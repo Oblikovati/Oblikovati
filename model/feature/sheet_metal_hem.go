@@ -7,36 +7,52 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
-	"oblikovati.org/model/param"
 )
 
-// Sheet-metal Hem feature (M13-F02). A hem folds the material at an edge back on itself —
-// the reinforced/safe edge on a finished panel. Geometrically it is a flange bent through
-// ~180°, so it reuses the flange's cross-section band (buildFlangeSolid at a half-turn): the
-// wall curls over the bend radius and runs back across the parent. The hem TYPE sets the
-// bend radius: a closed hem folds tight (radius ≈ half the thickness, the wall nearly flat
-// against the sheet); an open hem leaves a rounded loop of the given gap (radius = gap/2).
+// Sheet-metal Hem feature (M13-F02, types per #1956). A hem folds the material at an edge back on
+// itself — the reinforced/safe edge on a finished panel. Geometrically it is a chain of bends and
+// straight runs (see sheet_metal_band.go) extruded along the picked edge and unioned onto the
+// sheet. The four types are Inventor's HemTypeEnum, and two of them are radius/angle-driven rather
+// than length-driven:
+//
+//   - single   — one half-turn, then the leg runs back over the parent (gap + length).
+//   - double   — a half-turn, a leg, then a SECOND half-turn curling the other way so the free
+//     edge stacks on top of the first leg instead of folding down into the parent (gap + length).
+//   - rolled   — a plain curl of the given radius through the given sweep, no straight leg.
+//   - teardrop — a curl past a half-turn, then a straight tail that closes back onto the sheet;
+//     the tail length is derived from the radius and angle, which is why Inventor asks for
+//     neither a gap nor a length here.
 
-// HemType discriminates the hem geometry.
+// HemType discriminates the hem geometry (Inventor's HemTypeEnum).
 type HemType int
 
 const (
-	// ClosedHem folds the material flat back on itself (a tight radius ≈ t/2).
-	ClosedHem HemType = iota
-	// OpenHem leaves a rounded loop of the configured gap (radius = gap/2).
-	OpenHem
+	// SingleHem folds the material back on itself once. The gap is the clear distance between the
+	// returning leg and the parent, so the inside radius is half of it; with no gap it folds tight
+	// at half the material thickness. This is the value the legacy "closed"/"open" spellings map
+	// to, and its ordinal is unchanged so an existing recipe still reads as a single hem.
+	SingleHem HemType = iota
+	// DoubleHem folds back twice, stacking three layers of material at the edge.
+	DoubleHem
+	// RolledHem curls the edge through a sweep angle at a given radius — a rolled safe edge.
+	RolledHem
+	// TeardropHem curls past a half-turn and runs back to the sheet, leaving a near-closed loop.
+	TeardropHem
 )
 
-// hemFoldAngle is the half-turn every hem folds through.
+// hemFoldAngle is the half-turn a single or double hem folds through.
 const hemFoldAngle = stdmath.Pi
 
-// SheetMetalHemDefinition is the hem recipe: the edge to hem, the hem length (how far the
-// folded-back wall runs), the type, an open hem's gap, and a flip to fold to the other side.
+// SheetMetalHemDefinition is the hem recipe: the edge to hem, the type, and the dimensions that
+// type takes — length + gap for the folded types, radius + angle for the curled ones. Flip folds
+// to the other side of the sheet.
 type SheetMetalHemDefinition struct {
 	EdgeKey []byte
-	Length  func() float64
+	Length  func() float64 // how far the folded-back leg runs; single/double only
 	Type    HemType
-	Gap     func() float64 // open-hem loop gap; ignored for a closed hem
+	Gap     func() float64 // clear gap of the fold (radius = gap/2); single/double only
+	Radius  func() float64 // curl radius; rolled/teardrop only
+	Angle   func() float64 // curl sweep (radians); rolled/teardrop only
 	Flip    bool
 }
 
@@ -53,13 +69,17 @@ func (f *SheetMetalHemFeature) Definition() *SheetMetalHemDefinition { return f.
 // Kind identifies the feature for serialization and the model tree.
 func (f *SheetMetalHemFeature) Kind() string { return "sheet-metal-hem" }
 
-// Recompute resolves the edge and folds a 180° hem onto the sheet at the type's radius.
+// Recompute resolves the edge and folds the hem's bend chain onto the sheet.
 func (f *SheetMetalHemFeature) Recompute(in Input) (Output, error) {
 	body, err := lastBody(in, "sheet-metal hem")
 	if err != nil {
 		return Output{}, err
 	}
-	t, radius, length, err := f.hemDims(in.Params)
+	t, err := sheetThickness(in.Params)
+	if err != nil {
+		return Output{}, err
+	}
+	steps, err := f.hemSteps(t)
 	if err != nil {
 		return Output{}, err
 	}
@@ -67,7 +87,7 @@ func (f *SheetMetalHemFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	wall, placement, err := buildFlangeSolid(edges[0], t, radius, length, hemFoldAngle, f.def.Flip, f.featName)
+	wall, placement, err := buildFoldedSolid(edges[0], t, steps, f.def.Flip, f.featName)
 	if err != nil {
 		return Output{}, err
 	}
@@ -88,38 +108,100 @@ func (f *SheetMetalHemFeature) Placement() (BendPlacement, bool) {
 	return *f.placement, true
 }
 
-// hemDims reads the live thickness and resolves the hem's bend radius and fold-back length,
-// erroring if either is non-positive.
-func (f *SheetMetalHemFeature) hemDims(ps *param.Parameters) (thickness, radius, length float64, err error) {
-	thickness, err = sheetThickness(ps)
-	if err != nil {
-		return 0, 0, 0, err
+// hemSteps builds the bend/run chain for the hem's type at the live material thickness.
+func (f *SheetMetalHemFeature) hemSteps(thickness float64) ([]bendRun, error) {
+	switch f.def.Type {
+	case SingleHem, DoubleHem:
+		return f.foldedSteps(thickness)
+	case RolledHem:
+		r, a, err := f.curlDims()
+		return []bendRun{{Angle: a, Radius: r}}, err
+	case TeardropHem:
+		return f.teardropSteps(thickness)
+	default:
+		return nil, fmt.Errorf("sheet-metal hem: unknown type %d", f.def.Type)
 	}
-	radius = f.hemRadius(thickness)
-	length = evalFloat(f.def.Length)
-	if radius <= 0 || length <= 0 {
-		return 0, 0, 0, fmt.Errorf("sheet-metal hem: radius/length must be positive (r=%g l=%g)", radius, length)
-	}
-	return thickness, radius, length, nil
 }
 
-// hemRadius returns the inside bend radius for the hem type: a closed hem folds at half the
-// material thickness; an open hem at half its gap (defaulting to the thickness when unset).
-func (f *SheetMetalHemFeature) hemRadius(thickness float64) float64 {
-	if f.def.Type == OpenHem {
-		if g := evalFloat(f.def.Gap); g > 0 {
-			return g / 2
-		}
-		return thickness
+// foldedSteps builds the single or double fold. The double's second bend is NEGATIVE — it curls
+// the opposite way, which is what stacks its leg on top of the first instead of folding it down
+// through the parent — and folds tight, since only the outer fold has to clear the doubled
+// material the gap is measured across.
+func (f *SheetMetalHemFeature) foldedSteps(thickness float64) ([]bendRun, error) {
+	radius, leg := f.foldRadius(thickness), evalFloat(f.def.Length)
+	if radius <= 0 || leg <= 0 {
+		return nil, fmt.Errorf("sheet-metal hem: radius/length must be positive (r=%g l=%g)", radius, leg)
+	}
+	steps := []bendRun{{Angle: hemFoldAngle, Radius: radius, Run: leg}}
+	if f.def.Type == DoubleHem {
+		steps = append(steps, bendRun{Angle: -hemFoldAngle, Radius: thickness / 2, Run: leg})
+	}
+	return steps, nil
+}
+
+// teardropSteps curls the edge and then runs straight back to the parent's face. The tail is
+// DERIVED: it is the run that brings the material's near surface back to the sheet, which is why
+// the teardrop takes no length. A sweep of a half-turn or less never heads back, and a full turn
+// has already closed, so both are refused rather than run off to infinity.
+func (f *SheetMetalHemFeature) teardropSteps(thickness float64) ([]bendRun, error) {
+	radius, angle, err := f.curlDims()
+	if err != nil {
+		return nil, err
+	}
+	if angle <= hemFoldAngle || angle >= 2*stdmath.Pi {
+		return nil, fmt.Errorf("sheet-metal hem: a teardrop's sweep must be more than a half-turn and "+
+			"less than a full one so the tail closes back onto the sheet, got %g rad", angle)
+	}
+	return []bendRun{{Angle: angle, Radius: radius, Run: teardropTail(radius, angle, thickness)}}, nil
+}
+
+// teardropTail is the straight run that brings the tail's end down onto the parent's face.
+//
+// The centreline leaves the curl at height radius − (radius+t/2)·cos(angle) and descends at
+// sin(angle) per unit run. What has to reach the face is the LOWEST corner of the tail's end, and
+// that sits half a thickness below the centreline only in proportion to how far the end face has
+// tilted — |cos(angle)| — because the material's cross-section has rotated with it. Measuring to
+// the centreline instead leaves the tail hanging half a thickness clear of the sheet, which is a
+// teardrop that does not close.
+func teardropTail(radius, angle, thickness float64) float64 {
+	half := thickness / 2
+	rise := radius - (radius+half)*stdmath.Cos(angle)
+	return (half*stdmath.Abs(stdmath.Cos(angle)) - rise) / stdmath.Sin(angle)
+}
+
+// curlDims reads the radius and sweep the curled types are driven by.
+func (f *SheetMetalHemFeature) curlDims() (radius, angle float64, err error) {
+	radius, angle = evalFloat(f.def.Radius), evalFloat(f.def.Angle)
+	if radius <= 0 || angle <= 0 {
+		return 0, 0, fmt.Errorf("sheet-metal hem: a rolled or teardrop hem is driven by its curl, so "+
+			"radius and angle must both be positive (r=%g a=%g rad)", radius, angle)
+	}
+	return radius, angle, nil
+}
+
+// foldRadius returns the inside bend radius of a single or double hem's outer fold: half the clear
+// gap, or half the material thickness (folded tight) when no gap is given.
+func (f *SheetMetalHemFeature) foldRadius(thickness float64) float64 {
+	if g := evalFloat(f.def.Gap); g > 0 {
+		return g / 2
 	}
 	return thickness / 2
 }
 
-// BendSpecs reports the single 180° fold a hem introduces, for the flat pattern. The hem
-// radius is gauge-derived (a closed hem folds at half the thickness), so it is always
-// resolved here from the passed thickness rather than deferred to the rule's default.
+// BendSpecs reports the folds a hem introduces, for the flat pattern. A folded hem's radius is
+// gauge-derived (a tight fold is half the thickness), so it is always resolved here from the
+// passed thickness rather than deferred to the rule's default; a curled hem's comes from its own
+// radius. It reports the folds even when a dimension the SOLID needs is missing — the developed
+// length depends on the bends, not on how far the leg then runs.
 func (f *SheetMetalHemFeature) BendSpecs(thickness float64) []BendSpec {
-	return []BendSpec{{Angle: hemFoldAngle, Radius: f.hemRadius(thickness)}}
+	if f.def.Type == RolledHem || f.def.Type == TeardropHem {
+		return []BendSpec{{Angle: evalFloat(f.def.Angle), Radius: evalFloat(f.def.Radius)}}
+	}
+	specs := []BendSpec{{Angle: hemFoldAngle, Radius: f.foldRadius(thickness)}}
+	if f.def.Type == DoubleHem {
+		specs = append(specs, BendSpec{Angle: hemFoldAngle, Radius: thickness / 2})
+	}
+	return specs
 }
 
 // SheetMetalHemFeatures adds hem features into the engine.
@@ -139,13 +221,27 @@ func (c *SheetMetalHemFeatures) Add(def *SheetMetalHemDefinition) *PartFeature {
 	return pf
 }
 
-// ParseHemType resolves a wire spelling to a hem type.
+// hemTypeNames is the stable wire/recipe vocabulary for the hem types — one source shared by the
+// op registry and the .obk codec so they cannot drift.
+var hemTypeNames = map[HemType]string{
+	SingleHem: "single", DoubleHem: "double", RolledHem: "rolled", TeardropHem: "teardrop",
+}
+
+// HemTypeName renders a hem type as its stable name.
+func HemTypeName(t HemType) string { return hemTypeNames[t] }
+
+// ParseHemType resolves a wire spelling to a hem type. "closed" and "open" are the spellings this
+// feature shipped with, before the types were named after Inventor's: both are single hems, and
+// what set them apart — how tight the fold is — is the GAP, which is still what says it.
 func ParseHemType(s string) (HemType, bool) {
 	switch s {
-	case "", "closed":
-		return ClosedHem, true
-	case "open":
-		return OpenHem, true
+	case "", "closed", "open":
+		return SingleHem, true
+	}
+	for t, n := range hemTypeNames {
+		if n == s {
+			return t, true
+		}
 	}
 	return 0, false
 }

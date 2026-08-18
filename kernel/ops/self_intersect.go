@@ -3,8 +3,10 @@
 package ops
 
 import (
+	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -23,9 +25,11 @@ type SelfIntersection struct {
 }
 
 // SelfIntersections tessellates each face at q and reports every non-adjacent
-// face pair whose triangles cross. The check is mesh-accurate: crossings
-// thinner than the chord tolerance can escape it, which matches what every
-// downstream consumer (booleans, mass properties, export) would see anyway.
+// face pair whose triangles cross. The check is mesh-accurate: a crossing no
+// deeper than the two faces' own faceting error is not reported, because the
+// mesh carries no evidence that the true surfaces cross at all — which matches
+// what every downstream consumer (booleans, mass properties, export) sees anyway.
+// Two planar faces are meshed exactly and so are held to a crossing of zero.
 //
 // Example: if hits := ops.SelfIntersections(body, ops.DefaultQuality()); len(hits) > 0 { reject(body) }
 func SelfIntersections(b *topo.Body, q Quality) []SelfIntersection {
@@ -50,7 +54,12 @@ func SelfIntersections(b *topo.Body, q Quality) []SelfIntersection {
 			if bvhs[j] == nil {
 				bvhs[j] = newTriBVH(tris[j])
 			}
-			if p, hit := meshCrossesOffBoundary(tris[i], bvhs[j], shared, q.tol()); hit {
+			// Two meshes may each stray from their true surface, so they can appear to cross by up
+			// to the SUM of their deviations with no real interpenetration behind it — which is what
+			// made every tangent blend (fillet/sphere/cone weld) report a false self-intersection
+			// (#2077). Planar faces contribute nothing, so plane-on-plane stays exact.
+			allow := faceMeshDeviation(faces[i], q) + faceMeshDeviation(faces[j], q)
+			if p, hit := meshCrossesOffBoundary(tris[i], bvhs[j], shared, q.tol(), allow); hit {
 				out = append(out, SelfIntersection{FaceA: faces[i], FaceB: faces[j], Witness: p})
 			}
 		}
@@ -89,24 +98,56 @@ func sharedFaceBoundary(a, b *topo.Face) [][2]math.Point3 {
 // witness lies farther than tol from the shared boundary — the first real interpenetration. The exact
 // Möller test and the boundary filter are unchanged, so detection is identical to the old scan; only
 // the candidates it runs on are pruned. Crossings on the shared boundary are legitimate contact.
-func meshCrossesOffBoundary(aTris [][3]math.Point3, bBVH *triBVH, shared [][2]math.Point3, tol float64) (math.Point3, bool) {
+func meshCrossesOffBoundary(aTris [][3]math.Point3, bBVH *triBVH, shared [][2]math.Point3, tol, allow float64) (math.Point3, bool) {
 	var witness math.Point3
 	found := false
 	for _, t1 := range aTris {
 		box := math.BoxFromPoints(t1[0], t1[1], t1[2])
 		bBVH.query(box, func(j int) bool {
-			p, hit := trianglesIntersect(t1, bBVH.tris[j])
-			if hit && !onSharedBoundary(p, shared, tol) {
-				witness, found = p, true
-				return true // stop the BVH walk at the first real crossing
+			p, kind := triangleCrossing(t1, bBVH.tris[j], allow)
+			if kind == crossNone || onSharedBoundary(p, shared, tol) {
+				return false
 			}
-			return false
+			witness, found = p, true
+			return true // stop the BVH walk at the first real crossing
 		})
 		if found {
 			return witness, true
 		}
 	}
 	return math.Point3{}, false
+}
+
+// crossingThickness is how deep the shallower of the two triangles pokes through the other's
+// plane — the honest size of a straddling crossing, and what the faceting allowance is compared
+// against (#2077).
+func crossingThickness(a, b [3]math.Point3) float64 {
+	return stdmath.Min(pokeDepth(a, b), pokeDepth(b, a))
+}
+
+// pokeDepth is how far t reaches past the plane of other, on the side it reaches less far.
+func pokeDepth(t, other [3]math.Point3) float64 {
+	n, d := triPlaneEq(other)
+	scale := float64(n.Length())
+	if scale == 0 {
+		return 0 // a degenerate triangle has no plane to poke through
+	}
+	hi, lo := stdmath.Inf(-1), stdmath.Inf(1)
+	for _, p := range t {
+		s := (float64(n.Dot(p.AsVector())) - d) / scale
+		hi, lo = stdmath.Max(hi, s), stdmath.Min(lo, s)
+	}
+	return stdmath.Min(hi, -lo)
+}
+
+// faceMeshDeviation is how far a face's TESSELLATION may stray from its true surface. A planar
+// face is meshed exactly, so it gets no allowance at all; a curved face's chords sit up to the
+// chord tolerance away from the surface.
+func faceMeshDeviation(f *topo.Face, q Quality) float64 {
+	if _, planar := f.Geometry().(geom.Plane); planar {
+		return 0
+	}
+	return q.tol()
 }
 
 // onSharedBoundary reports whether p lies within tol of any shared boundary segment/point.
@@ -125,28 +166,127 @@ func meshTriangle(m *Mesh, i int) [3]math.Point3 {
 	}
 }
 
-// selfIntersectEps keeps grazing contact (faces meeting within numerical noise
-// of each other) from reporting as interpenetration.
-const selfIntersectEps = 1e-9 // tol:calibrated — guards an UNNORMALISED plane equation (n·p−d, ~size³); relativising needs normalising by |n| first
+// selfIntersectEps keeps grazing contact from separating two coplanar triangles that in fact
+// overlap. It guards ONLY the 2D separating-axis test in coplanarOverlap, whose coordinates come
+// from the ORTHONORMAL axes planeAxes now returns and so are true lengths. They were not until
+// #2077 — see planeAxes — so this really was a scaled residual for the whole of #2075's life.
+const selfIntersectEps = 1e-9 // tol:numeric — a true length on unit plane axes, not a scaled residual
+
+// crossRatio is how deep, and how far along, two triangles must cross before the crossing counts
+// as interpenetration rather than contact. It multiplies the smaller triangle's own size, so it
+// carries no model scale (ADR-0042) — see Oblikovati#2075.
+const crossRatio = 1e-9 // tol:numeric — dimensionless; scaled by the local triangle size at use
 
 // trianglesIntersect is the Möller interval test: T1 must straddle T2's plane
 // and vice versa, and their intervals on the planes' intersection line must
 // overlap. Coplanar triangles are handled by 2D overlap on their shared plane.
+//
+// Every comparison is made in TRUE length units, against a tolerance scaled by the smaller
+// triangle. Until Oblikovati#2075 the plane distances were left unnormalised (n·p−d, inflated by
+// |n| ≈ 2·area) and the interval was projected on the unnormalised n1×n2, so a fixed 1e-9 meant a
+// different thing for every pair of triangles — and for small ones it meant nothing at all. Two
+// faces that merely TOUCH along a line then read as interpenetrating, because the overlap interval
+// is a single point whose inflated length still cleared the threshold. That is what made a mitered
+// sheet-metal corner report a self-intersection where the gap cut abuts the wall it cuts.
 func trianglesIntersect(t1, t2 [3]math.Point3) (math.Point3, bool) {
+	p, kind := triangleCrossing(t1, t2, 0)
+	return p, kind != crossNone
+}
+
+// crossKind says WHICH branch of the Möller test produced a hit. The two need different evidence:
+// a straddling crossing is judged by how DEEP it is, a coplanar one by how much AREA it shares —
+// a coplanar pair has no depth at all, so a depth gate would silently erase every coplanar
+// overlap (#2077).
+type crossKind int
+
+const (
+	crossNone crossKind = iota
+	crossStraddle
+	crossCoplanar
+)
+
+// triangleCrossing is trianglesIntersect with the branch reported, and with a crossing smaller
+// than allow discarded as faceting noise (see faceMeshDeviation). allow is a LENGTH: the straddling
+// branch compares it against the crossing's depth, the coplanar branch against the square root of
+// the shared area, because those are the two branches' natural measures. allow = 0 makes the test
+// exact, which is what a pair of planar faces gets.
+func triangleCrossing(t1, t2 [3]math.Point3, allow float64) (math.Point3, crossKind) {
+	eps := crossRatio * stdmath.Min(triScale(t1), triScale(t2))
 	n2, d2 := triPlaneEq(t2)
-	s1, straddles1 := signedDistances(t1, n2, d2)
+	s1, straddles1 := signedDistances(t1, n2, d2, eps)
 	if !straddles1 {
-		if triCoplanar(s1) {
-			return coplanarOverlap(t1, t2, n2)
-		}
-		return math.Point3{}, false
+		return coplanarCrossing(t1, t2, n2, s1, eps, allow)
 	}
 	n1, d1 := triPlaneEq(t1)
-	s2, straddles2 := signedDistances(t2, n1, d1)
+	s2, straddles2 := signedDistances(t2, n1, d1, eps)
 	if !straddles2 {
-		return math.Point3{}, false
+		return math.Point3{}, crossNone
 	}
-	return intervalOverlap(t1, s1, t2, s2, n1.Cross(n2))
+	// Cross the UNIT normals, not the raw ones. |n| is ~2·area, so n1×n2 shrinks as the fourth
+	// power of the model and underflows the zero-length guard on small parts — which would drop a
+	// real crossing rather than report it. The unit cross product has magnitude sin θ, which
+	// depends only on the angle between the planes.
+	line, err := unitCross(n1, n2)
+	if err != nil {
+		return math.Point3{}, crossNone // planes too near parallel to define an intersection line
+	}
+	p, hit := intervalOverlap(t1, s1, t2, s2, line, eps)
+	if !hit || crossingThickness(t1, t2) <= allow {
+		return math.Point3{}, crossNone
+	}
+	return p, crossStraddle
+}
+
+// coplanarCrossing is the branch taken when t1 does not straddle t2's plane: either the two lie in
+// that plane and overlap in area, or they do not meet at all.
+//
+// A coplanar pair has no depth, so the faceting allowance applies to its AREA. The existing ratio
+// filter (#2074) compares the overlap to the smaller TRIANGLE, which a sliver passes on a
+// meaningless absolute overlap: a torus tessellated against a plane it touches produced overlaps
+// down to 1e-16 cm2 that way (#2077). Requiring the overlap to span more than allow on a side
+// discards those without weakening the ratio test that catches edge contact.
+func coplanarCrossing(t1, t2 [3]math.Point3, n2 math.Vector3, s1 [3]float64, eps, allow float64) (math.Point3, crossKind) {
+	if !triCoplanar(s1, eps) {
+		return math.Point3{}, crossNone
+	}
+	p, area, hit := coplanarOverlap(t1, t2, n2)
+	if !hit || area <= allow*allow {
+		return math.Point3{}, crossNone
+	}
+	return p, crossCoplanar
+}
+
+// parallelSinRatio is how far from parallel two planes must be before their intersection line is
+// worth computing. It is |sin θ| — dimensionless — so it says nothing about the model's size.
+const parallelSinRatio = 1e-12 // tol:numeric — a sine, not a length
+
+// unitCross returns the unit direction of the two planes' intersection line. It divides by the
+// normals' magnitudes explicitly rather than calling UnitVector3FromVector, whose zero-length guard
+// is an ABSOLUTE 1e-9: |n| is ~2·area, so on a part measured in microns every face normal looks
+// like a zero vector to that guard and a real crossing is silently dropped (#2075).
+func unitCross(n1, n2 math.Vector3) (math.Vector3, error) {
+	m1, m2 := float64(n1.Length()), float64(n2.Length())
+	if m1 == 0 || m2 == 0 {
+		return math.Vector3{}, fmt.Errorf("degenerate triangle normal: |n1|=%g |n2|=%g, want both > 0", m1, m2)
+	}
+	c := n1.Cross(n2)
+	sin := float64(c.Length()) / (m1 * m2)
+	if sin < parallelSinRatio {
+		return math.Vector3{}, fmt.Errorf("planes are parallel to within |sin| = %g, want >= %g", sin, parallelSinRatio)
+	}
+	return c.Scale(math.Scalar(1 / (m1 * m2 * sin))), nil
+}
+
+// triScale is a triangle's characteristic length — its longest edge. It turns the dimensionless
+// crossRatio into a length tolerance that follows the geometry instead of the model's units.
+func triScale(t [3]math.Point3) float64 {
+	longest := 0.0
+	for i := 0; i < 3; i++ {
+		if d := float64(t[i].DistanceTo(t[(i+1)%3])); d > longest {
+			longest = d
+		}
+	}
+	return longest
 }
 
 // triPlaneEq returns the triangle's (unnormalized) plane normal and offset.
@@ -155,39 +295,46 @@ func triPlaneEq(t [3]math.Point3) (math.Vector3, float64) {
 	return n, float64(n.Dot(t[0].AsVector()))
 }
 
-// signedDistances returns each vertex's signed distance to the plane and
-// whether the triangle genuinely straddles it (signs on both sides beyond eps).
-func signedDistances(t [3]math.Point3, n math.Vector3, d float64) ([3]float64, bool) {
+// signedDistances returns each vertex's TRUE perpendicular distance to the plane and whether the
+// triangle genuinely straddles it (signs on both sides beyond eps). Normalising by |n| is what
+// makes eps a length the caller can reason about (#2075).
+func signedDistances(t [3]math.Point3, n math.Vector3, d, eps float64) ([3]float64, bool) {
 	var s [3]float64
+	scale := float64(n.Length())
+	if scale == 0 {
+		return s, false // a degenerate triangle has no plane to straddle
+	}
 	pos, neg := false, false
 	for i, p := range t {
-		s[i] = float64(n.Dot(p.AsVector())) - d
-		if s[i] > selfIntersectEps {
+		s[i] = (float64(n.Dot(p.AsVector())) - d) / scale
+		if s[i] > eps {
 			pos = true
 		}
-		if s[i] < -selfIntersectEps {
+		if s[i] < -eps {
 			neg = true
 		}
 	}
 	return s, pos && neg
 }
 
-func triCoplanar(s [3]float64) bool {
+func triCoplanar(s [3]float64, eps float64) bool {
 	for _, v := range s {
-		if v > selfIntersectEps || v < -selfIntersectEps {
+		if v > eps || v < -eps {
 			return false
 		}
 	}
 	return true
 }
 
-// intervalOverlap projects both triangles' plane crossings onto the planes'
-// intersection line and reports a witness point if the intervals overlap.
-func intervalOverlap(t1 [3]math.Point3, s1 [3]float64, t2 [3]math.Point3, s2 [3]float64, line math.Vector3) (math.Point3, bool) {
+// intervalOverlap projects both triangles' plane crossings onto the planes' intersection line —
+// a UNIT direction, so the interval is a true arc length — and reports a witness point only when
+// the intervals share more than eps of it. Faces that touch along a line share a single POINT of
+// that line, so requiring positive length is what separates contact from interpenetration (#2075).
+func intervalOverlap(t1 [3]math.Point3, s1 [3]float64, t2 [3]math.Point3, s2 [3]float64, line math.Vector3, eps float64) (math.Point3, bool) {
 	a0, a1, pa := crossingInterval(t1, s1, line)
 	b0, b1, _ := crossingInterval(t2, s2, line)
 	lo, hi := max(a0, b0), min(a1, b1)
-	if lo+selfIntersectEps >= hi {
+	if lo+eps >= hi {
 		return math.Point3{}, false
 	}
 	return pa((lo + hi) / 2), true
@@ -225,27 +372,139 @@ func crossingInterval(t [3]math.Point3, s [3]float64, line math.Vector3) (float6
 	return u0, u1, at
 }
 
-// coplanarOverlap projects both triangles onto their shared plane's dominant
-// axes and tests 2D overlap by separating axes over both triangles' edges.
-func coplanarOverlap(t1, t2 [3]math.Point3, n math.Vector3) (math.Point3, bool) {
+// coplanarOverlap projects both triangles onto their shared plane's dominant axes, tests 2D
+// overlap by separating axes, and reports a witness INSIDE the shared region.
+//
+// The witness has to be truthful. Returning t1's centre instead (as this did until
+// Oblikovati#2074) put the witness far from where the triangles actually met, and the caller
+// filters legitimate contact by asking whether the witness lies on the two faces' shared
+// boundary — a centre never does. Two coplanar faces meeting along a shared edge, which every
+// sheet-metal wall makes where its end cap meets the sheet's side, were therefore reported as
+// interpenetrating on every part that had one.
+func coplanarOverlap(t1, t2 [3]math.Point3, n math.Vector3) (math.Point3, float64, bool) {
 	u, v := planeAxes(n)
 	a := projectTriangle(t1, u, v)
 	b := projectTriangle(t2, u, v)
 	if separated(a, b) || separated(b, a) {
-		return math.Point3{}, false
+		return math.Point3{}, 0, false
 	}
-	c := triangleCenter(t1)
-	return c, true
+	region, flat := clipToTriangle(t2, b, a)
+	if len(region) < 3 || degenerateShare(flat, a, b) {
+		return math.Point3{}, 0, false
+	}
+	// The 2D coordinates come from UNIT plane axes, so the shoelace area is a true area.
+	return centroidOf(region), polygonArea2D(flat), true // centroidOf is shared with the sphere-cap mesher
+}
+
+// coplanarShareRatio is the least share of the smaller triangle two coplanar triangles must
+// overlap by to count as interpenetrating. It is a RATIO of areas, so it carries no model
+// scale. Contact along an edge overlaps by ~1e-16 of a triangle (rounding alone) and a real
+// overlap by ~1e-2 or more, so every threshold between about 1e-12 and 1e-6 gives the same
+// answer — see TestCoplanarShareThresholdHasAPlateau.
+const coplanarShareRatio = 1e-9 // tol:numeric — a ratio of two areas, so it carries no model scale
+
+// degenerateShare reports whether the clipped region is contact rather than overlap: two
+// coplanar triangles meeting along an edge or at a corner share a region of no area, which is
+// how every face meets its neighbour and is not an interpenetration.
+func degenerateShare(region [][2]float64, a, b [3][2]float64) bool {
+	smaller := stdmath.Min(triArea2D(a), triArea2D(b))
+	if smaller <= 0 {
+		return true // a degenerate triangle cannot overlap anything
+	}
+	return polygonArea2D(region)/smaller < coplanarShareRatio
+}
+
+// triArea2D is the projected triangle's area.
+func triArea2D(t [3][2]float64) float64 {
+	return polygonArea2D([][2]float64{t[0], t[1], t[2]})
+}
+
+// polygonArea2D is the shoelace area, unsigned so winding does not matter.
+func polygonArea2D(p [][2]float64) float64 {
+	sum := 0.0
+	for i := range p {
+		j := (i + 1) % len(p)
+		sum += p[i][0]*p[j][1] - p[j][0]*p[i][1]
+	}
+	return stdmath.Abs(sum) / 2
+}
+
+// clipToTriangle clips triangle t (with projection tp) against clip's three edge half-planes,
+// returning the shared region's corners in 3D and their projections. It is Sutherland–Hodgman
+// run on the projected coordinates while interpolating the 3D points, so the corners land on
+// the real surface and the projections stay available to measure the region's area.
+func clipToTriangle(t [3]math.Point3, tp, clip [3][2]float64) ([]math.Point3, [][2]float64) {
+	poly := []math.Point3{t[0], t[1], t[2]}
+	proj := [][2]float64{tp[0], tp[1], tp[2]}
+	for i := 0; i < 3 && len(poly) > 0; i++ {
+		j := (i + 1) % 3
+		nx, ny := clip[j][1]-clip[i][1], clip[i][0]-clip[j][0]
+		inside := func(p [2]float64) float64 {
+			return nx*(p[0]-clip[i][0]) + ny*(p[1]-clip[i][1])
+		}
+		poly, proj = clipHalfPlane(poly, proj, inside, insideSign(clip, nx, ny, i))
+	}
+	return poly, proj
+}
+
+// insideSign reports which side of the clip edge the triangle's own third corner is on, so the
+// clip works for either winding.
+func insideSign(clip [3][2]float64, nx, ny float64, i int) float64 {
+	third := clip[(i+2)%3]
+	if nx*(third[0]-clip[i][0])+ny*(third[1]-clip[i][1]) < 0 {
+		return -1
+	}
+	return 1
+}
+
+// clipHalfPlane keeps the part of the polygon on the inside of one half-plane, interpolating
+// both the 3D point and its projection at each crossing.
+func clipHalfPlane(poly []math.Point3, proj [][2]float64, dist func([2]float64) float64,
+	sign float64) ([]math.Point3, [][2]float64) {
+	var outP []math.Point3
+	var outQ [][2]float64
+	for i := range poly {
+		j := (i + 1) % len(poly)
+		di, dj := sign*dist(proj[i]), sign*dist(proj[j])
+		if di >= 0 {
+			outP, outQ = append(outP, poly[i]), append(outQ, proj[i])
+		}
+		if (di >= 0) == (dj >= 0) || di == dj {
+			continue
+		}
+		f := di / (di - dj)
+		outP = append(outP, poly[i].TranslateBy(poly[i].VectorTo(poly[j]).Scale(math.Scalar(f))))
+		outQ = append(outQ, [2]float64{
+			proj[i][0] + f*(proj[j][0]-proj[i][0]),
+			proj[i][1] + f*(proj[j][1]-proj[i][1]),
+		})
+	}
+	return outP, outQ
 }
 
 // planeAxes picks two in-plane axes for the dominant-normal projection.
+// planeAxes returns an ORTHONORMAL pair spanning the plane with normal n, so coordinates projected
+// on them are true lengths and 2D areas are true areas.
+//
+// They used to be the raw cross products n×ref and n×(n×ref), whose magnitudes are |n| and |n|² —
+// so the projected space carried the triangle's own area as a scale factor, and carried a DIFFERENT
+// one on each axis. #2075 normalised every other comparison in this file and left this branch
+// alone, which is why the note on selfIntersectEps claimed unit axes that did not exist. Anything
+// measured in that space (a length against selfIntersectEps, an area against the faceting
+// allowance) meant a different thing for every pair of triangles (#2077).
 func planeAxes(n math.Vector3) (math.Vector3, math.Vector3) {
 	ref := math.V3(1, 0, 0)
 	if stdmath.Abs(float64(n.X)) > stdmath.Abs(float64(n.Y)) && stdmath.Abs(float64(n.X)) > stdmath.Abs(float64(n.Z)) {
 		ref = math.V3(0, 1, 0)
 	}
-	u := n.Cross(ref)
-	return u, n.Cross(u)
+	u, v := n.Cross(ref), n.Cross(n.Cross(ref))
+	// Divide by the magnitudes explicitly. UnitVector3FromVector guards zero length with an ABSOLUTE
+	// 1e-9, and |n| ~ 2·area underflows that on small parts — the trap #2075 fell into.
+	lu, lv := float64(u.Length()), float64(v.Length())
+	if lu == 0 || lv == 0 {
+		return math.Vector3{}, math.Vector3{} // degenerate triangle: everything projects to a point
+	}
+	return u.Scale(math.Scalar(1 / lu)), v.Scale(math.Scalar(1 / lv))
 }
 
 func projectTriangle(t [3]math.Point3, u, v math.Vector3) [3][2]float64 {
@@ -280,9 +539,4 @@ func axisInterval(t [3][2]float64, nx, ny float64) (float64, float64) {
 		lo, hi = min(lo, v), max(hi, v)
 	}
 	return lo, hi
-}
-
-func triangleCenter(t [3]math.Point3) math.Point3 {
-	v := t[0].AsVector().Add(t[1].AsVector()).Add(t[2].AsVector())
-	return v.Scale(math.Scalar(1.0 / 3)).AsPoint()
 }

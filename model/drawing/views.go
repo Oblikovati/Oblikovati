@@ -126,12 +126,17 @@ func (vs *DrawingViews) AddAuxiliary(spec AuxiliaryViewSpec) (*DrawingView, erro
 }
 
 // SectionViewSpec describes a section view cut from a parent view by a section line. The line
-// endpoints are in sheet millimetres, drawn on the parent view.
+// endpoints are in sheet millimetres, drawn on the parent view. Depth (>0, millimetres) limits
+// the retained half to a slab that deep; Reverse keeps the opposite half; Type selects a partial
+// cut (#1982).
 type SectionViewSpec struct {
 	Name             string
 	ParentView       string
 	X1, Y1, X2, Y2   float64 // section line on the parent (sheet mm)
 	CenterX, CenterY float64 // where the section view sits on the sheet
+	Depth            float64 // >0 ⇒ limited-depth slab (millimetres); 0 ⇒ full through-cut
+	Reverse          bool    // keep the far half instead of the near half
+	Type             types.SectionViewType
 }
 
 // AddSection adds a section view: the parent's referenced model cut by the plane through the
@@ -151,6 +156,9 @@ func (vs *DrawingViews) AddSection(spec SectionViewSpec) (*DrawingView, error) {
 		name: name, viewType: types.DrawingViewSection, baseView: spec.ParentView, section: line,
 		orientation: parent.orientation, style: parent.style, scale: parent.scale,
 		centerX: spec.CenterX, centerY: spec.CenterY,
+		// The kernel cuts in model centimetres; the request's depth is millimetres (#1982).
+		sectionOpts: hlr.SectionOptions{Reverse: spec.Reverse, Depth: spec.Depth / cmToMM},
+		sectionType: spec.Type,
 	}
 	origin := bodyCenter(body)
 	v.recompute(body, sectionBasis(baseBasis(parent.orientation, origin), line, parent.scale, parent.centerX, parent.centerY, origin))
@@ -468,6 +476,8 @@ func (vs *DrawingViews) EditProjected(name string, dir types.ProjectionDirection
 // path after a model edit. Draft views (no model) refresh their frame regardless; the
 // model-backed views are left untouched when no model resolves.
 func (vs *DrawingViews) Recompute() {
+	vs.resolveEffectiveStyles()
+	vs.applyAlignments() // pull locked views onto their anchors before projecting (#1988)
 	body, ok := vs.resolveBody()
 	for _, v := range vs.items {
 		if v.viewType == types.DrawingViewDraft {
@@ -480,6 +490,68 @@ func (vs *DrawingViews) Recompute() {
 		if basis, ok := vs.basisFor(v, bodyCenter(body)); ok {
 			v.recompute(body, basis)
 		}
+	}
+}
+
+// ViewLabelStyle carries the optional view-label overrides to apply (#1983); a nil field is left
+// unchanged. XMM and YMM are applied together (both must be set to reposition the caption).
+type ViewLabelStyle struct {
+	Text      *string
+	ShowLabel *bool
+	ShowName  *bool
+	ShowScale *bool
+	XMM       *float64
+	YMM       *float64
+}
+
+// SetLabel applies the given label overrides to the named view (#1983), erroring when no view
+// carries that name.
+func (vs *DrawingViews) SetLabel(name string, style ViewLabelStyle) error {
+	v, ok := vs.ByName(name)
+	if !ok {
+		return fmt.Errorf("drawing: no view named %q", name)
+	}
+	if style.Text != nil {
+		v.SetLabelText(*style.Text)
+	}
+	if style.ShowLabel != nil {
+		v.SetShowLabel(*style.ShowLabel)
+	}
+	if style.ShowName != nil {
+		v.SetShowName(*style.ShowName)
+	}
+	if style.ShowScale != nil {
+		v.SetShowScale(*style.ShowScale)
+	}
+	if style.XMM != nil && style.YMM != nil {
+		v.SetLabelPositionMM(*style.XMM, *style.YMM)
+	}
+	return nil
+}
+
+// SetDisplayTangentEdges shows/hides the named view's smooth tangent edges and re-projects it so the
+// change takes effect immediately (#1984).
+func (vs *DrawingViews) SetDisplayTangentEdges(name string, show bool) error {
+	v, ok := vs.ByName(name)
+	if !ok {
+		return fmt.Errorf("drawing: no view named %q", name)
+	}
+	v.SetDisplayTangentEdges(show)
+	vs.Recompute()
+	return nil
+}
+
+// resolveEffectiveStyles resolves each view's FromBase style to its base view's style before the
+// projection pass, so a derived view renders with its parent's style associatively (#1985).
+func (vs *DrawingViews) resolveEffectiveStyles() {
+	lookup := func(name string) (types.DrawingViewStyle, bool) {
+		if base, ok := vs.ByName(name); ok {
+			return base.style, true
+		}
+		return 0, false
+	}
+	for _, v := range vs.items {
+		v.resolveEffectiveStyle(lookup)
 	}
 }
 

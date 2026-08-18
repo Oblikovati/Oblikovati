@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/model/bom"
 	"oblikovati.org/model/bomapi"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/occurrence"
 )
 
 // The assembly bill-of-materials surface (M11-F05, #730): read a structured (nested) or
@@ -21,6 +22,34 @@ import (
 func (r *Router) registerAssemblyBOMHandlers() {
 	r.readOnly(wire.MethodAssemblyBOMView, typedAssembly(assemblyBOMView))
 	r.readOnly(wire.MethodAssemblyBOMExport, typedAssembly(assemblyBOMExport))
+	r.mutating(wire.MethodAssemblySetBOMStructure, "Set BOM Structure", typedAssembly(assemblySetBOMStructure))
+}
+
+// assemblySetBOMStructure sets an occurrence's per-occurrence BOM-structure override (#1978).
+func assemblySetBOMStructure(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetBOMStructureArgs) (wire.SetBOMStructureResult, error) {
+	o, err := occurrenceByID(asm, in.Occurrence, wire.MethodAssemblySetBOMStructure)
+	if err != nil {
+		return wire.SetBOMStructureResult{}, err
+	}
+	spelling := string(in.Structure)
+	if spelling == "" {
+		spelling = "default"
+	}
+	st, ok := bom.ParseStructure(spelling)
+	if !ok || st == bom.Varies {
+		return wire.SetBOMStructureResult{}, fmt.Errorf("%s: cannot set BOM structure %q (want default/normal/phantom/reference/purchased/inseparable)", wire.MethodAssemblySetBOMStructure, in.Structure)
+	}
+	o.SetBOMStructureOverride(spelling)
+	s.ActiveDocument().MarkDirty()
+	return wire.SetBOMStructureResult{Occurrence: o.ID(), Structure: currentBOMStructure(o)}, nil
+}
+
+// currentBOMStructure reports an occurrence's BOM-structure override, or "default" when it inherits.
+func currentBOMStructure(o *occurrence.Occurrence) types.BOMStructure {
+	if ov := o.BOMStructureOverride(); ov != "" {
+		return types.BOMStructure(ov)
+	}
+	return types.BOMDefault
 }
 
 // assemblyBOMView returns the requested BOM view of the active assembly.

@@ -353,10 +353,15 @@ func TestReplaceFacePlanesRoundTrip(t *testing.T) {
 }
 
 // patchSurfaceBody builds a one-face planar surface (non-solid) body [0,w]×[0,h] at z=0.
-func patchSurfaceBody(w, h float64) *topo.Body {
+func patchSurfaceBody(w, h float64) *topo.Body { return patchSurfaceAtZ(w, h, 0) }
+
+// patchSurfaceAtZ is patchSurfaceBody lifted to a height — a planar sheet that can sit inside a
+// solid and act as a cutting tool (#1891).
+func patchSurfaceAtZ(w, h, z float64) *topo.Body {
 	lin := topo.NewLineage(topo.Tok("test", "patch", 0))
 	bld := topo.NewBuilder(false, lin)
-	p := []math.Point3{{X: 0, Y: 0}, {X: w, Y: 0}, {X: w, Y: h}, {X: 0, Y: h}}
+	p := []math.Point3{{X: 0, Y: 0, Z: math.Scalar(z)}, {X: math.Scalar(w), Y: 0, Z: math.Scalar(z)},
+		{X: math.Scalar(w), Y: math.Scalar(h), Z: math.Scalar(z)}, {X: 0, Y: math.Scalar(h), Z: math.Scalar(z)}}
 	v := make([]*topo.Vertex, 4)
 	for i, q := range p {
 		v[i] = bld.AddVertex(q, lin)
@@ -366,7 +371,7 @@ func patchSurfaceBody(w, h float64) *topo.Body {
 		e := bld.AddEdge(geom.NewLineSegment(p[i], p[(i+1)%4]), v[i], v[(i+1)%4], lin)
 		uses[i] = topo.Use{Edge: e}
 	}
-	plane, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	plane, _ := geom.NewPlane(math.P3(0, 0, math.Scalar(z)), math.V3(0, 0, 1))
 	bld.AddFace(plane, lin, topo.OuterLoop(uses...))
 	return bld.Build()
 }

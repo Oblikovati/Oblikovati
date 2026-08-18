@@ -9,6 +9,10 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/topo"
+	obkmath "oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/model/sketch"
 )
 
 // Unreachable-API quick-wins from the M33 audit: draft neutral plane (#1866), coil end conditions
@@ -120,23 +124,37 @@ func TestCoilEndConditionErrors(t *testing.T) {
 	}
 }
 
-// TestCoilEndConditions: start/end transition + flat sweeps are accepted and build a healthy coil
-// with more geometry (the flat/transition turns) than the plain helix (#1883).
-func TestCoilEndConditions(t *testing.T) {
-	plain := coilVolume(t, nil)
-	ground := coilVolume(t, map[string]any{
-		"startTransitionAngle": "90 deg", "startFlatAngle": "180 deg",
-		"endTransitionAngle": "90 deg", "endFlatAngle": "180 deg",
-	})
-	if ground <= plain {
-		t.Errorf("ground-ended coil volume %g should exceed plain %g (added flat/transition turns)", ground, plain)
+// springProfilePart is a part whose sketch is a proper COIL profile: a small section on a plane
+// CONTAINING the coil axis and standing clear of it. profiledPart's sketch is on XY while the coil
+// axis defaults to Z, so its profile plane contains the sweep direction — a zero-rise flat end then
+// rotates that profile through its own plane and the body is degenerate by construction (#2080).
+func springProfilePart(t *testing.T) *app.Session {
+	t.Helper()
+	s := app.NewSession()
+	d, err := s.Workspace().Add(doc.Part, "spring.obk", true)
+	if err != nil {
+		t.Fatalf("add document: %v", err)
 	}
+	def := compdef.NewPartComponentDefinition()
+	d.SetContent(def)
+	sk := def.Sketches().Add(sketch.XZPlane()) // u = X (radial), v = Z (along the coil axis)
+	at := func(x, z float64) *sketch.Point { return sk.Points().Add(obkmath.P2(x, z)) }
+	corners := []*sketch.Point{at(2, 0), at(2.5, 0), at(2.5, 0.5), at(2, 0.5)} // 0.5 deep, radius 2
+	for i, c := range corners {
+		sk.Lines().Add(c, corners[(i+1)%len(corners)])
+	}
+	def.Recompute()
+	return s
 }
 
-func coilVolume(t *testing.T, extra map[string]any) float64 {
+// springCoilVolume builds a coil on the spring profile and returns its volume.
+func springCoilVolume(t *testing.T, extra map[string]any) float64 {
 	t.Helper()
-	s := profiledPart(t)
-	args := map[string]any{"sketchIndex": 0, "pitch": "5 mm", "revolutions": "3"}
+	s := springProfilePart(t)
+	// Pitch 20 mm against a 0.5 cm deep section. A 180° flat plus a 90° transition costs the worst
+	// one-turn window all but 3/8 of the pitch, so the rise there is 0.75 cm — still clear of the
+	// section's own 0.5 cm depth, which is what keeps consecutive turns apart (#2080).
+	args := map[string]any{"sketchIndex": 0, "pitch": "20 mm", "revolutions": "3"}
 	for k, v := range extra {
 		args[k] = v
 	}
@@ -151,6 +169,19 @@ func coilVolume(t *testing.T, extra map[string]any) float64 {
 		t.Fatalf("coil %v not healthy: %s", extra, raw)
 	}
 	return bodyVolume(t, s)
+}
+
+// TestCoilEndConditions: start/end transition + flat sweeps are accepted and build a healthy coil
+// with more geometry (the flat/transition turns) than the plain helix (#1883).
+func TestCoilEndConditions(t *testing.T) {
+	plain := springCoilVolume(t, nil)
+	ground := springCoilVolume(t, map[string]any{
+		"startTransitionAngle": "90 deg", "startFlatAngle": "180 deg",
+		"endTransitionAngle": "90 deg", "endFlatAngle": "180 deg",
+	})
+	if ground <= plain {
+		t.Errorf("ground-ended coil volume %g should exceed plain %g (added flat/transition turns)", ground, plain)
+	}
 }
 
 // TestHoleAngledDrillPointChangesVolume: an angled drill point produces a different blind-hole

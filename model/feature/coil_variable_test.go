@@ -10,11 +10,19 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
-// variableCoil builds a coil over the offset square with the given rail extras.
+// variableCoil builds a coil over a 1-deep offset square with the given rail extras.
 func variableCoil(t *testing.T, rows []CoilPitchRow, start, end CoilEndCondition) (*PartFeatures, *PartFeature) {
 	t.Helper()
+	return variableCoilWire(t, 1, rows, start, end)
+}
+
+// variableCoilWire is variableCoil with the profile depth chosen. A flat end costs the last turn
+// most of its rise, so a fixture that exercises one needs a wire thin enough for that turn to
+// still clear the turn below — otherwise the coil legitimately refuses to build (#2080).
+func variableCoilWire(t *testing.T, wire float64, rows []CoilPitchRow, start, end CoilEndCondition) (*PartFeatures, *PartFeature) {
+	t.Helper()
 	fs := NewPartFeatures(nil)
-	pf := NewCoilFeatures(fs).Add(offsetSquareSketch(4, 1), 0, yAxis(),
+	pf := NewCoilFeatures(fs).Add(offsetSquareSketch(4, wire), 0, yAxis(),
 		func() float64 { return 2 }, func() float64 { return 4 }, 0, ops.NewBody)
 	def := pf.Definition().(*CoilFeature).Definition()
 	def.PitchRows, def.StartEnd, def.EndEnd = rows, start, end
@@ -46,7 +54,9 @@ func TestVariablePitchCoilClimbsByPitchIntegral(t *testing.T) {
 // advance — the span stays the constant-pitch height while the rail gains the
 // extra sweep angle.
 func TestFlatEndCoilAddsSweepWithoutRise(t *testing.T) {
-	fs, pf := variableCoil(t, nil, CoilEndCondition{},
+	// A 0.5-deep wire: the flat end leaves the last turn only 0.75 above the one below it
+	// (a quarter turn of decaying pitch, then none), so a 1-deep wire would overlap it (#2080).
+	fs, pf := variableCoilWire(t, 0.5, nil, CoilEndCondition{},
 		CoilEndCondition{Flat: true, TransitionAngle: stdmath.Pi / 2, FlatAngle: stdmath.Pi})
 	if !pf.Health().OK() {
 		t.Fatalf("flat-end coil went sick: %+v", pf.Health())
@@ -57,8 +67,8 @@ func TestFlatEndCoilAddsSweepWithoutRise(t *testing.T) {
 	}
 	// Constant pitch 2 over 4 turns climbs 8; the transition adds a quarter
 	// turn of decaying pitch (2+0)/2·0.25 = 0.25; the flat sweep adds none.
-	if span := body.RangeBox().Max.Y - body.RangeBox().Min.Y; relErr(span, 8+0.25+1) > 0.05 {
-		t.Errorf("axial span = %g, want ≈9.25 (constant rise + transition quarter-turn)", span)
+	if span := body.RangeBox().Max.Y - body.RangeBox().Min.Y; relErr(span, 8+0.25+0.5) > 0.05 {
+		t.Errorf("axial span = %g, want ≈8.75 (constant rise + transition quarter-turn + wire)", span)
 	}
 }
 

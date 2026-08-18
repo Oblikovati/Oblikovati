@@ -85,3 +85,40 @@ func TestSheetToDrawingClassifiesLayers(t *testing.T) {
 		t.Errorf("layers = %d visible / %d hidden, want both populated", visible, hidden)
 	}
 }
+
+// TestZonedBorderAddsDivisionEntities: a zoned border exports its interior grid lines, so a 4×3-zone
+// sheet has exactly five more entities (3 vertical + 2 horizontal divisions) than a plain one (#1989).
+func TestZonedBorderAddsDivisionEntities(t *testing.T) {
+	c := drawingWithBaseView(t)
+	_, plain, err := ExportDrawingDXF(c.Sheets().Active(), DefaultDrawingExportLayers(), types.DXFR2018)
+	if err != nil {
+		t.Fatalf("plain export: %v", err)
+	}
+	if err := c.Sheets().Active().SetZonedBorder(4, 3, types.NumericBorderLabel, types.AlphabeticalBorderLabel); err != nil {
+		t.Fatalf("SetZonedBorder: %v", err)
+	}
+	_, zoned, err := ExportDrawingDXF(c.Sheets().Active(), DefaultDrawingExportLayers(), types.DXFR2018)
+	if err != nil {
+		t.Fatalf("zoned export: %v", err)
+	}
+	if zoned-plain != 5 {
+		t.Errorf("zoned added %d entities, want 5 (3 vertical + 2 horizontal divisions)", zoned-plain)
+	}
+}
+
+// TestTitleBlockCorner: the title-block origin lands in each requested corner within the margins (#1989).
+func TestTitleBlockCorner(t *testing.T) {
+	const w, h, margin, tbW, blockH = 400.0, 300.0, 10.0, 80.0, 48.0
+	cases := map[types.TitleBlockLocation][2]float64{
+		types.BottomRightTitleBlock: {w - margin - tbW, margin},
+		types.BottomLeftTitleBlock:  {margin, margin},
+		types.TopLeftTitleBlock:     {margin, h - margin - blockH},
+		types.TopRightTitleBlock:    {w - margin - tbW, h - margin - blockH},
+	}
+	for loc, want := range cases {
+		x0, y0 := titleBlockCorner(loc, w, h, margin, margin, margin, margin, tbW, blockH)
+		if x0 != want[0] || y0 != want[1] {
+			t.Errorf("titleBlockCorner(%v) = (%g,%g), want (%g,%g)", loc, x0, y0, want[0], want[1])
+		}
+	}
+}

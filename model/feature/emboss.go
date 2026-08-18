@@ -13,6 +13,25 @@ import (
 	"oblikovati.org/model/text"
 )
 
+// EmbossType is the emboss flavour (Inventor's EmbossTypeEnum, #1893).
+type EmbossType int
+
+const (
+	// EmbossFromFace raises the profile off the part. The default, and the zero value, so a
+	// definition written before the flavour existed keeps its behaviour.
+	EmbossFromFace EmbossType = iota
+	// EngraveFromFace cuts the profile into the part.
+	EngraveFromFace
+	// EmbossEngraveFromPlane takes the profile region TO the sketch plane offset by the depth: it
+	// fills wherever the part falls short of that surface and cuts whatever stands above it. That
+	// is how a raised panel is levelled on an uneven or curved wall, and it is the one flavour
+	// that applies two booleans rather than one. See emboss_plane.go.
+	EmbossEngraveFromPlane
+)
+
+// engraves reports whether this flavour cuts rather than raises.
+func (t EmbossType) engraves() bool { return t == EngraveFromFace }
+
 // EmbossDefinition is the recipe for an emboss: a closed sketch profile raised from (or engraved
 // into) the part by a depth along the sketch-plane normal. Engrave cuts; raise joins.
 //
@@ -26,8 +45,14 @@ type EmbossDefinition struct {
 	Text           *sketch.TextBox   // when set, the profile source is this text entity
 	Fonts          text.FontResolver // font catalogue for Text (defaults to the embedded faces)
 	Depth          func() float64
-	Engrave        bool    // cut into the face instead of raising from it
-	Taper          float64 // draft angle (radians)
+	Type           EmbossType // raise, engrave, or level to the plane (#1893)
+	Taper          float64    // draft angle (radians)
+	// WrapFaceKey wraps the profile ONTO that curved face instead of projecting it flat — text
+	// that follows a shaft rather than cutting a chord through it (#1893; see emboss_wrap.go).
+	// Empty ⇒ the flat projection. FaceAnchors carries the key's mint-time centroid for the
+	// geometric recovery tier (ADR-0043 P6), like BossDefinition.FaceAnchors.
+	WrapFaceKey []byte
+	FaceAnchors map[string]math.Point3
 }
 
 // EmbossFeature raises or engraves a closed profile on the part (Inventor's Emboss): the profile
@@ -48,14 +73,18 @@ func (f *EmbossFeature) Kind() string { return "emboss" }
 // Operation and ToolBody let a pattern/mirror replicate this feature with the right boolean —
 // an engrave cuts, a raise joins (see [ToolFeature]).
 func (f *EmbossFeature) Operation() ops.PartFeatureOperation {
-	if f.def.Engrave {
+	if f.def.Type.engraves() {
 		return ops.Cut
 	}
+	// A from-plane emboss applies BOTH booleans; it reports Join because that is the half its tool
+	// body carries. A pattern of one therefore replicates the raise and not the levelling cut —
+	// see the note on [EmbossFeature.levelToPlane].
 	return ops.Join
 }
 func (f *EmbossFeature) ToolBody() *topo.Body { return f.tool }
 
-// Recompute extrudes the profile(s) by the depth and joins (raise) or cuts (engrave) the part.
+// Recompute resolves the profile(s) and applies the flavour: raise, engrave, or level the region
+// to the sketch plane offset by the depth (#1893).
 func (f *EmbossFeature) Recompute(in Input) (Output, error) {
 	profiles, err := f.resolveProfiles()
 	if err != nil {
@@ -65,8 +94,20 @@ func (f *EmbossFeature) Recompute(in Input) (Output, error) {
 	if d <= 0 {
 		return Output{}, fmt.Errorf("emboss: depth %g must be > 0", d)
 	}
+	if f.def.Type == EmbossEngraveFromPlane {
+		return f.levelToPlane(in, profiles, d)
+	}
+	if len(f.def.WrapFaceKey) > 0 {
+		return f.wrapOntoFace(in, profiles, d)
+	}
+	return f.raiseOrEngrave(in, profiles, d)
+}
+
+// raiseOrEngrave is the flat-projection emboss: one prism along the sketch-plane normal, joined
+// (raise) or cut (engrave).
+func (f *EmbossFeature) raiseOrEngrave(in Input, profiles []*sketch.Profile, d float64) (Output, error) {
 	sp, op := orderedSpan(0, d), ops.Join
-	if f.def.Engrave {
+	if f.def.Type.engraves() {
 		sp, op = orderedSpan(0, -d), ops.Cut // cut into the part, below the sketch plane
 	}
 	f.tool = buildProfilePrisms(profiles, f.def.Sketch.Plane(), sp, f.def.Taper, featOr(f.featName, "emboss"), in.Diag)
@@ -109,17 +150,18 @@ type EmbossFeatures struct{ engine *PartFeatures }
 // NewEmbossFeatures binds the collection to an engine.
 func NewEmbossFeatures(engine *PartFeatures) *EmbossFeatures { return &EmbossFeatures{engine} }
 
-// Add adds an emboss of the sketch's closed profile(s); engrave cuts instead of raising.
-func (c *EmbossFeatures) Add(skt *sketch.Sketch, profileIndices []int, depth func() float64, engrave bool, taper float64) *PartFeature {
-	def := &EmbossDefinition{Sketch: skt, ProfileIndices: profileIndices, Depth: depth, Engrave: engrave, Taper: taper}
+// Add adds an emboss of the sketch's closed profile(s) in the given flavour (raise, engrave or
+// level to the plane — see [EmbossType]).
+func (c *EmbossFeatures) Add(skt *sketch.Sketch, profileIndices []int, depth func() float64, typ EmbossType, taper float64) *PartFeature {
+	def := &EmbossDefinition{Sketch: skt, ProfileIndices: profileIndices, Depth: depth, Type: typ, Taper: taper}
 	return c.add(def)
 }
 
 // AddText adds an emboss of a sketch TEXT entity: the recipe stores a reference to tb (in
 // sketch skt) and derives its glyph profiles on each recompute, so no outline geometry is
 // baked into the document and editing the text re-shapes the emboss.
-func (c *EmbossFeatures) AddText(skt *sketch.Sketch, tb *sketch.TextBox, depth func() float64, engrave bool, taper float64) *PartFeature {
-	def := &EmbossDefinition{Sketch: skt, Text: tb, Depth: depth, Engrave: engrave, Taper: taper}
+func (c *EmbossFeatures) AddText(skt *sketch.Sketch, tb *sketch.TextBox, depth func() float64, typ EmbossType, taper float64) *PartFeature {
+	def := &EmbossDefinition{Sketch: skt, Text: tb, Depth: depth, Type: typ, Taper: taper}
 	return c.add(def)
 }
 

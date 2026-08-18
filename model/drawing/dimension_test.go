@@ -277,6 +277,132 @@ func TestDimensionTextLiftedAndDraggable(t *testing.T) {
 	}
 }
 
+// TestDimensionTextOverrides prefix/suffix wrap the value, hideValue drops it, a free-text override
+// replaces the whole label, and dual-unit appends the inch value (#1992/#1993).
+func TestDimensionTextOverrides(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	frontBase(t, views)
+	dims := c.Sheets().Active().Dimensions()
+	d, err := dims.AddLinear("D1", "FRONT", types.HorizontalDimension, 88, 80, 112, 80, -12)
+	if err != nil {
+		t.Fatalf("AddLinear: %v", err)
+	}
+	value := d.Text() // the bare formatted value, e.g. "24.00"
+	str := func(s string) *string { return &s }
+	yes := true
+
+	if err := dims.SetTextStyle("D1", DimensionTextStyle{Prefix: str("2x "), Suffix: str(" MAX")}); err != nil {
+		t.Fatalf("SetTextStyle: %v", err)
+	}
+	if got, want := d.Text(), "2x "+value+" MAX"; got != want {
+		t.Errorf("prefixed/suffixed text = %q, want %q", got, want)
+	}
+	if err := dims.SetTextStyle("D1", DimensionTextStyle{DualUnit: &yes}); err != nil {
+		t.Fatalf("SetTextStyle dual: %v", err)
+	}
+	if got := d.Text(); !strings.Contains(got, " in]") || !strings.HasPrefix(got, "2x ") {
+		t.Errorf("dual-unit text = %q, want the prefix kept and an inch suffix", got)
+	}
+	if err := dims.SetTextStyle("D1", DimensionTextStyle{HideValue: &yes}); err != nil {
+		t.Fatalf("SetTextStyle hide: %v", err)
+	}
+	if got := d.Text(); strings.Contains(got, value) {
+		t.Errorf("hidden-value text %q still shows the value %q", got, value)
+	}
+	if err := dims.SetTextStyle("D1", DimensionTextStyle{OverrideText: str("SEE NOTE 3")}); err != nil {
+		t.Fatalf("SetTextStyle override: %v", err)
+	}
+	if got := d.Text(); got != "SEE NOTE 3" {
+		t.Errorf("override text = %q, want the free text to replace everything", got)
+	}
+}
+
+// TestDimensionToleranceNotation the tolerance methods render after the value (#1990): symmetric a
+// single ±, deviation a +/− pair, and a fit class its class string; none leaves the value bare.
+func TestDimensionToleranceNotation(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	frontBase(t, views)
+	dims := c.Sheets().Active().Dimensions()
+	d, err := dims.AddLinear("D1", "FRONT", types.HorizontalDimension, 88, 80, 112, 80, -12)
+	if err != nil {
+		t.Fatalf("AddLinear: %v", err)
+	}
+	value := d.Text()
+
+	if err := dims.SetTolerance("D1", types.DimensionTolerance{Type: types.SymmetricTolerance, Plus: 0.1, Precision: 2}); err != nil {
+		t.Fatalf("SetTolerance symmetric: %v", err)
+	}
+	if got, want := d.Text(), value+" ±0.10"; got != want {
+		t.Errorf("symmetric tolerance text = %q, want %q", got, want)
+	}
+	if err := dims.SetTolerance("D1", types.DimensionTolerance{Type: types.DeviationTolerance, Plus: 0.2, Minus: 0.05, Precision: 2}); err != nil {
+		t.Fatalf("SetTolerance deviation: %v", err)
+	}
+	if got, want := d.Text(), value+" +0.20/-0.05"; got != want {
+		t.Errorf("deviation tolerance text = %q, want %q", got, want)
+	}
+	if err := dims.SetTolerance("D1", types.DimensionTolerance{Type: types.FitsTolerance, Fit: "H7"}); err != nil {
+		t.Fatalf("SetTolerance fits: %v", err)
+	}
+	if got, want := d.Text(), value+" H7"; got != want {
+		t.Errorf("fits tolerance text = %q, want %q", got, want)
+	}
+	if err := dims.SetTolerance("D1", types.DimensionTolerance{Type: types.NoTolerance}); err != nil {
+		t.Fatalf("SetTolerance none: %v", err)
+	}
+	if got := d.Text(); got != value {
+		t.Errorf("cleared tolerance text = %q, want the bare value %q", got, value)
+	}
+}
+
+// TestInspectionDimension flags a dimension as an inspection dimension: the label and rate wrap
+// its value, a NoInspectionBorder shape clears it, and the shape/label/rate round-trip through the
+// recipe (#1996).
+func TestInspectionDimension(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	frontBase(t, views)
+	dims := c.Sheets().Active().Dimensions()
+	d, err := dims.AddLinear("D1", "FRONT", types.HorizontalDimension, 88, 80, 112, 80, -12)
+	if err != nil {
+		t.Fatalf("AddLinear: %v", err)
+	}
+	value := d.Text()
+
+	ins := types.InspectionDimension{Shape: types.RoundedEndsInspectionBorder, Label: "A1", Rate: "100%"}
+	if err := dims.SetInspection("D1", ins); err != nil {
+		t.Fatalf("SetInspection: %v", err)
+	}
+	if got, want := d.Text(), "A1 "+value+" 100%"; got != want {
+		t.Errorf("inspection text = %q, want %q", got, want)
+	}
+	if d.Inspection() != ins {
+		t.Errorf("Inspection() = %+v, want %+v", d.Inspection(), ins)
+	}
+
+	// Round-trip through the recipe: the inspection annotation (and its wrapped text) must survive.
+	restored, ok := reopen(t, c).Sheets().Active().Dimensions().ByName("D1")
+	if !ok {
+		t.Fatal("reopened drawing lost dimension D1")
+	}
+	if restored.Inspection() != ins {
+		t.Errorf("restored inspection = %+v, want %+v", restored.Inspection(), ins)
+	}
+	if got, want := restored.Text(), "A1 "+value+" 100%"; got != want {
+		t.Errorf("restored inspection text = %q, want %q", got, want)
+	}
+
+	// Clearing with NoInspectionBorder returns the bare value.
+	if err := dims.SetInspection("D1", types.InspectionDimension{Shape: types.NoInspectionBorder}); err != nil {
+		t.Fatalf("SetInspection clear: %v", err)
+	}
+	if got := d.Text(); got != value {
+		t.Errorf("cleared inspection text = %q, want the bare value %q", got, value)
+	}
+}
+
 // TestMoveLineShiftsDimensionLine: dragging the dimension line moves it perpendicular to itself.
 func TestMoveLineShiftsDimensionLine(t *testing.T) {
 	c := drawingWithBox(t)

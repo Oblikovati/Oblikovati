@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -48,9 +49,21 @@ type FlatBendLine struct {
 // 2D) and a token naming the punch/tool, drawn on the punch layer for the CAM programmer. It is
 // an annotation — a marker, not a body hole — so it represents a punch even where the flat solid
 // does not yet carry the cut.
+//
+// Position/Angle/DirectionUp/Depth are what a nest, a DXF punch layer or a punch note is actually
+// placed from (#1963): the outline alone says the shape but not where the tool goes or which side
+// it comes from. Depth counts only when HasDepth is set — a punch that goes clean through has no
+// depth, and a 0 would read as a zero-deep one.
 type FlatPunch struct {
-	Outline []math.Point2
-	Token   string
+	Outline     []math.Point2
+	Token       string
+	Position    math.Point2 // the outline's centroid in the base plane — where the tool is placed
+	Angle       float64     // the tool's rotation in the flat (radians), from the outline plus the die angle
+	DirectionUp bool        // punched from the base face's side rather than through it from behind
+	HasDepth    bool
+	Depth       float64
+	// Representation is the punch's flat/drawing appearance (#1968), carried through to the results.
+	Representation types.PunchRepresentationType
 }
 
 // FlatPattern is the developed flat: the flat solid, its fold lines, punch representations, the

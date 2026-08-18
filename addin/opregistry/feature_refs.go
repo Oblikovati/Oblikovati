@@ -38,6 +38,16 @@ func lengthValue(part *compdef.PartComponentDefinition, expr, field string) (flo
 	return v.Value, nil
 }
 
+// angleValue parses a unit-bearing angle ("5 deg") in database units (radians), naming field on
+// error — the length counterpart for angular tolerances (e.g. a press-brake facet angle).
+func angleValue(part *compdef.PartComponentDefinition, expr, field string) (float64, error) {
+	v, err := part.Units().Parse(expr, param.Angle)
+	if err != nil {
+		return 0, fmt.Errorf("%s %q: %w", field, expr, err)
+	}
+	return v.Value, nil
+}
+
 // lengthClosure turns a length argument into a live value closure. A plain literal
 // ("10 mm") becomes a constant; anything else (a parameter reference like "h" or an
 // expression like "h+2 mm") is backed by an auto-named model parameter so the

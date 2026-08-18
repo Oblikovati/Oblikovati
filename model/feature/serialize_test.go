@@ -351,8 +351,8 @@ func TestSolidFeaturesRoundTrip(t *testing.T) {
 		t.Errorf("boss = face %q height %v, want face-2 4", boss.PlacementFaceKey, boss.Height())
 	}
 	combine := fresh.Item(2).Definition().(*CombineFeature).Definition()
-	if combine.TargetIndex != 0 || combine.ToolIndex != 1 || combine.Operation != ops.Cut {
-		t.Errorf("combine = %+v, want target 0 tool 1 Cut", combine)
+	if combine.TargetIndex != 0 || len(combine.ToolIndices) != 1 || combine.ToolIndices[0] != 1 || combine.Operation != ops.Cut {
+		t.Errorf("combine = %+v, want target 0 tools [1] Cut", combine)
 	}
 }
 
@@ -463,7 +463,7 @@ func TestRibRoundTrip(t *testing.T) {
 func TestEmbossRoundTrip(t *testing.T) {
 	sk := squareSketch(4)
 	fs := NewPartFeatures(nil)
-	NewEmbossFeatures(fs).Add(sk, []int{0}, func() float64 { return 0.8 }, true, 0.1)
+	NewEmbossFeatures(fs).Add(sk, []int{0}, func() float64 { return 0.8 }, EngraveFromFace, 0.1)
 
 	data, err := fs.MarshalRecipe(oneSketch{s: sk})
 	if err != nil {
@@ -474,9 +474,9 @@ func TestEmbossRoundTrip(t *testing.T) {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
 	e := fresh.Item(0).Definition().(*EmbossFeature).Definition()
-	if !e.Engrave || e.Depth() != 0.8 || len(e.ProfileIndices) != 1 || e.Taper != 0.1 {
-		t.Errorf("restored emboss = engrave %v depth %v profiles %v taper %v, want true 0.8 [0] 0.1",
-			e.Engrave, e.Depth(), e.ProfileIndices, e.Taper)
+	if e.Type != EngraveFromFace || e.Depth() != 0.8 || len(e.ProfileIndices) != 1 || e.Taper != 0.1 {
+		t.Errorf("restored emboss = type %v depth %v profiles %v taper %v, want EngraveFromFace 0.8 [0] 0.1",
+			e.Type, e.Depth(), e.ProfileIndices, e.Taper)
 	}
 }
 
@@ -691,5 +691,64 @@ func TestThreadParityFieldsRoundTrip(t *testing.T) {
 	}
 	if d := old.Item(0).Definition().(*ThreadFeature).Definition(); d.Class != "" || d.Tapered || d.ModelDiameter != 0 {
 		t.Errorf("legacy thread restored with non-defaults: %+v", d)
+	}
+}
+
+// TestFaceFilletWidthRoundTrips (#1887): the WIDTH must survive a save/load, not be flattened into
+// whatever radius it resolved to on the day it was authored — otherwise a reopened part stops
+// re-resolving the chord against the angle its faces meet at.
+func TestFaceFilletWidthRoundTrips(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	pf := NewDressUpFeatures(fs).AddFaceFillet([][]byte{[]byte("a")}, [][]byte{[]byte("b")}, nil)
+	pf.Definition().(*FaceFilletFeature).Definition().Width = func() float64 { return 0.42 }
+
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if got := data[0].FaceFillet.Width; got != 0.42 {
+		t.Fatalf("saved width = %v, want 0.42", got)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	back := fresh.Item(0).Definition().(*FaceFilletFeature).Definition()
+	if back.Width == nil {
+		t.Fatal("restored face fillet has no width; it was flattened into a radius")
+	}
+	if got := back.Width(); got != 0.42 {
+		t.Errorf("restored width = %v, want the 0.42 chord back", got)
+	}
+}
+
+// TestChamferRunRoundTrips (#1888): the reference face and the partial span must survive a save,
+// or a reopened part silently reverts to a whole-edge chamfer with the setbacks assigned by
+// topology order — which is exactly the non-determinism the reference face was added to remove.
+func TestChamferRunRoundTrips(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	NewDressUpFeatures(fs).AddChamferDef(&ChamferDefinition{
+		EdgeKeys: [][]byte{[]byte("e")}, Distance: func() float64 { return 0.3 },
+		Distance2: func() float64 { return 0.6 }, Type: types.ChamferTwoDistances,
+		ReferenceFace: []byte("faceB"),
+		PartialStart:  func() float64 { return 0.5 }, PartialLength: func() float64 { return 1.25 },
+	})
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	back := fresh.Item(0).Definition().(*ChamferFeature).Definition()
+	if string(back.ReferenceFace) != "faceB" {
+		t.Errorf("restored reference face = %q, want \"faceB\"", back.ReferenceFace)
+	}
+	if back.PartialLength == nil || back.PartialStart == nil {
+		t.Fatal("restored chamfer lost its partial span; it reverted to the whole edge")
+	}
+	if got, at := back.PartialLength(), back.PartialStart(); got != 1.25 || at != 0.5 {
+		t.Errorf("restored span = %g long from %g, want 1.25 from 0.5", got, at)
 	}
 }

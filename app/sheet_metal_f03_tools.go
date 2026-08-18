@@ -140,7 +140,7 @@ func (t *SheetMetalRipTool) addRip(part *compdef.PartComponentDefinition, fs *fe
 	}
 	gap := t.gap
 	return feature.NewSheetMetalRipFeatures(fs).Add(&feature.SheetMetalRipDefinition{
-		Sketch: sk, LineIndex: idx, Gap: func() float64 { return gap },
+		Sketch: sk, LineIndex: idx, Gap: func() float64 { return gap }, GapSide: feature.SymmetricDir,
 	}), nil
 }
 

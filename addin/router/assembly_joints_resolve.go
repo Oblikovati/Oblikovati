@@ -4,6 +4,7 @@ package router
 
 import (
 	"oblikovati.org/api/contract"
+	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/model/assembly"
 )
@@ -17,6 +18,8 @@ func jointInfo(j assembly.Joint) wire.JointInfo {
 		return wire.JointInfo{}
 	}
 	a, b := j.AnchorRefs()
+	aMode, bMode := j.OriginModes()
+	ax, ay, bx, by := j.OriginOffsets()
 	return wire.JointInfo{
 		ID:               j.ID(),
 		Type:             j.Type().String(),
@@ -28,7 +31,25 @@ func jointInfo(j assembly.Joint) wire.JointInfo {
 		Limits:           jointLimitsInfo(j.Limits()),
 		Health:           j.Health().String(),
 		Suppressed:       j.Suppressed(),
+		Gap:              j.Gap(),
+		LinearPosition:   j.LinearPosition(),
+		AngularPosition:  j.AngularPosition(),
+		Locked:           j.Locked(),
+		Protected:        j.Protected(),
+		OriginOneMode:    originModeSpelling(aMode),
+		OriginTwoMode:    originModeSpelling(bMode),
+		OriginOneXOffset: ax, OriginOneYOffset: ay,
+		OriginTwoXOffset: bx, OriginTwoYOffset: by,
 	}
+}
+
+// originModeSpelling is a joint origin mode's wire spelling, or "" for the default (infer) so the
+// field is omitted on the common case (#1973).
+func originModeSpelling(m types.AssemblyJointOriginMode) string {
+	if m == types.JointOriginInfer {
+		return ""
+	}
+	return m.String()
 }
 
 // jointLimitsInfo renders a joint's limits, or nil when unbounded.

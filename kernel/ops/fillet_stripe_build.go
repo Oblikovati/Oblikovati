@@ -20,10 +20,11 @@ func rebuildWithStripe(b *topo.Body, st *tangentStripe) (*topo.Body, error) {
 		st: st, bld: topo.NewBuilder(b.IsSolid(), b.Lineage()),
 		verts: map[*topo.Vertex]*topo.Vertex{}, edges: map[*topo.Edge]*topo.Edge{},
 		chainIdx: map[*topo.Edge]int{}, downIdx: map[*topo.Edge]int{},
-		junIdx:    map[*topo.Vertex]int{},
+		goneV:     map[*topo.Vertex]bool{},
 		weld:      float64(geom.ResolutionForBox(b.RangeBox()).Weld()),
 		sharedFwd: make([]bool, len(st.segs)),
 	}
+	g.ends = resolveStripeEnds(st, g.weld)
 	g.index()
 	g.copySurvivingVertices(b)
 	if err := g.addNewVertsAndEdges(); err != nil {
@@ -41,10 +42,12 @@ func rebuildWithStripe(b *topo.Body, st *tangentStripe) (*topo.Body, error) {
 }
 
 // copySurvivingVertices carries over every original vertex except the interior junction corners the
-// stripe consumes (replaced by section feet). Open-run terminal corners survive and are copied here.
+// stripe consumes (replaced by section feet). Open-run terminal corners are copied here: the flat-cap
+// path folds its cap back to one, and at a run-out that lands on an existing face (#2083) nothing
+// references the copy, so Build drops it with the rest of the orphans.
 func (g *stripeBuild) copySurvivingVertices(b *topo.Body) {
 	for _, v := range b.Vertices() {
-		if _, gone := g.junIdx[v]; !gone {
+		if !g.goneV[v] {
 			g.verts[v] = g.bld.AddVertex(v.Point(), v.Lineage())
 		}
 	}
@@ -60,6 +63,9 @@ func (g *stripeBuild) copySurvivingEdges(b *topo.Body) {
 		if _, down := g.downIdx[e]; down {
 			continue
 		}
+		if _, _, isEnd := g.endEdgeSide(e); isEnd {
+			continue // cut back to its section foot in addEndRemnants
+		}
 		g.edges[e] = g.bld.AddEdge(e.Geometry(), g.verts[e.StartVertex()], g.verts[e.EndVertex()], e.Lineage())
 	}
 }
@@ -69,21 +75,26 @@ type stripeBuild struct {
 	bld      *topo.Builder
 	verts    map[*topo.Vertex]*topo.Vertex
 	edges    map[*topo.Edge]*topo.Edge
-	chainIdx map[*topo.Edge]int // chain edge → segment index
-	downIdx  map[*topo.Edge]int // vertical smooth edge → junction index
-	junIdx   map[*topo.Vertex]int
-	vS1, vW  []*topo.Vertex // per segment ENTRY: shared-side foot, wall-side foot
-	topE     []*topo.Edge   // per segment: shared-face contact
-	wallE    []*topo.Edge   // per segment: wall contact
-	section  []*topo.Edge   // per interior junction: tube section circle vS1[j]→vW[j]
-	lowerE   []*topo.Edge   // per interior junction: surviving lower part of the split vertical edge
+	chainIdx map[*topo.Edge]int    // chain edge → segment index
+	downIdx  map[*topo.Edge]int    // vertical smooth edge → junction index
+	goneV    map[*topo.Vertex]bool // original vertices the stripe consumes
+	vS1, vW  []*topo.Vertex        // per segment ENTRY: shared-side foot, wall-side foot
+	topE     []*topo.Edge          // per segment: shared-face contact
+	wallE    []*topo.Edge          // per segment: wall contact
+	section  []*topo.Edge          // per interior junction: tube section circle vS1[j]→vW[j]
+	lowerE   []*topo.Edge          // per interior junction: surviving lower part of the split vertical edge
 	// open-run terminals only: the last segment's EXIT feet, the two flat cap arcs, and the connectors
 	// folding each cap back to its surviving corner vertex (on the shared face and the wall).
 	vEndS1, vEndW *topo.Vertex
 	cap           [2]*topo.Edge // [0]=start terminal cap arc, [1]=end terminal cap arc
-	connTop       [2]*topo.Edge // corner vertex → shared-face foot
-	connWall      [2]*topo.Edge // corner vertex → wall foot
-	weld          float64       // model-relative coincidence tolerance (descending-edge remnant guard)
+	connTop       [2]*topo.Edge // corner vertex → shared-face foot (cap terminals only)
+	connWall      [2]*topo.Edge // corner vertex → wall foot (cap terminals only)
+	// A run-out landing ON an existing planar face carries no cap and no connectors: the face itself
+	// is re-trimmed along the section arc and its two boundary edges at the corner are cut back to the
+	// section feet (#2083). ends[t] is zero when terminal t takes the flat-cap path instead.
+	ends              [2]stripeEnd
+	endTopE, endWallE [2]*topo.Edge // the cut-back remnants of ends[t].topEdge / .wallEdge
+	weld              float64       // model-relative coincidence tolerance (descending-edge remnant guard)
 	// sharedFwd[i]: the SHARED face's retrim walks segment i's contact entry→exit. Recorded while
 	// copying the shared face so the blend face can take the topologically OPPOSITE direction —
 	// edge-use pairing is decided by topology, and only the face's Reversed flag by geometry.
@@ -91,8 +102,9 @@ type stripeBuild struct {
 }
 
 // index builds the lookup maps from the solved stripe: chain edges → segment, down edges → junction,
-// junction vertices → index. An open run's terminal slots are nil (its ends survive, not consumed) and
-// are skipped, so a terminal vertex is copied verbatim rather than replaced by section feet.
+// and the set of vertices the stripe consumes. An open run's terminal slots are nil (nothing is
+// consumed there) and are skipped, so a terminal vertex is copied verbatim rather than replaced by
+// section feet.
 func (g *stripeBuild) index() {
 	for i, e := range g.st.edges {
 		g.chainIdx[e] = i
@@ -102,7 +114,7 @@ func (g *stripeBuild) index() {
 			continue
 		}
 		g.downIdx[d] = j
-		g.junIdx[g.st.junction[j]] = j
+		g.goneV[g.st.junction[j]] = true
 	}
 }
 
@@ -187,24 +199,31 @@ func (g *stripeBuild) assertStraightRemnant(j int, cutPt, bottom math.Point3) er
 	return nil
 }
 
-// addTerminalEdges builds an open run's two flat cap arcs (shared foot → apex → wall foot) and the two
-// corner connectors per terminal — the lines folding the cap back to its surviving vertex on the shared
-// face and on the wall. A closed loop has no terminals, so this is a no-op.
+// addTerminalEdges builds an open run's two section arcs (shared foot → apex → wall foot), plus — per
+// terminal — either the two corner connectors folding a flat cap back to its surviving vertex, or, at a
+// terminal that lands on an existing face, the two cut-back remnants of that face's boundary (#2083).
+// A closed loop has no terminals, so this is a no-op.
 func (g *stripeBuild) addTerminalEdges(lin func(string, int) topo.Lineage) error {
 	if g.st.closed {
 		return nil
 	}
-	feet := [2][2]*topo.Vertex{{g.vS1[0], g.vW[0]}, {g.vEndS1, g.vEndW}}
 	for t := 0; t < 2; t++ {
+		feet := g.termFeet(t)
 		tm := g.st.term[t]
 		arc, err := geom.Arc3dByThreePoints(tm.topA, tm.apex, tm.wallA)
 		if err != nil {
 			return fmt.Errorf("fillet: cannot build the flat cap arc at open stripe terminal %d: %w", t, err)
 		}
-		g.cap[t] = g.bld.AddEdge(arc, feet[t][0], feet[t][1], lin("cap", t))
+		g.cap[t] = g.bld.AddEdge(arc, feet[0], feet[1], lin("cap", t))
+		if g.ends[t].active() {
+			if err := g.addEndRemnants(t, feet, lin); err != nil {
+				return err
+			}
+			continue // the section arc joins the end face directly: no cap, so no connectors either
+		}
 		vtx := g.verts[tm.vertex]
-		g.connTop[t] = g.bld.AddEdge(geom.NewLineSegment(tm.vertex.Point(), tm.topA), vtx, feet[t][0], lin("ctop", t))
-		g.connWall[t] = g.bld.AddEdge(geom.NewLineSegment(tm.vertex.Point(), tm.wallA), vtx, feet[t][1], lin("cwall", t))
+		g.connTop[t] = g.bld.AddEdge(geom.NewLineSegment(tm.vertex.Point(), tm.topA), vtx, feet[0], lin("ctop", t))
+		g.connWall[t] = g.bld.AddEdge(geom.NewLineSegment(tm.vertex.Point(), tm.wallA), vtx, feet[1], lin("cwall", t))
 	}
 	return nil
 }
@@ -256,6 +275,9 @@ func (g *stripeBuild) mapUse(f *topo.Face, u *topo.EdgeUse) []topo.Use {
 	if i, ok := g.chainIdx[u.Edge()]; ok {
 		return g.mapChainUse(f, u, i)
 	}
+	if t, side, ok := g.endEdgeSide(u.Edge()); ok {
+		return g.mapEndUse(f, u, t, side)
+	}
 	from := useFromVertex(u)
 	if j, ok := g.downIdx[u.Edge()]; ok {
 		fromV := g.verts[from]
@@ -282,10 +304,12 @@ func (g *stripeBuild) mapChainUse(f *topo.Face, u *topo.EdgeUse, i int) []topo.U
 	}
 	fwd := []dirPiece{{contact, entryFoot, exitFoot}}
 	n := len(g.st.segs)
-	if !g.st.closed && i == 0 {
+	// An ACTIVE terminal has no cap and so no connector: the contact simply ends at the section foot,
+	// where the end face's own cut-back boundary picks the loop up (#2083).
+	if !g.st.closed && i == 0 && !g.ends[0].active() {
 		fwd = append([]dirPiece{{startConn, g.verts[g.st.term[0].vertex], entryFoot}}, fwd...)
 	}
-	if !g.st.closed && i == n-1 {
+	if !g.st.closed && i == n-1 && !g.ends[1].active() {
 		fwd = append(fwd, dirPiece{endConn, exitFoot, g.verts[g.st.term[1].vertex]})
 	}
 	forward := useFromVertex(u) == g.entryVertex(i)

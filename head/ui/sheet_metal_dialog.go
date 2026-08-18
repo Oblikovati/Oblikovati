@@ -26,8 +26,9 @@ var smUI struct {
 	reliefShape                       int
 }
 
-// reliefShapeNames labels the relief-shape combo in types.ReliefShape order (round, square, tear).
-var reliefShapeNames = []string{"Round", "Square", "Tear"}
+// reliefShapeNames labels the BEND relief combo, in types.ReliefShape order. "Straight" was
+// spelled "Square" before the enum was reconciled with Inventor's BendReliefShapeEnum (#1960).
+var reliefShapeNames = []string{"Round", "Straight", "Tear"}
 
 // drawSheetMetalDialogs shows the property panel for whichever Sheet Metal tool is active. The
 // dispatch is split across the Setup (Style), Create (wall), and Modify panels' tools so each

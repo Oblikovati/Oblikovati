@@ -36,6 +36,11 @@ func TestSheetMetalPunchApply(t *testing.T) {
 	}
 	expectMergedSolid(t, out, "punch")
 
+	// A rotated punch with die metadata plumbs through to a healthy solid.
+	if _, err := apply(t, s, "sheetMetalPunch", `{"sketchIndex":1,"angle":"30 deg","acrossBends":true,"representationType":"centermark","toolId":"D8"}`); err != nil {
+		t.Fatalf("rotated punch apply: %v", err)
+	}
+
 	// Error paths.
 	if _, err := apply(t, profiledPart(t), "sheetMetalPunch", `{"sketchIndex":0}`); err == nil {
 		t.Error("punch on a non-sheet-metal part must error")
@@ -45,5 +50,11 @@ func TestSheetMetalPunchApply(t *testing.T) {
 	}
 	if _, err := apply(t, s, "sheetMetalPunch", `{"sketchIndex":1,"depth":"bad"}`); err == nil {
 		t.Error("punch with a bad depth must error")
+	}
+	if _, err := apply(t, s, "sheetMetalPunch", `{"sketchIndex":1,"representationType":"hologram"}`); err == nil {
+		t.Error("punch with an unknown representationType must error")
+	}
+	if _, err := apply(t, s, "sheetMetalPunch", `{"sketchIndex":1,"angle":"bad"}`); err == nil {
+		t.Error("punch with a bad angle must error")
 	}
 }

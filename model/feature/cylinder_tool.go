@@ -25,8 +25,16 @@ const cutterOverhang = 1e-2
 // axisInto. A small entry overhang past the start keeps the boolean's entry face clean.
 // It is the cut tool for holes and (joined) the boss body.
 func drillTool(center math.Point3, axisInto math.UnitVector3, radius, depth float64, feat string) *topo.Body {
+	return drillToolFrom(center, axisInto, radius, depth, cutterOverhang, feat)
+}
+
+// drillToolFrom is drillTool with the entry overhang named. The overhang exists to keep the tool's
+// entry face off a coincident target face, which only happens when the bore starts AT a surface; a
+// bore that starts inside material (a from-to hole, #1863) must begin exactly where it was asked
+// to, so it passes 0 rather than eating an overhang's worth of real material.
+func drillToolFrom(center math.Point3, axisInto math.UnitVector3, radius, depth, entry float64, feat string) *topo.Body {
 	plane := planePerp(center, axisInto)
-	return buildPrism(regularPolygon(radius, holeFacets), plane, span{near: -cutterOverhang, far: depth}, 0, feat)
+	return buildPrism(regularPolygon(radius, holeFacets), plane, span{near: -entry, far: depth}, 0, feat)
 }
 
 // regularPolygon returns an n-gon of the given radius centered at the origin, wound
@@ -40,9 +48,12 @@ func regularPolygon(radius float64, n int) []math.Point2 {
 	return out
 }
 
-// regularPolygonArea returns the area of an n-gon of the given radius (for tests/asserts).
-func regularPolygonArea(radius float64, n int) float64 {
-	return 0.5 * float64(n) * radius * radius * stdmath.Sin(2*stdmath.Pi/float64(n))
+// holeCylinderArea is the cross-section area a drilled bore of the given radius actually removes:
+// the holeFacets-gon the cutter is built from, not the true circle. Volume assertions compare
+// against it so they measure the geometry the kernel built rather than the one it approximates.
+func holeCylinderArea(radius float64) float64 {
+	n := float64(holeFacets)
+	return 0.5 * n * radius * radius * stdmath.Sin(2*stdmath.Pi/n)
 }
 
 // planePerp returns the sketch plane through origin whose normal is axisInto, so a prism

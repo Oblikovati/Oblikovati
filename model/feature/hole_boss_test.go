@@ -61,7 +61,7 @@ func TestBossRaisesStudOfExactVolume(t *testing.T) {
 	if r := ops.Validate(res[0]); !r.Valid || !res[0].IsSolid() {
 		t.Fatalf("bossed body not a valid solid: %+v", r)
 	}
-	want := 32 + regularPolygonArea(0.5, holeFacets)*1.5
+	want := 32 + holeCylinderArea(0.5)*1.5
 	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("bossed volume = %g, want %g (block + Ø1×1.5 stud)", got, want)
 	}
@@ -96,7 +96,7 @@ func TestPatternOfBossReplicatesStuds(t *testing.T) {
 	if len(res) != 1 {
 		t.Fatalf("pattern of a boss → %d bodies, want 1", len(res))
 	}
-	stud := regularPolygonArea(0.5, holeFacets) * 1.5
+	stud := holeCylinderArea(0.5) * 1.5
 	want := 32 + 2*stud
 	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("patterned-boss volume = %g, want %g (block + 2 studs)", got, want)
@@ -124,7 +124,7 @@ func TestHoleDrillsThroughForReal(t *testing.T) {
 	if r := ops.Validate(res[0]); !r.Valid || !res[0].IsSolid() {
 		t.Fatalf("drilled body not a valid solid: %+v", r)
 	}
-	want := 32 - regularPolygonArea(1, holeFacets)*2 // block − through cylinder
+	want := 32 - holeCylinderArea(1)*2 // block − through cylinder
 	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("drilled volume = %g, want %g (32 − Ø2 through hole)", got, want)
 	}

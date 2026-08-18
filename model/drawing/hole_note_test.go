@@ -46,23 +46,28 @@ func TestHoleNotesNeedHoles(t *testing.T) {
 	}
 }
 
-// TestFormatHoleNote: the format template substitutes {d} (diameter) and {n} (count); an empty
-// template uses the default ("Ø<d>", or "<n>x Ø<d>" when count > 1).
+// TestFormatHoleNote: the format template substitutes {d} (diameter), {n} (count) and {thread}
+// (designation); an empty template uses the default — the thread designation for a tapped hole, else
+// "Ø<d>", prefixed "<n>x " when the callout groups more than one hole.
 func TestFormatHoleNote(t *testing.T) {
 	cases := []struct {
 		format     string
 		diameterMM float64
 		count      int
+		thread     string
 		want       string
 	}{
-		{"", 8, 1, "Ø8.00"},
-		{"", 8, 3, "3x Ø8.00"},
-		{"Ø{d} THRU", 8, 1, "Ø8.00 THRU"},
-		{"TAP M8 x{n}", 8, 4, "TAP M8 x4"},
+		{"", 8, 1, "", "Ø8.00"},
+		{"", 8, 3, "", "3x Ø8.00"},
+		{"", 6.6, 1, "M8x1.25", "M8x1.25"},     // tapped: designation replaces the plain diameter
+		{"", 6.6, 4, "M8x1.25", "4x M8x1.25"},  // grouped tapped holes keep the count prefix
+		{"Ø{d} THRU", 8, 1, "", "Ø8.00 THRU"},  // template ignores the (absent) thread
+		{"TAP M8 x{n}", 8, 4, "", "TAP M8 x4"}, // {thread} absent from the template
+		{"{thread} DRILL", 6.6, 1, "M8x1.25", "M8x1.25 DRILL"},
 	}
 	for _, c := range cases {
-		if got := formatHoleNote(c.format, c.diameterMM, c.count); got != c.want {
-			t.Errorf("formatHoleNote(%q, %g, %d) = %q, want %q", c.format, c.diameterMM, c.count, got, c.want)
+		if got := formatHoleNote(c.format, c.diameterMM, c.count, c.thread); got != c.want {
+			t.Errorf("formatHoleNote(%q, %g, %d, %q) = %q, want %q", c.format, c.diameterMM, c.count, c.thread, got, c.want)
 		}
 	}
 }

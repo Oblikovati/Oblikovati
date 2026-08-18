@@ -6,10 +6,12 @@ import (
 	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
 
 // Sheet-metal Flange feature (M13-F02). A flange adds a wall on a straight edge of an
@@ -37,6 +39,22 @@ type SheetMetalFlangeDefinition struct {
 	Angle   func() float64 // bend angle (radians); nil ⇒ 90°
 	Radius  func() float64 // inside bend radius; nil ⇒ rule BendRadius
 	Flip    bool
+	// Width is how much of the picked edge the wall covers (#1958); the zero value is the whole
+	// edge, which is what this feature has always built.
+	Width FlangeWidth
+	// Options overrides the style's bend properties for this bend alone (#1959); nil ⇒ the style.
+	Options *BendOptions
+	// AutoMiter extends this wall and the one it corners with until they meet, then cuts MiterGap
+	// between them (#1961). Off by default: an existing part's corners stay as they were built.
+	AutoMiter bool
+	MiterGap  func() float64
+	// Position and HeightDatum decide where the wall LANDS (#1957): how far back from the picked
+	// edge the bend sits, and what the height is measured from. Both default to what this feature
+	// has always built — the bend at the edge, the height from its tangent. See
+	// sheet_metal_flange_position.go.
+	Position       BendPosition
+	PositionOffset func() float64 // explicit distance for the two edge-offset positions
+	HeightDatum    HeightDatum
 }
 
 // SheetMetalFlangeFeature folds a wall onto the sheet each recompute.
@@ -67,7 +85,8 @@ func (f *SheetMetalFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	wall, placement, err := buildFlangeSolid(edges[0], dims.thickness, dims.radius, dims.height, dims.angle, f.def.Flip, f.featName)
+	wall, placement, err := buildFoldedSolidAt(edges[0], dims.thickness, f.flangeSteps(dims),
+		dims.setback, f.def.Width, f.def.Flip, f.featName)
 	if err != nil {
 		return Output{}, err
 	}
@@ -76,8 +95,62 @@ func (f *SheetMetalFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
+	if bodies, err = f.relieve(bodies, edges[0], dims, placement, in); err != nil {
+		return Output{}, err
+	}
 	f.placement = &placement // record the resolved bend for the flat pattern (M13-F04)
 	return Output{Bodies: bodies, Heals: heals}, nil
+}
+
+// relieve cuts both styled reliefs this wall calls for (#2072): the notches at its own bend's ends,
+// and the corner cut where that bend meets one an earlier wall placed.
+func (f *SheetMetalFlangeFeature) relieve(bodies []*topo.Body, edge *topo.Edge, dims flangeDims,
+	placement BendPlacement, in Input) ([]*topo.Body, error) {
+	bodies, err := f.relieveBend(bodies, edge, dims, in.Relief)
+	if err != nil {
+		return nil, err
+	}
+	if bodies, err = f.mitre(bodies, placement, in); err != nil {
+		return nil, err
+	}
+	return cutCornerRelief(bodies, placement, in, f.bendTransition(in), featOr(f.featName, "flange"))
+}
+
+// mitre fills the corner between this wall and the one it meets, when the flange asks for it
+// (#1961). The gap defaults to the style's, which is what the sheet-metal rule's GapSize carries.
+func (f *SheetMetalFlangeFeature) mitre(bodies []*topo.Body, placement BendPlacement, in Input) ([]*topo.Body, error) {
+	if !f.def.AutoMiter {
+		return bodies, nil
+	}
+	gap := in.MiterGap
+	if f.def.MiterGap != nil {
+		gap = f.def.MiterGap()
+	}
+	return mitreCorner(bodies, placement, in, gap, featOr(f.featName, "flange"))
+}
+
+// bendTransition is the transition this bend uses: its own override, or the style's when it defers.
+func (f *SheetMetalFlangeFeature) bendTransition(in Input) types.BendTransition {
+	if f.def.Options != nil && f.def.Options.Transition != types.DefaultBendTransition {
+		return f.def.Options.Transition
+	}
+	return in.Transition
+}
+
+// relieveBend cuts the styled relief notches at the ends of this flange's bend that stop short of
+// the edge (#2072). A full-width flange reaches both ends of its edge and needs none, which is why
+// nothing was relieved before width extents existed (#1958).
+func (f *SheetMetalFlangeFeature) relieveBend(bodies []*topo.Body, edge *topo.Edge, dims flangeDims,
+	spec ReliefSpec) ([]*topo.Body, error) {
+	v0, v1 := edge.StartVertex().Point(), edge.EndVertex().Point()
+	from, to, err := f.def.Width.span(float64(v0.DistanceTo(v1)))
+	if err != nil {
+		return nil, err
+	}
+	length := float64(v0.DistanceTo(v1))
+	ends := bendReliefEnds(from, to, length)
+	return cutBendRelief(bodies, edge, ends, f.def.Options.resolve(spec), dims.thickness, length,
+		f.def.Flip, featOr(f.featName, "flange"))
 }
 
 // Placement returns the resolved bend geometry captured by the last successful recompute,
@@ -90,8 +163,16 @@ func (f *SheetMetalFlangeFeature) Placement() (BendPlacement, bool) {
 	return *f.placement, true
 }
 
-// flangeDims is the resolved, validated set of flange dimensions for one recompute.
-type flangeDims struct{ thickness, radius, height, angle float64 }
+// flangeDims is the resolved, validated set of flange dimensions for one recompute. run is the
+// straight wall length after the bend, which is the height once the datum's setback is taken off;
+// setback is how far back from the picked edge the section starts (#1957).
+type flangeDims struct{ thickness, radius, height, angle, run, setback float64 }
+
+// flangeSteps is the folded section a flange builds: its bend and the wall that follows. Where the
+// section STARTS is the bend position's business (d.setback), not a step.
+func (f *SheetMetalFlangeFeature) flangeSteps(d flangeDims) []bendRun {
+	return []bendRun{{Angle: d.angle, Radius: d.radius, Run: d.run}}
+}
 
 // resolveDims reads the live thickness, the bend radius (override or rule), the height, and
 // the angle, erroring if any is non-positive.
@@ -104,6 +185,10 @@ func (f *SheetMetalFlangeFeature) resolveDims(ps *param.Parameters) (flangeDims,
 	if d.radius <= 0 || d.height <= 0 || d.angle <= 0 {
 		return flangeDims{}, fmt.Errorf("sheet-metal flange: radius/height/angle must be positive (r=%g h=%g a=%g)", d.radius, d.height, d.angle)
 	}
+	if d.run, err = f.def.HeightDatum.wallRun(d.height, d.radius, d.thickness, d.angle); err != nil {
+		return flangeDims{}, err
+	}
+	d.setback = f.def.Position.setbackFor(d.radius, d.thickness, evalFloat(f.def.PositionOffset))
 	return d, nil
 }
 
@@ -139,12 +224,24 @@ func (f *SheetMetalFlangeFeature) BendSpecs(_ float64) []BendSpec {
 	return []BendSpec{{Angle: f.resolveAngle(), Radius: radius}}
 }
 
-// buildFlangeSolid constructs the bend+wall solid on edge: the cross-section band extruded
-// along the edge. up is the parent face's outward normal (the fold-toward side); out is the
-// in-plane direction away from the sheet. flip folds toward the opposite face. It also
-// returns the resolved [BendPlacement] (the bend line + outward direction + dims) so the
-// flat pattern can lay this flange out as a tab without re-resolving the edge.
-func buildFlangeSolid(edge *topo.Edge, thickness, radius, height, angle float64, flip bool, feat string) (*topo.Body, BendPlacement, error) {
+// buildFoldedSolid extrudes a folded-section chain (see sheet_metal_band.go) along the picked
+// edge — the shared body of the flange and every hem type (#1956). The reported placement
+// describes the FIRST bend, which is the one at the picked edge and so the one the flat pattern
+// unfolds about; the developed length of any further folds is the caller's BendSpecs to report.
+func buildFoldedSolid(edge *topo.Edge, thickness float64, steps []bendRun, flip bool,
+	feat string) (*topo.Body, BendPlacement, error) {
+	return buildFoldedSolidAt(edge, thickness, steps, 0, FlangeWidth{}, flip, feat)
+}
+
+// buildFoldedSolidAt is buildFoldedSolid with the section SHIFTED setback into the parent material
+// — how a flange sits back from its picked edge (#1957). The shifted section starts buried in the
+// sheet and the union absorbs the overlap; a backwards RUN cannot do this, because the bend that
+// follows it curls forward again and doubles the band over itself.
+func buildFoldedSolidAt(edge *topo.Edge, thickness float64, steps []bendRun, setback float64,
+	width FlangeWidth, flip bool, feat string) (*topo.Body, BendPlacement, error) {
+	if len(steps) == 0 {
+		return nil, BendPlacement{}, fmt.Errorf("sheet-metal %s: no bend steps to build", feat)
+	}
 	v0, v1 := edge.StartVertex().Point(), edge.EndVertex().Point()
 	e, err := math.UnitVector3FromVector(v0.VectorTo(v1))
 	if err != nil {
@@ -154,15 +251,33 @@ func buildFlangeSolid(edge *topo.Edge, thickness, radius, height, angle float64,
 	if err != nil {
 		return nil, BendPlacement{}, err
 	}
-	plane := planePerp(v0, e)
-	u, v := plane.XAxis().AsVector(), plane.YAxis().AsVector()
-	proj := func(w math.Vector3) math.Point2 { return math.P2(w.Dot(u), w.Dot(v)) }
-	poly := flangeBandPolygon(out.AsVector(), up.AsVector(), thickness, radius, height, angle, proj)
-	placement := BendPlacement{
-		AxisStart: v0, AxisEnd: v1, Outward: out, Up: up,
-		Angle: angle, Radius: radius, Thickness: thickness, Length: height, FoldDown: flip,
+	from, to, err := width.span(float64(v0.DistanceTo(v1)))
+	if err != nil {
+		return nil, BendPlacement{}, err
 	}
-	return buildPrism(poly, plane, span{near: 0, far: v0.DistanceTo(v1)}, 0, feat), placement, nil
+	plane := planePerp(v0, e)
+	poly := foldedSection(steps, out.AsVector(), up.AsVector(), thickness, setback, plane)
+	// The bend LINE is the covered sub-span, not the whole edge, so the flat pattern develops a
+	// partial wall as the partial tab it is (#1958).
+	along := e.AsVector()
+	placement := BendPlacement{
+		AxisStart: v0.TranslateBy(along.Scale(from)), AxisEnd: v0.TranslateBy(along.Scale(to)),
+		Outward: out, Up: up,
+		Angle: steps[0].Angle, Radius: steps[0].Radius, Thickness: thickness,
+		Length: steps[0].Run, FoldDown: flip,
+	}
+	return buildPrism(poly, plane, span{near: from, far: to}, 0, feat), placement, nil
+}
+
+// foldedSection projects the folded chain into the edge's section plane, shifted setback into the
+// parent material (#1957).
+func foldedSection(steps []bendRun, out, up math.Vector3, thickness, setback float64,
+	plane sketch.Plane) []math.Point2 {
+	u, v := plane.XAxis().AsVector(), plane.YAxis().AsVector()
+	return bandPolygon(steps, out, up, thickness, func(w math.Vector3) math.Point2 {
+		shifted := w.Add(out.Scale(-setback))
+		return math.P2(shifted.Dot(u), shifted.Dot(v))
+	})
 }
 
 // flangeFrame returns the parent face's outward normal (up) and the in-plane outward
@@ -197,36 +312,6 @@ func widerFace(a, b *topo.Face) *topo.Face {
 		return a
 	}
 	return b
-}
-
-// flangeBandPolygon returns the bend+wall cross-section as a closed 2D polygon in the section
-// plane (projected via proj). The inner arc has radius r about a centre offset up·r from the
-// edge; the outer arc has radius r+t; after the bend the wall runs straight for height h. The
-// loop is ordered inner-arc → inner-wall-end → outer-wall-end → outer-arc(reversed).
-func flangeBandPolygon(out, up math.Vector3, t, r, h, angle float64, proj func(math.Vector3) math.Point2) []math.Point2 {
-	centre := up.Scale(r) // bend-axis centre, relative to the edge origin
-	dir := func(phi float64) math.Vector3 {
-		return up.Scale(-stdmath.Cos(phi)).Add(out.Scale(stdmath.Sin(phi)))
-	}
-	steps := int(stdmath.Max(2, stdmath.Round(angle/flangeFacetStep)))
-	inner := make([]math.Point2, 0, steps+1)
-	outer := make([]math.Point2, 0, steps+1)
-	for k := 0; k <= steps; k++ {
-		phi := angle * float64(k) / float64(steps)
-		d := dir(phi)
-		inner = append(inner, proj(centre.Add(d.Scale(r))))
-		outer = append(outer, proj(centre.Add(d.Scale(r+t))))
-	}
-	wall := out.Scale(stdmath.Cos(angle)).Add(up.Scale(stdmath.Sin(angle))).Scale(h) // straight-run offset
-	innerEnd := proj(centre.Add(dir(angle).Scale(r)).Add(wall))
-	outerEnd := proj(centre.Add(dir(angle).Scale(r + t)).Add(wall))
-
-	poly := append([]math.Point2(nil), inner...) // inner arc, edge → bend end
-	poly = append(poly, innerEnd, outerEnd)      // across the wall's far end
-	for k := len(outer) - 1; k >= 0; k-- {       // outer arc back, bend end → edge
-		poly = append(poly, outer[k])
-	}
-	return poly
 }
 
 // polygonArea3 returns the area of a planar polygon in 3D (Newell's method).

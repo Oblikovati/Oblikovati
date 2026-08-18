@@ -25,7 +25,7 @@ func textOn(plane sketch.Plane, content string, height, dx, dy float64) (*sketch
 func TestTextEmbossRaisesMaterial(t *testing.T) {
 	fs := embossedBlock(t)
 	es, tb := textOn(planeAtZ(2), "I", 1.5, 2, 1) // a counter-less glyph keeps the test simple
-	emb := NewEmbossFeatures(fs).AddText(es, tb, func() float64 { return 1 }, false, 0)
+	emb := NewEmbossFeatures(fs).AddText(es, tb, func() float64 { return 1 }, EmbossFromFace, 0)
 	fs.Recompute()
 	if !emb.Health().OK() {
 		t.Fatalf("text emboss went sick: %+v", emb.Health())
@@ -48,7 +48,7 @@ func TestTextEmbossStoresReferenceNotGeometry(t *testing.T) {
 	block := squareSketch(10)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(block, 0, ops.NewBody, func() float64 { return 2 })
 	es, tb := textOn(planeAtZ(2), "AB", 2, 1, 1)
-	NewEmbossFeatures(fs).AddText(es, tb, func() float64 { return 1 }, false, 0)
+	NewEmbossFeatures(fs).AddText(es, tb, func() float64 { return 1 }, EmbossFromFace, 0)
 
 	data, err := fs.MarshalRecipe(twoSketches{a: block, b: es})
 	if err != nil {

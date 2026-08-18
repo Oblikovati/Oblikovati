@@ -2,7 +2,12 @@
 
 package feature
 
-import stdmath "math"
+import (
+	stdmath "math"
+
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/sketch"
+)
 
 // Which way a revolve sweeps (#2019).
 //
@@ -19,6 +24,18 @@ import stdmath "math"
 // Flipped is not merely cosmetic on a partial revolve: it decides which existing material a Cut or
 // Join meets, so [0,90°] and [-90°,0] are different features, and before this the second could not
 // be asked for at all.
+
+// resolveRevolveSpan resolves the swept span from whichever extent the definition names: the
+// angle extent reads it off Angle/Angle2/Direction, the geometric extents (#1860) measure it
+// against the model. bodies are the running bodies, which only to-next consults.
+func (r *RevolveFeature) resolveRevolveSpan(prof *sketch.Profile, axis *WorkAxis,
+	bodies []*topo.Body) (total, start float64, err error) {
+	if r.def.Extent == DistanceExtent {
+		total, start = revolveSpan(r.def)
+		return total, start, nil
+	}
+	return revolveExtentSpan(r.def, modelPolygon(prof, r.def.Sketch.Plane()), axis, bodies)
+}
 
 // revolveSpan resolves the total swept angle and the angular offset it starts at, from the
 // definition's angles and direction. A span reaching a full turn collapses to the full revolution

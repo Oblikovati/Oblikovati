@@ -46,6 +46,14 @@ type RevolveDefinition struct {
 	// (half each way) — Inventor's revolve Direction (#2019). Ignored once Angle2 is set, which
 	// is the asymmetric mode and names both sides itself. See revolveSpan.
 	Direction ExtentDirection
+	// Extent is how the revolve terminates (#1860). The zero value, DistanceExtent, is the ANGLE
+	// extent — a revolve's "distance" is its Angle (Inventor's kAngleExtent) — and the geometric
+	// members terminate on ToPlane/FromPlane or on the next material instead. See revolveExtentSpan.
+	Extent ExtentType
+	// ToPlane is the to-face stop (and the "to" of from-to); FromPlane is the "from". Both must
+	// contain the revolve axis — see radialHalfPlaneDir. Unused by the angle and to-next extents.
+	ToPlane   *WorkPlane
+	FromPlane *WorkPlane
 	Operation ops.PartFeatureOperation
 }
 
@@ -81,7 +89,7 @@ func (r *RevolveFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	r.tool, err = r.buildRevolveTool(prof, axis)
+	r.tool, err = r.buildRevolveTool(prof, axis, in.Bodies)
 	if err != nil {
 		return Output{}, err
 	}
@@ -96,8 +104,12 @@ func (r *RevolveFeature) Recompute(in Input) (Output, error) {
 // definition. For the Surface operation (kSurfaceOperation, #1858) it revolves the profile
 // boundary into an OPEN surface of revolution (a sheet); otherwise it builds the solid of
 // revolution via the shared [buildRevolveSolid] (the assembly-context revolve, #735, reuses it).
-func (r *RevolveFeature) buildRevolveTool(prof *sketch.Profile, axis *WorkAxis) (*topo.Body, error) {
-	angle, start := revolveSpan(r.def)
+func (r *RevolveFeature) buildRevolveTool(prof *sketch.Profile, axis *WorkAxis,
+	bodies []*topo.Body) (*topo.Body, error) {
+	angle, start, err := r.resolveRevolveSpan(prof, axis, bodies)
+	if err != nil {
+		return nil, err
+	}
 	plane, feat := r.def.Sketch.Plane(), featOr(r.featName, "revolve")
 	if r.def.Operation == ops.Surface {
 		return buildRevolveSheet(prof, plane, axis, angle, start, feat)
@@ -516,6 +528,11 @@ type CoilDefinition struct {
 	PitchRows []CoilPitchRow
 	StartEnd  CoilEndCondition
 	EndEnd    CoilEndCondition
+	// Handedness is the winding sense; the zero value is right-handed (#1883).
+	Handedness CoilHandedness
+	// Spiral sweeps a FLAT spiral instead of a helix: Pitch becomes the radial step per turn and
+	// there is no axial rise (Inventor's kSpiralCoilExtent, #1883). See coil_placement.go.
+	Spiral bool
 }
 
 // CoilFeature sweeps a profile along a helix.
@@ -542,11 +559,15 @@ func (c *CoilFeature) Recompute(in Input) (Output, error) {
 	if c.def.Axis == nil {
 		return Output{}, errors.New("coil: no axis")
 	}
-	rise, totalTurns, err := coilRail(c.def)
+	advance, totalTurns, err := coilRail(c.def)
 	if err != nil {
 		return Output{}, err
 	}
-	sections := coilSections(prof, c.def.Sketch.Plane(), c.def.Axis, rise, totalTurns, c.def.Taper)
+	place, err := coilPlacerFor(c.def, advance)
+	if err != nil {
+		return Output{}, err
+	}
+	sections := coilSections(prof, c.def.Sketch.Plane(), c.def.Axis, place, totalTurns, c.def.Handedness)
 	c.tool, err = c.coilTool(sections)
 	if err != nil {
 		return Output{}, err
@@ -564,52 +585,15 @@ func (c *CoilFeature) Recompute(in Input) (Output, error) {
 // body (no boolean).
 func (c *CoilFeature) coilTool(sections [][]math.Point3) (*topo.Body, error) {
 	feat := featOr(c.featName, "coil")
+	build := sweptSolid
 	if c.def.Operation == ops.Surface {
-		return sweptShell(sections, false, feat)
+		build = sweptShell
 	}
-	return sweptSolid(sections, false, feat)
-}
-
-// coilSections places the profile along the helix rail: at each step it is
-// rotated about the axis by the running angle and translated along the axis
-// by the rail's rise at that angle (constant pitch or the M06-F09 pitch
-// table — the rise closure carries either).
-func coilSections(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, rise func(float64) float64, revolutions, taper float64) [][]math.Point3 {
-	base := modelPolygon(prof, plane)
-	axisVec := axis.Direction().AsVector()
-	k := int(stdmath.Max(3, stdmath.Round(revolveSegments*revolutions)))
-	total := 2 * stdmath.Pi * revolutions
-	sections := make([][]math.Point3, k+1)
-	for s := 0; s <= k; s++ {
-		angle := total * float64(s) / float64(k)
-		rot := math.Rotation4(angle, axis.Direction(), axis.Origin())
-		h := rise(angle)
-		sec := make([]math.Point3, len(base))
-		for i, p := range base {
-			q := rot.TransformPoint(p).TranslateBy(axisVec.Scale(math.Scalar(h)))
-			sec[i] = coilTaperPoint(q, axis, taper, h)
-		}
-		sections[s] = sec
+	body, err := build(sections, false, feat)
+	if err != nil {
+		return nil, err
 	}
-	return sections
-}
-
-// coilTaperPoint moves a section point radially away from the axis by
-// tan(taper)·rise — the tapered coil whose helix radius grows with height
-// (M08 PBI-096, #316). Zero taper or zero rise is the identity.
-func coilTaperPoint(p math.Point3, axis *WorkAxis, taper, rise float64) math.Point3 {
-	if taper == 0 || rise == 0 {
-		return p
-	}
-	a := axis.Direction().AsVector()
-	v := axis.Origin().VectorTo(p)
-	radial := v.Sub(a.Scale(v.Dot(a)))
-	l := float64(radial.Length())
-	if l == 0 {
-		return p // a point ON the axis has no radial direction to taper along
-	}
-	off := stdmath.Tan(taper) * rise
-	return p.TranslateBy(radial.Scale(math.Scalar(off / l)))
+	return body, coilClearsItsOwnTurns(body, sections, c.def.Axis)
 }
 
 // CoilFeatures adds coils into the engine.
@@ -653,12 +637,21 @@ type RibDefinition struct {
 	// the direction (its sign; nil/0 ⇒ +normal).
 	ToNext    bool
 	Operation ops.PartFeatureOperation
+	// The wall's cross-section options (#1882; see rib_wall.go). ThickenSide picks which side of
+	// the path the thickness lands on; Draft (radians) tapers the wall, opening it toward the root;
+	// HoldThicknessAtRoot measures Thickness at the root instead of at the sketch plane (Inventor's
+	// kRibThicknessAtRoot), which is observable only under Draft; ExtendProfile lengthens the
+	// path's ends onto the part. Every zero value is the behaviour that predates the options.
+	ThickenSide         RibThickenSide
+	Draft               float64
+	HoldThicknessAtRoot bool
+	ExtendProfile       bool
 }
 
-// RibFeature thickens an open sketch profile (a path) into a wall: the path is offset by
-// ±Thickness/2 in the sketch plane to a closed band, then extruded Depth along the plane
-// normal and combined with the running body. (Inventor's "to-next" bounding against the
-// part is a refinement — Depth gives the finite extent today.)
+// RibFeature thickens an open sketch profile (a path) into a wall: the path is offset in the
+// sketch plane to a closed band (by ±Thickness/2, or wholly to one side — see [RibThickenSide]),
+// then extruded Depth along the plane normal, optionally drafted, and combined with the running
+// body. rib_wall.go shapes the band; ribDepth resolves the extent.
 type RibFeature struct {
 	def  *RibDefinition
 	tool *topo.Body // last rib wall, exposed so a pattern can replicate it
@@ -672,7 +665,7 @@ func (r *RibFeature) Operation() ops.PartFeatureOperation { return r.def.Operati
 func (r *RibFeature) ToolBody() *topo.Body                { return r.tool }
 
 func (r *RibFeature) Recompute(in Input) (Output, error) {
-	pts, err := r.pathPoints()
+	pts, err := r.wallPath(in)
 	if err != nil {
 		return Output{}, err
 	}
@@ -687,10 +680,13 @@ func (r *RibFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	band := ensureCCW2(thickenPath(pts, t))
+	band, taper, err := ribWallBand(pts, t, d, r.def.Draft, r.def.ThickenSide, r.def.HoldThicknessAtRoot)
+	if err != nil {
+		return Output{}, err
+	}
 	// The Surface operation (kSurfaceOperation, #1858) builds the rib walls only — an open sheet, no
 	// caps — rather than the capped prism; combine() adds it as a surface body (no boolean).
-	r.tool = buildExtrusionShell(band, r.def.Sketch.Plane(), orderedSpan(0, d), 0, "rib", r.def.Operation != ops.Surface)
+	r.tool = buildExtrusionShell(band, r.def.Sketch.Plane(), orderedSpan(0, d), taper, "rib", r.def.Operation != ops.Surface)
 	bodies, err := combine(in, r.tool, r.def.Operation)
 	if err != nil {
 		return Output{}, err
@@ -751,6 +747,18 @@ func nearestBodyHit(bodies []*topo.Body, origin math.Point3, dir math.Vector3) (
 	return best, found
 }
 
+// wallPath is the path the wall is built on: the sketch's open profile, with its ends extended
+// onto the existing material when ExtendProfile asks for it (#1882). The extension happens BEFORE
+// ribDepth measures a to-next extent, so a lengthened end's ray counts toward the depth the wall
+// needs in order to land everywhere.
+func (r *RibFeature) wallPath(in Input) ([]math.Point2, error) {
+	pts, err := r.pathPoints()
+	if err != nil || !r.def.ExtendProfile {
+		return pts, err
+	}
+	return ribExtendedPath(pts, r.def.Sketch.Plane(), in.Bodies), nil
+}
+
 // pathPoints resolves the rib's open profile (a sketch path) to its ordered points.
 func (r *RibFeature) pathPoints() ([]math.Point2, error) {
 	paths := r.def.Sketch.Paths()
@@ -784,47 +792,6 @@ func (c *RibFeatures) Add(skt *sketch.Sketch, profileIndex int, thickness, depth
 	pf := c.engine.Add(&RibFeature{def: def})
 	pf.SetName(c.engine.UniqueName("Rib"))
 	return pf
-}
-
-// thickenPath offsets a polyline by ±t/2 into a closed band polygon (left side forward,
-// right side back) so it can be extruded as a wall.
-func thickenPath(pts []math.Point2, t float64) []math.Point2 {
-	h := math.Scalar(t / 2)
-	n := len(pts)
-	band := make([]math.Point2, 0, 2*n)
-	for i := 0; i < n; i++ { // left side
-		band = append(band, pts[i].TranslateBy(vertexNormal2(pts, i).Scale(h)))
-	}
-	for i := n - 1; i >= 0; i-- { // right side, reversed → closed loop
-		band = append(band, pts[i].TranslateBy(vertexNormal2(pts, i).Scale(-h)))
-	}
-	return band
-}
-
-// vertexNormal2 is the unit in-plane normal at vertex i (averaged perpendicular of the
-// adjacent segments).
-func vertexNormal2(pts []math.Point2, i int) math.Vector2 {
-	var sum math.Vector2
-	if i > 0 {
-		sum = sum.Add(segNormal2(pts[i-1], pts[i]))
-	}
-	if i < len(pts)-1 {
-		sum = sum.Add(segNormal2(pts[i], pts[i+1]))
-	}
-	if l := float64(sum.Length()); l > 0 {
-		return sum.Scale(math.Scalar(1 / l))
-	}
-	return math.V2(0, 0)
-}
-
-// segNormal2 is the unit left normal of segment a→b.
-func segNormal2(a, b math.Point2) math.Vector2 {
-	d := a.VectorTo(b)
-	n := math.V2(-d.Y, d.X)
-	if l := float64(n.Length()); l > 0 {
-		return n.Scale(math.Scalar(1 / l))
-	}
-	return math.V2(0, 0)
 }
 
 // ensureCCW2 returns the polygon wound counter-clockwise (positive signed area) so the

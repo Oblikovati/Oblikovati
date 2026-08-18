@@ -26,7 +26,9 @@ func sweptSolid(sections [][]math.Point3, closedLoop bool, feat string) (*topo.B
 	if err := validateSections(sections, closedLoop); err != nil {
 		return nil, err
 	}
-	mesh := sectionMesh(sections, closedLoop, true, closureShift(sections, closedLoop))
+	shift := closureShift(sections, closedLoop)
+	sections = refineWarpedSpans(sections, closedLoop)
+	mesh := sectionMesh(sections, closedLoop, true, shift)
 	body := subd.ToBody(mesh, feat)
 	// A consistently-wound cage is either all-outward or all-inward; if the signed
 	// volume came out negative the cage is inside-out, so rebuild it face-reversed.
@@ -46,7 +48,9 @@ func sweptShell(sections [][]math.Point3, closedLoop bool, feat string) (*topo.B
 	if err := validateSections(sections, closedLoop); err != nil {
 		return nil, err
 	}
-	mesh := sectionMesh(sections, closedLoop, false, closureShift(sections, closedLoop))
+	shift := closureShift(sections, closedLoop)
+	sections = refineWarpedSpans(sections, closedLoop)
+	mesh := sectionMesh(sections, closedLoop, false, shift)
 	body := subd.ToBody(mesh, feat)
 	// A full-revolution shell is closed, so orient it outward like a solid; an open sheet's signed
 	// volume is ~0 and the flip is a harmless no-op.

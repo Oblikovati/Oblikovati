@@ -48,7 +48,20 @@ type Occurrence struct {
 	adaptive   bool
 	flexible   bool // sub-assembly solves independently per placement (M12-F06); excl. adaptive
 	substitute bool
-	definition Definition
+	// Display and state overrides (#1975/#1977). transparent draws the occurrence see-through;
+	// opacity (0 ⇒ the lane/node default) is a per-occurrence override; disabled (zero ⇒ enabled)
+	// skips it in selection/pick; excluded and reference drop it from BOM and mass properties;
+	// contactSet marks it a member of the contact solver's set.
+	transparent bool
+	opacity     float64
+	disabled    bool
+	excluded    bool
+	reference   bool
+	contactSet  bool
+	// bomStructureOverride is a per-occurrence BOM-structure override (the wire spelling, e.g.
+	// "phantom"); "" (or "default") defers to the component definition's structure (#1978).
+	bomStructureOverride string
+	definition           Definition
 	// childOverrides is a flexible occurrence's independent child placement: keyed by child
 	// instance name, it overrides the shared sub-assembly definition's default transform so THIS
 	// placement positions its components independently (M12-F06). Nil for a rigid occurrence.
@@ -117,6 +130,59 @@ func (o *Occurrence) Visible() bool { return !o.hidden }
 
 // SetVisible shows or hides the occurrence in the render queue.
 func (o *Occurrence) SetVisible(visible bool) { o.hidden = !visible }
+
+// Transparent reports whether the occurrence is drawn see-through (#1975).
+func (o *Occurrence) Transparent() bool { return o.transparent }
+
+// SetTransparent draws the occurrence see-through or solid.
+func (o *Occurrence) SetTransparent(transparent bool) { o.transparent = transparent }
+
+// Opacity is the per-occurrence opacity override in [0,1]; 0 means use the lane/node default
+// (opaque). It is a display concern, so it does not bump the version or affect solving (#1975).
+func (o *Occurrence) Opacity() float64 { return o.opacity }
+
+// SetOpacity sets the per-occurrence opacity override (0 ⇒ default).
+func (o *Occurrence) SetOpacity(opacity float64) { o.opacity = opacity }
+
+// Enabled reports whether the occurrence participates in selection/pick and editing. Stored
+// inverted (disabled) so the zero-value occurrence is enabled (#1977).
+func (o *Occurrence) Enabled() bool { return !o.disabled }
+
+// SetEnabled enables or disables the occurrence for selection/pick.
+func (o *Occurrence) SetEnabled(enabled bool) { o.disabled = !enabled }
+
+// Excluded reports whether the occurrence is excluded from BOM and mass properties while still
+// drawn — Inventor's excluded state (#1977).
+func (o *Occurrence) Excluded() bool { return o.excluded }
+
+// SetExcluded excludes or restores the occurrence for BOM and mass properties.
+func (o *Occurrence) SetExcluded(excluded bool) { o.excluded = excluded }
+
+// Reference reports whether the occurrence is a reference component — drawn for context but,
+// like excluded, dropped from BOM and mass properties (#1977).
+func (o *Occurrence) Reference() bool { return o.reference }
+
+// SetReference marks the occurrence a reference component or a normal one.
+func (o *Occurrence) SetReference(reference bool) { o.reference = reference }
+
+// InContactSet reports whether the occurrence is a member of the contact solver's set (#1977).
+func (o *Occurrence) InContactSet() bool { return o.contactSet }
+
+// BOMStructureOverride returns this occurrence's per-occurrence BOM-structure override (a wire
+// spelling), or "" when it defers to the component definition's structure (#1978).
+func (o *Occurrence) BOMStructureOverride() string { return o.bomStructureOverride }
+
+// SetBOMStructureOverride sets (or clears, with "" / "default") this occurrence's BOM-structure
+// override (#1978).
+func (o *Occurrence) SetBOMStructureOverride(structure string) {
+	if structure == "default" {
+		structure = ""
+	}
+	o.bomStructureOverride = structure
+}
+
+// SetInContactSet adds or removes the occurrence from the contact set.
+func (o *Occurrence) SetInContactSet(member bool) { o.contactSet = member }
 
 // Adaptive reports whether the occurrence's underdimensioned geometry may flex to
 // satisfy assembly constraints (resolved by the solver from M12).

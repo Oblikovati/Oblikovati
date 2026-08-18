@@ -23,7 +23,26 @@ const holeSchema = `{
   "type": "object",
   "properties": {
     "faceRef": {"type": "string", "description": "Reference key of the planar face to drill into (from get_reference_keys)."},
-    "type": {"type": "string", "enum": ["drilled", "counterbore", "countersink", "tapped"], "default": "drilled", "description": "Hole style."},
+    "type": {"type": "string", "enum": ["drilled", "counterbore", "countersink", "spotface", "tapped"], "default": "drilled", "description": "The hole's SEAT: the recess it opens into at the placement face. \"tapped\" is the older spelling of a drilled hole with tap=\"tapped\" — prefer setting \"tap\", which combines with any seat."},
+    "tap": {"type": "string", "enum": ["none", "tapped", "taperTapped"], "default": "none", "description": "The hole's thread FUNCTION, independent of its seat — so a counterbored tapped hole is expressible. Needs a designation."},
+    "threadClass": {"type": "string", "description": "Tap fit class, e.g. \"6H\" (metric) or \"2B\" (unified)."},
+    "leftHanded": {"type": "boolean", "default": false, "description": "Reverse the tap's thread sense; the default is an ordinary right-hand thread."},
+    "clearance": {"type": "object", "description": "Size the bore from a fastener table instead of diameter, keeping the fastener→hole link live. Inventor's HoleClearanceInfo.", "properties": {"standard": {"type": "string", "description": "Table the fastener is drawn from; \"ISO 273\" is carried."}, "fastener": {"type": "string", "description": "Thread designation the hole must pass, e.g. \"M6\"."}, "fit": {"type": "string", "enum": ["close", "medium", "free"], "default": "medium"}}, "required": ["fastener"]},
+    "placement": {"type": "string", "enum": ["sketch", "linear", "concentric", "point"], "description": "The rule LOCATING the bores (Inventor's HolePlacementTypeEnum). Omit for the single bore at faceRef/center. \"sketch\" drills one hole per CENTRE POINT of placementSketchIndex."},
+    "placementSketchIndex": {"type": "integer", "minimum": 0, "description": "Sketch whose centre points the \"sketch\" placement drills at."},
+    "placementFlipped": {"type": "boolean", "default": false, "description": "Drill ALONG the sketch normal / work axis instead of into it."},
+    "concentricRef": {"type": "string", "description": "Circular edge whose axis the \"concentric\" placement centres on."},
+    "edge1Ref": {"type": "string", "description": "First reference edge of the \"linear\" placement."},
+    "edge2Ref": {"type": "string", "description": "Second reference edge of the \"linear\" placement."},
+    "offset1": {"type": "string", "description": "Distance from edge1Ref, measured INTO the placement face, e.g. \"10 mm\"."},
+    "offset2": {"type": "string", "description": "Distance from edge2Ref, measured INTO the placement face."},
+    "pointRef": {"type": "string", "description": "Work point the \"point\" placement drills at, e.g. \"point/0\"."},
+    "axisRef": {"type": "string", "description": "Work axis the \"point\" placement drills along, e.g. \"origin/axis/z\"."},
+    "termination": {"type": "string", "enum": ["distance", "through-all", "to-face", "from-to"], "default": "distance", "description": "Where the bore STOPS. A named terminator must be square to the drill axis — a bore bottoms at one depth."},
+    "toFace": {"type": "string", "description": "Stop target for the to-face / from-to (end) terminations: a planar face key, \"plane/N\", or \"origin/plane/xy\"."},
+    "toFaceGeom": {"type": "object", "description": "The toFace target named by GEOMETRY (centroid + normal) instead of toFace. Wins over toFace.", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}, "required": ["centroid", "normal"]},
+    "fromFace": {"type": "string", "description": "Start target for the from-to termination; the bore begins there rather than at the placement face."},
+    "fromFaceGeom": {"type": "object", "description": "The fromFace target named by GEOMETRY instead of fromFace. Wins over fromFace.", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}, "required": ["centroid", "normal"]},
     "diameter": {"type": "string", "description": "Hole diameter with units, e.g. \"5 mm\"."},
     "depth": {"type": "string", "description": "Blind hole depth, e.g. \"8 mm\". Omit (drilled only) for a through-all hole."},
     "counterDiameter": {"type": "string", "description": "Counterbore diameter (type=counterbore)."},
@@ -37,7 +56,7 @@ const holeSchema = `{
     "drillPoint": {"type": "string", "enum": ["flat", "angled"], "default": "flat", "description": "Blind-hole bottom: \"flat\" (disc) or \"angled\" (cone of tipAngle). Inventor's HoleDrillPointTypeEnum."},
     "tipAngle": {"type": "string", "description": "Included angle of an \"angled\" drill point, e.g. \"118 deg\" (the default when omitted)."}
   },
-  "required": ["diameter"]
+  "required": []
 }`
 
 func holeDescriptor() *OperationDescriptor {
@@ -49,10 +68,10 @@ func applyHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	if in.FaceRef == "" && in.PlacementFaceGeom == nil {
-		return nil, errors.New("hole: needs faceRef or placementFaceGeom")
+	if err := requireHoleSizeAndFace(in); err != nil {
+		return nil, err
 	}
-	dia, err := lengthClosure(part, in.Diameter, "hole: diameter")
+	dia, err := optionalLengthClosure(part, in.Diameter, "hole: diameter")
 	if err != nil {
 		return nil, err
 	}
@@ -60,16 +79,50 @@ func applyHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := applyHoleCenter(part, pf, in); err != nil {
-		return nil, err
-	}
-	if err := applyHolePlacementGeom(pf, in); err != nil {
-		return nil, err
-	}
-	if err := applyHoleDrillPoint(part, pf, in); err != nil {
+	if err := configureHole(part, pf, in); err != nil {
 		return nil, err
 	}
 	return recomputeResult(part, pf)
+}
+
+// requireHoleSizeAndFace rejects the two requests that name no hole at all, so each is reported as
+// the caller error it is rather than surfacing later as a zero-diameter recompute failure.
+func requireHoleSizeAndFace(in featureargs.Hole) error {
+	// Every placement but "point" starts its bore on a face; on-point drills at a work point along a
+	// work axis, so demanding a face there would make the placement unusable (#1861).
+	if in.FaceRef == "" && in.PlacementFaceGeom == nil && strings.TrimSpace(in.Placement) != "point" {
+		return errors.New("hole: needs faceRef or placementFaceGeom (or the \"point\" placement)")
+	}
+	// A clearance hole is sized by its fastener, so it carries no diameter of its own (#1862).
+	if strings.TrimSpace(in.Diameter) == "" && in.Clearance == nil {
+		return errors.New("hole: needs \"diameter\", or a \"clearance\" fastener to size it from")
+	}
+	return nil
+}
+
+// configureHole applies everything that sits on top of the seat the builder chose: the drill point,
+// the placement (both the geometric face selector and the placement rule), the tap and clearance
+// axes, and the termination.
+func configureHole(part *compdef.PartComponentDefinition, pf *feature.PartFeature,
+	in featureargs.Hole) error {
+	if err := applyHoleCenter(part, pf, in); err != nil {
+		return err
+	}
+	if err := applyHolePlacementGeom(pf, in); err != nil {
+		return err
+	}
+	if err := applyHoleDrillPoint(part, pf, in); err != nil {
+		return err
+	}
+	if err := applyHoleOptions(part, pf, in); err != nil {
+		return err
+	}
+	placement, err := buildHolePlacement(part, in)
+	if err != nil {
+		return err
+	}
+	pf.Definition().(*feature.HoleFeature).Definition().Placement = placement
+	return nil
 }
 
 // applyHoleDrillPoint sets a blind hole's conical bottom from drillPoint/tipAngle, wiring the
@@ -179,12 +232,8 @@ func buildHole(part *compdef.PartComponentDefinition, in featureargs.Hole, dia f
 			return nil, err
 		}
 		return holes.AddDrilled(key, dia, depth), nil
-	case "counterbore":
-		depth, cdia, cdepth, err := threeLengths(part, in.Depth, in.CounterDiameter, in.CounterDepth, "hole counterbore")
-		if err != nil {
-			return nil, err
-		}
-		return holes.AddCounterbore(key, dia, depth, cdia, cdepth), nil
+	case "counterbore", "spotface":
+		return buildSeatedHole(part, holes, in, key, dia)
 	case "countersink":
 		depth, sdia, err := twoLengths(part, in.Depth, in.SinkDiameter, "hole countersink")
 		if err != nil {
@@ -196,16 +245,15 @@ func buildHole(part *compdef.PartComponentDefinition, in featureargs.Hole, dia f
 		}
 		return holes.AddCountersink(key, dia, depth, sdia, angle), nil
 	case "tapped":
+		// The older spelling of a DRILLED hole that is also tapped; applyHoleOptions adds the tap,
+		// which is what makes a tapped counterbore expressible at all (#1862).
 		depth, err := lengthClosure(part, in.Depth, "hole: depth")
 		if err != nil {
 			return nil, err
 		}
-		if in.Designation == "" {
-			return nil, errors.New("hole: tapped needs a designation, e.g. \"M5x0.8\"")
-		}
-		return holes.AddTapped(key, dia, depth, in.Designation), nil
+		return holes.AddDrilled(key, dia, depth), nil
 	default:
-		return nil, fmt.Errorf("hole: unknown type %q (want drilled|counterbore|countersink|tapped)", in.Type)
+		return nil, fmt.Errorf("hole: unknown type %q (want drilled|counterbore|countersink|spotface|tapped)", in.Type)
 	}
 }
 
@@ -231,4 +279,20 @@ func threeLengths(part *compdef.PartComponentDefinition, a, b, c, ctx string) (f
 		return nil, nil, nil, err
 	}
 	return av, bv, cv, nil
+}
+
+// buildSeatedHole builds the two flat-bottomed seats. A spotface IS a counterbore's recess, so they
+// share the builder; the seat type is then set apart, because the distinction is real to everything
+// downstream — callouts, hole notes, CAM (#1862).
+func buildSeatedHole(part *compdef.PartComponentDefinition, holes *feature.HoleFeatures,
+	in featureargs.Hole, key []byte, dia func() float64) (*feature.PartFeature, error) {
+	depth, cdia, cdepth, err := threeLengths(part, in.Depth, in.CounterDiameter, in.CounterDepth, "hole "+in.Type)
+	if err != nil {
+		return nil, err
+	}
+	pf := holes.AddCounterbore(key, dia, depth, cdia, cdepth)
+	if in.Type == "spotface" {
+		pf.Definition().(*feature.HoleFeature).Definition().Type = feature.SpotFaceHole
+	}
+	return pf, nil
 }

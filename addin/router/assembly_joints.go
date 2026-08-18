@@ -32,6 +32,8 @@ func (r *Router) registerAssemblyJointHandlers() {
 	r.mutating(wire.MethodAssemblyJointsDelete, "Delete Joint", typedAssembly(assemblyJointDelete))
 	r.mutating(wire.MethodAssemblyJointsSetLimits, "Edit Joint", typedAssembly(assemblyJointSetLimits))
 	r.mutating(wire.MethodAssemblyJointsSetFlip, "Edit Joint", typedAssembly(assemblyJointSetFlip))
+	r.mutating(wire.MethodAssemblyJointsSetState, "Edit Joint", typedAssembly(assemblyJointSetState))
+	r.mutating(wire.MethodAssemblyJointsSetOrigin, "Edit Joint Origin", typedAssembly(assemblyJointSetOrigin))
 	r.readOnly(wire.MethodDSJointsList, assemblyQuery(dsJointsList))
 	r.mutating(wire.MethodDSJointsAdd, "Add Joint", dsJointAdd)
 	r.mutating(wire.MethodDSJointsSetImposedMotion, "Edit Joint Motion", typedAssembly(dsJointSetImposedMotion))
@@ -76,6 +78,9 @@ func jointAdder(add func(*assembly.JointSet, assembly.Ref, assembly.Ref) assembl
 		if in.Flip {
 			_ = asm.Joints().SetFlip(j.ID(), true)
 		}
+		if in.Gap != 0 {
+			_ = asm.Joints().SetGap(j.ID(), in.Gap)
+		}
 		asm.SolveConstraints()
 		return json.Marshal(wire.AssemblyJointResult{Joint: jointInfo(j)})
 	}
@@ -98,6 +103,113 @@ func assemblyJointSetLimits(_ *app.Session, asm *compdef.AssemblyComponentDefini
 		return wire.AssemblyJointResult{}, err
 	}
 	return jointResult(asm, in.ID), nil
+}
+
+// assemblyJointSetState applies any subset of a joint's seating and state (#1970/#1974) — gap,
+// linear/angular rest position, locked, protected — re-solves, and returns the joint's info.
+func assemblyJointSetState(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetJointStateArgs) (wire.AssemblyJointResult, error) {
+	joints := asm.Joints()
+	if err := applyJointState(joints, in); err != nil {
+		return wire.AssemblyJointResult{}, err
+	}
+	asm.SolveConstraints()
+	return jointResult(asm, in.ID), nil
+}
+
+// assemblyJointSetOrigin defines one of a joint's two origins — inferred, offset, or the midplane
+// between two faces — and re-solves the assembly (#1973).
+func assemblyJointSetOrigin(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetJointOriginArgs) (wire.AssemblyJointResult, error) {
+	j := asm.Joints().ByID(in.ID)
+	if j == nil {
+		return wire.AssemblyJointResult{}, fmt.Errorf("%s: no joint with id %d", wire.MethodAssemblyJointsSetOrigin, in.ID)
+	}
+	if in.Which != 1 && in.Which != 2 {
+		return wire.AssemblyJointResult{}, fmt.Errorf("%s: which must be 1 or 2, got %d", wire.MethodAssemblyJointsSetOrigin, in.Which)
+	}
+	mode, ok := types.ParseAssemblyJointOriginMode(in.Mode)
+	if !ok {
+		return wire.AssemblyJointResult{}, fmt.Errorf("%s: unknown origin mode %q", wire.MethodAssemblyJointsSetOrigin, in.Mode)
+	}
+	if err := applyJointOrigin(asm, j, in, mode); err != nil {
+		return wire.AssemblyJointResult{}, err
+	}
+	asm.SolveConstraints()
+	return jointResult(asm, in.ID), nil
+}
+
+// applyJointOrigin dispatches the origin definition onto joint origin one or two (#1973).
+func applyJointOrigin(asm *compdef.AssemblyComponentDefinition, j assembly.Joint, in wire.SetJointOriginArgs, mode types.AssemblyJointOriginMode) error {
+	one := in.Which == 1
+	switch mode {
+	case types.JointOriginInfer:
+		pick(one, j.SetOriginOneAsInfer, j.SetOriginTwoAsInfer)()
+	case types.JointOriginOffset:
+		pick(one, func() { j.SetOriginOneAsOffset(in.XOffset, in.YOffset) }, func() { j.SetOriginTwoAsOffset(in.XOffset, in.YOffset) })()
+	case types.JointOriginBetweenTwoFaces:
+		fa, fb, err := resolveTwoFaces(asm, in)
+		if err != nil {
+			return err
+		}
+		pick(one, func() { j.SetOriginOneAsBetweenTwoFaces(fa, fb) }, func() { j.SetOriginTwoAsBetweenTwoFaces(fa, fb) })()
+	}
+	return nil
+}
+
+// pick returns whichOne when one is true, else whichTwo — a small dispatch helper for origin one/two.
+func pick(one bool, whichOne, whichTwo func()) func() {
+	if one {
+		return whichOne
+	}
+	return whichTwo
+}
+
+// resolveTwoFaces resolves the two face references of a between-two-faces origin.
+func resolveTwoFaces(asm *compdef.AssemblyComponentDefinition, in wire.SetJointOriginArgs) (assembly.Ref, assembly.Ref, error) {
+	fa, err := resolveConstraintRef(asm, in.FaceA, wire.MethodAssemblyJointsSetOrigin)
+	if err != nil {
+		return assembly.Ref{}, assembly.Ref{}, err
+	}
+	fb, err := resolveConstraintRef(asm, in.FaceB, wire.MethodAssemblyJointsSetOrigin)
+	if err != nil {
+		return assembly.Ref{}, assembly.Ref{}, err
+	}
+	return fa, fb, nil
+}
+
+// applyJointState sets each present state field onto the joint with id in.ID.
+func applyJointState(joints *assembly.JointSet, in wire.SetJointStateArgs) error {
+	if in.Gap != nil {
+		if err := joints.SetGap(in.ID, *in.Gap); err != nil {
+			return err
+		}
+	}
+	if in.LinearPosition != nil || in.AngularPosition != nil {
+		j := joints.ByID(in.ID)
+		if j == nil {
+			return fmt.Errorf("%s: no joint with id %d", wire.MethodAssemblyJointsSetState, in.ID)
+		}
+		lin, ang := valueOr(in.LinearPosition, j.LinearPosition()), valueOr(in.AngularPosition, j.AngularPosition())
+		if err := joints.SetPositions(in.ID, lin, ang); err != nil {
+			return err
+		}
+	}
+	if in.Locked != nil {
+		if err := joints.SetLocked(in.ID, *in.Locked); err != nil {
+			return err
+		}
+	}
+	if in.Protected != nil {
+		return joints.SetProtected(in.ID, *in.Protected)
+	}
+	return nil
+}
+
+// valueOr returns *p when set, else fallback.
+func valueOr(p *float64, fallback float64) float64 {
+	if p != nil {
+		return *p
+	}
+	return fallback
 }
 
 // assemblyJointSetFlip sets a joint's flip sense and returns its info.

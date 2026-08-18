@@ -11,7 +11,6 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
-	"oblikovati.org/kernel/geom"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -25,8 +24,9 @@ const filletSchema = `{
   "type": "object",
   "properties": {
     "edgeRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the edges to round (from get_reference_keys). Flat form: one constant radius over these edges."},
+    "width": {"type": "string", "description": "Face-fillet form: size the blend by the CHORD it spans instead of by the rolling ball's radius, e.g. \"4 mm\" — Inventor's chordal alternative, and what is measured on the part. Resolved against the angle the two face sets meet at, so they must share an edge and be planar. Wins over radius."},
     "radius": {"type": "string", "description": "Fillet radius with units, e.g. \"3 mm\" (flat and face-fillet forms)."},
-    "faceRefsA": {"type": "array", "items": {"type": "string"}, "description": "Face-fillet form (#694): first face set (reference keys). With faceRefsB + radius, rounds the edges the two sets share — pick by face instead of by edge. Adjacent faces only for now."},
+    "faceRefsA": {"type": "array", "items": {"type": "string"}, "description": "Face-fillet form (#694): first face set (reference keys). With faceRefsB and a radius (or width), rounds the edges the two sets share — pick by face instead of by edge. Sets that share NO edge are healed to the virtual edge their planes define and rounded there (#694)."},
     "faceRefsB": {"type": "array", "items": {"type": "string"}, "description": "Face-fillet form: second face set."},
     "edgeSets": {"type": "array", "minItems": 1, "description": "Edge-set form (takes precedence over edgeRefs): any mix of constant and variable radius sets.", "items": {"type": "object", "properties": {
       "edgeRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1},
@@ -38,7 +38,7 @@ const filletSchema = `{
         "radius": {"type": "string", "description": "Radius at this stop, e.g. \"4 mm\"."}
       }, "required": ["t", "radius"]}}
     }, "required": ["edgeRefs"]}},
-    "cornerType": {"type": "string", "enum": ["miter", "setback", "round"], "default": "miter", "description": "How a vertex where two filleted edges meet (third edge sharp) is treated: miter (exact crease), round (fillets the third edge into a smooth sphere). setback is reserved."},
+    "cornerType": {"type": "string", "enum": ["miter", "setback", "round"], "default": "miter", "description": "How a vertex where two filleted edges meet (third edge sharp) is treated: miter (exact crease), round (fillets the third edge into a smooth sphere). setback tapers the third edge to a run-out, giving a smooth set-back sphere."},
     "crossSection": {"type": "string", "enum": ["arc", "g2", "conic"], "default": "arc", "description": "Blend cross-section shape (#1284): arc = circular rolling-ball (G1, default), g2 = curvature-continuous (no highlight break at the tangency lines), conic = rho-controlled. G2/conic apply to planar-walled edge fillets."},
     "rho": {"type": "number", "minimum": 0.1, "maximum": 0.9, "description": "Conic fullness when crossSection=conic: 0.5 = parabola, lower = flatter, higher = fuller."},
     "concaveStrategy": {"type": "string", "enum": ["outward", "inward"], "default": "outward", "description": "Concave (internal) edge handling: outward fills the inside corner with an exact rolling-ball cylinder (default). inward rounds a recess into the corner and is only valid where the faces extend into the material (e.g. a pocket). Convex edges ignore this."},
@@ -54,6 +54,9 @@ const chamferSchema = `{
     "chamferType": {"type": "string", "enum": ["distance", "distanceAndAngle", "twoDistances"], "default": "distance", "description": "Setback mode."},
     "distance2": {"type": "string", "description": "twoDistances: setback on the second face, e.g. \"4 mm\"."},
     "angle": {"type": "string", "description": "distanceAndAngle: chamfer-face angle, e.g. \"30 deg\"."},
+    "referenceFace": {"type": "string", "description": "Face the \"distance\" is measured on for the asymmetric modes (reference key). Without it the assignment falls to the edge's face order, a topology artefact that can put the larger setback on the wrong face of mirrored geometry."},
+    "partialStart": {"type": "string", "description": "Where the bevel starts along each edge, measured from its start vertex, e.g. \"5 mm\" (default 0)."},
+    "partialLength": {"type": "string", "description": "How much of each edge the bevel covers, e.g. \"20 mm\". Omit for the whole edge — Inventor's partial chamfer."},
     "concaveStrategy": {"type": "string", "enum": ["outward", "inward"], "default": "outward", "description": "Concave (internal) edge handling: outward fills the inside corner with material (default), inward cuts a recessed relief groove. Convex edges ignore this."},
     "edgesGeom": {"type": "array", "description": "Select the bevelled edges by GEOMETRY instead of edgeRefs, so the binding survives recompute. Give either this or edgeRefs.", "items": {"type": "object", "properties": {"midpoint": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Edge midpoint [x,y,z] cm."}, "direction": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Unit tangent [x,y,z]."}}, "required": ["midpoint", "direction"]}}
   },
@@ -186,16 +189,28 @@ func applyFullRound(s *app.Session, raw json.RawMessage) (json.RawMessage, error
 }
 
 // applyFaceFillet rounds the edges shared between two face sets (#694, adjacent-faces case): both
-// faceRefsA and faceRefsB plus a radius are required.
+// faceRefsA and faceRefsB plus a radius (or a chordal width) are required.
 func applyFaceFillet(part *compdef.PartComponentDefinition, in featureargs.Fillet) (json.RawMessage, error) {
 	if len(in.FaceRefsA) == 0 || len(in.FaceRefsB) == 0 {
 		return nil, errors.New("face fillet: both faceRefsA and faceRefsB are required")
 	}
-	r, err := lengthClosure(part, in.Radius, fieldFilletRadius)
+	if strings.TrimSpace(in.Radius) == "" && strings.TrimSpace(in.Width) == "" {
+		return nil, errors.New("face fillet: needs \"radius\", or \"width\" to size the blend by its chord")
+	}
+	r, err := optionalLengthClosure(part, in.Radius, fieldFilletRadius)
 	if err != nil {
 		return nil, err
 	}
 	pf := feature.NewDressUpFeatures(part.Features()).AddFaceFillet(refKeys(in.FaceRefsA), refKeys(in.FaceRefsB), r)
+	// A width is the CHORD across the blend (#1887); the model resolves it to a radius against the
+	// angle the two face sets meet at, so it wins over any radius also given.
+	if strings.TrimSpace(in.Width) != "" {
+		w, err := lengthClosure(part, in.Width, "fillet: width")
+		if err != nil {
+			return nil, err
+		}
+		pf.Definition().(*feature.FaceFilletFeature).Definition().Width = w
+	}
 	return recomputeResult(part, pf)
 }
 
@@ -368,6 +383,9 @@ func buildChamfer(part *compdef.PartComponentDefinition, in featureargs.Chamfer)
 	if err := setChamferModeInput(part, def, in); err != nil {
 		return nil, err
 	}
+	if err := setChamferRun(part, def, in); err != nil {
+		return nil, err
+	}
 	if len(in.EdgesGeom) > 0 {
 		// Bind the chamfered edges by geometry when authored geometrically (survives recompute).
 		refs, err := geomEdgeRefs(in.EdgesGeom)
@@ -423,168 +441,20 @@ func setChamferModeInput(part *compdef.PartComponentDefinition, def *feature.Cha
 	return nil
 }
 
-const shellSchema = `{
-  "type": "object",
-  "properties": {
-    "faceRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the faces to remove, hollowing the body (from get_reference_keys)."},
-    "thickness": {"type": "string", "description": "Remaining wall thickness with units, e.g. \"1 mm\"."},
-    "facesGeom": {"type": "array", "description": "Select the removed faces by GEOMETRY instead of faceRefs, so the binding survives recompute. Give either this or faceRefs.", "items": {"type": "object", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Face centroid [x,y,z] cm."}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Outward unit normal [x,y,z]."}}, "required": ["centroid", "normal"]}},
-    "direction": {"type": "string", "enum": ["inside", "outside", "both"], "default": "inside", "description": "Which side the wall grows onto: \"inside\" (outer dimensions kept), \"outside\" (outer dimensions grow by thickness), or \"both\" (wall centred on the faces). Inventor's ShellDirectionEnum."}
-  },
-  "required": ["thickness"]
-}`
-
-const draftSchema = `{
-  "type": "object",
-  "properties": {
-    "faceRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the faces to draft (from get_reference_keys)."},
-    "angle": {"type": "string", "description": "Draft angle with units, e.g. \"3 deg\"."},
-    "pullDirection": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Explicit pull/parting direction [dx,dy,dz] (only its orientation matters). Omit to let the host infer it from the neutral faces."},
-    "facesGeom": {"type": "array", "description": "Select the drafted faces by GEOMETRY instead of faceRefs, so the binding survives recompute. Give either this or faceRefs.", "items": {"type": "object", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Face centroid [x,y,z] cm."}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Outward unit normal [x,y,z]."}}, "required": ["centroid", "normal"]}},
-    "neutralPlane": {"type": "string", "description": "Fixed-plane draft: a planar face key, work plane (\"plane/N\"), or origin plane (\"origin/plane/xy\"). Faces pivot on their intersection with it (dimensions in the plane preserved); pull defaults to its normal. Inventor's kFixedPlaneFaceDraftDefinitionType."}
-  },
-  "required": ["angle"]
-}`
-
-func shellDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: featureargs.KindShell, Summary: "Hollow a body to a wall thickness, removing the picked faces.", Schema: json.RawMessage(shellSchema), Apply: applyShell}
-}
-
-func draftDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: featureargs.KindDraft, Summary: "Taper picked faces by a draft angle.", Schema: json.RawMessage(draftSchema), Apply: applyDraft}
-}
-
-func applyShell(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeFeatureArgs[featureargs.Shell](s, raw)
+func setChamferRun(part *compdef.PartComponentDefinition, def *feature.ChamferDefinition,
+	in featureargs.Chamfer) error {
+	def.ReferenceFace = []byte(in.ReferenceFace)
+	if strings.TrimSpace(in.PartialLength) == "" {
+		return nil
+	}
+	length, err := lengthClosure(part, in.PartialLength, "chamfer: partialLength")
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if len(in.FaceRefs) == 0 && len(in.FacesGeom) == 0 {
-		return nil, errors.New("shell: faceRefs is empty (give faceRefs or facesGeom)")
-	}
-	th, err := lengthClosure(part, in.Thickness, "shell: thickness")
+	start, err := optionalLengthClosure(part, in.PartialStart, "chamfer: partialStart")
 	if err != nil {
-		return nil, err
+		return err
 	}
-	dir, ok := feature.ParseShellDirection(strings.ToLower(strings.TrimSpace(in.Direction)))
-	if !ok {
-		return nil, fmt.Errorf("shell: unknown direction %q (want inside|outside|both)", in.Direction)
-	}
-	pf := feature.NewDressUpFeatures(part.Features()).AddShell(refKeys(in.FaceRefs), th)
-	def := pf.Definition().(*feature.ShellFeature).Definition()
-	def.Direction = dir
-	if len(in.FacesGeom) > 0 {
-		// Bind the removed faces by geometry when authored geometrically (survives recompute).
-		refs, err := geomFaceRefs(in.FacesGeom)
-		if err != nil {
-			return nil, err
-		}
-		def.GeomFaces = refs
-	}
-	return recomputeResult(part, pf)
-}
-
-func applyDraft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeFeatureArgs[featureargs.Draft](s, raw)
-	if err != nil {
-		return nil, err
-	}
-	if len(in.FaceRefs) == 0 && len(in.FacesGeom) == 0 {
-		return nil, errors.New("draft: faceRefs is empty (give faceRefs or facesGeom)")
-	}
-	a, err := angleClosure(part, in.Angle, "draft: angle")
-	if err != nil {
-		return nil, err
-	}
-	pf, err := buildDraft(part, in, a)
-	if err != nil {
-		return nil, err
-	}
-	if len(in.FacesGeom) > 0 {
-		// Bind the drafted faces by geometry when authored geometrically (survives recompute).
-		refs, err := geomFaceRefs(in.FacesGeom)
-		if err != nil {
-			return nil, err
-		}
-		pf.Definition().(*feature.FaceDraftFeature).Definition().GeomFaces = refs
-	}
-	return recomputeResult(part, pf)
-}
-
-// buildDraft adds the draft feature: a fixed-plane (neutral) draft when neutralPlane is given,
-// else an explicit-pull draft (AddDraftPull) when pullDirection is given, else the host's inferred
-// pull (AddDraft, default +Z).
-func buildDraft(part *compdef.PartComponentDefinition, in featureargs.Draft, angle func() float64) (*feature.PartFeature, error) {
-	du := feature.NewDressUpFeatures(part.Features())
-	keys := refKeys(in.FaceRefs)
-	if strings.TrimSpace(in.NeutralPlane) != "" {
-		return buildNeutralDraft(part, du, in, keys, angle)
-	}
-	if len(in.PullDirection) == 0 {
-		return du.AddDraft(keys, angle), nil
-	}
-	pull, err := vec3(in.PullDirection, "draft: pullDirection")
-	if err != nil {
-		return nil, err
-	}
-	return du.AddDraftPull(keys, pull, angle), nil
-}
-
-// buildNeutralDraft resolves the fixed neutral plane (a planar face key, "plane/N", or origin
-// plane) and drafts the faces pivoting on their intersection with it — Inventor's fixed-plane
-// draft. The pull defaults to the plane normal unless pullDirection overrides it. #1866.
-func buildNeutralDraft(part *compdef.PartComponentDefinition, du *feature.DressUpFeatures, in featureargs.Draft, keys [][]byte, angle func() float64) (*feature.PartFeature, error) {
-	wp, err := part.WorkGeometry().PlaneTargetFromRef(in.NeutralPlane)
-	if err != nil {
-		return nil, fmt.Errorf("draft: neutralPlane %q: %w", in.NeutralPlane, err)
-	}
-	pl := wp.Plane()
-	neutral, err := geom.NewPlane(pl.Origin(), pl.Normal().AsVector())
-	if err != nil {
-		return nil, fmt.Errorf("draft: neutralPlane %q: %w", in.NeutralPlane, err)
-	}
-	pull := pl.Normal().AsVector()
-	if len(in.PullDirection) > 0 {
-		if pull, err = vec3(in.PullDirection, "draft: pullDirection"); err != nil {
-			return nil, err
-		}
-	}
-	return du.AddDraftPullNeutral(keys, pull, &neutral, angle), nil
-}
-
-// --- lip / groove (M20-F10) ------------------------------------------------
-
-const lipSchema = `{
-  "type": "object",
-  "properties": {
-    "edgeRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the edges to run the bead along (from get_reference_keys)."},
-    "width": {"type": "string", "description": "Bead width along the first adjacent face, e.g. \"2 mm\"."},
-    "height": {"type": "string", "description": "Bead height along the second adjacent face, e.g. \"2 mm\"."},
-    "groove": {"type": "boolean", "default": false, "description": "Cut a recessed groove instead of raising a lip."}
-  },
-  "required": ["edgeRefs", "width", "height"]
-}`
-
-func lipDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: featureargs.KindLip, Summary: "Run a raised lip (or recessed groove) bead along picked edges.", Schema: json.RawMessage(lipSchema), Apply: applyLip}
-}
-
-func applyLip(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeFeatureArgs[featureargs.Lip](s, raw)
-	if err != nil {
-		return nil, err
-	}
-	if len(in.EdgeRefs) == 0 {
-		return nil, errors.New("lip: edgeRefs is empty")
-	}
-	w, err := lengthClosure(part, in.Width, "lip: width")
-	if err != nil {
-		return nil, err
-	}
-	h, err := lengthClosure(part, in.Height, "lip: height")
-	if err != nil {
-		return nil, err
-	}
-	pf := feature.NewDressUpFeatures(part.Features()).AddLip(refKeys(in.EdgeRefs), w, h, in.Groove)
-	return recomputeResult(part, pf)
+	def.PartialStart, def.PartialLength = start, length
+	return nil
 }

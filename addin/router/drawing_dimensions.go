@@ -25,6 +25,11 @@ func (r *Router) registerDrawingDimensionHandlers() {
 	r.mutating(wire.MethodDrawingDimensionsAddOrdinate, "Add Dimension", typedCtx(activeSheetDimensions, drawingDimensionsAddOrdinate))
 	r.mutating(wire.MethodDrawingDimensionsAddArcLength, "Add Dimension", typedCtx(activeSheetDimensions, drawingDimensionsAddArcLength))
 	r.mutating(wire.MethodDrawingDimensionsDelete, "Delete Dimension", typedCtx(activeSheetDimensions, drawingDimensionsDelete))
+	r.mutating(wire.MethodDrawingDimensionsSetTextStyle, "Edit Dimension", typedCtx(activeSheetDimensions, drawingDimensionsSetTextStyle))
+	r.mutating(wire.MethodDrawingDimensionsSetTolerance, "Edit Dimension", typedCtx(activeSheetDimensions, drawingDimensionsSetTolerance))
+	r.mutating(wire.MethodDrawingDimensionsSetInspection, "Edit Dimension", typedCtx(activeSheetDimensions, drawingDimensionsSetInspection))
+	r.readOnly(wire.MethodDrawingDimensionsListRetrievable, typedCtx(activeSheetDimensions, drawingDimensionsListRetrievable))
+	r.mutating(wire.MethodDrawingDimensionsRetrieve, "Retrieve Dimensions", typedCtx(activeSheetDimensions, drawingDimensionsRetrieve))
 }
 
 // activeSheetDimensions returns the active drawing's active-sheet dimension collection.
@@ -194,8 +199,79 @@ func listDimensions(ds *drawing.DrawingDimensions) wire.ListDrawingDimensionsRes
 
 // drawingDimensionInfo flattens a dimension into its wire DTO.
 func drawingDimensionInfo(d *drawing.DrawingDimension) wire.DrawingDimensionInfo {
-	return wire.DrawingDimensionInfo{
+	info := wire.DrawingDimensionInfo{
 		Name: d.Name(), Type: d.Type().String(), ViewName: d.ViewName(),
 		ValueMM: d.ValueMM(), ValueDeg: d.ValueDeg(), Text: d.Text(), CurveCount: d.CurveCount(),
+		Prefix: d.Prefix(), Suffix: d.Suffix(), OverrideText: d.OverrideText(),
+		HideValue: d.HideValue(), DualUnit: d.DualUnit(),
+		Retrieved: d.Retrieved(), RetrievedFrom: d.RetrievedFrom(),
 	}
+	if tol := d.Tolerance(); tol.Type != types.NoTolerance {
+		t := tol
+		info.Tolerance = &t
+	}
+	if ins := d.Inspection(); ins.Shape != types.NoInspectionBorder {
+		i := ins
+		info.Inspection = &i
+	}
+	return info
+}
+
+// drawingDimensionsListRetrievable lists the referenced model's parametric dimensions for a view (#1991).
+func drawingDimensionsListRetrievable(_ *app.Session, ds *drawing.DrawingDimensions, in wire.ListRetrievableDimensionsArgs) (wire.RetrievableDimensionsResult, error) {
+	dims, err := ds.ListRetrievable(in.ViewName)
+	if err != nil {
+		return wire.RetrievableDimensionsResult{}, err
+	}
+	out := wire.RetrievableDimensionsResult{Dimensions: make([]wire.RetrievableDimensionInfo, len(dims))}
+	for i, md := range dims {
+		out.Dimensions[i] = wire.RetrievableDimensionInfo{Name: md.Name, ValueMM: md.ValueMM, SheetX: md.SheetX, SheetY: md.SheetY}
+	}
+	return out, nil
+}
+
+// drawingDimensionsRetrieve materialises the named model dimensions on a view as retrieved
+// dimensions (#1991).
+func drawingDimensionsRetrieve(s *app.Session, ds *drawing.DrawingDimensions, in wire.RetrieveDimensionsArgs) (wire.RetrievedDimensionsResult, error) {
+	dims, err := ds.Retrieve(in.ViewName, in.Names, in.OffsetMM)
+	if err != nil {
+		return wire.RetrievedDimensionsResult{}, err
+	}
+	out := wire.RetrievedDimensionsResult{Dimensions: make([]wire.DrawingDimensionInfo, len(dims))}
+	for i, d := range dims {
+		out.Dimensions[i] = drawingDimensionInfo(d)
+	}
+	s.ActiveDocument().MarkDirty()
+	return out, nil
+}
+
+// drawingDimensionsSetInspection flags the named dimension as an inspection dimension (#1996).
+func drawingDimensionsSetInspection(s *app.Session, ds *drawing.DrawingDimensions, in wire.SetDimensionInspectionArgs) (wire.ListDrawingDimensionsResult, error) {
+	if err := ds.SetInspection(in.Name, in.Inspection); err != nil {
+		return wire.ListDrawingDimensionsResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return listDimensions(ds), nil
+}
+
+// drawingDimensionsSetTolerance sets the named dimension's engineering tolerance (#1990).
+func drawingDimensionsSetTolerance(s *app.Session, ds *drawing.DrawingDimensions, in wire.SetDimensionToleranceArgs) (wire.ListDrawingDimensionsResult, error) {
+	if err := ds.SetTolerance(in.Name, in.Tolerance); err != nil {
+		return wire.ListDrawingDimensionsResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return listDimensions(ds), nil
+}
+
+// drawingDimensionsSetTextStyle applies the named dimension's text overrides (#1992/#1993).
+func drawingDimensionsSetTextStyle(s *app.Session, ds *drawing.DrawingDimensions, in wire.SetDimensionTextStyleArgs) (wire.ListDrawingDimensionsResult, error) {
+	style := drawing.DimensionTextStyle{
+		Prefix: in.Prefix, Suffix: in.Suffix, OverrideText: in.OverrideText,
+		HideValue: in.HideValue, DualUnit: in.DualUnit,
+	}
+	if err := ds.SetTextStyle(in.Name, style); err != nil {
+		return wire.ListDrawingDimensionsResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return listDimensions(ds), nil
 }

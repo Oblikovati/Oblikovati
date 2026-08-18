@@ -55,6 +55,10 @@ type AssemblyComponentDefinition struct {
 	pendingFeatures []assemblyFeatureProgramRecipe
 	// props are the assembly document's iProperties (metadata sets), like a part's (#156).
 	props *attr.PropertySets
+	// options are the assembly-editing defaults (#1981); updatePending records a recompute deferred
+	// while options.DeferUpdate was set, flushed when it is cleared.
+	options       AssemblyOptions
+	updatePending bool
 }
 
 // NewAssemblyComponentDefinition returns an empty assembly content object: no
@@ -73,6 +77,7 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 		work:        feature.NewWorkGeometry(),
 		sketches:    sketch.NewSketches(),
 		props:       attr.NewPropertySets(),
+		options:     defaultAssemblyOptions(),
 	}
 	occ.SetListener(a.events)
 	a.features.SetBus(a.events.Bus())    // feature-program events ride the assembly's occurrence bus
@@ -314,6 +319,10 @@ func (a *AssemblyComponentDefinition) AddSketch(plane sketch.Plane, host func() 
 // up to the end-of-features marker. Solving first means a profile-based feature (an
 // extrude) reads an up-to-date profile. Read per-occurrence results with [AssemblyFeatures.Result].
 func (a *AssemblyComponentDefinition) RecomputeFeatures() {
+	if a.options.DeferUpdate {
+		a.updatePending = true // batched until DeferUpdate is cleared (#1981)
+		return
+	}
 	a.solveSketches()
 	a.work.Recompute(nil) // origin + offset planes need no body; tangent-to-face planes are part-only
 	a.refreshSketchPlanes()

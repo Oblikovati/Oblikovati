@@ -11,10 +11,18 @@ import (
 // Open-run terminal caps (ADR-0050 P6). Filleting a CONTIGUOUS OPEN sub-run of a tangent chain (e.g.
 // three of the eight top-rim edges of a box whose vertical edges are already rounded) rounds the run as
 // a stripe exactly like the closed loop, but each end must be closed off. The tube ends in a flat
-// quarter-disk cap lying in the section plane ⊥ the spine: the corner tip survives (it is at distance
-// r·√2 > r from the ball centre, outside the bite, so material remains there), and the cap is the real
-// face bridging the end section arc back to that tip. This mirrors OCCT's free-end ChFi3d_CoupeParPlan
-// (a planar cut of the fillet surface) and reuses the same idiom as our arc-fillet setback end-caps.
+// quarter-disk cap lying in the section plane ⊥ the spine, bridging the end section arc back to the
+// terminal vertex. This mirrors OCCT's free-end ChFi3d_CoupeParPlan (a planar cut of the fillet
+// surface) and reuses the same idiom as our arc-fillet setback end-caps.
+//
+// The cap is only correct where the run stops PART-WAY along a rim: the rim continues unfilleted past
+// the terminal, so material really does remain over the cap's own area and the terminal vertex really
+// does survive. This header used to justify the cap differently — "the corner tip survives, it is at
+// distance r·√2 > r from the ball centre, outside the bite" — which has the sign backwards. Rounding a
+// CONVEX edge keeps what is inside the rolling ball and takes away the corner outside it: measured on
+// the 4 cm box, a point at the tip is not in the result. Where the run stops at a sharp corner nothing
+// remains over the cap and the section plane is an existing face's, so that case is recognised and
+// rebuilt instead — see fillet_stripe_endface.go (#2083).
 
 // addCapFaces adds the two flat setback cap faces of an open run — the quarter-disk pocket between each
 // end section arc (topFoot→apex→wallFoot) and the surviving corner vertex. Like addBlendFaces, the loop
@@ -22,16 +30,18 @@ import (
 // also pairs both corner connectors against their host-face retrims — and only the face's Reversed flag
 // comes from the winding-vs-normal test.
 func (g *stripeBuild) addCapFaces() {
-	feet := [2][2]*topo.Vertex{{g.vS1[0], g.vW[0]}, {g.vEndS1, g.vEndW}}
 	lin := func(t int) topo.Lineage { return topo.NewLineage(topo.Tok("stripe", "cap", t)) }
 	for t := 0; t < 2; t++ {
+		if g.ends[t].active() {
+			continue // the run-out lands on an existing face, which carries the section arc itself (#2083)
+		}
 		tm := g.st.term[t]
 		out := g.capOutward(t)
 		plane, err := geom.NewPlane(tm.vertex.Point(), out)
 		if err != nil {
 			continue // a degenerate section plane; Validate rejects the incomplete solid downstream
 		}
-		loop, ring := g.capLoop(t, feet[t])
+		loop, ring := g.capLoop(t, g.termFeet(t))
 		if capFaceFlipped(ring, out) {
 			g.bld.AddReversedFace(plane, lin(t), topo.OuterLoop(loop...))
 			continue

@@ -126,6 +126,39 @@ func TestAssemblyConstraintUnknownKeyRejected(t *testing.T) {
 	}
 }
 
+// TestAssemblyReferenceVectorAngleNeedsThirdEntity: requesting the reference-vector angle solution
+// without a referenceVector entity is rejected with a clear error, while supplying one succeeds
+// (#1972).
+func TestAssemblyReferenceVectorAngleNeedsThirdEntity(t *testing.T) {
+	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
+	occs[0].SetGrounded(true)
+	topKey := topBoxFaceKey(t, occs[0])
+	botKey := bottomBoxFaceKey(t, occs[1])
+
+	missing := mustJSON(t, wire.AddAngleArgs{
+		A:        wire.ConstraintGeomRef{Occurrence: occs[0].ID(), Entity: topKey},
+		B:        wire.ConstraintGeomRef{Occurrence: occs[1].ID(), Entity: botKey},
+		Angle:    stdmath.Pi / 4,
+		Solution: "reference-vector",
+	})
+	if _, err := r.Handle(s, "assemblyConstraints.addAngle", []byte(missing)); err == nil {
+		t.Error("reference-vector angle without a referenceVector entity should fail")
+	}
+
+	withAxis := mustJSON(t, wire.AddAngleArgs{
+		A:               wire.ConstraintGeomRef{Occurrence: occs[0].ID(), Entity: topKey},
+		B:               wire.ConstraintGeomRef{Occurrence: occs[1].ID(), Entity: botKey},
+		Angle:           stdmath.Pi / 4,
+		Solution:        "reference-vector",
+		ReferenceVector: wire.ConstraintGeomRef{Occurrence: occs[0].ID(), Entity: topKey},
+	})
+	var added wire.ConstraintResult
+	call(t, r, s, "assemblyConstraints.addAngle", withAxis, &added)
+	if added.Constraint.Type != "angle" {
+		t.Errorf("added = %+v, want an angle constraint", added.Constraint)
+	}
+}
+
 // dofOfOccurrence returns the reported DOF for an occurrence id in a health result.
 func dofOfOccurrence(h wire.AssemblyHealthResult, id uint64) int {
 	for _, o := range h.Occurrences {
@@ -134,4 +167,35 @@ func dofOfOccurrence(h wire.AssemblyHealthResult, id uint64) int {
 		}
 	}
 	return -1
+}
+
+// TestAssemblyDOFSplitOverWire: the solve report splits a free occurrence's six DOF into three
+// translational and three rotational, with a DOF centre (#1980).
+func TestAssemblyDOFSplitOverWire(t *testing.T) {
+	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
+	occs[0].SetGrounded(true)
+
+	var health wire.AssemblyHealthResult
+	call(t, r, s, "assemblyConstraints.solve", `{}`, &health)
+	free := dofInfoOf(health, occs[1].ID())
+	if free.TranslationCount != 3 || free.RotationCount != 3 {
+		t.Fatalf("free box DOF split = %d/%d, want 3/3", free.TranslationCount, free.RotationCount)
+	}
+	if free.TranslationCount+free.RotationCount != free.DegreesOfFreedom {
+		t.Errorf("split %d+%d ≠ scalar DOF %d", free.TranslationCount, free.RotationCount, free.DegreesOfFreedom)
+	}
+	grounded := dofInfoOf(health, occs[0].ID())
+	if grounded.TranslationCount != 0 || grounded.RotationCount != 0 {
+		t.Errorf("grounded box split = %d/%d, want 0/0", grounded.TranslationCount, grounded.RotationCount)
+	}
+}
+
+// dofInfoOf returns the DOF info reported for an occurrence id.
+func dofInfoOf(h wire.AssemblyHealthResult, id uint64) wire.OccurrenceDOFInfo {
+	for _, o := range h.Occurrences {
+		if o.Occurrence == id {
+			return o
+		}
+	}
+	return wire.OccurrenceDOFInfo{}
 }

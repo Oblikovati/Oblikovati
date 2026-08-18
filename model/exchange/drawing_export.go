@@ -95,7 +95,25 @@ func borderEntities(sheet *dmodel.Sheet, layer string) []drawing.Entity {
 	left, right, top, bottom := b.Margins()
 	x0, y0 := left, bottom
 	x1, y1 := sheet.WidthMM()-right, sheet.HeightMM()-top
-	return rectEntities(layer, x0, y0, x1, y1)
+	out := rectEntities(layer, x0, y0, x1, y1)
+	return append(out, zoneDivisionEntities(sheet, b, layer)...)
+}
+
+// zoneDivisionEntities emits a zoned border's interior grid lines (#1989); nothing for a plain border.
+func zoneDivisionEntities(sheet *dmodel.Sheet, b interface{}, layer string) []drawing.Entity {
+	bd, ok := b.(*dmodel.Border)
+	if !ok {
+		return nil
+	}
+	var out []drawing.Entity
+	for _, c := range bd.ZoneDivisions(sheet.WidthMM(), sheet.HeightMM()) {
+		out = append(out, &drawing.Line{
+			Layer: layer,
+			Start: [3]float64{float64(c.Start().X), float64(c.Start().Y), 0},
+			End:   [3]float64{float64(c.End().X), float64(c.End().Y), 0},
+		})
+	}
+	return out
 }
 
 // titleBlockEntities emits the title block at the border's lower-right: an outlined box with a
@@ -109,16 +127,27 @@ func titleBlockEntities(sheet *dmodel.Sheet, layer string) []drawing.Entity {
 	if len(fields) == 0 {
 		return nil
 	}
-	left, right, _, bottom := borderMargins(sheet)
+	left, right, top, bottom := borderMargins(sheet)
 	const tbWidth, rowH = 80.0, 8.0 // mm
-	x1 := sheet.WidthMM() - right
-	x0 := x1 - tbWidth
-	if x0 < left {
-		x0 = left
-	}
-	y0 := bottom
+	x0, y0 := titleBlockCorner(tb.Location(), sheet.WidthMM(), sheet.HeightMM(),
+		left, right, top, bottom, tbWidth, rowH*float64(len(fields)))
+	x1 := x0 + tbWidth
 	out := rectEntities(layer, x0, y0, x1, y0+rowH*float64(len(fields)))
 	return append(out, titleBlockRows(layer, fields, x0, y0, x1, tbWidth, rowH)...)
+}
+
+// titleBlockCorner returns the title block's lower-left origin (x0, y0) for its location, insetting a
+// tbWidth×blockH block against the chosen sheet corner within the border margins (#1989).
+func titleBlockCorner(loc types.TitleBlockLocation, w, h, left, right, top, bottom, tbWidth, blockH float64) (x0, y0 float64) {
+	x0 = left // left-hand corners
+	if loc == types.BottomRightTitleBlock || loc == types.TopRightTitleBlock {
+		x0 = w - right - tbWidth
+	}
+	y0 = bottom // bottom corners
+	if loc == types.TopLeftTitleBlock || loc == types.TopRightTitleBlock {
+		y0 = h - top - blockH
+	}
+	return x0, y0
 }
 
 // titleBlockRows emits each field's row: a divider line (except the first) and the label/value

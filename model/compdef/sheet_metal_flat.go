@@ -64,12 +64,62 @@ func developPunch(pf *feature.PartFeature, punch *feature.SheetMetalPunchFeature
 	profs := sk.Profiles()
 	out := make([]feature.FlatPunch, 0, profs.Count())
 	for j := 0; j < profs.Count(); j++ {
-		out = append(out, feature.FlatPunch{
-			Outline: projectToPlane(profs.Item(j).OuterLoop().Polygon(), sk.Plane(), basePlane),
-			Token:   pf.Name(),
-		})
+		outline := projectToPlane(profs.Item(j).OuterLoop().Polygon(), sk.Plane(), basePlane)
+		out = append(out, punchResult(outline, pf.Name(), punch.Definition()))
 	}
 	return out
+}
+
+// punchResult fills one developed punch's placement data (#1963): where the tool goes, how it is
+// turned, which side it comes from, and how deep. A nil depth is a punch clean through, which is
+// reported as HAVING no depth rather than as a depth of zero.
+func punchResult(outline []math.Point2, token string, def *feature.SheetMetalPunchDefinition) feature.FlatPunch {
+	// The flat outline comes from the UNROTATED sketch, so add the die's own rotation to report the
+	// tool's true orientation in the flat (#1968); the cut solid is already turned by the same angle.
+	angle := longestRunAngle(outline)
+	if def.Angle != nil {
+		angle += def.Angle()
+	}
+	p := feature.FlatPunch{
+		Outline:        outline,
+		Token:          token,
+		Position:       polygonCentroid2(outline),
+		Angle:          angle,
+		DirectionUp:    def.Direction != feature.NegativeDir,
+		Representation: def.Representation,
+	}
+	if def.Depth != nil {
+		p.HasDepth, p.Depth = true, def.Depth()
+	}
+	return p
+}
+
+// polygonCentroid2 averages a closed outline's vertices — where the punch tool is placed.
+func polygonCentroid2(pts []math.Point2) math.Point2 {
+	if len(pts) == 0 {
+		return math.P2(0, 0)
+	}
+	var sx, sy math.Scalar
+	for _, p := range pts {
+		sx, sy = sx+p.X, sy+p.Y
+	}
+	n := math.Scalar(len(pts))
+	return math.Point2{X: sx / n, Y: sy / n}
+}
+
+// longestRunAngle reports how the punch is TURNED in the flat: the direction of the outline's
+// longest straight run, which is the edge a rectangular or slotted tool is aligned to. A circular
+// punch has no meaningful orientation and its many short chords average out to whichever is
+// longest, which is harmless because every direction is equivalent for it.
+func longestRunAngle(pts []math.Point2) float64 {
+	best, angle := 0.0, 0.0
+	for i := range pts {
+		a, b := pts[i], pts[(i+1)%len(pts)]
+		if d := float64(a.DistanceTo(b)); d > best {
+			best, angle = d, stdmath.Atan2(float64(b.Y-a.Y), float64(b.X-a.X))
+		}
+	}
+	return angle
 }
 
 // projectToPlane maps a loop's 2D points from one plane's frame into another's (lift to model

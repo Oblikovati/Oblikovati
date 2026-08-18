@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -56,6 +57,21 @@ type Input struct {
 	// a nil recorder is a valid sink (diag.Recorder is nil-safe), so preview paths that do not
 	// consume diagnostics pass nothing.
 	Diag *diag.Recorder
+	// Relief is the sheet-metal style's bend relief, resolved for this recompute (#2072). The
+	// sizes could ride on parameters like the thickness does, but the SHAPE is not a number, so
+	// the whole spec arrives together rather than half here and half through Params.
+	Relief ReliefSpec
+	// PriorBends are the bends placed by the features ahead of this one (#2072). A wall meets
+	// another wall only at a corner, so relieving that corner needs both bends — and the feature
+	// building the second one is where they first both exist.
+	PriorBends []BendPlacement
+	// Corner is the sheet-metal style's CORNER relief, resolved for this recompute (#2072).
+	Corner CornerReliefSpec
+	// Transition is the style's bend transition (#1959), which a feature's own bend options may
+	// override.
+	Transition types.BendTransition
+	// MiterGap is the style's gap between mitered walls (#1961), which a flange may override.
+	MiterGap float64
 }
 
 // OperationalFeature is a feature that applies a boolean operation against the running

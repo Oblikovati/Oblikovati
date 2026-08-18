@@ -29,7 +29,7 @@ func sheetWithHem(t *testing.T, hemType HemType, lengthCm, gapCm float64) *topo.
 // TestClosedHemBuildsWatertightSolid a closed hem folds the edge back as one valid watertight
 // solid, adding material above the sheet.
 func TestClosedHemBuildsWatertightSolid(t *testing.T) {
-	body := sheetWithHem(t, ClosedHem, 0.8, 0)
+	body := sheetWithHem(t, SingleHem, 0.8, 0)
 	if !body.IsSolid() {
 		t.Fatal("hemmed sheet is not a solid")
 	}
@@ -54,8 +54,8 @@ func TestClosedHemBuildsWatertightSolid(t *testing.T) {
 // TestOpenHemLeavesLargerLoop an open hem with a gap folds over a larger radius than a closed
 // hem, so it rises higher.
 func TestOpenHemLeavesLargerLoop(t *testing.T) {
-	closedTop := topZOf(sheetWithHem(t, ClosedHem, 0.8, 0))
-	openTop := topZOf(sheetWithHem(t, OpenHem, 0.8, 0.6)) // gap 6 mm ⇒ radius 3 mm
+	closedTop := topZOf(sheetWithHem(t, SingleHem, 0.8, 0))
+	openTop := topZOf(sheetWithHem(t, SingleHem, 0.8, 0.6)) // gap 6 mm ⇒ radius 3 mm
 	if !(openTop > closedTop) {
 		t.Errorf("open hem (top %.3f) should loop higher than closed hem (top %.3f)", openTop, closedTop)
 	}
@@ -73,13 +73,13 @@ func topZOf(body *topo.Body) float64 {
 
 // TestHemTypeParse the wire spellings resolve, and an unknown one is rejected.
 func TestHemTypeParse(t *testing.T) {
-	for s, want := range map[string]HemType{"": ClosedHem, "closed": ClosedHem, "open": OpenHem} {
+	for s, want := range map[string]HemType{"": SingleHem, "closed": SingleHem, "open": SingleHem, "single": SingleHem, "double": DoubleHem, "rolled": RolledHem, "teardrop": TeardropHem} {
 		if got, ok := ParseHemType(s); !ok || got != want {
 			t.Errorf("ParseHemType(%q) = (%d,%v), want (%d,true)", s, got, ok, want)
 		}
 	}
-	if _, ok := ParseHemType("rolled"); ok {
-		t.Error("ParseHemType(rolled) should be unsupported for now")
+	if _, ok := ParseHemType("curled"); ok {
+		t.Error("ParseHemType(curled) should be rejected, not defaulted to a single hem")
 	}
 }
 
@@ -89,7 +89,7 @@ func TestHemRoundTrip(t *testing.T) {
 	NewSheetMetalHemFeatures(fs).Add(&SheetMetalHemDefinition{
 		EdgeKey: []byte("edge"),
 		Length:  func() float64 { return 0.6 },
-		Type:    OpenHem,
+		Type:    SingleHem,
 		Gap:     func() float64 { return 0.4 },
 		Flip:    true,
 	})
@@ -101,7 +101,7 @@ func TestHemRoundTrip(t *testing.T) {
 	if data[0].Kind != "sheet-metal-hem" || d == nil {
 		t.Fatalf("marshaled = %+v, want sheet-metal-hem", data[0])
 	}
-	if d.Length != 0.6 || d.Type != int32(OpenHem) || d.Gap != 0.4 || !d.Flip {
+	if d.Length != 0.6 || d.Type != HemTypeName(SingleHem) || d.Gap != 0.4 || !d.Flip {
 		t.Errorf("payload = %+v, want length 0.6 / open / gap 0.4 / flip", d)
 	}
 	fresh := NewPartFeatures(nil)
@@ -115,7 +115,7 @@ func TestHemRoundTrip(t *testing.T) {
 
 // TestHemDefinitionAccessor Definition/Kind return the stored recipe.
 func TestHemDefinitionAccessor(t *testing.T) {
-	def := &SheetMetalHemDefinition{EdgeKey: []byte("k"), Length: func() float64 { return 1 }, Type: OpenHem}
+	def := &SheetMetalHemDefinition{EdgeKey: []byte("k"), Length: func() float64 { return 1 }, Type: SingleHem}
 	f := &SheetMetalHemFeature{def: def}
 	if f.Definition() != def || f.Kind() != "sheet-metal-hem" {
 		t.Error("Definition/Kind mismatch")

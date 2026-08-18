@@ -35,6 +35,8 @@ func (r featureCodecSet) registerDressUpCodecs() {
 				Edges: encodeKeys(cf.def.EdgeKeys), Value: evalFloat(cf.def.Distance), FlatCorners: &flat,
 				ChamferType: int32(cf.def.Type), Value2: evalFloat(cf.def.Distance2), Angle: evalFloat(cf.def.Angle),
 				GeomEdges: encodeGeomEdges(cf.def.GeomEdges), EdgeAnchors: encodeEdgeAnchors(cf.def.EdgeAnchors),
+				ReferenceFace: encodeKey(cf.def.ReferenceFace),
+				PartialStart:  evalFloat(cf.def.PartialStart), PartialLength: evalFloat(cf.def.PartialLength),
 			}
 			return nil
 		},
@@ -43,7 +45,8 @@ func (r featureCodecSet) registerDressUpCodecs() {
 	r.register("face-fillet", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			ff := f.(*FaceFilletFeature)
-			fd.FaceFillet = &FaceFilletData{FacesA: encodeKeys(ff.def.FaceKeysA), FacesB: encodeKeys(ff.def.FaceKeysB), Value: evalFloat(ff.def.Radius)}
+			fd.FaceFillet = &FaceFilletData{FacesA: encodeKeys(ff.def.FaceKeysA), FacesB: encodeKeys(ff.def.FaceKeysB),
+				Value: evalFloat(ff.def.Radius), Width: evalFloat(ff.def.Width)}
 			return nil
 		},
 		decode: decodeFaceFillet,
@@ -67,7 +70,9 @@ func (r featureCodecSet) registerDressUpCodecs() {
 	r.register("shell", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			sf := f.(*ShellFeature)
-			fd.Shell = &FaceDressData{Faces: encodeKeys(sf.def.RemovedFaceKeys), Value: evalFloat(sf.def.Thickness), GeomFaces: encodeGeomFaces(sf.def.GeomFaces), ShellDirection: ShellDirectionName(sf.def.Direction)}
+			fd.Shell = &FaceDressData{Faces: encodeKeys(sf.def.RemovedFaceKeys), Value: evalFloat(sf.def.Thickness),
+				GeomFaces: encodeGeomFaces(sf.def.GeomFaces), ShellDirection: ShellDirectionName(sf.def.Direction),
+				FaceThicknesses: encodeFaceThicknesses(sf.def.FaceThicknesses)}
 			return nil
 		},
 		decode: decodeShell,
@@ -159,7 +164,23 @@ func decodeChamfer(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 	case types.ChamferDistanceAndAngle:
 		def.Angle = constFloat(fd.Chamfer.Angle)
 	}
+	if err := restoreChamferRun(def, fd.Chamfer); err != nil {
+		return nil, err
+	}
 	return NewDressUpFeatures(rc.fs).addChamfer(def), nil
+}
+
+// restoreChamferRun puts back the persisted reference face and partial span (#1888).
+func restoreChamferRun(def *ChamferDefinition, d *EdgeDressData) error {
+	ref, err := decodeKey(d.ReferenceFace)
+	if err != nil {
+		return err
+	}
+	def.ReferenceFace = ref
+	if d.PartialLength > 0 {
+		def.PartialStart, def.PartialLength = constFloat(d.PartialStart), constFloat(d.PartialLength)
+	}
+	return nil
 }
 
 // decodeFaceFillet rebuilds a two-face-set variable fillet, re-binding both face sets by key.
@@ -175,7 +196,11 @@ func decodeFaceFillet(rc *restoreContext, fd FeatureData) (*PartFeature, error) 
 	if err != nil {
 		return nil, err
 	}
-	return NewDressUpFeatures(rc.fs).AddFaceFillet(a, b, constFloat(fd.FaceFillet.Value)), nil
+	pf := NewDressUpFeatures(rc.fs).AddFaceFillet(a, b, constFloat(fd.FaceFillet.Value))
+	if w := fd.FaceFillet.Width; w > 0 {
+		pf.Definition().(*FaceFilletFeature).Definition().Width = constFloat(w)
+	}
+	return pf, nil
 }
 
 // decodeFullRound rebuilds a full-round fillet from its three face-set keys.
@@ -220,9 +245,37 @@ func decodeShell(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 	if !ok {
 		return nil, fmt.Errorf("shell: unknown direction %q", fd.Shell.ShellDirection)
 	}
+	fts, err := decodeFaceThicknesses(fd.Shell.FaceThicknesses)
+	if err != nil {
+		return nil, err
+	}
 	return NewDressUpFeatures(rc.fs).addShell(&ShellDefinition{
 		RemovedFaceKeys: d.keys, GeomFaces: d.geomFaces, Thickness: constFloat(d.value), Direction: dir,
+		FaceThicknesses: fts,
 	}), nil
+}
+
+// encodeFaceThicknesses / decodeFaceThicknesses carry a shell's per-face wall overrides through
+// the recipe (#1864), resolving each closure to the value it holds at save time — the same
+// treatment the uniform thickness gets.
+func encodeFaceThicknesses(fts []ShellFaceThickness) []FaceThicknessData {
+	var out []FaceThicknessData
+	for _, ft := range fts {
+		out = append(out, FaceThicknessData{Face: encodeKey(ft.FaceKey), Thickness: evalFloat(ft.Thickness)})
+	}
+	return out
+}
+
+func decodeFaceThicknesses(data []FaceThicknessData) ([]ShellFaceThickness, error) {
+	var out []ShellFaceThickness
+	for _, d := range data {
+		key, err := decodeKey(d.Face)
+		if err != nil {
+			return nil, fmt.Errorf("shell face thickness: %w", err)
+		}
+		out = append(out, ShellFaceThickness{FaceKey: key, Thickness: constFloat(d.Thickness)})
+	}
+	return out, nil
 }
 
 // decodeDraft rebuilds a face draft, re-binding its faces by key and its pull direction.

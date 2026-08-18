@@ -37,7 +37,8 @@ const singularDetTol = 1e-12
 // a tetrahedron cut that trims the pointy three-plane intersection into one flat triangular face
 // — the default corner blend. With it clear the three chamfer planes are left to meet at a point.
 // The blend honours per-face setbacks (d1, d2), so it is correct for asymmetric chamfers too.
-func chamferEdges(in Input, keys [][]byte, d1, d2 float64, feat string, flatCorners bool, strategy types.ChamferConcaveStrategy, anchors map[string]math.Point3) (Output, error) {
+func chamferEdges(in Input, keys [][]byte, d1, d2 float64, feat string, flatCorners bool,
+	strategy types.ChamferConcaveStrategy, run chamferRun, anchors map[string]math.Point3) (Output, error) {
 	body, err := runningBody(in)
 	if err != nil {
 		return Output{}, err
@@ -52,14 +53,16 @@ func chamferEdges(in Input, keys [][]byte, d1, d2 float64, feat string, flatCorn
 	// The analytic conical chamfer (#127) assumes a SYMMETRIC setback on a CONVEX cylinder rim;
 	// an asymmetric chamfer or any concave edge takes the faceted-wedge path (which develops the
 	// per-edge fill/relief). The flat-corner blend handles both symmetric and asymmetric setbacks.
-	if d1 == d2 && allConvex(edges) {
+	// A partial chamfer covers only a span of each rim, which the whole-rim analytic cone cannot
+	// express, so it takes the wedge path (#1888).
+	if d1 == d2 && !run.isPartial() && allConvex(edges) {
 		// A rim of a simple analytic cylinder gets a TRUE conical chamfer (one geom.Cone face) by
 		// rebuilding the body as a surface of revolution (#127). Anything else falls through.
 		if res, ok := analyticCylinderChamfer(body, edges, d1, feat); ok {
 			return Output{Bodies: replaceBody(in.Bodies, body, res), Heals: heals}, nil
 		}
 	}
-	out, err := chamferByWedges(in, body, edges, d1, d2, feat, flatCorners, strategy)
+	out, err := chamferByWedges(in, body, edges, d1, d2, feat, flatCorners, strategy, run)
 	if err != nil {
 		return Output{}, err
 	}
@@ -87,11 +90,12 @@ type wedgeOp struct {
 
 // chamferByWedges bevels the edges by applying a per-edge wedge tool (plus the flat-corner blend
 // cuts when requested) — the general faceted path used for every non-analytic chamfer.
-func chamferByWedges(in Input, body *topo.Body, edges []*topo.Edge, d1, d2 float64, feat string, flatCorners bool, strategy types.ChamferConcaveStrategy) (Output, error) {
+func chamferByWedges(in Input, body *topo.Body, edges []*topo.Edge, d1, d2 float64, feat string,
+	flatCorners bool, strategy types.ChamferConcaveStrategy, run chamferRun) (Output, error) {
 	// A curved body (analytic cylinder) is re-faceted and the selected edges remapped to its faceted
 	// segments, so the wedge cut works instead of hitting a degenerate closed edge (#129/#127).
 	work, edges := planarizeForEdges(body, edges, feat)
-	tools, convex, err := chamferWedgeTools(edges, d1, d2, strategy, feat)
+	tools, convex, err := chamferWedgeTools(edges, d1, d2, strategy, run, feat)
 	if err != nil {
 		return Output{}, err
 	}
@@ -111,20 +115,21 @@ func chamferByWedges(in Input, body *topo.Body, edges []*topo.Edge, d1, d2 float
 
 // chamferWedgeTools builds the per-edge wedge for each resolved edge, classifying it convex or
 // concave, and returns the tools-with-operation plus the convex-edge subset (for corner blending).
-func chamferWedgeTools(edges []*topo.Edge, d1, d2 float64, strategy types.ChamferConcaveStrategy, feat string) ([]wedgeOp, []*topo.Edge, error) {
+func chamferWedgeTools(edges []*topo.Edge, d1, d2 float64, strategy types.ChamferConcaveStrategy,
+	run chamferRun, feat string) ([]wedgeOp, []*topo.Edge, error) {
 	tools := make([]wedgeOp, 0, len(edges))
 	convex := make([]*topo.Edge, 0, len(edges))
 	for i, edge := range edges {
 		name := fmt.Sprintf("%s/w%d", feat, i)
 		if ops.ClassifyEdgeConvexity(edge) == ops.EdgeConcave {
-			tool, err := concaveChamferWedge(edge, d1, d2, strategy, name)
+			tool, err := concaveChamferWedge(edge, d1, d2, strategy, run, name)
 			if err != nil {
 				return nil, nil, err
 			}
 			tools = append(tools, wedgeOp{body: tool, op: concaveOp(strategy)})
 			continue
 		}
-		tool, err := chamferWedge(edge, d1, d2, name)
+		tool, err := chamferWedge(edge, d1, d2, run, name)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -206,28 +211,32 @@ func keyText(k []byte) string {
 // the first adjacent face, d2 along the second): equal distance, two distances, or a distance
 // plus the chamfer-face angle (d2 = d1·tan θ, exact for perpendicular faces, the box case).
 func chamferSetbacks(def *ChamferDefinition) (d1, d2 float64, err error) {
-	d1 = callOrZero(def.Distance)
-	switch def.Type {
+	return chamferSetbackValues(def.Type, callOrZero(def.Distance), callOrZero(def.Distance2), callOrZero(def.Angle))
+}
+
+// chamferSetbackValues maps a chamfer type and its raw inputs to the two face setbacks (d1, d2).
+// Shared by the part chamfer and the sheet-metal corner chamfer (#1967) so the distance /
+// two-distance / distance-and-angle rule lives in one place. angle is in radians.
+func chamferSetbackValues(ct types.ChamferType, d1, d2Raw, angle float64) (float64, float64, error) {
+	switch ct {
 	case types.ChamferTwoDistances:
-		d2 = callOrZero(def.Distance2)
+		return d1, d2Raw, nil
 	case types.ChamferDistanceAndAngle:
-		a := callOrZero(def.Angle)
-		if a <= 0 || a >= stdmath.Pi/2 {
-			return 0, 0, fmt.Errorf("chamfer: angle %g rad must be in (0, π/2)", a)
+		if angle <= 0 || angle >= stdmath.Pi/2 {
+			return 0, 0, fmt.Errorf("chamfer: angle %g rad must be in (0, π/2)", angle)
 		}
-		d2 = d1 * stdmath.Tan(a)
+		return d1, d1 * stdmath.Tan(angle), nil
 	default: // ChamferDistance (and the zero value): symmetric
-		d2 = d1
+		return d1, d1, nil
 	}
-	return d1, d2, nil
 }
 
 // chamferWedges builds a plain CUT wedge for each edge (setbacks d1, d2) — the convex-only path
 // the sheet-metal corner / corner-seam reliefs reuse (they never fill or relieve a concave edge).
-func chamferWedges(edges []*topo.Edge, d1, d2 float64, feat string) ([]*topo.Body, error) {
+func chamferWedges(edges []*topo.Edge, d1, d2 float64, run chamferRun, feat string) ([]*topo.Body, error) {
 	tools := make([]*topo.Body, 0, len(edges))
 	for i, edge := range edges {
-		tool, err := chamferWedge(edge, d1, d2, fmt.Sprintf("%s/w%d", feat, i))
+		tool, err := chamferWedge(edge, d1, d2, run, fmt.Sprintf("%s/w%d", feat, i))
 		if err != nil {
 			return nil, err
 		}
@@ -265,20 +274,21 @@ func chamferOverhang(d1, d2 float64) float64 {
 // the edge with the given overhang past each end. A NEGATIVE leg points the triangle to the
 // material side of the face (used by the concave relief cut); a point reflection preserves the
 // 2D winding, so buildPrism orients either form into a valid solid the boolean can apply.
-func wedgePrism(fr edgeFrame, s1, s2, overhang float64, feat string) *topo.Body {
+func wedgePrism(fr edgeFrame, s1, s2, overhang float64, run chamferRun, feat string) *topo.Body {
 	poly := []math.Point2{{X: 0, Y: 0}, fr.proj(fr.t1.Scale(s1)), fr.proj(fr.t2.Scale(s2))}
-	return buildPrism(poly, fr.plane, span{near: -overhang, far: fr.length + overhang}, 0, feat)
+	return buildPrism(poly, fr.plane, wedgeSpan(fr, run, overhang), 0, feat)
 }
 
 // chamferWedge builds the triangular prism CUT to bevel a convex edge: legs d1, d2 along the two
 // adjacent faces' interiors, with an overhang past each end so the boolean meets the neighbours
 // flush. Equal d1==d2 is the symmetric chamfer; d1≠d2 is the asymmetric two-distance / angle one.
-func chamferWedge(edge *topo.Edge, d1, d2 float64, feat string) (*topo.Body, error) {
+func chamferWedge(edge *topo.Edge, d1, d2 float64, run chamferRun, feat string) (*topo.Body, error) {
 	fr, err := edgeCornerFrame(edge, "chamfer")
 	if err != nil {
 		return nil, err
 	}
-	return wedgePrism(fr, d1, d2, chamferOverhang(d1, d2), feat), nil
+	s1, s2 := orderedSetbacks(edge, d1, d2, run.reference)
+	return wedgePrism(fr, s1, s2, chamferOverhang(s1, s2), run, feat), nil
 }
 
 // concaveChamferWedge builds the wedge for a CONCAVE (internal) edge. The two faces' interior
@@ -287,15 +297,17 @@ func chamferWedge(edge *topo.Edge, d1, d2 float64, feat string) (*topo.Body, err
 //     — an overhanging fill would protrude past the edge's end faces (it adds, not removes).
 //   - inward: reflect the legs to the material side (−d1·t1, −d2·t2) and CUT, gouging a recessed
 //     relief groove out of the corner; an overhang keeps that cut flush at the ends.
-func concaveChamferWedge(edge *topo.Edge, d1, d2 float64, strategy types.ChamferConcaveStrategy, feat string) (*topo.Body, error) {
+func concaveChamferWedge(edge *topo.Edge, d1, d2 float64, strategy types.ChamferConcaveStrategy,
+	run chamferRun, feat string) (*topo.Body, error) {
 	fr, err := edgeCornerFrame(edge, "chamfer")
 	if err != nil {
 		return nil, err
 	}
+	s1, s2 := orderedSetbacks(edge, d1, d2, run.reference)
 	if strategy == types.ChamferConcaveInward {
-		return wedgePrism(fr, -d1, -d2, chamferOverhang(d1, d2), feat), nil
+		return wedgePrism(fr, -s1, -s2, chamferOverhang(s1, s2), run, feat), nil
 	}
-	return wedgePrism(fr, d1, d2, 0, feat), nil
+	return wedgePrism(fr, s1, s2, 0, run, feat), nil
 }
 
 // edgeFrame is the resolved corner-cut frame at an edge (see edgeCornerFrame).

@@ -60,7 +60,8 @@ const threadSchema = `{
     "tapered": {"type": "boolean", "default": false, "description": "Pipe-thread (tapered) data; a cut tapered thread is rejected — model it cosmetic."},
     "modelDiameter": {"type": "string", "enum": ["major", "minor", "pitch", "tapDrill"], "description": "Which thread diameter the modeled face represents (default major)."},
     "length": {"type": "string", "description": "Threaded run along the axis (distance expression) from the face's start edge + offset; empty = full length (Inventor FullDepth)."},
-    "offset": {"type": "string", "description": "Distance expression from the face's start edge to where the thread begins; empty = 0. Thread the two ends of a stud with two features on one face."}
+    "offset": {"type": "string", "description": "Distance expression from the face's start edge to where the thread begins; empty = 0. Thread the two ends of a stud with two features on one face."},
+    "leftHanded": {"type": "boolean", "default": false, "description": "Reverse the thread sense — a turnbuckle end, a left pedal, a gas fitting. A cut thread grooves the other way; a cosmetic one records the handedness and draws its helix mirrored. A \"-LH\" designation says the same thing."}
   },
   "required": ["faceRef", "designation"]
 }`
@@ -95,7 +96,7 @@ func applyThread(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	pf := feature.NewDressUpFeatures(part.Features()).AddThreadDef(&feature.ThreadDefinition{
 		FaceKey: []byte(in.FaceRef), Designation: in.Designation, Cut: in.Cut,
 		Class: in.Class, Tapered: in.Tapered, ModelDiameter: md,
-		Offset: offset, Length: length,
+		Offset: offset, Length: length, LeftHanded: in.LeftHanded,
 	})
 	return recomputeResult(part, pf)
 }

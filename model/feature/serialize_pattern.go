@@ -24,6 +24,11 @@ type RectPatternData struct {
 	StepX   []float64           `yaml:"stepX"`
 	StepY   []float64           `yaml:"stepY"`
 	Options *PatternOptionsData `yaml:"options,omitempty"`
+	// MidPlaneX/MidPlaneY straddle the seed in that direction (#1889); Suppressed drops
+	// occurrences by index. Both omitted when unused, so older recipes round-trip unchanged.
+	MidPlaneX  bool  `yaml:"midPlaneX,omitempty"`
+	MidPlaneY  bool  `yaml:"midPlaneY,omitempty"`
+	Suppressed []int `yaml:"suppressed,omitempty"`
 }
 
 // CircPatternData replicates source features around an axis.
@@ -34,6 +39,9 @@ type CircPatternData struct {
 	AxisPoint []float64           `yaml:"axisPoint"`
 	AxisDir   []float64           `yaml:"axisDir"`
 	Options   *PatternOptionsData `yaml:"options,omitempty"`
+	// MidPlane straddles the seed (#1889); Suppressed drops occurrences by index.
+	MidPlane   bool  `yaml:"midPlane,omitempty"`
+	Suppressed []int `yaml:"suppressed,omitempty"`
 }
 
 // PatternOptionsData is the serialized M20-F18 option block (omitted entirely when the
@@ -134,6 +142,12 @@ type MirrorData struct {
 	Plane  string    `yaml:"plane"`
 	Origin []float64 `yaml:"origin"`
 	Normal []float64 `yaml:"normal"`
+	// OfBody reflects the whole solid rather than the source features; RemoveOriginal and
+	// JoinToOriginal are body-mode only (#1890). Omitted when unused, so a mirror written
+	// before #1890 reloads as the feature mirror it was.
+	OfBody         bool `yaml:"ofBody,omitempty"`
+	RemoveOriginal bool `yaml:"removeOriginal,omitempty"`
+	JoinToOriginal bool `yaml:"joinToOriginal,omitempty"`
 }
 
 // encodeVec3 / encodePoint3 serialize a 3-vector / point as [x,y,z]; encodePoints maps
@@ -201,6 +215,10 @@ func restoreRectPattern(fs *PartFeatures, d *RectPatternData, restored []*PartFe
 		return nil, err
 	}
 	f.Definition().Options = opts
+	f.Definition().MidPlaneX, f.Definition().MidPlaneY = d.MidPlaneX, d.MidPlaneY
+	if err := f.SuppressElements(d.Suppressed); err != nil {
+		return nil, err
+	}
 	return lastFeature(fs), nil
 }
 
@@ -218,6 +236,10 @@ func restoreCircPattern(fs *PartFeatures, d *CircPatternData, restored []*PartFe
 		return nil, err
 	}
 	f.Definition().Options = opts
+	f.Definition().MidPlane = d.MidPlane
+	if err := f.SuppressElements(d.Suppressed); err != nil {
+		return nil, err
+	}
 	return lastFeature(fs), nil
 }
 
@@ -246,7 +268,9 @@ func restoreMirror(fs *PartFeatures, d *MirrorData, restored []*PartFeature) (*P
 	if err != nil {
 		return nil, err
 	}
-	NewPatternFeatures(fs).AddMirror(src, key, decodePoint3(d.Origin), decodeVec3(d.Normal))
+	f := NewPatternFeatures(fs).AddMirror(src, key, decodePoint3(d.Origin), decodeVec3(d.Normal))
+	f.Definition().OfBody = d.OfBody
+	f.Definition().RemoveOriginal, f.Definition().JoinToOriginal = d.RemoveOriginal, d.JoinToOriginal
 	return lastFeature(fs), nil
 }
 

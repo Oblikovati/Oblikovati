@@ -24,6 +24,12 @@ const (
 	Purchased
 	// Inseparable is a welded/glued sub-assembly counted as a single line; not broken out.
 	Inseparable
+	// Default inherits the definition's structure — a per-occurrence override that defers to the
+	// shared definition (#1978). It never appears on a resolved row (it resolves to the definition).
+	Default
+	// Varies marks a structured row whose grouped occurrences carry differing structures (iAssembly)
+	// — a computed value, never one you set on a single component (#1978).
+	Varies
 )
 
 // String returns the lowercase name of the structure, used in diagnostics and export.
@@ -39,6 +45,10 @@ func (s Structure) String() string {
 		return "purchased"
 	case Inseparable:
 		return "inseparable"
+	case Default:
+		return "default"
+	case Varies:
+		return "varies"
 	default:
 		return "unknown"
 	}
@@ -47,7 +57,7 @@ func (s Structure) String() string {
 // ParseStructure resolves a structure's lowercase name back to its value, reporting false on an
 // unknown name (so a stored "BOM Structure" property maps to the enum; #718).
 func ParseStructure(s string) (Structure, bool) {
-	for _, v := range []Structure{Normal, Phantom, Reference, Purchased, Inseparable} {
+	for _, v := range []Structure{Normal, Phantom, Reference, Purchased, Inseparable, Default, Varies} {
 		if v.String() == s {
 			return v, true
 		}

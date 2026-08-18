@@ -496,6 +496,12 @@ type RevolveData struct {
 	Angle2     float64 `yaml:"angle2,omitempty"`     // second-direction sweep (#313)
 	Direction  string  `yaml:"direction,omitempty"`  // which way Angle sweeps (#2019); empty ⇒ positive
 	Operation  string  `yaml:"operation"`
+	// Extent is how the revolve terminates (#1860): empty ⇒ the angle extent (the default, so an
+	// ordinary revolve's recipe is unchanged), else "to-face", "from-to" or "to-next". ToPlane and
+	// FromPlane are the terminators' WorkRefs, named exactly as an extrude's are.
+	Extent    string `yaml:"extent,omitempty"`
+	ToPlane   string `yaml:"toPlane,omitempty"`
+	FromPlane string `yaml:"fromPlane,omitempty"`
 	// ProfilePoint selects the revolved region by an interior seed point (sketch 2-D cm) rather
 	// than by index, since an external author cannot predict the reader's region ordering. When
 	// present it wins over Profile; absent, the index is used unchanged.
@@ -514,6 +520,7 @@ func serializeRevolve(def *RevolveDefinition, sk SketchIndexer) (*RevolveData, e
 	d := &RevolveData{
 		Sketch: idx, Profile: def.ProfileIndex, Angle: evalFloat(def.Angle), Angle2: evalFloat(def.Angle2),
 		Direction: directionNames[def.Direction], Operation: op,
+		Extent: revolveExtentName(def.Extent), ToPlane: planeRefOf(def.ToPlane), FromPlane: planeRefOf(def.FromPlane),
 	}
 	switch {
 	case def.Axis != nil:
@@ -546,9 +553,53 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 	if err != nil {
 		return nil, err
 	}
-	// The sweep (second angle, direction) and the region seed are axis-independent, so they are
-	// applied once here rather than repeated down every axis branch.
+	// The sweep (second angle, direction, extent) and the region seed are axis-independent, so they
+	// are applied once here rather than repeated down every axis branch.
+	if err := restoreRevolveExtent(pf, d, work); err != nil {
+		return nil, err
+	}
 	return withProfileSeed(restoreRevolveDirection(restoreSecondAngle(pf, d.Angle2), d.Direction), d.ProfilePoint), nil
+}
+
+// restoreRevolveExtent puts a persisted geometric termination back on a restored revolve (#1860).
+// An empty recipe extent is the angle extent, which needs no terminator.
+func restoreRevolveExtent(pf *PartFeature, d *RevolveData, work *WorkGeometry) error {
+	rf, ok := pf.feature.(*RevolveFeature)
+	if !ok || d.Extent == "" {
+		return nil
+	}
+	rf.def.Extent = parseExtentName(d.Extent)
+	var err error
+	if rf.def.ToPlane, err = restorePlaneRef(work, d.ToPlane); err != nil {
+		return err
+	}
+	rf.def.FromPlane, err = restorePlaneRef(work, d.FromPlane)
+	return err
+}
+
+// restorePlaneRef resolves an optional terminator reference; an empty one is simply absent.
+func restorePlaneRef(work *WorkGeometry, ref string) (*WorkPlane, error) {
+	if ref == "" {
+		return nil, nil
+	}
+	return resolvePlaneRef(work, ref)
+}
+
+// planeRefOf is the recipe spelling of an optional terminator plane.
+func planeRefOf(wp *WorkPlane) string {
+	if wp == nil {
+		return ""
+	}
+	return string(wp.Key())
+}
+
+// revolveExtentName is the recipe spelling of a revolve's termination. The angle extent is the
+// default and writes nothing, so an ordinary revolve's recipe is unchanged by #1860.
+func revolveExtentName(t ExtentType) string {
+	if t == DistanceExtent {
+		return ""
+	}
+	return extentNames[t]
 }
 
 // restoreRevolveAboutItsAxis rebuilds the revolve on whichever axis the recipe names: a specific
@@ -654,6 +705,10 @@ type CoilData struct {
 	PitchRows []CoilPitchRowData `yaml:"pitchRows,omitempty"`
 	StartEnd  *CoilEndData       `yaml:"startEnd,omitempty"`
 	EndEnd    *CoilEndData       `yaml:"endEnd,omitempty"`
+	// Handedness and the flat-spiral flavour (#1883). LeftHanded is persisted as a flag rather
+	// than the enum so an existing document (no key) reads back as right-handed, the old default.
+	LeftHanded bool `yaml:"leftHanded,omitempty"`
+	Spiral     bool `yaml:"spiral,omitempty"`
 }
 
 // CoilPitchRowData is one persisted pitch station.
@@ -684,6 +739,7 @@ func serializeCoil(def *CoilDefinition, sk SketchIndexer) (*CoilData, error) {
 		Sketch: idx, Profile: def.ProfileIndex, Axis: string(def.Axis.Key()),
 		Pitch: evalFloat(def.Pitch), Revolutions: evalFloat(def.Revolutions),
 		Height: evalFloat(def.Height), Taper: def.Taper, Operation: op,
+		LeftHanded: def.Handedness == LeftHandedCoil, Spiral: def.Spiral,
 	}
 	for _, r := range def.PitchRows {
 		d.PitchRows = append(d.PitchRows, CoilPitchRowData(r))
@@ -724,6 +780,7 @@ func restoreCoil(fs *PartFeatures, d *CoilData, sk SketchIndexer, work *WorkGeom
 		Sketch: skt, ProfileIndex: d.Profile, Axis: axis,
 		Pitch: constFloat(d.Pitch), Revolutions: constFloat(d.Revolutions),
 		Height: constFloat(d.Height), Taper: d.Taper, Operation: op,
+		Handedness: coilHandednessFromData(d.LeftHanded), Spiral: d.Spiral,
 	}
 	pf := NewCoilFeatures(fs).AddDefinition(def)
 	for _, r := range d.PitchRows {
@@ -732,6 +789,14 @@ func restoreCoil(fs *PartFeatures, d *CoilData, sk SketchIndexer, work *WorkGeom
 	def.StartEnd = coilEndFromData(d.StartEnd)
 	def.EndEnd = coilEndFromData(d.EndEnd)
 	return pf, nil
+}
+
+// coilHandednessFromData rebuilds the winding sense from the persisted flag (#1883).
+func coilHandednessFromData(left bool) CoilHandedness {
+	if left {
+		return LeftHandedCoil
+	}
+	return RightHandedCoil
 }
 
 // coilEndFromData rebuilds a persisted flat end (nil stays natural).

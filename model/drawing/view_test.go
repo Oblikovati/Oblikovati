@@ -3,6 +3,7 @@
 package drawing
 
 import (
+	"strings"
 	"testing"
 
 	"oblikovati.org/api/types"
@@ -71,6 +72,98 @@ func TestAddBaseViewIsoProjectsCube(t *testing.T) {
 		}
 	}
 }
+
+// TestHiddenLineRemovedDropsHiddenCurves the hidden-line-removed style keeps the same visible edges
+// as hidden-line but produces ZERO hidden curves (#1985): the same iso cube that shows 9/3 hidden-
+// line shows 9/0.
+func TestHiddenLineRemovedDropsHiddenCurves(t *testing.T) {
+	c := drawingWithBox(t)
+	v, err := c.Sheets().Active().Views().AddBase(BaseViewSpec{
+		Orientation: types.BaseViewIso, Scale: 1, CenterX: 150, CenterY: 100, Style: types.HiddenLineRemovedViewStyle,
+	})
+	if err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	if visible, hidden := v.VisibleHidden(); visible != 9 || hidden != 0 {
+		t.Errorf("hidden-line-removed iso cube = %d visible / %d hidden, want 9/0", visible, hidden)
+	}
+}
+
+// TestFromBaseResolvesToParentStyle a FromBase view renders with its base view's style, and falls
+// back to the hidden-line default when the base is missing (#1985).
+func TestFromBaseResolvesToParentStyle(t *testing.T) {
+	v := &DrawingView{style: types.FromBaseViewStyle, baseView: "FRONT"}
+	v.resolveEffectiveStyle(func(name string) (types.DrawingViewStyle, bool) {
+		if name == "FRONT" {
+			return types.HiddenLineRemovedViewStyle, true
+		}
+		return 0, false
+	})
+	if v.EffectiveStyle() != types.HiddenLineRemovedViewStyle {
+		t.Errorf("FromBase effective style = %v, want the base's hiddenLineRemoved", v.EffectiveStyle())
+	}
+	orphan := &DrawingView{style: types.FromBaseViewStyle, baseView: "GONE"}
+	orphan.resolveEffectiveStyle(func(string) (types.DrawingViewStyle, bool) { return 0, false })
+	if orphan.EffectiveStyle() != types.HiddenLineViewStyle {
+		t.Errorf("orphan FromBase effective style = %v, want the hidden-line default", orphan.EffectiveStyle())
+	}
+}
+
+// TestViewLabelDefaultAndOverrides the default caption carries the view name and a scale note; the
+// show flags drop each part; a free-text override replaces it; hiding the label empties it (#1983).
+func TestViewLabelDefaultAndOverrides(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	v, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 0.5, CenterX: 100, CenterY: 100})
+	if err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	if got := v.Label(); !strings.Contains(got, "FRONT") || !strings.Contains(got, "1:2") {
+		t.Errorf("default label = %q, want the name FRONT and scale 1:2", got)
+	}
+	no := false
+	if err := views.SetLabel("FRONT", ViewLabelStyle{ShowScale: &no}); err != nil {
+		t.Fatalf("SetLabel: %v", err)
+	}
+	if got := v.Label(); strings.Contains(got, "1:2") || !strings.Contains(got, "FRONT") {
+		t.Errorf("scale-hidden label = %q, want the name without the scale note", got)
+	}
+	if err := views.SetLabel("FRONT", ViewLabelStyle{Text: strPtr("DETAIL A")}); err != nil {
+		t.Fatalf("SetLabel override: %v", err)
+	}
+	if got := v.Label(); got != "DETAIL A" {
+		t.Errorf("override label = %q, want DETAIL A", got)
+	}
+	if err := views.SetLabel("FRONT", ViewLabelStyle{ShowLabel: &no}); err != nil {
+		t.Fatalf("SetLabel hide: %v", err)
+	}
+	if got := v.Label(); got != "" {
+		t.Errorf("hidden label = %q, want empty", got)
+	}
+}
+
+// TestViewLabelRoundTrip checks a view's caption override and hidden-scale flag survive save +
+// reopen (#1983) — otherwise a customised label reverts to the default on open.
+func TestViewLabelRoundTrip(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	if _, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 0.5, CenterX: 100, CenterY: 100}); err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	no := false
+	if err := views.SetLabel("FRONT", ViewLabelStyle{Text: strPtr("DETAIL A"), ShowScale: &no}); err != nil {
+		t.Fatalf("SetLabel: %v", err)
+	}
+	v, ok := reopen(t, c).Sheets().Active().Views().ByName("FRONT")
+	if !ok {
+		t.Fatal("reopened drawing lost view FRONT")
+	}
+	if got := v.Label(); got != "DETAIL A" {
+		t.Errorf("restored label = %q, want the DETAIL A override", got)
+	}
+}
+
+func strPtr(s string) *string { return &s }
 
 func TestAddBaseViewRequiresModel(t *testing.T) {
 	c := NewContent() // no body resolver / reference

@@ -149,30 +149,36 @@ func withFromTo(part *compdef.PartComponentDefinition, ext feature.Extent, in fe
 // the face key names the stop face by geometry (see ToFaceGeom). A geometric target that matches no
 // face resolves nil, so the extent recomputes unhealthy rather than erroring the apply.
 func resolveEndPlane(part *compdef.PartComponentDefinition, in featureargs.Extrude) (*feature.WorkPlane, error) {
-	if in.ToFaceGeom != nil {
-		return planeFromGeom(part, *in.ToFaceGeom)
-	}
-	return planeFromRef(part, in.ToFace, "toFace")
+	return extentTargetPlane(part, "extrude", "toFace", in.ToFace, in.ToFaceGeom)
 }
 
 // resolveStartPlane resolves the from-to extent's start ("from") plane, mirroring resolveEndPlane
 // over fromFace/fromFaceGeom.
 func resolveStartPlane(part *compdef.PartComponentDefinition, in featureargs.Extrude) (*feature.WorkPlane, error) {
-	if in.FromFaceGeom != nil {
-		return planeFromGeom(part, *in.FromFaceGeom)
+	return extentTargetPlane(part, "extrude", "fromFace", in.FromFace, in.FromFaceGeom)
+}
+
+// extentTargetPlane resolves ONE terminator of a geometric extent, for whichever feature names it —
+// extrude terminates on planes parallel to its sketch, revolve on planes containing its axis, but
+// both name the target the same way. A geometric selector (centroid + normal) wins over a reference
+// key, as it does everywhere else; feat prefixes the errors so each feature reports as itself.
+func extentTargetPlane(part *compdef.PartComponentDefinition, feat, field, ref string,
+	sel *featureargs.GeomFaceSel) (*feature.WorkPlane, error) {
+	if sel != nil {
+		return planeFromGeom(part, *sel)
 	}
-	return planeFromRef(part, in.FromFace, "fromFace")
+	return planeFromRef(part, feat, field, ref)
 }
 
 // planeFromRef resolves a termination reference (a planar face key, "plane/N", or
 // "origin/plane/xy") to a work plane; an empty reference is a caller error naming the missing field.
-func planeFromRef(part *compdef.PartComponentDefinition, ref, field string) (*feature.WorkPlane, error) {
+func planeFromRef(part *compdef.PartComponentDefinition, feat, field, ref string) (*feature.WorkPlane, error) {
 	if strings.TrimSpace(ref) == "" {
-		return nil, fmt.Errorf("extrude: this extent requires %q (a planar face key, \"plane/N\", or \"origin/plane/xy\")", field)
+		return nil, fmt.Errorf("%s: this extent requires %q (a planar face key, \"plane/N\", or \"origin/plane/xy\")", feat, field)
 	}
 	wp, err := part.WorkGeometry().PlaneTargetFromRef(ref)
 	if err != nil {
-		return nil, fmt.Errorf("extrude: %s target %q: %w", field, ref, err)
+		return nil, fmt.Errorf("%s: %s target %q: %w", feat, field, ref, err)
 	}
 	return wp, nil
 }

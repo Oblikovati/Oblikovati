@@ -26,6 +26,15 @@ type SheetMetalContourFlangeDefinition struct {
 	EdgeKey []byte
 	Profile *sketch.Sketch
 	Flip    bool
+	// Width is how much of the edge the swept wall covers (#1958); the zero value is the whole
+	// edge, which is what this feature has always built.
+	Width FlangeWidth
+	// Operation is how the wall joins the model (#1961): Join unions it onto the running sheet (the
+	// default and what this feature always did), NewBody starts a body of its own.
+	Operation ops.PartFeatureOperation
+	// Radius rounds the profile's corners into bends; nil ⇒ the rule's BendRadius. A contour
+	// flange's corners ARE bends, and they were swept sharp before this.
+	Radius func() float64
 }
 
 // SheetMetalContourFlangeFeature sweeps the profile onto the sheet each recompute.
@@ -52,7 +61,7 @@ func (f *SheetMetalContourFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	profile, err := openProfilePoints(f.def.Profile)
+	profile, err := f.bentProfile(in)
 	if err != nil {
 		return Output{}, err
 	}
@@ -60,26 +69,64 @@ func (f *SheetMetalContourFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	wall, err := buildContourFlangeSolid(edges[0], profile, t, f.def.Flip, f.featName)
+	wall, err := buildContourFlangeSolid(edges[0], profile, t, f.def.Width, f.def.Flip, f.featName)
 	if err != nil {
 		return Output{}, err
 	}
-	bodies, err := combine(in, wall, ops.Join)
+	bodies, err := combine(in, wall, f.operation())
 	if err != nil {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies, Heals: heals}, nil
 }
 
+// bentProfile reads the drawn profile and rounds its corners into bends, which is what they are —
+// a contour flange swept with sharp corners is geometry no press brake can make.
+func (f *SheetMetalContourFlangeFeature) bentProfile(in Input) ([]math.Point2, error) {
+	profile, err := openProfilePoints(f.def.Profile)
+	if err != nil {
+		return nil, err
+	}
+	return roundProfileCorners(profile, f.bendRadius(in))
+}
+
+// operation is how this wall joins the model; the zero value is Join, which is what the feature
+// has always done.
+func (f *SheetMetalContourFlangeFeature) operation() ops.PartFeatureOperation {
+	if f.def.Operation == ops.NewBody {
+		return ops.NewBody
+	}
+	return ops.Join
+}
+
+// bendRadius is the radius the profile's corners are rounded to: the feature's override, else the
+// rule's BendRadius parameter — the same order a plain flange resolves it in.
+func (f *SheetMetalContourFlangeFeature) bendRadius(in Input) float64 {
+	if f.def.Radius != nil {
+		return f.def.Radius()
+	}
+	if in.Params != nil {
+		if p, ok := in.Params.ByName(flangeBendParamName); ok {
+			return p.ModelValue()
+		}
+	}
+	return 0
+}
+
 // buildContourFlangeSolid builds the contour-flange solid: the profile band mapped onto the
 // edge's section frame and extruded along the edge.
-func buildContourFlangeSolid(edge *topo.Edge, profile []math.Point2, thickness float64, flip bool, feat string) (*topo.Body, error) {
+func buildContourFlangeSolid(edge *topo.Edge, profile []math.Point2, thickness float64,
+	width FlangeWidth, flip bool, feat string) (*topo.Body, error) {
 	v0, v1 := edge.StartVertex().Point(), edge.EndVertex().Point()
 	e, err := math.UnitVector3FromVector(v0.VectorTo(v1))
 	if err != nil {
 		return nil, fmt.Errorf("sheet-metal contour flange: degenerate edge")
 	}
 	up, out, err := flangeFrame(edge, v0.Midpoint(v1), e, flip)
+	if err != nil {
+		return nil, err
+	}
+	from, to, err := width.span(float64(v0.DistanceTo(v1)))
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +138,7 @@ func buildContourFlangeSolid(edge *topo.Edge, profile []math.Point2, thickness f
 		return math.P2(math.Scalar(w.Dot(u)), math.Scalar(w.Dot(v)))
 	}
 	band := contourBand(profile, thickness, at)
-	return buildPrism(band, plane, span{near: 0, far: v0.DistanceTo(v1)}, 0, feat), nil
+	return buildPrism(band, plane, span{near: from, far: to}, 0, feat), nil
 }
 
 // contourBand returns the closed cross-section band for the profile mapped into the section
@@ -102,6 +149,18 @@ func contourBand(profile []math.Point2, thickness float64, at func(math.Point2) 
 		band[i] = at(p)
 	}
 	return band
+}
+
+// mitreVector is the offset direction at a corner between two unit normals: the vector whose
+// projection on each is 1, so an offset by d clears both faces by d. Segments that double back
+// (opposing normals) have no mitre at all — the profile would have to be offset to infinity — so
+// the incoming normal is used and the corner is left un-mitred rather than blown up.
+func mitreVector(n1, n2 math.Vector2) math.Vector2 {
+	denom := 1 + float64(n1.Dot(n2))
+	if denom < 1e-9 {
+		return n1
+	}
+	return n1.Add(n2).Scale(math.Scalar(1 / denom))
 }
 
 // profileBand2D returns the closed constant-thickness band of an open profile: the inner
@@ -130,8 +189,14 @@ func offsetProfile(pts []math.Point2, d float64) []math.Point2 {
 	return out
 }
 
-// vertexNormal returns the unit left-normal at vertex i: the segment normal at an endpoint,
-// the averaged adjacent normals at an interior vertex.
+// vertexNormal returns the offset direction at vertex i: the unit left-normal at an endpoint, and
+// at an interior vertex the MITRE vector — the one whose perpendicular distance to BOTH adjacent
+// segments is the offset, not merely its own length.
+//
+// It used to return the normalised average of the two normals, which is a unit vector, so offsetting
+// by the gauge moved the corner only gauge·cos(half the turn) away from each face: the band came out
+// thin at every corner, by 29% at a right angle. The mitre m = (n1+n2)/(1+n1·n2) satisfies
+// m·n1 = m·n2 = 1, which is what "offset by the gauge" has to mean on both faces at once.
 func vertexNormal(pts []math.Point2, i int) math.Vector2 {
 	left := func(a, b math.Point2) math.Vector2 {
 		dx, dy := float64(b.X-a.X), float64(b.Y-a.Y)
@@ -147,11 +212,7 @@ func vertexNormal(pts []math.Point2, i int) math.Vector2 {
 	case i == len(pts)-1:
 		return left(pts[i-1], pts[i])
 	default:
-		n := left(pts[i-1], pts[i]).Add(left(pts[i], pts[i+1]))
-		if u, err := math.UnitVector2FromVector(n); err == nil {
-			return u.AsVector()
-		}
-		return left(pts[i], pts[i+1])
+		return mitreVector(left(pts[i-1], pts[i]), left(pts[i], pts[i+1]))
 	}
 }
 

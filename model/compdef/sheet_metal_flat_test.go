@@ -6,6 +6,7 @@ import (
 	"math"
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
@@ -89,6 +90,35 @@ func TestUnfoldDevelopsPunchRepresentation(t *testing.T) {
 	}
 	if len(fp.Punches[0].Outline) < 4 {
 		t.Errorf("punch outline = %d points, want >= 4 (the square profile)", len(fp.Punches[0].Outline))
+	}
+}
+
+// TestUnfoldEchoesPunchRepresentationAndAngle a punch's representation type reaches the flat punch
+// result, and the die's rotation is added to the flat outline's own angle (#1968).
+func TestUnfoldEchoesPunchRepresentationAndAngle(t *testing.T) {
+	flatPunch := func(angle float64) feature.FlatPunch {
+		d, _ := sheetWithFlange(t)
+		sk := d.Sketches().Add(sketch.XYPlane())
+		sk.AddRectangleByCorners(gmath.P2(1, 1), gmath.P2(2, 2))
+		feature.NewSheetMetalPunchFeatures(d.Features()).Add(&feature.SheetMetalPunchDefinition{
+			Sketch: sk, Angle: func() float64 { return angle }, Representation: types.CentermarkPunchRepresentation,
+		})
+		d.Recompute()
+		fp, err := d.Unfold()
+		if err != nil {
+			t.Fatalf("Unfold: %v", err)
+		}
+		if len(fp.Punches) != 1 {
+			t.Fatalf("flat punches = %d, want 1", len(fp.Punches))
+		}
+		return fp.Punches[0]
+	}
+	base, turned := flatPunch(0), flatPunch(0.5)
+	if turned.Representation != types.CentermarkPunchRepresentation {
+		t.Errorf("flat punch representation = %v, want centermark", turned.Representation)
+	}
+	if math.Abs((turned.Angle-base.Angle)-0.5) > 1e-9 {
+		t.Errorf("flat punch angle rose by %.5f, want the die's 0.5 rad", turned.Angle-base.Angle)
 	}
 }
 

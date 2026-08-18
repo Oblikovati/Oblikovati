@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/attr"
+	"oblikovati.org/model/bom"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/occurrence"
@@ -38,6 +39,21 @@ type assemblyRecipe struct {
 	Sketches          []sketch.SketchData            `yaml:"sketches,omitempty"`   // assembly-space sketches (#785)
 	Features          []assemblyFeatureProgramRecipe `yaml:"features,omitempty"`   // the machining program (#785)
 	EndOfFeatures     *int                           `yaml:"endOfFeatures,omitempty"`
+	Options           *assemblyOptionsRecipe         `yaml:"options,omitempty"` // assembly editing options (#1981)
+}
+
+// assemblyOptionsRecipe persists the assembly editing options (#1981); the transient DeferUpdate flag
+// is not stored (a reopened assembly is never mid-defer).
+type assemblyOptionsRecipe struct {
+	PartFeaturesInitiallyAdaptive            bool   `yaml:"partFeaturesInitiallyAdaptive,omitempty"`
+	OnlyActiveComponentIsOpaque              bool   `yaml:"onlyActiveComponentIsOpaque,omitempty"`
+	PlaceAndGroundFirstComponentAtOrigin     bool   `yaml:"placeAndGroundFirstComponentAtOrigin"`
+	EnableConstraintRedundancyAnalysis       bool   `yaml:"enableConstraintRedundancyAnalysis"`
+	DeleteComponentPatternSources            bool   `yaml:"deleteComponentPatternSources,omitempty"`
+	SectionAllParts                          bool   `yaml:"sectionAllParts,omitempty"`
+	UseLastOccurrenceOrientationForPlacement bool   `yaml:"useLastOccurrenceOrientationForPlacement,omitempty"`
+	DefaultLevelOfDetail                     string `yaml:"defaultLevelOfDetail,omitempty"`
+	DefaultDesignView                        string `yaml:"defaultDesignView,omitempty"`
 }
 
 // assemblyFeatureProgramRecipe is the persisted form of one program entry: the feature's inputs
@@ -63,6 +79,14 @@ type occurrenceRecipe struct {
 	// 16-cell row-major transform), persisting the M12-F06 independent solution per placement.
 	ChildTransforms map[string][]float64 `yaml:"childTransforms,omitempty"`
 	Substitute      bool                 `yaml:"substitute,omitempty"`
+	// BOMStructure is a per-occurrence BOM-structure override (wire spelling); "" ⇒ inherit (#1978).
+	BOMStructure string `yaml:"bomStructure,omitempty"`
+	// Virtual marks a geometry-free, document-free component persisted inline (no Component to
+	// resolve); its part number/description/structure restore the VirtualComponentDefinition (#1979).
+	Virtual            bool   `yaml:"virtual,omitempty"`
+	VirtualPartNumber  string `yaml:"virtualPartNumber,omitempty"`
+	VirtualDescription string `yaml:"virtualDescription,omitempty"`
+	VirtualStructure   string `yaml:"virtualStructure,omitempty"`
 }
 
 // MarshalRecipe renders the assembly's recipe as YAML bytes (doc.RecipeContent).
@@ -95,7 +119,42 @@ func (a *AssemblyComponentDefinition) buildRecipe() (assemblyRecipe, error) {
 	if eof := a.features.EndOfFeaturesPosition(); eof != endOfFeaturesAtEnd {
 		r.EndOfFeatures = &eof
 	}
+	r.Options = optionsRecipeOf(a.options)
 	return r, nil
+}
+
+// optionsRecipeOf snapshots the assembly editing options for persistence (#1981).
+func optionsRecipeOf(o AssemblyOptions) *assemblyOptionsRecipe {
+	return &assemblyOptionsRecipe{
+		PartFeaturesInitiallyAdaptive:            o.PartFeaturesInitiallyAdaptive,
+		OnlyActiveComponentIsOpaque:              o.OnlyActiveComponentIsOpaque,
+		PlaceAndGroundFirstComponentAtOrigin:     o.PlaceAndGroundFirstComponentAtOrigin,
+		EnableConstraintRedundancyAnalysis:       o.EnableConstraintRedundancyAnalysis,
+		DeleteComponentPatternSources:            o.DeleteComponentPatternSources,
+		SectionAllParts:                          o.SectionAllParts,
+		UseLastOccurrenceOrientationForPlacement: o.UseLastOccurrenceOrientationForPlacement,
+		DefaultLevelOfDetail:                     o.DefaultLevelOfDetail,
+		DefaultDesignView:                        o.DefaultDesignView,
+	}
+}
+
+// restoreOptions restores the assembly editing options from a recipe, keeping the defaults when the
+// recipe carries none (an older file) (#1981).
+func (a *AssemblyComponentDefinition) restoreOptions(rec *assemblyOptionsRecipe) {
+	if rec == nil {
+		return
+	}
+	a.options = AssemblyOptions{
+		PartFeaturesInitiallyAdaptive:            rec.PartFeaturesInitiallyAdaptive,
+		OnlyActiveComponentIsOpaque:              rec.OnlyActiveComponentIsOpaque,
+		PlaceAndGroundFirstComponentAtOrigin:     rec.PlaceAndGroundFirstComponentAtOrigin,
+		EnableConstraintRedundancyAnalysis:       rec.EnableConstraintRedundancyAnalysis,
+		DeleteComponentPatternSources:            rec.DeleteComponentPatternSources,
+		SectionAllParts:                          rec.SectionAllParts,
+		UseLastOccurrenceOrientationForPlacement: rec.UseLastOccurrenceOrientationForPlacement,
+		DefaultLevelOfDetail:                     rec.DefaultLevelOfDetail,
+		DefaultDesignView:                        rec.DefaultDesignView,
+	}
 }
 
 // featuresRecipe captures the machining program in order — each feature whose state is
@@ -144,6 +203,10 @@ func (a *AssemblyComponentDefinition) sketchSlice() []*sketch.Sketch {
 func (a *AssemblyComponentDefinition) occurrencesRecipe() []occurrenceRecipe {
 	var out []occurrenceRecipe
 	for _, o := range a.occurrences.All() {
+		if v, ok := o.Definition().(*VirtualComponentDefinition); ok {
+			out = append(out, virtualOccurrenceRecipe(o, v))
+			continue
+		}
 		if o.ComponentName() == "" {
 			continue
 		}
@@ -158,9 +221,27 @@ func (a *AssemblyComponentDefinition) occurrencesRecipe() []occurrenceRecipe {
 			Flexible:        o.Flexible(),
 			ChildTransforms: marshalChildOverrides(o.ChildOverrides()),
 			Substitute:      o.IsSubstitute(),
+			BOMStructure:    o.BOMStructureOverride(),
 		})
 	}
 	return out
+}
+
+// virtualOccurrenceRecipe persists a virtual occurrence inline — its transform/state plus the virtual
+// definition's part number/description/structure — so it restores without a backing document (#1979).
+func virtualOccurrenceRecipe(o *occurrence.Occurrence, v *VirtualComponentDefinition) occurrenceRecipe {
+	cells := o.Transform().Cells()
+	return occurrenceRecipe{
+		Name:               o.Name(),
+		Transform:          cells[:],
+		Suppressed:         o.Suppressed(),
+		Grounded:           o.Grounded(),
+		BOMStructure:       o.BOMStructureOverride(),
+		Virtual:            true,
+		VirtualPartNumber:  v.PartNumber(),
+		VirtualDescription: v.Description(),
+		VirtualStructure:   v.BOMStructure().String(),
+	}
 }
 
 // ApplyRecipe restores the assembly's units and stashes its occurrence records as pending
@@ -204,6 +285,7 @@ func (a *AssemblyComponentDefinition) applyRecipeStruct(r assemblyRecipe) error 
 	if r.EndOfFeatures != nil {
 		a.features.SetEndOfFeatures(*r.EndOfFeatures)
 	}
+	a.restoreOptions(r.Options)
 	a.pending = r.Occurrences
 	a.pendingFeatures = r.Features // features bind after occurrences resolve (they snapshot participation)
 	return nil
@@ -239,6 +321,10 @@ func (a *AssemblyComponentDefinition) ResolveReferences(owner *doc.Document) err
 		if err != nil {
 			return err
 		}
+		if rec.Virtual {
+			a.restoreVirtualOccurrence(rec, transform)
+			continue
+		}
 		def, component := a.resolveComponent(owner, rec.Component)
 		occ := a.occurrences.AddByComponentName(rec.Name, def, component, transform)
 		occ.SetSuppressed(rec.Suppressed)
@@ -247,8 +333,21 @@ func (a *AssemblyComponentDefinition) ResolveReferences(owner *doc.Document) err
 		occ.SetFlexible(rec.Flexible)
 		occ.SetChildOverrides(parseChildOverrides(rec.ChildTransforms))
 		occ.SetSubstitute(rec.Substitute)
+		occ.SetBOMStructureOverride(rec.BOMStructure)
 	}
 	return a.restoreFeatures()
+}
+
+// restoreVirtualOccurrence rebuilds a geometry-free virtual occurrence from its inline recipe — no
+// component document to resolve (#1979).
+func (a *AssemblyComponentDefinition) restoreVirtualOccurrence(rec occurrenceRecipe, transform math.Matrix4) {
+	structure, _ := bom.ParseStructure(rec.VirtualStructure)
+	def := NewVirtualComponent(rec.Name, rec.VirtualPartNumber, structure)
+	def.description = rec.VirtualDescription
+	occ := a.occurrences.AddByComponentDefinition(rec.Name, def, transform)
+	occ.SetSuppressed(rec.Suppressed)
+	occ.SetGrounded(rec.Grounded)
+	occ.SetBOMStructureOverride(rec.BOMStructure)
 }
 
 // restoreFeatures reconstructs the machining program now that the occurrences are bound (each

@@ -108,7 +108,9 @@ func (r featureCodecSet) registerSolidCodecs() {
 			if err != nil {
 				return err
 			}
-			fd.Combine = &CombineData{Target: cf.def.TargetIndex, Tool: cf.def.ToolIndex, Operation: op}
+			tool, tools := combineToolData(cf.def.ToolIndices)
+			fd.Combine = &CombineData{Target: cf.def.TargetIndex, Tool: tool, Tools: tools,
+				Operation: op, KeepTools: cf.def.KeepTools}
 			return nil
 		},
 		decode: func(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
@@ -135,13 +137,13 @@ func (r featureCodecSet) registerSolidCodecs() {
 		},
 	})
 	r.register("hole", featureCodec{
-		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
-			h, err := serializeHole(f.(*HoleFeature).def)
+		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
+			h, err := serializeHole(f.(*HoleFeature).def, sk)
 			fd.Hole = h
 			return err
 		},
 		decode: func(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
-			return restoreHole(rc.fs, fd.Hole)
+			return restoreHole(rc.fs, fd.Hole, rc.sk, rc.work)
 		},
 	})
 	r.register("boss", featureCodec{
@@ -160,6 +162,7 @@ func (r featureCodecSet) registerSolidCodecs() {
 			fd.Thread = &ThreadData{Face: encodeKey(t.def.FaceKey), Designation: t.def.Designation, Cut: t.def.Cut,
 				Class: t.def.Class, Tapered: t.def.Tapered, ModelDiameter: threadModelDiameterName(t.def.ModelDiameter),
 				Offset: evalFloat(t.def.Offset), Length: evalFloat(t.def.Length),
+				LeftHanded:  t.def.LeftHanded,
 				FaceAnchors: encodeFaceAnchors(t.def.FaceAnchors)}
 			return nil
 		},
@@ -257,7 +260,8 @@ func decodeThread(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 	}
 	return NewDressUpFeatures(rc.fs).addThreadDef(&ThreadDefinition{FaceKey: key, Designation: fd.Thread.Designation,
 		Cut: fd.Thread.Cut, Class: fd.Thread.Class, Tapered: fd.Thread.Tapered, ModelDiameter: md,
-		Offset: constFloat(fd.Thread.Offset), Length: constFloat(fd.Thread.Length), FaceAnchors: anchors}), nil
+		Offset: constFloat(fd.Thread.Offset), Length: constFloat(fd.Thread.Length),
+		LeftHanded: fd.Thread.LeftHanded, FaceAnchors: anchors}), nil
 }
 
 // decodeSnapFit rebuilds a cantilever snap-fit from its persisted dimensions.

@@ -37,7 +37,7 @@ func embossedBlock(t *testing.T) *PartFeatures {
 func TestEmbossRaisesMaterial(t *testing.T) {
 	fs := embossedBlock(t)
 	es := squareOn(planeAtZ(2), 4, 3) // 4×4 square centred-ish on the z=2 top
-	emb := NewEmbossFeatures(fs).Add(es, []int{0}, func() float64 { return 1 }, false, 0)
+	emb := NewEmbossFeatures(fs).Add(es, []int{0}, func() float64 { return 1 }, EmbossFromFace, 0)
 	fs.Recompute()
 	if !emb.Health().OK() {
 		t.Fatalf("emboss went sick: %+v", emb.Health())
@@ -55,7 +55,7 @@ func TestEmbossRaisesMaterial(t *testing.T) {
 func TestEmbossEngravesMaterial(t *testing.T) {
 	fs := embossedBlock(t)
 	es := squareOn(planeAtZ(2), 4, 3)
-	emb := NewEmbossFeatures(fs).Add(es, []int{0}, func() float64 { return 1 }, true, 0) // engrave
+	emb := NewEmbossFeatures(fs).Add(es, []int{0}, func() float64 { return 1 }, EngraveFromFace, 0) // engrave
 	fs.Recompute()
 	if !emb.Health().OK() {
 		t.Fatalf("engrave went sick: %+v", emb.Health())
@@ -68,7 +68,7 @@ func TestEmbossEngravesMaterial(t *testing.T) {
 func TestEmbossNeedsDepthAndProfile(t *testing.T) {
 	fs := embossedBlock(t)
 	es := squareOn(planeAtZ(2), 4, 3)
-	emb := NewEmbossFeatures(fs).Add(es, nil, func() float64 { return 1 }, false, 0) // no profile
+	emb := NewEmbossFeatures(fs).Add(es, nil, func() float64 { return 1 }, EmbossFromFace, 0) // no profile
 	fs.Recompute()
 	if emb.Health().OK() {
 		t.Error("emboss with no profile should be sick")

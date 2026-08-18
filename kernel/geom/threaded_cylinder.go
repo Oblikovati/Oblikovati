@@ -18,8 +18,14 @@ import (
 // one pitch at each end (thread runout) so the surface still meets its bounding circles.
 type ThreadedCylinder struct {
 	Cylinder
-	Pitch       float64 // axial advance per turn (model units)
-	Depth       float64 // thread height (root-to-crest)
+	Pitch float64 // axial advance per turn (model units)
+	Depth float64 // thread height (root-to-crest)
+	// Designation is the thread callout the feature was authored with ("M6x1", "1/4-20", …). It is
+	// carried on the surface because it CANNOT be reconstructed faithfully from geometry alone
+	// (metric vs imperial, and the model-diameter basis, are ambiguous once only radius+pitch
+	// remain) — a downstream consumer (a drawing hole note, an exporter) that must label the thread
+	// reads it from here rather than guessing (#1995).
+	Designation string
 	Internal    bool
 	RightHanded bool
 	VMin, VMax  float64 // axial extent of the threaded run

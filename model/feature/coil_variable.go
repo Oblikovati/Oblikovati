@@ -117,18 +117,34 @@ func coilRail(def *CoilDefinition) (func(angle float64) float64, float64, error)
 	return coilRise(stations)
 }
 
-// coilShapeSpec resolves the constant-shape coil from any TWO of
-// pitch/revolutions/height (the reference's three specification modes, #316).
-// A variable pitch table carries its own shape; height does not combine with it.
+// coilShapeSpec resolves the coil's shape, dispatching on the flavour that owns the rail: a
+// variable pitch table carries its own shape, a flat spiral takes pitch + revolutions (#1883),
+// and the plain helix takes any TWO of pitch/revolutions/height (#316).
 func coilShapeSpec(def *CoilDefinition) (pitch, revs float64, err error) {
 	p, r, h := callOrZero(def.Pitch), callOrZero(def.Revolutions), callOrZero(def.Height)
-	if len(def.PitchRows) > 0 {
-		if h > 0 {
-			return 0, 0, fmt.Errorf("coil: height %g cannot combine with a variable pitch table", h)
-		}
-		rr, err := requirePositive(r, "revolutions")
-		return p, rr, err
+	switch {
+	case len(def.PitchRows) > 0:
+		return coilTableShapeSpec(p, r, h)
+	case def.Spiral:
+		return coilSpiralShapeSpec(p, r, h)
+	default:
+		return coilTwoOfThreeShapeSpec(p, r, h)
 	}
+}
+
+// coilTableShapeSpec is the variable-pitch table's shape: the table sets the pitch per station,
+// so only the turn count is read here and a height has nothing left to constrain (#624).
+func coilTableShapeSpec(pitch, revs, height float64) (float64, float64, error) {
+	if height > 0 {
+		return 0, 0, fmt.Errorf("coil: height %g cannot combine with a variable pitch table", height)
+	}
+	r, err := requirePositive(revs, "revolutions")
+	return pitch, r, err
+}
+
+// coilTwoOfThreeShapeSpec resolves a constant-pitch helix from any TWO of
+// pitch/revolutions/height — the reference's three specification modes (#316).
+func coilTwoOfThreeShapeSpec(p, r, h float64) (float64, float64, error) {
 	switch {
 	case p > 0 && r > 0 && h > 0:
 		return 0, 0, fmt.Errorf("coil: give exactly two of pitch/revolutions/height (got %g/%g/%g)", p, r, h)
@@ -141,6 +157,22 @@ func coilShapeSpec(def *CoilDefinition) (pitch, revs float64, err error) {
 	default:
 		return 0, 0, fmt.Errorf("coil: give two of pitch/revolutions/height (got %g/%g/%g)", p, r, h)
 	}
+}
+
+// coilSpiralShapeSpec is the flat spiral's shape spec: pitch — here the RADIAL step per turn —
+// and revolutions, both required. A spiral has no axial rise, so there is no height for the
+// two-of-three spec to solve against, and a height given here could only be discarded (#1883).
+func coilSpiralShapeSpec(pitch, revs, height float64) (float64, float64, error) {
+	if height > 0 {
+		return 0, 0, fmt.Errorf("coil: a spiral has no axial rise, so height %g does not apply; "+
+			"give pitch (the radial step per turn) and revolutions", height)
+	}
+	p, err := requirePositive(pitch, "pitch")
+	if err != nil {
+		return 0, 0, err
+	}
+	r, err := requirePositive(revs, "revolutions")
+	return p, r, err
 }
 
 func requirePositive(v float64, what string) (float64, error) {

@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	gmath "oblikovati.org/math"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sheetmetal"
 )
@@ -28,6 +29,15 @@ const (
 const (
 	thicknessParamName  = "Thickness"
 	bendRadiusParamName = "BendRadius"
+	// The rest of Inventor's standard sheet-metal parameter roster (#1962). Each is created with
+	// the EXPRESSION Inventor's Default style uses, not a frozen number, so editing the gauge
+	// moves the reliefs with it and a user can re-author any of them by expression.
+	bendReliefWidthParam  = "BendReliefWidth"
+	bendReliefDepthParam  = "BendReliefDepth"
+	cornerReliefSizeParam = "CornerReliefSize"
+	minimumRemnantParam   = "MinimumRemnant"
+	transitionRadiusParam = "TransitionRadius"
+	gapSizeParam          = "GapSize"
 )
 
 // IsSheetMetal reports whether this part is in the sheet-metal environment.
@@ -52,21 +62,114 @@ func (d *PartComponentDefinition) EnableSheetMetal() (*sheetmetal.Rule, error) {
 	if err != nil {
 		return nil, err
 	}
-	relief := sheetmetal.Relief{
-		Shape: types.ReliefRound,
-		Width: sheetmetal.Constant(0.5 * thickness.ModelValue()),
-		Depth: sheetmetal.Constant(0.5 * thickness.ModelValue()),
+	roster, err := d.ensureSheetMetalRoster()
+	if err != nil {
+		return nil, err
 	}
-	d.sheetMetal = sheetmetal.NewRule(
-		"Default",
-		func() float64 { return thickness.ModelValue() },
-		func() float64 { return bendRadius.ModelValue() },
-		sheetmetal.Constant(0),
-		relief,
-		sheetmetal.KFactorMethod(0.44),
-	)
+	d.sheetMetal = seededRule(thickness.ModelValue, bendRadius.ModelValue, roster)
 	d.flatOrientations = sheetmetal.NewOrientations()
 	return d.sheetMetal, nil
+}
+
+// seededRule is the rule a part gets on entering the sheet-metal environment: Inventor's own
+// Default style (#1960) — a STRAIGHT bend relief, the corner trimmed to the bend, a three-bend
+// corner rounded at the bend radius — with every size reading its own named parameter (#1962), so
+// a gauge edit moves the reliefs with every wall and any of them can be re-authored by expression.
+func seededRule(thickness, bendRadius func() float64, roster map[string]func() float64) *sheetmetal.Rule {
+	relief := sheetmetal.Relief{
+		Shape: types.ReliefStraight,
+		Width: roster[bendReliefWidthParam],
+		Depth: roster[bendReliefDepthParam],
+	}
+	rule := sheetmetal.NewRule("Default", thickness, bendRadius, roster[gapSizeParam], relief,
+		sheetmetal.KFactorMethod(0.44))
+	rule.SetCornerRelief(defaultCornerRelief(roster[cornerReliefSizeParam], bendRadius))
+	// Inventor's Default style makes no transition, and sizes the arc form at the bend radius —
+	// which is what the TransitionRadius parameter carries (#1959).
+	rule.SetTransition(sheetmetal.BendTransition{
+		Kind: types.NoBendTransition, ArcRadius: roster[transitionRadiusParam],
+	})
+	return rule
+}
+
+// defaultCornerRelief is Inventor's Default-style corner relief (#1960): the corner trimmed to the
+// bend at four times thickness, on the bend tangents, and a three-bend corner rounded at the bend
+// radius. The sizes read named parameters, so a gauge edit moves them with every wall.
+func defaultCornerRelief(cornerSize, bendRadius func() float64) sheetmetal.CornerRelief {
+	return sheetmetal.CornerRelief{
+		Shape:          types.CornerTrimToBend,
+		Size:           cornerSize,
+		Placement:      types.CornerReliefAtBendTangent,
+		ThreeBendShape: types.CornerRoundWithRadius,
+		ThreeBendSize:  bendRadius,
+	}
+}
+
+// sheetMetalRosterExprs is the standard roster's default EXPRESSIONS, exactly as Inventor's
+// Default style states them (#1962). They reference Thickness and BendRadius rather than freezing
+// a number, which is what makes the whole style track the gauge.
+//
+// Inventor's roster also carries JacobiRadiusSize; it is left out rather than seeded with an
+// invented default, since nothing here develops the conical unfold it belongs to.
+var sheetMetalRosterExprs = map[string]string{
+	bendReliefWidthParam:  thicknessParamName,
+	bendReliefDepthParam:  thicknessParamName + " * 0.5",
+	cornerReliefSizeParam: thicknessParamName + " * 4",
+	minimumRemnantParam:   thicknessParamName + " * 2",
+	transitionRadiusParam: bendRadiusParamName,
+	gapSizeParam:          thicknessParamName,
+}
+
+// ensureSheetMetalRoster creates the standard parameters (idempotent) and returns a live reader
+// per name, so the rule's closures follow re-authored expressions.
+func (d *PartComponentDefinition) ensureSheetMetalRoster() (map[string]func() float64, error) {
+	out := make(map[string]func() float64, len(sheetMetalRosterExprs))
+	for name, expr := range sheetMetalRosterExprs {
+		p, ok := d.params.ByName(name)
+		if !ok {
+			created, err := d.params.AddUserParameter(name, expr)
+			if err != nil {
+				return nil, fmt.Errorf("sheet-metal %s parameter (%q): %w", name, expr, err)
+			}
+			p = created
+		}
+		out[name] = p.ModelValue
+	}
+	return out, nil
+}
+
+// reliefSpec resolves the active style's bend relief for one recompute (#2072). A part that is not
+// sheet metal has no style and so cuts no relief.
+func (d *PartComponentDefinition) reliefSpec() feature.ReliefSpec {
+	if d.sheetMetal == nil {
+		return feature.ReliefSpec{}
+	}
+	r := d.sheetMetal.Relief()
+	return feature.ReliefSpec{Shape: r.Shape, Width: d.sheetMetal.ReliefWidth(), Depth: d.sheetMetal.ReliefDepth()}
+}
+
+// cornerReliefSpec resolves the active style's CORNER relief for one recompute (#2072).
+func (d *PartComponentDefinition) cornerReliefSpec() feature.CornerReliefSpec {
+	if d.sheetMetal == nil {
+		return feature.CornerReliefSpec{Shape: types.CornerTear} // no style: nothing to cut
+	}
+	return feature.CornerReliefSpec{Shape: d.sheetMetal.CornerRelief().Shape, Size: d.sheetMetal.CornerReliefSize()}
+}
+
+// bendTransition resolves the active style's bend transition for one recompute (#1959).
+func (d *PartComponentDefinition) bendTransition() types.BendTransition {
+	if d.sheetMetal == nil {
+		return types.NoBendTransition
+	}
+	return d.sheetMetal.Transition().Kind
+}
+
+// miterGap is the style's gap between mitered walls (#1961) — the rule's GapSize.
+func (d *PartComponentDefinition) miterGap() float64 {
+	if d.sheetMetal == nil {
+		return 0
+	}
+	return d.sheetMetal.Gap()
 }
 
 // FlatOrientations returns the part's flat-pattern orientations (M13-F05), or nil when the
@@ -99,20 +202,29 @@ func BendRadiusParamName() string { return bendRadiusParamName }
 // rule's own state — its name, relief geometry, gap, and the full unfold method (K-factor,
 // equation source, or bend-table rows).
 type sheetMetalRecipe struct {
-	Name         string               `yaml:"name,omitempty"`
-	ReliefShape  string               `yaml:"reliefShape,omitempty"`
-	ReliefWidth  float64              `yaml:"reliefWidth,omitempty"`
-	ReliefDepth  float64              `yaml:"reliefDepth,omitempty"`
-	Gap          float64              `yaml:"gap,omitempty"`
-	UnfoldMethod string               `yaml:"unfoldMethod,omitempty"`
-	KFactor      float64              `yaml:"kFactor,omitempty"`
-	Equation     string               `yaml:"equation,omitempty"`
-	BendTable    []bendTableRowRecipe `yaml:"bendTable,omitempty"`
-	Orientations []orientationRecipe  `yaml:"orientations,omitempty"` // M13-F05
-	ActiveOrient string               `yaml:"activeOrientation,omitempty"`
-	DeferUpdate  bool                 `yaml:"deferFlatUpdate,omitempty"` // M13-F05
-	BendOrder    []string             `yaml:"bendOrder,omitempty"`       // M13-F06
-	Centerlines  []centerlineRecipe   `yaml:"centerlines,omitempty"`     // M13-F06
+	Name        string  `yaml:"name,omitempty"`
+	ReliefShape string  `yaml:"reliefShape,omitempty"`
+	ReliefWidth float64 `yaml:"reliefWidth,omitempty"`
+	ReliefDepth float64 `yaml:"reliefDepth,omitempty"`
+	Gap         float64 `yaml:"gap,omitempty"`
+	// The corner-relief block (#1960) — separate from the bend relief above.
+	CornerReliefShape     string  `yaml:"cornerReliefShape,omitempty"`
+	CornerReliefSize      float64 `yaml:"cornerReliefSize,omitempty"`
+	CornerReliefPlacement string  `yaml:"cornerReliefPlacement,omitempty"`
+	ThreeBendReliefShape  string  `yaml:"threeBendReliefShape,omitempty"`
+	ThreeBendReliefSize   float64 `yaml:"threeBendReliefSize,omitempty"`
+	// The bend transition (#1959); absent ⇒ none, which is what an older document meant.
+	BendTransition          string               `yaml:"bendTransition,omitempty"`
+	BendTransitionArcRadius float64              `yaml:"bendTransitionArcRadius,omitempty"`
+	UnfoldMethod            string               `yaml:"unfoldMethod,omitempty"`
+	KFactor                 float64              `yaml:"kFactor,omitempty"`
+	Equation                string               `yaml:"equation,omitempty"`
+	BendTable               []bendTableRowRecipe `yaml:"bendTable,omitempty"`
+	Orientations            []orientationRecipe  `yaml:"orientations,omitempty"` // M13-F05
+	ActiveOrient            string               `yaml:"activeOrientation,omitempty"`
+	DeferUpdate             bool                 `yaml:"deferFlatUpdate,omitempty"` // M13-F05
+	BendOrder               []string             `yaml:"bendOrder,omitempty"`       // M13-F06
+	Centerlines             []centerlineRecipe   `yaml:"centerlines,omitempty"`     // M13-F06
 }
 
 // centerlineRecipe is one persisted cosmetic centerline (flat 2D coordinates, cm).
@@ -149,14 +261,21 @@ func (d *PartComponentDefinition) sheetMetalRecipeOf() *sheetMetalRecipe {
 	}
 	r := d.sheetMetal
 	rec := &sheetMetalRecipe{
-		Name:         r.Name(),
-		ReliefShape:  r.Relief().Shape.String(),
-		ReliefWidth:  r.ReliefWidth(),
-		ReliefDepth:  r.ReliefDepth(),
-		Gap:          r.Gap(),
-		UnfoldMethod: r.Unfold().Type.String(),
-		KFactor:      r.Unfold().KFactor,
-		Equation:     r.Unfold().EquationSource(),
+		Name:                    r.Name(),
+		ReliefShape:             r.Relief().Shape.String(),
+		ReliefWidth:             r.ReliefWidth(),
+		ReliefDepth:             r.ReliefDepth(),
+		Gap:                     r.Gap(),
+		CornerReliefShape:       r.CornerRelief().Shape.String(),
+		CornerReliefSize:        r.CornerReliefSize(),
+		CornerReliefPlacement:   r.CornerRelief().Placement.String(),
+		ThreeBendReliefShape:    r.CornerRelief().ThreeBendShape.String(),
+		ThreeBendReliefSize:     r.ThreeBendReliefSize(),
+		BendTransition:          r.Transition().Kind.String(),
+		BendTransitionArcRadius: r.TransitionArcRadius(),
+		UnfoldMethod:            r.Unfold().Type.String(),
+		KFactor:                 r.Unfold().KFactor,
+		Equation:                r.Unfold().EquationSource(),
 	}
 	if t := r.Unfold().Table; t != nil {
 		for _, row := range t.Rows() {
@@ -245,7 +364,7 @@ func (d *PartComponentDefinition) restoreOrientations(rec *sheetMetalRecipe) err
 
 // restoreReliefAndGap applies the persisted relief shape/size and gap onto the rule.
 func (d *PartComponentDefinition) restoreReliefAndGap(rule *sheetmetal.Rule, rec *sheetMetalRecipe) error {
-	shape := types.ReliefRound
+	shape := types.ReliefStraight
 	if rec.ReliefShape != "" {
 		s, ok := types.ParseReliefShape(rec.ReliefShape)
 		if !ok {
@@ -259,6 +378,59 @@ func (d *PartComponentDefinition) restoreReliefAndGap(rule *sheetmetal.Rule, rec
 		Depth: sheetmetal.Constant(rec.ReliefDepth),
 	})
 	rule.SetGap(sheetmetal.Constant(rec.Gap))
+	return d.restoreCornerRelief(rule, rec)
+}
+
+// restoreCornerRelief applies the persisted corner-relief block (#1960). An absent block keeps the
+// rule's defaults, which are Inventor's; an unrecognised name is an error rather than a silent
+// fallback to a different cut.
+func (d *PartComponentDefinition) restoreCornerRelief(rule *sheetmetal.Rule, rec *sheetMetalRecipe) error {
+	corner := rule.CornerRelief()
+	for _, e := range []struct {
+		name  string
+		field *types.CornerReliefShape
+	}{{rec.CornerReliefShape, &corner.Shape}, {rec.ThreeBendReliefShape, &corner.ThreeBendShape}} {
+		if e.name == "" {
+			continue
+		}
+		shape, ok := types.ParseCornerReliefShape(e.name)
+		if !ok {
+			return fmt.Errorf("sheet-metal recipe: bad corner relief shape %q", e.name)
+		}
+		*e.field = shape
+	}
+	if rec.CornerReliefPlacement != "" {
+		placement, ok := types.ParseCornerReliefPlacement(rec.CornerReliefPlacement)
+		if !ok {
+			return fmt.Errorf("sheet-metal recipe: bad corner relief placement %q", rec.CornerReliefPlacement)
+		}
+		corner.Placement = placement
+	}
+	if rec.CornerReliefSize != 0 {
+		corner.Size = sheetmetal.Constant(rec.CornerReliefSize)
+	}
+	if rec.ThreeBendReliefSize != 0 {
+		corner.ThreeBendSize = sheetmetal.Constant(rec.ThreeBendReliefSize)
+	}
+	rule.SetCornerRelief(corner)
+	return restoreBendTransition(rule, rec)
+}
+
+// restoreBendTransition applies the persisted transition (#1959); an unknown name is an error
+// rather than a silent fallback to no transition at all.
+func restoreBendTransition(rule *sheetmetal.Rule, rec *sheetMetalRecipe) error {
+	t := rule.Transition()
+	if rec.BendTransition != "" {
+		kind, ok := types.ParseBendTransition(rec.BendTransition)
+		if !ok {
+			return fmt.Errorf("sheet-metal recipe: bad bend transition %q", rec.BendTransition)
+		}
+		t.Kind = kind
+	}
+	if rec.BendTransitionArcRadius != 0 {
+		t.ArcRadius = sheetmetal.Constant(rec.BendTransitionArcRadius)
+	}
+	rule.SetTransition(t)
 	return nil
 }
 

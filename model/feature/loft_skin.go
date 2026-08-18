@@ -171,8 +171,8 @@ func splineSections(sections [][]math.Point3, closed bool, ends loftEnds, wrapSh
 	// the face's curvature (G2). Closed lofts have no end sections, so this is open-only.
 	var firstA, lastA, firstJ, lastJ []math.Vector3
 	if !closed {
-		firstA, firstJ = faceContinuity(tan[0], sections[0], sections[1], ends.firstSurf, ends.first)
-		lastA, lastJ = faceContinuity(tan[m-1], sections[m-1], sections[m-2], ends.lastSurf, ends.last)
+		firstA, firstJ = faceContinuity(tan[0], sections[0], sections[1], ends.firstSurf, ends.first, true)
+		lastA, lastJ = faceContinuity(tan[m-1], sections[m-1], sections[m-2], ends.lastSurf, ends.last, false)
 	}
 	return hermiteBlend(sections, tan, closed, wrapShift, firstA, lastA, firstJ, lastJ)
 }
@@ -188,7 +188,7 @@ func continuityOrder(c LoftCondition) int { return c.ContinuityOrder() }
 // curvature and curvature-rate. The returned slices are nil below the requested order; both are nil
 // when there is no adjacent surface or the condition is not face continuity. The takeoff speed
 // follows the existing impact·chord convention so G1 magnitudes are unchanged.
-func faceContinuity(tangents []math.Vector3, sec, neighbor []math.Point3, surf geom.Surface, end LoftEnd) (second, third []math.Vector3) {
+func faceContinuity(tangents []math.Vector3, sec, neighbor []math.Point3, surf geom.Surface, end LoftEnd, isStart bool) (second, third []math.Vector3) {
 	order := continuityOrder(end.Condition)
 	if surf == nil || order == 0 {
 		return nil, nil
@@ -203,7 +203,7 @@ func faceContinuity(tangents []math.Vector3, sec, neighbor []math.Point3, surf g
 	if order >= 3 {
 		third = make([]math.Vector3, len(sec))
 	}
-	c := centroidOf(sec)
+	c, sign := centroidOf(sec), takeoffSign(isStart)
 	for j := range sec {
 		outward := c.VectorTo(sec[j]) // away from the section centroid (the flare side)
 		edge := edgeDirAt(sec, j)     // boundary tangent at this point
@@ -212,14 +212,15 @@ func faceContinuity(tangents []math.Vector3, sec, neighbor []math.Point3, surf g
 			continue // degenerate surface here — keep the approximate tangent
 		}
 		speed := impact * float64(sec[j].DistanceTo(neighbor[j])) // c: matches applyFaceTangent's scale
-		tangents[j] = t1.Scale(math.Scalar(speed))                // m0 = c · unit cross-boundary tangent
-		// P(t)=γ(s(t)) with s=c·t and |t1|=1 ⇒ P^(k)(0)=c^k·γ^(k) — matching geometric curvature (G2)
-		// and curvature-rate (G3) at the seam, reparam-invariant.
+		tangents[j] = t1.Scale(math.Scalar(sign * speed))         // m0 = ±c · unit cross-boundary tangent
+		// P(t)=γ(s(t)) with s=±c·t and |t1|=1 ⇒ P^(k)(0)=(±c)^k·γ^(k) — matching geometric curvature
+		// (G2) and curvature-rate (G3) at the seam, reparam-invariant. The ODD orders carry the
+		// mirror at a LAST section, where the face is at t=1 and the loft runs back from it (#2082).
 		if second != nil {
 			second[j] = g2.Scale(math.Scalar(speed * speed))
 		}
 		if third != nil {
-			third[j] = g3.Scale(math.Scalar(speed * speed * speed))
+			third[j] = g3.Scale(math.Scalar(sign * speed * speed * speed))
 		}
 	}
 	return second, third
@@ -538,17 +539,12 @@ func sectionTangents(sections [][]math.Point3, closed bool, ends loftEnds, wrapS
 // section is a point (apex) or a profile. endIdx is the end section, neighIdx its neighbour.
 func applyEnd(tangents []math.Vector3, sections [][]math.Point3, endIdx, neighIdx int, end LoftEnd, normal math.UnitVector3) {
 	sec, neighbor := sections[endIdx], sections[neighIdx]
+	isStart := endIdx < neighIdx
 	if collapsedLoop(sec) {
-		applyApexCondition(tangents, sec, neighbor, end, normal, endIdx < neighIdx)
+		applyApexCondition(tangents, sec, neighbor, end, normal, isStart)
 		return
 	}
-	var forward math.Vector3 // the +section (increasing-index) direction at this end
-	if endIdx < neighIdx {
-		forward = loopCentroid(sec).VectorTo(loopCentroid(neighbor))
-	} else {
-		forward = loopCentroid(neighbor).VectorTo(loopCentroid(sec))
-	}
-	applyEndCondition(tangents, sec, neighbor, end, normal, forward)
+	applyEndCondition(tangents, sec, neighbor, end, normal, isStart)
 }
 
 // collapsedLoop reports whether every point of a section coincides — a point (apex) section.
@@ -593,20 +589,38 @@ func applyApexCondition(tangents []math.Vector3, apexSec, neighbor []math.Point3
 // angle/direction takeoff (a chosen angle to the section plane) or a face-continuity takeoff
 // (Tangent/Smooth — leave the source face tangent to its surface). Free keeps the natural
 // Catmull-Rom tangent. neighbor is the adjacent section, normal the section's plane/face normal,
-// forward the +u (increasing-section) direction here.
-func applyEndCondition(tangents []math.Vector3, sec, neighbor []math.Point3, end LoftEnd, normal math.UnitVector3, forward math.Vector3) {
+// isStart says whether this is the FIRST section (+u leaves it) or the last (+u arrives at it).
+func applyEndCondition(tangents []math.Vector3, sec, neighbor []math.Point3, end LoftEnd, normal math.UnitVector3, isStart bool) {
 	switch {
 	case end.Condition.CurvesViaAngle():
-		applyAngleTakeoff(tangents, sec, neighbor, end, normal, forward)
+		applyAngleTakeoff(tangents, sec, neighbor, end, normal, isStart)
 	case end.Condition.IsFaceContinuity():
-		applyFaceTangent(tangents, sec, neighbor, end, normal)
+		applyFaceTangent(tangents, sec, neighbor, end, normal, isStart)
 	}
 }
 
+// takeoffSign turns a LEAVING direction (the way the surface departs the section into the body)
+// into the +u tangent the Hermite blend wants. +u leaves the first section but ARRIVES at the last
+// one, so the last section's takeoff is the mirror of its leaving direction.
+//
+// Missing this mirror is what made a 45° takeoff at both ends produce a pear rather than a barrel
+// — bulging to 2.27 at the bottom and pinching to 1.75 at the top of an r=2 loft — and, Reversed,
+// drove the side wall back down through the end cap at radius 1.74 (Oblikovati#2082).
+// applyApexCondition has always mirrored; the profile branches did not.
+func takeoffSign(isStart bool) float64 {
+	if isStart {
+		return 1
+	}
+	return -1
+}
+
 // applyAngleTakeoff aims each tangent at end.Angle from the section plane (sin·normal + cos·
-// radial), scaled by impact·chord; Reversed flips the through-plane component (an undercut).
-func applyAngleTakeoff(tangents []math.Vector3, sec, neighbor []math.Point3, end LoftEnd, normal math.UnitVector3, forward math.Vector3) {
-	nf := alignToward(normal, forward)
+// radial), scaled by impact·chord; Reversed flips the through-plane component (an undercut). The
+// direction built here is how the surface LEAVES the section — takeoffSign turns it into a +u
+// tangent, which mirrors it at a last section.
+func applyAngleTakeoff(tangents []math.Vector3, sec, neighbor []math.Point3, end LoftEnd, normal math.UnitVector3, isStart bool) {
+	inward := centroidOf(sec).VectorTo(centroidOf(neighbor)) // the way the body lies from here
+	nf := alignToward(normal, inward)
 	if end.Reversed {
 		nf = nf.Negate()
 	}
@@ -615,12 +629,12 @@ func applyAngleTakeoff(tangents []math.Vector3, sec, neighbor []math.Point3, end
 		impact = 1
 	}
 	sa, ca := stdmath.Sin(end.Angle), stdmath.Cos(end.Angle)
-	c := centroidOf(sec)
+	sign, c := takeoffSign(isStart), centroidOf(sec)
 	for j := range sec {
 		r := radialDir(sec[j], c, normal)
 		base := float64(sec[j].DistanceTo(neighbor[j]))
-		dir := nf.AsVector().Scale(sa).Add(r.Scale(ca))
-		tangents[j] = unitOrFallback(dir, forward).Scale(impact * base)
+		leave := nf.AsVector().Scale(sa).Add(r.Scale(ca))
+		tangents[j] = unitOrFallback(leave, inward).Scale(sign * impact * base)
 	}
 }
 
@@ -629,12 +643,13 @@ func applyAngleTakeoff(tangents []math.Vector3, sec, neighbor []math.Point3, end
 // outward, scaled by impact·chord. For a planar source face the loft's tangent plane along the
 // shared edge equals the face plane — exact G1 continuity. Smooth (G2) reuses this as a faceted-
 // kernel approximation. Reversed flips the takeoff inward.
-func applyFaceTangent(tangents []math.Vector3, sec, neighbor []math.Point3, end LoftEnd, normal math.UnitVector3) {
+func applyFaceTangent(tangents []math.Vector3, sec, neighbor []math.Point3, end LoftEnd, normal math.UnitVector3, isStart bool) {
 	impact := end.Impact
 	if impact <= 0 {
 		impact = 1
 	}
-	c, n := centroidOf(sec), normal.AsVector()
+	sign, n := takeoffSign(isStart), normal.AsVector()
+	c := centroidOf(sec)
 	for j := range sec {
 		t := n.Cross(edgeDirAt(sec, j))
 		if t.Dot(c.VectorTo(sec[j])) < 0 { // orient outward (away from the section centroid)
@@ -644,7 +659,7 @@ func applyFaceTangent(tangents []math.Vector3, sec, neighbor []math.Point3, end 
 			t = t.Negate()
 		}
 		base := float64(sec[j].DistanceTo(neighbor[j]))
-		tangents[j] = unitOrFallback(t, c.VectorTo(sec[j])).Scale(impact * base)
+		tangents[j] = unitOrFallback(t, c.VectorTo(sec[j])).Scale(sign * impact * base)
 	}
 }
 

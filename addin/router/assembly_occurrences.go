@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
+	"oblikovati.org/model/bom"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/occurrence"
 )
@@ -23,6 +24,7 @@ import (
 func (r *Router) registerAssemblyOccurrenceHandlers() {
 	r.readOnly(wire.MethodAssemblyOccurrences, assemblyQuery(assemblyOccurrences))
 	r.mutating(wire.MethodAssemblyPlace, "Place Component", typedAssembly(assemblyPlace))
+	r.mutating(wire.MethodAssemblyAddVirtual, "Add Virtual Component", typedAssembly(assemblyAddVirtual))
 	r.mutating(wire.MethodAssemblyPlaceByDefinition, "Place Component", typedAssembly(assemblyPlaceByDefinition))
 	r.mutating(wire.MethodAssemblyPlaceByDefinitionBatch, "Place Components", typedAssembly(assemblyPlaceByDefinitionBatch))
 	r.mutating(wire.MethodAssemblyTransform, "Move Component", typedAssembly(assemblyTransform))
@@ -30,6 +32,8 @@ func (r *Router) registerAssemblyOccurrenceHandlers() {
 	r.mutating(wire.MethodAssemblySetFlexible, "Set Flexible", typedAssembly(assemblySetFlexible))
 	r.mutating(wire.MethodAssemblySetFlexibleChild, "Set Flexible", typedAssembly(assemblySetFlexibleChild))
 	r.mutating(wire.MethodAssemblySuppress, "Suppress Component", typedAssembly(assemblySuppress))
+	r.mutating(wire.MethodAssemblySetVisible, "Show/Hide Component", typedAssembly(assemblySetVisible))
+	r.mutating(wire.MethodAssemblySetOccurrenceState, "Set Component State", typedAssembly(assemblySetOccurrenceState))
 	r.mutating(wire.MethodAssemblyReplace, "Replace Component", typedAssembly(assemblyReplace))
 	r.mutating(wire.MethodAssemblyRemove, "Delete Component", typedAssembly(assemblyRemove))
 }
@@ -52,7 +56,39 @@ func assemblyPlace(s *app.Session, asm *compdef.AssemblyComponentDefinition, in 
 	if err != nil {
 		return wire.OccurrenceResult{}, fmt.Errorf("%s: %w", wire.MethodAssemblyPlace, err)
 	}
+	asm.GroundFirstComponentIfEnabled(o) // ground the first placed component (#1981)
 	return occurrenceReply(o), nil
+}
+
+// assemblyAddVirtual adds a geometry-free, document-free virtual component to the assembly (#1979).
+func assemblyAddVirtual(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.AddVirtualArgs) (wire.OccurrenceResult, error) {
+	if in.Name == "" {
+		return wire.OccurrenceResult{}, fmt.Errorf("%s: a virtual component needs a name", wire.MethodAssemblyAddVirtual)
+	}
+	structure, ok := bom.ParseStructure(structureOrNormal(in.Structure))
+	if !ok || structure == bom.Varies || structure == bom.Default {
+		return wire.OccurrenceResult{}, fmt.Errorf("%s: invalid BOM structure %q", wire.MethodAssemblyAddVirtual, in.Structure)
+	}
+	o := asm.AddVirtual(in.Name, in.PartNumber, structure, transformOrIdentity(in.Transform))
+	s.ActiveDocument().MarkDirty()
+	return occurrenceReply(o), nil
+}
+
+// structureOrNormal defaults an empty BOM-structure spelling to normal.
+func structureOrNormal(s string) string {
+	if s == "" {
+		return "normal"
+	}
+	return s
+}
+
+// transformOrIdentity uses the wire transform, or the identity when it is the zero matrix (a virtual
+// component has no geometry, so an unset placement is harmless).
+func transformOrIdentity(m types.Matrix) math.Matrix4 {
+	if m.Cells == ([16]float64{}) {
+		return math.Identity4()
+	}
+	return matrixFromWire(m)
 }
 
 // assemblyPlaceByDefinition places another instance of an existing occurrence's component.
@@ -151,6 +187,50 @@ func subAssemblyHasChild(o *occurrence.Occurrence, childName string) bool {
 	return false
 }
 
+// assemblySetVisible shows or hides one occurrence — a display override independent of any
+// representation (#1975); non-geometric, so it does not go through the suppress veto.
+func assemblySetVisible(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetVisibleOccurrenceArgs) (wire.OccurrenceResult, error) {
+	o, err := occurrenceByID(asm, in.ID, wire.MethodAssemblySetVisible)
+	if err != nil {
+		return wire.OccurrenceResult{}, err
+	}
+	o.SetVisible(in.Visible)
+	return occurrenceReply(o), nil
+}
+
+// assemblySetOccurrenceState applies any subset of the occurrence's display/state overrides
+// (#1975/#1977): each field is changed only when the request carries it.
+func assemblySetOccurrenceState(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetOccurrenceStateArgs) (wire.OccurrenceResult, error) {
+	o, err := occurrenceByID(asm, in.ID, wire.MethodAssemblySetOccurrenceState)
+	if err != nil {
+		return wire.OccurrenceResult{}, err
+	}
+	applyOccurrenceState(o, in)
+	return occurrenceReply(o), nil
+}
+
+// applyOccurrenceState sets each present state override onto the occurrence.
+func applyOccurrenceState(o *occurrence.Occurrence, in wire.SetOccurrenceStateArgs) {
+	if in.Transparent != nil {
+		o.SetTransparent(*in.Transparent)
+	}
+	if in.Opacity != nil {
+		o.SetOpacity(*in.Opacity)
+	}
+	if in.Enabled != nil {
+		o.SetEnabled(*in.Enabled)
+	}
+	if in.Excluded != nil {
+		o.SetExcluded(*in.Excluded)
+	}
+	if in.Reference != nil {
+		o.SetReference(*in.Reference)
+	}
+	if in.ContactSet != nil {
+		o.SetInContactSet(*in.ContactSet)
+	}
+}
+
 // assemblySuppress excludes or restores an occurrence from the model (vetoable).
 func assemblySuppress(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SuppressOccurrenceArgs) (wire.OccurrenceResult, error) {
 	o, err := occurrenceByID(asm, in.ID, wire.MethodAssemblySuppress)
@@ -236,14 +316,24 @@ func occurrenceNodes(occs *occurrence.Occurrences) []wire.OccurrenceInfo {
 // occurrenceInfo renders one occurrence (and its nested children) as its wire DTO.
 func occurrenceInfo(o *occurrence.Occurrence) wire.OccurrenceInfo {
 	info := wire.OccurrenceInfo{
-		ID:         o.ID(),
-		Name:       o.Name(),
-		Transform:  types.Matrix{Cells: o.Transform().Cells()},
-		Suppressed: o.Suppressed(),
-		Grounded:   o.Grounded(),
-		Adaptive:   o.Adaptive(),
-		Flexible:   o.Flexible(),
-		Substitute: o.IsSubstitute(),
+		ID:          o.ID(),
+		Name:        o.Name(),
+		Transform:   types.Matrix{Cells: o.Transform().Cells()},
+		Suppressed:  o.Suppressed(),
+		Grounded:    o.Grounded(),
+		Adaptive:    o.Adaptive(),
+		Flexible:    o.Flexible(),
+		Substitute:  o.IsSubstitute(),
+		Visible:     o.Visible(),
+		Transparent: o.Transparent(),
+		Opacity:     o.Opacity(),
+		Enabled:     o.Enabled(),
+		Excluded:    o.Excluded(),
+		Reference:   o.Reference(),
+		ContactSet:  o.InContactSet(),
+	}
+	if v, ok := o.Definition().(*compdef.VirtualComponentDefinition); ok {
+		info.Virtual, info.PartNumber = true, v.PartNumber()
 	}
 	if subs := o.SubOccurrences(); subs != nil {
 		info.Children = occurrenceNodes(subs)

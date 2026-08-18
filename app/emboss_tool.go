@@ -95,10 +95,17 @@ func (t *EmbossTool) Commit(s *Session) error {
 }
 
 // addEmboss builds the emboss feature into engine fs — shared by Commit and the preview.
+//
+// The tool exposes only the raise/engrave toggle. The from-plane flavour and the wrap-to-face
+// option reached the API in #1893 but have no control here yet, so this maps the toggle onto the
+// two face-anchored flavours and leaves the rest at their defaults.
 func (t *EmbossTool) addEmboss(fs *feature.PartFeatures) *feature.PartFeature {
 	skt := t.profiles[0].Sketch
-	d, eng := t.depth, t.engrave
-	return feature.NewEmbossFeatures(fs).Add(skt, profileIndicesOn(t.profiles, skt), func() float64 { return d }, eng, 0)
+	d, typ := t.depth, feature.EmbossFromFace
+	if t.engrave {
+		typ = feature.EngraveFromFace
+	}
+	return feature.NewEmbossFeatures(fs).Add(skt, profileIndicesOn(t.profiles, skt), func() float64 { return d }, typ, 0)
 }
 
 // DraftFeature returns the unattached emboss feature the viewport previews before commit.

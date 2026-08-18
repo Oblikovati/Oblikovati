@@ -139,6 +139,46 @@ func (s *JointSet) SetFlip(id uint64, flip bool) error {
 	return nil
 }
 
+// SetGap seats the joint's two origins the given distance apart along the joint Z-axis (#1970).
+func (s *JointSet) SetGap(id uint64, gap float64) error {
+	j := s.ByID(id)
+	if j == nil {
+		return fmt.Errorf("assembly: no joint with id %d", id)
+	}
+	j.setGap(gap)
+	return nil
+}
+
+// SetPositions sets the joint's current linear/angular rest positions along its free DOF (#1970).
+func (s *JointSet) SetPositions(id uint64, linear, angular float64) error {
+	j := s.ByID(id)
+	if j == nil {
+		return fmt.Errorf("assembly: no joint with id %d", id)
+	}
+	j.setPositions(linear, angular)
+	return nil
+}
+
+// SetLocked freezes (or releases) the joint's remaining free DOF (#1974).
+func (s *JointSet) SetLocked(id uint64, locked bool) error {
+	j := s.ByID(id)
+	if j == nil {
+		return fmt.Errorf("assembly: no joint with id %d", id)
+	}
+	j.setLocked(locked)
+	return nil
+}
+
+// SetProtected marks the joint's DOF protected from other relationships (#1974).
+func (s *JointSet) SetProtected(id uint64, protected bool) error {
+	j := s.ByID(id)
+	if j == nil {
+		return fmt.Errorf("assembly: no joint with id %d", id)
+	}
+	j.setProtected(protected)
+	return nil
+}
+
 // ForOccurrence returns the per-occurrence view of the joints referencing o.
 func (s *JointSet) ForOccurrence(o *occurrence.Occurrence) *OccurrenceJoints {
 	var hit []Joint

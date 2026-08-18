@@ -19,7 +19,9 @@ func (r featureCodecSet) registerPatternCodecs() {
 			fd.RectPattern = &RectPatternData{
 				Source: src, CountX: evalInt(p.def.CountX), CountY: evalInt(p.def.CountY),
 				StepX: encodeVec3(p.def.StepX), StepY: encodeVec3(p.def.StepY),
-				Options: encodePatternOptions(p.def.Options),
+				Options:   encodePatternOptions(p.def.Options),
+				MidPlaneX: p.def.MidPlaneX, MidPlaneY: p.def.MidPlaneY,
+				Suppressed: p.SuppressedIndices(),
 			}
 			return nil
 		},
@@ -37,7 +39,9 @@ func (r featureCodecSet) registerPatternCodecs() {
 			fd.CircPattern = &CircPatternData{
 				Source: src, Count: evalInt(p.def.Count), Angle: evalFloat(p.def.Angle),
 				AxisPoint: encodePoint3(p.def.AxisPoint), AxisDir: encodeVec3(p.def.AxisDir),
-				Options: encodePatternOptions(p.def.Options),
+				Options:    encodePatternOptions(p.def.Options),
+				MidPlane:   p.def.MidPlane,
+				Suppressed: p.SuppressedIndices(),
 			}
 			return nil
 		},
@@ -69,6 +73,9 @@ func (r featureCodecSet) registerPatternCodecs() {
 			fd.Mirror = &MirrorData{
 				Source: src, Plane: encodeKey(p.def.MirrorPlaneKey),
 				Origin: encodePoint3(p.def.Origin), Normal: encodeVec3(p.def.Normal),
+				OfBody:         p.def.OfBody,
+				RemoveOriginal: p.def.RemoveOriginal,
+				JoinToOriginal: p.def.JoinToOriginal,
 			}
 			return nil
 		},

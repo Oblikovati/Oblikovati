@@ -30,6 +30,9 @@ const rectPatternSchema = `{
     "countYExpr": {"type": "string", "description": "Parameter-expression form of countY; when set it supersedes countY."},
     "stepX": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Spacing vector for the first direction [x,y,z] in cm."},
     "stepY": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Spacing vector for the second direction [x,y,z] in cm."},
+    "midPlaneX": {"type": "boolean", "description": "Spread the first direction's occurrences to BOTH sides of the seed instead of running one way from it. The seed does not move; with an even count the extra occurrence goes on the step's own side (reverse stepX to swap it)."},
+    "midPlaneY": {"type": "boolean", "description": "As midPlaneX, for the second direction."},
+    "suppressedElements": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "Occurrence indices to drop from the pattern. Element 0 is the seed \u2014 the source features' own material, applied before the pattern ran \u2014 and cannot be suppressed; suppress the source feature instead."},
     "spacingType": {"type": "string", "enum": ["spacing", "fitted", "fitToPathLength"], "description": "How a step is read: 'spacing' = gap between occurrences (default); 'fitted' = total span divided across the count."},
     "computeType": {"type": "string", "enum": ["identical", "adjustToModel", "optimized"], "description": "How each occurrence is computed."},
     "orientation": {"type": "string", "enum": ["identical", "direction1", "direction2"], "description": "How each occurrence is oriented."},
@@ -53,6 +56,8 @@ const circPatternSchema = `{
     "angle": {"type": "string", "description": "Total sweep angle, e.g. \"360 deg\"."},
     "axisPoint": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A point on the rotation axis [x,y,z] (default origin)."},
     "axisDir": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Rotation axis direction [x,y,z] (default +Z)."},
+    "midPlane": {"type": "boolean", "description": "Sweep the occurrences to both sides of the seed rather than all one way round the axis. The seed does not move; with an even count the extra occurrence goes on the +angle side."},
+    "suppressedElements": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "Occurrence indices to drop from the pattern. Element 0 is the seed \u2014 the source features' own material, applied before the pattern ran \u2014 and cannot be suppressed; suppress the source feature instead."},
     "spacingType": {"type": "string", "enum": ["spacing", "fitted", "fitToPathLength"], "description": "How 'angle' is read: 'spacing' = per-occurrence increment; 'fitted' = spread count across the angle inclusive; default = angle divided by count (full sweep)."},
     "computeType": {"type": "string", "enum": ["identical", "adjustToModel", "optimized"], "description": "How each occurrence is computed."},
     "orientation": {"type": "string", "enum": ["identical", "direction1", "direction2"], "description": "How each occurrence is oriented."},
@@ -72,7 +77,10 @@ const mirrorSchema = `{
   "properties": {
     "sourceFeatures": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Names of the features to mirror (see model.tree)."},
     "origin": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A point on the mirror plane [x,y,z] (default origin)."},
-    "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Mirror-plane normal [x,y,z], e.g. [1,0,0] for the YZ plane."}
+    "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Mirror-plane normal [x,y,z], e.g. [1,0,0] for the YZ plane."},
+    "mode": {"type": "string", "enum": ["features", "body"], "description": "What is reflected: 'features' (default) re-applies the source features' tools on the far side; 'body' reflects the whole running solid, which is how a symmetric part is usually built."},
+    "removeOriginal": {"type": "boolean", "description": "Keep only the reflected half, discarding the source \u2014 how a handed variant is made. Body mode only."},
+    "operation": {"type": "string", "enum": ["newBody", "join"], "description": "How the reflection joins the model: 'newBody' (default) leaves it a separate solid, 'join' unions it with the original. Body mode only."}
   },
   "required": ["sourceFeatures", "normal"]
 }`
@@ -86,7 +94,7 @@ func circPatternDescriptor() *OperationDescriptor {
 }
 
 func mirrorDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: featureargs.KindMirror, Summary: "Mirror features across a plane.", Schema: json.RawMessage(mirrorSchema), Apply: applyMirror}
+	return &OperationDescriptor{Name: featureargs.KindMirror, Summary: "Mirror features or a whole solid body across a plane.", Schema: json.RawMessage(mirrorSchema), Apply: applyMirror}
 }
 
 func applyRectPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -111,7 +119,9 @@ func applyRectPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 		return nil, err
 	}
 	f := feature.NewPatternFeatures(part.Features()).AddRectangular(ids, countX, countY, stepX, stepY)
-	f.Definition().Options = opts
+	if err := configureRectPattern(f, in, opts); err != nil {
+		return nil, err
+	}
 	return lastFeatureResult(part)
 }
 
@@ -164,8 +174,27 @@ func applyCircPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 		return nil, err
 	}
 	f := feature.NewPatternFeatures(part.Features()).AddCircular(ids, count, angle, originOr(in.AxisPoint), zAxisOr(in.AxisDir))
-	f.Definition().Options = opts
+	if err := configureCircPattern(f, in, opts); err != nil {
+		return nil, err
+	}
 	return lastFeatureResult(part)
+}
+
+// configureRectPattern applies the placement options plus the #1889 mid-plane and per-element
+// suppression fields to a freshly added grid pattern.
+func configureRectPattern(f *feature.RectangularPatternFeature, in featureargs.PatternRectangular,
+	opts feature.PatternOptions) error {
+	f.Definition().Options = opts
+	f.Definition().MidPlaneX, f.Definition().MidPlaneY = in.MidPlaneX, in.MidPlaneY
+	return f.SuppressElements(in.SuppressedElements)
+}
+
+// configureCircPattern is [configureRectPattern] for a circular array.
+func configureCircPattern(f *feature.CircularPatternFeature, in featureargs.PatternCircular,
+	opts feature.PatternOptions) error {
+	f.Definition().Options = opts
+	f.Definition().MidPlane = in.MidPlane
+	return f.SuppressElements(in.SuppressedElements)
 }
 
 // patternOptions resolves the M20-F18 option fields (spacing/compute/orientation/
@@ -246,8 +275,54 @@ func applyMirror(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 		return nil, errors.New("mirror: normal needs 3 components [x,y,z]")
 	}
 	normal, _ := vec3(in.Normal, "mirror: normal")
-	feature.NewPatternFeatures(part.Features()).AddMirror(ids, nil, originOr(in.Origin), normal)
+	f := feature.NewPatternFeatures(part.Features()).AddMirror(ids, nil, originOr(in.Origin), normal)
+	if err := configureMirror(f, in); err != nil {
+		return nil, err
+	}
 	return lastFeatureResult(part)
+}
+
+// configureMirror applies the #1890 mode and the two body-only options. The model refuses a
+// body-only option in feature mode at recompute; parsing them here means an unknown mode or
+// operation is named at the point the caller wrote it.
+func configureMirror(f *feature.MirrorFeature, in featureargs.Mirror) error {
+	ofBody, err := mirrorOfBody(in.Mode)
+	if err != nil {
+		return err
+	}
+	join, err := mirrorJoins(in.Operation)
+	if err != nil {
+		return err
+	}
+	f.Definition().OfBody, f.Definition().RemoveOriginal, f.Definition().JoinToOriginal =
+		ofBody, in.RemoveOriginal, join
+	return feature.ValidateMirrorMode(ofBody, in.RemoveOriginal, join)
+}
+
+// mirrorOfBody reads the mirror mode; Inventor carries the same choice as MirrorOfBody, so there
+// are exactly two ("faces" is not one of them — Inventor's mirror has no face mode).
+func mirrorOfBody(mode string) (bool, error) {
+	switch strings.TrimSpace(mode) {
+	case "", "features":
+		return false, nil
+	case "body":
+		return true, nil
+	default:
+		return false, fmt.Errorf("mirror: unknown mode %q (want \"features\" or \"body\")", mode)
+	}
+}
+
+// mirrorJoins reads the body-mode operation. Inventor allows only kNewBodyOperation and
+// kJoinOperation here.
+func mirrorJoins(op string) (bool, error) {
+	switch strings.TrimSpace(op) {
+	case "", "newBody":
+		return false, nil
+	case "join":
+		return true, nil
+	default:
+		return false, fmt.Errorf("mirror: unknown operation %q (want \"newBody\" or \"join\")", op)
+	}
 }
 
 func defaultInt(v, def int) int {

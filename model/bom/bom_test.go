@@ -67,6 +67,29 @@ func TestPartsOnlyTotalsAcrossNestedAssemblies(t *testing.T) {
 	}
 }
 
+// TestExcludedOccurrenceDropsFromBOM an excluded or reference occurrence stays in the scene but is
+// omitted from both BOM views, so its quantity does not count (#1977).
+func TestExcludedOccurrenceDropsFromBOM(t *testing.T) {
+	bolt := &fakePart{num: "BOLT-1", structure: Normal}
+	top := occurrence.NewOccurrences()
+	top.AddByComponentDefinition("bolt:1", bolt, math.Identity4())
+	kept := top.AddByComponentDefinition("bolt:2", bolt, math.Translation4(math.V3(1, 0, 0)))
+	excluded := top.AddByComponentDefinition("bolt:3", bolt, math.Translation4(math.V3(2, 0, 0)))
+	excluded.SetExcluded(true)
+	_ = kept
+
+	pv := New(top).PartsOnly()
+	if len(pv.Rows) != 1 || pv.Rows[0].Quantity != 2 {
+		t.Fatalf("parts-only = %v, want BOLT-1 qty 2 (the excluded one dropped)", rowNames(pv.Rows))
+	}
+	// A reference occurrence drops too.
+	excluded.SetExcluded(false)
+	excluded.SetReference(true)
+	if q := New(top).PartsOnly().Rows[0].Quantity; q != 2 {
+		t.Errorf("reference occurrence counted: qty %d, want 2", q)
+	}
+}
+
 func TestStructuredViewNestsAndCountsPerParent(t *testing.T) {
 	bolt := &fakePart{num: "BOLT-1", structure: Normal}
 	sub := newSub("SUB-1", Normal)

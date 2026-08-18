@@ -32,6 +32,8 @@ func (r *Router) registerDrawingAnnotationHandlers() {
 	r.mutating(wire.MethodDrawingAnnotationsAddNote, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddNote))
 	r.mutating(wire.MethodDrawingAnnotationsAddCustomTable, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddCustomTable))
 	r.mutating(wire.MethodDrawingAnnotationsAddHoleNotes, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddHoleNotes))
+	r.mutating(wire.MethodDrawingAnnotationsAddChamferNote, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddChamferNote))
+	r.mutating(wire.MethodDrawingAnnotationsAddBendNote, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddBendNote))
 	r.mutating(wire.MethodDrawingAnnotationsDelete, "Delete Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsDelete))
 }
 
@@ -225,6 +227,30 @@ func drawingAnnotationsAddHoleNotes(s *app.Session, an *drawing.DrawingAnnotatio
 	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
+func drawingAnnotationsAddChamferNote(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddChamferNoteArgs) (wire.AnnotationResult, error) {
+	if in.EdgeA == "" || in.EdgeB == "" {
+		return wire.AnnotationResult{}, fmt.Errorf("drawing: a chamfer note needs both edge keys (edgeA, edgeB)")
+	}
+	a, err := an.AddChamferNote(in.Name, in.ViewName, []byte(in.EdgeA), []byte(in.EdgeB))
+	if err != nil {
+		return wire.AnnotationResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
+}
+
+func drawingAnnotationsAddBendNote(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddBendNoteArgs) (wire.AnnotationResult, error) {
+	if in.BendEdge == "" {
+		return wire.AnnotationResult{}, fmt.Errorf("drawing: a bend note needs the bend edge key (bendEdge)")
+	}
+	a, err := an.AddBendNote(in.Name, in.ViewName, []byte(in.BendEdge))
+	if err != nil {
+		return wire.AnnotationResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
+}
+
 func drawingAnnotationsDelete(s *app.Session, an *drawing.DrawingAnnotations, in wire.DeleteAnnotationArgs) (wire.ListDrawingAnnotationsResult, error) {
 	if err := an.Remove(in.Name); err != nil {
 		return wire.ListDrawingAnnotationsResult{}, err
@@ -237,6 +263,6 @@ func drawingAnnotationsDelete(s *app.Session, an *drawing.DrawingAnnotations, in
 func drawingAnnotationInfo(a *drawing.DrawingAnnotation) wire.DrawingAnnotationInfo {
 	return wire.DrawingAnnotationInfo{
 		Name: a.Name(), Kind: a.Kind().String(), ViewName: a.ViewName(), Tag: a.Tag(),
-		CurveCount: a.CurveCount(), RowCount: a.RowCount(),
+		CurveCount: a.CurveCount(), RowCount: a.RowCount(), ThreadCount: a.ThreadCount(),
 	}
 }

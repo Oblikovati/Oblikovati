@@ -3,7 +3,6 @@
 package feature
 
 import (
-	"errors"
 	"fmt"
 
 	"oblikovati.org/api/types"
@@ -22,11 +21,16 @@ const (
 	SplitNegative                  // keep the opposite side (trim)
 )
 
-// SplitSolidDefinition is the recipe for a solid split: a cutting work plane, which side(s)
-// to keep, and FacesOnly — the reference's Split Faces mode, which imprints the plane onto
-// the body's faces without removing material (#330). Re-resolved each recompute.
+// SplitSolidDefinition is the recipe for a solid split: the cutting tool, which side(s) to keep,
+// and FacesOnly — the reference's Split Faces mode, which imprints the cut onto the body's faces
+// without removing material (#330). Re-resolved each recompute.
+//
+// Tool names what the split cuts with (#1891): the work plane in Plane, or the surface at
+// ToolIndex. See split_tool.go.
 type SplitSolidDefinition struct {
+	Tool      SplitToolKind
 	Plane     *WorkPlane
+	ToolIndex int
 	Keep      SplitSide
 	FacesOnly bool
 }
@@ -58,10 +62,7 @@ func (f *SplitSolidFeature) SplitType() types.SplitType {
 // requested side(s) — or imprinting faces only. A lost plane → Sick; surface (non-solid)
 // bodies pass through unchanged.
 func (f *SplitSolidFeature) Recompute(in Input) (Output, error) {
-	if f.def.Plane == nil {
-		return Output{}, errors.New("split: no cutting plane")
-	}
-	plane, err := geomPlaneOf(f.def.Plane)
+	plane, err := f.def.cuttingPlane(in.Bodies)
 	if err != nil {
 		return Output{}, err
 	}
@@ -136,6 +137,17 @@ func (c *ModifyFeatures) AddSplitSolid(plane *WorkPlane, keep SplitSide) *PartFe
 // faces without removing material (#330).
 func (c *ModifyFeatures) AddSplitFaces(plane *WorkPlane) *PartFeature {
 	pf := c.engine.Add(&SplitSolidFeature{def: &SplitSolidDefinition{Plane: plane, FacesOnly: true}})
+	pf.SetName(c.engine.UniqueName("Split"))
+	return pf
+}
+
+// AddSplitByDefinition adds a split from a fully-built recipe — the path the surface tools and
+// the recipe codec take, since they choose the tool rather than always passing a work plane
+// (#1891).
+//
+//	mods.AddSplitByDefinition(&SplitSolidDefinition{Tool: SplitBySurfaceBody, ToolIndex: 1})
+func (c *ModifyFeatures) AddSplitByDefinition(def *SplitSolidDefinition) *PartFeature {
+	pf := c.engine.Add(&SplitSolidFeature{def: def})
 	pf.SetName(c.engine.UniqueName("Split"))
 	return pf
 }

@@ -95,6 +95,12 @@ func applyStyleEdits(part *compdef.PartComponentDefinition, rule *sheetmetal.Rul
 	if err := applyReliefEdits(part, rule, in); err != nil {
 		return err
 	}
+	if err := applyCornerReliefEdits(part, rule, in); err != nil {
+		return err
+	}
+	if err := applyBendTransitionEdits(part, rule, in); err != nil {
+		return err
+	}
 	if in.MinimumGap != "" {
 		gap, err := resolveQuantity(part, in.MinimumGap, param.Length)
 		if err != nil {
@@ -111,7 +117,7 @@ func applyReliefEdits(part *compdef.PartComponentDefinition, rule *sheetmetal.Ru
 	if in.ReliefShape != "" {
 		shape, ok := types.ParseReliefShape(in.ReliefShape)
 		if !ok {
-			return fmt.Errorf("sheetMetal reliefShape %q: want round|square|tear", in.ReliefShape)
+			return fmt.Errorf("sheetMetal reliefShape %q: want round|straight|tear", in.ReliefShape)
 		}
 		relief.Shape = shape
 	}
@@ -129,6 +135,80 @@ func applyReliefEdits(part *compdef.PartComponentDefinition, rule *sheetmetal.Ru
 		*e.field = sheetmetal.Constant(v.Value)
 	}
 	rule.SetRelief(relief)
+	return nil
+}
+
+// applyCornerReliefEdits updates the CORNER relief block from the non-empty fields (#1960). It is
+// a separate property from the bend relief: the cut where two flanges meet, not the one at a
+// bend's ends.
+func applyCornerReliefEdits(part *compdef.PartComponentDefinition, rule *sheetmetal.Rule, in wire.SetSheetMetalStyleArgs) error {
+	corner := rule.CornerRelief()
+	for _, e := range []struct {
+		name  string
+		field *types.CornerReliefShape
+	}{{in.CornerReliefShape, &corner.Shape}, {in.ThreeBendReliefShape, &corner.ThreeBendShape}} {
+		if e.name == "" {
+			continue
+		}
+		shape, ok := types.ParseCornerReliefShape(e.name)
+		if !ok {
+			return fmt.Errorf("sheetMetal corner relief shape %q: want trimToBend|round|square|tear|"+
+				"fullRound|roundWithRadius|intersection", e.name)
+		}
+		*e.field = shape
+	}
+	if in.CornerReliefPlacement != "" {
+		placement, ok := types.ParseCornerReliefPlacement(in.CornerReliefPlacement)
+		if !ok {
+			return fmt.Errorf("sheetMetal cornerReliefPlacement %q: want bendTangent|bendIntersection|alongBend",
+				in.CornerReliefPlacement)
+		}
+		corner.Placement = placement
+	}
+	if err := applyCornerReliefSizes(part, &corner, in); err != nil {
+		return err
+	}
+	rule.SetCornerRelief(corner)
+	return nil
+}
+
+// applyCornerReliefSizes resolves the two corner-relief size expressions.
+func applyCornerReliefSizes(part *compdef.PartComponentDefinition, corner *sheetmetal.CornerRelief, in wire.SetSheetMetalStyleArgs) error {
+	for _, e := range []struct {
+		expr  string
+		field *func() float64
+	}{{in.CornerReliefSize, &corner.Size}, {in.ThreeBendReliefSize, &corner.ThreeBendSize}} {
+		if e.expr == "" {
+			continue
+		}
+		v, err := resolveQuantity(part, e.expr, param.Length)
+		if err != nil {
+			return fmt.Errorf("sheetMetal corner relief size %q: %w", e.expr, err)
+		}
+		*e.field = sheetmetal.Constant(v.Value)
+	}
+	return nil
+}
+
+// applyBendTransitionEdits updates how a bend meets the face beside it (#1959).
+func applyBendTransitionEdits(part *compdef.PartComponentDefinition, rule *sheetmetal.Rule, in wire.SetSheetMetalStyleArgs) error {
+	t := rule.Transition()
+	if in.BendTransition != "" {
+		kind, ok := types.ParseBendTransition(in.BendTransition)
+		if !ok {
+			return fmt.Errorf("sheetMetal bendTransition %q: want none|intersection|straightLine|arc|trimToBend",
+				in.BendTransition)
+		}
+		t.Kind = kind
+	}
+	if in.BendTransitionArcRadius != "" {
+		v, err := resolveQuantity(part, in.BendTransitionArcRadius, param.Length)
+		if err != nil {
+			return fmt.Errorf("sheetMetal bendTransitionArcRadius %q: %w", in.BendTransitionArcRadius, err)
+		}
+		t.ArcRadius = sheetmetal.Constant(v.Value)
+	}
+	rule.SetTransition(t)
 	return nil
 }
 
@@ -216,12 +296,41 @@ func flatInfo(flat *feature.FlatPattern) wire.FlatPatternInfo {
 			Start: point2d(b.A), End: point2d(b.B), Angle: b.Angle * degPerRad,
 		})
 	}
+	info.Punches = punchInfos(flat)
 	return info
+}
+
+// punchInfos projects the flat's developed punches onto the wire (#1963). The geometry was always
+// computed for the flat; it simply had no way out of the host.
+func punchInfos(flat *feature.FlatPattern) []wire.FlatPunchInfo {
+	out := make([]wire.FlatPunchInfo, 0, len(flat.Punches))
+	for _, p := range flat.Punches {
+		info := wire.FlatPunchInfo{
+			ID: p.Token, Position: point2d(p.Position), Angle: p.Angle * degPerRad,
+			DirectionUp: p.DirectionUp, HasDepth: p.HasDepth, Depth: p.Depth,
+			RepresentationType: nonDefaultPunchRepresentation(p.Representation),
+			Outline:            make([]types.Point2d, 0, len(p.Outline)),
+		}
+		for _, v := range p.Outline {
+			info.Outline = append(info.Outline, point2d(v))
+		}
+		out = append(out, info)
+	}
+	return out
 }
 
 // point2d converts a model 2D point to the wire value type.
 func point2d(p gmath.Point2) types.Point2d {
 	return types.Point2d{X: float64(p.X), Y: float64(p.Y)}
+}
+
+// nonDefaultPunchRepresentation is the punch representation's wire spelling, or "" for the default
+// (which the wire omits), so a punch that just inherits the document setting carries no type (#1968).
+func nonDefaultPunchRepresentation(r types.PunchRepresentationType) string {
+	if r == types.DefaultPunchRepresentation {
+		return ""
+	}
+	return r.String()
 }
 
 // styleInfo renders the active rule as wire, formatting lengths in the document's units and
@@ -248,6 +357,15 @@ func styleInfo(part *compdef.PartComponentDefinition, rule *sheetmetal.Rule) wir
 		UnfoldMethod:  unfold.Type.String(),
 		KFactor:       unfold.KFactor,
 		BendAllowance: rule.BendAllowance(halfPi, 0),
+
+		CornerReliefShape:     rule.CornerRelief().Shape.String(),
+		CornerReliefSize:      fmtLen(rule.CornerReliefSize()),
+		CornerReliefPlacement: rule.CornerRelief().Placement.String(),
+		ThreeBendReliefShape:  rule.CornerRelief().ThreeBendShape.String(),
+		ThreeBendReliefSize:   fmtLen(rule.ThreeBendReliefSize()),
+
+		BendTransition:          rule.Transition().Kind.String(),
+		BendTransitionArcRadius: fmtLen(rule.TransitionArcRadius()),
 	}
 }
 

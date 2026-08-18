@@ -6,18 +6,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
-	"oblikovati.org/model/sketch"
 )
 
-// The additive sketch-profile solid features beyond extrude: revolve, rib, emboss, coil, and
-// loft. Each consumes one or more closed/open sketch profiles (by sketchIndex/profileIndex)
-// and follows the extrude descriptor shape, so add_feature can drive the whole additive set.
+// The additive sketch-profile solid features beyond extrude: revolve and loft. Each consumes one
+// or more closed/open sketch profiles (by sketchIndex/profileIndex) and follows the extrude
+// descriptor shape, so add_feature can drive the whole additive set. The rib, coil and emboss grew
+// their own option clusters (#1882/#1883/#1893) and moved to feature_rib.go / feature_coil.go /
+// feature_emboss.go.
 
 // --- revolve ---------------------------------------------------------------
 
@@ -32,9 +34,14 @@ const revolveSchema = `{
     "angle2": {"type": "string", "description": "Optional second-direction sweep (opposite sense), e.g. \"30 deg\" — the two-directional revolve."},
     "direction": {"type": "string", "enum": ["positive", "negative", "symmetric"], "default": "positive", "description": "Which side of the profile the angle sweeps to: positive (forward), negative (the same sweep the other way), or symmetric (half each way). Ignored when angle2 is set, and unobservable on a full revolution."},
     "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect", "surface"], "default": "new", "description": "Boolean against existing bodies, or \"surface\" to revolve the profile into an open surface-of-revolution (sheet) body — Inventor's kSurfaceOperation."},
+    "extent": {"type": "string", "enum": ["angle", "to-face", "from-to", "to-next"], "default": "angle", "description": "How the revolve terminates. \"angle\" sweeps the given angle; \"to-face\" sweeps until it reaches toFace; \"from-to\" bounds the wedge by fromFace and toFace; \"to-next\" stops at the next material met. The geometric extents ignore angle/angle2 and measure their own sweep."},
+    "toFace": {"type": "string", "description": "Stop target for the to-face / from-to (end) extents: a planar face reference key, a work plane (\"plane/N\"), or an origin plane (\"origin/plane/xy\"). It must CONTAIN the revolve axis — only a radial face meets the sweep at one constant angle."},
+    "toFaceGeom": {"type": "object", "description": "The toFace target named by GEOMETRY (a planar face's centroid + normal) instead of toFace — for an author that cannot mint a face key. Wins over toFace.", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}, "required": ["centroid", "normal"]},
+    "fromFace": {"type": "string", "description": "Start target for the from-to extent, named like toFace and likewise containing the axis. The wedge runs backwards from the profile to fromFace and forwards to toFace, so it always contains the profile."},
+    "fromFaceGeom": {"type": "object", "description": "The fromFace start target named by GEOMETRY (centroid + normal) instead of fromFace. Wins over fromFace.", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}, "required": ["centroid", "normal"]},
     "profileSeed": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "Select the revolved region by an interior seed point [x,y] (sketch 2-D cm) instead of profileIndex — resolved by containment on the solved sketch every recompute; wins over profileIndex."}
   },
-  "required": ["sketchIndex", "angle"]
+  "required": ["sketchIndex"]
 }`
 
 func revolveDescriptor() *OperationDescriptor {
@@ -50,7 +57,11 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	angle, err := angleClosure(part, in.Angle, "revolve: angle")
+	extent, err := parseRevolveExtent(in)
+	if err != nil {
+		return nil, err
+	}
+	angle, err := revolveAngleFor(part, in, extent)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +74,7 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 			return nil, errors.New("revolve: aboutCenterline does not support a second-direction angle2")
 		}
 		pf := feature.NewRevolveFeatures(part.Features()).AddAboutCenterline(sk, in.ProfileIndex, angle, op)
-		return finishRevolve(part, pf, in)
+		return finishRevolve(part, pf, in, extent)
 	}
 	axis, err := axisFromRef(part, in.AxisRef)
 	if err != nil {
@@ -75,19 +86,87 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 			return nil, err
 		}
 		pf := feature.NewRevolveFeatures(part.Features()).AddTwoDirectional(sk, in.ProfileIndex, axis, angle, angle2, op)
-		return finishRevolve(part, pf, in)
+		return finishRevolve(part, pf, in, extent)
 	}
 	pf := feature.NewRevolveFeatures(part.Features()).Add(sk, in.ProfileIndex, axis, angle, op)
-	return finishRevolve(part, pf, in)
+	return finishRevolve(part, pf, in, extent)
+}
+
+// parseRevolveExtent maps the revolve's extent spelling onto the model member, rejecting the
+// combinations that would silently drop one of the caller's inputs (#1860). "angle" is spelled
+// DistanceExtent in the model: a revolve's "distance" IS its angle (Inventor's kAngleExtent).
+func parseRevolveExtent(in featureargs.Revolve) (feature.ExtentType, error) {
+	extent, err := revolveExtentType(in.Extent)
+	if err != nil || extent == feature.DistanceExtent {
+		return extent, err
+	}
+	if in.Angle2 != "" {
+		return 0, fmt.Errorf("revolve: extent %q measures its own sweep, so it cannot also take angle2 "+
+			"(the asymmetric two-angle mode); drop one", in.Extent)
+	}
+	return extent, nil
+}
+
+// revolveExtentType is the extent-spelling lookup on its own.
+func revolveExtentType(spelling string) (feature.ExtentType, error) {
+	switch strings.TrimSpace(spelling) {
+	case "", "angle":
+		return feature.DistanceExtent, nil
+	case "to-face":
+		return feature.ToFaceExtent, nil
+	case "from-to":
+		return feature.FromToExtent, nil
+	case "to-next":
+		return feature.ToNextExtent, nil
+	default:
+		return 0, fmt.Errorf("revolve: unknown extent %q (want angle, to-face, from-to or to-next)", spelling)
+	}
+}
+
+// revolveAngleFor resolves the sweep the angle extent reads. The geometric extents measure their
+// own, so they accept a missing angle rather than demanding a number the model will ignore.
+func revolveAngleFor(part *compdef.PartComponentDefinition, in featureargs.Revolve,
+	extent feature.ExtentType) (func() float64, error) {
+	if extent != feature.DistanceExtent {
+		return optionalAngleClosure(part, in.Angle, "revolve: angle")
+	}
+	if strings.TrimSpace(in.Angle) == "" {
+		return nil, errors.New(`revolve: the angle extent needs "angle" (e.g. "360 deg"); ` +
+			`the to-face / from-to / to-next extents measure their own sweep`)
+	}
+	return angleClosure(part, in.Angle, "revolve: angle")
 }
 
 // finishRevolve applies the axis-independent options — the sweep direction and the region seed —
 // and recomputes. Every construction path ends here so a "direction" can never be honoured on one
 // axis and dropped on another (#2019).
-func finishRevolve(part *compdef.PartComponentDefinition, pf *feature.PartFeature, in featureargs.Revolve) (json.RawMessage, error) {
-	pf.Definition().(*feature.RevolveFeature).Definition().Direction = parseExtentDirection(in.Direction)
+func finishRevolve(part *compdef.PartComponentDefinition, pf *feature.PartFeature,
+	in featureargs.Revolve, extent feature.ExtentType) (json.RawMessage, error) {
+	def := pf.Definition().(*feature.RevolveFeature).Definition()
+	def.Direction = parseExtentDirection(in.Direction)
+	if err := bindRevolveExtent(part, def, in, extent); err != nil {
+		return nil, err
+	}
 	setRevolveProfileSeed(pf, in.ProfileSeed)
 	return recomputeResult(part, pf)
+}
+
+// bindRevolveExtent records the extent and resolves whichever terminator plane(s) it needs. to-next
+// binds nothing: it finds its own stop against the running bodies at recompute time.
+func bindRevolveExtent(part *compdef.PartComponentDefinition, def *feature.RevolveDefinition,
+	in featureargs.Revolve, extent feature.ExtentType) error {
+	def.Extent = extent
+	var err error
+	switch extent {
+	case feature.FromToExtent:
+		if def.FromPlane, err = extentTargetPlane(part, "revolve", "fromFace", in.FromFace, in.FromFaceGeom); err != nil {
+			return err
+		}
+		fallthrough // from-to's END is named exactly like to-face's stop
+	case feature.ToFaceExtent:
+		def.ToPlane, err = extentTargetPlane(part, "revolve", "toFace", in.ToFace, in.ToFaceGeom)
+	}
+	return err
 }
 
 // setRevolveProfileSeed records an interior seed point on the revolve so its region resolves by
@@ -97,244 +176,6 @@ func setRevolveProfileSeed(pf *feature.PartFeature, seed []float64) {
 		return
 	}
 	pf.Definition().(*feature.RevolveFeature).Definition().ProfileSeed = append([]float64(nil), seed...)
-}
-
-// --- rib -------------------------------------------------------------------
-
-const ribSchema = `{
-  "type": "object",
-  "properties": {
-    "sketchIndex": {"type": "integer", "minimum": 0},
-    "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
-    "thickness": {"type": "string", "description": "Rib wall thickness, e.g. \"2 mm\"."},
-    "depth": {"type": "string", "description": "How far the rib grows toward the body, e.g. \"10 mm\" (sign picks the direction; omit with toNext)."},
-    "toNext": {"type": "boolean", "default": false, "description": "Extend the wall until it fully lands on the existing material (the to-next rib)."},
-    "operation": {"type": "string", "enum": ["new", "join", "surface"], "default": "join", "description": "Join the rib to existing material (default), a new body, or \"surface\" to build the rib walls as an open sheet — Inventor's kSurfaceOperation."}
-  },
-  "required": ["sketchIndex", "thickness"]
-}`
-
-func ribDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: featureargs.KindRib, Summary: "Thicken an open sketch profile into a support rib.", Schema: json.RawMessage(ribSchema), Apply: applyRib}
-}
-
-func applyRib(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeFeatureArgs[featureargs.Rib](s, raw)
-	if err != nil {
-		return nil, err
-	}
-	sk, err := sketchAt(part, in.SketchIndex)
-	if err != nil {
-		return nil, err
-	}
-	th, err := lengthClosure(part, in.Thickness, "rib: thickness")
-	if err != nil {
-		return nil, err
-	}
-	var depth func() float64
-	if in.Depth != "" {
-		if depth, err = lengthClosure(part, in.Depth, "rib: depth"); err != nil {
-			return nil, err
-		}
-	} else if !in.ToNext {
-		return nil, errors.New("rib: give depth or toNext")
-	}
-	op, err := parseOperation(in.Operation)
-	if err != nil {
-		return nil, err
-	}
-	def := &feature.RibDefinition{
-		Sketch: sk, ProfileIndex: in.ProfileIndex,
-		Thickness: th, Depth: depth, ToNext: in.ToNext, Operation: op,
-	}
-	pf := feature.NewRibFeatures(part.Features()).AddDefinition(def)
-	return recomputeResult(part, pf)
-}
-
-// --- emboss ----------------------------------------------------------------
-
-const embossSchema = `{
-  "type": "object",
-  "properties": {
-    "sketchIndex": {"type": "integer", "minimum": 0},
-    "profileIndices": {"type": "array", "items": {"type": "integer", "minimum": 0}, "description": "Profiles to emboss; omit to use profileIndex."},
-    "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
-    "textEntity": {"type": "integer", "minimum": 1, "description": "Sketch text entity id to emboss BY REFERENCE; takes precedence over profile indices (text geometry is derived, never baked)."},
-    "depth": {"type": "string", "description": "Raise (or, with engrave, cut) depth, e.g. \"1 mm\"."},
-    "engrave": {"type": "boolean", "default": false, "description": "Cut into the face instead of raising from it."}
-  },
-  "required": ["sketchIndex", "depth"]
-}`
-
-func embossDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: featureargs.KindEmboss, Summary: "Raise or engrave a sketch profile on a face.", Schema: json.RawMessage(embossSchema), Apply: applyEmboss}
-}
-
-func applyEmboss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeFeatureArgs[featureargs.Emboss](s, raw)
-	if err != nil {
-		return nil, err
-	}
-	sk, err := sketchAt(part, in.SketchIndex)
-	if err != nil {
-		return nil, err
-	}
-	depth, err := lengthClosure(part, in.Depth, "emboss: depth")
-	if err != nil {
-		return nil, err
-	}
-	pf, err := buildEmboss(part, sk, in, depth)
-	if err != nil {
-		return nil, err
-	}
-	return recomputeResult(part, pf)
-}
-
-// buildEmboss adds either a by-reference text emboss (when textEntity is set) or a
-// profile-region emboss, so a text emboss never bakes glyph geometry into the document.
-func buildEmboss(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in featureargs.Emboss, depth func() float64) (*feature.PartFeature, error) {
-	embs := feature.NewEmbossFeatures(part.Features())
-	if in.TextEntity != 0 {
-		e, ok := sk.EntityByID(sketch.ID(in.TextEntity))
-		if !ok {
-			return nil, fmt.Errorf("emboss: no entity with id %d", in.TextEntity)
-		}
-		tb, ok := e.(*sketch.TextBox)
-		if !ok {
-			return nil, fmt.Errorf("emboss: entity %d is a %T, not a text box", in.TextEntity, e)
-		}
-		return embs.AddText(sk, tb, depth, in.Engrave, 0), nil
-	}
-	profiles := in.ProfileIndices
-	if len(profiles) == 0 {
-		profiles = []int{in.ProfileIndex}
-	}
-	return embs.Add(sk, profiles, depth, in.Engrave, 0), nil
-}
-
-// --- coil ------------------------------------------------------------------
-
-const coilSchema = `{
-  "type": "object",
-  "properties": {
-    "sketchIndex": {"type": "integer", "minimum": 0},
-    "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
-    "axisRef": {"type": "string", "description": "Work-axis reference to coil about, e.g. \"origin/axis/z\" (default)."},
-    "pitch": {"type": "string", "description": "Axial rise per revolution, e.g. \"5 mm\". Give exactly two of pitch/revolutions/height."},
-    "revolutions": {"type": "string", "description": "Number of turns, e.g. \"4\"."},
-    "height": {"type": "string", "description": "Total axial rise, e.g. \"30 mm\" — combines with pitch OR revolutions."},
-    "taper": {"type": "string", "description": "Optional taper angle, e.g. \"5 deg\" — the helix radius grows with height."},
-    "operation": {"type": "string", "enum": ["new", "join", "cut", "surface"], "default": "new", "description": "Boolean against existing bodies, or \"surface\" to coil the profile into an open swept-surface (sheet) body — Inventor's kSurfaceOperation."},
-    "startTransitionAngle": {"type": "string", "description": "Spring start-end transition sweep (pitch winds down to zero), e.g. \"90 deg\". Grounds/flattens the coil start."},
-    "startFlatAngle": {"type": "string", "description": "Spring start-end flat sweep (zero pitch) after the transition, e.g. \"180 deg\"."},
-    "endTransitionAngle": {"type": "string", "description": "Spring end transition sweep (pitch winds down to zero), e.g. \"90 deg\"."},
-    "endFlatAngle": {"type": "string", "description": "Spring end flat sweep (zero pitch) after the transition, e.g. \"180 deg\"."}
-  },
-  "required": ["sketchIndex"]
-}`
-
-func coilDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: featureargs.KindCoil, Summary: "Sweep a profile along a helix into a spring/thread.", Schema: json.RawMessage(coilSchema), Apply: applyCoil}
-}
-
-func applyCoil(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeFeatureArgs[featureargs.Coil](s, raw)
-	if err != nil {
-		return nil, err
-	}
-	sk, err := sketchAt(part, in.SketchIndex)
-	if err != nil {
-		return nil, err
-	}
-	axis, err := coilAxis(part, in.AxisRef)
-	if err != nil {
-		return nil, err
-	}
-	pitch, revs, height, err := coilShapeArgs(part, in)
-	if err != nil {
-		return nil, err
-	}
-	taper, err := optionalAngleClosure(part, in.Taper, "coil: taper")
-	if err != nil {
-		return nil, err
-	}
-	op, err := parseOperation(in.Operation)
-	if err != nil {
-		return nil, err
-	}
-	startEnd, err := coilEndCondition(part, in.StartTransitionAngle, in.StartFlatAngle, "coil: start")
-	if err != nil {
-		return nil, err
-	}
-	endEnd, err := coilEndCondition(part, in.EndTransitionAngle, in.EndFlatAngle, "coil: end")
-	if err != nil {
-		return nil, err
-	}
-	def := &feature.CoilDefinition{
-		Sketch: sk, ProfileIndex: in.ProfileIndex, Axis: axis,
-		Pitch: pitch, Revolutions: revs, Height: height,
-		Taper: callOrZeroF(taper), Operation: op,
-		StartEnd: startEnd, EndEnd: endEnd,
-	}
-	pf := feature.NewCoilFeatures(part.Features()).AddDefinition(def)
-	return recomputeResult(part, pf)
-}
-
-// coilEndCondition parses one spring end's transition + flat sweep angles into a CoilEndCondition
-// (radians). It is active (Flat) only when at least one angle is given; the transition sweeps the
-// pitch down to zero and the flat sweep then holds zero pitch (a ground spring end). #1883.
-func coilEndCondition(part *compdef.PartComponentDefinition, transition, flat, ctx string) (feature.CoilEndCondition, error) {
-	if transition == "" && flat == "" {
-		return feature.CoilEndCondition{}, nil
-	}
-	tf, err := optionalAngleClosure(part, transition, ctx+": transitionAngle")
-	if err != nil {
-		return feature.CoilEndCondition{}, err
-	}
-	ff, err := optionalAngleClosure(part, flat, ctx+": flatAngle")
-	if err != nil {
-		return feature.CoilEndCondition{}, err
-	}
-	return feature.CoilEndCondition{Flat: true, TransitionAngle: callOrZeroF(tf), FlatAngle: callOrZeroF(ff)}, nil
-}
-
-// callOrZeroF evaluates an optional closure (nil ⇒ 0).
-func callOrZeroF(f func() float64) float64 {
-	if f == nil {
-		return 0
-	}
-	return f()
-}
-
-// coilAxis resolves the coil's work axis, defaulting to the Z origin axis when no ref is given
-// (a coil's natural axis), unlike the revolve default of Y.
-func coilAxis(part *compdef.PartComponentDefinition, ref string) (*feature.WorkAxis, error) {
-	if ref == "" {
-		ref = string(feature.OriginZAxis)
-	}
-	return axisFromRef(part, ref)
-}
-
-// coilShapeArgs resolves the two-of-three coil shape spec (#316): pitch and
-// height are unit-bearing lengths, revolutions a plain number; absent fields
-// stay nil (the model validates the combination).
-func coilShapeArgs(part *compdef.PartComponentDefinition, in featureargs.Coil) (pitch, revs, height func() float64, err error) {
-	if in.Pitch != "" {
-		if pitch, err = lengthClosure(part, in.Pitch, "coil: pitch"); err != nil {
-			return nil, nil, nil, err
-		}
-	}
-	if in.Revolutions != "" {
-		if revs, err = numberClosure(part, in.Revolutions, "coil: revolutions"); err != nil {
-			return nil, nil, nil, err
-		}
-	}
-	if in.Height != "" {
-		if height, err = lengthClosure(part, in.Height, "coil: height"); err != nil {
-			return nil, nil, nil, err
-		}
-	}
-	return pitch, revs, height, nil
 }
 
 // --- loft ------------------------------------------------------------------

@@ -9,6 +9,8 @@ import (
 	"strconv"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/hlr"
+	gmath "oblikovati.org/math"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/yamlcodec"
 )
@@ -35,17 +37,24 @@ type drawingRecipe struct {
 // sheetRecipe is the YAML shape of one sheet. WidthMM/HeightMM are written only for a
 // custom size (a standard size's dimensions come from the size+orientation on open).
 type sheetRecipe struct {
-	Name        string             `yaml:"name"`
-	Size        string             `yaml:"size"`
-	Orientation string             `yaml:"orientation,omitempty"`
-	WidthMM     float64            `yaml:"widthMm,omitempty"`
-	HeightMM    float64            `yaml:"heightMm,omitempty"`
-	Border      bool               `yaml:"border"`
-	TitleBlock  string             `yaml:"titleBlock,omitempty"` // definition name; "" ⇒ no title block
-	Views       []viewRecipe       `yaml:"views,omitempty"`
-	Annotations []annotationRecipe `yaml:"annotations,omitempty"`
-	Dimensions  []dimensionRecipe  `yaml:"dimensions,omitempty"`
-	Sketches    []sketchRecipeItem `yaml:"sketches,omitempty"`
+	Name        string  `yaml:"name"`
+	Size        string  `yaml:"size"`
+	Orientation string  `yaml:"orientation,omitempty"`
+	WidthMM     float64 `yaml:"widthMm,omitempty"`
+	HeightMM    float64 `yaml:"heightMm,omitempty"`
+	Border      bool    `yaml:"border"`
+	TitleBlock  string  `yaml:"titleBlock,omitempty"` // definition name; "" ⇒ no title block
+	// Sheet authoring (#1989): revision string, zoned-border grid + label modes, title-block corner.
+	Revision     string             `yaml:"revision,omitempty"`
+	BorderHZones int                `yaml:"borderHZones,omitempty"`
+	BorderVZones int                `yaml:"borderVZones,omitempty"`
+	BorderHLabel string             `yaml:"borderHLabel,omitempty"`
+	BorderVLabel string             `yaml:"borderVLabel,omitempty"`
+	TitleBlockAt string             `yaml:"titleBlockAt,omitempty"`
+	Views        []viewRecipe       `yaml:"views,omitempty"`
+	Annotations  []annotationRecipe `yaml:"annotations,omitempty"`
+	Dimensions   []dimensionRecipe  `yaml:"dimensions,omitempty"`
+	Sketches     []sketchRecipeItem `yaml:"sketches,omitempty"`
 }
 
 // sketchRecipeItem is the YAML shape of one drawing sketch: its name, entities and hatch regions
@@ -88,6 +97,28 @@ type dimensionRecipe struct {
 	TextDX   float64 `yaml:"textDxMm,omitempty"` // user text nudge (drag-the-text)
 	TextDY   float64 `yaml:"textDyMm,omitempty"`
 	AxisHorz bool    `yaml:"axisHorizontal,omitempty"` // ordinate: measure the view-X offset, else view-Y
+	// Text metadata (#1990/#1992/#1993/#1996) — the decorated text re-derives from these on open.
+	Prefix       string                     `yaml:"prefix,omitempty"`
+	Suffix       string                     `yaml:"suffix,omitempty"`
+	OverrideText string                     `yaml:"overrideText,omitempty"`
+	HideValue    bool                       `yaml:"hideValue,omitempty"`
+	DualUnit     bool                       `yaml:"dualUnit,omitempty"`
+	Tolerance    *types.DimensionTolerance  `yaml:"tolerance,omitempty"`
+	Inspection   *types.InspectionDimension `yaml:"inspection,omitempty"`
+	// Retrieved model dimension (#1991): the source parameter name and the 3D world endpoints it
+	// spans (re-fetched from the model on open; the endpoints are the fallback when it is gone).
+	RetrievedFrom string     `yaml:"retrievedFrom,omitempty"`
+	WorldA        [3]float64 `yaml:"worldA,omitempty"`
+	WorldB        [3]float64 `yaml:"worldB,omitempty"`
+}
+
+// point3Cells / point3FromCells convert a 3D point to/from its persisted [x,y,z] cells (#1991).
+func point3Cells(p gmath.Point3) [3]float64 {
+	return [3]float64{float64(p.X), float64(p.Y), float64(p.Z)}
+}
+
+func point3FromCells(c [3]float64) gmath.Point3 {
+	return gmath.P3(gmath.Scalar(c[0]), gmath.Scalar(c[1]), gmath.Scalar(c[2]))
 }
 
 // annotationRecipe is the YAML shape of one drawing annotation. A CoG marker's glyph re-derives
@@ -101,7 +132,8 @@ type annotationRecipe struct {
 	W        float64 `yaml:"widthMm,omitempty"`
 	H        float64 `yaml:"heightMm,omitempty"`
 	Tag      string  `yaml:"tag,omitempty"`
-	EdgeKey  string  `yaml:"edgeKey,omitempty"` // centre mark: the circular edge it marks
+	EdgeKey  string  `yaml:"edgeKey,omitempty"`  // centre mark: circular edge; chamfer: edge A; bend: bend edge
+	EdgeKeyB string  `yaml:"edgeKeyB,omitempty"` // chamfer note: edge B
 	// feature control frame (GD&T):
 	Characteristic string   `yaml:"characteristic,omitempty"`
 	Tolerance      string   `yaml:"tolerance,omitempty"`
@@ -144,6 +176,42 @@ type viewRecipe struct {
 	Style        string     `yaml:"style,omitempty"`
 	CenterX      float64    `yaml:"centerXmm,omitempty"`
 	CenterY      float64    `yaml:"centerYmm,omitempty"`
+	// Section options (#1982): the retained-slab depth (model cm; 0 ⇒ full), reverse flag and
+	// partial-cut type. SectionLine above carries the cut line.
+	SectionDepth   float64 `yaml:"sectionDepth,omitempty"`
+	SectionReverse bool    `yaml:"sectionReverse,omitempty"`
+	SectionType    string  `yaml:"sectionType,omitempty"`
+	// Label overrides (#1983): a caption override and the hide flags / caption position.
+	LabelText string  `yaml:"labelText,omitempty"`
+	HideLabel bool    `yaml:"hideLabel,omitempty"`
+	HideName  bool    `yaml:"hideName,omitempty"`
+	HideScale bool    `yaml:"hideScale,omitempty"`
+	LabelX    float64 `yaml:"labelXmm,omitempty"`
+	LabelY    float64 `yaml:"labelYmm,omitempty"`
+	// Crop fences clipping the view (#1987).
+	Crops []cropRecipe `yaml:"crops,omitempty"`
+	// HideTangentEdges drops smooth tangent edges from the projection (#1984); default shows them.
+	HideTangentEdges bool `yaml:"hideTangentEdges,omitempty"`
+	// Placement (#1988): rotation about the view centre (degrees), alignment lock to another view,
+	// and centring mode.
+	RotationDeg   float64 `yaml:"rotationDeg,omitempty"`
+	AlignedTo     string  `yaml:"alignedTo,omitempty"`
+	Alignment     string  `yaml:"alignment,omitempty"`
+	Justification string  `yaml:"justification,omitempty"`
+}
+
+// cropRecipe is the YAML shape of one crop fence: a rectangle (X0,Y0)-(X1,Y1) or a circle
+// (CircleX,CircleY,Radius), all sheet mm, plus the break-mark boundary spelling (#1987).
+type cropRecipe struct {
+	Circle    bool    `yaml:"circle,omitempty"`
+	X0        float64 `yaml:"x0,omitempty"`
+	Y0        float64 `yaml:"y0,omitempty"`
+	X1        float64 `yaml:"x1,omitempty"`
+	Y1        float64 `yaml:"y1,omitempty"`
+	CircleX   float64 `yaml:"circleXmm,omitempty"`
+	CircleY   float64 `yaml:"circleYmm,omitempty"`
+	Radius    float64 `yaml:"radiusMm,omitempty"`
+	BreakMark string  `yaml:"breakMark,omitempty"`
 }
 
 // buildRecipe captures the drawing's full persisted state as a [drawingRecipe] value — the shared
@@ -213,6 +281,12 @@ func sheetRecipeOf(sh *Sheet) sheetRecipe {
 	}
 	if sh.titleBlock != nil {
 		rec.TitleBlock = sh.titleBlock.def.name
+		rec.TitleBlockAt = sh.titleBlock.location.String()
+	}
+	rec.Revision = sh.revision
+	if sh.border != nil && sh.border.def.hZones > 0 {
+		rec.BorderHZones, rec.BorderVZones = sh.border.def.hZones, sh.border.def.vZones
+		rec.BorderHLabel, rec.BorderVLabel = sh.border.def.hLabelMode.String(), sh.border.def.vLabelMode.String()
 	}
 	for _, v := range sh.views.items {
 		rec.Views = append(rec.Views, viewRecipeOf(v))
@@ -252,7 +326,8 @@ func annotationRecipesOf(sh *Sheet) []annotationRecipe {
 	for _, a := range sh.annotations.items {
 		out = append(out, annotationRecipe{
 			Name: a.name, Kind: a.kind.String(), ViewName: a.viewName,
-			X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag, EdgeKey: hex.EncodeToString(a.edgeKey),
+			X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag,
+			EdgeKey: hex.EncodeToString(a.edgeKey), EdgeKeyB: hex.EncodeToString(a.edgeKeyB),
 			Characteristic: a.characteristic.String(), Tolerance: a.tolerance, Datums: a.datums,
 			MaterialRemoval: a.materialRemoval.String(), Revisions: revisionRowRecipesOf(a.revisions),
 			Headers: a.headers, Rows: a.tableRows, HoleQuantity: holeQuantityString(a),
@@ -307,9 +382,29 @@ func dimensionRecipesOf(sh *Sheet) []dimensionRecipe {
 			KeyA: hex.EncodeToString(d.keyA), KeyB: hex.EncodeToString(d.keyB),
 			EdgeKey: hex.EncodeToString(d.edgeKey), EdgeKeyB: hex.EncodeToString(d.edgeKeyB),
 			Offset: d.offset, TextDX: d.textDX, TextDY: d.textDY, AxisHorz: d.axisHorizontal,
+			Prefix: d.prefix, Suffix: d.suffix, OverrideText: d.overrideText,
+			HideValue: d.hideValue, DualUnit: d.dualUnit,
+			Tolerance: nonZeroTolerance(d.tolerance), Inspection: nonZeroInspection(d.inspection),
+			RetrievedFrom: d.retrievedFrom, WorldA: point3Cells(d.worldA), WorldB: point3Cells(d.worldB),
 		})
 	}
 	return out
+}
+
+// nonZeroTolerance / nonZeroInspection return a pointer to persist only when the metadata is set,
+// so a plain dimension writes no tolerance/inspection block (#1990/#1996).
+func nonZeroTolerance(t types.DimensionTolerance) *types.DimensionTolerance {
+	if t.Type == types.NoTolerance {
+		return nil
+	}
+	return &t
+}
+
+func nonZeroInspection(i types.InspectionDimension) *types.InspectionDimension {
+	if i.Shape == types.NoInspectionBorder {
+		return nil
+	}
+	return &i
 }
 
 // viewRecipeOf snapshots one view's definition (its curves are re-projected on open).
@@ -324,7 +419,30 @@ func viewRecipeOf(v *DrawingView) viewRecipe {
 		BreakGap:     [2]float64{v.brk.sheetG0, v.brk.sheetG1},
 		DraftSize:    [2]float64{v.draftW, v.draftH},
 		Scale:        v.scale, Style: v.style.String(), CenterX: v.centerX, CenterY: v.centerY,
+		SectionDepth: v.sectionOpts.Depth, SectionReverse: v.sectionOpts.Reverse, SectionType: v.sectionType.String(),
+		LabelText: v.labelText, HideLabel: v.hideLabel, HideName: v.hideName, HideScale: v.hideScale,
+		LabelX: v.labelX, LabelY: v.labelY, Crops: cropRecipesOf(v.crops),
+		HideTangentEdges: v.hideTangentEdges,
+		RotationDeg:      v.RotationDeg(), AlignedTo: v.alignedTo, Alignment: alignmentString(v),
+		Justification: justificationString(v),
 	}
+}
+
+// alignmentString persists a view's alignment lock, and only a real lock — "" for a free (in-position)
+// view so the common case stays out of the recipe.
+func alignmentString(v *DrawingView) string {
+	if !v.IsAligned() {
+		return ""
+	}
+	return v.alignment.String()
+}
+
+// justificationString persists a view's centring mode, and only a non-default one.
+func justificationString(v *DrawingView) string {
+	if v.justification == types.CenteredViewJustification {
+		return ""
+	}
+	return v.justification.String()
 }
 
 // restore rebuilds one sheet from its recipe and appends it. A standard size derives
@@ -343,12 +461,14 @@ func (s *Sheets) restore(rec sheetRecipe) error {
 	if err != nil {
 		return err
 	}
-	sh := &Sheet{name: rec.Name, size: size, orientation: orient, width: w, height: h, views: newDrawingViews(s.bodyResolve), bomResolve: s.bomResolve, dimPrecision: s.dimPrecision}
+	sh := &Sheet{name: rec.Name, size: size, orientation: orient, width: w, height: h, views: newDrawingViews(s.bodyResolve), bomResolve: s.bomResolve, modelDims: s.modelDimsResolve, dimPrecision: s.dimPrecision, lookup: s.lookup, revision: rec.Revision}
 	if rec.Border {
-		sh.border = newBorder(DefaultBorderDefinition())
+		sh.border = restoreBorder(rec)
 	}
 	if rec.TitleBlock != "" {
 		sh.titleBlock = newTitleBlock(DefaultTitleBlockDefinition(), s.lookup)
+		loc, _ := types.ParseTitleBlockLocation(rec.TitleBlockAt)
+		sh.titleBlock.location = loc
 	}
 	restoreSheetContents(sh, rec)
 	s.items = append(s.items, sh)
@@ -403,6 +523,15 @@ func restoreDimensions(sh *Sheet, recs []dimensionRecipe) {
 			name: dr.Name, dimType: dimType, viewName: dr.ViewName,
 			keyA: keyA, keyB: keyB, edgeKey: edgeKey, edgeKeyB: edgeKeyB,
 			offset: dr.Offset, textDX: dr.TextDX, textDY: dr.TextDY, axisHorizontal: dr.AxisHorz,
+			prefix: dr.Prefix, suffix: dr.Suffix, overrideText: dr.OverrideText,
+			hideValue: dr.HideValue, dualUnit: dr.DualUnit,
+			retrievedFrom: dr.RetrievedFrom, worldA: point3FromCells(dr.WorldA), worldB: point3FromCells(dr.WorldB),
+		}
+		if dr.Tolerance != nil {
+			d.tolerance = *dr.Tolerance
+		}
+		if dr.Inspection != nil {
+			d.inspection = *dr.Inspection
 		}
 		ds.recompute(d)
 		ds.items = append(ds.items, d)
@@ -419,9 +548,10 @@ func restoreAnnotations(sh *Sheet, recs []annotationRecipe) {
 	for _, ar := range recs {
 		kind, _ := types.ParseDrawingAnnotationKind(ar.Kind)
 		edgeKey, _ := hex.DecodeString(ar.EdgeKey)
+		edgeKeyB, _ := hex.DecodeString(ar.EdgeKeyB)
 		characteristic, _ := types.ParseGeometricCharacteristic(ar.Characteristic)
 		holeQuantity, _ := types.ParseHoleNoteQuantity(ar.HoleQuantity)
-		a := &DrawingAnnotation{name: ar.Name, kind: kind, viewName: ar.ViewName, x: ar.X, y: ar.Y, w: ar.W, h: ar.H, tag: ar.Tag, edgeKey: edgeKey,
+		a := &DrawingAnnotation{name: ar.Name, kind: kind, viewName: ar.ViewName, x: ar.X, y: ar.Y, w: ar.W, h: ar.H, tag: ar.Tag, edgeKey: edgeKey, edgeKeyB: edgeKeyB,
 			characteristic: characteristic, tolerance: ar.Tolerance, datums: ar.Datums, revisions: revisionRowsOf(ar.Revisions),
 			headers: ar.Headers, tableRows: ar.Rows, holeQuantity: holeQuantity}
 		restoreAnnotationGeometry(a, ar)
@@ -478,15 +608,34 @@ func restoreView(vr viewRecipe) *DrawingView {
 	vt := restoredViewType(vr)
 	sl, dt, bg, ds := vr.SectionLine, vr.Detail, vr.BreakGap, vr.DraftSize
 	brkOrient, _ := types.ParseBreakOrientation(vr.BreakOrient)
+	sectionType, _ := types.ParseSectionViewType(vr.SectionType)
 	return &DrawingView{
 		name: vr.Name, viewType: vt, projected: vt == types.DrawingViewProjected, baseView: vr.BaseView,
 		foldAngle: vr.FoldAngleDeg * math.Pi / 180, section: sectionLine{sl[0], sl[1], sl[2], sl[3]},
+		sectionOpts: hlr.SectionOptions{Reverse: vr.SectionReverse, Depth: vr.SectionDepth}, sectionType: sectionType,
 		detail: detailBoundary{sheetCX: dt[0], sheetCY: dt[1], sheetR: dt[2]},
 		brk:    breakBand{orientation: brkOrient, sheetG0: bg[0], sheetG1: bg[1]},
 		draftW: ds[0], draftH: ds[1],
 		orientation: orient, direction: dir,
 		scale: positiveScale(vr.Scale), style: style, centerX: vr.CenterX, centerY: vr.CenterY,
+		labelText: vr.LabelText, hideLabel: vr.HideLabel, hideName: vr.HideName, hideScale: vr.HideScale,
+		labelX: vr.LabelX, labelY: vr.LabelY, crops: cropRegionsFrom(vr.Crops),
+		hideTangentEdges: vr.HideTangentEdges,
+		rotation:         vr.RotationDeg * math.Pi / 180,
+		alignedTo:        vr.AlignedTo, alignment: parseAlignment(vr.Alignment), justification: parseJustification(vr.Justification),
 	}
+}
+
+// parseAlignment resolves a persisted alignment spelling, defaulting to in-position (free).
+func parseAlignment(s string) types.DrawingViewAlignment {
+	a, _ := types.ParseDrawingViewAlignment(s)
+	return a
+}
+
+// parseJustification resolves a persisted justification spelling, defaulting to centered.
+func parseJustification(s string) types.ViewJustification {
+	j, _ := types.ParseViewJustification(s)
+	return j
 }
 
 // restoredViewType resolves a recipe's view type, falling back to the Projected flag for
@@ -503,6 +652,17 @@ func restoredViewType(vr viewRecipe) types.DrawingViewType {
 
 // restoreDims resolves a restored sheet's dimensions: the table value for a standard
 // size, or the persisted laid-out dimensions for a custom size.
+// restoreBorder rebuilds a sheet's border from its recipe — a zoned border when the recipe carries a
+// zone grid, otherwise the plain default (#1989).
+func restoreBorder(rec sheetRecipe) *Border {
+	if rec.BorderHZones <= 0 || rec.BorderVZones <= 0 {
+		return newBorder(DefaultBorderDefinition())
+	}
+	hMode, _ := types.ParseBorderLabelMode(rec.BorderHLabel)
+	vMode, _ := types.ParseBorderLabelMode(rec.BorderVLabel)
+	return newBorder(ZonedBorderDefinition(rec.BorderHZones, rec.BorderVZones, hMode, vMode))
+}
+
 func (s *Sheets) restoreDims(size types.SheetSize, orient types.SheetOrientation, rec sheetRecipe) (float64, float64, error) {
 	if size == types.SheetSizeCustom {
 		if rec.WidthMM <= 0 || rec.HeightMM <= 0 {

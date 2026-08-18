@@ -3,6 +3,10 @@
 package drawing
 
 import (
+	stdmath "math"
+	"strconv"
+	"strings"
+
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/hlr"
@@ -23,10 +27,11 @@ const cmToMM = 10.0
 // hidden, carrying the source model edge's reference key so the view stays associative across
 // model recompute.
 type DrawingCurve struct {
-	A, B    math.Point2
-	Visible bool
-	kind    types.DrawingCurveKind
-	edgeKey []byte
+	A, B     math.Point2
+	Visible  bool
+	kind     types.DrawingCurveKind
+	edgeKey  []byte
+	edgeType types.DrawingEdgeType // model-edge role (tangent/thread/…); zero ⇒ ordinary sharp edge
 }
 
 // Start, End and IsVisible expose the curve geometry; EdgeKey is the source model edge key;
@@ -37,6 +42,10 @@ func (c DrawingCurve) IsVisible() bool              { return c.Visible }
 func (c DrawingCurve) Kind() types.DrawingCurveKind { return c.kind }
 func (c DrawingCurve) EdgeKey() []byte              { return c.edgeKey }
 
+// EdgeType is the model-edge role the curve came from (tangent/thread/bend…); zero ⇒ ordinary sharp
+// edge (#1984).
+func (c DrawingCurve) EdgeType() types.DrawingEdgeType { return c.edgeType }
+
 // DrawingView is one view on a sheet: a base view (standard orientation) or a projected view
 // (derived from a base view by a direction), at a scale/style/centre, holding the drawing
 // curves the hidden-line engine produced for the referenced model.
@@ -44,20 +53,43 @@ type DrawingView struct {
 	name        string
 	viewType    types.DrawingViewType
 	projected   bool
-	baseView    string         // the parent view a projected/auxiliary/section view derives from
-	foldAngle   float64        // auxiliary fold-line angle on the parent, radians
-	section     sectionLine    // section-view cut line on the parent (sheet mm)
-	detail      detailBoundary // detail-view circular boundary (parent model-2D)
-	brk         breakBand      // break-view removed band (parent model-2D, along the break axis)
-	draftW      float64        // draft-view frame width (sheet mm)
-	draftH      float64        // draft-view frame height (sheet mm)
+	baseView    string                // the parent view a projected/auxiliary/section view derives from
+	foldAngle   float64               // auxiliary fold-line angle on the parent, radians
+	section     sectionLine           // section-view cut line on the parent (sheet mm)
+	sectionOpts hlr.SectionOptions    // section reverse / limited-depth (#1982)
+	sectionType types.SectionViewType // section partial-cut kind (#1982)
+	detail      detailBoundary        // detail-view circular boundary (parent model-2D)
+	brk         breakBand             // break-view removed band (parent model-2D, along the break axis)
+	draftW      float64               // draft-view frame width (sheet mm)
+	draftH      float64               // draft-view frame height (sheet mm)
 	orientation types.BaseViewOrientation
 	direction   types.ProjectionDirection
 	scale       float64
-	style       types.DrawingViewStyle
-	centerX     float64 // sheet millimetres
+	style       types.DrawingViewStyle // authored style; FromBase resolves to the base at recompute
+	effStyle    types.DrawingViewStyle // the style actually rendered this recompute (FromBase resolved, #1985)
+	centerX     float64                // sheet millimetres
 	centerY     float64
-	curves      []DrawingCurve
+	// Label (#1983). labelText overrides the default caption; the hide* flags (zero ⇒ shown) drop
+	// the label, its name, or its scale note; labelX/Y position the caption (sheet mm, 0 ⇒ below the
+	// view center).
+	labelText string
+	hideLabel bool
+	hideName  bool
+	hideScale bool
+	labelX    float64
+	labelY    float64
+	crops     []cropRegion // crop fences clipping this view (#1987)
+	// hideTangentEdges drops smooth tangent edges (fillet/blend transitions) from the projection when
+	// set; the zero value shows them (the default), so no view constructor needs to opt in (#1984).
+	hideTangentEdges bool
+	// Placement (#1988). rotation turns the view's curves about its centre (radians, CCW). alignedTo
+	// locks the view to another view on alignment's axis (horizontal ⇒ shared Y, vertical ⇒ shared X);
+	// justification records the centring mode. The zero values are unrotated / free / centred.
+	rotation      float64
+	alignedTo     string
+	alignment     types.DrawingViewAlignment
+	justification types.ViewJustification
+	curves        []DrawingCurve
 }
 
 var (
@@ -91,6 +123,16 @@ func (v *DrawingView) FoldAngle() float64 { return v.foldAngle }
 func (v *DrawingView) SectionLineMM() (x1, y1, x2, y2 float64) {
 	return v.section.x1, v.section.y1, v.section.x2, v.section.y2
 }
+
+// SectionDepthMM is the retained-slab depth in millimetres, or 0 for a full through-cut. The
+// kernel stores it in model centimetres, so it converts back on the way out (#1982).
+func (v *DrawingView) SectionDepthMM() float64 { return v.sectionOpts.Depth * cmToMM }
+
+// SectionReverse reports whether the far half is kept instead of the near half (#1982).
+func (v *DrawingView) SectionReverse() bool { return v.sectionOpts.Reverse }
+
+// SectionType is the partial-cut kind (none/quarter/half/threeQuarter, #1982).
+func (v *DrawingView) SectionType() types.SectionViewType { return v.sectionType }
 
 // DetailBoundaryMM returns the detail view's circular boundary on its parent (sheet millimetres):
 // centre and radius, converted back from the parent's projection space.
@@ -142,27 +184,52 @@ func (v *DrawingView) VisibleHidden() (visible, hidden int) {
 // clipped cut-away projection (cut outline + hatch); other views run plain HLR. In wireframe
 // style every edge is drawn visible (no hidden-line removal).
 func (v *DrawingView) recompute(body *topo.Body, basis hlr.View) {
+	// A concrete style sets the effective style here so it holds even when a view is recomputed on
+	// its own (e.g. right after AddBase); a FromBase style keeps whatever the collection pre-pass
+	// resolved it to (#1985).
+	if v.style != types.FromBaseViewStyle {
+		v.effStyle = v.style
+	}
 	segs := v.project(body, basis)
 	v.curves = make([]DrawingCurve, 0, len(segs))
+	v.buildCurves(segs, tangentEdgeKeys(body))
+	v.applyCrops() // clip the projected curves to any crop fences (#1987)
+}
+
+// buildCurves fills the view's curves from its projected segments, dispatched by view type: the
+// break/slice/breakout views run their own compression/clip logic; every other type runs the
+// plain per-segment placement (clipped to a detail boundary where present).
+func (v *DrawingView) buildCurves(segs []hlr.Segment, tangent map[string]bool) {
 	switch v.viewType {
 	case types.DrawingViewBreak:
 		v.recomputeBreak(segs)
-		return
 	case types.DrawingViewSlice:
 		v.recomputeSlice(segs)
-		return
 	case types.DrawingViewBreakout:
 		v.recomputeBreakout(segs)
-		return
-	}
-	wireframe := v.style == types.WireframeViewStyle
-	for _, s := range segs {
-		a, b, ok := v.clip(s.A, s.B)
-		if !ok {
-			continue
+	default:
+		wireframe := v.style == types.WireframeViewStyle
+		for _, s := range segs {
+			edgeType := segEdgeType(s, tangent)
+			if edgeType == types.TangentDrawingEdge && v.hideTangentEdges {
+				continue // tangent display suppressed for this view (#1984)
+			}
+			a, b, ok := v.clip(s.A, s.B)
+			if !ok {
+				continue
+			}
+			v.appendEdgeCurve(a, b, wireframe || s.Visible, curveKind(s.Kind), s.EdgeKey, edgeType)
 		}
-		v.appendCurve(a, b, wireframe || s.Visible, curveKind(s.Kind), s.EdgeKey)
 	}
+}
+
+// segEdgeType classifies a projected segment by the role of its source model edge — currently
+// tangent (a smooth fillet/blend transition) or ordinary; other roles are unknown for now (#1984).
+func segEdgeType(s hlr.Segment, tangent map[string]bool) types.DrawingEdgeType {
+	if len(s.EdgeKey) > 0 && tangent[string(s.EdgeKey)] {
+		return types.TangentDrawingEdge
+	}
+	return types.UnknownDrawingEdge
 }
 
 // DraftSizeMM returns a draft view's frame size (sheet millimetres).
@@ -185,14 +252,92 @@ func (v *DrawingView) recomputeDraftFrame() {
 
 // appendCurve places a model-2D segment on the sheet and adds it to the view's curves.
 func (v *DrawingView) appendCurve(a, b math.Point2, visible bool, kind types.DrawingCurveKind, edgeKey []byte) {
-	v.curves = append(v.curves, DrawingCurve{A: v.place(a), B: v.place(b), Visible: visible, kind: kind, edgeKey: edgeKey})
+	v.appendEdgeCurve(a, b, visible, kind, edgeKey, types.UnknownDrawingEdge)
+}
+
+// appendEdgeCurve is appendCurve carrying the source edge's role (#1984).
+func (v *DrawingView) appendEdgeCurve(a, b math.Point2, visible bool, kind types.DrawingCurveKind, edgeKey []byte, edgeType types.DrawingEdgeType) {
+	// The hidden-line-removed style keeps only visible edges, so a hidden model edge produces no
+	// curve at all (#1985). Non-edge curves (section fills, break glyphs) are always kept.
+	if !visible && kind == types.DrawingEdgeCurve && v.effStyle.RemovesHiddenEdges() {
+		return
+	}
+	v.curves = append(v.curves, DrawingCurve{A: v.place(a), B: v.place(b), Visible: visible, kind: kind, edgeKey: edgeKey, edgeType: edgeType})
+}
+
+// resolveEffectiveStyle sets the view's effective render style for this recompute, following a
+// FromBase authored style to the named base view's style so a derived view tracks its parent
+// associatively (#1985) without overwriting the authored style. A base view (or a missing parent)
+// with FromBase falls back to the hidden-line default. lookup returns a view's authored style by name.
+func (v *DrawingView) resolveEffectiveStyle(lookup func(name string) (types.DrawingViewStyle, bool)) {
+	v.effStyle = v.style
+	if v.style != types.FromBaseViewStyle {
+		return
+	}
+	if s, ok := lookup(v.baseView); ok && s != types.FromBaseViewStyle {
+		v.effStyle = s
+		return
+	}
+	v.effStyle = types.HiddenLineViewStyle
+}
+
+// EffectiveStyle returns the style the view actually renders with (FromBase resolved), for reads.
+func (v *DrawingView) EffectiveStyle() types.DrawingViewStyle { return v.effStyle }
+
+// Label is the view's caption (#1983): the explicit override when set, else a default built from the
+// view name and a scale note, each dropped by its show flag. An empty string means no label is drawn.
+func (v *DrawingView) Label() string {
+	if v.hideLabel {
+		return ""
+	}
+	if v.labelText != "" {
+		return v.labelText
+	}
+	parts := make([]string, 0, 2)
+	if !v.hideName {
+		parts = append(parts, v.name)
+	}
+	if !v.hideScale {
+		parts = append(parts, "SCALE "+scaleNote(v.scale))
+	}
+	return strings.Join(parts, "  ")
+}
+
+// ShowLabel / ShowName / ShowScale report whether the label, its name, and its scale note are drawn.
+func (v *DrawingView) ShowLabel() bool { return !v.hideLabel }
+func (v *DrawingView) ShowName() bool  { return !v.hideName }
+func (v *DrawingView) ShowScale() bool { return !v.hideScale }
+
+// SetShowLabel / SetShowName / SetShowScale toggle the label and its parts.
+func (v *DrawingView) SetShowLabel(show bool) { v.hideLabel = !show }
+func (v *DrawingView) SetShowName(show bool)  { v.hideName = !show }
+func (v *DrawingView) SetShowScale(show bool) { v.hideScale = !show }
+
+// SetLabelText overrides the default caption ("" restores the default).
+func (v *DrawingView) SetLabelText(text string) { v.labelText = text }
+
+// LabelPositionMM is where the caption is placed (sheet mm); (0,0) means below the view center.
+func (v *DrawingView) LabelPositionMM() (x, y float64) { return v.labelX, v.labelY }
+
+// SetLabelPositionMM places the caption (sheet mm).
+func (v *DrawingView) SetLabelPositionMM(x, y float64) { v.labelX, v.labelY = x, y }
+
+// scaleNote formats a view scale as a drafting ratio: 1 → "1:1", 0.5 → "1:2", 2 → "2:1".
+func scaleNote(scale float64) string {
+	if scale <= 0 {
+		return "1:1"
+	}
+	if scale >= 1 {
+		return strconv.FormatFloat(scale, 'g', -1, 64) + ":1"
+	}
+	return "1:" + strconv.FormatFloat(1/scale, 'g', -1, 64)
 }
 
 // project runs the projection a view's type calls for: a section view's clipped cut-away, or
 // plain hidden-line projection for every other kind.
 func (v *DrawingView) project(body *topo.Body, basis hlr.View) []hlr.Segment {
 	if v.viewType == types.DrawingViewSection || v.viewType == types.DrawingViewSlice {
-		return hlr.ProjectSection(body, basis, ops.DefaultQuality())
+		return hlr.ProjectSectionOpts(body, basis, ops.DefaultQuality(), v.sectionOpts)
 	}
 	return hlr.Project(body, basis, ops.DefaultQuality())
 }
@@ -229,7 +374,20 @@ func (v *DrawingView) SheetPointOfModelMM(p, origin math.Point3) math.Point2 {
 // scale and centre.
 func (v *DrawingView) place(p math.Point2) math.Point2 {
 	s := math.Scalar(cmToMM * v.scale)
-	return math.P2(math.Scalar(v.centerX)+p.X*s, math.Scalar(v.centerY)+p.Y*s)
+	rp := rotatePoint2(p, v.rotation) // view rotation turns the curves about the model-2D origin (#1988)
+	return math.P2(math.Scalar(v.centerX)+rp.X*s, math.Scalar(v.centerY)+rp.Y*s)
+}
+
+// rotatePoint2 rotates a model-2D point about the origin by angle (radians, CCW). The projection is
+// centred on the model-2D origin, which maps to the view centre, so this rotates the view's curves
+// about that centre.
+func rotatePoint2(p math.Point2, angle float64) math.Point2 {
+	if angle == 0 {
+		return p
+	}
+	sin, cos := stdmath.Sincos(angle)
+	x, y := float64(p.X), float64(p.Y)
+	return math.P2(math.Scalar(x*cos-y*sin), math.Scalar(x*sin+y*cos))
 }
 
 // baseBasis is the projection frame for a base view's standard orientation, centred on origin.

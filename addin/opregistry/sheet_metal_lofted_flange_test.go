@@ -37,11 +37,23 @@ func TestSheetMetalLoftedFlangeApply(t *testing.T) {
 	}
 	expectMergedSolid(t, out, "loftedFlange")
 
+	// A press-brake output with a facet distance plumbs through to a healthy faceted wall.
+	if _, err := applyMap(t, s, "sheetMetalLoftedFlange", map[string]any{
+		"profileA": a, "profileB": b, "outputType": "pressBrakeFacetDistance", "facetTolerance": "1 mm",
+	}); err != nil {
+		t.Fatalf("press-brake lofted flange apply: %v", err)
+	}
+
 	// Error paths.
 	if _, err := apply(t, profiledPart(t), "sheetMetalLoftedFlange", `{"profileA":0,"profileB":0}`); err == nil {
 		t.Error("lofted flange on a non-sheet-metal part must error")
 	}
 	if _, err := apply(t, s, "sheetMetalLoftedFlange", `{"profileA":99,"profileB":0}`); err == nil {
 		t.Error("lofted flange with an out-of-range profile must error")
+	}
+	if _, err := applyMap(t, s, "sheetMetalLoftedFlange", map[string]any{
+		"profileA": a, "profileB": b, "outputType": "handHammered",
+	}); err == nil {
+		t.Error("lofted flange with an unknown outputType must error")
 	}
 }

@@ -51,7 +51,7 @@ func TestBendAndFoldBendSpecs(t *testing.T) {
 // TestHemBendSpecsGaugeDerivedRadius a hem reports a 180° fold whose radius is derived from
 // the gauge — a closed hem at half the thickness, an open hem at half its gap.
 func TestHemBendSpecsGaugeDerivedRadius(t *testing.T) {
-	closed := &SheetMetalHemFeature{def: &SheetMetalHemDefinition{Type: ClosedHem}}
+	closed := &SheetMetalHemFeature{def: &SheetMetalHemDefinition{Type: SingleHem}}
 	specs := closed.BendSpecs(0.2)
 	if len(specs) != 1 || math.Abs(specs[0].Angle-math.Pi) > 1e-12 {
 		t.Fatalf("closed hem specs = %+v, want one π fold", specs)
@@ -59,7 +59,7 @@ func TestHemBendSpecsGaugeDerivedRadius(t *testing.T) {
 	if specs[0].Radius != 0.1 {
 		t.Errorf("closed hem radius = %g, want 0.1 (half the 0.2 gauge)", specs[0].Radius)
 	}
-	open := &SheetMetalHemFeature{def: &SheetMetalHemDefinition{Type: OpenHem, Gap: constClosure(0.4)}}
+	open := &SheetMetalHemFeature{def: &SheetMetalHemDefinition{Type: SingleHem, Gap: constClosure(0.4)}}
 	if r := open.BendSpecs(0.2)[0].Radius; r != 0.2 {
 		t.Errorf("open hem radius = %g, want 0.2 (half the 0.4 gap)", r)
 	}

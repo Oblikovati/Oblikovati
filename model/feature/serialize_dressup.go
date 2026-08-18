@@ -81,6 +81,11 @@ type EdgeDressData struct {
 	// the geometric recovery tier (ADR-0043 P6b). Omitted for an older recipe, which then
 	// recovers a lost reference by exact/ancestral binding only.
 	EdgeAnchors []EdgeAnchorData `yaml:"edgeAnchors,omitempty"`
+	// Chamfer-only (#1888): the face Value is measured on for the asymmetric modes, and the span of
+	// each edge the bevel covers. Absent ⇒ the edge's own face order and the whole edge.
+	ReferenceFace string  `yaml:"referenceFace,omitempty"`
+	PartialStart  float64 `yaml:"partialStart,omitempty"`
+	PartialLength float64 `yaml:"partialLength,omitempty"`
 }
 
 // EdgeAnchorData is the serialized mint-time anchor of one picked edge: its reference key
@@ -229,6 +234,15 @@ type FaceDressData struct {
 	// ShellDirection is the wall side for a shell ("outside"/"both"; absent ⇒ inside). Unused by
 	// the other dress-ups. #1864.
 	ShellDirection string `yaml:"shellDirection,omitempty"`
+	// FaceThicknesses are a shell's per-face wall overrides, resolved at save time (#1864).
+	// Absent ⇒ every retained face carries the uniform Value.
+	FaceThicknesses []FaceThicknessData `yaml:"faceThicknesses,omitempty"`
+}
+
+// FaceThicknessData is one retained face's own wall thickness in a shell (#1864).
+type FaceThicknessData struct {
+	Face      string  `yaml:"face"`
+	Thickness float64 `yaml:"thickness"`
 }
 
 // GeomFaceRefData is the serialized form of a geometric face descriptor: the face's
@@ -244,6 +258,10 @@ type FaceFilletData struct {
 	FacesA []string `yaml:"facesA"`
 	FacesB []string `yaml:"facesB"`
 	Value  float64  `yaml:"value"`
+	// Width sizes the blend by its CHORD instead of by Value, the rolling ball's radius (#1887).
+	// Persisted separately so a reopened part still resolves the width against the angle its faces
+	// meet at, rather than freezing whatever radius that came to on the day it was authored.
+	Width float64 `yaml:"width,omitempty"`
 }
 
 // RuleFilletData persists a rule fillet (#486): the dihedral rule (wire spelling) and the radius.
@@ -280,8 +298,11 @@ type ThreadData struct {
 	ModelDiameter string `yaml:"modelDiameter,omitempty"`
 	// Offset and Length are the thread's axial window on the face (cm), resolved at save time
 	// (Inventor ThreadOffset / ThreadDepth). Absent/0 length ⇒ the thread runs the full face.
-	Offset      float64          `yaml:"offset,omitempty"`
-	Length      float64          `yaml:"length,omitempty"`
+	Offset float64 `yaml:"offset,omitempty"`
+	Length float64 `yaml:"length,omitempty"`
+	// LeftHanded reverses the thread sense (#1892). A flag, not a "handedness" name, so a
+	// document written before the option existed reads back as the right-hand thread it was.
+	LeftHanded  bool             `yaml:"leftHanded,omitempty"`
 	FaceAnchors []FaceAnchorData `yaml:"faceAnchors,omitempty"`
 }
 

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
@@ -56,6 +57,78 @@ func TestLoftedFlangeLoftsTransition(t *testing.T) {
 	}
 	if v := ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 0 {
 		t.Errorf("lofted flange volume = %g, want positive", v)
+	}
+}
+
+// bulgingLoftBundle is a curved die-formed bundle: two offset square bands on parallel planes, so
+// the Hermite curves bow (their tangents leave both planes along +Z while the points shift in-plane).
+func bulgingLoftBundle() []hermiteCurve {
+	up := math.V3(0, 0, 1).AsUnit()
+	bandA := []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(0, 2, 0)}
+	bandB := []math.Point3{math.P3(1, 1, 3), math.P3(3, 1, 3), math.P3(3, 3, 3), math.P3(1, 3, 3)}
+	return hermiteBundle(bandA, bandB, up, up)
+}
+
+// TestLoftSectionCountTightensWithTolerance the die-formed wall is fixed and fine; a press-brake
+// chord-tolerance output uses FEWER facets as the tolerance loosens, and never more than die-formed.
+func TestLoftSectionCountTightensWithTolerance(t *testing.T) {
+	bundle := bulgingLoftBundle()
+	if got := loftSectionCount(bundle, DieFormedLoftedFlange, 0); got != dieFormedSections {
+		t.Errorf("die-formed section count = %d, want %d", got, dieFormedSections)
+	}
+	loose := loftSectionCount(bundle, PressBrakeChordToleranceLoftedFlange, 0.20)
+	tight := loftSectionCount(bundle, PressBrakeChordToleranceLoftedFlange, 0.02)
+	if loose >= tight {
+		t.Errorf("press-brake facets did not tighten: loose(%d) should be < tight(%d)", loose, tight)
+	}
+	if tight > dieFormedSections {
+		t.Errorf("press-brake facets %d exceed die-formed %d", tight, dieFormedSections)
+	}
+	// The measured chord deviation of the chosen facet count must actually meet the tolerance.
+	if e := facetError(bundle, tight, PressBrakeChordToleranceLoftedFlange); e > 0.02 {
+		t.Errorf("chosen facet count leaves sagitta %.5f > tol 0.02", e)
+	}
+}
+
+// TestLoftSectionCountStraightBundle a bundle with no in-plane offset is already straight, so a
+// press-brake output needs a single facet (no curvature to approximate).
+func TestLoftSectionCountStraightBundle(t *testing.T) {
+	up := math.V3(0, 0, 1).AsUnit()
+	bandA := []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(0, 2, 0)}
+	bandB := []math.Point3{math.P3(0, 0, 3), math.P3(2, 0, 3), math.P3(0, 2, 3)} // pure +Z translation
+	bundle := hermiteBundle(bandA, bandB, up, up)
+	if got := loftSectionCount(bundle, PressBrakeChordToleranceLoftedFlange, 0.01); got != 1 {
+		t.Errorf("straight bundle press-brake count = %d, want 1 (no curvature)", got)
+	}
+}
+
+// TestLoftedFlangePressBrakeCoarserThanDieFormed both output forms build a valid watertight wall,
+// and a loose press-brake facets the transition into fewer faces than the smooth die-formed wall.
+func TestLoftedFlangePressBrakeCoarserThanDieFormed(t *testing.T) {
+	build := func(out LoftedFlangeOutputType, tol float64) *topo.Body {
+		planeB, _ := sketch.NewPlane(math.P3(1, 1, 3), math.V3(1, 0, 0).AsUnit(), math.V3(0, 1, 0).AsUnit())
+		fs := NewPartFeatures(thicknessParams(t))
+		pf := NewSheetMetalLoftedFlangeFeatures(fs).Add(&SheetMetalLoftedFlangeDefinition{
+			ProfileA: lProfileOnPlane(sketch.XYPlane(), 1, 1), ProfileB: lProfileOnPlane(planeB, 2, 2),
+			Operation: ops.NewBody, Output: out, FacetTolerance: tol,
+		})
+		fs.Recompute()
+		if !pf.Health().OK() {
+			t.Fatalf("lofted flange (%s) sick: %+v", out, pf.Health())
+		}
+		body := fs.Result()[0]
+		if r := ops.Validate(body); !r.Valid {
+			t.Fatalf("lofted flange (%s) invalid: %v", out, r.Issues)
+		}
+		if open := ops.BoundaryEdges(body); len(open) != 0 {
+			t.Errorf("lofted flange (%s) not watertight: %d boundary edges", out, len(open))
+		}
+		return body
+	}
+	die := build(DieFormedLoftedFlange, 0)
+	press := build(PressBrakeFacetDistanceLoftedFlange, 1.0) // wide facets → few
+	if nd, np := len(die.Faces()), len(press.Faces()); np >= nd {
+		t.Errorf("press-brake wall has %d faces, die-formed %d; press-brake should be coarser", np, nd)
 	}
 }
 
@@ -129,7 +202,10 @@ func TestLoftedFlangeRoundTrip(t *testing.T) {
 	pb := lProfileOnPlane(sketch.XYPlane(), 2, 2)
 	idx := twoSketchIndexer{a: pa, b: pb}
 	fs := NewPartFeatures(nil)
-	NewSheetMetalLoftedFlangeFeatures(fs).Add(&SheetMetalLoftedFlangeDefinition{ProfileA: pa, ProfileB: pb, Operation: ops.Join})
+	NewSheetMetalLoftedFlangeFeatures(fs).Add(&SheetMetalLoftedFlangeDefinition{
+		ProfileA: pa, ProfileB: pb, Operation: ops.Join, Output: PressBrakeFacetAngleLoftedFlange,
+		FacetTolerance: 0.1, Converge: true, Radius: constFloat(0.2),
+	})
 
 	data, err := fs.MarshalRecipe(idx)
 	if err != nil {
@@ -139,15 +215,17 @@ func TestLoftedFlangeRoundTrip(t *testing.T) {
 	if data[0].Kind != "sheet-metal-lofted-flange" || d == nil {
 		t.Fatalf("marshaled = %+v, want sheet-metal-lofted-flange", data[0])
 	}
-	if d.ProfileA != 0 || d.ProfileB != 1 || d.Operation != int32(ops.Join) {
-		t.Errorf("payload = %+v, want profiles 0/1 / join", d)
+	if d.ProfileA != 0 || d.ProfileB != 1 || d.Operation != int32(ops.Join) ||
+		d.Output != int32(PressBrakeFacetAngleLoftedFlange) || d.FacetTolerance != 0.1 || !d.Converge || d.Radius != 0.2 {
+		t.Errorf("payload = %+v, want profiles 0/1 / join / facetAngle / 0.1 / converge / 0.2", d)
 	}
 	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, idx, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
-	if fresh.Count() != 1 || fresh.Item(0).Kind() != "sheet-metal-lofted-flange" {
-		t.Errorf("restored = %d features, want one lofted flange", fresh.Count())
+	got := fresh.Item(0).Definition().(*SheetMetalLoftedFlangeFeature).Definition()
+	if got.Output != PressBrakeFacetAngleLoftedFlange || got.FacetTolerance != 0.1 || !got.Converge || evalFloat(got.Radius) != 0.2 {
+		t.Errorf("restored = %+v, want facetAngle / 0.1 / converge / 0.2", got)
 	}
 }
 
