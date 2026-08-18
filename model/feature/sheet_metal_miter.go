@@ -28,6 +28,15 @@ func mitreCorner(bodies []*topo.Body, bend BendPlacement, in Input, gap float64,
 	if !ok {
 		return bodies, nil
 	}
+	return mitreFillAtJunction(bodies, junction, gap, feat)
+}
+
+// mitreFillAtJunction carries both walls of a junction past the corner, joins them, then cuts the
+// styled gap on the bisector so the folded part has clearance. It is the shared corner fill used by
+// the auto-miter (#1961) and by the corner-seam butt/lap styles (#2085) — the latter own no bend,
+// so they discover the junction themselves and hand it here. A gap <= 0 butts the two walls tight.
+func mitreFillAtJunction(bodies []*topo.Body, junction bendJunction, gap float64,
+	feat string) ([]*topo.Body, error) {
 	out := bodies
 	for _, e := range mitreExtensions(junction) {
 		wall, err := extendWall(e, feat)
