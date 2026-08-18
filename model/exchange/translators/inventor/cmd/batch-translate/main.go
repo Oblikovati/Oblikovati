@@ -158,7 +158,7 @@ func featureTags(data []byte) string {
 	if ipt.HasRevolve(seg) {
 		tags = append(tags, "rev")
 	}
-	if _, ok := ipt.DecodeHole(seg); ok {
+	if _, ok := ipt.DecodeHole(d); ok {
 		tags = append(tags, "hole")
 	}
 	if _, ok := ipt.DecodeSweep(seg); ok {

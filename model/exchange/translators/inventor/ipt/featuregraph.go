@@ -68,14 +68,99 @@ type dcNode struct {
 }
 
 // dcNodes returns every node of the DC segment in walk order, so a reference r resolves to
-// nodes[r-1].
+// nodes[r-1]. Pre-2023 saves lack a 4-byte content-header gap this decoder (calibrated to Inventor
+// 2027) expects, so their entity fields sit 4 bytes earlier; such a segment is normalised once to
+// the 2027 layout (see olderContentHeader / padContentHeader) so every offset-34/38/42 decoder
+// reads it unchanged. The result is memoised because the whole feature/sketch decode re-walks it.
 func dcNodes(d *Document) []dcNode {
+	if d.dcCached {
+		return d.dcCache
+	}
 	var out []dcNode
 	d.walkSegment("PmDCSegment", func(typ uint32, pay []byte) bool {
 		out = append(out, dcNode{typ, pay})
 		return true
 	})
+	if olderContentHeader(out) {
+		for i := range out {
+			out[i].payload = padContentHeader(out[i].payload, out[i].typ)
+		}
+	}
+	d.dcCache, d.dcCached = out, true
 	return out
+}
+
+// contentHeaderGapFor returns where a pre-2023 node of the given type is missing the 4-byte
+// content-header gap 2027 adds. It is NODE-TYPE-DEPENDENT: a type's fields before the gap keep their
+// offset while everything after shifts +4, and types differ in how much header precedes the gap.
+//   - Most types (sketch entity, feature, FaceBound, FxAttrStyles) carry the gap at 22: a
+//     SketchPoint's sentinel sits at 26 on 2027 / 22 on older, so flags@30→34, owner@34→38,
+//     coords@38→42, a feature's property marker@30→34, a FaceBound's refs@26→30 all realign.
+//   - A Loop keeps its operation at 10 (unshifted) and carries the gap at 14, so its edge list
+//     realigns 14→18.
+//   - A SketchEntityRef carries the gap at 18, so its associative id realigns 18→22 (and its
+//     later point/sketch refs 30/42/50/51→34/46/54/55).
+//
+// Inserting a uniform gap breaks this: at 22 the Loop/EntityRef fields below 22 never move (no
+// region resolves); lower than 14 shifts a Loop's operation off its correct offset.
+func contentHeaderGapFor(typ uint32) int {
+	switch typ {
+	case loopNodeType, loop3DNodeType:
+		return 14
+	case entityRefNodeType:
+		return 18
+	default:
+		return 22
+	}
+}
+
+// padContentHeader inserts the missing 4-byte content-header gap at this node type's position so a
+// pre-2023 node reads at the 2027 offsets. See contentHeaderGapFor.
+func padContentHeader(pay []byte, typ uint32) []byte {
+	at := contentHeaderGapFor(typ)
+	if len(pay) < at {
+		return pay
+	}
+	out := make([]byte, len(pay)+4)
+	copy(out, pay[:at])
+	copy(out[at+4:], pay[at:])
+	return out
+}
+
+// olderContentHeader reports whether the DC segment uses the pre-2023 layout, detected from the
+// property/point List2 marker (0x0002,0x3000) that a feature node carries: at offset 34 on a 2027
+// save, at 30 on an older one. Falls back to a line's edge-list marker (42 vs 38) when the part has
+// no feature nodes; defaults to 2027 (no normalisation) when neither is present, so a file this
+// heuristic can't classify is left exactly as today.
+func olderContentHeader(nodes []dcNode) bool {
+	newer, older := 0, 0
+	for _, n := range nodes {
+		switch n.typ {
+		case featureNodeType:
+			newer, older = tallyMarker(n.payload, featurePropListOffset, newer, older)
+		case line2DNodeType:
+			newer, older = tallyMarker(n.payload, edgePointsListOffset, newer, older)
+		}
+	}
+	return older > newer
+}
+
+// tallyMarker increments newer/older by whether the List2 marker sits at the 2027 offset off or the
+// 4-byte-earlier pre-2023 offset off-4.
+func tallyMarker(pay []byte, off, newer, older int) (int, int) {
+	if hasList2Marker(pay, off) {
+		newer++
+	} else if hasList2Marker(pay, off-4) {
+		older++
+	}
+	return newer, older
+}
+
+// hasList2Marker reports whether a List2 header (marker + owner) begins at off.
+func hasList2Marker(pay []byte, off int) bool {
+	return off >= 0 && off+4 <= len(pay) &&
+		binary.LittleEndian.Uint16(pay[off:]) == list2Marker &&
+		binary.LittleEndian.Uint16(pay[off+2:]) == list2Owner
 }
 
 // nodeAt resolves a 1-based reference; ok=false when it points outside the segment.
@@ -162,6 +247,29 @@ func featureBoolean(nodes []dcNode, props []int, i int) bool {
 	}
 	v, ok := booleanValue(n.payload)
 	return ok && v
+}
+
+// enumValueOf reads a node's 16-bit enum value (an operation, extent, or hole-kind enum), and whether
+// the payload is long enough to hold one.
+func enumValueOf(n dcNode) (uint16, bool) {
+	if len(n.payload) < enumValueOffset+2 {
+		return 0, false
+	}
+	return binary.LittleEndian.Uint16(n.payload[enumValueOffset:]), true
+}
+
+// featureEnum reads the enum value the feature's i-th property names, and whether that property
+// resolves to a node carrying one — the generic form of extrudeExtentEnum for any property slot
+// (a hole's extent sits at a different index than an extrude's).
+func featureEnum(nodes []dcNode, props []int, i int) (uint16, bool) {
+	if i >= len(props) {
+		return 0, false
+	}
+	n, ok := nodeAt(nodes, props[i])
+	if !ok {
+		return 0, false
+	}
+	return enumValueOf(n)
 }
 
 // extrudeDirection reads the unit direction the feature's DirectionAxis names, and whether it read
@@ -287,6 +395,52 @@ func profileOf(pay []byte, patchToSketch map[int]int) int {
 		return i
 	}
 	return -1
+}
+
+// revolveAxisNodeType is the node a Revolution feature names at property 2 (propDirection), in
+// place of an extrude's DirectionAxis: its own axis/centreline reference. It is what tells a revolve
+// feature apart from an extrude (which names 0xCE52DF40 there) — verified on the ReelToReel revolve
+// parts, where every revolve's property 2 resolves to this type and no extrude's does.
+const revolveAxisNodeType = 0x8EF06C89
+
+// RevolveProfileSketch returns the GraphSketches index of the sketch the part's Revolution feature
+// consumes as its profile, resolved through the feature's BoundaryPatch property — the SAME
+// patch -> FaceBound -> Sketch2D chain ExtrudeProfiles uses. This replaces GUESSING the revolve base
+// (the first sketch that merely looks revolvable), which mis-picks a CUT profile on a multi-feature
+// machined part and revolves garbage. A revolve feature is a generic Fx feature that is not an
+// extrude (no depth) and names its axis at property 2 as a revolveAxisNodeType node. ok=false when
+// the part has no such feature or its profile patch can't be mapped, so callers keep their fallback.
+func RevolveProfileSketch(d *Document) (int, bool) {
+	nodes := dcNodes(d)
+	_, sketchIndex := sketchOrdinals(nodes)
+	patchToSketch := boundPatchSketches(nodes, sketchIndex)
+	for _, n := range nodes {
+		if n.typ != featureNodeType {
+			continue
+		}
+		if _, isExtrude := extrudeDepth(nodes, n.payload); isExtrude {
+			continue
+		}
+		props, ok := featureProperties(n.payload)
+		if !ok || len(props) <= propProfile || !isRevolveFeature(nodes, props) {
+			continue
+		}
+		if i, ok := patchToSketch[props[propProfile]]; ok {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
+// isRevolveFeature reports whether a feature's properties are a revolve's — property 2 (propDirection)
+// names a revolveAxisNodeType node, where an extrude names a DirectionAxis and a hole names its kind
+// at property 0.
+func isRevolveFeature(nodes []dcNode, props []int) bool {
+	if len(props) <= propDirection {
+		return false
+	}
+	ax, ok := nodeAt(nodes, props[propDirection])
+	return ok && ax.typ == revolveAxisNodeType
 }
 
 // boundPatchSketches maps each BoundaryPatch ordinal to the index of the sketch that bounds it,

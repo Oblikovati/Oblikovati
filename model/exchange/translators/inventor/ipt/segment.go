@@ -30,6 +30,11 @@ var zstdMagic = [4]byte{0x28, 0xB5, 0x2F, 0xFD}
 type Document struct {
 	segments map[string][]byte
 	metaRaw  map[string][]byte
+	// dcCache memoises the walked (and, for a pre-2023 save, layout-normalised) PmDCSegment nodes;
+	// the feature and sketch decoders each re-walk it, and the normalisation must run once. See
+	// dcNodes.
+	dcCache  []dcNode
+	dcCached bool
 }
 
 // Open parses the CFBF container and decompresses every B/M segment pair.

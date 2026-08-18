@@ -30,6 +30,7 @@ const (
 	circle2DNodeType  = 0xCE52DF3B // SketchCircle — centre by reference, radius inline
 	arc2DNodeType     = 0x160915E2 // SketchArc — centre by reference, radius inline
 	ellipse2DNodeType = 0x4507D460 // SketchEllipse — centre by reference, axis + both radii inline
+	spline2DNodeType  = 0xF9372FD4 // SketchSpline — interpolating (fit) spline through point refs
 )
 
 // Byte layout of a 2D entity's payload for this Inventor generation. The content header runs to 34
@@ -42,6 +43,16 @@ const (
 	point2DPosOffset      = 42
 	edgePointsListOffset  = 42
 )
+
+// arcFlag marks a SketchCircle node that is really an ARC (open), sitting in the entity flag word
+// at offset 34 one bit below constructionFlag (0x00080000). This Inventor generation serialises a
+// sketch arc as a SketchCircle (0xCE52DF3B) node with this bit set and two on-circle endpoints,
+// NOT as a distinct SketchArc (0x160915E2) — that type does not occur in the ReelToReel corpus at
+// all. A full circle whose rim merely carries coincidence points (a slot's pin touched by two
+// tangent lines) leaves the bit clear, so it is still emitted as a circle. Verified across the
+// corpus: the linkage's tangent-point circles read clear (4 circles / 0 arcs, matching Inventor)
+// while BigChunkyPlate's and TorquimeterDisk's corner rounds read set.
+const arcFlag = 0x00040000
 
 // GraphSketches returns one sketch per Sketch2D node, in node order, decoded exactly: entities are
 // grouped by the sketch they declare as their owner, and every edge's endpoints are resolved
@@ -89,7 +100,7 @@ func sketchOrdinals(nodes []dcNode) ([]int, map[int]int) {
 // Sketch2D (a block definition, say) are declined.
 func entityOwner(n dcNode, index map[int]int) (int, bool) {
 	switch n.typ {
-	case point2DNodeType, line2DNodeType, circle2DNodeType, arc2DNodeType, ellipse2DNodeType:
+	case point2DNodeType, line2DNodeType, circle2DNodeType, arc2DNodeType, ellipse2DNodeType, spline2DNodeType:
 	default:
 		return 0, false
 	}
@@ -117,7 +128,12 @@ func addGraphEntity(s *Sketch, nodes []dcNode, n dcNode) {
 			s.LineConstruction = append(s.LineConstruction, c)
 		}
 	case circle2DNodeType:
-		if circ, ok := circle2DAt(nodes, n.payload); ok {
+		// A SketchCircle marked open (arcFlag) with two endpoints is an arc — see arcFlag. Fall
+		// through to a circle when the bit is clear, or when its endpoints don't resolve.
+		if a, ok := arcFromCircleNode(nodes, n.payload); ok {
+			s.Arcs = append(s.Arcs, a)
+			s.ArcConstruction = append(s.ArcConstruction, c)
+		} else if circ, ok := circle2DAt(nodes, n.payload); ok {
 			s.Circles = append(s.Circles, circ)
 			s.CircleConstruction = append(s.CircleConstruction, c)
 		}
@@ -129,6 +145,11 @@ func addGraphEntity(s *Sketch, nodes []dcNode, n dcNode) {
 	case ellipse2DNodeType:
 		if e, ok := ellipse2DAt(nodes, n.payload); ok {
 			s.Ellipses = append(s.Ellipses, e)
+		}
+	case spline2DNodeType:
+		if sp, ok := spline2DAt(nodes, n.payload); ok {
+			s.Splines = append(s.Splines, sp)
+			s.SplineConstruction = append(s.SplineConstruction, c)
 		}
 	}
 }
@@ -164,6 +185,27 @@ func ellipse2DAt(nodes []dcNode, pay []byte) (Ellipse, bool) {
 		return Ellipse{}, false
 	}
 	return e, true
+}
+
+// spline2DAt reads a SketchSpline: its fit points, in order, from the entity's point-reference
+// list. Inventor stores an interpolating spline whose referenced points lie ON the curve, so the
+// same points fed to a fit spline reproduce it. Needs at least two points; returns ok=false (the
+// caller then drops the curve) if any reference doesn't resolve to a Point2D. Closed is left false
+// until a closed-spline node is available to locate its flag — the corpus fixtures are all open.
+func spline2DAt(nodes []dcNode, pay []byte) (Spline, bool) {
+	refs, _, ok := refList2(pay, edgePointsListOffset)
+	if !ok || len(refs) < 2 {
+		return Spline{}, false
+	}
+	pts := make([]Point2D, 0, len(refs))
+	for _, r := range refs {
+		p, ok := referencedPoint(nodes, r)
+		if !ok {
+			return Spline{}, false
+		}
+		pts = append(pts, p)
+	}
+	return Spline{Points: pts}, true
 }
 
 // point2DAt reads a SketchPoint's inline coordinates (cm).
@@ -205,7 +247,13 @@ func circle2DAt(nodes []dcNode, pay []byte) (Circle, bool) {
 	if !ok {
 		return Circle{}, false
 	}
-	return Circle{Center: c, Radius: r}, true
+	out := Circle{Center: c, Radius: r}
+	// Keep the on-rim endpoints when the node carries a distinct pair (a mis-flagged arc), so the
+	// revolve path can recover the arc; a genuine full circle has no distinct pair (start == end).
+	if s, e, ok := edgeEndpoints(nodes, pay); ok && s != e {
+		out.ArcStart, out.ArcEnd, out.ArcEndsOK = s, e, true
+	}
+	return out, true
 }
 
 // arc2DAt reads a SketchArc: centre + radius like a circle, with the endpoints from the edge's
@@ -220,6 +268,24 @@ func arc2DAt(nodes []dcNode, pay []byte) (Arc, bool) {
 		return Arc{}, false
 	}
 	return Arc{Center: c, Radius: r, Start: start, End: end}, true
+}
+
+// arcFromCircleNode reads a SketchCircle node as an arc when the file marks it open (arcFlag at
+// offset 34) and it carries two resolvable endpoints. Returns ok=false — so the caller emits a
+// circle — when the bit is clear or the endpoints don't resolve. See arcFlag for why arcs live
+// under the SketchCircle type in this Inventor generation.
+func arcFromCircleNode(nodes []dcNode, pay []byte) (Arc, bool) {
+	if len(pay) < entityFlags2Offset+4 {
+		return Arc{}, false
+	}
+	if binary.LittleEndian.Uint32(pay[entityFlags2Offset:])&arcFlag == 0 {
+		return Arc{}, false
+	}
+	a, ok := arc2DAt(nodes, pay)
+	if !ok || a.Start == a.End { // a zero-span "arc" is a degenerate full circle
+		return Arc{}, false
+	}
+	return a, true
 }
 
 // centreAndRadius reads the centre reference and radius that follow an edge's header on a circle

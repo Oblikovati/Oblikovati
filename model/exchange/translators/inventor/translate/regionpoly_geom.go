@@ -61,6 +61,52 @@ func arcPolyline(a ipt.Arc) []math.Point2 {
 	return out
 }
 
+// ellipseParam returns the eccentric angle t of a point on the ellipse, i.e. the t for which the
+// point is Center + MajorR*cos(t)*u + MinorR*sin(t)*v with u the major axis and v its CCW normal.
+func ellipseParam(e ipt.EllipseArc, p ipt.Point2D) float64 {
+	ux, uy := e.MajorAxis.X, e.MajorAxis.Y
+	dx, dy := p.X-e.Center.X, p.Y-e.Center.Y
+	x := dx*ux + dy*uy  // component along major axis
+	y := -dx*uy + dy*ux // component along minor axis (v = (-uy, ux))
+	return stdmath.Atan2(y/e.MinorR, x/e.MajorR)
+}
+
+// ellipsePoint maps an eccentric angle back to a boundary point.
+func ellipsePoint(e ipt.EllipseArc, t float64) math.Point2 {
+	ux, uy := e.MajorAxis.X, e.MajorAxis.Y
+	c, s := stdmath.Cos(t), stdmath.Sin(t)
+	x := e.Center.X + e.MajorR*c*ux - e.MinorR*s*uy
+	y := e.Center.Y + e.MajorR*c*uy + e.MinorR*s*ux
+	return math.P2(math.Scalar(x), math.Scalar(y))
+}
+
+// ellipseArcPolyline samples an ellipse boundary edge. When Start == End the loop names the whole
+// ellipse (sampled full turn); otherwise it walks the eccentric-angle span CCW from Start to End —
+// the same convention arcPolyline uses, since ipt.trimEllipseEdge ordered Start/End by posDir.
+func ellipseArcPolyline(e ipt.EllipseArc) []math.Point2 {
+	if e.Start == (ipt.Point2D{}) && e.End == (ipt.Point2D{}) {
+		out := make([]math.Point2, arcSegments)
+		for i := range out {
+			out[i] = ellipsePoint(e, 2*stdmath.Pi*float64(i)/float64(arcSegments))
+		}
+		return out
+	}
+	s, en := ellipseParam(e, e.Start), ellipseParam(e, e.End)
+	span := en - s
+	for span <= 0 {
+		span += 2 * stdmath.Pi
+	}
+	n := int(stdmath.Ceil(float64(arcSegments) * span / (2 * stdmath.Pi)))
+	if n < 2 {
+		n = 2
+	}
+	out := make([]math.Point2, 0, n+1)
+	for i := 0; i <= n; i++ {
+		out = append(out, ellipsePoint(e, s+span*float64(i)/float64(n)))
+	}
+	return out
+}
+
 // sampleWholeCircle samples a circle the loop names whole (a bore's hole loop).
 func sampleWholeCircle(c ipt.Circle) []math.Point2 {
 	out := make([]math.Point2, arcSegments)
@@ -71,6 +117,35 @@ func sampleWholeCircle(c ipt.Circle) []math.Point2 {
 			math.Scalar(c.Center.Y+c.Radius*stdmath.Sin(t)))
 	}
 	return out
+}
+
+// polygonArea is the absolute area a closed polygon encloses (shoelace).
+func polygonArea(poly []math.Point2) float64 {
+	a := 0.0
+	for i := range poly {
+		j := (i + 1) % len(poly)
+		a += float64(poly[i].X)*float64(poly[j].Y) - float64(poly[j].X)*float64(poly[i].Y)
+	}
+	if a < 0 {
+		a = -a
+	}
+	return a / 2
+}
+
+// smallestContainingArea returns the area of the smallest region outer loop that contains q, and
+// whether any does. The smallest (tightest) loop is the one a cell inside q must fit — where outer
+// loops overlap, a cell can belong to at most the smaller of them.
+func smallestContainingArea(q math.Point2, outers [][]math.Point2) (float64, bool) {
+	best, found := 0.0, false
+	for _, o := range outers {
+		if !pointInPoly(q, o) {
+			continue
+		}
+		if a := polygonArea(o); !found || a < best {
+			best, found = a, true
+		}
+	}
+	return best, found
 }
 
 // pointInPoly is the even-odd containment test.

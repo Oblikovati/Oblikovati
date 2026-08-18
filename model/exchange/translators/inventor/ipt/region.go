@@ -63,10 +63,22 @@ type RegionLoop struct {
 // RegionEdge is one curve of a region's boundary, identified by geometry so it can be matched
 // against a rebuilt profile's entities. Exactly one of the shapes is meaningful, per Kind.
 type RegionEdge struct {
-	Kind   EdgeKind
-	Line   Line
-	Circle Circle
-	Arc    Arc
+	Kind    EdgeKind
+	Line    Line
+	Circle  Circle
+	Arc     Arc
+	Ellipse EllipseArc
+}
+
+// EllipseArc is a region-boundary ellipse edge: the full ellipse geometry plus the span the face
+// walks (Start..End, ordered by the reference's posDir like an arc). Start == End (both zero) means
+// the loop names the whole ellipse, as a bore's hole loop does with a circle.
+type EllipseArc struct {
+	Center     Point2D
+	MajorAxis  Point2D // unit direction of the major axis
+	MajorR     float64
+	MinorR     float64
+	Start, End Point2D
 }
 
 // EdgeKind names which curve a RegionEdge carries.
@@ -76,6 +88,7 @@ const (
 	EdgeLine EdgeKind = iota
 	EdgeCircle
 	EdgeArc
+	EdgeEllipse
 )
 
 // ExtrudeRegions returns, for each extrude in feature order, the loops bounding the region it
@@ -170,7 +183,28 @@ func resolveRegionEdge(nodes []dcNode, ref int, assoc map[assocKey]dcNode, sketc
 	if e.Kind == EdgeCircle {
 		e = trimCircleEdge(e, er, assoc, sk)
 	}
+	if e.Kind == EdgeEllipse {
+		e = trimEllipseEdge(e, er, assoc, sk)
+	}
 	return e, true
+}
+
+// trimEllipseEdge records the span an ellipse-boundary edge walks, from the reference's own trim
+// points — the ellipse analogue of trimCircleEdge. The start/end points lie ON the ellipse; the
+// consumer (translate.ellipseArcPolyline) turns them into the swept parameter range. p1 == p2 (or an
+// unresolvable point) means the face uses the whole ellipse, left as Start == End for the consumer.
+func trimEllipseEdge(e RegionEdge, er dcNode, assoc map[assocKey]dcNode, sk int) RegionEdge {
+	p1, ok1 := entityRefPoint(er, entityRefPoint1Offset, assoc, sk)
+	p2, ok2 := entityRefPoint(er, entityRefPoint2Offset, assoc, sk)
+	if !ok1 || !ok2 || samePoint2D(p1, p2) {
+		return e // whole ellipse
+	}
+	start, end := p1, p2
+	if !entityRefPosDir(er) {
+		start, end = p2, p1
+	}
+	e.Ellipse.Start, e.Ellipse.End = start, end
+	return e
 }
 
 // trimCircleEdge cuts a named WHOLE circle back to the arc the face actually walks, from the
@@ -236,6 +270,11 @@ func regionEdgeOf(nodes []dcNode, n dcNode) (RegionEdge, bool) {
 	case arc2DNodeType:
 		a, ok := arc2DAt(nodes, n.payload)
 		return RegionEdge{Kind: EdgeArc, Arc: a}, ok
+	case ellipse2DNodeType:
+		el, ok := ellipse2DAt(nodes, n.payload)
+		return RegionEdge{Kind: EdgeEllipse, Ellipse: EllipseArc{
+			Center: el.Center, MajorAxis: el.MajorAxis, MajorR: el.MajorR, MinorR: el.MinorR,
+		}}, ok
 	}
 	return RegionEdge{}, false
 }

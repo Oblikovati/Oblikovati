@@ -13,9 +13,24 @@ import (
 // the arcs themselves are exact, trimmed by ipt.trimCircleEdge from the file's own point1AI /
 // point2AI / posDir, so nothing here guesses which way round a circle the face runs.
 
-// polyTol is the distance under which two boundary endpoints are the same point. The file's
-// coordinates meet exactly; this only absorbs float noise in re-deriving them.
-const polyTol = 1e-6 // tol:calibrated — region boundary endpoint join; see sketch arrMergeTol
+// polyTol is the distance (cm) under which two region-boundary endpoints are the same point when
+// chaining a loop's edges head-to-tail for the CONTAINMENT test. It is used ONLY to decide which
+// cells lie inside a region (regionBoundary/joinChains); it never touches built geometry.
+//
+// It cannot be float-noise-tight: a loop's edges do NOT always meet exactly. A thin (sub-mm) ribbon
+// where an end-cap arc meets the two side lines carries a real ~0.05 mm spread between the arc's
+// trimmed endpoint and the line's endpoint (TapePath's tape-guide loops: three curves meet at a
+// corner within a ~0.01 cm triangle). At 1e-6 those loops were UNCHAINABLE, so containment declined
+// and the caller fell back to the curve-set rule — which over-selected 13 cells (4.83 of 20.49 cm²)
+// and built the extrude at 7.6x its true volume.
+//
+// 7e-3 cm sits just above the real ~5e-3 cm endpoint spread and below the ~1.1e-2 cm separation of
+// genuinely-distinct corner points, so it joins the meant-to-coincide endpoints without collapsing a
+// real corner (a looser 1e-2 mis-closed TapePath's loop[2], halving its enclosed area). It stays far
+// below any feature size — negligible for a point-in-polygon test whose cell interiors sit well
+// inside the boundary. Only parts whose loops FAIL to chain at 1e-6 can change; a loop that already
+// closes is unaffected.
+const polyTol = 7e-3 // tol:calibrated — region containment endpoint join; see sketch arrMergeTol
 
 // arcSegments is how finely an arc is sampled for the containment test. Containment only asks which
 // side of the boundary a cell sits on — it is well inside or well outside — so this is a test
@@ -48,14 +63,35 @@ func containedProfileIndices(sk *sketch.Sketch, region []ipt.RegionLoop) ([]int,
 		}
 		q, ok := profileInteriorPoint(p)
 		if !ok {
-			return nil, false // cannot place a test point: decline rather than mis-select
+			// A cell with no placeable interior point is a degenerate sliver of the arrangement (a
+			// zero-width wedge between near-coincident curves); it bounds no material, so skip it
+			// rather than declining the WHOLE region. Declining sent the entire sketch to the
+			// curve-set fallback whenever one of many cells was degenerate — TapePath's 60-cell tape
+			// path had such slivers, so its thin ribbons were never containment-selected and the
+			// fallback over-built it 7.6x.
+			continue
 		}
-		if insideRegion(q, outers, holes) {
-			out = append(out, i)
+		if !insideRegion(q, outers, holes) {
+			continue
 		}
+		// A cell belongs to the region only if it FITS the loop that holds its test point. A single
+		// interior point being inside a loop is necessary but not sufficient: a large cell can have a
+		// corner poke into a small loop while the rest lies far outside it. FlangeReelMotor's +-shaped
+		// keep cell (108 cm²) had its point land in a 13.7 cm² edge scallop, so a through-cut selected
+		// the whole + and gutted the flange. A cell far larger than its containing loop cannot be that
+		// loop's interior, so it is rejected (the generous 1.5x slack passes reconstruction noise while
+		// catching this 7.9x mismatch).
+		if a, ok := smallestContainingArea(q, outers); ok && polygonArea(p.OuterLoop().Polygon()) > cellFitSlack*a {
+			continue
+		}
+		out = append(out, i)
 	}
 	return out, true
 }
+
+// cellFitSlack is how much larger than its containing region loop a cell may be and still count as
+// inside it — headroom for arc-sampling and boundary-chaining noise, well below any real over-select.
+const cellFitSlack = 1.5
 
 // profileInteriorPoint returns a point inside the cell's MATERIAL — inside its outer loop and
 // outside its own holes.
@@ -81,11 +117,22 @@ func profileInteriorPoint(p *sketch.Profile) (math.Point2, bool) {
 }
 
 // regionBoundaries reconstructs the region's material outlines and its holes.
+//
+// A MATERIAL loop that will not chain into a closed polygon is an OPEN sliver — a degenerate
+// fragment that bounds no area, so it can be no face and is dropped rather than failing the whole
+// region (TapePath's tape-guide patch carries one such 2-edge stub — a ~0.005 cm arc joined to a
+// line at a single shared vertex — alongside five real thin-ribbon faces; failing on it sent the
+// whole region to the wrong curve-set rule, which over-selected 13 cells and built the extrude at
+// 7.6x volume). A CUT loop is NOT dropped: an unreadable hole would silently over-fill the face, so
+// its region still declines to containment and keeps the safer fallback.
 func regionBoundaries(region []ipt.RegionLoop) (outers, holes [][]math.Point2, ok bool) {
 	for _, l := range region {
 		poly, ok := regionBoundary(l)
 		if !ok || len(poly) < 3 {
-			return nil, nil, false
+			if l.Cut {
+				return nil, nil, false // a hole we cannot read: decline rather than over-fill
+			}
+			continue // an open material sliver bounds no face
 		}
 		if l.Cut {
 			holes = append(holes, poly)
@@ -93,7 +140,7 @@ func regionBoundaries(region []ipt.RegionLoop) (outers, holes [][]math.Point2, o
 			outers = append(outers, poly)
 		}
 	}
-	return outers, holes, true
+	return outers, holes, len(outers) > 0
 }
 
 // insideRegion reports whether q is inside some material outline and outside every hole.
@@ -151,6 +198,12 @@ func loopChains(l ipt.RegionLoop) (chains [][]math.Point2, whole [][]math.Point2
 			chains = append(chains, arcPolyline(e.Arc))
 		case ipt.EdgeCircle:
 			whole = append(whole, sampleWholeCircle(e.Circle))
+		case ipt.EdgeEllipse:
+			if e.Ellipse.Start == (ipt.Point2D{}) && e.Ellipse.End == (ipt.Point2D{}) {
+				whole = append(whole, ellipseArcPolyline(e.Ellipse)) // a whole ellipse stands alone, like a bore
+			} else {
+				chains = append(chains, ellipseArcPolyline(e.Ellipse))
+			}
 		}
 	}
 	return chains, whole
