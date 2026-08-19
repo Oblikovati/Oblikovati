@@ -243,7 +243,7 @@ func knownMeshLeaks() []meshDebtEntry {
 func knownFoldedMeshes() []meshDebtEntry {
 	return []meshDebtEntry{
 		{"T9", "simple", 6, 15}, // FAIL(faulty) — all on one geom.BSplineSurface
-		{"F2", "complex", 1, 2}, // FAIL(area) — folds but does NOT leak
+		{"F2", "complex", 1, 2}, // FAIL(faulty) since #2079 (self-intersects) — folds but does NOT leak
 	}
 }
 

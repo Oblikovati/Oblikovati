@@ -8,14 +8,18 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
 )
 
-// codeLoftedFlangeUnmodeled marks a lofted flange whose converge / end-bend-radius solid is not
-// modelled yet (#2086).
+// codeLoftedFlangeUnmodeled marks a lofted flange whose converge input found nothing to model (#2086).
 const codeLoftedFlangeUnmodeled diag.Code = "sheet-metal.lofted-flange-unmodeled"
+
+// codeLoftedFlangeLipDropped marks an end-bend radius whose flat lip would self-intersect on this
+// profile, so only the rounded fold was kept (#2086).
+const codeLoftedFlangeLipDropped diag.Code = "sheet-metal.lofted-flange-lip-dropped"
 
 // Sheet-metal Lofted Flange feature (M13-F02). A lofted flange is a constant-thickness wall
 // that transitions between TWO open profiles on two sketch planes — the sheet-metal way to
@@ -80,16 +84,16 @@ func (f *SheetMetalLoftedFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	// The output type (die-formed / press-brake facets) IS modelled; converge and the end-bend
-	// radius are recorded but their solid is a follow-up (#2086), so report rather than pass off a
-	// sharp-cornered wall as converged.
-	if f.def.Converge || evalFloat(f.def.Radius) > 0 {
-		in.Diag.Recordf(codeLoftedFlangeUnmodeled, diag.Warning,
-			"lofted flange: converge=%v and end-bend radius are recorded but not modelled yet (#2086)", f.def.Converge)
+	if f.def.Converge {
+		converged, n := convergeCorners(bandA, bandB)
+		if n == 0 {
+			in.Diag.Recordf(codeLoftedFlangeUnmodeled, diag.Warning,
+				"lofted flange: converge is on but the profiles have no corners to pinch (#2086)")
+		}
+		bandB = converged
 	}
-	sections := loftedFlangeSections(bandA, bandB, f.def.ProfileA.Plane().Normal(),
-		f.def.ProfileB.Plane().Normal(), f.def.Output, f.def.FacetTolerance)
-	wall, err := sweptSolid(sections, false, featOr(f.featName, "loftedFlange"))
+	nA, nB := f.def.ProfileA.Plane().Normal(), f.def.ProfileB.Plane().Normal()
+	wall, err := f.buildTransitionWall(bandA, bandB, nA, nB, in.Diag)
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal lofted flange: %w", err)
 	}
@@ -98,6 +102,33 @@ func (f *SheetMetalLoftedFlangeFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
+}
+
+// buildTransitionWall skins the wall between the two bands. Without a bend radius it is the plain
+// profile-to-profile die-formed / press-brake wall; with one it is the rounded end bend (lip + fold).
+// Converge, when on, has already retargeted bandB's corners.
+func (f *SheetMetalLoftedFlangeFeature) buildTransitionWall(bandA, bandB []math.Point3,
+	nA, nB math.UnitVector3, rec *diag.Recorder) (*topo.Body, error) {
+	feat := featOr(f.featName, "loftedFlange")
+	r := evalFloat(f.def.Radius)
+	if r <= 0 {
+		return sweptSolid(loftedFlangeSections(bandA, bandB, nA, nB, f.def.Output, f.def.FacetTolerance), false, feat)
+	}
+	return f.buildRoundedWall(bandA, bandB, nA, nB, r, feat, rec)
+}
+
+// buildRoundedWall prefers the flat lip + fold, but the lip is an inward offset of the thickened
+// band, so at a tight radius it can self-intersect. When it does, the wall falls back to the fold
+// alone (always valid) and reports it, rather than ship a self-intersecting solid (#2086).
+func (f *SheetMetalLoftedFlangeFeature) buildRoundedWall(bandA, bandB []math.Point3,
+	nA, nB math.UnitVector3, r float64, feat string, rec *diag.Recorder) (*topo.Body, error) {
+	withLip, err := sweptSolid(endBendSections(bandA, bandB, nA, nB, r, r, f.def.Output, f.def.FacetTolerance), false, feat)
+	if err == nil && len(ops.SelfIntersections(withLip, ops.DefaultQuality())) == 0 {
+		return withLip, nil
+	}
+	rec.Recordf(codeLoftedFlangeLipDropped, diag.Warning,
+		"lofted flange: the flat end-bend lip would self-intersect at radius %g; kept the rounded fold without the lip (#2086)", r)
+	return sweptSolid(endBendSections(bandA, bandB, nA, nB, r, 0, f.def.Output, f.def.FacetTolerance), false, feat)
 }
 
 // loftBands thickens both profiles into their 3D bands, erroring when a profile cannot be read or

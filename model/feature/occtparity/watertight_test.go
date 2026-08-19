@@ -44,6 +44,30 @@ func TestIsWatertightSolidAcceptsGenuineSolid(t *testing.T) {
 	}
 }
 
+// TestIsWatertightSolidRejectsInterpenetration is the #2079 regression: R8 and W9 (the deep concave
+// boss-base rims whose R+r cove spills onto the side walls) build a body that is topologically valid —
+// Valid && Closed && Manifold && HolesContained && IsSolid — yet drives the plate face and the side wall
+// straight THROUGH each other (interpenetration 3-15 model units, far past any tessellation error). The
+// old topology-only gate called that watertight; the hardened isWatertightSolid rejects it via the
+// self-intersection scan. The three parts below pin each half: the blind spot, the defect, the fix.
+func TestIsWatertightSolidRejectsInterpenetration(t *testing.T) {
+	t.Parallel()
+	for _, name := range []string{"R8", "W9"} {
+		res, filletOK, props, ok := rawFilletResult(t, name)
+		rep := ops.Validate(res[0])
+		topologyOK := rep.Valid && rep.Closed && rep.Manifold && rep.HolesContained && res[0].IsSolid()
+		if !topologyOK {
+			t.Fatalf("%s: expected topology-valid (the #2079 blind spot the old gate trusted); got %+v", name, rep)
+		}
+		if len(ops.SelfIntersections(res[0], ops.PropertyQuality())) == 0 {
+			t.Fatalf("%s: expected a self-intersection (the #2079 defect); found none", name)
+		}
+		if isWatertightSolid(res, filletOK, props, ok) {
+			t.Errorf("%s: isWatertightSolid must REJECT a self-intersecting body, not report it watertight (#2079)", name)
+		}
+	}
+}
+
 // TestTheCorpusHoldsNoCase pins the quarantine list EMPTY — the corpus's last blind spot, closed.
 //
 // WHY THIS IS THE ASSERTION NOW. A quarantined case is SKIPPED by RunCase before it ever builds, so it is

@@ -28,5 +28,13 @@ func isWatertightSolid(res []*topo.Body, filletOK bool, props ops.GeometryProper
 		return false
 	}
 	rep := ops.Validate(res[0])
-	return rep.Valid && rep.Closed && rep.Manifold && rep.HolesContained && res[0].IsSolid()
+	topologyOK := rep.Valid && rep.Closed && rep.Manifold && rep.HolesContained && res[0].IsSolid()
+	// ops.Validate is TOPOLOGY-ONLY: a body whose faces are driven straight through each other still
+	// satisfies Valid && Closed && Manifold && HolesContained && IsSolid (#2079 — R8/W9/complex-F2 in
+	// the corpus interpenetrate by 3-15 model units, three orders of magnitude past any tessellation
+	// error). A genuine watertight solid does not self-intersect, so gate on it too. The scan runs at
+	// PropertyQuality — the SAME quality caseProperties already tessellated at — so it reuses the
+	// memoized tessellation rather than re-tessellating (the perf regression watertight must not
+	// reintroduce), adding only the face-pair crossing test.
+	return topologyOK && len(ops.SelfIntersections(res[0], ops.PropertyQuality())) == 0
 }

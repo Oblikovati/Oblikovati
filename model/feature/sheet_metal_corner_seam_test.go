@@ -68,10 +68,11 @@ func TestParseSeamType(t *testing.T) {
 	}
 }
 
-// TestCornerSeamOverlapDeferred a non-gap seam is a valid, healthy feature that records its
-// intent but does NOT remove material yet: the lap/butt solid is a follow-up (#2085), so the
-// feature reports an "unmodelled" diagnostic and leaves the sheet's volume untouched.
-func TestCornerSeamOverlapDeferred(t *testing.T) {
+// TestCornerSeamOverlapOnFlatSheetIsUnmodelled a non-gap seam on a FLAT sheet has no two flange
+// walls to lap, so its lap/butt solid (#2085) cannot be built there: the feature stays healthy,
+// leaves the volume untouched, and reports the "unmodelled" diagnostic honestly. (The modelled lap
+// on a real two-flange corner is exercised in sheet_metal_corner_seam_lap_test.go.)
+func TestCornerSeamOverlapOnFlatSheetIsUnmodelled(t *testing.T) {
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	edge := verticalCornerEdge(t, fs.Result()[0])
 	pf := NewSheetMetalCornerSeamFeatures(fs).Add(&SheetMetalCornerSeamDefinition{

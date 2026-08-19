@@ -95,14 +95,11 @@ func (f *SheetMetalCornerSeamFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	// Only the gap style removes material from this single-body sheet; the lap/butt styles differ
-	// in which wall laps over the other, which a watertight union cannot express (#2085). Record
-	// the seam and report honestly rather than pass off an unrelieved corner as an overlap.
+	// The gap style cuts a notch on this one body; the butt/lap styles finish the corner where two
+	// flange walls meet, so they build from the walls' bends instead (#2085) — and fall back to an
+	// honest report when there is no bent corner to finish.
 	if f.def.Type != GapSeam {
-		in.Diag.Recordf(codeCornerSeamUnmodeled, diag.Warning,
-			"corner seam %q leaves the corner unrelieved: its lap/butt solid is not modelled yet (#2085); recorded overlap %g%%",
-			f.def.Type, f.def.Overlap)
-		return Output{Bodies: in.Bodies, Heals: heals}, nil
+		return f.finishLapSeam(in, edges, gap, heals)
 	}
 	return f.cutGapSeam(in, body, edges, gap, heals)
 }
