@@ -2,7 +2,12 @@
 
 package occurrence
 
-import "oblikovati.org/math"
+import (
+	"fmt"
+
+	"oblikovati.org/api/types"
+	"oblikovati.org/math"
+)
 
 // OccurrencePatternElement is one replicated instance of an occurrence pattern: its
 // computed placement plus per-element state — a suppression flag and an optional
@@ -49,6 +54,13 @@ type OccurrencePattern struct {
 	base        math.Matrix4
 	arrangement Arrangement
 	elements    []*OccurrencePatternElement
+
+	// Persistent identity + the occurrences each element drives (#1976). occs is aligned to
+	// elements: occs[0] is the seed occurrence, occs[i>=1] the generated copy for element i, so
+	// suppressing/repositioning an element acts on the real occurrence. Set by BindOccurrences.
+	id   uint64
+	name string
+	occs []*Occurrence
 }
 
 // NewOccurrencePattern builds a pattern of seed (placed at base) over arrangement and
@@ -86,6 +98,9 @@ func (p *OccurrencePattern) Regenerate() {
 // Seed returns the component this pattern replicates.
 func (p *OccurrencePattern) Seed() Definition { return p.seed }
 
+// Arrangement returns the layout the pattern replicates the seed across — read for persistence.
+func (p *OccurrencePattern) Arrangement() Arrangement { return p.arrangement }
+
 // Count returns the number of pattern elements (including suppressed ones).
 func (p *OccurrencePattern) Count() int { return len(p.elements) }
 
@@ -97,6 +112,113 @@ func (p *OccurrencePattern) Elements() []*OccurrencePatternElement {
 	out := make([]*OccurrencePatternElement, len(p.elements))
 	copy(out, p.elements)
 	return out
+}
+
+// ID returns the pattern's session id, assigned when it is recorded in an
+// [OccurrencePatternSet].
+func (p *OccurrencePattern) ID() uint64 { return p.id }
+
+// Name returns the pattern's display name; SetName renames it.
+func (p *OccurrencePattern) Name() string     { return p.name }
+func (p *OccurrencePattern) SetName(n string) { p.name = n }
+
+// Kind reports the arrangement family — "circular", "rectangular", or "" for another
+// arrangement — so a client can tell how the pattern was laid out.
+func (p *OccurrencePattern) Kind() string {
+	switch p.arrangement.(type) {
+	case *CircularArrangement, CircularArrangement:
+		return "circular"
+	case *RectangularArrangement, RectangularArrangement:
+		return "rectangular"
+	default:
+		return ""
+	}
+}
+
+// BindOccurrences links the pattern's elements to the occurrences they drive: the seed (element
+// 0) and one generated occurrence per element beyond it, in element order. Editing an element
+// then moves or suppresses the real occurrence.
+func (p *OccurrencePattern) BindOccurrences(seed *Occurrence, generated []*Occurrence) {
+	p.occs = append([]*Occurrence{seed}, generated...)
+}
+
+// Occurrences returns the occurrences the pattern drives, element 0 (the seed) first.
+func (p *OccurrencePattern) Occurrences() []*Occurrence {
+	out := make([]*Occurrence, len(p.occs))
+	copy(out, p.occs)
+	return out
+}
+
+// SetSuppressed suppresses or unsuppresses the WHOLE pattern, moving every GENERATED element
+// together (#1976). Element 0 is the seed — the pre-existing component — so it is left in place; an
+// all-suppressed pattern leaves just the seed.
+func (p *OccurrencePattern) SetSuppressed(suppressed bool) {
+	for i := 1; i < len(p.elements); i++ {
+		p.setElementSuppressed(i, suppressed)
+	}
+}
+
+// SetElementSuppressed suppresses or unsuppresses one generated element by index (1..Count-1),
+// erroring on the seed (element 0) or an out-of-range index.
+func (p *OccurrencePattern) SetElementSuppressed(i int, suppressed bool) error {
+	if err := p.checkGenerated(i); err != nil {
+		return err
+	}
+	p.setElementSuppressed(i, suppressed)
+	return nil
+}
+
+// checkGenerated rejects the seed (element 0, which the pattern does not own) and out-of-range
+// indices, so pattern edits only ever touch the generated instances.
+func (p *OccurrencePattern) checkGenerated(i int) error {
+	if i < 1 || i >= len(p.elements) {
+		return fmt.Errorf("occurrence pattern element %d out of range [1,%d) (element 0 is the seed)", i, len(p.elements))
+	}
+	return nil
+}
+
+// setElementSuppressed sets the element flag and the driven occurrence together.
+func (p *OccurrencePattern) setElementSuppressed(i int, suppressed bool) {
+	p.elements[i].SetSuppressed(suppressed)
+	if i < len(p.occs) && p.occs[i] != nil {
+		p.occs[i].SetSuppressed(suppressed)
+	}
+}
+
+// RepositionElement moves one element (by index) to an explicit placement, off the regular grid,
+// erroring when the index is out of range. The driven occurrence moves with it.
+func (p *OccurrencePattern) RepositionElement(i int, m math.Matrix4) error {
+	if err := p.checkGenerated(i); err != nil {
+		return err
+	}
+	p.elements[i].Reposition(m)
+	if i < len(p.occs) && p.occs[i] != nil {
+		p.occs[i].SetTransform(m)
+	}
+	return nil
+}
+
+// Suppression reports whether none, some, or all of the pattern's elements are suppressed —
+// the pattern-level state Inventor's OccurrencePatternSuppressionEnum reports (#1976).
+func (p *OccurrencePattern) Suppression() types.OccurrencePatternSuppression {
+	generated := len(p.elements) - 1 // element 0 is the seed, not part of the pattern's suppression
+	if generated <= 0 {
+		return types.NoneSuppressed
+	}
+	suppressed := 0
+	for i := 1; i < len(p.elements); i++ {
+		if p.elements[i].suppressed {
+			suppressed++
+		}
+	}
+	switch suppressed {
+	case 0:
+		return types.NoneSuppressed
+	case generated:
+		return types.AllElementsSuppressed
+	default:
+		return types.SomeElementsSuppressed
+	}
 }
 
 // RangeBox returns the axis-aligned box enclosing the seed placed at every
