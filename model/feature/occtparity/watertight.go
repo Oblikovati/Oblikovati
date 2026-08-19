@@ -28,9 +28,7 @@ func isWatertightSolid(res []*topo.Body, filletOK bool, props ops.GeometryProper
 		return false
 	}
 	rep := ops.Validate(res[0])
-	if !(rep.Valid && rep.Closed && rep.Manifold && rep.HolesContained && res[0].IsSolid()) {
-		return false
-	}
+	topologyOK := rep.Valid && rep.Closed && rep.Manifold && rep.HolesContained && res[0].IsSolid()
 	// ops.Validate is TOPOLOGY-ONLY: a body whose faces are driven straight through each other still
 	// satisfies Valid && Closed && Manifold && HolesContained && IsSolid (#2079 — R8/W9/complex-F2 in
 	// the corpus interpenetrate by 3-15 model units, three orders of magnitude past any tessellation
@@ -38,5 +36,5 @@ func isWatertightSolid(res []*topo.Body, filletOK bool, props ops.GeometryProper
 	// PropertyQuality — the SAME quality caseProperties already tessellated at — so it reuses the
 	// memoized tessellation rather than re-tessellating (the perf regression watertight must not
 	// reintroduce), adding only the face-pair crossing test.
-	return len(ops.SelfIntersections(res[0], ops.PropertyQuality())) == 0
+	return topologyOK && len(ops.SelfIntersections(res[0], ops.PropertyQuality())) == 0
 }

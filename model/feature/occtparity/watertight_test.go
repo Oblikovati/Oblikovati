@@ -54,7 +54,9 @@ func TestIsWatertightSolidRejectsInterpenetration(t *testing.T) {
 	t.Parallel()
 	for _, name := range []string{"R8", "W9"} {
 		res, filletOK, props, ok := rawFilletResult(t, name)
-		if rep := ops.Validate(res[0]); !(rep.Valid && rep.Closed && rep.Manifold && rep.HolesContained && res[0].IsSolid()) {
+		rep := ops.Validate(res[0])
+		topologyOK := rep.Valid && rep.Closed && rep.Manifold && rep.HolesContained && res[0].IsSolid()
+		if !topologyOK {
 			t.Fatalf("%s: expected topology-valid (the #2079 blind spot the old gate trusted); got %+v", name, rep)
 		}
 		if len(ops.SelfIntersections(res[0], ops.PropertyQuality())) == 0 {
