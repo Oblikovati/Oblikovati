@@ -33,18 +33,35 @@ func (r *Router) registerAssemblyReplicationHandlers() {
 }
 
 // assemblyPatternCreate replicates the seed occurrence across an arrangement, adding one
-// occurrence per generated element beyond the seed.
-func assemblyPatternCreate(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.CreatePatternArgs) (wire.NewOccurrencesResult, error) {
+// occurrence per generated element beyond the seed and RECORDING the pattern so it can be
+// re-read, suppressed, and deleted as a group (#1976).
+func assemblyPatternCreate(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.CreatePatternArgs) (wire.CreatePatternResult, error) {
 	seed, err := occurrenceByID(asm, in.Seed, wire.MethodAssemblyPatternCreate)
 	if err != nil {
-		return wire.NewOccurrencesResult{}, err
+		return wire.CreatePatternResult{}, err
 	}
 	arr, err := arrangementFromArgs(in)
 	if err != nil {
-		return wire.NewOccurrencesResult{}, err
+		return wire.CreatePatternResult{}, err
 	}
 	pat := occurrence.NewOccurrencePattern(seed.Definition(), seed.Transform(), arr)
-	return newOccurrencesReply(occurrence.PatternComponents(asm.Occurrences(), seed, pat)), nil
+	generated := occurrence.PatternComponents(asm.Occurrences(), seed, pat)
+	name := fmt.Sprintf("Pattern%d", asm.Patterns().Count()+1)
+	asm.Patterns().Add(pat, name, seed, generated)
+	return wire.CreatePatternResult{Pattern: patternInfo(pat), Created: newOccurrencesReply(generated).Created}, nil
+}
+
+// patternInfo renders a persistent occurrence pattern for the wire (#1976): its id/name/kind, the
+// whole-pattern suppression state, and each element's suppress/reposition flags.
+func patternInfo(p *occurrence.OccurrencePattern) wire.PatternInfo {
+	elems := make([]wire.PatternElementInfo, p.Count())
+	for i := 0; i < p.Count(); i++ {
+		e := p.Element(i)
+		elems[i] = wire.PatternElementInfo{Index: i, Suppressed: e.Suppressed(), Repositioned: e.Repositioned()}
+	}
+	return wire.PatternInfo{
+		ID: p.ID(), Name: p.Name(), Kind: p.Kind(), Suppression: p.Suppression().String(), Elements: elems,
+	}
 }
 
 // assemblyMirror adds a mirror of each source occurrence across the plane (origin, normal).

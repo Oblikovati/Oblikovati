@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 )
 
@@ -100,5 +101,38 @@ func TestFeatureArrangementFollowsSuppliedOffsets(t *testing.T) {
 	}
 	if got := p.Element(1).Transform().TransformPoint(math.P3(0, 0, 0)); got != (math.P3(7, 0, 0)) {
 		t.Errorf("feature-driven element 1 = %v, want {7 0 0}", got)
+	}
+}
+
+// TestPatternSuppressionExcludesSeed the persistent pattern-level suppression (#1976) counts only
+// the GENERATED elements: element 0 is the seed, never suppressed by the pattern, so a fully
+// suppressed 4-up pattern still leaves the seed, and the seed cannot be suppressed or repositioned.
+func TestPatternSuppressionExcludesSeed(t *testing.T) {
+	p := NewOccurrencePattern(unitComponent(), math.Identity4(),
+		CircularArrangement{Origin: math.P3(0, 0, 0), Axis: unitZ(t), Step: math.Scalar(stdmath.Pi / 2), Count: 4})
+	if p.Suppression() != types.NoneSuppressed {
+		t.Errorf("fresh pattern suppression = %v, want none", p.Suppression())
+	}
+	if err := p.SetElementSuppressed(1, true); err != nil {
+		t.Fatalf("suppress element 1: %v", err)
+	}
+	if p.Suppression() != types.SomeElementsSuppressed {
+		t.Errorf("one suppressed element = %v, want some", p.Suppression())
+	}
+	p.SetSuppressed(true)
+	if p.Suppression() != types.AllElementsSuppressed {
+		t.Errorf("all suppressed = %v, want all", p.Suppression())
+	}
+	if p.Element(0).Suppressed() {
+		t.Error("SetSuppressed must not suppress the seed (element 0)")
+	}
+	if err := p.SetElementSuppressed(0, true); err == nil {
+		t.Error("suppressing the seed (element 0) should be rejected")
+	}
+	if err := p.RepositionElement(0, math.Identity4()); err == nil {
+		t.Error("repositioning the seed (element 0) should be rejected")
+	}
+	if err := p.SetElementSuppressed(4, true); err == nil {
+		t.Error("an out-of-range element should be rejected")
 	}
 }

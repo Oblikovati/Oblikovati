@@ -33,11 +33,12 @@ var (
 // joints, and representations attach to it from M12.
 type AssemblyComponentDefinition struct {
 	occurrences *occurrence.Occurrences
-	units       param.UnitsOfMeasure    // document display units (length/angle/…)
-	events      *AssemblyEvents         // occurrence-lifecycle event source (M11-F07)
-	constraints *assembly.ConstraintSet // constraint relationships + positioning solver (M12-F01)
-	joints      *assembly.JointSet      // joint relationships (reduced-DOF, M12-F02)
-	dsJoints    *assembly.DSJointSet    // DS-joint (DOF/imposed-motion) view (M12-F02)
+	units       param.UnitsOfMeasure             // document display units (length/angle/…)
+	events      *AssemblyEvents                  // occurrence-lifecycle event source (M11-F07)
+	constraints *assembly.ConstraintSet          // constraint relationships + positioning solver (M12-F01)
+	joints      *assembly.JointSet               // joint relationships (reduced-DOF, M12-F02)
+	dsJoints    *assembly.DSJointSet             // DS-joint (DOF/imposed-motion) view (M12-F02)
+	patterns    *occurrence.OccurrencePatternSet // persistent, editable occurrence patterns (#1976)
 
 	representations *assembly.Representations // design-view/positional/LOD override layers + model states (M12-F04)
 	contacts        *assembly.ContactSolver   // contact sets + interpenetration toggle (M12-F05)
@@ -53,6 +54,9 @@ type AssemblyComponentDefinition struct {
 	// features bind after the occurrences resolve (they snapshot participation), so they wait
 	// for ResolveReferences like the occurrences do (#785). Empty outside a reopen/restore.
 	pendingFeatures []assemblyFeatureProgramRecipe
+	// pendingPatterns holds occurrence patterns parsed by ApplyRecipe but not yet rebuilt — a
+	// pattern re-links to its occurrences by name, so it waits for ResolveReferences too (#1976).
+	pendingPatterns []occurrencePatternRecipe
 	// props are the assembly document's iProperties (metadata sets), like a part's (#156).
 	props *attr.PropertySets
 	// options are the assembly-editing defaults (#1981); updatePending records a recompute deferred
@@ -85,6 +89,7 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 	a.constraints = assembly.NewConstraintSet(occ, a.events)
 	a.joints = assembly.NewJointSet(occ, a.events)
 	a.dsJoints = assembly.NewDSJointSet()
+	a.patterns = occurrence.NewOccurrencePatternSet(occ)
 	a.representations = assembly.NewRepresentations(occ, a.constraints, a.joints)
 	a.contacts = assembly.NewContactSolver()
 	// Accept occurrence-qualified datum refs ("occ/<path>/plane/N") as inputs to the assembly's
@@ -207,6 +212,9 @@ func (a *AssemblyComponentDefinition) Constraints() *assembly.ConstraintSet { re
 // establish a degree-of-freedom set between occurrences (M12-F02). Author with its Add*
 // methods, then position with [AssemblyComponentDefinition.SolveConstraints].
 func (a *AssemblyComponentDefinition) Joints() *assembly.JointSet { return a.joints }
+
+// Patterns returns the assembly's persistent occurrence patterns (#1976).
+func (a *AssemblyComponentDefinition) Patterns() *occurrence.OccurrencePatternSet { return a.patterns }
 
 // DSJoints returns the assembly's DS-joint (degrees-of-freedom / imposed-motion) set (M12-F02).
 func (a *AssemblyComponentDefinition) DSJoints() *assembly.DSJointSet { return a.dsJoints }

@@ -39,7 +39,8 @@ type assemblyRecipe struct {
 	Sketches          []sketch.SketchData            `yaml:"sketches,omitempty"`   // assembly-space sketches (#785)
 	Features          []assemblyFeatureProgramRecipe `yaml:"features,omitempty"`   // the machining program (#785)
 	EndOfFeatures     *int                           `yaml:"endOfFeatures,omitempty"`
-	Options           *assemblyOptionsRecipe         `yaml:"options,omitempty"` // assembly editing options (#1981)
+	Options           *assemblyOptionsRecipe         `yaml:"options,omitempty"`  // assembly editing options (#1981)
+	Patterns          []occurrencePatternRecipe      `yaml:"patterns,omitempty"` // persistent occurrence patterns (#1976)
 }
 
 // assemblyOptionsRecipe persists the assembly editing options (#1981); the transient DeferUpdate flag
@@ -120,6 +121,7 @@ func (a *AssemblyComponentDefinition) buildRecipe() (assemblyRecipe, error) {
 		r.EndOfFeatures = &eof
 	}
 	r.Options = optionsRecipeOf(a.options)
+	r.Patterns = a.patternsRecipe()
 	return r, nil
 }
 
@@ -287,6 +289,7 @@ func (a *AssemblyComponentDefinition) applyRecipeStruct(r assemblyRecipe) error 
 	}
 	a.restoreOptions(r.Options)
 	a.pending = r.Occurrences
+	a.pendingPatterns = r.Patterns // patterns re-link to occurrences by name, after they resolve (#1976)
 	a.pendingFeatures = r.Features // features bind after occurrences resolve (they snapshot participation)
 	return nil
 }
@@ -301,10 +304,12 @@ func (a *AssemblyComponentDefinition) resetOccurrences() {
 	a.props = attr.NewPropertySets() // a restore re-applies the snapshot's properties onto a clean set (#156)
 	a.params = param.NewParameters() // a snapshot restore is a full replace; re-add params onto a clean table (#1557)
 	a.sketches = sketch.NewSketches()
-	a.sketches.ShareParameters(a.params) // re-wire so restored sketches resolve dimension expressions (#1557)
-	a.features = NewAssemblyFeatures()   // the program rebuilds from the snapshot (#785)
-	a.features.SetBus(a.events.Bus())    // re-wire the recompute event bus the fresh program needs
+	a.sketches.ShareParameters(a.params)                           // re-wire so restored sketches resolve dimension expressions (#1557)
+	a.features = NewAssemblyFeatures()                             // the program rebuilds from the snapshot (#785)
+	a.features.SetBus(a.events.Bus())                              // re-wire the recompute event bus the fresh program needs
+	a.patterns = occurrence.NewOccurrencePatternSet(a.occurrences) // re-bind to the fresh occurrences (#1976)
 	a.pendingFeatures = nil
+	a.pendingPatterns = nil
 	a.pending = nil
 }
 
@@ -334,6 +339,9 @@ func (a *AssemblyComponentDefinition) ResolveReferences(owner *doc.Document) err
 		occ.SetChildOverrides(parseChildOverrides(rec.ChildTransforms))
 		occ.SetSubstitute(rec.Substitute)
 		occ.SetBOMStructureOverride(rec.BOMStructure)
+	}
+	if err := a.restorePatterns(); err != nil { // patterns re-link to the now-bound occurrences (#1976)
+		return err
 	}
 	return a.restoreFeatures()
 }
