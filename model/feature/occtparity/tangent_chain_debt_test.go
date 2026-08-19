@@ -173,7 +173,8 @@ func tangentChainDebtIndex() map[string]int {
 // through ops.TangentEdgeChain, whose gates were aligned to PerformElement's FaceTangency + π/2
 // no-turn-back rule, replacing the KNOWN-divergent 1° antiparallel band + same-convexity gates).
 // Re-measured across every importable record after the alignment: 0 uncovered edges corpus-wide —
-// including the two FAIL(area) deciders (complex/D8/F2, the closed 8-edge rim spine), the seven
+// including the closed 8-edge rim-spine deciders (complex/D8 FAIL(area), complex/F2 FAIL(faulty)
+// since #2079's self-intersection gate), the seven
 // no-body faulties (complex/B9 C1 C5 F1, simple/P3 P7 U5), the pre-fillet skips (buildevol/K6,
 // complex/E1 E2, encoderegularity/A5's 14-edge spine), and the acquitted simple/N4.
 //
