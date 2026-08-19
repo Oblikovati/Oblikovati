@@ -81,10 +81,13 @@ func TestConcaveBossBaseRimArea(t *testing.T) {
 	}
 }
 
-// TestSpillingConcaveRimsStayDeep pins that R8 and W9 — the concave boss-base rims whose R+r cove spills
-// past the cap onto the side walls (the deep #2012 boss-root weld) — are NOT claimed by
-// solveConcaveBossRim's cap-fit gate: they must remain FAIL(area) on the unchanged solveRim ladder, not
-// silently regress to FAIL(faulty) or a false green.
+// TestSpillingConcaveRimsStayDeep pins that R8 and W9 — the concave boss-base rims whose R+r cove
+// spills past the cap onto the side walls (the deep #2012 boss-root weld) — are NOT claimed by
+// solveConcaveBossRim's cap-fit gate and stay FAIL on the unchanged solveRim ladder, never a false
+// green. They score FAIL(faulty), not FAIL(area): #2079 found the spilling cove drives the plate face
+// and the side wall straight THROUGH each other (interpenetration 3-15 model units), so the body was
+// never the clean "valid solid, wrong footprint" the old topology-only gate reported — the hardened
+// isWatertightSolid now names it faulty. A future fix frees them by DELETING this pin, not by widening.
 func TestSpillingConcaveRimsStayDeep(t *testing.T) {
 	t.Parallel()
 	byCase := map[string]Record{}
@@ -95,8 +98,8 @@ func TestSpillingConcaveRimsStayDeep(t *testing.T) {
 	}
 	dir := CorpusFixtureDir()
 	for _, id := range []string{"R8", "W9"} {
-		if got := ScoreCase(byCase[id], dir); got != FailArea {
-			t.Errorf("simple/%s scored %v, want FAIL(area) (deep #2012 boss-root; cap-fit gate must reject its spilling cove)", id, got)
+		if got := ScoreCase(byCase[id], dir); got != FailFaulty {
+			t.Errorf("simple/%s scored %v, want FAIL(faulty) (deep #2012 boss-root; its spilling cove self-intersects, #2079)", id, got)
 		}
 	}
 }
