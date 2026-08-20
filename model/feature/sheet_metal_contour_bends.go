@@ -37,6 +37,31 @@ func roundProfileCorners(pts []math.Point2, radius float64) ([]math.Point2, erro
 	return append(out, pts[len(pts)-1]), nil
 }
 
+// contourCornerBends reports one bend per non-collinear interior corner of an open profile — the
+// same corners roundProfileCorners turns into tangent arcs — so a contour flange's flat pattern can
+// develop each corner's bend allowance instead of laying it out as a sharp fold (#2076). The swept
+// angle is the corner's turn acos(in·out), independent of the radius; reportRadius is passed
+// straight into the spec (a non-positive value defers to the rule's default, the flange
+// convention). A profile with no interior corner — a single straight segment — reports no bends.
+func contourCornerBends(pts []math.Point2, reportRadius float64) []BendSpec {
+	if len(pts) < 3 {
+		return nil
+	}
+	var specs []BendSpec
+	for i := 1; i < len(pts)-1; i++ {
+		in, out, err := cornerDirections(pts[i-1], pts[i], pts[i+1])
+		if err != nil {
+			continue // a zero-length segment has no direction to turn through
+		}
+		turn := stdmath.Acos(clampUnit(float64(in.Dot(out))))
+		if turn < 1e-9 {
+			continue // collinear: no corner here, so no bend
+		}
+		specs = append(specs, BendSpec{Angle: turn, Radius: reportRadius})
+	}
+	return specs
+}
+
 // cornerArc is the arc that rounds the corner at b between segments a→b and b→c, tangent to both.
 // The tangent length is radius·tan(half the turn), so a corner that turns further eats more of its
 // own segments — which is why a radius that fits one corner can be refused at the next.
