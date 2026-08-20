@@ -312,6 +312,19 @@ func TestFilletCornerRoundAddsThirdEdge(t *testing.T) {
 // TestFilletRunOutToZero checks a lone variable fillet that tapers to radius 0 at one end: the blend
 // cone closes to a single apex on the edge (a run-out / "fade out"), producing a watertight solid
 // rather than the degenerate non-manifold fan the unguarded collapse would leave.
+//
+// CROSS-ARCH REGRESSION LOCK (#2020) — DO NOT gate this to a single architecture, and do not weaken
+// assertWatertight here. The run-out surface's (u,v) parameterization degenerates at the zero-radius
+// apex: many distinct 3D boundary samples map onto near-identical (u,v), so the (u,v) chart is not
+// injective there. Whether two of those samples land on IDENTICAL coordinates in the CDT chart (which
+// then keeps a single representative, cdt_build.go) depends on the last bit of the parameter — and Go
+// contracts a*b+c into a single FMA on arm64 but not amd64, so the same code once meshed 416/416
+// boundary edges on amd64 and only 241/416 on arm64, cracking the body along 177 free edges (amd64
+// "passing" was the coin landing the same way, not correctness). The blend now meshes the same
+// watertight solid on both — verified bit-identical on amd64 and on faithful-FMA arm64 — and this
+// test is the guard that keeps it so. It runs on the arm64 CI leg (test / macos-latest, Apple
+// Silicon), which is where a re-divergence would surface; keeping it un-gated is the acceptance
+// criterion of #2020. See also 8f8668f6 (a boundary-missing NURBS patch is no longer a candidate).
 func TestFilletRunOutToZero(t *testing.T) {
 	box := shellBox(2, 2, 2)
 	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{{Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0}})

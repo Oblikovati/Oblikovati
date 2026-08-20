@@ -184,7 +184,13 @@ jobs:
           path: coverage.out
 
   # Race detector needs cgo; Linux only.
+  # Runs ONLY when cutting a release (develop → the `release` branch), never on a PR: `-race`
+  # is by far the slowest gate on the board (minutes past the rest of the matrix) and was
+  # stalling otherwise-green PR merges for no per-PR signal. Release is cut on push to `release`
+  # (release.yml), so this is the pre-release race gate. develop has no branch protection, so a
+  # PR that never runs `race` is not blocked on it.
   race:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/release'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
