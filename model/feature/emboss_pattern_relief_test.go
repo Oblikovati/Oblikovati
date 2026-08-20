@@ -49,3 +49,28 @@ func TestEmbossFromPlanePatternReplicatesTheReliefCut(t *testing.T) {
 		t.Errorf("%v lies outside every emboss profile and must stay solid", p)
 	}
 }
+
+// TestEmbossFromPlaneMirrorReplicatesTheReliefCut is the mirror half of #2066 (the issue covers
+// pattern AND mirror; both replicate through the same resolveGroup). A mirror of an interior
+// from-plane emboss must reflect its relief cut, not only its raise.
+func TestEmbossFromPlaneMirrorReplicatesTheReliefCut(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	NewExtrudeFeatures(fs).AddExtrude(squareSketch(10), []int{0}, ops.NewBody,
+		Extent{Type: DistanceExtent, Direction: SymmetricDir, Distance: func() float64 { return 4 }}, 0)
+	emb := NewEmbossFeatures(fs).Add(rectSketchOn(sketch.XYPlane(), 1, 1, 3, 3),
+		[]int{0}, func() float64 { return 1 }, EmbossEngraveFromPlane, 0)
+	// Mirror across x=5: the seed pocket at x∈[1,3] reflects to x∈[7,9].
+	NewPatternFeatures(fs).AddMirror([]ID{emb.ID()}, nil, math.P3(5, 0, 0), math.V3(1, 0, 0))
+	fs.Recompute()
+
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("mirrored from-plane emboss is not a valid solid: %+v", r)
+	}
+	if p := math.P3(2, 2, -0.5); ops.PointInsideBody(body, p) {
+		t.Errorf("seed relief pocket %v is solid, want emptied", p)
+	}
+	if p := math.P3(8, 2, -0.5); ops.PointInsideBody(body, p) {
+		t.Errorf("mirrored relief pocket %v is solid — the mirror dropped the relief cut (#2066)", p)
+	}
+}
