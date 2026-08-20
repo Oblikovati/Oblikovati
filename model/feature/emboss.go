@@ -62,6 +62,10 @@ type EmbossFeature struct {
 	def      *EmbossDefinition
 	featName string
 	tool     *topo.Body // last raised/engraved prism, exposed so a pattern can replicate it
+	// reliefTool is the from-plane flavour's BACK-side prism, the one it cuts (#2066). Only the
+	// from-plane emboss sets it (raise/engrave apply one tool); a pattern reads it through
+	// ToolApplications so the relief cut is replicated at every copy, not just the raise.
+	reliefTool *topo.Body
 }
 
 // Definition returns the emboss recipe.
@@ -83,9 +87,21 @@ func (f *EmbossFeature) Operation() ops.PartFeatureOperation {
 }
 func (f *EmbossFeature) ToolBody() *topo.Body { return f.tool }
 
+// ToolApplications reports both booleans a FROM-PLANE emboss applies — the raise (Join, in front of
+// the plane) and the relief cut (Cut, behind it) — so a pattern/mirror replicates the relief at
+// every copy, not just the raise (#2066). It returns nil for a raise/engrave emboss, whose single
+// tool a pattern replicates through ToolBody/Operation as before.
+func (f *EmbossFeature) ToolApplications() []ToolApplication {
+	if f.reliefTool == nil || f.tool == nil {
+		return nil
+	}
+	return []ToolApplication{{Body: f.tool, Op: ops.Join}, {Body: f.reliefTool, Op: ops.Cut}}
+}
+
 // Recompute resolves the profile(s) and applies the flavour: raise, engrave, or level the region
 // to the sketch plane offset by the depth (#1893).
 func (f *EmbossFeature) Recompute(in Input) (Output, error) {
+	f.reliefTool = nil // only the from-plane path re-sets it (in cutBack); never carry a stale relief
 	profiles, err := f.resolveProfiles()
 	if err != nil {
 		return Output{}, err
