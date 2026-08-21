@@ -154,6 +154,21 @@ func TestDeleteSelectedStillRemovesEntities(t *testing.T) {
 	}
 }
 
+// TestDimensionDragMovesTheDimensionLine is the #1999 regression ("cannot move dimension line in
+// sketch"): repositioning a linear dimension's label moves the DIMENSION LINE with it, not just the
+// text. The line is drawn through the label (distanceView), so dragging the annotation relocates the
+// whole glyph — witness lines, arrows and all.
+func TestDimensionDragMovesTheDimensionLine(t *testing.T) {
+	s, _, d := dimensionedSketch(t)
+	dimLineY := func() float64 { return float64(viewOf(t, s, d).Segments[dimLineIndex][0].Y) }
+	before := dimLineY()
+	d.SetTextPoint(math.P2(2, math.Scalar(before-3))) // push the annotation 3 cm to the far side
+	after := dimLineY()
+	if stdmath.Abs(after-before) < 1 {
+		t.Fatalf("dimension line Y = %g → %g: moving the label did not move the dimension line (#1999)", before, after)
+	}
+}
+
 // TestDimensionDragMovesOnlyTheLabel: the drag stores a new TextPoint and leaves the measured
 // geometry untouched — moving an annotation must never move the model.
 func TestDimensionDragMovesOnlyTheLabel(t *testing.T) {
