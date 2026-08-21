@@ -1,8 +1,7 @@
 # Provenance — Quick Access Toolbar icons (PR-5a)
 
 This file records the source and licence of every third-party-derived asset in this
-change, per the Oblikovati contribution-ethics rule (Pillar 4: all sources documented,
-everything within license parameters).
+change for maintainer review and distribution compliance.
 
 ## Summary
 
