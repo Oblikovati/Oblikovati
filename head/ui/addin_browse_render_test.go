@@ -5,6 +5,7 @@
 package ui
 
 import (
+	"strconv"
 	"testing"
 
 	"oblikovati.org/api/client"
@@ -42,10 +43,10 @@ func TestAddInPanelTreeTableRender(t *testing.T) {
 				}},
 			},
 		}}, "fam-deep-groove"),
-		client.PanelTable("members", []string{"designation", "d", "D", "B"}, []wire.TableRow{
-			{Key: "6200", Cells: []string{"6200", "10", "30", "9"}},
-			{Key: "6202", Cells: []string{"6202", "15", "35", "11"}}, // selected row (Value below)
-		}, "6202"),
+		// A member table taller than addInTableRows (8) with the selection BELOW the fold, so the
+		// render exercises the #1933 scroll-into-view path (tableSelectionChanged → SetScrollHereY)
+		// and not just the top-of-table case.
+		client.PanelTable("members", []string{"designation", "d", "D", "B"}, offFoldMemberRows(), "62-10"),
 	}
 
 	frame := func() {
@@ -58,4 +59,15 @@ func TestAddInPanelTreeTableRender(t *testing.T) {
 	}
 	frame() // first render seeds the tree's open state via SetNextItemOpen(..., firstUse=true)
 	frame() // second render takes the treeFirstUse == false path
+}
+
+// offFoldMemberRows returns a member table taller than addInTableRows, so the selection at index 10
+// ("62-10") sits below the visible fold — the #1933 scenario the render must scroll into view.
+func offFoldMemberRows() []wire.TableRow {
+	rows := make([]wire.TableRow, 0, 12)
+	for i := 0; i < 12; i++ {
+		key := "62-" + strconv.Itoa(i)
+		rows = append(rows, wire.TableRow{Key: key, Cells: []string{key, "10", "30", "9"}})
+	}
+	return rows
 }
