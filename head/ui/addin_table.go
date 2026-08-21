@@ -11,6 +11,25 @@ import (
 // and the Place button below; the table scrolls internally past this many rows.
 const addInTableRows = 8
 
+// tableScrolledValue records the selection value each PanelTable last scrolled into view, keyed
+// windowID+"/"+controlID (mirroring treeSeeded). It lets drawTableRow scroll a programmatically
+// selected row into view ONCE when the selection changes, instead of every frame — an unconditional
+// scroll would fight the user's own scrolling (#1933).
+var tableScrolledValue = map[string]string{}
+
+// tableSelectionChanged reports (and records) whether a PanelTable's selection changed to value
+// since it last scrolled there. True exactly once per programmatic selection change, so the
+// below-the-fold pre-selected row scrolls into view on that frame and manual scrolling is left
+// alone while the selection is unchanged.
+func tableSelectionChanged(windowID, controlID, value string) bool {
+	key := windowID + "/" + controlID
+	if tableScrolledValue[key] == value {
+		return false
+	}
+	tableScrolledValue[key] = value
+	return true
+}
+
 // rowHeight is one table row's pixel height: the font's line height plus a small padding margin.
 // No table-sizing helper existed outside the Parameters dialog's own paramTableHeight (which bakes
 // in a fixed row px and an 8-row cap tuned for that grid), so PanelTable gets its own — this stays
@@ -75,6 +94,12 @@ func drawTableRow(s panelEditSession, windowID string, control wire.PanelControl
 			// is never itself "selected" (that fill would be the near-invisible dark Header).
 			if native.SelectableSpanAllColumns(cellAt(row, 0), false) {
 				s.PanelValueChanged(windowID, control.ID, row.Key)
+			}
+			// Scroll a below-the-fold pre-selected row into view once, when an add-in changes the
+			// selection programmatically — otherwise the table stays at the top with the highlighted
+			// row off-screen (#1933). Guarded so it fires only on a selection change, not every frame.
+			if row.Key == control.Value && tableSelectionChanged(windowID, control.ID, control.Value) {
+				native.SetScrollHereY()
 			}
 			continue
 		}
