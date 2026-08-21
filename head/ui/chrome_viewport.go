@@ -541,7 +541,7 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 	// so it draws in the depth-disabled lane in submission order — entities first, then dimensions,
 	// then interaction feedback. So grid < entities < dimensions, as intended (#909).
 	if g := s.Grid(); g.Visible {
-		list.Items = append(gridOverlay(plane, g.SpacingModel(), g.MajorEvery), list.Items...)
+		list.Items = append(gridOverlay(plane, g.SpacingModel(), g.MajorEvery, cam.Eye), list.Items...)
 	}
 	list.Items = append(list.Items, onTop(sketchOverlay(s.ActiveSketch(), s.IsSelectedEntity, hoverCandidate(s), s.ShowFormat()))...)
 	list.Items = append(list.Items, onTop(projectedCurveOverlay(s.ActiveSketch()))...)

@@ -5,6 +5,7 @@
 package ui
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/math"
@@ -32,38 +33,75 @@ func itemWithColor(items []renderer.DrawItem, color [4]float32) (renderer.DrawIt
 	return renderer.DrawItem{}, false
 }
 
+// eyeAbove looks straight down the +Z axis, so the XY-plane grid nudges toward +Z (#2087).
+var eyeAbove = math.P3(0, 0, 100)
+
 func TestGridOverlayNonPositiveSpacing(t *testing.T) {
-	if got := gridOverlay(xyPlane(t), 0, 5); got != nil {
+	if got := gridOverlay(xyPlane(t), 0, 5, eyeAbove); got != nil {
 		t.Errorf("spacing 0: got %d items, want nil", len(got))
 	}
-	if got := gridOverlay(xyPlane(t), -1, 5); got != nil {
+	if got := gridOverlay(xyPlane(t), -1, 5, eyeAbove); got != nil {
 		t.Errorf("spacing -1: got %d items, want nil", len(got))
 	}
 }
 
 // TestGridOverlayOriginAxisColors: the line through the origin along X is red (axisColorX)
-// and the line along Y is green (axisColorY), each a single segment spanning the grid.
+// and the line along Y is green (axisColorY), each a single segment spanning the grid. Both sit at
+// the #2087 nudge height (a hair toward the eye off the host plane), not exactly on z=0.
 func TestGridOverlayOriginAxisColors(t *testing.T) {
 	const spacing = 1.0
 	half := float64(gridCells) * spacing
-	items := gridOverlay(xyPlane(t), spacing, 5)
+	z := gridCoplanarNudge * half // the grid is lifted toward +Z (eye above); |origin| == 0 < half
+	items := gridOverlay(xyPlane(t), spacing, 5, eyeAbove)
 
 	xItem, ok := itemWithColor(items, axisColorX)
 	if !ok {
 		t.Fatalf("no X-axis (red) grid item; colors=%v", colorsOf(items))
 	}
-	assertAxisSegment(t, "X", xItem, math.P3(-half, 0, 0), math.P3(half, 0, 0))
+	assertAxisSegment(t, "X", xItem, math.P3(-half, 0, math.Scalar(z)), math.P3(half, 0, math.Scalar(z)))
 
 	yItem, ok := itemWithColor(items, axisColorY)
 	if !ok {
 		t.Fatalf("no Y-axis (green) grid item; colors=%v", colorsOf(items))
 	}
-	assertAxisSegment(t, "Y", yItem, math.P3(0, -half, 0), math.P3(0, half, 0))
+	assertAxisSegment(t, "Y", yItem, math.P3(0, -half, math.Scalar(z)), math.P3(0, half, math.Scalar(z)))
+}
+
+// TestGridOverlayNudgesTowardEye is the #2087 regression: the coplanar grid must be lifted off its
+// host plane TOWARD the eye — strictly off the plane (never left at z=0, where it z-fights the host
+// face) and on the eye's side (never pushed away). Asserting a strict sign, not an exact value,
+// keeps the guard honest: dropping the nudge (offset → 0) leaves the grid on the plane and fails
+// here, which an assertion derived from the nudge constant would not catch. The lift stays a hair —
+// far under one grid cell — so it wins the depth test without visibly floating above the face.
+func TestGridOverlayNudgesTowardEye(t *testing.T) {
+	const spacing = 1.0
+	aboveZ := float64(gridZ(t, gridOverlay(xyPlane(t), spacing, 5, math.P3(0, 0, 100))))
+	if aboveZ <= 0 || aboveZ >= spacing {
+		t.Errorf("eye above the XY plane: grid Z = %g, want a small +Z lift in (0, %g)", aboveZ, spacing)
+	}
+	belowZ := float64(gridZ(t, gridOverlay(xyPlane(t), spacing, 5, math.P3(0, 0, -100))))
+	if belowZ >= 0 || belowZ <= -spacing {
+		t.Errorf("eye below the XY plane: grid Z = %g, want a small −Z lift in (-%g, 0)", belowZ, spacing)
+	}
+	if stdmath.Abs(aboveZ+belowZ) > 1e-12 {
+		t.Errorf("lift is not symmetric about the plane: above=%g below=%g", aboveZ, belowZ)
+	}
+}
+
+// gridZ returns the Z of the X-axis grid item's first endpoint — the height the whole grid was
+// lifted to (every vertex shares the same normal offset on the XY plane).
+func gridZ(t *testing.T, items []renderer.DrawItem) math.Scalar {
+	t.Helper()
+	it, ok := itemWithColor(items, axisColorX)
+	if !ok {
+		t.Fatalf("no X-axis grid item; colors=%v", colorsOf(items))
+	}
+	return it.Positions[0].Z
 }
 
 // TestGridOverlayKeepsMinorAndMajor: the axis split does not drop the minor/major groups.
 func TestGridOverlayKeepsMinorAndMajor(t *testing.T) {
-	items := gridOverlay(xyPlane(t), 1.0, 5)
+	items := gridOverlay(xyPlane(t), 1.0, 5, eyeAbove)
 	if _, ok := itemWithColor(items, chromeTheme.gridMinorColor); !ok {
 		t.Errorf("no minor grid item; colors=%v", colorsOf(items))
 	}
