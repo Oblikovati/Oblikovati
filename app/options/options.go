@@ -100,6 +100,10 @@ type UI struct {
 	// ShowMenuBar keeps the legacy File/Edit/View/Tools/Help menu bar visible.
 	// The default stays true so File and Preferences remain discoverable.
 	ShowMenuBar bool `yaml:"showMenuBar"`
+	// ShowStatusBar shows the bottom status bar — Inventor's prompt line, which
+	// "indicates the next action the active command requires" (C-inventor-ui-reference
+	// §7). Default true; the toggle lives in Preferences ▸ UI and on View ▸ Windows.
+	ShowStatusBar bool `yaml:"showStatusBar"`
 }
 
 // Input is the mouse-navigation behaviour surface (Inventor-parity work,
@@ -144,7 +148,7 @@ func Defaults() All {
 		Save:      Save{Thumbnail: types.ThumbnailNone},
 		Updates:   Updates{CheckOnStartup: true},
 		Telemetry: Telemetry{ShareUsageStatistics: true},
-		UI:        UI{FontScale: 1, IconScale: 1, ShowMenuBar: true},
+		UI:        UI{FontScale: 1, IconScale: 1, ShowMenuBar: true, ShowStatusBar: true},
 		Input: Input{
 			MMBMode: "pan", ShiftMMBMode: "orbit", CtrlMMBMode: "pan",
 			WheelInvert: false, ZoomToCursor: true,

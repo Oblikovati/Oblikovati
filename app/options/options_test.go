@@ -60,13 +60,13 @@ func TestLoadKeepsDefaultsForAbsentKeys(t *testing.T) {
 	if !out.Part.ChamferFlatCorners || out.General.StartupAction != types.StartupNewPart {
 		t.Errorf("absent groups = %+v, want defaults kept", out)
 	}
-	if out.UI != (UI{FontScale: 1, IconScale: 1, ShowMenuBar: true}) {
-		t.Errorf("absent ui group = %+v, want 100%% scale defaults with menu bar shown", out.UI)
+	if out.UI != (UI{FontScale: 1, IconScale: 1, ShowMenuBar: true, ShowStatusBar: true}) {
+		t.Errorf("absent ui group = %+v, want 100%% scale defaults with menu bar and status bar shown", out.UI)
 	}
 }
 
 func TestDefaultsUIScaleIsFullSize(t *testing.T) {
-	if ui := Defaults().UI; ui != (UI{FontScale: 1, IconScale: 1, ShowMenuBar: true}) {
-		t.Errorf("Defaults().UI = %+v, want {1, 1, true}", ui)
+	if ui := Defaults().UI; ui != (UI{FontScale: 1, IconScale: 1, ShowMenuBar: true, ShowStatusBar: true}) {
+		t.Errorf("Defaults().UI = %+v, want {1, 1, true, true}", ui)
 	}
 }
