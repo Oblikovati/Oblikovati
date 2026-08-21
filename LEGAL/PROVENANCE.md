@@ -47,8 +47,10 @@ The Lucide sources are 24×24 stroke-based glyphs (`stroke="currentColor"`,
    direction-arrow path is painted with the secondary sentinel `#ff0000` (the
    action/result element role), matching the repo's convention of accenting the
    action element of a glyph.
-3. **No geometry was changed**: every path/rect element is byte-identical to the
-   Lucide source (verified against the SHA-256 hashes above).
+3. **Source geometry was retained**: every Lucide path/rect element is preserved
+   byte-for-byte apart from formatting and role-colour substitutions; the added
+   background plate is the documented ADR-0033 adaptation (verified against the
+   SHA-256 hashes above).
 
 ## Attribution
 
