@@ -166,12 +166,13 @@ func (t *MoveFaceTool) rotateParams() ToolParams {
 
 // --- Combine --------------------------------------------------------------
 
-// CombineTool booleans two picked bodies (Join/Cut/Intersect): the first pick is the
-// target, the second the tool body.
+// CombineTool booleans picked bodies (Join/Cut/Intersect): the first pick is the target, every
+// later pick a tool body. Keep-tool-bodies leaves the tools in the part afterwards (#2069).
 type CombineTool struct {
-	bodies []*topo.Body
-	op     ops.PartFeatureOperation
-	added  *feature.PartFeature
+	bodies    []*topo.Body
+	op        ops.PartFeatureOperation
+	keepTools bool // #2069: leave the tool bodies in the part after the boolean (KeepToolBodies)
+	added     *feature.PartFeature
 }
 
 func NewCombineTool() *CombineTool    { return &CombineTool{op: ops.Join} }
@@ -192,17 +193,17 @@ func (t *CombineTool) Cancel(s *Session) {
 }
 
 func (t *CombineTool) Prompt(*Session) string {
-	return "Pick the target body, then the tool body; set the operation; OK."
+	return "Pick the target body, then one or more tool bodies; set the operation; OK."
 }
 func (t *CombineTool) CanCommit() bool { return len(t.bodies) >= 2 }
 
 func (t *CombineTool) Commit(s *Session) error {
-	ti, tj, err := t.combineOperands(s)
+	target, tools, err := t.combineOperands(s)
 	if err != nil {
 		return err
 	}
 	part, _ := activePart(s) // combineOperands already vetted the part
-	t.added = t.addCombine(feature.NewModifyFeatures(part.Features()), ti, tj)
+	t.added = t.addCombine(feature.NewModifyFeatures(part.Features()), target, tools)
 	part.Recompute()
 	s.recordEdit(part, "Combine")
 	if !t.added.Health().OK() {
@@ -211,29 +212,38 @@ func (t *CombineTool) Commit(s *Session) error {
 	return nil
 }
 
-// combineOperands resolves the two picked bodies to indices in the active part's running
-// body list — Commit and DraftFeature (#1626) resolve identically, so the gate inspects
-// exactly what OK would build.
-func (t *CombineTool) combineOperands(s *Session) (int, int, error) {
+// combineOperands resolves the target (first pick) and every tool body (later picks) to indices in
+// the active part's running body list — Commit and DraftFeature (#1626) resolve identically, so the
+// gate inspects exactly what OK would build.
+func (t *CombineTool) combineOperands(s *Session) (int, []int, error) {
 	part, err := activePart(s)
 	if err != nil {
-		return 0, 0, err
+		return 0, nil, err
 	}
-	ti, tj := bodyIndexOf(part, t.bodies[0]), bodyIndexOf(part, t.bodies[1])
-	if ti < 0 || tj < 0 {
-		return 0, 0, errors.New("combine: a picked body is not in the active part")
+	target := bodyIndexOf(part, t.bodies[0])
+	if target < 0 {
+		return 0, nil, errors.New("combine: the target body is not in the active part")
 	}
-	return ti, tj, nil
+	tools := make([]int, 0, len(t.bodies)-1)
+	for _, b := range t.bodies[1:] {
+		j := bodyIndexOf(part, b)
+		if j < 0 {
+			return 0, nil, errors.New("combine: a picked tool body is not in the active part")
+		}
+		tools = append(tools, j)
+	}
+	return target, tools, nil
 }
 
 // addCombine builds the boolean into mods — the shared constructor used by both Commit
-// (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
-//
-// The tool picks exactly two bodies and always consumes the second, so it authors the single-tool,
-// tool-consuming combine. The tool collection and keepToolBodies (#1894) are reachable over /api;
-// the pick loop and dialog control for them are a follow-up.
-func (t *CombineTool) addCombine(mods *feature.ModifyFeatures, target, tool int) *feature.PartFeature {
-	return mods.AddCombine(target, tool, t.op)
+// (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift. The common
+// single-tool consuming combine takes the AddCombine convenience; several tools or keep-tool-bodies
+// (#2069/#1894) take the general AddCombineTools.
+func (t *CombineTool) addCombine(mods *feature.ModifyFeatures, target int, tools []int) *feature.PartFeature {
+	if len(tools) == 1 && !t.keepTools {
+		return mods.AddCombine(target, tools[0], t.op)
+	}
+	return mods.AddCombineTools(target, tools, t.op, t.keepTools)
 }
 
 // DraftFeature implements [PartFeatureTool] (#1626): the boolean it would commit, built
@@ -244,28 +254,36 @@ func (t *CombineTool) DraftFeature(s *Session) (feature.Feature, bool) {
 	if !t.CanCommit() {
 		return nil, false
 	}
-	ti, tj, err := t.combineOperands(s)
+	target, tools, err := t.combineOperands(s)
 	if err != nil {
 		return nil, false
 	}
 	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
-		return t.addCombine(feature.NewModifyFeatures(fs), ti, tj), nil
+		return t.addCombine(feature.NewModifyFeatures(fs), target, tools), nil
 	})
 }
 
 // SetOperation chooses Join (0), Cut (1) or Intersect (2).
 func (t *CombineTool) SetOperation(op ops.PartFeatureOperation) { t.op = op }
 
+// KeepTools / SetKeepTools leave the tool bodies in the part after the boolean instead of consuming
+// them (Inventor's KeepToolBodies, #2069/#1894), so a tool can go on to cut something else.
+func (t *CombineTool) KeepTools() bool     { return t.keepTools }
+func (t *CombineTool) SetKeepTools(v bool) { t.keepTools = v }
+
 // Params exposes the boolean operation as a named dropdown. It was an IntParam whose long
 // self-documenting label ("Operation (0=Join 1=Cut 2=Intersect)") overflowed the 95px label
 // column and collided with the InputInt steppers, rendering as illegible garble (#1803). A
 // ChoiceParam puts the short label in the column and the named options in the control.
 func (t *CombineTool) Params() ToolParams {
-	return ToolParams{Choices: []ChoiceParam{
-		{Label: "Operation", Options: []string{"Join", "Cut", "Intersect"},
-			Get: func() int { return int(t.op) },
-			Set: func(n int) { t.op = ops.PartFeatureOperation(n) }},
-	}}
+	return ToolParams{
+		Choices: []ChoiceParam{
+			{Label: "Operation", Options: []string{"Join", "Cut", "Intersect"},
+				Get: func() int { return int(t.op) },
+				Set: func(n int) { t.op = ops.PartFeatureOperation(n) }},
+		},
+		Bools: []BoolParam{{Label: "Keep tool bodies", Get: t.KeepTools, Set: t.SetKeepTools}},
+	}
 }
 
 // --- Move (body) ----------------------------------------------------------
