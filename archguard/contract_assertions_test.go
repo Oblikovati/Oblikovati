@@ -161,7 +161,14 @@ func skipNonSourceDir(name string) error {
 		return filepath.SkipDir
 	}
 	switch name {
-	case "experiments", "test-utilities", "node_modules", "testdata":
+	// _api is the Apache-2.0 contract checked out INSIDE the repo by the api-contract CI action
+	// (ADR-0018). Now that the contract guards run in CI, this subtree must be excluded from
+	// host-source walks: its client-side `var _ contract.X` assertions are not HOST assertions (the
+	// completeness guard would count them and call the client-implemented allowlist entries stale),
+	// and its wire package is the SOURCE of the method-name constants, not a re-declaration (the
+	// literal guard would flag every constant). Locally the contract is a sibling OUTSIDE the tree,
+	// so a repo walk never reaches it and this never matches.
+	case "experiments", "test-utilities", "node_modules", "testdata", "_api":
 		return filepath.SkipDir
 	}
 	return nil
