@@ -124,6 +124,11 @@ func drawThreadBehavior(t *app.ThreadTool) {
 	if native.Checkbox("Tapered (pipe) thread", &tapered) {
 		t.SetTapered(tapered)
 	}
+	propertyRow("")
+	leftHanded := t.LeftHanded() // #2069: author a left-hand thread from the dialog
+	if native.Checkbox("Left-hand thread", &leftHanded) {
+		t.SetLeftHanded(leftHanded)
+	}
 	if i := propertyComboRow("Class", "thread-class", t.ClassOptions(), t.ClassIndex()); i >= 0 {
 		t.SetClassIndex(i)
 	}

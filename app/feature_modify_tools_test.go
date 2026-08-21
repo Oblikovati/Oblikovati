@@ -61,6 +61,79 @@ func TestCombineTool(t *testing.T) {
 	}
 }
 
+// TestCombineToolCombinesMultipleTools is the #2069 regression: the tool must boolean the target
+// against EVERY picked tool body in one feature, not just the first — before this it consumed only
+// the second pick and ignored the rest.
+func TestCombineToolCombinesMultipleTools(t *testing.T) {
+	s, def, src := extrudedPart(t)
+	pat := NewFeatureRectPatternTool()
+	pat.countX = 3 // target + two tool copies → 3 bodies in a row
+	s.StartTool(pat)
+	s.feedPick(src)
+	if err := s.OK(); err != nil {
+		t.Fatalf("pattern setup OK: %v", err)
+	}
+	if def.SurfaceBodies().Count() != 3 {
+		t.Fatalf("setup wanted 3 bodies, got %d", def.SurfaceBodies().Count())
+	}
+
+	tool := NewCombineTool() // Join
+	s.StartTool(tool)
+	s.feedPick(BodyHandle{Body: def.SurfaceBodies().Item(0)})
+	s.feedPick(BodyHandle{Body: def.SurfaceBodies().Item(1)})
+	s.feedPick(BodyHandle{Body: def.SurfaceBodies().Item(2)})
+	if err := s.OK(); err != nil {
+		t.Fatalf("combine OK: %v", err)
+	}
+	if def.SurfaceBodies().Count() != 1 {
+		t.Fatalf("joining a target + two tools = %d bodies, want 1", def.SurfaceBodies().Count())
+	}
+}
+
+// TestCombineToolKeepsToolBodies is the #2069 regression for keep-tool-bodies: with the checkbox on,
+// the tool body must survive the boolean instead of being consumed. It also asserts the checkbox is
+// exposed as a BoolParam so the dialog can drive it.
+func TestCombineToolKeepsToolBodies(t *testing.T) {
+	s, def, src := extrudedPart(t)
+	pat := NewFeatureRectPatternTool() // 2×1 → target + one tool
+	s.StartTool(pat)
+	s.feedPick(src)
+	if err := s.OK(); err != nil {
+		t.Fatalf("pattern setup OK: %v", err)
+	}
+	if def.SurfaceBodies().Count() != 2 {
+		t.Fatalf("setup wanted 2 bodies, got %d", def.SurfaceBodies().Count())
+	}
+
+	tool := NewCombineTool()
+	keep, ok := boolParam(tool.Params(), "Keep tool bodies")
+	if !ok {
+		t.Fatal("Combine has no 'Keep tool bodies' checkbox — the dialog cannot reach KeepToolBodies (#2069)")
+	}
+	keep.Set(true) // drive it through the dialog's BoolParam, not the setter directly
+	s.StartTool(tool)
+	s.feedPick(BodyHandle{Body: def.SurfaceBodies().Item(0)})
+	s.feedPick(BodyHandle{Body: def.SurfaceBodies().Item(1)})
+	if err := s.OK(); err != nil {
+		t.Fatalf("combine OK: %v", err)
+	}
+	// Keep-tool-bodies drops only the target and appends the result, so the kept tool remains: 2
+	// bodies, not the 1 a consuming join leaves.
+	if def.SurfaceBodies().Count() != 2 {
+		t.Fatalf("keep-tool-bodies join = %d bodies, want 2 (result + kept tool)", def.SurfaceBodies().Count())
+	}
+}
+
+// boolParam finds a BoolParam by label in a tool's Params.
+func boolParam(p ToolParams, label string) (BoolParam, bool) {
+	for _, b := range p.Bools {
+		if b.Label == label {
+			return b, true
+		}
+	}
+	return BoolParam{}, false
+}
+
 // TestCombineToolOperationIsChoice is the #1803 regression: the Combine "Operation" input
 // must be a ChoiceParam (a named dropdown), NOT an IntParam whose long self-documenting
 // label overflowed the 95px column and collided with the InputInt steppers into garble. It

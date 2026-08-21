@@ -25,7 +25,8 @@ type ThreadTool struct {
 	cut         bool
 	classIdx    int // index into ClassOptions (0 = unspecified)
 	tapered     bool
-	modelDiaIdx int // index into ModelDiameterOptions (0 = major, the default)
+	leftHanded  bool // #2069: author a left-hand thread (ThreadDefinition.LeftHanded)
+	modelDiaIdx int  // index into ModelDiameterOptions (0 = major, the default)
 	added       *feature.PartFeature
 }
 
@@ -90,6 +91,11 @@ func (t *ThreadTool) SetCut(cut bool) { t.cut = cut }
 // (it needs a conical face), so CanCommit blocks the combination.
 func (t *ThreadTool) Tapered() bool     { return t.tapered }
 func (t *ThreadTool) SetTapered(v bool) { t.tapered = v }
+
+// LeftHanded / SetLeftHanded toggle a left-hand thread (#2069). The flag reaches the modeled
+// groove and the cosmetic helix (ThreadDefinition.LeftHanded, #1892); the default is right-handed.
+func (t *ThreadTool) LeftHanded() bool     { return t.leftHanded }
+func (t *ThreadTool) SetLeftHanded(v bool) { t.leftHanded = v }
 
 // ClassOptions lists the tolerance-class choices for the current standard: unspecified
 // first, then the standard's external and internal classes (#325).
@@ -199,12 +205,11 @@ func (t *ThreadTool) addThread(dress *feature.DressUpFeatures) (*feature.PartFea
 	if err != nil {
 		return nil, err
 	}
-	// The tool always builds a RIGHT-hand thread: Designation() composes the designation from the
-	// standard/size/pitch tables, so the "-LH" spelling is not reachable here either, and the
-	// dialog has no handedness control yet. ThreadDefinition.LeftHanded (#1892) is authorable over
-	// /api today; the UI control is tracked as a follow-up.
+	// Handedness comes from the dialog's Left-hand checkbox (#2069) via ThreadDefinition.LeftHanded
+	// (#1892). Designation() composes the RIGHT-hand spelling from the standard/size/pitch tables, so
+	// the flag is what turns the thread left-handed; the "-LH" suffix and the flag agree either way.
 	return dress.AddThreadDef(&feature.ThreadDefinition{
-		FaceKey: t.face.Face.ReferenceKey(), Designation: designation, Cut: t.cut,
+		FaceKey: t.face.Face.ReferenceKey(), Designation: designation, Cut: t.cut, LeftHanded: t.leftHanded,
 		Class: t.class(), Tapered: t.tapered, ModelDiameter: threadModelDiameters[clampRange(t.modelDiaIdx, len(threadModelDiameters))],
 	}), nil
 }

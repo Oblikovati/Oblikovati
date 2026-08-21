@@ -92,6 +92,34 @@ func TestThreadToolEndToEnd(t *testing.T) {
 	}
 }
 
+// TestThreadToolAuthorsLeftHandThread is the #2069 regression: the dialog's Left-hand checkbox
+// (SetLeftHanded) must reach ThreadDefinition.LeftHanded, so a left-hand thread is authorable from
+// the UI and not only over /api. The default stays right-handed.
+func TestThreadToolAuthorsLeftHandThread(t *testing.T) {
+	s, cyl := newPartWithCylinder(t)
+	face := cylinderFaceOf(t, cyl)
+	s.SetPicker(stubPicker{sel: FaceHandle{Face: face, Body: cyl}})
+
+	tool := NewThreadTool()
+	s.StartTool(tool)
+	s.Click(100, 100)
+	tool.SetStandardIndex(0)
+	tool.SetSizeIndex(6) // M8
+	tool.SetPitchIndex(0)
+	if tool.LeftHanded() {
+		t.Fatal("a new thread tool defaults to right-handed")
+	}
+	tool.SetLeftHanded(true)
+	if err := s.OK(); err != nil {
+		t.Fatalf("thread OK: %v", err)
+	}
+
+	def := tool.AddedFeature().Definition().(*feature.ThreadFeature).Definition()
+	if !def.LeftHanded {
+		t.Error("Left-hand checkbox set, but ThreadDefinition.LeftHanded is false — the flag did not reach the feature")
+	}
+}
+
 // TestThreadToolRejectsPlanarFace checks the tool ignores a non-cylindrical pick.
 func TestThreadToolRejectsPlanarFace(t *testing.T) {
 	s, block := newPartWithBlock(t, 4)
