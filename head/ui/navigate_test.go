@@ -30,17 +30,29 @@ func TestApplyNavigationZoomsOnWheelWhenHovered(t *testing.T) {
 // it is a pure dolly (target fixed); off-centre it pans the target toward the cursor.
 func TestApplyNavigationWheelZoomsTowardCursor(t *testing.T) {
 	cam := scene.NewCamera(800, 600)
-	center := ApplyNavigation(cam, NavInput{Hovered: true, Wheel: 1, CursorX: 400, CursorY: 300})
+	center := ApplyNavigation(cam, NavInput{Hovered: true, Wheel: 1, CursorX: 400, CursorY: 300, ZoomToCursor: true})
 	if !center.Target.IsEqualTo(cam.Target, 1e-9) {
 		t.Errorf("wheel zoom at the centre should keep the target fixed, got %v", center.Target)
 	}
-	off := ApplyNavigation(cam, NavInput{Hovered: true, Wheel: 1, CursorX: 700, CursorY: 150})
+	off := ApplyNavigation(cam, NavInput{Hovered: true, Wheel: 1, CursorX: 700, CursorY: 150, ZoomToCursor: true})
 	if off.Target.IsEqualTo(cam.Target, 1e-9) {
 		t.Error("wheel zoom off-centre should move the target toward the cursor (zoom-to-cursor)")
 	}
 }
 
-// TestClassifyOrbitZone covers the Free-Orbit ring zones (#913 N5–N8): inner disc → free, rim
+// TestApplyNavigationWheelZoomsTowardViewCentre verifies the explicit false option: an
+// off-centre wheel event changes distance without moving the camera target.
+func TestApplyNavigationWheelZoomsTowardViewCentre(t *testing.T) {
+	cam := scene.NewCamera(800, 600)
+	out := ApplyNavigation(cam, NavInput{Hovered: true, Wheel: 1, CursorX: 700, CursorY: 150, ZoomToCursor: false})
+	if !out.Target.IsEqualTo(cam.Target, 1e-9) {
+		t.Errorf("view-centred wheel zoom moved target to %v, want %v", out.Target, cam.Target)
+	}
+	if dist(out) >= dist(cam) {
+		t.Errorf("view-centred scroll-up should zoom in: dist %v, want < %v", dist(out), dist(cam))
+	}
+}
+
 // left/right → yaw, rim top/bottom → pitch, outside → roll, and a degenerate ring → free.
 func TestClassifyOrbitZone(t *testing.T) {
 	const cx, cy, radius = 400, 300, 200

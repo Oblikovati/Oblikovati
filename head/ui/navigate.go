@@ -91,6 +91,12 @@ type NavInput struct {
 	Left             bool      // left button down — only consulted in a Modal mode
 	OrbitZone        OrbitZone // the Free-Orbit ring zone latched at drag start (#913 N5–N8)
 	Constrained      bool      // Constrained Orbit tool active: a left-drag turntables about modelUp (#913 N10)
+	// Inventor-parity input preferences (2026-08-17), populated by readNavInput
+	// from the session's options (the pure functions below cannot read options).
+	MMBMode      string // "pan" | "orbit" — middle-button drag mode
+	ShiftMMBMode string // "orbit" | "pan" — Shift+middle-button drag mode
+	WheelInvert  bool   // true flips the wheel zoom direction
+	ZoomToCursor bool   // false zooms to the view centre instead of the cursor
 }
 
 // ApplyNavigation maps one frame of pointer input to a camera move, mirroring Inventor:
@@ -100,7 +106,15 @@ type NavInput struct {
 // sketch editor's left-click select/drag (#916). The camera math lives in scene.
 func ApplyNavigation(cam scene.Camera, in NavInput) scene.Camera {
 	if in.Hovered && in.Wheel != 0 {
-		cam = cam.DollyToCursor(stdmath.Pow(zoomPerNotch, float64(in.Wheel)), float64(in.CursorX), float64(in.CursorY))
+		factor := stdmath.Pow(zoomPerNotch, float64(in.Wheel))
+		if in.WheelInvert {
+			factor = 1 / factor
+		}
+		if in.ZoomToCursor {
+			cam = cam.DollyToCursor(factor, float64(in.CursorX), float64(in.CursorY))
+		} else {
+			cam = cam.Dolly(factor) // view-centred zoom (Inventor's Zoom to Cursor off)
+		}
 	}
 	if !in.Active || (in.DX == 0 && in.DY == 0) {
 		return cam
@@ -157,12 +171,24 @@ func navGesture(in NavInput) NavMode {
 	if in.Left {
 		return in.Modal
 	}
-	switch {
-	case in.Middle && in.Shift:
-		return NavOrbit
-	case in.Middle:
-		return NavPan
-	default:
-		return NavNone
+	mmbMode, shiftMode := "pan", "orbit" // Inventor defaults
+	if in.MMBMode == "orbit" {
+		mmbMode = "orbit"
 	}
+	if in.ShiftMMBMode == "pan" {
+		shiftMode = "pan"
+	}
+	if in.Middle && in.Shift {
+		if shiftMode == "orbit" {
+			return NavOrbit
+		}
+		return NavPan
+	}
+	if in.Middle {
+		if mmbMode == "orbit" {
+			return NavOrbit
+		}
+		return NavPan
+	}
+	return NavNone
 }

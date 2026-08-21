@@ -812,6 +812,13 @@ func readNavInput(s *app.Session) NavInput {
 	}
 	in.OrbitZone = latchOrbitZone(in, cx, cy)
 	in.Constrained = s.ConstrainedOrbitActive() && native.MouseDown(native.MouseLeft)
+	// Inventor-parity input preferences (2026-08-17): the pure navigation
+	// functions cannot read options, so the session's persisted values flow
+	// through NavInput here.
+	in.MMBMode = s.MMBMode()
+	in.ShiftMMBMode = s.ShiftMMBMode()
+	in.WheelInvert = s.WheelInvert()
+	in.ZoomToCursor = s.ZoomToCursor()
 	return in
 }
 
