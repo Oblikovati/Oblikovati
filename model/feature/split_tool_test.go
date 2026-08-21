@@ -120,7 +120,7 @@ func TestSplitRefusesANonPlanarTool(t *testing.T) {
 }
 
 // TestSplitToolMisuseIsRefused: a solid tool is a combine, an out-of-range index names nothing,
-// and the path tool is the split-FACE geometry. Each case asserts the REASON as well as the
+// and a path tool with no sketch has nothing to project. Each case asserts the REASON as well as the
 // refusal — a solid tool would fail anyway for having no single plane, and "not planar" would
 // send the caller looking for a flatter solid instead of the surface they meant to pick.
 func TestSplitToolMisuseIsRefused(t *testing.T) {
@@ -128,11 +128,11 @@ func TestSplitToolMisuseIsRefused(t *testing.T) {
 		def  *SplitSolidDefinition
 		want string
 	}{
-		"solid as tool": {&SplitSolidDefinition{Tool: SplitBySurfaceBody, ToolIndex: 0}, "is a SOLID"},
-		"out of range":  {&SplitSolidDefinition{Tool: SplitBySurfaceBody, ToolIndex: 9}, "out of range"},
-		"no surfaces":   {&SplitSolidDefinition{Tool: SplitByWorkSurface, ToolIndex: 3}, "out of range"},
-		"path":          {&SplitSolidDefinition{Tool: SplitByPath}, "split-FACE"},
-		"no plane":      {&SplitSolidDefinition{Tool: SplitByWorkPlane}, "no cutting plane"},
+		"solid as tool":  {&SplitSolidDefinition{Tool: SplitBySurfaceBody, ToolIndex: 0}, "is a SOLID"},
+		"out of range":   {&SplitSolidDefinition{Tool: SplitBySurfaceBody, ToolIndex: 9}, "out of range"},
+		"no surfaces":    {&SplitSolidDefinition{Tool: SplitByWorkSurface, ToolIndex: 3}, "out of range"},
+		"path no sketch": {&SplitSolidDefinition{Tool: SplitByPath}, "needs a sketch"},
+		"no plane":       {&SplitSolidDefinition{Tool: SplitByWorkPlane}, "no cutting plane"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			fs := boxAndSheetPart()

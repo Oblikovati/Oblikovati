@@ -3,12 +3,15 @@
 package feature
 
 import (
+	"errors"
 	"fmt"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // SplitSide selects which side(s) of the cutting plane a solid split keeps: both pieces (a true
@@ -33,6 +36,11 @@ type SplitSolidDefinition struct {
 	ToolIndex int
 	Keep      SplitSide
 	FacesOnly bool
+	// Sketch/ProfileIndex drive the SplitByPath tool (#2068): the profile's boundary, projected onto
+	// the running solids along the sketch plane normal, scores their faces (no material removed).
+	// Re-resolved each recompute, so editing the sketch reshapes the split.
+	Sketch       *sketch.Sketch
+	ProfileIndex int
 }
 
 // SplitSolidFeature divides the running solid bodies by a plane (the reference's Split
@@ -62,6 +70,9 @@ func (f *SplitSolidFeature) SplitType() types.SplitType {
 // requested side(s) — or imprinting faces only. A lost plane → Sick; surface (non-solid)
 // bodies pass through unchanged.
 func (f *SplitSolidFeature) Recompute(in Input) (Output, error) {
+	if f.def.Tool == SplitByPath {
+		return f.recomputePath(in)
+	}
 	plane, err := f.def.cuttingPlane(in.Bodies)
 	if err != nil {
 		return Output{}, err
@@ -96,6 +107,73 @@ func (f *SplitSolidFeature) splitOne(b *topo.Body, plane geom.Plane) ([]*topo.Bo
 		return nil, err
 	}
 	return keepSplitSides(pieces, plane, f.def.Keep), nil
+}
+
+// recomputePath scores every running solid's faces along the projected sketch path (#2068), leaving
+// the volume untouched. Surface (non-solid) bodies pass through unchanged.
+func (f *SplitSolidFeature) recomputePath(in Input) (Output, error) {
+	path, dir, err := f.def.projectedPath()
+	if err != nil {
+		return Output{}, err
+	}
+	var out []*topo.Body
+	for _, b := range in.Bodies {
+		if !b.IsSolid() {
+			out = append(out, b)
+			continue
+		}
+		scored, err := ops.SplitFacesByPath(b, path, dir)
+		if err != nil {
+			return Output{}, err
+		}
+		out = append(out, scored)
+	}
+	return Output{Bodies: out}, nil
+}
+
+// projectedPath resolves the split's profile to a closed model-space polyline plus the projection
+// direction (the sketch plane normal). The profile boundary is sampled to a polygon, so a profile
+// made of arcs/splines is imprinted as its faceted approximation — the plane split is exact, this is
+// not (#2068). The loop is closed (first point repeated) so the extruded tool sheet has no open end.
+func (d *SplitSolidDefinition) projectedPath() ([]math.Point3, math.Vector3, error) {
+	if d.Sketch == nil {
+		return nil, math.Vector3{}, errors.New("split: the path tool needs a sketch to project")
+	}
+	profs := d.Sketch.Profiles()
+	if d.ProfileIndex < 0 || d.ProfileIndex >= profs.Count() {
+		return nil, math.Vector3{}, fmt.Errorf("split: profile %d out of range (the sketch has %d)",
+			d.ProfileIndex, profs.Count())
+	}
+	poly := profs.Item(d.ProfileIndex).OuterLoop().Polygon()
+	if len(poly) < 2 {
+		return nil, math.Vector3{}, fmt.Errorf("split: profile %d has %d points, need at least 2",
+			d.ProfileIndex, len(poly))
+	}
+	plane := d.Sketch.Plane()
+	path := make([]math.Point3, 0, len(poly)+1)
+	for _, p := range poly {
+		m := plane.ToModel(p)
+		if len(path) > 0 && float64(path[len(path)-1].DistanceTo(m)) < 1e-9 {
+			continue // drop a repeated point so no sheet quad is degenerate
+		}
+		path = append(path, m)
+	}
+	if len(path) < 2 {
+		return nil, math.Vector3{}, fmt.Errorf("split: profile %d collapses to a single point", d.ProfileIndex)
+	}
+	if float64(path[0].DistanceTo(path[len(path)-1])) > 1e-9 {
+		path = append(path, path[0]) // close the loop unless the polygon already does
+	}
+	return path, plane.Normal().AsVector(), nil
+}
+
+// AddSplitFacesByPath adds a faces-only split that scores the running solids along a sketch
+// profile projected onto them (#2068), removing no material.
+func (c *ModifyFeatures) AddSplitFacesByPath(sk *sketch.Sketch, profileIndex int) *PartFeature {
+	pf := c.engine.Add(&SplitSolidFeature{def: &SplitSolidDefinition{
+		Tool: SplitByPath, FacesOnly: true, Sketch: sk, ProfileIndex: profileIndex}})
+	pf.SetName(c.engine.UniqueName("Split"))
+	return pf
 }
 
 // geomPlaneOf converts a work plane's sketch plane to a kernel plane for the split.

@@ -118,13 +118,13 @@ func (r featureCodecSet) registerSolidCodecs() {
 		},
 	})
 	r.register("splitSolid", featureCodec{
-		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
-			sd, err := serializeSplitSolid(f.(*SplitSolidFeature).def)
+		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
+			sd, err := serializeSplitSolid(f.(*SplitSolidFeature).def, sk)
 			fd.SplitSolid = sd
 			return err
 		},
 		decode: func(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
-			return restoreSplitSolid(rc.fs, fd.SplitSolid, rc.work)
+			return restoreSplitSolid(rc.fs, fd.SplitSolid, rc.work, rc.sk)
 		},
 	})
 	r.register("delete-body", featureCodec{
