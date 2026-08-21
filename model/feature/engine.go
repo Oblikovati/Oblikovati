@@ -284,7 +284,7 @@ func (fs *PartFeatures) PreviewResult(candidate Feature) ([]*topo.Body, error) {
 		return nil, errors.New("feature: PreviewResult got a nil candidate")
 	}
 	bodies := fs.prefixBodies(fs.effectiveEnd())
-	out, err := candidate.Recompute(Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool, Relief: fs.reliefSpec()})
+	out, err := candidate.Recompute(Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool, SourceTools: fs.sourceTools, Relief: fs.reliefSpec()})
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +321,7 @@ func (fs *PartFeatures) evaluateBody(pf *PartFeature, bodies []*topo.Body, sick 
 	}
 	pf.recomputes++
 	rec := &diag.Recorder{}
-	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool,
+	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool, SourceTools: fs.sourceTools,
 		Diag: rec, Relief: fs.reliefSpec(), Corner: fs.cornerReliefSpec(), Transition: fs.bendTransition(), MiterGap: fs.miterGapOf(), PriorBends: fs.bendsBefore(pf)})
 	pf.diags = rec.Records()
 	return fs.classify(pf, bodies, out, err, sick)
@@ -373,6 +373,25 @@ func (fs *PartFeatures) sourceTool(id ID) (*topo.Body, ops.PartFeatureOperation,
 		return nil, op, false
 	}
 	return tool, op, true
+}
+
+// sourceTools is sourceTool's multi-tool sibling (#2066): a source feature that applies several
+// booleans (a from-plane emboss raises and cuts about its plane) reports each here so a pattern
+// replicates all of them. ok is false — and the caller falls back to the single sourceTool — for a
+// feature that applies one tool or whose multi-tool set is empty this recompute.
+func (fs *PartFeatures) sourceTools(id ID) ([]ToolApplication, bool) {
+	for _, it := range fs.items {
+		if it.id != id {
+			continue
+		}
+		if mtf, ok := it.feature.(MultiToolFeature); ok {
+			if apps := mtf.ToolApplications(); len(apps) > 0 {
+				return apps, true
+			}
+		}
+		return nil, false
+	}
+	return nil, false
 }
 
 // operationOf returns a feature's boolean operation, or NewBody when it does not apply one

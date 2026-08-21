@@ -19,15 +19,15 @@ import (
 // of it, exactly as the flat prism path drills them (#1893).
 
 // wrappedEmbossTool merges every profile's wrapped pad into one tool body.
-func wrappedEmbossTool(profiles []*sketch.Profile, plane sketch.Plane, fr embossWrapFrame,
+func wrappedEmbossTool(profiles []*sketch.Profile, plane sketch.Plane, surf wrapSurface,
 	d float64, engrave bool, feat string, rec *diag.Recorder) (*topo.Body, error) {
-	inner, outer, err := wrapRadii(fr.cyl.Radius, d, engrave)
+	inner, outer, err := surf.offsets(d, engrave)
 	if err != nil {
 		return nil, err
 	}
 	pads := make([]*topo.Body, len(profiles))
 	for i, p := range profiles {
-		pads[i], err = wrappedProfilePad(p, plane, fr, inner, outer, prismName(feat, i, len(profiles)), rec)
+		pads[i], err = wrappedProfilePad(p, plane, surf, inner, outer, prismName(feat, i, len(profiles)), rec)
 		if err != nil {
 			return nil, err
 		}
@@ -55,23 +55,23 @@ func wrapRadii(radius, d float64, engrave bool) (inner, outer float64, err error
 }
 
 // wrappedProfilePad is one profile's pad with its inner loops cut back out.
-func wrappedProfilePad(p *sketch.Profile, plane sketch.Plane, fr embossWrapFrame,
+func wrappedProfilePad(p *sketch.Profile, plane sketch.Plane, surf wrapSurface,
 	inner, outer float64, feat string, rec *diag.Recorder) (*topo.Body, error) {
-	pad, err := wrappedSkin(p.OuterLoop().Polygon(), plane, fr, inner, outer, feat)
+	pad, err := wrappedSkin(p.OuterLoop().Polygon(), plane, surf, inner, outer, feat)
 	if err != nil {
 		return nil, err
 	}
-	return drillWrappedHoles(pad, p.InnerLoops(), plane, fr, inner, outer, feat, rec)
+	return drillWrappedHoles(pad, p.InnerLoops(), plane, surf, inner, outer, feat, rec)
 }
 
 // drillWrappedHoles cuts each inner loop out of the pad. Every hole tool overshoots BOTH radial
 // ends by the pad's own thickness so the cut passes clean through, the radial counterpart of
 // drillProfileHoles' axial overshoot.
-func drillWrappedHoles(pad *topo.Body, inner []sketch.Loop, plane sketch.Plane, fr embossWrapFrame,
+func drillWrappedHoles(pad *topo.Body, inner []sketch.Loop, plane sketch.Plane, surf wrapSurface,
 	lo, hi float64, feat string, rec *diag.Recorder) (*topo.Body, error) {
 	margin := hi - lo
 	for j, loop := range inner {
-		hole, err := wrappedSkin(loop.Polygon(), plane, fr, lo-margin, hi+margin,
+		hole, err := wrappedSkin(loop.Polygon(), plane, surf, lo-margin, hi+margin,
 			fmt.Sprintf("%s/hole%d", feat, j))
 		if err != nil {
 			return nil, err
@@ -85,11 +85,11 @@ func drillWrappedHoles(pad *topo.Body, inner []sketch.Loop, plane sketch.Plane, 
 
 // wrappedSkin lays one closed loop on the face at two radii and skins between them: the wrapped
 // loops become the pad's inner and outer faces, and the swept solid's caps close its walls.
-func wrappedSkin(poly []math.Point2, plane sketch.Plane, fr embossWrapFrame,
+func wrappedSkin(poly []math.Point2, plane sketch.Plane, surf wrapSurface,
 	inner, outer float64, feat string) (*topo.Body, error) {
 	sections := [][]math.Point3{
-		wrappedLoop(poly, plane, fr, inner),
-		wrappedLoop(poly, plane, fr, outer),
+		wrappedLoop(poly, plane, surf, inner),
+		wrappedLoop(poly, plane, surf, outer),
 	}
 	body, err := sweptSolid(sections, false, feat)
 	if err != nil {

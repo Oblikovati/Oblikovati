@@ -58,6 +58,7 @@ func (f *EmbossFeature) cutBack(in Input, bodies []*topo.Body, profiles []*sketc
 	d float64) (Output, error) {
 	relief := buildProfilePrisms(profiles, f.def.Sketch.Plane(), orderedSpan(0, -d), f.def.Taper,
 		featOr(f.featName, "emboss")+"/relief", in.Diag)
+	f.reliefTool = relief // exposed via ToolApplications so a pattern replicates the cut too (#2066)
 	run := in
 	run.Bodies = bodies
 	out, err := combine(run, relief, ops.Cut)

@@ -90,6 +90,29 @@ func (f *SheetMetalContourFlangeFeature) bentProfile(in Input) ([]math.Point2, e
 	return roundProfileCorners(profile, f.bendRadius(in))
 }
 
+// BendSpecs reports one bend per rounded interior corner of the contour profile, for the flat
+// pattern (#2076). Each corner of a contour flange IS a bend — it was swept sharp until #1961
+// rounded it to the bend radius — so the flat blank must develop each corner's bend allowance, or
+// it comes out short by the whole of it and any nest or DXF cut from it is undersized. The swept
+// angle is the corner's own turn; the radius follows the flange convention (the override, else 0 to
+// defer to the rule's default, which compdef.developBends fills in). Before the first recompute the
+// profile still reads from the definition, so this needs no captured state.
+//
+// Example:
+//
+//	specs := contourFlange.BendSpecs(thickness) // one BendSpec per non-collinear profile corner
+func (f *SheetMetalContourFlangeFeature) BendSpecs(_ float64) []BendSpec {
+	profile, err := openProfilePoints(f.def.Profile)
+	if err != nil {
+		return nil
+	}
+	radius := 0.0
+	if f.def.Radius != nil {
+		radius = f.def.Radius()
+	}
+	return contourCornerBends(profile, radius)
+}
+
 // operation is how this wall joins the model; the zero value is Join, which is what the feature
 // has always done.
 func (f *SheetMetalContourFlangeFeature) operation() ops.PartFeatureOperation {
@@ -322,4 +345,7 @@ func (c *SheetMetalContourFlangeFeatures) Add(def *SheetMetalContourFlangeDefini
 	return pf
 }
 
-var _ Feature = (*SheetMetalContourFlangeFeature)(nil)
+var (
+	_ Feature     = (*SheetMetalContourFlangeFeature)(nil)
+	_ BendLineage = (*SheetMetalContourFlangeFeature)(nil) // #2076: its corners develop as bends
+)

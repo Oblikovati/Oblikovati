@@ -131,7 +131,7 @@ func TestEmbossWrapToFaceReachesTheDefinition(t *testing.T) {
 	if res.Healthy {
 		t.Error("wrapping onto a planar face should report unhealthy: a planar face needs no wrap")
 	}
-	if !strings.Contains(res.Reason, "cylindrical face") {
-		t.Errorf("reason = %q, want it to name the cylindrical face the wrap needs", res.Reason)
+	if !strings.Contains(res.Reason, "cylindrical or conical face") {
+		t.Errorf("reason = %q, want it to name the cylindrical or conical face the wrap needs (#2065)", res.Reason)
 	}
 }

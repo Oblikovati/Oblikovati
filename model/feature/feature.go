@@ -51,6 +51,12 @@ type Input struct {
 	Bodies     []*topo.Body
 	Params     *param.Parameters
 	SourceTool func(id ID) (tool *topo.Body, op ops.PartFeatureOperation, ok bool)
+	// SourceTools is SourceTool's multi-tool sibling: a source feature that applies MORE THAN ONE
+	// boolean (a from-plane emboss raises material on one side of its plane AND cuts it on the
+	// other) reports each (tool, op) here so a pattern replicates all of them, not just the first
+	// (#2066). ok is false — and the caller falls back to the single SourceTool — for a feature that
+	// applies one tool or whose tools are unrecoverable. Nil for engines that resolve no sources.
+	SourceTools func(id ID) (tools []ToolApplication, ok bool)
 	// Diag collects the kernel diagnostics raised while the feature rebuilds — the facet/CSG
 	// fallback defects a boolean records when it abandons the analytic path (#1601). The engine
 	// installs a fresh recorder per evaluation and stores what it collected on the PartFeature;
@@ -87,6 +93,24 @@ type OperationalFeature interface {
 type ToolFeature interface {
 	OperationalFeature
 	ToolBody() *topo.Body
+}
+
+// ToolApplication is one boolean a feature applies: a tool body and the operation combined with
+// it. A feature that applies several (a from-plane emboss) reports them via [MultiToolFeature] so a
+// pattern re-applies every one at each occurrence (#2066).
+type ToolApplication struct {
+	Body *topo.Body
+	Op   ops.PartFeatureOperation
+}
+
+// MultiToolFeature is a [ToolFeature] that applies MORE THAN ONE boolean tool. A pattern/mirror
+// replicates every application with its own operation, so the copies match the seed rather than
+// carrying only the first tool (#2066: a patterned from-plane emboss kept the raise but dropped the
+// relief cut). ToolApplications returns nil when the feature applied a single tool this recompute —
+// the caller then falls back to [ToolFeature.ToolBody]/[OperationalFeature.Operation].
+type MultiToolFeature interface {
+	ToolFeature
+	ToolApplications() []ToolApplication
 }
 
 // Output is what a feature produces: the new running body state, plus any reference

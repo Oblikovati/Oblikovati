@@ -21,10 +21,21 @@ import (
 // bureaucracy: it is what fixes the correspondence. Without it there is no distinguished point to
 // anchor the profile at, and no direction in the sketch that measures arc length one-for-one.
 //
-// Only the cylinder is built here. Inventor also wraps to a cone, whose development is a circular
-// sector rather than a rectangle — a different frame (the tangent line is a generator, and the
-// angle per unit arc varies with slant distance). A cone is refused with that said out loud
-// rather than wrapped as if it were a cylinder, which would silently distort the profile.
+// The cylinder and the cone are both built here, behind wrapSurface. A cone's development is a
+// circular SECTOR rather than a rectangle (the tangent line is a generator through the apex, and the
+// angle per unit arc varies with slant distance), so it carries its own frame (emboss_wrap_cone.go);
+// the tool builder in emboss_wrap_tool.go is written against the interface and treats both the same.
+
+// wrapSurface is the developable face an emboss is wrapped onto (a cylinder or a cone). `level` is a
+// surface-defined coordinate the tool builder passes through opaquely: the cylinder reads it as an
+// absolute radius from the axis, the cone as a signed offset along the surface normal (0 on the
+// face). offsets() hands back the inner and outer level for one pad, and angleSpan sizes the
+// circumferential resampling so the wrapped loop follows the curvature instead of chording it.
+type wrapSurface interface {
+	at(p math.Point2, plane sketch.Plane, level float64) math.Point3
+	angleSpan(a, b math.Point2, plane sketch.Plane) float64
+	offsets(depth float64, engrave bool) (inner, outer float64, err error)
+}
 
 // wrapAngularStep is the finest angular step a wrapped loop is discretized to, matching the
 // revolve's 64-per-turn budget so a wrapped emboss is as round as the shaft it sits on. The
@@ -56,11 +67,11 @@ func (f *EmbossFeature) wrapOntoFace(in Input, profiles []*sketch.Profile, d flo
 	if err != nil {
 		return Output{}, fmt.Errorf("emboss: wrapToFace: %w", err)
 	}
-	frame, err := embossWrapFrameOn(face, f.def.Sketch.Plane())
+	surf, err := embossWrapSurfaceOn(face, f.def.Sketch.Plane())
 	if err != nil {
 		return Output{}, err
 	}
-	f.tool, err = wrappedEmbossTool(profiles, f.def.Sketch.Plane(), frame, d,
+	f.tool, err = wrappedEmbossTool(profiles, f.def.Sketch.Plane(), surf, d,
 		f.def.Type.engraves(), featOr(f.featName, "emboss"), in.Diag)
 	if err != nil {
 		return Output{}, err
@@ -77,19 +88,23 @@ func (f *EmbossFeature) combineWrapped(in Input, mt identity.MatchType) (Output,
 	return Output{Bodies: bodies, Heals: faceHeal(f.def.WrapFaceKey, mt)}, nil
 }
 
-// embossWrapFrameOn derives the correspondence between the sketch plane and the wrap face,
-// refusing every face the wrap is not defined on (Inventor limits it to one planar or conical
-// face; a planar one needs no wrap at all).
-func embossWrapFrameOn(face *topo.Face, plane sketch.Plane) (embossWrapFrame, error) {
-	switch cyl := face.Geometry().(type) {
+// embossWrapSurfaceOn derives the correspondence between the sketch plane and the wrap face,
+// dispatching on the face geometry: a cylinder or a cone (each tangent to the sketch plane). A
+// planar face needs no wrap; every other surface is refused with that said out loud rather than
+// wrapped as if it were a cylinder, which would silently distort the profile.
+func embossWrapSurfaceOn(face *topo.Face, plane sketch.Plane) (wrapSurface, error) {
+	switch g := face.Geometry().(type) {
 	case geom.Cylinder:
-		return embossWrapFrameFor(cyl, plane)
+		return embossWrapFrameFor(g, plane)
 	case *geom.Cylinder:
-		return embossWrapFrameFor(*cyl, plane)
+		return embossWrapFrameFor(*g, plane)
+	case geom.Cone:
+		return coneWrapFrameFor(g, plane)
+	case *geom.Cone:
+		return coneWrapFrameFor(*g, plane)
 	default:
-		return embossWrapFrame{}, fmt.Errorf("emboss: wrapToFace needs a cylindrical face, got %T; "+
-			"a planar face needs no wrap, and a cone (whose development is a sector, not a "+
-			"rectangle) is not supported yet", face.Geometry())
+		return nil, fmt.Errorf("emboss: wrapToFace needs a cylindrical or conical face, got %T; "+
+			"a planar face needs no wrap, and a free-form (b-spline) face is not supported", g)
 	}
 }
 
@@ -134,9 +149,10 @@ func newEmbossWrapFrame(cyl geom.Cylinder, plane sketch.Plane, axis, normal math
 	}
 }
 
-// at maps a sketch point onto the cylinder at the given radius: the displacement from the tangency
-// is split into an axial part, which slides along the axis, and a circumferential part, which is
-// spent as ARC LENGTH — so it becomes an angle of arc/radius.
+// at maps a sketch point onto the cylinder at the given radius (the cylinder's `level` is an
+// absolute radius from the axis): the displacement from the tangency is split into an axial part,
+// which slides along the axis, and a circumferential part, which is spent as ARC LENGTH — so it
+// becomes an angle of arc/radius.
 func (fr embossWrapFrame) at(p math.Point2, plane sketch.Plane, radius float64) math.Point3 {
 	v := plane.ToModel(fr.tangency).VectorTo(plane.ToModel(p))
 	axial, arc := v.Dot(fr.cyl.AxisDir.AsVector()), v.Dot(fr.circum)
@@ -147,6 +163,12 @@ func (fr embossWrapFrame) at(p math.Point2, plane sketch.Plane, radius float64) 
 	return rot.TransformPoint(base)
 }
 
+// offsets returns the inner and outer radius the cylinder pad is built between — wrapRadii, exposed
+// as the wrapSurface method (the cylinder's level is an absolute radius, so the offsets ARE radii).
+func (fr embossWrapFrame) offsets(depth float64, engrave bool) (inner, outer float64, err error) {
+	return wrapRadii(fr.cyl.Radius, depth, engrave)
+}
+
 // angleSpan is the angle a sketch-space distance subtends on the cylinder — how the resampling
 // step is chosen.
 func (fr embossWrapFrame) angleSpan(a, b math.Point2, plane sketch.Plane) float64 {
@@ -154,17 +176,17 @@ func (fr embossWrapFrame) angleSpan(a, b math.Point2, plane sketch.Plane) float6
 	return stdmath.Abs(float64(v.Dot(fr.circum))) / fr.cyl.Radius
 }
 
-// wrappedLoop maps a closed sketch polygon onto the cylinder at one radius, resampling each
-// segment first so the wrapped edge follows the curvature instead of chording across it.
-func wrappedLoop(poly []math.Point2, plane sketch.Plane, fr embossWrapFrame, radius float64) []math.Point3 {
+// wrappedLoop maps a closed sketch polygon onto the surface at one level, resampling each segment
+// first so the wrapped edge follows the curvature instead of chording across it.
+func wrappedLoop(poly []math.Point2, plane sketch.Plane, surf wrapSurface, level float64) []math.Point3 {
 	out := make([]math.Point3, 0, len(poly))
 	n := len(poly)
 	for i := 0; i < n; i++ {
 		a, b := poly[i], poly[(i+1)%n]
-		steps := wrapSegmentSteps(fr.angleSpan(a, b, plane))
+		steps := wrapSegmentSteps(surf.angleSpan(a, b, plane))
 		for s := 0; s < steps; s++ { // b is emitted as the next segment's a
 			t := float64(s) / float64(steps)
-			out = append(out, fr.at(lerpPoint2(a, b, t), plane, radius))
+			out = append(out, surf.at(lerpPoint2(a, b, t), plane, level))
 		}
 	}
 	return out

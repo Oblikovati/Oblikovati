@@ -212,7 +212,19 @@ func resolveGroup(in Input, sources []ID) (tools []groupTool, boolean bool) {
 	for _, id := range sources {
 		tool, op, ok := in.SourceTool(id)
 		if !booleanReplicable(op) {
-			return nil, false
+			return nil, false // a new-body placement — the caller copies whole bodies
+		}
+		// A multi-tool source (a from-plane emboss, #2066) replicates EVERY application; a
+		// single-tool source falls back to its one (tool, op). An unrecoverable single tool no-ops
+		// the pattern (return true) rather than multiplying whole bodies.
+		if apps, multi := in.sourceApplications(id); multi {
+			for _, a := range apps {
+				if !booleanReplicable(a.Op) {
+					return nil, false
+				}
+				tools = append(tools, groupTool{body: a.Body, op: a.Op})
+			}
+			continue
 		}
 		if !ok {
 			return nil, true
@@ -220,6 +232,16 @@ func resolveGroup(in Input, sources []ID) (tools []groupTool, boolean bool) {
 		tools = append(tools, groupTool{body: tool, op: op})
 	}
 	return tools, true
+}
+
+// sourceApplications returns the source's multi-tool applications when it has them (a from-plane
+// emboss's raise + relief cut, #2066); multi is false for a single-tool source, so resolveGroup
+// uses the single SourceTool instead.
+func (in Input) sourceApplications(id ID) (apps []ToolApplication, multi bool) {
+	if in.SourceTools == nil {
+		return nil, false
+	}
+	return in.SourceTools(id)
 }
 
 // booleanReplicable reports whether an operation is one the pattern re-applies as a boolean
