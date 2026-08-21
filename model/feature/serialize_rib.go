@@ -19,6 +19,27 @@ type RibData struct {
 	Draft         float64 `yaml:"draft,omitempty"`       // radians
 	ThicknessAt   string  `yaml:"thicknessAt,omitempty"` // "" (sketch plane) | root
 	ExtendProfile bool    `yaml:"extendProfile,omitempty"`
+	// Direction and DraftProfileEnds are omitted at their defaults (#2064): a normal/web rib with
+	// drafted ends reads back unchanged from an older document.
+	Direction        string `yaml:"direction,omitempty"`        // "" (normal) | parallel
+	DraftProfileEnds *bool  `yaml:"draftProfileEnds,omitempty"` // nil ⇒ default (drafted ends)
+}
+
+// ribDirectionNames is the persisted spelling of each rib direction, both ways. The normal (web)
+// default is the empty string so it drops out of the YAML entirely.
+var ribDirectionNames = map[RibDirection]string{
+	RibNormalToSketch: "", RibParallelToSketch: "parallel",
+}
+
+// ribDirectionFromName reads a persisted rib direction; an unknown spelling is a precise error
+// rather than a silent fall back to normal, which would rotate the wall 90°.
+func ribDirectionFromName(name string) (RibDirection, error) {
+	for dir, n := range ribDirectionNames {
+		if n == name {
+			return dir, nil
+		}
+	}
+	return 0, fmt.Errorf("rib: unknown direction %q in the recipe (want parallel or omitted for normal)", name)
 }
 
 // ribThickenSideNames is the persisted spelling of each thicken side, both ways. The symmetric
@@ -53,6 +74,7 @@ func serializeRib(def *RibDefinition, sk SketchIndexer) (*RibData, error) {
 		ToNext: def.ToNext, Operation: op,
 		ThickenSide: ribThickenSideNames[def.ThickenSide], Draft: def.Draft,
 		ThicknessAt: ribThicknessAtName(def.HoldThicknessAtRoot), ExtendProfile: def.ExtendProfile,
+		Direction: ribDirectionNames[def.Direction], DraftProfileEnds: def.DraftProfileEnds,
 	}, nil
 }
 
@@ -72,12 +94,17 @@ func restoreRib(fs *PartFeatures, d *RibData, sk SketchIndexer) (*PartFeature, e
 	if err != nil {
 		return nil, err
 	}
+	dir, err := ribDirectionFromName(d.Direction)
+	if err != nil {
+		return nil, err
+	}
 	def := &RibDefinition{
 		Sketch: skt, ProfileIndex: d.Profile,
 		Thickness: constFloat(d.Thickness), Depth: constFloat(d.Depth),
 		ToNext: d.ToNext, Operation: op,
 		ThickenSide: side, Draft: d.Draft,
 		HoldThicknessAtRoot: d.ThicknessAt == ribThicknessAtRootName, ExtendProfile: d.ExtendProfile,
+		Direction: dir, DraftProfileEnds: d.DraftProfileEnds,
 	}
 	return NewRibFeatures(fs).AddDefinition(def), nil
 }

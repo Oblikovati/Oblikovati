@@ -646,7 +646,30 @@ type RibDefinition struct {
 	Draft               float64
 	HoldThicknessAtRoot bool
 	ExtendProfile       bool
+	// Direction is whether the profile is projected NORMAL to the sketch plane (a web — the default
+	// and zero value, so a definition written before the option keeps its behaviour) or PARALLEL to
+	// it (a rib), mirroring Inventor's RibDefinition.IsRib (#2064). A parallel rib thickens the
+	// profile ALONG the plane normal and grows the wall IN the plane until it lands on the part — the
+	// 90°-rotated form used for a moulded part sectioned through its wall.
+	Direction RibDirection
+	// DraftProfileEnds says whether a NORMAL rib's draft tapers the profile's END caps along with its
+	// sides (Inventor's RibDefinition.DraftProfileEnds, default True). nil ⇒ the default (drafted
+	// ends, the pre-option behaviour); a non-nil false leaves the ends square. It has no effect
+	// without a draft, and none on a parallel rib (which refuses a draft, as Inventor does).
+	DraftProfileEnds *bool
 }
+
+// RibDirection selects how a rib projects its sketch profile — Inventor's RibDefinition.IsRib.
+type RibDirection int
+
+const (
+	// RibNormalToSketch thickens the profile in the sketch plane and extrudes it ALONG the plane
+	// normal (a web). The default and zero value.
+	RibNormalToSketch RibDirection = iota
+	// RibParallelToSketch thickens the profile along the plane normal and grows the wall IN the
+	// plane until it lands on the part (a rib), rotated 90° from the web form.
+	RibParallelToSketch
+)
 
 // RibFeature thickens an open sketch profile (a path) into a wall: the path is offset in the
 // sketch plane to a closed band (by ±Thickness/2, or wholly to one side — see [RibThickenSide]),
@@ -676,6 +699,24 @@ func (r *RibFeature) Recompute(in Input) (Output, error) {
 	if t <= 0 {
 		return Output{}, fmt.Errorf("rib: need positive thickness, got t=%g", t)
 	}
+	if r.def.Direction == RibParallelToSketch {
+		return r.recomputeParallel(in, pts, t)
+	}
+	return r.recomputeNormal(in, pts, t)
+}
+
+// recomputeNormal is the web form: thicken the path IN the sketch plane and extrude ALONG the plane
+// normal by the depth. The draft tapers the wall toward the root; DraftProfileEnds decides whether it
+// tapers the end caps too.
+func (r *RibFeature) recomputeNormal(in Input, pts []math.Point2, t float64) (Output, error) {
+	// Square (undrafted) profile ends under a draft need a DIRECTIONAL taper — widen the sides but
+	// hold the end caps perpendicular — which buildExtrusionShell's uniform outward taper cannot
+	// express. It is refused rather than silently drafting the ends (which would be the wrong shape).
+	// Without a draft the flag has no effect and the wall is square-ended either way. (#2064)
+	if r.def.Draft != 0 && !r.draftsProfileEnds() {
+		return Output{}, errors.New("rib: square profile ends under a draft are not modelled yet " +
+			"(the end caps would be drafted with the sides); drop the draft or leave draftProfileEnds set")
+	}
 	d, err := r.ribDepth(in, pts)
 	if err != nil {
 		return Output{}, err
@@ -692,6 +733,12 @@ func (r *RibFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
+}
+
+// draftsProfileEnds resolves DraftProfileEnds: nil ⇒ the default True (Inventor's default and the
+// pre-option behaviour), so only a non-nil false leaves the ends square.
+func (r *RibFeature) draftsProfileEnds() bool {
+	return r.def.DraftProfileEnds == nil || *r.def.DraftProfileEnds
 }
 
 // ribDepth resolves the wall extent: the explicit signed depth, or with
