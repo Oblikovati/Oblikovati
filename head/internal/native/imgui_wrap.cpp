@@ -54,6 +54,11 @@ void obk_ig_text(const char* s)              { ImGui::TextUnformatted(s); }
 // "%s" guard: the text is user/add-in supplied and may contain '%' — never pass it as the format.
 void obk_ig_text_wrapped(const char* s)      { ImGui::TextWrapped("%s", s); }
 int  obk_ig_button(const char* label)        { return ImGui::Button(label) ? 1 : 0; }
+// button_sized draws a button at an explicit size (0 in a component = size to the label), for
+// the ribbon's collapsed-panel tile, which must stand the full height of the band's grid.
+int  obk_ig_button_sized(const char* label, float w, float h) {
+    return ImGui::Button(label, ImVec2(w, h)) ? 1 : 0;
+}
 void obk_ig_same_line(void)                  { ImGui::SameLine(); }
 void obk_ig_separator(void)                  { ImGui::Separator(); }
 void obk_ig_separator_text(const char* s)    { ImGui::SeparatorText(s); }
@@ -80,6 +85,10 @@ int  obk_ig_begin_ribbon_band(const char* name, float height) {
 // scroll_max_x reports the current window's maximum horizontal scroll — >0 exactly when its content
 // overflows the window width, i.e. the ribbon's horizontal scrollbar is showing (#1471).
 float obk_ig_scroll_max_x(void) { return ImGui::GetScrollMaxX(); }
+// scroll_x is the current window's horizontal scroll offset. The ribbon's panel-fit arithmetic
+// subtracts it from the content region so the band's usable width is measured independently of
+// how far the user has scrolled it.
+float obk_ig_scroll_x(void) { return ImGui::GetScrollX(); }
 // scrollbar_size is the style thickness of a scrollbar, so the ribbon can grow its band height by
 // exactly that to seat the horizontal scrollbar without covering content (#1471).
 float obk_ig_scrollbar_size(void) { return ImGui::GetStyle().ScrollbarSize; }

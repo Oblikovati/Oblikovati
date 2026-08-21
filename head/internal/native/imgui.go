@@ -20,6 +20,7 @@ void obk_ig_end(void);
 void obk_ig_text(const char* s);
 void obk_ig_text_wrapped(const char* s);
 int  obk_ig_button(const char* label);
+int  obk_ig_button_sized(const char* label, float w, float h);
 void obk_ig_same_line(void);
 void obk_ig_separator(void);
 void obk_ig_separator_text(const char* s);
@@ -110,6 +111,7 @@ void obk_ig_get_cursor_pos(float* x, float* y);
 void obk_ig_set_cursor_pos(float x, float y);
 void obk_ig_dummy(float w, float h);
 int  obk_ig_begin_ribbon_band(const char* name, float height);
+float obk_ig_scroll_x(void);
 float obk_ig_scroll_max_x(void);
 float obk_ig_scrollbar_size(void);
 void obk_ig_get_cursor_screen_pos(float* x, float* y);
@@ -285,6 +287,16 @@ func Button(label string) bool {
 	c, free := cstr(label)
 	defer free()
 	return C.obk_ig_button(c) != 0
+}
+
+// ButtonSized draws a button of an explicit size and reports whether it was clicked this
+// frame. A zero component means "size to the label", exactly as Dear ImGui's own default.
+// The ribbon's collapsed-panel tile needs this: it must stand the full height of the band's
+// button grid whatever its label measures.
+func ButtonSized(label string, w, h float32) bool {
+	c, free := cstr(label)
+	defer free()
+	return C.obk_ig_button_sized(c, C.float(w), C.float(h)) != 0
 }
 
 func SameLine()  { C.obk_ig_same_line() }
@@ -1158,6 +1170,11 @@ func BeginRibbonBand(name string, height float32) bool {
 	return C.obk_ig_begin_ribbon_band(c, C.float(height)) != 0
 }
 
+// ScrollX is the current window's horizontal scroll offset. The ribbon subtracts it from the
+// content region so its fit arithmetic measures the band's real width rather than the width
+// left to the right of a scrolled-away cursor — otherwise how far the user had scrolled would
+// feed back into how many panels collapse.
+func ScrollX() float32 { return float32(C.obk_ig_scroll_x()) }
 // ScrollMaxX is the current window's maximum horizontal scroll offset; >0 means its content
 // overflows the window width (the ribbon band's horizontal scrollbar is showing, #1471).
 func ScrollMaxX() float32 { return float32(C.obk_ig_scroll_max_x()) }
