@@ -141,10 +141,17 @@ func dispatchToggleVisibility(s *Session) error {
 	return nil
 }
 
-// dispatchDelete is the Delete key: it removes the selected sketch entities while editing a
-// sketch (issue #1232). With no sketch open / nothing selected it is a no-op, so it never
-// destroys 3D geometry by accident — feature/body delete stays on the browser menu.
-func dispatchDelete(s *Session) error { return s.DeleteSelectedSketchEntities() }
+// dispatchDelete is the Delete key: while editing a 2D sketch it removes the selected entities,
+// dimensions and constraints (issue #1232); while editing a 3D sketch it removes only selected
+// constraint markers (#1998 follow-up), so a stray Delete never destroys 3D geometry — feature/body
+// and 3D-entity delete stay on the browser menu. With no sketch open / nothing selected it is a
+// no-op.
+func dispatchDelete(s *Session) error {
+	if s.InSketch3D() {
+		return s.DeleteSelectedSketch3DConstraints()
+	}
+	return s.DeleteSelectedSketchEntities()
+}
 
 // dispatchSave saves the active document (Ctrl+S / the "SAVE" command word, M26 F05).
 func dispatchSave(s *Session) error { return s.SaveActiveDocument() }

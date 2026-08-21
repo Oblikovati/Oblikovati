@@ -273,6 +273,11 @@ func (s *Session) Pointer(e PointerEvent) {
 		s.sketchEntityPointer(e)
 		return
 	}
+	// A 3D sketch's constraint markers sit on the geometry too, so test them before the RayPicker
+	// picks the curve underneath — only when no tool is consuming picks (#1998 follow-up).
+	if s.InSketch3D() && s.tool == nil && s.SelectSketchConstraint3DAt(e.X, e.Y, e.Mods) {
+		return
+	}
 	if s.picker == nil {
 		return
 	}
