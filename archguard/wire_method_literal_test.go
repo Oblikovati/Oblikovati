@@ -7,7 +7,6 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -26,22 +25,16 @@ import (
 // which both false-positives on unrelated dotted strings and false-negatives on gofmt
 // quirks) and, for each, requires call sites to reference the constant, not its value.
 
-// wireMethodPkgDir is the sibling Apache-2.0 module's wire package (the single source of
-// method-name truth). Skipped when the sibling is not checked out (a source-only build).
-const wireMethodPkgDir = "../../Oblikovati.API/wire"
-
 // wireMethodLiteralAllowlist justifies any bare occurrence of a wire method value that is
 // NOT a re-declaration (e.g. a doc example). Shrink-only, and empty by design: a real hit
 // is a bug to fix (import the constant), not to allowlist. Keyed "file:value".
 var wireMethodLiteralAllowlist = map[string]string{}
 
 func TestNoReDeclaredWireMethodLiterals(t *testing.T) {
-	if _, err := os.Stat(wireMethodPkgDir); err != nil {
-		t.Skipf("api wire package not checked out at %s: %v", wireMethodPkgDir, err)
-	}
-	values := wireMethodConstValues(t)
+	wireDir := apiSubdir(t, "wire") // resolved via go list -m, so this runs in CI (_api) too
+	values := wireMethodConstValues(t, wireDir)
 	if len(values) == 0 {
-		t.Fatalf("found no wire.Method* string constants in %s — the guard would be a no-op", wireMethodPkgDir)
+		t.Fatalf("found no wire.Method* string constants in %s — the guard would be a no-op", wireDir)
 	}
 	walkGoSourceFiles(t, "..", func(path string, file *ast.File, fset *token.FileSet) {
 		reportWireLiteralHits(t, path, file, fset, values)
@@ -50,12 +43,12 @@ func TestNoReDeclaredWireMethodLiterals(t *testing.T) {
 
 // wireMethodConstValues returns the string value -> constant-name map of every exported
 // `Method*` const in the wire package.
-func wireMethodConstValues(t *testing.T) map[string]string {
+func wireMethodConstValues(t *testing.T, wireDir string) map[string]string {
 	t.Helper()
 	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, wireMethodPkgDir, notATestFile, parser.SkipObjectResolution)
+	pkgs, err := parser.ParseDir(fset, wireDir, notATestFile, parser.SkipObjectResolution)
 	if err != nil {
-		t.Fatalf("parse %s: %v", wireMethodPkgDir, err)
+		t.Fatalf("parse %s: %v", wireDir, err)
 	}
 	values := map[string]string{}
 	for _, pkg := range pkgs {

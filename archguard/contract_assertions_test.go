@@ -22,9 +22,6 @@ import (
 // anywhere in this repo (all modules, head included) and fails on any interface that is
 // neither asserted nor justified in pendingContractAssertions.
 
-// apiContractDir is the sibling Apache-2.0 module's contract package.
-const apiContractDir = "../../Oblikovati.API/contract"
-
 // pendingContractAssertions lists contract interfaces knowingly without a host-side
 // assertion, each with the issue that owns closing the gap. Shrink-only: entries that
 // gain an assertion (or leave the contract) fail the guard until removed here.
@@ -67,10 +64,7 @@ var pendingContractAssertions = map[string]string{
 }
 
 func TestEveryContractInterfaceIsAsserted(t *testing.T) {
-	if _, err := os.Stat(apiContractDir); err != nil {
-		t.Skipf("api module not checked out at %s: %v", apiContractDir, err)
-	}
-	declared := contractInterfaceNames(t)
+	declared := contractInterfaceNames(t, apiSubdir(t, "contract"))
 	asserted := assertedContractNames(t)
 	for _, name := range declared {
 		if _, ok := asserted[name]; !ok && pendingContractAssertions[name] == "" {
@@ -101,12 +95,12 @@ func reportStaleAllowlist(t *testing.T, declared []string, asserted map[string]b
 
 // contractInterfaceNames parses the api/contract package and returns its exported
 // interface names (AST-level, no type checking — the contract package is plain Go).
-func contractInterfaceNames(t *testing.T) []string {
+func contractInterfaceNames(t *testing.T, contractDir string) []string {
 	t.Helper()
 	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, apiContractDir, notATestFile, parser.SkipObjectResolution)
+	pkgs, err := parser.ParseDir(fset, contractDir, notATestFile, parser.SkipObjectResolution)
 	if err != nil {
-		t.Fatalf("parse %s: %v", apiContractDir, err)
+		t.Fatalf("parse %s: %v", contractDir, err)
 	}
 	var names []string
 	for _, pkg := range pkgs {
@@ -167,7 +161,14 @@ func skipNonSourceDir(name string) error {
 		return filepath.SkipDir
 	}
 	switch name {
-	case "experiments", "test-utilities", "node_modules", "testdata":
+	// _api is the Apache-2.0 contract checked out INSIDE the repo by the api-contract CI action
+	// (ADR-0018). Now that the contract guards run in CI, this subtree must be excluded from
+	// host-source walks: its client-side `var _ contract.X` assertions are not HOST assertions (the
+	// completeness guard would count them and call the client-implemented allowlist entries stale),
+	// and its wire package is the SOURCE of the method-name constants, not a re-declaration (the
+	// literal guard would flag every constant). Locally the contract is a sibling OUTSIDE the tree,
+	// so a repo walk never reaches it and this never matches.
+	case "experiments", "test-utilities", "node_modules", "testdata", "_api":
 		return filepath.SkipDir
 	}
 	return nil

@@ -3,8 +3,8 @@
 package archguard
 
 import (
-	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -88,17 +88,13 @@ func listDeps(t *testing.T, dir string, patterns ...string) []string {
 	return deps
 }
 
-// apiModuleGoMod is the sibling Apache-2.0 contract module's go.mod, resolved via the workspace layout.
-const apiModuleGoMod = "../../Oblikovati.API/go.mod"
-
 // TestApiModuleDoesNotRequireSource fails if the Apache-2.0 api module requires ANY oblikovati.org module
 // — it is the root of the dependency graph, so it must require none (the GPL source requires it, never the
-// reverse). The license split (ADR-0018) depends on this direction. Skips when the sibling is not checked
-// out (a source-only build).
+// reverse). The license split (ADR-0018) depends on this direction. Skips when the api module is not
+// resolvable (a source-only build). The module dir is resolved through `go list -m` so this runs in CI
+// too, where the contract is checked out into _api rather than the ../../Oblikovati.API dev layout.
 func TestApiModuleDoesNotRequireSource(t *testing.T) {
-	if _, err := os.Stat(apiModuleGoMod); err != nil {
-		t.Skipf("api module not checked out at %s: %v", apiModuleGoMod, err)
-	}
+	apiModuleGoMod := filepath.Join(apiSubdir(t, ""), "go.mod")
 	for _, mod := range requiredInternalModules(t, apiModuleGoMod) {
 		t.Errorf("Oblikovati.API/go.mod requires %q — the Apache-2.0 contract must require no oblikovati.org "+
 			"module (the dependency flows source -> api, never the reverse). ADR-0018.", mod)
