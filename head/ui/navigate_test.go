@@ -110,6 +110,78 @@ func TestApplyNavigationConstrainedOrbit(t *testing.T) {
 	}
 }
 
+// TestNavGestureMiddleButtonModes pins the three middle-button bindings (plain,
+// Shift, Ctrl) across pan/orbit/zoom, with each binding's Inventor default for
+// empty or unrecognised values (an options file written before the key reads as
+// ""). Ctrl+MMB previously fell through to the plain branch and panned; it still
+// pans by default. Shift wins over Ctrl (I-doc §4.2).
+func TestNavGestureMiddleButtonModes(t *testing.T) {
+	cases := []struct {
+		name string
+		in   NavInput
+		want NavMode
+	}{
+		{"plain default", NavInput{Middle: true}, NavPan},
+		{"plain pan", NavInput{Middle: true, MMBMode: "pan"}, NavPan},
+		{"plain orbit", NavInput{Middle: true, MMBMode: "orbit"}, NavOrbit},
+		{"plain zoom", NavInput{Middle: true, MMBMode: "zoom"}, NavZoom},
+		{"plain unrecognised falls back to pan", NavInput{Middle: true, MMBMode: "spin"}, NavPan},
+		{"shift default", NavInput{Middle: true, Shift: true}, NavOrbit},
+		{"shift orbit", NavInput{Middle: true, Shift: true, ShiftMMBMode: "orbit"}, NavOrbit},
+		{"shift pan", NavInput{Middle: true, Shift: true, ShiftMMBMode: "pan"}, NavPan},
+		{"shift zoom", NavInput{Middle: true, Shift: true, ShiftMMBMode: "zoom"}, NavZoom},
+		{"shift unrecognised falls back to orbit", NavInput{Middle: true, Shift: true, ShiftMMBMode: "spin"}, NavOrbit},
+		{"ctrl default", NavInput{Middle: true, Ctrl: true}, NavPan},
+		{"ctrl pan", NavInput{Middle: true, Ctrl: true, CtrlMMBMode: "pan"}, NavPan},
+		{"ctrl orbit", NavInput{Middle: true, Ctrl: true, CtrlMMBMode: "orbit"}, NavOrbit},
+		{"ctrl zoom", NavInput{Middle: true, Ctrl: true, CtrlMMBMode: "zoom"}, NavZoom},
+		{"ctrl unrecognised falls back to pan", NavInput{Middle: true, Ctrl: true, CtrlMMBMode: "spin"}, NavPan},
+		{"shift wins over ctrl", NavInput{Middle: true, Shift: true, Ctrl: true, ShiftMMBMode: "orbit", CtrlMMBMode: "zoom"}, NavOrbit},
+		{"no middle is none", NavInput{Shift: true, Ctrl: true}, NavNone},
+	}
+	for _, c := range cases {
+		if got := navGesture(c.in); got != c.want {
+			t.Errorf("%s: navGesture = %d, want %d", c.name, got, c.want)
+		}
+	}
+}
+
+// TestApplyNavigationMiddleButtonZoom: a middle-drag with the binding set to zoom
+// dollies the camera (distance changes, target fixed) — the same NavZoom path F3 uses.
+func TestApplyNavigationMiddleButtonZoom(t *testing.T) {
+	cam := scene.NewCamera(800, 600)
+	out := ApplyNavigation(cam, NavInput{Active: true, Middle: true, MMBMode: "zoom", DY: 20})
+	if stdmath.Abs(dist(out)-dist(cam)) < 1e-9 {
+		t.Error("middle-drag zoom should change the eye–target distance")
+	}
+	if !out.Target.IsEqualTo(cam.Target, 1e-9) {
+		t.Error("middle-drag zoom must keep the target fixed (pure dolly)")
+	}
+}
+
+// TestApplyNavigationCtrlMiddleZoom: Ctrl+middle with the Ctrl binding set to zoom
+// dollies the camera; the default Ctrl mapping still pans (see navGesture table).
+func TestApplyNavigationCtrlMiddleZoom(t *testing.T) {
+	cam := scene.NewCamera(800, 600)
+	out := ApplyNavigation(cam, NavInput{Active: true, Middle: true, Ctrl: true, CtrlMMBMode: "zoom", DY: 20})
+	if stdmath.Abs(dist(out)-dist(cam)) < 1e-9 {
+		t.Error("Ctrl+middle-drag zoom should change the eye–target distance")
+	}
+	if !out.Target.IsEqualTo(cam.Target, 1e-9) {
+		t.Error("Ctrl+middle-drag zoom must keep the target fixed (pure dolly)")
+	}
+}
+
+// TestApplyNavigationCtrlMiddleDefaultsToPan: with the default (empty) Ctrl mapping,
+// Ctrl+middle keeps today's behaviour — it falls through to the plain branch and pans.
+func TestApplyNavigationCtrlMiddleDefaultsToPan(t *testing.T) {
+	cam := scene.NewCamera(800, 600)
+	out := ApplyNavigation(cam, NavInput{Active: true, Middle: true, Ctrl: true, DX: 50})
+	if out.Target.IsEqualTo(cam.Target, 1e-9) {
+		t.Error("Ctrl+middle-drag with the default mapping should pan (move the target)")
+	}
+}
+
 func TestApplyNavigationPansWithMiddleDrag(t *testing.T) {
 	cam := scene.NewCamera(800, 600)
 	out := ApplyNavigation(cam, NavInput{Active: true, Middle: true, DX: 50})
