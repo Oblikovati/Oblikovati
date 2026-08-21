@@ -38,6 +38,7 @@ var environmentEffectExempt = map[string]string{
 	"Sketch3D.LineWeight":      "a selection list, as above",
 	"Sketch.RelaxMode":         "toggles a solver mode the fingerprint does not read",
 	"Sketch.ShowConstraints":   "toggles an overlay the fingerprint does not read",
+	"Sketch3D.ShowConstraints": "toggles the 3D constraint overlay the fingerprint does not read (#1998)",
 	"Sketch.ShowFormat":        "toggles a persisted application option, not sketch state",
 	"Sketch3D.ShowFormat":      "toggles a persisted application option, as above",
 	"Sketch.DimensionsVisible": "toggles a display flag the fingerprint does not read",

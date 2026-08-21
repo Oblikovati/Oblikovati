@@ -598,7 +598,24 @@ func sketch3DConstrainCommands() []*CommandDefinition {
 		}).WithTab(tab3DSketch).WithEnvironment(Sketch3DEnvironment).WithEnable(inSketch3D).WithTooltip(d.tooltip).
 			WithIcon(d.icon).WithButtonStyle(SmallIconButton))
 	}
+	cmds = append(cmds, show3DConstraintsCommand())
 	return cmds
+}
+
+// show3DConstraintsCommand is the 3D Constrain panel's Show/Hide Constraints toggle (#1998), the
+// counterpart of the 2D Sketch.ShowConstraints. It shares the session toggle, so flipping it in
+// either environment reveals the markers in both; in a 3D sketch each geometric constraint draws a
+// marker in model space (SketchConstraintGlyphs3D). No default chord — F8 is bound to the 2D command
+// and chords are globally unique here, so the 3D toggle is reached from the ribbon button. Display-
+// only for now: a 3D marker is deleted through the browser, not yet by clicking it.
+func show3DConstraintsCommand() *CommandDefinition {
+	return NewCommand("Sketch3D.ShowConstraints", "Show Constraints", "Constrain", func(s *Session) error {
+		s.ToggleSketchConstraints()
+		return nil
+	}).WithTab(tab3DSketch).WithEnvironment(Sketch3DEnvironment).WithEnable(inSketch3D).
+		WithActive(func(s *Session) bool { return s.ShowSketchConstraints() }).
+		WithIcon("show-constraints").WithButtonStyle(SmallIconButton).
+		WithTooltip("Show Constraints — mark every geometric constraint in the 3D sketch.")
 }
 
 // sketch3DDrawCommands are the 3D-sketch geometry-placement tools (line/point/circle/arc/

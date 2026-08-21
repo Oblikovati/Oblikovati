@@ -587,6 +587,8 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 		list.Items = append(list.Items, cachedPartSketchOverlays(s)...)
 		list.Items = append(list.Items, partSketchPoints(s, pointMarkerPixels*cam.WorldPerPixel())...)
 		list.Items = append(list.Items, sketch3DOverlays(s, pointMarkerPixels*cam.WorldPerPixel())...)
+		// Show Constraints markers for the active 3D sketch (#1998), on top so they read over geometry.
+		list.Items = append(list.Items, onTop(constraint3DGlyphOverlay(s, cam, constraintGlyphPixels*cam.WorldPerPixel()))...)
 	}
 	list.Items = append(list.Items, selectedEdgeOverlay(s)...)
 	list.Items = append(list.Items, selectedMeshFacetOverlay(s)...) // picked placed-mesh facet (#1776)

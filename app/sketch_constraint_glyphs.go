@@ -70,6 +70,33 @@ func (s *Session) SketchConstraintGlyphs() []ConstraintGlyphView {
 	return views
 }
 
+// ConstraintGlyphView3D is one 3D-sketch constraint marker positioned for drawing (#1998): the
+// constraint, its glyph kind, and its model-space anchor. It carries no selection state — 3D
+// constraint markers are display-only for now (Show Constraints in a 3D sketch); viewport pick and
+// delete of a 3D marker are a follow-up, so a 3D constraint is removed through the browser.
+type ConstraintGlyphView3D struct {
+	Constraint sketch.Constraint
+	Kind       sketch.ConstraintKind
+	At         math.Point3
+}
+
+// SketchConstraintGlyphs3D returns the markers to draw for the active 3D sketch, empty when
+// constraints are hidden or no 3D sketch is open. It shares the Show Constraints toggle with the 2D
+// path, so F8 reveals both. The anchors are model-space points the head draws without a plane.
+//
+//	for _, g := range s.SketchConstraintGlyphs3D() { drawGlyph3D(g.Kind, g.At) }
+func (s *Session) SketchConstraintGlyphs3D() []ConstraintGlyphView3D {
+	if !s.showSketchConstraints || s.activeSketch3D == nil {
+		return nil
+	}
+	glyphs := s.activeSketch3D.ConstraintGlyphs()
+	views := make([]ConstraintGlyphView3D, len(glyphs))
+	for i, g := range glyphs {
+		views[i] = ConstraintGlyphView3D{Constraint: g.Constraint, Kind: g.Kind, At: g.At}
+	}
+	return views
+}
+
 // fannedGlyphAnchor offsets the nth marker sharing an anchor, so co-located markers sit in a row
 // beside the geometry rather than on top of one another.
 //
