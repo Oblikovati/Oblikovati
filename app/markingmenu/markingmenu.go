@@ -7,6 +7,8 @@
 package markingmenu
 
 import (
+	"sort"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/persistence/filestore"
@@ -75,7 +77,13 @@ func cloneStrings(ss []string) []string {
 // persisted form.
 func ToCustomization(menus map[types.Environment]wire.MarkingMenuView, classic bool) Customization {
 	c := Customization{Classic: classic}
-	for _, m := range menus {
+	environments := make([]types.Environment, 0, len(menus))
+	for env := range menus {
+		environments = append(environments, env)
+	}
+	sort.Slice(environments, func(i, j int) bool { return environments[i] < environments[j] })
+	for _, env := range environments {
+		m := menus[env]
 		entry := MenuEntry{Environment: int(m.Environment), Overflow: cloneStrings(m.Overflow)}
 		for _, slot := range m.Quadrants {
 			entry.Quadrants = append(entry.Quadrants, SlotEntry{

@@ -30,11 +30,11 @@ func (s *Session) UseMarkingMenuStore(store markingmenu.Store) error {
 
 // saveMarkingMenuCustomization persists the current marking-menu state when a store
 // is wired. Called by SetMarkingMenu, SetClassicContextMenu, and ToggleContextMenuStyle.
-func (s *Session) saveMarkingMenuCustomization() {
+func (s *Session) saveMarkingMenuCustomization() error {
 	if s.markingMenuStore == nil {
-		return
+		return nil
 	}
-	_ = s.markingMenuStore.Save(markingmenu.ToCustomization(s.markingMenus, s.classicContextMenu))
+	return s.markingMenuStore.Save(markingmenu.ToCustomization(s.markingMenus, s.classicContextMenu))
 }
 
 // OpenMarkingMenuEditor / CloseMarkingMenuEditor / MarkingMenuEditorOpen drive the
@@ -52,5 +52,7 @@ func (s *Session) ResetMarkingMenu(env Environment) {
 	} else {
 		s.markingMenus[env] = wire.MarkingMenuView{Environment: env}
 	}
-	s.saveMarkingMenuCustomization()
+	if err := s.saveMarkingMenuCustomization(); err != nil {
+		s.SetNotice("marking menu: " + err.Error())
+	}
 }

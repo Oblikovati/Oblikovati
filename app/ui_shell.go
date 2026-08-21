@@ -77,8 +77,7 @@ func (s *Session) SetMarkingMenu(menu wire.MarkingMenuView) error {
 		seen[item.Quadrant] = true
 	}
 	s.markingMenus[menu.Environment] = menu
-	s.saveMarkingMenuCustomization()
-	return nil
+	return s.saveMarkingMenuCustomization()
 }
 
 // RepeatMenuEntry returns the right-click "Repeat <command>" entry shown when idle: its display

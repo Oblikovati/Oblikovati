@@ -495,13 +495,17 @@ func (s *Session) ClassicContextMenu() bool { return s.classicContextMenu }
 // radial marking menu).
 func (s *Session) SetClassicContextMenu(classic bool) {
 	s.classicContextMenu = classic
-	s.saveMarkingMenuCustomization()
+	if err := s.saveMarkingMenuCustomization(); err != nil {
+		s.SetNotice("marking menu: " + err.Error())
+	}
 }
 
 // ToggleContextMenuStyle flips between the radial marking menu and the classic linear menu.
 func (s *Session) ToggleContextMenuStyle() {
 	s.classicContextMenu = !s.classicContextMenu
-	s.saveMarkingMenuCustomization()
+	if err := s.saveMarkingMenuCustomization(); err != nil {
+		s.SetNotice("marking menu: " + err.Error())
+	}
 }
 
 // Invoke is the alias-driven entry (Inventor command alias): typing a command alias

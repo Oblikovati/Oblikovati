@@ -58,7 +58,7 @@ func drawRadialMarkingMenu(s *app.Session) {
 	menu := s.MarkingMenu(app.CurrentEnvironment(s))
 	layout := markingRingLayoutForMenu(s, menu)
 	ringX, ringY := native.GetCursorPos()
-	native.InvisibleButton("##marking-area", layout.size, layout.size) // reserves the ring's space
+	native.Dummy(layout.size, layout.size) // reserves space without capturing slot clicks
 	for _, item := range menu.Quadrants {
 		drawMarkingSlot(s, ringX, ringY, layout, item)
 	}
