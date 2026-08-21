@@ -48,6 +48,7 @@ func (s *Session) StartFeatureTool(t PartFeatureTool) { s.StartTool(t) }
 func (s *Session) StartTool(t Tool) {
 	if s.tool != nil {
 		s.tool.tool.Cancel(s)
+		s.endToolTransaction()          // the outgoing tool's group dies with it (#1750)
 		s.Graphics().ClearInteraction() // drop the previous tool's preview/overlay graphics
 		s.dropCommandMiniToolbars()     // and its mini-toolbars (M05-F07)
 		s.dropCommandGizmos()           // and its triad/manipulators (M05-F13)
@@ -55,6 +56,9 @@ func (s *Session) StartTool(t Tool) {
 	s.notice = ""
 	s.tool = &ToolInstance{tool: t}
 	s.placementStartedByClick = false // a fresh command may still take its first point by typing
+	// Open the bounded transaction BEFORE Start: an opted-in tool's guard must be live the
+	// moment it is armed, not only once a point is placed (#1750 acceptance sub-case b).
+	s.beginToolTransaction(t)
 	t.Start(s)
 	s.installToolFilter() // derive the filter from the tool's declared AcceptedKinds (engine)
 }
@@ -122,6 +126,9 @@ func (s *Session) OK() error {
 // tool, and retire its transient UI (selection filter, preview graphics, mini-toolbars, gizmos).
 func (s *Session) finishToolCommit() {
 	s.notice = ""
+	// Close the tool's group AFTER OK recorded the edit (session_input.go:115): the deferred
+	// delta is committed here as the one undo step named for the tool (#1750).
+	s.endToolTransaction()
 	s.tool = nil
 	s.placementStartedByClick = false
 	s.restoreSelectionFilter()      // hand selection back to the ambient filter (engine)
@@ -162,6 +169,9 @@ func (s *Session) CancelTool() {
 // chaining-tool finish branch: the geometry it would commit belongs to the document that is
 // going away (#2040).
 func (s *Session) abandonTool() {
+	// Unconditionally, and before the nil check: a group must never survive its tool even if
+	// the tool has already been dropped by another path (#1750).
+	s.endToolTransaction()
 	if s.tool == nil {
 		return
 	}

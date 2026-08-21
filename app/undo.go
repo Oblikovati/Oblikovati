@@ -457,8 +457,19 @@ func (s *Session) EndTransaction() error {
 	if d == nil {
 		return ErrNoActiveDoc
 	}
-	dh := s.documentHistory(d)
-	if dh.groupDepth == 0 {
+	s.documentHistory(d) // open the stream if this is the document's first touch
+	return s.endTransactionOn(d)
+}
+
+// endTransactionOn is EndTransaction against a NAMED document rather than whichever one is
+// active now. An interactive tool holds its group open across many events, during which the
+// active document can change (a document switch, or a close that activates another), so the
+// tool path closes by document id and cannot decrement a different document's group by
+// mistake (see toolTransaction, tool_transaction.go). Everything below it is already
+// document-scoped: commitRecipeDelta takes d and emits against d.ID().
+func (s *Session) endTransactionOn(d *doc.Document) error {
+	dh, ok := s.histories[d.ID()]
+	if !ok || dh.groupDepth == 0 {
 		return ErrNoOpenTransaction
 	}
 	dh.groupDepth--
