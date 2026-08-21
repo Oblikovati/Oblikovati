@@ -543,7 +543,7 @@ const splitSolidSchema = `{
     "workPlaneIndex": {"type": "integer", "minimum": 0, "description": "Index of the work plane to split along (see list_work_planes)."},
     "keep": {"type": "string", "enum": ["both", "positive", "negative"], "default": "both", "description": "Which side(s) of the plane to keep (trim modes)."},
     "type": {"type": "string", "enum": ["trimSolid", "splitFaces", "splitBody"], "description": "Split kind: trimSolid keeps one side (per keep, default positive); splitFaces imprints the plane onto the faces without removing material; splitBody keeps both pieces as separate solids. Absent: derived from keep."},
-    "tool": {"type": "string", "enum": ["workPlane", "workSurface", "surfaceBody", "path"], "default": "workPlane", "description": "What the split cuts WITH (Inventor's SplitToolTypeEnum), independent of type. workSurface and surfaceBody take toolIndex and cut along the sheet's plane extended, so a PLANAR sheet is required — a curved one is refused rather than approximated. path is not yet buildable: it is the split-face geometry."},
+    "tool": {"type": "string", "enum": ["workPlane", "workSurface", "surfaceBody", "path"], "default": "workPlane", "description": "What the split cuts WITH (Inventor's SplitToolTypeEnum), independent of type. workSurface and surfaceBody take toolIndex and cut along the sheet's plane extended, so a PLANAR sheet is required — a curved one is refused rather than approximated. path projects a 2D sketch profile onto the faces and scores them (split-face geometry, #2068); it is buildable through the model API but not yet over the wire (no sketch field here), so it is refused."},
     "toolIndex": {"type": "integer", "minimum": 0, "description": "The surface tool: a work-surface position for tool \"workSurface\", or a body index for \"surfaceBody\"."}
   },
   "required": []
@@ -591,6 +591,14 @@ func splitWorkPlane(part *compdef.PartComponentDefinition, tool feature.SplitToo
 // split cuts with, the type decides what it does (#1891).
 func addSplitOfType(part *compdef.PartComponentDefinition, wp *feature.WorkPlane,
 	tool feature.SplitToolKind, in featureargs.SplitSolid) (*feature.PartFeature, error) {
+	if tool == feature.SplitByPath {
+		// The geometry is implemented (feature.AddSplitFacesByPath imprints a projected sketch
+		// profile), but the wire DTO carries no sketch reference yet, so the path tool is not
+		// reachable over /api. Refuse cleanly rather than build a sketch-less split that goes sick.
+		return nil, fmt.Errorf("splitSolid: the path tool needs a sketch profile, which the wire " +
+			"does not carry yet; it is buildable through the model API (AddSplitFacesByPath) — " +
+			"exposing the sketch reference over /api is a follow-up (#2068)")
+	}
 	def := &feature.SplitSolidDefinition{Tool: tool, Plane: wp, ToolIndex: in.ToolIndex, Keep: splitSide(in.Keep)}
 	if in.Type == "" {
 		return feature.NewModifyFeatures(part.Features()).AddSplitByDefinition(def), nil

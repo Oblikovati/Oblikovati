@@ -3,6 +3,7 @@
 package opregistry
 
 import (
+	"strings"
 	"testing"
 
 	"oblikovati.org/app"
@@ -35,7 +36,6 @@ func TestSplitToolReachesTheDefinition(t *testing.T) {
 	}{
 		{"workSurface", feature.SplitByWorkSurface},
 		{"surfaceBody", feature.SplitBySurfaceBody},
-		{"path", feature.SplitByPath},
 	} {
 		t.Run(c.spelling, func(t *testing.T) {
 			s, _, _ := extrudedSolid(t)
@@ -49,6 +49,20 @@ func TestSplitToolReachesTheDefinition(t *testing.T) {
 				t.Errorf("tool %q reached the definition as %v/%d, want %v/1", c.spelling, def.Tool, def.ToolIndex, c.want)
 			}
 		})
+	}
+}
+
+// TestSplitPathToolRefusedOverWire: the path tool's geometry is implemented (model API), but the
+// wire DTO carries no sketch reference yet, so a splitSolid with tool:"path" is refused with a
+// pointer to the follow-up rather than building a sketch-less split that goes sick (#2068).
+func TestSplitPathToolRefusedOverWire(t *testing.T) {
+	s, _, _ := extrudedSolid(t)
+	_, err := applyMap(t, s, "splitSolid", map[string]any{"tool": "path"})
+	if err == nil {
+		t.Fatal("tool:\"path\" should be refused over the wire (no sketch field yet)")
+	}
+	if !strings.Contains(err.Error(), "sketch") {
+		t.Errorf("path refusal = %q, want it to mention the missing sketch reference", err)
 	}
 }
 

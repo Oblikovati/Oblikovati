@@ -44,6 +44,88 @@ func SplitFacesByPlane(body *topo.Body, plane geom.Plane) (*topo.Body, error) {
 	return ra.Body, nil
 }
 
+// SplitFacesByPath imprints a projected polyline path onto a body's faces (the split-FACE-by-path
+// mode, #2068): each path segment, extruded along dir far enough to cross the body, is a planar
+// strip; together they form an open sheet tool whose intersection with each face scores it — like
+// SplitFacesByPlane, but along an arbitrary polyline rather than a straight plane section. No
+// material is removed, so the volume is unchanged.
+//
+// path is the polyline in MODEL space (already projected onto the sketch plane); dir is the
+// projection direction (the sketch plane normal). Straight segments only — a curved path segment
+// has no planar extrusion, so the caller facets it or refuses it. Needs at least two points.
+func SplitFacesByPath(body *topo.Body, path []math.Point3, dir math.Vector3) (*topo.Body, error) {
+	if len(path) < 2 {
+		return nil, fmt.Errorf("split faces by path: need at least 2 path points, got %d", len(path))
+	}
+	tool, err := pathSheetTool(body, path, dir)
+	if err != nil {
+		return nil, err
+	}
+	ra, _, err := brep.ImprintBodies(body, tool)
+	if err != nil {
+		return nil, fmt.Errorf("split faces by path: %w", err)
+	}
+	return ra.Body, nil
+}
+
+// pathSheetTool builds the open sheet whose faces are the path segments extruded ±ext along dir, so
+// the sheet reaches through the body on both sides of every face it must score. One planar quad per
+// segment, sharing the extruded rail edges at each interior path point.
+func pathSheetTool(body *topo.Body, path []math.Point3, dir math.Vector3) (*topo.Body, error) {
+	d, err := math.UnitVector3FromVector(dir)
+	if err != nil {
+		return nil, fmt.Errorf("split faces by path: projection direction is degenerate: %w", err)
+	}
+	ext := math.Scalar(splitExtent(body, path[0]))
+	off := d.AsVector().Scale(ext)
+	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok("splitpath", "sheet", 0)))
+	// Two rail vertices per path point: bottom (−dir) and top (+dir).
+	bot := make([]*topo.Vertex, len(path))
+	top := make([]*topo.Vertex, len(path))
+	for i, p := range path {
+		bot[i] = bld.AddVertex(p.TranslateBy(off.Scale(-1)), topo.NewLineage(topo.Tok("splitpath", "vbot", i)))
+		top[i] = bld.AddVertex(p.TranslateBy(off), topo.NewLineage(topo.Tok("splitpath", "vtop", i)))
+	}
+	rail := make([]*topo.Edge, len(path)) // the ±dir edge at each path point, shared by adjacent quads
+	rail[0] = bld.AddEdge(geom.NewLineSegment(bot[0].Point(), top[0].Point()), bot[0], top[0],
+		topo.NewLineage(topo.Tok("splitpath", "rail", 0)))
+	for i := 0; i+1 < len(path); i++ {
+		if err := addPathSheetQuad(bld, i, bot, top, rail); err != nil {
+			return nil, err
+		}
+	}
+	return bld.Build(), nil
+}
+
+// addPathSheetQuad adds the strip quad for segment i (path[i]→path[i+1]): its two along-path edges
+// (bottom and top) plus the shared rail edge at path[i+1], wound CCW about the segment's newell
+// normal so the loop and the face plane agree.
+func addPathSheetQuad(bld *topo.Builder, i int, bot, top []*topo.Vertex, rail []*topo.Edge) error {
+	corners := []math.Point3{bot[i].Point(), bot[i+1].Point(), top[i+1].Point(), top[i].Point()}
+	n := newellUnit(corners)
+	pl, err := geom.NewPlane(quadCentroid(corners), n)
+	if err != nil {
+		return fmt.Errorf("split faces by path: segment %d is degenerate (a zero-length step or a "+
+			"step along the projection direction): %w", i, err)
+	}
+	bottom := bld.AddEdge(geom.NewLineSegment(bot[i].Point(), bot[i+1].Point()), bot[i], bot[i+1],
+		topo.NewLineage(topo.Tok("splitpath", "bottom", i)))
+	upper := bld.AddEdge(geom.NewLineSegment(top[i].Point(), top[i+1].Point()), top[i], top[i+1],
+		topo.NewLineage(topo.Tok("splitpath", "top", i)))
+	rail[i+1] = bld.AddEdge(geom.NewLineSegment(bot[i+1].Point(), top[i+1].Point()), bot[i+1], top[i+1],
+		topo.NewLineage(topo.Tok("splitpath", "rail", i+1)))
+	// Ring bot[i] → bot[i+1] → top[i+1] → top[i], reversing the shared rail edges that are stored
+	// bottom→top so the loop still travels the ring direction.
+	uses := []topo.Use{
+		{Edge: bottom, Reversed: false},
+		{Edge: rail[i+1], Reversed: false},
+		{Edge: upper, Reversed: true},
+		{Edge: rail[i], Reversed: true},
+	}
+	bld.AddFace(pl, topo.NewLineage(topo.Tok("splitpath", "face", i)), topo.OuterLoop(uses...))
+	return nil
+}
+
 // splitExtent returns a half-width large enough for a cutting half-space anchored at the plane
 // origin to cover the whole body — twice the farthest body-corner distance from that origin, so
 // the box reaches the body even when the plane sits well outside it.
