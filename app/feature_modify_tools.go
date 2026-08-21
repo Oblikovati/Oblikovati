@@ -236,9 +236,13 @@ func (t *CombineTool) combineOperands(s *Session) (int, []int, error) {
 }
 
 // addCombine builds the boolean into mods — the shared constructor used by both Commit
-// (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift. It booleans the
-// target against every picked tool at once and honours keep-tool-bodies (#2069/#1894).
+// (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift. The common
+// single-tool consuming combine takes the AddCombine convenience; several tools or keep-tool-bodies
+// (#2069/#1894) take the general AddCombineTools.
 func (t *CombineTool) addCombine(mods *feature.ModifyFeatures, target int, tools []int) *feature.PartFeature {
+	if len(tools) == 1 && !t.keepTools {
+		return mods.AddCombine(target, tools[0], t.op)
+	}
 	return mods.AddCombineTools(target, tools, t.op, t.keepTools)
 }
 
