@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 )
 
 // Sheet-metal Hem feature (M13-F02, types per #1956). A hem folds the material at an edge back on
@@ -69,25 +70,9 @@ func (f *SheetMetalHemFeature) Definition() *SheetMetalHemDefinition { return f.
 // Kind identifies the feature for serialization and the model tree.
 func (f *SheetMetalHemFeature) Kind() string { return "sheet-metal-hem" }
 
-// Recompute resolves the edge and folds the hem's bend chain onto the sheet.
+// Recompute folds the hem's bend chain onto the sheet and relieves the corner it forms.
 func (f *SheetMetalHemFeature) Recompute(in Input) (Output, error) {
-	body, err := lastBody(in, "sheet-metal hem")
-	if err != nil {
-		return Output{}, err
-	}
-	t, err := sheetThickness(in.Params)
-	if err != nil {
-		return Output{}, err
-	}
-	steps, err := f.hemSteps(t)
-	if err != nil {
-		return Output{}, err
-	}
-	edges, heals, err := resolveEdges(body, [][]byte{f.def.EdgeKey}, nil)
-	if err != nil {
-		return Output{}, err
-	}
-	wall, placement, err := buildFoldedSolid(edges[0], t, steps, f.def.Flip, f.featName)
+	wall, placement, heals, err := f.foldHem(in)
 	if err != nil {
 		return Output{}, err
 	}
@@ -96,7 +81,41 @@ func (f *SheetMetalHemFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	f.placement = &placement // record the resolved bend for the flat pattern (M13-F04)
+	// A hem meeting an earlier wall at a corner forms a junction that has to be relieved too, not
+	// only a flange-to-flange one (#2072): its fold and the neighbour's want the same corner
+	// material. The hem spans its whole edge, so it needs no bend relief at the ends — only the
+	// corner cut where it meets a bend already placed.
+	bodies, err = cutCornerRelief(bodies, placement, in, in.Transition, featOr(f.featName, "hem"))
+	if err != nil {
+		return Output{}, err
+	}
 	return Output{Bodies: bodies, Heals: heals}, nil
+}
+
+// foldHem resolves the hem's edge, live thickness and bend chain, and builds the folded wall solid
+// plus the bend placement the flat pattern lays out and any reference heals from resolving the edge.
+func (f *SheetMetalHemFeature) foldHem(in Input) (*topo.Body, BendPlacement, []ReferenceHeal, error) {
+	body, err := lastBody(in, "sheet-metal hem")
+	if err != nil {
+		return nil, BendPlacement{}, nil, err
+	}
+	t, err := sheetThickness(in.Params)
+	if err != nil {
+		return nil, BendPlacement{}, nil, err
+	}
+	steps, err := f.hemSteps(t)
+	if err != nil {
+		return nil, BendPlacement{}, nil, err
+	}
+	edges, heals, err := resolveEdges(body, [][]byte{f.def.EdgeKey}, nil)
+	if err != nil {
+		return nil, BendPlacement{}, nil, err
+	}
+	wall, placement, err := buildFoldedSolid(edges[0], t, steps, f.def.Flip, f.featName)
+	if err != nil {
+		return nil, BendPlacement{}, nil, err
+	}
+	return wall, placement, heals, nil
 }
 
 // Placement returns the resolved bend geometry captured by the last successful recompute,
