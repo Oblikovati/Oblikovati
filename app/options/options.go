@@ -97,6 +97,9 @@ type Telemetry struct {
 type UI struct {
 	FontScale float64 `yaml:"fontScale"`
 	IconScale float64 `yaml:"iconScale"`
+	// ShowMenuBar keeps the legacy File/Edit/View/Tools/Help menu bar visible.
+	// The default stays true so File and Preferences remain discoverable.
+	ShowMenuBar bool `yaml:"showMenuBar"`
 }
 
 // Input is the mouse-navigation behaviour surface (Inventor-parity work,
@@ -141,7 +144,7 @@ func Defaults() All {
 		Save:      Save{Thumbnail: types.ThumbnailNone},
 		Updates:   Updates{CheckOnStartup: true},
 		Telemetry: Telemetry{ShareUsageStatistics: true},
-		UI:        UI{FontScale: 1, IconScale: 1},
+		UI:        UI{FontScale: 1, IconScale: 1, ShowMenuBar: true},
 		Input: Input{
 			MMBMode: "pan", ShiftMMBMode: "orbit", CtrlMMBMode: "pan",
 			WheelInvert: false, ZoomToCursor: true,

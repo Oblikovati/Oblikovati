@@ -22,7 +22,9 @@ import (
 // 3D viewport into its offscreen target.
 func DrawChrome(win *native.Window, s *app.Session) string {
 	prepareChromeFrame(win, s)
-	drawMenuBar(s)
+	if s.ShowMenuBar() {
+		drawMenuBar(s)
+	}
 	activated := ""
 	// The ribbon band must be drawn after the menu bar (it stacks beneath it in the
 	// viewport work area) and before the dockspace (which fills what remains).
@@ -31,6 +33,28 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	}
 	layoutDockedPanels()
 	drawViewportIfPresent(win, s)
+	// QAT / Application-menu deferred actions (G design D3): the band's
+	// buttons only set flags; this block consumes them in DrawChrome's ID
+	// context — OpenPopup beside BeginPopup (popup ID-stack guarantee), and
+	// Open/Save before drawChromeDialogs so the modal opens this frame.
+	// Every flag is reset on consumption, so none survives into next frame.
+	if appMenuRequested {
+		appMenuRequested = false
+		native.SetNextWindowPos(appMenuX, appMenuBottomY)
+		native.OpenPopup("##app-menu")
+	}
+	if qatOpenRequested {
+		qatOpenRequested = false
+		openViaHookOrDialog(s)
+	}
+	if qatSaveRequested {
+		qatSaveRequested = false
+		saveActive(s)
+	}
+	if native.BeginPopup("##app-menu") {
+		drawFileMenu(s)
+		native.EndPopup()
+	}
 	drawChromeDialogs(s)
 	drawChromeWindows(s)
 	drawDocumentClosePrompt(s)
