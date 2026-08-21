@@ -21,8 +21,10 @@ LDFLAGS     := -s -w \
 	-X $(MODULE)/build.Date=$(DATE)
 
 # Pinned dev tools (installed on demand into $GOBIN by `make tools`).
-GOLANGCI_VERSION  ?= v1.59.1
-GOTESTSUM_VERSION ?= v1.12.0
+# golangci-lint v2 lives at the /v2 module path; v1.59.1 and gotestsum v1.12.0
+# no longer compile under Go 1.26 (x/tools tokeninternal array-length error).
+GOLANGCI_VERSION  ?= v2.12.2
+GOTESTSUM_VERSION ?= v1.13.0
 
 # Cross-build matrix for `make build-all`.
 PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
@@ -101,7 +103,7 @@ ci: fmt-check vet lint test-race cover ## Everything CI runs, locally
 
 .PHONY: tools
 tools: ## Install pinned dev tools into $GOBIN
-	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_VERSION)
+	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION)
 	$(GO) install gotest.tools/gotestsum@$(GOTESTSUM_VERSION)
 
 .PHONY: hooks
