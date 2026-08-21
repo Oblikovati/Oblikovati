@@ -201,9 +201,14 @@ func TestOrbitPreservesDistanceAndYawsAroundUp(t *testing.T) {
 	if !c.Orbit(2*stdmath.Pi, 0).Eye.IsEqualTo(c.Eye, 1e-9) {
 		t.Error("full 360° yaw should return to the original eye")
 	}
-	// A pitch that would flip over the up pole is skipped (eye unchanged).
-	if !c.Orbit(0, stdmath.Pi/2).Eye.IsEqualTo(c.Eye, 1e-9) {
-		t.Error("near-pole pitch should be clamped (no change)")
+	// A quarter-turn pitch tumbles the eye over the pole to look from underneath (trackball,
+	// Inventor Free Orbit): eye (0,0,10) → (0,-10,0), up +Y → +Z.
+	p := c.Orbit(0, stdmath.Pi/2)
+	if !p.Eye.IsEqualTo(math.P3(0, -10, 0), 1e-9) {
+		t.Errorf("eye after 90° pitch = %v, want (0,-10,0) (tumbled underneath)", p.Eye)
+	}
+	if !p.Up.IsEqualTo(math.V3(0, 0, 1), 1e-9) {
+		t.Errorf("up after 90° pitch = %v, want (0,0,1)", p.Up)
 	}
 }
 
