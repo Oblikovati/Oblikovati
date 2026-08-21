@@ -1,9 +1,7 @@
 # Provenance — Lucide-derived UI icons (PR-5a, PR-5b)
 
 This file records the source and licence of every third-party-derived asset in these
-changes for maintainer review and distribution compliance, per the Oblikovati
-contribution-ethics rule (Pillar 4: all sources documented, everything within license
-parameters).
+changes for maintainer review and distribution compliance.
 
 ## Summary
 
