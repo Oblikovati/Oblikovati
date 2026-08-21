@@ -27,7 +27,8 @@ var authoringMethodDecl = regexp.MustCompile(`^func \(\w+ \*(\w*Features)\) ((?:
 // yet, with the issue that will give it one. Entries go stale loudly — a method that gains a
 // caller fails this test until its entry is deleted.
 var authoringMethodsWithoutCaller = map[string]string{
-	"AddFromCage": "#2048 — freeform cage editing has no UI; the builder lands with that work",
+	"AddFromCage":         "#2048 — freeform cage editing has no UI; the builder lands with that work",
+	"AddSplitFacesByPath": "#2068 — split-face-along-a-path is buildable via the model API; the wire sketch reference + UI tool that call it are the follow-up",
 }
 
 // TestExportedAuthoringMethodsHaveACaller fails on an exported model/feature authoring method
