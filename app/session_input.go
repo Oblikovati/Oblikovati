@@ -273,6 +273,18 @@ func (s *Session) Pointer(e PointerEvent) {
 		s.sketchEntityPointer(e)
 		return
 	}
+	// A 3D sketch's constraint markers sit on the geometry too, so test them before the RayPicker
+	// picks the curve underneath — only when no tool is consuming picks (#1998 follow-up).
+	if s.InSketch3D() && s.tool == nil && s.SelectSketchConstraint3DAt(e.X, e.Y, e.Mods) {
+		return
+	}
+	s.routeModelPointer(e)
+}
+
+// routeModelPointer runs the RayPicker for a left click that the 2D-sketch and 3D-constraint paths
+// did not consume: it feeds a hit to the active tool or updates the selection, and clears the
+// selection on an empty click.
+func (s *Session) routeModelPointer(e PointerEvent) {
 	if s.picker == nil {
 		return
 	}

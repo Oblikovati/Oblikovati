@@ -28,8 +28,10 @@ type constraint3DGlyphSource interface {
 var _ constraint3DGlyphSource = (*app.Session)(nil)
 
 // constraint3DGlyphOverlay builds the camera-facing marker items for the active 3D sketch's
-// constraints. hWorld is the marker half-size in world units (screen-constant, as for the 2D
-// overlay). Empty when constraints are hidden, no 3D sketch is open, or the camera is degenerate.
+// constraints — one item for the unselected markers and one for the selected, so a picked marker
+// reads at a glance (the target for Delete). hWorld is the marker half-size in world units
+// (screen-constant, as for the 2D overlay). Empty when constraints are hidden, no 3D sketch is open,
+// or the camera is degenerate.
 func constraint3DGlyphOverlay(s constraint3DGlyphSource, cam scene.Camera, hWorld float64) []renderer.DrawItem {
 	glyphs := s.SketchConstraintGlyphs3D()
 	if len(glyphs) == 0 {
@@ -39,15 +41,20 @@ func constraint3DGlyphOverlay(s constraint3DGlyphSource, cam scene.Camera, hWorl
 	if !ok {
 		return nil
 	}
-	acc := &segAccum{}
+	plain, chosen := &segAccum{}, &segAccum{}
 	for _, g := range glyphs {
 		billboard, err := sketch.NewPlane(g.At, right, up)
 		if err != nil {
 			continue // right⊥up by construction, so this cannot happen for a real camera
 		}
+		acc := plain
+		if g.Selected {
+			acc = chosen
+		}
 		constraintGlyphSegments(acc, billboard, math.P2(0, 0), hWorld, g.Kind)
 	}
-	return appendGrid(nil, acc, chromeTheme.sketchColor)
+	items := appendGrid(nil, plain, chromeTheme.sketchColor)
+	return appendGrid(items, chosen, chromeTheme.sketchSelectedColor)
 }
 
 // cameraBillboardAxes returns an orthonormal (right, up) pair spanning the plane that faces the

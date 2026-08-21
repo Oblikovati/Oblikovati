@@ -41,6 +41,41 @@ func (s *Session) DeleteSelectedSketchEntities() error {
 	return nil
 }
 
+// DeleteSelectedSketch3DConstraints removes the geometric constraints selected in the active 3D
+// sketch — the Delete-key action once a 3D constraint marker can be clicked (#1998 follow-up). It is
+// scoped to CONSTRAINTS on purpose: 3D sketch entities are not deleted from the viewport (that stays
+// on the browser, so a stray Delete never destroys 3D geometry), only the relations a marker
+// selects. Removing one frees the degrees of freedom it held, so the part recomputes and re-solves.
+// A no-op (nil) when not editing a 3D sketch, a tool is mid-operation, or nothing is selected.
+func (s *Session) DeleteSelectedSketch3DConstraints() error {
+	if s.activeSketch3D == nil || s.tool != nil {
+		return nil
+	}
+	cons := s.SelectedSketchConstraints()
+	if len(cons) == 0 {
+		return nil
+	}
+	part, err := activePart(s)
+	if err != nil {
+		return err
+	}
+	gc := s.activeSketch3D.GeometricConstraints3D()
+	n := 0
+	for _, c := range cons {
+		if err := gc.DeleteAllowed(c); err == nil {
+			n++
+		}
+	}
+	if n == 0 {
+		return nil
+	}
+	s.selection.Clear()
+	event.Emit(s.bus, event.After, SelectionChanged{Count: 0})
+	part.Recompute()
+	s.recordEdit(part, "Delete Sketch Constraints")
+	return nil
+}
+
 // deleteSketchConstraints drops each selected geometric constraint, returning how many were
 // removed. It goes through DeleteAllowed rather than Delete so a system-owned relation is refused
 // even if one somehow reached the selection — Show Constraints already declines to draw those, and
