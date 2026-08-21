@@ -61,9 +61,7 @@ func (d *PartComponentDefinition) bendTransforms(op string) ([]feature.BendTrans
 	var out []feature.BendTransform
 	fs := d.features
 	for i := 0; i < fs.Count(); i++ {
-		if bt, ok := bakeBendTransform(fs.Item(i), d.sheetMetal); ok {
-			out = append(out, bt)
-		}
+		out = append(out, bakeBendTransforms(fs.Item(i), d.sheetMetal)...)
 	}
 	if len(out) == 0 {
 		return nil, fmt.Errorf("%s: the part has no bends to act on", op)
@@ -71,30 +69,29 @@ func (d *PartComponentDefinition) bendTransforms(op string) ([]feature.BendTrans
 	return out, nil
 }
 
-// bakeBendTransform turns one feature's recorded bend placement into a transform, or ok=false
-// when it is not a healthy placed edge bend. The neutral-fibre radius is the rule's developed
-// length for this bend divided by its angle (so it honours the active unfold method — K-factor,
-// bend table, or equation — not just a fixed K-factor).
-func bakeBendTransform(pf *feature.PartFeature, rule *sheetmetal.Rule) (feature.BendTransform, bool) {
+// bakeBendTransforms turns a feature's recorded bend placements into transforms — one per bend, so a
+// multi-edge flange bakes every wall (#2071); empty when it is not a healthy placed edge bend. The
+// neutral-fibre radius is the rule's developed length for each bend divided by its angle (so it
+// honours the active unfold method — K-factor, bend table, or equation — not just a fixed K-factor).
+func bakeBendTransforms(pf *feature.PartFeature, rule *sheetmetal.Rule) []feature.BendTransform {
 	if pf.Suppressed() || !pf.Health().OK() {
-		return feature.BendTransform{}, false
+		return nil
 	}
-	placed, ok := pf.Definition().(feature.PlacedBend)
-	if !ok {
-		return feature.BendTransform{}, false
+	var out []feature.BendTransform
+	for _, p := range featurePlacements(pf.Definition()) {
+		if p.Angle <= 0 {
+			continue
+		}
+		out = append(out, feature.BendTransform{
+			LinePoint: p.AxisStart,
+			LineDir:   p.AxisStart.VectorTo(p.AxisEnd),
+			Up:        p.Up.AsVector(),
+			Out:       p.Outward.AsVector(),
+			Angle:     p.Angle,
+			Radius:    p.Radius,
+			Thickness: p.Thickness,
+			Neutral:   rule.BendAllowance(p.Angle, p.Radius) / p.Angle,
+		})
 	}
-	p, ok := placed.Placement()
-	if !ok || p.Angle <= 0 {
-		return feature.BendTransform{}, false
-	}
-	return feature.BendTransform{
-		LinePoint: p.AxisStart,
-		LineDir:   p.AxisStart.VectorTo(p.AxisEnd),
-		Up:        p.Up.AsVector(),
-		Out:       p.Outward.AsVector(),
-		Angle:     p.Angle,
-		Radius:    p.Radius,
-		Thickness: p.Thickness,
-		Neutral:   rule.BendAllowance(p.Angle, p.Radius) / p.Angle,
-	}, true
+	return out
 }

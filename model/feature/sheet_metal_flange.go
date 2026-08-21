@@ -3,6 +3,7 @@
 package feature
 
 import (
+	"errors"
 	"fmt"
 	stdmath "math"
 
@@ -55,13 +56,27 @@ type SheetMetalFlangeDefinition struct {
 	Position       BendPosition
 	PositionOffset func() float64 // explicit distance for the two edge-offset positions
 	HeightDatum    HeightDatum
+	// EdgeSets flanges SEVERAL edges in one feature, each set with its own edges and Width —
+	// Inventor's FlangeDefinition edge-set collection (#2071). When non-empty it SUPERSEDES
+	// EdgeKey/Width; every other option (height, angle, radius, flip, position, datum, options,
+	// miter) is shared across the sets. The zero value is the single-edge flange this feature has
+	// always built.
+	EdgeSets []FlangeEdgeSet
+}
+
+// FlangeEdgeSet is one edge group of a multi-edge flange (#2071): the edges to flange and the width
+// extent bounding their walls (the zero Width spans each whole edge).
+type FlangeEdgeSet struct {
+	EdgeKeys [][]byte
+	Width    FlangeWidth
 }
 
 // SheetMetalFlangeFeature folds a wall onto the sheet each recompute.
 type SheetMetalFlangeFeature struct {
-	def       *SheetMetalFlangeDefinition
-	featName  string
-	placement *BendPlacement // resolved bend geometry from the last recompute (for the flat pattern)
+	def        *SheetMetalFlangeDefinition
+	featName   string
+	placement  *BendPlacement  // the FIRST bend, for the single-placement PlacedBend interface
+	placements []BendPlacement // every bend this recompute placed (one per flanged edge), for the flat pattern
 }
 
 // Definition returns the flange recipe.
@@ -81,32 +96,78 @@ func (f *SheetMetalFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	edges, heals, err := resolveEdges(body, [][]byte{f.def.EdgeKey}, nil)
+	sets := f.edgeSets()
+	if len(sets) == 0 {
+		return Output{}, errors.New("sheet-metal flange: no edge to flange")
+	}
+	bodies, heals, err := f.flangeAllEdges(in, body, dims, sets)
 	if err != nil {
 		return Output{}, err
 	}
-	wall, placement, err := buildFoldedSolidAt(edges[0], dims.thickness, f.flangeSteps(dims),
-		dims.setback, f.def.Width, f.def.Flip, f.featName)
+	f.placement = &f.placements[0] // the first bend, for the single-placement PlacedBend interface
+	return Output{Bodies: bodies, Heals: heals}, nil
+}
+
+// flangeAllEdges folds a wall on every edge of every set onto the running sheet, chaining each
+// result into the next, and returns the final bodies plus the reference heals (#2071). It records
+// one bend placement per edge as it goes (f.placements).
+func (f *SheetMetalFlangeFeature) flangeAllEdges(in Input, body *topo.Body, dims flangeDims, sets []FlangeEdgeSet) ([]*topo.Body, []ReferenceHeal, error) {
+	run := in
+	f.placements = nil
+	var heals []ReferenceHeal
+	for _, set := range sets {
+		edges, h, err := resolveEdges(body, set.EdgeKeys, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+		heals = append(heals, h...)
+		for _, edge := range edges {
+			if run.Bodies, err = f.flangeOneEdge(run, edge, dims, set.Width); err != nil {
+				return nil, nil, err
+			}
+		}
+	}
+	return run.Bodies, heals, nil
+}
+
+// flangeOneEdge folds one wall onto the running bodies from a single edge with the given width, cuts
+// its reliefs, and records its bend placement. It returns the new running body state so the caller
+// can chain several edges (and edge sets) through one feature (#2071).
+func (f *SheetMetalFlangeFeature) flangeOneEdge(run Input, edge *topo.Edge, dims flangeDims, width FlangeWidth) ([]*topo.Body, error) {
+	wall, placement, err := buildFoldedSolidAt(edge, dims.thickness, f.flangeSteps(dims),
+		dims.setback, width, f.def.Flip, f.featName)
 	if err != nil {
-		return Output{}, err
+		return nil, err
 	}
 	// Union the wall onto the sheet (combine planarizes both before the planar boolean).
-	bodies, err := combine(in, wall, ops.Join)
+	bodies, err := combine(run, wall, ops.Join)
 	if err != nil {
-		return Output{}, err
+		return nil, err
 	}
-	if bodies, err = f.relieve(bodies, edges[0], dims, placement, in); err != nil {
-		return Output{}, err
+	if bodies, err = f.relieve(bodies, edge, dims, placement, width, run); err != nil {
+		return nil, err
 	}
-	f.placement = &placement // record the resolved bend for the flat pattern (M13-F04)
-	return Output{Bodies: bodies, Heals: heals}, nil
+	f.placements = append(f.placements, placement) // record the bend for the flat pattern (M13-F04)
+	return bodies, nil
+}
+
+// edgeSets returns the flange's edge sets — the explicit EdgeSets, or the single EdgeKey/Width set
+// this feature has always built (#2071).
+func (f *SheetMetalFlangeFeature) edgeSets() []FlangeEdgeSet {
+	if len(f.def.EdgeSets) > 0 {
+		return f.def.EdgeSets
+	}
+	if len(f.def.EdgeKey) == 0 {
+		return nil
+	}
+	return []FlangeEdgeSet{{EdgeKeys: [][]byte{f.def.EdgeKey}, Width: f.def.Width}}
 }
 
 // relieve cuts both styled reliefs this wall calls for (#2072): the notches at its own bend's ends,
 // and the corner cut where that bend meets one an earlier wall placed.
 func (f *SheetMetalFlangeFeature) relieve(bodies []*topo.Body, edge *topo.Edge, dims flangeDims,
-	placement BendPlacement, in Input) ([]*topo.Body, error) {
-	bodies, err := f.relieveBend(bodies, edge, dims, in.Relief)
+	placement BendPlacement, width FlangeWidth, in Input) ([]*topo.Body, error) {
+	bodies, err := f.relieveBend(bodies, edge, dims, width, in.Relief)
 	if err != nil {
 		return nil, err
 	}
@@ -141,9 +202,9 @@ func (f *SheetMetalFlangeFeature) bendTransition(in Input) types.BendTransition 
 // the edge (#2072). A full-width flange reaches both ends of its edge and needs none, which is why
 // nothing was relieved before width extents existed (#1958).
 func (f *SheetMetalFlangeFeature) relieveBend(bodies []*topo.Body, edge *topo.Edge, dims flangeDims,
-	spec ReliefSpec) ([]*topo.Body, error) {
+	width FlangeWidth, spec ReliefSpec) ([]*topo.Body, error) {
 	v0, v1 := edge.StartVertex().Point(), edge.EndVertex().Point()
-	from, to, err := f.def.Width.span(float64(v0.DistanceTo(v1)))
+	from, to, err := width.span(float64(v0.DistanceTo(v1)))
 	if err != nil {
 		return nil, err
 	}
@@ -153,15 +214,19 @@ func (f *SheetMetalFlangeFeature) relieveBend(bodies []*topo.Body, edge *topo.Ed
 		f.def.Flip, featOr(f.featName, "flange"))
 }
 
-// Placement returns the resolved bend geometry captured by the last successful recompute,
-// for the flat pattern to lay this flange out as a tab. ok is false before the first
-// recompute.
+// Placement returns the FIRST resolved bend from the last successful recompute (the single-bend
+// PlacedBend surface); the flat pattern reads every bend through Placements. ok is false before the
+// first recompute.
 func (f *SheetMetalFlangeFeature) Placement() (BendPlacement, bool) {
 	if f.placement == nil {
 		return BendPlacement{}, false
 	}
 	return *f.placement, true
 }
+
+// Placements returns every bend this feature placed — one per flanged edge (#2071) — for the flat
+// pattern to lay each out as a tab. A single-edge flange returns one, matching Placement.
+func (f *SheetMetalFlangeFeature) Placements() []BendPlacement { return f.placements }
 
 // flangeDims is the resolved, validated set of flange dimensions for one recompute. run is the
 // straight wall length after the bend, which is the height once the datum's setback is taken off;
@@ -221,7 +286,20 @@ func (f *SheetMetalFlangeFeature) BendSpecs(_ float64) []BendSpec {
 	if f.def.Radius != nil {
 		radius = f.def.Radius()
 	}
-	return []BendSpec{{Angle: f.resolveAngle(), Radius: radius}}
+	// One bend per flanged edge (#2071): a multi-edge flange develops each edge's fold. The
+	// dimensions are shared, so every spec is identical — only the count follows the edges.
+	n := 0
+	for _, set := range f.edgeSets() {
+		n += len(set.EdgeKeys)
+	}
+	if n == 0 {
+		n = 1 // a definition without a resolved edge still reports its one fold
+	}
+	specs := make([]BendSpec, n)
+	for i := range specs {
+		specs[i] = BendSpec{Angle: f.resolveAngle(), Radius: radius}
+	}
+	return specs
 }
 
 // buildFoldedSolid extrudes a folded-section chain (see sheet_metal_band.go) along the picked
@@ -348,4 +426,9 @@ func (c *SheetMetalFlangeFeatures) Add(def *SheetMetalFlangeDefinition) *PartFea
 	return pf
 }
 
-var _ Feature = (*SheetMetalFlangeFeature)(nil)
+var (
+	_ Feature     = (*SheetMetalFlangeFeature)(nil)
+	_ PlacedBend  = (*SheetMetalFlangeFeature)(nil)
+	_ PlacedBends = (*SheetMetalFlangeFeature)(nil) // #2071: a multi-edge flange places several bends
+	_ BendLineage = (*SheetMetalFlangeFeature)(nil)
+)

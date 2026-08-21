@@ -48,3 +48,10 @@ type BendPlacement struct {
 type PlacedBend interface {
 	Placement() (BendPlacement, bool)
 }
+
+// PlacedBends is a feature that places MORE THAN ONE edge bend in a single feature — a multi-edge
+// flange (#2071). The flat pattern lays out every one; a feature that implements both interfaces has
+// its Placement be the first of these. A single-edge feature can implement only PlacedBend.
+type PlacedBends interface {
+	Placements() []BendPlacement
+}
