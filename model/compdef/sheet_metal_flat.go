@@ -156,33 +156,42 @@ func (d *PartComponentDefinition) flatTabs() []feature.FlatTab {
 	fs := d.features
 	var tabs []feature.FlatTab
 	for i := 0; i < fs.Count(); i++ {
-		if tab, ok := d.developTab(fs.Item(i), plane); ok {
-			tabs = append(tabs, tab)
-		}
+		tabs = append(tabs, d.developTabs(fs.Item(i), plane)...)
 	}
 	return tabs
 }
 
-// developTab develops one feature into a flat tab, or ok=false when it is not a healthy
-// placed edge bend. It projects the recorded bend line and outward direction into the base
-// plane and adds the rule's bend allowance to the flange's straight run.
-func (d *PartComponentDefinition) developTab(pf *feature.PartFeature, plane sketch.Plane) (feature.FlatTab, bool) {
+// developTabs develops a feature's edge bends into flat tabs — one per bend, so a multi-edge flange
+// lays out every wall (#2071); empty when the feature is not a healthy placed edge bend. Each tab
+// projects the recorded bend line and outward direction into the base plane and adds the rule's bend
+// allowance to the flange's straight run.
+func (d *PartComponentDefinition) developTabs(pf *feature.PartFeature, plane sketch.Plane) []feature.FlatTab {
 	if pf.Suppressed() || !pf.Health().OK() {
-		return feature.FlatTab{}, false
+		return nil
 	}
-	placed, ok := pf.Definition().(feature.PlacedBend)
-	if !ok {
-		return feature.FlatTab{}, false
+	var tabs []feature.FlatTab
+	for _, p := range featurePlacements(pf.Definition()) {
+		tabs = append(tabs, feature.FlatTab{
+			A:        plane.ToSketch(p.AxisStart),
+			B:        plane.ToSketch(p.AxisEnd),
+			Length:   d.sheetMetal.Unfold().BendAllowance(p.Angle, p.Radius, p.Thickness) + p.Length,
+			Angle:    p.Angle,
+			FoldDown: p.FoldDown,
+		})
 	}
-	p, ok := placed.Placement()
-	if !ok {
-		return feature.FlatTab{}, false
+	return tabs
+}
+
+// featurePlacements returns every edge-bend placement a feature recorded — all of them for a
+// PlacedBends (a multi-edge flange, #2071), or the single one for a PlacedBend.
+func featurePlacements(def feature.Feature) []feature.BendPlacement {
+	if many, ok := def.(feature.PlacedBends); ok {
+		return many.Placements()
 	}
-	return feature.FlatTab{
-		A:        plane.ToSketch(p.AxisStart),
-		B:        plane.ToSketch(p.AxisEnd),
-		Length:   d.sheetMetal.Unfold().BendAllowance(p.Angle, p.Radius, p.Thickness) + p.Length,
-		Angle:    p.Angle,
-		FoldDown: p.FoldDown,
-	}, true
+	if one, ok := def.(feature.PlacedBend); ok {
+		if p, ok := one.Placement(); ok {
+			return []feature.BendPlacement{p}
+		}
+	}
+	return nil
 }

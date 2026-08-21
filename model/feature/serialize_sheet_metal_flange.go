@@ -20,6 +20,48 @@ type SheetMetalFlangeData struct {
 	HeightDatum    string  `yaml:"heightDatum,omitempty"`
 	// Width is how much of the edge the wall covers (#1958); absent ⇒ the whole edge.
 	Width *FlangeWidthData `yaml:"width,omitempty"`
+	// EdgeSets is the multi-edge flange's edge-set collection (#2071); absent ⇒ the single Edge/Width
+	// wall, so an older recipe reads back unchanged.
+	EdgeSets []FlangeEdgeSetData `yaml:"edgeSets,omitempty"`
+}
+
+// FlangeEdgeSetData is one persisted flange edge set: its edges and its own width extent (#2071).
+type FlangeEdgeSetData struct {
+	Edges []string         `yaml:"edges"`
+	Width *FlangeWidthData `yaml:"width,omitempty"`
+}
+
+// serializeFlangeEdgeSets projects the edge sets to their persisted form; nil for the single-edge
+// flange so its recipe is untouched.
+func serializeFlangeEdgeSets(sets []FlangeEdgeSet) []FlangeEdgeSetData {
+	if len(sets) == 0 {
+		return nil
+	}
+	out := make([]FlangeEdgeSetData, len(sets))
+	for i, s := range sets {
+		out[i] = FlangeEdgeSetData{Edges: encodeKeys(s.EdgeKeys), Width: serializeFlangeWidth(s.Width)}
+	}
+	return out
+}
+
+// restoreFlangeEdgeSets rebuilds the edge sets, erroring on an undecodable key or unknown width.
+func restoreFlangeEdgeSets(data []FlangeEdgeSetData) ([]FlangeEdgeSet, error) {
+	if len(data) == 0 {
+		return nil, nil
+	}
+	out := make([]FlangeEdgeSet, len(data))
+	for i, d := range data {
+		keys, err := decodeKeys(d.Edges)
+		if err != nil {
+			return nil, fmt.Errorf("sheet-metal flange edge set %d: %w", i, err)
+		}
+		width, err := restoreFlangeWidth(d.Width)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = FlangeEdgeSet{EdgeKeys: keys, Width: width}
+	}
+	return out, nil
 }
 
 // FlangeWidthData persists a flange's width extent and the distances it takes (#1958).
@@ -76,6 +118,7 @@ func serializeSheetMetalFlange(def *SheetMetalFlangeDefinition) *SheetMetalFlang
 		PositionOffset: evalFloat(def.PositionOffset),
 		HeightDatum:    HeightDatumName(def.HeightDatum),
 		Width:          serializeFlangeWidth(def.Width),
+		EdgeSets:       serializeFlangeEdgeSets(def.EdgeSets),
 	}
 }
 
@@ -101,9 +144,14 @@ func restoreSheetMetalFlange(fs *PartFeatures, d *SheetMetalFlangeData) (*PartFe
 	if err != nil {
 		return nil, err
 	}
+	edgeSets, err := restoreFlangeEdgeSets(d.EdgeSets)
+	if err != nil {
+		return nil, err
+	}
 	def := &SheetMetalFlangeDefinition{
 		EdgeKey:     key,
 		Width:       width,
+		EdgeSets:    edgeSets,
 		Height:      constFloat(d.Height),
 		Flip:        d.Flip,
 		Position:    position,
