@@ -48,13 +48,14 @@ The Lucide sources are 24×24 stroke-based glyphs (`stroke="currentColor"`,
 2. **Role sentinels**: replaced `stroke="currentColor"` with the ADR-0033 primary
    sentinel `#000` on the main linework. For `undo.svg` and `redo.svg`, the
    direction-arrow path is painted with the secondary sentinel `#ff0000` (the
-   action/result element role); likewise for `status-bar.svg` the short prompt-line
-   segment (`M6 17.5h7`) carries `#ff0000`. This matches the repo's convention of
-   accenting the action element of a glyph.
-3. **Source geometry was retained**: every Lucide path/rect element is preserved
-   byte-for-byte apart from formatting and role-colour substitutions; the added
-   background plate is the documented ADR-0033 adaptation (verified against the
-   SHA-256 hashes above).
+   action/result element role); likewise the `status-bar.svg` prompt-line segment
+   (`M6 17.5h7`) carries `#ff0000`. This matches the repo's convention of accenting
+   the action element of a glyph.
+3. **Source geometry was retained and documented**: every Lucide path/rect element is
+   preserved byte-for-byte apart from formatting and role-colour substitutions. The
+   added elements are documented ADR-0033 adaptations: the rounded background plate on
+   every glyph, and the short prompt-line path (`M6 17.5h7`) on `status-bar.svg` (all
+   verified against the SHA-256 hashes above).
 
 ## Attribution
 
