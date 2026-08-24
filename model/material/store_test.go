@@ -3,6 +3,7 @@
 package material
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
@@ -65,6 +66,39 @@ func TestStoreSaveLoadProjectAssets(t *testing.T) {
 	if data, ok := fs.files["/proj/DesignData/appearances.yaml"]; ok &&
 		strings.Contains(string(data), "id: "+DefaultAppearanceID) {
 		t.Error("built-in appearance was persisted to the project library")
+	}
+}
+
+// TestLoadProjectLibraryMigratesLegacyShapedAppearance is M46-F04's regression for the
+// project-library path: an old appearances.yaml saved before the OpenPBR consolidation
+// (5-scalar shape, a top-level "albedo" key) must load correctly via the same
+// AppearanceRecipe.UnmarshalYAML shape-sniff the document-recipe path uses — covered
+// "for free" since Store.Load unmarshals into the same AppearanceRecipe type.
+func TestLoadProjectLibraryMigratesLegacyShapedAppearance(t *testing.T) {
+	raw, err := os.ReadFile("../../test-utilities/openpbr-appearance-migration/old-project-library.yaml")
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	fs := newFakeFS()
+	fs.files["/proj/DesignData/appearances.yaml"] = raw
+	store := NewStore("/proj/DesignData", fs)
+
+	lib := NewLibrary()
+	if err := store.Load(lib); err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	a, ok := lib.Appearance("my-custom-red")
+	if !ok {
+		t.Fatal("legacy-shaped project appearance was not migrated")
+	}
+	if a.Source() != SourceProject {
+		t.Errorf("migrated appearance source = %q, want project", a.Source())
+	}
+	if a.Base().Metalness != 0 || a.Base().Color == (Color3{}) {
+		t.Errorf("migrated appearance base = %+v, want a non-zero color and metalness 0", a.Base())
+	}
+	if a.Specular().Roughness != 0.4 {
+		t.Errorf("migrated appearance specular roughness = %v, want 0.4", a.Specular().Roughness)
 	}
 }
 

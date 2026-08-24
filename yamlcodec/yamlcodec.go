@@ -26,6 +26,15 @@ func Marshal(v any) ([]byte, error) { return yaml.Marshal(v) }
 // Unmarshal parses YAML bytes into v.
 func Unmarshal(data []byte, v any) error { return yaml.Unmarshal(data, v) }
 
+// RawNode is a re-export of yaml.Node (a type alias, not a wrapper — identical to the
+// underlying type). It lets a type elsewhere in the module implement custom decoding
+// (an UnmarshalYAML(*yamlcodec.RawNode) error method, satisfying yaml.v3's own
+// Unmarshaler interface exactly) without that package importing gopkg.in/yaml.v3
+// itself — this package stays the sole import site (ADR-0020). Used by
+// model/material.AppearanceRecipe to shape-sniff a pre-consolidation on-disk entry
+// (M46-F04).
+type RawNode = yaml.Node
+
 // Document is the decoded form of a .obk file: identity, the recipe section (raw YAML
 // bytes, embedded natively on disk for readability), and named binary data sections.
 // Model is nil when the document carries no recipe (e.g. a manifest-only stub or a

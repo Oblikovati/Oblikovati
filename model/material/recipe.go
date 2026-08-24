@@ -3,9 +3,11 @@
 package material
 
 import (
+	"fmt"
 	"sort"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/yamlcodec"
 )
 
 // AppearanceRecipe is the persisted YAML shape of a full OpenPBR Surface v1.1.1
@@ -24,6 +26,66 @@ type AppearanceRecipe struct {
 	ThinFilm     OpenPBRThinFilm     `yaml:"thinFilm"`
 	Emission     OpenPBREmission     `yaml:"emission"`
 	Geometry     OpenPBRGeometry     `yaml:"geometry"`
+}
+
+// UnmarshalYAML shape-sniffs each entry (M46-F04): a pre-consolidation document or
+// project-library file has appearance entries in the OLD 5-scalar shape (a top-level
+// "albedo" key), which this transparently upgrades via legacyAppearanceToSpec so an
+// old file loads correctly instead of silently producing an all-zero-value appearance
+// (yaml.v3 would otherwise just ignore the unrecognized albedo/metallic/... keys).
+func (r *AppearanceRecipe) UnmarshalYAML(node *yamlcodec.RawNode) error {
+	var raw map[string]any
+	if err := node.Decode(&raw); err != nil {
+		return err
+	}
+	if _, legacy := raw["albedo"]; !legacy {
+		type plain AppearanceRecipe // avoid recursing into this UnmarshalYAML
+		var p plain
+		if err := node.Decode(&p); err != nil {
+			return err
+		}
+		*r = AppearanceRecipe(p)
+		return nil
+	}
+	return r.unmarshalLegacy(node)
+}
+
+// unmarshalLegacyAppearanceRecipe is the pre-M46 on-disk shape (mirrors the deleted
+// material.Appearance's old accessors).
+type unmarshalLegacyAppearanceRecipe struct {
+	ID          string  `yaml:"id"`
+	DisplayName string  `yaml:"name"`
+	Albedo      string  `yaml:"albedo"`
+	Metallic    float32 `yaml:"metallic"`
+	Roughness   float32 `yaml:"roughness"`
+	Emissive    string  `yaml:"emissive,omitempty"`
+	Opacity     float32 `yaml:"opacity"`
+}
+
+// unmarshalLegacy decodes an old-shaped entry and converts it through
+// legacyAppearanceToSpec.
+func (r *AppearanceRecipe) unmarshalLegacy(node *yamlcodec.RawNode) error {
+	var legacy unmarshalLegacyAppearanceRecipe
+	if err := node.Decode(&legacy); err != nil {
+		return err
+	}
+	albedo, err := types.ParseHex(legacy.Albedo)
+	if err != nil {
+		return fmt.Errorf("material: legacy appearance %q: albedo: %w", legacy.ID, err)
+	}
+	emissive := types.Rgba{A: 1}
+	if legacy.Emissive != "" {
+		if emissive, err = types.ParseHex(legacy.Emissive); err != nil {
+			return fmt.Errorf("material: legacy appearance %q: emissive: %w", legacy.ID, err)
+		}
+	}
+	spec := legacyAppearanceToSpec(legacyAppearanceSpec{
+		DisplayName: legacy.DisplayName, Albedo: albedo, Metallic: legacy.Metallic,
+		Roughness: legacy.Roughness, Emissive: emissive, Opacity: legacy.Opacity,
+	})
+	*r = appearanceToRecipe(NewAppearance(legacy.ID, SourceBuiltin, spec))
+	r.ID = legacy.ID
+	return nil
 }
 
 // MaterialRecipe / AssignmentRecipe are the other persisted YAML shapes of the materials
