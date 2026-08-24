@@ -1,6 +1,7 @@
 # ADR-0052 — Co-refined shared-seam classification for the planar boolean (near-tangent grazing seams)
 
-**Status:** Proposed (2026-08-23). · **Scopes** the architectural fix for
+**Status:** Accepted — Track A in progress on `feat/exact-boolean-core` (Phase 1a exact predicates
+landed 2026-08-24). · **Scopes** the architectural fix for
 [Oblikovati#2084](https://github.com/Oblikovati/Oblikovati/issues/2084) (a coil/core join tears when
 the coil mesh is refined) and unblocks
 [Oblikovati#2081](https://github.com/Oblikovati/Oblikovati/issues/2081) (the finer centre-fan
@@ -115,6 +116,19 @@ every future near-tangent faceted case; **Track B** is the higher-leverage targe
 families where analytic surfaces survive to the boolean. Both are large; pick per appetite (Track B is
 narrower and reuses the existing curved SSI machinery).
 
+### Decision (updated 2026-08-24): build Track A on exact geometric predicates
+
+Track A is the chosen path — it makes the kernel reliable for *all* near-tangent faceted booleans,
+not one family, and lets the `maxFacetWarpRatio` mitigation be retired. Its foundation is a set of
+**exact-sign geometric predicates** (`kernel/predicates`): the tear is ultimately a *tolerance-driven
+sign inconsistency* (two operands decide "which side" independently and disagree at the noise floor),
+so the arrangement's every topological decision must be exact, not toleranced. On 20k near-coplanar
+configurations a naive float `orient3d` misclassifies ~17 % — precisely the inconsistency that tears
+the seam. The predicates remove the gap: a static float filter returns a sign only when an a-priori
+error bound certifies it, and an exact `math/big.Rat` determinant decides everything else, so the
+sign is the exact mathematical sign with no epsilon. Products that feed an add/sub are rounded to
+block FMA fusion (#2020), which would otherwise invalidate the filter and diverge cross-platform.
+
 ## Phased execution plan (each phase gated on the FULL boolean corpus + the 4.6 s repro)
 
 - **Phase 0 — DONE.** Root cause pinned; four loci falsified; the CSG shortcut proven dead; the seam
@@ -122,10 +136,27 @@ narrower and reuses the existing curved SSI machinery).
   per-operand labellings are already correct). A fast operand-replay repro harness was built (capture
   the two operands to OBJ at the failing union, reload via `subd.ToBody`, replay `brep.Boolean` —
   4.6 s). Recorded on #2084 and in the session notes.
-- **Phase 1 — Track A cell-arrangement core (or Track B curved SSI).** A **new boolean core** (or a
-  new `curvedExactPaths` entry). **There is no corpus-safe partial step** and no shortcut: it lands as
-  one reviewed unit on its own branch, gated on the full `kernel/brep` + `kernel/ops` boolean corpus
-  with per-case volume/manifold assertions, with wholesale revert as the safety valve.
+- **Phase 1 — Track A cell-arrangement core.** Built on branch `feat/exact-boolean-core` as an
+  isolated new engine that is validated in the shadow of the existing one before it ever becomes the
+  default. The core itself has no corpus-safe *partial* cutover, but it is built from independently
+  testable sub-layers, each its own commit and each touching nothing load-bearing until the final
+  switch:
+  - **1a — exact predicates (`kernel/predicates`). DONE.** `Orient2D`/`Orient3D`, static filter +
+    exact `big.Rat`, FMA-guarded; validated against an independent exact oracle over 20k degenerate
+    cases; 100 % coverage. Touches nothing else.
+  - **1b — exact mesh-intersection primitives.** Segment×triangle, triangle×triangle, point-in-face,
+    coplanar tests, expressed purely through the sign predicates. New package, unit-tested against the
+    `big.Rat` oracle; still touches nothing load-bearing.
+  - **1c — co-refined merged complex.** One conforming arrangement of both operands' faces sharing an
+    exact intersection network (reuse `imprint`; the seam is already bit-shared).
+  - **1d — cell labelling + surface extraction.** Label 3-space cells by both operands' winding
+    numbers (reuse `solidProbe`), emit the faces between cells of differing in/out status — manifold
+    by construction; preserve `keep`/`coplanarKeep` semantics, ADR-0043 provenance, ADR-0047 sew.
+  - **1e — shadow validation + cutover.** A test harness runs the new core beside the current one over
+    the entire `kernel/brep` + `kernel/ops` corpus and asserts the new result is a strict superset
+    (same-or-better: valid, closed, correct volume). The default only switches when the new core is
+    green on the full corpus **and** on the 4.6 s #2084 repro at `maxFacetWarpRatio = 0.02`. Wholesale
+    revert (flip the default back) is the safety valve.
 - **Phase 2 — Remove the mitigation.** Once the repro is watertight at `maxFacetWarpRatio = 0.02` and
   #2081's centre fan, lower/retire the `swept_refine.go` lower bound and run
   `TestCoilJoinFinePitchWatertight` at the finer budget.
