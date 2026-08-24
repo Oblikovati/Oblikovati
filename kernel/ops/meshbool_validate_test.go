@@ -19,11 +19,11 @@ import (
 // split both operands so each stays a closed mesh (aOut/bOut have no open edge) —
 // the property whose absence tears #2084, now guaranteed here as on the coil.
 //
-// NOTE: the full booleanViaMeshbool result on this near-tangent case still has a
-// couple of open edges from generalized-winding-number CLASSIFICATION of a face
-// whose centroid sits almost on the other cylinder's surface — a separate,
-// tracked robustness follow-up (exact ray-cast point-in-solid). Co-refinement, the
-// #2084 defect, is fully fixed.
+// Third, that the FULL result is a valid closed solid. This near-tangent case once
+// left a couple of open edges from generalized-winding-number classification of a
+// face whose centroid sits almost on the other cylinder's surface; the exact
+// ray-cast point-in-solid classifier removed that residual, so the union now
+// validates end to end.
 func TestValidateCrossingCylinders(t *testing.T) {
 	a, err := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	if err != nil {
