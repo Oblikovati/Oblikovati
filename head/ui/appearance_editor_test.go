@@ -33,26 +33,26 @@ func (f *fakeMaterialFS) WriteFile(path string, data []byte) error {
 	return nil
 }
 
-// TestInWindowOpenPBRTabRendersAllGroups mirrors TestInWindowMaterialsWindowDrawsAllTabs
-// for the OpenPBR tab (M45-F05 PBI-351): opens the real window with the Materials
-// window on the OpenPBR tab and runs frames, so a mismatched ImGui Begin/End across any
+// TestInWindowAppearanceTabRendersAllGroups mirrors TestInWindowMaterialsWindowDrawsAllTabs
+// for the Appearance tab (M45-F05 PBI-351): opens the real window with the Materials
+// window on the Appearance tab and runs frames, so a mismatched ImGui Begin/End across any
 // of the nine stacked parameter groups (Base/Specular/Transmission/Subsurface/Coat/
 // Fuzz/ThinFilm/Emission/Geometry — all drawn unconditionally every frame, not gated
 // behind a nested tab selection) would trip Dear ImGui's assertions. It just needs to
 // run without aborting — this IS the "every group's tab renders without error" the PBI
 // asks for, since every group draws on every frame regardless of which top-level
 // Materials-window tab is active.
-func TestInWindowOpenPBRTabRendersAllGroups(t *testing.T) {
+func TestInWindowAppearanceTabRendersAllGroups(t *testing.T) {
 	win := newViewportWindow(t)
 	defer win.Destroy()
 	dockLaidOut = false
 	icons = nil
 	s := framedSession()
 
-	if len(s.Materials().OpenPBRAppearances()) == 0 {
-		t.Fatal("OpenPBR appearance library empty — nothing for the editor to render")
+	if len(s.Materials().Appearances()) == 0 {
+		t.Fatal("appearance library empty — nothing for the editor to render")
 	}
-	selectedOpenPBR = s.Materials().OpenPBRAppearances()[0].ID()
+	selectedAppearance = s.Materials().Appearances()[0].ID()
 
 	showMaterials = true
 	defer func() { showMaterials = false }()
@@ -64,12 +64,12 @@ func TestInWindowOpenPBRTabRendersAllGroups(t *testing.T) {
 	}
 }
 
-// TestOpenPBREditsPersistThroughProjectStore is PBI-351's second acceptance criterion:
-// editing a non-built-in OpenPBRAppearance through the exact session call the editor
-// uses (UpdateOpenPBRAppearance) must persist and round-trip through the project YAML
-// store — verified with a REAL material.Store attached (not just in-memory library
-// state), reloaded into a fresh session to prove the edit actually reached disk.
-func TestOpenPBREditsPersistThroughProjectStore(t *testing.T) {
+// TestAppearanceEditsPersistThroughProjectStore is PBI-351's second acceptance criterion:
+// editing a non-built-in Appearance through the exact session call the editor uses
+// (UpdateAppearance) must persist and round-trip through the project YAML store —
+// verified with a REAL material.Store attached (not just in-memory library state),
+// reloaded into a fresh session to prove the edit actually reached disk.
+func TestAppearanceEditsPersistThroughProjectStore(t *testing.T) {
 	fs := newFakeMaterialFS()
 	store := material.NewStore("/proj/DesignData", fs)
 
@@ -77,16 +77,16 @@ func TestOpenPBREditsPersistThroughProjectStore(t *testing.T) {
 	if err := s.LoadProjectMaterials(store); err != nil {
 		t.Fatalf("LoadProjectMaterials: %v", err)
 	}
-	base := s.Materials().OpenPBRAppearances()[0]
-	dup, err := s.DuplicateOpenPBRAppearance(base.ID(), "Editor Test Copy")
+	base := s.Materials().Appearances()[0]
+	dup, err := s.DuplicateAppearance(base.ID(), "Editor Test Copy")
 	if err != nil {
-		t.Fatalf("DuplicateOpenPBRAppearance: %v", err)
+		t.Fatalf("DuplicateAppearance: %v", err)
 	}
 
 	spec := dup.Spec()
 	spec.Base.Metalness = 0.73
 	spec.Coat.Weight = 1
-	s.UpdateOpenPBRAppearance(dup.ID(), spec) // editOpenPBRAppearance's exact persistence call
+	s.UpdateAppearance(dup.ID(), spec) // editAppearancePBR's exact persistence call
 
 	// A second session, sharing only the store (not the in-memory library), must see
 	// the edit — proving it reached the YAML file, not just this session's Library.
@@ -94,7 +94,7 @@ func TestOpenPBREditsPersistThroughProjectStore(t *testing.T) {
 	if err := s2.LoadProjectMaterials(store); err != nil {
 		t.Fatalf("LoadProjectMaterials (second session): %v", err)
 	}
-	got, ok := s2.Materials().OpenPBRAppearance(dup.ID())
+	got, ok := s2.Materials().Appearance(dup.ID())
 	if !ok {
 		t.Fatal("edited appearance did not round-trip through the project store")
 	}

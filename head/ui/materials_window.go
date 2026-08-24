@@ -65,10 +65,6 @@ func drawMaterialsBody(s *app.Session) {
 		drawAppearanceTabContent(s)
 		native.EndTabItem()
 	}
-	if native.BeginTabItem("OpenPBR") {
-		drawOpenPBRTabContent(s)
-		native.EndTabItem()
-	}
 	if native.BeginTabItem("Physical") {
 		drawPhysicalReadout(s)
 		native.EndTabItem()
