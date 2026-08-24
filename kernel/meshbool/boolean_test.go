@@ -34,6 +34,32 @@ func TestBooleanTwoBoxes(t *testing.T) {
 	}
 }
 
+// TestBooleanCoplanarBoxes overlaps two boxes offset only in x (A=[0,2]^3,
+// B=[1,3]x[0,2]x[0,2]), so their top/bottom/front/back faces are coplanar and
+// coincident on the SAME side over x in [1,2] — the case plain winding
+// classification gets wrong (it would drop both copies and leave a hole). The
+// coplanar-keep rule must retain exactly one copy. Overlap volume is 4.
+func TestBooleanCoplanarBoxes(t *testing.T) {
+	a := boxMesh([3]float64{0, 0, 0}, [3]float64{2, 2, 2})
+	b := boxMesh([3]float64{1, 0, 0}, [3]float64{3, 2, 2})
+	cases := []struct {
+		name string
+		op   Op
+		vol  float64
+	}{
+		{"union", Union, 12},          // 8 + 8 - 4
+		{"difference", Difference, 4}, // 8 - 4
+		{"intersection", Intersection, 4},
+	}
+	for _, tc := range cases {
+		res := Boolean(a, b, tc.op)
+		if v := meshVolume(res); math.Abs(v-tc.vol) > 1e-9 {
+			t.Fatalf("%s: volume = %.6f, want %.0f", tc.name, v, tc.vol)
+		}
+		assertWatertight(t, tc.name, res)
+	}
+}
+
 // TestBooleanDisjointUnion unions two separated boxes: the result is just both
 // boxes (volume 16) and watertight.
 func TestBooleanDisjointUnion(t *testing.T) {

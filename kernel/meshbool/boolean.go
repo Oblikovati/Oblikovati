@@ -24,16 +24,38 @@ func Boolean(a, b [][3]Point, op Op) [][3]Point {
 	aOut, bOut := CoRefine(a, b)
 	var result [][3]Point
 	for _, f := range aOut {
+		if sameDir, coincident := coplanarPartner(f, b); coincident {
+			if keepCoplanar(op, sameDir) {
+				result = append(result, f) // kept with a's outward normal
+			}
+			continue
+		}
 		if keepFromA(op, insideMesh(centroid(f), b)) {
 			result = append(result, f)
 		}
 	}
 	for _, f := range bOut {
+		if _, coincident := coplanarPartner(f, a); coincident {
+			continue // a's copy already represents every coincident face; drop b's
+		}
 		if keepFromB(op, insideMesh(centroid(f), a)) {
 			result = append(result, orientFromB(op, f))
 		}
 	}
 	return result
+}
+
+// keepCoplanar decides a face of a that is coincident with a face of b, by whether
+// their outward normals agree. Same-direction coincidence (both solids on the same
+// side of the plane) is a real boundary for Union/Intersection and internal to a
+// Difference; opposite-direction coincidence (solids face-to-face) is internal to
+// Union/Intersection and the retained a-boundary of a Difference. b's coincident
+// copy is always dropped so the result carries exactly one face there.
+func keepCoplanar(op Op, sameDir bool) bool {
+	if op == Difference {
+		return !sameDir
+	}
+	return sameDir
 }
 
 // keepFromA reports whether a face of a (inB = its centroid lies inside b) belongs
