@@ -8,19 +8,27 @@ import (
 	"oblikovati.org/api/types"
 )
 
-// AppearanceRecipe / MaterialRecipe / AssignmentRecipe are the persisted YAML shapes of
-// the materials data — embedded in a document's recipe and stored in the project library
-// (ADR-0020/0022). Colors are "#RRGGBBAA" hex for readable, git-diffable files.
+// AppearanceRecipe is the persisted YAML shape of a full OpenPBR Surface v1.1.1
+// appearance (project library storage / a document's embedded assets, ADR-0020/0022) —
+// every group inline. Colors stay raw ACEScg floats (not hex): emission_color is
+// unbounded above, which hex cannot represent.
 type AppearanceRecipe struct {
-	ID          string  `yaml:"id"`
-	DisplayName string  `yaml:"name"`
-	Albedo      string  `yaml:"albedo"`
-	Metallic    float32 `yaml:"metallic"`
-	Roughness   float32 `yaml:"roughness"`
-	Emissive    string  `yaml:"emissive,omitempty"`
-	Opacity     float32 `yaml:"opacity"`
+	ID           string              `yaml:"id"`
+	DisplayName  string              `yaml:"name"`
+	Base         OpenPBRBase         `yaml:"base"`
+	Specular     OpenPBRSpecular     `yaml:"specular"`
+	Transmission OpenPBRTransmission `yaml:"transmission"`
+	Subsurface   OpenPBRSubsurface   `yaml:"subsurface"`
+	Coat         OpenPBRCoat         `yaml:"coat"`
+	Fuzz         OpenPBRFuzz         `yaml:"fuzz"`
+	ThinFilm     OpenPBRThinFilm     `yaml:"thinFilm"`
+	Emission     OpenPBREmission     `yaml:"emission"`
+	Geometry     OpenPBRGeometry     `yaml:"geometry"`
 }
 
+// MaterialRecipe / AssignmentRecipe are the other persisted YAML shapes of the materials
+// data — embedded in a document's recipe and stored in the project library
+// (ADR-0020/0022).
 type MaterialRecipe struct {
 	ID          string           `yaml:"id"`
 	DisplayName string           `yaml:"name"`
@@ -44,21 +52,14 @@ type AssignmentRecipe struct {
 	BodyMaterial   map[string]string `yaml:"bodyMaterial,omitempty"`
 	BodyAppearance map[string]string `yaml:"bodyAppearance,omitempty"`
 	FaceAppearance map[string]string `yaml:"faceAppearance,omitempty"`
-
-	// OpenPBRAppearance assignments (M45-F05 PBI-350, ADR-0053) — the separate chain
-	// AssignmentStore.SetPartOpenPBRAppearance et al. write into.
-	PartOpenPBRAppearance string            `yaml:"partOpenPBRAppearance,omitempty"`
-	BodyOpenPBRAppearance map[string]string `yaml:"bodyOpenPBRAppearance,omitempty"`
-	FaceOpenPBRAppearance map[string]string `yaml:"faceOpenPBRAppearance,omitempty"`
 }
 
 // RecipeData is the materials section embedded in a part's recipe: the document's own
 // assets plus its assignments.
 type RecipeData struct {
-	Appearances        []AppearanceRecipe        `yaml:"appearances,omitempty"`
-	Materials          []MaterialRecipe          `yaml:"materials,omitempty"`
-	OpenPBRAppearances []OpenPBRAppearanceRecipe `yaml:"openpbrAppearances,omitempty"`
-	Assignments        *AssignmentRecipe         `yaml:"assignments,omitempty"`
+	Appearances []AppearanceRecipe `yaml:"appearances,omitempty"`
+	Materials   []MaterialRecipe   `yaml:"materials,omitempty"`
+	Assignments *AssignmentRecipe  `yaml:"assignments,omitempty"`
 }
 
 // MarshalRecipe captures a document's embedded asset set and assignments as RecipeData,
@@ -71,28 +72,18 @@ func MarshalRecipe(set *AssetSet, assign *AssignmentStore) RecipeData {
 	for _, m := range sortMaterials(set.Materials()) {
 		data.Materials = append(data.Materials, materialToRecipe(m))
 	}
-	for _, a := range sortOpenPBRAppearances(set.OpenPBRAppearances()) {
-		data.OpenPBRAppearances = append(data.OpenPBRAppearances, openPBRAppearanceToRecipe(a))
-	}
 	data.Assignments = assignmentRecipe(assign)
 	return data
 }
 
 // ApplyRecipe restores embedded assets (as document-source) into set and assignments into
-// assign. A malformed color aborts the load (no silent black surfaces).
+// assign.
 func ApplyRecipe(data RecipeData, set *AssetSet, assign *AssignmentStore) error {
 	for _, ar := range data.Appearances {
-		a, err := recipeToAppearance(ar, SourceDocument)
-		if err != nil {
-			return err
-		}
-		set.PutAppearance(a)
+		set.PutAppearance(recipeToAppearance(ar, SourceDocument))
 	}
 	for _, mr := range data.Materials {
 		set.PutMaterial(recipeToMaterial(mr, SourceDocument))
-	}
-	for _, pr := range data.OpenPBRAppearances {
-		set.PutOpenPBRAppearance(recipeToOpenPBRAppearance(pr, SourceDocument))
 	}
 	if data.Assignments != nil {
 		applyAssignmentRecipe(assign, data.Assignments)
@@ -101,28 +92,22 @@ func ApplyRecipe(data RecipeData, set *AssetSet, assign *AssignmentStore) error 
 }
 
 func appearanceToRecipe(a *Appearance) AppearanceRecipe {
+	s := a.spec
 	return AppearanceRecipe{
-		ID: a.id, DisplayName: a.spec.DisplayName,
-		Albedo: a.spec.Albedo.Hex(), Metallic: a.spec.Metallic, Roughness: a.spec.Roughness,
-		Emissive: a.spec.Emissive.Hex(), Opacity: a.spec.Opacity,
+		ID: a.id, DisplayName: s.DisplayName,
+		Base: s.Base, Specular: s.Specular, Transmission: s.Transmission,
+		Subsurface: s.Subsurface, Coat: s.Coat, Fuzz: s.Fuzz, ThinFilm: s.ThinFilm,
+		Emission: s.Emission, Geometry: s.Geometry,
 	}
 }
 
-func recipeToAppearance(r AppearanceRecipe, source Source) (*Appearance, error) {
-	albedo, err := types.ParseHex(r.Albedo)
-	if err != nil {
-		return nil, err
-	}
-	emissive := types.Rgba{A: 1}
-	if r.Emissive != "" {
-		if emissive, err = types.ParseHex(r.Emissive); err != nil {
-			return nil, err
-		}
-	}
+func recipeToAppearance(r AppearanceRecipe, source Source) *Appearance {
 	return NewAppearance(r.ID, source, AppearanceSpec{
-		DisplayName: r.DisplayName, Albedo: albedo, Metallic: r.Metallic,
-		Roughness: r.Roughness, Emissive: emissive, Opacity: r.Opacity,
-	}), nil
+		DisplayName: r.DisplayName,
+		Base:        r.Base, Specular: r.Specular, Transmission: r.Transmission,
+		Subsurface: r.Subsurface, Coat: r.Coat, Fuzz: r.Fuzz, ThinFilm: r.ThinFilm,
+		Emission: r.Emission, Geometry: r.Geometry,
+	})
 }
 
 func materialToRecipe(m *Material) MaterialRecipe {
@@ -161,18 +146,14 @@ func recipeToMaterial(r MaterialRecipe, source Source) *Material {
 // minimal).
 func assignmentRecipe(assign *AssignmentStore) *AssignmentRecipe {
 	r := &AssignmentRecipe{
-		PartMaterial:          assign.partMaterial,
-		PartAppearance:        assign.partAppearance,
-		BodyMaterial:          nonEmpty(assign.bodyMaterial),
-		BodyAppearance:        nonEmpty(assign.bodyAppearance),
-		FaceAppearance:        nonEmpty(assign.faceAppearance),
-		PartOpenPBRAppearance: assign.partOpenPBRAppearance,
-		BodyOpenPBRAppearance: nonEmpty(assign.bodyOpenPBRAppearance),
-		FaceOpenPBRAppearance: nonEmpty(assign.faceOpenPBRAppearance),
+		PartMaterial:   assign.partMaterial,
+		PartAppearance: assign.partAppearance,
+		BodyMaterial:   nonEmpty(assign.bodyMaterial),
+		BodyAppearance: nonEmpty(assign.bodyAppearance),
+		FaceAppearance: nonEmpty(assign.faceAppearance),
 	}
 	if r.PartMaterial == "" && r.PartAppearance == "" &&
-		r.BodyMaterial == nil && r.BodyAppearance == nil && r.FaceAppearance == nil &&
-		r.PartOpenPBRAppearance == "" && r.BodyOpenPBRAppearance == nil && r.FaceOpenPBRAppearance == nil {
+		r.BodyMaterial == nil && r.BodyAppearance == nil && r.FaceAppearance == nil {
 		return nil
 	}
 	return r
@@ -185,9 +166,6 @@ func applyAssignmentRecipe(assign *AssignmentStore, r *AssignmentRecipe) {
 	assign.bodyMaterial = orEmpty(r.BodyMaterial)
 	assign.bodyAppearance = orEmpty(r.BodyAppearance)
 	assign.faceAppearance = orEmpty(r.FaceAppearance)
-	assign.partOpenPBRAppearance = r.PartOpenPBRAppearance
-	assign.bodyOpenPBRAppearance = orEmpty(r.BodyOpenPBRAppearance)
-	assign.faceOpenPBRAppearance = orEmpty(r.FaceOpenPBRAppearance)
 }
 
 func sortAppearances(in []*Appearance) []*Appearance {

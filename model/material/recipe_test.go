@@ -8,14 +8,19 @@ import (
 	"oblikovati.org/api/types"
 )
 
+// TestRecipeRoundTripEmbedsAssetsAndAssignments: a document-embedded custom appearance
+// and its part/body/face assignments (plus a body material assignment) must all survive
+// a marshal/apply round trip.
 func TestRecipeRoundTripEmbedsAssetsAndAssignments(t *testing.T) {
 	set := NewAssetSet()
 	assign := NewAssignmentStore()
-	set.PutAppearance(NewAppearance("custom-red", SourceDocument, AppearanceSpec{
-		DisplayName: "Custom Red", Albedo: mustColor("#ff0000ff"),
-		Metallic: 0.2, Roughness: 0.5, Emissive: mustColor("#000000ff"), Opacity: 1,
-	}))
-	assign.SetPartAppearance("custom-red")
+	spec := AppearanceSpec{DisplayName: "Custom Copper"}
+	spec.Base.Color = types.NewColor3(0.72, 0.45, 0.2)
+	spec.Base.Weight = 1
+	set.PutAppearance(NewAppearance("custom-copper", SourceDocument, spec))
+	assign.SetPartAppearance("custom-copper")
+	assign.SetBodyAppearance("bodykey", "custom-copper")
+	assign.SetFaceAppearance("facekey", "custom-copper")
 	assign.SetBodyMaterial("bodykey", "steel")
 
 	data := MarshalRecipe(set, assign)
@@ -25,71 +30,29 @@ func TestRecipeRoundTripEmbedsAssetsAndAssignments(t *testing.T) {
 	if err := ApplyRecipe(data, set2, assign2); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
-	a, ok := set2.Appearance("custom-red")
+	a, ok := set2.Appearance("custom-copper")
 	if !ok {
 		t.Fatal("embedded appearance not restored")
 	}
 	if a.Source() != SourceDocument {
 		t.Errorf("restored appearance source = %q, want document", a.Source())
 	}
-	if a.Albedo() != mustColor("#ff0000ff") || a.Metallic() != 0.2 {
-		t.Errorf("restored appearance lost PBR fields: %+v", a.Spec())
+	if a.Base().Color != spec.Base.Color || a.Base().Weight != 1 {
+		t.Errorf("restored appearance lost base fields: %+v", a.Base())
 	}
-	if assign2.PartAppearance() != "custom-red" || assign2.BodyMaterials()["bodykey"] != "steel" {
-		t.Errorf("assignments not restored: part=%q body=%v", assign2.PartAppearance(), assign2.BodyMaterials())
+	if assign2.PartAppearance() != "custom-copper" ||
+		assign2.BodyAppearances()["bodykey"] != "custom-copper" ||
+		assign2.FaceAppearances()["facekey"] != "custom-copper" ||
+		assign2.BodyMaterials()["bodykey"] != "steel" {
+		t.Errorf("assignments not restored: part=%q body=%v face=%v bodyMaterial=%v",
+			assign2.PartAppearance(), assign2.BodyAppearances(), assign2.FaceAppearances(), assign2.BodyMaterials())
 	}
 }
 
 // An un-styled document produces no materials section (empty asset set + no assignments).
 func TestMarshalRecipeEmptyWhenUnstyled(t *testing.T) {
 	data := MarshalRecipe(NewAssetSet(), NewAssignmentStore())
-	if len(data.Appearances) != 0 || len(data.Materials) != 0 || len(data.OpenPBRAppearances) != 0 || data.Assignments != nil {
+	if len(data.Appearances) != 0 || len(data.Materials) != 0 || data.Assignments != nil {
 		t.Errorf("unstyled document produced a non-empty materials recipe: %+v", data)
-	}
-}
-
-// TestRecipeRoundTripEmbedsOpenPBRAssetsAndAssignments mirrors
-// TestRecipeRoundTripEmbedsAssetsAndAssignments for the separate OpenPBRAppearance
-// chain (M45-F05 PBI-350, ADR-0053) — a document-embedded custom appearance and its
-// part/body/face assignments must all survive a marshal/apply round trip.
-func TestRecipeRoundTripEmbedsOpenPBRAssetsAndAssignments(t *testing.T) {
-	set := NewAssetSet()
-	assign := NewAssignmentStore()
-	spec := OpenPBRAppearanceSpec{DisplayName: "Custom Copper"}
-	spec.Base.Color = types.NewColor3(0.72, 0.45, 0.2)
-	spec.Base.Weight = 1
-	set.PutOpenPBRAppearance(NewOpenPBRAppearance("custom-copper", SourceDocument, spec))
-	assign.SetPartOpenPBRAppearance("custom-copper")
-	assign.SetBodyOpenPBRAppearance("bodykey", "custom-copper")
-	assign.SetFaceOpenPBRAppearance("facekey", "custom-copper")
-
-	data := MarshalRecipe(set, assign)
-
-	set2, assign2 := NewAssetSet(), NewAssignmentStore()
-	if err := ApplyRecipe(data, set2, assign2); err != nil {
-		t.Fatalf("ApplyRecipe: %v", err)
-	}
-	a, ok := set2.OpenPBRAppearance("custom-copper")
-	if !ok {
-		t.Fatal("embedded OpenPBR appearance not restored")
-	}
-	if a.Source() != SourceDocument {
-		t.Errorf("restored OpenPBR appearance source = %q, want document", a.Source())
-	}
-	if a.Base().Color != spec.Base.Color || a.Base().Weight != 1 {
-		t.Errorf("restored OpenPBR appearance lost base fields: %+v", a.Base())
-	}
-	if assign2.PartOpenPBRAppearance() != "custom-copper" ||
-		assign2.BodyOpenPBRAppearances()["bodykey"] != "custom-copper" ||
-		assign2.FaceOpenPBRAppearances()["facekey"] != "custom-copper" {
-		t.Errorf("OpenPBR assignments not restored: part=%q body=%v face=%v",
-			assign2.PartOpenPBRAppearance(), assign2.BodyOpenPBRAppearances(), assign2.FaceOpenPBRAppearances())
-	}
-}
-
-func TestRecipeRejectsBadColor(t *testing.T) {
-	data := RecipeData{Appearances: []AppearanceRecipe{{ID: "x", Albedo: "not-a-color"}}}
-	if err := ApplyRecipe(data, NewAssetSet(), NewAssignmentStore()); err == nil {
-		t.Error("ApplyRecipe accepted a malformed color")
 	}
 }
