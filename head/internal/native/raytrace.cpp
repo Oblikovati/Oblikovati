@@ -23,6 +23,10 @@ struct RTFunctions {
     PFN_vkDestroyAccelerationStructureKHR destroy = nullptr;
     PFN_vkCmdBuildAccelerationStructuresKHR cmdBuild = nullptr;
     PFN_vkGetAccelerationStructureDeviceAddressKHR getDeviceAddress = nullptr;
+    // Full RT pipeline (PBI-345) — also extension-only entry points.
+    PFN_vkCreateRayTracingPipelinesKHR createRTPipeline = nullptr;
+    PFN_vkGetRayTracingShaderGroupHandlesKHR getShaderGroupHandles = nullptr;
+    PFN_vkCmdTraceRaysKHR cmdTraceRays = nullptr;
 };
 
 RTFunctions g_rtFn;
@@ -40,6 +44,11 @@ void rt_load_functions(VkDevice device) {
         device, "vkCmdBuildAccelerationStructuresKHR");
     g_rtFn.getDeviceAddress = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetDeviceProcAddr(
         device, "vkGetAccelerationStructureDeviceAddressKHR");
+    g_rtFn.createRTPipeline =
+        (PFN_vkCreateRayTracingPipelinesKHR)vkGetDeviceProcAddr(device, "vkCreateRayTracingPipelinesKHR");
+    g_rtFn.getShaderGroupHandles = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetDeviceProcAddr(
+        device, "vkGetRayTracingShaderGroupHandlesKHR");
+    g_rtFn.cmdTraceRays = (PFN_vkCmdTraceRaysKHR)vkGetDeviceProcAddr(device, "vkCmdTraceRaysKHR");
     g_rtFnLoaded = true;
 }
 
@@ -69,14 +78,27 @@ struct RTScene {
     RTBuffer instanceBuf;
     RTBuffer tlasBuffer;
     VkAccelerationStructureKHR tlas = VK_NULL_HANDLE;
-    VkDescriptorSetLayout dsLayout = VK_NULL_HANDLE;
-    VkPipelineLayout pipeLayout = VK_NULL_HANDLE;
-    VkPipeline pipeline = VK_NULL_HANDLE;
-    VkDescriptorPool descPool = VK_NULL_HANDLE;
-    VkDescriptorSet descSet = VK_NULL_HANDLE;
+    // Ray-query compute pipeline (PBI-333's single-TraceRay-call Intersector).
+    VkDescriptorSetLayout rqDsLayout = VK_NULL_HANDLE;
+    VkPipelineLayout rqPipeLayout = VK_NULL_HANDLE;
+    VkPipeline rqPipeline = VK_NULL_HANDLE;
+    VkDescriptorPool rqDescPool = VK_NULL_HANDLE;
+    VkDescriptorSet rqDescSet = VK_NULL_HANDLE;
     RTBuffer rayParamsBuf;
     RTBuffer resultBuf;
     bool built = false;
+
+    // Full RT pipeline (PBI-345's ray-gen/closest-hit/miss single-bounce harness) —
+    // separate from the ray-query pipeline above; both can coexist on one scene.
+    VkDescriptorSetLayout pipeDsLayout = VK_NULL_HANDLE;
+    VkPipelineLayout pipePipeLayout = VK_NULL_HANDLE;
+    VkPipeline pipePipeline = VK_NULL_HANDLE;
+    VkDescriptorPool pipeDescPool = VK_NULL_HANDLE;
+    VkDescriptorSet pipeDescSet = VK_NULL_HANDLE;
+    RTBuffer sbtBuf;
+    RTBuffer pipeCamBuf, pipeOutputBuf, pipeParamsBuf;
+    uint32_t sbtHandleSize = 0, sbtHandleAlignment = 0, sbtBaseAlignment = 0;
+    bool pipelineBuilt = false;
 };
 
 namespace {
@@ -240,13 +262,13 @@ bool rt_create_compute_pipeline(RTScene* s, const uint32_t* spv, int spvLen) {
     dslInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     dslInfo.bindingCount = 3;
     dslInfo.pBindings = bindings;
-    if (!ok(vkCreateDescriptorSetLayout(c->device, &dslInfo, c->allocator, &s->dsLayout))) return false;
+    if (!ok(vkCreateDescriptorSetLayout(c->device, &dslInfo, c->allocator, &s->rqDsLayout))) return false;
 
     VkPipelineLayoutCreateInfo plInfo{};
     plInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     plInfo.setLayoutCount = 1;
-    plInfo.pSetLayouts = &s->dsLayout;
-    if (!ok(vkCreatePipelineLayout(c->device, &plInfo, c->allocator, &s->pipeLayout))) return false;
+    plInfo.pSetLayouts = &s->rqDsLayout;
+    if (!ok(vkCreatePipelineLayout(c->device, &plInfo, c->allocator, &s->rqPipeLayout))) return false;
 
     VkShaderModuleCreateInfo smInfo{};
     smInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -263,14 +285,14 @@ bool rt_create_compute_pipeline(RTScene* s, const uint32_t* spv, int spvLen) {
     VkComputePipelineCreateInfo pInfo{};
     pInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
     pInfo.stage = stage;
-    pInfo.layout = s->pipeLayout;
+    pInfo.layout = s->rqPipeLayout;
     // Known false positive (verified against real RADV hardware, M45-F01 PBI-333): the
     // Khronos validation layer's SPIR-V capability table doesn't yet recognize
     // RayQueryPositionFetchKHR and reports "Unhandled OpCapability" here — this is a
     // validation-layer database gap, not a driver rejection. Pipeline creation still
     // returns VK_SUCCESS and the shader dispatches correctly (TestRTSceneMatchesCPUOracle
     // cross-checks hit results against renderer.FakeIntersector on live hardware).
-    VkResult pipeResult = vkCreateComputePipelines(c->device, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &s->pipeline);
+    VkResult pipeResult = vkCreateComputePipelines(c->device, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &s->rqPipeline);
     vkDestroyShaderModule(c->device, shader, c->allocator);
     if (!ok(pipeResult)) return false;
 
@@ -284,14 +306,14 @@ bool rt_create_compute_pipeline(RTScene* s, const uint32_t* spv, int spvLen) {
     poolInfo.maxSets = 1;
     poolInfo.poolSizeCount = 3;
     poolInfo.pPoolSizes = poolSizes;
-    if (!ok(vkCreateDescriptorPool(c->device, &poolInfo, c->allocator, &s->descPool))) return false;
+    if (!ok(vkCreateDescriptorPool(c->device, &poolInfo, c->allocator, &s->rqDescPool))) return false;
 
     VkDescriptorSetAllocateInfo dsAlloc{};
     dsAlloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    dsAlloc.descriptorPool = s->descPool;
+    dsAlloc.descriptorPool = s->rqDescPool;
     dsAlloc.descriptorSetCount = 1;
-    dsAlloc.pSetLayouts = &s->dsLayout;
-    if (!ok(vkAllocateDescriptorSets(c->device, &dsAlloc, &s->descSet))) return false;
+    dsAlloc.pSetLayouts = &s->rqDsLayout;
+    if (!ok(vkAllocateDescriptorSets(c->device, &dsAlloc, &s->rqDescSet))) return false;
 
     // RayParams: vec3 origin, float tMin, vec3 direction, float tMax — std140, 32 bytes.
     rt_create_buffer(c, &s->rayParamsBuf, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -311,11 +333,11 @@ bool rt_create_compute_pipeline(RTScene* s, const uint32_t* spv, int spvLen) {
     VkDescriptorBufferInfo rayInfo{s->rayParamsBuf.buffer, 0, 32};
     VkDescriptorBufferInfo resInfo{s->resultBuf.buffer, 0, 64};
     VkWriteDescriptorSet writes[3]{};
-    writes[0] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, &asWrite, s->descSet, 0, 0, 1,
+    writes[0] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, &asWrite, s->rqDescSet, 0, 0, 1,
                 VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, nullptr, nullptr, nullptr};
-    writes[1] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->descSet, 1, 0, 1,
+    writes[1] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->rqDescSet, 1, 0, 1,
                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &rayInfo, nullptr};
-    writes[2] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->descSet, 2, 0, 1,
+    writes[2] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->rqDescSet, 2, 0, 1,
                 VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &resInfo, nullptr};
     vkUpdateDescriptorSets(c->device, 3, writes, 0, nullptr);
     return true;
@@ -439,8 +461,8 @@ void obk_rt_scene_trace(void* scene, float ox, float oy, float oz, float dx, flo
     std::memcpy(s->rayParamsBuf.mapped, rayParams, sizeof(rayParams));
 
     rt_run_commands(s, [&](VkCommandBuffer cmd) {
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->pipeline);
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->pipeLayout, 0, 1, &s->descSet, 0, nullptr);
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->rqPipeline);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->rqPipeLayout, 0, 1, &s->rqDescSet, 0, nullptr);
         vkCmdDispatch(cmd, 1, 1, 1);
         VkMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
@@ -478,17 +500,242 @@ void obk_rt_scene_trace(void* scene, float ox, float oy, float oz, float dx, flo
     if (primitiveID) *primitiveID = r->primitiveID;
 }
 
+namespace {
+
+VkDeviceSize align_up(VkDeviceSize v, VkDeviceSize a) { return (v + a - 1) / a * a; }
+
+VkShaderModule rt_load_shader(HeadContext* c, const uint32_t* spv, int spvLen) {
+    VkShaderModuleCreateInfo smInfo{};
+    smInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    smInfo.codeSize = (size_t)spvLen;
+    smInfo.pCode = spv;
+    VkShaderModule shader = VK_NULL_HANDLE;
+    vkCreateShaderModule(c->device, &smInfo, c->allocator, &shader);
+    return shader;
+}
+
+} // namespace
+
+int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLen, const uint32_t* missSpv,
+                                int missLen, const uint32_t* shadowMissSpv, int shadowMissLen,
+                                const uint32_t* chitSpv, int chitLen) {
+    RTScene* s = (RTScene*)scene;
+    if (!s || !s->built || s->pipelineBuilt || !s->ctx->hwRayTracingPipeline) return 1;
+    HeadContext* c = s->ctx;
+
+    VkDescriptorSetLayoutBinding bindings[4]{};
+    bindings[0] = {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1,
+                  VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr};
+    bindings[1] = {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr};
+    bindings[2] = {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr};
+    bindings[3] = {3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr};
+    VkDescriptorSetLayoutCreateInfo dslInfo{};
+    dslInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    dslInfo.bindingCount = 4;
+    dslInfo.pBindings = bindings;
+    if (!ok(vkCreateDescriptorSetLayout(c->device, &dslInfo, c->allocator, &s->pipeDsLayout))) return 1;
+
+    VkPipelineLayoutCreateInfo plInfo{};
+    plInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    plInfo.setLayoutCount = 1;
+    plInfo.pSetLayouts = &s->pipeDsLayout;
+    if (!ok(vkCreatePipelineLayout(c->device, &plInfo, c->allocator, &s->pipePipeLayout))) return 1;
+
+    VkShaderModule rgen = rt_load_shader(c, rgenSpv, rgenLen);
+    VkShaderModule miss = rt_load_shader(c, missSpv, missLen);
+    VkShaderModule shadowMiss = rt_load_shader(c, shadowMissSpv, shadowMissLen);
+    VkShaderModule chit = rt_load_shader(c, chitSpv, chitLen);
+    if (!rgen || !miss || !shadowMiss || !chit) return 1;
+
+    VkPipelineShaderStageCreateInfo stages[4]{};
+    stages[0] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
+                VK_SHADER_STAGE_RAYGEN_BIT_KHR,      rgen,       "main", nullptr};
+    stages[1] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
+                VK_SHADER_STAGE_MISS_BIT_KHR,        miss,       "main", nullptr};
+    stages[2] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
+                VK_SHADER_STAGE_MISS_BIT_KHR,        shadowMiss, "main", nullptr};
+    stages[3] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
+                VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, chit,       "main", nullptr};
+
+    // Group indices mirror stages[] 1:1 for the two GENERAL (raygen/miss) groups; the
+    // hit group is its own (4th) group referencing stage index 3 as its closest-hit.
+    VkRayTracingShaderGroupCreateInfoKHR groups[4]{};
+    for (int i = 0; i < 3; i++) {
+        groups[i].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        groups[i].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+        groups[i].generalShader = (uint32_t)i;
+        groups[i].closestHitShader = VK_SHADER_UNUSED_KHR;
+        groups[i].anyHitShader = VK_SHADER_UNUSED_KHR;
+        groups[i].intersectionShader = VK_SHADER_UNUSED_KHR;
+    }
+    groups[3].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+    groups[3].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+    groups[3].generalShader = VK_SHADER_UNUSED_KHR;
+    groups[3].closestHitShader = 3;
+    // Opaque geometry (VK_GEOMETRY_OPAQUE_BIT_KHR on every BLAS, obk_rt_scene_add_mesh)
+    // never invokes any-hit, so this harness has none — the "any-hit" part of PBI-345's
+    // scope is trivially satisfied by opaque-only geometry, same as raytrace.comp's
+    // ray-query path; an alpha-cutout material would need a real any-hit shader here.
+    groups[3].anyHitShader = VK_SHADER_UNUSED_KHR;
+    groups[3].intersectionShader = VK_SHADER_UNUSED_KHR;
+
+    VkRayTracingPipelineCreateInfoKHR pInfo{};
+    pInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+    pInfo.stageCount = 4;
+    pInfo.pStages = stages;
+    pInfo.groupCount = 4;
+    pInfo.pGroups = groups;
+    pInfo.maxPipelineRayRecursionDepth = 2; // primary ray + one shadow ray traced from within it
+    pInfo.layout = s->pipePipeLayout;
+    VkResult pipeResult =
+        g_rtFn.createRTPipeline(c->device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &s->pipePipeline);
+    vkDestroyShaderModule(c->device, rgen, c->allocator);
+    vkDestroyShaderModule(c->device, miss, c->allocator);
+    vkDestroyShaderModule(c->device, shadowMiss, c->allocator);
+    vkDestroyShaderModule(c->device, chit, c->allocator);
+    if (!ok(pipeResult)) return 1;
+
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtProps{};
+    rtProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+    VkPhysicalDeviceProperties2 props2{};
+    props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    props2.pNext = &rtProps;
+    vkGetPhysicalDeviceProperties2(c->physical, &props2);
+    s->sbtHandleSize = rtProps.shaderGroupHandleSize;
+    s->sbtHandleAlignment = rtProps.shaderGroupHandleAlignment;
+    s->sbtBaseAlignment = rtProps.shaderGroupBaseAlignment;
+
+    std::vector<uint8_t> handles(4 * (size_t)s->sbtHandleSize);
+    if (!ok(g_rtFn.getShaderGroupHandles(c->device, s->pipePipeline, 0, 4, handles.size(), handles.data())))
+        return 1;
+
+    VkDeviceSize entryStride = align_up(s->sbtHandleSize, s->sbtHandleAlignment);
+    VkDeviceSize raygenOffset = 0;
+    VkDeviceSize missOffset = align_up(raygenOffset + entryStride, s->sbtBaseAlignment);
+    VkDeviceSize hitOffset = align_up(missOffset + 2 * entryStride, s->sbtBaseAlignment);
+    VkDeviceSize sbtSize = align_up(hitOffset + entryStride, s->sbtBaseAlignment);
+
+    std::vector<uint8_t> sbtData(sbtSize, 0);
+    std::memcpy(sbtData.data() + raygenOffset, handles.data() + 0 * s->sbtHandleSize, s->sbtHandleSize);
+    std::memcpy(sbtData.data() + missOffset, handles.data() + 1 * s->sbtHandleSize, s->sbtHandleSize);
+    std::memcpy(sbtData.data() + missOffset + entryStride, handles.data() + 2 * s->sbtHandleSize, s->sbtHandleSize);
+    std::memcpy(sbtData.data() + hitOffset, handles.data() + 3 * s->sbtHandleSize, s->sbtHandleSize);
+
+    if (!rt_upload_buffer(c, &s->sbtBuf,
+                          VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                          sbtData.data(), sbtSize))
+        return 1;
+
+    rt_create_buffer(c, &s->pipeCamBuf, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 32);
+    vkMapMemory(c->device, s->pipeCamBuf.memory, 0, 32, 0, &s->pipeCamBuf.mapped);
+    rt_create_buffer(c, &s->pipeParamsBuf, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 64);
+    vkMapMemory(c->device, s->pipeParamsBuf.memory, 0, 64, 0, &s->pipeParamsBuf.mapped);
+    rt_create_buffer(c, &s->pipeOutputBuf, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 16);
+    vkMapMemory(c->device, s->pipeOutputBuf.memory, 0, 16, 0, &s->pipeOutputBuf.mapped);
+
+    VkDescriptorPoolSize poolSizes[3] = {
+        {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
+        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1},
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
+    };
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.maxSets = 1;
+    poolInfo.poolSizeCount = 3;
+    poolInfo.pPoolSizes = poolSizes;
+    if (!ok(vkCreateDescriptorPool(c->device, &poolInfo, c->allocator, &s->pipeDescPool))) return 1;
+
+    VkDescriptorSetAllocateInfo dsAlloc{};
+    dsAlloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    dsAlloc.descriptorPool = s->pipeDescPool;
+    dsAlloc.descriptorSetCount = 1;
+    dsAlloc.pSetLayouts = &s->pipeDsLayout;
+    if (!ok(vkAllocateDescriptorSets(c->device, &dsAlloc, &s->pipeDescSet))) return 1;
+
+    VkWriteDescriptorSetAccelerationStructureKHR asWrite{};
+    asWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+    asWrite.accelerationStructureCount = 1;
+    asWrite.pAccelerationStructures = &s->tlas;
+    VkDescriptorBufferInfo outInfo{s->pipeOutputBuf.buffer, 0, 16};
+    VkDescriptorBufferInfo camInfo{s->pipeCamBuf.buffer, 0, 32};
+    VkDescriptorBufferInfo paramInfo{s->pipeParamsBuf.buffer, 0, 64};
+    VkWriteDescriptorSet writes[4]{};
+    writes[0] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, &asWrite, s->pipeDescSet, 0, 0, 1,
+                VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, nullptr, nullptr, nullptr};
+    writes[1] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->pipeDescSet, 1, 0, 1,
+                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &outInfo, nullptr};
+    writes[2] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->pipeDescSet, 2, 0, 1,
+                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &camInfo, nullptr};
+    writes[3] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->pipeDescSet, 3, 0, 1,
+                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &paramInfo, nullptr};
+    vkUpdateDescriptorSets(c->device, 4, writes, 0, nullptr);
+
+    s->pipelineBuilt = true;
+    return 0;
+}
+
+void obk_rt_scene_trace_pipeline(void* scene, float ox, float oy, float oz, float dx, float dy, float dz,
+                                 float tMin, float tMax, const float* params, float* outR, float* outG,
+                                 float* outB) {
+    RTScene* s = (RTScene*)scene;
+    if (!s || !s->pipelineBuilt) return;
+    HeadContext* c = s->ctx;
+
+    float camParams[8] = {ox, oy, oz, tMin, dx, dy, dz, tMax};
+    std::memcpy(s->pipeCamBuf.mapped, camParams, sizeof(camParams));
+    std::memcpy(s->pipeParamsBuf.mapped, params, 16 * sizeof(float));
+
+    VkDeviceAddress sbtBase = s->sbtBuf.address;
+    VkDeviceSize entryStride = align_up(s->sbtHandleSize, s->sbtHandleAlignment);
+    VkDeviceSize missOffset = align_up(entryStride, s->sbtBaseAlignment);
+    VkDeviceSize hitOffset = align_up(missOffset + 2 * entryStride, s->sbtBaseAlignment);
+
+    VkStridedDeviceAddressRegionKHR raygenRegion{sbtBase + 0, entryStride, entryStride};
+    VkStridedDeviceAddressRegionKHR missRegion{sbtBase + missOffset, entryStride, 2 * entryStride};
+    VkStridedDeviceAddressRegionKHR hitRegion{sbtBase + hitOffset, entryStride, entryStride};
+    VkStridedDeviceAddressRegionKHR callableRegion{};
+
+    rt_run_commands(s, [&](VkCommandBuffer cmd) {
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->pipePipeline);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->pipePipeLayout, 0, 1,
+                                &s->pipeDescSet, 0, nullptr);
+        g_rtFn.cmdTraceRays(cmd, &raygenRegion, &missRegion, &hitRegion, &callableRegion, 1, 1, 1);
+        VkMemoryBarrier barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+        barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_PIPELINE_STAGE_HOST_BIT, 0, 1,
+                             &barrier, 0, nullptr, 0, nullptr);
+    });
+
+    auto* out = reinterpret_cast<float*>(s->pipeOutputBuf.mapped);
+    if (outR) *outR = out[0];
+    if (outG) *outG = out[1];
+    if (outB) *outB = out[2];
+}
+
 void obk_rt_scene_destroy(void* scene) {
     RTScene* s = (RTScene*)scene;
     if (!s) return;
     HeadContext* c = s->ctx;
     vkDeviceWaitIdle(c->device);
-    if (s->pipeline) vkDestroyPipeline(c->device, s->pipeline, c->allocator);
-    if (s->pipeLayout) vkDestroyPipelineLayout(c->device, s->pipeLayout, c->allocator);
-    if (s->dsLayout) vkDestroyDescriptorSetLayout(c->device, s->dsLayout, c->allocator);
-    if (s->descPool) vkDestroyDescriptorPool(c->device, s->descPool, c->allocator);
+    if (s->rqPipeline) vkDestroyPipeline(c->device, s->rqPipeline, c->allocator);
+    if (s->rqPipeLayout) vkDestroyPipelineLayout(c->device, s->rqPipeLayout, c->allocator);
+    if (s->rqDsLayout) vkDestroyDescriptorSetLayout(c->device, s->rqDsLayout, c->allocator);
+    if (s->rqDescPool) vkDestroyDescriptorPool(c->device, s->rqDescPool, c->allocator);
     rt_destroy_buffer(c, &s->rayParamsBuf);
     rt_destroy_buffer(c, &s->resultBuf);
+    if (s->pipePipeline) vkDestroyPipeline(c->device, s->pipePipeline, c->allocator);
+    if (s->pipePipeLayout) vkDestroyPipelineLayout(c->device, s->pipePipeLayout, c->allocator);
+    if (s->pipeDsLayout) vkDestroyDescriptorSetLayout(c->device, s->pipeDsLayout, c->allocator);
+    if (s->pipeDescPool) vkDestroyDescriptorPool(c->device, s->pipeDescPool, c->allocator);
+    rt_destroy_buffer(c, &s->sbtBuf);
+    rt_destroy_buffer(c, &s->pipeCamBuf);
+    rt_destroy_buffer(c, &s->pipeOutputBuf);
+    rt_destroy_buffer(c, &s->pipeParamsBuf);
     if (s->tlas) g_rtFn.destroy(c->device, s->tlas, c->allocator);
     rt_destroy_buffer(c, &s->tlasBuffer);
     rt_destroy_buffer(c, &s->instanceBuf);

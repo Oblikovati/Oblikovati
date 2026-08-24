@@ -133,34 +133,57 @@ bool create_device(HeadContext* c) {
     VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR posFetchFeatures{};
     posFetchFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR;
     posFetchFeatures.pNext = &rqFeatures;
+    // The full RT pipeline (ray-gen/closest-hit/any-hit/miss shader stages + shader
+    // binding table, M45-F04 PBI-345) is a SEPARATE extension from ray query
+    // (VK_KHR_ray_tracing_pipeline vs VK_KHR_ray_query) — PBI-333's hardware Intersector
+    // uses ray query only, so this wasn't needed until now.
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtPipelineFeatures{};
+    rtPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+    rtPipelineFeatures.pNext = &posFetchFeatures;
     VkPhysicalDeviceFeatures2 features2{};
     features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    features2.pNext = &posFetchFeatures;
+    features2.pNext = &rtPipelineFeatures;
     features2.features = feats;
 
     bool rtExtsPresent = device_has_ext(c->physical, "VK_KHR_acceleration_structure") &&
                          device_has_ext(c->physical, "VK_KHR_ray_query") &&
                          device_has_ext(c->physical, "VK_KHR_deferred_host_operations");
     bool posFetchExtPresent = device_has_ext(c->physical, "VK_KHR_ray_tracing_position_fetch");
+    bool rtPipelineExtPresent = device_has_ext(c->physical, "VK_KHR_ray_tracing_pipeline");
     if (rtExtsPresent) vkGetPhysicalDeviceFeatures2(c->physical, &features2);
     c->hwRayTracingAvailable = rtExtsPresent && asFeatures.accelerationStructure &&
                                rqFeatures.rayQuery && bdaFeatures.bufferDeviceAddress;
     c->hwRayTracingPositionFetch = c->hwRayTracingAvailable && posFetchExtPresent &&
                                    posFetchFeatures.rayTracingPositionFetch;
+    c->hwRayTracingPipeline = c->hwRayTracingAvailable && rtPipelineExtPresent &&
+                              rtPipelineFeatures.rayTracingPipeline;
     if (c->hwRayTracingAvailable) {
         dev_ext.push_back("VK_KHR_acceleration_structure");
         dev_ext.push_back("VK_KHR_ray_query");
         dev_ext.push_back("VK_KHR_deferred_host_operations");
         dev_ext.push_back("VK_KHR_buffer_device_address");
+        // A *FeaturesKHR struct in vkCreateDevice's pNext requires its extension to be
+        // enabled (unlike a read-only vkGetPhysicalDeviceFeatures2 query, where the
+        // chain above is always legal), so the CREATION chain is assembled fresh here —
+        // every link set explicitly — rather than reused from the query chain above.
+        // Reusing it by mutating one link (an earlier version of this code) left
+        // posFetchFeatures.pNext pointing at its ORIGINAL target (rqFeatures) instead of
+        // nullptr, closing the chain into a cycle that hung vkCreateDevice forever.
+        asFeatures.pNext = &bdaFeatures;
+        rqFeatures.pNext = &asFeatures;
+        VkBaseOutStructure* chainTail = (VkBaseOutStructure*)&rqFeatures;
+        if (c->hwRayTracingPipeline) {
+            dev_ext.push_back("VK_KHR_ray_tracing_pipeline");
+            rtPipelineFeatures.pNext = nullptr;
+            chainTail->pNext = (VkBaseOutStructure*)&rtPipelineFeatures;
+            chainTail = (VkBaseOutStructure*)&rtPipelineFeatures;
+        }
         if (c->hwRayTracingPositionFetch) {
             dev_ext.push_back("VK_KHR_ray_tracing_position_fetch");
-        } else {
-            // A *FeaturesKHR struct in vkCreateDevice's pNext requires its extension to
-            // be enabled (unlike a read-only vkGetPhysicalDeviceFeatures2 query, where
-            // the chain above is always legal) — splice posFetchFeatures back out of
-            // the CREATION chain when its extension isn't going to be enabled.
-            features2.pNext = &rqFeatures;
+            posFetchFeatures.pNext = nullptr;
+            chainTail->pNext = (VkBaseOutStructure*)&posFetchFeatures;
         }
+        features2.pNext = &rqFeatures;
     } else {
         // Nothing in features2's pNext chain will be enabled; drop it so an unsupported
         // device's vkCreateDevice doesn't reference dangling feature-request structs.

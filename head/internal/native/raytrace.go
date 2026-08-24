@@ -16,6 +16,13 @@ void  obk_rt_scene_trace(void* scene, float ox, float oy, float oz, float dx, fl
                          float tMin, float tMax, int* hit, float* t, float* px, float* py, float* pz,
                          float* nx, float* ny, float* nz, uint32_t* instanceID, uint32_t* primitiveID);
 void  obk_rt_scene_destroy(void* scene);
+
+int  obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLen, const uint32_t* missSpv,
+                                 int missLen, const uint32_t* shadowMissSpv, int shadowMissLen,
+                                 const uint32_t* chitSpv, int chitLen);
+void obk_rt_scene_trace_pipeline(void* scene, float ox, float oy, float oz, float dx, float dy, float dz,
+                                 float tMin, float tMax, const float* params, float* outR, float* outG,
+                                 float* outB);
 */
 import "C"
 
@@ -104,6 +111,56 @@ func (s *RTScene) Trace(origin, direction [3]float32, tMin, tMax float32) RTHit 
 		InstanceID:  uint32(cInstanceID),
 		PrimitiveID: uint32(cPrimitiveID),
 	}
+}
+
+// PipelineParams is pathtrace.rchit's Params UBO, laid out exactly (M45-F04 PBI-345):
+// 16 float32 in this field order, matching the shader's std140 struct byte-for-byte
+// (see raytrace.h's doc comment) — Pad0/Pad1 exist only to keep vec3 members aligned to
+// 16 bytes and are never read by the shader.
+type PipelineParams struct {
+	LightPos                                            [3]float32
+	LightIntensity                                      float32
+	LightColor                                          [3]float32
+	Pad0                                                float32
+	BaseColor                                           [3]float32
+	BaseWeight                                          float32
+	SpecularRoughness, SpecularIOR, BaseMetalness, Pad1 float32
+}
+
+func (p PipelineParams) floats() [16]float32 {
+	return [16]float32{
+		p.LightPos[0], p.LightPos[1], p.LightPos[2], p.LightIntensity,
+		p.LightColor[0], p.LightColor[1], p.LightColor[2], p.Pad0,
+		p.BaseColor[0], p.BaseColor[1], p.BaseColor[2], p.BaseWeight,
+		p.SpecularRoughness, p.SpecularIOR, p.BaseMetalness, p.Pad1,
+	}
+}
+
+// BuildPipeline creates the ray-gen/miss/shadow-miss/closest-hit shader binding table
+// and pipeline over the SAME BLAS/TLAS Build already created — call after Build.
+func (s *RTScene) BuildPipeline(rgen, miss, shadowMiss, chit []byte) error {
+	rc := C.obk_rt_scene_build_pipeline(s.handle,
+		(*C.uint32_t)(unsafe.Pointer(unsafe.SliceData(rgen))), C.int(len(rgen)),
+		(*C.uint32_t)(unsafe.Pointer(unsafe.SliceData(miss))), C.int(len(miss)),
+		(*C.uint32_t)(unsafe.Pointer(unsafe.SliceData(shadowMiss))), C.int(len(shadowMiss)),
+		(*C.uint32_t)(unsafe.Pointer(unsafe.SliceData(chit))), C.int(len(chit)))
+	if rc != 0 {
+		return errors.New("native: RTScene.BuildPipeline failed (see stderr)")
+	}
+	return nil
+}
+
+// TracePipeline dispatches one vkCmdTraceRaysKHR call (a single ray) through the full
+// RT pipeline and returns the resulting single-bounce direct-lighting radiance.
+func (s *RTScene) TracePipeline(origin, direction [3]float32, tMin, tMax float32, params PipelineParams) (r, g, b float32) {
+	pf := params.floats()
+	var cR, cG, cB C.float
+	C.obk_rt_scene_trace_pipeline(s.handle,
+		C.float(origin[0]), C.float(origin[1]), C.float(origin[2]),
+		C.float(direction[0]), C.float(direction[1]), C.float(direction[2]),
+		C.float(tMin), C.float(tMax),
+		(*C.float)(unsafe.Pointer(&pf[0])), &cR, &cG, &cB)
+	return float32(cR), float32(cG), float32(cB)
 }
 
 // Destroy frees every Vulkan resource the scene owns.

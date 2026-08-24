@@ -39,6 +39,10 @@ struct HeadContext {
     // (only meaningful when hwRayTracingAvailable) — lets the ray-query compute shader
     // fetch a hit triangle's vertex positions directly for the geometric normal.
     bool                     hwRayTracingPositionFetch = false;
+    // hwRayTracingPipeline additionally requires VK_KHR_ray_tracing_pipeline (M45-F04
+    // PBI-345) — the full ray-gen/closest-hit/any-hit/miss shader-stage pipeline, a
+    // separate device extension from ray query (which PBI-333's Intersector uses).
+    bool                     hwRayTracingPipeline = false;
 };
 
 // Pick a memory type index satisfying type_bits and props, or UINT32_MAX. Shared by

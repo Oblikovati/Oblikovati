@@ -39,4 +39,25 @@ void obk_rt_scene_trace(void* scene, float ox, float oy, float oz, float dx, flo
 
 void obk_rt_scene_destroy(void* scene);
 
+// --- Full RT pipeline (M45-F04 PBI-345): ray-gen/closest-hit/miss over the SAME
+// BLAS/TLAS obk_rt_scene_build already built — a second query path alongside the
+// ray-query compute shader (PBI-333), not a replacement for it. Call after
+// obk_rt_scene_build.
+
+// obk_rt_scene_build_pipeline creates the ray-gen/miss/shadow-miss/closest-hit shader
+// binding table and pipeline from the caller-supplied SPIR-V (embedded Go-side). Returns
+// 0 on success.
+int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLen, const uint32_t* missSpv,
+                                int missLen, const uint32_t* shadowMissSpv, int shadowMissLen,
+                                const uint32_t* chitSpv, int chitLen);
+
+// obk_rt_scene_trace_pipeline dispatches one vkCmdTraceRaysKHR call (a single ray) and
+// reads back the resulting single-bounce direct-lighting radiance. params is the 16
+// floats matching pathtrace.rchit's Params UBO exactly: [lightPos.xyz, lightIntensity,
+// lightColor.rgb, pad, baseColor.rgb, baseWeight, specularRoughness, specularIOR,
+// baseMetalness, pad].
+void obk_rt_scene_trace_pipeline(void* scene, float ox, float oy, float oz, float dx, float dy, float dz,
+                                 float tMin, float tMax, const float* params, float* outR, float* outG,
+                                 float* outB);
+
 } // extern "C"

@@ -52,3 +52,19 @@ var raytraceCompSPV []byte
 //
 //go:embed shaders/swtrace.comp.spv
 var swtraceCompSPV []byte
+
+// Full hardware RT pipeline: ray-gen/miss/shadow-miss/closest-hit (M45-F04 PBI-345,
+// ADR-0053) — a single-bounce, single-light direct-lighting harness wiring the F03
+// OpenPBR GLSL library to the F01 hardware backend's acceleration structures.
+
+//go:embed shaders/pathtrace.rgen.spv
+var pathtraceRgenSPV []byte
+
+//go:embed shaders/pathtrace.rmiss.spv
+var pathtraceRmissSPV []byte
+
+//go:embed shaders/shadow.rmiss.spv
+var shadowRmissSPV []byte
+
+//go:embed shaders/pathtrace.rchit.spv
+var pathtraceRchitSPV []byte
