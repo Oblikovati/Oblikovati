@@ -68,6 +68,18 @@ func SegSegCross(a, b, c, d Point, axis int) Point {
 	return lerpPoint(a, b, t)
 }
 
+// segmentsProperlyCross reports whether segments ab and cd cross transversally in
+// the projection: each segment strictly straddles the other's supporting line, so
+// the crossing is strictly interior to both. Shared or on-line endpoints (a zero
+// orientation) are not proper crossings.
+func segmentsProperlyCross(a, b, c, d Point, axis int) bool {
+	s1 := orient2(a, b, c, axis)
+	s2 := orient2(a, b, d, axis)
+	s3 := orient2(c, d, a, axis)
+	s4 := orient2(c, d, b, axis)
+	return s1 != 0 && s2 != 0 && s1 != s2 && s3 != 0 && s4 != 0 && s3 != s4
+}
+
 // lerpPoint returns the exact 3D point a + t*(b-a).
 func lerpPoint(a, b Point, t *big.Rat) Point {
 	return Point{

@@ -66,7 +66,7 @@ func TestSegSegCrossExact(t *testing.T) {
 			a, b, c, d = flatPt(r), flatPt(r), flatPt(r), flatPt(r)
 		}
 		const axis = 2 // both families project non-degenerately by dropping z
-		if !properlyCross(a, b, c, d, axis) {
+		if !segmentsProperlyCross(a, b, c, d, axis) {
 			continue
 		}
 		x := SegSegCross(a, b, c, d, axis)
@@ -101,16 +101,6 @@ func projF(p [3]float64, axis int) (u, v float64) {
 	default:
 		return p[0], p[1]
 	}
-}
-
-// properlyCross reports whether segments ab and cd straddle each other's lines in
-// the projection — the SegSegCross precondition plus the symmetric condition.
-func properlyCross(a, b, c, d Point, axis int) bool {
-	s1 := orient2(c, d, a, axis)
-	s2 := orient2(c, d, b, axis)
-	s3 := orient2(a, b, c, axis)
-	s4 := orient2(a, b, d, axis)
-	return s1 != 0 && s2 != 0 && s1 != s2 && s3 != 0 && s4 != 0 && s3 != s4
 }
 
 // flatPt is a point in the z=0 plane with small integer coordinates.

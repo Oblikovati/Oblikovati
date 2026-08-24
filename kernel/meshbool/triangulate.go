@@ -28,12 +28,20 @@ type Triangulation struct {
 	axis  int
 }
 
-// NewTriangulation starts from a single non-degenerate triangle.
+// NewTriangulation starts from a single non-degenerate triangle, stored CCW in the
+// projection. Keeping every triangle CCW is a standing invariant: it lets
+// constraint-edge cavities be re-triangulated (via CCW ear clipping) without an
+// orientation seam against the rest of the mesh.
 func NewTriangulation(t [3]Point) *Triangulation {
+	axis := planeAxis(t)
+	tri := [3]int{0, 1, 2}
+	if orient2(t[0], t[1], t[2], axis) < 0 {
+		tri = [3]int{0, 2, 1} // normalize to CCW
+	}
 	return &Triangulation{
 		verts: []Point{t[0], t[1], t[2]},
-		tris:  [][3]int{{0, 1, 2}},
-		axis:  planeAxis(t),
+		tris:  [][3]int{tri},
+		axis:  axis,
 	}
 }
 
