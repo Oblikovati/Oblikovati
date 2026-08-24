@@ -87,6 +87,21 @@ func TestBooleanViaMeshboolBoxes(t *testing.T) {
 	}
 }
 
+// TestBooleanViaMeshboolCoplanar drives the coplanar-keep + face-merge path through
+// the full brep adapter: two boxes overlapping only in x share coincident
+// top/bottom/front/back faces. The union must be a valid solid of volume 12.
+func TestBooleanViaMeshboolCoplanar(t *testing.T) {
+	a := subd.ToBody(subd.Box(2, 2, 2), "a")
+	b := boxBodyAt(2, 2, 2, math.V3(1, 0, 0), "b")
+	res := booleanViaMeshbool(a, b, meshbool.Union, PropertyQuality(), "op")
+	if !res.IsSolid() || !Validate(res).Valid {
+		t.Fatal("coplanar union is not a valid solid")
+	}
+	if v := soupVolume(bodyToSoup(res, PropertyQuality())); stdmath.Abs(v-12) > 1e-9 {
+		t.Fatalf("coplanar union volume = %.6f, want 12", v)
+	}
+}
+
 // boxBodyAt builds a box translated by off.
 func boxBodyAt(sx, sy, sz float64, off math.Vector3, feat string) *topo.Body {
 	m := subd.Box(sx, sy, sz)
