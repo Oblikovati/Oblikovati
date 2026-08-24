@@ -68,6 +68,35 @@ func SegSegCross(a, b, c, d Point, axis int) Point {
 	return lerpPoint(a, b, t)
 }
 
+// inCircleSign returns the exact in-circle sign of d relative to triangle (a,b,c),
+// projected on axis: +1 if d lies strictly inside the circumcircle when a,b,c are
+// counterclockwise, -1 outside, 0 cocircular. The exact-arithmetic counterpart of
+// predicates.InCircle, on rational Points, so the Delaunay flip that builds the
+// robust constrained triangulation never oscillates on a near-cocircular quad.
+func inCircleSign(a, b, c, d Point, axis int) int {
+	au, av := project(a, axis)
+	bu, bv := project(b, axis)
+	cu, cv := project(c, axis)
+	du, dv := project(d, axis)
+	adx, ady := new(big.Rat).Sub(au, du), new(big.Rat).Sub(av, dv)
+	bdx, bdy := new(big.Rat).Sub(bu, du), new(big.Rat).Sub(bv, dv)
+	cdx, cdy := new(big.Rat).Sub(cu, du), new(big.Rat).Sub(cv, dv)
+	alift := ratSquareSum(adx, ady)
+	blift := ratSquareSum(bdx, bdy)
+	clift := ratSquareSum(cdx, cdy)
+	t1 := new(big.Rat).Mul(alift, crossDiff(bdx, cdy, cdx, bdy))
+	t2 := new(big.Rat).Mul(blift, crossDiff(cdx, ady, adx, cdy))
+	t3 := new(big.Rat).Mul(clift, crossDiff(adx, bdy, bdx, ady))
+	return t1.Add(t1, t2).Add(t1, t3).Sign()
+}
+
+// ratSquareSum returns x*x + y*y exactly.
+func ratSquareSum(x, y *big.Rat) *big.Rat {
+	xx := new(big.Rat).Mul(x, x)
+	yy := new(big.Rat).Mul(y, y)
+	return xx.Add(xx, yy)
+}
+
 // segmentsProperlyCross reports whether segments ab and cd cross transversally in
 // the projection: each segment strictly straddles the other's supporting line, so
 // the crossing is strictly interior to both. Shared or on-line endpoints (a zero

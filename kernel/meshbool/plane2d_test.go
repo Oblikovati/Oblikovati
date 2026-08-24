@@ -3,6 +3,7 @@
 package meshbool
 
 import (
+	"math"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -36,6 +37,51 @@ func TestOrient2MatchesPredicates(t *testing.T) {
 			}
 		}
 	}
+}
+
+// TestInCircleSignMatchesPredicates cross-checks the rational in-circle test
+// against predicates.InCircle on the same projected coordinates, across all three
+// drop axes, including the near-cocircular regime.
+func TestInCircleSignMatchesPredicates(t *testing.T) {
+	r := rand.New(rand.NewSource(0x1c08))
+	for i := 0; i < 20000; i++ {
+		a, b, c := rc(r), rc(r), rc(r)
+		var d [3]float64
+		if i%2 == 0 {
+			d = rc(r)
+		} else {
+			// place d on the circumcircle of a,b,c in the xy plane (near-cocircular)
+			ox, oy, ok := circumcentreXY(a, b, c)
+			if !ok {
+				continue
+			}
+			ang := r.Float64() * 6.283185307179586
+			rad := math.Hypot(a[0]-ox, a[1]-oy)
+			d = [3]float64{ox + rad*math.Cos(ang), oy + rad*math.Sin(ang), 0}
+		}
+		for axis := 0; axis < 3; axis++ {
+			au, av := projF(a, axis)
+			bu, bv := projF(b, axis)
+			cu, cv := projF(c, axis)
+			du, dv := projF(d, axis)
+			want := predicates.InCircle(au, av, bu, bv, cu, cv, du, dv)
+			if got := inCircleSign(pt(a), pt(b), pt(c), pt(d), axis); got != want {
+				t.Fatalf("case %d axis %d: inCircleSign=%d, predicates=%d", i, axis, got, want)
+			}
+		}
+	}
+}
+
+func circumcentreXY(a, b, c [3]float64) (float64, float64, bool) {
+	d1x, d1y := b[0]-a[0], b[1]-a[1]
+	d2x, d2y := c[0]-a[0], c[1]-a[1]
+	det := d1x*d2y - d1y*d2x
+	if det == 0 {
+		return 0, 0, false
+	}
+	r1 := (b[0]*b[0] + b[1]*b[1] - a[0]*a[0] - a[1]*a[1]) / 2
+	r2 := (c[0]*c[0] + c[1]*c[1] - a[0]*a[0] - a[1]*a[1]) / 2
+	return (r1*d2y - r2*d1y) / det, (d1x*r2 - d2x*r1) / det, true
 }
 
 func TestOrient2KnownCCW(t *testing.T) {
