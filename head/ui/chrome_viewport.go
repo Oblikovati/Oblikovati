@@ -489,6 +489,33 @@ func maxF32(a, b float32) float32 {
 // with the camera's view-projection, and blits the resulting texture back over the
 // input-capturing button at (cx,cy) so the panel shows the rendered scene.
 func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene.Camera, list renderer.DrawList, bodyCount, pw, ph int, cx, cy float32) {
+	if s.VisualStyle() == renderer.Realistic {
+		if tex, samples, ok := renderRealisticViewportImage(win, s, slot, cam, pw, ph); ok {
+			native.SetCursorPos(cx, cy)
+			native.Image(tex, float32(pw), float32(ph))
+			drawRealisticConvergenceIndicator(samples, cx, cy)
+			return
+		}
+		// No backend available (headless/no GPU) or nothing visible yet — fall back to the
+		// raster pass below so the panel is never left blank.
+	}
+	renderRasterViewportImage(win, s, slot, cam, list, bodyCount, pw, ph, cx, cy)
+}
+
+// applyRasterFrameState pushes the lighting/environment/skybox/shadow/point-cloud state
+// the raster pass needs before RenderViewport, given the frame's view-projection and
+// model bounds.
+func applyRasterFrameState(win *native.Window, s *app.Session, mvp [16]float32, mn, mx [3]float32, hasGeom bool) {
+	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))
+	applyEnvironment(win, app.RenderEnvironment(s.Environment())) // app value -> renderer at the wall (B10 #1621)
+	applySkybox(win, app.RenderEnvironment(s.Environment()), mvp)
+	applyShadow(win, s, mn, mx, hasGeom)
+	uploadPointClouds(win, s) // retained GL-points buffer, skipped on orbit (#645)
+}
+
+// renderRasterViewportImage is renderViewportImage's raster (mesh.frag) pass — every
+// visual style except a successfully-rendered Realistic mode goes through this.
+func renderRasterViewportImage(win *native.Window, s *app.Session, slot int, cam scene.Camera, list renderer.DrawList, bodyCount, pw, ph int, cx, cy float32) {
 	// Fit the shadow frustum to the model (before adding the ground), then drop in the ground
 	// plane so object shadows have a surface to land on. With instancing, the bounds come from the
 	// instance groups' transformed range boxes (no tessellation) rather than scanning a world-body
@@ -507,11 +534,7 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	frameStats.buildNs = time.Since(tb).Nanoseconds()
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFarPlane(s, cam, mn, mx, hasGeom))
 	eye := frameEye(cam) // reused scratch; RenderViewport copies it into the push constant synchronously (#1423)
-	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))
-	applyEnvironment(win, app.RenderEnvironment(s.Environment())) // app value -> renderer at the wall (B10 #1621)
-	applySkybox(win, app.RenderEnvironment(s.Environment()), mvp)
-	applyShadow(win, s, mn, mx, hasGeom)
-	uploadPointClouds(win, s) // retained GL-points buffer, skipped on orbit (#645)
+	applyRasterFrameState(win, s, mvp, mn, mx, hasGeom)
 	tg := frameClock()
 	win.RenderViewport(slot, pw, ph, mvp[:], eye,
 		m.TriVerts, m.TriVCount, m.TriIndices,

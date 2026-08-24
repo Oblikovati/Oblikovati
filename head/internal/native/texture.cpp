@@ -214,6 +214,77 @@ uint64_t obk_create_texture(void* h, const unsigned char* rgba, int w, int hh) {
     return (uint64_t)set;
 }
 
+// obk_update_texture re-uploads w×h RGBA8 pixels into an EXISTING texture created by
+// obk_create_texture, in place (same VkImage/VkDescriptorSet — no new ImGui texture
+// handle) — the progressive Realistic-mode path tracer (M45-F05 PBI-350) calls this
+// every accumulated frame instead of paying obk_create_texture's full image+descriptor
+// churn each time. w/h must match the size the texture was created at; a caller that
+// needs a different size must destroy and recreate instead. Returns 0 on success.
+int obk_update_texture(void* h, uint64_t handle, const unsigned char* rgba, int w, int hh) {
+    HeadContext* c = (HeadContext*)h;
+    if (!c || !c->icons || !rgba || w <= 0 || hh <= 0 || handle == 0) return 1;
+    VkDescriptorSet set = (VkDescriptorSet)handle;
+    auto found = c->icons->registry.find(set);
+    if (found == c->icons->registry.end()) return 1;
+    IconTexture& tex = found->second;
+    IconTextures* it = c->icons;
+
+    // This texture may still be READ by a previous frame's already-submitted ImGui draw
+    // (native.Image samples it every EndFrame while the Realistic-mode path tracer keeps
+    // updating it call-to-call, PBI-350) — a pipeline barrier alone only orders work
+    // within/across command buffers submitted to the SAME queue in program order, which
+    // is not a guarantee this function can rely on across independent EndFrame/
+    // UpdateTexture call sites. Wait for the whole device to go idle before mutating the
+    // image, trading some throughput for correctness (found live: repeated rapid updates
+    // without this produced a RADV GCVM_L2_PROTECTION_FAULT — a genuine read/write race).
+    vkDeviceWaitIdle(c->device);
+
+    VkDeviceSize bytes = (VkDeviceSize)w * hh * 4;
+    VkBuffer staging = VK_NULL_HANDLE;
+    VkDeviceMemory stagingMem = VK_NULL_HANDLE;
+    if (!make_staging(c, bytes, rgba, &staging, &stagingMem)) return 1;
+
+    VkCommandBufferAllocateInfo ca{};
+    ca.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    ca.commandPool = it->cmdPool;
+    ca.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    ca.commandBufferCount = 1;
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
+    vkAllocateCommandBuffers(c->device, &ca, &cmd);
+
+    VkCommandBufferBeginInfo bi{};
+    bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cmd, &bi);
+
+    transition(cmd, tex.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+              VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
+              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {(uint32_t)w, (uint32_t)hh, 1};
+    vkCmdCopyBufferToImage(cmd, staging, tex.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    transition(cmd, tex.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+              VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+              VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+    vkEndCommandBuffer(cmd);
+
+    VkSubmitInfo submit{};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
+    vkResetFences(c->device, 1, &it->fence);
+    vkQueueSubmit(c->queue, 1, &submit, it->fence);
+    vkWaitForFences(c->device, 1, &it->fence, VK_TRUE, UINT64_MAX);
+    vkFreeCommandBuffers(c->device, it->cmdPool, 1, &cmd);
+    vkDestroyBuffer(c->device, staging, nullptr);
+    vkFreeMemory(c->device, stagingMem, nullptr);
+    return 0;
+}
+
 // obk_destroy_texture frees one icon texture by its handle (idempotent on an unknown
 // or zero handle), removing it from ImGui and releasing its image/memory/view.
 void obk_destroy_texture(void* h, uint64_t handle) {

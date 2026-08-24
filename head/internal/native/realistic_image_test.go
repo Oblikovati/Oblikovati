@@ -187,7 +187,7 @@ func TestSWSceneRealisticImageMatchesCPUOracle(t *testing.T) {
 		triangles[i] = renderer.Triangle{V0: v(0), V1: v(1), V2: v(2), InstanceID: 1, PrimitiveID: uint32(i)}
 	}
 	bvh := renderer.BuildBVH(triangles)
-	if err := scene.Build(swBuildInputFrom(bvh, triangles)); err != nil {
+	if err := scene.Build(SWBuildInputFrom(bvh, triangles)); err != nil {
 		t.Fatalf("Build: %v", err)
 	}
 	if err := scene.BuildRealisticPathtracePipeline(swpathtraceRealisticCompSPV); err != nil {
@@ -239,7 +239,7 @@ func TestRealisticImageBackendParity(t *testing.T) {
 		{V0: [3]float32{-5, -5, 0}, V1: [3]float32{5, 5, 0}, V2: [3]float32{-5, 5, 0}, InstanceID: 1, PrimitiveID: 1},
 	}
 	bvh := renderer.BuildBVH(triangles)
-	if err := swScene.Build(swBuildInputFrom(bvh, triangles)); err != nil {
+	if err := swScene.Build(SWBuildInputFrom(bvh, triangles)); err != nil {
 		t.Fatalf("SWScene.Build: %v", err)
 	}
 	if err := swScene.BuildRealisticPathtracePipeline(swpathtraceRealisticCompSPV); err != nil {

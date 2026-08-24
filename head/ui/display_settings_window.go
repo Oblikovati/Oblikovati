@@ -21,9 +21,33 @@ func drawDisplaySettingsBody(s *app.Session) {
 		s.SetDisplaySettings(0, set)
 	}
 	native.Separator()
+	editRealisticSettings(s)
+	native.Separator()
 	if native.Button("Done") {
 		s.CloseDisplaySettings()
 	}
+}
+
+// editRealisticSettings draws the hardware ray-tracing checkbox (M45-F05 PBI-350,
+// ADR-0053): a persisted, global (not per-document) preference, since it reflects a
+// device capability trade-off rather than a document's authored look. Unchecking it
+// only costs Realistic mode's convergence speed — the software backend is always
+// spec-equivalent — so the label says so rather than implying a quality loss.
+//
+// This dialog has no live Vulkan device handle (it draws from *app.Session alone), so
+// the checkbox shows the raw override (unchecked/unset until the user picks a side) —
+// the actual effective backend, resolved against this device's real capability
+// (renderer.ResolveHardwareRayTracingEnabled), is decided per-frame in
+// realistic_render.go and shown live via the convergence indicator's rendering, not
+// this checkbox's initial state.
+func editRealisticSettings(s *app.Session) {
+	prefs := s.ViewCubePrefs()
+	enabled := prefs.HardwareRayTracing != nil && *prefs.HardwareRayTracing
+	if native.Checkbox("Hardware ray tracing (Realistic mode)", &enabled) {
+		prefs.HardwareRayTracing = &enabled
+		s.SetViewCubePrefs(prefs)
+	}
+	native.TextWrapped("When off, Realistic mode still renders the exact same image — only slower to converge. Unset defaults to whatever this device supports.")
 }
 
 // editDisplaySettings draws the editable controls into set, returning whether any changed.

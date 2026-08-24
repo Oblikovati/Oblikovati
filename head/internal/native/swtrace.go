@@ -31,6 +31,8 @@ import "C"
 import (
 	"errors"
 	"unsafe"
+
+	"oblikovati.org/renderer"
 )
 
 // SWScene is the software (compute-shader BVH) ray-tracing scene: no ray-tracing
@@ -62,6 +64,17 @@ type SWBuildInput struct {
 	Nodes     []byte // renderer.BVHNode slice, reinterpreted (32 bytes each)
 	TriOrder  []int32
 	Triangles []byte // renderer.Triangle slice, reinterpreted (44 bytes each)
+}
+
+// SWBuildInputFrom converts a renderer.BVH + triangle list into the raw byte layout
+// SWScene.Build expects — Go does not reorder struct fields, so a []renderer.BVHNode /
+// []renderer.Triangle slice's in-memory bytes already match swtrace.comp's tightly
+// packed scalar structs (see swtrace.h's doc comment); this just reinterprets the slice
+// headers, no copying.
+func SWBuildInputFrom(bvh *renderer.BVH, triangles []renderer.Triangle) SWBuildInput {
+	nodesBytes := unsafe.Slice((*byte)(unsafe.Pointer(unsafe.SliceData(bvh.Nodes))), len(bvh.Nodes)*32)
+	triBytes := unsafe.Slice((*byte)(unsafe.Pointer(unsafe.SliceData(triangles))), len(triangles)*44)
+	return SWBuildInput{Nodes: nodesBytes, TriOrder: bvh.TriangleOrder, Triangles: triBytes}
 }
 
 // Build uploads in's BVH and creates the traversal compute pipeline. Call once before

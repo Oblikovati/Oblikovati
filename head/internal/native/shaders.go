@@ -89,3 +89,14 @@ var pathtraceRealisticRchitSPV []byte
 
 //go:embed shaders/swpathtrace_realistic.comp.spv
 var swpathtraceRealisticCompSPV []byte
+
+// RealisticPipelineShaders returns the embedded SPIR-V for the live per-pixel hardware
+// Realistic-viewport pipeline, for RTScene.BuildRealisticPipeline — head/ui (a
+// different package) has no other access to these embedded bytes.
+func RealisticPipelineShaders() (rgen, miss, shadowMiss, chit []byte) {
+	return pathtraceRealisticRgenSPV, pathtraceRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV
+}
+
+// RealisticPathtraceShader returns the embedded SPIR-V for the live per-pixel software
+// Realistic-viewport compute pipeline, for SWScene.BuildRealisticPathtracePipeline.
+func RealisticPathtraceShader() []byte { return swpathtraceRealisticCompSPV }

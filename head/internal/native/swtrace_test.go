@@ -6,21 +6,9 @@ package native
 
 import (
 	"testing"
-	"unsafe"
 
 	"oblikovati.org/renderer"
 )
-
-// swBuildInputFrom converts a renderer.BVH + triangle list into the raw byte layout
-// SWScene.Build expects — Go does not reorder struct fields, so a []renderer.BVHNode /
-// []renderer.Triangle slice's in-memory bytes already match swtrace.comp's tightly
-// packed scalar structs (see swtrace.h's doc comment); this just reinterprets the slice
-// headers, no copying.
-func swBuildInputFrom(bvh *renderer.BVH, triangles []renderer.Triangle) SWBuildInput {
-	nodesBytes := unsafe.Slice((*byte)(unsafe.Pointer(unsafe.SliceData(bvh.Nodes))), len(bvh.Nodes)*32)
-	triBytes := unsafe.Slice((*byte)(unsafe.Pointer(unsafe.SliceData(triangles))), len(triangles)*44)
-	return SWBuildInput{Nodes: nodesBytes, TriOrder: bvh.TriangleOrder, Triangles: triBytes}
-}
 
 // TestSWSceneMatchesCPUOracle is PBI-334's live hardware cross-check, mirroring PBI-333's
 // TestRTSceneMatchesCPUOracle exactly (same quad scene, same oracle) but through the
@@ -44,7 +32,7 @@ func TestSWSceneMatchesCPUOracle(t *testing.T) {
 		{V0: [3]float32{-0.5, -0.5, 0}, V1: [3]float32{0.5, 0.5, 0}, V2: [3]float32{-0.5, 0.5, 0}, InstanceID: 7, PrimitiveID: 1},
 	}
 	bvh := renderer.BuildBVH(triangles)
-	if err := scene.Build(swBuildInputFrom(bvh, triangles)); err != nil {
+	if err := scene.Build(SWBuildInputFrom(bvh, triangles)); err != nil {
 		t.Fatalf("Build: %v", err)
 	}
 
@@ -125,7 +113,7 @@ func TestSWSceneMatchesRTScene(t *testing.T) {
 	}
 	defer swScene.Destroy()
 	bvh := renderer.BuildBVH(triangles)
-	if err := swScene.Build(swBuildInputFrom(bvh, triangles)); err != nil {
+	if err := swScene.Build(SWBuildInputFrom(bvh, triangles)); err != nil {
 		t.Fatalf("SWScene.Build: %v", err)
 	}
 

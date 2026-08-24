@@ -108,7 +108,7 @@ func TestSWSceneSatisfiesIntersectorContract(t *testing.T) {
 		}
 		scenes = append(scenes, scene)
 		bvh := renderer.BuildBVH(triangles)
-		if err := scene.Build(swBuildInputFrom(bvh, triangles)); err != nil {
+		if err := scene.Build(SWBuildInputFrom(bvh, triangles)); err != nil {
 			t.Fatalf("Build: %v", err)
 		}
 		return swSceneIntersector{scene}
