@@ -16,25 +16,16 @@
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_ray_tracing_position_fetch : require
 #extension GL_GOOGLE_include_directive : require
-#include "openpbr/base_lobes.glsl"
+#include "openpbr/extended_lobes.glsl"
 
 layout(location = 0) rayPayloadInEXT vec3 payload;
 layout(location = 1) rayPayloadEXT bool shadowed;
 
 layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
 
-layout(set = 0, binding = 3) uniform Params {
-    vec3 lightDirection; // unit vector FROM the surface TOWARD the light
-    float lightIntensity;
-    vec3 lightColor;
-    float pad0;
-    vec3 baseColor;
-    float baseWeight;
-    float specularRoughness;
-    float specularIOR;
-    float baseMetalness; // unused by base_lobes.glsl's dielectric-only path (see pathtrace.rchit's note)
-    float pad1;
-} params;
+// Field list shared with swpathtrace_realistic.comp — see extended_lobes.glsl's
+// OPENPBR_REALISTIC_PARAMS_FIELDS doc comment for the authoritative field order.
+layout(set = 0, binding = 3) uniform Params { OPENPBR_REALISTIC_PARAMS_FIELDS } params;
 
 void buildBasis(vec3 n, out vec3 tangent, out vec3 bitangent) {
     vec3 up = abs(n.y) < 0.99 ? vec3(0, 1, 0) : vec3(1, 0, 0);
@@ -70,16 +61,18 @@ void main() {
         return;
     }
 
-    float alpha = openpbrAlphaFromRoughness(params.specularRoughness);
-    vec3 diffuse = openpbrDiffuseSingleScatter(params.baseColor * params.baseWeight, 0.0, wiLocal, woLocal);
+    OpenPBRRealisticMaterial mat;
+    mat.baseColor = params.baseColor; mat.baseWeight = params.baseWeight;
+    mat.specularRoughness = params.specularRoughness; mat.specularIOR = params.specularIOR;
+    mat.coatColor = params.coatColor; mat.coatWeight = params.coatWeight;
+    mat.coatRoughness = params.coatRoughness; mat.coatIOR = params.coatIOR; mat.coatDarkening = params.coatDarkening;
+    mat.fuzzColor = params.fuzzColor; mat.fuzzWeight = params.fuzzWeight; mat.fuzzRoughness = params.fuzzRoughness;
+    mat.thinFilmWeight = params.thinFilmWeight; mat.thinFilmThicknessMicrons = params.thinFilmThicknessMicrons;
+    mat.thinFilmIOR = params.thinFilmIOR;
+    mat.subsurfaceColor = params.subsurfaceColor; mat.subsurfaceWeight = params.subsurfaceWeight;
+    mat.subsurfaceAnisotropy = params.subsurfaceAnisotropy;
 
-    vec3 h = normalize(wiLocal + woLocal);
-    float d = openpbrDistributionGGX(h, alpha);
-    float g = openpbrSmithG2(wiLocal, woLocal, alpha);
-    float fr = openpbrDielectricFresnel(params.specularIOR, max(dot(wiLocal, h), 0.0));
-    float specular = fr * d * g / (4.0 * wiLocal.z * woLocal.z);
-
-    vec3 brdf = diffuse + vec3(specular);
+    vec3 brdf = openpbrShadeSurface(mat, wiLocal, woLocal);
     float cosTheta = wiLocal.z;
     payload = brdf * params.lightColor * params.lightIntensity * cosTheta;
 }

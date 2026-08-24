@@ -10,6 +10,12 @@ namespace {
 
 bool ok(VkResult r) { return r == VK_SUCCESS; }
 
+// kRealisticParamsBytes mirrors raytrace.cpp's own constant of the same name — the live
+// per-pixel Realistic-viewport pipeline's Params UBO size (#2148): 56 float32/224 bytes.
+// Distinct from (and independent of) the single-ray test-harness ptParamsBuf, which
+// stays fixed at 16 floats/64 bytes.
+constexpr VkDeviceSize kRealisticParamsBytes = 56 * sizeof(float);
+
 struct SWBuffer {
     VkBuffer buffer = VK_NULL_HANDLE;
     VkDeviceMemory memory = VK_NULL_HANDLE;
@@ -484,8 +490,8 @@ int obk_sw_scene_build_realistic_pathtrace_pipeline(void* scene, const uint32_t*
 
     sw_create_buffer(c, &s->imgCamBuf, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 64);
     vkMapMemory(c->device, s->imgCamBuf.memory, 0, 64, 0, &s->imgCamBuf.mapped);
-    sw_create_buffer(c, &s->imgParamsBuf, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 64);
-    vkMapMemory(c->device, s->imgParamsBuf.memory, 0, 64, 0, &s->imgParamsBuf.mapped);
+    sw_create_buffer(c, &s->imgParamsBuf, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kRealisticParamsBytes);
+    vkMapMemory(c->device, s->imgParamsBuf.memory, 0, kRealisticParamsBytes, 0, &s->imgParamsBuf.mapped);
     sw_create_buffer(c, &s->imgOutputBuf, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 16);
     vkMapMemory(c->device, s->imgOutputBuf.memory, 0, 16, 0, &s->imgOutputBuf.mapped);
     s->imgOutputWidth = 1;
@@ -495,7 +501,7 @@ int obk_sw_scene_build_realistic_pathtrace_pipeline(void* scene, const uint32_t*
     VkDescriptorBufferInfo nodesInfo{s->nodesBuf.buffer, 0, VK_WHOLE_SIZE};
     VkDescriptorBufferInfo triOrderInfo{s->triOrderBuf.buffer, 0, VK_WHOLE_SIZE};
     VkDescriptorBufferInfo trianglesInfo{s->trianglesBuf.buffer, 0, VK_WHOLE_SIZE};
-    VkDescriptorBufferInfo paramInfo{s->imgParamsBuf.buffer, 0, 64};
+    VkDescriptorBufferInfo paramInfo{s->imgParamsBuf.buffer, 0, kRealisticParamsBytes};
     VkDescriptorBufferInfo outInfo{s->imgOutputBuf.buffer, 0, 16};
     VkDescriptorBufferInfo* infos[6] = {&camInfo, &nodesInfo, &triOrderInfo, &trianglesInfo, &paramInfo, &outInfo};
     VkDescriptorType types[6] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -538,7 +544,7 @@ int obk_sw_scene_trace_realistic_pathtrace_image(void* scene, int width, int hei
     }
 
     std::memcpy(s->imgCamBuf.mapped, camera, 16 * sizeof(float));
-    std::memcpy(s->imgParamsBuf.mapped, params, 16 * sizeof(float));
+    std::memcpy(s->imgParamsBuf.mapped, params, kRealisticParamsBytes);
 
     VkCommandBufferAllocateInfo cba{};
     cba.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

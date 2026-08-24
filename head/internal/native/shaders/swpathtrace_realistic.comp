@@ -8,7 +8,7 @@
 // pathtrace_realistic.rgen/.rchit — see those files' doc comments for why (single
 // scene-global material, one CPU-picked light per dispatch).
 #extension GL_GOOGLE_include_directive : require
-#include "openpbr/base_lobes.glsl"
+#include "openpbr/extended_lobes.glsl"
 #include "sw_bvh_types.glsl"
 
 layout(local_size_x = 8, local_size_y = 8) in;
@@ -28,18 +28,9 @@ layout(set = 0, binding = 1, std430) readonly buffer Nodes { BVHNode nodes[]; };
 layout(set = 0, binding = 2, std430) readonly buffer TriOrder { int triOrder[]; };
 layout(set = 0, binding = 3, std430) readonly buffer Triangles { GpuTriangle tris[]; };
 
-layout(set = 0, binding = 4) uniform Params {
-    vec3 lightDirection; // unit vector FROM the surface TOWARD the light
-    float lightIntensity;
-    vec3 lightColor;
-    float pad0;
-    vec3 baseColor;
-    float baseWeight;
-    float specularRoughness;
-    float specularIOR;
-    float baseMetalness;
-    float pad1;
-} params;
+// Field list shared with pathtrace_realistic.rchit — see extended_lobes.glsl's
+// OPENPBR_REALISTIC_PARAMS_FIELDS doc comment for the authoritative field order.
+layout(set = 0, binding = 4) uniform Params { OPENPBR_REALISTIC_PARAMS_FIELDS } params;
 
 layout(set = 0, binding = 5, std430) buffer Output { vec4 pixels[]; } outputBuf;
 
@@ -82,16 +73,18 @@ void main() {
     vec3 woLocal = vec3(dot(wo, tangent), dot(wo, bitangent), dot(wo, normal));
     if (wiLocal.z <= 0.0 || woLocal.z <= 0.0) return;
 
-    float alpha = openpbrAlphaFromRoughness(params.specularRoughness);
-    vec3 diffuse = openpbrDiffuseSingleScatter(params.baseColor * params.baseWeight, 0.0, wiLocal, woLocal);
+    OpenPBRRealisticMaterial mat;
+    mat.baseColor = params.baseColor; mat.baseWeight = params.baseWeight;
+    mat.specularRoughness = params.specularRoughness; mat.specularIOR = params.specularIOR;
+    mat.coatColor = params.coatColor; mat.coatWeight = params.coatWeight;
+    mat.coatRoughness = params.coatRoughness; mat.coatIOR = params.coatIOR; mat.coatDarkening = params.coatDarkening;
+    mat.fuzzColor = params.fuzzColor; mat.fuzzWeight = params.fuzzWeight; mat.fuzzRoughness = params.fuzzRoughness;
+    mat.thinFilmWeight = params.thinFilmWeight; mat.thinFilmThicknessMicrons = params.thinFilmThicknessMicrons;
+    mat.thinFilmIOR = params.thinFilmIOR;
+    mat.subsurfaceColor = params.subsurfaceColor; mat.subsurfaceWeight = params.subsurfaceWeight;
+    mat.subsurfaceAnisotropy = params.subsurfaceAnisotropy;
 
-    vec3 h = normalize(wiLocal + woLocal);
-    float d = openpbrDistributionGGX(h, alpha);
-    float g = openpbrSmithG2(wiLocal, woLocal, alpha);
-    float fr = openpbrDielectricFresnel(params.specularIOR, max(dot(wiLocal, h), 0.0));
-    float specular = fr * d * g / (4.0 * wiLocal.z * woLocal.z);
-
-    vec3 brdf = diffuse + vec3(specular);
+    vec3 brdf = openpbrShadeSurface(mat, wiLocal, woLocal);
     float cosTheta = wiLocal.z;
     outputBuf.pixels[idx] = vec4(brdf * params.lightColor * params.lightIntensity * cosTheta, 1.0);
 }

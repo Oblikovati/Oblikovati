@@ -12,6 +12,15 @@ namespace {
 
 bool ok(VkResult r) { return r == VK_SUCCESS; }
 
+// kRealisticParamsBytes is the live per-pixel Realistic-viewport pipeline's Params UBO
+// size (#2148): 56 float32 / 224 bytes — the original 16-float base-lobes-only layout
+// (RealisticLightParams' first 16 fields) plus 40 more for Coat/Fuzz/ThinFilm/
+// Transmission+dispersion/Subsurface, laid out exactly as raytrace.go's
+// RealisticLightParams.floats() and swpathtrace_realistic.comp/pathtrace_realistic.rchit's
+// Params struct. Distinct from (and independent of) obk_rt_scene_build_pipeline's
+// single-ray test-harness PipelineParams, which stays fixed at 16 floats/64 bytes.
+constexpr VkDeviceSize kRealisticParamsBytes = 56 * sizeof(float);
+
 // VK_KHR_acceleration_structure's functions are not part of the Linux Vulkan loader's
 // direct-link trampoline set (unlike e.g. VK_KHR_swapchain's), so they must be resolved
 // via vkGetDeviceProcAddr once the extension is enabled on a device — direct linking
@@ -856,8 +865,8 @@ int obk_rt_scene_build_realistic_pipeline(void* scene, const uint32_t* rgenSpv, 
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 64);
     vkMapMemory(c->device, s->imgCamBuf.memory, 0, 64, 0, &s->imgCamBuf.mapped);
     rt_create_buffer(c, &s->imgParamsBuf, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 64);
-    vkMapMemory(c->device, s->imgParamsBuf.memory, 0, 64, 0, &s->imgParamsBuf.mapped);
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, kRealisticParamsBytes);
+    vkMapMemory(c->device, s->imgParamsBuf.memory, 0, kRealisticParamsBytes, 0, &s->imgParamsBuf.mapped);
     rt_create_buffer(c, &s->imgOutputBuf, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 16);
     vkMapMemory(c->device, s->imgOutputBuf.memory, 0, 16, 0, &s->imgOutputBuf.mapped);
@@ -889,7 +898,7 @@ int obk_rt_scene_build_realistic_pipeline(void* scene, const uint32_t* rgenSpv, 
     asWrite.pAccelerationStructures = &s->tlas;
     VkDescriptorBufferInfo outInfo{s->imgOutputBuf.buffer, 0, 16};
     VkDescriptorBufferInfo camInfo{s->imgCamBuf.buffer, 0, 64};
-    VkDescriptorBufferInfo paramInfo{s->imgParamsBuf.buffer, 0, 64};
+    VkDescriptorBufferInfo paramInfo{s->imgParamsBuf.buffer, 0, kRealisticParamsBytes};
     VkWriteDescriptorSet writes[4]{};
     writes[0] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, &asWrite, s->imgDescSet, 0, 0, 1,
                 VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, nullptr, nullptr, nullptr};
@@ -934,7 +943,7 @@ int obk_rt_scene_trace_realistic_image(void* scene, int width, int height, const
     }
 
     std::memcpy(s->imgCamBuf.mapped, camera, 16 * sizeof(float));
-    std::memcpy(s->imgParamsBuf.mapped, params, 16 * sizeof(float));
+    std::memcpy(s->imgParamsBuf.mapped, params, kRealisticParamsBytes);
 
     VkDeviceAddress sbtBase = s->imgSbtBuf.address;
     VkDeviceSize entryStride = align_up(s->imgSbtHandleSize, s->imgSbtHandleAlignment);

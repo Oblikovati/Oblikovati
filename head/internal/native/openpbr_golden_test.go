@@ -28,6 +28,16 @@ type openpbrGoldenParams struct {
 	TanHalfFovY    float32    `json:"tan_half_fov_y"`
 	Width          int        `json:"width"`
 	Height         int        `json:"height"`
+
+	// #2148 extended-lobe tiers (coat/fuzz/subsurface; see render_reference.py's own
+	// Blender-side mapping for each field).
+	CoatWeight       float32    `json:"coat_weight"`
+	CoatRoughness    float32    `json:"coat_roughness"`
+	CoatIOR          float32    `json:"coat_ior"`
+	SheenWeight      float32    `json:"sheen_weight"`
+	SheenRoughness   float32    `json:"sheen_roughness"`
+	SheenTint        [3]float32 `json:"sheen_tint"`
+	SubsurfaceWeight float32    `json:"subsurface_weight"`
 }
 
 // openpbrGoldenMinSSIM is a hard floor, not a target. A from-scratch calibration run
@@ -60,10 +70,61 @@ const openpbrGoldenMinSSIM = 0.70
 // work once each lobe is ported — see the tracked follow-up issue this PBI files for
 // that porting work.
 func TestOpenPBRBaseLobesMatchBlenderReference(t *testing.T) {
-	p := loadGoldenParams(t, "../../../test-utilities/openpbr-goldens/params-base.json")
-	ref := loadGoldenPNG(t, "../../../test-utilities/openpbr-goldens/goldens/ref-base.png")
+	runOpenPBRGoldenTest(t, "base", func(p openpbrGoldenParams) RealisticLightParams {
+		return RealisticLightParams{
+			LightDirection: p.LightDir, LightIntensity: p.LightIntensity, LightColor: [3]float32{1, 1, 1},
+			BaseColor: p.BaseColor, BaseWeight: 1, SpecularRoughness: p.Roughness, SpecularIOR: p.IOR, BaseMetalness: p.Metallic,
+		}
+	})
+}
 
-	win, err := CreateWindow(64, 64, "openpbr-golden-test")
+// TestOpenPBRCoatMatchesBlenderReference / TestOpenPBRFuzzMatchesBlenderReference /
+// TestOpenPBRSubsurfaceMatchesBlenderReference are #2148's acceptance criterion for the
+// 3 extended lobes with a committed Blender reference (see
+// TestOpenPBRExtendedLobesPendingGLSLPort below for why transmission has none). Same
+// harness as TestOpenPBRBaseLobesMatchBlenderReference — see its doc comment.
+func TestOpenPBRCoatMatchesBlenderReference(t *testing.T) {
+	runOpenPBRGoldenTest(t, "coat", func(p openpbrGoldenParams) RealisticLightParams {
+		return RealisticLightParams{
+			LightDirection: p.LightDir, LightIntensity: p.LightIntensity, LightColor: [3]float32{1, 1, 1},
+			BaseColor: p.BaseColor, BaseWeight: 1, SpecularRoughness: p.Roughness, SpecularIOR: p.IOR, BaseMetalness: p.Metallic,
+			CoatColor: [3]float32{1, 1, 1}, CoatWeight: p.CoatWeight, CoatRoughness: p.CoatRoughness,
+			CoatIOR: p.CoatIOR, CoatDarkening: 1,
+		}
+	})
+}
+
+func TestOpenPBRFuzzMatchesBlenderReference(t *testing.T) {
+	runOpenPBRGoldenTest(t, "fuzz", func(p openpbrGoldenParams) RealisticLightParams {
+		return RealisticLightParams{
+			LightDirection: p.LightDir, LightIntensity: p.LightIntensity, LightColor: [3]float32{1, 1, 1},
+			BaseColor: p.BaseColor, BaseWeight: 1, SpecularRoughness: p.Roughness, SpecularIOR: p.IOR, BaseMetalness: p.Metallic,
+			FuzzColor: p.SheenTint, FuzzWeight: p.SheenWeight, FuzzRoughness: p.SheenRoughness,
+		}
+	})
+}
+
+func TestOpenPBRSubsurfaceMatchesBlenderReference(t *testing.T) {
+	runOpenPBRGoldenTest(t, "subsurface", func(p openpbrGoldenParams) RealisticLightParams {
+		return RealisticLightParams{
+			LightDirection: p.LightDir, LightIntensity: p.LightIntensity, LightColor: [3]float32{1, 1, 1},
+			BaseColor: p.BaseColor, BaseWeight: 1, SpecularRoughness: p.Roughness, SpecularIOR: p.IOR, BaseMetalness: p.Metallic,
+			SubsurfaceColor: p.BaseColor, SubsurfaceWeight: p.SubsurfaceWeight,
+		}
+	})
+}
+
+// runOpenPBRGoldenTest is the shared body TestOpenPBRBaseLobesMatchBlenderReference and
+// the 3 extended-lobe golden tests above all follow: load params-<tier>.json and
+// ref-<tier>.png, render through the SAME live per-pixel dispatch Realistic mode uses,
+// and assert SSIM >= openpbrGoldenMinSSIM. build turns the parsed JSON into the specific
+// RealisticLightParams fields that tier's lobe needs.
+func runOpenPBRGoldenTest(t *testing.T, tier string, build func(openpbrGoldenParams) RealisticLightParams) {
+	t.Helper()
+	p := loadGoldenParams(t, "../../../test-utilities/openpbr-goldens/params-"+tier+".json")
+	ref := loadGoldenPNG(t, "../../../test-utilities/openpbr-goldens/goldens/ref-"+tier+".png")
+
+	win, err := CreateWindow(64, 64, "openpbr-golden-test-"+tier)
 	if err != nil {
 		t.Fatalf("CreateWindow: %v", err)
 	}
@@ -71,10 +132,7 @@ func TestOpenPBRBaseLobesMatchBlenderReference(t *testing.T) {
 
 	triangles := UVSphereTriangles(1, 96, 48, 1)
 	cam := PinholeCameraBasis(p.Eye, p.TanHalfFovY, p.Width, p.Height)
-	light := RealisticLightParams{
-		LightDirection: p.LightDir, LightIntensity: p.LightIntensity, LightColor: [3]float32{1, 1, 1},
-		BaseColor: p.BaseColor, BaseWeight: 1, SpecularRoughness: p.Roughness, SpecularIOR: p.IOR, BaseMetalness: p.Metallic,
-	}
+	light := build(p)
 	pixels, err := RenderGoldenSphere(win, triangles, cam, light, p.Width, p.Height, false)
 	if err != nil {
 		t.Fatalf("RenderGoldenSphere: %v", err)
@@ -87,18 +145,19 @@ func TestOpenPBRBaseLobesMatchBlenderReference(t *testing.T) {
 }
 
 // TestOpenPBRExtendedLobesPendingGLSLPort documents (and will fail loudly, as a nudge to
-// update this test, the day someone ports a lobe) that coat/fuzz/subsurface/transmission
-// have no live-shader comparison yet — see TestOpenPBRBaseLobesMatchBlenderReference's
-// doc comment. References already exist under test-utilities/openpbr-goldens/goldens/
-// ref-{coat,fuzz,subsurface,transmission}.png for whoever picks that follow-up up.
+// update this test, the day someone ports it) that transmission has no live-shader
+// comparison yet: showing transmitted light needs a continuation/refraction ray, which
+// neither backend's pipeline supports (see extended_lobes.glsl's header comment for the
+// full explanation) — a materially bigger undertaking than coat/fuzz/thin-film/subsurface
+// (which are all local reflection modifications, no extra ray needed), tracked as its own
+// follow-up. The reference image already exists at
+// test-utilities/openpbr-goldens/goldens/ref-transmission.png for whoever picks it up.
 func TestOpenPBRExtendedLobesPendingGLSLPort(t *testing.T) {
-	for _, tier := range []string{"coat", "fuzz", "subsurface", "transmission"} {
-		t.Run(tier, func(t *testing.T) {
-			t.Skipf("%s lobe not yet ported to the live GLSL path tracer (base lobes only) — "+
-				"reference image committed at test-utilities/openpbr-goldens/goldens/ref-%s.png "+
-				"for when it is", tier, tier)
-		})
-	}
+	t.Run("transmission", func(t *testing.T) {
+		t.Skip("transmission needs a continuation/refraction ray neither backend's pipeline " +
+			"supports yet (recursion depth is primary+shadow only) — reference image committed " +
+			"at test-utilities/openpbr-goldens/goldens/ref-transmission.png for when it lands")
+	})
 }
 
 func loadGoldenParams(t *testing.T, path string) openpbrGoldenParams {

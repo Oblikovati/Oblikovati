@@ -194,9 +194,15 @@ func (c CameraBasis) floats() [16]float32 {
 }
 
 // RealisticLightParams is pathtrace_realistic.rchit/swpathtrace_realistic.comp's Params
-// UBO: the same 16-float/64-byte shape as PipelineParams, but LightDirection replaces
-// LightPos — a unit vector toward one directional light (renderer.SceneLight.Direction),
-// not a point-light position — see those shaders' doc comments.
+// UBO: LightDirection (a unit vector toward one directional light,
+// renderer.SceneLight.Direction, not a point-light position — see those shaders' doc
+// comments) plus the base lobes (the original 16-float/64-byte layout, unchanged) and,
+// as of #2148, every extended OpenPBR lobe the live path tracer now shades: Coat,
+// Fuzz/sheen, Thin-film, Transmission+dispersion, Subsurface — 56 floats/224 bytes
+// total. A zero-value field group reproduces the prior lobe's output exactly (each
+// lobe's own weight=0 short-circuit, mirrored from kernel/shading/openpbr's Layer*/Mix*
+// functions), so callers that only set the base fields (e.g. the golden-harness base
+// tier) are unaffected.
 type RealisticLightParams struct {
 	LightDirection                                      [3]float32
 	LightIntensity                                      float32
@@ -205,14 +211,53 @@ type RealisticLightParams struct {
 	BaseColor                                           [3]float32
 	BaseWeight                                          float32
 	SpecularRoughness, SpecularIOR, BaseMetalness, Pad1 float32
+
+	CoatColor                             [3]float32
+	CoatWeight                            float32
+	CoatRoughness, CoatIOR, CoatDarkening float32
+	Pad2                                  float32
+
+	FuzzColor        [3]float32
+	FuzzWeight       float32
+	FuzzRoughness    float32
+	Pad3, Pad4, Pad5 float32
+
+	ThinFilmWeight, ThinFilmThicknessMicrons, ThinFilmIOR float32
+	Pad6                                                  float32
+
+	TransmissionColor                                              [3]float32
+	TransmissionWeight                                             float32
+	TransmissionDepth, DispersionScale, DispersionAbbeNumber, Pad7 float32
+
+	SubsurfaceColor       [3]float32
+	SubsurfaceWeight      float32
+	SubsurfaceRadiusScale [3]float32
+	SubsurfaceRadius      float32
+	SubsurfaceAnisotropy  float32
+	Pad8, Pad9, Pad10     float32
 }
 
-func (p RealisticLightParams) floats() [16]float32 {
-	return [16]float32{
+func (p RealisticLightParams) floats() [56]float32 {
+	return [56]float32{
 		p.LightDirection[0], p.LightDirection[1], p.LightDirection[2], p.LightIntensity,
 		p.LightColor[0], p.LightColor[1], p.LightColor[2], p.Pad0,
 		p.BaseColor[0], p.BaseColor[1], p.BaseColor[2], p.BaseWeight,
 		p.SpecularRoughness, p.SpecularIOR, p.BaseMetalness, p.Pad1,
+
+		p.CoatColor[0], p.CoatColor[1], p.CoatColor[2], p.CoatWeight,
+		p.CoatRoughness, p.CoatIOR, p.CoatDarkening, p.Pad2,
+
+		p.FuzzColor[0], p.FuzzColor[1], p.FuzzColor[2], p.FuzzWeight,
+		p.FuzzRoughness, p.Pad3, p.Pad4, p.Pad5,
+
+		p.ThinFilmWeight, p.ThinFilmThicknessMicrons, p.ThinFilmIOR, p.Pad6,
+
+		p.TransmissionColor[0], p.TransmissionColor[1], p.TransmissionColor[2], p.TransmissionWeight,
+		p.TransmissionDepth, p.DispersionScale, p.DispersionAbbeNumber, p.Pad7,
+
+		p.SubsurfaceColor[0], p.SubsurfaceColor[1], p.SubsurfaceColor[2], p.SubsurfaceWeight,
+		p.SubsurfaceRadiusScale[0], p.SubsurfaceRadiusScale[1], p.SubsurfaceRadiusScale[2], p.SubsurfaceRadius,
+		p.SubsurfaceAnisotropy, p.Pad8, p.Pad9, p.Pad10,
 	}
 }
 

@@ -75,10 +75,11 @@ int obk_rt_scene_build_realistic_pipeline(void* scene, const uint32_t* rgenSpv, 
 // obk_rt_scene_trace_realistic_image dispatches one vkCmdTraceRaysKHR(width,height,1)
 // call. camera is 16 floats matching pathtrace_realistic.rgen's CameraParams UBO
 // exactly: [eye.xyz, tMin, forward.xyz, tMax, right.xyz, tanHalfFovY, up.xyz, aspect].
-// params is 16 floats matching pathtrace_realistic.rchit's Params UBO: [lightDirection.xyz,
-// lightIntensity, lightColor.rgb, pad, baseColor.rgb, baseWeight, specularRoughness,
-// specularIOR, baseMetalness, pad]. outPixels must have room for width*height*3 floats
-// (RGB, row-major, alpha dropped). Returns 0 on success.
+// params is 56 floats (#2148) matching pathtrace_realistic.rchit's Params UBO exactly —
+// see raytrace.go's RealisticLightParams.floats() for the authoritative field order
+// (base lobes' original 16 floats, then Coat/Fuzz/ThinFilm/Transmission+dispersion/
+// Subsurface, 8/8/4/8/12 floats respectively). outPixels must have room for
+// width*height*3 floats (RGB, row-major, alpha dropped). Returns 0 on success.
 int obk_rt_scene_trace_realistic_image(void* scene, int width, int height, const float* camera,
                                        const float* params, float* outPixels);
 
