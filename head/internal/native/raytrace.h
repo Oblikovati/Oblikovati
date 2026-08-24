@@ -60,4 +60,26 @@ void obk_rt_scene_trace_pipeline(void* scene, float ox, float oy, float oz, floa
                                  float tMin, float tMax, const float* params, float* outR, float* outG,
                                  float* outB);
 
+// --- Live per-pixel Realistic-viewport pipeline (M45-F05 PBI-350): a per-pixel
+// pinhole-camera path tracer over the SAME BLAS/TLAS, independent of the single-ray
+// harness pipeline above (own SBT/descriptor set) so that pipeline's already-verified
+// tests are never at risk from this one's changes.
+
+// obk_rt_scene_build_realistic_pipeline creates the ray-gen/miss/shadow-miss/
+// closest-hit pipeline for the live per-pixel viewport pass. Returns 0 on success.
+int obk_rt_scene_build_realistic_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLen,
+                                          const uint32_t* missSpv, int missLen,
+                                          const uint32_t* shadowMissSpv, int shadowMissLen,
+                                          const uint32_t* chitSpv, int chitLen);
+
+// obk_rt_scene_trace_realistic_image dispatches one vkCmdTraceRaysKHR(width,height,1)
+// call. camera is 16 floats matching pathtrace_realistic.rgen's CameraParams UBO
+// exactly: [eye.xyz, tMin, forward.xyz, tMax, right.xyz, tanHalfFovY, up.xyz, aspect].
+// params is 16 floats matching pathtrace_realistic.rchit's Params UBO: [lightDirection.xyz,
+// lightIntensity, lightColor.rgb, pad, baseColor.rgb, baseWeight, specularRoughness,
+// specularIOR, baseMetalness, pad]. outPixels must have room for width*height*3 floats
+// (RGB, row-major, alpha dropped). Returns 0 on success.
+int obk_rt_scene_trace_realistic_image(void* scene, int width, int height, const float* camera,
+                                       const float* params, float* outPixels);
+
 } // extern "C"

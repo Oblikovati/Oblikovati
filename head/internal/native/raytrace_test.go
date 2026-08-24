@@ -102,3 +102,43 @@ func absf(x float32) float32 {
 	}
 	return x
 }
+
+// TestRTSceneAcrossSeparateWindowsInOneProcess is a regression test for a bug found
+// live while adding M45-F05 PBI-350: the extension function pointers
+// (vkGetAccelerationStructureBuildSizesKHR etc.) were resolved once into a
+// process-global cache keyed off the FIRST device ever seen, then reused unchanged by
+// every later RTScene — including one created on a SECOND, different Vulkan device (a
+// second window). A device-level function pointer from vkGetDeviceProcAddr is valid
+// only for the device it was retrieved from (Vulkan spec); reusing one against a
+// different device is undefined behavior, and manifested here as an intermittent
+// SIGSEGV inside obk_rt_scene_add_mesh (~50-65% of runs). Fixed by resolving the
+// function table fresh per RTScene (RTScene::rtFn) instead of caching it globally —
+// this test creates and fully exercises two RTScenes on two separate windows in strict
+// sequence, which reproduced the crash before the fix.
+func TestRTSceneAcrossSeparateWindowsInOneProcess(t *testing.T) {
+	verts, indices := unitQuadVerticesIndices()
+
+	for i := 0; i < 2; i++ {
+		w, err := CreateWindow(64, 64, "Oblikovati (RT cross-window regression test)")
+		if err != nil {
+			t.Skipf("no window/GPU available: %v", err)
+		}
+		scene, err := w.NewRTScene()
+		if err != nil {
+			w.Destroy()
+			t.Skipf("no hardware ray tracing available: %v", err)
+		}
+		if err := scene.AddMesh(verts, indices, uint32(i+1)); err != nil {
+			t.Fatalf("window %d: AddMesh: %v", i, err)
+		}
+		if err := scene.Build(); err != nil {
+			t.Fatalf("window %d: Build: %v", i, err)
+		}
+		hit := scene.Trace([3]float32{0, 0, 2}, [3]float32{0, 0, -1}, 0, 1e6)
+		if !hit.Hit {
+			t.Errorf("window %d: expected a hit through the quad's center, got a miss", i)
+		}
+		scene.Destroy()
+		w.Destroy()
+	}
+}

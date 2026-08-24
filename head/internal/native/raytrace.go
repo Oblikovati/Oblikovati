@@ -23,6 +23,13 @@ int  obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenL
 void obk_rt_scene_trace_pipeline(void* scene, float ox, float oy, float oz, float dx, float dy, float dz,
                                  float tMin, float tMax, const float* params, float* outR, float* outG,
                                  float* outB);
+
+int obk_rt_scene_build_realistic_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLen,
+                                          const uint32_t* missSpv, int missLen,
+                                          const uint32_t* shadowMissSpv, int shadowMissLen,
+                                          const uint32_t* chitSpv, int chitLen);
+int obk_rt_scene_trace_realistic_image(void* scene, int width, int height, const float* camera,
+                                       const float* params, float* outPixels);
 */
 import "C"
 
@@ -161,6 +168,84 @@ func (s *RTScene) TracePipeline(origin, direction [3]float32, tMin, tMax float32
 		C.float(tMin), C.float(tMax),
 		(*C.float)(unsafe.Pointer(&pf[0])), &cR, &cG, &cB)
 	return float32(cR), float32(cG), float32(cB)
+}
+
+// CameraBasis is pathtrace_realistic.rgen/swpathtrace_realistic.comp's CameraParams
+// UBO, laid out exactly (M45-F05 PBI-350): a pinhole eye/forward/right/up basis, unlike
+// PipelineParams' single fixed ray — one call renders a whole image, not one pixel.
+type CameraBasis struct {
+	Eye         [3]float32
+	TMin        float32
+	Forward     [3]float32
+	TMax        float32
+	Right       [3]float32
+	TanHalfFovY float32
+	Up          [3]float32
+	Aspect      float32
+}
+
+func (c CameraBasis) floats() [16]float32 {
+	return [16]float32{
+		c.Eye[0], c.Eye[1], c.Eye[2], c.TMin,
+		c.Forward[0], c.Forward[1], c.Forward[2], c.TMax,
+		c.Right[0], c.Right[1], c.Right[2], c.TanHalfFovY,
+		c.Up[0], c.Up[1], c.Up[2], c.Aspect,
+	}
+}
+
+// RealisticLightParams is pathtrace_realistic.rchit/swpathtrace_realistic.comp's Params
+// UBO: the same 16-float/64-byte shape as PipelineParams, but LightDirection replaces
+// LightPos — a unit vector toward one directional light (renderer.SceneLight.Direction),
+// not a point-light position — see those shaders' doc comments.
+type RealisticLightParams struct {
+	LightDirection                                      [3]float32
+	LightIntensity                                      float32
+	LightColor                                          [3]float32
+	Pad0                                                float32
+	BaseColor                                           [3]float32
+	BaseWeight                                          float32
+	SpecularRoughness, SpecularIOR, BaseMetalness, Pad1 float32
+}
+
+func (p RealisticLightParams) floats() [16]float32 {
+	return [16]float32{
+		p.LightDirection[0], p.LightDirection[1], p.LightDirection[2], p.LightIntensity,
+		p.LightColor[0], p.LightColor[1], p.LightColor[2], p.Pad0,
+		p.BaseColor[0], p.BaseColor[1], p.BaseColor[2], p.BaseWeight,
+		p.SpecularRoughness, p.SpecularIOR, p.BaseMetalness, p.Pad1,
+	}
+}
+
+// BuildRealisticPipeline creates the live per-pixel Realistic-viewport pipeline over
+// the same BLAS/TLAS Build already created — independent of BuildPipeline's single-ray
+// test-harness pipeline (its own SBT/descriptor set), so that pipeline's already-verified
+// PBI-345/346 tests are never at risk from a change here. Call after Build.
+func (s *RTScene) BuildRealisticPipeline(rgen, miss, shadowMiss, chit []byte) error {
+	rc := C.obk_rt_scene_build_realistic_pipeline(s.handle,
+		(*C.uint32_t)(unsafe.Pointer(unsafe.SliceData(rgen))), C.int(len(rgen)),
+		(*C.uint32_t)(unsafe.Pointer(unsafe.SliceData(miss))), C.int(len(miss)),
+		(*C.uint32_t)(unsafe.Pointer(unsafe.SliceData(shadowMiss))), C.int(len(shadowMiss)),
+		(*C.uint32_t)(unsafe.Pointer(unsafe.SliceData(chit))), C.int(len(chit)))
+	if rc != 0 {
+		return errors.New("native: RTScene.BuildRealisticPipeline failed (see stderr)")
+	}
+	return nil
+}
+
+// TraceRealisticImage dispatches one vkCmdTraceRaysKHR(width,height,1) call — one
+// primary+shadow ray pair per pixel — and returns the resulting width*height RGB image
+// (row-major, length 3*width*height, alpha dropped).
+func (s *RTScene) TraceRealisticImage(width, height int, camera CameraBasis, params RealisticLightParams) ([]float32, error) {
+	cf := camera.floats()
+	pf := params.floats()
+	out := make([]float32, width*height*3)
+	rc := C.obk_rt_scene_trace_realistic_image(s.handle, C.int(width), C.int(height),
+		(*C.float)(unsafe.Pointer(&cf[0])), (*C.float)(unsafe.Pointer(&pf[0])),
+		(*C.float)(unsafe.Pointer(unsafe.SliceData(out))))
+	if rc != 0 {
+		return nil, errors.New("native: RTScene.TraceRealisticImage failed (see stderr)")
+	}
+	return out, nil
 }
 
 // Destroy frees every Vulkan resource the scene owns.

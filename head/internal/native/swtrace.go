@@ -21,6 +21,10 @@ int  obk_sw_scene_build_pathtrace_pipeline(void* scene, const uint32_t* spv, int
 void obk_sw_scene_trace_pathtrace(void* scene, float ox, float oy, float oz, float dx, float dy, float dz,
                                   float tMin, float tMax, const float* params, float* outR, float* outG,
                                   float* outB);
+
+int obk_sw_scene_build_realistic_pathtrace_pipeline(void* scene, const uint32_t* spv, int spvLen);
+int obk_sw_scene_trace_realistic_pathtrace_image(void* scene, int width, int height, const float* camera,
+                                                 const float* params, float* outPixels);
 */
 import "C"
 
@@ -121,6 +125,34 @@ func (s *SWScene) TracePathtrace(origin, direction [3]float32, tMin, tMax float3
 		C.float(tMin), C.float(tMax),
 		(*C.float)(unsafe.Pointer(&pf[0])), &cR, &cG, &cB)
 	return float32(cR), float32(cG), float32(cB)
+}
+
+// BuildRealisticPathtracePipeline creates the live per-pixel Realistic-viewport compute
+// pipeline over this scene's already-uploaded BVH (M45-F05 PBI-350) — independent of
+// BuildPathtracePipeline's single-ray test-harness pipeline. Call after Build.
+func (s *SWScene) BuildRealisticPathtracePipeline(spv []byte) error {
+	rc := C.obk_sw_scene_build_realistic_pathtrace_pipeline(s.handle,
+		(*C.uint32_t)(unsafe.Pointer(unsafe.SliceData(spv))), C.int(len(spv)))
+	if rc != 0 {
+		return errors.New("native: SWScene.BuildRealisticPathtracePipeline failed (see stderr)")
+	}
+	return nil
+}
+
+// TraceRealisticPathtraceImage dispatches ceil(width/8)xceil(height/8) work groups —
+// one primary+shadow ray pair per pixel — and returns the resulting width*height RGB
+// image (row-major, length 3*width*height, alpha dropped).
+func (s *SWScene) TraceRealisticPathtraceImage(width, height int, camera CameraBasis, params RealisticLightParams) ([]float32, error) {
+	cf := camera.floats()
+	pf := params.floats()
+	out := make([]float32, width*height*3)
+	rc := C.obk_sw_scene_trace_realistic_pathtrace_image(s.handle, C.int(width), C.int(height),
+		(*C.float)(unsafe.Pointer(&cf[0])), (*C.float)(unsafe.Pointer(&pf[0])),
+		(*C.float)(unsafe.Pointer(unsafe.SliceData(out))))
+	if rc != 0 {
+		return nil, errors.New("native: SWScene.TraceRealisticPathtraceImage failed (see stderr)")
+	}
+	return out, nil
 }
 
 // Destroy frees every Vulkan resource the scene owns.

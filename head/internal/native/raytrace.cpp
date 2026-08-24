@@ -29,27 +29,34 @@ struct RTFunctions {
     PFN_vkCmdTraceRaysKHR cmdTraceRays = nullptr;
 };
 
-RTFunctions g_rtFn;
-bool g_rtFnLoaded = false;
-
-void rt_load_functions(VkDevice device) {
-    if (g_rtFnLoaded) return;
-    g_rtFn.getBuildSizes = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetDeviceProcAddr(
+// rt_load_functions resolves every extension-only entry point fresh, into fn, for
+// device — always, never cached across calls. A device-level function pointer from
+// vkGetDeviceProcAddr is valid ONLY for the device (and its child objects) it was
+// retrieved from (Vulkan spec); a single process-global cache resolved once against
+// the FIRST device ever seen (this file's original design) is undefined behavior for
+// every RTScene created on a later, different device — e.g. a second test's window in
+// the same process. Reproduced as an intermittent SIGSEGV inside obk_rt_scene_add_mesh
+// when two windows/RTScenes were created in sequence within one test binary (found
+// live while adding M45-F05 PBI-350's per-pixel image pipeline, but pre-existing since
+// PBI-333 — any two RT-using tests in the same process could trigger it). Fixed by
+// storing RTFunctions per-RTScene (RTScene::rtFn) instead of process-global; the
+// re-resolution cost is a handful of vkGetDeviceProcAddr calls per scene, negligible.
+void rt_load_functions(VkDevice device, RTFunctions& fn) {
+    fn.getBuildSizes = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetDeviceProcAddr(
         device, "vkGetAccelerationStructureBuildSizesKHR");
-    g_rtFn.create =
+    fn.create =
         (PFN_vkCreateAccelerationStructureKHR)vkGetDeviceProcAddr(device, "vkCreateAccelerationStructureKHR");
-    g_rtFn.destroy =
+    fn.destroy =
         (PFN_vkDestroyAccelerationStructureKHR)vkGetDeviceProcAddr(device, "vkDestroyAccelerationStructureKHR");
-    g_rtFn.cmdBuild = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetDeviceProcAddr(
+    fn.cmdBuild = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetDeviceProcAddr(
         device, "vkCmdBuildAccelerationStructuresKHR");
-    g_rtFn.getDeviceAddress = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetDeviceProcAddr(
+    fn.getDeviceAddress = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetDeviceProcAddr(
         device, "vkGetAccelerationStructureDeviceAddressKHR");
-    g_rtFn.createRTPipeline =
+    fn.createRTPipeline =
         (PFN_vkCreateRayTracingPipelinesKHR)vkGetDeviceProcAddr(device, "vkCreateRayTracingPipelinesKHR");
-    g_rtFn.getShaderGroupHandles = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetDeviceProcAddr(
+    fn.getShaderGroupHandles = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetDeviceProcAddr(
         device, "vkGetRayTracingShaderGroupHandlesKHR");
-    g_rtFn.cmdTraceRays = (PFN_vkCmdTraceRaysKHR)vkGetDeviceProcAddr(device, "vkCmdTraceRaysKHR");
-    g_rtFnLoaded = true;
+    fn.cmdTraceRays = (PFN_vkCmdTraceRaysKHR)vkGetDeviceProcAddr(device, "vkCmdTraceRaysKHR");
 }
 
 struct RTBuffer {
@@ -72,6 +79,7 @@ struct RTBlas {
 
 struct RTScene {
     HeadContext* ctx = nullptr;
+    RTFunctions rtFn; // resolved fresh for THIS scene's device in obk_rt_scene_create — see rt_load_functions
     VkCommandPool cmdPool = VK_NULL_HANDLE;
     VkFence fence = VK_NULL_HANDLE;
     std::vector<RTBlas> blases;
@@ -99,6 +107,21 @@ struct RTScene {
     RTBuffer pipeCamBuf, pipeOutputBuf, pipeParamsBuf;
     uint32_t sbtHandleSize = 0, sbtHandleAlignment = 0, sbtBaseAlignment = 0;
     bool pipelineBuilt = false;
+
+    // Live per-pixel Realistic-viewport pipeline (M45-F05 PBI-350) — a THIRD, independent
+    // pipeline/SBT/descriptor set alongside the ray-query (rq*) and single-ray test-harness
+    // (pipe*) ones above, sharing only this scene's BLAS/TLAS. Kept independent rather than
+    // reusing pipe*'s shader modules so PBI-345/346's already-verified single-ray harness is
+    // never at risk of a regression from this pipeline's changes.
+    VkDescriptorSetLayout imgDsLayout = VK_NULL_HANDLE;
+    VkPipelineLayout imgPipeLayout = VK_NULL_HANDLE;
+    VkPipeline imgPipeline = VK_NULL_HANDLE;
+    VkDescriptorPool imgDescPool = VK_NULL_HANDLE;
+    VkDescriptorSet imgDescSet = VK_NULL_HANDLE;
+    RTBuffer imgSbtBuf, imgCamBuf, imgParamsBuf, imgOutputBuf;
+    uint32_t imgSbtHandleSize = 0, imgSbtHandleAlignment = 0, imgSbtBaseAlignment = 0;
+    int imgOutputWidth = 0, imgOutputHeight = 0; // 0 until the first trace_realistic_image call sizes imgOutputBuf
+    bool imgPipelineBuilt = false;
 };
 
 namespace {
@@ -208,7 +231,7 @@ VkAccelerationStructureKHR rt_build_acceleration_structure(RTScene* s, VkAcceler
 
     VkAccelerationStructureBuildSizesInfoKHR sizes{};
     sizes.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-    g_rtFn.getBuildSizes(c->device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+    s->rtFn.getBuildSizes(c->device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
                                             &buildInfo, &primitiveCount, &sizes);
 
     rt_create_buffer(c, outAsBuffer,
@@ -221,7 +244,7 @@ VkAccelerationStructureKHR rt_build_acceleration_structure(RTScene* s, VkAcceler
     asCreate.size = sizes.accelerationStructureSize;
     asCreate.type = type;
     VkAccelerationStructureKHR as = VK_NULL_HANDLE;
-    g_rtFn.create(c->device, &asCreate, c->allocator, &as);
+    s->rtFn.create(c->device, &asCreate, c->allocator, &as);
 
     RTBuffer scratch;
     rt_create_buffer(c, &scratch, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -234,18 +257,18 @@ VkAccelerationStructureKHR rt_build_acceleration_structure(RTScene* s, VkAcceler
     const VkAccelerationStructureBuildRangeInfoKHR* pRange = &range;
 
     rt_run_commands(s, [&](VkCommandBuffer cmd) {
-        g_rtFn.cmdBuild(cmd, 1, &buildInfo, &pRange);
+        s->rtFn.cmdBuild(cmd, 1, &buildInfo, &pRange);
     });
 
     rt_destroy_buffer(c, &scratch);
     return as;
 }
 
-VkDeviceAddress rt_as_device_address(HeadContext* c, VkAccelerationStructureKHR as) {
+VkDeviceAddress rt_as_device_address(RTScene* s, VkAccelerationStructureKHR as) {
     VkAccelerationStructureDeviceAddressInfoKHR info{};
     info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
     info.accelerationStructure = as;
-    return g_rtFn.getDeviceAddress(c->device, &info);
+    return s->rtFn.getDeviceAddress(s->ctx->device, &info);
 }
 
 // rt_create_compute_pipeline builds the raytrace.comp pipeline (descriptor layout:
@@ -350,9 +373,9 @@ extern "C" {
 void* obk_rt_scene_create(void* h) {
     HeadContext* c = (HeadContext*)h;
     if (!c || !c->hwRayTracingAvailable) return nullptr;
-    rt_load_functions(c->device);
     RTScene* s = new RTScene();
     s->ctx = c;
+    rt_load_functions(c->device, s->rtFn);
     VkCommandPoolCreateInfo cpi{};
     cpi.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     cpi.queueFamilyIndex = c->queueFamily;
@@ -406,7 +429,7 @@ int obk_rt_scene_add_mesh(void* scene, const float* vertices, int vertexCount,
     b.handle = rt_build_acceleration_structure(s, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR,
                                                geom, b.primitiveCount, &b.asBuffer);
     if (b.handle == VK_NULL_HANDLE) return 1;
-    b.deviceAddress = rt_as_device_address(c, b.handle);
+    b.deviceAddress = rt_as_device_address(s, b.handle);
     s->blases.push_back(b);
     return 0;
 }
@@ -588,7 +611,7 @@ int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLe
     pInfo.maxPipelineRayRecursionDepth = 2; // primary ray + one shadow ray traced from within it
     pInfo.layout = s->pipePipeLayout;
     VkResult pipeResult =
-        g_rtFn.createRTPipeline(c->device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &s->pipePipeline);
+        s->rtFn.createRTPipeline(c->device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &s->pipePipeline);
     vkDestroyShaderModule(c->device, rgen, c->allocator);
     vkDestroyShaderModule(c->device, miss, c->allocator);
     vkDestroyShaderModule(c->device, shadowMiss, c->allocator);
@@ -606,7 +629,7 @@ int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLe
     s->sbtBaseAlignment = rtProps.shaderGroupBaseAlignment;
 
     std::vector<uint8_t> handles(4 * (size_t)s->sbtHandleSize);
-    if (!ok(g_rtFn.getShaderGroupHandles(c->device, s->pipePipeline, 0, 4, handles.size(), handles.data())))
+    if (!ok(s->rtFn.getShaderGroupHandles(c->device, s->pipePipeline, 0, 4, handles.size(), handles.data())))
         return 1;
 
     VkDeviceSize entryStride = align_up(s->sbtHandleSize, s->sbtHandleAlignment);
@@ -702,7 +725,7 @@ void obk_rt_scene_trace_pipeline(void* scene, float ox, float oy, float oz, floa
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->pipePipeline);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->pipePipeLayout, 0, 1,
                                 &s->pipeDescSet, 0, nullptr);
-        g_rtFn.cmdTraceRays(cmd, &raygenRegion, &missRegion, &hitRegion, &callableRegion, 1, 1, 1);
+        s->rtFn.cmdTraceRays(cmd, &raygenRegion, &missRegion, &hitRegion, &callableRegion, 1, 1, 1);
         VkMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
         barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -715,6 +738,235 @@ void obk_rt_scene_trace_pipeline(void* scene, float ox, float oy, float oz, floa
     if (outR) *outR = out[0];
     if (outG) *outG = out[1];
     if (outB) *outB = out[2];
+}
+
+// obk_rt_scene_build_realistic_pipeline mirrors obk_rt_scene_build_pipeline exactly
+// (same 4-binding descriptor set shape: TLAS, output storage buffer, camera UBO, params
+// UBO), except the camera UBO is 64 bytes (an eye/forward/right/up pinhole basis, not a
+// single fixed ray — pathtrace_realistic.rgen's CameraParams) and the output buffer
+// starts at a 1-pixel placeholder size, resized to the real width*height by the first
+// obk_rt_scene_trace_realistic_image call (image dimensions aren't known yet here).
+int obk_rt_scene_build_realistic_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLen,
+                                          const uint32_t* missSpv, int missLen,
+                                          const uint32_t* shadowMissSpv, int shadowMissLen,
+                                          const uint32_t* chitSpv, int chitLen) {
+    RTScene* s = (RTScene*)scene;
+    if (!s || !s->built || s->imgPipelineBuilt || !s->ctx->hwRayTracingPipeline) return 1;
+    HeadContext* c = s->ctx;
+
+    VkDescriptorSetLayoutBinding bindings[4]{};
+    bindings[0] = {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1,
+                  VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr};
+    bindings[1] = {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr};
+    bindings[2] = {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr};
+    bindings[3] = {3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr};
+    VkDescriptorSetLayoutCreateInfo dslInfo{};
+    dslInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    dslInfo.bindingCount = 4;
+    dslInfo.pBindings = bindings;
+    if (!ok(vkCreateDescriptorSetLayout(c->device, &dslInfo, c->allocator, &s->imgDsLayout))) return 1;
+
+    VkPipelineLayoutCreateInfo plInfo{};
+    plInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    plInfo.setLayoutCount = 1;
+    plInfo.pSetLayouts = &s->imgDsLayout;
+    if (!ok(vkCreatePipelineLayout(c->device, &plInfo, c->allocator, &s->imgPipeLayout))) return 1;
+
+    VkShaderModule rgen = rt_load_shader(c, rgenSpv, rgenLen);
+    VkShaderModule miss = rt_load_shader(c, missSpv, missLen);
+    VkShaderModule shadowMiss = rt_load_shader(c, shadowMissSpv, shadowMissLen);
+    VkShaderModule chit = rt_load_shader(c, chitSpv, chitLen);
+    if (!rgen || !miss || !shadowMiss || !chit) return 1;
+
+    VkPipelineShaderStageCreateInfo stages[4]{};
+    stages[0] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
+                VK_SHADER_STAGE_RAYGEN_BIT_KHR,      rgen,       "main", nullptr};
+    stages[1] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
+                VK_SHADER_STAGE_MISS_BIT_KHR,        miss,       "main", nullptr};
+    stages[2] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
+                VK_SHADER_STAGE_MISS_BIT_KHR,        shadowMiss, "main", nullptr};
+    stages[3] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
+                VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, chit,       "main", nullptr};
+
+    VkRayTracingShaderGroupCreateInfoKHR groups[4]{};
+    for (int i = 0; i < 3; i++) {
+        groups[i].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        groups[i].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+        groups[i].generalShader = (uint32_t)i;
+        groups[i].closestHitShader = VK_SHADER_UNUSED_KHR;
+        groups[i].anyHitShader = VK_SHADER_UNUSED_KHR;
+        groups[i].intersectionShader = VK_SHADER_UNUSED_KHR;
+    }
+    groups[3].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+    groups[3].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+    groups[3].generalShader = VK_SHADER_UNUSED_KHR;
+    groups[3].closestHitShader = 3;
+    groups[3].anyHitShader = VK_SHADER_UNUSED_KHR;
+    groups[3].intersectionShader = VK_SHADER_UNUSED_KHR;
+
+    VkRayTracingPipelineCreateInfoKHR pInfo{};
+    pInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+    pInfo.stageCount = 4;
+    pInfo.pStages = stages;
+    pInfo.groupCount = 4;
+    pInfo.pGroups = groups;
+    pInfo.maxPipelineRayRecursionDepth = 2; // primary ray + one shadow ray traced from within it
+    pInfo.layout = s->imgPipeLayout;
+    VkResult pipeResult = s->rtFn.createRTPipeline(c->device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pInfo,
+                                                  c->allocator, &s->imgPipeline);
+    vkDestroyShaderModule(c->device, rgen, c->allocator);
+    vkDestroyShaderModule(c->device, miss, c->allocator);
+    vkDestroyShaderModule(c->device, shadowMiss, c->allocator);
+    vkDestroyShaderModule(c->device, chit, c->allocator);
+    if (!ok(pipeResult)) return 1;
+
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtProps{};
+    rtProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+    VkPhysicalDeviceProperties2 props2{};
+    props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    props2.pNext = &rtProps;
+    vkGetPhysicalDeviceProperties2(c->physical, &props2);
+    s->imgSbtHandleSize = rtProps.shaderGroupHandleSize;
+    s->imgSbtHandleAlignment = rtProps.shaderGroupHandleAlignment;
+    s->imgSbtBaseAlignment = rtProps.shaderGroupBaseAlignment;
+
+    std::vector<uint8_t> handles(4 * (size_t)s->imgSbtHandleSize);
+    if (!ok(s->rtFn.getShaderGroupHandles(c->device, s->imgPipeline, 0, 4, handles.size(), handles.data())))
+        return 1;
+
+    VkDeviceSize entryStride = align_up(s->imgSbtHandleSize, s->imgSbtHandleAlignment);
+    VkDeviceSize raygenOffset = 0;
+    VkDeviceSize missOffset = align_up(raygenOffset + entryStride, s->imgSbtBaseAlignment);
+    VkDeviceSize hitOffset = align_up(missOffset + 2 * entryStride, s->imgSbtBaseAlignment);
+    VkDeviceSize sbtSize = align_up(hitOffset + entryStride, s->imgSbtBaseAlignment);
+
+    std::vector<uint8_t> sbtData(sbtSize, 0);
+    std::memcpy(sbtData.data() + raygenOffset, handles.data() + 0 * s->imgSbtHandleSize, s->imgSbtHandleSize);
+    std::memcpy(sbtData.data() + missOffset, handles.data() + 1 * s->imgSbtHandleSize, s->imgSbtHandleSize);
+    std::memcpy(sbtData.data() + missOffset + entryStride, handles.data() + 2 * s->imgSbtHandleSize,
+               s->imgSbtHandleSize);
+    std::memcpy(sbtData.data() + hitOffset, handles.data() + 3 * s->imgSbtHandleSize, s->imgSbtHandleSize);
+
+    if (!rt_upload_buffer(c, &s->imgSbtBuf,
+                          VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                          sbtData.data(), sbtSize))
+        return 1;
+
+    rt_create_buffer(c, &s->imgCamBuf, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 64);
+    vkMapMemory(c->device, s->imgCamBuf.memory, 0, 64, 0, &s->imgCamBuf.mapped);
+    rt_create_buffer(c, &s->imgParamsBuf, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 64);
+    vkMapMemory(c->device, s->imgParamsBuf.memory, 0, 64, 0, &s->imgParamsBuf.mapped);
+    rt_create_buffer(c, &s->imgOutputBuf, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 16);
+    vkMapMemory(c->device, s->imgOutputBuf.memory, 0, 16, 0, &s->imgOutputBuf.mapped);
+    s->imgOutputWidth = 1;
+    s->imgOutputHeight = 1;
+
+    VkDescriptorPoolSize poolSizes[3] = {
+        {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
+        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1},
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
+    };
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.maxSets = 1;
+    poolInfo.poolSizeCount = 3;
+    poolInfo.pPoolSizes = poolSizes;
+    if (!ok(vkCreateDescriptorPool(c->device, &poolInfo, c->allocator, &s->imgDescPool))) return 1;
+
+    VkDescriptorSetAllocateInfo dsAlloc{};
+    dsAlloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    dsAlloc.descriptorPool = s->imgDescPool;
+    dsAlloc.descriptorSetCount = 1;
+    dsAlloc.pSetLayouts = &s->imgDsLayout;
+    if (!ok(vkAllocateDescriptorSets(c->device, &dsAlloc, &s->imgDescSet))) return 1;
+
+    VkWriteDescriptorSetAccelerationStructureKHR asWrite{};
+    asWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+    asWrite.accelerationStructureCount = 1;
+    asWrite.pAccelerationStructures = &s->tlas;
+    VkDescriptorBufferInfo outInfo{s->imgOutputBuf.buffer, 0, 16};
+    VkDescriptorBufferInfo camInfo{s->imgCamBuf.buffer, 0, 64};
+    VkDescriptorBufferInfo paramInfo{s->imgParamsBuf.buffer, 0, 64};
+    VkWriteDescriptorSet writes[4]{};
+    writes[0] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, &asWrite, s->imgDescSet, 0, 0, 1,
+                VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, nullptr, nullptr, nullptr};
+    writes[1] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 1, 0, 1,
+                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &outInfo, nullptr};
+    writes[2] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 2, 0, 1,
+                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &camInfo, nullptr};
+    writes[3] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 3, 0, 1,
+                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &paramInfo, nullptr};
+    vkUpdateDescriptorSets(c->device, 4, writes, 0, nullptr);
+
+    s->imgPipelineBuilt = true;
+    return 0;
+}
+
+// obk_rt_scene_trace_realistic_image dispatches one vkCmdTraceRaysKHR(width,height,1)
+// call — one primary+shadow ray pair per pixel — and reads back the resulting
+// width*height RGB image. Resizes imgOutputBuf (and re-writes its descriptor) only when
+// width*height actually changes from the previous call (e.g. a viewport panel resize),
+// not on every call.
+int obk_rt_scene_trace_realistic_image(void* scene, int width, int height, const float* camera,
+                                       const float* params, float* outPixels) {
+    RTScene* s = (RTScene*)scene;
+    if (!s || !s->imgPipelineBuilt || width <= 0 || height <= 0) return 1;
+    HeadContext* c = s->ctx;
+
+    if (width != s->imgOutputWidth || height != s->imgOutputHeight) {
+        vkDeviceWaitIdle(c->device); // the old buffer may still be read by a prior frame's GPU work
+        rt_destroy_buffer(c, &s->imgOutputBuf);
+        VkDeviceSize bytes = (VkDeviceSize)width * height * 16;
+        if (!rt_create_buffer(c, &s->imgOutputBuf, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, bytes))
+            return 1;
+        vkMapMemory(c->device, s->imgOutputBuf.memory, 0, bytes, 0, &s->imgOutputBuf.mapped);
+        s->imgOutputWidth = width;
+        s->imgOutputHeight = height;
+
+        VkDescriptorBufferInfo outInfo{s->imgOutputBuf.buffer, 0, bytes};
+        VkWriteDescriptorSet write{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 1, 0, 1,
+                                   VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &outInfo, nullptr};
+        vkUpdateDescriptorSets(c->device, 1, &write, 0, nullptr);
+    }
+
+    std::memcpy(s->imgCamBuf.mapped, camera, 16 * sizeof(float));
+    std::memcpy(s->imgParamsBuf.mapped, params, 16 * sizeof(float));
+
+    VkDeviceAddress sbtBase = s->imgSbtBuf.address;
+    VkDeviceSize entryStride = align_up(s->imgSbtHandleSize, s->imgSbtHandleAlignment);
+    VkDeviceSize missOffset = align_up(entryStride, s->imgSbtBaseAlignment);
+    VkDeviceSize hitOffset = align_up(missOffset + 2 * entryStride, s->imgSbtBaseAlignment);
+
+    VkStridedDeviceAddressRegionKHR raygenRegion{sbtBase + 0, entryStride, entryStride};
+    VkStridedDeviceAddressRegionKHR missRegion{sbtBase + missOffset, entryStride, 2 * entryStride};
+    VkStridedDeviceAddressRegionKHR hitRegion{sbtBase + hitOffset, entryStride, entryStride};
+    VkStridedDeviceAddressRegionKHR callableRegion{};
+
+    rt_run_commands(s, [&](VkCommandBuffer cmd) {
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->imgPipeline);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->imgPipeLayout, 0, 1,
+                                &s->imgDescSet, 0, nullptr);
+        s->rtFn.cmdTraceRays(cmd, &raygenRegion, &missRegion, &hitRegion, &callableRegion,
+                            (uint32_t)width, (uint32_t)height, 1);
+        VkMemoryBarrier barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+        barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_PIPELINE_STAGE_HOST_BIT, 0, 1,
+                             &barrier, 0, nullptr, 0, nullptr);
+    });
+
+    auto* out = reinterpret_cast<float*>(s->imgOutputBuf.mapped);
+    for (int i = 0; i < width * height; i++) {
+        outPixels[i * 3 + 0] = out[i * 4 + 0];
+        outPixels[i * 3 + 1] = out[i * 4 + 1];
+        outPixels[i * 3 + 2] = out[i * 4 + 2];
+    }
+    return 0;
 }
 
 void obk_rt_scene_destroy(void* scene) {
@@ -736,11 +988,19 @@ void obk_rt_scene_destroy(void* scene) {
     rt_destroy_buffer(c, &s->pipeCamBuf);
     rt_destroy_buffer(c, &s->pipeOutputBuf);
     rt_destroy_buffer(c, &s->pipeParamsBuf);
-    if (s->tlas) g_rtFn.destroy(c->device, s->tlas, c->allocator);
+    if (s->imgPipeline) vkDestroyPipeline(c->device, s->imgPipeline, c->allocator);
+    if (s->imgPipeLayout) vkDestroyPipelineLayout(c->device, s->imgPipeLayout, c->allocator);
+    if (s->imgDsLayout) vkDestroyDescriptorSetLayout(c->device, s->imgDsLayout, c->allocator);
+    if (s->imgDescPool) vkDestroyDescriptorPool(c->device, s->imgDescPool, c->allocator);
+    rt_destroy_buffer(c, &s->imgSbtBuf);
+    rt_destroy_buffer(c, &s->imgCamBuf);
+    rt_destroy_buffer(c, &s->imgOutputBuf);
+    rt_destroy_buffer(c, &s->imgParamsBuf);
+    if (s->tlas) s->rtFn.destroy(c->device, s->tlas, c->allocator);
     rt_destroy_buffer(c, &s->tlasBuffer);
     rt_destroy_buffer(c, &s->instanceBuf);
     for (auto& b : s->blases) {
-        if (b.handle) g_rtFn.destroy(c->device, b.handle, c->allocator);
+        if (b.handle) s->rtFn.destroy(c->device, b.handle, c->allocator);
         rt_destroy_buffer(c, &b.asBuffer);
         rt_destroy_buffer(c, &b.vertexBuf);
         rt_destroy_buffer(c, &b.indexBuf);

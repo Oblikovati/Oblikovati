@@ -75,6 +75,18 @@ struct SWScene {
     VkDescriptorSet ptDescSet = VK_NULL_HANDLE;
     SWBuffer ptCamBuf, ptParamsBuf, ptOutputBuf;
     bool pathtraceBuilt = false;
+
+    // Live per-pixel Realistic-viewport pipeline (M45-F05 PBI-350) — a THIRD compute
+    // pipeline, independent of the single-ray pt* harness above (own descriptor set), so
+    // PBI-346's already-verified test is never at risk from a change here.
+    VkDescriptorSetLayout imgDsLayout = VK_NULL_HANDLE;
+    VkPipelineLayout imgPipeLayout = VK_NULL_HANDLE;
+    VkPipeline imgPipeline = VK_NULL_HANDLE;
+    VkDescriptorPool imgDescPool = VK_NULL_HANDLE;
+    VkDescriptorSet imgDescSet = VK_NULL_HANDLE;
+    SWBuffer imgCamBuf, imgParamsBuf, imgOutputBuf;
+    int imgOutputWidth = 0, imgOutputHeight = 0;
+    bool imgPipelineBuilt = false;
 };
 
 extern "C" {
@@ -400,6 +412,173 @@ void obk_sw_scene_trace_pathtrace(void* scene, float ox, float oy, float oz, flo
     if (outB) *outB = out[2];
 }
 
+// obk_sw_scene_build_realistic_pathtrace_pipeline mirrors
+// obk_sw_scene_build_pathtrace_pipeline exactly (same 6-binding descriptor set shape:
+// camera UBO, nodes/triOrder/triangles SSBOs reusing the scene's already-uploaded
+// geometry buffers, params UBO, output SSBO), except the camera UBO is 64 bytes (a
+// pinhole eye/forward/right/up basis, swpathtrace_realistic.comp's CameraParams) and the
+// output buffer starts at a 1-pixel placeholder, resized to width*height by the first
+// obk_sw_scene_trace_realistic_pathtrace_image call.
+int obk_sw_scene_build_realistic_pathtrace_pipeline(void* scene, const uint32_t* spv, int spvLen) {
+    SWScene* s = (SWScene*)scene;
+    if (!s || !s->built || s->imgPipelineBuilt) return 1;
+    HeadContext* c = s->ctx;
+
+    VkDescriptorSetLayoutBinding bindings[6]{};
+    bindings[0] = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    bindings[1] = {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    bindings[2] = {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    bindings[3] = {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    bindings[4] = {4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    bindings[5] = {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    VkDescriptorSetLayoutCreateInfo dslInfo{};
+    dslInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    dslInfo.bindingCount = 6;
+    dslInfo.pBindings = bindings;
+    if (!ok(vkCreateDescriptorSetLayout(c->device, &dslInfo, c->allocator, &s->imgDsLayout))) return 1;
+
+    VkPipelineLayoutCreateInfo plInfo{};
+    plInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    plInfo.setLayoutCount = 1;
+    plInfo.pSetLayouts = &s->imgDsLayout;
+    if (!ok(vkCreatePipelineLayout(c->device, &plInfo, c->allocator, &s->imgPipeLayout))) return 1;
+
+    VkShaderModuleCreateInfo smInfo{};
+    smInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    smInfo.codeSize = (size_t)spvLen;
+    smInfo.pCode = spv;
+    VkShaderModule shader = VK_NULL_HANDLE;
+    if (!ok(vkCreateShaderModule(c->device, &smInfo, c->allocator, &shader))) return 1;
+
+    VkPipelineShaderStageCreateInfo stage{};
+    stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    stage.module = shader;
+    stage.pName = "main";
+    VkComputePipelineCreateInfo pInfo{};
+    pInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pInfo.stage = stage;
+    pInfo.layout = s->imgPipeLayout;
+    VkResult pipeResult =
+        vkCreateComputePipelines(c->device, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &s->imgPipeline);
+    vkDestroyShaderModule(c->device, shader, c->allocator);
+    if (!ok(pipeResult)) return 1;
+
+    VkDescriptorPoolSize poolSizes[2] = {
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
+        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4},
+    };
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.maxSets = 1;
+    poolInfo.poolSizeCount = 2;
+    poolInfo.pPoolSizes = poolSizes;
+    if (!ok(vkCreateDescriptorPool(c->device, &poolInfo, c->allocator, &s->imgDescPool))) return 1;
+
+    VkDescriptorSetAllocateInfo dsAlloc{};
+    dsAlloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    dsAlloc.descriptorPool = s->imgDescPool;
+    dsAlloc.descriptorSetCount = 1;
+    dsAlloc.pSetLayouts = &s->imgDsLayout;
+    if (!ok(vkAllocateDescriptorSets(c->device, &dsAlloc, &s->imgDescSet))) return 1;
+
+    sw_create_buffer(c, &s->imgCamBuf, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 64);
+    vkMapMemory(c->device, s->imgCamBuf.memory, 0, 64, 0, &s->imgCamBuf.mapped);
+    sw_create_buffer(c, &s->imgParamsBuf, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 64);
+    vkMapMemory(c->device, s->imgParamsBuf.memory, 0, 64, 0, &s->imgParamsBuf.mapped);
+    sw_create_buffer(c, &s->imgOutputBuf, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 16);
+    vkMapMemory(c->device, s->imgOutputBuf.memory, 0, 16, 0, &s->imgOutputBuf.mapped);
+    s->imgOutputWidth = 1;
+    s->imgOutputHeight = 1;
+
+    VkDescriptorBufferInfo camInfo{s->imgCamBuf.buffer, 0, 64};
+    VkDescriptorBufferInfo nodesInfo{s->nodesBuf.buffer, 0, VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo triOrderInfo{s->triOrderBuf.buffer, 0, VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo trianglesInfo{s->trianglesBuf.buffer, 0, VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo paramInfo{s->imgParamsBuf.buffer, 0, 64};
+    VkDescriptorBufferInfo outInfo{s->imgOutputBuf.buffer, 0, 16};
+    VkDescriptorBufferInfo* infos[6] = {&camInfo, &nodesInfo, &triOrderInfo, &trianglesInfo, &paramInfo, &outInfo};
+    VkDescriptorType types[6] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                 VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
+    VkWriteDescriptorSet writes[6]{};
+    for (uint32_t i = 0; i < 6; i++) {
+        writes[i] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, i, 0, 1,
+                    types[i],           nullptr, infos[i],  nullptr};
+    }
+    vkUpdateDescriptorSets(c->device, 6, writes, 0, nullptr);
+
+    s->imgPipelineBuilt = true;
+    return 0;
+}
+
+// obk_sw_scene_trace_realistic_pathtrace_image dispatches ceil(width/8) x ceil(height/8)
+// work groups (swpathtrace_realistic.comp's local_size 8x8) and reads back the
+// resulting width*height RGB image. Resizes imgOutputBuf (and re-writes its descriptor)
+// only when width*height actually changes from the previous call.
+int obk_sw_scene_trace_realistic_pathtrace_image(void* scene, int width, int height, const float* camera,
+                                                 const float* params, float* outPixels) {
+    SWScene* s = (SWScene*)scene;
+    if (!s || !s->imgPipelineBuilt || width <= 0 || height <= 0) return 1;
+    HeadContext* c = s->ctx;
+
+    if (width != s->imgOutputWidth || height != s->imgOutputHeight) {
+        vkDeviceWaitIdle(c->device);
+        sw_destroy_buffer(c, &s->imgOutputBuf);
+        VkDeviceSize bytes = (VkDeviceSize)width * height * 16;
+        if (!sw_create_buffer(c, &s->imgOutputBuf, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, bytes)) return 1;
+        vkMapMemory(c->device, s->imgOutputBuf.memory, 0, bytes, 0, &s->imgOutputBuf.mapped);
+        s->imgOutputWidth = width;
+        s->imgOutputHeight = height;
+
+        VkDescriptorBufferInfo outInfo{s->imgOutputBuf.buffer, 0, bytes};
+        VkWriteDescriptorSet write{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 5, 0, 1,
+                                   VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &outInfo, nullptr};
+        vkUpdateDescriptorSets(c->device, 1, &write, 0, nullptr);
+    }
+
+    std::memcpy(s->imgCamBuf.mapped, camera, 16 * sizeof(float));
+    std::memcpy(s->imgParamsBuf.mapped, params, 16 * sizeof(float));
+
+    VkCommandBufferAllocateInfo cba{};
+    cba.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cba.commandPool = s->cmdPool;
+    cba.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cba.commandBufferCount = 1;
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
+    vkAllocateCommandBuffers(c->device, &cba, &cmd);
+    VkCommandBufferBeginInfo bi{};
+    bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cmd, &bi);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->imgPipeline);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->imgPipeLayout, 0, 1, &s->imgDescSet, 0, nullptr);
+    vkCmdDispatch(cmd, (uint32_t)((width + 7) / 8), (uint32_t)((height + 7) / 8), 1);
+    VkMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &barrier, 0,
+                         nullptr, 0, nullptr);
+    vkEndCommandBuffer(cmd);
+    VkSubmitInfo submit{};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
+    vkResetFences(c->device, 1, &s->fence);
+    vkQueueSubmit(c->queue, 1, &submit, s->fence);
+    vkWaitForFences(c->device, 1, &s->fence, VK_TRUE, UINT64_MAX);
+    vkFreeCommandBuffers(c->device, s->cmdPool, 1, &cmd);
+
+    auto* out = reinterpret_cast<float*>(s->imgOutputBuf.mapped);
+    for (int i = 0; i < width * height; i++) {
+        outPixels[i * 3 + 0] = out[i * 4 + 0];
+        outPixels[i * 3 + 1] = out[i * 4 + 1];
+        outPixels[i * 3 + 2] = out[i * 4 + 2];
+    }
+    return 0;
+}
+
 void obk_sw_scene_destroy(void* scene) {
     SWScene* s = (SWScene*)scene;
     if (!s) return;
@@ -418,6 +597,13 @@ void obk_sw_scene_destroy(void* scene) {
     sw_destroy_buffer(c, &s->ptCamBuf);
     sw_destroy_buffer(c, &s->ptParamsBuf);
     sw_destroy_buffer(c, &s->ptOutputBuf);
+    if (s->imgPipeline) vkDestroyPipeline(c->device, s->imgPipeline, c->allocator);
+    if (s->imgPipeLayout) vkDestroyPipelineLayout(c->device, s->imgPipeLayout, c->allocator);
+    if (s->imgDsLayout) vkDestroyDescriptorSetLayout(c->device, s->imgDsLayout, c->allocator);
+    if (s->imgDescPool) vkDestroyDescriptorPool(c->device, s->imgDescPool, c->allocator);
+    sw_destroy_buffer(c, &s->imgCamBuf);
+    sw_destroy_buffer(c, &s->imgParamsBuf);
+    sw_destroy_buffer(c, &s->imgOutputBuf);
     sw_destroy_buffer(c, &s->nodesBuf);
     sw_destroy_buffer(c, &s->triOrderBuf);
     sw_destroy_buffer(c, &s->trianglesBuf);

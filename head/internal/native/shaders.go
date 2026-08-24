@@ -75,3 +75,17 @@ var pathtraceRchitSPV []byte
 //
 //go:embed shaders/swpathtrace.comp.spv
 var swpathtraceCompSPV []byte
+
+// Live per-pixel Realistic-viewport pipelines (M45-F05 PBI-350): a pinhole-camera
+// ray-gen (hardware) and an equivalent per-pixel compute dispatch (software), both
+// shading one directional light per dispatch — the actual pass Realistic mode now
+// renders, distinct from the single-ray PBI-345/346 CPU-oracle test harnesses above.
+
+//go:embed shaders/pathtrace_realistic.rgen.spv
+var pathtraceRealisticRgenSPV []byte
+
+//go:embed shaders/pathtrace_realistic.rchit.spv
+var pathtraceRealisticRchitSPV []byte
+
+//go:embed shaders/swpathtrace_realistic.comp.spv
+var swpathtraceRealisticCompSPV []byte

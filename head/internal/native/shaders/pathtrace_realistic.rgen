@@ -1,0 +1,41 @@
+#version 460
+// Ray-gen for the LIVE Realistic-mode viewport (M45-F05 PBI-350, ADR-0053): unlike
+// pathtrace.rgen's single-ray CPU-oracle harness, this generates one pinhole camera ray
+// per pixel (gl_LaunchIDEXT) from an eye/forward/right/up basis, and writes into an
+// Output SSBO sized width*height instead of one fixed slot — one call renders a whole
+// frame's worth of primary samples. Reuses pathtrace.rmiss/shadow.rmiss unchanged (same
+// payload contract) and pairs with pathtrace_realistic.rchit (directional-light
+// shading, vs. that harness's point light).
+#extension GL_EXT_ray_tracing : require
+
+layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
+
+layout(set = 0, binding = 1, std430) buffer Output { vec4 pixels[]; } outputBuf;
+
+layout(set = 0, binding = 2) uniform CameraParams {
+    vec3 eye;
+    float tMin;
+    vec3 forward;
+    float tMax;
+    vec3 right;
+    float tanHalfFovY;
+    vec3 up;
+    float aspect;
+} cam;
+
+layout(location = 0) rayPayloadEXT vec3 payload;
+
+void main() {
+    vec2 size = vec2(gl_LaunchSizeEXT.xy);
+    vec2 px = vec2(gl_LaunchIDEXT.xy) + 0.5;
+    vec2 ndc = (px / size) * 2.0 - 1.0;
+    ndc.y = -ndc.y; // row 0 (top) -> +Y (up)
+
+    vec3 dir = normalize(cam.forward + ndc.x * cam.aspect * cam.tanHalfFovY * cam.right +
+                         ndc.y * cam.tanHalfFovY * cam.up);
+
+    traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, cam.eye, cam.tMin, dir, cam.tMax, 0);
+
+    uint idx = gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x;
+    outputBuf.pixels[idx] = vec4(payload, 1.0);
+}

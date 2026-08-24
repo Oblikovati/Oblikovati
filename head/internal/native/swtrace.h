@@ -51,4 +51,19 @@ void obk_sw_scene_trace_pathtrace(void* scene, float ox, float oy, float oz, flo
                                   float tMin, float tMax, const float* params, float* outR, float* outG,
                                   float* outB);
 
+// --- Live per-pixel Realistic-viewport pipeline (M45-F05 PBI-350): a per-pixel
+// pinhole-camera path tracer over this scene's SAME uploaded BVH, independent of the
+// single-ray pathtrace harness above (own descriptor set).
+
+// obk_sw_scene_build_realistic_pathtrace_pipeline creates the per-pixel shading compute
+// pipeline. Returns 0 on success.
+int obk_sw_scene_build_realistic_pathtrace_pipeline(void* scene, const uint32_t* spv, int spvLen);
+
+// obk_sw_scene_trace_realistic_pathtrace_image dispatches ceil(width/8)xceil(height/8)
+// work groups. camera/params are the same 16-float layouts as
+// raytrace.h's obk_rt_scene_trace_realistic_image. outPixels must have room for
+// width*height*3 floats (RGB, row-major, alpha dropped). Returns 0 on success.
+int obk_sw_scene_trace_realistic_pathtrace_image(void* scene, int width, int height, const float* camera,
+                                                 const float* params, float* outPixels);
+
 } // extern "C"
