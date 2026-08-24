@@ -93,5 +93,15 @@ func (m MergedLookup) Material(id string) (*Material, bool) {
 	return m.Catalog.Material(id)
 }
 
+// OpenPBRAppearance looks up an id, embedded set first (mirrors Appearance).
+func (m MergedLookup) OpenPBRAppearance(id string) (*OpenPBRAppearance, bool) {
+	if m.Embedded != nil {
+		if a, ok := m.Embedded.OpenPBRAppearance(id); ok {
+			return a, true
+		}
+	}
+	return m.Catalog.OpenPBRAppearance(id)
+}
+
 // DefaultAppearance defers to the catalog's neutral default.
 func (m MergedLookup) DefaultAppearance() *Appearance { return m.Catalog.DefaultAppearance() }

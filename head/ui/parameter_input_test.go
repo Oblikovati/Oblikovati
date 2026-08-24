@@ -49,9 +49,10 @@ func TestParamSeedText(t *testing.T) {
 // bareInputFloatAllowlist lists the only head/ui files that may call native.InputFloat directly,
 // because their fields are NOT document-unit feature/tool parameters (#1519). Each entry says why.
 var bareInputFloatAllowlist = map[string]string{
-	"appearance_editor.go":  "PBR scalars (Metallic/Roughness/Opacity) are dimensionless [0,1] ratios, not a document dimension",
-	"parameters_dialogs.go": "the parameter table's tolerance editor enters deviations in database units by design",
-	"preferences_window.go": "an application preference (grid spacing) with a fixed unit, not a per-document parameter",
+	"appearance_editor.go":         "PBR scalars (Metallic/Roughness/Opacity) are dimensionless [0,1] ratios, not a document dimension",
+	"openpbr_appearance_editor.go": "OpenPBR Surface scalars (weight/roughness/IOR/anisotropy/color channels/thickness/luminance) are physical-material properties in fixed units or [0,1] ratios, not document-unit feature dimensions — mirrors appearance_editor.go's legacy PBR-scalar exemption",
+	"parameters_dialogs.go":        "the parameter table's tolerance editor enters deviations in database units by design",
+	"preferences_window.go":        "an application preference (grid spacing) with a fixed unit, not a per-document parameter",
 }
 
 // unitTextAllowlist lists files that may render a unit name as a standalone Text — a table column,

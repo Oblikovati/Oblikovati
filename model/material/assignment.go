@@ -21,10 +21,9 @@ type AssignmentStore struct {
 
 	// OpenPBRAppearance assignments (M45-F05 PBI-350, ADR-0053) — a SEPARATE override
 	// chain from the legacy Appearance one above, not a fallback into it: a body assigned
-	// an OpenPBRAppearance does not also consult bodyAppearance. Resolving which chain a
-	// renderer should prefer when BOTH are set on the same body is future work (belongs
-	// with the appearance-editor/catalog PBIs, 351/352, which is where OpenPBRAppearance
-	// becomes the primary authoring surface) — this type only stores the assignment.
+	// an OpenPBRAppearance does not also consult bodyAppearance. When BOTH are set on the
+	// same body, the OpenPBR chain wins (app.Session.partSurfaceLookup, #2150) — the
+	// newer, richer system a user explicitly opted into by assigning it.
 	partOpenPBRAppearance string
 	bodyOpenPBRAppearance map[string]string
 	faceOpenPBRAppearance map[string]string
@@ -98,6 +97,7 @@ type AssetLookup interface {
 	Appearance(id string) (*Appearance, bool)
 	Material(id string) (*Material, bool)
 	DefaultAppearance() *Appearance
+	OpenPBRAppearance(id string) (*OpenPBRAppearance, bool)
 }
 
 // EffectiveMaterialID returns the id of the material governing a body — its own override if
@@ -146,6 +146,37 @@ func (s *AssignmentStore) EffectiveAppearance(look AssetLookup, bodyKey, faceKey
 		}
 	}
 	return look.DefaultAppearance()
+}
+
+// EffectiveOpenPBRAppearance resolves the OpenPBR appearance overriding a body/face, along
+// the same face → body → part precedence [EffectiveAppearance] uses. Unlike
+// EffectiveAppearance it returns ok=false (not the neutral default) when nothing in this
+// chain is assigned, so a caller can fall back to the legacy Appearance chain instead —
+// the two chains are separate (see the AssignmentStore doc comment), and a renderer must
+// tell "explicitly assigned OpenPBR appearance" apart from "nothing assigned here."
+func (s *AssignmentStore) EffectiveOpenPBRAppearance(look AssetLookup, bodyKey, faceKey string) (*OpenPBRAppearance, bool) {
+	if faceKey != "" {
+		if a := openPBRApprOrNil(look, s.faceOpenPBRAppearance[faceKey]); a != nil {
+			return a, true
+		}
+	}
+	if a := openPBRApprOrNil(look, s.bodyOpenPBRAppearance[bodyKey]); a != nil {
+		return a, true
+	}
+	if a := openPBRApprOrNil(look, s.partOpenPBRAppearance); a != nil {
+		return a, true
+	}
+	return nil, false
+}
+
+// openPBRApprOrNil returns the OpenPBR appearance for id via look, or nil for an
+// empty/unknown id.
+func openPBRApprOrNil(look AssetLookup, id string) *OpenPBRAppearance {
+	if id == "" {
+		return nil
+	}
+	a, _ := look.OpenPBRAppearance(id)
+	return a
 }
 
 // apprOrNil returns the appearance for id via look, or nil for an empty/unknown id.

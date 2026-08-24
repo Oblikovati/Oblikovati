@@ -3,6 +3,8 @@
 package app
 
 import (
+	"math"
+
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/material"
@@ -95,7 +97,15 @@ func (s *Session) partSurfaceLookup(part *compdef.PartComponentDefinition) rende
 				return styleSurface(cs)
 			}
 		}
-		appr := assign.EffectiveAppearance(look, material.RefKey(b.ReferenceKey()), "")
+		key := material.RefKey(b.ReferenceKey())
+		// An assigned OpenPBRAppearance (M45-F05, ADR-0053) wins over the legacy chain — a
+		// user who explicitly assigned one via the OpenPBR editor/API means it to be the
+		// body's real material, not an inert side record (#2150). Falls through to the
+		// legacy Appearance chain when nothing is assigned in the OpenPBR chain.
+		if opbr, ok := assign.EffectiveOpenPBRAppearance(look, key, ""); ok {
+			return openPBRAppearanceSurface(opbr)
+		}
+		appr := assign.EffectiveAppearance(look, key, "")
 		return appearanceSurface(appr)
 	}
 }
@@ -139,4 +149,40 @@ func appearanceSurface(a *material.Appearance) renderer.Surface {
 		Emissive:  [3]float32{em.R, em.G, em.B},
 		Opacity:   a.Opacity(),
 	}
+}
+
+// openPBRAppearanceSurface converts an OpenPBR appearance's Base/Specular/Emission/
+// Geometry groups into the renderer's PBR surface value. renderer.Surface.Albedo/
+// Emissive are sRGB-encoded (mesh.frag's toLinear() decodes them at shade time — see
+// appearanceSurface above), but an OpenPBRAppearance's colors are already LINEAR
+// (types.Color3, ACEScg working space, PBI-335/349) — so this, unlike appearanceSurface,
+// encodes rather than passes the values straight through, to land on the same
+// sRGB-encoded convention every consumer (raster and Realistic mode alike) expects.
+func openPBRAppearanceSurface(a *material.OpenPBRAppearance) renderer.Surface {
+	base, spec, geo := a.Base(), a.Specular(), a.Geometry()
+	em := a.Emission()
+	emissive := material.Color3{R: em.Color.R * em.Luminance, G: em.Color.G * em.Luminance, B: em.Color.B * em.Luminance}
+	return renderer.Surface{
+		Albedo:    encodeSRGBColor(base.Color),
+		Metallic:  base.Metalness,
+		Roughness: spec.Roughness,
+		Emissive:  encodeSRGB3(emissive),
+		Opacity:   geo.Opacity,
+	}
+}
+
+// encodeSRGBChannel is the inverse of mesh.frag's toLinear(c) = pow(c, 2.2).
+func encodeSRGBChannel(c float32) float32 {
+	if c < 0 {
+		return 0
+	}
+	return float32(math.Pow(float64(c), 1/2.2))
+}
+
+func encodeSRGB3(c material.Color3) [3]float32 {
+	return [3]float32{encodeSRGBChannel(c.R), encodeSRGBChannel(c.G), encodeSRGBChannel(c.B)}
+}
+
+func encodeSRGBColor(c material.Color3) [4]float32 {
+	return [4]float32{encodeSRGBChannel(c.R), encodeSRGBChannel(c.G), encodeSRGBChannel(c.B), 1}
 }

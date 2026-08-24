@@ -5,12 +5,31 @@
 package ui
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 )
+
+// TestLinearBaseColorDecodesSRGB proves linearBaseColor undoes mesh.frag's own
+// toLinear(c) = pow(c, 2.2) gamma encode — the fix for #2150 (Realistic mode was
+// feeding renderer.Surface.Albedo's sRGB-encoded values straight to a BRDF that
+// expects linear input, unlike the raster pipeline which decodes in-shader).
+func TestLinearBaseColorDecodesSRGB(t *testing.T) {
+	got := linearBaseColor([4]float32{0.5, 1, 0, 1})
+	want := [3]float32{
+		float32(stdmath.Pow(0.5, 2.2)),
+		1,
+		0,
+	}
+	for i := range got {
+		if diff := got[i] - want[i]; diff > 1e-5 || diff < -1e-5 {
+			t.Errorf("linearBaseColor(0.5,1,0)[%d] = %v, want %v", i, got[i], want[i])
+		}
+	}
+}
 
 // windowBrightFraction renders several frames (accumulating samples for Realistic mode)
 // and returns the fraction of the composited window's pixels that are bright — the

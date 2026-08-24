@@ -357,9 +357,10 @@ func nativeCameraBasis(cam scene.Camera) native.CameraBasis {
 // per-sample). An unlit scene (no active lights) returns a zero-intensity light, which
 // shades to black rather than crashing.
 func pickLightParams(lighting renderer.SceneLighting, rng *rand.Rand, material renderer.DrawItem) native.RealisticLightParams {
+	base := linearBaseColor(material.Color)
 	lights := lighting.ActiveLights()
 	if len(lights) == 0 {
-		return native.RealisticLightParams{BaseColor: [3]float32{material.Color[0], material.Color[1], material.Color[2]}, BaseWeight: 1, SpecularIOR: 1.5}
+		return native.RealisticLightParams{BaseColor: base, BaseWeight: 1, SpecularIOR: 1.5}
 	}
 	dist := renderer.NewLightDistribution(lights)
 	_, light, pdf := dist.Sample(rng.Float64())
@@ -371,12 +372,27 @@ func pickLightParams(lighting renderer.SceneLighting, rng *rand.Rand, material r
 		LightDirection:    light.Direction,
 		LightIntensity:    light.Intensity * scale,
 		LightColor:        light.Color,
-		BaseColor:         [3]float32{material.Color[0], material.Color[1], material.Color[2]},
+		BaseColor:         base,
 		BaseWeight:        1,
 		SpecularRoughness: material.Roughness,
 		SpecularIOR:       1.5,
 		BaseMetalness:     material.Metallic,
 	}
+}
+
+// linearBaseColor gamma-decodes a renderer.DrawItem's sRGB-encoded Color the same way
+// mesh.frag's toLinear(c) = pow(c, 2.2) does for the raster pipeline — base_lobes.glsl's
+// BRDF math (pathtrace_realistic.rchit/swpathtrace_realistic.comp) expects a LINEAR
+// reflectance input and applies no decode of its own (#2150), unlike mesh.frag which
+// decodes in-shader.
+func linearBaseColor(c [4]float32) [3]float32 {
+	dec := func(v float32) float32 {
+		if v < 0 {
+			return 0
+		}
+		return float32(stdmath.Pow(float64(v), 2.2))
+	}
+	return [3]float32{dec(c[0]), dec(c[1]), dec(c[2])}
 }
 
 // realisticHardwareEnabled resolves the persisted hardware-RT checkbox override
