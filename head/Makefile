@@ -44,7 +44,8 @@ shaders:
 		glslangValidator -V wideline.frag -o wideline.frag.spv && \
 		glslangValidator -V skybox.vert -o skybox.vert.spv && \
 		glslangValidator -V skybox.frag -o skybox.frag.spv && \
-		glslangValidator --target-env vulkan1.3 -V raytrace.comp -o raytrace.comp.spv
+		glslangValidator --target-env vulkan1.3 -V raytrace.comp -o raytrace.comp.spv && \
+		glslangValidator --target-env vulkan1.3 -V swtrace.comp -o swtrace.comp.spv
 
 # build compiles every head command (proves the cgo/Vulkan stack links).
 build: native-libs

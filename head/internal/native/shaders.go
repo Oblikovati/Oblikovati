@@ -45,3 +45,10 @@ var skyboxFragSPV []byte
 //
 //go:embed shaders/raytrace.comp.spv
 var raytraceCompSPV []byte
+
+// Software BVH-traversal compute shader (M45-F01 PBI-334, ADR-0053): no ray-tracing
+// extensions, so no --target-env bump is strictly required, but built the same way as
+// raytrace.comp.spv for consistency (and SPIR-V 1.4+'s Shader Storage Buffer improvements).
+//
+//go:embed shaders/swtrace.comp.spv
+var swtraceCompSPV []byte
