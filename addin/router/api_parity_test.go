@@ -58,7 +58,14 @@ func TestEveryWireMethodHasAHandler(t *testing.T) {
 // them. Tracked debt: add an entry only when the contract genuinely lands before its handler, and
 // DELETE it the moment the handler lands (the guard above fails on a stale entry, so this list may
 // only shrink).
-var notYetHandled = map[string]bool{}
+var notYetHandled = map[string]bool{
+	// model.assignOpenPBRAppearance (M45-F02 #2126): the OpenPBRAppearance library/CRUD
+	// contract lands in PBI-339, but assignment needs the document-embedding and
+	// assignment-store plumbing that PBI-350 (M45-F05, "wire kRealisticRendering end to
+	// end") builds once the renderer can actually consume an OpenPBR surface. Delete this
+	// entry the moment that handler lands.
+	"MethodModelAssignOpenPBRAppearance": true,
+}
 
 // notYetRelayed are wire events the API declares ahead of the host behavior that would
 // emit them (the representations / model-state surface has no app-level event yet). They

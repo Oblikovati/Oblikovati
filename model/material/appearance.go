@@ -17,6 +17,9 @@ type AppearanceSpec struct {
 }
 
 // Appearance is one PBR appearance asset. It satisfies [contract.Appearance].
+//
+// Deprecated: use [OpenPBRAppearance] for new work (M45, ADR-0053); this type keeps
+// working unmodified alongside it.
 type Appearance struct {
 	id     string
 	source Source

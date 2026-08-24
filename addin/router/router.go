@@ -452,6 +452,12 @@ func (r *Router) registerMaterialHandlers() {
 	r.readOnly(wire.MethodAppearancesGet, typed(getAppearance))
 	r.readOnly(wire.MethodAppearancesCreate, typed(createAppearance))
 	r.readOnly(wire.MethodAppearancesUpdate, typed(updateAppearance))
+	// OpenPBR Surface appearances (M45-F02 #2126, ADR-0053): additive alongside
+	// appearances.* above — the full OpenPBR lobe set instead of metallic-roughness.
+	r.readOnly(wire.MethodOpenPBRAppearancesList, listOpenPBRAppearances)
+	r.readOnly(wire.MethodOpenPBRAppearancesGet, typed(getOpenPBRAppearance))
+	r.readOnly(wire.MethodOpenPBRAppearancesCreate, typed(createOpenPBRAppearance))
+	r.readOnly(wire.MethodOpenPBRAppearancesUpdate, typed(updateOpenPBRAppearance))
 	r.readOnly(wire.MethodMaterialsList, listMaterials)
 	r.readOnly(wire.MethodMaterialsGet, typed(getMaterial))
 	r.readOnly(wire.MethodMaterialsCreate, typed(createMaterial))

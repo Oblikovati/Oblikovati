@@ -20,6 +20,7 @@ const DefaultAppearanceID = "default"
 // offending file — caught by the package tests, never reached at runtime.
 func seedBuiltins(l *Library) {
 	l.AddAppearance(defaultAppearance())
+	l.AddOpenPBRAppearance(defaultOpenPBRAppearance())
 	if err := loadCatalog(l); err != nil {
 		panic(fmt.Sprintf("material: built-in catalog: %v", err))
 	}
