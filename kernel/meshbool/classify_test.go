@@ -7,40 +7,6 @@ import (
 	"testing"
 )
 
-func TestInsideMeshCube(t *testing.T) {
-	cube := boxMesh([3]float64{0, 0, 0}, [3]float64{1, 1, 1})
-	inside := []Point{
-		pt([3]float64{0.5, 0.5, 0.5}),
-		pt([3]float64{0.1, 0.9, 0.5}),
-		pt([3]float64{0.01, 0.01, 0.01}),
-	}
-	outside := []Point{
-		pt([3]float64{2, 2, 2}),
-		pt([3]float64{-0.5, 0.5, 0.5}),
-		pt([3]float64{0.5, 0.5, 1.5}),
-	}
-	for _, p := range inside {
-		if !insideMesh(p, cube) {
-			t.Fatalf("point %v classified outside the cube (w=%.3f)", p.Round(), windingNumber(p, cube))
-		}
-	}
-	for _, p := range outside {
-		if insideMesh(p, cube) {
-			t.Fatalf("point %v classified inside the cube (w=%.3f)", p.Round(), windingNumber(p, cube))
-		}
-	}
-}
-
-func TestWindingNumberMagnitude(t *testing.T) {
-	cube := boxMesh([3]float64{0, 0, 0}, [3]float64{2, 2, 2})
-	if w := windingNumber(pt([3]float64{1, 1, 1}), cube); math.Abs(math.Abs(w)-1) > 1e-9 {
-		t.Fatalf("winding number inside = %.6f, want ±1", w)
-	}
-	if w := windingNumber(pt([3]float64{5, 5, 5}), cube); math.Abs(w) > 1e-9 {
-		t.Fatalf("winding number far outside = %.6f, want 0", w)
-	}
-}
-
 func TestCentroidInterior(t *testing.T) {
 	tr := tri([3]float64{0, 0, 0}, [3]float64{6, 0, 0}, [3]float64{0, 6, 0})
 	if got := centroid(tr); !got.Equal(pt([3]float64{2, 2, 0})) {
@@ -84,7 +50,11 @@ func boxMesh(lo, hi [3]float64) [][3]Point {
 func meshVolume(mesh [][3]Point) float64 {
 	vol := 0.0
 	for _, t := range mesh {
-		vol += fdot(t[0].floats(), fcross(t[1].floats(), t[2].floats())) / 6
+		a, b, c := t[0].Round(), t[1].Round(), t[2].Round()
+		cx := b.Y*c.Z - b.Z*c.Y
+		cy := b.Z*c.X - b.X*c.Z
+		cz := b.X*c.Y - b.Y*c.X
+		vol += (a.X*cx + a.Y*cy + a.Z*cz) / 6
 	}
 	return vol
 }

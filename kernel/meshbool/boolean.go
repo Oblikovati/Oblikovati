@@ -31,7 +31,7 @@ func Boolean(a, b [][3]Point, op Op) [][3]Point {
 			}
 			continue
 		}
-		if keepFromA(op, insideMesh(centroid(f), b)) {
+		if keepFromA(op, insideExact(centroid(f), b, gb)) {
 			result = append(result, f)
 		}
 	}
@@ -39,7 +39,7 @@ func Boolean(a, b [][3]Point, op Op) [][3]Point {
 		if _, coincident := coplanarPartner(f, a, ga); coincident {
 			continue // a's copy already represents every coincident face; drop b's
 		}
-		if keepFromB(op, insideMesh(centroid(f), a)) {
+		if keepFromB(op, insideExact(centroid(f), a, ga)) {
 			result = append(result, orientFromB(op, f))
 		}
 	}

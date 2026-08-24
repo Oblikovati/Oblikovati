@@ -45,6 +45,19 @@ func TestValidateCrossingCylinders(t *testing.T) {
 	if soupOpenEdges(aOut) != 0 || soupOpenEdges(bOut) != 0 {
 		t.Fatalf("co-refinement is not watertight: aOut=%d bOut=%d open edges", soupOpenEdges(aOut), soupOpenEdges(bOut))
 	}
+	// With exact ray-cast classification the full union is a valid closed solid.
+	res := booleanViaMeshbool(a, b, meshbool.Union, q, "op")
+	if !res.IsSolid() {
+		t.Fatal("union result is not a solid")
+	}
+	if r := Validate(res); !r.Valid {
+		t.Fatalf("union result invalid: %+v", r)
+	}
+	volA := BodyGeometryProperties(a, q).Volume
+	volB := BodyGeometryProperties(b, q).Volume
+	if volU := BodyGeometryProperties(res, q).Volume; volU < volA || volU > volA+volB {
+		t.Fatalf("union volume %.3f out of range [%.3f, %.3f]", volU, volA, volA+volB)
+	}
 }
 
 // soupOpenEdges counts directed edges of a soup whose reverse is absent (a

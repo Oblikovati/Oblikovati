@@ -46,6 +46,7 @@ func (a aabb) overlaps(b aabb) bool {
 // faceGrid buckets a mesh's face bounding boxes into a uniform grid.
 type faceGrid struct {
 	cell    float64
+	bbox    aabb
 	boxes   []aabb
 	buckets map[[3]int][]int
 	visited []int // per-face generation stamp, so candidate() needs no per-call alloc
@@ -67,6 +68,7 @@ func newFaceGrid(mesh [][3]Point) *faceGrid {
 			all.hi[k] = math.Max(all.hi[k], b.hi[k])
 		}
 	}
+	g.bbox = all
 	g.cell = gridCell(all, len(mesh))
 	for i, t := range mesh {
 		b := faceAABB(t)
@@ -89,6 +91,77 @@ func (g *faceGrid) candidates(query aabb) []int {
 		}
 	})
 	return out
+}
+
+// rayFaces returns the faces whose cells a ray from p (float coordinates) in
+// direction dir passes through, up to the far distance — the only faces an exact
+// ray-cast need test. It is a 3D DDA (Amanatides–Woo) over the grid; faces spanning
+// several traversed cells are returned once via the generation stamp.
+func (g *faceGrid) rayFaces(p, dir [3]float64) []int {
+	g.gen++
+	var out []int
+	cell := cellIndex(p, g.cell)
+	step, tMax, tDelta := ddaSetup(p, dir, cell, g.cell)
+	far := g.farDistance()
+	for t := 0.0; t <= far; {
+		for _, i := range g.buckets[cell] {
+			if g.visited[i] != g.gen {
+				g.visited[i] = g.gen
+				out = append(out, i)
+			}
+		}
+		k := minAxis3(tMax)
+		t = tMax[k]
+		cell[k] += step[k]
+		tMax[k] += tDelta[k]
+	}
+	return out
+}
+
+// ddaSetup computes the per-axis step, first cell-boundary parameter (tMax) and
+// per-cell parameter increment (tDelta) for the ray p+t·dir; a zero component never
+// advances that axis.
+func ddaSetup(p, dir [3]float64, cell [3]int, cellSize float64) (step [3]int, tMax, tDelta [3]float64) {
+	for k := 0; k < 3; k++ {
+		switch {
+		case dir[k] > 0:
+			step[k] = 1
+			tDelta[k] = cellSize / dir[k]
+			tMax[k] = (float64(cell[k]+1)*cellSize - p[k]) / dir[k]
+		case dir[k] < 0:
+			step[k] = -1
+			tDelta[k] = cellSize / -dir[k]
+			tMax[k] = (float64(cell[k])*cellSize - p[k]) / dir[k]
+		default:
+			step[k] = 0
+			tDelta[k] = math.Inf(1)
+			tMax[k] = math.Inf(1)
+		}
+	}
+	return step, tMax, tDelta
+}
+
+// farDistance is the ray parameter at which the far endpoint p+far*dir is guaranteed
+// outside the mesh bounding box (matching farPoint in raycast.go), so the ray-walk
+// covers every crossing. For an interior sample this reaches beyond the surface; for
+// an exterior sample the parity is even regardless, so the answer stays correct.
+func (g *faceGrid) farDistance() float64 {
+	e := 1.0
+	for k := 0; k < 3; k++ {
+		e = math.Max(e, math.Max(math.Abs(g.bbox.lo[k]), math.Abs(g.bbox.hi[k])))
+	}
+	return 4*e + 4
+}
+
+func minAxis3(t [3]float64) int {
+	k := 0
+	if t[1] < t[k] {
+		k = 1
+	}
+	if t[2] < t[k] {
+		k = 2
+	}
+	return k
 }
 
 // forCells calls fn for each grid cell the box spans.
