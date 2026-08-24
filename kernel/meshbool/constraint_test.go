@@ -86,7 +86,7 @@ func TestForceEdgeDefensiveContracts(t *testing.T) {
 	if indexIn([]int{1, 2, 3}, 9) != -1 {
 		t.Fatal("indexIn of a missing vertex must be -1")
 	}
-	if got := traceCycle(map[int]int{0: 1, 1: 2, 2: 1}); len(got) == 0 || len(got) > 4 {
+	if got := traceCycle(map[int]int{0: 1, 1: 2, 2: 1}, 0); len(got) == 0 || len(got) > 4 {
 		t.Fatalf("traceCycle must terminate on a malformed successor map, got %v", got)
 	}
 

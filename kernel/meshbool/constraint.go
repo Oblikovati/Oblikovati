@@ -65,22 +65,19 @@ func (tr *Triangulation) cavityBoundary(crossed []int) []int {
 		}
 	}
 	nextOf := make(map[int]int)
+	var start int
 	for de := range present {
 		if !present[[2]int{de[1], de[0]}] {
 			nextOf[de[0]] = de[1]
+			start = de[0]
 		}
 	}
-	return traceCycle(nextOf)
+	return traceCycle(nextOf, start)
 }
 
-// traceCycle walks the successor map from an arbitrary start back to it, bounded
-// by the map size so a malformed (non-simple) cavity cannot loop forever.
-func traceCycle(nextOf map[int]int) []int {
-	var start int
-	for a := range nextOf {
-		start = a
-		break
-	}
+// traceCycle walks the successor map from start back to it, bounded by the map
+// size so a malformed (non-simple) cavity cannot loop forever.
+func traceCycle(nextOf map[int]int, start int) []int {
 	cycle := []int{start}
 	for cur := nextOf[start]; cur != start; cur = nextOf[cur] {
 		cycle = append(cycle, cur)

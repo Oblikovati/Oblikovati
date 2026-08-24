@@ -28,3 +28,16 @@ func rdot(a, b [3]*big.Rat) *big.Rat {
 func triNormal(tri [3]Point) [3]*big.Rat {
 	return rcross(tri[1].sub(tri[0]), tri[2].sub(tri[0]))
 }
+
+// rcollinear reports whether x lies exactly on the line through a and b.
+func rcollinear(a, b, x Point) bool {
+	c := rcross(x.sub(a), b.sub(a))
+	return c[0].Sign() == 0 && c[1].Sign() == 0 && c[2].Sign() == 0
+}
+
+// segParam returns (x-a)·(b-a), the exact ordering parameter of x along a→b; it
+// runs from 0 at a to (b-a)·(b-a) at b, so a point is on segment [a,b] when it is
+// collinear and its parameter lies in that closed range.
+func segParam(a, b, x Point) *big.Rat {
+	return rdot(x.sub(a), b.sub(a))
+}
