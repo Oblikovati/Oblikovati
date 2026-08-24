@@ -46,6 +46,29 @@ func TestCoRefineCrossingSquares(t *testing.T) {
 	assertNoEdgeCrosses(t, "B", bOut, seg, 0)
 }
 
+func TestCoRefineCoplanarOverlap(t *testing.T) {
+	// Two triangles in z=0 that overlap; the shared region is triangle
+	// (1,1)-(3,1)-(1,3) and both faces must be imprinted with its boundary.
+	a := [][3]Point{tri([3]float64{0, 0, 0}, [3]float64{4, 0, 0}, [3]float64{0, 4, 0})}
+	b := [][3]Point{tri([3]float64{1, 1, 0}, [3]float64{5, 1, 0}, [3]float64{1, 5, 0})}
+	aOut, bOut := CoRefine(a, b)
+
+	assertMeshArea(t, "A", aOut, 2, big.NewRat(16, 1)) // 2 * (½·4·4)
+	assertMeshArea(t, "B", bOut, 2, big.NewRat(16, 1))
+
+	overlap := []Point{pt([3]float64{1, 1, 0}), pt([3]float64{3, 1, 0}), pt([3]float64{1, 3, 0})}
+	for _, v := range overlap {
+		if !meshHasVertex(aOut, v) || !meshHasVertex(bOut, v) {
+			t.Fatalf("overlap corner %v is not a shared vertex of both meshes", v.Round())
+		}
+	}
+	for i := range overlap {
+		edge := [2]Point{overlap[i], overlap[(i+1)%len(overlap)]}
+		assertNoEdgeCrosses(t, "A", aOut, edge, 2)
+		assertNoEdgeCrosses(t, "B", bOut, edge, 2)
+	}
+}
+
 func TestCoRefineDisjointUnchanged(t *testing.T) {
 	a := [][3]Point{tri([3]float64{0, 0, 0}, [3]float64{4, 0, 0}, [3]float64{0, 4, 0})}
 	b := [][3]Point{tri([3]float64{0, 0, 9}, [3]float64{4, 0, 9}, [3]float64{0, 4, 9})}

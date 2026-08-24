@@ -13,9 +13,9 @@ package meshbool
 // intersection. Faces that meet nothing pass through unchanged. Coordinates stay
 // exact; the caller rounds. PRECONDITION: both meshes have non-degenerate faces.
 //
-// Coplanar face-face overlaps are not yet resolved (IntersectTriangles reports
-// them as Coplanar and they are skipped here); that 2D-overlap case is a later
-// layer. Transversal crossings and single-point touches are handled.
+// Transversal crossings, single-point touches, and coplanar overlaps are all
+// handled: a coplanar overlap imprints the boundary of the shared convex region on
+// both faces so they conform there too.
 func CoRefine(a, b [][3]Point) (aOut, bOut [][3]Point) {
 	return refineAgainst(a, b), refineAgainst(b, a)
 }
@@ -41,7 +41,26 @@ func faceConstraints(f [3]Point, others [][3]Point) [][2]Point {
 			segs = append(segs, [2]Point{r.P, r.Q})
 		case Touching:
 			segs = append(segs, [2]Point{r.P, r.P})
+		case Coplanar:
+			segs = append(segs, coplanarConstraints(f, o)...)
 		}
+	}
+	return segs
+}
+
+// coplanarConstraints returns the boundary edges of the convex overlap of coplanar
+// faces f and o, so both faces are imprinted with the shared region's outline.
+func coplanarConstraints(f, o [3]Point) [][2]Point {
+	overlap := trianglePolygonOverlap(f, o, planeAxis(f))
+	if len(overlap) < 2 {
+		return nil // a point touch or no overlap contributes no edge
+	}
+	if len(overlap) == 2 {
+		return [][2]Point{{overlap[0], overlap[1]}} // a shared edge
+	}
+	segs := make([][2]Point, len(overlap))
+	for i := range overlap {
+		segs[i] = [2]Point{overlap[i], overlap[(i+1)%len(overlap)]}
 	}
 	return segs
 }
