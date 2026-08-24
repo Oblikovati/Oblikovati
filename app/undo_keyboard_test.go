@@ -38,9 +38,16 @@ func sketchWithPerpConstraint(t *testing.T) *Session {
 // an interactive tool is armed — the state a user is in for the ENTIRE duration of sketch drawing.
 // The old guard `s.tool != nil` silently no-op'd here, so undo appeared dead during sketching; the
 // fix narrows the guard to an actually-open transaction (s.InTransaction()).
+//
+// The armed tool was the LINE tool until the line chain became a transactional tool
+// (tool_transaction.go) — it now deliberately DOES open a group on activation, so it can no
+// longer stand for "merely armed". The rectangle tool is the same shape of sketch drawing tool
+// and does not opt in, so it still pins the exact property this test was written for: arming a
+// tool is not, by itself, a transaction. TestKeyboardUndoBlockedWhileLineChainOpen below covers
+// the tool that now is one.
 func TestKeyboardUndoWorksWhileToolArmed(t *testing.T) {
 	s := sketchWithPerpConstraint(t)
-	s.StartTool(NewLineTool()) // arm a tool: this is precisely the old guard's kill condition
+	s.StartTool(NewRectangleTool()) // arm a tool: this is precisely the old guard's kill condition
 	if s.InTransaction() {
 		t.Fatal("fixture: no bounded transaction should be open with a merely-armed tool")
 	}

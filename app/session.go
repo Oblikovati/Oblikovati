@@ -56,6 +56,7 @@ type Session struct {
 	selection                 *Selection
 	highlightSets             *HighlightSets // named, colored emphasis groups for add-ins (#157)
 	tool                      *ToolInstance
+	toolTxn                   toolTransaction  // the bounded transaction the active tool holds open (#1750)
 	featureEditors            featureEditorSet // full-panel editors, assembled at the composition root (#1617)
 	picker                    Picker
 	regionPicker              RegionPicker          // resolves a box-select rectangle (nil ⇒ box-select disabled)
