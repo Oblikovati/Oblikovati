@@ -4,6 +4,7 @@ package app
 
 import (
 	"fmt"
+	stdmath "math"
 
 	"oblikovati.org/math"
 	"oblikovati.org/renderer"
@@ -48,6 +49,35 @@ func (s *Session) PressKeyNamed(key string, mods Modifier) (string, error) {
 		return s.ActiveToolName(), err
 	}
 	return s.ActiveToolName(), nil
+}
+
+// zoomPerNotch is the wheel-zoom dolly factor per notch, mirroring head/ui/navigate.go's
+// own constant of the same name and value — the wire's equivalent of that package's
+// live-viewport wheel handling (ApplyNavigation), so a synthetic wire.MethodViewportScroll
+// call zooms by the same amount a real mouse-wheel notch does.
+const zoomPerNotch = 0.9
+
+// ScrollViewport applies one mouse-wheel notch's worth of zoom (wire.MethodViewportScroll):
+// dy notches dolly the camera, toward (x,y) when ZoomToCursor is set, else view-centred —
+// the same math head/ui/navigate.go's ApplyNavigation applies for a real wheel event. dx
+// carries no binding yet (matching wire.ScrollViewportArgs' own doc comment). Returns the
+// tool still running afterwards, mirroring ClickPointer/PressKeyNamed's convention.
+func (s *Session) ScrollViewport(dx, dy, x, y float64) string {
+	if dy == 0 {
+		return s.ActiveToolName()
+	}
+	factor := stdmath.Pow(zoomPerNotch, dy)
+	if s.WheelInvert() {
+		factor = 1 / factor
+	}
+	cam := s.Camera()
+	if s.ZoomToCursor() {
+		cam = cam.DollyToCursor(factor, x, y)
+	} else {
+		cam = cam.Dolly(factor)
+	}
+	s.SetCamera(cam)
+	return s.ActiveToolName()
 }
 
 // ActiveToolName is the running command's name, empty when none is running.

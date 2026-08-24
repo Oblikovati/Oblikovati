@@ -57,3 +57,10 @@ func pressKey(s *app.Session, in wire.PressKeyArgs) (wire.PressKeyResult, error)
 	}
 	return wire.PressKeyResult{ActiveTool: tool}, nil
 }
+
+// scrollViewport delivers a synthetic mouse-wheel tick, zooming the camera exactly as a
+// real wheel notch would (Session.ScrollViewport).
+func scrollViewport(s *app.Session, in wire.ScrollViewportArgs) (wire.ScrollViewportResult, error) {
+	tool := s.ScrollViewport(in.DX, in.DY, in.X, in.Y)
+	return wire.ScrollViewportResult{ActiveTool: tool}, nil
+}
