@@ -60,11 +60,14 @@ func TestStoreSaveLoadProjectAssets(t *testing.T) {
 		t.Errorf("project material not loaded; have %d materials", len(dst.Materials()))
 	}
 	// Built-ins must NOT be written to the project library file.
-	if data, ok := fs.files["/proj/DesignData/materials.yaml"]; ok && strings.Contains(string(data), "id: steel") {
+	if data, ok := fs.files[store.materialPath()]; !ok {
+		t.Error("Save did not write the project materials file")
+	} else if strings.Contains(string(data), "id: steel") {
 		t.Error("built-in material was persisted to the project library")
 	}
-	if data, ok := fs.files["/proj/DesignData/appearances.yaml"]; ok &&
-		strings.Contains(string(data), "id: "+DefaultAppearanceID) {
+	if data, ok := fs.files[store.appearancePath()]; !ok {
+		t.Error("Save did not write the project appearances file")
+	} else if strings.Contains(string(data), "id: "+DefaultAppearanceID) {
 		t.Error("built-in appearance was persisted to the project library")
 	}
 }
@@ -80,8 +83,8 @@ func TestLoadProjectLibraryMigratesLegacyShapedAppearance(t *testing.T) {
 		t.Fatalf("read fixture: %v", err)
 	}
 	fs := newFakeFS()
-	fs.files["/proj/DesignData/appearances.yaml"] = raw
 	store := NewStore("/proj/DesignData", fs)
+	fs.files[store.appearancePath()] = raw
 
 	lib := NewLibrary()
 	if err := store.Load(lib); err != nil {
