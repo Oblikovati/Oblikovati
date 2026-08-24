@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
-	"oblikovati.org/kernel/meshbool"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -60,7 +59,8 @@ func TestShadowValidateAgainstExistingEngine(t *testing.T) {
 				t.Logf("%s/%s: existing engine declined (%v); skipping comparison", pc.name, op, err)
 				continue
 			}
-			mine := booleanViaMeshbool(pc.a(t), pc.b(t), meshboolOp(op), q, "shadow")
+			mop, _ := toMeshboolOp(op)
+			mine := booleanViaMeshbool(pc.a(t), pc.b(t), mop, q, "shadow")
 			if !mine.IsSolid() {
 				t.Errorf("%s/%s: mesh-arrangement result is not a solid", pc.name, op)
 				continue
@@ -84,17 +84,6 @@ func TestShadowValidateAgainstExistingEngine(t *testing.T) {
 				t.Logf("%s/%s: ok (mine=%.4f %s=%.4f, %.3f%%)", pc.name, op, vm, source, oracle, rel*100)
 			}
 		}
-	}
-}
-
-func meshboolOp(op PartFeatureOperation) meshbool.Op {
-	switch op {
-	case Join:
-		return meshbool.Union
-	case Cut:
-		return meshbool.Difference
-	default:
-		return meshbool.Intersection
 	}
 }
 

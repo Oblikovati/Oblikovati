@@ -32,10 +32,26 @@ func soupToBody(soup [][3]meshbool.Point, feat string) *topo.Body {
 
 // booleanViaMeshbool computes `a op b` through the exact mesh-arrangement core
 // (ADR-0052): tessellate both operands to soups, run meshbool.Boolean, and rebuild
-// a body from the watertight result. This is the new engine end to end; it is NOT
-// yet the default — the shadow-validation cutover gates it against the corpus.
+// a body from the watertight result. The result is exact-volume and watertight but
+// FACETED (#2153), so it is used only as a robustness fallback (booleanGeneral),
+// never in preference to a valid analytic/planar result.
 func booleanViaMeshbool(a, b *topo.Body, op meshbool.Op, q Quality, feat string) *topo.Body {
 	return soupToBody(meshbool.Boolean(bodyToSoup(a, q), bodyToSoup(b, q), op), feat)
+}
+
+// toMeshboolOp maps a part-feature operation to the mesh-arrangement operation, and
+// reports false for operations (NewBody, NewBody-like) that are not a set operation.
+func toMeshboolOp(op PartFeatureOperation) (meshbool.Op, bool) {
+	switch op {
+	case Join:
+		return meshbool.Union, true
+	case Cut:
+		return meshbool.Difference, true
+	case Intersect:
+		return meshbool.Intersection, true
+	default:
+		return 0, false
+	}
 }
 
 // buildLoopSpec creates the oriented edge uses for one boundary loop, sharing
