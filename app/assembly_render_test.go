@@ -89,7 +89,8 @@ func TestAssemblySurfaceLookupResolvesOccurrenceAppearance(t *testing.T) {
 		t.Fatal("steel appearance missing from the seeded library")
 	}
 	got := lookup(body)
-	if got.Albedo != steel.Albedo().Array() || got.Metallic != steel.Metallic() {
+	want := appearanceSurface(steel)
+	if got.Albedo != want.Albedo || got.Metallic != want.Metallic {
 		t.Errorf("placed body resolved to %+v, want the steel appearance (per-occurrence material, #1103)", got)
 	}
 }

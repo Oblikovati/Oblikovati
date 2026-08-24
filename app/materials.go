@@ -98,13 +98,6 @@ func (s *Session) partSurfaceLookup(part *compdef.PartComponentDefinition) rende
 			}
 		}
 		key := material.RefKey(b.ReferenceKey())
-		// An assigned OpenPBRAppearance (M45-F05, ADR-0053) wins over the legacy chain — a
-		// user who explicitly assigned one via the OpenPBR editor/API means it to be the
-		// body's real material, not an inert side record (#2150). Falls through to the
-		// legacy Appearance chain when nothing is assigned in the OpenPBR chain.
-		if opbr, ok := assign.EffectiveOpenPBRAppearance(look, key, ""); ok {
-			return openPBRAppearanceSurface(opbr)
-		}
 		appr := assign.EffectiveAppearance(look, key, "")
 		return appearanceSurface(appr)
 	}
@@ -139,26 +132,14 @@ func (s *Session) assemblySurfaceLookup(asm *compdef.AssemblyComponentDefinition
 	}
 }
 
-// appearanceSurface converts a model appearance into the renderer's PBR surface value.
+// appearanceSurface converts a model appearance's Base/Specular/Emission/Geometry
+// groups into the renderer's PBR surface value. renderer.Surface.Albedo/Emissive are
+// sRGB-encoded (mesh.frag's toLinear() decodes them at shade time), but an
+// Appearance's colors are already LINEAR (types.Color3, ACEScg working space,
+// PBI-335/349) — so this encodes rather than passing the values straight through, to
+// land on the sRGB-encoded convention every consumer (raster and Realistic mode
+// alike) expects.
 func appearanceSurface(a *material.Appearance) renderer.Surface {
-	em := a.Emissive()
-	return renderer.Surface{
-		Albedo:    a.Albedo().Array(),
-		Metallic:  a.Metallic(),
-		Roughness: a.Roughness(),
-		Emissive:  [3]float32{em.R, em.G, em.B},
-		Opacity:   a.Opacity(),
-	}
-}
-
-// openPBRAppearanceSurface converts an OpenPBR appearance's Base/Specular/Emission/
-// Geometry groups into the renderer's PBR surface value. renderer.Surface.Albedo/
-// Emissive are sRGB-encoded (mesh.frag's toLinear() decodes them at shade time — see
-// appearanceSurface above), but an OpenPBRAppearance's colors are already LINEAR
-// (types.Color3, ACEScg working space, PBI-335/349) — so this, unlike appearanceSurface,
-// encodes rather than passes the values straight through, to land on the same
-// sRGB-encoded convention every consumer (raster and Realistic mode alike) expects.
-func openPBRAppearanceSurface(a *material.OpenPBRAppearance) renderer.Surface {
 	base, spec, geo := a.Base(), a.Specular(), a.Geometry()
 	em := a.Emission()
 	emissive := material.Color3{R: em.Color.R * em.Luminance, G: em.Color.G * em.Luminance, B: em.Color.B * em.Luminance}

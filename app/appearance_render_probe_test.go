@@ -24,8 +24,9 @@ func TestPartAppearanceResolvesThroughLiveAssignPath(t *testing.T) {
 	}
 	body := s.VisibleBodies()[0]
 	got := look(body)
-	if got.Albedo != want.Albedo().Array() {
+	wantAlbedo := appearanceSurface(want).Albedo
+	if got.Albedo != wantAlbedo {
 		t.Errorf("body albedo = %v, want steel %v — part appearance not resolved (renders grey)",
-			got.Albedo, want.Albedo().Array())
+			got.Albedo, wantAlbedo)
 	}
 }
