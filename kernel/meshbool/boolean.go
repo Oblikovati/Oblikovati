@@ -21,10 +21,11 @@ const (
 // meshes. Coplanar face pairs are conformed but their coplanar-keep selection is a
 // later layer.
 func Boolean(a, b [][3]Point, op Op) [][3]Point {
-	aOut, bOut := CoRefine(a, b)
+	ga, gb := newFaceGrid(a), newFaceGrid(b)
+	aOut, bOut := coRefine(a, b, ga, gb)
 	var result [][3]Point
 	for _, f := range aOut {
-		if sameDir, coincident := coplanarPartner(f, b); coincident {
+		if sameDir, coincident := coplanarPartner(f, b, gb); coincident {
 			if keepCoplanar(op, sameDir) {
 				result = append(result, f) // kept with a's outward normal
 			}
@@ -35,7 +36,7 @@ func Boolean(a, b [][3]Point, op Op) [][3]Point {
 		}
 	}
 	for _, f := range bOut {
-		if _, coincident := coplanarPartner(f, a); coincident {
+		if _, coincident := coplanarPartner(f, a, ga); coincident {
 			continue // a's copy already represents every coincident face; drop b's
 		}
 		if keepFromB(op, insideMesh(centroid(f), a)) {

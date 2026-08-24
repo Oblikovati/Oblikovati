@@ -13,9 +13,10 @@ package meshbool
 // coplanarPartner reports whether face f is coincident with a face of other — a
 // coplanar face whose region contains f's centroid — and, if so, whether their
 // outward normals point the same way.
-func coplanarPartner(f [3]Point, other [][3]Point) (sameDir, found bool) {
+func coplanarPartner(f [3]Point, other [][3]Point, grid *faceGrid) (sameDir, found bool) {
 	c := centroid(f)
-	for _, g := range other {
+	for _, gi := range grid.candidates(faceAABB(f)) {
+		g := other[gi]
 		if faceOnPlane(f, g) && inTriangle(g, c) {
 			return rdot(triNormal(f), triNormal(g)).Sign() > 0, true
 		}

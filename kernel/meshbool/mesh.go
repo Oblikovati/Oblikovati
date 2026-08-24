@@ -17,7 +17,13 @@ package meshbool
 // handled: a coplanar overlap imprints the boundary of the shared convex region on
 // both faces so they conform there too.
 func CoRefine(a, b [][3]Point) (aOut, bOut [][3]Point) {
-	return refineAgainst(a, b), refineAgainst(b, a)
+	return coRefine(a, b, newFaceGrid(a), newFaceGrid(b))
+}
+
+// coRefine is CoRefine with the operands' face indices supplied, so a caller that
+// also needs them for classification (Boolean) builds each grid once.
+func coRefine(a, b [][3]Point, ga, gb *faceGrid) (aOut, bOut [][3]Point) {
+	return refineAgainst(a, b, gb), refineAgainst(b, a, ga)
 }
 
 // refineAgainst re-triangulates every face of faces to conform to others. Two
@@ -26,10 +32,10 @@ func CoRefine(a, b [][3]Point) (aOut, bOut [][3]Point) {
 // bit-identical to EdgePlaneCross(Q,P), so both incident faces split the shared
 // edge at the exact same point. (This holds only for a watertight input; the ops
 // adapter welds the tessellation to guarantee it.)
-func refineAgainst(faces, others [][3]Point) [][3]Point {
+func refineAgainst(faces, others [][3]Point, grid *faceGrid) [][3]Point {
 	var out [][3]Point
 	for _, f := range faces {
-		out = append(out, RefineFace(f, faceConstraints(f, others))...)
+		out = append(out, RefineFace(f, faceConstraints(f, others, grid))...)
 	}
 	return out
 }
@@ -38,16 +44,16 @@ func refineAgainst(faces, others [][3]Point) [][3]Point {
 // — one per other face it crosses. A Touching contact becomes a degenerate segment
 // so its point is inserted as a shared vertex; a Coplanar overlap is skipped (see
 // CoRefine).
-func faceConstraints(f [3]Point, others [][3]Point) [][2]Point {
+func faceConstraints(f [3]Point, others [][3]Point, grid *faceGrid) [][2]Point {
 	var segs [][2]Point
-	for _, o := range others {
-		switch r := IntersectTriangles(f, o); r.Kind {
+	for _, oi := range grid.candidates(faceAABB(f)) {
+		switch r := IntersectTriangles(f, others[oi]); r.Kind {
 		case Crossing:
 			segs = append(segs, [2]Point{r.P, r.Q})
 		case Touching:
 			segs = append(segs, [2]Point{r.P, r.P})
 		case Coplanar:
-			segs = append(segs, coplanarConstraints(f, o)...)
+			segs = append(segs, coplanarConstraints(f, others[oi])...)
 		}
 	}
 	return segs
