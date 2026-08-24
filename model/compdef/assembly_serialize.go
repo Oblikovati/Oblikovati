@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/assembly"
 	"oblikovati.org/model/attr"
 	"oblikovati.org/model/bom"
 	"oblikovati.org/model/doc"
@@ -308,6 +309,17 @@ func (a *AssemblyComponentDefinition) resetOccurrences() {
 	a.features = NewAssemblyFeatures()                             // the program rebuilds from the snapshot (#785)
 	a.features.SetBus(a.events.Bus())                              // re-wire the recompute event bus the fresh program needs
 	a.patterns = occurrence.NewOccurrencePatternSet(a.occurrences) // re-bind to the fresh occurrences (#1976)
+	// The relationship sets were constructed once against the ORIGINAL occurrence collection
+	// (NewAssemblyComponentDefinition) and hold that pointer. A restore swaps in a fresh
+	// collection, so leaving them untouched would make the solver walk a detached ghost
+	// collection while the live assembly is untouched — and, because the snapshot recipe carries
+	// no relationship data, a full-replace restore must yield an empty relationship set anyway.
+	// Re-wire them empty against the fresh collection, exactly as the constructor does.
+	a.constraints = assembly.NewConstraintSet(a.occurrences, a.events)
+	a.joints = assembly.NewJointSet(a.occurrences, a.events)
+	a.dsJoints = assembly.NewDSJointSet()
+	a.representations = assembly.NewRepresentations(a.occurrences, a.constraints, a.joints)
+	a.contacts = assembly.NewContactSolver()
 	a.pendingFeatures = nil
 	a.pendingPatterns = nil
 	a.pending = nil
