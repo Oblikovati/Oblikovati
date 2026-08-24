@@ -19,21 +19,14 @@ type Library struct {
 	apprOrder   []string
 	matOrder    []string
 	revision    uint64
-
-	// OpenPBR Surface appearances (M45, ADR-0053) — held side by side with the
-	// metallic-roughness appearances above, never merged into the same map/order (see
-	// openpbr_library.go for the accessors).
-	openpbrAppearances map[string]*OpenPBRAppearance
-	openpbrApprOrder   []string
 }
 
 // NewLibrary returns a library seeded with the shipped built-in catalog.
 func NewLibrary() *Library {
 	lib := &Library{
-		appearances:        map[string]*Appearance{},
-		materials:          map[string]*Material{},
-		openpbrAppearances: map[string]*OpenPBRAppearance{},
-		revision:           1,
+		appearances: map[string]*Appearance{},
+		materials:   map[string]*Material{},
+		revision:    1,
 	}
 	seedBuiltins(lib)
 	return lib

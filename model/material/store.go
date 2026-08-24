@@ -39,15 +39,10 @@ type materialLibraryFile struct {
 	Materials []MaterialRecipe `yaml:"materials"`
 }
 
-// Load folds the project library's appearances, OpenPBR appearances, and materials into
-// lib as project-source assets. A missing library (first run) is not an error. A
-// malformed color aborts the load (a corrupt library should fail loudly, not render
-// black).
+// Load folds the project library's appearances and materials into lib as project-source
+// assets. A missing library (first run) is not an error.
 func (s *Store) Load(lib *Library) error {
 	if err := s.loadAppearances(lib); err != nil {
-		return err
-	}
-	if err := s.loadOpenPBRAppearances(lib); err != nil {
 		return err
 	}
 	return s.loadMaterials(lib)
@@ -63,11 +58,7 @@ func (s *Store) loadAppearances(lib *Library) error {
 		return fmt.Errorf("material: parse %q: %w", s.appearancePath(), err)
 	}
 	for _, r := range f.Appearances {
-		a, err := recipeToAppearance(r, SourceProject)
-		if err != nil {
-			return fmt.Errorf("material: %q: %w", s.appearancePath(), err)
-		}
-		lib.AddAppearance(a)
+		lib.AddAppearance(recipeToAppearance(r, SourceProject))
 	}
 	return nil
 }
@@ -92,9 +83,6 @@ func (s *Store) loadMaterials(lib *Library) error {
 // their .obk.
 func (s *Store) Save(lib *Library) error {
 	if err := s.saveAppearances(lib); err != nil {
-		return err
-	}
-	if err := s.saveOpenPBRAppearances(lib); err != nil {
 		return err
 	}
 	return s.saveMaterials(lib)

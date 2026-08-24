@@ -34,9 +34,10 @@ func TestStoreSaveLoadProjectAssets(t *testing.T) {
 	store := NewStore("/proj/DesignData", fs)
 
 	src := NewLibrary()
-	dup, _ := src.DuplicateAppearance("steel", "Brushed Alu", SourceProject)
+	dup, _ := src.DuplicateAppearance(DefaultAppearanceID, "Brushed Alu", SourceProject)
 	spec := dup.Spec()
-	spec.Albedo = mustColor("#c0c4c8ff")
+	spec.Base.Metalness = 1
+	spec.Specular.Roughness = 0.2
 	src.EditAppearance(dup.ID(), spec)
 	if _, err := src.DuplicateMaterial("aluminum-6061", "Shop Alu", SourceProject); err != nil {
 		t.Fatalf("DuplicateMaterial: %v", err)
@@ -51,8 +52,8 @@ func TestStoreSaveLoadProjectAssets(t *testing.T) {
 		t.Fatalf("Load: %v", err)
 	}
 	got, ok := dst.Appearance(dup.ID())
-	if !ok || got.Source() != SourceProject || got.Albedo() != mustColor("#c0c4c8ff") {
-		t.Errorf("project appearance not loaded: %v ok=%v", got, ok)
+	if !ok || got.Source() != SourceProject || got.Base().Metalness != 1 || got.Specular().Roughness != 0.2 {
+		t.Errorf("project appearance not loaded: %+v ok=%v", got, ok)
 	}
 	if _, ok := dst.Material("shop-alu"); !ok {
 		t.Errorf("project material not loaded; have %d materials", len(dst.Materials()))
@@ -60,6 +61,10 @@ func TestStoreSaveLoadProjectAssets(t *testing.T) {
 	// Built-ins must NOT be written to the project library file.
 	if data, ok := fs.files["/proj/DesignData/materials.yaml"]; ok && strings.Contains(string(data), "id: steel") {
 		t.Error("built-in material was persisted to the project library")
+	}
+	if data, ok := fs.files["/proj/DesignData/appearances.yaml"]; ok &&
+		strings.Contains(string(data), "id: "+DefaultAppearanceID) {
+		t.Error("built-in appearance was persisted to the project library")
 	}
 }
 

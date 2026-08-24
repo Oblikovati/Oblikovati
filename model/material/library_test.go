@@ -22,6 +22,19 @@ func TestBuiltinsPresentAndReadOnly(t *testing.T) {
 	if steel.Density() != before {
 		t.Error("SetSpec mutated a built-in material")
 	}
+
+	def := lib.DefaultAppearance()
+	if def == nil {
+		t.Fatal("built-in default appearance missing")
+	}
+	if def.Source() != SourceBuiltin || def.Source().Editable() {
+		t.Errorf("default appearance source = %q (editable=%v), want builtin/read-only", def.Source(), def.Source().Editable())
+	}
+	beforeWeight := def.Base().Weight
+	def.SetSpec(AppearanceSpec{Base: OpenPBRBase{Weight: 0}})
+	if def.Base().Weight != beforeWeight {
+		t.Error("SetSpec mutated a built-in appearance")
+	}
 }
 
 // Every built-in material must reference an appearance that exists, or the renderer
@@ -38,7 +51,7 @@ func TestBuiltinMaterialsReferenceRealAppearances(t *testing.T) {
 func TestDuplicateAppearanceIsEditableSnapshot(t *testing.T) {
 	lib := NewLibrary()
 	r0 := lib.Revision()
-	dup, err := lib.DuplicateAppearance("steel", "My Steel", SourceProject)
+	dup, err := lib.DuplicateAppearance(DefaultAppearanceID, "My Appearance", SourceProject)
 	if err != nil {
 		t.Fatalf("DuplicateAppearance: %v", err)
 	}
@@ -50,18 +63,18 @@ func TestDuplicateAppearanceIsEditableSnapshot(t *testing.T) {
 	}
 	// Editing the copy must not touch the built-in it came from.
 	spec := dup.Spec()
-	spec.Albedo = mustColor("#ff0000ff")
+	spec.Coat.Weight = 1
 	lib.EditAppearance(dup.ID(), spec)
-	steel, _ := lib.Appearance("steel")
-	if steel.Albedo() == dup.Albedo() {
+	def := lib.DefaultAppearance()
+	if def.Coat().Weight == dup.Coat().Weight {
 		t.Error("editing the duplicate leaked into the built-in appearance")
 	}
 }
 
 func TestDuplicateNamesGetDistinctIDs(t *testing.T) {
 	lib := NewLibrary()
-	a, _ := lib.DuplicateAppearance("steel", "Custom", SourceProject)
-	b, _ := lib.DuplicateAppearance("steel", "Custom", SourceProject)
+	a, _ := lib.DuplicateAppearance(DefaultAppearanceID, "Custom", SourceProject)
+	b, _ := lib.DuplicateAppearance(DefaultAppearanceID, "Custom", SourceProject)
 	if a.ID() == b.ID() {
 		t.Errorf("two duplicates share id %q; ids must be unique", a.ID())
 	}
@@ -78,5 +91,16 @@ func TestRemoveRejectsBuiltin(t *testing.T) {
 	}
 	if _, ok := lib.Material(dup.ID()); ok {
 		t.Error("removed material still present")
+	}
+
+	if err := lib.RemoveAppearance(DefaultAppearanceID); err == nil {
+		t.Error("removing a built-in appearance should fail")
+	}
+	adup, _ := lib.DuplicateAppearance(DefaultAppearanceID, "Temp", SourceProject)
+	if err := lib.RemoveAppearance(adup.ID()); err != nil {
+		t.Fatalf("RemoveAppearance(custom): %v", err)
+	}
+	if _, ok := lib.Appearance(adup.ID()); ok {
+		t.Error("removed appearance still present")
 	}
 }

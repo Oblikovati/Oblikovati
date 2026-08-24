@@ -7,40 +7,31 @@ package material
 // project library it was authored against (ADR-0022). Built-in assets are not embedded
 // (they are always reproducible from the catalog), so the set stays small.
 type AssetSet struct {
-	appearances        map[string]*Appearance
-	materials          map[string]*Material
-	openpbrAppearances map[string]*OpenPBRAppearance
+	appearances map[string]*Appearance
+	materials   map[string]*Material
 }
 
 // NewAssetSet returns an empty document asset set.
 func NewAssetSet() *AssetSet {
 	return &AssetSet{
-		appearances:        map[string]*Appearance{},
-		materials:          map[string]*Material{},
-		openpbrAppearances: map[string]*OpenPBRAppearance{},
+		appearances: map[string]*Appearance{},
+		materials:   map[string]*Material{},
 	}
 }
 
-// PutAppearance / PutMaterial / PutOpenPBRAppearance embed (or replace) an asset under its id.
+// PutAppearance / PutMaterial embed (or replace) an asset under its id.
 func (s *AssetSet) PutAppearance(a *Appearance) { s.appearances[a.id] = a }
 func (s *AssetSet) PutMaterial(m *Material)     { s.materials[m.id] = m }
-func (s *AssetSet) PutOpenPBRAppearance(a *OpenPBRAppearance) {
-	s.openpbrAppearances[a.ID()] = a
-}
 
-// Appearance / Material / OpenPBRAppearance look up an embedded asset by id.
+// Appearance / Material look up an embedded asset by id.
 func (s *AssetSet) Appearance(id string) (*Appearance, bool) {
 	a, ok := s.appearances[id]
 	return a, ok
 }
 func (s *AssetSet) Material(id string) (*Material, bool) { m, ok := s.materials[id]; return m, ok }
-func (s *AssetSet) OpenPBRAppearance(id string) (*OpenPBRAppearance, bool) {
-	a, ok := s.openpbrAppearances[id]
-	return a, ok
-}
 
-// Appearances / Materials / OpenPBRAppearances return the embedded assets (order is
-// unspecified; callers that need determinism sort by id).
+// Appearances / Materials return the embedded assets (order is unspecified; callers
+// that need determinism sort by id).
 func (s *AssetSet) Appearances() []*Appearance {
 	out := make([]*Appearance, 0, len(s.appearances))
 	for _, a := range s.appearances {
@@ -53,14 +44,6 @@ func (s *AssetSet) Materials() []*Material {
 	out := make([]*Material, 0, len(s.materials))
 	for _, m := range s.materials {
 		out = append(out, m)
-	}
-	return out
-}
-
-func (s *AssetSet) OpenPBRAppearances() []*OpenPBRAppearance {
-	out := make([]*OpenPBRAppearance, 0, len(s.openpbrAppearances))
-	for _, a := range s.openpbrAppearances {
-		out = append(out, a)
 	}
 	return out
 }
@@ -91,16 +74,6 @@ func (m MergedLookup) Material(id string) (*Material, bool) {
 		}
 	}
 	return m.Catalog.Material(id)
-}
-
-// OpenPBRAppearance looks up an id, embedded set first (mirrors Appearance).
-func (m MergedLookup) OpenPBRAppearance(id string) (*OpenPBRAppearance, bool) {
-	if m.Embedded != nil {
-		if a, ok := m.Embedded.OpenPBRAppearance(id); ok {
-			return a, true
-		}
-	}
-	return m.Catalog.OpenPBRAppearance(id)
 }
 
 // DefaultAppearance defers to the catalog's neutral default.
