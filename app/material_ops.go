@@ -108,6 +108,44 @@ func (s *Session) embedAppearance(part *compdef.PartComponentDefinition, id stri
 	part.Assets().PutAppearance(material.NewAppearance(a.ID(), material.SourceDocument, a.Spec()))
 }
 
+// AssignOpenPBRAppearance overrides the OpenPBR appearance at part/body/face scope,
+// embedding a portable copy in the document — the separate OpenPBRAppearance chain
+// [AssignAppearance] mirrors for the legacy Appearance one (M45-F05 PBI-350, ADR-0053).
+func (s *Session) AssignOpenPBRAppearance(scope, key, appearanceID string) error {
+	part, err := activePart(s)
+	if err != nil {
+		return err
+	}
+	if _, ok := s.Materials().OpenPBRAppearance(appearanceID); !ok {
+		return fmt.Errorf("app: unknown OpenPBR appearance %q", appearanceID)
+	}
+	s.embedOpenPBRAppearance(part, appearanceID)
+	switch scope {
+	case ScopePart:
+		part.Assignments().SetPartOpenPBRAppearance(appearanceID)
+	case ScopeBody:
+		part.Assignments().SetBodyOpenPBRAppearance(key, appearanceID)
+	case ScopeFace:
+		part.Assignments().SetFaceOpenPBRAppearance(key, appearanceID)
+	default:
+		return fmt.Errorf("app: unknown appearance scope %q", scope)
+	}
+	part.MarkChanged()
+	s.recordEdit(part, "Assign OpenPBR Appearance")
+	return nil
+}
+
+// embedOpenPBRAppearance copies a non-built-in OpenPBR appearance into the document's
+// asset set, so the .obk carries its own copy (built-ins are reproducible and not
+// embedded) — mirrors embedAppearance.
+func (s *Session) embedOpenPBRAppearance(part *compdef.PartComponentDefinition, id string) {
+	a, ok := s.Materials().OpenPBRAppearance(id)
+	if !ok || a.Source() == material.SourceBuiltin {
+		return
+	}
+	part.Assets().PutOpenPBRAppearance(material.NewOpenPBRAppearance(a.ID(), material.SourceDocument, a.Spec()))
+}
+
 // embedMaterial copies a non-built-in material (and its appearance) into the document.
 func (s *Session) embedMaterial(part *compdef.PartComponentDefinition, id string) {
 	m, ok := s.Materials().Material(id)

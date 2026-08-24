@@ -464,6 +464,7 @@ func (r *Router) registerMaterialHandlers() {
 	r.readOnly(wire.MethodMaterialsUpdate, typed(updateMaterial))
 	r.mutating(wire.MethodModelAssignMaterial, "Assign Material", typed(assignMaterial))
 	r.mutating(wire.MethodModelAssignAppearance, "Assign Appearance", typed(assignAppearance))
+	r.mutating(wire.MethodModelAssignOpenPBRAppearance, "Assign OpenPBR Appearance", typed(assignOpenPBRAppearance))
 	r.readOnly(wire.MethodModelPhysicalProperties, physicalProperties)
 
 	// Body topology, queries and facet sets (M07 #293/#629/#630).

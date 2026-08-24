@@ -17,9 +17,22 @@ import (
 	"oblikovati.org/kernel/shading/openpbr"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/persistence/userprefs"
 	"oblikovati.org/renderer"
 	"oblikovati.org/scene"
 )
+
+// realisticSession is the narrow view of *app.Session the Realistic-mode path tracer
+// needs (audit I5, the arrowSession/cloudBounder pattern — head/ui's session-coupling
+// ratchet, viewport_instancing.go's cloudBounder) — *app.Session satisfies it
+// implicitly, so this file's functions never take the whole session.
+type realisticSession interface {
+	VisibleInstances() []app.InstanceGroup
+	SurfaceLookup() renderer.SurfaceLookup
+	SceneLighting() renderer.SceneLighting
+	ViewCubePrefs() userprefs.Prefs
+	SetViewCubePrefs(userprefs.Prefs)
+}
 
 // Realistic-mode live path tracer (M45-F05 PBI-350, ADR-0053): replaces mesh.frag's
 // raster pbr() pass for renderer.Realistic with the F04 path-tracing pipeline
@@ -38,7 +51,7 @@ import (
 // a split-view layout renders multiple tiles from the same *app.Session, each needing
 // its own accumulation buffer and texture.
 type realisticCacheKey struct {
-	s    *app.Session
+	s    realisticSession
 	slot int
 }
 
@@ -68,7 +81,7 @@ var realisticCache = map[realisticCacheKey]*realisticState{}
 // on win (every tile/slot) — call when s's window/document closes, before win itself is
 // destroyed (RTScene/SWScene/the presentation texture all reference win's device). A
 // no-op if s never rendered in Realistic mode.
-func DestroyRealisticState(win *native.Window, s *app.Session) {
+func DestroyRealisticState(win *native.Window, s realisticSession) {
 	for key, st := range realisticCache {
 		if key.s != s {
 			continue
@@ -99,7 +112,7 @@ type realisticMesh struct {
 // back to the raster pass so the panel is never left blank). Call every frame; the
 // accumulation buffer only resets when the camera, scene, or material actually changes
 // (renderer.Accumulator.SyncState).
-func renderRealisticViewportImage(win *native.Window, s *app.Session, slot int, cam scene.Camera, pw, ph int) (tex uint64, sampleCount int, ok bool) {
+func renderRealisticViewportImage(win *native.Window, s realisticSession, slot int, cam scene.Camera, pw, ph int) (tex uint64, sampleCount int, ok bool) {
 	if pw <= 0 || ph <= 0 {
 		return 0, 0, false
 	}
@@ -131,7 +144,7 @@ func renderRealisticViewportImage(win *native.Window, s *app.Session, slot int, 
 
 // realisticStateFor returns the persistent GPU state for (s,slot), creating it (and/or
 // resizing its accumulator to pw×ph) on first use or on a viewport resize.
-func realisticStateFor(s *app.Session, slot, pw, ph int) *realisticState {
+func realisticStateFor(s realisticSession, slot, pw, ph int) *realisticState {
 	key := realisticCacheKey{s: s, slot: slot}
 	st := realisticCache[key]
 	if st == nil {
@@ -161,7 +174,7 @@ func presentRealisticFrame(win *native.Window, st *realisticState, pw, ph int, e
 
 // traceRealisticFrame dispatches one sample through whichever backend the hardware-RT
 // checkbox (persisted, PBI-332/333) resolves to for this device.
-func traceRealisticFrame(st *realisticState, win *native.Window, s *app.Session, cam scene.Camera, pw, ph int, lighting renderer.SceneLighting, material renderer.DrawItem) ([]float32, error) {
+func traceRealisticFrame(st *realisticState, win *native.Window, s realisticSession, cam scene.Camera, pw, ph int, lighting renderer.SceneLighting, material renderer.DrawItem) ([]float32, error) {
 	basis := nativeCameraBasis(cam)
 	params := pickLightParams(lighting, st.rng, material)
 	if realisticHardwareEnabled(win, s) && st.rt != nil {
@@ -249,7 +262,7 @@ func buildSWScene(sw *native.SWScene, meshes []realisticMesh) bool {
 // comment on why not real TLAS instancing yet), plus one representative DrawItem for
 // its material (base color/roughness/metalness) — the first non-empty triangle item
 // encountered, deterministic for a given scene.
-func realisticGeometry(s *app.Session, cam scene.Camera) (meshes []realisticMesh, material renderer.DrawItem, ok bool) {
+func realisticGeometry(s realisticSession, cam scene.Camera) (meshes []realisticMesh, material renderer.DrawItem, ok bool) {
 	groups := s.VisibleInstances()
 	lookup := s.SurfaceLookup()
 	var nextID uint32 = 1
@@ -369,7 +382,7 @@ func pickLightParams(lighting renderer.SceneLighting, rng *rand.Rand, material r
 // realisticHardwareEnabled resolves the persisted hardware-RT checkbox override
 // (PBI-332) against this device's actual capability (PBI-333/ADR-0053's "unchecking it
 // only ever costs convergence time, never correctness" rule).
-func realisticHardwareEnabled(win *native.Window, s *app.Session) bool {
+func realisticHardwareEnabled(win *native.Window, s realisticSession) bool {
 	accel, pipeline, query := win.RayTracingExtensionSupport()
 	supported := renderer.SupportsHardwareRayTracing(renderer.RTDeviceFeatures{
 		AccelerationStructure: accel, RayTracingPipeline: pipeline, RayQuery: query,

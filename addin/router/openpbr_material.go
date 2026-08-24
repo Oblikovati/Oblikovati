@@ -62,3 +62,12 @@ func updateOpenPBRAppearance(s *app.Session, in wire.UpdateOpenPBRAppearanceArgs
 	}
 	return openPBRAppearanceInfo(a), nil
 }
+
+// assignOpenPBRAppearance overrides the OpenPBR appearance at part/body/face scope
+// (M45-F05 PBI-350) — mirrors material.go's assignAppearance for the legacy chain.
+func assignOpenPBRAppearance(s *app.Session, in wire.AssignOpenPBRAppearanceArgs) (wire.OKResult, error) {
+	if err := s.AssignOpenPBRAppearance(in.Scope, in.Key, in.AppearanceID); err != nil {
+		return wire.OKResult{}, err
+	}
+	return wire.OKResult{OK: true}, nil
+}

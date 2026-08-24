@@ -44,14 +44,21 @@ type AssignmentRecipe struct {
 	BodyMaterial   map[string]string `yaml:"bodyMaterial,omitempty"`
 	BodyAppearance map[string]string `yaml:"bodyAppearance,omitempty"`
 	FaceAppearance map[string]string `yaml:"faceAppearance,omitempty"`
+
+	// OpenPBRAppearance assignments (M45-F05 PBI-350, ADR-0053) — the separate chain
+	// AssignmentStore.SetPartOpenPBRAppearance et al. write into.
+	PartOpenPBRAppearance string            `yaml:"partOpenPBRAppearance,omitempty"`
+	BodyOpenPBRAppearance map[string]string `yaml:"bodyOpenPBRAppearance,omitempty"`
+	FaceOpenPBRAppearance map[string]string `yaml:"faceOpenPBRAppearance,omitempty"`
 }
 
 // RecipeData is the materials section embedded in a part's recipe: the document's own
 // assets plus its assignments.
 type RecipeData struct {
-	Appearances []AppearanceRecipe `yaml:"appearances,omitempty"`
-	Materials   []MaterialRecipe   `yaml:"materials,omitempty"`
-	Assignments *AssignmentRecipe  `yaml:"assignments,omitempty"`
+	Appearances        []AppearanceRecipe        `yaml:"appearances,omitempty"`
+	Materials          []MaterialRecipe          `yaml:"materials,omitempty"`
+	OpenPBRAppearances []OpenPBRAppearanceRecipe `yaml:"openpbrAppearances,omitempty"`
+	Assignments        *AssignmentRecipe         `yaml:"assignments,omitempty"`
 }
 
 // MarshalRecipe captures a document's embedded asset set and assignments as RecipeData,
@@ -63,6 +70,9 @@ func MarshalRecipe(set *AssetSet, assign *AssignmentStore) RecipeData {
 	}
 	for _, m := range sortMaterials(set.Materials()) {
 		data.Materials = append(data.Materials, materialToRecipe(m))
+	}
+	for _, a := range sortOpenPBRAppearances(set.OpenPBRAppearances()) {
+		data.OpenPBRAppearances = append(data.OpenPBRAppearances, openPBRAppearanceToRecipe(a))
 	}
 	data.Assignments = assignmentRecipe(assign)
 	return data
@@ -80,6 +90,9 @@ func ApplyRecipe(data RecipeData, set *AssetSet, assign *AssignmentStore) error 
 	}
 	for _, mr := range data.Materials {
 		set.PutMaterial(recipeToMaterial(mr, SourceDocument))
+	}
+	for _, pr := range data.OpenPBRAppearances {
+		set.PutOpenPBRAppearance(recipeToOpenPBRAppearance(pr, SourceDocument))
 	}
 	if data.Assignments != nil {
 		applyAssignmentRecipe(assign, data.Assignments)
@@ -148,14 +161,18 @@ func recipeToMaterial(r MaterialRecipe, source Source) *Material {
 // minimal).
 func assignmentRecipe(assign *AssignmentStore) *AssignmentRecipe {
 	r := &AssignmentRecipe{
-		PartMaterial:   assign.partMaterial,
-		PartAppearance: assign.partAppearance,
-		BodyMaterial:   nonEmpty(assign.bodyMaterial),
-		BodyAppearance: nonEmpty(assign.bodyAppearance),
-		FaceAppearance: nonEmpty(assign.faceAppearance),
+		PartMaterial:          assign.partMaterial,
+		PartAppearance:        assign.partAppearance,
+		BodyMaterial:          nonEmpty(assign.bodyMaterial),
+		BodyAppearance:        nonEmpty(assign.bodyAppearance),
+		FaceAppearance:        nonEmpty(assign.faceAppearance),
+		PartOpenPBRAppearance: assign.partOpenPBRAppearance,
+		BodyOpenPBRAppearance: nonEmpty(assign.bodyOpenPBRAppearance),
+		FaceOpenPBRAppearance: nonEmpty(assign.faceOpenPBRAppearance),
 	}
 	if r.PartMaterial == "" && r.PartAppearance == "" &&
-		r.BodyMaterial == nil && r.BodyAppearance == nil && r.FaceAppearance == nil {
+		r.BodyMaterial == nil && r.BodyAppearance == nil && r.FaceAppearance == nil &&
+		r.PartOpenPBRAppearance == "" && r.BodyOpenPBRAppearance == nil && r.FaceOpenPBRAppearance == nil {
 		return nil
 	}
 	return r
@@ -168,6 +185,9 @@ func applyAssignmentRecipe(assign *AssignmentStore, r *AssignmentRecipe) {
 	assign.bodyMaterial = orEmpty(r.BodyMaterial)
 	assign.bodyAppearance = orEmpty(r.BodyAppearance)
 	assign.faceAppearance = orEmpty(r.FaceAppearance)
+	assign.partOpenPBRAppearance = r.PartOpenPBRAppearance
+	assign.bodyOpenPBRAppearance = orEmpty(r.BodyOpenPBRAppearance)
+	assign.faceOpenPBRAppearance = orEmpty(r.FaceOpenPBRAppearance)
 }
 
 func sortAppearances(in []*Appearance) []*Appearance {

@@ -302,7 +302,8 @@ func (d *PartComponentDefinition) applyRecipeStruct(r partRecipe) error {
 // the part has neither (keeps an un-styled part's recipe minimal).
 func (d *PartComponentDefinition) materialsRecipe() *material.RecipeData {
 	data := material.MarshalRecipe(d.assets, d.assignments)
-	if len(data.Appearances) == 0 && len(data.Materials) == 0 && data.Assignments == nil {
+	if len(data.Appearances) == 0 && len(data.Materials) == 0 && len(data.OpenPBRAppearances) == 0 &&
+		data.Assignments == nil {
 		return nil
 	}
 	return &data

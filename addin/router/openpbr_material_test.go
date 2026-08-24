@@ -47,3 +47,24 @@ func TestOpenPBRAppearancesListAndCreate(t *testing.T) {
 		t.Errorf("get after update = %+v, want the persisted edit", got)
 	}
 }
+
+// TestModelAssignOpenPBRAppearance covers the model.assignOpenPBRAppearance handler
+// (M45-F05 PBI-350, ADR-0053) — mirrors material_coverage_test.go's
+// model.assignAppearance coverage for the separate OpenPBRAppearance chain.
+func TestModelAssignOpenPBRAppearance(t *testing.T) {
+	r, s := seededSession(t)
+
+	var res wire.OKResult
+	call(t, r, s, "model.assignOpenPBRAppearance", mustJSON(t, wire.AssignOpenPBRAppearanceArgs{
+		Scope: "part", AppearanceID: material.DefaultOpenPBRAppearanceID,
+	}), &res)
+	if !res.OK {
+		t.Error("model.assignOpenPBRAppearance did not report OK")
+	}
+
+	if err := tryCall(t, r, s, "model.assignOpenPBRAppearance", mustJSON(t, wire.AssignOpenPBRAppearanceArgs{
+		Scope: "part", AppearanceID: "nope",
+	})); err == nil {
+		t.Error("model.assignOpenPBRAppearance with an unknown id should error")
+	}
+}

@@ -34,13 +34,13 @@ func drawDisplaySettingsBody(s *app.Session) {
 // only costs Realistic mode's convergence speed — the software backend is always
 // spec-equivalent — so the label says so rather than implying a quality loss.
 //
-// This dialog has no live Vulkan device handle (it draws from *app.Session alone), so
-// the checkbox shows the raw override (unchecked/unset until the user picks a side) —
-// the actual effective backend, resolved against this device's real capability
+// This dialog has no live Vulkan device handle, so the checkbox shows the raw override
+// (unchecked/unset until the user picks a side) — the actual effective backend,
+// resolved against this device's real capability
 // (renderer.ResolveHardwareRayTracingEnabled), is decided per-frame in
 // realistic_render.go and shown live via the convergence indicator's rendering, not
 // this checkbox's initial state.
-func editRealisticSettings(s *app.Session) {
+func editRealisticSettings(s realisticSession) {
 	prefs := s.ViewCubePrefs()
 	enabled := prefs.HardwareRayTracing != nil && *prefs.HardwareRayTracing
 	if native.Checkbox("Hardware ray tracing (Realistic mode)", &enabled) {

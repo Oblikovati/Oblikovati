@@ -18,15 +18,27 @@ type AssignmentStore struct {
 	bodyMaterial   map[string]string // bodyKey → material id
 	bodyAppearance map[string]string // bodyKey → appearance id
 	faceAppearance map[string]string // faceKey → appearance id
+
+	// OpenPBRAppearance assignments (M45-F05 PBI-350, ADR-0053) — a SEPARATE override
+	// chain from the legacy Appearance one above, not a fallback into it: a body assigned
+	// an OpenPBRAppearance does not also consult bodyAppearance. Resolving which chain a
+	// renderer should prefer when BOTH are set on the same body is future work (belongs
+	// with the appearance-editor/catalog PBIs, 351/352, which is where OpenPBRAppearance
+	// becomes the primary authoring surface) — this type only stores the assignment.
+	partOpenPBRAppearance string
+	bodyOpenPBRAppearance map[string]string
+	faceOpenPBRAppearance map[string]string
 }
 
 // NewAssignmentStore returns an empty store (no assignments — everything resolves to the
 // default appearance).
 func NewAssignmentStore() *AssignmentStore {
 	return &AssignmentStore{
-		bodyMaterial:   map[string]string{},
-		bodyAppearance: map[string]string{},
-		faceAppearance: map[string]string{},
+		bodyMaterial:          map[string]string{},
+		bodyAppearance:        map[string]string{},
+		faceAppearance:        map[string]string{},
+		bodyOpenPBRAppearance: map[string]string{},
+		faceOpenPBRAppearance: map[string]string{},
 	}
 }
 
@@ -46,6 +58,19 @@ func (s *AssignmentStore) SetBodyAppearance(key, id string) { setOrClear(s.bodyA
 
 func (s *AssignmentStore) SetFaceAppearance(key, id string) { setOrClear(s.faceAppearance, key, id) }
 
+// SetPartOpenPBRAppearance / SetBodyOpenPBRAppearance / SetFaceOpenPBRAppearance mirror
+// the legacy Appearance setters above, for the separate OpenPBRAppearance chain
+// (M45-F05 PBI-350, ADR-0053).
+func (s *AssignmentStore) SetPartOpenPBRAppearance(id string) { s.partOpenPBRAppearance = id }
+
+func (s *AssignmentStore) SetBodyOpenPBRAppearance(key, id string) {
+	setOrClear(s.bodyOpenPBRAppearance, key, id)
+}
+
+func (s *AssignmentStore) SetFaceOpenPBRAppearance(key, id string) {
+	setOrClear(s.faceOpenPBRAppearance, key, id)
+}
+
 // PartMaterial / PartAppearance / BodyMaterials / BodyAppearances / FaceAppearances expose
 // the raw assignments for persistence (the maps are copies).
 func (s *AssignmentStore) PartMaterial() string             { return s.partMaterial }
@@ -53,6 +78,16 @@ func (s *AssignmentStore) PartAppearance() string           { return s.partAppea
 func (s *AssignmentStore) BodyMaterials() map[string]string { return copyMap(s.bodyMaterial) }
 func (s *AssignmentStore) BodyAppearances() map[string]string {
 	return copyMap(s.bodyAppearance)
+}
+
+// PartOpenPBRAppearance / BodyOpenPBRAppearances / FaceOpenPBRAppearances expose the raw
+// OpenPBRAppearance assignments for persistence (the maps are copies).
+func (s *AssignmentStore) PartOpenPBRAppearance() string { return s.partOpenPBRAppearance }
+func (s *AssignmentStore) BodyOpenPBRAppearances() map[string]string {
+	return copyMap(s.bodyOpenPBRAppearance)
+}
+func (s *AssignmentStore) FaceOpenPBRAppearances() map[string]string {
+	return copyMap(s.faceOpenPBRAppearance)
 }
 func (s *AssignmentStore) FaceAppearances() map[string]string { return copyMap(s.faceAppearance) }
 
