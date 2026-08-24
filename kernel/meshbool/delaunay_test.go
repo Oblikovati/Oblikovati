@@ -83,6 +83,15 @@ func TestNewDelaunayNormalizesCW(t *testing.T) {
 
 func assertDelaunayMesh(t *testing.T, fi int, d *delaunayMesh, wantArea *big.Rat) {
 	t.Helper()
+	assertValidTiling(t, fi, d, wantArea)
+	assertDelaunayProperty(t, fi, d)
+}
+
+// assertValidTiling checks area conservation, non-degenerate CCW triangles, and
+// symmetric adjacency — the invariants that hold even for a CONSTRAINED (non-
+// Delaunay) triangulation.
+func assertValidTiling(t *testing.T, fi int, d *delaunayMesh, wantArea *big.Rat) {
+	t.Helper()
 	sum := new(big.Rat)
 	for i, tr := range d.tris {
 		det := orient2Val(d.verts[tr.v[0]], d.verts[tr.v[1]], d.verts[tr.v[2]], d.axis)
@@ -95,7 +104,6 @@ func assertDelaunayMesh(t *testing.T, fi int, d *delaunayMesh, wantArea *big.Rat
 		t.Fatalf("face %d: area not conserved: sum=%s want=%s", fi, sum.RatString(), wantArea.RatString())
 	}
 	assertAdjacencySymmetric(t, fi, d)
-	assertDelaunayProperty(t, fi, d)
 }
 
 func assertAdjacencySymmetric(t *testing.T, fi int, d *delaunayMesh) {
