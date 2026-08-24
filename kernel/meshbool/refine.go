@@ -49,6 +49,9 @@ func constraintVertices(segments [][2]Point, axis int) []Point {
 // at every vertex that lies on it so each consecutive sub-edge satisfies ForceEdge's
 // no-vertex-strictly-between precondition.
 func (tr *Triangulation) forceSegment(a, b Point) {
+	if a.Equal(b) {
+		return // degenerate (a Touching point): its vertex is inserted, no edge to force
+	}
 	on := tr.verticesOnSegment(a, b)
 	for k := 0; k+1 < len(on); k++ {
 		tr.ForceEdge(on[k], on[k+1])
