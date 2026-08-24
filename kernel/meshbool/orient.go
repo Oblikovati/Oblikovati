@@ -17,12 +17,15 @@ import (
 // (a-d),(b-d),(c-d): +1 if d is below plane(a,b,c) (a,b,c CCW from above), -1 if
 // above, 0 if coplanar.
 //
-// When all four vertices are exact binary64 positions — the common case, since
-// original tessellation vertices convert exactly — it delegates to the
-// filtered-exact predicates.Orient3D, whose static float filter decides the
-// non-degenerate majority without any big.Rat arithmetic. The pure-rational path
-// runs only when a constructed intersection vertex is involved. Both paths are
-// exact, so the fast path can never disagree with the slow one (see
+// It is filtered in two tiers before the exact path. When all four vertices are
+// exact binary64 positions — the common case, since original tessellation vertices
+// convert exactly — it delegates to the filtered-exact predicates.Orient3D, whose
+// static float filter decides the non-degenerate majority without any big.Rat. When
+// a constructed intersection vertex is involved (not a binary64), an interval filter
+// (orient3DInterval) still resolves the sign in float arithmetic whenever the
+// determinant is safely away from zero — the case that dominates the ray-cast
+// classifier on a refined mesh. Only a near-degenerate determinant reaches the
+// pure-rational path. Every tier is exact, so none can disagree with big.Rat (see
 // TestOrient3DFastPathMatchesExact). This is the perf lever that makes the
 // arrangement viable on refined meshes (Oblikovati#2084 coil).
 func Orient3D(a, b, c, d Point) int {
@@ -30,6 +33,9 @@ func Orient3D(a, b, c, d Point) int {
 		return predicates.Orient3D(
 			f[0][0], f[0][1], f[0][2], f[1][0], f[1][1], f[1][2],
 			f[2][0], f[2][1], f[2][2], f[3][0], f[3][1], f[3][2])
+	}
+	if s, ok := orient3DInterval(a, b, c, d); ok {
+		return s
 	}
 	return orient3DVal(a, b, c, d).Sign()
 }
