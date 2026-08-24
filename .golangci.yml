@@ -60,6 +60,11 @@ linters:
       - linters:
           - funlen
         path: kernel/brep/(cylinder|drill).*\.go
+      # The Delaunay CDT's split/flip re-linking is straight-line adjacency code;
+      # splitting it hurts readability, as with the geometry helpers above.
+      - linters:
+          - funlen
+        path: kernel/meshbool/delaunay.*\.go
       # Disposable experiments print directly and keep exploratory helpers inline.
       - linters:
           - forbidigo
