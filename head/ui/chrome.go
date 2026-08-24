@@ -31,6 +31,12 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	if id := drawRibbon(s); id != "" {
 		activated = id
 	}
+	// The status bar is the ribbon's mirror image: a fixed band claiming the BOTTOM of the
+	// work area before the dockspace fills what remains (Inventor-parity 2026-08-17;
+	// C-inventor-ui-reference §7).
+	if s.ShowStatusBar() {
+		drawStatusBar(app.BuildStatus(s))
+	}
 	layoutDockedPanels()
 	drawViewportIfPresent(win, s)
 	// QAT / Application-menu deferred actions (G design D3): the band's

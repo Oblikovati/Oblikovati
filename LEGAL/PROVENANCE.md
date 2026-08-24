@@ -1,14 +1,15 @@
-# Provenance — Quick Access Toolbar icons (PR-5a)
+# Provenance — Lucide-derived UI icons (PR-5a, PR-5b)
 
-This file records the source and licence of every third-party-derived asset in this
-change for maintainer review and distribution compliance.
+This file records the source and licence of every third-party-derived asset in these
+changes for maintainer review and distribution compliance.
 
 ## Summary
 
-The five SVG glyphs added by this PR (`file-menu.svg`, `open.svg`, `save.svg`,
-`undo.svg`, `redo.svg`) are **derived from Lucide icons**, an open-source icon set
+The SVG glyphs added by these PRs — the five Quick Access Toolbar glyphs
+(`file-menu.svg`, `open.svg`, `save.svg`, `undo.svg`, `redo.svg`) and the status-bar
+glyph (`status-bar.svg`) — are **derived from Lucide icons**, an open-source icon set
 released under the **ISC License** (GPL-2.0-compatible permissive licence). The
-original glyphs authored for this PR were replaced because their provenance was not
+original glyphs authored for these PRs were replaced because their provenance was not
 documented; the replacement glyphs are adapted from a primary upstream source with an
 explicit permissive licence. **No Autodesk artwork, source, or proprietary assets are
 included.**
@@ -31,6 +32,7 @@ included.**
   | `head/icon/assets/save.svg` | `save.svg` | `ee9d56a7fec4b20dd6689546d41f68219ea8cbd67f99bd17a1bdaff5be6edb53` |
   | `head/icon/assets/undo.svg` | `undo-2.svg` | `efad2edbbd2be6038cc23fd64df2d012fad5cc6460dfbf227cfa3d990e9e897f` |
   | `head/icon/assets/redo.svg` | `redo-2.svg` | `4cbd2cdebc70b6b7979c681ed3f313d9cbb102465dcf7d0d2d6a72c937b344bc` |
+  | `head/icon/assets/status-bar.svg` | `panel-bottom.svg` | `7792f8b39919a347ba7be86fda059c41a46e38dbe23758f7be6aa4514579703e` |
 
 ## Modifications made
 
@@ -44,12 +46,14 @@ The Lucide sources are 24×24 stroke-based glyphs (`stroke="currentColor"`,
 2. **Role sentinels**: replaced `stroke="currentColor"` with the ADR-0033 primary
    sentinel `#000` on the main linework. For `undo.svg` and `redo.svg`, the
    direction-arrow path is painted with the secondary sentinel `#ff0000` (the
-   action/result element role), matching the repo's convention of accenting the
-   action element of a glyph.
-3. **Source geometry was retained**: every Lucide path/rect element is preserved
-   byte-for-byte apart from formatting and role-colour substitutions; the added
-   background plate is the documented ADR-0033 adaptation (verified against the
-   SHA-256 hashes above).
+   action/result element role); likewise the `status-bar.svg` prompt-line segment
+   (`M6 17.5h7`) carries `#ff0000`. This matches the repo's convention of accenting
+   the action element of a glyph.
+3. **Source geometry was retained and documented**: every Lucide path/rect element is
+   preserved byte-for-byte apart from formatting and role-colour substitutions. The
+   added elements are documented ADR-0033 adaptations: the rounded background plate on
+   every glyph, and the short prompt-line path (`M6 17.5h7`) on `status-bar.svg` (all
+   verified against the SHA-256 hashes above).
 
 ## Attribution
 

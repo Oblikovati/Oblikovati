@@ -49,6 +49,11 @@ func drawUITab(s *app.Session) {
 	if native.Checkbox("Show classic menu bar", &show) {
 		reportPrefError(s.SetShowMenuBar(show))
 	}
+	// The bottom prompt line, like Inventor's status bar (also on View ▸ Windows).
+	status := s.ShowStatusBar()
+	if native.Checkbox("Show status bar", &status) {
+		reportPrefError(s.SetShowStatusBar(status))
+	}
 }
 
 // navModeOptions lists the three middle-button gestures, with this binding's

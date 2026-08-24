@@ -82,6 +82,18 @@ int  obk_ig_begin_ribbon_band(const char* name, float height) {
     return ImGui::BeginViewportSideBar(name, ImGui::GetMainViewport(), ImGuiDir_Up,
         height, flags) ? 1 : 0;
 }
+// begin_status_bar pins a full-width, fixed-height band to the BOTTOM of the main viewport
+// — the mirror of begin_ribbon_band (Inventor-parity 2026-08-17, C-inventor-ui-reference §7).
+// Like the ribbon it claims its slice of the viewport work area via BeginViewportSideBar, so
+// the dockspace created afterwards lays out above it. NoScrollbar/NoScrollWithMouse keep a
+// too-wide status line from turning the band into a scroll sink. Pair with obk_ig_end
+// regardless of the return value.
+int  obk_ig_begin_status_bar(const char* name, float height) {
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
+        ImGuiWindowFlags_NoSavedSettings;
+    return ImGui::BeginViewportSideBar(name, ImGui::GetMainViewport(), ImGuiDir_Down,
+        height, flags) ? 1 : 0;
+}
 // scroll_max_x reports the current window's maximum horizontal scroll — >0 exactly when its content
 // overflows the window width, i.e. the ribbon's horizontal scrollbar is showing (#1471).
 float obk_ig_scroll_max_x(void) { return ImGui::GetScrollMaxX(); }

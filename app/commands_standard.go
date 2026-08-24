@@ -959,6 +959,11 @@ func windowsViewCommands() []*CommandDefinition {
 		}).WithTab("View").WithEnable(hasActivePart).WithIcon("nav-bar").WithButtonStyle(SmallIconButton).
 			WithActive(func(s *Session) bool { return s.ShowNavBar() }).
 			WithTooltip("Navigation Bar — show or hide the floating navigation-tool strip in each viewport."),
+		NewCommand("View.StatusBar", "Status Bar", "Windows", func(s *Session) error {
+			return s.SetShowStatusBar(!s.ShowStatusBar())
+		}).WithTab("View").WithIcon("status-bar").WithButtonStyle(SmallIconButton).
+			WithActive(func(s *Session) bool { return s.ShowStatusBar() }).
+			WithTooltip("Status Bar — show or hide the prompt line at the foot of the window."),
 		layout("View.LayoutSingle", "Single View", "layout-single", types.LayoutSingle),
 		layout("View.LayoutTwoH", "Two Views (Side by Side)", "layout-two-h", types.LayoutTwoH),
 		layout("View.LayoutTwoV", "Two Views (Stacked)", "layout-two-v", types.LayoutTwoV),

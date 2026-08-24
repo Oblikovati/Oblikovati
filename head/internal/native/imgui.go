@@ -112,6 +112,7 @@ void obk_ig_set_cursor_pos(float x, float y);
 void obk_ig_dummy(float w, float h);
 int  obk_ig_begin_ribbon_band(const char* name, float height);
 float obk_ig_scroll_x(void);
+int  obk_ig_begin_status_bar(const char* name, float height);
 float obk_ig_scroll_max_x(void);
 float obk_ig_scrollbar_size(void);
 void obk_ig_get_cursor_screen_pos(float* x, float* y);
@@ -1175,6 +1176,17 @@ func BeginRibbonBand(name string, height float32) bool {
 // left to the right of a scrolled-away cursor — otherwise how far the user had scrolled would
 // feed back into how many panels collapse.
 func ScrollX() float32 { return float32(C.obk_ig_scroll_x()) }
+
+// BeginStatusBar pins a full-width band of the given height across the BOTTOM of the main
+// viewport — the ribbon band's mirror image. Like it, the band is fixed chrome (not movable,
+// resizable or dockable) and the dockspace lays out above it. Reports whether the content is
+// visible; pair with End regardless.
+func BeginStatusBar(name string, height float32) bool {
+	c, free := cstr(name)
+	defer free()
+	return C.obk_ig_begin_status_bar(c, C.float(height)) != 0
+}
+
 // ScrollMaxX is the current window's maximum horizontal scroll offset; >0 means its content
 // overflows the window width (the ribbon band's horizontal scrollbar is showing, #1471).
 func ScrollMaxX() float32 { return float32(C.obk_ig_scroll_max_x()) }
