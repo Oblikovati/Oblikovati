@@ -80,3 +80,48 @@ func soupOpenEdges(soup [][3]meshbool.Point) int {
 	}
 	return open
 }
+
+// TestValidateGrazingSeamUnion is the Oblikovati#2084 regression. Two vertical
+// cylinders are offset by 5.85 so their walls (radius 3) graze in a thin lens, and
+// unioned at a refined tessellation. The grazing seam is a fan of near-tangent
+// slivers — the configuration whose imprint the old cavity triangulation could not
+// handle: on the reported coil-over-core model the boolean crashed or left hundreds
+// of gaps once the mesh was refined. The robust Delaunay CDT co-refinement replaced
+// that method; this locks in the fix on real curved geometry at refinement.
+//
+// It is built in code (not from the reported model's mesh capture, whose exported
+// operands were not watertight and so could not support a watertight assertion),
+// which lets it assert the exact property #2084 violated: the refined co-refinement
+// of the grazing seam stays watertight, and the union is a valid closed solid of the
+// analytic volume — two r=3, h=12 cylinders (339.29 each) minus the thin lens
+// overlap (~1.5), about 677.
+func TestValidateGrazingSeamUnion(t *testing.T) {
+	a, err := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	if err != nil {
+		t.Fatalf("cylinder a: %v", err)
+	}
+	b, err := brep.SolidCylinder(math.P3(5.85, 0, -6), math.V3(0, 0, 1), 3, 12)
+	if err != nil {
+		t.Fatalf("cylinder b: %v", err)
+	}
+	q := Quality{ChordTolerance: 0.001, AngleTolerance: 0.05}
+	sa, sb := bodyToSoup(a, q), bodyToSoup(b, q)
+
+	// The refined co-refinement of the grazing seam must stay watertight — the
+	// property whose absence tore #2084.
+	aOut, bOut := meshbool.CoRefine(sa, sb)
+	if soupOpenEdges(aOut) != 0 || soupOpenEdges(bOut) != 0 {
+		t.Fatalf("grazing-seam co-refinement not watertight: aOut=%d bOut=%d open edges", soupOpenEdges(aOut), soupOpenEdges(bOut))
+	}
+
+	res := booleanViaMeshbool(a, b, meshbool.Union, q, "op")
+	if !res.IsSolid() {
+		t.Fatal("grazing-seam union result is not a solid")
+	}
+	if r := Validate(res); !r.Valid {
+		t.Fatalf("grazing-seam union invalid: %+v", r)
+	}
+	if vol := BodyGeometryProperties(res, q).Volume; vol < 676 || vol > 678 {
+		t.Fatalf("grazing-seam union volume %.3f out of analytic range [676, 678]", vol)
+	}
+}
