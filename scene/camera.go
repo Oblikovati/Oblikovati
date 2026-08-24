@@ -267,17 +267,17 @@ func (c Camera) cursorPlanePoint(px, py float64) (math.Point3, bool) {
 	return origin.TranslateBy(dir.Scale(t)), true
 }
 
-// Orbit rotates the eye around the fixed target — a turntable: yaw about the up axis,
-// then pitch about the current right axis (Inventor's Rotate). The eye–target distance
-// is preserved; a pitch that would flip over the up pole is skipped.
+// Orbit rotates the eye around the fixed target — a trackball (Inventor's Free Orbit): yaw
+// about the up axis, then pitch about the current right axis, with the up vector tumbling
+// along with the pitch so the view can roll over the pole and look at the model from any
+// side, including underneath. The eye–target distance is preserved.
 func (c Camera) Orbit(yaw, pitch float64) Camera {
 	up := unit(c.Up)
 	offset := rotateAboutAxis(c.Target.VectorTo(c.Eye), up, yaw)
 	forward := unit(offset.Scale(-1)) // eye → target after the yaw
 	right := unit(forward.Cross(up))
-	if pitched := rotateAboutAxis(offset, right, pitch); absDot(unit(pitched), up) < poleCos {
-		offset = pitched
-	}
+	offset = rotateAboutAxis(offset, right, pitch)
+	c.Up = unit(rotateAboutAxis(up, right, pitch))
 	c.Eye = c.Target.TranslateBy(offset)
 	return c
 }
