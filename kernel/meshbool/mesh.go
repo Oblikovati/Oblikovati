@@ -20,7 +20,12 @@ func CoRefine(a, b [][3]Point) (aOut, bOut [][3]Point) {
 	return refineAgainst(a, b), refineAgainst(b, a)
 }
 
-// refineAgainst re-triangulates every face of faces to conform to others.
+// refineAgainst re-triangulates every face of faces to conform to others. Two
+// faces of the SAME operand sharing an edge stay watertight without extra work: a
+// point where the other operand crosses that edge is EdgePlaneCross(P,Q), which is
+// bit-identical to EdgePlaneCross(Q,P), so both incident faces split the shared
+// edge at the exact same point. (This holds only for a watertight input; the ops
+// adapter welds the tessellation to guarantee it.)
 func refineAgainst(faces, others [][3]Point) [][3]Point {
 	var out [][3]Point
 	for _, f := range faces {
