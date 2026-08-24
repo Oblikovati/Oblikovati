@@ -114,6 +114,76 @@ func TestRealisticModeSelectedViaAPIRendersNonBlank(t *testing.T) {
 	}
 }
 
+// TestRealisticModeCaptureViewportStaysRasterCaptureWindowIsLive is the regression test
+// for #2149: drawRealisticResult (chrome_viewport.go) composites Realistic mode's
+// path-traced texture directly onto the window's swapchain via native.Image, bypassing
+// the offscreen viewport render target dispatchRasterDraw/win.RenderViewport writes to
+// (and that ReadbackViewport/SaveViewportPNG — the wire.MethodViewportCapture /
+// capture_viewport path — read back from). So switching to Realistic mode leaves that
+// offscreen target holding the LAST raster frame, documented on
+// [wire.CaptureViewportArgs] (#2149): callers needing a live Realistic-mode capture must
+// use wire.MethodViewportCaptureWindow / capture_window instead, which reads back the
+// composited swapchain ReadbackWindow also uses here.
+func TestRealisticModeCaptureViewportStaysRasterCaptureWindowIsLive(t *testing.T) {
+	win := newViewportWindow(t)
+	defer win.Destroy()
+
+	s := rvBoxPart(t)
+	defer DestroyRealisticState(win, s)
+	if err := s.SetDisplayMode(types.ShadedWithEdgesRendering); err != nil {
+		t.Fatalf("SetDisplayMode(raster): %v", err)
+	}
+	for i := 0; i < 8; i++ {
+		viewportFrame(win, s)
+	}
+	rasterOffscreen, _, _, ok := win.ReadbackViewport(0)
+	if !ok {
+		t.Fatal("ReadbackViewport (raster) failed")
+	}
+
+	if err := s.SetDisplayMode(types.RealisticRendering); err != nil {
+		t.Fatalf("SetDisplayMode(realistic): %v", err)
+	}
+	if lit := windowBrightFraction(win, s, 6); lit < 0.02 {
+		t.Fatalf("Realistic mode's window composite is near-blank: bright fraction %.4f", lit)
+	}
+
+	staleOffscreen, w1, h1, ok := win.ReadbackViewport(0)
+	if !ok {
+		t.Fatal("ReadbackViewport (after switching to realistic) failed")
+	}
+	if len(staleOffscreen) != len(rasterOffscreen) {
+		t.Fatalf("offscreen target size changed: %d vs %d bytes", len(staleOffscreen), len(rasterOffscreen))
+	}
+	for i := range rasterOffscreen {
+		if staleOffscreen[i] != rasterOffscreen[i] {
+			t.Fatalf("offscreen viewport target changed after switching to Realistic mode — "+
+				"the #2149 documented limitation no longer holds, so capture_viewport's own doc "+
+				"comment on wire.CaptureViewportArgs needs updating (byte %d: raster=%d now=%d)",
+				i, rasterOffscreen[i], staleOffscreen[i])
+		}
+	}
+
+	windowPixels, w2, h2, ok := win.ReadbackWindow()
+	if !ok {
+		t.Fatal("ReadbackWindow (realistic) failed")
+	}
+	if w1 == 0 || h1 == 0 || w2 == 0 || h2 == 0 {
+		t.Fatalf("empty readback: offscreen %dx%d, window %dx%d", w1, h1, w2, h2)
+	}
+	bright, total := 0, w2*h2
+	for i := 0; i+3 < len(windowPixels); i += 4 {
+		b, g, r := float64(windowPixels[i]), float64(windowPixels[i+1]), float64(windowPixels[i+2])
+		if 0.299*r+0.587*g+0.114*b > 40 {
+			bright++
+		}
+	}
+	if frac := float64(bright) / float64(total); frac < 0.02 {
+		t.Errorf("ReadbackWindow (the capture_window path) bright fraction = %.4f, want >= 0.02 — "+
+			"it should show the LIVE Realistic render even though capture_viewport cannot", frac)
+	}
+}
+
 // TestRealisticModeBackendParityThroughRealUIPath is PBI-350's second acceptance
 // criterion, extending PBI-346's single-ray and F04's per-pixel-image parity tests
 // through the actual UI rendering path (renderViewportImage → renderRealisticViewportImage):
