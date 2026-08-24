@@ -43,6 +43,25 @@ func (p Point) Equal(q Point) bool {
 	return p.X.Cmp(q.X) == 0 && p.Y.Cmp(q.Y) == 0 && p.Z.Cmp(q.Z) == 0
 }
 
+// float64Exact returns p's coordinates as float64 and reports whether every
+// coordinate is exactly a binary64 (the float equals the rational, so an exact
+// predicate on the floats gives the same sign as one on the rationals). Original
+// tessellation vertices are exact; constructed intersection vertices — built by
+// rational arithmetic with denominators that are not powers of two — generally are
+// not. This is the gate for the float fast path in [Orient3D].
+func (p Point) float64Exact() ([3]float64, bool) {
+	var f [3]float64
+	for i, c := range [3]*big.Rat{p.X, p.Y, p.Z} {
+		v, _ := c.Float64()
+		r := new(big.Rat).SetFloat64(v) // nil on a non-finite round-trip
+		if r == nil || r.Cmp(c) != 0 {
+			return f, false
+		}
+		f[i] = v
+	}
+	return f, true
+}
+
 // sub returns the exact vector p-q as three rationals.
 func (p Point) sub(q Point) [3]*big.Rat {
 	return [3]*big.Rat{
