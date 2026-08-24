@@ -164,3 +164,47 @@ func sumXYZ(p Point) *big.Rat {
 	s := new(big.Rat).Add(p.X, p.Y)
 	return s.Add(s, p.Z)
 }
+
+// TestInCircleFilterMatchesExact is the safety net for the in-circle interval filter:
+// over a large random sweep mixing exact and constructed vertices, across all three
+// projection axes, inCircleSign (interval then exact) must equal the pure exact
+// determinant. A wrong certification would show as a mismatch.
+func TestInCircleFilterMatchesExact(t *testing.T) {
+	rng := rand.New(rand.NewSource(0x1c1c))
+	for i := 0; i < 20000; i++ {
+		a := randPoint(rng, i%3 == 0)
+		b := randPoint(rng, i%5 == 0)
+		c := randPoint(rng, i%7 == 0)
+		d := randPoint(rng, i%2 == 0)
+		axis := i % 3
+		if got, want := inCircleSign(a, b, c, d, axis), inCircleExact(a, b, c, d, axis); got != want {
+			t.Fatalf("quad %d axis %d: inCircleSign=%d, exact=%d (interval mis-certified)", i, axis, got, want)
+		}
+	}
+}
+
+// TestInCircleNearCocircular stresses the filter at its hardest point: three points on
+// the radius-5 circle (a,b,c) and a fourth on the circle at (3,4) lifted off it by a
+// rational epsilon from 1 down to 1e-40 in both signs, plus 0 exactly. For every
+// epsilon inCircleSign must equal the exact sign — the interval certifies the correct
+// side or defers to exact; the cocircular case (epsilon 0) must yield 0.
+func TestInCircleNearCocircular(t *testing.T) {
+	a := Point{big.NewRat(5, 1), big.NewRat(0, 1), big.NewRat(0, 1)}
+	b := Point{big.NewRat(0, 1), big.NewRat(5, 1), big.NewRat(0, 1)}
+	c := Point{big.NewRat(-5, 1), big.NewRat(0, 1), big.NewRat(0, 1)}
+	den := big.NewInt(1)
+	ten := big.NewInt(10)
+	for k := 0; k <= 40; k++ {
+		for _, sign := range []int64{1, -1, 0} {
+			dv := big.NewRat(4, 1)
+			if sign != 0 {
+				dv = new(big.Rat).Add(big.NewRat(4, 1), new(big.Rat).SetFrac(big.NewInt(sign), new(big.Int).Set(den)))
+			}
+			d := Point{big.NewRat(3, 1), dv, big.NewRat(0, 1)}
+			if got, want := inCircleSign(a, b, c, d, 2), inCircleExact(a, b, c, d, 2); got != want {
+				t.Fatalf("k=%d sign=%d: inCircleSign=%d, exact=%d", k, sign, got, want)
+			}
+		}
+		den.Mul(den, ten)
+	}
+}

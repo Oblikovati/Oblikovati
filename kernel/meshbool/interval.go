@@ -58,6 +58,22 @@ func iMul(a, b interval) interval {
 	}
 }
 
+// iSquare returns an interval containing a*a. It is tighter than iMul(a,a): a square
+// is non-negative, so when a straddles zero the lower bound is 0 rather than a
+// spurious negative corner product. The lift terms of the in-circle determinant are
+// sums of such squares, so a tight bound there keeps the whole determinant interval
+// narrow and lets more tests resolve without the exact path.
+func iSquare(a interval) interval {
+	switch {
+	case a.lo >= 0:
+		return interval{widenLo(rounded(a.lo * a.lo)), widenHi(rounded(a.hi * a.hi))}
+	case a.hi <= 0:
+		return interval{widenLo(rounded(a.hi * a.hi)), widenHi(rounded(a.lo * a.lo))}
+	default:
+		return interval{0, widenHi(max(rounded(a.lo*a.lo), rounded(a.hi*a.hi)))}
+	}
+}
+
 // rounded forces its (already binary64) argument through an explicit conversion so
 // the Go compiler cannot fuse a preceding multiply with a following add/sub into an
 // FMA (Oblikovati#2020: Go fuses a*b+c on arm64 but not amd64). The interval widening

@@ -55,6 +55,21 @@ func TestOrient3DIntervalCertifies(t *testing.T) {
 	}
 }
 
+// TestISquareContains checks the three iSquare regimes — a positive interval, a
+// negative interval, and one straddling zero (whose lower bound must be 0, not a
+// spurious negative) — each enclosing the true square range.
+func TestISquareContains(t *testing.T) {
+	if s := iSquare(interval{2, 3}); s.lo > 4 || s.hi < 9 {
+		t.Fatalf("positive interval: [%v,%v] does not enclose [4,9]", s.lo, s.hi)
+	}
+	if s := iSquare(interval{-3, -2}); s.lo > 4 || s.hi < 9 {
+		t.Fatalf("negative interval: [%v,%v] does not enclose [4,9]", s.lo, s.hi)
+	}
+	if s := iSquare(interval{-3, 2}); s.lo != 0 || s.hi < 9 {
+		t.Fatalf("straddling interval: [%v,%v], want [0, >=9]", s.lo, s.hi)
+	}
+}
+
 // TestCoordInterval checks the coordinate bracket: an exact binary64 collapses to a
 // point, and a non-dyadic rational is strictly enclosed.
 func TestCoordInterval(t *testing.T) {

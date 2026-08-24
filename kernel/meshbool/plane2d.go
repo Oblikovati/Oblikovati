@@ -73,7 +73,21 @@ func SegSegCross(a, b, c, d Point, axis int) Point {
 // counterclockwise, -1 outside, 0 cocircular. The exact-arithmetic counterpart of
 // predicates.InCircle, on rational Points, so the Delaunay flip that builds the
 // robust constrained triangulation never oscillates on a near-cocircular quad.
+//
+// The interval filter resolves the sign in float arithmetic for the non-degenerate
+// majority — the co-refinement legalize loop is the dominant big.Rat cost on a
+// refined mesh once the ray-cast is filtered (Oblikovati#2084) — and only a
+// near-cocircular quad reaches the exact path. Both are exact, so they never
+// disagree (see TestInCircleFilterMatchesExact).
 func inCircleSign(a, b, c, d Point, axis int) int {
+	if s, ok := inCircleInterval(a, b, c, d, axis); ok {
+		return s
+	}
+	return inCircleExact(a, b, c, d, axis)
+}
+
+// inCircleExact is the pure-rational in-circle determinant behind inCircleSign.
+func inCircleExact(a, b, c, d Point, axis int) int {
 	au, av := project(a, axis)
 	bu, bv := project(b, axis)
 	cu, cv := project(c, axis)
@@ -88,6 +102,46 @@ func inCircleSign(a, b, c, d Point, axis int) int {
 	t2 := new(big.Rat).Mul(blift, crossDiff(cdx, ady, adx, cdy))
 	t3 := new(big.Rat).Mul(clift, crossDiff(adx, bdy, bdx, ady))
 	return t1.Add(t1, t2).Add(t1, t3).Sign()
+}
+
+// projectInterval brackets a point's two in-plane coordinates for the axis
+// projection, matching project's coordinate choice.
+func projectInterval(p Point, axis int) [2]interval {
+	iv := intervalsOf(p)
+	switch axis {
+	case 0:
+		return [2]interval{iv[1], iv[2]} // drop x → keep (y,z)
+	case 1:
+		return [2]interval{iv[0], iv[2]} // drop y → keep (x,z)
+	default:
+		return [2]interval{iv[0], iv[1]} // drop z → keep (x,y)
+	}
+}
+
+// inCircleInterval evaluates the in-circle determinant in interval arithmetic,
+// following the exact term grouping of inCircleExact. It returns the sign and true
+// when the result interval excludes zero; otherwise the caller must use the exact
+// predicate.
+func inCircleInterval(a, b, c, d Point, axis int) (int, bool) {
+	ai, bi, ci, di := projectInterval(a, axis), projectInterval(b, axis), projectInterval(c, axis), projectInterval(d, axis)
+	adx, ady := iSub(ai[0], di[0]), iSub(ai[1], di[1])
+	bdx, bdy := iSub(bi[0], di[0]), iSub(bi[1], di[1])
+	cdx, cdy := iSub(ci[0], di[0]), iSub(ci[1], di[1])
+	alift := iAdd(iSquare(adx), iSquare(ady))
+	blift := iAdd(iSquare(bdx), iSquare(bdy))
+	clift := iAdd(iSquare(cdx), iSquare(cdy))
+	t1 := iMul(alift, crossDiffInterval(bdx, cdy, cdx, bdy))
+	t2 := iMul(blift, crossDiffInterval(cdx, ady, adx, cdy))
+	t3 := iMul(clift, crossDiffInterval(adx, bdy, bdx, ady))
+	det := iAdd(iAdd(t1, t2), t3)
+	switch {
+	case det.lo > 0:
+		return 1, true
+	case det.hi < 0:
+		return -1, true
+	default:
+		return 0, false
+	}
 }
 
 // ratSquareSum returns x*x + y*y exactly.
