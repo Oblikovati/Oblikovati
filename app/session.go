@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 
 	"oblikovati.org/api/wire"
+	"oblikovati.org/app/markingmenu"
 	"oblikovati.org/app/options"
 	"oblikovati.org/clientgraphics"
 	"oblikovati.org/command"
@@ -123,6 +124,7 @@ type Session struct {
 	addinEnvironments         map[Environment]string                           // registered add-in environments (M05-F16)
 	activeAddInEnv            Environment                                      // the entered add-in environment (base when none)
 	markingMenus              map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
+	markingMenuStore          markingmenu.Store                                // persists marking-menu customization (nil ⇒ session-only)
 	contextMenus              map[string]map[string][]wire.ContextMenuItemSpec // add-in menu injections by kind
 	lastCommandID             string                                           // the most recently invoked command, for right-click Repeat (#915 C5)
 	classicContextMenu        bool                                             // right-click shows the classic linear menu instead of the radial marking menu (#915 C8)
@@ -153,6 +155,7 @@ type Session struct {
 	chamferConcaveOut         bool                              // default concave-edge strategy for new chamfers (true ⇒ outward fill)
 	paramsDialogOpen          bool                              // the Manage ▸ Parameters dialog is open
 	keymapEditorOpen          bool                              // the Tools ▸ Customize Keyboard panel is open (M05-F17)
+	markingMenuEditorOpen     bool                              // the Tools ▸ Customize Marking Menu panel is open (REQ-005)
 	lightingPanelOpen         bool                              // the View ▸ Lighting settings panel is open
 	namedViewsPanelOpen       bool                              // the View ▸ Named Views panel is open (M16-F03 #404)
 	colorStylesPanelOpen      bool                              // the Color Styles panel is open (M16-F02 #403/#408)
@@ -490,10 +493,20 @@ func (s *Session) ClassicContextMenu() bool { return s.classicContextMenu }
 
 // SetClassicContextMenu chooses the right-click menu style (true = classic linear, false =
 // radial marking menu).
-func (s *Session) SetClassicContextMenu(classic bool) { s.classicContextMenu = classic }
+func (s *Session) SetClassicContextMenu(classic bool) {
+	s.classicContextMenu = classic
+	if err := s.saveMarkingMenuCustomization(); err != nil {
+		s.SetNotice("marking menu: " + err.Error())
+	}
+}
 
 // ToggleContextMenuStyle flips between the radial marking menu and the classic linear menu.
-func (s *Session) ToggleContextMenuStyle() { s.classicContextMenu = !s.classicContextMenu }
+func (s *Session) ToggleContextMenuStyle() {
+	s.classicContextMenu = !s.classicContextMenu
+	if err := s.saveMarkingMenuCustomization(); err != nil {
+		s.SetNotice("marking menu: " + err.Error())
+	}
+}
 
 // Invoke is the alias-driven entry (Inventor command alias): typing a command alias
 // runs the matching command.

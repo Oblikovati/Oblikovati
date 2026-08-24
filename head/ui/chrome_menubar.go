@@ -142,6 +142,9 @@ func drawToolsMenu(s *app.Session) {
 		if native.MenuItem("Customize Keyboard") { // M05-F17: rebind shortcuts / aliases
 			s.OpenKeymapEditor()
 		}
+		if native.MenuItem("Customize Marking Menu") { // REQ-005: assign commands to radial slots
+			s.OpenMarkingMenuEditor()
+		}
 		if native.MenuItem("Command Input") { // M05-F17: type an alias to run a command
 			s.BeginCommandInput()
 		}

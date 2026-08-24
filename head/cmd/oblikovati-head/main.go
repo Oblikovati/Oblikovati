@@ -18,6 +18,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/app/keymap"
+	"oblikovati.org/app/markingmenu"
 	"oblikovati.org/app/options"
 	"oblikovati.org/build"
 	"oblikovati.org/head/internal/appicon"
@@ -212,6 +213,7 @@ func newDemoSession() *app.Session {
 	}
 	registerCommands(s)
 	loadKeymap(s)                          // after registerCommands: CheckDefaults validates the registered shortcuts
+	loadMarkingMenu(s)                     // per-user radial menu customization + classic/radial style toggle
 	s.SetURLOpener(sysopen.SystemOpener{}) // web-view fallback (M05-F08)
 	loadAppOptions(s)
 	// StartupAction (M05-F11): the historical default seeds a demo part; the user can
@@ -311,6 +313,18 @@ func loadKeymap(s *app.Session) {
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "keymap: %v\n", err)
+	}
+}
+
+// loadMarkingMenu wires the per-user marking-menu customization file; a store
+// failure costs only persistence (enriched defaults still apply).
+func loadMarkingMenu(s *app.Session) {
+	path, err := markingmenu.DefaultPath()
+	if err == nil {
+		err = s.UseMarkingMenuStore(markingmenu.NewFileStore(path))
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "markingmenu: %v\n", err)
 	}
 }
 

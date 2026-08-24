@@ -28,7 +28,12 @@ func handleViewportRightClick(s *app.Session) {
 	}
 	lx, ly := viewportCursor()
 	if !beginSelectOtherAt(s, lx, ly) {
-		openMarkingMenu()
+		// Defer the OpenPopup to drawMarkingMenu's top-level context: OpenPopup and
+		// BeginPopup must run in the same ImGui window, and this is called inside the
+		// Viewport window while drawMarkingMenu runs at the top level (the appMenuRequested
+		// pattern, chrome.go). Calling OpenPopup here would open it in the Viewport's
+		// popup stack and the top-level BeginPopup would never see it.
+		markingMenuRequested = true
 	}
 }
 

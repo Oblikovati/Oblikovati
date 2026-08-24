@@ -5,7 +5,6 @@
 package ui
 
 import (
-	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
@@ -19,32 +18,27 @@ import (
 // markingMenuPopupID names the popup; the viewport's right-click opens it.
 const markingMenuPopupID = "##marking-menu"
 
-// markingMenuRadius is the ring's pixel radius around the popup center.
-const markingMenuRadius = 72
-
 // openMarkingMenu arms the popup (called on a viewport right-click).
 func openMarkingMenu() { native.OpenPopup(markingMenuPopupID) }
+
+// markingMenuRequested is set by the viewport's right-click handler (inside the Viewport
+// window) and consumed here at the top level, so OpenPopup and BeginPopup run in the same
+// ImGui window context (the appMenuRequested pattern, chrome.go). Without this deferral the
+// popup opens in the Viewport's popup stack and the top-level BeginPopup never sees it.
+var markingMenuRequested bool
 
 // openMarkingMenuOnFirstFrame lets the visual harness show the menu without a
 // synthetic right-click; consumed on the first chrome frame.
 var openMarkingMenuOnFirstFrame bool
-
-// quadrantDirections maps each compass slot to its unit offset (screen y grows
-// downward, so north is -y).
-var quadrantDirections = map[types.ScreenQuadrant][2]float32{
-	types.QuadrantNorth: {0, -1}, types.QuadrantNorthEast: {0.7, -0.7},
-	types.QuadrantEast: {1, 0}, types.QuadrantSouthEast: {0.7, 0.7},
-	types.QuadrantSouth: {0, 1}, types.QuadrantSouthWest: {-0.7, 0.7},
-	types.QuadrantWest: {-1, 0}, types.QuadrantNorthWest: {-0.7, -0.7},
-}
 
 // drawMarkingMenu renders the right-click popup when open, in the user's chosen style: the radial
 // ring (default) or the classic linear menu (#915 C8). Both lead with the idle "Repeat <command>"
 // entry (#915 C5) and end with the style toggle. Unknown command ids are skipped, so a customized
 // menu can name commands before they register.
 func drawMarkingMenu(s *app.Session) {
-	if openMarkingMenuOnFirstFrame {
+	if openMarkingMenuOnFirstFrame || markingMenuRequested {
 		openMarkingMenuOnFirstFrame = false
+		markingMenuRequested = false
 		openMarkingMenu()
 	}
 	if !native.BeginPopup(markingMenuPopupID) {
@@ -62,14 +56,53 @@ func drawMarkingMenu(s *app.Session) {
 func drawRadialMarkingMenu(s *app.Session) {
 	drawRepeatEntry(s)
 	menu := s.MarkingMenu(app.CurrentEnvironment(s))
-	const size = 2*markingMenuRadius + 96 // ring + button width margin
-	centerX, centerY := float32(size)/2, float32(size)/2
-	native.InvisibleButton("##marking-area", size, size) // reserves the ring's space
+	layout := markingRingLayoutForMenu(s, menu)
+	ringX, ringY := native.GetCursorPos()
+	native.Dummy(layout.size, layout.size) // reserves space without capturing slot clicks
 	for _, item := range menu.Quadrants {
-		drawMarkingSlot(s, centerX, centerY, item)
+		drawMarkingSlot(s, ringX, ringY, layout, item)
 	}
+	// Slots are positioned manually, so restore the layout cursor after the reserved ring before
+	// drawing overflow and the style row. Otherwise those rows start at whichever slot happened
+	// to be last in the persisted slice and can overlap the ring (the observed right-click defect).
+	m := native.Metrics()
+	native.SetCursorPos(ringX, ringY+layout.size+m.ItemSpacingY)
 	drawMarkingOverflow(s, menu.Overflow)
 	drawContextMenuStyleToggle(s)
+}
+
+// markingMenuCommandHost is the narrow command lookup seam used while measuring the ring.
+// Keeping the measurement helper on this interface preserves the head/ui coupling ratchet.
+type markingMenuCommandHost interface {
+	Commands() *app.CommandManager
+}
+
+var _ markingMenuCommandHost = (*app.Session)(nil)
+
+// markingRingLayoutForMenu measures the commands that will actually render. Unknown
+// command ids are intentionally ignored, matching drawMarkingSlot's fallback.
+func markingRingLayoutForMenu(s markingMenuCommandHost, menu wire.MarkingMenuView) markingRingLayout {
+	m := native.Metrics()
+	iconPx := scaledIconPx(smallIconPx)
+	var maxWidth, maxHeight float32
+	for _, item := range menu.Quadrants {
+		cmd, ok := s.Commands().ByID(item.CommandID)
+		if !ok {
+			continue
+		}
+		hasIcon := false
+		if icons != nil {
+			_, hasIcon = icons.texture(cmd.Icon(), cmd.InlineIconSVG(), iconPx)
+		}
+		w, h := markingSlotExtent(cmd.DisplayName(), hasIcon, iconPx, m)
+		if w > maxWidth {
+			maxWidth = w
+		}
+		if h > maxHeight {
+			maxHeight = h
+		}
+	}
+	return newMarkingRingLayout(maxWidth, maxHeight)
 }
 
 // drawClassicContextMenu draws the same commands as a plain vertical list — the classic
@@ -129,24 +162,58 @@ func drawLinearCommandEntry(s *app.Session, id string) {
 	native.EndDisabled()
 }
 
-// drawMarkingSlot places one quadrant's command button on the ring.
-func drawMarkingSlot(s *app.Session, centerX, centerY float32, item wire.MarkingMenuItem) {
+// drawMarkingSlot places one quadrant's command button on the ring. When the command has an
+// icon asset, it draws icon + label side by side (the same composition as the ribbon's small
+// labelled icon buttons, drawLabeledIconButton, chrome_ribbon.go:613-624 — the icon is the click
+// target there too); a command with no icon falls back to the original text-only button.
+func drawMarkingSlot(s *app.Session, ringX, ringY float32, layout markingRingLayout, item wire.MarkingMenuItem) {
 	cmd, ok := s.Commands().ByID(item.CommandID)
 	if !ok {
 		return
 	}
-	dir := quadrantDirections[item.Quadrant]
 	label := cmd.DisplayName()
-	w := native.CalcTextWidth(label) + 16
-	x := centerX + dir[0]*markingMenuRadius - w/2
-	y := centerY + dir[1]*markingMenuRadius - 12
-	native.SetCursorPos(x, y)
+	iconPx := scaledIconPx(smallIconPx)
+	tex, hasIcon := icons.texture(cmd.Icon(), cmd.InlineIconSVG(), iconPx)
+	m := native.Metrics()
+	w, h := markingSlotExtent(label, hasIcon, iconPx, m)
+	x, y := markingSlotPosition(layout, item.Quadrant, w, h)
+	native.SetCursorPos(ringX+x, ringY+y)
 	native.BeginDisabled(!cmd.IsEnabled(s))
-	if native.Button(label + "##mm-" + item.CommandID) {
+	var clicked bool
+	if hasIcon {
+		native.BeginGroup()
+		clicked = native.ImageButton("##mm-"+item.CommandID, tex, float32(iconPx), float32(iconPx), identityTint)
+		native.SameLine()
+		cx, cy := native.GetCursorScreenPos()
+		native.SetCursorScreenPos(cx, cy+(float32(iconPx)+2*m.FramePadY-native.TextLineHeight())/2)
+		native.Text(label)
+		native.EndGroup()
+	} else {
+		clicked = native.Button(label + "##mm-" + item.CommandID)
+	}
+	if clicked {
 		_ = s.Execute(item.CommandID)
 		native.CloseCurrentPopup()
 	}
 	native.EndDisabled()
+}
+
+// markingSlotExtent mirrors the ImGui primitives used by drawMarkingSlot, so the ring can
+// reserve enough room before it places any command. ImageButton includes frame padding; the
+// label is a plain text item separated by the live item spacing.
+func markingSlotExtent(label string, hasIcon bool, iconPx int, m native.StyleMetrics) (float32, float32) {
+	textWidth := native.CalcTextWidth(label)
+	textHeight := native.FrameHeight()
+	if !hasIcon {
+		return textWidth + 2*m.FramePadX, textHeight
+	}
+	iconWidth := float32(iconPx) + 2*m.FramePadX
+	iconHeight := float32(iconPx) + 2*m.FramePadY
+	width := iconWidth + m.ItemSpacingX + textWidth
+	if textHeight > iconHeight {
+		iconHeight = textHeight
+	}
+	return width, iconHeight
 }
 
 // drawMarkingOverflow renders the linear rows beneath the ring.

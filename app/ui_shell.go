@@ -24,29 +24,31 @@ func (EnvironmentChanged) EventID() event.TypeID { return tidEnvironmentChanged 
 
 // defaultMarkingMenus is the out-of-the-box radial layout per environment: the
 // modeling staples around the cursor in base, the sketch staples in sketch.
+// Matches Inventor §8 where commands exist (C-inventor-ui-reference.md).
 func defaultMarkingMenus() map[Environment]wire.MarkingMenuView {
 	return map[Environment]wire.MarkingMenuView{
 		BaseEnvironment: {
 			Environment: BaseEnvironment,
 			Quadrants: []wire.MarkingMenuItem{
 				{Quadrant: types.QuadrantNorth, CommandID: "Sketch.Create2D"},
-				{Quadrant: types.QuadrantEast, CommandID: "Create.Extrude"},
-				{Quadrant: types.QuadrantSouth, CommandID: "Modify.Hole"},
-				{Quadrant: types.QuadrantWest, CommandID: "Create.Revolve"},
 				{Quadrant: types.QuadrantNorthEast, CommandID: "Modify.Fillet"},
+				{Quadrant: types.QuadrantEast, CommandID: "Create.Extrude"},
 				{Quadrant: types.QuadrantSouthEast, CommandID: "Modify.Chamfer"},
+				{Quadrant: types.QuadrantSouth, CommandID: "Modify.Hole"},
+				{Quadrant: types.QuadrantSouthWest, CommandID: "WorkPlane.Offset"},
+				{Quadrant: types.QuadrantWest, CommandID: "Create.Revolve"},
 			},
 		},
 		SketchEnvironment: {
 			Environment: SketchEnvironment,
 			Quadrants: []wire.MarkingMenuItem{
 				{Quadrant: types.QuadrantNorth, CommandID: "Sketch.Line"},
+				{Quadrant: types.QuadrantNorthEast, CommandID: "Sketch.Dimension"},
 				{Quadrant: types.QuadrantEast, CommandID: "Sketch.Circle"},
 				{Quadrant: types.QuadrantSouth, CommandID: "Sketch.Rectangle"},
 				{Quadrant: types.QuadrantWest, CommandID: "Sketch.Arc"},
-				{Quadrant: types.QuadrantNorthEast, CommandID: "Sketch.Dimension"},
+				{Quadrant: types.QuadrantNorthWest, CommandID: "Sketch.Finish"},
 			},
-			Overflow: []string{"Sketch.Finish"},
 		},
 	}
 }
@@ -75,7 +77,7 @@ func (s *Session) SetMarkingMenu(menu wire.MarkingMenuView) error {
 		seen[item.Quadrant] = true
 	}
 	s.markingMenus[menu.Environment] = menu
-	return nil
+	return s.saveMarkingMenuCustomization()
 }
 
 // RepeatMenuEntry returns the right-click "Repeat <command>" entry shown when idle: its display
