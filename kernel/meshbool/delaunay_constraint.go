@@ -2,6 +2,11 @@
 
 package meshbool
 
+import (
+	"math/big"
+	"sort"
+)
+
 // Constraint-edge recovery for the Delaunay mesh (Sloan 1993). To force a segment
 // (ui,vi) to appear as a triangulation edge, repeatedly flip an edge the segment
 // crosses whose quadrilateral is convex; each such flip is local and exactly
@@ -29,6 +34,45 @@ func (d *delaunayMesh) forceEdge(ui, vi int) {
 		}
 		d.flipEdge(ti, e)
 	}
+}
+
+// forceSegment forces the whole segment [a,b] as triangulation edges, splitting it
+// at every vertex lying on it so each sub-edge meets forceEdge's no-vertex-between
+// precondition. a and b must already be vertices (the co-refinement inserts every
+// endpoint and crossing first).
+func (d *delaunayMesh) forceSegment(a, b Point) {
+	if a.Equal(b) {
+		return
+	}
+	on := d.verticesOnSegment(a, b)
+	for k := 0; k+1 < len(on); k++ {
+		d.forceEdge(on[k], on[k+1])
+	}
+}
+
+// verticesOnSegment returns the indices of all vertices lying on the closed segment
+// [a,b], ordered from a to b by their exact parameter.
+func (d *delaunayMesh) verticesOnSegment(a, b Point) []int {
+	lenSq := segParam(a, b, b)
+	type onVert struct {
+		idx int
+		t   *big.Rat
+	}
+	var on []onVert
+	for i, v := range d.verts {
+		if !rcollinear(a, b, v) {
+			continue
+		}
+		if t := segParam(a, b, v); t.Sign() >= 0 && t.Cmp(lenSq) <= 0 {
+			on = append(on, onVert{i, t})
+		}
+	}
+	sort.Slice(on, func(i, j int) bool { return on[i].t.Cmp(on[j].t) < 0 })
+	idx := make([]int, len(on))
+	for i, e := range on {
+		idx[i] = e.idx
+	}
+	return idx
 }
 
 // edgeExists reports whether ui and vi are both vertices of some triangle.

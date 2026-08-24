@@ -148,3 +148,35 @@ func hasVertex(d *delaunayMesh, p Point) bool {
 	}
 	return false
 }
+
+// randBary returns an exact point inside face (or on an edge when onEdge) from
+// integer barycentric weights, so it lies exactly in the face plane.
+func randBary(r *rand.Rand, face [3]Point, onEdge bool) Point {
+	wi, wj, wk := int64(r.Intn(9)+1), int64(r.Intn(9)+1), int64(r.Intn(9)+1)
+	if onEdge {
+		switch r.Intn(3) {
+		case 0:
+			wi = 0
+		case 1:
+			wj = 0
+		default:
+			wk = 0
+		}
+	}
+	return baryPoint(face, wi, wj, wk)
+}
+
+func baryPoint(face [3]Point, wi, wj, wk int64) Point {
+	den := big.NewRat(wi+wj+wk, 1)
+	mix := func(a, b, c *big.Rat) *big.Rat {
+		s := new(big.Rat).Mul(a, big.NewRat(wi, 1))
+		s.Add(s, new(big.Rat).Mul(b, big.NewRat(wj, 1)))
+		s.Add(s, new(big.Rat).Mul(c, big.NewRat(wk, 1)))
+		return s.Quo(s, den)
+	}
+	return Point{
+		X: mix(face[0].X, face[1].X, face[2].X),
+		Y: mix(face[0].Y, face[1].Y, face[2].Y),
+		Z: mix(face[0].Z, face[1].Z, face[2].Z),
+	}
+}
