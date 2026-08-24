@@ -49,7 +49,8 @@ shaders:
 		glslangValidator --target-env vulkan1.3 -V pathtrace.rgen -o pathtrace.rgen.spv && \
 		glslangValidator --target-env vulkan1.3 -V pathtrace.rmiss -o pathtrace.rmiss.spv && \
 		glslangValidator --target-env vulkan1.3 -V shadow.rmiss -o shadow.rmiss.spv && \
-		glslangValidator --target-env vulkan1.3 -V pathtrace.rchit -o pathtrace.rchit.spv
+		glslangValidator --target-env vulkan1.3 -V pathtrace.rchit -o pathtrace.rchit.spv && \
+		glslangValidator --target-env vulkan1.3 -V swpathtrace.comp -o swpathtrace.comp.spv
 
 # build compiles every head command (proves the cgo/Vulkan stack links).
 build: native-libs

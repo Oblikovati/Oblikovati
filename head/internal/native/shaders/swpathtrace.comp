@@ -1,0 +1,187 @@
+#version 450
+// Software single-bounce, single-light direct-lighting harness (M45-F04 PBI-346,
+// ADR-0053): the compute-shader-BVH counterpart of pathtrace.rgen/.rchit/.rmiss —
+// same F03 GLSL BSDF library (openpbr/base_lobes.glsl), same shading math, only the
+// intersection call differs (BVH traversal via a plain buffer, not an acceleration
+// structure/ray query). A compute shader has no ray-gen/closest-hit/miss STAGE
+// separation, so both the primary and shadow queries are ordinary function calls
+// within one shader body instead of two traceRayEXT dispatches into separate stages.
+#extension GL_GOOGLE_include_directive : require
+#include "openpbr/base_lobes.glsl"
+
+layout(local_size_x = 1) in;
+
+struct BVHNode {
+    float minX, minY, minZ;
+    float maxX, maxY, maxZ;
+    int leftFirst;
+    int triCount;
+};
+
+struct GpuTriangle {
+    float v0x, v0y, v0z;
+    float v1x, v1y, v1z;
+    float v2x, v2y, v2z;
+    uint instanceID;
+    uint primitiveID;
+};
+
+layout(set = 0, binding = 0) uniform CameraParams {
+    vec3 origin;
+    float tMin;
+    vec3 direction;
+    float tMax;
+} cam;
+
+layout(set = 0, binding = 1, std430) readonly buffer Nodes { BVHNode nodes[]; };
+layout(set = 0, binding = 2, std430) readonly buffer TriOrder { int triOrder[]; };
+layout(set = 0, binding = 3, std430) readonly buffer Triangles { GpuTriangle tris[]; };
+
+layout(set = 0, binding = 4) uniform Params {
+    vec3 lightPos;
+    float lightIntensity;
+    vec3 lightColor;
+    float pad0;
+    vec3 baseColor;
+    float baseWeight;
+    float specularRoughness;
+    float specularIOR;
+    float baseMetalness;
+    float pad1;
+} params;
+
+layout(set = 0, binding = 5, std430) buffer Output { vec4 radiance; } outputBuf;
+
+// A traversal hit result — same fields as raytrace.comp's HitResult, minus the extra
+// std430 vec3 padding this local (non-buffer) struct doesn't need.
+struct TraceResult {
+    bool hit;
+    float t;
+    vec3 normal;
+    int triIdx;
+};
+
+bool rayAABBHit(vec3 origin, vec3 dir, vec3 mn, vec3 mx, float tMin, float currentBestT) {
+    vec3 invD = 1.0 / dir;
+    vec3 t0 = (mn - origin) * invD;
+    vec3 t1 = (mx - origin) * invD;
+    vec3 tSmall = min(t0, t1);
+    vec3 tBig = max(t0, t1);
+    float tEnter = max(max(tSmall.x, tSmall.y), max(tSmall.z, tMin));
+    float tExit = min(min(tBig.x, tBig.y), min(tBig.z, currentBestT));
+    return tEnter <= tExit;
+}
+
+bool rayTriangleHit(vec3 origin, vec3 dir, GpuTriangle tri, out float t, out vec3 normal) {
+    vec3 v0 = vec3(tri.v0x, tri.v0y, tri.v0z);
+    vec3 v1 = vec3(tri.v1x, tri.v1y, tri.v1z);
+    vec3 v2 = vec3(tri.v2x, tri.v2y, tri.v2z);
+    vec3 e1 = v1 - v0;
+    vec3 e2 = v2 - v0;
+    vec3 pvec = cross(dir, e2);
+    float det = dot(e1, pvec);
+    if (abs(det) < 1e-8) return false;
+    float invDet = 1.0 / det;
+    vec3 tvec = origin - v0;
+    float u = dot(tvec, pvec) * invDet;
+    if (u < 0.0 || u > 1.0) return false;
+    vec3 qvec = cross(tvec, e1);
+    float v = dot(dir, qvec) * invDet;
+    if (v < 0.0 || u + v > 1.0) return false;
+    t = dot(e2, qvec) * invDet;
+    normal = normalize(cross(e1, e2));
+    return true;
+}
+
+// traceBVH is swtrace.comp's traversal loop, extracted into a function so both the
+// primary and shadow queries in main() below call the exact same code — the two
+// backends (PBI-333/334's ray-query/BVH Intersectors) already share this property at
+// the Intersector level; this harness shares it at the shading-integrator level too.
+TraceResult traceBVH(vec3 origin, vec3 dir, float tMin, float tMax) {
+    TraceResult result;
+    result.hit = false;
+    float bestT = tMax;
+    int bestTri = -1;
+    vec3 bestNormal = vec3(0);
+
+    int stack[32];
+    int sp = 0;
+    stack[sp++] = 0;
+    while (sp > 0) {
+        int nodeIdx = stack[--sp];
+        BVHNode node = nodes[nodeIdx];
+        vec3 mn = vec3(node.minX, node.minY, node.minZ);
+        vec3 mx = vec3(node.maxX, node.maxY, node.maxZ);
+        if (!rayAABBHit(origin, dir, mn, mx, tMin, bestT)) continue;
+
+        if (node.triCount > 0) {
+            for (int i = 0; i < node.triCount; i++) {
+                int triIdx = triOrder[node.leftFirst + i];
+                float t;
+                vec3 n;
+                if (rayTriangleHit(origin, dir, tris[triIdx], t, n) && t >= tMin && t < bestT) {
+                    bestT = t;
+                    bestTri = triIdx;
+                    bestNormal = n;
+                }
+            }
+        } else if (sp < 30) {
+            stack[sp++] = node.leftFirst;
+            stack[sp++] = node.leftFirst + 1;
+        }
+    }
+
+    if (bestTri >= 0) {
+        result.hit = true;
+        result.t = bestT;
+        result.normal = bestNormal;
+        result.triIdx = bestTri;
+    }
+    return result;
+}
+
+void buildBasis(vec3 n, out vec3 tangent, out vec3 bitangent) {
+    vec3 up = abs(n.y) < 0.99 ? vec3(0, 1, 0) : vec3(1, 0, 0);
+    tangent = normalize(cross(up, n));
+    bitangent = cross(n, tangent);
+}
+
+void main() {
+    outputBuf.radiance = vec4(0.0);
+
+    TraceResult primary = traceBVH(cam.origin, cam.direction, cam.tMin, cam.tMax);
+    if (!primary.hit) return;
+
+    vec3 hitPoint = cam.origin + cam.direction * primary.t;
+    vec3 normal = primary.normal;
+
+    vec3 toLight = params.lightPos - hitPoint;
+    float dist = length(toLight);
+    vec3 wi = toLight / dist;
+    vec3 wo = -cam.direction;
+
+    TraceResult shadow = traceBVH(hitPoint + normal * 1e-3, wi, 1e-3, dist - 2e-3);
+    if (shadow.hit) return; // occluded: radiance stays 0
+
+    vec3 tangent, bitangent;
+    buildBasis(normal, tangent, bitangent);
+    vec3 wiLocal = vec3(dot(wi, tangent), dot(wi, bitangent), dot(wi, normal));
+    vec3 woLocal = vec3(dot(wo, tangent), dot(wo, bitangent), dot(wo, normal));
+    if (wiLocal.z <= 0.0 || woLocal.z <= 0.0) return;
+
+    float alpha = openpbrAlphaFromRoughness(params.specularRoughness);
+    // See pathtrace.rchit's identical note: base_diffuse_roughness isn't exposed by this
+    // harness yet, fixed at the spec's own Lambertian default (0).
+    vec3 diffuse = openpbrDiffuseSingleScatter(params.baseColor * params.baseWeight, 0.0, wiLocal, woLocal);
+
+    vec3 h = normalize(wiLocal + woLocal);
+    float d = openpbrDistributionGGX(h, alpha);
+    float g = openpbrSmithG2(wiLocal, woLocal, alpha);
+    float fr = openpbrDielectricFresnel(params.specularIOR, max(dot(wiLocal, h), 0.0));
+    float specular = fr * d * g / (4.0 * wiLocal.z * woLocal.z);
+
+    vec3 brdf = diffuse + vec3(specular);
+    float attenuation = params.lightIntensity / (dist * dist);
+    float cosTheta = wiLocal.z;
+    outputBuf.radiance = vec4(brdf * params.lightColor * attenuation * cosTheta, 1.0);
+}

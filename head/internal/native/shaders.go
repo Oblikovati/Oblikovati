@@ -68,3 +68,10 @@ var shadowRmissSPV []byte
 
 //go:embed shaders/pathtrace.rchit.spv
 var pathtraceRchitSPV []byte
+
+// Software single-bounce path-tracing harness (M45-F04 PBI-346): the same shading math
+// as pathtrace.rchit, but as one compute shader over the software BVH (PBI-334)
+// instead of a full RT pipeline.
+//
+//go:embed shaders/swpathtrace.comp.spv
+var swpathtraceCompSPV []byte

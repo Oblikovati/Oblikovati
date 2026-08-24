@@ -35,4 +35,20 @@ void obk_sw_scene_trace(void* scene, float ox, float oy, float oz, float dx, flo
 
 void obk_sw_scene_destroy(void* scene);
 
+// --- Software single-bounce path-tracing harness (M45-F04 PBI-346): the same
+// ray-gen/shading logic as raytrace.h's obk_rt_scene_build_pipeline/trace_pipeline, but
+// as one compute shader over this scene's ALREADY-UPLOADED BVH (from obk_sw_scene_build)
+// instead of a full RT pipeline. Call after obk_sw_scene_build.
+
+// obk_sw_scene_build_pathtrace_pipeline creates the shading compute pipeline from the
+// caller-supplied SPIR-V (embedded Go-side). Returns 0 on success.
+int obk_sw_scene_build_pathtrace_pipeline(void* scene, const uint32_t* spv, int spvLen);
+
+// obk_sw_scene_trace_pathtrace dispatches one shading compute call and reads back the
+// resulting single-bounce direct-lighting radiance. params is the same 16 floats as
+// raytrace.h's obk_rt_scene_trace_pipeline (identical Params UBO layout).
+void obk_sw_scene_trace_pathtrace(void* scene, float ox, float oy, float oz, float dx, float dy, float dz,
+                                  float tMin, float tMax, const float* params, float* outR, float* outG,
+                                  float* outB);
+
 } // extern "C"

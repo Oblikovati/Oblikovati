@@ -16,6 +16,11 @@ void  obk_sw_scene_trace(void* scene, float ox, float oy, float oz, float dx, fl
                          float tMin, float tMax, int* hit, float* t, float* px, float* py, float* pz,
                          float* nx, float* ny, float* nz, uint32_t* instanceID, uint32_t* primitiveID);
 void  obk_sw_scene_destroy(void* scene);
+
+int  obk_sw_scene_build_pathtrace_pipeline(void* scene, const uint32_t* spv, int spvLen);
+void obk_sw_scene_trace_pathtrace(void* scene, float ox, float oy, float oz, float dx, float dy, float dz,
+                                  float tMin, float tMax, const float* params, float* outR, float* outG,
+                                  float* outB);
 */
 import "C"
 
@@ -91,6 +96,31 @@ func (s *SWScene) Trace(origin, direction [3]float32, tMin, tMax float32) RTHit 
 		InstanceID:  uint32(cInstanceID),
 		PrimitiveID: uint32(cPrimitiveID),
 	}
+}
+
+// BuildPathtracePipeline creates the single-bounce shading compute pipeline over this
+// scene's already-uploaded BVH (M45-F04 PBI-346) — call after Build.
+func (s *SWScene) BuildPathtracePipeline(spv []byte) error {
+	rc := C.obk_sw_scene_build_pathtrace_pipeline(s.handle,
+		(*C.uint32_t)(unsafe.Pointer(unsafe.SliceData(spv))), C.int(len(spv)))
+	if rc != 0 {
+		return errors.New("native: SWScene.BuildPathtracePipeline failed (see stderr)")
+	}
+	return nil
+}
+
+// TracePathtrace dispatches one shading compute call and returns the resulting
+// single-bounce direct-lighting radiance — same PipelineParams layout as
+// RTScene.TracePipeline (both shaders share pathtrace.rchit's Params UBO shape).
+func (s *SWScene) TracePathtrace(origin, direction [3]float32, tMin, tMax float32, params PipelineParams) (r, g, b float32) {
+	pf := params.floats()
+	var cR, cG, cB C.float
+	C.obk_sw_scene_trace_pathtrace(s.handle,
+		C.float(origin[0]), C.float(origin[1]), C.float(origin[2]),
+		C.float(direction[0]), C.float(direction[1]), C.float(direction[2]),
+		C.float(tMin), C.float(tMax),
+		(*C.float)(unsafe.Pointer(&pf[0])), &cR, &cG, &cB)
+	return float32(cR), float32(cG), float32(cB)
 }
 
 // Destroy frees every Vulkan resource the scene owns.
