@@ -28,6 +28,48 @@ func drawUITab(s *app.Session) {
 	editUIIconScale(s)
 	native.Separator()
 	native.Text("Text size also scales the Script Console code editor.")
+	native.Separator()
+	// Mouse-navigation preferences (Inventor-parity, 2026-08-17). Defaults
+	// match Inventor: middle-drag pans, Shift+middle-drag orbits, scroll-up
+	// zooms in, wheel zooms to the cursor.
+	native.Text("Mouse navigation (defaults match Inventor):")
+	editNavModeCombo("Middle button drag", s.MMBMode(), s.SetMMBMode, navModeOptions("pan"))
+	editNavModeCombo("Shift + middle button drag", s.ShiftMMBMode(), s.SetShiftMMBMode, navModeOptions("orbit"))
+	editNavModeCombo("Ctrl + middle button drag", s.CtrlMMBMode(), s.SetCtrlMMBMode, navModeOptions("pan"))
+	invert := s.WheelInvert()
+	if native.Checkbox("Invert wheel zoom direction", &invert) {
+		reportPrefError(s.SetWheelInvert(invert))
+	}
+	toCursor := s.ZoomToCursor()
+	if native.Checkbox("Zoom to cursor", &toCursor) {
+		reportPrefError(s.SetZoomToCursor(toCursor))
+	}
+}
+
+// navModeOptions lists the three middle-button gestures, with this binding's
+// Inventor default first in the combo.
+func navModeOptions(preferred string) []string {
+	opts := []string{preferred}
+	for _, mode := range []string{"pan", "orbit", "zoom"} {
+		if mode != preferred {
+			opts = append(opts, mode)
+		}
+	}
+	return opts
+}
+
+// editNavModeCombo draws one pan/orbit/zoom mode selector (BeginCombo + Selectable
+// pattern, same as the add-in grid combo cells).
+func editNavModeCombo(label, current string, set func(string) error, options []string) {
+	if !native.BeginCombo(label, current) {
+		return
+	}
+	for _, opt := range options {
+		if native.Selectable(opt, opt == current) {
+			reportPrefError(set(opt))
+		}
+	}
+	native.EndCombo()
 }
 
 // editUITextScale draws the UI text-size slider, reading and writing the scale as a percentage.

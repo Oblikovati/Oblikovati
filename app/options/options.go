@@ -99,6 +99,19 @@ type UI struct {
 	IconScale float64 `yaml:"iconScale"`
 }
 
+// Input is the mouse-navigation behaviour surface (Inventor-parity work,
+// 2026-08-17). Oblikovati ships Inventor's default bindings; these toggles let a
+// user adapt the pointer gestures without code changes. Each plain/modifier middle-button
+// mapping can select pan, orbit, or zoom; WheelInvert flips the scroll direction; and
+// ZoomToCursor=false zooms to the view centre instead of the cursor.
+type Input struct {
+	MMBMode      string `yaml:"mmbMode"`      // "pan" (default, Inventor) | "orbit" | "zoom"
+	ShiftMMBMode string `yaml:"shiftMmbMode"` // "orbit" (default, Inventor) | "pan" | "zoom"
+	CtrlMMBMode  string `yaml:"ctrlMmbMode"`  // "pan" (default) | "orbit" | "zoom"
+	WheelInvert  bool   `yaml:"wheelInvert"`  // false: scroll-up zooms in (Inventor default)
+	ZoomToCursor bool   `yaml:"zoomToCursor"` // true: wheel zooms toward the cursor (Inventor default)
+}
+
 // All is every persisted option group. The ViewCube/display preferences live in
 // their own store (persistence/userprefs) and the color scheme in the theme store —
 // the options surface proxies those rather than duplicating their persistence.
@@ -110,6 +123,7 @@ type All struct {
 	Updates   Updates   `yaml:"updates"`
 	Telemetry Telemetry `yaml:"telemetry"`
 	UI        UI        `yaml:"ui"`
+	Input     Input     `yaml:"input"`
 }
 
 // Defaults returns the out-of-the-box options, mirroring the session's historical
@@ -128,6 +142,10 @@ func Defaults() All {
 		Updates:   Updates{CheckOnStartup: true},
 		Telemetry: Telemetry{ShareUsageStatistics: true},
 		UI:        UI{FontScale: 1, IconScale: 1},
+		Input: Input{
+			MMBMode: "pan", ShiftMMBMode: "orbit", CtrlMMBMode: "pan",
+			WheelInvert: false, ZoomToCursor: true,
+		},
 	}
 }
 

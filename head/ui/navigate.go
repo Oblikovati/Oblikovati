@@ -91,16 +91,33 @@ type NavInput struct {
 	Left             bool      // left button down — only consulted in a Modal mode
 	OrbitZone        OrbitZone // the Free-Orbit ring zone latched at drag start (#913 N5–N8)
 	Constrained      bool      // Constrained Orbit tool active: a left-drag turntables about modelUp (#913 N10)
+	// Inventor-parity input preferences (2026-08-17), populated by readNavInput
+	// from the session's options (the pure functions below cannot read options).
+	MMBMode      string // "pan" | "orbit" | "zoom" — middle-button drag mode
+	ShiftMMBMode string // "orbit" | "pan" | "zoom" — Shift+middle-button drag mode
+	CtrlMMBMode  string // "pan" | "orbit" | "zoom" — Ctrl+middle-button drag mode
+	WheelInvert  bool   // true flips the wheel zoom direction
+	ZoomToCursor bool   // false zooms to the view centre instead of the cursor
+	Ctrl         bool   // Ctrl held — selects the CtrlMMBMode binding (I-doc §4.2)
 }
 
 // ApplyNavigation maps one frame of pointer input to a camera move, mirroring Inventor:
-// wheel zooms (when hovered), middle-drag pans, Shift+middle-drag orbits. Left-drag is
+// wheel zooms (when hovered), middle-drag pans, Shift+middle orbits, Ctrl+middle follows
+// its own binding (I-doc §4.2); each binding can also be set to zoom. Left-drag is
 // deliberately NOT a navigation gesture — Inventor reserves it for selection (box-select
 // on empty space, drag-to-move on an entity), and orbiting on left-drag collided with the
 // sketch editor's left-click select/drag (#916). The camera math lives in scene.
 func ApplyNavigation(cam scene.Camera, in NavInput) scene.Camera {
 	if in.Hovered && in.Wheel != 0 {
-		cam = cam.DollyToCursor(stdmath.Pow(zoomPerNotch, float64(in.Wheel)), float64(in.CursorX), float64(in.CursorY))
+		factor := stdmath.Pow(zoomPerNotch, float64(in.Wheel))
+		if in.WheelInvert {
+			factor = 1 / factor
+		}
+		if in.ZoomToCursor {
+			cam = cam.DollyToCursor(factor, float64(in.CursorX), float64(in.CursorY))
+		} else {
+			cam = cam.Dolly(factor) // view-centred zoom (Inventor's Zoom to Cursor off)
+		}
 	}
 	if !in.Active || (in.DX == 0 && in.DY == 0) {
 		return cam
@@ -151,18 +168,38 @@ func ringRollAngle(cam scene.Camera, in NavInput) float64 {
 }
 
 // navGesture resolves a drag into a navigation gesture: a held F-key (F2 pan / F3 zoom / F4
-// orbit) drives a left-drag; otherwise the middle button pans, Shift+middle orbits. A plain
-// left-drag (no modal key) is NavNone — it belongs to selection, not navigation.
+// orbit) drives a left-drag; otherwise the middle button pans, Shift+middle orbits, and
+// Ctrl+middle follows its own binding (I-doc §4.2). A plain left-drag (no modal key) is
+// NavNone — it belongs to selection, not navigation. Shift wins over Ctrl when both are held.
 func navGesture(in NavInput) NavMode {
 	if in.Left {
 		return in.Modal
 	}
-	switch {
-	case in.Middle && in.Shift:
-		return NavOrbit
-	case in.Middle:
-		return NavPan
-	default:
+	if !in.Middle {
 		return NavNone
+	}
+	switch {
+	case in.Shift:
+		return middleMode(in.ShiftMMBMode, NavOrbit) // Inventor default: Shift+MMB orbits
+	case in.Ctrl:
+		return middleMode(in.CtrlMMBMode, NavPan) // default: Ctrl+MMB pans (pre-2026-08-17 behaviour)
+	default:
+		return middleMode(in.MMBMode, NavPan) // Inventor default: MMB pans
+	}
+}
+
+// middleMode maps a persisted middle-button mode name to a gesture, falling back to the
+// binding's Inventor default on an empty or unrecognised value (an options file written
+// before the key reads as ""). "zoom" dollies the camera, the same NavZoom path F3 uses.
+func middleMode(mode string, fallback NavMode) NavMode {
+	switch mode {
+	case "pan":
+		return NavPan
+	case "orbit":
+		return NavOrbit
+	case "zoom":
+		return NavZoom
+	default:
+		return fallback
 	}
 }

@@ -791,8 +791,8 @@ func viewportClipFar(cam scene.Camera, mn, mx [3]float32, hasGeom bool) float64 
 // readNavInput snapshots this frame's viewport pointer state from the native layer for
 // the pure ApplyNavigation mapping (see navigate.go). It must be called right after the
 // viewport's InvisibleButton, so IsItemActive/Hovered refer to it. Navigation is driven by
-// the middle button only (pan / Shift+orbit); the left button belongs to selection and
-// box-select, handled separately, so it is not read here.
+// the middle button only (pan / Shift+orbit / Ctrl+orbit, each configurable); the left
+// button belongs to selection and box-select, handled separately, so it is not read here.
 func readNavInput(s *app.Session) NavInput {
 	dx, dy := native.MouseDelta()
 	modal := heldNavMode()
@@ -807,11 +807,20 @@ func readNavInput(s *app.Session) NavInput {
 		CursorY: float32(cy),
 		Middle:  native.MouseDown(native.MouseMiddle),
 		Shift:   native.KeyShift(),
+		Ctrl:    native.KeyCtrl(),
 		Modal:   modal,
 		Left:    modal != NavNone && native.MouseDown(native.MouseLeft),
 	}
 	in.OrbitZone = latchOrbitZone(in, cx, cy)
 	in.Constrained = s.ConstrainedOrbitActive() && native.MouseDown(native.MouseLeft)
+	// Inventor-parity input preferences (2026-08-17): the pure navigation
+	// functions cannot read options, so the session's persisted values flow
+	// through NavInput here.
+	in.MMBMode = s.MMBMode()
+	in.ShiftMMBMode = s.ShiftMMBMode()
+	in.CtrlMMBMode = s.CtrlMMBMode()
+	in.WheelInvert = s.WheelInvert()
+	in.ZoomToCursor = s.ZoomToCursor()
 	return in
 }
 
