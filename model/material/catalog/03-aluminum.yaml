@@ -15,97 +15,287 @@
 #        expansionCoeff 1/K | specificHeat J/(kg*K) | resistivity ohm*m | relativePermittivity -
 
 appearances:
-  - {id: aluminum-cast, name: Aluminum (Cast), albedo: "#d8dadbff", metallic: 1.0, roughness: 0.50, opacity: 1.0}
-
+    - id: aluminum-cast
+      name: Aluminum (Cast)
+      base:
+        weight: 1
+        color:
+            r: 0.69408053
+            g: 0.7082978
+            b: 0.7154654
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.5
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
 materials:
-  - id: aluminum-2011
-    name: Aluminum 2011 (T3)
-    density: 2.82
-    appearance: aluminum
-    mechanical: {youngsModulus: 70, poissonsRatio: 0.33, yieldStrength: 295, ultimateTensileStrength: 380}
-    thermal:    {conductivity: 152, expansionCoeff: 22.9e-6, specificHeat: 864}
-    electrical: {resistivity: 4.3e-8, relativePermittivity: 1}
-  - id: aluminum-2014
-    name: Aluminum 2014 (T6)
-    density: 2.80
-    appearance: aluminum
-    mechanical: {youngsModulus: 73, poissonsRatio: 0.33, yieldStrength: 414, ultimateTensileStrength: 483}
-    thermal:    {conductivity: 154, expansionCoeff: 23.0e-6, specificHeat: 880}
-    electrical: {resistivity: 4.3e-8, relativePermittivity: 1}
-  - id: aluminum-2024
-    name: Aluminum 2024 (T3)
-    density: 2.78
-    appearance: aluminum
-    mechanical: {youngsModulus: 73, poissonsRatio: 0.33, yieldStrength: 345, ultimateTensileStrength: 483}
-    thermal:    {conductivity: 121, expansionCoeff: 23.2e-6, specificHeat: 875}
-    electrical: {resistivity: 5.8e-8, relativePermittivity: 1}
-  - id: aluminum-3003
-    name: Aluminum 3003 (H14)
-    density: 2.73
-    appearance: aluminum
-    mechanical: {youngsModulus: 69, poissonsRatio: 0.33, yieldStrength: 145, ultimateTensileStrength: 150}
-    thermal:    {conductivity: 159, expansionCoeff: 23.2e-6, specificHeat: 893}
-    electrical: {resistivity: 3.7e-8, relativePermittivity: 1}
-  - id: aluminum-5052
-    name: Aluminum 5052 (H32)
-    density: 2.68
-    appearance: aluminum
-    mechanical: {youngsModulus: 70, poissonsRatio: 0.33, yieldStrength: 195, ultimateTensileStrength: 230}
-    thermal:    {conductivity: 138, expansionCoeff: 23.8e-6, specificHeat: 880}
-    electrical: {resistivity: 4.9e-8, relativePermittivity: 1}
-  - id: aluminum-5083
-    name: Aluminum 5083 (H116)
-    density: 2.66
-    appearance: aluminum
-    mechanical: {youngsModulus: 71, poissonsRatio: 0.33, yieldStrength: 215, ultimateTensileStrength: 305}
-    thermal:    {conductivity: 117, expansionCoeff: 24.2e-6, specificHeat: 900}
-    electrical: {resistivity: 5.9e-8, relativePermittivity: 1}
-  - id: aluminum-6061
-    name: Aluminum 6061 (T6)
-    density: 2.70
-    appearance: aluminum
-    mechanical: {youngsModulus: 68.9, poissonsRatio: 0.33, yieldStrength: 276, ultimateTensileStrength: 310}
-    thermal:    {conductivity: 167, expansionCoeff: 23.6e-6, specificHeat: 896}
-    electrical: {resistivity: 3.99e-8, relativePermittivity: 1}
-  - id: aluminum-6063
-    name: Aluminum 6063 (T6)
-    density: 2.69
-    appearance: aluminum
-    mechanical: {youngsModulus: 68.9, poissonsRatio: 0.33, yieldStrength: 214, ultimateTensileStrength: 241}
-    thermal:    {conductivity: 200, expansionCoeff: 23.4e-6, specificHeat: 900}
-    electrical: {resistivity: 3.3e-8, relativePermittivity: 1}
-  - id: aluminum-6082
-    name: Aluminum 6082 (T6)
-    density: 2.70
-    appearance: aluminum
-    mechanical: {youngsModulus: 70, poissonsRatio: 0.33, yieldStrength: 250, ultimateTensileStrength: 290}
-    thermal:    {conductivity: 170, expansionCoeff: 23.1e-6, specificHeat: 900}
-    electrical: {resistivity: 3.8e-8, relativePermittivity: 1}
-  - id: aluminum-7050
-    name: Aluminum 7050 (T7451)
-    density: 2.83
-    appearance: aluminum
-    mechanical: {youngsModulus: 72, poissonsRatio: 0.33, yieldStrength: 469, ultimateTensileStrength: 524}
-    thermal:    {conductivity: 157, expansionCoeff: 23.5e-6, specificHeat: 860}
-    electrical: {resistivity: 4.5e-8, relativePermittivity: 1}
-  - id: aluminum-7075
-    name: Aluminum 7075 (T6)
-    density: 2.81
-    appearance: aluminum
-    mechanical: {youngsModulus: 71.7, poissonsRatio: 0.33, yieldStrength: 503, ultimateTensileStrength: 572}
-    thermal:    {conductivity: 130, expansionCoeff: 23.6e-6, specificHeat: 960}
-    electrical: {resistivity: 5.2e-8, relativePermittivity: 1}
-  - id: aluminum-a356
-    name: Aluminum A356 (T6, Cast)
-    density: 2.67
-    appearance: aluminum-cast
-    mechanical: {youngsModulus: 72.4, poissonsRatio: 0.33, yieldStrength: 165, ultimateTensileStrength: 230}
-    thermal:    {conductivity: 151, expansionCoeff: 21.5e-6, specificHeat: 963}
-    electrical: {resistivity: 4.4e-8, relativePermittivity: 1}
-  - id: aluminum-380
-    name: Aluminum 380 (Die Cast)
-    density: 2.74
-    appearance: aluminum-cast
-    mechanical: {youngsModulus: 71, poissonsRatio: 0.33, yieldStrength: 159, ultimateTensileStrength: 324}
-    thermal:    {conductivity: 96, expansionCoeff: 21.8e-6, specificHeat: 963}
-    electrical: {resistivity: 7.5e-8, relativePermittivity: 1}
+    - id: aluminum-2011
+      name: Aluminum 2011 (T3)
+      density: 2.82
+      mechanical:
+        youngsModulus: 70
+        poissonsRatio: 0.33
+        yieldStrength: 295
+        ultimateTensileStrength: 380
+      thermal:
+        conductivity: 152
+        expansionCoeff: 2.29e-05
+        specificHeat: 864
+      electrical:
+        resistivity: 4.3e-08
+        relativePermittivity: 1
+      appearance: aluminum
+    - id: aluminum-2014
+      name: Aluminum 2014 (T6)
+      density: 2.8
+      mechanical:
+        youngsModulus: 73
+        poissonsRatio: 0.33
+        yieldStrength: 414
+        ultimateTensileStrength: 483
+      thermal:
+        conductivity: 154
+        expansionCoeff: 2.3e-05
+        specificHeat: 880
+      electrical:
+        resistivity: 4.3e-08
+        relativePermittivity: 1
+      appearance: aluminum
+    - id: aluminum-2024
+      name: Aluminum 2024 (T3)
+      density: 2.78
+      mechanical:
+        youngsModulus: 73
+        poissonsRatio: 0.33
+        yieldStrength: 345
+        ultimateTensileStrength: 483
+      thermal:
+        conductivity: 121
+        expansionCoeff: 2.32e-05
+        specificHeat: 875
+      electrical:
+        resistivity: 5.8e-08
+        relativePermittivity: 1
+      appearance: aluminum
+    - id: aluminum-3003
+      name: Aluminum 3003 (H14)
+      density: 2.73
+      mechanical:
+        youngsModulus: 69
+        poissonsRatio: 0.33
+        yieldStrength: 145
+        ultimateTensileStrength: 150
+      thermal:
+        conductivity: 159
+        expansionCoeff: 2.32e-05
+        specificHeat: 893
+      electrical:
+        resistivity: 3.7e-08
+        relativePermittivity: 1
+      appearance: aluminum
+    - id: aluminum-5052
+      name: Aluminum 5052 (H32)
+      density: 2.68
+      mechanical:
+        youngsModulus: 70
+        poissonsRatio: 0.33
+        yieldStrength: 195
+        ultimateTensileStrength: 230
+      thermal:
+        conductivity: 138
+        expansionCoeff: 2.38e-05
+        specificHeat: 880
+      electrical:
+        resistivity: 4.9e-08
+        relativePermittivity: 1
+      appearance: aluminum
+    - id: aluminum-5083
+      name: Aluminum 5083 (H116)
+      density: 2.66
+      mechanical:
+        youngsModulus: 71
+        poissonsRatio: 0.33
+        yieldStrength: 215
+        ultimateTensileStrength: 305
+      thermal:
+        conductivity: 117
+        expansionCoeff: 2.42e-05
+        specificHeat: 900
+      electrical:
+        resistivity: 5.9e-08
+        relativePermittivity: 1
+      appearance: aluminum
+    - id: aluminum-6061
+      name: Aluminum 6061 (T6)
+      density: 2.7
+      mechanical:
+        youngsModulus: 68.9
+        poissonsRatio: 0.33
+        yieldStrength: 276
+        ultimateTensileStrength: 310
+      thermal:
+        conductivity: 167
+        expansionCoeff: 2.36e-05
+        specificHeat: 896
+      electrical:
+        resistivity: 3.99e-08
+        relativePermittivity: 1
+      appearance: aluminum
+    - id: aluminum-6063
+      name: Aluminum 6063 (T6)
+      density: 2.69
+      mechanical:
+        youngsModulus: 68.9
+        poissonsRatio: 0.33
+        yieldStrength: 214
+        ultimateTensileStrength: 241
+      thermal:
+        conductivity: 200
+        expansionCoeff: 2.34e-05
+        specificHeat: 900
+      electrical:
+        resistivity: 3.3e-08
+        relativePermittivity: 1
+      appearance: aluminum
+    - id: aluminum-6082
+      name: Aluminum 6082 (T6)
+      density: 2.7
+      mechanical:
+        youngsModulus: 70
+        poissonsRatio: 0.33
+        yieldStrength: 250
+        ultimateTensileStrength: 290
+      thermal:
+        conductivity: 170
+        expansionCoeff: 2.31e-05
+        specificHeat: 900
+      electrical:
+        resistivity: 3.8e-08
+        relativePermittivity: 1
+      appearance: aluminum
+    - id: aluminum-7050
+      name: Aluminum 7050 (T7451)
+      density: 2.83
+      mechanical:
+        youngsModulus: 72
+        poissonsRatio: 0.33
+        yieldStrength: 469
+        ultimateTensileStrength: 524
+      thermal:
+        conductivity: 157
+        expansionCoeff: 2.35e-05
+        specificHeat: 860
+      electrical:
+        resistivity: 4.5e-08
+        relativePermittivity: 1
+      appearance: aluminum
+    - id: aluminum-7075
+      name: Aluminum 7075 (T6)
+      density: 2.81
+      mechanical:
+        youngsModulus: 71.7
+        poissonsRatio: 0.33
+        yieldStrength: 503
+        ultimateTensileStrength: 572
+      thermal:
+        conductivity: 130
+        expansionCoeff: 2.36e-05
+        specificHeat: 960
+      electrical:
+        resistivity: 5.2e-08
+        relativePermittivity: 1
+      appearance: aluminum
+    - id: aluminum-a356
+      name: Aluminum A356 (T6, Cast)
+      density: 2.67
+      mechanical:
+        youngsModulus: 72.4
+        poissonsRatio: 0.33
+        yieldStrength: 165
+        ultimateTensileStrength: 230
+      thermal:
+        conductivity: 151
+        expansionCoeff: 2.15e-05
+        specificHeat: 963
+      electrical:
+        resistivity: 4.4e-08
+        relativePermittivity: 1
+      appearance: aluminum-cast
+    - id: aluminum-380
+      name: Aluminum 380 (Die Cast)
+      density: 2.74
+      mechanical:
+        youngsModulus: 71
+        poissonsRatio: 0.33
+        yieldStrength: 159
+        ultimateTensileStrength: 324
+      thermal:
+        conductivity: 96
+        expansionCoeff: 2.18e-05
+        specificHeat: 963
+      electrical:
+        resistivity: 7.5e-08
+        relativePermittivity: 1
+      appearance: aluminum-cast

@@ -27,115 +27,684 @@
 # are uncoated dull grey cast/sintered metals; ferrites (soft MnZn and hard ceramic) are
 # dark, low-metalness ceramics with a matte finish.
 appearances:
-  - {id: electrical-steel, name: Electrical Steel,  albedo: "#b6bbc0ff", metallic: 1.0, roughness: 0.42, opacity: 1.0}
-  - {id: soft-ferrite,     name: Soft Ferrite,      albedo: "#34363aff", metallic: 0.15, roughness: 0.55, opacity: 1.0}
-  - {id: ndfeb-magnet,     name: NdFeB Magnet,      albedo: "#eef0f3ff", metallic: 1.0, roughness: 0.07, opacity: 1.0}
-  - {id: smco-magnet,      name: SmCo Magnet,       albedo: "#7f8186ff", metallic: 1.0, roughness: 0.58, opacity: 1.0}
-  - {id: hard-ferrite,     name: Ferrite Magnet,    albedo: "#2a2c2fff", metallic: 0.10, roughness: 0.65, opacity: 1.0}
-  - {id: alnico-magnet,    name: AlNiCo Magnet,     albedo: "#9a9da0ff", metallic: 1.0, roughness: 0.52, opacity: 1.0}
-
+    - id: electrical-steel
+      name: Electrical Steel
+      base:
+        weight: 1
+        color:
+            r: 0.4761773
+            g: 0.5054325
+            b: 0.5356416
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.42
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: soft-ferrite
+      name: Soft Ferrite
+      base:
+        weight: 1
+        color:
+            r: 0.03025652
+            g: 0.032875918
+            b: 0.038472746
+        metalness: 0.15
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.55
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: ndfeb-magnet
+      name: NdFeB Magnet
+      base:
+        weight: 1
+        color:
+            r: 0.8591736
+            g: 0.87513757
+            b: 0.8993845
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.07
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: smco-magnet
+      name: SmCo Magnet
+      base:
+        weight: 1
+        color:
+            r: 0.2157644
+            g: 0.22331044
+            b: 0.24279638
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.58
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: hard-ferrite
+      name: Ferrite Magnet
+      base:
+        weight: 1
+        color:
+            r: 0.018912984
+            g: 0.020951133
+            b: 0.024222944
+        metalness: 0.1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.65
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: alnico-magnet
+      name: AlNiCo Magnet
+      base:
+        weight: 1
+        color:
+            r: 0.32972905
+            g: 0.3440257
+            b: 0.35865393
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.52
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
 materials:
-  # --- Soft-magnetic cores -------------------------------------------------------------
-  - id: electrical-steel-m270
-    name: Electrical Steel (M270-35A, NO)
-    density: 7.65
-    appearance: electrical-steel
-    # Non-oriented silicon steel, the workhorse motor lamination. Source: Cogent M270-35A.
-    mechanical: {youngsModulus: 185, poissonsRatio: 0.30, yieldStrength: 450, ultimateTensileStrength: 565}
-    thermal:    {conductivity: 25.0, expansionCoeff: 11.6e-6, specificHeat: 460}
-    electrical: {resistivity: 5.2e-7, relativePermittivity: 1}
-    magnetic:   {class: soft-magnetic, relativePermeability: 4000, saturationFluxDensity: 1.8, coreLoss: 2.7}
-  - id: electrical-steel-m400
-    name: Electrical Steel (M400-50A, NO)
-    density: 7.70
-    appearance: electrical-steel
-    # Lower-cost, higher-loss NO grade. Source: Cogent M400-50A.
-    mechanical: {youngsModulus: 185, poissonsRatio: 0.30, yieldStrength: 410, ultimateTensileStrength: 520}
-    thermal:    {conductivity: 28.0, expansionCoeff: 11.6e-6, specificHeat: 460}
-    electrical: {resistivity: 4.0e-7, relativePermittivity: 1}
-    magnetic:   {class: soft-magnetic, relativePermeability: 3500, saturationFluxDensity: 1.8, coreLoss: 4.0}
-  - id: electrical-steel-m19
-    name: Electrical Steel (AISI M-19, NO)
-    density: 7.65
-    appearance: electrical-steel
-    # The FEMM-library reference NO silicon steel (29 gauge). Source: FEMM material library.
-    mechanical: {youngsModulus: 185, poissonsRatio: 0.30, yieldStrength: 360, ultimateTensileStrength: 490}
-    thermal:    {conductivity: 25.0, expansionCoeff: 11.6e-6, specificHeat: 460}
-    electrical: {resistivity: 5.0e-7, relativePermittivity: 1}
-    magnetic:   {class: soft-magnetic, relativePermeability: 5000, saturationFluxDensity: 1.8, coreLoss: 3.0}
-  - id: cobalt-iron-vacoflux
-    name: Cobalt Iron (49% Co, Vacoflux 50)
-    density: 8.12
-    appearance: electrical-steel
-    # Highest-Bsat soft-magnetic alloy, used in high-power-density motors. Source: VAC Vacoflux 50.
-    mechanical: {youngsModulus: 220, poissonsRatio: 0.30, yieldStrength: 400, ultimateTensileStrength: 700}
-    thermal:    {conductivity: 30.0, expansionCoeff: 9.3e-6, specificHeat: 420}
-    electrical: {resistivity: 4.0e-7, relativePermittivity: 1}
-    magnetic:   {class: soft-magnetic, relativePermeability: 5000, saturationFluxDensity: 2.35, coreLoss: 1.5}
-  - id: soft-ferrite-mnzn
-    name: Soft Ferrite (MnZn, N87)
-    density: 4.85
-    appearance: soft-ferrite
-    # High-frequency core (transformers/inductors): high μr, very high resistivity, low Bsat.
-    # Source: TDK/EPCOS N87 datasheet.
-    mechanical: {youngsModulus: 150, poissonsRatio: 0.28, yieldStrength: 30, ultimateTensileStrength: 50}
-    thermal:    {conductivity: 4.0, expansionCoeff: 10.0e-6, specificHeat: 750}
-    electrical: {resistivity: 8.0, relativePermittivity: 1}
-    magnetic:   {class: soft-magnetic, relativePermeability: 2200, saturationFluxDensity: 0.49}
-
-  # --- Permanent magnets ---------------------------------------------------------------
-  - id: magnet-ndfeb-n35
-    name: Magnet (NdFeB, N35 Sintered)
-    density: 7.50
-    appearance: ndfeb-magnet
-    # Sintered NdFeB, entry grade. Source: Arnold/Eclipse N35 datasheet.
-    mechanical: {youngsModulus: 160, poissonsRatio: 0.24, yieldStrength: 75, ultimateTensileStrength: 80}
-    thermal:    {conductivity: 9.0, expansionCoeff: 5.2e-6, specificHeat: 440}
-    electrical: {resistivity: 1.4e-6, relativePermittivity: 1}
-    magnetic:   {class: hard-magnetic, remanence: 1.18, coercivity: 955, relativePermeability: 1.05}
-  - id: magnet-ndfeb-n42
-    name: Magnet (NdFeB, N42 Sintered)
-    density: 7.50
-    appearance: ndfeb-magnet
-    # The default servo-motor magnet. Source: Arnold/Eclipse N42 datasheet.
-    mechanical: {youngsModulus: 160, poissonsRatio: 0.24, yieldStrength: 75, ultimateTensileStrength: 80}
-    thermal:    {conductivity: 9.0, expansionCoeff: 5.2e-6, specificHeat: 440}
-    electrical: {resistivity: 1.4e-6, relativePermittivity: 1}
-    magnetic:   {class: hard-magnetic, remanence: 1.30, coercivity: 915, relativePermeability: 1.05}
-  - id: magnet-ndfeb-n52
-    name: Magnet (NdFeB, N52 Sintered)
-    density: 7.50
-    appearance: ndfeb-magnet
-    # Highest-energy commercial grade. Source: Arnold/Eclipse N52 datasheet.
-    mechanical: {youngsModulus: 160, poissonsRatio: 0.24, yieldStrength: 75, ultimateTensileStrength: 80}
-    thermal:    {conductivity: 9.0, expansionCoeff: 5.2e-6, specificHeat: 440}
-    electrical: {resistivity: 1.4e-6, relativePermittivity: 1}
-    magnetic:   {class: hard-magnetic, remanence: 1.45, coercivity: 875, relativePermeability: 1.05}
-  - id: magnet-smco-2-17
-    name: Magnet (SmCo, Sm2Co17)
-    density: 8.40
-    appearance: smco-magnet
-    # High-temperature rare-earth magnet (to ~300 C), high coercivity. Source: Arnold SmCo 2:17.
-    mechanical: {youngsModulus: 150, poissonsRatio: 0.24, yieldStrength: 35, ultimateTensileStrength: 40}
-    thermal:    {conductivity: 10.0, expansionCoeff: 9.0e-6, specificHeat: 370}
-    electrical: {resistivity: 8.6e-7, relativePermittivity: 1}
-    magnetic:   {class: hard-magnetic, remanence: 1.05, coercivity: 1990, relativePermeability: 1.05}
-  - id: magnet-ferrite-y30
-    name: Magnet (Hard Ferrite, Y30)
-    density: 4.90
-    appearance: hard-ferrite
-    # Low-cost ceramic magnet; low Br but cheap and corrosion-proof. Source: Eclipse Y30.
-    mechanical: {youngsModulus: 150, poissonsRatio: 0.28, yieldStrength: 50, ultimateTensileStrength: 55}
-    thermal:    {conductivity: 4.0, expansionCoeff: 13.0e-6, specificHeat: 800}
-    electrical: {resistivity: 1.0e4, relativePermittivity: 1}
-    magnetic:   {class: hard-magnetic, remanence: 0.40, coercivity: 250, relativePermeability: 1.10}
-  - id: magnet-alnico-5
-    name: Magnet (AlNiCo 5, Cast)
-    density: 7.30
-    appearance: alnico-magnet
-    # High Br but low Hc (easily demagnetised); high-temperature, used in sensors/instruments.
-    # Source: Arnold AlNiCo 5 datasheet.
-    mechanical: {youngsModulus: 100, poissonsRatio: 0.28, yieldStrength: 50, ultimateTensileStrength: 55}
-    thermal:    {conductivity: 12.0, expansionCoeff: 11.3e-6, specificHeat: 460}
-    electrical: {resistivity: 4.7e-7, relativePermittivity: 1}
-    magnetic:   {class: hard-magnetic, remanence: 1.25, coercivity: 51, relativePermeability: 4.0}
+    - id: electrical-steel-m270
+      name: Electrical Steel (M270-35A, NO)
+      density: 7.65
+      mechanical:
+        youngsModulus: 185
+        poissonsRatio: 0.3
+        yieldStrength: 450
+        ultimateTensileStrength: 565
+      thermal:
+        conductivity: 25
+        expansionCoeff: 1.16e-05
+        specificHeat: 460
+      electrical:
+        resistivity: 5.2e-07
+        relativePermittivity: 1
+      magnetic:
+        class: soft-magnetic
+        relativePermeability: 4000
+        saturationFluxDensity: 1.8
+        coreLoss: 2.7
+      appearance: electrical-steel
+    - id: electrical-steel-m400
+      name: Electrical Steel (M400-50A, NO)
+      density: 7.7
+      mechanical:
+        youngsModulus: 185
+        poissonsRatio: 0.3
+        yieldStrength: 410
+        ultimateTensileStrength: 520
+      thermal:
+        conductivity: 28
+        expansionCoeff: 1.16e-05
+        specificHeat: 460
+      electrical:
+        resistivity: 4e-07
+        relativePermittivity: 1
+      magnetic:
+        class: soft-magnetic
+        relativePermeability: 3500
+        saturationFluxDensity: 1.8
+        coreLoss: 4
+      appearance: electrical-steel
+    - id: electrical-steel-m19
+      name: Electrical Steel (AISI M-19, NO)
+      density: 7.65
+      mechanical:
+        youngsModulus: 185
+        poissonsRatio: 0.3
+        yieldStrength: 360
+        ultimateTensileStrength: 490
+      thermal:
+        conductivity: 25
+        expansionCoeff: 1.16e-05
+        specificHeat: 460
+      electrical:
+        resistivity: 5e-07
+        relativePermittivity: 1
+      magnetic:
+        class: soft-magnetic
+        relativePermeability: 5000
+        saturationFluxDensity: 1.8
+        coreLoss: 3
+      appearance: electrical-steel
+    - id: cobalt-iron-vacoflux
+      name: Cobalt Iron (49% Co, Vacoflux 50)
+      density: 8.12
+      mechanical:
+        youngsModulus: 220
+        poissonsRatio: 0.3
+        yieldStrength: 400
+        ultimateTensileStrength: 700
+      thermal:
+        conductivity: 30
+        expansionCoeff: 9.3e-06
+        specificHeat: 420
+      electrical:
+        resistivity: 4e-07
+        relativePermittivity: 1
+      magnetic:
+        class: soft-magnetic
+        relativePermeability: 5000
+        saturationFluxDensity: 2.35
+        coreLoss: 1.5
+      appearance: electrical-steel
+    - id: soft-ferrite-mnzn
+      name: Soft Ferrite (MnZn, N87)
+      density: 4.85
+      mechanical:
+        youngsModulus: 150
+        poissonsRatio: 0.28
+        yieldStrength: 30
+        ultimateTensileStrength: 50
+      thermal:
+        conductivity: 4
+        expansionCoeff: 1e-05
+        specificHeat: 750
+      electrical:
+        resistivity: 8
+        relativePermittivity: 1
+      magnetic:
+        class: soft-magnetic
+        relativePermeability: 2200
+        saturationFluxDensity: 0.49
+      appearance: soft-ferrite
+    - id: magnet-ndfeb-n35
+      name: Magnet (NdFeB, N35 Sintered)
+      density: 7.5
+      mechanical:
+        youngsModulus: 160
+        poissonsRatio: 0.24
+        yieldStrength: 75
+        ultimateTensileStrength: 80
+      thermal:
+        conductivity: 9
+        expansionCoeff: 5.2e-06
+        specificHeat: 440
+      electrical:
+        resistivity: 1.4e-06
+        relativePermittivity: 1
+      magnetic:
+        class: hard-magnetic
+        relativePermeability: 1.05
+        remanence: 1.18
+        coercivity: 955
+      appearance: ndfeb-magnet
+    - id: magnet-ndfeb-n42
+      name: Magnet (NdFeB, N42 Sintered)
+      density: 7.5
+      mechanical:
+        youngsModulus: 160
+        poissonsRatio: 0.24
+        yieldStrength: 75
+        ultimateTensileStrength: 80
+      thermal:
+        conductivity: 9
+        expansionCoeff: 5.2e-06
+        specificHeat: 440
+      electrical:
+        resistivity: 1.4e-06
+        relativePermittivity: 1
+      magnetic:
+        class: hard-magnetic
+        relativePermeability: 1.05
+        remanence: 1.3
+        coercivity: 915
+      appearance: ndfeb-magnet
+    - id: magnet-ndfeb-n52
+      name: Magnet (NdFeB, N52 Sintered)
+      density: 7.5
+      mechanical:
+        youngsModulus: 160
+        poissonsRatio: 0.24
+        yieldStrength: 75
+        ultimateTensileStrength: 80
+      thermal:
+        conductivity: 9
+        expansionCoeff: 5.2e-06
+        specificHeat: 440
+      electrical:
+        resistivity: 1.4e-06
+        relativePermittivity: 1
+      magnetic:
+        class: hard-magnetic
+        relativePermeability: 1.05
+        remanence: 1.45
+        coercivity: 875
+      appearance: ndfeb-magnet
+    - id: magnet-smco-2-17
+      name: Magnet (SmCo, Sm2Co17)
+      density: 8.4
+      mechanical:
+        youngsModulus: 150
+        poissonsRatio: 0.24
+        yieldStrength: 35
+        ultimateTensileStrength: 40
+      thermal:
+        conductivity: 10
+        expansionCoeff: 9e-06
+        specificHeat: 370
+      electrical:
+        resistivity: 8.6e-07
+        relativePermittivity: 1
+      magnetic:
+        class: hard-magnetic
+        relativePermeability: 1.05
+        remanence: 1.05
+        coercivity: 1990
+      appearance: smco-magnet
+    - id: magnet-ferrite-y30
+      name: Magnet (Hard Ferrite, Y30)
+      density: 4.9
+      mechanical:
+        youngsModulus: 150
+        poissonsRatio: 0.28
+        yieldStrength: 50
+        ultimateTensileStrength: 55
+      thermal:
+        conductivity: 4
+        expansionCoeff: 1.3e-05
+        specificHeat: 800
+      electrical:
+        resistivity: 10000
+        relativePermittivity: 1
+      magnetic:
+        class: hard-magnetic
+        relativePermeability: 1.1
+        remanence: 0.4
+        coercivity: 250
+      appearance: hard-ferrite
+    - id: magnet-alnico-5
+      name: Magnet (AlNiCo 5, Cast)
+      density: 7.3
+      mechanical:
+        youngsModulus: 100
+        poissonsRatio: 0.28
+        yieldStrength: 50
+        ultimateTensileStrength: 55
+      thermal:
+        conductivity: 12
+        expansionCoeff: 1.13e-05
+        specificHeat: 460
+      electrical:
+        resistivity: 4.7e-07
+        relativePermittivity: 1
+      magnetic:
+        class: hard-magnetic
+        relativePermeability: 4
+        remanence: 1.25
+        coercivity: 51
+      appearance: alnico-magnet

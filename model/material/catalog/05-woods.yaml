@@ -30,175 +30,1789 @@
 #        expansionCoeff & alpha 1/K | specificHeat J/(kg*K) | resistivity ohm*m | nu, eps_r -
 
 appearances:
-  - {id: oak,         name: Oak (Red),        albedo: "#b88a4fff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
-  - {id: oak-white,   name: Oak (White),      albedo: "#c2a06aff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
-  - {id: maple,       name: Maple,            albedo: "#d8b98aff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
-  - {id: birch,       name: Birch,            albedo: "#e0c89cff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
-  - {id: beech,       name: Beech,            albedo: "#cda982ff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
-  - {id: ash,         name: Ash,              albedo: "#d6c19aff", metallic: 0.0, roughness: 0.68, opacity: 1.0}
-  - {id: walnut,      name: Walnut,           albedo: "#5c4327ff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
-  - {id: mahogany,    name: Mahogany,         albedo: "#8a4b32ff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
-  - {id: cherry,      name: Cherry,           albedo: "#9c5a3cff", metallic: 0.0, roughness: 0.60, opacity: 1.0}
-  - {id: teak,        name: Teak,             albedo: "#b1814aff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
-  - {id: pine,        name: Pine,             albedo: "#d8b074ff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
-  - {id: pine-white,  name: Pine (White),     albedo: "#e3cfa0ff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
-  - {id: douglas-fir, name: Douglas Fir,      albedo: "#c79a5eff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
-  - {id: spruce,      name: Spruce,           albedo: "#e0cba0ff", metallic: 0.0, roughness: 0.72, opacity: 1.0}
-  - {id: cedar,       name: Cedar (Red),      albedo: "#b07a52ff", metallic: 0.0, roughness: 0.72, opacity: 1.0}
-  - {id: balsa,       name: Balsa,            albedo: "#e8dcc0ff", metallic: 0.0, roughness: 0.75, opacity: 1.0}
-  - {id: bamboo,      name: Bamboo,           albedo: "#d6b87aff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
-
+    - id: oak
+      name: Oak (Red)
+      base:
+        weight: 1
+        color:
+            r: 0.48776522
+            g: 0.25902736
+            b: 0.075926125
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: oak-white
+      name: Oak (White)
+      base:
+        weight: 1
+        color:
+            r: 0.54799354
+            g: 0.35865393
+            b: 0.14497213
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: maple
+      name: Maple
+      base:
+        weight: 1
+        color:
+            r: 0.69408053
+            g: 0.49361622
+            b: 0.25902736
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.65
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: birch
+      name: Birch
+      base:
+        weight: 1
+        color:
+            r: 0.75189507
+            g: 0.585973
+            b: 0.33922336
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.65
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: beech
+      name: Beech
+      base:
+        weight: 1
+        color:
+            r: 0.6186857
+            g: 0.40454084
+            b: 0.22713655
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.65
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: ash
+      name: Ash
+      base:
+        weight: 1
+        color:
+            r: 0.68002033
+            g: 0.54179835
+            b: 0.32972905
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.68
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: walnut
+      name: Walnut
+      base:
+        weight: 1
+        color:
+            r: 0.10615607
+            g: 0.052841634
+            b: 0.016067702
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: mahogany
+      name: Mahogany
+      base:
+        weight: 1
+        color:
+            r: 0.25902736
+            g: 0.06772459
+            b: 0.027755281
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.65
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: cherry
+      name: Cherry
+      base:
+        weight: 1
+        color:
+            r: 0.33922336
+            g: 0.10114517
+            b: 0.041451894
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.6
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: teak
+      name: Teak
+      base:
+        weight: 1
+        color:
+            r: 0.44787088
+            g: 0.22331044
+            b: 0.065753885
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.65
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: pine
+      name: Pine
+      base:
+        weight: 1
+        color:
+            r: 0.69408053
+            g: 0.44232297
+            b: 0.17677432
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: pine-white
+      name: Pine (White)
+      base:
+        weight: 1
+        color:
+            r: 0.7742273
+            g: 0.63204265
+            b: 0.35865393
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: douglas-fir
+      name: Douglas Fir
+      base:
+        weight: 1
+        color:
+            r: 0.57954663
+            g: 0.32972905
+            b: 0.11129942
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: spruce
+      name: Spruce
+      base:
+        weight: 1
+        color:
+            r: 0.75189507
+            g: 0.6054843
+            b: 0.35865393
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.72
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: cedar
+      name: Cedar (Red)
+      base:
+        weight: 1
+        color:
+            r: 0.44232297
+            g: 0.19751643
+            b: 0.08241421
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.72
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: balsa
+      name: Balsa
+      base:
+        weight: 1
+        color:
+            r: 0.8122415
+            g: 0.72267246
+            b: 0.5356416
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.75
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: bamboo
+      name: Bamboo
+      base:
+        weight: 1
+        color:
+            r: 0.68002033
+            g: 0.48776522
+            b: 0.19751643
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.65
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
 materials:
-  - id: oak-red
-    name: Oak, Red
-    density: 0.63
-    appearance: oak
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 12.5, poissonsRatio: 0.37, yieldStrength: 47, ultimateTensileStrength: 99}
-    thermal:    {conductivity: 0.16, expansionCoeff: 4.9e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 12.5, e2: 1.25, e3: 0.63, g12: 0.83, g23: 0.16, g13: 0.75, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.9e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: oak-white
-    name: Oak, White
-    density: 0.68
-    appearance: oak-white
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 12.3, poissonsRatio: 0.37, yieldStrength: 51, ultimateTensileStrength: 105}
-    thermal:    {conductivity: 0.17, expansionCoeff: 4.9e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 12.3, e2: 1.23, e3: 0.62, g12: 0.81, g23: 0.16, g13: 0.74, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.9e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: maple-hard
-    name: Maple, Hard (Sugar)
-    density: 0.63
-    appearance: maple
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 12.6, poissonsRatio: 0.37, yieldStrength: 54, ultimateTensileStrength: 109}
-    thermal:    {conductivity: 0.16, expansionCoeff: 4.8e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 12.6, e2: 1.26, e3: 0.63, g12: 0.83, g23: 0.16, g13: 0.76, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.8e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: birch-yellow
-    name: Birch, Yellow
-    density: 0.62
-    appearance: birch
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 13.9, poissonsRatio: 0.37, yieldStrength: 56, ultimateTensileStrength: 114}
-    thermal:    {conductivity: 0.16, expansionCoeff: 4.8e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 13.9, e2: 1.39, e3: 0.70, g12: 0.92, g23: 0.18, g13: 0.83, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.8e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: beech
-    name: Beech, American
-    density: 0.64
-    appearance: beech
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 11.9, poissonsRatio: 0.37, yieldStrength: 50, ultimateTensileStrength: 103}
-    thermal:    {conductivity: 0.16, expansionCoeff: 4.8e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 11.9, e2: 1.19, e3: 0.60, g12: 0.79, g23: 0.15, g13: 0.71, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.8e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: ash-white
-    name: Ash, White
-    density: 0.60
-    appearance: ash
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 12.0, poissonsRatio: 0.37, yieldStrength: 51, ultimateTensileStrength: 103}
-    thermal:    {conductivity: 0.15, expansionCoeff: 4.9e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 12.0, e2: 1.20, e3: 0.60, g12: 0.79, g23: 0.16, g13: 0.72, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.9e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: walnut-black
-    name: Walnut, Black
-    density: 0.55
-    appearance: walnut
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 11.6, poissonsRatio: 0.37, yieldStrength: 52, ultimateTensileStrength: 101}
-    thermal:    {conductivity: 0.14, expansionCoeff: 4.8e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 11.6, e2: 1.16, e3: 0.58, g12: 0.77, g23: 0.15, g13: 0.70, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.8e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: mahogany
-    name: Mahogany, Honduran
-    density: 0.50
-    appearance: mahogany
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 10.0, poissonsRatio: 0.37, yieldStrength: 46, ultimateTensileStrength: 79}
-    thermal:    {conductivity: 0.13, expansionCoeff: 4.5e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 10.0, e2: 1.00, e3: 0.50, g12: 0.66, g23: 0.13, g13: 0.60, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.5e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: cherry-black
-    name: Cherry, Black
-    density: 0.50
-    appearance: cherry
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 10.3, poissonsRatio: 0.37, yieldStrength: 49, ultimateTensileStrength: 85}
-    thermal:    {conductivity: 0.13, expansionCoeff: 4.7e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 10.3, e2: 1.03, e3: 0.52, g12: 0.68, g23: 0.13, g13: 0.62, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.7e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: teak
-    name: Teak
-    density: 0.65
-    appearance: teak
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 12.3, poissonsRatio: 0.37, yieldStrength: 58, ultimateTensileStrength: 100}
-    thermal:    {conductivity: 0.16, expansionCoeff: 4.5e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 12.3, e2: 1.23, e3: 0.62, g12: 0.81, g23: 0.16, g13: 0.74, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.5e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: pine-southern-yellow
-    name: Pine, Southern Yellow (Loblolly)
-    density: 0.59
-    appearance: pine
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 14.8, poissonsRatio: 0.32, yieldStrength: 58, ultimateTensileStrength: 100}
-    thermal:    {conductivity: 0.15, expansionCoeff: 4.0e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 14.8, e2: 1.11, e3: 0.64, g12: 0.90, g23: 0.10, g13: 1.02, nu12: 0.32, nu23: 0.40, nu13: 0.42, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: pine-eastern-white
-    name: Pine, Eastern White
-    density: 0.35
-    appearance: pine-white
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 8.5, poissonsRatio: 0.32, yieldStrength: 33, ultimateTensileStrength: 59}
-    thermal:    {conductivity: 0.11, expansionCoeff: 4.0e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 8.5, e2: 0.64, e3: 0.37, g12: 0.52, g23: 0.06, g13: 0.59, nu12: 0.32, nu23: 0.40, nu13: 0.42, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: douglas-fir
-    name: Douglas Fir
-    density: 0.48
-    appearance: douglas-fir
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 13.4, poissonsRatio: 0.29, yieldStrength: 50, ultimateTensileStrength: 85}
-    thermal:    {conductivity: 0.13, expansionCoeff: 4.0e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 13.4, e2: 1.01, e3: 0.58, g12: 0.82, g23: 0.09, g13: 0.92, nu12: 0.29, nu23: 0.40, nu13: 0.45, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: spruce-sitka
-    name: Spruce, Sitka
-    density: 0.40
-    appearance: spruce
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 9.9, poissonsRatio: 0.32, yieldStrength: 39, ultimateTensileStrength: 70}
-    thermal:    {conductivity: 0.12, expansionCoeff: 4.0e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 9.9, e2: 0.74, e3: 0.43, g12: 0.60, g23: 0.07, g13: 0.68, nu12: 0.32, nu23: 0.40, nu13: 0.42, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: cedar-western-red
-    name: Cedar, Western Red
-    density: 0.32
-    appearance: cedar
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 7.7, poissonsRatio: 0.32, yieldStrength: 31, ultimateTensileStrength: 52}
-    thermal:    {conductivity: 0.10, expansionCoeff: 4.0e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 7.7, e2: 0.58, e3: 0.33, g12: 0.47, g23: 0.05, g13: 0.53, nu12: 0.32, nu23: 0.40, nu13: 0.42, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: balsa
-    name: Balsa
-    density: 0.16
-    appearance: balsa
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 3.4, poissonsRatio: 0.37, yieldStrength: 12, ultimateTensileStrength: 19}
-    thermal:    {conductivity: 0.055, expansionCoeff: 4.0e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 3.4, e2: 0.34, e3: 0.17, g12: 0.22, g23: 0.04, g13: 0.20, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}
-  - id: bamboo
-    name: Bamboo (Moso, Laminated)
-    density: 0.70
-    appearance: bamboo
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 15.0, poissonsRatio: 0.37, yieldStrength: 55, ultimateTensileStrength: 120}
-    thermal:    {conductivity: 0.17, expansionCoeff: 4.0e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-    orthotropic: {e1: 15.0, e2: 1.50, e3: 0.75, g12: 0.99, g23: 0.20, g13: 0.90, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}
+    - id: oak-red
+      name: Oak, Red
+      density: 0.63
+      mechanical:
+        youngsModulus: 12.5
+        poissonsRatio: 0.37
+        yieldStrength: 47
+        ultimateTensileStrength: 99
+      thermal:
+        conductivity: 0.16
+        expansionCoeff: 4.9e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 12.5
+        e2: 1.25
+        e3: 0.63
+        g12: 0.83
+        g23: 0.16
+        g13: 0.75
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4.9e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: oak
+    - id: oak-white
+      name: Oak, White
+      density: 0.68
+      mechanical:
+        youngsModulus: 12.3
+        poissonsRatio: 0.37
+        yieldStrength: 51
+        ultimateTensileStrength: 105
+      thermal:
+        conductivity: 0.17
+        expansionCoeff: 4.9e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 12.3
+        e2: 1.23
+        e3: 0.62
+        g12: 0.81
+        g23: 0.16
+        g13: 0.74
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4.9e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: oak-white
+    - id: maple-hard
+      name: Maple, Hard (Sugar)
+      density: 0.63
+      mechanical:
+        youngsModulus: 12.6
+        poissonsRatio: 0.37
+        yieldStrength: 54
+        ultimateTensileStrength: 109
+      thermal:
+        conductivity: 0.16
+        expansionCoeff: 4.8e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 12.6
+        e2: 1.26
+        e3: 0.63
+        g12: 0.83
+        g23: 0.16
+        g13: 0.76
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4.8e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: maple
+    - id: birch-yellow
+      name: Birch, Yellow
+      density: 0.62
+      mechanical:
+        youngsModulus: 13.9
+        poissonsRatio: 0.37
+        yieldStrength: 56
+        ultimateTensileStrength: 114
+      thermal:
+        conductivity: 0.16
+        expansionCoeff: 4.8e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 13.9
+        e2: 1.39
+        e3: 0.7
+        g12: 0.92
+        g23: 0.18
+        g13: 0.83
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4.8e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: birch
+    - id: beech
+      name: Beech, American
+      density: 0.64
+      mechanical:
+        youngsModulus: 11.9
+        poissonsRatio: 0.37
+        yieldStrength: 50
+        ultimateTensileStrength: 103
+      thermal:
+        conductivity: 0.16
+        expansionCoeff: 4.8e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 11.9
+        e2: 1.19
+        e3: 0.6
+        g12: 0.79
+        g23: 0.15
+        g13: 0.71
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4.8e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: beech
+    - id: ash-white
+      name: Ash, White
+      density: 0.6
+      mechanical:
+        youngsModulus: 12
+        poissonsRatio: 0.37
+        yieldStrength: 51
+        ultimateTensileStrength: 103
+      thermal:
+        conductivity: 0.15
+        expansionCoeff: 4.9e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 12
+        e2: 1.2
+        e3: 0.6
+        g12: 0.79
+        g23: 0.16
+        g13: 0.72
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4.9e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: ash
+    - id: walnut-black
+      name: Walnut, Black
+      density: 0.55
+      mechanical:
+        youngsModulus: 11.6
+        poissonsRatio: 0.37
+        yieldStrength: 52
+        ultimateTensileStrength: 101
+      thermal:
+        conductivity: 0.14
+        expansionCoeff: 4.8e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 11.6
+        e2: 1.16
+        e3: 0.58
+        g12: 0.77
+        g23: 0.15
+        g13: 0.7
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4.8e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: walnut
+    - id: mahogany
+      name: Mahogany, Honduran
+      density: 0.5
+      mechanical:
+        youngsModulus: 10
+        poissonsRatio: 0.37
+        yieldStrength: 46
+        ultimateTensileStrength: 79
+      thermal:
+        conductivity: 0.13
+        expansionCoeff: 4.5e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 10
+        e2: 1
+        e3: 0.5
+        g12: 0.66
+        g23: 0.13
+        g13: 0.6
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4.5e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: mahogany
+    - id: cherry-black
+      name: Cherry, Black
+      density: 0.5
+      mechanical:
+        youngsModulus: 10.3
+        poissonsRatio: 0.37
+        yieldStrength: 49
+        ultimateTensileStrength: 85
+      thermal:
+        conductivity: 0.13
+        expansionCoeff: 4.7e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 10.3
+        e2: 1.03
+        e3: 0.52
+        g12: 0.68
+        g23: 0.13
+        g13: 0.62
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4.7e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: cherry
+    - id: teak
+      name: Teak
+      density: 0.65
+      mechanical:
+        youngsModulus: 12.3
+        poissonsRatio: 0.37
+        yieldStrength: 58
+        ultimateTensileStrength: 100
+      thermal:
+        conductivity: 0.16
+        expansionCoeff: 4.5e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 12.3
+        e2: 1.23
+        e3: 0.62
+        g12: 0.81
+        g23: 0.16
+        g13: 0.74
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4.5e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: teak
+    - id: pine-southern-yellow
+      name: Pine, Southern Yellow (Loblolly)
+      density: 0.59
+      mechanical:
+        youngsModulus: 14.8
+        poissonsRatio: 0.32
+        yieldStrength: 58
+        ultimateTensileStrength: 100
+      thermal:
+        conductivity: 0.15
+        expansionCoeff: 4e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 14.8
+        e2: 1.11
+        e3: 0.64
+        g12: 0.9
+        g23: 0.1
+        g13: 1.02
+        nu12: 0.32
+        nu23: 0.4
+        nu13: 0.42
+        alpha1: 4e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: pine
+    - id: pine-eastern-white
+      name: Pine, Eastern White
+      density: 0.35
+      mechanical:
+        youngsModulus: 8.5
+        poissonsRatio: 0.32
+        yieldStrength: 33
+        ultimateTensileStrength: 59
+      thermal:
+        conductivity: 0.11
+        expansionCoeff: 4e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 8.5
+        e2: 0.64
+        e3: 0.37
+        g12: 0.52
+        g23: 0.06
+        g13: 0.59
+        nu12: 0.32
+        nu23: 0.4
+        nu13: 0.42
+        alpha1: 4e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: pine-white
+    - id: douglas-fir
+      name: Douglas Fir
+      density: 0.48
+      mechanical:
+        youngsModulus: 13.4
+        poissonsRatio: 0.29
+        yieldStrength: 50
+        ultimateTensileStrength: 85
+      thermal:
+        conductivity: 0.13
+        expansionCoeff: 4e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 13.4
+        e2: 1.01
+        e3: 0.58
+        g12: 0.82
+        g23: 0.09
+        g13: 0.92
+        nu12: 0.29
+        nu23: 0.4
+        nu13: 0.45
+        alpha1: 4e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: douglas-fir
+    - id: spruce-sitka
+      name: Spruce, Sitka
+      density: 0.4
+      mechanical:
+        youngsModulus: 9.9
+        poissonsRatio: 0.32
+        yieldStrength: 39
+        ultimateTensileStrength: 70
+      thermal:
+        conductivity: 0.12
+        expansionCoeff: 4e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 9.9
+        e2: 0.74
+        e3: 0.43
+        g12: 0.6
+        g23: 0.07
+        g13: 0.68
+        nu12: 0.32
+        nu23: 0.4
+        nu13: 0.42
+        alpha1: 4e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: spruce
+    - id: cedar-western-red
+      name: Cedar, Western Red
+      density: 0.32
+      mechanical:
+        youngsModulus: 7.7
+        poissonsRatio: 0.32
+        yieldStrength: 31
+        ultimateTensileStrength: 52
+      thermal:
+        conductivity: 0.1
+        expansionCoeff: 4e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 7.7
+        e2: 0.58
+        e3: 0.33
+        g12: 0.47
+        g23: 0.05
+        g13: 0.53
+        nu12: 0.32
+        nu23: 0.4
+        nu13: 0.42
+        alpha1: 4e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: cedar
+    - id: balsa
+      name: Balsa
+      density: 0.16
+      mechanical:
+        youngsModulus: 3.4
+        poissonsRatio: 0.37
+        yieldStrength: 12
+        ultimateTensileStrength: 19
+      thermal:
+        conductivity: 0.055
+        expansionCoeff: 4e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 3.4
+        e2: 0.34
+        e3: 0.17
+        g12: 0.22
+        g23: 0.04
+        g13: 0.2
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: balsa
+    - id: bamboo
+      name: Bamboo (Moso, Laminated)
+      density: 0.7
+      mechanical:
+        youngsModulus: 15
+        poissonsRatio: 0.37
+        yieldStrength: 55
+        ultimateTensileStrength: 120
+      thermal:
+        conductivity: 0.17
+        expansionCoeff: 4e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 15
+        e2: 1.5
+        e3: 0.75
+        g12: 0.99
+        g23: 0.2
+        g13: 0.9
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: bamboo

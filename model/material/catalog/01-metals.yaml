@@ -23,274 +23,2928 @@
 #        expansionCoeff 1/K | specificHeat J/(kg*K) | resistivity ohm*m | relativePermittivity -
 
 appearances:
-  - {id: beryllium,  name: Beryllium,  albedo: "#c2c1baff", metallic: 1.0, roughness: 0.45, opacity: 1.0}
-  - {id: magnesium,  name: Magnesium,  albedo: "#c6c4bdff", metallic: 1.0, roughness: 0.50, opacity: 1.0}
-  - {id: aluminum,   name: Aluminum,   albedo: "#f4f5f5ff", metallic: 1.0, roughness: 0.30, opacity: 1.0}
-  - {id: titanium,   name: Titanium,   albedo: "#c3bab1ff", metallic: 1.0, roughness: 0.38, opacity: 1.0}
-  - {id: vanadium,   name: Vanadium,   albedo: "#c3c6c8ff", metallic: 1.0, roughness: 0.40, opacity: 1.0}
-  - {id: chromium,   name: Chromium,   albedo: "#c4c5c5ff", metallic: 1.0, roughness: 0.22, opacity: 1.0}
-  - {id: iron,       name: Iron,       albedo: "#c4c7c7ff", metallic: 1.0, roughness: 0.42, opacity: 1.0}
-  - {id: cobalt,     name: Cobalt,     albedo: "#d2d2d0ff", metallic: 1.0, roughness: 0.38, opacity: 1.0}
-  - {id: nickel,     name: Nickel,     albedo: "#d4ccc0ff", metallic: 1.0, roughness: 0.32, opacity: 1.0}
-  - {id: copper,     name: Copper,     albedo: "#fad0c0ff", metallic: 1.0, roughness: 0.30, opacity: 1.0}
-  - {id: zinc,       name: Zinc,       albedo: "#d2d6d8ff", metallic: 1.0, roughness: 0.50, opacity: 1.0}
-  - {id: zirconium,  name: Zirconium,  albedo: "#c9ccccff", metallic: 1.0, roughness: 0.40, opacity: 1.0}
-  - {id: niobium,    name: Niobium,    albedo: "#c4c6c9ff", metallic: 1.0, roughness: 0.40, opacity: 1.0}
-  - {id: molybdenum, name: Molybdenum, albedo: "#cdd0cfff", metallic: 1.0, roughness: 0.38, opacity: 1.0}
-  - {id: ruthenium,  name: Ruthenium,  albedo: "#c8c7c2ff", metallic: 1.0, roughness: 0.35, opacity: 1.0}
-  - {id: rhodium,    name: Rhodium,    albedo: "#d8d6d2ff", metallic: 1.0, roughness: 0.20, opacity: 1.0}
-  - {id: palladium,  name: Palladium,  albedo: "#cfccc4ff", metallic: 1.0, roughness: 0.25, opacity: 1.0}
-  - {id: silver,     name: Silver,     albedo: "#fcfaf5ff", metallic: 1.0, roughness: 0.22, opacity: 1.0}
-  - {id: cadmium,    name: Cadmium,    albedo: "#cdd0d2ff", metallic: 1.0, roughness: 0.45, opacity: 1.0}
-  - {id: indium,     name: Indium,     albedo: "#d3d6d8ff", metallic: 1.0, roughness: 0.50, opacity: 1.0}
-  - {id: tin,        name: Tin,        albedo: "#d6d9dbff", metallic: 1.0, roughness: 0.40, opacity: 1.0}
-  - {id: antimony,   name: Antimony,   albedo: "#c6c8cbff", metallic: 1.0, roughness: 0.45, opacity: 1.0}
-  - {id: hafnium,    name: Hafnium,    albedo: "#c2c4c5ff", metallic: 1.0, roughness: 0.40, opacity: 1.0}
-  - {id: tantalum,   name: Tantalum,   albedo: "#b8bcc4ff", metallic: 1.0, roughness: 0.38, opacity: 1.0}
-  - {id: tungsten,   name: Tungsten,   albedo: "#c9cbc9ff", metallic: 1.0, roughness: 0.38, opacity: 1.0}
-  - {id: rhenium,    name: Rhenium,    albedo: "#c4c4c2ff", metallic: 1.0, roughness: 0.38, opacity: 1.0}
-  - {id: osmium,     name: Osmium,     albedo: "#b8bcc6ff", metallic: 1.0, roughness: 0.35, opacity: 1.0}
-  - {id: iridium,    name: Iridium,    albedo: "#d0d1cfff", metallic: 1.0, roughness: 0.28, opacity: 1.0}
-  - {id: platinum,   name: Platinum,   albedo: "#d4cdc1ff", metallic: 1.0, roughness: 0.25, opacity: 1.0}
-  - {id: gold,       name: Gold,       albedo: "#ffe29bff", metallic: 1.0, roughness: 0.24, opacity: 1.0}
-  - {id: lead,       name: Lead,       albedo: "#9fa4adff", metallic: 1.0, roughness: 0.50, opacity: 1.0}
-  - {id: bismuth,    name: Bismuth,    albedo: "#b9a9a0ff", metallic: 1.0, roughness: 0.45, opacity: 1.0}
-
+    - id: beryllium
+      name: Beryllium
+      base:
+        weight: 1
+        color:
+            r: 0.54799354
+            g: 0.54179835
+            b: 0.4995053
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.45
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: magnesium
+      name: Magnesium
+      base:
+        weight: 1
+        color:
+            r: 0.5731589
+            g: 0.5604992
+            b: 0.5174014
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.5
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: aluminum
+      name: Aluminum
+      base:
+        weight: 1
+        color:
+            r: 0.9075472
+            g: 0.91575015
+            b: 0.91575015
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.3
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: titanium
+      name: Titanium
+      base:
+        weight: 1
+        color:
+            r: 0.5542271
+            g: 0.4995053
+            b: 0.44787088
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.38
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: vanadium
+      name: Vanadium
+      base:
+        weight: 1
+        color:
+            r: 0.5542271
+            g: 0.5731589
+            b: 0.585973
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.4
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: chromium
+      name: Chromium
+      base:
+        weight: 1
+        color:
+            r: 0.5604992
+            g: 0.5668098
+            b: 0.5668098
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.22
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: iron
+      name: Iron
+      base:
+        weight: 1
+        color:
+            r: 0.5604992
+            g: 0.57954663
+            b: 0.57954663
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.42
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: cobalt
+      name: Cobalt
+      base:
+        weight: 1
+        color:
+            r: 0.6523701
+            g: 0.6523701
+            b: 0.63877946
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.38
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: nickel
+      name: Nickel
+      base:
+        weight: 1
+        color:
+            r: 0.666117
+            g: 0.6120656
+            b: 0.5356416
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.32
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: copper
+      name: Copper
+      base:
+        weight: 1
+        color:
+            r: 0.95736957
+            g: 0.63877946
+            b: 0.5356416
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.3
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: zinc
+      name: Zinc
+      base:
+        weight: 1
+        color:
+            r: 0.6523701
+            g: 0.68002033
+            b: 0.69408053
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.5
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: zirconium
+      name: Zirconium
+      base:
+        weight: 1
+        color:
+            r: 0.59243804
+            g: 0.6120656
+            b: 0.6120656
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.4
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: niobium
+      name: Niobium
+      base:
+        weight: 1
+        color:
+            r: 0.5604992
+            g: 0.5731589
+            b: 0.59243804
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.4
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: molybdenum
+      name: Molybdenum
+      base:
+        weight: 1
+        color:
+            r: 0.6186857
+            g: 0.63877946
+            b: 0.63204265
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.38
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: ruthenium
+      name: Ruthenium
+      base:
+        weight: 1
+        color:
+            r: 0.585973
+            g: 0.57954663
+            b: 0.54799354
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.35
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: rhodium
+      name: Rhodium
+      base:
+        weight: 1
+        color:
+            r: 0.69408053
+            g: 0.68002033
+            b: 0.6523701
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.2
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: palladium
+      name: Palladium
+      base:
+        weight: 1
+        color:
+            r: 0.63204265
+            g: 0.6120656
+            b: 0.5604992
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.25
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: silver
+      name: Silver
+      base:
+        weight: 1
+        color:
+            r: 0.9743002
+            g: 0.95736957
+            b: 0.91575015
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.22
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: cadmium
+      name: Cadmium
+      base:
+        weight: 1
+        color:
+            r: 0.6186857
+            g: 0.63877946
+            b: 0.6523701
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.45
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: indium
+      name: Indium
+      base:
+        weight: 1
+        color:
+            r: 0.65922403
+            g: 0.68002033
+            b: 0.69408053
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.5
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: tin
+      name: Tin
+      base:
+        weight: 1
+        color:
+            r: 0.68002033
+            g: 0.7011695
+            b: 0.7154654
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.4
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: antimony
+      name: Antimony
+      base:
+        weight: 1
+        color:
+            r: 0.5731589
+            g: 0.585973
+            b: 0.6054843
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.45
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: hafnium
+      name: Hafnium
+      base:
+        weight: 1
+        color:
+            r: 0.54799354
+            g: 0.5604992
+            b: 0.5668098
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.4
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: tantalum
+      name: Tantalum
+      base:
+        weight: 1
+        color:
+            r: 0.48776522
+            g: 0.51139784
+            b: 0.5604992
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.38
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: tungsten
+      name: Tungsten
+      base:
+        weight: 1
+        color:
+            r: 0.59243804
+            g: 0.6054843
+            b: 0.59243804
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.38
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: rhenium
+      name: Rhenium
+      base:
+        weight: 1
+        color:
+            r: 0.5604992
+            g: 0.5604992
+            b: 0.54799354
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.38
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: osmium
+      name: Osmium
+      base:
+        weight: 1
+        color:
+            r: 0.48776522
+            g: 0.51139784
+            b: 0.5731589
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.35
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: iridium
+      name: Iridium
+      base:
+        weight: 1
+        color:
+            r: 0.63877946
+            g: 0.6455553
+            b: 0.63204265
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.28
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: platinum
+      name: Platinum
+      base:
+        weight: 1
+        color:
+            r: 0.666117
+            g: 0.6186857
+            b: 0.54179835
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.25
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: gold
+      name: Gold
+      base:
+        weight: 1
+        color:
+            r: 1
+            g: 0.7667436
+            b: 0.33445784
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.24
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: lead
+      name: Lead
+      base:
+        weight: 1
+        color:
+            r: 0.35374093
+            g: 0.37867627
+            b: 0.42590532
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.5
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: bismuth
+      name: Bismuth
+      base:
+        weight: 1
+        color:
+            r: 0.49361622
+            g: 0.40454084
+            b: 0.35865393
+        metalness: 1
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.45
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
 materials:
-  - id: beryllium
-    name: Beryllium
-    density: 1.85
-    appearance: beryllium
-    mechanical: {youngsModulus: 287, poissonsRatio: 0.032, yieldStrength: 240, ultimateTensileStrength: 370}
-    thermal:    {conductivity: 200, expansionCoeff: 11.3e-6, specificHeat: 1825}
-    electrical: {resistivity: 3.6e-8, relativePermittivity: 1}
-  - id: magnesium
-    name: Magnesium
-    density: 1.74
-    appearance: magnesium
-    mechanical: {youngsModulus: 45, poissonsRatio: 0.29, yieldStrength: 40, ultimateTensileStrength: 160}
-    thermal:    {conductivity: 156, expansionCoeff: 24.8e-6, specificHeat: 1023}
-    electrical: {resistivity: 4.39e-8, relativePermittivity: 1}
-  - id: aluminum-1100
-    name: Aluminum (Pure, 1100)
-    density: 2.71
-    appearance: aluminum
-    mechanical: {youngsModulus: 69, poissonsRatio: 0.33, yieldStrength: 34, ultimateTensileStrength: 90}
-    thermal:    {conductivity: 222, expansionCoeff: 23.6e-6, specificHeat: 904}
-    electrical: {resistivity: 2.99e-8, relativePermittivity: 1}
-  - id: titanium-cp
-    name: Titanium (CP Grade 2)
-    density: 4.51
-    appearance: titanium
-    mechanical: {youngsModulus: 105, poissonsRatio: 0.34, yieldStrength: 275, ultimateTensileStrength: 345}
-    thermal:    {conductivity: 16.4, expansionCoeff: 8.6e-6, specificHeat: 523}
-    electrical: {resistivity: 4.2e-7, relativePermittivity: 1}
-  - id: vanadium
-    name: Vanadium
-    density: 6.11
-    appearance: vanadium
-    mechanical: {youngsModulus: 128, poissonsRatio: 0.37, yieldStrength: 380, ultimateTensileStrength: 460}
-    thermal:    {conductivity: 30.7, expansionCoeff: 8.4e-6, specificHeat: 489}
-    electrical: {resistivity: 1.97e-7, relativePermittivity: 1}
-  - id: chromium
-    name: Chromium
-    density: 7.19
-    appearance: chromium
-    # brittle at room temperature: yield/UTS are approximate tensile figures
-    mechanical: {youngsModulus: 279, poissonsRatio: 0.21, yieldStrength: 131, ultimateTensileStrength: 282}
-    thermal:    {conductivity: 93.9, expansionCoeff: 4.9e-6, specificHeat: 449}
-    electrical: {resistivity: 1.25e-7, relativePermittivity: 1}
-  - id: iron-pure
-    name: Iron (Pure)
-    density: 7.87
-    appearance: iron
-    mechanical: {youngsModulus: 211, poissonsRatio: 0.29, yieldStrength: 50, ultimateTensileStrength: 200}
-    thermal:    {conductivity: 80.4, expansionCoeff: 11.8e-6, specificHeat: 449}
-    electrical: {resistivity: 9.71e-8, relativePermittivity: 1}
-    # Annealed pure iron: the textbook soft-magnetic element. μr (max, well-annealed) reaches
-    # ~5000; Bsat ≈ 2.16 T. Source: Bozorth "Ferromagnetism"; Cullity & Graham.
-    magnetic:   {class: soft-magnetic, relativePermeability: 5000, saturationFluxDensity: 2.16}
-  - id: cobalt
-    name: Cobalt
-    density: 8.90
-    appearance: cobalt
-    mechanical: {youngsModulus: 209, poissonsRatio: 0.31, yieldStrength: 225, ultimateTensileStrength: 800}
-    thermal:    {conductivity: 100, expansionCoeff: 13.0e-6, specificHeat: 421}
-    electrical: {resistivity: 6.24e-8, relativePermittivity: 1}
-    # Ferromagnetic element, highest Bsat of the three (≈1.8 T). μr lower than iron.
-    # Source: Cullity & Graham, "Introduction to Magnetic Materials".
-    magnetic:   {class: soft-magnetic, relativePermeability: 250, saturationFluxDensity: 1.8}
-  - id: nickel
-    name: Nickel
-    density: 8.90
-    appearance: nickel
-    mechanical: {youngsModulus: 200, poissonsRatio: 0.31, yieldStrength: 148, ultimateTensileStrength: 462}
-    thermal:    {conductivity: 90.9, expansionCoeff: 13.4e-6, specificHeat: 444}
-    electrical: {resistivity: 6.99e-8, relativePermittivity: 1}
-    # Ferromagnetic element, low Bsat (≈0.6 T). Source: Cullity & Graham.
-    magnetic:   {class: soft-magnetic, relativePermeability: 600, saturationFluxDensity: 0.6}
-  - id: copper-c110
-    name: Copper (C110)
-    density: 8.96
-    appearance: copper
-    mechanical: {youngsModulus: 128, poissonsRatio: 0.34, yieldStrength: 70, ultimateTensileStrength: 220}
-    thermal:    {conductivity: 391, expansionCoeff: 16.5e-6, specificHeat: 385}
-    electrical: {resistivity: 1.71e-8, relativePermittivity: 1}
-  - id: zinc
-    name: Zinc
-    density: 7.14
-    appearance: zinc
-    mechanical: {youngsModulus: 108, poissonsRatio: 0.25, yieldStrength: 110, ultimateTensileStrength: 150}
-    thermal:    {conductivity: 116, expansionCoeff: 30.2e-6, specificHeat: 388}
-    electrical: {resistivity: 5.9e-8, relativePermittivity: 1}
-  - id: zirconium
-    name: Zirconium
-    density: 6.52
-    appearance: zirconium
-    mechanical: {youngsModulus: 88, poissonsRatio: 0.34, yieldStrength: 230, ultimateTensileStrength: 330}
-    thermal:    {conductivity: 22.6, expansionCoeff: 5.7e-6, specificHeat: 278}
-    electrical: {resistivity: 4.21e-7, relativePermittivity: 1}
-  - id: niobium
-    name: Niobium
-    density: 8.57
-    appearance: niobium
-    mechanical: {youngsModulus: 105, poissonsRatio: 0.40, yieldStrength: 240, ultimateTensileStrength: 275}
-    thermal:    {conductivity: 53.7, expansionCoeff: 7.3e-6, specificHeat: 265}
-    electrical: {resistivity: 1.52e-7, relativePermittivity: 1}
-  - id: molybdenum
-    name: Molybdenum
-    density: 10.22
-    appearance: molybdenum
-    mechanical: {youngsModulus: 329, poissonsRatio: 0.31, yieldStrength: 415, ultimateTensileStrength: 690}
-    thermal:    {conductivity: 138, expansionCoeff: 4.8e-6, specificHeat: 251}
-    electrical: {resistivity: 5.34e-8, relativePermittivity: 1}
-  - id: ruthenium
-    name: Ruthenium
-    density: 12.37
-    appearance: ruthenium
-    # hard, low-ductility: strength figures approximate
-    mechanical: {youngsModulus: 447, poissonsRatio: 0.30, yieldStrength: 370, ultimateTensileStrength: 510}
-    thermal:    {conductivity: 117, expansionCoeff: 6.4e-6, specificHeat: 238}
-    electrical: {resistivity: 7.1e-8, relativePermittivity: 1}
-  - id: rhodium
-    name: Rhodium
-    density: 12.41
-    appearance: rhodium
-    mechanical: {youngsModulus: 380, poissonsRatio: 0.26, yieldStrength: 70, ultimateTensileStrength: 951}
-    thermal:    {conductivity: 150, expansionCoeff: 8.2e-6, specificHeat: 243}
-    electrical: {resistivity: 4.3e-8, relativePermittivity: 1}
-  - id: palladium
-    name: Palladium
-    density: 12.02
-    appearance: palladium
-    mechanical: {youngsModulus: 121, poissonsRatio: 0.39, yieldStrength: 55, ultimateTensileStrength: 180}
-    thermal:    {conductivity: 71.8, expansionCoeff: 11.8e-6, specificHeat: 244}
-    electrical: {resistivity: 1.05e-7, relativePermittivity: 1}
-  - id: silver
-    name: Silver
-    density: 10.49
-    appearance: silver
-    mechanical: {youngsModulus: 83, poissonsRatio: 0.37, yieldStrength: 55, ultimateTensileStrength: 170}
-    thermal:    {conductivity: 429, expansionCoeff: 18.9e-6, specificHeat: 235}
-    electrical: {resistivity: 1.59e-8, relativePermittivity: 1}
-  - id: cadmium
-    name: Cadmium
-    density: 8.65
-    appearance: cadmium
-    mechanical: {youngsModulus: 50, poissonsRatio: 0.30, yieldStrength: 28, ultimateTensileStrength: 71}
-    thermal:    {conductivity: 96.6, expansionCoeff: 30.8e-6, specificHeat: 232}
-    electrical: {resistivity: 7.27e-8, relativePermittivity: 1}
-  - id: indium
-    name: Indium
-    density: 7.31
-    appearance: indium
-    mechanical: {youngsModulus: 11, poissonsRatio: 0.45, yieldStrength: 2.5, ultimateTensileStrength: 4.5}
-    thermal:    {conductivity: 81.8, expansionCoeff: 32.1e-6, specificHeat: 233}
-    electrical: {resistivity: 8.37e-8, relativePermittivity: 1}
-  - id: tin
-    name: Tin
-    density: 7.27
-    appearance: tin
-    mechanical: {youngsModulus: 50, poissonsRatio: 0.36, yieldStrength: 11, ultimateTensileStrength: 15}
-    thermal:    {conductivity: 66.8, expansionCoeff: 22.0e-6, specificHeat: 228}
-    electrical: {resistivity: 1.15e-7, relativePermittivity: 1}
-  - id: antimony
-    name: Antimony
-    density: 6.68
-    appearance: antimony
-    # brittle metalloid: yield approximated to tensile strength
-    mechanical: {youngsModulus: 55, poissonsRatio: 0.25, yieldStrength: 11, ultimateTensileStrength: 11}
-    thermal:    {conductivity: 24.4, expansionCoeff: 11.0e-6, specificHeat: 207}
-    electrical: {resistivity: 4.0e-7, relativePermittivity: 1}
-  - id: hafnium
-    name: Hafnium
-    density: 13.31
-    appearance: hafnium
-    mechanical: {youngsModulus: 78, poissonsRatio: 0.37, yieldStrength: 240, ultimateTensileStrength: 450}
-    thermal:    {conductivity: 23.0, expansionCoeff: 5.9e-6, specificHeat: 144}
-    electrical: {resistivity: 3.31e-7, relativePermittivity: 1}
-  - id: tantalum
-    name: Tantalum
-    density: 16.69
-    appearance: tantalum
-    mechanical: {youngsModulus: 186, poissonsRatio: 0.34, yieldStrength: 180, ultimateTensileStrength: 205}
-    thermal:    {conductivity: 57.5, expansionCoeff: 6.3e-6, specificHeat: 140}
-    electrical: {resistivity: 1.31e-7, relativePermittivity: 1}
-  - id: tungsten
-    name: Tungsten
-    density: 19.25
-    appearance: tungsten
-    mechanical: {youngsModulus: 411, poissonsRatio: 0.28, yieldStrength: 750, ultimateTensileStrength: 980}
-    thermal:    {conductivity: 173, expansionCoeff: 4.5e-6, specificHeat: 132}
-    electrical: {resistivity: 5.28e-8, relativePermittivity: 1}
-  - id: rhenium
-    name: Rhenium
-    density: 21.02
-    appearance: rhenium
-    mechanical: {youngsModulus: 463, poissonsRatio: 0.30, yieldStrength: 290, ultimateTensileStrength: 1070}
-    thermal:    {conductivity: 48.0, expansionCoeff: 6.2e-6, specificHeat: 137}
-    electrical: {resistivity: 1.8e-7, relativePermittivity: 1}
-  - id: osmium
-    name: Osmium
-    density: 22.59
-    appearance: osmium
-    # hardest elemental metal, brittle: yield approximated to compressive/tensile figure
-    mechanical: {youngsModulus: 559, poissonsRatio: 0.25, yieldStrength: 1000, ultimateTensileStrength: 1000}
-    thermal:    {conductivity: 87.6, expansionCoeff: 5.1e-6, specificHeat: 130}
-    electrical: {resistivity: 8.1e-8, relativePermittivity: 1}
-  - id: iridium
-    name: Iridium
-    density: 22.56
-    appearance: iridium
-    mechanical: {youngsModulus: 528, poissonsRatio: 0.26, yieldStrength: 490, ultimateTensileStrength: 1100}
-    thermal:    {conductivity: 147, expansionCoeff: 6.4e-6, specificHeat: 131}
-    electrical: {resistivity: 4.71e-8, relativePermittivity: 1}
-  - id: platinum
-    name: Platinum
-    density: 21.45
-    appearance: platinum
-    mechanical: {youngsModulus: 168, poissonsRatio: 0.38, yieldStrength: 70, ultimateTensileStrength: 165}
-    thermal:    {conductivity: 71.6, expansionCoeff: 8.8e-6, specificHeat: 133}
-    electrical: {resistivity: 1.06e-7, relativePermittivity: 1}
-  - id: gold
-    name: Gold
-    density: 19.30
-    appearance: gold
-    mechanical: {youngsModulus: 79, poissonsRatio: 0.44, yieldStrength: 30, ultimateTensileStrength: 120}
-    thermal:    {conductivity: 318, expansionCoeff: 14.2e-6, specificHeat: 129}
-    electrical: {resistivity: 2.21e-8, relativePermittivity: 1}
-  - id: lead
-    name: Lead
-    density: 11.34
-    appearance: lead
-    mechanical: {youngsModulus: 16, poissonsRatio: 0.44, yieldStrength: 12, ultimateTensileStrength: 18}
-    thermal:    {conductivity: 35.3, expansionCoeff: 28.9e-6, specificHeat: 129}
-    electrical: {resistivity: 2.08e-7, relativePermittivity: 1}
-  - id: bismuth
-    name: Bismuth
-    density: 9.78
-    appearance: bismuth
-    # brittle: tensile figure approximate, no distinct yield
-    mechanical: {youngsModulus: 32, poissonsRatio: 0.33, yieldStrength: 70, ultimateTensileStrength: 70}
-    thermal:    {conductivity: 7.97, expansionCoeff: 13.4e-6, specificHeat: 122}
-    electrical: {resistivity: 1.29e-6, relativePermittivity: 1}
+    - id: beryllium
+      name: Beryllium
+      density: 1.85
+      mechanical:
+        youngsModulus: 287
+        poissonsRatio: 0.032
+        yieldStrength: 240
+        ultimateTensileStrength: 370
+      thermal:
+        conductivity: 200
+        expansionCoeff: 1.13e-05
+        specificHeat: 1825
+      electrical:
+        resistivity: 3.6e-08
+        relativePermittivity: 1
+      appearance: beryllium
+    - id: magnesium
+      name: Magnesium
+      density: 1.74
+      mechanical:
+        youngsModulus: 45
+        poissonsRatio: 0.29
+        yieldStrength: 40
+        ultimateTensileStrength: 160
+      thermal:
+        conductivity: 156
+        expansionCoeff: 2.48e-05
+        specificHeat: 1023
+      electrical:
+        resistivity: 4.39e-08
+        relativePermittivity: 1
+      appearance: magnesium
+    - id: aluminum-1100
+      name: Aluminum (Pure, 1100)
+      density: 2.71
+      mechanical:
+        youngsModulus: 69
+        poissonsRatio: 0.33
+        yieldStrength: 34
+        ultimateTensileStrength: 90
+      thermal:
+        conductivity: 222
+        expansionCoeff: 2.36e-05
+        specificHeat: 904
+      electrical:
+        resistivity: 2.99e-08
+        relativePermittivity: 1
+      appearance: aluminum
+    - id: titanium-cp
+      name: Titanium (CP Grade 2)
+      density: 4.51
+      mechanical:
+        youngsModulus: 105
+        poissonsRatio: 0.34
+        yieldStrength: 275
+        ultimateTensileStrength: 345
+      thermal:
+        conductivity: 16.4
+        expansionCoeff: 8.6e-06
+        specificHeat: 523
+      electrical:
+        resistivity: 4.2e-07
+        relativePermittivity: 1
+      appearance: titanium
+    - id: vanadium
+      name: Vanadium
+      density: 6.11
+      mechanical:
+        youngsModulus: 128
+        poissonsRatio: 0.37
+        yieldStrength: 380
+        ultimateTensileStrength: 460
+      thermal:
+        conductivity: 30.7
+        expansionCoeff: 8.4e-06
+        specificHeat: 489
+      electrical:
+        resistivity: 1.97e-07
+        relativePermittivity: 1
+      appearance: vanadium
+    - id: chromium
+      name: Chromium
+      density: 7.19
+      mechanical:
+        youngsModulus: 279
+        poissonsRatio: 0.21
+        yieldStrength: 131
+        ultimateTensileStrength: 282
+      thermal:
+        conductivity: 93.9
+        expansionCoeff: 4.9e-06
+        specificHeat: 449
+      electrical:
+        resistivity: 1.25e-07
+        relativePermittivity: 1
+      appearance: chromium
+    - id: iron-pure
+      name: Iron (Pure)
+      density: 7.87
+      mechanical:
+        youngsModulus: 211
+        poissonsRatio: 0.29
+        yieldStrength: 50
+        ultimateTensileStrength: 200
+      thermal:
+        conductivity: 80.4
+        expansionCoeff: 1.18e-05
+        specificHeat: 449
+      electrical:
+        resistivity: 9.71e-08
+        relativePermittivity: 1
+      magnetic:
+        class: soft-magnetic
+        relativePermeability: 5000
+        saturationFluxDensity: 2.16
+      appearance: iron
+    - id: cobalt
+      name: Cobalt
+      density: 8.9
+      mechanical:
+        youngsModulus: 209
+        poissonsRatio: 0.31
+        yieldStrength: 225
+        ultimateTensileStrength: 800
+      thermal:
+        conductivity: 100
+        expansionCoeff: 1.3e-05
+        specificHeat: 421
+      electrical:
+        resistivity: 6.24e-08
+        relativePermittivity: 1
+      magnetic:
+        class: soft-magnetic
+        relativePermeability: 250
+        saturationFluxDensity: 1.8
+      appearance: cobalt
+    - id: nickel
+      name: Nickel
+      density: 8.9
+      mechanical:
+        youngsModulus: 200
+        poissonsRatio: 0.31
+        yieldStrength: 148
+        ultimateTensileStrength: 462
+      thermal:
+        conductivity: 90.9
+        expansionCoeff: 1.34e-05
+        specificHeat: 444
+      electrical:
+        resistivity: 6.99e-08
+        relativePermittivity: 1
+      magnetic:
+        class: soft-magnetic
+        relativePermeability: 600
+        saturationFluxDensity: 0.6
+      appearance: nickel
+    - id: copper-c110
+      name: Copper (C110)
+      density: 8.96
+      mechanical:
+        youngsModulus: 128
+        poissonsRatio: 0.34
+        yieldStrength: 70
+        ultimateTensileStrength: 220
+      thermal:
+        conductivity: 391
+        expansionCoeff: 1.65e-05
+        specificHeat: 385
+      electrical:
+        resistivity: 1.71e-08
+        relativePermittivity: 1
+      appearance: copper
+    - id: zinc
+      name: Zinc
+      density: 7.14
+      mechanical:
+        youngsModulus: 108
+        poissonsRatio: 0.25
+        yieldStrength: 110
+        ultimateTensileStrength: 150
+      thermal:
+        conductivity: 116
+        expansionCoeff: 3.02e-05
+        specificHeat: 388
+      electrical:
+        resistivity: 5.9e-08
+        relativePermittivity: 1
+      appearance: zinc
+    - id: zirconium
+      name: Zirconium
+      density: 6.52
+      mechanical:
+        youngsModulus: 88
+        poissonsRatio: 0.34
+        yieldStrength: 230
+        ultimateTensileStrength: 330
+      thermal:
+        conductivity: 22.6
+        expansionCoeff: 5.7e-06
+        specificHeat: 278
+      electrical:
+        resistivity: 4.21e-07
+        relativePermittivity: 1
+      appearance: zirconium
+    - id: niobium
+      name: Niobium
+      density: 8.57
+      mechanical:
+        youngsModulus: 105
+        poissonsRatio: 0.4
+        yieldStrength: 240
+        ultimateTensileStrength: 275
+      thermal:
+        conductivity: 53.7
+        expansionCoeff: 7.3e-06
+        specificHeat: 265
+      electrical:
+        resistivity: 1.52e-07
+        relativePermittivity: 1
+      appearance: niobium
+    - id: molybdenum
+      name: Molybdenum
+      density: 10.22
+      mechanical:
+        youngsModulus: 329
+        poissonsRatio: 0.31
+        yieldStrength: 415
+        ultimateTensileStrength: 690
+      thermal:
+        conductivity: 138
+        expansionCoeff: 4.8e-06
+        specificHeat: 251
+      electrical:
+        resistivity: 5.34e-08
+        relativePermittivity: 1
+      appearance: molybdenum
+    - id: ruthenium
+      name: Ruthenium
+      density: 12.37
+      mechanical:
+        youngsModulus: 447
+        poissonsRatio: 0.3
+        yieldStrength: 370
+        ultimateTensileStrength: 510
+      thermal:
+        conductivity: 117
+        expansionCoeff: 6.4e-06
+        specificHeat: 238
+      electrical:
+        resistivity: 7.1e-08
+        relativePermittivity: 1
+      appearance: ruthenium
+    - id: rhodium
+      name: Rhodium
+      density: 12.41
+      mechanical:
+        youngsModulus: 380
+        poissonsRatio: 0.26
+        yieldStrength: 70
+        ultimateTensileStrength: 951
+      thermal:
+        conductivity: 150
+        expansionCoeff: 8.2e-06
+        specificHeat: 243
+      electrical:
+        resistivity: 4.3e-08
+        relativePermittivity: 1
+      appearance: rhodium
+    - id: palladium
+      name: Palladium
+      density: 12.02
+      mechanical:
+        youngsModulus: 121
+        poissonsRatio: 0.39
+        yieldStrength: 55
+        ultimateTensileStrength: 180
+      thermal:
+        conductivity: 71.8
+        expansionCoeff: 1.18e-05
+        specificHeat: 244
+      electrical:
+        resistivity: 1.05e-07
+        relativePermittivity: 1
+      appearance: palladium
+    - id: silver
+      name: Silver
+      density: 10.49
+      mechanical:
+        youngsModulus: 83
+        poissonsRatio: 0.37
+        yieldStrength: 55
+        ultimateTensileStrength: 170
+      thermal:
+        conductivity: 429
+        expansionCoeff: 1.89e-05
+        specificHeat: 235
+      electrical:
+        resistivity: 1.59e-08
+        relativePermittivity: 1
+      appearance: silver
+    - id: cadmium
+      name: Cadmium
+      density: 8.65
+      mechanical:
+        youngsModulus: 50
+        poissonsRatio: 0.3
+        yieldStrength: 28
+        ultimateTensileStrength: 71
+      thermal:
+        conductivity: 96.6
+        expansionCoeff: 3.08e-05
+        specificHeat: 232
+      electrical:
+        resistivity: 7.27e-08
+        relativePermittivity: 1
+      appearance: cadmium
+    - id: indium
+      name: Indium
+      density: 7.31
+      mechanical:
+        youngsModulus: 11
+        poissonsRatio: 0.45
+        yieldStrength: 2.5
+        ultimateTensileStrength: 4.5
+      thermal:
+        conductivity: 81.8
+        expansionCoeff: 3.21e-05
+        specificHeat: 233
+      electrical:
+        resistivity: 8.37e-08
+        relativePermittivity: 1
+      appearance: indium
+    - id: tin
+      name: Tin
+      density: 7.27
+      mechanical:
+        youngsModulus: 50
+        poissonsRatio: 0.36
+        yieldStrength: 11
+        ultimateTensileStrength: 15
+      thermal:
+        conductivity: 66.8
+        expansionCoeff: 2.2e-05
+        specificHeat: 228
+      electrical:
+        resistivity: 1.15e-07
+        relativePermittivity: 1
+      appearance: tin
+    - id: antimony
+      name: Antimony
+      density: 6.68
+      mechanical:
+        youngsModulus: 55
+        poissonsRatio: 0.25
+        yieldStrength: 11
+        ultimateTensileStrength: 11
+      thermal:
+        conductivity: 24.4
+        expansionCoeff: 1.1e-05
+        specificHeat: 207
+      electrical:
+        resistivity: 4e-07
+        relativePermittivity: 1
+      appearance: antimony
+    - id: hafnium
+      name: Hafnium
+      density: 13.31
+      mechanical:
+        youngsModulus: 78
+        poissonsRatio: 0.37
+        yieldStrength: 240
+        ultimateTensileStrength: 450
+      thermal:
+        conductivity: 23
+        expansionCoeff: 5.9e-06
+        specificHeat: 144
+      electrical:
+        resistivity: 3.31e-07
+        relativePermittivity: 1
+      appearance: hafnium
+    - id: tantalum
+      name: Tantalum
+      density: 16.69
+      mechanical:
+        youngsModulus: 186
+        poissonsRatio: 0.34
+        yieldStrength: 180
+        ultimateTensileStrength: 205
+      thermal:
+        conductivity: 57.5
+        expansionCoeff: 6.3e-06
+        specificHeat: 140
+      electrical:
+        resistivity: 1.31e-07
+        relativePermittivity: 1
+      appearance: tantalum
+    - id: tungsten
+      name: Tungsten
+      density: 19.25
+      mechanical:
+        youngsModulus: 411
+        poissonsRatio: 0.28
+        yieldStrength: 750
+        ultimateTensileStrength: 980
+      thermal:
+        conductivity: 173
+        expansionCoeff: 4.5e-06
+        specificHeat: 132
+      electrical:
+        resistivity: 5.28e-08
+        relativePermittivity: 1
+      appearance: tungsten
+    - id: rhenium
+      name: Rhenium
+      density: 21.02
+      mechanical:
+        youngsModulus: 463
+        poissonsRatio: 0.3
+        yieldStrength: 290
+        ultimateTensileStrength: 1070
+      thermal:
+        conductivity: 48
+        expansionCoeff: 6.2e-06
+        specificHeat: 137
+      electrical:
+        resistivity: 1.8e-07
+        relativePermittivity: 1
+      appearance: rhenium
+    - id: osmium
+      name: Osmium
+      density: 22.59
+      mechanical:
+        youngsModulus: 559
+        poissonsRatio: 0.25
+        yieldStrength: 1000
+        ultimateTensileStrength: 1000
+      thermal:
+        conductivity: 87.6
+        expansionCoeff: 5.1e-06
+        specificHeat: 130
+      electrical:
+        resistivity: 8.1e-08
+        relativePermittivity: 1
+      appearance: osmium
+    - id: iridium
+      name: Iridium
+      density: 22.56
+      mechanical:
+        youngsModulus: 528
+        poissonsRatio: 0.26
+        yieldStrength: 490
+        ultimateTensileStrength: 1100
+      thermal:
+        conductivity: 147
+        expansionCoeff: 6.4e-06
+        specificHeat: 131
+      electrical:
+        resistivity: 4.71e-08
+        relativePermittivity: 1
+      appearance: iridium
+    - id: platinum
+      name: Platinum
+      density: 21.45
+      mechanical:
+        youngsModulus: 168
+        poissonsRatio: 0.38
+        yieldStrength: 70
+        ultimateTensileStrength: 165
+      thermal:
+        conductivity: 71.6
+        expansionCoeff: 8.8e-06
+        specificHeat: 133
+      electrical:
+        resistivity: 1.06e-07
+        relativePermittivity: 1
+      appearance: platinum
+    - id: gold
+      name: Gold
+      density: 19.3
+      mechanical:
+        youngsModulus: 79
+        poissonsRatio: 0.44
+        yieldStrength: 30
+        ultimateTensileStrength: 120
+      thermal:
+        conductivity: 318
+        expansionCoeff: 1.42e-05
+        specificHeat: 129
+      electrical:
+        resistivity: 2.21e-08
+        relativePermittivity: 1
+      appearance: gold
+    - id: lead
+      name: Lead
+      density: 11.34
+      mechanical:
+        youngsModulus: 16
+        poissonsRatio: 0.44
+        yieldStrength: 12
+        ultimateTensileStrength: 18
+      thermal:
+        conductivity: 35.3
+        expansionCoeff: 2.89e-05
+        specificHeat: 129
+      electrical:
+        resistivity: 2.08e-07
+        relativePermittivity: 1
+      appearance: lead
+    - id: bismuth
+      name: Bismuth
+      density: 9.78
+      mechanical:
+        youngsModulus: 32
+        poissonsRatio: 0.33
+        yieldStrength: 70
+        ultimateTensileStrength: 70
+      thermal:
+        conductivity: 7.97
+        expansionCoeff: 1.34e-05
+        specificHeat: 122
+      electrical:
+        resistivity: 1.29e-06
+        relativePermittivity: 1
+      appearance: bismuth
