@@ -107,13 +107,76 @@ bool create_device(HeadContext* c) {
     vkGetPhysicalDeviceFeatures(c->physical, &avail);
     VkPhysicalDeviceFeatures feats{};
     feats.largePoints = avail.largePoints;
+
+    // Hardware ray tracing (M45-F01 PBI-333, ADR-0053): PBI-332 only probed extension
+    // PRESENCE (device_has_ext, obk_head_ray_tracing_support). Actually using the
+    // extensions needs the real feature-bit query via VkPhysicalDeviceFeatures2 + the
+    // extension structs, chained here — presence in vkEnumerateDeviceExtensionProperties
+    // does not guarantee the feature bit is on. Acceleration structures also require
+    // VK_KHR_buffer_device_address (core in 1.2/1.3, requested as a feature) and
+    // VK_KHR_deferred_host_operations (their build dependency). All are additive: a
+    // device lacking them simply doesn't get hwRayTracingAvailable set, and the renderer
+    // falls back to the always-available software Intersector (PBI-334).
+    VkPhysicalDeviceBufferDeviceAddressFeatures bdaFeatures{};
+    bdaFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR asFeatures{};
+    asFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+    asFeatures.pNext = &bdaFeatures;
+    VkPhysicalDeviceRayQueryFeaturesKHR rqFeatures{};
+    rqFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+    rqFeatures.pNext = &asFeatures;
+    // Position fetch (VK_KHR_ray_tracing_position_fetch) lets the ray-query compute
+    // shader read the hit triangle's vertex positions directly (rayQueryGetIntersection
+    // TriangleVertexPositionsKHR) to compute the geometric normal, instead of a bindless
+    // buffer_reference vertex-fetch path — optional (checked again before use), but
+    // widely supported alongside acceleration_structure/ray_query on the same hardware.
+    VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR posFetchFeatures{};
+    posFetchFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR;
+    posFetchFeatures.pNext = &rqFeatures;
+    VkPhysicalDeviceFeatures2 features2{};
+    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    features2.pNext = &posFetchFeatures;
+    features2.features = feats;
+
+    bool rtExtsPresent = device_has_ext(c->physical, "VK_KHR_acceleration_structure") &&
+                         device_has_ext(c->physical, "VK_KHR_ray_query") &&
+                         device_has_ext(c->physical, "VK_KHR_deferred_host_operations");
+    bool posFetchExtPresent = device_has_ext(c->physical, "VK_KHR_ray_tracing_position_fetch");
+    if (rtExtsPresent) vkGetPhysicalDeviceFeatures2(c->physical, &features2);
+    c->hwRayTracingAvailable = rtExtsPresent && asFeatures.accelerationStructure &&
+                               rqFeatures.rayQuery && bdaFeatures.bufferDeviceAddress;
+    c->hwRayTracingPositionFetch = c->hwRayTracingAvailable && posFetchExtPresent &&
+                                   posFetchFeatures.rayTracingPositionFetch;
+    if (c->hwRayTracingAvailable) {
+        dev_ext.push_back("VK_KHR_acceleration_structure");
+        dev_ext.push_back("VK_KHR_ray_query");
+        dev_ext.push_back("VK_KHR_deferred_host_operations");
+        dev_ext.push_back("VK_KHR_buffer_device_address");
+        if (c->hwRayTracingPositionFetch) {
+            dev_ext.push_back("VK_KHR_ray_tracing_position_fetch");
+        } else {
+            // A *FeaturesKHR struct in vkCreateDevice's pNext requires its extension to
+            // be enabled (unlike a read-only vkGetPhysicalDeviceFeatures2 query, where
+            // the chain above is always legal) — splice posFetchFeatures back out of
+            // the CREATION chain when its extension isn't going to be enabled.
+            features2.pNext = &rqFeatures;
+        }
+    } else {
+        // Nothing in features2's pNext chain will be enabled; drop it so an unsupported
+        // device's vkCreateDevice doesn't reference dangling feature-request structs.
+        features2.pNext = nullptr;
+    }
+
     VkDeviceCreateInfo ci{};
     ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    ci.pNext = c->hwRayTracingAvailable ? &features2 : nullptr;
     ci.queueCreateInfoCount = 1;
     ci.pQueueCreateInfos = &q;
     ci.enabledExtensionCount = (uint32_t)dev_ext.size();
     ci.ppEnabledExtensionNames = dev_ext.data();
-    ci.pEnabledFeatures = &feats;
+    // pEnabledFeatures must be null when pNext carries a VkPhysicalDeviceFeatures2 (which
+    // already embeds the base VkPhysicalDeviceFeatures) — VUID-VkDeviceCreateInfo-pNext-00373.
+    ci.pEnabledFeatures = c->hwRayTracingAvailable ? nullptr : &feats;
     if (!ok(vkCreateDevice(c->physical, &ci, c->allocator, &c->device))) return false;
     vkGetDeviceQueue(c->device, c->queueFamily, 0, &c->queue);
     return true;

@@ -39,3 +39,9 @@ var skyboxVertSPV []byte
 
 //go:embed shaders/skybox.frag.spv
 var skyboxFragSPV []byte
+
+// Hardware ray-query Intersector compute shader (M45-F01 PBI-333, ADR-0053). --target-env
+// vulkan1.3 (not the others' implicit vulkan1.0) because GL_EXT_ray_query needs SPIR-V 1.4+.
+//
+//go:embed shaders/raytrace.comp.spv
+var raytraceCompSPV []byte

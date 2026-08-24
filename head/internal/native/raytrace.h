@@ -1,0 +1,42 @@
+// Hardware ray-tracing scene: BLAS-per-body + TLAS acceleration structures and a
+// compute-shader ray-query Intersector (M45-F01 PBI-333, ADR-0053). Declared separately
+// from head.h/HeadContext because an RTScene is not part of the live per-frame render
+// loop yet (that integration is a later PBI) — it borrows a Window's device/queue and is
+// otherwise self-contained, so it can be created, queried, and destroyed independently.
+#pragma once
+#include "head.h"
+
+struct RTScene;
+
+extern "C" {
+
+// obk_rt_scene_create borrows h's Vulkan device/queue (h must have
+// hwRayTracingAvailable) and returns an opaque RTScene handle, or null if RT is
+// unavailable or resource creation fails.
+void* obk_rt_scene_create(void* h);
+
+// obk_rt_scene_add_mesh appends one BLAS-source mesh (vertices as tightly packed xyz
+// float triples, indices as triangle-list uint32) to the scene, tagged with
+// instanceCustomIndex (surfaces as renderer.Hit.InstanceID) — call once per unique body
+// before obk_rt_scene_build. Returns 0 on success.
+int obk_rt_scene_add_mesh(void* scene, const float* vertices, int vertexCount,
+                          const uint32_t* indices, int indexCount, uint32_t instanceCustomIndex);
+
+// obk_rt_scene_build builds every accumulated mesh's BLAS and the scene's single TLAS
+// (one identity-transform instance per mesh, in add_mesh call order), then creates the
+// raytrace.comp compute pipeline from the caller-supplied SPIR-V (embedded Go-side via
+// go:embed, mirroring obk_viewport_init's shader-loading pattern — this file has no
+// compile-time access to the .spv). Returns 0 on success. Call once after every
+// obk_rt_scene_add_mesh call.
+int obk_rt_scene_build(void* scene, const uint32_t* spv, int spvLen);
+
+// obk_rt_scene_trace dispatches a single ray query against the built TLAS and reads the
+// nearest-hit result back. hit/instanceID/primitiveID/t/point/normal mirror
+// renderer.Hit's fields exactly (out params optional — pass null to skip).
+void obk_rt_scene_trace(void* scene, float ox, float oy, float oz, float dx, float dy, float dz,
+                        float tMin, float tMax, int* hit, float* t, float* px, float* py, float* pz,
+                        float* nx, float* ny, float* nz, uint32_t* instanceID, uint32_t* primitiveID);
+
+void obk_rt_scene_destroy(void* scene);
+
+} // extern "C"
