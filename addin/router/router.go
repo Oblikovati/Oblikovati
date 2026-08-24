@@ -452,19 +452,12 @@ func (r *Router) registerMaterialHandlers() {
 	r.readOnly(wire.MethodAppearancesGet, typed(getAppearance))
 	r.readOnly(wire.MethodAppearancesCreate, typed(createAppearance))
 	r.readOnly(wire.MethodAppearancesUpdate, typed(updateAppearance))
-	// OpenPBR Surface appearances (M45-F02 #2126, ADR-0053): additive alongside
-	// appearances.* above — the full OpenPBR lobe set instead of metallic-roughness.
-	r.readOnly(wire.MethodOpenPBRAppearancesList, listOpenPBRAppearances)
-	r.readOnly(wire.MethodOpenPBRAppearancesGet, typed(getOpenPBRAppearance))
-	r.readOnly(wire.MethodOpenPBRAppearancesCreate, typed(createOpenPBRAppearance))
-	r.readOnly(wire.MethodOpenPBRAppearancesUpdate, typed(updateOpenPBRAppearance))
 	r.readOnly(wire.MethodMaterialsList, listMaterials)
 	r.readOnly(wire.MethodMaterialsGet, typed(getMaterial))
 	r.readOnly(wire.MethodMaterialsCreate, typed(createMaterial))
 	r.readOnly(wire.MethodMaterialsUpdate, typed(updateMaterial))
 	r.mutating(wire.MethodModelAssignMaterial, "Assign Material", typed(assignMaterial))
 	r.mutating(wire.MethodModelAssignAppearance, "Assign Appearance", typed(assignAppearance))
-	r.mutating(wire.MethodModelAssignOpenPBRAppearance, "Assign OpenPBR Appearance", typed(assignOpenPBRAppearance))
 	r.readOnly(wire.MethodModelPhysicalProperties, physicalProperties)
 
 	// Body topology, queries and facet sets (M07 #293/#629/#630).
