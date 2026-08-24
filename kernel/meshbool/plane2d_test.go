@@ -208,3 +208,42 @@ func TestInCircleNearCocircular(t *testing.T) {
 		den.Mul(den, ten)
 	}
 }
+
+// TestOrient2FilterMatchesExact is the safety net for the orientation interval
+// filter: over a random sweep of exact and constructed triples across all three
+// projection axes, orient2 must equal the sign of the exact determinant.
+func TestOrient2FilterMatchesExact(t *testing.T) {
+	rng := rand.New(rand.NewSource(0x02c2))
+	for i := 0; i < 20000; i++ {
+		a := randPoint(rng, i%3 == 0)
+		b := randPoint(rng, i%5 == 0)
+		c := randPoint(rng, i%2 == 0)
+		axis := i % 3
+		if got, want := orient2(a, b, c, axis), orient2Val(a, b, c, axis).Sign(); got != want {
+			t.Fatalf("triple %d axis %d: orient2=%d, exact=%d (interval mis-certified)", i, axis, got, want)
+		}
+	}
+}
+
+// TestOrient2NearCollinear stresses the filter near collinearity: a and b lie on the
+// u-axis and c is lifted off it by a rational epsilon from 1 to 1e-40 in both signs,
+// plus 0 exactly (collinear -> 0). orient2 must match the exact sign throughout.
+func TestOrient2NearCollinear(t *testing.T) {
+	a := Point{big.NewRat(1, 3), big.NewRat(0, 1), big.NewRat(0, 1)}
+	b := Point{big.NewRat(7, 3), big.NewRat(0, 1), big.NewRat(0, 1)}
+	den := big.NewInt(1)
+	ten := big.NewInt(10)
+	for k := 0; k <= 40; k++ {
+		for _, sign := range []int64{1, -1, 0} {
+			cv := new(big.Rat)
+			if sign != 0 {
+				cv.SetFrac(big.NewInt(sign), new(big.Int).Set(den))
+			}
+			c := Point{big.NewRat(4, 3), cv, big.NewRat(0, 1)}
+			if got, want := orient2(a, b, c, 2), orient2Val(a, b, c, 2).Sign(); got != want {
+				t.Fatalf("k=%d sign=%d: orient2=%d, exact=%d", k, sign, got, want)
+			}
+		}
+		den.Mul(den, ten)
+	}
+}

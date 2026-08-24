@@ -51,9 +51,34 @@ func orient2Val(a, b, c Point, axis int) *big.Rat {
 }
 
 // orient2 returns the exact sign of orient2Val: +1 CCW, -1 CW, 0 collinear, in the
-// projected plane.
+// projected plane. The interval filter resolves the non-degenerate majority in float
+// arithmetic — orient2 is the dominant big.Rat cost of the co-refinement CDT once
+// the ray-cast and in-circle tests are filtered — and only a near-collinear triple
+// falls to the exact determinant. Both are exact, so they never disagree (see
+// TestOrient2FilterMatchesExact). orient2Val itself stays exact: SegSegCross needs
+// its rational value, not just the sign, to construct the intersection point.
 func orient2(a, b, c Point, axis int) int {
+	if s, ok := orient2Interval(a, b, c, axis); ok {
+		return s
+	}
 	return orient2Val(a, b, c, axis).Sign()
+}
+
+// orient2Interval evaluates the projected orientation determinant in interval
+// arithmetic, following the exact term grouping of orient2Val. It returns the sign
+// and true when the result interval excludes zero; otherwise the caller uses the
+// exact predicate.
+func orient2Interval(a, b, c Point, axis int) (int, bool) {
+	ai, bi, ci := projectInterval(a, axis), projectInterval(b, axis), projectInterval(c, axis)
+	det := crossDiffInterval(iSub(ai[0], ci[0]), iSub(bi[1], ci[1]), iSub(ai[1], ci[1]), iSub(bi[0], ci[0]))
+	switch {
+	case det.lo > 0:
+		return 1, true
+	case det.hi < 0:
+		return -1, true
+	default:
+		return 0, false
+	}
 }
 
 // SegSegCross returns the exact point where segment ab meets the line through c,d,
