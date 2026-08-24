@@ -25,7 +25,17 @@ func RefineFace(face [3]Point, segments [][2]Point) [][3]Point {
 	for _, s := range segments {
 		tr.forceSegment(s[0], s[1])
 	}
-	return tr.Triangles()
+	tris := tr.Triangles()
+	// NewTriangulation stores CCW-in-projection; if the input face was CW there, the
+	// sub-triangles carry the opposite normal. Restore the operand's face orientation
+	// so downstream winding-number classification and the result mesh see the true
+	// outward normal.
+	if orient2(face[0], face[1], face[2], tr.axis) < 0 {
+		for i := range tris {
+			tris[i][1], tris[i][2] = tris[i][2], tris[i][1]
+		}
+	}
+	return tris
 }
 
 // constraintVertices returns every segment endpoint plus every exact pairwise

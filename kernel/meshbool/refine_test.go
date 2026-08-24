@@ -53,6 +53,22 @@ func TestRefineFaceSegmentAlongEdge(t *testing.T) {
 	}
 }
 
+func TestRefineFacePreservesOrientation(t *testing.T) {
+	// A face wound clockwise in its projection: every refined sub-triangle must keep
+	// that same (input) orientation, not the internal CCW-normalized one.
+	face := tri([3]float64{0, 0, 0}, [3]float64{0, 4, 0}, [3]float64{4, 0, 0})
+	inSign := orient2(face[0], face[1], face[2], 2)
+	if inSign >= 0 {
+		t.Fatal("test face is not clockwise in the xy projection")
+	}
+	tris := RefineFace(face, [][2]Point{seg([3]float64{2, 0, 0}, [3]float64{0, 2, 0})})
+	for _, tt := range tris {
+		if orient2(tt[0], tt[1], tt[2], 2) != inSign {
+			t.Fatalf("refined triangle orientation %d != input %d", orient2(tt[0], tt[1], tt[2], 2), inSign)
+		}
+	}
+}
+
 // assertFaceConformed checks the refined triangulation tiles the face exactly (area
 // conserved) and no triangle edge properly crosses any constraint — i.e. every
 // constraint is covered by triangulation edges.
