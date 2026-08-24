@@ -11,6 +11,22 @@ import "math/big"
 // 2D operations. Constructed crossings are lifted back to exact 3D points that lie
 // on the originating segments — the conforming property carried into the plane.
 
+// planeAxis returns the coordinate axis (0=x,1=y,2=z) to drop for a non-degenerate
+// 2D projection of triangle tri's plane — the axis most parallel to its normal.
+func planeAxis(tri [3]Point) int {
+	n := triNormal(tri)
+	ax := new(big.Rat).Abs(n[0])
+	ay := new(big.Rat).Abs(n[1])
+	az := new(big.Rat).Abs(n[2])
+	if ax.Cmp(ay) >= 0 && ax.Cmp(az) >= 0 {
+		return 0
+	}
+	if ay.Cmp(az) >= 0 {
+		return 1
+	}
+	return 2
+}
+
 // project returns p's two surviving coordinates after dropping axis.
 func project(p Point, axis int) (u, v *big.Rat) {
 	switch axis {
