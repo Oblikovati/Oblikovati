@@ -19,6 +19,9 @@ func (tr *Triangulation) ForceEdge(ui, vi int) {
 		return
 	}
 	cycle := tr.cavityBoundary(crossed)
+	if indexIn(cycle, ui) < 0 || indexIn(cycle, vi) < 0 {
+		return // degenerate cavity: an endpoint is not on its boundary (defensive)
+	}
 	left, right := splitCycle(cycle, ui, vi)
 	tr.removeTriangles(crossed)
 	tr.retriangulate(left)

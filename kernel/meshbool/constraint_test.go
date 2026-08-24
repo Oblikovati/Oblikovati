@@ -106,6 +106,28 @@ func TestForceEdgeDefensiveContracts(t *testing.T) {
 	}
 }
 
+// TestForceEdgeDegenerateCavityBails pins the crash-safety guard: if the segment
+// crosses a triangle that does not contain its endpoints (a degenerate cavity whose
+// boundary omits ui/vi — which pathological near-tangent input can produce),
+// ForceEdge must bail without panicking, not index a -1 into the cycle.
+func TestForceEdgeDegenerateCavityBails(t *testing.T) {
+	trg := &Triangulation{
+		verts: []Point{
+			pt([3]float64{0, 0, 0}),  // 0 = ui (not in any triangle)
+			pt([3]float64{10, 0, 0}), // 1 = vi (not in any triangle)
+			pt([3]float64{5, 1, 0}),  // 2
+			pt([3]float64{4, -1, 0}), // 3
+			pt([3]float64{6, -1, 0}), // 4
+		},
+		tris: [][3]int{{2, 3, 4}}, // crossed by segment 0->1 but contains neither endpoint
+		axis: 2,
+	}
+	trg.ForceEdge(0, 1) // must not panic
+	if len(trg.tris) != 1 {
+		t.Fatalf("degenerate-cavity ForceEdge changed the mesh (%d tris); it must bail", len(trg.tris))
+	}
+}
+
 // assertMeshValid checks the mesh still tiles the face exactly (area unchanged) and
 // every triangle is non-degenerate and CCW.
 func assertMeshValid(t *testing.T, trg *Triangulation, wantArea *big.Rat) {
