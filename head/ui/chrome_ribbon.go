@@ -24,6 +24,14 @@ func drawRibbon(s *app.Session) string {
 	force := contextualTab(s)
 	var activated string
 	bandOpen := native.BeginRibbonBand("##ribbon", ribbonBandHeight())
+	if bandOpen {
+		// The Application-menu button and the Quick Access Toolbar share the
+		// band's top row with the tab bar — Inventor's pre-ribbon strip
+		// (G design D1). Buttons only set deferred-action flags; DrawChrome
+		// consumes them in its own context.
+		drawQuickAccess(s)
+		native.SameLine()
+	}
 	if bandOpen && native.BeginTabBar("##ribbon-tabs") {
 		for _, tab := range app.BuildRibbon(s).Tabs {
 			if native.BeginTabItemSelected(tab.Name, tab.Name == force) {

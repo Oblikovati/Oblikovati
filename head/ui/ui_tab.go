@@ -44,6 +44,11 @@ func drawUITab(s *app.Session) {
 	if native.Checkbox("Zoom to cursor", &toCursor) {
 		reportPrefError(s.SetZoomToCursor(toCursor))
 	}
+	native.Separator()
+	show := s.ShowMenuBar()
+	if native.Checkbox("Show classic menu bar", &show) {
+		reportPrefError(s.SetShowMenuBar(show))
+	}
 }
 
 // navModeOptions lists the three middle-button gestures, with this binding's
