@@ -55,6 +55,11 @@ func loadCatalogFile(l *Library, name string) error {
 			return fmt.Errorf("material: catalog %q appearance %q: %w", name, ar.ID, err)
 		}
 		l.AddAppearance(a)
+		// M45-F05 PBI-352: every catalog Appearance gets a mechanically migrated
+		// OpenPBRAppearance twin, same id, so Realistic mode is immediately useful
+		// against the built-in catalog. The legacy entry stays (ADR-0022/deprecation
+		// note) — this is additive, not a replacement.
+		l.AddOpenPBRAppearance(NewOpenPBRAppearance(a.ID(), SourceBuiltin, migrateAppearance(a)))
 	}
 	for _, mr := range rd.Materials {
 		l.AddMaterial(recipeToMaterial(mr, SourceBuiltin))
