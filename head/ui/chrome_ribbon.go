@@ -27,7 +27,7 @@ func drawRibbon(s *app.Session) string {
 	if bandOpen && native.BeginTabBar("##ribbon-tabs") {
 		for _, tab := range app.BuildRibbon(s).Tabs {
 			if native.BeginTabItemSelected(tab.Name, tab.Name == force) {
-				if id := drawTabPanels(s, tab.Panels); id != "" {
+				if id := drawTabPanels(s, tab.Name, tab.Panels); id != "" {
 					activated = id
 				}
 				native.EndTabItem()
@@ -55,13 +55,22 @@ const ribbonMaxRows = 3
 const ribbonControlRows = 4
 
 // ribbonGridHeight is the height of the band's button-grid area: the tallest column
-// shape, ribbonMaxRows rows of small icon buttons.
+// shape — ribbonMaxRows rows of small icon buttons, the stateful-control column, or a
+// large icon button under a caption wrapped to its full largeCaptionMaxLines.
 func ribbonGridHeight(m native.StyleMetrics) float32 {
 	buttonRow := float32(scaledIconPx(smallIconPx)) + 2*m.FramePadY
 	buttonGrid := ribbonRowsHeight(ribbonMaxRows, buttonRow, m.ItemSpacingY)
 	controlRow := maxF32(native.FrameHeight(), intensityChartHeight)
 	controlGrid := ribbonRowsHeight(ribbonControlRows, controlRow, m.ItemSpacingY)
-	return maxF32(buttonGrid, controlGrid)
+	return maxF32(maxF32(buttonGrid, controlGrid), largeButtonHeight(m))
+}
+
+// largeButtonHeight is the tallest a large icon button can stand: its glyph frame plus a
+// caption wrapped to the maximum number of lines. The band reserves this so a two-line
+// caption is never clipped by the panel-name strip beneath it.
+func largeButtonHeight(m native.StyleMetrics) float32 {
+	frame := float32(scaledIconPx(largeIconPx)) + 2*m.FramePadY
+	return frame + largeCaptionMaxLines*native.TextLineHeight()
 }
 
 func ribbonRowsHeight(rows int, row, spacing float32) float32 {
@@ -88,10 +97,19 @@ func ribbonBandHeight() float32 {
 // (button columns + name strip) separated by a full-height vertical divider. Every
 // panel pins its name at the same band-bottom Y (labelY), which both matches the
 // reference ribbon's footer strip and makes the dividers span the full band.
-func drawTabPanels(s ribbonControlHost, panels []app.RibbonPanel) string {
+//
+// Panels wider than the band collapse from the right to flyout tiles, so a tab that cannot
+// fit the window never runs commands off the edge (see ribbon_collapse.go). The decision uses
+// last frame's measured widths; this frame re-measures every panel it draws expanded.
+func drawTabPanels(s ribbonControlHost, tabName string, panels []app.RibbonPanel) string {
 	m := native.Metrics()
+	gridH := ribbonGridHeight(m)
 	_, gridTop := native.GetCursorScreenPos()
-	labelY := gridTop + ribbonGridHeight(m) + m.ItemSpacingY
+	labelY := gridTop + gridH + m.ItemSpacingY
+	availW, _ := native.ContentRegionAvail()
+	expanded := panelsThatFit(cachedPanelWidths(tabName, panels), ribbonSeparatorWidth(m),
+		widestCollapsedPanel(panels, m), availW-native.ScrollX())
+	ribbonCollapsedPanels = len(panels) - expanded
 	var activated string
 	for i, panel := range panels {
 		if i > 0 {
@@ -99,11 +117,29 @@ func drawTabPanels(s ribbonControlHost, panels []app.RibbonPanel) string {
 			native.SeparatorVertical()
 			native.SameLine()
 		}
+		if i >= expanded {
+			if id := drawCollapsedPanel(s, panel, tabName, labelY, gridH); id != "" {
+				activated = id
+			}
+			continue
+		}
 		if id := drawPanel(s, panel, labelY); id != "" {
 			activated = id
 		}
+		measurePanelWidth(tabName, panel.Name)
 	}
 	return activated
+}
+
+// measurePanelWidth records the width of the panel just drawn expanded — drawPanel leaves its
+// whole layout group as the last item, so its rect is the panel's laid-out width — for the
+// next frame's fit decision.
+func measurePanelWidth(tabName, panelName string) {
+	x0, _ := native.ItemRectMin()
+	x1, _ := native.ItemRectMax()
+	if w := x1 - x0; w > 0 {
+		ribbonPanelWidth[ribbonPanelWidthKey(tabName, panelName)] = w
+	}
 }
 
 // contextualTab returns the ribbon tab to force-select on the frame the ribbon environment
@@ -171,6 +207,19 @@ func drawPanel(s ribbonControlHost, panel app.RibbonPanel, labelY float32) strin
 	return activated
 }
 
+// drawPanelFlyoutBody draws a collapsed panel's contents inside its flyout popup: the same
+// controls the expanded panel shows, minus the band-bottom name strip — the flyout is its own
+// window, not part of the band, and the tile it drops from already carries the name.
+func drawPanelFlyoutBody(s ribbonControlHost, panel app.RibbonPanel) string {
+	if panel.Name == app.PanelPointCloud {
+		return drawPointCloudGrid(s, panel)
+	}
+	if panel.Selector != nil {
+		return drawSelectorCombo(panel)
+	}
+	return drawPanelColumns(s, packPanelColumns(panel.Buttons))
+}
+
 const (
 	pointCloudSliderWidth = 82
 	pointCloudComboWidth  = 124
@@ -207,15 +256,25 @@ var _ ribbonControlHost = (*app.Session)(nil)
 // beneath, but only when the target cloud is in Intensity mode (the app leaves IntensityRamp nil
 // otherwise). Returns the id of a clicked tool or a chosen display mode, or "".
 func drawPointCloudPanel(s ribbonControlHost, panel app.RibbonPanel, labelY float32) string {
+	native.BeginGroup()
+	activated := drawPointCloudGrid(s, panel)
+	drawPanelName(panel.Name, labelY)
+	native.EndGroup()
+	return activated
+}
+
+// drawPointCloudGrid draws the Point Cloud panel's control block on its own — the three tool
+// columns plus the intensity ramp — without the band's name strip, so both the in-band panel
+// and its collapsed flyout render the identical grid.
+func drawPointCloudGrid(s ribbonControlHost, panel app.RibbonPanel) string {
 	var activated string
 	pick := func(id string) {
 		if got := drawPointCloudButton(s, panel, id); got != "" {
 			activated = got
 		}
 	}
-	native.BeginGroup()
 
-	// The columns and ramp sit in one inner group so drawPanelName measures the full grid width
+	// The columns and ramp sit in one group so drawPanelName measures the full grid width
 	// (ItemRectMin/Max span the whole block) and centers the panel name under it — without this
 	// the last item measured would be column 3 alone and the label would sit off to the right.
 	native.BeginGroup()
@@ -245,9 +304,6 @@ func drawPointCloudPanel(s ribbonControlHost, panel app.RibbonPanel, labelY floa
 		drawIntensityRampControls(s, panel.IntensityRamp)
 	}
 	native.EndGroup() // close the measurable content block
-
-	drawPanelName(panel.Name, labelY)
-	native.EndGroup()
 	return activated
 }
 
@@ -350,13 +406,22 @@ const selectorWidth = 230
 // caller runs it (which sets the new selection); the box reflects the session state on
 // the next frame.
 func drawSelectorPanel(panel app.RibbonPanel, labelY float32) string {
+	native.BeginGroup()
+	activated := drawSelectorCombo(panel)
+	drawPanelName(panel.Name, labelY)
+	native.EndGroup()
+	return activated
+}
+
+// drawSelectorCombo draws a selector panel's drop-down on its own, without the band's name
+// strip, so the in-band panel and its collapsed flyout share one control.
+func drawSelectorCombo(panel app.RibbonPanel) string {
 	sel := panel.Selector
 	preview := ""
 	if sel.SelectedIndex >= 0 && sel.SelectedIndex < len(sel.Options) {
 		preview = sel.Options[sel.SelectedIndex].Label
 	}
 	var activated string
-	native.BeginGroup()
 	native.SetNextItemWidth(selectorWidth)
 	if native.BeginCombo("##"+panel.Name, preview) {
 		for i, opt := range sel.Options {
@@ -369,8 +434,6 @@ func drawSelectorPanel(panel app.RibbonPanel, labelY float32) string {
 		}
 		native.EndCombo()
 	}
-	drawPanelName(panel.Name, labelY)
-	native.EndGroup()
 	return activated
 }
 
@@ -526,19 +589,39 @@ func drawPopupMenuButton(btn app.RibbonButton) string {
 	return chosen
 }
 
-// variantArrowWidth is the pixel width of a split button's dropdown arrow box — just wide
-// enough for the combo's caret, since its preview text is empty (the head shows the label).
+// variantArrowWidth is the base pixel width of a split button's dropdown arrow tile, before
+// the icon-scale preference is applied.
 const variantArrowWidth = 18
 
-// drawVariantDropdown renders a split button's dropdown next to its head: a narrow combo
-// whose entries are the variant tools. Choosing one returns its command id so the caller
-// runs it; a disabled variant is shown greyed and is not selectable. Returns "" if nothing
-// was chosen this frame.
+// drawVariantDropdown renders a split button's dropdown beside its head: a narrow tile
+// carrying a drop-down caret, standing the same height as the head's glyph frame so the two
+// read as one control, and opening a menu of the variant tools. Choosing one returns its
+// command id so the caller runs it; a disabled variant is shown greyed and is not selectable.
+// Returns "" if nothing was chosen this frame.
+//
+// This was a zero-preview BeginCombo of a fixed 18px, which Dear ImGui lays out as a text box
+// plus a caret button of FrameHeight — at any font where FrameHeight exceeds 18 the caret is
+// clipped away entirely and the control renders as a blank sliver. On this machine's 4K chrome
+// that hid the drop-down on every split button in the ribbon, so Work Plane's eleven plane
+// constructors, Work Axis's six and Work Point's seven had no visible affordance at all. Drawing
+// the caret ourselves cannot be clipped by the font metrics, and reuses the collapsed panel's
+// caret so both drop-downs in the band look the same.
 func drawVariantDropdown(btn app.RibbonButton) string {
+	m := native.Metrics()
+	w := float32(scaledIconPx(variantArrowWidth))
+	h := variantArrowHeight(btn.Command.ButtonStyle(), m)
+	id := "##" + btn.Command.ID() + "-variants"
+
 	native.SameLine()
-	native.SetNextItemWidth(variantArrowWidth)
+	x, y := native.GetCursorScreenPos()
+	if native.ButtonSized(id, w, h) {
+		native.OpenPopup(id)
+	}
+	native.SetItemTooltip(btn.Command.DisplayName() + " — more tools")
+	drawRibbonCaret(x+w/2, y+h/2)
+
 	var chosen string
-	if native.BeginCombo("##"+btn.Command.ID()+"-variants", "") {
+	if native.BeginPopup(id) {
 		for _, v := range btn.Variants {
 			native.BeginDisabled(!v.Enabled)
 			if native.Selectable(v.Label, false) {
@@ -549,9 +632,20 @@ func drawVariantDropdown(btn app.RibbonButton) string {
 				native.SetItemTooltip(v.Tooltip)
 			}
 		}
-		native.EndCombo()
+		native.EndPopup()
 	}
 	return chosen
+}
+
+// variantArrowHeight is how tall a split button's caret tile stands: exactly its head's glyph
+// frame, so the caret sits beside the icon rather than overhanging the caption beneath it. A
+// text-only head has no glyph frame, so the arrow takes the standard control height.
+func variantArrowHeight(style app.ButtonStyle, m native.StyleMetrics) float32 {
+	px, ok := iconSizeFor(style)
+	if !ok {
+		return native.FrameHeight()
+	}
+	return float32(px) + 2*m.FramePadY
 }
 
 // drawButtonControl draws the command's clickable control and its tooltip, returning
@@ -623,16 +717,21 @@ func drawLabeledIconButton(btn app.RibbonButton, tex uint64, px float32) bool {
 	return clicked
 }
 
-// drawLargeIconButton renders a large button as a panel heading: the icon centered over
-// its caption, the cell as wide as the wider of the two — so "Start 2D Sketch" doesn't
-// hang off a 40px icon.
+// drawLargeIconButton renders a large button as a panel heading: the icon centred over its
+// caption, the cell as wide as the wider of the two. A caption too wide for the glyph frame
+// wraps onto a second line at a word boundary rather than stretching the cell — a multi-word
+// label like "New 2D Sketch" or "Replace Face" would otherwise make its tile several times the
+// width of its icon, which is most of why a maximized 4K window's Create & Modify tab could
+// not fit. See ribbon_caption.go for why this is ours rather than a documented Inventor rule.
 func drawLargeIconButton(btn app.RibbonButton, tex uint64, px float32) bool {
 	m := native.Metrics()
 	frameW := px + 2*m.FramePadX // ImageButton draws its frame padding around the glyph
-	textW := native.CalcTextWidth(btn.Command.DisplayName())
+	lines := wrapCaption(btn.Command.DisplayName(), frameW, native.CalcTextWidth)
 	cellW := frameW
-	if textW > cellW {
-		cellW = textW
+	for _, line := range lines {
+		if w := native.CalcTextWidth(line); w > cellW {
+			cellW = w
+		}
 	}
 	native.BeginGroup()
 	x, y := native.GetCursorScreenPos()
@@ -640,8 +739,11 @@ func drawLargeIconButton(btn app.RibbonButton, tex uint64, px float32) bool {
 	clicked := native.ImageButton(btn.Command.ID(), tex, px, px, identityTint)
 	setCommandTooltip(btn.Command)
 	_, captionY := native.GetCursorScreenPos()
-	native.SetCursorScreenPos(x+(cellW-textW)/2, captionY)
-	native.Text(btn.Command.DisplayName())
+	for i, line := range lines {
+		lineW := native.CalcTextWidth(line)
+		native.SetCursorScreenPos(x+(cellW-lineW)/2, captionY+float32(i)*native.TextLineHeight())
+		native.Text(line)
+	}
 	native.EndGroup()
 	return clicked
 }
