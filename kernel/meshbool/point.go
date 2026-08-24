@@ -52,6 +52,9 @@ func (p Point) Equal(q Point) bool {
 func (p Point) float64Exact() ([3]float64, bool) {
 	var f [3]float64
 	for i, c := range [3]*big.Rat{p.X, p.Y, p.Z} {
+		if !denomIsPowerOfTwo(c) {
+			return f, false // cheap reject: no binary64 has a non-power-of-two denominator
+		}
 		v, _ := c.Float64()
 		r := new(big.Rat).SetFloat64(v) // nil on a non-finite round-trip
 		if r == nil || r.Cmp(c) != 0 {
@@ -60,6 +63,27 @@ func (p Point) float64Exact() ([3]float64, bool) {
 		f[i] = v
 	}
 	return f, true
+}
+
+// denomsArePowersOfTwo reports whether all three coordinate denominators are powers
+// of two — the cheap, allocation-free necessary condition for the point to be exact
+// binary64. floatQuad screens all four vertices with this before any SetFloat64
+// round-trip, so a quad with even one constructed vertex (the ray-cast tests a
+// constructed centroid against exact triangle vertices) is rejected without paying
+// the round-trip on the exact vertices.
+func (p Point) denomsArePowersOfTwo() bool {
+	return denomIsPowerOfTwo(p.X) && denomIsPowerOfTwo(p.Y) && denomIsPowerOfTwo(p.Z)
+}
+
+// denomIsPowerOfTwo reports whether the lowest-terms denominator of c is a power of
+// two. It is a necessary condition for c to be an exact binary64 and a cheap,
+// allocation-free reject for the constructed intersection vertices — whose
+// denominators are generally not powers of two — so float64Exact skips the SetFloat64
+// round-trip on that common failing case. A power of two has exactly one set bit, so
+// its bit length is one past its trailing-zero count.
+func denomIsPowerOfTwo(c *big.Rat) bool {
+	d := c.Denom()
+	return d.BitLen()-1 == int(d.TrailingZeroBits())
 }
 
 // sub returns the exact vector p-q as three rationals.

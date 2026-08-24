@@ -52,6 +52,25 @@ func TestFloat64Exact(t *testing.T) {
 	if _, ok := third.float64Exact(); ok {
 		t.Fatal("1/3 must not be float-exact")
 	}
+	// Power-of-two denominator (passes the cheap reject) but a numerator too wide for
+	// the 53-bit mantissa, so the round-trip check must still fail it.
+	wide := new(big.Rat).SetFrac(new(big.Int).Add(new(big.Int).Lsh(big.NewInt(1), 60), big.NewInt(1)), big.NewInt(2))
+	if _, ok := (Point{wide, big.NewRat(0, 1), big.NewRat(0, 1)}).float64Exact(); ok {
+		t.Fatal("(2^60+1)/2 is not exactly representable and must be rejected")
+	}
+}
+
+// TestOrient3DWidePowerOfTwoDenom drives a quad through floatQuad's second pass: a
+// vertex whose denominator is a power of two (passing the cheap screen) but whose
+// numerator is too wide for the mantissa, so the round-trip disqualifies it and the
+// quad resolves through the interval/exact path. The result must match exact.
+func TestOrient3DWidePowerOfTwoDenom(t *testing.T) {
+	wide := new(big.Rat).SetFrac(new(big.Int).Add(new(big.Int).Lsh(big.NewInt(1), 60), big.NewInt(1)), big.NewInt(2))
+	a, b, c := FromCoords(0, 0, 0), FromCoords(1, 0, 0), FromCoords(0, 1, 0)
+	d := Point{wide, big.NewRat(1, 1), big.NewRat(1, 1)}
+	if got, want := Orient3D(a, b, c, d), orient3DVal(a, b, c, d).Sign(); got != want {
+		t.Fatalf("wide-denom quad: Orient3D=%d, exact=%d", got, want)
+	}
 }
 
 func randCoord(rng *rand.Rand) float64 { return (rng.Float64()*2 - 1) * 10 }

@@ -41,13 +41,22 @@ func Orient3D(a, b, c, d Point) int {
 }
 
 // floatQuad returns the four points as exact float64 triples, or ok=false as soon
-// as any coordinate is a constructed rational that is not a binary64.
+// as any coordinate is a constructed rational that is not a binary64. A cheap
+// power-of-two screen over all four vertices runs first, so a quad that includes even
+// one constructed vertex is rejected before any expensive SetFloat64 round-trip on
+// the exact vertices.
 func floatQuad(a, b, c, d Point) ([4][3]float64, bool) {
+	pts := [4]Point{a, b, c, d}
+	for _, p := range pts {
+		if !p.denomsArePowersOfTwo() {
+			return [4][3]float64{}, false
+		}
+	}
 	var f [4][3]float64
-	for i, p := range [4]Point{a, b, c, d} {
+	for i, p := range pts {
 		v, ok := p.float64Exact()
 		if !ok {
-			return f, false
+			return [4][3]float64{}, false
 		}
 		f[i] = v
 	}
