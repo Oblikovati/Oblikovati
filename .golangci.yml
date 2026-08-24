@@ -92,12 +92,14 @@ linters:
       # material.Appearance / contract.Appearance are deliberately deprecated-but-kept
       # (M45, ADR-0053): the legacy metallic-roughness chain still works unmodified
       # alongside the new OpenPBRAppearance, so its own implementation and the code that
-      # bridges it into the renderer (app/materials.go's appearanceSurface et al.) are
-      # expected, permanent references to the deprecated type, not a to-be-fixed warning.
+      # bridges it into the renderer (app/materials.go's appearanceSurface et al.) and
+      # the /api wire router (addin/router/material.go, still serving the legacy
+      # appearance.* methods add-ins depend on) are expected, permanent references to
+      # the deprecated type, not a to-be-fixed warning.
       - linters:
           - staticcheck
         text: "SA1019:.*Appearance is deprecated"
-        path: (app/materials\.go|model/material/appearance\.go)
+        path: (app/materials\.go|model/material/appearance\.go|addin/router/material\.go)
     paths:
       - third_party$
       - builtin$

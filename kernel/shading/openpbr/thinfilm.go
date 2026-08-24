@@ -142,25 +142,15 @@ func ThinFilmReflectanceDielectric(cosThetaI, etaExterior, etaFilm, etaBase, thi
 	thicknessNM := thicknessMicrons * 1000
 	presence := thinFilmPresenceMultiplier(thicknessNM)
 
-	r12s, r12p, t12s, t12p, cosThetaTFilm := fresnelAmplitudeDielectric(cosThetaI, etaExterior, etaFilm)
-	if cosThetaTFilm <= 0 {
-		// Total internal reflection on the outside of the film.
-		return Gray(presence)
+	amp, ok := thinFilmAiryAmplitudes(cosThetaI, etaExterior, etaFilm, etaBase, thicknessNM)
+	if !ok {
+		return Gray(presence) // total internal reflection on the outside of the film
 	}
-	r21s, r21p := -r12s, -r12p
-	safeCosI := math.Max(cosThetaI, minDenom)
-	t21Scale := (etaFilm * cosThetaTFilm) / (etaExterior * safeCosI)
-	t21s, t21p := t12s*t21Scale, t12p*t21Scale
-
-	opd := 2 * etaFilm * thicknessNM * cosThetaTFilm
-	deltaPhi := func(lambdaNM float64) float64 { return 2 * math.Pi * opd / lambdaNM }
-
-	r23s, r23p := fresnelAmplitudeComplex(cosThetaTFilm, etaFilm, complex(etaBase, 0))
 
 	reflectance := func(lambdaNM float64) float64 {
-		expI := cmplx.Exp(complex(0, deltaPhi(lambdaNM)))
-		rs := airyReflectance(r12s, t12s, r21s, t21s, r23s, expI)
-		rp := airyReflectance(r12p, t12p, r21p, t21p, r23p, expI)
+		expI := cmplx.Exp(complex(0, 2*math.Pi*amp.opd/lambdaNM))
+		rs := airyReflectance(amp.r12s, amp.t12s, amp.r21s, amp.t21s, amp.r23s, expI)
+		rp := airyReflectance(amp.r12p, amp.t12p, amp.r21p, amp.t21p, amp.r23p, expI)
 		return 0.5 * (rs + rp)
 	}
 
@@ -169,6 +159,38 @@ func ThinFilmReflectanceDielectric(cosThetaI, etaExterior, etaFilm, etaBase, thi
 		G: presence * reflectance(rgbWavelengthsNM.G),
 		B: presence * reflectance(rgbWavelengthsNM.B),
 	}
+}
+
+// thinFilmAmplitudes holds the per-interface Fresnel amplitude/phase state
+// ThinFilmReflectanceDielectric's Airy sum needs at every wavelength, computed once
+// (wavelength-independent except opd/lambda itself) rather than per-channel.
+type thinFilmAmplitudes struct {
+	r12s, r12p, t12s, t12p float64
+	r21s, r21p, t21s, t21p float64
+	r23s, r23p             complex128
+	opd                    float64 // optical path difference, nm
+}
+
+// thinFilmAiryAmplitudes computes thinFilmAmplitudes, split out of
+// ThinFilmReflectanceDielectric to keep it within CLAUDE.md's 20-statement function
+// limit. ok is false on total internal reflection at the outer (exterior→film)
+// interface, the one case with no Airy sum to evaluate.
+func thinFilmAiryAmplitudes(cosThetaI, etaExterior, etaFilm, etaBase, thicknessNM float64) (thinFilmAmplitudes, bool) {
+	r12s, r12p, t12s, t12p, cosThetaTFilm := fresnelAmplitudeDielectric(cosThetaI, etaExterior, etaFilm)
+	if cosThetaTFilm <= 0 {
+		return thinFilmAmplitudes{}, false
+	}
+	r21s, r21p := -r12s, -r12p
+	safeCosI := math.Max(cosThetaI, minDenom)
+	t21Scale := (etaFilm * cosThetaTFilm) / (etaExterior * safeCosI)
+	t21s, t21p := t12s*t21Scale, t12p*t21Scale
+	r23s, r23p := fresnelAmplitudeComplex(cosThetaTFilm, etaFilm, complex(etaBase, 0))
+	return thinFilmAmplitudes{
+		r12s: r12s, r12p: r12p, t12s: t12s, t12p: t12p,
+		r21s: r21s, r21p: r21p, t21s: t21s, t21p: t21p,
+		r23s: r23s, r23p: r23p,
+		opd: 2 * etaFilm * thicknessNM * cosThetaTFilm,
+	}, true
 }
 
 // FresnelWithThinFilm blends the thin-film-modulated Fresnel reflectance over the plain
