@@ -43,51 +43,6 @@ func TestEffectiveAppearancePrecedence(t *testing.T) {
 	}
 }
 
-// TestEffectiveOpenPBRAppearancePrecedence mirrors TestEffectiveAppearancePrecedence for
-// the separate OpenPBRAppearance chain (M45-F05 PBI-350/#2150): face → body → part, and
-// ok=false (not a default fallback) when nothing in this chain is assigned, so a caller
-// can fall back to the legacy Appearance chain instead.
-func TestEffectiveOpenPBRAppearancePrecedence(t *testing.T) {
-	lib := NewLibrary()
-	partAppr, err := lib.DuplicateOpenPBRAppearance(DefaultOpenPBRAppearanceID, "part-red", SourceProject)
-	if err != nil {
-		t.Fatalf("duplicate part appearance: %v", err)
-	}
-	bodyAppr, err := lib.DuplicateOpenPBRAppearance(DefaultOpenPBRAppearanceID, "body-green", SourceProject)
-	if err != nil {
-		t.Fatalf("duplicate body appearance: %v", err)
-	}
-	faceAppr, err := lib.DuplicateOpenPBRAppearance(DefaultOpenPBRAppearanceID, "face-blue", SourceProject)
-	if err != nil {
-		t.Fatalf("duplicate face appearance: %v", err)
-	}
-
-	st := NewAssignmentStore()
-	const body, face = "bodykey", "facekey"
-
-	if _, ok := st.EffectiveOpenPBRAppearance(lib, body, ""); ok {
-		t.Error("unassigned body resolved an OpenPBR appearance, want ok=false")
-	}
-
-	st.SetPartOpenPBRAppearance(partAppr.ID())
-	if got, ok := st.EffectiveOpenPBRAppearance(lib, body, ""); !ok || got.ID() != partAppr.ID() {
-		t.Errorf("with part assignment, = %v/%v, want %q/true", got, ok, partAppr.ID())
-	}
-
-	st.SetBodyOpenPBRAppearance(body, bodyAppr.ID())
-	if got, ok := st.EffectiveOpenPBRAppearance(lib, body, ""); !ok || got.ID() != bodyAppr.ID() {
-		t.Errorf("body override = %v/%v, want %q/true", got, ok, bodyAppr.ID())
-	}
-
-	st.SetFaceOpenPBRAppearance(face, faceAppr.ID())
-	if got, ok := st.EffectiveOpenPBRAppearance(lib, body, face); !ok || got.ID() != faceAppr.ID() {
-		t.Errorf("face override = %v/%v, want %q/true", got, ok, faceAppr.ID())
-	}
-	if got, ok := st.EffectiveOpenPBRAppearance(lib, body, "otherface"); !ok || got.ID() != bodyAppr.ID() {
-		t.Errorf("other face = %v/%v, want %q/true (body override)", got, ok, bodyAppr.ID())
-	}
-}
-
 func TestEffectiveMaterialOverride(t *testing.T) {
 	lib := NewLibrary()
 	st := NewAssignmentStore()
