@@ -589,6 +589,25 @@ void obk_head_gpu_info(void* h, char* nameOut, int nameCap, unsigned int* apiVer
     if (nameCap > 0) nameOut[i] = '\0';
 }
 
+// obk_head_ray_tracing_support reports whether the selected physical device advertises
+// the hardware ray-tracing device extensions (M45-F01 PBI-332, ADR-0053) — the same
+// device_has_ext presence check used for VK_KHR_portability_subset above, not a full
+// VkPhysicalDeviceFeatures2 feature-bit query. That deeper query belongs to PBI-333,
+// which actually enables these extensions on device creation; this one only answers "is
+// hardware RT worth offering as a checkbox" (renderer.SupportsHardwareRayTracing decides
+// from these three bits). Each out-param is optional (pass null to skip) and set to 0
+// when there is no selected device.
+void obk_head_ray_tracing_support(void* h, int* hasAccelStruct, int* hasRTPipeline, int* hasRayQuery) {
+    HeadContext* c = (HeadContext*)h;
+    if (hasAccelStruct) *hasAccelStruct = 0;
+    if (hasRTPipeline) *hasRTPipeline = 0;
+    if (hasRayQuery) *hasRayQuery = 0;
+    if (!c || c->physical == VK_NULL_HANDLE) return;
+    if (hasAccelStruct) *hasAccelStruct = device_has_ext(c->physical, "VK_KHR_acceleration_structure") ? 1 : 0;
+    if (hasRTPipeline) *hasRTPipeline = device_has_ext(c->physical, "VK_KHR_ray_tracing_pipeline") ? 1 : 0;
+    if (hasRayQuery) *hasRayQuery = device_has_ext(c->physical, "VK_KHR_ray_query") ? 1 : 0;
+}
+
 void obk_head_destroy(void* h) {
     HeadContext* c = (HeadContext*)h;
     if (!c) return;

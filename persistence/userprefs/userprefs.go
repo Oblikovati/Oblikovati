@@ -29,6 +29,12 @@ type Prefs struct {
 	LockToSelection bool `yaml:"lockToSelection,omitempty"`
 	// NavBarHidden hides the floating Navigation Bar when true (the View-tab toggle; default shown).
 	NavBarHidden bool `yaml:"navBarHidden,omitempty"`
+	// HardwareRayTracing overrides Realistic mode's hardware-RT checkbox (M45-F01 PBI-332,
+	// ADR-0053): nil (the zero value, so a fresh install carries no override) means "on iff
+	// the device supports it" — renderer.ResolveHardwareRayTracingEnabled applies that
+	// default. A non-nil value is the user's explicit choice, which sticks even if the
+	// device's reported support later changes (a driver update, a different GPU).
+	HardwareRayTracing *bool `yaml:"hardwareRayTracing,omitempty"`
 }
 
 // Store loads and saves the global preferences.

@@ -28,6 +28,7 @@ void  obk_head_destroy(void* h);
 void  obk_head_get_window_state(void* h, int* x, int* y, int* w, int* hh, int* maximized);
 void  obk_head_apply_window_state(void* h, int x, int y, int maximized);
 void  obk_head_gpu_info(void* h, char* nameOut, int nameCap, unsigned int* apiVersionOut);
+void  obk_head_ray_tracing_support(void* h, int* hasAccelStruct, int* hasRTPipeline, int* hasRayQuery);
 void  obk_head_set_icon(void* h, int count, const int* sizes, const unsigned char* const* pixels);
 */
 import "C"
@@ -135,6 +136,19 @@ func (w *Window) GPUInfo() (name, vulkanVersion string) {
 	var apiVer C.uint
 	C.obk_head_gpu_info(w.handle, &buf[0], C.int(len(buf)), &apiVer)
 	return C.GoString(&buf[0]), formatVulkanVersion(uint32(apiVer))
+}
+
+// RayTracingExtensionSupport reports whether the selected physical device advertises the
+// three hardware ray-tracing device extensions (M45-F01 PBI-332, ADR-0053): the
+// acceleration-structure and ray-tracing-pipeline extensions the hardware Intersector
+// backend needs (PBI-333), and ray query as an alternative to the pipeline extension.
+// This is presence-only (matches the existing GPU capability queries here), not a full
+// feature-bit query — renderer.SupportsHardwareRayTracing turns it into the checkbox
+// default. All false when no device is selected.
+func (w *Window) RayTracingExtensionSupport() (accelStruct, rtPipeline, rayQuery bool) {
+	var a, p, q C.int
+	C.obk_head_ray_tracing_support(w.handle, &a, &p, &q)
+	return a != 0, p != 0, q != 0
 }
 
 // formatVulkanVersion renders a packed VkPhysicalDeviceProperties.apiVersion as
