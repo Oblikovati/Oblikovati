@@ -101,20 +101,30 @@ func (t *SketchFilletTool) Commit(s *Session) error {
 	return err
 }
 
-// SketchOffsetTool offsets a single picked curve by a distance.
+// SketchOffsetTool offsets a picked curve — with Loop Select (Inventor's default) the whole
+// connected loop, otherwise the single curve — by a distance, keeping the geometry analytic (lines,
+// arcs and circles stay themselves). A positive distance offsets inward (shrinks a closed loop).
 type SketchOffsetTool struct {
 	dialogTool
 	pickCollector
-	distance math.Scalar
+	distance   math.Scalar
+	loopSelect bool // Inventor default: offset the whole connected loop, not just the picked curve
 }
 
-// NewSketchOffsetTool makes an offset tool with the given default distance.
+// NewSketchOffsetTool makes an offset tool with the given default distance and Loop Select on, as
+// Inventor defaults.
 func NewSketchOffsetTool(distance float64) *SketchOffsetTool {
-	return &SketchOffsetTool{pickCollector: pickCollector{want: 1}, distance: math.Scalar(distance)}
+	return &SketchOffsetTool{pickCollector: pickCollector{want: 1}, distance: math.Scalar(distance), loopSelect: true}
 }
 
 func (t *SketchOffsetTool) Name() string                  { return "Offset" }
 func (t *SketchOffsetTool) Pick(_ *Session, s Selectable) { t.take(s) }
+
+// LoopSelect reports whether the whole connected loop is offset (Inventor's default); the right-click
+// menu toggles it. With it off, only the picked curve is offset.
+func (t *SketchOffsetTool) LoopSelect() bool      { return t.loopSelect }
+func (t *SketchOffsetTool) SetLoopSelect(on bool) { t.loopSelect = on }
+func (t *SketchOffsetTool) ToggleLoopSelect()     { t.loopSelect = !t.loopSelect }
 
 // Accepts highlights the curves OffsetEntity handles: line, circle, arc, and a projected reference
 // curve (a projected face perimeter or edge, offset as a polyline — #2158 follow-up). Uses the
@@ -135,14 +145,40 @@ func (t *SketchOffsetTool) Params() ToolParams {
 	return ToolParams{Floats: []FloatParam{scalarParam("Distance", &t.distance)}}
 }
 
-// Commit offsets the picked curve.
+// Commit offsets the picked geometry: with Loop Select the whole connected loop (analytic — arcs
+// stay arcs), otherwise the single curve. A positive distance offsets inward regardless of the
+// loop's traversal winding, so the result is predictable.
 func (t *SketchOffsetTool) Commit(s *Session) error {
 	sk := s.ActiveSketch()
 	if sk == nil {
 		return errors.New("offset: no active sketch")
 	}
-	_, err := sk.OffsetEntity(t.picks[0], t.distance)
+	if !t.loopSelect {
+		_, err := sk.OffsetEntity(t.picks[0], t.distance)
+		return err
+	}
+	path, ok := sk.ConnectedChainFrom(t.picks[0])
+	if !ok {
+		_, err := sk.OffsetEntity(t.picks[0], t.distance)
+		return err
+	}
+	d := float64(t.distance)
+	if signedLoopArea(path.Points()) < 0 {
+		d = -d // a CW loop offsets inward with a negative d; flip so positive distance always shrinks
+	}
+	_, err := sk.OffsetConnectedLoop(path, d)
 	return err
+}
+
+// signedLoopArea is twice the signed area of the closed polygon (CCW ⇒ positive), used only for its
+// SIGN to make a positive offset distance shrink a loop whatever its traversal direction.
+func signedLoopArea(pts []math.Point2) float64 {
+	a := 0.0
+	for i := 0; i < len(pts); i++ {
+		p, q := pts[i], pts[(i+1)%len(pts)]
+		a += float64(p.X*q.Y - q.X*p.Y)
+	}
+	return a
 }
 
 // SketchMirrorTool mirrors the first picked entity across the second picked line.
