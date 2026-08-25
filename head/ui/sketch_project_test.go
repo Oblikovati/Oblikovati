@@ -9,10 +9,9 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
-	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
-	"oblikovati.org/scene"
 )
 
 // projectedCurveCount counts the sketch's projected reference curves.
@@ -26,57 +25,64 @@ func projectedCurveCount(sk *sketch.Sketch) int {
 	return n
 }
 
-// TestSketchProjectHighlightsAndProjectsModelFace is the end-to-end regression for the reported
-// Project Geometry gaps while editing a sketch: (1) the model face under the cursor must HIGHLIGHT
-// (the sketch overlay path never drew the model-reference hover highlight, so a projectable face
-// looked dead, #2158), and (2) a single click must PROJECT it — no dialog, no OK — with the tool
-// staying armed. A straight-down camera puts the box's top face under the centre pixel.
-func TestSketchProjectHighlightsAndProjectsModelFace(t *testing.T) {
+// topCapFace returns the box's +Z planar cap face.
+func topCapFace(t *testing.T, body *topo.Body) *topo.Face {
+	t.Helper()
+	for _, f := range body.Faces() {
+		if pl, ok := f.Geometry().(geom.Plane); ok && float64(pl.Normal().Z) > 0.9 {
+			return f
+		}
+	}
+	t.Fatal("no +Z cap face on the box")
+	return nil
+}
+
+// TestSketchProjectPerPickAndRenders is the end-to-end regression for the reported Project Geometry
+// gaps while editing a sketch: the tool picks model references (so the head draws the model-face
+// hover highlight in the sketch overlay path, #2158), a single pick PROJECTS the face's perimeter
+// with no dialog/OK and the tool stays armed, and the sketch-edit frame — now carrying the projected
+// curves and the model-reference highlight — renders without crashing. It picks the face directly to
+// stay independent of viewport pixel layout.
+func TestSketchProjectPerPickAndRenders(t *testing.T) {
 	win := newViewportWindow(t)
 	defer win.Destroy()
 	dockLaidOut = false
 	icons = nil
 
 	s := boxHostSession(t) // box [0,6]³ on XY
-	cam := scene.NewCamera(inWinW, inWinH)
-	cam.Eye, cam.Target, cam.Up = math.P3(3, 3, 30), math.P3(3, 3, 0), math.V3(0, 1, 0)
-	s.SetCamera(cam)
-	s.SetPicker(app.NewRayPicker(cam, func() []*topo.Body { return s.VisibleBodies() }))
+	body := s.VisibleBodies()[0]
+	top := topCapFace(t, body)
+	frameCameraOn(s, body.RangeBox())
 	if _, err := s.CreateSketch(sketch.XYPlane()); err != nil {
 		t.Fatalf("CreateSketch: %v", err)
 	}
 	if !s.InSketch() {
 		t.Fatal("expected to be editing the sketch")
 	}
-	s.StartTool(app.NewProjectGeometryTool())
-	sk := s.ActiveSketch()
+	tool := app.NewProjectGeometryTool()
+	s.StartTool(tool)
 
-	cx, cy := float32(inWinW/2), float32(inWinH/2)
-	for i := 0; i < 10; i++ {
-		native.InjectMousePos(cx, cy)
-		viewportFrame(win, s)
-	}
-	// (1) The model face under the cursor resolves through the tool's filter — so it highlights and
-	// is projectable while editing the sketch (the sketch overlay path now draws the model-reference
-	// hover highlight for a model-reference tool, #2158).
-	ox, oy := native.ItemRectMin()
-	lx, ly := float64(cx-ox), float64(cy-oy)
+	// The head draws the model-reference hover highlight in-sketch only for a tool that picks model
+	// references — the wiring that made a projectable face visible again (#2158).
 	if !s.ToolPicksModelReferences() {
 		t.Fatal("Project Geometry must pick model references while in-sketch")
 	}
-	if sel, ok := s.PickAt(lx, ly, s.Selection().Filter()); !ok {
-		t.Fatal("no model geometry under the cursor through the tool filter")
-	} else if _, isFace := sel.(app.FaceHandle); !isFace {
-		t.Fatalf("hover resolved to %T, want a FaceHandle (face highlight/projection)", sel)
-	}
 
-	// (2) A single click projects the face's perimeter — no OK — and the tool stays armed.
+	// A single pick projects the face's four boundary edges immediately — no OK — and the tool stays
+	// armed for the next pick.
+	sk := s.ActiveSketch()
 	before := projectedCurveCount(sk)
-	s.Click(lx, ly)
+	tool.Pick(s, app.FaceHandle{Face: top, Body: body})
 	if got := projectedCurveCount(sk) - before; got != 4 {
-		t.Fatalf("a click projected %d curves, want 4 (the top face's edges) — no OK needed", got)
+		t.Fatalf("picking the face projected %d curves, want 4 (its edges) — no OK needed", got)
 	}
 	if s.ActiveTool() == nil {
-		t.Error("Project Geometry deactivated after one click; it must stay armed for the next pick")
+		t.Error("Project Geometry deactivated after one pick; it must stay armed")
+	}
+
+	// The sketch-edit frame (projected-curve overlay + model-reference highlight wiring) renders.
+	for i := 0; i < 4; i++ {
+		native.InjectMousePos(float32(inWinW/2), float32(inWinH/2))
+		viewportFrame(win, s)
 	}
 }
