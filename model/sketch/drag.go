@@ -16,11 +16,19 @@ type PinTarget struct {
 	Target math.Point2
 }
 
-// dragFix is a temporary pin pulling point p toward target. It reuses FixConstraint (a fix to a
-// position) rather than re-declaring its residual/variable math; it is appended only for the
+// dragPinWeight is the residual weight of a drag pin — small, so the pin is SOFT: it yields to the
+// sketch's hard constraints (dimensions, tangency, coincidence) instead of fighting them at equal
+// strength. An unopposed pin still lands its point exactly on the cursor (its residual reaches
+// zero regardless of weight); the weight only decides who wins under conflict, and a hard
+// constraint must (#2160). Small enough that a hard constraint's residual dwarfs it, large enough
+// to stay well clear of the solver's damping floor.
+const dragPinWeight = 1e-3 // tol:numeric — soft-pin weight (#2160)
+
+// dragFix is a temporary SOFT pin pulling point p toward target. It reuses FixConstraint (a fix to
+// a position) rather than re-declaring its residual/variable math; it is appended only for the
 // duration of one DragSolve and is never added to the sketch's persisted constraints.
 func dragFix(p *Point, target math.Point2) *FixConstraint {
-	return &FixConstraint{constraintBase: newConstraint(), P: p, x0: target.X, y0: target.Y}
+	return &FixConstraint{constraintBase: newConstraint(), P: p, x0: target.X, y0: target.Y, weight: dragPinWeight}
 }
 
 // DragSolve re-solves the sketch with the given points temporarily pinned to their drag targets.
