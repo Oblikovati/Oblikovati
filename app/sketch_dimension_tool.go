@@ -147,7 +147,9 @@ func (t *DimensionTool) contains(e sketch.Entity) bool {
 // dimensionComplete reports whether the picks already describe a dimension: a circle (radius),
 // a line (length) or two lines (angle), or two points (distance). One point alone does not.
 func dimensionComplete(ents []sketch.Entity) bool {
-	if len(filterCircles(ents)) >= 1 || len(filterLines(ents)) >= 1 {
+	// A single circular curve (circle OR arc) is a complete radius dimension; matching circles only
+	// left an arc pick "incomplete", so the tool never placed its radius dimension (#2160-adjacent).
+	if len(circularCurvesFrom(ents)) >= 1 || len(filterLines(ents)) >= 1 {
 		return true
 	}
 	return len(filterPoints(ents)) >= 2
