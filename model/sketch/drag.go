@@ -27,14 +27,75 @@ func dragFix(p *Point, target math.Point2) *FixConstraint {
 // The dragged points follow the cursor while the existing constraints pull the dependent geometry
 // along (and hold the pinned points back along any directions they are constrained in). The pins
 // are not persisted; geometry is left in the solved configuration. Returns the solve result.
+//
+// A pin on a point that is already fixed — grounded to a reference anchor, or held by a Fix
+// constraint — is dropped rather than added. A drag pin is just another equal-weight positional
+// residual (a FixConstraint), so pinning a point that a hard constraint already holds at the origin
+// would make the least-squares solve split the difference and let a coincident-to-origin endpoint
+// drag off the origin (#2160). Dropping that pin lets the hard constraint hold the point while the
+// rest of the dragged geometry follows the cursor.
 func (s *Sketch) DragSolve(pins []PinTarget) SolveResult {
+	grounded := s.groundedPoints()
 	cons := append([]Constraint(nil), s.Constraints()...)
 	for _, pt := range pins {
+		if grounded[pt.P] {
+			continue
+		}
 		cons = append(cons, dragFix(pt.P, pt.Target))
 	}
 	r := Solve(cons, s.variables(), Options{})
 	s.syncEllipseAxes()
 	return r
+}
+
+// groundedPoints returns the points a drag must not pin: those transitively coincident with a fixed
+// anchor. The seeds are the reference points (projected/included anchors, excluded from the solver
+// so they never move) and any point held by a Fix constraint; the grounded flag then floods across
+// coincidence constraints, so a point coincident to the origin — or coincident to a point that is —
+// is grounded. See DragSolve for why pinning such a point is wrong (#2160).
+func (s *Sketch) groundedPoints() map[*Point]bool {
+	grounded, adj := s.groundSeedsAndCoincidences()
+	floodGrounded(grounded, adj)
+	return grounded
+}
+
+// groundSeedsAndCoincidences seeds the grounded set with every fixed anchor (reference points and
+// Fix-held points) and builds the undirected coincidence adjacency the flood spreads along.
+func (s *Sketch) groundSeedsAndCoincidences() (map[*Point]bool, map[*Point][]*Point) {
+	grounded := make(map[*Point]bool, len(s.refPts))
+	for _, p := range s.refPts {
+		grounded[p] = true
+	}
+	adj := map[*Point][]*Point{}
+	for _, c := range s.Constraints() {
+		switch k := c.(type) {
+		case *CoincidentConstraint:
+			adj[k.A] = append(adj[k.A], k.B)
+			adj[k.B] = append(adj[k.B], k.A)
+		case *FixConstraint:
+			grounded[k.P] = true
+		}
+	}
+	return grounded, adj
+}
+
+// floodGrounded spreads the grounded flag across coincidence edges in place: a point coincident to a
+// grounded point is itself grounded.
+func floodGrounded(grounded map[*Point]bool, adj map[*Point][]*Point) {
+	stack := make([]*Point, 0, len(grounded))
+	for p := range grounded {
+		stack = append(stack, p)
+	}
+	for len(stack) > 0 {
+		p := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		for _, q := range adj[p] {
+			if !grounded[q] {
+				grounded[q] = true
+				stack = append(stack, q)
+			}
+		}
+	}
 }
 
 // pointDefined is an entity that can name its constrainable points (each entity declares its own
