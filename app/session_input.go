@@ -329,9 +329,11 @@ func (s *Session) toolPicksModelReferences() bool {
 }
 
 // pickModelReferenceInSketch runs the 3D hit-test for an in-sketch reference-picking tool and
-// feeds any hit (a B-rep edge/vertex or datum) to the tool, so model geometry becomes projectable
-// from the viewport while editing a sketch (#1496). A miss is ignored — there is no ambient sketch
-// selection to clear, and the tool keeps waiting for a reference.
+// feeds any hit — a B-rep face, edge or vertex, or datum geometry — to the tool, so model geometry
+// becomes projectable from the viewport while editing a sketch (#1496, faces #2158). The kinds a
+// hit can resolve to are exactly the tool's AcceptedKinds (installed as the pick filter), which is
+// also what the hover highlight uses, so what lights up on hover is what a click projects. A miss
+// is ignored — there is no ambient sketch selection to clear, and the tool keeps waiting.
 func (s *Session) pickModelReferenceInSketch(e PointerEvent) {
 	if s.picker == nil {
 		return
