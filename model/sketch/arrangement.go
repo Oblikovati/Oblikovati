@@ -125,11 +125,11 @@ func entityPolyline(e Entity) (pts []math.Point2, closed bool) {
 		}
 		return naturalPolyline(t), false
 	case *ProjectedCurve:
-		// A projected reference curve carries its own sampled polyline (a projected face perimeter
-		// or model edge); expose it here so it can be hit-tested, region-detected and offset like any
-		// other curve — without a case it fell through to naturalPolyline's endpoint chord (empty for
-		// a projection) and was unpickable (#2158 follow-up).
-		p := t.Points()
+		// A projected reference curve exposes its (smooth, analytic when it is a line/arc/circle)
+		// polyline here so it can be hit-tested, region-detected and offset like any other curve —
+		// without a case it fell through to naturalPolyline's endpoint chord (empty for a projection)
+		// and was unpickable (#2158 follow-up).
+		p := t.RenderPolyline()
 		return p, polylineReturnsToStart(p)
 	default:
 		return naturalPolyline(e), false // Line, Arc, open Spline

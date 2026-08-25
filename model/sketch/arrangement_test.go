@@ -3,6 +3,7 @@
 package sketch
 
 import (
+	stdmath "math"
 	"testing"
 
 	gmath "oblikovati.org/math"
@@ -14,11 +15,13 @@ import (
 // fell through to an endpoint chord that was empty, so it could not be picked at all.
 func TestProjectedCurveEntityPolyline(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
-	square := []gmath.Point2{gmath.P2(0, 0), gmath.P2(4, 0), gmath.P2(4, 4), gmath.P2(0, 4), gmath.P2(0, 0)}
-	pc := s.RestoreProjectedCurve(nextID(), square, "edge", "E1")
+	// A non-circular closed projection (an ellipse) stays a polyline; it must still expose that
+	// polyline through EntityPolyline and report closed, so it is pickable and offsettable.
+	loop := ellipsePts(4, 2, 0, 2*stdmath.Pi, 24)
+	pc := s.RestoreProjectedCurve(nextID(), loop, "edge", "E1")
 	got, closed := EntityPolyline(pc)
-	if len(got) != len(square) {
-		t.Fatalf("EntityPolyline(closed ProjectedCurve) = %d points, want %d", len(got), len(square))
+	if len(got) < 3 {
+		t.Fatalf("EntityPolyline(closed ProjectedCurve) = %d points, want the sampled loop", len(got))
 	}
 	if !closed {
 		t.Error("a projected closed perimeter must report closed (offset needs a loop)")

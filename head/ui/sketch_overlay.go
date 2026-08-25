@@ -208,7 +208,7 @@ func projectedCurveOverlay(sk *sketch.Sketch, selected func(sketch.Entity) bool,
 		case selected != nil && selected(e):
 			acc = sel
 		}
-		acc.polyline(plane, pc.Points(), false)
+		acc.polyline(plane, pc.RenderPolyline(), false)
 	}
 	items := appendGrid(nil, normal, chromeTheme.sketchColor)
 	items = appendGrid(items, sel, chromeTheme.sketchSelectedColor)
