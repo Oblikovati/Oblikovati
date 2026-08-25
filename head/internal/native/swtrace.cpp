@@ -123,13 +123,24 @@ struct SWScene {
 
 namespace {
 
+// swCommandTimeoutNs mirrors raytrace.cpp's rtCommandTimeoutNs exactly (same reasoning: a
+// lost/faulted device leaves a submitted fence permanently unsignaled, and this scene's
+// dispatch is on the live per-frame Realistic-mode software path — see
+// sw_dispatch_and_wait's own doc comment). Duplicated rather than shared across the two
+// independent translation units for one constant.
+constexpr uint64_t swCommandTimeoutNs = 5'000'000'000ULL;
+
 // sw_dispatch_and_wait is shared by obk_sw_scene_trace, obk_sw_scene_trace_pathtrace, and
 // obk_sw_scene_trace_realistic_pathtrace_image: all three record one compute dispatch into a
 // fresh one-time command buffer, submit it, and block on the scene's shared fence for the
-// (deliberately synchronous — this is a test/single-shot harness, not the live per-frame path)
 // result to land in host-visible memory, differing only in which pipeline/descriptor set to
-// bind and how many workgroups to dispatch.
-void sw_dispatch_and_wait(HeadContext* c, SWScene* s, VkPipeline pipeline, VkPipelineLayout layout,
+// bind and how many workgroups to dispatch. obk_sw_scene_trace_realistic_pathtrace_image IS
+// the live per-frame Realistic-mode software path as of #2148/#2155 (the "test/single-shot
+// harness only" framing this comment used to have is stale) — the bounded timeout below
+// (rt_run_commands' rtCommandTimeoutNs in raytrace.cpp — same value, same reasoning) exists
+// for exactly that caller: an unbounded wait here means a lost device freezes the whole UI.
+// Returns false on timeout; the caller must not assume its output buffer was written.
+bool sw_dispatch_and_wait(HeadContext* c, SWScene* s, VkPipeline pipeline, VkPipelineLayout layout,
                           VkDescriptorSet descSet, uint32_t groupsX, uint32_t groupsY, uint32_t groupsZ) {
     VkCommandBufferAllocateInfo cba{};
     cba.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -158,8 +169,9 @@ void sw_dispatch_and_wait(HeadContext* c, SWScene* s, VkPipeline pipeline, VkPip
     submit.pCommandBuffers = &cmd;
     vkResetFences(c->device, 1, &s->fence);
     vkQueueSubmit(c->queue, 1, &submit, s->fence);
-    vkWaitForFences(c->device, 1, &s->fence, VK_TRUE, UINT64_MAX);
+    VkResult waitResult = vkWaitForFences(c->device, 1, &s->fence, VK_TRUE, swCommandTimeoutNs);
     vkFreeCommandBuffers(c->device, s->cmdPool, 1, &cmd);
+    return waitResult == VK_SUCCESS;
 }
 
 } // namespace
@@ -278,7 +290,7 @@ void obk_sw_scene_trace(void* scene, float ox, float oy, float oz, float dx, flo
     float rayParams[8] = {ox, oy, oz, tMin, dx, dy, dz, tMax};
     std::memcpy(s->rayParamsBuf.mapped, rayParams, sizeof(rayParams));
 
-    sw_dispatch_and_wait(c, s, s->pipeline, s->pipeLayout, s->descSet, 1, 1, 1);
+    if (!sw_dispatch_and_wait(c, s, s->pipeline, s->pipeLayout, s->descSet, 1, 1, 1)) return; // *hit already 0
 
     // Mirrors raytrace.cpp's HitResultLayout exactly (same std430 shape and padding).
     struct HitResultLayout {
@@ -387,7 +399,7 @@ void obk_sw_scene_trace_pathtrace(void* scene, float ox, float oy, float oz, flo
     std::memcpy(s->ptCamBuf.mapped, camParams, sizeof(camParams));
     std::memcpy(s->ptParamsBuf.mapped, params, 16 * sizeof(float));
 
-    sw_dispatch_and_wait(c, s, s->ptPipeline, s->ptPipeLayout, s->ptDescSet, 1, 1, 1);
+    if (!sw_dispatch_and_wait(c, s, s->ptPipeline, s->ptPipeLayout, s->ptDescSet, 1, 1, 1)) return; // outR/G/B untouched
 
     auto* out = reinterpret_cast<float*>(s->ptOutputBuf.mapped);
     if (outR) *outR = out[0];
@@ -504,8 +516,12 @@ int obk_sw_scene_trace_realistic_pathtrace_image(void* scene, int width, int hei
     std::memcpy(s->imgCamBuf.mapped, camera, 16 * sizeof(float));
     std::memcpy(s->imgParamsBuf.mapped, params, kRealisticParamsBytes);
 
-    sw_dispatch_and_wait(c, s, s->imgPipeline, s->imgPipeLayout, s->imgDescSet, (uint32_t)((width + 7) / 8),
-                        (uint32_t)((height + 7) / 8), 1);
+    // #2155: a timed-out dispatch reports failure instead of reading back whatever the
+    // output buffer happens to hold — RTScene.TraceRealisticImage's own doc comment on
+    // this same failure path (raytrace.cpp) explains the caller-side handling.
+    if (!sw_dispatch_and_wait(c, s, s->imgPipeline, s->imgPipeLayout, s->imgDescSet, (uint32_t)((width + 7) / 8),
+                              (uint32_t)((height + 7) / 8), 1))
+        return 1;
 
     auto* out = reinterpret_cast<float*>(s->imgOutputBuf.mapped);
     for (int i = 0; i < width * height; i++) {

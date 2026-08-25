@@ -200,12 +200,25 @@ void rt_destroy_buffer(HeadContext* c, RTBuffer* b) {
     *b = RTBuffer{};
 }
 
+// rtCommandTimeoutNs bounds rt_run_commands' fence wait (#2155 live-testing finding): a
+// lost/faulted device (the "radv/amdgpu: CS has been cancelled... hard recovery" class
+// this codebase has hit repeatedly during real-hardware testing, e.g. issue #2143) leaves
+// a submitted fence permanently unsignaled — an unbounded wait here means one bad GPU
+// event freezes the calling thread forever, which for a live per-frame caller (the
+// Realistic-mode viewport) means freezing the WHOLE application's UI, not just that one
+// dispatch. 5s is generous for any legitimate single dispatch this scene size targets
+// (interactive frame budgets are milliseconds, not seconds) while still bounding the
+// worst case to something a caller can recover from instead of hanging indefinitely.
+constexpr uint64_t rtCommandTimeoutNs = 5'000'000'000ULL;
+
 // rt_run_commands records cmds into a fresh one-shot command buffer and submits+waits —
 // the same idiom as viewport.cpp's readback path (VkCommandBufferAllocateInfo → begin →
 // record → end → submit → wait fence → free), using this scene's own pool/fence since an
-// RTScene is not tied to a live Viewport's frame resources.
+// RTScene is not tied to a live Viewport's frame resources. Returns false if the fence
+// wait times out (see rtCommandTimeoutNs) — callers must treat that as a failed dispatch,
+// not assume cmds' side effects (e.g. a filled output buffer) completed.
 template <typename Fn>
-void rt_run_commands(RTScene* s, Fn&& cmds) {
+bool rt_run_commands(RTScene* s, Fn&& cmds) {
     VkCommandBufferAllocateInfo cba{};
     cba.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     cba.commandPool = s->cmdPool;
@@ -225,8 +238,9 @@ void rt_run_commands(RTScene* s, Fn&& cmds) {
     submit.pCommandBuffers = &cmd;
     vkResetFences(s->ctx->device, 1, &s->fence);
     vkQueueSubmit(s->ctx->queue, 1, &submit, s->fence);
-    vkWaitForFences(s->ctx->device, 1, &s->fence, VK_TRUE, UINT64_MAX);
+    VkResult waitResult = vkWaitForFences(s->ctx->device, 1, &s->fence, VK_TRUE, rtCommandTimeoutNs);
     vkFreeCommandBuffers(s->ctx->device, s->cmdPool, 1, &cmd);
+    return waitResult == VK_SUCCESS;
 }
 
 // rt_build_acceleration_structure runs the shared query-size/create-buffer/create-AS/
@@ -277,11 +291,15 @@ VkAccelerationStructureKHR rt_build_acceleration_structure(RTScene* s, VkAcceler
     range.primitiveCount = primitiveCount;
     const VkAccelerationStructureBuildRangeInfoKHR* pRange = &range;
 
-    rt_run_commands(s, [&](VkCommandBuffer cmd) {
+    bool built = rt_run_commands(s, [&](VkCommandBuffer cmd) {
         s->rtFn.cmdBuild(cmd, 1, &buildInfo, &pRange);
     });
 
     rt_destroy_buffer(c, &scratch);
+    if (!built) {
+        s->rtFn.destroy(c->device, as, c->allocator);
+        return VK_NULL_HANDLE;
+    }
     return as;
 }
 
@@ -504,7 +522,7 @@ void obk_rt_scene_trace(void* scene, float ox, float oy, float oz, float dx, flo
     float rayParams[8] = {ox, oy, oz, tMin, dx, dy, dz, tMax};
     std::memcpy(s->rayParamsBuf.mapped, rayParams, sizeof(rayParams));
 
-    rt_run_commands(s, [&](VkCommandBuffer cmd) {
+    bool ok = rt_run_commands(s, [&](VkCommandBuffer cmd) {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->rqPipeline);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->rqPipeLayout, 0, 1, &s->rqDescSet, 0, nullptr);
         vkCmdDispatch(cmd, 1, 1, 1);
@@ -515,6 +533,7 @@ void obk_rt_scene_trace(void* scene, float ox, float oy, float oz, float dx, flo
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 1,
                              &barrier, 0, nullptr, 0, nullptr);
     });
+    if (!ok) return; // timed out: *hit is already 0, the result buffer's contents are undefined
 
     // Mirrors the shader's std430 HitResult block EXACTLY, including its layout rules:
     // a vec3 member's base alignment is 16 bytes, so 8 bytes of padding separate `t`
@@ -826,7 +845,7 @@ void obk_rt_scene_trace_pipeline(void* scene, float ox, float oy, float oz, floa
     VkStridedDeviceAddressRegionKHR hitRegion{sbtBase + hitOffset, entryStride, entryStride};
     VkStridedDeviceAddressRegionKHR callableRegion{};
 
-    rt_run_commands(s, [&](VkCommandBuffer cmd) {
+    bool ok = rt_run_commands(s, [&](VkCommandBuffer cmd) {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->pipePipeline);
         s->rtFn.cmdSetStackSize(cmd, s->pipeStackSize);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->pipePipeLayout, 0, 1,
@@ -839,6 +858,7 @@ void obk_rt_scene_trace_pipeline(void* scene, float ox, float oy, float oz, floa
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_PIPELINE_STAGE_HOST_BIT, 0, 1,
                              &barrier, 0, nullptr, 0, nullptr);
     });
+    if (!ok) return; // timed out: leave outR/outG/outB untouched, same as the !pipelineBuilt early return above
 
     auto* out = reinterpret_cast<float*>(s->pipeOutputBuf.mapped);
     if (outR) *outR = out[0];
@@ -988,7 +1008,7 @@ int obk_rt_scene_trace_realistic_image(void* scene, int width, int height, const
     VkStridedDeviceAddressRegionKHR hitRegion{sbtBase + hitOffset, entryStride, entryStride};
     VkStridedDeviceAddressRegionKHR callableRegion{};
 
-    rt_run_commands(s, [&](VkCommandBuffer cmd) {
+    bool ok = rt_run_commands(s, [&](VkCommandBuffer cmd) {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->imgPipeline);
         s->rtFn.cmdSetStackSize(cmd, s->imgStackSize);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->imgPipeLayout, 0, 1,
@@ -1002,6 +1022,12 @@ int obk_rt_scene_trace_realistic_image(void* scene, int width, int height, const
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_PIPELINE_STAGE_HOST_BIT, 0, 1,
                              &barrier, 0, nullptr, 0, nullptr);
     });
+    // #2155: a timed-out dispatch (see rt_run_commands/rtCommandTimeoutNs) reports failure
+    // instead of reading back whatever the output buffer happens to hold — the caller
+    // (RTScene.TraceRealisticImage -> traceRealisticFrame -> renderRealisticViewportImage)
+    // already treats an error here as "this frame failed," falling back to the raster pass
+    // for that frame (renderRealisticViewportImage's own doc comment) rather than hanging.
+    if (!ok) return 1;
 
     auto* out = reinterpret_cast<float*>(s->imgOutputBuf.mapped);
     for (int i = 0; i < width * height; i++) {

@@ -114,6 +114,48 @@ func TestRealisticModeSelectedViaAPIRendersNonBlank(t *testing.T) {
 	}
 }
 
+// TestRealisticSceneNotRebuiltOnCameraOnlyChange is the regression test for a live-testing
+// finding during #2155: orbiting the camera used to retrigger a full RT/SW scene rebuild
+// (destroy + recreate BLAS/TLAS + pipeline) every frame, because renderRealisticViewportImage
+// conflated the accumulator's reset signal (fires on ANY camera/scene/material change) with
+// the RT scene's own rebuild trigger (mesh content only) — turning a trivial 2-mesh part
+// into ~370ms/frame instead of single-digit ms, and stressing the exact GPU-resource churn
+// realisticState's own doc comment already flags as a hang-inducing failure class.
+func TestRealisticSceneNotRebuiltOnCameraOnlyChange(t *testing.T) {
+	win := newViewportWindow(t)
+	defer win.Destroy()
+	s := rvBoxPart(t)
+	defer DestroyRealisticState(win, s)
+	if err := s.SetDisplayMode(types.RealisticRendering); err != nil {
+		t.Fatalf("SetDisplayMode: %v", err)
+	}
+
+	const slot, pw, ph = 0, 64, 64
+	cam := s.Camera()
+	if _, _, ok := renderRealisticViewportImage(win, s, slot, cam, pw, ph); !ok {
+		t.Fatal("first render did not build the RT scene")
+	}
+	st := realisticStateFor(s, slot)
+	firstRT, firstSW := st.rt, st.sw
+	if firstRT == nil && firstSW == nil {
+		t.Fatal("neither backend built on first render")
+	}
+
+	for i := 0; i < 5; i++ {
+		cam = cam.Orbit(0.2, 0)
+		if _, _, ok := renderRealisticViewportImage(win, s, slot, cam, pw, ph); !ok {
+			t.Fatalf("render %d (camera-only change) failed", i)
+		}
+	}
+
+	if st.rt != firstRT {
+		t.Errorf("hardware RT scene was rebuilt on camera-only change: got %p, want unchanged %p", st.rt, firstRT)
+	}
+	if st.sw != firstSW {
+		t.Errorf("software scene was rebuilt on camera-only change: got %p, want unchanged %p", st.sw, firstSW)
+	}
+}
+
 // TestRealisticModeCaptureViewportStaysRasterCaptureWindowIsLive is the regression test
 // for #2149: drawRealisticResult (chrome_viewport.go) composites Realistic mode's
 // path-traced texture directly onto the window's swapchain via native.Image, bypassing

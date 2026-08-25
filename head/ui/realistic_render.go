@@ -65,14 +65,17 @@ type realisticCacheKey struct {
 // and leaked GPU resources across the whole head/ui test binary, compounding into
 // hangs deep in a full-suite run once enough leaked resources piled up).
 type realisticState struct {
-	rt       *native.RTScene
-	sw       *native.SWScene
-	sceneKey uint64
-	accum    *renderer.Accumulator
-	tex      uint64
-	texW     int
-	texH     int
-	rng      *rand.Rand
+	rt             *native.RTScene
+	sw             *native.SWScene
+	sceneKey       uint64
+	sceneBuilt     bool // guards the FIRST rebuild independent of sceneKey's zero value — see renderRealisticViewportImage
+	lastCameraHash uint64
+	haveLastCamera bool // guards the FIRST frame, before there's a previous camera to compare against
+	accum          *renderer.Accumulator
+	tex            uint64
+	texW           int
+	texH           int
+	rng            *rand.Rand
 }
 
 var realisticCache = map[realisticCacheKey]*realisticState{}
@@ -107,16 +110,55 @@ type realisticMesh struct {
 	instanceID uint32
 }
 
+// realisticInteractiveDownscale is the linear resolution divisor Realistic mode traces at
+// while the camera is actively moving, rather than the full panel resolution (#2155
+// live-testing finding): a full-panel dispatch measured ~330-400ms on this project's own
+// dev hardware for a TRIVIAL two-mesh part, scaling with pixel count — and because the
+// trace runs synchronously in the main render loop (traceRealisticFrame), that single-
+// handedly blocked the UI thread for that long on EVERY orbit frame. Tracing at 1/3 linear
+// resolution (1/9 the pixels) while the camera is in motion keeps a visibly-present,
+// interactive preview (rather than skipping the frame) while cutting worst-case blocking
+// roughly 9x; realisticGeometry's own camera-hash reset makes this free to switch back —
+// the accumulator naturally jumps to full pw×ph and restarts the moment the camera stops
+// (ensureRealisticAccumSize + Accumulator.SyncState below), so idle convergence quality is
+// completely unaffected. The Vulkan-level fix for the remaining worst case — a dispatch
+// that never returns at all (a lost/faulted device) — is rtCommandTimeoutNs/
+// swCommandTimeoutNs (raytrace.cpp/swtrace.cpp): traceRealisticFrame already treats that
+// as an ordinary failed frame (err != nil below), not a hang.
+const realisticInteractiveDownscale = 3
+
+// realisticTraceResolution returns the resolution to actually dispatch a trace at: the
+// full panel size when idle (cameraMoving false), or a reduced interactive preview size
+// otherwise — see realisticInteractiveDownscale's own doc comment.
+func realisticTraceResolution(pw, ph int, cameraMoving bool) (tracePW, tracePH int) {
+	if !cameraMoving {
+		return pw, ph
+	}
+	tracePW, tracePH = pw/realisticInteractiveDownscale, ph/realisticInteractiveDownscale
+	if tracePW < 1 {
+		tracePW = 1
+	}
+	if tracePH < 1 {
+		tracePH = 1
+	}
+	return tracePW, tracePH
+}
+
 // renderRealisticViewportImage renders one Realistic-mode progressive-accumulation
 // sample and returns the presentation texture (0, false on failure — the caller falls
 // back to the raster pass so the panel is never left blank). Call every frame; the
-// accumulation buffer only resets when the camera, scene, or material actually changes
-// (renderer.Accumulator.SyncState).
+// accumulation buffer resets whenever the camera, scene, or material changes
+// (renderer.Accumulator.SyncState), but the built RT/SW scene (BLAS/TLAS/pipeline) is
+// rebuilt ONLY when the scene's mesh content actually changes — camera orbiting and
+// material edits must never pay that cost (a bug found live during #2155: this used to
+// retrigger a full destroy+rebuild of the RT scene on EVERY frame of camera movement).
+// The actual trace/accumulate/present resolution drops to a reduced interactive preview
+// while the camera is moving — see realisticInteractiveDownscale.
 func renderRealisticViewportImage(win *native.Window, s realisticSession, slot int, cam scene.Camera, pw, ph int) (tex uint64, sampleCount int, ok bool) {
 	if pw <= 0 || ph <= 0 {
 		return 0, 0, false
 	}
-	st := realisticStateFor(s, slot, pw, ph)
+	st := realisticStateFor(s, slot)
 
 	meshes, material, haveGeometry := realisticGeometry(s, cam)
 	if !haveGeometry {
@@ -124,37 +166,55 @@ func renderRealisticViewportImage(win *native.Window, s realisticSession, slot i
 	}
 
 	state := renderer.AccumulationState{Camera: cameraHash(cam), Scene: realisticSceneHash(meshes), Material: materialHash(material)}
-	if reset := st.accum.SyncState(state); reset || st.sceneKey != state.Scene {
+	cameraMoving := st.haveLastCamera && st.lastCameraHash != state.Camera
+	st.lastCameraHash, st.haveLastCamera = state.Camera, true
+	tracePW, tracePH := realisticTraceResolution(pw, ph, cameraMoving)
+	ensureRealisticAccumSize(st, tracePW, tracePH)
+
+	st.accum.SyncState(state) // resets the accumulator on ANY change — a separate concern from rebuilding the RT scene below
+	if !st.sceneBuilt || st.sceneKey != state.Scene {
+		// Only the MESH CONTENT (state.Scene) invalidates the built BLAS/TLAS/pipeline —
+		// camera and material changes reset the accumulator above but must not touch the
+		// acceleration structure, which doesn't depend on either.
 		if !rebuildRealisticScene(win, st, meshes) {
 			return 0, 0, false
 		}
 		st.sceneKey = state.Scene
+		st.sceneBuilt = true
 	}
 
 	lighting := s.SceneLighting()
-	pixels, err := traceRealisticFrame(st, win, s, cam, pw, ph, lighting, material)
+	pixels, err := traceRealisticFrame(st, win, s, cam, tracePW, tracePH, lighting, material)
 	if err != nil {
 		return 0, 0, false
 	}
 	st.accum.AddFrame(pixels)
 
-	presentRealisticFrame(win, st, pw, ph, float64(lighting.Exposure))
+	presentRealisticFrame(win, st, tracePW, tracePH, float64(lighting.Exposure))
 	return st.tex, st.accum.SampleCount(), st.tex != 0
 }
 
-// realisticStateFor returns the persistent GPU state for (s,slot), creating it (and/or
-// resizing its accumulator to pw×ph) on first use or on a viewport resize.
-func realisticStateFor(s realisticSession, slot, pw, ph int) *realisticState {
+// realisticStateFor returns the persistent GPU state for (s,slot), creating it on first
+// use — call ensureRealisticAccumSize separately once the caller has decided this frame's
+// trace resolution (renderRealisticViewportImage: full panel size when idle, a reduced
+// interactive preview size while the camera is moving).
+func realisticStateFor(s realisticSession, slot int) *realisticState {
 	key := realisticCacheKey{s: s, slot: slot}
 	st := realisticCache[key]
 	if st == nil {
 		st = &realisticState{rng: rand.New(rand.NewSource(1))}
 		realisticCache[key] = st
 	}
+	return st
+}
+
+// ensureRealisticAccumSize (re)allocates st's accumulator when pw×ph differs from its
+// current size — split out of realisticStateFor (#2155) so a caller can look up the
+// persistent state before deciding what resolution to size it to this frame.
+func ensureRealisticAccumSize(st *realisticState, pw, ph int) {
 	if st.accum == nil || st.accum.Width() != pw || st.accum.Height() != ph {
 		st.accum = renderer.NewAccumulator(pw, ph)
 	}
-	return st
 }
 
 // presentRealisticFrame tone-maps st's accumulated image to display RGBA8 and uploads
