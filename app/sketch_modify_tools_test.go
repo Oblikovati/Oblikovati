@@ -124,7 +124,7 @@ func TestSketchOffsetToolOffsetsCurve(t *testing.T) {
 	tool := NewSketchOffsetTool(2)
 	s.StartTool(tool)
 	tool.Pick(s, SketchEntityHandle{Entity: l}) // select the curve
-	if err := s.OK(); err != nil {               // OK finishes with the default distance (no placement click)
+	if err := s.OK(); err != nil {              // OK finishes with the default distance (no placement click)
 		t.Fatalf("OK: %v", err)
 	}
 	if sk.Lines().Count() != 2 {
