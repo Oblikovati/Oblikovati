@@ -38,6 +38,14 @@ type openpbrGoldenParams struct {
 	SheenRoughness   float32    `json:"sheen_roughness"`
 	SheenTint        [3]float32 `json:"sheen_tint"`
 	SubsurfaceWeight float32    `json:"subsurface_weight"`
+
+	// #2155 transmission tier (see render_reference.py's own Blender-side mapping).
+	TransmissionWeight   float32    `json:"transmission_weight"`
+	TransmissionColor    [3]float32 `json:"transmission_color"`
+	TransmissionDepth    float32    `json:"transmission_depth"`
+	DispersionScale      float32    `json:"dispersion_scale"`
+	DispersionAbbeNumber float32    `json:"dispersion_abbe_number"`
+	ThinWalled           bool       `json:"thin_walled"`
 }
 
 // openpbrGoldenMinSSIM is a hard floor, not a target. A from-scratch calibration run
@@ -60,15 +68,11 @@ const openpbrGoldenMinSSIM = 0.70
 // mode uses), and assert perceptual similarity via SSIM
 // (architecture/testing/00-renderer-oracle-pipeline.md's Tier-4 oracle).
 //
-// Scoped to base lobes ONLY (diffuse + specular dielectric/metal): PBI-345/346 built
-// coat/fuzz/subsurface/transmission/thin-film entirely as a CPU reference
-// (kernel/shading/openpbr), but never ported them into the live GLSL path-tracer
-// shaders (pathtrace_realistic.rchit / swpathtrace_realistic.comp render base lobes
-// only). Reference PNGs for those 4 additional tiers are already committed under
-// test-utilities/openpbr-goldens/goldens/ (generated the same way as this test's
-// reference) so the live comparison can be turned on tier-by-tier with no new Blender
-// work once each lobe is ported — see the tracked follow-up issue this PBI files for
-// that porting work.
+// Scoped to base lobes ONLY (diffuse + specular dielectric/metal) — each extended lobe
+// (coat/fuzz/subsurface added by #2148, transmission by #2155) gets its own golden test
+// below instead, against its own reference PNG under test-utilities/openpbr-goldens/
+// goldens/ (generated the same way as this test's reference), so a regression in one
+// lobe's shading doesn't mask or get masked by another's.
 func TestOpenPBRBaseLobesMatchBlenderReference(t *testing.T) {
 	runOpenPBRGoldenTest(t, "base", func(p openpbrGoldenParams) RealisticLightParams {
 		return RealisticLightParams{
@@ -79,9 +83,9 @@ func TestOpenPBRBaseLobesMatchBlenderReference(t *testing.T) {
 }
 
 // TestOpenPBRCoatMatchesBlenderReference / TestOpenPBRFuzzMatchesBlenderReference /
-// TestOpenPBRSubsurfaceMatchesBlenderReference are #2148's acceptance criterion for the
-// 3 extended lobes with a committed Blender reference (see
-// TestOpenPBRExtendedLobesPendingGLSLPort below for why transmission has none). Same
+// TestOpenPBRSubsurfaceMatchesBlenderReference are #2148's acceptance criterion for 3 of
+// the 4 extended lobes (see TestOpenPBRTransmissionMatchesBlenderReference below for the
+// 4th, transmission, which needed #2155's continuation-ray recursion first). Same
 // harness as TestOpenPBRBaseLobesMatchBlenderReference — see its doc comment.
 func TestOpenPBRCoatMatchesBlenderReference(t *testing.T) {
 	runOpenPBRGoldenTest(t, "coat", func(p openpbrGoldenParams) RealisticLightParams {
@@ -144,20 +148,30 @@ func runOpenPBRGoldenTest(t *testing.T, tier string, build func(openpbrGoldenPar
 	}
 }
 
-// TestOpenPBRExtendedLobesPendingGLSLPort documents (and will fail loudly, as a nudge to
-// update this test, the day someone ports it) that transmission has no live-shader
-// comparison yet: showing transmitted light needs a continuation/refraction ray, which
-// neither backend's pipeline supports (see extended_lobes.glsl's header comment for the
-// full explanation) — a materially bigger undertaking than coat/fuzz/thin-film/subsurface
-// (which are all local reflection modifications, no extra ray needed), tracked as its own
-// follow-up. The reference image already exists at
-// test-utilities/openpbr-goldens/goldens/ref-transmission.png for whoever picks it up.
-func TestOpenPBRExtendedLobesPendingGLSLPort(t *testing.T) {
-	t.Run("transmission", func(t *testing.T) {
-		t.Skip("transmission needs a continuation/refraction ray neither backend's pipeline " +
-			"supports yet (recursion depth is primary+shadow only) — reference image committed " +
-			"at test-utilities/openpbr-goldens/goldens/ref-transmission.png for when it lands")
+// TestOpenPBRTransmissionMatchesBlenderReference is #2155's acceptance criterion: a solid
+// (non-thin-walled) glass sphere, rendered through the SAME live per-pixel dispatch
+// Realistic mode uses — now with a real recursive continuation ray through the surface
+// (see extended_lobes.glsl's header and pathtrace_realistic.rchit/
+// swpathtrace_realistic.comp's trace loops) — matches the committed Blender reference.
+func TestOpenPBRTransmissionMatchesBlenderReference(t *testing.T) {
+	runOpenPBRGoldenTest(t, "transmission", func(p openpbrGoldenParams) RealisticLightParams {
+		return RealisticLightParams{
+			LightDirection: p.LightDir, LightIntensity: p.LightIntensity, LightColor: [3]float32{1, 1, 1},
+			BaseColor: p.BaseColor, BaseWeight: 1, SpecularRoughness: p.Roughness, SpecularIOR: p.IOR, BaseMetalness: p.Metallic,
+			TransmissionColor: p.TransmissionColor, TransmissionWeight: p.TransmissionWeight,
+			TransmissionDepth: p.TransmissionDepth, DispersionScale: p.DispersionScale,
+			DispersionAbbeNumber: p.DispersionAbbeNumber, ThinWalled: boolToFloat32(p.ThinWalled),
+		}
 	})
+}
+
+// boolToFloat32 encodes a bool into RealisticLightParams.ThinWalled's float32 slot (>0.5
+// means true — see extended_lobes.glsl's OPENPBR_REALISTIC_PARAMS_FIELDS doc comment).
+func boolToFloat32(b bool) float32 {
+	if b {
+		return 1
+	}
+	return 0
 }
 
 func loadGoldenParams(t *testing.T, path string) openpbrGoldenParams {

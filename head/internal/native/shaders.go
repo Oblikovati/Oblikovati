@@ -84,6 +84,15 @@ var swpathtraceCompSPV []byte
 //go:embed shaders/pathtrace_realistic.rgen.spv
 var pathtraceRealisticRgenSPV []byte
 
+// pathtrace_realistic.rmiss (#2155): a dedicated background-miss shader, distinct from
+// the shared pathtrace.rmiss above — this pipeline's location-0 payload grew from a plain
+// vec3 to RTPathPayload (rt_payload.glsl) to carry transmission recursion state, and a
+// payload's declared type must match across every shader stage sharing its location
+// within one pipeline.
+//
+//go:embed shaders/pathtrace_realistic.rmiss.spv
+var pathtraceRealisticRmissSPV []byte
+
 //go:embed shaders/pathtrace_realistic.rchit.spv
 var pathtraceRealisticRchitSPV []byte
 
@@ -94,7 +103,7 @@ var swpathtraceRealisticCompSPV []byte
 // Realistic-viewport pipeline, for RTScene.BuildRealisticPipeline — head/ui (a
 // different package) has no other access to these embedded bytes.
 func RealisticPipelineShaders() (rgen, miss, shadowMiss, chit []byte) {
-	return pathtraceRealisticRgenSPV, pathtraceRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV
+	return pathtraceRealisticRgenSPV, pathtraceRealisticRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV
 }
 
 // RealisticPathtraceShader returns the embedded SPIR-V for the live per-pixel software

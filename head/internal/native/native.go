@@ -14,6 +14,7 @@ package native
 #cgo CPPFLAGS: -I${SRCDIR}/../../third_party/imgui -I${SRCDIR}/../../third_party/imgui/backends
 #cgo pkg-config: glfw3 vulkan
 
+#include <stdint.h>
 #include <stdlib.h>
 
 void* obk_head_create(int width, int height, const char* title);
@@ -30,6 +31,7 @@ void  obk_head_apply_window_state(void* h, int x, int y, int maximized);
 void  obk_head_gpu_info(void* h, char* nameOut, int nameCap, unsigned int* apiVersionOut);
 void  obk_head_ray_tracing_support(void* h, int* hasAccelStruct, int* hasRTPipeline, int* hasRayQuery);
 void  obk_head_set_icon(void* h, int count, const int* sizes, const unsigned char* const* pixels);
+void  obk_viewport_env_binding(void* c, uint64_t* view, uint64_t* sampler, uint64_t* generation);
 */
 import "C"
 
@@ -149,6 +151,19 @@ func (w *Window) RayTracingExtensionSupport() (accelStruct, rtPipeline, rayQuery
 	var a, p, q C.int
 	C.obk_head_ray_tracing_support(w.handle, &a, &p, &q)
 	return a != 0, p != 0, q != 0
+}
+
+// EnvironmentGeneration returns the live viewport's environment-image generation counter
+// (viewport.cpp's Viewport::envGeneration, bumped each time the equirect HDR/sky image is
+// (re)created) — 0 if no viewport is initialized yet. Realistic-mode's scene-content hash
+// folds this in (#2155's IBL follow-up) so an environment change rebuilds the RT/SW
+// pipelines' descriptor sets — see raytrace.cpp/swtrace.cpp's env_binding_for and
+// obk_viewport_env_binding's own doc comment in head.h for why a stale descriptor can't
+// just be left alone.
+func (w *Window) EnvironmentGeneration() uint64 {
+	var view, sampler, gen C.uint64_t
+	C.obk_viewport_env_binding(w.handle, &view, &sampler, &gen)
+	return uint64(gen)
 }
 
 // formatVulkanVersion renders a packed VkPhysicalDeviceProperties.apiVersion as

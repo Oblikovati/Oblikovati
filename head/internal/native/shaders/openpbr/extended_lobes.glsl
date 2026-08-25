@@ -4,7 +4,7 @@
 // reuses its GGX/Fresnel/diffuse primitives). Every function here has a byte-identical Go
 // counterpart with CPU-reference oracle tests — keep the two in lockstep by hand.
 //
-// Three lobes are simplified relative to their CPU reference, each following an EXISTING
+// Two lobes are simplified relative to their CPU reference, each following an EXISTING
 // precedent this file's sibling already set for the SAME class of problem (skipping an
 // expensive/architecturally-unavailable term rather than inventing a new approximation):
 //
@@ -13,16 +13,6 @@
 //     multi-scatter compensation for the SAME reason ("too expensive to run per-shading-
 //     sample", multiscatter.go's own doc comment). LayerFuzz here is a plain weighted mix,
 //     not the exact energy-normalized blend.
-//   - Transmission is PORTED (openpbrThinWallFresnel/Transmittance/Extinction/
-//     MixTransmission below, CPU-oracle-tested) but NOT wired into either shading main:
-//     showing anything transmitted — thin-walled or solid — means sampling what is
-//     BEHIND the surface, which needs a continuation/refraction ray. Neither backend's
-//     pipeline supports that today (maxPipelineRayRecursionDepth=2: primary + one shadow
-//     ray only; the SW compute backend has no recursion at all, just one flat BVH
-//     traversal per pixel). A straight-through thin-walled ray not bending direction does
-//     NOT remove the need to trace it — it still needs a real ray. transmission_weight
-//     therefore has no visible effect until that recursion-depth architecture work lands
-//     (tracked separately as its own follow-up, distinct from #2148's other 4 lobes).
 //   - Subsurface is a LOCAL diffuse-albedo approximation (SubsurfaceSingleScatterAlbedo
 //     fed through the same single-scatter diffuse shape base_lobes.glsl already has), not
 //     a spatial (screen-space-blurred) diffusion profile — subsurface_radius has no
@@ -33,11 +23,25 @@
 //
 // Coat and Thin-film are full, unsimplified ports (both are purely local — no hemisphere
 // integral, no extra ray).
+//
+// Transmission (#2155) IS wired in with a real continuation ray, traced by each backend's
+// own main()/trace loop (openpbrShadeBaseSubstrate/openpbrBaseSpecular below expose the
+// pieces a caller needs to splice a traced translucent contribution in before coat/fuzz
+// layering — see transmission_lobe.glsl's header for why the actual traceRayEXT/BVH-walk
+// control flow can't live in this shared, ray-tracing-agnostic file).
 
 #ifndef OPENPBR_EXTENDED_LOBES_GLSL
 #define OPENPBR_EXTENDED_LOBES_GLSL
 
 #include "base_lobes.glsl"
+#include "transmission_lobe.glsl"
+
+// OPENPBR_MAX_TRANSMISSION_BOUNCES bounds how many continuation rays a single primary hit
+// may chain through transmissive surfaces (entering + exiting a solid, or passing through
+// a thin-walled sheet, each count as one bounce) — both backends' trace loops enforce
+// this, and the HW backend's requested maxPipelineRayRecursionDepth (raytrace.cpp) is
+// sized directly from it (1 primary + this many continuations + 1 terminal shadow ray).
+const int OPENPBR_MAX_TRANSMISSION_BOUNCES = 4;
 
 const float OPENPBR_MIN_DENOM = 1e-9;
 
@@ -252,31 +256,6 @@ vec3 openpbrFresnelWithThinFilm(float cosThetaI, float ior, float filmIOR, float
     return mix(plain, film, weight);
 }
 
-// --- Transmission (transmission.go), thin-walled case only — see this file's header. ---
-
-// openpbrThinWallFresnel ports transmission.go's ThinWallFresnel exactly: the closed-form
-// sum of a thin sheet's internal-reflection series, 2R/(1+R).
-float openpbrThinWallFresnel(float ior, float cosThetaI) {
-    float r = openpbrDielectricFresnel(ior, cosThetaI);
-    return (2.0 * r) / (1.0 + r);
-}
-
-// openpbrThinWallTransmittance ports transmission.go's ThinWallTransmittance exactly:
-// (1-R)/(1+R), the fraction passing straight through undeflected.
-float openpbrThinWallTransmittance(float ior, float cosThetaI) {
-    float r = openpbrDielectricFresnel(ior, cosThetaI);
-    return (1.0 - r) / (1.0 + r);
-}
-
-// openpbrTransmissionExtinction ports transmission.go's TransmissionExtinction (Beer's
-// law inverted): the per-channel extinction that turns white into transmissionColor over
-// transmissionDepth. depth<=0 returns zero extinction (transmission_color unused).
-vec3 openpbrTransmissionExtinction(vec3 color, float depth) {
-    if (depth <= 0.0) return vec3(0.0);
-    vec3 clamped = max(color, vec3(1e-6));
-    return -log(clamped) / depth;
-}
-
 // --- Subsurface (subsurface.go), local single-scatter-albedo approximation — see this
 // file's header note on the missing spatial blur. ---
 
@@ -313,12 +292,6 @@ vec3 openpbrMixSubsurface(vec3 diffuse, vec3 subsurface, float weight) {
     return mix(diffuse, subsurface, weight);
 }
 
-// openpbrMixTransmission ports transmission.go's MixTransmission exactly.
-vec3 openpbrMixTransmission(vec3 opaque, vec3 transmission, float weight) {
-    if (weight <= 0.0) return opaque;
-    return mix(opaque, transmission, weight);
-}
-
 // --- Shading combination + shared Params UBO field list ---
 //
 // OPENPBR_REALISTIC_PARAMS_FIELDS is the Params uniform block BODY shared by
@@ -326,7 +299,7 @@ vec3 openpbrMixTransmission(vec3 opaque, vec3 transmission, float weight) {
 // its own `layout(set=..., binding=...) uniform Params { OPENPBR_REALISTIC_PARAMS_FIELDS
 // } params;` (their binding indices differ), but the FIELD LIST itself lives in exactly
 // one place, matching raytrace.go's RealisticLightParams.floats() field order
-// byte-for-byte (56 floats/224 bytes total — see that struct's own doc comment).
+// byte-for-byte (60 floats/240 bytes total — see that struct's own doc comment).
 #define OPENPBR_REALISTIC_PARAMS_FIELDS \
     vec3 lightDirection; \
     float lightIntensity; \
@@ -359,15 +332,19 @@ vec3 openpbrMixTransmission(vec3 opaque, vec3 transmission, float weight) {
     float transmissionDepth; \
     float dispersionScale; \
     float dispersionAbbeNumber; \
-    float pad7; \
+    float thinWalled; \
     vec3 subsurfaceColor; \
     float subsurfaceWeight; \
     vec3 subsurfaceRadiusScale; \
     float subsurfaceRadius; \
     float subsurfaceAnisotropy; \
-    float pad8; \
-    float pad9; \
-    float pad10;
+    float envEnabled; \
+    float envRotation; \
+    float envIntensity; \
+    float lightIsEnvironment; \
+    float pad11; \
+    float pad12; \
+    float pad13;
 
 // OpenPBRRealisticMaterial bundles the subset of a Params instance
 // openpbrShadeSurface needs, so it can be a plain value parameter (a struct TYPE
@@ -384,7 +361,56 @@ struct OpenPBRRealisticMaterial {
     float thinFilmWeight, thinFilmThicknessMicrons, thinFilmIOR;
     vec3 subsurfaceColor;
     float subsurfaceWeight, subsurfaceAnisotropy;
+    vec3 transmissionColor;
+    float transmissionWeight, transmissionDepth, dispersionScale, dispersionAbbeNumber;
+    bool thinWalled;
 };
+
+// openpbrBaseSpecular is the base substrate's own dielectric/metal GGX+Fresnel reflection
+// term (single-scatter, thin-film-modulated) — split out of openpbrShadeSurface (#2155)
+// so a caller building a translucent base substrate (specular reflection PLUS a traced
+// transmitted contribution, spec's S_translucent-base) can reuse it without recomputing
+// the same GGX/Fresnel evaluation twice.
+vec3 openpbrBaseSpecular(OpenPBRRealisticMaterial m, vec3 wiLocal, vec3 woLocal) {
+    float alpha = openpbrAlphaFromRoughness(m.specularRoughness);
+    vec3 h = normalize(wiLocal + woLocal);
+    float d = openpbrDistributionGGX(h, alpha);
+    float g = openpbrSmithG2(wiLocal, woLocal, alpha);
+    float cosH = max(dot(wiLocal, h), 0.0);
+    vec3 fr = openpbrFresnelWithThinFilm(cosH, m.specularIOR, m.thinFilmIOR,
+                                         m.thinFilmThicknessMicrons, m.thinFilmWeight);
+    return fr * (d * g / (4.0 * wiLocal.z * woLocal.z));
+}
+
+// openpbrShadeBaseSubstrate is the OPAQUE base substrate — diffuse(+subsurface)+specular,
+// with NO transmission (spec's M_opaque-base) — split out of openpbrShadeSurface (#2155)
+// so a caller with real ray-tracing capability can mix it against a translucent
+// alternative (openpbrMixTransmission) before layering coat/fuzz. This file has no
+// traceRay capability itself (also #include'd by the SW compute shader, which has none)
+// — the actual continuation-ray trace that builds the translucent alternative lives in
+// each backend's own main()/trace loop, not here.
+vec3 openpbrShadeBaseSubstrate(OpenPBRRealisticMaterial m, vec3 wiLocal, vec3 woLocal) {
+    vec3 diffuse = openpbrDiffuseSingleScatter(m.baseColor * m.baseWeight, 0.0, wiLocal, woLocal);
+    vec3 specular = openpbrBaseSpecular(m, wiLocal, woLocal);
+
+    vec3 diffuseSlab = diffuse;
+    if (m.subsurfaceWeight > 0.0) {
+        vec3 subsurface = openpbrSubsurfaceLocalApprox(m.subsurfaceColor, m.subsurfaceAnisotropy, wiLocal, woLocal);
+        diffuseSlab = openpbrMixSubsurface(diffuse, subsurface, m.subsurfaceWeight);
+    }
+    return diffuseSlab + specular;
+}
+
+// openpbrLayerCoatFuzz layers coat then fuzz over an already-computed base substrate
+// value (opaque, translucent, or a transmission_weight mix of the two) — split out of
+// openpbrShadeSurface (#2155) so callers that build their own base (see
+// openpbrShadeBaseSubstrate's doc comment) don't duplicate this layering.
+vec3 openpbrLayerCoatFuzz(vec3 base, OpenPBRRealisticMaterial m, vec3 wiLocal, vec3 woLocal) {
+    float fCoat = openpbrSpecularCoat(wiLocal, woLocal, m.coatRoughness, m.coatIOR);
+    float darkening = openpbrCoatDarkeningFactor(1.0, m.coatWeight, m.coatDarkening, m.coatIOR);
+    vec3 coated = openpbrLayerCoat(fCoat, base, m.coatColor, m.coatWeight, darkening, woLocal.z, m.coatIOR);
+    return openpbrLayerFuzz(wiLocal, woLocal, m.fuzzRoughness, m.fuzzColor, m.fuzzWeight, coated);
+}
 
 // openpbrShadeSurface combines every lobe into one local reflected-radiance BRDF value
 // (excluding light color/intensity/cosine — the caller applies those), in OpenPBR's own
@@ -393,31 +419,12 @@ struct OpenPBRRealisticMaterial {
 // the coated result. Every extended lobe's weight=0 reproduces the PRIOR stage's output
 // exactly (each Layer*/Mix* helper's own weight<=0 short-circuit), so a material with
 // every extended field zeroed renders bit-identical to the pre-#2148 base-lobes-only
-// shading — the same regression guard kernel/shading/openpbr's own CPU tests use.
+// shading — the same regression guard kernel/shading/openpbr's own CPU tests use. This is
+// the NO-transmission composition (m.transmissionWeight ignored) — callers wiring in a
+// traced translucent contribution use openpbrShadeBaseSubstrate/openpbrLayerCoatFuzz
+// directly instead (pathtrace_realistic.rchit, swpathtrace_realistic.comp).
 vec3 openpbrShadeSurface(OpenPBRRealisticMaterial m, vec3 wiLocal, vec3 woLocal) {
-    float alpha = openpbrAlphaFromRoughness(m.specularRoughness);
-    vec3 diffuse = openpbrDiffuseSingleScatter(m.baseColor * m.baseWeight, 0.0, wiLocal, woLocal);
-
-    vec3 h = normalize(wiLocal + woLocal);
-    float d = openpbrDistributionGGX(h, alpha);
-    float g = openpbrSmithG2(wiLocal, woLocal, alpha);
-    float cosH = max(dot(wiLocal, h), 0.0);
-    vec3 fr = openpbrFresnelWithThinFilm(cosH, m.specularIOR, m.thinFilmIOR,
-                                         m.thinFilmThicknessMicrons, m.thinFilmWeight);
-    vec3 specular = fr * (d * g / (4.0 * wiLocal.z * woLocal.z));
-
-    vec3 diffuseSlab = diffuse;
-    if (m.subsurfaceWeight > 0.0) {
-        vec3 subsurface = openpbrSubsurfaceLocalApprox(m.subsurfaceColor, m.subsurfaceAnisotropy, wiLocal, woLocal);
-        diffuseSlab = openpbrMixSubsurface(diffuse, subsurface, m.subsurfaceWeight);
-    }
-    vec3 base = diffuseSlab + specular;
-
-    float fCoat = openpbrSpecularCoat(wiLocal, woLocal, m.coatRoughness, m.coatIOR);
-    float darkening = openpbrCoatDarkeningFactor(1.0, m.coatWeight, m.coatDarkening, m.coatIOR);
-    vec3 coated = openpbrLayerCoat(fCoat, base, m.coatColor, m.coatWeight, darkening, woLocal.z, m.coatIOR);
-
-    return openpbrLayerFuzz(wiLocal, woLocal, m.fuzzRoughness, m.fuzzColor, m.fuzzWeight, coated);
+    return openpbrLayerCoatFuzz(openpbrShadeBaseSubstrate(m, wiLocal, woLocal), m, wiLocal, woLocal);
 }
 
 #endif // OPENPBR_EXTENDED_LOBES_GLSL

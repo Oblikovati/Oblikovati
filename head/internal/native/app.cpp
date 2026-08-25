@@ -35,6 +35,12 @@ uint32_t obk_find_memory_type(VkPhysicalDevice phys, uint32_t type_bits,
 
 namespace {
 
+// kFrameFenceTimeoutNs mirrors viewport.cpp's kViewportFenceTimeoutNs / raytrace.cpp's
+// rtCommandTimeoutNs / swtrace.cpp's swCommandTimeoutNs (same value, same reasoning —
+// bounding vkWaitForFences so a lost device can't freeze the app forever). Duplicated
+// rather than shared across independent translation units for one constant.
+static const uint64_t kFrameFenceTimeoutNs = 5'000'000'000ULL;
+
 bool ok(VkResult r) { return r == VK_SUCCESS; }
 
 // instance_has_ext reports whether the loader advertises an instance extension, so we
@@ -241,18 +247,34 @@ void setup_window(HeadContext* c, VkSurfaceKHR surface, int w, int h) {
 // ImGui swapchain submit may wait on in one frame (one per visible tile in the quad layout, #1421).
 static const int kMaxOffscreenTiles = 4;
 
-void frame_render(HeadContext* c, ImDrawData* dd, VkSemaphore* offscreenSems, int offscreenCount) {
+// frame_render returns false when its frame-slot fence times out (#2155) — the caller
+// (obk_head_end_frame) must not call frame_present in that case: this frame's command
+// buffer was never (re)recorded/submitted, so there is nothing new to present, and
+// vkResetCommandPool below would be unsafe to reach while the slot's previous submission
+// might still be executing.
+bool frame_render(HeadContext* c, ImDrawData* dd, VkSemaphore* offscreenSems, int offscreenCount) {
     ImGui_ImplVulkanH_Window* wd = &c->window_data;
     VkSemaphore acq = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
     VkSemaphore done = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
-    VkResult err = vkAcquireNextImageKHR(c->device, wd->Swapchain, UINT64_MAX, acq,
+    // Bounded (#2155): vkAcquireNextImageKHR blocks until an image is available, and — like
+    // every vkWaitForFences call in this codebase's render path — had no timeout, so a lost
+    // device hung here forever (this was the ACTUAL remaining hang after the fence-wait
+    // fixes elsewhere in this file/viewport.cpp/texture.cpp: it's a different Vulkan call
+    // with its own timeout parameter, easy to miss searching only for vkWaitForFences).
+    // VK_TIMEOUT joins the existing OUT_OF_DATE/SUBOPTIMAL early-exit.
+    VkResult err = vkAcquireNextImageKHR(c->device, wd->Swapchain, kFrameFenceTimeoutNs, acq,
                                          VK_NULL_HANDLE, &wd->FrameIndex);
+    if (err == VK_TIMEOUT) return false;
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
         c->swapChainRebuild = true;
-        if (err == VK_ERROR_OUT_OF_DATE_KHR) return;
+        if (err == VK_ERROR_OUT_OF_DATE_KHR) return false;
     }
     ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
-    vkWaitForFences(c->device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);
+    // Bounded (#2155, see kViewportFenceTimeoutNs in viewport.cpp for the same reasoning —
+    // this is the core per-frame swapchain path every display mode shares, not something
+    // specific to Realistic mode's ray tracing): an unbounded wait here means a lost
+    // device freezes the WHOLE application, forever, on every single frame.
+    if (vkWaitForFences(c->device, 1, &fd->Fence, VK_TRUE, kFrameFenceTimeoutNs) != VK_SUCCESS) return false;
     vkResetFences(c->device, 1, &fd->Fence);
     vkResetCommandPool(c->device, fd->CommandPool, 0);
     VkCommandBufferBeginInfo begin{};
@@ -294,6 +316,7 @@ void frame_render(HeadContext* c, ImDrawData* dd, VkSemaphore* offscreenSems, in
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &done;
     vkQueueSubmit(c->queue, 1, &submit, fd->Fence);
+    return true;
 }
 
 void frame_present(HeadContext* c) {
@@ -651,8 +674,11 @@ void obk_head_end_frame(void* h, float r, float g, float b) {
     int offscreenCount = 0;
     obk_viewport_frame_flush(c, offscreenSems, &offscreenCount, minimized ? 0 : 1);
     if (!minimized) {
-        frame_render(c, dd, offscreenSems, offscreenCount);
-        frame_present(c);
+        // #2155: skip presenting when frame_render timed out — its command buffer was
+        // never submitted, so there is nothing new for frame_present to show, and
+        // presenting anyway would either show a stale/undefined image or hit a validation
+        // error over an unsignalled semaphore.
+        if (frame_render(c, dd, offscreenSems, offscreenCount)) frame_present(c);
     }
 }
 

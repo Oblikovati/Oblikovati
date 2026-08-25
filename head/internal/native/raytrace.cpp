@@ -5,6 +5,8 @@
 // instanced draw path) is a later PBI; this establishes the correct, hardware-verified
 // acceleration-structure and ray-query mechanics renderer.Intersector needs.
 #include "raytrace.h"
+#include <algorithm>
+#include <array>
 #include <cstring>
 #include <vector>
 
@@ -13,13 +15,14 @@ namespace {
 bool ok(VkResult r) { return r == VK_SUCCESS; }
 
 // kRealisticParamsBytes is the live per-pixel Realistic-viewport pipeline's Params UBO
-// size (#2148): 56 float32 / 224 bytes — the original 16-float base-lobes-only layout
+// size (#2148): 60 float32 / 240 bytes — the original 16-float base-lobes-only layout
 // (RealisticLightParams' first 16 fields) plus 40 more for Coat/Fuzz/ThinFilm/
-// Transmission+dispersion/Subsurface, laid out exactly as raytrace.go's
-// RealisticLightParams.floats() and swpathtrace_realistic.comp/pathtrace_realistic.rchit's
-// Params struct. Distinct from (and independent of) obk_rt_scene_build_pipeline's
-// single-ray test-harness PipelineParams, which stays fixed at 16 floats/64 bytes.
-constexpr VkDeviceSize kRealisticParamsBytes = 56 * sizeof(float);
+// Transmission+dispersion/Subsurface (#2148), plus 4 more for Env/LightIsEnvironment
+// (#2135/#2155), laid out exactly as raytrace.go's RealisticLightParams.floats() and
+// swpathtrace_realistic.comp/pathtrace_realistic.rchit's Params struct. Distinct from
+// (and independent of) obk_rt_scene_build_pipeline's single-ray test-harness
+// PipelineParams, which stays fixed at 16 floats/64 bytes.
+constexpr VkDeviceSize kRealisticParamsBytes = 60 * sizeof(float);
 
 // VK_KHR_acceleration_structure's functions are not part of the Linux Vulkan loader's
 // direct-link trampoline set (unlike e.g. VK_KHR_swapchain's), so they must be resolved
@@ -36,6 +39,11 @@ struct RTFunctions {
     PFN_vkCreateRayTracingPipelinesKHR createRTPipeline = nullptr;
     PFN_vkGetRayTracingShaderGroupHandlesKHR getShaderGroupHandles = nullptr;
     PFN_vkCmdTraceRaysKHR cmdTraceRays = nullptr;
+    // Pipeline stack sizing (#2155) — required once a pipeline actually recurses (a hit
+    // shader tracing another ray from within itself, not just a single-level shadow
+    // query): see rt_pipeline_stack_size's own doc comment for why.
+    PFN_vkGetRayTracingShaderGroupStackSizeKHR getGroupStackSize = nullptr;
+    PFN_vkCmdSetRayTracingPipelineStackSizeKHR cmdSetStackSize = nullptr;
 };
 
 // rt_load_functions resolves every extension-only entry point fresh, into fn, for
@@ -66,6 +74,10 @@ void rt_load_functions(VkDevice device, RTFunctions& fn) {
     fn.getShaderGroupHandles = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetDeviceProcAddr(
         device, "vkGetRayTracingShaderGroupHandlesKHR");
     fn.cmdTraceRays = (PFN_vkCmdTraceRaysKHR)vkGetDeviceProcAddr(device, "vkCmdTraceRaysKHR");
+    fn.getGroupStackSize = (PFN_vkGetRayTracingShaderGroupStackSizeKHR)vkGetDeviceProcAddr(
+        device, "vkGetRayTracingShaderGroupStackSizeKHR");
+    fn.cmdSetStackSize = (PFN_vkCmdSetRayTracingPipelineStackSizeKHR)vkGetDeviceProcAddr(
+        device, "vkCmdSetRayTracingPipelineStackSizeKHR");
 }
 
 struct RTBuffer {
@@ -115,6 +127,7 @@ struct RTScene {
     RTBuffer sbtBuf;
     RTBuffer pipeCamBuf, pipeOutputBuf, pipeParamsBuf;
     uint32_t sbtHandleSize = 0, sbtHandleAlignment = 0, sbtBaseAlignment = 0;
+    uint32_t pipeStackSize = 0; // vkCmdSetRayTracingPipelineStackSizeKHR — see rt_pipeline_stack_size
     bool pipelineBuilt = false;
 
     // Live per-pixel Realistic-viewport pipeline (M45-F05 PBI-350) — a THIRD, independent
@@ -129,8 +142,19 @@ struct RTScene {
     VkDescriptorSet imgDescSet = VK_NULL_HANDLE;
     RTBuffer imgSbtBuf, imgCamBuf, imgParamsBuf, imgOutputBuf;
     uint32_t imgSbtHandleSize = 0, imgSbtHandleAlignment = 0, imgSbtBaseAlignment = 0;
+    uint32_t imgStackSize = 0; // vkCmdSetRayTracingPipelineStackSizeKHR — see rt_pipeline_stack_size
     int imgOutputWidth = 0, imgOutputHeight = 0; // 0 until the first trace_realistic_image call sizes imgOutputBuf
     bool imgPipelineBuilt = false;
+
+    // dummyEnv* is a lazily-created 1×1 fallback for the environment binding (#2155's IBL
+    // follow-up, ensure_dummy_env) — used ONLY when this scene's HeadContext has no
+    // Viewport (obk_viewport_env_binding reports view=0), e.g. several existing test
+    // harnesses that create an RTScene without ever calling InitViewport. Shared by both
+    // pipeline builders below rather than one per pipeline, since only one is ever needed.
+    VkImage dummyEnvImage = VK_NULL_HANDLE;
+    VkDeviceMemory dummyEnvMem = VK_NULL_HANDLE;
+    VkImageView dummyEnvView = VK_NULL_HANDLE;
+    VkSampler dummyEnvSampler = VK_NULL_HANDLE;
 };
 
 namespace {
@@ -188,12 +212,25 @@ void rt_destroy_buffer(HeadContext* c, RTBuffer* b) {
     *b = RTBuffer{};
 }
 
+// rtCommandTimeoutNs bounds rt_run_commands' fence wait (#2155 live-testing finding): a
+// lost/faulted device (the "radv/amdgpu: CS has been cancelled... hard recovery" class
+// this codebase has hit repeatedly during real-hardware testing, e.g. issue #2143) leaves
+// a submitted fence permanently unsignaled — an unbounded wait here means one bad GPU
+// event freezes the calling thread forever, which for a live per-frame caller (the
+// Realistic-mode viewport) means freezing the WHOLE application's UI, not just that one
+// dispatch. 5s is generous for any legitimate single dispatch this scene size targets
+// (interactive frame budgets are milliseconds, not seconds) while still bounding the
+// worst case to something a caller can recover from instead of hanging indefinitely.
+constexpr uint64_t rtCommandTimeoutNs = 5'000'000'000ULL;
+
 // rt_run_commands records cmds into a fresh one-shot command buffer and submits+waits —
 // the same idiom as viewport.cpp's readback path (VkCommandBufferAllocateInfo → begin →
 // record → end → submit → wait fence → free), using this scene's own pool/fence since an
-// RTScene is not tied to a live Viewport's frame resources.
+// RTScene is not tied to a live Viewport's frame resources. Returns false if the fence
+// wait times out (see rtCommandTimeoutNs) — callers must treat that as a failed dispatch,
+// not assume cmds' side effects (e.g. a filled output buffer) completed.
 template <typename Fn>
-void rt_run_commands(RTScene* s, Fn&& cmds) {
+bool rt_run_commands(RTScene* s, Fn&& cmds) {
     VkCommandBufferAllocateInfo cba{};
     cba.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     cba.commandPool = s->cmdPool;
@@ -213,8 +250,123 @@ void rt_run_commands(RTScene* s, Fn&& cmds) {
     submit.pCommandBuffers = &cmd;
     vkResetFences(s->ctx->device, 1, &s->fence);
     vkQueueSubmit(s->ctx->queue, 1, &submit, s->fence);
-    vkWaitForFences(s->ctx->device, 1, &s->fence, VK_TRUE, UINT64_MAX);
+    VkResult waitResult = vkWaitForFences(s->ctx->device, 1, &s->fence, VK_TRUE, rtCommandTimeoutNs);
     vkFreeCommandBuffers(s->ctx->device, s->cmdPool, 1, &cmd);
+    return waitResult == VK_SUCCESS;
+}
+
+// record_dummy_env_upload records the barrier/copy/barrier sequence that gets a 1x1
+// staging buffer's pixel into img, ready for the ray-tracing shader stage to sample —
+// split out of ensure_dummy_env's command-recording lambda to stay within this project's
+// 20-line function limit and give the lambda an explicit (not implicit-by-reference)
+// capture list.
+void record_dummy_env_upload(VkCommandBuffer cmd, VkImage img, VkBuffer stagingBuf) {
+    VkImageMemoryBarrier toDst{};
+    toDst.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    toDst.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    toDst.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    toDst.srcAccessMask = 0;
+    toDst.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    toDst.image = img;
+    toDst.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                         0, nullptr, 0, nullptr, 1, &toDst);
+    VkBufferImageCopy cp{};
+    cp.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    cp.imageExtent = {1, 1, 1};
+    vkCmdCopyBufferToImage(cmd, stagingBuf, img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &cp);
+    VkImageMemoryBarrier toRead = toDst;
+    toRead.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    toRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    toRead.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    toRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    // Consumed by pathtrace_realistic.rmiss (VK_SHADER_STAGE_MISS_BIT_KHR), not a
+    // fragment shader — RAY_TRACING_SHADER_BIT_KHR, not FRAGMENT_SHADER_BIT, or this
+    // barrier doesn't actually order the layout transition against the shader that
+    // reads it.
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0,
+                         0, nullptr, 0, nullptr, 1, &toRead);
+}
+
+// ensure_dummy_env lazily creates a 1×1 mid-grey fallback environment image+sampler on s
+// (#2155's IBL follow-up) — used only when s's HeadContext has no Viewport (so
+// obk_viewport_env_binding has nothing real to report), so the descriptor set's
+// environment binding still has something valid to point at (an unwritten
+// combined-image-sampler binding is invalid even in a pipeline whose shader never samples
+// it). Mirrors viewport.cpp's own init_default_env fallback in spirit, at 1x1 scale.
+bool ensure_dummy_env(RTScene* s) {
+    if (s->dummyEnvView != VK_NULL_HANDLE) return true;
+    HeadContext* c = s->ctx;
+    constexpr VkFormat kFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+    const std::array<float, 4> grey = {0.05f, 0.05f, 0.05f, 1.0f};
+
+    RTBuffer staging{};
+    if (!rt_upload_buffer(c, &staging, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, grey.data(), grey.size() * sizeof(float)))
+        return false;
+
+    VkImageCreateInfo ii{};
+    ii.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ii.imageType = VK_IMAGE_TYPE_2D;
+    ii.format = kFormat;
+    ii.extent = {1, 1, 1};
+    ii.mipLevels = 1;
+    ii.arrayLayers = 1;
+    ii.samples = VK_SAMPLE_COUNT_1_BIT;
+    ii.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ii.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    ii.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    if (!ok(vkCreateImage(c->device, &ii, c->allocator, &s->dummyEnvImage))) return false;
+    VkMemoryRequirements req{};
+    vkGetImageMemoryRequirements(c->device, s->dummyEnvImage, &req);
+    VkMemoryAllocateInfo ai{};
+    ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    ai.allocationSize = req.size;
+    ai.memoryTypeIndex = obk_find_memory_type(c->physical, req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (!ok(vkAllocateMemory(c->device, &ai, c->allocator, &s->dummyEnvMem))) return false;
+    if (!ok(vkBindImageMemory(c->device, s->dummyEnvImage, s->dummyEnvMem, 0))) return false;
+
+    VkImage img = s->dummyEnvImage;
+    VkBuffer stagingBuf = staging.buffer;
+    bool copied = rt_run_commands(s, [img, stagingBuf](VkCommandBuffer cmd) {
+        record_dummy_env_upload(cmd, img, stagingBuf);
+    });
+    rt_destroy_buffer(c, &staging);
+    if (!copied) return false;
+
+    VkImageViewCreateInfo vi{};
+    vi.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    vi.image = s->dummyEnvImage;
+    vi.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    vi.format = kFormat;
+    vi.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    if (!ok(vkCreateImageView(c->device, &vi, c->allocator, &s->dummyEnvView))) return false;
+
+    VkSamplerCreateInfo si{};
+    si.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    si.magFilter = VK_FILTER_LINEAR;
+    si.minFilter = VK_FILTER_LINEAR;
+    si.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    si.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    si.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    return ok(vkCreateSampler(c->device, &si, c->allocator, &s->dummyEnvSampler));
+}
+
+// env_binding_for resolves the environment image/sampler s's descriptor sets should bind:
+// the live Viewport's (obk_viewport_env_binding) if one exists, else s's own lazily-built
+// 1×1 fallback (ensure_dummy_env). Returns false only if the fallback itself fails to
+// build (a real allocation failure, not "no viewport" — that's the expected/common case).
+bool env_binding_for(RTScene* s, VkImageView* view, VkSampler* sampler) {
+    uint64_t v = 0, samp = 0, gen = 0;
+    obk_viewport_env_binding(s->ctx, &v, &samp, &gen);
+    if (v != 0 && samp != 0) {
+        *view = (VkImageView)v;
+        *sampler = (VkSampler)samp;
+        return true;
+    }
+    if (!ensure_dummy_env(s)) return false;
+    *view = s->dummyEnvView;
+    *sampler = s->dummyEnvSampler;
+    return true;
 }
 
 // rt_build_acceleration_structure runs the shared query-size/create-buffer/create-AS/
@@ -265,11 +417,15 @@ VkAccelerationStructureKHR rt_build_acceleration_structure(RTScene* s, VkAcceler
     range.primitiveCount = primitiveCount;
     const VkAccelerationStructureBuildRangeInfoKHR* pRange = &range;
 
-    rt_run_commands(s, [&](VkCommandBuffer cmd) {
+    bool built = rt_run_commands(s, [&](VkCommandBuffer cmd) {
         s->rtFn.cmdBuild(cmd, 1, &buildInfo, &pRange);
     });
 
     rt_destroy_buffer(c, &scratch);
+    if (!built) {
+        s->rtFn.destroy(c->device, as, c->allocator);
+        return VK_NULL_HANDLE;
+    }
     return as;
 }
 
@@ -492,7 +648,7 @@ void obk_rt_scene_trace(void* scene, float ox, float oy, float oz, float dx, flo
     float rayParams[8] = {ox, oy, oz, tMin, dx, dy, dz, tMax};
     std::memcpy(s->rayParamsBuf.mapped, rayParams, sizeof(rayParams));
 
-    rt_run_commands(s, [&](VkCommandBuffer cmd) {
+    bool ok = rt_run_commands(s, [&](VkCommandBuffer cmd) {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->rqPipeline);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->rqPipeLayout, 0, 1, &s->rqDescSet, 0, nullptr);
         vkCmdDispatch(cmd, 1, 1, 1);
@@ -503,6 +659,7 @@ void obk_rt_scene_trace(void* scene, float ox, float oy, float oz, float dx, flo
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 1,
                              &barrier, 0, nullptr, 0, nullptr);
     });
+    if (!ok) return; // timed out: *hit is already 0, the result buffer's contents are undefined
 
     // Mirrors the shader's std430 HitResult block EXACTLY, including its layout rules:
     // a vec3 member's base alignment is 16 bytes, so 8 bytes of padding separate `t`
@@ -558,21 +715,59 @@ struct RTPipelineResources {
     uint32_t handleSize = 0;
     uint32_t handleAlignment = 0;
     uint32_t baseAlignment = 0;
+    uint32_t stackSize = 0;
 };
+
+// rt_pipeline_stack_size computes the pipeline's required call-stack size for
+// vkCmdSetRayTracingPipelineStackSizeKHR (#2155). Without this call, the driver is free
+// to use whatever default it likes for vkCmdTraceRaysKHR — RADV's default is sized for a
+// pipeline that never recurses past a single shadow-ray query, which this pipeline no
+// longer is (pathtrace_realistic.rchit now fires a bounded chain of continuation rays
+// through transmissive surfaces, invoking itself again for each). An undersized stack
+// overflows into unrelated GPU memory: observed live as an intermittent GPUVM fault/"CS
+// cancelled" device-lost error that also corrupted LATER, unrelated dispatches on the
+// same device — not a cosmetic bug. Formula per the VK_KHR_ray_tracing_pipeline spec's
+// own "Ray Tracing Pipeline Stack" section (raygen's own frame, plus one frame of the
+// worst-case hit/miss group per recursion level — this pipeline has no any-hit/
+// intersection/callable shaders, so those terms are always zero here).
+uint32_t rt_pipeline_stack_size(RTScene* s, VkPipeline pipeline, uint32_t recursionDepth) {
+    auto groupStack = [&](uint32_t group, VkShaderGroupShaderKHR shader) -> uint32_t {
+        return s->rtFn.getGroupStackSize(s->ctx->device, pipeline, group, shader);
+    };
+    uint32_t raygenStack = groupStack(0, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
+    uint32_t missStack = std::max(groupStack(1, VK_SHADER_GROUP_SHADER_GENERAL_KHR),
+                                  groupStack(2, VK_SHADER_GROUP_SHADER_GENERAL_KHR));
+    uint32_t hitStack = groupStack(3, VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR);
+    uint32_t perLevel = std::max(missStack, hitStack);
+    return raygenStack + recursionDepth * perLevel;
+}
 
 bool rt_build_4stage_pipeline(HeadContext* c, RTScene* s, const uint32_t* rgenSpv, int rgenLen,
                               const uint32_t* missSpv, int missLen, const uint32_t* shadowMissSpv,
                               int shadowMissLen, const uint32_t* chitSpv, int chitLen,
                               RTPipelineResources& out) {
-    VkDescriptorSetLayoutBinding bindings[4]{};
+    VkDescriptorSetLayoutBinding bindings[5]{};
     bindings[0] = {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1,
                   VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr};
     bindings[1] = {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr};
     bindings[2] = {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr};
-    bindings[3] = {3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr};
+    // #2155: RAYGEN_BIT added so pathtrace_realistic.rgen can read specularIOR/
+    // dispersionScale/dispersionAbbeNumber to decide its dispersion loop — harmless for
+    // the PBI-345 harness pipeline sharing this binding layout, whose rgen doesn't
+    // declare (and so never reads) the Params UBO at all.
+    bindings[3] = {3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
+                   VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr};
+    // #2155 IBL follow-up: the equirect environment map (Viewport's own envView/
+    // envSampler, obk_viewport_env_binding) so a primary ray that misses everything shows
+    // the sky instead of flat black. MISS_BIT only — the shadow miss (location 1) just
+    // sets a bool and never samples it. Harmless for the PBI-345 harness pipeline sharing
+    // this binding layout: its own pathtrace.rmiss doesn't declare binding 4, so it's
+    // simply unused there (a valid descriptor is still written — see both callers below —
+    // since an unwritten binding in a bound set is invalid even if no shader reads it).
+    bindings[4] = {4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_MISS_BIT_KHR, nullptr};
     VkDescriptorSetLayoutCreateInfo dslInfo{};
     dslInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    dslInfo.bindingCount = 4;
+    dslInfo.bindingCount = 5;
     dslInfo.pBindings = bindings;
     if (!ok(vkCreateDescriptorSetLayout(c->device, &dslInfo, c->allocator, &out.dsLayout))) return false;
 
@@ -620,13 +815,34 @@ bool rt_build_4stage_pipeline(HeadContext* c, RTScene* s, const uint32_t* rgenSp
     groups[3].anyHitShader = VK_SHADER_UNUSED_KHR;
     groups[3].intersectionShader = VK_SHADER_UNUSED_KHR;
 
+    // #2155: vkCmdSetRayTracingPipelineStackSizeKHR (called before every trace dispatch,
+    // see obk_rt_scene_trace_pipeline/obk_rt_scene_trace_realistic_image) is a DYNAMIC
+    // STATE setter — per VUID-vkCmdTraceRaysKHR-None-08608, calling it on a pipeline that
+    // didn't declare VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR as dynamic at
+    // creation time is undefined behavior. Caught live via VK_LAYER_KHRONOS_validation
+    // (VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation) after the stack-size fix alone
+    // left an intermittent GPUVM fault: the dynamic-state omission, not the stack size
+    // value itself, was the actual undefined behavior — RADV apparently honored the call
+    // most of the time regardless, which is what made this so hard to pin down.
+    VkDynamicState dynamicState = VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR;
+    VkPipelineDynamicStateCreateInfo dynInfo{};
+    dynInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynInfo.dynamicStateCount = 1;
+    dynInfo.pDynamicStates = &dynamicState;
+
     VkRayTracingPipelineCreateInfoKHR pInfo{};
     pInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
     pInfo.stageCount = 4;
     pInfo.pStages = stages;
     pInfo.groupCount = 4;
     pInfo.pGroups = groups;
-    pInfo.maxPipelineRayRecursionDepth = 2; // primary ray + one shadow ray traced from within it
+    // primary ray + up to OPENPBR_MAX_TRANSMISSION_BOUNCES (extended_lobes.glsl)
+    // recursive continuation rays through transmissive surfaces + one terminal shadow ray
+    // fired from whichever level is deepest. The PBI-345 test-harness pipeline (this
+    // function's OTHER caller, obk_rt_scene_build_pipeline) never recurses past its own
+    // primary+shadow pair, so the higher budget is unused there, not unsafe.
+    pInfo.maxPipelineRayRecursionDepth = 6;
+    pInfo.pDynamicState = &dynInfo;
     pInfo.layout = out.pipeLayout;
     VkResult pipeResult =
         s->rtFn.createRTPipeline(c->device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &out.pipeline);
@@ -645,6 +861,7 @@ bool rt_build_4stage_pipeline(HeadContext* c, RTScene* s, const uint32_t* rgenSp
     out.handleSize = rtProps.shaderGroupHandleSize;
     out.handleAlignment = rtProps.shaderGroupHandleAlignment;
     out.baseAlignment = rtProps.shaderGroupBaseAlignment;
+    out.stackSize = rt_pipeline_stack_size(s, out.pipeline, pInfo.maxPipelineRayRecursionDepth);
     return true;
 }
 
@@ -667,6 +884,7 @@ int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLe
     s->sbtHandleSize = res.handleSize;
     s->sbtHandleAlignment = res.handleAlignment;
     s->sbtBaseAlignment = res.baseAlignment;
+    s->pipeStackSize = res.stackSize;
 
     std::vector<uint8_t> handles(4 * (size_t)s->sbtHandleSize);
     if (!ok(s->rtFn.getShaderGroupHandles(c->device, s->pipePipeline, 0, 4, handles.size(), handles.data())))
@@ -699,15 +917,16 @@ int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLe
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 16);
     vkMapMemory(c->device, s->pipeOutputBuf.memory, 0, 16, 0, &s->pipeOutputBuf.mapped);
 
-    VkDescriptorPoolSize poolSizes[3] = {
+    VkDescriptorPoolSize poolSizes[4] = {
         {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
         {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1},
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1},
     };
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.maxSets = 1;
-    poolInfo.poolSizeCount = 3;
+    poolInfo.poolSizeCount = 4;
     poolInfo.pPoolSizes = poolSizes;
     if (!ok(vkCreateDescriptorPool(c->device, &poolInfo, c->allocator, &s->pipeDescPool))) return 1;
 
@@ -718,6 +937,10 @@ int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLe
     dsAlloc.pSetLayouts = &s->pipeDsLayout;
     if (!ok(vkAllocateDescriptorSets(c->device, &dsAlloc, &s->pipeDescSet))) return 1;
 
+    VkImageView envView = VK_NULL_HANDLE;
+    VkSampler envSampler = VK_NULL_HANDLE;
+    if (!env_binding_for(s, &envView, &envSampler)) return 1;
+
     VkWriteDescriptorSetAccelerationStructureKHR asWrite{};
     asWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
     asWrite.accelerationStructureCount = 1;
@@ -725,7 +948,8 @@ int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLe
     VkDescriptorBufferInfo outInfo{s->pipeOutputBuf.buffer, 0, 16};
     VkDescriptorBufferInfo camInfo{s->pipeCamBuf.buffer, 0, 32};
     VkDescriptorBufferInfo paramInfo{s->pipeParamsBuf.buffer, 0, 64};
-    VkWriteDescriptorSet writes[4]{};
+    VkDescriptorImageInfo envInfo{envSampler, envView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkWriteDescriptorSet writes[5]{};
     writes[0] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, &asWrite, s->pipeDescSet, 0, 0, 1,
                 VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, nullptr, nullptr, nullptr};
     writes[1] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->pipeDescSet, 1, 0, 1,
@@ -734,7 +958,9 @@ int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLe
                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &camInfo, nullptr};
     writes[3] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->pipeDescSet, 3, 0, 1,
                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &paramInfo, nullptr};
-    vkUpdateDescriptorSets(c->device, 4, writes, 0, nullptr);
+    writes[4] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->pipeDescSet, 4, 0, 1,
+                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &envInfo, nullptr, nullptr};
+    vkUpdateDescriptorSets(c->device, 5, writes, 0, nullptr);
 
     s->pipelineBuilt = true;
     return 0;
@@ -761,8 +987,9 @@ void obk_rt_scene_trace_pipeline(void* scene, float ox, float oy, float oz, floa
     VkStridedDeviceAddressRegionKHR hitRegion{sbtBase + hitOffset, entryStride, entryStride};
     VkStridedDeviceAddressRegionKHR callableRegion{};
 
-    rt_run_commands(s, [&](VkCommandBuffer cmd) {
+    bool ok = rt_run_commands(s, [&](VkCommandBuffer cmd) {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->pipePipeline);
+        s->rtFn.cmdSetStackSize(cmd, s->pipeStackSize);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->pipePipeLayout, 0, 1,
                                 &s->pipeDescSet, 0, nullptr);
         s->rtFn.cmdTraceRays(cmd, &raygenRegion, &missRegion, &hitRegion, &callableRegion, 1, 1, 1);
@@ -773,6 +1000,7 @@ void obk_rt_scene_trace_pipeline(void* scene, float ox, float oy, float oz, floa
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_PIPELINE_STAGE_HOST_BIT, 0, 1,
                              &barrier, 0, nullptr, 0, nullptr);
     });
+    if (!ok) return; // timed out: leave outR/outG/outB untouched, same as the !pipelineBuilt early return above
 
     auto* out = reinterpret_cast<float*>(s->pipeOutputBuf.mapped);
     if (outR) *outR = out[0];
@@ -804,6 +1032,7 @@ int obk_rt_scene_build_realistic_pipeline(void* scene, const uint32_t* rgenSpv, 
     s->imgSbtHandleSize = res.handleSize;
     s->imgSbtHandleAlignment = res.handleAlignment;
     s->imgSbtBaseAlignment = res.baseAlignment;
+    s->imgStackSize = res.stackSize;
 
     std::vector<uint8_t> handles(4 * (size_t)s->imgSbtHandleSize);
     if (!ok(s->rtFn.getShaderGroupHandles(c->device, s->imgPipeline, 0, 4, handles.size(), handles.data())))
@@ -839,15 +1068,16 @@ int obk_rt_scene_build_realistic_pipeline(void* scene, const uint32_t* rgenSpv, 
     s->imgOutputWidth = 1;
     s->imgOutputHeight = 1;
 
-    VkDescriptorPoolSize poolSizes[3] = {
+    VkDescriptorPoolSize poolSizes[4] = {
         {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
         {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1},
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1},
     };
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.maxSets = 1;
-    poolInfo.poolSizeCount = 3;
+    poolInfo.poolSizeCount = 4;
     poolInfo.pPoolSizes = poolSizes;
     if (!ok(vkCreateDescriptorPool(c->device, &poolInfo, c->allocator, &s->imgDescPool))) return 1;
 
@@ -858,6 +1088,10 @@ int obk_rt_scene_build_realistic_pipeline(void* scene, const uint32_t* rgenSpv, 
     dsAlloc.pSetLayouts = &s->imgDsLayout;
     if (!ok(vkAllocateDescriptorSets(c->device, &dsAlloc, &s->imgDescSet))) return 1;
 
+    VkImageView envView = VK_NULL_HANDLE;
+    VkSampler envSampler = VK_NULL_HANDLE;
+    if (!env_binding_for(s, &envView, &envSampler)) return 1;
+
     VkWriteDescriptorSetAccelerationStructureKHR asWrite{};
     asWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
     asWrite.accelerationStructureCount = 1;
@@ -865,7 +1099,8 @@ int obk_rt_scene_build_realistic_pipeline(void* scene, const uint32_t* rgenSpv, 
     VkDescriptorBufferInfo outInfo{s->imgOutputBuf.buffer, 0, 16};
     VkDescriptorBufferInfo camInfo{s->imgCamBuf.buffer, 0, 64};
     VkDescriptorBufferInfo paramInfo{s->imgParamsBuf.buffer, 0, kRealisticParamsBytes};
-    VkWriteDescriptorSet writes[4]{};
+    VkDescriptorImageInfo envInfo{envSampler, envView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkWriteDescriptorSet writes[5]{};
     writes[0] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, &asWrite, s->imgDescSet, 0, 0, 1,
                 VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, nullptr, nullptr, nullptr};
     writes[1] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 1, 0, 1,
@@ -874,7 +1109,9 @@ int obk_rt_scene_build_realistic_pipeline(void* scene, const uint32_t* rgenSpv, 
                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &camInfo, nullptr};
     writes[3] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 3, 0, 1,
                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &paramInfo, nullptr};
-    vkUpdateDescriptorSets(c->device, 4, writes, 0, nullptr);
+    writes[4] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 4, 0, 1,
+                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &envInfo, nullptr, nullptr};
+    vkUpdateDescriptorSets(c->device, 5, writes, 0, nullptr);
 
     s->imgPipelineBuilt = true;
     return 0;
@@ -921,8 +1158,9 @@ int obk_rt_scene_trace_realistic_image(void* scene, int width, int height, const
     VkStridedDeviceAddressRegionKHR hitRegion{sbtBase + hitOffset, entryStride, entryStride};
     VkStridedDeviceAddressRegionKHR callableRegion{};
 
-    rt_run_commands(s, [&](VkCommandBuffer cmd) {
+    bool ok = rt_run_commands(s, [&](VkCommandBuffer cmd) {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->imgPipeline);
+        s->rtFn.cmdSetStackSize(cmd, s->imgStackSize);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->imgPipeLayout, 0, 1,
                                 &s->imgDescSet, 0, nullptr);
         s->rtFn.cmdTraceRays(cmd, &raygenRegion, &missRegion, &hitRegion, &callableRegion,
@@ -934,6 +1172,12 @@ int obk_rt_scene_trace_realistic_image(void* scene, int width, int height, const
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_PIPELINE_STAGE_HOST_BIT, 0, 1,
                              &barrier, 0, nullptr, 0, nullptr);
     });
+    // #2155: a timed-out dispatch (see rt_run_commands/rtCommandTimeoutNs) reports failure
+    // instead of reading back whatever the output buffer happens to hold — the caller
+    // (RTScene.TraceRealisticImage -> traceRealisticFrame -> renderRealisticViewportImage)
+    // already treats an error here as "this frame failed," falling back to the raster pass
+    // for that frame (renderRealisticViewportImage's own doc comment) rather than hanging.
+    if (!ok) return 1;
 
     auto* out = reinterpret_cast<float*>(s->imgOutputBuf.mapped);
     for (int i = 0; i < width * height; i++) {
@@ -980,6 +1224,10 @@ void obk_rt_scene_destroy(void* scene) {
         rt_destroy_buffer(c, &b.vertexBuf);
         rt_destroy_buffer(c, &b.indexBuf);
     }
+    if (s->dummyEnvSampler) vkDestroySampler(c->device, s->dummyEnvSampler, c->allocator);
+    if (s->dummyEnvView) vkDestroyImageView(c->device, s->dummyEnvView, c->allocator);
+    if (s->dummyEnvImage) vkDestroyImage(c->device, s->dummyEnvImage, c->allocator);
+    if (s->dummyEnvMem) vkFreeMemory(c->device, s->dummyEnvMem, c->allocator);
     if (s->fence) vkDestroyFence(c->device, s->fence, c->allocator);
     if (s->cmdPool) vkDestroyCommandPool(c->device, s->cmdPool, c->allocator);
     delete s;

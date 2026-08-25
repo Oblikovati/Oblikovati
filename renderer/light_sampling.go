@@ -38,6 +38,11 @@ func NewLightDistribution(lights []SceneLight) *LightDistribution {
 // Len is the number of lights in the distribution.
 func (d *LightDistribution) Len() int { return len(d.lights) }
 
+// TotalWeight is the distribution's total power-based weight — a caller combining this
+// distribution with EnvironmentDistribution (pEnv = envWeight / (envWeight + this)) needs
+// it to weight the two selection strategies against each other.
+func (d *LightDistribution) TotalWeight() float64 { return d.total }
+
 // PDF is light index i's discrete selection probability (weight_i / total weight).
 func (d *LightDistribution) PDF(i int) float64 {
 	if d.total <= 0 {

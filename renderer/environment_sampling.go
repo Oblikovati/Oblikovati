@@ -108,16 +108,48 @@ func (d *EnvironmentDistribution) PDF(x, y int) float64 {
 	return d.luma[y][x] * float64(d.w) * float64(d.h) / (d.totalMass * 2 * math.Pi * math.Pi)
 }
 
-// direction converts texel (x,y) to a unit direction: row 0 is the zenith (+Z), the
-// last row the nadir, columns sweep azimuth 0..2π — matching envimage.Equirect's own
-// documented convention exactly, so callers can pass its pixels through unmodified.
+// direction converts texel (x,y) to a unit direction, at the environment's own zero
+// rotation: row 0 is the zenith (+Z), the last row the nadir. The azimuth formula below
+// is the EXACT algebraic inverse (at rot=0) of the shader-side sampling convention this
+// package must stay consistent with — skybox.frag's/openpbr/env_sample.glsl's
+// `u = atan(d.y,d.x)/(2π) + 0.5 + rot/(2π)` — NOT the naive `2π*(x+0.5)/w` a reader might
+// expect from envimage.Equirect's "columns sweep azimuth 0..2π" doc comment: that phrasing
+// describes generate()'s arbitrary [0,1) authoring parameter, not the azimuth a SAMPLER
+// recovers from a world direction. Solving u's formula for atan(d.y,d.x) at rot=0 with
+// u=(x+0.5)/w gives phi = 2π*(x+0.5)/w - π (see TestEnvironmentDistributionMatchesShaderSampling,
+// which round-trips this exactly). Getting this wrong doesn't just mis-align an unrelated
+// texel — since Sample's returned pdf is computed from the (x,y) texel this function
+// converts, a caller that later re-samples the environment TEXTURE at the returned
+// direction (rather than reading pixels[] at (x,y) directly, as the live path tracer
+// does — GPU texture, no CPU-side lookup) would divide one texel's radiance by a
+// DIFFERENT texel's pdf: not merely inefficient importance sampling, but a biased
+// estimator.
 func (d *EnvironmentDistribution) direction(x, y int) [3]float32 {
 	theta := math.Pi * (float64(y) + 0.5) / float64(d.h)
-	phi := 2 * math.Pi * (float64(x) + 0.5) / float64(d.w)
+	phi := 2*math.Pi*(float64(x)+0.5)/float64(d.w) - math.Pi
 	sinTheta := math.Sin(theta)
 	return [3]float32{
 		float32(sinTheta * math.Cos(phi)),
 		float32(sinTheta * math.Sin(phi)),
 		float32(math.Cos(theta)),
 	}
+}
+
+// TotalWeight is the distribution's total solid-angle-weighted radiance mass — the
+// environment's counterpart to LightDistribution's own (private) discrete-light total,
+// exposed so a caller combining both into one selection probability (pEnv = envWeight /
+// (envWeight + lightsWeight)) can read it without re-deriving the pixel sum itself.
+func (d *EnvironmentDistribution) TotalWeight() float64 { return d.totalMass }
+
+// RotateAroundZ applies the environment's runtime azimuthal rotation (app.EnvironmentState
+// .Rotation, radians) to a direction already resolved at the distribution's zero-rotation
+// baseline (direction/Sample above): solving env_sample.glsl's `u += rot/(2π)` for a FIXED
+// texel shows the world-space azimuth shifts by -rot as rotation increases (a larger rot
+// shows an EARLIER part of the map at a given screen direction), so this rotates by -rot,
+// not +rot — see EnvironmentDistribution.direction's own doc comment for the u/phi algebra
+// this inverts.
+func RotateAroundZ(dir [3]float32, rotation float32) [3]float32 {
+	s, c := math.Sincos(float64(-rotation))
+	x, y := float64(dir[0]), float64(dir[1])
+	return [3]float32{float32(x*c - y*s), float32(x*s + y*c), dir[2]}
 }

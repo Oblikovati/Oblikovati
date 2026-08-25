@@ -17,11 +17,16 @@ import (
 // envCache memoizes the uploaded IBL environment so the (expensive) decode + mip + GPU upload
 // happens only when the chosen environment image changes, not every frame. The pixel key
 // (preset + file) gates re-decoding; rotation/intensity ride along on each upload (they change
-// only on user action, never per frame).
+// only on user action, never per frame). dist (#2135/#2155's illumination-contribution
+// follow-up) is built alongside upload from the SAME base-resolution decode, gated by the
+// same pixelKey — Realistic mode's pickLightParams importance-samples it to pick which
+// texel's direction to treat as this dispatch's "light" when it chooses the environment
+// over a discrete light.
 type envCache struct {
 	pixelKey string
 	paramKey string
 	upload   envimage.Upload
+	dist     *renderer.EnvironmentDistribution
 	active   bool
 }
 
@@ -75,9 +80,22 @@ func (e *envCache) resolve(env renderer.Environment) {
 	}
 	if !ok || err != nil {
 		e.upload = envimage.Upload{}
+		e.dist = nil
 		e.active = false
 		return
 	}
 	e.upload = envimage.Flatten(envimage.MipChain(img))
+	e.dist = renderer.NewEnvironmentDistribution(img.W, img.H, img.Pixels)
 	e.active = true
+}
+
+// currentEnvironmentDistribution returns the active environment's importance-sampling
+// distribution (nil if none is active/loaded yet) — Realistic mode's pickLightParams
+// queries this after applyEnvironment has run for the frame (renderViewportImage calls
+// applyEnvironment unconditionally before either render path, #2155's IBL follow-up).
+func currentEnvironmentDistribution() *renderer.EnvironmentDistribution {
+	if !viewportEnv.active {
+		return nil
+	}
+	return viewportEnv.dist
 }

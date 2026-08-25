@@ -87,6 +87,15 @@ func cpuOracleExtendedPixel(origin, direction [3]float32, p RealisticLightParams
 		diffuseSlab = openpbr.MixSubsurface(diffuse, subsurface, float64(p.SubsurfaceWeight))
 	}
 	base := diffuseSlab.Add(specular)
+	if p.TransmissionWeight > 0 {
+		// The flat single-quad fixture has nothing for a transmitted ray to reach (it
+		// always misses into black background, whether thin-walled-straight or
+		// solid-refracted — see this file's TestTransmissionMatchesCPUOracle doc
+		// comment), so the traced contribution is exactly zero here: only the LOCAL
+		// mix(opaqueBase, specular-only translucentBase, weight) term survives, an
+		// exact closed form matching openpbr.MixTransmission/openpbrMixTransmission.
+		base = openpbr.MixTransmission(base, specular, float64(p.TransmissionWeight))
+	}
 
 	coatColor := openpbr.Color3{R: float64(p.CoatColor[0]), G: float64(p.CoatColor[1]), B: float64(p.CoatColor[2])}
 	fCoat := specularSingleScatter(wi, wo, float64(p.CoatRoughness), float64(p.CoatIOR))
@@ -160,6 +169,22 @@ var extendedLobeCases = []extendedLobeCase{
 		p.SubsurfaceWeight = 0.7
 		p.SubsurfaceAnisotropy = 0
 	}},
+	{"transmission-thinwalled", func(p *RealisticLightParams) {
+		p.TransmissionWeight = 0.8
+		p.ThinWalled = 1
+	}},
+	// Same expected pixel color as transmission-thinwalled (the flat single-quad
+	// fixture has nothing for either a straight-through or a Snell-refracted
+	// continuation ray to reach, so both miss to black identically — see
+	// cpuOracleExtendedPixel's own comment) — exercises openpbrRefract's real
+	// Snell's-law/IOR-stack branch (ThinWalled=0) for crash/NaN/sign coverage on both
+	// backends, complementing the thin-walled case above and the solid-refraction
+	// Blender golden (TestOpenPBRTransmissionMatchesBlenderReference) which validates
+	// the visual result numerically.
+	{"transmission-solid", func(p *RealisticLightParams) {
+		p.TransmissionWeight = 0.8
+		p.SpecularIOR = 1.5
+	}},
 }
 
 // TestRTSceneExtendedLobesMatchCPUOracle is #2148's hardware-backend acceptance
@@ -185,7 +210,7 @@ func TestRTSceneExtendedLobesMatchCPUOracle(t *testing.T) {
 	if err := scene.Build(); err != nil {
 		t.Fatalf("Build: %v", err)
 	}
-	if err := scene.BuildRealisticPipeline(pathtraceRealisticRgenSPV, pathtraceRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV); err != nil {
+	if err := scene.BuildRealisticPipeline(pathtraceRealisticRgenSPV, pathtraceRealisticRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV); err != nil {
 		t.Skipf("no hardware RT pipeline available: %v", err)
 	}
 
@@ -272,7 +297,7 @@ func TestExtendedLobesZeroWeightReproducesBaseLobes(t *testing.T) {
 	if err := scene.Build(); err != nil {
 		t.Fatalf("Build: %v", err)
 	}
-	if err := scene.BuildRealisticPipeline(pathtraceRealisticRgenSPV, pathtraceRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV); err != nil {
+	if err := scene.BuildRealisticPipeline(pathtraceRealisticRgenSPV, pathtraceRealisticRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV); err != nil {
 		t.Skipf("no hardware RT pipeline available: %v", err)
 	}
 

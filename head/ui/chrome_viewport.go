@@ -490,6 +490,15 @@ func maxF32(a, b float32) float32 {
 // input-capturing button at (cx,cy) so the panel shows the rendered scene.
 func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene.Camera, list renderer.DrawList, bodyCount, pw, ph int, cx, cy float32) {
 	if s.VisualStyle() == renderer.Realistic {
+		// #2155's IBL follow-up: Realistic mode's RT/SW pipelines sample the SAME uploaded
+		// environment image via obk_viewport_env_binding (env_binding_for's own doc comment
+		// in raytrace.cpp/swtrace.cpp) that the raster path uploads further down — but a
+		// session that renders in Realistic mode from its very first frame would otherwise
+		// never reach that call at all (it returns below before getting there) and always
+		// fall back to the 1x1 dummy grey image. Called here, scoped to this branch only, so
+		// the raster path's own applyEnvironment call further down keeps its original
+		// timing relative to the rest of that path unchanged.
+		applyEnvironment(win, app.RenderEnvironment(s.Environment())) // app value -> renderer at the wall (B10 #1621)
 		if tex, samples, ok := renderRealisticViewportImage(win, s, slot, cam, pw, ph); ok {
 			drawRealisticResult(tex, samples, pw, ph, cx, cy)
 			return

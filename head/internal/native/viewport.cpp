@@ -74,6 +74,20 @@ static const int kMaxTiles = 4;
 // scene being orbited then pipelines instead of fully serialising CPU↔GPU every frame.
 static const int kFramesInFlight = 2;
 
+// kViewportFenceTimeoutNs bounds every vkWaitForFences in this file (#2155 live-testing
+// finding): a lost/faulted device (the "radv/amdgpu: CS has been cancelled... hard
+// recovery" class already tracked as #2143) leaves a submitted fence permanently
+// unsignaled. An unbounded wait ANYWHERE in this file freezes the calling thread forever
+// — and because this file's functions run in the main render loop (obk_head_begin_frame/
+// obk_head_end_frame), that means freezing the WHOLE APPLICATION's UI, not just one
+// dispatch, for every display mode (this is the core per-frame path every visual style
+// shares, not something specific to Realistic mode's ray tracing). Every call site below
+// treats a timeout as "skip this specific GPU-touching step and let the caller retry next
+// frame" — never as license to touch a resource whose completion fence hasn't actually
+// signaled. Same 5s value as raytrace.cpp's rtCommandTimeoutNs/swtrace.cpp's
+// swCommandTimeoutNs, for the same reasoning.
+static const uint64_t kViewportFenceTimeoutNs = 5'000'000'000ULL;
+
 // Target is one size-dependent offscreen render target: a color+depth image, its
 // framebuffer, and the ImGui sampled-image set that draws it into a panel. One per tile.
 struct Target {
@@ -144,6 +158,15 @@ struct Viewport {
     VkDeviceMemory  envMem = VK_NULL_HANDLE;
     VkImageView     envView = VK_NULL_HANDLE;
     VkSampler       envSampler = VK_NULL_HANDLE;
+    // envGeneration increments every time envView/envSampler are (re)created (#2155's IBL
+    // follow-up): a Realistic-mode RTScene/SWScene descriptor set snapshots whichever
+    // VkImageView it was written with — recreating the environment image (a different
+    // handle) leaves any earlier-written descriptor set pointing at a destroyed view. The
+    // live per-frame path (head/ui/realistic_render.go) folds this generation into its
+    // existing scene-content hash, so an environment change forces the SAME rebuild path
+    // that already fires on geometry changes, re-writing the descriptor with the current
+    // view instead of needing a second, parallel invalidation mechanism.
+    uint64_t        envGeneration = 0;
 
     // Skybox draw state: the inverse view-projection (column-major) and whether to draw the
     // environment background this frame, set per frame by obk_viewport_set_skybox.
@@ -931,10 +954,19 @@ void make_env_image(HeadContext* c, Viewport* v, const float* data, const int* d
     submit.pCommandBuffers = &cmd;
     vkResetFences(c->device, 1, &v->fence);
     vkQueueSubmit(c->queue, 1, &submit, v->fence);
-    vkWaitForFences(c->device, 1, &v->fence, VK_TRUE, UINT64_MAX);
+    bool uploaded = vkWaitForFences(c->device, 1, &v->fence, VK_TRUE, kViewportFenceTimeoutNs) == VK_SUCCESS;
     vkFreeCommandBuffers(c->device, v->cmdPool, 1, &cmd);
     vkDestroyBuffer(c->device, staging.buffer, nullptr);
     vkFreeMemory(c->device, staging.memory, nullptr);
+    if (!uploaded) {
+        // A timed-out fence means the copy/barrier above may not have run: v->envImage's
+        // contents (and even its layout) are undefined. Tear it back down rather than
+        // create a view/descriptor over possibly-garbage data — leaves the environment at
+        // "none" (destroy_env_image already nulled v->envView/envMem, so a null envImage is
+        // internally consistent), which the next environment change or app restart retries.
+        destroy_env_image(c, v);
+        return;
+    }
 
     VkImageViewCreateInfo vi{};
     vi.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -944,6 +976,7 @@ void make_env_image(HeadContext* c, Viewport* v, const float* data, const int* d
     vi.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, (uint32_t)levels, 0, 1};
     vkCreateImageView(c->device, &vi, nullptr, &v->envView);
     write_env_descriptor(c, v);
+    v->envGeneration++;
 }
 
 // create_env_sampler builds the IBL sampler: trilinear with azimuth wrap (U repeat) and a
@@ -1303,8 +1336,13 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
         // vbuf/ibuf are SHARED across the in-flight ring; re-uploading (or growing) them while a
         // previous frame still reads them would corrupt that frame. Re-uploads happen only on a real
         // geometry change (rare — not the orbit path, #1422), so draining the ring here is cheap and
-        // keeps the shared geometry safe under frames-in-flight (#1421).
-        vkWaitForFences(c->device, kFramesInFlight, v->frameFence, VK_TRUE, UINT64_MAX);
+        // keeps the shared geometry safe under frames-in-flight (#1421). Bounded (#2155): the draw
+        // calls below are scattered across ~250 lines and can't all be safely gated on a timeout
+        // without risking a subtler bug than the one being fixed, so a timeout here proceeds anyway
+        // (turning a permanent hang into an at-most-5s stall) rather than attempting a full abort —
+        // the observed real-world trigger (a lost/reset device) means nothing is still reading the
+        // old buffer regardless, so proceeding is the actually-safe case in practice.
+        vkWaitForFences(c->device, kFramesInFlight, v->frameFence, VK_TRUE, kViewportFenceTimeoutNs);
         std::vector<float> verts;
         verts.reserve((size_t)(occVC + triVC + lineVC + hidVC + topTriVC + topLineVC + wideVC + topWideVC) * kVertexFloats);
         verts.insert(verts.end(), occV, occV + (size_t)occVC * kVertexFloats);
@@ -1624,7 +1662,12 @@ void obk_viewport_frame_begin(HeadContext* c) {
     Viewport* v = c ? c->viewport : nullptr;
     if (!v) return;
     const int r = (int)(v->frameIndex % kFramesInFlight);
-    vkWaitForFences(c->device, 1, &v->frameFence[r], VK_TRUE, UINT64_MAX);
+    // Bounded (#2155): this should return near-instantly (the fence was signalled
+    // kFramesInFlight frames ago — the comment above). A timeout here means the device is
+    // in real trouble; the flag resets below are harmless CPU-side bookkeeping either way,
+    // so this caps the worst case at kViewportFenceTimeoutNs instead of hanging forever,
+    // without changing normal-path behavior at all.
+    vkWaitForFences(c->device, 1, &v->frameFence[r], VK_TRUE, kViewportFenceTimeoutNs);
     v->frameShadowDone[r] = false;
     v->frameSubmitted = false;
     v->pendingCount = 0;
@@ -1770,7 +1813,10 @@ int obk_viewport_readback(void* h, int slot, unsigned char* out, int cap, int* w
     // image is actually rendered before we copy it (readback runs mid-frame, before the frame flush).
     const int r = (int)(v->frameIndex % kFramesInFlight);
     submit_offscreen(c, v, true);
-    vkWaitForFences(c->device, 1, &v->frameFence[r], VK_TRUE, UINT64_MAX);
+    // Bounded (#2155): a timeout means the color image may not be fully rendered — report
+    // "not ready" (this function's own documented 0 return) rather than copy possibly-
+    // incomplete GPU work.
+    if (vkWaitForFences(c->device, 1, &v->frameFence[r], VK_TRUE, kViewportFenceTimeoutNs) != VK_SUCCESS) return 0;
     Target* t = &v->slots[slotIndex(slot)][r].target;
     if (t->colorImage == VK_NULL_HANDLE || t->width <= 0 || t->height <= 0) return 0;
     int need = t->width * t->height * 4;
@@ -1811,7 +1857,11 @@ int obk_viewport_readback(void* h, int slot, unsigned char* out, int cap, int* w
     submit.pCommandBuffers = &cmd;
     vkResetFences(c->device, 1, &v->fence);
     vkQueueSubmit(c->queue, 1, &submit, v->fence);
-    vkWaitForFences(c->device, 1, &v->fence, VK_TRUE, UINT64_MAX);
+    // Bounded (#2155): on timeout, deliberately leak cmd/staging rather than free/destroy
+    // them while the GPU might still be mid-copy into them (freeing a pending command
+    // buffer, or destroying memory a still-running transfer writes to, is undefined
+    // behavior — worse than a bounded, rare leak in an already-degraded path).
+    if (vkWaitForFences(c->device, 1, &v->fence, VK_TRUE, kViewportFenceTimeoutNs) != VK_SUCCESS) return 0;
     vkFreeCommandBuffers(c->device, v->cmdPool, 1, &cmd);
 
     void* mapped = nullptr;
@@ -1843,8 +1893,10 @@ int obk_window_capture(void* h, unsigned char* out, int cap, int* w, int* hh) {
     if (hh) *hh = wd->Height;
     if (!out || cap < need) return 0;
 
-    // The ImGui render into this backbuffer must be complete before we read it.
-    vkWaitForFences(c->device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);
+    // The ImGui render into this backbuffer must be complete before we read it. Bounded
+    // (#2155): nothing has been allocated yet at this point, so a clean early return on
+    // timeout (this function's own documented "0 if not ready") has no cleanup to skip.
+    if (vkWaitForFences(c->device, 1, &fd->Fence, VK_TRUE, kViewportFenceTimeoutNs) != VK_SUCCESS) return 0;
 
     GpuBuffer staging{};
     upload(c, &staging, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, (VkDeviceSize)need);
@@ -1893,7 +1945,13 @@ int obk_window_capture(void* h, unsigned char* out, int cap, int* w, int* hh) {
     submit.commandBufferCount = 1;
     submit.pCommandBuffers = &cmd;
     vkQueueSubmit(c->queue, 1, &submit, fence);
-    vkWaitForFences(c->device, 1, &fence, VK_TRUE, UINT64_MAX);
+    // Bounded (#2155): this command buffer also restores fd->Backbuffer to PRESENT_SRC_KHR
+    // (it was flipped to TRANSFER_SRC_OPTIMAL above) — if the wait times out we can't know
+    // whether that restore ran, so the backbuffer's layout is genuinely uncertain either
+    // way. Leaking cmd/fence/staging and returning "not ready" avoids reading uninitialized
+    // pixel data at least; a frozen application (the pre-#2155 behavior here) is strictly
+    // worse than that residual risk, which is unchanged from before this fix either way.
+    if (vkWaitForFences(c->device, 1, &fence, VK_TRUE, kViewportFenceTimeoutNs) != VK_SUCCESS) return 0;
 
     void* mapped = nullptr;
     vkMapMemory(c->device, staging.memory, 0, need, 0, &mapped);
@@ -1943,7 +2001,9 @@ void obk_viewport_upload_points(void* h, const float* verts, int count, uint64_t
     // pointBuf is shared across the in-flight ring; a (rare) re-upload drains the ring first so no
     // previous frame reads it mid-transfer (mirrors the vbuf re-upload guard, #1421). The fences are
     // signalled here — obk_viewport_frame_begin already waited this slot — so this does not stall.
-    vkWaitForFences(c->device, kFramesInFlight, v->frameFence, VK_TRUE, UINT64_MAX);
+    // Bounded (#2155): see the vbuf/ibuf re-upload guard's own comment (obk_viewport_render) for why
+    // a timeout here proceeds anyway rather than attempting a full abort.
+    vkWaitForFences(c->device, kFramesInFlight, v->frameFence, VK_TRUE, kViewportFenceTimeoutNs);
     v->pointCount = count > 0 ? count : 0;
     if (v->pointCount > 0 && verts) {
         upload_geom(c, &v->pointBuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -1959,6 +2019,17 @@ uint64_t obk_viewport_point_uploads(void* h) {
     HeadContext* c = (HeadContext*)h;
     if (!c || !c->viewport) return 0;
     return c->viewport->pointUploads;
+}
+
+// obk_viewport_env_binding — see its declaration in head.h for the full contract.
+void obk_viewport_env_binding(HeadContext* c, uint64_t* view, uint64_t* sampler, uint64_t* generation) {
+    if (view) *view = 0;
+    if (sampler) *sampler = 0;
+    if (generation) *generation = 0;
+    if (!c || !c->viewport) return;
+    if (view) *view = (uint64_t)c->viewport->envView;
+    if (sampler) *sampler = (uint64_t)c->viewport->envSampler;
+    if (generation) *generation = c->viewport->envGeneration;
 }
 
 void obk_viewport_destroy(HeadContext* c) {

@@ -52,6 +52,7 @@ shaders:
 		glslangValidator --target-env vulkan1.3 -V pathtrace.rchit -o pathtrace.rchit.spv && \
 		glslangValidator --target-env vulkan1.3 -V swpathtrace.comp -o swpathtrace.comp.spv && \
 		glslangValidator --target-env vulkan1.3 -V pathtrace_realistic.rgen -o pathtrace_realistic.rgen.spv && \
+		glslangValidator --target-env vulkan1.3 -V pathtrace_realistic.rmiss -o pathtrace_realistic.rmiss.spv && \
 		glslangValidator --target-env vulkan1.3 -V pathtrace_realistic.rchit -o pathtrace_realistic.rchit.spv && \
 		glslangValidator --target-env vulkan1.3 -V swpathtrace_realistic.comp -o swpathtrace_realistic.comp.spv
 
