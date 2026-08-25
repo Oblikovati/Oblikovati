@@ -33,11 +33,7 @@ func coRefine(a, b [][3]Point, ga, gb *faceGrid) (aOut, bOut [][3]Point) {
 // edge at the exact same point. (This holds only for a watertight input; the ops
 // adapter welds the tessellation to guarantee it.)
 func refineAgainst(faces, others [][3]Point, grid *faceGrid) [][3]Point {
-	var out [][3]Point
-	for _, f := range faces {
-		out = append(out, RefineFace(f, faceConstraints(f, others, grid))...)
-	}
-	return out
+	return refineAgainstTagged(untagged(faces), others, grid).Tris
 }
 
 // faceConstraints collects the exact intersection segments face f must conform to
