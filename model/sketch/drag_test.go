@@ -62,6 +62,67 @@ func TestDragSolveFreePointMovesToTarget(t *testing.T) {
 	}
 }
 
+// TestDragKeepsOriginCoincidentEndpointPinned is the #2160 regression: an endpoint coincident to a
+// fixed reference anchor (the projected origin) must stay on that anchor through a drag. A drag pin
+// is an equal-weight positional residual, so before the fix a body drag pinned that endpoint to the
+// cursor and the least-squares solve split the difference against the coincidence — the endpoint
+// slid to the midpoint and "dragged off the origin". It must now stay put while the free end follows.
+func TestDragKeepsOriginCoincidentEndpointPinned(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	origin := s.newRefPoint(math.P2(0, 0)) // a fixed anchor, like the projected origin
+	line := s.Lines().AddByTwoPoints(math.P2(2, 0), math.P2(4, 0))
+	s.GeometricConstraints().AddCoincident(line.A, origin)
+	s.Solve() // line.A snaps onto the origin
+
+	if !line.A.Position().IsEqualTo(math.P2(0, 0), 1e-6) {
+		t.Fatalf("setup: line.A should sit on the origin after solve, got %v", line.A.Position())
+	}
+
+	// Body drag: both endpoints pinned to a cursor offset up and to the right.
+	s.DragSolve([]PinTarget{
+		{P: line.A, Target: math.P2(3, 1)},
+		{P: line.B, Target: math.P2(5, 1)},
+	})
+
+	if !line.A.Position().IsEqualTo(math.P2(0, 0), 1e-6) {
+		t.Errorf("origin-coincident endpoint drifted to %v; the coincidence must hold it at the origin (#2160)", line.A.Position())
+	}
+	if !line.B.Position().IsEqualTo(math.P2(5, 1), 1e-6) {
+		t.Errorf("free endpoint = %v, should follow the drag to (5,1)", line.B.Position())
+	}
+}
+
+// TestGroundedPointsFloodsCoincidenceChain checks the grounded flag reaches a point coincident to a
+// point that is itself coincident to the origin (transitive), while an unconstrained point stays free.
+func TestGroundedPointsFloodsCoincidenceChain(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	origin := s.newRefPoint(math.P2(0, 0))
+	p := s.Points().Add(math.P2(1, 1))
+	q := s.Points().Add(math.P2(2, 2))
+	s.GeometricConstraints().AddCoincident(p, origin) // p grounded directly
+	s.GeometricConstraints().AddCoincident(q, p)      // q grounded through p
+	free := s.Points().Add(math.P2(9, 9))
+
+	g := s.groundedPoints()
+	if !g[origin] || !g[p] || !g[q] {
+		t.Errorf("origin, p and q should all be grounded; got origin=%v p=%v q=%v", g[origin], g[p], g[q])
+	}
+	if g[free] {
+		t.Error("an unconstrained point must not be grounded")
+	}
+}
+
+// TestGroundedPointsIncludesFixConstraint checks a Fix constraint grounds its point, so a drag does
+// not tug a user-fixed point off its position.
+func TestGroundedPointsIncludesFixConstraint(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	p := s.Points().Add(math.P2(3, 3))
+	s.GeometricConstraints().AddFix(p)
+	if !s.groundedPoints()[p] {
+		t.Error("a Fix-constrained point must be grounded")
+	}
+}
+
 func TestDefiningPointsByEntity(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	pt := s.Points().Add(math.P2(0, 0))
