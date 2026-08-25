@@ -6,11 +6,13 @@ package ui
 
 import (
 	stdmath "math"
+	"math/rand"
 	"testing"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
+	"oblikovati.org/renderer"
 )
 
 // TestLinearBaseColorDecodesSRGB proves linearBaseColor undoes mesh.frag's own
@@ -27,6 +29,216 @@ func TestLinearBaseColorDecodesSRGB(t *testing.T) {
 	for i := range got {
 		if diff := got[i] - want[i]; diff > 1e-5 || diff < -1e-5 {
 			t.Errorf("linearBaseColor(0.5,1,0)[%d] = %v, want %v", i, got[i], want[i])
+		}
+	}
+}
+
+// solidEnvDistribution builds a small, uniformly-bright renderer.EnvironmentDistribution
+// for pickLightParams/pickEnvironmentLight tests — luminance is the same at every texel,
+// so Sample's direction is unconstrained by content (any RNG draw is equally valid) while
+// its pdf is still a real, non-degenerate value these tests can check against.
+func solidEnvDistribution() *renderer.EnvironmentDistribution {
+	const w, h = 8, 4
+	pixels := make([]float32, w*h*4)
+	for i := range pixels {
+		pixels[i] = 1
+	}
+	return renderer.NewEnvironmentDistribution(w, h, pixels)
+}
+
+func onLight(intensity float32) renderer.SceneLighting {
+	return renderer.SceneLighting{Lights: []renderer.SceneLight{
+		{Kind: renderer.DirectionalLight, Direction: [3]float32{0, 0, 1}, Color: [3]float32{1, 1, 1}, Intensity: intensity, On: true},
+	}}
+}
+
+// TestPickLightParamsNoLightsNoEnvironmentIsUnlit covers pickLightParams' degenerate
+// branch directly: no active lights and no active environment must leave every Light*
+// field zero (shading to black downstream, not crashing or picking a phantom source).
+func TestPickLightParamsNoLightsNoEnvironmentIsUnlit(t *testing.T) {
+	rng := rand.New(rand.NewSource(1))
+	got := pickLightParams(renderer.SceneLighting{}, rng, renderer.DrawItem{}, app.EnvironmentState{}, nil)
+	if got.LightIntensity != 0 || got.LightIsEnvironment != 0 || got.LightDirection != ([3]float32{}) {
+		t.Errorf("unlit scene: params = %+v, want every Light* field zero", got)
+	}
+}
+
+// TestPickLightParamsDiscreteLightOnlyAlwaysPicksLight covers the (still-reachable)
+// pre-#2135 code path directly: with no active environment, pickLightParams must never
+// route to pickEnvironmentLight regardless of the RNG draw (pEnv is exactly 0 when
+// envWeight is 0) — this is the coverage gap #2135's environment-selection branch left
+// behind (pickDiscreteLight had 0% coverage from the existing GPU-backed Realistic-mode
+// tests alone, since those fixtures all have an active environment).
+func TestPickLightParamsDiscreteLightOnlyAlwaysPicksLight(t *testing.T) {
+	for seed := int64(0); seed < 20; seed++ {
+		rng := rand.New(rand.NewSource(seed))
+		got := pickLightParams(onLight(2), rng, renderer.DrawItem{}, app.EnvironmentState{}, nil)
+		if got.LightIsEnvironment != 0 {
+			t.Fatalf("seed %d: LightIsEnvironment = %v, want 0 (no active environment to compete for selection)", seed, got.LightIsEnvironment)
+		}
+		if got.LightIntensity <= 0 {
+			t.Fatalf("seed %d: LightIntensity = %v, want > 0", seed, got.LightIntensity)
+		}
+	}
+}
+
+// TestPickLightParamsEnvironmentOnlyAlwaysPicksEnvironment is
+// TestPickLightParamsDiscreteLightOnlyAlwaysPicksLight's mirror: with no active lights,
+// pEnv is exactly 1, so pickLightParams must always route to pickEnvironmentLight
+// regardless of the RNG draw.
+func TestPickLightParamsEnvironmentOnlyAlwaysPicksEnvironment(t *testing.T) {
+	env := app.EnvironmentState{Preset: "Sky", Intensity: 2}
+	dist := solidEnvDistribution()
+	for seed := int64(0); seed < 20; seed++ {
+		rng := rand.New(rand.NewSource(seed))
+		got := pickLightParams(renderer.SceneLighting{}, rng, renderer.DrawItem{}, env, dist)
+		if got.LightIsEnvironment != 1 {
+			t.Fatalf("seed %d: LightIsEnvironment = %v, want 1 (no active lights to compete for selection)", seed, got.LightIsEnvironment)
+		}
+		if got.LightIntensity <= 0 {
+			t.Fatalf("seed %d: LightIntensity = %v, want > 0", seed, got.LightIntensity)
+		}
+		if length := stdmath.Sqrt(float64(got.LightDirection[0]*got.LightDirection[0] +
+			got.LightDirection[1]*got.LightDirection[1] + got.LightDirection[2]*got.LightDirection[2])); stdmath.Abs(length-1) > 1e-4 {
+			t.Fatalf("seed %d: LightDirection = %v, length %v, want a unit vector", seed, got.LightDirection, length)
+		}
+	}
+}
+
+// TestPickLightParamsWeightsSelectionBetweenStrategies checks pEnv actually discriminates
+// on relative weight, not just presence/absence: a light overwhelmingly brighter than the
+// environment should be picked far more often than the environment is, and vice versa —
+// the property pEnv = envWeight/(envWeight+lightsWeight) exists to guarantee.
+func TestPickLightParamsWeightsSelectionBetweenStrategies(t *testing.T) {
+	dist := solidEnvDistribution()
+	count := func(lightIntensity, envIntensity float32) (envPicks int) {
+		rng := rand.New(rand.NewSource(7))
+		env := app.EnvironmentState{Preset: "Sky", Intensity: envIntensity}
+		const n = 2000
+		for i := 0; i < n; i++ {
+			if pickLightParams(onLight(lightIntensity), rng, renderer.DrawItem{}, env, dist).LightIsEnvironment != 0 {
+				envPicks++
+			}
+		}
+		return envPicks
+	}
+
+	if got := count(1000, 0.001); got > 50 {
+		t.Errorf("light >> environment: environment picked %d/2000 times, want it rare (dominant light should win almost always)", got)
+	}
+	if got := count(0.001, 1000); got < 1950 {
+		t.Errorf("environment >> light: environment picked %d/2000 times, want it dominant", got)
+	}
+}
+
+// TestPickDiscreteLightSingleLightScalesByIntensity is a precise (not statistical) check
+// of pickDiscreteLight's formula: with exactly one light, LightDistribution.Sample's pdf
+// is always 1 regardless of the RNG draw, so LightIntensity should reduce to
+// light.Intensity/pLight exactly — the same relationship pickEnvironmentLight's own
+// LightIntensity = 1/(pEnv*pdf) mirrors.
+func TestPickDiscreteLightSingleLightScalesByIntensity(t *testing.T) {
+	dist := renderer.NewLightDistribution(onLight(3).Lights)
+	rng := rand.New(rand.NewSource(1))
+	var params native.RealisticLightParams
+	const pLight = 0.7
+	pickDiscreteLight(&params, rng, dist, pLight)
+
+	wantIntensity := float32(3 / pLight)
+	if diff := params.LightIntensity - wantIntensity; diff > 1e-4 || diff < -1e-4 {
+		t.Errorf("LightIntensity = %v, want %v (light.Intensity=3 / pLight=%v, pdf=1 for a single light)", params.LightIntensity, wantIntensity, pLight)
+	}
+	if params.LightIsEnvironment != 0 {
+		t.Errorf("LightIsEnvironment = %v, want 0", params.LightIsEnvironment)
+	}
+	if params.LightColor != ([3]float32{1, 1, 1}) {
+		t.Errorf("LightColor = %v, want the light's own color (1,1,1)", params.LightColor)
+	}
+}
+
+// TestPickDiscreteLightNilDistributionLeavesParamsZero guards pickDiscreteLight's own
+// defensive nil check (reached when pLight<=0 too, e.g. an active environment claiming
+// the entire selection weight) — must not panic or fabricate a light.
+func TestPickDiscreteLightNilDistributionLeavesParamsZero(t *testing.T) {
+	rng := rand.New(rand.NewSource(1))
+	var params native.RealisticLightParams
+	pickDiscreteLight(&params, rng, nil, 1)
+	if params.LightIntensity != 0 {
+		t.Errorf("LightIntensity = %v, want 0 (nil distribution)", params.LightIntensity)
+	}
+}
+
+// TestPickEnvironmentLightScalesByPEnvAndPDF is pickDiscreteLight's env-branch
+// counterpart: LightIsEnvironment/LightIntensity are set and LightDirection stays a unit
+// vector after renderer.RotateAroundZ (a broken rotation matrix would change its length,
+// not just its bearing) — checked structurally across several (pEnv, rotation) pairs
+// rather than hand-computing Sample's exact pdf/direction, which
+// TestEnvironmentDistributionPDFIntegratesToOne/TestEnvironmentDistributionDirectionIsUnitLength
+// (renderer package) already cover directly.
+func TestPickEnvironmentLightScalesByPEnvAndPDF(t *testing.T) {
+	dist := solidEnvDistribution()
+	cases := []struct {
+		pEnv     float64
+		rotation float32
+	}{
+		{0.4, 1.1}, {0.05, 0}, {0.95, -2.3}, {1.0, stdmath.Pi},
+	}
+	for _, c := range cases {
+		rng := rand.New(rand.NewSource(5))
+		var params native.RealisticLightParams
+		pickEnvironmentLight(&params, rng, dist, c.rotation, c.pEnv)
+
+		if params.LightIsEnvironment != 1 {
+			t.Errorf("pEnv=%v rotation=%v: LightIsEnvironment = %v, want 1", c.pEnv, c.rotation, params.LightIsEnvironment)
+		}
+		if params.LightIntensity <= 0 {
+			t.Errorf("pEnv=%v rotation=%v: LightIntensity = %v, want > 0", c.pEnv, c.rotation, params.LightIntensity)
+		}
+		length := stdmath.Sqrt(float64(params.LightDirection[0]*params.LightDirection[0] +
+			params.LightDirection[1]*params.LightDirection[1] + params.LightDirection[2]*params.LightDirection[2]))
+		if stdmath.Abs(length-1) > 1e-4 {
+			t.Errorf("pEnv=%v rotation=%v: LightDirection = %v, length %v, want a unit vector", c.pEnv, c.rotation, params.LightDirection, length)
+		}
+	}
+}
+
+// TestPickEnvironmentLightAllBlackDistributionLeavesParamsZero covers
+// pickEnvironmentLight's own pdf<=0 guard directly — unreachable through pickLightParams
+// itself (an all-black environment has TotalWeight()==0, so pEnv is 0 and
+// pickEnvironmentLight is never selected), but a real defensive check worth its own test:
+// division by a zero pdf must not happen even if called directly.
+func TestPickEnvironmentLightAllBlackDistributionLeavesParamsZero(t *testing.T) {
+	dist := renderer.NewEnvironmentDistribution(8, 4, make([]float32, 8*4*4)) // all-black
+	rng := rand.New(rand.NewSource(1))
+	var params native.RealisticLightParams
+	pickEnvironmentLight(&params, rng, dist, 0, 0.5)
+	if params.LightIsEnvironment != 0 || params.LightIntensity != 0 {
+		t.Errorf("params = %+v, want every field left zero (pdf<=0 guard)", params)
+	}
+}
+
+// TestApplyEnvironmentParams covers applyEnvironmentParams' three branches directly:
+// inactive (nothing set), active+ShowImage (background visibility AND rotation/intensity
+// for light sampling), active+!ShowImage (rotation/intensity only — an environment can
+// light the scene while hidden as a backdrop, applyEnvironmentParams' own doc comment).
+func TestApplyEnvironmentParams(t *testing.T) {
+	cases := []struct {
+		name            string
+		env             app.EnvironmentState
+		wantEnvEnabled  float32
+		wantEnvRotation float32
+	}{
+		{"inactive", app.EnvironmentState{}, 0, 0},
+		{"active and shown", app.EnvironmentState{Preset: "Sky", Rotation: 1.2, Intensity: 3, ShowImage: true}, 1, 1.2},
+		{"active but hidden", app.EnvironmentState{Preset: "Sky", Rotation: 1.2, Intensity: 3, ShowImage: false}, 0, 1.2},
+	}
+	for _, c := range cases {
+		var params native.RealisticLightParams
+		applyEnvironmentParams(&params, c.env)
+		if params.EnvEnabled != c.wantEnvEnabled {
+			t.Errorf("%s: EnvEnabled = %v, want %v", c.name, params.EnvEnabled, c.wantEnvEnabled)
+		}
+		if params.EnvRotation != c.wantEnvRotation {
+			t.Errorf("%s: EnvRotation = %v, want %v", c.name, params.EnvRotation, c.wantEnvRotation)
 		}
 	}
 }

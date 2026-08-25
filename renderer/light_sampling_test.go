@@ -91,6 +91,34 @@ func TestLightDistributionPDFSumsToOne(t *testing.T) {
 	}
 }
 
+// TestLightDistributionTotalWeightMatchesSumOfLightWeights covers the #2135/#2155
+// accessor pickLightParams uses to weight discrete-light selection against
+// EnvironmentDistribution's own TotalWeight: it must equal the plain sum of
+// lightWeight(l) over every light, the same quantity NewLightDistribution accumulates
+// into its CDF.
+func TestLightDistributionTotalWeightMatchesSumOfLightWeights(t *testing.T) {
+	lights := SceneLightingFor(LightingThreePoint).Lights
+	dist := NewLightDistribution(lights)
+	var want float64
+	for _, l := range lights {
+		want += lightWeight(l)
+	}
+	if got := dist.TotalWeight(); math.Abs(got-want) > 1e-9 {
+		t.Errorf("TotalWeight() = %v, want %v (sum of lightWeight over every light)", got, want)
+	}
+}
+
+// TestLightDistributionTotalWeightZeroWhenEmpty covers the caller-facing degenerate
+// case pickLightParams relies on: no lights means TotalWeight is exactly 0, so an
+// active environment always wins the selection (pEnv=1) without a Sample call ever
+// needing to run against an empty distribution.
+func TestLightDistributionTotalWeightZeroWhenEmpty(t *testing.T) {
+	dist := NewLightDistribution(nil)
+	if got := dist.TotalWeight(); got != 0 {
+		t.Errorf("TotalWeight() on an empty distribution = %v, want 0", got)
+	}
+}
+
 func TestLightDistributionSampleAllZeroWeightPanics(t *testing.T) {
 	defer func() {
 		if recover() == nil {

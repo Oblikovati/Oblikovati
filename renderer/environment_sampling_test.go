@@ -183,6 +183,44 @@ func TestRotateAroundZMatchesShaderRotation(t *testing.T) {
 	}
 }
 
+// TestEnvironmentDistributionTotalWeightMatchesConstructionSum covers the #2135/#2155
+// accessor pickLightParams uses to weight environment selection against
+// LightDistribution's own TotalWeight: it must equal the solid-angle-weighted mass
+// NewEnvironmentDistribution accumulated while building the row/marginal CDFs, computed
+// here independently (sum of luma*sinTheta per texel) rather than by re-deriving it from
+// the distribution's own internals.
+func TestEnvironmentDistributionTotalWeightMatchesConstructionSum(t *testing.T) {
+	const w, h = 16, 8
+	pixels := make([]float32, w*h*4)
+	rng := rand.New(rand.NewSource(3))
+	for i := 0; i < w*h; i++ {
+		v := rng.Float32() * 4
+		pixels[i*4], pixels[i*4+1], pixels[i*4+2], pixels[i*4+3] = v, v, v, 1
+	}
+	d := NewEnvironmentDistribution(w, h, pixels)
+
+	var want float64
+	for y := 0; y < h; y++ {
+		sinTheta := math.Sin(math.Pi * (float64(y) + 0.5) / float64(h))
+		for x := 0; x < w; x++ {
+			want += float64(pixels[(y*w+x)*4]) * sinTheta // R==G==B here, luma reduces to the raw value
+		}
+	}
+	if got := d.TotalWeight(); math.Abs(got-want) > 1e-6 {
+		t.Errorf("TotalWeight() = %v, want %v (independently summed solid-angle-weighted luma)", got, want)
+	}
+}
+
+// TestEnvironmentDistributionTotalWeightZeroWhenAllBlack covers the caller-facing
+// degenerate case pickLightParams relies on: an all-black environment contributes zero
+// selection weight, so pEnv is exactly 0 and pickEnvironmentLight is never chosen.
+func TestEnvironmentDistributionTotalWeightZeroWhenAllBlack(t *testing.T) {
+	d := NewEnvironmentDistribution(8, 4, make([]float32, 8*4*4))
+	if got := d.TotalWeight(); got != 0 {
+		t.Errorf("TotalWeight() on an all-black map = %v, want 0", got)
+	}
+}
+
 func TestEnvironmentDistributionAllBlackNeverPanics(t *testing.T) {
 	const w, h = 8, 4
 	pixels := make([]float32, w*h*4)
