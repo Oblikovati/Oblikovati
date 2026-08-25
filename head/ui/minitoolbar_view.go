@@ -76,30 +76,36 @@ func miniToolbarScreenPos(cam scene.Camera, originX, originY float32, tb wire.Mi
 // drawMiniToolbarControl renders one control by kind, reporting edits through the
 // session so the owner sees miniToolbar.changed.
 func drawMiniToolbarControl(s *app.Session, toolbarID string, control wire.MiniToolbarControlSpec) {
-	changed := false
-	switch control.Kind {
-	case types.MiniToolbarCheckbox:
-		changed = native.Checkbox(control.Label, &control.Checked)
-	case types.MiniToolbarCombo:
-		changed = drawMiniToolbarCombo(&control)
-	case types.MiniToolbarSlider:
-		v := float32(control.Number)
-		if native.SliderFloat(control.Label, &v, float32(control.Min), float32(control.Max)) {
-			control.Number = roundSlider(float64(v))
-			changed = true
-		}
-	case types.MiniToolbarTextBox, types.MiniToolbarValueEditor:
-		changed = drawMiniToolbarText(&control, false)
-	case types.MiniToolbarTextEditor:
-		changed = drawMiniToolbarText(&control, true)
-	default: // MiniToolbarButton
-		changed = native.Button(control.Label)
-	}
+	changed := miniToolbarControlChanged(&control)
 	if control.Tooltip != "" {
 		native.SetItemTooltip(control.Tooltip)
 	}
 	if changed {
 		_ = s.ChangeMiniToolbarControl(toolbarID, control)
+	}
+}
+
+// miniToolbarControlChanged renders one mini-toolbar control by kind (writing any edit back into
+// *control) and reports whether the user changed it.
+func miniToolbarControlChanged(control *wire.MiniToolbarControlSpec) bool {
+	switch control.Kind {
+	case types.MiniToolbarCheckbox:
+		return native.Checkbox(control.Label, &control.Checked)
+	case types.MiniToolbarCombo:
+		return drawMiniToolbarCombo(control)
+	case types.MiniToolbarSlider:
+		v := float32(control.Number)
+		if native.SliderFloat(control.Label, &v, float32(control.Min), float32(control.Max)) {
+			control.Number = roundSlider(float64(v))
+			return true
+		}
+		return false
+	case types.MiniToolbarTextBox, types.MiniToolbarValueEditor:
+		return drawMiniToolbarText(control, false)
+	case types.MiniToolbarTextEditor:
+		return drawMiniToolbarText(control, true)
+	default: // MiniToolbarButton
+		return native.Button(control.Label)
 	}
 }
 

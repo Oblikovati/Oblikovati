@@ -29,9 +29,15 @@ func drawUITab(s *app.Session) {
 	native.Separator()
 	native.Text("Text size also scales the Script Console code editor.")
 	native.Separator()
-	// Mouse-navigation preferences (Inventor-parity, 2026-08-17). Defaults
-	// match Inventor: middle-drag pans, Shift+middle-drag orbits, scroll-up
-	// zooms in, wheel zooms to the cursor.
+	drawMouseNavPrefs(s)
+	native.Separator()
+	drawWindowChromePrefs(s)
+}
+
+// drawMouseNavPrefs draws the middle-button gesture selectors and the wheel-zoom checkboxes
+// (Inventor-parity, 2026-08-17): defaults are middle-drag pans, Shift+middle-drag orbits, scroll-up
+// zooms in, and the wheel zooms to the cursor.
+func drawMouseNavPrefs(s *app.Session) {
 	native.Text("Mouse navigation (defaults match Inventor):")
 	editNavModeCombo("Middle button drag", s.MMBMode(), s.SetMMBMode, navModeOptions("pan"))
 	editNavModeCombo("Shift + middle button drag", s.ShiftMMBMode(), s.SetShiftMMBMode, navModeOptions("orbit"))
@@ -44,12 +50,15 @@ func drawUITab(s *app.Session) {
 	if native.Checkbox("Zoom to cursor", &toCursor) {
 		reportPrefError(s.SetZoomToCursor(toCursor))
 	}
-	native.Separator()
+}
+
+// drawWindowChromePrefs draws the classic-menu-bar and status-bar visibility toggles (also reachable
+// from View ▸ Windows).
+func drawWindowChromePrefs(s *app.Session) {
 	show := s.ShowMenuBar()
 	if native.Checkbox("Show classic menu bar", &show) {
 		reportPrefError(s.SetShowMenuBar(show))
 	}
-	// The bottom prompt line, like Inventor's status bar (also on View ▸ Windows).
 	status := s.ShowStatusBar()
 	if native.Checkbox("Show status bar", &status) {
 		reportPrefError(s.SetShowStatusBar(status))

@@ -35,21 +35,28 @@ func drawAnglePlaneDialog(s *app.Session) {
 	}
 	dialogSizeOnce(340, 250)
 	if native.Begin("Angle to Plane") {
-		drawFeatureBreadcrumb("Angle to Plane", "")
-		if propertySection("Input Geometry") {
-			drawPickChipRow("About", "angle-plane-axis", pickChipText(t.AxisPicked(), "1 Axis", "Select Axis"),
-				t.AxisPicked(), "Click the axis or edge to rotate about", t.ClearPicks)
-			drawPickChipRow("From", "angle-plane-base", pickChipText(t.BasePicked(), "1 Plane", "Select Plane"),
-				t.BasePicked(), "Click the plane or planar face to measure the angle from", t.ClearPicks)
-		}
-		if propertySection("Behavior") {
-			native.BeginDisabled(!t.AxisPicked() || !t.BasePicked())
-			angleDegRow(s, "Angle", "angle-plane-angle", &anglePlaneUI.angleDeg)
-			native.EndDisabled()
-			t.SetAngleDegrees(float64(anglePlaneUI.angleDeg))
-		}
-		native.Separator()
-		drawCommitCancelButtons(s, t.CanCommit())
+		drawAnglePlaneBody(s, t)
 	}
 	native.End()
+}
+
+// drawAnglePlaneBody fills the Angle to Plane panel: the About-axis and From-plane pick rows, then the
+// Angle field (enabled once both are picked). Split from drawAnglePlaneDialog to keep each within one
+// screen of widgets.
+func drawAnglePlaneBody(s *app.Session, t *app.AngleWorkPlaneTool) {
+	drawFeatureBreadcrumb("Angle to Plane", "")
+	if propertySection("Input Geometry") {
+		drawPickChipRow("About", "angle-plane-axis", pickChipText(t.AxisPicked(), "1 Axis", "Select Axis"),
+			t.AxisPicked(), "Click the axis or edge to rotate about", t.ClearPicks)
+		drawPickChipRow("From", "angle-plane-base", pickChipText(t.BasePicked(), "1 Plane", "Select Plane"),
+			t.BasePicked(), "Click the plane or planar face to measure the angle from", t.ClearPicks)
+	}
+	if propertySection("Behavior") {
+		native.BeginDisabled(!t.AxisPicked() || !t.BasePicked())
+		angleDegRow(s, "Angle", "angle-plane-angle", &anglePlaneUI.angleDeg)
+		native.EndDisabled()
+		t.SetAngleDegrees(float64(anglePlaneUI.angleDeg))
+	}
+	native.Separator()
+	drawCommitCancelButtons(s, t.CanCommit())
 }

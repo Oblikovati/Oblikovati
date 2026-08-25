@@ -31,21 +31,28 @@ func drawShellDialog(s *app.Session) {
 	}
 	dialogSizeOnce(340, 230)
 	if native.Begin("Shell") {
-		title := "Shell"
-		if name := sh.EditingName(); name != "" {
-			title = name // re-editing a committed shell: the breadcrumb names it
-		}
-		drawFeatureBreadcrumb(title, "")
-		if propertySection("Input Geometry") {
-			drawPickChipRow("Remove", "shell-faces", countChipText(sh.FaceCount(), "Face", "Select Faces"),
-				sh.FaceCount() > 0, "Click the faces to open (they are removed; the rest walls in)", sh.ClearFaces)
-		}
-		if propertySection("Behavior") {
-			lengthCmRow(s, "Thickness", "shell-thickness", &shellUI.thickness)
-			sh.SetThickness(float64(shellUI.thickness))
-		}
-		native.Separator()
-		drawCommitCancelButtons(s, sh.CanCommit())
+		drawShellBody(s, sh)
 	}
 	native.End()
+}
+
+// drawShellBody fills the Shell panel: the breadcrumb, the faces-to-remove pick row, and the wall
+// Thickness, then the commit/cancel buttons. Split from drawShellDialog to keep each within one
+// screen of widgets.
+func drawShellBody(s *app.Session, sh *app.ShellTool) {
+	title := "Shell"
+	if name := sh.EditingName(); name != "" {
+		title = name // re-editing a committed shell: the breadcrumb names it
+	}
+	drawFeatureBreadcrumb(title, "")
+	if propertySection("Input Geometry") {
+		drawPickChipRow("Remove", "shell-faces", countChipText(sh.FaceCount(), "Face", "Select Faces"),
+			sh.FaceCount() > 0, "Click the faces to open (they are removed; the rest walls in)", sh.ClearFaces)
+	}
+	if propertySection("Behavior") {
+		lengthCmRow(s, "Thickness", "shell-thickness", &shellUI.thickness)
+		sh.SetThickness(float64(shellUI.thickness))
+	}
+	native.Separator()
+	drawCommitCancelButtons(s, sh.CanCommit())
 }

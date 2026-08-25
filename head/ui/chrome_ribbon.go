@@ -120,23 +120,28 @@ func drawTabPanels(s ribbonControlHost, tabName string, panels []app.RibbonPanel
 	ribbonCollapsedPanels = len(panels) - expanded
 	var activated string
 	for i, panel := range panels {
-		if i > 0 {
-			native.SameLine()
-			native.SeparatorVertical()
-			native.SameLine()
-		}
-		if i >= expanded {
-			if id := drawCollapsedPanel(s, panel, tabName, labelY, gridH); id != "" {
-				activated = id
-			}
-			continue
-		}
-		if id := drawPanel(s, panel, labelY); id != "" {
+		if id := drawRibbonPanelAt(s, panel, i, expanded, tabName, labelY, gridH); id != "" {
 			activated = id
 		}
-		measurePanelWidth(tabName, panel.Name)
 	}
 	return activated
+}
+
+// drawRibbonPanelAt draws one ribbon panel — with a left separator except the first — either expanded
+// or, once past the fit count (i >= expanded), as a collapsed flyout tile, returning any command id it
+// activated. An expanded panel is measured afterward for the next frame's fit decision.
+func drawRibbonPanelAt(s ribbonControlHost, panel app.RibbonPanel, i, expanded int, tabName string, labelY, gridH float32) string {
+	if i > 0 {
+		native.SameLine()
+		native.SeparatorVertical()
+		native.SameLine()
+	}
+	if i >= expanded {
+		return drawCollapsedPanel(s, panel, tabName, labelY, gridH)
+	}
+	id := drawPanel(s, panel, labelY)
+	measurePanelWidth(tabName, panel.Name)
+	return id
 }
 
 // measurePanelWidth records the width of the panel just drawn expanded — drawPanel leaves its
@@ -276,42 +281,65 @@ func drawPointCloudPanel(s ribbonControlHost, panel app.RibbonPanel, labelY floa
 // and its collapsed flyout render the identical grid.
 func drawPointCloudGrid(s ribbonControlHost, panel app.RibbonPanel) string {
 	var activated string
-	pick := func(id string) {
-		if got := drawPointCloudButton(s, panel, id); got != "" {
-			activated = got
+	set := func(id string) {
+		if id != "" {
+			activated = id
 		}
 	}
-
 	// The columns and ramp sit in one group so drawPanelName measures the full grid width
 	// (ItemRectMin/Max span the whole block) and centers the panel name under it — without this
 	// the last item measured would be column 3 alone and the label would sit off to the right.
 	native.BeginGroup()
-
-	native.BeginGroup() // column 1: Import over the stacked point-size ("Size") and Density sliders
-	pick("PointCloud.Import")
-	drawPointCloudSlider(s, "Size", panel.PointSizeSlider)
-	drawPointCloudSlider(s, "Density", panel.Slider)
-	native.EndGroup()
-
+	set(drawPointCloudColumn1(s, panel))
 	native.SameLine()
-	native.BeginGroup() // column 2: Move / Work Point over the display-mode selector
-	pick("PointCloud.Move")
-	pick("PointCloud.WorkPoint")
-	if got := drawPointCloudSelector(panel); got != "" {
-		activated = got
-	}
-	native.EndGroup()
-
+	set(drawPointCloudColumn2(s, panel))
 	native.SameLine()
-	native.BeginGroup() // column 3: Crop / Fit Work Plane
-	pick("PointCloud.CropBox")
-	pick("PointCloud.FitPlane")
-	native.EndGroup()
-
+	set(drawPointCloudColumn3(s, panel))
 	if panel.IntensityRamp != nil {
 		drawIntensityRampControls(s, panel.IntensityRamp)
 	}
 	native.EndGroup() // close the measurable content block
+	return activated
+}
+
+// pointCloudButtons draws the given point-cloud command buttons in order, returning the id of the one
+// clicked (last wins — at most one click lands per frame).
+func pointCloudButtons(s ribbonControlHost, panel app.RibbonPanel, ids ...string) string {
+	var activated string
+	for _, id := range ids {
+		if got := drawPointCloudButton(s, panel, id); got != "" {
+			activated = got
+		}
+	}
+	return activated
+}
+
+// drawPointCloudColumn1 is Import over the stacked point-size ("Size") and Density sliders.
+func drawPointCloudColumn1(s ribbonControlHost, panel app.RibbonPanel) string {
+	native.BeginGroup()
+	activated := pointCloudButtons(s, panel, "PointCloud.Import")
+	drawPointCloudSlider(s, "Size", panel.PointSizeSlider)
+	drawPointCloudSlider(s, "Density", panel.Slider)
+	native.EndGroup()
+	return activated
+}
+
+// drawPointCloudColumn2 is Move / Work Point over the display-mode selector.
+func drawPointCloudColumn2(s ribbonControlHost, panel app.RibbonPanel) string {
+	native.BeginGroup()
+	activated := pointCloudButtons(s, panel, "PointCloud.Move", "PointCloud.WorkPoint")
+	if got := drawPointCloudSelector(panel); got != "" {
+		activated = got
+	}
+	native.EndGroup()
+	return activated
+}
+
+// drawPointCloudColumn3 is Crop / Fit Work Plane.
+func drawPointCloudColumn3(s ribbonControlHost, panel app.RibbonPanel) string {
+	native.BeginGroup()
+	activated := pointCloudButtons(s, panel, "PointCloud.CropBox", "PointCloud.FitPlane")
+	native.EndGroup()
 	return activated
 }
 
@@ -627,21 +655,28 @@ func drawVariantDropdown(btn app.RibbonButton) string {
 	}
 	native.SetItemTooltip(btn.Command.DisplayName() + " — more tools")
 	drawRibbonCaret(x+w/2, y+h/2)
+	return variantPopupSelection(id, btn.Variants)
+}
 
-	var chosen string
-	if native.BeginPopup(id) {
-		for _, v := range btn.Variants {
-			native.BeginDisabled(!v.Enabled)
-			if native.Selectable(v.Label, false) {
-				chosen = v.CommandID
-			}
-			native.EndDisabled()
-			if v.Tooltip != "" {
-				native.SetItemTooltip(v.Tooltip)
-			}
-		}
-		native.EndPopup()
+// variantPopupSelection opens a split button's variant popup (keyed id) and returns the command id of
+// a chosen variant, or "" when the popup is closed or nothing was picked. A disabled variant is shown
+// greyed and is not selectable.
+func variantPopupSelection(id string, variants []app.RibbonVariant) string {
+	if !native.BeginPopup(id) {
+		return ""
 	}
+	var chosen string
+	for _, v := range variants {
+		native.BeginDisabled(!v.Enabled)
+		if native.Selectable(v.Label, false) {
+			chosen = v.CommandID
+		}
+		native.EndDisabled()
+		if v.Tooltip != "" {
+			native.SetItemTooltip(v.Tooltip)
+		}
+	}
+	native.EndPopup()
 	return chosen
 }
 

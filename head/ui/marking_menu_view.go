@@ -203,23 +203,27 @@ func drawMarkingSlot(s *app.Session, ringX, ringY float32, layout markingRingLay
 	x, y := markingSlotPosition(layout, item.Quadrant, w, h)
 	native.SetCursorPos(ringX+x, ringY+y)
 	native.BeginDisabled(!cmd.IsEnabled(s))
-	var clicked bool
-	if hasIcon {
-		native.BeginGroup()
-		clicked = native.ImageButton("##mm-"+item.CommandID, tex, float32(iconPx), float32(iconPx), identityTint)
-		native.SameLine()
-		cx, cy := native.GetCursorScreenPos()
-		native.SetCursorScreenPos(cx, cy+(float32(iconPx)+2*m.FramePadY-native.TextLineHeight())/2)
-		native.Text(label)
-		native.EndGroup()
-	} else {
-		clicked = native.Button(label + "##mm-" + item.CommandID)
-	}
-	if clicked {
+	if drawMarkingSlotButton(item, label, tex, hasIcon, iconPx, m) {
 		_ = s.Execute(item.CommandID)
 		native.CloseCurrentPopup()
 	}
 	native.EndDisabled()
+}
+
+// drawMarkingSlotButton draws a marking-slot's clickable control — an icon beside its label when the
+// command has an icon asset, else a plain text button — and reports whether it was clicked.
+func drawMarkingSlotButton(item wire.MarkingMenuItem, label string, tex uint64, hasIcon bool, iconPx int, m native.StyleMetrics) bool {
+	if !hasIcon {
+		return native.Button(label + "##mm-" + item.CommandID)
+	}
+	native.BeginGroup()
+	clicked := native.ImageButton("##mm-"+item.CommandID, tex, float32(iconPx), float32(iconPx), identityTint)
+	native.SameLine()
+	cx, cy := native.GetCursorScreenPos()
+	native.SetCursorScreenPos(cx, cy+(float32(iconPx)+2*m.FramePadY-native.TextLineHeight())/2)
+	native.Text(label)
+	native.EndGroup()
+	return clicked
 }
 
 // markingSlotExtent mirrors the ImGui primitives used by drawMarkingSlot, so the ring can

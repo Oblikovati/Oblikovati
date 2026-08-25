@@ -39,11 +39,19 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	}
 	layoutDockedPanels()
 	drawViewportIfPresent(win, s)
-	// QAT / Application-menu deferred actions (G design D3): the band's
-	// buttons only set flags; this block consumes them in DrawChrome's ID
-	// context — OpenPopup beside BeginPopup (popup ID-stack guarantee), and
-	// Open/Save before drawChromeDialogs so the modal opens this frame.
-	// Every flag is reset on consumption, so none survives into next frame.
+	consumeDeferredChromeActions(s)
+	drawChromeDialogs(s)
+	drawChromeWindows(s)
+	drawDocumentClosePrompt(s)
+	drawFileDialog(s)
+	return activated
+}
+
+// consumeDeferredChromeActions runs the QAT / Application-menu actions the band's buttons deferred as
+// flags (G design D3), in DrawChrome's ID context — OpenPopup beside BeginPopup (popup ID-stack
+// guarantee), and Open/Save before drawChromeDialogs so the modal opens this frame. Every flag is
+// reset on consumption, so none survives into the next frame.
+func consumeDeferredChromeActions(s *app.Session) {
 	if appMenuRequested {
 		appMenuRequested = false
 		native.SetNextWindowPos(appMenuX, appMenuBottomY)
@@ -61,11 +69,6 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 		drawFileMenu(s)
 		native.EndPopup()
 	}
-	drawChromeDialogs(s)
-	drawChromeWindows(s)
-	drawDocumentClosePrompt(s)
-	drawFileDialog(s)
-	return activated
 }
 
 func prepareChromeFrame(win *native.Window, s *app.Session) {
