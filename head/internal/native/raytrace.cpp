@@ -662,18 +662,34 @@ bool rt_build_4stage_pipeline(HeadContext* c, RTScene* s, const uint32_t* rgenSp
     groups[3].anyHitShader = VK_SHADER_UNUSED_KHR;
     groups[3].intersectionShader = VK_SHADER_UNUSED_KHR;
 
+    // #2155: vkCmdSetRayTracingPipelineStackSizeKHR (called before every trace dispatch,
+    // see obk_rt_scene_trace_pipeline/obk_rt_scene_trace_realistic_image) is a DYNAMIC
+    // STATE setter — per VUID-vkCmdTraceRaysKHR-None-08608, calling it on a pipeline that
+    // didn't declare VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR as dynamic at
+    // creation time is undefined behavior. Caught live via VK_LAYER_KHRONOS_validation
+    // (VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation) after the stack-size fix alone
+    // left an intermittent GPUVM fault: the dynamic-state omission, not the stack size
+    // value itself, was the actual undefined behavior — RADV apparently honored the call
+    // most of the time regardless, which is what made this so hard to pin down.
+    VkDynamicState dynamicState = VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR;
+    VkPipelineDynamicStateCreateInfo dynInfo{};
+    dynInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynInfo.dynamicStateCount = 1;
+    dynInfo.pDynamicStates = &dynamicState;
+
     VkRayTracingPipelineCreateInfoKHR pInfo{};
     pInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
     pInfo.stageCount = 4;
     pInfo.pStages = stages;
     pInfo.groupCount = 4;
     pInfo.pGroups = groups;
-    // #2155: primary ray + up to OPENPBR_MAX_TRANSMISSION_BOUNCES (extended_lobes.glsl)
+    // primary ray + up to OPENPBR_MAX_TRANSMISSION_BOUNCES (extended_lobes.glsl)
     // recursive continuation rays through transmissive surfaces + one terminal shadow ray
     // fired from whichever level is deepest. The PBI-345 test-harness pipeline (this
     // function's OTHER caller, obk_rt_scene_build_pipeline) never recurses past its own
     // primary+shadow pair, so the higher budget is unused there, not unsafe.
     pInfo.maxPipelineRayRecursionDepth = 6;
+    pInfo.pDynamicState = &dynInfo;
     pInfo.layout = out.pipeLayout;
     VkResult pipeResult =
         s->rtFn.createRTPipeline(c->device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &out.pipeline);
