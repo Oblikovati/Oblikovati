@@ -176,14 +176,14 @@ func renderRealisticViewportImage(win *native.Window, s realisticSession, slot i
 		return 0, 0, false
 	}
 
-	lighting := s.SceneLighting()
-	pixels, err := traceRealisticFrame(st, win, s, cam, tracePW, tracePH, lighting, material, env)
+	shading := realisticShadingInputs{lighting: s.SceneLighting(), material: material, env: env}
+	pixels, err := traceRealisticFrame(st, win, s, cam, tracePW, tracePH, shading)
 	if err != nil {
 		return 0, 0, false
 	}
 	st.accum.AddFrame(pixels)
 
-	presentRealisticFrame(win, st, tracePW, tracePH, float64(lighting.Exposure))
+	presentRealisticFrame(win, st, tracePW, tracePH, float64(shading.lighting.Exposure))
 	return st.tex, st.accum.SampleCount(), st.tex != 0
 }
 
@@ -265,12 +265,22 @@ func presentRealisticFrame(win *native.Window, st *realisticState, pw, ph int, e
 	win.UpdateTexture(st.tex, rgba, pw, ph)
 }
 
+// realisticShadingInputs bundles traceRealisticFrame's per-frame scene-shading data
+// (lighting rig, representative material, environment state) into one parameter — split
+// out to keep the function's own parameter count within this repo's 7-parameter limit
+// (SonarCloud go:S107) after #2135/#2155 added env for IBL selection.
+type realisticShadingInputs struct {
+	lighting renderer.SceneLighting
+	material renderer.DrawItem
+	env      app.EnvironmentState
+}
+
 // traceRealisticFrame dispatches one sample through whichever backend the hardware-RT
 // checkbox (persisted, PBI-332/333) resolves to for this device.
-func traceRealisticFrame(st *realisticState, win *native.Window, s realisticSession, cam scene.Camera, pw, ph int, lighting renderer.SceneLighting, material renderer.DrawItem, env app.EnvironmentState) ([]float32, error) {
+func traceRealisticFrame(st *realisticState, win *native.Window, s realisticSession, cam scene.Camera, pw, ph int, in realisticShadingInputs) ([]float32, error) {
 	basis := nativeCameraBasis(cam)
-	params := pickLightParams(lighting, st.rng, material, env, currentEnvironmentDistribution())
-	applyEnvironmentParams(&params, env)
+	params := pickLightParams(in.lighting, st.rng, in.material, in.env, currentEnvironmentDistribution())
+	applyEnvironmentParams(&params, in.env)
 	if realisticHardwareEnabled(win, s) && st.rt != nil {
 		return st.rt.TraceRealisticImage(pw, ph, basis, params)
 	}
@@ -501,7 +511,7 @@ func pickLightParams(lighting renderer.SceneLighting, rng *rand.Rand, material r
 	}
 
 	pEnv := envWeight / totalWeight
-	if envActive && rng.Float64() < pEnv {
+	if envActive && rng.Float64() < pEnv { // NOSONAR: Monte Carlo selection, not a security context — see pickDiscreteLight's own NOSONAR doc comment
 		pickEnvironmentLight(&params, rng, envDist, env.Rotation, pEnv)
 	} else {
 		pickDiscreteLight(&params, rng, dist, 1-pEnv)
@@ -516,7 +526,7 @@ func pickLightParams(lighting renderer.SceneLighting, rng *rand.Rand, material r
 // which direction within it. A degenerate (all-black) environment leaves params' light
 // fields zero rather than dividing by a zero pdf.
 func pickEnvironmentLight(params *native.RealisticLightParams, rng *rand.Rand, envDist *renderer.EnvironmentDistribution, rotation float32, pEnv float64) {
-	dir, pdf := envDist.Sample(rng.Float64(), rng.Float64())
+	dir, pdf := envDist.Sample(rng.Float64(), rng.Float64()) // NOSONAR: Monte Carlo direction sampling, not a security context
 	if pdf <= 0 {
 		return
 	}

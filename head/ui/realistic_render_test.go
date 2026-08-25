@@ -201,6 +201,17 @@ func TestPickEnvironmentLightScalesByPEnvAndPDF(t *testing.T) {
 	}
 }
 
+// TestRealisticTraceResolutionClampsToOnePixel covers realisticTraceResolution's own
+// floor: a panel small enough that pw/realisticInteractiveDownscale truncates to 0 while
+// the camera is moving must still trace at least a 1x1 preview, not a degenerate 0x0
+// dispatch.
+func TestRealisticTraceResolutionClampsToOnePixel(t *testing.T) {
+	tracePW, tracePH := realisticTraceResolution(1, 1, true)
+	if tracePW != 1 || tracePH != 1 {
+		t.Errorf("realisticTraceResolution(1,1,true) = (%d,%d), want (1,1)", tracePW, tracePH)
+	}
+}
+
 // TestPickEnvironmentLightAllBlackDistributionLeavesParamsZero covers
 // pickEnvironmentLight's own pdf<=0 guard directly — unreachable through pickLightParams
 // itself (an all-black environment has TotalWeight()==0, so pEnv is 0 and

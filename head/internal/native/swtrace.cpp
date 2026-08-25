@@ -4,6 +4,7 @@
 // noticeably smaller than raytrace.cpp: the whole vkGetDeviceProcAddr function-loading
 // dance PBI-333 needed is unnecessary when nothing is an extension-only entry point.
 #include "swtrace.h"
+#include <array>
 #include <cstring>
 
 namespace {
@@ -215,16 +216,46 @@ bool sw_run_commands(SWScene* s, Fn&& cmds) {
     return waitResult == VK_SUCCESS;
 }
 
+// record_dummy_env_upload mirrors raytrace.cpp's own helper of the same name exactly,
+// except the final barrier's destination stage is COMPUTE_SHADER_BIT (consumed by
+// swpathtrace_realistic.comp) rather than RAY_TRACING_SHADER_BIT_KHR — split out of
+// ensure_dummy_env's command-recording lambda for the same reasons (20-line function
+// limit, explicit lambda capture).
+void record_dummy_env_upload(VkCommandBuffer cmd, VkImage img, VkBuffer stagingBuf) {
+    VkImageMemoryBarrier toDst{};
+    toDst.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    toDst.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    toDst.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    toDst.srcAccessMask = 0;
+    toDst.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    toDst.image = img;
+    toDst.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                         0, nullptr, 0, nullptr, 1, &toDst);
+    VkBufferImageCopy cp{};
+    cp.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    cp.imageExtent = {1, 1, 1};
+    vkCmdCopyBufferToImage(cmd, stagingBuf, img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &cp);
+    VkImageMemoryBarrier toRead = toDst;
+    toRead.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    toRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    toRead.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    toRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0,
+                         0, nullptr, 0, nullptr, 1, &toRead);
+}
+
 // ensure_dummy_env mirrors raytrace.cpp's ensure_dummy_env exactly (a lazily-created 1x1
 // mid-grey fallback environment image+sampler, for when s's HeadContext has no Viewport).
 bool ensure_dummy_env(SWScene* s) {
     if (s->dummyEnvView != VK_NULL_HANDLE) return true;
     HeadContext* c = s->ctx;
     constexpr VkFormat kFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
-    const float grey[4] = {0.05f, 0.05f, 0.05f, 1.0f};
+    const std::array<float, 4> grey = {0.05f, 0.05f, 0.05f, 1.0f};
 
     SWBuffer staging{};
-    if (!sw_upload_buffer(c, &staging, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, grey, sizeof(grey))) return false;
+    if (!sw_upload_buffer(c, &staging, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, grey.data(), grey.size() * sizeof(float)))
+        return false;
 
     VkImageCreateInfo ii{};
     ii.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -248,28 +279,9 @@ bool ensure_dummy_env(SWScene* s) {
     if (!ok(vkBindImageMemory(c->device, s->dummyEnvImage, s->dummyEnvMem, 0))) return false;
 
     VkImage img = s->dummyEnvImage;
-    bool copied = sw_run_commands(s, [&](VkCommandBuffer cmd) {
-        VkImageMemoryBarrier toDst{};
-        toDst.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        toDst.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        toDst.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        toDst.srcAccessMask = 0;
-        toDst.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        toDst.image = img;
-        toDst.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                             0, nullptr, 0, nullptr, 1, &toDst);
-        VkBufferImageCopy cp{};
-        cp.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        cp.imageExtent = {1, 1, 1};
-        vkCmdCopyBufferToImage(cmd, staging.buffer, img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &cp);
-        VkImageMemoryBarrier toRead = toDst;
-        toRead.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        toRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        toRead.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        toRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0,
-                             0, nullptr, 0, nullptr, 1, &toRead);
+    VkBuffer stagingBuf = staging.buffer;
+    bool copied = sw_run_commands(s, [img, stagingBuf](VkCommandBuffer cmd) {
+        record_dummy_env_upload(cmd, img, stagingBuf);
     });
     sw_destroy_buffer(c, &staging);
     if (!copied) return false;
@@ -284,8 +296,11 @@ bool ensure_dummy_env(SWScene* s) {
 
     VkSamplerCreateInfo si{};
     si.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    si.magFilter = si.minFilter = VK_FILTER_LINEAR;
-    si.addressModeU = si.addressModeV = si.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    si.magFilter = VK_FILTER_LINEAR;
+    si.minFilter = VK_FILTER_LINEAR;
+    si.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    si.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    si.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     return ok(vkCreateSampler(c->device, &si, c->allocator, &s->dummyEnvSampler));
 }
 
