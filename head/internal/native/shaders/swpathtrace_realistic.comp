@@ -7,6 +7,11 @@
 // directional-light Params shape and camera-ray-generation math with
 // pathtrace_realistic.rgen/.rchit — see those files' doc comments for why (single
 // scene-global material, one CPU-picked light per dispatch).
+//
+// Transmission (#2155) chains up to OPENPBR_MAX_TRANSMISSION_BOUNCES continuation
+// segments through the SAME compute-shader invocation via an explicit iterative loop —
+// GLSL forbids recursive function calls, so this is the software backend's equivalent of
+// the hardware backend's recursive traceRayEXT chain (pathtrace_realistic.rchit).
 #extension GL_GOOGLE_include_directive : require
 #include "openpbr/extended_lobes.glsl"
 #include "sw_bvh_types.glsl"
@@ -42,6 +47,126 @@ void buildBasis(vec3 n, out vec3 tangent, out vec3 bitangent) {
     bitangent = cross(n, tangent);
 }
 
+OpenPBRRealisticMaterial realisticMaterialFromParams() {
+    OpenPBRRealisticMaterial mat;
+    mat.baseColor = params.baseColor; mat.baseWeight = params.baseWeight;
+    mat.specularRoughness = params.specularRoughness; mat.specularIOR = params.specularIOR;
+    mat.coatColor = params.coatColor; mat.coatWeight = params.coatWeight;
+    mat.coatRoughness = params.coatRoughness; mat.coatIOR = params.coatIOR; mat.coatDarkening = params.coatDarkening;
+    mat.fuzzColor = params.fuzzColor; mat.fuzzWeight = params.fuzzWeight; mat.fuzzRoughness = params.fuzzRoughness;
+    mat.thinFilmWeight = params.thinFilmWeight; mat.thinFilmThicknessMicrons = params.thinFilmThicknessMicrons;
+    mat.thinFilmIOR = params.thinFilmIOR;
+    mat.subsurfaceColor = params.subsurfaceColor; mat.subsurfaceWeight = params.subsurfaceWeight;
+    mat.subsurfaceAnisotropy = params.subsurfaceAnisotropy;
+    mat.transmissionColor = params.transmissionColor; mat.transmissionWeight = params.transmissionWeight;
+    mat.transmissionDepth = params.transmissionDepth; mat.dispersionScale = params.dispersionScale;
+    mat.dispersionAbbeNumber = params.dispersionAbbeNumber;
+    mat.thinWalled = params.thinWalled > 0.5;
+    return mat;
+}
+
+// directLightAt evaluates one hit point's direct-lit response: the opaque base substrate
+// mixed against the translucent base's LOCAL term (specular reflection only — the traced
+// transmitted contribution is accumulated separately by the caller's bounce loop), coat
+// and fuzz layered on top, shadow-tested against the same light every bounce shades with.
+// channelIOR replaces mat.specularIOR ONLY for translucentBase's mixing weight is
+// unaffected by dispersion (dispersion bends the CONTINUATION ray direction, evaluated by
+// the caller, not this hit's own reflected response).
+vec3 directLightAt(vec3 hitPoint, vec3 normal, vec3 wiLocal, vec3 woLocal, OpenPBRRealisticMaterial mat) {
+    if (wiLocal.z <= 0.0 || woLocal.z <= 0.0) return vec3(0.0);
+    vec3 wi = normalize(params.lightDirection);
+    TraceResult shadow = traceBVH(hitPoint + normal * 1e-3, wi, 1e-3, 1e6);
+    if (shadow.hit) return vec3(0.0);
+
+    vec3 opaqueBase = openpbrShadeBaseSubstrate(mat, wiLocal, woLocal);
+    vec3 translucentLocal = openpbrBaseSpecular(mat, wiLocal, woLocal);
+    vec3 base = openpbrMixTransmission(opaqueBase, translucentLocal, mat.transmissionWeight);
+    vec3 shaded = openpbrLayerCoatFuzz(base, mat, wiLocal, woLocal);
+    return shaded * params.lightColor * params.lightIntensity * wiLocal.z;
+}
+
+// traceRealisticPath chains up to OPENPBR_MAX_TRANSMISSION_BOUNCES transmission segments
+// from one camera ray, accumulating each segment's direct-lit response weighted by the
+// throughput surviving to reach it (transmission_weight * Fresnel/thin-wall transmittance
+// at every crossing, Beer's-law extinction over the REAL traced distance inside a solid
+// medium). channelIOR/channelMask implement dispersion (#2155): called once per RGB
+// channel with that channel's Cauchy-dispersed IOR and a one-hot mask when
+// dispersion_scale>0 (see main()), or once with the material's own IOR and mask=1
+// otherwise — see this function's own entering/exiting branch for why only the
+// REFRACTION direction/transmittance depends on channelIOR, not the reflected highlight.
+vec3 traceRealisticPath(vec3 origin, vec3 dir, OpenPBRRealisticMaterial mat, float channelIOR, vec3 channelMask) {
+    vec3 radiance = vec3(0.0);
+    vec3 throughput = vec3(1.0);
+    vec3 pendingExtinction = vec3(0.0);
+    vec3 rayOrigin = origin;
+    vec3 rayDir = dir;
+    float tMinBounce = cam.tMin;
+    float tMaxBounce = cam.tMax;
+
+    float iorStack[OPENPBR_MAX_TRANSMISSION_BOUNCES + 2];
+    int iorDepth = 1;
+    iorStack[0] = 1.0;
+
+    for (int bounce = 0; bounce <= OPENPBR_MAX_TRANSMISSION_BOUNCES; bounce++) {
+        TraceResult hit = traceBVH(rayOrigin, rayDir, tMinBounce, tMaxBounce);
+        if (!hit.hit) break;
+        throughput *= exp(-pendingExtinction * hit.t);
+        pendingExtinction = vec3(0.0);
+
+        vec3 hitPoint = rayOrigin + rayDir * hit.t;
+        vec3 rawNormal = hit.normal;
+        vec3 normal = rawNormal;
+        if (dot(normal, rayDir) > 0.0) normal = -normal; // two-sided shading normal (CAD faces can present either way)
+
+        vec3 wi = normalize(params.lightDirection);
+        vec3 wo = -rayDir;
+        vec3 tangent, bitangent;
+        buildBasis(normal, tangent, bitangent);
+        vec3 wiLocal = vec3(dot(wi, tangent), dot(wi, bitangent), dot(wi, normal));
+        vec3 woLocal = vec3(dot(wo, tangent), dot(wo, bitangent), dot(wo, normal));
+
+        radiance += throughput * channelMask * directLightAt(hitPoint, normal, wiLocal, woLocal, mat);
+
+        if (mat.transmissionWeight <= 0.0 || bounce == OPENPBR_MAX_TRANSMISSION_BOUNCES || woLocal.z <= 0.0) break;
+
+        // Entering/exiting is decided from the RAW (un-flipped) geometric normal — the
+        // shading normal above always opposes the ray for two-sided convenience, which
+        // would make every hit look like "entering" and break nested-medium tracking.
+        bool entering = dot(rawNormal, rayDir) < 0.0;
+        float iorRatio;
+        if (entering) {
+            iorRatio = channelIOR / iorStack[iorDepth - 1];
+            if (iorDepth < iorStack.length()) { iorStack[iorDepth] = channelIOR; iorDepth++; }
+        } else {
+            if (iorDepth > 1) iorDepth--;
+            iorRatio = iorStack[iorDepth - 1] / channelIOR;
+        }
+
+        vec3 continueLocal;
+        float transmittance;
+        bool refracted = true;
+        if (mat.thinWalled) {
+            transmittance = openpbrThinWallTransmittance(channelIOR, woLocal.z);
+            continueLocal = -woLocal; // straight through, undeviated (spec's thin-walled series)
+        } else {
+            refracted = openpbrRefract(woLocal, iorRatio, continueLocal);
+            transmittance = 1.0 - openpbrDielectricFresnel(channelIOR, woLocal.z);
+        }
+        if (!refracted) break; // total internal reflection: no transmitted ray, chain ends here
+
+        throughput *= mat.transmissionWeight * transmittance;
+        if (entering && !mat.thinWalled && mat.transmissionDepth > 0.0) {
+            pendingExtinction = openpbrTransmissionExtinction(mat.transmissionColor, mat.transmissionDepth);
+        }
+
+        rayDir = normalize(continueLocal.x * tangent + continueLocal.y * bitangent + continueLocal.z * normal);
+        rayOrigin = hitPoint - normal * 1e-3; // offset to the transmitted side of the surface
+        tMinBounce = 1e-3;
+        tMaxBounce = 1e6;
+    }
+    return radiance;
+}
+
 void main() {
     uvec2 size = gl_NumWorkGroups.xy * gl_WorkGroupSize.xy;
     uvec2 px = gl_GlobalInvocationID.xy;
@@ -54,37 +179,21 @@ void main() {
     vec3 dir = normalize(cam.forward + ndc.x * cam.aspect * cam.tanHalfFovY * cam.right +
                          ndc.y * cam.tanHalfFovY * cam.up);
 
-    TraceResult primary = traceBVH(cam.eye, dir, cam.tMin, cam.tMax);
-    if (!primary.hit) return;
+    OpenPBRRealisticMaterial mat = realisticMaterialFromParams();
 
-    vec3 hitPoint = cam.eye + dir * primary.t;
-    vec3 normal = primary.normal;
-    if (dot(normal, dir) > 0.0) normal = -normal; // two-sided (CAD faces can present either way)
+    vec3 result;
+    if (mat.dispersionScale > 0.0) {
+        result = vec3(0.0);
+        for (int ch = 0; ch < 3; ch++) {
+            float chIOR = openpbrDispersiveIOR(mat.specularIOR, mat.dispersionAbbeNumber,
+                                               mat.dispersionScale, OPENPBR_RGB_WAVELENGTHS_NM[ch]);
+            vec3 mask = vec3(0.0);
+            mask[ch] = 1.0;
+            result += traceRealisticPath(cam.eye, dir, mat, chIOR, mask);
+        }
+    } else {
+        result = traceRealisticPath(cam.eye, dir, mat, mat.specularIOR, vec3(1.0));
+    }
 
-    vec3 wi = normalize(params.lightDirection);
-    vec3 wo = -dir;
-
-    TraceResult shadow = traceBVH(hitPoint + normal * 1e-3, wi, 1e-3, 1e6);
-    if (shadow.hit) return; // occluded: radiance stays 0
-
-    vec3 tangent, bitangent;
-    buildBasis(normal, tangent, bitangent);
-    vec3 wiLocal = vec3(dot(wi, tangent), dot(wi, bitangent), dot(wi, normal));
-    vec3 woLocal = vec3(dot(wo, tangent), dot(wo, bitangent), dot(wo, normal));
-    if (wiLocal.z <= 0.0 || woLocal.z <= 0.0) return;
-
-    OpenPBRRealisticMaterial mat;
-    mat.baseColor = params.baseColor; mat.baseWeight = params.baseWeight;
-    mat.specularRoughness = params.specularRoughness; mat.specularIOR = params.specularIOR;
-    mat.coatColor = params.coatColor; mat.coatWeight = params.coatWeight;
-    mat.coatRoughness = params.coatRoughness; mat.coatIOR = params.coatIOR; mat.coatDarkening = params.coatDarkening;
-    mat.fuzzColor = params.fuzzColor; mat.fuzzWeight = params.fuzzWeight; mat.fuzzRoughness = params.fuzzRoughness;
-    mat.thinFilmWeight = params.thinFilmWeight; mat.thinFilmThicknessMicrons = params.thinFilmThicknessMicrons;
-    mat.thinFilmIOR = params.thinFilmIOR;
-    mat.subsurfaceColor = params.subsurfaceColor; mat.subsurfaceWeight = params.subsurfaceWeight;
-    mat.subsurfaceAnisotropy = params.subsurfaceAnisotropy;
-
-    vec3 brdf = openpbrShadeSurface(mat, wiLocal, woLocal);
-    float cosTheta = wiLocal.z;
-    outputBuf.pixels[idx] = vec4(brdf * params.lightColor * params.lightIntensity * cosTheta, 1.0);
+    outputBuf.pixels[idx] = vec4(result, 1.0);
 }

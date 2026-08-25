@@ -152,7 +152,7 @@ func TestRTSceneRealisticImageMatchesCPUOracle(t *testing.T) {
 	if err := scene.Build(); err != nil {
 		t.Fatalf("Build: %v", err)
 	}
-	if err := scene.BuildRealisticPipeline(pathtraceRealisticRgenSPV, pathtraceRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV); err != nil {
+	if err := scene.BuildRealisticPipeline(pathtraceRealisticRgenSPV, pathtraceRealisticRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV); err != nil {
 		t.Skipf("no hardware RT pipeline available: %v", err)
 	}
 
@@ -225,7 +225,7 @@ func TestRealisticImageBackendParity(t *testing.T) {
 	if err := rtScene.Build(); err != nil {
 		t.Fatalf("RTScene.Build: %v", err)
 	}
-	if err := rtScene.BuildRealisticPipeline(pathtraceRealisticRgenSPV, pathtraceRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV); err != nil {
+	if err := rtScene.BuildRealisticPipeline(pathtraceRealisticRgenSPV, pathtraceRealisticRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV); err != nil {
 		t.Skipf("no hardware RT pipeline available: %v", err)
 	}
 

@@ -7,6 +7,8 @@
 // payload contract) and pairs with pathtrace_realistic.rchit (directional-light
 // shading, vs. that harness's point light).
 #extension GL_EXT_ray_tracing : require
+#extension GL_GOOGLE_include_directive : require
+#include "rt_payload.glsl"
 
 layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
 
@@ -23,7 +25,25 @@ layout(set = 0, binding = 2) uniform CameraParams {
     float aspect;
 } cam;
 
-layout(location = 0) rayPayloadEXT vec3 payload;
+// Field list shared with pathtrace_realistic.rchit/swpathtrace_realistic.comp — see
+// extended_lobes.glsl's OPENPBR_REALISTIC_PARAMS_FIELDS doc comment. Read here only for
+// specularIOR/dispersionScale/dispersionAbbeNumber, to decide the dispersion loop below.
+layout(set = 0, binding = 3) uniform Params { OPENPBR_REALISTIC_PARAMS_FIELDS } params;
+
+layout(location = 0) rayPayloadEXT RTPathPayload payload;
+
+// traceChain fires one full primary-ray-through-transmission-chain, initializing the
+// payload's recursion state fresh, and returns the resulting radiance. See
+// rt_payload.glsl's channelIOR/channelMask doc comment for what channel selects.
+vec3 traceChain(vec3 origin, vec3 dir, float channelIOR, vec3 channelMask) {
+    payload.depth = 0;
+    payload.iorStackDepth = 1;
+    payload.iorStack[0] = 1.0; // ambient medium (vacuum/air) — see kernel/shading/openpbr's IORStack
+    payload.channelIOR = channelIOR;
+    payload.channelMask = channelMask;
+    traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, origin, cam.tMin, dir, cam.tMax, 0);
+    return payload.radiance;
+}
 
 void main() {
     vec2 size = vec2(gl_LaunchSizeEXT.xy);
@@ -34,8 +54,20 @@ void main() {
     vec3 dir = normalize(cam.forward + ndc.x * cam.aspect * cam.tanHalfFovY * cam.right +
                          ndc.y * cam.tanHalfFovY * cam.up);
 
-    traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, cam.eye, cam.tMin, dir, cam.tMax, 0);
+    vec3 result;
+    if (params.dispersionScale > 0.0) {
+        result = vec3(0.0);
+        for (int ch = 0; ch < 3; ch++) {
+            float chIOR = openpbrDispersiveIOR(params.specularIOR, params.dispersionAbbeNumber,
+                                               params.dispersionScale, OPENPBR_RGB_WAVELENGTHS_NM[ch]);
+            vec3 mask = vec3(0.0);
+            mask[ch] = 1.0;
+            result += traceChain(cam.eye, dir, chIOR, mask);
+        }
+    } else {
+        result = traceChain(cam.eye, dir, params.specularIOR, vec3(1.0));
+    }
 
     uint idx = gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x;
-    outputBuf.pixels[idx] = vec4(payload, 1.0);
+    outputBuf.pixels[idx] = vec4(result, 1.0);
 }

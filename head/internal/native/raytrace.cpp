@@ -569,7 +569,12 @@ bool rt_build_4stage_pipeline(HeadContext* c, RTScene* s, const uint32_t* rgenSp
                   VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr};
     bindings[1] = {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr};
     bindings[2] = {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr};
-    bindings[3] = {3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr};
+    // #2155: RAYGEN_BIT added so pathtrace_realistic.rgen can read specularIOR/
+    // dispersionScale/dispersionAbbeNumber to decide its dispersion loop — harmless for
+    // the PBI-345 harness pipeline sharing this binding layout, whose rgen doesn't
+    // declare (and so never reads) the Params UBO at all.
+    bindings[3] = {3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
+                   VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr};
     VkDescriptorSetLayoutCreateInfo dslInfo{};
     dslInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     dslInfo.bindingCount = 4;
@@ -626,7 +631,12 @@ bool rt_build_4stage_pipeline(HeadContext* c, RTScene* s, const uint32_t* rgenSp
     pInfo.pStages = stages;
     pInfo.groupCount = 4;
     pInfo.pGroups = groups;
-    pInfo.maxPipelineRayRecursionDepth = 2; // primary ray + one shadow ray traced from within it
+    // #2155: primary ray + up to OPENPBR_MAX_TRANSMISSION_BOUNCES (extended_lobes.glsl)
+    // recursive continuation rays through transmissive surfaces + one terminal shadow ray
+    // fired from whichever level is deepest. The PBI-345 test-harness pipeline (this
+    // function's OTHER caller, obk_rt_scene_build_pipeline) never recurses past its own
+    // primary+shadow pair, so the higher budget is unused there, not unsafe.
+    pInfo.maxPipelineRayRecursionDepth = 6;
     pInfo.layout = out.pipeLayout;
     VkResult pipeResult =
         s->rtFn.createRTPipeline(c->device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &out.pipeline);

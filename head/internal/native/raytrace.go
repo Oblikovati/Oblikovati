@@ -202,7 +202,10 @@ func (c CameraBasis) floats() [16]float32 {
 // total. A zero-value field group reproduces the prior lobe's output exactly (each
 // lobe's own weight=0 short-circuit, mirrored from kernel/shading/openpbr's Layer*/Mix*
 // functions), so callers that only set the base fields (e.g. the golden-harness base
-// tier) are unaffected.
+// tier) are unaffected. ThinWalled (#2155) repurposes the transmission group's own
+// alignment-padding slot (no size/layout change): nonzero selects the spec's thin-walled
+// evaluation mode (straight-through, no Snell bending — geometry_thin_walled) over the
+// default solid-dielectric refraction.
 type RealisticLightParams struct {
 	LightDirection                                      [3]float32
 	LightIntensity                                      float32
@@ -225,9 +228,9 @@ type RealisticLightParams struct {
 	ThinFilmWeight, ThinFilmThicknessMicrons, ThinFilmIOR float32
 	Pad6                                                  float32
 
-	TransmissionColor                                              [3]float32
-	TransmissionWeight                                             float32
-	TransmissionDepth, DispersionScale, DispersionAbbeNumber, Pad7 float32
+	TransmissionColor                                                    [3]float32
+	TransmissionWeight                                                   float32
+	TransmissionDepth, DispersionScale, DispersionAbbeNumber, ThinWalled float32
 
 	SubsurfaceColor       [3]float32
 	SubsurfaceWeight      float32
@@ -253,7 +256,7 @@ func (p RealisticLightParams) floats() [56]float32 {
 		p.ThinFilmWeight, p.ThinFilmThicknessMicrons, p.ThinFilmIOR, p.Pad6,
 
 		p.TransmissionColor[0], p.TransmissionColor[1], p.TransmissionColor[2], p.TransmissionWeight,
-		p.TransmissionDepth, p.DispersionScale, p.DispersionAbbeNumber, p.Pad7,
+		p.TransmissionDepth, p.DispersionScale, p.DispersionAbbeNumber, p.ThinWalled,
 
 		p.SubsurfaceColor[0], p.SubsurfaceColor[1], p.SubsurfaceColor[2], p.SubsurfaceWeight,
 		p.SubsurfaceRadiusScale[0], p.SubsurfaceRadiusScale[1], p.SubsurfaceRadiusScale[2], p.SubsurfaceRadius,
