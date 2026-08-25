@@ -42,16 +42,6 @@ func filterLines(ents []sketch.Entity) []*sketch.Line {
 	return out
 }
 
-func filterCircles(ents []sketch.Entity) []*sketch.Circle {
-	var out []*sketch.Circle
-	for _, e := range ents {
-		if c, ok := e.(*sketch.Circle); ok {
-			out = append(out, c)
-		}
-	}
-	return out
-}
-
 // circularCurvesFrom returns the circular curves (circles and arcs) among ents, in pick
 // order, as the polymorphic [sketch.CircularCurve] the circular constraints accept — so
 // concentric/tangent/equal/coincident treat an arc exactly like a circle.
@@ -275,9 +265,11 @@ func addDimensionFor(dims *sketch.DimensionConstraints, units param.UnitsOfMeasu
 func addPlacedDimensionFor(dims *sketch.DimensionConstraints, units param.UnitsOfMeasure, ents []sketch.Entity,
 	at math.Point2, placed bool) (*sketch.DimensionConstraint, error) {
 	switch {
-	case len(filterCircles(ents)) >= 1:
-		c := filterCircles(ents)[0]
-		return dims.AddRadius(c, lengthExpr(units, c.Radius))
+	case len(circularCurvesFrom(ents)) >= 1:
+		// Both a circle and an arc are CircularCurves and dimension their radius the same way;
+		// matching only *Circle here silently dropped an arc's radius dimension (#2160-adjacent).
+		c := circularCurvesFrom(ents)[0]
+		return dims.AddRadius(c, lengthExpr(units, c.CurveRadius()))
 	case len(filterLines(ents)) >= 2:
 		l := filterLines(ents)
 		return dims.AddAngle(l[0], l[1], angleExpr(units, lineAngle(l[0], l[1])))
