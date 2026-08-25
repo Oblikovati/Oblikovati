@@ -5,6 +5,7 @@ package app
 import (
 	"errors"
 
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
 )
@@ -19,6 +20,7 @@ import (
 // 2D sketch (#1262).
 type ProjectGeometryTool struct {
 	dialogTool
+	faces      []FaceHandle
 	edges      []EdgeHandle
 	vertices   []VertexHandle
 	workPoints []WorkPointHandle
@@ -42,16 +44,18 @@ func (t *ProjectGeometryTool) Start(*Session) {}
 // (#1496). The browser tree fed picks through SelectBrowserNode, but the 3D view did not.
 func (t *ProjectGeometryTool) PicksModelReferences() bool { return true }
 
-// AcceptedKinds declares project-geometry picks projectable references: B-rep edges and
+// AcceptedKinds declares project-geometry picks projectable references: B-rep faces, edges and
 // vertices, plus the part's datum geometry (work points, axes and planes — the Origin folder
-// and user work features).
+// and user work features). A face projects all of its bounding edges (Inventor's behaviour) — the
+// piece that made hovering a planar/circular face do nothing at all (#2158).
 func (t *ProjectGeometryTool) AcceptedKinds() []SelectionKind {
-	return []SelectionKind{SelectEdge, SelectVertex, SelectWorkPoint, SelectWorkAxis, SelectWorkPlane}
+	return []SelectionKind{SelectFace, SelectEdge, SelectVertex, SelectWorkPoint, SelectWorkAxis, SelectWorkPlane}
 }
 
 // Picks reports every picked reference for the unified highlight.
 func (t *ProjectGeometryTool) Picks() []Selectable {
-	picks := append(selectables(t.edges), selectables(t.vertices)...)
+	picks := append(selectables(t.faces), selectables(t.edges)...)
+	picks = append(picks, selectables(t.vertices)...)
 	for _, h := range t.workPoints {
 		picks = append(picks, h)
 	}
@@ -67,6 +71,8 @@ func (t *ProjectGeometryTool) Picks() []Selectable {
 // Pick records a clicked edge, vertex or datum reference (ignoring other kinds).
 func (t *ProjectGeometryTool) Pick(_ *Session, sel Selectable) {
 	switch h := sel.(type) {
+	case FaceHandle:
+		t.faces = append(t.faces, h)
 	case EdgeHandle:
 		t.edges = append(t.edges, h)
 	case VertexHandle:
@@ -82,7 +88,7 @@ func (t *ProjectGeometryTool) Pick(_ *Session, sel Selectable) {
 
 // CanCommit reports whether at least one reference is picked.
 func (t *ProjectGeometryTool) CanCommit() bool {
-	return len(t.edges)+len(t.vertices)+len(t.workPoints)+len(t.workAxes)+len(t.workPlanes) > 0
+	return len(t.faces)+len(t.edges)+len(t.vertices)+len(t.workPoints)+len(t.workAxes)+len(t.workPlanes) > 0
 }
 
 // Commit projects each picked edge/vertex onto the active 2D sketch as associative
@@ -93,11 +99,14 @@ func (t *ProjectGeometryTool) Commit(s *Session) error {
 		return errors.New("project geometry: not editing a 2D sketch")
 	}
 	if !t.CanCommit() {
-		return errors.New("project geometry: pick at least one edge, vertex or datum reference")
+		return errors.New("project geometry: pick at least one face, edge, vertex or datum reference")
 	}
 	part, err := activePart(s)
 	if err != nil {
 		return err
+	}
+	for _, f := range t.faces {
+		projectFaceEdges(sk, part, f.Face)
 	}
 	for _, e := range t.edges {
 		sk.ProjectCurve(compdef.NewEdgeRefSource(part, string(e.Edge.ReferenceKey())))
@@ -107,6 +116,16 @@ func (t *ProjectGeometryTool) Commit(s *Session) error {
 	}
 	t.projectDatums(sk, part)
 	return nil
+}
+
+// projectFaceEdges projects every bounding edge of a picked face onto sk — Inventor projects a
+// face as its whole boundary (e.g. a cylinder's planar end face yields its circular perimeter,
+// #2158). Each edge re-derives associatively through its reference key, exactly as a directly
+// picked edge does; Face.Edges already returns the distinct edges, so no dedup is needed here.
+func projectFaceEdges(sk *sketch.Sketch, part *compdef.PartComponentDefinition, face *topo.Face) {
+	for _, e := range face.Edges() {
+		sk.ProjectCurve(compdef.NewEdgeRefSource(part, string(e.ReferenceKey())))
+	}
 }
 
 // projectDatums projects the picked datum geometry onto sk: the origin/work points as
