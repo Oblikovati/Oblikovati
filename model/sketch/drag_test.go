@@ -123,6 +123,28 @@ func TestGroundedPointsIncludesFixConstraint(t *testing.T) {
 	}
 }
 
+// TestDragSoftPinYieldsToDimension is the safety property behind allowing dimension-determined
+// entities to be dragged (#2160, symptom A): the drag pin is soft, so it must not stretch a hard
+// dimension. A point fixed 2 units from a grounded anchor, dragged out to 10, must stay ~2 away —
+// the dimension wins. With an equal-weight pin it would drift toward the midpoint and violate it.
+func TestDragSoftPinYieldsToDimension(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	anchor := s.Points().Add(math.P2(0, 0))
+	s.GeometricConstraints().AddFix(anchor)
+	p := s.Points().Add(math.P2(2, 0))
+	s.GeometricConstraints().AddHorizontal(anchor, p)
+	if _, err := s.DimensionConstraints().AddDistance(anchor, p, "2 cm"); err != nil {
+		t.Fatalf("AddDistance: %v", err)
+	}
+	s.Solve()
+
+	s.DragSolve([]PinTarget{{P: p, Target: math.P2(10, 0)}})
+
+	if d := float64(p.Position().DistanceTo(anchor.Position())); d < 1.9 || d > 2.1 {
+		t.Errorf("drag stretched the distance dimension: |p-anchor| = %.4f, want ~2 (soft pin must yield)", d)
+	}
+}
+
 func TestDefiningPointsByEntity(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	pt := s.Points().Add(math.P2(0, 0))

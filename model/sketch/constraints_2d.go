@@ -564,6 +564,21 @@ type FixConstraint struct {
 	constraintBase
 	P      *Point
 	x0, y0 math.Scalar
+	// weight scales the residual. 0 means a hard fix (⇒ weight 1) — a user or persisted Fix. A
+	// small positive value makes it a SOFT pin: because the solver minimises the raw sum of
+	// squares, a small weight lets the pin yield to hard constraints instead of fighting them.
+	// Drag pins are soft so dragging an entity whose points are held by a dimension or a
+	// tangency does not violate that constraint, and instead moves the geometry within its
+	// remaining freedom (#2160). Zero-valued (cloned/restored) fixes stay hard.
+	weight float64
+}
+
+// residualWeight returns the residual scale, treating the zero value as a hard fix (weight 1).
+func (c *FixConstraint) residualWeight() float64 {
+	if c.weight > 0 {
+		return c.weight
+	}
+	return 1
 }
 
 // AddFix pins point p to its current location.
@@ -573,9 +588,10 @@ func (g *GeometricConstraints) AddFix(p *Point) *FixConstraint {
 	return c
 }
 
-// residualAD: each coordinate must hold its captured value.
+// residualAD: each coordinate must hold its captured value (scaled by the fix's weight).
 func (c *FixConstraint) residualAD(v []ad.Number) []ad.Number {
-	return []ad.Number{v[0].AddConst(-float64(c.x0)), v[1].AddConst(-float64(c.y0))}
+	w := ad.Const(c.residualWeight())
+	return []ad.Number{v[0].AddConst(-float64(c.x0)).Mul(w), v[1].AddConst(-float64(c.y0)).Mul(w)}
 }
 func (c *FixConstraint) Residuals() []float64      { return adResiduals(c.Variables(), c.residualAD) }
 func (c *FixConstraint) Partials() [][]float64     { return adPartials(c.Variables(), c.residualAD) }
