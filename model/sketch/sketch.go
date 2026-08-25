@@ -314,9 +314,25 @@ func (s *Sketch) AllPoints() []*Point {
 
 // Lines/Arcs/Circles/Ellipses/Splines/Points/Blocks return the typed entity
 // factories (the Lines etc. collections).
-func (s *Sketch) Lines() *Lines       { return s.lines }
-func (s *Sketch) Arcs() *Arcs         { return s.arcs }
-func (s *Sketch) Circles() *Circles   { return s.circles }
+func (s *Sketch) Lines() *Lines     { return s.lines }
+func (s *Sketch) Arcs() *Arcs       { return s.arcs }
+func (s *Sketch) Circles() *Circles { return s.circles }
+
+// CircularCenters returns the centre position of every circle and arc. A sketch overlay marks
+// these so a circular entity's centre is a visible hover/snap target: an arc's centre sits off the
+// curve in empty space, so without a marker the user cannot aim a coincident constraint at it — it
+// looks like the arc "has no centre" (#2159). Keeping the type knowledge here lets the head draw
+// the markers without inspecting sketch entity types (archguard I1, #1624).
+func (s *Sketch) CircularCenters() []math.Point2 {
+	out := make([]math.Point2, 0, len(s.circles.items)+len(s.arcs.items))
+	for _, c := range s.circles.items {
+		out = append(out, c.Center.Position())
+	}
+	for _, a := range s.arcs.items {
+		out = append(out, a.Center.Position())
+	}
+	return out
+}
 func (s *Sketch) Ellipses() *Ellipses { return s.ellipses }
 func (s *Sketch) Splines() *Splines   { return s.splines }
 
