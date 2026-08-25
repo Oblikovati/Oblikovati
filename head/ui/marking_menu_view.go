@@ -55,6 +55,7 @@ func drawMarkingMenu(s *app.Session) {
 // drawRadialMarkingMenu draws the eight-quadrant ring plus its overflow rows.
 func drawRadialMarkingMenu(s *app.Session) {
 	drawRepeatEntry(s)
+	drawActiveToolMenuOptions(s)
 	menu := s.MarkingMenu(app.CurrentEnvironment(s))
 	layout := markingRingLayoutForMenu(s, menu)
 	ringX, ringY := native.GetCursorPos()
@@ -109,6 +110,7 @@ func markingRingLayoutForMenu(s markingMenuCommandHost, menu wire.MarkingMenuVie
 // (non-radial) right-click menu (#915 C8).
 func drawClassicContextMenu(s *app.Session) {
 	drawRepeatEntry(s)
+	drawActiveToolMenuOptions(s)
 	menu := s.MarkingMenu(app.CurrentEnvironment(s))
 	for _, item := range menu.Quadrants {
 		drawLinearCommandEntry(s, item.CommandID)
@@ -129,6 +131,28 @@ func drawRepeatEntry(s *app.Session) {
 	if native.Selectable(label+"##mm-repeat", false) {
 		_ = s.RepeatLastCommand()
 		native.CloseCurrentPopup()
+	}
+	native.Separator()
+}
+
+// drawActiveToolMenuOptions renders the active tool's in-command toggle options (Inventor's
+// right-click options, e.g. the Offset tool's Loop Select / Constrain Offset) as checkable rows at
+// the top of the context menu. A checkmark prefix shows an on option; clicking one flips it and
+// closes the menu, as Inventor does. Nothing renders when no tool offers options.
+func drawActiveToolMenuOptions(s *app.Session) {
+	opts := s.ActiveToolMenuOptions()
+	if len(opts) == 0 {
+		return
+	}
+	for _, opt := range opts {
+		label := opt.Label
+		if opt.Checked {
+			label = "✓ " + opt.Label
+		}
+		if native.MenuItem(label + "##tool-opt-" + opt.Label) {
+			s.ToggleActiveToolMenuOption(opt.Label)
+			native.CloseCurrentPopup()
+		}
 	}
 	native.Separator()
 }

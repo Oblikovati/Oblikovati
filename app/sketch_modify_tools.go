@@ -164,6 +164,31 @@ func (t *SketchOffsetTool) ConstrainOffset() bool      { return t.constrainOffse
 func (t *SketchOffsetTool) SetConstrainOffset(on bool) { t.constrainOffset = on }
 func (t *SketchOffsetTool) ToggleConstrainOffset()     { t.constrainOffset = !t.constrainOffset }
 
+// The offset option labels, shared by the right-click menu and its toggle handler so the two never
+// drift.
+const (
+	offsetLoopSelectLabel      = "Loop Select"
+	offsetConstrainOffsetLabel = "Constrain Offset"
+)
+
+// MenuOptions surfaces Inventor's two Offset right-click toggles as checkable rows.
+func (t *SketchOffsetTool) MenuOptions() []ToolMenuOption {
+	return []ToolMenuOption{
+		{Label: offsetLoopSelectLabel, Checked: t.loopSelect},
+		{Label: offsetConstrainOffsetLabel, Checked: t.constrainOffset},
+	}
+}
+
+// ToggleMenuOption flips the option the user chose from the right-click menu.
+func (t *SketchOffsetTool) ToggleMenuOption(label string) {
+	switch label {
+	case offsetLoopSelectLabel:
+		t.ToggleLoopSelect()
+	case offsetConstrainOffsetLabel:
+		t.ToggleConstrainOffset()
+	}
+}
+
 // Accepts highlights the curves OffsetEntity handles: line, circle, arc, and a projected reference
 // curve (a projected face perimeter or edge, offset as a polyline — #2158 follow-up). Uses the
 // entity's Kind() capability via entityKindIs, not a type switch, per the sketch-entity seam (#1624).
