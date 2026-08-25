@@ -137,9 +137,11 @@ func entityPolyline(e Entity) (pts []math.Point2, closed bool) {
 }
 
 // polylineReturnsToStart reports whether a sampled polyline closes on itself (its last point equals
-// its first) — true for a projected closed edge such as a circular face perimeter.
+// its first) — true for a projected closed edge such as a circular face perimeter. It uses the same
+// node-merge tolerance the arrangement treats as coincident, so a loop that closes is detected on
+// the same scale a crossing is.
 func polylineReturnsToStart(pts []math.Point2) bool {
-	return len(pts) >= 3 && pts[len(pts)-1].IsEqualTo(pts[0], 1e-9)
+	return len(pts) >= 3 && pts[len(pts)-1].IsEqualTo(pts[0], arrMergeTol)
 }
 
 // cut is a crossing along a segment: the parameter t∈[0,1] where it occurs and the
