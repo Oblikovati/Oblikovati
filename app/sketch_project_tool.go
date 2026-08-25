@@ -3,6 +3,8 @@
 package app
 
 import (
+	"errors"
+
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
@@ -104,8 +106,14 @@ func projectFaceEdges(sk *sketch.Sketch, part *compdef.PartComponentDefinition, 
 // projected (the projection itself already happened on each pick, not here).
 func (t *ProjectGeometryTool) CanCommit() bool { return t.projected }
 
-// Commit is the no-op finish: the projections already happened on each pick, so OK/Enter only tears
-// the tool down (a non-mutating commit records nothing).
-func (t *ProjectGeometryTool) Commit(*Session) error { return nil }
+// Commit finishes the tool: the projections already happened on each pick, so it is a no-op tear-
+// down once anything was projected. It refuses (errors) when nothing was projected, so Enter with an
+// empty tool does not silently "succeed" — the same guard the other reference tools hold.
+func (t *ProjectGeometryTool) Commit(*Session) error {
+	if !t.projected {
+		return errors.New("project geometry: pick a face, edge, vertex or datum reference to project")
+	}
+	return nil
+}
 
 var _ Tool = (*ProjectGeometryTool)(nil)
