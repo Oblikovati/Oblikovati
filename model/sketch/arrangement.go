@@ -124,9 +124,22 @@ func entityPolyline(e Entity) (pts []math.Point2, closed bool) {
 			return sampleSplineEntity(t), true
 		}
 		return naturalPolyline(t), false
+	case *ProjectedCurve:
+		// A projected reference curve carries its own sampled polyline (a projected face perimeter
+		// or model edge); expose it here so it can be hit-tested, region-detected and offset like any
+		// other curve — without a case it fell through to naturalPolyline's endpoint chord (empty for
+		// a projection) and was unpickable (#2158 follow-up).
+		p := t.Points()
+		return p, polylineReturnsToStart(p)
 	default:
 		return naturalPolyline(e), false // Line, Arc, open Spline
 	}
+}
+
+// polylineReturnsToStart reports whether a sampled polyline closes on itself (its last point equals
+// its first) — true for a projected closed edge such as a circular face perimeter.
+func polylineReturnsToStart(pts []math.Point2) bool {
+	return len(pts) >= 3 && pts[len(pts)-1].IsEqualTo(pts[0], 1e-9)
 }
 
 // cut is a crossing along a segment: the parameter t∈[0,1] where it occurs and the
