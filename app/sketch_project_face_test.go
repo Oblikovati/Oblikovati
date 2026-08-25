@@ -85,6 +85,31 @@ func TestProjectGeometryProjectsCircularCapPerimeter(t *testing.T) {
 	}
 }
 
+// TestProjectGeometryProjectsOnPickWithoutOK pins the per-click behaviour: Project Geometry has no
+// dialog, so a pick projects immediately (no OK step) and the tool stays armed for the next pick —
+// the reported gap where a click on a highlighted face produced no projected geometry.
+func TestProjectGeometryProjectsOnPickWithoutOK(t *testing.T) {
+	s, def := emptyPartSession(t)
+	buildCylinderPart(def, 2, 4)
+	body := def.SurfaceBodies().All()[0]
+	cap := planarCapFace(t, body)
+	sk, err := s.CreateSketch(sketch.XYPlane())
+	if err != nil {
+		t.Fatalf("CreateSketch: %v", err)
+	}
+	tool := NewProjectGeometryTool()
+	s.StartTool(tool)
+
+	before := countProjectedCurves(sk)
+	tool.Pick(s, FaceHandle{Face: cap, Body: body})
+	if got := countProjectedCurves(sk) - before; got != 1 {
+		t.Fatalf("a face pick projected %d curves before any OK, want 1 (per-click, no dialog)", got)
+	}
+	if s.ActiveTool() == nil {
+		t.Error("Project Geometry deactivated after one pick; it must stay armed for the next (Inventor)")
+	}
+}
+
 // TestProjectGeometryProjectsAllFaceEdges locks the face→boundary enumeration: projecting a box
 // face must project every one of its bounding edges, not just one, so a polygonal face yields its
 // whole outline (#2158).
