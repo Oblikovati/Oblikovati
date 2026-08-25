@@ -52,18 +52,14 @@ func TestProjectGeometryToolProjectsDatums(t *testing.T) {
 
 	tool := NewProjectGeometryTool()
 	s.StartTool(tool)
+	// Each pick projects immediately — Project Geometry has no dialog (Inventor). The parallel XY
+	// plane has no intersection line with the sketch, so its pick projects nothing.
 	tool.Pick(s, WorkPointHandle{Point: center})
 	tool.Pick(s, WorkAxisHandle{Axis: xAxis})
 	tool.Pick(s, WorkPlaneHandle{Plane: xzPlane})
-	tool.Pick(s, WorkPlaneHandle{Plane: xyPlane}) // parallel: must be skipped on commit
+	tool.Pick(s, WorkPlaneHandle{Plane: xyPlane}) // parallel: projects nothing
 	if !tool.CanCommit() {
-		t.Fatal("tool should be ready after picking datum geometry")
-	}
-	if got := len(tool.Picks()); got != 4 {
-		t.Errorf("Picks() = %d, want 4 datum picks for the highlight", got)
-	}
-	if err := s.OK(); err != nil {
-		t.Fatalf("OK: %v", err)
+		t.Fatal("tool should be finishable after projecting datum geometry")
 	}
 
 	sk := s.ActiveSketch()
