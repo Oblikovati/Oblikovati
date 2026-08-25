@@ -116,10 +116,11 @@ func NewSketchOffsetTool(distance float64) *SketchOffsetTool {
 func (t *SketchOffsetTool) Name() string                  { return "Offset" }
 func (t *SketchOffsetTool) Pick(_ *Session, s Selectable) { t.take(s) }
 
-// Accepts highlights the curves OffsetEntity handles: line, circle, arc. Uses the entity's
-// Kind() capability via entityKindIs, not a type switch, per the sketch-entity seam (#1624).
+// Accepts highlights the curves OffsetEntity handles: line, circle, arc, and a projected reference
+// curve (a projected face perimeter or edge, offset as a polyline — #2158 follow-up). Uses the
+// entity's Kind() capability via entityKindIs, not a type switch, per the sketch-entity seam (#1624).
 func (t *SketchOffsetTool) Accepts(e sketch.Entity) bool {
-	return entityKindIs(e, sketch.LineKind, sketch.CircleKind, sketch.ArcKind)
+	return entityKindIs(e, sketch.LineKind, sketch.CircleKind, sketch.ArcKind, sketch.ProjectedCurveKind)
 }
 func (t *SketchOffsetTool) CanCommit() bool        { return t.ready() }
 func (t *SketchOffsetTool) AutoCommitOnPick() bool { return true }
