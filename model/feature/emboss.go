@@ -322,6 +322,11 @@ func buildPrismWithHoles(p *sketch.Profile, plane sketch.Plane, sp span, taper f
 				return cyl
 			}
 		}
+		// A closed line+arc loop extrudes to an ANALYTIC prism — arc cap edges + true partial-cylinder
+		// side faces — so a projected/offset/filleted face sees real arcs, not chords (#2164).
+		if body := buildAnalyticExtrusion(p.OuterLoop(), plane, sp, feat); body != nil {
+			return body
+		}
 	}
 	solid := buildPrism(p.OuterLoop().Polygon(), plane, sp, taper, feat)
 	if inner := p.InnerLoops(); len(inner) > 0 {

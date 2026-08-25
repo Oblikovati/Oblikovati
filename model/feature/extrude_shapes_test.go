@@ -51,8 +51,9 @@ func assertWatertightSolid(t *testing.T, b *topo.Body) {
 	}
 }
 
-// assertPrismVolume asserts the mesh volume equals the cross-section area times the
-// height — i.e. the prism is exactly the swept profile polygon, arcs and all.
+// assertPrismVolume asserts the mesh volume equals the sampled cross-section polygon's area times the
+// height — the exact invariant for a FACETED prism (a pure polygon, or an ellipse/spline profile that
+// stays faceted), whose mesh IS that sampled polygon swept.
 func assertPrismVolume(t *testing.T, b *topo.Body, sk *sketch.Sketch, profileIndex int, height float64) {
 	t.Helper()
 	poly := sk.Profiles().Item(profileIndex).OuterLoop().Polygon()
@@ -63,13 +64,25 @@ func assertPrismVolume(t *testing.T, b *topo.Body, sk *sketch.Sketch, profileInd
 	}
 }
 
+// assertAnalyticPrismVolume asserts the swept solid's tessellated volume tracks the TRUE analytic
+// cross-section area × height. A line+arc profile now extrudes to an ANALYTIC prism (real arc edges,
+// cylinder walls, #2164), so the true area — not the sampled chord polygon — is the truth; meshing an
+// arc undershoots it slightly, so this uses the 2% curved-body tolerance, not the exact faceted match.
+func assertAnalyticPrismVolume(t *testing.T, b *topo.Body, trueArea, height float64) {
+	t.Helper()
+	want := trueArea * height
+	if got := meshVolume(b); relErr(got, want) > 0.02 {
+		t.Errorf("analytic prism volume = %.6f, want ≈ %.6f (true area %.6f × height %.1f)", got, want, trueArea, height)
+	}
+}
+
 func TestExtrudeHalfDiscFromArcAndLine(t *testing.T) {
 	const r, h = 5.0, 4.0
 	sk := halfDiscSketch(r)
 	b := extrudeProfile(t, sk, 0, h)
 	assertWatertightSolid(t, b)
-	assertPrismVolume(t, b, sk, 0, h)
-	// The faceted half-disc area is within a few percent of the analytic πr²/2.
+	assertAnalyticPrismVolume(t, b, stdmath.Pi*r*r/2, h) // analytic half-disc: true πr²/2 area
+	// The sampled half-disc polygon area is within a few percent of the analytic πr²/2.
 	if a := polygonArea(sk.Profiles().Item(0).OuterLoop().Polygon()); relErr(a, stdmath.Pi*r*r/2) > 0.02 {
 		t.Errorf("half-disc cross-section area = %.4f, want ≈ %.4f", a, stdmath.Pi*r*r/2)
 	}
@@ -80,7 +93,7 @@ func TestExtrudeStadiumFromTwoArcsTwoLines(t *testing.T) {
 	sk := stadiumSketch(l, r)
 	b := extrudeProfile(t, sk, 0, h)
 	assertWatertightSolid(t, b)
-	assertPrismVolume(t, b, sk, 0, h)
+	assertAnalyticPrismVolume(t, b, 2*r*l+stdmath.Pi*r*r, h) // analytic stadium: true 2rl+πr²
 	box := b.RangeBox().Diagonal()
 	if !approxEq(box.X, l+2*r) || !approxEq(box.Y, 2*r) || !approxEq(box.Z, h) {
 		t.Errorf("stadium box = %v, want (%.1f, %.1f, %.1f)", box, l+2*r, 2*r, h)
@@ -95,7 +108,7 @@ func TestExtrudeRoundedRectangleFilletedCorners(t *testing.T) {
 	sk := roundedRectSketch(w, ht, r)
 	b := extrudeProfile(t, sk, 0, h)
 	assertWatertightSolid(t, b)
-	assertPrismVolume(t, b, sk, 0, h)
+	assertAnalyticPrismVolume(t, b, w*ht-(4-stdmath.Pi)*r*r, h) // analytic rounded rect: true area
 	box := b.RangeBox().Diagonal()
 	if !approxEq(box.X, w) || !approxEq(box.Y, ht) || !approxEq(box.Z, h) {
 		t.Errorf("rounded-rect box = %v, want (%.1f, %.1f, %.1f)", box, w, ht, h)
@@ -154,11 +167,14 @@ func TestExtrudeTwoComplexClosedPathsAsSeparateBodies(t *testing.T) {
 	if n := sk.Profiles().Count(); n != 2 {
 		t.Fatalf("sketch has %d profiles, want 2 disjoint closed paths", n)
 	}
-	for i := 0; i < 2; i++ {
-		b := extrudeProfile(t, sk, i, h)
-		assertWatertightSolid(t, b)
-		assertPrismVolume(t, b, sk, i, h)
-	}
+	// Profile 0 is the stadium (line+arc → analytic, true 2rl+πr²); profile 1 is an ellipse (stays
+	// faceted, so its mesh IS the sampled polygon).
+	stadium := extrudeProfile(t, sk, 0, h)
+	assertWatertightSolid(t, stadium)
+	assertAnalyticPrismVolume(t, stadium, 2*2*8+stdmath.Pi*2*2, h)
+	ellipse := extrudeProfile(t, sk, 1, h)
+	assertWatertightSolid(t, ellipse)
+	assertPrismVolume(t, ellipse, sk, 1, h)
 }
 
 func TestExtrudeMultipleRegionsMergeIntoOneBody(t *testing.T) {
