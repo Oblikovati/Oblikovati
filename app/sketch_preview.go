@@ -242,6 +242,23 @@ func (t *PointTool) PendingRecipe(_ *Session, cursor math.Point2, _ []string) (s
 	return sketch.PointRecipe(cursor), true
 }
 
+// PendingRecipe previews the OFFSET of the picked geometry as a ghost following the cursor: the whole
+// connected loop (Loop Select) or the single curve, offset by the cursor's signed distance to the
+// seed — the same geometry OK commits. Nothing shows until a curve is picked; the ghost then tracks
+// the cursor's side and distance so the user sees the offset before the placement click.
+func (t *SketchOffsetTool) PendingRecipe(_ *Session, cursor math.Point2, _ []string) (sketch.Recipe, bool) {
+	if len(t.picks) == 0 || t.sk == nil {
+		return sketch.Recipe{}, false
+	}
+	d := placementSignedOffset(sketch.EntityOutline(t.picks[0]), cursor)
+	if t.loopSelect {
+		if path, ok := t.sk.ConnectedChainFrom(t.picks[0]); ok && path.Count() > 1 {
+			return t.sk.OffsetLoopRecipe(path, d)
+		}
+	}
+	return sketch.OffsetEntityRecipe(t.picks[0], d)
+}
+
 // stdAbs is the unsigned magnitude of a scalar measurement.
 func stdAbs(v math.Scalar) float64 {
 	if v < 0 {

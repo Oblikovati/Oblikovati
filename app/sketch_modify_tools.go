@@ -55,6 +55,8 @@ var (
 	_ SketchEntityTool = (*SketchFilletTool)(nil)
 	_ SketchEntityTool = (*SketchOffsetTool)(nil)
 	_ SketchEntityTool = (*SketchMirrorTool)(nil)
+	// Offset draws a live preview ghost of the offset, so it is a RecipeTool (the head's preview path).
+	_ RecipeTool = (*SketchOffsetTool)(nil)
 )
 
 // SketchFilletTool rounds the corner between two picked lines with a tangent arc.
@@ -112,6 +114,7 @@ type SketchOffsetTool struct {
 	constrainOffset bool        // Inventor default: constrain the offset associative to its source
 	placement       math.Point2 // where the user clicked to place the offset (its side + distance)
 	placed          bool
+	sk              *sketch.Sketch // the sketch the seed was picked in (for whole-loop highlight + preview)
 }
 
 // NewSketchOffsetTool makes an offset tool with the given default distance and both Loop Select and
@@ -125,8 +128,37 @@ func NewSketchOffsetTool(distance float64) *SketchOffsetTool {
 	}
 }
 
-func (t *SketchOffsetTool) Name() string                  { return "Offset" }
-func (t *SketchOffsetTool) Pick(_ *Session, s Selectable) { t.take(s) }
+func (t *SketchOffsetTool) Name() string { return "Offset" }
+func (t *SketchOffsetTool) Pick(sess *Session, s Selectable) {
+	t.take(s)
+	if len(t.picks) > 0 {
+		t.sk = sess.ActiveSketch()
+	}
+}
+
+// Picked highlights the WHOLE connected loop from the picked seed when Loop Select is on (Inventor
+// lights the whole profile, not one segment); with it off, only the seed. The commit still seeds from
+// picks[0] — this only widens what is drawn as selected.
+func (t *SketchOffsetTool) Picked() []sketch.Entity {
+	if !t.loopSelect || len(t.picks) == 0 || t.sk == nil {
+		return t.picks
+	}
+	path, ok := t.sk.ConnectedChainFrom(t.picks[0])
+	if !ok || path.Count() <= 1 {
+		return t.picks
+	}
+	return chainEntities(path)
+}
+
+// chainEntities extracts a connected chain's entities in traversal order.
+func chainEntities(path *sketch.Path) []sketch.Entity {
+	ents := path.Entities()
+	out := make([]sketch.Entity, len(ents))
+	for i, pe := range ents {
+		out[i] = pe.Entity
+	}
+	return out
+}
 
 // ClickAt drives Inventor's two-step flow: the first click selects the geometry to offset, then the
 // user moves the cursor and clicks to place the offset copy — the placement click's side and its
@@ -139,6 +171,7 @@ func (t *SketchOffsetTool) ClickAt(s *Session, px, py float64) {
 	if len(t.picks) == 0 {
 		if ent, ok := s.pickSketchEntity(px, py); ok && t.Accepts(ent) {
 			t.takeEntity(ent)
+			t.sk = s.ActiveSketch()
 		}
 		return
 	}
@@ -196,7 +229,7 @@ func (t *SketchOffsetTool) Accepts(e sketch.Entity) bool {
 	return entityKindIs(e, sketch.LineKind, sketch.CircleKind, sketch.ArcKind, sketch.ProjectedCurveKind)
 }
 func (t *SketchOffsetTool) CanCommit() bool { return t.ready() }
-func (t *SketchOffsetTool) Cancel(*Session) { t.reset(); t.placed = false }
+func (t *SketchOffsetTool) Cancel(*Session) { t.reset(); t.placed = false; t.sk = nil }
 func (t *SketchOffsetTool) Prompt(*Session) string {
 	if len(t.picks) == 0 {
 		return "Select geometry to offset"
@@ -233,6 +266,7 @@ func (t *SketchOffsetTool) Commit(s *Session) error {
 		}
 		if t.constrainOffset {
 			sk.ConstrainOffsetSingle(t.picks[0], off)
+			sk.AddOffsetSingleDimension(t.picks[0], off) // Inventor's offset dimension, driving the distance
 		}
 		return nil
 	}
@@ -241,7 +275,9 @@ func (t *SketchOffsetTool) Commit(s *Session) error {
 		return err
 	}
 	if t.constrainOffset {
-		sk.ConstrainOffsetLoop(path, offsets)
+		// One driving offset dimension binds the whole loop uniformly (Inventor): editing it moves
+		// every segment together (driven offset constraints on the non-dimensioned lines).
+		sk.ConstrainOffsetLoopUniform(path, offsets)
 	}
 	return nil
 }

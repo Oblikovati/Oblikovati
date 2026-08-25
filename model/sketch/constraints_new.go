@@ -59,16 +59,37 @@ func (c *GroundConstraint) Variables() []*math.Scalar {
 }
 
 // OffsetConstraint holds line L2 parallel to L1 at a fixed signed perpendicular distance
-// (the geometric relation behind an offset; pairs with a driven offset dimension).
+// (the geometric relation behind an offset; pairs with a driven offset dimension). When live is
+// non-nil the distance is read from it each solve — an offset segment DRIVEN by one shared offset
+// dimension, so editing the dimension moves a whole uniform-offset loop (Dist keeps the last live
+// value so a serialized constraint reloads frozen at that distance, live being a closure).
 type OffsetConstraint struct {
 	constraintBase
 	L1, L2 *Line
 	Dist   float64
+	live   func() float64
+}
+
+// currentDist is the target signed distance: the live value when driven, else the fixed Dist.
+func (c *OffsetConstraint) currentDist() float64 {
+	if c.live != nil {
+		return c.live()
+	}
+	return c.Dist
 }
 
 // AddOffset constrains L2 parallel to L1 at the signed perpendicular distance dist.
 func (g *GeometricConstraints) AddOffset(l1, l2 *Line, dist float64) *OffsetConstraint {
 	c := &OffsetConstraint{constraintBase: newConstraint(), L1: l1, L2: l2, Dist: dist}
+	g.add(c)
+	return c
+}
+
+// AddOffsetDriven constrains L2 parallel to L1 at the signed perpendicular distance live() reads each
+// solve — the binding that keeps a uniform-offset loop's segments tied to one driving dimension. Dist
+// snapshots the initial value so a serialized (closure-less) reload stays at that distance.
+func (g *GeometricConstraints) AddOffsetDriven(l1, l2 *Line, live func() float64) *OffsetConstraint {
+	c := &OffsetConstraint{constraintBase: newConstraint(), L1: l1, L2: l2, Dist: live(), live: live}
 	g.add(c)
 	return c
 }
@@ -83,7 +104,7 @@ func (c *OffsetConstraint) residualAD(v []ad.Number) []ad.Number {
 	// distance of L2.A from L1 was already a true distance.
 	parallel := adSineAngle(d1, d2)
 	dist := adSignedPerpDistance(d1, a2.Sub(a1))
-	return []ad.Number{parallel, dist.AddConst(-c.Dist)}
+	return []ad.Number{parallel, dist.AddConst(-c.currentDist())}
 }
 
 // Residuals reports the parallel error and the perpendicular-distance error.

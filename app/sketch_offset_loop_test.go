@@ -56,6 +56,31 @@ func TestOffsetToolLoopSelectOffsetsWholeLoop(t *testing.T) {
 	}
 }
 
+// TestOffsetToolLoopSelectHighlightsWholeLoop: with Loop Select on, picking one curve highlights the
+// WHOLE connected loop (Picked returns every loop entity), so the user sees the whole profile
+// selected — not just the one segment. With it off, only the picked curve highlights.
+func TestOffsetToolLoopSelectHighlightsWholeLoop(t *testing.T) {
+	s, _ := emptyPartSession(t)
+	sk, _ := s.CreateSketch(sketch.XYPlane())
+	lines := squareLoop(sk, 4)
+
+	tool := NewSketchOffsetTool(0.5)
+	s.StartTool(tool)
+	tool.Pick(s, SketchEntityHandle{Entity: lines[0]})
+	if got := len(tool.Picked()); got != 4 {
+		t.Fatalf("Loop Select highlighted %d entities, want 4 (the whole loop)", got)
+	}
+	// and the seed is among them
+	if !s.IsSelectedEntity(lines[2]) {
+		t.Error("a non-seed loop edge is not reported selected — the whole-loop highlight is missing")
+	}
+
+	tool.SetLoopSelect(false)
+	if got := len(tool.Picked()); got != 1 {
+		t.Fatalf("with Loop Select off, highlighted %d entities, want 1 (the seed only)", got)
+	}
+}
+
 // TestOffsetToolSingleWhenLoopSelectOff: with Loop Select off, only the picked curve offsets.
 func TestOffsetToolSingleWhenLoopSelectOff(t *testing.T) {
 	s, _ := emptyPartSession(t)
@@ -138,11 +163,62 @@ func TestOffsetToolConstrainOffsetDefaultOn(t *testing.T) {
 	if !NewSketchOffsetTool(1).ConstrainOffset() {
 		t.Fatal("Constrain Offset must be on by default (Inventor)")
 	}
-	if got := run(true); got != 8 { // 4 parallel + 4 coincident corners
-		t.Errorf("constrained loop offset added %d constraints, want 8", got)
+	if got := run(true); got != 9 { // 4 parallel + 4 coincident corners + 1 offset dimension
+		t.Errorf("constrained loop offset added %d constraints, want 9 (8 geometric + 1 offset dimension)", got)
 	}
 	if got := run(false); got != 0 {
 		t.Errorf("unconstrained loop offset added %d constraints, want 0", got)
+	}
+}
+
+// TestOffsetToolCreatesOffsetDimension: committing a constrained offset creates an offset dimension
+// driving the distance (Inventor), so the user can edit the offset value straight away.
+func TestOffsetToolCreatesOffsetDimension(t *testing.T) {
+	s, _ := emptyPartSession(t)
+	sk, _ := s.CreateSketch(sketch.XYPlane())
+	lines := squareLoop(sk, 4)
+	before := sk.DimensionConstraints().Count()
+
+	tool := NewSketchOffsetTool(0.5)
+	s.StartTool(tool)
+	tool.Pick(s, SketchEntityHandle{Entity: lines[0]})
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	if got := sk.DimensionConstraints().Count() - before; got != 1 {
+		t.Fatalf("committing an offset created %d dimensions, want 1 (the offset dimension)", got)
+	}
+}
+
+// TestOffsetToolPreviewFollowsCursor: after selecting a loop, PendingRecipe returns the offset ghost
+// at the cursor — the whole loop offset toward the cursor's side (Inventor shows the offset preview).
+func TestOffsetToolPreviewFollowsCursor(t *testing.T) {
+	s, _ := emptyPartSession(t)
+	sk, _ := s.CreateSketch(sketch.XYPlane())
+	lines := squareLoop(sk, 4) // CCW square [0,4]^2, lines[0] = bottom edge
+	tool := NewSketchOffsetTool(0.5)
+	s.StartTool(tool)
+
+	if _, ok := tool.PendingRecipe(s, math.P2(2, 0.5), nil); ok {
+		t.Fatal("preview shown before any curve is picked")
+	}
+	tool.Pick(s, SketchEntityHandle{Entity: lines[0]})
+
+	r, ok := tool.PendingRecipe(s, math.P2(2, 0.5), nil) // cursor 0.5 inside the bottom edge
+	if !ok {
+		t.Fatal("no offset preview after selecting a loop")
+	}
+	if got := len(r.Entities); got != 4 {
+		t.Fatalf("loop offset preview has %d entities, want 4 (the whole loop)", got)
+	}
+	pts, _ := sketch.RecipeOutline(r)
+	if len(pts) == 0 {
+		t.Fatal("offset preview outline is empty")
+	}
+	for _, p := range pts { // an inner offset — every point stays inside the source square
+		if p.X < -1e-6 || p.X > 4+1e-6 || p.Y < -1e-6 || p.Y > 4+1e-6 {
+			t.Fatalf("preview point %v is outside the source square — the offset went the wrong way", p)
+		}
 	}
 }
 
