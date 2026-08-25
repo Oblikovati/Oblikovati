@@ -8,6 +8,16 @@ import (
 	"oblikovati.org/math"
 )
 
+// FillTriangles triangulates a planar region — an outer boundary with optional holes — into triangles
+// whose vertex indices address outer[i] for i<len(outer), then the holes concatenated after it. It is
+// the exported entry to the ear-clipping triangulator, for callers that need a filled overlay of a 2D
+// region (a sketch profile/area highlight) rather than a B-rep face's tessellation.
+//
+//	tris := ops.FillTriangles(profile.OuterLoop().Polygon(), holePolys)
+func FillTriangles(outer []math.Point2, holes [][]math.Point2) [][3]int {
+	return earcut(outer, holes)
+}
+
 // earcut triangulates a planar polygon with holes, returning triangles as index triples into
 // a combined vertex list (the outer loop followed by each hole, in order). It is a faithful
 // port of Mapbox's "earcut" ear-clipping algorithm (ISC-licensed; Eberly-style hole bridging

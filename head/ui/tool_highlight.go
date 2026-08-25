@@ -9,6 +9,8 @@ import (
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 	"oblikovati.org/renderer"
 )
 
@@ -28,7 +30,7 @@ import (
 func drawSelectable(sel app.Selectable, color [4]float32) []renderer.DrawItem {
 	switch h := sel.(type) {
 	case app.ProfileHandle:
-		return profileOutline(h, color)
+		return appendProfileFill(profileOutline(h, color), h, color)
 	case app.EdgeHandle:
 		return edgeWire([]*topo.Edge{h.Edge}, color)
 	case app.FaceHandle:
@@ -88,6 +90,51 @@ func toolHoverHighlight(s *app.Session) []renderer.DrawItem {
 	return drawSelectable(sel, chromeTheme.sketchCandidateColor)
 }
 
+// appendProfileFill adds a translucent, always-on-top tint of a sketch region (its outer loop minus
+// its holes, ear-clipped) to items — the filled part of a region highlight, so hovering or selecting a
+// profile lights the WHOLE area, not only its outline, matching Inventor's region highlight (#2165). A
+// stale index or a region whose triangulation is empty adds nothing.
+func appendProfileFill(items []renderer.DrawItem, ph app.ProfileHandle, color [4]float32) []renderer.DrawItem {
+	if ph.ProfileIndex >= ph.Sketch.Profiles().Count() {
+		return items
+	}
+	prof := ph.Sketch.Profiles().Item(ph.ProfileIndex)
+	if !prof.IsClosed() {
+		return items // an open profile bounds no area to fill
+	}
+	outer := prof.OuterLoop().Polygon()
+	verts := append([]math.Point2(nil), outer...)
+	holes := make([][]math.Point2, 0, len(prof.InnerLoops()))
+	for _, h := range prof.InnerLoops() {
+		holes = append(holes, h.Polygon())
+		verts = append(verts, h.Polygon()...)
+	}
+	tris := ops.FillTriangles(outer, holes)
+	if len(tris) == 0 {
+		return items
+	}
+	return append(items, regionFillItem(ph.Sketch.Plane(), verts, tris, color))
+}
+
+// regionFillItem lifts a region's 2D triangulation onto its sketch plane as one translucent on-top
+// Triangles item (the fill shares the profile-outline colour, at the face-fill opacity).
+func regionFillItem(plane sketch.Plane, verts []math.Point2, tris [][3]int, color [4]float32) renderer.DrawItem {
+	pos := make([]math.Point3, len(verts))
+	normals := make([]math.Vector3, len(verts))
+	n := plane.Normal().AsVector()
+	for i, p := range verts {
+		pos[i], normals[i] = plane.ToModel(p), n
+	}
+	idx := make([]int, 0, len(tris)*3)
+	for _, t := range tris {
+		idx = append(idx, t[0], t[1], t[2])
+	}
+	return renderer.DrawItem{
+		Primitive: renderer.Triangles, Positions: pos, Normals: normals, Indices: idx,
+		Color: color, Opacity: faceFillOpacity, OnTop: true,
+	}
+}
+
 // faceFill returns a translucent, always-on-top tint of a face's tessellation — the visible part
 // of a face highlight (the highlighted face is the front-most hit, so drawing it on top reads
 // cleanly without z-fighting the model's own edges). Used for both preselect and selected faces.
@@ -106,6 +153,47 @@ func faceFill(fh app.FaceHandle, color [4]float32) renderer.DrawItem {
 
 // faceFillOpacity keeps the face tint translucent so the face's shading still reads through.
 const faceFillOpacity = 0.5
+
+// drawRegionModifierBadge draws a +/− glyph beside the cursor when a modified click during area
+// selection would ADD or REMOVE the region under the cursor — Inventor's add/remove cursor feedback
+// (#2165). It renders in screen space in the viewport-overlay pass (not part of the 3D draw list), so
+// it must be called while the viewport item is current. Nothing is drawn unless a region multi-select
+// tool is active, a modifier is held, and a region sits under the cursor (RegionModifierHint).
+func drawRegionModifierBadge(s *app.Session) {
+	if s.ActiveTool() == nil || !native.IsItemHovered() {
+		return
+	}
+	var mods app.Modifier
+	if native.KeyCtrl() {
+		mods |= app.CtrlMod
+	}
+	if native.KeyShift() {
+		mods |= app.ShiftMod
+	}
+	cx, cy := viewportCursor()
+	show, add := s.RegionModifierHint(cx, cy, mods)
+	if !show {
+		return
+	}
+	mx, my := native.MousePos()
+	drawCursorPlusMinus(mx, my, add)
+}
+
+// drawCursorPlusMinus paints a small badge offset from the cursor: a green plus for ADD, a red minus
+// for REMOVE — the horizontal bar is common to both, the vertical bar makes the plus.
+func drawCursorPlusMinus(mx, my float32, add bool) {
+	const off, half = 13.0, 5.0
+	bx, by := mx+off, my+off
+	native.DrawRectFilled(bx-half-2, by-half-2, bx+half+2, by+half+2, [4]float32{0.11, 0.11, 0.12, 0.88})
+	fg := [4]float32{0.45, 0.95, 0.45, 1} // add → green
+	if !add {
+		fg = [4]float32{0.98, 0.5, 0.5, 1} // remove → red
+	}
+	native.DrawLine(bx-half, by, bx+half, by, fg, 2)
+	if add {
+		native.DrawLine(bx, by-half, bx, by+half, fg, 2)
+	}
+}
 
 // toolSelectedHighlight highlights everything the active tool has picked, in the selection colour —
 // the picks come from the uniform app.Picking contract (s.ToolPicks), so every tool highlights its

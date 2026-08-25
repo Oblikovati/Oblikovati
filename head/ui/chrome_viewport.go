@@ -347,6 +347,7 @@ func drawViewportOverlays(s *app.Session, cam scene.Camera, sketchPlane sketch.P
 	if s.InSketch() {
 		drawPlacementFieldBoxes(s, cam, ox, oy) // in-place dimension input (#2014)
 	}
+	drawRegionModifierBadge(s) // +/− cursor badge during area (region) multi-select (#2165)
 }
 
 // updateViewportCamera sizes the camera to the panel and either advances the active camera

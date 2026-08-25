@@ -95,3 +95,37 @@ func (s *Session) ToolPicks() []Selectable {
 	}
 	return nil
 }
+
+// RegionModifierHint reports what a MODIFIED click at pixel (x,y) would do to the region under the
+// cursor, so the head can badge the cursor with a + (add) or − (remove) during area selection —
+// exactly Inventor's add/remove cursor feedback. show is false unless the active tool is a region
+// multi-select tool (one that honours the modifier, [modifierPicker]), a modifier is held, and a
+// region is under the cursor; add is true when that region is not yet picked (a modified click would
+// ADD it) and false when it is already picked (the click would REMOVE it).
+func (s *Session) RegionModifierHint(x, y float64, mods Modifier) (show, add bool) {
+	if s.tool == nil || (!mods.Has(CtrlMod) && !mods.Has(ShiftMod)) {
+		return false, false
+	}
+	if _, ok := s.tool.tool.(modifierPicker); !ok {
+		return false, false
+	}
+	sel, ok := s.PickAt(x, y, s.pickFilter())
+	if !ok {
+		return false, false
+	}
+	if _, ok := sel.(ProfileHandle); !ok {
+		return false, false // the +/− badge is for area (region) selection only
+	}
+	return true, !s.toolAlreadyPicked(sel)
+}
+
+// toolAlreadyPicked reports whether sel is among the active tool's current picks (so a modified click
+// would toggle it off rather than add it).
+func (s *Session) toolAlreadyPicked(sel Selectable) bool {
+	for _, p := range s.ToolPicks() {
+		if p == sel {
+			return true
+		}
+	}
+	return false
+}
