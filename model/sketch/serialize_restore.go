@@ -49,6 +49,7 @@ func restoreSketch(sc *Sketches, sd SketchData) error {
 	if err := r.restoreDimensions(sd.Dimensions); err != nil {
 		return err
 	}
+	r.applyPendingOffsetDrives()
 	return r.restoreCloudAnchors(sd.CloudAnchors)
 }
 
@@ -110,6 +111,19 @@ type sketchRestorer struct {
 	pointMap  map[int]*Point
 	entityMap map[int]Entity
 	maxID     uint64
+	// pendingOffsetDrives are driven offset constraints whose driving dimension parameter is not yet
+	// created when constraints restore (dimensions restore afterwards); applyPendingOffsetDrives
+	// re-binds them by parameter name once the dimensions exist.
+	pendingOffsetDrives []pendingOffsetDrive
+}
+
+// pendingOffsetDrive is a driven offset constraint held back until its driving dimension parameter
+// exists (see sketchRestorer.pendingOffsetDrives).
+type pendingOffsetDrive struct {
+	l1, l2 *Line
+	name   string
+	sign   float64
+	dist   float64 // frozen fallback when the named parameter cannot be resolved
 }
 
 // idCarrier is the restore-only seam for pinning a sketch object's local id to its
@@ -403,6 +417,19 @@ func (r *sketchRestorer) twoPoints(cd ConstraintData, add func(a, b *Point)) err
 	}
 	add(p[0], p[1])
 	return nil
+}
+
+// applyPendingOffsetDrives re-binds each deferred driven offset constraint to its driving dimension's
+// parameter (now that dimensions have been restored), or falls back to a frozen offset at the persisted
+// distance when the parameter no longer resolves.
+func (r *sketchRestorer) applyPendingOffsetDrives() {
+	for _, p := range r.pendingOffsetDrives {
+		if driver, ok := r.s.params.ByName(p.name); ok {
+			r.s.geomCons.AddOffsetDriven(p.l1, p.l2, driver, p.sign)
+			continue
+		}
+		r.s.geomCons.AddOffset(p.l1, p.l2, p.dist)
+	}
 }
 
 func (r *sketchRestorer) twoLines(cd ConstraintData, add func(a, b *Line)) error {

@@ -13,9 +13,10 @@ import (
 // so editing that one dimension moves the whole loop uniformly. It replaces the plain
 // ConstrainOffsetLoop + AddOffsetLoopDimension pair: each element gets exactly one distance-binding
 // constraint (no doubled parallels), so a rectangle offset is fully constrained (DOF 0) and rigidly
-// uniform. Circular offsets stay concentric — their radius is NOT driven by the line dimension yet, a
-// known limit for rounded loops (the arc keeps its offset radius). A driven constraint is a closure,
-// so a serialized reload freezes it at its last distance (see OffsetConstraint).
+// uniform. Circular offsets stay concentric and are carried by the corner joins, so an arc's radius
+// grows with the driving dimension too (a stadium's caps track the dimension uniformly). The driven
+// links persist: each records its driving dimension's parameter name and is re-bound on reload
+// (applyPendingOffsetDrives), so editing the dimension still drives the whole loop after a save/reload.
 
 // ConstrainOffsetLoopUniform constrains a whole offset loop associatively AND uniformly. offsets pair
 // element-for-element with path.Entities(). Returns the driving dimension, or nil when the loop has
@@ -61,7 +62,8 @@ func (s *Sketch) dimensionFirstOffsetLine(ents []ProfileEntity, offsets []Entity
 
 // constrainUniformOffsetPair binds one non-dimensioned offset element to its source at the SAME
 // distance as the driving dimension: a line by a driven offset constraint (parallel + distance =
-// ±dim), anything circular by concentric (radius kept at its offset value — not driven).
+// ±dim), anything circular by concentric — a concentric arc's radius then follows the dimension
+// through the shared corner points, so both grow together.
 func (s *Sketch) constrainUniformOffsetPair(src, off Entity, dim *DimensionConstraint) {
 	sl, okSrc := src.(*Line)
 	ol, okOff := off.(*Line)
@@ -73,6 +75,5 @@ func (s *Sketch) constrainUniformOffsetPair(src, off Entity, dim *DimensionConst
 	if perpDistanceToLine(sl.A.Position(), sl.B.Position(), ol.A.Position()) < 0 {
 		sign = -1.0 // this segment's offset sits on the opposite side of its source's left normal
 	}
-	p := dim.Parameter()
-	s.geomCons.AddOffsetDriven(sl, ol, func() float64 { return sign * p.ModelValue() })
+	s.geomCons.AddOffsetDriven(sl, ol, dim.Parameter(), sign)
 }
