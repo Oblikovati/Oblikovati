@@ -25,9 +25,21 @@ import (
 // the pipeline can see reconstruction fired.
 const CodeBooleanAnalyticReconstruction diag.Code = "boolean.analytic-reconstruction"
 
+// reconstructionCutover gates whether booleanGeneral prefers an analytic reconstruction
+// over a valid-but-faceted curved result. It is OFF until ADR-0054's cutover layer: the
+// recovery is correct where it fires (it upgrades a faceted join to analytic at matching
+// volume) but flipping it changes corpus results that today assert the faceted fallback
+// (e.g. csg_fallback_test), and that flip must land WITH a shadow-validation against the
+// analytic engine and the OCCT oracle plus the corpus updates — not as a side effect. The
+// whole recovery path stays compiled and unit-tested so the cutover is a one-line flip.
+const reconstructionCutover = false
+
 // recoverFacetedCurvedJoin returns an analytic reconstruction of a valid-but-faceted
 // curved boolean, or nil when it does not apply or does not strictly improve the result.
 func recoverFacetedCurvedJoin(op PartFeatureOperation, target, tool, primary *topo.Body, rec *diag.Recorder) *topo.Body {
+	if !reconstructionCutover {
+		return nil
+	}
 	mop, ok := toMeshboolOp(op)
 	if !ok || !facetedCurvedJoin(target, tool, primary) {
 		return nil
