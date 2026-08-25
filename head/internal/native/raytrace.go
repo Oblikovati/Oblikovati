@@ -205,7 +205,22 @@ func (c CameraBasis) floats() [16]float32 {
 // tier) are unaffected. ThinWalled (#2155) repurposes the transmission group's own
 // alignment-padding slot (no size/layout change): nonzero selects the spec's thin-walled
 // evaluation mode (straight-through, no Snell bending — geometry_thin_walled) over the
-// default solid-dielectric refraction.
+// default solid-dielectric refraction. EnvEnabled/EnvRotation/EnvIntensity (#2135/#2155's
+// IBL follow-up) repurpose the subsurface group's own trailing alignment-padding slots (no
+// size/layout change): EnvEnabled nonzero lets a primary ray that misses all geometry
+// sample the bound equirect environment map (binding 4 in raytrace.cpp's descriptor set,
+// binding 6 in swtrace.cpp's) via dirUV (openpbr/env_sample.glsl) instead of returning
+// black; EnvRotation/EnvIntensity mirror skybox.frag's own rot/intensity uniforms so the
+// ray-traced background matches the rasterized skybox exactly. LightIsEnvironment
+// (#2135/#2155's illumination-contribution follow-up) extends a fresh trailing group of
+// 4 floats (60 floats/240 bytes total): pickLightParams now sometimes points
+// LightDirection at an environment-importance-sampled direction (renderer.
+// EnvironmentDistribution.Sample) instead of a discrete light, and sets this nonzero so
+// directLightAt (pathtrace_realistic.rchit/swpathtrace_realistic.comp) samples the
+// environment texture at LightDirection for its color instead of reading LightColor —
+// EnvIntensity/EnvRotation are reused for that lookup (the same equirect map, just
+// queried at a different, light-sampled direction rather than the miss ray's own
+// direction), so LightColor is unused on this path.
 type RealisticLightParams struct {
 	LightDirection                                      [3]float32
 	LightIntensity                                      float32
@@ -237,11 +252,15 @@ type RealisticLightParams struct {
 	SubsurfaceRadiusScale [3]float32
 	SubsurfaceRadius      float32
 	SubsurfaceAnisotropy  float32
-	Pad8, Pad9, Pad10     float32
+
+	EnvEnabled, EnvRotation, EnvIntensity float32
+
+	LightIsEnvironment  float32
+	Pad11, Pad12, Pad13 float32
 }
 
-func (p RealisticLightParams) floats() [56]float32 {
-	return [56]float32{
+func (p RealisticLightParams) floats() [60]float32 {
+	return [60]float32{
 		p.LightDirection[0], p.LightDirection[1], p.LightDirection[2], p.LightIntensity,
 		p.LightColor[0], p.LightColor[1], p.LightColor[2], p.Pad0,
 		p.BaseColor[0], p.BaseColor[1], p.BaseColor[2], p.BaseWeight,
@@ -260,7 +279,9 @@ func (p RealisticLightParams) floats() [56]float32 {
 
 		p.SubsurfaceColor[0], p.SubsurfaceColor[1], p.SubsurfaceColor[2], p.SubsurfaceWeight,
 		p.SubsurfaceRadiusScale[0], p.SubsurfaceRadiusScale[1], p.SubsurfaceRadiusScale[2], p.SubsurfaceRadius,
-		p.SubsurfaceAnisotropy, p.Pad8, p.Pad9, p.Pad10,
+		p.SubsurfaceAnisotropy, p.EnvEnabled, p.EnvRotation, p.EnvIntensity,
+
+		p.LightIsEnvironment, p.Pad11, p.Pad12, p.Pad13,
 	}
 }
 

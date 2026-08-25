@@ -299,7 +299,7 @@ vec3 openpbrMixSubsurface(vec3 diffuse, vec3 subsurface, float weight) {
 // its own `layout(set=..., binding=...) uniform Params { OPENPBR_REALISTIC_PARAMS_FIELDS
 // } params;` (their binding indices differ), but the FIELD LIST itself lives in exactly
 // one place, matching raytrace.go's RealisticLightParams.floats() field order
-// byte-for-byte (56 floats/224 bytes total — see that struct's own doc comment).
+// byte-for-byte (60 floats/240 bytes total — see that struct's own doc comment).
 #define OPENPBR_REALISTIC_PARAMS_FIELDS \
     vec3 lightDirection; \
     float lightIntensity; \
@@ -338,9 +338,13 @@ vec3 openpbrMixSubsurface(vec3 diffuse, vec3 subsurface, float weight) {
     vec3 subsurfaceRadiusScale; \
     float subsurfaceRadius; \
     float subsurfaceAnisotropy; \
-    float pad8; \
-    float pad9; \
-    float pad10;
+    float envEnabled; \
+    float envRotation; \
+    float envIntensity; \
+    float lightIsEnvironment; \
+    float pad11; \
+    float pad12; \
+    float pad13;
 
 // OpenPBRRealisticMaterial bundles the subset of a Params instance
 // openpbrShadeSurface needs, so it can be a plain value parameter (a struct TYPE

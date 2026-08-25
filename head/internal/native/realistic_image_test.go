@@ -44,6 +44,20 @@ func realisticTestScene() (verts []float32, indices []uint32, cam CameraBasis, p
 	return verts, indices, cam, params
 }
 
+// realisticTestSceneEnvLight mirrors realisticTestScene but with LightIsEnvironment set
+// (#2135/#2155's illumination-contribution follow-up): the shader must source its light
+// color from the bound environment texture (dummyEnvGrey in these harnesses, which never
+// call InitViewport) at LightDirection, instead of LightColor — LightColor is deliberately
+// zeroed so a shader that wrongly ignores LightIsEnvironment renders black (an obvious
+// large diff) rather than coincidentally matching by falling through to an unused field.
+func realisticTestSceneEnvLight() (verts []float32, indices []uint32, cam CameraBasis, params RealisticLightParams) {
+	verts, indices, cam, params = realisticTestScene()
+	params.LightIsEnvironment = 1
+	params.EnvIntensity = 3
+	params.LightColor = [3]float32{0, 0, 0}
+	return verts, indices, cam, params
+}
+
 // pixelRay reproduces pathtrace_realistic.rgen/swpathtrace_realistic.comp's per-pixel
 // camera-ray generation exactly, in Go, so the CPU oracle probes the SAME ray a GPU
 // invocation for (px,py) would trace.
@@ -61,11 +75,21 @@ func pixelRay(px, py, width, height int, cam CameraBasis) (origin, dir [3]float3
 	return cam.Eye, [3]float32{fx / n, fy / n, fz / n}
 }
 
+// dummyEnvGrey mirrors raytrace.cpp/swtrace.cpp's ensure_dummy_env's own hardcoded 1x1
+// fallback color — env_binding_for falls back to it whenever a scene's HeadContext has
+// no live Viewport, which every test harness in this file is (CreateWindow, never
+// InitViewport). cpuOracleRealisticPixel's LightIsEnvironment branch substitutes it as
+// the "sampled" color, since these harnesses never upload a real equirect texture for
+// the oracle to independently decode pixel-for-pixel.
+const dummyEnvGrey = 0.05
+
 // cpuOracleRealisticPixel reproduces pathtrace_realistic.rchit/swpathtrace_realistic.comp's
 // shading math exactly in Go (directional light, no inverse-square), intersecting the
 // flat z=0 quad analytically (bounded to x,y in [-5,5]) rather than re-implementing
 // ray-triangle intersection — TestRTSceneMatchesCPUOracle/TestSWSceneMatchesCPUOracle
-// (PBI-333/334) already cover that.
+// (PBI-333/334) already cover that. p.LightIsEnvironment != 0 (#2135/#2155's
+// illumination-contribution follow-up) substitutes dummyEnvGrey for p.LightColor,
+// mirroring directLightAt's own env-vs-discrete-light branch.
 func cpuOracleRealisticPixel(origin, direction [3]float32, p RealisticLightParams) (r, g, b float32) {
 	if direction[2] >= 0 {
 		return 0, 0, 0 // ray parallel to or moving away from the z=0 plane: no hit
@@ -99,10 +123,15 @@ func cpuOracleRealisticPixel(origin, direction [3]float32, p RealisticLightParam
 	fr := openpbr.DielectricFresnel(float64(p.SpecularIOR), math.Max(wi.Dot(h), 0))
 	specular := fr * d * g2 / (4 * wi.Z * wo.Z)
 
+	lightColor := [3]float32{p.LightColor[0], p.LightColor[1], p.LightColor[2]}
+	if p.LightIsEnvironment != 0 {
+		lightColor = [3]float32{dummyEnvGrey * p.EnvIntensity, dummyEnvGrey * p.EnvIntensity, dummyEnvGrey * p.EnvIntensity}
+	}
+
 	cosTheta := wi.Z
-	rF := (diffuse.R + specular) * float64(p.LightColor[0]) * float64(p.LightIntensity) * cosTheta
-	gF := (diffuse.G + specular) * float64(p.LightColor[1]) * float64(p.LightIntensity) * cosTheta
-	bF := (diffuse.B + specular) * float64(p.LightColor[2]) * float64(p.LightIntensity) * cosTheta
+	rF := (diffuse.R + specular) * float64(lightColor[0]) * float64(p.LightIntensity) * cosTheta
+	gF := (diffuse.G + specular) * float64(lightColor[1]) * float64(p.LightIntensity) * cosTheta
+	bF := (diffuse.B + specular) * float64(lightColor[2]) * float64(p.LightIntensity) * cosTheta
 	return float32(rF), float32(gF), float32(bF)
 }
 
@@ -213,6 +242,145 @@ func TestRealisticImageBackendParity(t *testing.T) {
 	defer w.Destroy()
 
 	verts, indices, cam, params := realisticTestScene()
+
+	rtScene, err := w.NewRTScene()
+	if err != nil {
+		t.Skipf("no hardware ray tracing available: %v", err)
+	}
+	defer rtScene.Destroy()
+	if err := rtScene.AddMesh(verts, indices, 1); err != nil {
+		t.Fatalf("RTScene.AddMesh: %v", err)
+	}
+	if err := rtScene.Build(); err != nil {
+		t.Fatalf("RTScene.Build: %v", err)
+	}
+	if err := rtScene.BuildRealisticPipeline(pathtraceRealisticRgenSPV, pathtraceRealisticRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV); err != nil {
+		t.Skipf("no hardware RT pipeline available: %v", err)
+	}
+
+	swScene, err := w.NewSWScene()
+	if err != nil {
+		t.Skipf("no compute-capable device available: %v", err)
+	}
+	defer swScene.Destroy()
+	triangles := []renderer.Triangle{
+		{V0: [3]float32{-5, -5, 0}, V1: [3]float32{5, -5, 0}, V2: [3]float32{5, 5, 0}, InstanceID: 1, PrimitiveID: 0},
+		{V0: [3]float32{-5, -5, 0}, V1: [3]float32{5, 5, 0}, V2: [3]float32{-5, 5, 0}, InstanceID: 1, PrimitiveID: 1},
+	}
+	bvh := renderer.BuildBVH(triangles)
+	if err := swScene.Build(SWBuildInputFrom(bvh, triangles)); err != nil {
+		t.Fatalf("SWScene.Build: %v", err)
+	}
+	if err := swScene.BuildRealisticPathtracePipeline(swpathtraceRealisticCompSPV); err != nil {
+		t.Fatalf("SWScene.BuildRealisticPathtracePipeline: %v", err)
+	}
+
+	const width, height = 16, 16
+	rtPixels, err := rtScene.TraceRealisticImage(width, height, cam, params)
+	if err != nil {
+		t.Fatalf("TraceRealisticImage: %v", err)
+	}
+	swPixels, err := swScene.TraceRealisticPathtraceImage(width, height, cam, params)
+	if err != nil {
+		t.Fatalf("TraceRealisticPathtraceImage: %v", err)
+	}
+
+	for i := range rtPixels {
+		if abs32(rtPixels[i]-swPixels[i]) > 0.02 {
+			px, ch := i/3, i%3
+			t.Fatalf("pixel %d channel %d: hardware=%v software=%v, want equal within 0.02", px, ch, rtPixels[i], swPixels[i])
+		}
+	}
+}
+
+// TestRTSceneRealisticImageEnvironmentLightMatchesCPUOracle is
+// TestRTSceneRealisticImageMatchesCPUOracle's #2135/#2155 counterpart: LightIsEnvironment
+// set instead of a discrete light, exercising pathtrace_realistic.rchit's directLightAt
+// env-sampling branch (and its binding-4 envMap descriptor) end to end.
+func TestRTSceneRealisticImageEnvironmentLightMatchesCPUOracle(t *testing.T) {
+	w, err := CreateWindow(64, 64, "Oblikovati (realistic HW env-light image test)")
+	if err != nil {
+		t.Skipf("no window/GPU available: %v", err)
+	}
+	defer w.Destroy()
+
+	scene, err := w.NewRTScene()
+	if err != nil {
+		t.Skipf("no hardware ray tracing available: %v", err)
+	}
+	defer scene.Destroy()
+
+	verts, indices, cam, params := realisticTestSceneEnvLight()
+	if err := scene.AddMesh(verts, indices, 1); err != nil {
+		t.Fatalf("AddMesh: %v", err)
+	}
+	if err := scene.Build(); err != nil {
+		t.Fatalf("Build: %v", err)
+	}
+	if err := scene.BuildRealisticPipeline(pathtraceRealisticRgenSPV, pathtraceRealisticRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV); err != nil {
+		t.Skipf("no hardware RT pipeline available: %v", err)
+	}
+
+	const width, height = 16, 16
+	pixels, err := scene.TraceRealisticImage(width, height, cam, params)
+	if err != nil {
+		t.Fatalf("TraceRealisticImage: %v", err)
+	}
+	checkImageAgainstOracle(t, pixels, width, height, cam, params, 0.02)
+}
+
+// TestSWSceneRealisticImageEnvironmentLightMatchesCPUOracle is
+// TestSWSceneRealisticImageMatchesCPUOracle's #2135/#2155 counterpart, exercising
+// swpathtrace_realistic.comp's directLightAt env-sampling branch (binding 6's envMap).
+func TestSWSceneRealisticImageEnvironmentLightMatchesCPUOracle(t *testing.T) {
+	w, err := CreateWindow(64, 64, "Oblikovati (realistic SW env-light image test)")
+	if err != nil {
+		t.Skipf("no window/GPU available: %v", err)
+	}
+	defer w.Destroy()
+
+	scene, err := w.NewSWScene()
+	if err != nil {
+		t.Skipf("no compute-capable device available: %v", err)
+	}
+	defer scene.Destroy()
+
+	verts, indices, cam, params := realisticTestSceneEnvLight()
+	triangles := make([]renderer.Triangle, len(indices)/3)
+	for i := range triangles {
+		v := func(j int) [3]float32 {
+			k := indices[i*3+j] * 3
+			return [3]float32{verts[k], verts[k+1], verts[k+2]}
+		}
+		triangles[i] = renderer.Triangle{V0: v(0), V1: v(1), V2: v(2), InstanceID: 1, PrimitiveID: uint32(i)}
+	}
+	bvh := renderer.BuildBVH(triangles)
+	if err := scene.Build(SWBuildInputFrom(bvh, triangles)); err != nil {
+		t.Fatalf("Build: %v", err)
+	}
+	if err := scene.BuildRealisticPathtracePipeline(swpathtraceRealisticCompSPV); err != nil {
+		t.Fatalf("BuildRealisticPathtracePipeline: %v", err)
+	}
+
+	const width, height = 16, 16
+	pixels, err := scene.TraceRealisticPathtraceImage(width, height, cam, params)
+	if err != nil {
+		t.Fatalf("TraceRealisticPathtraceImage: %v", err)
+	}
+	checkImageAgainstOracle(t, pixels, width, height, cam, params, 0.02)
+}
+
+// TestRealisticImageEnvironmentLightBackendParity is TestRealisticImageBackendParity's
+// #2135/#2155 counterpart: hardware and software must agree when the picked light IS the
+// environment, not just for a discrete light.
+func TestRealisticImageEnvironmentLightBackendParity(t *testing.T) {
+	w, err := CreateWindow(64, 64, "Oblikovati (realistic env-light image backend parity test)")
+	if err != nil {
+		t.Skipf("no window/GPU available: %v", err)
+	}
+	defer w.Destroy()
+
+	verts, indices, cam, params := realisticTestSceneEnvLight()
 
 	rtScene, err := w.NewRTScene()
 	if err != nil {

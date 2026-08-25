@@ -11,10 +11,10 @@ namespace {
 bool ok(VkResult r) { return r == VK_SUCCESS; }
 
 // kRealisticParamsBytes mirrors raytrace.cpp's own constant of the same name — the live
-// per-pixel Realistic-viewport pipeline's Params UBO size (#2148): 56 float32/224 bytes.
-// Distinct from (and independent of) the single-ray test-harness ptParamsBuf, which
-// stays fixed at 16 floats/64 bytes.
-constexpr VkDeviceSize kRealisticParamsBytes = 56 * sizeof(float);
+// per-pixel Realistic-viewport pipeline's Params UBO size (#2135/#2155): 60 float32/240
+// bytes. Distinct from (and independent of) the single-ray test-harness ptParamsBuf,
+// which stays fixed at 16 floats/64 bytes.
+constexpr VkDeviceSize kRealisticParamsBytes = 60 * sizeof(float);
 
 struct SWBuffer {
     VkBuffer buffer = VK_NULL_HANDLE;
@@ -119,6 +119,16 @@ struct SWScene {
     SWBuffer imgCamBuf, imgParamsBuf, imgOutputBuf;
     int imgOutputWidth = 0, imgOutputHeight = 0;
     bool imgPipelineBuilt = false;
+
+    // dummyEnv* mirrors raytrace.cpp's RTScene::dummyEnv* exactly (#2155's IBL follow-up,
+    // ensure_dummy_env below) — this scene's own 1x1 fallback for the environment binding,
+    // used only when this scene's HeadContext has no Viewport. A separate copy from
+    // raytrace.cpp's because RTScene/SWScene are distinct translation units with no shared
+    // base type to hang a common fallback off of.
+    VkImage dummyEnvImage = VK_NULL_HANDLE;
+    VkDeviceMemory dummyEnvMem = VK_NULL_HANDLE;
+    VkImageView dummyEnvView = VK_NULL_HANDLE;
+    VkSampler dummyEnvSampler = VK_NULL_HANDLE;
 };
 
 namespace {
@@ -172,6 +182,128 @@ bool sw_dispatch_and_wait(HeadContext* c, SWScene* s, VkPipeline pipeline, VkPip
     VkResult waitResult = vkWaitForFences(c->device, 1, &s->fence, VK_TRUE, swCommandTimeoutNs);
     vkFreeCommandBuffers(c->device, s->cmdPool, 1, &cmd);
     return waitResult == VK_SUCCESS;
+}
+
+// sw_run_commands mirrors raytrace.cpp's rt_run_commands exactly (record into a fresh
+// one-time command buffer, submit, block on the scene's shared fence) — used by
+// ensure_dummy_env below for the image upload/layout-transition sequence, which isn't a
+// compute dispatch so it can't reuse sw_dispatch_and_wait.
+template <typename Fn>
+bool sw_run_commands(SWScene* s, Fn&& cmds) {
+    HeadContext* c = s->ctx;
+    VkCommandBufferAllocateInfo cba{};
+    cba.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cba.commandPool = s->cmdPool;
+    cba.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cba.commandBufferCount = 1;
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
+    vkAllocateCommandBuffers(c->device, &cba, &cmd);
+    VkCommandBufferBeginInfo bi{};
+    bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cmd, &bi);
+    cmds(cmd);
+    vkEndCommandBuffer(cmd);
+    VkSubmitInfo submit{};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
+    vkResetFences(c->device, 1, &s->fence);
+    vkQueueSubmit(c->queue, 1, &submit, s->fence);
+    VkResult waitResult = vkWaitForFences(c->device, 1, &s->fence, VK_TRUE, swCommandTimeoutNs);
+    vkFreeCommandBuffers(c->device, s->cmdPool, 1, &cmd);
+    return waitResult == VK_SUCCESS;
+}
+
+// ensure_dummy_env mirrors raytrace.cpp's ensure_dummy_env exactly (a lazily-created 1x1
+// mid-grey fallback environment image+sampler, for when s's HeadContext has no Viewport).
+bool ensure_dummy_env(SWScene* s) {
+    if (s->dummyEnvView != VK_NULL_HANDLE) return true;
+    HeadContext* c = s->ctx;
+    constexpr VkFormat kFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+    const float grey[4] = {0.05f, 0.05f, 0.05f, 1.0f};
+
+    SWBuffer staging{};
+    if (!sw_upload_buffer(c, &staging, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, grey, sizeof(grey))) return false;
+
+    VkImageCreateInfo ii{};
+    ii.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ii.imageType = VK_IMAGE_TYPE_2D;
+    ii.format = kFormat;
+    ii.extent = {1, 1, 1};
+    ii.mipLevels = 1;
+    ii.arrayLayers = 1;
+    ii.samples = VK_SAMPLE_COUNT_1_BIT;
+    ii.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ii.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    ii.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    if (!ok(vkCreateImage(c->device, &ii, c->allocator, &s->dummyEnvImage))) return false;
+    VkMemoryRequirements req{};
+    vkGetImageMemoryRequirements(c->device, s->dummyEnvImage, &req);
+    VkMemoryAllocateInfo ai{};
+    ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    ai.allocationSize = req.size;
+    ai.memoryTypeIndex = obk_find_memory_type(c->physical, req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (!ok(vkAllocateMemory(c->device, &ai, c->allocator, &s->dummyEnvMem))) return false;
+    if (!ok(vkBindImageMemory(c->device, s->dummyEnvImage, s->dummyEnvMem, 0))) return false;
+
+    VkImage img = s->dummyEnvImage;
+    bool copied = sw_run_commands(s, [&](VkCommandBuffer cmd) {
+        VkImageMemoryBarrier toDst{};
+        toDst.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        toDst.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        toDst.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        toDst.srcAccessMask = 0;
+        toDst.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        toDst.image = img;
+        toDst.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                             0, nullptr, 0, nullptr, 1, &toDst);
+        VkBufferImageCopy cp{};
+        cp.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        cp.imageExtent = {1, 1, 1};
+        vkCmdCopyBufferToImage(cmd, staging.buffer, img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &cp);
+        VkImageMemoryBarrier toRead = toDst;
+        toRead.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        toRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        toRead.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        toRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0,
+                             0, nullptr, 0, nullptr, 1, &toRead);
+    });
+    sw_destroy_buffer(c, &staging);
+    if (!copied) return false;
+
+    VkImageViewCreateInfo vi{};
+    vi.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    vi.image = s->dummyEnvImage;
+    vi.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    vi.format = kFormat;
+    vi.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    if (!ok(vkCreateImageView(c->device, &vi, c->allocator, &s->dummyEnvView))) return false;
+
+    VkSamplerCreateInfo si{};
+    si.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    si.magFilter = si.minFilter = VK_FILTER_LINEAR;
+    si.addressModeU = si.addressModeV = si.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    return ok(vkCreateSampler(c->device, &si, c->allocator, &s->dummyEnvSampler));
+}
+
+// env_binding_for mirrors raytrace.cpp's env_binding_for exactly: the live Viewport's
+// environment image (obk_viewport_env_binding) if one exists, else s's own lazily-built
+// 1x1 fallback (ensure_dummy_env).
+bool env_binding_for(SWScene* s, VkImageView* view, VkSampler* sampler) {
+    uint64_t v = 0, samp = 0, gen = 0;
+    obk_viewport_env_binding(s->ctx, &v, &samp, &gen);
+    if (v != 0 && samp != 0) {
+        *view = (VkImageView)v;
+        *sampler = (VkSampler)samp;
+        return true;
+    }
+    if (!ensure_dummy_env(s)) return false;
+    *view = s->dummyEnvView;
+    *sampler = s->dummyEnvSampler;
+    return true;
 }
 
 } // namespace
@@ -419,16 +551,20 @@ int obk_sw_scene_build_realistic_pathtrace_pipeline(void* scene, const uint32_t*
     if (!s || !s->built || s->imgPipelineBuilt) return 1;
     HeadContext* c = s->ctx;
 
-    VkDescriptorSetLayoutBinding bindings[6]{};
+    VkDescriptorSetLayoutBinding bindings[7]{};
     bindings[0] = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     bindings[1] = {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     bindings[2] = {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     bindings[3] = {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     bindings[4] = {4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     bindings[5] = {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    // binding 6 (#2155's IBL follow-up): the equirect environment map, so
+    // swpathtrace_realistic.comp's miss/background case can sample the same HDR sky the
+    // raster skybox and the hardware-RT backend (raytrace.cpp's binding 4) show.
+    bindings[6] = {6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     VkDescriptorSetLayoutCreateInfo dslInfo{};
     dslInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    dslInfo.bindingCount = 6;
+    dslInfo.bindingCount = 7;
     dslInfo.pBindings = bindings;
     if (!ok(vkCreateDescriptorSetLayout(c->device, &dslInfo, c->allocator, &s->imgDsLayout))) return 1;
 
@@ -440,14 +576,15 @@ int obk_sw_scene_build_realistic_pathtrace_pipeline(void* scene, const uint32_t*
 
     if (!sw_build_compute_pipeline(c, s->imgPipeLayout, spv, spvLen, s->imgPipeline)) return 1;
 
-    VkDescriptorPoolSize poolSizes[2] = {
+    VkDescriptorPoolSize poolSizes[3] = {
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
         {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1},
     };
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.maxSets = 1;
-    poolInfo.poolSizeCount = 2;
+    poolInfo.poolSizeCount = 3;
     poolInfo.pPoolSizes = poolSizes;
     if (!ok(vkCreateDescriptorPool(c->device, &poolInfo, c->allocator, &s->imgDescPool))) return 1;
 
@@ -457,6 +594,10 @@ int obk_sw_scene_build_realistic_pathtrace_pipeline(void* scene, const uint32_t*
     dsAlloc.descriptorSetCount = 1;
     dsAlloc.pSetLayouts = &s->imgDsLayout;
     if (!ok(vkAllocateDescriptorSets(c->device, &dsAlloc, &s->imgDescSet))) return 1;
+
+    VkImageView envView = VK_NULL_HANDLE;
+    VkSampler envSampler = VK_NULL_HANDLE;
+    if (!env_binding_for(s, &envView, &envSampler)) return 1;
 
     sw_create_buffer(c, &s->imgCamBuf, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 64);
     vkMapMemory(c->device, s->imgCamBuf.memory, 0, 64, 0, &s->imgCamBuf.mapped);
@@ -473,16 +614,23 @@ int obk_sw_scene_build_realistic_pathtrace_pipeline(void* scene, const uint32_t*
     VkDescriptorBufferInfo trianglesInfo{s->trianglesBuf.buffer, 0, VK_WHOLE_SIZE};
     VkDescriptorBufferInfo paramInfo{s->imgParamsBuf.buffer, 0, kRealisticParamsBytes};
     VkDescriptorBufferInfo outInfo{s->imgOutputBuf.buffer, 0, 16};
-    VkDescriptorBufferInfo* infos[6] = {&camInfo, &nodesInfo, &triOrderInfo, &trianglesInfo, &paramInfo, &outInfo};
-    VkDescriptorType types[6] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                 VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
-    VkWriteDescriptorSet writes[6]{};
-    for (uint32_t i = 0; i < 6; i++) {
-        writes[i] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, i, 0, 1,
-                    types[i],           nullptr, infos[i],  nullptr};
-    }
-    vkUpdateDescriptorSets(c->device, 6, writes, 0, nullptr);
+    VkDescriptorImageInfo envInfo{envSampler, envView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkWriteDescriptorSet writes[7]{};
+    writes[0] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 0, 0, 1,
+                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &camInfo, nullptr};
+    writes[1] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 1, 0, 1,
+                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &nodesInfo, nullptr};
+    writes[2] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 2, 0, 1,
+                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &triOrderInfo, nullptr};
+    writes[3] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 3, 0, 1,
+                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &trianglesInfo, nullptr};
+    writes[4] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 4, 0, 1,
+                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &paramInfo, nullptr};
+    writes[5] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 5, 0, 1,
+                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &outInfo, nullptr};
+    writes[6] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, s->imgDescSet, 6, 0, 1,
+                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &envInfo, nullptr, nullptr};
+    vkUpdateDescriptorSets(c->device, 7, writes, 0, nullptr);
 
     s->imgPipelineBuilt = true;
     return 0;
@@ -560,6 +708,10 @@ void obk_sw_scene_destroy(void* scene) {
     sw_destroy_buffer(c, &s->nodesBuf);
     sw_destroy_buffer(c, &s->triOrderBuf);
     sw_destroy_buffer(c, &s->trianglesBuf);
+    if (s->dummyEnvSampler) vkDestroySampler(c->device, s->dummyEnvSampler, c->allocator);
+    if (s->dummyEnvView) vkDestroyImageView(c->device, s->dummyEnvView, c->allocator);
+    if (s->dummyEnvImage) vkDestroyImage(c->device, s->dummyEnvImage, c->allocator);
+    if (s->dummyEnvMem) vkFreeMemory(c->device, s->dummyEnvMem, c->allocator);
     if (s->fence) vkDestroyFence(c->device, s->fence, c->allocator);
     if (s->cmdPool) vkDestroyCommandPool(c->device, s->cmdPool, c->allocator);
     delete s;

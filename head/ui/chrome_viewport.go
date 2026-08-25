@@ -489,6 +489,13 @@ func maxF32(a, b float32) float32 {
 // with the camera's view-projection, and blits the resulting texture back over the
 // input-capturing button at (cx,cy) so the panel shows the rendered scene.
 func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene.Camera, list renderer.DrawList, bodyCount, pw, ph int, cx, cy float32) {
+	// #2155's IBL follow-up: applyEnvironment must run before the Realistic branch's early
+	// return, not only in the raster path below — Realistic mode's RT/SW pipelines sample
+	// this SAME uploaded image via obk_viewport_env_binding (env_binding_for's own doc
+	// comment in raytrace.cpp/swtrace.cpp), so a session that renders in Realistic mode
+	// from its very first frame would otherwise never trigger the upload at all and always
+	// fall back to the 1x1 dummy grey image.
+	applyEnvironment(win, app.RenderEnvironment(s.Environment())) // app value -> renderer at the wall (B10 #1621)
 	if s.VisualStyle() == renderer.Realistic {
 		if tex, samples, ok := renderRealisticViewportImage(win, s, slot, cam, pw, ph); ok {
 			drawRealisticResult(tex, samples, pw, ph, cx, cy)
@@ -513,8 +520,7 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFarPlane(s, cam, mn, mx, hasGeom))
 	eye := frameEye(cam) // reused scratch; RenderViewport copies it into the push constant synchronously (#1423)
 	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))
-	applyEnvironment(win, app.RenderEnvironment(s.Environment())) // app value -> renderer at the wall (B10 #1621)
-	applySkybox(win, app.RenderEnvironment(s.Environment()), mvp)
+	applySkybox(win, app.RenderEnvironment(s.Environment()), mvp) // applyEnvironment already ran above
 	applyShadow(win, s, mn, mx, hasGeom)
 	uploadPointClouds(win, s) // retained GL-points buffer, skipped on orbit (#645)
 	dispatchRasterDraw(win, slot, pw, ph, mvp, eye, m, mats, recs, geomKey, s.ActiveSectionClip())

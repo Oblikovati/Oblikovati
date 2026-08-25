@@ -32,6 +32,7 @@
 #extension GL_EXT_ray_tracing_position_fetch : require
 #extension GL_GOOGLE_include_directive : require
 #include "rt_payload.glsl"
+#include "openpbr/env_sample.glsl"
 
 layout(location = 0) rayPayloadInEXT RTPathPayload payload;
 layout(location = 1) rayPayloadEXT bool shadowed;
@@ -41,6 +42,12 @@ layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
 // Field list shared with swpathtrace_realistic.comp — see extended_lobes.glsl's
 // OPENPBR_REALISTIC_PARAMS_FIELDS doc comment for the authoritative field order.
 layout(set = 0, binding = 3) uniform Params { OPENPBR_REALISTIC_PARAMS_FIELDS } params;
+// binding 4 (#2135/#2155's illumination-contribution follow-up): the same equirect
+// environment map pathtrace_realistic.rmiss samples for background visibility —
+// directLightAt below samples it again here at a DIFFERENT (light-importance-sampled)
+// direction when params.lightIsEnvironment says this dispatch picked the environment
+// over a discrete light.
+layout(set = 0, binding = 4) uniform sampler2D envMap;
 
 void buildBasis(vec3 n, out vec3 tangent, out vec3 bitangent) {
     vec3 up = abs(n.y) < 0.99 ? vec3(0, 1, 0) : vec3(1, 0, 0);
@@ -83,7 +90,17 @@ vec3 directLightAt(vec3 hitPoint, vec3 normal, vec3 wiLocal, vec3 woLocal, OpenP
     vec3 translucentLocal = openpbrBaseSpecular(mat, wiLocal, woLocal);
     vec3 base = openpbrMixTransmission(opaqueBase, translucentLocal, mat.transmissionWeight);
     vec3 shaded = openpbrLayerCoatFuzz(base, mat, wiLocal, woLocal);
-    return shaded * params.lightColor * params.lightIntensity * wiLocal.z;
+    // #2135/#2155: this dispatch's single light pick is EITHER a discrete light
+    // (lightColor holds its premultiplied color) OR the environment (lightIsEnvironment
+    // != 0 — ui/realistic_render.go's pickLightParams picked an importance-sampled
+    // direction from renderer.EnvironmentDistribution instead), in which case the color
+    // comes from re-sampling envMap at wi (enabled=1.0 unconditionally: the CPU only
+    // ever sets lightIsEnvironment when it already knows the environment is active,
+    // independent of envEnabled's own background-visibility-only ShowImage gate).
+    vec3 lightRadiance = params.lightIsEnvironment > 0.5
+        ? openpbrSampleEnvironment(envMap, wi, 1.0, params.envRotation, params.envIntensity)
+        : params.lightColor;
+    return shaded * lightRadiance * params.lightIntensity * wiLocal.z;
 }
 
 void main() {

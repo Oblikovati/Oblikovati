@@ -80,14 +80,13 @@ func TestEnvironmentDistributionConcentratesOnBrightRegion(t *testing.T) {
 }
 
 // sampleColumnIndex draws one sample and recovers which column it landed in, by
-// inverting direction() well enough for this test's purposes: azimuth back to x.
+// inverting direction()'s `phi = 2π(x+0.5)/w - π` well enough for this test's purposes:
+// azimuth back to x (see direction's own doc comment for why that specific formula, not
+// the naive phi=2π*x/w a reader might otherwise reach for here).
 func sampleColumnIndex(d *EnvironmentDistribution, u1, u2 float64) int {
 	dir, _ := d.Sample(u1, u2)
-	phi := math.Atan2(float64(dir[1]), float64(dir[0]))
-	if phi < 0 {
-		phi += 2 * math.Pi
-	}
-	x := int(phi / (2 * math.Pi) * float64(d.w))
+	phi := math.Atan2(float64(dir[1]), float64(dir[0])) // (-π, π]
+	x := int((phi + math.Pi) / (2 * math.Pi) * float64(d.w))
 	return clampIndex(x, d.w)
 }
 
@@ -106,6 +105,81 @@ func TestEnvironmentDistributionDirectionIsUnitLength(t *testing.T) {
 				t.Fatalf("direction(%d,%d) = %v, length %v, want 1", x, y, dir, length)
 			}
 		}
+	}
+}
+
+// dirUV ports openpbr/env_sample.glsl's openpbrEnvDirUV (== skybox.frag's dirUV) to Go
+// byte-for-byte, so this test can assert direction(x,y) is its algebraic inverse at
+// rot=0 — the exact property EnvironmentDistribution.direction's own doc comment argues
+// for. A mismatch here means the live path tracer would divide one texel's GPU-sampled
+// radiance by an unrelated texel's CPU-computed pdf: a biased estimator, not merely a
+// less-efficient one.
+func dirUV(d [3]float32, rot float64) (u, v float64) {
+	u = math.Atan2(float64(d[1]), float64(d[0]))/(2*math.Pi) + 0.5 + rot/(2*math.Pi)
+	u -= math.Floor(u) // wrap into [0,1), matching GLSL's default texture-sampler REPEAT wrap
+	v = math.Acos(clampFloat(float64(d[2]), -1, 1)) / math.Pi
+	return u, v
+}
+
+func clampFloat(v, lo, hi float64) float64 {
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
+}
+
+func TestEnvironmentDistributionDirectionMatchesShaderSampling(t *testing.T) {
+	const w, h = 32, 16
+	pixels := make([]float32, w*h*4)
+	for i := range pixels {
+		pixels[i] = 1
+	}
+	d := NewEnvironmentDistribution(w, h, pixels)
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			dir := d.direction(x, y)
+			u, v := dirUV(dir, 0)
+			wantU, wantV := (float64(x)+0.5)/float64(w), (float64(y)+0.5)/float64(h)
+			if diff := math.Abs(u - wantU); diff > 1e-6 {
+				t.Errorf("direction(%d,%d) -> dirUV u=%v, want %v (diff %v)", x, y, u, wantU, diff)
+			}
+			if diff := math.Abs(v - wantV); diff > 1e-6 {
+				t.Errorf("direction(%d,%d) -> dirUV v=%v, want %v (diff %v)", x, y, v, wantV, diff)
+			}
+		}
+	}
+}
+
+// TestRotateAroundZMatchesShaderRotation checks the invariant RotateAroundZ exists to
+// establish: sampling the ROTATED direction through dirUV WITH the real rotation applied
+// (as env_sample.glsl's shaders actually do, texel lookups at runtime rotation) lands on
+// the SAME texel as sampling the original (rot=0) direction with no rotation — i.e.
+// RotateAroundZ pre-compensates the direction so the shader's own `u += rot/(2π)` term
+// exactly cancels back out to the originally-picked texel. Confirms the sign (rotate by
+// -rot, not +rot): dirUV(RotateAroundZ(dir,rot), rot) == dirUV(dir, 0).
+func TestRotateAroundZMatchesShaderRotation(t *testing.T) {
+	const w, h = 32, 16
+	pixels := make([]float32, w*h*4)
+	for i := range pixels {
+		pixels[i] = 1
+	}
+	d := NewEnvironmentDistribution(w, h, pixels)
+	x, y := 5, 4
+	base := d.direction(x, y)
+	wantU, wantV := dirUV(base, 0)
+
+	const rotation = 0.7 // radians
+	rotated := RotateAroundZ(base, rotation)
+	gotU, gotV := dirUV(rotated, rotation)
+
+	if diff := math.Abs(gotU - wantU); diff > 1e-6 {
+		t.Errorf("RotateAroundZ(rot=%v): dirUV(rotated, rot).u=%v, want %v (diff %v)", rotation, gotU, wantU, diff)
+	}
+	if diff := math.Abs(gotV - wantV); diff > 1e-6 {
+		t.Errorf("RotateAroundZ(rot=%v): dirUV(rotated, rot).v=%v, want %v (diff %v)", rotation, gotV, wantV, diff)
 	}
 }
 

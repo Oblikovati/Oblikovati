@@ -5,6 +5,7 @@
 package ui
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"hash/fnv"
@@ -32,6 +33,7 @@ type realisticSession interface {
 	SceneLighting() renderer.SceneLighting
 	ViewCubePrefs() userprefs.Prefs
 	SetViewCubePrefs(userprefs.Prefs)
+	Environment() app.EnvironmentState
 }
 
 // Realistic-mode live path tracer (M45-F05 PBI-350, ADR-0053): replaces mesh.frag's
@@ -165,26 +167,17 @@ func renderRealisticViewportImage(win *native.Window, s realisticSession, slot i
 		return 0, 0, false
 	}
 
-	state := renderer.AccumulationState{Camera: cameraHash(cam), Scene: realisticSceneHash(meshes), Material: materialHash(material)}
-	cameraMoving := st.haveLastCamera && st.lastCameraHash != state.Camera
-	st.lastCameraHash, st.haveLastCamera = state.Camera, true
-	tracePW, tracePH := realisticTraceResolution(pw, ph, cameraMoving)
-	ensureRealisticAccumSize(st, tracePW, tracePH)
+	env := s.Environment()
+	state := realisticAccumulationState(win, cam, meshes, material, env)
+	tracePW, tracePH := realisticPrepareFrame(st, state, pw, ph)
 
 	st.accum.SyncState(state) // resets the accumulator on ANY change — a separate concern from rebuilding the RT scene below
-	if !st.sceneBuilt || st.sceneKey != state.Scene {
-		// Only the MESH CONTENT (state.Scene) invalidates the built BLAS/TLAS/pipeline —
-		// camera and material changes reset the accumulator above but must not touch the
-		// acceleration structure, which doesn't depend on either.
-		if !rebuildRealisticScene(win, st, meshes) {
-			return 0, 0, false
-		}
-		st.sceneKey = state.Scene
-		st.sceneBuilt = true
+	if !ensureRealisticSceneBuilt(win, st, meshes, state.Scene) {
+		return 0, 0, false
 	}
 
 	lighting := s.SceneLighting()
-	pixels, err := traceRealisticFrame(st, win, s, cam, tracePW, tracePH, lighting, material)
+	pixels, err := traceRealisticFrame(st, win, s, cam, tracePW, tracePH, lighting, material, env)
 	if err != nil {
 		return 0, 0, false
 	}
@@ -192,6 +185,46 @@ func renderRealisticViewportImage(win *native.Window, s realisticSession, slot i
 
 	presentRealisticFrame(win, st, tracePW, tracePH, float64(lighting.Exposure))
 	return st.tex, st.accum.SampleCount(), st.tex != 0
+}
+
+// realisticPrepareFrame records st's camera-moving state from state.Camera and sizes its
+// accumulator to this frame's trace resolution (realisticTraceResolution) — split out of
+// renderRealisticViewportImage (funlen).
+func realisticPrepareFrame(st *realisticState, state renderer.AccumulationState, pw, ph int) (tracePW, tracePH int) {
+	cameraMoving := st.haveLastCamera && st.lastCameraHash != state.Camera
+	st.lastCameraHash, st.haveLastCamera = state.Camera, true
+	tracePW, tracePH = realisticTraceResolution(pw, ph, cameraMoving)
+	ensureRealisticAccumSize(st, tracePW, tracePH)
+	return tracePW, tracePH
+}
+
+// ensureRealisticSceneBuilt (re)builds st's RT/SW scene when it hasn't been built yet or
+// sceneHash (state.Scene) no longer matches the last build — mesh content changes trigger
+// this the same way an environment-image regeneration does (realisticSceneHash's own doc
+// comment on why envGen folds into sceneHash) — split out of renderRealisticViewportImage
+// (funlen).
+func ensureRealisticSceneBuilt(win *native.Window, st *realisticState, meshes []realisticMesh, sceneHash uint64) bool {
+	if st.sceneBuilt && st.sceneKey == sceneHash {
+		return true
+	}
+	if !rebuildRealisticScene(win, st, meshes) {
+		return false
+	}
+	st.sceneKey = sceneHash
+	st.sceneBuilt = true
+	return true
+}
+
+// realisticAccumulationState fingerprints this frame's camera/scene/material/environment
+// for renderer.Accumulator.SyncState — split out of renderRealisticViewportImage (funlen)
+// after #2155's IBL follow-up added the environment generation/hash computation.
+func realisticAccumulationState(win *native.Window, cam scene.Camera, meshes []realisticMesh, material renderer.DrawItem, env app.EnvironmentState) renderer.AccumulationState {
+	return renderer.AccumulationState{
+		Camera:      cameraHash(cam),
+		Scene:       realisticSceneHash(meshes, win.EnvironmentGeneration()),
+		Material:    materialHash(material),
+		Environment: environmentHash(env),
+	}
 }
 
 // realisticStateFor returns the persistent GPU state for (s,slot), creating it on first
@@ -234,9 +267,10 @@ func presentRealisticFrame(win *native.Window, st *realisticState, pw, ph int, e
 
 // traceRealisticFrame dispatches one sample through whichever backend the hardware-RT
 // checkbox (persisted, PBI-332/333) resolves to for this device.
-func traceRealisticFrame(st *realisticState, win *native.Window, s realisticSession, cam scene.Camera, pw, ph int, lighting renderer.SceneLighting, material renderer.DrawItem) ([]float32, error) {
+func traceRealisticFrame(st *realisticState, win *native.Window, s realisticSession, cam scene.Camera, pw, ph int, lighting renderer.SceneLighting, material renderer.DrawItem, env app.EnvironmentState) ([]float32, error) {
 	basis := nativeCameraBasis(cam)
-	params := pickLightParams(lighting, st.rng, material)
+	params := pickLightParams(lighting, st.rng, material, env, currentEnvironmentDistribution())
+	applyEnvironmentParams(&params, env)
 	if realisticHardwareEnabled(win, s) && st.rt != nil {
 		return st.rt.TraceRealisticImage(pw, ph, basis, params)
 	}
@@ -357,10 +391,33 @@ func bakeInstanceMesh(item renderer.DrawItem, t math.Matrix4, instanceID uint32)
 	return realisticMesh{verts: verts, indices: indices, instanceID: instanceID}
 }
 
-func realisticSceneHash(meshes []realisticMesh) uint64 {
+// realisticSceneHash fingerprints meshes' geometry plus envGen (win.EnvironmentGeneration,
+// #2155's IBL follow-up) — envGen changes whenever the environment image is regenerated,
+// which stale-invalidates the RT/SW pipelines' env descriptor bindings (env_binding_for's
+// own doc comment in raytrace.cpp/swtrace.cpp) and so must trigger the same rebuild path a
+// mesh edit does, even though the BLAS/TLAS geometry itself is unaffected.
+func realisticSceneHash(meshes []realisticMesh, envGen uint64) uint64 {
 	h := fnv.New64a()
 	for _, m := range meshes {
 		hashFloat32s(h, m.verts)
+	}
+	var b [8]byte
+	binary.LittleEndian.PutUint64(b[:], envGen)
+	_, _ = h.Write(b[:])
+	return h.Sum64()
+}
+
+// environmentHash fingerprints the display-affecting parts of env (IBL background
+// visibility, rotation, intensity) so a change resets the accumulator (renderer.
+// Accumulator.SyncState) — separate from realisticSceneHash's envGen, which only changes
+// when the underlying image is actually regenerated, not on every rotation/intensity edit.
+func environmentHash(env app.EnvironmentState) uint64 {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(env.Preset))
+	_, _ = h.Write([]byte(env.FilePath))
+	hashFloat32s(h, []float32{env.Rotation, env.Intensity})
+	if env.ShowImage {
+		_, _ = h.Write([]byte{1})
 	}
 	return h.Sum64()
 }
@@ -409,38 +466,102 @@ func nativeCameraBasis(cam scene.Camera) native.CameraBasis {
 	}
 }
 
-// pickLightParams picks one light from lighting's active rig, power-weighted
-// (renderer.LightDistribution, PBI-348), and scales its intensity by 1/PDF so
-// accumulating many dispatches — each possibly picking a different light — converges
-// to the correct multi-light-weighted image (the same unbiased-estimator property
-// PBI-348's CPU test proved analytically, applied here per-dispatch instead of
-// per-sample). An unlit scene (no active lights) returns a zero-intensity light, which
-// shades to black rather than crashing.
-func pickLightParams(lighting renderer.SceneLighting, rng *rand.Rand, material renderer.DrawItem) native.RealisticLightParams {
-	base := linearBaseColor(material.Color)
-	lights := lighting.ActiveLights()
-	if len(lights) == 0 {
-		return native.RealisticLightParams{BaseColor: base, BaseWeight: 1, SpecularIOR: 1.5}
+// pickLightParams picks EITHER one light from lighting's active rig, power-weighted
+// (renderer.LightDistribution, PBI-348), OR the environment itself, importance-sampled
+// (renderer.EnvironmentDistribution, #2135/#2155's illumination-contribution follow-up)
+// — a single Monte Carlo selection per dispatch between the two sampling strategies,
+// weighted by their relative total weight (pEnv below) so accumulating many dispatches,
+// each possibly picking a different light OR the environment, converges to the correct
+// combined-lighting image (the same unbiased-estimator property PBI-348's CPU test
+// proved analytically for discrete lights alone, extended here to a second strategy).
+// envDist is nil when no environment is active/loaded (currentEnvironmentDistribution).
+// A scene with neither active lights nor an active environment returns a zero-intensity
+// light, which shades to black rather than crashing.
+func pickLightParams(lighting renderer.SceneLighting, rng *rand.Rand, material renderer.DrawItem, env app.EnvironmentState, envDist *renderer.EnvironmentDistribution) native.RealisticLightParams {
+	params := native.RealisticLightParams{
+		BaseColor: linearBaseColor(material.Color), BaseWeight: 1,
+		SpecularRoughness: material.Roughness, SpecularIOR: 1.5, BaseMetalness: material.Metallic,
 	}
-	dist := renderer.NewLightDistribution(lights)
+
+	lights := lighting.ActiveLights()
+	var dist *renderer.LightDistribution
+	var lightsWeight float64
+	if len(lights) > 0 {
+		dist = renderer.NewLightDistribution(lights)
+		lightsWeight = dist.TotalWeight()
+	}
+	envActive := env.IsActive() && envDist != nil
+	envWeight := 0.0
+	if envActive {
+		envWeight = envDist.TotalWeight() * float64(env.Intensity)
+	}
+	totalWeight := lightsWeight + envWeight
+	if totalWeight <= 0 {
+		return params // no discrete lights, no active environment: unlit
+	}
+
+	pEnv := envWeight / totalWeight
+	if envActive && rng.Float64() < pEnv {
+		pickEnvironmentLight(&params, rng, envDist, env.Rotation, pEnv)
+	} else {
+		pickDiscreteLight(&params, rng, dist, 1-pEnv)
+	}
+	return params
+}
+
+// pickEnvironmentLight importance-samples envDist for a direction (renderer.
+// EnvironmentDistribution.Sample), rotates it into world space (renderer.RotateAroundZ,
+// matching env_sample.glsl's own rotation convention), and scales by 1/(pEnv*pdf) —
+// pEnv accounts for this dispatch having chosen the environment strategy at all, pdf for
+// which direction within it. A degenerate (all-black) environment leaves params' light
+// fields zero rather than dividing by a zero pdf.
+func pickEnvironmentLight(params *native.RealisticLightParams, rng *rand.Rand, envDist *renderer.EnvironmentDistribution, rotation float32, pEnv float64) {
+	dir, pdf := envDist.Sample(rng.Float64(), rng.Float64())
+	if pdf <= 0 {
+		return
+	}
+	params.LightDirection = renderer.RotateAroundZ(dir, rotation)
+	params.LightIsEnvironment = 1
+	params.LightIntensity = float32(1 / (pEnv * pdf))
+}
+
+// pickDiscreteLight mirrors this file's own prior single-strategy pickLightParams body:
+// power-weighted light-importance sampling (PBI-348), now scaled by 1/(pLight*pdf) —
+// pLight accounts for this dispatch having chosen the discrete-light strategy at all
+// (1 when no environment competes for selection).
+func pickDiscreteLight(params *native.RealisticLightParams, rng *rand.Rand, dist *renderer.LightDistribution, pLight float64) {
+	if dist == nil || pLight <= 0 {
+		return
+	}
 	// Monte Carlo light-importance sampling, not a security context: math/rand is the
 	// correct, intentional choice here (fast, and seedable via rand.NewSource for
 	// deterministic backend-parity tests — crypto/rand offers neither). See
 	// realisticState's own rng field/seeding comment.
 	_, light, pdf := dist.Sample(rng.Float64()) // NOSONAR
 	if pdf <= 0 {
-		return native.RealisticLightParams{}
+		return
 	}
-	scale := float32(1 / pdf)
-	return native.RealisticLightParams{
-		LightDirection:    light.Direction,
-		LightIntensity:    light.Intensity * scale,
-		LightColor:        light.Color,
-		BaseColor:         base,
-		BaseWeight:        1,
-		SpecularRoughness: material.Roughness,
-		SpecularIOR:       1.5,
-		BaseMetalness:     material.Metallic,
+	scale := float32(1 / (pLight * pdf))
+	params.LightDirection = light.Direction
+	params.LightColor = light.Color
+	params.LightIntensity = light.Intensity * scale
+}
+
+// applyEnvironmentParams sets params' EnvRotation/EnvIntensity (needed for BOTH background
+// visibility and, as of #2135/#2155's illumination-contribution follow-up, light-sampled
+// environment color — pickLightParams's own env branch reads them too) whenever an
+// environment is active, and EnvEnabled (background visibility ONLY — the miss shaders'
+// own gate) additionally requires env.ShowImage: an environment can light the scene while
+// hidden as a backdrop, matching how DCC tools separate "used for lighting" from "shown as
+// background" (extended_lobes.glsl's OPENPBR_REALISTIC_PARAMS_FIELDS).
+func applyEnvironmentParams(params *native.RealisticLightParams, env app.EnvironmentState) {
+	if !env.IsActive() {
+		return
+	}
+	params.EnvRotation = env.Rotation
+	params.EnvIntensity = env.Intensity
+	if env.ShowImage {
+		params.EnvEnabled = 1
 	}
 }
 

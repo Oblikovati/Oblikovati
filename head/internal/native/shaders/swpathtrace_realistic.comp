@@ -14,6 +14,7 @@
 // the hardware backend's recursive traceRayEXT chain (pathtrace_realistic.rchit).
 #extension GL_GOOGLE_include_directive : require
 #include "openpbr/extended_lobes.glsl"
+#include "openpbr/env_sample.glsl"
 #include "sw_bvh_types.glsl"
 
 layout(local_size_x = 8, local_size_y = 8) in;
@@ -38,6 +39,10 @@ layout(set = 0, binding = 3, std430) readonly buffer Triangles { GpuTriangle tri
 layout(set = 0, binding = 4) uniform Params { OPENPBR_REALISTIC_PARAMS_FIELDS } params;
 
 layout(set = 0, binding = 5, std430) buffer Output { vec4 pixels[]; } outputBuf;
+
+// binding 6 (#2135/#2155's IBL follow-up): the equirect environment map, mirroring
+// raytrace.cpp's binding 4 — see openpbr/env_sample.glsl's own doc comment.
+layout(set = 0, binding = 6) uniform sampler2D envMap;
 
 #include "sw_bvh_traverse.glsl"
 
@@ -82,7 +87,13 @@ vec3 directLightAt(vec3 hitPoint, vec3 normal, vec3 wiLocal, vec3 woLocal, OpenP
     vec3 translucentLocal = openpbrBaseSpecular(mat, wiLocal, woLocal);
     vec3 base = openpbrMixTransmission(opaqueBase, translucentLocal, mat.transmissionWeight);
     vec3 shaded = openpbrLayerCoatFuzz(base, mat, wiLocal, woLocal);
-    return shaded * params.lightColor * params.lightIntensity * wiLocal.z;
+    // #2135/#2155: mirrors pathtrace_realistic.rchit's own directLightAt exactly — this
+    // dispatch's single light pick is either a discrete light (lightColor) or the
+    // environment (lightIsEnvironment != 0), re-sampled from envMap at wi.
+    vec3 lightRadiance = params.lightIsEnvironment > 0.5
+        ? openpbrSampleEnvironment(envMap, wi, 1.0, params.envRotation, params.envIntensity)
+        : params.lightColor;
+    return shaded * lightRadiance * params.lightIntensity * wiLocal.z;
 }
 
 // traceRealisticPath chains up to OPENPBR_MAX_TRANSMISSION_BOUNCES transmission segments
@@ -109,7 +120,19 @@ vec3 traceRealisticPath(vec3 origin, vec3 dir, OpenPBRRealisticMaterial mat, flo
 
     for (int bounce = 0; bounce <= OPENPBR_MAX_TRANSMISSION_BOUNCES; bounce++) {
         TraceResult hit = traceBVH(rayOrigin, rayDir, tMinBounce, tMaxBounce);
-        if (!hit.hit) break;
+        if (!hit.hit) {
+            // #2135/#2155: background visibility — mirrors pathtrace_realistic.rchit's own
+            // childRadiance*exp(-extinction*childDist) treatment of a continuation ray that
+            // escapes to the background: pendingExtinction is 0 for the common case (a ray
+            // EXITING a medium, so exp(0)=1, full background visible); nonzero only for a ray
+            // still marked as ENTERING that never finds an exit surface, where using
+            // tMaxBounce (this loop's equivalent of the RT backend's childDist≈tMax) as the
+            // escape distance underflows exp() toward 0 — an unbounded "solid" absorbs
+            // everything, same as the RT backend.
+            vec3 env = openpbrSampleEnvironment(envMap, rayDir, params.envEnabled, params.envRotation, params.envIntensity);
+            radiance += throughput * exp(-pendingExtinction * tMaxBounce) * channelMask * env;
+            break;
+        }
         throughput *= exp(-pendingExtinction * hit.t);
         pendingExtinction = vec3(0.0);
 

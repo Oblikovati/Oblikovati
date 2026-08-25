@@ -65,3 +65,14 @@ extern "C" void obk_viewport_frame_flush(HeadContext* c, VkSemaphore* outSems, i
 // obk_icons_destroy frees the ribbon-icon texture cache (images + sampler); defined in
 // texture.cpp (C linkage) and called from app.cpp on teardown.
 extern "C" void obk_icons_destroy(HeadContext* c);
+
+// obk_viewport_env_binding (#2155's IBL follow-up) exposes the equirect environment image
+// Viewport privately owns (defined in viewport.cpp, called from raytrace.cpp/swtrace.cpp
+// so the Realistic-mode ray-tracing pipelines can sample the SAME environment the raster
+// skybox already shows, instead of a second, duplicate upload). *view/*sampler receive
+// VK_NULL_HANDLE (0) and *generation 0 if c has no viewport yet (a caller not using
+// InitViewport, e.g. several existing test harnesses) — callers must bind a local fallback
+// image in that case, matching Viewport's own init_default_env precedent. generation
+// increments every time the environment image is recreated (an environment change) — see
+// Viewport::envGeneration's own doc comment for why callers must track it.
+extern "C" void obk_viewport_env_binding(HeadContext* c, uint64_t* view, uint64_t* sampler, uint64_t* generation);

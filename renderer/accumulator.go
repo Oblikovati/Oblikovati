@@ -76,9 +76,10 @@ func (a *Accumulator) Reset() {
 // material generation) is the F05 wiring PBI's job (PBI-350, "wire kRealisticRendering
 // end to end") — this type only defines the comparison contract those hashes feed.
 type AccumulationState struct {
-	Camera   uint64
-	Scene    uint64
-	Material uint64
+	Camera      uint64
+	Scene       uint64
+	Material    uint64
+	Environment uint64
 }
 
 // SyncState resets the accumulator if state differs from the state passed to the

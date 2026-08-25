@@ -158,6 +158,15 @@ struct Viewport {
     VkDeviceMemory  envMem = VK_NULL_HANDLE;
     VkImageView     envView = VK_NULL_HANDLE;
     VkSampler       envSampler = VK_NULL_HANDLE;
+    // envGeneration increments every time envView/envSampler are (re)created (#2155's IBL
+    // follow-up): a Realistic-mode RTScene/SWScene descriptor set snapshots whichever
+    // VkImageView it was written with — recreating the environment image (a different
+    // handle) leaves any earlier-written descriptor set pointing at a destroyed view. The
+    // live per-frame path (head/ui/realistic_render.go) folds this generation into its
+    // existing scene-content hash, so an environment change forces the SAME rebuild path
+    // that already fires on geometry changes, re-writing the descriptor with the current
+    // view instead of needing a second, parallel invalidation mechanism.
+    uint64_t        envGeneration = 0;
 
     // Skybox draw state: the inverse view-projection (column-major) and whether to draw the
     // environment background this frame, set per frame by obk_viewport_set_skybox.
@@ -967,6 +976,7 @@ void make_env_image(HeadContext* c, Viewport* v, const float* data, const int* d
     vi.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, (uint32_t)levels, 0, 1};
     vkCreateImageView(c->device, &vi, nullptr, &v->envView);
     write_env_descriptor(c, v);
+    v->envGeneration++;
 }
 
 // create_env_sampler builds the IBL sampler: trilinear with azimuth wrap (U repeat) and a
@@ -2009,6 +2019,17 @@ uint64_t obk_viewport_point_uploads(void* h) {
     HeadContext* c = (HeadContext*)h;
     if (!c || !c->viewport) return 0;
     return c->viewport->pointUploads;
+}
+
+// obk_viewport_env_binding — see its declaration in head.h for the full contract.
+void obk_viewport_env_binding(HeadContext* c, uint64_t* view, uint64_t* sampler, uint64_t* generation) {
+    if (view) *view = 0;
+    if (sampler) *sampler = 0;
+    if (generation) *generation = 0;
+    if (!c || !c->viewport) return;
+    if (view) *view = (uint64_t)c->viewport->envView;
+    if (sampler) *sampler = (uint64_t)c->viewport->envSampler;
+    if (generation) *generation = c->viewport->envGeneration;
 }
 
 void obk_viewport_destroy(HeadContext* c) {
