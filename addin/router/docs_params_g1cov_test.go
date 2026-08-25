@@ -105,7 +105,7 @@ func TestDpcovMaterialErrorPaths(t *testing.T) {
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"materials.create", mustJSON(t, wire.DuplicateAssetArgs{BaseID: "nope", Name: "X"})},
 		{"appearances.create", mustJSON(t, wire.DuplicateAssetArgs{BaseID: "nope", Name: "X"})},
-		{"appearances.update", mustJSON(t, wire.AppearanceInfo{ID: "nope", Albedo: "not-a-color"})},
+		{"appearances.update", mustJSON(t, wire.UpdateAppearanceArgs{ID: "nope"})},
 		{"model.assignMaterial", mustJSON(t, wire.AssignMaterialArgs{BodyKey: "nope", MaterialID: "nope"})},
 	})
 }
@@ -114,7 +114,7 @@ func TestDpcovMaterialUpdateUnknownAndPhysProps(t *testing.T) {
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"materials.update", mustJSON(t, wire.MaterialInfo{ID: "nope"})},
-		{"appearances.update", mustJSON(t, wire.AppearanceInfo{ID: "nope", Albedo: "#ffffff", Emissive: "#000000"})},
+		{"appearances.update", mustJSON(t, wire.UpdateAppearanceArgs{ID: "nope"})},
 	})
 	rr := New(opregistry.Default())
 	if _, err := rr.Handle(app.NewSession(), "model.physicalProperties", []byte(`{}`)); err == nil {

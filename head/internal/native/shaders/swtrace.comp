@@ -1,0 +1,126 @@
+#version 450
+// Single-ray software Intersector query (M45-F01 PBI-334, ADR-0053): stack-based
+// traversal of a CPU-built median-split BVH (renderer.BuildBVH), with no ray-tracing
+// extensions at all — the always-available fallback when the hardware-RT checkbox is
+// off or unsupported (renderer.SupportsHardwareRayTracing). All buffer structs use only
+// scalar float/int members (never vec3) so their std430 layout is tightly packed with no
+// implicit padding, matching the Go-side structs (renderer.BVHNode, renderer.Triangle)
+// byte-for-byte without needing manual pad fields on either side — the lesson from
+// raytrace.comp's HitResult block, applied here from the start instead of debugged in.
+
+layout(local_size_x = 1) in;
+
+struct BVHNode {
+    float minX, minY, minZ;
+    float maxX, maxY, maxZ;
+    int leftFirst;
+    int triCount; // 0 = internal (leftFirst = left child index, right = leftFirst+1); >0 = leaf
+};
+
+struct GpuTriangle {
+    float v0x, v0y, v0z;
+    float v1x, v1y, v1z;
+    float v2x, v2y, v2z;
+    uint instanceID;
+    uint primitiveID;
+};
+
+layout(set = 0, binding = 0) uniform RayParams {
+    vec3 origin;
+    float tMin;
+    vec3 direction;
+    float tMax;
+} ray;
+
+layout(set = 0, binding = 1, std430) readonly buffer Nodes { BVHNode nodes[]; };
+layout(set = 0, binding = 2, std430) readonly buffer TriOrder { int triOrder[]; };
+layout(set = 0, binding = 3, std430) readonly buffer Triangles { GpuTriangle tris[]; };
+
+layout(set = 0, binding = 4, std430) buffer HitResult {
+    uint hit;
+    float t;
+    vec3 point;
+    vec3 normal;
+    uint instanceID;
+    uint primitiveID;
+} result;
+
+// rayAABBHit is the standard slab test, returning whether the ray reaches the box within
+// [ray.tMin, currentBestT] — currentBestT lets a caller reject a box entirely behind an
+// already-found closer hit.
+bool rayAABBHit(vec3 mn, vec3 mx, float currentBestT) {
+    vec3 invD = 1.0 / ray.direction;
+    vec3 t0 = (mn - ray.origin) * invD;
+    vec3 t1 = (mx - ray.origin) * invD;
+    vec3 tSmall = min(t0, t1);
+    vec3 tBig = max(t0, t1);
+    float tEnter = max(max(tSmall.x, tSmall.y), max(tSmall.z, ray.tMin));
+    float tExit = min(min(tBig.x, tBig.y), min(tBig.z, currentBestT));
+    return tEnter <= tExit;
+}
+
+// rayTriangleHit is Möller-Trumbore, the same algorithm and convention as renderer.
+// FakeIntersector's CPU oracle (kernel-side rayTriangle in intersector.go) — kept
+// identical so hardware/software/CPU-oracle backends agree on hit t/normal exactly.
+bool rayTriangleHit(GpuTriangle tri, out float t, out vec3 normal) {
+    vec3 v0 = vec3(tri.v0x, tri.v0y, tri.v0z);
+    vec3 v1 = vec3(tri.v1x, tri.v1y, tri.v1z);
+    vec3 v2 = vec3(tri.v2x, tri.v2y, tri.v2z);
+    vec3 e1 = v1 - v0;
+    vec3 e2 = v2 - v0;
+    vec3 pvec = cross(ray.direction, e2);
+    float det = dot(e1, pvec);
+    if (abs(det) < 1e-8) return false;
+    float invDet = 1.0 / det;
+    vec3 tvec = ray.origin - v0;
+    float u = dot(tvec, pvec) * invDet;
+    if (u < 0.0 || u > 1.0) return false;
+    vec3 qvec = cross(tvec, e1);
+    float v = dot(ray.direction, qvec) * invDet;
+    if (v < 0.0 || u + v > 1.0) return false;
+    t = dot(e2, qvec) * invDet;
+    normal = normalize(cross(e1, e2));
+    return true;
+}
+
+void main() {
+    result.hit = 0;
+    float bestT = ray.tMax;
+    int bestTri = -1;
+    vec3 bestNormal = vec3(0);
+
+    int stack[32];
+    int sp = 0;
+    stack[sp++] = 0;
+    while (sp > 0) {
+        int nodeIdx = stack[--sp];
+        BVHNode node = nodes[nodeIdx];
+        vec3 mn = vec3(node.minX, node.minY, node.minZ);
+        vec3 mx = vec3(node.maxX, node.maxY, node.maxZ);
+        if (!rayAABBHit(mn, mx, bestT)) continue;
+
+        if (node.triCount > 0) {
+            for (int i = 0; i < node.triCount; i++) {
+                int triIdx = triOrder[node.leftFirst + i];
+                float t;
+                vec3 n;
+                if (rayTriangleHit(tris[triIdx], t, n) && t >= ray.tMin && t < bestT) {
+                    bestT = t;
+                    bestTri = triIdx;
+                    bestNormal = n;
+                }
+            }
+        } else if (sp < 30) { // leave headroom; a well-formed median-split tree never nests this deep
+            stack[sp++] = node.leftFirst;
+            stack[sp++] = node.leftFirst + 1;
+        }
+    }
+
+    if (bestTri < 0) return;
+    result.hit = 1;
+    result.t = bestT;
+    result.point = ray.origin + ray.direction * bestT;
+    result.normal = bestNormal;
+    result.instanceID = tris[bestTri].instanceID;
+    result.primitiveID = tris[bestTri].primitiveID;
+}

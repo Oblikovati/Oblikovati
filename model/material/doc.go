@@ -31,6 +31,19 @@ type (
 	IsotropyClass      = types.IsotropyClass
 	AnisotropicElastic = types.AnisotropicElastic
 	PhysicalProperties = types.PhysicalProperties
+
+	// OpenPBR Surface v1.1.1 group/color types (M45, ADR-0053) — additive alongside the
+	// metallic-roughness aliases above.
+	Color3              = types.Color3
+	OpenPBRBase         = types.OpenPBRBase
+	OpenPBRSpecular     = types.OpenPBRSpecular
+	OpenPBRTransmission = types.OpenPBRTransmission
+	OpenPBRSubsurface   = types.OpenPBRSubsurface
+	OpenPBRCoat         = types.OpenPBRCoat
+	OpenPBRFuzz         = types.OpenPBRFuzz
+	OpenPBRThinFilm     = types.OpenPBRThinFilm
+	OpenPBREmission     = types.OpenPBREmission
+	OpenPBRGeometry     = types.OpenPBRGeometry
 )
 
 const (

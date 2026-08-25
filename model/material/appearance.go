@@ -4,19 +4,23 @@ package material
 
 import "oblikovati.org/api/contract"
 
-// AppearanceSpec is the editable content of an appearance — everything but its identity
-// and source. Carrying the editable fields as one value keeps construction and edits
-// (which must respect the read-only rule for built-ins) in one place.
+// AppearanceSpec is the editable content of an appearance — every OpenPBR Surface
+// v1.1.1 lobe group, but not its identity/source.
 type AppearanceSpec struct {
-	DisplayName string
-	Albedo      Rgba
-	Metallic    float32
-	Roughness   float32
-	Emissive    Rgba
-	Opacity     float32
+	DisplayName  string
+	Base         OpenPBRBase
+	Specular     OpenPBRSpecular
+	Transmission OpenPBRTransmission
+	Subsurface   OpenPBRSubsurface
+	Coat         OpenPBRCoat
+	Fuzz         OpenPBRFuzz
+	ThinFilm     OpenPBRThinFilm
+	Emission     OpenPBREmission
+	Geometry     OpenPBRGeometry
 }
 
-// Appearance is one PBR appearance asset. It satisfies [contract.Appearance].
+// Appearance is one full OpenPBR Surface v1.1.1 appearance asset. It satisfies
+// [contract.Appearance].
 type Appearance struct {
 	id     string
 	source Source
@@ -30,16 +34,22 @@ func NewAppearance(id string, source Source, spec AppearanceSpec) *Appearance {
 	return &Appearance{id: id, source: source, spec: spec}
 }
 
-// ID / DisplayName / Source / Albedo / Metallic / Roughness / Emissive / Opacity satisfy
-// the read-only public contract.
+// ID / DisplayName / Source satisfy the shared asset identity contract.
 func (a *Appearance) ID() string          { return a.id }
 func (a *Appearance) DisplayName() string { return a.spec.DisplayName }
 func (a *Appearance) Source() Source      { return a.source }
-func (a *Appearance) Albedo() Rgba        { return a.spec.Albedo }
-func (a *Appearance) Metallic() float32   { return a.spec.Metallic }
-func (a *Appearance) Roughness() float32  { return a.spec.Roughness }
-func (a *Appearance) Emissive() Rgba      { return a.spec.Emissive }
-func (a *Appearance) Opacity() float32    { return a.spec.Opacity }
+
+// Base / Specular / Transmission / Subsurface / Coat / Fuzz / ThinFilm / Emission /
+// Geometry satisfy the read-only public contract's grouped accessors.
+func (a *Appearance) Base() OpenPBRBase                 { return a.spec.Base }
+func (a *Appearance) Specular() OpenPBRSpecular         { return a.spec.Specular }
+func (a *Appearance) Transmission() OpenPBRTransmission { return a.spec.Transmission }
+func (a *Appearance) Subsurface() OpenPBRSubsurface     { return a.spec.Subsurface }
+func (a *Appearance) Coat() OpenPBRCoat                 { return a.spec.Coat }
+func (a *Appearance) Fuzz() OpenPBRFuzz                 { return a.spec.Fuzz }
+func (a *Appearance) ThinFilm() OpenPBRThinFilm         { return a.spec.ThinFilm }
+func (a *Appearance) Emission() OpenPBREmission         { return a.spec.Emission }
+func (a *Appearance) Geometry() OpenPBRGeometry         { return a.spec.Geometry }
 
 // Spec returns a copy of the editable fields (the editor reads it to populate controls).
 func (a *Appearance) Spec() AppearanceSpec { return a.spec }

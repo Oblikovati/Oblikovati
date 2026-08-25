@@ -3,6 +3,8 @@
 package app
 
 import (
+	"math"
+
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/material"
@@ -95,7 +97,8 @@ func (s *Session) partSurfaceLookup(part *compdef.PartComponentDefinition) rende
 				return styleSurface(cs)
 			}
 		}
-		appr := assign.EffectiveAppearance(look, material.RefKey(b.ReferenceKey()), "")
+		key := material.RefKey(b.ReferenceKey())
+		appr := assign.EffectiveAppearance(look, key, "")
 		return appearanceSurface(appr)
 	}
 }
@@ -129,14 +132,38 @@ func (s *Session) assemblySurfaceLookup(asm *compdef.AssemblyComponentDefinition
 	}
 }
 
-// appearanceSurface converts a model appearance into the renderer's PBR surface value.
+// appearanceSurface converts a model appearance's Base/Specular/Emission/Geometry
+// groups into the renderer's PBR surface value. renderer.Surface.Albedo/Emissive are
+// sRGB-encoded (mesh.frag's toLinear() decodes them at shade time), but an
+// Appearance's colors are already LINEAR (types.Color3, ACEScg working space,
+// PBI-335/349) — so this encodes rather than passing the values straight through, to
+// land on the sRGB-encoded convention every consumer (raster and Realistic mode
+// alike) expects.
 func appearanceSurface(a *material.Appearance) renderer.Surface {
-	em := a.Emissive()
+	base, spec, geo := a.Base(), a.Specular(), a.Geometry()
+	em := a.Emission()
+	emissive := material.Color3{R: em.Color.R * em.Luminance, G: em.Color.G * em.Luminance, B: em.Color.B * em.Luminance}
 	return renderer.Surface{
-		Albedo:    a.Albedo().Array(),
-		Metallic:  a.Metallic(),
-		Roughness: a.Roughness(),
-		Emissive:  [3]float32{em.R, em.G, em.B},
-		Opacity:   a.Opacity(),
+		Albedo:    encodeSRGBColor(base.Color),
+		Metallic:  base.Metalness,
+		Roughness: spec.Roughness,
+		Emissive:  encodeSRGB3(emissive),
+		Opacity:   geo.Opacity,
 	}
+}
+
+// encodeSRGBChannel is the inverse of mesh.frag's toLinear(c) = pow(c, 2.2).
+func encodeSRGBChannel(c float32) float32 {
+	if c < 0 {
+		return 0
+	}
+	return float32(math.Pow(float64(c), 1/2.2))
+}
+
+func encodeSRGB3(c material.Color3) [3]float32 {
+	return [3]float32{encodeSRGBChannel(c.R), encodeSRGBChannel(c.G), encodeSRGBChannel(c.B)}
+}
+
+func encodeSRGBColor(c material.Color3) [4]float32 {
+	return [4]float32{encodeSRGBChannel(c.R), encodeSRGBChannel(c.G), encodeSRGBChannel(c.B), 1}
 }

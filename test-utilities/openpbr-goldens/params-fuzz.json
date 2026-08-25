@@ -1,0 +1,4 @@
+{"base_color": [0.15, 0.1, 0.3], "metallic": 0.0, "roughness": 0.6, "ior": 1.5,
+ "sheen_weight": 0.8, "sheen_roughness": 0.5, "sheen_tint": [0.6, 0.5, 0.9],
+ "light_direction": [0.3, 0.5, 0.8], "light_intensity": 3.0,
+ "eye": [0, -4, 0], "tan_half_fov_y": 0.4, "width": 128, "height": 128}

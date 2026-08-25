@@ -14,6 +14,8 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
+	"oblikovati.org/head/viewport"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
@@ -23,7 +25,20 @@ import (
 const inWinW, inWinH = 800, 600
 
 // newViewportWindow opens the head window, or skips the test if the environment has no
-// display/Vulkan driver.
+// display/Vulkan driver. Also resets every head/ui package-level global that DrawChrome's
+// helpers cache across frames "for this app run" (#2142/#2156): each in-window test wants
+// to simulate a fresh app process, but a fresh *native.Window/ImGui context alone doesn't
+// clear these, so a value left behind by an EARLIER test in the same test binary (a
+// different window, a different session) silently feeds a stale decision into this one.
+// Confirmed root cause for #2142 (TestInWindowRibbonUploadsIconTextures): ribbonPanelWidth
+// is a process-lifetime cache of each ribbon panel's measured expanded width, keyed only by
+// tab+panel name — a width measured against an EARLIER test's window/command-set stayed
+// cached, so panelsThatFit's fit-vs-collapse decision for THIS test's "Create" panel (and
+// therefore whether its Extrude button — and icon texture upload — ever draws at all) used
+// a number that had nothing to do with this test's own content. dockLaidOut/icons were
+// already reset per-test before this fix; centralizing every such reset here (rather than
+// requiring each new in-window test to remember the full list) is the actual fix — a test
+// that forgets one of these is exactly how #2142 happened in the first place.
 func newViewportWindow(t *testing.T) *native.Window {
 	t.Helper()
 	win, err := native.CreateWindow(inWinW, inWinH, "obk-inwindow-test")
@@ -31,6 +46,25 @@ func newViewportWindow(t *testing.T) *native.Window {
 		t.Skipf("no window/Vulkan available: %v", err)
 	}
 	win.InitViewport()
+	dockLaidOut = false
+	icons = nil
+	ribbonPanelWidth = map[string]float32{}
+	prevEnv = app.Environment(255) // out-of-range: guarantees a mismatch against any real cur
+	prevActiveDoc = ^uint64(0)     // max uint64: guarantees a mismatch against any real doc id
+	prevFramedDoc = ^uint64(0)
+	// #2156: frameAtlasCache is a SINGLE (non-map) package-level retained atlas, keyed by a
+	// content-derived string (viewport_instancing.go's instancedSourceKey) — two different
+	// tests/windows whose scenes happen to hash to the same key (e.g. two tests that each
+	// build "one box") make cachedFrameAtlas skip rebuilding and reuse the EARLIER test's
+	// mesh/records, which were computed against a since-destroyed window's geometry-upload
+	// state. sourceMeshCache/visibleScratch are the same class of risk (retained across
+	// windows, keyed by content or *topo.Body pointer) — reset defensively alongside it.
+	frameAtlasCache = frameAtlas{}
+	sourceMeshCache = map[*topo.Body]struct {
+		key  string
+		mesh viewport.Mesh
+	}{}
+	visibleScratch = map[*topo.Body][]math.Matrix4{}
 	return win
 }
 

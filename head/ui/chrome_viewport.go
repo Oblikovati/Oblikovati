@@ -489,16 +489,21 @@ func maxF32(a, b float32) float32 {
 // with the camera's view-projection, and blits the resulting texture back over the
 // input-capturing button at (cx,cy) so the panel shows the rendered scene.
 func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene.Camera, list renderer.DrawList, bodyCount, pw, ph int, cx, cy float32) {
+	if s.VisualStyle() == renderer.Realistic {
+		if tex, samples, ok := renderRealisticViewportImage(win, s, slot, cam, pw, ph); ok {
+			drawRealisticResult(tex, samples, pw, ph, cx, cy)
+			return
+		}
+		// No backend available (headless/no GPU) or nothing visible yet — fall back to the
+		// raster pass below so the panel is never left blank.
+	}
 	// Fit the shadow frustum to the model (before adding the ground), then drop in the ground
 	// plane so object shadows have a surface to land on. With instancing, the bounds come from the
 	// instance groups' transformed range boxes (no tessellation) rather than scanning a world-body
 	// mesh, so framing a 10k-copy assembly is O(instances).
 	groups := s.VisibleInstances()
 	mn, mx, hasGeom := frameBounds(s, list, groups) // framing/shadow bounds cover the whole model
-	var ground []renderer.DrawItem
-	if hasGeom && wantGround(s) {
-		ground = []renderer.DrawItem{groundPlaneItem(mn, mx, renderer.PassSetFor(s.VisualStyle()).Faces, displayGroundColor(s))}
-	}
+	ground := groundPlaneItems(s, mn, mx, hasGeom)
 	tb := frameClock()
 	// Draw only the instances inside the view frustum (M34-F1) — off-screen placements never reach
 	// the GPU upload. The bounds above still use the full set so shadows/framing don't shift on orbit.
@@ -512,6 +517,36 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	applySkybox(win, app.RenderEnvironment(s.Environment()), mvp)
 	applyShadow(win, s, mn, mx, hasGeom)
 	uploadPointClouds(win, s) // retained GL-points buffer, skipped on orbit (#645)
+	dispatchRasterDraw(win, slot, pw, ph, mvp, eye, m, mats, recs, geomKey, s.ActiveSectionClip())
+	presentViewportTexture(win, slot, pw, ph, cx, cy)
+}
+
+// groundPlaneItems returns the ground-plane draw item for a framed, ground-wanting
+// scene, or nil otherwise — factored out of renderViewportImage to keep it short;
+// groundPlaneSession (ground_plane.go) is already a ≤6-method interface, so this adds
+// nothing to head/ui's session-coupling ratchet (audit I5).
+func groundPlaneItems(s groundPlaneSession, mn, mx [3]float32, hasGeom bool) []renderer.DrawItem {
+	if !hasGeom || !wantGround(s) {
+		return nil
+	}
+	return []renderer.DrawItem{groundPlaneItem(mn, mx, renderer.PassSetFor(s.VisualStyle()).Faces, displayGroundColor(s))}
+}
+
+// drawRealisticResult draws a successfully-rendered Realistic-mode frame (its texture
+// plus the convergence overlay) back over the invisible input-capturing button —
+// session-free (tex/samples are already-resolved values) so it never adds to head/ui's
+// session-coupling ratchet (audit I5).
+func drawRealisticResult(tex uint64, samples, pw, ph int, cx, cy float32) {
+	native.SetCursorPos(cx, cy)
+	native.Image(tex, float32(pw), float32(ph))
+	drawRealisticConvergenceIndicator(samples, cx, cy)
+}
+
+// dispatchRasterDraw submits the frame's already-built mesh/instance data to the
+// offscreen render target and records the GPU-side timing — every argument is an
+// already-resolved value (no *app.Session), so splitting this out of
+// renderViewportImage costs nothing on head/ui's session-coupling ratchet (audit I5).
+func dispatchRasterDraw(win *native.Window, slot, pw, ph int, mvp [16]float32, eye []float32, m viewport.Mesh, mats []float32, recs []int32, geomKey uint64, sectionClip []float32) {
 	tg := frameClock()
 	win.RenderViewport(slot, pw, ph, mvp[:], eye,
 		m.TriVerts, m.TriVCount, m.TriIndices,
@@ -522,11 +557,18 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 		m.TopLineVerts, m.TopLineVCount, m.TopLineIndices,
 		m.WideLineVerts, m.WideLineVCount, m.WideLineIndices,
 		m.TopWideLineVerts, m.TopWideLineVCount, m.TopWideLineIndices,
-		m.TriBiasFirst, m.TopTriSolidFirst, s.ActiveSectionClip(), // section-plane clip (M12-F04); #1489 solid-glyph split
+		m.TriBiasFirst, m.TopTriSolidFirst, sectionClip, // section-plane clip (M12-F04); #1489 solid-glyph split
 		mats, recs, geomKey) // instanced draw (ADR-0038); geomKey gates the geometry re-upload (#1422)
 	frameStats.gpuNs = time.Since(tg).Nanoseconds()
+}
+
+// presentViewportTexture blits slot's just-rendered offscreen target back over the
+// invisible input-capturing button at (cx,cy) — the tail every render path (raster or
+// Realistic) shares, factored out session-free so it never adds to head/ui's
+// session-coupling ratchet (audit I5).
+func presentViewportTexture(win *native.Window, slot, pw, ph int, cx, cy float32) {
 	if tex := win.ViewportTexture(slot); tex != 0 {
-		native.SetCursorPos(cx, cy) // draw the image back over the invisible button
+		native.SetCursorPos(cx, cy)
 		native.Image(tex, float32(pw), float32(ph))
 	}
 }

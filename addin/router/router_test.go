@@ -324,14 +324,14 @@ func TestAppearancesAndMaterialsListAndCreate(t *testing.T) {
 	if made.Source != "project" || made.Density == 0 {
 		t.Fatalf("created material = %+v, want a project copy with density", made)
 	}
-	// Edit its appearance's albedo and read it back.
+	// Edit its base color and read it back.
 	var appr wire.AppearanceInfo
 	call(t, r, s, "appearances.create", `{"baseId":"steel","name":"Shop Steel Look"}`, &appr)
-	appr.Albedo = "#ff8800ff"
+	appr.Base.Color = types.NewColor3(1, 0.53, 0)
 	var updated wire.AppearanceInfo
 	call(t, r, s, "appearances.update", mustJSON(t, appr), &updated)
-	if updated.Albedo != "#ff8800ff" {
-		t.Errorf("updated albedo = %q, want #ff8800ff", updated.Albedo)
+	if updated.Base.Color != appr.Base.Color {
+		t.Errorf("updated base color = %+v, want %+v", updated.Base.Color, appr.Base.Color)
 	}
 }
 

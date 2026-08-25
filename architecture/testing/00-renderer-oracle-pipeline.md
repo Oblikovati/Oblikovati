@@ -109,6 +109,55 @@ Making it sound (the parts that matter):
 - **Per-AOV comparison:** export Blender's depth/normal/albedo AOVs and compare each to
   our matching pass — divergence localizes to a stage (geometry vs shading vs lighting).
 
+### Tier 4 in practice: the OpenPBR golden harness (M45-F05 PBI-353)
+
+The first concrete implementation of this pipeline is
+`test-utilities/openpbr-goldens/` (Blender driver + params + committed reference
+PNGs) and `head/internal/native/openpbr_golden_test.go` (the Go-side comparison),
+generating our render via `head/internal/native`'s `RenderGoldenSphere` — the exact
+`RTScene`/`SWScene` dispatch `renderer.Realistic` mode uses — through
+`head/cmd/openpbrgoldenshot` for standalone reference regeneration. It follows the
+pipeline above with three deliberate, documented deviations from the ideal stated
+elsewhere in this doc:
+
+- **Reference shader, not Blender's OpenPBR node.** This environment's Blender
+  (4.0.2) has no native OpenPBR node yet, and neither MaterialX nor Substance is
+  available to script headlessly. `render_reference.py` uses Blender's Principled
+  BSDF v2 instead — verified (via a live headless parameter probe) to expose a
+  near-1:1 superset of OpenPBR's own parameter groups (Base Color/Metallic/
+  Roughness/IOR, Coat Weight/Roughness/IOR, Sheen Weight/Roughness/Tint for
+  OpenPBR's Fuzz, Subsurface Weight/Radius, Transmission Weight), so it is a
+  faithful perceptual reference for this tier, not an unrelated stand-in. Swap to a
+  real OpenPBR node the day Blender ships one.
+- **Comparison in display (post-tonemap sRGB PNG) space, not linear EXR.** Both
+  sides already own a real tone-mapping pipeline meant to be the thing a user
+  actually sees — Blender's Standard view transform on its side,
+  `kernel/shading/openpbr.ToDisplay` (PBI-349, ACEScg → ACES-filmic → sRGB) on
+  ours — so the golden compares those two *display-referred* outputs directly
+  rather than re-deriving a separate linear-EXR path with its own tonemap-off
+  configuration to maintain.
+- **SSIM only; FLIP deferred.** A pure-Go windowed SSIM
+  (`head/internal/native/ssim.go`) is implemented and unit-tested; FLIP's full
+  perceptual color-difference model is not, since SSIM alone has proven adequately
+  discriminating so far (see the calibration note below). A documented follow-up,
+  not a placeholder — add FLIP if a future golden shows SSIM is too permissive.
+
+**Calibration finding:** measured SSIM between our base-lobes render and the
+Blender reference for a representative base material is **~0.85**, and is
+essentially unaffected by sphere tessellation density (48×24 vs 96×48
+segments/rings scored 0.8522 vs 0.8524) — meaning that ceiling reflects genuine
+BRDF-model disagreement (our EON diffuse + single-scatter GGX vs Blender's
+multi-scatter-GGX Principled BSDF v2), not a fixable rendering defect. The
+committed test's threshold (`openpbrGoldenMinSSIM = 0.70`) sits with real margin
+below that measured baseline.
+
+**Scope:** only the base lobes (diffuse + specular dielectric/metal) are wired
+into the live GLSL path tracer today, so only that tier has a live comparison
+(`TestOpenPBRBaseLobesMatchBlenderReference`). Reference PNGs for
++coat/+fuzz/+subsurface/+transmission are already committed and a skipped test
+table names them (`TestOpenPBRExtendedLobesPendingGLSLPort`); porting those lobes
+into the live shaders is tracked separately (issue #2148).
+
 ## Determinism: software Vulkan (llvmpipe) in CI
 
 GPU output is **not bit-reproducible** across drivers/hardware — so CI renders on

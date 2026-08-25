@@ -43,7 +43,17 @@ shaders:
 		glslangValidator -V wideline.vert -o wideline.vert.spv && \
 		glslangValidator -V wideline.frag -o wideline.frag.spv && \
 		glslangValidator -V skybox.vert -o skybox.vert.spv && \
-		glslangValidator -V skybox.frag -o skybox.frag.spv
+		glslangValidator -V skybox.frag -o skybox.frag.spv && \
+		glslangValidator --target-env vulkan1.3 -V raytrace.comp -o raytrace.comp.spv && \
+		glslangValidator --target-env vulkan1.3 -V swtrace.comp -o swtrace.comp.spv && \
+		glslangValidator --target-env vulkan1.3 -V pathtrace.rgen -o pathtrace.rgen.spv && \
+		glslangValidator --target-env vulkan1.3 -V pathtrace.rmiss -o pathtrace.rmiss.spv && \
+		glslangValidator --target-env vulkan1.3 -V shadow.rmiss -o shadow.rmiss.spv && \
+		glslangValidator --target-env vulkan1.3 -V pathtrace.rchit -o pathtrace.rchit.spv && \
+		glslangValidator --target-env vulkan1.3 -V swpathtrace.comp -o swpathtrace.comp.spv && \
+		glslangValidator --target-env vulkan1.3 -V pathtrace_realistic.rgen -o pathtrace_realistic.rgen.spv && \
+		glslangValidator --target-env vulkan1.3 -V pathtrace_realistic.rchit -o pathtrace_realistic.rchit.spv && \
+		glslangValidator --target-env vulkan1.3 -V swpathtrace_realistic.comp -o swpathtrace_realistic.comp.spv
 
 # build compiles every head command (proves the cgo/Vulkan stack links).
 build: native-libs

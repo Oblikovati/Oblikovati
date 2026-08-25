@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Fixture (M46-F04): a project-library appearances.yaml exactly as PBI-350 saved it,
+# BEFORE the OpenPBR appearance consolidation — the old 5-scalar metallic-roughness
+# shape (id/name/albedo/metallic/roughness/emissive/opacity), never the 9-group
+# native one. Used by TestLoadProjectLibraryMigratesLegacyShapedAppearance to prove an
+# old file loads correctly (migrated through legacyAppearanceToSpec) instead of
+# silently producing an all-zero-value appearance.
+appearances:
+  - id: my-custom-red
+    name: My Custom Red
+    albedo: "#c02020ff"
+    metallic: 0.0
+    roughness: 0.4
+    opacity: 1.0

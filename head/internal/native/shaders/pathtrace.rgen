@@ -1,0 +1,26 @@
+#version 460
+// Ray-gen for the hardware RT pipeline (M45-F04 PBI-345, ADR-0053): a minimal
+// single-bounce, single-light direct-lighting integrator wiring the F03 GLSL BSDF
+// library (openpbr/base_lobes.glsl) to the F01 hardware Intersector's acceleration
+// structures. This is a correctness-verification harness (one ray, one output slot),
+// not the live per-frame viewport path tracer — that full progressive integrator is
+// PBI-347's job once this pipeline's mechanics are proven against the F03 CPU oracle.
+#extension GL_EXT_ray_tracing : require
+
+layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
+
+layout(set = 0, binding = 1, std430) buffer Output { vec4 radiance; } outputBuf;
+
+layout(set = 0, binding = 2) uniform CameraParams {
+    vec3 origin;
+    float tMin;
+    vec3 direction;
+    float tMax;
+} cam;
+
+layout(location = 0) rayPayloadEXT vec3 payload;
+
+void main() {
+    traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, cam.origin, cam.tMin, cam.direction, cam.tMax, 0);
+    outputBuf.radiance = vec4(payload, 1.0);
+}

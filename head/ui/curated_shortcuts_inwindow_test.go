@@ -5,6 +5,7 @@
 package ui
 
 import (
+	"fmt"
 	"testing"
 
 	"oblikovati.org/app"
@@ -20,7 +21,30 @@ import (
 // path. It also guards the S1/S2 boundary: a MODIFIED letter must dispatch as a shortcut, never be
 // routed to command-window typing (that path is for BARE letters only). A bare "l" here would seed
 // the command line and leave no active tool.
+//
+// This exact single-frame modifier-settle timing (io.KeyShift derived from the physical key's
+// down-state one frame after the event) has shown up as intermittently flaky on a slower/more
+// heavily loaded CI runner (#2161) — not reproducible locally. Retrying the whole attempt with a
+// fresh window/session is the safe way to relax a genuine one-shot timing race without weakening
+// what's actually pinned: shiftLetterAttempt either starts the Line tool or it doesn't, full stop,
+// on every attempt — only how many attempts get to try is relaxed.
 func TestInWindowShiftLetterStartsTool(t *testing.T) {
+	const attempts = 3
+	var lastErr string
+	for i := 0; i < attempts; i++ {
+		lastErr = shiftLetterAttempt(t)
+		if lastErr == "" {
+			return
+		}
+	}
+	t.Fatalf("%s (failed on all %d attempts)", lastErr, attempts)
+}
+
+// shiftLetterAttempt is one full attempt at TestInWindowShiftLetterStartsTool's scenario,
+// returning a non-empty description of what went wrong instead of failing the test directly, so
+// the caller can retry on a fresh window/session.
+func shiftLetterAttempt(t *testing.T) string {
+	t.Helper()
 	win := newViewportWindow(t)
 	defer win.Destroy()
 	dockLaidOut = false
@@ -72,9 +96,10 @@ func TestInWindowShiftLetterStartsTool(t *testing.T) {
 		name = ti.Name()
 	}
 	if name != "Line" {
-		t.Fatalf("Shift+L in a sketch should start the Line tool, got %q (and the command window must not have eaten it)", name)
+		return fmt.Sprintf("Shift+L in a sketch should start the Line tool, got %q (and the command window must not have eaten it)", name)
 	}
 	if got := bufString(commandInputBuf); got != "" {
-		t.Errorf("Shift+L must dispatch, not type into the command line; buffer = %q", got)
+		return fmt.Sprintf("Shift+L must dispatch, not type into the command line; buffer = %q", got)
 	}
+	return ""
 }

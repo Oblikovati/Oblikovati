@@ -229,6 +229,7 @@ func (r *Router) registerStandardHandlers() {
 	// here as well would make every click of a multi-click command its own Ctrl+Z.
 	r.readOnly(wire.MethodViewportClick, typed(clickViewport))
 	r.readOnly(wire.MethodViewportKey, typed(pressKey))
+	r.readOnly(wire.MethodViewportScroll, typed(scrollViewport))
 	r.readOnly(wire.MethodInteractionState, interactionState)
 	r.readOnly(wire.MethodInteractionSetNotice, interactionSetNotice)
 	r.readOnly(wire.MethodViewsList, typed(listViews))

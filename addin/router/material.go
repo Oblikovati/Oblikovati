@@ -15,8 +15,9 @@ import (
 func appearanceInfo(a *material.Appearance) wire.AppearanceInfo {
 	return wire.AppearanceInfo{
 		ID: a.ID(), DisplayName: a.DisplayName(), Source: string(a.Source()),
-		Albedo: a.Albedo().Hex(), Metallic: a.Metallic(), Roughness: a.Roughness(),
-		Emissive: a.Emissive().Hex(), Opacity: a.Opacity(),
+		Base: a.Base(), Specular: a.Specular(), Transmission: a.Transmission(),
+		Subsurface: a.Subsurface(), Coat: a.Coat(), Fuzz: a.Fuzz(), ThinFilm: a.ThinFilm(),
+		Emission: a.Emission(), Geometry: a.Geometry(),
 	}
 }
 
@@ -67,7 +68,7 @@ func getMaterial(s *app.Session, in wire.AssetRefArgs) (wire.MaterialInfo, error
 	return materialInfo(m), nil
 }
 
-func createAppearance(s *app.Session, in wire.DuplicateAssetArgs) (wire.AppearanceInfo, error) {
+func createAppearance(s *app.Session, in wire.CreateAppearanceArgs) (wire.AppearanceInfo, error) {
 	a, err := s.DuplicateAppearance(in.BaseID, in.Name)
 	if err != nil {
 		return wire.AppearanceInfo{}, err
@@ -83,18 +84,12 @@ func createMaterial(s *app.Session, in wire.DuplicateAssetArgs) (wire.MaterialIn
 	return materialInfo(m), nil
 }
 
-func updateAppearance(s *app.Session, in wire.AppearanceInfo) (wire.AppearanceInfo, error) {
-	albedo, err := material.ParseColor(in.Albedo)
-	if err != nil {
-		return wire.AppearanceInfo{}, fmt.Errorf("appearances.update: albedo: %w", err)
-	}
-	emissive, err := material.ParseColor(in.Emissive)
-	if err != nil {
-		return wire.AppearanceInfo{}, fmt.Errorf("appearances.update: emissive: %w", err)
-	}
+func updateAppearance(s *app.Session, in wire.UpdateAppearanceArgs) (wire.AppearanceInfo, error) {
 	s.UpdateAppearance(in.ID, material.AppearanceSpec{
-		DisplayName: in.DisplayName, Albedo: albedo, Metallic: in.Metallic,
-		Roughness: in.Roughness, Emissive: emissive, Opacity: in.Opacity,
+		DisplayName: in.DisplayName,
+		Base:        in.Base, Specular: in.Specular, Transmission: in.Transmission,
+		Subsurface: in.Subsurface, Coat: in.Coat, Fuzz: in.Fuzz, ThinFilm: in.ThinFilm,
+		Emission: in.Emission, Geometry: in.Geometry,
 	})
 	a, ok := s.Materials().Appearance(in.ID)
 	if !ok {

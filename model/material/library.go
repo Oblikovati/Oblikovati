@@ -23,7 +23,11 @@ type Library struct {
 
 // NewLibrary returns a library seeded with the shipped built-in catalog.
 func NewLibrary() *Library {
-	lib := &Library{appearances: map[string]*Appearance{}, materials: map[string]*Material{}, revision: 1}
+	lib := &Library{
+		appearances: map[string]*Appearance{},
+		materials:   map[string]*Material{},
+		revision:    1,
+	}
 	seedBuiltins(lib)
 	return lib
 }

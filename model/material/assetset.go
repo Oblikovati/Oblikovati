@@ -13,7 +13,10 @@ type AssetSet struct {
 
 // NewAssetSet returns an empty document asset set.
 func NewAssetSet() *AssetSet {
-	return &AssetSet{appearances: map[string]*Appearance{}, materials: map[string]*Material{}}
+	return &AssetSet{
+		appearances: map[string]*Appearance{},
+		materials:   map[string]*Material{},
+	}
 }
 
 // PutAppearance / PutMaterial embed (or replace) an asset under its id.
@@ -27,8 +30,8 @@ func (s *AssetSet) Appearance(id string) (*Appearance, bool) {
 }
 func (s *AssetSet) Material(id string) (*Material, bool) { m, ok := s.materials[id]; return m, ok }
 
-// Appearances / Materials return the embedded assets (order is unspecified; callers that
-// need determinism sort by id).
+// Appearances / Materials return the embedded assets (order is unspecified; callers
+// that need determinism sort by id).
 func (s *AssetSet) Appearances() []*Appearance {
 	out := make([]*Appearance, 0, len(s.appearances))
 	for _, a := range s.appearances {

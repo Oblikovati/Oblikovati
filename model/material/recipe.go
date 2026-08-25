@@ -3,15 +3,56 @@
 package material
 
 import (
+	"fmt"
 	"sort"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/yamlcodec"
 )
 
-// AppearanceRecipe / MaterialRecipe / AssignmentRecipe are the persisted YAML shapes of
-// the materials data — embedded in a document's recipe and stored in the project library
-// (ADR-0020/0022). Colors are "#RRGGBBAA" hex for readable, git-diffable files.
+// AppearanceRecipe is the persisted YAML shape of a full OpenPBR Surface v1.1.1
+// appearance (project library storage / a document's embedded assets, ADR-0020/0022) —
+// every group inline. Colors stay raw ACEScg floats (not hex): emission_color is
+// unbounded above, which hex cannot represent.
 type AppearanceRecipe struct {
+	ID           string              `yaml:"id"`
+	DisplayName  string              `yaml:"name"`
+	Base         OpenPBRBase         `yaml:"base"`
+	Specular     OpenPBRSpecular     `yaml:"specular"`
+	Transmission OpenPBRTransmission `yaml:"transmission"`
+	Subsurface   OpenPBRSubsurface   `yaml:"subsurface"`
+	Coat         OpenPBRCoat         `yaml:"coat"`
+	Fuzz         OpenPBRFuzz         `yaml:"fuzz"`
+	ThinFilm     OpenPBRThinFilm     `yaml:"thinFilm"`
+	Emission     OpenPBREmission     `yaml:"emission"`
+	Geometry     OpenPBRGeometry     `yaml:"geometry"`
+}
+
+// UnmarshalYAML shape-sniffs each entry (M46-F04): a pre-consolidation document or
+// project-library file has appearance entries in the OLD 5-scalar shape (a top-level
+// "albedo" key), which this transparently upgrades via legacyAppearanceToSpec so an
+// old file loads correctly instead of silently producing an all-zero-value appearance
+// (yaml.v3 would otherwise just ignore the unrecognized albedo/metallic/... keys).
+func (r *AppearanceRecipe) UnmarshalYAML(node *yamlcodec.RawNode) error {
+	var raw map[string]any
+	if err := node.Decode(&raw); err != nil {
+		return err
+	}
+	if _, legacy := raw["albedo"]; !legacy {
+		type plain AppearanceRecipe // avoid recursing into this UnmarshalYAML
+		var p plain
+		if err := node.Decode(&p); err != nil {
+			return err
+		}
+		*r = AppearanceRecipe(p)
+		return nil
+	}
+	return r.unmarshalLegacy(node)
+}
+
+// unmarshalLegacyAppearanceRecipe is the pre-M46 on-disk shape (mirrors the deleted
+// material.Appearance's old accessors).
+type unmarshalLegacyAppearanceRecipe struct {
 	ID          string  `yaml:"id"`
 	DisplayName string  `yaml:"name"`
 	Albedo      string  `yaml:"albedo"`
@@ -21,6 +62,35 @@ type AppearanceRecipe struct {
 	Opacity     float32 `yaml:"opacity"`
 }
 
+// unmarshalLegacy decodes an old-shaped entry and converts it through
+// legacyAppearanceToSpec.
+func (r *AppearanceRecipe) unmarshalLegacy(node *yamlcodec.RawNode) error {
+	var legacy unmarshalLegacyAppearanceRecipe
+	if err := node.Decode(&legacy); err != nil {
+		return err
+	}
+	albedo, err := types.ParseHex(legacy.Albedo)
+	if err != nil {
+		return fmt.Errorf("material: legacy appearance %q: albedo: %w", legacy.ID, err)
+	}
+	emissive := types.Rgba{A: 1}
+	if legacy.Emissive != "" {
+		if emissive, err = types.ParseHex(legacy.Emissive); err != nil {
+			return fmt.Errorf("material: legacy appearance %q: emissive: %w", legacy.ID, err)
+		}
+	}
+	spec := legacyAppearanceToSpec(legacyAppearanceSpec{
+		DisplayName: legacy.DisplayName, Albedo: albedo, Metallic: legacy.Metallic,
+		Roughness: legacy.Roughness, Emissive: emissive, Opacity: legacy.Opacity,
+	})
+	*r = appearanceToRecipe(NewAppearance(legacy.ID, SourceBuiltin, spec))
+	r.ID = legacy.ID
+	return nil
+}
+
+// MaterialRecipe / AssignmentRecipe are the other persisted YAML shapes of the materials
+// data — embedded in a document's recipe and stored in the project library
+// (ADR-0020/0022).
 type MaterialRecipe struct {
 	ID          string           `yaml:"id"`
 	DisplayName string           `yaml:"name"`
@@ -69,14 +139,10 @@ func MarshalRecipe(set *AssetSet, assign *AssignmentStore) RecipeData {
 }
 
 // ApplyRecipe restores embedded assets (as document-source) into set and assignments into
-// assign. A malformed color aborts the load (no silent black surfaces).
+// assign.
 func ApplyRecipe(data RecipeData, set *AssetSet, assign *AssignmentStore) error {
 	for _, ar := range data.Appearances {
-		a, err := recipeToAppearance(ar, SourceDocument)
-		if err != nil {
-			return err
-		}
-		set.PutAppearance(a)
+		set.PutAppearance(recipeToAppearance(ar, SourceDocument))
 	}
 	for _, mr := range data.Materials {
 		set.PutMaterial(recipeToMaterial(mr, SourceDocument))
@@ -88,28 +154,22 @@ func ApplyRecipe(data RecipeData, set *AssetSet, assign *AssignmentStore) error 
 }
 
 func appearanceToRecipe(a *Appearance) AppearanceRecipe {
+	s := a.spec
 	return AppearanceRecipe{
-		ID: a.id, DisplayName: a.spec.DisplayName,
-		Albedo: a.spec.Albedo.Hex(), Metallic: a.spec.Metallic, Roughness: a.spec.Roughness,
-		Emissive: a.spec.Emissive.Hex(), Opacity: a.spec.Opacity,
+		ID: a.id, DisplayName: s.DisplayName,
+		Base: s.Base, Specular: s.Specular, Transmission: s.Transmission,
+		Subsurface: s.Subsurface, Coat: s.Coat, Fuzz: s.Fuzz, ThinFilm: s.ThinFilm,
+		Emission: s.Emission, Geometry: s.Geometry,
 	}
 }
 
-func recipeToAppearance(r AppearanceRecipe, source Source) (*Appearance, error) {
-	albedo, err := types.ParseHex(r.Albedo)
-	if err != nil {
-		return nil, err
-	}
-	emissive := types.Rgba{A: 1}
-	if r.Emissive != "" {
-		if emissive, err = types.ParseHex(r.Emissive); err != nil {
-			return nil, err
-		}
-	}
+func recipeToAppearance(r AppearanceRecipe, source Source) *Appearance {
 	return NewAppearance(r.ID, source, AppearanceSpec{
-		DisplayName: r.DisplayName, Albedo: albedo, Metallic: r.Metallic,
-		Roughness: r.Roughness, Emissive: emissive, Opacity: r.Opacity,
-	}), nil
+		DisplayName: r.DisplayName,
+		Base:        r.Base, Specular: r.Specular, Transmission: r.Transmission,
+		Subsurface: r.Subsurface, Coat: r.Coat, Fuzz: r.Fuzz, ThinFilm: r.ThinFilm,
+		Emission: r.Emission, Geometry: r.Geometry,
+	})
 }
 
 func materialToRecipe(m *Material) MaterialRecipe {

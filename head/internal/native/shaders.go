@@ -39,3 +39,64 @@ var skyboxVertSPV []byte
 
 //go:embed shaders/skybox.frag.spv
 var skyboxFragSPV []byte
+
+// Hardware ray-query Intersector compute shader (M45-F01 PBI-333, ADR-0053). --target-env
+// vulkan1.3 (not the others' implicit vulkan1.0) because GL_EXT_ray_query needs SPIR-V 1.4+.
+//
+//go:embed shaders/raytrace.comp.spv
+var raytraceCompSPV []byte
+
+// Software BVH-traversal compute shader (M45-F01 PBI-334, ADR-0053): no ray-tracing
+// extensions, so no --target-env bump is strictly required, but built the same way as
+// raytrace.comp.spv for consistency (and SPIR-V 1.4+'s Shader Storage Buffer improvements).
+//
+//go:embed shaders/swtrace.comp.spv
+var swtraceCompSPV []byte
+
+// Full hardware RT pipeline: ray-gen/miss/shadow-miss/closest-hit (M45-F04 PBI-345,
+// ADR-0053) — a single-bounce, single-light direct-lighting harness wiring the F03
+// OpenPBR GLSL library to the F01 hardware backend's acceleration structures.
+
+//go:embed shaders/pathtrace.rgen.spv
+var pathtraceRgenSPV []byte
+
+//go:embed shaders/pathtrace.rmiss.spv
+var pathtraceRmissSPV []byte
+
+//go:embed shaders/shadow.rmiss.spv
+var shadowRmissSPV []byte
+
+//go:embed shaders/pathtrace.rchit.spv
+var pathtraceRchitSPV []byte
+
+// Software single-bounce path-tracing harness (M45-F04 PBI-346): the same shading math
+// as pathtrace.rchit, but as one compute shader over the software BVH (PBI-334)
+// instead of a full RT pipeline.
+//
+//go:embed shaders/swpathtrace.comp.spv
+var swpathtraceCompSPV []byte
+
+// Live per-pixel Realistic-viewport pipelines (M45-F05 PBI-350): a pinhole-camera
+// ray-gen (hardware) and an equivalent per-pixel compute dispatch (software), both
+// shading one directional light per dispatch — the actual pass Realistic mode now
+// renders, distinct from the single-ray PBI-345/346 CPU-oracle test harnesses above.
+
+//go:embed shaders/pathtrace_realistic.rgen.spv
+var pathtraceRealisticRgenSPV []byte
+
+//go:embed shaders/pathtrace_realistic.rchit.spv
+var pathtraceRealisticRchitSPV []byte
+
+//go:embed shaders/swpathtrace_realistic.comp.spv
+var swpathtraceRealisticCompSPV []byte
+
+// RealisticPipelineShaders returns the embedded SPIR-V for the live per-pixel hardware
+// Realistic-viewport pipeline, for RTScene.BuildRealisticPipeline — head/ui (a
+// different package) has no other access to these embedded bytes.
+func RealisticPipelineShaders() (rgen, miss, shadowMiss, chit []byte) {
+	return pathtraceRealisticRgenSPV, pathtraceRmissSPV, shadowRmissSPV, pathtraceRealisticRchitSPV
+}
+
+// RealisticPathtraceShader returns the embedded SPIR-V for the live per-pixel software
+// Realistic-viewport compute pipeline, for SWScene.BuildRealisticPathtracePipeline.
+func RealisticPathtraceShader() []byte { return swpathtraceRealisticCompSPV }

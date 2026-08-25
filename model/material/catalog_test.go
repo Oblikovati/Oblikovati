@@ -69,18 +69,20 @@ func TestEveryMaterialHasReliableProperties(t *testing.T) {
 	}
 }
 
-// TestAppearanceValuesInRange keeps PBR inputs physical: metallic/roughness/opacity in
-// [0,1], and opacity strictly positive so no built-in renders fully invisible.
+// TestAppearanceValuesInRange keeps PBR inputs physical: base_metalness/
+// specular_roughness/geometry_opacity in [0,1], and opacity strictly positive so no
+// built-in renders fully invisible.
 func TestAppearanceValuesInRange(t *testing.T) {
 	for _, a := range NewLibrary().Appearances() {
-		if a.Metallic() < 0 || a.Metallic() > 1 {
-			t.Errorf("appearance %q: metallic = %v, want [0,1]", a.ID(), a.Metallic())
+		metallic, roughness, opacity := a.Base().Metalness, a.Specular().Roughness, a.Geometry().Opacity
+		if metallic < 0 || metallic > 1 {
+			t.Errorf("appearance %q: base_metalness = %v, want [0,1]", a.ID(), metallic)
 		}
-		if a.Roughness() < 0 || a.Roughness() > 1 {
-			t.Errorf("appearance %q: roughness = %v, want [0,1]", a.ID(), a.Roughness())
+		if roughness < 0 || roughness > 1 {
+			t.Errorf("appearance %q: specular_roughness = %v, want [0,1]", a.ID(), roughness)
 		}
-		if a.Opacity() <= 0 || a.Opacity() > 1 {
-			t.Errorf("appearance %q: opacity = %v, want (0,1]", a.ID(), a.Opacity())
+		if opacity <= 0 || opacity > 1 {
+			t.Errorf("appearance %q: geometry_opacity = %v, want (0,1]", a.ID(), opacity)
 		}
 	}
 }

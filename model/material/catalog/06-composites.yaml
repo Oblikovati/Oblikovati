@@ -28,106 +28,953 @@
 #        expansionCoeff & alpha 1/K | specificHeat J/(kg*K) | resistivity ohm*m | nu, eps_r -
 
 appearances:
-  - {id: cfrp,        name: Carbon Fiber (Gloss),  albedo: "#1c1e22ff", metallic: 0.0, roughness: 0.25, opacity: 1.0}
-  - {id: cfrp-nylon,  name: Carbon-Filled Nylon,   albedo: "#26282bff", metallic: 0.0, roughness: 0.55, opacity: 1.0}
-  - {id: fiberglass,  name: Fiberglass,            albedo: "#d8d9d2ff", metallic: 0.0, roughness: 0.40, opacity: 1.0}
-  - {id: g10,         name: G10 / FR4,             albedo: "#b6bd7aff", metallic: 0.0, roughness: 0.40, opacity: 1.0}
-  - {id: aramid,      name: Aramid (Kevlar),       albedo: "#c9a227ff", metallic: 0.0, roughness: 0.45, opacity: 1.0}
-  - {id: smc,         name: SMC (Molded),          albedo: "#d5d3ccff", metallic: 0.0, roughness: 0.45, opacity: 1.0}
-  - {id: plywood,     name: Plywood,               albedo: "#d2b483ff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
-  - {id: osb,         name: OSB,                   albedo: "#c9a86aff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
-  - {id: mdf,         name: MDF,                   albedo: "#b8956aff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
-
+    - id: cfrp
+      name: Carbon Fiber (Gloss)
+      base:
+        weight: 1
+        color:
+            r: 0.0077510276
+            g: 0.009021492
+            b: 0.011881336
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.25
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: cfrp-nylon
+      name: Carbon-Filled Nylon
+      base:
+        weight: 1
+        color:
+            r: 0.015175239
+            g: 0.016988054
+            b: 0.01991784
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.55
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: fiberglass
+      name: Fiberglass
+      base:
+        weight: 1
+        color:
+            r: 0.69408053
+            g: 0.7011695
+            b: 0.6523701
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.4
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: g10
+      name: G10 / FR4
+      base:
+        weight: 1
+        color:
+            r: 0.4761773
+            g: 0.5174014
+            b: 0.19751643
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.4
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: aramid
+      name: Aramid (Kevlar)
+      base:
+        weight: 1
+        color:
+            r: 0.59243804
+            g: 0.36859095
+            b: 0.016067702
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.45
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: smc
+      name: SMC (Molded)
+      base:
+        weight: 1
+        color:
+            r: 0.6730491
+            g: 0.65922403
+            b: 0.6120656
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.45
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: plywood
+      name: Plywood
+      base:
+        weight: 1
+        color:
+            r: 0.6523701
+            g: 0.46474117
+            b: 0.23099816
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.65
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: osb
+      name: OSB
+      base:
+        weight: 1
+        color:
+            r: 0.59243804
+            g: 0.39929333
+            b: 0.14497213
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: mdf
+      name: MDF
+      base:
+        weight: 1
+        color:
+            r: 0.48776522
+            g: 0.30663478
+            b: 0.14497213
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
 materials:
-  - id: cfrp-unidirectional
-    name: Carbon Fiber/Epoxy (UD, 0deg)
-    density: 1.60
-    appearance: cfrp
-    isotropy: transversely-isotropic
-    # brittle laminate: scalar yield ~ tensile (no yield plateau)
-    mechanical: {youngsModulus: 135, poissonsRatio: 0.30, yieldStrength: 1200, ultimateTensileStrength: 1500}
-    thermal:    {conductivity: 5.0, expansionCoeff: 2.0e-6, specificHeat: 900}
-    electrical: {resistivity: 1.5e-5, relativePermittivity: 1}
-    orthotropic: {e1: 135, e2: 10, e3: 10, g12: 5.0, g23: 3.57, g13: 5.0, nu12: 0.30, nu23: 0.40, nu13: 0.30, alpha1: -0.5e-6, alpha2: 28e-6, alpha3: 28e-6}
-  - id: cfrp-woven
-    name: Carbon Fiber/Epoxy (Woven, Quasi-Iso)
-    density: 1.55
-    appearance: cfrp
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 70, poissonsRatio: 0.30, yieldStrength: 500, ultimateTensileStrength: 600}
-    thermal:    {conductivity: 5.0, expansionCoeff: 3.0e-6, specificHeat: 900}
-    electrical: {resistivity: 1.5e-5, relativePermittivity: 1}
-    orthotropic: {e1: 70, e2: 70, e3: 8, g12: 5.0, g23: 3.5, g13: 3.5, nu12: 0.05, nu23: 0.30, nu13: 0.30, alpha1: 2e-6, alpha2: 2e-6, alpha3: 30e-6}
-  - id: cfrp-nylon
-    name: Carbon-Filled Nylon (Printed)
-    density: 1.30
-    appearance: cfrp-nylon
-    mechanical: {youngsModulus: 8.0, poissonsRatio: 0.38, yieldStrength: 70, ultimateTensileStrength: 90}
-    thermal:    {conductivity: 0.30, expansionCoeff: 40e-6, specificHeat: 1400}
-    electrical: {resistivity: 1e6, relativePermittivity: 3.0}
-  - id: gfrp-eglass
-    name: E-Glass/Epoxy (UD, 0deg)
-    density: 2.00
-    appearance: fiberglass
-    isotropy: transversely-isotropic
-    mechanical: {youngsModulus: 45, poissonsRatio: 0.28, yieldStrength: 900, ultimateTensileStrength: 1000}
-    thermal:    {conductivity: 0.35, expansionCoeff: 7.0e-6, specificHeat: 1000}
-    electrical: {resistivity: 1e13, relativePermittivity: 4.5}
-    orthotropic: {e1: 45, e2: 12, e3: 12, g12: 5.0, g23: 4.29, g13: 5.0, nu12: 0.28, nu23: 0.40, nu13: 0.28, alpha1: 7e-6, alpha2: 25e-6, alpha3: 25e-6}
-  - id: fiberglass-csm
-    name: Fiberglass (Chopped Strand/Polyester)
-    density: 1.50
-    appearance: fiberglass
-    mechanical: {youngsModulus: 7.0, poissonsRatio: 0.30, yieldStrength: 100, ultimateTensileStrength: 120}
-    thermal:    {conductivity: 0.30, expansionCoeff: 25e-6, specificHeat: 1000}
-    electrical: {resistivity: 1e13, relativePermittivity: 4.5}
-  - id: g10-fr4
-    name: G10 / FR4 (Glass/Epoxy Laminate)
-    density: 1.85
-    appearance: g10
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 24, poissonsRatio: 0.18, yieldStrength: 300, ultimateTensileStrength: 340}
-    thermal:    {conductivity: 0.30, expansionCoeff: 14e-6, specificHeat: 1100}
-    electrical: {resistivity: 1e12, relativePermittivity: 4.7}
-    orthotropic: {e1: 24, e2: 24, e3: 18, g12: 7.0, g23: 3.5, g13: 3.5, nu12: 0.12, nu23: 0.18, nu13: 0.18, alpha1: 14e-6, alpha2: 14e-6, alpha3: 70e-6}
-  - id: aramid-epoxy
-    name: Aramid (Kevlar)/Epoxy (UD, 0deg)
-    density: 1.38
-    appearance: aramid
-    isotropy: transversely-isotropic
-    mechanical: {youngsModulus: 76, poissonsRatio: 0.34, yieldStrength: 1200, ultimateTensileStrength: 1400}
-    thermal:    {conductivity: 0.50, expansionCoeff: 2.0e-6, specificHeat: 1100}
-    electrical: {resistivity: 1e14, relativePermittivity: 4.0}
-    orthotropic: {e1: 76, e2: 5.5, e3: 5.5, g12: 2.3, g23: 1.96, g13: 2.3, nu12: 0.34, nu23: 0.40, nu13: 0.34, alpha1: -2e-6, alpha2: 60e-6, alpha3: 60e-6}
-  - id: smc
-    name: SMC (Glass/Polyester, Molded)
-    density: 1.90
-    appearance: smc
-    mechanical: {youngsModulus: 11, poissonsRatio: 0.30, yieldStrength: 80, ultimateTensileStrength: 82}
-    thermal:    {conductivity: 0.20, expansionCoeff: 20e-6, specificHeat: 1200}
-    electrical: {resistivity: 1e13, relativePermittivity: 4.5}
-  - id: plywood-structural
-    name: Plywood (Softwood, Structural)
-    density: 0.55
-    appearance: plywood
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 7.0, poissonsRatio: 0.30, yieldStrength: 30, ultimateTensileStrength: 35}
-    thermal:    {conductivity: 0.13, expansionCoeff: 6.0e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e14, relativePermittivity: 3.0}
-    orthotropic: {e1: 7.0, e2: 4.5, e3: 0.5, g12: 0.6, g23: 0.5, g13: 0.5, nu12: 0.20, nu23: 0.30, nu13: 0.30, alpha1: 6e-6, alpha2: 6e-6, alpha3: 30e-6}
-  - id: osb
-    name: OSB (Oriented Strand Board)
-    density: 0.65
-    appearance: osb
-    isotropy: orthotropic
-    mechanical: {youngsModulus: 5.5, poissonsRatio: 0.30, yieldStrength: 20, ultimateTensileStrength: 28}
-    thermal:    {conductivity: 0.13, expansionCoeff: 6.0e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e13, relativePermittivity: 3.0}
-    orthotropic: {e1: 5.5, e2: 3.0, e3: 0.4, g12: 1.0, g23: 0.5, g13: 0.5, nu12: 0.20, nu23: 0.30, nu13: 0.30, alpha1: 6e-6, alpha2: 6e-6, alpha3: 30e-6}
-  - id: mdf
-    name: MDF (Medium-Density Fiberboard)
-    density: 0.75
-    appearance: mdf
-    mechanical: {youngsModulus: 3.6, poissonsRatio: 0.25, yieldStrength: 18, ultimateTensileStrength: 30}
-    thermal:    {conductivity: 0.10, expansionCoeff: 6.0e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e12, relativePermittivity: 3.0}
+    - id: cfrp-unidirectional
+      name: Carbon Fiber/Epoxy (UD, 0deg)
+      density: 1.6
+      mechanical:
+        youngsModulus: 135
+        poissonsRatio: 0.3
+        yieldStrength: 1200
+        ultimateTensileStrength: 1500
+      thermal:
+        conductivity: 5
+        expansionCoeff: 2e-06
+        specificHeat: 900
+      electrical:
+        resistivity: 1.5e-05
+        relativePermittivity: 1
+      isotropy: transversely-isotropic
+      orthotropic:
+        e1: 135
+        e2: 10
+        e3: 10
+        g12: 5
+        g23: 3.57
+        g13: 5
+        nu12: 0.3
+        nu23: 0.4
+        nu13: 0.3
+        alpha1: -5e-07
+        alpha2: 2.8e-05
+        alpha3: 2.8e-05
+      appearance: cfrp
+    - id: cfrp-woven
+      name: Carbon Fiber/Epoxy (Woven, Quasi-Iso)
+      density: 1.55
+      mechanical:
+        youngsModulus: 70
+        poissonsRatio: 0.3
+        yieldStrength: 500
+        ultimateTensileStrength: 600
+      thermal:
+        conductivity: 5
+        expansionCoeff: 3e-06
+        specificHeat: 900
+      electrical:
+        resistivity: 1.5e-05
+        relativePermittivity: 1
+      isotropy: orthotropic
+      orthotropic:
+        e1: 70
+        e2: 70
+        e3: 8
+        g12: 5
+        g23: 3.5
+        g13: 3.5
+        nu12: 0.05
+        nu23: 0.3
+        nu13: 0.3
+        alpha1: 2e-06
+        alpha2: 2e-06
+        alpha3: 3e-05
+      appearance: cfrp
+    - id: cfrp-nylon
+      name: Carbon-Filled Nylon (Printed)
+      density: 1.3
+      mechanical:
+        youngsModulus: 8
+        poissonsRatio: 0.38
+        yieldStrength: 70
+        ultimateTensileStrength: 90
+      thermal:
+        conductivity: 0.3
+        expansionCoeff: 4e-05
+        specificHeat: 1400
+      electrical:
+        resistivity: 1e+06
+        relativePermittivity: 3
+      appearance: cfrp-nylon
+    - id: gfrp-eglass
+      name: E-Glass/Epoxy (UD, 0deg)
+      density: 2
+      mechanical:
+        youngsModulus: 45
+        poissonsRatio: 0.28
+        yieldStrength: 900
+        ultimateTensileStrength: 1000
+      thermal:
+        conductivity: 0.35
+        expansionCoeff: 7e-06
+        specificHeat: 1000
+      electrical:
+        resistivity: 1e+13
+        relativePermittivity: 4.5
+      isotropy: transversely-isotropic
+      orthotropic:
+        e1: 45
+        e2: 12
+        e3: 12
+        g12: 5
+        g23: 4.29
+        g13: 5
+        nu12: 0.28
+        nu23: 0.4
+        nu13: 0.28
+        alpha1: 7e-06
+        alpha2: 2.5e-05
+        alpha3: 2.5e-05
+      appearance: fiberglass
+    - id: fiberglass-csm
+      name: Fiberglass (Chopped Strand/Polyester)
+      density: 1.5
+      mechanical:
+        youngsModulus: 7
+        poissonsRatio: 0.3
+        yieldStrength: 100
+        ultimateTensileStrength: 120
+      thermal:
+        conductivity: 0.3
+        expansionCoeff: 2.5e-05
+        specificHeat: 1000
+      electrical:
+        resistivity: 1e+13
+        relativePermittivity: 4.5
+      appearance: fiberglass
+    - id: g10-fr4
+      name: G10 / FR4 (Glass/Epoxy Laminate)
+      density: 1.85
+      mechanical:
+        youngsModulus: 24
+        poissonsRatio: 0.18
+        yieldStrength: 300
+        ultimateTensileStrength: 340
+      thermal:
+        conductivity: 0.3
+        expansionCoeff: 1.4e-05
+        specificHeat: 1100
+      electrical:
+        resistivity: 1e+12
+        relativePermittivity: 4.7
+      isotropy: orthotropic
+      orthotropic:
+        e1: 24
+        e2: 24
+        e3: 18
+        g12: 7
+        g23: 3.5
+        g13: 3.5
+        nu12: 0.12
+        nu23: 0.18
+        nu13: 0.18
+        alpha1: 1.4e-05
+        alpha2: 1.4e-05
+        alpha3: 7e-05
+      appearance: g10
+    - id: aramid-epoxy
+      name: Aramid (Kevlar)/Epoxy (UD, 0deg)
+      density: 1.38
+      mechanical:
+        youngsModulus: 76
+        poissonsRatio: 0.34
+        yieldStrength: 1200
+        ultimateTensileStrength: 1400
+      thermal:
+        conductivity: 0.5
+        expansionCoeff: 2e-06
+        specificHeat: 1100
+      electrical:
+        resistivity: 1e+14
+        relativePermittivity: 4
+      isotropy: transversely-isotropic
+      orthotropic:
+        e1: 76
+        e2: 5.5
+        e3: 5.5
+        g12: 2.3
+        g23: 1.96
+        g13: 2.3
+        nu12: 0.34
+        nu23: 0.4
+        nu13: 0.34
+        alpha1: -2e-06
+        alpha2: 6e-05
+        alpha3: 6e-05
+      appearance: aramid
+    - id: smc
+      name: SMC (Glass/Polyester, Molded)
+      density: 1.9
+      mechanical:
+        youngsModulus: 11
+        poissonsRatio: 0.3
+        yieldStrength: 80
+        ultimateTensileStrength: 82
+      thermal:
+        conductivity: 0.2
+        expansionCoeff: 2e-05
+        specificHeat: 1200
+      electrical:
+        resistivity: 1e+13
+        relativePermittivity: 4.5
+      appearance: smc
+    - id: plywood-structural
+      name: Plywood (Softwood, Structural)
+      density: 0.55
+      mechanical:
+        youngsModulus: 7
+        poissonsRatio: 0.3
+        yieldStrength: 30
+        ultimateTensileStrength: 35
+      thermal:
+        conductivity: 0.13
+        expansionCoeff: 6e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+14
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 7
+        e2: 4.5
+        e3: 0.5
+        g12: 0.6
+        g23: 0.5
+        g13: 0.5
+        nu12: 0.2
+        nu23: 0.3
+        nu13: 0.3
+        alpha1: 6e-06
+        alpha2: 6e-06
+        alpha3: 3e-05
+      appearance: plywood
+    - id: osb
+      name: OSB (Oriented Strand Board)
+      density: 0.65
+      mechanical:
+        youngsModulus: 5.5
+        poissonsRatio: 0.3
+        yieldStrength: 20
+        ultimateTensileStrength: 28
+      thermal:
+        conductivity: 0.13
+        expansionCoeff: 6e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+13
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 5.5
+        e2: 3
+        e3: 0.4
+        g12: 1
+        g23: 0.5
+        g13: 0.5
+        nu12: 0.2
+        nu23: 0.3
+        nu13: 0.3
+        alpha1: 6e-06
+        alpha2: 6e-06
+        alpha3: 3e-05
+      appearance: osb
+    - id: mdf
+      name: MDF (Medium-Density Fiberboard)
+      density: 0.75
+      mechanical:
+        youngsModulus: 3.6
+        poissonsRatio: 0.25
+        yieldStrength: 18
+        ultimateTensileStrength: 30
+      thermal:
+        conductivity: 0.1
+        expansionCoeff: 6e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+12
+        relativePermittivity: 3
+      appearance: mdf

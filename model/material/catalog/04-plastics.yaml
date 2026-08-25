@@ -20,190 +20,2097 @@
 #        expansionCoeff 1/K | specificHeat J/(kg*K) | resistivity ohm*m | relativePermittivity -
 
 appearances:
-  - {id: abs-black,       name: ABS (Black),       albedo: "#1a1a1aff", metallic: 0.0, roughness: 0.45, opacity: 1.0}
-  - {id: abs-white,       name: ABS (White),       albedo: "#e8e8e8ff", metallic: 0.0, roughness: 0.45, opacity: 1.0}
-  - {id: pla,             name: PLA,               albedo: "#ececdfff", metallic: 0.0, roughness: 0.40, opacity: 1.0}
-  - {id: petg,            name: PETG,              albedo: "#cfe0e4ff", metallic: 0.0, roughness: 0.18, opacity: 0.85}
-  - {id: pet,             name: PET,               albedo: "#dfe7e6ff", metallic: 0.0, roughness: 0.20, opacity: 0.90}
-  - {id: polycarbonate,   name: Polycarbonate,     albedo: "#d7e0e2ff", metallic: 0.0, roughness: 0.12, opacity: 0.80}
-  - {id: acrylic,         name: Acrylic (PMMA),    albedo: "#e6efefff", metallic: 0.0, roughness: 0.08, opacity: 0.75}
-  - {id: nylon,           name: Nylon,             albedo: "#ece9e0ff", metallic: 0.0, roughness: 0.45, opacity: 1.0}
-  - {id: acetal,          name: Acetal (POM),      albedo: "#edeeeeff", metallic: 0.0, roughness: 0.35, opacity: 1.0}
-  - {id: polypropylene,   name: Polypropylene,     albedo: "#e8eae6ff", metallic: 0.0, roughness: 0.45, opacity: 1.0}
-  - {id: hdpe,            name: HDPE,              albedo: "#e9ebe8ff", metallic: 0.0, roughness: 0.50, opacity: 1.0}
-  - {id: ldpe,            name: LDPE,              albedo: "#eef0eeff", metallic: 0.0, roughness: 0.55, opacity: 0.95}
-  - {id: pvc,             name: PVC (Rigid),       albedo: "#d9dcd7ff", metallic: 0.0, roughness: 0.40, opacity: 1.0}
-  - {id: ptfe,            name: PTFE,              albedo: "#f2f3f1ff", metallic: 0.0, roughness: 0.40, opacity: 1.0}
-  - {id: peek,            name: PEEK,              albedo: "#c8a86aff", metallic: 0.0, roughness: 0.40, opacity: 1.0}
-  - {id: ultem,           name: PEI (Ultem),       albedo: "#c79a4eff", metallic: 0.0, roughness: 0.30, opacity: 0.90}
-  - {id: polystyrene,     name: Polystyrene,       albedo: "#e8edf0ff", metallic: 0.0, roughness: 0.12, opacity: 0.80}
-  - {id: hips,            name: HIPS,              albedo: "#ededebff", metallic: 0.0, roughness: 0.45, opacity: 1.0}
-  - {id: pvdf,            name: PVDF,              albedo: "#f0f1efff", metallic: 0.0, roughness: 0.35, opacity: 1.0}
-  - {id: epoxy-resin,     name: Epoxy Resin,       albedo: "#d9c9a8ff", metallic: 0.0, roughness: 0.25, opacity: 0.90}
-  - {id: polyester-resin, name: Polyester Resin,   albedo: "#e3ddc9ff", metallic: 0.0, roughness: 0.30, opacity: 0.90}
-  - {id: polyurethane,    name: Polyurethane,      albedo: "#e6dccbff", metallic: 0.0, roughness: 0.40, opacity: 1.0}
-  - {id: silicone,        name: Silicone Rubber,   albedo: "#e8e2dcff", metallic: 0.0, roughness: 0.55, opacity: 0.95}
-
+    - id: abs-black
+      name: ABS (Black)
+      base:
+        weight: 1
+        color:
+            r: 0.0065849577
+            g: 0.0065849577
+            b: 0.0065849577
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.45
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: abs-white
+      name: ABS (White)
+      base:
+        weight: 1
+        color:
+            r: 0.8122415
+            g: 0.8122415
+            b: 0.8122415
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.45
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: pla
+      name: PLA
+      base:
+        weight: 1
+        color:
+            r: 0.8433697
+            g: 0.8433697
+            b: 0.7445302
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.4
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: petg
+      name: PETG
+      base:
+        weight: 1
+        color:
+            r: 0.63204265
+            g: 0.75189507
+            b: 0.7817507
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.18
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 0.85
+        thinWalled: false
+    - id: pet
+      name: PET
+      base:
+        weight: 1
+        color:
+            r: 0.7445302
+            g: 0.8045591
+            b: 0.79691654
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.2
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 0.9
+        thinWalled: false
+    - id: polycarbonate
+      name: Polycarbonate
+      base:
+        weight: 1
+        color:
+            r: 0.68703085
+            g: 0.75189507
+            b: 0.7667436
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.12
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 0.8
+        thinWalled: false
+    - id: acrylic
+      name: Acrylic (PMMA)
+      base:
+        weight: 1
+        color:
+            r: 0.79691654
+            g: 0.8671355
+            b: 0.8671355
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.08
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 0.75
+        thinWalled: false
+    - id: nylon
+      name: Nylon
+      base:
+        weight: 1
+        color:
+            r: 0.8433697
+            g: 0.8199637
+            b: 0.75189507
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.45
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: acetal
+      name: Acetal (POM)
+      base:
+        weight: 1
+        color:
+            r: 0.85125166
+            g: 0.8591736
+            b: 0.8591736
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.35
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: polypropylene
+      name: Polypropylene
+      base:
+        weight: 1
+        color:
+            r: 0.8122415
+            g: 0.8277258
+            b: 0.79691654
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.45
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: hdpe
+      name: HDPE
+      base:
+        weight: 1
+        color:
+            r: 0.8199637
+            g: 0.8355278
+            b: 0.8122415
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.5
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: ldpe
+      name: LDPE
+      base:
+        weight: 1
+        color:
+            r: 0.8591736
+            g: 0.87513757
+            b: 0.8591736
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.55
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 0.95
+        thinWalled: false
+    - id: pvc
+      name: PVC (Rigid)
+      base:
+        weight: 1
+        color:
+            r: 0.7011695
+            g: 0.72267246
+            b: 0.68703085
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.4
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: ptfe
+      name: PTFE
+      base:
+        weight: 1
+        color:
+            r: 0.89126205
+            g: 0.8993845
+            b: 0.8831797
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.4
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: peek
+      name: PEEK
+      base:
+        weight: 1
+        color:
+            r: 0.585973
+            g: 0.39929333
+            b: 0.14497213
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.4
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: ultem
+      name: PEI (Ultem)
+      base:
+        weight: 1
+        color:
+            r: 0.57954663
+            g: 0.32972905
+            b: 0.07382777
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.3
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 0.9
+        thinWalled: false
+    - id: polystyrene
+      name: Polystyrene
+      base:
+        weight: 1
+        color:
+            r: 0.8122415
+            g: 0.85125166
+            b: 0.87513757
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.12
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 0.8
+        thinWalled: false
+    - id: hips
+      name: HIPS
+      base:
+        weight: 1
+        color:
+            r: 0.85125166
+            g: 0.85125166
+            b: 0.8355278
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.45
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: pvdf
+      name: PVDF
+      base:
+        weight: 1
+        color:
+            r: 0.87513757
+            g: 0.8831797
+            b: 0.8671355
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.35
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: epoxy-resin
+      name: Epoxy Resin
+      base:
+        weight: 1
+        color:
+            r: 0.7011695
+            g: 0.59243804
+            b: 0.39929333
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.25
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 0.9
+        thinWalled: false
+    - id: polyester-resin
+      name: Polyester Resin
+      base:
+        weight: 1
+        color:
+            r: 0.7742273
+            g: 0.7299189
+            b: 0.59243804
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.3
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 0.9
+        thinWalled: false
+    - id: polyurethane
+      name: Polyurethane
+      base:
+        weight: 1
+        color:
+            r: 0.79691654
+            g: 0.72267246
+            b: 0.6054843
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.4
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: silicone
+      name: Silicone Rubber
+      base:
+        weight: 1
+        color:
+            r: 0.8122415
+            g: 0.7667436
+            b: 0.72267246
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.55
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 0.95
+        thinWalled: false
 materials:
-  - id: abs-plastic
-    name: ABS
-    density: 1.06
-    appearance: abs-black
-    mechanical: {youngsModulus: 2.1, poissonsRatio: 0.35, yieldStrength: 40, ultimateTensileStrength: 44}
-    thermal:    {conductivity: 0.17, expansionCoeff: 90e-6, specificHeat: 1300}
-    electrical: {resistivity: 1e15, relativePermittivity: 2.9}
-  - id: pla
-    name: PLA
-    density: 1.24
-    appearance: pla
-    mechanical: {youngsModulus: 3.5, poissonsRatio: 0.36, yieldStrength: 50, ultimateTensileStrength: 50}
-    thermal:    {conductivity: 0.13, expansionCoeff: 68e-6, specificHeat: 1800}
-    electrical: {resistivity: 1e14, relativePermittivity: 3.0}
-  - id: petg
-    name: PETG
-    density: 1.27
-    appearance: petg
-    mechanical: {youngsModulus: 2.1, poissonsRatio: 0.38, yieldStrength: 50, ultimateTensileStrength: 50}
-    thermal:    {conductivity: 0.20, expansionCoeff: 68e-6, specificHeat: 1200}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
-  - id: pet
-    name: PET
-    density: 1.38
-    appearance: pet
-    mechanical: {youngsModulus: 2.8, poissonsRatio: 0.40, yieldStrength: 55, ultimateTensileStrength: 75}
-    thermal:    {conductivity: 0.24, expansionCoeff: 70e-6, specificHeat: 1200}
-    electrical: {resistivity: 1e16, relativePermittivity: 3.4}
-  - id: polycarbonate
-    name: Polycarbonate (PC)
-    density: 1.20
-    appearance: polycarbonate
-    mechanical: {youngsModulus: 2.3, poissonsRatio: 0.37, yieldStrength: 62, ultimateTensileStrength: 66}
-    thermal:    {conductivity: 0.20, expansionCoeff: 65e-6, specificHeat: 1200}
-    electrical: {resistivity: 1e14, relativePermittivity: 3.0}
-  - id: acrylic-pmma
-    name: Acrylic (PMMA)
-    density: 1.18
-    appearance: acrylic
-    mechanical: {youngsModulus: 3.2, poissonsRatio: 0.37, yieldStrength: 70, ultimateTensileStrength: 72}
-    thermal:    {conductivity: 0.19, expansionCoeff: 70e-6, specificHeat: 1450}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.3}
-  - id: nylon-6
-    name: Nylon 6 (PA6)
-    density: 1.14
-    appearance: nylon
-    mechanical: {youngsModulus: 2.7, poissonsRatio: 0.39, yieldStrength: 45, ultimateTensileStrength: 70}
-    thermal:    {conductivity: 0.25, expansionCoeff: 80e-6, specificHeat: 1600}
-    electrical: {resistivity: 1e13, relativePermittivity: 3.8}
-  - id: nylon-66
-    name: Nylon 66 (PA66)
-    density: 1.14
-    appearance: nylon
-    mechanical: {youngsModulus: 3.0, poissonsRatio: 0.39, yieldStrength: 55, ultimateTensileStrength: 82}
-    thermal:    {conductivity: 0.25, expansionCoeff: 80e-6, specificHeat: 1700}
-    electrical: {resistivity: 1e13, relativePermittivity: 4.0}
-  - id: acetal-pom
-    name: Acetal (POM)
-    density: 1.41
-    appearance: acetal
-    mechanical: {youngsModulus: 3.1, poissonsRatio: 0.35, yieldStrength: 65, ultimateTensileStrength: 70}
-    thermal:    {conductivity: 0.31, expansionCoeff: 110e-6, specificHeat: 1500}
-    electrical: {resistivity: 1e13, relativePermittivity: 3.7}
-  - id: polypropylene
-    name: Polypropylene (PP)
-    density: 0.905
-    appearance: polypropylene
-    mechanical: {youngsModulus: 1.5, poissonsRatio: 0.42, yieldStrength: 33, ultimateTensileStrength: 35}
-    thermal:    {conductivity: 0.17, expansionCoeff: 100e-6, specificHeat: 1920}
-    electrical: {resistivity: 1e15, relativePermittivity: 2.2}
-  - id: hdpe
-    name: HDPE
-    density: 0.95
-    appearance: hdpe
-    mechanical: {youngsModulus: 1.0, poissonsRatio: 0.42, yieldStrength: 26, ultimateTensileStrength: 33}
-    thermal:    {conductivity: 0.48, expansionCoeff: 120e-6, specificHeat: 1900}
-    electrical: {resistivity: 1e15, relativePermittivity: 2.3}
-  - id: ldpe
-    name: LDPE
-    density: 0.92
-    appearance: ldpe
-    mechanical: {youngsModulus: 0.25, poissonsRatio: 0.45, yieldStrength: 11, ultimateTensileStrength: 12}
-    thermal:    {conductivity: 0.33, expansionCoeff: 200e-6, specificHeat: 2300}
-    electrical: {resistivity: 1e15, relativePermittivity: 2.2}
-  - id: pvc-rigid
-    name: PVC (Rigid)
-    density: 1.40
-    appearance: pvc
-    mechanical: {youngsModulus: 3.0, poissonsRatio: 0.38, yieldStrength: 50, ultimateTensileStrength: 52}
-    thermal:    {conductivity: 0.16, expansionCoeff: 80e-6, specificHeat: 1000}
-    electrical: {resistivity: 1e14, relativePermittivity: 3.4}
-  - id: ptfe
-    name: PTFE
-    density: 2.20
-    appearance: ptfe
-    mechanical: {youngsModulus: 0.5, poissonsRatio: 0.46, yieldStrength: 14, ultimateTensileStrength: 25}
-    thermal:    {conductivity: 0.25, expansionCoeff: 130e-6, specificHeat: 1010}
-    electrical: {resistivity: 1e18, relativePermittivity: 2.1}
-  - id: peek
-    name: PEEK
-    density: 1.32
-    appearance: peek
-    mechanical: {youngsModulus: 3.6, poissonsRatio: 0.40, yieldStrength: 97, ultimateTensileStrength: 100}
-    thermal:    {conductivity: 0.25, expansionCoeff: 47e-6, specificHeat: 1340}
-    electrical: {resistivity: 1e16, relativePermittivity: 3.2}
-  - id: pei-ultem
-    name: PEI (Ultem 1000)
-    density: 1.27
-    appearance: ultem
-    mechanical: {youngsModulus: 3.0, poissonsRatio: 0.36, yieldStrength: 105, ultimateTensileStrength: 105}
-    thermal:    {conductivity: 0.22, expansionCoeff: 56e-6, specificHeat: 1100}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.15}
-  - id: polystyrene
-    name: Polystyrene (GPPS)
-    density: 1.05
-    appearance: polystyrene
-    mechanical: {youngsModulus: 3.2, poissonsRatio: 0.34, yieldStrength: 45, ultimateTensileStrength: 50}
-    thermal:    {conductivity: 0.14, expansionCoeff: 70e-6, specificHeat: 1300}
-    electrical: {resistivity: 1e16, relativePermittivity: 2.5}
-  - id: hips
-    name: HIPS
-    density: 1.05
-    appearance: hips
-    mechanical: {youngsModulus: 2.0, poissonsRatio: 0.34, yieldStrength: 25, ultimateTensileStrength: 30}
-    thermal:    {conductivity: 0.14, expansionCoeff: 80e-6, specificHeat: 1300}
-    electrical: {resistivity: 1e16, relativePermittivity: 2.5}
-  - id: pvdf
-    name: PVDF
-    density: 1.78
-    appearance: pvdf
-    mechanical: {youngsModulus: 2.0, poissonsRatio: 0.40, yieldStrength: 50, ultimateTensileStrength: 50}
-    thermal:    {conductivity: 0.19, expansionCoeff: 120e-6, specificHeat: 1300}
-    electrical: {resistivity: 1e14, relativePermittivity: 8.0}
-  - id: epoxy-resin
-    name: Epoxy Resin (Cast)
-    density: 1.15
-    appearance: epoxy-resin
-    mechanical: {youngsModulus: 3.0, poissonsRatio: 0.35, yieldStrength: 40, ultimateTensileStrength: 65}
-    thermal:    {conductivity: 0.19, expansionCoeff: 60e-6, specificHeat: 1000}
-    electrical: {resistivity: 1e15, relativePermittivity: 3.6}
-  - id: polyester-resin
-    name: Polyester Resin (Cast)
-    density: 1.20
-    appearance: polyester-resin
-    mechanical: {youngsModulus: 3.2, poissonsRatio: 0.37, yieldStrength: 45, ultimateTensileStrength: 55}
-    thermal:    {conductivity: 0.17, expansionCoeff: 100e-6, specificHeat: 1200}
-    electrical: {resistivity: 1e14, relativePermittivity: 3.3}
-  - id: polyurethane
-    name: Polyurethane (Rigid)
-    density: 1.20
-    appearance: polyurethane
-    mechanical: {youngsModulus: 1.5, poissonsRatio: 0.40, yieldStrength: 35, ultimateTensileStrength: 40}
-    thermal:    {conductivity: 0.21, expansionCoeff: 100e-6, specificHeat: 1800}
-    electrical: {resistivity: 1e12, relativePermittivity: 4.0}
-  - id: silicone-rubber
-    name: Silicone Rubber
-    density: 1.10
-    appearance: silicone
-    # elastomer: very low modulus, yield ~ tensile (no sharp yield)
-    mechanical: {youngsModulus: 0.01, poissonsRatio: 0.48, yieldStrength: 5, ultimateTensileStrength: 8}
-    thermal:    {conductivity: 0.20, expansionCoeff: 250e-6, specificHeat: 1300}
-    electrical: {resistivity: 1e13, relativePermittivity: 3.0}
+    - id: abs-plastic
+      name: ABS
+      density: 1.06
+      mechanical:
+        youngsModulus: 2.1
+        poissonsRatio: 0.35
+        yieldStrength: 40
+        ultimateTensileStrength: 44
+      thermal:
+        conductivity: 0.17
+        expansionCoeff: 9e-05
+        specificHeat: 1300
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 2.9
+      appearance: abs-black
+    - id: pla
+      name: PLA
+      density: 1.24
+      mechanical:
+        youngsModulus: 3.5
+        poissonsRatio: 0.36
+        yieldStrength: 50
+        ultimateTensileStrength: 50
+      thermal:
+        conductivity: 0.13
+        expansionCoeff: 6.8e-05
+        specificHeat: 1800
+      electrical:
+        resistivity: 1e+14
+        relativePermittivity: 3
+      appearance: pla
+    - id: petg
+      name: PETG
+      density: 1.27
+      mechanical:
+        youngsModulus: 2.1
+        poissonsRatio: 0.38
+        yieldStrength: 50
+        ultimateTensileStrength: 50
+      thermal:
+        conductivity: 0.2
+        expansionCoeff: 6.8e-05
+        specificHeat: 1200
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      appearance: petg
+    - id: pet
+      name: PET
+      density: 1.38
+      mechanical:
+        youngsModulus: 2.8
+        poissonsRatio: 0.4
+        yieldStrength: 55
+        ultimateTensileStrength: 75
+      thermal:
+        conductivity: 0.24
+        expansionCoeff: 7e-05
+        specificHeat: 1200
+      electrical:
+        resistivity: 1e+16
+        relativePermittivity: 3.4
+      appearance: pet
+    - id: polycarbonate
+      name: Polycarbonate (PC)
+      density: 1.2
+      mechanical:
+        youngsModulus: 2.3
+        poissonsRatio: 0.37
+        yieldStrength: 62
+        ultimateTensileStrength: 66
+      thermal:
+        conductivity: 0.2
+        expansionCoeff: 6.5e-05
+        specificHeat: 1200
+      electrical:
+        resistivity: 1e+14
+        relativePermittivity: 3
+      appearance: polycarbonate
+    - id: acrylic-pmma
+      name: Acrylic (PMMA)
+      density: 1.18
+      mechanical:
+        youngsModulus: 3.2
+        poissonsRatio: 0.37
+        yieldStrength: 70
+        ultimateTensileStrength: 72
+      thermal:
+        conductivity: 0.19
+        expansionCoeff: 7e-05
+        specificHeat: 1450
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3.3
+      appearance: acrylic
+    - id: nylon-6
+      name: Nylon 6 (PA6)
+      density: 1.14
+      mechanical:
+        youngsModulus: 2.7
+        poissonsRatio: 0.39
+        yieldStrength: 45
+        ultimateTensileStrength: 70
+      thermal:
+        conductivity: 0.25
+        expansionCoeff: 8e-05
+        specificHeat: 1600
+      electrical:
+        resistivity: 1e+13
+        relativePermittivity: 3.8
+      appearance: nylon
+    - id: nylon-66
+      name: Nylon 66 (PA66)
+      density: 1.14
+      mechanical:
+        youngsModulus: 3
+        poissonsRatio: 0.39
+        yieldStrength: 55
+        ultimateTensileStrength: 82
+      thermal:
+        conductivity: 0.25
+        expansionCoeff: 8e-05
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+13
+        relativePermittivity: 4
+      appearance: nylon
+    - id: acetal-pom
+      name: Acetal (POM)
+      density: 1.41
+      mechanical:
+        youngsModulus: 3.1
+        poissonsRatio: 0.35
+        yieldStrength: 65
+        ultimateTensileStrength: 70
+      thermal:
+        conductivity: 0.31
+        expansionCoeff: 0.00011
+        specificHeat: 1500
+      electrical:
+        resistivity: 1e+13
+        relativePermittivity: 3.7
+      appearance: acetal
+    - id: polypropylene
+      name: Polypropylene (PP)
+      density: 0.905
+      mechanical:
+        youngsModulus: 1.5
+        poissonsRatio: 0.42
+        yieldStrength: 33
+        ultimateTensileStrength: 35
+      thermal:
+        conductivity: 0.17
+        expansionCoeff: 0.0001
+        specificHeat: 1920
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 2.2
+      appearance: polypropylene
+    - id: hdpe
+      name: HDPE
+      density: 0.95
+      mechanical:
+        youngsModulus: 1
+        poissonsRatio: 0.42
+        yieldStrength: 26
+        ultimateTensileStrength: 33
+      thermal:
+        conductivity: 0.48
+        expansionCoeff: 0.00012
+        specificHeat: 1900
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 2.3
+      appearance: hdpe
+    - id: ldpe
+      name: LDPE
+      density: 0.92
+      mechanical:
+        youngsModulus: 0.25
+        poissonsRatio: 0.45
+        yieldStrength: 11
+        ultimateTensileStrength: 12
+      thermal:
+        conductivity: 0.33
+        expansionCoeff: 0.0002
+        specificHeat: 2300
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 2.2
+      appearance: ldpe
+    - id: pvc-rigid
+      name: PVC (Rigid)
+      density: 1.4
+      mechanical:
+        youngsModulus: 3
+        poissonsRatio: 0.38
+        yieldStrength: 50
+        ultimateTensileStrength: 52
+      thermal:
+        conductivity: 0.16
+        expansionCoeff: 8e-05
+        specificHeat: 1000
+      electrical:
+        resistivity: 1e+14
+        relativePermittivity: 3.4
+      appearance: pvc
+    - id: ptfe
+      name: PTFE
+      density: 2.2
+      mechanical:
+        youngsModulus: 0.5
+        poissonsRatio: 0.46
+        yieldStrength: 14
+        ultimateTensileStrength: 25
+      thermal:
+        conductivity: 0.25
+        expansionCoeff: 0.00013
+        specificHeat: 1010
+      electrical:
+        resistivity: 1e+18
+        relativePermittivity: 2.1
+      appearance: ptfe
+    - id: peek
+      name: PEEK
+      density: 1.32
+      mechanical:
+        youngsModulus: 3.6
+        poissonsRatio: 0.4
+        yieldStrength: 97
+        ultimateTensileStrength: 100
+      thermal:
+        conductivity: 0.25
+        expansionCoeff: 4.7e-05
+        specificHeat: 1340
+      electrical:
+        resistivity: 1e+16
+        relativePermittivity: 3.2
+      appearance: peek
+    - id: pei-ultem
+      name: PEI (Ultem 1000)
+      density: 1.27
+      mechanical:
+        youngsModulus: 3
+        poissonsRatio: 0.36
+        yieldStrength: 105
+        ultimateTensileStrength: 105
+      thermal:
+        conductivity: 0.22
+        expansionCoeff: 5.6e-05
+        specificHeat: 1100
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3.15
+      appearance: ultem
+    - id: polystyrene
+      name: Polystyrene (GPPS)
+      density: 1.05
+      mechanical:
+        youngsModulus: 3.2
+        poissonsRatio: 0.34
+        yieldStrength: 45
+        ultimateTensileStrength: 50
+      thermal:
+        conductivity: 0.14
+        expansionCoeff: 7e-05
+        specificHeat: 1300
+      electrical:
+        resistivity: 1e+16
+        relativePermittivity: 2.5
+      appearance: polystyrene
+    - id: hips
+      name: HIPS
+      density: 1.05
+      mechanical:
+        youngsModulus: 2
+        poissonsRatio: 0.34
+        yieldStrength: 25
+        ultimateTensileStrength: 30
+      thermal:
+        conductivity: 0.14
+        expansionCoeff: 8e-05
+        specificHeat: 1300
+      electrical:
+        resistivity: 1e+16
+        relativePermittivity: 2.5
+      appearance: hips
+    - id: pvdf
+      name: PVDF
+      density: 1.78
+      mechanical:
+        youngsModulus: 2
+        poissonsRatio: 0.4
+        yieldStrength: 50
+        ultimateTensileStrength: 50
+      thermal:
+        conductivity: 0.19
+        expansionCoeff: 0.00012
+        specificHeat: 1300
+      electrical:
+        resistivity: 1e+14
+        relativePermittivity: 8
+      appearance: pvdf
+    - id: epoxy-resin
+      name: Epoxy Resin (Cast)
+      density: 1.15
+      mechanical:
+        youngsModulus: 3
+        poissonsRatio: 0.35
+        yieldStrength: 40
+        ultimateTensileStrength: 65
+      thermal:
+        conductivity: 0.19
+        expansionCoeff: 6e-05
+        specificHeat: 1000
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3.6
+      appearance: epoxy-resin
+    - id: polyester-resin
+      name: Polyester Resin (Cast)
+      density: 1.2
+      mechanical:
+        youngsModulus: 3.2
+        poissonsRatio: 0.37
+        yieldStrength: 45
+        ultimateTensileStrength: 55
+      thermal:
+        conductivity: 0.17
+        expansionCoeff: 0.0001
+        specificHeat: 1200
+      electrical:
+        resistivity: 1e+14
+        relativePermittivity: 3.3
+      appearance: polyester-resin
+    - id: polyurethane
+      name: Polyurethane (Rigid)
+      density: 1.2
+      mechanical:
+        youngsModulus: 1.5
+        poissonsRatio: 0.4
+        yieldStrength: 35
+        ultimateTensileStrength: 40
+      thermal:
+        conductivity: 0.21
+        expansionCoeff: 0.0001
+        specificHeat: 1800
+      electrical:
+        resistivity: 1e+12
+        relativePermittivity: 4
+      appearance: polyurethane
+    - id: silicone-rubber
+      name: Silicone Rubber
+      density: 1.1
+      mechanical:
+        youngsModulus: 0.01
+        poissonsRatio: 0.48
+        yieldStrength: 5
+        ultimateTensileStrength: 8
+      thermal:
+        conductivity: 0.2
+        expansionCoeff: 0.00025
+        specificHeat: 1300
+      electrical:
+        resistivity: 1e+13
+        relativePermittivity: 3
+      appearance: silicone

@@ -1,0 +1,71 @@
+// Software ray-tracing scene: a plain compute-shader traversal of a CPU-built BVH
+// (renderer.BuildBVH), with no ray-tracing extensions at all (M45-F01 PBI-334,
+// ADR-0053) — the always-available fallback obk_head_ray_tracing_support/
+// SupportsHardwareRayTracing say to fall back to when the hardware checkbox is off or
+// unsupported. Mirrors raytrace.h's RTScene shape (create/build/trace/destroy) but needs
+// none of its acceleration-structure machinery: BVH nodes and triangles are plain bound
+// storage buffers, no buffer-device-address or extension-function loading required.
+#pragma once
+#include "head.h"
+
+struct SWScene;
+
+extern "C" {
+
+// obk_sw_scene_create borrows h's Vulkan device/queue and returns an opaque SWScene
+// handle. Always succeeds if h has a valid device — unlike hardware RT, this backend
+// has no capability precondition.
+void* obk_sw_scene_create(void* h);
+
+// obk_sw_scene_build uploads a CPU-built BVH (nodes, tightly packed as
+// renderer.BVHNode: 6 floats + 2 int32 = 32 bytes each) + its triangle reorder index
+// (int32 each) + the original-order triangle list (tightly packed as renderer.Triangle:
+// 9 floats + 2 uint32 = 44 bytes each) and creates the traversal compute pipeline from
+// the caller-supplied SPIR-V (embedded Go-side, mirroring obk_rt_scene_build). Returns 0
+// on success.
+int obk_sw_scene_build(void* scene, const void* nodes, int nodeCount, const int32_t* triOrder,
+                       int triOrderCount, const void* triangles, int triangleCount, const uint32_t* spv,
+                       int spvLen);
+
+// obk_sw_scene_trace dispatches a single ray query against the built BVH and reads the
+// nearest-hit result back — identical signature/semantics to obk_rt_scene_trace.
+void obk_sw_scene_trace(void* scene, float ox, float oy, float oz, float dx, float dy, float dz,
+                        float tMin, float tMax, int* hit, float* t, float* px, float* py, float* pz,
+                        float* nx, float* ny, float* nz, uint32_t* instanceID, uint32_t* primitiveID);
+
+void obk_sw_scene_destroy(void* scene);
+
+// --- Software single-bounce path-tracing harness (M45-F04 PBI-346): the same
+// ray-gen/shading logic as raytrace.h's obk_rt_scene_build_pipeline/trace_pipeline, but
+// as one compute shader over this scene's ALREADY-UPLOADED BVH (from obk_sw_scene_build)
+// instead of a full RT pipeline. Call after obk_sw_scene_build.
+
+// obk_sw_scene_build_pathtrace_pipeline creates the shading compute pipeline from the
+// caller-supplied SPIR-V (embedded Go-side). Returns 0 on success.
+int obk_sw_scene_build_pathtrace_pipeline(void* scene, const uint32_t* spv, int spvLen);
+
+// obk_sw_scene_trace_pathtrace dispatches one shading compute call and reads back the
+// resulting single-bounce direct-lighting radiance. params is the same 16 floats as
+// raytrace.h's obk_rt_scene_trace_pipeline (identical Params UBO layout).
+void obk_sw_scene_trace_pathtrace(void* scene, float ox, float oy, float oz, float dx, float dy, float dz,
+                                  float tMin, float tMax, const float* params, float* outR, float* outG,
+                                  float* outB);
+
+// --- Live per-pixel Realistic-viewport pipeline (M45-F05 PBI-350): a per-pixel
+// pinhole-camera path tracer over this scene's SAME uploaded BVH, independent of the
+// single-ray pathtrace harness above (own descriptor set).
+
+// obk_sw_scene_build_realistic_pathtrace_pipeline creates the per-pixel shading compute
+// pipeline. Returns 0 on success.
+int obk_sw_scene_build_realistic_pathtrace_pipeline(void* scene, const uint32_t* spv, int spvLen);
+
+// obk_sw_scene_trace_realistic_pathtrace_image dispatches ceil(width/8)xceil(height/8)
+// work groups. camera is the same 16-float layout as raytrace.h's
+// obk_rt_scene_trace_realistic_image; params is the same 56-float layout (#2148) as
+// that function's own params — see raytrace.h's doc comment for the authoritative field
+// order. outPixels must have room for width*height*3 floats (RGB, row-major, alpha
+// dropped). Returns 0 on success.
+int obk_sw_scene_trace_realistic_pathtrace_image(void* scene, int width, int height, const float* camera,
+                                                 const float* params, float* outPixels);
+
+} // extern "C"

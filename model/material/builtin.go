@@ -8,11 +8,6 @@ import (
 	"oblikovati.org/api/types"
 )
 
-// DefaultAppearanceID is the neutral appearance applied when a body has no material or
-// appearance assigned — it reproduces the renderer's pre-materials default gray, so an
-// un-assigned model looks exactly as it did before this subsystem.
-const DefaultAppearanceID = "default"
-
 // seedBuiltins fills a fresh library with the shipped, read-only catalog: the neutral
 // default appearance (always present, the resolver's last resort) followed by the
 // embedded category catalogs (metals, steels, aluminium, plastics, woods, composites,
@@ -25,18 +20,10 @@ func seedBuiltins(l *Library) {
 	}
 }
 
-// defaultAppearance is the neutral gray fallback, kept in code (not the YAML catalog) so
-// DefaultAppearanceID is guaranteed present even if a catalog file is hand-edited.
-func defaultAppearance() *Appearance {
-	return NewAppearance(DefaultAppearanceID, SourceBuiltin, AppearanceSpec{
-		DisplayName: "Default", Albedo: mustColor("#b3b8bdff"), Metallic: 0, Roughness: 0.6,
-		Emissive: mustColor("#000000ff"), Opacity: 1,
-	})
-}
-
-// mustColor parses an authored built-in color literal, panicking with the offending
-// value on a malformed constant (a programming error caught by the package tests, not a
-// runtime condition).
+// mustColor parses an sRGB hex color literal, panicking with the offending value on a
+// malformed constant (a programming error caught by the package tests, not a runtime
+// condition). Used by legacy-shaped fixtures/migration code — the current AppearanceSpec
+// carries linear ACEScg Color3 values, not sRGB hex.
 func mustColor(s string) Rgba {
 	c, err := types.ParseHex(s)
 	if err != nil {

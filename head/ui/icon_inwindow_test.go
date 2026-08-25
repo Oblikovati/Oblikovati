@@ -16,10 +16,8 @@ import (
 // on real hardware, not just the pure-Go rasterizer. Skips when no display/Vulkan is
 // available (e.g. CI without a GPU).
 func TestInWindowRibbonUploadsIconTextures(t *testing.T) {
-	win := newViewportWindow(t)
+	win := newViewportWindow(t) // also resets dockLaidOut/icons/ribbonPanelWidth/prevEnv/prevActiveDoc/prevFramedDoc (#2142)
 	defer win.Destroy()
-	dockLaidOut = false // rebuild the default layout for this fresh window/context
-	icons = nil         // rebind the icon cache to this fresh window
 
 	s := app.NewSession()
 	if err := app.RegisterStandardCommands(s); err != nil {

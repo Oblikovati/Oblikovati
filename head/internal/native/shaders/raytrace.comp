@@ -1,0 +1,57 @@
+#version 460
+// Single-ray hardware Intersector query (M45-F01 PBI-333, ADR-0053): traces one ray
+// against the scene TLAS via GL_EXT_ray_query (no ray-gen/closest-hit/any-hit pipeline —
+// that full RT pipeline is PBI-345's job; this is the minimal, always-dispatchable
+// backend for renderer.Intersector.TraceRay). Position fetch reads the hit triangle's
+// vertices directly for the geometric normal, avoiding a bindless vertex-buffer fetch
+// path (see raytrace.h's note on VK_KHR_ray_tracing_position_fetch).
+#extension GL_EXT_ray_query : require
+#extension GL_EXT_ray_tracing_position_fetch : require
+
+layout(local_size_x = 1) in;
+
+layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
+
+layout(set = 0, binding = 1) uniform RayParams {
+    vec3 origin;
+    float tMin;
+    vec3 direction;
+    float tMax;
+} ray;
+
+layout(set = 0, binding = 2, std430) buffer HitResult {
+    uint hit;          // 0 or 1
+    float t;
+    vec3 point;
+    vec3 normal;
+    uint instanceID;   // instanceCustomIndex
+    uint primitiveID;
+} result;
+
+void main() {
+    rayQueryEXT q;
+    rayQueryInitializeEXT(q, tlas, gl_RayFlagsOpaqueEXT, 0xFF, ray.origin, ray.tMin, ray.direction, ray.tMax);
+    while (rayQueryProceedEXT(q)) {
+        // Every geometry is opaque (BLAS built with VK_GEOMETRY_OPAQUE_BIT_KHR), so the
+        // candidate is always committed immediately — no any-hit evaluation needed.
+        rayQueryConfirmIntersectionEXT(q);
+    }
+
+    if (rayQueryGetIntersectionTypeEXT(q, true) == gl_RayQueryCommittedIntersectionNoneEXT) {
+        result.hit = 0;
+        return;
+    }
+
+    result.hit = 1;
+    result.t = rayQueryGetIntersectionTEXT(q, true);
+    result.instanceID = uint(rayQueryGetIntersectionInstanceCustomIndexEXT(q, true));
+    result.primitiveID = uint(rayQueryGetIntersectionPrimitiveIndexEXT(q, true));
+    result.point = ray.origin + ray.direction * result.t;
+
+    vec3 verts[3];
+    rayQueryGetIntersectionTriangleVertexPositionsEXT(q, true, verts);
+    // Object-space triangle; the TLAS instance here is always identity (PBI-333's scope
+    // — one BLAS per body, no per-instance transform yet), so object space IS world
+    // space and no normal-matrix transform is needed.
+    result.normal = normalize(cross(verts[1] - verts[0], verts[2] - verts[0]));
+}

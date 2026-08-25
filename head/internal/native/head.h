@@ -30,6 +30,19 @@ struct HeadContext {
     bool                     swapChainRebuild = false;
     Viewport*                viewport = nullptr; // 3D scene render target (lazy)
     IconTextures*            icons = nullptr;    // ribbon-icon texture cache (lazy)
+    // hwRayTracingAvailable is set once in create_device (app.cpp) after the real
+    // VkPhysicalDeviceFeatures2 feature-bit query (M45-F01 PBI-333) — obk_head_ray_
+    // tracing_support's presence-only probe (PBI-332) cannot tell whether the extension
+    // is merely advertised or actually enabled on this device.
+    bool                     hwRayTracingAvailable = false;
+    // hwRayTracingPositionFetch additionally requires VK_KHR_ray_tracing_position_fetch
+    // (only meaningful when hwRayTracingAvailable) — lets the ray-query compute shader
+    // fetch a hit triangle's vertex positions directly for the geometric normal.
+    bool                     hwRayTracingPositionFetch = false;
+    // hwRayTracingPipeline additionally requires VK_KHR_ray_tracing_pipeline (M45-F04
+    // PBI-345) — the full ray-gen/closest-hit/any-hit/miss shader-stage pipeline, a
+    // separate device extension from ray query (which PBI-333's Intersector uses).
+    bool                     hwRayTracingPipeline = false;
 };
 
 // Pick a memory type index satisfying type_bits and props, or UINT32_MAX. Shared by

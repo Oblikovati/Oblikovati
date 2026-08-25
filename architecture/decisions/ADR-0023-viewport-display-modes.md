@@ -12,6 +12,14 @@
 > lives directly at the repository root (`kernel/`, `model/`, `app/`, `head/`, …),
 > and the Apache-2.0 `/api` module is the sibling `Oblikovati.API` repository.
 > The record below is preserved as written.
+>
+> **Superseded in part (2026-08, M45).** §2's "Realistic = software raster PBR;
+> hardware ray tracing explicitly out of scope" call is reversed by
+> [ADR-0053](ADR-0053-openpbr-realistic-mode.md): `Realistic` becomes a progressive,
+> fully OpenPBR-compliant path tracer with an optional hardware-RT backend (software
+> compute-shader fallback stays equally spec-compliant). §§1/3/4/5 (style→pass
+> resolution, viewport HLR, NPR framework, testability) are unaffected. The record
+> below is preserved as written.
 
 ## Context
 

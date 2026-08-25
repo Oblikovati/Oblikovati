@@ -30,8 +30,13 @@ func TestAssignmentsSurviveRecompute(t *testing.T) {
 // YAML), restoring the document's embedded appearance and its assignment.
 func TestMaterialsRecipeRoundTrip(t *testing.T) {
 	def := NewPartComponentDefinition()
+	wantColor := material.Color3{R: 0.1, G: 0.25, B: 1}
 	def.Assets().PutAppearance(material.NewAppearance("doc-blue", material.SourceDocument,
-		material.AppearanceSpec{DisplayName: "Doc Blue", Albedo: parseColor(t, "#2040ffff"), Opacity: 1}))
+		material.AppearanceSpec{
+			DisplayName: "Doc Blue",
+			Base:        material.OpenPBRBase{Color: wantColor, Weight: 1},
+			Geometry:    material.OpenPBRGeometry{Opacity: 1},
+		}))
 	def.Assignments().SetPartAppearance("doc-blue")
 
 	yaml, err := def.MarshalRecipe()
@@ -43,19 +48,10 @@ func TestMaterialsRecipeRoundTrip(t *testing.T) {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
 	a, ok := restored.Assets().Appearance("doc-blue")
-	if !ok || a.Albedo() != parseColor(t, "#2040ffff") {
+	if !ok || a.Base().Color != wantColor {
 		t.Errorf("embedded appearance not restored from recipe: %v ok=%v", a, ok)
 	}
 	if restored.Assignments().PartAppearance() != "doc-blue" {
 		t.Errorf("assignment not restored: %q", restored.Assignments().PartAppearance())
 	}
-}
-
-func parseColor(t *testing.T, hex string) material.Rgba {
-	t.Helper()
-	c, err := material.ParseColor(hex)
-	if err != nil {
-		t.Fatalf("ParseColor(%q): %v", hex, err)
-	}
-	return c
 }

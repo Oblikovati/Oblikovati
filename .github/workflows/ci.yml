@@ -128,14 +128,18 @@ jobs:
       # (fillet_elliptic_cone_runout.go: 181/181 "uncovered"). That understated coverage on new code
       # by ~13 points and failed SonarCloud's 80% gate on a measurement artefact, not a test gap.
       #
-      # Scoped to the four trees whose code is cross-exercised, NOT `./...`: instrumenting every
+      # Scoped to the trees whose code is cross-exercised, NOT `./...`: instrumenting every
       # package into every test binary costs >30min on model/feature/occtparity alone, while this
       # scope measured 373s against 303s uninstrumented (+23%) for that package. `addin/...` is in
       # the list because the router/opregistry handlers are production code Sonar analyses (not
       # coverage-excluded), driven by addin/router/*_test.go here, yet — like the translator modules
       # below — read ~0% on new code unless instrumented, since a test binary otherwise credits only
       # its own package. Omitting it failed the 80% gate on a large handler tranche as a measurement
-      # artefact, not a test gap.
+      # artefact, not a test gap. `renderer/...` (M45 ray-tracing backend: accumulator, BVH,
+      # light/environment sampling, intersector) is the SAME failure mode: -coverpkg restricts
+      # instrumentation to exactly the listed packages for every binary, so a package left out
+      # gets none, even for its own tests — renderer read 0% on new code despite each file having
+      # a same-named _test.go beside it, purely because it was missing from this list.
       #
       # Ubuntu-only because that is the single leg whose profile feeds the `sonar` job (see the
       # upload step below); the macOS/Windows legs keep the uninstrumented command so the slowest
@@ -144,7 +148,7 @@ jobs:
         run: |
           COVERPKG=""
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            COVERPKG="-coverpkg=./kernel/...,./model/...,./app/...,./addin/..."
+            COVERPKG="-coverpkg=./kernel/...,./model/...,./app/...,./addin/...,./renderer/..."
           fi
           gotestsum --junitfile test-results-${{ matrix.os }}.xml -- \
             -coverprofile=coverage.out -covermode=count $COVERPKG -timeout 60m ./...

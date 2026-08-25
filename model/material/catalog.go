@@ -50,11 +50,7 @@ func loadCatalogFile(l *Library, name string) error {
 		return fmt.Errorf("material: parse catalog %q: %w", name, err)
 	}
 	for _, ar := range rd.Appearances {
-		a, err := recipeToAppearance(ar, SourceBuiltin)
-		if err != nil {
-			return fmt.Errorf("material: catalog %q appearance %q: %w", name, ar.ID, err)
-		}
-		l.AddAppearance(a)
+		l.AddAppearance(recipeToAppearance(ar, SourceBuiltin))
 	}
 	for _, mr := range rd.Materials {
 		l.AddMaterial(recipeToMaterial(mr, SourceBuiltin))
