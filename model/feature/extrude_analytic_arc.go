@@ -28,6 +28,22 @@ type analyticSeg struct {
 	mid, center math.Point2
 }
 
+// analyticPrismOrNil builds an analytic prism from a taper-free, hole-free profile's outer loop by
+// raising the SAME 2D profile along the frame's normal: a full circle → a true geom.Cylinder, a
+// closed line+arc loop → an analytic arc prism (arc cap edges + partial-cylinder walls, #2164). It
+// returns nil when the loop is neither, so the caller keeps the faceted prism. Shared by the extrude
+// builder (frame = the sketch plane) and the straight-path sweep builder (frame = a synthetic plane
+// whose normal is the path tangent), which both lift the same 2D coordinates onto a frame and raise
+// them by the same span — so one dispatch serves both.
+func analyticPrismOrNil(loop sketch.Loop, plane sketch.Plane, sp span, feat string) *topo.Body {
+	if c := circleLoop(loop); c != nil {
+		if cyl := buildAnalyticCylinder(c, plane, sp, feat); cyl != nil {
+			return cyl
+		}
+	}
+	return buildAnalyticExtrusion(loop, plane, sp, feat)
+}
+
 // buildAnalyticExtrusion builds a watertight solid prism from a closed line+arc loop, keeping arcs
 // analytic. It returns nil — so the caller falls back to the faceted buildPrism — when the loop has a
 // non line/arc segment (a spline/ellipse), has no arc at all (a pure polygon gains nothing analytic),
