@@ -96,6 +96,42 @@ func TestNestedLoopsClassifyInnerAndOuter(t *testing.T) {
 	}
 }
 
+// TestNestedMultiEntityLoopIsSelectable is the #2165 regression: a MULTI-ENTITY inner loop (a
+// rectangle inside a rectangle — the shape a rounded-profile offset produces) must ALSO bound its own
+// selectable region, not only the annulus. Before the fix the inner rectangle was absorbed as a hole
+// (only single-primitive circles/ellipses were exempt), so its inner face could not be picked to
+// extrude — the user could select the band but not the inner region.
+func TestNestedMultiEntityLoopIsSelectable(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	addRectangle(s, 0, 0, 10, 10) // outer
+	addRectangle(s, 3, 3, 7, 7)   // an inner rectangle (multi-entity, not a primitive)
+	ps := s.Profiles()
+	if ps.Count() != 2 {
+		t.Fatalf("Profiles count = %d, want 2 (the frame and the inner rectangle face)", ps.Count())
+	}
+	// The inner region's centre must be selectable — contained by exactly one profile (the inner
+	// face), never by the frame (whose hole it is).
+	center := math.P2(5, 5)
+	hits := 0
+	for i := 0; i < ps.Count(); i++ {
+		if ps.Item(i).Contains(center) {
+			hits++
+		}
+	}
+	if hits != 1 {
+		t.Errorf("inner-region centre is contained by %d profiles, want exactly 1 (the inner face)", hits)
+	}
+	// The index-0 (outer/frame) region must be preserved and keep the inner rectangle as its hole,
+	// so index-based selections in older documents stay valid.
+	frame := ps.Item(0)
+	if len(frame.InnerLoops()) != 1 {
+		t.Errorf("frame (index 0) should keep 1 hole (the inner rectangle); got %d", len(frame.InnerLoops()))
+	}
+	if frame.Contains(center) {
+		t.Error("the frame must NOT contain the inner-region centre (that point is its hole)")
+	}
+}
+
 // classifyAnnulusAndDisk splits the two profiles into the one with a hole (the annulus) and the one
 // without (the disk).
 func classifyAnnulusAndDisk(t *testing.T, ps *Profiles) (annulus, disk *Profile) {
