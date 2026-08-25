@@ -31,32 +31,33 @@ func drawDraftDialog(s *app.Session) {
 	}
 	dialogSizeOnce(340, 230)
 	if native.Begin("Draft") {
-		drawDraftBody(s, d)
+		title := "Draft"
+		if name := d.EditingName(); name != "" {
+			title = name // re-editing a committed draft: the breadcrumb names it
+		}
+		drawFeatureBreadcrumb(title, "")
+		drawDraftInputGeometry(d)
+		if propertySection("Behavior") {
+			angleDegRowHint(s, "Angle", "draft-angle", " (+out / −in)", &draftUI.angle)
+			d.SetAngleDegrees(float64(draftUI.angle))
+		}
+		native.Separator()
+		drawCommitCancelButtons(s, d.CanCommit())
 	}
 	native.End()
 }
 
-// drawDraftBody fills the Draft panel: the breadcrumb, the Input Geometry pick rows, and the Behavior
-// angle, then the commit/cancel buttons. Split from drawDraftDialog so each stays within one screen of
-// widgets.
-func drawDraftBody(s *app.Session, d *app.DraftTool) {
-	title := "Draft"
-	if name := d.EditingName(); name != "" {
-		title = name // re-editing a committed draft: the breadcrumb names it
+// drawDraftInputGeometry draws the Draft panel's Input Geometry section — the faces-to-draft chip and
+// the pull/neutral rows. Tool-only (no session), so the split reduces drawDraftDialog's length without
+// widening head/ui's *app.Session coupling (audit I5).
+func drawDraftInputGeometry(d *app.DraftTool) {
+	if !propertySection("Input Geometry") {
+		return
 	}
-	drawFeatureBreadcrumb(title, "")
-	if propertySection("Input Geometry") {
-		drawPickChipRow("Faces", "draft-faces", countChipText(d.FaceCount(), "Face", "Select Faces"),
-			d.FaceCount() > 0, "Click faces in the viewport to draft", d.ClearFaces)
-		drawDraftPullRow(d)
-		drawDraftNeutralRow(d)
-	}
-	if propertySection("Behavior") {
-		angleDegRowHint(s, "Angle", "draft-angle", " (+out / −in)", &draftUI.angle)
-		d.SetAngleDegrees(float64(draftUI.angle))
-	}
-	native.Separator()
-	drawCommitCancelButtons(s, d.CanCommit())
+	drawPickChipRow("Faces", "draft-faces", countChipText(d.FaceCount(), "Face", "Select Faces"),
+		d.FaceCount() > 0, "Click faces in the viewport to draft", d.ClearFaces)
+	drawDraftPullRow(d)
+	drawDraftNeutralRow(d)
 }
 
 // drawDraftPullRow shows the pull-direction chip (the face whose normal is the mould-pull axis,

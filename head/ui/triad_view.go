@@ -142,35 +142,40 @@ func routeGizmoInput(s *app.Session, cam scene.Camera) bool {
 		return false
 	}
 	mx, my := viewportCursor()
-	return handleGizmoHover(s, cam, mx, my)
-}
-
-// handleGizmoHover handles the pointer over a non-dragging gizmo: a triad segment under the cursor is
-// hovered (and, on a left click, begins its drag); otherwise a manipulator handle under the cursor
-// begins its drag on a left click. It reports whether the gizmo consumed the pointer this frame.
-func handleGizmoHover(s *app.Session, cam scene.Camera, mx, my float64) bool {
+	// The pointer ray and pick tolerance are the same for a triad-segment or a manipulator-handle
+	// grab, so compute them once for both branches (this also keeps the function within one screen).
+	rayO, rayD := cam.RayThrough(mx, my)
+	snapTol := gizmoHitPx * cam.WorldPerPixel()
 	if seg, hit := triadHitTest(s, cam, mx, my); hit {
 		s.HoverTriadSegment(seg, true)
 		if native.IsItemClicked(native.MouseLeft) {
-			rayO, rayD := cam.RayThrough(mx, my)
-			snapTol := gizmoHitPx * cam.WorldPerPixel()
 			_ = s.BeginTriadDrag(seg, rayO, rayD, snapTol, native.KeyShift(), native.KeyCtrl())
 		}
 		return true
 	}
 	s.HoverTriadSegment(types.TriadOrigin, false)
 	if gizmo, handle, hit := manipulatorHitTest(s, cam, mx, my); hit && native.IsItemClicked(native.MouseLeft) {
-		rayO, rayD := cam.RayThrough(mx, my)
 		forward := unitV(cam.Eye.VectorTo(cam.Target))
-		snapTol := gizmoHitPx * cam.WorldPerPixel()
 		_ = s.BeginManipulatorDrag(gizmo, handle, forward.Scale(-1), rayO, rayD, snapTol, native.KeyShift(), native.KeyCtrl())
 		return true
 	}
 	return false
 }
 
+// gizmoDragSession is the in-flight-drag machine continueGizmoDrag needs — five methods, not the
+// whole session (audit I5).
+type gizmoDragSession interface {
+	TriadDragging() bool
+	DragTriad(rayO math.Point3, rayD math.Vector3, shift, ctrl bool) error
+	DragManipulator(rayO math.Point3, rayD math.Vector3, shift, ctrl bool) error
+	EndTriadDrag(rayO math.Point3, rayD math.Vector3, shift, ctrl bool) error
+	EndManipulatorDrag(rayO math.Point3, rayD math.Vector3, shift, ctrl bool) error
+}
+
+var _ gizmoDragSession = (*app.Session)(nil)
+
 // continueGizmoDrag advances or ends the in-flight gesture with the pointer ray.
-func continueGizmoDrag(s *app.Session, cam scene.Camera) {
+func continueGizmoDrag(s gizmoDragSession, cam scene.Camera) {
 	mx, my := viewportCursor()
 	rayO, rayD := cam.RayThrough(mx, my)
 	shift, ctrl := native.KeyShift(), native.KeyCtrl()

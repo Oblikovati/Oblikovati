@@ -154,13 +154,22 @@ func faceFill(fh app.FaceHandle, color [4]float32) renderer.DrawItem {
 // faceFillOpacity keeps the face tint translucent so the face's shading still reads through.
 const faceFillOpacity = 0.5
 
+// regionBadgeSession is drawRegionModifierBadge's slim view of the session (audit I5): just the
+// add/remove decision for the region under the cursor. RegionModifierHint already returns show=false
+// when no region tool is active, so the badge needs nothing else.
+type regionBadgeSession interface {
+	RegionModifierHint(x, y float64, mods app.Modifier) (show, add bool)
+}
+
+var _ regionBadgeSession = (*app.Session)(nil)
+
 // drawRegionModifierBadge draws a +/− glyph beside the cursor when a modified click during area
 // selection would ADD or REMOVE the region under the cursor — Inventor's add/remove cursor feedback
 // (#2165). It renders in screen space in the viewport-overlay pass (not part of the 3D draw list), so
 // it must be called while the viewport item is current. Nothing is drawn unless a region multi-select
 // tool is active, a modifier is held, and a region sits under the cursor (RegionModifierHint).
-func drawRegionModifierBadge(s *app.Session) {
-	if s.ActiveTool() == nil || !native.IsItemHovered() {
+func drawRegionModifierBadge(s regionBadgeSession) {
+	if !native.IsItemHovered() {
 		return
 	}
 	var mods app.Modifier

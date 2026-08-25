@@ -29,39 +29,27 @@ func drawUITab(s *app.Session) {
 	native.Separator()
 	native.Text("Text size also scales the Script Console code editor.")
 	native.Separator()
-	drawMouseNavPrefs(s)
-	native.Separator()
-	drawWindowChromePrefs(s)
-}
-
-// drawMouseNavPrefs draws the middle-button gesture selectors and the wheel-zoom checkboxes
-// (Inventor-parity, 2026-08-17): defaults are middle-drag pans, Shift+middle-drag orbits, scroll-up
-// zooms in, and the wheel zooms to the cursor.
-func drawMouseNavPrefs(s *app.Session) {
+	// Mouse-navigation preferences (Inventor-parity, 2026-08-17): defaults are middle-drag pans,
+	// Shift+middle-drag orbits, scroll-up zooms in, and the wheel zooms to the cursor.
 	native.Text("Mouse navigation (defaults match Inventor):")
 	editNavModeCombo("Middle button drag", s.MMBMode(), s.SetMMBMode, navModeOptions("pan"))
 	editNavModeCombo("Shift + middle button drag", s.ShiftMMBMode(), s.SetShiftMMBMode, navModeOptions("orbit"))
 	editNavModeCombo("Ctrl + middle button drag", s.CtrlMMBMode(), s.SetCtrlMMBMode, navModeOptions("pan"))
-	invert := s.WheelInvert()
-	if native.Checkbox("Invert wheel zoom direction", &invert) {
-		reportPrefError(s.SetWheelInvert(invert))
-	}
-	toCursor := s.ZoomToCursor()
-	if native.Checkbox("Zoom to cursor", &toCursor) {
-		reportPrefError(s.SetZoomToCursor(toCursor))
-	}
+	prefCheckbox("Invert wheel zoom direction", s.WheelInvert, s.SetWheelInvert)
+	prefCheckbox("Zoom to cursor", s.ZoomToCursor, s.SetZoomToCursor)
+	native.Separator()
+	// Classic menu bar + status bar visibility (also on View ▸ Windows).
+	prefCheckbox("Show classic menu bar", s.ShowMenuBar, s.SetShowMenuBar)
+	prefCheckbox("Show status bar", s.ShowStatusBar, s.SetShowStatusBar)
 }
 
-// drawWindowChromePrefs draws the classic-menu-bar and status-bar visibility toggles (also reachable
-// from View ▸ Windows).
-func drawWindowChromePrefs(s *app.Session) {
-	show := s.ShowMenuBar()
-	if native.Checkbox("Show classic menu bar", &show) {
-		reportPrefError(s.SetShowMenuBar(show))
-	}
-	status := s.ShowStatusBar()
-	if native.Checkbox("Show status bar", &status) {
-		reportPrefError(s.SetShowStatusBar(status))
+// prefCheckbox draws a boolean preference checkbox: get supplies the current value, set persists a
+// toggle (its error surfaces through reportPrefError). It takes closures rather than the whole
+// session, so the preferences tab does not widen head/ui's *app.Session coupling (audit I5).
+func prefCheckbox(label string, get func() bool, set func(bool) error) {
+	v := get()
+	if native.Checkbox(label, &v) {
+		reportPrefError(set(v))
 	}
 }
 

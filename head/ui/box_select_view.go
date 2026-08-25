@@ -80,7 +80,19 @@ func viewportModeOwnsPointer(s *app.Session) bool {
 // consumed this frame's left input. While the Edit Control Points tool is active, a left press on
 // a control-net handle begins the drag, the cursor slides it (the surface re-evaluates live), and
 // release commits the edit (M36-F03). Mirrors updateCloudDrag.
-func updateControlPointDrag(s *app.Session) bool {
+// cvDragSession is the drag machine the NURBS control-point editor needs — five methods, not the
+// whole session (audit I5). Mirrors cageDragSession.
+type cvDragSession interface {
+	CVEditActive() bool
+	CVDragActive() bool
+	BeginCVDrag(px, py float64) bool
+	UpdateCVDrag(px, py float64)
+	CommitCVDrag()
+}
+
+var _ cvDragSession = (*app.Session)(nil)
+
+func updateControlPointDrag(s cvDragSession) bool {
 	if !s.CVEditActive() {
 		return false
 	}
@@ -140,7 +152,19 @@ func updateFreeformCageDrag(s cageDragSession) bool {
 // this frame's left input. While the Move tool is active, a left press begins the drag, the cursor
 // translates the cloud (datums built on it follow), and release commits — mirroring the sketch
 // drag-to-move (#645).
-func updateCloudDrag(s *app.Session) bool {
+// cloudDragSession is the drag machine the point-cloud mover needs — five methods, not the whole
+// session (audit I5). Mirrors cvDragSession / cageDragSession.
+type cloudDragSession interface {
+	CloudMoveActive() bool
+	CloudDragActive() bool
+	BeginCloudDrag(px, py float64) bool
+	UpdateCloudDrag(px, py float64)
+	CommitCloudDrag()
+}
+
+var _ cloudDragSession = (*app.Session)(nil)
+
+func updateCloudDrag(s cloudDragSession) bool {
 	if !s.CloudMoveActive() {
 		return false
 	}

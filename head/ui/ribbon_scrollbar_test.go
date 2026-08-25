@@ -51,7 +51,11 @@ func driveRibbon(t *testing.T, w, h int) (collapsed int, scrollbar bool) {
 		clear(ribbonPanelWidth)
 	}()
 	s := ribbonSession(t)
-	return settleRibbon(t, win, s)
+	return settleRibbon(t, func() {
+		win.BeginFrame()
+		DrawChrome(win, s)
+		win.EndFrame(0.1, 0.1, 0.1)
+	})
 }
 
 // primeViewportSize works around a harness limitation: ImGui's main-viewport size reflects the
@@ -79,14 +83,12 @@ func primeViewportSize(t *testing.T, w, h int) {
 // sometimes sampled BEFORE the layout settled and the result flipped run-to-run (the #1471 tests'
 // order-dependent flakiness). Waiting for a stable state makes it deterministic. maxSettleFrames caps
 // the wait so a genuine non-convergence fails loudly rather than hanging.
-func settleRibbon(t *testing.T, win *native.Window, s *app.Session) (collapsed int, scrollbar bool) {
+func settleRibbon(t *testing.T, renderFrame func()) (collapsed int, scrollbar bool) {
 	t.Helper()
 	const settleStableFrames, maxSettleFrames = 4, 240
 	stable, prevCollapsed, prevScroll := 0, -1, false
 	for i := 0; i < maxSettleFrames && stable < settleStableFrames; i++ {
-		win.BeginFrame()
-		DrawChrome(win, s)
-		win.EndFrame(0.1, 0.1, 0.1)
+		renderFrame()
 		if ribbonCollapsedPanels == prevCollapsed && ribbonScrollbarShown == prevScroll {
 			stable++
 			continue
