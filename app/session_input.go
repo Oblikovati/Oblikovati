@@ -328,6 +328,12 @@ func (s *Session) toolPicksModelReferences() bool {
 	return ok && mr.PicksModelReferences()
 }
 
+// ToolPicksModelReferences is the exported form the head reads to decide whether to draw the
+// model-reference hover highlight while a sketch is being edited: a tool like Project Geometry
+// picks B-rep faces/edges from the viewport during sketch edit (#1496/#2158), so the head must
+// show what will be projected — the sketch overlay path otherwise draws only sketch-entity feedback.
+func (s *Session) ToolPicksModelReferences() bool { return s.toolPicksModelReferences() }
+
 // pickModelReferenceInSketch runs the 3D hit-test for an in-sketch reference-picking tool and
 // feeds any hit — a B-rep face, edge or vertex, or datum geometry — to the tool, so model geometry
 // becomes projectable from the viewport while editing a sketch (#1496, faces #2158). The kinds a

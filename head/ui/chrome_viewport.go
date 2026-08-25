@@ -595,6 +595,13 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 		list.Items = append(gridOverlay(plane, g.SpacingModel(), g.MajorEvery, cam.Eye), list.Items...)
 	}
 	list.Items = append(list.Items, onTop(sketchOverlay(s.ActiveSketch(), s.IsSelectedEntity, hoverCandidate(s), s.ShowFormat()))...)
+	// A model-reference tool (Project Geometry) picks B-rep faces/edges from the viewport while the
+	// sketch is edited, so highlight what it would project — the model-overlay path that normally
+	// draws this is skipped in sketch mode, which is why a projectable face never lit up (#2158). Not
+	// onTop: it tints the 3D face behind the sketch plane, under the sketch entities drawn above.
+	if s.ToolPicksModelReferences() {
+		list.Items = append(list.Items, toolHoverHighlight(s)...)
+	}
 	list.Items = append(list.Items, onTop(projectedCurveOverlay(s.ActiveSketch()))...)
 	dims := s.SketchDimensions()
 	list.Items = append(list.Items, onTop(dimensionLines(plane, dims))...)
