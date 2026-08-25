@@ -75,6 +75,49 @@ func TestOffsetToolSingleWhenLoopSelectOff(t *testing.T) {
 	}
 }
 
+// TestOffsetToolPlacementSetsSideAndDistance is Inventor's cursor-driven placement: after selecting a
+// curve, the click that places the offset sets both its side and its distance from the picked
+// geometry. A placement one unit inside a square loop offsets the whole loop inward by exactly one.
+func TestOffsetToolPlacementSetsSideAndDistance(t *testing.T) {
+	s, _ := emptyPartSession(t)
+	sk, _ := s.CreateSketch(sketch.XYPlane())
+	lines := squareLoop(sk, 4) // CCW [0,4]^2; lines[0] is the bottom edge (0,0)->(4,0)
+	before := sk.Lines().Count()
+
+	tool := NewSketchOffsetTool(0.5) // default distance ignored once a placement is set
+	s.StartTool(tool)
+	tool.Pick(s, SketchEntityHandle{Entity: lines[0]})
+	tool.placement, tool.placed = math.P2(2, 1), true // 1 unit inside, above the bottom edge
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	if got := sk.Lines().Count() - before; got != 4 {
+		t.Fatalf("placement offset created %d lines, want 4 (whole loop)", got)
+	}
+	innerBottom := false
+	for i := before; i < sk.Lines().Count(); i++ {
+		l := sk.Lines().Item(i)
+		if absOffset(float64(l.A.Position().Y)-1) < 1e-6 && absOffset(float64(l.B.Position().Y)-1) < 1e-6 {
+			innerBottom = true
+		}
+	}
+	if !innerBottom {
+		t.Error("no inner edge at y=1 — the placement did not offset inward by its 1-unit distance")
+	}
+}
+
+// TestPlacementSignedOffset checks the side/distance the cursor placement encodes: the magnitude is
+// the perpendicular distance to the curve, the sign the side (left of A->B is positive).
+func TestPlacementSignedOffset(t *testing.T) {
+	line := []math.Point2{math.P2(0, 0), math.P2(4, 0)} // natural direction +X, left normal +Y
+	if d := placementSignedOffset(line, math.P2(2, 3)); absOffset(d-3) > 1e-9 {
+		t.Errorf("left placement signed offset = %v, want +3", d)
+	}
+	if d := placementSignedOffset(line, math.P2(2, -2)); absOffset(d+2) > 1e-9 {
+		t.Errorf("right placement signed offset = %v, want -2", d)
+	}
+}
+
 func absOffset(x float64) float64 {
 	if x < 0 {
 		return -x

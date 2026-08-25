@@ -123,7 +123,10 @@ func TestSketchOffsetToolOffsetsCurve(t *testing.T) {
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 	tool := NewSketchOffsetTool(2)
 	s.StartTool(tool)
-	s.feedPick(SketchEntityHandle{Entity: l}) // auto-commits
+	tool.Pick(s, SketchEntityHandle{Entity: l}) // select the curve
+	if err := s.OK(); err != nil {               // OK finishes with the default distance (no placement click)
+		t.Fatalf("OK: %v", err)
+	}
 	if sk.Lines().Count() != 2 {
 		t.Fatalf("lines after offset = %d, want 2", sk.Lines().Count())
 	}
