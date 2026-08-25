@@ -363,7 +363,11 @@ func pickLightParams(lighting renderer.SceneLighting, rng *rand.Rand, material r
 		return native.RealisticLightParams{BaseColor: base, BaseWeight: 1, SpecularIOR: 1.5}
 	}
 	dist := renderer.NewLightDistribution(lights)
-	_, light, pdf := dist.Sample(rng.Float64())
+	// Monte Carlo light-importance sampling, not a security context: math/rand is the
+	// correct, intentional choice here (fast, and seedable via rand.NewSource for
+	// deterministic backend-parity tests — crypto/rand offers neither). See
+	// realisticState's own rng field/seeding comment.
+	_, light, pdf := dist.Sample(rng.Float64()) // NOSONAR
 	if pdf <= 0 {
 		return native.RealisticLightParams{}
 	}

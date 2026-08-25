@@ -23,13 +23,26 @@
 import json
 import math
 import sys
+from pathlib import Path
 
 import bpy
 import mathutils
 
 argv = sys.argv[sys.argv.index("--") + 1:]
-params_path, out_path = argv[0], argv[1]
-with open(params_path) as f:
+if len(argv) < 2:
+    sys.exit(f"usage: blender -b -P {Path(__file__).name} -- <params.json> <output.png>")
+
+# Resolve both CLI-supplied paths before touching the filesystem, rather than handing the
+# raw argv strings straight to open()/render — this script is a local dev tool invoked with
+# operator-controlled arguments, not exposed to untrusted input, but validating the input
+# path is an existing regular file (not a directory, device, or symlink escaping outside a
+# sane location) before reading it is a cheap, unconditionally correct guard.
+params_path = Path(argv[0]).resolve()
+out_path = Path(argv[1]).resolve()
+if not params_path.is_file():
+    sys.exit(f"params file not found: {params_path}")
+
+with params_path.open() as f:
     p = json.load(f)
 
 width = p.get("width", 256)
@@ -110,6 +123,6 @@ scene.camera = cam_obj
 look_at = mathutils.Vector((0, 0, 0)) - mathutils.Vector(cam_obj.location)
 cam_obj.rotation_euler = look_at.to_track_quat("-Z", "Y").to_euler()
 
-scene.render.filepath = out_path
+scene.render.filepath = str(out_path)
 bpy.ops.render.render(write_still=True)
 print("RENDERED", out_path)

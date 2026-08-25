@@ -546,15 +546,24 @@ VkShaderModule rt_load_shader(HeadContext* c, const uint32_t* spv, int spvLen) {
     return shader;
 }
 
-} // namespace
+// RTPipelineResources/rt_build_4stage_pipeline are shared by obk_rt_scene_build_pipeline and
+// obk_rt_scene_build_realistic_pipeline: both build an identical 4-binding descriptor set
+// (TLAS, output storage buffer, camera UBO, params UBO) and 4-stage (raygen/miss/shadow-miss/
+// closest-hit) ray tracing pipeline shape, differing only in which RTScene fields the caller
+// stores the result into (and the camera/params UBO sizes it allocates afterward).
+struct RTPipelineResources {
+    VkDescriptorSetLayout dsLayout = VK_NULL_HANDLE;
+    VkPipelineLayout pipeLayout = VK_NULL_HANDLE;
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    uint32_t handleSize = 0;
+    uint32_t handleAlignment = 0;
+    uint32_t baseAlignment = 0;
+};
 
-int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLen, const uint32_t* missSpv,
-                                int missLen, const uint32_t* shadowMissSpv, int shadowMissLen,
-                                const uint32_t* chitSpv, int chitLen) {
-    RTScene* s = (RTScene*)scene;
-    if (!s || !s->built || s->pipelineBuilt || !s->ctx->hwRayTracingPipeline) return 1;
-    HeadContext* c = s->ctx;
-
+bool rt_build_4stage_pipeline(HeadContext* c, RTScene* s, const uint32_t* rgenSpv, int rgenLen,
+                              const uint32_t* missSpv, int missLen, const uint32_t* shadowMissSpv,
+                              int shadowMissLen, const uint32_t* chitSpv, int chitLen,
+                              RTPipelineResources& out) {
     VkDescriptorSetLayoutBinding bindings[4]{};
     bindings[0] = {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1,
                   VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr};
@@ -565,19 +574,19 @@ int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLe
     dslInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     dslInfo.bindingCount = 4;
     dslInfo.pBindings = bindings;
-    if (!ok(vkCreateDescriptorSetLayout(c->device, &dslInfo, c->allocator, &s->pipeDsLayout))) return 1;
+    if (!ok(vkCreateDescriptorSetLayout(c->device, &dslInfo, c->allocator, &out.dsLayout))) return false;
 
     VkPipelineLayoutCreateInfo plInfo{};
     plInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     plInfo.setLayoutCount = 1;
-    plInfo.pSetLayouts = &s->pipeDsLayout;
-    if (!ok(vkCreatePipelineLayout(c->device, &plInfo, c->allocator, &s->pipePipeLayout))) return 1;
+    plInfo.pSetLayouts = &out.dsLayout;
+    if (!ok(vkCreatePipelineLayout(c->device, &plInfo, c->allocator, &out.pipeLayout))) return false;
 
     VkShaderModule rgen = rt_load_shader(c, rgenSpv, rgenLen);
     VkShaderModule miss = rt_load_shader(c, missSpv, missLen);
     VkShaderModule shadowMiss = rt_load_shader(c, shadowMissSpv, shadowMissLen);
     VkShaderModule chit = rt_load_shader(c, chitSpv, chitLen);
-    if (!rgen || !miss || !shadowMiss || !chit) return 1;
+    if (!rgen || !miss || !shadowMiss || !chit) return false;
 
     VkPipelineShaderStageCreateInfo stages[4]{};
     stages[0] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
@@ -618,14 +627,14 @@ int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLe
     pInfo.groupCount = 4;
     pInfo.pGroups = groups;
     pInfo.maxPipelineRayRecursionDepth = 2; // primary ray + one shadow ray traced from within it
-    pInfo.layout = s->pipePipeLayout;
+    pInfo.layout = out.pipeLayout;
     VkResult pipeResult =
-        s->rtFn.createRTPipeline(c->device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &s->pipePipeline);
+        s->rtFn.createRTPipeline(c->device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &out.pipeline);
     vkDestroyShaderModule(c->device, rgen, c->allocator);
     vkDestroyShaderModule(c->device, miss, c->allocator);
     vkDestroyShaderModule(c->device, shadowMiss, c->allocator);
     vkDestroyShaderModule(c->device, chit, c->allocator);
-    if (!ok(pipeResult)) return 1;
+    if (!ok(pipeResult)) return false;
 
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtProps{};
     rtProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
@@ -633,9 +642,31 @@ int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLe
     props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     props2.pNext = &rtProps;
     vkGetPhysicalDeviceProperties2(c->physical, &props2);
-    s->sbtHandleSize = rtProps.shaderGroupHandleSize;
-    s->sbtHandleAlignment = rtProps.shaderGroupHandleAlignment;
-    s->sbtBaseAlignment = rtProps.shaderGroupBaseAlignment;
+    out.handleSize = rtProps.shaderGroupHandleSize;
+    out.handleAlignment = rtProps.shaderGroupHandleAlignment;
+    out.baseAlignment = rtProps.shaderGroupBaseAlignment;
+    return true;
+}
+
+} // namespace
+
+int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLen, const uint32_t* missSpv,
+                                int missLen, const uint32_t* shadowMissSpv, int shadowMissLen,
+                                const uint32_t* chitSpv, int chitLen) {
+    RTScene* s = (RTScene*)scene;
+    if (!s || !s->built || s->pipelineBuilt || !s->ctx->hwRayTracingPipeline) return 1;
+    HeadContext* c = s->ctx;
+
+    RTPipelineResources res;
+    if (!rt_build_4stage_pipeline(c, s, rgenSpv, rgenLen, missSpv, missLen, shadowMissSpv, shadowMissLen,
+                                  chitSpv, chitLen, res))
+        return 1;
+    s->pipeDsLayout = res.dsLayout;
+    s->pipePipeLayout = res.pipeLayout;
+    s->pipePipeline = res.pipeline;
+    s->sbtHandleSize = res.handleSize;
+    s->sbtHandleAlignment = res.handleAlignment;
+    s->sbtBaseAlignment = res.baseAlignment;
 
     std::vector<uint8_t> handles(4 * (size_t)s->sbtHandleSize);
     if (!ok(s->rtFn.getShaderGroupHandles(c->device, s->pipePipeline, 0, 4, handles.size(), handles.data())))
@@ -763,81 +794,16 @@ int obk_rt_scene_build_realistic_pipeline(void* scene, const uint32_t* rgenSpv, 
     if (!s || !s->built || s->imgPipelineBuilt || !s->ctx->hwRayTracingPipeline) return 1;
     HeadContext* c = s->ctx;
 
-    VkDescriptorSetLayoutBinding bindings[4]{};
-    bindings[0] = {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1,
-                  VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr};
-    bindings[1] = {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr};
-    bindings[2] = {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr};
-    bindings[3] = {3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr};
-    VkDescriptorSetLayoutCreateInfo dslInfo{};
-    dslInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    dslInfo.bindingCount = 4;
-    dslInfo.pBindings = bindings;
-    if (!ok(vkCreateDescriptorSetLayout(c->device, &dslInfo, c->allocator, &s->imgDsLayout))) return 1;
-
-    VkPipelineLayoutCreateInfo plInfo{};
-    plInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    plInfo.setLayoutCount = 1;
-    plInfo.pSetLayouts = &s->imgDsLayout;
-    if (!ok(vkCreatePipelineLayout(c->device, &plInfo, c->allocator, &s->imgPipeLayout))) return 1;
-
-    VkShaderModule rgen = rt_load_shader(c, rgenSpv, rgenLen);
-    VkShaderModule miss = rt_load_shader(c, missSpv, missLen);
-    VkShaderModule shadowMiss = rt_load_shader(c, shadowMissSpv, shadowMissLen);
-    VkShaderModule chit = rt_load_shader(c, chitSpv, chitLen);
-    if (!rgen || !miss || !shadowMiss || !chit) return 1;
-
-    VkPipelineShaderStageCreateInfo stages[4]{};
-    stages[0] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
-                VK_SHADER_STAGE_RAYGEN_BIT_KHR,      rgen,       "main", nullptr};
-    stages[1] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
-                VK_SHADER_STAGE_MISS_BIT_KHR,        miss,       "main", nullptr};
-    stages[2] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
-                VK_SHADER_STAGE_MISS_BIT_KHR,        shadowMiss, "main", nullptr};
-    stages[3] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
-                VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, chit,       "main", nullptr};
-
-    VkRayTracingShaderGroupCreateInfoKHR groups[4]{};
-    for (int i = 0; i < 3; i++) {
-        groups[i].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-        groups[i].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        groups[i].generalShader = (uint32_t)i;
-        groups[i].closestHitShader = VK_SHADER_UNUSED_KHR;
-        groups[i].anyHitShader = VK_SHADER_UNUSED_KHR;
-        groups[i].intersectionShader = VK_SHADER_UNUSED_KHR;
-    }
-    groups[3].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-    groups[3].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
-    groups[3].generalShader = VK_SHADER_UNUSED_KHR;
-    groups[3].closestHitShader = 3;
-    groups[3].anyHitShader = VK_SHADER_UNUSED_KHR;
-    groups[3].intersectionShader = VK_SHADER_UNUSED_KHR;
-
-    VkRayTracingPipelineCreateInfoKHR pInfo{};
-    pInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-    pInfo.stageCount = 4;
-    pInfo.pStages = stages;
-    pInfo.groupCount = 4;
-    pInfo.pGroups = groups;
-    pInfo.maxPipelineRayRecursionDepth = 2; // primary ray + one shadow ray traced from within it
-    pInfo.layout = s->imgPipeLayout;
-    VkResult pipeResult = s->rtFn.createRTPipeline(c->device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pInfo,
-                                                  c->allocator, &s->imgPipeline);
-    vkDestroyShaderModule(c->device, rgen, c->allocator);
-    vkDestroyShaderModule(c->device, miss, c->allocator);
-    vkDestroyShaderModule(c->device, shadowMiss, c->allocator);
-    vkDestroyShaderModule(c->device, chit, c->allocator);
-    if (!ok(pipeResult)) return 1;
-
-    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtProps{};
-    rtProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
-    VkPhysicalDeviceProperties2 props2{};
-    props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    props2.pNext = &rtProps;
-    vkGetPhysicalDeviceProperties2(c->physical, &props2);
-    s->imgSbtHandleSize = rtProps.shaderGroupHandleSize;
-    s->imgSbtHandleAlignment = rtProps.shaderGroupHandleAlignment;
-    s->imgSbtBaseAlignment = rtProps.shaderGroupBaseAlignment;
+    RTPipelineResources res;
+    if (!rt_build_4stage_pipeline(c, s, rgenSpv, rgenLen, missSpv, missLen, shadowMissSpv, shadowMissLen,
+                                  chitSpv, chitLen, res))
+        return 1;
+    s->imgDsLayout = res.dsLayout;
+    s->imgPipeLayout = res.pipeLayout;
+    s->imgPipeline = res.pipeline;
+    s->imgSbtHandleSize = res.handleSize;
+    s->imgSbtHandleAlignment = res.handleAlignment;
+    s->imgSbtBaseAlignment = res.baseAlignment;
 
     std::vector<uint8_t> handles(4 * (size_t)s->imgSbtHandleSize);
     if (!ok(s->rtFn.getShaderGroupHandles(c->device, s->imgPipeline, 0, 4, handles.size(), handles.data())))

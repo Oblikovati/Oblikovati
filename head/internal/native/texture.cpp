@@ -135,6 +135,25 @@ bool make_device_image(HeadContext* c, int w, int h, IconTexture* tex) {
     return vkCreateImageView(c->device, &vi, nullptr, &tex->view) == VK_SUCCESS;
 }
 
+// submit_texture_upload ends, submits, and waits on the one-time-submit command buffer both
+// obk_create_texture and obk_update_texture record their transition/copy/transition sequence
+// into, then releases the staging buffer that fed it — shared because both are the same
+// "copy pixels to the device image, then discard the staging buffer" tail.
+void submit_texture_upload(HeadContext* c, IconTextures* it, VkCommandBuffer cmd, VkBuffer staging,
+                           VkDeviceMemory stagingMem) {
+    vkEndCommandBuffer(cmd);
+    VkSubmitInfo submit{};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
+    vkResetFences(c->device, 1, &it->fence);
+    vkQueueSubmit(c->queue, 1, &submit, it->fence);
+    vkWaitForFences(c->device, 1, &it->fence, VK_TRUE, UINT64_MAX);
+    vkFreeCommandBuffers(c->device, it->cmdPool, 1, &cmd);
+    vkDestroyBuffer(c->device, staging, nullptr);
+    vkFreeMemory(c->device, stagingMem, nullptr);
+}
+
 } // namespace
 
 extern "C" {
@@ -189,18 +208,7 @@ uint64_t obk_create_texture(void* h, const unsigned char* rgba, int w, int hh) {
                VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-    vkEndCommandBuffer(cmd);
-
-    VkSubmitInfo submit{};
-    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &cmd;
-    vkResetFences(c->device, 1, &it->fence);
-    vkQueueSubmit(c->queue, 1, &submit, it->fence);
-    vkWaitForFences(c->device, 1, &it->fence, VK_TRUE, UINT64_MAX);
-    vkFreeCommandBuffers(c->device, it->cmdPool, 1, &cmd);
-    vkDestroyBuffer(c->device, staging, nullptr);
-    vkFreeMemory(c->device, stagingMem, nullptr);
+    submit_texture_upload(c, it, cmd, staging, stagingMem);
 
     VkDescriptorSet set = ImGui_ImplVulkan_AddTexture(it->sampler, tex.view,
                                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -270,18 +278,7 @@ int obk_update_texture(void* h, uint64_t handle, const unsigned char* rgba, int 
               VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
               VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-    vkEndCommandBuffer(cmd);
-
-    VkSubmitInfo submit{};
-    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &cmd;
-    vkResetFences(c->device, 1, &it->fence);
-    vkQueueSubmit(c->queue, 1, &submit, it->fence);
-    vkWaitForFences(c->device, 1, &it->fence, VK_TRUE, UINT64_MAX);
-    vkFreeCommandBuffers(c->device, it->cmdPool, 1, &cmd);
-    vkDestroyBuffer(c->device, staging, nullptr);
-    vkFreeMemory(c->device, stagingMem, nullptr);
+    submit_texture_upload(c, it, cmd, staging, stagingMem);
     return 0;
 }
 

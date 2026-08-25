@@ -58,6 +58,32 @@ void sw_destroy_buffer(HeadContext* c, SWBuffer* b) {
     *b = SWBuffer{};
 }
 
+// sw_build_compute_pipeline is shared by obk_sw_scene_build, obk_sw_scene_build_pathtrace_pipeline,
+// and obk_sw_scene_build_realistic_pathtrace_pipeline: all three compile the same single-entry-point
+// "main" compute shader and pipeline shape, differing only in the descriptor-set layout feeding it.
+bool sw_build_compute_pipeline(HeadContext* c, VkPipelineLayout layout, const uint32_t* spv, int spvLen,
+                               VkPipeline& outPipeline) {
+    VkShaderModuleCreateInfo smInfo{};
+    smInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    smInfo.codeSize = (size_t)spvLen;
+    smInfo.pCode = spv;
+    VkShaderModule shader = VK_NULL_HANDLE;
+    if (!ok(vkCreateShaderModule(c->device, &smInfo, c->allocator, &shader))) return false;
+
+    VkPipelineShaderStageCreateInfo stage{};
+    stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    stage.module = shader;
+    stage.pName = "main";
+    VkComputePipelineCreateInfo pInfo{};
+    pInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pInfo.stage = stage;
+    pInfo.layout = layout;
+    VkResult pipeResult = vkCreateComputePipelines(c->device, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &outPipeline);
+    vkDestroyShaderModule(c->device, shader, c->allocator);
+    return ok(pipeResult);
+}
+
 } // namespace
 
 struct SWScene {
@@ -94,6 +120,49 @@ struct SWScene {
     int imgOutputWidth = 0, imgOutputHeight = 0;
     bool imgPipelineBuilt = false;
 };
+
+namespace {
+
+// sw_dispatch_and_wait is shared by obk_sw_scene_trace, obk_sw_scene_trace_pathtrace, and
+// obk_sw_scene_trace_realistic_pathtrace_image: all three record one compute dispatch into a
+// fresh one-time command buffer, submit it, and block on the scene's shared fence for the
+// (deliberately synchronous — this is a test/single-shot harness, not the live per-frame path)
+// result to land in host-visible memory, differing only in which pipeline/descriptor set to
+// bind and how many workgroups to dispatch.
+void sw_dispatch_and_wait(HeadContext* c, SWScene* s, VkPipeline pipeline, VkPipelineLayout layout,
+                          VkDescriptorSet descSet, uint32_t groupsX, uint32_t groupsY, uint32_t groupsZ) {
+    VkCommandBufferAllocateInfo cba{};
+    cba.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cba.commandPool = s->cmdPool;
+    cba.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cba.commandBufferCount = 1;
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
+    vkAllocateCommandBuffers(c->device, &cba, &cmd);
+    VkCommandBufferBeginInfo bi{};
+    bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cmd, &bi);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 1, &descSet, 0, nullptr);
+    vkCmdDispatch(cmd, groupsX, groupsY, groupsZ);
+    VkMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &barrier, 0,
+                         nullptr, 0, nullptr);
+    vkEndCommandBuffer(cmd);
+    VkSubmitInfo submit{};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
+    vkResetFences(c->device, 1, &s->fence);
+    vkQueueSubmit(c->queue, 1, &submit, s->fence);
+    vkWaitForFences(c->device, 1, &s->fence, VK_TRUE, UINT64_MAX);
+    vkFreeCommandBuffers(c->device, s->cmdPool, 1, &cmd);
+}
+
+} // namespace
 
 extern "C" {
 
@@ -149,25 +218,7 @@ int obk_sw_scene_build(void* scene, const void* nodes, int nodeCount, const int3
     plInfo.pSetLayouts = &s->dsLayout;
     if (!ok(vkCreatePipelineLayout(c->device, &plInfo, c->allocator, &s->pipeLayout))) return 1;
 
-    VkShaderModuleCreateInfo smInfo{};
-    smInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    smInfo.codeSize = (size_t)spvLen;
-    smInfo.pCode = spv;
-    VkShaderModule shader = VK_NULL_HANDLE;
-    if (!ok(vkCreateShaderModule(c->device, &smInfo, c->allocator, &shader))) return 1;
-
-    VkPipelineShaderStageCreateInfo stage{};
-    stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    stage.module = shader;
-    stage.pName = "main";
-    VkComputePipelineCreateInfo pInfo{};
-    pInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    pInfo.stage = stage;
-    pInfo.layout = s->pipeLayout;
-    VkResult pipeResult = vkCreateComputePipelines(c->device, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &s->pipeline);
-    vkDestroyShaderModule(c->device, shader, c->allocator);
-    if (!ok(pipeResult)) return 1;
+    if (!sw_build_compute_pipeline(c, s->pipeLayout, spv, spvLen, s->pipeline)) return 1;
 
     VkDescriptorPoolSize poolSizes[2] = {
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
@@ -227,35 +278,7 @@ void obk_sw_scene_trace(void* scene, float ox, float oy, float oz, float dx, flo
     float rayParams[8] = {ox, oy, oz, tMin, dx, dy, dz, tMax};
     std::memcpy(s->rayParamsBuf.mapped, rayParams, sizeof(rayParams));
 
-    VkCommandBufferAllocateInfo cba{};
-    cba.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    cba.commandPool = s->cmdPool;
-    cba.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    cba.commandBufferCount = 1;
-    VkCommandBuffer cmd = VK_NULL_HANDLE;
-    vkAllocateCommandBuffers(c->device, &cba, &cmd);
-    VkCommandBufferBeginInfo bi{};
-    bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    vkBeginCommandBuffer(cmd, &bi);
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->pipeline);
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->pipeLayout, 0, 1, &s->descSet, 0, nullptr);
-    vkCmdDispatch(cmd, 1, 1, 1);
-    VkMemoryBarrier barrier{};
-    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-    barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
-    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &barrier, 0,
-                         nullptr, 0, nullptr);
-    vkEndCommandBuffer(cmd);
-    VkSubmitInfo submit{};
-    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &cmd;
-    vkResetFences(c->device, 1, &s->fence);
-    vkQueueSubmit(c->queue, 1, &submit, s->fence);
-    vkWaitForFences(c->device, 1, &s->fence, VK_TRUE, UINT64_MAX);
-    vkFreeCommandBuffers(c->device, s->cmdPool, 1, &cmd);
+    sw_dispatch_and_wait(c, s, s->pipeline, s->pipeLayout, s->descSet, 1, 1, 1);
 
     // Mirrors raytrace.cpp's HitResultLayout exactly (same std430 shape and padding).
     struct HitResultLayout {
@@ -305,25 +328,7 @@ int obk_sw_scene_build_pathtrace_pipeline(void* scene, const uint32_t* spv, int 
     plInfo.pSetLayouts = &s->ptDsLayout;
     if (!ok(vkCreatePipelineLayout(c->device, &plInfo, c->allocator, &s->ptPipeLayout))) return 1;
 
-    VkShaderModuleCreateInfo smInfo{};
-    smInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    smInfo.codeSize = (size_t)spvLen;
-    smInfo.pCode = spv;
-    VkShaderModule shader = VK_NULL_HANDLE;
-    if (!ok(vkCreateShaderModule(c->device, &smInfo, c->allocator, &shader))) return 1;
-
-    VkPipelineShaderStageCreateInfo stage{};
-    stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    stage.module = shader;
-    stage.pName = "main";
-    VkComputePipelineCreateInfo pInfo{};
-    pInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    pInfo.stage = stage;
-    pInfo.layout = s->ptPipeLayout;
-    VkResult pipeResult = vkCreateComputePipelines(c->device, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &s->ptPipeline);
-    vkDestroyShaderModule(c->device, shader, c->allocator);
-    if (!ok(pipeResult)) return 1;
+    if (!sw_build_compute_pipeline(c, s->ptPipeLayout, spv, spvLen, s->ptPipeline)) return 1;
 
     VkDescriptorPoolSize poolSizes[2] = {
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
@@ -382,35 +387,7 @@ void obk_sw_scene_trace_pathtrace(void* scene, float ox, float oy, float oz, flo
     std::memcpy(s->ptCamBuf.mapped, camParams, sizeof(camParams));
     std::memcpy(s->ptParamsBuf.mapped, params, 16 * sizeof(float));
 
-    VkCommandBufferAllocateInfo cba{};
-    cba.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    cba.commandPool = s->cmdPool;
-    cba.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    cba.commandBufferCount = 1;
-    VkCommandBuffer cmd = VK_NULL_HANDLE;
-    vkAllocateCommandBuffers(c->device, &cba, &cmd);
-    VkCommandBufferBeginInfo bi{};
-    bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    vkBeginCommandBuffer(cmd, &bi);
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->ptPipeline);
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->ptPipeLayout, 0, 1, &s->ptDescSet, 0, nullptr);
-    vkCmdDispatch(cmd, 1, 1, 1);
-    VkMemoryBarrier barrier{};
-    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-    barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
-    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &barrier, 0,
-                         nullptr, 0, nullptr);
-    vkEndCommandBuffer(cmd);
-    VkSubmitInfo submit{};
-    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &cmd;
-    vkResetFences(c->device, 1, &s->fence);
-    vkQueueSubmit(c->queue, 1, &submit, s->fence);
-    vkWaitForFences(c->device, 1, &s->fence, VK_TRUE, UINT64_MAX);
-    vkFreeCommandBuffers(c->device, s->cmdPool, 1, &cmd);
+    sw_dispatch_and_wait(c, s, s->ptPipeline, s->ptPipeLayout, s->ptDescSet, 1, 1, 1);
 
     auto* out = reinterpret_cast<float*>(s->ptOutputBuf.mapped);
     if (outR) *outR = out[0];
@@ -449,26 +426,7 @@ int obk_sw_scene_build_realistic_pathtrace_pipeline(void* scene, const uint32_t*
     plInfo.pSetLayouts = &s->imgDsLayout;
     if (!ok(vkCreatePipelineLayout(c->device, &plInfo, c->allocator, &s->imgPipeLayout))) return 1;
 
-    VkShaderModuleCreateInfo smInfo{};
-    smInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    smInfo.codeSize = (size_t)spvLen;
-    smInfo.pCode = spv;
-    VkShaderModule shader = VK_NULL_HANDLE;
-    if (!ok(vkCreateShaderModule(c->device, &smInfo, c->allocator, &shader))) return 1;
-
-    VkPipelineShaderStageCreateInfo stage{};
-    stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    stage.module = shader;
-    stage.pName = "main";
-    VkComputePipelineCreateInfo pInfo{};
-    pInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    pInfo.stage = stage;
-    pInfo.layout = s->imgPipeLayout;
-    VkResult pipeResult =
-        vkCreateComputePipelines(c->device, VK_NULL_HANDLE, 1, &pInfo, c->allocator, &s->imgPipeline);
-    vkDestroyShaderModule(c->device, shader, c->allocator);
-    if (!ok(pipeResult)) return 1;
+    if (!sw_build_compute_pipeline(c, s->imgPipeLayout, spv, spvLen, s->imgPipeline)) return 1;
 
     VkDescriptorPoolSize poolSizes[2] = {
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
@@ -546,35 +504,8 @@ int obk_sw_scene_trace_realistic_pathtrace_image(void* scene, int width, int hei
     std::memcpy(s->imgCamBuf.mapped, camera, 16 * sizeof(float));
     std::memcpy(s->imgParamsBuf.mapped, params, kRealisticParamsBytes);
 
-    VkCommandBufferAllocateInfo cba{};
-    cba.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    cba.commandPool = s->cmdPool;
-    cba.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    cba.commandBufferCount = 1;
-    VkCommandBuffer cmd = VK_NULL_HANDLE;
-    vkAllocateCommandBuffers(c->device, &cba, &cmd);
-    VkCommandBufferBeginInfo bi{};
-    bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    vkBeginCommandBuffer(cmd, &bi);
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->imgPipeline);
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->imgPipeLayout, 0, 1, &s->imgDescSet, 0, nullptr);
-    vkCmdDispatch(cmd, (uint32_t)((width + 7) / 8), (uint32_t)((height + 7) / 8), 1);
-    VkMemoryBarrier barrier{};
-    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-    barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
-    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &barrier, 0,
-                         nullptr, 0, nullptr);
-    vkEndCommandBuffer(cmd);
-    VkSubmitInfo submit{};
-    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &cmd;
-    vkResetFences(c->device, 1, &s->fence);
-    vkQueueSubmit(c->queue, 1, &submit, s->fence);
-    vkWaitForFences(c->device, 1, &s->fence, VK_TRUE, UINT64_MAX);
-    vkFreeCommandBuffers(c->device, s->cmdPool, 1, &cmd);
+    sw_dispatch_and_wait(c, s, s->imgPipeline, s->imgPipeLayout, s->imgDescSet, (uint32_t)((width + 7) / 8),
+                        (uint32_t)((height + 7) / 8), 1);
 
     auto* out = reinterpret_cast<float*>(s->imgOutputBuf.mapped);
     for (int i = 0; i < width * height; i++) {
