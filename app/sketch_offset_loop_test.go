@@ -118,6 +118,34 @@ func TestPlacementSignedOffset(t *testing.T) {
 	}
 }
 
+// TestOffsetToolConstrainOffsetDefaultOn: with Constrain Offset on (Inventor default) a loop offset
+// adds associativity constraints; turning it off adds none.
+func TestOffsetToolConstrainOffsetDefaultOn(t *testing.T) {
+	run := func(constrain bool) int {
+		s, _ := emptyPartSession(t)
+		sk, _ := s.CreateSketch(sketch.XYPlane())
+		lines := squareLoop(sk, 4)
+		before := len(sk.Constraints())
+		tool := NewSketchOffsetTool(0.5)
+		tool.SetConstrainOffset(constrain)
+		s.StartTool(tool)
+		tool.Pick(s, SketchEntityHandle{Entity: lines[0]})
+		if err := s.OK(); err != nil {
+			t.Fatalf("OK: %v", err)
+		}
+		return len(sk.Constraints()) - before
+	}
+	if !NewSketchOffsetTool(1).ConstrainOffset() {
+		t.Fatal("Constrain Offset must be on by default (Inventor)")
+	}
+	if got := run(true); got != 8 { // 4 parallel + 4 coincident corners
+		t.Errorf("constrained loop offset added %d constraints, want 8", got)
+	}
+	if got := run(false); got != 0 {
+		t.Errorf("unconstrained loop offset added %d constraints, want 0", got)
+	}
+}
+
 func absOffset(x float64) float64 {
 	if x < 0 {
 		return -x

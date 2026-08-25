@@ -107,16 +107,22 @@ func (t *SketchFilletTool) Commit(s *Session) error {
 type SketchOffsetTool struct {
 	dialogTool
 	pickCollector
-	distance   math.Scalar
-	loopSelect bool       // Inventor default: offset the whole connected loop, not just the picked curve
-	placement  math.Point2 // where the user clicked to place the offset (its side + distance)
-	placed     bool
+	distance        math.Scalar
+	loopSelect      bool        // Inventor default: offset the whole connected loop, not just the picked curve
+	constrainOffset bool        // Inventor default: constrain the offset associative to its source
+	placement       math.Point2 // where the user clicked to place the offset (its side + distance)
+	placed          bool
 }
 
-// NewSketchOffsetTool makes an offset tool with the given default distance and Loop Select on, as
-// Inventor defaults.
+// NewSketchOffsetTool makes an offset tool with the given default distance and both Loop Select and
+// Constrain Offset on, as Inventor defaults.
 func NewSketchOffsetTool(distance float64) *SketchOffsetTool {
-	return &SketchOffsetTool{pickCollector: pickCollector{want: 1}, distance: math.Scalar(distance), loopSelect: true}
+	return &SketchOffsetTool{
+		pickCollector:   pickCollector{want: 1},
+		distance:        math.Scalar(distance),
+		loopSelect:      true,
+		constrainOffset: true,
+	}
 }
 
 func (t *SketchOffsetTool) Name() string                  { return "Offset" }
@@ -151,6 +157,12 @@ func (t *SketchOffsetTool) AutoCommits() bool { return t.placed }
 func (t *SketchOffsetTool) LoopSelect() bool      { return t.loopSelect }
 func (t *SketchOffsetTool) SetLoopSelect(on bool) { t.loopSelect = on }
 func (t *SketchOffsetTool) ToggleLoopSelect()     { t.loopSelect = !t.loopSelect }
+
+// ConstrainOffset reports whether the offset is constrained associative to its source (Inventor's
+// default — parallel lines, concentric arcs, joined corners); the right-click menu toggles it.
+func (t *SketchOffsetTool) ConstrainOffset() bool      { return t.constrainOffset }
+func (t *SketchOffsetTool) SetConstrainOffset(on bool) { t.constrainOffset = on }
+func (t *SketchOffsetTool) ToggleConstrainOffset()     { t.constrainOffset = !t.constrainOffset }
 
 // Accepts highlights the curves OffsetEntity handles: line, circle, arc, and a projected reference
 // curve (a projected face perimeter or edge, offset as a polyline — #2158 follow-up). Uses the
@@ -190,11 +202,23 @@ func (t *SketchOffsetTool) Commit(s *Session) error {
 	// OffsetConnectedLoop is for a multi-curve chain, and OffsetEntity keeps a single line/arc/circle
 	// analytic. ConnectedChainFrom returns ok for ANY curve, so the count, not ok, gates the loop path.
 	if !t.loopSelect || !ok || path.Count() <= 1 {
-		_, err := sk.OffsetEntity(t.picks[0], math.Scalar(t.singleDistance()))
+		off, err := sk.OffsetEntity(t.picks[0], math.Scalar(t.singleDistance()))
+		if err != nil {
+			return err
+		}
+		if t.constrainOffset {
+			sk.ConstrainOffsetSingle(t.picks[0], off)
+		}
+		return nil
+	}
+	offsets, err := sk.OffsetConnectedLoop(path, t.loopDistance(path))
+	if err != nil {
 		return err
 	}
-	_, err := sk.OffsetConnectedLoop(path, t.loopDistance(path))
-	return err
+	if t.constrainOffset {
+		sk.ConstrainOffsetLoop(path, offsets)
+	}
+	return nil
 }
 
 // singleDistance is the signed offset for one curve: the placement's signed distance to the seed
