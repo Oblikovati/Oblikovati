@@ -5,6 +5,7 @@
 // instanced draw path) is a later PBI; this establishes the correct, hardware-verified
 // acceleration-structure and ray-query mechanics renderer.Intersector needs.
 #include "raytrace.h"
+#include <algorithm>
 #include <cstring>
 #include <vector>
 
@@ -36,6 +37,11 @@ struct RTFunctions {
     PFN_vkCreateRayTracingPipelinesKHR createRTPipeline = nullptr;
     PFN_vkGetRayTracingShaderGroupHandlesKHR getShaderGroupHandles = nullptr;
     PFN_vkCmdTraceRaysKHR cmdTraceRays = nullptr;
+    // Pipeline stack sizing (#2155) — required once a pipeline actually recurses (a hit
+    // shader tracing another ray from within itself, not just a single-level shadow
+    // query): see rt_pipeline_stack_size's own doc comment for why.
+    PFN_vkGetRayTracingShaderGroupStackSizeKHR getGroupStackSize = nullptr;
+    PFN_vkCmdSetRayTracingPipelineStackSizeKHR cmdSetStackSize = nullptr;
 };
 
 // rt_load_functions resolves every extension-only entry point fresh, into fn, for
@@ -66,6 +72,10 @@ void rt_load_functions(VkDevice device, RTFunctions& fn) {
     fn.getShaderGroupHandles = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetDeviceProcAddr(
         device, "vkGetRayTracingShaderGroupHandlesKHR");
     fn.cmdTraceRays = (PFN_vkCmdTraceRaysKHR)vkGetDeviceProcAddr(device, "vkCmdTraceRaysKHR");
+    fn.getGroupStackSize = (PFN_vkGetRayTracingShaderGroupStackSizeKHR)vkGetDeviceProcAddr(
+        device, "vkGetRayTracingShaderGroupStackSizeKHR");
+    fn.cmdSetStackSize = (PFN_vkCmdSetRayTracingPipelineStackSizeKHR)vkGetDeviceProcAddr(
+        device, "vkCmdSetRayTracingPipelineStackSizeKHR");
 }
 
 struct RTBuffer {
@@ -115,6 +125,7 @@ struct RTScene {
     RTBuffer sbtBuf;
     RTBuffer pipeCamBuf, pipeOutputBuf, pipeParamsBuf;
     uint32_t sbtHandleSize = 0, sbtHandleAlignment = 0, sbtBaseAlignment = 0;
+    uint32_t pipeStackSize = 0; // vkCmdSetRayTracingPipelineStackSizeKHR — see rt_pipeline_stack_size
     bool pipelineBuilt = false;
 
     // Live per-pixel Realistic-viewport pipeline (M45-F05 PBI-350) — a THIRD, independent
@@ -129,6 +140,7 @@ struct RTScene {
     VkDescriptorSet imgDescSet = VK_NULL_HANDLE;
     RTBuffer imgSbtBuf, imgCamBuf, imgParamsBuf, imgOutputBuf;
     uint32_t imgSbtHandleSize = 0, imgSbtHandleAlignment = 0, imgSbtBaseAlignment = 0;
+    uint32_t imgStackSize = 0; // vkCmdSetRayTracingPipelineStackSizeKHR — see rt_pipeline_stack_size
     int imgOutputWidth = 0, imgOutputHeight = 0; // 0 until the first trace_realistic_image call sizes imgOutputBuf
     bool imgPipelineBuilt = false;
 };
@@ -558,7 +570,32 @@ struct RTPipelineResources {
     uint32_t handleSize = 0;
     uint32_t handleAlignment = 0;
     uint32_t baseAlignment = 0;
+    uint32_t stackSize = 0;
 };
+
+// rt_pipeline_stack_size computes the pipeline's required call-stack size for
+// vkCmdSetRayTracingPipelineStackSizeKHR (#2155). Without this call, the driver is free
+// to use whatever default it likes for vkCmdTraceRaysKHR — RADV's default is sized for a
+// pipeline that never recurses past a single shadow-ray query, which this pipeline no
+// longer is (pathtrace_realistic.rchit now fires a bounded chain of continuation rays
+// through transmissive surfaces, invoking itself again for each). An undersized stack
+// overflows into unrelated GPU memory: observed live as an intermittent GPUVM fault/"CS
+// cancelled" device-lost error that also corrupted LATER, unrelated dispatches on the
+// same device — not a cosmetic bug. Formula per the VK_KHR_ray_tracing_pipeline spec's
+// own "Ray Tracing Pipeline Stack" section (raygen's own frame, plus one frame of the
+// worst-case hit/miss group per recursion level — this pipeline has no any-hit/
+// intersection/callable shaders, so those terms are always zero here).
+uint32_t rt_pipeline_stack_size(RTScene* s, VkPipeline pipeline, uint32_t recursionDepth) {
+    auto groupStack = [&](uint32_t group, VkShaderGroupShaderKHR shader) -> uint32_t {
+        return s->rtFn.getGroupStackSize(s->ctx->device, pipeline, group, shader);
+    };
+    uint32_t raygenStack = groupStack(0, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
+    uint32_t missStack = std::max(groupStack(1, VK_SHADER_GROUP_SHADER_GENERAL_KHR),
+                                  groupStack(2, VK_SHADER_GROUP_SHADER_GENERAL_KHR));
+    uint32_t hitStack = groupStack(3, VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR);
+    uint32_t perLevel = std::max(missStack, hitStack);
+    return raygenStack + recursionDepth * perLevel;
+}
 
 bool rt_build_4stage_pipeline(HeadContext* c, RTScene* s, const uint32_t* rgenSpv, int rgenLen,
                               const uint32_t* missSpv, int missLen, const uint32_t* shadowMissSpv,
@@ -655,6 +692,7 @@ bool rt_build_4stage_pipeline(HeadContext* c, RTScene* s, const uint32_t* rgenSp
     out.handleSize = rtProps.shaderGroupHandleSize;
     out.handleAlignment = rtProps.shaderGroupHandleAlignment;
     out.baseAlignment = rtProps.shaderGroupBaseAlignment;
+    out.stackSize = rt_pipeline_stack_size(s, out.pipeline, pInfo.maxPipelineRayRecursionDepth);
     return true;
 }
 
@@ -677,6 +715,7 @@ int obk_rt_scene_build_pipeline(void* scene, const uint32_t* rgenSpv, int rgenLe
     s->sbtHandleSize = res.handleSize;
     s->sbtHandleAlignment = res.handleAlignment;
     s->sbtBaseAlignment = res.baseAlignment;
+    s->pipeStackSize = res.stackSize;
 
     std::vector<uint8_t> handles(4 * (size_t)s->sbtHandleSize);
     if (!ok(s->rtFn.getShaderGroupHandles(c->device, s->pipePipeline, 0, 4, handles.size(), handles.data())))
@@ -773,6 +812,7 @@ void obk_rt_scene_trace_pipeline(void* scene, float ox, float oy, float oz, floa
 
     rt_run_commands(s, [&](VkCommandBuffer cmd) {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->pipePipeline);
+        s->rtFn.cmdSetStackSize(cmd, s->pipeStackSize);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->pipePipeLayout, 0, 1,
                                 &s->pipeDescSet, 0, nullptr);
         s->rtFn.cmdTraceRays(cmd, &raygenRegion, &missRegion, &hitRegion, &callableRegion, 1, 1, 1);
@@ -814,6 +854,7 @@ int obk_rt_scene_build_realistic_pipeline(void* scene, const uint32_t* rgenSpv, 
     s->imgSbtHandleSize = res.handleSize;
     s->imgSbtHandleAlignment = res.handleAlignment;
     s->imgSbtBaseAlignment = res.baseAlignment;
+    s->imgStackSize = res.stackSize;
 
     std::vector<uint8_t> handles(4 * (size_t)s->imgSbtHandleSize);
     if (!ok(s->rtFn.getShaderGroupHandles(c->device, s->imgPipeline, 0, 4, handles.size(), handles.data())))
@@ -933,6 +974,7 @@ int obk_rt_scene_trace_realistic_image(void* scene, int width, int height, const
 
     rt_run_commands(s, [&](VkCommandBuffer cmd) {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->imgPipeline);
+        s->rtFn.cmdSetStackSize(cmd, s->imgStackSize);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, s->imgPipeLayout, 0, 1,
                                 &s->imgDescSet, 0, nullptr);
         s->rtFn.cmdTraceRays(cmd, &raygenRegion, &missRegion, &hitRegion, &callableRegion,
