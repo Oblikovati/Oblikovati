@@ -152,11 +152,11 @@ func (s *SweepFeature) Recompute(in Input) (Output, error) {
 	return Output{Bodies: bodies}, nil
 }
 
-// buildSweepTool builds the swept tool body. A rigid straight sweep of a circle / line+arc profile
-// keeps ANALYTIC faces — a straight NormalToPath sweep is exactly an extrude along the path tangent,
-// so it reuses the extrude analytic prism (#2164 follow-up) and a projected face sees real arcs, not
-// chords. Every other sweep (bent path, taper/twist/scaling/rail/guide, a surface sweep, or a profile
-// with holes) uses the faceted section skin.
+// buildSweepTool builds the swept tool body. A rigid sweep keeps ANALYTIC faces where it can: a
+// straight run reuses the extrude analytic prism (a straight NormalToPath sweep is exactly an extrude
+// along the path tangent), and a full circular path with a circle profile is a torus (#2164 follow-up)
+// — so a projected face sees real arcs, not chords. Every other sweep (a bent/partial path,
+// taper/twist/scaling/rail/guide, a surface sweep, or a profile with holes) uses the faceted skin.
 func (s *SweepFeature) buildSweepTool(prof *sketch.Profile, path *sketch.Path3D, cfg sweepConfig) (*topo.Body, error) {
 	feat := featOr(s.featName, "sweep")
 	if s.def.Operation != ops.Surface && s.sweepIsRigid() {

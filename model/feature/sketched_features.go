@@ -147,6 +147,8 @@ func buildRevolveSolid(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis,
 				return body, nil
 			}
 		}
+	} else if body, ok := buildPartialRevolveSolid(prof, plane, axis, angle, start, feat); ok {
+		return body, nil // a partial revolve of a line-only meridian keeps analytic sector walls (#2019)
 	}
 	sections, closed := revolveSectionsFrom(prof, plane, axis, angle, start)
 	return sweptSolid(sections, closed, feat)

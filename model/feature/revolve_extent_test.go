@@ -47,7 +47,11 @@ func revolveWithExtent(t *testing.T, set func(*RevolveDefinition)) *ops.Geometry
 	if !pf.Health().OK() {
 		return nil
 	}
-	props := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality())
+	// A terminator-swept wedge is now an ANALYTIC sector (partial cylinder walls + planar caps), so
+	// its volume is EXACT and only the display-grade mesh under-reports it. Measure at PropertyQuality
+	// — the codebase's grade for reported property values (tessellate.go) — not the display default,
+	// which biases an analytic curved volume ~1.5% low and would fail the 1% wedge gate below.
+	props := ops.BodyGeometryProperties(fs.Result()[0], ops.PropertyQuality())
 	return &props
 }
 
