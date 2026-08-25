@@ -14,6 +14,8 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
+	"oblikovati.org/head/viewport"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
@@ -50,6 +52,19 @@ func newViewportWindow(t *testing.T) *native.Window {
 	prevEnv = app.Environment(255) // out-of-range: guarantees a mismatch against any real cur
 	prevActiveDoc = ^uint64(0)     // max uint64: guarantees a mismatch against any real doc id
 	prevFramedDoc = ^uint64(0)
+	// #2156: frameAtlasCache is a SINGLE (non-map) package-level retained atlas, keyed by a
+	// content-derived string (viewport_instancing.go's instancedSourceKey) — two different
+	// tests/windows whose scenes happen to hash to the same key (e.g. two tests that each
+	// build "one box") make cachedFrameAtlas skip rebuilding and reuse the EARLIER test's
+	// mesh/records, which were computed against a since-destroyed window's geometry-upload
+	// state. sourceMeshCache/visibleScratch are the same class of risk (retained across
+	// windows, keyed by content or *topo.Body pointer) — reset defensively alongside it.
+	frameAtlasCache = frameAtlas{}
+	sourceMeshCache = map[*topo.Body]struct {
+		key  string
+		mesh viewport.Mesh
+	}{}
+	visibleScratch = map[*topo.Body][]math.Matrix4{}
 	return win
 }
 
