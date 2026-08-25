@@ -2,7 +2,11 @@
 
 package sketch
 
-import "testing"
+import (
+	"testing"
+
+	gmath "oblikovati.org/math"
+)
 
 // TestEntityListStorageCore pins the shared storage core the typed factory collections
 // embed (#1656): append order, Count/Item indexing, and remove-first-occurrence
@@ -36,4 +40,26 @@ func TestEntityListItemIsUnguarded(t *testing.T) {
 	}()
 	var l entityList[int]
 	_ = l.Item(0)
+}
+
+// TestCircularCenters returns each circle's and arc's centre so a sketch overlay can mark them
+// (#2159), and nothing for a sketch without circular geometry.
+func TestCircularCenters(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	if got := s.CircularCenters(); len(got) != 0 {
+		t.Fatalf("empty sketch CircularCenters = %v, want none", got)
+	}
+	s.Circles().AddByCenterRadius(gmath.P2(2, 3), 1)
+	s.Arcs().AddByCenterStartEnd(gmath.P2(-4, 5), gmath.P2(-3, 5), gmath.P2(-4, 6), true)
+
+	got := s.CircularCenters()
+	if len(got) != 2 {
+		t.Fatalf("CircularCenters = %d centres, want 2 (one circle, one arc)", len(got))
+	}
+	if !got[0].IsEqualTo(gmath.P2(2, 3), 1e-9) {
+		t.Errorf("circle centre = %v, want (2,3)", got[0])
+	}
+	if !got[1].IsEqualTo(gmath.P2(-4, 5), 1e-9) {
+		t.Errorf("arc centre = %v, want (-4,5)", got[1])
+	}
 }

@@ -347,6 +347,7 @@ func drawViewportOverlays(s *app.Session, cam scene.Camera, sketchPlane sketch.P
 	if s.InSketch() {
 		drawPlacementFieldBoxes(s, cam, ox, oy) // in-place dimension input (#2014)
 	}
+	drawRegionModifierBadge(s) // +/− cursor badge during area (region) multi-select (#2165)
 }
 
 // updateViewportCamera sizes the camera to the panel and either advances the active camera
@@ -594,8 +595,19 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 	if g := s.Grid(); g.Visible {
 		list.Items = append(gridOverlay(plane, g.SpacingModel(), g.MajorEvery, cam.Eye), list.Items...)
 	}
-	list.Items = append(list.Items, onTop(sketchOverlay(s.ActiveSketch(), s.IsSelectedEntity, hoverCandidate(s), s.ShowFormat()))...)
-	list.Items = append(list.Items, onTop(projectedCurveOverlay(s.ActiveSketch()))...)
+	cand := hoverCandidate(s) // the sketch entity the active tool would accept on hover (once per frame)
+	list.Items = append(list.Items, onTop(sketchOverlay(s.ActiveSketch(), s.IsSelectedEntity, cand, s.ShowFormat()))...)
+	// A model-reference tool (Project Geometry) picks B-rep faces/edges from the viewport while the
+	// sketch is edited, so highlight what it would project — the model-overlay path that normally
+	// draws this is skipped in sketch mode, which is why a projectable face never lit up (#2158). Not
+	// onTop: it tints the 3D face behind the sketch plane, under the sketch entities drawn above.
+	if s.ToolPicksModelReferences() {
+		list.Items = append(list.Items, toolHoverHighlight(s)...)
+	}
+	// Projected curves are drawn here (sketchOverlay misses them), tinted for hover/selection so a
+	// projected perimeter gives the same feedback as any other curve — the piece the offset workflow
+	// needed to see what it was about to pick (#2158 follow-up).
+	list.Items = append(list.Items, onTop(projectedCurveOverlay(s.ActiveSketch(), s.IsSelectedEntity, cand))...)
 	dims := s.SketchDimensions()
 	list.Items = append(list.Items, onTop(dimensionLines(plane, dims))...)
 	if item, ok := pointsOverlay(plane, s.ActiveSketch(), pointMarkerPixels*cam.WorldPerPixel()); ok {

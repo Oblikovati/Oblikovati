@@ -120,9 +120,8 @@ func midpointPicked(picks []constraintPick) bool {
 }
 
 // Entity-kind acceptance predicates.
-func acceptPoints(e sketch.Entity) bool  { _, ok := e.(*sketch.Point); return ok }
-func acceptLines(e sketch.Entity) bool   { _, ok := e.(*sketch.Line); return ok }
-func acceptCircles(e sketch.Entity) bool { _, ok := e.(*sketch.Circle); return ok }
+func acceptPoints(e sketch.Entity) bool { _, ok := e.(*sketch.Point); return ok }
+func acceptLines(e sketch.Entity) bool  { _, ok := e.(*sketch.Line); return ok }
 
 // acceptCircular accepts any circular curve — a circle or an arc.
 func acceptCircular(e sketch.Entity) bool {
@@ -145,7 +144,10 @@ func acceptCoincident(e sketch.Entity) bool {
 }
 
 func acceptDimensionable(e sketch.Entity) bool {
-	return acceptPoints(e) || acceptLines(e) || acceptCircles(e)
+	// Circular means circle OR arc: an arc dimensions its radius exactly like a circle, but matching
+	// only *Circle meant the tool never picked an arc, so an arc could not be radius-dimensioned at
+	// all (#2160-adjacent).
+	return acceptPoints(e) || acceptLines(e) || acceptCircular(e)
 }
 
 // readyCoincident is satisfied by two points, or a point plus a line/circle/arc.

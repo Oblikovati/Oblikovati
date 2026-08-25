@@ -85,12 +85,16 @@ func (p *ProjectedPoint) Update() {
 // (the "break link" / include-without-associativity option).
 func (p *ProjectedPoint) BreakLink() { p.linked = false }
 
-// ProjectedCurve is a sketch polyline projected from a model edge (or cut edge).
+// ProjectedCurve is a sketch curve projected from a model edge (or cut edge). points is the sampled
+// polyline; shape is its analytic form (a projected line/arc/circle projects to one — Inventor keeps
+// them analytic), re-derived from points on every Update, so a projected arc draws smooth and offsets
+// as a concentric arc rather than a faceted chain.
 type ProjectedCurve struct {
 	id     ID
 	source CurveSource
 	plane  Plane
 	points []math.Point2
+	shape  projectedShape
 	linked bool
 	// srcKind/srcID persist the source's identity for save/reload + rebind (see ProjectedPoint).
 	srcKind, srcID string
@@ -135,6 +139,17 @@ func (c *ProjectedCurve) Update() {
 	for _, q := range src {
 		c.points = append(c.points, c.plane.ToSketch(q))
 	}
+	c.shape = fitProjectedShape(c.points)
+}
+
+// RenderPolyline returns the curve as a smooth polyline for drawing and hit-testing: the analytic
+// shape sampled finely when the projection is a line/arc/circle (so a projected arc is not the 16
+// source facets), else the raw projected points.
+func (c *ProjectedCurve) RenderPolyline() []math.Point2 {
+	if p := c.shape.polyline(); p != nil {
+		return p
+	}
+	return c.Points()
 }
 
 // BreakLink detaches the projection from its source, freezing the current polyline.
@@ -278,7 +293,7 @@ func (s *Sketch) RestoreProjectedPoint(anchorID ID, pos math.Point2, srcKind, sr
 // RestoreProjectedCurve rebuilds a projected curve frozen at the given polyline, pinning its id
 // and keeping the source descriptor for a later Rebind.
 func (s *Sketch) RestoreProjectedCurve(id ID, pts []math.Point2, srcKind, srcID string) *ProjectedCurve {
-	c := &ProjectedCurve{id: id, plane: s.plane, points: pts, linked: false, srcKind: srcKind, srcID: srcID}
+	c := &ProjectedCurve{id: id, plane: s.plane, points: pts, shape: fitProjectedShape(pts), linked: false, srcKind: srcKind, srcID: srcID}
 	s.add(c)
 	return c
 }

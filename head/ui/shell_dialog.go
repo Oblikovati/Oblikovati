@@ -36,10 +36,7 @@ func drawShellDialog(s *app.Session) {
 			title = name // re-editing a committed shell: the breadcrumb names it
 		}
 		drawFeatureBreadcrumb(title, "")
-		if propertySection("Input Geometry") {
-			drawPickChipRow("Remove", "shell-faces", countChipText(sh.FaceCount(), "Face", "Select Faces"),
-				sh.FaceCount() > 0, "Click the faces to open (they are removed; the rest walls in)", sh.ClearFaces)
-		}
+		drawShellInputGeometry(sh)
 		if propertySection("Behavior") {
 			lengthCmRow(s, "Thickness", "shell-thickness", &shellUI.thickness)
 			sh.SetThickness(float64(shellUI.thickness))
@@ -48,4 +45,15 @@ func drawShellDialog(s *app.Session) {
 		drawCommitCancelButtons(s, sh.CanCommit())
 	}
 	native.End()
+}
+
+// drawShellInputGeometry draws the Shell panel's Input Geometry section — the faces-to-remove chip.
+// Tool-only (no session), so the split reduces drawShellDialog's length without widening head/ui's
+// *app.Session coupling (audit I5).
+func drawShellInputGeometry(sh *app.ShellTool) {
+	if !propertySection("Input Geometry") {
+		return
+	}
+	drawPickChipRow("Remove", "shell-faces", countChipText(sh.FaceCount(), "Face", "Select Faces"),
+		sh.FaceCount() > 0, "Click the faces to open (they are removed; the rest walls in)", sh.ClearFaces)
 }

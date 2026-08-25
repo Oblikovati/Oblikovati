@@ -100,6 +100,34 @@ func (p coordPicker) Pick(x, _ float64, filter *SelectionFilter) (Selectable, bo
 	return sel, true
 }
 
+// TestRegionModifierHintAddRemove: with a region tool active and Ctrl held, the cursor hint is ADD
+// over an unpicked region and REMOVE over an already-picked one — the +/− the head badges the cursor
+// with — and nothing without a modifier or without an active region tool.
+func TestRegionModifierHintAddRemove(t *testing.T) {
+	s, r0, r1 := newPartWithTwoSquares(t, 2, 10)
+	s.SetPicker(coordPicker{left: r0, right: r1, split: 100})
+
+	// No active tool → no hint even with Ctrl over a region.
+	if show, _ := s.RegionModifierHint(10, 10, CtrlMod); show {
+		t.Error("no tool active: expected no cursor hint")
+	}
+	ext := NewExtrudeTool()
+	s.StartTool(ext)
+	ext.Pick(s, r0) // region 0 is now picked
+
+	if show, _ := s.RegionModifierHint(10, 10, 0); show {
+		t.Error("no modifier held: expected no cursor hint")
+	}
+	show, add := s.RegionModifierHint(10, 10, CtrlMod) // over the already-picked region 0
+	if !show || add {
+		t.Errorf("over a picked region: show=%v add=%v, want show=true add=false (REMOVE)", show, add)
+	}
+	show, add = s.RegionModifierHint(200, 10, CtrlMod) // over the unpicked region 1
+	if !show || !add {
+		t.Errorf("over an unpicked region: show=%v add=%v, want show=true add=true (ADD)", show, add)
+	}
+}
+
 func TestExtrudeCtrlClickThroughPointerCapturesBothRegions(t *testing.T) {
 	s, r0, r1 := newPartWithTwoSquares(t, 2, 10)
 	s.SetPicker(coordPicker{left: r0, right: r1, split: 100})

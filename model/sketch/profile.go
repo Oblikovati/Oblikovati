@@ -259,13 +259,17 @@ func (s *Sketch) normalGeometry() []Entity {
 // groupRegions builds profiles from closed loops by even–odd nesting: a loop contained in an even
 // number of others is an outer boundary; loops one level deeper inside it are its holes.
 //
-// As an exception, a hole loop that is a single closed PRIMITIVE the user drew — a circle or an
-// ellipse — ALSO bounds its own selectable region (the disk inside it), so a circle inside a
-// rectangle yields BOTH the annulus AND the disk, matching how Inventor lets you select either face.
-// (#1526: lofting "the circle" produced nothing because the disk was silently absorbed as a hole and
-// never offered as a profile.) The exception is deliberately narrow: text-glyph counters and abutting
-// grill cells are not single primitives, so they stay holes only and the glyph/grill region detection
-// (and the grill boolean, which uses ClosedLoops, #863) is unchanged.
+// As an exception, an odd-nested loop the user actually DREW also bounds its own selectable region
+// (the area inside it), so nested loops yield BOTH the annulus AND the inner face, matching how
+// Inventor lets you select either. A circle inside a rectangle offers the disk (#1526), and a
+// rounded-rectangle (or any polygon) inside another offers its inner face (#2165 — the offset of a
+// rounded profile left the inner region unselectable). Synthetic text-glyph counters carry NO
+// entities (they are bare polygons from TextProfiles), so they stay holes only and the glyph region
+// detection is unchanged; the grill boolean uses ClosedLoops (#863) and is likewise untouched.
+//
+// The extra inner regions are APPENDED after every outer region, so a loop the exception newly exposes
+// never shifts an outer region's index — index-based extrude/loft selections in older documents keep
+// pointing at the same face (newer ones resolve by seed point, #region-seed).
 func groupRegions(loops []Loop) []*Profile {
 	depth := make([]int, len(loops))
 	for i := range loops {
@@ -277,27 +281,75 @@ func groupRegions(loops []Loop) []*Profile {
 	}
 	var profiles []*Profile
 	for i, l := range loops {
-		if depth[i]%2 == 0 || isClosedPrimitiveLoop(l) {
+		if depth[i]%2 == 0 {
+			profiles = append(profiles, &Profile{outer: l, inner: holesOf(i, loops, depth)})
+		}
+	}
+	abutting := abuttingLoops(loops)
+	for i, l := range loops {
+		if depth[i]%2 == 1 && loopBoundsOwnRegion(l) && !abutting[i] {
 			profiles = append(profiles, &Profile{outer: l, inner: holesOf(i, loops, depth)})
 		}
 	}
 	return profiles
 }
 
-// isClosedPrimitiveLoop reports whether a loop is a single closed-curve primitive (a circle or a full
-// ellipse). Such a loop unambiguously bounds a region the user can select — the basis for the
-// disk-inside-a-hole exception in groupRegions (#1526). A multi-entity loop (a polygon, a glyph
-// outline, a chain of grill bars) is not a primitive and keeps the plain even–odd hole behaviour.
-func isClosedPrimitiveLoop(l Loop) bool {
-	if len(l.entities) != 1 {
-		return false
+// loopBoundsOwnRegion reports whether an odd-nested (hole) loop ALSO bounds a face the user can
+// select in its own right. A loop the user drew — one that carries sketch entities, whether a single
+// circle/ellipse or a multi-entity polygon/rounded-rectangle chain — does; a synthetic text-glyph
+// counter (a bare polygon with no entities, produced by TextProfiles) does not, so the hole in an
+// 'O'/'A'/'B' stays a hole. See groupRegions (#1526, #2165).
+func loopBoundsOwnRegion(l Loop) bool {
+	return len(l.entities) >= 1
+}
+
+// abuttingLoops flags each loop that shares an edge with another loop — the minimal cells of one
+// SUBDIVIDED island (a grid of crossing grill bars carves an interior into many abutting cells). Such
+// a cell is NOT a region the user drew, so it stays a hole (merged into one outline by holesOf, #863);
+// only a STANDALONE inner loop — one sharing no edge with any sibling, i.e. a genuinely nested circle,
+// rectangle or rounded rectangle — bounds its own selectable region (#2165). Edges are welded so two
+// cells tracing the same boundary points register as shared.
+func abuttingLoops(loops []Loop) []bool {
+	edgeUses := map[[2]int]int{}
+	loopEdges := make([][][2]int, len(loops))
+	w := newLoopWelder()
+	for li, l := range loops {
+		loopEdges[li] = weldedLoopEdges(w, l)
+		for _, key := range loopEdges[li] {
+			edgeUses[key]++
+		}
 	}
-	switch l.entities[0].Entity.(type) {
-	case *Circle, *Ellipse:
-		return true
-	default:
-		return false
+	abut := make([]bool, len(loops))
+	for li := range loops {
+		for _, key := range loopEdges[li] {
+			if edgeUses[key] > 1 {
+				abut[li] = true
+				break
+			}
+		}
 	}
+	return abut
+}
+
+// weldedLoopEdges returns a loop's undirected edges as sorted welded-index pairs, so an edge two
+// abutting cells trace from the same boundary points registers as the one shared edge.
+func weldedLoopEdges(w *loopWelder, l Loop) [][2]int {
+	idx := make([]int, len(l.polygon))
+	for i, p := range l.polygon {
+		idx[i] = w.add(p)
+	}
+	edges := make([][2]int, 0, len(idx))
+	for i := range idx {
+		a, b := idx[i], idx[(i+1)%len(idx)]
+		if a == b {
+			continue
+		}
+		if a > b {
+			a, b = b, a
+		}
+		edges = append(edges, [2]int{a, b})
+	}
+	return edges
 }
 
 // holesOf returns the holes of outer (index oi): the loops one nesting level inside it. A

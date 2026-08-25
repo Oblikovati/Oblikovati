@@ -316,11 +316,12 @@ func buildPrismWithHoles(p *sketch.Profile, plane sketch.Plane, sp span, taper f
 	// A full-circle profile with no holes and no taper extrudes to a TRUE cylinder (analytic side
 	// face), so thread/chamfer/fillet on it work (#129). Booleans re-facet it on demand (combine →
 	// planarized). Other shapes fall through to the faceted prism.
+	// A full circle → a true cylinder; a closed line+arc loop → an ANALYTIC prism (arc cap edges +
+	// true partial-cylinder side faces) so a projected/offset/filleted face sees real arcs, not chords
+	// (#129, #2164). Booleans re-facet it on demand (combine → planarized). Other shapes fall through.
 	if taper == 0 && len(p.InnerLoops()) == 0 {
-		if c := circleLoop(p.OuterLoop()); c != nil {
-			if cyl := buildAnalyticCylinder(c, plane, sp, feat); cyl != nil {
-				return cyl
-			}
+		if body := analyticPrismOrNil(p.OuterLoop(), plane, sp, feat); body != nil {
+			return body
 		}
 	}
 	solid := buildPrism(p.OuterLoop().Polygon(), plane, sp, taper, feat)

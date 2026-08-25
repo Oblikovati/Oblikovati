@@ -149,6 +149,25 @@ func TestCircleRadiusDimension(t *testing.T) {
 	}
 }
 
+// TestArcRadiusDimension is the #2160-adjacent regression: the general Dimension tool must give an
+// ARC a radius dimension, exactly as it does a circle. The auto-dimension branch matched only
+// *Circle, so picking an arc fell through to the point/line path and produced no radius dimension —
+// "radius dim not respected on arcs". An arc is a CircularCurve like a circle, so it dimensions the
+// same way.
+func TestArcRadiusDimension(t *testing.T) {
+	s, sk := sketchSession(t)
+	// CCW arc of radius 2 centred at the origin, from (2,0) to (0,2) — its midpoint is (√2,√2).
+	sk.Arcs().AddByCenterStartEnd(math.P2(0, 0), math.P2(2, 0), math.P2(0, 2), true)
+
+	s.StartTool(NewDimensionTool())
+	clickSketch(t, s, math.P2(1.41421356, 1.41421356)) // on the arc
+	clickSketch(t, s, math.P2(4, 4))                   // place
+
+	if got := dimKinds(sk); len(got) != 1 || got[0] != sketch.RadiusDim {
+		t.Fatalf("an arc gave %v, want [RadiusDim] — the arc must dimension its radius like a circle", got)
+	}
+}
+
 // TestPlacementClickNearGeometryDoesNotAbsorbIt: once the pick set is complete and cannot be
 // extended, clicking near other geometry places the label instead of silently adding that
 // entity — otherwise placing a label over a busy sketch would build the wrong dimension.

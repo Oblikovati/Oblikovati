@@ -55,6 +55,8 @@ var (
 	_ SketchEntityTool = (*SketchFilletTool)(nil)
 	_ SketchEntityTool = (*SketchOffsetTool)(nil)
 	_ SketchEntityTool = (*SketchMirrorTool)(nil)
+	// Offset draws a live preview ghost of the offset, so it is a RecipeTool (the head's preview path).
+	_ RecipeTool = (*SketchOffsetTool)(nil)
 )
 
 // SketchFilletTool rounds the corner between two picked lines with a tangent arc.
@@ -101,30 +103,139 @@ func (t *SketchFilletTool) Commit(s *Session) error {
 	return err
 }
 
-// SketchOffsetTool offsets a single picked curve by a distance.
+// SketchOffsetTool offsets a picked curve — with Loop Select (Inventor's default) the whole
+// connected loop, otherwise the single curve — by a distance, keeping the geometry analytic (lines,
+// arcs and circles stay themselves). A positive distance offsets inward (shrinks a closed loop).
 type SketchOffsetTool struct {
 	dialogTool
 	pickCollector
-	distance math.Scalar
+	distance        math.Scalar
+	loopSelect      bool        // Inventor default: offset the whole connected loop, not just the picked curve
+	constrainOffset bool        // Inventor default: constrain the offset associative to its source
+	placement       math.Point2 // where the user clicked to place the offset (its side + distance)
+	placed          bool
+	sk              *sketch.Sketch // the sketch the seed was picked in (for whole-loop highlight + preview)
 }
 
-// NewSketchOffsetTool makes an offset tool with the given default distance.
+// NewSketchOffsetTool makes an offset tool with the given default distance and both Loop Select and
+// Constrain Offset on, as Inventor defaults.
 func NewSketchOffsetTool(distance float64) *SketchOffsetTool {
-	return &SketchOffsetTool{pickCollector: pickCollector{want: 1}, distance: math.Scalar(distance)}
+	return &SketchOffsetTool{
+		pickCollector:   pickCollector{want: 1},
+		distance:        math.Scalar(distance),
+		loopSelect:      true,
+		constrainOffset: true,
+	}
 }
 
-func (t *SketchOffsetTool) Name() string                  { return "Offset" }
-func (t *SketchOffsetTool) Pick(_ *Session, s Selectable) { t.take(s) }
+func (t *SketchOffsetTool) Name() string { return "Offset" }
+func (t *SketchOffsetTool) Pick(sess *Session, s Selectable) {
+	t.take(s)
+	if len(t.picks) > 0 {
+		t.sk = sess.ActiveSketch()
+	}
+}
 
-// Accepts highlights the curves OffsetEntity handles: line, circle, arc. Uses the entity's
-// Kind() capability via entityKindIs, not a type switch, per the sketch-entity seam (#1624).
+// Picked highlights the WHOLE connected loop from the picked seed when Loop Select is on (Inventor
+// lights the whole profile, not one segment); with it off, only the seed. The commit still seeds from
+// picks[0] — this only widens what is drawn as selected.
+func (t *SketchOffsetTool) Picked() []sketch.Entity {
+	if !t.loopSelect || len(t.picks) == 0 || t.sk == nil {
+		return t.picks
+	}
+	path, ok := t.sk.ConnectedChainFrom(t.picks[0])
+	if !ok || path.Count() <= 1 {
+		return t.picks
+	}
+	return chainEntities(path)
+}
+
+// chainEntities extracts a connected chain's entities in traversal order.
+func chainEntities(path *sketch.Path) []sketch.Entity {
+	ents := path.Entities()
+	out := make([]sketch.Entity, len(ents))
+	for i, pe := range ents {
+		out[i] = pe.Entity
+	}
+	return out
+}
+
+// ClickAt drives Inventor's two-step flow: the first click selects the geometry to offset, then the
+// user moves the cursor and clicks to place the offset copy — the placement click's side and its
+// distance from the curve set the offset. Selecting first through ClickAt (rather than an ambient
+// entity pick) is what lets the second, empty-space click become the placement.
+func (t *SketchOffsetTool) ClickAt(s *Session, px, py float64) {
+	if t.placed {
+		return
+	}
+	if len(t.picks) == 0 {
+		if ent, ok := s.pickSketchEntity(px, py); ok && t.Accepts(ent) {
+			t.takeEntity(ent)
+			t.sk = s.ActiveSketch()
+		}
+		return
+	}
+	if p, ok := s.sketchClickPoint(px, py); ok {
+		t.placement, t.placed = p, true
+	}
+}
+
+// AutoCommits finishes the tool on the placement click — only then, so the first (selection) click
+// does not commit. CanCommit stays true once a curve is selected so OK/Enter can finish with the
+// default distance (the API path used by tests).
+func (t *SketchOffsetTool) AutoCommits() bool { return t.placed }
+
+// LoopSelect reports whether the whole connected loop is offset (Inventor's default); the right-click
+// menu toggles it. With it off, only the picked curve is offset.
+func (t *SketchOffsetTool) LoopSelect() bool      { return t.loopSelect }
+func (t *SketchOffsetTool) SetLoopSelect(on bool) { t.loopSelect = on }
+func (t *SketchOffsetTool) ToggleLoopSelect()     { t.loopSelect = !t.loopSelect }
+
+// ConstrainOffset reports whether the offset is constrained associative to its source (Inventor's
+// default — parallel lines, concentric arcs, joined corners); the right-click menu toggles it.
+func (t *SketchOffsetTool) ConstrainOffset() bool      { return t.constrainOffset }
+func (t *SketchOffsetTool) SetConstrainOffset(on bool) { t.constrainOffset = on }
+func (t *SketchOffsetTool) ToggleConstrainOffset()     { t.constrainOffset = !t.constrainOffset }
+
+// The offset option labels, shared by the right-click menu and its toggle handler so the two never
+// drift.
+const (
+	offsetLoopSelectLabel      = "Loop Select"
+	offsetConstrainOffsetLabel = "Constrain Offset"
+)
+
+// MenuOptions surfaces Inventor's two Offset right-click toggles as checkable rows.
+func (t *SketchOffsetTool) MenuOptions() []ToolMenuOption {
+	return []ToolMenuOption{
+		{Label: offsetLoopSelectLabel, Checked: t.loopSelect},
+		{Label: offsetConstrainOffsetLabel, Checked: t.constrainOffset},
+	}
+}
+
+// ToggleMenuOption flips the option the user chose from the right-click menu.
+func (t *SketchOffsetTool) ToggleMenuOption(label string) {
+	switch label {
+	case offsetLoopSelectLabel:
+		t.ToggleLoopSelect()
+	case offsetConstrainOffsetLabel:
+		t.ToggleConstrainOffset()
+	}
+}
+
+// Accepts highlights the curves OffsetEntity handles: line, circle, arc, and a projected reference
+// curve (a projected face perimeter or edge, offset as a polyline — #2158 follow-up). Uses the
+// entity's Kind() capability via entityKindIs, not a type switch, per the sketch-entity seam (#1624).
 func (t *SketchOffsetTool) Accepts(e sketch.Entity) bool {
-	return entityKindIs(e, sketch.LineKind, sketch.CircleKind, sketch.ArcKind)
+	return entityKindIs(e, sketch.LineKind, sketch.CircleKind, sketch.ArcKind, sketch.ProjectedCurveKind)
 }
-func (t *SketchOffsetTool) CanCommit() bool        { return t.ready() }
-func (t *SketchOffsetTool) AutoCommitOnPick() bool { return true }
-func (t *SketchOffsetTool) Cancel(*Session)        { t.reset() }
-func (t *SketchOffsetTool) Prompt(*Session) string { return "Pick a curve to offset." }
+func (t *SketchOffsetTool) CanCommit() bool { return t.ready() }
+func (t *SketchOffsetTool) Cancel(*Session) { t.reset(); t.placed = false; t.sk = nil }
+func (t *SketchOffsetTool) Prompt(*Session) string {
+	if len(t.picks) == 0 {
+		return "Select geometry to offset"
+	}
+	return "Move the cursor and click to place the offset"
+}
 
 // SetDistance sets the offset distance.
 func (t *SketchOffsetTool) SetDistance(d float64) { t.distance = math.Scalar(d) }
@@ -134,14 +245,102 @@ func (t *SketchOffsetTool) Params() ToolParams {
 	return ToolParams{Floats: []FloatParam{scalarParam("Distance", &t.distance)}}
 }
 
-// Commit offsets the picked curve.
+// Commit offsets the picked geometry: with Loop Select the whole connected loop (analytic — arcs
+// stay arcs), otherwise the single curve. When the user placed the offset (the second click) the
+// placement's side and its distance to the curve set the signed distance directly (Inventor's
+// cursor-driven placement); otherwise a positive default distance offsets inward whatever the loop's
+// winding, so the API/test path stays predictable.
 func (t *SketchOffsetTool) Commit(s *Session) error {
 	sk := s.ActiveSketch()
 	if sk == nil {
 		return errors.New("offset: no active sketch")
 	}
-	_, err := sk.OffsetEntity(t.picks[0], t.distance)
-	return err
+	path, ok := sk.ConnectedChainFrom(t.picks[0])
+	// A lone curve (no connected neighbours) offsets as a single entity even with Loop Select on —
+	// OffsetConnectedLoop is for a multi-curve chain, and OffsetEntity keeps a single line/arc/circle
+	// analytic. ConnectedChainFrom returns ok for ANY curve, so the count, not ok, gates the loop path.
+	if !t.loopSelect || !ok || path.Count() <= 1 {
+		off, err := sk.OffsetEntity(t.picks[0], math.Scalar(t.singleDistance()))
+		if err != nil {
+			return err
+		}
+		if t.constrainOffset {
+			sk.ConstrainOffsetSingle(t.picks[0], off)
+			sk.AddOffsetSingleDimension(t.picks[0], off) // Inventor's offset dimension, driving the distance
+		}
+		return nil
+	}
+	offsets, err := sk.OffsetConnectedLoop(path, t.loopDistance(path))
+	if err != nil {
+		return err
+	}
+	if t.constrainOffset {
+		// One driving offset dimension binds the whole loop uniformly (Inventor): editing it moves
+		// every segment together (driven offset constraints on the non-dimensioned lines).
+		sk.ConstrainOffsetLoopUniform(path, offsets)
+	}
+	return nil
+}
+
+// singleDistance is the signed offset for one curve: the placement's signed distance to the seed
+// when placed, else the default distance (its own sign, no winding logic — a lone curve has no
+// inside).
+func (t *SketchOffsetTool) singleDistance() float64 {
+	if t.placed {
+		return placementSignedOffset(sketch.EntityOutline(t.picks[0]), t.placement)
+	}
+	return float64(t.distance)
+}
+
+// loopDistance is the signed offset for a loop: the placement's signed distance in the seed's
+// left-normal frame (the frame OffsetConnectedLoop offsets along) when placed, else the default
+// distance flipped so a positive value always shrinks the loop whatever its winding.
+func (t *SketchOffsetTool) loopDistance(path *sketch.Path) float64 {
+	if t.placed {
+		return placementSignedOffset(sketch.EntityOutline(t.picks[0]), t.placement)
+	}
+	d := float64(t.distance)
+	if signedLoopArea(path.Points()) < 0 {
+		d = -d // a CW loop offsets inward with a negative d; flip so positive distance always shrinks
+	}
+	return d
+}
+
+// placementSignedOffset returns the offset distance the cursor placement implies: the magnitude is
+// the placement's perpendicular distance to the curve, the sign its side (positive when the
+// placement lies to the LEFT of the seed's natural traversal, matching offsetLine/OffsetConnectedLoop
+// which offset by d along the left normal). This is Inventor's "move the cursor and click to place".
+func placementSignedOffset(outline []math.Point2, p math.Point2) float64 {
+	if len(outline) < 2 {
+		return 0
+	}
+	best, signed := math.Scalar(-1), 0.0
+	for i := 0; i+1 < len(outline); i++ {
+		a, b := outline[i], outline[i+1]
+		dist := p.DistanceTo(segmentClosestPoint(p, a, b))
+		if best >= 0 && dist >= best {
+			continue
+		}
+		best = dist
+		cross := (b.X-a.X)*(p.Y-a.Y) - (b.Y-a.Y)*(p.X-a.X) // >0 ⇒ p left of a→b
+		if cross < 0 {
+			signed = -float64(dist)
+		} else {
+			signed = float64(dist)
+		}
+	}
+	return signed
+}
+
+// signedLoopArea is twice the signed area of the closed polygon (CCW ⇒ positive), used only for its
+// SIGN to make a positive offset distance shrink a loop whatever its traversal direction.
+func signedLoopArea(pts []math.Point2) float64 {
+	a := 0.0
+	for i := 0; i < len(pts); i++ {
+		p, q := pts[i], pts[(i+1)%len(pts)]
+		a += float64(p.X*q.Y - q.X*p.Y)
+	}
+	return a
 }
 
 // SketchMirrorTool mirrors the first picked entity across the second picked line.

@@ -71,6 +71,27 @@ func TestContourRollPartialAngle(t *testing.T) {
 	}
 }
 
+// TestContourRollTubeKeepsCylinderWalls: a full roll of a straight profile is an ANALYTIC shell —
+// bore + outer walls are true cylinders (2 cylinder faces), not a faceted prism (#2019).
+func TestContourRollTubeKeepsCylinderWalls(t *testing.T) {
+	body := rolledBody(t, 2, 3, 0)
+	if got := cylinderFaceCount(body); got != 2 {
+		t.Fatalf("rolled tube has %d cylinder faces, want 2 (bore + outer wall) — faceted", got)
+	}
+}
+
+// TestContourRollPartialKeepsCylinderWalls: a 90° roll keeps analytic partial-cylinder walls plus
+// planar caps, not a faceted shell.
+func TestContourRollPartialKeepsCylinderWalls(t *testing.T) {
+	body := rolledBody(t, 2, 3, stdmath.Pi/2)
+	if got := cylinderFaceCount(body); got != 2 {
+		t.Fatalf("partial rolled shell has %d cylinder faces, want 2 — faceted", got)
+	}
+	if got := planarFaceCount(body); got < 2 {
+		t.Fatalf("partial rolled shell has %d planar faces, want ≥2 (caps)", got)
+	}
+}
+
 // TestContourRollRejectsBadInput an out-of-range axis line, zero angle, and missing thickness
 // each go sick.
 func TestContourRollRejectsBadInput(t *testing.T) {

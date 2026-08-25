@@ -392,16 +392,38 @@ func groundCodec() constraintCodec {
 	}
 }
 
+// offsetCodec persists an offset relation. A DRIVEN offset (one tied to a shared driving dimension)
+// additionally stores the driver dimension's parameter name so the live link survives a reload; it is
+// held back on decode and re-bound after the dimensions restore (applyPendingOffsetDrives), since the
+// driving parameter does not exist yet at constraint-restore time. A plain (frozen) offset stores just
+// its signed distance. Value carries the signed distance either way (its sign is the driven side).
 func offsetCodec() constraintCodec {
 	return constraintCodec{
 		encode: func(c Constraint) (ConstraintData, error) {
 			v := c.(*OffsetConstraint)
-			return ConstraintData{Curves: []int{int(v.L1.id), int(v.L2.id)}, Value: v.Dist}, nil
+			return ConstraintData{Curves: []int{int(v.L1.id), int(v.L2.id)}, Value: v.Dist, Name: v.DriverName}, nil
 		},
 		decode: func(r *sketchRestorer, cd ConstraintData) error {
-			return r.twoLines(cd, func(a, b *Line) { r.s.geomCons.AddOffset(a, b, cd.Value) })
+			return r.twoLines(cd, func(a, b *Line) {
+				if cd.Name == "" {
+					r.s.geomCons.AddOffset(a, b, cd.Value)
+					return
+				}
+				r.pendingOffsetDrives = append(r.pendingOffsetDrives, pendingOffsetDrive{
+					l1: a, l2: b, name: cd.Name, sign: offsetSideSign(cd.Value), dist: cd.Value,
+				})
+			})
 		},
 	}
+}
+
+// offsetSideSign recovers a driven offset's side (+1/−1) from its signed persisted distance; a zero
+// distance is degenerate, so it defaults to +1.
+func offsetSideSign(dist float64) float64 {
+	if dist < 0 {
+		return -1
+	}
+	return 1
 }
 
 func textBoxAnchorCodec() constraintCodec {

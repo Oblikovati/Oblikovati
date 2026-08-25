@@ -57,6 +57,34 @@ func (mc *MoveableClassifier) Of(e Entity) types.GeometryMoveableStatus {
 	return types.MoveableByDimensionChange
 }
 
+// HasDrivingDimensionOn reports whether a driving (non-reference) dimension acts on any of entity
+// e's freedom variables. It distinguishes the two ways an entity can be MoveableByDimensionChange:
+// determined by a driving dimension (a fully-dimensioned line — Relax Mode's job to move, #791) or
+// determined purely by geometric constraints (a fillet arc tangent to still-free lines, which a
+// direct drag should move within the sketch's freedom, #2160). The drag gate uses it to allow the
+// latter while still refusing the former.
+func (s *Sketch) HasDrivingDimensionOn(e Entity) bool {
+	vars, ok := entityFreedomVars(e)
+	if !ok {
+		return false
+	}
+	owned := make(map[*math.Scalar]bool, len(vars))
+	for _, v := range vars {
+		owned[v] = true
+	}
+	for _, d := range s.dimCons.All() {
+		if d.Driven() {
+			continue // a reference dimension only reports; it holds nothing
+		}
+		for _, v := range d.Variables() {
+			if owned[v] {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // entityFreedomVars returns the scalar DOFs that move entity e; known is
 // false for kinds the classifier does not model (annotations, images).
 func entityFreedomVars(e Entity) (vars []*math.Scalar, known bool) {

@@ -141,11 +141,7 @@ func (s *SweepFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	sections, err := sweepSectionsCfg(prof, s.def.Sketch.Plane(), path.Points(), cfg)
-	if err != nil {
-		return Output{}, err
-	}
-	s.tool, err = s.sweepTool(sections, path.IsClosed())
+	s.tool, err = s.buildSweepTool(prof, path, cfg)
 	if err != nil {
 		return Output{}, err
 	}
@@ -154,6 +150,44 @@ func (s *SweepFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
+}
+
+// buildSweepTool builds the swept tool body. A rigid sweep keeps ANALYTIC faces where it can: a
+// straight run reuses the extrude analytic prism (a straight NormalToPath sweep is exactly an extrude
+// along the path tangent), and a full circular path with a circle profile is a torus (#2164 follow-up)
+// — so a projected face sees real arcs, not chords. Every other sweep (a bent/partial path,
+// taper/twist/scaling/rail/guide, a surface sweep, or a profile with holes) uses the faceted skin.
+func (s *SweepFeature) buildSweepTool(prof *sketch.Profile, path *sketch.Path3D, cfg sweepConfig) (*topo.Body, error) {
+	feat := featOr(s.featName, "sweep")
+	if s.def.Operation != ops.Surface && s.sweepIsRigid() {
+		if body := analyticRigidSweep(prof, s.def.Sketch.Plane(), path, feat); body != nil {
+			return body, nil
+		}
+	}
+	sections, err := sweepSectionsCfg(prof, s.def.Sketch.Plane(), path.Points(), cfg)
+	if err != nil {
+		return nil, err
+	}
+	return s.sweepTool(sections, path.IsClosed())
+}
+
+// sweepIsRigid reports whether the definition sweeps the profile rigidly — no taper, twist, scaling
+// rail, or guide surface, and the profile kept normal to the path. Only a rigid sweep maps to an
+// analytic prism; any deformation makes the section vary along the path (a non-analytic skin).
+func (s *SweepFeature) sweepIsRigid() bool {
+	d := s.def
+	return normalToPathOrientation(d.Orientation) &&
+		callOrZero(d.Taper) == 0 &&
+		callOrZero(d.Twist) == 0 &&
+		len(d.TwistStations) == 0 &&
+		d.GuideRail == nil &&
+		len(d.GuideFaceKey) == 0
+}
+
+// normalToPathOrientation reports whether the orientation keeps the profile perpendicular to the path
+// tangent — the explicit NormalToPath, or the zero value the definition defaults to (sweep.go).
+func normalToPathOrientation(o types.SweepProfileOrientation) bool {
+	return o == 0 || o == types.NormalToPath
 }
 
 // sweepTool builds the swept body from its cross-sections: for the Surface operation

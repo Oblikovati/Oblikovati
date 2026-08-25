@@ -131,7 +131,7 @@ var (
 // row (G design D1). Click actions are deferred via the package flags;
 // DrawChrome consumes them after drawRibbon.
 func drawQuickAccess(h appQatHost) {
-	drawAppMenuButton(h)
+	drawAppMenuButton()
 	for _, b := range qatButtons {
 		native.SameLine()
 		drawQATButton(h, b)
@@ -142,7 +142,7 @@ func drawQuickAccess(h appQatHost) {
 // glyph). It is archguard-clean: it only draws and sets the appMenuRequested
 // flag plus the button's screen position — the popup itself opens in
 // DrawChrome's context (ID-stack note, G design D3).
-func drawAppMenuButton(h appQatHost) {
+func drawAppMenuButton() {
 	px := float32(scaledIconPx(smallIconPx))
 	x, _ := native.GetCursorScreenPos()
 	var clicked bool

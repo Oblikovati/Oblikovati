@@ -33,23 +33,8 @@ var (
 // single-pick click handler. Replaces the bare handleViewportClick call so they never both
 // fire on the same press.
 func handleViewportSelection(s *app.Session) {
-	if updateOrbitPivot(s) {
-		return // Free Orbit: a no-drag click set the orbit pivot (#913 N9)
-	}
-	if s.ConstrainedOrbitActive() {
-		return // Constrained Orbit owns the left-drag, which turntables (#913 N10)
-	}
-	if heldNavMode() != NavNone {
-		return // a held F2/F3/F4 turns a left-drag into navigation, not selection (#911)
-	}
-	if updateZoomWindow(s) {
-		return // the Zoom Window tool owns the left-drag while armed (#913 N16)
-	}
-	if s.SelectOtherActive() {
-		if native.IsItemClicked(native.MouseLeft) {
-			s.CommitSelectOther() // a click in the viewport accepts the highlighted candidate (#910)
-		}
-		return // the Select Other cycle owns viewport picking until it ends
+	if viewportModeOwnsPointer(s) {
+		return
 	}
 	// The direct-manipulation machines are mutually exclusive by construction — each is gated
 	// on its own tool or mode being active — so they share one guard: place new sketch
@@ -65,11 +50,49 @@ func handleViewportSelection(s *app.Session) {
 	handleViewportClick(s)
 }
 
+// viewportModeOwnsPointer reports whether a navigation or selection MODE already owns this frame's
+// left input, so viewport selection stands down: Free Orbit's pivot-set click, Constrained Orbit, a
+// held F2/F3/F4 nav gesture, the Zoom Window tool, or the Select Other cycle (a click accepts its
+// highlighted candidate).
+func viewportModeOwnsPointer(s *app.Session) bool {
+	if updateOrbitPivot(s) {
+		return true // Free Orbit: a no-drag click set the orbit pivot (#913 N9)
+	}
+	if s.ConstrainedOrbitActive() {
+		return true // Constrained Orbit owns the left-drag, which turntables (#913 N10)
+	}
+	if heldNavMode() != NavNone {
+		return true // a held F2/F3/F4 turns a left-drag into navigation, not selection (#911)
+	}
+	if updateZoomWindow(s) {
+		return true // the Zoom Window tool owns the left-drag while armed (#913 N16)
+	}
+	if s.SelectOtherActive() {
+		if native.IsItemClicked(native.MouseLeft) {
+			s.CommitSelectOther() // a click in the viewport accepts the highlighted candidate (#910)
+		}
+		return true // the Select Other cycle owns viewport picking until it ends
+	}
+	return false
+}
+
 // updateControlPointDrag advances interactive NURBS control-point editing and reports whether it
 // consumed this frame's left input. While the Edit Control Points tool is active, a left press on
 // a control-net handle begins the drag, the cursor slides it (the surface re-evaluates live), and
 // release commits the edit (M36-F03). Mirrors updateCloudDrag.
-func updateControlPointDrag(s *app.Session) bool {
+// cvDragSession is the drag machine the NURBS control-point editor needs — five methods, not the
+// whole session (audit I5). Mirrors cageDragSession.
+type cvDragSession interface {
+	CVEditActive() bool
+	CVDragActive() bool
+	BeginCVDrag(px, py float64) bool
+	UpdateCVDrag(px, py float64)
+	CommitCVDrag()
+}
+
+var _ cvDragSession = (*app.Session)(nil)
+
+func updateControlPointDrag(s cvDragSession) bool {
 	if !s.CVEditActive() {
 		return false
 	}
@@ -129,7 +152,19 @@ func updateFreeformCageDrag(s cageDragSession) bool {
 // this frame's left input. While the Move tool is active, a left press begins the drag, the cursor
 // translates the cloud (datums built on it follow), and release commits — mirroring the sketch
 // drag-to-move (#645).
-func updateCloudDrag(s *app.Session) bool {
+// cloudDragSession is the drag machine the point-cloud mover needs — five methods, not the whole
+// session (audit I5). Mirrors cvDragSession / cageDragSession.
+type cloudDragSession interface {
+	CloudMoveActive() bool
+	CloudDragActive() bool
+	BeginCloudDrag(px, py float64) bool
+	UpdateCloudDrag(px, py float64)
+	CommitCloudDrag()
+}
+
+var _ cloudDragSession = (*app.Session)(nil)
+
+func updateCloudDrag(s cloudDragSession) bool {
 	if !s.CloudMoveActive() {
 		return false
 	}

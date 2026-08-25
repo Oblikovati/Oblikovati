@@ -56,14 +56,26 @@ func (s *Session) BeginEntityDrag(px, py float64) bool {
 	return true
 }
 
-// draggableForMode reports whether ent may be direct-dragged in the current mode. Normally
-// only MoveableFree geometry drags (fixed / fully-dimensioned entities click-select instead);
-// in Relax Mode any entity drags, because the solver relaxes the dimensions holding it (#791).
+// draggableForMode reports whether ent may be direct-dragged in the current mode. MoveableFree
+// geometry always drags. A determined entity (MoveableByDimensionChange) drags only when it is held
+// by geometric constraints, not by a driving dimension: a fillet arc tangent to two under-
+// constrained lines was wrongly refused before, even though the sketch was under-constrained
+// (#2160), and drags now — its soft drag pins (sketch.dragFix) yield to the tangency and move the
+// arc within the sketch's remaining freedom. A fully-dimensioned entity stays Relax Mode's job
+// (dragging it normally would only fight the dimension); a truly fixed entity click-selects. In
+// Relax Mode any entity drags, the solver relaxing the dimensions holding it (#791).
 func (s *Session) draggableForMode(ent sketch.Entity) bool {
 	if s.relaxMode {
 		return true
 	}
-	return s.activeSketch.MoveableClassifier().Of(ent) == types.MoveableFree
+	switch s.activeSketch.MoveableClassifier().Of(ent) {
+	case types.MoveableFree:
+		return true
+	case types.MoveableByDimensionChange:
+		return !s.activeSketch.HasDrivingDimensionOn(ent)
+	default: // MoveableFixed, MoveableUnknown
+		return false
+	}
 }
 
 // dragAnchors collects the distinct points to pin while dragging — the defining points of every

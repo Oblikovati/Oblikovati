@@ -127,7 +127,7 @@ func partSketchOverlays(s *app.Session) []renderer.DrawItem {
 			continue
 		}
 		items = append(items, sketchOverlay(sk, allEntitiesWhenSelected(sk, selected), nil, s.ShowFormat())...)
-		items = append(items, projectedCurveOverlay(sk)...)
+		items = append(items, projectedCurveOverlay(sk, nil, nil)...)
 	}
 	return items
 }
@@ -186,20 +186,33 @@ func sketchOverlay(sk *sketch.Sketch, selected func(sketch.Entity) bool, candida
 
 // projectedCurveOverlay draws a sketch's projected reference curves — the lines projected from
 // edges or datum geometry (axes, plane↔sketch intersections, #1262). They live in the entity
-// list rather than the typed Lines/Arcs collections, so sketchOverlay misses them; this draws
-// each as a polyline in the sketch colour. Returns nil when the sketch projects no curves.
-func projectedCurveOverlay(sk *sketch.Sketch) []renderer.DrawItem {
+// list rather than the typed Lines/Arcs collections, so sketchOverlay misses them; this draws each
+// as a polyline, tinting the hover candidate and the selected curves the same way sketchOverlay
+// does its own geometry — without which a projected curve gave no hover/selection feedback even
+// though it is pickable (#2158 follow-up). Returns nil when the sketch projects no curves.
+func projectedCurveOverlay(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity) []renderer.DrawItem {
 	if sk == nil {
 		return nil
 	}
 	plane := sk.Plane()
-	acc := &segAccum{}
+	normal, sel, cand := &segAccum{}, &segAccum{}, &segAccum{}
 	for _, e := range sk.Entities() {
-		if pc, ok := e.(*sketch.ProjectedCurve); ok {
-			acc.polyline(plane, pc.Points(), false)
+		pc, ok := e.(*sketch.ProjectedCurve)
+		if !ok {
+			continue
 		}
+		acc := normal
+		switch {
+		case candidate != nil && e == candidate:
+			acc = cand
+		case selected != nil && selected(e):
+			acc = sel
+		}
+		acc.polyline(plane, pc.RenderPolyline(), false)
 	}
-	return appendGrid(nil, acc, chromeTheme.sketchColor)
+	items := appendGrid(nil, normal, chromeTheme.sketchColor)
+	items = appendGrid(items, sel, chromeTheme.sketchSelectedColor)
+	return appendGrid(items, cand, chromeTheme.sketchCandidateColor)
 }
 
 func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity, suppress bool) *sketchStyleBuckets {

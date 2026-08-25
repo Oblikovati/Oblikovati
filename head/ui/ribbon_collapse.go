@@ -146,17 +146,20 @@ func drawCollapsedPanel(s ribbonControlHost, panel app.RibbonPanel, tabName stri
 	// registers none), so the name centres under the tile exactly as it does under a grid.
 	drawPanelName(panel.Name, labelY)
 	native.EndGroup()
+	return drawCollapsedPanelFlyout(s, panel, id, tabName, x, labelY, m)
+}
 
-	// The flyout is a window of its own, so it is opened outside the layout group and pinned
-	// just under the band rather than at the pointer — Inventor drops a panel's flyout from
-	// the panel, not from the cursor. Its left edge is pulled back when the panel is too wide
-	// to drop straight down, because an explicit SetNextWindowPos overrides Dear ImGui's own
-	// on-screen clamping and the flyout would otherwise run off the right of the display —
-	// the very failure this whole system exists to end.
-	var activated string
+// drawCollapsedPanelFlyout opens the collapsed panel's flyout (popup id) — a window of its own,
+// opened outside the tile's layout group and pinned just under the band rather than at the pointer,
+// because Inventor drops a panel's flyout from the panel. Its left edge is pulled back when the panel
+// is too wide to drop straight down: an explicit SetNextWindowPos overrides Dear ImGui's own on-screen
+// clamp, so the flyout would otherwise run off the right of the display — the failure this whole
+// system exists to end. Returns the id of a command activated inside it, or "".
+func drawCollapsedPanelFlyout(s ribbonControlHost, panel app.RibbonPanel, id, tabName string, x, labelY float32, m native.StyleMetrics) string {
 	vpW, _ := native.MainViewportSize()
 	flyoutX := clampFlyoutX(x, ribbonPanelWidth[ribbonPanelWidthKey(tabName, panel.Name)], vpW)
 	native.SetNextWindowPos(flyoutX, labelY+native.TextLineHeight()+m.ItemSpacingY)
+	var activated string
 	if native.BeginPopup(id) {
 		if got := drawPanelFlyoutBody(s, panel); got != "" {
 			activated = got

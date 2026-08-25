@@ -7,6 +7,8 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
 
@@ -59,16 +61,30 @@ func (f *SheetMetalContourRollFeature) Recompute(in Input) (Output, error) {
 	if angle <= 0 {
 		return Output{}, fmt.Errorf("sheet-metal contour roll: angle must be positive, got %g", angle)
 	}
-	sections, full := revolvePointsAbout(band, axis, angle, 0)
-	rolled, err := sweptSolid(sections, full, featOr(f.featName, "contourRoll"))
+	rolled, err := rollBand(band, axis, angle, featOr(f.featName, "contourRoll"))
 	if err != nil {
-		return Output{}, fmt.Errorf("sheet-metal contour roll: %w", err)
+		return Output{}, err
 	}
 	bodies, err := combine(in, rolled, f.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
+}
+
+// rollBand builds the rolled shell from the thickened band: a straight-band roll is a partial/full
+// revolve, so it keeps analytic cylinder/cone walls (a projected face reads real arcs, not chords); a
+// band that will not revolve cleanly falls back to the faceted section sweep.
+func rollBand(band []math.Point3, axis *WorkAxis, angle float64, feat string) (*topo.Body, error) {
+	if rolled := analyticContourRoll(band, axis, angle, feat); rolled != nil {
+		return rolled, nil
+	}
+	sections, full := revolvePointsAbout(band, axis, angle, 0)
+	rolled, err := sweptSolid(sections, full, feat)
+	if err != nil {
+		return nil, fmt.Errorf("sheet-metal contour roll: %w", err)
+	}
+	return rolled, nil
 }
 
 // resolveAxis resolves the roll axis from the profile sketch's axis line.

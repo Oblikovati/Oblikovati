@@ -142,28 +142,40 @@ func routeGizmoInput(s *app.Session, cam scene.Camera) bool {
 		return false
 	}
 	mx, my := viewportCursor()
+	// The pointer ray and pick tolerance are the same for a triad-segment or a manipulator-handle
+	// grab, so compute them once for both branches (this also keeps the function within one screen).
+	rayO, rayD := cam.RayThrough(mx, my)
+	snapTol := gizmoHitPx * cam.WorldPerPixel()
 	if seg, hit := triadHitTest(s, cam, mx, my); hit {
 		s.HoverTriadSegment(seg, true)
 		if native.IsItemClicked(native.MouseLeft) {
-			rayO, rayD := cam.RayThrough(mx, my)
-			snapTol := gizmoHitPx * cam.WorldPerPixel()
 			_ = s.BeginTriadDrag(seg, rayO, rayD, snapTol, native.KeyShift(), native.KeyCtrl())
 		}
 		return true
 	}
 	s.HoverTriadSegment(types.TriadOrigin, false)
 	if gizmo, handle, hit := manipulatorHitTest(s, cam, mx, my); hit && native.IsItemClicked(native.MouseLeft) {
-		rayO, rayD := cam.RayThrough(mx, my)
 		forward := unitV(cam.Eye.VectorTo(cam.Target))
-		snapTol := gizmoHitPx * cam.WorldPerPixel()
 		_ = s.BeginManipulatorDrag(gizmo, handle, forward.Scale(-1), rayO, rayD, snapTol, native.KeyShift(), native.KeyCtrl())
 		return true
 	}
 	return false
 }
 
+// gizmoDragSession is the in-flight-drag machine continueGizmoDrag needs — five methods, not the
+// whole session (audit I5).
+type gizmoDragSession interface {
+	TriadDragging() bool
+	DragTriad(rayO math.Point3, rayD math.Vector3, shift, ctrl bool) error
+	DragManipulator(rayO math.Point3, rayD math.Vector3, shift, ctrl bool) error
+	EndTriadDrag(rayO math.Point3, rayD math.Vector3, shift, ctrl bool) error
+	EndManipulatorDrag(rayO math.Point3, rayD math.Vector3, shift, ctrl bool) error
+}
+
+var _ gizmoDragSession = (*app.Session)(nil)
+
 // continueGizmoDrag advances or ends the in-flight gesture with the pointer ray.
-func continueGizmoDrag(s *app.Session, cam scene.Camera) {
+func continueGizmoDrag(s gizmoDragSession, cam scene.Camera) {
 	mx, my := viewportCursor()
 	rayO, rayD := cam.RayThrough(mx, my)
 	shift, ctrl := native.KeyShift(), native.KeyCtrl()
@@ -201,19 +213,25 @@ func triadHitTest(s *app.Session, cam scene.Camera, mx, my float64) (types.Triad
 		}
 	}
 	for i, axis := range axes {
-		for _, t := range []float64{0.4, 0.7, 1.0} {
-			probe(types.TriadSegment(uint8(types.TriadXAxis)+uint8(i)), pos.TranslateBy(axis.Scale(worldLen*t)))
-		}
-		u, v := planeBasis(axis)
-		ringSeg := types.TriadSegment(uint8(types.TriadXRing) + uint8(i))
-		for k := 0; k < 16; k++ {
-			ang := 2 * stdmath.Pi * float64(k) / 16
-			offset := u.Scale(0.75 * worldLen * stdmath.Cos(ang)).Add(v.Scale(0.75 * worldLen * stdmath.Sin(ang)))
-			probe(ringSeg, pos.TranslateBy(offset))
-		}
+		probeTriadAxis(i, axis, pos, worldLen, probe)
 	}
 	probe(types.TriadOrigin, pos)
 	return best, found
+}
+
+// probeTriadAxis feeds axis i's three grip points (at 0.4/0.7/1.0 of its length) and its 16-point
+// rotation ring to probe, which keeps the nearest hit.
+func probeTriadAxis(i int, axis math.Vector3, pos math.Point3, worldLen float64, probe func(types.TriadSegment, math.Point3)) {
+	for _, t := range []float64{0.4, 0.7, 1.0} {
+		probe(types.TriadSegment(uint8(types.TriadXAxis)+uint8(i)), pos.TranslateBy(axis.Scale(worldLen*t)))
+	}
+	u, v := planeBasis(axis)
+	ringSeg := types.TriadSegment(uint8(types.TriadXRing) + uint8(i))
+	for k := 0; k < 16; k++ {
+		ang := 2 * stdmath.Pi * float64(k) / 16
+		offset := u.Scale(0.75 * worldLen * stdmath.Cos(ang)).Add(v.Scale(0.75 * worldLen * stdmath.Sin(ang)))
+		probe(ringSeg, pos.TranslateBy(offset))
+	}
 }
 
 // manipulatorHitTest finds the handle under the cursor.

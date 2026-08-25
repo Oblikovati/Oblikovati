@@ -55,6 +55,7 @@ func drawMarkingMenu(s *app.Session) {
 // drawRadialMarkingMenu draws the eight-quadrant ring plus its overflow rows.
 func drawRadialMarkingMenu(s *app.Session) {
 	drawRepeatEntry(s)
+	drawActiveToolMenuOptions(s)
 	menu := s.MarkingMenu(app.CurrentEnvironment(s))
 	layout := markingRingLayoutForMenu(s, menu)
 	ringX, ringY := native.GetCursorPos()
@@ -109,6 +110,7 @@ func markingRingLayoutForMenu(s markingMenuCommandHost, menu wire.MarkingMenuVie
 // (non-radial) right-click menu (#915 C8).
 func drawClassicContextMenu(s *app.Session) {
 	drawRepeatEntry(s)
+	drawActiveToolMenuOptions(s)
 	menu := s.MarkingMenu(app.CurrentEnvironment(s))
 	for _, item := range menu.Quadrants {
 		drawLinearCommandEntry(s, item.CommandID)
@@ -129,6 +131,28 @@ func drawRepeatEntry(s *app.Session) {
 	if native.Selectable(label+"##mm-repeat", false) {
 		_ = s.RepeatLastCommand()
 		native.CloseCurrentPopup()
+	}
+	native.Separator()
+}
+
+// drawActiveToolMenuOptions renders the active tool's in-command toggle options (Inventor's
+// right-click options, e.g. the Offset tool's Loop Select / Constrain Offset) as checkable rows at
+// the top of the context menu. A checkmark prefix shows an on option; clicking one flips it and
+// closes the menu, as Inventor does. Nothing renders when no tool offers options.
+func drawActiveToolMenuOptions(s *app.Session) {
+	opts := s.ActiveToolMenuOptions()
+	if len(opts) == 0 {
+		return
+	}
+	for _, opt := range opts {
+		label := opt.Label
+		if opt.Checked {
+			label = "✓ " + opt.Label
+		}
+		if native.MenuItem(label + "##tool-opt-" + opt.Label) {
+			s.ToggleActiveToolMenuOption(opt.Label)
+			native.CloseCurrentPopup()
+		}
 	}
 	native.Separator()
 }
@@ -179,23 +203,27 @@ func drawMarkingSlot(s *app.Session, ringX, ringY float32, layout markingRingLay
 	x, y := markingSlotPosition(layout, item.Quadrant, w, h)
 	native.SetCursorPos(ringX+x, ringY+y)
 	native.BeginDisabled(!cmd.IsEnabled(s))
-	var clicked bool
-	if hasIcon {
-		native.BeginGroup()
-		clicked = native.ImageButton("##mm-"+item.CommandID, tex, float32(iconPx), float32(iconPx), identityTint)
-		native.SameLine()
-		cx, cy := native.GetCursorScreenPos()
-		native.SetCursorScreenPos(cx, cy+(float32(iconPx)+2*m.FramePadY-native.TextLineHeight())/2)
-		native.Text(label)
-		native.EndGroup()
-	} else {
-		clicked = native.Button(label + "##mm-" + item.CommandID)
-	}
-	if clicked {
+	if drawMarkingSlotButton(item, label, tex, hasIcon, iconPx, m) {
 		_ = s.Execute(item.CommandID)
 		native.CloseCurrentPopup()
 	}
 	native.EndDisabled()
+}
+
+// drawMarkingSlotButton draws a marking-slot's clickable control — an icon beside its label when the
+// command has an icon asset, else a plain text button — and reports whether it was clicked.
+func drawMarkingSlotButton(item wire.MarkingMenuItem, label string, tex uint64, hasIcon bool, iconPx int, m native.StyleMetrics) bool {
+	if !hasIcon {
+		return native.Button(label + "##mm-" + item.CommandID)
+	}
+	native.BeginGroup()
+	clicked := native.ImageButton("##mm-"+item.CommandID, tex, float32(iconPx), float32(iconPx), identityTint)
+	native.SameLine()
+	cx, cy := native.GetCursorScreenPos()
+	native.SetCursorScreenPos(cx, cy+(float32(iconPx)+2*m.FramePadY-native.TextLineHeight())/2)
+	native.Text(label)
+	native.EndGroup()
+	return clicked
 }
 
 // markingSlotExtent mirrors the ImGui primitives used by drawMarkingSlot, so the ring can

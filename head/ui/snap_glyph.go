@@ -62,12 +62,20 @@ func pointsOverlay(plane sketch.Plane, sk *sketch.Sketch, hWorld float64) (rende
 	for i := 0; i < pts.Count(); i++ {
 		acc.targetMarker(plane, pts.Item(i).Position(), hWorld)
 	}
-	// Projected point anchors (e.g. the auto-projected origin centre, #1262) live in the
-	// entity list, not the typed Points collection, so glyph them here too.
+	// Projected point anchors (e.g. the auto-projected origin centre, #1262) live in the entity
+	// list, not the typed Points collection, so glyph them here too.
 	for _, e := range sk.Entities() {
 		if pp, ok := e.(*sketch.ProjectedPoint); ok {
 			acc.targetMarker(plane, pp.Position(), hWorld)
 		}
+	}
+	// A circle's/arc's centre is a real, constrainable sketch point but is not in the Points
+	// collection. Without a marker the user has no hover target for it: a circle's centre hides at
+	// its visual centroid so it snaps by luck, but an arc's centre sits off the curve in empty
+	// space — which made a coincident-to-origin on an arc centre impossible to aim at ("the arc has
+	// no centre", #2159). The sketch supplies the centres so the head draws no entity-type switch.
+	for _, c := range sk.CircularCenters() {
+		acc.targetMarker(plane, c, hWorld)
 	}
 	if len(acc.pos) == 0 {
 		return renderer.DrawItem{}, false

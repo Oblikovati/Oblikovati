@@ -33,6 +33,7 @@ func ribbonSession(t *testing.T) *app.Session {
 // GPU/display.
 func driveRibbon(t *testing.T, w, h int) (collapsed int, scrollbar bool) {
 	t.Helper()
+	primeViewportSize(t, w, h) // ImGui's viewport size lags a window behind; prime it to w×h first
 	win, err := native.CreateWindow(w, h, "ribbon-scroll-test")
 	if err != nil {
 		t.Skipf("no window/Vulkan available: %v", err)
@@ -50,10 +51,53 @@ func driveRibbon(t *testing.T, w, h int) (collapsed int, scrollbar bool) {
 		clear(ribbonPanelWidth)
 	}()
 	s := ribbonSession(t)
-	for i := 0; i < 5; i++ { // settle the dock layout + let the fit decision stabilise
+	return settleRibbon(t, func() {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)
+	})
+}
+
+// primeViewportSize works around a harness limitation: ImGui's main-viewport size reflects the
+// PREVIOUS window created in the process, not the one being drawn (the new offscreen window's
+// framebuffer extent never reaches io.DisplaySize within a test). A throwaway window of the target
+// size, rendered one frame then destroyed, becomes that "previous" window — so the real window below
+// measures at the intended w×h instead of whatever earlier test's size leaked in. Without this the
+// ribbon-fit tests measured against a stale width and were order-dependent.
+func primeViewportSize(t *testing.T, w, h int) {
+	prime, err := native.CreateWindow(w, h, "ribbon-scroll-prime")
+	if err != nil {
+		t.Skipf("no window/Vulkan available: %v", err)
+	}
+	prime.InitViewport()
+	prime.BeginFrame()
+	prime.EndFrame(0.1, 0.1, 0.1)
+	prime.Destroy()
+}
+
+// settleRibbon renders chrome frames until the ribbon's fit decision reaches STEADY STATE — the
+// collapsed-panel count and scrollbar flag unchanged for settleStableFrames consecutive frames —
+// then returns that settled result. A FIXED frame count is the wrong precondition: the fit reads the
+// dock layout's content-region width, which needs an unknown, machine-dependent number of frames to
+// lay out (and the band-height↔scrollbar feedback adds a frame of hysteresis), so a fixed five frames
+// sometimes sampled BEFORE the layout settled and the result flipped run-to-run (the #1471 tests'
+// order-dependent flakiness). Waiting for a stable state makes it deterministic. maxSettleFrames caps
+// the wait so a genuine non-convergence fails loudly rather than hanging.
+func settleRibbon(t *testing.T, renderFrame func()) (collapsed int, scrollbar bool) {
+	t.Helper()
+	const settleStableFrames, maxSettleFrames = 4, 240
+	stable, prevCollapsed, prevScroll := 0, -1, false
+	for i := 0; i < maxSettleFrames && stable < settleStableFrames; i++ {
+		renderFrame()
+		if ribbonCollapsedPanels == prevCollapsed && ribbonScrollbarShown == prevScroll {
+			stable++
+			continue
+		}
+		stable, prevCollapsed, prevScroll = 0, ribbonCollapsedPanels, ribbonScrollbarShown
+	}
+	if stable < settleStableFrames {
+		t.Fatalf("ribbon fit never settled in %d frames (collapsed=%d scrollbar=%v); it is oscillating",
+			maxSettleFrames, ribbonCollapsedPanels, ribbonScrollbarShown)
 	}
 	return ribbonCollapsedPanels, ribbonScrollbarShown
 }

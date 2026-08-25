@@ -36,12 +36,7 @@ func drawAnglePlaneDialog(s *app.Session) {
 	dialogSizeOnce(340, 250)
 	if native.Begin("Angle to Plane") {
 		drawFeatureBreadcrumb("Angle to Plane", "")
-		if propertySection("Input Geometry") {
-			drawPickChipRow("About", "angle-plane-axis", pickChipText(t.AxisPicked(), "1 Axis", "Select Axis"),
-				t.AxisPicked(), "Click the axis or edge to rotate about", t.ClearPicks)
-			drawPickChipRow("From", "angle-plane-base", pickChipText(t.BasePicked(), "1 Plane", "Select Plane"),
-				t.BasePicked(), "Click the plane or planar face to measure the angle from", t.ClearPicks)
-		}
+		drawAnglePlaneInputGeometry(t)
 		if propertySection("Behavior") {
 			native.BeginDisabled(!t.AxisPicked() || !t.BasePicked())
 			angleDegRow(s, "Angle", "angle-plane-angle", &anglePlaneUI.angleDeg)
@@ -52,4 +47,17 @@ func drawAnglePlaneDialog(s *app.Session) {
 		drawCommitCancelButtons(s, t.CanCommit())
 	}
 	native.End()
+}
+
+// drawAnglePlaneInputGeometry draws the Angle to Plane panel's Input Geometry section — the About-axis
+// and From-plane pick rows. Tool-only (no session), so the split reduces drawAnglePlaneDialog's length
+// without widening head/ui's *app.Session coupling (audit I5).
+func drawAnglePlaneInputGeometry(t *app.AngleWorkPlaneTool) {
+	if !propertySection("Input Geometry") {
+		return
+	}
+	drawPickChipRow("About", "angle-plane-axis", pickChipText(t.AxisPicked(), "1 Axis", "Select Axis"),
+		t.AxisPicked(), "Click the axis or edge to rotate about", t.ClearPicks)
+	drawPickChipRow("From", "angle-plane-base", pickChipText(t.BasePicked(), "1 Plane", "Select Plane"),
+		t.BasePicked(), "Click the plane or planar face to measure the angle from", t.ClearPicks)
 }

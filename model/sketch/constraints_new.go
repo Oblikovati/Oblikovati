@@ -4,6 +4,7 @@ package sketch
 
 import (
 	"oblikovati.org/math"
+	"oblikovati.org/model/param"
 	"oblikovati.org/solve/ad"
 )
 
@@ -59,16 +60,47 @@ func (c *GroundConstraint) Variables() []*math.Scalar {
 }
 
 // OffsetConstraint holds line L2 parallel to L1 at a fixed signed perpendicular distance
-// (the geometric relation behind an offset; pairs with a driven offset dimension).
+// (the geometric relation behind an offset; pairs with a driven offset dimension). When driver is
+// non-nil the distance is DrivenSign·driver.ModelValue() each solve — an offset segment tied to one
+// shared driving offset dimension, so editing that dimension moves a whole uniform-offset loop. The
+// distance is pulled LIVE at solve time (no parameter-graph propagation needed), and the driver's
+// stable name (DriverName) plus sign persist so a reloaded constraint can be re-bound to the restored
+// dimension (see AddOffsetDriven / the offset codec). Dist keeps the last driven value as the frozen
+// fallback when no driver can be resolved.
 type OffsetConstraint struct {
 	constraintBase
-	L1, L2 *Line
-	Dist   float64
+	L1, L2     *Line
+	Dist       float64
+	driver     *param.Parameter // live driving dimension's parameter; nil ⇒ frozen at Dist
+	DriverSign float64          // +1 / −1: which side of L1's left normal L2 sits on
+	DriverName string           // driver's parameter name, for re-binding after a reload
+}
+
+// currentDist is the target signed distance: DrivenSign·driver each solve when driven, else fixed Dist.
+func (c *OffsetConstraint) currentDist() float64 {
+	if c.driver != nil {
+		return c.DriverSign * c.driver.ModelValue()
+	}
+	return c.Dist
 }
 
 // AddOffset constrains L2 parallel to L1 at the signed perpendicular distance dist.
 func (g *GeometricConstraints) AddOffset(l1, l2 *Line, dist float64) *OffsetConstraint {
 	c := &OffsetConstraint{constraintBase: newConstraint(), L1: l1, L2: l2, Dist: dist}
+	g.add(c)
+	return c
+}
+
+// AddOffsetDriven constrains L2 parallel to L1 at the signed perpendicular distance sign·driver each
+// solve — the binding that keeps a uniform-offset loop's segments tied to one driving dimension. It
+// reads driver.ModelValue() live (so it needs no graph recompute) and records the driver's name so the
+// link survives a save/reload (rebound in the offset codec). Dist snapshots the initial value as the
+// frozen fallback used when the driver cannot be resolved on reload.
+func (g *GeometricConstraints) AddOffsetDriven(l1, l2 *Line, driver *param.Parameter, sign float64) *OffsetConstraint {
+	c := &OffsetConstraint{
+		constraintBase: newConstraint(), L1: l1, L2: l2,
+		Dist: sign * driver.ModelValue(), driver: driver, DriverSign: sign, DriverName: driver.Name(),
+	}
 	g.add(c)
 	return c
 }
@@ -83,7 +115,7 @@ func (c *OffsetConstraint) residualAD(v []ad.Number) []ad.Number {
 	// distance of L2.A from L1 was already a true distance.
 	parallel := adSineAngle(d1, d2)
 	dist := adSignedPerpDistance(d1, a2.Sub(a1))
-	return []ad.Number{parallel, dist.AddConst(-c.Dist)}
+	return []ad.Number{parallel, dist.AddConst(-c.currentDist())}
 }
 
 // Residuals reports the parallel error and the perpendicular-distance error.

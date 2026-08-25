@@ -7,7 +7,6 @@ package ui
 import (
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/renderer"
 )
@@ -230,13 +229,6 @@ func drawExtrudeAdvanced(s *app.Session) {
 	parameterFloatRow(s, "Taper A", "extrude-taper", paramAngle, "", &extrudeUI.taper)
 	s.SetExtrudeTaperDisplay(float64(extrudeUI.taper))
 }
-
-// extrudeOperations names each boolean operation for the combo-based feature dialogs
-// (Revolve, Sweep, Loft, Coil) that share the list.
-var extrudeOperations = []struct {
-	label string
-	op    ops.PartFeatureOperation
-}{{"New Solid", ops.NewBody}, {"Join", ops.Join}, {"Cut", ops.Cut}, {"Intersect", ops.Intersect}}
 
 // profileOutline returns the wireframe of a region's outer loop and holes in color.
 // Returns nil when the region index is stale (sketch edited under the selection).
