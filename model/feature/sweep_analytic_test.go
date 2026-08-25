@@ -75,6 +75,31 @@ func TestSweepCircleDiagonalStraightMakesCylinder(t *testing.T) {
 	}
 }
 
+// circlePath3D samples a full circle of the given radius in the z=0 plane (centre origin) into n
+// points, marked closed — the path a torus sweep rides.
+func circlePath3D(radius float64, n int) *sketch.Path3D {
+	pts := make([]*sketch.Point3D, n)
+	for i := 0; i < n; i++ {
+		th := 2 * stdmath.Pi * float64(i) / float64(n)
+		pts[i] = sketch.NewPoint3D(math.P3(math.Scalar(radius*stdmath.Cos(th)), math.Scalar(radius*stdmath.Sin(th)), 0))
+	}
+	return sketch.NewPath3D(pts, true)
+}
+
+// TestSweepCircleAroundCircleMakesTorus: a circle swept along a FULL circular path is ONE analytic
+// torus face (major = path radius, minor = profile radius), not a faceted ring — so projecting it
+// sees a real circle, not a chord polygon.
+func TestSweepCircleAroundCircleMakesTorus(t *testing.T) {
+	const major, minor = 10.0, 2.0
+	body := straightSweep(t, circleSketchAt(0, 0, minor), circlePath3D(major, 24))
+	if got := torusFaceCount(body); got != 1 {
+		t.Fatalf("circle-around-circle sweep has %d torus faces, want 1 (fell to the faceted ring)", got)
+	}
+	if got, want := bodyVolume(body), 2*stdmath.Pi*stdmath.Pi*major*minor*minor; relErr(got, want) > 0.02 {
+		t.Errorf("swept torus volume = %g, want ≈%g (2π²·R·r²)", got, want)
+	}
+}
+
 // TestSweepBentPathStaysFaceted guards the collinearity gate: a genuinely bent path is NOT a straight
 // run, so it must keep the faceted skin (zero analytic cylinder faces) — never mis-claimed analytic.
 func TestSweepBentPathStaysFaceted(t *testing.T) {

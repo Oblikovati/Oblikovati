@@ -160,7 +160,7 @@ func (s *SweepFeature) Recompute(in Input) (Output, error) {
 func (s *SweepFeature) buildSweepTool(prof *sketch.Profile, path *sketch.Path3D, cfg sweepConfig) (*topo.Body, error) {
 	feat := featOr(s.featName, "sweep")
 	if s.def.Operation != ops.Surface && s.sweepIsRigid() {
-		if body := analyticStraightSweep(prof, s.def.Sketch.Plane(), path.Points(), feat); body != nil {
+		if body := analyticRigidSweep(prof, s.def.Sketch.Plane(), path, feat); body != nil {
 			return body, nil
 		}
 	}
