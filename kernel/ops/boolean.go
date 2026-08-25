@@ -120,6 +120,9 @@ func join(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Rec
 func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, rec *diag.Recorder) (*topo.Body, error) {
 	body, err := booleanGeneralExact(op, target, tool, lin, rec)
 	if err == nil && body != nil && validBooleanSolid(body) {
+		if recon := recoverFacetedCurvedJoin(op, target, tool, body, rec); recon != nil {
+			return recon, nil // the analytic path faceted a curved join; reconstruction restored it (#2167)
+		}
 		return body, nil
 	}
 	if mesh := meshArrangementFallback(op, target, tool, rec); mesh != nil {
