@@ -40,7 +40,19 @@ import (
 // staged as its own careful, corpus-validated step, not forced in here. Un-skip when it
 // lands.
 func TestReconstructCocylindricalCapOnWall(t *testing.T) {
-	t.Skip("ADR-0054/#2167: cocylindrical cap-on-wall needs conforming tessellation (rim-sliver membrane); see doc")
+	// ADR-0054 status (after the conforming-tessellation fix): the #2167 rim-sliver
+	// MEMBRANE is GONE — canonical circular sampling (kernel/geom/canonical_sampling.go)
+	// makes the two operands share the z=6 rim exactly, so the mesh boolean now emits a
+	// 2-manifold, correct-volume soup (no opposite-facing zero-volume flap). Reconstruction
+	// merges the two cocylindrical walls into ONE analytic cylinder (cyls=1) and builds a
+	// CLOSED, MANIFOLD, SOLID body. What remains is a coplanar-classification residue in the
+	// exact core: co-refinement strips the D bottom cap's coincidence partner, so
+	// keepTaggedFromB keeps ~26 internal z=6 interface triangles that should be dropped;
+	// reconstruction then rebuilds them as two spurious down-facing caps (volume 270.1 vs
+	// 277.9, Euler +2). That is a meshbool co-refinement/classification fix, tracked
+	// separately from the tessellation architecture this fixture drove. Un-skip when the
+	// interface-drop lands. The membrane root cause — the reason #2167 was visible — is fixed.
+	t.Skip("ADR-0054/#2167: membrane fixed (conforming tessellation); analytic reconstruction pending the coplanar interface-drop in the exact core")
 
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 6)
 	if err != nil {

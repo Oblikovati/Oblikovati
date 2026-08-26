@@ -37,18 +37,15 @@ func dProfileSketchOnPlaneZ(z, r, theta float64) *sketch.Sketch {
 // re-tessellate against one surface (aligned grids, no seam) — asserted here as analytic
 // cylinder faces surviving the join plus the exact stacked volume.
 func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
-	// ADR-0054 target, not yet closed. Reconstruction rebuilds the two cocylindrical
-	// walls analytically (cyl=2), but the mesh boolean produces a zero-volume rim-sliver
-	// membrane for this cocylindrical cap-on-wall case: the cylinder's top cap tessellates
-	// to the true rim (radius R) while the D-prism's arc is inscribed (below R), so the
-	// thin ring between them is kept as an opposite-facing membrane the tessellations do
-	// not conform. The soup is 2-manifold and correct-volume, yet it groups to a
-	// non-manifold B-rep. The fix is a conforming (canonical absolute-angle) tessellation
-	// of the shared cocylindrical circle — a tessellation-path change validated on its own.
-	// The recovery adopts reconstruction only when it validates, so #2167 stays faceted
-	// today: no regression, no fix. See ADR-0054 §Status and the kernel-level twin
-	// ops.TestReconstructCocylindricalCapOnWall. Un-skip when the tessellation fix lands.
-	t.Skip("ADR-0054/#2167: cocylindrical cap-on-wall needs conforming tessellation (rim-sliver membrane)")
+	// ADR-0054 status: the rim-sliver MEMBRANE that made #2167 visible is fixed — canonical
+	// circular tessellation (kernel/geom/canonical_sampling.go) makes the two cocylindrical
+	// operands share the join-plane rim exactly, so the mesh boolean now emits a 2-manifold,
+	// correct-volume soup. Reconstruction merges the two walls to one analytic cylinder and
+	// builds a closed manifold solid. One exact-core residue remains (an internal coplanar
+	// cap the co-refined classification fails to drop), so the analytic join is not yet a
+	// valid B-rep and the recovery stays gated — #2167 stays faceted today, no regression.
+	// See ADR-0054 §Status and the kernel twin ops.TestReconstructCocylindricalCapOnWall.
+	t.Skip("ADR-0054/#2167: membrane fixed (conforming tessellation); analytic join pending the coplanar interface-drop in the exact core")
 	const r, theta, h1, h2 = 3.0, 0.6, 6.0, 4.0
 	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
