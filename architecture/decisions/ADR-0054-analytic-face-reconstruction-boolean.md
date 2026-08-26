@@ -104,28 +104,34 @@ proven on gluing unions (a stepped coaxial shaft → two analytic walls, exact v
 planar booleans (box union, exact volume), and a curved-bar ∪ tool. It is **not yet the
 default** — `reconstructionCutover = false` — because two frontiers remain:
 
-1. **Cocylindrical cap-on-wall (#2167) — membrane FIXED; one exact-core residue remains.**
-   The rim-sliver membrane was a **conforming-tessellation** defect: two operands sampled the
-   shared radius-R circle INDEPENDENTLY (one reaching the true rim, the other inscribed), so
-   the thin ring between the approximations was kept as a zero-volume opposite-facing flap.
-   The fix is **canonical absolute-angle sampling of circle/arc edges**
-   (`kernel/geom/canonical_sampling.go`, wired through `kernel/ops/edge_discretize.go` and
-   `tessellate.go`): a circle/arc discretizes to the SAME points whenever it *is* the same
-   circle, independent of the edge's stored RefDir, normal sign, or object identity —
-   conformance becomes a property of the geometry, not of intra-body pointer sharing. The
-   segment count is the same power of two the adaptive bisection converges to, so facet
-   density (and curved area/volume error) is unchanged; a closed circle is anchored on its
-   seam vertex to stay angularly monotone. With this, the boolean soup is 2-manifold AND
-   correct-volume for the cocylindrical join. Reconstruction adds a **same-surface merge**
-   (`meshbool_reconstruct_merge.go`: relabel coincident-surface tags before the arrangement
-   trace, so a false seam between two cocylindrical walls becomes interior) and **sub-arc
-   edge reuse** (`matchSubArc`: rebuild a run tracing part of a rim circle), and now produces
-   a CLOSED, MANIFOLD, SOLID body with the two walls fused to ONE analytic cylinder. The last
-   residue is in the **exact core, not tessellation**: co-refinement strips the internal
-   D-bottom-cap's coincidence partner, so `keepTaggedFromB` keeps ~26 interface triangles it
-   should drop, and reconstruction rebuilds them as two spurious internal caps (volume 270.1
-   vs 277.9, Euler +2). Closing it is a `meshbool` coplanar interface-drop fix. Guarded by
-   `ops.TestReconstructCocylindricalCapOnWall` (skipped, with the current diagnosis).
+1. **Cocylindrical cap-on-wall (#2167) — CLOSED at the kernel level.** Three cooperating
+   fixes take it from a visible faceted seam to a valid analytic solid:
+   - **Conforming tessellation** (`kernel/geom/canonical_sampling.go`, wired through
+     `edge_discretize.go`/`tessellate.go`): a circle/arc discretizes to the SAME points
+     whenever it *is* the same circle — canonical absolute-angle sampling from
+     (centre, axis line, radius), independent of RefDir, normal sign, or edge identity.
+     Conformance is a property of the geometry, not of intra-body pointer sharing. Same
+     power-of-two segment count as the adaptive path (density/volume error unchanged);
+     closed circles seam-anchored to stay monotone. This removes the rim-sliver membrane.
+   - **Cross-operand vertex-on-edge imprint** (`kernel/ops/meshbool_imprint.go`): the mesh
+     co-refinement runs per-operand and misses a VERTEX of one operand on an EDGE of the
+     other. A D-profile chord corner sits on the cylinder rim at a non-canonical angle —
+     OUTSIDE the inscribed rim polygon — so it cannot be recovered by splitting a soup edge.
+     Before tessellating each operand for the boolean, imprint the other's on-edge vertices
+     into the edge's discretization (installed as the edge's snapped polyline, both faces
+     share it, restored after). Restricted to full-circle rims, where the faceting gap
+     exists and `matchSubArc` can rebuild the sub-arcs; straight/other edges are exact
+     already or a follow-up.
+   - **Same-surface merge** (`meshbool_reconstruct_merge.go`): relabel coincident-surface
+     tags before the arrangement trace, so the false seam between the lower cylinder wall and
+     the upper cocylindrical arc wall becomes interior — the two rebuild as ONE analytic
+     cylinder (the correct B-rep, as Inventor/OCCT merge cocylindrical faces), with the
+     exposed cap trimmed to the minor segment via `matchSubArc`.
+
+   `reconstructBoolean(cylinder, D-prism, Union)` now yields a closed, manifold, solid B-rep
+   of five analytic faces at the exact stacked volume — asserted by the (now un-skipped)
+   `ops.TestReconstructCocylindricalCapOnWall`. The FEATURE-level test stays skipped pending
+   the Layer-5 cutover below.
 
 2. **Curved SSI-edge welding (e.g. cyl ∪ box).** Reconstruction recovers the analytic
    surfaces but the plane∩cylinder ellipse/line edges do not yet weld watertight; Layer 4

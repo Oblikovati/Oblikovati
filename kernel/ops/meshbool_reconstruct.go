@@ -24,10 +24,13 @@ import (
 // reconstructBoolean computes `a op b` and rebuilds it analytically, or returns false
 // to leave the caller on the faceted path.
 func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality, feat string) (*topo.Body, bool) {
-	aSoup, aRefs := bodyToTaggedSoup(a, q, 0)
-	bSoup, bRefs := bodyToTaggedSoup(b, q, len(aRefs))
-	refs := append(aRefs, bRefs...)
 	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox()))
+	// Cross-operand vertex-on-edge imprint: sample each operand's edges through the OTHER
+	// operand's vertices that lie on them, so the two conform at a shared corner the mesh
+	// co-refinement would otherwise miss (ADR-0054 / #2167 chord corner on the rim circle).
+	aSoup, aRefs := taggedSoupWithImprints(a, q, 0, crossOperandImprints(a, b, res.Weld()))
+	bSoup, bRefs := taggedSoupWithImprints(b, q, len(aRefs), crossOperandImprints(b, a, res.Weld()))
+	refs := append(aRefs, bRefs...)
 	cat := catalogOriginalEdges(a, b)
 
 	// Fuse coincident-surface tags (cocylindrical walls, coplanar faces) so their shared
