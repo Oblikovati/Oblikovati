@@ -97,6 +97,34 @@ mesh engine only when green on the full `kernel/brep` + `kernel/ops` corpus. Fli
 - Corpus safety is the gating invariant, as in ADR-0052: no cutover until the reconstructed engine is a
   strict superset of the analytic engine on the full boolean corpus and the OCCT oracle.
 
+## Status (findings from the first build)
+
+Layers 1–2c and the (gated-off) recovery hook are landed and green. Reconstruction is
+proven on gluing unions (a stepped coaxial shaft → two analytic walls, exact volume),
+planar booleans (box union, exact volume), and a curved-bar ∪ tool. It is **not yet the
+default** — `reconstructionCutover = false` — because two frontiers remain:
+
+1. **Cocylindrical cap-on-wall (#2167) — root-caused, blocked on tessellation.** When two
+   operands share the radius-R circle at a join plane (a cylinder's top-cap rim and a
+   D-prism's bottom-cap arc are the SAME circle) but tessellate it INDEPENDENTLY — one
+   reaching the true rim at R, the other inscribed below R — the thin ring between the two
+   approximations is a **zero-volume, opposite-facing membrane**: kept because
+   `coplanarPartner` cannot see it as coincident and `insideExact` reports it outside the
+   *tessellated* other operand. The soup is 2-manifold and correct-volume (the membrane is
+   edge-paired and volume-neutral), but it is degenerate, so BOTH `soupToBody` and the
+   provenance reconstruction group it to a non-manifold B-rep. **Fix:** conform the two
+   operands' tessellations of the shared cocylindrical circle — a canonical absolute-angle
+   sampling of circle/arc edges so cocylindrical edges share vertices. This is a change to
+   `kernel/ops/tessellate*.go` (the highest-priority subsystem) and must be golden-image
+   validated, so it is its own careful step. Guarded by
+   `ops.TestReconstructCocylindricalCapOnWall` (skipped, with the full diagnosis).
+
+2. **Curved SSI-edge welding (e.g. cyl ∪ box).** Reconstruction recovers the analytic
+   surfaces but the plane∩cylinder ellipse/line edges do not yet weld watertight; Layer 4
+   (exact SSI conics welded consistently on both incident faces) closes it.
+
+Until both land, the recovery gate stays off so the corpus is unchanged.
+
 ## Alternatives considered and rejected
 
 - **Fit surfaces from the facet cloud (RANSAC / least-squares).** Rejected: tolerance-bound, cannot

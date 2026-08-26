@@ -38,14 +38,17 @@ func dProfileSketchOnPlaneZ(z, r, theta float64) *sketch.Sketch {
 // cylinder faces surviving the join plus the exact stacked volume.
 func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
 	// ADR-0054 target, not yet closed. Reconstruction rebuilds the two cocylindrical
-	// walls analytically (cyl=2) but the result is not yet 2-manifold for this specific
-	// cocylindrical CAP-ON-WALL geometry: the D-cap's arc edge lies exactly on the main
-	// cylinder's wall, so the coplanar cap overlap (dropped D region) and the wall's
-	// arc-imprint interact into a soup that is 2-manifold yet groups to a non-manifold
-	// B-rep (the annulus cap shatters, the arc edge borders 4 faces). The safe recovery
-	// adopts reconstruction only when it validates, so today #2167 stays faceted — no
-	// regression, but no fix. Un-skip when the cocylindrical cap-on-wall conformance lands.
-	t.Skip("ADR-0054: cocylindrical cap-on-wall reconstruction not yet 2-manifold (#2167 blocker)")
+	// walls analytically (cyl=2), but the mesh boolean produces a zero-volume rim-sliver
+	// membrane for this cocylindrical cap-on-wall case: the cylinder's top cap tessellates
+	// to the true rim (radius R) while the D-prism's arc is inscribed (below R), so the
+	// thin ring between them is kept as an opposite-facing membrane the tessellations do
+	// not conform. The soup is 2-manifold and correct-volume, yet it groups to a
+	// non-manifold B-rep. The fix is a conforming (canonical absolute-angle) tessellation
+	// of the shared cocylindrical circle — a tessellation-path change validated on its own.
+	// The recovery adopts reconstruction only when it validates, so #2167 stays faceted
+	// today: no regression, no fix. See ADR-0054 §Status and the kernel-level twin
+	// ops.TestReconstructCocylindricalCapOnWall. Un-skip when the tessellation fix lands.
+	t.Skip("ADR-0054/#2167: cocylindrical cap-on-wall needs conforming tessellation (rim-sliver membrane)")
 	const r, theta, h1, h2 = 3.0, 0.6, 6.0, 4.0
 	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
