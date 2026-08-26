@@ -106,11 +106,15 @@ func TessellateEdge(e *topo.Edge, q Quality) []math.Point3 {
 // canal band's v by 1.2e-2 and sheared every boundary strip — see canalRailRow).
 func tessellateEdgeWithParams(e *topo.Edge, q Quality) ([]math.Point3, []float64) {
 	c := e.Geometry()
-	// A circle/arc takes the canonical absolute-angle samples so every consumer of this
-	// edge (a band-loft rail here, a neighbour cap via discretizeEdge) agrees on its
-	// points — the same conformance invariant, within one body (ADR-0054/#2167).
-	if pts, params, ok := conformalCircularSamples(e, q.tol(), q.angleTol()); ok {
-		return pts, params
+	// Honour an installed snapped polyline (a healed import, or the boolean's temporary canonical
+	// conformance sampling) so this consumer — a band-loft rail — agrees with a neighbour cap that
+	// reads the SAME edge through discretizeEdge (both use the snapped points), within one body.
+	if snapped := e.SnappedCurve(); snapped != nil {
+		params := make([]float64, len(snapped))
+		for i, p := range snapped {
+			params[i], _ = geom.CurveParamAtPoint3(c, p)
+		}
+		return snapped, params
 	}
 	lo, hi := c.Domain()
 	params := adaptiveParams(c.PointAt, lo, hi, q.tol(), q.angleTol())

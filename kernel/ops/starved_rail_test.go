@@ -303,15 +303,8 @@ func TestStarvedRailHSweepMonotoneConvergence(t *testing.T) {
 		if relErr(area, truth) > 0.05 {
 			t.Errorf("h=%g: area %.4f vs truth %.4f (rel %.4f > 5%%)", target, area, truth, relErr(area, truth))
 		}
-		// Monotone non-increasing (recon's #1 test), with a RELATIVE slack for re-triangulation
-		// noise. Relative (not the old absolute +0.25) because canonical circular sampling
-		// (ADR-0054) ties the end-arcs' facet density to the whole circle's canonical station
-		// count, so a short arc gets a coarser — but still chord-tolerance-meeting — set than the
-		// old adaptive power-of-two overshoot; the CDT then traces a slightly different, still
-		// converging path (one ≤25% transient bump here). A genuine "giant fan" over-enclosure is
-		// a large multiple, which this still catches, while area+folds stay strictly gated above.
-		if mx > prevMax*1.25+1e-9 {
-			t.Errorf("h=%g: max triangle area %.4f jumped >25%% from previous %.4f — not converging monotonically", target, mx, prevMax)
+		if mx > prevMax+0.25 { // monotone non-increasing (recon's #1 test), slack for re-triangulation noise
+			t.Errorf("h=%g: max triangle area %.4f increased from previous %.4f — not converging monotonically", target, mx, prevMax)
 		}
 		prevMax = mx
 	}

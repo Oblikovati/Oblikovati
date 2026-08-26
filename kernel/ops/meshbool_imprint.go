@@ -63,20 +63,28 @@ func vertexOnEdgeInterior(e *topo.Edge, p math.Point3, tol float64) bool {
 	return onCurve(e.Geometry(), p, tol)
 }
 
-// applyImprints installs, on every edge that has imprint points, a snapped polyline equal to
-// the edge's normal discretization with those points inserted, and returns a closure that
-// restores each edge's original snapped state. Call the closure (e.g. via defer) once the
-// tessellation that must see the imprints has run.
-func applyImprints(imprints map[*topo.Edge][]math.Point3, q Quality) func() {
+// applyBooleanConformance installs, on every CIRCLE/ARC edge of the body, a snapped polyline equal
+// to its CANONICAL absolute-angle sampling (with any cross-operand imprint points inserted), and
+// returns a closure that restores each edge afterwards. Because discretizeEdge (and
+// tessellateEdgeWithParams) consult the snapped polyline first, the boolean tessellates b's
+// circular boundaries canonically — so two operands sharing a circle discretize it identically —
+// while DISPLAY and every other consumer, which never call this, keep the adaptive sampling. This
+// scopes the conformance to exactly the boolean input (ADR-0054/#2167). The snapped polyline is set
+// only for the tessellation and restored, so the operand body is left unchanged.
+func applyBooleanConformance(b *topo.Body, imprints map[*topo.Edge][]math.Point3, q Quality) func() {
 	type prev struct {
 		e    *topo.Edge
 		poly []math.Point3
 		res  float64
 	}
-	saved := make([]prev, 0, len(imprints))
-	for e, pts := range imprints {
+	var saved []prev
+	for _, e := range b.Edges() {
+		poly, ok := conformalPolyline(e, imprints[e], q)
+		if !ok {
+			continue // non-circular edge: adaptive sampling already conforms (its chords are exact)
+		}
 		saved = append(saved, prev{e, e.SnappedCurve(), e.Tolerance()})
-		e.SetSnappedCurve(imprintedPolyline(e, pts, q), e.Tolerance())
+		e.SetSnappedCurve(poly, e.Tolerance())
 	}
 	return func() {
 		for _, s := range saved {
@@ -85,21 +93,25 @@ func applyImprints(imprints map[*topo.Edge][]math.Point3, q Quality) func() {
 	}
 }
 
-// taggedSoupWithImprints is bodyToTaggedSoup with the given cross-operand imprints applied to
-// the body's edges for the duration of the tessellation, then restored.
+// taggedSoupWithImprints is bodyToTaggedSoup with the boolean-input conformance sampling (canonical
+// circle/arc edges + cross-operand imprints) applied to the body's edges for the duration of the
+// tessellation, then restored.
 func taggedSoupWithImprints(b *topo.Body, q Quality, tagBase int, imprints map[*topo.Edge][]math.Point3) (meshbool.TaggedSoup, []faceSurfaceRef) {
-	defer applyImprints(imprints, q)()
+	defer applyBooleanConformance(b, imprints, q)()
 	return bodyToTaggedSoup(b, q, tagBase)
 }
 
-// imprintedPolyline is the edge's discretization with each imprint point inserted at the
-// polyline position where it causes the least detour — i.e. into the segment it lies on.
-func imprintedPolyline(e *topo.Edge, pts []math.Point3, q Quality) []math.Point3 {
-	poly := discretizeEdge(e, q)
-	for _, p := range pts {
-		poly = insertOnPolyline(poly, p)
+// conformalPolyline returns a circle/arc edge's canonical absolute-angle sampling with the given
+// imprint points inserted at the segment each lies on; ok=false for a non-circular edge.
+func conformalPolyline(e *topo.Edge, imprints []math.Point3, q Quality) ([]math.Point3, bool) {
+	pts, _, ok := conformalCircularSamples(e, q.tol(), q.angleTol())
+	if !ok {
+		return nil, false
 	}
-	return poly
+	for _, p := range imprints {
+		pts = insertOnPolyline(pts, p)
+	}
+	return pts, true
 }
 
 // insertOnPolyline inserts p into the segment of poly it lies on (least added detour),

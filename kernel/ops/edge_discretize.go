@@ -38,13 +38,12 @@ func discretizeEdge(e *topo.Edge, q Quality) []math.Point3 {
 
 // sampleEdgeCurve samples an edge's curve into a chord polyline directly (ignoring any healing
 // snap) — the raw discretization [discretizeEdge] derives from, and what [snapEdge] re-projects.
-// A circle/arc edge takes the CANONICAL absolute-angle path (conformalCircularSamples) so two
-// operands sharing that circle discretize it identically (ADR-0054/#2167); every other curve
-// keeps the adaptive midpoint bisection.
+// This is the adaptive midpoint bisection used for DISPLAY and every non-boolean consumer. The
+// boolean input takes a CANONICAL absolute-angle sampling of its circle/arc edges instead, but
+// installs it as a temporary snapped polyline (applyBooleanConformance), which discretizeEdge
+// consults first — so only the boolean operands conform, and display meshing is untouched
+// (ADR-0054/#2167; the global-canonical variant folded some occtparity display meshes — see #2168).
 func sampleEdgeCurve(e *topo.Edge, q Quality) []math.Point3 {
-	if pts, _, ok := conformalCircularSamples(e, q.tol(), q.angleTol()); ok {
-		return pts // already anchored on / ending at the edge's vertices
-	}
 	c := e.Geometry()
 	lo, hi := c.Domain()
 	ts := adaptiveParams(func(t float64) math.Point3 { return c.PointAt(t) }, lo, hi, q.tol(), q.angleTol())
