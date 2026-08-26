@@ -2,9 +2,10 @@
 
 package command
 
-import "slices"
-
-import "errors"
+import (
+	"errors"
+	"slices"
+)
 
 // errTransactionClosed reports use of a transaction that has already committed or
 // aborted.

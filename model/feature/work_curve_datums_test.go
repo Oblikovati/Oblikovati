@@ -95,9 +95,6 @@ func TestCirclePlaneIntersectionGolden(t *testing.T) {
 	}
 }
 
-//go:fix inline
-func ptr(p math.Point3) *math.Point3 { return new(p) }
-
 // TestCurveEntityPointRoundTrips: a curve-and-entity point serializes its refs and its proximity
 // solution point, and restores to an equivalent definition (#1842).
 func TestCurveEntityPointRoundTrips(t *testing.T) {

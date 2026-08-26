@@ -55,7 +55,7 @@ func (d snapshotDelta) size() int { return len(d.middle) + 2*8 }
 // commonPrefixLen returns the number of leading bytes a and b share.
 func commonPrefixLen(a, b []byte) int {
 	n := min(len(b), len(a))
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if a[i] != b[i] {
 			return i
 		}
@@ -66,7 +66,7 @@ func commonPrefixLen(a, b []byte) int {
 // commonSuffixLen returns the number of trailing bytes a and b share.
 func commonSuffixLen(a, b []byte) int {
 	n := min(len(b), len(a))
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if a[len(a)-1-i] != b[len(b)-1-i] {
 			return i
 		}

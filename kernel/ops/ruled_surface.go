@@ -113,7 +113,7 @@ func rotateRail(r []math.Point3, shift int) []math.Point3 {
 func railCost(a, b []math.Point3) float64 {
 	n := min(len(b), len(a))
 	sum := 0.0
-	for i := 0; i < n; i++ {
+	for i := range n {
 		sum += float64(a[i].DistanceTo(b[i]))
 	}
 	return sum

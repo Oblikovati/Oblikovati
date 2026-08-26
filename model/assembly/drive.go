@@ -83,7 +83,7 @@ func driveValues(s DriveSettings) []float64 {
 	forward := rampValues(s.start, s.end, s.step)
 	reps := max(s.reps, 1)
 	var out []float64
-	for r := 0; r < reps; r++ {
+	for r := range reps {
 		if s.pingPong && r%2 == 1 {
 			out = append(out, reversed(forward)...)
 		} else {

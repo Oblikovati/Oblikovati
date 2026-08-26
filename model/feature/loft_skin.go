@@ -789,10 +789,7 @@ func segmentSamplesG2(p0, p1 []math.Point3, m0, m1, startA, endA, startJ, endJ [
 		sec[s] = blendSection(p0, p1, m0, m1, startA, endA, startJ, endJ, float64(s)/float64(probes))
 	}
 	turn := stdmath.Max(segmentTwist(p0, p1), maxTrackTurn(sec))
-	n := max(int(stdmath.Ceil(turn/(loftMaxStepDeg*stdmath.Pi/180))), loftSegmentSamples)
-	if n > loftMaxSegmentSamples {
-		n = loftMaxSegmentSamples
-	}
+	n := min(max(int(stdmath.Ceil(turn/(loftMaxStepDeg*stdmath.Pi/180))), loftSegmentSamples), loftMaxSegmentSamples)
 	return n
 }
 
@@ -807,10 +804,7 @@ func segmentSamplesG2(p0, p1 []math.Point3, m0, m1, startA, endA, startJ, endJ [
 // A 90° twist → ~18 sub-sections (smooth); a straight, ruled segment → the floor.
 func segmentSamples(p0, p1 []math.Point3, m0, m1 []math.Vector3) int {
 	turn := stdmath.Max(segmentTwist(p0, p1), segmentTrackTurn(p0, p1, m0, m1))
-	n := max(int(stdmath.Ceil(turn/(loftMaxStepDeg*stdmath.Pi/180))), loftSegmentSamples)
-	if n > loftMaxSegmentSamples {
-		n = loftMaxSegmentSamples
-	}
+	n := min(max(int(stdmath.Ceil(turn/(loftMaxStepDeg*stdmath.Pi/180))), loftSegmentSamples), loftMaxSegmentSamples)
 	return n
 }
 
@@ -837,10 +831,7 @@ func aroundSubdivisions(sections [][]math.Point3, closed bool, wrapShift int) in
 			maxTwist = a
 		}
 	}
-	k := max(int(stdmath.Ceil(maxTwist/(loftAroundStepDeg*stdmath.Pi/180))), 1)
-	if k > loftMaxAroundSubdiv {
-		k = loftMaxAroundSubdiv
-	}
+	k := min(max(int(stdmath.Ceil(maxTwist/(loftAroundStepDeg*stdmath.Pi/180))), 1), loftMaxAroundSubdiv)
 	return k
 }
 

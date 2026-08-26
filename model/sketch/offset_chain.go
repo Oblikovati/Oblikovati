@@ -2,9 +2,11 @@
 
 package sketch
 
-import "slices"
+import (
+	"slices"
 
-import "oblikovati.org/math"
+	"oblikovati.org/math"
+)
 
 // chainJoinTol is the distance under which two curve endpoints count as joined when tracing the
 // connected chain an offset Loop Select follows.

@@ -2,9 +2,10 @@
 
 package feature
 
-import "slices"
-
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 // Thread standards and the size/pitch tables behind the thread tool's preferences. A standard
 // (ISO/ANSI/JIS) groups sizes under a system (metric or imperial); each size offers one or more

@@ -2,9 +2,10 @@
 
 package material
 
-import "maps"
-
-import "encoding/hex"
+import (
+	"encoding/hex"
+	"maps"
+)
 
 // AssignmentStore records which material/appearance is assigned where in a part, keyed by
 // the persistent hex reference key of a body or face — stable across Recompute, unlike the

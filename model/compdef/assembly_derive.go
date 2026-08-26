@@ -51,7 +51,7 @@ func flattenParallel(occs *occurrence.Occurrences, rootWS float64) []feature.Pla
 	workers := min(runtime.GOMAXPROCS(0), n)
 	parts := make([][]feature.PlacedBody, workers)
 	var wg sync.WaitGroup
-	for wkr := 0; wkr < workers; wkr++ {
+	for wkr := range workers {
 		lo, hi := chunkRange(n, workers, wkr)
 		wg.Add(1)
 		go func(slot, lo, hi int) {

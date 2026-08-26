@@ -9,9 +9,11 @@
 // ComponentOccurrences (M11-F01/F02, #345/#346).
 package occurrence
 
-import "maps"
+import (
+	"maps"
 
-import "oblikovati.org/math"
+	"oblikovati.org/math"
+)
 
 // Definition is the component definition an occurrence instances — a part or an
 // assembly definition (model/compdef). Many occurrences can share one Definition (the

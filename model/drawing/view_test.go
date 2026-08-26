@@ -163,9 +163,6 @@ func TestViewLabelRoundTrip(t *testing.T) {
 	}
 }
 
-//go:fix inline
-func strPtr(s string) *string { return new(s) }
-
 func TestAddBaseViewRequiresModel(t *testing.T) {
 	c := NewContent() // no body resolver / reference
 	if _, err := c.Sheets().Active().Views().AddBase(BaseViewSpec{Orientation: types.BaseViewFront}); err == nil {

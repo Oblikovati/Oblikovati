@@ -51,10 +51,7 @@ const (
 // callStackFor sizes the call stack proportionally to the registry budget, clamped so
 // a small memory cap still allows useful recursion and a large one stays bounded.
 func callStackFor(slots int) int {
-	cs := max(slots/16, 256)
-	if cs > maxCallStackSize {
-		cs = maxCallStackSize
-	}
+	cs := min(max(slots/16, 256), maxCallStackSize)
 	return cs
 }
 

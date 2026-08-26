@@ -80,9 +80,6 @@ func analyticCurve3D(e Entity, segments int) (curve3At, int) {
 // helixSampleCount scales the sample budget with the turn count (min one segment
 // budget per turn, capped at 16 turns so a pathological helix stays bounded).
 func helixSampleCount(turns float64, segments int) int {
-	n := max(int(turns), 1)
-	if n > 16 {
-		n = 16
-	}
+	n := min(max(int(turns), 1), 16)
 	return n * segments
 }

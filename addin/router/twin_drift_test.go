@@ -51,7 +51,7 @@ func TestModelWireTwinsHaveMatchingFields(t *testing.T) {
 func exportedFieldNames(t reflect.Type) []string {
 	var names []string
 	for f := range t.Fields() {
-		if f := f; f.IsExported() {
+		if f.IsExported() {
 			names = append(names, f.Name)
 		}
 	}

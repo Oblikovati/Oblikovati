@@ -2,9 +2,11 @@
 
 package theme
 
-import "maps"
+import (
+	"maps"
 
-import "oblikovati.org/api/types"
+	"oblikovati.org/api/types"
+)
 
 // Palette is a full-snapshot color map: every theme stores a color for every token, so
 // there is no inheritance to resolve at read time (the user chose self-contained custom
