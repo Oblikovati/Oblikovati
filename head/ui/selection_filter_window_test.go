@@ -28,7 +28,7 @@ func TestInWindowSelectionFilterWindowDraws(t *testing.T) {
 	st.SetEnabled(app.SelectVertex, false) // a disabled row draws unticked
 	st.Move(st.Rank(app.SelectFace), 0)    // a reordered list draws in the new order
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)

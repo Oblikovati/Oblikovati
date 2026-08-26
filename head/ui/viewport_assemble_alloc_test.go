@@ -24,7 +24,7 @@ func TestAssembleAllocFree(t *testing.T) {
 	for i := range tfs {
 		tfs[i] = math.Translation4(math.V3(float64(i), 0, 0))
 	}
-	for s := 0; s < sources; s++ {
+	for s := range sources {
 		b := new(topo.Body)
 		atlas.recs = append(atlas.recs, [5]int32{1, 0, 36, 0, 0}) // one tri-stream template per source
 		atlas.regions = append(atlas.regions, atlasRegion{source: b, start: s, end: s + 1})

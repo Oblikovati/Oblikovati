@@ -22,7 +22,7 @@ func TestUpdateTextureRoundTrip(t *testing.T) {
 
 	const width, height = 8, 8
 	red := make([]byte, width*height*4)
-	for i := 0; i < width*height; i++ {
+	for i := range width * height {
 		red[i*4], red[i*4+1], red[i*4+2], red[i*4+3] = 255, 0, 0, 255
 	}
 	tex := w.CreateTexture(red, width, height)
@@ -32,10 +32,10 @@ func TestUpdateTextureRoundTrip(t *testing.T) {
 	defer w.DestroyTexture(tex)
 
 	blue := make([]byte, width*height*4)
-	for i := 0; i < width*height; i++ {
+	for i := range width * height {
 		blue[i*4], blue[i*4+1], blue[i*4+2], blue[i*4+3] = 0, 0, 255, 255
 	}
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		if !w.UpdateTexture(tex, blue, width, height) {
 			t.Fatalf("UpdateTexture failed on iteration %d", i)
 		}

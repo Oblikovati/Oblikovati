@@ -29,7 +29,7 @@ func TestInWindowExportDialogFitsAtRaisedFontScale(t *testing.T) {
 	fileModal.openFor(dialogExport) // arm the global Export modal that DrawChrome renders
 	defer fileModal.cancel()
 
-	for i := 0; i < 6; i++ {
+	for range 6 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)

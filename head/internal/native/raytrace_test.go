@@ -78,7 +78,7 @@ func TestRTSceneMatchesCPUOracle(t *testing.T) {
 			if absf(got.T-want.T) > tol {
 				t.Errorf("T = %v, want %v", got.T, want.T)
 			}
-			for i := 0; i < 3; i++ {
+			for i := range 3 {
 				if absf(got.Point[i]-want.Point[i]) > tol {
 					t.Errorf("Point[%d] = %v, want %v", i, got.Point[i], want.Point[i])
 				}
@@ -118,7 +118,7 @@ func absf(x float32) float32 {
 func TestRTSceneAcrossSeparateWindowsInOneProcess(t *testing.T) {
 	verts, indices := unitQuadVerticesIndices()
 
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		w, err := CreateWindow(64, 64, "Oblikovati (RT cross-window regression test)")
 		if err != nil {
 			t.Skipf("no window/GPU available: %v", err)

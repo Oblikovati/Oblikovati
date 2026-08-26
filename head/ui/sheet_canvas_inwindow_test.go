@@ -132,7 +132,7 @@ func TestInWindowDrawingSheetTabsRender(t *testing.T) {
 
 // renderChromeFrames draws n full chrome frames — the in-window tests' shared render loop.
 func renderChromeFrames(win *native.Window, s *app.Session, n int) {
-	for i := 0; i < n; i++ {
+	for range n {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)

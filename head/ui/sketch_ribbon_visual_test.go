@@ -30,7 +30,7 @@ func TestInWindowSketchRibbonVisualHold(t *testing.T) {
 	dockLaidOut = false
 	icons = nil
 	s := sketchEnvSession(t)
-	for i := 0; i < 6000; i++ { // long enough to screenshot even uncapped (~30s+)
+	for range 6000 { // long enough to screenshot even uncapped (~30s+)
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)

@@ -54,7 +54,7 @@ func widen(min, max *[3]float32, x, y, z float32) {
 // vertex) in verts.
 func accumulatePositions(verts []float32, min, max *[3]float32) {
 	for i := 0; i+VertexFloats <= len(verts); i += VertexFloats {
-		for a := 0; a < 3; a++ {
+		for a := range 3 {
 			v := verts[i+a]
 			if v < min[a] {
 				min[a] = v

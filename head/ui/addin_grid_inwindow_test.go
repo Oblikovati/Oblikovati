@@ -63,7 +63,7 @@ func TestInWindowGridPanelScreenshot(t *testing.T) {
 		t.Fatalf("SetDockableWindow (validation): %v", err)
 	}
 
-	for i := 0; i < 3; i++ { // settle immediate-mode layout + tab selection
+	for range 3 { // settle immediate-mode layout + tab selection
 		win.BeginFrame()
 		native.SetNextWindowPos(0, 0)
 		native.SetNextWindowSize(inWinW, inWinH)

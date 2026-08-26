@@ -28,7 +28,7 @@ func TestInWindowOffsetContextMenuOptions(t *testing.T) {
 	}
 
 	render := func() {
-		for i := 0; i < 8; i++ {
+		for range 8 {
 			win.BeginFrame()
 			DrawChrome(win, s)
 			win.EndFrame(0.1, 0.1, 0.1)

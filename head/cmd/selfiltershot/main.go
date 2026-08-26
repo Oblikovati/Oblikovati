@@ -56,7 +56,7 @@ func run(out string, frames int, reorder bool) error {
 	}
 	defer win.Destroy()
 	win.InitViewport()
-	for i := 0; i < frames; i++ {
+	for range frames {
 		win.BeginFrame()
 		ui.DrawChrome(win, s)
 		win.EndFrame(ui.WindowClearColor())

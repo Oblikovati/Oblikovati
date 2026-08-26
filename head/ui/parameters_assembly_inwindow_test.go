@@ -45,7 +45,7 @@ func TestInWindowAssemblyParametersDialogDraws(t *testing.T) {
 	s.OpenParameters()
 	openLinkPicker() // exercise the derived-table source picker too
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)

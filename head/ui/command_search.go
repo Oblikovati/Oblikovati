@@ -41,10 +41,7 @@ func drawSearchResults(s *app.Session, hits []*app.CommandDefinition) {
 	_ = h
 	native.SetNextWindowPos(x, y+native.FrameHeight())
 	if native.Begin("Search results###cmd-search-results") {
-		limit := len(hits)
-		if limit > 10 {
-			limit = 10
-		}
+		limit := min(len(hits), 10)
 		for _, cmd := range hits[:limit] {
 			native.BeginDisabled(!cmd.IsEnabled(s))
 			if native.Selectable(cmd.DisplayName()+"##sr-"+cmd.ID(), false) {

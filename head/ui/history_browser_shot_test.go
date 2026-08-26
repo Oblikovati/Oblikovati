@@ -42,7 +42,7 @@ func TestShotHistoryBrowser(t *testing.T) {
 	historyBrowserSelection[plate] = true
 
 	s.OpenHistoryBrowser()
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.12, 0.12, 0.14)

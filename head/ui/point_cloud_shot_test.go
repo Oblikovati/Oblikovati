@@ -38,7 +38,7 @@ func TestInWindowPointCloudRenders(t *testing.T) {
 	// Select a scan point so its orange snap-highlight reads among the cyan grid.
 	s.Select(app.PointCloudPointHandle{Point: math.P3(0, 0, 0)})
 
-	for i := 0; i < 8; i++ {
+	for range 8 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.12, 0.12, 0.14)

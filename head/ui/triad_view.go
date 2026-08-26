@@ -74,7 +74,7 @@ func gizmoRing(center math.Point3, axis math.Vector3, radius float64, color [4]f
 	const segments = 24
 	pos := make([]math.Point3, segments)
 	idx := make([]int, 0, segments*2)
-	for i := 0; i < segments; i++ {
+	for i := range segments {
 		ang := 2 * stdmath.Pi * float64(i) / segments
 		offset := u.Scale(radius * stdmath.Cos(ang)).Add(v.Scale(radius * stdmath.Sin(ang)))
 		pos[i] = center.TranslateBy(offset)
@@ -227,7 +227,7 @@ func probeTriadAxis(i int, axis math.Vector3, pos math.Point3, worldLen float64,
 	}
 	u, v := planeBasis(axis)
 	ringSeg := types.TriadSegment(uint8(types.TriadXRing) + uint8(i))
-	for k := 0; k < 16; k++ {
+	for k := range 16 {
 		ang := 2 * stdmath.Pi * float64(k) / 16
 		offset := u.Scale(0.75 * worldLen * stdmath.Cos(ang)).Add(v.Scale(0.75 * worldLen * stdmath.Sin(ang)))
 		probe(ringSeg, pos.TranslateBy(offset))

@@ -52,7 +52,7 @@ func refreshWorkPlaneEditUI(s *app.Session, nScalars int) {
 		return
 	}
 	workPlaneEditUI.values = make([]float32, nScalars)
-	for i := 0; i < nScalars; i++ {
+	for i := range nScalars {
 		workPlaneEditUI.values[i] = float32(s.EditPlaneScalarValue(i))
 	}
 	workPlaneEditUI.editing = s.EditPlaneName()
@@ -91,7 +91,7 @@ func drawWorkPlaneRefSlots(s *app.Session, n int) {
 	if n == 0 || !propertySection("Input Geometry") {
 		return
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		label := s.EditPlaneRefSlotLabel(i)
 		propertyRow(label)
 		arm, _ := propertyArmableSlotChip(fmt.Sprintf("edit-plane-ref-%d", i), label,

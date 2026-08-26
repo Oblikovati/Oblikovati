@@ -58,7 +58,7 @@ func refreshFeatureEditUI(s *app.Session, nParams int) {
 	}
 	featureEditUI.values = make([]float32, nParams)
 	featureEditUI.texts = make([][]byte, nParams)
-	for i := 0; i < nParams; i++ {
+	for i := range nParams {
 		featureEditUI.values[i] = float32(s.EditFeatureParamValue(i))
 		featureEditUI.texts[i] = make([]byte, editFieldBufLen)
 		setBuf(featureEditUI.texts[i], paramSeedText(s.EditFeatureParamValue(i), s.EditFeatureParamUnitName(i)))
@@ -81,7 +81,7 @@ func drawEditRefSlots(s *app.Session, n int) {
 	if n == 0 || !propertySection("Input Geometry") {
 		return
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		label := s.EditFeatureRefSlotLabel(i)
 		propertyRow(label)
 		text := editSlotChipText(s.EditFeatureRefSlotRefCount(i), label)

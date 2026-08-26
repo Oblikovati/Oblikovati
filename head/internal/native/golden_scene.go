@@ -21,7 +21,7 @@ import (
 func UVSphereTriangles(radius float32, segments, rings int, instanceID uint32) []renderer.Triangle {
 	var tris []renderer.Triangle
 	var id uint32
-	for ring := 0; ring < rings; ring++ {
+	for ring := range rings {
 		tris, id = appendSphereRing(tris, id, radius, ring, segments, rings, instanceID)
 	}
 	return tris
@@ -40,7 +40,7 @@ func appendSphereRing(tris []renderer.Triangle, id uint32, radius float32, ring,
 	}
 	v0 := float32(ring) / float32(rings)
 	v1 := float32(ring+1) / float32(rings)
-	for seg := 0; seg < segments; seg++ {
+	for seg := range segments {
 		u0 := float32(seg) / float32(segments)
 		u1 := float32(seg+1) / float32(segments)
 		p00, p01 := pos(u0, v0), pos(u0, v1)
@@ -83,8 +83,8 @@ func PinholeCameraBasis(eye [3]float32, tanHalfFovY float32, width, height int) 
 // to compare against a golden PNG or write to disk.
 func ToneMappedImage(pixels []float32, width, height int) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
+	for y := range height {
+		for x := range width {
 			i := (y*width + x) * 3
 			r, g, b := pixels[i], pixels[i+1], pixels[i+2]
 			disp := openpbr.ToDisplay(openpbr.NewColor3(float64(r), float64(g), float64(b)), 1.0)

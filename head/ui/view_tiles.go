@@ -49,10 +49,7 @@ func tileRects(layout types.ViewLayout, w, h float32, viewCount int, splitX, spl
 // tileCount is how many tiles to draw: the layout's tile count, capped by the available
 // views and clamped to at least 1 (so fewer views than the layout wants falls back simply).
 func tileCount(layout types.ViewLayout, viewCount int) int {
-	t := layout.Tiles()
-	if viewCount < t {
-		t = viewCount
-	}
+	t := min(viewCount, layout.Tiles())
 	if t < 1 {
 		t = 1
 	}

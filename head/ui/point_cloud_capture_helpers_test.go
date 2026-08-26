@@ -45,7 +45,7 @@ func attachSheetWithFitPlane(t *testing.T, s *app.Session) (*pointcloud.PointClo
 func captureFramed(t *testing.T, win *native.Window, s *app.Session, box math.Box, name string) {
 	t.Helper()
 	frameCameraOn(s, box)
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.12)

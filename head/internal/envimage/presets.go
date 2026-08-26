@@ -33,9 +33,9 @@ type shadeFunc func(u, t float32) (r, g, b float32)
 // generate fills a preset-resolution equirect from a per-pixel shade function.
 func generate(shade shadeFunc) Equirect {
 	e := newEquirect(presetW, presetH)
-	for y := 0; y < presetH; y++ {
+	for y := range presetH {
 		t := 1 - 2*(float32(y)+0.5)/float32(presetH)
-		for x := 0; x < presetW; x++ {
+		for x := range presetW {
 			u := (float32(x) + 0.5) / float32(presetW)
 			r, g, b := shade(u, t)
 			e.set(x, y, r, g, b)

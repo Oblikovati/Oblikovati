@@ -140,8 +140,8 @@ func cpuOracleRealisticPixel(origin, direction [3]float32, p RealisticLightParam
 func checkImageAgainstOracle(t *testing.T, got []float32, width, height int, cam CameraBasis, params RealisticLightParams, tol float32) {
 	t.Helper()
 	hits, misses := 0, 0
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
+	for y := range height {
+		for x := range width {
 			origin, dir := pixelRay(x, y, width, height, cam)
 			wantR, wantG, wantB := cpuOracleRealisticPixel(origin, dir, params)
 			i := (y*width + x) * 3

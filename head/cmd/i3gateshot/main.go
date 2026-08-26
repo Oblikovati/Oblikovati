@@ -80,7 +80,7 @@ func capture(win *native.Window, s *app.Session, picks []*topo.Body, wantBlocked
 	if r := s.CommitBlockedReason(); (r != "") != wantBlocked {
 		return fmt.Errorf("picks %d: blocked=%q, want blocked=%v", len(picks), r, wantBlocked)
 	}
-	for i := 0; i < frames; i++ {
+	for range frames {
 		win.BeginFrame()
 		ui.DrawChrome(win, s)
 		win.EndFrame(ui.WindowClearColor())

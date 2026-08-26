@@ -70,7 +70,7 @@ func TestInWindowCropBoxRenders(t *testing.T) {
 		t.Fatalf("crop should reduce the displayed set to a non-empty subset, got %d of %d", cropped, full)
 	}
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.12)

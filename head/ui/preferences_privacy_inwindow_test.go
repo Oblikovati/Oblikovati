@@ -43,7 +43,7 @@ func TestInWindowPreferencesWindowOpensWithPrivacyTab(t *testing.T) {
 
 	showPreferences = true
 	defer func() { showPreferences = false }()
-	for i := 0; i < 3; i++ { // a few frames so the tab bar settles
+	for range 3 { // a few frames so the tab bar settles
 		win.BeginFrame()
 		drawDockablePanels(s) // renders Preferences via the shared closable path (#1473)
 		win.EndFrame(0.1, 0.1, 0.1)

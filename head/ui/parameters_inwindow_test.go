@@ -34,7 +34,7 @@ func TestInWindowParametersDialogDraws(t *testing.T) {
 	_ = s.SetParameterValueList(id.ID(), []string{"20 mm", "25 mm"}, true)
 	s.OpenParameters()
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)

@@ -15,7 +15,7 @@ import (
 // back as active index i, and the tool's seat flags stay mutually exclusive.
 func TestHoleSeatToggleRoundTrip(t *testing.T) {
 	h := app.NewHoleTool()
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		applyHoleSeat(h, i)
 		if got := holeSeatIndex(h); got != i {
 			t.Errorf("after applyHoleSeat(%d), index = %d, want %d", i, got, i)
@@ -140,7 +140,7 @@ func TestLoftListHeight(t *testing.T) {
 // mode on — a single-direction toggle must clear it, or Angle B would keep widening the sweep.
 func TestRevolveDirectionToggleRoundTrip(t *testing.T) {
 	rv := app.NewRevolveTool()
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		applyRevolveDirection(rv, i)
 		if got := revolveDirectionIndex(rv); got != i {
 			t.Errorf("after applyRevolveDirection(%d), index = %d, want %d", i, got, i)

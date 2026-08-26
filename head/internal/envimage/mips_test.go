@@ -27,8 +27,8 @@ func TestMipChainReachesOnePixel(t *testing.T) {
 // (box filter preserves a constant), guarding the averaging math.
 func TestDownsampleAveragesEnergy(t *testing.T) {
 	src := newEquirect(4, 4)
-	for y := 0; y < 4; y++ {
-		for x := 0; x < 4; x++ {
+	for y := range 4 {
+		for x := range 4 {
 			src.set(x, y, 0.5, 0.25, 0.75)
 		}
 	}

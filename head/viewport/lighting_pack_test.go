@@ -63,7 +63,7 @@ func TestPackLightingDropsOffLightsAndDefaults(t *testing.T) {
 // float array.
 func TestPackLightingClampsToMax(t *testing.T) {
 	var l renderer.SceneLighting
-	for i := 0; i < renderer.MaxSceneLights+5; i++ {
+	for range renderer.MaxSceneLights + 5 {
 		l.Lights = append(l.Lights, renderer.SceneLight{Kind: renderer.DirectionalLight, On: true})
 	}
 	got := PackLighting(l)

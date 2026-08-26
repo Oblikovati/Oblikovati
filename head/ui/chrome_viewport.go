@@ -464,7 +464,7 @@ func frameBounds(s *app.Session, list renderer.DrawList, groups []app.InstanceGr
 		if !ok {
 			return omn, omx, true
 		}
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			mn[i] = minF32(mn[i], omn[i])
 			mx[i] = maxF32(mx[i], omx[i])
 		}
@@ -828,7 +828,7 @@ func unionBounds(lo, hi [3]float32, has bool, omn, omx [3]float32) ([3]float32, 
 	if !has {
 		return omn, omx
 	}
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		lo[i], hi[i] = minF32(lo[i], omn[i]), maxF32(hi[i], omx[i])
 	}
 	return lo, hi

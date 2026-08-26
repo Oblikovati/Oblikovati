@@ -113,7 +113,7 @@ func spanWidth(widths []float64, gap float64, col, span int) float64 {
 // its content rather than flexing. Non-auto columns get 0 (ignored by the resolver).
 func measureAutoColumns(control wire.PanelControlSpec, rows [][]gridlayout.Placement, n int) []float64 {
 	autoW := make([]float64, n)
-	for ci := 0; ci < n; ci++ {
+	for ci := range n {
 		if control.Columns[ci].Kind != types.GridTrackAuto {
 			continue
 		}

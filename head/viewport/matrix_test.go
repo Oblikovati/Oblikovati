@@ -10,10 +10,10 @@ import (
 // mul4x4 multiplies two column-major 4×4 matrices (for the inverse round-trip check).
 func mul4x4(a, b [16]float32) [16]float32 {
 	var out [16]float32
-	for col := 0; col < 4; col++ {
-		for row := 0; row < 4; row++ {
+	for col := range 4 {
+		for row := range 4 {
 			var s float32
-			for k := 0; k < 4; k++ {
+			for k := range 4 {
 				s += a[k*4+row] * b[col*4+k]
 			}
 			out[col*4+row] = s
@@ -36,7 +36,7 @@ func TestInvert4x4RoundTrip(t *testing.T) {
 		t.Fatal("matrix reported singular")
 	}
 	prod := mul4x4(m, inv)
-	for i := 0; i < 16; i++ {
+	for i := range 16 {
 		want := float32(0)
 		if i%5 == 0 {
 			want = 1

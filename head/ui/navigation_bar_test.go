@@ -62,7 +62,7 @@ func TestInWindowNavigationBarDraws(t *testing.T) {
 	if !s.ShowNavBar() {
 		t.Fatal("the Navigation Bar should be shown by default")
 	}
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)

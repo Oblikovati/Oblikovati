@@ -136,7 +136,7 @@ func orbit(win *native.Window, s *app.Session, frames int) (total time.Duration,
 	yaw := 2 * math.Pi / float64(frames)
 	times = make([]float64, 0, frames)
 	t0 := time.Now()
-	for i := 0; i < frames; i++ {
+	for range frames {
 		s.SetCamera(s.Camera().Orbit(yaw, 0))
 		f0 := time.Now()
 		drawFrame(win, s)
@@ -150,7 +150,7 @@ func orbit(win *native.Window, s *app.Session, frames int) (total time.Duration,
 // (realisticInteractiveDownscale), not a converged image.
 func settle(win *native.Window, s *app.Session) {
 	const settleFrames = 40
-	for i := 0; i < settleFrames; i++ {
+	for range settleFrames {
 		drawFrame(win, s)
 	}
 }

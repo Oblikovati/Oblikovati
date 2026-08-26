@@ -81,7 +81,7 @@ func TestSketchProjectPerPickAndRenders(t *testing.T) {
 	}
 
 	// The sketch-edit frame (projected-curve overlay + model-reference highlight wiring) renders.
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		native.InjectMousePos(float32(inWinW/2), float32(inWinH/2))
 		viewportFrame(win, s)
 	}

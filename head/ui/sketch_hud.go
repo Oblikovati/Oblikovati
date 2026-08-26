@@ -170,7 +170,7 @@ func drawSketchHUDPanel(view app.SketchHUDView, mx, my float32) {
 // hudPanelWidth measures the panel: both fields' "label value" widths plus the paddings/gaps.
 func hudPanelWidth(view app.SketchHUDView) float32 {
 	total := float32(2 * hudRowPadX)
-	for i := 0; i < len(view.Labels); i++ {
+	for i := range len(view.Labels) {
 		total += hudFieldWidth(view.Labels[i], hudValueText(view, i))
 		if i == 0 {
 			total += hudFieldGap
@@ -182,7 +182,7 @@ func hudPanelWidth(view app.SketchHUDView) float32 {
 // drawHUDFields paints each "label value(unit)" pair left to right from (x,y), highlighting
 // the active field's value cell.
 func drawHUDFields(view app.SketchHUDView, x, y float32) {
-	for i := 0; i < len(view.Labels); i++ {
+	for i := range len(view.Labels) {
 		value := hudValueText(view, i)
 		native.DrawText(x, y, view.Labels[i], hudLabelColor)
 		vx := x + native.CalcTextWidth(view.Labels[i]) + hudLabelGap

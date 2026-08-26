@@ -63,7 +63,7 @@ func run(path string, frames int) error {
 func renderBody(win *native.Window, s *app.Session, def *compdef.PartComponentDefinition, target math.Point3, frames int, path string) error {
 	body := def.SurfaceBodies().Item(0)
 	shotscene.AimCameraAtEdge(s, body, nearestEdge(body, target))
-	for i := 0; i < frames; i++ {
+	for range frames {
 		win.BeginFrame()
 		ui.DrawChrome(win, s)
 		win.EndFrame(ui.WindowClearColor())

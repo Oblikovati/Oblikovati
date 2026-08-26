@@ -361,8 +361,8 @@ func applyImageOverlay(s *app.Session) {
 // writeCheckerPNG writes an n×n magenta/cyan checker so the overlay is unmistakable in a capture.
 func writeCheckerPNG(path string, n int) error {
 	img := image.NewRGBA(image.Rect(0, 0, n, n))
-	for y := 0; y < n; y++ {
-		for x := 0; x < n; x++ {
+	for y := range n {
+		for x := range n {
 			c := color.RGBA{R: 255, B: 255, A: 255} // magenta
 			if (x/8+y/8)%2 == 0 {
 				c = color.RGBA{G: 220, B: 255, A: 255} // cyan

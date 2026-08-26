@@ -46,7 +46,7 @@ func TestInWindowLoftDialogRenders(t *testing.T) {
 	// A few full-chrome frames render the panel as the user sees it: drawLoftDialog → the Curves tab
 	// (sections list rows, guides, options). refreshLoftUI seeds loftUI here, so the direct tab-body
 	// draws below start from a valid editor state.
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.12)

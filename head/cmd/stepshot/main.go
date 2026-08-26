@@ -90,7 +90,7 @@ func captureShadedAndNormals(s *app.Session, out string, frames int) error {
 
 // capture renders frames of the live chrome and writes the viewport image to path.
 func capture(win *native.Window, s *app.Session, path string, frames int) error {
-	for i := 0; i < frames; i++ {
+	for range frames {
 		win.BeginFrame()
 		ui.DrawChrome(win, s)
 		win.EndFrame(ui.WindowClearColor())

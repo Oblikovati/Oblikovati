@@ -166,7 +166,7 @@ func rayUnitCube(o, d math.Vector3) (math.Vector3, bool) {
 	tmin, tmax := stdmath.Inf(-1), stdmath.Inf(1)
 	oc := []float64{o.X, o.Y, o.Z}
 	dc := []float64{d.X, d.Y, d.Z}
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if stdmath.Abs(dc[i]) < 1e-12 {
 			if oc[i] < -1 || oc[i] > 1 {
 				return math.Vector3{}, false
@@ -223,7 +223,7 @@ func faceAxis(c [3]float64) int {
 // is past the edge zone (promoting a face hit to an edge/corner), else 0.
 func zoneSigns(c [3]float64, face int) [3]int {
 	var s [3]int
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if i == face || stdmath.Abs(c[i]) >= edgeZone {
 			s[i] = sign(c[i])
 		}
@@ -244,8 +244,8 @@ type faceCell struct {
 func faceCells(d faceDef) []faceCell {
 	cuts := [4]float64{0, viewCubeEdgeBand, 1 - viewCubeEdgeBand, 1} // thin edge strips, big centre
 	cells := make([]faceCell, 0, 9)
-	for i := 0; i < 3; i++ {
-		for j := 0; j < 3; j++ {
+	for i := range 3 {
+		for j := range 3 {
 			sa, sb := cuts[i], cuts[i+1]
 			ta, tb := cuts[j], cuts[j+1]
 			cell := faceCell{quad: [4]math.Vector3{

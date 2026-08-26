@@ -101,7 +101,7 @@ func boxAssembly(t *testing.T) *app.Session {
 // returns the fraction of pixels that are bright body geometry — luminance well above the dark
 // themed background. A blank viewport returns ~0; a solid filling the view returns a large fraction.
 func litFraction(win *native.Window, s *app.Session) float64 {
-	for i := 0; i < 8; i++ {
+	for range 8 {
 		viewportFrame(win, s)
 	}
 	px, w, h, ok := win.ReadbackViewport(0)
