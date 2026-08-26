@@ -27,16 +27,23 @@ func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality, feat string)
 	aSoup, aRefs := bodyToTaggedSoup(a, q, 0)
 	bSoup, bRefs := bodyToTaggedSoup(b, q, len(aRefs))
 	refs := append(aRefs, bRefs...)
+	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox()))
+	cat := catalogOriginalEdges(a, b)
+
+	// Fuse coincident-surface tags (cocylindrical walls, coplanar faces) so their shared
+	// seam is interior to one face, not a false edge between two (ADR-0054 same-surface merge).
+	rep, groupSize := mergeCoincidentTags(refs, res)
+	relabelTags(aSoup.Tags, rep)
+	relabelTags(bSoup.Tags, rep)
 	inputCount := tagCounts(aSoup.Tags, bSoup.Tags)
 	result := meshbool.BooleanTagged(aSoup, bSoup, op)
+	relabelTags(result.Tags, rep)
 	resultCount := tagCounts(result.Tags)
-	cat := catalogOriginalEdges(a, b)
-	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox()))
 
 	arr := meshbool.ArrangementTopologyOf(result)
 	inputs := make([]brep.ReconInput, 0, len(arr.Faces))
 	for _, f := range arr.Faces {
-		in, ok := reconstructFace(f, refs, len(aRefs), op, inputCount, resultCount, arr.Verts, cat, res)
+		in, ok := reconstructFace(f, refs, len(aRefs), op, inputCount, resultCount, groupSize, arr.Verts, cat, res)
 		if !ok {
 			return nil, false
 		}
@@ -52,10 +59,13 @@ func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality, feat string)
 // reconstructFace turns one arrangement face into a ReconInput: a pass-through for an
 // untouched survivor, or a rebuilt face for a split one.
 func reconstructFace(f meshbool.ArrangementFace, refs []faceSurfaceRef, naRefs int, op meshbool.Op,
-	inputCount, resultCount map[int]int, verts []meshbool.Point, cat *origEdgeCatalog, res geom.Resolution) (brep.ReconInput, bool) {
+	inputCount, resultCount, groupSize map[int]int, verts []meshbool.Point, cat *origEdgeCatalog, res geom.Resolution) (brep.ReconInput, bool) {
 	ref := refs[f.Tag]
 	fromB := f.Tag >= naRefs
-	if resultCount[f.Tag] == inputCount[f.Tag] {
+	// Pass a face through only when it is a single original face kept whole. A MERGED group
+	// (two coincident faces fused, groupSize>1) is never one original topo.Face, so it must be
+	// rebuilt on its shared surface even when every triangle survived.
+	if groupSize[f.Tag] <= 1 && resultCount[f.Tag] == inputCount[f.Tag] {
 		return brep.ReconInput{PassThrough: ref.face, ForceReversed: op == meshbool.Difference && fromB}, true
 	}
 	loops, ok := rebuildLoops(f.Loops, ref.surface, refs, verts, cat, res)

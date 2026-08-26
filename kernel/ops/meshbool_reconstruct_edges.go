@@ -84,8 +84,35 @@ func (cat *origEdgeCatalog) matchRun(run meshbool.ArrangementRun, verts []meshbo
 		if e, ok := oe.matchOpen(p0, pn, mid, tol); ok {
 			return e, true
 		}
+		if e, ok := oe.matchSubArc(p0, mid, pn, tol); ok {
+			return e, true
+		}
 	}
 	return brep.ReconEdge{}, false
+}
+
+// matchSubArc reuses a CLOSED circle edge for an OPEN run that traces part of it — the
+// case the two other matchers miss: when a full rim circle is split into sub-arcs by a
+// coincident-surface merge (a cocylindrical wall's minor-arc top borders the exposed cap
+// on the SAME rim circle), the run's endpoints fall between the circle's own vertices, so
+// they match no original edge's endpoints. Here the exact sub-arc is rebuilt on the circle
+// through the run's three sample points (start, mid, end), keeping the boundary analytic
+// and coincident with the neighbour face's copy of the same rim.
+func (oe origEdge) matchSubArc(p0, mid, pn math.Point3, tol float64) (brep.ReconEdge, bool) {
+	if !oe.closed {
+		return brep.ReconEdge{}, false
+	}
+	if _, isCircle := oe.curve.(geom.Circle); !isCircle {
+		return brep.ReconEdge{}, false
+	}
+	if !onCurve(oe.curve, p0, tol) || !onCurve(oe.curve, mid, tol) || !onCurve(oe.curve, pn, tol) {
+		return brep.ReconEdge{}, false
+	}
+	arc, err := geom.Arc3dByThreePoints(p0, mid, pn)
+	if err != nil {
+		return brep.ReconEdge{}, false
+	}
+	return brep.ReconEdge{Curve: arc, T0: 0, T1: 1}, true
 }
 
 // matchOpen returns oe as a run-oriented ReconEdge when its endpoints equal {p0,pn} and
