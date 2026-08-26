@@ -8,6 +8,8 @@
 package subd
 
 import (
+	"maps"
+
 	"oblikovati.org/math"
 )
 
@@ -61,9 +63,7 @@ func (m Mesh) Clone() Mesh {
 		faces[i] = append([]int(nil), f...)
 	}
 	creases := map[[2]int]float64{}
-	for k, v := range m.Creases {
-		creases[k] = v
-	}
+	maps.Copy(creases, m.Creases)
 	return Mesh{Verts: verts, Faces: faces, Creases: creases}
 }
 

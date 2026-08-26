@@ -68,7 +68,7 @@ func polylineParamAtPoint2(g Polyline2d, p math.Point2) (float64, SolutionNature
 	segs := len(g.Vertices) - 1
 	best, bestT, ties := stdmath.Inf(1), 0.0, 0
 	var bestFoot math.Point2
-	for i := 0; i < segs; i++ {
+	for i := range segs {
 		seg := NewLineSegment2d(g.Vertices[i], g.Vertices[i+1])
 		local := segmentParamAtPoint2(seg, p)
 		foot := seg.PointAt(local)
@@ -149,7 +149,7 @@ func clusterMinima2(c Curve2, p math.Point2, ts, ds []float64, best, tol float64
 // refineClosest2 polishes a closest-point candidate by Newton on
 // g(t) = (P(t)−p)·P′(t), clamped to the domain.
 func refineClosest2(c Curve2, p math.Point2, t, lo, hi float64) float64 {
-	for i := 0; i < 16; i++ {
+	for range 16 {
 		d1, d2, _ := CurveDerivatives2(c, t)
 		r := p.VectorTo(c.PointAt(t))
 		g := float64(r.Dot(d1))
@@ -194,7 +194,7 @@ func CurveRangeBox2(c Curve2) math.Box2d {
 // twin of sinusoidBox.
 func sinusoidBox2(center math.Point2, major, minor math.Vector2, a, b, start, sweep float64) math.Box2d {
 	angles := []float64{start, start + sweep}
-	for axis := 0; axis < 2; axis++ {
+	for axis := range 2 {
 		mj, mn := vectorComponent2(major, axis), vectorComponent2(minor, axis)
 		extremum := stdmath.Atan2(b*mn, a*mj)
 		angles = append(angles, anglesInSweep(extremum, start, sweep)...)

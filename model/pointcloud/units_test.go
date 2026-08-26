@@ -50,13 +50,13 @@ func minimalLAS(points [][3]float64) []byte {
 	binary.LittleEndian.PutUint32(hdr[96:], uint32(headerSize))
 	binary.LittleEndian.PutUint16(hdr[105:], recLen)
 	binary.LittleEndian.PutUint32(hdr[107:], uint32(len(points)))
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		binary.LittleEndian.PutUint64(hdr[131+i*8:], stdmath.Float64bits(scale))
 	}
 	out := hdr
 	for _, p := range points {
 		rec := make([]byte, recLen)
-		for c := 0; c < 3; c++ {
+		for c := range 3 {
 			binary.LittleEndian.PutUint32(rec[c*4:], uint32(int32(stdmath.Round(p[c]/scale))))
 		}
 		out = append(out, rec...)

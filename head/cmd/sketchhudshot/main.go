@@ -48,7 +48,7 @@ func run(out string, frames int, relax bool) error {
 	for _, r := range "75" { // type a precise length so the HUD shows an engaged field
 		s.HUDInputRune(r)
 	}
-	for i := 0; i < frames; i++ {
+	for range frames {
 		native.InjectMousePos(760, 470) // park the cursor over the canvas so the HUD draws there
 		win.BeginFrame()
 		ui.DrawChrome(win, s)

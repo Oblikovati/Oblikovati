@@ -76,8 +76,7 @@ func TestCloseCanBeVetoed(t *testing.T) {
 
 	// Dirty document: the close is vetoed and the document stays open.
 	err := ws.Close(d, true)
-	var veto *VetoError
-	if !errors.As(err, &veto) {
+	if _, ok := errors.AsType[*VetoError](err); !ok {
 		t.Fatalf("Close error = %v, want a VetoError", err)
 	}
 	if _, ok := ws.ByName("p.obk"); !ok {

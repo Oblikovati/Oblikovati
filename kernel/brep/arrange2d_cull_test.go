@@ -58,7 +58,7 @@ func bruteNarrowPhasePairs(segments [][2]math.Point2) [][2]int {
 // accepts — a miss would silently drop an arrangement crossing.
 func TestSegmentCullGridSupersetOfNarrowPhase(t *testing.T) {
 	rng := stdrand.New(stdrand.NewSource(7))
-	for trial := 0; trial < 20; trial++ {
+	for trial := range 20 {
 		segments := randomArrangementSegments(rng, 60)
 		cull := newSegmentCullGrid(segments)
 		cand := make([][]int, len(segments))
@@ -133,7 +133,7 @@ func bruteSplitTJunctions(pts []math.Point2, edges map[[2]int]bool) {
 // elementary edge set.
 func TestPlanarizeGridMatchesBrute(t *testing.T) {
 	rng := stdrand.New(stdrand.NewSource(11))
-	for trial := 0; trial < 20; trial++ {
+	for trial := range 20 {
 		segments := randomArrangementSegments(rng, 80)
 		gotPts, gotEdges := planarize(segments)
 		wantPts, wantEdges := brutePlanarize(segments)
@@ -151,7 +151,7 @@ func TestPlanarizeGridMatchesBrute(t *testing.T) {
 // the full scan's (via the one-giant-cell degradation).
 func TestVertexOnEdgeInteriorGridMatchesFullScan(t *testing.T) {
 	rng := stdrand.New(stdrand.NewSource(13))
-	for trial := 0; trial < 20; trial++ {
+	for trial := range 20 {
 		pts, edges := planarize(randomArrangementSegments(rng, 40))
 		grid := newVertexCullGrid(pts)
 		full := &vertexCullGrid{cell: 1e30, cells: map[[2]int32][]int32{}} // tol:numeric — one-giant-cell degradation, not a length tolerance

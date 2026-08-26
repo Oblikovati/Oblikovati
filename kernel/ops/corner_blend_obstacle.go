@@ -82,11 +82,11 @@ func (bsplineObstacleProvider) Build(req CornerBlendRequest) (CornerBlendPatch, 
 func pinFillBoundary(fill geom.BSplineSurface, c0, c1, d0, d1 geom.BSplineCurve) (geom.BSplineSurface, error) {
 	ctrl, w := copyNet(fill.Ctrl), copyWeights(fill.Weights)
 	nu, nv := len(ctrl), len(ctrl[0])
-	for i := 0; i < nu; i++ {
+	for i := range nu {
 		ctrl[i][0], w[i][0] = c0.Ctrl[i], c0.Weights[i]       // VMin edge ← c0 (wall)
 		ctrl[i][nv-1], w[i][nv-1] = c1.Ctrl[i], c1.Weights[i] // VMax edge ← c1 (rim)
 	}
-	for j := 0; j < nv; j++ {
+	for j := range nv {
 		ctrl[0][j], w[0][j] = d0.Ctrl[j], d0.Weights[j]       // UMin edge ← d0 (wingL)
 		ctrl[nu-1][j], w[nu-1][j] = d1.Ctrl[j], d1.Weights[j] // UMax edge ← d1 (wingR)
 	}

@@ -71,7 +71,7 @@ func coreCanalStations(ef edgeFillet, dets []obstacleDetection, res Resolution, 
 	centers := make([]math.Point3, coreCanalPatchStations)
 	feetA := make([]math.Point3, coreCanalPatchStations)
 	feetB := make([]math.Point3, coreCanalPatchStations)
-	for i := 0; i < coreCanalPatchStations; i++ {
+	for i := range coreCanalPatchStations {
 		z := zLo + (zHi-zLo)*float64(i)/float64(coreCanalPatchStations-1)
 		center, footA, footB, ok := coreSectionStation(z, dets, ef, res)
 		if !ok {

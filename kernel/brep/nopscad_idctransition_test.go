@@ -21,8 +21,8 @@ func TestNopIDCTransitionCSG(t *testing.T) {
 		body = cutOrFatal(t, body, prismBody(regularPolygonPoints(math.P3(x, height/2, 0), pitch/4, 20, 0), -width/2-0.05, width/2+0.05, "idc-pin-hole"), "idc pin hole")
 	}
 	body = cutOrFatal(t, body, prismBody(rectAtPoints(0, height/2-pitch/4+pitch/6, float64(cols)*pitch, pitch/3), -width/2-0.05, width/2+0.05, "idc-slot"), "idc slot")
-	for x := 0; x < cols; x++ {
-		for y := 0; y < rows; y++ {
+	for x := range cols {
+		for y := range rows {
 			body = joinOrFatal(t, body, box(pitch*(float64(x)-float64(cols-1)/2)-0.025, pitch*(float64(y)-0.5)-0.025, -0.42, 0.05, 0.05, 0.56), "idc pin")
 		}
 	}

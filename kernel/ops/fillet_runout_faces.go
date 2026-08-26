@@ -3,6 +3,8 @@
 package ops
 
 import (
+	maps0 "maps"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -49,9 +51,7 @@ func collectRunouts(body *topo.Body, fils []edgeFillet, res Resolution,
 		if !ok {
 			continue
 		}
-		for id, f := range set.replace {
-			replace[id] = f
-		}
+		maps0.Copy(replace, set.replace)
 		extra[fils[i].edge.ID()] = set.extra
 		handled[fils[i].edge.ID()] = true
 	}
@@ -144,7 +144,7 @@ func sampledArcSegs(arc geom.Curve3, start, end math.Point3) []endSeg {
 	pts = append(pts, end)
 	pts[0] = start // pin to the wing's node points (weld-identical to the arc ends)
 	segs := make([]endSeg, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		segs[i] = endSeg{from: pts[i], to: pts[i+1], curve: curves[i]}
 	}
 	return segs

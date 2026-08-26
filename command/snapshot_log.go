@@ -110,10 +110,7 @@ func (l *SnapshotLog) reconstruct(i int) ([]byte, error) {
 // (the undo stream truncates in lockstep with the command history's done/undone stacks). A
 // highWater at or above the current high-water mark is a no-op.
 func (l *SnapshotLog) TruncateTo(highWater int) {
-	keep := highWater - l.baseOffset
-	if keep < 0 {
-		keep = 0
-	}
+	keep := max(highWater-l.baseOffset, 0)
 	if keep < len(l.entries) {
 		l.entries = l.entries[:keep]
 	}

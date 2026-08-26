@@ -10,8 +10,8 @@ import (
 
 // paramGrid lays out an n×n parameter grid over [0,1]² and the matching points from height(u,v).
 func paramGrid(n int, height func(u, v float64) float64) (pts []math.Point3, us, vs []float64) {
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			u := float64(i) / float64(n-1)
 			v := float64(j) / float64(n-1)
 			us = append(us, u)
@@ -88,7 +88,7 @@ func TestUniformClampedKnotsClampedAndEven(t *testing.T) {
 	if len(k) != 10 {
 		t.Fatalf("knot length = %d, want 10", len(k))
 	}
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		if k[i] != 0 || k[6+i] != 1 {
 			t.Fatalf("clamp broken: %v", k)
 		}

@@ -123,7 +123,7 @@ func curvedSolid(faces []filletFace, rings [][][]int, classes map[[2]int]int) bo
 	for fi := range faces {
 		for li, ring := range rings[fi] {
 			ids := faces[fi].loops[li].srcE
-			for k := 0; k < len(ring); k++ {
+			for k := range ring {
 				a, b := ring[k], ring[(k+1)%len(ring)]
 				use[seamEdgeKey{canon2(a, b), edgeClassOf(a, b, srcIDAt(ids, k), classes)}]++
 			}
@@ -146,7 +146,7 @@ func pairEdgeClasses(faces []filletFace, rings [][][]int) map[[2]int]int {
 	for fi := range faces {
 		for li, ring := range rings[fi] {
 			ids := faces[fi].loops[li].srcE
-			for k := 0; k < len(ring); k++ {
+			for k := range ring {
 				id := srcIDAt(ids, k)
 				if id == 0 {
 					continue

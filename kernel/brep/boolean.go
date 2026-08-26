@@ -303,7 +303,7 @@ func segmentOnFaceBoundary(f planarFace, s [2]math.Point3) bool {
 func pointOnFaceBoundary(f planarFace, p math.Point3) bool {
 	for _, ring := range f.loops {
 		n := len(ring)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			if distPointSegment(p, ring[i], ring[(i+1)%n]) < boundaryImprintTol {
 				return true
 			}

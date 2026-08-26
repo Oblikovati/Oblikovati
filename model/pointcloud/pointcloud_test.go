@@ -135,7 +135,7 @@ func TestSetScaleRejectsNonPositive(t *testing.T) {
 // and the displayed count honours the cap.
 func TestDisplayBudgetStridesEvenly(t *testing.T) {
 	var pts []omath.Point3
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		pts = append(pts, omath.P3(omath.Scalar(i), 0, 0))
 	}
 	pc := New("s", "", "", pts)

@@ -81,7 +81,7 @@ func solveRow(trows [][]math.Point3, q []math.Point3, cs, ct [][]float64, k, a i
 	for j := 0; j <= k; j++ {
 		rhs = rhs.Add(trows[j][a].AsVector().Scale(math.Scalar(ct[k][j])))
 	}
-	for i := 0; i < k; i++ {
+	for i := range k {
 		rhs = rhs.Sub(q[i].AsVector().Scale(math.Scalar(cs[k][i])))
 	}
 	return rhs.Scale(math.Scalar(1 / cs[k][k])).AsPoint()
@@ -181,7 +181,7 @@ func crossRows(s BSplineSurface, edge Boundary) [][]math.Point3 {
 // uRows returns the u-indexed rows (along-edge = v) ordered by the edge-inward index map.
 func uRows(s BSplineSurface, nu int, idx func(int) int) [][]math.Point3 {
 	rows := make([][]math.Point3, nu)
-	for k := 0; k < nu; k++ {
+	for k := range nu {
 		rows[k] = append([]math.Point3(nil), s.Ctrl[idx(k)]...)
 	}
 	return rows
@@ -190,7 +190,7 @@ func uRows(s BSplineSurface, nu int, idx func(int) int) [][]math.Point3 {
 // vRows returns the v-indexed rows (along-edge = u) ordered by the edge-inward index map.
 func vRows(s BSplineSurface, nv int, idx func(int) int) [][]math.Point3 {
 	rows := make([][]math.Point3, nv)
-	for k := 0; k < nv; k++ {
+	for k := range nv {
 		row := make([]math.Point3, len(s.Ctrl))
 		for i := range s.Ctrl {
 			row[i] = s.Ctrl[i][idx(k)]

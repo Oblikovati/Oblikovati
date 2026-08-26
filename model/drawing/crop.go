@@ -217,7 +217,7 @@ func (c cropRegion) outlineCurves() []DrawingCurve {
 		gmath.P2(gmath.Scalar(c.x1), gmath.Scalar(c.y1)), gmath.P2(gmath.Scalar(c.x0), gmath.Scalar(c.y1)),
 	}
 	out := make([]DrawingCurve, 0, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		out = append(out, breakCurve(corners[i], corners[(i+1)%4]))
 	}
 	return out
@@ -256,7 +256,7 @@ func (c cropRegion) zigzagRectCurves() []DrawingCurve {
 		gmath.P2(gmath.Scalar(c.x1), gmath.Scalar(c.y1)), gmath.P2(gmath.Scalar(c.x0), gmath.Scalar(c.y1)),
 	}
 	var out []DrawingCurve
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		out = append(out, zigzagEdge(corners[i], corners[(i+1)%4])...)
 	}
 	return out

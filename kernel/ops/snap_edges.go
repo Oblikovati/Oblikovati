@@ -147,7 +147,7 @@ const intersectIters = 6
 // convergeToIntersection alternately projects p onto a then b, driving it toward a point on BOTH
 // surfaces (their intersection) — where two analytic grid-meshed faces each reproduce it.
 func convergeToIntersection(a, b geom.Surface, p math.Point3) math.Point3 {
-	for i := 0; i < intersectIters; i++ {
+	for range intersectIters {
 		ua, va := a.ParamAt(p)
 		p = a.PointAt(ua, va)
 		ub, vb := b.ParamAt(p)

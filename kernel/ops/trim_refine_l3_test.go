@@ -37,8 +37,8 @@ func referencePatchArea(s geom.Surface) float64 {
 	const n = 200
 	h := 1.0 / n
 	var area float64
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			u, v := (float64(i)+0.5)*h, (float64(j)+0.5)*h
 			du, dv := s.DerivativesAt(u, v)
 			area += float64(du.Cross(dv).Length()) * h * h
@@ -54,16 +54,16 @@ func denseBoundary(s geom.Surface, m int) (p3 []math.Point3, uv []math.Point2) {
 		p3 = append(p3, s.PointAt(u, v))
 		uv = append(uv, math.P2(math.Scalar(u), math.Scalar(v)))
 	}
-	for i := 0; i < m; i++ {
+	for i := range m {
 		add(float64(i)/float64(m), 0)
 	}
-	for i := 0; i < m; i++ {
+	for i := range m {
 		add(1, float64(i)/float64(m))
 	}
-	for i := 0; i < m; i++ {
+	for i := range m {
 		add(1-float64(i)/float64(m), 1)
 	}
-	for i := 0; i < m; i++ {
+	for i := range m {
 		add(0, 1-float64(i)/float64(m))
 	}
 	return p3, uv

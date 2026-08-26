@@ -60,7 +60,7 @@ func TestInWindowBrowserClipsWideLeafList(t *testing.T) {
 		leaves[i] = app.BrowserNode{Label: fmt.Sprintf("body %d", i), Kind: "body"}
 	}
 
-	for f := 0; f < 3; f++ {
+	for range 3 {
 		win.BeginFrame()
 		native.Begin("clip-test")
 		browserNodeSeq = 7

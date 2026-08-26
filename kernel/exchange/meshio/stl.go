@@ -46,7 +46,7 @@ func decodeBinarySTL(data []byte) (RawMesh, error) {
 	var m RawMesh
 	m.Reserve(int(count)) // header gives the exact size; fill without reallocation (#1765)
 	off := 84
-	for i := uint32(0); i < count; i++ {
+	for range count {
 		off += 12 // skip the per-facet normal
 		a := readVec32(data, off)
 		b := readVec32(data, off+12)
@@ -99,7 +99,7 @@ func appendFacet(m *RawMesh, facet []math.Point3) {
 // scanVertex reads three whitespace-separated floats after a "vertex" token.
 func scanVertex(sc *bufio.Scanner) (math.Point3, error) {
 	var c [3]float64
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if !sc.Scan() {
 			return math.Point3{}, stlErr("vertex truncated at coordinate", strconv.Itoa(i))
 		}

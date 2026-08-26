@@ -67,7 +67,7 @@ func appendIfOnSurface(out []math.Point3, c Curve3, t, d float64) []math.Point3 
 // parameter where the curve meets the surface.
 func bisectCurveSurface(c Curve3, s Surface, a, b float64) float64 {
 	da := SignedDistanceToSurface(s, c.PointAt(a))
-	for i := 0; i < curveSurfaceBisectIter; i++ {
+	for range curveSurfaceBisectIter {
 		mid := (a + b) / 2
 		dm := SignedDistanceToSurface(s, c.PointAt(mid))
 		if dm == 0 {

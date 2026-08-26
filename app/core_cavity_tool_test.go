@@ -26,7 +26,7 @@ func TestCoreCavityToolEndToEnd(t *testing.T) {
 	if def.SurfaceBodies().Count() != 2 {
 		t.Fatalf("after core/cavity: %d bodies, want 2", def.SurfaceBodies().Count())
 	}
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		b := def.SurfaceBodies().Item(i)
 		if r := ops.Validate(b); !r.Valid || !b.IsSolid() {
 			t.Fatalf("mold half %d not a valid solid: %+v", i, r)

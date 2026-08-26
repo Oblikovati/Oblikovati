@@ -4,6 +4,7 @@ package feature
 
 import (
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/math"
 )
@@ -70,8 +71,8 @@ func bandPolygon(steps []bendRun, out, up math.Vector3, thickness float64,
 		sideL, sideR = append(sideL, ls...), append(sideR, rs...)
 	}
 	poly := append([]math.Point2(nil), sideL...)
-	for k := len(sideR) - 1; k >= 0; k-- {
-		poly = append(poly, sideR[k])
+	for _, s := range slices.Backward(sideR) {
+		poly = append(poly, s)
 	}
 	return ensureCCW2(poly)
 }

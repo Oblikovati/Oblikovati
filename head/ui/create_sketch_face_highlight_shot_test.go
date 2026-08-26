@@ -72,7 +72,7 @@ func TestInWindowCreateSketchHoversFaceHighlight(t *testing.T) {
 	// Settle the layout + camera and establish hover over the face (an ImGui item is not reported
 	// hovered on its first appearance), then draw several frames so the hover-highlight overlay
 	// (toolHoverHighlight → drawSelectable on the FaceHandle) renders into the captured frame.
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		native.InjectMousePos(cx, cy)
 		viewportFrame(win, s)
 	}
@@ -107,7 +107,7 @@ func TestInWindowCreateSketchRevealsOriginPlane(t *testing.T) {
 	s.StartTool(app.NewCreateSketchTool())
 
 	cx, cy := float32(inWinW/2), float32(inWinH/2)
-	for i := 0; i < 10; i++ { // settle layout + hover so the reveal overlay renders into the frame
+	for range 10 { // settle layout + hover so the reveal overlay renders into the frame
 		native.InjectMousePos(cx, cy)
 		viewportFrame(win, s)
 	}
@@ -144,7 +144,7 @@ func TestInWindowToolFaceHighlightGeneralizes(t *testing.T) {
 	s.StartTool(app.NewShellTool())
 
 	cx, cy := float32(480), float32(400)
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		native.InjectMousePos(cx, cy)
 		viewportFrame(win, s)
 	}
@@ -159,7 +159,7 @@ func TestInWindowToolFaceHighlightGeneralizes(t *testing.T) {
 	native.InjectMouseButton(native.MouseLeft, true)
 	viewportFrame(win, s)
 	native.InjectMouseButton(native.MouseLeft, false)
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		native.InjectMousePos(cx, cy)
 		viewportFrame(win, s)
 	}

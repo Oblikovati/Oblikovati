@@ -5,6 +5,7 @@ package ops
 import (
 	"fmt"
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
@@ -53,7 +54,7 @@ func resolveStripeEnds(st *tangentStripe, weld float64) [2]stripeEnd {
 	if st.closed {
 		return out
 	}
-	for t := 0; t < 2; t++ {
+	for t := range 2 {
 		out[t] = resolveOneStripeEnd(st, t, weld)
 	}
 	return out
@@ -169,12 +170,7 @@ func soleEdgeBounding(edges []*topo.Edge, a, b *topo.Face) *topo.Edge {
 
 // edgeBounds reports whether e is one of f's boundary edges.
 func edgeBounds(e *topo.Edge, f *topo.Face) bool {
-	for _, g := range e.Faces() {
-		if g == f {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(e.Faces(), f)
 }
 
 // curveBetween restricts c to the span from a to b, presented over [0,1] in that direction.
@@ -240,7 +236,7 @@ func (g *stripeBuild) endRemnant(t int, e *topo.Edge, foot *topo.Vertex, lin top
 // endEdgeSide identifies e as one of an active terminal's end-face boundary edges, returning that
 // terminal and which side of the tube it bounds.
 func (g *stripeBuild) endEdgeSide(e *topo.Edge) (term, side int, ok bool) {
-	for t := 0; t < 2; t++ {
+	for t := range 2 {
 		if !g.ends[t].active() {
 			continue
 		}

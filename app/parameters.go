@@ -3,6 +3,7 @@
 package app
 
 import (
+	"slices"
 	"strings"
 
 	"oblikovati.org/model/param"
@@ -127,10 +128,8 @@ func valueTypeName(p *param.Parameter) string {
 func multiValueOptions(p *param.Parameter) []string {
 	list := p.ExpressionList()
 	current := p.Expression()
-	for _, v := range list {
-		if v == current {
-			return list
-		}
+	if slices.Contains(list, current) {
+		return list
 	}
 	if p.AllowsCustomValue() {
 		return append(list, current)

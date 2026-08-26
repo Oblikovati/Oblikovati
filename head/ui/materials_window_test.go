@@ -22,7 +22,7 @@ func TestInWindowMaterialsWindowDrawsAllTabs(t *testing.T) {
 
 	// A couple of frames so the window appears and its default tab renders, plus selecting
 	// the first built-in material populates the (disabled) property editor.
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)

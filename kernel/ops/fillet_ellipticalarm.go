@@ -52,7 +52,7 @@ func ellipticalCylinderPlaneEdge(e *topo.Edge) (ec geom.EllipticalCylinder, pl g
 	if len(faces) != 2 {
 		return geom.EllipticalCylinder{}, geom.Plane{}, nil, nil, false
 	}
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		c, okc := faces[i].Geometry().(geom.EllipticalCylinder)
 		p, okp := faces[1-i].Geometry().(geom.Plane)
 		if okc && okp {
@@ -175,7 +175,7 @@ func ellipticTangentRoot(ec geom.EllipticalCylinder, base math.Point3, dir math.
 		return math.Point3{}, false // tangency never reached — no arm this direction
 	}
 	lo := 0.0
-	for i := 0; i < ellipticArmBisectIters; i++ {
+	for range ellipticArmBisectIters {
 		m := 0.5 * (lo + hi)
 		if g(m) < 0 {
 			lo = m

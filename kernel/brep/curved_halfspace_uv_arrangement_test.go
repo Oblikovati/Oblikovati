@@ -32,7 +32,7 @@ func cylinderRuledUV(r, vMin, vMax float64) ruledUV {
 // round-trips through the surface point and back to itself (Oblikovati#1405).
 func TestRuledParamOfInvertsPoint3(t *testing.T) {
 	c := cylinderRuledUV(3, -5, 5)
-	for i := 0; i < 16; i++ {
+	for i := range 16 {
 		u := 2 * stdmath.Pi * float64(i) / 16
 		for _, v := range []float64{-4, -1, 0, 2.5, 4} {
 			uv := c.paramOf(c.point3(u, v))
@@ -351,7 +351,7 @@ func TestTrimByImprintIslandHole(t *testing.T) {
 	c := cylinderRuledUV(3, -5, 5)
 	corners := []math.Point2{math.P2(2, -1), math.P2(3, -1), math.P2(3, 1), math.P2(2, 1)}
 	var curves []geom.Curve3
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		a := c.point3(float64(corners[i].X), float64(corners[i].Y))
 		b := c.point3(float64(corners[(i+1)%4].X), float64(corners[(i+1)%4].Y))
 		curves = append(curves, geom.NewLineSegment(a, b))

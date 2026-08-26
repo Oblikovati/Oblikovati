@@ -164,7 +164,7 @@ const arrBruteMax = 1024
 func intersectionCuts(segs []taggedSeg) [][]cut {
 	cuts := make([][]cut, len(segs))
 	if len(segs) <= arrBruteMax {
-		for i := 0; i < len(segs); i++ {
+		for i := range segs {
 			for j := i + 1; j < len(segs); j++ {
 				cutPair(segs, i, j, cuts)
 			}
@@ -250,7 +250,7 @@ func binSegments(segs []taggedSeg, col, row func(float64) int, cols, rows int) [
 func testBinnedPairs(segs []taggedSeg, bins [][]int32, cuts [][]cut) {
 	tested := map[[2]int32]struct{}{}
 	for _, bin := range bins {
-		for x := 0; x < len(bin); x++ {
+		for x := range bin {
 			for y := x + 1; y < len(bin); y++ {
 				i, j := bin[x], bin[y]
 				if i > j {

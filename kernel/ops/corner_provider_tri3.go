@@ -50,7 +50,7 @@ func (tri3Provider) Build(loop RailLoop, scale Resolution) (CornerBlendPatch, Ce
 // incident Adjacent is nil the agreement is undefined, so fall back to the deterministic default 0.
 func choosePole(loop RailLoop) int {
 	best, bestDot := 0, -2.0
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		d, ok := cornerNormalAgreement(loop, k)
 		if !ok {
 			return 0

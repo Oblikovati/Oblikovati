@@ -31,7 +31,7 @@ import (
 func TestInWindowShiftLetterStartsTool(t *testing.T) {
 	const attempts = 3
 	var lastErr string
-	for i := 0; i < attempts; i++ {
+	for range attempts {
 		lastErr = shiftLetterAttempt(t)
 		if lastErr == "" {
 			return

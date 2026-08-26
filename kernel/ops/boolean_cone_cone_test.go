@@ -28,12 +28,12 @@ func coneConeIntersectVolume() float64 {
 	lo, hi, yz := -6.0, 6.0, 1.6
 	dx, dyz := (hi-lo)/nx, 2*yz/nyz
 	cnt := 0
-	for i := 0; i < nx; i++ {
+	for i := range nx {
 		x := lo + (float64(i)+0.5)*dx
 		rThin := (x - thinApexX) * thinTan
-		for j := 0; j < nyz; j++ {
+		for j := range nyz {
 			y := -yz + (float64(j)+0.5)*dyz
-			for k := 0; k < nyz; k++ {
+			for k := range nyz {
 				z := -yz + (float64(k)+0.5)*dyz
 				rFat := (z - fatApexZ) * fatTan
 				if y*y+z*z <= rThin*rThin && x*x+y*y <= rFat*rFat {

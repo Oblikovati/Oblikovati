@@ -27,8 +27,8 @@ func (s *Sketch) RectangularPatternLive(ents []Entity, step1 func() math.Vector2
 	}
 	g := s.GeometricConstraints()
 	var copies []Entity
-	for i := 0; i < count1; i++ {
-		for j := 0; j < count2; j++ {
+	for i := range count1 {
+		for j := range count2 {
 			if i == 0 && j == 0 {
 				continue // the seed
 			}

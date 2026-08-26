@@ -31,7 +31,7 @@ func sampleFilletLoop() (filletLoop, map[int]int) {
 func edgeSrcMap(loop filletLoop, idOf func(m.Point3) int) map[[2]int]uint64 {
 	out := map[[2]int]uint64{}
 	n := len(loop.pts)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b := idOf(loop.pts[i]), idOf(loop.pts[(i+1)%n])
 		out[canon2(a, b)] = loop.srcE[i]
 	}

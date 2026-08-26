@@ -91,7 +91,7 @@ func (e *codeEditor) drawText(ox, oy float32, m editorMetrics, first, last int) 
 // line. This is O(first) per frame — negligible for an interactive console script.
 func (e *codeEditor) startState(first int) lualex.State {
 	var st lualex.State
-	for i := 0; i < first; i++ {
+	for i := range first {
 		_, st = lualex.TokenizeLine(e.model.Line(i), st)
 	}
 	return st

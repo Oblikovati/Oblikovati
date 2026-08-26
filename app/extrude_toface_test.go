@@ -3,6 +3,7 @@
 package app
 
 import (
+	"slices"
 	"testing"
 
 	"oblikovati.org/model/compdef"
@@ -78,10 +79,5 @@ func TestExtrudeToFacePicksIncludeTermination(t *testing.T) {
 }
 
 func kindsContain(ks []SelectionKind, want SelectionKind) bool {
-	for _, k := range ks {
-		if k == want {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(ks, want)
 }

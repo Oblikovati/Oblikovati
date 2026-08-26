@@ -172,7 +172,7 @@ func rimFaces(e *topo.Edge) (cylF, capF *topo.Face, cyl geom.Cylinder, pl geom.P
 	if len(faces) != 2 {
 		return nil, nil, cyl, pl, fmt.Errorf("fillet: rim edge bounds %d faces, need 2", len(faces))
 	}
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		c, okc := faces[i].Geometry().(geom.Cylinder)
 		p, okp := faces[1-i].Geometry().(geom.Plane)
 		if okc && okp {

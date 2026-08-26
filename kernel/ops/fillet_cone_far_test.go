@@ -426,7 +426,7 @@ func invertArmUV(surf geom.BSplineSurface, p math.Point3) math.Point2 {
 	v0, v1 := surf.VDomain()
 	bu, bv := gridNearestUV(surf, p, u0, u1, v0, v1, 60)
 	step := 0.5 * stdmath.Max((u1-u0)/60, (v1-v0)/60)
-	for k := 0; k < 40; k++ {
+	for range 40 {
 		bu, bv = gridNearestUV(surf, p, stdmath.Max(u0, bu-step), stdmath.Min(u1, bu+step),
 			stdmath.Max(v0, bv-step), stdmath.Min(v1, bv+step), 6)
 		step *= 0.5

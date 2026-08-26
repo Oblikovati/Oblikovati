@@ -216,7 +216,7 @@ func TestSwitchingToolMidChainReleases(t *testing.T) {
 // without closing would need five Ends. One close must always be enough.
 func TestRestartingLineToolDoesNotNestTransactions(t *testing.T) {
 	s := lineChainSession(t)
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		s.StartTool(NewLineTool())
 		s.Click(40, 40)
 	}

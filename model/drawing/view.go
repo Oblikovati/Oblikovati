@@ -245,7 +245,7 @@ func (v *DrawingView) recomputeDraftFrame() {
 		math.P2(math.Scalar(x1), math.Scalar(y1)), math.P2(math.Scalar(x0), math.Scalar(y1)),
 	}
 	v.curves = v.curves[:0]
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		v.curves = append(v.curves, DrawingCurve{A: corners[i], B: corners[(i+1)%4], Visible: true, kind: types.DrawingEdgeCurve})
 	}
 }

@@ -96,10 +96,7 @@ func arcPolyline(a *Arc) []math.Point2 {
 	} else if sweep >= -1e-12 {
 		sweep -= 2 * stdmath.Pi
 	}
-	n := int(stdmath.Ceil(stdmath.Abs(sweep) / arcSampleStep))
-	if n < 1 {
-		n = 1
-	}
+	n := max(int(stdmath.Ceil(stdmath.Abs(sweep)/arcSampleStep)), 1)
 	pts := make([]math.Point2, n+1)
 	for i := 0; i <= n; i++ {
 		ang := angS + sweep*float64(i)/float64(n)

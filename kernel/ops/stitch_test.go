@@ -24,7 +24,7 @@ func quadBody(feat string, p0, p1, p2, p3 math.Point3) *topo.Body {
 		v[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(feat, "vertex", i)))
 	}
 	uses := make([]topo.Use, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		j := (i + 1) % 4
 		e := bld.AddEdge(geom.NewLineSegment(pts[i], pts[j]), v[i], v[j], topo.NewLineage(topo.Tok(feat, "edge", i)))
 		uses[i] = topo.Fwd(e)

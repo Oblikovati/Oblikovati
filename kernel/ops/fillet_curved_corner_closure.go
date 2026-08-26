@@ -115,7 +115,7 @@ func sphericalClosure(dirs [3]math.UnitVector3, r float64, res Resolution) bool 
 // tangentDirs returns the three host-tangent points as unit directions from the centre.
 func tangentDirs(w cornerWeld) ([3]math.UnitVector3, bool) {
 	var out [3]math.UnitVector3
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		d, err := math.UnitVector3FromVector(w.center.VectorTo(w.tPoints[i]))
 		if err != nil {
 			return out, false

@@ -84,7 +84,7 @@ func TestAddInCatalogueWindowDrawsInWindow(t *testing.T) {
 		State: addincat.StateUpdateAvailable, InstalledVersion: "1.0.0", LatestVersion: "1.1.0",
 	}
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		win.BeginFrame()
 		drawAddInCatalogueWindow(s)
 		if native.Begin("##addincat-scratch") {
@@ -103,7 +103,7 @@ func TestAddInCatalogueWindowDrawsInWindow(t *testing.T) {
 	for errSession.AddInCatalogueError() == "" && time.Now().Before(deadline) {
 		time.Sleep(2 * time.Millisecond)
 	}
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		win.BeginFrame()
 		drawAddInCatalogueWindow(errSession)
 		win.EndFrame(0.1, 0.1, 0.1)

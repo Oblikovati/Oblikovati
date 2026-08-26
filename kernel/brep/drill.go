@@ -85,7 +85,7 @@ func circleInsideFace(center math.Point3, f planarFace, radius float64) bool {
 	}
 	u, v := f.plane.UAxis.AsVector(), f.plane.VAxis.AsVector()
 	const samples = 24
-	for i := 0; i < samples; i++ {
+	for i := range samples {
 		a := 2 * stdmath.Pi * float64(i) / samples
 		rim := center.TranslateBy(u.Scale(math.Scalar(radius * stdmath.Cos(a)))).TranslateBy(v.Scale(math.Scalar(radius * stdmath.Sin(a))))
 		if !pointInFace2D(to2D(f.plane, rim), f) {

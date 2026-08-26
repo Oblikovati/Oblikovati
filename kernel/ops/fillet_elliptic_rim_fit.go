@@ -82,7 +82,7 @@ func sampledLoopUVPolygon(l *topo.Loop, uv func(math.Point3) math.Point2) []math
 	for _, u := range l.EdgeUses() {
 		c := u.Edge().Geometry()
 		lo, hi := c.Domain()
-		for i := 0; i < ellipticRimLoopSamples; i++ {
+		for i := range ellipticRimLoopSamples {
 			t := lo + (hi-lo)*float64(i)/float64(ellipticRimLoopSamples)
 			if u.Reversed() {
 				t = hi - (hi-lo)*float64(i)/float64(ellipticRimLoopSamples)

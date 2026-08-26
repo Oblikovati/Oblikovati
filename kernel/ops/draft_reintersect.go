@@ -21,7 +21,7 @@ func intersectSurfacesNear(start math.Point3, surfaces []geom.Surface, tol float
 		return start, false
 	}
 	p := start
-	for iter := 0; iter < 40; iter++ {
+	for range 40 {
 		a, b, ok := surfaceResidualSystem(p, surfaces)
 		if !ok {
 			return p, false
@@ -43,7 +43,7 @@ func intersectSurfacesNear(start math.Point3, surfaces []geom.Surface, tol float
 func surfaceResidualSystem(p math.Point3, surfaces []geom.Surface) ([3][3]float64, [3]float64, bool) {
 	var a [3][3]float64
 	var b [3]float64
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		u, v := surfaces[i].ParamAt(p)
 		foot := surfaces[i].PointAt(u, v)
 		n := surfaces[i].NormalAt(u, v)

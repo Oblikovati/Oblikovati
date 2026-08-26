@@ -158,7 +158,7 @@ func closestOnCurve(curve geom.Curve3, p math.Point3) float64 {
 		}
 	}
 	lo, hi := stdmath.Max(0, bestT-step), stdmath.Min(1, bestT+step)
-	for k := 0; k < 100; k++ {
+	for range 100 {
 		m1, m2 := lo+(hi-lo)/3, hi-(hi-lo)/3
 		if curve.PointAt(m1).DistanceTo(p) < curve.PointAt(m2).DistanceTo(p) {
 			hi = m2

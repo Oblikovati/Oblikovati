@@ -11,7 +11,7 @@ import (
 // a small varying tail, mimicking how a real edit changes a localised region of the recipe.
 func snap(n int) []byte {
 	body := make([]byte, 0, 4096)
-	for i := 0; i < 256; i++ {
+	for i := range 256 {
 		body = append(body, []byte(fmt.Sprintf("feature%d;", i))...)
 	}
 	return append(body, []byte(fmt.Sprintf("|edit=%d", n))...)
@@ -20,13 +20,13 @@ func snap(n int) []byte {
 func TestSnapshotLogReconstructsEveryPositionAcrossCheckpoints(t *testing.T) {
 	l := NewSnapshotLogEvery(4) // force frequent checkpoints + deltas to exercise both paths
 	const positions = 21
-	for n := 0; n < positions; n++ {
+	for n := range positions {
 		if got := l.Append(snap(n)); got != n {
 			t.Fatalf("Append returned position %d, want %d", got, n)
 		}
 	}
 	// Every position must reconstruct byte-for-byte — checkpoints and the deltas between them.
-	for n := 0; n < positions; n++ {
+	for n := range positions {
 		got, err := l.At(n)
 		if err != nil {
 			t.Fatalf("At(%d): %v", n, err)
@@ -52,7 +52,7 @@ func TestSnapshotLogAtRejectsOutOfRange(t *testing.T) {
 // a new edit truncates the forward positions, and the reused position reconstructs the new state.
 func TestSnapshotLogTruncateToDropsRedoBranch(t *testing.T) {
 	l := NewSnapshotLogEvery(4)
-	for n := 0; n < 6; n++ {
+	for n := range 6 {
 		l.Append(snap(n))
 	}
 	l.TruncateTo(3) // keep positions 0,1,2 (the cursor undid back to position 2)
@@ -76,7 +76,7 @@ func TestSnapshotLogTruncateToDropsRedoBranch(t *testing.T) {
 // positions are freed but surviving event references (by absolute position) still resolve.
 func TestSnapshotLogTruncateFrontReclaimsAndKeepsPositionsStable(t *testing.T) {
 	l := NewSnapshotLogEvery(4)
-	for n := 0; n < 10; n++ {
+	for n := range 10 {
 		l.Append(snap(n))
 	}
 	before := l.RetainedBytes()
@@ -108,7 +108,7 @@ func TestSnapshotLogMemoryGrowsLinearly(t *testing.T) {
 	l := NewSnapshotLogEvery(32)
 	const edits = 200
 	recipeSize := len(snap(0))
-	for n := 0; n < edits; n++ {
+	for n := range edits {
 		l.Append(snap(n))
 	}
 	naive := edits * recipeSize // what two-full-snapshots-per-edit storage approximated
@@ -128,7 +128,7 @@ func BenchmarkSnapshotLogMemory(b *testing.B) {
 	const edits = 1000
 	for i := 0; i < b.N; i++ {
 		l := NewSnapshotLog()
-		for n := 0; n < edits; n++ {
+		for n := range edits {
 			l.Append(snap(n))
 		}
 		if i == 0 {

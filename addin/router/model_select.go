@@ -70,7 +70,7 @@ func activeBodies(s *app.Session, method string) ([]*topo.Body, error) {
 	}
 	n := part.SurfaceBodies().Count()
 	bodies := make([]*topo.Body, 0, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		bodies = append(bodies, part.SurfaceBodies().Item(i))
 	}
 	return bodies, nil

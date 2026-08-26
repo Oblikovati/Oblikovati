@@ -36,7 +36,7 @@ func TestDockablePanelsRenderThroughSharedPath(t *testing.T) {
 	for i := range dockablePanels {
 		dockablePanels[i].setOpen(s, true)
 	}
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		win.BeginFrame()
 		drawDockablePanels(s)
 		if native.BeginMainMenuBar() {

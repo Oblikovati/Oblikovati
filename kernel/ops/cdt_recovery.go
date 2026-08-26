@@ -65,14 +65,14 @@ func loopPoints(pts [][2]float64, idx []int) []math.Point2 {
 func (m *cdt) domainLeaked(tris [][3]int, loops [][]int) bool {
 	use := make(map[[2]int]int, len(tris)*3)
 	for _, t := range tris {
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			use[conKey(t[i], t[(i+1)%3])]++
 		}
 	}
 	rep := m.representatives()
 	for _, lp := range loops {
 		boundary, interior := 0, 0
-		for k := 0; k < len(lp); k++ {
+		for k := range lp {
 			switch e := conKey(rep[lp[k]], rep[lp[(k+1)%len(lp)]]); {
 			case use[e] == 1:
 				boundary++

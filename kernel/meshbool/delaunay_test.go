@@ -24,7 +24,7 @@ func TestDelaunayInsertInvariants(t *testing.T) {
 		d := newDelaunayInTriangle(face)
 		want := new(big.Rat).Abs(orient2Val(face[0], face[1], face[2], d.axis))
 		var inserted []Point
-		for k := 0; k < 150; k++ {
+		for k := range 150 {
 			p := randBary(r, face, k%5 == 0) // one in five on a face edge
 			d.Insert(p)
 			inserted = append(inserted, p)
@@ -109,7 +109,7 @@ func assertValidTiling(t *testing.T, fi int, d *delaunayMesh, wantArea *big.Rat)
 func assertAdjacencySymmetric(t *testing.T, fi int, d *delaunayMesh) {
 	t.Helper()
 	for ti, tr := range d.tris {
-		for e := 0; e < 3; e++ {
+		for e := range 3 {
 			tj := tr.adj[e]
 			if tj < 0 {
 				continue
@@ -125,7 +125,7 @@ func assertAdjacencySymmetric(t *testing.T, fi int, d *delaunayMesh) {
 func assertDelaunayProperty(t *testing.T, fi int, d *delaunayMesh) {
 	t.Helper()
 	for ti, tr := range d.tris {
-		for e := 0; e < 3; e++ {
+		for e := range 3 {
 			tj := tr.adj[e]
 			if tj < 0 {
 				continue

@@ -181,10 +181,10 @@ func (fr embossWrapFrame) angleSpan(a, b math.Point2, plane sketch.Plane) float6
 func wrappedLoop(poly []math.Point2, plane sketch.Plane, surf wrapSurface, level float64) []math.Point3 {
 	out := make([]math.Point3, 0, len(poly))
 	n := len(poly)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b := poly[i], poly[(i+1)%n]
 		steps := wrapSegmentSteps(surf.angleSpan(a, b, plane))
-		for s := 0; s < steps; s++ { // b is emitted as the next segment's a
+		for s := range steps { // b is emitted as the next segment's a
 			t := float64(s) / float64(steps)
 			out = append(out, surf.at(lerpPoint2(a, b, t), plane, level))
 		}

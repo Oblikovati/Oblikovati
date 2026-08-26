@@ -33,8 +33,8 @@ type StatusBar struct {
 // BuildStatus assembles the status bar from the session: the active tool's prompt and
 // commit-readiness, or "Ready" when idle, plus the selection count and any notice.
 func BuildStatus(s *Session) StatusBar {
-	sb := StatusBar{Prompt: "Ready", SelectionCount: s.Selection().Count(), Notice: s.Notice()}
-	sb.StatusText = s.StatusText()
+	sb := StatusBar{Prompt: "Ready", SelectionCount: s.Selection().Count(), Notice: s.Notice(),
+		StatusText: s.StatusText()}
 	sb.Progress, sb.HasProgress = s.Progress().Innermost()
 	sb.MessageBadge = s.Messages().HasErrors() || s.Messages().HasWarnings()
 	sb.InSketch = s.InSketch()

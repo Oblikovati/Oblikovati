@@ -116,7 +116,7 @@ func reverseArcLoop(loop filletLoop) filletLoop {
 	n := len(loop.pts)
 	mids := arcMidpoints(loop)
 	var out filletLoop
-	for i := 0; i < n; i++ {
+	for i := range n {
 		from := loop.pts[(n-i)%n]
 		to := loop.pts[(n-i-1+n)%n]
 		src := (n - i - 1 + n) % n

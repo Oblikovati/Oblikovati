@@ -102,13 +102,7 @@ func (d *Document) fieldNames() []string {
 // zipPoints combines equal-length coordinate columns into points, stopping at the shortest so a
 // short final column never indexes past another.
 func zipPoints(xs, ys, zs []float64) []omath.Point3 {
-	n := len(xs)
-	if len(ys) < n {
-		n = len(ys)
-	}
-	if len(zs) < n {
-		n = len(zs)
-	}
+	n := min(len(zs), min(len(ys), len(xs)))
 	out := make([]omath.Point3, n)
 	for i := 0; i < n; i++ {
 		out[i] = omath.P3(omath.Scalar(xs[i]), omath.Scalar(ys[i]), omath.Scalar(zs[i]))

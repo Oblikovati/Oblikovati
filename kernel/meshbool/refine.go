@@ -42,7 +42,7 @@ func constraintVertices(segments [][2]Point, axis int) []Point {
 	for _, s := range segments {
 		out = append(out, s[0], s[1])
 	}
-	for i := 0; i < len(segments); i++ {
+	for i := range segments {
 		for j := i + 1; j < len(segments); j++ {
 			if segmentsProperlyCross(segments[i][0], segments[i][1], segments[j][0], segments[j][1], axis) {
 				out = append(out, SegSegCross(segments[i][0], segments[i][1], segments[j][0], segments[j][1], axis))

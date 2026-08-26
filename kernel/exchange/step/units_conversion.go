@@ -4,6 +4,7 @@ package step
 
 import (
 	"fmt"
+	"slices"
 
 	"oblikovati.org/kernel/exchange/step/part21"
 )
@@ -66,8 +67,8 @@ func measureValue(v part21.Value) (float64, error) {
 // lastRef returns the last reference-valued parameter (the conversion_factor slot,
 // robust to writers that put the name first or a dimensions select before it).
 func lastRef(params []part21.Value) (int, error) {
-	for i := len(params) - 1; i >= 0; i-- {
-		if id, err := params[i].AsRef(); err == nil {
+	for _, param := range slices.Backward(params) {
+		if id, err := param.AsRef(); err == nil {
 			return id, nil
 		}
 	}

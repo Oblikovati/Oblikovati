@@ -60,7 +60,7 @@ func findControlValue(controls []wire.PanelControlSpec, id string) string {
 // nesting beyond the depth bound is rejected with a message naming the window.
 func TestSetDockableWindowRejectsTooDeep(t *testing.T) {
 	deep := wire.PanelControlSpec{Kind: types.PanelLabel, Text: "x"}
-	for i := 0; i < maxControlNestDepth+2; i++ {
+	for range maxControlNestDepth + 2 {
 		deep = wire.PanelControlSpec{Kind: types.PanelGroup, Title: "g", Children: []wire.PanelControlSpec{deep}}
 	}
 	w := wire.DockableWindowSpec{ID: "deep", Title: "Deep", Controls: []wire.PanelControlSpec{deep}}

@@ -14,7 +14,7 @@ import (
 // +z) when ccw is set and CW otherwise — to drive the winding-invariance test.
 func ring(z, r float64, n int, ccw bool) []math.Point3 {
 	out := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		k := i
 		if !ccw {
 			k = n - i
@@ -72,12 +72,12 @@ func TestTubeSolidClosedIsToroidal(t *testing.T) {
 	const n, segs = 32, 24
 	outer := make([][]math.Point3, segs)
 	inner := make([][]math.Point3, segs)
-	for s := 0; s < segs; s++ {
+	for s := range segs {
 		a := 2 * stdmath.Pi * float64(s) / float64(segs)
 		cx, cy := 6*stdmath.Cos(a), 6*stdmath.Sin(a) // sweep center around a radius-6 circle
 		out := make([]math.Point3, n)
 		in := make([]math.Point3, n)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			b := 2 * stdmath.Pi * float64(i) / float64(n)
 			// tube cross-section in the plane containing the axis and the sweep radius
 			ro, ri := 1.5, 0.8

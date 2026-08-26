@@ -26,7 +26,7 @@ func TestPlaneConeObliqueEllipse(t *testing.T) {
 	if el.MajorRadius < el.MinorRadius {
 		t.Errorf("major radius %g < minor %g", el.MajorRadius, el.MinorRadius)
 	}
-	for i := 0; i < 12; i++ {
+	for i := range 12 {
 		assertOnConeAndPlane(t, cone, pl, el.PointAt(float64(i)/12))
 	}
 }

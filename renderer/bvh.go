@@ -97,7 +97,7 @@ func boundsOf(triangles []Triangle, indices []int32) (mn, mx [3]float32) {
 	for _, idx := range indices {
 		t := triangles[idx]
 		for _, v := range [3][3]float32{t.V0, t.V1, t.V2} {
-			for a := 0; a < 3; a++ {
+			for a := range 3 {
 				if v[a] < mn[a] {
 					mn[a] = v[a]
 				}

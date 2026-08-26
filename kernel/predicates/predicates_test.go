@@ -71,11 +71,11 @@ func TestOrient3DExactMatchesOracleUnderStress(t *testing.T) {
 	r := rand.New(rand.NewSource(0x2084))
 	teeth := 0
 	const n = 20000
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b, c := randPt(r), randPt(r), randPt(r)
 		s, u := r.Float64(), r.Float64()
 		var d [3]float64
-		for k := 0; k < 3; k++ {
+		for k := range 3 {
 			d[k] = a[k] + s*(b[k]-a[k]) + u*(c[k]-a[k]) // on plane(a,b,c) in real arithmetic
 		}
 		want := oracleOrient3D(a, b, c, d)
@@ -112,7 +112,7 @@ func TestOrient2DExactMatchesOracleUnderStress(t *testing.T) {
 	r := rand.New(rand.NewSource(0x2081))
 	teeth := 0
 	const n = 20000
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := [2]float64{(r.Float64() - 0.5) * 2e5, (r.Float64() - 0.5) * 2e5}
 		b := [2]float64{(r.Float64() - 0.5) * 2e5, (r.Float64() - 0.5) * 2e5}
 		s := r.Float64()
@@ -137,11 +137,11 @@ func TestOrient2DExactMatchesOracleUnderStress(t *testing.T) {
 // whole design, so this asserts it directly across the stress corpus.
 func TestFilterNeverCertifiesWrongSign(t *testing.T) {
 	r := rand.New(rand.NewSource(0x1822))
-	for i := 0; i < 20000; i++ {
+	for i := range 20000 {
 		a, b, c := randPt(r), randPt(r), randPt(r)
 		s, u := r.Float64(), r.Float64()
 		var d [3]float64
-		for k := 0; k < 3; k++ {
+		for k := range 3 {
 			d[k] = a[k] + s*(b[k]-a[k]) + u*(c[k]-a[k])
 		}
 		det, certified := filterOrient3D(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2], d[0], d[1], d[2])
@@ -159,7 +159,7 @@ func TestFilterNeverCertifiesWrongSign(t *testing.T) {
 // first three points negates the orientation.
 func TestOrient3DAntisymmetry(t *testing.T) {
 	r := rand.New(rand.NewSource(7))
-	for i := 0; i < 5000; i++ {
+	for i := range 5000 {
 		a, b, c, d := randPt(r), randPt(r), randPt(r), randPt(r)
 		abcd := Orient3D(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2], d[0], d[1], d[2])
 		bacd := Orient3D(b[0], b[1], b[2], a[0], a[1], a[2], c[0], c[1], c[2], d[0], d[1], d[2])

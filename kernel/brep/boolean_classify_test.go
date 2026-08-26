@@ -16,17 +16,17 @@ func classifyPolygonPrism(t *testing.T, r float64, n int, z0, z1 float64, name s
 	t.Helper()
 	verts := make([]math.Point3, 0, n*2)
 	for _, z := range []float64{z0, z1} {
-		for i := 0; i < n; i++ {
+		for i := range n {
 			a := 2 * stdmath.Pi * float64(i) / float64(n)
 			verts = append(verts, math.P3(r*stdmath.Cos(a), r*stdmath.Sin(a), z))
 		}
 	}
 	bottom, top := make([]int, n), make([]int, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		bottom[i], top[i] = n-1-i, n+i
 	}
 	faces := [][]int{bottom, top}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		faces = append(faces, []int{i, (i + 1) % n, (i+1)%n + n, i + n})
 	}
 	return subd.ToBody(subd.Mesh{Verts: verts, Faces: faces}, name)

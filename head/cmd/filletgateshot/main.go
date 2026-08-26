@@ -74,7 +74,7 @@ func capture(win *native.Window, s *app.Session, edge *topo.Edge, radius float64
 	if r := s.CommitBlockedReason(); (r != "") != wantBlocked {
 		return fmt.Errorf("radius %g: blocked=%q, want blocked=%v", radius, r, wantBlocked)
 	}
-	for i := 0; i < frames; i++ {
+	for range frames {
 		win.BeginFrame()
 		ui.DrawChrome(win, s)
 		win.EndFrame(ui.WindowClearColor())

@@ -85,22 +85,20 @@ func TestCirclePlaneIntersectionGolden(t *testing.T) {
 		}
 	}
 	// proximity picks the near side deterministically
-	near, _ := nearestHit(hits, ptr(math.P3(0, 10, 0)))
+	near, _ := nearestHit(hits, new(math.P3(0, 10, 0)))
 	if float64(near.Y) < 0 {
 		t.Errorf("proximity toward +Y picked %v, want the +Y contact", near)
 	}
-	far, _ := nearestHit(hits, ptr(math.P3(0, -10, 0)))
+	far, _ := nearestHit(hits, new(math.P3(0, -10, 0)))
 	if float64(far.Y) > 0 {
 		t.Errorf("proximity toward -Y picked %v, want the -Y contact", far)
 	}
 }
 
-func ptr(p math.Point3) *math.Point3 { return &p }
-
 // TestCurveEntityPointRoundTrips: a curve-and-entity point serializes its refs and its proximity
 // solution point, and restores to an equivalent definition (#1842).
 func TestCurveEntityPointRoundTrips(t *testing.T) {
-	def := curveEntityPointDef{curve: WorkRef("edge/x"), entity: OriginYZPlane, proximity: ptr(math.P3(1, 2, 3))}
+	def := curveEntityPointDef{curve: WorkRef("edge/x"), entity: OriginYZPlane, proximity: new(math.P3(1, 2, 3))}
 	d, err := serializePointDef(def)
 	if err != nil {
 		t.Fatalf("serialize: %v", err)

@@ -29,7 +29,7 @@ type datumEntry struct {
 func datumEntries() []datumEntry {
 	selPoints := func(n int) func(*testing.T, *Session, *compdef.PartComponentDefinition) {
 		return func(_ *testing.T, s *Session, def *compdef.PartComponentDefinition) {
-			for i := 0; i < n; i++ {
+			for i := range n {
 				s.Selection().Add(WorkPointHandle{Point: addUserPoint(def, math.P3(float64(i), 0, 0))})
 			}
 		}

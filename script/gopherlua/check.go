@@ -33,10 +33,7 @@ func toDiagnostic(err error, source string) diag.Diagnostic {
 		return diag.Diagnostic{Line: 0, Col: 0, Message: err.Error()}
 	}
 	line := clampLine(pe.Pos.Line-1, source)
-	col := pe.Pos.Column
-	if col < 0 {
-		col = 0
-	}
+	col := max(pe.Pos.Column, 0)
 	return diag.Diagnostic{Line: line, Col: col, Message: pe.Message}
 }
 

@@ -92,7 +92,7 @@ const figureEightWrapTol = 0.15
 func torusSectionAbsentArc(t geom.Torus, m, k, c float64) float64 {
 	const n = 720
 	absent := 0
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if stdmath.Abs(torusW(t, m, k, c, 2*stdmath.Pi*float64(i)/n)) > 1 {
 			absent++
 		}

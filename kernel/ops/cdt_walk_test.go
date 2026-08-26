@@ -9,8 +9,8 @@ import "testing"
 // dense case the adjacency walk accelerates — and returns the built cdt.
 func denseGridCDT(n int) *cdt {
 	pts := make([][2]float64, 0, n*n)
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			pts = append(pts, [2]float64{float64(i), float64(j)})
 		}
 	}

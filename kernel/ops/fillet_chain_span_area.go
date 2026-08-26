@@ -140,7 +140,7 @@ func meanPotentialAlongEdge(surf geom.Surface, p, q uvPoint, uRef float64) float
 func metricPotential(surf geom.Surface, u, v, uRef float64) float64 {
 	h := (u - uRef) / spanAreaUPanels
 	var sum float64
-	for panel := 0; panel < spanAreaUPanels; panel++ {
+	for panel := range spanAreaUPanels {
 		lo := uRef + float64(panel)*h
 		for k, s := range spanAreaGaussX {
 			du, dv := surf.DerivativesAt(lo+s*h, v)

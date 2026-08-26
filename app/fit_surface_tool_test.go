@@ -17,8 +17,8 @@ func attachCapCloud(t *testing.T, s *Session, def *compdef.PartComponentDefiniti
 	t.Helper()
 	const r, half, n = 10.0, 3.0, 12
 	pts := make([]math.Point3, 0, n*n)
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			x := -half + 2*half*float64(i)/float64(n-1)
 			y := -half + 2*half*float64(j)/float64(n-1)
 			pts = append(pts, math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(stdmath.Sqrt(r*r-x*x-y*y))))

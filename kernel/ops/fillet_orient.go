@@ -45,7 +45,7 @@ func buildEdgeSides(faces []filletFace, rings [][][]int, classes map[[2]int]int)
 	for fi := range faces {
 		for li, ring := range rings[fi] {
 			ids := faces[fi].loops[li].srcE
-			for k := 0; k < len(ring); k++ {
+			for k := range ring {
 				a, b := ring[k], ring[(k+1)%len(ring)]
 				key := seamEdgeKey{canon2(a, b), edgeClassOf(a, b, srcIDAt(ids, k), classes)}
 				sides[key] = append(sides[key], edgeSide{fi, a, b})
@@ -146,7 +146,7 @@ func reverseFilletLoop(loop filletLoop) filletLoop {
 		srcV:   make([]uint64, n),
 		srcE:   make([]uint64, n),
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		from, to := loop.pts[(n-i)%n], loop.pts[(n-i-1+n)%n]
 		seg := (n - i - 1 + n) % n
 		out.pts[i] = from
@@ -229,7 +229,7 @@ func reverseCurveExactly(c geom.Curve3) geom.Curve3 {
 func reverseIntRing(ring []int) []int {
 	n := len(ring)
 	out := make([]int, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		out[i] = ring[(n-i)%n]
 	}
 	return out

@@ -80,7 +80,7 @@ func normalSystem(pts [][]float64, ubar []float64, p, nctrl int, knots []float64
 		nk := denseBasis(ubar[k], p, nctrl, knots)
 		rk := residual(pts[k], pts[0], pts[m], nk[0], nk[n])
 		for i := 1; i <= n-1; i++ {
-			for c := 0; c < dim; c++ {
+			for c := range dim {
 				rhs[i-1][c] += nk[i] * rk[c]
 			}
 			for j := 1; j <= n-1; j++ {

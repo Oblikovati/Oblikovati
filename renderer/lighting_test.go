@@ -56,7 +56,7 @@ func TestSceneLightingForUnknownFallsBackToDefault(t *testing.T) {
 // array bound, so a style cannot overflow the GPU light buffer (ADR-0026 §1).
 func TestActiveLightsClampsToMax(t *testing.T) {
 	var s SceneLighting
-	for i := 0; i < MaxSceneLights+3; i++ {
+	for range MaxSceneLights + 3 {
 		s.Lights = append(s.Lights, SceneLight{Kind: DirectionalLight, On: true})
 	}
 	s.Lights = append(s.Lights, SceneLight{Kind: PointLight, On: false}) // must be dropped

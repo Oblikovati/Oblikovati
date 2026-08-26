@@ -26,7 +26,7 @@ func stepEntities(t *testing.T, data []byte) map[int]string {
 	t.Helper()
 	out := map[int]string{}
 	re := regexp.MustCompile(`^#(\d+)=(.*);$`)
-	for _, line := range strings.Split(string(data), "\n") {
+	for line := range strings.SplitSeq(string(data), "\n") {
 		if m := re.FindStringSubmatch(strings.TrimSpace(line)); m != nil {
 			id, _ := strconv.Atoi(m[1])
 			out[id] = m[2]

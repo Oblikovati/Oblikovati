@@ -111,7 +111,7 @@ func refineMin(f func(float64) float64, a, b float64) float64 {
 	const gr = 0.6180339887498949
 	c := b - gr*(b-a)
 	d := a + gr*(b-a)
-	for i := 0; i < 60; i++ {
+	for range 60 {
 		if f(c) < f(d) {
 			b, d = d, c
 			c = b - gr*(b-a)

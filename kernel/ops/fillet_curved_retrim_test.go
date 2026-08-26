@@ -203,7 +203,7 @@ func assertLoopClosed(t *testing.T, loop filletLoop) {
 	if n < 3 {
 		t.Fatalf("retrim loop has %d points (want ≥3)", n)
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		arc, ok := loop.curves[i].(geom.Arc3d)
 		if !ok {
 			continue
@@ -416,7 +416,7 @@ func developedLoopArea(host geom.Surface, loop filletLoop) float64 {
 func densePolyline(loop filletLoop, k int) []math.Point3 {
 	n := len(loop.pts)
 	var out []math.Point3
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b := loop.pts[i], loop.pts[(i+1)%n]
 		out = append(out, a)
 		if arc, ok := loop.curves[i].(geom.Arc3d); ok {

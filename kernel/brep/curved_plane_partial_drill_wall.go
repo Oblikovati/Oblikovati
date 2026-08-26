@@ -67,7 +67,7 @@ func sidePiece(orig curvedFace, ring []math.Point3, k int) curvedFace {
 func clipHalfPlane(ring []math.Point3, through math.Point3, dir math.Vector3) []math.Point3 {
 	var out []math.Point3
 	n := len(ring)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b := ring[i], ring[(i+1)%n]
 		sa := float64(through.VectorTo(a).Dot(dir))
 		sb := float64(through.VectorTo(b).Dot(dir))

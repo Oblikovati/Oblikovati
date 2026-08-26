@@ -31,7 +31,7 @@ func TestUndoStreamStoresDeltasNotFullSnapshots(t *testing.T) {
 	def := partOf(t, s)
 
 	const edits = 96
-	for i := 0; i < edits; i++ {
+	for i := range edits {
 		if err := s.AddNumericUserParameter(fmt.Sprintf("d%d", i), "10 mm"); err != nil {
 			t.Fatalf("add param %d: %v", i, err)
 		}
@@ -59,7 +59,7 @@ func TestUndoRedoParityThroughDeltaLog(t *testing.T) {
 	base := def.Parameters().Count()
 
 	const edits = 40 // spans multiple checkpoint intervals so reconstruction replays real deltas
-	for i := 0; i < edits; i++ {
+	for i := range edits {
 		if err := s.AddNumericUserParameter(fmt.Sprintf("p%d", i), fmt.Sprintf("%d mm", i+1)); err != nil {
 			t.Fatalf("add param %d: %v", i, err)
 		}
@@ -68,7 +68,7 @@ func TestUndoRedoParityThroughDeltaLog(t *testing.T) {
 		t.Fatalf("after edits: %d params, want %d", def.Parameters().Count(), base+edits)
 	}
 
-	for i := 0; i < edits; i++ {
+	for i := range edits {
 		if err := s.Undo(); err != nil {
 			t.Fatalf("undo %d: %v", i, err)
 		}
@@ -77,7 +77,7 @@ func TestUndoRedoParityThroughDeltaLog(t *testing.T) {
 		t.Errorf("after undoing all edits: %d params, want the baseline %d", def.Parameters().Count(), base)
 	}
 
-	for i := 0; i < edits; i++ {
+	for i := range edits {
 		if err := s.Redo(); err != nil {
 			t.Fatalf("redo %d: %v", i, err)
 		}
@@ -85,7 +85,7 @@ func TestUndoRedoParityThroughDeltaLog(t *testing.T) {
 	if def.Parameters().Count() != base+edits {
 		t.Errorf("after redoing all edits: %d params, want %d", def.Parameters().Count(), base+edits)
 	}
-	for i := 0; i < edits; i++ {
+	for i := range edits {
 		if _, ok := def.Parameters().ByName(fmt.Sprintf("p%d", i)); !ok {
 			t.Errorf("redo lost parameter p%d", i)
 		}
@@ -101,10 +101,10 @@ func TestReclaimAuditLogsTrimsAndDiscards(t *testing.T) {
 		keptDoc: command.NewSnapshotLogEvery(2),
 		goneDoc: command.NewSnapshotLogEvery(2),
 	}
-	for n := 0; n < 8; n++ {
+	for n := range 8 {
 		audit[keptDoc].Append([]byte(fmt.Sprintf("kept-%d", n)))
 	}
-	for n := 0; n < 4; n++ {
+	for n := range 4 {
 		audit[goneDoc].Append([]byte(fmt.Sprintf("gone-%d", n)))
 	}
 	// Surviving events reference only keptDoc, earliest position 5; goneDoc has no live event.

@@ -197,7 +197,7 @@ func stitchBandRows(m *Mesh, a, b bandRow) {
 	}
 	if len(a.idx) == len(b.idx) {
 		n := len(a.idx)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			ni := (i + 1) % n
 			emitClosedTri(m, a.idx[i], a.idx[ni], b.idx[ni])
 			emitClosedTri(m, a.idx[i], b.idx[ni], b.idx[i])

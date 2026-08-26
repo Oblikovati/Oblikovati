@@ -166,7 +166,7 @@ func TestCreateMidplaneNeedsTwoPlanes(t *testing.T) {
 
 func TestCreatedWorkPlanesAppearInBrowserWithUniqueNames(t *testing.T) {
 	s, def := emptyPartSession(t)
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		s.Selection().Clear()
 		selectPlanes(s, def.OriginPlanes()[0], def.OriginPlanes()[1])
 		if _, err := s.CreateMidplaneWorkPlane(); err != nil {

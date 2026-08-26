@@ -36,7 +36,7 @@ func conePlaneEdge(e *topo.Edge) (co geom.Cone, pl geom.Plane, coneFace, planeFa
 	if len(faces) != 2 {
 		return geom.Cone{}, geom.Plane{}, nil, nil, false
 	}
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		c, okc := faces[i].Geometry().(geom.Cone)
 		p, okp := faces[1-i].Geometry().(geom.Plane)
 		if okc && okp {

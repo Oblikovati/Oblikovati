@@ -66,7 +66,7 @@ var toolDialogSignature = regexp.MustCompile(`^func draw[A-Z]\w*Dialogs?\(s \*ap
 // countSessionInSource counts *app.Session in one file's source under the ratchet rules.
 func countSessionInSource(src string) int {
 	n := 0
-	for _, line := range strings.Split(src, "\n") {
+	for line := range strings.SplitSeq(src, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmed, "//") || strings.Contains(line, "(*app.Session)(nil)") {
 			continue

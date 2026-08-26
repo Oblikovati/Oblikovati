@@ -98,7 +98,7 @@ func TestReadRawIntegers(t *testing.T) {
 func TestReadRD(t *testing.T) {
 	bits := math.Float64bits(-3.75)
 	buf := make([]byte, 8)
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		buf[i] = byte(bits >> (8 * uint(i))) // little-endian
 	}
 	if got := NewBitReader(buf).ReadRD(); got != -3.75 {
@@ -168,7 +168,7 @@ func TestReadBD(t *testing.T) {
 	var full bitWriter
 	full.writeBits(0b00, 2)
 	bits := math.Float64bits(123.5)
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		full.writeBits(uint64(byte(bits>>(8*uint(i)))), 8)
 	}
 	if got := NewBitReader(full.bytes()).ReadBD(); got != 123.5 {

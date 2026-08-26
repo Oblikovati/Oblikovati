@@ -4,6 +4,7 @@ package app
 
 import (
 	"fmt"
+	"slices"
 
 	"oblikovati.org/api/types"
 )
@@ -268,12 +269,7 @@ func (c *CommandDefinition) appearsOnRibbon(key RibbonKey) bool {
 	if len(c.ribbons) == 0 {
 		return key == PartRibbon
 	}
-	for _, k := range c.ribbons {
-		if k == key {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(c.ribbons, key)
 }
 
 // ID/DisplayName/Tab/Category/Kind/Alias/Tooltip are the command's metadata.

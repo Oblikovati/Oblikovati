@@ -45,8 +45,8 @@ func adjugate3(m [9]Scalar) [9]Scalar {
 // mul3x3 returns the matrix product a·b of two row-major 3×3 matrices.
 func mul3x3(a, b [9]Scalar) [9]Scalar {
 	var out [9]Scalar
-	for r := 0; r < 3; r++ {
-		for c := 0; c < 3; c++ {
+	for r := range 3 {
+		for c := range 3 {
 			out[r*3+c] = a[r*3]*b[c] + a[r*3+1]*b[3+c] + a[r*3+2]*b[6+c]
 		}
 	}

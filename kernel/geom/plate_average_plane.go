@@ -93,8 +93,8 @@ func scatterMatrix(pts []math.Point3, c math.Point3) [3][3]float64 {
 	for _, p := range pts {
 		d := c.VectorTo(p)
 		row := [3]float64{float64(d.X), float64(d.Y), float64(d.Z)}
-		for i := 0; i < 3; i++ {
-			for j := 0; j < 3; j++ {
+		for i := range 3 {
+			for j := range 3 {
 				m[i][j] += row[i] * row[j]
 			}
 		}
@@ -208,7 +208,7 @@ const jacobiSkipFloor = 1e-30
 func jacobiEigen3(a [3][3]float64) (values [3]float64, vectors [3][3]float64) {
 	vectors = identity3()
 	floor := jacobiConvergedRelTol * jacobiConvergedRelTol * frobeniusNormSquared(a)
-	for sweep := 0; sweep < jacobiMaxSweeps; sweep++ {
+	for range jacobiMaxSweeps {
 		if jacobiSweep(&a, &vectors) <= floor {
 			break
 		}
@@ -227,8 +227,8 @@ func identity3() [3][3]float64 {
 // for every sweep.
 func frobeniusNormSquared(a [3][3]float64) float64 {
 	var sum float64
-	for i := 0; i < 3; i++ {
-		for j := 0; j < 3; j++ {
+	for i := range 3 {
+		for j := range 3 {
 			sum += a[i][j] * a[i][j]
 		}
 	}
@@ -294,7 +294,7 @@ func thirdIndex(p, q int) int {
 // rotateEigenvectorColumns accumulates the same (c,s) rotation into v's (p,q) columns, so v
 // ends up holding the eigenvectors once a is diagonal.
 func rotateEigenvectorColumns(v *[3][3]float64, p, q int, c, s float64) {
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		vip, viq := v[i][p], v[i][q]
 		v[i][p] = c*vip - s*viq
 		v[i][q] = s*vip + c*viq

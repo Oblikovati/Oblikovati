@@ -9,7 +9,11 @@
 // ComponentOccurrences (M11-F01/F02, #345/#346).
 package occurrence
 
-import "oblikovati.org/math"
+import (
+	"maps"
+
+	"oblikovati.org/math"
+)
 
 // Definition is the component definition an occurrence instances — a part or an
 // assembly definition (model/compdef). Many occurrences can share one Definition (the
@@ -241,9 +245,7 @@ func (o *Occurrence) ChildOverrides() map[string]math.Matrix4 {
 		return nil
 	}
 	out := make(map[string]math.Matrix4, len(o.childOverrides))
-	for k, v := range o.childOverrides {
-		out[k] = v
-	}
+	maps.Copy(out, o.childOverrides)
 	return out
 }
 
@@ -254,9 +256,7 @@ func (o *Occurrence) SetChildOverrides(overrides map[string]math.Matrix4) {
 		return
 	}
 	o.childOverrides = make(map[string]math.Matrix4, len(overrides))
-	for k, v := range overrides {
-		o.childOverrides[k] = v
-	}
+	maps.Copy(o.childOverrides, overrides)
 }
 
 // IsSubstitute reports whether this occurrence is a substitute — a simplified

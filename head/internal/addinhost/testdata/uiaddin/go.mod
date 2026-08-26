@@ -4,4 +4,4 @@
 // normal `go build ./...` ignores it; its own go.mod keeps the build self-contained.
 module uifixture
 
-go 1.22
+go 1.27.0

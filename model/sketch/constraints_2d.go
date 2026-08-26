@@ -4,6 +4,7 @@ package sketch
 
 import (
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/math"
 	"oblikovati.org/solve/ad"
@@ -461,10 +462,8 @@ func (g *GeometricConstraints) AddCircularTangent(c1, c2 CircularCurve) *Circula
 func sharedCurvePoint(c1, c2 CircularCurve) *Point {
 	second := curveDefiningPoints(c2)
 	for _, p := range curveDefiningPoints(c1) {
-		for _, q := range second {
-			if p == q {
-				return p
-			}
+		if slices.Contains(second, p) {
+			return p
 		}
 	}
 	return nil

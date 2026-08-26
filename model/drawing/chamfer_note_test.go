@@ -32,7 +32,7 @@ func chamferedSquarePrism(c, h float64) *topo.Body {
 		verts = append(verts, gmath.P3(p[0], p[1], h))
 	}
 	faces := [][]int{octRingReversed(n), octRingForward(n, n)}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		j := (i + 1) % n
 		faces = append(faces, []int{i, j, n + j, n + i}) // outward side quad
 	}

@@ -35,7 +35,7 @@ func TestRingLeavingCurveMatchesTraversal(t *testing.T) {
 	ring, chain := rimChainTestRing(t, n)
 	for _, rev := range []bool{false, true} {
 		visited := ringVisitOrder(ring, rev)
-		for k := 0; k < n; k++ {
+		for k := range n {
 			c := ringLeavingCurve(chain, k, rev)
 			start, end := c.PointAt(0), c.PointAt(1)
 			next := visited[(k+1)%n]
@@ -69,7 +69,7 @@ func TestReverseLeavingChainKeepsSegmentsOnTheirPoints(t *testing.T) {
 	ring, chain := rimChainTestRing(t, n)
 	newRing := append([]math.Point3{ring[0]}, reversePts(ring[1:])...)
 	newChain := reverseLeavingChain(chain)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		start, end := newChain[k].PointAt(0), newChain[k].PointAt(1)
 		if float64(start.DistanceTo(newRing[k])) > 1e-12 {
 			t.Fatalf("k=%d: reversed-chain curve starts %v, want reversed-ring point %v", k, start, newRing[k])

@@ -59,7 +59,7 @@ func triPlaneCrossPoints(tri, plane [3]Point) []Point {
 		Orient3D(plane[0], plane[1], plane[2], tri[2]),
 	}
 	var pts []Point
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if s[i] == 0 {
 			pts = appendUnique(pts, tri[i])
 		}

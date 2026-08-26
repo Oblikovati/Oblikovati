@@ -132,13 +132,7 @@ func roundToFraction(v float64, denom int) float64 {
 // denominator: precision 1→halves, 3→eighths, 6→sixty-fourths, clamped to the
 // 1/2…1/128 range Inventor offers.
 func (m UnitsOfMeasure) fractionDenominator() int {
-	p := m.lengthPrecision
-	if p < 1 {
-		p = 1
-	}
-	if p > 7 {
-		p = 7
-	}
+	p := min(max(m.lengthPrecision, 1), 7)
 	return 1 << p
 }
 

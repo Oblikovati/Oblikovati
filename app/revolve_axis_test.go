@@ -4,6 +4,7 @@ package app
 
 import (
 	stdmath "math"
+	"slices"
 	"testing"
 
 	"oblikovati.org/kernel/ops"
@@ -141,12 +142,7 @@ func TestRevolveAcceptsAWorkAxisPick(t *testing.T) {
 
 // acceptsKind reports whether a tool's accepted-kind list admits kind.
 func acceptsKind(kinds []SelectionKind, kind SelectionKind) bool {
-	for _, k := range kinds {
-		if k == kind {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(kinds, kind)
 }
 
 // TestRevolveAcceptsAPlainSketchLineAsAxis: the model revolves about any sketch line, but the tool

@@ -110,7 +110,7 @@ func tangentCosine(g, tangentLen, rLen float64) float64 {
 // step fails to improve.
 func lineSearchToward(s Surface, q math.Point3, u, v, ddu, ddv, d2 float64) (nu, nv float64, moved bool) {
 	alpha := 1.0
-	for k := 0; k < 8; k++ {
+	for range 8 {
 		cu, cv := clampToSurface(s, u+alpha*ddu, v+alpha*ddv)
 		if float64(s.PointAt(cu, cv).VectorTo(q).LengthSquared()) < d2 {
 			return cu, cv, true

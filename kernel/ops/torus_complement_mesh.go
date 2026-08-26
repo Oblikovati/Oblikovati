@@ -4,6 +4,7 @@ package ops
 
 import (
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
@@ -109,8 +110,8 @@ func loopUVBounds(loop []math.Point2) (uMin, uMax, vMin, vMax float64) {
 
 // lastBelow returns the largest index i with xs[i] ≤ x (0 if none), for a strictly increasing xs.
 func lastBelow(xs []float64, x float64) int {
-	for i := len(xs) - 1; i >= 0; i-- {
-		if xs[i] <= x {
+	for i, x0 := range slices.Backward(xs) {
+		if x0 <= x {
 			return i
 		}
 	}
@@ -119,7 +120,7 @@ func lastBelow(xs []float64, x float64) int {
 
 // firstAbove returns the smallest index i with xs[i] ≥ x (last index if none), for increasing xs.
 func firstAbove(xs []float64, x float64) int {
-	for i := 0; i < len(xs); i++ {
+	for i := range xs {
 		if xs[i] >= x {
 			return i
 		}

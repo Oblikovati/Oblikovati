@@ -18,10 +18,10 @@ func flatNeighbour(t *testing.T, x0, x1, y0, y1 float64, flipV bool) *topo.Body 
 	t.Helper()
 	ctrl := make([][]math.Point3, 4)
 	w := make([][]float64, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		ctrl[i] = make([]math.Point3, 4)
 		w[i] = []float64{1, 1, 1, 1}
-		for j := 0; j < 4; j++ {
+		for j := range 4 {
 			yj := y0 + (y1-y0)*float64(j)/3
 			if flipV {
 				yj = y1 - (y1-y0)*float64(j)/3
@@ -104,7 +104,7 @@ func planeNeighbour(t *testing.T, tag string, x0, x1, y0, y1 float64) *topo.Body
 		v[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(tag, "v", i)))
 	}
 	uses := make([]topo.Use, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		j := (i + 1) % 4
 		e := bld.AddEdge(geom.NewLineSegment(c[i], c[j]), v[i], v[j], topo.NewLineage(topo.Tok(tag, "e", i)))
 		uses[i] = topo.Fwd(e)

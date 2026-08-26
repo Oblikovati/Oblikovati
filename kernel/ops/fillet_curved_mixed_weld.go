@@ -4,6 +4,7 @@ package ops
 
 import (
 	"fmt"
+	"maps"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
@@ -362,9 +363,7 @@ func mixedHostFaces(body *topo.Body, roles mixedRoleArms, corner curvedMixedCorn
 	if reason != "" {
 		return nil, reason
 	}
-	for f, ff := range caps {
-		retrims[f] = ff
-	}
+	maps.Copy(retrims, caps)
 	out := make([]filletFace, 0, len(body.Faces()))
 	for _, f := range body.Faces() {
 		if ff, bitten := retrims[f]; bitten {

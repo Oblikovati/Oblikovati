@@ -103,7 +103,7 @@ func TestProfilesCacheInvalidatesOnEllipseChange(t *testing.T) {
 // picker never arranges hundreds of thousands of segments.
 func TestProfilesCappedForHugeSketch(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
-	for i := 0; i < maxProfileEntities+10; i++ {
+	for i := range maxProfileEntities + 10 {
 		x := float64(i)
 		s.Lines().AddByTwoPoints(math.P2(x, 0), math.P2(x+0.5, 1))
 	}

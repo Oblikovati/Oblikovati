@@ -18,10 +18,10 @@ func flatNeighbourBody(t *testing.T, tag string, x0, y0 float64) *topo.Body {
 	const n = 5
 	ctrl := make([][]math.Point3, n)
 	w := make([][]float64, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		ctrl[i] = make([]math.Point3, n)
 		w[i] = make([]float64, n)
-		for j := 0; j < n; j++ {
+		for j := range n {
 			ctrl[i][j] = math.P3(math.Scalar(x0+float64(i)*0.25), math.Scalar(y0+float64(j)*0.25), 0)
 			w[i][j] = 1
 		}
@@ -38,7 +38,7 @@ func flatNeighbourBody(t *testing.T, tag string, x0, y0 float64) *topo.Body {
 		v[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(tag, "v", i)))
 	}
 	uses := make([]topo.Use, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		j := (i + 1) % 4
 		e := bld.AddEdge(geom.NewLineSegment(c[i], c[j]), v[i], v[j], topo.NewLineage(topo.Tok(tag, "e", i)))
 		uses[i] = topo.Fwd(e)

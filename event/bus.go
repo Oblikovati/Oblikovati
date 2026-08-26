@@ -109,5 +109,5 @@ func stronger(acc, next Outcome) Outcome {
 
 // typeOf returns the reflect.Type of the event type E for use as a dispatch key.
 func typeOf[E Event]() reflect.Type {
-	return reflect.TypeOf((*E)(nil)).Elem()
+	return reflect.TypeFor[E]()
 }

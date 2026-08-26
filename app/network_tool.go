@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"slices"
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
@@ -54,12 +55,7 @@ func (t *NetworkTool) Pick(_ *Session, sel Selectable) {
 }
 
 func (t *NetworkTool) has(h ProfileHandle) bool {
-	for _, p := range append(append([]ProfileHandle{}, t.uProfiles...), t.vProfiles...) {
-		if p == h {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(append(append([]ProfileHandle{}, t.uProfiles...), t.vProfiles...), h)
 }
 
 // Prompt guides the two-stage pick.

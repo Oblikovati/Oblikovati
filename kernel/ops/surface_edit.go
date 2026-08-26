@@ -197,7 +197,7 @@ func BodyPlane(body *topo.Body) (geom.Plane, bool) {
 func clipHalfSpace(poly []math.Point3, origin math.Point3, normal math.Vector3, keepPositive bool) []math.Point3 {
 	var out []math.Point3
 	n := len(poly)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		cur, nxt := poly[i], poly[(i+1)%n]
 		ds := keepDistance(cur, origin, normal, keepPositive)
 		de := keepDistance(nxt, origin, normal, keepPositive)
@@ -330,7 +330,7 @@ func MidSurfaces(body *topo.Body, minThickness, maxThickness float64, feat strin
 	}
 	var patches []MidPatch
 	used := make([]bool, len(faces))
-	for i := 0; i < len(faces); i++ {
+	for i := range faces {
 		j := matchOpposite(faces, used, i, minThickness, maxThickness)
 		if j < 0 {
 			continue

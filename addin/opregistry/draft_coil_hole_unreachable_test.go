@@ -4,6 +4,7 @@ package opregistry
 
 import (
 	"encoding/json"
+	"maps"
 	"math"
 	"testing"
 
@@ -90,9 +91,7 @@ func TestHoleDrillPointErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			s, _, face := extrudedSolid(t)
 			args := map[string]any{"faceRef": face, "diameter": "4 mm", "depth": "5 mm"}
-			for k, v := range tc.extra {
-				args[k] = v
-			}
+			maps.Copy(args, tc.extra)
 			if _, err := applyMap(t, s, "hole", args); err == nil {
 				t.Errorf("%s should error", tc.name)
 			}
@@ -114,9 +113,7 @@ func TestCoilEndConditionErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			s := profiledPart(t)
 			args := map[string]any{"sketchIndex": 0, "pitch": "5 mm", "revolutions": "3"}
-			for k, v := range tc.extra {
-				args[k] = v
-			}
+			maps.Copy(args, tc.extra)
 			if _, err := applyMap(t, s, "coil", args); err == nil {
 				t.Errorf("%s should error", tc.name)
 			}
@@ -155,9 +152,7 @@ func springCoilVolume(t *testing.T, extra map[string]any) float64 {
 	// one-turn window all but 3/8 of the pitch, so the rise there is 0.75 cm — still clear of the
 	// section's own 0.5 cm depth, which is what keeps consecutive turns apart (#2080).
 	args := map[string]any{"sketchIndex": 0, "pitch": "20 mm", "revolutions": "3"}
-	for k, v := range extra {
-		args[k] = v
-	}
+	maps.Copy(args, extra)
 	raw, err := applyMap(t, s, "coil", args)
 	if err != nil {
 		t.Fatalf("coil %v: %v", extra, err)
@@ -198,9 +193,7 @@ func blindHoleVolume(t *testing.T, extra map[string]any) float64 {
 	t.Helper()
 	s, _, face := extrudedSolid(t)
 	args := map[string]any{"faceRef": face, "diameter": "4 mm", "depth": "5 mm"}
-	for k, v := range extra {
-		args[k] = v
-	}
+	maps.Copy(args, extra)
 	if _, err := applyMap(t, s, "hole", args); err != nil {
 		t.Fatalf("drill hole %v: %v", extra, err)
 	}

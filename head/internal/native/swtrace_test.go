@@ -62,7 +62,7 @@ func TestSWSceneMatchesCPUOracle(t *testing.T) {
 			if absf(got.T-want.T) > tol {
 				t.Errorf("T = %v, want %v", got.T, want.T)
 			}
-			for i := 0; i < 3; i++ {
+			for i := range 3 {
 				if absf(got.Point[i]-want.Point[i]) > tol {
 					t.Errorf("Point[%d] = %v, want %v", i, got.Point[i], want.Point[i])
 				}

@@ -96,7 +96,7 @@ func canalInnerBite(host *topo.Face, bundles []canalArmBundle, b canalBoundaries
 func armRailsOnHost(host *topo.Face, bundles []canalArmBundle) []endSeg {
 	var rails []endSeg
 	for _, bundle := range bundles {
-		for k := 0; k < 2; k++ {
+		for k := range 2 {
 			if bundle.hosts[k] == host {
 				rails = append(rails, bundle.rails[k])
 			}

@@ -70,7 +70,7 @@ func TestPickLightParamsNoLightsNoEnvironmentIsUnlit(t *testing.T) {
 // behind (pickDiscreteLight had 0% coverage from the existing GPU-backed Realistic-mode
 // tests alone, since those fixtures all have an active environment).
 func TestPickLightParamsDiscreteLightOnlyAlwaysPicksLight(t *testing.T) {
-	for seed := int64(0); seed < 20; seed++ {
+	for seed := range int64(20) {
 		rng := rand.New(rand.NewSource(seed))
 		got := pickLightParams(onLight(2), rng, renderer.DrawItem{}, app.EnvironmentState{}, nil)
 		if got.LightIsEnvironment != 0 {
@@ -89,7 +89,7 @@ func TestPickLightParamsDiscreteLightOnlyAlwaysPicksLight(t *testing.T) {
 func TestPickLightParamsEnvironmentOnlyAlwaysPicksEnvironment(t *testing.T) {
 	env := app.EnvironmentState{Preset: "Sky", Intensity: 2}
 	dist := solidEnvDistribution()
-	for seed := int64(0); seed < 20; seed++ {
+	for seed := range int64(20) {
 		rng := rand.New(rand.NewSource(seed))
 		got := pickLightParams(renderer.SceneLighting{}, rng, renderer.DrawItem{}, env, dist)
 		if got.LightIsEnvironment != 1 {
@@ -115,7 +115,7 @@ func TestPickLightParamsWeightsSelectionBetweenStrategies(t *testing.T) {
 		rng := rand.New(rand.NewSource(7))
 		env := app.EnvironmentState{Preset: "Sky", Intensity: envIntensity}
 		const n = 2000
-		for i := 0; i < n; i++ {
+		for range n {
 			if pickLightParams(onLight(lightIntensity), rng, renderer.DrawItem{}, env, dist).LightIsEnvironment != 0 {
 				envPicks++
 			}
@@ -261,7 +261,7 @@ func TestApplyEnvironmentParams(t *testing.T) {
 // actually lands via native.Image — unlike ReadbackViewport, which only sees the
 // raster win.RenderViewport render target the Realistic path bypasses entirely).
 func windowBrightFraction(win *native.Window, s *app.Session, frames int) float64 {
-	for i := 0; i < frames; i++ {
+	for range frames {
 		viewportFrame(win, s)
 	}
 	px, w, h, ok := win.ReadbackWindow()
@@ -364,7 +364,7 @@ func TestRealisticSceneNotRebuiltOnCameraOnlyChange(t *testing.T) {
 		t.Fatal("neither backend built on first render")
 	}
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		cam = cam.Orbit(0.2, 0)
 		if _, _, ok := renderRealisticViewportImage(win, s, slot, cam, pw, ph); !ok {
 			t.Fatalf("render %d (camera-only change) failed", i)
@@ -398,7 +398,7 @@ func TestRealisticModeCaptureViewportStaysRasterCaptureWindowIsLive(t *testing.T
 	if err := s.SetDisplayMode(types.ShadedWithEdgesRendering); err != nil {
 		t.Fatalf("SetDisplayMode(raster): %v", err)
 	}
-	for i := 0; i < 8; i++ {
+	for range 8 {
 		viewportFrame(win, s)
 	}
 	rasterOffscreen, _, _, ok := win.ReadbackViewport(0)
@@ -481,7 +481,7 @@ func TestRealisticModeBackendParityThroughRealUIPath(t *testing.T) {
 	if !realisticHardwareEnabled(win, s) {
 		t.Skip("no hardware ray tracing available on this device — parity check needs both backends")
 	}
-	for i := 0; i < samples; i++ {
+	for range samples {
 		viewportFrame(win, s)
 	}
 	hwPixels, w1, h1, ok1 := win.ReadbackWindow()
@@ -493,7 +493,7 @@ func TestRealisticModeBackendParityThroughRealUIPath(t *testing.T) {
 	prefs.HardwareRayTracing = &hwOff
 	s.SetViewCubePrefs(prefs)
 	DestroyRealisticState(win, s) // free the hardware run's GPU state and force a fresh accumulator
-	for i := 0; i < samples; i++ {
+	for range samples {
 		viewportFrame(win, s)
 	}
 	swPixels, w2, h2, ok2 := win.ReadbackWindow()

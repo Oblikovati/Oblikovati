@@ -47,7 +47,7 @@ func newEdgeArcTable(c geom.Curve3) (*edgeArcTable, bool) {
 // backward (dir=−1); tangents are the local polyline directions oriented with the walk.
 func (t *edgeArcTable) uniformAnchors(count int, dir float64) []geom.CanalEdgeAnchor {
 	out := make([]geom.CanalEdgeAnchor, count)
-	for k := 0; k < count; k++ {
+	for k := range count {
 		frac := float64(k) / float64(count-1)
 		if dir < 0 {
 			frac = 1 - frac

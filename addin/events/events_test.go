@@ -4,6 +4,7 @@ package events
 
 import (
 	"encoding/json"
+	"slices"
 	"sync"
 	"testing"
 
@@ -83,12 +84,7 @@ func TestDocumentCreatedCarriesName(t *testing.T) {
 }
 
 func has(s []string, v string) bool {
-	for _, x := range s {
-		if x == v {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(s, v)
 }
 
 // rawRecorder collects the raw JSON the sink receives, for events whose shapes are

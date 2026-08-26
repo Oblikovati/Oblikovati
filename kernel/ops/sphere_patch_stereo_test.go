@@ -18,7 +18,7 @@ import (
 // points, excluding the last (so concatenated arcs do not duplicate the shared corner).
 func quarterArc(center, a, b math.Point3, n int) []math.Point3 {
 	var out []math.Point3
-	for k := 0; k < n; k++ {
+	for k := range n {
 		phi := (stdmath.Pi / 2) * float64(k) / float64(n)
 		c, s := stdmath.Cos(phi), stdmath.Sin(phi)
 		out = append(out, math.P3(

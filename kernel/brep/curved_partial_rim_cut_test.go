@@ -108,11 +108,11 @@ func analyticPartialRimVolume(n int) float64 {
 	inTarget := func(x, y, z float64) bool { return x*x+y*y < 9 && z > 0 && z < 10 && x+z < 9.5 }
 	inRod := func(x, y, z float64) bool { return y*y+(z-3)*(z-3) < 1 && x > -6 && x < 6 }
 	count := 0
-	for i := 0; i < n; i++ {
+	for i := range n {
 		x := -3 + 6*(float64(i)+0.5)/float64(n)
-		for j := 0; j < n; j++ {
+		for j := range n {
 			y := -3 + 6*(float64(j)+0.5)/float64(n)
-			for k := 0; k < n; k++ {
+			for k := range n {
 				z := 10 * (float64(k) + 0.5) / float64(n)
 				if inTarget(x, y, z) && !inRod(x, y, z) {
 					count++

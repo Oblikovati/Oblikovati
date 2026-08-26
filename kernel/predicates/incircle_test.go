@@ -31,7 +31,7 @@ func TestInCircleVsOracleUnderStress(t *testing.T) {
 	r := rand.New(rand.NewSource(0x1c1c))
 	teeth := 0
 	const n = 20000
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := [2]float64{r.Float64() * 100, r.Float64() * 100}
 		b := [2]float64{r.Float64() * 100, r.Float64() * 100}
 		c := [2]float64{r.Float64() * 100, r.Float64() * 100}

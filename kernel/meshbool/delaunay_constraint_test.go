@@ -25,7 +25,7 @@ func TestForceEdgeRecoversConstraint(t *testing.T) {
 
 	r := rand.New(rand.NewSource(0x2c2c))
 	flipped := false
-	for k := 0; k < 40; k++ {
+	for range 40 {
 		i := 3 + r.Intn(len(d.verts)-3) // pick interior vertices (skip the 3 corners)
 		j := 3 + r.Intn(len(d.verts)-3)
 		if i == j {

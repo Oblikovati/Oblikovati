@@ -178,7 +178,7 @@ func assertRimBandOnTheMaterialSide(t *testing.T, b *topo.Body, rf *rimFillet) {
 		t.Errorf("band torus centre %v R=%g, want centre z=%g (the material side of the cap) R=%g",
 			tor.Center, tor.MajorRadius, wantZ, spoolHeadR-spoolRimRadius)
 	}
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		p := rf.cylTan.PointAt(float64(i) / 8 * 2 * stdmath.Pi)
 		inset := math.P3(p.X*0.99, p.Y*0.99, p.Z)
 		if !PointInsideBody(b, inset) {
@@ -239,7 +239,7 @@ func assertSameBand(t *testing.T, got, want *rimFillet) {
 		t.Errorf("band torus %v R=%g r=%g, want %v R=%g r=%g",
 			g.Center, g.MajorRadius, g.MinorRadius, w.Center, w.MajorRadius, w.MinorRadius)
 	}
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		u := float64(i) / 8 * 2 * stdmath.Pi
 		if d := got.cylTan.PointAt(u).DistanceTo(want.cylTan.PointAt(u)); d > 1e-12 {
 			t.Errorf("cyl-tangent rail differs by %g at u=%g", d, u)

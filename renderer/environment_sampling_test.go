@@ -16,16 +16,16 @@ func TestEnvironmentDistributionPDFIntegratesToOne(t *testing.T) {
 	const w, h = 64, 32
 	pixels := make([]float32, w*h*4)
 	rng := rand.New(rand.NewSource(11))
-	for i := 0; i < w*h; i++ {
+	for i := range w * h {
 		v := rng.Float32() * 5
 		pixels[i*4], pixels[i*4+1], pixels[i*4+2], pixels[i*4+3] = v, v*0.8, v*0.6, 1
 	}
 	d := NewEnvironmentDistribution(w, h, pixels)
 
 	var integral float64
-	for y := 0; y < h; y++ {
+	for y := range h {
 		solidAngle := math.Sin(math.Pi*(float64(y)+0.5)/float64(h)) * (math.Pi / float64(h)) * (2 * math.Pi / float64(w))
-		for x := 0; x < w; x++ {
+		for x := range w {
 			integral += d.PDF(x, y) * solidAngle
 		}
 	}
@@ -45,9 +45,9 @@ func TestEnvironmentDistributionConcentratesOnBrightRegion(t *testing.T) {
 	const bright, dim = 10.0, 1.0
 	pixels := make([]float32, w*h*4)
 	var brightMass, totalMass float64
-	for y := 0; y < h; y++ {
+	for y := range h {
 		sinTheta := math.Sin(math.Pi * (float64(y) + 0.5) / float64(h))
-		for x := 0; x < w; x++ {
+		for x := range w {
 			v := float32(dim)
 			if x < w/4 { // a quarter of the columns are the bright region
 				v = float32(bright)
@@ -66,7 +66,7 @@ func TestEnvironmentDistributionConcentratesOnBrightRegion(t *testing.T) {
 	rng := rand.New(rand.NewSource(23))
 	const n = 200_000
 	hits := 0
-	for i := 0; i < n; i++ {
+	for range n {
 		x := sampleColumnIndex(d, rng.Float64(), rng.Float64())
 		if x < w/4 {
 			hits++
@@ -97,8 +97,8 @@ func TestEnvironmentDistributionDirectionIsUnitLength(t *testing.T) {
 		pixels[i] = 1
 	}
 	d := NewEnvironmentDistribution(w, h, pixels)
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			dir := d.direction(x, y)
 			length := math.Sqrt(float64(dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2]))
 			if math.Abs(length-1) > 1e-5 {
@@ -138,8 +138,8 @@ func TestEnvironmentDistributionDirectionMatchesShaderSampling(t *testing.T) {
 		pixels[i] = 1
 	}
 	d := NewEnvironmentDistribution(w, h, pixels)
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			dir := d.direction(x, y)
 			u, v := dirUV(dir, 0)
 			wantU, wantV := (float64(x)+0.5)/float64(w), (float64(y)+0.5)/float64(h)
@@ -193,16 +193,16 @@ func TestEnvironmentDistributionTotalWeightMatchesConstructionSum(t *testing.T) 
 	const w, h = 16, 8
 	pixels := make([]float32, w*h*4)
 	rng := rand.New(rand.NewSource(3))
-	for i := 0; i < w*h; i++ {
+	for i := range w * h {
 		v := rng.Float32() * 4
 		pixels[i*4], pixels[i*4+1], pixels[i*4+2], pixels[i*4+3] = v, v, v, 1
 	}
 	d := NewEnvironmentDistribution(w, h, pixels)
 
 	var want float64
-	for y := 0; y < h; y++ {
+	for y := range h {
 		sinTheta := math.Sin(math.Pi * (float64(y) + 0.5) / float64(h))
-		for x := 0; x < w; x++ {
+		for x := range w {
 			want += float64(pixels[(y*w+x)*4]) * sinTheta // R==G==B here, luma reduces to the raw value
 		}
 	}

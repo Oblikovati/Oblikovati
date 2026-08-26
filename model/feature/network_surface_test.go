@@ -13,16 +13,16 @@ import (
 func gridPolylines() (u, v [][]math.Point3) {
 	line := func(x0, y0, x1, y1 float64) []math.Point3 {
 		out := make([]math.Point3, 5)
-		for k := 0; k < 5; k++ {
+		for k := range 5 {
 			t := math.Scalar(float64(k) / 4)
 			out[k] = math.P3(math.Scalar(x0)+(math.Scalar(x1)-math.Scalar(x0))*t, math.Scalar(y0)+(math.Scalar(y1)-math.Scalar(y0))*t, 0)
 		}
 		return out
 	}
-	for j := 0; j < 3; j++ { // u-curves along x at y=0,1,2
+	for j := range 3 { // u-curves along x at y=0,1,2
 		u = append(u, line(0, float64(j), 2, float64(j)))
 	}
-	for i := 0; i < 3; i++ { // v-curves along y at x=0,1,2
+	for i := range 3 { // v-curves along y at x=0,1,2
 		v = append(v, line(float64(i), 0, float64(i), 2))
 	}
 	return u, v

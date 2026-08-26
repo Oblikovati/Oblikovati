@@ -23,7 +23,7 @@ func (m *RoleMasks) Compose(colors RoleColors) *image.RGBA {
 
 // composePixel accumulates the roles' premultiplied src-over at one pixel.
 func (m *RoleMasks) composePixel(i int, colors RoleColors) (r, g, b, a float32) {
-	for role := Role(0); role < RoleCount; role++ {
+	for role := range RoleCount {
 		sa := float32(m.cover[role][i]) / 255 * colors[role][3]
 		if sa == 0 {
 			continue

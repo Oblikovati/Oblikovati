@@ -95,7 +95,7 @@ func TestInWindowAddInPanelRendersEditableControls(t *testing.T) {
 	if err := s.SetDockableWindow(editableFormWindow()); err != nil {
 		t.Fatalf("SetDockableWindow: %v", err)
 	}
-	for i := 0; i < 2; i++ { // two frames: immediate-mode buffers seed on the first
+	for range 2 { // two frames: immediate-mode buffers seed on the first
 		win.BeginFrame()
 		drawAddInPanels(s)
 		win.EndFrame(0.1, 0.1, 0.1)

@@ -230,7 +230,7 @@ func predictedDecrease(delta []float64, j [][]float64, r []float64) float64 {
 // floored at 1 so a variable no constraint currently touches still receives bounded damping.
 func columnNorms(j [][]float64, n int) []float64 {
 	d := make([]float64, n)
-	for c := 0; c < n; c++ {
+	for c := range n {
 		s := 0.0
 		for i := range j {
 			s += j[i][c] * j[i][c]
@@ -382,7 +382,7 @@ func finiteDiffJacobian(res []Residual, vars []*math.Scalar) [][]float64 {
 		*v = orig - h
 		rm := evalResiduals(res)
 		*v = orig
-		for i := 0; i < m; i++ {
+		for i := range m {
 			j[i][col] = (rp[i] - rm[i]) / float64(2*h)
 		}
 	}

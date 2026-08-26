@@ -197,7 +197,7 @@ func interpRim(pts [][2]float64, period float64) rimFunc {
 		if u <= pts[0][0] { // the seam segment, approached from below: last sample − period → first
 			return lerpV(u, pts[last][0]-period, pts[last][1], pts[0][0], pts[0][1])
 		}
-		for i := 0; i < last; i++ {
+		for i := range last {
 			if u <= pts[i+1][0] {
 				return lerpV(u, pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1])
 			}

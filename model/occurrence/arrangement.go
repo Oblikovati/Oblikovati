@@ -49,8 +49,8 @@ type RectangularArrangement struct {
 func (r RectangularArrangement) Placements() []math.Matrix4 {
 	c1, c2 := max(r.Count1, 1), max(r.Count2, 1)
 	out := make([]math.Matrix4, 0, c1*c2)
-	for row := 0; row < c2; row++ {
-		for col := 0; col < c1; col++ {
+	for row := range c2 {
+		for col := range c1 {
 			offset := r.Dir1.AsVector().Scale(math.Scalar(col) * r.Spacing1).
 				Add(r.Dir2.AsVector().Scale(math.Scalar(row) * r.Spacing2))
 			out = append(out, math.Translation4(offset))

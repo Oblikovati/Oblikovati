@@ -3,6 +3,7 @@
 package doc
 
 import (
+	"maps"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -293,9 +294,7 @@ func (d *Document) BodyNames() map[string]string {
 		return nil
 	}
 	out := make(map[string]string, len(d.bodyNames))
-	for k, v := range d.bodyNames {
-		out[k] = v
-	}
+	maps.Copy(out, d.bodyNames)
 	return out
 }
 
@@ -307,9 +306,7 @@ func (d *Document) RestoreBodyNames(names map[string]string) {
 		return
 	}
 	d.bodyNames = make(map[string]string, len(names))
-	for k, v := range names {
-		d.bodyNames[k] = v
-	}
+	maps.Copy(d.bodyNames, names)
 }
 
 // BodyColorStyle returns the color-style name assigned to a body (by its reference key) and whether
@@ -342,9 +339,7 @@ func (d *Document) BodyColorStyles() map[string]string {
 		return nil
 	}
 	out := make(map[string]string, len(d.bodyColorStyles))
-	for k, v := range d.bodyColorStyles {
-		out[k] = v
-	}
+	maps.Copy(out, d.bodyColorStyles)
 	return out
 }
 
@@ -356,9 +351,7 @@ func (d *Document) RestoreBodyColorStyles(styles map[string]string) {
 		return
 	}
 	d.bodyColorStyles = make(map[string]string, len(styles))
-	for k, v := range styles {
-		d.bodyColorStyles[k] = v
-	}
+	maps.Copy(d.bodyColorStyles, styles)
 }
 
 // Referenced reports whether any open document references this one. An

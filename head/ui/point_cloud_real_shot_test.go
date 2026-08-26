@@ -42,7 +42,7 @@ func TestInWindowRealScanRenders(t *testing.T) {
 
 	frameCameraOn(s, pc.RangeBox())
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.12)
@@ -74,7 +74,7 @@ func TestInWindowRealE57Renders(t *testing.T) {
 
 	frameCameraOn(s, pc.RangeBox())
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.12)

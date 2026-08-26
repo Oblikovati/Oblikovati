@@ -64,7 +64,7 @@ func surfaceNormalSystem(points []math.Point3, us, vs []float64, du, dv, nu, nv 
 		rows, vals := activeTensorBasis(us[k], vs[k], du, dv, nu, nv, uknots, vknots)
 		qc := [3]float64{float64(q.X), float64(q.Y), float64(q.Z)}
 		for x, r := range rows {
-			for c := 0; c < 3; c++ {
+			for c := range 3 {
 				rhs[r][c] += vals[x] * qc[c]
 			}
 			for y, rr := range rows {
@@ -112,9 +112,9 @@ func applyRidge(ntn [][]float64) {
 // reshapeNet folds the solved flat control rows (index i*nv+j) into an nu×nv point net.
 func reshapeNet(flat [][]float64, nu, nv int) [][]math.Point3 {
 	net := make([][]math.Point3, nu)
-	for i := 0; i < nu; i++ {
+	for i := range nu {
 		net[i] = make([]math.Point3, nv)
-		for j := 0; j < nv; j++ {
+		for j := range nv {
 			r := flat[i*nv+j]
 			net[i][j] = math.P3(math.Scalar(r[0]), math.Scalar(r[1]), math.Scalar(r[2]))
 		}

@@ -77,7 +77,7 @@ func addTriangleColored(pos *[]math.Point3, nrm *[]math.Vector3, cols *[][4]floa
 	for t := 0; 3*t+2 < len(m.Indices); t++ {
 		c := meshDebugColor(*index)
 		*index++
-		for k := 0; k < 3; k++ {
+		for k := range 3 {
 			v := m.Indices[3*t+k]
 			*idx = append(*idx, len(*pos))
 			*pos, *nrm, *cols = append(*pos, m.Positions[v]), append(*nrm, m.Normals[v]), append(*cols, c)

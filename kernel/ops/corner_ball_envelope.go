@@ -69,9 +69,9 @@ func (env *BallEnvelope) measurable() bool {
 func ballDevSamplePoints(surf geom.Surface) []math.Point3 {
 	u0, u1, v0, v1 := surfaceDomain(surf)
 	out := make([]math.Point3, 0, ballDevGrid*ballDevGrid)
-	for i := 0; i < ballDevGrid; i++ {
+	for i := range ballDevGrid {
 		u := u0 + (u1-u0)*float64(i+1)/float64(ballDevGrid+1)
-		for j := 0; j < ballDevGrid; j++ {
+		for j := range ballDevGrid {
 			out = append(out, surf.PointAt(u, v0+(v1-v0)*float64(j+1)/float64(ballDevGrid+1)))
 		}
 	}
@@ -216,7 +216,7 @@ func sectionCurvePoint(c geom.Curve3, p math.Point3, spine math.Vector3) (math.P
 // precision (50 halvings take any real span to ~1e-15 relative).
 func bisectHeight(height func(float64) float64, a, b float64) float64 {
 	fa := height(a)
-	for k := 0; k < 50; k++ {
+	for range 50 {
 		m := 0.5 * (a + b)
 		if fm := height(m); (fm < 0) == (fa < 0) {
 			a, fa = m, fm

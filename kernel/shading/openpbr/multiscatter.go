@@ -42,10 +42,10 @@ func DirectionalAlbedoGGX(cosThetaO, alpha float64) float64 {
 	wo := Vec3{X: sinThetaO, Z: cosThetaO}
 
 	var sum float64
-	for i := 0; i < albedoQuadratureTheta; i++ {
+	for i := range albedoQuadratureTheta {
 		thetaI := (float64(i) + 0.5) / albedoQuadratureTheta * (math.Pi / 2)
 		sinThetaI, cosThetaI := math.Sin(thetaI), math.Cos(thetaI)
-		for j := 0; j < albedoQuadraturePhi; j++ {
+		for j := range albedoQuadraturePhi {
 			phiI := (float64(j) + 0.5) / albedoQuadraturePhi * (2 * math.Pi)
 			wi := Vec3{X: sinThetaI * math.Cos(phiI), Y: sinThetaI * math.Sin(phiI), Z: cosThetaI}
 			h := wi.Add(wo).Normalize()
@@ -65,7 +65,7 @@ func DirectionalAlbedoGGX(cosThetaO, alpha float64) float64 {
 // both reach the same white-furnace-test guarantee.
 func AverageAlbedoGGX(alpha float64) float64 {
 	var sum float64
-	for i := 0; i < averageQuadratureN; i++ {
+	for i := range averageQuadratureN {
 		mu := (float64(i) + 0.5) / averageQuadratureN
 		sum += DirectionalAlbedoGGX(mu, alpha) * mu
 	}

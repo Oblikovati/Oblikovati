@@ -16,7 +16,7 @@ import (
 // fast-path gate or a sign-convention seam between the two predicates.
 func TestOrient3DFastPathMatchesExact(t *testing.T) {
 	rng := rand.New(rand.NewSource(20260824))
-	for i := 0; i < 20000; i++ {
+	for i := range 20000 {
 		a := randPoint(rng, i%3 == 0)
 		b := randPoint(rng, i%5 == 0)
 		c := randPoint(rng, i%7 == 0)

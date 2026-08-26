@@ -48,7 +48,7 @@ func buildChordedTorusBand(t *testing.T, tor geom.Torus, n int, lin topo.Lineage
 	seam := bld.AddEdge(seamArc, vFoot[0], vTop, lin)
 	top := bld.AddEdge(topRimCircle(tor), vTop, vTop, lin)
 	uses := []topo.Use{topo.Fwd(seam), topo.Rev(top), topo.Rev(seam)}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		j := (i + 1) % n
 		e := bld.AddEdge(geom.NewLineSegment(foot[i], foot[j]), vFoot[i], vFoot[j], lin)
 		uses = append(uses, topo.Fwd(e))
@@ -67,7 +67,7 @@ func topRimCircle(tor geom.Torus) geom.Circle {
 // torusRingPoints samples n points around the torus at tube parameter v, u_k = 2πk/n.
 func torusRingPoints(tor geom.Torus, v float64, n int) []math.Point3 {
 	pts := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		pts[i] = tor.PointAt(2*stdmath.Pi*float64(i)/float64(n), v)
 	}
 	return pts
@@ -145,7 +145,7 @@ func meshIsWatertight(m *Mesh) bool {
 	tri := map[[2]int]int{}
 	for t := 0; 3*t+2 < len(m.Indices); t++ {
 		v := [3]int{weld[m.Indices[3*t]], weld[m.Indices[3*t+1]], weld[m.Indices[3*t+2]]}
-		for k := 0; k < 3; k++ {
+		for k := range 3 {
 			tri[undirectedEdge(v[k], v[(k+1)%3])]++
 		}
 	}

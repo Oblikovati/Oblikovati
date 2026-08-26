@@ -5,6 +5,7 @@ package ops
 import (
 	"fmt"
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
@@ -114,10 +115,8 @@ func runoutSideFace(wallSeamE, coneSeamE *topo.Edge, wallF, coneF *topo.Face) (*
 		if f == wallF || f == coneF {
 			continue
 		}
-		for _, f2 := range coneSeamE.Faces() {
-			if f2 == f {
-				return f, ""
-			}
+		if slices.Contains(coneSeamE.Faces(), f) {
+			return f, ""
 		}
 	}
 	return nil, "elliptic cone canal runout: the two open-end rulings share no side face"

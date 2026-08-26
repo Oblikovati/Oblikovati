@@ -40,8 +40,8 @@ func ParseLIN(src string) ([]Definition, error) {
 // parseLINLine consumes one non-comment line: a `*` header opens a pending
 // definition, a pattern line completes it (returned non-nil).
 func parseLINLine(line string, n int, pending **Definition) (*Definition, error) {
-	if strings.HasPrefix(line, "*") {
-		name, desc, _ := strings.Cut(strings.TrimPrefix(line, "*"), ",")
+	if after, ok := strings.CutPrefix(line, "*"); ok {
+		name, desc, _ := strings.Cut(after, ",")
 		if strings.TrimSpace(name) == "" {
 			return nil, fmt.Errorf("linetype: line %d: header %q has an empty name (want *NAME,description)", n, line)
 		}

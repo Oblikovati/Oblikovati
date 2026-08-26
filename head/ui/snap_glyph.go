@@ -95,7 +95,7 @@ func (a *segAccum) targetMarker(plane sketch.Plane, c math.Point2, h float64) {
 func circlePoints(c math.Point2, r float64) []math.Point2 {
 	const n = 16
 	pts := make([]math.Point2, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		t := 2 * stdmath.Pi * float64(i) / n
 		pts[i] = math.P2(c.X+r*stdmath.Cos(t), c.Y+r*stdmath.Sin(t))
 	}

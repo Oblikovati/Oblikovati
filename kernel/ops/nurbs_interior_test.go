@@ -14,16 +14,16 @@ func uvSquare(lo, hi float64, n int) []math.Point2 {
 	var loop []math.Point2
 	add := func(u, v float64) { loop = append(loop, math.P2(math.Scalar(u), math.Scalar(v))) }
 	step := (hi - lo) / float64(n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		add(lo+float64(i)*step, lo)
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		add(hi, lo+float64(i)*step)
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		add(hi-float64(i)*step, hi)
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		add(lo, hi-float64(i)*step)
 	}
 	return loop

@@ -343,8 +343,8 @@ func surfacePatchArea(s geom.BSplineSurface) float64 {
 	const n = 96
 	du, dv := (u1-u0)/n, (v1-v0)/n
 	total := 0.0
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			total += float64(surfaceNormal(s, u0+(float64(i)+0.5)*du, v0+(float64(j)+0.5)*dv).Length()) * du * dv
 		}
 	}

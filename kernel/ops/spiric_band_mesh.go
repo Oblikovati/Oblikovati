@@ -116,7 +116,7 @@ func spiricInteriorRows(m *Mesh, t geom.Torus, plus, minus geom.SpiricArc, vs []
 // even the wide ( |K|/M small ) band is faceted to the chord deflection.
 func spiricBandColumns(plus, minus geom.SpiricArc, q Quality) int {
 	var maxSpan float64
-	for k := 0; k < 8; k++ {
+	for k := range 8 {
 		v := 2 * stdmath.Pi * float64(k) / 8
 		if span := minus.UAt(v) + 2*stdmath.Pi - plus.UAt(v); span > maxSpan {
 			maxSpan = span

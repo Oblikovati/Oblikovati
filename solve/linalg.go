@@ -24,7 +24,7 @@ func leastSquares(src [][]float64, b []float64) ([]float64, bool) {
 		a[i] = append([]float64(nil), src[i]...)
 	}
 	y := append([]float64(nil), b...)
-	for k := 0; k < cols; k++ {
+	for k := range cols {
 		if !householderColumn(a, y, k, rows, cols) {
 			return nil, false
 		}

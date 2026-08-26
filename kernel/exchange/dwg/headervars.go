@@ -89,22 +89,22 @@ func readHeaderVarsR2010(r *BitReader, hv *HeaderVars, version Version) {
 
 // readModeFlags consumes the run of boolean mode variables (DIMASO..PELLIPSE).
 func readModeFlags(r *BitReader, version Version) {
-	for i := 0; i < 2; i++ { // DIMASO, DIMSHO
+	for range 2 { // DIMASO, DIMSHO
 		r.ReadBit()
 	}
-	for i := 0; i < 7; i++ { // PLINEGEN, ORTHOMODE, REGENMODE, FILLMODE, QTEXTMODE, PSLTSCALE, LIMCHECK
+	for range 7 { // PLINEGEN, ORTHOMODE, REGENMODE, FILLMODE, QTEXTMODE, PSLTSCALE, LIMCHECK
 		r.ReadBit()
 	}
 	if version >= R2004 {
 		r.ReadBit() // unknown_11
 	}
-	for i := 0; i < 4; i++ { // USRTIMER, SKPOLY, ANGDIR, SPLFRAME
+	for range 4 { // USRTIMER, SKPOLY, ANGDIR, SPLFRAME
 		r.ReadBit()
 	}
-	for i := 0; i < 2; i++ { // MIRRTEXT, WORLDVIEW
+	for range 2 { // MIRRTEXT, WORLDVIEW
 		r.ReadBit()
 	}
-	for i := 0; i < 3; i++ { // TILEMODE, PLIMCHECK, VISRETAIN
+	for range 3 { // TILEMODE, PLIMCHECK, VISRETAIN
 		r.ReadBit()
 	}
 	r.ReadBit() // DISPSILH
@@ -125,10 +125,10 @@ func readUnitsAndCounts(r *BitReader, hv *HeaderVars, version Version) {
 		r.ReadBL() // unknown_13
 		r.ReadBL() // unknown_14
 	}
-	for i := 0; i < 5; i++ { // USERI1..USERI5
+	for range 5 { // USERI1..USERI5
 		r.ReadBS()
 	}
-	for i := 0; i < 14; i++ { // SPLINESEGS..TEXTQLTY
+	for range 14 { // SPLINESEGS..TEXTQLTY
 		r.ReadBS()
 	}
 }
@@ -145,12 +145,12 @@ func readSizesAndTimes(r *BitReader, hv *HeaderVars, version Version) {
 	hv.FilletRad = r.ReadBD()
 	hv.Thickness = r.ReadBD()
 	hv.AngBase = r.ReadBD()
-	r.ReadBD()               // PDSIZE
-	r.ReadBD()               // PLINEWID
-	for i := 0; i < 5; i++ { // USERR1..USERR5
+	r.ReadBD()    // PDSIZE
+	r.ReadBD()    // PLINEWID
+	for range 5 { // USERR1..USERR5
 		r.ReadBD()
 	}
-	for i := 0; i < 4; i++ { // CHAMFERA..CHAMFERD
+	for range 4 { // CHAMFERA..CHAMFERD
 		r.ReadBD()
 	}
 	r.ReadBD()     // FACETRES
@@ -222,19 +222,19 @@ func readUcsDimAndInsunits(r *BitReader, hv *HeaderVars, version Version) int {
 //
 //nolint:funlen,gocyclo // sequential version-gated dimension-variable reads; length/branches are the format.
 func skipBD(r *BitReader, n int) {
-	for i := 0; i < n; i++ {
+	for range n {
 		r.ReadBD()
 	}
 }
 
 func skipBS(r *BitReader, n int) {
-	for i := 0; i < n; i++ {
+	for range n {
 		r.ReadBS()
 	}
 }
 
 func skipBit(r *BitReader, n int) {
-	for i := 0; i < n; i++ {
+	for range n {
 		r.ReadBit()
 	}
 }
@@ -344,10 +344,10 @@ func readHeaderVarsR2000(r *BitReader, hv *HeaderVars, version Version) {
 	r.ReadBD() // PDSIZE
 	r.ReadBD() // PLINEWID
 	read3BDn(r, 0)
-	for i := 0; i < 5; i++ { // USERR1..USERR5
+	for range 5 { // USERR1..USERR5
 		r.ReadBD()
 	}
-	for i := 0; i < 4; i++ { // CHAMFERA..CHAMFERD
+	for range 4 { // CHAMFERA..CHAMFERD
 		r.ReadBD()
 	}
 	r.ReadBD() // FACETRES
@@ -392,46 +392,46 @@ func readHeaderVarsR2000(r *BitReader, hv *HeaderVars, version Version) {
 	readTV(r)      // DIMAPOST
 
 	hv.DimScale = r.ReadBD()
-	for i := 0; i < 8; i++ { // DIMASZ..DIMTM
+	for range 8 { // DIMASZ..DIMTM
 		r.ReadBD()
 	}
-	for i := 0; i < 6; i++ { // DIMTOL, DIMLIM, DIMTIH, DIMTOH, DIMSE1, DIMSE2
+	for range 6 { // DIMTOL, DIMLIM, DIMTIH, DIMTOH, DIMSE1, DIMSE2
 		r.ReadBit()
 	}
-	r.ReadBS()               // DIMTAD
-	r.ReadBS()               // DIMZIN
-	r.ReadBS()               // DIMAZIN
-	for i := 0; i < 8; i++ { // DIMTXT..DIMGAP
+	r.ReadBS()    // DIMTAD
+	r.ReadBS()    // DIMZIN
+	r.ReadBS()    // DIMAZIN
+	for range 8 { // DIMTXT..DIMGAP
 		r.ReadBD()
 	}
-	r.ReadBD()                // DIMALTRND
-	r.ReadBit()               // DIMALT
-	r.ReadBS()                // DIMALTD
-	r.ReadBit()               // DIMTOFL
-	r.ReadBit()               // DIMSAH
-	r.ReadBit()               // DIMTIX
-	r.ReadBit()               // DIMSOXD
-	r.ReadBS()                // DIMCLRD (index only)
-	r.ReadBS()                // DIMCLRE
-	r.ReadBS()                // DIMCLRT
-	for i := 0; i < 11; i++ { // DIMADEC..DIMJUST
+	r.ReadBD()     // DIMALTRND
+	r.ReadBit()    // DIMALT
+	r.ReadBS()     // DIMALTD
+	r.ReadBit()    // DIMTOFL
+	r.ReadBit()    // DIMSAH
+	r.ReadBit()    // DIMTIX
+	r.ReadBit()    // DIMSOXD
+	r.ReadBS()     // DIMCLRD (index only)
+	r.ReadBS()     // DIMCLRE
+	r.ReadBS()     // DIMCLRT
+	for range 11 { // DIMADEC..DIMJUST
 		r.ReadBS()
 	}
-	r.ReadBit()              // DIMSD1
-	r.ReadBit()              // DIMSD2
-	for i := 0; i < 4; i++ { // DIMTOLJ, DIMTZIN, DIMALTZ, DIMALTTZ
+	r.ReadBit()   // DIMSD1
+	r.ReadBit()   // DIMSD2
+	for range 4 { // DIMTOLJ, DIMTZIN, DIMALTZ, DIMALTTZ
 		r.ReadBS()
 	}
-	r.ReadBit()              // DIMUPT
-	r.ReadBS()               // DIMATFIT
-	r.ReadHandle()           // DIMTXSTY
-	r.ReadHandle()           // DIMLDRBLK
-	r.ReadHandle()           // DIMBLK
-	r.ReadHandle()           // DIMBLK1
-	r.ReadHandle()           // DIMBLK2
-	r.ReadBS()               // DIMLWD
-	r.ReadBS()               // DIMLWE
-	for i := 0; i < 9; i++ { // BLOCK..DIMSTYLE control objects
+	r.ReadBit()    // DIMUPT
+	r.ReadBS()     // DIMATFIT
+	r.ReadHandle() // DIMTXSTY
+	r.ReadHandle() // DIMLDRBLK
+	r.ReadHandle() // DIMBLK
+	r.ReadHandle() // DIMBLK1
+	r.ReadHandle() // DIMBLK2
+	r.ReadBS()     // DIMLWD
+	r.ReadBS()     // DIMLWE
+	for range 9 {  // BLOCK..DIMSTYLE control objects
 		r.ReadHandle()
 	}
 	r.ReadHandle() // VX_CONTROL_OBJECT (VERSIONS R13..R2000)
@@ -452,7 +452,7 @@ func readHeaderVarsR2000(r *BitReader, hv *HeaderVars, version Version) {
 // readTV consumes a pre-R2007 text variable: a BitShort length then that many bytes.
 func readTV(r *BitReader) {
 	n := r.ReadBS()
-	for i := 0; i < n; i++ {
+	for range n {
 		r.ReadRC()
 	}
 }
@@ -466,7 +466,7 @@ func readCMC(r *BitReader) { r.ReadBS(); r.ReadBL(); r.ReadRC() }
 
 // read3BDn consumes n consecutive 3D points.
 func read3BDn(r *BitReader, n int) {
-	for i := 0; i < n; i++ {
+	for range n {
 		r.Read3BD()
 	}
 }

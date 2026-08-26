@@ -223,12 +223,12 @@ func closedEdgeCrossings(le loopEdge, plane geom.Plane, n math.Vector3) []float6
 	span := le.t1 - le.t0 // signed: negative when the closed edge is traversed reversed (t0 > t1)
 	ts := make([]float64, samples)
 	gs := make([]float64, samples)
-	for i := 0; i < samples; i++ {
+	for i := range samples {
 		ts[i] = le.t0 + span*(float64(i)+0.5)/samples
 		gs[i] = signedDistance(le.curve.PointAt(ts[i]), plane, n)
 	}
 	var out []float64
-	for i := 0; i < samples; i++ {
+	for i := range samples {
 		j := (i + 1) % samples
 		if (gs[i] < 0) == (gs[j] < 0) {
 			continue
@@ -263,7 +263,7 @@ func sortByTraversal(out []float64, t0, span float64) {
 // bisectCrossing refines a sign-change bracket [ta, tb] to the parameter where g = 0.
 func bisectCrossing(le loopEdge, plane geom.Plane, n math.Vector3, ta, tb float64) float64 {
 	ga := signedDistance(le.curve.PointAt(ta), plane, n)
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		tm := (ta + tb) / 2
 		gm := signedDistance(le.curve.PointAt(tm), plane, n)
 		if (ga < 0) == (gm < 0) {
@@ -280,7 +280,7 @@ func bisectCrossing(le loopEdge, plane geom.Plane, n math.Vector3, ta, tb float6
 func keptRuns(segs []keptSeg) [][]loopEdge {
 	n := len(segs)
 	start := -1
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if segs[i].keep && !segs[(i+n-1)%n].keep {
 			start = i
 			break
@@ -300,7 +300,7 @@ func collectRuns(segs []keptSeg, start int) [][]loopEdge {
 	n := len(segs)
 	var runs [][]loopEdge
 	var cur []loopEdge
-	for k := 0; k < n; k++ {
+	for k := range n {
 		s := segs[(start+k)%n]
 		if s.keep {
 			cur = append(cur, s.edge)

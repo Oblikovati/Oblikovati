@@ -123,7 +123,7 @@ func groupToFourSides(loop []boundaryEdge) [4]boundaryEdge {
 	sizes := distributeFour(len(loop))
 	var sides [4]boundaryEdge
 	idx := 0
-	for g := 0; g < 4; g++ {
+	for g := range 4 {
 		group := loop[idx : idx+sizes[g]]
 		sides[g] = mergeGroup(group)
 		idx += sizes[g]
@@ -153,7 +153,7 @@ func mergeGroup(group []boundaryEdge) boundaryEdge {
 func distributeFour(n int) [4]int {
 	base, rem := n/4, n%4
 	var sizes [4]int
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		sizes[i] = base
 		if i < rem {
 			sizes[i]++

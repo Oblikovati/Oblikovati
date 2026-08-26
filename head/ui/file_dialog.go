@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -415,12 +416,7 @@ func resolveExplorerPath(cwd, text string) string {
 }
 
 func containsString(values []string, needle string) bool {
-	for _, value := range values {
-		if value == needle {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(values, needle)
 }
 
 func copyText(dst []byte, text string) {

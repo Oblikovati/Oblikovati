@@ -92,7 +92,7 @@ func railFeetForPicked(picked, rail endSeg, v0 math.Point3, tol float64) (math.P
 func spliceConcaveRing(segs []endSeg, i int, prev, rail, next endSeg) []endSeg {
 	n := len(segs)
 	out := make([]endSeg, n)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		switch k {
 		case (i - 1 + n) % n:
 			out[k] = prev

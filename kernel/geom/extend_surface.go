@@ -65,7 +65,7 @@ func extendUMax(s BSplineSurface, distance float64, order int) (BSplineSurface, 
 	weights := copyWeights(s.Weights)
 	for j := 1; j <= p; j++ {
 		row, wr := make([]math.Point3, nv), unitWeights(nv)
-		for a := 0; a < nv; a++ {
+		for a := range nv {
 			row[a] = bezierExtensionPoint(d, j, p, e, order, a)
 		}
 		ctrl, weights = append(ctrl, row), append(weights, wr)
@@ -81,7 +81,7 @@ func boundaryDerivatives(srows [][]math.Point3, coeff [][]float64, order, nv int
 	d := make([][]math.Vector3, order+1)
 	for k := 0; k <= order; k++ {
 		d[k] = make([]math.Vector3, nv)
-		for a := 0; a < nv; a++ {
+		for a := range nv {
 			var v math.Vector3
 			for j := 0; j <= order; j++ {
 				v = v.Add(srows[j][a].AsVector().Scale(math.Scalar(coeff[k][j])))
@@ -122,7 +122,7 @@ func reverseU(s BSplineSurface) BSplineSurface {
 	nu := len(s.Ctrl)
 	ctrl := make([][]math.Point3, nu)
 	weights := make([][]float64, nu)
-	for i := 0; i < nu; i++ {
+	for i := range nu {
 		ctrl[i] = append([]math.Point3(nil), s.Ctrl[nu-1-i]...)
 		weights[i] = append([]float64(nil), s.Weights[nu-1-i]...)
 	}
@@ -135,10 +135,10 @@ func transposeSurface(s BSplineSurface) BSplineSurface {
 	nu, nv := len(s.Ctrl), len(s.Ctrl[0])
 	ctrl := make([][]math.Point3, nv)
 	weights := make([][]float64, nv)
-	for j := 0; j < nv; j++ {
+	for j := range nv {
 		ctrl[j] = make([]math.Point3, nu)
 		weights[j] = make([]float64, nu)
-		for i := 0; i < nu; i++ {
+		for i := range nu {
 			ctrl[j][i], weights[j][i] = s.Ctrl[i][j], s.Weights[i][j]
 		}
 	}
@@ -152,7 +152,7 @@ func reversedKnots(knots []float64) []float64 {
 	n := len(knots)
 	lo, hi := knots[0], knots[n-1]
 	out := make([]float64, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		out[i] = lo + hi - knots[n-1-i]
 	}
 	return out
@@ -170,7 +170,7 @@ func repeatedKnot(v float64, count int) []float64 {
 // powInt returns x^n for a small non-negative n.
 func powInt(x float64, n int) float64 {
 	p := 1.0
-	for i := 0; i < n; i++ {
+	for range n {
 		p *= x
 	}
 	return p

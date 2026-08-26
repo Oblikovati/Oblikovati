@@ -281,7 +281,7 @@ func unitCross(n1, n2 math.Vector3) (math.Vector3, error) {
 // crossRatio into a length tolerance that follows the geometry instead of the model's units.
 func triScale(t [3]math.Point3) float64 {
 	longest := 0.0
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if d := float64(t[i].DistanceTo(t[(i+1)%3])); d > longest {
 			longest = d
 		}
@@ -345,7 +345,7 @@ func intervalOverlap(t1 [3]math.Point3, s1 [3]float64, t2 [3]math.Point3, s2 [3]
 // parameter back to a 3D witness point.
 func crossingInterval(t [3]math.Point3, s [3]float64, line math.Vector3) (float64, float64, func(float64) math.Point3) {
 	var pts []math.Point3
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		j := (i + 1) % 3
 		if (s[i] > 0) == (s[j] > 0) || s[i] == s[j] {
 			continue
@@ -519,7 +519,7 @@ func projectTriangle(t [3]math.Point3, u, v math.Vector3) [3][2]float64 {
 // a and b — disjoint intervals on the axis mean no overlap (plain SAT, winding
 // independent).
 func separated(a, b [3][2]float64) bool {
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		j := (i + 1) % 3
 		nx, ny := a[j][1]-a[i][1], a[i][0]-a[j][0] // edge normal
 		aMin, aMax := axisInterval(a, nx, ny)

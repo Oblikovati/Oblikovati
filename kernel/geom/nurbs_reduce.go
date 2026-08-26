@@ -62,7 +62,7 @@ func decomposeBezier(p int, knots []float64, pw []hpoint4, breaks []float64) [][
 	}
 	nseg := len(breaks) - 1
 	segs := make([][]hpoint4, nseg)
-	for s := 0; s < nseg; s++ {
+	for s := range nseg {
 		segs[s] = append([]hpoint4(nil), work[s*p:s*p+p+1]...)
 	}
 	return segs
@@ -87,7 +87,7 @@ func bezierReduceCtrl(seg []hpoint4, p int) []hpoint4 {
 	qb := reduceBackward(seg, p)
 	r := (p - 1) / 2
 	q := make([]hpoint4, p)
-	for i := 0; i < p; i++ {
+	for i := range p {
 		if i <= r {
 			q[i] = qf[i]
 		} else {
@@ -167,7 +167,7 @@ func bezierJoinKnots(pr int, breaks []float64) []float64 {
 		knots = append(knots, breaks[0])
 	}
 	for s := 1; s < nseg; s++ {
-		for k := 0; k < pr; k++ {
+		for range pr {
 			knots = append(knots, breaks[s])
 		}
 	}

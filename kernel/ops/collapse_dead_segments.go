@@ -39,7 +39,7 @@ func collapseDeadLoop(l *filletLoop, ring []int, weld float64) []int {
 	var pts []math.Point3
 	var srcV, srcE []uint64
 	var curves []geom.Curve3
-	for k := 0; k < n; k++ {
+	for k := range n {
 		if ring[k] == ring[(k+1)%n] && deadCurve(curveAt(l.curves, k), weld) {
 			continue // dead self-loop: drop segment k; the vertex survives via the next segment's start
 		}

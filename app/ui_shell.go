@@ -4,6 +4,7 @@ package app
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 
 	"oblikovati.org/api/types"
@@ -190,9 +191,7 @@ func (s *Session) RegisterEnvironment(env Environment, name string) error {
 // AddInEnvironments returns the registered add-in environments.
 func (s *Session) AddInEnvironments() map[Environment]string {
 	out := make(map[Environment]string, len(s.addinEnvironments))
-	for env, name := range s.addinEnvironments {
-		out[env] = name
-	}
+	maps.Copy(out, s.addinEnvironments)
 	return out
 }
 

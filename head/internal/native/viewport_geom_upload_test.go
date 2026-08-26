@@ -46,13 +46,13 @@ func TestViewportGeomUploadDirtySkip(t *testing.T) {
 	// Warm up the frames-in-flight ring (#1421): each ring slot has its own offscreen target, and the
 	// first use of each creates it — a recreation that (correctly, per #1218) forces a re-upload. So
 	// the steady state begins only after every ring slot has rendered keyA at this size.
-	for i := 0; i < 6; i++ {
+	for range 6 {
 		render(keyA, 640, 480)
 	}
 	// Static orbit: same geometry (keyA), moving camera, several frames — ZERO further uploads, no
 	// matter the ring depth. This is the #1422 property.
 	base := w.ViewportGeomUploads()
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		render(keyA, 640, 480)
 	}
 	if got := w.ViewportGeomUploads(); got != base {
@@ -69,7 +69,7 @@ func TestViewportGeomUploadDirtySkip(t *testing.T) {
 	// must re-upload (or it samples stale/blank geometry). Render enough frames to cover the ring; the
 	// upload count MUST climb (no stale geometry), which is the regression M34-F4 missed.
 	resizeBase := w.ViewportGeomUploads()
-	for i := 0; i < 6; i++ {
+	for range 6 {
 		render(keyB, 400, 300)
 	}
 	if got := w.ViewportGeomUploads(); got <= resizeBase {

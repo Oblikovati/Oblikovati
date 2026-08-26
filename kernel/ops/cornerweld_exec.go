@@ -4,6 +4,7 @@ package ops
 
 import (
 	"fmt"
+	"slices"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
@@ -148,8 +149,8 @@ func forwardRefs(ids []railID) []railRef {
 // face of a shared chain reads it.
 func reversedRefs(ids []railID) []railRef {
 	out := make([]railRef, 0, len(ids))
-	for i := len(ids) - 1; i >= 0; i-- {
-		out = append(out, railRef{id: ids[i], dir: railReversed})
+	for _, id := range slices.Backward(ids) {
+		out = append(out, railRef{id: id, dir: railReversed})
 	}
 	return out
 }

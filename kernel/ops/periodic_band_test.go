@@ -22,7 +22,7 @@ func TestPeriodicBandGridRejectsNonBand(t *testing.T) {
 	// A genuine band: points on two constant-latitude circles spanning full longitude → accepted.
 	var band []math.Point3
 	for _, lat := range []float64{-0.3, 0.3} {
-		for k := 0; k < 8; k++ {
+		for k := range 8 {
 			band = append(band, s.PointAt(2*stdmath.Pi*float64(k)/8, lat))
 		}
 	}
@@ -32,7 +32,7 @@ func TestPeriodicBandGridRejectsNonBand(t *testing.T) {
 	// A boundary spiralling across many latitudes is NOT a band (a cap near the pole) → rejected,
 	// so it falls through to the boundary triangulator instead of a torn full-domain grid.
 	var spiral []math.Point3
-	for k := 0; k < 16; k++ {
+	for k := range 16 {
 		lat := -0.3 + 1.2*float64(k)/16 // wanders across latitudes, up toward the pole
 		spiral = append(spiral, s.PointAt(2*stdmath.Pi*float64(k)/16, lat))
 	}

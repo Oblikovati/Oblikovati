@@ -26,7 +26,7 @@ type SketchChamferTool struct {
 
 // NewSketchChamferTool makes a chamfer tool with the given default setback.
 func NewSketchChamferTool(distance float64) *SketchChamferTool {
-	return &SketchChamferTool{pickCollector: pickCollector{want: 2}, distance: math.Scalar(distance)}
+	return &SketchChamferTool{want: 2, distance: math.Scalar(distance)}
 }
 
 func (t *SketchChamferTool) Name() string                  { return "Chamfer" }

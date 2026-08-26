@@ -58,16 +58,16 @@ type cylCylSeamCase struct {
 // (captured 2026-07-31, scripts scratchpad/wb/*.tcl; checkshape valid on all five).
 func cylCylSeamPerFaceCases() []cylCylSeamCase {
 	return []cylCylSeamCase{
-		{grid: "simple", drawexeFaceCase: drawexeFaceCase{name: "K2", totalArea: 72801.7, perFaceTol: cylCylSeamPerFaceTol,
-			drawexe: []float64{39433.3, 15502.8, 7853.98, 7853.98, 2157.55}}},
-		{grid: "simple", drawexeFaceCase: drawexeFaceCase{name: "K3", totalArea: 72801.7, perFaceTol: cylCylSeamPerFaceTol,
-			drawexe: []float64{39433.3, 15502.8, 7853.98, 7853.98, 2157.55}}},
-		{grid: "simple", drawexeFaceCase: drawexeFaceCase{name: "K4", totalArea: 19943.5, perFaceTol: cylCylSeamPerFaceTol,
-			drawexe: []float64{13605, 2827.43, 1847.67, 1663.41}}},
-		{grid: "bfuseblend", drawexeFaceCase: drawexeFaceCase{name: "B5", totalArea: 64858.3, perFaceTol: cylCylSeamPerFaceTol,
-			drawexe: []float64{36385.3, 14407.8, 5026.55, 5026.55, 2827.43, 1184.74}}},
-		{grid: "bfuseblend", drawexeFaceCase: drawexeFaceCase{name: "B4", totalArea: 82814.4, perFaceTol: cylCylSeamPerFaceTol,
-			drawexe: []float64{39703, 9628.81, 9628.81, 7853.98, 7853.98, 2827.43, 2827.43, 1245.5, 1245.5}}},
+		{grid: "simple", name: "K2", totalArea: 72801.7, perFaceTol: cylCylSeamPerFaceTol,
+			drawexe: []float64{39433.3, 15502.8, 7853.98, 7853.98, 2157.55}},
+		{grid: "simple", name: "K3", totalArea: 72801.7, perFaceTol: cylCylSeamPerFaceTol,
+			drawexe: []float64{39433.3, 15502.8, 7853.98, 7853.98, 2157.55}},
+		{grid: "simple", name: "K4", totalArea: 19943.5, perFaceTol: cylCylSeamPerFaceTol,
+			drawexe: []float64{13605, 2827.43, 1847.67, 1663.41}},
+		{grid: "bfuseblend", name: "B5", totalArea: 64858.3, perFaceTol: cylCylSeamPerFaceTol,
+			drawexe: []float64{36385.3, 14407.8, 5026.55, 5026.55, 2827.43, 1184.74}},
+		{grid: "bfuseblend", name: "B4", totalArea: 82814.4, perFaceTol: cylCylSeamPerFaceTol,
+			drawexe: []float64{39703, 9628.81, 9628.81, 7853.98, 7853.98, 2827.43, 2827.43, 1245.5, 1245.5}},
 		// The equal-parallel valley LINE seam (exact cylinder arm, cylCylParallelValleyArmEdge +
 		// the existing single-arm runout weld). P1's 14234.3 pair are symmetry twins. complex/E8
 		// (the unequal-radius parallel valley) is deliberately ABSENT: its R10-wall foot ruling
@@ -75,8 +75,8 @@ func cylCylSeamPerFaceCases() []cylCylSeamCase {
 		// boundary, and the shipped solid keeps strips totalling +19.98 area vs OCCT's per-face
 		// receipts (a would-be false green at +0.074% whole-body) — so the arm DECLINES it
 		// (cylCylValleyFeetOnHosts) until a neighbour-recede/sew capability exists.
-		{grid: "simple", drawexeFaceCase: drawexeFaceCase{name: "P1", totalArea: 98604.8, perFaceTol: cylCylSeamPerFaceTol,
-			drawexe: []float64{34550.7, 17596.5, 16954.3, 14234.3, 14234.3, 1034.66}}},
+		{grid: "simple", name: "P1", totalArea: 98604.8, perFaceTol: cylCylSeamPerFaceTol,
+			drawexe: []float64{34550.7, 17596.5, 16954.3, 14234.3, 14234.3, 1034.66}},
 	}
 }
 

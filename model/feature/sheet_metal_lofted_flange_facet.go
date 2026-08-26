@@ -145,7 +145,7 @@ const sagittaSubSamples = 5
 // interior points of each segment so the S-curve's off-centre bow is not missed.
 func maxSagitta(c hermiteCurve, pts []math.Point3, m int) float64 {
 	worst := 0.0
-	for j := 0; j < m; j++ {
+	for j := range m {
 		for k := 1; k < sagittaSubSamples; k++ {
 			t := (float64(j) + float64(k)/float64(sagittaSubSamples)) / float64(m)
 			if d := pointSegmentDistance(c.at(t), pts[j], pts[j+1]); d > worst {

@@ -171,7 +171,7 @@ func annotatedGeometryKey(sel Selectable) ([]byte, bool) {
 // does not record an empty datum.
 func splitModelDatums(s string) []string {
 	var out []string
-	for _, part := range strings.Split(s, ",") {
+	for part := range strings.SplitSeq(s, ",") {
 		if d := strings.TrimSpace(part); d != "" {
 			out = append(out, d)
 		}

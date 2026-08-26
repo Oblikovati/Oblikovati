@@ -253,7 +253,7 @@ func addSectorCaps(bld *topo.Builder, a, r0 math.UnitVector3, angle float64, axi
 	startPlane, err := geom.NewPlane(axisOrigin, t0.Scale(-1))
 	if err == nil {
 		start := make([]topo.Use, n)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			start[i] = topo.Fwd(m0[i])
 		}
 		bld.AddFace(startPlane, revLin(feat, "sector-start-cap", 0), topo.OuterLoop(start...))
@@ -263,7 +263,7 @@ func addSectorCaps(bld *topo.Builder, a, r0 math.UnitVector3, angle float64, axi
 	endPlane, err := geom.NewPlane(axisOrigin, tA)
 	if err == nil {
 		end := make([]topo.Use, n)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			end[i] = topo.Rev(mA[n-1-i])
 		}
 		bld.AddFace(endPlane, revLin(feat, "sector-end-cap", 0), topo.OuterLoop(end...))

@@ -19,12 +19,12 @@ type sourceKinded interface{ SourceKind() string }
 // it is a surface source on the 3D surface-projection path, not the point/curve rebind, so its
 // absence is a decision, not an oversight. A new reference source must be classified here.
 var refSourceKindCoverage = map[reflect.Type]bool{
-	reflect.TypeOf(EdgeRefSource{}):      true,
-	reflect.TypeOf(VertexRefSource{}):    true,
-	reflect.TypeOf(WorkPointRefSource{}): true,
-	reflect.TypeOf(WorkAxisRefSource{}):  true,
-	reflect.TypeOf(WorkPlaneRefSource{}): true,
-	reflect.TypeOf(FaceRefSource{}):      false,
+	reflect.TypeFor[EdgeRefSource]():      true,
+	reflect.TypeFor[VertexRefSource]():    true,
+	reflect.TypeFor[WorkPointRefSource](): true,
+	reflect.TypeFor[WorkAxisRefSource]():  true,
+	reflect.TypeFor[WorkPlaneRefSource](): true,
+	reflect.TypeFor[FaceRefSource]():      false,
 }
 
 // TestReferenceSourceKindCoverage asserts each reference source's real sourceKinded satisfaction

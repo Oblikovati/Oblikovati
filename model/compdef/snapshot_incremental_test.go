@@ -43,7 +43,7 @@ func TestIncrementalUndoReusesFeaturePrefix(t *testing.T) {
 	}
 	before := recomputeCounts(def)
 	prefixObjs := make([]*feature.PartFeature, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		prefixObjs[i] = def.Features().Item(i)
 	}
 
@@ -54,7 +54,7 @@ func TestIncrementalUndoReusesFeaturePrefix(t *testing.T) {
 		t.Fatalf("after incremental undo: %d features, want %d", def.Features().Count(), n)
 	}
 	after := recomputeCounts(def)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if def.Features().Item(i) != prefixObjs[i] {
 			t.Errorf("feature %d was rebuilt (different object); the incremental path should reuse it", i)
 		}
@@ -91,7 +91,7 @@ func TestIncrementalRedoRebuildsOnlyTailFeature(t *testing.T) {
 		t.Fatalf("after redo: %d features, want %d", def.Features().Count(), n+1)
 	}
 	after := recomputeCounts(def)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if after[i] != before[i] {
 			t.Errorf("prefix feature %d recomputed on redo: %d→%d, want reused", i, before[i], after[i])
 		}

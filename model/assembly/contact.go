@@ -109,10 +109,8 @@ func (s *ContactSolver) AddMember(setID, occurrence uint64) error {
 	if cs == nil {
 		return fmt.Errorf("assembly: no contact set with id %d", setID)
 	}
-	for _, m := range cs.members {
-		if m == occurrence {
-			return nil
-		}
+	if slices.Contains(cs.members, occurrence) {
+		return nil
 	}
 	cs.members = append(cs.members, occurrence)
 	return nil

@@ -17,10 +17,10 @@ import (
 // not.
 func farCluster(cx, cy float64, n int) []drawing.Entity {
 	es := make([]drawing.Entity, 0, n+3)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		es = append(es, &drawing.Circle{Center: [3]float64{cx + float64(i), cy + float64(i%5), 0}, Radius: 1})
 	}
-	for i := 0; i < 3; i++ { // outliers mirrored to the far side
+	for range 3 { // outliers mirrored to the far side
 		es = append(es, &drawing.Arc{Center: [3]float64{-cx, cy, 0}, Radius: 1})
 	}
 	return es

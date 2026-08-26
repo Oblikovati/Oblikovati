@@ -306,7 +306,7 @@ func projectToPlane(outer3D []math.Point3, holes3D [][]math.Point3) ([]math.Poin
 func newellUnit(loop []math.Point3) math.Vector3 {
 	var nx, ny, nz float64
 	n := len(loop)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		c, d := loop[i], loop[(i+1)%n]
 		nx += (c.Y - d.Y) * (c.Z + d.Z)
 		ny += (c.Z - d.Z) * (c.X + d.X)

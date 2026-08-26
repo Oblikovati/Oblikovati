@@ -15,7 +15,7 @@ func TestConnectedChainFromProjectedLoop(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	corners := []gmath.Point2{gmath.P2(0, 0), gmath.P2(4, 0), gmath.P2(4, 4), gmath.P2(0, 4)}
 	var first Entity
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		pc := s.RestoreProjectedCurve(nextID(), []gmath.Point2{corners[i], corners[(i+1)%4]}, "edge", "E")
 		if i == 0 {
 			first = pc

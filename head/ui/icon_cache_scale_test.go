@@ -39,7 +39,7 @@ func TestIconCacheEvictsOnScaleChange(t *testing.T) {
 
 	// After the in-flight window passes, the retired textures are freed — the cache (and the
 	// descriptor pool behind it) does not grow without bound across repeated scale changes.
-	for i := 0; i < retireAfterFrames+2; i++ {
+	for range retireAfterFrames + 2 {
 		c.beginFrame(1, 2.0)
 	}
 	if len(c.retired) != 0 {

@@ -38,8 +38,8 @@ func TestRasterizeRolesSplitsBySentinel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RasterizeRoles: %v", err)
 	}
-	for r := Role(0); r < RoleCount; r++ {
-		for other := Role(0); other < RoleCount; other++ {
+	for r := range RoleCount {
+		for other := range RoleCount {
 			cov := masks.cover[other][quadrantCenter(16, r)]
 			if other == r && cov < 200 {
 				t.Errorf("role %s mask misses its own quadrant (coverage %d)", r, cov)
@@ -140,7 +140,7 @@ func TestRasterizeNormalizesGlyphSize(t *testing.T) {
 // unionBounds is the tight box of every role's coverage in a mask set.
 func unionBounds(m *RoleMasks, px int) image.Rectangle {
 	minX, minY, maxX, maxY := px, px, -1, -1
-	for r := Role(0); r < RoleCount; r++ {
+	for r := range RoleCount {
 		for i, v := range m.cover[r] {
 			if v <= alphaThreshold {
 				continue

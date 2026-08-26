@@ -2,7 +2,10 @@
 
 package material
 
-import "encoding/hex"
+import (
+	"encoding/hex"
+	"maps"
+)
 
 // AssignmentStore records which material/appearance is assigned where in a part, keyed by
 // the persistent hex reference key of a body or face — stable across Recompute, unlike the
@@ -134,8 +137,6 @@ func setOrClear(m map[string]string, key, id string) {
 // copyMap returns an independent copy of a string map (defensive, for persistence reads).
 func copyMap(m map[string]string) map[string]string {
 	out := make(map[string]string, len(m))
-	for k, v := range m {
-		out[k] = v
-	}
+	maps.Copy(out, m)
 	return out
 }

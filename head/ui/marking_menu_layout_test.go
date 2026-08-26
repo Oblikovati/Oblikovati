@@ -20,7 +20,7 @@ func TestMarkingRingLayoutKeepsScaledSlotsInsideAndSeparate(t *testing.T) {
 		if x < 0 || y < 0 || x+layout.maxSlotWidth > layout.size || y+layout.maxSlotHeight > layout.size {
 			t.Fatalf("slot %d (%v) escapes ring bounds: (%.1f, %.1f) in %.1f", i, q, x, y, layout.size)
 		}
-		for j := 0; j < i; j++ {
+		for j := range i {
 			px, py := markingSlotPosition(layout, quadrants[j], layout.maxSlotWidth, layout.maxSlotHeight)
 			if rectanglesOverlap(x, y, layout.maxSlotWidth, layout.maxSlotHeight, px, py, layout.maxSlotWidth, layout.maxSlotHeight) {
 				t.Fatalf("slots %v and %v overlap", q, quadrants[j])

@@ -105,7 +105,7 @@ func closedGridVertices(m *Mesh, s geom.Surface, us, vs []float64, poles []int) 
 // skipping the zero-area triangle of a cell that touches a collapsed pole vertex.
 func emitClosedGrid(m *Mesh, idx [][]int, uWrap bool) {
 	cols := len(idx)
-	for i := 0; i < cols; i++ {
+	for i := range cols {
 		ni := i + 1
 		if ni >= cols {
 			if !uWrap {

@@ -57,7 +57,7 @@ func TestBuildBVHLeafBoundsContainTheirTriangles(t *testing.T) {
 		}
 		for _, triIdx := range bvh.TriangleOrder[n.LeftFirst : n.LeftFirst+n.TriCount] {
 			for _, v := range [3][3]float32{tris[triIdx].V0, tris[triIdx].V1, tris[triIdx].V2} {
-				for a := 0; a < 3; a++ {
+				for a := range 3 {
 					if v[a] < n.Min[a]-1e-6 || v[a] > n.Max[a]+1e-6 {
 						t.Fatalf("leaf bounds [%v,%v] do not contain vertex %v (axis %d) of triangle %d", n.Min, n.Max, v, a, triIdx)
 					}
@@ -79,7 +79,7 @@ func TestBuildBVHInternalBoundsContainChildren(t *testing.T) {
 		left := bvh.Nodes[n.LeftFirst]
 		right := bvh.Nodes[n.LeftFirst+1]
 		for _, child := range []BVHNode{left, right} {
-			for a := 0; a < 3; a++ {
+			for a := range 3 {
 				if child.Min[a] < n.Min[a]-1e-6 || child.Max[a] > n.Max[a]+1e-6 {
 					t.Errorf("node %d bounds [%v,%v] do not contain child bounds [%v,%v] (axis %d)",
 						i, n.Min, n.Max, child.Min, child.Max, a)

@@ -72,7 +72,7 @@ func planarLoopSamples(l *topo.Loop, flat func(math.Point3) math.Point2) []math.
 	var pts []math.Point2
 	for _, u := range l.EdgeUses() {
 		c := u.Edge().Geometry()
-		for i := 0; i < holeEdgeSamples; i++ {
+		for i := range holeEdgeSamples {
 			t := float64(i) / holeEdgeSamples
 			if u.Reversed() { // honour loop-traversal direction so the samples form an ordered ring
 				t = 1 - t

@@ -23,8 +23,8 @@ func downsample(src Equirect) Equirect {
 	w := max1(src.W / 2)
 	h := max1(src.H / 2)
 	dst := newEquirect(w, h)
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			r, g, b := avg2x2(src, x*2, y*2)
 			dst.set(x, y, r, g, b)
 		}
@@ -35,8 +35,8 @@ func downsample(src Equirect) Equirect {
 // avg2x2 averages the 2×2 source block whose top-left is (sx,sy), clamping to the source bounds.
 func avg2x2(src Equirect, sx, sy int) (float32, float32, float32) {
 	var r, g, b float32
-	for dy := 0; dy < 2; dy++ {
-		for dx := 0; dx < 2; dx++ {
+	for dy := range 2 {
+		for dx := range 2 {
 			pr, pg, pb := src.At(clampi(sx+dx, src.W-1), clampi(sy+dy, src.H-1))
 			r, g, b = r+pr, g+pg, b+pb
 		}

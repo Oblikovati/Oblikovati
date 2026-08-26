@@ -25,7 +25,7 @@ import (
 func drainUntilQuiet(t *testing.T, w *Window) {
 	t.Helper()
 	const slice = 20 * time.Millisecond
-	for i := 0; i < 50; i++ { // bounded so a pathologically chatty server cannot hang the test
+	for range 50 { // bounded so a pathologically chatty server cannot hang the test
 		start := time.Now()
 		w.WaitEvents(slice.Seconds())
 		if time.Since(start) >= slice/2 {
@@ -61,7 +61,7 @@ func TestWaitEventsBlocksWhenIdle(t *testing.T) {
 	const d = 0.1
 	const n = 5
 	start := time.Now()
-	for i := 0; i < n; i++ {
+	for range n {
 		w.WaitEvents(d)
 	}
 	elapsed := time.Since(start).Seconds()
@@ -100,7 +100,7 @@ func TestPostEmptyEventWakesBlockingWait(t *testing.T) {
 	// head/internal/native byte-identical to its last green run — a runner-image change alone.)
 	const postAfter = 150 * time.Millisecond
 	var elapsed time.Duration
-	for attempt := 0; attempt < 5; attempt++ {
+	for attempt := range 5 {
 		drainUntilQuiet(t, w)
 		posted := make(chan struct{})
 		go func() {

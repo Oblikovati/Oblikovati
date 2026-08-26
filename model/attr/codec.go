@@ -84,7 +84,7 @@ func DecodeAttributes(data []byte) (*AttributeManager, error) {
 		return nil, err
 	}
 	m := NewAttributeManager()
-	for i := uint32(0); i < nKeys; i++ {
+	for range nKeys {
 		if err := decodeAnchor(r, m); err != nil {
 			return nil, err
 		}
@@ -104,7 +104,7 @@ func decodeAnchor(r *bytes.Reader, m *AttributeManager) error {
 	if err != nil {
 		return err
 	}
-	for i := uint32(0); i < nSets; i++ {
+	for range nSets {
 		if err := decodeSet(r, ss); err != nil {
 			return err
 		}
@@ -122,7 +122,7 @@ func decodeSet(r *bytes.Reader, ss *AttributeSets) error {
 	if err != nil {
 		return err
 	}
-	for i := uint32(0); i < nAttrs; i++ {
+	for range nAttrs {
 		attrName, err := readString(r)
 		if err != nil {
 			return err

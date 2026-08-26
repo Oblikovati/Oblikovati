@@ -65,30 +65,30 @@ func writeHeaderVarBody(w *BitWriter, h *graphHandles, insunits int, handseed ui
 //
 //nolint:funlen // sequential header-variable writes in spec order; length is the field layout.
 func writeHeaderUnitsModes(w *BitWriter) {
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		w.WriteBD(1) // unit1..4 ratio
 	}
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		writeTextEmpty(w) // unit1..4 name
 	}
 	w.WriteBL(0)                  // unknown_8
 	w.WriteBL(0)                  // unknown_9
 	w.WriteHandle(hardPtrCode, 0) // VX_TABLE_RECORD (null)
-	for i := 0; i < 20; i++ {     // DIMASO..PELLIPSE mode bits (see readModeFlags, R2000)
+	for range 20 {                // DIMASO..PELLIPSE mode bits (see readModeFlags, R2000)
 		w.WriteBit(0)
 	}
-	w.WriteBS(0)             // PROXYGRAPHICS
-	w.WriteBS(0)             // TREEDEPTH
-	w.WriteBS(2)             // LUNITS
-	w.WriteBS(4)             // LUPREC
-	w.WriteBS(0)             // AUNITS
-	w.WriteBS(0)             // AUPREC
-	w.WriteBS(0)             // ATTMODE
-	w.WriteBS(0)             // PDMODE
-	for i := 0; i < 5; i++ { // USERI1..5
+	w.WriteBS(0)  // PROXYGRAPHICS
+	w.WriteBS(0)  // TREEDEPTH
+	w.WriteBS(2)  // LUNITS
+	w.WriteBS(4)  // LUPREC
+	w.WriteBS(0)  // AUNITS
+	w.WriteBS(0)  // AUPREC
+	w.WriteBS(0)  // ATTMODE
+	w.WriteBS(0)  // PDMODE
+	for range 5 { // USERI1..5
 		w.WriteBS(0)
 	}
-	for i := 0; i < 14; i++ { // SPLINESEGS..TEXTQLTY
+	for range 14 { // SPLINESEGS..TEXTQLTY
 		w.WriteBS(0)
 	}
 }
@@ -108,17 +108,17 @@ func writeHeaderSizesAndCurrent(w *BitWriter, h *graphHandles, handseed uint64) 
 	w.WriteBD(0) // ANGBASE
 	w.WriteBD(0) // PDSIZE
 	w.WriteBD(0) // PLINEWID
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		w.WriteBD(0) // USERR1..5
 	}
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		w.WriteBD(0) // CHAMFERA..D
 	}
 	w.WriteBD(0.5)    // FACETRES
 	w.WriteBD(1)      // CMLSCALE
 	w.WriteBD(1)      // CELTSCALE
 	writeName(w, ".") // MENU
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		w.WriteBL(0) // TDCREATE, TDUPDATE, TDINDWG, TDUSRTIMER (each TIMEBLL = 2 BL)
 		w.WriteBL(0)
 	}
@@ -164,7 +164,7 @@ func writeHeaderUcsAndExtents(w *BitWriter) {
 
 // writePoints writes n origin 3D points (BitDouble triples).
 func writePoints(w *BitWriter, n int) {
-	for i := 0; i < n; i++ {
+	for range n {
 		w.Write3BD([3]float64{})
 	}
 }
@@ -179,7 +179,7 @@ func writeHeaderDimVars(w *BitWriter) {
 	for _, v := range []float64{0.18, 0.0625, 0.38, 0.18, 0, 0, 0, 0} { // DIMASZ..DIMTM
 		w.WriteBD(v)
 	}
-	for i := 0; i < 6; i++ { // DIMTOL,DIMLIM,DIMTIH,DIMTOH,DIMSE1,DIMSE2
+	for range 6 { // DIMTOL,DIMLIM,DIMTIH,DIMTOH,DIMSE1,DIMSE2
 		w.WriteBit(0)
 	}
 	w.WriteBS(0)                                                      // DIMTAD
@@ -208,7 +208,7 @@ func writeHeaderDimVars(w *BitWriter) {
 	}
 	w.WriteBit(0) // DIMUPT
 	w.WriteBS(3)  // DIMATFIT
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		w.WriteHandle(hardPtrCode, 0) // DIMTXSTY,DIMLDRBLK,DIMBLK,DIMBLK1,DIMBLK2 (null)
 	}
 	w.WriteBS(-2) // DIMLWD

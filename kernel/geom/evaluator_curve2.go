@@ -59,7 +59,7 @@ func curveLengthBreaks2(c Curve2) []float64 {
 func polylineLengthBetween2(p Polyline2d, lo, hi float64) float64 {
 	segs := len(p.Vertices) - 1
 	total := 0.0
-	for i := 0; i < segs; i++ {
+	for i := range segs {
 		s0, s1 := float64(i)/float64(segs), float64(i+1)/float64(segs)
 		overlap := stdmath.Min(hi, s1) - stdmath.Max(lo, s0)
 		if overlap > 0 {
@@ -118,7 +118,7 @@ func CurveStrokes2(c Curve2, from, to, tolerance float64) []math.Point2 {
 		return pts
 	}
 	quarter := (hi - lo) / 4 // see CurveStrokes3: break closed-curve symmetry
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		a, b := lo+float64(i)*quarter, lo+float64(i+1)*quarter
 		strokeRecurse2(c, a, b, c.PointAt(a), c.PointAt(b), tolerance, strokeMaxDepth, &pts)
 	}

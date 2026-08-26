@@ -3,6 +3,7 @@
 package occtparity
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -115,11 +116,8 @@ func facesBoundedBy(b *topo.Body, e *topo.Edge) []*topo.Face {
 		if f.Geometry() == nil {
 			continue
 		}
-		for _, be := range boundaryEdgesOf(f) {
-			if be == e {
-				out = append(out, f)
-				break
-			}
+		if slices.Contains(boundaryEdgesOf(f), e) {
+			out = append(out, f)
 		}
 	}
 	return out

@@ -20,7 +20,7 @@ func TestInvert3x3ScaleSweep(t *testing.T) {
 			t.Errorf("scale %g: conditioned diagonal falsely singular", s)
 			continue
 		}
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			if got := float64(inv[4*i] * m[4*i]); stdmath.Abs(got-1) > 1e-12 {
 				t.Errorf("scale %g: M·M⁻¹ diagonal = %g, want 1", s, got)
 			}

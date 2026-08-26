@@ -93,7 +93,7 @@ func ellipseLowerArcSamples(p0, p1 math.Point3, a, b float64, n int) []math.Poin
 	theta0 := stdmath.Acos(p0.X / a)
 	theta1 := stdmath.Acos(p1.X / a)
 	pts := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		f := float64(i) / float64(n-1)
 		theta := theta0 + f*(theta1-theta0)
 		pts[i] = math.P3(a*stdmath.Cos(theta), -b*stdmath.Sin(theta), 0)
@@ -198,8 +198,8 @@ func surfaceArea(s geom.BSplineSurface) float64 {
 	const n = 40
 	du, dv := (u1-u0)/n, (v1-v0)/n
 	area := 0.0
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			u := u0 + (float64(i)+0.5)*du
 			v := v0 + (float64(j)+0.5)*dv
 			pu, pv := s.DerivativesAt(u, v)
@@ -274,7 +274,7 @@ func assertReversedTraces(t *testing.T, orig, rev geom.BSplineCurve) {
 func assertReversedNet(t *testing.T, orig, rev geom.BSplineCurve) {
 	t.Helper()
 	n := len(orig.Ctrl)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if !rev.Ctrl[i].IsEqualTo(orig.Ctrl[n-1-i], 1e-12) {
 			t.Errorf("rev.Ctrl[%d] = %v, want %v", i, rev.Ctrl[i], orig.Ctrl[n-1-i])
 		}

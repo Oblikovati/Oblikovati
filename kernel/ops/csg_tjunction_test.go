@@ -51,7 +51,7 @@ func TestRemoveTJunctionsScalesPastOldBudget(t *testing.T) {
 
 	verts := append([]math.Point3{}, tj...)
 	faces := [][3]int{{0, 1, 2}}
-	for i := 0; i < tjunctionPadCount; i++ {
+	for i := range tjunctionPadCount {
 		b, x := len(verts), float64(100+i)
 		verts = append(verts, math.P3(x, 0, 0), math.P3(x+1, 0, 0), math.P3(x, 1, 0))
 		faces = append(faces, [3]int{b, b + 1, b + 2})
@@ -75,7 +75,7 @@ const tjunctionPadCount = 4001
 func TestRemoveTJunctionsMixedScaleFast(t *testing.T) {
 	var verts []math.Point3
 	var faces [][3]int
-	for i := 0; i < 6000; i++ { // many tiny triangles → a tiny mean edge length
+	for i := range 6000 { // many tiny triangles → a tiny mean edge length
 		b, x := len(verts), 0.001*float64(i)
 		verts = append(verts, math.P3(x, 0, 0), math.P3(x+0.0005, 0, 0), math.P3(x, 0.0005, 0))
 		faces = append(faces, [3]int{b, b + 1, b + 2})

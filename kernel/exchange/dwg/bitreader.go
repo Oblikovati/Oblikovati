@@ -124,10 +124,7 @@ func (r *BitReader) ReadBits(n int) uint64 {
 	}
 	var v uint64
 	for n > 0 {
-		take := n
-		if take > 8 {
-			take = 8
-		}
+		take := min(n, 8)
 		v = v<<uint(take) | uint64(r.readUpTo8(take))
 		n -= take
 	}
@@ -281,7 +278,7 @@ func (r *BitReader) Read3BD() [3]float64 { return [3]float64{r.ReadBD(), r.ReadB
 func (r *BitReader) ReadMC() int {
 	var result uint
 	var shift uint
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		b := uint(r.ReadRC())
 		if b&0x80 == 0 { // terminating group
 			result |= (b & 0x3f) << shift
@@ -304,7 +301,7 @@ func (r *BitReader) ReadMC() int {
 func (r *BitReader) ReadUMC() uint64 {
 	var result uint64
 	var shift uint
-	for i := 0; i < 9; i++ {
+	for range 9 {
 		b := uint64(r.ReadRC())
 		result |= (b & 0x7f) << shift
 		if b&0x80 == 0 {
@@ -321,7 +318,7 @@ func (r *BitReader) ReadUMC() uint64 {
 func (r *BitReader) ReadMS() int {
 	var result uint
 	var shift uint
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		w := uint(r.ReadRS())
 		if w&0x8000 == 0 {
 			result |= w << shift
@@ -414,7 +411,7 @@ func (r *BitReader) ReadBE() [3]float64 {
 func (r *BitReader) ReadBLL() uint64 {
 	n := int(r.ReadBits(3))
 	var v uint64
-	for i := 0; i < n; i++ {
+	for i := range n {
 		v |= uint64(r.ReadRC()) << (8 * uint(i))
 	}
 	return v
@@ -427,7 +424,7 @@ func (r *BitReader) ReadHandle() Handle {
 	code := first >> 4
 	n := int(first & 0x0f)
 	var val uint64
-	for i := 0; i < n; i++ {
+	for range n {
 		val = val<<8 | uint64(r.ReadRC())
 	}
 	return Handle{Code: code, Size: uint8(n), Value: val}

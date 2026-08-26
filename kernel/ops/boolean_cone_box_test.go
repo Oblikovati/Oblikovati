@@ -382,7 +382,7 @@ func resultHasParabolicEdge(b *topo.Body) bool {
 func frustumCapBeyondPlaneVolume(tanA, z0, z1, xCut float64) float64 {
 	const steps = 20000
 	sum := 0.0
-	for i := 0; i < steps; i++ {
+	for i := range steps {
 		z := z0 + (z1-z0)*(float64(i)+0.5)/steps
 		r := (z - (z0 - 3/tanA)) * tanA // radius grows linearly; bottom r=3 at z0
 		sum += circleAreaBeyondChord(r, xCut)

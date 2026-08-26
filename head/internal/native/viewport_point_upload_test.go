@@ -46,7 +46,7 @@ func TestViewportPointUploadRetained(t *testing.T) {
 	const keyA, keyB uint64 = 0x5CA2, 0xC10D
 	// Warm the frames-in-flight ring: the first use of each ring slot creates its target; the point
 	// buffer itself is shared, so it uploads once for keyA and every later keyA frame skips.
-	for i := 0; i < 7; i++ {
+	for range 7 {
 		render(keyA)
 	}
 	base := w.ViewportPointUploads()
@@ -54,7 +54,7 @@ func TestViewportPointUploadRetained(t *testing.T) {
 		t.Fatal("point buffer never uploaded — points would not render")
 	}
 	// Static orbit: same points (keyA), moving camera — ZERO further uploads. This is the #645 property.
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		render(keyA)
 	}
 	if got := w.ViewportPointUploads(); got != base {
@@ -116,14 +116,14 @@ func TestViewportPointUploadScale(t *testing.T) {
 	frame() // first frame: uploads 2M points once
 	t.Logf("2M-point first frame (incl. upload): %v", time.Since(t0))
 
-	for i := 0; i < 6; i++ { // warm the frames-in-flight ring
+	for range 6 { // warm the frames-in-flight ring
 		frame()
 	}
 	base := w.ViewportPointUploads()
 
 	const orbit = 30
 	torb := time.Now()
-	for i := 0; i < orbit; i++ {
+	for range orbit {
 		frame()
 	}
 	per := time.Since(torb) / orbit
@@ -145,7 +145,7 @@ func TestViewportPointUploadScale(t *testing.T) {
 // [pos.xyz, rgba]. No RNG (unavailable/undesired here) — a cheap integer hash spreads them.
 func bigCloudVerts(n int) []float32 {
 	v := make([]float32, 0, n*7)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		x := float32((i*2654435761)%2000)/1000 - 1 // ~[-1,1)
 		y := float32((i*40503)%2000)/1000 - 1
 		z := float32((i*97)%2000)/1000 - 1

@@ -203,7 +203,7 @@ func mcpSummary(doc *ast.CommentGroup) string {
 	if doc == nil {
 		return ""
 	}
-	for _, line := range strings.Split(doc.Text(), "\n") {
+	for line := range strings.SplitSeq(doc.Text(), "\n") {
 		if rest, ok := strings.CutPrefix(strings.TrimSpace(line), "mcp:summary "); ok {
 			return strings.TrimSpace(rest)
 		}

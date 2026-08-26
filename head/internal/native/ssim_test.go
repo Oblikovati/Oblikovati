@@ -11,8 +11,8 @@ import (
 
 func gradientImage(w, h int) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			v := uint8(255 * (x + y) / (w + h))
 			img.Set(x, y, color.RGBA{v, v, v, 255})
 		}
@@ -32,8 +32,8 @@ func TestSSIMRandomNoiseVsConstantScoresLow(t *testing.T) {
 	rng := rand.New(rand.NewSource(1))
 	noise := image.NewRGBA(image.Rect(0, 0, w, h))
 	flat := image.NewRGBA(image.Rect(0, 0, w, h))
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			noise.Set(x, y, color.RGBA{uint8(rng.Intn(256)), uint8(rng.Intn(256)), uint8(rng.Intn(256)), 255})
 			flat.Set(x, y, color.RGBA{128, 128, 128, 255})
 		}
@@ -49,8 +49,8 @@ func TestSSIMSlightlyPerturbedImageScoresHigh(t *testing.T) {
 	base := gradientImage(w, h)
 	perturbed := image.NewRGBA(image.Rect(0, 0, w, h))
 	rng := rand.New(rand.NewSource(2))
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			r, g, b, a := base.At(x, y).RGBA()
 			jitter := int32(rng.Intn(7) - 3) // +/- ~1% noise
 			perturbed.Set(x, y, color.RGBA{

@@ -26,7 +26,7 @@ func TestMergeAbuttingLoopsOrderIsDeterministic(t *testing.T) {
 	right := Loop{closed: true, polygon: []math.Point2{
 		math.P2(1, 0), math.P2(2, 0), math.P2(2, 1), math.P2(1, 1)}}
 	var want string
-	for i := 0; i < 25; i++ {
+	for i := range 25 {
 		got := loopSeqKey(mergeAbuttingLoops([]Loop{left, right}))
 		if i == 0 {
 			want = got

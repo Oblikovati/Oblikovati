@@ -607,8 +607,8 @@ func realisticHardwareEnabled(win *native.Window, s realisticSession) bool {
 func resolveDisplayRGBA(accum *renderer.Accumulator, exposure float64) []byte {
 	w, h := accum.Width(), accum.Height()
 	out := make([]byte, w*h*4)
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			r, g, b := accum.At(x, y)
 			disp := openpbr.ToDisplay(openpbr.NewColor3(float64(r), float64(g), float64(b)), exposure)
 			i := (y*w + x) * 4

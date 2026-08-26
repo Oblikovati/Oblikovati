@@ -4,6 +4,7 @@ package router
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"oblikovati.org/api/wire"
@@ -24,11 +25,8 @@ func sketchConsumers(part *compdef.PartComponentDefinition, sk *sketch.Sketch) [
 	feats := part.Features()
 	for i := 0; i < feats.Count(); i++ {
 		f := feats.Item(i)
-		for _, c := range f.ConsumedSketches() {
-			if c == sk {
-				out = append(out, f)
-				break
-			}
+		if slices.Contains(f.ConsumedSketches(), sk) {
+			out = append(out, f)
 		}
 	}
 	return out

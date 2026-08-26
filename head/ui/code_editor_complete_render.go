@@ -33,7 +33,7 @@ func (e *codeEditor) drawCompletion(ox, oy float32, m editorMetrics) {
 	y := e.lineY(oy, e.model.Caret().Line+1, m)
 	w := complWidth(c.items) * m.charW
 	native.DrawRectFilled(x, y, x+w, y+float32(shown)*m.lineH, colComplBg)
-	for row := 0; row < shown; row++ {
+	for row := range shown {
 		e.drawComplRow(x, y, w, m, first+row, row)
 	}
 }
@@ -53,10 +53,7 @@ func (e *codeEditor) drawComplRow(x, y, w float32, m editorMetrics, idx, row int
 // complWindow returns the first visible row and the visible count, scrolling the window so the
 // selected candidate stays in view.
 func complWindow(sel, total int) (first, shown int) {
-	shown = total
-	if shown > maxComplRows {
-		shown = maxComplRows
-	}
+	shown = min(total, maxComplRows)
 	first = 0
 	if sel >= maxComplRows {
 		first = sel - maxComplRows + 1

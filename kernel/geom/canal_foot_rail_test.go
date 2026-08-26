@@ -14,7 +14,7 @@ import (
 // A feet displaced horizontally by r (exact ball distance). Mirrors the shape contactLocusRail
 // resolves on the setback corpus: 73 stations = 6 rail chords refined 12-fold.
 func footRailStations(n int, r float64) (centers, feetA, feetB []math.Point3) {
-	for i := 0; i < n; i++ {
+	for i := range n {
 		x := -3 + 6*float64(i)/float64(n-1)
 		y := 0.1 * x * x
 		c := math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(r))

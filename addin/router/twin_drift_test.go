@@ -29,10 +29,10 @@ type twinPair struct {
 
 // modelWireTwins is the registry of hand-converted twins (add a row when a new one appears).
 var modelWireTwins = []twinPair{
-	{"DriveResult", reflect.TypeOf(assembly.DriveResult{}), reflect.TypeOf(wire.DriveResult{})},
-	{"DriveFrame", reflect.TypeOf(assembly.DriveFrame{}), reflect.TypeOf(wire.DriveFrame{})},
-	{"Placement", reflect.TypeOf(assembly.OccurrencePlacement{}), reflect.TypeOf(wire.DrivePlacement{})},
-	{"FlatPatternSettings", reflect.TypeOf(sheetmetal.FlatPatternSettings{}), reflect.TypeOf(wire.FlatPatternSettings{})},
+	{"DriveResult", reflect.TypeFor[assembly.DriveResult](), reflect.TypeFor[wire.DriveResult]()},
+	{"DriveFrame", reflect.TypeFor[assembly.DriveFrame](), reflect.TypeFor[wire.DriveFrame]()},
+	{"Placement", reflect.TypeFor[assembly.OccurrencePlacement](), reflect.TypeFor[wire.DrivePlacement]()},
+	{"FlatPatternSettings", reflect.TypeFor[sheetmetal.FlatPatternSettings](), reflect.TypeFor[wire.FlatPatternSettings]()},
 }
 
 // TestModelWireTwinsHaveMatchingFields fails when the exported field-name sets of a twin pair
@@ -50,8 +50,8 @@ func TestModelWireTwinsHaveMatchingFields(t *testing.T) {
 // exportedFieldNames returns t's exported field names in sorted order.
 func exportedFieldNames(t reflect.Type) []string {
 	var names []string
-	for i := 0; i < t.NumField(); i++ {
-		if f := t.Field(i); f.IsExported() {
+	for f := range t.Fields() {
+		if f.IsExported() {
 			names = append(names, f.Name)
 		}
 	}

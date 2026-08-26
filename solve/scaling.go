@@ -89,11 +89,11 @@ func augmentedLM(j [][]float64, r []float64, lambda float64, diag []float64) ([]
 	sqrtL := stdmath.Sqrt(lambda)
 	aug := make([][]float64, m+n)
 	rhs := make([]float64, m+n)
-	for i := 0; i < m; i++ {
+	for i := range m {
 		aug[i] = j[i]
 		rhs[i] = -r[i]
 	}
-	for d := 0; d < n; d++ {
+	for d := range n {
 		row := make([]float64, n)
 		row[d] = sqrtL * diag[d] // Marquardt scaling: damping proportional to the column norm (#1609)
 		aug[m+d] = row

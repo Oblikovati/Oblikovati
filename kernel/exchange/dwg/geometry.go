@@ -216,7 +216,7 @@ func readSplineControlForm(r *BitReader, s *Spline, objSize int) {
 	if weighted {
 		s.Weights = make([]float64, numCtrl)
 	}
-	for i := 0; i < numCtrl; i++ {
+	for i := range numCtrl {
 		s.ControlPoints[i] = r.Read3BD()
 		if weighted {
 			s.Weights[i] = r.ReadBD()

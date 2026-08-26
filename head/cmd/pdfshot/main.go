@@ -128,7 +128,7 @@ func capture(s *app.Session, out string, frames int) error {
 	}
 	defer win.Destroy()
 	win.InitViewport()
-	for i := 0; i < frames; i++ {
+	for range frames {
 		win.BeginFrame()
 		ui.DrawChrome(win, s)
 		win.EndFrame(ui.WindowClearColor())

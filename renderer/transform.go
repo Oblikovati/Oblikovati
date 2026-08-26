@@ -50,7 +50,7 @@ func NewProjector(cam scene.Camera, near, far float64) Projector {
 func (pr Projector) Project(p math.Point3) (x, y float64, ok bool) {
 	v := [4]float64{p.X, p.Y, p.Z, 1}
 	var clip [4]float64
-	for r := 0; r < 4; r++ {
+	for r := range 4 {
 		clip[r] = float64(pr.vp[0*4+r])*v[0] + float64(pr.vp[1*4+r])*v[1] +
 			float64(pr.vp[2*4+r])*v[2] + float64(pr.vp[3*4+r])*v[3]
 	}
@@ -120,8 +120,8 @@ func orthographic(cam scene.Camera, aspect, near, far float64) [16]float32 {
 // mul4 multiplies two column-major 4×4 matrices (a·b).
 func mul4(a, b [16]float32) [16]float32 {
 	var out [16]float32
-	for c := 0; c < 4; c++ {
-		for r := 0; r < 4; r++ {
+	for c := range 4 {
+		for r := range 4 {
 			out[c*4+r] = a[0*4+r]*b[c*4+0] + a[1*4+r]*b[c*4+1] +
 				a[2*4+r]*b[c*4+2] + a[3*4+r]*b[c*4+3]
 		}

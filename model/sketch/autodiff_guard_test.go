@@ -41,7 +41,7 @@ func representativeSketch(t *testing.T) *Sketch {
 func TestSketchSolvePathIsFiniteDifferenceFree(t *testing.T) {
 	s := representativeSketch(t)
 	for _, c := range s.Constraints() {
-		if _, ok := interface{}(c).(solve.Differentiable); !ok {
+		if _, ok := any(c).(solve.Differentiable); !ok {
 			t.Errorf("constraint %T is not solve.Differentiable — it would force the finite-difference fallback", c)
 		}
 	}

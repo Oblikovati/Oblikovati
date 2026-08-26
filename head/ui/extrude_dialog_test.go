@@ -16,7 +16,7 @@ import (
 // the two-distance mode on.
 func TestExtrudeDirectionToggleRoundTrip(t *testing.T) {
 	ext := app.NewExtrudeTool()
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		applyExtrudeDirection(ext, i)
 		if got := extrudeDirectionIndex(ext); got != i {
 			t.Errorf("after applyExtrudeDirection(%d), index = %d, want %d", i, got, i)

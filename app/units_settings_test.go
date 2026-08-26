@@ -3,6 +3,7 @@
 package app
 
 import (
+	"slices"
 	"testing"
 
 	"oblikovati.org/api/types"
@@ -89,25 +90,17 @@ func TestUnitsSettingsOpenClose(t *testing.T) {
 
 // TestUnitOptionLists checks each category offers its expected units.
 func TestUnitOptionLists(t *testing.T) {
-	has := func(opts []string, want string) bool {
-		for _, o := range opts {
-			if o == want {
-				return true
-			}
-		}
-		return false
-	}
-	if !has(LengthUnitOptions(), "mm") || !has(LengthUnitOptions(), "in") {
+	if !slices.Contains(LengthUnitOptions(), "mm") || !slices.Contains(LengthUnitOptions(), "in") {
 		t.Error("length options missing mm/in")
 	}
 	// Micrometres are now the smallest selectable length unit.
 	if LengthUnitOptions()[0] != "µm" {
 		t.Errorf("smallest length option = %q, want \"µm\"", LengthUnitOptions()[0])
 	}
-	if !has(AngleUnitOptions(), "deg") || !has(AngleUnitOptions(), "rad") {
+	if !slices.Contains(AngleUnitOptions(), "deg") || !slices.Contains(AngleUnitOptions(), "rad") {
 		t.Error("angle options missing deg/rad")
 	}
-	if !has(MassUnitOptions(), "kg") || !has(TimeUnitOptions(), "s") {
+	if !slices.Contains(MassUnitOptions(), "kg") || !slices.Contains(TimeUnitOptions(), "s") {
 		t.Error("mass/time options missing kg/s")
 	}
 }

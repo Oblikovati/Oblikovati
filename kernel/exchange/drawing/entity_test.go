@@ -68,7 +68,7 @@ func TestPlanar(t *testing.T) {
 // classified planar at the bulk elevation, not flipped onto the 3D path by the outliers.
 func TestPlanarTolueratesOutliers(t *testing.T) {
 	ents := make([]Entity, 0, 20)
-	for i := 0; i < 18; i++ {
+	for range 18 {
 		ents = append(ents, &Line{Start: [3]float64{0, 0, 2}, End: [3]float64{1, 1, 2}})
 	}
 	ents = append(ents, &Point{Position: [3]float64{0, 0, 1e7}}, &Point{Position: [3]float64{0, 0, -1e7}})

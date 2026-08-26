@@ -33,7 +33,7 @@ func torusPlaneEdge(e *topo.Edge) (host geom.Torus, pl geom.Plane, planeFace *to
 	if len(faces) != 2 {
 		return geom.Torus{}, geom.Plane{}, nil, false
 	}
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		h, okh := faces[i].Geometry().(geom.Torus)
 		p, okp := faces[1-i].Geometry().(geom.Plane)
 		if okh && okp {

@@ -3,6 +3,8 @@
 package app
 
 import (
+	"maps"
+
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app/markingmenu"
 )
@@ -20,9 +22,7 @@ func (s *Session) UseMarkingMenuStore(store markingmenu.Store) error {
 	s.markingMenuStore = store
 	if len(loaded.Menus) > 0 {
 		menus, _ := markingmenu.ApplyToMenus(loaded)
-		for env, menu := range menus {
-			s.markingMenus[env] = menu
-		}
+		maps.Copy(s.markingMenus, menus)
 	}
 	s.classicContextMenu = loaded.Classic
 	return nil

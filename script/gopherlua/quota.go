@@ -36,10 +36,7 @@ func memoryOptions(lim script.Limits) lua.Options {
 		return opts
 	}
 	const bytesPerSlot = 32 // conservative LValue footprint estimate
-	slots := int(lim.MemBytes / bytesPerSlot)
-	if slots < minRegistrySize {
-		slots = minRegistrySize
-	}
+	slots := max(int(lim.MemBytes/bytesPerSlot), minRegistrySize)
 	opts.RegistrySize = slots
 	opts.RegistryMaxSize = slots // hard cap: registry cannot grow past the budget
 	opts.CallStackSize = callStackFor(slots)
@@ -54,13 +51,7 @@ const (
 // callStackFor sizes the call stack proportionally to the registry budget, clamped so
 // a small memory cap still allows useful recursion and a large one stays bounded.
 func callStackFor(slots int) int {
-	cs := slots / 16
-	if cs < 256 {
-		cs = 256
-	}
-	if cs > maxCallStackSize {
-		cs = maxCallStackSize
-	}
+	cs := min(max(slots/16, 256), maxCallStackSize)
 	return cs
 }
 

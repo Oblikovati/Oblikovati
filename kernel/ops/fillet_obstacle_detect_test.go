@@ -12,7 +12,7 @@ import (
 // sampleEllipse returns n points of the T6 base ellipse (a=15,b=10) in the z=0 host plane.
 func sampleEllipse(n int) []m.Point2 {
 	pts := make([]m.Point2, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		t := 2 * math.Pi * float64(i) / float64(n)
 		pts[i] = m.P2(15*math.Cos(t), 10*math.Sin(t))
 	}
@@ -112,7 +112,7 @@ func TestDipsPast(t *testing.T) {
 // only a short arc around index 0 dips past it while the rest of the ellipse stays host-side.
 func obliqueEllipseWrapDipRim(n int, a, b, rot float64) []m.Point2 {
 	pts := make([]m.Point2, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		t := 2 * math.Pi * float64(i) / float64(n)
 		x0, y0 := a*math.Cos(t), b*math.Sin(t)
 		pts[i] = m.P2(x0*math.Cos(rot)-y0*math.Sin(rot), x0*math.Sin(rot)+y0*math.Cos(rot))

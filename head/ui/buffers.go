@@ -6,8 +6,8 @@ import "bytes"
 
 // bufString reads the NUL-terminated text ImGui wrote into an InputText buffer.
 func bufString(b []byte) string {
-	if i := bytes.IndexByte(b, 0); i >= 0 {
-		return string(b[:i])
+	if before, _, ok := bytes.Cut(b, []byte{0}); ok {
+		return string(before)
 	}
 	return string(b)
 }

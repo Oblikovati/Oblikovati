@@ -51,7 +51,7 @@ func TestRunCallsHostAndConvertsResult(t *testing.T) {
 	if f.method != "documents.create" {
 		t.Errorf("method = %q, want documents.create", f.method)
 	}
-	var got map[string]interface{}
+	var got map[string]any
 	if err := json.Unmarshal(f.argsJSON, &got); err != nil {
 		t.Fatalf("args not JSON: %v", err)
 	}

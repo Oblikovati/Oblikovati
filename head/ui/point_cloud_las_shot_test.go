@@ -34,7 +34,7 @@ func synthLASCube() []byte {
 	binary.LittleEndian.PutUint32(h[96:], headerSize)
 	binary.LittleEndian.PutUint16(h[105:], recordLen)
 	binary.LittleEndian.PutUint32(h[107:], uint32(len(pts)))
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		binary.LittleEndian.PutUint64(h[131+i*8:], math.Float64bits(1.0)) // scale = 1
 	}
 	out := h
@@ -69,7 +69,7 @@ func TestInWindowSyntheticLASRenders(t *testing.T) {
 	t.Logf("loaded %d LAS points", pc.TotalPointCount())
 
 	frameCameraOn(s, pc.RangeBox())
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.12)

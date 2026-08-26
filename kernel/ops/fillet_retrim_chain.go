@@ -3,6 +3,8 @@
 package ops
 
 import (
+	"slices"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -118,12 +120,12 @@ func clipChainTail(ring, chain []endSeg, tol float64) ([]endSeg, bool) {
 	if pointOnRing(ring, chain[len(chain)-1].to, tol) {
 		return chain, true
 	}
-	for i := len(chain) - 1; i >= 0; i-- {
-		t, p, ok := ringMeetOnSeg(ring, chain[i], tol, false)
+	for i, c := range slices.Backward(chain) {
+		t, p, ok := ringMeetOnSeg(ring, c, tol, false)
 		if !ok {
 			continue
 		}
-		return append(append([]endSeg{}, chain[:i]...), segToParam(chain[i], t, p)), true
+		return append(append([]endSeg{}, chain[:i]...), segToParam(c, t, p)), true
 	}
 	return nil, false
 }

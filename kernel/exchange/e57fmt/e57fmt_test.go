@@ -140,10 +140,7 @@ func (b e57Builder) packets() []byte {
 	specs := b.fieldSpecs()
 	var out []byte
 	for i := 0; i < len(b.points); i += b.perPacket {
-		end := i + b.perPacket
-		if end > len(b.points) {
-			end = len(b.points)
-		}
+		end := min(i+b.perPacket, len(b.points))
 		out = append(out, onePacket(specs, i, end)...)
 	}
 	return out
@@ -201,10 +198,7 @@ func (b e57Builder) xml() []byte {
 func paginate(logical []byte) []byte {
 	var phys []byte
 	for i := 0; i < len(logical); i += testPayload {
-		end := i + testPayload
-		if end > len(logical) {
-			end = len(logical)
-		}
+		end := min(i+testPayload, len(logical))
 		page := logical[i:end]
 		phys = append(phys, page...)
 		phys = append(phys, make([]byte, testPayload-len(page))...) // pad partial last page

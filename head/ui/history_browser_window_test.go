@@ -33,7 +33,7 @@ func TestInWindowHistoryBrowserDraws(t *testing.T) {
 	s.OpenHistoryBrowser()
 	defer s.CloseHistoryBrowser()
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)
@@ -56,7 +56,7 @@ func TestInWindowHistoryBrowserEmptyDraws(t *testing.T) {
 	s.OpenHistoryBrowser()
 	defer s.CloseHistoryBrowser()
 
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)

@@ -86,9 +86,9 @@ func saddleAnalyticArea(k, ax, ay float64) float64 {
 	const n = 400
 	dx, dy := 2*ax/n, 2*ay/n
 	total := 0.0
-	for i := 0; i < n; i++ {
+	for i := range n {
 		x := -ax + (float64(i)+0.5)*dx
-		for j := 0; j < n; j++ {
+		for j := range n {
 			y := -ay + (float64(j)+0.5)*dy
 			total += stdmath.Sqrt(1+4*k*k*x*x+4*k*k*y*y) * dx * dy
 		}
@@ -438,7 +438,7 @@ func decimateNearCoincidentRows(cs []PlateConstraint, vals [3][]float64, hSep fl
 			continue
 		}
 		keptCs = append(keptCs, cs[i])
-		for c := 0; c < 3; c++ {
+		for c := range 3 {
 			keptVals[c] = append(keptVals[c], vals[c][i])
 		}
 	}

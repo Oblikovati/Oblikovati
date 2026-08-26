@@ -30,10 +30,10 @@ func multiSpanNurbsBody(t *testing.T) *topo.Body {
 	t.Helper()
 	ctrl := make([][]math.Point3, 4)
 	w := make([][]float64, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		ctrl[i] = make([]math.Point3, 4)
 		w[i] = []float64{1, 1, 1, 1}
-		for j := 0; j < 4; j++ {
+		for j := range 4 {
 			ctrl[i][j] = math.P3(float64(i), float64(j), float64((i-1)*(j-1))*0.4)
 		}
 	}
@@ -55,7 +55,7 @@ func multiSpanNurbsBody(t *testing.T) *topo.Body {
 		v[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok("seed", "v", i)))
 	}
 	uses := make([]topo.Use, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		j := (i + 1) % 4
 		e := bld.AddEdge(geom.NewLineSegment(corners[i], corners[j]), v[i], v[j], topo.NewLineage(topo.Tok("seed", "e", i)))
 		uses[i] = topo.Fwd(e)

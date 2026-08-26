@@ -43,7 +43,7 @@ func TestInWindowKeymapEditorDraws(t *testing.T) {
 
 // drawKeymapFrames renders n full chrome frames (the window draws as part of chrome).
 func drawKeymapFrames(win *native.Window, s *app.Session, n int) {
-	for i := 0; i < n; i++ {
+	for range n {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)

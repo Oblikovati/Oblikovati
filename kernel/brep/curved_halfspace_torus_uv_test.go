@@ -15,9 +15,9 @@ import (
 func TestTorusUVParamOfInvertsPoint(t *testing.T) {
 	tor, _ := geom.NewTorus(math.P3(1, -2, 3), math.V3(0, 0, 1), 5, 2)
 	c := torusUV{torus: tor, seamU: 0.7, seamV: 2.1}
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		u := 2 * stdmath.Pi * float64(i) / 8
-		for j := 0; j < 8; j++ {
+		for j := range 8 {
 			v := 2 * stdmath.Pi * float64(j) / 8
 			// absolute surface point, then invert: paramOf reports seam-relative, so add the seams back.
 			p := tor.PointAt(u, v)

@@ -15,7 +15,7 @@ import (
 func TestReplaceFromKeepsPrefixRebuildsTail(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
 	}
 	fs.Recompute()
@@ -66,7 +66,7 @@ func TestReplaceFromRejectsOutOfRangePrefix(t *testing.T) {
 func TestReplaceFromTruncatesTail(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
 	}
 	removedID := fs.Item(2).ID()

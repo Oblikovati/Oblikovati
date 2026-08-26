@@ -159,7 +159,7 @@ func bytestream(body []byte, bsCount, fieldIndex int) ([]byte, error) {
 	}
 	off := 2 * bsCount
 	var start, length int
-	for i := 0; i < bsCount; i++ {
+	for i := range bsCount {
 		l := int(binary.LittleEndian.Uint16(body[2*i:]))
 		if i == fieldIndex {
 			start, length = off, l
@@ -224,7 +224,7 @@ func decodeScaledInts(buf []byte, f protoField) []float64 {
 	count := (len(buf) * 8) / int(bits)
 	out := make([]float64, 0, count)
 	r := bitReader{buf: buf}
-	for i := 0; i < count; i++ {
+	for range count {
 		raw := int64(r.read(bits)) + f.min
 		out = append(out, float64(raw)*f.scale+f.offset)
 	}

@@ -84,7 +84,7 @@ func loopsSelfCross(outer2D []math.Point2, holes2D [][]math.Point2) bool {
 	var segs [][2][2]float64
 	appendLoop := func(loop []math.Point2) {
 		n := len(loop)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			p, q := loop[i], loop[(i+1)%n]
 			segs = append(segs, [2][2]float64{{float64(p.X), float64(p.Y)}, {float64(q.X), float64(q.Y)}})
 		}

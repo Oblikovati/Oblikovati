@@ -31,10 +31,10 @@ func (st *tangentStripe) resolveJunctionCrossings(sp *blend.Spine, m *blend.Marc
 	st.cutOnShared = make([]bool, n)
 	stations := make([]float64, n)
 	touched := make([]bool, n)
-	for j := 0; j < n; j++ {
+	for j := range n {
 		stations[j], _ = sp.EdgeSpineRange(j)
 	}
-	for j := 0; j < n; j++ {
+	for j := range n {
 		if st.junction[j] == nil {
 			continue
 		}
@@ -146,7 +146,7 @@ func (st *tangentStripe) applyCrossing(sp *blend.Spine, m *blend.Marcher, j, pre
 // when the feet are collinear — the same rule the marcher's contactCurve uses).
 func (st *tangentStripe) rebuildTouchedContacts(sp *blend.Spine, m *blend.Marcher, stations []float64, touched []bool) error {
 	n := len(st.segs)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if !touched[i] {
 			continue
 		}

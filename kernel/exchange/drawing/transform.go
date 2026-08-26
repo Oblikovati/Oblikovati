@@ -32,8 +32,8 @@ func InsertAffine(in *Insert) Affine {
 // parent.Mul(child).
 func (a Affine) Mul(b Affine) Affine {
 	var m Affine
-	for i := 0; i < 3; i++ {
-		for j := 0; j < 4; j++ {
+	for i := range 3 {
+		for j := range 4 {
 			m[i][j] = a[i][0]*b[0][j] + a[i][1]*b[1][j] + a[i][2]*b[2][j]
 			if j == 3 {
 				m[i][j] += a[i][3] // homogeneous translation column

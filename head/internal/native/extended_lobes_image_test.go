@@ -120,8 +120,8 @@ func cpuOracleExtendedPixel(origin, direction [3]float32, p RealisticLightParams
 func checkImageAgainstExtendedOracle(t *testing.T, got []float32, width, height int, cam CameraBasis, params RealisticLightParams, tol float32) {
 	t.Helper()
 	hits := 0
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
+	for y := range height {
+		for x := range width {
 			origin, dir := pixelRay(x, y, width, height, cam)
 			wantR, wantG, wantB := cpuOracleExtendedPixel(origin, dir, params)
 			i := (y*width + x) * 3
@@ -309,8 +309,8 @@ func TestExtendedLobesZeroWeightReproducesBaseLobes(t *testing.T) {
 	// cpuOracleRealisticPixel (realistic_image_test.go, base lobes only) and
 	// cpuOracleExtendedPixel (this file) must agree exactly when every extended field is
 	// zero — proving openpbrShadeSurface's layering short-circuits are wired correctly.
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
+	for y := range height {
+		for x := range width {
 			origin, dir := pixelRay(x, y, width, height, cam)
 			baseR, baseG, baseB := cpuOracleRealisticPixel(origin, dir, params)
 			extR, extG, extB := cpuOracleExtendedPixel(origin, dir, params)

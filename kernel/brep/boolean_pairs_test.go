@@ -5,6 +5,7 @@ package brep
 import (
 	stdrand "math/rand"
 	"reflect"
+	"slices"
 	"testing"
 
 	"oblikovati.org/math"
@@ -47,7 +48,7 @@ func randomPairFixture(rng *stdrand.Rand) (fa, fb []planarFace) {
 // and change the boolean's output.
 func TestCrossingFaceCandidatesSupersetOfImprintingPairs(t *testing.T) {
 	rng := stdrand.New(stdrand.NewSource(1607))
-	for trial := 0; trial < 60; trial++ {
+	for trial := range 60 {
 		fa, fb := randomPairFixture(rng)
 		pairs := crossingFaceCandidates(fa, fb)
 		for i := range fa {
@@ -66,12 +67,7 @@ func TestCrossingFaceCandidatesSupersetOfImprintingPairs(t *testing.T) {
 }
 
 func containsIndex(idx []int, want int) bool {
-	for _, v := range idx {
-		if v == want {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(idx, want)
 }
 
 // TestImprintCandidatesMatchesBruteScan pins bit-identity, not just superset-ness: the culled
@@ -79,7 +75,7 @@ func containsIndex(idx []int, want int) bool {
 // same order (the 2D arrangement is order-sensitive at tolerance) — on randomized fixtures.
 func TestImprintCandidatesMatchesBruteScan(t *testing.T) {
 	rng := stdrand.New(stdrand.NewSource(1411))
-	for trial := 0; trial < 60; trial++ {
+	for trial := range 60 {
 		fa, fb := randomPairFixture(rng)
 		wantA, wantB, wantProv := bruteImprintPairs(fa, fb)
 		gotA, gotB, gotProv := imprintCandidates(fa, fb, crossingFaceCandidates(fa, fb))

@@ -125,7 +125,7 @@ func capTangentCircleFits(capF *topo.Face, capCenter math.Point3, axis, ref math
 	ev := topo.NewFaceEvaluator(capF)
 	bi := axis.Cross(ref)
 	const n = 64
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := 2 * stdmath.Pi * float64(i) / float64(n)
 		p := capCenter.
 			TranslateBy(ref.AsVector().Scale(majorR * stdmath.Cos(a))).

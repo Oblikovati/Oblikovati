@@ -15,7 +15,7 @@ import (
 func project(vp [16]float32, p math.Point3) (ndc [3]float64, w float64) {
 	v := [4]float64{p.X, p.Y, p.Z, 1}
 	var clip [4]float64
-	for r := 0; r < 4; r++ {
+	for r := range 4 {
 		clip[r] = float64(vp[0*4+r])*v[0] + float64(vp[1*4+r])*v[1] +
 			float64(vp[2*4+r])*v[2] + float64(vp[3*4+r])*v[3]
 	}
@@ -94,7 +94,7 @@ func TestProjectionTranslationInvariance(t *testing.T) {
 	cam.Target = cam.Target.TranslateBy(off)
 	movedNDC, _ := project(ViewProjection(cam, 0.1, 1000), math.P3(0.5, 0.3, 0).TranslateBy(off))
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if stdmath.Abs(baseNDC[i]-movedNDC[i]) > 1e-5 {
 			t.Errorf("translation changed NDC[%d]: %g vs %g", i, baseNDC[i], movedNDC[i])
 		}

@@ -58,7 +58,7 @@ func TestPlaneFitTilted(t *testing.T) {
 func TestPlaneFitNoisyStaysClose(t *testing.T) {
 	// z = 0 plane with small deterministic noise → normal stays near ±Z.
 	var pts []math.Point3
-	for i := 0; i < 50; i++ {
+	for i := range 50 {
 		x := float64(i%7) - 3
 		y := float64(i%5) - 2
 		z := 0.01 * float64((i*13)%5-2) // tiny out-of-plane jitter

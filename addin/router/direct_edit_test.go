@@ -38,9 +38,9 @@ func TestDirectEditSizeOverWire(t *testing.T) {
 			top = f.Key
 		}
 	}
-	args, _ := json.Marshal(map[string]interface{}{
+	args, _ := json.Marshal(map[string]any{
 		"kind": "directEdit",
-		"args": map[string]interface{}{
+		"args": map[string]any{
 			"operation": "size", "faceRefs": []string{top},
 			"direction": []float64{0, 0, 1}, "distance": "10 mm",
 		},

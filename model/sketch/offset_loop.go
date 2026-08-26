@@ -23,7 +23,7 @@ func (s *Sketch) OffsetClosedLoop(poly []math.Point2, d float64, arcSegs int) []
 		pts[i] = s.points.Add(p)
 	}
 	ents := make([]Entity, 0, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		ents = append(ents, s.lines.Add(pts[i], pts[(i+1)%n]))
 	}
 	return ents
@@ -88,7 +88,7 @@ func offsetClosedPolygon(poly []math.Point2, d float64, arcSegs int) []math.Poin
 	segs := offsetEdges(poly, d)
 	n := len(poly)
 	var out []math.Point2
-	for i := 0; i < n; i++ {
+	for i := range n {
 		prev, cur := segs[(i+n-1)%n], segs[i]
 		out = append(out, cornerPoints(poly[i], prev, cur, d, arcSegs)...)
 	}
@@ -104,7 +104,7 @@ type offsetEdge struct {
 func offsetEdges(poly []math.Point2, d float64) []offsetEdge {
 	n := len(poly)
 	segs := make([]offsetEdge, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		p, q := poly[i], poly[(i+1)%n]
 		dx, dy := float64(q.X-p.X), float64(q.Y-p.Y)
 		l := stdmath.Hypot(dx, dy)

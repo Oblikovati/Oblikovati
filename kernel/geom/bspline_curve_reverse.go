@@ -12,13 +12,13 @@ func ReverseBSplineCurve(c BSplineCurve) (BSplineCurve, error) {
 	n := len(c.Ctrl)
 	ctrl := make([]math.Point3, n)
 	weights := make([]float64, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		ctrl[i], weights[i] = c.Ctrl[n-1-i], c.Weights[n-1-i]
 	}
 	m := len(c.Knots)
 	lo, hi := c.Knots[0], c.Knots[m-1]
 	knots := make([]float64, m)
-	for i := 0; i < m; i++ {
+	for i := range m {
 		knots[i] = lo + hi - c.Knots[m-1-i]
 	}
 	return NewBSplineCurve(c.Degree, ctrl, weights, knots)

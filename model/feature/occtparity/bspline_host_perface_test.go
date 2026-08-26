@@ -38,18 +38,18 @@ const bsplineHostPerFaceTol = 1e-3
 // (captured 2026-07-31; checkshape valid on all six).
 func bsplineHostPerFaceCases() []cylCylSeamCase {
 	return []cylCylSeamCase{
-		{grid: "simple", drawexeFaceCase: drawexeFaceCase{name: "G5", totalArea: 106867, perFaceTol: bsplineHostPerFaceTol,
-			drawexe: []float64{36275.4, 23000, 22403.4, 19335.1, 5853.26}}},
-		{grid: "simple", drawexeFaceCase: drawexeFaceCase{name: "G7", totalArea: 33988.4, perFaceTol: bsplineHostPerFaceTol,
-			drawexe: []float64{16082.6, 9569.8, 3711.21, 3711.21, 909.873}}},
-		{grid: "simple", drawexeFaceCase: drawexeFaceCase{name: "G9", totalArea: 33865.5, perFaceTol: bsplineHostPerFaceTol,
-			drawexe: []float64{15777.2, 10181.3, 3720, 2839.91, 1339.86}}},
-		{grid: "simple", drawexeFaceCase: drawexeFaceCase{name: "I5", totalArea: 81863.7, perFaceTol: bsplineHostPerFaceTol,
-			drawexe: []float64{18100.9, 14581.2, 13776.9, 13038, 9975.47, 9972.52, 2418.69}}},
-		{grid: "simple", drawexeFaceCase: drawexeFaceCase{name: "I7", totalArea: 81743.8, perFaceTol: bsplineHostPerFaceTol,
-			drawexe: []float64{16290.8, 15307.7, 14581.2, 12787.1, 9975.99, 9975.96, 2824.98}}},
-		{grid: "simple", drawexeFaceCase: drawexeFaceCase{name: "V6", totalArea: 263402, perFaceTol: bsplineHostPerFaceTol,
-			drawexe: []float64{95197.1, 57179.3, 57179.3, 49718, 4128.2}}},
+		{grid: "simple", name: "G5", totalArea: 106867, perFaceTol: bsplineHostPerFaceTol,
+			drawexe: []float64{36275.4, 23000, 22403.4, 19335.1, 5853.26}},
+		{grid: "simple", name: "G7", totalArea: 33988.4, perFaceTol: bsplineHostPerFaceTol,
+			drawexe: []float64{16082.6, 9569.8, 3711.21, 3711.21, 909.873}},
+		{grid: "simple", name: "G9", totalArea: 33865.5, perFaceTol: bsplineHostPerFaceTol,
+			drawexe: []float64{15777.2, 10181.3, 3720, 2839.91, 1339.86}},
+		{grid: "simple", name: "I5", totalArea: 81863.7, perFaceTol: bsplineHostPerFaceTol,
+			drawexe: []float64{18100.9, 14581.2, 13776.9, 13038, 9975.47, 9972.52, 2418.69}},
+		{grid: "simple", name: "I7", totalArea: 81743.8, perFaceTol: bsplineHostPerFaceTol,
+			drawexe: []float64{16290.8, 15307.7, 14581.2, 12787.1, 9975.99, 9975.96, 2824.98}},
+		{grid: "simple", name: "V6", totalArea: 263402, perFaceTol: bsplineHostPerFaceTol,
+			drawexe: []float64{95197.1, 57179.3, 57179.3, 49718, 4128.2}},
 	}
 }
 

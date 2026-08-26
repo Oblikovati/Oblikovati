@@ -17,16 +17,16 @@ import (
 // flat-faced solid — the OpenSCAD `cylinder(R, $fn = 6)` idiom used for screw sockets.
 func hexPrismBody(r, z0, z1 float64) *topo.Body {
 	var v []math.Point3
-	for k := 0; k < 6; k++ {
+	for k := range 6 {
 		a := float64(k) * stdmath.Pi / 3
 		v = append(v, math.P3(r*stdmath.Cos(a), r*stdmath.Sin(a), z0))
 	}
-	for k := 0; k < 6; k++ {
+	for k := range 6 {
 		a := float64(k) * stdmath.Pi / 3
 		v = append(v, math.P3(r*stdmath.Cos(a), r*stdmath.Sin(a), z1))
 	}
 	faces := [][]int{{5, 4, 3, 2, 1, 0}, {6, 7, 8, 9, 10, 11}} // bottom −Z, top +Z
-	for k := 0; k < 6; k++ {
+	for k := range 6 {
 		n := (k + 1) % 6
 		faces = append(faces, []int{k, n, n + 6, k + 6})
 	}

@@ -3,6 +3,8 @@
 package app
 
 import (
+	"slices"
+
 	"oblikovati.org/event"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -22,12 +24,7 @@ func (s *Session) IsSelectedEntity(e sketch.Entity) bool {
 			return true
 		}
 	}
-	for _, picked := range s.toolPicked() {
-		if picked == e {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(s.toolPicked(), e)
 }
 
 // toolPicked returns the entities the active sketch-entity tool has picked, or nil.

@@ -18,7 +18,7 @@ import (
 func facetedDiscPolygon(cx, cy, r float64) []math.Point2 {
 	const n = 24
 	out := make([]math.Point2, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := 2 * stdmath.Pi * float64(i) / float64(n)
 		out[i] = math.P2(math.Scalar(cx)+math.Scalar(r*stdmath.Cos(a)), math.Scalar(cy)+math.Scalar(r*stdmath.Sin(a)))
 	}

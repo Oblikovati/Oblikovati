@@ -4,6 +4,7 @@ package app
 
 import (
 	"fmt"
+	"slices"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/event"
@@ -127,10 +128,5 @@ func (s *Session) removePendingPrompt(id string) {
 
 // promptHasButton reports whether answer is one of the prompt's buttons.
 func promptHasButton(spec PromptSpec, answer string) bool {
-	for _, b := range spec.Buttons {
-		if b == answer {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(spec.Buttons, answer)
 }

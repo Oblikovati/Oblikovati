@@ -138,8 +138,8 @@ func meetOfPlanes(planes []geom.Plane) (math.Point3, bool) {
 		n := pl.Normal()
 		d := n.Dot(pl.Origin.AsVector())
 		nv := [3]float64{n.X, n.Y, n.Z}
-		for i := 0; i < 3; i++ {
-			for j := 0; j < 3; j++ {
+		for i := range 3 {
+			for j := range 3 {
 				a[i][j] += nv[i] * nv[j]
 			}
 			b[i] += nv[i] * d
@@ -234,7 +234,7 @@ func buildSolidFromLoops(faces []ploop) *topo.Body {
 	edgeUse := map[[2]int]int{}
 	for _, fr := range rings {
 		for _, r := range fr {
-			for k := 0; k < len(r); k++ {
+			for k := range r {
 				edgeUse[canon2(r[k], r[(k+1)%len(r)])]++
 			}
 		}

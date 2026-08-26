@@ -60,7 +60,7 @@ var surfaceKindNames = [...]string{
 // each kind, so a new kind fails a stale consumer at CI.
 func SurfaceKinds() []SurfaceKind {
 	all := make([]SurfaceKind, 0, surfaceKindCount)
-	for k := SurfaceKind(0); k < surfaceKindCount; k++ {
+	for k := range surfaceKindCount {
 		all = append(all, k)
 	}
 	return all
@@ -149,7 +149,7 @@ var curveKindNames = [...]string{
 // CurveKinds returns every CurveKind in declaration order (see SurfaceKinds).
 func CurveKinds() []CurveKind {
 	all := make([]CurveKind, 0, curveKindCount)
-	for k := CurveKind(0); k < curveKindCount; k++ {
+	for k := range curveKindCount {
 		all = append(all, k)
 	}
 	return all

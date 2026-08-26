@@ -170,8 +170,8 @@ var _ contract.BSplineSurface = bsplineSurfaceAdapter{}
 
 func newBSplineSurface(g geom.BSplineSurface) bsplineSurfaceAdapter {
 	return bsplineSurfaceAdapter{
-		surface: surface{kind: types.BSplineSurfaceKind, form: types.SurfaceFormNURBS, inner: g},
-		g:       g,
+		kind: types.BSplineSurfaceKind, form: types.SurfaceFormNURBS, inner: g,
+		g: g,
 	}
 }
 

@@ -90,7 +90,7 @@ func bracketedRoots(g func(float64) float64, n int) []float64 {
 // derivative adds no robustness a 60-step bisection to ~1e-16 rad lacks).
 func bisectRoot(g func(float64) float64, lo, hi float64) float64 {
 	glo := g(lo)
-	for k := 0; k < 60; k++ {
+	for range 60 {
 		mid := (lo + hi) / 2
 		gm := g(mid)
 		if gm == 0 || (hi-lo) < 1e-15 {

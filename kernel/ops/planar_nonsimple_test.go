@@ -14,7 +14,7 @@ import (
 // mid add-in build — the input that used to drive planarTris' CDT flip-recovery to O(n·T²).
 func selfCrossingBand(n int) []math.Point2 {
 	pts := make([]math.Point2, 0, 2*n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		pts = append(pts, math.P2(float64(i), 0.0001*float64(i%2)))
 	}
 	for i := n - 1; i >= 0; i-- {

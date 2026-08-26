@@ -23,7 +23,7 @@ import (
 func crossingIntersectVolume(rRod, rFat float64) float64 {
 	const n = 20000
 	sum := 0.0
-	for i := 0; i < n; i++ {
+	for i := range n {
 		phi := 2 * stdmath.Pi * (float64(i) + 0.5) / n
 		c := stdmath.Cos(phi) * stdmath.Cos(phi)
 		if c < 1e-9 {

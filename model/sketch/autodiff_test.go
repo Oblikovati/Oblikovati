@@ -35,7 +35,7 @@ func fdPartials(c differentiableConstraint) [][]float64 {
 		*v = orig - h
 		rm := append([]float64(nil), c.Residuals()...)
 		*v = orig
-		for i := 0; i < m; i++ {
+		for i := range m {
 			jac[i][j] = (rp[i] - rm[i]) / (2 * h)
 		}
 	}
@@ -132,7 +132,7 @@ func globalFDJacobian(cons []Constraint, universe []*math.Scalar) [][]float64 {
 		*v = orig - h
 		rm := resAt()
 		*v = orig
-		for i := 0; i < m; i++ {
+		for i := range m {
 			jac[i][j] = (rp[i] - rm[i]) / (2 * h)
 		}
 	}

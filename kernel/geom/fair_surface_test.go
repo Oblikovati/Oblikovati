@@ -15,10 +15,10 @@ func noisyPatch(t *testing.T) BSplineSurface {
 	const n = 8
 	ctrl := make([][]math.Point3, n)
 	w := make([][]float64, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		ctrl[i] = make([]math.Point3, n)
 		w[i] = make([]float64, n)
-		for j := 0; j < n; j++ {
+		for j := range n {
 			z := 0.0
 			if i > 0 && i < n-1 && j > 0 && j < n-1 { // jitter interior only (boundary stays flat)
 				z = 0.2 * float64((i*7+j*13)%5-2) // deterministic ±wrinkle
@@ -67,8 +67,8 @@ func TestFairSurfaceReducesCurvatureVariance(t *testing.T) {
 		t.Errorf("fairing did not reduce curvature variance: before %g, after %g", before, after)
 	}
 	// The G2 held band (rows/cols 0–2 and 5–7) is unchanged, so boundary continuity is preserved.
-	for i := 0; i < 8; i++ {
-		for j := 0; j < 8; j++ {
+	for i := range 8 {
+		for j := range 8 {
 			held := i < 3 || i >= 5 || j < 3 || j >= 5
 			if held && !faired.Ctrl[i][j].IsEqualTo(s.Ctrl[i][j], 1e-12) {
 				t.Errorf("held band CV (%d,%d) moved: %v vs %v", i, j, faired.Ctrl[i][j], s.Ctrl[i][j])

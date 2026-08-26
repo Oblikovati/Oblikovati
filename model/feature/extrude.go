@@ -342,7 +342,7 @@ func buildExtrusionShell(poly []math.Point2, plane sketch.Plane, sp span, taper 
 	bld := topo.NewBuilder(caps, topo.NewLineage(topo.Tok(feat, "body", 0)))
 	bottom := make([]*topo.Vertex, n)
 	top := make([]*topo.Vertex, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		b := plane.ToModel(poly[i]).TranslateBy(normal.Scale(sp.near))
 		t := plane.ToModel(topPoly[i]).TranslateBy(normal.Scale(sp.far))
 		bottom[i] = bld.AddVertex(b, topo.NewLineage(topo.Tok(feat, "vertex", i)))
@@ -412,7 +412,7 @@ func taperedLoop(poly []math.Point2, depth, taper float64) []math.Point2 {
 func offsetPolygon2D(poly []math.Point2, delta float64) []math.Point2 {
 	n := len(poly)
 	out := make([]math.Point2, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		prev := poly[(i-1+n)%n]
 		next := poly[(i+1)%n]
 		nIn := edgeNormal2D(prev, poly[i])
@@ -472,7 +472,7 @@ func outwardSign(poly []math.Point2) float64 {
 func prismEdges(bld *topo.Builder, bottom, top []*topo.Vertex, feat string) (be, te, ve []*topo.Edge) {
 	n := len(bottom)
 	be, te, ve = make([]*topo.Edge, n), make([]*topo.Edge, n), make([]*topo.Edge, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		j := (i + 1) % n
 		be[i] = bld.AddEdge(geom.NewLineSegment(bottom[i].Point(), bottom[j].Point()), bottom[i], bottom[j], topo.NewLineage(topo.Tok(feat, "bottom-edge", i)))
 		te[i] = bld.AddEdge(geom.NewLineSegment(top[i].Point(), top[j].Point()), top[i], top[j], topo.NewLineage(topo.Tok(feat, "top-edge", i)))
@@ -489,7 +489,7 @@ func addCaps(bld *topo.Builder, bottom, top []*topo.Vertex, be, te []*topo.Edge,
 	topPlane, _ := geom.NewPlane(top[0].Point(), normal)
 	bottomLoop := make([]topo.Use, n)
 	topLoop := make([]topo.Use, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		bottomLoop[i] = topo.Rev(be[n-1-i]) // reverse order & direction → outward-down
 		topLoop[i] = topo.Fwd(te[i])
 	}
@@ -502,7 +502,7 @@ func addCaps(bld *topo.Builder, bottom, top []*topo.Vertex, be, te []*topo.Edge,
 // a clockwise profile (see outwardSign) so every wall faces away from the interior.
 func addSides(bld *topo.Builder, bottom, top []*topo.Vertex, be, te, ve []*topo.Edge, sign float64, feat string) {
 	n := len(bottom)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		j := (i + 1) % n
 		surf := sideSurface(bottom[i].Point(), bottom[j].Point(), top[i].Point(), sign)
 		loop := topo.OuterLoop(topo.Fwd(be[i]), topo.Fwd(ve[j]), topo.Rev(te[i]), topo.Rev(ve[i]))

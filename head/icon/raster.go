@@ -70,7 +70,7 @@ func RasterizeRoles(svg []byte, px int) (*RoleMasks, error) {
 		return nil, err
 	}
 	masks := &RoleMasks{px: px}
-	for r := Role(0); r < RoleCount; r++ {
+	for r := range RoleCount {
 		big, err := renderDoc(filterForRole(doc, r), px*supersample)
 		if err != nil {
 			return nil, fmt.Errorf("icon: role %s: %w", r, err)

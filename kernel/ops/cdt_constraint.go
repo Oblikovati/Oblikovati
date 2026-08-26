@@ -250,7 +250,7 @@ func (m *cdt) flipDiagonal(t, i int) (int, int) {
 	}
 	p, q := m.tris[t].v[(i+1)%3], m.tris[t].v[(i+2)%3] // the edge flip(t,i) replaces
 	c := m.tris[t].v[i]
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		if v := m.tris[s].v[k]; v != p && v != q {
 			return c, v
 		}
@@ -393,7 +393,7 @@ func (m *cdt) recoverByFlips(a, b int) bool {
 
 // vertexLocal returns the local index (0..2) of vertex v in tri, or -1 if absent.
 func vertexLocal(tri cdtTri, v int) int {
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if tri.v[i] == v {
 			return i
 		}

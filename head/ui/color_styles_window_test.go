@@ -58,7 +58,7 @@ func TestInWindowColorStylesPanelDraws(t *testing.T) {
 	s.OpenColorStylesPanel()
 	defer s.CloseColorStylesPanel()
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)

@@ -107,7 +107,7 @@ func TestFlattenEmitsPerVertexColors(t *testing.T) {
 // broadcasts to every vertex (legacy behavior preserved).
 func TestFlattenFallsBackToBroadcastColor(t *testing.T) {
 	m := Flatten(renderer.DrawList{Items: []renderer.DrawItem{triItem(0)}})
-	for v := 0; v < 3; v++ {
+	for v := range 3 {
 		c := m.TriVerts[v*VertexFloats+6 : v*VertexFloats+10]
 		if c[0] != 1 || c[1] != 0 || c[2] != 0 || c[3] != 1 {
 			t.Fatalf("vertex %d color = %v, want broadcast red", v, c)

@@ -80,7 +80,7 @@ func listDeps(t *testing.T, dir string, patterns ...string) []string {
 		t.Fatalf("go list -deps %v (dir %s): %v", patterns, dir, err)
 	}
 	var deps []string
-	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(string(out)), "\n") {
 		if line != "" {
 			deps = append(deps, line)
 		}

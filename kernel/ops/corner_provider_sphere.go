@@ -147,7 +147,7 @@ func sampleCurve3Open(c geom.Curve3, rev bool) []math.Point3 {
 func sampleCurveN(c geom.Curve3, n int, rev bool) []math.Point3 {
 	lo, hi := c.Domain()
 	pts := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		pts[i] = c.PointAt(openSampleParam(lo, hi, i, n, rev))
 	}
 	return pts
@@ -176,7 +176,7 @@ func sampleCurveNTrimmed(c geom.Curve3, n int, rev bool) ([]math.Point3, []geom.
 	lo, hi := c.Domain()
 	pts := make([]math.Point3, n)
 	curves := make([]geom.Curve3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := openSampleParam(lo, hi, i, n, rev)   // this sub-edge's own start vertex param
 		b := openSampleParam(lo, hi, i+1, n, rev) // its end vertex param (far endpoint at i+1==n)
 		pts[i] = c.PointAt(a)

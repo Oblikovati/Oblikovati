@@ -36,7 +36,7 @@ func (e SurfaceEvaluator) ClosestParam(p math.Point3) (u, v float64) {
 	uLo, uHi := clampDomain(e.surface.UDomain())
 	vLo, vHi := clampDomain(e.surface.VDomain())
 	u, v = gridSeed(e.surface, p, uLo, uHi, vLo, vHi)
-	for i := 0; i < 40; i++ {
+	for range 40 {
 		u, v = projectStep(e.surface, p, u, v, uLo, uHi, vLo, vHi)
 	}
 	return u, v

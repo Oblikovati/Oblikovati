@@ -61,18 +61,18 @@ func TestNetworkSurfaceInterpolatesNodes(t *testing.T) {
 	}
 	uCurves := make([]BSplineCurve, 3) // along a (u) at v-station b
 	vCurves := make([]BSplineCurve, 3) // along b (v) at u-station a
-	for b := 0; b < 3; b++ {
+	for b := range 3 {
 		uCurves[b] = line3(t, pt(0, b), pt(1, b), pt(2, b))
 	}
-	for a := 0; a < 3; a++ {
+	for a := range 3 {
 		vCurves[a] = line3(t, pt(a, 0), pt(a, 1), pt(a, 2))
 	}
 	net, err := NetworkSurface(uCurves, vCurves)
 	if err != nil {
 		t.Fatalf("NetworkSurface: %v", err)
 	}
-	for a := 0; a < 3; a++ {
-		for b := 0; b < 3; b++ {
+	for a := range 3 {
+		for b := range 3 {
 			if d := onSurface(net, pt(a, b)); d > 1e-6 {
 				t.Errorf("grid node (%d,%d) off the network: dist %g", a, b, d)
 			}

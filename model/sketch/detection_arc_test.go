@@ -13,7 +13,7 @@ import (
 func polygonArea(poly []math.Point2) float64 {
 	a := 0.0
 	n := len(poly)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		j := (i + 1) % n
 		a += poly[i].X*poly[j].Y - poly[j].X*poly[i].Y
 	}

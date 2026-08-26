@@ -39,7 +39,7 @@ func TestPreviousViewRestoresRecordedCamera(t *testing.T) {
 
 func TestViewHistoryCapsAtMax(t *testing.T) {
 	s := NewSession()
-	for i := 0; i < maxViewHistory+10; i++ {
+	for i := range maxViewHistory + 10 {
 		s.SetCamera(camAt(float64(i)))
 		s.PushViewHistory()
 	}

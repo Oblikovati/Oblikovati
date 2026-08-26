@@ -117,7 +117,7 @@ func straightSteps(a, b math.Point3, step float64) []math.Point3 {
 	n := int(stdmath.Ceil(d / step))
 	dir := a.VectorTo(b)
 	pts := make([]math.Point3, 0, n+1)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		pts = append(pts, a.TranslateBy(dir.Scale(float64(i)*step/d)))
 	}
 	return append(pts, b)

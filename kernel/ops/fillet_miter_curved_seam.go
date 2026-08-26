@@ -228,7 +228,7 @@ func torusTubeMembership(tor geom.Torus, r float64, p math.Point3) float64 {
 // bisectAxial refines a sign-change bracket [t0,t1] of g to a root by bisection.
 func bisectAxial(g func(float64) float64, t0, t1 float64) float64 {
 	f0 := g(t0)
-	for i := 0; i < 60; i++ {
+	for range 60 {
 		mid := 0.5 * (t0 + t1)
 		fm := g(mid)
 		if f0*fm <= 0 {
@@ -292,7 +292,7 @@ func projectOntoSeam(arms curvedMiterArms, r float64, start math.Point3, res Res
 	if !ok {
 		return math.Point3{}, false
 	}
-	for it := 0; it < miterSeamNewtonIters; it++ {
+	for range miterSeamNewtonIters {
 		if stdmath.Abs(f1) <= tol && stdmath.Abs(f2) <= tol {
 			return p, true
 		}

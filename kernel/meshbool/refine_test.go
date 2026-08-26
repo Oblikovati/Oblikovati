@@ -83,7 +83,7 @@ func assertFaceConformed(t *testing.T, face [3]Point, tris [][3]Point, segments 
 			t.Fatalf("degenerate or clockwise triangle in refined face")
 		}
 		sum.Add(sum, d)
-		for e := 0; e < 3; e++ {
+		for e := range 3 {
 			p, q := tt[e], tt[(e+1)%3]
 			for _, s := range segments {
 				if segmentsProperlyCross(p, q, s[0], s[1], axis) {

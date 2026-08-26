@@ -49,7 +49,7 @@ func TestInWindowCamBrowserPaneScreenshot(t *testing.T) {
 	}
 	icons = newIconCache(win) // bind the icon cache to this fresh window/context so glyphs rasterise
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		win.BeginFrame()
 		native.SetNextWindowPos(0, 0)
 		native.SetNextWindowSize(inWinW, inWinH)

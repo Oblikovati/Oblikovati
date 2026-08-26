@@ -63,7 +63,7 @@ func TestTwoCapCrossingCutRendersLive(t *testing.T) {
 	defer win.Destroy()
 
 	s := twoCapPart(t)
-	for i := 0; i < 8; i++ {
+	for range 8 {
 		viewportFrame(win, s)
 	}
 	px, w, h, ok := win.ReadbackViewport(0)

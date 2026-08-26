@@ -24,7 +24,7 @@ func (c ruledUV) wrapsAllU() bool {
 		// natural test below and take the wrapping-band emission like every other ruled cut/join (#1403).
 		return false
 	}
-	for i := 0; i < 720; i++ {
+	for i := range 720 {
 		u := 2 * stdmath.Pi * float64(i) / 720
 		if c.solidMode {
 			if !c.anyKeptVSolid(u) { // general curved∩curved: kept at this azimuth iff some v is inside (#1403)

@@ -64,7 +64,7 @@ func TestInWindowSketchPointFromScanRenders(t *testing.T) {
 	// select → project → render path without error (the placed position is asserted in the app
 	// unit test, which is the authoritative geometric check).
 	frameCameraOn(s, pc.RangeBox())
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.12)

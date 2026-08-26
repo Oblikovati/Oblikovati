@@ -20,7 +20,7 @@ func squareSeat(t *testing.T, half float64) (geom.Plane, curvedFace, [][]math.Po
 	h := math.Scalar(half)
 	ring := []math.Point3{math.P3(-h, -h, 0), math.P3(h, -h, 0), math.P3(h, h, 0), math.P3(-h, h, 0)}
 	var edges []loopEdge
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		edges = append(edges, loopEdge{curve: geom.NewLineSegment(ring[i], ring[(i+1)%4]), t0: 0, t1: 1})
 	}
 	return pl, curvedFace{surface: pl, loops: []curvedLoop{{edges: edges}}}, [][]math.Point3{ring}
@@ -34,7 +34,7 @@ func curvedFaceUVArea(pl geom.Plane, f curvedFace) float64 {
 	for _, loop := range f.loops {
 		var poly []math.Point2
 		for _, e := range loop.edges {
-			for i := 0; i < 64; i++ {
+			for i := range 64 {
 				tt := e.t0 + (e.t1-e.t0)*float64(i)/64
 				poly = append(poly, to2D(pl, e.curve.PointAt(tt)))
 			}

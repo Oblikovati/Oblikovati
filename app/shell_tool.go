@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"slices"
 
 	"oblikovati.org/model/feature"
 )
@@ -45,12 +46,7 @@ func (t *ShellTool) Pick(_ *Session, sel Selectable) {
 }
 
 func (t *ShellTool) hasFace(f FaceHandle) bool {
-	for _, h := range t.faces {
-		if h == f {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(t.faces, f)
 }
 
 // SetThickness/Thickness set the shell wall thickness (database units).

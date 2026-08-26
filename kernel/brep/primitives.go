@@ -34,7 +34,7 @@ func SolidBlock(min, max math.Point3, feat string) (*topo.Body, error) {
 // blockCorner index convention: bit 0 = +X, bit 1 = +Y, bit 2 = +Z.
 func blockVertices(bld *topo.Builder, min, max math.Point3, feat string) [8]*topo.Vertex {
 	var v [8]*topo.Vertex
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		p := math.P3(pick(i&1 != 0, max.X, min.X), pick(i&2 != 0, max.Y, min.Y), pick(i&4 != 0, max.Z, min.Z))
 		v[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(feat, "vertex", i)))
 	}
@@ -77,7 +77,7 @@ var blockFaceCorners = [6][4]int{
 func blockFaces(bld *topo.Builder, v [8]*topo.Vertex, e map[[2]int]*topo.Edge, feat string) {
 	for fi, corners := range blockFaceCorners {
 		uses := make([]topo.Use, 4)
-		for k := 0; k < 4; k++ {
+		for k := range 4 {
 			a, b := corners[k], corners[(k+1)%4]
 			if edge, ok := e[[2]int{a, b}]; ok {
 				uses[k] = topo.Fwd(edge)

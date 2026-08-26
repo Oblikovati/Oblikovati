@@ -93,7 +93,7 @@ func trianglesOnEdge(m *ops.Mesh, e [2]int) []int {
 	var out []int
 	for t := 0; t+2 < len(m.Indices); t += 3 {
 		hits := 0
-		for k := 0; k < 3; k++ {
+		for k := range 3 {
 			if v := m.Indices[t+k]; v == e[0] || v == e[1] {
 				hits++
 			}

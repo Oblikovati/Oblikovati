@@ -5,6 +5,7 @@ package app
 import (
 	"fmt"
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
@@ -90,12 +91,7 @@ func (s *Session) TriadAllows(seg types.TriadSegment) bool {
 	if len(s.triad.spec.Allowed) == 0 {
 		return true
 	}
-	for _, allowed := range s.triad.spec.Allowed {
-		if allowed == seg {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(s.triad.spec.Allowed, seg)
 }
 
 // HoverTriadSegment reports the hovered segment (the head's hit-test); transitions

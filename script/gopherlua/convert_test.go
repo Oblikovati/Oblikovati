@@ -97,7 +97,7 @@ func TestConvertRejectsFunctionValue(t *testing.T) {
 // jsonEqual compares two JSON documents structurally (key order / whitespace agnostic).
 func jsonEqual(t *testing.T, a, b string) bool {
 	t.Helper()
-	var va, vb interface{}
+	var va, vb any
 	if err := json.Unmarshal([]byte(a), &va); err != nil {
 		t.Fatalf("unmarshal %q: %v", a, err)
 	}

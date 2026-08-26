@@ -58,7 +58,7 @@ func classifyVertices(n math.Vector3, w float64, pts [3]math.Point3, planeTol fl
 // splitSpanning cuts a triangle that crosses the plane into its front and back vertex
 // loops, inserting the edge–plane intersection points (csg.js polygon split).
 func splitSpanning(n math.Vector3, w float64, pts [3]math.Point3, types []int) (f, b []math.Point3) {
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		j := (i + 1) % 3
 		ti, tj := types[i], types[j]
 		if ti != backOf {

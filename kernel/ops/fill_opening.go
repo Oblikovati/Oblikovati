@@ -213,7 +213,7 @@ func reverseCurve(c geom.BSplineCurve) geom.BSplineCurve {
 	n := len(c.Ctrl)
 	ctrl := make([]math.Point3, n)
 	w := make([]float64, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		ctrl[i], w[i] = c.Ctrl[n-1-i], c.Weights[n-1-i]
 	}
 	knots := c.Knots

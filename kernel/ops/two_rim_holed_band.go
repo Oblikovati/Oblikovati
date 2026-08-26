@@ -4,6 +4,7 @@ package ops
 
 import (
 	stdmath "math"
+	"slices"
 	"sort"
 
 	"oblikovati.org/kernel/geom"
@@ -205,8 +206,8 @@ func rotateRing(ring []math.Point3, i int) []math.Point3 {
 
 // appendReversed appends src in reverse order to dst.
 func appendReversed(dst, src []math.Point3) []math.Point3 {
-	for i := len(src) - 1; i >= 0; i-- {
-		dst = append(dst, src[i])
+	for _, s := range slices.Backward(src) {
+		dst = append(dst, s)
 	}
 	return dst
 }

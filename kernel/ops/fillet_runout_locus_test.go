@@ -124,7 +124,7 @@ func syntheticLocusBand(t *testing.T) (*runoutBand, math.Point3, math.Point3) {
 	t.Helper()
 	const n, r = 73, 2.0
 	sts := make([]runoutStation, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		x := -3 + 6*float64(i)/float64(n-1)
 		y := 0.1 * x * x
 		sts[i] = runoutStation{

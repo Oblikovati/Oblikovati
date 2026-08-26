@@ -27,10 +27,10 @@ func rippledSheet(t *testing.T, uSpans, vSpans int, amplitude float64, eggcrate 
 func rippledNet(nu, nv int, amplitude float64, eggcrate bool) (ctrl [][]math.Point3, weights [][]float64) {
 	ctrl = make([][]math.Point3, nu)
 	weights = make([][]float64, nu)
-	for i := 0; i < nu; i++ {
+	for i := range nu {
 		ctrl[i] = make([]math.Point3, nv)
 		weights[i] = make([]float64, nv)
-		for j := 0; j < nv; j++ {
+		for j := range nv {
 			ctrl[i][j] = math.P3(float64(i), float64(j), rippleHeight(i, j, amplitude, eggcrate))
 			weights[i][j] = 1
 		}
@@ -78,7 +78,7 @@ func TestParamAtHighSpanSurfaceInversion(t *testing.T) {
 	vLo, vHi := s.VDomain()
 	rng := rand.New(rand.NewSource(1)) // deterministic: repeatable failures
 	failures := 0
-	for k := 0; k < 100; k++ {
+	for range 100 {
 		u := uLo + (uHi-uLo)*rng.Float64()
 		v := vLo + (vHi-vLo)*rng.Float64()
 		p := s.PointAt(u, v)

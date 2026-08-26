@@ -160,10 +160,7 @@ func (a Number) Cos() Number {
 // allocated, so a constant (nil) operand contributes nothing and the value-only
 // path stays allocation-free.
 func combine(ga, gb []float64, ca, cb float64) []float64 {
-	n := len(ga)
-	if len(gb) > n {
-		n = len(gb)
-	}
+	n := max(len(gb), len(ga))
 	if n == 0 {
 		return nil
 	}

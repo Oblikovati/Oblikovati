@@ -409,9 +409,9 @@ func scallopEdge(ax, ay, bx, by float64) []DrawingCurve {
 	step := length / float64(count)
 	var out []DrawingCurve
 	const seg = 6
-	for k := 0; k < count; k++ {
+	for k := range count {
 		s0 := float64(k) * step
-		for j := 0; j < seg; j++ {
+		for j := range seg {
 			t0 := math.Pi * float64(j) / seg
 			t1 := math.Pi * float64(j+1) / seg
 			out = append(out, DrawingCurve{

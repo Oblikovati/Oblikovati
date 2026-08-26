@@ -59,7 +59,7 @@ func toMeshboolOp(op PartFeatureOperation) (meshbool.Op, bool) {
 func buildLoopSpec(vb *vertexBank, eb *edgeBank, loop []meshbool.Point, outer bool) topo.LoopSpec {
 	n := len(loop)
 	uses := make([]topo.Use, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		e, reversed := eb.get(vb, loop[i], loop[(i+1)%n])
 		uses[i] = topo.Use{Edge: e, Reversed: reversed}
 	}
@@ -140,7 +140,7 @@ func loopMean(pts []math.Point3) math.Point3 {
 func newellNormalOf(pts []math.Point3) math.Vector3 {
 	var nx, ny, nz float64
 	n := len(pts)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		cur, nxt := pts[i], pts[(i+1)%n]
 		nx += (cur.Y - nxt.Y) * (cur.Z + nxt.Z)
 		ny += (cur.Z - nxt.Z) * (cur.X + nxt.X)

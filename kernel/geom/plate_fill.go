@@ -123,7 +123,7 @@ func decimateCoincidentRows(cs []PlateConstraint, vals [3][]float64) ([]PlateCon
 			continue
 		}
 		keptCs = append(keptCs, cs[i])
-		for c := 0; c < 3; c++ {
+		for c := range 3 {
 			keptVals[c] = append(keptVals[c], vals[c][i])
 		}
 	}
@@ -150,9 +150,9 @@ func plateGrid(sides [4]PlateSide, d PlateDomain, coeffs []PlateCoeffs) (pts []m
 	pts = make([]math.Point3, 0, n*n)
 	us = make([]float64, 0, n*n)
 	vs = make([]float64, 0, n*n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		xi := float64(i) / float64(n-1)
-		for j := 0; j < n; j++ {
+		for j := range n {
 			eta := float64(j) / float64(n-1)
 			u, v := coonsDomainPoint(sides, d, xi, eta)
 			pts = append(pts, plateSurfacePoint(coeffs, u, v))

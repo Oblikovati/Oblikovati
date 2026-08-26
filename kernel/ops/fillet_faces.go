@@ -3,6 +3,8 @@
 package ops
 
 import (
+	maps0 "maps"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 )
@@ -24,9 +26,7 @@ func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*co
 	// The far-end multi-face trim (fillet_farend_chain.go) rebuilds every host its contact chain touches,
 	// from that host's ORIGINAL ring — so it must run after the obstacle/runout rebuilds have claimed
 	// theirs, and it declines outright on a collision rather than half-applying (an unclosed shell).
-	for id, ff := range commitFarEndSplits(body, fils, replace, handled) {
-		replace[id] = ff
-	}
+	maps0.Copy(replace, commitFarEndSplits(body, fils, replace, handled))
 	out := transformedBodyFaces(body, maps, replace)
 	out = append(out, filletBlendFaces(fils, caps, handled, extra)...)
 	for _, cb := range blends {
@@ -70,12 +70,8 @@ func mergeRunoutFaces(body *topo.Body, fils []edgeFillet, res Resolution, maps f
 	replace map[uint64]filletFace, extra map[uint64][]filletFace, handled map[uint64]bool) (
 	map[uint64]filletFace, map[uint64][]filletFace, map[uint64]bool) {
 	rnReplace, rnExtra, rnHandled := collectRunouts(body, fils, res, handled, maps)
-	for id, f := range rnReplace {
-		replace[id] = f
-	}
-	for id, fs := range rnExtra {
-		extra[id] = fs
-	}
+	maps0.Copy(replace, rnReplace)
+	maps0.Copy(extra, rnExtra)
 	for id := range rnHandled {
 		handled[id] = true
 	}

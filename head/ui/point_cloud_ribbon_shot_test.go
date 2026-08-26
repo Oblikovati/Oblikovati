@@ -60,7 +60,7 @@ func TestInWindowPointCloudPanelButtons(t *testing.T) {
 	pc.SetDisplayMode(types.PointCloudDisplayModeIntensity)
 	s.Select(app.PointCloudHandle{Clouds: def.PointClouds(), Cloud: pc}) // enable Fit Work Plane / Crop Box
 
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		win.BeginFrame()
 		DrawChrome(win, s) // binds the icon cache and draws the chrome
 		native.SetNextWindowPos(40, 80)

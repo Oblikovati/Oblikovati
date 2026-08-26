@@ -392,7 +392,7 @@ func bridgeGapWithArc(kept []loopEdge, arc geom.EllipticalArc) ([]loopEdge, bool
 		return nil, false
 	}
 	gap := -1
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if float64(kept[i].end().DistanceTo(kept[(i+1)%n].start())) > 1e-6 {
 			gap = i
 			break
@@ -402,7 +402,7 @@ func bridgeGapWithArc(kept []loopEdge, arc geom.EllipticalArc) ([]loopEdge, bool
 		return nil, false
 	}
 	rot := make([]loopEdge, 0, n+1)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		rot = append(rot, kept[(gap+1+k)%n])
 	}
 	return append(rot, orientArcBetween(arc, rot[n-1].end(), rot[0].start())), true
@@ -423,7 +423,7 @@ func orientArcBetween(arc geom.EllipticalArc, from, _ math.Point3) loopEdge {
 func nearestRingSeg(verts []math.Point3, p math.Point3) (int, float64, float64) {
 	best, bestT, bestD := 0, 0.0, stdmath.Inf(1)
 	n := len(verts)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b := verts[i], verts[(i+1)%n]
 		ab := a.VectorTo(b)
 		l2 := float64(ab.LengthSquared())

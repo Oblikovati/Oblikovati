@@ -5,6 +5,7 @@ package occtparity
 import (
 	"fmt"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"oblikovati.org/kernel/ops"
@@ -148,12 +149,7 @@ func hasCylinderNeighbour(e *topo.Edge) bool {
 }
 
 func vertexTouchesCurved(v *topo.Vertex) bool {
-	for _, e := range v.Edges() {
-		if hasCylinderNeighbour(e) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(v.Edges(), hasCylinderNeighbour)
 }
 
 func sumFaceTess(b *topo.Body) float64 {

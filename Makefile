@@ -23,7 +23,10 @@ LDFLAGS     := -s -w \
 # Pinned dev tools (installed on demand into $GOBIN by `make tools`).
 # golangci-lint v2 lives at the /v2 module path; v1.59.1 and gotestsum v1.12.0
 # no longer compile under Go 1.26 (x/tools tokeninternal array-length error).
-GOLANGCI_VERSION  ?= v2.12.2
+# golangci-lint refuses to run against a module targeting a newer Go than the
+# toolchain it was itself built with, so the pin must track this module's `go`
+# directive: v2.13.1 is the first release built with go1.27.0.
+GOLANGCI_VERSION  ?= v2.13.1
 GOTESTSUM_VERSION ?= v1.13.0
 
 # Cross-build matrix for `make build-all`.

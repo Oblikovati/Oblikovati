@@ -98,8 +98,8 @@ func (t Matrix4) TransformUnitVector(u UnitVector3) (UnitVector3, error) {
 // applying o first, then t.
 func (t Matrix4) Mul(o Matrix4) Matrix4 {
 	var out [16]Scalar
-	for r := 0; r < 4; r++ {
-		for c := 0; c < 4; c++ {
+	for r := range 4 {
+		for c := range 4 {
 			out[r*4+c] = t.m[r*4]*o.m[c] + t.m[r*4+1]*o.m[4+c] +
 				t.m[r*4+2]*o.m[8+c] + t.m[r*4+3]*o.m[12+c]
 		}

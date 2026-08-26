@@ -26,8 +26,8 @@ func uvSphereMesh(nLat, nLon int, r float64) *Mesh {
 			m.Positions = append(m.Positions, p)
 		}
 	}
-	for i := 0; i < nLat; i++ {
-		for j := 0; j < nLon; j++ {
+	for i := range nLat {
+		for j := range nLon {
 			a, b, c, d := at(i, j), at(i+1, j), at(i+1, j+1), at(i, j+1)
 			if i > 0 {
 				push(a, b, d) // outward CCW seen from outside
@@ -47,7 +47,7 @@ func TestWindingFarFieldMatchesBruteOnRandomPoints(t *testing.T) {
 	mesh := uvSphereMesh(24, 32, 1)
 	far := newMeshWindingFarField(mesh)
 	rng := stdrand.New(stdrand.NewSource(2018)) // Barill et al. year, for flavour
-	for k := 0; k < 1000; k++ {
+	for k := range 1000 {
 		span := []float64{1.05, 1.5, 30}[k%3] // surface band, mid range, deep far field
 		p := math.P3(rng.Float64()*2*span-span, rng.Float64()*2*span-span, rng.Float64()*2*span-span)
 		if got, want := far.inside(p), pointInMesh(mesh, p); got != want {

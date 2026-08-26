@@ -196,7 +196,7 @@ func (t *FeatureControlFrameTool) Params() ToolParams {
 // splitDatums turns a comma-separated datum string ("A, B,C") into trimmed, non-empty references.
 func splitDatums(s string) []string {
 	var out []string
-	for _, part := range strings.Split(s, ",") {
+	for part := range strings.SplitSeq(s, ",") {
 		if d := strings.TrimSpace(part); d != "" {
 			out = append(out, d)
 		}
@@ -631,7 +631,7 @@ func (t *RevisionCloudTool) PreviewCurves(*Session) []drawing.DrawingCurve {
 	w, h := gmath.Scalar(t.width/2), gmath.Scalar(t.height/2)
 	corners := [4]gmath.Point2{gmath.P2(-w, -h), gmath.P2(w, -h), gmath.P2(w, h), gmath.P2(-w, h)}
 	t.preview = t.preview[:0]
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		t.preview = append(t.preview, drawing.DrawingCurve{A: corners[i], B: corners[(i+1)%4], Visible: true})
 	}
 	return t.preview

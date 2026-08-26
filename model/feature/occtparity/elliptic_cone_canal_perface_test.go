@@ -39,12 +39,12 @@ const ellipticConePerFaceTol = 1e-2
 // differs by >13%).
 func ellipticConeCanalCases() []cylCylSeamCase {
 	return []cylCylSeamCase{
-		{grid: "tolblend_simple", drawexeFaceCase: drawexeFaceCase{name: "B4", totalArea: 547392, perFaceTol: ellipticConePerFaceTol,
-			drawexe: []float64{157258, 98174.8, 96992.6, 78329.5, 78125, 24543.7, 13966.8}}},
-		{grid: "tolblend_simple", drawexeFaceCase: drawexeFaceCase{name: "B8", totalArea: 547392, perFaceTol: ellipticConePerFaceTol,
-			drawexe: []float64{157258, 98174.8, 96992.6, 78329.5, 78125, 24543.7, 13966.8}}},
-		{grid: "tolblend_simple", drawexeFaceCase: drawexeFaceCase{name: "C3", totalArea: 782458, perFaceTol: ellipticConePerFaceTol,
-			drawexe: []float64{324462, 203353, 196350, 49087.4, 9171.8}}},
+		{grid: "tolblend_simple", name: "B4", totalArea: 547392, perFaceTol: ellipticConePerFaceTol,
+			drawexe: []float64{157258, 98174.8, 96992.6, 78329.5, 78125, 24543.7, 13966.8}},
+		{grid: "tolblend_simple", name: "B8", totalArea: 547392, perFaceTol: ellipticConePerFaceTol,
+			drawexe: []float64{157258, 98174.8, 96992.6, 78329.5, 78125, 24543.7, 13966.8}},
+		{grid: "tolblend_simple", name: "C3", totalArea: 782458, perFaceTol: ellipticConePerFaceTol,
+			drawexe: []float64{324462, 203353, 196350, 49087.4, 9171.8}},
 	}
 }
 

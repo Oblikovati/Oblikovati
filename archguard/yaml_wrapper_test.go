@@ -62,7 +62,7 @@ func packagesImportingYaml(t *testing.T) []string {
 // matchYamlImporters keeps the import paths whose import lists contain yaml.v3.
 func matchYamlImporters(listing string) []string {
 	var pkgs []string
-	for _, line := range strings.Split(strings.TrimSpace(listing), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(listing), "\n") {
 		path, imports, ok := strings.Cut(line, "::")
 		if ok && strings.Contains(imports, yamlV3Path) {
 			pkgs = append(pkgs, path)

@@ -86,7 +86,7 @@ func skipEED(r *BitReader) {
 			return
 		}
 		r.ReadHandle() // app id
-		for i := 0; i < size; i++ {
+		for range size {
 			r.ReadRC()
 		}
 	}

@@ -30,7 +30,7 @@ func TestOpenReloadCycle(t *testing.T) {
 		return req, nil
 	}, 2*time.Second)
 
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		lib, err := Open(so)
 		if err != nil {
 			t.Fatalf("Open (cycle %d): %v", i, err)

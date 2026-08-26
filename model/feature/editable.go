@@ -292,10 +292,7 @@ func intParam(label string, field *func() int) EditableParam {
 			return float64((*field)())
 		},
 		Set: func(v float64) {
-			n := int(v + 0.5)
-			if n < 1 {
-				n = 1
-			}
+			n := max(int(v+0.5), 1)
 			*field = func() int { return n }
 		},
 	}

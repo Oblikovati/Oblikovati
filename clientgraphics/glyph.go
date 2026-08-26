@@ -87,13 +87,13 @@ func diagonalGlyph(c math.Point3, bb billboard, r float64) [][2]math.Point3 {
 // phaseTurns turns (e.g. 0.25 turns the 4-gon into an axis-aligned square).
 func polygonGlyph(c math.Point3, bb billboard, r float64, n int, phaseTurns float64) [][2]math.Point3 {
 	pts := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		t := 2 * stdmath.Pi * (float64(i)/float64(n) + phaseTurns)
 		off := bb.right.Scale(r * stdmath.Cos(t)).Add(bb.up.Scale(r * stdmath.Sin(t)))
 		pts[i] = c.TranslateBy(off)
 	}
 	segs := make([][2]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		segs[i] = [2]math.Point3{pts[i], pts[(i+1)%n]}
 	}
 	return segs

@@ -20,7 +20,7 @@ import (
 // coplanar and imprint code paths from run to run. Ten runs, one canonical geometry hash.
 func TestTangentBooleanChainedRecomputeIsDeterministic(t *testing.T) {
 	var want string
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		a := guardBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2), "a")
 		b := guardBlock(t, math.P3(2, 2, 0), math.P3(4, 4, 2), "b") // shares only the vertical edge x=2,y=2
 		tangent, err := Boolean(Join, a, b)

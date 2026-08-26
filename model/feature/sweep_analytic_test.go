@@ -79,7 +79,7 @@ func TestSweepCircleDiagonalStraightMakesCylinder(t *testing.T) {
 // points, marked closed — the path a torus sweep rides.
 func circlePath3D(radius float64, n int) *sketch.Path3D {
 	pts := make([]*sketch.Point3D, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		th := 2 * stdmath.Pi * float64(i) / float64(n)
 		pts[i] = sketch.NewPoint3D(math.P3(math.Scalar(radius*stdmath.Cos(th)), math.Scalar(radius*stdmath.Sin(th)), 0))
 	}

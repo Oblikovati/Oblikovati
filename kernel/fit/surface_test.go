@@ -13,8 +13,8 @@ import (
 // z = sqrt(r²−x²−y²) over x,y ∈ [−half, half] — a scanned spherical-cap region (#1291 acceptance).
 func sphericalCap(n int, r, half float64) []math.Point3 {
 	pts := make([]math.Point3, 0, n*n)
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			x := -half + 2*half*float64(i)/float64(n-1)
 			y := -half + 2*half*float64(j)/float64(n-1)
 			z := stdmath.Sqrt(r*r - x*x - y*y)

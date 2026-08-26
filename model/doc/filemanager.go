@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -69,11 +70,9 @@ func (m *DesignProjectManager) ActiveProject() *DesignProject { return m.active 
 
 // SetActiveProject makes a registered project active, erroring if it is unknown.
 func (m *DesignProjectManager) SetActiveProject(p *DesignProject) error {
-	for _, known := range m.projects {
-		if known == p {
-			m.active = p
-			return nil
-		}
+	if slices.Contains(m.projects, p) {
+		m.active = p
+		return nil
 	}
 	return fmt.Errorf("doc: project %q is not registered", p.Name)
 }

@@ -3,6 +3,8 @@
 package ops
 
 import (
+	"slices"
+
 	"oblikovati.org/kernel/geom"
 )
 
@@ -64,8 +66,8 @@ func obstacleCanalPatchLoops(of *ObstacleFeature) []filletLoop {
 	for _, p := range c.FeetWall {
 		loop.add(p, nil)
 	}
-	for i := len(c.FeetRim) - 1; i >= 0; i-- {
-		loop.add(c.FeetRim[i], nil)
+	for _, v := range slices.Backward(c.FeetRim) {
+		loop.add(v, nil)
 	}
 	return []filletLoop{loop}
 }

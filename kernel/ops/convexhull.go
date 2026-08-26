@@ -102,7 +102,7 @@ func insertPoint(pts []math.Point3, faces [][3]int, pi int) [][3]int {
 		if !visible[fi] {
 			continue
 		}
-		for e := 0; e < 3; e++ {
+		for e := range 3 {
 			a, b := f[e], f[(e+1)%3]
 			if !seen[[2]int{b, a}] {
 				out = append(out, [3]int{a, b, pi})
@@ -119,7 +119,7 @@ func visibleEdgeSet(faces [][3]int, visible []bool) map[[2]int]bool {
 		if !visible[fi] {
 			continue
 		}
-		for e := 0; e < 3; e++ {
+		for e := range 3 {
 			seen[[2]int{f[e], f[(e+1)%3]}] = true
 		}
 	}
@@ -166,7 +166,7 @@ func compactHull(pts []math.Point3, faces [][3]int) ([]math.Point3, [][3]int, er
 	out := make([][3]int, len(faces))
 	for i, f := range faces {
 		var nf [3]int
-		for k := 0; k < 3; k++ {
+		for k := range 3 {
 			idx, ok := remap[f[k]]
 			if !ok {
 				idx = len(verts)

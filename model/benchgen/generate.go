@@ -234,7 +234,7 @@ func (b *builder) bayQuota(tier Tier) int {
 // placeTierInBay round-robin places n parts of tier into the bay, advancing the shared
 // slot so each placement gets a distinct in-bay jitter.
 func (b *builder) placeTierInBay(bayDoc *doc.Document, bayDef *compdef.AssemblyComponentDefinition, tier Tier, n int, slot *int) error {
-	for i := 0; i < n; i++ {
+	for range n {
 		part := b.nextPart(tier, true)
 		name := fmt.Sprintf("%s:%d", tier, *slot)
 		if _, err := bayDef.PlaceComponentFromFile(bayDoc, part, name, partTransform(*slot)); err != nil {

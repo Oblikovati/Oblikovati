@@ -3,6 +3,8 @@
 package ops
 
 import (
+	maps0 "maps"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -103,9 +105,7 @@ func collectObstacles(body *topo.Body, fils []edgeFillet, res Resolution,
 		if !ok {
 			continue
 		}
-		for id, f := range set.replace {
-			replace[id] = f
-		}
+		maps0.Copy(replace, set.replace)
 		extra[fils[i].edge.ID()] = set.extra
 		handled[fils[i].edge.ID()] = true
 		recordWallInserts(maps.edgeInserts, set)

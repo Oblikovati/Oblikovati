@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	stdmath "math"
+	"slices"
 	"testing"
 
 	"oblikovati.org/addin/modelaccess"
@@ -205,8 +206,8 @@ func TestSketch3DAddHelix(t *testing.T) {
 func lastHelix(t *testing.T, part *compdef.PartComponentDefinition) *sketch.HelicalCurve3D {
 	t.Helper()
 	ents := part.Sketches3D().Item(0).Entities()
-	for i := len(ents) - 1; i >= 0; i-- {
-		if h, ok := ents[i].(*sketch.HelicalCurve3D); ok {
+	for _, ent := range slices.Backward(ents) {
+		if h, ok := ent.(*sketch.HelicalCurve3D); ok {
 			return h
 		}
 	}

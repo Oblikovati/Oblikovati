@@ -32,7 +32,7 @@ func TestSweepPanelShot(t *testing.T) {
 	icons = nil
 
 	s := sweepRailSession(t)
-	for i := 0; i < 12; i++ {
+	for range 12 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.12)

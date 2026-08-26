@@ -26,7 +26,7 @@ import (
 // editing that parameter moves only that block (and the tail the engine rebuilds after it).
 func buildExtrudeStack(t *testing.T, def *compdef.PartComponentDefinition, n, driveIndex int, driveParam string) {
 	t.Helper()
-	for i := 0; i < n; i++ {
+	for i := range n {
 		sk := def.Sketches().Add(sketch.XYPlane())
 		ox := float64(i) * 10
 		c0 := sk.Points().Add(math.P2(ox, 0))
@@ -83,7 +83,7 @@ func TestParameterEditRebuildsOnlyDependentTail(t *testing.T) {
 	def.RecomputeAfterChange()
 	after := recomputeCounts(def)
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		switch {
 		case i < driveIndex && after[i] != before[i]:
 			t.Errorf("feature %d (before the edited one) recomputed: %d→%d, want reused", i, before[i], after[i])

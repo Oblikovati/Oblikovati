@@ -11,10 +11,10 @@ import "math"
 // mul4 multiplies two column-major 4×4 matrices (a·b).
 func mul4(a, b [16]float32) [16]float32 {
 	var out [16]float32
-	for col := 0; col < 4; col++ {
-		for row := 0; row < 4; row++ {
+	for col := range 4 {
+		for row := range 4 {
 			var s float32
-			for k := 0; k < 4; k++ {
+			for k := range 4 {
 				s += a[k*4+row] * b[col*4+k]
 			}
 			out[col*4+row] = s

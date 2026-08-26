@@ -273,7 +273,7 @@ func fillPBorder(a [][]float64, cs []PlateConstraint) {
 	n := len(cs)
 	for i, c := range cs {
 		row := plateMonoRow(c.U, c.V, c.Order)
-		for k := 0; k < 6; k++ {
+		for k := range 6 {
 			a[i][n+k] = row[k]
 			a[n+k][i] = row[k]
 		}
@@ -423,11 +423,11 @@ func buildPlateCoeffs(ncs []PlateConstraint, x [][]float64, rFloor float64, fram
 func extractFieldCoeffs(centers []PlateConstraint, x [][]float64, f int, rFloor float64, frame plateDomainFrame) PlateCoeffs {
 	n := len(centers)
 	lambda := make([]float64, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		lambda[i] = x[i][f]
 	}
 	var poly [6]float64
-	for k := 0; k < 6; k++ {
+	for k := range 6 {
 		poly[k] = x[n+k][f]
 	}
 	return PlateCoeffs{centers: centers, lambda: lambda, poly: poly, rFloor: rFloor, u0: frame.u0, v0: frame.v0, scale: frame.scale}

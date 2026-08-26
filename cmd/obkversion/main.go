@@ -120,7 +120,7 @@ func (g realGit) newestTag(pattern string) string {
 	if err != nil {
 		return ""
 	}
-	for _, line := range strings.Split(out, "\n") {
+	for line := range strings.SplitSeq(out, "\n") {
 		if t := strings.TrimSpace(line); t != "" {
 			return t
 		}
@@ -140,7 +140,7 @@ func (g realGit) commitsSince(ref string) []string {
 		return nil
 	}
 	var msgs []string
-	for _, m := range strings.Split(out, "\x00") {
+	for m := range strings.SplitSeq(out, "\x00") {
 		if strings.TrimSpace(m) != "" {
 			msgs = append(msgs, m)
 		}

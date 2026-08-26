@@ -61,7 +61,7 @@ func parseOBJVertex(fields []string) (math.Point3, error) {
 		return math.Point3{}, &decodeError{format: "OBJ", what: "vertex needs 3 coordinates, got", value: strings.Join(fields, " ")}
 	}
 	var c [3]float64
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		v, err := strconv.ParseFloat(fields[i+1], 64)
 		if err != nil {
 			return math.Point3{}, &decodeError{format: "OBJ", what: "bad coordinate", value: fields[i+1]}
@@ -91,7 +91,7 @@ func parseOBJFace(fields []string, verts []math.Point3, m *RawMesh) error {
 // resolveOBJIndex parses a face corner token ("v", "v/vt", "v/vt/vn", "v//vn") to a
 // 0-based vertex index, handling the 1-based and negative-relative OBJ conventions.
 func resolveOBJIndex(tok string, n int) (int, error) {
-	first := strings.SplitN(tok, "/", 2)[0]
+	first, _, _ := strings.Cut(tok, "/")
 	v, err := strconv.Atoi(first)
 	if err != nil {
 		return 0, &decodeError{format: "OBJ", what: "bad face index", value: tok}

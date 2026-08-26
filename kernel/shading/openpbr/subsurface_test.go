@@ -81,7 +81,7 @@ func TestPhaseHenyeyGreensteinIntegratesToOne(t *testing.T) {
 	for _, g := range []float64{-0.7, -0.3, 0, 0.3, 0.7} {
 		const n = 256
 		var sum float64
-		for i := 0; i < n; i++ {
+		for i := range n {
 			cosTheta := -1 + (float64(i)+0.5)/n*2
 			sum += PhaseHenyeyGreenstein(cosTheta, g) * 2 * math.Pi
 		}

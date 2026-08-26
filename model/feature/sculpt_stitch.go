@@ -5,6 +5,7 @@ package feature
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -176,8 +177,8 @@ func sculptTarget(others []*topo.Body, affected *int) int {
 	if affected != nil && *affected >= 0 && *affected < len(others) && others[*affected].IsSolid() {
 		return *affected
 	}
-	for i := len(others) - 1; i >= 0; i-- {
-		if others[i].IsSolid() {
+	for i, other := range slices.Backward(others) {
+		if other.IsSolid() {
 			return i
 		}
 	}

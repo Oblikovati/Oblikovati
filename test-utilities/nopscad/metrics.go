@@ -108,7 +108,7 @@ func parseBinarySTL(raw []byte, n uint32) []triangle {
 		bits := binary.LittleEndian.Uint32(raw[o : o+4])
 		return omath.Scalar(math.Float32frombits(bits))
 	}
-	for i := uint32(0); i < n; i++ {
+	for range n {
 		base := off + 12 // skip the 3-float facet normal
 		p := func(k int) omath.Point3 {
 			b := base + k*12
@@ -130,7 +130,7 @@ func parseASCIISTL(s string) ([]triangle, error) {
 		}
 		return 0, 0, 0, false
 	}
-	for _, line := range strings.Split(s, "\n") {
+	for line := range strings.SplitSeq(s, "\n") {
 		if x, y, z, ok := fields(strings.TrimSpace(line)); ok {
 			pts = append(pts, omath.P3(omath.Scalar(x), omath.Scalar(y), omath.Scalar(z)))
 			if len(pts) == 3 {

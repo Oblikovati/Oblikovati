@@ -65,7 +65,7 @@ func writeDimstyle(h *graphHandles) []byte {
 	for _, v := range []float64{1, 0.18, 0.0625, 0.38, 0.18, 0, 0, 0, 0} { // DIMSCALE..DIMTM
 		b.data.WriteBD(v)
 	}
-	for i := 0; i < 6; i++ { // DIMTOL,DIMLIM,DIMTIH,DIMTOH,DIMSE1,DIMSE2
+	for range 6 { // DIMTOL,DIMLIM,DIMTIH,DIMTOH,DIMSE1,DIMSE2
 		b.data.WriteBit(0)
 	}
 	b.data.WriteBS(0)                                                 // DIMTAD
@@ -98,7 +98,7 @@ func writeDimstyle(h *graphHandles) []byte {
 	b.data.WriteBS(-2)                                  // DIMLWE (default)
 	b.data.WriteBit(0)                                  // unknown trailing flag the oracle reads as 0
 	b.handles.WriteHandle(hardPtrCode, h.styleStandard) // DIMTXSTY
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		b.handles.WriteHandle(hardPtrCode, 0) // DIMLDRBLK, DIMBLK, DIMBLK1, DIMBLK2 (null)
 	}
 	return frameObject(b)

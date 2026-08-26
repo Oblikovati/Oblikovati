@@ -272,7 +272,7 @@ func faceBoundaryCurves(f *topo.Face) []geom.Curve3 {
 // polishOntoWall Newton-refines q along axis onto the wall's zero set, using the wall's own normal for the
 // derivative of the signed distance along the slide (d/dt = n·axis).
 func polishOntoWall(q math.Point3, axis math.Vector3, wall geom.Surface) math.Point3 {
-	for i := 0; i < farEndNewtonSteps; i++ {
+	for range farEndNewtonSteps {
 		u, v, foot := geom.ClosestPointOnSurface(wall, q)
 		d := foot.VectorTo(q).Dot(wall.NormalAt(u, v))
 		slope := wall.NormalAt(u, v).Dot(axis)

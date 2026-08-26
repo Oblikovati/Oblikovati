@@ -90,7 +90,7 @@ func rimBandHosts(e *topo.Edge) (devF, capF *topo.Face, ok bool) {
 	if len(faces) != 2 {
 		return nil, nil, false
 	}
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		if _, isPlane := faces[i].Geometry().(geom.Plane); !isPlane {
 			continue
 		}

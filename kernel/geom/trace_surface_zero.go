@@ -146,7 +146,7 @@ func snapTinyToZero(v float64) float64 {
 // the 3D point on the base surface there.
 func bisectEdge(s Surface, f scalarField, ua, va, fa, ub, vb float64) math.Point3 {
 	lo, hi := 0.0, 1.0
-	for k := 0; k < traceBisectIter; k++ {
+	for range traceBisectIter {
 		mid := (lo + hi) / 2
 		um, vm := math.Lerp(ua, ub, mid), math.Lerp(va, vb, mid)
 		fm := f(um, vm)

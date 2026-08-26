@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"slices"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/model/feature"
@@ -67,12 +68,7 @@ func (t *ReplaceFaceTool) Pick(_ *Session, sel Selectable) {
 }
 
 func (t *ReplaceFaceTool) hasFace(f FaceHandle) bool {
-	for _, h := range t.faces {
-		if h == f {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(t.faces, f)
 }
 
 // SetPickingTarget switches between picking the faces to replace and the target face.

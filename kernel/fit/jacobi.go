@@ -17,7 +17,7 @@ const jacobiSweeps = 50
 // best-fit plane normal. The input is assumed symmetric (a[i][j] == a[j][i]).
 func jacobiEigen3(a mat3) (vals [3]float64, vecs mat3) {
 	vecs = identity3()
-	for sweep := 0; sweep < jacobiSweeps; sweep++ {
+	for range jacobiSweeps {
 		if offDiagonalNorm(a) == 0 {
 			break
 		}
@@ -54,7 +54,7 @@ func applySimilarity(a mat3, p, q int, c, s float64) mat3 {
 	a[p][p] = c*c*app - 2*s*c*apq + s*s*aqq
 	a[q][q] = s*s*app + 2*s*c*apq + c*c*aqq
 	a[p][q], a[q][p] = 0, 0
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		if k == p || k == q {
 			continue
 		}
@@ -69,7 +69,7 @@ func applySimilarity(a mat3, p, q int, c, s float64) mat3 {
 
 // applyColumns post-multiplies the eigenvector matrix by the rotation (updates columns p and q).
 func applyColumns(v mat3, p, q int, c, s float64) mat3 {
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		vkp, vkq := v[k][p], v[k][q]
 		v[k][p] = c*vkp - s*vkq
 		v[k][q] = s*vkp + c*vkq

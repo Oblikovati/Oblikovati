@@ -168,7 +168,7 @@ func o1StationParam(i int) float64 {
 // end-clustering equalises the arm-side and locus-side interpolation residuals (see n4CanalEndCluster).
 func o1CornerBallPath(f o1BallFrame, mid, lateral geom.Surface) (cornerBallPath, bool) {
 	path := cornerBallPath{}
-	for i := 0; i < o1CanalStationCount; i++ {
+	for i := range o1CanalStationCount {
 		c, ok := f.centerAt(f.a0 + (f.a1-f.a0)*o1StationParam(i))
 		if !ok {
 			return cornerBallPath{}, false

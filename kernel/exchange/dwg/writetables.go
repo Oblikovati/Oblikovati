@@ -74,7 +74,7 @@ func writeLinetype(handle, control uint64, name string) []byte {
 	b.data.WriteBD(0)      // pattern length
 	b.data.WriteRC('A')    // alignment, always 'A'
 	b.data.WriteRC(0)      // numdashes
-	for i := 0; i < 256; i++ {
+	for range 256 {
 		b.data.WriteRC(0) // string area
 	}
 	return frameObject(b)

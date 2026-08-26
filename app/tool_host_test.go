@@ -153,7 +153,7 @@ func TestHostedToolRatchet(t *testing.T) {
 // into a second Session (#1635). Grow the ceiling only with deliberate evidence.
 func TestToolHostStaysSlim(t *testing.T) {
 	const ceiling = 8
-	got := reflect.TypeOf((*ToolHost)(nil)).Elem().NumMethod()
+	got := reflect.TypeFor[ToolHost]().NumMethod()
 	if got > ceiling {
 		t.Fatalf("ToolHost has %d methods, ceiling %d — a slim host must not re-fatten (#1635)", got, ceiling)
 	}

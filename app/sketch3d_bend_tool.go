@@ -5,6 +5,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"oblikovati.org/model/sketch"
 )
@@ -71,12 +72,7 @@ func (t *Bend3DTool) PickSnap(ent sketch.Entity, _ SnapResult) {
 }
 
 func (t *Bend3DTool) contains(l *sketch.Line3D) bool {
-	for _, have := range t.lines {
-		if have == l {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(t.lines, l)
 }
 
 // CanCommit is true once two lines are picked.

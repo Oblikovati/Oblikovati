@@ -16,10 +16,10 @@ func nurbsGridBody(t *testing.T, n int) *topo.Body {
 	t.Helper()
 	ctrl := make([][]math.Point3, n)
 	w := make([][]float64, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		ctrl[i] = make([]math.Point3, n)
 		w[i] = make([]float64, n)
-		for j := 0; j < n; j++ {
+		for j := range n {
 			ctrl[i][j] = math.P3(float64(i)/float64(n-1), float64(j)/float64(n-1), 0)
 			w[i][j] = 1
 		}

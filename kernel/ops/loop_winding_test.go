@@ -17,7 +17,7 @@ import (
 // classifier in tessellate_trim.go (TestUnwrapRejectsFullWrapWhereverItStarts).
 func TestLoopWindingIsExactlyQuantised(t *testing.T) {
 	for _, n := range []int{3, 5, 8, 17, 64} {
-		for phase := 0; phase < n; phase++ {
+		for phase := range n {
 			us := make([]float64, n)
 			for i := range us {
 				us[i] = stdmath.Mod(2*stdmath.Pi*float64((i+phase)%n)/float64(n), 2*stdmath.Pi)

@@ -162,8 +162,8 @@ func bsplinePatchSurfaceArea(f *topo.Face) float64 {
 	v0, v1 := surf.VDomain()
 	hu, hv := (u1-u0)/n4PatchAreaCells, (v1-v0)/n4PatchAreaCells
 	area := 0.0
-	for i := 0; i < n4PatchAreaCells; i++ {
-		for j := 0; j < n4PatchAreaCells; j++ {
+	for i := range n4PatchAreaCells {
+		for j := range n4PatchAreaCells {
 			area += gaussCellArea(surf, u0+(float64(i)+0.5)*hu, v0+(float64(j)+0.5)*hv, hu, hv)
 		}
 	}

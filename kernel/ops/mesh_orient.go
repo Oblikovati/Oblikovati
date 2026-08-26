@@ -42,8 +42,8 @@ func triangleAdjacency(m *Mesh) [][]orientLink {
 	w := meshSegWelder(m)
 	uses := map[segKey][]use{}
 	nt := m.TriangleCount()
-	for ti := 0; ti < nt; ti++ {
-		for k := 0; k < 3; k++ {
+	for ti := range nt {
+		for k := range 3 {
 			a, b := triEdge(m, ti, k)
 			key := w.seg(a, b)
 			if len(uses[key]) < 2 {

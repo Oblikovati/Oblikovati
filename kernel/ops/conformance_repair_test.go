@@ -118,7 +118,7 @@ func meshHasSegment(m *Mesh, a, b math.Point3) bool {
 	near := func(p, qp math.Point3) bool { return p.DistanceTo(qp) < 1e-6 }
 	for tr := 0; 3*tr+2 < len(m.Indices); tr++ {
 		v := [3]math.Point3{m.Positions[m.Indices[3*tr]], m.Positions[m.Indices[3*tr+1]], m.Positions[m.Indices[3*tr+2]]}
-		for k := 0; k < 3; k++ {
+		for k := range 3 {
 			p, qp := v[k], v[(k+1)%3]
 			if (near(p, a) && near(qp, b)) || (near(p, b) && near(qp, a)) {
 				return true

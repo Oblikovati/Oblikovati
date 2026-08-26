@@ -185,7 +185,7 @@ func dipRimPointAtStation(d obstacleDetection, ef edgeFillet, z float64) (math.P
 func rimPlaneCrossings(rim geom.Curve3, ef edgeFillet, z float64) []math.Point3 {
 	f := func(t float64) float64 { return axisParam(ef, rim.PointAt(t)) - z }
 	var out []math.Point3
-	for i := 0; i < rimScanSamples; i++ {
+	for i := range rimScanSamples {
 		t0, t1 := float64(i)/float64(rimScanSamples), float64(i+1)/float64(rimScanSamples)
 		f0, f1 := f(t0), f(t1)
 		if f0 == 0 {
@@ -207,7 +207,7 @@ const rimScanSamples = 256
 // weld, so it converges on the parameter itself (tol:parametric).
 func bisectRimParam(f func(float64) float64, lo, hi float64) float64 {
 	flo := f(lo)
-	for i := 0; i < 60; i++ {
+	for range 60 {
 		mid := (lo + hi) / 2
 		fmid := f(mid)
 		if (flo < 0) == (fmid < 0) {

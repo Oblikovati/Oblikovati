@@ -2,7 +2,10 @@
 
 package command
 
-import "errors"
+import (
+	"errors"
+	"slices"
+)
 
 // errTransactionClosed reports use of a transaction that has already committed or
 // aborted.
@@ -106,8 +109,8 @@ func (t *Transaction) Abort() error {
 	}
 	t.state = Aborted
 	t.h.open = t.parent
-	for i := len(t.cmds) - 1; i >= 0; i-- {
-		if err := t.cmds[i].Revert(); err != nil {
+	for _, v := range slices.Backward(t.cmds) {
+		if err := v.Revert(); err != nil {
 			return err
 		}
 	}

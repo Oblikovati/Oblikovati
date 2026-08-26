@@ -22,7 +22,7 @@ func rectilinearUnitLoop() []math.Point2 {
 	var loop []math.Point2
 	for i := range corners {
 		a, b := corners[i], corners[(i+1)%len(corners)]
-		for k := 0; k < 7; k++ {
+		for k := range 7 {
 			loop = append(loop, a.Lerp(b, math.Scalar(float64(k)/7)))
 		}
 	}
@@ -58,7 +58,7 @@ func TestIsoRectilinearGridDeclinesAPlainRectangle(t *testing.T) {
 	corners := []math.Point2{math.P2(0, 0), math.P2(4, 0), math.P2(4, 10), math.P2(0, 10)}
 	for i := range corners {
 		a, b := corners[i], corners[(i+1)%len(corners)]
-		for k := 0; k < 5; k++ {
+		for k := range 5 {
 			loop = append(loop, a.Lerp(b, math.Scalar(float64(k)/5)))
 		}
 	}

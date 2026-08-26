@@ -5,6 +5,7 @@ package app
 import (
 	"errors"
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/feature"
@@ -156,12 +157,7 @@ func (t *ChamferTool) addEdge(e EdgeHandle) {
 }
 
 func (t *ChamferTool) hasEdge(e EdgeHandle) bool {
-	for _, h := range t.edges {
-		if h == e {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(t.edges, e)
 }
 
 // SetDistance/Distance set the chamfer setback (database units).

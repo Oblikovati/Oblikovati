@@ -226,8 +226,8 @@ func gaussCellArea(s Surface, u0, u1, v0, v1 float64) float64 {
 		return 0
 	}
 	sum := 0.0
-	for i := 0; i < 5; i++ {
-		for j := 0; j < 5; j++ {
+	for i := range 5 {
+		for j := range 5 {
 			du, dv := s.DerivativesAt(u0+hu*(1+gauss5.x[i]), v0+hv*(1+gauss5.x[j]))
 			sum += gauss5.w[i] * gauss5.w[j] * float64(du.Cross(dv).Length())
 		}
@@ -295,7 +295,7 @@ func SurfaceRangeBox(s Surface) math.Box {
 func torusRangeBox(g Torus) math.Box {
 	box := math.EmptyBox()
 	reach := [3]float64{}
-	for axis := 0; axis < 3; axis++ {
+	for axis := range 3 {
 		ref, bin := vectorComponent(g.Ref.AsVector(), axis), vectorComponent(g.binormal, axis)
 		axial := vectorComponent(g.AxisDir.AsVector(), axis)
 		reach[axis] = (g.MajorRadius+g.MinorRadius)*stdmath.Hypot(ref, bin) +

@@ -51,7 +51,7 @@ func TestSeedCommandInput(t *testing.T) {
 func TestInWindowBareLetterTypesIntoCommandWindow(t *testing.T) {
 	const attempts = 3
 	var lastErr string
-	for i := 0; i < attempts; i++ {
+	for range attempts {
 		lastErr = bareLetterAttempt(t)
 		if lastErr == "" {
 			return

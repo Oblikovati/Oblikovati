@@ -32,7 +32,7 @@ func faceEdges3D(f planarFace) [][2]math.Point3 {
 	var segs [][2]math.Point3
 	for _, ring := range f.loops {
 		n := len(ring)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			segs = append(segs, [2]math.Point3{ring[i], ring[(i+1)%n]})
 		}
 	}
@@ -83,7 +83,7 @@ func loopCrossingParams(f planarFace, seg geom.LineSegment2d) []float64 {
 	ts := []float64{0, 1}
 	for _, ring := range f.loops {
 		n := len(ring)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			c, d := to2D(f.plane, ring[i]), to2D(f.plane, ring[(i+1)%n])
 			if _, sp, _, ok := geom.Segment2dIntersection(seg, geom.NewLineSegment2d(c, d), arrTol); ok {
 				ts = append(ts, sp)

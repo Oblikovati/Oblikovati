@@ -16,7 +16,7 @@ import (
 func facetedLoopSegments(cx, cy, r float64, n int) []hlr.Segment {
 	pts := circleLoop(cx, cy, r, n)
 	segs := make([]hlr.Segment, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		segs[i] = hlr.Segment{A: pts[i], B: pts[(i+1)%n], EdgeKey: []byte{byte(i)}}
 	}
 	return segs
@@ -26,7 +26,7 @@ func facetedLoopSegments(cx, cy, r float64, n int) []hlr.Segment {
 // for a hole rim tessellated into segment endpoints by the projection.
 func circleLoop(cx, cy, r float64, n int) []math.Point2 {
 	pts := make([]math.Point2, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := 2 * stdmath.Pi * float64(i) / float64(n)
 		pts[i] = math.P2(math.Scalar(cx+r*stdmath.Cos(a)), math.Scalar(cy+r*stdmath.Sin(a)))
 	}

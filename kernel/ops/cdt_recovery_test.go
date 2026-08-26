@@ -18,7 +18,7 @@ import (
 func edgeUseCount(tris [][3]int) map[[2]int]int {
 	use := map[[2]int]int{}
 	for _, t := range tris {
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			use[conKey(t[i], t[(i+1)%3])]++
 		}
 	}

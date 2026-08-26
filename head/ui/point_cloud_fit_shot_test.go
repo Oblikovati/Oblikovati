@@ -52,7 +52,7 @@ func TestInWindowFitPlaneRenders(t *testing.T) {
 	t.Logf("fitted plane origin=%v normal=%v from %d points", plane.Origin, plane.Normal(), pc.TotalPointCount())
 
 	frameCameraOn(s, pc.RangeBox())
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.12)

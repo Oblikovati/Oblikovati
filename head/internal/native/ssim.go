@@ -75,8 +75,8 @@ func ssimWindow(la, lb []float64, stride, x0, y0, window int, c1, c2 float64) fl
 func lumaGrid(img image.Image, w, h int) []float64 {
 	out := make([]float64, w*h)
 	b := img.Bounds()
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			r, g, bl, _ := img.At(b.Min.X+x, b.Min.Y+y).RGBA()
 			out[y*w+x] = (0.299*float64(r) + 0.587*float64(g) + 0.114*float64(bl)) / 65535
 		}

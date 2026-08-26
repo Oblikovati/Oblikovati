@@ -46,7 +46,7 @@ func nearCollinear2(rng *rand.Rand) (a, b, c math.Point2) {
 func TestOrient2DTightenedFilterIsExactAndTighter(t *testing.T) {
 	rng := rand.New(rand.NewSource(14))
 	trustedNewMismatch, newResolvesOldExact := 0, 0
-	for i := 0; i < 300000; i++ {
+	for i := range 300000 {
 		a, b, c := nearCollinear2(rng)
 		left := (a.X - c.X) * (b.Y - c.Y)
 		right := (a.Y - c.Y) * (b.X - c.X)
@@ -94,7 +94,7 @@ func nearCoplanar3(rng *rand.Rand) (a, b, c, d math.Point3) {
 func TestOrient3DTightenedFilterIsExactAndTighter(t *testing.T) {
 	rng := rand.New(rand.NewSource(56))
 	mismatch, tighter := 0, 0
-	for i := 0; i < 300000; i++ {
+	for i := range 300000 {
 		a, b, c, d := nearCoplanar3(rng)
 		det, mag := orient3DFloat(a, b, c, d)
 		newBound := orient3DFilter * mag
@@ -137,7 +137,7 @@ func nearCocircular2(rng *rand.Rand) (a, b, c, d math.Point2) {
 func TestInCircleTightenedFilterIsExactAndTighter(t *testing.T) {
 	rng := rand.New(rand.NewSource(96))
 	mismatch, tighter := 0, 0
-	for i := 0; i < 300000; i++ {
+	for i := range 300000 {
 		a, b, c, d := nearCocircular2(rng)
 		det, mag := inCircleFloat(a, b, c, d)
 		newBound := inCircleFilter * mag

@@ -66,13 +66,13 @@ func soupOpenEdges(soup [][3]meshbool.Point) int {
 	edge := map[string]int{}
 	key := func(p, q meshbool.Point) string { return pointKey(p) + "->" + pointKey(q) }
 	for _, tri := range soup {
-		for e := 0; e < 3; e++ {
+		for e := range 3 {
 			edge[key(tri[e], tri[(e+1)%3])]++
 		}
 	}
 	open := 0
 	for _, tri := range soup {
-		for e := 0; e < 3; e++ {
+		for e := range 3 {
 			if edge[pointKey(tri[(e+1)%3])+"->"+pointKey(tri[e])] == 0 {
 				open++
 			}

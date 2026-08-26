@@ -8,8 +8,8 @@ import "testing"
 // for a normal drawing's bulk.
 func gridPoints(n int, size float64) []Point3 {
 	pts := make([]Point3, 0, n*n)
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			x := size * float64(i) / float64(n-1)
 			y := size * float64(j) / float64(n-1)
 			pts = append(pts, P3(x, y, 0))
@@ -47,7 +47,7 @@ func TestRobustBoxExcludesFarStray(t *testing.T) {
 // dimension, so nothing is clipped.
 func TestRobustBoxKeepsLegitimateSpread(t *testing.T) {
 	pts := make([]Point3, 0, 200)
-	for i := 0; i < 200; i++ {
+	for i := range 200 {
 		pts = append(pts, P3(float64(i)*1000, float64(i%3), 0)) // X spans 0..199000, Y tiny
 	}
 	b := RobustPointBox(pts)

@@ -52,7 +52,7 @@ func spanAreaAt(u, z float64) math.Point3 {
 func spanAreaRimArc(z, u0, u1 float64) []endSeg {
 	n := int(stdmath.Ceil(stdmath.Abs(u1-u0)/1.5 - 1e-12))
 	out := make([]endSeg, 0, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := u0 + (u1-u0)*float64(i)/float64(n)
 		b := u0 + (u1-u0)*float64(i+1)/float64(n)
 		out = append(out, chainCircleSeg(math.P3(0, 0, math.Scalar(z)), math.V3(1, 0, 0), math.V3(0, 1, 0), spanAreaCylR, a, b))

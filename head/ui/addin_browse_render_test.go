@@ -65,7 +65,7 @@ func TestAddInPanelTreeTableRender(t *testing.T) {
 // ("62-10") sits below the visible fold — the #1933 scenario the render must scroll into view.
 func offFoldMemberRows() []wire.TableRow {
 	rows := make([]wire.TableRow, 0, 12)
-	for i := 0; i < 12; i++ {
+	for i := range 12 {
 		key := "62-" + strconv.Itoa(i)
 		rows = append(rows, wire.TableRow{Key: key, Cells: []string{key, "10", "30", "9"}})
 	}

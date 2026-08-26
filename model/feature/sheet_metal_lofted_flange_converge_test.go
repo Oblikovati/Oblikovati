@@ -41,7 +41,7 @@ func TestConvergeCornersRetargetsOnlyCorners(t *testing.T) {
 // regularRing is an m-gon of radius r in the z-plane — a stand-in for a rounded profile.
 func regularRing(m int, r, z float64) []math.Point3 {
 	pts := make([]math.Point3, m)
-	for k := 0; k < m; k++ {
+	for k := range m {
 		a := 2 * stdmath.Pi * float64(k) / float64(m)
 		pts[k] = math.P3(r*stdmath.Cos(a), r*stdmath.Sin(a), z)
 	}

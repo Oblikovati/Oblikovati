@@ -119,7 +119,7 @@ func ccwMeridianVerts(verts []RevolveVertex) []RevolveVertex {
 	}
 	n := len(verts)
 	out := make([]RevolveVertex, n)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		oldEdge := n - 1 - k
 		out[k] = RevolveVertex{P: verts[(oldEdge-1+n)%n].P, ArcCenter: verts[oldEdge].ArcCenter}
 	}

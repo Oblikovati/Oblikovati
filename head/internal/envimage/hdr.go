@@ -38,11 +38,11 @@ func decodeHDRStream(r *bufio.Reader) (Equirect, error) {
 	}
 	out := newEquirect(w, h)
 	row := make([]byte, w*4) // one scanline of RGBE
-	for y := 0; y < h; y++ {
+	for y := range h {
 		if err := readHDRScanline(r, row, w); err != nil {
 			return Equirect{}, fmt.Errorf("scanline %d: %w", y, err)
 		}
-		for x := 0; x < w; x++ {
+		for x := range w {
 			rr, gg, bb := rgbeToFloat(row[x*4], row[x*4+1], row[x*4+2], row[x*4+3])
 			out.set(x, y, rr, gg, bb)
 		}
@@ -95,7 +95,7 @@ func readHDRScanline(r *bufio.Reader, row []byte, w int) error {
 		copy(row[:4], hdr[:])
 		return readFull(r, row[4:])
 	}
-	for ch := 0; ch < 4; ch++ { // four RLE-encoded channel planes
+	for ch := range 4 { // four RLE-encoded channel planes
 		if err := decodeRLEChannel(r, row, ch, w); err != nil {
 			return err
 		}

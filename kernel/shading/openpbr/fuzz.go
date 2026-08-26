@@ -57,10 +57,10 @@ func fuzzScalarAlbedo(cosThetaO, roughness float64) float64 {
 	wo := Vec3{X: sinThetaO, Z: cosThetaO}
 
 	var sum float64
-	for i := 0; i < fuzzAlbedoQuadratureN; i++ {
+	for i := range fuzzAlbedoQuadratureN {
 		thetaI := (float64(i) + 0.5) / fuzzAlbedoQuadratureN * (math.Pi / 2)
 		sinThetaI, cosThetaI := math.Sin(thetaI), math.Cos(thetaI)
-		for j := 0; j < fuzzAlbedoQuadratureN; j++ {
+		for j := range fuzzAlbedoQuadratureN {
 			phiI := (float64(j) + 0.5) / fuzzAlbedoQuadratureN * (2 * math.Pi)
 			wi := Vec3{X: sinThetaI * math.Cos(phiI), Y: sinThetaI * math.Sin(phiI), Z: cosThetaI}
 			f := SpecularFuzz(wi, wo, roughness, Gray(1))

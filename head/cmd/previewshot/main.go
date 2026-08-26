@@ -74,7 +74,7 @@ func run(op, out string, frames int) error {
 	}
 	defer win.Destroy()
 	win.InitViewport()
-	for i := 0; i < frames; i++ {
+	for range frames {
 		win.BeginFrame()
 		ui.DrawChrome(win, s)
 		win.EndFrame(ui.WindowClearColor())
@@ -581,7 +581,7 @@ func cubeFace(p0, p1, p2, p3 math.Point3) *topo.Body {
 		v[i] = bld.AddVertex(q, lin)
 	}
 	uses := make([]topo.Use, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		uses[i] = topo.Fwd(bld.AddEdge(geom.NewLineSegment(pts[i], pts[(i+1)%4]), v[i], v[(i+1)%4], lin))
 	}
 	bld.AddFace(surf, lin, topo.OuterLoop(uses...))

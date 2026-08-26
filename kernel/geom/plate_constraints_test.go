@@ -141,7 +141,7 @@ func TestDiscretizeSidesCounts(t *testing.T) {
 	if len(cs) != 40 {
 		t.Fatalf("constraint count = %d, want 40", len(cs))
 	}
-	for c := 0; c < 3; c++ {
+	for c := range 3 {
 		if len(vals[c]) != len(cs) {
 			t.Fatalf("value field %d length = %d, want %d (one per constraint)", c, len(vals[c]), len(cs))
 		}
@@ -223,7 +223,7 @@ func checkSideG1(t *testing.T, side PlateSide, d PlateDomain, cs []PlateConstrai
 	t.Helper()
 	lo, hi := side.Curve.Domain()
 	worst := 0.0
-	for k := 0; k < 5; k++ {
+	for k := range 5 {
 		foot := side.Curve.PointAt(lo + (hi-lo)*float64(k)/4)
 		u, v := d.Project(foot)
 		su := rowVector(cs, vals, u, v, [2]int{1, 0})

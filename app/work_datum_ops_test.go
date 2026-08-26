@@ -218,7 +218,7 @@ func TestAngleWorkPlaneToolNeedsPicksAndAngle(t *testing.T) {
 // duplicates, and every work point used to be minted as the same "WorkPoint".
 func TestCreatedDatumsGetUniqueNames(t *testing.T) {
 	s, def := emptyPartSession(t)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		s.Selection().Clear()
 		s.Selection().Add(WorkPointHandle{Point: addUserPoint(def, math.P3(float64(i), 0, 0))})
 		if _, err := s.CreateVertexWorkPoint(); err != nil {

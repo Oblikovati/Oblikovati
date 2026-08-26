@@ -64,7 +64,7 @@ func readGlobalsValue(path, key string) string {
 	if err != nil {
 		return ""
 	}
-	for _, line := range strings.Split(string(b), "\n") {
+	for line := range strings.SplitSeq(string(b), "\n") {
 		k, v, ok := strings.Cut(strings.TrimSpace(line), "=")
 		if ok && k == key {
 			return strings.TrimSpace(v)

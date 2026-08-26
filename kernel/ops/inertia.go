@@ -102,8 +102,8 @@ func transpose3(m mat3) mat3 {
 
 func mul3(a, b mat3) mat3 {
 	var r mat3
-	for i := 0; i < 3; i++ {
-		for j := 0; j < 3; j++ {
+	for i := range 3 {
+		for j := range 3 {
 			r[i][j] = a[i][0]*b[0][j] + a[i][1]*b[1][j] + a[i][2]*b[2][j]
 		}
 	}
@@ -112,8 +112,8 @@ func mul3(a, b mat3) mat3 {
 
 func add3(a, b mat3) mat3 {
 	var r mat3
-	for i := 0; i < 3; i++ {
-		for j := 0; j < 3; j++ {
+	for i := range 3 {
+		for j := range 3 {
 			r[i][j] = a[i][j] + b[i][j]
 		}
 	}
@@ -122,8 +122,8 @@ func add3(a, b mat3) mat3 {
 
 func scale3(a mat3, s float64) mat3 {
 	var r mat3
-	for i := 0; i < 3; i++ {
-		for j := 0; j < 3; j++ {
+	for i := range 3 {
+		for j := range 3 {
 			r[i][j] = a[i][j] * s
 		}
 	}

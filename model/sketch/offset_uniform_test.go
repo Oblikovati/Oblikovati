@@ -14,7 +14,7 @@ import (
 func groundedSquare(s *Sketch, side float64) []*Line {
 	c := []gmath.Point2{gmath.P2(0, 0), gmath.P2(gmath.Scalar(side), 0), gmath.P2(gmath.Scalar(side), gmath.Scalar(side)), gmath.P2(0, gmath.Scalar(side))}
 	lines := make([]*Line, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		lines[i] = s.Lines().AddByTwoPoints(c[i], c[(i+1)%4])
 		s.GeometricConstraints().AddGround(lines[i])
 	}

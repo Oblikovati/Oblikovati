@@ -76,8 +76,8 @@ func farX(dx float64) math.Matrix4 {
 // gridCloud builds a synthetic cloud of n×n points on the XY plane for render benchmarks.
 func gridCloud(t testing.TB, n int) []math.Point3 {
 	pts := make([]math.Point3, 0, n*n)
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			pts = append(pts, math.P3(math.Scalar(i), math.Scalar(j), 0))
 		}
 	}

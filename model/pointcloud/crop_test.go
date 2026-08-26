@@ -11,7 +11,7 @@ import (
 // gridCloud returns a cloud of points at integer x in [0,9], y=z=0.
 func gridCloud() *PointCloud {
 	var pts []math.Point3
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		pts = append(pts, math.P3(math.Scalar(i), 0, 0))
 	}
 	return New("scan", "", "", pts)

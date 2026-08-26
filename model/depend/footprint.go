@@ -2,6 +2,8 @@
 
 package depend
 
+import "slices"
+
 // Footprint is the set of keys one consumer (a sketch solve, a feature evaluation, a work
 // plane's recompute) read during the last recompute. The engine's whole correctness rests
 // on one rule: a consumer is dirtied by a change exactly when the change touches a key in
@@ -34,10 +36,5 @@ func (s Set) Empty() bool { return len(s) == 0 }
 // the change-set. It is kind-agnostic — a ParameterKey and an ExternalGeometryKey are
 // compared the same way — which is exactly what lets a future adaptive reference reuse it.
 func Intersects(footprint []Key, changed Set) bool {
-	for _, k := range footprint {
-		if changed.Has(k) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(footprint, changed.Has)
 }

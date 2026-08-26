@@ -92,7 +92,7 @@ func borderSegment(ax, ay, bx, by float64) DrawingCurve {
 // or empty strings for the none mode (the divisions are still drawn).
 func zoneLabels(n int, mode types.BorderLabelMode) []string {
 	out := make([]string, 0, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		switch mode {
 		case types.NumericBorderLabel:
 			out = append(out, strconv.Itoa(i+1))

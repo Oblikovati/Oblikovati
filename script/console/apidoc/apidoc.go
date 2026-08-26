@@ -11,6 +11,8 @@ package apidoc
 
 //go:generate go run gen/main.go
 
+import "strings"
+
 // Param is one argument of a method: its Lua table key and a human-readable type.
 type Param struct {
 	Name string
@@ -54,12 +56,13 @@ func (d Doc) Signature() string {
 	if len(d.Params) == 0 {
 		return d.Wire + "{}"
 	}
-	out := d.Wire + "{ "
+	var out strings.Builder
+	out.WriteString(d.Wire + "{ ")
 	for i, p := range d.Params {
 		if i > 0 {
-			out += ", "
+			out.WriteString(", ")
 		}
-		out += p.Name
+		out.WriteString(p.Name)
 	}
-	return out + " }"
+	return out.String() + " }"
 }

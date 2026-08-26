@@ -17,7 +17,7 @@ func closedBarrelSurface(t *testing.T, radius, height float64, cols int) BSpline
 	t.Helper()
 	ctrl := make([][]math.Point3, cols)
 	weights := make([][]float64, cols)
-	for c := 0; c < cols; c++ {
+	for c := range cols {
 		ang := 2 * stdmath.Pi * float64(c) / float64(cols-1) // c = cols−1 lands back on c = 0
 		x, y := radius*stdmath.Cos(ang), radius*stdmath.Sin(ang)
 		ctrl[c] = []math.Point3{math.P3(x, y, 0), math.P3(x, y, height)}
@@ -56,7 +56,7 @@ func TestParamAtInvertsAcrossTheClosingSeam(t *testing.T) {
 	s := closedBarrelSurface(t, 5.9, 18, 30)
 	const steps = 257
 	worstU, worst := 0.0, 0.0
-	for i := 0; i < steps; i++ {
+	for i := range steps {
 		u := float64(i) / float64(steps-1)
 		if e := roundTripInversionError(s, u, 0.5); e > worst {
 			worstU, worst = u, e

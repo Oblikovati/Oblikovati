@@ -159,7 +159,7 @@ func TestLoftG2MatchesFaceCurvature(t *testing.T) {
 	const n = 24
 	ring := func(radius, z float64) []math.Point3 {
 		out := make([]math.Point3, n)
-		for k := 0; k < n; k++ {
+		for k := range n {
 			a := 2 * stdmath.Pi * float64(k) / float64(n)
 			out[k] = math.P3(math.Scalar(radius*stdmath.Cos(a)), math.Scalar(radius*stdmath.Sin(a)), math.Scalar(z))
 		}
@@ -167,7 +167,7 @@ func TestLoftG2MatchesFaceCurvature(t *testing.T) {
 	}
 	sphereRing := func() []math.Point3 { // the loft's start section, lying on the sphere at latitude v0
 		out := make([]math.Point3, n)
-		for k := 0; k < n; k++ {
+		for k := range n {
 			out[k] = sph.PointAt(2*stdmath.Pi*float64(k)/float64(n), v0)
 		}
 		return out
@@ -189,7 +189,7 @@ func TestLoftG2MatchesFaceCurvature(t *testing.T) {
 	if a0 == nil {
 		t.Fatal("G2 face continuity produced no second-derivative data")
 	}
-	for j := 0; j < n; j++ {
+	for j := range n {
 		m := tan[0][j]
 		k := float64(m.Cross(a0[j]).Length()) / stdmath.Pow(float64(m.Length()), 3)
 		if d := stdmath.Abs(k - 1/R); d > 1e-6 {
@@ -218,7 +218,7 @@ func TestHermite7MatchesSepticPolynomial(t *testing.T) {
 	}
 	poly := func(c [8]float64, t float64) float64 {
 		s, tp := 0.0, 1.0
-		for k := 0; k < 8; k++ {
+		for k := range 8 {
 			s += c[k] * tp
 			tp *= t
 		}
@@ -228,7 +228,7 @@ func TestHermite7MatchesSepticPolynomial(t *testing.T) {
 		s := 0.0
 		for k := d; k < 8; k++ {
 			coef := c[k]
-			for i := 0; i < d; i++ {
+			for i := range d {
 				coef *= float64(k - i)
 			}
 			s += coef * stdmath.Pow(t, float64(k-d))
@@ -260,14 +260,14 @@ func TestLoftG3MatchesFaceCurvatureRate(t *testing.T) {
 	const n = 24
 	ring := func(radius, z float64) []math.Point3 {
 		out := make([]math.Point3, n)
-		for k := 0; k < n; k++ {
+		for k := range n {
 			a := 2 * stdmath.Pi * float64(k) / float64(n)
 			out[k] = math.P3(math.Scalar(radius*stdmath.Cos(a)), math.Scalar(radius*stdmath.Sin(a)), math.Scalar(z))
 		}
 		return out
 	}
 	sec0 := make([]math.Point3, n)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		sec0[k] = sph.PointAt(2*stdmath.Pi*float64(k)/float64(n), v0)
 	}
 	sec1 := ring(R*stdmath.Cos(v0)+1, R*stdmath.Sin(v0)+1)
@@ -278,7 +278,7 @@ func TestLoftG3MatchesFaceCurvatureRate(t *testing.T) {
 		t.Fatal("G3 face continuity must produce both second- and third-derivative data")
 	}
 	// G2 still holds (seam curvature = 1/R) and the third-derivative array is populated and finite.
-	for j := 0; j < n; j++ {
+	for j := range n {
 		m := tan[0][j]
 		k := float64(m.Cross(second[j]).Length()) / stdmath.Pow(float64(m.Length()), 3)
 		if d := stdmath.Abs(k - 1/R); d > 1e-6 {

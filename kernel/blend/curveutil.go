@@ -66,7 +66,7 @@ func arcLength(c geom.Curve3, lo, hi float64) float64 {
 	half := (hi - lo) / 2
 	mid := (hi + lo) / 2
 	sum := 0.0
-	for k := 0; k < 5; k++ {
+	for k := range 5 {
 		t := mid + half*gaussLegendre5.x[k]
 		sum += gaussLegendre5.w[k] * float64(c.TangentAt(t).Length())
 	}
@@ -85,7 +85,7 @@ func paramAtArcLength(c geom.Curve3, lo, hi, target float64) float64 {
 		return hi
 	}
 	t := lo + (hi-lo)*target/full // constant-speed seed
-	for iter := 0; iter < 12; iter++ {
+	for range 12 {
 		speed := float64(c.TangentAt(t).Length())
 		if speed < 1e-14 {
 			break

@@ -83,7 +83,7 @@ func surfaceClosedInU(s geom.BSplineSurface) bool {
 	vlo, vhi := s.VDomain()
 	var samples []math.Point3
 	maxGap := 0.0
-	for k := 0; k < 5; k++ {
+	for k := range 5 {
 		v := vlo + (vhi-vlo)*(float64(k)+0.5)/5
 		a, b := s.PointAt(ulo, v), s.PointAt(uhi, v)
 		samples = append(samples, a, b)
@@ -101,7 +101,7 @@ func surfaceClosedInV(s geom.BSplineSurface) bool {
 	vlo, vhi := s.VDomain()
 	var samples []math.Point3
 	maxGap := 0.0
-	for k := 0; k < 5; k++ {
+	for k := range 5 {
 		u := ulo + (uhi-ulo)*(float64(k)+0.5)/5
 		a, b := s.PointAt(u, vlo), s.PointAt(u, vhi)
 		samples = append(samples, a, b)

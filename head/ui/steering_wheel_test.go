@@ -66,7 +66,7 @@ func TestInWindowSteeringWheelDraws(t *testing.T) {
 	if !s.SteeringWheelActive() {
 		t.Fatal("SteeringWheels should be active after toggle")
 	}
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)
@@ -96,7 +96,7 @@ func TestInWindowSteeringWheelPinsAtSummonPoint(t *testing.T) {
 
 	// Hover the viewport centre so the ring summons + pins there (an ImGui item is not reported hovered
 	// on its first appearance, so settle a few frames).
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		native.InjectMousePos(cx, cy)
 		frame()
 	}

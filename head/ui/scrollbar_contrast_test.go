@@ -5,6 +5,7 @@
 package ui
 
 import (
+	"slices"
 	"testing"
 
 	"oblikovati.org/api/types"
@@ -14,10 +15,8 @@ import (
 // slotToken reverses chromeBinding to report which theme token drives a given Dear ImGui color slot.
 func slotToken(slot string) (types.ThemeToken, bool) {
 	for tok, slots := range chromeBinding {
-		for _, s := range slots {
-			if s == slot {
-				return tok, true
-			}
+		if slices.Contains(slots, slot) {
+			return tok, true
 		}
 	}
 	var none types.ThemeToken
@@ -51,7 +50,7 @@ func TestScrollbarGrabContrastsWithTrack(t *testing.T) {
 // rgbDistance is the summed absolute RGB difference of two RGBA colors (alpha ignored).
 func rgbDistance(a, b [4]float32) float32 {
 	var d float32
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if a[i] > b[i] {
 			d += a[i] - b[i]
 		} else {

@@ -23,7 +23,7 @@ func totalRAMBytes() int64 {
 // parseMemTotalKB extracts the MemTotal value (in kB) from /proc/meminfo contents, or 0 if the
 // line is absent or malformed. Kept pure so the parsing is unit-tested without /proc.
 func parseMemTotalKB(meminfo []byte) int64 {
-	for _, line := range strings.Split(string(meminfo), "\n") {
+	for line := range strings.SplitSeq(string(meminfo), "\n") {
 		if !strings.HasPrefix(line, "MemTotal:") {
 			continue
 		}
@@ -52,7 +52,7 @@ func cpuModel() string {
 // parseCPUModelName extracts the first "model name" value from /proc/cpuinfo contents, or "".
 // Kept pure so the parsing is unit-tested without /proc.
 func parseCPUModelName(cpuinfo []byte) string {
-	for _, line := range strings.Split(string(cpuinfo), "\n") {
+	for line := range strings.SplitSeq(string(cpuinfo), "\n") {
 		key, val, ok := strings.Cut(line, ":")
 		if ok && strings.TrimSpace(key) == "model name" {
 			return strings.TrimSpace(val)

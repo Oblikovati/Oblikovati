@@ -239,7 +239,7 @@ func (b *instanceBuilder) mergedMesh() viewport.Mesh {
 // from the instanced path while still rendering on the legacy one, which is close to undebuggable.
 func sortRecsInto(out *[][7]int32, recs [][7]int32) [][7]int32 {
 	o := (*out)[:0]
-	for s := int32(0); s < numInstStreams; s++ {
+	for s := range int32(numInstStreams) {
 		for _, r := range recs {
 			if r[0] == s {
 				o = append(o, r)
@@ -501,8 +501,8 @@ func widenBounds(min, max *[3]float32, x, y, z float32) {
 // mesh.vert binding-1 mat4 expects — directly onto dst, so a frame's matrices land in one reused
 // buffer instead of a heap slice per instance (#1423).
 func appendMatrixFloats(dst []float32, t math.Matrix4) []float32 {
-	for col := 0; col < 4; col++ {
-		for row := 0; row < 4; row++ {
+	for col := range 4 {
+		for row := range 4 {
 			dst = append(dst, float32(t.At(row, col)))
 		}
 	}

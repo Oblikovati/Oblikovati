@@ -51,7 +51,7 @@ func requiredInternalModules(t *testing.T, path string) []string {
 	}
 	var mods []string
 	inBlock := false
-	for _, line := range strings.Split(string(raw), "\n") {
+	for line := range strings.SplitSeq(string(raw), "\n") {
 		line = strings.TrimSpace(line)
 		switch {
 		case line == "" || strings.HasPrefix(line, "//"):

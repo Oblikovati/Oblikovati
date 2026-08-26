@@ -24,7 +24,7 @@ func coneCylinderIntersectVolume(rFat float64) float64 {
 	const n = 200000
 	const apexX, tanHalf = -14.0, 0.125
 	sum, lo, hi := 0.0, -rFat, rFat
-	for i := 0; i < n; i++ {
+	for i := range n {
 		x := lo + (hi-lo)*(float64(i)+0.5)/n
 		r := (x - apexX) * tanHalf
 		h := stdmath.Sqrt(rFat*rFat - x*x)
@@ -180,7 +180,7 @@ func conePartialPlugVolume(rFat float64) float64 {
 	const n = 200000
 	const apexX, tanHalf = -14.0, 0.125
 	sum, lo, hi := 0.0, -rFat, 0.0
-	for i := 0; i < n; i++ {
+	for i := range n {
 		x := lo + (hi-lo)*(float64(i)+0.5)/n
 		r := (x - apexX) * tanHalf
 		h := stdmath.Sqrt(rFat*rFat - x*x)

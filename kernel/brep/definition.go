@@ -84,7 +84,7 @@ type DefinitionIssue struct {
 	Problem string
 }
 
-func issuef(issues []DefinitionIssue, path, format string, args ...interface{}) []DefinitionIssue {
+func issuef(issues []DefinitionIssue, path, format string, args ...any) []DefinitionIssue {
 	return append(issues, DefinitionIssue{Path: path, Problem: fmt.Sprintf(format, args...)})
 }
 

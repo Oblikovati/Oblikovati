@@ -160,7 +160,7 @@ func findVerticalCylArm(t *testing.T, w cornerWeld) armSetback {
 // G1 error the derivation names — used only to report the mutation's bite magnitude.
 func observedRailMismatch(arm geom.Surface, rail geom.Arc3d, center math.Point3, r float64) float64 {
 	worst := 0.0
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		p := rail.PointAt(float64(i) / 4)
 		m, ok := armBallCenter(arm, p)
 		if !ok {

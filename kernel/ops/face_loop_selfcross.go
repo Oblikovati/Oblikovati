@@ -208,7 +208,7 @@ func loopSelfCrossing(l developedLoop) (area float64, i, j int, crosses bool) {
 	if n < 4 {
 		return 0, -1, -1, false
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b := xy(l.pts[i]), xy(l.pts[(i+1)%n])
 		for j := i + 2; j < n; j++ {
 			if i == 0 && j == n-1 {

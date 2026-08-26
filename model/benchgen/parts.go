@@ -51,11 +51,11 @@ func sketchRegularPolygon(sk *sketch.Sketch, sides int, radiusCm float64) error 
 		return fmt.Errorf("benchgen: polygon radius must be > 0 cm, got %g", radiusCm)
 	}
 	corners := make([]*sketch.Point, sides)
-	for i := 0; i < sides; i++ {
+	for i := range sides {
 		theta := 2 * math.Pi * float64(i) / float64(sides)
 		corners[i] = sk.Points().Add(obkmath.P2(radiusCm*math.Cos(theta), radiusCm*math.Sin(theta)))
 	}
-	for i := 0; i < sides; i++ {
+	for i := range sides {
 		sk.Lines().Add(corners[i], corners[(i+1)%sides])
 	}
 	return nil

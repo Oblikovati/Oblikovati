@@ -3,4 +3,4 @@
 // it; its own go.mod keeps the c-shared build self-contained (no head deps).
 module echofixture
 
-go 1.22
+go 1.27.0

@@ -35,13 +35,13 @@ func seamedHemisphereFace(t *testing.T, radius float64, nArcs int) *topo.Face {
 	bld := topo.NewBuilder(true, lin("body", 0))
 	vp := bld.AddVertex(pole, lin("vp", 0))
 	rims := make([]*topo.Vertex, nArcs)
-	for i := 0; i < nArcs; i++ {
+	for i := range nArcs {
 		a := 2 * stdmath.Pi * float64(i) / float64(nArcs)
 		rims[i] = bld.AddVertex(equatorPt(radius, a), lin("vr", i))
 	}
 	seam := bld.AddEdge(seamMeridian(t, radius), vp, rims[0], lin("seam", 0))
 	uses := []topo.Use{topo.Fwd(seam)}
-	for i := 0; i < nArcs; i++ {
+	for i := range nArcs {
 		a0 := 2 * stdmath.Pi * float64(i) / float64(nArcs)
 		a1 := 2 * stdmath.Pi * float64(i+1) / float64(nArcs)
 		arc, err := geom.Arc3dByThreePoints(equatorPt(radius, a0), equatorPt(radius, (a0+a1)/2), equatorPt(radius, a1))
