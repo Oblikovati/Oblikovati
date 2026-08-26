@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -37,7 +38,13 @@ func discretizeEdge(e *topo.Edge, q Quality) []math.Point3 {
 
 // sampleEdgeCurve samples an edge's curve into a chord polyline directly (ignoring any healing
 // snap) — the raw discretization [discretizeEdge] derives from, and what [snapEdge] re-projects.
+// A circle/arc edge takes the CANONICAL absolute-angle path (conformalCircularSamples) so two
+// operands sharing that circle discretize it identically (ADR-0054/#2167); every other curve
+// keeps the adaptive midpoint bisection.
 func sampleEdgeCurve(e *topo.Edge, q Quality) []math.Point3 {
+	if pts, _, ok := conformalCircularSamples(e, q.tol(), q.angleTol()); ok {
+		return pts // already anchored on / ending at the edge's vertices
+	}
 	c := e.Geometry()
 	lo, hi := c.Domain()
 	ts := adaptiveParams(func(t float64) math.Point3 { return c.PointAt(t) }, lo, hi, q.tol(), q.angleTol())
@@ -48,6 +55,25 @@ func sampleEdgeCurve(e *topo.Edge, q Quality) []math.Point3 {
 	pts[0] = e.StartVertex().Point()
 	pts[len(pts)-1] = e.EndVertex().Point()
 	return pts
+}
+
+// conformalCircularSamples returns canonical absolute-angle samples for a circle or arc
+// EDGE (ADR-0054) together with each sample's parameter in the curve's own [0,1] domain:
+// identical interior points for any two coincident circular curves, so the two operands of
+// a boolean conform on a shared curved boundary. A full circle is anchored on the edge's
+// seam vertex; an arc runs between its endpoints. Returns ok=false for a non-circular
+// curve, whose caller keeps the adaptive path.
+func conformalCircularSamples(e *topo.Edge, chordTol, angleTol float64) (pts []math.Point3, params []float64, ok bool) {
+	switch k := e.Geometry().(type) {
+	case geom.Circle:
+		pts, params = geom.CircleConformalSamples(k, e.StartVertex().Point(), chordTol, angleTol)
+		return pts, params, true
+	case geom.Arc3d:
+		pts, params = geom.ArcConformalSamples(k, chordTol, angleTol)
+		pts[0], pts[len(pts)-1] = e.StartVertex().Point(), e.EndVertex().Point()
+		return pts, params, true
+	}
+	return nil, nil, false
 }
 
 // loopBoundary returns a loop's boundary as an ordered point ring, each edge sampled
