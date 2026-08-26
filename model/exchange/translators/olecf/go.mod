@@ -4,4 +4,4 @@
 // .ipt, SolidWorks .sldprt, ...). Standard library only.
 module oblikovati.org/model/exchange/translators/olecf
 
-go 1.26.0
+go 1.27.0

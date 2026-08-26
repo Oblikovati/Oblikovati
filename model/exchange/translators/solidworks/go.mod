@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 module oblikovati.org/model/exchange/translators/solidworks
 
-go 1.26.0
+go 1.27.0
 
 require (
 	oblikovati.org v0.0.0
@@ -12,7 +12,7 @@ require (
 	golang.org/x/image v0.41.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	oblikovati.org/api v0.144.0 // indirect
+	oblikovati.org/api v0.151.1 // indirect
 )
 
 // Resolved locally via the workspace (go.work); the replaces let non-workspace tooling
