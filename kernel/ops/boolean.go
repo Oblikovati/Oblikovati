@@ -120,10 +120,8 @@ func join(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Rec
 func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, rec *diag.Recorder) (*topo.Body, error) {
 	body, err := booleanGeneralExact(op, target, tool, lin, rec)
 	if err == nil && body != nil && validBooleanSolid(body) {
-		if recon := recoverFacetedCurvedJoin(op, target, tool, body, rec); recon != nil {
-			return recon, nil // the analytic path faceted a curved join; reconstruction restored it (#2167)
-		}
-		return body, nil
+		return body, nil // reconstruction now lives inside curvedExactBoolean (ADR-0054 L5), so a
+		// valid primary here is already the analytic reconstruction where one applied
 	}
 	if mesh := meshArrangementFallback(op, target, tool, rec); mesh != nil {
 		return mesh, nil
@@ -235,7 +233,9 @@ func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *d
 			return body, true
 		}
 	}
-	return nil, false
+	// Last resort (ADR-0054 L5): no analytic recognizer applied — rebuild the join from the
+	// exact mesh boolean's provenance on the operands' exact surfaces, instead of faceting.
+	return reconstructedCurvedBoolean(op, target, tool, rec)
 }
 
 // CodeBooleanAnalyticVolumeReject marks a curved analytic boolean whose result fell OUTSIDE the

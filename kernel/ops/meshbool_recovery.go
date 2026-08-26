@@ -3,75 +3,60 @@
 package ops
 
 import (
-	stdmath "math"
-
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 )
 
-// Faceted-curved-join recovery (ADR-0054). The analytic/planar boolean sometimes leaves
-// a VALID but FACETED result for a curved join it has no analytic path for — the #2167
-// cocylindrical arc-wall union facets both walls into mismatched grids (the visible
-// seam). Provenance reconstruction rebuilds those on their exact surfaces. This upgrades
-// such a result to the analytic B-rep, but only when reconstruction is a valid solid
-// that recovers analytic faces the primary lost at the same volume — so a correct
-// analytic primary is never disturbed and a case reconstruction cannot yet close stays
-// on the faceted result.
+// Reconstructed curved boolean (ADR-0054 Layer 5). When no exact analytic path in
+// curvedExactPaths recognises a curved join — the #2167 cocylindrical arc-wall union is the
+// motivating case — the operation would otherwise facet both operands and run the planar
+// boolean, shattering the curved walls into mismatched grids (the visible seam). Instead the
+// exact mesh-arrangement boolean (ADR-0052) runs on the operands' provenance-tagged
+// tessellation and the result is rebuilt on the operands' EXACT surfaces (reconstructBoolean,
+// ADR-0054 L1–L4). Wired as the LAST path in curvedExactBoolean, so it fires only where every
+// analytic recognizer declined, and both the direct ops.Boolean path and the feature combine
+// path (which tries CurvedBoolean on the still-analytic operands before faceting) pick it up.
 
-// CodeBooleanAnalyticReconstruction marks a boolean the analytic path faceted and
-// provenance reconstruction (ADR-0054) restored to analytic faces. Unlike the mesh
-// fallback this is an IMPROVEMENT (a faceted valid solid → an analytic one), recorded so
-// the pipeline can see reconstruction fired.
+// CodeBooleanAnalyticReconstruction marks a boolean that no analytic curved path recognised and
+// provenance reconstruction (ADR-0054) rebuilt on the exact surfaces — an analytic B-rep in place
+// of the faceted planar fallback, recorded so the pipeline can see reconstruction fired.
 const CodeBooleanAnalyticReconstruction diag.Code = "boolean.analytic-reconstruction"
 
-// reconstructionCutover gates whether booleanGeneral prefers an analytic reconstruction
-// over a valid-but-faceted curved result. It is OFF until ADR-0054's cutover layer: the
-// recovery is correct where it fires (it upgrades a faceted join to analytic at matching
-// volume) but flipping it changes corpus results that today assert the faceted fallback
-// (e.g. csg_fallback_test), and that flip must land WITH a shadow-validation against the
-// analytic engine and the OCCT oracle plus the corpus updates — not as a side effect. The
-// whole recovery path stays compiled and unit-tested so the cutover is a one-line flip.
+// reconstructionCutover gates whether reconstruction is offered as a curved-boolean path. It is
+// the ADR-0054 Layer-5 switch: the reconstruction is exact where it fires (exact surfaces from
+// provenance, self-validated below for validity AND the Requicha volume bracket), and turning it
+// on upgrades a faceted curved join to an analytic B-rep — but it changes results that previously
+// asserted the faceted fallback (csg_fallback_test's Join, the #2167 feature test), so it lands
+// with those corpus updates and the reconstruction shadow-validation, not silently.
 const reconstructionCutover = false
 
-// recoverFacetedCurvedJoin returns an analytic reconstruction of a valid-but-faceted
-// curved boolean, or nil when it does not apply or does not strictly improve the result.
-func recoverFacetedCurvedJoin(op PartFeatureOperation, target, tool, primary *topo.Body, rec *diag.Recorder) *topo.Body {
+// reconstructedCurvedBoolean rebuilds `target op tool` from the exact mesh boolean's provenance and
+// returns (body, true) only when reconstruction is enabled, applies (a curved operand, modest size),
+// succeeds, and yields a valid solid whose volume sits inside the Requicha bracket — so a case
+// reconstruction cannot yet close, or one it closes to the wrong volume, falls through to faceting.
+func reconstructedCurvedBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	if !reconstructionCutover {
-		return nil
+		return nil, false
 	}
 	mop, ok := toMeshboolOp(op)
-	if !ok || !facetedCurvedJoin(target, tool, primary) {
-		return nil
+	if !ok || analyticFaceCount(target)+analyticFaceCount(tool) == 0 {
+		return nil, false // no curved operand → the planar B-rep boolean is already exact
 	}
 	if len(target.Faces())+len(tool.Faces()) > csgFallbackFaceLimit {
-		return nil // reconstruction runs the exact mesh boolean; gate operand size as the fallbacks do
+		return nil, false // the exact mesh boolean is expensive; gate operand size as the fallbacks do
 	}
 	recon, ok := reconstructBoolean(target, tool, mop, DefaultQuality(), "boolean")
 	if !ok || !validBooleanSolid(recon) {
-		return nil
+		return nil, false
 	}
-	if analyticFaceCount(recon) <= analyticFaceCount(primary) || !volumesClose(recon, primary, 0.02) {
-		return nil
+	tv, wv, bv := boolVolumes(target, tool, recon)
+	if volumeOutOfBracket(op, tv, wv, bv, curvedVolumeGuardFraction*max(tv, wv)) {
+		return nil, false // reject a valid-but-wrong-volume reconstruction (the guard the analytic paths get)
 	}
 	rec.Recordf(CodeBooleanAnalyticReconstruction, diag.Info,
-		"%s: analytic path faceted a curved join; rebuilt %d analytic faces from provenance (#2153)", op, analyticFaceCount(recon))
-	return recon
-}
-
-// facetedCurvedJoin reports the cheap signature of a curved join the analytic path
-// faceted: the operands carry analytic (non-planar) faces the primary result lost, AND
-// the primary's face count EXPLODED past the operands' total. The explosion test
-// distinguishes faceting (a curved wall becomes dozens of planar facets, #2167's 74
-// planes) from a legitimate merge (two coaxial cylinders fuse into ONE clean wall,
-// which also drops the curved-face count but keeps the face total small) — recovery
-// must not disturb the latter.
-func facetedCurvedJoin(target, tool, primary *topo.Body) bool {
-	operandCurved := analyticFaceCount(target) + analyticFaceCount(tool)
-	if operandCurved == 0 || analyticFaceCount(primary) >= operandCurved {
-		return false
-	}
-	return len(primary.Faces()) > len(target.Faces())+len(tool.Faces())
+		"%s: no analytic curved path; rebuilt %d analytic faces from the exact boolean's provenance (#2153)", op, analyticFaceCount(recon))
+	return recon, true
 }
 
 // analyticFaceCount counts a body's non-planar (analytic curved) faces.
@@ -83,24 +68,4 @@ func analyticFaceCount(b *topo.Body) int {
 		}
 	}
 	return n
-}
-
-// volumesClose reports whether two bodies enclose the same volume within a relative
-// tolerance (the faceted primary under-reports curved volume, so the tolerance covers
-// the facet bias — a coarse guard against reconstruction producing wrong geometry).
-func volumesClose(a, b *topo.Body, rel float64) bool {
-	va := enclosedVolume(a)
-	vb := enclosedVolume(b)
-	return stdmath.Abs(va-vb) <= rel*stdmath.Max(stdmath.Abs(va), stdmath.Abs(vb))
-}
-
-// enclosedVolume is the volume a body encloses, integrated over its tessellation by the
-// divergence theorem (positive for a closed, outward-oriented solid).
-func enclosedVolume(b *topo.Body) float64 {
-	vol := 0.0
-	for _, tri := range bodyToSoup(b, DefaultQuality()) {
-		p, q, r := tri[0].Round(), tri[1].Round(), tri[2].Round()
-		vol += (p.X*(q.Y*r.Z-q.Z*r.Y) + p.Y*(q.Z*r.X-q.X*r.Z) + p.Z*(q.X*r.Y-q.Y*r.X)) / 6
-	}
-	return vol
 }

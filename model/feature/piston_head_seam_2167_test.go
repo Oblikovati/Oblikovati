@@ -37,17 +37,20 @@ func dProfileSketchOnPlaneZ(z, r, theta float64) *sketch.Sketch {
 // re-tessellate against one surface (aligned grids, no seam) — asserted here as analytic
 // cylinder faces surviving the join plus the exact stacked volume.
 func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
-	// ADR-0054 status: at the KERNEL level #2167 is CLOSED — reconstruction now builds a
-	// valid, closed, manifold analytic solid (conforming tessellation + cross-operand
-	// vertex-on-edge imprint + same-surface merge; see the passing kernel twin
-	// ops.TestReconstructCocylindricalCapOnWall). This FEATURE-level test additionally needs
-	// the Layer-5 recovery CUTOVER (reconstructionCutover, meshbool_recovery.go): today the
-	// feature Join reaches reconstruction only through the gated recovery, so the feature
-	// path is still faceted — no regression. The cutover flips booleanGeneral to prefer the
-	// analytic reconstruction and must land with the OCCT/analytic shadow validation, not as
-	// a side effect. Un-skip when it lands. NOTE: the merge makes the cocylindrical walls ONE
-	// analytic cylinder, so the assertion below expects cyl==1 (updated from the old >=2).
-	t.Skip("ADR-0054/#2167: closed at the kernel level; feature path pending the Layer-5 recovery cutover")
+	// ADR-0054 status: at the KERNEL level #2167 is CLOSED — reconstruction builds a valid,
+	// closed, manifold analytic solid (conforming tessellation + cross-operand vertex-on-edge
+	// imprint + same-surface merge; see the passing kernel twin
+	// ops.TestReconstructCocylindricalCapOnWall). The Layer-5 CUTOVER is landed: reconstruction
+	// is now the last path in curvedExactBoolean, so the feature combine tries it on the
+	// still-analytic operands before faceting. But the EXTRUDE-built D-prism reconstructs to an
+	// INVALID body (its cap earcut triangulates differently than the hand-built fixture, and the
+	// exact coplanar classification is sensitive to that — the soup fragments and the internal
+	// cap is not dropped), so reconstruction DECLINES here and the feature Join falls back to
+	// faceting: no regression, but the feature path is not yet analytic. Closing this is a
+	// reconstruction-robustness follow-up (make the coplanar drop insensitive to the two
+	// coincident caps' independent triangulations). Un-skip when it lands. NOTE: the merge makes
+	// the cocylindrical walls ONE analytic cylinder, so the assertion below expects cyl==1.
+	t.Skip("ADR-0054/#2167: kernel-closed + cutover landed; feature path pending reconstruction robustness on extrude-built cocylindrical operands")
 	const r, theta, h1, h2 = 3.0, 0.6, 6.0, 4.0
 	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)

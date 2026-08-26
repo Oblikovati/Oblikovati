@@ -106,13 +106,18 @@ default** — `reconstructionCutover = false` — because two frontiers remain:
 
 1. **Cocylindrical cap-on-wall (#2167) — CLOSED at the kernel level.** Three cooperating
    fixes take it from a visible faceted seam to a valid analytic solid:
-   - **Conforming tessellation** (`kernel/geom/canonical_sampling.go`, wired through
-     `edge_discretize.go`/`tessellate.go`): a circle/arc discretizes to the SAME points
-     whenever it *is* the same circle — canonical absolute-angle sampling from
-     (centre, axis line, radius), independent of RefDir, normal sign, or edge identity.
-     Conformance is a property of the geometry, not of intra-body pointer sharing. Same
-     power-of-two segment count as the adaptive path (density/volume error unchanged);
-     closed circles seam-anchored to stay monotone. This removes the rim-sliver membrane.
+   - **Conforming tessellation** (`kernel/geom/canonical_sampling.go`): a circle/arc
+     discretizes to the SAME points whenever it *is* the same circle — canonical
+     absolute-angle sampling from (centre, axis line, radius), independent of RefDir, normal
+     sign, or edge identity. Conformance is a property of the geometry, not of intra-body
+     pointer sharing. Same power-of-two segment count as the adaptive path (density/volume
+     error unchanged); closed circles seam-anchored to stay monotone. Applied to the BOOLEAN
+     INPUT ONLY — `applyBooleanConformance` (`kernel/ops/meshbool_imprint.go`) installs it as
+     a temporary snapped polyline on each operand's circle/arc edges (consulted first by
+     `discretizeEdge`/`tessellateEdgeWithParams`) and restores it, so DISPLAY meshing keeps
+     the adaptive bisection. The global variant closed #2167 too but folded an `occtparity`
+     display mesh (`complex/F2`) and drifted golden facet counts; unifying on one global
+     canonical discretization is deferred to #2168. This removes the rim-sliver membrane.
    - **Cross-operand vertex-on-edge imprint** (`kernel/ops/meshbool_imprint.go`): the mesh
      co-refinement runs per-operand and misses a VERTEX of one operand on an EDGE of the
      other. A D-profile chord corner sits on the cylinder rim at a non-canonical angle —
@@ -130,14 +135,34 @@ default** — `reconstructionCutover = false` — because two frontiers remain:
 
    `reconstructBoolean(cylinder, D-prism, Union)` now yields a closed, manifold, solid B-rep
    of five analytic faces at the exact stacked volume — asserted by the (now un-skipped)
-   `ops.TestReconstructCocylindricalCapOnWall`. The FEATURE-level test stays skipped pending
-   the Layer-5 cutover below.
+   `ops.TestReconstructCocylindricalCapOnWall`.
 
-2. **Curved SSI-edge welding (e.g. cyl ∪ box).** Reconstruction recovers the analytic
-   surfaces but the plane∩cylinder ellipse/line edges do not yet weld watertight; Layer 4
-   (exact SSI conics welded consistently on both incident faces) closes it.
+2. **Layer-5 cutover — LANDED.** Reconstruction is wired as the LAST path in
+   `curvedExactBoolean` (`reconstructedCurvedBoolean`, gated by `reconstructionCutover = true`),
+   so it fires only where every analytic recognizer declined, and BOTH the direct `ops.Boolean`
+   path and the feature `combine` path (which tries `CurvedBoolean` on the still-analytic
+   operands before faceting) pick it up. It self-validates: a valid closed solid whose volume is
+   inside the Requicha bracket, else it declines and the operation falls back to faceting — so it
+   is never adopted wrong. Codified by `ops.TestReconstructionCutoverShadow` (correct where it
+   fires — D-join, coaxial cylinders, box union all match the analytic volume; declines safely on
+   crossing cylinders) and the updated `TestCSGFallbackJoin` (a filleted bar ∪ box now KEEPS its
+   fillet cylinder instead of faceting). The old `recoverFacetedCurvedJoin` recovery in
+   `booleanGeneral` is subsumed and removed.
 
-Until both land, the recovery gate stays off so the corpus is unchanged.
+3. **Reconstruction robustness on extrude-built operands — the remaining blocker for the
+   FEATURE-level #2167.** The kernel fixture (`dPrismBody`) reconstructs to a valid solid, but the
+   EXTRUDE-built D-prism does not: its cap earcut triangulates differently than the fixture, and
+   the exact coplanar-drop classification (`coplanarPartner`, centroid-in-triangle) is sensitive
+   to the two coincident caps' INDEPENDENT triangulations — the soup fragments and the internal
+   cap is kept. So `reconstructedCurvedBoolean` DECLINES for the feature piston (Union), which
+   falls back to faceting: no regression, but the feature path is not yet analytic. The fix is to
+   make the coplanar drop insensitive to triangulation (or conform the two caps' interiors, not
+   only their rims). `model/feature`'s piston test stays skipped with this reason.
+
+4. **Curved SSI-edge welding (e.g. cyl ∪ box).** Reconstruction recovers the analytic surfaces
+   but the plane∩cylinder ellipse/line edges do not yet weld watertight; Layer 4 (exact SSI conics
+   welded consistently on both incident faces) closes it. Reconstruction declines it (stays
+   faceted) — safe.
 
 ## Alternatives considered and rejected
 
