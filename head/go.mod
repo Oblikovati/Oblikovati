@@ -5,7 +5,7 @@
 // consumed via the replace directive below.
 module oblikovati.org/head
 
-go 1.26.0
+go 1.27.0
 
 require (
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c
