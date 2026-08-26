@@ -32,8 +32,8 @@ func scaleFieldV(u, v, u0, v0, l float64) float64 {
 func scaledFieldConstraints(u0, v0, l float64) ([]PlateConstraint, [][]float64) {
 	var cs []PlateConstraint
 	var val []float64
-	for i := 0; i < 5; i++ {
-		for j := 0; j < 5; j++ {
+	for i := range 5 {
+		for j := range 5 {
 			u := u0 + l*(float64(i)/4-0.5)
 			v := v0 + l*(float64(j)/4-0.5)
 			cs = append(cs, PlateConstraint{U: u, V: v, Order: [2]int{0, 0}})

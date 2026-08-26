@@ -20,7 +20,7 @@ func offsetConvexCCW(pts []math.Point3, d float64) []math.Point3 {
 	// One offset line per edge i→i+1: a point on it plus the (un-normalised) edge direction.
 	op := make([]math.Point3, n)
 	od := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b := pts[i], pts[(i+1)%n]
 		dx, dy := b.X-a.X, b.Y-a.Y
 		l := stdmath.Hypot(dx, dy)
@@ -30,7 +30,7 @@ func offsetConvexCCW(pts []math.Point3, d float64) []math.Point3 {
 		od[i] = math.P3(dx, dy, 0)
 	}
 	res := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		j := (i - 1 + n) % n // vertex i is shared by edge j (j→i) and edge i (i→i+1)
 		res[i] = lineLineIntersect(op[j], od[j], op[i], od[i])
 	}

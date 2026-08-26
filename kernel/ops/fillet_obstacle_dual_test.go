@@ -256,7 +256,7 @@ func filletFaceArea(t *testing.T, f filletFace) float64 {
 // somewhere near the loop in aggregate, else a future edge-insert has no straight edge left to split.
 func pointOnStraightLoopSegment(loop filletLoop, p math.Point3, tol float64) bool {
 	n := len(loop.pts)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if loop.curves[i] != nil {
 			continue
 		}

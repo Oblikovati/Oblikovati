@@ -56,7 +56,7 @@ func trianglePlaneSegment(tri [3]math.Point3, n math.Vector3, d float64) ([2]mat
 		s[i] = float64(n.Dot(p.AsVector())) - d
 	}
 	var pts []math.Point3
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		j := (i + 1) % 3
 		if (s[i] > 0) == (s[j] > 0) || s[i] == s[j] {
 			continue

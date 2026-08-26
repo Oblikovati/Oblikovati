@@ -5,6 +5,7 @@ package sketch
 import (
 	"fmt"
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/math"
 )
@@ -98,12 +99,7 @@ func entityRefsPoint(e Entity, p *Point) bool {
 	if !ok {
 		return false
 	}
-	for _, dp := range pd.definingPoints() {
-		if dp == p {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(pd.definingPoints(), p)
 }
 
 // AddChamfer bevels the corner where two lines meet with a straight line, trimming each

@@ -42,7 +42,7 @@ const endCapCoplanarTol = 1e-9
 // (so the rim vertex is superseded) and records the cap∩side edge that absorption re-ends. An end that
 // declines keeps the pre-existing separate-triangle topology verbatim.
 func (g *arcBuild) resolveEndCapMerges() {
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		g.capSide[i], g.merged[i] = absorbableEndCap(g.af, i)
 	}
 }
@@ -125,7 +125,7 @@ func (g *arcBuild) mergedEnd(v *topo.Vertex, i int) *topo.Vertex {
 // supersededRimVertex reports whether v is a rim vertex the merge retires (so it is never copied into
 // the rebuilt body — no edge of the result reaches it).
 func (g *arcBuild) supersededRimVertex(v *topo.Vertex) bool {
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		if g.absorbed(i) && v == g.af.ends[i].rimV {
 			return true
 		}
@@ -146,7 +146,7 @@ func (g *arcBuild) replacedEdge(e *topo.Edge) bool {
 
 // capSideIndex returns the end whose cap∩side edge e is (and whether the merge owns it).
 func (g *arcBuild) capSideIndex(e *topo.Edge) (int, bool) {
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		if g.absorbed(i) && e == g.capSide[i] {
 			return i, true
 		}

@@ -241,10 +241,7 @@ func asciiColor(f []string, idx int) float32 {
 // maxIndex returns the largest of the three position column indices — the minimum field count an
 // ascii vertex line must exceed to carry x, y and z.
 func maxIndex(x, y, z int) int {
-	m := x
-	if y > m {
-		m = y
-	}
+	m := max(y, x)
 	if z > m {
 		m = z
 	}

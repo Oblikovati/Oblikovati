@@ -156,8 +156,8 @@ var _ contract.BSplineCurve = bsplineAdapter{}
 
 func newBSpline(g geom.BSplineCurve) bsplineAdapter {
 	return bsplineAdapter{
-		curve3: curve3{kind: types.BSplineCurveKind, form: types.CurveFormNURBS, inner: g},
-		g:      g,
+		kind: types.BSplineCurveKind, form: types.CurveFormNURBS, inner: g,
+		g: g,
 	}
 }
 

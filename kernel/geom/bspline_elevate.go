@@ -45,7 +45,7 @@ func (s BSplineSurface) ElevateDegreeU(t int) (BSplineSurface, error) {
 	vCount := len(s.Ctrl[0])
 	cols := make([][]hpoint4, vCount)
 	var newU []float64
-	for j := 0; j < vCount; j++ {
+	for j := range vCount {
 		newU, cols[j] = elevateDegreeHomog(s.UDegree, t, s.UKnots, columnToHomog(s, j))
 	}
 	ctrl, weights := netFromColumns(cols)
@@ -61,7 +61,7 @@ func (s BSplineSurface) ElevateDegreeV(t int) (BSplineSurface, error) {
 	ctrl := make([][]math.Point3, uCount)
 	weights := make([][]float64, uCount)
 	var newV []float64
-	for i := 0; i < uCount; i++ {
+	for i := range uCount {
 		var elevated []hpoint4
 		newV, elevated = elevateDegreeHomog(s.VDegree, t, s.VKnots, rowToHomog(s, i))
 		ctrl[i], weights[i] = curveFromHomog(elevated)

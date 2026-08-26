@@ -42,7 +42,7 @@ func faceAdjacency(fm []*Mesh) [][]orientLink {
 	uses := map[segKey][]use{}
 	for fi, m := range fm {
 		for t := 0; t+2 < len(m.Indices); t += 3 {
-			for k := 0; k < 3; k++ {
+			for k := range 3 {
 				a, b := m.Positions[m.Indices[t+k]], m.Positions[m.Indices[t+(k+1)%3]]
 				key := w.seg(a, b)
 				if len(uses[key]) < 2 {

@@ -30,9 +30,9 @@ func reedSolomonDeinterleave(src []byte, blockCount, dataSize int) ([]byte, erro
 		return nil, fmt.Errorf("dwg reed-solomon: short input %d bytes, need %d (%d blocks * %d)", len(src), need, blockCount, rsBlockSize)
 	}
 	dst := make([]byte, blockCount*dataSize)
-	for j := 0; j < blockCount; j++ {
+	for j := range blockCount {
 		block := src[j*rsBlockSize:]
-		for i := 0; i < dataSize; i++ {
+		for i := range dataSize {
 			dst[i*blockCount+j] = block[i]
 		}
 	}

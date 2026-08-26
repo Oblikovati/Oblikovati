@@ -32,15 +32,15 @@ func bruteEndpointClusterSnap(pts []math.Point3, tol float64) *boundaryClusters 
 // just under tol (must meld transitively across grid cells).
 func sewClusterFixture(rng *stdrand.Rand, nuclei int, tol float64) []math.Point3 {
 	var pts []math.Point3
-	for k := 0; k < nuclei; k++ {
+	for range nuclei {
 		c := math.P3(rng.Float64()*50, rng.Float64()*50, rng.Float64()*50)
 		pts = append(pts, c)
-		for s := 0; s < 3; s++ {
+		for range 3 {
 			pts = append(pts, c.TranslateBy(math.V3(rng.Float64()*tol/3, rng.Float64()*tol/3, rng.Float64()*tol/3)))
 		}
 		pts = append(pts, c.TranslateBy(math.V3(10*tol, 0, 0))) // stray
 	}
-	for s := 0; s < 8; s++ { // the transitive chain
+	for s := range 8 { // the transitive chain
 		pts = append(pts, math.P3(60+float64(s)*0.9*tol, 60, 60))
 	}
 	return pts
@@ -51,7 +51,7 @@ func sewClusterFixture(rng *stdrand.Rand, nuclei int, tol float64) []math.Point3
 // cell keys.
 func TestEndpointClusterSnapMatchesBrute(t *testing.T) {
 	rng := stdrand.New(stdrand.NewSource(84)) // PBI-084, the original sew work item
-	for trial := 0; trial < 20; trial++ {
+	for trial := range 20 {
 		tol := 0.05 + rng.Float64()*0.2
 		pts := sewClusterFixture(rng, 20, tol)
 		got := endpointClusterSnap(pts, tol)
@@ -68,7 +68,7 @@ func TestEndpointClusterSnapMatchesBrute(t *testing.T) {
 func TestEndpointClusterSnapChainMelds(t *testing.T) {
 	tol := 0.1
 	var pts []math.Point3
-	for s := 0; s < 10; s++ {
+	for s := range 10 {
 		pts = append(pts, math.P3(float64(s)*0.9*tol, 0, 0))
 	}
 	bc := endpointClusterSnap(pts, tol)

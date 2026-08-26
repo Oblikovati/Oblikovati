@@ -130,7 +130,7 @@ func reverseOpenArc(arc filletLoop) filletLoop {
 	n := len(arc.pts)
 	mids := arcMidpoints(arc)
 	out := filletLoop{pts: make([]math.Point3, n), curves: make([]geom.Curve3, n), srcV: make([]uint64, n), srcE: make([]uint64, n)}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		out.pts[i] = arc.pts[n-1-i]
 		out.srcV[i] = arc.srcV[n-1-i]
 		if i == n-1 {
@@ -152,7 +152,7 @@ func reverseOpenArc(arc filletLoop) filletLoop {
 // being split by the notch.
 func spliceSubArc(outer filletLoop, seg int, arc filletLoop) filletLoop {
 	var out filletLoop
-	for i := 0; i < seg; i++ {
+	for i := range seg {
 		out.addID(outer.pts[i], outer.curves[i], outer.srcV[i], outer.srcE[i])
 	}
 	out.addID(outer.pts[seg], nil, outer.srcV[seg], 0)

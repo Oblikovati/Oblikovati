@@ -115,10 +115,7 @@ func controlCurveFor(pts []math.Point2, closed bool) (geom.BSplineCurve2d, error
 	if closed {
 		return geom.NewClosedControlBSplineCurve2d(pts)
 	}
-	degree := len(pts) - 1
-	if degree > 3 {
-		degree = 3
-	}
+	degree := min(len(pts)-1, 3)
 	return geom.NewBSplineCurve2dUniformWeights(degree, pts, clampedUniformKnots(len(pts), degree))
 }
 

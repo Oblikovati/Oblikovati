@@ -94,7 +94,7 @@ func nurbsSurfaceBody(surf geom.BSplineSurface, feat string) *topo.Body {
 		v[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(feat, "vertex", i)))
 	}
 	uses := make([]topo.Use, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		j := (i + 1) % 4
 		e := bld.AddEdge(geom.NewLineSegment(corners[i], corners[j]), v[i], v[j], topo.NewLineage(topo.Tok(feat, "edge", i)))
 		uses[i] = topo.Fwd(e)

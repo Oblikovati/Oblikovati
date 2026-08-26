@@ -81,10 +81,7 @@ func sweep(occs *occurrence.Occurrences, cs *ConstraintSet, js *JointSet, joint 
 // repeated RepetitionCount times, each odd pass reversed when ping-pong is set.
 func driveValues(s DriveSettings) []float64 {
 	forward := rampValues(s.start, s.end, s.step)
-	reps := s.reps
-	if reps < 1 {
-		reps = 1
-	}
+	reps := max(s.reps, 1)
 	var out []float64
 	for r := 0; r < reps; r++ {
 		if s.pingPong && r%2 == 1 {

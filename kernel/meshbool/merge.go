@@ -56,7 +56,7 @@ func groupCoplanar(verts []Point, tris [][3]int) [][]int {
 	uf := newUnionFind(len(tris))
 	edgeTri := make(map[[2]int]int) // canonical edge -> a triangle already using it
 	for ti, t := range tris {
-		for e := 0; e < 3; e++ {
+		for e := range 3 {
 			key := edgeKeyOf(t[e], t[(e+1)%3])
 			if other, ok := edgeTri[key]; ok {
 				if coplanarTris(verts, tris[other], t) {
@@ -98,7 +98,7 @@ func boundaryEdges(tris [][3]int, group []int) [][2]int {
 	present := make(map[[2]int]bool)
 	for _, ti := range group {
 		t := tris[ti]
-		for e := 0; e < 3; e++ {
+		for e := range 3 {
 			present[[2]int{t[e], t[(e+1)%3]}] = true
 		}
 	}
@@ -137,7 +137,7 @@ func classifyLoops(loops [][]int, verts []Point, axis int) (outer []int, holes [
 func cleanLoop(verts []Point, loop []int, axis int) []Point {
 	n := len(loop)
 	var out []Point
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b, c := verts[loop[(i-1+n)%n]], verts[loop[i]], verts[loop[(i+1)%n]]
 		if orient2(a, b, c, axis) != 0 {
 			out = append(out, b)
@@ -162,7 +162,7 @@ func edgeKeyOf(a, b int) [2]int {
 func loopArea2(loop []int, verts []Point, axis int) *big.Rat {
 	sum := new(big.Rat)
 	n := len(loop)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		u0, v0 := project(verts[loop[i]], axis)
 		u1, v1 := project(verts[loop[(i+1)%n]], axis)
 		sum.Add(sum, crossDiff(u0, v1, u1, v0))

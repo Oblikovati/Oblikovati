@@ -196,7 +196,7 @@ func PolygonRecipe(center, through math.Point2, sides int, inscribed bool) Recip
 // n−1 equalities already make all n edges equal.
 func polygonConstraints(sides int) []RecipeConstraint {
 	cons := make([]RecipeConstraint, 0, 2*sides)
-	for i := 0; i < sides; i++ {
+	for i := range sides {
 		cons = append(cons, RecipeConstraint{Kind: PointOnCircleKind, Points: []int{i}, Entities: []int{sides}})
 	}
 	for i := 0; i+1 < sides; i++ {

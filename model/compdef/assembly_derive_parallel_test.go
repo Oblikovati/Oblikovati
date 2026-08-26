@@ -19,7 +19,7 @@ func wideAssembly(t *testing.T) *AssemblyComponentDefinition {
 	sub.Place("inner:2", part, math.Translation4(math.V3(0, 5, 0)))
 
 	top := NewAssemblyComponentDefinition()
-	for i := 0; i < 6; i++ {
+	for i := range 6 {
 		top.Place("loose:"+string(rune('a'+i)), part, math.Translation4(math.V3(math.Scalar(10*i), 0, 0)))
 	}
 	top.Place("sub:1", sub, math.Translation4(math.V3(100, 0, 0)))

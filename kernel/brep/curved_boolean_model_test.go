@@ -75,7 +75,7 @@ func TestLoopEdgesWalkContiguously(t *testing.T) {
 	if n < 3 {
 		t.Fatalf("block face loop has %d edges, want ≥3", n)
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		end := loop.edges[i].end()
 		start := loop.edges[(i+1)%n].start()
 		if d := float64(end.DistanceTo(start)); d > 1e-9 {

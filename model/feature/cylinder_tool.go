@@ -41,7 +41,7 @@ func drillToolFrom(center math.Point3, axisInto math.UnitVector3, radius, depth,
 // counter-clockwise.
 func regularPolygon(radius float64, n int) []math.Point2 {
 	out := make([]math.Point2, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := 2 * stdmath.Pi * float64(i) / float64(n)
 		out[i] = math.P2(radius*stdmath.Cos(a), radius*stdmath.Sin(a))
 	}

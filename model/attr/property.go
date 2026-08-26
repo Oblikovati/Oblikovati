@@ -178,7 +178,7 @@ func DecodeProperties(data []byte) (*PropertySets, error) {
 		return nil, err
 	}
 	ps := &PropertySets{sets: map[string]*PropertySet{}}
-	for i := uint32(0); i < nSets; i++ {
+	for range nSets {
 		if err := decodePropertySet(r, ps); err != nil {
 			return nil, err
 		}
@@ -196,7 +196,7 @@ func decodePropertySet(r *bytes.Reader, ps *PropertySets) error {
 	if err != nil {
 		return err
 	}
-	for i := uint32(0); i < nProps; i++ {
+	for range nProps {
 		propName, err := readString(r)
 		if err != nil {
 			return err

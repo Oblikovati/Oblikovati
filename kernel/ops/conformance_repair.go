@@ -344,7 +344,7 @@ func simpleLoop2D(pts []math.Point2) bool {
 	if n < 4 {
 		return true
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b := xy(pts[i]), xy(pts[(i+1)%n])
 		for j := i + 2; j < n; j++ {
 			if i == 0 && j == n-1 {
@@ -386,7 +386,7 @@ func freeSegments(fm []*Mesh, w segWelder) map[segKey]bool {
 	deg := map[segKey]int{}
 	for _, m := range fm {
 		for t := 0; t+2 < len(m.Indices); t += 3 {
-			for k := 0; k < 3; k++ {
+			for k := range 3 {
 				deg[w.seg(m.Positions[m.Indices[t+k]], m.Positions[m.Indices[t+(k+1)%3]])]++
 			}
 		}
@@ -403,7 +403,7 @@ func freeSegments(fm []*Mesh, w segWelder) map[segKey]bool {
 // meshTouchesFree reports whether any edge of m is one of the free (unpaired) segments.
 func meshTouchesFree(m *Mesh, free map[segKey]bool, w segWelder) bool {
 	for t := 0; t+2 < len(m.Indices); t += 3 {
-		for k := 0; k < 3; k++ {
+		for k := range 3 {
 			if free[w.seg(m.Positions[m.Indices[t+k]], m.Positions[m.Indices[t+(k+1)%3]])] {
 				return true
 			}
@@ -449,7 +449,7 @@ func (w segWelder) coord(p math.Point3) [3]int64 {
 // less reports whether a sorts before b in quantized coordinates (the canonical edge direction).
 func (w segWelder) less(a, b math.Point3) bool {
 	ka, kb := w.coord(a), w.coord(b)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if ka[i] != kb[i] {
 			return ka[i] < kb[i]
 		}

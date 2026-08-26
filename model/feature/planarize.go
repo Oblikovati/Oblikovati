@@ -3,6 +3,8 @@
 package feature
 
 import (
+	"slices"
+
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
@@ -208,12 +210,7 @@ func edgeNeedsPlanarize(e *topo.Edge) bool {
 
 // anyEdgeNeedsPlanarize reports whether any selected edge requires the body to be planarized first.
 func anyEdgeNeedsPlanarize(edges []*topo.Edge) bool {
-	for _, e := range edges {
-		if edgeNeedsPlanarize(e) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(edges, edgeNeedsPlanarize)
 }
 
 // planarizeForEdges re-facets a simple cylinder body for an edge op (chamfer/fillet) and maps each

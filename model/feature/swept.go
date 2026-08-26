@@ -105,7 +105,7 @@ func sectionMesh(sections [][]math.Point3, closedLoop, caps bool, wrapShift int)
 		if closedLoop && ns == 0 { // the wrap segment carries the loop's correspondence offset
 			shift = wrapShift
 		}
-		for i := 0; i < n; i++ {
+		for i := range n {
 			j := (i + 1) % n
 			a, b := s*n+i, s*n+j
 			c, d := ns*n+(j+shift)%n, ns*n+(i+shift)%n
@@ -192,14 +192,14 @@ func tubeMesh(outerSecs, innerSecs [][]math.Point3, closedLoop, caps bool) subd.
 	var faces [][]int
 	for s := 0; s < segs; s++ {
 		ns := (s + 1) % k
-		for i := 0; i < n; i++ {
+		for i := range n {
 			j := (i + 1) % n
 			faces = append(faces, sideQuad(verts, oi(s, i), oi(s, j), oi(ns, j), oi(ns, i))...) // outer wall
 			faces = append(faces, sideQuad(verts, ii(s, i), ii(ns, i), ii(ns, j), ii(s, j))...) // inner wall (reversed)
 		}
 	}
 	if caps && !closedLoop {
-		for i := 0; i < n; i++ {
+		for i := range n {
 			j := (i + 1) % n
 			faces = append(faces, sideQuad(verts, oi(0, i), ii(0, i), ii(0, j), oi(0, j))...)         // start cap
 			faces = append(faces, sideQuad(verts, oi(k-1, i), oi(k-1, j), ii(k-1, j), ii(k-1, i))...) // end cap
@@ -239,7 +239,7 @@ func quadPlanar(a, b, c, d math.Point3) bool {
 // start cap winds opposite the side faces so the closed cage stays consistently oriented).
 func row(s, n int) []int {
 	out := make([]int, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		out[i] = s*n + i
 	}
 	return out

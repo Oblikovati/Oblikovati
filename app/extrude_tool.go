@@ -326,11 +326,11 @@ func prismWireframe(plane sketch.Plane, poly []math.Point2, dist float64) render
 	for _, p := range poly { // bottom ring [0,n)
 		pts = append(pts, plane.ToModel(p))
 	}
-	for i := 0; i < n; i++ { // top ring [n,2n)
+	for i := range n { // top ring [n,2n)
 		pts = append(pts, pts[i].TranslateBy(up))
 	}
 	var idx []int
-	for i := 0; i < n; i++ {
+	for i := range n {
 		j := (i + 1) % n
 		idx = append(idx, i, j)     // bottom loop
 		idx = append(idx, n+i, n+j) // top loop

@@ -114,10 +114,7 @@ func (d *DrawingDimension) inspectionWrap(body string) string {
 // a symmetric ±, an asymmetric +/− deviation, stacked max/min limits, or an ISO fit class.
 func (d *DrawingDimension) toleranceNote() string {
 	t := d.tolerance
-	prec := t.Precision
-	if prec < 0 {
-		prec = 0
-	}
+	prec := max(t.Precision, 0)
 	f := func(v float64) string { return formatDimValue(v, prec) }
 	switch t.Type {
 	case types.SymmetricTolerance:

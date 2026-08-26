@@ -3,6 +3,7 @@
 package ops_test
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -70,10 +71,8 @@ func adjacentVerticalEdges(t *testing.T, b *topo.Body) ([]byte, []byte) {
 // sharesFace reports whether two edges bound a common face.
 func sharesFace(a, b *topo.Edge) bool {
 	for _, fa := range a.Faces() {
-		for _, fb := range b.Faces() {
-			if fa == fb {
-				return true
-			}
+		if slices.Contains(b.Faces(), fa) {
+			return true
 		}
 	}
 	return false

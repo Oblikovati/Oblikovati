@@ -102,22 +102,22 @@ func rectAtPoints(cx, cy, width, height float64) []math.Point3 {
 }
 func frustumBody(r0, r1, z0, z1 float64, sides int, feat string) *topo.Body {
 	verts := make([]math.Point3, 0, 2*sides)
-	for i := 0; i < sides; i++ {
+	for i := range sides {
 		a := 2 * stdmath.Pi * float64(i) / float64(sides)
 		verts = append(verts, math.P3(r0*stdmath.Cos(a), r0*stdmath.Sin(a), z0))
 	}
-	for i := 0; i < sides; i++ {
+	for i := range sides {
 		a := 2 * stdmath.Pi * float64(i) / float64(sides)
 		verts = append(verts, math.P3(r1*stdmath.Cos(a), r1*stdmath.Sin(a), z1))
 	}
 	bottom := make([]int, sides)
 	top := make([]int, sides)
-	for i := 0; i < sides; i++ {
+	for i := range sides {
 		bottom[i] = sides - 1 - i
 		top[i] = sides + i
 	}
 	faces := [][]int{bottom, top}
-	for i := 0; i < sides; i++ {
+	for i := range sides {
 		next := (i + 1) % sides
 		faces = append(faces, []int{i, next, next + sides, i + sides})
 	}
@@ -314,7 +314,7 @@ func nopPolygonArea(points []math.Point3) float64 {
 }
 func regularPolygonPoints(center math.Point3, radius float64, sides int, angleOffset float64) []math.Point3 {
 	points := make([]math.Point3, sides)
-	for i := 0; i < sides; i++ {
+	for i := range sides {
 		angle := angleOffset + 2*stdmath.Pi*float64(i)/float64(sides)
 		points[i] = math.P3(center.X+radius*stdmath.Cos(angle), center.Y+radius*stdmath.Sin(angle), 0)
 	}
@@ -322,7 +322,7 @@ func regularPolygonPoints(center math.Point3, radius float64, sides int, angleOf
 }
 func regularPolygonXZ(centerX, centerZ, radius float64, sides int, angleOffset float64) []math.Point3 {
 	points := make([]math.Point3, sides)
-	for i := 0; i < sides; i++ {
+	for i := range sides {
 		angle := angleOffset + 2*stdmath.Pi*float64(i)/float64(sides)
 		points[i] = math.P3(centerX+radius*stdmath.Cos(angle), 0, centerZ+radius*stdmath.Sin(angle))
 	}

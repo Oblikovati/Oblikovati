@@ -21,7 +21,7 @@ const foldDihedralTol = 0.2
 // Returns the number of flips applied.
 func repairFolds(m *Mesh, maxPasses int) int {
 	total := 0
-	for pass := 0; pass < maxPasses; pass++ {
+	for range maxPasses {
 		flips := repairFoldPass(m)
 		total += flips
 		if flips == 0 {
@@ -97,7 +97,7 @@ func edgeTriMap(m *Mesh) map[edgeKey][]int {
 	adj := make(map[edgeKey][]int, len(m.Indices))
 	for t := 0; 3*t+2 < len(m.Indices); t++ {
 		v := [3]int{m.Indices[3*t], m.Indices[3*t+1], m.Indices[3*t+2]}
-		for k := 0; k < 3; k++ {
+		for k := range 3 {
 			e := sortedEdge(v[k], v[(k+1)%3])
 			adj[e] = append(adj[e], t)
 		}

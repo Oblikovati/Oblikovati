@@ -31,7 +31,7 @@ type ringSeg struct {
 func reverseRingSeg(s ringSeg) ringSeg {
 	n := len(s.pts)
 	out := ringSeg{pts: make([]math.Point3, n), curves: make([]geom.Curve3, n-1), srcE: s.srcE}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		out.pts[i] = s.pts[n-1-i]
 	}
 	for i := 0; i+1 < n; i++ {
@@ -246,7 +246,7 @@ func buildDualSplitWall(d obstacleDetection, ef edgeFillet, stations []float64, 
 func spliceRimPoint(loop filletLoop, rim geom.Curve3, ps math.Point3, srcE uint64, weld float64) (filletLoop, bool) {
 	n := len(loop.pts)
 	best, bestD := -1, stdmath.Inf(1)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		seg := geom.NewLineSegment(loop.pts[i], loop.pts[(i+1)%n])
 		if d := geom.DistancePointToSegment(seg, ps); d < bestD {
 			best, bestD = i, d
@@ -260,7 +260,7 @@ func spliceRimPoint(loop filletLoop, rim geom.Curve3, ps math.Point3, srcE uint6
 	}
 	var out filletLoop
 	in, off := splitRimSegmentCurve(rim, curveAt(loop.curves, best), loop.pts[best], ps, loop.pts[(best+1)%n], weld)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if i == best {
 			out.addID(loop.pts[i], in, loop.srcV[i], srcE)
 			out.addID(ps, off, 0, srcE)

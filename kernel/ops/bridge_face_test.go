@@ -18,10 +18,10 @@ func bridgePatchBody(t *testing.T, xoff float64, z func(i, j int) float64) *topo
 	const n = 5
 	ctrl := make([][]math.Point3, n)
 	w := make([][]float64, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		ctrl[i] = make([]math.Point3, n)
 		w[i] = make([]float64, n)
-		for j := 0; j < n; j++ {
+		for j := range n {
 			ctrl[i][j] = math.P3(math.Scalar(xoff+float64(i)*0.25), math.Scalar(float64(j)*0.25), math.Scalar(z(i, j)))
 			w[i][j] = 1
 		}

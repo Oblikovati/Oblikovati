@@ -4,6 +4,7 @@ package brep
 
 import (
 	stdmath "math"
+	"slices"
 	"sort"
 
 	"oblikovati.org/kernel/geom"
@@ -228,7 +229,7 @@ func sortedLoopStarts(next map[uint64][]uint64) []uint64 {
 	for v := range next {
 		keys = append(keys, v)
 	}
-	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	slices.Sort(keys)
 	return keys
 }
 

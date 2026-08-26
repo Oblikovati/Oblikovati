@@ -132,9 +132,9 @@ func TestCapCrossingCutMembershipMatchesCSG(t *testing.T) {
 	mesh, _ := TessellateBody(res, DefaultQuality()) // tessellate ONCE; the O(n³) grid would re-mesh per point via PointInsideBody
 	mismatches := 0
 	const n = 60
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
-			for k := 0; k < n; k++ {
+	for i := range n {
+		for j := range n {
+			for k := range n {
 				p := math.P3(math.Scalar(-3+6*(float64(i)+0.5)/n), math.Scalar(-3+6*(float64(j)+0.5)/n), math.Scalar(10*(float64(k)+0.5)/n))
 				if nearSurface(p) {
 					continue

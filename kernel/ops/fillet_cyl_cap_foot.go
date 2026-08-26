@@ -102,7 +102,7 @@ func bracketedTrigRoots(coef [6]float64) []float64 {
 func safeguardedTrigRoot(coef [6]float64, lo, hi float64) float64 {
 	flo, _ := fCircleCyl(coef, lo)
 	t := 0.5 * (lo + hi)
-	for iter := 0; iter < 80; iter++ {
+	for range 80 {
 		f, fp := fCircleCyl(coef, t)
 		if (flo < 0) == (f < 0) {
 			lo = t

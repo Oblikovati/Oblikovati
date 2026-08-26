@@ -153,7 +153,7 @@ func cornerArmRails(plan cornerWeldPlan, spec cornerArmSpec, links []cornerArmLi
 	}
 	chain.a[last] = plan.ledger.add(fmt.Sprintf("%s/hostA[%d]", spec.role, last), railA)
 	chain.b[last] = plan.ledger.add(fmt.Sprintf("%s/hostB[%d]", spec.role, last), railB)
-	for i := 0; i < last; i++ {
+	for i := range last {
 		if reason := cornerArmLinkRails(plan, spec, links[i], stations[i+1], stations[i], chain, i, res); reason != "" {
 			return chain, run, reason
 		}

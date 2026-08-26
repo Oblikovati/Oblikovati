@@ -48,10 +48,7 @@ func flattenSerial(occs *occurrence.Occurrences, rootWS float64) []feature.Place
 // byte-for-byte identical to flattenSerial. This is the M34-F2 wall-time cut over the deep DAG.
 func flattenParallel(occs *occurrence.Occurrences, rootWS float64) []feature.PlacedBody {
 	n := occs.Count()
-	workers := runtime.GOMAXPROCS(0)
-	if workers > n {
-		workers = n
-	}
+	workers := min(runtime.GOMAXPROCS(0), n)
 	parts := make([][]feature.PlacedBody, workers)
 	var wg sync.WaitGroup
 	for wkr := 0; wkr < workers; wkr++ {

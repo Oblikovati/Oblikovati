@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"slices"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/feature"
@@ -157,12 +158,7 @@ func (t *FilletTool) addEdge(e EdgeHandle) {
 }
 
 func (t *FilletTool) hasEdge(e EdgeHandle) bool {
-	for _, h := range t.edges {
-		if h == e {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(t.edges, e)
 }
 
 // SetRadius/Radius set the fillet radius (database units).

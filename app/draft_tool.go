@@ -5,6 +5,7 @@ package app
 import (
 	"errors"
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
@@ -141,12 +142,7 @@ func (t *DraftTool) neutralPlane() *geom.Plane {
 }
 
 func (t *DraftTool) hasFace(f FaceHandle) bool {
-	for _, h := range t.faces {
-		if h == f {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(t.faces, f)
 }
 
 // SetAngleDegrees/AngleDegrees set the draft angle in degrees (signed).

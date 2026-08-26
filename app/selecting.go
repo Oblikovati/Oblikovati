@@ -10,6 +10,8 @@ package app
 // kind, or named its accessor so the head could not find it). With these contracts the host
 // owns filtering and highlighting uniformly for every tool. See ADR-0041.
 
+import "slices"
+
 // Selecting is implemented by every interactive tool that picks geometry. AcceptedKinds reports
 // the selection kinds pickable AT THE TOOL'S CURRENT STEP — it is re-read after each pick, so a
 // multi-step tool returns different kinds as it advances (e.g. Extrude: a profile, then, once a
@@ -122,10 +124,5 @@ func (s *Session) RegionModifierHint(x, y float64, mods Modifier) (show, add boo
 // toolAlreadyPicked reports whether sel is among the active tool's current picks (so a modified click
 // would toggle it off rather than add it).
 func (s *Session) toolAlreadyPicked(sel Selectable) bool {
-	for _, p := range s.ToolPicks() {
-		if p == sel {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(s.ToolPicks(), sel)
 }

@@ -178,7 +178,7 @@ func definitionIssues(in []brep.DefinitionIssue) []types.BrepDefinitionIssue {
 	return out
 }
 
-func defIssue(section string, index int, format string, args ...interface{}) types.BrepDefinitionIssue {
+func defIssue(section string, index int, format string, args ...any) types.BrepDefinitionIssue {
 	return types.BrepDefinitionIssue{
 		Path:    fmt.Sprintf("%s[%d]", section, index),
 		Problem: fmt.Sprintf(format, args...),
@@ -210,7 +210,7 @@ func triplets(v []float64, want int) ([]math.Point3, bool) {
 		return nil, false
 	}
 	out := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		out[i] = math.P3(math.Scalar(v[3*i]), math.Scalar(v[3*i+1]), math.Scalar(v[3*i+2]))
 	}
 	return out, true

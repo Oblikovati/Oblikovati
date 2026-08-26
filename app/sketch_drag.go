@@ -3,6 +3,8 @@
 package app
 
 import (
+	"slices"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/event"
 	"oblikovati.org/math"
@@ -100,10 +102,8 @@ func (s *Session) dragAnchors(ent sketch.Entity) []dragAnchor {
 // selection, mirroring a click.
 func (s *Session) dragSet(ent sketch.Entity) []sketch.Entity {
 	sel := s.selectedSketchEntities()
-	for _, e := range sel {
-		if e == ent {
-			return sel
-		}
+	if slices.Contains(sel, ent) {
+		return sel
 	}
 	s.selection.Clear()
 	if s.selection.Add(SketchEntityHandle{Entity: ent}) {

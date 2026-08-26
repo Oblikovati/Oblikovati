@@ -31,7 +31,7 @@ func TestConstrainedDelaunayDeterministic(t *testing.T) {
 	if len(first) == 0 {
 		t.Fatal("constrainedDelaunay returned no triangles")
 	}
-	for run := 0; run < 200; run++ {
+	for run := range 200 {
 		got := constrainedDelaunay(pts, [][]int{{0, 1, 2, 3}})
 		if !triIndexEqual(first, got) {
 			t.Fatalf("run %d: constrainedDelaunay non-deterministic (%d vs %d tris / differing order)", run, len(first), len(got))
@@ -68,7 +68,7 @@ func TestTessellateBodyDeterministicOnImportedSolid(t *testing.T) {
 		}
 		q := DefaultQuality()
 		first, _ := TessellateBody(bodies[0], q)
-		for run := 0; run < 20; run++ {
+		for run := range 20 {
 			got, _ := TessellateBody(bodies[0], q)
 			if !meshIdentical(first, got) {
 				t.Fatalf("%s run %d: TessellateBody non-deterministic on a fixed body", name, run)

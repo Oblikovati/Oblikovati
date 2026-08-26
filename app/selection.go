@@ -3,6 +3,8 @@
 package app
 
 import (
+	"slices"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -278,12 +280,7 @@ func (s *Selection) Add(sel Selectable) bool {
 // Contains reports whether sel is already in the set. Selectable handles are comparable
 // value structs wrapping the underlying entity pointer/id, so identity is plain equality.
 func (s *Selection) Contains(sel Selectable) bool {
-	for _, it := range s.items {
-		if it == sel {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(s.items, sel)
 }
 
 // Remove drops sel from the set, reporting whether it was present.

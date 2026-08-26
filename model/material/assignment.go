@@ -2,6 +2,8 @@
 
 package material
 
+import "maps"
+
 import "encoding/hex"
 
 // AssignmentStore records which material/appearance is assigned where in a part, keyed by
@@ -134,8 +136,6 @@ func setOrClear(m map[string]string, key, id string) {
 // copyMap returns an independent copy of a string map (defensive, for persistence reads).
 func copyMap(m map[string]string) map[string]string {
 	out := make(map[string]string, len(m))
-	for k, v := range m {
-		out[k] = v
-	}
+	maps.Copy(out, m)
 	return out
 }

@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"maps"
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
@@ -29,9 +30,7 @@ const dihedralOrthoCosTol = 1e-9
 // them exactly once (registerBlendArc APPENDS — reusing the original struct would double every arc).
 func cloneBlendResetArcs(cb *cornerBlend) *cornerBlend {
 	tan := make(map[uint64]math.Point3, len(cb.tan))
-	for k, v := range cb.tan {
-		tan[k] = v
-	}
+	maps.Copy(tan, cb.tan)
 	// radiusTorus rides the clone: a body with BOTH a void-sphere corner and a mixed-radius torus
 	// corner re-solves its bands against the same transient blend, and the classifier must still
 	// route the torus vertex to accumulateRadiusTorus after the re-solve.

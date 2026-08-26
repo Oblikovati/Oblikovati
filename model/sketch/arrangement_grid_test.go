@@ -15,7 +15,7 @@ import (
 func TestGridArrangementDetectsManyRegions(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	const squares = 400 // 400 × 4 lines = 1600 segments > arrBruteMax (1024)
-	for k := 0; k < squares; k++ {
+	for k := range squares {
 		x := float64(k%20) * 10 // spread out on a 20-wide grid so squares don't touch
 		y := float64(k/20) * 10
 		corners := []math.Point2{
@@ -46,7 +46,7 @@ func TestGridAndBruteAgreeOnCrossing(t *testing.T) {
 		// two overlapping squares → 3 regions (left-only, overlap, right-only)
 		addClosed(s, []math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}})
 		addClosed(s, []math.Point2{{X: 2, Y: 1}, {X: 6, Y: 1}, {X: 6, Y: 5}, {X: 2, Y: 5}})
-		for k := 0; k < extra; k++ { // padding squares far away to cross the threshold
+		for k := range extra { // padding squares far away to cross the threshold
 			x := 100 + float64(k%30)*10
 			y := float64(k/30) * 10
 			addClosed(s, []math.Point2{{X: x, Y: y}, {X: x + 1, Y: y}, {X: x + 1, Y: y + 1}, {X: x, Y: y + 1}})

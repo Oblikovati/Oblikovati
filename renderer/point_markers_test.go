@@ -40,7 +40,7 @@ func TestPointMarkersColoredRepeatsPerPointColors(t *testing.T) {
 	if len(item.Colors) != 12 {
 		t.Fatalf("color count = %d, want 12", len(item.Colors))
 	}
-	for i := 0; i < 6; i++ {
+	for i := range 6 {
 		if item.Colors[i] != cols[0] {
 			t.Fatalf("first point color %d = %v, want %v", i, item.Colors[i], cols[0])
 		}

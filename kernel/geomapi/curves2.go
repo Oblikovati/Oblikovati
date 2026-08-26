@@ -149,8 +149,8 @@ var _ contract.BSplineCurve2d = bspline2dAdapter{}
 
 func newBSpline2d(g geom.BSplineCurve2d) bspline2dAdapter {
 	return bspline2dAdapter{
-		curve2: curve2{kind: types.BSplineCurve2dKind, form: types.CurveFormNURBS, inner: g},
-		g:      g,
+		kind: types.BSplineCurve2dKind, form: types.CurveFormNURBS, inner: g,
+		g: g,
 	}
 }
 

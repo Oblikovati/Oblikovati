@@ -184,7 +184,7 @@ func bisectOutwardZero(f func(float64) (float64, bool), a, b float64) (float64, 
 	if !ok {
 		return 0, false
 	}
-	for i := 0; i < farEndJunctionSteps; i++ {
+	for range farEndJunctionSteps {
 		m := (a + b) / 2
 		fm, ok := f(m)
 		if !ok {

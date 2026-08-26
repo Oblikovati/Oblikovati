@@ -87,7 +87,7 @@ func freeColumnVectors(r [][]float64, pivotCols []int, n int) [][]float64 {
 		isPivot[c] = true
 	}
 	var basis [][]float64
-	for f := 0; f < n; f++ {
+	for f := range n {
 		if isPivot[f] {
 			continue
 		}

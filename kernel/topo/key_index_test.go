@@ -18,7 +18,7 @@ import (
 func buildKeyedStrip(n int) *Body {
 	bld := NewBuilder(false, NewLineage(Tok("strip", "body", 0)))
 	pl, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
-	for i := 0; i < n; i++ {
+	for i := range n {
 		x := float64(i) * 2
 		a := bld.AddVertex(math.P3(x, 0, 0), NewLineage(Tok("strip", "vertex", i*3)))
 		b := bld.AddVertex(math.P3(x+1, 0, 0), NewLineage(Tok("strip", "vertex", i*3+1)))
@@ -68,7 +68,7 @@ func TestFacesByKeyReturnsDefensiveCopy(t *testing.T) {
 // index agrees with a linear scan and is stable across calls.
 func TestKeyLookupMemoizedConsistent(t *testing.T) {
 	body := buildKeyedStrip(16)
-	for pass := 0; pass < 2; pass++ {
+	for pass := range 2 {
 		for _, e := range body.Edges() {
 			got := body.EdgesByKey(e.ReferenceKey())
 			if len(got) != 1 || got[0].ID() != e.ID() {
@@ -112,7 +112,7 @@ func TestKeyIndexConcurrentLookupsAreRaceFree(t *testing.T) {
 	body := buildKeyedStrip(64)
 	edges, faces, verts := body.Edges(), body.Faces(), body.Vertices()
 	var wg sync.WaitGroup
-	for g := 0; g < 32; g++ {
+	for g := range 32 {
 		wg.Add(1)
 		go func(g int) {
 			defer wg.Done()

@@ -117,7 +117,7 @@ func TestRedefineRejectsSelfReference(t *testing.T) {
 	if err := wp.RedefineSlots()[0].Set(wp.Key()); err == nil {
 		t.Fatal("re-picking a plane's base to the plane itself must be rejected")
 	}
-	for i := 0; i < 3; i++ { // the old bug compounded per recompute (z = 2, 4, 6, …)
+	for range 3 { // the old bug compounded per recompute (z = 2, 4, 6, …)
 		g.Recompute(nil)
 	}
 	if !wp.Plane().Origin().IsEqualTo(math.P3(0, 0, 2), wtol) {

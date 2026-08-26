@@ -50,8 +50,8 @@ func TestEarcutMultiHoleArea(t *testing.T) {
 	// A dense 4×4 grid — 16 interacting bridges.
 	var holes [][]math.Point2
 	combined := append([]math.Point2(nil), outer...)
-	for gx := 0; gx < 4; gx++ {
-		for gy := 0; gy < 4; gy++ {
+	for gx := range 4 {
+		for gy := range 4 {
 			h := ccwSquare(0.5+float64(gx)*1.0, 0.4+float64(gy)*0.7, 0.15)
 			holes = append(holes, h)
 			combined = append(combined, h...)

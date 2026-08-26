@@ -128,7 +128,7 @@ func TestCDTCocircularNgon(t *testing.T) {
 	for _, n := range []int{6, 8, 12, 20, 32, 64} {
 		var pts [][2]float64
 		var loop []int
-		for i := 0; i < n; i++ {
+		for i := range n {
 			a := 2 * stdmath.Pi * float64(i) / float64(n)
 			pts = append(pts, [2]float64{25 * stdmath.Cos(a), 25 * stdmath.Sin(a)})
 			loop = append(loop, i)
@@ -160,7 +160,7 @@ func TestCDTCocircularNgonWithHoles(t *testing.T) {
 	circle := func(cx, cy, r float64, n int, start int) ([][2]float64, []int) {
 		var pts [][2]float64
 		var idx []int
-		for i := 0; i < n; i++ {
+		for i := range n {
 			a := 2 * stdmath.Pi * float64(i) / float64(n)
 			pts = append(pts, [2]float64{cx + r*stdmath.Cos(a), cy + r*stdmath.Sin(a)})
 			idx = append(idx, start+i)

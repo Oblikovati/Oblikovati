@@ -80,7 +80,7 @@ func openMeshEdgeCount(m *ops.Mesh) int {
 	use := map[[2]pk]int{}
 	for t := 0; t+2 < len(m.Indices); t += 3 {
 		tri := [3]int{m.Indices[t], m.Indices[t+1], m.Indices[t+2]}
-		for k := 0; k < 3; k++ {
+		for k := range 3 {
 			a, c := key(tri[k]), key(tri[(k+1)%3])
 			if less(c, a) {
 				a, c = c, a
@@ -99,7 +99,7 @@ func openMeshEdgeCount(m *ops.Mesh) int {
 
 // less orders two rounded positions lexicographically for a canonical undirected edge key.
 func less(a, b [3]int64) bool {
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if a[i] != b[i] {
 			return a[i] < b[i]
 		}

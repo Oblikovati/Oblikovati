@@ -10,6 +10,8 @@ package feature
 // consumer goes, and a never-consumed datum is never auto-removed. This file exposes the datum-side
 // primitives; the host supplies the non-datum consumers (sketches, part features) via a predicate.
 
+import "slices"
+
 // ConstructionRefs returns the reference of every live user construction datum (plane/axis/point).
 // Origin/coordinate-system datums are never construction; deleted datums are skipped.
 func (g *WorkGeometry) ConstructionRefs() []WorkRef {
@@ -45,10 +47,8 @@ func (g *WorkGeometry) RefConsumedByDatum(ref WorkRef) bool {
 		if f.key == ref {
 			continue
 		}
-		for _, r := range f.refs {
-			if r == ref {
-				return true
-			}
+		if slices.Contains(f.refs, ref) {
+			return true
 		}
 	}
 	return false

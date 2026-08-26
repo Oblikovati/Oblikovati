@@ -84,7 +84,7 @@ func highestEdge(t *testing.T, b *topo.Body) *topo.Edge {
 // classification flip nondeterministically between runs; the exact, undisplaced result removes that.
 func TestTangentContactChainedRecomputeDeterministic(t *testing.T) {
 	var want string
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		body := tangentTwoBoxUnion(t)
 		out, err := FilletEdges(body, [][]byte{highestEdge(t, body).ReferenceKey()}, 0.1)
 		if err != nil {

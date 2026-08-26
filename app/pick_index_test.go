@@ -20,7 +20,7 @@ import (
 func boxRowAssembly(t *testing.T, n int) (*Session, *compdef.AssemblyComponentDefinition, *doc.Document) {
 	t.Helper()
 	s, asm, boxDoc, asmDoc := emptyBoxAssembly(t)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		at := math.Translation4(math.V3(math.Scalar(10*k), 0, 0))
 		if _, err := asm.PlaceComponentFromFile(asmDoc, boxDoc, "box", at); err != nil {
 			t.Fatalf("place box %d: %v", k, err)

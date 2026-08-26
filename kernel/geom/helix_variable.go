@@ -90,10 +90,7 @@ func (h VariableHelix3d) TotalTurns() float64 { return h.stations[len(h.stations
 
 // segmentAt finds the station segment containing the turn coordinate.
 func (h VariableHelix3d) segmentAt(turn float64) int {
-	i := sort.Search(len(h.stations)-1, func(k int) bool { return h.stations[k+1].Turn >= turn })
-	if i > len(h.stations)-2 {
-		i = len(h.stations) - 2
-	}
+	i := min(sort.Search(len(h.stations)-1, func(k int) bool { return h.stations[k+1].Turn >= turn }), len(h.stations)-2)
 	return i
 }
 

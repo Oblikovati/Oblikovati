@@ -291,8 +291,8 @@ func controlNetLines(surf geom.BSplineSurface) renderer.DrawItem {
 	}
 	idx := func(i, j int) int { return i*nv + j }
 	var indices []int
-	for i := 0; i < nu; i++ {
-		for j := 0; j < nv; j++ {
+	for i := range nu {
+		for j := range nv {
 			if i+1 < nu {
 				indices = append(indices, idx(i, j), idx(i+1, j))
 			}

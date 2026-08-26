@@ -24,7 +24,7 @@ func TestBoundaryPatchConsistentWinding(t *testing.T) {
 	// interior point, so its triangles span the curvature — where the centroid sample failed).
 	const n = 24
 	var rim []math.Point3
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := 2 * stdmath.Pi * float64(i) / float64(n)
 		rim = append(rim, math.P3(
 			math.Scalar(10*stdmath.Cos(stdmath.Pi/4)*stdmath.Cos(a)),

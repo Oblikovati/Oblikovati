@@ -83,7 +83,7 @@ func TestUniformAnchorsSpacingAndEndpoints(t *testing.T) {
 	if fwd[0].P.DistanceTo(math.P3(0, 0, 0)) > 1e-9 || fwd[3].P.DistanceTo(math.P3(12, 0, 0)) > 1e-9 {
 		t.Fatalf("dir=+1 endpoints = %v .. %v, want (0,0,0)..(12,0,0)", fwd[0].P, fwd[3].P)
 	}
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		step := fwd[i].P.DistanceTo(fwd[i+1].P)
 		if stdmath.Abs(step-4) > 1e-9 {
 			t.Errorf("fwd step %d = %v, want 4", i, step)

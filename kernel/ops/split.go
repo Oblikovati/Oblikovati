@@ -206,7 +206,7 @@ func boxFromCorners(c [8]math.Point3) *topo.Body {
 		pts := []math.Point3{c[ring[0]], c[ring[1]], c[ring[2]], c[ring[3]]}
 		pl, _ := geom.NewPlane(quadCentroid(pts), newellUnit(pts))
 		uses := make([]topo.Use, 4)
-		for i := 0; i < 4; i++ {
+		for i := range 4 {
 			a, b := ring[i], ring[(i+1)%4]
 			uses[i] = topo.Use{Edge: edge(a, b), Reversed: a > b}
 		}

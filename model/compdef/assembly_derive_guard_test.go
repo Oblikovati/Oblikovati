@@ -37,7 +37,7 @@ func TestFlattenDepthCapBoundsDeepChain(t *testing.T) {
 	top.Place("shallow", part, math.Identity4())
 
 	cur := top
-	for i := 0; i < maxAssemblyDepth+50; i++ {
+	for range maxAssemblyDepth + 50 {
 		next := NewAssemblyComponentDefinition()
 		cur.Place("child", next, math.Identity4())
 		cur = next

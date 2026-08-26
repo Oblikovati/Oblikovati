@@ -29,7 +29,7 @@ func applyInertia(mp *MassProperties, bodies []*topo.Body, q ops.Quality, densit
 	mp.InertiaXxGmm2, mp.InertiaYyGmm2, mp.InertiaZzGmm2 = total.xx*scale, total.yy*scale, total.zz*scale
 	mp.InertiaXyGmm2, mp.InertiaYzGmm2, mp.InertiaZxGmm2 = total.xy*scale, total.yz*scale, total.zx*scale
 	vals, vecs := jacobiEigenSym3(total)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		mp.PrincipalMomentsGmm2[i] = vals[i] * scale
 		mp.PrincipalAxes[i] = vecs[i]
 	}
@@ -57,7 +57,7 @@ func parallelAxis(vol float64, d [3]float64) sym3 {
 func jacobiEigenSym3(s sym3) (vals [3]float64, vecs [3][3]float64) {
 	a := [3][3]float64{{s.xx, s.xy, s.zx}, {s.xy, s.yy, s.yz}, {s.zx, s.yz, s.zz}}
 	v := [3][3]float64{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}} // accumulated rotations (columns = eigenvectors)
-	for sweep := 0; sweep < 50; sweep++ {
+	for range 50 {
 		if offDiagNorm(a) < 1e-18 {
 			break
 		}
@@ -66,14 +66,14 @@ func jacobiEigenSym3(s sym3) (vals [3]float64, vecs [3][3]float64) {
 		}
 	}
 	idx := [3]int{0, 1, 2} // sort eigenvalues ascending
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		for j := i + 1; j < 3; j++ {
 			if a[idx[j]][idx[j]] < a[idx[i]][idx[i]] {
 				idx[i], idx[j] = idx[j], idx[i]
 			}
 		}
 	}
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		k := idx[i]
 		vals[i] = a[k][k]
 		vecs[i] = [3]float64{v[0][k], v[1][k], v[2][k]} // column k is the eigenvector
@@ -99,17 +99,17 @@ func jacobiRotate(a *[3][3]float64, v *[3][3]float64, p, q int) {
 	}
 	c := 1 / stdmath.Sqrt(t*t+1)
 	sn := t * c
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		akp, akq := a[k][p], a[k][q]
 		a[k][p] = c*akp - sn*akq
 		a[k][q] = sn*akp + c*akq
 	}
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		apk, aqk := a[p][k], a[q][k]
 		a[p][k] = c*apk - sn*aqk
 		a[q][k] = sn*apk + c*aqk
 	}
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		vkp, vkq := v[k][p], v[k][q]
 		v[k][p] = c*vkp - sn*vkq
 		v[k][q] = sn*vkp + c*vkq

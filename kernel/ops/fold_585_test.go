@@ -56,7 +56,7 @@ func TestSpherePoleCapFoldFree(t *testing.T) {
 	const ring = 6
 	vEdge := stdmath.Pi/2 - 0.25
 	var outerUV []math.Point2
-	for k := 0; k < ring; k++ {
+	for k := range ring {
 		u := 2 * stdmath.Pi * float64(k) / ring
 		outerUV = append(outerUV, math.P2(math.Scalar(u), math.Scalar(vEdge)))
 	}

@@ -2,6 +2,8 @@
 
 package theme
 
+import "maps"
+
 import "oblikovati.org/api/types"
 
 // Palette is a full-snapshot color map: every theme stores a color for every token, so
@@ -26,9 +28,7 @@ func (p Palette) Color(t Token) Rgba {
 // built-in palette it was copied from.
 func (p Palette) Clone() Palette {
 	out := make(Palette, len(p))
-	for t, c := range p {
-		out[t] = c
-	}
+	maps.Copy(out, p)
 	return out
 }
 

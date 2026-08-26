@@ -82,7 +82,7 @@ func TestAssemblyFeatureMachinesParticipantsGated(t *testing.T) {
 
 	asm.RecomputeFeatures()
 
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		if got := resultVolume(asm.Features(), occs[i]); stdmath.Abs(got-0.5) > 1e-6 {
 			t.Errorf("participant %d machined volume = %g, want 0.5", i, got)
 		}

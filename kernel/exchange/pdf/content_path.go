@@ -154,7 +154,7 @@ func (in *interp) formMatrix(v objectValue) (matrix, bool) {
 		return matrix{}, false
 	}
 	var m matrix
-	for i := 0; i < 6; i++ {
+	for i := range 6 {
 		n, ok := in.doc.resolve(arr[i]).(numberObj)
 		if !ok {
 			return matrix{}, false

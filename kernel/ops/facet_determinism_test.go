@@ -29,7 +29,7 @@ func TestFacetIsDeterministic(t *testing.T) {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
 	var want string
-	for i := 0; i < 25; i++ {
+	for i := range 25 {
 		faceted := Facet(cyl, "f")
 		if faceted == nil {
 			t.Fatalf("run %d: Facet returned nil", i)

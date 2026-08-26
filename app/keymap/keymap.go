@@ -9,6 +9,8 @@
 package keymap
 
 import (
+	"maps"
+
 	"oblikovati.org/persistence/filestore"
 	"oblikovati.org/userconfig"
 )
@@ -39,9 +41,7 @@ func cloneMap(m map[string]string) map[string]string {
 		return nil
 	}
 	out := make(map[string]string, len(m))
-	for k, v := range m {
-		out[k] = v
-	}
+	maps.Copy(out, m)
 	return out
 }
 

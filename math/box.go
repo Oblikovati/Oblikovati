@@ -128,7 +128,7 @@ func (b Box) Corners() [8]Point3 {
 	xs := [2]Scalar{b.Min.X, b.Max.X}
 	ys := [2]Scalar{b.Min.Y, b.Max.Y}
 	zs := [2]Scalar{b.Min.Z, b.Max.Z}
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		c[i] = Point3{xs[i&1], ys[(i>>1)&1], zs[(i>>2)&1]}
 	}
 	return c

@@ -166,7 +166,7 @@ func isSampledLocalMin(d []float64, i int) bool {
 // accepts it only when the refined distance is within tol — so a bracket that merely APPROACHES the
 // boundary (a chain passing close by without touching) is rejected rather than snapped onto it.
 func refineRingMeet(ring []endSeg, s endSeg, lo, hi, tol float64) (float64, math.Point3, bool) {
-	for k := 0; k < ringMeetRefine; k++ {
+	for range ringMeetRefine {
 		a, b := lo+(hi-lo)*goldenInset, hi-(hi-lo)*goldenInset
 		if distToRing(ring, segPointAt(s, a)) <= distToRing(ring, segPointAt(s, b)) {
 			hi = b

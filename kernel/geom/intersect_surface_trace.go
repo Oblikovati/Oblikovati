@@ -4,6 +4,7 @@ package geom
 
 import (
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/math"
 )
@@ -174,8 +175,8 @@ func (tr ssiTracer) marchCurve(pc math.Point3, nb, no math.Vector3) []math.Point
 	}
 	bwd, _ := tr.marchOneWay(pc, nb, no, false)
 	out := make([]math.Point3, 0, len(bwd)+1+len(fwd))
-	for i := len(bwd) - 1; i >= 0; i-- {
-		out = append(out, bwd[i])
+	for _, b := range slices.Backward(bwd) {
+		out = append(out, b)
 	}
 	out = append(out, pc)
 	return append(out, fwd...)
@@ -411,7 +412,7 @@ func orient(t, h math.Vector3) math.Vector3 {
 // mid-air stall: the predicted point has no nearby crossing, e.g. a march walking off a NURBS patch).
 func correctToBothSurfaces(base, other Surface, p math.Point3, tol float64) (math.Point3, math.Vector3, math.Vector3, bool) {
 	var nb, no math.Vector3
-	for i := 0; i < ssiCorrectIters; i++ {
+	for range ssiCorrectIters {
 		ub, vb, db := ProjectPointToSurface(base, p)
 		uo, vo, do := ProjectPointToSurface(other, p)
 		pb, po := base.PointAt(ub, vb), other.PointAt(uo, vo)
@@ -479,7 +480,7 @@ func nearTangency(base, other Surface, p math.Point3, step float64) bool {
 // the contact point and whether it is a GENUINE tangency — the surfaces meet within tol there and
 // their normals are (anti)parallel (so the corrector's stall was a real touch, not a mid-air stall).
 func refineTangency(base, other Surface, p math.Point3, tol float64) (math.Point3, bool) {
-	for i := 0; i < ssiCorrectIters; i++ {
+	for range ssiCorrectIters {
 		ub, vb, _ := ProjectPointToSurface(base, p)
 		uo, vo, _ := ProjectPointToSurface(other, p)
 		pb, po := base.PointAt(ub, vb), other.PointAt(uo, vo)

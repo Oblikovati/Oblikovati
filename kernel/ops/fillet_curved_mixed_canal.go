@@ -93,7 +93,7 @@ func n4CornerBallPath(torus geom.Torus, vplane geom.Plane, m0, m1 math.Point3, t
 		return cornerBallPath{}, false
 	}
 	path := cornerBallPath{}
-	for i := 0; i < n4CanalStationCount; i++ {
+	for i := range n4CanalStationCount {
 		c, ok := f.centerAt(f.psi0 + (f.psi1-f.psi0)*n4StationParam(i))
 		if !ok {
 			return cornerBallPath{}, false

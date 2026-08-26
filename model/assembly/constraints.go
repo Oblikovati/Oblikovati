@@ -110,8 +110,8 @@ func (s *ConstraintSet) newBase(kind types.AssemblyConstraintType, a, b Ref) *co
 	s.nextID++
 	s.counts[kind]++
 	return &constraintBase{
-		relationshipBase: relationshipBase{id: s.nextID, name: constraintName(kind, s.counts[kind]), a: toAnchor(a), b: toAnchor(b)},
-		kind:             kind,
+		id: s.nextID, name: constraintName(kind, s.counts[kind]), a: toAnchor(a), b: toAnchor(b),
+		kind: kind,
 	}
 }
 

@@ -20,7 +20,7 @@ import (
 func TestRayPickerCurvedSceneStaysCheapPerFrame(t *testing.T) {
 	const balls = 16
 	bodies := make([]*topo.Body, 0, balls)
-	for i := 0; i < balls; i++ {
+	for i := range balls {
 		// Stagger the balls along x so several sit under the pick ray's neighbourhood, like the
 		// bearing's ball complement — the picker still ray-tests them all every frame.
 		b, err := brep.SolidSphere(math.V3(float64(i)*0.1, 0, 0).AsPoint(), 1.0, "ball")

@@ -160,7 +160,7 @@ func settledAnchors(groups []operandGroup, curveDOF bool) []math.Point2 {
 	for i, g := range groups {
 		ats[i] = g.center()
 	}
-	for pass := 0; pass < settlePasses; pass++ {
+	for range settlePasses {
 		settleOnce(groups, ats, curveDOF)
 	}
 	return ats

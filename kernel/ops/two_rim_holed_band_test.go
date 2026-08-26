@@ -20,7 +20,7 @@ func bandCylinder(h float64) geom.Cylinder {
 // rimLoop samples a full-circle rim at axial v as a 3D point loop on the cylinder.
 func rimLoop(s geom.Surface, v float64, n int) []math.Point3 {
 	out := make([]math.Point3, 0, n)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		out = append(out, s.PointAt(2*stdmath.Pi*float64(k)/float64(n), v))
 	}
 	return out
@@ -29,7 +29,7 @@ func rimLoop(s geom.Surface, v float64, n int) []math.Point3 {
 // lensLoop samples a small closed lens hole centred at (theta0,v0) in the wall's (θ,v) chart.
 func lensLoop(s geom.Surface, theta0, v0, rTheta, rV float64, n int) []math.Point3 {
 	out := make([]math.Point3, 0, n)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		a := 2 * stdmath.Pi * float64(k) / float64(n)
 		out = append(out, s.PointAt(theta0+rTheta*stdmath.Cos(a), v0+rV*stdmath.Sin(a)))
 	}

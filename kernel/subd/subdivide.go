@@ -10,7 +10,7 @@ import (
 
 // SubdivideN applies n Catmull–Clark refinement steps (n ≤ 0 returns the cage).
 func SubdivideN(m Mesh, n int) Mesh {
-	for i := 0; i < n; i++ {
+	for range n {
 		m = Subdivide(m)
 	}
 	return m
@@ -51,7 +51,7 @@ func splitFaces(faces [][]int, vBase int, epIdx map[[2]int]int) [][]int {
 	var out [][]int
 	for fi, f := range faces {
 		n := len(f)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			out = append(out, []int{
 				f[i],
 				epIdx[edgeKey(f[i], f[(i+1)%n])],

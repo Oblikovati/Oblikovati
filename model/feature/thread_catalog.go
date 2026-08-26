@@ -2,6 +2,8 @@
 
 package feature
 
+import "slices"
+
 import "fmt"
 
 // Thread standards and the size/pitch tables behind the thread tool's preferences. A standard
@@ -114,10 +116,5 @@ func ThreadDesignation(std ThreadStandard, sizeName string, pitch float64) (stri
 }
 
 func hasPitch(ps []float64, p float64) bool {
-	for _, x := range ps {
-		if x == p {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(ps, p)
 }

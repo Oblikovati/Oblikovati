@@ -88,7 +88,7 @@ func screwCenter(origin math.Point3, v, w math.Vector3) math.Point3 {
 func twistJacobian(p *placement, residuals []solve.Residual) [][]float64 {
 	base := evalResidualValues(residuals)
 	cols := make([][]float64, 6)
-	for c := 0; c < 6; c++ {
+	for c := range 6 {
 		cols[c] = twistColumn(p, residuals, base, c)
 	}
 	rows := make([][]float64, len(base))

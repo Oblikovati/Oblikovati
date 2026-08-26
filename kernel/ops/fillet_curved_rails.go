@@ -87,7 +87,7 @@ func railIsGreatCircle(rail geom.Arc3d, center math.Point3, r float64) bool {
 //	if !curvedRailG1(arm.arm, rail, w.center, w.radius, res) { /* not G1 — reject the weld */ }
 func curvedRailG1(arm geom.Surface, rail geom.Arc3d, center math.Point3, r float64, res Resolution) bool {
 	tol := res.Weld() // unit-normal difference is dimensionless — the relative resolution, not r-scaled
-	for i := 0; i < g1RailSamples; i++ {
+	for i := range g1RailSamples {
 		p := rail.PointAt(float64(i) / float64(g1RailSamples-1))
 		m, ok := armBallCenter(arm, p)
 		if !ok {

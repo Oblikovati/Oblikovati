@@ -20,7 +20,7 @@ func segmentCrossings(m *cdt, a, b int) int {
 		if m.dead[t] {
 			continue
 		}
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			u, w := m.tris[t].v[(i+1)%3], m.tris[t].v[(i+2)%3]
 			key := conKey(u, w)
 			if seen[key] {
@@ -61,7 +61,7 @@ func edgeManifold(m *cdt) bool {
 		if m.dead[t] {
 			continue
 		}
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			use[conKey(m.tris[t].v[(i+1)%3], m.tris[t].v[(i+2)%3])]++
 		}
 	}
@@ -78,7 +78,7 @@ func edgeManifold(m *cdt) bool {
 // chord is recovered in exactly (crossings) flips with no deferral — the clean instrumented case.
 func convexPolygonCDT(n int) *cdt {
 	pts := make([][2]float64, n)
-	for j := 0; j < n; j++ {
+	for j := range n {
 		a := 2 * stdmath.Pi * float64(j) / float64(n)
 		pts[j] = [2]float64{10 * stdmath.Cos(a), 10 * stdmath.Sin(a)}
 	}
@@ -234,7 +234,7 @@ func combPolygon(k int, w, h float64) ([][2]float64, []int) {
 	// Right wall up, then teeth across the top from right to left: each tooth is up, across, down.
 	loop = append(loop, add(w, h))
 	toothW := w / float64(2*k+1)
-	for j := 0; j < k; j++ {
+	for j := range k {
 		xr := w - float64(2*j+1)*toothW
 		xl := w - float64(2*j+2)*toothW
 		loop = append(loop, add(xr, h*0.4)) // down into the slot

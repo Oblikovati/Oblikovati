@@ -19,7 +19,7 @@ type aabb struct{ lo, hi [3]float64 }
 func faceAABB(t [3]Point) aabb {
 	p := [3]math3{m3(t[0]), m3(t[1]), m3(t[2])}
 	var b aabb
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		b.lo[k] = math.Min(p[0][k], math.Min(p[1][k], p[2][k]))
 		b.hi[k] = math.Max(p[0][k], math.Max(p[1][k], p[2][k]))
 	}
@@ -35,7 +35,7 @@ func m3(p Point) math3 {
 }
 
 func (a aabb) overlaps(b aabb) bool {
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		if a.hi[k] < b.lo[k] || b.hi[k] < a.lo[k] {
 			return false
 		}
@@ -63,7 +63,7 @@ func newFaceGrid(mesh [][3]Point) *faceGrid {
 	all := faceAABB(mesh[0])
 	for _, t := range mesh {
 		b := faceAABB(t)
-		for k := 0; k < 3; k++ {
+		for k := range 3 {
 			all.lo[k] = math.Min(all.lo[k], b.lo[k])
 			all.hi[k] = math.Max(all.hi[k], b.hi[k])
 		}
@@ -122,7 +122,7 @@ func (g *faceGrid) rayFaces(p, dir [3]float64) []int {
 // per-cell parameter increment (tDelta) for the ray p+t·dir; a zero component never
 // advances that axis.
 func ddaSetup(p, dir [3]float64, cell [3]int, cellSize float64) (step [3]int, tMax, tDelta [3]float64) {
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		switch {
 		case dir[k] > 0:
 			step[k] = 1
@@ -147,7 +147,7 @@ func ddaSetup(p, dir [3]float64, cell [3]int, cellSize float64) (step [3]int, tM
 // an exterior sample the parity is even regardless, so the answer stays correct.
 func (g *faceGrid) farDistance() float64 {
 	e := 1.0
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		e = math.Max(e, math.Max(math.Abs(g.bbox.lo[k]), math.Abs(g.bbox.hi[k])))
 	}
 	return 4*e + 4
@@ -185,7 +185,7 @@ func cellIndex(p [3]float64, cell float64) [3]int {
 // face count (about one face per cell), with a positive floor for a degenerate box.
 func gridCell(all aabb, n int) float64 {
 	var d float64
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		s := all.hi[k] - all.lo[k]
 		d += s * s
 	}

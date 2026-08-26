@@ -168,7 +168,7 @@ func readLocatorTable(data []byte, count int, h *FileHeader) error {
 		return fmt.Errorf("dwg: R2000 locator table of %d records overruns file (need %d bytes, have %d)", count, end+18, len(data))
 	}
 	h.Sections = make([]SectionLocator, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		off := recStart + i*recSize
 		h.Sections[i] = SectionLocator{
 			ID:      data[off],

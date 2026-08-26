@@ -16,18 +16,18 @@ import (
 // axes, in both the general and near-collinear regimes.
 func TestOrient2MatchesPredicates(t *testing.T) {
 	r := rand.New(rand.NewSource(0x1c05))
-	for i := 0; i < 20000; i++ {
+	for i := range 20000 {
 		a, b := rc(r), rc(r)
 		var c [3]float64
 		if i%2 == 0 {
 			s := r.Float64() // on line a-b → collinear/near-collinear regime
-			for k := 0; k < 3; k++ {
+			for k := range 3 {
 				c[k] = a[k] + s*(b[k]-a[k])
 			}
 		} else {
 			c = rc(r)
 		}
-		for axis := 0; axis < 3; axis++ {
+		for axis := range 3 {
 			au, av := projF(a, axis)
 			bu, bv := projF(b, axis)
 			cu, cv := projF(c, axis)
@@ -44,7 +44,7 @@ func TestOrient2MatchesPredicates(t *testing.T) {
 // drop axes, including the near-cocircular regime.
 func TestInCircleSignMatchesPredicates(t *testing.T) {
 	r := rand.New(rand.NewSource(0x1c08))
-	for i := 0; i < 20000; i++ {
+	for i := range 20000 {
 		a, b, c := rc(r), rc(r), rc(r)
 		var d [3]float64
 		if i%2 == 0 {
@@ -59,7 +59,7 @@ func TestInCircleSignMatchesPredicates(t *testing.T) {
 			rad := math.Hypot(a[0]-ox, a[1]-oy)
 			d = [3]float64{ox + rad*math.Cos(ang), oy + rad*math.Sin(ang), 0}
 		}
-		for axis := 0; axis < 3; axis++ {
+		for axis := range 3 {
 			au, av := projF(a, axis)
 			bu, bv := projF(b, axis)
 			cu, cv := projF(c, axis)
@@ -103,7 +103,7 @@ func TestOrient2KnownCCW(t *testing.T) {
 func TestSegSegCrossExact(t *testing.T) {
 	r := rand.New(rand.NewSource(0x1c06))
 	crossed := 0
-	for i := 0; i < 40000; i++ {
+	for i := range 40000 {
 		var a, b, c, d Point
 		tilted := i%2 == 1
 		if tilted {
@@ -171,7 +171,7 @@ func sumXYZ(p Point) *big.Rat {
 // determinant. A wrong certification would show as a mismatch.
 func TestInCircleFilterMatchesExact(t *testing.T) {
 	rng := rand.New(rand.NewSource(0x1c1c))
-	for i := 0; i < 20000; i++ {
+	for i := range 20000 {
 		a := randPoint(rng, i%3 == 0)
 		b := randPoint(rng, i%5 == 0)
 		c := randPoint(rng, i%7 == 0)
@@ -214,7 +214,7 @@ func TestInCircleNearCocircular(t *testing.T) {
 // projection axes, orient2 must equal the sign of the exact determinant.
 func TestOrient2FilterMatchesExact(t *testing.T) {
 	rng := rand.New(rand.NewSource(0x02c2))
-	for i := 0; i < 20000; i++ {
+	for i := range 20000 {
 		a := randPoint(rng, i%3 == 0)
 		b := randPoint(rng, i%5 == 0)
 		c := randPoint(rng, i%2 == 0)

@@ -85,7 +85,7 @@ func (s BSplineSurface) RemoveKnotV(v float64, num int, tol float64) (BSplineSur
 func removeSurfaceU(s BSplineSurface, u float64, r, sm, eff int, tol float64) (newU []float64, ctrl [][]math.Point3, weights [][]float64, removed int) {
 	vCount := len(s.Ctrl[0])
 	removed = eff
-	for j := 0; j < vCount; j++ {
+	for j := range vCount {
 		_, _, got := removeKnotHomog(s.UDegree, s.UKnots, columnToHomog(s, j), u, r, sm, eff, tol)
 		removed = min(removed, got)
 	}
@@ -93,7 +93,7 @@ func removeSurfaceU(s BSplineSurface, u float64, r, sm, eff int, tol float64) (n
 		return nil, nil, nil, 0
 	}
 	cols := make([][]hpoint4, vCount)
-	for j := 0; j < vCount; j++ {
+	for j := range vCount {
 		newU, cols[j], _ = removeKnotHomog(s.UDegree, s.UKnots, columnToHomog(s, j), u, r, sm, removed, tol)
 	}
 	ctrl, weights = netFromColumns(cols)
@@ -104,7 +104,7 @@ func removeSurfaceU(s BSplineSurface, u float64, r, sm, eff int, tol float64) (n
 func removeSurfaceV(s BSplineSurface, v float64, r, sm, eff int, tol float64) (newV []float64, ctrl [][]math.Point3, weights [][]float64, removed int) {
 	uCount := len(s.Ctrl)
 	removed = eff
-	for i := 0; i < uCount; i++ {
+	for i := range uCount {
 		row := rowToHomog(s, i)
 		_, _, got := removeKnotHomog(s.VDegree, s.VKnots, row, v, r, sm, eff, tol)
 		removed = min(removed, got)
@@ -114,7 +114,7 @@ func removeSurfaceV(s BSplineSurface, v float64, r, sm, eff int, tol float64) (n
 	}
 	ctrl = make([][]math.Point3, uCount)
 	weights = make([][]float64, uCount)
-	for i := 0; i < uCount; i++ {
+	for i := range uCount {
 		var refined []hpoint4
 		newV, refined, _ = removeKnotHomog(s.VDegree, s.VKnots, rowToHomog(s, i), v, r, sm, removed, tol)
 		ctrl[i], weights[i] = curveFromHomog(refined)

@@ -126,11 +126,9 @@ func TestRunLockRejectsConcurrentRun(t *testing.T) {
 	r := New(blockingEngine{started: make(chan struct{}), release: make(chan struct{})}, &nopCaller{}, nil)
 	be := r.engine.(blockingEngine)
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		_, _ = r.Run(context.Background(), "first", fastLimits(), nil)
-	}()
+	})
 	<-be.started
 	if _, err := r.Run(context.Background(), "second", fastLimits(), nil); err != ErrBusy {
 		t.Errorf("second concurrent run: err = %v, want ErrBusy", err)

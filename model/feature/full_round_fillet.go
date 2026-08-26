@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
@@ -189,10 +190,7 @@ func roundArcChords(tangent, apex math.Point2, r float64) []math.Point2 {
 	for a0-a1 > stdmath.Pi {
 		a1 += 2 * stdmath.Pi
 	}
-	k := int(stdmath.Ceil(stdmath.Abs(a1-a0) / (2 * stdmath.Pi / 32)))
-	if k < 2 {
-		k = 2
-	}
+	k := max(int(stdmath.Ceil(stdmath.Abs(a1-a0)/(2*stdmath.Pi/32))), 2)
 	out := make([]math.Point2, 0, k)
 	for j := 1; j <= k; j++ {
 		a := a0 + (a1-a0)*float64(j)/float64(k)
@@ -204,10 +202,8 @@ func roundArcChords(tangent, apex math.Point2, r float64) []math.Point2 {
 // sharedEdgeMidpoint returns the midpoint of an edge shared by faces a and b, if any.
 func sharedEdgeMidpoint(a, b *topo.Face) (math.Point3, bool) {
 	for _, e := range a.Edges() {
-		for _, f := range e.Faces() {
-			if f == b {
-				return e.StartVertex().Point().Midpoint(e.EndVertex().Point()), true
-			}
+		if slices.Contains(e.Faces(), b) {
+			return e.StartVertex().Point().Midpoint(e.EndVertex().Point()), true
 		}
 	}
 	return math.Point3{}, false
@@ -234,7 +230,7 @@ func linearSolve3(rowA, rowB, rowC math.Vector3, a, b, c float64) (math.Point3, 
 	}
 	col := func(i int, v [3]float64) [3][3]float64 {
 		mm := m
-		for r := 0; r < 3; r++ {
+		for r := range 3 {
 			mm[r][i] = v[r]
 		}
 		return mm

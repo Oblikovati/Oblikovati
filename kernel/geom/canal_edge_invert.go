@@ -86,7 +86,7 @@ func (s *canalMarchHostState) peekInvert(q math.Point3) (CanalFoot, error) {
 // silently absorbed.
 func (s *canalMarchHostState) localFoot(q math.Point3, seed CanalFoot) (CanalFoot, error) {
 	u, v := seed.U, seed.V
-	for i := 0; i < canalInvertMaxIter; i++ {
+	for range canalInvertMaxIter {
 		du, dv, r := s.footFrame(u, v, q)
 		if footPerpendicular(du, dv, r) {
 			return s.guardedFoot(u, v, seed)
@@ -131,7 +131,7 @@ func footPerpendicular(du, dv, r math.Vector3) bool {
 // moved=false means even the smallest step fails to improve: the numeric floor.
 func (s *canalMarchHostState) dampFootStep(q math.Point3, u, v, su, sv, d2 float64) (nu, nv float64, moved bool) {
 	alpha := 1.0
-	for k := 0; k < 8; k++ {
+	for range 8 {
 		cu, cv := u+alpha*su, v+alpha*sv
 		r := s.host.pointAtLifted(cu, cv).VectorTo(q)
 		if float64(r.LengthSquared()) < d2 {

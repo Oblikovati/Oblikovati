@@ -21,7 +21,7 @@ func TestReserveFillsWithoutRealloc(t *testing.T) {
 	if vertsCap != n*3 || trisCap != n {
 		t.Fatalf("Reserve(%d) gave cap verts=%d tris=%d, want %d/%d", n, vertsCap, trisCap, n*3, n)
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		f := float64(i)
 		m.AddTriangle(math.P3(f, 0, 0), math.P3(0, f, 0), math.P3(0, 0, f))
 	}

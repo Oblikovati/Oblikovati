@@ -61,7 +61,7 @@ func (s BSplineSurface) RefineKnotsV(vs []float64) (BSplineSurface, error) {
 func insertSurfaceU(s BSplineSurface, u float64, r int) (newU []float64, ctrl [][]math.Point3, weights [][]float64) {
 	vCount := len(s.Ctrl[0])
 	cols := make([][]hpoint4, vCount)
-	for j := 0; j < vCount; j++ {
+	for j := range vCount {
 		newU, cols[j] = insertKnotHomog(s.UDegree, s.UKnots, columnToHomog(s, j), u, r)
 	}
 	ctrl, weights = netFromColumns(cols)
@@ -83,7 +83,7 @@ func insertSurfaceV(s BSplineSurface, v float64, r int) (newV []float64, ctrl []
 	uCount := len(s.Ctrl)
 	ctrl = make([][]math.Point3, uCount)
 	weights = make([][]float64, uCount)
-	for i := 0; i < uCount; i++ {
+	for i := range uCount {
 		row := make([]hpoint4, len(s.Ctrl[i]))
 		for j := range s.Ctrl[i] {
 			row[j] = hpoint4FromCurve(s.Ctrl[i][j], s.Weights[i][j])
@@ -101,7 +101,7 @@ func netFromColumns(cols [][]hpoint4) (ctrl [][]math.Point3, weights [][]float64
 	rows := len(cols[0])
 	ctrl = make([][]math.Point3, rows)
 	weights = make([][]float64, rows)
-	for i := 0; i < rows; i++ {
+	for i := range rows {
 		ctrl[i] = make([]math.Point3, len(cols))
 		weights[i] = make([]float64, len(cols))
 		for j := range cols {

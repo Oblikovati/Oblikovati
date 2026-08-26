@@ -67,7 +67,7 @@ func revolveToNextTurn(base []math.Point3, axis *WorkAxis, bodies []*topo.Body, 
 // firstMaterialTurn marches one profile point's circular path and returns the sweep angle of the
 // first face it crosses.
 func firstMaterialTurn(p math.Point3, axis *WorkAxis, bodies []*topo.Body, sense float64) (float64, bool) {
-	for k := 0; k < int(2*stdmath.Pi/revolveToNextStep); k++ {
+	for k := range int(2 * stdmath.Pi / revolveToNextStep) {
 		from := rotateAboutAxis(p, axis, sense*revolveToNextStep*float64(k))
 		to := rotateAboutAxis(p, axis, sense*revolveToNextStep*float64(k+1))
 		hit, ok := chordHit(from, to, bodies)

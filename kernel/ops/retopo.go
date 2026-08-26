@@ -64,8 +64,8 @@ func vertexAtPlanes(v *topo.Vertex, faces []*topo.Face, planes map[uint64]geom.P
 		n := pl.Normal()
 		d := n.Dot(pl.Origin.AsVector())
 		nv := [3]float64{n.X, n.Y, n.Z}
-		for i := 0; i < 3; i++ {
-			for j := 0; j < 3; j++ {
+		for i := range 3 {
+			for j := range 3 {
 				a[i][j] += nv[i] * nv[j]
 			}
 			b[i] += nv[i] * d
@@ -126,9 +126,9 @@ func solve3(a [3][3]float64, b [3]float64) ([3]float64, bool) {
 		return [3]float64{}, false
 	}
 	var x [3]float64
-	for c := 0; c < 3; c++ {
+	for c := range 3 {
 		m := a
-		for r := 0; r < 3; r++ {
+		for r := range 3 {
 			m[r][c] = b[r]
 		}
 		x[c] = det3(m) / det

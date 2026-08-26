@@ -5,6 +5,7 @@ package ops
 import (
 	"fmt"
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
@@ -141,10 +142,7 @@ func sampleMiterSeam(v math.Point3, r float64, nS math.Vector3, a1, a2 miterArm)
 		return nil, fmt.Errorf("fillet: degenerate miter (edge axis lies in the seam plane)")
 	}
 	w := stdmath.Acos(math.Clamp(nS.Dot(a1.nF), -1, 1)) // rolling-ball wedge spanned on arm 1
-	k := int(stdmath.Ceil(w / (2 * stdmath.Pi / filletChordsPerTurn)))
-	if k < 4 {
-		k = 4
-	}
+	k := max(int(stdmath.Ceil(w/(2*stdmath.Pi/filletChordsPerTurn))), 4)
 	vMinusCen := a1.cen.VectorTo(v) // v − cen1
 	out := make([]math.Point3, k+1)
 	for j := 0; j <= k; j++ {
@@ -169,10 +167,8 @@ func slerpVec(a, b math.Vector3, s float64) math.Vector3 {
 // sharedFace returns the face bounding both edges, or nil if they share none.
 func sharedFace(e1, e2 *topo.Edge) *topo.Face {
 	for _, f1 := range e1.Faces() {
-		for _, f2 := range e2.Faces() {
-			if f1 == f2 {
-				return f1
-			}
+		if slices.Contains(e2.Faces(), f1) {
+			return f1
 		}
 	}
 	return nil

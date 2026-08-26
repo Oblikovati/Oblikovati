@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"slices"
 
 	"oblikovati.org/model/feature"
 )
@@ -57,12 +58,7 @@ func (t *FaceFilletTool) hasFace(f FaceHandle) bool {
 
 // faceSetHas reports whether set already contains f.
 func faceSetHas(set []FaceHandle, f FaceHandle) bool {
-	for _, h := range set {
-		if h == f {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(set, f)
 }
 
 // ArmSetA / ArmSetB choose which set the next picks extend (the panel's two selector chips).

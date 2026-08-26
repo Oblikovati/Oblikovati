@@ -158,7 +158,7 @@ func orientRingChainToEdge(ring []math.Point3, leaving []geom.Curve3, footEdge *
 func reverseLeavingChain(leaving []geom.Curve3) []geom.Curve3 {
 	n := len(leaving)
 	out := make([]geom.Curve3, n)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		if c := leaving[(n-1-k)%n]; c != nil {
 			out[k] = geom.ReverseCurve3(c)
 		}

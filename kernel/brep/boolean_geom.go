@@ -134,7 +134,7 @@ func collinearEdgeSpans(o2 math.Point2, d2 math.Vector2, f planarFace) [][2]floa
 	var out [][2]float64
 	for _, ring := range f.loops {
 		n := len(ring)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			a, b := to2D(f.plane, ring[i]), to2D(f.plane, ring[(i+1)%n])
 			if distPointLine2D(a, o2, d2) > arrTol || distPointLine2D(b, o2, d2) > arrTol {
 				continue
@@ -163,7 +163,7 @@ func to2Dvec(pl geom.Plane, v math.Vector3) math.Vector2 {
 func ringCrossings(o2 math.Point2, d2 math.Vector2, ring []math.Point3, pl geom.Plane) []float64 {
 	var ts []float64
 	n := len(ring)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b := to2D(pl, ring[i]), to2D(pl, ring[(i+1)%n])
 		if t, ok := lineSegCross(o2, d2, a, b); ok {
 			ts = append(ts, t)

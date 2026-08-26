@@ -92,7 +92,7 @@ func (d *delaunayMesh) locate(pi int) (int, int) {
 			continue // outside this (CCW) triangle
 		}
 		edge := -1
-		for e := 0; e < 3; e++ {
+		for e := range 3 {
 			if s[e] == 0 {
 				edge = e // on this edge; two zeros would be a vertex, already handled above
 			}
@@ -117,7 +117,7 @@ func (d *delaunayMesh) link(ti, e, tj int) {
 // edgeSlot returns the edge index of the directed edge (a,b) in triangle ti, or -1.
 func (d *delaunayMesh) edgeSlot(ti, a, b int) int {
 	t := d.tris[ti]
-	for e := 0; e < 3; e++ {
+	for e := range 3 {
 		if t.v[e] == a && t.v[(e+1)%3] == b {
 			return e
 		}
@@ -189,7 +189,7 @@ func (d *delaunayMesh) flip(ti, tj, a, b, p, q int) {
 
 // legalizeOpp legalizes the edge of ti opposite vertex pi.
 func (d *delaunayMesh) legalizeOpp(ti, pi int) {
-	for e := 0; e < 3; e++ {
+	for e := range 3 {
 		if d.tris[ti].v[e] != pi && d.tris[ti].v[(e+1)%3] != pi {
 			d.legalize(ti, e)
 			return

@@ -166,7 +166,7 @@ type ProjectedViewTool struct {
 
 // NewProjectedViewTool creates the tool; its base-view list is captured on Start.
 func NewProjectedViewTool() *ProjectedViewTool {
-	return &ProjectedViewTool{derivedViewTool: derivedViewTool{centerX: 250, centerY: 150}}
+	return &ProjectedViewTool{centerX: 250, centerY: 150}
 }
 
 func (t *ProjectedViewTool) Name() string { return "Projected View" }
@@ -230,7 +230,7 @@ type AuxiliaryViewTool struct {
 
 // NewAuxiliaryViewTool creates the tool; its parent-view list is captured on Start.
 func NewAuxiliaryViewTool() *AuxiliaryViewTool {
-	return &AuxiliaryViewTool{derivedViewTool: derivedViewTool{centerX: 250, centerY: 250}}
+	return &AuxiliaryViewTool{centerX: 250, centerY: 250}
 }
 
 func (t *AuxiliaryViewTool) Name() string { return "Auxiliary View" }
@@ -293,7 +293,7 @@ type SectionViewTool struct {
 
 // NewSectionViewTool creates the tool; its base-view list is captured on Start.
 func NewSectionViewTool() *SectionViewTool {
-	return &SectionViewTool{derivedViewTool: derivedViewTool{centerX: 150, centerY: 250}}
+	return &SectionViewTool{centerX: 150, centerY: 250}
 }
 
 func (t *SectionViewTool) Name() string { return "Section View" }
@@ -363,7 +363,7 @@ type DetailViewTool struct {
 
 // NewDetailViewTool starts at 2× magnification.
 func NewDetailViewTool() *DetailViewTool {
-	return &DetailViewTool{derivedViewTool: derivedViewTool{centerX: 150, centerY: 250}, scale: 2}
+	return &DetailViewTool{centerX: 150, centerY: 250, scale: 2}
 }
 
 func (t *DetailViewTool) Name() string { return "Detail View" }
@@ -441,7 +441,7 @@ type BreakViewTool struct {
 
 // NewBreakViewTool creates the tool; its base-view list is captured on Start.
 func NewBreakViewTool() *BreakViewTool {
-	return &BreakViewTool{derivedViewTool: derivedViewTool{centerX: 150, centerY: 250}}
+	return &BreakViewTool{centerX: 150, centerY: 250}
 }
 
 func (t *BreakViewTool) Name() string { return "Break View" }
@@ -556,7 +556,7 @@ type SliceViewTool struct {
 
 // NewSliceViewTool creates the tool; its base-view list is captured on Start.
 func NewSliceViewTool() *SliceViewTool {
-	return &SliceViewTool{derivedViewTool: derivedViewTool{centerX: 150, centerY: 250}}
+	return &SliceViewTool{centerX: 150, centerY: 250}
 }
 
 func (t *SliceViewTool) Name() string { return "Slice View" }
@@ -612,7 +612,7 @@ type BreakoutViewTool struct{ derivedViewTool }
 
 // NewBreakoutViewTool creates the tool; its base-view list is captured on Start.
 func NewBreakoutViewTool() *BreakoutViewTool {
-	return &BreakoutViewTool{derivedViewTool: derivedViewTool{centerX: 150, centerY: 250}}
+	return &BreakoutViewTool{centerX: 150, centerY: 250}
 }
 
 func (t *BreakoutViewTool) Name() string { return "Breakout View" }
@@ -682,7 +682,7 @@ func (t *DraftViewTool) PreviewCurves(*Session) []drawing.DrawingCurve {
 	w, h := gmath.Scalar(t.width/2), gmath.Scalar(t.height/2)
 	corners := [4]gmath.Point2{gmath.P2(-w, -h), gmath.P2(w, -h), gmath.P2(w, h), gmath.P2(-w, h)}
 	t.preview = t.preview[:0]
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		t.preview = append(t.preview, drawing.DrawingCurve{A: corners[i], B: corners[(i+1)%4], Visible: true})
 	}
 	return t.preview

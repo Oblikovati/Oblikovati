@@ -4,6 +4,7 @@ package app
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"oblikovati.org/api/types"
@@ -50,10 +51,8 @@ func (s *Session) absentInterestNotice(d *doc.Document) string {
 // interestClientPresent reports whether clientID matches a registered add-in
 // or a connected client application.
 func (s *Session) interestClientPresent(clientID string) bool {
-	for _, id := range s.addins.Registered() {
-		if id == clientID {
-			return true
-		}
+	if slices.Contains(s.addins.Registered(), clientID) {
+		return true
 	}
 	for _, info := range s.clientApps.List() {
 		if info.Name == clientID {

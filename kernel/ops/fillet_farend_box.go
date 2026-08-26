@@ -115,7 +115,7 @@ func ringParamSequence(s geom.Surface, segs []endSeg) (us, vs []float64) {
 func sliceIntoEdges(us, vs []float64, n int) []edgeParams {
 	k := paramBoxStations + 1
 	out := make([]edgeParams, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		out[i] = edgeParams{us: us[i*k : (i+1)*k], vs: vs[i*k : (i+1)*k]}
 	}
 	return out

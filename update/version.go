@@ -28,7 +28,7 @@ func IsNewer(latest, current string) bool {
 // stripped first.
 func compareCore(a, b string) int {
 	ax, bx := coreParts(a), coreParts(b)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		switch {
 		case ax[i] > bx[i]:
 			return 1

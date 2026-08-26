@@ -5,6 +5,7 @@ package drawing
 import (
 	"fmt"
 	stdmath "math"
+	"slices"
 	"strconv"
 
 	"oblikovati.org/api/types"
@@ -106,10 +107,8 @@ func chamferAndReferenceFace(eA, eB *topo.Edge) (chamfer, ref *topo.Face, ok boo
 // commonFace returns the first face present in both slices, or nil.
 func commonFace(a, b []*topo.Face) *topo.Face {
 	for _, fa := range a {
-		for _, fb := range b {
-			if fa == fb {
-				return fa
-			}
+		if slices.Contains(b, fa) {
+			return fa
 		}
 	}
 	return nil

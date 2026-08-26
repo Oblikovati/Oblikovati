@@ -130,7 +130,7 @@ func TestCursorRoundTripFidelity(t *testing.T) {
 	}
 	tipCount := def.Parameters().Count()
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if err := s.Undo(); err != nil {
 			t.Fatalf("undo %d: %v", i, err)
 		}
@@ -138,7 +138,7 @@ func TestCursorRoundTripFidelity(t *testing.T) {
 	if got := def.Parameters().Count(); got != tipCount-3 {
 		t.Fatalf("after undo×3: param count = %d, want %d", got, tipCount-3)
 	}
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if err := s.Redo(); err != nil {
 			t.Fatalf("redo %d: %v", i, err)
 		}

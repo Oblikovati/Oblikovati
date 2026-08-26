@@ -3,6 +3,8 @@
 package feature
 
 import (
+	"slices"
+
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -53,12 +55,7 @@ func (fs *PartFeatures) producerOf(b *topo.Body, end int) *PartFeature {
 
 // holdsBody reports whether bodies contains this exact body (identity, not equality).
 func holdsBody(bodies []*topo.Body, b *topo.Body) bool {
-	for _, held := range bodies {
-		if held == b {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(bodies, b)
 }
 
 // sameBodies reports whether two body lists are the same bodies in the same order.

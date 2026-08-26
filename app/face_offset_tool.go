@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"slices"
 
 	"oblikovati.org/model/feature"
 )
@@ -43,12 +44,7 @@ func (t *FaceOffsetTool) Pick(_ *Session, sel Selectable) {
 }
 
 func (t *FaceOffsetTool) hasFace(f FaceHandle) bool {
-	for _, h := range t.faces {
-		if h == f {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(t.faces, f)
 }
 
 // SetDistance/Distance set the offset distance (database units, signed).

@@ -78,7 +78,7 @@ func BenchmarkConstrainedDelaunay(b *testing.B) {
 // circleWithInteriorGrid builds a CDT input: an n-point circle boundary (n hard constraints) plus an
 // interior point grid — a stand-in for the dense trimmed-wall inputs the mesher feeds the CDT.
 func circleWithInteriorGrid(n int) (pts [][2]float64, loops [][]int) {
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := 2 * stdmath.Pi * float64(i) / float64(n)
 		pts = append(pts, [2]float64{50 * stdmath.Cos(a), 50 * stdmath.Sin(a)})
 	}

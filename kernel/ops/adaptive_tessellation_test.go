@@ -17,10 +17,10 @@ func offsetBumpSurface(t *testing.T) geom.BSplineSurface {
 	t.Helper()
 	ctrl := make([][]math.Point3, 4)
 	w := make([][]float64, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		ctrl[i] = make([]math.Point3, 4)
 		w[i] = []float64{1, 1, 1, 1}
-		for j := 0; j < 4; j++ {
+		for j := range 4 {
 			z := math.Scalar(0)
 			if i == 1 && j == 1 { // raise one control point toward the (≈0.25,0.25) corner region
 				z = 4

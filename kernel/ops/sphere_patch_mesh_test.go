@@ -96,7 +96,7 @@ func TestSpherePatchDirectMeshIsCurved(t *testing.T) {
 func sphereQuadBoundary(s geom.Sphere, u0, u1, v0, v1 float64, n int) []math.Point3 {
 	var out []math.Point3
 	add := func(uf func(t float64) (u, v float64)) {
-		for k := 0; k < n; k++ {
+		for k := range n {
 			u, v := uf(float64(k) / float64(n))
 			out = append(out, s.PointAt(u, v))
 		}

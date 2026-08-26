@@ -60,7 +60,7 @@ func TestConvexHullSphere(t *testing.T) {
 	const r, n = 1.5, 400
 	var pts []math.Point3
 	ga := stdmath.Pi * (3 - stdmath.Sqrt(5)) // golden-angle Fibonacci sphere
-	for i := 0; i < n; i++ {
+	for i := range n {
 		z := 1 - 2*(float64(i)+0.5)/n
 		rho := stdmath.Sqrt(1 - z*z)
 		th := ga * float64(i)

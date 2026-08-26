@@ -41,7 +41,7 @@ func rimCrossings(rim []math.Point2, b boundaryLine2, res Resolution) []crossing
 	tol := res.Weld()
 	var out []crossing
 	n := len(rim)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, c := rim[i], rim[(i+1)%n]
 		da, dc := b.signedDist(a), b.signedDist(c)
 		if da > tol && dc < -tol || da < -tol && dc > tol {

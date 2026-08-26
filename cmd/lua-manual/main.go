@@ -74,7 +74,7 @@ func loadExamples() ([]luadoc.Example, error) {
 // human description shown above its source.
 func leadingComment(src string) string {
 	var parts []string
-	for _, line := range strings.Split(src, "\n") {
+	for line := range strings.SplitSeq(src, "\n") {
 		t := strings.TrimSpace(line)
 		rest, ok := strings.CutPrefix(t, "--")
 		if !ok {

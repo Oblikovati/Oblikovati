@@ -4,6 +4,7 @@ package feature
 
 import (
 	"fmt"
+	"slices"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
@@ -155,9 +156,9 @@ func thickenBoolean(in Input, surface, solid *topo.Body, op ops.PartFeatureOpera
 
 // lastSolidExcept returns the most recent solid body that is not skip, or nil.
 func lastSolidExcept(bodies []*topo.Body, skip *topo.Body) *topo.Body {
-	for i := len(bodies) - 1; i >= 0; i-- {
-		if bodies[i] != skip && bodies[i].IsSolid() {
-			return bodies[i]
+	for _, bodie := range slices.Backward(bodies) {
+		if bodie != skip && bodie.IsSolid() {
+			return bodie
 		}
 	}
 	return nil
@@ -315,15 +316,15 @@ func (c *ModifyFeatures) AddSplit(faceKeys [][]byte) *PartFeature {
 }
 
 func (c *ModifyFeatures) AddMoveFace(faceKeys [][]byte, translation math.Vector3) *PartFeature {
-	return c.engine.Add(&MoveFaceFeature{faceEditFeature: faceEditFeature{kind: "move-face", faceKeys: faceKeys}, translation: translation})
+	return c.engine.Add(&MoveFaceFeature{kind: "move-face", faceKeys: faceKeys, translation: translation})
 }
 
 // AddMoveFaceRotate is the rotate arm of move-face (#331): the picked faces rotate by angle
 // about the axis (point + direction).
 func (c *ModifyFeatures) AddMoveFaceRotate(faceKeys [][]byte, axisPoint math.Point3, axisDir math.Vector3, angle func() float64) *PartFeature {
 	return c.engine.Add(&MoveFaceFeature{
-		faceEditFeature: faceEditFeature{kind: "move-face", faceKeys: faceKeys},
-		axisPoint:       axisPoint, axisDir: axisDir, angle: angle,
+		kind: "move-face", faceKeys: faceKeys,
+		axisPoint: axisPoint, axisDir: axisDir, angle: angle,
 	})
 }
 
@@ -331,26 +332,26 @@ func (c *ModifyFeatures) AddMoveFaceRotate(faceKeys [][]byte, axisPoint math.Poi
 // computes the exact offset, which satisfies every approximation bound).
 func (c *ModifyFeatures) AddFaceOffsetApprox(faceKeys [][]byte, distance func() float64, approx types.FeatureApproximationType) *PartFeature {
 	return c.engine.Add(&FaceOffsetFeature{
-		faceEditFeature: faceEditFeature{kind: "face-offset", faceKeys: faceKeys},
-		distance:        distance, approximation: approx,
+		kind: "face-offset", faceKeys: faceKeys,
+		distance: distance, approximation: approx,
 	})
 }
 
 // AddDeleteFace deletes the picked faces. heal=true extends the neighbouring faces to close the
 // opening; heal=false leaves the body open. Faces on an internal void shell drop that void (#1884).
 func (c *ModifyFeatures) AddDeleteFace(faceKeys [][]byte, heal bool) *PartFeature {
-	return c.engine.Add(&DeleteFaceFeature{faceEditFeature: faceEditFeature{kind: "delete-face", faceKeys: faceKeys}, heal: heal})
+	return c.engine.Add(&DeleteFaceFeature{kind: "delete-face", faceKeys: faceKeys, heal: heal})
 }
 
 func (c *ModifyFeatures) AddReplaceFace(faceKeys [][]byte, targetKey []byte) *PartFeature {
-	return c.engine.Add(&ReplaceFaceFeature{faceEditFeature: faceEditFeature{kind: "replace-face", faceKeys: faceKeys}, targetKey: targetKey})
+	return c.engine.Add(&ReplaceFaceFeature{kind: "replace-face", faceKeys: faceKeys, targetKey: targetKey})
 }
 
 // AddReplaceFacePlanes replaces the picked faces with a set of frozen target planes (#1886) — work
 // planes and/or new faces, possibly from other bodies. Each picked face is assigned to its nearest
 // target at recompute.
 func (c *ModifyFeatures) AddReplaceFacePlanes(faceKeys [][]byte, targets []geom.Plane) *PartFeature {
-	return c.engine.Add(&ReplaceFaceFeature{faceEditFeature: faceEditFeature{kind: "replace-face", faceKeys: faceKeys}, targetPlanes: targets})
+	return c.engine.Add(&ReplaceFaceFeature{kind: "replace-face", faceKeys: faceKeys, targetPlanes: targets})
 }
 
 // AddThicken thickens the running surface body into a solid of the given wall thickness.

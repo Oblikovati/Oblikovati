@@ -68,9 +68,9 @@ func CoonsFill(c0, c1, d0, d1 BSplineCurve) (BSplineSurface, error) {
 	gu := grevilleAbscissae(c0.Knots, c0.Degree)
 	gv := grevilleAbscissae(d0.Knots, d0.Degree)
 	ctrl := make([][]math.Point3, nu)
-	for i := 0; i < nu; i++ {
+	for i := range nu {
 		ctrl[i] = make([]math.Point3, nv)
-		for j := 0; j < nv; j++ {
+		for j := range nv {
 			ctrl[i][j] = coonsControl(c0, c1, d0, d1, i, j, gu[i], gv[j])
 		}
 	}
@@ -96,7 +96,7 @@ func grevilleAbscissae(knots []float64, p int) []float64 {
 	lo, hi := knots[p], knots[len(knots)-1-p]
 	span := hi - lo
 	g := make([]float64, nctrl)
-	for i := 0; i < nctrl; i++ {
+	for i := range nctrl {
 		sum := 0.0
 		for k := 1; k <= p; k++ {
 			sum += knots[i+k]

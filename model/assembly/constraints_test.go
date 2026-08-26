@@ -102,7 +102,7 @@ func TestOverConstraintFlagged(t *testing.T) {
 	moving := place(occs, "moving:1", math.Translation4(math.V3(0, 0, 4)))
 
 	set := NewConstraintSet(occs, nil)
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		set.AddMate(ref(base, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1))), ref(moving, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, -1))), 0, types.MateSolutionOpposed)
 	}
 	rep := set.Solve()

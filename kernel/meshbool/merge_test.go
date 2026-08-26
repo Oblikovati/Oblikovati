@@ -66,7 +66,7 @@ func annulusSoup() [][3]Point {
 	a := [4][3]float64{{0, 0, 0}, {6, 0, 0}, {6, 6, 0}, {0, 6, 0}}
 	b := [4][3]float64{{2, 2, 0}, {4, 2, 0}, {4, 4, 0}, {2, 4, 0}}
 	var soup [][3]Point
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		j := (i + 1) % 4
 		soup = append(soup,
 			[3]Point{pt(a[i]), pt(a[j]), pt(b[j])},

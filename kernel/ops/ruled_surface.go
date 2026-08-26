@@ -47,10 +47,7 @@ func wireRailPoints(w *topo.Wire, n int) []math.Point3 {
 	if len(uses) == 0 {
 		return nil
 	}
-	per := n / len(uses)
-	if per < 2 {
-		per = 2
-	}
+	per := max(n/len(uses), 2)
 	var pts []math.Point3
 	for _, u := range uses {
 		seg := sampleUse(u, per)
@@ -114,10 +111,7 @@ func rotateRail(r []math.Point3, shift int) []math.Point3 {
 }
 
 func railCost(a, b []math.Point3) float64 {
-	n := len(a)
-	if len(b) < n {
-		n = len(b)
-	}
+	n := min(len(b), len(a))
 	sum := 0.0
 	for i := 0; i < n; i++ {
 		sum += float64(a[i].DistanceTo(b[i]))
@@ -133,7 +127,7 @@ func resampleRail(r []math.Point3, n int) []math.Point3 {
 	}
 	total := cum[len(cum)-1]
 	out := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		out[i] = railPointAt(r, cum, total*float64(i)/float64(n-1))
 	}
 	return out
@@ -180,7 +174,7 @@ func ruledSpanBody(r1, r2 []math.Point3, closed bool) (*topo.Body, error) {
 
 func railVertices(bld *topo.Builder, r []math.Point3, m, rail int) []*topo.Vertex {
 	out := make([]*topo.Vertex, m)
-	for i := 0; i < m; i++ {
+	for i := range m {
 		out[i] = bld.AddVertex(r[i], topo.NewLineage(topo.Tok("ruled", fmt.Sprintf("rail%d-vertex", rail), i)))
 	}
 	return out

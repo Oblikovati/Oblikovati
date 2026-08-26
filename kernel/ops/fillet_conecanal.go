@@ -287,10 +287,10 @@ func (s coneCanalSpine) resolveStations(lo, hi float64, res Resolution) (canalSt
 // malformed band). Nodes cluster near the hyperbola vertex (curvatureWeightedXf) rather than uniformly.
 func (s coneCanalSpine) stationsAt(lo, hi float64, n int) (canalStations, coneArmReject) {
 	xfs := s.curvatureWeightedXf(lo, hi, n)
-	st := canalStations{xfs: xfs}
-	st.centers = make([]math.Point3, n+1)
-	st.feetA = make([]math.Point3, n+1)
-	st.feetB = make([]math.Point3, n+1)
+	st := canalStations{xfs: xfs,
+		centers: make([]math.Point3, n+1),
+		feetA:   make([]math.Point3, n+1),
+		feetB:   make([]math.Point3, n+1)}
 	for i, xf := range xfs {
 		m := s.center(xf)
 		coneT, ok := s.coneFoot(m)
@@ -400,7 +400,7 @@ func goldenSectionMin(f func(float64) float64, lo, hi float64, iters int) float6
 	a, b := lo, hi
 	c, d := b-invPhi*(b-a), a+invPhi*(b-a)
 	fc, fd := f(c), f(d)
-	for k := 0; k < iters; k++ {
+	for range iters {
 		if fc < fd {
 			b, d, fd = d, c, fc
 			c = b - invPhi*(b-a)

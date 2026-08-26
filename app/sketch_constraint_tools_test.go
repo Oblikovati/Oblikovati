@@ -4,6 +4,7 @@ package app
 
 import (
 	stdmath "math"
+	"slices"
 	"testing"
 
 	"oblikovati.org/math"
@@ -190,10 +191,5 @@ func hasCoincident(sk *sketch.Sketch) bool {
 }
 
 func hasConstraint(sk *sketch.Sketch, pred func(sketch.Constraint) bool) bool {
-	for _, c := range sk.GeometricConstraints().All() {
-		if pred(c) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(sk.GeometricConstraints().All(), pred)
 }

@@ -120,7 +120,7 @@ func wallBridgeRail(wall geom.Cylinder, armStart, armEnd geom.Surface, wStart, w
 // projecting each point onto the wall so the sampled rail lies exactly on the wall (radius R).
 func sampleWallHermite(wall geom.Cylinder, wStart, wEnd math.Point3, m0, m1 math.Vector3, n int) []math.Point3 {
 	pts := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		t := float64(i) / float64(n-1)
 		h00 := 2*t*t*t - 3*t*t + 1
 		h10 := t*t*t - 2*t*t + t

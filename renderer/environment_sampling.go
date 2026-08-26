@@ -35,11 +35,11 @@ func NewEnvironmentDistribution(w, h int, pixels []float32) *EnvironmentDistribu
 	d := &EnvironmentDistribution{w: w, h: h, luma: make([][]float64, h), rowCDF: make([][]float64, h), marginalCDF: make([]float64, h)}
 
 	var totalMass float64
-	for y := 0; y < h; y++ {
+	for y := range h {
 		sinTheta := math.Sin(math.Pi * (float64(y) + 0.5) / float64(h))
 		row, rowCDF := make([]float64, w), make([]float64, w)
 		var rowMass float64
-		for x := 0; x < w; x++ {
+		for x := range w {
 			i := (y*w + x) * stride
 			row[x] = 0.2126*float64(pixels[i]) + 0.7152*float64(pixels[i+1]) + 0.0722*float64(pixels[i+2])
 			rowMass += row[x] * sinTheta

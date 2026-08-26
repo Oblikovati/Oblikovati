@@ -16,27 +16,27 @@ import (
 // designViewInfo encodes a design-view representation.
 func designViewInfo(d assembly.DesignViewRep) wire.DesignViewInfo {
 	return wire.DesignViewInfo{
-		RepresentationInfo: wire.RepresentationInfo{ID: d.ID(), Name: d.Name(), Kind: d.Kind().String(), Active: d.Active()},
-		HiddenCount:        d.HiddenCount(),
-		AppearanceCount:    d.AppearanceCount(),
-		SectionPlanes:      d.SectionPlanes(),
-		Camera:             cameraViewFromCaptured(d.Camera()),
+		ID: d.ID(), Name: d.Name(), Kind: d.Kind().String(), Active: d.Active(),
+		HiddenCount:     d.HiddenCount(),
+		AppearanceCount: d.AppearanceCount(),
+		SectionPlanes:   d.SectionPlanes(),
+		Camera:          cameraViewFromCaptured(d.Camera()),
 	}
 }
 
 // positionalInfo encodes a positional representation.
 func positionalInfo(p assembly.PositionalRep) wire.PositionalInfo {
 	return wire.PositionalInfo{
-		RepresentationInfo: wire.RepresentationInfo{ID: p.ID(), Name: p.Name(), Kind: p.Kind().String(), Active: p.Active()},
-		OverrideCount:      p.OverrideCount(),
+		ID: p.ID(), Name: p.Name(), Kind: p.Kind().String(), Active: p.Active(),
+		OverrideCount: p.OverrideCount(),
 	}
 }
 
 // lodInfo encodes a level-of-detail representation.
 func lodInfo(l assembly.LODRep) wire.LODInfo {
 	return wire.LODInfo{
-		RepresentationInfo: wire.RepresentationInfo{ID: l.ID(), Name: l.Name(), Kind: l.Kind().String(), Active: l.Active()},
-		SuppressedCount:    l.SuppressedCount(),
+		ID: l.ID(), Name: l.Name(), Kind: l.Kind().String(), Active: l.Active(),
+		SuppressedCount: l.SuppressedCount(),
 	}
 }
 

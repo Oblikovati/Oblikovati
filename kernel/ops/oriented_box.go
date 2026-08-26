@@ -138,7 +138,7 @@ func minAreaRectangle(pts []math.Point2) (rect2, bool) {
 		return degenerateRect(hull)
 	}
 	best, bestArea := rect2{}, stdmath.Inf(1)
-	for i := 0; i < len(hull); i++ {
+	for i := range hull {
 		j := (i + 1) % len(hull)
 		dir := unit2(hull[i].VectorTo(hull[j]))
 		if float64(dir.Length()) == 0 {

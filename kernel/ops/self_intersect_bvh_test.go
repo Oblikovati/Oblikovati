@@ -13,8 +13,8 @@ import (
 func gridTriangles(n int, zPlane float64) [][3]math.Point3 {
 	z := math.Scalar(zPlane)
 	tris := make([][3]math.Point3, 0, 2*n*n)
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			x0, y0 := math.Scalar(i), math.Scalar(j)
 			x1, y1 := x0+1, y0+1
 			a := math.Point3{X: x0, Y: y0, Z: z}

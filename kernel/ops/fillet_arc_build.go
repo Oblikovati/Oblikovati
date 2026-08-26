@@ -60,7 +60,7 @@ type arcBuild struct {
 func (g *arcBuild) addNewEdges() {
 	af := g.af
 	lin := func(role string, i int) topo.Lineage { return topo.NewLineage(topo.Tok("arcfillet", role, i)) }
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		g.vc[i] = g.bld.AddVertex(af.ends[i].vc, lin("vc", i))
 		g.vt[i] = g.bld.AddVertex(af.ends[i].vt, lin("vt", i))
 	}
@@ -72,7 +72,7 @@ func (g *arcBuild) addNewEdges() {
 	capMid := af.torus.PointAt((af.ends[0].uCap+af.ends[1].uCap)/2, capTube)
 	capArc, _ := geom.Arc3dByThreePoints(af.ends[0].vt, capMid, af.ends[1].vt)
 	g.capTan = g.bld.AddEdge(capArc, g.vt[0], g.vt[1], lin("captan", 0))
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		g.addEndEdges(i, lin)
 	}
 }
@@ -217,7 +217,7 @@ func (g *arcBuild) addTorusAndCaps() {
 	for _, u := range torus {
 		torusEndRev[u.Edge] = u.Reversed
 	}
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		if g.absorbed(i) {
 			continue // the side face absorbed this end: it is not a face of its own (fillet_arc_endcap.go)
 		}

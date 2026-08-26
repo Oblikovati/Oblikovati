@@ -143,7 +143,7 @@ func (d *Document) asciiFaces(face Element) ([][]int, error) {
 			return nil, fmt.Errorf("plyfmt: malformed ascii face %d: %q", len(out), sc.Text())
 		}
 		idx := make([]int, n)
-		for k := 0; k < n; k++ {
+		for k := range n {
 			idx[k], _ = strconv.Atoi(f[k+1])
 		}
 		out = append(out, idx)
@@ -184,7 +184,7 @@ func (d *Document) readBinaryFace(pos int, prop Property, i int) ([]int, int, er
 		return nil, 0, fmt.Errorf("plyfmt: truncated in face %d indices", i)
 	}
 	idx := make([]int, n)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		idx[k] = int(scalarValue(d.body[pos:], prop.ListElem, elemSize, order))
 		pos += elemSize
 	}

@@ -15,7 +15,7 @@ import (
 func squareRailLoop(n int) RailLoop {
 	corners := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0), math.P3(0.5, -1, 0)}
 	sides := make([]Side, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		sides[i] = Side{Curve: geom.NewLineSegment(corners[i%len(corners)], corners[(i+1)%len(corners)]), Cont: G0}
 	}
 	return RailLoop{Sides: sides}

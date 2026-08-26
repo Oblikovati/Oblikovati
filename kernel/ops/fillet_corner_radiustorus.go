@@ -112,7 +112,7 @@ func allConvexPicks(ps []filletPick) bool {
 // exactly equal and strictly smaller — the [rB, rS, rS] pattern; ok=false otherwise.
 func soleBigRadiusIndex(vid uint64, ps []filletPick) (int, bool) {
 	r := [3]float64{radiusAtVertex(ps[0], vid), radiusAtVertex(ps[1], vid), radiusAtVertex(ps[2], vid)}
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		rB, s1, s2 := r[i], r[(i+1)%3], r[(i+2)%3]
 		if s1 == s2 && rB > s1 {
 			return i, true

@@ -34,7 +34,7 @@ func readModulePath(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("read go.mod: %v", err)
 	}
-	for _, line := range strings.Split(string(b), "\n") {
+	for line := range strings.SplitSeq(string(b), "\n") {
 		if rest, ok := strings.CutPrefix(strings.TrimSpace(line), "module "); ok {
 			return strings.TrimSpace(rest)
 		}

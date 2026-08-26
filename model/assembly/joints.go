@@ -215,8 +215,8 @@ func (s *JointSet) newJoint(kind types.AssemblyJointType, a, b Ref) *assemblyJoi
 	s.nextID++
 	s.counts[kind]++
 	return &assemblyJoint{jointBase: &jointBase{
-		relationshipBase: relationshipBase{id: s.nextID, name: jointName(kind, s.counts[kind]), a: toAnchor(a), b: toAnchor(b)},
-		kind:             kind,
+		id: s.nextID, name: jointName(kind, s.counts[kind]), a: toAnchor(a), b: toAnchor(b),
+		kind: kind,
 	}}
 }
 

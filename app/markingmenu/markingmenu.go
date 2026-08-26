@@ -7,7 +7,7 @@
 package markingmenu
 
 import (
-	"sort"
+	"slices"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
@@ -81,7 +81,7 @@ func ToCustomization(menus map[types.Environment]wire.MarkingMenuView, classic b
 	for env := range menus {
 		environments = append(environments, env)
 	}
-	sort.Slice(environments, func(i, j int) bool { return environments[i] < environments[j] })
+	slices.Sort(environments)
 	for _, env := range environments {
 		m := menus[env]
 		entry := MenuEntry{Environment: int(m.Environment), Overflow: cloneStrings(m.Overflow)}

@@ -114,7 +114,7 @@ func TestRepeatedRecomputesDoNotAccumulateDiagnostics(t *testing.T) {
 	pf := fs.Add(crossedTrimFeature{})
 	fs.Recompute()
 	first := len(pf.Diagnostics())
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		fs.Recompute()
 	}
 	if got := len(pf.Diagnostics()); got != first {

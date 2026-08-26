@@ -2,6 +2,8 @@
 
 package renderer
 
+import "maps"
+
 // BLASBuilder builds or destroys one backend-specific bottom-level acceleration
 // structure for a body's triangle mesh — implemented by the hardware backend
 // (head/internal/native's RTScene, PBI-333) so [BLASCache]'s per-body dirty-tracking
@@ -57,9 +59,7 @@ func (c *BLASCache) Sync(bodies map[uint64][]Triangle) map[uint64]any {
 		c.BuildCount++
 	}
 	out := make(map[uint64]any, len(c.entries))
-	for hash, handle := range c.entries {
-		out[hash] = handle
-	}
+	maps.Copy(out, c.entries)
 	return out
 }
 

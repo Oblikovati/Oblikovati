@@ -71,7 +71,7 @@ func TestGridPatchMeshAddsInteriorNodes(t *testing.T) {
 	cu, cv, r := 1.0, 0.4, 0.4
 	var uv []math.Point2
 	var p3 []math.Point3
-	for k := 0; k < n; k++ {
+	for k := range n {
 		a := 2 * stdmath.Pi * float64(k) / n
 		u, v := cu+r*stdmath.Cos(a), cv+r*stdmath.Sin(a)
 		uv = append(uv, math.P2(math.Scalar(u), math.Scalar(v)))

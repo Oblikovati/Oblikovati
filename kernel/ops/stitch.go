@@ -224,7 +224,7 @@ func canonical(a, b vKey) (eKey, bool) {
 }
 
 func lessV(a, b vKey) bool {
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if a[i] != b[i] {
 			return a[i] < b[i]
 		}

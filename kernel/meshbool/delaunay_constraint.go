@@ -96,7 +96,7 @@ func (d *delaunayMesh) edgeExists(ui, vi int) bool {
 func (d *delaunayMesh) convexCrossing(ui, vi int) (int, int, bool) {
 	u, v := d.verts[ui], d.verts[vi]
 	for ti := range d.tris {
-		for e := 0; e < 3; e++ {
+		for e := range 3 {
 			if d.tris[ti].adj[e] < 0 {
 				continue
 			}

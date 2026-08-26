@@ -128,7 +128,7 @@ func TestViewLabelDefaultAndOverrides(t *testing.T) {
 	if got := v.Label(); strings.Contains(got, "1:2") || !strings.Contains(got, "FRONT") {
 		t.Errorf("scale-hidden label = %q, want the name without the scale note", got)
 	}
-	if err := views.SetLabel("FRONT", ViewLabelStyle{Text: strPtr("DETAIL A")}); err != nil {
+	if err := views.SetLabel("FRONT", ViewLabelStyle{Text: new("DETAIL A")}); err != nil {
 		t.Fatalf("SetLabel override: %v", err)
 	}
 	if got := v.Label(); got != "DETAIL A" {
@@ -151,7 +151,7 @@ func TestViewLabelRoundTrip(t *testing.T) {
 		t.Fatalf("AddBase: %v", err)
 	}
 	no := false
-	if err := views.SetLabel("FRONT", ViewLabelStyle{Text: strPtr("DETAIL A"), ShowScale: &no}); err != nil {
+	if err := views.SetLabel("FRONT", ViewLabelStyle{Text: new("DETAIL A"), ShowScale: &no}); err != nil {
 		t.Fatalf("SetLabel: %v", err)
 	}
 	v, ok := reopen(t, c).Sheets().Active().Views().ByName("FRONT")
@@ -163,7 +163,8 @@ func TestViewLabelRoundTrip(t *testing.T) {
 	}
 }
 
-func strPtr(s string) *string { return &s }
+//go:fix inline
+func strPtr(s string) *string { return new(s) }
 
 func TestAddBaseViewRequiresModel(t *testing.T) {
 	c := NewContent() // no body resolver / reference

@@ -49,7 +49,7 @@ func dedupConsecutive(poly []Point) []Point {
 func clipByLine(poly []Point, a, b Point, axis int) []Point {
 	var out []Point
 	n := len(poly)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		prev := poly[(i+n-1)%n]
 		cur := poly[i]
 		curIn := orient2(a, b, cur, axis) >= 0

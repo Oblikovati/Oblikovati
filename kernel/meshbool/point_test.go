@@ -46,13 +46,13 @@ func TestFromCoordsRejectsNonFinite(t *testing.T) {
 // near-coplanar noise floor (where predicates takes its exact path).
 func TestOrient3DMatchesPredicates(t *testing.T) {
 	r := rand.New(rand.NewSource(0x1c01))
-	for i := 0; i < 20000; i++ {
+	for i := range 20000 {
 		a, b, c := rc(r), rc(r), rc(r)
 		var d [3]float64
 		if i%2 == 0 {
 			// on plane(a,b,c) in real arithmetic → forces the exact path
 			s, u := r.Float64(), r.Float64()
-			for k := 0; k < 3; k++ {
+			for k := range 3 {
 				d[k] = a[k] + s*(b[k]-a[k]) + u*(c[k]-a[k])
 			}
 		} else {
@@ -73,7 +73,7 @@ func TestOrient3DMatchesPredicates(t *testing.T) {
 func TestEdgePlaneCrossExact(t *testing.T) {
 	r := rand.New(rand.NewSource(0x1c02))
 	built := 0
-	for i := 0; i < 20000; i++ {
+	for i := range 20000 {
 		a, b, c := pt(rc(r)), pt(rc(r)), pt(rc(r))
 		e0, e1 := pt(rc(r)), pt(rc(r))
 		s0, s1 := Orient3D(a, b, c, e0), Orient3D(a, b, c, e1)

@@ -23,7 +23,7 @@ const bandR, bandr = 3.0, 1.5
 func analyticBandArea(rRod, rFat float64) float64 {
 	const n = 20000
 	sum := 0.0
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := 2 * stdmath.Pi * (float64(i) + 0.5) / n
 		sum += rRod * 2 * stdmath.Sqrt(rFat*rFat-rRod*rRod*stdmath.Cos(a)*stdmath.Cos(a))
 	}
@@ -118,7 +118,7 @@ func TestSaddleBandLoftDeclinesNonBand(t *testing.T) {
 func densePinchRing(cyl geom.Cylinder, n int, tinyGap float64) []math.Point3 {
 	v := func(u float64) float64 { return cyl.Radius + 0.02*cyl.Radius*stdmath.Cos(u) }
 	pts := make([]math.Point3, 0, n+1)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		u := 2 * stdmath.Pi * float64(i) / float64(n)
 		pts = append(pts, cyl.PointAt(u, v(u)))
 	}

@@ -25,9 +25,9 @@ func TestMoveFaceRotateOverWire(t *testing.T) {
 	if top == "" {
 		t.Fatal("no top face found")
 	}
-	args, _ := json.Marshal(map[string]interface{}{
+	args, _ := json.Marshal(map[string]any{
 		"kind": "moveFace",
-		"args": map[string]interface{}{
+		"args": map[string]any{
 			"faceRefs":  []string{top},
 			"axisPoint": []float64{0, 0, 5},
 			"axisDir":   []float64{0, 1, 0},
@@ -53,9 +53,9 @@ func TestFaceOffsetApproximationOverWire(t *testing.T) {
 	var keys wire.ReferenceKeysResult
 	call(t, r, s, "model.referenceKeys", `{}`, &keys)
 	face := keys.Bodies[0].Faces[0].Key
-	args, _ := json.Marshal(map[string]interface{}{
+	args, _ := json.Marshal(map[string]any{
 		"kind": "faceOffset",
-		"args": map[string]interface{}{
+		"args": map[string]any{
 			"faceRefs": []string{face}, "distance": "2 mm", "approximation": "neverTooThick",
 		},
 	})
@@ -67,9 +67,9 @@ func TestFaceOffsetApproximationOverWire(t *testing.T) {
 		t.Fatalf("faceOffset bodies = %d, want 1", res.Bodies)
 	}
 
-	bad, _ := json.Marshal(map[string]interface{}{
+	bad, _ := json.Marshal(map[string]any{
 		"kind": "faceOffset",
-		"args": map[string]interface{}{"faceRefs": []string{face}, "distance": "2 mm", "approximation": "sloppy"},
+		"args": map[string]any{"faceRefs": []string{face}, "distance": "2 mm", "approximation": "sloppy"},
 	})
 	if _, err := r.Handle(s, "features.add", bad); err == nil {
 		t.Fatal("an unknown approximation must be rejected")

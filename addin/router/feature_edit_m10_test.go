@@ -46,9 +46,9 @@ func TestBossScalarsEditableOverWire(t *testing.T) {
 		t.Fatal("fixture: no top face key found")
 	}
 	// Reference keys carry raw bytes — marshal the args, never %q-format them.
-	args, err := json.Marshal(map[string]interface{}{
+	args, err := json.Marshal(map[string]any{
 		"kind": "boss",
-		"args": map[string]interface{}{"faceRef": top, "diameter": "8 mm", "height": "5 mm"},
+		"args": map[string]any{"faceRef": top, "diameter": "8 mm", "height": "5 mm"},
 	})
 	if err != nil {
 		t.Fatal(err)

@@ -11,7 +11,7 @@ import (
 
 func ngon2D(cx, cy, r float64, n int) []math.Point2 {
 	var p []math.Point2
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := 2 * stdmath.Pi * float64(i) / float64(n)
 		p = append(p, math.P2(cx+r*stdmath.Cos(a), cy+r*stdmath.Sin(a)))
 	}

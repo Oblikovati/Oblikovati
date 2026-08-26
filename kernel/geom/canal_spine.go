@@ -348,7 +348,7 @@ func refineInterior(pts []math.Point3, offs [2]OffsetSurface, weld float64) ([]m
 // It reuses the SSI corrector step: tangent-plane Newton where the host normals are transversal, a
 // damped steepest-descent step where they are near-parallel (the corner pinch, pitfall 1).
 func correctToOffsetPair(offA, offB OffsetSurface, p math.Point3, tol float64) (math.Point3, bool) {
-	for i := 0; i < ssiCorrectIters; i++ {
+	for range ssiCorrectIters {
 		uA, vA, _ := ProjectPointToSurface(offA.Base, p)
 		uB, vB, _ := ProjectPointToSurface(offB.Base, p)
 		nA, nB := offA.Base.NormalAt(uA, vA), offB.Base.NormalAt(uB, vB)

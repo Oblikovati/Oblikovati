@@ -159,7 +159,7 @@ func collapseU(g BSplineSurface, u float64) (ctrl []math.Point3, weights []float
 	cols := len(g.Ctrl[0])
 	ctrl = make([]math.Point3, cols)
 	weights = make([]float64, cols)
-	for j := 0; j < cols; j++ {
+	for j := range cols {
 		var h homog
 		for k := 0; k <= g.UDegree; k++ {
 			i := span - g.UDegree + k
@@ -177,7 +177,7 @@ func collapseV(g BSplineSurface, v float64) (ctrl []math.Point3, weights []float
 	rows := len(g.Ctrl)
 	ctrl = make([]math.Point3, rows)
 	weights = make([]float64, rows)
-	for i := 0; i < rows; i++ {
+	for i := range rows {
 		var h homog
 		for k := 0; k <= g.VDegree; k++ {
 			j := span - g.VDegree + k

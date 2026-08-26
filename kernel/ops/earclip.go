@@ -125,7 +125,7 @@ func earClip(poly []math.Point2) [][3]int {
 // triangle contains no other vertex).
 func findEar(poly []math.Point2, idx []int) (int, bool) {
 	m := len(idx)
-	for i := 0; i < m; i++ {
+	for i := range m {
 		a, b, c := poly[idx[(i+m-1)%m]], poly[idx[i]], poly[idx[(i+1)%m]]
 		if predicate.Orient2D(a, b, c) <= 0 {
 			continue // reflex or collinear vertex — not an ear
@@ -143,7 +143,7 @@ func findEar(poly []math.Point2, idx []int) (int, bool) {
 // bridge vertices, still triangulate instead of stalling.
 func anyInside(poly []math.Point2, idx []int, ear int, a, b, c math.Point2) bool {
 	m := len(idx)
-	for k := 0; k < m; k++ {
+	for k := range m {
 		if k == ear || k == (ear+m-1)%m || k == (ear+1)%m {
 			continue
 		}

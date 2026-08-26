@@ -20,8 +20,8 @@ func gridMesh(n int) ([]math.Point3, [][3]int32) {
 		}
 	}
 	var tris [][3]int32
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			tris = append(tris, [3]int32{idx(i, j), idx(i, j+1), idx(i+1, j)})
 			tris = append(tris, [3]int32{idx(i, j+1), idx(i+1, j+1), idx(i+1, j)})
 		}
@@ -50,8 +50,8 @@ func TestMeshRayIndexMatchesBruteForce(t *testing.T) {
 		t.Fatal("NewMeshRayIndex returned nil for a non-empty mesh")
 	}
 	dir := math.V3(0, 0, -1)
-	for gy := 0; gy < 16; gy++ {
-		for gx := 0; gx < 16; gx++ {
+	for gy := range 16 {
+		for gx := range 16 {
 			o := math.P3(float64(gx)+0.25, float64(gy)+0.25, 10) // straight down onto a known cell
 			wantTri, wantT, wantOK := bruteNearest(pos, tris, o, dir)
 			gotTri, gotT, gotOK := idx.Nearest(o, dir)

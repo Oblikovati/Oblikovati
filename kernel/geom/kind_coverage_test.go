@@ -29,7 +29,7 @@ func TestSurfaceKindCoverage(t *testing.T) {
 		t.Fatalf("surfaceKindProbes has %d entries, want %d (one per SurfaceKind) — a new kind needs a probe",
 			len(surfaceKindProbes), int(surfaceKindCount))
 	}
-	for k := SurfaceKind(0); k < surfaceKindCount; k++ {
+	for k := range surfaceKindCount {
 		probe, ok := surfaceKindProbes[k]
 		if !ok {
 			t.Errorf("SurfaceKind %v has no probe — add its type to surfaceKindProbes", k)
@@ -63,7 +63,7 @@ func TestCurveKindCoverage(t *testing.T) {
 		t.Fatalf("curveKindProbes has %d entries, want %d (one per CurveKind) — a new kind needs a probe",
 			len(curveKindProbes), int(curveKindCount))
 	}
-	for k := CurveKind(0); k < curveKindCount; k++ {
+	for k := range curveKindCount {
 		probe, ok := curveKindProbes[k]
 		if !ok {
 			t.Errorf("CurveKind %v has no probe — add its type to curveKindProbes", k)
@@ -79,7 +79,7 @@ func TestCurveKindCoverage(t *testing.T) {
 // (used verbatim in error messages), so a new kind cannot ship with a "SurfaceKind(?)" label.
 func TestSurfaceKindNamesComplete(t *testing.T) {
 	seen := map[string]bool{}
-	for k := SurfaceKind(0); k < surfaceKindCount; k++ {
+	for k := range surfaceKindCount {
 		name := k.String()
 		if name == "SurfaceKind(?)" || seen[name] {
 			t.Errorf("SurfaceKind %d has a missing or duplicate name %q", k, name)
@@ -91,7 +91,7 @@ func TestSurfaceKindNamesComplete(t *testing.T) {
 // TestCurveKindNamesComplete is the curve analogue.
 func TestCurveKindNamesComplete(t *testing.T) {
 	seen := map[string]bool{}
-	for k := CurveKind(0); k < curveKindCount; k++ {
+	for k := range curveKindCount {
 		name := k.String()
 		if name == "CurveKind(?)" || seen[name] {
 			t.Errorf("CurveKind %d has a missing or duplicate name %q", k, name)

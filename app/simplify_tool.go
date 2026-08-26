@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"slices"
 
 	"oblikovati.org/model/feature"
 )
@@ -46,12 +47,7 @@ func (t *SimplifyTool) Pick(_ *Session, sel Selectable) {
 }
 
 func (t *SimplifyTool) hasFace(f FaceHandle) bool {
-	for _, h := range t.faces {
-		if h == f {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(t.faces, f)
 }
 
 // Faces returns the picked faces; FaceCount is what the property panel's chip shows.

@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -175,8 +176,8 @@ func lipBandPolygon(out, up math.Vector3, d lipDims, proj func(math.Vector3) mat
 	for _, p := range lt.inner {
 		poly = append(poly, to3(p))
 	}
-	for k := len(lt.outer) - 1; k >= 0; k-- {
-		poly = append(poly, to3(lt.outer[k]))
+	for _, v := range slices.Backward(lt.outer) {
+		poly = append(poly, to3(v))
 	}
 	return poly
 }

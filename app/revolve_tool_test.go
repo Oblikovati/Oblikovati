@@ -41,7 +41,7 @@ func newPartWithOffsetSquare(t *testing.T, x0, side float64) (*Session, ProfileH
 // mkCenterlineSketch builds a sketch holding n vertical centerlines (no profile geometry).
 func mkCenterlineSketch(n int) *sketch.Sketch {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
-	for i := 0; i < n; i++ {
+	for i := range n {
 		cl := sk.Lines().AddByTwoPoints(math.P2(math.Scalar(i), 0), math.P2(math.Scalar(i), 1))
 		cl.SetCenterline(true)
 	}

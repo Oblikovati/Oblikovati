@@ -4,6 +4,7 @@ package ops
 
 import (
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
@@ -144,10 +145,8 @@ func edgeStartParam(e *topo.Edge) float64 { lo, _ := e.Geometry().Domain(); retu
 // appendDistinctEdge appends e unless it is already in the list (a closed rail is used once, but the
 // guard keeps the classification total).
 func appendDistinctEdge(list []*topo.Edge, e *topo.Edge) []*topo.Edge {
-	for _, x := range list {
-		if x == e {
-			return list
-		}
+	if slices.Contains(list, e) {
+		return list
 	}
 	return append(list, e)
 }

@@ -170,7 +170,7 @@ func shoulderSharedVolume(ballR, rodR, stop float64) float64 {
 func TestShoulderRodVolumeMatchesNumericIntegration(t *testing.T) {
 	const R, rc, stop, n = ballStudR, ballStudRod, 0.45, 400000
 	numeric := 0.0
-	for i := 0; i < n; i++ {
+	for i := range n {
 		r := rc * (float64(i) + 0.5) / n
 		numeric += 2 * stdmath.Pi * r * stdmath.Min(stop, stdmath.Sqrt(R*R-r*r)) * (rc / n)
 	}

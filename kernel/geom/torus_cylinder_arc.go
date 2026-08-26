@@ -93,7 +93,7 @@ func solveTorusCylU(t Torus, cyl Cylinder, v, uSeed, weld float64) (float64, boo
 	a2 := cyl.AxisDir.AsVector()
 	rho := stdmath.Abs(t.MajorRadius + t.MinorRadius*stdmath.Cos(v))
 	u := uSeed
-	for iter := 0; iter < 40; iter++ {
+	for range 40 {
 		e := cyl.Origin.VectorTo(t.PointAt(u, v)) // E = P(u,v) − O₂
 		ea := float64(e.Dot(a2))
 		g := float64(e.LengthSquared()) - ea*ea - cyl.Radius*cyl.Radius

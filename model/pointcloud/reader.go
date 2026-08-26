@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -51,10 +52,8 @@ func ReadScan(filename string, data []byte, opts exchange.TranslationOptions) ([
 func ReadScanSamples(filename string, data []byte, opts exchange.TranslationOptions) ([]PointSample, []string, error) {
 	ext := strings.ToLower(filepath.Ext(filename))
 	for _, r := range registeredReaders {
-		for _, e := range r.Extensions() {
-			if e == ext {
-				return readScaled(r, data, opts)
-			}
+		if slices.Contains(r.Extensions(), ext) {
+			return readScaled(r, data, opts)
 		}
 	}
 	return nil, nil, fmt.Errorf("pointcloud: no reader for scan extension %q (file %q)", ext, filename)
@@ -152,10 +151,8 @@ func scanUnitMM(millimetres bool) float64 {
 func IsScanFile(path string) bool {
 	ext := strings.ToLower(filepath.Ext(path))
 	for _, r := range registeredReaders {
-		for _, e := range r.Extensions() {
-			if e == ext {
-				return true
-			}
+		if slices.Contains(r.Extensions(), ext) {
+			return true
 		}
 	}
 	return false
@@ -328,7 +325,7 @@ func setSampleRGB(s *PointSample, fields []string) {
 // convention (#1787). Returns false if any field is not numeric.
 func parseRGBFields(fields []string) ([3]float32, bool) {
 	var rgb [3]float32
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		v, err := strconv.ParseFloat(fields[i], 64)
 		if err != nil {
 			return [3]float32{}, false

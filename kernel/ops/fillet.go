@@ -615,10 +615,7 @@ const runoutTol = 1e-9
 // as if the full circle had filletChordsPerTurn sides (a 90° wedge gets 8), with a floor of 4.
 func cornerChordCount(in cornerInputs) int {
 	wedge := stdmath.Acos(float64(in.nA.Dot(in.nB)))
-	k := int(stdmath.Ceil(wedge / (2 * stdmath.Pi / filletChordsPerTurn)))
-	if k < 4 {
-		k = 4
-	}
+	k := max(int(stdmath.Ceil(wedge/(2*stdmath.Pi/filletChordsPerTurn))), 4)
 	return k
 }
 
@@ -654,8 +651,8 @@ func midProfiles(e *topo.Edge, in cornerInputs, mids []FilletRadiusPoint, k int,
 	for _, m := range mids {
 		p := p0.TranslateBy(span.Scale(m.T))
 		cen := p.TranslateBy(in.offDir.Scale(m.R))
-		c := corner{a: in.a, b: in.b, cen: cen, ta: cen.TranslateBy(in.nA.Scale(m.R)), tb: cen.TranslateBy(in.nB.Scale(m.R))}
-		c.mid = cen.TranslateBy(slerpVec(in.nA, in.nB, 0.5).Scale(m.R))
+		c := corner{a: in.a, b: in.b, cen: cen, ta: cen.TranslateBy(in.nA.Scale(m.R)), tb: cen.TranslateBy(in.nB.Scale(m.R)),
+			mid: cen.TranslateBy(slerpVec(in.nA, in.nB, 0.5).Scale(m.R))}
 		c.chords = crossSectionChords(c, in, k, cross, rho)
 		out = append(out, c)
 	}

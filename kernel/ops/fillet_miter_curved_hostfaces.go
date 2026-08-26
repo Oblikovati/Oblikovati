@@ -4,6 +4,7 @@ package ops
 
 import (
 	"fmt"
+	"slices"
 
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -90,12 +91,7 @@ func passthroughGuardHosts(tor, cyl miterArmSide) []*topo.Face {
 
 // containsFace reports whether f is one of hosts.
 func containsFace(hosts []*topo.Face, f *topo.Face) bool {
-	for _, h := range hosts {
-		if h == f {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(hosts, f)
 }
 
 // passthroughHostIsSound reports whether a candidate contact host's OWN (untouched) loops are free of

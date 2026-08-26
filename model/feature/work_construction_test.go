@@ -3,6 +3,7 @@
 package feature
 
 import (
+	"slices"
 	"testing"
 
 	"oblikovati.org/math"
@@ -68,10 +69,5 @@ func TestPruneConstructionOrphan(t *testing.T) {
 }
 
 func contains(refs []WorkRef, ref WorkRef) bool {
-	for _, r := range refs {
-		if r == ref {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(refs, ref)
 }

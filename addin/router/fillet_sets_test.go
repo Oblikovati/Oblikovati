@@ -45,10 +45,10 @@ type filletSetsAddResult struct {
 // features.add (keys carry raw bytes, so the args are marshalled, not quoted).
 func TestFilletEdgeSetsOverWire(t *testing.T) {
 	r, s, vertical := filletBoxFixture(t)
-	args, _ := json.Marshal(map[string]interface{}{
+	args, _ := json.Marshal(map[string]any{
 		"kind": "fillet",
-		"args": map[string]interface{}{
-			"edgeSets": []map[string]interface{}{
+		"args": map[string]any{
+			"edgeSets": []map[string]any{
 				{"edgeRefs": []string{vertical[0]}, "radius": "4 mm"},
 				{"edgeRefs": []string{vertical[1]}, "startRadius": "2 mm", "endRadius": "7 mm"},
 			},
@@ -70,10 +70,10 @@ func TestFilletEdgeSetsOverWire(t *testing.T) {
 // and a variable pair is a precise error.
 func TestFilletEdgeSetRejectsMixedSpelling(t *testing.T) {
 	r, s, vertical := filletBoxFixture(t)
-	args, _ := json.Marshal(map[string]interface{}{
+	args, _ := json.Marshal(map[string]any{
 		"kind": "fillet",
-		"args": map[string]interface{}{
-			"edgeSets": []map[string]interface{}{
+		"args": map[string]any{
+			"edgeSets": []map[string]any{
 				{"edgeRefs": []string{vertical[0]}, "radius": "4 mm", "startRadius": "2 mm", "endRadius": "7 mm"},
 			},
 		},

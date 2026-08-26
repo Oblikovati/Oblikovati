@@ -186,7 +186,7 @@ func projectIntoSectionPlane(seed math.Point3, an CanalEdgeAnchor, p, q math.Vec
 // envelope-theorem gradient of the distance-to-surface function.
 func newtonCanalCentre(a, b *canalMarchHostState, r float64, p, q math.Vector3, c math.Point3, weld float64) (math.Point3, CanalFoot, CanalFoot, error) {
 	tol := 0.25 * weld
-	for i := 0; i < canalMarchMaxNewton; i++ {
+	for range canalMarchMaxNewton {
 		fa, fb, g1, g2, err := canalStationResiduals(a, b, c, r)
 		if err != nil {
 			return c, fa, fb, err
@@ -254,7 +254,7 @@ func unitDot(v, w math.Vector3) float64 {
 func dampCanalStep(a, b *canalMarchHostState, c math.Point3, r float64, p, q math.Vector3, dx, dy, g1, g2 float64) math.Point3 {
 	best := g1*g1 + g2*g2
 	alpha := 1.0
-	for k := 0; k < 8; k++ {
+	for range 8 {
 		cand := c.TranslateBy(p.Scale(math.Scalar(alpha * dx))).TranslateBy(q.Scale(math.Scalar(alpha * dy)))
 		if canalResidualNorm(a, b, cand, r) < best {
 			return cand

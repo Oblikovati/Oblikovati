@@ -64,14 +64,12 @@ func TestRecorderIsConcurrencySafe(t *testing.T) {
 	var r Recorder
 	const goroutines, each = 16, 64
 	var wg sync.WaitGroup
-	for g := 0; g < goroutines; g++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for i := 0; i < each; i++ {
+	for range goroutines {
+		wg.Go(func() {
+			for range each {
 				r.Recordf("c.parallel", Defect, "from a goroutine")
 			}
-		}()
+		})
 	}
 	wg.Wait()
 	if n := r.Count(Defect); n != goroutines*each {

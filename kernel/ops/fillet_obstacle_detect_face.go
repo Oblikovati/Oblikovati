@@ -331,7 +331,7 @@ func planeFrame(pl geom.Plane) (func(math.Point3) math.Point2, func(math.Point2)
 func sampleHoleRim(rim geom.Curve3, edgeID uint64) filletLoop {
 	var loop filletLoop
 	n := obstacleRimSamples
-	for i := 0; i < n; i++ {
+	for i := range n {
 		t0, t1 := float64(i)/float64(n), float64(i+1)/float64(n)
 		loop.addID(rim.PointAt(t0), rimSegmentArc(rim, t0, t1), 0, edgeID)
 	}

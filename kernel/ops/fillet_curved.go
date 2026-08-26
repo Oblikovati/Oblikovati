@@ -24,7 +24,7 @@ func cylinderPlaneEdge(e *topo.Edge) (cyl geom.Cylinder, pl geom.Plane, ok bool)
 	if len(faces) != 2 {
 		return geom.Cylinder{}, geom.Plane{}, false
 	}
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		c, okc := faces[i].Geometry().(geom.Cylinder)
 		p, okp := faces[1-i].Geometry().(geom.Plane)
 		if okc && okp {

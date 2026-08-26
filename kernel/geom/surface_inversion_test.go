@@ -79,7 +79,7 @@ func TestGaussNewtonConvergesWherePerAxisStalls(t *testing.T) {
 	// The old per-axis projection, given the SAME budget from the same seed, lands nowhere
 	// near perpendicular on this skewed patch — the concrete contrast motivating #1401.
 	pu, pv := 0.5, 0.5
-	for i := 0; i < budget; i++ {
+	for range budget {
 		pu, pv = perAxisStep(s, q, pu, pv)
 	}
 	perAxisCos := perpCosine(s, q, pu, pv)

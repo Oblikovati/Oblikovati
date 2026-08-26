@@ -36,7 +36,7 @@ func TestInTriangleCoplanarBasic(t *testing.T) {
 // affine grid that spans interior, edges, vertices, and exterior.
 func TestInTriangleCoplanarVsOracle(t *testing.T) {
 	r := rand.New(rand.NewSource(0x1539))
-	for trial := 0; trial < 400; trial++ {
+	for trial := range 400 {
 		a := randIntPt(r)
 		b := randIntPt(r)
 		c := randIntPt(r)
@@ -51,7 +51,7 @@ func TestInTriangleCoplanarVsOracle(t *testing.T) {
 			for ni := -2; ni <= 4; ni++ {
 				m, n := float64(mi)/2, float64(ni)/2 // half-integer combos stay exact
 				var p [3]float64
-				for k := 0; k < 3; k++ {
+				for k := range 3 {
 					p[k] = a[k] + m*(b[k]-a[k]) + n*(c[k]-a[k])
 				}
 				if orient3(a, b, c, p) != 0 {
@@ -74,17 +74,17 @@ func TestSegmentPiercesTriangleVsOracle(t *testing.T) {
 	r := rand.New(rand.NewSource(0x2072))
 	pierces := 0
 	const n = 20000
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b, c := randPt(r), randPt(r), randPt(r)
 		var p, q [3]float64
 		if i%2 == 0 {
 			// Aim through the centroid, perpendicular-ish, to force genuine pierces.
 			var g [3]float64
-			for k := 0; k < 3; k++ {
+			for k := range 3 {
 				g[k] = (a[k] + b[k] + c[k]) / 3
 			}
 			d := randPt(r)
-			for k := 0; k < 3; k++ {
+			for k := range 3 {
 				p[k] = g[k] - d[k]
 				q[k] = g[k] + d[k]
 			}
@@ -162,7 +162,7 @@ func oraclePierces(a, b, c, p, q [3]float64) bool {
 	// x = p + t(q-p), t = dp/(dp-dq): the exact plane-crossing point.
 	tt := new(big.Rat).Quo(dp, new(big.Rat).Sub(dp, dq))
 	var x [3]*big.Rat
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		diff := new(big.Rat).Sub(ratOf(q[k]), ratOf(p[k]))
 		x[k] = new(big.Rat).Add(ratOf(p[k]), new(big.Rat).Mul(tt, diff))
 	}

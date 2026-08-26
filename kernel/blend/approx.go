@@ -27,13 +27,13 @@ func fitCanal(centre geom.Curve3, a, b geom.Surface, r, t0, t1, tol float64, ins
 	pts := make([]math.Point3, 0, canalGridU*canalGridV)
 	us := make([]float64, 0, canalGridU*canalGridV)
 	vs := make([]float64, 0, canalGridU*canalGridV)
-	for iu := 0; iu < canalGridU; iu++ {
+	for iu := range canalGridU {
 		u := float64(iu) / (canalGridU - 1)
 		arc, ok := sectionAt(centre.PointAt(t0+u*(t1-t0)), a, b, r, tol, inside)
 		if !ok {
 			return nil, StatusTwistedSurface
 		}
-		for iv := 0; iv < canalGridV; iv++ {
+		for iv := range canalGridV {
 			v := float64(iv) / (canalGridV - 1)
 			pts = append(pts, arc.PointAt(v))
 			us = append(us, u)

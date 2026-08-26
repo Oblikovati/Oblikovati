@@ -2,6 +2,8 @@
 
 package sketch
 
+import "slices"
+
 import "oblikovati.org/math"
 
 // chainJoinTol is the distance under which two curve endpoints count as joined when tracing the
@@ -102,8 +104,8 @@ func nextInChain(cur math.Point2, curves []Entity, ends map[Entity][2]math.Point
 // two free ends meet.
 func assembleChain(seed Entity, sa, sb math.Point2, fwd, bwd []ProfileEntity) *Path {
 	entities := make([]ProfileEntity, 0, len(bwd)+1+len(fwd))
-	for i := len(bwd) - 1; i >= 0; i-- {
-		entities = append(entities, ProfileEntity{Entity: bwd[i].Entity, reversed: !bwd[i].reversed})
+	for _, b := range slices.Backward(bwd) {
+		entities = append(entities, ProfileEntity{Entity: b.Entity, reversed: !b.reversed})
 	}
 	entities = append(entities, ProfileEntity{Entity: seed})
 	entities = append(entities, fwd...)

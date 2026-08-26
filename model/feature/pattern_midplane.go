@@ -50,8 +50,8 @@ func seedFirst[T any](cells []T, seed int) []T {
 // shiftX/shiftY move the grid's origin cell to the seed so a mid-plane direction straddles it.
 func rectTransforms(nx, ny int, stepX, stepY math.Vector3, shiftX, shiftY int) []math.Matrix4 {
 	out := make([]math.Matrix4, 0, nx*ny)
-	for iy := 0; iy < ny; iy++ {
-		for ix := 0; ix < nx; ix++ {
+	for iy := range ny {
+		for ix := range nx {
 			offset := stepX.Scale(float64(ix - shiftX)).Add(stepY.Scale(float64(iy - shiftY)))
 			out = append(out, math.Translation4(offset))
 		}
@@ -69,7 +69,7 @@ func circTransforms(count int, inc float64, axisPoint math.Point3, axisDir math.
 		return nil, err
 	}
 	out := make([]math.Matrix4, count)
-	for k := 0; k < count; k++ {
+	for k := range count {
 		out[k] = math.Rotation4(inc*float64(k-shift), dir, axisPoint)
 	}
 	return seedFirst(out, shift), nil

@@ -35,15 +35,15 @@ func ParseOccurrenceRef(ref WorkRef) (path []string, native WorkRef, ok bool) {
 		return nil, "", false
 	}
 	rest := s[len(occurrenceRefPrefix):]
-	slash := strings.IndexByte(rest, '/')
-	if slash < 0 {
+	before, after, ok := strings.Cut(rest, "/")
+	if !ok {
 		return nil, "", false
 	}
-	raw, err := base64.RawURLEncoding.DecodeString(rest[:slash])
+	raw, err := base64.RawURLEncoding.DecodeString(before)
 	if err != nil {
 		return nil, "", false
 	}
-	nativeRef := rest[slash+1:]
+	nativeRef := after
 	if nativeRef == "" {
 		return nil, "", false
 	}

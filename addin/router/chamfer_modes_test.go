@@ -3,6 +3,7 @@
 package router
 
 import (
+	"maps"
 	"testing"
 
 	"oblikovati.org/api/wire"
@@ -13,9 +14,7 @@ import (
 func chamferArgs(t *testing.T, edge string, extra map[string]any) string {
 	t.Helper()
 	args := map[string]any{"edgeRefs": []string{edge}, "distance": "3 mm"}
-	for k, v := range extra {
-		args[k] = v
-	}
+	maps.Copy(args, extra)
 	return mustJSON(t, map[string]any{"kind": "chamfer", "args": args})
 }
 

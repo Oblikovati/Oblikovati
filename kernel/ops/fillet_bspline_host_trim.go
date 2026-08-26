@@ -95,7 +95,7 @@ func signChangeWindow(f func(float64) float64, vp []float64, i0, i1 int) (lo, hi
 // resolution ~1e-18 of the interval — beyond float64, i.e. converged).
 func bisectRoot(f func(float64) float64, lo, hi float64) float64 {
 	flo := f(lo)
-	for i := 0; i < 60; i++ {
+	for range 60 {
 		mid := (lo + hi) / 2
 		if fm := f(mid); (fm < 0) == (flo < 0) {
 			lo, flo = mid, fm
@@ -206,7 +206,7 @@ func trimCurveSamples(surf geom.BSplineSurface, end bsplineHostEndTrim, vp []flo
 func trimFitError(fitted geom.BSplineCurve, surf geom.BSplineSurface, end bsplineHostEndTrim, bound float64) float64 {
 	lo, hi := fitted.Domain()
 	worst := 0.0
-	for i := 0; i < 16; i++ {
+	for i := range 16 {
 		q := fitted.PointAt(lo + (hi-lo)*(float64(i)+0.5)/16)
 		worst = stdmath.Max(worst, stdmath.Abs(end.cap.signedCapDist(q)))
 		worst = stdmath.Max(worst, distToSurface(surf, q))

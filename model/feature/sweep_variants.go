@@ -141,7 +141,7 @@ func resamplePolyline(pts []math.Point3, n int) []math.Point3 {
 	}
 	total := cum[len(cum)-1]
 	out := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		out[i] = polylinePointAt(pts, cum, total*float64(i)/float64(n-1))
 	}
 	return out
@@ -468,10 +468,7 @@ func stampStations(tool *topo.Body, path []math.Point3) []math.Point3 {
 	if step <= 0 {
 		step = total / 8
 	}
-	n := int(stdmath.Ceil(total/step)) + 1
-	if n < len(path) {
-		n = len(path)
-	}
+	n := max(int(stdmath.Ceil(total/step))+1, len(path))
 	return resamplePolyline(path, n)
 }
 

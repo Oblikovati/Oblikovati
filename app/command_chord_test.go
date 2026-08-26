@@ -3,6 +3,7 @@
 package app
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -12,9 +13,9 @@ import (
 // lastEcho returns the text of the most recent echoed (user-input) scrollback line.
 func lastEcho(cl *CommandLine) string {
 	lines := cl.Scrollback().Lines()
-	for i := len(lines) - 1; i >= 0; i-- {
-		if lines[i].Severity == cmdline.Echo {
-			return lines[i].Text
+	for _, line := range slices.Backward(lines) {
+		if line.Severity == cmdline.Echo {
+			return line.Text
 		}
 	}
 	return ""

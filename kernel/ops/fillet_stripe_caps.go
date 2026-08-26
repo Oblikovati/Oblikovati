@@ -31,7 +31,7 @@ import (
 // comes from the winding-vs-normal test.
 func (g *stripeBuild) addCapFaces() {
 	lin := func(t int) topo.Lineage { return topo.NewLineage(topo.Tok("stripe", "cap", t)) }
-	for t := 0; t < 2; t++ {
+	for t := range 2 {
 		if g.ends[t].active() {
 			continue // the run-out lands on an existing face, which carries the section arc itself (#2083)
 		}

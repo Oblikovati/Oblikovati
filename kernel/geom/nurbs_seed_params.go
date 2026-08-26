@@ -34,7 +34,7 @@ func knotSpanSeedParams(knots []float64, degree int) []float64 {
 	spans := len(breaks) - 1
 	per := (seedMinSamples + spans - 1) / spans // ceil(min/spans): ≥1, larger only when spans<16
 	out := []float64{breaks[0]}
-	for i := 0; i < spans; i++ {
+	for i := range spans {
 		a, b := breaks[i], breaks[i+1]
 		for k := 1; k <= per; k++ {
 			out = append(out, a+(b-a)*float64(k)/float64(per))

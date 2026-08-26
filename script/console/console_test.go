@@ -135,7 +135,7 @@ func TestConsoleSnapshotIsCopy(t *testing.T) {
 func TestConsoleCapsOutput(t *testing.T) {
 	co := console.New()
 	const flood = 6000
-	for i := 0; i < flood; i++ {
+	for range flood {
 		co.AppendOutput("line")
 	}
 	co.AppendOutput("last")

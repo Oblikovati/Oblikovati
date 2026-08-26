@@ -21,7 +21,7 @@ func partSessionWithEdits(t *testing.T, n int) (*Session, doc.ID) {
 		t.Fatalf("AddPart: %v", err)
 	}
 	trackFromHere(s)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if err := s.AddNumericUserParameter("p"+string(rune('a'+i)), "1 cm"); err != nil {
 			t.Fatalf("add parameter %d: %v", i, err)
 		}

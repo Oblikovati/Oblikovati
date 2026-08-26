@@ -195,7 +195,7 @@ func TestPlateSolveMultiSharesMatrix(t *testing.T) {
 // K-diagonal ridge, so the honest-reject is robust.
 func TestPlateRejectsRankDeficient(t *testing.T) {
 	var cs []PlateConstraint
-	for i := 0; i < 7; i++ {
+	for i := range 7 {
 		s := float64(i)
 		cs = append(cs, PlateConstraint{U: s, V: s, Order: [2]int{0, 0}, Value: s})
 	}

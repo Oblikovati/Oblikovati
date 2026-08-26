@@ -45,7 +45,7 @@ func approximateSurfaceLS(grid [][]math.Point3, uDeg, vDeg, nu, nv int, uu, vv [
 		return nil, nil, nil, err
 	}
 	ctrl = make([][]math.Point3, nu)
-	for k := 0; k < nu; k++ {
+	for k := range nu {
 		pctrl, vk, e := approximateLS(mid[k], vDeg, nv, vv)
 		if e != nil {
 			return nil, nil, nil, e
@@ -75,7 +75,7 @@ func fitColumnsU(grid [][]math.Point3, uDeg, nu int, uu []float64) (mid [][][]fl
 			return nil, nil, e
 		}
 		uKnots = uk
-		for k := 0; k < nu; k++ {
+		for k := range nu {
 			mid[k][l] = rctrl[k]
 		}
 	}

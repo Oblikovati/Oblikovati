@@ -5,6 +5,7 @@ package app
 import (
 	"bytes"
 	"errors"
+	"slices"
 
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/feature"
@@ -24,8 +25,8 @@ import (
 // "<componentLineage>" — the same suffix the wire path stores from a component-local key (#735).
 func componentEdgeSuffix(referenceKey []byte) []byte {
 	lineage := topo.LineageSuffixOf(referenceKey)
-	if i := bytes.IndexByte(lineage, '/'); i >= 0 {
-		return lineage[i+1:]
+	if _, after, ok := bytes.Cut(lineage, []byte{'/'}); ok {
+		return after
 	}
 	return lineage
 }
@@ -55,12 +56,7 @@ func (t *assemblyEdgeSelectTool) Pick(_ *Session, sel Selectable) {
 }
 
 func (t *assemblyEdgeSelectTool) hasEdge(e EdgeHandle) bool {
-	for _, h := range t.edges {
-		if h == e {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(t.edges, e)
 }
 
 // Cancel abandons the picks and clears the edge filter.

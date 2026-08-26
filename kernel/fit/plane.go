@@ -66,7 +66,7 @@ func covariance(points []math.Point3, c math.Point3) mat3 {
 // twoSmallest returns the indices of the smallest and middle eigenvalues.
 func twoSmallest(v [3]float64) (lo, mid int) {
 	order := [3]int{0, 1, 2}
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		for j := i + 1; j < 3; j++ {
 			if v[order[j]] < v[order[i]] {
 				order[i], order[j] = order[j], order[i]

@@ -50,7 +50,7 @@ func pointInCurvedFace(f curvedFace, p math.Point3) bool {
 func loopWindingAngle(loop curvedLoop, p math.Point3, normal math.Vector3) float64 {
 	sum := 0.0
 	for _, le := range loop.edges {
-		for k := 0; k < loopSampleCount; k++ {
+		for k := range loopSampleCount {
 			ta := le.t0 + (le.t1-le.t0)*float64(k)/loopSampleCount
 			tb := le.t0 + (le.t1-le.t0)*float64(k+1)/loopSampleCount
 			sum += edgeWindingAngle(le, p, normal, ta, tb, le.curve.PointAt(ta), le.curve.PointAt(tb), 0)

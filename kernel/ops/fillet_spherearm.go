@@ -37,7 +37,7 @@ func spherePlaneEdge(e *topo.Edge) (sp geom.Sphere, pl geom.Plane, sphereFace, p
 	if len(faces) != 2 {
 		return geom.Sphere{}, geom.Plane{}, nil, nil, false
 	}
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		s, oks := faces[i].Geometry().(geom.Sphere)
 		p, okp := faces[1-i].Geometry().(geom.Plane)
 		if oks && okp {

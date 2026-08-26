@@ -424,7 +424,7 @@ func solveStationAtAngle(sp coneCanalSpine, hCap, psi, lo, hi float64) (float64,
 	if flo > 0 || fhi <= 0 {
 		return 0, false
 	}
-	for i := 0; i < canalCapSolveIters; i++ {
+	for range canalCapSolveIters {
 		mid := 0.5 * (lo + hi)
 		if (f(mid) <= 0) == (flo <= 0) {
 			lo = mid

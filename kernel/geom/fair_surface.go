@@ -25,7 +25,7 @@ func FairSurface(s BSplineSurface, holdOrder int, strength float64, iterations i
 		strength = 1
 	}
 	cur := cloneNet(s.Ctrl)
-	for it := 0; it < iterations; it++ {
+	for range iterations {
 		next := cloneNet(cur)
 		for i := band; i < nu-band; i++ {
 			for j := band; j < nv-band; j++ {

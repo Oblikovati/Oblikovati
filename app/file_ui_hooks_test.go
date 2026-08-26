@@ -134,8 +134,7 @@ func TestOpenDocumentFromMRUHonorsVetoAndRecords(t *testing.T) {
 		return event.Veto("the vault says this file moved")
 	})
 	_, err := s.OpenDocumentFromMRU("/models/a.obk")
-	var veto *doc.VetoError
-	if !errors.As(err, &veto) {
+	if _, ok := errors.AsType[*doc.VetoError](err); !ok {
 		t.Fatalf("vetoed MRU open = %v, want a *doc.VetoError", err)
 	}
 }

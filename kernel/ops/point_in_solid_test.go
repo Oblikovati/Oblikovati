@@ -86,7 +86,7 @@ func TestSphereContainmentMatchesAnalytic(t *testing.T) {
 	shell := 0.1 // exclude points within this band of the surface (chord/sagitta ambiguity)
 	rng := rand.New(rand.NewSource(1317))
 	tested, mism := 0, 0
-	for i := 0; i < 4000; i++ {
+	for range 4000 {
 		p := m.P3(m.Scalar(rng.Float64()*8-4), m.Scalar(rng.Float64()*8-4), m.Scalar(rng.Float64()*8-4))
 		d := float64(p.DistanceTo(center))
 		if math.Abs(d-r) < shell {
@@ -131,7 +131,7 @@ func TestTorusContainmentMatchesAnalytic(t *testing.T) {
 	}
 	rng := rand.New(rand.NewSource(424242))
 	tested, mism := 0, 0
-	for i := 0; i < 6000; i++ {
+	for range 6000 {
 		p := m.P3(m.Scalar(rng.Float64()*16-8), m.Scalar(rng.Float64()*16-8), m.Scalar(rng.Float64()*4-2))
 		// Exclude a shell band where faceting vs analytic legitimately disagree.
 		rho := math.Hypot(float64(p.X), float64(p.Y))

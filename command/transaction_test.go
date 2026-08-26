@@ -130,7 +130,7 @@ func TestSuppressionCoalescesBatchToOneUpdate(t *testing.T) {
 	h.OnChange(func() { updates++ })
 
 	tx := h.Begin("Big batch")
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		_ = tx.Do(Rename(d, "n"))
 	}
 	if updates != 0 {
@@ -149,7 +149,7 @@ func TestSuppressNotificationsGatesBareEdits(t *testing.T) {
 	h.OnChange(func() { updates++ })
 
 	h.SuppressNotifications(true)
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		_ = h.Do(Rename(d, "n"))
 	}
 	if updates != 0 {

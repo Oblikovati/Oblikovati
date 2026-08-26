@@ -100,7 +100,7 @@ func borderEntities(sheet *dmodel.Sheet, layer string) []drawing.Entity {
 }
 
 // zoneDivisionEntities emits a zoned border's interior grid lines (#1989); nothing for a plain border.
-func zoneDivisionEntities(sheet *dmodel.Sheet, b interface{}, layer string) []drawing.Entity {
+func zoneDivisionEntities(sheet *dmodel.Sheet, b any, layer string) []drawing.Entity {
 	bd, ok := b.(*dmodel.Border)
 	if !ok {
 		return nil

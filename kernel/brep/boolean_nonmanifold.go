@@ -28,7 +28,7 @@ func collectEdgeUses(faces []builtFace) map[[2]int][]loopEdgeUse {
 	for fi, f := range faces {
 		for ri, r := range f.rings {
 			n := len(r)
-			for i := 0; i < n; i++ {
+			for i := range n {
 				a, b := r[i], r[(i+1)%n]
 				key := canonEdge(a, b)
 				uses[key] = append(uses[key], loopEdgeUse{face: fi, ring: ri, pos: i, reversed: a > b, fromB: f.fromB})

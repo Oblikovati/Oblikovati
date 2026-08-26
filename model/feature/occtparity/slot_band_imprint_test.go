@@ -214,7 +214,7 @@ func slotLoopPolyline(l *topo.Loop) []math.Point3 {
 // slotEdgePoints samples one edge use from its own start toward its own end.
 func slotEdgePoints(c geom.Curve3, a, b math.Point3, reversed bool) []math.Point3 {
 	pts := make([]math.Point3, 0, slotFaceSamples)
-	for i := 0; i < slotFaceSamples; i++ {
+	for i := range slotFaceSamples {
 		t := float64(i) / slotFaceSamples
 		if c == nil {
 			pts = append(pts, a.Lerp(b, math.Scalar(t)))

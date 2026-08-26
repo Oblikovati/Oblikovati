@@ -74,7 +74,7 @@ func TestConcurrentSubmitsEachGetOwnResult(t *testing.T) {
 	const n = 50
 	var wg sync.WaitGroup
 	mismatch := make(chan string, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
@@ -114,7 +114,7 @@ func TestSubmitContextCancel(t *testing.T) {
 
 func TestDrainMaxLimit(t *testing.T) {
 	d := New(8)
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		go func() { _, _ = d.Submit(context.Background(), func() ([]byte, error) { return nil, nil }) }()
 	}
 	waitFor(t, func() bool { return d.Pending() == 3 }, "three jobs queued")
@@ -142,16 +142,16 @@ func TestSubmitAfterClose(t *testing.T) {
 // when) a job is enqueued — before it drains — so the head can post a window wake.
 func TestWakeupFiresOnEnqueue(t *testing.T) {
 	d := New(4)
-	var woke int32
-	d.SetWakeup(func() { atomic.AddInt32(&woke, 1) })
+	var woke atomic.Int32
+	d.SetWakeup(func() { woke.Add(1) })
 
-	if got := atomic.LoadInt32(&woke); got != 0 {
+	if got := woke.Load(); got != 0 {
 		t.Fatalf("wakeup fired %d times before any Submit, want 0", got)
 	}
 	go func() { _, _ = d.Submit(context.Background(), func() ([]byte, error) { return nil, nil }) }()
-	waitFor(t, func() bool { return atomic.LoadInt32(&woke) == 1 }, "wakeup fired once on enqueue")
+	waitFor(t, func() bool { return woke.Load() == 1 }, "wakeup fired once on enqueue")
 	d.Drain(0)
-	if got := atomic.LoadInt32(&woke); got != 1 {
+	if got := woke.Load(); got != 1 {
 		t.Fatalf("wakeup fired %d times, want exactly 1 (one enqueue)", got)
 	}
 }

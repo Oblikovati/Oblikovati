@@ -33,10 +33,10 @@ func PointMarkersColored(points []math.Point3, size float64, colors [][4]float32
 		return nil
 	}
 	h := math.Scalar(size / 2)
-	item := DrawItem{Primitive: Lines, ObjectID: objectID}
-	item.Positions = make([]math.Point3, 0, len(points)*6)
-	item.Indices = make([]int, 0, len(points)*6)
-	item.Colors = make([][4]float32, 0, len(points)*6)
+	item := DrawItem{Primitive: Lines, ObjectID: objectID,
+		Positions: make([]math.Point3, 0, len(points)*6),
+		Indices:   make([]int, 0, len(points)*6),
+		Colors:    make([][4]float32, 0, len(points)*6)}
 	for i, p := range points {
 		base := len(item.Positions)
 		item.Positions = append(item.Positions,
@@ -45,7 +45,7 @@ func PointMarkersColored(points []math.Point3, size float64, colors [][4]float32
 			math.P3(p.X, p.Y, p.Z-h), math.P3(p.X, p.Y, p.Z+h),
 		)
 		item.Indices = append(item.Indices, base, base+1, base+2, base+3, base+4, base+5)
-		for j := 0; j < 6; j++ {
+		for range 6 {
 			item.Colors = append(item.Colors, colors[i])
 		}
 	}

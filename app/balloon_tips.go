@@ -4,6 +4,8 @@ package app
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 
 	"oblikovati.org/app/cmdline"
 	"oblikovati.org/event"
@@ -70,10 +72,8 @@ func (s *Session) ShowBalloonTip(id string) (bool, error) {
 	if b.suppressed[id] {
 		return false, nil
 	}
-	for _, active := range b.active {
-		if active == id {
-			return true, nil // already showing
-		}
+	if slices.Contains(b.active, id) {
+		return true, nil // already showing
 	}
 	b.active = append(b.active, id)
 	s.feedScrollback(balloonLine(b.specs[id]), cmdline.Info) // M26 F03: also show in the Command Window
@@ -119,9 +119,7 @@ func (s *Session) UseDialogMemoryStore(store dialogmemory.Store) error {
 	for _, id := range mem.SuppressedTips {
 		s.balloonTips.suppressed[id] = true
 	}
-	for id, answer := range mem.PromptAnswers {
-		s.prompts.remembered[id] = answer
-	}
+	maps.Copy(s.prompts.remembered, mem.PromptAnswers)
 	return nil
 }
 
@@ -134,8 +132,6 @@ func (s *Session) saveDialogMemory() {
 	for id := range s.balloonTips.suppressed {
 		mem.SuppressedTips = append(mem.SuppressedTips, id)
 	}
-	for id, answer := range s.prompts.remembered {
-		mem.PromptAnswers[id] = answer
-	}
+	maps.Copy(mem.PromptAnswers, s.prompts.remembered)
 	_ = s.dialogMemoryStore.Save(mem)
 }

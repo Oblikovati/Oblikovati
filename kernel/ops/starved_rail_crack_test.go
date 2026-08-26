@@ -152,7 +152,7 @@ func railEdgeDegrees(t *testing.T, m *Mesh, rail []math.Point3) []int {
 	deg := map[[2]int]int{}
 	for tr := 0; 3*tr+2 < len(m.Indices); tr++ {
 		v := [3]int{weld[m.Indices[3*tr]], weld[m.Indices[3*tr+1]], weld[m.Indices[3*tr+2]]}
-		for k := 0; k < 3; k++ {
+		for k := range 3 {
 			a, b := v[k], v[(k+1)%3]
 			if a > b {
 				a, b = b, a

@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -193,8 +194,8 @@ func profileBand2D(profile []math.Point2, thickness float64) []math.Point2 {
 	outer := offsetProfile(profile, -thickness)
 	band := make([]math.Point2, 0, len(profile)+len(outer))
 	band = append(band, profile...)
-	for i := len(outer) - 1; i >= 0; i-- {
-		band = append(band, outer[i])
+	for _, o := range slices.Backward(outer) {
+		band = append(band, o)
 	}
 	return band
 }
@@ -249,7 +250,7 @@ func openProfilePoints(sk *sketch.Sketch) ([]math.Point2, error) {
 	n := lines.Count()
 	deg := map[*sketch.Point]int{}
 	profileLines := 0
-	for i := 0; i < n; i++ {
+	for i := range n {
 		l := lines.Item(i)
 		if l.IsCenterline() { // an axis/centerline (e.g. a contour-roll axis) is not part of the profile
 			continue
@@ -295,7 +296,7 @@ func walkOpenChain(lines *sketch.Lines, n, profileLines int, start *sketch.Point
 	used := make([]bool, n)
 	pts := []math.Point2{start.Position()}
 	cur := start
-	for step := 0; step < profileLines; step++ {
+	for range profileLines {
 		next, idx := nextSegment(lines, n, used, cur)
 		if next == nil {
 			return nil, fmt.Errorf("sheet-metal contour flange: profile is not a single connected chain")
@@ -310,7 +311,7 @@ func walkOpenChain(lines *sketch.Lines, n, profileLines int, start *sketch.Point
 // nextSegment finds an unused, non-centerline line touching cur and returns its other endpoint
 // and index.
 func nextSegment(lines *sketch.Lines, n int, used []bool, cur *sketch.Point) (*sketch.Point, int) {
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if used[i] {
 			continue
 		}

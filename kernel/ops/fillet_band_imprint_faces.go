@@ -3,6 +3,8 @@
 package ops
 
 import (
+	maps0 "maps"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -51,9 +53,7 @@ func collectBandImprints(body *topo.Body, fils []edgeFillet, maps filletRebuildM
 	if !ok {
 		return replace, extra, handled
 	}
-	for id, f := range set.replace {
-		replace[id] = f
-	}
+	maps0.Copy(replace, set.replace)
 	extra[fils[0].edge.ID()] = []filletFace{set.band}
 	handled[fils[0].edge.ID()] = true
 	return replace, extra, handled

@@ -83,7 +83,7 @@ func buildHostNotch(host *topo.Face, maps filletRebuildMaps, tanA, tanB math.Poi
 // host tangent points (unordered) within weld — the receded filleted edge the notch detour replaces.
 func tangentSegmentIndex(l filletLoop, tanA, tanB math.Point3, weld float64) (int, bool) {
 	n := len(l.pts)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		p, q := l.pts[k], l.pts[(k+1)%n]
 		if matchPair(p, q, tanA, tanB, weld) {
 			return k, true

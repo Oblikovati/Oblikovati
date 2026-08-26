@@ -40,7 +40,7 @@ func arcNurbsBasis(xdir, ydir math.Vector3, sweep float64) (dirs []math.Vector3,
 	dirs = append(dirs, at(0))
 	weights = append(weights, 1)
 	knots = []float64{0, 0, 0}
-	for s := 0; s < segs; s++ {
+	for s := range segs {
 		mid := float64(s)*d + d/2
 		// The interior control direction sits on the tangent intersection: dir(mid)/cos(d/2).
 		dirs = append(dirs, at(mid).Scale(1/w), at(float64(s+1)*d))
@@ -97,7 +97,7 @@ func NewRuledSectionBlend(sec0, sec1 [3]math.Point3, w float64) (BSplineSurface,
 	weights := []float64{1, w, 1}
 	ctrl := make([][]math.Point3, 3)
 	wts := make([][]float64, 3)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		ctrl[i] = []math.Point3{sec0[i], sec1[i]}
 		wts[i] = []float64{weights[i], weights[i]}
 	}

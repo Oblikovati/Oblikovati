@@ -61,7 +61,7 @@ func ellipticalCylinderConeEdge(e *topo.Edge) (geom.EllipticalCylinder, geom.Con
 	if len(faces) != 2 {
 		return geom.EllipticalCylinder{}, geom.Cone{}, nil, nil, false
 	}
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		ec, okE := faces[i].Geometry().(geom.EllipticalCylinder)
 		co, okC := faces[1-i].Geometry().(geom.Cone)
 		if okE && okC {
@@ -193,7 +193,7 @@ func ternaryMinHalfAngle(spine ellipticConeRimSpine, a, b float64) float64 {
 		}
 		return spine.sectionHalfAngle(st)
 	}
-	for i := 0; i < 200; i++ {
+	for range 200 {
 		m1, m2 := a+(b-a)/3, b-(b-a)/3
 		if f(m1) <= f(m2) {
 			b = m2

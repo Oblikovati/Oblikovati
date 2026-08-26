@@ -4,6 +4,7 @@ package param
 
 import (
 	"fmt"
+	"maps"
 	stdmath "math"
 	"strconv"
 	"strings"
@@ -99,9 +100,7 @@ func DefaultUnitsOfMeasure() UnitsOfMeasure {
 // before storing it back on a document.
 func (m UnitsOfMeasure) Clone() UnitsOfMeasure {
 	prefs := make(map[Unit]string, len(m.prefs))
-	for k, v := range m.prefs {
-		prefs[k] = v
-	}
+	maps.Copy(prefs, m.prefs)
 	m.prefs = prefs
 	return m
 }

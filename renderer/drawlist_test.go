@@ -38,7 +38,7 @@ func box(side float64, off math.Vector3) *topo.Body {
 	bld.AddFace(pl(math.V3(0, 0, 0), math.V3(0, 0, -1)), lin("f", 0), topo.OuterLoop(topo.Rev(be[3]), topo.Rev(be[2]), topo.Rev(be[1]), topo.Rev(be[0])))
 	bld.AddFace(pl(math.V3(0, 0, side), math.V3(0, 0, 1)), lin("f", 1), topo.OuterLoop(topo.Fwd(te[0]), topo.Fwd(te[1]), topo.Fwd(te[2]), topo.Fwd(te[3])))
 	up := math.V3(0, 0, 1)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		j := (i + 1) % 4
 		normal := b[i].Point().VectorTo(b[j].Point()).Cross(up) // outward = edge × up
 		sp, _ := geom.NewPlane(b[i].Point(), normal)

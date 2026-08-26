@@ -62,7 +62,7 @@ func BenchmarkNameFragments(b *testing.B) {
 	// Pad the provenance with unrelated segments to mimic a dense imprint set (many crossing
 	// faces), the regime where the redundant key rebuilds dominated.
 	other := topo.NewLineage(topo.Tok("tool", "face", 99))
-	for i := 0; i < 200; i++ {
+	for range 200 {
 		prov = append(prov, imprintSeg{a: math.P3(0, 5, 0), b: math.P3(1, 5, 0), owner: parent, other: other})
 	}
 	scratch := make([]subFace, len(fromFace))

@@ -216,7 +216,7 @@ func seamCorners(edges []*topo.Edge, prior []BendPlacement) []seamCorner {
 // vs the rest) for the corner seam, which owns no bend and must find the corners from the walls.
 func allBendJunctions(prior []BendPlacement) []bendJunction {
 	var out []bendJunction
-	for i := 0; i < len(prior); i++ {
+	for i := range prior {
 		for k := i + 1; k < len(prior); k++ {
 			if parallelBends(prior[i], prior[k]) {
 				continue

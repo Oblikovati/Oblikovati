@@ -25,8 +25,8 @@ func sphereMesh(r float64, nLat, nLong int) SurfaceSamples {
 			m.Normals = append(m.Normals, math.V3(math.Scalar(x/r), math.Scalar(y/r), math.Scalar(z/r)))
 		}
 	}
-	for i := 0; i < nLat; i++ {
-		for j := 0; j < nLong; j++ {
+	for i := range nLat {
+		for j := range nLong {
 			a, b, c, d := idx(i, j), idx(i, j+1), idx(i+1, j+1), idx(i+1, j)
 			m.Triangles = append(m.Triangles, [3]int{a, b, c}, [3]int{a, c, d})
 		}
@@ -60,8 +60,8 @@ func TestIsophotesFlatPlaneAreEmpty(t *testing.T) {
 			m.Normals = append(m.Normals, math.V3(0, 0, 1))
 		}
 	}
-	for i := 0; i < 4; i++ {
-		for j := 0; j < 4; j++ {
+	for i := range 4 {
+		for j := range 4 {
 			a := i*5 + j
 			m.Triangles = append(m.Triangles, [3]int{a, a + 1, a + 6}, [3]int{a, a + 6, a + 5})
 		}
@@ -84,8 +84,8 @@ func TestIsophotesLinearFieldAreStraightAndParallel(t *testing.T) {
 			m.Normals = append(m.Normals, nrm)
 		}
 	}
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			a, b, c, d := idx(i, j), idx(i, j+1), idx(i+1, j+1), idx(i+1, j)
 			m.Triangles = append(m.Triangles, [3]int{a, b, c}, [3]int{a, c, d})
 		}
@@ -116,8 +116,8 @@ func tiltStrip(a func(float64) float64) SurfaceSamples {
 			m.Normals = append(m.Normals, nrm)
 		}
 	}
-	for i := 0; i < nx; i++ {
-		for j := 0; j < ny; j++ {
+	for i := range nx {
+		for j := range ny {
 			a0, b0, c0, d0 := idx(i, j), idx(i, j+1), idx(i+1, j+1), idx(i+1, j)
 			m.Triangles = append(m.Triangles, [3]int{a0, b0, c0}, [3]int{a0, c0, d0})
 		}
@@ -230,8 +230,8 @@ func TestZebraBandsFlatIsSingleBand(t *testing.T) {
 			m.Normals = append(m.Normals, math.V3(0, 0, 1))
 		}
 	}
-	for i := 0; i < 3; i++ {
-		for j := 0; j < 3; j++ {
+	for i := range 3 {
+		for j := range 3 {
 			a := i*4 + j
 			m.Triangles = append(m.Triangles, [3]int{a, a + 1, a + 5}, [3]int{a, a + 5, a + 4})
 		}

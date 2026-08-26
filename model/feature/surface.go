@@ -346,7 +346,7 @@ func loopEdges(bld *topo.Builder, verts []*topo.Vertex, feat, role string, idx i
 	n := len(verts)
 	uses := make([]topo.Use, n)
 	r := fmt.Sprintf("%s%d-edge", role, idx)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		j := (i + 1) % n
 		e := bld.AddEdge(geom.NewLineSegment(verts[i].Point(), verts[j].Point()), verts[i], verts[j], topo.NewLineage(topo.Tok(feat, r, i)))
 		uses[i] = topo.Fwd(e)

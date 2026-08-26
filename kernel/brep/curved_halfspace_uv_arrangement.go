@@ -119,7 +119,7 @@ func (c ruledUV) sampleRange(curve geom.Curve3, t0, t1 float64) []uvSeg {
 func (c ruledUV) sampleVertices(pl *geom.Polyline, t0, t1 float64) []uvSeg {
 	n := len(pl.Vertices)
 	ts := []float64{t0}
-	for j := 0; j < n; j++ {
+	for j := range n {
 		if vt := float64(j) / float64(n-1); vt > t0 && vt < t1 {
 			ts = append(ts, vt)
 		}
@@ -327,7 +327,7 @@ func (c ruledUV) clipEndToBand(s uvSeg, isA bool) (math.Point2, float64) {
 // point where the curve's axial coordinate v equals vLim — the exact rim crossing.
 func (c ruledUV) refineCurveV(curve geom.Curve3, tOut, tIn, vLim float64) float64 {
 	out := tOut
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		tm := (tOut + tIn) / 2
 		if (c.curveV(curve, out)-vLim <= 0) == (c.curveV(curve, tm)-vLim <= 0) {
 			tOut = tm
@@ -989,7 +989,7 @@ func meanEdgeV(c uvSide, edges []loopEdge) float64 {
 // wraps re-emits as a spurious full curve. A loop on a single curve (no transition) is returned unchanged.
 func rotateToTransition(rec []recoveredEdge) []recoveredEdge {
 	n := len(rec)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if !sameRun(rec[(i-1+n)%n], rec[i]) {
 			return append(append([]recoveredEdge{}, rec[i:]...), rec[:i]...)
 		}

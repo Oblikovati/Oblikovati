@@ -107,7 +107,7 @@ func invertLength(signedLength func(float64) float64, speed func(float64) float6
 		return lo
 	}
 	t := (lo + hi) / 2
-	for i := 0; i < 64; i++ {
+	for range 64 {
 		miss := signedLength(t) - target
 		if stdmath.Abs(miss) <= lengthRelTol*stdmath.Max(1, stdmath.Abs(target)) {
 			return t

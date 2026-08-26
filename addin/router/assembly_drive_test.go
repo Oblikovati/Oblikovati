@@ -73,8 +73,8 @@ func TestAssemblyDriveUndrivableJointRejected(t *testing.T) {
 // parts.
 func rotationAngleBetween(a, b types.Matrix) float64 {
 	trace := 0.0
-	for i := 0; i < 3; i++ {
-		for j := 0; j < 3; j++ {
+	for i := range 3 {
+		for j := range 3 {
 			trace += a.At(i, j) * b.At(i, j) // Σ a[i][j]·b[i][j] = trace(A·Bᵀ)
 		}
 	}

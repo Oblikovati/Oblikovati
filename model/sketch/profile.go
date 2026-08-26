@@ -547,7 +547,7 @@ const onCircleTol = arrMergeTol // tol:calibrated — point-on-circle touch; see
 // vertex shifts — a circle nothing touches samples exactly as sampleCircle does.
 func sampleCircleThrough(c *Circle, touches []math.Point2) []math.Point2 {
 	angles := make([]float64, 0, circleSamples+len(touches))
-	for i := 0; i < circleSamples; i++ {
+	for i := range circleSamples {
 		angles = append(angles, 2*stdmath.Pi*float64(i)/float64(circleSamples))
 	}
 	for _, p := range touches {

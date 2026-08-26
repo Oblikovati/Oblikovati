@@ -3,6 +3,7 @@
 package app
 
 import (
+	"slices"
 	"testing"
 
 	"oblikovati.org/api/types"
@@ -90,12 +91,7 @@ func TestUnitsSettingsOpenClose(t *testing.T) {
 // TestUnitOptionLists checks each category offers its expected units.
 func TestUnitOptionLists(t *testing.T) {
 	has := func(opts []string, want string) bool {
-		for _, o := range opts {
-			if o == want {
-				return true
-			}
-		}
-		return false
+		return slices.Contains(opts, want)
 	}
 	if !has(LengthUnitOptions(), "mm") || !has(LengthUnitOptions(), "in") {
 		t.Error("length options missing mm/in")

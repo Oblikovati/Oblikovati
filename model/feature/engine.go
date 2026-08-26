@@ -497,7 +497,7 @@ func (fs *PartFeatures) effectiveEnd() int {
 
 // earliestDirty returns the index of the first dirty feature below end, or -1.
 func (fs *PartFeatures) earliestDirty(end int) int {
-	for i := 0; i < end; i++ {
+	for i := range end {
 		if fs.items[i].dirty {
 			return i
 		}
@@ -517,7 +517,7 @@ func (fs *PartFeatures) prefixBodies(start int) []*topo.Body {
 // features depending on them are still poisoned.
 func (fs *PartFeatures) sickBefore(start int) map[ID]bool {
 	sick := map[ID]bool{}
-	for i := 0; i < start; i++ {
+	for i := range start {
 		if fs.items[i].health.Status == health.Sick {
 			sick[fs.items[i].id] = true
 		}

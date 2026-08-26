@@ -64,7 +64,7 @@ func TestIntersectTrianglesTouching(t *testing.T) {
 func TestIntersectTrianglesProperties(t *testing.T) {
 	r := rand.New(rand.NewSource(0x1c03))
 	crossings, touches := 0, 0
-	for i := 0; i < 30000; i++ {
+	for i := range 30000 {
 		t1, t2 := smallTri(r), smallTri(r)
 		if degenerate(t1) || degenerate(t2) {
 			continue
@@ -96,7 +96,7 @@ func TestIntersectTrianglesProperties(t *testing.T) {
 // agree in kind and endpoint set — the intersection is a property of the pair.
 func TestIntersectTrianglesSymmetric(t *testing.T) {
 	r := rand.New(rand.NewSource(0x1c04))
-	for i := 0; i < 30000; i++ {
+	for i := range 30000 {
 		t1, t2 := smallTri(r), smallTri(r)
 		if degenerate(t1) || degenerate(t2) {
 			continue

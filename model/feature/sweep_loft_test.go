@@ -20,7 +20,7 @@ func closedMobiusLoftBody(t *testing.T, n int, radius, width, thick float64,
 	t.Helper()
 	fs := NewPartFeatures(nil)
 	sections := make([]LoftSection, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		u := 2 * stdmath.Pi * float64(i) / float64(n)
 		sections[i] = LoftSection{Sketch: section(u, u/2, radius, width, thick), ProfileIndex: 0}
 	}
@@ -76,7 +76,7 @@ func centeredRectOn(plane sketch.Plane, halfW, halfH float64) *sketch.Sketch {
 func polygonAreaXY(loop []math.Point3) float64 {
 	var sum float64
 	n := len(loop)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b := loop[i], loop[(i+1)%n]
 		sum += float64(a.X*b.Y - b.X*a.Y)
 	}
@@ -111,7 +111,7 @@ func TestResampleLoopPreservesArea(t *testing.T) {
 // untwisted ring). W is the band width, T its thickness. CCW in the width/thickness frame.
 func mobiusSectionLoops(n int, radius, width, thick, turns float64) [][]math.Point3 {
 	loops := make([][]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		u := 2 * stdmath.Pi * float64(i) / float64(n)
 		a := u * turns
 		cu, su := stdmath.Cos(u), stdmath.Sin(u)

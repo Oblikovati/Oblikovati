@@ -2,6 +2,8 @@
 
 package ops
 
+import "slices"
+
 // insert adds point index ip by connected-cavity Bowyer–Watson: find a triangle whose circumcircle
 // contains the point, delete the connected star of such triangles, and fan the cavity boundary to the
 // new point. Skips a point coinciding with an existing vertex (no strictly-bad triangle).
@@ -63,7 +65,7 @@ func (m *cdt) locate(p [2]float64) int {
 // near-linear test.
 func (m *cdt) walkAcross(t int, p [2]float64) int {
 	m.walkSteps++
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		a, b := m.tris[t].v[(i+1)%3], m.tris[t].v[(i+2)%3]
 		if orient2d(m.pts[a], m.pts[b], p) < 0 { // p is right of the CCW edge (a,b): cross to n[i]
 			if ne := m.tris[t].n[i]; ne >= 0 {
@@ -80,7 +82,7 @@ func (m *cdt) liveSeed() int {
 	if m.last >= 0 && m.last < len(m.dead) && !m.dead[m.last] {
 		return m.last
 	}
-	for t := len(m.tris) - 1; t >= 0; t-- {
+	for t := range slices.Backward(m.tris) {
 		if !m.dead[t] {
 			return t
 		}
@@ -115,7 +117,7 @@ func (m *cdt) collectCavity(seed int, p [2]float64) cavity {
 	for queue := []int{seed}; len(queue) > 0; {
 		t := queue[0]
 		queue = queue[1:]
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			ne := m.tris[t].n[i]
 			if ne < 0 || c.in[ne] {
 				continue
@@ -172,7 +174,7 @@ func (m *cdt) fanCavity(ip int, c cavity) {
 func (m *cdt) cavityBoundary(c cavity) []cavityEdge {
 	var bnd []cavityEdge
 	for _, t := range c.order {
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			ne := m.tris[t].n[i]
 			if ne >= 0 && c.in[ne] {
 				continue
@@ -218,7 +220,7 @@ func (m *cdt) flip(t, i int) bool {
 	}
 	c, pp, q := m.tris[t].v[i], m.tris[t].v[(i+1)%3], m.tris[t].v[(i+2)%3]
 	d := -1
-	for k := 0; k < 3; k++ {
+	for k := range 3 {
 		if v := m.tris[s].v[k]; v != pp && v != q {
 			d = v
 		}
@@ -277,7 +279,7 @@ func (m *cdt) flipOneCrossing(a, b int) bool {
 		if m.dead[t] {
 			continue
 		}
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			u, w := m.tris[t].v[(i+1)%3], m.tris[t].v[(i+2)%3]
 			if u == a || u == b || w == a || w == b {
 				continue // edges touching an endpoint never cross the segment
@@ -348,7 +350,7 @@ func (m *cdt) floodInside() []bool {
 // floodStep visits triangle t's not-yet-seen neighbours, setting each one's inside flag (flipped
 // across a constrained edge) and enqueuing it; returns the extended queue.
 func (m *cdt) floodStep(t int, inside, visited []bool, queue []int) []int {
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		s := m.tris[t].n[i]
 		if s < 0 || m.dead[s] || visited[s] {
 			continue
@@ -382,7 +384,7 @@ func constrainedDelaunayRefinedChecked(pts [][2]float64, loops [][]int, nFrontie
 		return nil, nil, false
 	}
 	m := newCDT(pts)
-	for i := 0; i < nFrontier; i++ {
+	for i := range nFrontier {
 		m.insert(i)
 	}
 	m.constrain(loops)
@@ -419,7 +421,7 @@ func (m *cdt) constrain(loops [][]int) {
 	rep := m.representatives()
 	m.buildIncident()
 	for _, lp := range loops {
-		for k := 0; k < len(lp); k++ {
+		for k := range lp {
 			m.insertConstraint(rep[lp[k]], rep[lp[(k+1)%len(lp)]])
 		}
 	}

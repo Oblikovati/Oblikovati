@@ -115,9 +115,9 @@ func rotateToBestOffset(ref, cur []math.Point3) []math.Point3 {
 func bestLoopOffset(ref, cur []math.Point3) int {
 	n := len(cur)
 	best, bestCost := 0, stdmath.Inf(1)
-	for off := 0; off < n; off++ {
+	for off := range n {
 		cost := 0.0
-		for k := 0; k < n; k++ {
+		for k := range n {
 			d := float64(ref[k].DistanceTo(cur[(k+off)%n]))
 			cost += d * d
 		}
@@ -147,7 +147,7 @@ func rotateVecLoop(vecs []math.Vector3, off int) []math.Vector3 {
 	}
 	n := len(vecs)
 	out := make([]math.Vector3, n)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		out[k] = vecs[(k+off)%n]
 	}
 	return out
@@ -296,15 +296,15 @@ func railGuide(sections [][]math.Point3, rails [][]math.Point3) [][]math.Point3 
 		samples := resamplePath(rail, levels)
 		jr := nearestTrack(sections[0], samples[0])
 		samples[0], samples[levels-1] = sections[0][jr], sections[levels-1][jr] // pin the ends
-		for s := 0; s < levels; s++ {
+		for s := range levels {
 			d := sections[s][jr].VectorTo(samples[s])
-			for j := 0; j < n; j++ {
+			for j := range n {
 				disp[s][j] = disp[s][j].Add(d.Scale(railFalloff(j, jr, n)))
 			}
 		}
 	}
-	for s := 0; s < levels; s++ {
-		for j := 0; j < n; j++ {
+	for s := range levels {
+		for j := range n {
 			sections[s][j] = sections[s][j].TranslateBy(disp[s][j])
 		}
 	}
@@ -339,7 +339,7 @@ func rotateLoop(sec []math.Point3, off int) []math.Point3 {
 	}
 	n := len(sec)
 	out := make([]math.Point3, n)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		out[k] = sec[(k+off)%n]
 	}
 	return out
@@ -422,7 +422,7 @@ func centerlineGuide(sections [][]math.Point3, centerline []math.Point3) [][]mat
 	}
 	samples := resamplePath(centerline, levels)
 	samples[0], samples[levels-1] = centroidOf(sections[0]), centroidOf(sections[levels-1]) // pin ends
-	for s := 0; s < levels; s++ {
+	for s := range levels {
 		d := centroidOf(sections[s]).VectorTo(samples[s])
 		for j := range sections[s] {
 			sections[s][j] = sections[s][j].TranslateBy(d)
@@ -513,7 +513,7 @@ func sectionTangents(sections [][]math.Point3, closed bool, ends loftEnds, wrapS
 	// the seam) instead of along the loop.
 	corr := func(j, shift int) int { return ((j+shift)%n + n) % n }
 	tan := make([][]math.Vector3, m)
-	for i := 0; i < m; i++ {
+	for i := range m {
 		tan[i] = make([]math.Vector3, n)
 		predShift, succShift := 0, 0
 		if closed && i == 0 {
@@ -522,7 +522,7 @@ func sectionTangents(sections [][]math.Point3, closed bool, ends loftEnds, wrapS
 		if closed && i == m-1 {
 			succShift = wrapShift // stepping forward to section 0 crosses the seam
 		}
-		for j := 0; j < n; j++ {
+		for j := range n {
 			p := sections[idx(i-1)][corr(j, predShift)]
 			q := sections[idx(i+1)][corr(j, succShift)]
 			tan[i][j] = p.VectorTo(q).Scale(0.5)
@@ -789,10 +789,7 @@ func segmentSamplesG2(p0, p1 []math.Point3, m0, m1, startA, endA, startJ, endJ [
 		sec[s] = blendSection(p0, p1, m0, m1, startA, endA, startJ, endJ, float64(s)/float64(probes))
 	}
 	turn := stdmath.Max(segmentTwist(p0, p1), maxTrackTurn(sec))
-	n := int(stdmath.Ceil(turn / (loftMaxStepDeg * stdmath.Pi / 180)))
-	if n < loftSegmentSamples {
-		n = loftSegmentSamples
-	}
+	n := max(int(stdmath.Ceil(turn/(loftMaxStepDeg*stdmath.Pi/180))), loftSegmentSamples)
 	if n > loftMaxSegmentSamples {
 		n = loftMaxSegmentSamples
 	}
@@ -810,10 +807,7 @@ func segmentSamplesG2(p0, p1 []math.Point3, m0, m1, startA, endA, startJ, endJ [
 // A 90° twist → ~18 sub-sections (smooth); a straight, ruled segment → the floor.
 func segmentSamples(p0, p1 []math.Point3, m0, m1 []math.Vector3) int {
 	turn := stdmath.Max(segmentTwist(p0, p1), segmentTrackTurn(p0, p1, m0, m1))
-	n := int(stdmath.Ceil(turn / (loftMaxStepDeg * stdmath.Pi / 180)))
-	if n < loftSegmentSamples {
-		n = loftSegmentSamples
-	}
+	n := max(int(stdmath.Ceil(turn/(loftMaxStepDeg*stdmath.Pi/180))), loftSegmentSamples)
 	if n > loftMaxSegmentSamples {
 		n = loftMaxSegmentSamples
 	}
@@ -843,10 +837,7 @@ func aroundSubdivisions(sections [][]math.Point3, closed bool, wrapShift int) in
 			maxTwist = a
 		}
 	}
-	k := int(stdmath.Ceil(maxTwist / (loftAroundStepDeg * stdmath.Pi / 180)))
-	if k < 1 {
-		k = 1
-	}
+	k := max(int(stdmath.Ceil(maxTwist/(loftAroundStepDeg*stdmath.Pi/180))), 1)
 	if k > loftMaxAroundSubdiv {
 		k = loftMaxAroundSubdiv
 	}
@@ -869,9 +860,9 @@ func densifyAround(sections [][]math.Point3, k int) [][]math.Point3 {
 			continue
 		}
 		dense := make([]math.Point3, 0, m*k)
-		for j := 0; j < m; j++ {
+		for j := range m {
 			a, b := sec[j], sec[(j+1)%m]
-			for t := 0; t < k; t++ {
+			for t := range k {
 				f := math.Scalar(float64(t) / float64(k))
 				dense = append(dense, a.TranslateBy(a.VectorTo(b).Scale(f)))
 			}

@@ -4,6 +4,7 @@ package ops
 
 import (
 	"fmt"
+	"slices"
 
 	"oblikovati.org/kernel/topo"
 )
@@ -83,12 +84,12 @@ func cornerNearRefs(near []railID, dir railSense) []railRef {
 // one face twice, which no retrim can re-clip.
 func cornerArmHostBites(links []cornerArmLink, rails cornerArmRailChain) ([]cornerArmHostBite, string) {
 	acc := newHostBiteAccumulator()
-	for i := len(links) - 1; i >= 0; i-- {
-		if links[i].hostA == links[i].hostB {
-			return nil, fmt.Sprintf("link %d rides on face %d twice", i, links[i].hostA.ID())
+	for i, link := range slices.Backward(links) {
+		if link.hostA == link.hostB {
+			return nil, fmt.Sprintf("link %d rides on face %d twice", i, link.hostA.ID())
 		}
-		acc.add(links[i].hostA, rails.a[i], links[i].edge)
-		acc.add(links[i].hostB, rails.b[i], links[i].edge)
+		acc.add(link.hostA, rails.a[i], link.edge)
+		acc.add(link.hostB, rails.b[i], link.edge)
 	}
 	return acc.bites, ""
 }

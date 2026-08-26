@@ -88,7 +88,7 @@ func weldedFreeEdgeCount(m *Mesh) int {
 	deg := map[[2]int]int{}
 	for t := 0; 3*t+2 < len(m.Indices); t++ {
 		v := [3]int{weld[m.Indices[3*t]], weld[m.Indices[3*t+1]], weld[m.Indices[3*t+2]]}
-		for k := 0; k < 3; k++ {
+		for k := range 3 {
 			a, b := v[k], v[(k+1)%3]
 			if a > b {
 				a, b = b, a

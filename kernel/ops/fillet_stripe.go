@@ -4,6 +4,7 @@ package ops
 
 import (
 	"fmt"
+	"slices"
 
 	"oblikovati.org/kernel/blend"
 	"oblikovati.org/kernel/geom"
@@ -343,10 +344,8 @@ func freeEndVertex(e, nb *topo.Edge) *topo.Vertex {
 // sharedVertex returns the vertex shared by two edges, or nil when they meet at none.
 func sharedVertex(e1, e2 *topo.Edge) *topo.Vertex {
 	for _, a := range []*topo.Vertex{e1.StartVertex(), e1.EndVertex()} {
-		for _, b := range []*topo.Vertex{e2.StartVertex(), e2.EndVertex()} {
-			if a == b {
-				return a
-			}
+		if slices.Contains([]*topo.Vertex{e2.StartVertex(), e2.EndVertex()}, a) {
+			return a
 		}
 	}
 	return nil
@@ -390,7 +389,7 @@ func stripeSegOf(bs blend.BlendSegment, shared *topo.Face) (stripeSeg, error) {
 func (st *tangentStripe) solveApices(sp *blend.Spine, m *blend.Marcher, r float64) error {
 	n := len(st.segs)
 	st.apex = make([]math.Point3, n)
-	for j := 0; j < n; j++ {
+	for j := range n {
 		a, ok := st.entryApex(sp, m, r, j)
 		if !ok {
 			return fmt.Errorf("fillet: no section at stripe junction %d", j)
@@ -473,10 +472,5 @@ func faceBoundsAll(f *topo.Face, edges []*topo.Edge) bool {
 
 // edgeHasFace reports whether f bounds e.
 func edgeHasFace(e *topo.Edge, f *topo.Face) bool {
-	for _, ef := range e.Faces() {
-		if ef == f {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(e.Faces(), f)
 }

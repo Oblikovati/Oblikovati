@@ -39,10 +39,10 @@ func networkGrid(uCurves, vCurves []BSplineCurve) ([][]math.Point3, error) {
 	nu, nv := len(vCurves), len(uCurves)
 	gapTol := networkGapTol(uCurves, vCurves)
 	grid := make([][]math.Point3, nu)
-	for a := 0; a < nu; a++ {
+	for a := range nu {
 		grid[a] = make([]math.Point3, nv)
 		us := float64(a) / float64(nu-1)
-		for b := 0; b < nv; b++ {
+		for b := range nv {
 			vs := float64(b) / float64(nv-1)
 			pu := uCurves[b].PointAt(us) // u-curve b at u-station a
 			pv := vCurves[a].PointAt(vs) // v-curve a at v-station b
@@ -119,16 +119,16 @@ func interpCols(rows [][][]float64, pu int, uparams, uknots []float64) ([][]math
 	for a := range net {
 		net[a] = make([]math.Point3, nv)
 	}
-	for b := 0; b < nv; b++ {
+	for b := range nv {
 		col := make([][]float64, nu)
-		for a := 0; a < nu; a++ {
+		for a := range nu {
 			col[a] = rows[a][b]
 		}
 		ctrl, err := solveInterp(uparams, pu, uknots, col)
 		if err != nil {
 			return nil, err
 		}
-		for a := 0; a < nu; a++ {
+		for a := range nu {
 			net[a][b] = math.P3(math.Scalar(ctrl[a][0]), math.Scalar(ctrl[a][1]), math.Scalar(ctrl[a][2]))
 		}
 	}
@@ -171,9 +171,9 @@ func avgChordParams(grid [][]math.Point3, _ bool) []float64 {
 func avgChordParamsRows(rows [][][]float64) []float64 {
 	nu, nv := len(rows), len(rows[0])
 	sum := make([]float64, nu)
-	for b := 0; b < nv; b++ {
+	for b := range nv {
 		col := make([][]float64, nu)
-		for a := 0; a < nu; a++ {
+		for a := range nu {
 			col[a] = rows[a][b]
 		}
 		ub, err := chordParams(col)

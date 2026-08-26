@@ -4,6 +4,7 @@ package sketch
 
 import (
 	"fmt"
+	"slices"
 
 	"oblikovati.org/math"
 )
@@ -82,12 +83,7 @@ func (s *Sketch) pointInUse(p *Point) bool {
 
 // pointAmong reports whether p is in pts.
 func pointAmong(pts []*Point, p *Point) bool {
-	for _, x := range pts {
-		if x == p {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(pts, p)
 }
 
 // replaceEntityPoint rewires one defining point of a moved entity to its

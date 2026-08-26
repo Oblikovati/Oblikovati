@@ -97,7 +97,7 @@ func (b lasBuilder) writeCount(hdr []byte) {
 }
 
 func putVec3(b []byte, off int, v [3]float64) {
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		binary.LittleEndian.PutUint64(b[off+i*8:], math.Float64bits(v[i]))
 	}
 }

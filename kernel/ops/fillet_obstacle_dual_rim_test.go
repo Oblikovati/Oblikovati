@@ -354,7 +354,7 @@ func assertDipRunSpansNodeToNode(t *testing.T, b dualBoss, ring filletLoop, cove
 func runStartOf(in []bool) (int, int) {
 	n := len(in)
 	start, runs := 0, 0
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if in[i] && !in[(i-1+n)%n] {
 			start, runs = i, runs+1
 		}

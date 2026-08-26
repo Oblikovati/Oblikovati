@@ -278,7 +278,7 @@ func distanceToCurve(p math.Point3, ref geom.Curve3) float64 {
 		}
 	}
 	step := (hi - lo) / n
-	for k := 0; k < 60; k++ {
+	for range 60 {
 		step /= 2
 		for _, t := range []float64{bt - step, bt + step} {
 			if d := p.DistanceTo(ref.PointAt(t)); d < best {
@@ -313,7 +313,7 @@ func matchRimSegments(t *testing.T, who string, loop filletLoop, segCount int, w
 	for i, p := range wall.pts {
 		index[p] = i
 	}
-	for i := 0; i < segCount; i++ {
+	for i := range segCount {
 		matchOneRimPair(t, who, loop, i, wall, index, cov)
 	}
 }
@@ -415,7 +415,7 @@ func assertCurveSpansSegment(t *testing.T, who string, seg int, c geom.Curve3, a
 func assertEveryWallRimSegmentCovered(t *testing.T, d obstacleDetection, wall filletLoop, covered map[int]int) {
 	t.Helper()
 	rimSegs := len(d.holeSampled.pts) + 2 // 64 samples + the 2 inserted nodes, as a closed ring
-	for seg := 0; seg < rimSegs; seg++ {
+	for seg := range rimSegs {
 		if covered[seg] != 1 {
 			t.Errorf("wall rim segment %d is presented by %d rim consumers, want exactly 1 (notch or patch) — station counts have drifted apart",
 				seg, covered[seg])

@@ -359,8 +359,8 @@ func integrateSurfaceArea(s geom.BSplineSurface) float64 {
 	const n = 64
 	du, dv := (u1-u0)/n, (v1-v0)/n
 	sum := 0.0
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			su, sv := s.DerivativesAt(u0+(float64(i)+0.5)*du, v0+(float64(j)+0.5)*dv)
 			sum += float64(su.Cross(sv).Length()) * du * dv
 		}

@@ -66,7 +66,7 @@ func capExitEllipse(tool geom.Cylinder, capPlane geom.Plane) (geom.EllipseFull, 
 // outside the rim means the ellipse crosses it (the deferred rim-crossing corner), so slice 1 declines.
 func ellipseInsideRim(e geom.EllipseFull, rimCentre math.Point3, r, margin float64) bool {
 	const n = 128 // dense enough to catch a shallow rim graze the coarse arrangement would miss
-	for i := 0; i < n; i++ {
+	for i := range n {
 		p := e.PointAt(float64(i) / float64(n))
 		if float64(rimCentre.VectorTo(p).Length()) > r-margin {
 			return false

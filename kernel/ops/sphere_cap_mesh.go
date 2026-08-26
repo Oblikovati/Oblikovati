@@ -158,7 +158,7 @@ func capNormal(axis, perp math.Vector3, ang float64) math.Vector3 {
 // fans the last ring to the shared pole vertex, each triangle wound to agree with its normals.
 func emitCapGrid(m *Mesh, grid [][]int, pole int) {
 	cols, rows := len(grid), len(grid[0])
-	for i := 0; i < cols; i++ {
+	for i := range cols {
 		ni := (i + 1) % cols
 		for k := 0; k+1 < rows; k++ {
 			emitClosedTri(m, grid[i][k], grid[ni][k], grid[ni][k+1])

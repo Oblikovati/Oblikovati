@@ -101,7 +101,7 @@ func holdName(atRoot bool) string {
 func thickenPathBetween(pts []math.Point2, left, right float64) []math.Point2 {
 	n := len(pts)
 	band := make([]math.Point2, 0, 2*n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		band = append(band, pts[i].TranslateBy(vertexNormal2(pts, i).Scale(math.Scalar(left))))
 	}
 	for i := n - 1; i >= 0; i-- {

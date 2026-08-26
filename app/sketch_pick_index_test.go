@@ -19,7 +19,7 @@ import (
 func TestSketchPickIndexFindsLineAmongMany(t *testing.T) {
 	s, profile := newPartWithSquare(t, 2) // 2×2 square on XY
 	sk := profile.Sketch
-	for i := 0; i < 3000; i++ { // a wall of lines off to the side, far from the cursor
+	for i := range 3000 { // a wall of lines off to the side, far from the cursor
 		y := float64(i) * 0.5
 		sk.Lines().AddByTwoPoints(math.P2(-100, y), math.P2(-90, y))
 	}
@@ -41,7 +41,7 @@ func TestSketchPickIndexFindsLineAmongMany(t *testing.T) {
 func TestSketchPickIndexMatchesBruteForce(t *testing.T) {
 	s, profile := newPartWithSquare(t, 2)
 	sk := profile.Sketch
-	for i := 0; i < 500; i++ {
+	for i := range 500 {
 		x := float64(i) * 0.1
 		sk.Lines().AddByTwoPoints(math.P2(x, 5), math.P2(x+0.05, 5))
 	}

@@ -355,7 +355,7 @@ func chainCircleSeg(center math.Point3, u, v math.Vector3, r, a0, a1 float64) en
 func chainRingPolyline(segs []endSeg) []math.Point3 {
 	pts := make([]math.Point3, 0, len(segs)*areaSamplesPerSeg)
 	for _, s := range segs {
-		for i := 0; i < areaSamplesPerSeg; i++ {
+		for i := range areaSamplesPerSeg {
 			pts = append(pts, segPointAt(s, float64(i)/areaSamplesPerSeg))
 		}
 	}

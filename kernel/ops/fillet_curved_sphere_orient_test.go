@@ -18,7 +18,7 @@ import (
 // spherePatchLoop returns a ring of points on sphere sph at polar angle `polar` (radians from +Z), CCW in φ.
 func spherePatchLoop(sph geom.Sphere, polar float64, n int) []math.Point3 {
 	pts := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		phi := 2 * stdmath.Pi * float64(i) / float64(n)
 		dir := math.V3(math.Scalar(stdmath.Sin(polar)*stdmath.Cos(phi)),
 			math.Scalar(stdmath.Sin(polar)*stdmath.Sin(phi)), math.Scalar(stdmath.Cos(polar)))

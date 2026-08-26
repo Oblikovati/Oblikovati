@@ -37,7 +37,7 @@ func marchTestHosts(t *testing.T) (CanalMarchHost, CanalMarchHost) {
 
 func marchTestAnchors(n int, a0, a1 float64) []CanalEdgeAnchor {
 	anchors := make([]CanalEdgeAnchor, n)
-	for k := 0; k < n; k++ {
+	for k := range n {
 		a := a0 + (a1-a0)*float64(k)/float64(n-1)
 		anchors[k] = CanalEdgeAnchor{
 			P: math.P3(marchTestR*stdmath.Cos(a), marchTestR*stdmath.Sin(a), marchTestH),

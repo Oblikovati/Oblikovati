@@ -137,10 +137,10 @@ func bicubicPatch(t *testing.T) BSplineSurface {
 	t.Helper()
 	ctrl := make([][]math.Point3, 4)
 	w := make([][]float64, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		ctrl[i] = make([]math.Point3, 4)
 		w[i] = []float64{1, 1, 1, 1}
-		for j := 0; j < 4; j++ {
+		for j := range 4 {
 			ctrl[i][j] = math.P3(float64(i), float64(j), float64((i-1)*(j-1))*0.3)
 		}
 	}

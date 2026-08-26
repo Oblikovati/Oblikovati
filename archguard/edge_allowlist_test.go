@@ -155,7 +155,7 @@ func firstPartyImports(t *testing.T) map[string][]string {
 // parseImportLines keeps only oblikovati.org packages and their oblikovati.org imports.
 func parseImportLines(out string) map[string][]string {
 	edges := map[string][]string{}
-	for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(out), "\n") {
 		fields := strings.Fields(line)
 		if len(fields) == 0 || !strings.HasPrefix(fields[0], "oblikovati.org/") {
 			continue

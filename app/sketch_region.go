@@ -75,7 +75,7 @@ func regionCoversOutline(pts []screenPt, rect screenRect, crossing bool) bool {
 // endpoint-inside case is handled by the caller's vertex test).
 func segmentCrossesRect(a, b screenPt, r screenRect) bool {
 	corners := [4]screenPt{{r.minX, r.minY}, {r.maxX, r.minY}, {r.maxX, r.maxY}, {r.minX, r.maxY}}
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		if segmentsIntersect(a, b, corners[i], corners[(i+1)%4]) {
 			return true
 		}

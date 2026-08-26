@@ -13,7 +13,7 @@ import (
 func squareLoop(sk *sketch.Sketch, side float64) []*sketch.Line {
 	c := []math.Point2{math.P2(0, 0), math.P2(side, 0), math.P2(side, side), math.P2(0, side)}
 	var ls []*sketch.Line
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		ls = append(ls, sk.Lines().AddByTwoPoints(c[i], c[(i+1)%4]))
 	}
 	return ls

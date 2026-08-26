@@ -74,7 +74,7 @@ func lPrism(depth float64) *topo.Body {
 		verts = append(verts, math.P3(p[0], depth, p[1]))
 	}
 	faces := [][]int{reversedRing(n), forwardRing(n, n)} // −Y and +Y caps
-	for i := 0; i < n; i++ {
+	for i := range n {
 		j := (i + 1) % n
 		faces = append(faces, []int{i, n + i, n + j, j}) // outward side quad
 	}

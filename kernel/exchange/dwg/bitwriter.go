@@ -226,7 +226,7 @@ func (w *BitWriter) WriteHandle(code uint8, value uint64) {
 func (w *BitWriter) Append(o *BitWriter) {
 	n := o.Position()
 	src := o.buf
-	for i := 0; i < n; i++ {
+	for i := range n {
 		bit := uint(src[i/8]>>(7-uint(i%8))) & 1
 		w.WriteBit(bit)
 	}

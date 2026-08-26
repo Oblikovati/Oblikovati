@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"slices"
 
 	"oblikovati.org/model/feature"
 )
@@ -41,12 +42,7 @@ func (t *DeleteFaceTool) Pick(_ *Session, sel Selectable) {
 }
 
 func (t *DeleteFaceTool) hasFace(f FaceHandle) bool {
-	for _, h := range t.faces {
-		if h == f {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(t.faces, f)
 }
 
 // Faces returns the picked faces (for the UI to list/highlight).

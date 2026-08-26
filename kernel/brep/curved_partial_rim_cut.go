@@ -112,15 +112,15 @@ func cutCylinderOperand(b *topo.Body) (ruledOperand, bool) {
 	o := ruledOperand{body: b, face: f, surface: cyl, inside: inside,
 		newUV: func(op Op, isB bool, other func(math.Point3) bool) ruledUV {
 			return newCylinderUVSolid(cyl, band, op, isB, other)
+		},
+		splitCut: func(imprint []geom.Curve3, op Op, isB bool, other func(math.Point3) bool) ([]curvedFace, bool) {
+			c := newCutCylinderUVSolid(cyl, band, prior, op, isB, other)
+			c.placeSeams(imprint)
+			if !c.disjointFromPrior(imprint) {
+				return nil, false // outside the disjoint sub-family → decline to CSG
+			}
+			return keptOrNone(trimByImprint(&c, f, cyl, imprint, cutCylinderMaterial(&c)))
 		}}
-	o.splitCut = func(imprint []geom.Curve3, op Op, isB bool, other func(math.Point3) bool) ([]curvedFace, bool) {
-		c := newCutCylinderUVSolid(cyl, band, prior, op, isB, other)
-		c.placeSeams(imprint)
-		if !c.disjointFromPrior(imprint) {
-			return nil, false // outside the disjoint sub-family → decline to CSG
-		}
-		return keptOrNone(trimByImprint(&c, f, cyl, imprint, cutCylinderMaterial(&c)))
-	}
 	return o, true
 }
 

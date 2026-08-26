@@ -51,7 +51,7 @@ func TestUnwrapRejectsSeamStartFullWrap(t *testing.T) {
 func TestUnwrapRejectsFullWrapWhereverItStarts(t *testing.T) {
 	const n = 24
 	base := seamStartFullWrapSamples(n)
-	for shift := 0; shift < n; shift++ {
+	for shift := range n {
 		rot := make([]float64, n)
 		for i := range rot {
 			rot[i] = base[(i+shift)%n]
@@ -135,7 +135,7 @@ func TestUnwrapAcceptsDegenerateAndTinyLoops(t *testing.T) {
 func TestSeamWindingLeapMeasuresTheWinding(t *testing.T) {
 	var twice []float64
 	const n = 48
-	for i := 0; i < n; i++ {
+	for i := range n {
 		twice = append(twice, stdmath.Mod(4*stdmath.Pi*float64(i)/float64(n), 2*stdmath.Pi))
 	}
 	if _, ok := unwrap(twice); ok {

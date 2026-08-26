@@ -229,7 +229,7 @@ func TestSphereZoneRevolveMakesAnalyticSphere(t *testing.T) {
 func sphereZoneShellVolume(rIn, rOut, radius, zc float64) float64 {
 	const n = 20000
 	acc, dr := 0.0, (rOut-rIn)/n
-	for i := 0; i < n; i++ {
+	for i := range n {
 		r := rIn + (float64(i)+0.5)*dr
 		acc += r * (zc - stdmath.Sqrt(radius*radius-r*r))
 	}

@@ -145,7 +145,7 @@ func loopRetrace(l developedLoop, ring []math.Point3) (float64, bool) {
 	}
 	tol, floor := retraceCollinearTol*diag, retraceMinOverlap*diag
 	worst := 0.0
-	for i := 0; i < n; i++ {
+	for i := range n {
 		for j := i + 1; j < n; j++ {
 			if ov := retraceOfPair(l.pts, ring, i, j, tol, floor); ov > worst {
 				worst = ov

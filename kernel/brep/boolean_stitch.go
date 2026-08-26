@@ -65,7 +65,7 @@ func hasTangentContact(uses map[[2]int][]loopEdgeUse) bool {
 func splitRingTJunctions(ring []int, w *welder3) []int {
 	n := len(ring)
 	out := make([]int, 0, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b := ring[i], ring[(i+1)%n]
 		out = append(out, a)
 		mids := verticesOnSegment(a, b, ring, w)
@@ -290,7 +290,7 @@ func orientRing(loop []math.Point3, normal math.Vector3, outer bool) []math.Poin
 func newell3(loop []math.Point3) math.Vector3 {
 	var nx, ny, nz float64
 	n := len(loop)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		c, d := loop[i], loop[(i+1)%n]
 		nx += (c.Y - d.Y) * (c.Z + d.Z)
 		ny += (c.Z - d.Z) * (c.X + d.X)

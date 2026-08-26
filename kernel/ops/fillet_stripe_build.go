@@ -126,7 +126,7 @@ func (g *stripeBuild) addNewVertsAndEdges() error {
 	n := len(g.st.segs)
 	lin := func(role string, i int) topo.Lineage { return topo.NewLineage(topo.Tok("stripe", role, i)) }
 	g.vS1, g.vW = make([]*topo.Vertex, n), make([]*topo.Vertex, n)
-	for j := 0; j < n; j++ {
+	for j := range n {
 		g.vS1[j] = g.bld.AddVertex(g.st.segs[j].topA, lin("s1", j))
 		g.vW[j] = g.bld.AddVertex(g.st.segs[j].wallA, lin("w", j))
 	}
@@ -135,7 +135,7 @@ func (g *stripeBuild) addNewVertsAndEdges() error {
 		g.vEndW = g.bld.AddVertex(g.st.segs[n-1].wallB, lin("w", n))
 	}
 	g.topE, g.wallE = make([]*topo.Edge, n), make([]*topo.Edge, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		g.topE[i] = g.bld.AddEdge(g.st.segs[i].topContact, g.vS1[i], g.exitFootS1(i), lin("top", i))
 		g.wallE[i] = g.bld.AddEdge(g.st.segs[i].wallContact, g.vW[i], g.exitFootW(i), lin("wall", i))
 	}
@@ -151,7 +151,7 @@ func (g *stripeBuild) addNewVertsAndEdges() error {
 func (g *stripeBuild) addSectionsAndRemnants(lin func(string, int) topo.Lineage) error {
 	n := len(g.st.segs)
 	g.section, g.lowerE = make([]*topo.Edge, n), make([]*topo.Edge, n)
-	for j := 0; j < n; j++ {
+	for j := range n {
 		if g.st.junction[j] == nil { // an open-run terminal
 			continue
 		}
@@ -207,7 +207,7 @@ func (g *stripeBuild) addTerminalEdges(lin func(string, int) topo.Lineage) error
 	if g.st.closed {
 		return nil
 	}
-	for t := 0; t < 2; t++ {
+	for t := range 2 {
 		feet := g.termFeet(t)
 		tm := g.st.term[t]
 		arc, err := geom.Arc3dByThreePoints(tm.topA, tm.apex, tm.wallA)
@@ -372,7 +372,7 @@ func dirUse(e *topo.Edge, from *topo.Vertex) topo.Use {
 func (g *stripeBuild) addBlendFaces() {
 	n := len(g.st.segs)
 	lin := func(i int) topo.Lineage { return topo.NewLineage(topo.Tok("stripe", "blend", i)) }
-	for i := 0; i < n; i++ {
+	for i := range n {
 		loop, ring := g.blendLoop(i)
 		if blendRingFlipped(g.st.segs[i].surf, ring) {
 			g.bld.AddReversedFace(g.st.segs[i].surf, lin(i), topo.OuterLoop(loop...))

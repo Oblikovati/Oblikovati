@@ -52,7 +52,7 @@ func decryptR2004Header(data []byte) ([]byte, error) {
 	}
 	dec := make([]byte, size)
 	var seed uint32 = 1
-	for i := 0; i < size; i++ {
+	for i := range size {
 		seed = seed*0x343fd + 0x269ec3
 		dec[i] = data[start+i] ^ byte(seed>>0x10)
 	}

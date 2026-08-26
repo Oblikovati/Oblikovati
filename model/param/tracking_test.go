@@ -3,7 +3,7 @@
 package param
 
 import (
-	"sort"
+	"slices"
 	"testing"
 
 	"oblikovati.org/model/depend"
@@ -12,7 +12,7 @@ import (
 // sortedIDs returns ids sorted, for order-independent comparison.
 func sortedIDs(ids []ID) []ID {
 	out := append([]ID(nil), ids...)
-	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	slices.Sort(out)
 	return out
 }
 

@@ -26,10 +26,10 @@ func edgeNeighbour(t *testing.T, a, b, center math.Point3, reach float64) *topo.
 	bOut := b.TranslateBy(out)
 	ctrl := make([][]math.Point3, 4)
 	w := make([][]float64, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		ctrl[i] = make([]math.Point3, 4)
 		w[i] = []float64{1, 1, 1, 1}
-		for j := 0; j < 4; j++ {
+		for j := range 4 {
 			s := float64(j) / 3
 			inner := a.Lerp(b, s)
 			outer := aOut.Lerp(bOut, s)
@@ -50,13 +50,13 @@ func edgeNeighbour(t *testing.T, a, b, center math.Point3, reach float64) *topo.
 func polygonNeighbours(t *testing.T, n int, r float64, z func(i int) float64) ([]*topo.Body, []math.Point3) {
 	t.Helper()
 	verts := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := 2 * stdmath.Pi * float64(i) / float64(n)
 		verts[i] = math.P3(math.Scalar(r*stdmath.Cos(a)), math.Scalar(r*stdmath.Sin(a)), math.Scalar(z(i)))
 	}
 	center := math.P3(0, 0, 0)
 	bodies := make([]*topo.Body, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		bodies[i] = edgeNeighbour(t, verts[i], verts[(i+1)%n], center, r)
 	}
 	return bodies, verts

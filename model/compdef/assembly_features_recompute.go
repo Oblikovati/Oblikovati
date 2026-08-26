@@ -26,7 +26,7 @@ import (
 func (fs *AssemblyFeatures) Recompute(placed []feature.PlacedBody) {
 	groups, leaves := groupByPath(placed)
 	end := fs.effectiveEnd()
-	for i := 0; i < end; i++ {
+	for i := range end {
 		fs.evaluate(fs.items[i], groups, leaves)
 	}
 	fs.result, fs.resultLeaf = groups, leaves

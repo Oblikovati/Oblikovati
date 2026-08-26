@@ -174,8 +174,8 @@ func surfaceArea(surf BSplineSurface, nu, nv int) float64 {
 		}
 	}
 	total := 0.0
-	for i := 0; i < nu; i++ {
-		for j := 0; j < nv; j++ {
+	for i := range nu {
+		for j := range nv {
 			total += triArea(grid[i][j], grid[i+1][j], grid[i+1][j+1])
 			total += triArea(grid[i][j], grid[i+1][j+1], grid[i][j+1])
 		}

@@ -147,9 +147,9 @@ func TestTorusLiesOnTube(t *testing.T) {
 // inverts each sampled spiric point through ParamAt, so the inverse must be tight, not just close.
 func TestTorusParamAtInvertsPointAt(t *testing.T) {
 	tor, _ := NewTorus(math.P3(1, -2, 3), math.V3(0, 0, 1), 5, 2)
-	for i := 0; i < 12; i++ {
+	for i := range 12 {
 		u := 2 * stdmath.Pi * float64(i) / 12
-		for j := 0; j < 12; j++ {
+		for j := range 12 {
 			v := 2 * stdmath.Pi * float64(j) / 12
 			gu, gv := tor.ParamAt(tor.PointAt(u, v))
 			if du := angleGap(gu, u); du > 1e-9 {

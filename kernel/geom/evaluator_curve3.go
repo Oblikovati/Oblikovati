@@ -66,7 +66,7 @@ func curveLengthBreaks3(c Curve3) []float64 {
 func polylineLengthBetween3(p Polyline, lo, hi float64) float64 {
 	segs := len(p.Vertices) - 1
 	total := 0.0
-	for i := 0; i < segs; i++ {
+	for i := range segs {
 		s0, s1 := float64(i)/float64(segs), float64(i+1)/float64(segs)
 		overlap := stdmath.Min(hi, s1) - stdmath.Max(lo, s0)
 		if overlap > 0 {
@@ -148,7 +148,7 @@ func CurveStrokes3(c Curve3, from, to, tolerance float64) []math.Point3 {
 	// Four initial slices break the symmetry of closed curves, whose full-range
 	// chord midpoint can coincide with the curve (a zero-length chord on a circle).
 	quarter := (hi - lo) / 4
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		a, b := lo+float64(i)*quarter, lo+float64(i+1)*quarter
 		strokeRecurse3(c, a, b, c.PointAt(a), c.PointAt(b), tolerance, strokeMaxDepth, &pts)
 	}

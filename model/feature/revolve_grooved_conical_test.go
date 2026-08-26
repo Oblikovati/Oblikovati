@@ -44,7 +44,7 @@ func housingMeridian(backHi, backLo float64) *sketch.Sketch {
 func pappusVolume(p *sketch.Profile) float64 {
 	poly := p.OuterLoop().Polygon()
 	var a2, cx float64
-	for i := 0; i < len(poly); i++ {
+	for i := range poly {
 		j := (i + 1) % len(poly)
 		cross := float64(poly[i].X*poly[j].Y - poly[j].X*poly[i].Y)
 		a2 += cross

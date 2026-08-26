@@ -144,7 +144,7 @@ func polylineParamAtPoint3(g Polyline, p math.Point3) (float64, SolutionNature) 
 	segs := len(g.Vertices) - 1
 	best, bestT, ties := stdmath.Inf(1), 0.0, 0
 	var bestFoot math.Point3
-	for i := 0; i < segs; i++ {
+	for i := range segs {
 		seg := NewLineSegment(g.Vertices[i], g.Vertices[i+1])
 		local := segmentParamAtPoint3(seg, p)
 		foot := seg.PointAt(local)
@@ -244,7 +244,7 @@ func appendCluster(clusters []float64, t, width float64) []float64 {
 // refineClosest3 polishes a closest-point candidate by Newton on
 // g(t) = (P(t)−p)·P′(t), clamped to the domain.
 func refineClosest3(c Curve3, p math.Point3, t, lo, hi float64) float64 {
-	for i := 0; i < 16; i++ {
+	for range 16 {
 		d1, d2, _ := CurveDerivatives3(c, t)
 		r := p.VectorTo(c.PointAt(t))
 		g := float64(r.Dot(d1))
@@ -289,7 +289,7 @@ func CurveRangeBox3(c Curve3) math.Box {
 // where it falls inside the sweep, plus the sweep ends.
 func sinusoidBox(center math.Point3, major, minor math.Vector3, a, b, start, sweep float64) math.Box {
 	angles := []float64{start, start + sweep}
-	for axis := 0; axis < 3; axis++ {
+	for axis := range 3 {
 		mj, mn := vectorComponent(major, axis), vectorComponent(minor, axis)
 		extremum := stdmath.Atan2(b*mn, a*mj)
 		angles = append(angles, anglesInSweep(extremum, start, sweep)...)

@@ -32,7 +32,7 @@ func weJ3Spine(t *testing.T) spiricRimSpine {
 // tube-centre circle), and the cap foot is ON the cap plane (n̂-coordinate = capD).
 func TestSpiricStationExactness(t *testing.T) {
 	sp := weJ3Spine(t)
-	for k := 0; k < 64; k++ {
+	for k := range 64 {
 		psi := 2 * stdmath.Pi * float64(k) / 64
 		c, tubeFoot, capFoot, ok := sp.station(psi)
 		if !ok {

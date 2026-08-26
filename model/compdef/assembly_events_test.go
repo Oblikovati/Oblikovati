@@ -66,8 +66,7 @@ func TestSuppressVetoKeepsOccurrenceActive(t *testing.T) {
 	})
 
 	err := asm.SetOccurrenceSuppressed(o, true)
-	var veto *AssemblyVetoError
-	if !errors.As(err, &veto) {
+	if _, ok := errors.AsType[*AssemblyVetoError](err); !ok {
 		t.Fatalf("SetOccurrenceSuppressed err = %v, want AssemblyVetoError", err)
 	}
 	if o.Suppressed() {

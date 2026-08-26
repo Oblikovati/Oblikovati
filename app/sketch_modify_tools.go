@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"slices"
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -38,10 +39,8 @@ func (c *pickCollector) takeEntity(ent sketch.Entity) {
 	if ent == nil || len(c.picks) >= c.want {
 		return
 	}
-	for _, p := range c.picks {
-		if p == ent {
-			return
-		}
+	if slices.Contains(c.picks, ent) {
+		return
 	}
 	c.picks = append(c.picks, ent)
 }
@@ -68,7 +67,7 @@ type SketchFilletTool struct {
 
 // NewSketchFilletTool makes a fillet tool with the given default radius.
 func NewSketchFilletTool(radius float64) *SketchFilletTool {
-	return &SketchFilletTool{pickCollector: pickCollector{want: 2}, radius: math.Scalar(radius)}
+	return &SketchFilletTool{want: 2, radius: math.Scalar(radius)}
 }
 
 func (t *SketchFilletTool) Name() string                  { return "Sketch Fillet" }
@@ -121,7 +120,7 @@ type SketchOffsetTool struct {
 // Constrain Offset on, as Inventor defaults.
 func NewSketchOffsetTool(distance float64) *SketchOffsetTool {
 	return &SketchOffsetTool{
-		pickCollector:   pickCollector{want: 1},
+		want:            1,
 		distance:        math.Scalar(distance),
 		loopSelect:      true,
 		constrainOffset: true,
@@ -336,7 +335,7 @@ func placementSignedOffset(outline []math.Point2, p math.Point2) float64 {
 // SIGN to make a positive offset distance shrink a loop whatever its traversal direction.
 func signedLoopArea(pts []math.Point2) float64 {
 	a := 0.0
-	for i := 0; i < len(pts); i++ {
+	for i := range pts {
 		p, q := pts[i], pts[(i+1)%len(pts)]
 		a += float64(p.X*q.Y - q.X*p.Y)
 	}
@@ -351,7 +350,7 @@ type SketchMirrorTool struct {
 
 // NewSketchMirrorTool makes a mirror tool (pick geometry, then the mirror line).
 func NewSketchMirrorTool() *SketchMirrorTool {
-	return &SketchMirrorTool{pickCollector: pickCollector{want: 2}}
+	return &SketchMirrorTool{want: 2}
 }
 
 func (t *SketchMirrorTool) Name() string                  { return "Mirror" }

@@ -68,7 +68,7 @@ func mixedCornerGeom(pivot cornerBand, pair []cornerBand) (mixedGeom, bool) {
 // projection is the same point on the old signature and the correct one on the new.)
 // ok=false when a band's wall is non-planar.
 func fillMixedTangents(g *mixedGeom, pair []cornerBand) bool {
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		g.spine[i] = footOnLine(g.center, pair[i].cyl.Origin, pair[i].cyl.AxisDir.AsVector())
 		wall := otherBandFace(pair[i], g.top)
 		nW, ok := planeNormal(wall)

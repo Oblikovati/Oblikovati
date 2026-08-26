@@ -87,7 +87,7 @@ func facePlane(m Mesh, f []int) geom.Surface {
 func newellNormal(m Mesh, f []int) math.Vector3 {
 	var nx, ny, nz float64
 	n := len(f)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		cur, nxt := m.Verts[f[i]], m.Verts[f[(i+1)%n]]
 		nx += (cur.Y - nxt.Y) * (cur.Z + nxt.Z)
 		ny += (cur.Z - nxt.Z) * (cur.X + nxt.X)

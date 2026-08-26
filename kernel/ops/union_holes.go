@@ -296,7 +296,7 @@ func pointInLoop2D(p math.Point2, loop []math.Point2) bool {
 // one lies strictly inside another (so their union is smaller than the sum of their areas). Only
 // then is the costlier arrangement-union tessellation needed.
 func holesOverlap(holes [][]math.Point2) bool {
-	for i := 0; i < len(holes); i++ {
+	for i := range holes {
 		for j := i + 1; j < len(holes); j++ {
 			if loopsOverlap(holes[i], holes[j]) {
 				return true

@@ -116,7 +116,7 @@ func squareWireBody(side float64) (*topo.Body, *topo.Wire) {
 		v[i] = bld.AddVertex(p[i], topo.NewLineage(topo.Tok("w", "vertex", i)))
 	}
 	uses := make([]topo.Use, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		j := (i + 1) % 4
 		e := bld.AddEdge(geom.NewLineSegment(p[i], p[j]), v[i], v[j], topo.NewLineage(topo.Tok("w", "edge", i)))
 		uses[i] = topo.Fwd(e)
@@ -156,7 +156,7 @@ func TestWireNonPlanarDetected(t *testing.T) {
 		v[i] = bld.AddVertex(p[i], topo.NewLineage(topo.Tok("w", "vertex", i)))
 	}
 	uses := make([]topo.Use, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		j := (i + 1) % 4
 		e := bld.AddEdge(geom.NewLineSegment(p[i], p[j]), v[i], v[j], topo.NewLineage(topo.Tok("w", "edge", i)))
 		uses[i] = topo.Fwd(e)

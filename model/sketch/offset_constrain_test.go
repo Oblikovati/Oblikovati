@@ -13,7 +13,7 @@ import (
 func squareChain(s *Sketch, side float64) (*Path, []*Line) {
 	c := []gmath.Point2{gmath.P2(0, 0), gmath.P2(side, 0), gmath.P2(side, side), gmath.P2(0, side)}
 	ls := make([]*Line, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		ls[i] = s.Lines().AddByTwoPoints(c[i], c[(i+1)%4])
 	}
 	path, _ := s.ConnectedChainFrom(ls[0])

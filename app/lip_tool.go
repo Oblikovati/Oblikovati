@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"slices"
 
 	"oblikovati.org/model/feature"
 )
@@ -46,12 +47,7 @@ func (t *LipTool) Pick(_ *Session, sel Selectable) {
 }
 
 func (t *LipTool) hasEdge(e EdgeHandle) bool {
-	for _, h := range t.edges {
-		if h == e {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(t.edges, e)
 }
 
 // The options the property window drives: width, height (database units) and groove (cut vs raise).

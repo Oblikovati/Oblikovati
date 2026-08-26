@@ -51,7 +51,7 @@ func TestTailLevelFilter(t *testing.T) {
 
 func TestRingDropsOldestAndCounts(t *testing.T) {
 	b := NewBuffer(3)
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		b.RecordOp("m", 0, true, "", "", "")
 	}
 	res := b.Tail(0, "", 0)

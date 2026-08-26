@@ -5,6 +5,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
@@ -54,9 +55,7 @@ func (m *AddInManager) UseBehaviorStore(store AddInBehaviorStore) error {
 	if err != nil {
 		return fmt.Errorf("app: load add-in behaviors: %w", err)
 	}
-	for id, b := range loaded {
-		m.behaviors[id] = b
-	}
+	maps.Copy(m.behaviors, loaded)
 	m.behaviorStore = store
 	return nil
 }

@@ -85,7 +85,7 @@ func loop2DArea(loop filletLoop, flat func(m.Point3) m.Point2) float64 {
 	pts := project2D(loop.pts, flat)
 	n := len(pts)
 	var sum2 float64
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b := pts[i], pts[(i+1)%n]
 		sum2 += a.X*b.Y - b.X*a.Y
 	}

@@ -52,7 +52,7 @@ func parseSectionMap(raw []byte) ([]sectionDescriptor, error) {
 	}
 	descs := make([]sectionDescriptor, 0, count)
 	off := sectionInfoHeaderLen
-	for i := 0; i < count; i++ {
+	for i := range count {
 		d, next, err := readDescriptor(raw, off)
 		if err != nil {
 			return nil, fmt.Errorf("dwg: section descriptor %d: %w", i, err)
@@ -85,7 +85,7 @@ func readDescriptor(raw []byte, off int) (sectionDescriptor, int, error) {
 		pages:      make([]sectionPageRef, pageCount),
 	}
 	p := off + descriptorFixedLen
-	for j := 0; j < pageCount; j++ {
+	for j := range pageCount {
 		base := p + j*16
 		d.pages[j] = sectionPageRef{
 			number:      int32(binary.LittleEndian.Uint32(raw[base:])),

@@ -31,7 +31,7 @@ func TestLightDistributionMatchesBruteForceRelativeContribution(t *testing.T) {
 	estimate := make([][3]float32, len(lights))
 	const n = 200_000
 	rng := rand.New(rand.NewSource(7))
-	for s := 0; s < n; s++ {
+	for range n {
 		i, light, pdf := dist.Sample(rng.Float64())
 		c := DirectContribution(light, normal, albedo)
 		estimate[i][0] += c[0] / float32(pdf)
@@ -39,7 +39,7 @@ func TestLightDistributionMatchesBruteForceRelativeContribution(t *testing.T) {
 		estimate[i][2] += c[2] / float32(pdf)
 	}
 	for i := range estimate {
-		for c := 0; c < 3; c++ {
+		for c := range 3 {
 			estimate[i][c] /= n
 		}
 	}
@@ -71,7 +71,7 @@ func TestLightDistributionSampleAlwaysReturnsAPositiveWeightLight(t *testing.T) 
 	}
 	dist := NewLightDistribution(lights)
 	rng := rand.New(rand.NewSource(3))
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		index, _, pdf := dist.Sample(rng.Float64())
 		if index != 1 {
 			t.Fatalf("Sample picked the zero-weight light (index %d) with pdf %v", index, pdf)

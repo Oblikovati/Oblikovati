@@ -3,6 +3,8 @@
 package compdef
 
 import (
+	"slices"
+
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -30,7 +32,7 @@ func (a *AssemblyComponentDefinition) AnalyzeInterference(subset []uint64) assem
 		boxes[o.ID()] = o.RangeBox()
 	}
 	var out assembly.InterferenceResults
-	for i := 0; i < len(occs); i++ {
+	for i := range occs {
 		for j := i + 1; j < len(occs); j++ {
 			oa, ob := occs[i], occs[j]
 			if !pairInSubset(subset, oa.ID(), ob.ID()) || !boxes[oa.ID()].Intersects(boxes[ob.ID()]) {
@@ -157,10 +159,5 @@ func pairInSubset(subset []uint64, a, b uint64) bool {
 }
 
 func idInSet(ids []uint64, v uint64) bool {
-	for _, id := range ids {
-		if id == v {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(ids, v)
 }

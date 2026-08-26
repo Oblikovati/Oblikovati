@@ -104,7 +104,7 @@ func transposeToSections(paths [][]math.Point3) [][]math.Point3 {
 	}
 	m := len(paths[0])
 	sections := make([][]math.Point3, m)
-	for s := 0; s < m; s++ {
+	for s := range m {
 		section := make([]math.Point3, len(paths))
 		for i := range paths {
 			section[i] = paths[i][s]

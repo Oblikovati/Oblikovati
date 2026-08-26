@@ -37,7 +37,7 @@ func ruledLoftVolume(twist, area, height float64) float64 {
 	c, s := stdmath.Cos(twist), stdmath.Sin(twist)
 	const steps = 20000
 	sum := 0.0
-	for k := 0; k < steps; k++ {
+	for k := range steps {
 		t := (float64(k) + 0.5) / steps
 		m00 := (1 - t) + t*c
 		sum += (m00*m00 + (t*s)*(t*s)) / steps

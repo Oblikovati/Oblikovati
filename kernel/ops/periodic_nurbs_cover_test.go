@@ -18,7 +18,7 @@ func closedBSplineCylinder(t *testing.T, radius, height float64) geom.BSplineSur
 	const cols = 9 // last column repeats the first to close the loop
 	ctrl := make([][]math.Point3, cols)
 	weights := make([][]float64, cols)
-	for c := 0; c < cols; c++ {
+	for c := range cols {
 		ang := 2 * stdmath.Pi * float64(c) / float64(cols-1)
 		x, y := radius*stdmath.Cos(ang), radius*stdmath.Sin(ang)
 		ctrl[c] = []math.Point3{math.P3(x, y, 0), math.P3(x, y, height)}
@@ -36,7 +36,7 @@ func clampedUniformKnots(count, deg int) []float64 {
 	n := count + deg + 1
 	interior := count - deg - 1
 	k := make([]float64, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		switch {
 		case i <= deg:
 			k[i] = 0
@@ -52,7 +52,7 @@ func clampedUniformKnots(count, deg int) []float64 {
 // sampleRim samples a constant-v circle on the surface as a rim cylLoop (u advances 0→~1, wrapping).
 func sampleRim(s geom.BSplineSurface, v float64, n int) cylLoop {
 	l := cylLoop{}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		u := float64(i) / float64(n)
 		l.p3 = append(l.p3, s.PointAt(u, v))
 		l.u = append(l.u, u)
@@ -64,7 +64,7 @@ func sampleRim(s geom.BSplineSurface, v float64, n int) cylLoop {
 // sampleMouth samples a small (u,v) circle on the surface as a mouth cylLoop.
 func sampleMouth(s geom.BSplineSurface, cu, cv, r float64, n int) cylLoop {
 	l := cylLoop{}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a := 2 * stdmath.Pi * float64(i) / float64(n)
 		u, v := cu+r*stdmath.Cos(a), cv+r*stdmath.Sin(a)
 		l.p3 = append(l.p3, s.PointAt(u, v))

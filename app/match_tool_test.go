@@ -20,10 +20,10 @@ func matchPatchBody(t *testing.T, xoff float64, z func(i, j int) float64) *topo.
 	const n = 5
 	ctrl := make([][]math.Point3, n)
 	w := make([][]float64, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		ctrl[i] = make([]math.Point3, n)
 		w[i] = make([]float64, n)
-		for j := 0; j < n; j++ {
+		for j := range n {
 			ctrl[i][j] = math.P3(math.Scalar(xoff+float64(i)*0.25), math.Scalar(float64(j)*0.25), math.Scalar(z(i, j)))
 			w[i][j] = 1
 		}
@@ -40,7 +40,7 @@ func matchPatchBody(t *testing.T, xoff float64, z func(i, j int) float64) *topo.
 		v[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok("m", "v", i)))
 	}
 	uses := make([]topo.Use, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		j := (i + 1) % 4
 		e := bld.AddEdge(geom.NewLineSegment(c[i], c[j]), v[i], v[j], topo.NewLineage(topo.Tok("m", "e", i)))
 		uses[i] = topo.Fwd(e)

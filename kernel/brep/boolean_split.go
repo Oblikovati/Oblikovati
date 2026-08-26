@@ -101,7 +101,7 @@ func faceBoundarySegments(f planarFace) [][2]math.Point2 {
 	var segs [][2]math.Point2
 	for _, ring := range f.loops {
 		n := len(ring)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			segs = append(segs, [2]math.Point2{to2D(f.plane, ring[i]), to2D(f.plane, ring[(i+1)%n])})
 		}
 	}
@@ -129,7 +129,7 @@ func interiorPoint2D(r Face2D) (math.Point2, bool) {
 	if n < 3 {
 		return math.Point2{}, false
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a, b := poly[i], poly[(i+1)%n]
 		e := a.VectorTo(b)
 		mid := math.P2((a.X+b.X)/2, (a.Y+b.Y)/2)
@@ -141,7 +141,7 @@ func interiorPoint2D(r Face2D) (math.Point2, bool) {
 			}
 		}
 	}
-	for i := 0; i < n; i++ { // fallback: ear centroids
+	for i := range n { // fallback: ear centroids
 		prev, cur, next := poly[(i-1+n)%n], poly[i], poly[(i+1)%n]
 		if turn2D(prev, cur, next) <= arrTol || !earEmpty(poly, i) {
 			continue
@@ -163,7 +163,7 @@ func turn2D(a, b, c math.Point2) float64 {
 func earEmpty(poly []math.Point2, i int) bool {
 	n := len(poly)
 	a, b, c := poly[(i-1+n)%n], poly[i], poly[(i+1)%n]
-	for j := 0; j < n; j++ {
+	for j := range n {
 		if j == i || j == (i-1+n)%n || j == (i+1)%n {
 			continue
 		}

@@ -98,7 +98,7 @@ func assertMeshArea(t *testing.T, name string, tris [][3]Point, axis int, want *
 func assertNoEdgeCrosses(t *testing.T, name string, tris [][3]Point, seg [2]Point, axis int) {
 	t.Helper()
 	for _, tt := range tris {
-		for e := 0; e < 3; e++ {
+		for e := range 3 {
 			p, q := tt[e], tt[(e+1)%3]
 			if segmentsProperlyCross(p, q, seg[0], seg[1], axis) {
 				t.Fatalf("mesh %s: triangle edge (%v,%v) crosses the intersection", name, p.Round(), q.Round())

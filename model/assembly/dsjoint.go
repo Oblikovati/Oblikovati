@@ -81,10 +81,10 @@ func (d dsJointDefinition) DSJointType() types.DSJointType { return d.kind }
 func dsJointDOFs(kind types.DSJointType) []*dsDOF {
 	trans, rot := dsJointFreedoms(kind)
 	dofs := make([]*dsDOF, 0, trans+rot)
-	for i := 0; i < trans; i++ {
+	for range trans {
 		dofs = append(dofs, &dsDOF{rotational: false, imposed: types.DSDOFFree})
 	}
-	for i := 0; i < rot; i++ {
+	for range rot {
 		dofs = append(dofs, &dsDOF{rotational: true, imposed: types.DSDOFFree})
 	}
 	return dofs

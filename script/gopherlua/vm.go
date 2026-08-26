@@ -69,7 +69,7 @@ func (e *Engine) runGuarded(ctx context.Context, source string, g script.Globals
 // recoveredPanic turns a recovered value into a logged, descriptive error so a genuine
 // host bug stays visible in observability (slog + stack) yet is never fatal to the app
 // (ADR-0028 §2, risk "two layers of recover masking real bugs").
-func recoveredPanic(rec interface{}) error {
+func recoveredPanic(rec any) error {
 	stack := string(debug.Stack())
 	slog.Error("script: recovered panic in Lua VM", "value", rec, "stack", stack)
 	return fmt.Errorf("script: recovered panic: %v", rec)

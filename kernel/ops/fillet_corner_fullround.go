@@ -184,8 +184,8 @@ func commonTangentSphereCentre(faces []*topo.Face, r float64) (math.Point3, floa
 		n := outwardPlaneNormal(f, pl)
 		d := n.Dot(pl.Origin.AsVector()) - r
 		row := [3]float64{n.X, n.Y, n.Z}
-		for i := 0; i < 3; i++ {
-			for j := 0; j < 3; j++ {
+		for i := range 3 {
+			for j := range 3 {
 				ata[i][j] += row[i] * row[j]
 			}
 			atb[i] += row[i] * d

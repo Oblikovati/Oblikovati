@@ -571,7 +571,7 @@ func loopUseStarts(l *topo.Loop) []math.Point3 {
 		c := u.Edge().Geometry()
 		lo, hi := c.Domain()
 		n := edgeRingSamples(c)
-		for i := 0; i < n; i++ { // [0,n): exclude the endpoint shared with the next edge's start
+		for i := range n { // [0,n): exclude the endpoint shared with the next edge's start
 			f := float64(i) / float64(n)
 			t := lo + (hi-lo)*f
 			if u.Reversed() {
@@ -809,7 +809,7 @@ func resampleLoop(poly []math.Point3, n int) []math.Point3 {
 	}
 	interior := edgeInteriorCounts(segLen, total, n-m)
 	out := make([]math.Point3, 0, n)
-	for i := 0; i < m; i++ {
+	for i := range m {
 		a, b := poly[i], poly[(i+1)%m]
 		out = append(out, a) // the corner — always preserved
 		for t := 1; t <= interior[i]; t++ {
@@ -855,7 +855,7 @@ func loopSegmentLengths(poly []math.Point3) ([]float64, float64) {
 	m := len(poly)
 	segLen := make([]float64, m)
 	total := 0.0
-	for i := 0; i < m; i++ {
+	for i := range m {
 		segLen[i] = poly[i].DistanceTo(poly[(i+1)%m])
 		total += segLen[i]
 	}

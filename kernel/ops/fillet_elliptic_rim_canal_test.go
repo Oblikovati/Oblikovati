@@ -66,7 +66,7 @@ func rimCentroid(e *topo.Edge) math.Point3 {
 	lo, hi := c.Domain()
 	var acc math.Vector3
 	const n = 64
-	for i := 0; i < n; i++ {
+	for i := range n {
 		acc = acc.Add(math.P3(0, 0, 0).VectorTo(c.PointAt(lo + (hi-lo)*float64(i)/float64(n))))
 	}
 	return math.P3(0, 0, 0).TranslateBy(acc.Scale(1.0 / n))
@@ -98,7 +98,7 @@ func TestEllipticRimSpineStationsAreExactlyTangent(t *testing.T) {
 		t.Fatal("newEllipticRimSpine declined J6's top rim")
 	}
 	tol := 1e-9 * r
-	for k := 0; k < 64; k++ {
+	for k := range 64 {
 		u := 2 * stdmath.Pi * float64(k) / 64
 		c, wf, pf, ok := spine.station(u)
 		if !ok {
@@ -339,8 +339,8 @@ func parametricSurfaceArea(s geom.BSplineSurface) float64 {
 	vLo, vHi := s.VDomain()
 	du, dv := (uHi-uLo)/n, (vHi-vLo)/n
 	total := 0.0
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			pu, pv := s.DerivativesAt(uLo+(float64(i)+0.5)*du, vLo+(float64(j)+0.5)*dv)
 			total += float64(pu.Cross(pv).Length()) * du * dv
 		}

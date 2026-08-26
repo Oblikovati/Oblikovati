@@ -103,7 +103,7 @@ func complexQuadraticRoots(a, b, c complex128) (complex128, complex128) {
 // quartic — Ferrari's closed form is accurate to ~1e-9 relative; two Newton steps against F and
 // F' remove the accumulated depression/factoring error.
 func quarticNewtonPolish(t, c0, c1, c2, c3, c4 float64) float64 {
-	for i := 0; i < quarticNewtonPolishSteps; i++ {
+	for range quarticNewtonPolishSteps {
 		f := (((c4*t+c3)*t+c2)*t+c1)*t + c0
 		fp := ((4*c4*t+3*c3)*t+2*c2)*t + c1
 		if fp == 0 {

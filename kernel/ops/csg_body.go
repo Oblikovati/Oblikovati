@@ -219,7 +219,7 @@ func removeTJunctions(verts []math.Point3, faces [][3]int, lineTol float64) ([]m
 // the three corners unchanged.
 func edgeSubdividedBoundary(verts []math.Point3, f [3]int, idx *axisIndex, lineTol float64) []int {
 	poly := make([]int, 0, 3)
-	for e := 0; e < 3; e++ {
+	for e := range 3 {
 		p, q := f[e], f[(e+1)%3]
 		poly = append(poly, p)
 		poly = append(poly, edgeInteriorPoints(verts, p, q, idx, lineTol)...)
@@ -413,7 +413,7 @@ func edgeKeyOf(a, b int) [2]int {
 func edgeUseCounts(faces [][3]int) map[[2]int]int {
 	uses := map[[2]int]int{}
 	for _, f := range faces {
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			uses[edgeKeyOf(f[i], f[(i+1)%3])]++
 		}
 	}
@@ -454,7 +454,7 @@ func buildCageEdges(bld *topo.Builder, verts []math.Point3, tv []*topo.Vertex, u
 // edge runs against the canonical (min,max) stored edge.
 func triangleLoop(f [3]int, edges map[[2]int]*topo.Edge) topo.LoopSpec {
 	uses := make([]topo.Use, 3)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		a, b := f[i], f[(i+1)%3]
 		uses[i] = topo.Use{Edge: edges[edgeKeyOf(a, b)], Reversed: a > b}
 	}

@@ -31,7 +31,7 @@ func tableToJSON(v lua.LValue) ([]byte, error) {
 // luaToGo converts one Lua value to a JSON-marshalable Go value, recursing into tables.
 // It rejects nesting past maxConvertDepth (the cyclic/too-deep guard) and unsupported
 // types (functions, userdata, threads) with a message naming the offending Lua type.
-func luaToGo(v lua.LValue, depth int) (interface{}, error) {
+func luaToGo(v lua.LValue, depth int) (any, error) {
 	if depth > maxConvertDepth {
 		return nil, fmt.Errorf("script: table nesting exceeds %d (cyclic or too deep)", maxConvertDepth)
 	}
@@ -53,7 +53,7 @@ func luaToGo(v lua.LValue, depth int) (interface{}, error) {
 
 // tableToGo converts a Lua table to either a []interface{} (when it is a dense
 // 1..n array) or a map[string]interface{} (otherwise), recursing through luaToGo.
-func tableToGo(tb *lua.LTable, depth int) (interface{}, error) {
+func tableToGo(tb *lua.LTable, depth int) (any, error) {
 	if n := tb.Len(); n > 0 && isSequence(tb, n) {
 		return sequenceToGo(tb, n, depth)
 	}
@@ -73,8 +73,8 @@ func isSequence(tb *lua.LTable, n int) bool {
 }
 
 // sequenceToGo converts a 1..n Lua array to a Go slice.
-func sequenceToGo(tb *lua.LTable, n, depth int) ([]interface{}, error) {
-	out := make([]interface{}, 0, n)
+func sequenceToGo(tb *lua.LTable, n, depth int) ([]any, error) {
+	out := make([]any, 0, n)
 	for i := 1; i <= n; i++ {
 		g, err := luaToGo(tb.RawGetInt(i), depth+1)
 		if err != nil {
@@ -87,8 +87,8 @@ func sequenceToGo(tb *lua.LTable, n, depth int) ([]interface{}, error) {
 
 // mapToGo converts a Lua table to a Go map keyed by the string form of each key, so
 // the result marshals to a JSON object. Non-string keys are stringified.
-func mapToGo(tb *lua.LTable, depth int) (map[string]interface{}, error) {
-	out := map[string]interface{}{}
+func mapToGo(tb *lua.LTable, depth int) (map[string]any, error) {
+	out := map[string]any{}
 	var convErr error
 	tb.ForEach(func(k, val lua.LValue) {
 		if convErr != nil {
@@ -112,7 +112,7 @@ func jsonToTable(l *lua.LState, data []byte) (lua.LValue, error) {
 	if len(data) == 0 {
 		return l.NewTable(), nil
 	}
-	var g interface{}
+	var g any
 	if err := json.Unmarshal(data, &g); err != nil {
 		return nil, fmt.Errorf("script: decode result JSON: %w", err)
 	}
@@ -120,7 +120,7 @@ func jsonToTable(l *lua.LState, data []byte) (lua.LValue, error) {
 }
 
 // goToLua converts a decoded JSON value (from encoding/json) into a Lua value on l.
-func goToLua(l *lua.LState, g interface{}) lua.LValue {
+func goToLua(l *lua.LState, g any) lua.LValue {
 	switch t := g.(type) {
 	case nil:
 		return lua.LNil
@@ -130,9 +130,9 @@ func goToLua(l *lua.LState, g interface{}) lua.LValue {
 		return lua.LNumber(t)
 	case string:
 		return lua.LString(t)
-	case []interface{}:
+	case []any:
 		return sliceToTable(l, t)
-	case map[string]interface{}:
+	case map[string]any:
 		return objectToTable(l, t)
 	default:
 		return lua.LString(fmt.Sprintf("%v", t))
@@ -140,7 +140,7 @@ func goToLua(l *lua.LState, g interface{}) lua.LValue {
 }
 
 // sliceToTable builds a 1..n Lua array table from a Go slice.
-func sliceToTable(l *lua.LState, s []interface{}) *lua.LTable {
+func sliceToTable(l *lua.LState, s []any) *lua.LTable {
 	tb := l.NewTable()
 	for _, e := range s {
 		tb.Append(goToLua(l, e))
@@ -150,7 +150,7 @@ func sliceToTable(l *lua.LState, s []interface{}) *lua.LTable {
 
 // objectToTable builds a Lua table from a Go map, inserting keys in sorted order so
 // the conversion is deterministic (repeatable tests, stable iteration).
-func objectToTable(l *lua.LState, m map[string]interface{}) *lua.LTable {
+func objectToTable(l *lua.LState, m map[string]any) *lua.LTable {
 	tb := l.NewTable()
 	keys := make([]string, 0, len(m))
 	for k := range m {

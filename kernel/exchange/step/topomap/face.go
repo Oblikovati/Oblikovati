@@ -149,8 +149,7 @@ func (a *assembler) faceSurface(ent *part21.RawEntity) (geom.Surface, bool, erro
 	}
 	surf, err := geommap.Surface(a.g, surfID, a.scale)
 	if err != nil {
-		var unsup geommap.ErrUnsupportedSurface
-		if errors.As(err, &unsup) {
+		if _, ok := errors.AsType[geommap.ErrUnsupportedSurface](err); ok {
 			a.warn("skipped face #%d: %v", ent.ID, err)
 			return nil, true, nil
 		}

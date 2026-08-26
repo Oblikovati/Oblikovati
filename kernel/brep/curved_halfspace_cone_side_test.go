@@ -3,6 +3,7 @@
 package brep
 
 import (
+	"slices"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -29,10 +30,8 @@ func TestConeSideHalfSpaceArcBand(t *testing.T) {
 	if cones != 1 {
 		t.Errorf("result has %d cone faces, want exactly 1 (the arc-band side stays analytic)", cones)
 	}
-	for _, f := range res.Faces() {
-		if hasHyperbolaEdge(f) {
-			return
-		}
+	if slices.ContainsFunc(res.Faces(), hasHyperbolaEdge) {
+		return
 	}
 	t.Error("no face carries a hyperbolic edge — the cut was not imprinted as a hyperbola")
 }
@@ -103,12 +102,7 @@ func TestConeSideHalfSpaceVertexInsideTongue(t *testing.T) {
 
 // anyFaceHasHyperbola reports whether any face of the body carries a hyperbolic edge.
 func anyFaceHasHyperbola(b *topo.Body) bool {
-	for _, f := range b.Faces() {
-		if hasHyperbolaEdge(f) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(b.Faces(), hasHyperbolaEdge)
 }
 
 // mustFrustum builds a frustum solid (bottom radius < top radius) or fails the test.

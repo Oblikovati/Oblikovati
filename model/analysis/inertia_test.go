@@ -16,7 +16,7 @@ import (
 func TestJacobiEigenSym3(t *testing.T) {
 	vals, vecs := jacobiEigenSym3(sym3{xx: 2, yy: 2, zz: 5, xy: 1, yz: 0, zx: 0})
 	want := [3]float64{1, 3, 5} // ascending
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if math.Abs(vals[i]-want[i]) > 1e-9 {
 			t.Fatalf("eigenvalue[%d] = %g, want %g (all: %v)", i, vals[i], want[i], vals)
 		}

@@ -79,7 +79,7 @@ func pointCount(data []byte) uint64 {
 // readVec3 reads three consecutive little-endian float64 starting at off.
 func readVec3(data []byte, off int) [3]float64 {
 	var v [3]float64
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		v[i] = math.Float64frombits(binary.LittleEndian.Uint64(data[off+i*8:]))
 	}
 	return v

@@ -62,7 +62,7 @@ func (s BSplineSurface) ReduceDegreeU(tol float64) (BSplineSurface, bool, error)
 	vCount := len(s.Ctrl[0])
 	cols := make([][]hpoint4, vCount)
 	var newU []float64
-	for j := 0; j < vCount; j++ {
+	for j := range vCount {
 		var ok bool
 		newU, cols[j], ok = degreeReduceHomog(s.UDegree, s.UKnots, columnToHomog(s, j), tol)
 		if !ok {
@@ -86,7 +86,7 @@ func (s BSplineSurface) ReduceDegreeV(tol float64) (BSplineSurface, bool, error)
 	ctrl := make([][]math.Point3, uCount)
 	weights := make([][]float64, uCount)
 	var newV []float64
-	for i := 0; i < uCount; i++ {
+	for i := range uCount {
 		var rowPw []hpoint4
 		var ok bool
 		newV, rowPw, ok = degreeReduceHomog(s.VDegree, s.VKnots, rowToHomog(s, i), tol)

@@ -116,9 +116,9 @@ func protoFields(xs []xmlField) ([]protoField, error) {
 // protoFieldFrom maps one xmlField to a protoField, defaulting scale to 1 and offset to 0 (the
 // E57 defaults when the attributes are absent) and recognising the three storable node types.
 func protoFieldFrom(x xmlField) (protoField, error) {
-	f := protoField{name: x.XMLName.Local, min: atoiDefault(x.Minimum, 0), max: atoiDefault(x.Maximum, 0)}
-	f.scale = atofDefault(x.Scale, 1)
-	f.offset = atofDefault(x.Offset, 0)
+	f := protoField{name: x.XMLName.Local, min: atoiDefault(x.Minimum, 0), max: atoiDefault(x.Maximum, 0),
+		scale:  atofDefault(x.Scale, 1),
+		offset: atofDefault(x.Offset, 0)}
 	switch x.Type {
 	case "ScaledInteger":
 		f.kind = kindScaledInteger

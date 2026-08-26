@@ -166,7 +166,7 @@ func scanLinearUnitKeys(dir []byte) (unit, sizeIndex int, hasSize, ok bool) {
 	}
 	u16 := func(i int) uint16 { return binary.LittleEndian.Uint16(dir[i*2:]) }
 	numKeys := int(u16(3))
-	for k := 0; k < numKeys; k++ {
+	for k := range numKeys {
 		base := 4 + k*4
 		if (base+4)*2 > len(dir) {
 			break

@@ -12,7 +12,7 @@ import (
 // sufficient because add-in versions are plain numeric semver (the API pins that upstream).
 func compareSemver(a, b string) int {
 	ai, bi := numericParts(a), numericParts(b)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if ai[i] != bi[i] {
 			if ai[i] < bi[i] {
 				return -1

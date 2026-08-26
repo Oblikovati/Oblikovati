@@ -49,7 +49,7 @@ func TestTubeBandCircleAndRail(t *testing.T) {
 	tor := weTestTorus(t, 200, 50)
 	iso := make([]math.Point3, 0, 64)
 	wander := make([]math.Point3, 0, 64)
-	for k := 0; k < 64; k++ {
+	for k := range 64 {
 		v := 2 * stdmath.Pi * float64(k) / 64
 		iso = append(iso, tor.PointAt(1.0, v))
 		wander = append(wander, tor.PointAt(2.0+0.05*stdmath.Sin(v), v))

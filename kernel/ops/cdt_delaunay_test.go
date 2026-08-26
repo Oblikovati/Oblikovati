@@ -24,7 +24,7 @@ func cdtNonDelaunayEdges(m *cdt) [][2]int {
 		if m.dead[t] || m.hasSuper(t) {
 			continue
 		}
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			u, w := m.tris[t].v[(i+1)%3], m.tris[t].v[(i+2)%3]
 			k := conKey(u, w)
 			if seen[k] || m.con[k] > 0 {
@@ -97,11 +97,11 @@ func TestCDTInsertionIntoRecoveredCorridor(t *testing.T) {
 		pts = append(pts, [2]float64{float64(i), y})
 	}
 	nStrip := len(pts)
-	for i := 0; i < 6; i++ { // probes straddling the recovered chord, mid-corridor
+	for i := range 6 { // probes straddling the recovered chord, mid-corridor
 		pts = append(pts, [2]float64{3.3 + 3*float64(i), 0.4 + 0.2*float64(i%2)})
 	}
 	m := newCDT(pts)
-	for ip := 0; ip < nStrip; ip++ {
+	for ip := range nStrip {
 		m.insert(ip)
 	}
 	m.buildIncident()
@@ -218,7 +218,7 @@ func TestCDTPinchedHoleWallParity(t *testing.T) {
 func TestCDTSteinerInsertionAfterConstraintsWalks(t *testing.T) {
 	pts, loop, nFrontier := combFixture()
 	m := newCDT(pts)
-	for i := 0; i < nFrontier; i++ {
+	for i := range nFrontier {
 		m.insert(i)
 	}
 	m.constrain([][]int{loop})

@@ -74,7 +74,7 @@ func checkBlindFits(slab *topo.Body, entry planarFace, bottom math.Point3, radiu
 	}
 	u, v := entry.plane.UAxis.AsVector(), entry.plane.VAxis.AsVector()
 	const samples = 8
-	for i := 0; i < samples; i++ {
+	for i := range samples {
 		a := 2 * stdmath.Pi * float64(i) / samples
 		rim := bottom.TranslateBy(u.Scale(math.Scalar(radius * stdmath.Cos(a)))).TranslateBy(v.Scale(math.Scalar(radius * stdmath.Sin(a))))
 		if !insideSolid(slab, rim) {

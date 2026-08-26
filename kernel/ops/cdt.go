@@ -141,7 +141,7 @@ func newCDT(pts [][2]float64) *cdt {
 // (unordered), or -1 if t has no such edge.
 func (m *cdt) localEdge(t, a, b int) int {
 	tri := m.tris[t]
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		u, w := tri.v[(i+1)%3], tri.v[(i+2)%3]
 		if (u == a && w == b) || (u == b && w == a) {
 			return i

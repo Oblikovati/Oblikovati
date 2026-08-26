@@ -70,7 +70,7 @@ func addAnalyticCaps(bld *topo.Builder, bottom, top []*topo.Vertex, be, te []*to
 	topPlane, _ := geom.NewPlane(top[0].Point(), normal)
 	bottomLoop := make([]topo.Use, n)
 	topLoop := make([]topo.Use, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		bottomLoop[i] = topo.Rev(be[n-1-i])
 		topLoop[i] = topo.Fwd(te[i])
 	}
