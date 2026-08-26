@@ -16,7 +16,7 @@ func main() {
 	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	log.Info("oblikovati starting", "version", build.Version, "commit", build.Commit)
 
-	if err := build.NotYetImplemented("PBI-001: runtime/window bootstrap"); err != nil {
+	if err := build.NotYetImplemented("PBI-001: runtime/window bootstrap"); err != nil { //nolint:staticcheck // NotYetImplemented always errors by design (build/nyi.go)
 		log.Warn("startup incomplete", "reason", err)
 	}
 }

@@ -85,9 +85,11 @@ linters:
       # go/parser.ParseDir is deprecated since Go 1.25 because it ignores build tags, but these
       # test-only architecture walkers parse untagged .go files under a single directory, where
       # that limitation does not apply. Surfaced when the linter moved to a Go 1.26 build.
+      # The staticcheck bundled with golangci-lint v2.13.1 (needed for go1.27 compat) qualifies
+      # the symbol as "go/parser.ParseDir" instead of "parser.ParseDir" — match both.
       - linters:
           - staticcheck
-        text: "SA1019: parser.ParseDir"
+        text: "SA1019: (go/)?parser\\.ParseDir"
         path: _test\.go
     paths:
       - third_party$

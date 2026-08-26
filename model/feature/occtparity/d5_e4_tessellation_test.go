@@ -68,7 +68,7 @@ func TestD5E4TessellationFoldGate(t *testing.T) {
 				meshTotal += area
 				assertFaceFinitePositive(t, name, f, area)
 				if ops.FoldEdgeCount(m) > 0 {
-					foldingFaces++
+					foldingFaces++ //nolint:staticcheck // SA4006 false positive: read below via assertFoldingFaceBudget(t, name, foldingFaces)
 					assertNoFold(t, name, f, m, area)
 				}
 				assertFaceFoldFreeAtEveryQuality(t, name, f, m)

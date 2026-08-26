@@ -126,7 +126,7 @@ func gapFaceKeys(body *topo.Body, faceKeysA, faceKeysB [][]byte) [][]byte {
 	nsA, nsB := planeNormals(body, faceKeysA), planeNormals(body, faceKeysB)
 	var out [][]byte
 	for _, f := range body.Faces() {
-		k := string(f.ReferenceKey())
+		k := string(f.ReferenceKey()) //nolint:staticcheck // SA6001: ReferenceKey() allocates a fresh []byte each call, so inlining into both lookups below would allocate twice instead of once
 		if inA[k] || inB[k] {
 			continue
 		}
@@ -241,7 +241,7 @@ func sharedEdgeKeys(body *topo.Body, faceKeysA, faceKeysB [][]byte) [][]byte {
 		if len(fs) != 2 {
 			continue
 		}
-		ka, kb := string(fs[0].ReferenceKey()), string(fs[1].ReferenceKey())
+		ka, kb := string(fs[0].ReferenceKey()), string(fs[1].ReferenceKey()) //nolint:staticcheck // SA6001: ReferenceKey() allocates a fresh []byte each call, so inlining into each lookup below would allocate twice instead of once
 		if (inA[ka] && inB[kb]) || (inA[kb] && inB[ka]) {
 			out = append(out, e.ReferenceKey())
 		}
