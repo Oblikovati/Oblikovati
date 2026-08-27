@@ -70,7 +70,7 @@ func Export(part *compdef.PartComponentDefinition, path string, format types.Exc
 	// drift (#1631, audit I8).
 	route, ok := formatRoutes.byFormat[format]
 	if !ok || route.exportBodies == nil {
-		return ExportResult{}, fmt.Errorf("export: unsupported format %q (want stl|obj|3mf|step)", format)
+		return ExportResult{}, fmt.Errorf("export: unsupported format %q (want stl|obj|3mf|gltf|step)", format)
 	}
 	data, tris, warns, err := route.exportBodies(bodies, res, exportOptions(part, path))
 	if err != nil {

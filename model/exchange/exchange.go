@@ -28,11 +28,16 @@ var _ contract.MeshTranslator = MeshExchange{}
 
 // Formats lists the mesh formats this translator handles (import and export).
 func (MeshExchange) Formats() []types.ExchangeFormat {
-	return []types.ExchangeFormat{types.FormatSTL, types.FormatOBJ, types.Format3MF}
+	return []types.ExchangeFormat{types.FormatSTL, types.FormatOBJ, types.Format3MF, types.FormatGLTF}
 }
 
-// CanImport reports whether the format is a supported mesh format.
-func (MeshExchange) CanImport(f types.ExchangeFormat) bool { return f.IsMesh() }
+// CanImport reports whether the format is a supported mesh format. glTF is
+// deliberately EXCLUDED in v1: the exporter is export-only (R1-2), no decoder
+// ships, and the capability query must not over-promise — a .glb import fails
+// with a typed unsupported-format error at the kernel switch.
+func (MeshExchange) CanImport(f types.ExchangeFormat) bool {
+	return f.IsMesh() && f != types.FormatGLTF
+}
 
 // CanExport reports whether the format is a supported mesh format.
 func (MeshExchange) CanExport(f types.ExchangeFormat) bool { return f.IsMesh() }

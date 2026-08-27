@@ -52,6 +52,27 @@ func writeCubeSTL(t *testing.T, dir string, s float64) string {
 	return path
 }
 
+// TestMeshExchangeGLTFCapability: Formats includes glTF; CanImport excludes it
+// (export-only honesty, R1-2); CanExport includes it.
+func TestMeshExchangeGLTFCapability(t *testing.T) {
+	me := MeshExchange{}
+	found := false
+	for _, f := range me.Formats() {
+		if f == types.FormatGLTF {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("Formats() does not include FormatGLTF")
+	}
+	if me.CanImport(types.FormatGLTF) {
+		t.Error("CanImport(gltf) = true; v1 is export-only and must not over-promise")
+	}
+	if !me.CanExport(types.FormatGLTF) {
+		t.Error("CanExport(gltf) = false; the exporter ships in v1")
+	}
+}
+
 func TestImportIntoMakesAWatertightMeshASolid(t *testing.T) {
 	dir := t.TempDir()
 	path := writeCubeSTL(t, dir, 4)

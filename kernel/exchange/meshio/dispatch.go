@@ -95,7 +95,7 @@ func ExportBody(format types.ExchangeFormat, body *topo.Body, res types.MeshReso
 		data, err := Encode3MF(body, q)
 		return data, triangleCount(body, q), err
 	default:
-		return nil, 0, fmt.Errorf("meshio: unsupported export format %q (want stl|obj|3mf)", format)
+		return nil, 0, fmt.Errorf("meshio: unsupported export format %q (want stl|obj|3mf|gltf)", format)
 	}
 }
 
@@ -114,16 +114,23 @@ func triangleCount(body *topo.Body, q ops.Quality) int {
 //
 //	data, tris, err := meshio.ExportBodies(types.FormatSTL, part.SurfaceBodies().All(), types.ResolutionMedium)
 func ExportBodies(format types.ExchangeFormat, bodies []*topo.Body, res types.MeshResolution, opts exchange.TranslationOptions) ([]byte, int, error) {
-	// STL and OBJ carry no unit, so they always use the millimetre convention (the
-	// universal mesh interchange unit) regardless of the document unit; only 3MF
-	// records — and thus honors — the document's unit.
+	// glTF is a per-body format (one mesh per body, one primitive per mesh) and
+	// has its own entry point — the merged path below would destroy the per-body
+	// identity glTF's node design needs (R4-1).
+	if format == types.FormatGLTF {
+		return nil, 0, fmt.Errorf("meshio: gltf export requires the per-body path (ExportBodiesGLTF)")
+	}
+	// The file unit is forced per format on a LOCAL copy so the caller's options
+	// are never mutated (R3-3): STL/OBJ are unitless — millimetre convention;
+	// only 3MF records — and thus honors — the document's unit.
+	local := opts
 	if format != types.Format3MF {
-		opts.FileUnit = "mm"
+		local.FileUnit = "mm"
 	}
 	q := QualityFor(res)
 	merged := mergeTessellations(bodies, q)
-	scaleMesh(merged, opts.ExportScale()) // database centimetres → the file unit
-	return encodeMesh(format, merged, opts.FileUnit)
+	scaleMesh(merged, local.ExportScale()) // database centimetres → the file unit
+	return encodeMesh(format, merged, local.FileUnit)
 }
 
 // encodeMesh encodes an already-tessellated mesh in the given format, returning the bytes
@@ -138,16 +145,45 @@ func encodeMesh(format types.ExchangeFormat, mesh *ops.Mesh, fileUnit string) ([
 		data, err := encode3MFMesh(mesh, threeMFUnitName(fileUnit))
 		return data, mesh.TriangleCount(), err
 	default:
-		return nil, 0, fmt.Errorf("meshio: unsupported export format %q (want stl|obj|3mf)", format)
+		return nil, 0, fmt.Errorf("meshio: unsupported export format %q (want stl|obj|3mf|gltf)", format)
 	}
 }
 
-// mergeTessellations tessellates each body at q and concatenates the meshes (offsetting
-// indices) so they export as one combined mesh.
-func mergeTessellations(bodies []*topo.Body, q ops.Quality) *ops.Mesh {
-	merged := &ops.Mesh{}
+// BodyMesh is one body's tessellation record: the stable body identifier, the
+// display name, and the tessellated mesh. It is the per-body unit the glTF
+// exporter consumes (R2-7/R4-1).
+type BodyMesh struct {
+	ID   string
+	Name string
+	Mesh *ops.Mesh
+}
+
+// TessellateBodies tessellates each body at q, in input slice order (kernel
+// B-rep order, stable — R2-10). It is the SINGLE ownership point of
+// tessellation: the glTF branch consumes its records directly and never
+// merges; mergeTessellations is a pure merger over the same records, so every
+// mesh format tessellates exactly once (R4-1).
+//
+// Example:
+//
+//	meshes := meshio.TessellateBodies(bodies, meshio.QualityFor(types.ResolutionHigh))
+func TessellateBodies(bodies []*topo.Body, q ops.Quality) []BodyMesh {
+	out := make([]BodyMesh, 0, len(bodies))
 	for _, b := range bodies {
 		mesh, _ := ops.TessellateBody(b, q)
+		out = append(out, BodyMesh{ID: fmt.Sprintf("%d", b.ID()), Name: fmt.Sprintf("Body%d", b.ID()), Mesh: mesh})
+	}
+	return out
+}
+
+// mergeTessellations is a PURE merger: it tessellates the bodies once via
+// [TessellateBodies] and concatenates the meshes (offsetting indices) so they
+// export as one combined mesh — the legacy STL/OBJ/3MF shape, byte-for-byte
+// unchanged (R4-1).
+func mergeTessellations(bodies []*topo.Body, q ops.Quality) *ops.Mesh {
+	merged := &ops.Mesh{}
+	for _, bm := range TessellateBodies(bodies, q) {
+		mesh := bm.Mesh
 		base := len(merged.Positions)
 		merged.Positions = append(merged.Positions, mesh.Positions...)
 		merged.Normals = append(merged.Normals, mesh.Normals...)
