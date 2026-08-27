@@ -38,13 +38,9 @@ func sheetMetalHemDescriptor() *OperationDescriptor {
 }
 
 func applySheetMetalHem(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := activeSheetMetalPart(s, "sheetMetalHem")
+	part, in, err := decodeSheetMetalArgs[featureargs.SheetMetalHem](s, raw, "sheetMetalHem")
 	if err != nil {
 		return nil, err
-	}
-	var in featureargs.SheetMetalHem
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, fmt.Errorf("sheetMetalHem: invalid args: %w", err)
 	}
 	if in.Edge == "" {
 		return nil, fmt.Errorf("sheetMetalHem: edge is required")

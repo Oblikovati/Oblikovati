@@ -4,6 +4,7 @@ package opregistry
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/app"
@@ -22,6 +23,22 @@ func decodeFeatureArgs[T any](s *app.Session, raw json.RawMessage) (*compdef.Par
 	}
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, in, err
+	}
+	return part, in, nil
+}
+
+// decodeSheetMetalArgs is decodeFeatureArgs's sheet-metal twin: it resolves the active part
+// through activeSheetMetalPart (erroring, named by op, when it is absent or not in the
+// sheet-metal environment) instead of modelaccess.ActivePart, and wraps an unmarshal failure
+// with op so every sheetMetal* handler reports the same "op: invalid args: …" shape.
+func decodeSheetMetalArgs[T any](s *app.Session, raw json.RawMessage, op string) (*compdef.PartComponentDefinition, T, error) {
+	var in T
+	part, err := activeSheetMetalPart(s, op)
+	if err != nil {
+		return nil, in, err
+	}
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return nil, in, fmt.Errorf("%s: invalid args: %w", op, err)
 	}
 	return part, in, nil
 }

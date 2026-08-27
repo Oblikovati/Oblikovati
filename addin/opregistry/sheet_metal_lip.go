@@ -40,13 +40,9 @@ func sheetMetalLipDescriptor() *OperationDescriptor {
 const defaultLipReturn = "3 mm"
 
 func applySheetMetalLip(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := activeSheetMetalPart(s, "sheetMetalLip")
+	part, in, err := decodeSheetMetalArgs[featureargs.SheetMetalLip](s, raw, "sheetMetalLip")
 	if err != nil {
 		return nil, err
-	}
-	var in featureargs.SheetMetalLip
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, fmt.Errorf("sheetMetalLip: invalid args: %w", err)
 	}
 	def, err := lipDef(part, in)
 	if err != nil {

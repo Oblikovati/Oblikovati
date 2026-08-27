@@ -41,13 +41,9 @@ func sheetMetalRipDescriptor() *OperationDescriptor {
 const defaultRipGap = "0.1 mm"
 
 func applySheetMetalRip(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := activeSheetMetalPart(s, "sheetMetalRip")
+	part, in, err := decodeSheetMetalArgs[featureargs.SheetMetalRip](s, raw, "sheetMetalRip")
 	if err != nil {
 		return nil, err
-	}
-	var in featureargs.SheetMetalRip
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, fmt.Errorf("sheetMetalRip: invalid args: %w", err)
 	}
 	def, err := ripDefinition(part, &in)
 	if err != nil {

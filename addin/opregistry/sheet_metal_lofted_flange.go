@@ -39,13 +39,9 @@ func sheetMetalLoftedFlangeDescriptor() *OperationDescriptor {
 }
 
 func applySheetMetalLoftedFlange(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := activeSheetMetalPart(s, "sheetMetalLoftedFlange")
+	part, in, err := decodeSheetMetalArgs[featureargs.SheetMetalLoftedFlange](s, raw, "sheetMetalLoftedFlange")
 	if err != nil {
 		return nil, err
-	}
-	var in featureargs.SheetMetalLoftedFlange
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, fmt.Errorf("sheetMetalLoftedFlange: invalid args: %w", err)
 	}
 	def, err := loftedFlangeDefinition(part, &in)
 	if err != nil {

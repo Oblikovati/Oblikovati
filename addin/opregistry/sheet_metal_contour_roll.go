@@ -4,7 +4,6 @@ package opregistry
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
@@ -34,13 +33,9 @@ func sheetMetalContourRollDescriptor() *OperationDescriptor {
 }
 
 func applySheetMetalContourRoll(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := activeSheetMetalPart(s, "sheetMetalContourRoll")
+	part, in, err := decodeSheetMetalArgs[featureargs.SheetMetalContourRoll](s, raw, "sheetMetalContourRoll")
 	if err != nil {
 		return nil, err
-	}
-	var in featureargs.SheetMetalContourRoll
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, fmt.Errorf("sheetMetalContourRoll: invalid args: %w", err)
 	}
 	profile, err := sketchAt(part, in.ProfileSketch)
 	if err != nil {

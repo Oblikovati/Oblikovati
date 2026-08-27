@@ -4,7 +4,6 @@ package opregistry
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
@@ -35,13 +34,9 @@ func sheetMetalCutDescriptor() *OperationDescriptor {
 }
 
 func applySheetMetalCut(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := activeSheetMetalPart(s, "sheetMetalCut")
+	part, in, err := decodeSheetMetalArgs[featureargs.SheetMetalCut](s, raw, "sheetMetalCut")
 	if err != nil {
 		return nil, err
-	}
-	var in featureargs.SheetMetalCut
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, fmt.Errorf("sheetMetalCut: invalid args: %w", err)
 	}
 	sk, err := sketchAt(part, in.SketchIndex)
 	if err != nil {

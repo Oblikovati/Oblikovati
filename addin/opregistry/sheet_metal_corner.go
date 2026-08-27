@@ -40,13 +40,9 @@ func sheetMetalCornerDescriptor() *OperationDescriptor {
 }
 
 func applySheetMetalCorner(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := activeSheetMetalPart(s, "sheetMetalCorner")
+	part, in, err := decodeSheetMetalArgs[featureargs.SheetMetalCorner](s, raw, "sheetMetalCorner")
 	if err != nil {
 		return nil, err
-	}
-	var in featureargs.SheetMetalCorner
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, fmt.Errorf("sheetMetalCorner: invalid args: %w", err)
 	}
 	treatment, ok := feature.ParseCornerTreatment(in.Treatment)
 	if !ok {

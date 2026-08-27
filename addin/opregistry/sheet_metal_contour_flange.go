@@ -73,13 +73,9 @@ func sheetMetalContourFlangeDescriptor() *OperationDescriptor {
 }
 
 func applySheetMetalContourFlange(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := activeSheetMetalPart(s, "sheetMetalContourFlange")
+	part, in, err := decodeSheetMetalArgs[featureargs.SheetMetalContourFlange](s, raw, "sheetMetalContourFlange")
 	if err != nil {
 		return nil, err
-	}
-	var in featureargs.SheetMetalContourFlange
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, fmt.Errorf("sheetMetalContourFlange: invalid args: %w", err)
 	}
 	if in.Edge == "" {
 		return nil, fmt.Errorf("sheetMetalContourFlange: edge is required")
