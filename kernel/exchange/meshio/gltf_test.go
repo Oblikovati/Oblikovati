@@ -677,6 +677,63 @@ func TestGLTFHugeNormalComponent(t *testing.T) {
 	}
 }
 
+// TestGLTFHugeCollinearTriangleDropped: the CHG2-4 regression fixture —
+// A=(-3e38,0,0), B=(3e38,0,0), C=(0,0,0) are finite float64 positions that
+// pack to finite float32 values, but the float32 difference B−A overflows to
+// +Inf. The post-pack degeneracy check computes the area cross-product in
+// float64, so the collinear triangle has area 0 and is dropped; the old
+// float32 path produced a NaN area (Inf×0) that read as non-degenerate and
+// kept the triangle. No NaN may appear in any accessor.
+func TestGLTFHugeCollinearTriangleDropped(t *testing.T) {
+	huge := 3e38
+	// Direct pin of the documented rule: the huge collinear triangle is
+	// degenerate (area 0 in float64) and must be dropped.
+	pos := []float32{float32(-huge), 0, 0, float32(huge), 0, 0, 0, 0, 0}
+	if !degeneratePacked(pos, 0, 1, 2) {
+		t.Fatal("degeneratePacked(huge collinear) = false, want true (dropped)")
+	}
+	// End-to-end: the huge collinear triangle plus a valid unit triangle.
+	// Only the valid triangle survives; every emitted accessor value is finite.
+	m := gltfTestMesh(
+		[]math.Point3{
+			math.P3(-huge, 0, 0), math.P3(huge, 0, 0), math.P3(0, 0, 0),
+			math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0),
+		},
+		[]math.Vector3{
+			math.V3(0, 0, 1), math.V3(0, 0, 1), math.V3(0, 0, 1),
+			math.V3(0, 0, 1), math.V3(0, 0, 1), math.V3(0, 0, 1),
+		},
+		[]int{0, 1, 2, 3, 4, 5},
+	)
+	body, err := sanitizeGLTFBody(gltfBodyMesh("1", "hugecollinear", m), 0.01)
+	if err != nil {
+		t.Fatalf("sanitize: %v", err)
+	}
+	if len(body.indices) != 3 {
+		t.Fatalf("indices = %v, want only the valid triangle", body.indices)
+	}
+	for i := 0; i < len(body.positions); i++ {
+		if stdmath.IsNaN(float64(body.positions[i])) || stdmath.IsInf(float64(body.positions[i]), 0) {
+			t.Fatalf("position %d = %v, want finite", i, body.positions[i])
+		}
+	}
+	for i := 0; i < len(body.normals); i++ {
+		if stdmath.IsNaN(float64(body.normals[i])) || stdmath.IsInf(float64(body.normals[i]), 0) {
+			t.Fatalf("normal %d = %v, want finite", i, body.normals[i])
+		}
+	}
+	for _, c := range body.min {
+		if stdmath.IsNaN(float64(c)) || stdmath.IsInf(float64(c), 0) {
+			t.Fatalf("min component = %v, want finite", c)
+		}
+	}
+	for _, c := range body.max {
+		if stdmath.IsNaN(float64(c)) || stdmath.IsInf(float64(c), 0) {
+			t.Fatalf("max component = %v, want finite", c)
+		}
+	}
+}
+
 // TestGLTFDeterministicOrdering: two exports of the same bodies produce
 // byte-identical GLBs (R2-10).
 func TestGLTFDeterministicOrdering(t *testing.T) {

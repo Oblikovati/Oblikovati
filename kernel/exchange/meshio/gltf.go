@@ -224,11 +224,16 @@ func normalOK(norm []float32, vi int) bool {
 
 // degeneratePacked reports whether the triangle's packed float32 positions are
 // degenerate: duplicate positions or geometric area at or below the 1e-12 m²
-// epsilon (R4-4 — the check runs again AFTER float32 quantization).
+// epsilon (R4-4 — the check runs again AFTER float32 quantization). The
+// difference and cross-product are computed in float64 (CHG2-4): a finite
+// float32 component like 3e38 overflows the float32 square-sum to +Inf, which
+// would wrongly read as an infinite area. A NON-FINITE area from finite
+// inputs is treated as invalid — the triangle cannot be certified
+// non-degenerate, so it is dropped (documented rule, CHG2-4).
 func degeneratePacked(pos []float32, i, j, k int) bool {
-	ax, ay, az := pos[3*i], pos[3*i+1], pos[3*i+2]
-	bx, by, bz := pos[3*j], pos[3*j+1], pos[3*j+2]
-	cx, cy, cz := pos[3*k], pos[3*k+1], pos[3*k+2]
+	ax, ay, az := float64(pos[3*i]), float64(pos[3*i+1]), float64(pos[3*i+2])
+	bx, by, bz := float64(pos[3*j]), float64(pos[3*j+1]), float64(pos[3*j+2])
+	cx, cy, cz := float64(pos[3*k]), float64(pos[3*k+1]), float64(pos[3*k+2])
 	if (ax == bx && ay == by && az == bz) ||
 		(bx == cx && by == cy && bz == cz) ||
 		(cx == ax && cy == ay && cz == az) {
@@ -237,7 +242,10 @@ func degeneratePacked(pos []float32, i, j, k int) bool {
 	ux, uy, uz := bx-ax, by-ay, bz-az
 	vx, vy, vz := cx-ax, cy-ay, cz-az
 	cx2, cy2, cz2 := uy*vz-uz*vy, uz*vx-ux*vz, ux*vy-uy*vx
-	area := 0.5 * stdmath.Sqrt(float64(cx2*cx2+cy2*cy2+cz2*cz2))
+	area := 0.5 * stdmath.Sqrt(cx2*cx2+cy2*cy2+cz2*cz2)
+	if stdmath.IsNaN(area) || stdmath.IsInf(area, 0) {
+		return true
+	}
 	return area <= 1e-12
 }
 

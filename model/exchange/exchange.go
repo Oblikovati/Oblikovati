@@ -88,12 +88,21 @@ type ExportResult struct {
 // path in format. Multiple bodies are merged into one mesh file (the formats carry a
 // single mesh first cut). An empty part errors rather than writing an empty file.
 //
+// glTF delegates to the canonical [Export] path so the second public entry point
+// enforces the same contract: .glb-only destinations, per-body routing with warnings,
+// and the atomic temp+rename write (CHG2-2/3). The other mesh formats keep the merged
+// meshio.ExportBodies path but write through the same atomic writeExportFile helper
+// (CHG2-3) — no truncate-then-write window from either entry point.
+//
 // Example:
 //
 //	res, err := exchange.MeshExchange{}.ExportFrom(part, "p.stl", types.FormatSTL, types.ResolutionHigh)
 func (MeshExchange) ExportFrom(part *compdef.PartComponentDefinition, path string, format types.ExchangeFormat, res types.MeshResolution) (ExportResult, error) {
 	if !format.IsMesh() {
 		return ExportResult{}, fmt.Errorf("export: %q is not a mesh format (want stl|obj|3mf)", format)
+	}
+	if format == types.FormatGLTF {
+		return Export(part, path, format, res)
 	}
 	bodies := part.SurfaceBodies().All()
 	if len(bodies) == 0 {
@@ -103,8 +112,8 @@ func (MeshExchange) ExportFrom(part *compdef.PartComponentDefinition, path strin
 	if err != nil {
 		return ExportResult{}, fmt.Errorf("export %q: %w", path, err)
 	}
-	if err := os.WriteFile(path, data, 0o644); err != nil {
-		return ExportResult{}, fmt.Errorf("export: write %q: %w", path, err)
+	if err := writeExportFile(path, data); err != nil {
+		return ExportResult{}, err
 	}
 	return ExportResult{TriangleCount: tris}, nil
 }
