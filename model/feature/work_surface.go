@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/topo"
-	"oblikovati.org/model/internal/collview"
+	"oblikovati.org/model/collview"
 )
 
 // WorkSurface construction surfaces (M20-F16, #654… see #650). A surface-output feature

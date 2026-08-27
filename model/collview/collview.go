@@ -7,6 +7,11 @@
 // here replaces the hand-typed copies each contract collection used to carry.
 // The api/contract collection INTERFACES stay non-generic by design (COM-style
 // object model); only the GPL-side implementations use this view.
+//
+// Promoted out of model/internal (G16 #2177) once app/'s own contract
+// implementations (colorStylesView, colorSchemesAdapter) needed the same guard —
+// Go's internal-package visibility only reaches model/'s own subtree, so a package
+// two sibling trees both legitimately depend on cannot stay internal to either.
 package collview
 
 // Indexed adapts a concrete slice to a contract Count/Item collection, e.g.

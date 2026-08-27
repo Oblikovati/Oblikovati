@@ -5,7 +5,7 @@ package assembly
 import (
 	"oblikovati.org/api/contract"
 	"oblikovati.org/math"
-	"oblikovati.org/model/internal/collview"
+	"oblikovati.org/model/collview"
 )
 
 // Interference analysis (M12-F05, Oblikovati/Oblikovati#362/#368) reports the overlapping

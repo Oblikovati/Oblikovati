@@ -5,6 +5,7 @@ package app
 import (
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
+	"oblikovati.org/model/collview"
 	"oblikovati.org/model/colorscheme"
 )
 
@@ -54,11 +55,7 @@ var _ contract.ColorSchemes = colorSchemesAdapter{}
 func (a colorSchemesAdapter) Count() int { return len(a.s.colorSchemes.Schemes()) }
 
 func (a colorSchemesAdapter) Item(i int) contract.ColorScheme {
-	schemes := a.s.colorSchemes.Schemes()
-	if i < 0 || i >= len(schemes) {
-		return nil
-	}
-	return schemeView{schemes[i]}
+	return collview.ItemAs(a.s.colorSchemes.Schemes(), i, func(sc colorscheme.Scheme) contract.ColorScheme { return schemeView{sc} })
 }
 
 func (a colorSchemesAdapter) Active() contract.ColorScheme {

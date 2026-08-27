@@ -4,7 +4,7 @@ package assembly
 
 import (
 	"oblikovati.org/api/contract"
-	"oblikovati.org/model/internal/collview"
+	"oblikovati.org/model/collview"
 )
 
 // Compile-time assertions that the constraint engine satisfies the public Apache-2.0
