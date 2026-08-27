@@ -5,6 +5,7 @@ package feature
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -36,8 +37,8 @@ type analyticSeg struct {
 // whose normal is the path tangent), which both lift the same 2D coordinates onto a frame and raise
 // them by the same span — so one dispatch serves both.
 func analyticPrismOrNil(loop sketch.Loop, plane sketch.Plane, sp span, feat string) *topo.Body {
-	if c := circleLoop(loop); c != nil {
-		if cyl := buildAnalyticCylinder(c, plane, sp, feat); cyl != nil {
+	if center, radius, ok := circleLoop(loop); ok {
+		if cyl := buildAnalyticCylinder(center, radius, plane, sp, feat); cyl != nil {
 			return cyl
 		}
 	}
@@ -96,8 +97,12 @@ func rawProfileSegments(ents []sketch.ProfileEntity) ([]analyticSeg, bool) {
 }
 
 // rawSegmentOf reduces one entity to a line or arc segment via the sketch-entity capabilities. ok is
-// false for anything that is not a line or arc.
+// false for anything that is not a line or arc. A projected reference curve carries an analytic
+// geom.Curve2 (ADR-0055), consumed first so a projected profile extrudes analytically.
 func rawSegmentOf(e sketch.Entity) (analyticSeg, bool) {
+	if seg, ok := analyticSegFromProjected(e); ok {
+		return seg, true
+	}
 	shaped, isShaped := e.(sketch.ShapedEntity)
 	if !isShaped {
 		return analyticSeg{}, false
@@ -115,6 +120,28 @@ func rawSegmentOf(e sketch.Entity) (analyticSeg, bool) {
 			return analyticSeg{}, false
 		}
 		return analyticSeg{isArc: true, a: pts[1], b: pts[2], center: pts[0], mid: arc.ArcMidpoint()}, true
+	default:
+		return analyticSeg{}, false
+	}
+}
+
+// analyticSegFromProjected reduces a projected reference curve — which carries an analytic
+// geom.Curve2 — to a line or arc profile segment (ADR-0055), so a projected line/arc profile keeps
+// its exact geometry through the extrude. A full circle is handled by circleLoop, not here.
+func analyticSegFromProjected(e sketch.Entity) (analyticSeg, bool) {
+	ac, ok := e.(sketch.AnalyticCurveEntity)
+	if !ok {
+		return analyticSeg{}, false
+	}
+	c2, ok := ac.AnalyticCurve()
+	if !ok {
+		return analyticSeg{}, false
+	}
+	switch k := c2.(type) {
+	case geom.LineSegment2d:
+		return analyticSeg{a: k.StartPoint, b: k.EndPoint}, true
+	case geom.Arc2d:
+		return analyticSeg{isArc: true, a: k.PointAt(0), b: k.PointAt(1), center: k.Center, mid: k.PointAt(0.5)}, true
 	default:
 		return analyticSeg{}, false
 	}

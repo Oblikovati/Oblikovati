@@ -121,6 +121,14 @@ func (c *ProjectedCurve) AnalyticCurve() (geom.Curve2, bool) {
 	return c.curve, c.curve != nil
 }
 
+// AnalyticCurveEntity is a sketch entity that carries an analytic 2D curve — a projected reference
+// curve — so profile/extrude/offset consumers keep it analytic instead of a faceted polyline
+// (ADR-0055). ProjectedCurve implements it.
+type AnalyticCurveEntity interface {
+	Entity
+	AnalyticCurve() (geom.Curve2, bool)
+}
+
 // EntityID implements [Entity].
 func (c *ProjectedCurve) EntityID() ID { return c.id }
 

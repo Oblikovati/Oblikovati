@@ -25,22 +25,39 @@ import (
 // construction as kernel/brep.SolidCylinder. Downstream features that need a real cylindrical
 // face then work. Other profiles (arcs, polygons, holes, tapered) keep the faceted path for now.
 
-// circleLoop returns the loop's single full-circle entity, or nil if the loop is not exactly
-// one Circle (e.g. it is a polygon, an arc chain, or a multi-entity loop).
-func circleLoop(l sketch.Loop) *sketch.Circle {
+// circleLoop returns the centre and radius of the loop's single full-circle entity — a native
+// sketch.Circle or a PROJECTED circle carrying an analytic geom.Circle2d (ADR-0055) — and ok=false
+// when the loop is not exactly one full circle (a polygon, an arc chain, or a multi-entity loop).
+func circleLoop(l sketch.Loop) (center math.Point2, radius float64, ok bool) {
 	ents := l.Entities()
 	if len(ents) != 1 {
-		return nil
+		return math.Point2{}, 0, false
 	}
-	c, _ := ents[0].Entity.(*sketch.Circle)
-	return c
+	if c, isCircle := ents[0].Entity.(*sketch.Circle); isCircle {
+		return c.Center.Position(), float64(c.Radius), true
+	}
+	if ac, hasAnalytic := ents[0].Entity.(sketch.AnalyticCurveEntity); hasAnalytic {
+		if circ, isCircle := analyticCircle(ac); isCircle {
+			return circ.Center, circ.Radius, true
+		}
+	}
+	return math.Point2{}, 0, false
 }
 
-// buildAnalyticCylinder builds a true-cylinder solid from a full-circle profile swept over the
-// span along the sketch-plane normal. nil if the geometry is degenerate (caller falls back to the
-// faceted prism). Mirrors kernel/brep.SolidCylinder, with this feature's lineage tokens.
-func buildAnalyticCylinder(c *sketch.Circle, plane sketch.Plane, sp span, feat string) *topo.Body {
-	radius := float64(c.Radius)
+// analyticCircle returns e's analytic form as a geom.Circle2d when it is a full circle.
+func analyticCircle(e sketch.AnalyticCurveEntity) (geom.Circle2d, bool) {
+	c2, ok := e.AnalyticCurve()
+	if !ok {
+		return geom.Circle2d{}, false
+	}
+	circ, isCircle := c2.(geom.Circle2d)
+	return circ, isCircle
+}
+
+// buildAnalyticCylinder builds a true-cylinder solid from a full-circle profile (centre, radius)
+// swept over the span along the sketch-plane normal. nil if the geometry is degenerate (caller
+// falls back to the faceted prism). Mirrors kernel/brep.SolidCylinder, with this feature's lineage.
+func buildAnalyticCylinder(center math.Point2, radius float64, plane sketch.Plane, sp span, feat string) *topo.Body {
 	height := stdmath.Abs(sp.far - sp.near)
 	if radius <= 0 || height <= 0 {
 		return nil
@@ -48,7 +65,7 @@ func buildAnalyticCylinder(c *sketch.Circle, plane sketch.Plane, sp span, feat s
 	normal := plane.Normal().AsVector()
 	refDir := plane.XAxis() // angle-0 = sketch +X, so this cylinder records its generating frame (#129)
 	lo := stdmath.Min(sp.near, sp.far)
-	base := plane.ToModel(c.Center.Position()).TranslateBy(normal.Scale(math.Scalar(lo)))
+	base := plane.ToModel(center).TranslateBy(normal.Scale(math.Scalar(lo)))
 	topCenter := base.TranslateBy(normal.Scale(math.Scalar(height)))
 
 	// Pin the analytic frame to the sketch plane (RefDir = sketch +X, winding CCW about the
