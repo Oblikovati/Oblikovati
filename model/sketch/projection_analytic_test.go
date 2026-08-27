@@ -89,6 +89,27 @@ func TestProjectedCircleSerializesAnalytic(t *testing.T) {
 	}
 }
 
+// TestProjectedCircleOffsetsAnalytic: offsetting an analytic projected circle yields a concentric
+// analytic circle — not a faceted polyline. This is the offset robustness the analytic
+// representation buys (ADR-0055): segment polylines break offset; analytic curves offset cleanly.
+func TestProjectedCircleOffsetsAnalytic(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	circ, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
+	pc := s.ProjectCurve(&analyticEdge{id: "e5", curve: circ})
+
+	e, err := s.OffsetEntity(pc, 1)
+	if err != nil {
+		t.Fatalf("offset: %v", err)
+	}
+	c, ok := e.(*Circle)
+	if !ok {
+		t.Fatalf("offset of a projected circle = %T, want an analytic *Circle (not a faceted chain)", e)
+	}
+	if r := float64(c.Radius); stdmath.Abs(r-6) > 1e-9 && stdmath.Abs(r-4) > 1e-9 {
+		t.Fatalf("offset circle radius = %g, want 4 or 6 (concentric)", r)
+	}
+}
+
 // TestProjectedNonAnalyticFallsBack: a source that only yields sample points (no analytic curve)
 // projects to a polyline, and AnalyticCurve reports false — the fallback path still works.
 func TestProjectedNonAnalyticFallsBack(t *testing.T) {

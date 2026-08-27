@@ -194,8 +194,24 @@ func (c *ProjectedCurve) updateAnalytic() bool {
 	}
 	c.curve = c2
 	c.points = sampleCurve2(c2, projectedRenderSegments)
-	c.shape = projectedShape{}
+	c.shape = shapeFromCurve2(c2) // exact — so offset/arrangement stay analytic (they read shape)
 	return true
+}
+
+// shapeFromCurve2 mirrors an analytic geom.Curve2 into the projectedShape the offset and arrangement
+// paths still consume — exactly, unlike a fit from sampled points. It is the bridge until those
+// paths read geom.Curve2 directly (then projectedShape and fitProjectedShape are deleted, ADR-0055).
+func shapeFromCurve2(c geom.Curve2) projectedShape {
+	switch k := c.(type) {
+	case geom.LineSegment2d:
+		return projectedShape{kind: shapeLine, a: k.StartPoint, b: k.EndPoint}
+	case geom.Circle2d:
+		return projectedShape{kind: shapeCircle, center: k.Center, radius: k.Radius}
+	case geom.Arc2d:
+		return projectedShape{kind: shapeArc, center: k.Center, radius: k.Radius, start: k.StartAngle, sweep: k.SweepAngle}
+	default:
+		return projectedShape{}
+	}
 }
 
 // sketchPlaneToGeom builds the geom.Plane whose (u,v) frame is the sketch plane's (xAxis, yAxis), so
