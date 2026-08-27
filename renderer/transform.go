@@ -64,15 +64,15 @@ func (pr Projector) Project(p math.Point3) (x, y float64, ok bool) {
 // view is the right-handed world→eye transform (camera looks down its local −Z),
 // column-major.
 func view(cam scene.Camera) [16]float32 {
-	f := norm(sub(cam.Target, cam.Eye))
-	s := norm(cross(f, [3]float64{cam.Up.X, cam.Up.Y, cam.Up.Z}))
-	u := cross(s, f)
+	f := normalize3(sub(cam.Target, cam.Eye))
+	s := normalize3(cross3(f, [3]float64{cam.Up.X, cam.Up.Y, cam.Up.Z}))
+	u := cross3(s, f)
 	e := [3]float64{cam.Eye.X, cam.Eye.Y, cam.Eye.Z}
 	return [16]float32{
 		f32(s[0]), f32(u[0]), f32(-f[0]), 0,
 		f32(s[1]), f32(u[1]), f32(-f[1]), 0,
 		f32(s[2]), f32(u[2]), f32(-f[2]), 0,
-		f32(-dot(s, e)), f32(-dot(u, e)), f32(dot(f, e)), 1,
+		f32(-dot3(s, e)), f32(-dot3(u, e)), f32(dot3(f, e)), 1,
 	}
 }
 
@@ -130,20 +130,8 @@ func mul4(a, b [16]float32) [16]float32 {
 }
 
 // sub returns a−b as a plain coordinate triple (world-space displacement).
-func sub(a, b math.Point3) [3]float64 { return [3]float64{a.X - b.X, a.Y - b.Y, a.Z - b.Z} }
+func sub(a, b math.Point3) [3]float64 {
+	return sub3([3]float64{a.X, a.Y, a.Z}, [3]float64{b.X, b.Y, b.Z})
+}
 
 func f32(v float64) float32 { return float32(v) }
-
-func dot(a, b [3]float64) float64 { return a[0]*b[0] + a[1]*b[1] + a[2]*b[2] }
-
-func cross(a, b [3]float64) [3]float64 {
-	return [3]float64{a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]}
-}
-
-func norm(v [3]float64) [3]float64 {
-	l := stdmath.Sqrt(dot(v, v))
-	if l == 0 {
-		return v
-	}
-	return [3]float64{v[0] / l, v[1] / l, v[2] / l}
-}

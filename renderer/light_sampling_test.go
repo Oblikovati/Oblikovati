@@ -20,7 +20,7 @@ func TestLightDistributionMatchesBruteForceRelativeContribution(t *testing.T) {
 	// Faces roughly between the key and fill lights, so both contribute (the back/rim
 	// light faces the opposite way and legitimately contributes zero from here — that
 	// is itself part of what this test must tolerate without biasing the estimate).
-	normal := normalize32([3]float32{-0.2, 0.8, 1.5})
+	normal := normalize3([3]float32{-0.2, 0.8, 1.5})
 
 	bruteForce := make([][3]float32, len(lights))
 	for i, l := range lights {

@@ -2,8 +2,6 @@
 
 package renderer
 
-import "math"
-
 // Ray is one ray-tracing query: an origin and a (not necessarily normalized) direction,
 // with the valid hit range [TMin, TMax] measured in units of Direction.
 type Ray struct {
@@ -86,54 +84,29 @@ func (f *FakeIntersector) TraceRay(ray Ray) Hit {
 // CCW-wound triangle as seen from the ray origin side) geometric normal, or ok=false for
 // a miss or a ray parallel to the triangle's plane.
 func rayTriangle(ray Ray, tri Triangle) (t float32, normal [3]float32, ok bool) {
-	e1 := sub32(tri.V1, tri.V0)
-	e2 := sub32(tri.V2, tri.V0)
-	pvec := cross32(ray.Direction, e2)
-	det := dot32(e1, pvec)
+	e1 := sub3(tri.V1, tri.V0)
+	e2 := sub3(tri.V2, tri.V0)
+	pvec := cross3(ray.Direction, e2)
+	det := dot3(e1, pvec)
 	const epsilon = 1e-8
 	if det > -epsilon && det < epsilon {
 		return 0, [3]float32{}, false
 	}
 	invDet := 1 / det
-	tvec := sub32(ray.Origin, tri.V0)
-	u := dot32(tvec, pvec) * invDet
+	tvec := sub3(ray.Origin, tri.V0)
+	u := dot3(tvec, pvec) * invDet
 	if u < 0 || u > 1 {
 		return 0, [3]float32{}, false
 	}
-	qvec := cross32(tvec, e1)
-	v := dot32(ray.Direction, qvec) * invDet
+	qvec := cross3(tvec, e1)
+	v := dot3(ray.Direction, qvec) * invDet
 	if v < 0 || u+v > 1 {
 		return 0, [3]float32{}, false
 	}
-	t = dot32(e2, qvec) * invDet
-	return t, normalize32(cross32(e1, e2)), true
+	t = dot3(e2, qvec) * invDet
+	return t, normalize3(cross3(e1, e2)), true
 }
-
-// sub32 / cross32 / dot32 / normalize32 are [3]float32 vector helpers, distinct from
-// transform.go's [3]float64 sub/cross/dot/norm (Go has no overloading, so these can't
-// share names) — ray-tracing math stays float32 to match the Vulkan-facing vertex/hit
-// buffers both GPU Intersector backends (PBI-333/334) will produce and consume.
-func sub32(a, b [3]float32) [3]float32 { return [3]float32{a[0] - b[0], a[1] - b[1], a[2] - b[2]} }
-
-func cross32(a, b [3]float32) [3]float32 {
-	return [3]float32{
-		a[1]*b[2] - a[2]*b[1],
-		a[2]*b[0] - a[0]*b[2],
-		a[0]*b[1] - a[1]*b[0],
-	}
-}
-
-func dot32(a, b [3]float32) float32 { return a[0]*b[0] + a[1]*b[1] + a[2]*b[2] }
 
 func addScaled(a, dir [3]float32, t float32) [3]float32 {
 	return [3]float32{a[0] + dir[0]*t, a[1] + dir[1]*t, a[2] + dir[2]*t}
-}
-
-func normalize32(v [3]float32) [3]float32 {
-	l := dot32(v, v)
-	if l == 0 {
-		return v
-	}
-	inv := float32(1) / float32(math.Sqrt(float64(l)))
-	return [3]float32{v[0] * inv, v[1] * inv, v[2] * inv}
 }
