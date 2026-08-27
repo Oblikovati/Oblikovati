@@ -30,10 +30,30 @@ func intersectionRunEdge(run meshbool.ArrangementRun, surface, neighbor geom.Sur
 	if !handled || len(curves) == 0 {
 		return brep.ReconEdge{}, false
 	}
-	if c, ok := branchThroughRun(curves, run, verts, runMatchTol(run, verts, res)); ok {
-		return orientRunEdge(c, run, verts, res.Weld()), true
+	c, ok := branchThroughRun(curves, run, verts, runMatchTol(run, verts, res))
+	if !ok || !weldableSSICurve(c) {
+		return brep.ReconEdge{}, false
 	}
-	return brep.ReconEdge{}, false
+	return orientRunEdge(c, run, verts, res.Weld()), true
+}
+
+// weldableSSICurve reports whether a synthesized surface-surface intersection curve is one
+// reconstruction can reuse and close watertight: a LINE (plane∩plane, plane∩cylinder along a
+// ruling) or a CIRCLE (cylinder/cone/sphere cut by a plane ⊥ its axis). These are exact and,
+// crucially, identical to the same curve computed from the neighbour face, so the two incident
+// faces' copies WELD. An oblique conic — an EllipseFull (cylinder∩tilted plane), parabola, or
+// hyperbola — is exact as a curve but not yet welded consistently across both faces (each face
+// samples it independently), so a face bounded by one closes to a VALID but wrong-volume solid
+// (the #2167-sibling disjoint/oblique cut, e.g. SlottedScrew's slanted-hex bore exit). Until the
+// numeric-SSI weld layer lands (ADR-0054 Layer 4), reconstruction DECLINES those runs so the
+// caller falls back to the exact faceted boolean — no wrong geometry, no regression.
+func weldableSSICurve(c geom.Curve3) bool {
+	switch c.(type) {
+	case geom.Line, geom.Circle:
+		return true
+	default:
+		return false
+	}
 }
 
 // branchThroughRun picks the intersection curve the run lies on: the one minimising the
