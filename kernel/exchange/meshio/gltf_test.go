@@ -184,6 +184,42 @@ func TestGLTFExportUnitsAreMetres(t *testing.T) {
 	}
 }
 
+// TestGLTFZeroValueOptionsDefaultUnit: a zero-value TranslationOptions (the
+// CHG3-1 ExportBody delegation path and any direct caller passing the zero
+// value) must default TargetUnitMM to the kernel's centimetre database unit —
+// a 6 cm cube exports with POSITION max 0.06 m, NOT 0.006 m (CHG3-2).
+func TestGLTFZeroValueOptionsDefaultUnit(t *testing.T) {
+	box := cmBox(t)
+	data, _, _, err := ExportBodiesGLTF([]*topo.Body{box}, types.ResolutionHigh, exchange.TranslationOptions{})
+	if err != nil {
+		t.Fatalf("ExportBodiesGLTF: %v", err)
+	}
+	glb := parseGLB(t, data)
+	doc := parseGLTFJSON(t, glb.jsonData)
+	pos := doc.Accessors[doc.Meshes[0].Primitives[0].Attributes["POSITION"]]
+	if stdmath.Abs(pos.Max[0]-0.06) > 1e-6 {
+		t.Errorf("POSITION max X = %v, want 0.06 m (zero-value options must default to the cm database unit)", pos.Max[0])
+	}
+}
+
+// TestExportBodyGLTFDelegates: ExportBody(FormatGLTF, body, res) delegates to
+// the per-body glTF path and returns a valid GLB (magic + nonempty) — the
+// CHG3-1 single-body entry point.
+func TestExportBodyGLTFDelegates(t *testing.T) {
+	box := cmBox(t)
+	data, tris, err := ExportBody(types.FormatGLTF, box, types.ResolutionHigh)
+	if err != nil {
+		t.Fatalf("ExportBody(gltf): %v", err)
+	}
+	if len(data) == 0 {
+		t.Fatal("ExportBody(gltf) returned empty data")
+	}
+	if tris != 12 {
+		t.Errorf("triangle count = %d, want 12", tris)
+	}
+	parseGLB(t, data) // fails on a bad magic/header
+}
+
 // TestGLBContainerBytes checks the GLB container invariants: magic, version,
 // exact header length, JSON-first/BIN-second order, padded chunkLengths, and
 // the 0x20/0x00 padding bytes (R3-1).

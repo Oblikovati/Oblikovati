@@ -93,7 +93,10 @@ func Export(part *compdef.PartComponentDefinition, path string, format types.Exc
 // in the destination's directory, then the temp file is renamed over the
 // destination. A failure at any step removes the temp file and leaves a
 // pre-existing destination untouched — no truncate-then-write window
-// (R4-9, change-review CHG-6).
+// (R4-9, change-review CHG-6). The temp file's mode is set BEFORE the rename:
+// a pre-existing destination keeps its mode (stat + Chmod), a new destination
+// gets 0o644 — os.CreateTemp creates 0600, which would otherwise replace a
+// 0644 destination with a 0600 file (CHG3-3).
 func writeExportFile(path string, data []byte) error {
 	dir := filepath.Dir(path)
 	base := filepath.Base(path)
@@ -113,6 +116,14 @@ func writeExportFile(path string, data []byte) error {
 	if err := tmp.Close(); err != nil {
 		os.Remove(tmpName)
 		return fmt.Errorf("export: close %q: %w", path, err)
+	}
+	mode := os.FileMode(0o644)
+	if info, err := os.Stat(path); err == nil {
+		mode = info.Mode().Perm()
+	}
+	if err := os.Chmod(tmpName, mode); err != nil {
+		os.Remove(tmpName)
+		return fmt.Errorf("export: chmod temp for %q: %w", path, err)
 	}
 	if err := os.Rename(tmpName, path); err != nil {
 		os.Remove(tmpName)

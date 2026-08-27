@@ -40,6 +40,11 @@ func TestGLTFDocumentShape(t *testing.T) {
 	if !bytes.Contains(glb.jsonData, []byte(`"mesh":0`)) {
 		t.Error("JSON missing the node→mesh reference for node 0")
 	}
+	// The material must carry doubleSided EXPLICITLY (no omitempty): a reader
+	// must not guess the spec default for a closed B-rep body (CHG3-4).
+	if !bytes.Contains(glb.jsonData, []byte(`"doubleSided":false`)) {
+		t.Error("JSON missing the explicit \"doubleSided\":false in the material object")
+	}
 	prim := doc.Meshes[0].Primitives[0]
 	if prim.Mode != 4 {
 		t.Errorf("primitive mode = %d, want 4 (TRIANGLES)", prim.Mode)

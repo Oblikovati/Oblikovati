@@ -196,6 +196,38 @@ func TestExportGLTFPassesThroughGLB(t *testing.T) {
 	}
 }
 
+// TestExportPreservesDestinationMode: a successful export over a pre-existing
+// 0644 destination leaves the destination 0644 — the temp file (0600 from
+// os.CreateTemp) must be chmodded to the prior destination's mode before the
+// rename (CHG3-3). Windows honors only the read-only bit of FileMode, so the
+// strict 0644 assertion runs on non-Windows; on Windows the test asserts the
+// write bits are set (the export must not leave the destination read-only).
+func TestExportPreservesDestinationMode(t *testing.T) {
+	part := partWithCube(t)
+	dir := t.TempDir()
+	dst := filepath.Join(dir, "box.glb")
+	if err := os.WriteFile(dst, []byte("stale bytes"), 0o644); err != nil {
+		t.Fatalf("seed destination: %v", err)
+	}
+	if _, err := exchange.Export(part, dst, types.FormatGLTF, types.ResolutionHigh); err != nil {
+		t.Fatalf("Export glb: %v", err)
+	}
+	info, err := os.Stat(dst)
+	if err != nil {
+		t.Fatalf("stat destination: %v", err)
+	}
+	perm := info.Mode().Perm()
+	if runtime.GOOS == "windows" {
+		if perm&0o222 == 0 {
+			t.Errorf("destination mode = %o, want write bits set (not read-only)", perm)
+		}
+		return
+	}
+	if perm != 0o644 {
+		t.Errorf("destination mode = %o, want 0644 (prior destination mode preserved)", perm)
+	}
+}
+
 // TestExportWriteFailureLeavesDestinationUntouched: a write failure (the
 // rename over a read-only destination is denied on Windows) must leave a
 // pre-existing destination byte-for-byte unchanged and return a typed error

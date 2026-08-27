@@ -79,6 +79,13 @@ func importFileUnitMM(format types.ExchangeFormat, data []byte) (float64, []stri
 // format. It is the single format switch for export; the per-format encoders own the
 // byte emission. The triangle count returned is what was written.
 //
+// glTF delegates to the per-body path [ExportBodiesGLTF] with a single-body slice and
+// zero-value options (the glTF path defaults the unit itself — see CHG3-2). Its
+// warnings (a skipped empty body) have nowhere to go in this 3-value signature, so
+// they are dropped here; callers that need them use [ExportBodiesGLTF] directly. A
+// single empty body errors with "no exportable bodies", which is correct for a
+// single empty body (CHG3-1).
+//
 // Example:
 //
 //	data, tris, err := meshio.ExportBody(types.FormatSTL, body, types.ResolutionHigh)
@@ -94,6 +101,9 @@ func ExportBody(format types.ExchangeFormat, body *topo.Body, res types.MeshReso
 	case types.Format3MF:
 		data, err := Encode3MF(body, q)
 		return data, triangleCount(body, q), err
+	case types.FormatGLTF:
+		data, tris, _, err := ExportBodiesGLTF([]*topo.Body{body}, res, exchange.TranslationOptions{})
+		return data, tris, err
 	default:
 		return nil, 0, fmt.Errorf("meshio: unsupported export format %q (want stl|obj|3mf|gltf)", format)
 	}

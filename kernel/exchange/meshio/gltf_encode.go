@@ -72,6 +72,7 @@ type gltfPrimitive struct {
 
 type gltfMaterial struct {
 	Name                 string  `json:"name"`
+	DoubleSided          bool    `json:"doubleSided"`
 	PBRMetallicRoughness gltfPBR `json:"pbrMetallicRoughness"`
 }
 
@@ -154,10 +155,14 @@ func buildGLTFDocument(bodies []*gltfBody) ([]byte, []byte, error) {
 
 // gltfCADMaterial is the single explicit PBR material every primitive
 // references (R4-2): neutral grey, metallic 0 (the spec default is 1 —
-// chrome), roughness 1, double-sided false (closed B-rep bodies).
+// chrome), roughness 1, double-sided false (closed B-rep bodies). The
+// doubleSided field is emitted EXPLICITLY (no omitempty) so the JSON always
+// carries "doubleSided": false — a reader must not guess the spec default
+// (CHG3-4).
 func gltfCADMaterial() gltfMaterial {
 	return gltfMaterial{
-		Name: "CAD_Default",
+		Name:        "CAD_Default",
+		DoubleSided: false,
 		PBRMetallicRoughness: gltfPBR{
 			BaseColorFactor: [4]float64{0.8, 0.8, 0.8, 1.0},
 			MetallicFactor:  0.0,

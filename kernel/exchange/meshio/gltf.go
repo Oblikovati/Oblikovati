@@ -38,14 +38,21 @@ func gltfErr(what, value string) error {
 // ExportBodiesGLTF tessellates the bodies at res and encodes them as a GLB —
 // the per-body glTF path (one mesh per body, one primitive per mesh, indexed).
 // It forces the file unit to metres (glTF 2.0 §3.4) on a LOCAL copy of opts so
-// the caller's options are never mutated (R3-3). Warnings report skipped empty
-// bodies (R3-5/R3-6).
+// the caller's options are never mutated (R3-3). A zero TargetUnitMM (the
+// zero-value options) defaults to the kernel's centimetre database unit
+// (exchange.DBUnitMM, translate.go:78) so a zero-value call exports at the
+// same scale as the model layer's explicit options — without the default the
+// 6 cm cube would export as 0.006 m instead of 0.06 m (CHG3-2). Warnings
+// report skipped empty bodies (R3-5/R3-6).
 //
 // Example:
 //
 //	data, tris, warns, err := meshio.ExportBodiesGLTF(bodies, types.ResolutionHigh, opts)
 func ExportBodiesGLTF(bodies []*topo.Body, res types.MeshResolution, opts exchange.TranslationOptions) ([]byte, int, []string, error) {
 	local := opts
+	if local.TargetUnitMM == 0 {
+		local.TargetUnitMM = exchange.DBUnitMM
+	}
 	local.FileUnit = "m"
 	return encodeGLTFBodies(bodies, QualityFor(res), local)
 }
