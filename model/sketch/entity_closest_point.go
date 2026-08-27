@@ -59,16 +59,5 @@ func closestOnSegment(a, b, target math.Point2) math.Point2 {
 	if lenSq == 0 {
 		return a // a degenerate segment is just its own endpoint
 	}
-	return a.Lerp(b, clampUnit(a.VectorTo(target).Dot(seg)/lenSq))
-}
-
-// clampUnit confines a segment parameter to [0,1].
-func clampUnit(t float64) float64 {
-	if t < 0 {
-		return 0
-	}
-	if t > 1 {
-		return 1
-	}
-	return t
+	return a.Lerp(b, math.Clamp01(a.VectorTo(target).Dot(seg)/lenSq))
 }

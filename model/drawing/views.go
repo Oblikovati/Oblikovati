@@ -9,7 +9,7 @@ import (
 	"oblikovati.org/kernel/hlr"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
-	"oblikovati.org/model/internal/collview"
+	"oblikovati.org/model/collview"
 )
 
 // bodyLookup resolves the drawing's referenced model to its B-rep body for projection. It is

@@ -4,7 +4,6 @@ package opregistry
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
@@ -37,13 +36,9 @@ func sheetMetalBendDescriptor() *OperationDescriptor {
 }
 
 func applySheetMetalBend(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := activeSheetMetalPart(s, "sheetMetalBend")
+	part, in, err := decodeSheetMetalArgs[featureargs.SheetMetalBend](s, raw, "sheetMetalBend")
 	if err != nil {
 		return nil, err
-	}
-	var in featureargs.SheetMetalBend
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, fmt.Errorf("sheetMetalBend: invalid args: %w", err)
 	}
 	sk, err := sketchAt(part, in.SketchIndex)
 	if err != nil {

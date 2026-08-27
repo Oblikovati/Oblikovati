@@ -100,10 +100,7 @@ type cvEditDrag struct {
 
 // CVEditActive reports whether the Edit Control Points tool is the active tool.
 func (s *Session) CVEditActive() bool {
-	if s.tool == nil {
-		return false
-	}
-	_, ok := s.tool.tool.(*ControlPointEditTool)
+	_, ok := s.activeToolOK[*ControlPointEditTool]()
 	return ok
 }
 

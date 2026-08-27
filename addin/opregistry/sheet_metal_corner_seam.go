@@ -39,13 +39,9 @@ func sheetMetalCornerSeamDescriptor() *OperationDescriptor {
 }
 
 func applySheetMetalCornerSeam(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := activeSheetMetalPart(s, "sheetMetalCornerSeam")
+	part, in, err := decodeSheetMetalArgs[featureargs.SheetMetalCornerSeam](s, raw, "sheetMetalCornerSeam")
 	if err != nil {
 		return nil, err
-	}
-	var in featureargs.SheetMetalCornerSeam
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, fmt.Errorf("sheetMetalCornerSeam: invalid args: %w", err)
 	}
 	if len(in.Edges) == 0 {
 		return nil, fmt.Errorf("sheetMetalCornerSeam: edges is empty")

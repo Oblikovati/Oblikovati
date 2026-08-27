@@ -4,7 +4,6 @@ package opregistry
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
@@ -34,13 +33,9 @@ func sheetMetalFaceDescriptor() *OperationDescriptor {
 }
 
 func applySheetMetalFace(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := activeSheetMetalPart(s, "sheetMetalFace")
+	part, in, err := decodeSheetMetalArgs[featureargs.SheetMetalFace](s, raw, "sheetMetalFace")
 	if err != nil {
 		return nil, err
-	}
-	var in featureargs.SheetMetalFace
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, fmt.Errorf("sheetMetalFace: invalid args: %w", err)
 	}
 	sk, err := sketchAt(part, in.SketchIndex)
 	if err != nil {

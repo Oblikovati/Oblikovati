@@ -27,10 +27,7 @@ type cageEditDrag struct {
 
 // CageEditActive reports whether the Edit Freeform Cage tool is the active tool.
 func (s *Session) CageEditActive() bool {
-	if s.tool == nil {
-		return false
-	}
-	_, ok := s.tool.tool.(*FreeformCageEditTool)
+	_, ok := s.activeToolOK[*FreeformCageEditTool]()
 	return ok
 }
 
@@ -59,7 +56,7 @@ func (s *Session) BeginCageDrag(px, py float64) bool {
 		return false
 	}
 	s.cageEdit = cageEditDrag{vertex: i, feature: pf, body: body, origin: at, normal: cam.Forward(), from: from, active: true}
-	if t, ok := s.tool.tool.(*FreeformCageEditTool); ok {
+	if t, ok := s.activeToolOK[*FreeformCageEditTool](); ok {
 		t.lastVertex = i // the Crease action applies to the handle the user just grabbed
 	}
 	return true

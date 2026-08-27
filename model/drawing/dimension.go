@@ -13,7 +13,7 @@ import (
 	"oblikovati.org/kernel/hlr"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
-	"oblikovati.org/model/internal/collview"
+	"oblikovati.org/model/collview"
 )
 
 // Drawing dimensions (M14-F03 PBI-141, #388): a linear dimension annotates the distance between

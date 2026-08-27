@@ -106,13 +106,7 @@ func armDihedralAngle(fa, fb *topo.Face) (float64, bool) {
 		return 0, false
 	}
 	nA, nB := outwardPlaneNormal(fa, pa), outwardPlaneNormal(fb, pb)
-	return stdmath.Acos(clamp1(nA.Dot(nB))), true
-}
-
-// clamp1 clamps x to [-1, 1] (a dot product of two unit vectors can drift a hair outside that range
-// on floating-point noise, and stdmath.Acos of anything past it is NaN).
-func clamp1(x float64) float64 {
-	return stdmath.Max(-1, stdmath.Min(1, x))
+	return stdmath.Acos(math.Clamp(nA.Dot(nB), -1, 1)), true
 }
 
 // armEdgeShared reports whether fa and fb are the two faces of some edge of either face — i.e. they

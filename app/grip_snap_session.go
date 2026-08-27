@@ -7,9 +7,5 @@ package app
 // ActiveGripSnap returns the running Grip Snap tool, or nil when the active tool is not a grip snap
 // (or there is none).
 func (s *Session) ActiveGripSnap() *GripSnapTool {
-	if s.tool == nil {
-		return nil
-	}
-	g, _ := s.tool.tool.(*GripSnapTool)
-	return g
+	return s.activeTool[*GripSnapTool]()
 }

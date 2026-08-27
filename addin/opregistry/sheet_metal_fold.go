@@ -38,13 +38,9 @@ func sheetMetalFoldDescriptor() *OperationDescriptor {
 }
 
 func applySheetMetalFold(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := activeSheetMetalPart(s, "sheetMetalFold")
+	part, in, err := decodeSheetMetalArgs[featureargs.SheetMetalFold](s, raw, "sheetMetalFold")
 	if err != nil {
 		return nil, err
-	}
-	var in featureargs.SheetMetalFold
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, fmt.Errorf("sheetMetalFold: invalid args: %w", err)
 	}
 	sk, err := sketchAt(part, in.SketchIndex)
 	if err != nil {

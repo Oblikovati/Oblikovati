@@ -2,7 +2,11 @@
 
 package openpbr
 
-import "math"
+import (
+	"math"
+
+	gmath "oblikovati.org/math"
+)
 
 // SubsurfaceExtinction returns the per-channel volumetric extinction coefficient μt
 // (spec §Subsurface: "the reciprocal of the MFP per channel"), regularized near a
@@ -51,7 +55,7 @@ func subsurfaceColorFromAlbedoChannel(alpha, g float64) float64 {
 	if denom <= 0 {
 		return 1
 	}
-	s := math.Sqrt(clamp(num/denom, 0, 1))
+	s := math.Sqrt(gmath.Clamp(num/denom, 0, 1))
 	return (1 - s) * (1 - 0.139*s) / (1 + 1.17*s)
 }
 
@@ -61,7 +65,7 @@ func subsurfaceColorFromAlbedoChannel(alpha, g float64) float64 {
 // anisotropy g ∈ (-1,1) (the spec itself notes implementations should clamp away from
 // the ±1 limits, where the phase function becomes degenerate).
 func PhaseHenyeyGreenstein(cosTheta, g float64) float64 {
-	g = clamp(g, -0.999, 0.999)
+	g = gmath.Clamp(g, -0.999, 0.999)
 	gSq := g * g
 	denom := 1 + gSq - 2*g*cosTheta
 	return (1 - gSq) / (4 * math.Pi * math.Pow(math.Max(denom, 1e-9), 1.5))

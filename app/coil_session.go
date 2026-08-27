@@ -7,9 +7,5 @@ package app
 // ActiveCoil returns the running Coil tool, or nil when the active tool is not a coil
 // (or there is none).
 func (s *Session) ActiveCoil() *CoilTool {
-	if s.tool == nil {
-		return nil
-	}
-	c, _ := s.tool.tool.(*CoilTool)
-	return c
+	return s.activeTool[*CoilTool]()
 }

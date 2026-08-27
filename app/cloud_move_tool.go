@@ -57,10 +57,7 @@ func canMoveSelectedCloud(s *Session) bool {
 // CloudMoveActive reports whether the Move tool is the active tool (so the viewport routes a
 // left-drag to moving the cloud rather than selecting).
 func (s *Session) CloudMoveActive() bool {
-	if s.tool == nil {
-		return false
-	}
-	_, ok := s.tool.tool.(*CloudMoveTool)
+	_, ok := s.activeToolOK[*CloudMoveTool]()
 	return ok
 }
 

@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // edgeDirections resolves, for an ordered tangent-continuous edge run, whether each edge is
@@ -91,21 +92,10 @@ func paramAtArcLength(c geom.Curve3, lo, hi, target float64) float64 {
 			break
 		}
 		dt := (arcLength(c, lo, t) - target) / speed
-		t = clampf(t-dt, lo, hi)
+		t = math.Clamp(t-dt, lo, hi)
 		if stdmath.Abs(dt) < 1e-12 {
 			break
 		}
 	}
 	return t
-}
-
-// clampf constrains x to [lo,hi].
-func clampf(x, lo, hi float64) float64 {
-	if x < lo {
-		return lo
-	}
-	if x > hi {
-		return hi
-	}
-	return x
 }

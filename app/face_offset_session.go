@@ -7,9 +7,5 @@ package app
 // ActiveFaceOffset returns the running Offset Face tool, or nil when the active tool is not
 // a face offset (or there is none).
 func (s *Session) ActiveFaceOffset() *FaceOffsetTool {
-	if s.tool == nil {
-		return nil
-	}
-	o, _ := s.tool.tool.(*FaceOffsetTool)
-	return o
+	return s.activeTool[*FaceOffsetTool]()
 }

@@ -4,7 +4,7 @@ package assembly
 
 import (
 	"oblikovati.org/api/contract"
-	"oblikovati.org/model/internal/collview"
+	"oblikovati.org/model/collview"
 )
 
 // Representations satisfies contract.RepresentationsManager (M12-F04): the in-proc read

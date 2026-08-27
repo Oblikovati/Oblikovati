@@ -27,21 +27,15 @@ func SubSpanBSplineCurve(c BSplineCurve, t0, t1 float64) (BSplineCurve, error) {
 	if !(t0 < t1) || t0 < lo-knotEps || t1 > hi+knotEps {
 		return BSplineCurve{}, fmt.Errorf("SubSpanBSplineCurve: span [%g, %g] not increasing inside domain [%g, %g]", t0, t1, lo, hi)
 	}
-	full, err := raiseToFullMult(c, clampSpanParam(t0, lo, hi))
+	full, err := raiseToFullMult(c, math.Clamp(t0, lo, hi))
 	if err != nil {
 		return BSplineCurve{}, err
 	}
-	full, err = raiseToFullMult(full, clampSpanParam(t1, lo, hi))
+	full, err = raiseToFullMult(full, math.Clamp(t1, lo, hi))
 	if err != nil {
 		return BSplineCurve{}, err
 	}
-	return extractSpan(full, clampSpanParam(t0, lo, hi), clampSpanParam(t1, lo, hi))
-}
-
-// clampSpanParam snaps a cut parameter onto the closed domain (the caller may carry
-// float noise just past an end).
-func clampSpanParam(t, lo, hi float64) float64 {
-	return stdmath.Min(hi, stdmath.Max(lo, t))
+	return extractSpan(full, math.Clamp(t0, lo, hi), math.Clamp(t1, lo, hi))
 }
 
 // raiseToFullMult inserts t until its multiplicity is the degree; a domain end (already at

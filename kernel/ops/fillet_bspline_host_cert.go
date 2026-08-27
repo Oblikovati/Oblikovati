@@ -77,7 +77,7 @@ func wgBsplineArgmaxStations(canal *bsplineHostCanal, vp []float64, argJ int) {
 	if os.Getenv("WG_BSPLINE_DEBUG") != "1" || argJ < 0 {
 		return
 	}
-	for j := maxInt(0, argJ-1); j <= minInt(len(canal.stations)-1, argJ+2); j++ {
+	for j := max(0, argJ-1); j <= min(len(canal.stations)-1, argJ+2); j++ {
 		st := canal.stations[j]
 		wgBsplineDebug(fmt.Sprintf("  st %d arc=%.4f v=%.6f C=%v fA(u=%.4f v=%.4f P=%v) fB(u=%.4f v=%.4f P=%v)",
 			j, canal.plan.arcs[j], vp[j], st.Center, st.FootA.U, st.FootA.V, st.FootA.P, st.FootB.U, st.FootB.V, st.FootB.P), nil)

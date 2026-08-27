@@ -44,7 +44,7 @@ func sectionAt(c math.Point3, a, b geom.Surface, r, tol float64, inside func(mat
 	e1 := unitVec(c.VectorTo(fa))
 	toB := c.VectorTo(fb)
 	e2 := unitVec(toB.Add(e1.Scale(-toB.Dot(e1)))) // Gram-Schmidt: (c→fb) component ⟂ e1
-	sweep := stdmath.Acos(clampUnit(float64(e1.Dot(unitVec(toB)))))
+	sweep := stdmath.Acos(math.Clamp(float64(e1.Dot(unitVec(toB))), -1, 1))
 	arc := SectionArc{Center: c, E1: e1, E2: e2, R: r, Sweep: sweep, FootA: fa, FootB: fb}
 	if inside(arc.PointAt(0.5)) { // the minor arc dips into the material: take the major arc instead
 		arc.E2 = e2.Negate()
@@ -66,15 +66,4 @@ func unitVec(v math.Vector3) math.Vector3 {
 		return v.Scale(math.Scalar(1 / l))
 	}
 	return v
-}
-
-// clampUnit constrains x to [-1,1] so Acos of a rounded dot product never yields NaN.
-func clampUnit(x float64) float64 {
-	if x < -1 {
-		return -1
-	}
-	if x > 1 {
-		return 1
-	}
-	return x
 }

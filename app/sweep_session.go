@@ -7,9 +7,5 @@ package app
 // ActiveSweep returns the running Sweep tool, or nil when the active tool is not a sweep
 // (or there is none).
 func (s *Session) ActiveSweep() *SweepTool {
-	if s.tool == nil {
-		return nil
-	}
-	sw, _ := s.tool.tool.(*SweepTool)
-	return sw
+	return s.activeTool[*SweepTool]()
 }

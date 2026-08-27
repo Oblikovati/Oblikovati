@@ -47,13 +47,16 @@ var allowedTreeImports = map[string][]string{
 	"userconfig":  {},
 	// yamlcodec is the neutral YAML leaf (ADR-0020): it wraps gopkg.in/yaml.v3 and imports
 	// nothing first-party, so both the domain and persistence may depend on it (B4 #1615).
-	"yamlcodec":  {},
-	"build":      {},
-	"crcpost":    {},
-	"perf":       {},
-	"release":    {},
-	"report":     {"crcpost"},
-	"theme":      {"api", "persistence", "userconfig", "yamlcodec"},
+	"yamlcodec": {},
+	"build":     {},
+	"crcpost":   {},
+	"perf":      {},
+	"release":   {},
+	"report":    {"crcpost"},
+	// theme -> math: blendermap's alpha-scale clamp routes through the shared math.Clamp
+	// instead of a hand-rolled (and previously buggy — it never clamped the lower bound)
+	// local clamp01 (G15 #2176).
+	"theme":      {"api", "math", "persistence", "userconfig", "yamlcodec"},
 	"update":     {},
 	"usagestats": {"crcpost", "persistence"},
 	"addincat":   {"persistence"},

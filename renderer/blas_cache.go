@@ -8,10 +8,10 @@ import "maps"
 // structure for a body's triangle mesh — implemented by the hardware backend
 // (head/internal/native's RTScene, PBI-333) so [BLASCache]'s per-body dirty-tracking
 // decision stays backend-agnostic and CPU-testable (ADR-0014), matching [Intersector]'s
-// own seam. The returned handle is opaque to this package.
-type BLASBuilder interface {
-	BuildBLAS(triangles []Triangle) (handle any, err error)
-	DestroyBLAS(handle any)
+// own seam. H is the backend's real handle type, opaque to this package.
+type BLASBuilder[H any] interface {
+	BuildBLAS(triangles []Triangle) (handle H, err error)
+	DestroyBLAS(handle H)
 }
 
 // BLASCache retains one built BLAS per unique body content hash, so a rebuild happens
@@ -21,9 +21,9 @@ type BLASBuilder interface {
 // caller's concern (e.g. a content hash of the tessellated triangle streams, mirroring
 // head/ui's existing overlayHash technique) — this cache only decides build/keep/destroy
 // from whatever hashes it's handed.
-type BLASCache struct {
-	builder BLASBuilder
-	entries map[uint64]any
+type BLASCache[H any] struct {
+	builder BLASBuilder[H]
+	entries map[uint64]H
 
 	// BuildCount / DestroyCount instrument every Sync call for the PBI-333 rebuild-count
 	// regression test — production callers may ignore them.
@@ -31,15 +31,15 @@ type BLASCache struct {
 }
 
 // NewBLASCache returns an empty cache that builds BLASes via builder.
-func NewBLASCache(builder BLASBuilder) *BLASCache {
-	return &BLASCache{builder: builder, entries: map[uint64]any{}}
+func NewBLASCache[H any](builder BLASBuilder[H]) *BLASCache[H] {
+	return &BLASCache[H]{builder: builder, entries: map[uint64]H{}}
 }
 
 // Sync ensures exactly the given bodies have a resident BLAS: a hash already cached is
 // left untouched (no rebuild); a new or changed hash is built; a previously-cached hash
 // no longer present is destroyed (freeing GPU memory for a removed or edited-away body).
 // Returns the current hash→handle mapping, e.g. for the caller's TLAS instance build.
-func (c *BLASCache) Sync(bodies map[uint64][]Triangle) map[uint64]any {
+func (c *BLASCache[H]) Sync(bodies map[uint64][]Triangle) map[uint64]H {
 	for hash := range c.entries {
 		if _, present := bodies[hash]; !present {
 			c.builder.DestroyBLAS(c.entries[hash])
@@ -58,10 +58,10 @@ func (c *BLASCache) Sync(bodies map[uint64][]Triangle) map[uint64]any {
 		c.entries[hash] = handle
 		c.BuildCount++
 	}
-	out := make(map[uint64]any, len(c.entries))
+	out := make(map[uint64]H, len(c.entries))
 	maps.Copy(out, c.entries)
 	return out
 }
 
 // Len reports how many BLASes are currently resident.
-func (c *BLASCache) Len() int { return len(c.entries) }
+func (c *BLASCache[H]) Len() int { return len(c.entries) }

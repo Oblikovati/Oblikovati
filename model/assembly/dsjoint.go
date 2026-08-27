@@ -7,7 +7,7 @@ import (
 
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
-	"oblikovati.org/model/internal/collview"
+	"oblikovati.org/model/collview"
 )
 
 // The DS-joint surface (M12-F02): the degrees-of-freedom / imposed-motion view of a joint

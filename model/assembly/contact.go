@@ -7,7 +7,7 @@ import (
 	"slices"
 
 	"oblikovati.org/api/contract"
-	"oblikovati.org/model/internal/collview"
+	"oblikovati.org/model/collview"
 )
 
 // Contact (M12-F05, Oblikovati/Oblikovati#362/#368): a contact set is a named group of

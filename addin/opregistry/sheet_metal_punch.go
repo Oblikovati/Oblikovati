@@ -39,13 +39,9 @@ func sheetMetalPunchDescriptor() *OperationDescriptor {
 }
 
 func applySheetMetalPunch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := activeSheetMetalPart(s, "sheetMetalPunch")
+	part, in, err := decodeSheetMetalArgs[featureargs.SheetMetalPunch](s, raw, "sheetMetalPunch")
 	if err != nil {
 		return nil, err
-	}
-	var in featureargs.SheetMetalPunch
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, fmt.Errorf("sheetMetalPunch: invalid args: %w", err)
 	}
 	def, err := punchDefinition(part, &in)
 	if err != nil {

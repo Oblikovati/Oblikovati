@@ -286,7 +286,7 @@ func stdSqrt(v float64) float64 { return stdmath.Sqrt(v) }
 // screen rectangle and the mm→pixel scale.
 func fitSheet(ox, oy, availW, availH float32, sheetWmm, sheetHmm float64) rect {
 	const pad = 40
-	scale := minf(float64(availW-2*pad)/sheetWmm, float64(availH-2*pad)/sheetHmm)
+	scale := min(float64(availW-2*pad)/sheetWmm, float64(availH-2*pad)/sheetHmm)
 	if scale <= 0 {
 		scale = 1
 	}
@@ -349,8 +349,8 @@ func drawTitleBlock(inner rect, sheet *drawing.Sheet) {
 // titleBlockRect places the title block: 70 mm wide (clamped to the inner width and a
 // readable minimum) and a readable row height, anchored to the inner lower-right corner.
 func titleBlockRect(inner rect, rows int) rect {
-	w := clampf(70*inner.scale, 150, inner.w)
-	rowH := maxf(7*inner.scale, 14)
+	w := math.Clamp(70*inner.scale, 150, inner.w)
+	rowH := max(7*inner.scale, 14)
 	h := rowH * float32(rows)
 	return rect{x: inner.x + inner.w - w, y: inner.y + inner.h - h, w: w, h: h, scale: inner.scale}
 }
@@ -374,28 +374,4 @@ func rectOutline(r rect, c [4]float32, th float32) {
 	native.DrawLine(r.x+r.w, r.y, r.x+r.w, r.y+r.h, c, th)
 	native.DrawLine(r.x+r.w, r.y+r.h, r.x, r.y+r.h, c, th)
 	native.DrawLine(r.x, r.y+r.h, r.x, r.y, c, th)
-}
-
-func minf(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxf(a, b float32) float32 {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func clampf(v, lo, hi float32) float32 {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
-	}
-	return v
 }

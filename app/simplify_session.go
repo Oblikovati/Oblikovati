@@ -7,9 +7,5 @@ package app
 // ActiveSimplify returns the running Simplify tool, or nil when the active tool is not a
 // simplify (or there is none).
 func (s *Session) ActiveSimplify() *SimplifyTool {
-	if s.tool == nil {
-		return nil
-	}
-	t, _ := s.tool.tool.(*SimplifyTool)
-	return t
+	return s.activeTool[*SimplifyTool]()
 }

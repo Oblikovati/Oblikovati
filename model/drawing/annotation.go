@@ -12,7 +12,7 @@ import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
-	"oblikovati.org/model/internal/collview"
+	"oblikovati.org/model/collview"
 )
 
 // Drawing annotations (M14-F02 #813): sheet markup that is not a view. A centre-of-gravity

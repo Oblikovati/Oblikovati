@@ -201,11 +201,7 @@ func (s *Session) FeatureIsEditable(f *feature.PartFeature) bool {
 // ActiveFeatureEdit returns the running feature-edit tool, or nil when the active tool (if any)
 // is not a feature edit.
 func (s *Session) ActiveFeatureEdit() *FeatureEditTool {
-	if s.tool == nil {
-		return nil
-	}
-	t, _ := s.tool.tool.(*FeatureEditTool)
-	return t
+	return s.activeTool[*FeatureEditTool]()
 }
 
 // IsEditingFeature reports whether a feature edit dialog should be open.

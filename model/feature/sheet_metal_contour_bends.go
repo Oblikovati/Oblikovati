@@ -53,7 +53,7 @@ func contourCornerBends(pts []math.Point2, reportRadius float64) []BendSpec {
 		if err != nil {
 			continue // a zero-length segment has no direction to turn through
 		}
-		turn := stdmath.Acos(clampUnit(float64(in.Dot(out))))
+		turn := stdmath.Acos(math.Clamp(float64(in.Dot(out)), -1, 1))
 		if turn < 1e-9 {
 			continue // collinear: no corner here, so no bend
 		}
@@ -70,7 +70,7 @@ func cornerArc(a, b, c math.Point2, radius float64) ([]math.Point2, error) {
 	if err != nil {
 		return nil, err
 	}
-	turn := stdmath.Acos(clampUnit(float64(in.Dot(out))))
+	turn := stdmath.Acos(math.Clamp(float64(in.Dot(out)), -1, 1))
 	if turn < 1e-9 {
 		return nil, nil // collinear: no corner to round
 	}

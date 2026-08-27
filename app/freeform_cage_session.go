@@ -7,11 +7,7 @@ package app
 // ActiveCageEdit returns the running Edit Freeform Cage tool, or nil when the active tool is not
 // the cage editor (or there is none).
 func (s *Session) ActiveCageEdit() *FreeformCageEditTool {
-	if s.tool == nil {
-		return nil
-	}
-	t, _ := s.tool.tool.(*FreeformCageEditTool)
-	return t
+	return s.activeTool[*FreeformCageEditTool]()
 }
 
 // CanEditFreeformCage reports whether the active part holds a free-form body to edit — the

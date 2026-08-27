@@ -444,7 +444,7 @@ func (s *Session) SetPointCloudIntensityRamp(low, high [4]float32) {
 }
 
 func normalizedPointCloudRampColor(c [4]float32) [4]float32 {
-	return [4]float32{clamp01(c[0]), clamp01(c[1]), clamp01(c[2]), 1}
+	return [4]float32{math.Clamp(c[0], 0, 1), math.Clamp(c[1], 0, 1), math.Clamp(c[2], 0, 1), 1}
 }
 
 // SelectionFilterState returns the user-editable no-tool ambient selection filter and priority

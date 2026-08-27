@@ -76,7 +76,7 @@ func DirectContribution(l SceneLight, normal, albedo [3]float32) [3]float32 {
 	if !l.On || l.Kind != DirectionalLight {
 		return [3]float32{}
 	}
-	ndotl := dot32(normal, normalize32(l.Direction))
+	ndotl := dot3(normal, normalize3(l.Direction))
 	if ndotl <= 0 {
 		return [3]float32{}
 	}

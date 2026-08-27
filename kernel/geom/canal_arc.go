@@ -59,7 +59,7 @@ func arcControls(m, fa, fb math.Point3, radius float64) (shoulder math.Point3, w
 			"crossSectionArc: foot coincides with center m=%v (|m→fa|=%g, |m→fb|=%g), expected both = radius %g",
 			m, la, lb, radius)
 	}
-	half := 0.5 * stdmath.Acos(clampUnit(float64(da.Dot(db))/(la*lb)))
+	half := 0.5 * stdmath.Acos(math.Clamp(float64(da.Dot(db))/(la*lb), -1, 1))
 	if half <= arcMinHalfAngle || half >= halfPi-arcMinHalfAngle {
 		return math.Point3{}, 0, fmt.Errorf(
 			"crossSectionArc: feet+center near-collinear (arc half-angle %g rad outside (%g, %g)): "+
@@ -68,9 +68,4 @@ func arcControls(m, fa, fb math.Point3, radius float64) (shoulder math.Point3, w
 	weight = stdmath.Cos(half)
 	bis := da.Scale(1 / la).Add(db.Scale(1 / lb)) // feet bisector → the minor-arc (cavity) side, |bis| = 2·weight
 	return m.TranslateBy(bis.Scale(radius / (2 * weight * weight))), weight, nil
-}
-
-// clampUnit clamps x to [-1, 1] so a round-off-inflated dot/‖·‖ ratio cannot make Acos return NaN.
-func clampUnit(x float64) float64 {
-	return stdmath.Max(-1, stdmath.Min(1, x))
 }

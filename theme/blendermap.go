@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/math"
 	"oblikovati.org/theme/blenderxml"
 )
 
@@ -196,7 +197,7 @@ func (d derivedBinding) derive(p Palette) Rgba {
 	}
 	c := p.Color(d.base)
 	if d.alphaScale != 0 {
-		c.A = clamp01(c.A * d.alphaScale)
+		c.A = math.Clamp(c.A*d.alphaScale, 0, 1)
 		return c
 	}
 	return mixRgb(c, p.Color(types.TokenChromeText), d.mix)
@@ -207,13 +208,6 @@ func (d derivedBinding) derive(p Palette) Rgba {
 func mixRgb(a, b Rgba, t float32) Rgba {
 	lerp := func(x, y float32) float32 { return x + (y-x)*t }
 	return Rgba{R: lerp(a.R, b.R), G: lerp(a.G, b.G), B: lerp(a.B, b.B), A: a.A}
-}
-
-func clamp01(v float32) float32 {
-	if v > 1 {
-		return 1
-	}
-	return v
 }
 
 // writeBackColor pushes one token's color into its Blender attribute, so the saved

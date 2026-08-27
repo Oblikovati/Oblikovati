@@ -101,7 +101,7 @@ func (s *Spine) SupportFaces(i int) []*topo.Face { return s.edges[i].Faces() }
 // locate maps a spine abscissa to the (edge index, curve parameter) that realizes it, inverting
 // each edge's arc length and honoring its traversal direction.
 func (s *Spine) locate(absc float64) (int, float64) {
-	absc = clampf(absc, 0, s.total)
+	absc = math.Clamp(absc, 0, s.total)
 	i := s.edgeIndex(absc)
 	local := absc - s.starts[i]
 	lo, hi := s.edges[i].Geometry().Domain()

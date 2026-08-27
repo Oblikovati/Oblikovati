@@ -7,7 +7,7 @@ import (
 
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
-	"oblikovati.org/model/internal/collview"
+	"oblikovati.org/model/collview"
 	"oblikovati.org/model/occurrence"
 )
 

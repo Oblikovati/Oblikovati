@@ -6,6 +6,7 @@ import (
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
 	"oblikovati.org/event"
+	"oblikovati.org/model/collview"
 	"oblikovati.org/model/style"
 	"oblikovati.org/renderer"
 )
@@ -98,11 +99,7 @@ var _ contract.ColorStyles = colorStylesView{}
 func (v colorStylesView) Count() int { return len(v.s.styles.Styles()) }
 
 func (v colorStylesView) Item(i int) contract.ColorStyle {
-	styles := v.s.styles.Styles()
-	if i < 0 || i >= len(styles) {
-		return nil
-	}
-	return colorStyleView{styles[i]}
+	return collview.ItemAs(v.s.styles.Styles(), i, func(cs style.ColorStyle) contract.ColorStyle { return colorStyleView{cs} })
 }
 
 func (v colorStylesView) ByName(name string) contract.ColorStyle {

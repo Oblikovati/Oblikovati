@@ -7,9 +7,5 @@ package app
 // ActiveMeasure returns the running Measure tool, or nil when the active tool is not a measure (or
 // there is none).
 func (s *Session) ActiveMeasure() *MeasureTool {
-	if s.tool == nil {
-		return nil
-	}
-	m, _ := s.tool.tool.(*MeasureTool)
-	return m
+	return s.activeTool[*MeasureTool]()
 }

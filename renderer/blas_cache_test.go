@@ -8,20 +8,22 @@ import (
 )
 
 // fakeBLASBuilder counts Build/Destroy calls and hands back a distinct handle each
-// build, so a test can assert exactly which hashes were (re)built.
+// build, so a test can assert exactly which hashes were (re)built. It instantiates
+// BLASBuilder[int] — a stand-in for a real hardware backend's concrete handle type,
+// proving BLASCache[H] doesn't need any to type-check.
 type fakeBLASBuilder struct {
 	nextHandle int
 	built      []int // handles, in build order
-	destroyed  []any
+	destroyed  []int
 }
 
-func (f *fakeBLASBuilder) BuildBLAS(_ []Triangle) (any, error) {
+func (f *fakeBLASBuilder) BuildBLAS(_ []Triangle) (int, error) {
 	f.nextHandle++
 	f.built = append(f.built, f.nextHandle)
 	return f.nextHandle, nil
 }
 
-func (f *fakeBLASBuilder) DestroyBLAS(handle any) { f.destroyed = append(f.destroyed, handle) }
+func (f *fakeBLASBuilder) DestroyBLAS(handle int) { f.destroyed = append(f.destroyed, handle) }
 
 func quadTriangles(z float32) []Triangle {
 	return []Triangle{{V0: [3]float32{0, 0, z}, V1: [3]float32{1, 0, z}, V2: [3]float32{0, 1, z}}}
@@ -107,7 +109,7 @@ func TestBLASCacheBuildErrorLeavesNoEntry(t *testing.T) {
 
 type erroringBLASBuilder struct{}
 
-func (erroringBLASBuilder) BuildBLAS(_ []Triangle) (any, error) {
-	return nil, errors.New("fake build failure")
+func (erroringBLASBuilder) BuildBLAS(_ []Triangle) (int, error) {
+	return 0, errors.New("fake build failure")
 }
-func (erroringBLASBuilder) DestroyBLAS(_ any) {}
+func (erroringBLASBuilder) DestroyBLAS(_ int) {}

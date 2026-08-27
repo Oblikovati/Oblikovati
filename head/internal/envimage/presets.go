@@ -2,7 +2,10 @@
 
 package envimage
 
-import "oblikovati.org/renderer"
+import (
+	gmath "oblikovati.org/math"
+	"oblikovati.org/renderer"
+)
 
 // presetRes is the resolution of the generated presets. A modest lat-long map is plenty for
 // IBL (the shader blurs it by roughness via mips); the skybox samples the same texture.
@@ -52,7 +55,7 @@ func studioShade(_, t float32) (float32, float32, float32) {
 
 // overcastShade is a near-uniform dim grey, marginally brighter overhead.
 func overcastShade(_, t float32) (float32, float32, float32) {
-	v := 0.5 + 0.12*clamp01((t+1)*0.5)
+	v := 0.5 + 0.12*gmath.Clamp((t+1)*0.5, 0, 1)
 	return v, v, v
 }
 
