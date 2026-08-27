@@ -150,14 +150,23 @@ default** — `reconstructionCutover = false` — because two frontiers remain:
    `booleanGeneral` is subsumed and removed.
 
 3. **Reconstruction robustness on extrude-built operands — the remaining blocker for the
-   FEATURE-level #2167.** The kernel fixture (`dPrismBody`) reconstructs to a valid solid, but the
-   EXTRUDE-built D-prism does not: its cap earcut triangulates differently than the fixture, and
-   the exact coplanar-drop classification (`coplanarPartner`, centroid-in-triangle) is sensitive
-   to the two coincident caps' INDEPENDENT triangulations — the soup fragments and the internal
-   cap is kept. So `reconstructedCurvedBoolean` DECLINES for the feature piston (Union), which
-   falls back to faceting: no regression, but the feature path is not yet analytic. The fix is to
-   make the coplanar drop insensitive to triangulation (or conform the two caps' interiors, not
-   only their rims). `model/feature`'s piston test stays skipped with this reason.
+   FEATURE-level #2167.** The kernel fixture reconstructs to a valid solid; the EXTRUDE-built
+   operands hit two further layers, one now closed:
+   - **CLOSED — near-degenerate cross-operand rim slivers.** The exact mesh boolean welds each
+     operand internally but never the two to EACH OTHER, so where they share a boundary reached by
+     two sampling paths (a canonical cap edge vs a cylinder surface evaluation) it left one vertex
+     a sub-tolerance step from the other — a near-degenerate sliver that fragments the arrangement,
+     and the reason the interface cap was not dropped. `weldResultSoup` (`meshbool_reconstruct.go`)
+     welds the combined output with the size-relative tolerance (the tolerance lives in the ops
+     layer; the meshbool core stays exact). With it, hand-cyl ∪ extrude-D reconstructs to a valid
+     5-face solid.
+   - **OPEN — reconstruction seam-wrap edge match.** For a fully extrude-built join, the result is
+     now manifold with the correct faces but not yet CLOSED: when the extrude cylinder's rim seam
+     falls inside the exposed minor-arc region, the boundary run wraps the seam, so `matchClosed`
+     reuses the FULL rim circle where `matchSubArc` should cut a sub-arc — leaving open edges. The
+     fix is a seam-aware run match (split a seam-crossing run and reuse the sub-arc). Until it
+     lands, `reconstructedCurvedBoolean` DECLINES for the feature piston and the Join falls back to
+     faceting (no regression); the cutover stays gated and the piston test skipped.
 
 4. **Curved SSI-edge welding (e.g. cyl ∪ box).** Reconstruction recovers the analytic surfaces
    but the plane∩cylinder ellipse/line edges do not yet weld watertight; Layer 4 (exact SSI conics

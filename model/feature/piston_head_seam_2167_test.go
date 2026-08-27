@@ -39,18 +39,17 @@ func dProfileSketchOnPlaneZ(z, r, theta float64) *sketch.Sketch {
 func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
 	// ADR-0054 status: at the KERNEL level #2167 is CLOSED — reconstruction builds a valid,
 	// closed, manifold analytic solid (conforming tessellation + cross-operand vertex-on-edge
-	// imprint + same-surface merge; see the passing kernel twin
-	// ops.TestReconstructCocylindricalCapOnWall). The Layer-5 CUTOVER is landed: reconstruction
-	// is now the last path in curvedExactBoolean, so the feature combine tries it on the
-	// still-analytic operands before faceting. But the EXTRUDE-built D-prism reconstructs to an
-	// INVALID body (its cap earcut triangulates differently than the hand-built fixture, and the
-	// exact coplanar classification is sensitive to that — the soup fragments and the internal
-	// cap is not dropped), so reconstruction DECLINES here and the feature Join falls back to
-	// faceting: no regression, but the feature path is not yet analytic. Closing this is a
-	// reconstruction-robustness follow-up (make the coplanar drop insensitive to the two
-	// coincident caps' independent triangulations). Un-skip when it lands. NOTE: the merge makes
-	// the cocylindrical walls ONE analytic cylinder, so the assertion below expects cyl==1.
-	t.Skip("ADR-0054/#2167: kernel-closed + cutover landed; feature path pending reconstruction robustness on extrude-built cocylindrical operands")
+	// imprint + same-surface merge + cross-operand result weld; see the passing kernel twin
+	// ops.TestReconstructCocylindricalCapOnWall). The Layer-5 cutover mechanism is wired
+	// (reconstruction is the last path in curvedExactBoolean, tried by the feature combine on the
+	// still-analytic operands), but stays GATED because the EXTRUDE-built operands still hit two
+	// reconstruction-robustness layers not yet closed: (1) FIXED — near-degenerate cross-operand
+	// rim slivers, removed by weldResultSoup; (2) OPEN — when the extrude cylinder's rim seam falls
+	// in the exposed minor-arc region, the boundary run WRAPS the seam and matchClosed reuses the
+	// FULL rim circle where matchSubArc should cut a sub-arc, leaving open edges. So the feature
+	// Join declines to faceting: no regression, but not yet analytic. Un-skip + flip the gate when
+	// (2) lands. NOTE: the merge makes the cocylindrical walls ONE analytic cylinder (cyl==1).
+	t.Skip("ADR-0054/#2167: kernel-closed; feature path pending the reconstruction seam-wrap edge-match fix (matchSubArc on a seam-crossing run)")
 	const r, theta, h1, h2 = 3.0, 0.6, 6.0, 4.0
 	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)

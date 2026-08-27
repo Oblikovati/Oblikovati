@@ -40,6 +40,7 @@ func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality) (*topo.Body,
 	relabelTags(bSoup.Tags, rep)
 	inputCount := tagCounts(aSoup.Tags, bSoup.Tags)
 	result := meshbool.BooleanTagged(aSoup, bSoup, op)
+	result = weldResultSoup(result, res.Weld())
 	relabelTags(result.Tags, rep)
 
 	arr := meshbool.ArrangementTopologyOf(result)
@@ -138,4 +139,68 @@ func tagCounts(tagSlices ...[]int) map[int]int {
 // runPoint rounds one run vertex to a kernel point.
 func runPoint(verts []meshbool.Point, run meshbool.ArrangementRun, i int) math.Point3 {
 	return verts[run.Verts[i]].Round()
+}
+
+// weldResultSoup collapses result vertices that co-refinement placed within tol of each other to
+// a single representative, then drops the degenerate triangles that then appear. The exact mesh
+// boolean welds each operand INTERNALLY, but never the two operands to EACH OTHER: where they share
+// a boundary sampled by two paths (e.g. a rim reached by a canonical cap edge on one side and a
+// cylinder surface evaluation on the other), it inserts one operand's vertex a sub-tolerance step
+// from the other's, leaving a near-degenerate sliver that fragments the arrangement. Welding the
+// combined output — the same size-relative hygiene the IN adapter applies to each operand — removes
+// it. The tolerance lives here in the ops layer; the meshbool core stays exact (ADR-0054).
+func weldResultSoup(soup meshbool.TaggedSoup, tol float64) meshbool.TaggedSoup {
+	w := newVertexWelder(tol)
+	out := meshbool.TaggedSoup{}
+	for i := range soup.Tris {
+		t := soup.Tris[i]
+		tri := [3]meshbool.Point{w.canon(t[0]), w.canon(t[1]), w.canon(t[2])}
+		if tri[0].Equal(tri[1]) || tri[1].Equal(tri[2]) || tri[2].Equal(tri[0]) {
+			continue // welded to a degenerate sliver
+		}
+		out.Tris = append(out.Tris, tri)
+		out.Tags = append(out.Tags, soup.Tags[i])
+	}
+	return out
+}
+
+// vertexWelder maps points within tol of an earlier one to that earlier representative, via a
+// spatial hash keyed on the rounded position (27-cell neighbour search catches a pair straddling
+// a cell border).
+type vertexWelder struct {
+	tol     float64
+	buckets map[[3]int64][]weldedVertex
+}
+
+type weldedVertex struct {
+	rat  meshbool.Point
+	flat math.Point3
+}
+
+func newVertexWelder(tol float64) *vertexWelder {
+	return &vertexWelder{tol: tol, buckets: map[[3]int64][]weldedVertex{}}
+}
+
+// canon returns the representative p welds to (an earlier vertex within tol), or records and
+// returns p when none exists.
+func (w *vertexWelder) canon(p meshbool.Point) meshbool.Point {
+	flat := p.Round()
+	c := w.cellOf(flat)
+	for dx := int64(-1); dx <= 1; dx++ {
+		for dy := int64(-1); dy <= 1; dy++ {
+			for dz := int64(-1); dz <= 1; dz++ {
+				for _, e := range w.buckets[[3]int64{c[0] + dx, c[1] + dy, c[2] + dz}] {
+					if e.flat.DistanceTo(flat) <= w.tol {
+						return e.rat
+					}
+				}
+			}
+		}
+	}
+	w.buckets[c] = append(w.buckets[c], weldedVertex{p, flat})
+	return p
+}
+
+func (w *vertexWelder) cellOf(p math.Point3) [3]int64 {
+	return [3]int64{int64(p.X / w.tol), int64(p.Y / w.tol), int64(p.Z / w.tol)}
 }
