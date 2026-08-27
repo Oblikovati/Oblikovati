@@ -177,33 +177,38 @@ func analyticSegOf(e Entity) (analyticSeg, error) {
 }
 
 // projectedAnalyticSeg reduces a projected curve to its analytic line/arc form (Inventor keeps a
-// projected edge analytic). A full projected circle cannot join a multi-entity chain, and a non-
-// analytic (shapeNone) projection has no analytic offset, so both error.
+// projected edge analytic) from its geom.Curve2 (ADR-0055). A full projected circle cannot join a
+// multi-entity chain, and a non-analytic projection has no analytic offset, so both error.
 func projectedAnalyticSeg(pc *ProjectedCurve) (analyticSeg, error) {
-	sh := pc.shape
-	switch sh.kind {
-	case shapeLine:
-		return analyticSeg{isLine: true, p0: sh.a, p1: sh.b}, nil
-	case shapeArc:
+	c2, ok := pc.AnalyticCurve()
+	if !ok {
+		return analyticSeg{}, fmt.Errorf("offset: projected curve is not analytic")
+	}
+	switch k := c2.(type) {
+	case geom.LineSegment2d:
+		return analyticSeg{isLine: true, p0: k.StartPoint, p1: k.EndPoint}, nil
+	case geom.Arc2d:
 		return analyticSeg{
-			center: sh.center, radius: sh.radius, ccw: sh.sweep > 0,
-			p0: arcPointAt(sh.center, sh.radius, sh.start),
-			p1: arcPointAt(sh.center, sh.radius, sh.start+sh.sweep),
+			center: k.Center, radius: k.Radius, ccw: k.SweepAngle > 0,
+			p0: arcPointAt(k.Center, k.Radius, k.StartAngle),
+			p1: arcPointAt(k.Center, k.Radius, k.StartAngle+k.SweepAngle),
 		}, nil
 	default:
-		return analyticSeg{}, fmt.Errorf("offset: curve is not analytic (projected shape kind %d)", sh.kind)
+		return analyticSeg{}, fmt.Errorf("offset: projected curve is not a line or arc (%T)", c2)
 	}
 }
 
 // circleCenterRadius returns the centre and radius of a full-circle entity (a Circle or a projected
-// circle), reporting false for anything else.
+// circle carrying an analytic geom.Circle2d), reporting false for anything else.
 func circleCenterRadius(e Entity) (math.Point2, float64, bool) {
 	switch v := e.(type) {
 	case *Circle:
 		return v.Center.Position(), float64(v.Radius), true
 	case *ProjectedCurve:
-		if v.shape.kind == shapeCircle {
-			return v.shape.center, v.shape.radius, true
+		if c2, ok := v.AnalyticCurve(); ok {
+			if circ, isCircle := c2.(geom.Circle2d); isCircle {
+				return circ.Center, circ.Radius, true
+			}
 		}
 	}
 	return math.Point2{}, 0, false

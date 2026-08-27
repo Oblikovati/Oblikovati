@@ -9,8 +9,9 @@ import (
 	gmath "oblikovati.org/math"
 )
 
-// ellipsePts samples an ellipse (semi-axes ra, rb) — an obliquely projected arc/circle, which is
-// NOT a circle, so fitProjectedShape leaves it shapeNone and the offset falls back to the polyline.
+// ellipsePts samples an ellipse (semi-axes ra, rb) — an obliquely projected arc/circle, which has no
+// analytic geom.Curve2 yet (ADR-0055 phase 2), so a restored-from-points projection of it offsets as
+// a polyline.
 func ellipsePts(ra, rb, start, sweep float64, n int) []gmath.Point2 {
 	pts := make([]gmath.Point2, n+1)
 	for i := range pts {
@@ -22,12 +23,12 @@ func ellipsePts(ra, rb, start, sweep float64, n int) []gmath.Point2 {
 
 // TestOffsetProjectedClosedLoop: a non-circular closed projection (an ellipse) offsets as a closed
 // loop of lines — the polyline fallback (#2158 follow-up). A circular projection takes the analytic
-// path instead (TestOffsetProjectedCircleMakesACircle).
+// path instead (TestProjectedCircleOffsetsAnalytic).
 func TestOffsetProjectedClosedLoop(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	pc := s.RestoreProjectedCurve(nextID(), ellipsePts(4, 2, 0, 2*stdmath.Pi, 24), "edge", "E1")
-	if pc.shape.kind != shapeNone {
-		t.Fatalf("an ellipse should stay a polyline, got shape kind %d", pc.shape.kind)
+	if _, ok := pc.AnalyticCurve(); ok {
+		t.Fatal("an ellipse polyline should have no analytic curve (it offsets as a polyline)")
 	}
 	before := s.Lines().Count()
 	got, err := s.OffsetEntity(pc, -0.5)
@@ -46,8 +47,8 @@ func TestOffsetProjectedClosedLoop(t *testing.T) {
 func TestOffsetProjectedOpenCurve(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	pc := s.RestoreProjectedCurve(nextID(), ellipsePts(4, 2, 0, stdmath.Pi, 16), "edge", "E2")
-	if pc.shape.kind != shapeNone {
-		t.Fatalf("a half-ellipse should stay a polyline, got shape kind %d", pc.shape.kind)
+	if _, ok := pc.AnalyticCurve(); ok {
+		t.Fatal("a half-ellipse polyline should have no analytic curve (it offsets as a polyline)")
 	}
 	before := s.Lines().Count()
 	if _, err := s.OffsetEntity(pc, 0.5); err != nil {

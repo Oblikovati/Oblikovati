@@ -107,7 +107,6 @@ type ProjectedCurve struct {
 	plane  Plane
 	curve  geom.Curve2 // the analytic 2D form (ADR-0055); nil for a non-analytic (sampled) source
 	points []math.Point2
-	shape  projectedShape
 	linked bool
 	// srcKind/srcID persist the source's identity for save/reload + rebind (see ProjectedPoint).
 	srcKind, srcID string
@@ -173,7 +172,6 @@ func (c *ProjectedCurve) Update() {
 	for _, q := range src {
 		c.points = append(c.points, c.plane.ToSketch(q))
 	}
-	c.shape = fitProjectedShape(c.points)
 }
 
 // updateAnalytic sets the analytic 2D curve from the source's exact curve, returning false when the
@@ -194,24 +192,7 @@ func (c *ProjectedCurve) updateAnalytic() bool {
 	}
 	c.curve = c2
 	c.points = sampleCurve2(c2, projectedRenderSegments)
-	c.shape = shapeFromCurve2(c2) // exact — so offset/arrangement stay analytic (they read shape)
 	return true
-}
-
-// shapeFromCurve2 mirrors an analytic geom.Curve2 into the projectedShape the offset and arrangement
-// paths still consume — exactly, unlike a fit from sampled points. It is the bridge until those
-// paths read geom.Curve2 directly (then projectedShape and fitProjectedShape are deleted, ADR-0055).
-func shapeFromCurve2(c geom.Curve2) projectedShape {
-	switch k := c.(type) {
-	case geom.LineSegment2d:
-		return projectedShape{kind: shapeLine, a: k.StartPoint, b: k.EndPoint}
-	case geom.Circle2d:
-		return projectedShape{kind: shapeCircle, center: k.Center, radius: k.Radius}
-	case geom.Arc2d:
-		return projectedShape{kind: shapeArc, center: k.Center, radius: k.Radius, start: k.StartAngle, sweep: k.SweepAngle}
-	default:
-		return projectedShape{}
-	}
 }
 
 // sketchPlaneToGeom builds the geom.Plane whose (u,v) frame is the sketch plane's (xAxis, yAxis), so
@@ -231,13 +212,10 @@ func sampleCurve2(c geom.Curve2, n int) []math.Point2 {
 	return pts
 }
 
-// RenderPolyline returns the curve as a smooth polyline for drawing and hit-testing: the analytic
-// shape sampled finely when the projection is a line/arc/circle (so a projected arc is not the 16
-// source facets), else the raw projected points.
+// RenderPolyline returns the curve as a polyline for drawing and hit-testing. For an analytic
+// projection c.points is the geom.Curve2 sampled finely (a projected arc draws smooth, not the 16
+// source facets); for a non-analytic one it is the raw projected polyline.
 func (c *ProjectedCurve) RenderPolyline() []math.Point2 {
-	if p := c.shape.polyline(); p != nil {
-		return p
-	}
 	return c.Points()
 }
 
@@ -383,7 +361,7 @@ func (s *Sketch) RestoreProjectedPoint(anchorID ID, pos math.Point2, srcKind, sr
 // and keeping the source descriptor for a later Rebind. This is the LEGACY path for documents that
 // stored the sampled coords; new documents store the analytic curve (RestoreProjectedCurveAnalytic).
 func (s *Sketch) RestoreProjectedCurve(id ID, pts []math.Point2, srcKind, srcID string) *ProjectedCurve {
-	c := &ProjectedCurve{id: id, plane: s.plane, points: pts, shape: fitProjectedShape(pts), linked: false, srcKind: srcKind, srcID: srcID}
+	c := &ProjectedCurve{id: id, plane: s.plane, points: pts, linked: false, srcKind: srcKind, srcID: srcID}
 	s.add(c)
 	return c
 }

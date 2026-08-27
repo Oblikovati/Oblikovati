@@ -110,6 +110,26 @@ func TestProjectedCircleOffsetsAnalytic(t *testing.T) {
 	}
 }
 
+// TestProjectedArcOffsetsAnalytic: offsetting an analytic projected arc yields a concentric analytic
+// arc of the same span — the offset path reads the geom.Curve2 directly (ADR-0055, no projectedShape).
+func TestProjectedArcOffsetsAnalytic(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	arc, _ := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 5, 0, stdmath.Pi/2)
+	pc := s.ProjectCurve(&analyticEdge{id: "a5", curve: arc})
+
+	got, err := s.OffsetEntity(pc, -1) // inner offset → radius 4
+	if err != nil {
+		t.Fatalf("offset projected arc: %v", err)
+	}
+	a, ok := got.(*Arc)
+	if !ok {
+		t.Fatalf("offset of a projected arc = %T, want a real *Arc (not a faceted chain)", got)
+	}
+	if r := float64(a.Radius()); stdmath.Abs(r-4) > 1e-9 {
+		t.Fatalf("offset arc radius = %g, want 4 (5 + -1)", r)
+	}
+}
+
 // TestProjectedNonAnalyticFallsBack: a source that only yields sample points (no analytic curve)
 // projects to a polyline, and AnalyticCurve reports false — the fallback path still works.
 func TestProjectedNonAnalyticFallsBack(t *testing.T) {

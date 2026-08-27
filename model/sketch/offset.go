@@ -6,6 +6,8 @@ import (
 	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/kernel/geom"
+
 	"oblikovati.org/math"
 )
 
@@ -33,15 +35,17 @@ func (s *Sketch) OffsetEntity(e Entity, d math.Scalar) (Entity, error) {
 // offsetting a projected polyline (matching OffsetClosedLoop's own default fidelity).
 const projectedOffsetArcSegs = 8
 
-// offsetProjectedCurve offsets a projected reference curve — a sampled polyline, e.g. a projected
-// face perimeter or model edge — by d as new sketch line geometry: a closed perimeter offsets as a
-// closed loop (an inner offset for d<0, matching offsetCircle's sign), an open edge as an open
-// chain. The projection is already faceted, so its offset is faceted too. This is the offset a user
-// reaches by selecting a projected perimeter (#2158 follow-up); before it, OffsetEntity rejected the
-// projected curve outright.
+// offsetProjectedCurve offsets a projected reference curve by d. An ANALYTIC projection (its
+// geom.Curve2 is a line/circle/arc — the common case, ADR-0055) offsets exactly: a concentric
+// circle/arc, a parallel line. A non-analytic projection (an oblique conic, or a multi-edge
+// silhouette loop) offsets as a faceted polyline: a closed perimeter as a closed loop (an inner
+// offset for d<0, matching offsetCircle's sign), an open edge as an open chain. This is the offset a
+// user reaches by selecting a projected perimeter (#2158 follow-up).
 func (s *Sketch) offsetProjectedCurve(pc *ProjectedCurve, d math.Scalar) (Entity, error) {
-	if e, err, ok := s.offsetProjectedShape(pc.shape, d); ok {
-		return e, err
+	if c2, ok := pc.AnalyticCurve(); ok {
+		if e, err, ok := s.offsetAnalyticCurve2(c2, d); ok {
+			return e, err
+		}
 	}
 	// A projection that is not analytic (an oblique arc → ellipse) offsets as a faceted polyline.
 	pts := pc.RenderPolyline()
@@ -58,19 +62,20 @@ func (s *Sketch) offsetProjectedCurve(pc *ProjectedCurve, d math.Scalar) (Entity
 	return s.addOpenPolyline(off), nil
 }
 
-// offsetProjectedShape offsets an analytic projected shape into a real sketch line/arc/circle — a
-// projected arc offsets to a concentric arc, a circle to a concentric circle, a line to a parallel
-// line (Inventor keeps projected geometry analytic). ok is false for shapeNone (polyline fallback).
-// The sign matches offsetCircle: d>0 grows the radius, d<0 shrinks it (an inner offset).
-func (s *Sketch) offsetProjectedShape(sh projectedShape, d math.Scalar) (Entity, error, bool) {
-	switch sh.kind {
-	case shapeLine:
-		return s.offsetProjectedLine(sh, d), nil, true
-	case shapeCircle:
-		e, err := s.offsetProjectedCircle(sh, d)
+// offsetAnalyticCurve2 offsets a projected curve's analytic geom.Curve2 (ADR-0055) into a real
+// sketch line/arc/circle — a projected arc offsets to a concentric arc, a circle to a concentric
+// circle, a line to a parallel line (Inventor keeps projected geometry analytic). ok is false for a
+// form with no analytic offset (the polyline fallback). The sign matches offsetCircle: d>0 grows the
+// radius, d<0 shrinks it (an inner offset).
+func (s *Sketch) offsetAnalyticCurve2(c geom.Curve2, d math.Scalar) (Entity, error, bool) {
+	switch k := c.(type) {
+	case geom.LineSegment2d:
+		return s.offsetProjectedLine(k.StartPoint, k.EndPoint, d), nil, true
+	case geom.Circle2d:
+		e, err := s.offsetProjectedCircle(k.Center, k.Radius, d)
 		return e, err, true
-	case shapeArc:
-		e, err := s.offsetProjectedArc(sh, d)
+	case geom.Arc2d:
+		e, err := s.offsetProjectedArc(k, d)
 		return e, err, true
 	default:
 		return nil, nil, false
@@ -79,33 +84,33 @@ func (s *Sketch) offsetProjectedShape(sh projectedShape, d math.Scalar) (Entity,
 
 // offsetProjectedLine returns the projected line shifted by d along its left normal (a copy in place
 // for a degenerate zero-length shape).
-func (s *Sketch) offsetProjectedLine(sh projectedShape, d math.Scalar) *Line {
-	u, ok := unitVec(sh.a.VectorTo(sh.b))
+func (s *Sketch) offsetProjectedLine(a, b math.Point2, d math.Scalar) *Line {
+	u, ok := unitVec(a.VectorTo(b))
 	if !ok {
-		return s.lines.AddByTwoPoints(sh.a, sh.b)
+		return s.lines.AddByTwoPoints(a, b)
 	}
 	n := math.V2(-u.Y, u.X).Scale(float64(d))
-	return s.lines.AddByTwoPoints(sh.a.TranslateBy(n), sh.b.TranslateBy(n))
+	return s.lines.AddByTwoPoints(a.TranslateBy(n), b.TranslateBy(n))
 }
 
 // offsetProjectedCircle returns the concentric circle of radius radius+d.
-func (s *Sketch) offsetProjectedCircle(sh projectedShape, d math.Scalar) (*Circle, error) {
-	r := sh.radius + float64(d)
+func (s *Sketch) offsetProjectedCircle(center math.Point2, radius float64, d math.Scalar) (*Circle, error) {
+	r := radius + float64(d)
 	if r <= 0 {
-		return nil, fmt.Errorf("offset: projected circle radius %.4g + %.4g ≤ 0", sh.radius, float64(d))
+		return nil, fmt.Errorf("offset: projected circle radius %.4g + %.4g ≤ 0", radius, float64(d))
 	}
-	return s.circles.AddByCenterRadius(sh.center, math.Scalar(r)), nil
+	return s.circles.AddByCenterRadius(center, math.Scalar(r)), nil
 }
 
 // offsetProjectedArc returns the concentric arc of radius radius+d over the same angular span.
-func (s *Sketch) offsetProjectedArc(sh projectedShape, d math.Scalar) (*Arc, error) {
-	r := sh.radius + float64(d)
+func (s *Sketch) offsetProjectedArc(a geom.Arc2d, d math.Scalar) (*Arc, error) {
+	r := a.Radius + float64(d)
 	if r <= 0 {
-		return nil, fmt.Errorf("offset: projected arc radius %.4g + %.4g ≤ 0", sh.radius, float64(d))
+		return nil, fmt.Errorf("offset: projected arc radius %.4g + %.4g ≤ 0", a.Radius, float64(d))
 	}
-	start := arcPointAt(sh.center, r, sh.start)
-	end := arcPointAt(sh.center, r, sh.start+sh.sweep)
-	return s.arcs.AddByCenterStartEnd(sh.center, start, end, sh.sweep > 0), nil
+	start := arcPointAt(a.Center, r, a.StartAngle)
+	end := arcPointAt(a.Center, r, a.StartAngle+a.SweepAngle)
+	return s.arcs.AddByCenterStartEnd(a.Center, start, end, a.SweepAngle > 0), nil
 }
 
 // arcPointAt is the point on the circle of radius r about centre at angle a (radians).
