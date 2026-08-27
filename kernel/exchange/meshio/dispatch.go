@@ -79,6 +79,13 @@ func importFileUnitMM(format types.ExchangeFormat, data []byte) (float64, []stri
 // format. It is the single format switch for export; the per-format encoders own the
 // byte emission. The triangle count returned is what was written.
 //
+// The legacy mesh formats (STL/OBJ/3MF) tessellate ONCE via [TessellateBodies] and
+// feed the same mesh to the encoder and the count — the per-body encoders
+// (EncodeBinarySTL/EncodeOBJ/Encode3MF) tessellate internally, so encoding and
+// counting separately would tessellate twice (CHG4-1). The file unit is the legacy
+// single-body default: 3MF declares the 3MF document unit default millimetre
+// (Encode3MF); STL/OBJ are unitless.
+//
 // glTF delegates to the per-body path [ExportBodiesGLTF] with a single-body slice and
 // zero-value options (the glTF path defaults the unit itself — see CHG3-2). Its
 // warnings (a skipped empty body) have nowhere to go in this 3-value signature, so
@@ -92,28 +99,18 @@ func importFileUnitMM(format types.ExchangeFormat, data []byte) (float64, []stri
 func ExportBody(format types.ExchangeFormat, body *topo.Body, res types.MeshResolution) ([]byte, int, error) {
 	q := QualityFor(res)
 	switch format {
-	case types.FormatSTL:
-		data := EncodeBinarySTL(body, q)
-		return data, triangleCount(body, q), nil
-	case types.FormatOBJ:
-		data := EncodeOBJ(body, q)
-		return data, triangleCount(body, q), nil
-	case types.Format3MF:
-		data, err := Encode3MF(body, q)
-		return data, triangleCount(body, q), err
 	case types.FormatGLTF:
 		data, tris, _, err := ExportBodiesGLTF([]*topo.Body{body}, res, exchange.TranslationOptions{})
 		return data, tris, err
+	case types.FormatSTL, types.FormatOBJ, types.Format3MF:
+		records, err := TessellateBodies([]*topo.Body{body}, q)
+		if err != nil {
+			return nil, 0, err
+		}
+		return encodeMesh(format, records[0].Mesh, "millimeter")
 	default:
 		return nil, 0, fmt.Errorf("meshio: unsupported export format %q (want stl|obj|3mf|gltf)", format)
 	}
-}
-
-// triangleCount returns how many triangles a body tessellates to at quality q (the count
-// the encoders write).
-func triangleCount(body *topo.Body, q ops.Quality) int {
-	mesh, _ := ops.TessellateBody(body, q)
-	return mesh.TriangleCount()
 }
 
 // ExportBodies tessellates several bodies at the given resolution, merges them into one
@@ -191,7 +188,10 @@ type BodyMesh struct {
 //	meshes, err := meshio.TessellateBodies(bodies, meshio.QualityFor(types.ResolutionHigh))
 func TessellateBodies(bodies []*topo.Body, q ops.Quality) ([]BodyMesh, error) {
 	out := make([]BodyMesh, 0, len(bodies))
-	for _, b := range bodies {
+	for i, b := range bodies {
+		if b == nil {
+			return nil, fmt.Errorf("tessellate: body at index %d is nil", i)
+		}
 		mesh, _ := ops.TessellateBody(b, q)
 		if mesh == nil {
 			return nil, fmt.Errorf("tessellate body %d: nil mesh", b.ID())

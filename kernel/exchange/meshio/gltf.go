@@ -64,7 +64,10 @@ func ExportBodiesGLTF(bodies []*topo.Body, res types.MeshResolution, opts exchan
 func encodeGLTFBodies(bodies []*topo.Body, q ops.Quality, opts exchange.TranslationOptions) ([]byte, int, []string, error) {
 	var warnings []string
 	exportable := make([]*topo.Body, 0, len(bodies))
-	for _, b := range bodies {
+	for i, b := range bodies {
+		if b == nil {
+			return nil, 0, nil, fmt.Errorf("gltf: body at index %d is nil", i)
+		}
 		if len(b.Faces()) == 0 {
 			warnings = append(warnings, fmt.Sprintf("gltf: body %d is empty; skipped", b.ID()))
 			continue

@@ -456,6 +456,27 @@ func TestGLTFAllEmpty(t *testing.T) {
 	}
 }
 
+// TestGLTFNilBodyTypedError: a nil body in the slice is a typed error naming
+// the index, returned BEFORE any dereference — no panic (CHG4-2).
+func TestGLTFNilBodyTypedError(t *testing.T) {
+	box := cmBox(t)
+	_, _, _, err := ExportBodiesGLTF([]*topo.Body{box, nil}, types.ResolutionHigh,
+		exchange.TranslationOptions{TargetUnitMM: exchange.DBUnitMM})
+	if err == nil || !strings.Contains(err.Error(), "gltf: body at index 1 is nil") {
+		t.Fatalf("err = %v, want a gltf nil-body error naming index 1", err)
+	}
+}
+
+// TestTessellateBodiesNilBodyTypedError: a nil body in the slice is a typed
+// error naming the index, returned BEFORE any dereference — no panic (CHG4-2).
+func TestTessellateBodiesNilBodyTypedError(t *testing.T) {
+	box := cmBox(t)
+	_, err := TessellateBodies([]*topo.Body{box, nil}, QualityFor(types.ResolutionHigh))
+	if err == nil || !strings.Contains(err.Error(), "tessellate: body at index 1 is nil") {
+		t.Fatalf("err = %v, want a tessellate nil-body error naming index 1", err)
+	}
+}
+
 // TestGLTFNormalCountMismatch: len(normals) != len(positions) is a typed error
 // (R2-9).
 func TestGLTFNormalCountMismatch(t *testing.T) {
