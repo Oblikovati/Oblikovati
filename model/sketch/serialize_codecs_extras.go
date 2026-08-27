@@ -109,10 +109,22 @@ func registerProjectionCodecs() {
 		encode: func(e Entity) (EntityData, error) {
 			v := e.(*ProjectedCurve)
 			kind, id := v.SourceDescriptor()
+			// Store the analytic curve (a few floats) not the 17-point polyline (ADR-0055); a
+			// non-analytic projection still stores its coords.
+			if curve, ok := v.AnalyticCurve(); ok {
+				if shape, params, ok := analyticCurveData(curve); ok {
+					return EntityData{ID: int(v.id), ProjShape: shape, ProjParams: params, Source: id, SourceKind: kind}, nil
+				}
+			}
 			return EntityData{ID: int(v.id), Coords: flattenPoints(v.points), Source: id, SourceKind: kind}, nil
 		},
 		decode: func(r *sketchRestorer, ed EntityData) (Entity, error) {
-			c := r.s.RestoreProjectedCurve(ID(ed.ID), unflattenPoints(ed.Coords), ed.SourceKind, ed.Source)
+			var c *ProjectedCurve
+			if curve, ok := analyticCurveFromData(ed.ProjShape, ed.ProjParams); ok {
+				c = r.s.RestoreProjectedCurveAnalytic(ID(ed.ID), curve, ed.SourceKind, ed.Source)
+			} else {
+				c = r.s.RestoreProjectedCurve(ID(ed.ID), unflattenPoints(ed.Coords), ed.SourceKind, ed.Source)
+			}
 			r.note(ed.ID)
 			return c, nil
 		},

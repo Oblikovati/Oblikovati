@@ -44,6 +44,51 @@ func TestProjectedCircleStaysAnalytic(t *testing.T) {
 	}
 }
 
+// TestProjectedCircleSerializesAnalytic: a projected circle persists as a compact analytic
+// descriptor (3 floats) with NO coords polyline, and round-trips back to an analytic circle
+// (ADR-0055 — the fix for the 34-float-per-curve document bloat).
+func TestProjectedCircleSerializesAnalytic(t *testing.T) {
+	sc := NewSketches()
+	s := sc.Add(XYPlane())
+	circ, _ := geom.NewCircle(math.P3(2, 3, 5), math.V3(0, 0, 1), 4)
+	s.ProjectCurve(&analyticEdge{id: "c9", curve: circ})
+
+	data, err := sc.MarshalRecipe()
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	var ed EntityData
+	for _, e := range data[0].Entities {
+		if e.Source == "c9" {
+			ed = e
+		}
+	}
+	if ed.ProjShape != "circle" || len(ed.ProjParams) != 3 {
+		t.Fatalf("serialized projShape=%q params=%v, want circle [2 3 4]", ed.ProjShape, ed.ProjParams)
+	}
+	if len(ed.Coords) != 0 {
+		t.Fatalf("serialized a %d-float coords polyline; an analytic curve stores none", len(ed.Coords))
+	}
+
+	out := roundTrip(t, sc)
+	var rc *ProjectedCurve
+	for _, e := range out.Entities() {
+		if c, ok := e.(*ProjectedCurve); ok {
+			rc = c
+		}
+	}
+	if rc == nil {
+		t.Fatal("projected curve lost on round trip")
+	}
+	c2, ok := rc.AnalyticCurve()
+	if !ok {
+		t.Fatal("restored projected curve is not analytic")
+	}
+	if cc, isCircle := c2.(geom.Circle2d); !isCircle || stdmath.Abs(cc.Radius-4) > 1e-9 {
+		t.Fatalf("restored curve = %T, want Circle2d r 4", c2)
+	}
+}
+
 // TestProjectedNonAnalyticFallsBack: a source that only yields sample points (no analytic curve)
 // projects to a polyline, and AnalyticCurve reports false — the fallback path still works.
 func TestProjectedNonAnalyticFallsBack(t *testing.T) {

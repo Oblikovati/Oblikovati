@@ -96,6 +96,8 @@ type EntityData struct {
 	FormatWeight float64   `yaml:"formatLineWeight,omitempty"`
 	Source       string    `yaml:"source,omitempty"`       // projected*: the source's SourceID
 	SourceKind   string    `yaml:"sourceKind,omitempty"`   // projected*: vertex|edge|workPoint|workAxis|workPlane
+	ProjShape    string    `yaml:"projShape,omitempty"`    // projectedCurve: analytic form line|circle|arc (ADR-0055)
+	ProjParams   []float64 `yaml:"projParams,omitempty"`   // projectedCurve: line[ax,ay,bx,by]|circle[cx,cy,r]|arc[cx,cy,r,start,sweep]
 	ImageRef     string    `yaml:"imageRef,omitempty"`     // image only
 	Anchor       []float64 `yaml:"anchor,omitempty"`       // image/text: [x, y]
 	Size         []float64 `yaml:"size,omitempty"`         // image only: [w, h]

@@ -356,9 +356,62 @@ func (s *Sketch) RestoreProjectedPoint(anchorID ID, pos math.Point2, srcKind, sr
 }
 
 // RestoreProjectedCurve rebuilds a projected curve frozen at the given polyline, pinning its id
-// and keeping the source descriptor for a later Rebind.
+// and keeping the source descriptor for a later Rebind. This is the LEGACY path for documents that
+// stored the sampled coords; new documents store the analytic curve (RestoreProjectedCurveAnalytic).
 func (s *Sketch) RestoreProjectedCurve(id ID, pts []math.Point2, srcKind, srcID string) *ProjectedCurve {
 	c := &ProjectedCurve{id: id, plane: s.plane, points: pts, shape: fitProjectedShape(pts), linked: false, srcKind: srcKind, srcID: srcID}
 	s.add(c)
 	return c
+}
+
+// RestoreProjectedCurveAnalytic rebuilds a projected curve frozen at its persisted analytic 2D curve
+// (ADR-0055), pinning its id and keeping the source descriptor for a later Rebind. The polyline is
+// re-derived from the curve for display; it is not stored.
+func (s *Sketch) RestoreProjectedCurveAnalytic(id ID, curve geom.Curve2, srcKind, srcID string) *ProjectedCurve {
+	c := &ProjectedCurve{
+		id: id, plane: s.plane, curve: curve, points: sampleCurve2(curve, projectedRenderSegments),
+		linked: false, srcKind: srcKind, srcID: srcID,
+	}
+	s.add(c)
+	return c
+}
+
+// analyticCurveData encodes a projected curve's analytic 2D form as a compact shape tag + params for
+// persistence (ADR-0055): line[ax,ay,bx,by], circle[cx,cy,r], arc[cx,cy,r,start,sweep]. ok=false for
+// a form with no compact encoding yet (the caller then persists the sampled polyline).
+func analyticCurveData(c geom.Curve2) (shape string, params []float64, ok bool) {
+	switch k := c.(type) {
+	case geom.LineSegment2d:
+		return "line", []float64{float64(k.StartPoint.X), float64(k.StartPoint.Y), float64(k.EndPoint.X), float64(k.EndPoint.Y)}, true
+	case geom.Circle2d:
+		return "circle", []float64{float64(k.Center.X), float64(k.Center.Y), k.Radius}, true
+	case geom.Arc2d:
+		return "arc", []float64{float64(k.Center.X), float64(k.Center.Y), k.Radius, k.StartAngle, k.SweepAngle}, true
+	default:
+		return "", nil, false
+	}
+}
+
+// analyticCurveFromData rebuilds the geom.Curve2 a projected curve persisted via analyticCurveData,
+// or ok=false when the shape/params do not describe one.
+func analyticCurveFromData(shape string, p []float64) (geom.Curve2, bool) {
+	switch shape {
+	case "line":
+		if len(p) != 4 {
+			return nil, false
+		}
+		return geom.NewLineSegment2d(math.P2(math.Scalar(p[0]), math.Scalar(p[1])), math.P2(math.Scalar(p[2]), math.Scalar(p[3]))), true
+	case "circle":
+		if len(p) != 3 {
+			return nil, false
+		}
+		return geom.NewCircle2d(math.P2(math.Scalar(p[0]), math.Scalar(p[1])), p[2]), true
+	case "arc":
+		if len(p) != 5 {
+			return nil, false
+		}
+		return geom.NewArc2d(math.P2(math.Scalar(p[0]), math.Scalar(p[1])), p[2], p[3], p[4]), true
+	default:
+		return nil, false
+	}
 }
