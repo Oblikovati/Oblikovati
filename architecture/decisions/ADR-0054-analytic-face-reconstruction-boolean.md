@@ -171,16 +171,31 @@ default** — `reconstructionCutover = false` — because two frontiers remain:
      planar face is always rebuilt from its arrangement boundary, where the trim is explicit. The
      extrude-built join now reconstructs to a valid, closed, manifold 5-face analytic solid
      (verified: Layer-5 gate on → the #2167 feature test PASSES; the fix reverted, gate on → FAILS).
-   - **OPEN — disjoint-region cut (the gate-flip blocker).** A tool cylinder whose material
-     intersection is two disjoint pieces separated by a pre-existing void reconstructs to a
-     valid-but-WRONG volume that slips the Requicha bracket (a cut's result can sit anywhere in
-     `[tv-wv, tv]`, so an under-removal is inside the bracket — the guard cannot catch it).
-     Reproduced by `ops` SlottedScrew's cross-hole (through-slot Cut: removes 26.4 mm³, want
-     32.4). A simpler disjoint cut instead reconstructs to the RIGHT volume but `Valid=false`
-     (rejected, falls back — safe), so the failure is case-dependent, not uniform. This is the last
-     robustness layer before the Layer-5 cutover can flip; until it lands the cutover stays gated
-     (`reconstructionCutover=false`) and the piston feature test is gate-aware (skips while gated,
-     guards the seam-wrap layer the instant the gate flips, via `ops.ReconstructionCutoverEnabled`).
+   - **CLOSED — disjoint-region / oblique-conic cut (real cause: unweldable ellipse SSI).** A
+     tool cylinder whose material intersection is two disjoint pieces separated by a void
+     reconstructed to a valid-but-WRONG volume that slips the Requicha bracket (a cut's result can
+     sit anywhere in `[tv-wv, tv]`, so an under-removal is inside it). The cause was NOT
+     disjointness — a perpendicular cylinder crossing a slot void reconstructs correctly (circular
+     exits). It was the OBLIQUE CONIC SSI: where the bore exits a slanted face, `intersectionRunEdge`
+     synthesized a `geom.EllipseFull` (cylinder∩tilted plane). The ellipse is exact as a curve but
+     each incident face samples it independently, so the two copies do not weld and the closed solid
+     encloses the wrong region (SlottedScrew's cross-hole removed ~5 mm³ too little). Isolated by
+     provenance, not thresholds: across the corpus the faithful reconstructions synthesize only
+     `geom.Line` and `geom.Circle` SSI (exact, identical from both faces → weld); only the failing
+     ones synthesize `geom.EllipseFull`. Fix (`weldableSSICurve`, commit 01ed8196): confine SSI
+     reuse to lines and circles; an oblique conic DECLINES, so the caller falls back to the exact
+     faceted boolean — no wrong geometry, no regression, until the numeric-SSI weld layer (Layer 4)
+     lands. Regressions: `ops.TestReconstructDeclinesObliqueConicCut` (oblique declines) and
+     `TestReconstructPerpendicularDisjointCutRebuilds` (perpendicular disjoint rebuilds, 2 bore
+     walls, exact volume).
+   - **READY — the Layer-5 cutover has no remaining correctness blocker.** With the guard, a full
+     corpus run at `reconstructionCutover=true` leaves ONLY `csg_fallback_test`'s Join/Cut failing —
+     and those assert the OLD faceted fallback where reconstruction now yields the more accurate
+     analytic result (kept fillet cylinder, exact volume). SlottedScrew and the #2167 piston both
+     pass. Flipping the gate is now a test-premise update, not a correctness fix: set
+     `reconstructionCutover=true`, rewrite `csg_fallback_test`'s Join/Cut to assert the analytic
+     result, and drop the piston test's gate-aware skip. The gate stays off in this commit pending
+     that decision.
 
 4. **Curved SSI-edge welding (e.g. cyl ∪ box).** Reconstruction recovers the analytic surfaces
    but the plane∩cylinder ellipse/line edges do not yet weld watertight; Layer 4 (exact SSI conics
