@@ -143,11 +143,14 @@ default** — `reconstructionCutover = false` — because two frontiers remain:
    path and the feature `combine` path (which tries `CurvedBoolean` on the still-analytic
    operands before faceting) pick it up. It self-validates: a valid closed solid whose volume is
    inside the Requicha bracket, else it declines and the operation falls back to faceting — so it
-   is never adopted wrong. Codified by `ops.TestReconstructionCutoverShadow` (correct where it
-   fires — D-join, coaxial cylinders, box union all match the analytic volume; declines safely on
-   crossing cylinders) and the updated `TestCSGFallbackJoin` (a filleted bar ∪ box now KEEPS its
-   fillet cylinder instead of faceting). The old `recoverFacetedCurvedJoin` recovery in
-   `booleanGeneral` is subsumed and removed.
+   is never adopted wrong. The cutover is now the active default (`reconstructionCutover = true`,
+   kept as an alpha kill-switch) with all three robustness layers below CLOSED. Codified by
+   `ops.TestReconstructionCutoverShadow` (correct where it fires — D-join, coaxial cylinders, box
+   union all match the analytic volume; declines safely on crossing cylinders), the
+   `curved_operand_boolean_test.go` trio (a filleted bar ∪/−/∩ box now KEEPS its fillet cylinder
+   and holds the exact analytic volume instead of faceting), and the feature-level
+   `TestPistonHeadCocylindricalJoinKeepsAnalyticWalls` (#2167). The old `recoverFacetedCurvedJoin`
+   recovery in `booleanGeneral` is subsumed and removed.
 
 3. **Reconstruction robustness on extrude-built operands — the remaining blocker for the
    FEATURE-level #2167.** The kernel fixture reconstructs to a valid solid; the EXTRUDE-built

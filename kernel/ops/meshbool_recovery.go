@@ -23,13 +23,14 @@ import (
 // of the faceted planar fallback, recorded so the pipeline can see reconstruction fired.
 const CodeBooleanAnalyticReconstruction diag.Code = "boolean.analytic-reconstruction"
 
-// reconstructionCutover gates whether reconstruction is offered as a curved-boolean path. It is
-// the ADR-0054 Layer-5 switch: the reconstruction is exact where it fires (exact surfaces from
-// provenance, self-validated below for validity AND the Requicha volume bracket), and turning it
-// on upgrades a faceted curved join to an analytic B-rep — but it changes results that previously
-// asserted the faceted fallback (csg_fallback_test's Join, the #2167 feature test), so it lands
-// with those corpus updates and the reconstruction shadow-validation, not silently.
-const reconstructionCutover = false
+// reconstructionCutover gates whether reconstruction is offered as a curved-boolean path — the
+// ADR-0054 Layer-5 switch, now ON (the default). Where it fires the reconstruction is exact
+// (analytic surfaces from provenance, self-validated below for validity AND the Requicha volume
+// bracket, with unweldable oblique-conic SSI declined by weldableSSICurve), upgrading a faceted
+// curved join to an analytic B-rep; where reconstruction declines the caller falls back to the
+// exact faceted boolean. Kept as a kill-switch during the alpha rollout: flip to false to route
+// every curved boolean through the faceted fallback again.
+const reconstructionCutover = true
 
 // ReconstructionCutoverEnabled reports whether the ADR-0054 Layer-5 cutover is on, so a
 // higher-layer regression that only fires through the reconstruction path (the #2167 piston

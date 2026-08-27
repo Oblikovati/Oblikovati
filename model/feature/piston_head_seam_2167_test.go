@@ -37,21 +37,16 @@ func dProfileSketchOnPlaneZ(z, r, theta float64) *sketch.Sketch {
 // re-tessellate against one surface (aligned grids, no seam) — asserted here as analytic
 // cylinder faces surviving the join plus the exact stacked volume.
 func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
-	// ADR-0054 status: reconstruction now closes the EXTRUDE-built cocylindrical join. The two
-	// reconstruction-robustness layers this shape hit are both CLOSED: (1) near-degenerate
-	// cross-operand rim slivers, removed by weldResultSoup; (2) the seam-wrap layer — the
-	// extrude-tessellated top cap, cut to a minor segment, coincidentally kept the full disc's
-	// facet count after the weld and passed through as the UNTRIMMED disc (open edges). Fixed by
-	// always rebuilding a PLANAR face from its arrangement boundary (only a periodic CURVED wall
-	// passes through). With this test's own operands, reconstruction builds a valid, closed,
-	// manifold 5-face analytic solid (verified: gate on → PASS; the fix reverted, gate on → FAIL).
-	// It runs the moment the Layer-5 cutover flips; today it is GATED because the flip itself is
-	// blocked on a SEPARATE, pre-existing layer — the disjoint-region cut (a tool cylinder crossing
-	// a void reconstructs to a valid-but-wrong volume, ops SlottedScrew cross-hole). Flip the gate,
-	// update csg_fallback_test's Join/Cut + SlottedScrew, and this guards the seam-wrap layer.
-	// NOTE: the merge makes the cocylindrical walls ONE analytic cylinder (cyl==1).
+	// #2167 at the feature level: an EXTRUDE-built full cylinder JOINED to a stacked D-prism whose
+	// arc wall is cocylindrical must keep BOTH walls analytic — the ADR-0054 Layer-5 reconstruction
+	// (reconstructionCutover, now the default) rebuilds them on the exact cylinder surface, merged to
+	// ONE analytic wall (cyl==1), so they re-tessellate against a single surface with no seam. The
+	// robustness layers this extrude-built shape needed are all closed: cross-operand rim-sliver weld
+	// (weldResultSoup), the seam-wrap planar-cap rebuild, and the oblique-conic SSI decline (this join
+	// uses only line/circle SSI, so it reconstructs). The gate-aware skip keeps this green if the
+	// Layer-5 kill-switch is ever turned off.
 	if !ops.ReconstructionCutoverEnabled() {
-		t.Skip("ADR-0054 Layer-5 gated off; seam-wrap layer this test guards is CLOSED — flip reconstructionCutover once the disjoint-region cut layer lands (#2167)")
+		t.Skip("ADR-0054 Layer-5 reconstruction disabled (reconstructionCutover=false); #2167 falls back to faceting")
 	}
 	const r, theta, h1, h2 = 3.0, 0.6, 6.0, 4.0
 	fs := NewPartFeatures(nil)

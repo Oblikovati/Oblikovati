@@ -36,13 +36,19 @@ func TestReconstructDeclinesObliqueConicCut(t *testing.T) {
 	if _, ok := reconstructBoolean(box, oblique, meshbool.Difference, DefaultQuality()); ok {
 		t.Fatal("oblique-conic cut reconstructed; must decline (ellipse SSI does not weld — ADR-0054 Layer 4)")
 	}
-	// The faceted boolean still produces the correct result — declining loses nothing.
+	// Declining loses nothing: the exact faceted boolean still produces a valid solid that
+	// removes real material (the tool axis pierces the box, so the result is strictly smaller
+	// than the box). The CSG BSP engine's exact-volume correctness is covered separately, on
+	// clean planar operands, by csg_test.go.
 	res, err := Boolean(Cut, box, oblique)
 	if err != nil {
 		t.Fatalf("faceted fallback: %v", err)
 	}
 	if r := Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("faceted fallback is not a valid solid: %+v", r)
+	}
+	if v := BodyGeometryProperties(res, DefaultQuality()).Volume; v <= 0.9 || v >= 1.0 {
+		t.Fatalf("faceted fallback volume = %.5f, want a box (1.0) with a bore removed (0.9..1.0)", v)
 	}
 }
 
