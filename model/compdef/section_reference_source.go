@@ -5,9 +5,11 @@ package compdef
 import (
 	"fmt"
 	stdmath "math"
+	"slices"
 	"strconv"
 	"strings"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -167,18 +169,13 @@ func sampleWireCurve(w *topo.Wire) []math.Point3 {
 	return pts
 }
 
-// sampleUseCurve samples one edge use over its domain into referenceSampleSteps+1 points,
-// honouring the use's direction so consecutive edges chain head-to-tail.
+// sampleUseCurve samples one edge use over its domain into referenceSampleSteps+1 points via the
+// shared geom.SampleCurve3 (ADR-0055), honouring the use's direction so consecutive edges chain
+// head-to-tail.
 func sampleUseCurve(u topo.Use) []math.Point3 {
-	c := u.Edge.Geometry()
-	lo, hi := c.Domain()
-	out := make([]math.Point3, referenceSampleSteps+1)
-	for i := range out {
-		t := float64(i) / float64(referenceSampleSteps)
-		if u.Reversed {
-			t = 1 - t
-		}
-		out[i] = c.PointAt(lo + (hi-lo)*t)
+	out := geom.SampleCurve3(u.Edge.Geometry(), referenceSampleSteps)
+	if u.Reversed {
+		slices.Reverse(out)
 	}
 	return out
 }

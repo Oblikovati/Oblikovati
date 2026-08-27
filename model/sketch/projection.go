@@ -2,7 +2,10 @@
 
 package sketch
 
-import "oblikovati.org/math"
+import (
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
+)
 
 // Projection links model geometry into a sketch as reference geometry that updates
 // when the source changes. The model side is reached through a seam — [PointSource]
@@ -26,6 +29,15 @@ type PointSource interface {
 type CurveSource interface {
 	SourceID() string
 	SamplePoints() ([]math.Point3, bool)
+}
+
+// AnalyticCurveSource is the optional [CurveSource] capability that yields the source edge's EXACT
+// analytic curve, so the projection stays analytic — a projected circle is a circle, an arc an arc
+// — instead of the sampled polyline SamplePoints returns (ADR-0055). A single model edge implements
+// it; a multi-edge cut/silhouette loop does not (it has no one analytic curve) and falls back to
+// SamplePoints.
+type AnalyticCurveSource interface {
+	SourceCurve() (geom.Curve3, bool)
 }
 
 // ProjectedPoint is a sketch point projected from a model vertex. It owns a fixed
@@ -93,11 +105,20 @@ type ProjectedCurve struct {
 	id     ID
 	source CurveSource
 	plane  Plane
+	curve  geom.Curve2 // the analytic 2D form (ADR-0055); nil for a non-analytic (sampled) source
 	points []math.Point2
 	shape  projectedShape
 	linked bool
 	// srcKind/srcID persist the source's identity for save/reload + rebind (see ProjectedPoint).
 	srcKind, srcID string
+}
+
+// AnalyticCurve returns the projected curve's exact analytic 2D form (a geom.Line2d/Circle2d/Arc2d)
+// and true, or ok=false when the projection fell back to a sampled polyline (a non-analytic source
+// or an oblique conic not yet handled). Consumers (extrude, offset, serialization) use this to keep
+// projected geometry analytic (ADR-0055).
+func (c *ProjectedCurve) AnalyticCurve() (geom.Curve2, bool) {
+	return c.curve, c.curve != nil
 }
 
 // EntityID implements [Entity].
@@ -124,10 +145,14 @@ func (c *ProjectedCurve) IsReference() bool { return true }
 // Linked reports whether the projection still tracks its source.
 func (c *ProjectedCurve) Linked() bool { return c.linked }
 
-// Update re-projects the source's sample points onto the sketch plane. A lost reference
-// breaks the link, freezing the last polyline.
+// Update re-projects from the current source. It prefers the ANALYTIC path (the source's exact
+// curve projected onto the plane, keeping a circle a circle — ADR-0055) and only samples a source
+// with no analytic curve. A lost reference breaks the link, freezing the last geometry.
 func (c *ProjectedCurve) Update() {
 	if !c.linked {
+		return
+	}
+	if c.updateAnalytic() {
 		return
 	}
 	src, ok := c.source.SamplePoints()
@@ -135,11 +160,51 @@ func (c *ProjectedCurve) Update() {
 		c.linked = false
 		return
 	}
+	c.curve = nil
 	c.points = c.points[:0]
 	for _, q := range src {
 		c.points = append(c.points, c.plane.ToSketch(q))
 	}
 	c.shape = fitProjectedShape(c.points)
+}
+
+// updateAnalytic sets the analytic 2D curve from the source's exact curve, returning false when the
+// source is not an [AnalyticCurveSource], its reference is lost, or the projection is not yet
+// analytic (an oblique conic) — the caller then falls back to sampling.
+func (c *ProjectedCurve) updateAnalytic() bool {
+	as, ok := c.source.(AnalyticCurveSource)
+	if !ok {
+		return false
+	}
+	c3, ok := as.SourceCurve()
+	if !ok {
+		return false
+	}
+	c2, ok := geom.ProjectCurveToPlane(sketchPlaneToGeom(c.plane), c3)
+	if !ok {
+		return false
+	}
+	c.curve = c2
+	c.points = sampleCurve2(c2, projectedRenderSegments)
+	c.shape = projectedShape{}
+	return true
+}
+
+// sketchPlaneToGeom builds the geom.Plane whose (u,v) frame is the sketch plane's (xAxis, yAxis), so
+// geom.ProjectCurveToPlane projects into the sketch's own 2D coordinate system.
+func sketchPlaneToGeom(p Plane) geom.Plane {
+	pl, _ := geom.NewPlaneFromAxes(p.origin, p.xAxis.AsVector(), p.yAxis.AsVector())
+	return pl
+}
+
+// sampleCurve2 samples an analytic 2D curve into n+1 points for drawing and hit-testing.
+func sampleCurve2(c geom.Curve2, n int) []math.Point2 {
+	lo, hi := c.Domain()
+	pts := make([]math.Point2, n+1)
+	for i := range pts {
+		pts[i] = c.PointAt(lo + (hi-lo)*float64(i)/float64(n))
+	}
+	return pts
 }
 
 // RenderPolyline returns the curve as a smooth polyline for drawing and hit-testing: the analytic
