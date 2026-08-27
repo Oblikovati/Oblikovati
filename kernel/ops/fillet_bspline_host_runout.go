@@ -114,20 +114,6 @@ func bsplineHostEndWindow(canal *bsplineHostCanal, endIdx int) (lo, hi int) {
 	return lo, hi
 }
 
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 // bsplineHostSolveEnd resolves one end: capping plane, both rail crossings (snapped onto
 // the host boundary edges) and the fitted trim curve.
 func bsplineHostSolveEnd(ef edgeFillet, canal *bsplineHostCanal, v *topo.Vertex, vp []float64, iLo, iHi int, res Resolution) (bsplineHostEndTrim, string) {

@@ -107,7 +107,7 @@ func (st *tangentStripe) footGapToDown(sp *blend.Spine, m *blend.Marcher, j, seg
 	d := st.down[j].Geometry()
 	t, _ := geom.CurveParamAtPoint3(d, foot)
 	lo, hi := d.Domain()
-	return float64(d.PointAt(clampStation(t, lo, hi)).DistanceTo(foot))
+	return float64(d.PointAt(math.Clamp(t, lo, hi)).DistanceTo(foot))
 }
 
 // minimizeFootGap ternary-searches the foot-to-descending-edge gap over [a,b] (spine stations,
@@ -178,7 +178,7 @@ func (st *tangentStripe) segLen(sp *blend.Spine, i int) float64 {
 // clamped for an open run.
 func (st *tangentStripe) wrapStation(s float64, sp *blend.Spine) float64 {
 	if !st.closed {
-		return clampStation(s, 0, sp.Length())
+		return math.Clamp(s, 0, sp.Length())
 	}
 	l := sp.Length()
 	s = stdmath.Mod(s, l)
@@ -194,11 +194,6 @@ func (st *tangentStripe) wrapMidStation(entry, exit float64, sp *blend.Spine) fl
 		return (entry + exit) / 2
 	}
 	return st.wrapStation(entry+(exit+sp.Length()-entry)/2, sp)
-}
-
-// clampStation constrains x to [lo,hi].
-func clampStation(x, lo, hi float64) float64 {
-	return stdmath.Min(stdmath.Max(x, lo), hi)
 }
 
 // surfaceFoot is the projection of p onto s (nearest point via the surface's parameter inverse).

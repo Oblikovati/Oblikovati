@@ -2,7 +2,11 @@
 
 package openpbr
 
-import "math"
+import (
+	"math"
+
+	gmath "oblikovati.org/math"
+)
 
 // F0FromIOR converts a relative IOR (eta_t/eta_i) to normal-incidence reflectance F0,
 // exact port of Adobe's openpbr_f0_from_ior.
@@ -74,7 +78,7 @@ func F82TintFresnel(f0, tint Color3, cosTheta float64) Color3 {
 	oneMinusCosToFifth := oneMinusCos * oneMinusCos * oneMinusCos * oneMinusCos * oneMinusCos
 	channel := func(r, bC float64) float64 {
 		v := r + ((1-r)-bC*cosTheta*oneMinusCos)*oneMinusCosToFifth
-		return clamp(v, 0, 1)
+		return gmath.Clamp(v, 0, 1)
 	}
 	return Color3{R: channel(f0.R, b.R), G: channel(f0.G, b.G), B: channel(f0.B, b.B)}
 }
@@ -84,7 +88,7 @@ func F82TintFresnel(f0, tint Color3, cosTheta float64) Color3 {
 // Used by the Kulla-Conty multi-scatter compensation (multiscatter.go).
 func F82TintAverageFresnel(f0, tint Color3) Color3 {
 	b := f82SchlickBFactor(f0, tint)
-	channel := func(r, bC float64) float64 { return clamp(r+(1-r)*(1.0/21)-bC*(1.0/126), 0, 1) }
+	channel := func(r, bC float64) float64 { return gmath.Clamp(r+(1-r)*(1.0/21)-bC*(1.0/126), 0, 1) }
 	return Color3{R: channel(f0.R, b.R), G: channel(f0.G, b.G), B: channel(f0.B, b.B)}
 }
 

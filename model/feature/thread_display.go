@@ -77,26 +77,15 @@ func resolveThreadSpan(vFaceMin, vFaceMax float64, offset, length func() float64
 	if offset != nil {
 		start = vFaceMin + offset()
 	}
-	start = clampAxial(start, vFaceMin, vFaceMax)
+	start = math.Clamp(start, vFaceMin, vFaceMax)
 	end := vFaceMax
 	if length != nil {
 		if l := length(); l > 0 {
 			end = start + l
 		}
 	}
-	end = clampAxial(end, start, vFaceMax)
+	end = math.Clamp(end, start, vFaceMax)
 	return start, end
-}
-
-// clampAxial bounds v to [lo, hi].
-func clampAxial(v, lo, hi float64) float64 {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
-	}
-	return v
 }
 
 // axialExtent projects a face's range-box corners onto the cylinder axis to bound the threaded

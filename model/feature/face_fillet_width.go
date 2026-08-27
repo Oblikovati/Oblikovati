@@ -107,7 +107,7 @@ func edgeDihedralAngle(body *topo.Body, key []byte, feat string) (float64, error
 	}
 	// Outward normals meeting at angle φ bound an interior dihedral of π − φ: on a box's 90° edge
 	// the normals are perpendicular, and π − π/2 is the 90° the blend actually sits in.
-	return stdmath.Pi - stdmath.Acos(clampUnit(float64(nA.Dot(nB)))), nil
+	return stdmath.Pi - stdmath.Acos(math.Clamp(float64(nA.Dot(nB)), -1, 1)), nil
 }
 
 // outwardNormalOf is a planar face's outward unit normal, honouring its sense.
@@ -121,10 +121,4 @@ func outwardNormalOf(f *topo.Face, feat string) (math.Vector3, error) {
 		return n.Scale(-1), nil
 	}
 	return n, nil
-}
-
-// clampUnit keeps a unit-vector dot product inside [-1, 1], where Acos is defined; floating-point
-// noise can push it a hair outside and turn the angle into NaN.
-func clampUnit(x float64) float64 {
-	return stdmath.Max(-1, stdmath.Min(1, x))
 }

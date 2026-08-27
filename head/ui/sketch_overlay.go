@@ -61,17 +61,17 @@ func cachedSketchOverlayBounds() (min, max [3]float32, ok bool) {
 // drawItemsBounds is the axis-aligned model-space box over every vertex of items (all
 // primitives, including the OnTop lines a sketch overlay is made of). ok is false when items
 // carry no positions.
-func drawItemsBounds(items []renderer.DrawItem) (min, max [3]float32, ok bool) {
-	min = [3]float32{stdmath.MaxFloat32, stdmath.MaxFloat32, stdmath.MaxFloat32}
-	max = [3]float32{-stdmath.MaxFloat32, -stdmath.MaxFloat32, -stdmath.MaxFloat32}
+func drawItemsBounds(items []renderer.DrawItem) (lo, hi [3]float32, ok bool) {
+	lo = [3]float32{stdmath.MaxFloat32, stdmath.MaxFloat32, stdmath.MaxFloat32}
+	hi = [3]float32{-stdmath.MaxFloat32, -stdmath.MaxFloat32, -stdmath.MaxFloat32}
 	for _, it := range items {
 		for _, p := range it.Positions {
-			min[0], max[0] = minF32(min[0], float32(p.X)), maxF32(max[0], float32(p.X))
-			min[1], max[1] = minF32(min[1], float32(p.Y)), maxF32(max[1], float32(p.Y))
-			min[2], max[2] = minF32(min[2], float32(p.Z)), maxF32(max[2], float32(p.Z))
+			lo[0], hi[0] = min(lo[0], float32(p.X)), max(hi[0], float32(p.X))
+			lo[1], hi[1] = min(lo[1], float32(p.Y)), max(hi[1], float32(p.Y))
+			lo[2], hi[2] = min(lo[2], float32(p.Z)), max(hi[2], float32(p.Z))
 		}
 	}
-	return min, max, min[0] <= max[0]
+	return lo, hi, lo[0] <= hi[0]
 }
 
 // sketchOverlayKey identifies the finished-sketch overlay geometry. Sketch edits do

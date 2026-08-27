@@ -68,9 +68,9 @@ const ribbonControlRows = 4
 func ribbonGridHeight(m native.StyleMetrics) float32 {
 	buttonRow := float32(scaledIconPx(smallIconPx)) + 2*m.FramePadY
 	buttonGrid := ribbonRowsHeight(ribbonMaxRows, buttonRow, m.ItemSpacingY)
-	controlRow := maxF32(native.FrameHeight(), intensityChartHeight)
+	controlRow := max(native.FrameHeight(), intensityChartHeight)
 	controlGrid := ribbonRowsHeight(ribbonControlRows, controlRow, m.ItemSpacingY)
-	return maxF32(maxF32(buttonGrid, controlGrid), largeButtonHeight(m))
+	return max(max(buttonGrid, controlGrid), largeButtonHeight(m))
 }
 
 // largeButtonHeight is the tallest a large icon button can stand: its glyph frame plus a

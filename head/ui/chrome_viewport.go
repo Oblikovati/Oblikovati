@@ -465,25 +465,11 @@ func frameBounds(s *app.Session, list renderer.DrawList, groups []app.InstanceGr
 			return omn, omx, true
 		}
 		for i := range 3 {
-			mn[i] = minF32(mn[i], omn[i])
-			mx[i] = maxF32(mx[i], omx[i])
+			mn[i] = min(mn[i], omn[i])
+			mx[i] = max(mx[i], omx[i])
 		}
 	}
 	return mn, mx, ok
-}
-
-func minF32(a, b float32) float32 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxF32(a, b float32) float32 {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 // renderViewportImage flattens the draw list, renders it into the window's offscreen target
@@ -829,7 +815,7 @@ func unionBounds(lo, hi [3]float32, has bool, omn, omx [3]float32) ([3]float32, 
 		return omn, omx
 	}
 	for i := range 3 {
-		lo[i], hi[i] = minF32(lo[i], omn[i]), maxF32(hi[i], omx[i])
+		lo[i], hi[i] = min(lo[i], omn[i]), max(hi[i], omx[i])
 	}
 	return lo, hi
 }

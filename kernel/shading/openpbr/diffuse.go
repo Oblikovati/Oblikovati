@@ -2,7 +2,11 @@
 
 package openpbr
 
-import "math"
+import (
+	"math"
+
+	gmath "oblikovati.org/math"
+)
 
 // fonConstantA / fonConstantB are the Fujii-Oren-Nayar (FON) closed-form fit constants
 // from the OpenPBR spec's energy-preserving Oren-Nayar formulation (index.html
@@ -20,7 +24,7 @@ const (
 func directionalAlbedoFON(mu, roughness float64) float64 {
 	af := 1 / (1 + fonConstantA*roughness)
 	bf := roughness * af
-	clampedMu := clamp(mu, 0, 1)
+	clampedMu := gmath.Clamp(mu, 0, 1)
 	si := math.Sqrt(1 - clampedMu*clampedMu)
 	g := si*(math.Acos(clampedMu)-si*clampedMu) +
 		(2.0/3.0)*(si*clampedMu*(1+si+si*si)/(1+si)-si)
@@ -71,5 +75,3 @@ func channelRhoMS(rho, avgEF float64) float64 {
 	}
 	return rho * rho * avgEF / denom
 }
-
-func clamp(x, lo, hi float64) float64 { return math.Max(lo, math.Min(hi, x)) }

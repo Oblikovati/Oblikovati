@@ -5,6 +5,8 @@ package ops
 import (
 	stdmath "math"
 	"math/cmplx"
+
+	"oblikovati.org/math"
 )
 
 // Generic real-root extraction for a monic-normalizable quartic and the cubic it depends on
@@ -150,7 +152,7 @@ func depressedCubicRealRoots(p, q float64) []float64 {
 		return []float64{2 * u, -u}
 	default: // disc < 0 ⇒ p < 0 (three distinct real roots — Viète's trigonometric substitution)
 		radius := stdmath.Sqrt(-p * p * p / 27)
-		phi := stdmath.Acos(clampUnit(-q / (2 * radius)))
+		phi := stdmath.Acos(math.Clamp(-q/(2*radius), -1, 1))
 		amp := 2 * stdmath.Sqrt(-p/3)
 		roots := make([]float64, 3)
 		for k := range roots {

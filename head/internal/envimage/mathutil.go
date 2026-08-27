@@ -2,25 +2,18 @@
 
 package envimage
 
-import "math"
+import (
+	"math"
 
-// clamp01 clamps v to [0,1].
-func clamp01(v float32) float32 {
-	if v < 0 {
-		return 0
-	}
-	if v > 1 {
-		return 1
-	}
-	return v
-}
+	gmath "oblikovati.org/math"
+)
 
 // mix linearly interpolates a→b by t∈[0,1] (t is clamped).
-func mix(a, b, t float32) float32 { return a + (b-a)*clamp01(t) }
+func mix(a, b, t float32) float32 { return a + (b-a)*gmath.Clamp(t, 0, 1) }
 
 // smoothstep is the Hermite 0→1 ramp between edges e0 and e1.
 func smoothstep(e0, e1, x float32) float32 {
-	t := clamp01((x - e0) / (e1 - e0))
+	t := gmath.Clamp((x-e0)/(e1-e0), 0, 1)
 	return t * t * (3 - 2*t)
 }
 

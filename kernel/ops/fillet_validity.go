@@ -43,7 +43,7 @@ func validateFilletRadii(picks []filletPick, concave ConcaveFill) error {
 			continue // degenerate dihedral: leave to the assembly's own validity gate
 		}
 		if r := p.maxRadius(); r > rMax*(1+1e-6) {
-			phi := stdmath.Acos(-clampUnit(float64(nA.Dot(nB)))) * 180 / stdmath.Pi
+			phi := stdmath.Acos(-math.Clamp(float64(nA.Dot(nB)), -1, 1)) * 180 / stdmath.Pi
 			return fmt.Errorf(
 				"fillet: radius %g exceeds geometric maximum %g on edge %d (available in-face width %g on face %d, dihedral %.1f°); reduce the radius or use a smaller value",
 				r, rMax, p.edge.ID(), bindingW, bindingFace, phi)
@@ -218,15 +218,4 @@ func (p filletPick) maxRadius() float64 {
 		m = stdmath.Max(m, rp.R)
 	}
 	return m
-}
-
-// clampUnit constrains x to [-1,1] so Acos of a rounded dot product never yields NaN.
-func clampUnit(x float64) float64 {
-	if x < -1 {
-		return -1
-	}
-	if x > 1 {
-		return 1
-	}
-	return x
 }

@@ -5,6 +5,8 @@ package openpbr
 import (
 	"math"
 	"math/cmplx"
+
+	gmath "oblikovati.org/math"
 )
 
 // rgbWavelengthsNM are the fixed representative R/G/B wavelengths (nanometers) this
@@ -25,7 +27,7 @@ const minDenom = 1e-9
 // openpbr_snell_cos_unified: works for a real (dielectric) or complex (conductor) etaT,
 // producing a complex cos(theta_t) under total internal reflection so phase is preserved.
 func snellCosComplex(cosThetaI, etaI float64, etaT complex128) complex128 {
-	sinThetaI := math.Sqrt(clamp(1-cosThetaI*cosThetaI, 0, 1))
+	sinThetaI := math.Sqrt(gmath.Clamp(1-cosThetaI*cosThetaI, 0, 1))
 	etaIOverEtaT := complex(etaI, 0) / etaT
 	sinThetaT := complex(sinThetaI, 0) * etaIOverEtaT
 	cosThetaTSq := complex(1, 0) - sinThetaT*sinThetaT
@@ -64,12 +66,12 @@ func safeComplexDivide(numer, denom complex128) complex128 {
 // openpbr_compute_fresnel_dielectric_polarized_amplitude. Returns the s/p amplitude
 // reflection AND transmission coefficients, plus cos(theta_t) (0 under TIR).
 func fresnelAmplitudeDielectric(cosThetaI, etaI, etaT float64) (rs, rp, ts, tp, cosThetaT float64) {
-	sinThetaI := math.Sqrt(clamp(1-cosThetaI*cosThetaI, 0, 1))
+	sinThetaI := math.Sqrt(gmath.Clamp(1-cosThetaI*cosThetaI, 0, 1))
 	sinThetaT := etaI / etaT * sinThetaI
 	if sinThetaT >= 1 {
 		return 1, 1, 0, 0, 0
 	}
-	cosThetaT = math.Sqrt(clamp(1-sinThetaT*sinThetaT, 0, 1))
+	cosThetaT = math.Sqrt(gmath.Clamp(1-sinThetaT*sinThetaT, 0, 1))
 
 	etaICosThetaI := etaI * cosThetaI
 	etaTCosThetaT := etaT * cosThetaT
@@ -119,7 +121,7 @@ func thinFilmPresenceMultiplier(thicknessNM float64) float64 {
 }
 
 func smoothstep(edge0, edge1, x float64) float64 {
-	t := clamp((x-edge0)/(edge1-edge0), 0, 1)
+	t := gmath.Clamp((x-edge0)/(edge1-edge0), 0, 1)
 	return t * t * (3 - 2*t)
 }
 

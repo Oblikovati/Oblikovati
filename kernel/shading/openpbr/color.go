@@ -2,7 +2,11 @@
 
 package openpbr
 
-import "math"
+import (
+	"math"
+
+	gmath "oblikovati.org/math"
+)
 
 // Color pipeline (M45-F04 PBI-349, ADR-0053): OpenPBR's spec default working color
 // space is ACEScg (AP1 primaries, D60 white) — see api/types.Color3's doc comment. The
@@ -46,7 +50,7 @@ func ACEScgToLinearSRGB(c Color3) Color3 {
 func ACESFilmicTonemap(c Color3) Color3 {
 	const a, b, cc, d, e = 2.51, 0.03, 2.43, 0.59, 0.14
 	tonemap := func(x float64) float64 {
-		return clamp01((x * (a*x + b)) / (x*(cc*x+d) + e))
+		return gmath.Clamp01((x * (a*x + b)) / (x*(cc*x+d) + e))
 	}
 	return Color3{R: tonemap(c.R), G: tonemap(c.G), B: tonemap(c.B)}
 }
@@ -69,16 +73,6 @@ func ToDisplay(c Color3, exposure float64) Color3 {
 	return EncodeSRGB(ACESFilmicTonemap(linear))
 }
 
-func clamp01(x float64) float64 {
-	if x < 0 {
-		return 0
-	}
-	if x > 1 {
-		return 1
-	}
-	return x
-}
-
 func powClamped01(x, exp float64) float64 {
-	return math.Pow(clamp01(x), exp)
+	return math.Pow(gmath.Clamp01(x), exp)
 }

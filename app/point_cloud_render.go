@@ -173,7 +173,7 @@ func displaySampleColor(pc *pointcloud.PointCloud, s pointcloud.PointSample, low
 // 0..1 per the file's known bit depth at decode (#1787), so this only clamps into the valid range and
 // adds opaque alpha — no per-point bit-depth guessing, which mis-scaled dark 16-bit points.
 func rgbMarkerColor(rgb [3]float32) [4]float32 {
-	return [4]float32{clamp01(rgb[0]), clamp01(rgb[1]), clamp01(rgb[2]), 1}
+	return [4]float32{math.Clamp(rgb[0], 0, 1), math.Clamp(rgb[1], 0, 1), math.Clamp(rgb[2], 0, 1), 1}
 }
 
 func intensityMarkerColor(pc *pointcloud.PointCloud, intensity float64, low, high [4]float32) ([4]float32, bool) {
@@ -181,29 +181,13 @@ func intensityMarkerColor(pc *pointcloud.PointCloud, intensity float64, low, hig
 	if !ok || max <= min {
 		return [4]float32{}, false
 	}
-	t := float32((intensity - min) / (max - min))
-	if t < 0 {
-		t = 0
-	}
-	if t > 1 {
-		t = 1
-	}
+	t := math.Clamp(float32((intensity-min)/(max-min)), 0, 1)
 	return [4]float32{
 		lerpFloat32(low[0], high[0], t),
 		lerpFloat32(low[1], high[1], t),
 		lerpFloat32(low[2], high[2], t),
 		1,
 	}, true
-}
-
-func clamp01(v float32) float32 {
-	if v < 0 {
-		return 0
-	}
-	if v > 1 {
-		return 1
-	}
-	return v
 }
 
 func lerpFloat32(a, b, t float32) float32 {

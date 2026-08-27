@@ -39,7 +39,7 @@ func wrapCaption(label string, maxW float32, width func(string) float32) []strin
 	for split := 1; split < len(words); split++ {
 		head := strings.Join(words[:split], " ")
 		tail := strings.Join(words[split:], " ")
-		widest := maxF32(width(head), width(tail))
+		widest := max(width(head), width(tail))
 		if bestWidest < 0 || widest < bestWidest {
 			best, bestWidest = split, widest
 		}
