@@ -31,6 +31,11 @@ const CodeBooleanAnalyticReconstruction diag.Code = "boolean.analytic-reconstruc
 // with those corpus updates and the reconstruction shadow-validation, not silently.
 const reconstructionCutover = false
 
+// ReconstructionCutoverEnabled reports whether the ADR-0054 Layer-5 cutover is on, so a
+// higher-layer regression that only fires through the reconstruction path (the #2167 piston
+// feature test) can guard the seam-wrap layer without hard-coding the gate's state.
+func ReconstructionCutoverEnabled() bool { return reconstructionCutover }
+
 // reconstructedCurvedBoolean rebuilds `target op tool` from the exact mesh boolean's provenance and
 // returns (body, true) only when reconstruction is enabled, applies (a curved operand, modest size),
 // succeeds, and yields a valid solid whose volume sits inside the Requicha bracket — so a case

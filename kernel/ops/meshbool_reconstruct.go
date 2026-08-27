@@ -77,10 +77,16 @@ func reconstructFace(f meshbool.ArrangementFace, refs []faceSurfaceRef, naRefs i
 	inputCount, resultCount, groupSize map[int]int, verts []meshbool.Point, cat *origEdgeCatalog, res geom.Resolution) (brep.ReconInput, bool) {
 	ref := refs[f.Tag]
 	fromB := f.Tag >= naRefs
-	// Pass a face through only when it is a single original face kept whole. A MERGED group
-	// (two coincident faces fused, groupSize>1) is never one original topo.Face, so it must be
-	// rebuilt on its shared surface even when every triangle survived.
-	if groupSize[f.Tag] <= 1 && resultCount[f.Tag] == inputCount[f.Tag] {
+	// Pass a face through only when it is a single original CURVED face kept whole — pass-through
+	// exists to preserve a periodic seam loop (a full cylinder wall) that cannot be recovered from
+	// facets. A PLANAR face has no such seam and is always rebuilt from its arrangement boundary,
+	// because the "kept-whole" signal (result facet count == input count) is not reliable for it:
+	// weldResultSoup drops the co-refinement's degenerate slivers, so a face whose overlap WAS cut
+	// away can collapse back to its original count (a trimmed cap's minor segment happening to hold
+	// as many facets as the whole disc) and would otherwise pass through as the untrimmed face. A
+	// MERGED group (groupSize>1) is never one original topo.Face and is likewise always rebuilt.
+	_, planar := ref.surface.(geom.Plane)
+	if !planar && groupSize[f.Tag] <= 1 && resultCount[f.Tag] == inputCount[f.Tag] {
 		return brep.ReconInput{PassThrough: ref.face, ForceReversed: op == meshbool.Difference && fromB}, true
 	}
 	loops, ok := rebuildLoops(f.Loops, ref.surface, refs, verts, cat, res)

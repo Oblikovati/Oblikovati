@@ -37,19 +37,22 @@ func dProfileSketchOnPlaneZ(z, r, theta float64) *sketch.Sketch {
 // re-tessellate against one surface (aligned grids, no seam) — asserted here as analytic
 // cylinder faces surviving the join plus the exact stacked volume.
 func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
-	// ADR-0054 status: at the KERNEL level #2167 is CLOSED — reconstruction builds a valid,
-	// closed, manifold analytic solid (conforming tessellation + cross-operand vertex-on-edge
-	// imprint + same-surface merge + cross-operand result weld; see the passing kernel twin
-	// ops.TestReconstructCocylindricalCapOnWall). The Layer-5 cutover mechanism is wired
-	// (reconstruction is the last path in curvedExactBoolean, tried by the feature combine on the
-	// still-analytic operands), but stays GATED because the EXTRUDE-built operands still hit two
-	// reconstruction-robustness layers not yet closed: (1) FIXED — near-degenerate cross-operand
-	// rim slivers, removed by weldResultSoup; (2) OPEN — when the extrude cylinder's rim seam falls
-	// in the exposed minor-arc region, the boundary run WRAPS the seam and matchClosed reuses the
-	// FULL rim circle where matchSubArc should cut a sub-arc, leaving open edges. So the feature
-	// Join declines to faceting: no regression, but not yet analytic. Un-skip + flip the gate when
-	// (2) lands. NOTE: the merge makes the cocylindrical walls ONE analytic cylinder (cyl==1).
-	t.Skip("ADR-0054/#2167: kernel-closed; feature path pending the reconstruction seam-wrap edge-match fix (matchSubArc on a seam-crossing run)")
+	// ADR-0054 status: reconstruction now closes the EXTRUDE-built cocylindrical join. The two
+	// reconstruction-robustness layers this shape hit are both CLOSED: (1) near-degenerate
+	// cross-operand rim slivers, removed by weldResultSoup; (2) the seam-wrap layer — the
+	// extrude-tessellated top cap, cut to a minor segment, coincidentally kept the full disc's
+	// facet count after the weld and passed through as the UNTRIMMED disc (open edges). Fixed by
+	// always rebuilding a PLANAR face from its arrangement boundary (only a periodic CURVED wall
+	// passes through). With this test's own operands, reconstruction builds a valid, closed,
+	// manifold 5-face analytic solid (verified: gate on → PASS; the fix reverted, gate on → FAIL).
+	// It runs the moment the Layer-5 cutover flips; today it is GATED because the flip itself is
+	// blocked on a SEPARATE, pre-existing layer — the disjoint-region cut (a tool cylinder crossing
+	// a void reconstructs to a valid-but-wrong volume, ops SlottedScrew cross-hole). Flip the gate,
+	// update csg_fallback_test's Join/Cut + SlottedScrew, and this guards the seam-wrap layer.
+	// NOTE: the merge makes the cocylindrical walls ONE analytic cylinder (cyl==1).
+	if !ops.ReconstructionCutoverEnabled() {
+		t.Skip("ADR-0054 Layer-5 gated off; seam-wrap layer this test guards is CLOSED — flip reconstructionCutover once the disjoint-region cut layer lands (#2167)")
+	}
 	const r, theta, h1, h2 = 3.0, 0.6, 6.0, 4.0
 	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
