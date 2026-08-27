@@ -9,9 +9,5 @@ package app
 // ActiveRevolve returns the running Revolve tool, or nil when the active tool is not a
 // revolve (or there is none).
 func (s *Session) ActiveRevolve() *RevolveTool {
-	if s.tool == nil {
-		return nil
-	}
-	rv, _ := s.tool.tool.(*RevolveTool)
-	return rv
+	return s.activeTool[*RevolveTool]()
 }

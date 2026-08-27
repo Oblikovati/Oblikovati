@@ -7,9 +7,5 @@ package app
 // ActiveAnglePlane returns the running Angle to Plane tool, or nil when the active tool is not
 // an angle-plane (or there is none).
 func (s *Session) ActiveAnglePlane() *AngleWorkPlaneTool {
-	if s.tool == nil {
-		return nil
-	}
-	t, _ := s.tool.tool.(*AngleWorkPlaneTool)
-	return t
+	return s.activeTool[*AngleWorkPlaneTool]()
 }

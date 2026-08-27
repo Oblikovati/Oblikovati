@@ -92,11 +92,7 @@ func (t *SurfaceInterrogationTool) Params() ToolParams {
 
 // activeInterrogationTool returns the active Surface Analysis tool, if any.
 func (s *Session) activeInterrogationTool() (*SurfaceInterrogationTool, bool) {
-	if s.tool == nil {
-		return nil, false
-	}
-	t, ok := s.tool.tool.(*SurfaceInterrogationTool)
-	return t, ok
+	return s.activeToolOK[*SurfaceInterrogationTool]()
 }
 
 // SurfaceInterrogationItems returns the live interrogation line overlay for every visible body, or

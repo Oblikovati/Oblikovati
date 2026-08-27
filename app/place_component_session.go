@@ -12,11 +12,7 @@ import "oblikovati.org/model/doc"
 // ActivePlaceComponent returns the running Place Component tool, or nil when the active tool is
 // not a place-component (or there is none).
 func (s *Session) ActivePlaceComponent() *PlaceComponentTool {
-	if s.tool == nil {
-		return nil
-	}
-	t, _ := s.tool.tool.(*PlaceComponentTool)
-	return t
+	return s.activeTool[*PlaceComponentTool]()
 }
 
 // SetPlaceComponentDocument hands the running Place tool the component the user chose in the

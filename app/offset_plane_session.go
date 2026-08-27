@@ -11,11 +11,7 @@ import "oblikovati.org/model/param"
 // ActiveOffsetPlane returns the running Offset Plane tool, or nil when the active tool is
 // not an offset-plane (or there is none).
 func (s *Session) ActiveOffsetPlane() *OffsetWorkPlaneTool {
-	if s.tool == nil {
-		return nil
-	}
-	t, _ := s.tool.tool.(*OffsetWorkPlaneTool)
-	return t
+	return s.activeTool[*OffsetWorkPlaneTool]()
 }
 
 // OffsetDistanceDisplay returns the active offset tool's distance in the document's length

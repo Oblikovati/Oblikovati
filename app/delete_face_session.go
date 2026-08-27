@@ -7,9 +7,5 @@ package app
 // ActiveDeleteFace returns the running Delete Face tool, or nil when the active tool is not
 // a delete-face (or there is none).
 func (s *Session) ActiveDeleteFace() *DeleteFaceTool {
-	if s.tool == nil {
-		return nil
-	}
-	d, _ := s.tool.tool.(*DeleteFaceTool)
-	return d
+	return s.activeTool[*DeleteFaceTool]()
 }

@@ -187,11 +187,7 @@ func (s *Session) BeginEditWorkPlane(h WorkPlaneHandle) {
 
 // ActiveWorkPlaneEdit returns the running work-plane edit tool, or nil.
 func (s *Session) ActiveWorkPlaneEdit() *WorkPlaneEditTool {
-	if s.tool == nil {
-		return nil
-	}
-	t, _ := s.tool.tool.(*WorkPlaneEditTool)
-	return t
+	return s.activeTool[*WorkPlaneEditTool]()
 }
 
 // IsEditingWorkPlane reports whether a work-plane edit dialog should be open.

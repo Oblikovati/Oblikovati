@@ -31,3 +31,26 @@ type ToolInstance struct {
 // Tool returns the running tool; Name its name.
 func (ti *ToolInstance) Tool() Tool   { return ti.tool }
 func (ti *ToolInstance) Name() string { return ti.tool.Name() }
+
+// activeTool returns the running tool as T, or the zero value (nil) when the active
+// tool is not of that type. Every per-feature ActiveXTool() accessor is a one-line
+// wrapper around this generic method (Go 1.27), private to the package.
+func (s *Session) activeTool[T Tool]() T {
+	var zero T
+	if s.tool == nil {
+		return zero
+	}
+	t, _ := s.tool.tool.(T)
+	return t
+}
+
+// activeToolOK is activeTool's counterpart for the accessors that report presence
+// via a bool instead of a nil-checkable pointer.
+func (s *Session) activeToolOK[T Tool]() (T, bool) {
+	var zero T
+	if s.tool == nil {
+		return zero, false
+	}
+	t, ok := s.tool.tool.(T)
+	return t, ok
+}

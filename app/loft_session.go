@@ -7,9 +7,5 @@ package app
 // ActiveLoft returns the running Loft tool, or nil when the active tool is not a loft
 // (or there is none).
 func (s *Session) ActiveLoft() *LoftTool {
-	if s.tool == nil {
-		return nil
-	}
-	l, _ := s.tool.tool.(*LoftTool)
-	return l
+	return s.activeTool[*LoftTool]()
 }

@@ -7,9 +7,5 @@ package app
 // ActiveFullRoundFillet returns the running Full Round Fillet tool, or nil when the active tool is
 // not a full round (or there is none).
 func (s *Session) ActiveFullRoundFillet() *FullRoundFilletTool {
-	if s.tool == nil {
-		return nil
-	}
-	f, _ := s.tool.tool.(*FullRoundFilletTool)
-	return f
+	return s.activeTool[*FullRoundFilletTool]()
 }

@@ -11,11 +11,7 @@ import "oblikovati.org/model/param"
 // ActiveExtrude returns the running Extrude tool, or nil when the active tool is not an
 // extrude (or there is none).
 func (s *Session) ActiveExtrude() *ExtrudeTool {
-	if s.tool == nil {
-		return nil
-	}
-	ext, _ := s.tool.tool.(*ExtrudeTool)
-	return ext
+	return s.activeTool[*ExtrudeTool]()
 }
 
 // ExtrudeDistanceDisplay returns the active extrude tool's distance in the document's
