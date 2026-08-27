@@ -75,6 +75,20 @@ func writeICOContainer(w io.Writer, sizes []int, pngs [][]byte) error {
 	if _, err := w.Write(hdr); err != nil {
 		return err
 	}
+	if err := writeICOEntries(w, sizes, pngs); err != nil {
+		return err
+	}
+	for _, p := range pngs {
+		if _, err := w.Write(p); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// writeICOEntries emits one ICONDIRENTRY per image, its payload offset computed from the
+// fixed 6-byte header plus 16 bytes per entry.
+func writeICOEntries(w io.Writer, sizes []int, pngs [][]byte) error {
 	offset := 6 + 16*len(sizes)
 	for i, s := range sizes {
 		dim := byte(s % maxICOSize) // 256 encodes as 0
@@ -88,11 +102,6 @@ func writeICOContainer(w io.Writer, sizes []int, pngs [][]byte) error {
 			return err
 		}
 		offset += len(pngs[i])
-	}
-	for _, p := range pngs {
-		if _, err := w.Write(p); err != nil {
-			return err
-		}
 	}
 	return nil
 }

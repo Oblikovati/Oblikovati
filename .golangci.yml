@@ -72,6 +72,16 @@ linters:
           - unparam
           - unused
         path: experiments/.*\.go
+      # The head module's cmd/ tools are cgo screenshot/benchmark/CI utilities (a separate
+      # module whose `make lint` walks up to this config): they print results and diagnostics
+      # directly and their main/setup entry points are linear, exactly like the root
+      # cmd/oblikovati-cli and experiments/ above.
+      - linters:
+          - forbidigo
+          - funlen
+          - gocyclo
+          - unparam
+        path: head/cmd/.*\.go
       # Geometry kernels, STEP parser/stringers, command dispatch, and sketch/feature
       # construction helpers are intentionally linear one-case-per-step algorithms.
       - linters:
