@@ -48,7 +48,7 @@ func dashPolyline[P dashable[P]](pts []P, closed bool, pattern []float64) [][2]P
 	segs := [][2]P{}
 	cur := dashCursor{steps: steps, rem: steps[0].length}
 	for i := 1; i < len(pts); i++ {
-		segs = walkEdge(&cur, segs, pts[i-1], pts[i])
+		segs = cur.walkEdge(segs, pts[i-1], pts[i])
 	}
 	return segs
 }
@@ -86,8 +86,10 @@ type dashCursor struct {
 }
 
 // walkEdge appends the pen-down sub-segments of one polyline edge, advancing the
-// pattern cursor so the pattern continues seamlessly onto the next edge.
-func walkEdge[P dashable[P]](c *dashCursor, segs [][2]P, p, q P) [][2]P {
+// cursor's own pattern position so the pattern continues seamlessly onto the next
+// edge. A generic method (Go 1.27) rather than a free function taking *dashCursor:
+// the operation belongs to the cursor's state, parameterized per call by point type.
+func (c *dashCursor) walkEdge[P dashable[P]](segs [][2]P, p, q P) [][2]P {
 	total := float64(p.DistanceTo(q))
 	for at := 0.0; total-at > minCycle; {
 		step := c.rem

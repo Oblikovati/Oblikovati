@@ -44,7 +44,12 @@ type Subscription struct {
 
 // Subscribe registers h for events of type E in phase p and returns a handle to
 // cancel it. Subscribing the same type in both phases takes two calls.
-func Subscribe[E Event](b *Bus, p Phase, h Handler[E]) Subscription {
+//
+// A generic method (Go 1.27) on the non-generic *Bus, parameterized per call by
+// event type — the top-level Subscribe below is kept as a thin wrapper so the
+// ~90 existing call sites (event.Subscribe(bus, ...)) don't need mechanical
+// migration; new code can prefer bus.Subscribe(...) directly.
+func (b *Bus) Subscribe[E Event](p Phase, h Handler[E]) Subscription {
 	k := subKey{typ: typeOf[E](), phase: p}
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -52,6 +57,11 @@ func Subscribe[E Event](b *Bus, p Phase, h Handler[E]) Subscription {
 	id := b.seq
 	b.subs[k] = append(b.subs[k], handlerEntry{id: id, fn: h})
 	return Subscription{bus: b, key: k, id: id}
+}
+
+// Subscribe is Bus.Subscribe as a free function, kept for existing call sites.
+func Subscribe[E Event](b *Bus, p Phase, h Handler[E]) Subscription {
+	return b.Subscribe(p, h)
 }
 
 // Cancel removes the subscription, reporting whether it was found.
@@ -69,16 +79,22 @@ func (s Subscription) Cancel() bool {
 }
 
 // Emit delivers e to every Before-or-After handler for its type and returns the
-// aggregate outcome. It uses a background context; see [EmitContext] for deadlines.
+// aggregate outcome. It uses a background context; see [Bus.EmitContext] for
+// deadlines.
+func (b *Bus) Emit[E Event](p Phase, e E) Outcome {
+	return b.EmitContext(context.Background(), p, e)
+}
+
+// Emit is Bus.Emit as a free function, kept for existing call sites.
 func Emit[E Event](b *Bus, p Phase, e E) Outcome {
-	return EmitContext(context.Background(), b, p, e)
+	return b.Emit(p, e)
 }
 
 // EmitContext delivers e with an explicit context (e.g. a veto deadline for
 // add-ins). Every handler runs; the aggregate outcome is the strongest disposition
 // any handler returned (Abort > Handled > NotHandled), carrying the first veto
 // reason. A vetoing Before outcome tells the caller to cancel the operation.
-func EmitContext[E Event](ctx context.Context, b *Bus, p Phase, e E) Outcome {
+func (b *Bus) EmitContext[E Event](ctx context.Context, p Phase, e E) Outcome {
 	handlers := b.snapshot(subKey{typ: typeOf[E](), phase: p})
 	result := Continue()
 	for _, entry := range handlers {
@@ -86,6 +102,11 @@ func EmitContext[E Event](ctx context.Context, b *Bus, p Phase, e E) Outcome {
 		result = stronger(result, out)
 	}
 	return result
+}
+
+// EmitContext is Bus.EmitContext as a free function, kept for existing call sites.
+func EmitContext[E Event](ctx context.Context, b *Bus, p Phase, e E) Outcome {
+	return b.EmitContext(ctx, p, e)
 }
 
 // snapshot copies the handler slice for a key under the read lock, so handlers can

@@ -132,6 +132,42 @@ func TestContextCarriesPhaseAndDeadline(t *testing.T) {
 	}
 }
 
+// TestBusMethodFormMatchesFreeFunctions exercises the Go 1.27 generic methods
+// (Bus.Subscribe/Emit/EmitContext) directly rather than through the free-function
+// wrappers the rest of this file uses, proving the method form behaves identically
+// (Subscribe/Emit/EmitContext above already cover dispatch semantics in depth).
+func TestBusMethodFormMatchesFreeFunctions(t *testing.T) {
+	b := NewBus()
+	var seen []string
+	sub := b.Subscribe(After, func(_ Context, e docSaved) Outcome {
+		seen = append(seen, e.name)
+		return Continue()
+	})
+
+	if out := b.Emit(After, docSaved{name: "part.obk"}); out.Vetoed() {
+		t.Errorf("Emit outcome = %+v, want not vetoed", out)
+	}
+	if len(seen) != 1 || seen[0] != "part.obk" {
+		t.Errorf("handler saw %v, want [part.obk]", seen)
+	}
+
+	type ctxKey string
+	ctx := context.WithValue(context.Background(), ctxKey("k"), "v")
+	var gotVal any
+	b.Subscribe(Before, func(c Context, _ docClosing) Outcome {
+		gotVal = c.Ctx.Value(ctxKey("k"))
+		return Continue()
+	})
+	b.EmitContext(ctx, Before, docClosing{})
+	if gotVal != "v" {
+		t.Errorf("EmitContext context value = %v, want v", gotVal)
+	}
+
+	if !sub.Cancel() {
+		t.Error("Cancel returned false for an active subscription")
+	}
+}
+
 func TestHandlerMaySubscribeDuringEmit(_ *testing.T) {
 	b := NewBus()
 	added := false
