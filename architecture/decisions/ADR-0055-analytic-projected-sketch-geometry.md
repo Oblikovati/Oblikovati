@@ -137,12 +137,13 @@ lost/frozen source still shows its last analytic shape.
   `EdgeRefSource`; `ProjectedCurve` carries a `geom.Curve2`; persistence stores the analytic
   descriptor and drops `coords` (legacy `coords` still read); the extrude and offset consume the
   analytic curve. Verified on the piston-head demo: all 146 projected curves recompute analytic,
-  document 282 KB → 125 KB (2.26×). **Deferred within phase 1:** deleting `fitProjectedShape` /
-  `projectedShape`. The offset and arrangement paths still read `projectedShape`, so it is now a
-  view *derived exactly from the analytic `geom.Curve2`* (not a fit from points) via
-  `shapeFromCurve2`; it and `fitProjectedShape` (the sample-only + legacy-`coords` fallback) are
-  removed once offset/arrangement read `geom.Curve2` directly. The audit's sampler consolidation is
-  done; the classifier deletion waits on that offset/arrangement migration.
+  document 282 KB → 125 KB (2.26×). **Dedup complete:** offset now reads the analytic `geom.Curve2`
+  directly (arrangement already used `RenderPolyline`), so `ProjectedCurve` drops its `shape` field
+  and `projectedShape` + the fit-from-points machinery (`fitProjectedShape`, `fitCircleThrough`,
+  `allOnCircle`, `collinearPolyline`, `arcSpan`) are **deleted** — one analytic form (the
+  `geom.Curve2`) is consumed by extrude, offset, arrangement and serialization, no re-fit, no second
+  representation. A non-analytic projection (oblique conic, multi-edge silhouette loop) still
+  offsets/renders as a polyline.
 - **Phase 2 (oblique conics).** Map an oblique projected circle to the existing `EllipticalArc`
   entity (`entity_kind.go`), so oblique projections are analytic too; extend the extrude/offset paths
   to ellipse segments.
