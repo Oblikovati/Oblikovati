@@ -36,7 +36,7 @@ func TestReconstructCocylindricalCapOnWall(t *testing.T) {
 	}
 	d := dPrismBody(3, 0.6, 6, 10, "d")
 
-	body, ok := reconstructBoolean(cyl, d, meshbool.Union, DefaultQuality(), "u")
+	body, ok := reconstructBoolean(cyl, d, meshbool.Union, DefaultQuality())
 	if !ok {
 		t.Fatal("cocylindrical join declined reconstruction")
 	}

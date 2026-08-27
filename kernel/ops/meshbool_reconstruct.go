@@ -23,15 +23,15 @@ import (
 
 // reconstructBoolean computes `a op b` and rebuilds it analytically, or returns false
 // to leave the caller on the faceted path.
-func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality, feat string) (*topo.Body, bool) {
+func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality) (*topo.Body, bool) {
 	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox()))
 	// Cross-operand vertex-on-edge imprint: sample each operand's edges through the OTHER
 	// operand's vertices that lie on them, so the two conform at a shared corner the mesh
 	// co-refinement would otherwise miss (ADR-0054 / #2167 chord corner on the rim circle).
 	aSoup, aRefs := taggedSoupWithImprints(a, q, 0, crossOperandImprints(a, b, res.Weld()))
 	bSoup, bRefs := taggedSoupWithImprints(b, q, len(aRefs), crossOperandImprints(b, a, res.Weld()))
-	refs := append(aRefs, bRefs...)
-	cat := catalogOriginalEdges(a, b)
+	refs := make([]faceSurfaceRef, 0, len(aRefs)+len(bRefs))
+	refs = append(append(refs, aRefs...), bRefs...)
 
 	// Fuse coincident-surface tags (cocylindrical walls, coplanar faces) so their shared
 	// seam is interior to one face, not a false edge between two (ADR-0054 same-surface merge).
@@ -41,22 +41,33 @@ func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality, feat string)
 	inputCount := tagCounts(aSoup.Tags, bSoup.Tags)
 	result := meshbool.BooleanTagged(aSoup, bSoup, op)
 	relabelTags(result.Tags, rep)
-	resultCount := tagCounts(result.Tags)
 
 	arr := meshbool.ArrangementTopologyOf(result)
-	inputs := make([]brep.ReconInput, 0, len(arr.Faces))
-	for _, f := range arr.Faces {
-		in, ok := reconstructFace(f, refs, len(aRefs), op, inputCount, resultCount, groupSize, arr.Verts, cat, res)
-		if !ok {
-			return nil, false
-		}
-		inputs = append(inputs, in)
+	inputs, ok := reconstructFaces(arr, refs, len(aRefs), op, inputCount, tagCounts(result.Tags),
+		groupSize, catalogOriginalEdges(a, b), res)
+	if !ok {
+		return nil, false
 	}
 	body := brep.ReconstructBooleanBody(inputs)
 	if body == nil || !body.IsSolid() || len(body.Faces()) == 0 {
 		return nil, false
 	}
 	return body, true
+}
+
+// reconstructFaces turns each arrangement face into a ReconInput, failing fast when any face
+// cannot be rebuilt (a run matching neither an original edge nor an analytic SSI).
+func reconstructFaces(arr meshbool.ArrangementTopology, refs []faceSurfaceRef, naRefs int, op meshbool.Op,
+	inputCount, resultCount, groupSize map[int]int, cat *origEdgeCatalog, res geom.Resolution) ([]brep.ReconInput, bool) {
+	inputs := make([]brep.ReconInput, 0, len(arr.Faces))
+	for _, f := range arr.Faces {
+		in, ok := reconstructFace(f, refs, naRefs, op, inputCount, resultCount, groupSize, arr.Verts, cat, res)
+		if !ok {
+			return nil, false
+		}
+		inputs = append(inputs, in)
+	}
+	return inputs, true
 }
 
 // reconstructFace turns one arrangement face into a ReconInput: a pass-through for an

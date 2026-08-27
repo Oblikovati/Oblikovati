@@ -36,18 +36,10 @@ func mergeCoincidentTags(refs []faceSurfaceRef, res geom.Resolution) (rep []int,
 	for i := range refs {
 		rep[i] = i
 	}
-	var find func(int) int
-	find = func(i int) int {
-		for rep[i] != i {
-			rep[i] = rep[rep[i]]
-			i = rep[i]
-		}
-		return i
-	}
 	for i := range refs {
 		for j := i + 1; j < len(refs); j++ {
 			if surfacesCoincide(refs[i], refs[j], res) {
-				if ri, rj := find(i), find(j); ri != rj {
+				if ri, rj := findRoot(rep, i), findRoot(rep, j); ri != rj {
 					rep[max2(ri, rj)] = min2(ri, rj) // keep the smaller tag as representative
 				}
 			}
@@ -55,10 +47,19 @@ func mergeCoincidentTags(refs []faceSurfaceRef, res geom.Resolution) (rep []int,
 	}
 	size = make(map[int]int, len(refs))
 	for i := range refs {
-		rep[i] = find(i)
+		rep[i] = findRoot(rep, i)
 		size[rep[i]]++
 	}
 	return rep, size
+}
+
+// findRoot returns the union-find root of i in rep, compressing the path it walks.
+func findRoot(rep []int, i int) int {
+	for rep[i] != i {
+		rep[i] = rep[rep[i]]
+		i = rep[i]
+	}
+	return i
 }
 
 // relabelTags rewrites each tag in place to its group representative.

@@ -56,7 +56,7 @@ func TestReconstructionCutoverShadow(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			body, ok := reconstructBoolean(c.a(t), c.b(t), c.op, DefaultQuality(), "shadow")
+			body, ok := reconstructBoolean(c.a(t), c.b(t), c.op, DefaultQuality())
 			if stdmath.IsNaN(c.analytic) {
 				if ok && validBooleanSolid(body) {
 					t.Fatalf("%s: reconstruction produced a solid but is expected to DECLINE (SSI edges do not weld yet)", c.name)

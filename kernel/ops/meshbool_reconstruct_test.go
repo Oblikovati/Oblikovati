@@ -29,7 +29,7 @@ func TestReconstructSteppedShaftKeepsAnalyticWalls(t *testing.T) {
 		t.Fatalf("upper cylinder: %v", err)
 	}
 
-	body, ok := reconstructBoolean(lower, upper, meshbool.Union, DefaultQuality(), "shaft")
+	body, ok := reconstructBoolean(lower, upper, meshbool.Union, DefaultQuality())
 	if !ok {
 		t.Fatal("reconstruction declined a pure gluing union it should handle")
 	}
@@ -52,7 +52,7 @@ func TestReconstructSteppedShaftKeepsAnalyticWalls(t *testing.T) {
 func TestReconstructBoxUnionExactVolume(t *testing.T) {
 	a := boxBodyAt(2, 2, 2, math.V3(0, 0, 0), "a")
 	b := boxBodyAt(2, 2, 2, math.V3(1, 0, 0), "b") // overlaps a in x: union volume = 12
-	body, ok := reconstructBoolean(a, b, meshbool.Union, DefaultQuality(), "boxes")
+	body, ok := reconstructBoolean(a, b, meshbool.Union, DefaultQuality())
 	if !ok {
 		t.Fatal("reconstruction declined a planar box union")
 	}

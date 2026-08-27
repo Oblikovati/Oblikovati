@@ -46,7 +46,7 @@ func reconstructedCurvedBoolean(op PartFeatureOperation, target, tool *topo.Body
 	if len(target.Faces())+len(tool.Faces()) > csgFallbackFaceLimit {
 		return nil, false // the exact mesh boolean is expensive; gate operand size as the fallbacks do
 	}
-	recon, ok := reconstructBoolean(target, tool, mop, DefaultQuality(), "boolean")
+	recon, ok := reconstructBoolean(target, tool, mop, DefaultQuality())
 	if !ok || !validBooleanSolid(recon) {
 		return nil, false
 	}
