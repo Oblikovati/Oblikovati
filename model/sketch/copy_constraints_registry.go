@@ -108,15 +108,15 @@ func (g *GeometricConstraints) carryFrom(c Constraint, m *cloneMap) (carried boo
 // outside the copied set.
 
 func carryCoincident(g *GeometricConstraints, v *CoincidentConstraint, m *cloneMap) bool {
-	return carryPoints(m, v.A, v.B, g.AddCoincident)
+	return m.carryPoints(v.A, v.B, g.AddCoincident)
 }
 
 func carryHorizontal(g *GeometricConstraints, v *HorizontalConstraint, m *cloneMap) bool {
-	return carryPoints(m, v.A, v.B, g.AddHorizontal)
+	return m.carryPoints(v.A, v.B, g.AddHorizontal)
 }
 
 func carryVertical(g *GeometricConstraints, v *VerticalConstraint, m *cloneMap) bool {
-	return carryPoints(m, v.A, v.B, g.AddVertical)
+	return m.carryPoints(v.A, v.B, g.AddVertical)
 }
 
 // carryLineHorizontal / carryLineVertical remap the single line of a single-line
@@ -140,47 +140,47 @@ func carryLineVertical(g *GeometricConstraints, v *SingleLineVerticalConstraint,
 }
 
 func carryPointOnLine(g *GeometricConstraints, v *PointOnLineConstraint, m *cloneMap) bool {
-	return carryPointLine(m, v.P, v.L, g.AddPointOnLine)
+	return m.carryPointLine(v.P, v.L, g.AddPointOnLine)
 }
 
 func carryMidpoint(g *GeometricConstraints, v *MidpointConstraint, m *cloneMap) bool {
-	return carryPointLine(m, v.P, v.L, g.AddMidpoint)
+	return m.carryPointLine(v.P, v.L, g.AddMidpoint)
 }
 
 func carryPointOnCircle(g *GeometricConstraints, v *PointOnCircleConstraint, m *cloneMap) bool {
-	return carryPointCurve(m, v.P, v.C, g.AddPointOnCircle)
+	return m.carryPointCurve(v.P, v.C, g.AddPointOnCircle)
 }
 
 func carryParallel(g *GeometricConstraints, v *ParallelConstraint, m *cloneMap) bool {
-	return carryLines(m, v.L1, v.L2, g.AddParallel)
+	return m.carryLines(v.L1, v.L2, g.AddParallel)
 }
 
 func carryPerpendicular(g *GeometricConstraints, v *PerpendicularConstraint, m *cloneMap) bool {
-	return carryLines(m, v.L1, v.L2, g.AddPerpendicular)
+	return m.carryLines(v.L1, v.L2, g.AddPerpendicular)
 }
 
 func carryCollinear(g *GeometricConstraints, v *CollinearConstraint, m *cloneMap) bool {
-	return carryLines(m, v.L1, v.L2, g.AddCollinear)
+	return m.carryLines(v.L1, v.L2, g.AddCollinear)
 }
 
 func carryEqualLength(g *GeometricConstraints, v *EqualLengthConstraint, m *cloneMap) bool {
-	return carryLines(m, v.L1, v.L2, g.AddEqualLength)
+	return m.carryLines(v.L1, v.L2, g.AddEqualLength)
 }
 
 func carryConcentric(g *GeometricConstraints, v *ConcentricConstraint, m *cloneMap) bool {
-	return carryCurves(m, v.C1, v.C2, g.AddConcentric)
+	return m.carryCurves(v.C1, v.C2, g.AddConcentric)
 }
 
 func carryEqualRadius(g *GeometricConstraints, v *EqualRadiusConstraint, m *cloneMap) bool {
-	return carryCurves(m, v.C1, v.C2, g.AddEqualRadius)
+	return m.carryCurves(v.C1, v.C2, g.AddEqualRadius)
 }
 
 func carryCircularTangent(g *GeometricConstraints, v *CircularTangentConstraint, m *cloneMap) bool {
-	return carryCurves(m, v.C1, v.C2, g.AddCircularTangent)
+	return m.carryCurves(v.C1, v.C2, g.AddCircularTangent)
 }
 
 func carryTangent(g *GeometricConstraints, v *TangentConstraint, m *cloneMap) bool {
-	return carryLineCurve(m, v.L, v.C, g.AddTangent)
+	return m.carryLineCurve(v.L, v.C, g.AddTangent)
 }
 
 func carrySymmetryKind(g *GeometricConstraints, v *SymmetryConstraint, m *cloneMap) bool {
