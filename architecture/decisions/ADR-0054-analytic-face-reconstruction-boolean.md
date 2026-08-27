@@ -160,13 +160,27 @@ default** — `reconstructionCutover = false` — because two frontiers remain:
      welds the combined output with the size-relative tolerance (the tolerance lives in the ops
      layer; the meshbool core stays exact). With it, hand-cyl ∪ extrude-D reconstructs to a valid
      5-face solid.
-   - **OPEN — reconstruction seam-wrap edge match.** For a fully extrude-built join, the result is
-     now manifold with the correct faces but not yet CLOSED: when the extrude cylinder's rim seam
-     falls inside the exposed minor-arc region, the boundary run wraps the seam, so `matchClosed`
-     reuses the FULL rim circle where `matchSubArc` should cut a sub-arc — leaving open edges. The
-     fix is a seam-aware run match (split a seam-crossing run and reuse the sub-arc). Until it
-     lands, `reconstructedCurvedBoolean` DECLINES for the feature piston and the Join falls back to
-     faceting (no regression); the cutover stays gated and the piston test skipped.
+   - **CLOSED — seam-wrap edge match (real cause: planar-cap pass-through).** For a fully
+     extrude-built join the result was manifold with the correct faces but not CLOSED — open edges
+     on the top. The cause was NOT a curved seam-wrap but the PLANAR cap pass-through: a face was
+     passed through untouched when its result facet count equalled its input count ("kept whole"),
+     and `weldResultSoup` broke that signal for planar faces — it drops the co-refinement's
+     degenerate slivers, so the cylinder's top cap, cut to a minor segment by the D-prism, collapsed
+     back to the full-disc facet count and passed through as the UNTRIMMED disc. Fix
+     (`reconstructFace`, commit 690010ef): only a periodic CURVED wall is ever passed through; a
+     planar face is always rebuilt from its arrangement boundary, where the trim is explicit. The
+     extrude-built join now reconstructs to a valid, closed, manifold 5-face analytic solid
+     (verified: Layer-5 gate on → the #2167 feature test PASSES; the fix reverted, gate on → FAILS).
+   - **OPEN — disjoint-region cut (the gate-flip blocker).** A tool cylinder whose material
+     intersection is two disjoint pieces separated by a pre-existing void reconstructs to a
+     valid-but-WRONG volume that slips the Requicha bracket (a cut's result can sit anywhere in
+     `[tv-wv, tv]`, so an under-removal is inside the bracket — the guard cannot catch it).
+     Reproduced by `ops` SlottedScrew's cross-hole (through-slot Cut: removes 26.4 mm³, want
+     32.4). A simpler disjoint cut instead reconstructs to the RIGHT volume but `Valid=false`
+     (rejected, falls back — safe), so the failure is case-dependent, not uniform. This is the last
+     robustness layer before the Layer-5 cutover can flip; until it lands the cutover stays gated
+     (`reconstructionCutover=false`) and the piston feature test is gate-aware (skips while gated,
+     guards the seam-wrap layer the instant the gate flips, via `ops.ReconstructionCutoverEnabled`).
 
 4. **Curved SSI-edge welding (e.g. cyl ∪ box).** Reconstruction recovers the analytic surfaces
    but the plane∩cylinder ellipse/line edges do not yet weld watertight; Layer 4 (exact SSI conics
