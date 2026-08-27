@@ -61,6 +61,17 @@ var pendingContractAssertions = map[string]string{
 	"ObjectsEnumeratorByVariant": "client-implemented: api/client/transient_objects.go",
 	"ObjectCollectionByVariant":  "client-implemented: api/client/transient_objects.go",
 	"TransientObjects":           "client-implemented: api/client/transient_objects.go",
+
+	// Enumerable[T any] (api/client generics audit #288) is a generic interface, not a
+	// concrete one — this guard's model is one `var _ contract.X = ...` per interface
+	// NAME, which cannot express "implemented for every T". The 13 collection interfaces
+	// it backs (FaceShells, Wires, AssemblyConstraints, ...) are now type ALIASES over
+	// it, so they no longer appear in the declared set this guard walks at all; their own
+	// host implementations are unchanged and still structurally satisfy Count()/Item(i)
+	// wherever they did before. A single `var _ contract.Enumerable[X] = ...` for one X
+	// would prove nothing about any other instantiation, so it is not a meaningful
+	// substitute — asserting per-alias (already covered) is the real compile-time proof.
+	"Enumerable": "generic interface, verified per-alias instead (#288, #2177)",
 }
 
 func TestEveryContractInterfaceIsAsserted(t *testing.T) {
