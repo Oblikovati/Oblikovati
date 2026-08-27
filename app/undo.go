@@ -549,22 +549,22 @@ func (s *Session) Redo() error {
 func (s *Session) undoDocument(d *doc.Document) error {
 	dh := s.documentHistory(d)
 	ev := TransactionUndone{Document: d.ID(), Label: lastLabel(dh.hist.UndoLabels())}
-	if err := cursorMove(s, d, dh, ev, dh.hist.Undo); err != nil {
+	if err := s.cursorMove(d, dh, ev, dh.hist.Undo); err != nil {
 		return err
 	}
 	s.reattachActiveSketchAfterRestore(d) // restore rebuilt the sketch objects; re-bind the edit (#1270)
-	event.Emit(s.bus, event.After, ev)
+	s.bus.Emit(event.After, ev)
 	return nil
 }
 
 func (s *Session) redoDocument(d *doc.Document) error {
 	dh := s.documentHistory(d)
 	ev := TransactionRedone{Document: d.ID(), Label: firstLabel(dh.hist.RedoLabels())}
-	if err := cursorMove(s, d, dh, ev, dh.hist.Redo); err != nil {
+	if err := s.cursorMove(d, dh, ev, dh.hist.Redo); err != nil {
 		return err
 	}
 	s.reattachActiveSketchAfterRestore(d) // restore rebuilt the sketch objects; re-bind the edit (#1270)
-	event.Emit(s.bus, event.After, ev)
+	s.bus.Emit(event.After, ev)
 	return nil
 }
 
@@ -640,10 +640,11 @@ func (s *Session) DocumentHistoryView(id doc.ID) (DocumentTimeline, bool) {
 // cursorMove runs one undo/redo navigation behind its Before event: a handler may
 // veto the move (e.g. external state cannot roll back, M04-F05), and a failed
 // move surfaces in the status bar. The caller emits the matching After event.
-// Generic (and free, since methods cannot be) because the bus dispatches on the
-// event's static type — an interface-typed emit would reach no subscriber.
-func cursorMove[E event.Event](s *Session, d *doc.Document, dh *docHistory, ev E, move func() error) error {
-	if out := event.Emit(s.bus, event.Before, ev); out.Vetoed() {
+// A generic method (Go 1.27): the bus dispatches on the event's static type, so
+// it needs its own type parameter rather than accepting the event.Event interface
+// — an interface-typed emit would reach no subscriber.
+func (s *Session) cursorMove[E event.Event](d *doc.Document, dh *docHistory, ev E, move func() error) error {
+	if out := s.bus.Emit(event.Before, ev); out.Vetoed() {
 		s.notice = out.Reason
 		return &doc.VetoError{Operation: "transaction", Reason: out.Reason}
 	}

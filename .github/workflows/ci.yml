@@ -139,7 +139,10 @@ jobs:
       # light/environment sampling, intersector) is the SAME failure mode: -coverpkg restricts
       # instrumentation to exactly the listed packages for every binary, so a package left out
       # gets none, even for its own tests — renderer read 0% on new code despite each file having
-      # a same-named _test.go beside it, purely because it was missing from this list.
+      # a same-named _test.go beside it, purely because it was missing from this list. `event/...`
+      # (the pub/sub Bus, #2170's generic-methods conversion) hit the identical failure mode the
+      # moment its new code grew past a handful of lines: 0% on new code despite `go test
+      # ./event/...` itself reading 100% locally.
       #
       # Ubuntu-only because that is the single leg whose profile feeds the `sonar` job (see the
       # upload step below); the macOS/Windows legs keep the uninstrumented command so the slowest
@@ -148,7 +151,7 @@ jobs:
         run: |
           COVERPKG=""
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            COVERPKG="-coverpkg=./kernel/...,./model/...,./app/...,./addin/...,./renderer/..."
+            COVERPKG="-coverpkg=./kernel/...,./model/...,./app/...,./addin/...,./renderer/...,./event/..."
           fi
           gotestsum --junitfile test-results-${{ matrix.os }}.xml -- \
             -coverprofile=coverage.out -covermode=count $COVERPKG -timeout 60m ./...

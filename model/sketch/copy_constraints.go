@@ -134,11 +134,12 @@ func allOperandsRequested(c Constraint, requested map[Entity]bool) bool {
 	return true
 }
 
-// The carry* helpers remap a fixed operand shape and invoke the matching factory iff every
+// The carry* methods remap a fixed operand shape and invoke the matching factory iff every
 // operand is inside the copied set. The factory's return value is discarded — the relation is
-// already registered by Add — so they are generic over it (R).
+// already registered by Add — so they are generic over it (R). Generic methods (Go 1.27) on
+// the non-generic *cloneMap, alongside its existing point/line/curve/... lookups above.
 
-func carryPoints[R any](m *cloneMap, a, b *Point, add func(*Point, *Point) R) bool {
+func (m *cloneMap) carryPoints[R any](a, b *Point, add func(*Point, *Point) R) bool {
 	na, ok1 := m.point(a)
 	nb, ok2 := m.point(b)
 	if !ok1 || !ok2 {
@@ -148,7 +149,7 @@ func carryPoints[R any](m *cloneMap, a, b *Point, add func(*Point, *Point) R) bo
 	return true
 }
 
-func carryPointLine[R any](m *cloneMap, p *Point, l *Line, add func(*Point, *Line) R) bool {
+func (m *cloneMap) carryPointLine[R any](p *Point, l *Line, add func(*Point, *Line) R) bool {
 	np, ok1 := m.point(p)
 	nl, ok2 := m.line(l)
 	if !ok1 || !ok2 {
@@ -158,7 +159,7 @@ func carryPointLine[R any](m *cloneMap, p *Point, l *Line, add func(*Point, *Lin
 	return true
 }
 
-func carryPointCurve[R any](m *cloneMap, p *Point, c CircularCurve, add func(*Point, CircularCurve) R) bool {
+func (m *cloneMap) carryPointCurve[R any](p *Point, c CircularCurve, add func(*Point, CircularCurve) R) bool {
 	np, ok1 := m.point(p)
 	nc, ok2 := m.curve(c)
 	if !ok1 || !ok2 {
@@ -168,7 +169,7 @@ func carryPointCurve[R any](m *cloneMap, p *Point, c CircularCurve, add func(*Po
 	return true
 }
 
-func carryLines[R any](m *cloneMap, l1, l2 *Line, add func(*Line, *Line) R) bool {
+func (m *cloneMap) carryLines[R any](l1, l2 *Line, add func(*Line, *Line) R) bool {
 	n1, ok1 := m.line(l1)
 	n2, ok2 := m.line(l2)
 	if !ok1 || !ok2 {
@@ -178,7 +179,7 @@ func carryLines[R any](m *cloneMap, l1, l2 *Line, add func(*Line, *Line) R) bool
 	return true
 }
 
-func carryCurves[R any](m *cloneMap, c1, c2 CircularCurve, add func(CircularCurve, CircularCurve) R) bool {
+func (m *cloneMap) carryCurves[R any](c1, c2 CircularCurve, add func(CircularCurve, CircularCurve) R) bool {
 	n1, ok1 := m.curve(c1)
 	n2, ok2 := m.curve(c2)
 	if !ok1 || !ok2 {
@@ -188,7 +189,7 @@ func carryCurves[R any](m *cloneMap, c1, c2 CircularCurve, add func(CircularCurv
 	return true
 }
 
-func carryLineCurve[R any](m *cloneMap, l *Line, c CircularCurve, add func(*Line, CircularCurve) R) bool {
+func (m *cloneMap) carryLineCurve[R any](l *Line, c CircularCurve, add func(*Line, CircularCurve) R) bool {
 	nl, ok1 := m.line(l)
 	nc, ok2 := m.curve(c)
 	if !ok1 || !ok2 {

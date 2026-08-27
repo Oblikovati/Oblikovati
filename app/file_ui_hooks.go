@@ -20,19 +20,19 @@ const maxRecentDocuments = 10
 // supplies a path replaces the dialog: the head opens the returned path
 // directly instead of showing it.
 func (s *Session) HookFileOpenDialog() (string, bool) {
-	return runDialogHook(s, FileOpenDialog{answer: new(string)})
+	return s.runDialogHook(FileOpenDialog{answer: new(string)})
 }
 
 // HookFileSaveAsDialog announces File ▸ Save As is about to present; a supplied
 // path replaces the dialog.
 func (s *Session) HookFileSaveAsDialog(saveCopyAs bool) (string, bool) {
-	return runDialogHook(s, FileSaveAsDialog{SaveCopyAs: saveCopyAs, answer: new(string)})
+	return s.runDialogHook(FileSaveAsDialog{SaveCopyAs: saveCopyAs, answer: new(string)})
 }
 
 // HookFileNewDialog announces a new-document template chooser is about to
 // present; a supplied template replaces the dialog.
 func (s *Session) HookFileNewDialog() (string, bool) {
-	return runDialogHook(s, FileNewDialog{answer: new(string)})
+	return s.runDialogHook(FileNewDialog{answer: new(string)})
 }
 
 // dialogHook is the shape the three dialog hooks share: an answer slot readable
@@ -42,11 +42,12 @@ type dialogHook interface {
 	Supplied() string
 }
 
-// runDialogHook emits one dialog hook in both phases and returns the answer.
-// Generic because the bus dispatches on the event's static type.
-func runDialogHook[E dialogHook](s *Session, ev E) (string, bool) {
-	event.Emit(s.bus, event.Before, ev)
-	event.Emit(s.bus, event.After, ev)
+// runDialogHook emits one dialog hook in both phases and returns the answer. A
+// generic method (Go 1.27): the bus dispatches on the event's static type, so it
+// needs its own type parameter rather than accepting the dialogHook interface.
+func (s *Session) runDialogHook[E dialogHook](ev E) (string, bool) {
+	s.bus.Emit(event.Before, ev)
+	s.bus.Emit(event.After, ev)
 	return ev.Supplied(), ev.Supplied() != ""
 }
 

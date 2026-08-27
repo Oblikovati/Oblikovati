@@ -4,7 +4,7 @@
 
 ## Decision
 
-Implement the application in **Go** (1.22+), targeting Linux, macOS, Windows.
+Implement the application in **Go** (1.27+), targeting Linux, macOS, Windows.
 
 ## Why
 
@@ -26,7 +26,10 @@ Implement the application in **Go** (1.22+), targeting Linux, macOS, Windows.
   (ADR-0007). (realtime-3d §13)
 - **Generics are newer/less expressive** than C++ templates → the kernel leans on
   `float64` concrete types and a small set of generic containers, not deep
-  template metaprogramming.
+  template metaprogramming. [ADR-0054](ADR-0054-generic-methods-policy.md) extends
+  this appetite to Go 1.27's generic methods: adopted only where a non-generic
+  receiver's own free-function helper exists purely for lack of the feature, or
+  where it collapses genuinely duplicated logic — not merely because it's now possible.
 - **No exceptions** → errors as typed values (realtime-3d §15); modeling failures
   are *health state*, not panics (parametric-cad skill).
 
