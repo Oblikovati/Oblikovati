@@ -5,13 +5,16 @@ package exchange_test
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/exchange"
+	"oblikovati.org/model/feature"
 )
 
 // stepFixture is a hand-authored AP203 fixture shared with the kernel step tests.
@@ -138,5 +141,169 @@ func TestMeshExportImportThroughDispatch(t *testing.T) {
 	v1 := ops.BodyGeometryProperties(back.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	if relErr(v0, v1) > 0.05 {
 		t.Errorf("mesh dispatch round-trip volume %.4f → %.4f", v0, v1)
+	}
+}
+
+// partWithCube seeds a part with one solid cube body via the STEP import path.
+func partWithCube(t *testing.T) *compdef.PartComponentDefinition {
+	t.Helper()
+	part := compdef.NewPartComponentDefinition()
+	if _, err := exchange.Import(part, stepFixture("cube.step"), types.FormatSTEP); err != nil {
+		t.Fatalf("seed import: %v", err)
+	}
+	return part
+}
+
+// TestExportGLTFRequiresGLBDestination: the direct model API rejects a
+// FormatGLTF export to a non-.glb destination with a typed error naming the
+// supported extension (CHG-2) — the CLI guard alone was not enough.
+func TestExportGLTFRequiresGLBDestination(t *testing.T) {
+	part := partWithCube(t)
+	dir := t.TempDir()
+	for _, name := range []string{"box.gltf", "box.GLTF", "box.json"} {
+		dst := filepath.Join(dir, name)
+		_, err := exchange.Export(part, dst, types.FormatGLTF, types.ResolutionHigh)
+		if err == nil {
+			t.Fatalf("Export(%s) succeeded; want a typed .glb-required error", name)
+		}
+		if !strings.Contains(err.Error(), ".glb") || !strings.Contains(err.Error(), name) {
+			t.Errorf("Export(%s) err = %q, want a typed error naming .glb and the path", name, err)
+		}
+		if _, statErr := os.Stat(dst); !os.IsNotExist(statErr) {
+			t.Errorf("Export(%s) created the destination despite the rejection", name)
+		}
+	}
+}
+
+// TestExportGLTFPassesThroughGLB: a .glb destination exports successfully
+// through the direct model API (CHG-2 pass-through).
+func TestExportGLTFPassesThroughGLB(t *testing.T) {
+	part := partWithCube(t)
+	dst := filepath.Join(t.TempDir(), "box.glb")
+	res, err := exchange.Export(part, dst, types.FormatGLTF, types.ResolutionHigh)
+	if err != nil {
+		t.Fatalf("Export glb: %v", err)
+	}
+	if res.TriangleCount == 0 {
+		t.Errorf("triangle count = 0, want > 0")
+	}
+	data, err := os.ReadFile(dst)
+	if err != nil {
+		t.Fatalf("read %s: %v", dst, err)
+	}
+	if len(data) < 12 || string(data[0:4]) != "glTF" {
+		t.Fatalf("exported file is not a GLB: %d bytes, magic %q", len(data), data[0:4])
+	}
+}
+
+// TestExportWriteFailureLeavesDestinationUntouched: a write failure (the
+// rename over a read-only destination is denied on Windows) must leave a
+// pre-existing destination byte-for-byte unchanged and return a typed error
+// (CHG-6). On POSIX, rename over a read-only file succeeds, so the failure
+// injection is Windows-only; the no-truncate-on-encode-error test covers the
+// cross-platform guarantee.
+func TestExportWriteFailureLeavesDestinationUntouched(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("rename over a read-only destination succeeds on POSIX; failure injection is Windows-only (CHG-6 limitation)")
+	}
+	part := partWithCube(t)
+	dir := t.TempDir()
+	dst := filepath.Join(dir, "box.glb")
+	known := []byte("pre-existing destination bytes")
+	if err := os.WriteFile(dst, known, 0o644); err != nil {
+		t.Fatalf("seed destination: %v", err)
+	}
+	if err := os.Chmod(dst, 0o444); err != nil {
+		t.Fatalf("make destination read-only: %v", err)
+	}
+	defer os.Chmod(dst, 0o644)
+
+	_, err := exchange.Export(part, dst, types.FormatGLTF, types.ResolutionHigh)
+	if err == nil {
+		t.Fatal("Export succeeded; want a typed write error")
+	}
+	if !strings.Contains(err.Error(), "rename over") {
+		t.Errorf("err = %q, want a typed rename error", err)
+	}
+	got, err := os.ReadFile(dst)
+	if err != nil {
+		t.Fatalf("read destination: %v", err)
+	}
+	if string(got) != string(known) {
+		t.Errorf("destination changed: got %q, want %q", got, known)
+	}
+	// No temp files may be left behind.
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("read dir: %v", err)
+	}
+	for _, e := range entries {
+		if strings.Contains(e.Name(), ".tmp") {
+			t.Errorf("leftover temp file %q after failed export", e.Name())
+		}
+	}
+}
+
+// TestExportEncodeErrorDoesNotTruncateDestination: an encoder error before any
+// write (a part whose only body is empty) must leave a pre-existing
+// destination untouched — the atomic write never opens the destination
+// (CHG-6 no-truncate guarantee, cross-platform).
+func TestExportEncodeErrorDoesNotTruncateDestination(t *testing.T) {
+	part := compdef.NewPartComponentDefinition()
+	empty := topo.BodyFromShells(topo.NewLineage(topo.Tok("x", "y", 0)), false)
+	feature.NewImportedBodies(part.Features()).Add(empty, "dummy-resource", "stl")
+	part.Recompute()
+
+	dir := t.TempDir()
+	dst := filepath.Join(dir, "box.glb")
+	known := []byte("pre-existing destination bytes")
+	if err := os.WriteFile(dst, known, 0o644); err != nil {
+		t.Fatalf("seed destination: %v", err)
+	}
+
+	_, err := exchange.Export(part, dst, types.FormatGLTF, types.ResolutionHigh)
+	if err == nil {
+		t.Fatal("Export succeeded; want the no-exportable-bodies encoder error")
+	}
+	if !strings.Contains(err.Error(), "no exportable bodies") {
+		t.Errorf("err = %q, want the encoder's no-exportable-bodies error", err)
+	}
+	got, err := os.ReadFile(dst)
+	if err != nil {
+		t.Fatalf("read destination: %v", err)
+	}
+	if string(got) != string(known) {
+		t.Errorf("destination changed: got %q, want %q", got, known)
+	}
+}
+
+// TestExportSuccessPathRenamesOverDestination: a successful export replaces a
+// pre-existing destination via temp+rename and leaves no temp files (CHG-6
+// success path).
+func TestExportSuccessPathRenamesOverDestination(t *testing.T) {
+	part := partWithCube(t)
+	dir := t.TempDir()
+	dst := filepath.Join(dir, "box.glb")
+	if err := os.WriteFile(dst, []byte("stale bytes"), 0o644); err != nil {
+		t.Fatalf("seed destination: %v", err)
+	}
+	if _, err := exchange.Export(part, dst, types.FormatGLTF, types.ResolutionHigh); err != nil {
+		t.Fatalf("Export glb: %v", err)
+	}
+	data, err := os.ReadFile(dst)
+	if err != nil {
+		t.Fatalf("read destination: %v", err)
+	}
+	if len(data) < 12 || string(data[0:4]) != "glTF" {
+		t.Fatalf("destination not replaced with a GLB: %d bytes, magic %q", len(data), data[0:4])
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("read dir: %v", err)
+	}
+	for _, e := range entries {
+		if strings.Contains(e.Name(), ".tmp") {
+			t.Errorf("leftover temp file %q after successful export", e.Name())
+		}
 	}
 }

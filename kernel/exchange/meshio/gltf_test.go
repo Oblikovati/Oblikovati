@@ -645,6 +645,38 @@ func TestGLTFOverflowFloat32(t *testing.T) {
 	}
 }
 
+// TestGLTFHugeNormalComponent: a normal component of magnitude ~3e38 is finite
+// as a float32 but its float32 square-sum overflows to +Inf (CHG-4). The
+// float64 length/normalize path keeps the triangle and writes a unit normal —
+// no zero or Inf normal is emitted.
+func TestGLTFHugeNormalComponent(t *testing.T) {
+	huge := 3e38
+	m := gltfTestMesh(
+		[]math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)},
+		[]math.Vector3{math.V3(0, 0, 1), math.V3(0, 0, 1), math.V3(0, 0, 1), math.V3(huge, 0, 0), math.V3(0, 0, 1), math.V3(0, 0, 1)},
+		[]int{0, 1, 2, 3, 4, 5},
+	)
+	body, err := sanitizeGLTFBody(gltfBodyMesh("1", "huge", m), 0.01)
+	if err != nil {
+		t.Fatalf("sanitize: %v", err)
+	}
+	if len(body.indices) != 6 {
+		t.Fatalf("indices = %v, want both triangles kept (float64 length is finite)", body.indices)
+	}
+	for i := 0; i < len(body.normals); i += 3 {
+		x, y, z := body.normals[i], body.normals[i+1], body.normals[i+2]
+		if stdmath.IsNaN(float64(x)) || stdmath.IsInf(float64(x), 0) ||
+			stdmath.IsNaN(float64(y)) || stdmath.IsInf(float64(y), 0) ||
+			stdmath.IsNaN(float64(z)) || stdmath.IsInf(float64(z), 0) {
+			t.Fatalf("normal %d = [%v %v %v], want finite", i/3, x, y, z)
+		}
+		l := stdmath.Sqrt(float64(x)*float64(x) + float64(y)*float64(y) + float64(z)*float64(z))
+		if stdmath.Abs(l-1) > 1e-6 {
+			t.Errorf("normal %d length = %v, want 1 (unit)", i/3, l)
+		}
+	}
+}
+
 // TestGLTFDeterministicOrdering: two exports of the same bodies produce
 // byte-identical GLBs (R2-10).
 func TestGLTFDeterministicOrdering(t *testing.T) {

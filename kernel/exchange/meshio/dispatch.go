@@ -128,7 +128,10 @@ func ExportBodies(format types.ExchangeFormat, bodies []*topo.Body, res types.Me
 		local.FileUnit = "mm"
 	}
 	q := QualityFor(res)
-	merged := mergeTessellations(bodies, q)
+	merged, err := mergeTessellations(bodies, q)
+	if err != nil {
+		return nil, 0, err
+	}
 	scaleMesh(merged, local.ExportScale()) // database centimetres → the file unit
 	return encodeMesh(format, merged, local.FileUnit)
 }
@@ -150,8 +153,15 @@ func encodeMesh(format types.ExchangeFormat, mesh *ops.Mesh, fileUnit string) ([
 }
 
 // BodyMesh is one body's tessellation record: the stable body identifier, the
-// display name, and the tessellated mesh. It is the per-body unit the glTF
-// exporter consumes (R2-7/R4-1).
+// derived stable label, and the tessellated mesh. It is the per-body unit the
+// glTF exporter consumes (R2-7/R4-1).
+//
+// Name is a DERIVED stable label ("Body<id>"), NOT a source display name: the
+// kernel's topo.Body carries no display-name surface (only ID/Kind/Lineage/
+// ReferenceKey), so the exporter cannot know a body's user-facing name.
+// Display-name plumbing from the model/occurrence layer into the kernel is a
+// recorded follow-up (change-review CHG-5); until it lands, exported names are
+// the collision-safe Body<id> labels.
 type BodyMesh struct {
 	ID   string
 	Name string
@@ -162,27 +172,36 @@ type BodyMesh struct {
 // B-rep order, stable — R2-10). It is the SINGLE ownership point of
 // tessellation: the glTF branch consumes its records directly and never
 // merges; mergeTessellations is a pure merger over the same records, so every
-// mesh format tessellates exactly once (R4-1).
+// mesh format tessellates exactly once (R4-1). A body that fails to tessellate
+// (or yields a nil mesh) is a typed error naming the body id — never a silent
+// skip (change-review CHG-3).
 //
 // Example:
 //
-//	meshes := meshio.TessellateBodies(bodies, meshio.QualityFor(types.ResolutionHigh))
-func TessellateBodies(bodies []*topo.Body, q ops.Quality) []BodyMesh {
+//	meshes, err := meshio.TessellateBodies(bodies, meshio.QualityFor(types.ResolutionHigh))
+func TessellateBodies(bodies []*topo.Body, q ops.Quality) ([]BodyMesh, error) {
 	out := make([]BodyMesh, 0, len(bodies))
 	for _, b := range bodies {
 		mesh, _ := ops.TessellateBody(b, q)
+		if mesh == nil {
+			return nil, fmt.Errorf("tessellate body %d: nil mesh", b.ID())
+		}
 		out = append(out, BodyMesh{ID: fmt.Sprintf("%d", b.ID()), Name: fmt.Sprintf("Body%d", b.ID()), Mesh: mesh})
 	}
-	return out
+	return out, nil
 }
 
 // mergeTessellations is a PURE merger: it tessellates the bodies once via
 // [TessellateBodies] and concatenates the meshes (offsetting indices) so they
 // export as one combined mesh — the legacy STL/OBJ/3MF shape, byte-for-byte
 // unchanged (R4-1).
-func mergeTessellations(bodies []*topo.Body, q ops.Quality) *ops.Mesh {
+func mergeTessellations(bodies []*topo.Body, q ops.Quality) (*ops.Mesh, error) {
 	merged := &ops.Mesh{}
-	for _, bm := range TessellateBodies(bodies, q) {
+	records, err := TessellateBodies(bodies, q)
+	if err != nil {
+		return nil, err
+	}
+	for _, bm := range records {
 		mesh := bm.Mesh
 		base := len(merged.Positions)
 		merged.Positions = append(merged.Positions, mesh.Positions...)
@@ -191,5 +210,5 @@ func mergeTessellations(bodies []*topo.Body, q ops.Quality) *ops.Mesh {
 			merged.Indices = append(merged.Indices, base+idx)
 		}
 	}
-	return merged
+	return merged, nil
 }

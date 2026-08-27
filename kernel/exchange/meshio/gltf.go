@@ -68,7 +68,10 @@ func encodeGLTFBodies(bodies []*topo.Body, q ops.Quality, opts exchange.Translat
 		return nil, 0, nil, errors.New("gltf: no exportable bodies")
 	}
 	scale := opts.ExportScale()
-	meshes := TessellateBodies(exportable, q)
+	meshes, err := TessellateBodies(exportable, q)
+	if err != nil {
+		return nil, 0, nil, err
+	}
 	gb := make([]*gltfBody, 0, len(meshes))
 	for _, bm := range meshes {
 		body, err := sanitizeGLTFBody(bm, scale)
@@ -187,7 +190,7 @@ func filterGLTFTriangles(m *ops.Mesh, pos, norm []float32, valid []bool) []uint3
 		if i == j || j == k || k == i {
 			continue
 		}
-		if normLen(norm, i) == 0 || normLen(norm, j) == 0 || normLen(norm, k) == 0 {
+		if !normalOK(norm, i) || !normalOK(norm, j) || !normalOK(norm, k) {
 			continue
 		}
 		if degeneratePacked(pos, i, j, k) {
@@ -198,10 +201,25 @@ func filterGLTFTriangles(m *ops.Mesh, pos, norm []float32, valid []bool) []uint3
 	return kept
 }
 
-// normLen returns the length of the packed normal at vertex vi.
-func normLen(norm []float32, vi int) float32 {
-	x, y, z := norm[3*vi], norm[3*vi+1], norm[3*vi+2]
-	return float32(stdmath.Sqrt(float64(x*x + y*y + z*z)))
+// normalOK reports whether the packed normal at vertex vi is usable: its
+// length is computed in float64 (a finite float32 component like 3e38 squares
+// to +Inf in float32, which would wrongly read as a zero/Inf length —
+// change-review CHG-4), the length is finite and non-zero, and the float32
+// normalization of that length is finite and unit-length within 1e-6.
+func normalOK(norm []float32, vi int) bool {
+	x, y, z := float64(norm[3*vi]), float64(norm[3*vi+1]), float64(norm[3*vi+2])
+	l := stdmath.Sqrt(x*x + y*y + z*z)
+	if stdmath.IsNaN(l) || stdmath.IsInf(l, 0) || l == 0 {
+		return false
+	}
+	ux, uy, uz := float32(x/l), float32(y/l), float32(z/l)
+	if !finite32(ux) || !finite32(uy) || !finite32(uz) {
+		return false
+	}
+	// Re-validate the NARROWED unit vector: float32 rounding can push a
+	// normalized component off unit length (CHG-4).
+	rl := stdmath.Sqrt(float64(ux)*float64(ux) + float64(uy)*float64(uy) + float64(uz)*float64(uz))
+	return stdmath.Abs(rl-1) <= 1e-6
 }
 
 // degeneratePacked reports whether the triangle's packed float32 positions are
@@ -247,13 +265,15 @@ func pruneGLTFVertices(pos, norm []float32, kept []uint32) (outPos, outNorm []fl
 }
 
 // normalize3 returns the unit vector of (x,y,z), or the zero vector when the
-// length is zero (callers drop zero-length normals before normalizing).
+// length is zero (callers drop zero-length normals before normalizing). The
+// length is computed in float64 so a finite float32 component that overflows
+// the float32 square-sum (e.g. 3e38) still normalizes correctly (CHG-4).
 func normalize3(x, y, z float32) [3]float32 {
-	l := float32(stdmath.Sqrt(float64(x*x + y*y + z*z)))
+	l := stdmath.Sqrt(float64(x)*float64(x) + float64(y)*float64(y) + float64(z)*float64(z))
 	if l == 0 {
 		return [3]float32{}
 	}
-	return [3]float32{x / l, y / l, z / l}
+	return [3]float32{float32(float64(x) / l), float32(float64(y) / l), float32(float64(z) / l)}
 }
 
 // gltfBounds returns the per-component min and max of the packed positions.

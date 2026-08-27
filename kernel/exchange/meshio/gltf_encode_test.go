@@ -8,7 +8,9 @@ import (
 	"testing"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/exchange"
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -188,7 +190,10 @@ func TestGLTFDecodeRejectsGLTF(t *testing.T) {
 func TestGLTFBodyMeshNames(t *testing.T) {
 	boxA := cmBox(t)
 	boxB := cmBox(t)
-	meshes := TessellateBodies([]*topo.Body{boxA, boxB}, QualityFor(types.ResolutionHigh))
+	meshes, err := TessellateBodies([]*topo.Body{boxA, boxB}, QualityFor(types.ResolutionHigh))
+	if err != nil {
+		t.Fatalf("TessellateBodies: %v", err)
+	}
 	if len(meshes) != 2 {
 		t.Fatalf("TessellateBodies returned %d records, want 2", len(meshes))
 	}
@@ -209,12 +214,18 @@ func TestGLTFMergeTessellationsUnchanged(t *testing.T) {
 	boxA := cmBox(t)
 	boxB := cmBox(t)
 	q := QualityFor(types.ResolutionLow)
-	merged := mergeTessellations([]*topo.Body{boxA, boxB}, q)
+	merged, err := mergeTessellations([]*topo.Body{boxA, boxB}, q)
+	if err != nil {
+		t.Fatalf("mergeTessellations: %v", err)
+	}
 	if merged.TriangleCount() != 24 {
 		t.Fatalf("merged triangle count = %d, want 24", merged.TriangleCount())
 	}
 	// The merged positions are the concatenation of the per-body tessellations.
-	records := TessellateBodies([]*topo.Body{boxA, boxB}, q)
+	records, err := TessellateBodies([]*topo.Body{boxA, boxB}, q)
+	if err != nil {
+		t.Fatalf("TessellateBodies: %v", err)
+	}
 	if len(merged.Positions) != len(records[0].Mesh.Positions)+len(records[1].Mesh.Positions) {
 		t.Errorf("merged positions = %d, want %d+%d", len(merged.Positions), len(records[0].Mesh.Positions), len(records[1].Mesh.Positions))
 	}
@@ -223,6 +234,63 @@ func TestGLTFMergeTessellationsUnchanged(t *testing.T) {
 	for _, idx := range records[1].Mesh.Indices {
 		if idx+base >= len(merged.Positions) {
 			t.Errorf("merged index %d out of range", idx+base)
+		}
+	}
+}
+
+// TestGLTFMergeTessellationsHandComputed: the merger's output equals a
+// hand-computed concatenation of two known body meshes — positions and normals
+// in body order, the second body's indices offset by the first body's vertex
+// count (CHG-7 semantic golden). The golden is built from the per-body
+// tessellations of two distinct known bodies, so it pins the merger's
+// concatenation arithmetic, not the tessellator's output.
+func TestGLTFMergeTessellationsHandComputed(t *testing.T) {
+	boxA := cmBox(t)
+	boxB, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(3, 3, 3), "small")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	q := QualityFor(types.ResolutionLow)
+	meshA, _ := ops.TessellateBody(boxA, q)
+	meshB, _ := ops.TessellateBody(boxB, q)
+
+	// Hand-computed concatenation: A's vertices, then B's vertices; B's
+	// indices offset by A's vertex count.
+	wantPos := append(append([]math.Point3(nil), meshA.Positions...), meshB.Positions...)
+	wantNorm := append(append([]math.Vector3(nil), meshA.Normals...), meshB.Normals...)
+	base := len(meshA.Positions)
+	wantIdx := make([]int, 0, len(meshA.Indices)+len(meshB.Indices))
+	wantIdx = append(wantIdx, meshA.Indices...)
+	for _, idx := range meshB.Indices {
+		wantIdx = append(wantIdx, base+idx)
+	}
+
+	got, err := mergeTessellations([]*topo.Body{boxA, boxB}, q)
+	if err != nil {
+		t.Fatalf("mergeTessellations: %v", err)
+	}
+	if len(got.Positions) != len(wantPos) {
+		t.Fatalf("positions = %d, want %d", len(got.Positions), len(wantPos))
+	}
+	for i := range wantPos {
+		if got.Positions[i] != wantPos[i] {
+			t.Errorf("position %d = %v, want %v", i, got.Positions[i], wantPos[i])
+		}
+	}
+	if len(got.Normals) != len(wantNorm) {
+		t.Fatalf("normals = %d, want %d", len(got.Normals), len(wantNorm))
+	}
+	for i := range wantNorm {
+		if got.Normals[i] != wantNorm[i] {
+			t.Errorf("normal %d = %v, want %v", i, got.Normals[i], wantNorm[i])
+		}
+	}
+	if len(got.Indices) != len(wantIdx) {
+		t.Fatalf("indices = %d, want %d", len(got.Indices), len(wantIdx))
+	}
+	for i := range wantIdx {
+		if got.Indices[i] != wantIdx[i] {
+			t.Errorf("index %d = %d, want %d", i, got.Indices[i], wantIdx[i])
 		}
 	}
 }
