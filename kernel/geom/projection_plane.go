@@ -34,21 +34,21 @@ func ProjectCurveToPlane(pl Plane, c Curve3) (Curve2, bool) {
 	case Line:
 		return projectInfiniteLine(pl, k)
 	case Circle:
-		if !normalParallelToPlane(k.Normal, pl) {
-			return nil, false // oblique circle → ellipse (phase 2)
+		if normalParallelToPlane(k.Normal, pl) {
+			return NewCircle2d(planeUV(pl, k.Center), k.Radius), true
 		}
-		return NewCircle2d(planeUV(pl, k.Center), k.Radius), true
+		return projectCircleToEllipse2d(pl, k) // oblique circle → ellipse
 	case Arc3d:
-		if !normalParallelToPlane(k.Normal, pl) {
-			return nil, false // oblique arc → elliptical arc (phase 2)
+		if normalParallelToPlane(k.Normal, pl) {
+			lo, hi := k.Domain()
+			arc, err := Arc2dByThreePoints(
+				planeUV(pl, k.PointAt(lo)), planeUV(pl, k.PointAt((lo+hi)/2)), planeUV(pl, k.PointAt(hi)))
+			if err != nil {
+				return nil, false
+			}
+			return arc, true
 		}
-		lo, hi := k.Domain()
-		arc, err := Arc2dByThreePoints(
-			planeUV(pl, k.PointAt(lo)), planeUV(pl, k.PointAt((lo+hi)/2)), planeUV(pl, k.PointAt(hi)))
-		if err != nil {
-			return nil, false
-		}
-		return arc, true
+		return projectArcToEllipse2d(pl, k) // oblique arc → elliptical arc
 	default:
 		return nil, false
 	}
@@ -73,6 +73,106 @@ func projectInfiniteLine(pl Plane, l Line) (Curve2, bool) {
 func planeUV(pl Plane, p math.Point3) math.Point2 {
 	d := pl.Origin.VectorTo(p)
 	return math.P2(d.Dot(pl.UAxis.AsVector()), d.Dot(pl.VAxis.AsVector()))
+}
+
+// vecUV projects a 3D VECTOR (no origin shift) into pl's (u,v) frame.
+func vecUV(pl Plane, v math.Vector3) math.Vector2 {
+	return math.V2(v.Dot(pl.UAxis.AsVector()), v.Dot(pl.VAxis.AsVector()))
+}
+
+// projectCircleToEllipse2d projects an oblique circle onto pl as the analytic ellipse it becomes
+// (semi-major = r, semi-minor = r·cosθ for a tilt θ; ADR-0055 phase 2). The circle's two in-plane
+// unit axes project to conjugate semi-diameters r·û, r·v̂ of the ellipse. ok=false when the circle is
+// edge-on (projects to a segment), leaving the caller on the sampled fallback.
+func projectCircleToEllipse2d(pl Plane, k Circle) (Curve2, bool) {
+	u, v := circleConjugateSemiDiameters(pl, k)
+	return ellipseFromConjugate(planeUV(pl, k.Center), u, v)
+}
+
+// projectArcToEllipse2d projects an oblique arc as the elliptical arc it becomes: the full ellipse
+// of its circle, restricted to the arc's span. The span is recovered by mapping the arc's start,
+// mid, and end points to the ellipse's eccentric angle and picking the direction through the mid.
+func projectArcToEllipse2d(pl Plane, k Arc3d) (Curve2, bool) {
+	u, v := arcConjugateSemiDiameters(pl, k)
+	full, ok := ellipseFromConjugate(planeUV(pl, k.Center), u, v)
+	if !ok {
+		return nil, false
+	}
+	ell := full.(EllipseFull2d)
+	lo, hi := k.Domain()
+	a0 := ellipseEccentricAngle(ell, planeUV(pl, k.PointAt(lo)))
+	am := ellipseEccentricAngle(ell, planeUV(pl, k.PointAt((lo+hi)/2)))
+	an := ellipseEccentricAngle(ell, planeUV(pl, k.PointAt(hi)))
+	start, sweep := arcSweepThroughMid(a0, am, an)
+	arc, err := NewEllipticalArc2d(ell.Center, ell.MajorAxis.AsVector(), ell.MajorRadius, ell.MinorRadius, start, sweep)
+	if err != nil {
+		return nil, false
+	}
+	return arc, true
+}
+
+// circleConjugateSemiDiameters returns the two 2D conjugate semi-diameters (r·RefDir, r·binormal
+// projected) that generate the circle's projected ellipse.
+func circleConjugateSemiDiameters(pl Plane, k Circle) (u, v math.Vector2) {
+	binormal := k.Normal.AsVector().Cross(k.RefDir.AsVector())
+	return vecUV(pl, k.RefDir.AsVector()).Scale(math.Scalar(k.Radius)), vecUV(pl, binormal).Scale(math.Scalar(k.Radius))
+}
+
+// arcConjugateSemiDiameters is circleConjugateSemiDiameters for an arc (same circle frame).
+func arcConjugateSemiDiameters(pl Plane, k Arc3d) (u, v math.Vector2) {
+	binormal := k.Normal.AsVector().Cross(k.RefDir.AsVector())
+	return vecUV(pl, k.RefDir.AsVector()).Scale(math.Scalar(k.Radius)), vecUV(pl, binormal).Scale(math.Scalar(k.Radius))
+}
+
+// ellipseFromConjugate builds the ellipse {center + u·cosφ + v·sinφ} (u, v conjugate semi-diameters)
+// in principal-axis form. The principal axes are the extrema of the radius: at eccentric angle
+// θ = ½·atan2(2 u·v, |u|²−|v|²) and θ+90° the two orthogonal semi-diameters are the axes. ok=false
+// when the minor radius collapses (a circle projected edge-on → a segment).
+func ellipseFromConjugate(center math.Point2, u, v math.Vector2) (Curve2, bool) {
+	uu, vv, uv := float64(u.Dot(u)), float64(v.Dot(v)), float64(u.Dot(v))
+	theta := 0.5 * stdmath.Atan2(2*uv, uu-vv)
+	c, s := math.Scalar(stdmath.Cos(theta)), math.Scalar(stdmath.Sin(theta))
+	p1 := u.Scale(c).Add(v.Scale(s))  // semi-diameter at θ
+	p2 := u.Scale(-s).Add(v.Scale(c)) // orthogonal semi-diameter at θ+90°
+	majorDir, majorR, minorR := p1, float64(p1.Length()), float64(p2.Length())
+	if minorR > majorR {
+		majorDir, majorR, minorR = p2, minorR, majorR
+	}
+	if minorR <= planeParallelTol*majorR || majorR == 0 {
+		return nil, false // edge-on: the ellipse is a segment
+	}
+	e, err := NewEllipseFull2d(center, majorDir, majorR, minorR)
+	if err != nil {
+		return nil, false
+	}
+	return e, true
+}
+
+// ellipseEccentricAngle returns the angle α with p = center + majorR·cosα·major + minorR·sinα·minor.
+func ellipseEccentricAngle(e EllipseFull2d, p math.Point2) float64 {
+	d := e.Center.VectorTo(p)
+	ca := float64(d.Dot(e.MajorAxis.AsVector())) / e.MajorRadius
+	sa := float64(d.Dot(e.minorAxis())) / e.MinorRadius
+	return stdmath.Atan2(sa, ca)
+}
+
+// arcSweepThroughMid returns the start angle and signed sweep from a0 to an that passes through the
+// mid angle am (so the elliptical arc covers the source arc's side, not its complement).
+func arcSweepThroughMid(a0, am, an float64) (start, sweep float64) {
+	ccw := wrapTwoPi(an - a0)
+	if wrapTwoPi(am-a0) <= ccw {
+		return a0, ccw
+	}
+	return a0, ccw - 2*stdmath.Pi
+}
+
+// wrapTwoPi maps an angle into [0, 2π).
+func wrapTwoPi(a float64) float64 {
+	a = stdmath.Mod(a, 2*stdmath.Pi)
+	if a < 0 {
+		a += 2 * stdmath.Pi
+	}
+	return a
 }
 
 // normalParallelToPlane reports whether a curve's plane (given its unit normal) is parallel to pl,

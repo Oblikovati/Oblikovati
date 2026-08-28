@@ -389,6 +389,12 @@ func analyticCurveData(c geom.Curve2) (shape string, params []float64, ok bool) 
 		return "circle", []float64{float64(k.Center.X), float64(k.Center.Y), k.Radius}, true
 	case geom.Arc2d:
 		return "arc", []float64{float64(k.Center.X), float64(k.Center.Y), k.Radius, k.StartAngle, k.SweepAngle}, true
+	case geom.EllipseFull2d:
+		return "ellipse", []float64{float64(k.Center.X), float64(k.Center.Y),
+			float64(k.MajorAxis.X()), float64(k.MajorAxis.Y()), k.MajorRadius, k.MinorRadius}, true
+	case geom.EllipticalArc2d:
+		return "ellipticalArc", []float64{float64(k.Center.X), float64(k.Center.Y),
+			float64(k.MajorAxis.X()), float64(k.MajorAxis.Y()), k.MajorRadius, k.MinorRadius, k.StartAngle, k.SweepAngle}, true
 	default:
 		return "", nil, false
 	}
@@ -413,6 +419,27 @@ func analyticCurveFromData(shape string, p []float64) (geom.Curve2, bool) {
 			return nil, false
 		}
 		return geom.NewArc2d(math.P2(math.Scalar(p[0]), math.Scalar(p[1])), p[2], p[3], p[4]), true
+	default:
+		return conicCurveFromData(shape, p)
+	}
+}
+
+// conicCurveFromData rebuilds a projected ellipse / elliptical arc persisted by analyticCurveData
+// (ADR-0055 phase 2). ellipse=[cx,cy,mx,my,majorR,minorR]; ellipticalArc adds [start,sweep].
+func conicCurveFromData(shape string, p []float64) (geom.Curve2, bool) {
+	switch shape {
+	case "ellipse":
+		if len(p) != 6 {
+			return nil, false
+		}
+		e, err := geom.NewEllipseFull2d(math.P2(math.Scalar(p[0]), math.Scalar(p[1])), math.V2(math.Scalar(p[2]), math.Scalar(p[3])), p[4], p[5])
+		return e, err == nil
+	case "ellipticalArc":
+		if len(p) != 8 {
+			return nil, false
+		}
+		e, err := geom.NewEllipticalArc2d(math.P2(math.Scalar(p[0]), math.Scalar(p[1])), math.V2(math.Scalar(p[2]), math.Scalar(p[3])), p[4], p[5], p[6], p[7])
+		return e, err == nil
 	default:
 		return nil, false
 	}

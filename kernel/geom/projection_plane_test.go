@@ -61,12 +61,62 @@ func TestProjectAntiParallelCircleToPlane(t *testing.T) {
 	}
 }
 
-// TestProjectObliqueCircleDeclines: a tilted circle projects to an ellipse (phase 2), so the phase-1
-// primitive declines and the caller falls back to sampling.
-func TestProjectObliqueCircleDeclines(t *testing.T) {
-	circ, _ := NewCircle(math.P3(0, 0, 0), math.V3(1, 0, 1), 2) // 45° tilt
-	if _, ok := ProjectCurveToPlane(xyPlaneAt(0), circ); ok {
-		t.Fatal("oblique circle must decline (ellipse not yet handled)")
+// TestProjectObliqueCircleToEllipse: a circle tilted 45° about Y projects to an ellipse whose
+// major axis (the rotation axis, Y) keeps radius r and whose minor axis (the tilt, X) is r·cos45°.
+func TestProjectObliqueCircleToEllipse(t *testing.T) {
+	circ, _ := NewCircle(math.P3(1, 1, 0), math.V3(1, 0, 1), 2) // normal 45° from +Z, in the X–Z plane
+	c2, ok := ProjectCurveToPlane(xyPlaneAt(0), circ)
+	if !ok {
+		t.Fatal("oblique circle declined")
+	}
+	e, isEllipse := c2.(EllipseFull2d)
+	if !isEllipse {
+		t.Fatalf("want EllipseFull2d, got %T", c2)
+	}
+	if e.Center.DistanceTo(math.P2(1, 1)) > 1e-9 {
+		t.Fatalf("ellipse centre %v, want (1,1)", e.Center)
+	}
+	if stdmath.Abs(e.MajorRadius-2) > 1e-9 || stdmath.Abs(e.MinorRadius-2*stdmath.Cos(stdmath.Pi/4)) > 1e-9 {
+		t.Fatalf("ellipse radii = %g/%g, want 2 / %g", e.MajorRadius, e.MinorRadius, 2*stdmath.Cos(stdmath.Pi/4))
+	}
+	if stdmath.Abs(float64(e.MajorAxis.X())) > 1e-9 { // major axis is ±Y (the rotation axis)
+		t.Fatalf("major axis %v, want ±Y (the tilt shrinks X, not Y)", e.MajorAxis)
+	}
+}
+
+// TestProjectObliqueArcToEllipticalArc: an oblique arc projects to an elliptical arc that covers the
+// same geometry — its endpoints match the projected 3D endpoints, and every projected arc point lies
+// on it.
+func TestProjectObliqueArcToEllipticalArc(t *testing.T) {
+	arc, _ := NewArc3d(math.P3(0, 0, 0), math.V3(1, 0, 1), math.V3(0, 1, 0), 3, 0.3, stdmath.Pi*0.8)
+	pl := xyPlaneAt(0)
+	c2, ok := ProjectCurveToPlane(pl, arc)
+	if !ok {
+		t.Fatal("oblique arc declined")
+	}
+	ea, isEA := c2.(EllipticalArc2d)
+	if !isEA {
+		t.Fatalf("want EllipticalArc2d, got %T", c2)
+	}
+	if ea.PointAt(0).DistanceTo(planeUV(pl, arc.PointAt(0))) > 1e-9 ||
+		ea.PointAt(1).DistanceTo(planeUV(pl, arc.PointAt(1))) > 1e-9 {
+		t.Fatalf("elliptical-arc endpoints do not match the projected arc endpoints")
+	}
+	samples := make([]math.Point2, 401)
+	for i := range samples {
+		samples[i] = ea.PointAt(float64(i) / 400)
+	}
+	for i := 0; i <= 20; i++ { // every projected 3D arc point lies on the elliptical arc
+		p := planeUV(pl, arc.PointAt(float64(i)/20))
+		best := stdmath.Inf(1)
+		for _, q := range samples {
+			if d := float64(p.DistanceTo(q)); d < best {
+				best = d
+			}
+		}
+		if best > 1e-3 {
+			t.Fatalf("projected arc point %v is %.4g off the elliptical arc", p, best)
+		}
 	}
 }
 

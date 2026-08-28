@@ -110,6 +110,47 @@ func TestProjectedCircleOffsetsAnalytic(t *testing.T) {
 	}
 }
 
+// TestProjectedEllipseSerializes: an oblique projected circle becomes an analytic ellipse (phase 2)
+// and persists as a compact ellipse descriptor (6 floats), no coords — round-tripping analytic.
+func TestProjectedEllipseSerializes(t *testing.T) {
+	sc := NewSketches()
+	s := sc.Add(XYPlane())
+	circ, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(1, 0, 1), 2) // 45° tilt → ellipse
+	s.ProjectCurve(&analyticEdge{id: "el", curve: circ})
+
+	data, err := sc.MarshalRecipe()
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	var ed EntityData
+	for _, e := range data[0].Entities {
+		if e.Source == "el" {
+			ed = e
+		}
+	}
+	if ed.ProjShape != "ellipse" || len(ed.ProjParams) != 6 {
+		t.Fatalf("serialized projShape=%q params=%v, want ellipse[6]", ed.ProjShape, ed.ProjParams)
+	}
+	if len(ed.Coords) != 0 {
+		t.Fatalf("ellipse stored %d coords floats, want 0", len(ed.Coords))
+	}
+
+	out := roundTrip(t, sc)
+	var rc *ProjectedCurve
+	for _, e := range out.Entities() {
+		if c, ok := e.(*ProjectedCurve); ok {
+			rc = c
+		}
+	}
+	c2, ok := rc.AnalyticCurve()
+	if !ok {
+		t.Fatal("restored projected ellipse is not analytic")
+	}
+	if _, isEllipse := c2.(geom.EllipseFull2d); !isEllipse {
+		t.Fatalf("restored curve = %T, want EllipseFull2d", c2)
+	}
+}
+
 // TestProjectedArcOffsetsAnalytic: offsetting an analytic projected arc yields a concentric analytic
 // arc of the same span — the offset path reads the geom.Curve2 directly (ADR-0055, no projectedShape).
 func TestProjectedArcOffsetsAnalytic(t *testing.T) {
