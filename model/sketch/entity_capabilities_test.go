@@ -176,22 +176,20 @@ func (f *fakeProjectionResolver) CurveProjectionSource(kind, _ string, _ Plane) 
 	return f.curveSrc, kind == "edge"
 }
 
-// TestRebindProjectionReattachesSources: each projected entity re-attaches its
-// own live source through the resolver; unknown descriptors stay frozen and
-// non-projected entities are untouched.
+// TestRebindProjectionReattachesSources: the sketch re-attaches each restored projection's live
+// source through the resolver — projected points (entities) and curve projections (Projection
+// records driving reference entities, ADR-0055 phase 3) alike; unknown descriptors stay frozen.
 func TestRebindProjectionReattachesSources(t *testing.T) {
 	sc := NewSketches()
 	s := sc.Add(XYPlane())
 	pp := s.RestoreProjectedPoint(nextID(), math.P2(1, 1), "vertex", "V1")
-	pc := s.RestoreProjectedCurve(nextID(), []math.Point2{math.P2(0, 0), math.P2(1, 0)}, "edge", "E1")
-	frozen := s.RestoreProjectedCurve(nextID(), []math.Point2{math.P2(2, 0)}, "mystery", "X")
+	pc := s.RestoreProjection(s.addReferencePolyline([]math.Point2{math.P2(0, 0), math.P2(1, 0)}), "edge", "E1")
+	frozen := s.RestoreProjection(s.addReferencePolyline([]math.Point2{math.P2(2, 0), math.P2(3, 0)}), "mystery", "X")
 	res := &fakeProjectionResolver{
 		pointSrc: &fakePointSource{id: "V1", pos: math.P3(1, 1, 0)},
 		curveSrc: &fakeCurveSource{id: "E1", pts: []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0)}},
 	}
-	for _, e := range s.Entities() {
-		RebindProjection(e, res, s.Plane())
-	}
+	s.RebindProjections(res)
 	if !pp.Linked() {
 		t.Error("projected point must relink through the resolver")
 	}

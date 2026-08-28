@@ -79,11 +79,12 @@ func TestConstrainOffsetSinglePairsLineParallel(t *testing.T) {
 	}
 }
 
-// TestConstrainOffsetSkipsProjectedSource: a projected-curve source has no native binding, so
-// constraining pairs nothing (reference geometry is already associative to the model).
+// TestConstrainOffsetSkipsProjectedSource: a non-analytic projection is a grounded reference spline
+// (ADR-0055 phase 3) with no native line/circle binding, so constraining an offset to it pairs
+// nothing (the reference geometry is already associative to the model).
 func TestConstrainOffsetSkipsProjectedSource(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
-	pc := s.RestoreProjectedCurve(nextID(), []gmath.Point2{gmath.P2(0, 0), gmath.P2(4, 0)}, "edge", "E")
+	pc := s.addReferencePolyline([]gmath.Point2{gmath.P2(0, 0), gmath.P2(2, 1), gmath.P2(4, 0)})
 	off := s.Lines().AddByTwoPoints(gmath.P2(0, 1), gmath.P2(4, 1))
 	if n := s.ConstrainOffsetSingle(pc, off); n != 0 {
 		t.Fatalf("projected source added %d constraints, want 0 (skipped)", n)

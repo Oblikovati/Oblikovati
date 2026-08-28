@@ -30,23 +30,24 @@ func projectedSketch(t *testing.T) *sketch.Sketch {
 	return sk
 }
 
-// TestProjectedCurveOverlayDrawsReferenceLines: a projected curve becomes a drawn polyline.
+// TestProjectedCurveOverlayDrawsReferenceLines: a projected curve is a concrete reference line now
+// (ADR-0055 phase 3), so the standard sketch overlay draws it — no separate projected-curve overlay.
 func TestProjectedCurveOverlayDrawsReferenceLines(t *testing.T) {
-	if got := projectedCurveOverlay(projectedSketch(t), nil, nil); len(got) != 1 {
-		t.Fatalf("projectedCurveOverlay = %d items, want 1 (the projected reference line)", len(got))
+	if got := sketchOverlay(projectedSketch(t), nil, nil, false); len(got) == 0 {
+		t.Fatal("the projected reference line must be drawn by the sketch overlay")
 	}
-	if got := projectedCurveOverlay(nil, nil, nil); got != nil {
-		t.Errorf("projectedCurveOverlay(nil, nil, nil) = %v, want nil", got)
+	if got := sketchOverlay(nil, nil, nil, false); got != nil {
+		t.Errorf("sketchOverlay(nil, …) = %v, want nil", got)
 	}
 }
 
-// TestProjectedCurveOverlayEmptyWhenNoProjection: a plain sketch projects no curves.
+// TestProjectedCurveOverlayEmptyWhenNoProjection: a plain, geometry-less sketch draws nothing.
 func TestProjectedCurveOverlayEmptyWhenNoProjection(t *testing.T) {
 	s := app.NewSession()
 	pd, _ := compdef.AddPart(s.Workspace(), "q.opd", true)
 	sk := pd.Content().(*compdef.PartComponentDefinition).Sketches().Add(sketch.XYPlane())
-	if got := projectedCurveOverlay(sk, nil, nil); got != nil {
-		t.Errorf("projectedCurveOverlay of a curve-less sketch = %v, want nil", got)
+	if got := sketchOverlay(sk, nil, nil, false); len(got) != 0 {
+		t.Errorf("sketch overlay of a geometry-less sketch = %d items, want 0", len(got))
 	}
 }
 
@@ -60,14 +61,14 @@ func TestPointsOverlayIncludesProjectedPoint(t *testing.T) {
 	}
 }
 
-// firstProjectedCurve returns the sketch's first projected reference curve.
-func firstProjectedCurve(sk *sketch.Sketch) *sketch.ProjectedCurve {
-	for _, e := range sk.Entities() {
-		if pc, ok := e.(*sketch.ProjectedCurve); ok {
-			return pc
-		}
+// referenceCurveEntity returns the concrete reference entity of the sketch's first curve projection
+// (ADR-0055 phase 3).
+func referenceCurveEntity(sk *sketch.Sketch) sketch.Entity {
+	ps := sk.Projections()
+	if len(ps) == 0 {
+		return nil
 	}
-	return nil
+	return ps[0].Entity()
 }
 
 // drawListHasColor reports whether any item is drawn in color c.
@@ -86,15 +87,15 @@ func drawListHasColor(items []renderer.DrawItem, c [4]float32) bool {
 // selection worked but gave no feedback.
 func TestProjectedCurveOverlayTintsHoverAndSelection(t *testing.T) {
 	sk := projectedSketch(t)
-	pc := firstProjectedCurve(sk)
+	pc := referenceCurveEntity(sk)
 	if pc == nil {
 		t.Fatal("setup: no projected curve")
 	}
-	if got := projectedCurveOverlay(sk, nil, pc); !drawListHasColor(got, chromeTheme.sketchCandidateColor) {
+	if got := sketchOverlay(sk, nil, pc, false); !drawListHasColor(got, chromeTheme.sketchCandidateColor) {
 		t.Error("hovered projected curve not drawn in the candidate colour")
 	}
 	sel := func(e sketch.Entity) bool { return e == pc }
-	if got := projectedCurveOverlay(sk, sel, nil); !drawListHasColor(got, chromeTheme.sketchSelectedColor) {
+	if got := sketchOverlay(sk, sel, nil, false); !drawListHasColor(got, chromeTheme.sketchSelectedColor) {
 		t.Error("selected projected curve not drawn in the selected colour")
 	}
 }

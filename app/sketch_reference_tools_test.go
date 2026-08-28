@@ -58,12 +58,12 @@ func TestProjectGeometryToolEndToEnd(t *testing.T) {
 	}
 }
 
-// projectedCount counts reference (projected) entities in a 2D sketch.
+// projectedCount counts reference (projected) geometry in a 2D sketch: projected points (entities)
+// plus curve projections (each driving a concrete reference entity, ADR-0055 phase 3).
 func projectedCount(sk *sketch.Sketch) int {
-	n := 0
+	n := len(sk.Projections())
 	for _, e := range sk.Entities() {
-		switch e.(type) {
-		case *sketch.ProjectedCurve, *sketch.ProjectedPoint:
+		if _, ok := e.(*sketch.ProjectedPoint); ok {
 			n++
 		}
 	}

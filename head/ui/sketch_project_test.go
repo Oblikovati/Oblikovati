@@ -14,15 +14,10 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
-// projectedCurveCount counts the sketch's projected reference curves.
+// projectedCurveCount counts the sketch's curve projections (each driving a concrete reference
+// entity, ADR-0055 phase 3).
 func projectedCurveCount(sk *sketch.Sketch) int {
-	n := 0
-	for _, e := range sk.Entities() {
-		if _, ok := e.(*sketch.ProjectedCurve); ok {
-			n++
-		}
-	}
-	return n
+	return len(sk.Projections())
 }
 
 // topCapFace returns the box's +Z planar cap face.

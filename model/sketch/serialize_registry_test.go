@@ -148,7 +148,7 @@ func populateEvery2DKind(t *testing.T, sc *Sketches, s *Sketch) {
 	s.texts.AddStyled(math.P2(7, 7), "note", 0.5, 0, TextHJustify(0), TextVJustify(0), "sans", 0)
 	s.fills.Add(math.P2(0.5, 0.25), "solid")
 	s.RestoreProjectedPoint(nextID(), math.P2(8, 8), "vertex", "V1")
-	s.RestoreProjectedCurve(nextID(), []math.Point2{math.P2(8, 0), math.P2(9, 1)}, "edge", "E1")
+	s.RestoreProjection(s.addReferencePolyline([]math.Point2{math.P2(8, 0), math.P2(9, 1)}), "edge", "E1")
 	blockSource := s.Lines().AddByTwoPoints(math.P2(10, 10), math.P2(11, 10))
 	if _, _, err := s.Blocks().CreateFromSelection(sc.BlockDefinitions(), "blk", []Entity{blockSource}); err != nil {
 		t.Fatalf("CreateFromSelection: %v", err)

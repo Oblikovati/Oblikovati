@@ -41,12 +41,24 @@ func (s EdgeRefSource) SourceID() string { return s.ref }
 // SourceKind tags this as an edge reference for projection persistence/rebind (#1268).
 func (s EdgeRefSource) SourceKind() string { return "edge" }
 
-// SamplePoints re-resolves the edge by key and samples its curve; ok=false when lost.
+// SamplePoints re-resolves the edge by key and samples its curve; ok=false when lost. It is the
+// FALLBACK path: projection prefers the analytic SourceCurve below and only samples a source with
+// no single analytic curve (ADR-0055).
 func (s EdgeRefSource) SamplePoints() ([]math.Point3, bool) {
+	if c, ok := s.SourceCurve(); ok {
+		return geom.SampleCurve3(c, referenceSampleSteps), true
+	}
+	return nil, false
+}
+
+// SourceCurve re-resolves the edge by key and returns its exact analytic curve, so a projection
+// keeps the curve analytic (a projected circle is a circle) instead of a sampled polyline
+// (ADR-0055). ok=false when the reference is lost.
+func (s EdgeRefSource) SourceCurve() (geom.Curve3, bool) {
 	key := []byte(s.ref)
 	for _, b := range s.bodies() {
 		if edge, ok := b.FindEdgeByKey(key); ok {
-			return sampleReferenceCurve(edge.Geometry()), true
+			return edge.Geometry(), true
 		}
 	}
 	return nil, false
@@ -143,14 +155,4 @@ func (d *PartComponentDefinition) FaceKeyResolves(ref string) bool {
 		}
 	}
 	return false
-}
-
-// sampleReferenceCurve samples a 3D curve over its domain into a polyline.
-func sampleReferenceCurve(c geom.Curve3) []math.Point3 {
-	lo, hi := c.Domain()
-	pts := make([]math.Point3, referenceSampleSteps+1)
-	for i := range pts {
-		pts[i] = c.PointAt(lo + (hi-lo)*float64(i)/float64(referenceSampleSteps))
-	}
-	return pts
 }

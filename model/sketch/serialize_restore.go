@@ -214,6 +214,31 @@ func (r *sketchRestorer) restoreProjectedPoint(ed EntityData) (Entity, error) {
 	return pp, nil
 }
 
+// restoreProjectedCurve rebuilds a projected curve as its concrete grounded reference entity
+// (ADR-0055 phase 3): it re-creates the reference Line/Circle/Arc/Ellipse/Spline from the persisted
+// analytic form (or polyline), re-registers the frozen Projection that drives it, and pins the
+// entity's defining points to their saved ids in the point map so constraints referencing them
+// restore. The entity's own id is pinned by restoreEntities' generic post-step.
+func (r *sketchRestorer) restoreProjectedCurve(ed EntityData) (Entity, error) {
+	ent, ok := r.s.buildReferenceEntity(ed.ProjShape, ed.ProjParams, ed.Coords)
+	if !ok {
+		return nil, fmt.Errorf("projectedCurve %d: cannot rebuild reference entity (shape %q, %d params, %d coords)",
+			ed.ID, ed.ProjShape, len(ed.ProjParams), len(ed.Coords))
+	}
+	r.s.RestoreProjection(ent, ed.SourceKind, ed.Source)
+	dps := DefiningPoints(ent)
+	if len(ed.Points) != len(dps) {
+		return nil, fmt.Errorf("projectedCurve %d: %d point ids for a %d-point reference entity", ed.ID, len(ed.Points), len(dps))
+	}
+	for i, p := range dps {
+		p.setID(ID(ed.Points[i]))
+		r.pointMap[ed.Points[i]] = p
+		r.note(ed.Points[i])
+	}
+	r.note(ed.ID)
+	return ent, nil
+}
+
 // note raises the restorer's max-id watermark for an id pinned outside pin() (the
 // self-id'd projected entities), so later minted ids never collide with restored ones.
 func (r *sketchRestorer) note(id int) {

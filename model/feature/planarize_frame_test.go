@@ -45,10 +45,9 @@ func sortedVertexPoints(pts []math.Point3) []math.Point3 {
 // dress-up (chamfer/fillet/shell) selects a different physical edge (analytic-cylinder re-faceting).
 func TestPlanarizedDiscMatchesFacetedExtrude(t *testing.T) {
 	plane := sketch.XYPlane()
-	circle := &sketch.Circle{Center: &sketch.Point{X: 0, Y: 0}, Radius: 30}
 	sp := span{near: 0, far: 10}
 
-	analytic := buildAnalyticCylinder(circle, plane, sp, "f")
+	analytic := buildAnalyticCylinder(math.P2(0, 0), 30, plane, sp, "f")
 	if analytic == nil {
 		t.Fatal("buildAnalyticCylinder returned nil for a Ø60 circle")
 	}

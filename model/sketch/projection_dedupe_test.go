@@ -74,13 +74,7 @@ func countProjectedPoints(s *Sketch) int {
 }
 
 func countProjectedCurves(s *Sketch) int {
-	n := 0
-	for _, e := range s.Entities() {
-		if _, ok := e.(*ProjectedCurve); ok {
-			n++
-		}
-	}
-	return n
+	return len(s.projections) // curve projections drive concrete reference entities (ADR-0055 phase 3)
 }
 
 // identifiedPointSource is a point source that carries the stable (kind, id) identity the

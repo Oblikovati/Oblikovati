@@ -135,6 +135,20 @@ func countKind(ents []wire.SketchEntityInfo, kind string) int {
 	return n
 }
 
+// countReferenceCurves counts enumerated reference (projected) curve entities. A projected curve now
+// enumerates under its concrete kind (line/circle/arc) with the Reference flag set, not a distinct
+// projectedCurve kind (ADR-0055 phase 3). The projected POINT also carries Reference, so it is
+// excluded here by kind.
+func countReferenceCurves(ents []wire.SketchEntityInfo) int {
+	n := 0
+	for _, e := range ents {
+		if e.Reference && e.Kind != "projectedPoint" {
+			n++
+		}
+	}
+	return n
+}
+
 // TestSketchSetPropertyRoundTripsThroughGet sets each sketch property through the API
 // and reads it back via sketch.get (F01 PBI-201).
 func TestSketchSetPropertyRoundTripsThroughGet(t *testing.T) {
@@ -948,8 +962,8 @@ func TestSketchProjectGeometry(t *testing.T) {
 
 	var ents wire.EnumerateEntitiesResult
 	call(t, r, s, "sketch.entities", `{"sketchIndex":1}`, &ents)
-	if countKind(ents.Entities, "projectedCurve") != 1 {
-		t.Fatalf("want 1 projectedCurve, got %+v", ents.Entities)
+	if countReferenceCurves(ents.Entities) != 1 {
+		t.Fatalf("want 1 reference curve, got %+v", ents.Entities)
 	}
 }
 
@@ -973,8 +987,8 @@ func TestSketchProjectDatumGeometry(t *testing.T) {
 	if got := countKind(ents.Entities, "projectedPoint"); got != 1 {
 		t.Errorf("want 1 projectedPoint (origin centre), got %d", got)
 	}
-	if got := countKind(ents.Entities, "projectedCurve"); got != 2 {
-		t.Errorf("want 2 projectedCurve (X axis + XZ∩XY), got %d", got)
+	if got := countReferenceCurves(ents.Entities); got != 2 {
+		t.Errorf("want 2 reference curves (X axis + XZ∩XY), got %d", got)
 	}
 }
 
