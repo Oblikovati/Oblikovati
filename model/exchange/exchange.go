@@ -99,7 +99,7 @@ type ExportResult struct {
 //	res, err := exchange.MeshExchange{}.ExportFrom(part, "p.stl", types.FormatSTL, types.ResolutionHigh)
 func (MeshExchange) ExportFrom(part *compdef.PartComponentDefinition, path string, format types.ExchangeFormat, res types.MeshResolution) (ExportResult, error) {
 	if !format.IsMesh() {
-		return ExportResult{}, fmt.Errorf("export: %q is not a mesh format (want stl|obj|3mf)", format)
+		return ExportResult{}, fmt.Errorf("export: %q is not a mesh format (want stl|obj|3mf|gltf)", format)
 	}
 	if format == types.FormatGLTF {
 		return Export(part, path, format, res)
