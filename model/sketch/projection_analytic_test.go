@@ -24,23 +24,23 @@ func (e *analyticEdge) SamplePoints() ([]math.Point3, bool) {
 }
 func (e *analyticEdge) SourceCurve() (geom.Curve3, bool) { return e.curve, true }
 
-// TestProjectedCircleStaysAnalytic: projecting a model circle parallel to the sketch plane yields an
-// analytic geom.Circle2d of the same radius — not a 17-point polyline. This is the piston-rim case.
+// TestProjectedCircleStaysAnalytic: projecting a model circle parallel to the sketch plane yields a
+// concrete reference Circle of the same radius — not a 17-point polyline (ADR-0055 phase 3). This is
+// the piston-rim case.
 func TestProjectedCircleStaysAnalytic(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	circ, _ := geom.NewCircle(math.P3(2, 3, 5), math.V3(0, 0, 1), 4) // parallel to XY at z=5
 	pc := s.ProjectCurve(&analyticEdge{id: "e1", curve: circ})
 
-	c2, ok := pc.AnalyticCurve()
-	if !ok {
-		t.Fatal("projected circle is not analytic (fell back to a polyline)")
-	}
-	cc, isCircle := c2.(geom.Circle2d)
+	cc, isCircle := pc.Entity().(*Circle)
 	if !isCircle {
-		t.Fatalf("want geom.Circle2d, got %T", c2)
+		t.Fatalf("want a reference *Circle, got %T", pc.Entity())
 	}
-	if cc.Center.DistanceTo(math.P2(2, 3)) > 1e-9 || stdmath.Abs(cc.Radius-4) > 1e-9 {
-		t.Fatalf("projected circle = centre %v r %g, want (2,3) r 4", cc.Center, cc.Radius)
+	if !cc.IsReference() {
+		t.Error("a projected circle must be grounded reference geometry")
+	}
+	if cc.Center.Position().DistanceTo(math.P2(2, 3)) > 1e-9 || stdmath.Abs(float64(cc.Radius)-4) > 1e-9 {
+		t.Fatalf("projected circle = centre %v r %g, want (2,3) r 4", cc.Center.Position(), float64(cc.Radius))
 	}
 }
 
@@ -71,21 +71,15 @@ func TestProjectedCircleSerializesAnalytic(t *testing.T) {
 	}
 
 	out := roundTrip(t, sc)
-	var rc *ProjectedCurve
-	for _, e := range out.Entities() {
-		if c, ok := e.(*ProjectedCurve); ok {
-			rc = c
-		}
+	if len(out.projections) != 1 {
+		t.Fatalf("restored %d curve projections, want 1", len(out.projections))
 	}
-	if rc == nil {
-		t.Fatal("projected curve lost on round trip")
+	cc, isCircle := out.projections[0].Entity().(*Circle)
+	if !isCircle {
+		t.Fatalf("restored projection entity = %T, want a reference *Circle", out.projections[0].Entity())
 	}
-	c2, ok := rc.AnalyticCurve()
-	if !ok {
-		t.Fatal("restored projected curve is not analytic")
-	}
-	if cc, isCircle := c2.(geom.Circle2d); !isCircle || stdmath.Abs(cc.Radius-4) > 1e-9 {
-		t.Fatalf("restored curve = %T, want Circle2d r 4", c2)
+	if stdmath.Abs(float64(cc.Radius)-4) > 1e-9 {
+		t.Fatalf("restored circle radius = %g, want 4", float64(cc.Radius))
 	}
 }
 
@@ -97,7 +91,7 @@ func TestProjectedCircleOffsetsAnalytic(t *testing.T) {
 	circ, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
 	pc := s.ProjectCurve(&analyticEdge{id: "e5", curve: circ})
 
-	e, err := s.OffsetEntity(pc, 1)
+	e, err := s.OffsetEntity(pc.Entity(), 1)
 	if err != nil {
 		t.Fatalf("offset: %v", err)
 	}
@@ -136,18 +130,11 @@ func TestProjectedEllipseSerializes(t *testing.T) {
 	}
 
 	out := roundTrip(t, sc)
-	var rc *ProjectedCurve
-	for _, e := range out.Entities() {
-		if c, ok := e.(*ProjectedCurve); ok {
-			rc = c
-		}
+	if len(out.projections) != 1 {
+		t.Fatalf("restored %d curve projections, want 1", len(out.projections))
 	}
-	c2, ok := rc.AnalyticCurve()
-	if !ok {
-		t.Fatal("restored projected ellipse is not analytic")
-	}
-	if _, isEllipse := c2.(geom.EllipseFull2d); !isEllipse {
-		t.Fatalf("restored curve = %T, want EllipseFull2d", c2)
+	if _, isEllipse := out.projections[0].Entity().(*Ellipse); !isEllipse {
+		t.Fatalf("restored projection entity = %T, want a reference *Ellipse", out.projections[0].Entity())
 	}
 }
 
@@ -158,7 +145,7 @@ func TestProjectedArcOffsetsAnalytic(t *testing.T) {
 	arc, _ := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 5, 0, stdmath.Pi/2)
 	pc := s.ProjectCurve(&analyticEdge{id: "a5", curve: arc})
 
-	got, err := s.OffsetEntity(pc, -1) // inner offset → radius 4
+	got, err := s.OffsetEntity(pc.Entity(), -1) // inner offset → radius 4
 	if err != nil {
 		t.Fatalf("offset projected arc: %v", err)
 	}
@@ -172,16 +159,18 @@ func TestProjectedArcOffsetsAnalytic(t *testing.T) {
 }
 
 // TestProjectedNonAnalyticFallsBack: a source that only yields sample points (no analytic curve)
-// projects to a polyline, and AnalyticCurve reports false — the fallback path still works.
+// projects to a grounded reference Spline through the samples — the fallback path still works
+// (ADR-0055 phase 3).
 func TestProjectedNonAnalyticFallsBack(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	pc := s.ProjectCurve(&movableEdge{id: "e2", samples: []math.Point3{
 		math.P3(0, 0, 0), math.P3(1, 0.3, 0), math.P3(2, -0.2, 0),
 	}})
-	if _, ok := pc.AnalyticCurve(); ok {
-		t.Fatal("a sample-only source must not report an analytic curve")
+	sp, ok := pc.Entity().(*Spline)
+	if !ok {
+		t.Fatalf("a sample-only source must project to a reference *Spline, got %T", pc.Entity())
 	}
-	if len(pc.Points()) == 0 {
-		t.Fatal("fallback projection lost its polyline")
+	if !sp.IsReference() || sp.PointCount() == 0 {
+		t.Fatal("fallback projection lost its reference polyline")
 	}
 }

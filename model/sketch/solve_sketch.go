@@ -56,10 +56,19 @@ func (s *Sketch) variables() []*math.Scalar {
 // the authoritative direction after a geometry-mutating solve (#1879 AC2). Analyze-only paths that
 // build variables() but never move geometry skip this — orientation was only seeded, not changed.
 func (s *Sketch) syncEllipseAxes() {
+	// A grounded reference ellipse (a projected edge) is excluded from variables(), so its
+	// orientation was never seeded/solved this pass; rewriting MajorAxis from that stale angle
+	// would corrupt the driven axis, so leave reference conics untouched (ADR-0055 phase 3).
 	for _, e := range s.ellipses.items {
+		if e.reference {
+			continue
+		}
 		e.syncAxisFromOrientation()
 	}
 	for _, e := range s.ellArcs.items {
+		if e.reference {
+			continue
+		}
 		e.syncAxisFromOrientation()
 	}
 }

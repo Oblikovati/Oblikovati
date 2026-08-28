@@ -5,7 +5,6 @@ package feature
 import (
 	stdmath "math"
 
-	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -97,12 +96,10 @@ func rawProfileSegments(ents []sketch.ProfileEntity) ([]analyticSeg, bool) {
 }
 
 // rawSegmentOf reduces one entity to a line or arc segment via the sketch-entity capabilities. ok is
-// false for anything that is not a line or arc. A projected reference curve carries an analytic
-// geom.Curve2 (ADR-0055), consumed first so a projected profile extrudes analytically.
+// false for anything that is not a line or arc. A projected reference line/arc is a native
+// sketch.Line/sketch.Arc (ADR-0055 phase 3), so it flows through the same ShapedEntity path with no
+// projected-curve special case.
 func rawSegmentOf(e sketch.Entity) (analyticSeg, bool) {
-	if seg, ok := analyticSegFromProjected(e); ok {
-		return seg, true
-	}
 	shaped, isShaped := e.(sketch.ShapedEntity)
 	if !isShaped {
 		return analyticSeg{}, false
@@ -120,28 +117,6 @@ func rawSegmentOf(e sketch.Entity) (analyticSeg, bool) {
 			return analyticSeg{}, false
 		}
 		return analyticSeg{isArc: true, a: pts[1], b: pts[2], center: pts[0], mid: arc.ArcMidpoint()}, true
-	default:
-		return analyticSeg{}, false
-	}
-}
-
-// analyticSegFromProjected reduces a projected reference curve — which carries an analytic
-// geom.Curve2 — to a line or arc profile segment (ADR-0055), so a projected line/arc profile keeps
-// its exact geometry through the extrude. A full circle is handled by circleLoop, not here.
-func analyticSegFromProjected(e sketch.Entity) (analyticSeg, bool) {
-	ac, ok := e.(sketch.AnalyticCurveEntity)
-	if !ok {
-		return analyticSeg{}, false
-	}
-	c2, ok := ac.AnalyticCurve()
-	if !ok {
-		return analyticSeg{}, false
-	}
-	switch k := c2.(type) {
-	case geom.LineSegment2d:
-		return analyticSeg{a: k.StartPoint, b: k.EndPoint}, true
-	case geom.Arc2d:
-		return analyticSeg{isArc: true, a: k.PointAt(0), b: k.PointAt(1), center: k.Center, mid: k.PointAt(0.5)}, true
 	default:
 		return analyticSeg{}, false
 	}

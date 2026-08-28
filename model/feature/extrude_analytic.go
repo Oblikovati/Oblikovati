@@ -25,9 +25,9 @@ import (
 // construction as kernel/brep.SolidCylinder. Downstream features that need a real cylindrical
 // face then work. Other profiles (arcs, polygons, holes, tapered) keep the faceted path for now.
 
-// circleLoop returns the centre and radius of the loop's single full-circle entity — a native
-// sketch.Circle or a PROJECTED circle carrying an analytic geom.Circle2d (ADR-0055) — and ok=false
-// when the loop is not exactly one full circle (a polygon, an arc chain, or a multi-entity loop).
+// circleLoop returns the centre and radius of the loop's single full-circle entity, and ok=false
+// when the loop is not exactly one full circle (a polygon, an arc chain, or a multi-entity loop). A
+// projected circle is a native sketch.Circle (ADR-0055 phase 3), so it matches here directly.
 func circleLoop(l sketch.Loop) (center math.Point2, radius float64, ok bool) {
 	ents := l.Entities()
 	if len(ents) != 1 {
@@ -36,22 +36,7 @@ func circleLoop(l sketch.Loop) (center math.Point2, radius float64, ok bool) {
 	if c, isCircle := ents[0].Entity.(*sketch.Circle); isCircle {
 		return c.Center.Position(), float64(c.Radius), true
 	}
-	if ac, hasAnalytic := ents[0].Entity.(sketch.AnalyticCurveEntity); hasAnalytic {
-		if circ, isCircle := analyticCircle(ac); isCircle {
-			return circ.Center, circ.Radius, true
-		}
-	}
 	return math.Point2{}, 0, false
-}
-
-// analyticCircle returns e's analytic form as a geom.Circle2d when it is a full circle.
-func analyticCircle(e sketch.AnalyticCurveEntity) (geom.Circle2d, bool) {
-	c2, ok := e.AnalyticCurve()
-	if !ok {
-		return geom.Circle2d{}, false
-	}
-	circ, isCircle := c2.(geom.Circle2d)
-	return circ, isCircle
 }
 
 // buildAnalyticCylinder builds a true-cylinder solid from a full-circle profile (centre, radius)

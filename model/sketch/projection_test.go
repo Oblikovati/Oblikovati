@@ -40,6 +40,27 @@ func (e *movableEdge) SamplePoints() ([]math.Point3, bool) {
 	return e.samples, true
 }
 
+// isReferenceEntity reports whether a concrete entity is flagged grounded reference geometry.
+func isReferenceEntity(e Entity) bool {
+	r, ok := e.(interface{ IsReference() bool })
+	return ok && r.IsReference()
+}
+
+// splinePoints returns the positions of a non-analytic curve projection's grounded reference spline
+// (ADR-0055 phase 3): a sampled edge/silhouette projects to a reference Spline, not the old
+// polyline-carrying ProjectedCurve, so tests inspect the concrete entity's points.
+func splinePoints(p *Projection) []math.Point2 {
+	sp, ok := p.Entity().(*Spline)
+	if !ok {
+		return nil
+	}
+	out := make([]math.Point2, len(sp.Points))
+	for i, pt := range sp.Points {
+		out[i] = pt.Position()
+	}
+	return out
+}
+
 // TestProjectedPointIsConstrainableAnchor proves a 2D sketch can be built on a projected
 // point: a free point constrained coincident with the projected anchor snaps to it on
 // solve, while the anchor stays fixed (it is not a free DOF).
@@ -101,14 +122,16 @@ func TestProjectedSourceDescriptorAndRebind(t *testing.T) {
 		t.Errorf("after rebind+update the point should track its source, got %v linked=%v", rp.Position(), rp.Linked())
 	}
 
-	rc := s.RestoreProjectedCurve(ID(8), []math.Point2{{X: 0}, {X: 1}}, "edge", "e1")
+	// A restored-frozen curve projection drives a concrete reference entity (built here as a
+	// reference spline) and keeps its descriptor for the host to rebind (ADR-0055 phase 3).
+	rc := s.RestoreProjection(s.addReferencePolyline([]math.Point2{{X: 0}, {X: 1}}), "edge", "e1")
 	if k, id := rc.SourceDescriptor(); k != "edge" || id != "e1" {
 		t.Errorf("restored curve descriptor = (%q,%q), want (edge,e1)", k, id)
 	}
 	rc.Rebind(&movableEdge{id: "e1", samples: []math.Point3{{X: 0}, {X: 2}, {X: 4}}})
-	rc.Update()
-	if !rc.Linked() || len(rc.Points()) != 3 {
-		t.Errorf("after rebind the curve should re-project, got %d points linked=%v", len(rc.Points()), rc.Linked())
+	rc.Update(s)
+	if !rc.Linked() || len(splinePoints(rc)) != 3 {
+		t.Errorf("after rebind the curve should re-project, got %d points linked=%v", len(splinePoints(rc)), rc.Linked())
 	}
 }
 
@@ -144,7 +167,7 @@ func TestProjectedLostReferenceFreezes(t *testing.T) {
 	if pp.Linked() || pc.Linked() {
 		t.Error("lost references should break both projection links")
 	}
-	if !pp.Position().IsEqualTo(math.P2(2, 3), tol) || len(pc.Points()) != 2 {
+	if !pp.Position().IsEqualTo(math.P2(2, 3), tol) || len(splinePoints(pc)) != 2 {
 		t.Error("lost references should freeze the last projected geometry")
 	}
 }
@@ -198,19 +221,19 @@ func TestProjectCutEdgesProjectsEachSource(t *testing.T) {
 	if len(curves) != 1 {
 		t.Fatalf("ProjectCutEdges returned %d curves, want 1", len(curves))
 	}
-	pts := curves[0].Points()
+	pts := splinePoints(curves[0])
 	if len(pts) != 3 || !pts[2].IsEqualTo(math.P2(2, 2), tol) {
 		t.Errorf("projected polyline = %v, want last point (2,2)", pts)
 	}
-	if curves[0].SourceID() != "e1" || !curves[0].IsReference() || curves[0].EntityID() == 0 {
+	if curves[0].SourceID() != "e1" || !isReferenceEntity(curves[0].Entity()) || curves[0].Entity().EntityID() == 0 {
 		t.Error("projected curve metadata wrong")
 	}
 
 	// Source edge changes shape → re-projection follows.
 	e.samples = []math.Point3{math.P3(0, 0, 7), math.P3(5, 0, 7)}
-	curves[0].Update()
-	if len(curves[0].Points()) != 2 {
-		t.Errorf("after source change, polyline has %d points, want 2", len(curves[0].Points()))
+	curves[0].Update(s)
+	if len(splinePoints(curves[0])) != 2 {
+		t.Errorf("after source change, polyline has %d points, want 2", len(splinePoints(curves[0])))
 	}
 
 	curves[0].BreakLink()
@@ -232,17 +255,17 @@ func TestProjectedGeometrySerializeRoundTrip(t *testing.T) {
 
 	out := roundTrip(t, sc)
 	var rp *ProjectedPoint
-	var rc *ProjectedCurve
 	for _, e := range out.Entities() {
-		switch v := e.(type) {
-		case *ProjectedPoint:
+		if v, ok := e.(*ProjectedPoint); ok {
 			rp = v
-		case *ProjectedCurve:
-			rc = v
 		}
 	}
-	if rp == nil || rc == nil {
-		t.Fatalf("projected geometry lost on round trip: point=%v curve=%v", rp, rc)
+	if len(out.projections) != 1 {
+		t.Fatalf("restored %d curve projections, want 1", len(out.projections))
+	}
+	rc := out.projections[0]
+	if rp == nil {
+		t.Fatalf("projected point lost on round trip")
 	}
 	if rp.EntityID() != anchorID {
 		t.Errorf("restored anchor id = %d, want %d (constraints reference it)", rp.EntityID(), anchorID)
@@ -259,7 +282,7 @@ func TestProjectedGeometrySerializeRoundTrip(t *testing.T) {
 	if k, id := rc.SourceDescriptor(); k != "edge" || id != "e9" {
 		t.Errorf("restored curve descriptor = (%q,%q), want (edge,e9)", k, id)
 	}
-	if len(rc.Points()) != 2 {
-		t.Errorf("restored curve has %d points, want 2", len(rc.Points()))
+	if len(splinePoints(rc)) != 2 {
+		t.Errorf("restored curve has %d points, want 2", len(splinePoints(rc)))
 	}
 }

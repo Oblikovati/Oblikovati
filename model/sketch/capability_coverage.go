@@ -21,11 +21,13 @@ package sketch
 // save/load (#153). A new such entity kind that forgets setID is a build break here, not a
 // silent id-collision on reload.
 //
-// The projections (ProjectedPoint / ProjectedCurve) are deliberately NOT idCarriers: they are
-// not pinned through sketchRestorer.pin but rebuilt through RestoreProjectedPoint /
-// rebindSketchProjections, which mint their anchor Point (itself an idCarrier) with the saved
-// id (#1268). Writing this exception down is the point of the audit (I10, #1633) — the earlier
-// "every entity satisfies it" claim quietly overstated the set.
+// A ProjectedPoint is deliberately NOT an idCarrier: it is not pinned through sketchRestorer.pin but
+// rebuilt through RestoreProjectedPoint, which mints its anchor Point (itself an idCarrier) with the
+// saved id (#1268). A projected CURVE, by contrast, IS now a concrete reference Line/Circle/Arc
+// (ADR-0055 phase 3): it embeds entityBase, so it is a normal idCarrier pinned by the generic restore
+// step, and only its owning Projection record is rebuilt from the source descriptor. Writing this
+// exception down is the point of the audit (I10, #1633) — the earlier "every entity satisfies it"
+// claim quietly overstated the set.
 var (
 	_ idCarrier = (*Point)(nil)
 	_ idCarrier = (*Line)(nil)

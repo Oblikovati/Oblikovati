@@ -62,12 +62,23 @@ func curvedFaceKey(t *testing.T, b *topo.Body) string {
 	return ""
 }
 
-// projectedBounds returns the min/max 2D corner over every projected curve's polyline.
-func projectedBounds(curves []*sketch.ProjectedCurve) (lo, hi math.Point2) {
+// projectionPoints returns a curve projection's reference-entity defining points in sketch space
+// (ADR-0055 phase 3: the projection drives a concrete reference Line/Circle/Arc/Spline).
+func projectionPoints(c *sketch.Projection) []math.Point2 {
+	pts := sketch.DefiningPoints(c.Entity())
+	out := make([]math.Point2, len(pts))
+	for i, p := range pts {
+		out[i] = p.Position()
+	}
+	return out
+}
+
+// projectedBounds returns the min/max 2D corner over every projection's reference geometry.
+func projectedBounds(curves []*sketch.Projection) (lo, hi math.Point2) {
 	lo = math.P2(stdmath.Inf(1), stdmath.Inf(1))
 	hi = math.P2(stdmath.Inf(-1), stdmath.Inf(-1))
 	for _, c := range curves {
-		for _, p := range c.Points() {
+		for _, p := range projectionPoints(c) {
 			lo = math.P2(math.Scalar(stdmath.Min(float64(lo.X), float64(p.X))), math.Scalar(stdmath.Min(float64(lo.Y), float64(p.Y))))
 			hi = math.P2(math.Scalar(stdmath.Max(float64(hi.X), float64(p.X))), math.Scalar(stdmath.Max(float64(hi.Y), float64(p.Y))))
 		}
@@ -135,8 +146,8 @@ func TestSilhouetteSourceProjectsCylinderRuling(t *testing.T) {
 		t.Fatal("silhouette source reports no geometry, want the +Y ruling")
 	}
 	c := sk.ProjectCurve(src)
-	if !c.Linked() || len(c.Points()) == 0 {
-		t.Errorf("projected silhouette linked=%v points=%d, want linked with a polyline", c.Linked(), len(c.Points()))
+	if !c.Linked() || len(projectionPoints(c)) == 0 {
+		t.Errorf("projected silhouette linked=%v points=%d, want linked with a polyline", c.Linked(), len(projectionPoints(c)))
 	}
 }
 
@@ -172,17 +183,14 @@ func TestProjectedCutEdgesRebindOnReload(t *testing.T) {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
 
-	var restored int
-	for _, e := range got.Sketches().Item(1).Entities() { // sketch 0 is the profile; 1 is the cut
-		if c, ok := e.(*sketch.ProjectedCurve); ok {
-			restored++
-			if !c.Linked() {
-				t.Error("restored cut edge should re-link (rebind + recompute re-section the solid)")
-			}
+	restored := got.Sketches().Item(1).Projections() // sketch 0 is the profile; 1 is the cut
+	for _, c := range restored {
+		if !c.Linked() {
+			t.Error("restored cut edge should re-link (rebind + recompute re-section the solid)")
 		}
 	}
-	if restored != len(before) {
-		t.Errorf("restored %d projected cut edges, want %d", restored, len(before))
+	if len(restored) != len(before) {
+		t.Errorf("restored %d projected cut edges, want %d", len(restored), len(before))
 	}
 }
 

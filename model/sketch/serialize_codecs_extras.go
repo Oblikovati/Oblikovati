@@ -105,30 +105,64 @@ func registerProjectionCodecs() {
 			return r.restoreProjectedPoint(ed)
 		},
 	})
+	// A projected curve is a concrete grounded reference entity driven by a Projection (ADR-0055
+	// phase 3), not an entity with a Kind(); it is encoded from the sketch's projection list by
+	// serializeProjection, so this codec's encode half is an unreachable programming-error guard,
+	// and its decode rebuilds the reference entity and re-registers the frozen projection.
 	registerEntityCodec(ProjectedCurveKind, entityCodec{
-		encode: func(e Entity) (EntityData, error) {
-			v := e.(*ProjectedCurve)
-			kind, id := v.SourceDescriptor()
-			// Store the analytic curve (a few floats) not the 17-point polyline (ADR-0055); a
-			// non-analytic projection still stores its coords.
-			if curve, ok := v.AnalyticCurve(); ok {
-				if shape, params, ok := analyticCurveData(curve); ok {
-					return EntityData{ID: int(v.id), ProjShape: shape, ProjParams: params, Source: id, SourceKind: kind}, nil
-				}
-			}
-			return EntityData{ID: int(v.id), Coords: flattenPoints(v.points), Source: id, SourceKind: kind}, nil
+		encode: func(_ Entity) (EntityData, error) {
+			return EntityData{}, fmt.Errorf("projectedCurve is serialized via serializeProjection, not the entity codec (ADR-0055)")
 		},
 		decode: func(r *sketchRestorer, ed EntityData) (Entity, error) {
-			var c *ProjectedCurve
-			if curve, ok := analyticCurveFromData(ed.ProjShape, ed.ProjParams); ok {
-				c = r.s.RestoreProjectedCurveAnalytic(ID(ed.ID), curve, ed.SourceKind, ed.Source)
-			} else {
-				c = r.s.RestoreProjectedCurve(ID(ed.ID), unflattenPoints(ed.Coords), ed.SourceKind, ed.Source)
-			}
-			r.note(ed.ID)
-			return c, nil
+			return r.restoreProjectedCurve(ed)
 		},
 	})
+}
+
+// projectionOwnedIDs is the set of entity ids owned by a projection — the concrete reference
+// entities serializeSketch skips in the normal entity loop because they persist through their
+// Projection instead (ADR-0055 phase 3).
+func projectionOwnedIDs(s *Sketch) map[ID]bool {
+	out := make(map[ID]bool, len(s.projections))
+	for _, pr := range s.projections {
+		out[pr.Entity().EntityID()] = true
+	}
+	return out
+}
+
+// serializeProjection encodes one curve projection as a projectedCurve row: the driven reference
+// entity's id and defining-point ids (so constraints referencing them round-trip), the source
+// descriptor (for rebind), and the entity's exact analytic form — line/circle/arc/ellipse — as a
+// compact shape+params, or its polyline for a non-analytic reference spline (ADR-0055).
+func serializeProjection(pr *Projection) EntityData {
+	ent := pr.Entity()
+	kind, id := pr.SourceDescriptor()
+	ed := EntityData{
+		ID:         int(ent.EntityID()),
+		Kind:       string(ProjectedCurveKind),
+		Points:     pointIDsOf(DefiningPoints(ent)),
+		Source:     id,
+		SourceKind: kind,
+	}
+	if c2, ok := entityCurve2(ent); ok {
+		if shape, params, ok := analyticCurveData(c2); ok {
+			ed.ProjShape, ed.ProjParams = shape, params
+			return ed
+		}
+	}
+	ed.Coords = flattenPoints(definingPointPositions(ent))
+	return ed
+}
+
+// definingPointPositions returns the positions of an entity's defining points, in DefiningPoints
+// order — the polyline of a reference spline for persistence.
+func definingPointPositions(ent Entity) []math.Point2 {
+	dps := DefiningPoints(ent)
+	out := make([]math.Point2, len(dps))
+	for i, p := range dps {
+		out[i] = p.Position()
+	}
+	return out
 }
 
 // registerDerivedCurveCodecs pairs the M21 derived curves. An offset spline's

@@ -8,12 +8,9 @@ import (
 	"oblikovati.org/math"
 )
 
-// Small 2D helpers shared by projected-curve rendering and the offset paths. The projected-curve
-// analytic form is now a geom.Curve2 (ADR-0055); these are the remaining sampling/geometry bits.
-
-// projectedRenderSegments is how finely an analytic projected curve is sampled for drawing and
-// hit-testing, so a projected arc reads as a smooth curve rather than the source facets.
-const projectedRenderSegments = 64
+// Small 2D geometry helper shared by the offset paths (and the reference-curve test). A projected
+// curve is now a concrete reference entity (ADR-0055 phase 3), so no projected-curve sampler lives
+// here anymore.
 
 // perpDistanceToLine is the signed perpendicular distance from p to the infinite line through a→b.
 func perpDistanceToLine(a, b, p math.Point2) float64 {

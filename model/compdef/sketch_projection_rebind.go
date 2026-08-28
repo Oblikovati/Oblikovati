@@ -15,12 +15,9 @@ import (
 // Recompute, whose UpdateProjections then re-projects from the live sources (#1268).
 func (d *PartComponentDefinition) rebindSketchProjections() {
 	for i := 0; i < d.sketches.Count(); i++ {
-		sk := d.sketches.Item(i)
-		for _, e := range sk.Entities() {
-			// Each projected entity re-attaches itself through the resolver
-			// below — no per-kind dispatch here (#1624, audit I1).
-			sketch.RebindProjection(e, d, sk.Plane())
-		}
+		// The sketch re-attaches its projected points and curve projections through the resolver
+		// below — no per-kind dispatch here (#1624, audit I1; ADR-0055 phase 3).
+		d.sketches.Item(i).RebindProjections(d)
 	}
 }
 

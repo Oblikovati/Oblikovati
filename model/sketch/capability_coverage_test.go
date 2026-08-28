@@ -18,7 +18,7 @@ var sketch2DEntities = []Entity{
 	(*Point)(nil), (*Line)(nil), (*Circle)(nil), (*Arc)(nil), (*Ellipse)(nil),
 	(*EllipticalArc)(nil), (*Spline)(nil), (*SplineHandle)(nil), (*FixedSpline)(nil),
 	(*OffsetSpline)(nil), (*EquationCurve)(nil), (*BlockInstance)(nil), (*SketchImage)(nil),
-	(*TextBox)(nil), (*FillRegion)(nil), (*ProjectedPoint)(nil), (*ProjectedCurve)(nil),
+	(*TextBox)(nil), (*FillRegion)(nil), (*ProjectedPoint)(nil),
 }
 
 // pointDefinedCoverage records which entity types define draggable points (a drag pins them so
@@ -32,7 +32,7 @@ var pointDefinedCoverage = map[reflect.Type]bool{
 	kindType((*OffsetSpline)(nil)): false, kindType((*EquationCurve)(nil)): false,
 	kindType((*BlockInstance)(nil)): false, kindType((*SketchImage)(nil)): false,
 	kindType((*TextBox)(nil)): false, kindType((*FillRegion)(nil)): false,
-	kindType((*ProjectedPoint)(nil)): false, kindType((*ProjectedCurve)(nil)): false,
+	kindType((*ProjectedPoint)(nil)): false,
 }
 
 // smoothCurveCoverage records the sealed SmoothCurve set: only a Line, Arc or Spline can report
@@ -45,7 +45,6 @@ var smoothCurveCoverage = map[reflect.Type]bool{
 	kindType((*EquationCurve)(nil)): false, kindType((*BlockInstance)(nil)): false,
 	kindType((*SketchImage)(nil)): false, kindType((*TextBox)(nil)): false,
 	kindType((*FillRegion)(nil)): false, kindType((*ProjectedPoint)(nil)): false,
-	kindType((*ProjectedCurve)(nil)): false,
 }
 
 // circularCurveCoverage records the sealed CircularCurve set: only a Circle or Arc is defined by
@@ -58,7 +57,7 @@ var circularCurveCoverage = map[reflect.Type]bool{
 	kindType((*OffsetSpline)(nil)): false, kindType((*EquationCurve)(nil)): false,
 	kindType((*BlockInstance)(nil)): false, kindType((*SketchImage)(nil)): false,
 	kindType((*TextBox)(nil)): false, kindType((*FillRegion)(nil)): false,
-	kindType((*ProjectedPoint)(nil)): false, kindType((*ProjectedCurve)(nil)): false,
+	kindType((*ProjectedPoint)(nil)): false,
 }
 
 // kindType keys a coverage map by an entity's concrete type (reflect.Type is safe on a typed-nil

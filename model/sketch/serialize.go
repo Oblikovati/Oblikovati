@@ -217,6 +217,7 @@ func serializeSketch(s *Sketch) (SketchData, error) {
 			Standalone: standalone[p.id], CenterPoint: p.centerPoint,
 		})
 	}
+	owned := projectionOwnedIDs(s)
 	for _, e := range s.ents {
 		if _, isPoint := e.(*Point); isPoint {
 			continue // standalone points are captured in Points, not Entities
@@ -224,12 +225,18 @@ func serializeSketch(s *Sketch) (SketchData, error) {
 		if _, isHandle := e.(*SplineHandle); isHandle {
 			continue // handles persist inside their spline's record (M06-F11)
 		}
+		if owned[e.EntityID()] {
+			continue // a projection's concrete reference entity persists via its Projection (ADR-0055)
+		}
 		ed, err := serializeEntity(e)
 		if err != nil {
 			return SketchData{}, err
 		}
 		s.writeEntityFormat(&ed, e.EntityID()) // format lives on the sketch, not the entity (#2015)
 		sd.Entities = append(sd.Entities, ed)
+	}
+	for _, pr := range s.projections {
+		sd.Entities = append(sd.Entities, serializeProjection(pr))
 	}
 	for _, c := range s.geomCons.All() {
 		cd, err := serializeConstraint(c)

@@ -21,40 +21,18 @@ func ellipsePts(ra, rb, start, sweep float64, n int) []gmath.Point2 {
 	return pts
 }
 
-// TestOffsetProjectedClosedLoop: a non-circular closed projection (an ellipse) offsets as a closed
-// loop of lines — the polyline fallback (#2158 follow-up). A circular projection takes the analytic
-// path instead (TestProjectedCircleOffsetsAnalytic).
-func TestOffsetProjectedClosedLoop(t *testing.T) {
+// TestOffsetProjectedSplineIsUnsupported: a non-analytic projection is a grounded reference Spline
+// (ADR-0055 phase 3), and OffsetEntity offsets only analytic line/circle/arc geometry — so the old
+// faceted-polyline offset (whose broken-up segments the architecture change deliberately removed) is
+// no longer produced. Analytic projections (circle/arc) still offset cleanly
+// (TestProjectedCircleOffsetsAnalytic / TestProjectedArcOffsetsAnalytic).
+func TestOffsetProjectedSplineIsUnsupported(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
-	pc := s.RestoreProjectedCurve(nextID(), ellipsePts(4, 2, 0, 2*stdmath.Pi, 24), "edge", "E1")
-	if _, ok := pc.AnalyticCurve(); ok {
-		t.Fatal("an ellipse polyline should have no analytic curve (it offsets as a polyline)")
+	pc := s.addReferencePolyline(ellipsePts(4, 2, 0, 2*stdmath.Pi, 24))
+	if _, ok := pc.(*Spline); !ok {
+		t.Fatalf("a non-analytic projection should be a reference *Spline, got %T", pc)
 	}
-	before := s.Lines().Count()
-	got, err := s.OffsetEntity(pc, -0.5)
-	if err != nil {
-		t.Fatalf("OffsetEntity(closed ellipse projection): %v", err)
-	}
-	if got == nil {
-		t.Fatal("offset returned a nil entity")
-	}
-	if s.Lines().Count() <= before {
-		t.Errorf("no offset line geometry created (%d→%d lines)", before, s.Lines().Count())
-	}
-}
-
-// TestOffsetProjectedOpenCurve: a non-circular open projection offsets as an open chain of lines.
-func TestOffsetProjectedOpenCurve(t *testing.T) {
-	s := NewSketches().Add(XYPlane())
-	pc := s.RestoreProjectedCurve(nextID(), ellipsePts(4, 2, 0, stdmath.Pi, 16), "edge", "E2")
-	if _, ok := pc.AnalyticCurve(); ok {
-		t.Fatal("a half-ellipse polyline should have no analytic curve (it offsets as a polyline)")
-	}
-	before := s.Lines().Count()
-	if _, err := s.OffsetEntity(pc, 0.5); err != nil {
-		t.Fatalf("OffsetEntity(open ellipse projection): %v", err)
-	}
-	if s.Lines().Count() <= before {
-		t.Error("no offset line geometry created for the open projection")
+	if _, err := s.OffsetEntity(pc, -0.5); err == nil {
+		t.Fatal("offsetting a reference spline should be unsupported (analytic projections offset, splines do not)")
 	}
 }
