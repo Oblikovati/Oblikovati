@@ -19,16 +19,28 @@ func (s *Sketch) variables() []*math.Scalar {
 	for _, p := range s.pts {
 		vars = append(vars, &p.X, &p.Y)
 	}
+	// A reference (projected) entity is grounded: its points live in refPts (already excluded above)
+	// and its scalar DOF (radius, ellipse radii/orientation) are held fixed too, so it is driven by
+	// its source, not solved (ADR-0055 phase 3).
 	for _, c := range s.circles.items {
+		if c.reference {
+			continue
+		}
 		vars = append(vars, &c.Radius)
 	}
 	for _, e := range s.ellipses.items {
+		if e.reference {
+			continue
+		}
 		e.seedOrientation()
 		vars = append(vars, &e.MajorRadius, &e.MinorRadius, e.axisAngle())
 	}
 	// Elliptical arcs contribute only their orientation DOF here; their radii were never in the
 	// DOF universe (an arc's extent is authored, not solved), and this change keeps that scope.
 	for _, e := range s.ellArcs.items {
+		if e.reference {
+			continue
+		}
 		e.seedOrientation()
 		vars = append(vars, e.axisAngle())
 	}

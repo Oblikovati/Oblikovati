@@ -48,6 +48,7 @@ type entityBase struct {
 	id           ID
 	construction bool
 	centerline   bool
+	reference    bool // projected/included reference geometry: grounded (solver-fixed), driven by a source
 }
 
 func newEntity() entityBase { return entityBase{id: nextID()} }
@@ -74,6 +75,15 @@ func (e *entityBase) IsCenterline() bool { return e.centerline }
 
 // SetCenterline marks the entity as a centerline (implying construction; see IsConstruction).
 func (e *entityBase) SetCenterline(c bool) { e.centerline = c }
+
+// IsReference reports whether the entity is projected/included reference geometry: driven
+// associatively by a model source and GROUNDED in the solver (its DOF are held fixed, so it does
+// not float while free geometry solves to meet it). Unlike construction, a reference curve still
+// participates in profiles (a projected rim can bound an extrude). See ADR-0055 phase 3.
+func (e *entityBase) IsReference() bool { return e.reference }
+
+// SetReference marks the entity as grounded reference geometry.
+func (e *entityBase) SetReference(r bool) { e.reference = r }
 
 // Line is a straight segment between two constrainable endpoints.
 type Line struct {
