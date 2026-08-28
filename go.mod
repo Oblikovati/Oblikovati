@@ -8,7 +8,7 @@ require (
 	golang.org/x/sys v0.47.0
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/gotestsum v1.12.0
-	oblikovati.org/api v0.153.1
+	oblikovati.org/api v0.154.0
 )
 
 require (
