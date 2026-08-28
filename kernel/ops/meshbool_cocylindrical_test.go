@@ -11,11 +11,11 @@ import (
 	"oblikovati.org/math"
 )
 
-// TestReconstructCocylindricalCapOnWall is the ADR-0054 #2167 target at the kernel level: a
+// TestReconstructCocylindricalCapOnWall is the ADR-0056 #2167 target at the kernel level: a
 // full cylinder unioned with a stacked D-prism whose arc wall is cocylindrical (same
 // radius/axis) must reconstruct to a valid analytic solid.
 //
-// It exercises the whole ADR-0054 chain end to end:
+// It exercises the whole ADR-0056 chain end to end:
 //   - CONFORMING tessellation (canonical circular sampling) so the two operands share the
 //     radius-R join-plane rim exactly — no rim-sliver membrane;
 //   - CROSS-OPERAND VERTEX-ON-EDGE IMPRINT so the D-profile's chord corners, which sit on

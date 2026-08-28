@@ -2,7 +2,7 @@
 
 package meshbool
 
-// Arrangement topology extraction (ADR-0054 Layer 2a). The tagged boolean result is a
+// Arrangement topology extraction (ADR-0056 Layer 2a). The tagged boolean result is a
 // watertight triangle soup where every triangle carries the id of the operand surface
 // it descends from. Reconstruction groups those triangles into analytic faces; this
 // file recovers the pure TOPOLOGY it needs — which faces there are, and how they

@@ -42,7 +42,7 @@ func discretizeEdge(e *topo.Edge, q Quality) []math.Point3 {
 // boolean input takes a CANONICAL absolute-angle sampling of its circle/arc edges instead, but
 // installs it as a temporary snapped polyline (applyBooleanConformance), which discretizeEdge
 // consults first — so only the boolean operands conform, and display meshing is untouched
-// (ADR-0054/#2167; the global-canonical variant folded some occtparity display meshes — see #2168).
+// (ADR-0056/#2167; the global-canonical variant folded some occtparity display meshes — see #2168).
 func sampleEdgeCurve(e *topo.Edge, q Quality) []math.Point3 {
 	c := e.Geometry()
 	lo, hi := c.Domain()
@@ -57,7 +57,7 @@ func sampleEdgeCurve(e *topo.Edge, q Quality) []math.Point3 {
 }
 
 // conformalCircularSamples returns canonical absolute-angle samples for a circle or arc
-// EDGE (ADR-0054) together with each sample's parameter in the curve's own [0,1] domain:
+// EDGE (ADR-0056) together with each sample's parameter in the curve's own [0,1] domain:
 // identical interior points for any two coincident circular curves, so the two operands of
 // a boolean conform on a shared curved boundary. A full circle is anchored on the edge's
 // seam vertex; an arc runs between its endpoints. Returns ok=false for a non-circular

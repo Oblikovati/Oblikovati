@@ -9,7 +9,7 @@ import (
 	"oblikovati.org/math"
 )
 
-// Conformal circular sampling (ADR-0054, Oblikovati#2167).
+// Conformal circular sampling (ADR-0056, Oblikovati#2167).
 //
 // Two operands of a mesh boolean that share a circular boundary — a cylinder's rim
 // and a coaxial arc are literally the SAME circle — must discretize it into IDENTICAL

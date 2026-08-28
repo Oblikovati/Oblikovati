@@ -10,7 +10,7 @@ import (
 	"oblikovati.org/math"
 )
 
-// Original-edge reuse for reconstruction (ADR-0054 Layer 2c). A split face's boundary
+// Original-edge reuse for reconstruction (ADR-0056 Layer 2c). A split face's boundary
 // run is, in a gluing boolean (union along coincident faces, the #2167 family), always
 // a tessellation of an ORIGINAL edge of one operand — a rim circle, a chord line, a
 // profile arc. Reusing that edge's exact analytic curve makes the rebuilt face's

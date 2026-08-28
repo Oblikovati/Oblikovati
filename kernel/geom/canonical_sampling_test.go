@@ -9,7 +9,7 @@ import (
 	"oblikovati.org/math"
 )
 
-// The conformance invariant (ADR-0054/#2167): whenever two circular curves ARE the same
+// The conformance invariant (ADR-0056/#2167): whenever two circular curves ARE the same
 // circle — same centre, axis line, radius — they must discretize to the identical point
 // set, no matter how each stored its RefDir or normal sign. These tests pin that property
 // at the source, independent of the boolean that consumes it.

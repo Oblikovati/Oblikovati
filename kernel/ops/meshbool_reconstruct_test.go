@@ -11,7 +11,7 @@ import (
 	"oblikovati.org/math"
 )
 
-// TestReconstructSteppedShaftKeepsAnalyticWalls is the ADR-0054 payoff and the #2167
+// TestReconstructSteppedShaftKeepsAnalyticWalls is the ADR-0056 payoff and the #2167
 // mechanism in miniature: two coaxial cylinders of different radius stacked and unioned.
 // Both walls are UNTOUCHED (nothing removes them) so they must survive as analytic
 // cylinders; only the shared cap is SPLIT into an annulus whose outer and inner rims

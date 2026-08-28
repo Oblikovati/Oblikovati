@@ -13,7 +13,7 @@ import (
 // TestBodyToTaggedSoupProvenance proves the IN adapter tags every triangle with the
 // EXACT originating surface: a capped cylinder tessellates into one cylindrical wall
 // and two planar caps, and every soup triangle's tag must resolve to that face's true
-// surface kind. This is the provenance reconstruction (ADR-0054) depends on — the tag
+// surface kind. This is the provenance reconstruction (ADR-0056) depends on — the tag
 // is not a fit, it is which face the tessellator meshed.
 func TestBodyToTaggedSoupProvenance(t *testing.T) {
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)

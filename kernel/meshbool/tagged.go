@@ -2,12 +2,12 @@
 
 package meshbool
 
-// Provenance-tagged boolean (ADR-0054). Co-refinement only ever SPLITS an input
+// Provenance-tagged boolean (ADR-0056). Co-refinement only ever SPLITS an input
 // facet against the other operand's crossing segments — it never fuses two input
 // facets into one output triangle, and it never creates a triangle off an original
 // surface. So every output triangle descends from exactly one input facet, and an
 // integer tag identifying that facet's originating operand surface propagates
-// exactly from input to output. The ADR-0054 reconstruction groups the result by tag
+// exactly from input to output. The ADR-0056 reconstruction groups the result by tag
 // to rebuild each face on its exact original analytic surface, instead of fitting a
 // plane per coplanar facet region (which faceted-izes every curved boolean, #2153).
 

@@ -9,7 +9,7 @@ import (
 	"oblikovati.org/math"
 )
 
-// Analytic surface-surface intersection edges for reconstruction (ADR-0054 Layer 2c/3).
+// Analytic surface-surface intersection edges for reconstruction (ADR-0056 Layer 2c/3).
 // When a split face's boundary run is not an operand's original edge, it is a NEW
 // intersection curve where this face's surface meets the run's neighbour surface. For
 // the closed-form pairs geom.IntersectSurfacesAnalytic solves (plane∩plane = line,
@@ -45,7 +45,7 @@ func intersectionRunEdge(run meshbool.ArrangementRun, surface, neighbor geom.Sur
 // hyperbola — is exact as a curve but not yet welded consistently across both faces (each face
 // samples it independently), so a face bounded by one closes to a VALID but wrong-volume solid
 // (the #2167-sibling disjoint/oblique cut, e.g. SlottedScrew's slanted-hex bore exit). Until the
-// numeric-SSI weld layer lands (ADR-0054 Layer 4), reconstruction DECLINES those runs so the
+// numeric-SSI weld layer lands (ADR-0056 Layer 4), reconstruction DECLINES those runs so the
 // caller falls back to the exact faceted boolean — no wrong geometry, no regression.
 func weldableSSICurve(c geom.Curve3) bool {
 	switch c.(type) {

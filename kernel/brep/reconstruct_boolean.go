@@ -7,7 +7,7 @@ import (
 	"oblikovati.org/kernel/topo"
 )
 
-// Analytic-face reconstruction assembly (ADR-0054 Layer 2b). The exact mesh-arrangement
+// Analytic-face reconstruction assembly (ADR-0056 Layer 2b). The exact mesh-arrangement
 // boolean (kernel/meshbool) produces a watertight but FACETED result; the ops adapter
 // groups those facets by provenance tag and hands this package, per output face, either
 // an original face to copy wholesale (an untouched survivor keeps its exact surface AND

@@ -12,7 +12,7 @@ import (
 	"oblikovati.org/math"
 )
 
-// TestReconstructionCutoverShadow is the ADR-0054 Layer-5 cutover gate: it shadow-validates the
+// TestReconstructionCutoverShadow is the ADR-0056 Layer-5 cutover gate: it shadow-validates the
 // analytic reconstruction against a KNOWN analytic volume for a matrix of curved booleans that
 // no analytic recognizer handles (so reconstructedCurvedBoolean is the path that fires). The
 // invariant the cutover rests on is codified here — reconstruction is never ADOPTED WRONG:

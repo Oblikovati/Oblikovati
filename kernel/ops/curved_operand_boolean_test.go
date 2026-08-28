@@ -12,7 +12,7 @@ import (
 )
 
 // A boolean with a curved (fillet/cylinder) operand cannot go through the planar B-rep path.
-// With the ADR-0054 Layer-5 cutover (reconstructionCutover), such a boolean is rebuilt
+// With the ADR-0056 Layer-5 cutover (reconstructionCutover), such a boolean is rebuilt
 // ANALYTICALLY from the exact mesh boolean's provenance whenever its new boundary edges are all
 // lines and circles (weldableSSICurve): the fillet cylinder SURVIVES and the volume is exact —
 // where the pre-reconstruction triangle-soup CSG fallback would have faceted the fillet away.

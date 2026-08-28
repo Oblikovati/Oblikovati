@@ -30,7 +30,7 @@ func dProfileSketchOnPlaneZ(z, r, theta float64) *sketch.Sketch {
 
 // TestPistonHeadCocylindricalJoinKeepsAnalyticWalls is the #2167 regression: a full
 // cylinder JOINED to a stacked D-profile prism whose arc wall is cocylindrical must keep
-// BOTH walls analytic. Before ADR-0054 the analytic path had no handler for
+// BOTH walls analytic. Before ADR-0056 the analytic path had no handler for
 // cylinder ∪ cocylindrical-arc-prism, so it faceted the whole join (74 planar faces, 0
 // cylinders) and the two walls' mismatched facet grids showed as a visible seam. The
 // provenance reconstruction rebuilds both walls on their exact cylinder surface, so they
@@ -38,7 +38,7 @@ func dProfileSketchOnPlaneZ(z, r, theta float64) *sketch.Sketch {
 // cylinder faces surviving the join plus the exact stacked volume.
 func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
 	// #2167 at the feature level: an EXTRUDE-built full cylinder JOINED to a stacked D-prism whose
-	// arc wall is cocylindrical must keep BOTH walls analytic — the ADR-0054 Layer-5 reconstruction
+	// arc wall is cocylindrical must keep BOTH walls analytic — the ADR-0056 Layer-5 reconstruction
 	// (reconstructionCutover, now the default) rebuilds them on the exact cylinder surface, merged to
 	// ONE analytic wall (cyl==1), so they re-tessellate against a single surface with no seam. The
 	// robustness layers this extrude-built shape needed are all closed: cross-operand rim-sliver weld
@@ -46,7 +46,7 @@ func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
 	// uses only line/circle SSI, so it reconstructs). The gate-aware skip keeps this green if the
 	// Layer-5 kill-switch is ever turned off.
 	if !ops.ReconstructionCutoverEnabled() {
-		t.Skip("ADR-0054 Layer-5 reconstruction disabled (reconstructionCutover=false); #2167 falls back to faceting")
+		t.Skip("ADR-0056 Layer-5 reconstruction disabled (reconstructionCutover=false); #2167 falls back to faceting")
 	}
 	const r, theta, h1, h2 = 3.0, 0.6, 6.0, 4.0
 	fs := NewPartFeatures(nil)

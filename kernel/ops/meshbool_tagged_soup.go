@@ -8,7 +8,7 @@ import (
 	"oblikovati.org/kernel/topo"
 )
 
-// The provenance-carrying IN half of the exact-boolean adapter (ADR-0054). Where
+// The provenance-carrying IN half of the exact-boolean adapter (ADR-0056). Where
 // bodyToSoup flattens a body to bare triangles, bodyToTaggedSoup tags every triangle
 // with the id of the topo.Face it was meshed from and keeps a side table mapping each
 // id to that face's exact analytic surface. Because tessellateBodyFaces meshes one

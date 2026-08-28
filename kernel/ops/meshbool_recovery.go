@@ -8,23 +8,23 @@ import (
 	"oblikovati.org/kernel/topo"
 )
 
-// Reconstructed curved boolean (ADR-0054 Layer 5). When no exact analytic path in
+// Reconstructed curved boolean (ADR-0056 Layer 5). When no exact analytic path in
 // curvedExactPaths recognises a curved join — the #2167 cocylindrical arc-wall union is the
 // motivating case — the operation would otherwise facet both operands and run the planar
 // boolean, shattering the curved walls into mismatched grids (the visible seam). Instead the
 // exact mesh-arrangement boolean (ADR-0052) runs on the operands' provenance-tagged
 // tessellation and the result is rebuilt on the operands' EXACT surfaces (reconstructBoolean,
-// ADR-0054 L1–L4). Wired as the LAST path in curvedExactBoolean, so it fires only where every
+// ADR-0056 L1–L4). Wired as the LAST path in curvedExactBoolean, so it fires only where every
 // analytic recognizer declined, and both the direct ops.Boolean path and the feature combine
 // path (which tries CurvedBoolean on the still-analytic operands before faceting) pick it up.
 
 // CodeBooleanAnalyticReconstruction marks a boolean that no analytic curved path recognised and
-// provenance reconstruction (ADR-0054) rebuilt on the exact surfaces — an analytic B-rep in place
+// provenance reconstruction (ADR-0056) rebuilt on the exact surfaces — an analytic B-rep in place
 // of the faceted planar fallback, recorded so the pipeline can see reconstruction fired.
 const CodeBooleanAnalyticReconstruction diag.Code = "boolean.analytic-reconstruction"
 
 // reconstructionCutover gates whether reconstruction is offered as a curved-boolean path — the
-// ADR-0054 Layer-5 switch, now ON (the default). Where it fires the reconstruction is exact
+// ADR-0056 Layer-5 switch, now ON (the default). Where it fires the reconstruction is exact
 // (analytic surfaces from provenance, self-validated below for validity AND the Requicha volume
 // bracket, with unweldable oblique-conic SSI declined by weldableSSICurve), upgrading a faceted
 // curved join to an analytic B-rep; where reconstruction declines the caller falls back to the
@@ -32,7 +32,7 @@ const CodeBooleanAnalyticReconstruction diag.Code = "boolean.analytic-reconstruc
 // every curved boolean through the faceted fallback again.
 const reconstructionCutover = true
 
-// ReconstructionCutoverEnabled reports whether the ADR-0054 Layer-5 cutover is on, so a
+// ReconstructionCutoverEnabled reports whether the ADR-0056 Layer-5 cutover is on, so a
 // higher-layer regression that only fires through the reconstruction path (the #2167 piston
 // feature test) can guard the seam-wrap layer without hard-coding the gate's state.
 func ReconstructionCutoverEnabled() bool { return reconstructionCutover }

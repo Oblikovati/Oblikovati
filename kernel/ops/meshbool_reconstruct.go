@@ -10,7 +10,7 @@ import (
 	"oblikovati.org/math"
 )
 
-// Analytic-face reconstruction driver (ADR-0054 Layer 2c). It runs the exact
+// Analytic-face reconstruction driver (ADR-0056 Layer 2c). It runs the exact
 // mesh-arrangement boolean with provenance tags, then rebuilds an ANALYTIC B-rep from
 // the tagged result instead of the faceted soupToBody: an untouched face (its result
 // facet count equals its input count — co-refinement only splits, and an unsplit face
@@ -27,14 +27,14 @@ func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality) (*topo.Body,
 	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox()))
 	// Cross-operand vertex-on-edge imprint: sample each operand's edges through the OTHER
 	// operand's vertices that lie on them, so the two conform at a shared corner the mesh
-	// co-refinement would otherwise miss (ADR-0054 / #2167 chord corner on the rim circle).
+	// co-refinement would otherwise miss (ADR-0056 / #2167 chord corner on the rim circle).
 	aSoup, aRefs := taggedSoupWithImprints(a, q, 0, crossOperandImprints(a, b, res.Weld()))
 	bSoup, bRefs := taggedSoupWithImprints(b, q, len(aRefs), crossOperandImprints(b, a, res.Weld()))
 	refs := make([]faceSurfaceRef, 0, len(aRefs)+len(bRefs))
 	refs = append(append(refs, aRefs...), bRefs...)
 
 	// Fuse coincident-surface tags (cocylindrical walls, coplanar faces) so their shared
-	// seam is interior to one face, not a false edge between two (ADR-0054 same-surface merge).
+	// seam is interior to one face, not a false edge between two (ADR-0056 same-surface merge).
 	rep, groupSize := mergeCoincidentTags(refs, res)
 	relabelTags(aSoup.Tags, rep)
 	relabelTags(bSoup.Tags, rep)
@@ -154,7 +154,7 @@ func runPoint(verts []meshbool.Point, run meshbool.ArrangementRun, i int) math.P
 // cylinder surface evaluation on the other), it inserts one operand's vertex a sub-tolerance step
 // from the other's, leaving a near-degenerate sliver that fragments the arrangement. Welding the
 // combined output — the same size-relative hygiene the IN adapter applies to each operand — removes
-// it. The tolerance lives here in the ops layer; the meshbool core stays exact (ADR-0054).
+// it. The tolerance lives here in the ops layer; the meshbool core stays exact (ADR-0056).
 func weldResultSoup(soup meshbool.TaggedSoup, tol float64) meshbool.TaggedSoup {
 	w := newVertexWelder(tol)
 	out := meshbool.TaggedSoup{}

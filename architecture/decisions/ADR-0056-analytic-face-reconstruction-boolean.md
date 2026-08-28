@@ -1,4 +1,4 @@
-# ADR-0054 — Analytic-face reconstruction from the mesh-arrangement boolean
+# ADR-0056 — Analytic-face reconstruction from the mesh-arrangement boolean
 
 **Status:** Accepted — building on `feat/analytic-boolean-reconstruction`. · **Scopes**
 [Oblikovati#2153](https://github.com/Oblikovati/Oblikovati/issues/2153) (the arrangement emits faceted

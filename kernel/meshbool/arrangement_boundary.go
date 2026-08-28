@@ -4,7 +4,7 @@ package meshbool
 
 import "math/big"
 
-// Boundary tracing for one arrangement face (ADR-0054 Layer 2a). A face's boundary is
+// Boundary tracing for one arrangement face (ADR-0056 Layer 2a). A face's boundary is
 // every directed facet edge whose reverse leaves the face's component. Tracing chains
 // those into loops by pivoting around each shared vertex through the face interior —
 // which separates loops correctly even where several meet at one vertex, unlike a

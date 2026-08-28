@@ -8,7 +8,7 @@ import (
 	"oblikovati.org/kernel/geom"
 )
 
-// Same-surface adjacent-face merge for reconstruction (ADR-0054). A gluing boolean of two
+// Same-surface adjacent-face merge for reconstruction (ADR-0056). A gluing boolean of two
 // bodies that share a surface — the #2167 cocylindrical join, or two coplanar-faced solids
 // welded along a face — leaves the shared surface as TWO tagged regions (e.g. a lower
 // cylinder wall and an upper cocylindrical wall) meeting along a false seam that is not a

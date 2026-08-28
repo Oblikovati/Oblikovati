@@ -11,7 +11,7 @@ import (
 	m "oblikovati.org/math"
 )
 
-// The disjoint-region cut layer (ADR-0054). A boolean whose exact soup is correct can still
+// The disjoint-region cut layer (ADR-0056). A boolean whose exact soup is correct can still
 // reconstruct to a VALID-but-wrong-volume analytic B-rep when a boundary run is an OBLIQUE
 // conic surface-surface intersection (a cylinder cut by a tilted plane = ellipse): the ellipse
 // is exact as a curve, but each incident face samples it independently, so the two copies do
@@ -34,7 +34,7 @@ func TestReconstructDeclinesObliqueConicCut(t *testing.T) {
 		t.Fatalf("cyl: %v", err)
 	}
 	if _, ok := reconstructBoolean(box, oblique, meshbool.Difference, DefaultQuality()); ok {
-		t.Fatal("oblique-conic cut reconstructed; must decline (ellipse SSI does not weld — ADR-0054 Layer 4)")
+		t.Fatal("oblique-conic cut reconstructed; must decline (ellipse SSI does not weld — ADR-0056 Layer 4)")
 	}
 	// Declining loses nothing: the exact faceted boolean still produces a valid solid that
 	// removes real material (the tool axis pierces the box, so the result is strictly smaller

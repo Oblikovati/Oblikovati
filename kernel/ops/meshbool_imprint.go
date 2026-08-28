@@ -11,7 +11,7 @@ import (
 	"oblikovati.org/math"
 )
 
-// Cross-operand vertex-on-edge imprinting for the exact boolean (ADR-0054).
+// Cross-operand vertex-on-edge imprinting for the exact boolean (ADR-0056).
 //
 // The mesh boolean co-refines each operand INDEPENDENTLY, so it imprints edge-edge and
 // face-face crossings but not a VERTEX of one operand lying on an EDGE of the other. When
@@ -69,7 +69,7 @@ func vertexOnEdgeInterior(e *topo.Edge, p math.Point3, tol float64) bool {
 // tessellateEdgeWithParams) consult the snapped polyline first, the boolean tessellates b's
 // circular boundaries canonically — so two operands sharing a circle discretize it identically —
 // while DISPLAY and every other consumer, which never call this, keep the adaptive sampling. This
-// scopes the conformance to exactly the boolean input (ADR-0054/#2167). The snapped polyline is set
+// scopes the conformance to exactly the boolean input (ADR-0056/#2167). The snapped polyline is set
 // only for the tessellation and restored, so the operand body is left unchanged.
 func applyBooleanConformance(b *topo.Body, imprints map[*topo.Edge][]math.Point3, q Quality) func() {
 	type prev struct {
