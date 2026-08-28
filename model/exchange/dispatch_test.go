@@ -248,7 +248,7 @@ func TestExportWriteFailureLeavesDestinationUntouched(t *testing.T) {
 	if err := os.Chmod(dst, 0o444); err != nil {
 		t.Fatalf("make destination read-only: %v", err)
 	}
-	defer os.Chmod(dst, 0o644)
+	defer func() { _ = os.Chmod(dst, 0o644) }()
 
 	_, err := exchange.Export(part, dst, types.FormatGLTF, types.ResolutionHigh)
 	if err == nil {

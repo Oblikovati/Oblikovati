@@ -116,34 +116,7 @@ func buildGLTFDocument(bodies []*gltfBody) ([]byte, []byte, error) {
 	names := allocateGLTFNames(bodyNames(bodies))
 	var bin bytes.Buffer
 	for i, b := range bodies {
-		doc.Scenes[0].Nodes[i] = i
-		doc.Nodes = append(doc.Nodes, gltfNode{Name: names[i], Mesh: i})
-		doc.Meshes = append(doc.Meshes, gltfMesh{Name: names[i], Primitives: []gltfPrimitive{{
-			Attributes: map[string]int{"POSITION": len(doc.Accessors), "NORMAL": len(doc.Accessors) + 1},
-			Indices:    len(doc.Accessors) + 2,
-			Material:   0,
-			Mode:       4,
-		}}})
-		posView := appendGLTFBufferView(&bin, &doc, gltfArrayBuffer)
-		bin.Write(f32Bytes(b.positions))
-		doc.BufferViews[posView].ByteLength = len(b.positions) * 4
-		doc.Accessors = append(doc.Accessors, gltfAccessor{
-			BufferView: posView, ComponentType: gltfFloat, Count: len(b.positions) / 3,
-			Type: "VEC3", Min: f32s(b.min[:]), Max: f32s(b.max[:]),
-		})
-		normView := appendGLTFBufferView(&bin, &doc, gltfArrayBuffer)
-		bin.Write(f32Bytes(b.normals))
-		doc.BufferViews[normView].ByteLength = len(b.normals) * 4
-		doc.Accessors = append(doc.Accessors, gltfAccessor{
-			BufferView: normView, ComponentType: gltfFloat, Count: len(b.normals) / 3, Type: "VEC3",
-		})
-		idxView := appendGLTFBufferView(&bin, &doc, gltfElementArray)
-		idxType, idxBytes := gltfIndexType(len(b.positions) / 3)
-		writeGLTFIndices(&bin, b.indices, idxBytes)
-		doc.BufferViews[idxView].ByteLength = len(b.indices) * idxBytes
-		doc.Accessors = append(doc.Accessors, gltfAccessor{
-			BufferView: idxView, ComponentType: idxType, Count: len(b.indices), Type: "SCALAR",
-		})
+		appendGLTFBody(&doc, &bin, i, names[i], b)
 	}
 	doc.Buffers = []gltfBuffer{{ByteLength: bin.Len()}}
 	jsonData, err := json.Marshal(&doc)
@@ -151,6 +124,39 @@ func buildGLTFDocument(bodies []*gltfBody) ([]byte, []byte, error) {
 		return nil, nil, fmt.Errorf("gltf: marshal document: %w", err)
 	}
 	return jsonData, bin.Bytes(), nil
+}
+
+// appendGLTFBody emits one body's node, mesh (POSITION/NORMAL/indices accessors
+// and bufferViews, 4-byte aligned in input order) into doc and bin.
+func appendGLTFBody(doc *gltfJSONDoc, bin *bytes.Buffer, i int, name string, b *gltfBody) {
+	doc.Scenes[0].Nodes[i] = i
+	doc.Nodes = append(doc.Nodes, gltfNode{Name: name, Mesh: i})
+	doc.Meshes = append(doc.Meshes, gltfMesh{Name: name, Primitives: []gltfPrimitive{{
+		Attributes: map[string]int{"POSITION": len(doc.Accessors), "NORMAL": len(doc.Accessors) + 1},
+		Indices:    len(doc.Accessors) + 2,
+		Material:   0,
+		Mode:       4,
+	}}})
+	posView := appendGLTFBufferView(bin, doc, gltfArrayBuffer)
+	bin.Write(f32Bytes(b.positions))
+	doc.BufferViews[posView].ByteLength = len(b.positions) * 4
+	doc.Accessors = append(doc.Accessors, gltfAccessor{
+		BufferView: posView, ComponentType: gltfFloat, Count: len(b.positions) / 3,
+		Type: "VEC3", Min: f32s(b.min[:]), Max: f32s(b.max[:]),
+	})
+	normView := appendGLTFBufferView(bin, doc, gltfArrayBuffer)
+	bin.Write(f32Bytes(b.normals))
+	doc.BufferViews[normView].ByteLength = len(b.normals) * 4
+	doc.Accessors = append(doc.Accessors, gltfAccessor{
+		BufferView: normView, ComponentType: gltfFloat, Count: len(b.normals) / 3, Type: "VEC3",
+	})
+	idxView := appendGLTFBufferView(bin, doc, gltfElementArray)
+	idxType, idxBytes := gltfIndexType(len(b.positions) / 3)
+	writeGLTFIndices(bin, b.indices, idxBytes)
+	doc.BufferViews[idxView].ByteLength = len(b.indices) * idxBytes
+	doc.Accessors = append(doc.Accessors, gltfAccessor{
+		BufferView: idxView, ComponentType: idxType, Count: len(b.indices), Type: "SCALAR",
+	})
 }
 
 // gltfCADMaterial is the single explicit PBR material every primitive
@@ -190,7 +196,7 @@ func allocateGLTFNames(names []string) []string {
 	for i, n := range names {
 		candidate := n
 		for used[candidate] {
-			candidate = candidate + "#2"
+			candidate += "#2"
 		}
 		used[candidate] = true
 		out[i] = candidate

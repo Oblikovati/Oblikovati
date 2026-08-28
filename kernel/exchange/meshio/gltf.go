@@ -62,11 +62,52 @@ func ExportBodiesGLTF(bodies []*topo.Body, res types.MeshResolution, opts exchan
 // JSON document + BIN buffer, and wrap the GLB container. The complete GLB is
 // built in memory before any destination write (R4-9).
 func encodeGLTFBodies(bodies []*topo.Body, q ops.Quality, opts exchange.TranslationOptions) ([]byte, int, []string, error) {
+	warnings, exportable, err := exportableBodies(bodies)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+	scale := opts.ExportScale()
+	meshes, err := TessellateBodies(exportable, q)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+	gb, err := sanitizeGLTFBodyAll(meshes, scale)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+	data, tris, err := encodeGLTFBytes(gb)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+	return data, tris, warnings, nil
+}
+
+// encodeGLTFBytes builds the GLB container from sanitized bodies and totals triangles.
+func encodeGLTFBytes(gb []*gltfBody) ([]byte, int, error) {
+	jsonData, binData, err := buildGLTFDocument(gb)
+	if err != nil {
+		return nil, 0, err
+	}
+	data, err := wrapGLB(jsonData, binData)
+	if err != nil {
+		return nil, 0, err
+	}
+	tris := 0
+	for _, b := range gb {
+		tris += len(b.indices) / 3
+	}
+	return data, tris, nil
+}
+
+// exportableBodies validates the input slice (nil body -> typed error naming the
+// index, change-review CHG4-2) and filters empty bodies, reporting each skip as a
+// warning (R3-5/R3-6). An all-empty input is a typed error (R3-5).
+func exportableBodies(bodies []*topo.Body) ([]string, []*topo.Body, error) {
 	var warnings []string
 	exportable := make([]*topo.Body, 0, len(bodies))
 	for i, b := range bodies {
 		if b == nil {
-			return nil, 0, nil, fmt.Errorf("gltf: body at index %d is nil", i)
+			return nil, nil, fmt.Errorf("gltf: body at index %d is nil", i)
 		}
 		if len(b.Faces()) == 0 {
 			warnings = append(warnings, fmt.Sprintf("gltf: body %d is empty; skipped", b.ID()))
@@ -75,34 +116,22 @@ func encodeGLTFBodies(bodies []*topo.Body, q ops.Quality, opts exchange.Translat
 		exportable = append(exportable, b)
 	}
 	if len(exportable) == 0 {
-		return nil, 0, nil, errors.New("gltf: no exportable bodies")
+		return nil, nil, errors.New("gltf: no exportable bodies")
 	}
-	scale := opts.ExportScale()
-	meshes, err := TessellateBodies(exportable, q)
-	if err != nil {
-		return nil, 0, nil, err
-	}
+	return warnings, exportable, nil
+}
+
+// sanitizeGLTFBodyAll sanitizes each tessellated body record at the given scale.
+func sanitizeGLTFBodyAll(meshes []BodyMesh, scale float64) ([]*gltfBody, error) {
 	gb := make([]*gltfBody, 0, len(meshes))
 	for _, bm := range meshes {
 		body, err := sanitizeGLTFBody(bm, scale)
 		if err != nil {
-			return nil, 0, nil, err
+			return nil, err
 		}
 		gb = append(gb, body)
 	}
-	jsonData, binData, err := buildGLTFDocument(gb)
-	if err != nil {
-		return nil, 0, nil, err
-	}
-	data, err := wrapGLB(jsonData, binData)
-	if err != nil {
-		return nil, 0, nil, err
-	}
-	tris := 0
-	for _, b := range gb {
-		tris += len(b.indices) / 3
-	}
-	return data, tris, warnings, nil
+	return gb, nil
 }
 
 // gltfBody is one body's sanitized, packed glTF data: swizzled/scaled float32

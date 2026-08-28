@@ -23,28 +23,6 @@ func gltfTestMesh(positions []math.Point3, normals []math.Vector3, indices []int
 	return &ops.Mesh{Positions: positions, Normals: normals, Indices: indices}
 }
 
-// gltfCubeMesh is a 6 cm cube mesh (8 vertices, 12 triangles, outward normals)
-// in kernel centimetres — the unit/swizzle fixture.
-func gltfCubeMesh() *ops.Mesh {
-	p := []math.Point3{
-		math.P3(0, 0, 0), math.P3(6, 0, 0), math.P3(6, 6, 0), math.P3(0, 6, 0),
-		math.P3(0, 0, 6), math.P3(6, 0, 6), math.P3(6, 6, 6), math.P3(0, 6, 6),
-	}
-	n := []math.Vector3{
-		math.V3(0, 0, -1), math.V3(0, 0, -1), math.V3(0, 0, -1), math.V3(0, 0, -1),
-		math.V3(0, 0, 1), math.V3(0, 0, 1), math.V3(0, 0, 1), math.V3(0, 0, 1),
-	}
-	idx := []int{
-		0, 3, 2, 0, 2, 1, // bottom -Z
-		4, 5, 6, 4, 6, 7, // top +Z
-		0, 1, 5, 0, 5, 4, // front -Y
-		2, 3, 7, 2, 7, 6, // back +Y
-		1, 2, 6, 1, 6, 5, // right +X
-		0, 4, 7, 0, 7, 3, // left -X
-	}
-	return gltfTestMesh(p, n, idx)
-}
-
 // gltfBodyMesh wraps a mesh as a BodyMesh record with a stable id/name.
 func gltfBodyMesh(id, name string, m *ops.Mesh) BodyMesh {
 	return BodyMesh{ID: id, Name: name, Mesh: m}

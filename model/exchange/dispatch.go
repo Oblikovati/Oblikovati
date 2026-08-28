@@ -98,36 +98,51 @@ func Export(part *compdef.PartComponentDefinition, path string, format types.Exc
 // gets 0o644 — os.CreateTemp creates 0600, which would otherwise replace a
 // 0644 destination with a 0600 file (CHG3-3).
 func writeExportFile(path string, data []byte) error {
-	dir := filepath.Dir(path)
-	base := filepath.Base(path)
-	tmp, err := os.CreateTemp(dir, base+".tmp*")
+	tmpName, err := writeExportTemp(path, data)
 	if err != nil {
-		return fmt.Errorf("export: create temp for %q: %w", path, err)
+		return err
+	}
+	if err := setExportTempMode(tmpName, path); err != nil {
+		os.Remove(tmpName)
+		return err
+	}
+	if err := os.Rename(tmpName, path); err != nil {
+		os.Remove(tmpName)
+		return fmt.Errorf("export: rename over %q: %w", path, err)
+	}
+	return nil
+}
+
+// writeExportTemp writes data to a temp file beside path and closes it; on any
+// failure the temp is removed and the destination untouched.
+func writeExportTemp(path string, data []byte) (string, error) {
+	tmp, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".tmp*")
+	if err != nil {
+		return "", fmt.Errorf("export: create temp for %q: %w", path, err)
 	}
 	tmpName := tmp.Name()
-	cleanup := func() {
+	if _, err := tmp.Write(data); err != nil {
 		tmp.Close()
 		os.Remove(tmpName)
-	}
-	if _, err := tmp.Write(data); err != nil {
-		cleanup()
-		return fmt.Errorf("export: write %q: %w", path, err)
+		return "", fmt.Errorf("export: write %q: %w", path, err)
 	}
 	if err := tmp.Close(); err != nil {
 		os.Remove(tmpName)
-		return fmt.Errorf("export: close %q: %w", path, err)
+		return "", fmt.Errorf("export: close %q: %w", path, err)
 	}
+	return tmpName, nil
+}
+
+// setExportTempMode gives the temp file the destination's mode before the rename:
+// a pre-existing destination keeps its mode (stat + Chmod), a new destination gets
+// 0o644 (os.CreateTemp creates 0600, which would downgrade a 0644 file — CHG3-3).
+func setExportTempMode(tmpName, path string) error {
 	mode := os.FileMode(0o644)
 	if info, err := os.Stat(path); err == nil {
 		mode = info.Mode().Perm()
 	}
 	if err := os.Chmod(tmpName, mode); err != nil {
-		os.Remove(tmpName)
 		return fmt.Errorf("export: chmod temp for %q: %w", path, err)
-	}
-	if err := os.Rename(tmpName, path); err != nil {
-		os.Remove(tmpName)
-		return fmt.Errorf("export: rename over %q: %w", path, err)
 	}
 	return nil
 }
