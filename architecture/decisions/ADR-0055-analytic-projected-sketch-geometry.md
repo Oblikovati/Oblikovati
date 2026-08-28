@@ -150,10 +150,33 @@ lost/frozen source still shows its last analytic shape.
   So tilted projections are analytic and small on disk too. Offsetting an ellipse and extruding an
   elliptical profile keep their polyline/faceted fallbacks for now (an ellipse's offset is not an
   ellipse; the elliptical-cylinder extrude is a later feature).
-- **Phase 3 (concrete reference entities).** Migrate the `ProjectedCurve` wrapper to concrete
-  reference-flagged `Line`/`Circle`/`Arc`/`EllipticalArc`/spline entities (the SHAPER/Inventor model),
-  so projected geometry participates uniformly in constraints, offset and region tracing with no
-  wrapper special-casing.
+- **Phase 3 (concrete reference entities) — IN PROGRESS.** Migrate the `ProjectedCurve` wrapper to
+  concrete reference-flagged `Line`/`Circle`/`Arc`/`EllipticalArc`/spline entities (the SHAPER/Inventor
+  model), so projected geometry participates uniformly in constraints, offset and region tracing with
+  no wrapper special-casing. Staged (each commit green):
+  - **A — grounding (DONE).** `entityBase.reference` flag (distinct from `construction`); `variables()`
+    skips a reference entity's scalar DOF; its points live in `refPts`. A reference entity is fixed but
+    profile-participating. Inert until B sets the flag.
+  - **B — projection builds concrete entities.** A `Sketch.addReferenceCurve(geom.Curve2)` factory
+    builds a reference `Line`/`Circle`/`Arc`/`EllipticalArc` on `refPts`. `ProjectCurve` creates one and
+    records `{source, entity, linked, srcKind, srcID}` in a `projection` list (the associativity owner,
+    replacing `ProjectedCurve`'s role). Full-ellipse projection needs a full `Ellipse` reference entity.
+  - **C — associative update.** `UpdateProjections` re-projects each record's source and rewrites its
+    concrete entity's geometry in place (centre/radius/points), keeping the reference key stable;
+    lost-source freezes; the `#2016` dedup keys on `(srcKind, srcID)` as today.
+  - **D — serialization.** A reference entity serializes as its normal row plus `reference: true` and the
+    `source`/`sourceKind` descriptor; restore rebuilds it grounded and re-records the projection for
+    rebind. Drop the `projectedCurve` codec + `projShape`/`projParams`/`coords`.
+  - **E — delete the wrapper + its special-casing.** Remove `ProjectedCurve`, `ProjectedCurveKind`,
+    `AnalyticCurveEntity`, and the projected-curve branches in extrude (`analyticSegFromProjected`,
+    `circleLoop`), offset (`offsetProjectedCurve`, `projectedAnalyticSeg`, `circleCenterRadius`),
+    `arrangement`, `entity_shape`, `capability_coverage`, the router and app tools — they read the
+    concrete `Line`/`Circle`/`Arc` natively. Blast radius ≈ 12 non-test + 16 test files.
+  - **F — migrate the projection test corpus** (dedup #2016, rebind #1268, lost-reference freeze,
+    entityPolyline, offset-of-projected, the phase-1/2 analytic tests) onto concrete entities.
+  Stages B–F are one coherent rewrite of the projection creation/serialization/consumer surface and
+  must land together (a half-migrated state carrying both representations is worse than either);
+  do them as a focused pass, not interleaved with unrelated work.
 - **Phase 4 (free-form).** Project NURBS edges to same-degree sketch splines (control-point
   projection); reserve a sampled fallback only as an explicit non-associative snapshot.
 
