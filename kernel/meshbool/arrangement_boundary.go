@@ -88,8 +88,15 @@ func walkBoundaryLoop(s halfEdge, idx map[[2]int]halfEdge, used map[[2]int]bool,
 // and returns the next boundary edge b→w — the first fan edge whose reverse leaves the
 // component. This is the manifold boundary-trace rotation, so a vertex where two loops
 // touch is walked without crossing loops.
+//
+// The pivot is BOUNDED by the triangle count: a manifold fan around b visits each incident
+// triangle once, so it reaches the fan's boundary in at most (degree of b) ≤ len(tris) steps.
+// A NON-manifold vertex fan — which a degenerate planar arrangement can produce (a wedge cut
+// on a coincident/near-coincident facet, #2247) — has no such boundary in one rotation and
+// would pivot forever; the bound refuses it (a named decline, not a hang: the caller's loop
+// closes short and reconstruction fails validity, falling through to the exact planar boolean).
 func nextBoundaryEdge(a, b int, tris [][3]int, owner map[[2]int]int, comp []int, c int) (int, bool) {
-	for from := a; ; {
+	for from, steps := a, 0; steps <= len(tris); steps++ {
 		ti, ok := owner[[2]int{from, b}]
 		if !ok || comp[ti] != c {
 			return 0, false // not reachable on a watertight component
@@ -100,6 +107,7 @@ func nextBoundaryEdge(a, b int, tris [][3]int, owner map[[2]int]int, comp []int,
 		}
 		from = w
 	}
+	return 0, false // fan did not close within the triangle count — a non-manifold vertex; decline
 }
 
 // apexVertex returns the triangle vertex that is neither a nor b.

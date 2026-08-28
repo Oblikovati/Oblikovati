@@ -85,6 +85,30 @@ func assertLoopCloses(t *testing.T, tag int, loop ArrangementLoop) {
 	}
 }
 
+// TestNextBoundaryEdgeTerminatesOnClosedFan pins the #2247 boundary-walk hang: the fan pivot
+// around a vertex must be BOUNDED. A vertex whose incident triangles form a closed rotational
+// cycle (here vertex 0, fully surrounded by the fan 0-1-2 / 0-2-3 / 0-3-1) has no boundary edge in
+// its fan, so pivoting from any spoke rotates forever (1→3→2→1…). A degenerate planar arrangement
+// (a wedge cut on a coincident facet) produces exactly such a non-manifold/closed fan; before the
+// bound, reconstructBoolean hung there (the taper-shaft chamfer timed out at 600s). The bound turns
+// the infinite pivot into a named decline: nextBoundaryEdge returns ok=false. This test COMPLETING
+// is the assertion — remove the bound and it loops until the test-timeout, failing loudly.
+func TestNextBoundaryEdgeTerminatesOnClosedFan(t *testing.T) {
+	// A closed umbrella around vertex 0: three triangles sharing the apex, every spoke 0→wi
+	// backed by an interior neighbour, so the pivot never reaches a boundary.
+	tris := [][3]int{{0, 1, 2}, {0, 2, 3}, {0, 3, 1}}
+	owner := map[[2]int]int{}
+	for ti, tr := range tris {
+		for e := 0; e < 3; e++ {
+			owner[[2]int{tr[e], tr[(e+1)%3]}] = ti
+		}
+	}
+	comp := []int{0, 0, 0}
+	if _, ok := nextBoundaryEdge(1, 0, tris, owner, comp, 0); ok {
+		t.Fatal("closed fan reported a boundary edge; the pivot must decline (ok=false), not find one")
+	}
+}
+
 func equalInts(a, b []int) bool {
 	if len(a) != len(b) {
 		return false
