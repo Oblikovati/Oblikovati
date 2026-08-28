@@ -50,7 +50,12 @@ func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality) (*topo.Body,
 		return nil, false
 	}
 	body := brep.ReconstructBooleanBody(inputs)
-	if body == nil || !body.IsSolid() || len(body.Faces()) == 0 {
+	if body == nil || len(body.Faces()) == 0 || !validBooleanSolid(body) {
+		// Reconstruction can assemble a solid that is closed+manifold yet Euler-inadmissible
+		// (an oblique conic exit that crosses an operand CORNER splits its ellipse across two
+		// faces, doubling a loop → χ too large). Decline those to the exact faceted fallback;
+		// a CLEAN oblique cut (an ellipse bounding one hole per face) validates and rebuilds
+		// analytically (ADR-0056 Layer 4).
 		return nil, false
 	}
 	return body, true
