@@ -33,17 +33,7 @@ func bodyToSoup(b *topo.Body, q Quality) [][3]meshbool.Point {
 // boolean, which stays exact on the welded mesh. Triangles that collapse to a
 // degenerate (a sub-tolerance sliver) are dropped.
 func soupFromMesh(m *Mesh) [][3]meshbool.Point {
-	pos := weldPositions(m.Positions)
-	soup := make([][3]meshbool.Point, 0, m.TriangleCount())
-	for t := 0; t < m.TriangleCount(); t++ {
-		i, j, k := m.Indices[3*t], m.Indices[3*t+1], m.Indices[3*t+2]
-		tri := [3]meshbool.Point{meshbool.FromPoint3(pos[i]), meshbool.FromPoint3(pos[j]), meshbool.FromPoint3(pos[k])}
-		if tri[0].Equal(tri[1]) || tri[1].Equal(tri[2]) || tri[2].Equal(tri[0]) {
-			continue // welded to a degenerate sliver
-		}
-		soup = append(soup, tri)
-	}
-	return soup
+	return taggedSoupFromMesh(m, make([]int, m.TriangleCount())).Tris
 }
 
 // weldPositions snaps positions within a size-relative tolerance to a shared

@@ -20,30 +20,12 @@ const (
 // tears #2084. PRECONDITION: a and b are closed, outward-oriented, non-degenerate
 // meshes. Coplanar face pairs are conformed but their coplanar-keep selection is a
 // later layer.
+//
+// Boolean is the untagged entry point; it delegates to [BooleanTagged] with a
+// single-tag soup so the keep/coplanar/orient logic lives in exactly one place. The
+// result triangles are identical (same order) to the pre-tagging implementation.
 func Boolean(a, b [][3]Point, op Op) [][3]Point {
-	ga, gb := newFaceGrid(a), newFaceGrid(b)
-	aOut, bOut := coRefine(a, b, ga, gb)
-	var result [][3]Point
-	for _, f := range aOut {
-		if sameDir, coincident := coplanarPartner(f, b, gb); coincident {
-			if keepCoplanar(op, sameDir) {
-				result = append(result, f) // kept with a's outward normal
-			}
-			continue
-		}
-		if keepFromA(op, insideExact(centroid(f), b, gb)) {
-			result = append(result, f)
-		}
-	}
-	for _, f := range bOut {
-		if _, coincident := coplanarPartner(f, a, ga); coincident {
-			continue // a's copy already represents every coincident face; drop b's
-		}
-		if keepFromB(op, insideExact(centroid(f), a, ga)) {
-			result = append(result, orientFromB(op, f))
-		}
-	}
-	return result
+	return BooleanTagged(untagged(a), untagged(b), op).Tris
 }
 
 // keepCoplanar decides a face of a that is coincident with a face of b, by whether
