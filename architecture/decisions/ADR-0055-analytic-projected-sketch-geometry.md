@@ -144,9 +144,12 @@ lost/frozen source still shows its last analytic shape.
   `geom.Curve2`) is consumed by extrude, offset, arrangement and serialization, no re-fit, no second
   representation. A non-analytic projection (oblique conic, multi-edge silhouette loop) still
   offsets/renders as a polyline.
-- **Phase 2 (oblique conics).** Map an oblique projected circle to the existing `EllipticalArc`
-  entity (`entity_kind.go`), so oblique projections are analytic too; extend the extrude/offset paths
-  to ellipse segments.
+- **Phase 2 (oblique conics) — LANDED.** `geom.ProjectCurveToPlane` builds `EllipseFull2d` /
+  `EllipticalArc2d` for oblique circles/arcs (conjugate-diameter → principal-axis closed form);
+  `ProjectedCurve` carries them; serialization stores a compact `ellipse`/`ellipticalArc` descriptor.
+  So tilted projections are analytic and small on disk too. Offsetting an ellipse and extruding an
+  elliptical profile keep their polyline/faceted fallbacks for now (an ellipse's offset is not an
+  ellipse; the elliptical-cylinder extrude is a later feature).
 - **Phase 3 (concrete reference entities).** Migrate the `ProjectedCurve` wrapper to concrete
   reference-flagged `Line`/`Circle`/`Arc`/`EllipticalArc`/spline entities (the SHAPER/Inventor model),
   so projected geometry participates uniformly in constraints, offset and region tracing with no
