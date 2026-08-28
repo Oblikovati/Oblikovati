@@ -67,9 +67,13 @@ func formatFromExt(path string) (types.ExchangeFormat, error) {
 		return types.FormatOBJ, nil
 	case ".3mf":
 		return types.Format3MF, nil
+	case ".glb":
+		return types.FormatGLTF, nil
+	case ".gltf":
+		return "", fmt.Errorf("unsupported extension %q: glTF export writes a self-contained .glb (the .gltf JSON+bin form is not shipped in v1)", ext)
 	case ".step", ".stp":
 		return types.FormatSTEP, nil
 	default:
-		return "", fmt.Errorf("unsupported extension %q (want .stl|.obj|.3mf|.step)", ext)
+		return "", fmt.Errorf("unsupported extension %q (want .stl|.obj|.3mf|.glb|.step)", ext)
 	}
 }

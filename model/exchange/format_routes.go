@@ -84,6 +84,11 @@ func defaultFormatRoutes() *formatRouteSet {
 	for _, f := range []types.ExchangeFormat{types.FormatSTL, types.FormatOBJ, types.Format3MF} {
 		s.register(formatRoute{format: f, extensions: []string{"." + string(f)}, exportBodies: meshExportRoute(f)})
 	}
+	// glTF registers ONLY the .glb extension in v1 (R1-2): the encoder emits a
+	// self-contained GLB container; a .gltf destination is a typed error naming
+	// the supported extension. The route carries its own exporter because the
+	// per-body glTF path returns warnings (skipped empty bodies).
+	s.register(formatRoute{format: types.FormatGLTF, extensions: []string{".glb"}, exportBodies: gltfExportRoute})
 	s.register(formatRoute{format: types.FormatSTEP, extensions: []string{".step", ".stp"}, exportBodies: stepExportRoute})
 	s.registerDrawing(dwgDrawingDecoder{})
 	s.registerDrawing(dxfDrawingDecoder{})
@@ -104,6 +109,13 @@ func meshExportRoute(f types.ExchangeFormat) exportBodiesFunc {
 		data, tris, err := meshio.ExportBodies(f, bodies, res, opts)
 		return data, tris, nil, err
 	}
+}
+
+// gltfExportRoute adapts the per-body glTF/GLB encoder to the export capability. It is
+// separate from meshExportRoute because the glTF path returns warnings (skipped empty
+// bodies) and must not go through the merged-mesh ExportBodies path (R4-1).
+func gltfExportRoute(bodies []*topo.Body, res types.MeshResolution, opts exchange.TranslationOptions) ([]byte, int, []string, error) {
+	return meshio.ExportBodiesGLTF(bodies, res, opts)
 }
 
 // stepExportRoute adapts the STEP writer (exact B-rep; resolution ignored) to the export

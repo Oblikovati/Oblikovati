@@ -59,6 +59,30 @@ func TestFormatFromPathRoutesEveryRegisteredExtension(t *testing.T) {
 	}
 }
 
+// TestGLTFRouteHasExportCapability: the glTF route registers .glb with an export
+// capability and no decoder — the export-only v1 contract (R1-2).
+func TestGLTFRouteHasExportCapability(t *testing.T) {
+	r, ok := formatRoutes.byFormat[types.FormatGLTF]
+	if !ok {
+		t.Fatal("FormatGLTF has no registered route")
+	}
+	if r.exportBodies == nil {
+		t.Error("glTF route has no export capability")
+	}
+	if r.decoder != nil {
+		t.Error("glTF route carries a decoder; v1 is export-only")
+	}
+	if len(r.extensions) != 1 || r.extensions[0] != ".glb" {
+		t.Errorf("glTF extensions = %v, want [.glb] (R1-2)", r.extensions)
+	}
+	if f, ok := formatForExtension(".glb"); !ok || f != types.FormatGLTF {
+		t.Errorf(".glb resolves to (%q, %v), want FormatGLTF", f, ok)
+	}
+	if _, ok := formatForExtension(".gltf"); ok {
+		t.Error(".gltf resolves to a format; v1 registers only .glb (R1-2)")
+	}
+}
+
 // TestRegisterRejectsDuplicateFormatAndExtension is the decisive guard: a second route claiming an
 // already-registered format or extension panics at construction, so a copy-paste registration cannot
 // silently shadow another format.

@@ -74,6 +74,12 @@ func exportBodies(part *compdef.PartComponentDefinition, src, dst string, args [
 		return err
 	}
 	fmt.Fprintf(out, "exported %s to %s (%d triangles, %s resolution)\n", src, dst, result.TriangleCount, res.Normalized())
+	// Warnings (e.g. skipped empty bodies) are user-facing: print each on its
+	// own line after the summary, in the deterministic order the exporter
+	// produced them (CHG2-1).
+	for _, w := range result.Warnings {
+		fmt.Fprintf(out, "warning: %s\n", w)
+	}
 	return nil
 }
 

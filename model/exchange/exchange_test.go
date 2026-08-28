@@ -5,6 +5,8 @@ package exchange
 import (
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
 	"oblikovati.org/api/types"
@@ -50,6 +52,27 @@ func writeCubeSTL(t *testing.T, dir string, s float64) string {
 		t.Fatalf("write fixture: %v", err)
 	}
 	return path
+}
+
+// TestMeshExchangeGLTFCapability: Formats includes glTF; CanImport excludes it
+// (export-only honesty, R1-2); CanExport includes it.
+func TestMeshExchangeGLTFCapability(t *testing.T) {
+	me := MeshExchange{}
+	found := false
+	for _, f := range me.Formats() {
+		if f == types.FormatGLTF {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("Formats() does not include FormatGLTF")
+	}
+	if me.CanImport(types.FormatGLTF) {
+		t.Error("CanImport(gltf) = true; v1 is export-only and must not over-promise")
+	}
+	if !me.CanExport(types.FormatGLTF) {
+		t.Error("CanExport(gltf) = false; the exporter ships in v1")
+	}
 }
 
 func TestImportIntoMakesAWatertightMeshASolid(t *testing.T) {
@@ -152,5 +175,143 @@ func TestExportThenImportRoundTripsACylinderVolume(t *testing.T) {
 	// as a 0.5 cm cube (0.125 cm³) and the OBJ round-trip preserves that.
 	if want := 0.125; got < want-1e-4 || got > want+1e-4 {
 		t.Errorf("round-trip volume = %v, want %v cm³", got, want)
+	}
+}
+
+// TestExportFromGLTFWritesValidGLB: MeshExchange{}.ExportFrom with FormatGLTF
+// delegates to the canonical Export path and writes a valid GLB (CHG2-2).
+func TestExportFromGLTFWritesValidGLB(t *testing.T) {
+	dir := t.TempDir()
+	part := compdef.NewPartComponentDefinition()
+	src := writeCubeSTL(t, dir, 4)
+	if _, err := (MeshExchange{}).ImportInto(part, src, types.FormatSTL); err != nil {
+		t.Fatalf("seed import: %v", err)
+	}
+	dst := filepath.Join(dir, "box.glb")
+	res, err := (MeshExchange{}).ExportFrom(part, dst, types.FormatGLTF, types.ResolutionHigh)
+	if err != nil {
+		t.Fatalf("ExportFrom glb: %v", err)
+	}
+	if res.TriangleCount == 0 {
+		t.Errorf("triangle count = 0, want > 0")
+	}
+	data, err := os.ReadFile(dst)
+	if err != nil {
+		t.Fatalf("read %s: %v", dst, err)
+	}
+	if len(data) < 12 || string(data[0:4]) != "glTF" {
+		t.Fatalf("exported file is not a GLB: %d bytes, magic %q", len(data), data[0:4])
+	}
+}
+
+// TestExportFromGLTFRejectsGLTFDestination: MeshExchange{}.ExportFrom with
+// FormatGLTF to a .gltf path is a typed error naming .glb — the delegation
+// enforces the canonical .glb-only contract from the second entry point
+// (CHG2-2).
+func TestExportFromGLTFRejectsGLTFDestination(t *testing.T) {
+	dir := t.TempDir()
+	part := compdef.NewPartComponentDefinition()
+	src := writeCubeSTL(t, dir, 4)
+	if _, err := (MeshExchange{}).ImportInto(part, src, types.FormatSTL); err != nil {
+		t.Fatalf("seed import: %v", err)
+	}
+	dst := filepath.Join(dir, "box.gltf")
+	_, err := (MeshExchange{}).ExportFrom(part, dst, types.FormatGLTF, types.ResolutionHigh)
+	if err == nil || !strings.Contains(err.Error(), ".glb") {
+		t.Fatalf("ExportFrom .gltf err = %v, want a typed error naming .glb", err)
+	}
+	if _, statErr := os.Stat(dst); !os.IsNotExist(statErr) {
+		t.Errorf("ExportFrom(.gltf) created the destination despite the rejection")
+	}
+}
+
+// TestExportFromSTLWritesAtomically: MeshExchange{}.ExportFrom for STL writes
+// through the same atomic writeExportFile helper as Export — a pre-existing
+// destination is replaced via temp+rename and no temp files are left behind
+// (CHG2-3).
+func TestExportFromSTLWritesAtomically(t *testing.T) {
+	dir := t.TempDir()
+	part := compdef.NewPartComponentDefinition()
+	src := writeCubeSTL(t, dir, 4)
+	if _, err := (MeshExchange{}).ImportInto(part, src, types.FormatSTL); err != nil {
+		t.Fatalf("seed import: %v", err)
+	}
+	dst := filepath.Join(dir, "box.stl")
+	if err := os.WriteFile(dst, []byte("stale bytes"), 0o644); err != nil {
+		t.Fatalf("seed destination: %v", err)
+	}
+	res, err := (MeshExchange{}).ExportFrom(part, dst, types.FormatSTL, types.ResolutionHigh)
+	if err != nil {
+		t.Fatalf("ExportFrom stl: %v", err)
+	}
+	if res.TriangleCount == 0 {
+		t.Errorf("triangle count = 0, want > 0")
+	}
+	data, err := os.ReadFile(dst)
+	if err != nil {
+		t.Fatalf("read destination: %v", err)
+	}
+	if len(data) < 84 || string(data[0:5]) != "solid" && data[0] != 0 {
+		t.Errorf("destination not replaced with STL content: %d bytes", len(data))
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("read dir: %v", err)
+	}
+	for _, e := range entries {
+		if strings.Contains(e.Name(), ".tmp") {
+			t.Errorf("leftover temp file %q after successful ExportFrom", e.Name())
+		}
+	}
+}
+
+// TestExportFromSTLWriteFailureLeavesDestinationUntouched: a write failure
+// through ExportFrom (the rename over a read-only destination is denied on
+// Windows) must leave a pre-existing destination byte-for-byte unchanged and
+// return a typed error (CHG2-3 — the atomic write applies to the second
+// public entry point too). On POSIX, rename over a read-only file succeeds,
+// so the failure injection is Windows-only.
+func TestExportFromSTLWriteFailureLeavesDestinationUntouched(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("rename over a read-only destination succeeds on POSIX; failure injection is Windows-only (CHG-6 limitation)")
+	}
+	dir := t.TempDir()
+	part := compdef.NewPartComponentDefinition()
+	src := writeCubeSTL(t, dir, 4)
+	if _, err := (MeshExchange{}).ImportInto(part, src, types.FormatSTL); err != nil {
+		t.Fatalf("seed import: %v", err)
+	}
+	dst := filepath.Join(dir, "box.stl")
+	known := []byte("pre-existing destination bytes")
+	if err := os.WriteFile(dst, known, 0o644); err != nil {
+		t.Fatalf("seed destination: %v", err)
+	}
+	if err := os.Chmod(dst, 0o444); err != nil {
+		t.Fatalf("make destination read-only: %v", err)
+	}
+	defer func() { _ = os.Chmod(dst, 0o644) }()
+
+	_, err := (MeshExchange{}).ExportFrom(part, dst, types.FormatSTL, types.ResolutionHigh)
+	if err == nil {
+		t.Fatal("ExportFrom succeeded; want a typed write error")
+	}
+	if !strings.Contains(err.Error(), "rename over") {
+		t.Errorf("err = %q, want a typed rename error", err)
+	}
+	got, err := os.ReadFile(dst)
+	if err != nil {
+		t.Fatalf("read destination: %v", err)
+	}
+	if string(got) != string(known) {
+		t.Errorf("destination changed: got %q, want %q", got, known)
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("read dir: %v", err)
+	}
+	for _, e := range entries {
+		if strings.Contains(e.Name(), ".tmp") {
+			t.Errorf("leftover temp file %q after failed ExportFrom", e.Name())
+		}
 	}
 }

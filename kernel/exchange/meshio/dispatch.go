@@ -79,31 +79,38 @@ func importFileUnitMM(format types.ExchangeFormat, data []byte) (float64, []stri
 // format. It is the single format switch for export; the per-format encoders own the
 // byte emission. The triangle count returned is what was written.
 //
+// The legacy mesh formats (STL/OBJ/3MF) tessellate ONCE via [TessellateBodies] and
+// feed the same mesh to the encoder and the count — the per-body encoders
+// (EncodeBinarySTL/EncodeOBJ/Encode3MF) tessellate internally, so encoding and
+// counting separately would tessellate twice (CHG4-1). The file unit is the legacy
+// single-body default: 3MF declares the 3MF document unit default millimetre
+// (Encode3MF); STL/OBJ are unitless.
+//
+// glTF delegates to the per-body path [ExportBodiesGLTF] with a single-body slice and
+// zero-value options (the glTF path defaults the unit itself — see CHG3-2). Its
+// warnings (a skipped empty body) have nowhere to go in this 3-value signature, so
+// they are dropped here; callers that need them use [ExportBodiesGLTF] directly. A
+// single empty body errors with "no exportable bodies", which is correct for a
+// single empty body (CHG3-1).
+//
 // Example:
 //
 //	data, tris, err := meshio.ExportBody(types.FormatSTL, body, types.ResolutionHigh)
 func ExportBody(format types.ExchangeFormat, body *topo.Body, res types.MeshResolution) ([]byte, int, error) {
 	q := QualityFor(res)
 	switch format {
-	case types.FormatSTL:
-		data := EncodeBinarySTL(body, q)
-		return data, triangleCount(body, q), nil
-	case types.FormatOBJ:
-		data := EncodeOBJ(body, q)
-		return data, triangleCount(body, q), nil
-	case types.Format3MF:
-		data, err := Encode3MF(body, q)
-		return data, triangleCount(body, q), err
+	case types.FormatGLTF:
+		data, tris, _, err := ExportBodiesGLTF([]*topo.Body{body}, res, exchange.TranslationOptions{})
+		return data, tris, err
+	case types.FormatSTL, types.FormatOBJ, types.Format3MF:
+		records, err := TessellateBodies([]*topo.Body{body}, q)
+		if err != nil {
+			return nil, 0, err
+		}
+		return encodeMesh(format, records[0].Mesh, "millimeter")
 	default:
-		return nil, 0, fmt.Errorf("meshio: unsupported export format %q (want stl|obj|3mf)", format)
+		return nil, 0, fmt.Errorf("meshio: unsupported export format %q (want stl|obj|3mf|gltf)", format)
 	}
-}
-
-// triangleCount returns how many triangles a body tessellates to at quality q (the count
-// the encoders write).
-func triangleCount(body *topo.Body, q ops.Quality) int {
-	mesh, _ := ops.TessellateBody(body, q)
-	return mesh.TriangleCount()
 }
 
 // ExportBodies tessellates several bodies at the given resolution, merges them into one
@@ -114,16 +121,26 @@ func triangleCount(body *topo.Body, q ops.Quality) int {
 //
 //	data, tris, err := meshio.ExportBodies(types.FormatSTL, part.SurfaceBodies().All(), types.ResolutionMedium)
 func ExportBodies(format types.ExchangeFormat, bodies []*topo.Body, res types.MeshResolution, opts exchange.TranslationOptions) ([]byte, int, error) {
-	// STL and OBJ carry no unit, so they always use the millimetre convention (the
-	// universal mesh interchange unit) regardless of the document unit; only 3MF
-	// records — and thus honors — the document's unit.
+	// glTF is a per-body format (one mesh per body, one primitive per mesh) and
+	// has its own entry point — the merged path below would destroy the per-body
+	// identity glTF's node design needs (R4-1).
+	if format == types.FormatGLTF {
+		return nil, 0, fmt.Errorf("meshio: gltf export requires the per-body path (ExportBodiesGLTF)")
+	}
+	// The file unit is forced per format on a LOCAL copy so the caller's options
+	// are never mutated (R3-3): STL/OBJ are unitless — millimetre convention;
+	// only 3MF records — and thus honors — the document's unit.
+	local := opts
 	if format != types.Format3MF {
-		opts.FileUnit = "mm"
+		local.FileUnit = "mm"
 	}
 	q := QualityFor(res)
-	merged := mergeTessellations(bodies, q)
-	scaleMesh(merged, opts.ExportScale()) // database centimetres → the file unit
-	return encodeMesh(format, merged, opts.FileUnit)
+	merged, err := mergeTessellations(bodies, q)
+	if err != nil {
+		return nil, 0, err
+	}
+	scaleMesh(merged, local.ExportScale()) // database centimetres → the file unit
+	return encodeMesh(format, merged, local.FileUnit)
 }
 
 // encodeMesh encodes an already-tessellated mesh in the given format, returning the bytes
@@ -138,16 +155,64 @@ func encodeMesh(format types.ExchangeFormat, mesh *ops.Mesh, fileUnit string) ([
 		data, err := encode3MFMesh(mesh, threeMFUnitName(fileUnit))
 		return data, mesh.TriangleCount(), err
 	default:
-		return nil, 0, fmt.Errorf("meshio: unsupported export format %q (want stl|obj|3mf)", format)
+		return nil, 0, fmt.Errorf("meshio: unsupported export format %q (want stl|obj|3mf|gltf)", format)
 	}
 }
 
-// mergeTessellations tessellates each body at q and concatenates the meshes (offsetting
-// indices) so they export as one combined mesh.
-func mergeTessellations(bodies []*topo.Body, q ops.Quality) *ops.Mesh {
-	merged := &ops.Mesh{}
-	for _, b := range bodies {
+// BodyMesh is one body's tessellation record: the stable body identifier, the
+// derived stable label, and the tessellated mesh. It is the per-body unit the
+// glTF exporter consumes (R2-7/R4-1).
+//
+// Name is a DERIVED stable label ("Body<id>"), NOT a source display name: the
+// kernel's topo.Body carries no display-name surface (only ID/Kind/Lineage/
+// ReferenceKey), so the exporter cannot know a body's user-facing name.
+// Display-name plumbing from the model/occurrence layer into the kernel is a
+// recorded follow-up (change-review CHG-5); until it lands, exported names are
+// the collision-safe Body<id> labels.
+type BodyMesh struct {
+	ID   string
+	Name string
+	Mesh *ops.Mesh
+}
+
+// TessellateBodies tessellates each body at q, in input slice order (kernel
+// B-rep order, stable — R2-10). It is the SINGLE ownership point of
+// tessellation: the glTF branch consumes its records directly and never
+// merges; mergeTessellations is a pure merger over the same records, so every
+// mesh format tessellates exactly once (R4-1). A body that fails to tessellate
+// (or yields a nil mesh) is a typed error naming the body id — never a silent
+// skip (change-review CHG-3).
+//
+// Example:
+//
+//	meshes, err := meshio.TessellateBodies(bodies, meshio.QualityFor(types.ResolutionHigh))
+func TessellateBodies(bodies []*topo.Body, q ops.Quality) ([]BodyMesh, error) {
+	out := make([]BodyMesh, 0, len(bodies))
+	for i, b := range bodies {
+		if b == nil {
+			return nil, fmt.Errorf("tessellate: body at index %d is nil", i)
+		}
 		mesh, _ := ops.TessellateBody(b, q)
+		if mesh == nil {
+			return nil, fmt.Errorf("tessellate body %d: nil mesh", b.ID())
+		}
+		out = append(out, BodyMesh{ID: fmt.Sprintf("%d", b.ID()), Name: fmt.Sprintf("Body%d", b.ID()), Mesh: mesh})
+	}
+	return out, nil
+}
+
+// mergeTessellations is a PURE merger: it tessellates the bodies once via
+// [TessellateBodies] and concatenates the meshes (offsetting indices) so they
+// export as one combined mesh — the legacy STL/OBJ/3MF shape, byte-for-byte
+// unchanged (R4-1).
+func mergeTessellations(bodies []*topo.Body, q ops.Quality) (*ops.Mesh, error) {
+	merged := &ops.Mesh{}
+	records, err := TessellateBodies(bodies, q)
+	if err != nil {
+		return nil, err
+	}
+	for _, bm := range records {
+		mesh := bm.Mesh
 		base := len(merged.Positions)
 		merged.Positions = append(merged.Positions, mesh.Positions...)
 		merged.Normals = append(merged.Normals, mesh.Normals...)
@@ -155,5 +220,5 @@ func mergeTessellations(bodies []*topo.Body, q ops.Quality) *ops.Mesh {
 			merged.Indices = append(merged.Indices, base+idx)
 		}
 	}
-	return merged
+	return merged, nil
 }
