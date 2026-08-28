@@ -2,13 +2,17 @@
 
 package sketch
 
-import "oblikovati.org/math"
+import (
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
+)
 
 // Projection links model geometry into a sketch as reference geometry that updates
 // when the source changes. The model side is reached through a seam — [PointSource]
 // / [CurveSource] — so the sketch never depends on the B-rep kernel directly; the
 // kernel's vertices/edges implement these in M07 (the same seam discipline used for
-// reference keys). Projected geometry is construction/reference by default.
+// reference keys). Projected geometry is reference geometry: grounded, but a first-class
+// curve profiles and constraints use natively (ADR-0055 phase 3).
 
 // PointSource is a model entity that yields a 3D position to project (e.g. a topo
 // vertex). SourceID is a stable identity used to recognize the source across recompute
@@ -26,6 +30,15 @@ type PointSource interface {
 type CurveSource interface {
 	SourceID() string
 	SamplePoints() ([]math.Point3, bool)
+}
+
+// AnalyticCurveSource is the optional [CurveSource] capability that yields the source edge's EXACT
+// analytic curve, so the projection stays analytic — a projected circle is a circle, an arc an arc
+// — instead of the sampled polyline SamplePoints returns (ADR-0055). A single model edge implements
+// it; a multi-edge cut/silhouette loop does not (it has no one analytic curve) and falls back to
+// SamplePoints.
+type AnalyticCurveSource interface {
+	SourceCurve() (geom.Curve3, bool)
 }
 
 // ProjectedPoint is a sketch point projected from a model vertex. It owns a fixed
@@ -85,75 +98,129 @@ func (p *ProjectedPoint) Update() {
 // (the "break link" / include-without-associativity option).
 func (p *ProjectedPoint) BreakLink() { p.linked = false }
 
-// ProjectedCurve is a sketch curve projected from a model edge (or cut edge). points is the sampled
-// polyline; shape is its analytic form (a projected line/arc/circle projects to one — Inventor keeps
-// them analytic), re-derived from points on every Update, so a projected arc draws smooth and offsets
-// as a concentric arc rather than a faceted chain.
-type ProjectedCurve struct {
-	id     ID
+// Projection is the associative link from a model edge to the concrete grounded reference entity it
+// drives in the sketch (ADR-0055 phase 3). Unlike the old ProjectedCurve wrapper it is NOT itself an
+// entity: the sketch carries a real reference Line/Circle/Arc/Ellipse/EllipticalArc/Spline (in
+// s.ents and its typed collection, grounded and driven), so every consumer — constraints, offset,
+// profiles, extrude — uses it natively with no projected-curve special case. The Projection
+// re-derives that entity's geometry from the source on Update, and persists the source link.
+type Projection struct {
 	source CurveSource
+	entity Entity // the concrete grounded reference entity this projection drives
 	plane  Plane
-	points []math.Point2
-	shape  projectedShape
 	linked bool
 	// srcKind/srcID persist the source's identity for save/reload + rebind (see ProjectedPoint).
 	srcKind, srcID string
 }
 
-// EntityID implements [Entity].
-func (c *ProjectedCurve) EntityID() ID { return c.id }
+// Entity returns the concrete grounded reference entity the projection drives.
+func (p *Projection) Entity() Entity { return p.entity }
 
-// Points returns the cached sketch-space polyline.
-func (c *ProjectedCurve) Points() []math.Point2 {
-	out := make([]math.Point2, len(c.points))
-	copy(out, c.points)
+// SourceID returns the source identity, or "" once the link is broken.
+func (p *Projection) SourceID() string {
+	if !p.linked {
+		return ""
+	}
+	return p.source.SourceID()
+}
+
+// Linked reports whether the projection still tracks its source.
+func (p *Projection) Linked() bool { return p.linked }
+
+// BreakLink detaches the projection from its source, freezing the current reference entity.
+func (p *Projection) BreakLink() { p.linked = false }
+
+// SourceDescriptor returns the (kind, id) a host uses to rebuild this projection's live source after
+// a reload; an empty kind means there is nothing to rebind (the projection stays frozen).
+func (p *Projection) SourceDescriptor() (kind, id string) { return p.srcKind, p.srcID }
+
+// Rebind attaches a freshly built live source to a projection restored frozen, making it associative
+// again; the next UpdateProjections re-projects from it.
+func (p *Projection) Rebind(src CurveSource) { p.source, p.linked = src, true }
+
+// Update re-drives the reference entity from the current source. It prefers the ANALYTIC path (the
+// source's exact curve projected onto the plane, keeping a circle a circle — ADR-0055) and only
+// samples a source with no analytic curve. Geometry is written IN PLACE when the curve type is
+// unchanged, so the entity's id and points survive; a type change or a lost reference is handled by
+// rebuilding or freezing.
+func (p *Projection) Update(s *Sketch) {
+	if !p.linked {
+		return
+	}
+	if c2, ok := projectSourceCurve(p.plane, p.source); ok {
+		if setReferenceGeometry(p.entity, c2) {
+			return
+		}
+		p.rebuild(s, s.addReferenceCurve(c2))
+		return
+	}
+	pts, ok := p.source.SamplePoints()
+	if !ok {
+		p.linked = false
+		return
+	}
+	proj := projectPointsToPlane(p.plane, pts)
+	if sp, isSpline := p.entity.(*Spline); isSpline && setReferenceSplinePoints(sp, proj) {
+		return
+	}
+	p.rebuild(s, s.addReferencePolyline(proj))
+}
+
+// rebuild swaps in a freshly built reference entity when Update cannot drive the old one in place
+// (its curve type changed). The old entity and its points are dropped; the new entity takes the
+// projection. A recompute type change is rare (an edge projected head-on then obliquely), and a
+// constraint bound to the old entity is necessarily invalidated by the geometry change anyway.
+func (p *Projection) rebuild(s *Sketch, next Entity) {
+	if next == nil {
+		p.linked = false
+		return
+	}
+	s.deleteEntity(p.entity)
+	p.entity = next
+}
+
+// projectSourceCurve projects the source's exact analytic 3D curve onto the plane, keeping its type
+// (circle→circle, arc→arc, line→line, oblique conic→ellipse). ok is false when the source is not an
+// [AnalyticCurveSource], its reference is lost, or the projection is edge-on/free-form.
+func projectSourceCurve(plane Plane, src CurveSource) (geom.Curve2, bool) {
+	as, ok := src.(AnalyticCurveSource)
+	if !ok {
+		return nil, false
+	}
+	c3, ok := as.SourceCurve()
+	if !ok {
+		return nil, false
+	}
+	return geom.ProjectCurveToPlane(sketchPlaneToGeom(plane), c3)
+}
+
+// projectPointsToPlane maps sampled model-space points onto the sketch plane's 2D frame.
+func projectPointsToPlane(plane Plane, pts []math.Point3) []math.Point2 {
+	out := make([]math.Point2, len(pts))
+	for i, q := range pts {
+		out[i] = plane.ToSketch(q)
+	}
 	return out
 }
 
-// SourceID returns the source identity, or "" once the link is broken.
-func (c *ProjectedCurve) SourceID() string {
-	if !c.linked {
-		return ""
+// setReferenceSplinePoints drives a reference spline's points in place, returning false when the
+// projected point count changed (the caller rebuilds the spline).
+func setReferenceSplinePoints(sp *Spline, pts []math.Point2) bool {
+	if len(sp.Points) != len(pts) {
+		return false
 	}
-	return c.source.SourceID()
+	for i, p := range pts {
+		sp.Points[i].SetPosition(p)
+	}
+	return true
 }
 
-// IsReference reports that projected geometry is reference/construction geometry.
-func (c *ProjectedCurve) IsReference() bool { return true }
-
-// Linked reports whether the projection still tracks its source.
-func (c *ProjectedCurve) Linked() bool { return c.linked }
-
-// Update re-projects the source's sample points onto the sketch plane. A lost reference
-// breaks the link, freezing the last polyline.
-func (c *ProjectedCurve) Update() {
-	if !c.linked {
-		return
-	}
-	src, ok := c.source.SamplePoints()
-	if !ok {
-		c.linked = false
-		return
-	}
-	c.points = c.points[:0]
-	for _, q := range src {
-		c.points = append(c.points, c.plane.ToSketch(q))
-	}
-	c.shape = fitProjectedShape(c.points)
+// sketchPlaneToGeom builds the geom.Plane whose (u,v) frame is the sketch plane's (xAxis, yAxis), so
+// geom.ProjectCurveToPlane projects into the sketch's own 2D coordinate system.
+func sketchPlaneToGeom(p Plane) geom.Plane {
+	pl, _ := geom.NewPlaneFromAxes(p.origin, p.xAxis.AsVector(), p.yAxis.AsVector())
+	return pl
 }
-
-// RenderPolyline returns the curve as a smooth polyline for drawing and hit-testing: the analytic
-// shape sampled finely when the projection is a line/arc/circle (so a projected arc is not the 16
-// source facets), else the raw projected points.
-func (c *ProjectedCurve) RenderPolyline() []math.Point2 {
-	if p := c.shape.polyline(); p != nil {
-		return p
-	}
-	return c.Points()
-}
-
-// BreakLink detaches the projection from its source, freezing the current polyline.
-func (c *ProjectedCurve) BreakLink() { c.linked = false }
 
 // ProjectPoint projects a model vertex into the sketch as a fixed, constrainable reference
 // point and returns the associative projected point. Projecting a source the sketch already
@@ -190,59 +257,79 @@ func (s *Sketch) projectionOfSource(kind, id string) (*ProjectedPoint, bool) {
 	return nil, false
 }
 
-// curveProjectionOfSource is [Sketch.projectionOfSource] for projected curves, with the same
-// identity rule.
-func (s *Sketch) curveProjectionOfSource(kind, id string) (*ProjectedCurve, bool) {
+// projectionOfCurveSource finds an existing curve projection built from the same source, with the
+// same (kind, id) identity rule as [Sketch.projectionOfSource].
+func (s *Sketch) projectionOfCurveSource(kind, id string) (*Projection, bool) {
 	if kind == "" || id == "" {
 		return nil, false
 	}
-	for _, e := range s.ents {
-		if c, ok := e.(*ProjectedCurve); ok && c.srcKind == kind && c.srcID == id {
-			return c, true
+	for _, p := range s.projections {
+		if p.srcKind == kind && p.srcID == id {
+			return p, true
 		}
 	}
 	return nil, false
 }
 
-// ProjectCurve projects a model edge into the sketch as reference geometry. Like
-// [Sketch.ProjectPoint] it returns an existing projection of the same source rather than
-// duplicating it (#2016).
-func (s *Sketch) ProjectCurve(src CurveSource) *ProjectedCurve {
-	if c, ok := s.curveProjectionOfSource(curveSourceKind(src), src.SourceID()); ok {
-		return c
+// ProjectCurve projects a model edge into the sketch as a concrete grounded reference entity and
+// returns the associative projection that drives it. Like [Sketch.ProjectPoint] it returns an
+// existing projection of the same source rather than duplicating it (#2016).
+func (s *Sketch) ProjectCurve(src CurveSource) *Projection {
+	kind, id := curveSourceKind(src), src.SourceID()
+	if p, ok := s.projectionOfCurveSource(kind, id); ok {
+		return p
 	}
-	c := &ProjectedCurve{
-		id: nextID(), source: src, plane: s.plane, linked: true,
-		srcKind: curveSourceKind(src), srcID: src.SourceID(),
+	p := &Projection{source: src, plane: s.plane, linked: true, srcKind: kind, srcID: id}
+	p.entity = s.buildProjectionEntity(src)
+	s.projections = append(s.projections, p)
+	return p
+}
+
+// buildProjectionEntity resolves the source's current geometry and builds the concrete reference
+// entity: the source's exact analytic curve when it has one (a circle → a reference Circle, ADR-0055),
+// otherwise a reference Spline through its sampled polyline.
+func (s *Sketch) buildProjectionEntity(src CurveSource) Entity {
+	if c2, ok := projectSourceCurve(s.plane, src); ok {
+		if e := s.addReferenceCurve(c2); e != nil {
+			return e
+		}
 	}
-	c.Update()
-	s.add(c)
-	return c
+	pts, _ := src.SamplePoints() // resolved now; a later lost reference freezes via Update
+	return s.addReferencePolyline(projectPointsToPlane(s.plane, pts))
+}
+
+// Projections returns the sketch's curve projections — the associative links that drive its concrete
+// grounded reference entities (ADR-0055 phase 3), in creation order. The driven entities are also in
+// [Sketch.Entities]; this is the view a host uses to reach the source link a projection carries.
+func (s *Sketch) Projections() []*Projection {
+	out := make([]*Projection, len(s.projections))
+	copy(out, s.projections)
+	return out
 }
 
 // ProjectCutEdges projects the edges where the sketch plane cuts the model. The cut
 // edges are computed by the kernel (M07) and supplied as sources; the sketch maps
 // them to its plane and adds them as reference geometry.
-func (s *Sketch) ProjectCutEdges(sources []CurveSource) []*ProjectedCurve {
-	out := make([]*ProjectedCurve, 0, len(sources))
+func (s *Sketch) ProjectCutEdges(sources []CurveSource) []*Projection {
+	out := make([]*Projection, 0, len(sources))
 	for _, src := range sources {
 		out = append(out, s.ProjectCurve(src))
 	}
 	return out
 }
 
-// UpdateProjections re-projects every linked projected entity from its source — the hook a
-// recompute calls so projected (include) geometry tracks the model as it changes. With
-// self-resolving sources (keyed by reference) this re-binds the projection to the freshly
-// rebuilt B-rep, making projection associative.
+// UpdateProjections re-projects every linked projection from its source — the hook a recompute calls
+// so projected (include) geometry tracks the model as it changes. With self-resolving sources (keyed
+// by reference) this re-binds the projection to the freshly rebuilt B-rep, making projection
+// associative.
 func (s *Sketch) UpdateProjections() {
 	for _, e := range s.ents {
-		switch v := e.(type) {
-		case *ProjectedPoint:
-			v.Update()
-		case *ProjectedCurve:
+		if v, ok := e.(*ProjectedPoint); ok {
 			v.Update()
 		}
+	}
+	for _, p := range s.projections {
+		p.Update(s)
 	}
 	s.updateCloudAnchors() // re-project scan-anchored points so they follow their clouds (#645)
 }
@@ -275,10 +362,6 @@ func (p *ProjectedPoint) SourceDescriptor() (kind, id string) { return p.srcKind
 // associative again; the next UpdateProjections re-projects from it.
 func (p *ProjectedPoint) Rebind(src PointSource) { p.source, p.linked = src, true }
 
-// SourceDescriptor / Rebind for a projected curve mirror ProjectedPoint's.
-func (c *ProjectedCurve) SourceDescriptor() (kind, id string) { return c.srcKind, c.srcID }
-func (c *ProjectedCurve) Rebind(src CurveSource)              { c.source, c.linked = src, true }
-
 // RestoreProjectedPoint rebuilds a projected point frozen at pos, pinning the anchor's id so
 // constraints that reference it survive, and keeping the source descriptor for a later Rebind.
 // The host re-attaches the live source after load (compdef.rebindSketchProjections, #1268).
@@ -290,10 +373,78 @@ func (s *Sketch) RestoreProjectedPoint(anchorID ID, pos math.Point2, srcKind, sr
 	return p
 }
 
-// RestoreProjectedCurve rebuilds a projected curve frozen at the given polyline, pinning its id
-// and keeping the source descriptor for a later Rebind.
-func (s *Sketch) RestoreProjectedCurve(id ID, pts []math.Point2, srcKind, srcID string) *ProjectedCurve {
-	c := &ProjectedCurve{id: id, plane: s.plane, points: pts, shape: fitProjectedShape(pts), linked: false, srcKind: srcKind, srcID: srcID}
-	s.add(c)
-	return c
+// RestoreProjection rebuilds a curve projection frozen at its persisted reference entity: the
+// concrete entity is passed already built (with its ids pinned by the restore codec), and this pairs
+// it with a frozen Projection carrying the source descriptor for a later Rebind (#1268, ADR-0055).
+func (s *Sketch) RestoreProjection(entity Entity, srcKind, srcID string) *Projection {
+	p := &Projection{entity: entity, plane: s.plane, linked: false, srcKind: srcKind, srcID: srcID}
+	s.projections = append(s.projections, p)
+	return p
+}
+
+// analyticCurveData encodes a reference entity's analytic 2D form as a compact shape tag + params for
+// persistence (ADR-0055): line[ax,ay,bx,by], circle[cx,cy,r], arc[cx,cy,r,start,sweep]. ok=false for
+// a form with no compact encoding yet (the caller then persists the sampled polyline).
+func analyticCurveData(c geom.Curve2) (shape string, params []float64, ok bool) {
+	switch k := c.(type) {
+	case geom.LineSegment2d:
+		return "line", []float64{float64(k.StartPoint.X), float64(k.StartPoint.Y), float64(k.EndPoint.X), float64(k.EndPoint.Y)}, true
+	case geom.Circle2d:
+		return "circle", []float64{float64(k.Center.X), float64(k.Center.Y), k.Radius}, true
+	case geom.Arc2d:
+		return "arc", []float64{float64(k.Center.X), float64(k.Center.Y), k.Radius, k.StartAngle, k.SweepAngle}, true
+	case geom.EllipseFull2d:
+		return "ellipse", []float64{float64(k.Center.X), float64(k.Center.Y),
+			float64(k.MajorAxis.X()), float64(k.MajorAxis.Y()), k.MajorRadius, k.MinorRadius}, true
+	case geom.EllipticalArc2d:
+		return "ellipticalArc", []float64{float64(k.Center.X), float64(k.Center.Y),
+			float64(k.MajorAxis.X()), float64(k.MajorAxis.Y()), k.MajorRadius, k.MinorRadius, k.StartAngle, k.SweepAngle}, true
+	default:
+		return "", nil, false
+	}
+}
+
+// analyticCurveFromData rebuilds the geom.Curve2 a projected curve persisted via analyticCurveData,
+// or ok=false when the shape/params do not describe one.
+func analyticCurveFromData(shape string, p []float64) (geom.Curve2, bool) {
+	switch shape {
+	case "line":
+		if len(p) != 4 {
+			return nil, false
+		}
+		return geom.NewLineSegment2d(math.P2(math.Scalar(p[0]), math.Scalar(p[1])), math.P2(math.Scalar(p[2]), math.Scalar(p[3]))), true
+	case "circle":
+		if len(p) != 3 {
+			return nil, false
+		}
+		return geom.NewCircle2d(math.P2(math.Scalar(p[0]), math.Scalar(p[1])), p[2]), true
+	case "arc":
+		if len(p) != 5 {
+			return nil, false
+		}
+		return geom.NewArc2d(math.P2(math.Scalar(p[0]), math.Scalar(p[1])), p[2], p[3], p[4]), true
+	default:
+		return conicCurveFromData(shape, p)
+	}
+}
+
+// conicCurveFromData rebuilds a projected ellipse / elliptical arc persisted by analyticCurveData
+// (ADR-0055 phase 2). ellipse=[cx,cy,mx,my,majorR,minorR]; ellipticalArc adds [start,sweep].
+func conicCurveFromData(shape string, p []float64) (geom.Curve2, bool) {
+	switch shape {
+	case "ellipse":
+		if len(p) != 6 {
+			return nil, false
+		}
+		e, err := geom.NewEllipseFull2d(math.P2(math.Scalar(p[0]), math.Scalar(p[1])), math.V2(math.Scalar(p[2]), math.Scalar(p[3])), p[4], p[5])
+		return e, err == nil
+	case "ellipticalArc":
+		if len(p) != 8 {
+			return nil, false
+		}
+		e, err := geom.NewEllipticalArc2d(math.P2(math.Scalar(p[0]), math.Scalar(p[1])), math.V2(math.Scalar(p[2]), math.Scalar(p[3])), p[4], p[5], p[6], p[7])
+		return e, err == nil
+	default:
+		return nil, false
+	}
 }

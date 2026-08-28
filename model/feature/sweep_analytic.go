@@ -42,15 +42,14 @@ func analyticTorusSweep(prof *sketch.Profile, path *sketch.Path3D, feat string) 
 	if !path.IsClosed() || len(prof.InnerLoops()) != 0 {
 		return nil
 	}
-	circle := circleLoop(prof.OuterLoop())
-	if circle == nil {
-		return nil
-	}
-	fit, ok := fitPathCircle(path.Points())
+	_, minor, ok := circleLoop(prof.OuterLoop())
 	if !ok {
 		return nil
 	}
-	minor := float64(circle.CurveRadius())
+	fit, okFit := fitPathCircle(path.Points())
+	if !okFit {
+		return nil
+	}
 	if minor <= 0 || minor >= fit.Radius {
 		return nil
 	}

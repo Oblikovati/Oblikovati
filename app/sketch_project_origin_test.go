@@ -63,15 +63,13 @@ func TestProjectGeometryToolProjectsDatums(t *testing.T) {
 	}
 
 	sk := s.ActiveSketch()
-	var points, curves int
+	var points int
 	for _, e := range sk.Entities() {
-		switch e.(type) {
-		case *sketch.ProjectedPoint:
+		if _, ok := e.(*sketch.ProjectedPoint); ok {
 			points++
-		case *sketch.ProjectedCurve:
-			curves++
 		}
 	}
+	curves := len(sk.Projections()) // curve projections drive concrete reference entities (ADR-0055)
 	// 1 point = the origin centre, projected once: CreateSketch already auto-projected it, and
 	// picking it again reuses that projection instead of stacking a second reference point on
 	// the same spot (#2016);

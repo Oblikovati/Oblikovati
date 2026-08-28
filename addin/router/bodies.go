@@ -5,11 +5,13 @@ package router
 import (
 	"fmt"
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -279,15 +281,11 @@ func wirePolylines(b *topo.Body) []wire.WirePolyline {
 }
 
 func appendUseSamples(pts []float64, u topo.Use) []float64 {
-	const per = 16
-	c := u.Edge.Geometry()
-	lo, hi := c.Domain()
-	for i := 0; i <= per; i++ {
-		t := float64(i) / per
-		if u.Reversed {
-			t = 1 - t
-		}
-		p := c.PointAt(lo + (hi-lo)*t)
+	samples := geom.SampleCurve3(u.Edge.Geometry(), 16) // shared sampler (ADR-0055)
+	if u.Reversed {
+		slices.Reverse(samples)
+	}
+	for _, p := range samples {
 		pts = append(pts, float64(p.X), float64(p.Y), float64(p.Z))
 	}
 	return pts

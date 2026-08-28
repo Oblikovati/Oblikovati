@@ -34,7 +34,8 @@ func (s *Sketch) ConstrainOffsetSingle(source, offset Entity) int {
 
 // constrainOffsetPair adds the one geometric constraint that keeps an offset associative to its
 // source: parallel for a line, concentric for a circle/arc. It returns 0 (no constraint) when the
-// source is neither — a projected curve, a spline — since those have no matching native binding.
+// source is neither — a spline, including a non-analytic reference spline projection — since those
+// have no matching native binding.
 func (s *Sketch) constrainOffsetPair(src, off Entity) int {
 	if sl, ok := src.(*Line); ok {
 		if ol, ok := off.(*Line); ok {

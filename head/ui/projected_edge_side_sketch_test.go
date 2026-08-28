@@ -29,7 +29,7 @@ func TestProjectedModelEdgeOnSideSketchDraws(t *testing.T) {
 	edge := projectableEdgeOnto(t, def, body, side.Plane())
 	side.ProjectCurve(compdef.NewEdgeRefSource(def, string(edge.ReferenceKey())))
 
-	if got := projectedCurveOverlay(side, nil, nil); len(got) == 0 {
+	if got := sketchOverlay(side, nil, nil, false); len(got) == 0 {
 		t.Fatal("a model edge projected onto a side sketch must draw a polyline (#1496)")
 	}
 }

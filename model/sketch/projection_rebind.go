@@ -12,40 +12,41 @@ type ProjectionSourceResolver interface {
 	CurveProjectionSource(kind, id string, plane Plane) (CurveSource, bool)
 }
 
-// sourceRebindable is the sealed rebind capability: each projected entity
-// re-attaches its own source through the resolver, so no consumer needs to
-// know which projected kinds exist (#1624, audit I1).
-type sourceRebindable interface {
-	rebindFrom(res ProjectionSourceResolver, plane Plane)
+// RebindProjections re-attaches every restored projection's live source through the resolver, so
+// projections become associative again after a reload; the next UpdateProjections re-projects from
+// the live sources (#1268). Point projections (still entities) and curve projections (the Projection
+// records that drive concrete reference entities, ADR-0055 phase 3) are both handled here, so the
+// host needs no per-kind dispatch. A descriptor the resolver cannot resolve is left frozen.
+func (s *Sketch) RebindProjections(res ProjectionSourceResolver) {
+	for _, e := range s.ents {
+		if p, ok := e.(*ProjectedPoint); ok {
+			rebindPoint(p, res)
+		}
+	}
+	for _, p := range s.projections {
+		rebindCurve(p, res, s.plane)
+	}
 }
 
-func (p *ProjectedPoint) rebindFrom(res ProjectionSourceResolver, _ Plane) {
+// rebindPoint re-attaches a projected point's live source; a legacy row without a descriptor stays
+// frozen.
+func rebindPoint(p *ProjectedPoint, res ProjectionSourceResolver) {
 	kind, id := p.SourceDescriptor()
 	if kind == "" {
-		return // legacy row without a descriptor stays frozen
+		return
 	}
 	if src, ok := res.PointProjectionSource(kind, id); ok {
 		p.Rebind(src)
 	}
 }
 
-func (c *ProjectedCurve) rebindFrom(res ProjectionSourceResolver, plane Plane) {
-	kind, id := c.SourceDescriptor()
+// rebindCurve re-attaches a curve projection's live source.
+func rebindCurve(p *Projection, res ProjectionSourceResolver, plane Plane) {
+	kind, id := p.SourceDescriptor()
 	if kind == "" {
 		return
 	}
 	if src, ok := res.CurveProjectionSource(kind, id, plane); ok {
-		c.Rebind(src)
-	}
-}
-
-// RebindProjection re-attaches e's live projection source after a reload,
-// making the projection associative again; non-projected entities and
-// unresolvable descriptors are left frozen.
-//
-//	sketch.RebindProjection(entity, partDef, sk.Plane())
-func RebindProjection(e Entity, res ProjectionSourceResolver, plane Plane) {
-	if r, ok := e.(sourceRebindable); ok {
-		r.rebindFrom(res, plane)
+		p.Rebind(src)
 	}
 }

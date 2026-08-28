@@ -590,10 +590,9 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 	if s.ToolPicksModelReferences() {
 		list.Items = append(list.Items, toolHoverHighlight(s)...)
 	}
-	// Projected curves are drawn here (sketchOverlay misses them), tinted for hover/selection so a
-	// projected perimeter gives the same feedback as any other curve — the piece the offset workflow
-	// needed to see what it was about to pick (#2158 follow-up).
-	list.Items = append(list.Items, onTop(projectedCurveOverlay(s.ActiveSketch(), s.IsSelectedEntity, cand))...)
+	// A projected reference curve is a native line/circle/arc now (ADR-0055 phase 3), so the
+	// sketchOverlay above already draws it — tinted for hover/selection like any other curve, the
+	// feedback the offset workflow needs to see what it is about to pick (#2158 follow-up).
 	dims := s.SketchDimensions()
 	list.Items = append(list.Items, onTop(dimensionLines(plane, dims))...)
 	if item, ok := pointsOverlay(plane, s.ActiveSketch(), pointMarkerPixels*cam.WorldPerPixel()); ok {

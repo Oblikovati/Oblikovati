@@ -13,9 +13,9 @@ import (
 const chainJoinTol = 1e-6 // tol:calibrated — offset chain endpoint connectivity
 
 // curveEnds returns a curve entity's two endpoints (in sketch space) and whether it is inherently
-// closed (a circle, or a projected/closed curve that returns to its start). ok is false for a
-// non-curve entity. Projected curves are included, so Loop Select works on a projected perimeter
-// that Paths() (which reads only native line/arc geometry) does not report (#2158 follow-up).
+// closed (a circle, or a closed spline). ok is false for a non-curve entity. A projected reference
+// curve is a native Line/Arc/Circle/Spline (ADR-0055), so Loop Select works on a projected perimeter
+// through these cases with no projected-curve special path (#2158 follow-up).
 func curveEnds(e Entity) (a, b math.Point2, closed, ok bool) {
 	switch t := e.(type) {
 	case *Line:
@@ -24,12 +24,6 @@ func curveEnds(e Entity) (a, b math.Point2, closed, ok bool) {
 		return t.Start.Position(), t.End.Position(), false, true
 	case *Circle:
 		return t.Center.Position(), t.Center.Position(), true, true
-	case *ProjectedCurve:
-		p := t.RenderPolyline()
-		if len(p) < 2 {
-			return math.Point2{}, math.Point2{}, false, false
-		}
-		return p[0], p[len(p)-1], polylineReturnsToStart(p), true
 	case *Spline:
 		if len(t.Points) >= 2 {
 			return t.Points[0].Position(), t.Points[len(t.Points)-1].Position(), t.Closed, true

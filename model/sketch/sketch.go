@@ -172,6 +172,10 @@ type Sketch struct {
 	refPts      []*Point              // fixed reference points (projected anchors): constrainable but not solved
 	cloudPts    []*cloudAnchoredPoint // sketch points anchored on scan points (datum-cloud provenance, #645)
 	ptArena     pointArena            // block allocator backing newPoint (one alloc per block, not per vertex)
+	// projections are the associative links from model edges to the concrete grounded reference
+	// entities they drive (ADR-0055 phase 3). The driven entities live in ents/the typed collections
+	// like any geometry; a projection re-derives one on UpdateProjections and persists its source.
+	projections []*Projection
 
 	lines         *Lines
 	arcs          *Arcs
@@ -380,8 +384,14 @@ func (s *Sketch) SetParameters(ps *param.Parameters) {
 func (s *Sketch) Constraints() []Constraint {
 	out := s.geomCons.All()
 	// Every arc carries an internal circularity constraint keeping its End on the circle
-	// (#1419); the solver consumes it like any other, but it is not a user-facing relation.
+	// (#1419); the solver consumes it like any other, but it is not a user-facing relation. A
+	// grounded reference arc (a projected edge) is held fixed by its refPts, so its circularity
+	// would be a redundant all-fixed equation that trips the over-constrained check — skip it
+	// (ADR-0055 phase 3).
 	for _, a := range s.arcs.items {
+		if a.reference {
+			continue
+		}
 		out = append(out, a.circularity)
 		for _, ft := range a.filletTangents {
 			out = append(out, ft) // fillet tangency to each blended edge (#69)

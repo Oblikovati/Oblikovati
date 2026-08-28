@@ -11,17 +11,18 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
-// projectedOf returns the first projected point and curve in a sketch (nil when absent).
-func projectedOf(sk *sketch.Sketch) (*sketch.ProjectedPoint, *sketch.ProjectedCurve) {
+// projectedOf returns the first projected point (an entity) and curve projection (a Projection
+// driving a reference entity, ADR-0055 phase 3) in a sketch (nil when absent).
+func projectedOf(sk *sketch.Sketch) (*sketch.ProjectedPoint, *sketch.Projection) {
 	var pp *sketch.ProjectedPoint
-	var pc *sketch.ProjectedCurve
 	for _, e := range sk.Entities() {
-		switch v := e.(type) {
-		case *sketch.ProjectedPoint:
+		if v, ok := e.(*sketch.ProjectedPoint); ok {
 			pp = v
-		case *sketch.ProjectedCurve:
-			pc = v
 		}
+	}
+	var pc *sketch.Projection
+	if ps := sk.Projections(); len(ps) > 0 {
+		pc = ps[0]
 	}
 	return pp, pc
 }
