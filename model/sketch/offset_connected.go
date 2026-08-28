@@ -159,7 +159,8 @@ func radialScale(center, p math.Point2, scale float64) math.Point2 {
 }
 
 // analyticSegOf reduces a supported entity to a line or circular-arc form; it errors for a curve with
-// no analytic form (a spline, or an obliquely projected arc that fits as an ellipse).
+// no analytic form (a spline, or an obliquely projected arc that fits as an ellipse). A projected
+// reference line/arc is a native Line/Arc (ADR-0055), so it needs no projected-curve case.
 func analyticSegOf(e Entity) (analyticSeg, error) {
 	switch v := e.(type) {
 	case *Line:
@@ -169,42 +170,16 @@ func analyticSegOf(e Entity) (analyticSeg, error) {
 			center: v.Center.Position(), radius: float64(v.Radius()), ccw: v.CounterClockwise,
 			p0: v.Start.Position(), p1: v.End.Position(),
 		}, nil
-	case *ProjectedCurve:
-		return projectedAnalyticSeg(v)
 	default:
 		return analyticSeg{}, fmt.Errorf("offset: curve is not analytic (%T)", e)
 	}
 }
 
-// projectedAnalyticSeg reduces a projected curve to its analytic line/arc form (Inventor keeps a
-// projected edge analytic). A full projected circle cannot join a multi-entity chain, and a non-
-// analytic (shapeNone) projection has no analytic offset, so both error.
-func projectedAnalyticSeg(pc *ProjectedCurve) (analyticSeg, error) {
-	sh := pc.shape
-	switch sh.kind {
-	case shapeLine:
-		return analyticSeg{isLine: true, p0: sh.a, p1: sh.b}, nil
-	case shapeArc:
-		return analyticSeg{
-			center: sh.center, radius: sh.radius, ccw: sh.sweep > 0,
-			p0: arcPointAt(sh.center, sh.radius, sh.start),
-			p1: arcPointAt(sh.center, sh.radius, sh.start+sh.sweep),
-		}, nil
-	default:
-		return analyticSeg{}, fmt.Errorf("offset: curve is not analytic (projected shape kind %d)", sh.kind)
-	}
-}
-
-// circleCenterRadius returns the centre and radius of a full-circle entity (a Circle or a projected
-// circle), reporting false for anything else.
+// circleCenterRadius returns the centre and radius of a full-circle entity, reporting false for
+// anything else. A projected circle is a native Circle (ADR-0055), so it matches the Circle case.
 func circleCenterRadius(e Entity) (math.Point2, float64, bool) {
-	switch v := e.(type) {
-	case *Circle:
+	if v, ok := e.(*Circle); ok {
 		return v.Center.Position(), float64(v.Radius), true
-	case *ProjectedCurve:
-		if v.shape.kind == shapeCircle {
-			return v.shape.center, v.shape.radius, true
-		}
 	}
 	return math.Point2{}, 0, false
 }

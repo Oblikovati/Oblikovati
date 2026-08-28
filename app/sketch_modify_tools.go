@@ -221,11 +221,12 @@ func (t *SketchOffsetTool) ToggleMenuOption(label string) {
 	}
 }
 
-// Accepts highlights the curves OffsetEntity handles: line, circle, arc, and a projected reference
-// curve (a projected face perimeter or edge, offset as a polyline — #2158 follow-up). Uses the
-// entity's Kind() capability via entityKindIs, not a type switch, per the sketch-entity seam (#1624).
+// Accepts highlights the curves OffsetEntity handles: line, circle, arc. A projected reference curve
+// (a projected face perimeter or edge, #2158) is a native line/circle/arc now (ADR-0055 phase 3), so
+// it is accepted through those kinds. Uses the entity's Kind() capability via entityKindIs, not a
+// type switch, per the sketch-entity seam (#1624).
 func (t *SketchOffsetTool) Accepts(e sketch.Entity) bool {
-	return entityKindIs(e, sketch.LineKind, sketch.CircleKind, sketch.ArcKind, sketch.ProjectedCurveKind)
+	return entityKindIs(e, sketch.LineKind, sketch.CircleKind, sketch.ArcKind)
 }
 func (t *SketchOffsetTool) CanCommit() bool { return t.ready() }
 func (t *SketchOffsetTool) Cancel(*Session) { t.reset(); t.placed = false; t.sk = nil }

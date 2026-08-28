@@ -52,8 +52,8 @@ func TestProjectCutEdgesOverWire(t *testing.T) {
 	}
 	var ents wire.EnumerateEntitiesResult
 	call(t, r, s, "sketch.entities", `{"sketchIndex":1}`, &ents)
-	if got := countKind(ents.Entities, "projectedCurve"); got != len(proj.Created) {
-		t.Errorf("enumerated %d projectedCurve, want %d", got, len(proj.Created))
+	if got := countReferenceCurves(ents.Entities); got != len(proj.Created) {
+		t.Errorf("enumerated %d reference curves, want %d", got, len(proj.Created))
 	}
 }
 
@@ -87,8 +87,8 @@ func TestProjectSilhouetteOverWire(t *testing.T) {
 	}
 	var ents wire.EnumerateEntitiesResult
 	call(t, r, s, "sketch.entities", `{"sketchIndex":1}`, &ents)
-	if got := countKind(ents.Entities, "projectedCurve"); got != 1 {
-		t.Errorf("enumerated %d projectedCurve, want 1 silhouette", got)
+	if got := countReferenceCurves(ents.Entities); got != 1 {
+		t.Errorf("enumerated %d reference curves, want 1 silhouette", got)
 	}
 }
 

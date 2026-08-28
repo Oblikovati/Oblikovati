@@ -70,7 +70,6 @@ func (i *SketchImage) Kind() EntityKind    { return ImageKind }
 func (t *TextBox) Kind() EntityKind        { return TextKind }
 func (f *FillRegion) Kind() EntityKind     { return FillRegionKind }
 func (p *ProjectedPoint) Kind() EntityKind { return ProjectedPointKind }
-func (c *ProjectedCurve) Kind() EntityKind { return ProjectedCurveKind }
 
 // A spline's kind depends on its fit flag in either dimension: interpolation
 // splines are "spline", approximating ones "controlPointSpline" — the wire

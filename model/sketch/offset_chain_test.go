@@ -16,7 +16,7 @@ func TestConnectedChainFromProjectedLoop(t *testing.T) {
 	corners := []gmath.Point2{gmath.P2(0, 0), gmath.P2(4, 0), gmath.P2(4, 4), gmath.P2(0, 4)}
 	var first Entity
 	for i := range 4 {
-		pc := s.RestoreProjectedCurve(nextID(), []gmath.Point2{corners[i], corners[(i+1)%4]}, "edge", "E")
+		pc := s.addReferencePolyline([]gmath.Point2{corners[i], corners[(i+1)%4]})
 		if i == 0 {
 			first = pc
 		}

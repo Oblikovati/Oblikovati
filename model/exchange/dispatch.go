@@ -70,16 +70,81 @@ func Export(part *compdef.PartComponentDefinition, path string, format types.Exc
 	// drift (#1631, audit I8).
 	route, ok := formatRoutes.byFormat[format]
 	if !ok || route.exportBodies == nil {
-		return ExportResult{}, fmt.Errorf("export: unsupported format %q (want stl|obj|3mf|step)", format)
+		return ExportResult{}, fmt.Errorf("export: unsupported format %q (want stl|obj|3mf|gltf|step)", format)
+	}
+	// glTF v1 is GLB-only: the encoder emits a self-contained GLB container,
+	// and a JSON .gltf destination is a typed error naming the supported
+	// extension (R1-2, change-review CHG-2). The CLI guard alone was not
+	// enough — the direct model API must enforce it too.
+	if format == types.FormatGLTF && strings.ToLower(filepath.Ext(path)) != ".glb" {
+		return ExportResult{}, fmt.Errorf("export %q: glTF requires a .glb destination (JSON .gltf output is not supported in this version)", path)
 	}
 	data, tris, warns, err := route.exportBodies(bodies, res, exportOptions(part, path))
 	if err != nil {
 		return ExportResult{}, fmt.Errorf("export %q: %w", path, err)
 	}
-	if err := os.WriteFile(path, data, 0o644); err != nil {
-		return ExportResult{}, fmt.Errorf("export: write %q: %w", path, err)
+	if err := writeExportFile(path, data); err != nil {
+		return ExportResult{}, err
 	}
 	return ExportResult{TriangleCount: tris, Warnings: warns}, nil
+}
+
+// writeExportFile writes data to path atomically: the bytes go to a temp file
+// in the destination's directory, then the temp file is renamed over the
+// destination. A failure at any step removes the temp file and leaves a
+// pre-existing destination untouched — no truncate-then-write window
+// (R4-9, change-review CHG-6). The temp file's mode is set BEFORE the rename:
+// a pre-existing destination keeps its mode (stat + Chmod), a new destination
+// gets 0o644 — os.CreateTemp creates 0600, which would otherwise replace a
+// 0644 destination with a 0600 file (CHG3-3).
+func writeExportFile(path string, data []byte) error {
+	tmpName, err := writeExportTemp(path, data)
+	if err != nil {
+		return err
+	}
+	if err := setExportTempMode(tmpName, path); err != nil {
+		os.Remove(tmpName)
+		return err
+	}
+	if err := os.Rename(tmpName, path); err != nil {
+		os.Remove(tmpName)
+		return fmt.Errorf("export: rename over %q: %w", path, err)
+	}
+	return nil
+}
+
+// writeExportTemp writes data to a temp file beside path and closes it; on any
+// failure the temp is removed and the destination untouched.
+func writeExportTemp(path string, data []byte) (string, error) {
+	tmp, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".tmp*")
+	if err != nil {
+		return "", fmt.Errorf("export: create temp for %q: %w", path, err)
+	}
+	tmpName := tmp.Name()
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		os.Remove(tmpName)
+		return "", fmt.Errorf("export: write %q: %w", path, err)
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpName)
+		return "", fmt.Errorf("export: close %q: %w", path, err)
+	}
+	return tmpName, nil
+}
+
+// setExportTempMode gives the temp file the destination's mode before the rename:
+// a pre-existing destination keeps its mode (stat + Chmod), a new destination gets
+// 0o644 (os.CreateTemp creates 0600, which would downgrade a 0644 file — CHG3-3).
+func setExportTempMode(tmpName, path string) error {
+	mode := os.FileMode(0o644)
+	if info, err := os.Stat(path); err == nil {
+		mode = info.Mode().Perm()
+	}
+	if err := os.Chmod(tmpName, mode); err != nil {
+		return fmt.Errorf("export: chmod temp for %q: %w", path, err)
+	}
+	return nil
 }
 
 // exportOptions is exportUnits plus the product name a format that carries one writes. The name

@@ -46,7 +46,7 @@ func projectRefs(part *compdef.PartComponentDefinition, sk *sketch.Sketch, refs 
 // interactive tool does (#1262).
 func projectRef(part *compdef.PartComponentDefinition, sk *sketch.Sketch, ref string) (sketch.Entity, bool) {
 	if part.EdgeKeyResolves(ref) {
-		return sk.ProjectCurve(compdef.NewEdgeRefSource(part, ref)), true
+		return sk.ProjectCurve(compdef.NewEdgeRefSource(part, ref)).Entity(), true
 	}
 	if part.VertexKeyResolves(ref) {
 		return sk.ProjectPoint(compdef.NewVertexRefSource(part, ref)), true
@@ -55,13 +55,13 @@ func projectRef(part *compdef.PartComponentDefinition, sk *sketch.Sketch, ref st
 		return sk.ProjectPoint(compdef.NewWorkPointRefSource(part, feature.WorkRef(ref))), true
 	}
 	if part.WorkAxisKeyResolves(ref) {
-		return sk.ProjectCurve(compdef.NewWorkAxisRefSource(part, feature.WorkRef(ref))), true
+		return sk.ProjectCurve(compdef.NewWorkAxisRefSource(part, feature.WorkRef(ref))).Entity(), true
 	}
 	if part.WorkPlaneKeyResolves(ref) {
 		if !part.WorkPlaneIntersectsSketch(feature.WorkRef(ref), sk.Plane()) {
 			return nil, false // parallel to the sketch: no intersection line to project
 		}
-		return sk.ProjectCurve(compdef.NewWorkPlaneRefSource(part, feature.WorkRef(ref), sk.Plane())), true
+		return sk.ProjectCurve(compdef.NewWorkPlaneRefSource(part, feature.WorkRef(ref), sk.Plane())).Entity(), true
 	}
 	return nil, false
 }
@@ -79,7 +79,7 @@ func projectCutEdges(_ *app.Session, part *compdef.PartComponentDefinition, in w
 	}
 	created := make([]uint64, 0, len(sources))
 	for _, c := range sk.ProjectCutEdges(sources) {
-		created = append(created, uint64(c.EntityID()))
+		created = append(created, uint64(c.Entity().EntityID()))
 	}
 	return wire.ProjectGeometryResult{Created: created, Healthy: true}, nil
 }
@@ -100,5 +100,5 @@ func projectSilhouette(_ *app.Session, part *compdef.PartComponentDefinition, in
 		return wire.ProjectGeometryResult{}, fmt.Errorf("sketch.projectSilhouette: face %q has no silhouette on the sketch plane", in.FaceRef)
 	}
 	c := sk.ProjectCurve(src)
-	return wire.ProjectGeometryResult{Created: []uint64{uint64(c.EntityID())}, Healthy: true}, nil
+	return wire.ProjectGeometryResult{Created: []uint64{uint64(c.Entity().EntityID())}, Healthy: true}, nil
 }

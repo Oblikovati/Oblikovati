@@ -36,8 +36,8 @@ type analyticSeg struct {
 // whose normal is the path tangent), which both lift the same 2D coordinates onto a frame and raise
 // them by the same span — so one dispatch serves both.
 func analyticPrismOrNil(loop sketch.Loop, plane sketch.Plane, sp span, feat string) *topo.Body {
-	if c := circleLoop(loop); c != nil {
-		if cyl := buildAnalyticCylinder(c, plane, sp, feat); cyl != nil {
+	if center, radius, ok := circleLoop(loop); ok {
+		if cyl := buildAnalyticCylinder(center, radius, plane, sp, feat); cyl != nil {
 			return cyl
 		}
 	}
@@ -96,7 +96,9 @@ func rawProfileSegments(ents []sketch.ProfileEntity) ([]analyticSeg, bool) {
 }
 
 // rawSegmentOf reduces one entity to a line or arc segment via the sketch-entity capabilities. ok is
-// false for anything that is not a line or arc.
+// false for anything that is not a line or arc. A projected reference line/arc is a native
+// sketch.Line/sketch.Arc (ADR-0055 phase 3), so it flows through the same ShapedEntity path with no
+// projected-curve special case.
 func rawSegmentOf(e sketch.Entity) (analyticSeg, bool) {
 	shaped, isShaped := e.(sketch.ShapedEntity)
 	if !isShaped {

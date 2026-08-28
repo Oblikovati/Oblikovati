@@ -60,7 +60,7 @@ func TestProjectGeometryPicksModelEdgeInSketch(t *testing.T) {
 	if len(curves)-before != 1 {
 		t.Fatalf("committing projected %d curves, want 1", len(curves)-before)
 	}
-	if got := distinctPointCount(curves[len(curves)-1].Points()); got < 2 {
+	if got := distinctPointCount(projectionRefPoints(curves[len(curves)-1])); got < 2 {
 		t.Errorf("projected curve is degenerate (%d distinct points), want a real segment", got)
 	}
 }
@@ -126,17 +126,20 @@ func projectableEdge(t *testing.T, part *compdef.PartComponentDefinition, body *
 	return nil
 }
 
-func projectedCurves(sk *sketch.Sketch) []*sketch.ProjectedCurve {
-	var out []*sketch.ProjectedCurve
-	for _, e := range sk.Entities() {
-		if c, ok := e.(*sketch.ProjectedCurve); ok {
-			out = append(out, c)
-		}
+func projectedCurves(sk *sketch.Sketch) []*sketch.Projection { return sk.Projections() }
+
+func countProjectedCurves(sk *sketch.Sketch) int { return len(sk.Projections()) }
+
+// projectionRefPoints returns a curve projection's reference-entity defining points (ADR-0055
+// phase 3): a projected straight edge drives a reference Line whose two endpoints define its segment.
+func projectionRefPoints(c *sketch.Projection) []math.Point2 {
+	pts := sketch.DefiningPoints(c.Entity())
+	out := make([]math.Point2, len(pts))
+	for i, p := range pts {
+		out[i] = p.Position()
 	}
 	return out
 }
-
-func countProjectedCurves(sk *sketch.Sketch) int { return len(projectedCurves(sk)) }
 
 func distinctPointCount(pts []math.Point2) int {
 	if len(pts) == 0 {

@@ -39,7 +39,6 @@ var (
 	_ ShapedEntity = (*OffsetSpline)(nil)
 	_ ShapedEntity = (*BlockInstance)(nil)
 	_ ShapedEntity = (*ProjectedPoint)(nil)
-	_ ShapedEntity = (*ProjectedCurve)(nil)
 
 	_ RadiusedEntity = (*Circle)(nil)
 	_ RadiusedEntity = (*Arc)(nil)
@@ -76,7 +75,6 @@ func (f *FixedSpline) ShapePoints() []math.Point2    { return append([]math.Poin
 func (o *OffsetSpline) ShapePoints() []math.Point2   { return nil }
 func (b *BlockInstance) ShapePoints() []math.Point2  { return nil }
 func (p *ProjectedPoint) ShapePoints() []math.Point2 { return []math.Point2{p.Position()} }
-func (c *ProjectedCurve) ShapePoints() []math.Point2 { return c.Points() }
 
 func (c *Circle) ShapeRadius() float64 { return float64(c.Radius) }
 func (a *Arc) ShapeRadius() float64    { return float64(a.Radius()) }

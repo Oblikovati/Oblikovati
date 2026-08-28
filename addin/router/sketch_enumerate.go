@@ -29,6 +29,7 @@ func enumerateEntities(s *app.Session, part *compdef.PartComponentDefinition, in
 			ID:             uint64(e.EntityID()),
 			Kind:           string(kind),
 			Construction:   isConstruction(e),
+			Reference:      isReference(e),
 			Points:         pts,
 			Radius:         radius,
 			ReferenceKey:   entityReferenceKey(guid, e),
@@ -134,7 +135,9 @@ var wireSketchEntityKinds = map[sketch.EntityKind]types.SketchEntityKind{
 	sketch.FixedSplineKind:        types.SketchEntityFixedSpline,
 	sketch.OffsetSplineKind:       types.SketchEntityOffsetSpline,
 	sketch.ProjectedPointKind:     types.SketchEntityProjectedPoint,
-	sketch.ProjectedCurveKind:     types.SketchEntityProjectedCurve,
+	// A projected CURVE enumerates as its concrete kind (line/circle/arc) with the reference flag
+	// set, because it IS a native reference entity now (ADR-0055 phase 3) — there is no distinct
+	// projectedCurve entity kind to map.
 }
 
 func wireSketchEntityKind(k sketch.EntityKind) types.SketchEntityKind {
@@ -291,6 +294,14 @@ func advancedDimensionKind(k sketch.DimKind) types.DimensionConstraintKind {
 func isConstruction(e sketch.Entity) bool {
 	c, ok := e.(interface{ IsConstruction() bool })
 	return ok && c.IsConstruction()
+}
+
+// isReference reports whether a curve entity is projected/included reference geometry — the flag
+// that identifies a projected edge/face perimeter now that it enumerates under its concrete kind
+// (line/circle/arc) rather than a distinct projectedCurve kind (ADR-0055 phase 3).
+func isReference(e sketch.Entity) bool {
+	r, ok := e.(interface{ IsReference() bool })
+	return ok && r.IsReference()
 }
 
 // ids collects the entity ids of the given entities (nil-safe).

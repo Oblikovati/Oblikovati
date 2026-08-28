@@ -80,8 +80,16 @@ func TestProjectGeometryProjectsCircularCapPerimeter(t *testing.T) {
 	if len(curves)-before != 1 {
 		t.Fatalf("projecting the circular cap made %d curves, want 1 (its perimeter)", len(curves)-before)
 	}
-	if got := distinctPointCount(curves[len(curves)-1].Points()); got < 3 {
-		t.Errorf("projected cap perimeter is degenerate (%d distinct points), want a real circle", got)
+	// The cap perimeter is a circle, so its projection is now a concrete reference *Circle (ADR-0055
+	// phase 3): a real circle is a positive radius, not "3 distinct points". A non-analytic perimeter
+	// would fall back to a reference spline, checked by its distinct-point count instead.
+	last := curves[len(curves)-1].Entity()
+	if c, ok := last.(*sketch.Circle); ok {
+		if float64(c.Radius) <= 0 {
+			t.Errorf("projected cap perimeter has non-positive radius %g, want a real circle", float64(c.Radius))
+		}
+	} else if got := distinctPointCount(projectionRefPoints(curves[len(curves)-1])); got < 3 {
+		t.Errorf("projected cap perimeter is degenerate (%T, %d distinct points), want a real circle", last, got)
 	}
 }
 
