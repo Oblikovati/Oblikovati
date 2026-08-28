@@ -200,10 +200,20 @@ default** — `reconstructionCutover = false` — because two frontiers remain:
      result, and drop the piston test's gate-aware skip. The gate stays off in this commit pending
      that decision.
 
-4. **Curved SSI-edge welding (e.g. cyl ∪ box).** Reconstruction recovers the analytic surfaces
-   but the plane∩cylinder ellipse/line edges do not yet weld watertight; Layer 4 (exact SSI conics
-   welded consistently on both incident faces) closes it. Reconstruction declines it (stays
-   faceted) — safe.
+4. **Curved SSI-edge welding — LANDED for the ellipse (Layer 4).** A clean oblique plane∩cylinder
+   cut (a cylinder bored through a box at an angle, cyl ∪/− box) now reconstructs analytically. Two
+   findings closed it, and neither was the welding premise this ADR originally assumed:
+   - The ellipse ALREADY welds. `geom.IntersectSurfacesAnalytic` canonicalises the plane∩cylinder
+     ellipse (the plane is always the first argument), so both incident faces synthesize the
+     bit-identical `EllipseFull`, and the endpoints+midpoint `edgeKey` fuses their copies into one
+     `topo.Edge`. `weldableSSICurve` simply widens to admit `EllipseFull`/`EllipticalArc`.
+   - The real defect was ARC-EXTENT, not welding. A closed conic restricted to two endpoints is
+     ambiguous between the direct sub-arc and its wrapping complement; the raw `[t0,t1]` stored the
+     wrong half (SlottedScrew's slanted bore removed ~5 mm³ too little). `orientRunEdge` now picks
+     the arc the run's INTERIOR vertex lies on (the analogue of `matchSubArc`'s three-point arc).
+   `reconstructBoolean` self-validates Euler-admissibility, so the one case still left faceted — an
+   oblique exit that crosses an operand CORNER, splitting its ellipse across two faces into an
+   inadmissible χ — declines safely. Cone∩plane parabola/hyperbola remain future work.
 
 ## Alternatives considered and rejected
 

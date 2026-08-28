@@ -3,6 +3,8 @@
 package ops
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/meshbool"
@@ -39,17 +41,16 @@ func intersectionRunEdge(run meshbool.ArrangementRun, surface, neighbor geom.Sur
 
 // weldableSSICurve reports whether a synthesized surface-surface intersection curve is one
 // reconstruction can reuse and close watertight: a LINE (plane∩plane, plane∩cylinder along a
-// ruling) or a CIRCLE (cylinder/cone/sphere cut by a plane ⊥ its axis). These are exact and,
-// crucially, identical to the same curve computed from the neighbour face, so the two incident
-// faces' copies WELD. An oblique conic — an EllipseFull (cylinder∩tilted plane), parabola, or
-// hyperbola — is exact as a curve but not yet welded consistently across both faces (each face
-// samples it independently), so a face bounded by one closes to a VALID but wrong-volume solid
-// (the #2167-sibling disjoint/oblique cut, e.g. SlottedScrew's slanted-hex bore exit). Until the
-// numeric-SSI weld layer lands (ADR-0056 Layer 4), reconstruction DECLINES those runs so the
-// caller falls back to the exact faceted boolean — no wrong geometry, no regression.
+// ruling), a CIRCLE (cylinder/cone/sphere cut by a plane ⊥ its axis), or an ELLIPSE
+// (cylinder∩tilted plane). geom.IntersectSurfacesAnalytic canonicalises the plane∩cylinder
+// ellipse — the plane operand is always the first argument, so both incident faces synthesize
+// the BIT-IDENTICAL EllipseFull — and the endpoints+midpoint weld key (curved_stitch.edgeKey)
+// therefore fuses the two faces' copies into ONE topo.Edge (ADR-0056 Layer 4). The remaining
+// closed forms with no consistent weld yet (cone∩plane parabola/hyperbola) still fall through
+// to the exact faceted boolean.
 func weldableSSICurve(c geom.Curve3) bool {
 	switch c.(type) {
-	case geom.Line, geom.Circle:
+	case geom.Line, geom.Circle, geom.EllipseFull, geom.EllipticalArc:
 		return true
 	default:
 		return false
@@ -101,7 +102,11 @@ func runMatchTol(run meshbool.ArrangementRun, verts []meshbool.Point, res geom.R
 
 // orientRunEdge restricts c to the run's extent, oriented so the loop walks it start to
 // end. A closed run (endpoints coincide) spans the whole domain, swept in the run's
-// direction; an open run runs between its endpoint parameters.
+// direction; an open run runs between its endpoint parameters. For a PERIODIC curve (a
+// closed ellipse) the two endpoints leave the arc ambiguous — the boundary is either the
+// direct [t0,t1] interval or its wrapping complement — so the run's interior vertex fixes
+// which arc, and thus the sweep sign and extent (ADR-0056 Layer 4; the analogue of
+// matchSubArc's three-point arc for original circle edges).
 func orientRunEdge(c geom.Curve3, run meshbool.ArrangementRun, verts []meshbool.Point, tol float64) brep.ReconEdge {
 	n := len(run.Verts)
 	p0, pn := verts[run.Verts[0]].Round(), verts[run.Verts[n-1]].Round()
@@ -110,7 +115,34 @@ func orientRunEdge(c geom.Curve3, run meshbool.ArrangementRun, verts []meshbool.
 	}
 	t0, _ := geom.CurveParamAtPoint3(c, p0)
 	t1, _ := geom.CurveParamAtPoint3(c, pn)
+	if _, periodic := c.(geom.EllipseFull); periodic {
+		t1 = ellipseArcEndThroughMid(c, t0, t1, verts[run.Verts[n/2]].Round())
+	}
 	return brep.ReconEdge{Curve: c, T0: t0, T1: t1}
+}
+
+// ellipseArcEndThroughMid returns the end parameter (a signed offset from t0, so the
+// sweep sign is right) of the sub-arc of a closed ellipse that RUNS THROUGH the interior
+// vertex mid. A closed conic on [0,1] restricted to two endpoints spans either the forward
+// interval or its wrapping complement; the mid vertex disambiguates. Without this the raw
+// [t0,t1] stores the wrong half (SlottedScrew's slanted bore exit removed too little).
+func ellipseArcEndThroughMid(c geom.Curve3, t0, t1 float64, mid math.Point3) float64 {
+	tm, _ := geom.CurveParamAtPoint3(c, mid)
+	forward := frac01(t1 - t0) // increasing-param distance t0→t1
+	toMid := frac01(tm - t0)   // increasing-param distance t0→mid
+	if toMid <= forward {
+		return t0 + forward // the forward sub-arc holds the mid vertex
+	}
+	return t0 - (1 - forward) // the boundary runs the wrapping complement (negative sweep)
+}
+
+// frac01 maps x to its fractional part in [0,1).
+func frac01(x float64) float64 {
+	x -= stdmath.Floor(x)
+	if x < 0 {
+		x++
+	}
+	return x
 }
 
 // closedRunEdge spans a closed curve's whole domain, swept in the run's direction (set

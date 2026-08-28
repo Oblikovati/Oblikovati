@@ -11,20 +11,20 @@ import (
 	m "oblikovati.org/math"
 )
 
-// The disjoint-region cut layer (ADR-0056). A boolean whose exact soup is correct can still
-// reconstruct to a VALID-but-wrong-volume analytic B-rep when a boundary run is an OBLIQUE
-// conic surface-surface intersection (a cylinder cut by a tilted plane = ellipse): the ellipse
-// is exact as a curve, but each incident face samples it independently, so the two copies do
-// not weld and the closed solid encloses the wrong region (SlottedScrew's slanted-hex bore
-// exit removed ~5 mm³ too little). weldableSSICurve confines SSI reuse to LINES and CIRCLES —
-// exact and identical from both faces — so reconstruction DECLINES an oblique-conic run and the
-// caller falls back to the exact faceted boolean. These lock that boundary: an oblique cut
-// declines, while a perpendicular cut (circular exits) — even across a disjoint void — rebuilds.
+// The corner-crossing decline boundary (ADR-0056 Layer 4). A CLEAN oblique cut — a cylinder
+// bored through a box at an angle, one ellipse per pierced face — now reconstructs analytically
+// (the ellipse SSI edge welds, and orientRunEdge picks the arc half the run traces; see
+// meshbool_reconstruct_ssi_weld_test.go). What still declines is a cut whose ellipse crosses an
+// operand CORNER: the exit ellipse splits across two adjacent faces, doubling a face loop into an
+// Euler-inadmissible assembly (χ too large for one shell). reconstructBoolean self-validates and
+// declines that, so the caller falls back to the exact faceted boolean — no wrong geometry. These
+// lock the boundary: a corner-crossing oblique cut declines; a perpendicular cut (circular exits),
+// even across a disjoint void, rebuilds.
 
-// TestReconstructDeclinesObliqueConicCut: a cylinder cut through a box at an angle needs an
-// ELLIPSE at each face exit. Reconstruction must decline (leaving the caller on the exact
-// faceted path) rather than emit a valid-but-wrong analytic solid.
-func TestReconstructDeclinesObliqueConicCut(t *testing.T) {
+// TestReconstructDeclinesCornerCrossingObliqueCut: an oblique bore whose exit ellipse crosses a box
+// corner (the tool axis leaves through the top AND a side) assembles an Euler-inadmissible B-rep.
+// Reconstruction must decline (leaving the caller on the exact faceted path) rather than emit it.
+func TestReconstructDeclinesCornerCrossingObliqueCut(t *testing.T) {
 	box, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(1, 1, 1), "box")
 	if err != nil {
 		t.Fatalf("box: %v", err)
@@ -34,7 +34,7 @@ func TestReconstructDeclinesObliqueConicCut(t *testing.T) {
 		t.Fatalf("cyl: %v", err)
 	}
 	if _, ok := reconstructBoolean(box, oblique, meshbool.Difference, DefaultQuality()); ok {
-		t.Fatal("oblique-conic cut reconstructed; must decline (ellipse SSI does not weld — ADR-0056 Layer 4)")
+		t.Fatal("corner-crossing oblique cut reconstructed; must decline (Euler-inadmissible — ADR-0056 Layer 4)")
 	}
 	// Declining loses nothing: the exact faceted boolean still produces a valid solid that
 	// removes real material (the tool axis pierces the box, so the result is strictly smaller
