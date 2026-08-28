@@ -400,6 +400,55 @@ func TestGLTFAllTrianglesDropped(t *testing.T) {
 	}
 }
 
+// TestGLTFDegenerateBodySkippedNotFatal: a body whose triangles are all dropped
+// by sanitization is skipped with a warning, exactly like an empty body — it
+// must NOT fail a multi-body batch. The valid body in the same batch still
+// exports (CHG-8: the empty-skip and degenerate-skip behave the same).
+func TestGLTFDegenerateBodySkippedNotFatal(t *testing.T) {
+	good := gltfTestMesh(
+		[]math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)},
+		[]math.Vector3{math.V3(0, 0, 1), math.V3(0, 0, 1), math.V3(0, 0, 1)},
+		[]int{0, 1, 2},
+	)
+	degenerate := gltfTestMesh(
+		[]math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0)}, // collinear → zero area
+		[]math.Vector3{math.V3(0, 0, 1), math.V3(0, 0, 1), math.V3(0, 0, 1)},
+		[]int{0, 1, 2},
+	)
+	gb, warns, err := sanitizeGLTFBodyAll(
+		[]BodyMesh{gltfBodyMesh("1", "good", good), gltfBodyMesh("2", "deg", degenerate)}, 0.01)
+	if err != nil {
+		t.Fatalf("sanitizeGLTFBodyAll: %v", err)
+	}
+	if len(gb) != 1 {
+		t.Fatalf("bodies = %d, want 1 (the degenerate body skipped, the valid body kept)", len(gb))
+	}
+	if len(warns) != 1 || !strings.Contains(warns[0], "body 2") || !strings.Contains(warns[0], "no valid geometry") {
+		t.Errorf("warnings = %v, want one naming body 2 with no valid geometry", warns)
+	}
+}
+
+// TestGLTFAllBodiesDegenerateErrors: when EVERY body drops to no geometry the
+// export has nothing to write and errors like the all-empty case (CHG-8), rather
+// than emitting an empty GLB.
+func TestGLTFAllBodiesDegenerateErrors(t *testing.T) {
+	degenerate := gltfTestMesh(
+		[]math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0)}, // collinear
+		[]math.Vector3{math.V3(0, 0, 1), math.V3(0, 0, 1), math.V3(0, 0, 1)},
+		[]int{0, 1, 2},
+	)
+	gb, warns, err := sanitizeGLTFBodyAll([]BodyMesh{gltfBodyMesh("1", "deg", degenerate)}, 0.01)
+	if err != nil {
+		t.Fatalf("sanitizeGLTFBodyAll: %v", err)
+	}
+	if len(gb) != 0 {
+		t.Fatalf("bodies = %d, want 0 (all degenerate)", len(gb))
+	}
+	if len(warns) != 1 {
+		t.Errorf("warnings = %v, want one for the skipped body", warns)
+	}
+}
+
 // TestGLTFEmptyBodySkip: an empty body is skipped with a warning; a valid body
 // still exports (R3-5/R3-6).
 func TestGLTFEmptyBodySkip(t *testing.T) {

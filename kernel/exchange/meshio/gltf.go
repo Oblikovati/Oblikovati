@@ -71,9 +71,17 @@ func encodeGLTFBodies(bodies []*topo.Body, q ops.Quality, opts exchange.Translat
 	if err != nil {
 		return nil, 0, nil, err
 	}
-	gb, err := sanitizeGLTFBodyAll(meshes, scale)
+	gb, sanitizeWarnings, err := sanitizeGLTFBodyAll(meshes, scale)
 	if err != nil {
 		return nil, 0, nil, err
+	}
+	warnings = append(warnings, sanitizeWarnings...)
+	// A body with faces can still tessellate to nothing usable (every triangle
+	// dropped as degenerate/non-finite). That is skipped with a warning like an
+	// empty body, not a fatal error — but if it leaves no body at all to write,
+	// the export has no geometry and errors, mirroring the all-empty case (CHG-8).
+	if len(gb) == 0 {
+		return nil, 0, nil, errors.New("gltf: no exportable bodies")
 	}
 	data, tris, err := encodeGLTFBytes(gb)
 	if err != nil {
@@ -121,17 +129,32 @@ func exportableBodies(bodies []*topo.Body) ([]string, []*topo.Body, error) {
 	return warnings, exportable, nil
 }
 
+// errNoValidTriangles marks a body whose triangles were ALL dropped by
+// sanitization (degenerate / non-finite geometry). It is a soft skip — the body
+// is warned about and left out, exactly like an empty body — whereas a
+// structural mesh-invariant violation (bad normal count, out-of-range index) is
+// a hard error that fails the export (CHG-8).
+var errNoValidTriangles = errors.New("no valid triangles")
+
 // sanitizeGLTFBodyAll sanitizes each tessellated body record at the given scale.
-func sanitizeGLTFBodyAll(meshes []BodyMesh, scale float64) ([]*gltfBody, error) {
+// A body that yields no valid triangle is skipped with a warning (like an empty
+// body), so one all-degenerate body cannot fail an otherwise valid multi-body
+// export; any other sanitization failure is a hard error (CHG-8).
+func sanitizeGLTFBodyAll(meshes []BodyMesh, scale float64) ([]*gltfBody, []string, error) {
 	gb := make([]*gltfBody, 0, len(meshes))
+	var warnings []string
 	for _, bm := range meshes {
 		body, err := sanitizeGLTFBody(bm, scale)
+		if errors.Is(err, errNoValidTriangles) {
+			warnings = append(warnings, fmt.Sprintf("gltf: body %s has no valid geometry; skipped", bm.ID))
+			continue
+		}
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		gb = append(gb, body)
 	}
-	return gb, nil
+	return gb, warnings, nil
 }
 
 // gltfBody is one body's sanitized, packed glTF data: swizzled/scaled float32
@@ -160,7 +183,7 @@ func sanitizeGLTFBody(bm BodyMesh, scale float64) (*gltfBody, error) {
 	packedPos, packedNorm, valid := packGLTFVertices(m, scale)
 	kept := filterGLTFTriangles(m, packedPos, packedNorm, valid)
 	if len(kept) == 0 {
-		return nil, gltfErr("body "+bm.ID+" has no valid triangles", "")
+		return nil, fmt.Errorf("gltf: body %s has %w", bm.ID, errNoValidTriangles)
 	}
 	pos, norm, idx := pruneGLTFVertices(packedPos, packedNorm, kept)
 	min, max := gltfBounds(pos)
