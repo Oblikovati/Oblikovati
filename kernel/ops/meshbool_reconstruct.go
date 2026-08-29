@@ -33,6 +33,11 @@ func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality) (*topo.Body,
 	refs := make([]faceSurfaceRef, 0, len(aRefs)+len(bRefs))
 	refs = append(append(refs, aRefs...), bRefs...)
 
+	// Reconcile cross-operand coincident planar faces onto one shared EXACT plane before the mesh
+	// boolean, so its exact coplanar classification sees the intended coincidence a sub-ULP
+	// tessellation jitter would otherwise hide (ADR-0056 Sew reconciliation; #2247 coincident-opposite).
+	snapCoincidentPlanes(&aSoup, &bSoup, refs, len(aRefs), res)
+
 	// Fuse coincident-surface tags (cocylindrical walls, coplanar faces) so their shared
 	// seam is interior to one face, not a false edge between two (ADR-0056 same-surface merge).
 	rep, groupSize := mergeCoincidentTags(refs, res)
