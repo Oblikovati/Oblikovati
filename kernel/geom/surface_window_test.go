@@ -31,6 +31,23 @@ func TestSurfaceWindowKeepsPeriodicClipsAxial(t *testing.T) {
 	}
 }
 
+// TestSurfaceWindowTightHasNoPad: SurfaceWindowTight clips an unbounded direction to EXACTLY the box
+// projection (no outward pad), so a cylinder side windowed to its own body box reproduces the cap band
+// bit-for-bit — the exactness the near-pinch imprint weld needs (#1818). The padded SurfaceWindow is wider.
+func TestSurfaceWindowTightHasNoPad(t *testing.T) {
+	cyl, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
+	box := math.NewBox(math.P3(-2, -2, 1), math.P3(2, 2, 5)) // axis-aligned: axial span z ∈ [1,5] exactly
+	tight := SurfaceWindowTight(cyl, box)
+	if stdmath.Abs(tight.VMin-1) > 1e-12 || stdmath.Abs(tight.VMax-5) > 1e-12 {
+		t.Errorf("tight axial window [%g,%g] must equal the exact cap band [1,5]", tight.VMin, tight.VMax)
+	}
+	padded := SurfaceWindow(cyl, box)
+	if !(padded.VMin < tight.VMin && padded.VMax > tight.VMax) {
+		t.Errorf("padded window [%g,%g] must be strictly wider than the tight [%g,%g]",
+			padded.VMin, padded.VMax, tight.VMin, tight.VMax)
+	}
+}
+
 // TestSurfaceWindowUnboundedPlaneProjectsBothDirections: a plane is unbounded in BOTH directions, so both
 // are clipped to the box projection — neither stays the infinite domain.
 func TestSurfaceWindowUnboundedPlaneProjectsBothDirections(t *testing.T) {

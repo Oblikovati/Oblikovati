@@ -51,7 +51,10 @@ func curvedImprintLoops(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, b
 		return nil, false
 	}
 	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox())) // model-relative loop-closure weld (#1399)
-	loops := imprintTraceLoops(sa, sb, geom.SurfaceWindow(sa, a.RangeBox()), res, rec)
+	// SurfaceWindowTight (no pad): the window is a's own caps EXACTLY, reproducing the per-primitive imprint
+	// band bit-for-bit — the padded window's 5% over-sweep shifts the marched loop and breaks the
+	// sampling-sensitive near-pinch weld (#1818, ADR-0058 phase 3).
+	loops := imprintTraceLoops(sa, sb, geom.SurfaceWindowTight(sa, a.RangeBox()), res, rec)
 	if len(loops) == 0 {
 		return nil, false
 	}

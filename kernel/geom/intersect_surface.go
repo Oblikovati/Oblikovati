@@ -65,18 +65,40 @@ func marchedCurves(base, other Surface, box math.Box) []Curve3 {
 // apex/axial-band windows (ADR-0058 phase 3).
 //
 //	win := geom.SurfaceWindow(coneSurface, coneBody.RangeBox()) // full angle, apex-distance band of the body
+//
+// It pads an unbounded direction outward by windowPadFraction so a crossing exactly on a box face is not
+// clipped — needed by the general marcher. A caller that wants the box's EXACT projection (a boolean imprint
+// windowed to an operand body's own caps, whose downstream assembly is sampling-sensitive — the near-pinch
+// band, #1818) uses SurfaceWindowTight instead.
 func SurfaceWindow(s Surface, box math.Box) SurfaceGrid {
+	return surfaceWindowPadded(s, box, windowPadFraction)
+}
+
+// SurfaceWindowTight is SurfaceWindow with NO outward pad: an unbounded direction is clipped to exactly the
+// box's projection, so windowing a primitive side to its own body box reproduces that primitive's intrinsic
+// axial/apex band bit-for-bit (the exact window the per-primitive boolean imprints used). Sampling-sensitive
+// consumers (the near-pinch cut/join assembly, #1818) require this exactness; the padded SurfaceWindow's 5%
+// over-sweep shifts the marched loop enough to break their raw-loop weld.
+func SurfaceWindowTight(s Surface, box math.Box) SurfaceGrid {
+	return surfaceWindowPadded(s, box, 0)
+}
+
+// windowPadFraction widens an unbounded marching window past the box projection so a tangency exactly on a
+// box face is not clipped (SurfaceWindow / the general marcher). SurfaceWindowTight passes 0.
+const windowPadFraction = 0.05
+
+func surfaceWindowPadded(s Surface, box math.Box, padFrac float64) SurfaceGrid {
 	uLo, uHi := s.UDomain()
 	vLo, vHi := s.VDomain()
-	uMin, uMax := paramWindow(s, box, uLo, uHi, true)
-	vMin, vMax := paramWindow(s, box, vLo, vHi, false)
+	uMin, uMax := paramWindow(s, box, uLo, uHi, true, padFrac)
+	vMin, vMax := paramWindow(s, box, vLo, vHi, false, padFrac)
 	return SurfaceGrid{UMin: uMin, UMax: uMax, VMin: vMin, VMax: vMax}
 }
 
 // paramWindow returns the [min,max] window for one parameter direction: a finite domain as-is (a bounded
 // or periodic direction), or — for an unbounded direction — the box's projection onto it (via ParamAt of
 // the corners), padded so a crossing on the box boundary is not clipped.
-func paramWindow(s Surface, box math.Box, lo, hi float64, isU bool) (float64, float64) {
+func paramWindow(s Surface, box math.Box, lo, hi float64, isU bool, padFrac float64) (float64, float64) {
 	if !stdmath.IsInf(lo, 0) && !stdmath.IsInf(hi, 0) {
 		return lo, hi
 	}
@@ -89,6 +111,6 @@ func paramWindow(s Surface, box math.Box, lo, hi float64, isU bool) (float64, fl
 		}
 		pmin, pmax = stdmath.Min(pmin, p), stdmath.Max(pmax, p)
 	}
-	pad := 0.05 * (pmax - pmin) // widen so a tangency exactly on a box face stays inside the window
+	pad := padFrac * (pmax - pmin) // widen so a tangency exactly on a box face stays inside the window
 	return pmin - pad, pmax + pad
 }
