@@ -72,8 +72,7 @@ var (
 	curvedEdgeScallopCut      = gatedCurved(Cut, withoutRecorder(brep.CutEdgeScallop))   // straight cylinder through a slab, circle CLIPS one edge (#1591)
 	curvedPartialCut          = gatedCurved(Cut, brep.PartialPenetrationCutGeneral)      // blind rod hole
 	curvedSteinmetzCut        = gatedCurved(Cut, brep.SteinmetzCutGeneral)               // equal-R bicylinder bite, general pipeline
-	curvedConeCylinderCut     = gatedCurved(Cut, brep.ConeCylinderCutGeneral)
-	curvedConeConeCut         = gatedCurved(Cut, brep.ConeConeCutGeneral)
+	curvedConeCrossingCut     = gatedCurved(Cut, brep.RuledConeCrossingCutGeneral)       // cone∩cone + cone∩cylinder, one driver (ADR-0058 phase 3)
 	curvedCrossingCut         = gatedCurved(Cut, brep.CrossingCylinderCutGeneral)
 	curvedCapCrossCut         = gatedCurved(Cut, brep.CapCrossingCutGeneral)                // oblique tool exits one cap, ellipse inside rim (#1724)
 	curvedRimCrossCut         = gatedCurved(Cut, brep.RimCrossingCutGeneral)                // oblique tool exits one cap, ellipse crosses rim (#1724 slice 2)
@@ -89,8 +88,7 @@ var (
 	curvedCylinderBossJoin = gatedCurved(Join, withoutRecorder(brep.JoinCylindricalBoss))  // cylinder seated flush on a face, base strictly interior
 	curvedPartialBossJoin  = gatedCurved(Join, withoutRecorder(brep.JoinPartialBoss))      // cylinder boss whose base circle straddles the seat edge (#1591)
 	curvedPartialJoin      = gatedCurved(Join, brep.PartialPenetrationJoinGeneral)         // fat + entry stub
-	curvedConeCylinderJoin = gatedCurved(Join, brep.ConeCylinderJoinGeneral)
-	curvedConeConeJoin     = gatedCurved(Join, brep.ConeConeJoinGeneral)
+	curvedConeCrossingJoin = gatedCurved(Join, brep.RuledConeCrossingJoinGeneral)          // cone∩cone + cone∩cylinder, one driver (ADR-0058 phase 3)
 	curvedCrossingJoin     = gatedCurved(Join, brep.CrossingCylinderJoinGeneral)
 	curvedSteinmetzJoin    = gatedCurved(Join, brep.SteinmetzJoinGeneral) // equal-R bicylinder union, general pipeline
 )

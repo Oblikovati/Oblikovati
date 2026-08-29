@@ -107,12 +107,12 @@ func arrangementGoldenCases() []arrangementGoldenCase {
 		{"cone-cone-cut", "V4E5F4chi0free1", "V4E5F4chi0-62b46082d3a6e2e7", func() (*topo.Body, bool) {
 			fat, _ := brep.SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 			rod, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "rod")
-			return brep.ConeConeCutGeneral(fat, rod, nil)
+			return brep.RuledConeCrossingCutGeneral(fat, rod, nil)
 		}},
 		{"cone-cylinder-cut", "V4E5F4chi0free1", "V4E5F4chi0-1f6dd86ad3e40a48", func() (*topo.Body, bool) {
 			cyl := cylZ(-6, 3, 12)
 			cone, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
-			return brep.ConeCylinderCutGeneral(cyl, cone, nil)
+			return brep.RuledConeCrossingCutGeneral(cyl, cone, nil)
 		}},
 		{"steinmetz-cut", "V4E6F6chi2free0", "V4E6F6chi2-9ebec3decb26122b", func() (*topo.Body, bool) {
 			return brep.SteinmetzCutGeneral(cylX(-6, 3, 12), cylZ(-6, 3, 12), nil)

@@ -63,7 +63,7 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../brep/curved_halfspace_looped.go",
 		"../brep/curved_halfspace_cone_side.go",
 		"../brep/curved_crossing_imprint.go",
-		"../brep/curved_cone_cone_imprint.go",
+		"../brep/curved_crossing_imprint_general.go", // the merged imprint (ADR-0058 phase 3); cone_cone_imprint.go was folded in
 		"../brep/curved_cone_cylinder_imprint.go",
 		"../brep/curved_cylinder_membership.go",
 		"../brep/curved_general_boolean.go",

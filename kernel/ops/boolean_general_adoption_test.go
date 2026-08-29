@@ -105,10 +105,10 @@ func TestGeneralConeCutJoinIsAdopted(t *testing.T) {
 		name    string
 		general func() (*topo.Body, bool)
 	}{
-		{"cone − cone (drill)", func() (*topo.Body, bool) { return brep.ConeConeCutGeneral(fatCone(), rodCone(), nil) }},
-		{"cone ∪ cone", func() (*topo.Body, bool) { return brep.ConeConeJoinGeneral(fatCone(), rodCone(), nil) }},
-		{"cone − cylinder (drill)", func() (*topo.Body, bool) { return brep.ConeCylinderCutGeneral(cyl(), cone(), nil) }},
-		{"cone ∪ cylinder", func() (*topo.Body, bool) { return brep.ConeCylinderJoinGeneral(cyl(), cone(), nil) }},
+		{"cone − cone (drill)", func() (*topo.Body, bool) { return brep.RuledConeCrossingCutGeneral(fatCone(), rodCone(), nil) }},
+		{"cone ∪ cone", func() (*topo.Body, bool) { return brep.RuledConeCrossingJoinGeneral(fatCone(), rodCone(), nil) }},
+		{"cone − cylinder (drill)", func() (*topo.Body, bool) { return brep.RuledConeCrossingCutGeneral(cyl(), cone(), nil) }},
+		{"cone ∪ cylinder", func() (*topo.Body, bool) { return brep.RuledConeCrossingJoinGeneral(cyl(), cone(), nil) }},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
