@@ -5,7 +5,6 @@ package brep
 import (
 	stdmath "math"
 
-	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -241,43 +240,10 @@ func loopsClearOfCaps(side ruledUV, loops []geom.Polyline) bool {
 	return true
 }
 
-// CrossingCylinderIntersectGeneral is the exported entry kernel/ops routes crossing-cylinder intersect
-// through: the GENERAL curved∩curved pipeline (#1403), no bespoke loop→body constructor. ok=false outside
-// the wired cylinder-through-cylinder crossing so the caller keeps its fallback.
-func CrossingCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	return crossingCylinderIntersectGeneral(a, b, rec)
-}
-
-// crossingCylinderIntersectGeneral builds cylinder ∩ cylinder (two crossing cylinders) through the GENERAL
-// pipeline (#1403): the SSI imprint, then trimByImprint on each cylinder side keeping the part inside the
-// other, then curvedStitch. The simplest pair — both sides are cylinders, so the recipe is fully symmetric
-// (no rod/fat split): the rod-wall band inside the fat plus the two fat-wall lens caps fall out of the same
-// two-sided trim. ok=false when the pair is not a cylinder-through-cylinder crossing.
-func crossingCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	loops, ok := crossingCylinderLoops(a, b, rec)
-	if !ok || len(loops) == 0 {
-		return nil, false
-	}
-	fA, cylA, bandA, okA := cylinderSideFace(a)
-	fB, cylB, bandB, okB := cylinderSideFace(b)
-	insideA, okMA := curvedSolidMembership(a)
-	insideB, okMB := curvedSolidMembership(b)
-	if !okA || !okB || !okMA || !okMB {
-		return nil, false
-	}
-	// Near-pinch (#1818): the two loops project to the LARGER-radius (fat) wall as two lens ovals whose tips
-	// nearly touch at the necks; a single (u,v) arrangement carrying both fuses them, so the fat wall is
-	// trimmed one loop at a time — each oval alone in its own arrangement, which is well-conditioned. The
-	// smaller (thin) wall carries the two loops as a single full-azimuth band bounded by both, so it keeps the
-	// both-loops trim. Away from the near-pinch band both sides take the both-loops trim unchanged.
-	nearPinch := nearPinchLoops(loops)
-	keptA, okA2 := keptOrNone(cylinderLensSplit(nearPinch && cylA.Radius > cylB.Radius, fA, cylA, bandA, loops, false, insideB))
-	keptB, okB2 := keptOrNone(cylinderLensSplit(nearPinch && cylB.Radius > cylA.Radius, fB, cylB, bandB, loops, true, insideA))
-	if !okA2 || !okB2 {
-		return nil, false
-	}
-	return curvedStitch(append(keptA, keptB...)), true
-}
+// Cylinder∩cylinder intersect (including the near-pinch band, #1818) is now built by the unified
+// ruledCrossingIntersect (curved_general_crossing.go, ADR-0058 phase 3), which routes the near-pinch fatter
+// wall through cylinderLensSplit below as one conditioning branch. The former crossingCylinderIntersectGeneral
+// driver collapsed into it.
 
 // cylinderLensSplit trims a cylinder side by the intersection imprint. perLoop trims each loop in a SEPARATE
 // arrangement — the #1818 near-pinch fat wall, whose two lens caps sit tip-to-tip at the necks and would fuse

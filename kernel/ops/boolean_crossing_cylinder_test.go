@@ -449,7 +449,7 @@ func TestBooleanIntersectEqualRadiusDefersFromExactPath(t *testing.T) {
 	a, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	b, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12) // equal radius
 
-	if res, ok := brep.CrossingCylinderIntersectGeneral(a, b, nil); ok && ops.Validate(res).Valid {
+	if res, ok := brep.RuledCrossingIntersectGeneral(a, b, nil); ok && ops.Validate(res).Valid {
 		t.Error("equal-radius (Steinmetz) crossing should not be adopted by the general intersect path")
 	}
 }

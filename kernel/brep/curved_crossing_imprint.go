@@ -64,8 +64,8 @@ func keepImprintLoops(tr geom.SurfaceIntersection, res geom.Resolution, rec *dia
 
 // crossingCylinderLoops traces the intersection loops of two bare cylinder bodies as closed polylines,
 // declining (silently) only below the Steinmetz snap ceiling where the exact bicylinder constructor takes
-// over (#1780). Unlike crossingCylinderImprint it does NOT decline the near-pinch band — the intersect driver
-// (crossingCylinderIntersectGeneral) resolves that band robustly by trimming the fat wall per loop (#1818),
+// over (#1780). Unlike crossingCylinderImprint it does NOT decline the near-pinch band — the unified intersect
+// driver (ruledCrossingIntersect) resolves that band robustly by trimming the fat wall per loop (#1818),
 // so it needs the raw loops. Callers that cannot yet handle the near-pinch band (cut/join, cap-crossing) use
 // crossingCylinderImprint, which adds the near-pinch decline.
 func crossingCylinderLoops(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {

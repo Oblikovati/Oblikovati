@@ -24,11 +24,11 @@ func TestGeneralIntersectIsAdopted(t *testing.T) {
 		a, b    func() *topo.Body
 	}{
 		{"crossing cylinders ∩",
-			func(a, b *topo.Body) (*topo.Body, bool) { return brep.CrossingCylinderIntersectGeneral(a, b, nil) },
+			func(a, b *topo.Body) (*topo.Body, bool) { return brep.RuledCrossingIntersectGeneral(a, b, nil) },
 			func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12); return b },
 			func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12); return b }},
 		{"cone ∩ cone",
-			func(a, b *topo.Body) (*topo.Body, bool) { return brep.RuledConeCrossingIntersectGeneral(a, b, nil) },
+			func(a, b *topo.Body) (*topo.Body, bool) { return brep.RuledCrossingIntersectGeneral(a, b, nil) },
 			func() *topo.Body {
 				b, _ := brep.SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 				return b
@@ -38,7 +38,7 @@ func TestGeneralIntersectIsAdopted(t *testing.T) {
 				return b
 			}},
 		{"cone ∩ cylinder",
-			func(a, b *topo.Body) (*topo.Body, bool) { return brep.RuledConeCrossingIntersectGeneral(a, b, nil) },
+			func(a, b *topo.Body) (*topo.Body, bool) { return brep.RuledCrossingIntersectGeneral(a, b, nil) },
 			func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12); return b },
 			func() *topo.Body {
 				b, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")

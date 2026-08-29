@@ -302,7 +302,7 @@ func CurvedBooleanWithDiagnostics(op PartFeatureOperation, target, tool *topo.Bo
 var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body, *diag.Recorder) (*topo.Body, bool){
 	// Intersect — all [T] transversal (curved∩convex-planar half-space, then ruled crossings).
 	curvedConvexIntersect, curvedConvexSubtract,
-	curvedCrossingIntersect, curvedSteinmetzIntersect, curvedConeCrossingIntersect,
+	curvedRuledCrossingIntersect, curvedSteinmetzIntersect,
 	curvedPartialIntersect, curvedBallRodIntersect,
 	// Cut — [P] the drill through-hole and the edge scallop (curved-on-planar), the rest [T] transversal.
 	curvedCylindricalHoleCut, curvedEdgeScallopCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedConeCrossingCut, curvedCapCrossCut, curvedRimCrossCut, curvedTwoCapCrossCut, curvedConeCapCrossCut, curvedPartialRimCut, curvedPartialRimCornerCut, curvedCrossingCut, curvedBallRodCut,
