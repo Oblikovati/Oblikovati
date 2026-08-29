@@ -69,7 +69,7 @@ func keepImprintLoops(tr geom.SurfaceIntersection, res geom.Resolution, rec *dia
 // so it needs the raw loops. Callers that cannot yet handle the near-pinch band (cut/join, cap-crossing) use
 // crossingCylinderImprint, which adds the near-pinch decline.
 func crossingCylinderLoops(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
-	ca, baseA, heightA, okA := cylinderSolidParams(facesOfAny(a))
+	ca, _, _, okA := cylinderSolidParams(facesOfAny(a))
 	cb, _, _, okB := cylinderSolidParams(facesOfAny(b))
 	if !okA || !okB {
 		return nil, false
@@ -81,11 +81,9 @@ func crossingCylinderLoops(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline
 	if ca.Radius != cb.Radius && stdmath.Abs(ca.Radius-cb.Radius) <= steinmetzSnapCeiling(res) {
 		return nil, false
 	}
-	loops := imprintTraceLoops(ca, cb, cylinderTraceWindow(ca, baseA, heightA), res, rec)
-	if len(loops) == 0 {
-		return nil, false
-	}
-	return loops, true
+	// The trace is the general curved-crossing imprint (ADR-0058 phase 3); this wrapper keeps only the
+	// both-cylinder guard and the Steinmetz snap-ceiling conditioning gate above.
+	return curvedImprintLoops(a, b, rec)
 }
 
 // crossingCylinderImprint returns the crossing-cylinder loops for callers that decline the near-pinch band to

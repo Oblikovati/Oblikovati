@@ -47,7 +47,7 @@ func SurfaceIntersect(a, b Surface, box math.Box, res Resolution) (curves []Curv
 // as a Curve3 (a Polyline — a valid, if non-analytic, boundary curve; recognising it as an analytic
 // circle/ellipse is a later refinement, ADR-0058 phase 1b).
 func marchedCurves(base, other Surface, box math.Box) []Curve3 {
-	traced := TraceSurfaceIntersection(base, other, surfaceWindow(base, box))
+	traced := TraceSurfaceIntersection(base, other, SurfaceWindow(base, box))
 	out := make([]Curve3, 0, len(traced.Curves))
 	for _, poly := range traced.Curves {
 		if c, err := NewPolyline(poly); err == nil {
@@ -57,10 +57,15 @@ func marchedCurves(base, other Surface, box math.Box) []Curve3 {
 	return out
 }
 
-// surfaceWindow derives the base surface's marching window from a bounding box: a bounded or periodic
+// SurfaceWindow derives a surface's marching window from a bounding box: a bounded or periodic
 // parameter direction uses its whole domain; an UNBOUNDED direction (a plane/cylinder/cone's axial run)
-// is clipped to where the box projects onto it, so the marcher never sweeps the infinite surface.
-func surfaceWindow(s Surface, box math.Box) SurfaceGrid {
+// is clipped to where the box projects onto it, so the marcher never sweeps the infinite surface. It is
+// the general windowing SurfaceIntersect uses internally AND the curved-boolean imprint uses to clip a
+// surface to an operand body's own extent (pass that body's RangeBox), replacing the per-primitive
+// apex/axial-band windows (ADR-0058 phase 3).
+//
+//	win := geom.SurfaceWindow(coneSurface, coneBody.RangeBox()) // full angle, apex-distance band of the body
+func SurfaceWindow(s Surface, box math.Box) SurfaceGrid {
 	uLo, uHi := s.UDomain()
 	vLo, vHi := s.VDomain()
 	uMin, uMax := paramWindow(s, box, uLo, uHi, true)

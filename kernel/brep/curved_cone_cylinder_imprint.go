@@ -24,17 +24,12 @@ import (
 // The cone is the trace base, windowed to its apex-distance band [vMin, vMax]; the periodic angular
 // direction is left to the tracer.
 func coneCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
-	cone, cyl, vMin, vMax, ok := coneAndCylinder(a, b)
-	if !ok {
+	if _, _, _, _, ok := coneAndCylinder(a, b); !ok {
 		return nil, false
 	}
-	window := geom.SurfaceGrid{VMin: vMin, VMax: vMax}
-	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox())) // model-relative loop-closure weld (#1399)
-	loops := imprintTraceLoops(cone, cyl, window, res, rec)
-	if len(loops) == 0 {
-		return nil, false
-	}
-	return loops, true
+	// The trace is the general curved-crossing imprint (ADR-0058 phase 3); this wrapper keeps only the
+	// one-cone-one-cylinder guard (the dispatch classification kernel/ops keys on).
+	return curvedImprintLoops(a, b, rec)
 }
 
 // coneAndCylinder resolves two bodies into one bare cone (with its apex-distance band) and one bare

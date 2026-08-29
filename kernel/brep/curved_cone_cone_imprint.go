@@ -25,16 +25,13 @@ import (
 // no closed loop is traced. The first body's cone is the trace base, windowed to its apex-distance band
 // [vMin, vMax]; the periodic angular direction is left to the tracer.
 func coneConeImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
-	ca, vMin, vMax, okA := coneSolidParams(facesOfAny(a))
-	cb, _, _, okB := coneSolidParams(facesOfAny(b))
-	if !okA || !okB {
+	if _, _, _, ok := coneSolidParams(facesOfAny(a)); !ok {
+		return nil, false // a cone + a cylinder is the cone–cylinder case, handled elsewhere
+	}
+	if _, _, _, ok := coneSolidParams(facesOfAny(b)); !ok {
 		return nil, false
 	}
-	window := geom.SurfaceGrid{VMin: vMin, VMax: vMax}
-	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox())) // model-relative loop-closure weld (#1399)
-	loops := imprintTraceLoops(ca, cb, window, res, rec)
-	if len(loops) == 0 {
-		return nil, false
-	}
-	return loops, true
+	// The trace itself is the general curved-crossing imprint (ADR-0058 phase 3): both operands' primary
+	// curved surfaces, windowed to the base body's own band. This wrapper keeps only the both-cone guard.
+	return curvedImprintLoops(a, b, rec)
 }
