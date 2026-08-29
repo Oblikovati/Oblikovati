@@ -36,7 +36,37 @@ func intersectionRunEdge(run meshbool.ArrangementRun, surface, neighbor geom.Sur
 	if !ok || !weldableSSICurve(c) {
 		return brep.ReconEdge{}, false
 	}
+	if runIsClosed(run, verts, res.Weld()) && !boundedDomain(c) {
+		// A CLOSED run (its endpoints coincide) can bound an edge only of a PERIODIC curve —
+		// a circle/ellipse whose bounded domain wraps. The arrangement can also trace a
+		// DEGENERATE collinear sliver as a closed run (down a shared edge and back to its
+		// start, verts [z=1.5, 1.1, 0.5, 1.5]); its SSI branch is a LINE, whose domain is
+		// ±Inf. orientRunEdge → closedRunEdge would take that unbounded domain as the edge
+		// interval and synthesize Inf/NaN endpoints — an invalid body caught only later by
+		// Validate, after tessellation can already panic on the non-finite coordinate. Refuse
+		// it here as a named decline (no runtime Inf; classify, don't build) so the caller
+		// falls back to the exact faceted boolean instead (#2247, ADR-0056).
+		return brep.ReconEdge{}, false
+	}
 	return orientRunEdge(c, run, verts, res.Weld()), true
+}
+
+// runIsClosed reports whether a run's endpoints coincide within tol — a run that loops back
+// on itself, which only a periodic curve can bound (see intersectionRunEdge's decline).
+func runIsClosed(run meshbool.ArrangementRun, verts []meshbool.Point, tol float64) bool {
+	n := len(run.Verts)
+	if n < 2 {
+		return false
+	}
+	return verts[run.Verts[0]].Round().DistanceTo(verts[run.Verts[n-1]].Round()) <= tol
+}
+
+// boundedDomain reports whether a curve's parameter domain is finite — true for a periodic
+// curve (circle/ellipse), false for an unbounded line whose ±Inf domain cannot yield a
+// closed edge's interval.
+func boundedDomain(c geom.Curve3) bool {
+	lo, hi := c.Domain()
+	return !stdmath.IsInf(lo, 0) && !stdmath.IsInf(hi, 0) && !stdmath.IsNaN(lo) && !stdmath.IsNaN(hi)
 }
 
 // weldableSSICurve reports whether a synthesized surface-surface intersection curve is one
