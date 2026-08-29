@@ -122,10 +122,7 @@ func chainLineage(ch *edgeChain) topo.Lineage {
 			return e.Lineage()
 		}
 	}
-	for e := range ch.edges {
-		return e.Lineage()
-	}
-	return topo.Lineage{}
+	return topo.Lineage{} // unreachable: ch.a is an endpoint of exactly one chain edge
 }
 
 // pointOnLine reports whether p lies on the infinite line through a and b within tol.

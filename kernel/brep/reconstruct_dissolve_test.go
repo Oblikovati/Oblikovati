@@ -101,6 +101,57 @@ func vertexAt(b *topo.Body, p math.Point3) *topo.Vertex {
 	return nil
 }
 
+// TestDissolveNoOpOnCleanBodyAndNil: a nil body and a clean box (every vertex a genuine 3-valent
+// corner, no 2-valent collinear split) are returned unchanged — the dissolve only fires on a spurious
+// split.
+func TestDissolveNoOpOnCleanBodyAndNil(t *testing.T) {
+	if dissolveCollinearVertices(nil) != nil {
+		t.Error("nil body must pass through")
+	}
+	box, err := SolidBlock(math.P3(0, 0, 0), math.P3(1, 1, 1), "b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dissolveCollinearVertices(box) != box {
+		t.Error("a clean body with no 2-valent collinear vertex must be returned unchanged")
+	}
+}
+
+// TestLessPointTotalOrder covers the point tie-break (X, then Y, then Z) that makes the merged edge's
+// endpoint order — and thus the result — deterministic across runs.
+func TestLessPointTotalOrder(t *testing.T) {
+	cases := []struct {
+		p, q math.Point3
+		want bool
+	}{
+		{math.P3(0, 9, 9), math.P3(1, 0, 0), true},  // X decides
+		{math.P3(1, 0, 0), math.P3(0, 9, 9), false}, // X decides (other way)
+		{math.P3(2, 0, 9), math.P3(2, 1, 0), true},  // Y decides
+		{math.P3(2, 1, 0), math.P3(2, 0, 9), false}, // Y decides (other way)
+		{math.P3(2, 2, 0), math.P3(2, 2, 1), true},  // Z decides
+		{math.P3(2, 2, 1), math.P3(2, 2, 1), false}, // equal → not less
+	}
+	for _, c := range cases {
+		if got := lessPoint(c.p, c.q); got != c.want {
+			t.Errorf("lessPoint(%v,%v) = %v, want %v", c.p, c.q, got, c.want)
+		}
+	}
+}
+
+// TestOrderEndsIsPointOrdered covers both branches of orderEnds: it returns the two vertices sorted by
+// point regardless of the argument order.
+func TestOrderEndsIsPointOrdered(t *testing.T) {
+	bld := topo.NewBuilder(true, lin("t"))
+	lo := bld.AddVertex(math.P3(0, 0, 0), lin("lo"))
+	hi := bld.AddVertex(math.P3(1, 0, 0), lin("hi"))
+	for _, in := range [][2]*topo.Vertex{{lo, hi}, {hi, lo}} {
+		a, b := orderEnds(in[0], in[1])
+		if a != lo || b != hi {
+			t.Errorf("orderEnds(%v) did not sort to (lo,hi)", in)
+		}
+	}
+}
+
 func lin(tokens ...string) topo.Lineage {
 	toks := make([]topo.LineageToken, len(tokens))
 	for i, s := range tokens {
