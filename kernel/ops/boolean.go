@@ -305,9 +305,9 @@ var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body, *dia
 	curvedRuledCrossingIntersect, curvedSteinmetzIntersect,
 	curvedPartialIntersect, curvedBallRodIntersect,
 	// Cut — [P] the drill through-hole and the edge scallop (curved-on-planar), the rest [T] transversal.
-	curvedCylindricalHoleCut, curvedEdgeScallopCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedConeCrossingCut, curvedCapCrossCut, curvedRimCrossCut, curvedTwoCapCrossCut, curvedConeCapCrossCut, curvedPartialRimCut, curvedPartialRimCornerCut, curvedCrossingCut, curvedBallRodCut,
+	curvedCylindricalHoleCut, curvedEdgeScallopCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedRuledCrossingCut, curvedCapCrossCut, curvedRimCrossCut, curvedTwoCapCrossCut, curvedConeCapCrossCut, curvedPartialRimCut, curvedPartialRimCornerCut, curvedBallRodCut,
 	// Join — [D] coaxial (degenerate overlap), [P] boss interior then straddling (curved-on-planar), the rest [T] transversal.
-	curvedCoaxialJoin, curvedCylinderBossJoin, curvedPartialBossJoin, curvedPartialJoin, curvedConeCrossingJoin, curvedCrossingJoin, curvedSteinmetzJoin, curvedBallRodJoin,
+	curvedCoaxialJoin, curvedCylinderBossJoin, curvedPartialBossJoin, curvedPartialJoin, curvedRuledCrossingJoin, curvedSteinmetzJoin, curvedBallRodJoin,
 }
 
 func shouldFallbackBoolean(op PartFeatureOperation, target, tool, body *topo.Body) bool {

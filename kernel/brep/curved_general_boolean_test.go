@@ -188,7 +188,7 @@ func TestRuledCrossingIntersectDeclinesPlanarPair(t *testing.T) {
 func TestCrossingCylinderCutGeneral(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
-	res, ok := CrossingCylinderCutGeneral(fat, rod, nil)
+	res, ok := RuledCrossingCutGeneral(fat, rod, nil)
 	if !ok {
 		t.Fatal("general crossing-cylinder cut declined; want the drilled solid")
 	}
@@ -207,7 +207,7 @@ func TestCrossingCylinderCutGeneral(t *testing.T) {
 func TestCrossingCylinderJoinGeneral(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
-	res, ok := CrossingCylinderJoinGeneral(fat, rod, nil)
+	res, ok := RuledCrossingJoinGeneral(fat, rod, nil)
 	if !ok {
 		t.Fatal("general crossing-cylinder join declined; want the welded solid")
 	}
@@ -225,7 +225,7 @@ func TestCrossingCylinderJoinGeneral(t *testing.T) {
 func TestCrossingCylinderJoinGeneralDeclines(t *testing.T) {
 	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 12)
 	b, _ := SolidCylinder(math.P3(20, 0, 0), math.V3(0, 0, 1), 1.5, 12) // far apart, no intersection
-	if _, ok := CrossingCylinderJoinGeneral(a, b, nil); ok {
+	if _, ok := RuledCrossingJoinGeneral(a, b, nil); ok {
 		t.Error("non-intersecting cylinders should decline from the join general path")
 	}
 }
@@ -265,7 +265,7 @@ func TestReverseCurvedFaces(t *testing.T) {
 func TestCrossingCylinderCutGeneralDeclines(t *testing.T) {
 	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 12)
 	b, _ := SolidCylinder(math.P3(20, 0, 0), math.V3(0, 0, 1), 1.5, 12) // far apart, no intersection
-	if _, ok := CrossingCylinderCutGeneral(a, b, nil); ok {
+	if _, ok := RuledCrossingCutGeneral(a, b, nil); ok {
 		t.Error("non-intersecting cylinders should decline from the cut general path")
 	}
 }

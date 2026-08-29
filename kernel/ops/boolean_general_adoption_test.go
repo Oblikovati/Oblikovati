@@ -68,8 +68,8 @@ func TestGeneralCrossingCutJoinIsAdopted(t *testing.T) {
 		name    string
 		general func() (*topo.Body, bool)
 	}{
-		{"crossing cylinders − (drill)", func() (*topo.Body, bool) { return brep.CrossingCylinderCutGeneral(fat(), rod(), nil) }},
-		{"crossing cylinders ∪", func() (*topo.Body, bool) { return brep.CrossingCylinderJoinGeneral(fat(), rod(), nil) }},
+		{"crossing cylinders − (drill)", func() (*topo.Body, bool) { return brep.RuledCrossingCutGeneral(fat(), rod(), nil) }},
+		{"crossing cylinders ∪", func() (*topo.Body, bool) { return brep.RuledCrossingJoinGeneral(fat(), rod(), nil) }},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -105,10 +105,10 @@ func TestGeneralConeCutJoinIsAdopted(t *testing.T) {
 		name    string
 		general func() (*topo.Body, bool)
 	}{
-		{"cone − cone (drill)", func() (*topo.Body, bool) { return brep.RuledConeCrossingCutGeneral(fatCone(), rodCone(), nil) }},
-		{"cone ∪ cone", func() (*topo.Body, bool) { return brep.RuledConeCrossingJoinGeneral(fatCone(), rodCone(), nil) }},
-		{"cone − cylinder (drill)", func() (*topo.Body, bool) { return brep.RuledConeCrossingCutGeneral(cyl(), cone(), nil) }},
-		{"cone ∪ cylinder", func() (*topo.Body, bool) { return brep.RuledConeCrossingJoinGeneral(cyl(), cone(), nil) }},
+		{"cone − cone (drill)", func() (*topo.Body, bool) { return brep.RuledCrossingCutGeneral(fatCone(), rodCone(), nil) }},
+		{"cone ∪ cone", func() (*topo.Body, bool) { return brep.RuledCrossingJoinGeneral(fatCone(), rodCone(), nil) }},
+		{"cone − cylinder (drill)", func() (*topo.Body, bool) { return brep.RuledCrossingCutGeneral(cyl(), cone(), nil) }},
+		{"cone ∪ cylinder", func() (*topo.Body, bool) { return brep.RuledCrossingJoinGeneral(cyl(), cone(), nil) }},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
