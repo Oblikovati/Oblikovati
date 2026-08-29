@@ -45,7 +45,7 @@ func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality) (*topo.Body,
 
 	arr := meshbool.ArrangementTopologyOf(result)
 	inputs, ok := reconstructFaces(arr, refs, len(aRefs), op, inputCount, tagCounts(result.Tags),
-		groupSize, catalogOriginalEdges(a, b), res)
+		groupSize, aliasKeysForGroups(refs, rep), catalogOriginalEdges(a, b), res)
 	if !ok {
 		return nil, false
 	}
@@ -64,10 +64,10 @@ func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality) (*topo.Body,
 // reconstructFaces turns each arrangement face into a ReconInput, failing fast when any face
 // cannot be rebuilt (a run matching neither an original edge nor an analytic SSI).
 func reconstructFaces(arr meshbool.ArrangementTopology, refs []faceSurfaceRef, naRefs int, op meshbool.Op,
-	inputCount, resultCount, groupSize map[int]int, cat *origEdgeCatalog, res geom.Resolution) ([]brep.ReconInput, bool) {
+	inputCount, resultCount, groupSize map[int]int, aliasKeys map[int][][]byte, cat *origEdgeCatalog, res geom.Resolution) ([]brep.ReconInput, bool) {
 	inputs := make([]brep.ReconInput, 0, len(arr.Faces))
 	for _, f := range arr.Faces {
-		in, ok := reconstructFace(f, refs, naRefs, op, inputCount, resultCount, groupSize, arr.Verts, cat, res)
+		in, ok := reconstructFace(f, refs, naRefs, op, inputCount, resultCount, groupSize, aliasKeys, arr.Verts, cat, res)
 		if !ok {
 			return nil, false
 		}
@@ -79,7 +79,7 @@ func reconstructFaces(arr meshbool.ArrangementTopology, refs []faceSurfaceRef, n
 // reconstructFace turns one arrangement face into a ReconInput: a pass-through for an
 // untouched survivor, or a rebuilt face for a split one.
 func reconstructFace(f meshbool.ArrangementFace, refs []faceSurfaceRef, naRefs int, op meshbool.Op,
-	inputCount, resultCount, groupSize map[int]int, verts []meshbool.Point, cat *origEdgeCatalog, res geom.Resolution) (brep.ReconInput, bool) {
+	inputCount, resultCount, groupSize map[int]int, aliasKeys map[int][][]byte, verts []meshbool.Point, cat *origEdgeCatalog, res geom.Resolution) (brep.ReconInput, bool) {
 	ref := refs[f.Tag]
 	fromB := f.Tag >= naRefs
 	// Pass a face through only when it is a single original CURVED face kept whole — pass-through
@@ -99,10 +99,11 @@ func reconstructFace(f meshbool.ArrangementFace, refs []faceSurfaceRef, naRefs i
 		return brep.ReconInput{}, false
 	}
 	return brep.ReconInput{
-		Surface:  ref.surface,
-		Reversed: ref.reversed != (op == meshbool.Difference && fromB),
-		Loops:    loops,
-		Lineage:  ref.face.Lineage(),
+		Surface:   ref.surface,
+		Reversed:  ref.reversed != (op == meshbool.Difference && fromB),
+		Loops:     loops,
+		Lineage:   ref.face.Lineage(),
+		AliasKeys: aliasKeys[f.Tag],
 	}, true
 }
 

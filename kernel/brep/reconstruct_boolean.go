@@ -44,6 +44,10 @@ type ReconInput struct {
 	Reversed bool
 	Loops    []ReconLoop
 	Lineage  topo.Lineage
+	// AliasKeys are the reference keys of coplanar operand faces the boolean merged into this rebuilt
+	// face; ReconstructBooleanBody registers the built face under each so a pick on any merged parent
+	// survives (ADR-0057). Empty for an unmerged face and always empty for a PassThrough.
+	AliasKeys [][]byte
 }
 
 // ReconstructBooleanBody welds reconstructed analytic faces into a watertight solid,
@@ -71,10 +75,11 @@ func (in ReconInput) toCurvedFace() curvedFace {
 		}
 	}
 	return curvedFace{
-		surface:  in.Surface,
-		reversed: in.Reversed,
-		loops:    reconLoopsToCurved(in.Loops),
-		lineage:  in.Lineage,
+		surface:   in.Surface,
+		reversed:  in.Reversed,
+		loops:     reconLoopsToCurved(in.Loops),
+		lineage:   in.Lineage,
+		aliasKeys: in.AliasKeys,
 	}
 }
 
