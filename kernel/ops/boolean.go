@@ -119,7 +119,7 @@ func join(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Rec
 // rescue for a case that otherwise ships broken, never a preference.
 func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, rec *diag.Recorder) (*topo.Body, error) {
 	body, err := booleanGeneralExact(op, target, tool, lin, rec)
-	if err == nil && body != nil && validBooleanSolid(body) {
+	if err == nil && body != nil && Validate(body).ValidSolid() {
 		return body, nil // reconstruction now lives inside curvedExactBoolean (ADR-0056 L5), so a
 		// valid primary here is already the analytic reconstruction where one applied
 	}
@@ -147,11 +147,11 @@ func meshArrangementFallback(op PartFeatureOperation, target, tool *topo.Body, r
 		return nil
 	}
 	body := booleanViaMeshbool(target, tool, mop, DefaultQuality(), "boolean")
-	// Require a NON-EMPTY valid solid. An empty body vacuously passes validBooleanSolid
+	// Require a NON-EMPTY valid solid. An empty body vacuously passes Validate().ValidSolid()
 	// (no faces to violate manifoldness), but the fallback only reaches here because the
 	// primary path left a non-empty torn result — so real geometry is expected. An empty
 	// mesh result is not the tear it exists to rescue, so decline rather than adopt it.
-	if len(body.Faces()) == 0 || !validBooleanSolid(body) {
+	if len(body.Faces()) == 0 || !Validate(body).ValidSolid() {
 		return nil
 	}
 	rec.Recordf(CodeBooleanMeshArrangementFallback, diag.Defect,
@@ -196,7 +196,7 @@ func booleanGeneralExact(op PartFeatureOperation, target, tool *topo.Body, lin t
 		// Validate().Valid, which does not require Closed. T-junction removal now always closes
 		// the cage (#1336), so this is belt-and-braces: never replace a sound planar result with
 		// an open one.
-		if csg, cerr := booleanCSG(op, target, tool, lin, rec); cerr == nil && csg != nil && validBooleanSolid(csg) {
+		if csg, cerr := booleanCSG(op, target, tool, lin, rec); cerr == nil && csg != nil && Validate(csg).ValidSolid() {
 			return csg, nil
 		}
 	}
@@ -311,15 +311,10 @@ var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body, *dia
 }
 
 func shouldFallbackBoolean(op PartFeatureOperation, target, tool, body *topo.Body) bool {
-	if !validBooleanSolid(body) {
+	if !Validate(body).ValidSolid() {
 		return true
 	}
 	return invalidBooleanVolume(op, target, tool, body)
-}
-
-func validBooleanSolid(body *topo.Body) bool {
-	r := Validate(body)
-	return r.Valid && r.Closed && r.Manifold && body.IsSolid()
 }
 
 func invalidBooleanVolume(op PartFeatureOperation, target, tool, body *topo.Body) bool {

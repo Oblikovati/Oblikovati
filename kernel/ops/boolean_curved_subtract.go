@@ -46,7 +46,7 @@ func curvedConvexSubtract(op PartFeatureOperation, target, tool *topo.Body, _ *d
 		return nil, false
 	}
 	res, err := brep.SubtractAxialPrism(target, poly)
-	if err != nil || !validBooleanSolid(res) {
+	if err != nil || !Validate(res).ValidSolid() {
 		return nil, false
 	}
 	return res, true

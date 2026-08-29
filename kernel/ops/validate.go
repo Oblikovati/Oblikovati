@@ -15,6 +15,10 @@ type ValidationReport struct {
 	Manifold      bool
 	Closed        bool
 	OrientationOK bool
+	// IsSolid records whether the validated body is a solid (vs an open surface/sheet body). Validity
+	// itself allows an open surface body; [ValidationReport.ValidSolid] pairs Valid with this so a caller
+	// that specifically requires a watertight solid result (every boolean path) has one post-condition.
+	IsSolid bool
 	// EulerCharacteristic is the body surface's χ from the Euler–Poincaré relation V−E+2F−L (L = total
 	// face loops; the +2F−L corrects the naive V−E+F for B-rep seam edges and holed faces). For a closed
 	// orientable solid χ = Σ over shells of 2−2·genusₛ, so EulerConsistent reports whether χ is admissible
@@ -37,7 +41,7 @@ type ValidationReport struct {
 // solid. It reports each offending edge precisely (PBI-084) — a surface body is
 // allowed to be open.
 func Validate(b *topo.Body) ValidationReport {
-	r := ValidationReport{Manifold: true, Closed: true, OrientationOK: true, EulerConsistent: true, HolesContained: true}
+	r := ValidationReport{Manifold: true, Closed: true, OrientationOK: true, EulerConsistent: true, HolesContained: true, IsSolid: b.IsSolid()}
 	for _, e := range b.Edges() {
 		switch uses := e.Uses(); {
 		case len(uses) < 2:
@@ -62,6 +66,14 @@ func Validate(b *topo.Body) ValidationReport {
 	// tripwire flag until then.
 	r.Valid = r.Manifold && r.OrientationOK && (!b.IsSolid() || (r.Closed && r.EulerConsistent))
 	return r
+}
+
+// ValidSolid is the boolean pipeline's adoption post-condition: the body is a valid, watertight solid.
+// It is exactly Valid AND IsSolid — for a solid, Valid already implies Closed and Manifold, and for a
+// surface body the IsSolid term rejects it — so the boolean paths gate on this one report method rather
+// than re-composing Valid/Closed/Manifold/IsSolid by hand (the deleted validBooleanSolid, #2294).
+func (r ValidationReport) ValidSolid() bool {
+	return r.Valid && r.IsSolid
 }
 
 // checkEuler computes the surface χ = V−E+2F−L (the Euler–Poincaré form, correct across B-rep seams and

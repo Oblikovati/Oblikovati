@@ -35,7 +35,7 @@ func gatedCurved(want PartFeatureOperation, build ruledBuild) func(PartFeatureOp
 			return nil, false
 		}
 		res, ok := build(target, tool, rec)
-		if !ok || !validBooleanSolid(res) {
+		if !ok || !Validate(res).ValidSolid() {
 			return nil, false
 		}
 		return res, true

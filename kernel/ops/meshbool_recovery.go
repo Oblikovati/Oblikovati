@@ -53,7 +53,7 @@ func reconstructedCurvedBoolean(op PartFeatureOperation, target, tool *topo.Body
 		return nil, false // the exact mesh boolean is expensive; gate operand size as the fallbacks do
 	}
 	recon, ok := reconstructBoolean(target, tool, mop, DefaultQuality())
-	if !ok || !validBooleanSolid(recon) {
+	if !ok || !Validate(recon).ValidSolid() {
 		return nil, false
 	}
 	tv, wv, bv := boolVolumes(target, tool, recon)

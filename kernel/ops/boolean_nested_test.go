@@ -46,7 +46,7 @@ func TestJoinNestedReturnsOuterOnly(t *testing.T) {
 	if nf := len(joined.Faces()); nf != 6 {
 		t.Errorf("union face count = %d, want 6 (no interior wall)", nf)
 	}
-	if !validBooleanSolid(joined) {
+	if !Validate(joined).ValidSolid() {
 		t.Errorf("union is not a valid closed manifold solid")
 	}
 	if r := Validate(joined); !r.Closed || !r.Manifold {
@@ -81,7 +81,7 @@ func TestIntersectNestedReturnsInner(t *testing.T) {
 	if v := BodyGeometryProperties(got, DefaultQuality()).Volume; math.Abs(v-27) > 1e-6 {
 		t.Errorf("intersection volume = %g, want 27", v)
 	}
-	if !validBooleanSolid(got) {
+	if !Validate(got).ValidSolid() {
 		t.Errorf("intersection is not a valid closed manifold solid")
 	}
 }

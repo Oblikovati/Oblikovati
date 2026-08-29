@@ -93,7 +93,7 @@ func TestNonConvexJoinVolumeMatchesAnalytic(t *testing.T) {
 	if math.Abs(got-want) > 1e-6*want {
 		t.Errorf("union volume = %g, want %g", got, want)
 	}
-	if !validBooleanSolid(joined) {
+	if !Validate(joined).ValidSolid() {
 		t.Errorf("union is not a valid closed manifold solid")
 	}
 }

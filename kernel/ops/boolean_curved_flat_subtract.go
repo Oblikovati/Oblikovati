@@ -42,7 +42,7 @@ func curvedFlatSubtract(op PartFeatureOperation, target, tool *topo.Body, _ *dia
 			pieces = append(pieces, piece)
 		}
 	}
-	if len(pieces) != 1 || !validBooleanSolid(pieces[0]) {
+	if len(pieces) != 1 || !Validate(pieces[0]).ValidSolid() {
 		return nil, false // 0 pieces (box ⊇ target) or several (a multi-plane notch needing a union): defer
 	}
 	return pieces[0], true
