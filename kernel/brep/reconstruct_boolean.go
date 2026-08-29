@@ -60,7 +60,10 @@ func ReconstructBooleanBody(inputs []ReconInput) *topo.Body {
 	for _, in := range inputs {
 		faces = append(faces, in.toCurvedFace())
 	}
-	return curvedStitch(faces)
+	// The mesh arrangement can split one straight edge across runs, leaving a spurious 2-valent
+	// collinear vertex the exact boolean never makes; dissolve those so the reconstructed topology
+	// matches brep's and a downstream near-tangent boolean is not broken by the extra edge (#2247).
+	return dissolveCollinearVertices(curvedStitch(faces))
 }
 
 // toCurvedFace converts one ReconInput to the internal curvedFace model.
