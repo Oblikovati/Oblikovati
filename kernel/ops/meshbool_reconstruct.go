@@ -39,8 +39,7 @@ func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality) (*topo.Body,
 	relabelTags(aSoup.Tags, rep)
 	relabelTags(bSoup.Tags, rep)
 	inputCount := tagCounts(aSoup.Tags, bSoup.Tags)
-	result := meshbool.BooleanTagged(aSoup, bSoup, op)
-	result = weldResultSoup(result, res.Weld())
+	result := cleanResultSoup(meshbool.BooleanTagged(aSoup, bSoup, op), res.Weld())
 	relabelTags(result.Tags, rep)
 
 	arr := meshbool.ArrangementTopologyOf(result)
@@ -151,6 +150,15 @@ func tagCounts(tagSlices ...[]int) map[int]int {
 // runPoint rounds one run vertex to a kernel point.
 func runPoint(verts []meshbool.Point, run meshbool.ArrangementRun, i int) math.Point3 {
 	return verts[run.Verts[i]].Round()
+}
+
+// cleanResultSoup applies the cross-operand hygiene the exact mesh boolean leaves to the ops
+// layer (ADR-0056): weld near-coincident vertices the two operands inserted a sub-tolerance
+// step apart, then collapse the near-tangent sliver caps a coincident-wall imprint leaves
+// (T-junction re-stitch, #2247), so the arrangement never traces a degenerate face as a
+// "slit" run. Both use the weld tolerance; the meshbool core stays exact.
+func cleanResultSoup(soup meshbool.TaggedSoup, tol float64) meshbool.TaggedSoup {
+	return collapseSlivers(weldResultSoup(soup, tol), tol)
 }
 
 // weldResultSoup collapses result vertices that co-refinement placed within tol of each other to
