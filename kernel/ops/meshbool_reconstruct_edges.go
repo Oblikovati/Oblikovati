@@ -87,8 +87,33 @@ func (cat *origEdgeCatalog) matchRun(run meshbool.ArrangementRun, verts []meshbo
 		if e, ok := oe.matchSubArc(p0, mid, pn, tol); ok {
 			return e, true
 		}
+		if e, ok := oe.matchSubSegment(p0, mid, pn, tol); ok {
+			return e, true
+		}
 	}
 	return brep.ReconEdge{}, false
+}
+
+// matchSubSegment reuses a straight original edge for an OPEN run that traces PART of it —
+// the straight-line analogue of matchSubArc (#2247). When two coincident-OPPOSITE coplanar
+// faces meet along a run (a lap-seam tab whose front face is coplanar with the flange's back
+// face, opposite normals), that run lies on a real straight edge but its endpoints fall
+// between the edge's own vertices, so matchOpen (which needs equal endpoints) misses it and
+// the coincident-plane pair yields no surface-surface line for intersectionRunEdge to fit.
+// Here the exact sub-segment between the run's endpoints is rebuilt on the original edge's
+// line — identical to the neighbour face's copy of the same edge, so the stitch welds and no
+// SSI is needed.
+func (oe origEdge) matchSubSegment(p0, mid, pn math.Point3, tol float64) (brep.ReconEdge, bool) {
+	if oe.closed {
+		return brep.ReconEdge{}, false
+	}
+	if _, isSeg := oe.curve.(geom.LineSegment); !isSeg {
+		return brep.ReconEdge{}, false
+	}
+	if !onCurve(oe.curve, p0, tol) || !onCurve(oe.curve, mid, tol) || !onCurve(oe.curve, pn, tol) {
+		return brep.ReconEdge{}, false
+	}
+	return brep.ReconEdge{Curve: geom.NewLineSegment(p0, pn), T0: 0, T1: 1}, true
 }
 
 // matchSubArc reuses a CLOSED circle edge for an OPEN run that traces part of it — the
