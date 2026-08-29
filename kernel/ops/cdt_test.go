@@ -13,7 +13,7 @@ import (
 func cdtAreaSum(pts [][2]float64, tris [][3]int) float64 {
 	var a float64
 	for _, t := range tris {
-		a += orient2d(pts[t[0]], pts[t[1]], pts[t[2]]) / 2
+		a += triTwiceSignedArea(pts[t[0]], pts[t[1]], pts[t[2]]) / 2
 	}
 	return a
 }

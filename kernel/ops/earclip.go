@@ -5,10 +5,17 @@ package ops
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/predicates"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
-	"oblikovati.org/math/predicate"
 )
+
+// orient2p is the sign of the signed area of triangle (a, b, c) via the one exact predicate package
+// (kernel/predicates, ADR-0042): >0 CCW, <0 CW, 0 collinear. It adapts math.Point2 to the flat-coord
+// entry point so ear-clipping's convexity/containment tests stay sign-exact on near-collinear samples.
+func orient2p(a, b, c math.Point2) int {
+	return predicates.Orient2D(a.X, a.Y, b.X, b.Y, c.X, c.Y)
+}
 
 // tessellatePlanarFace triangulates a planar face's boundary by ear-clipping (using
 // the exact orientation predicate), giving a watertight triangulation. The boundary
@@ -127,7 +134,7 @@ func findEar(poly []math.Point2, idx []int) (int, bool) {
 	m := len(idx)
 	for i := range m {
 		a, b, c := poly[idx[(i+m-1)%m]], poly[idx[i]], poly[idx[(i+1)%m]]
-		if predicate.Orient2D(a, b, c) <= 0 {
+		if orient2p(a, b, c) <= 0 {
 			continue // reflex or collinear vertex — not an ear
 		}
 		if !anyInside(poly, idx, i, a, b, c) {
@@ -151,7 +158,7 @@ func anyInside(poly []math.Point2, idx []int, ear int, a, b, c math.Point2) bool
 		if p == a || p == b || p == c {
 			continue // a doubled bridge vertex coincident with an ear corner — not blocking
 		}
-		if predicate.Orient2D(poly[idx[(k+m-1)%m]], p, poly[idx[(k+1)%m]]) > 0 {
+		if orient2p(poly[idx[(k+m-1)%m]], p, poly[idx[(k+1)%m]]) > 0 {
 			continue // convex vertex — cannot block an ear
 		}
 		if pointInTriangle(p, a, b, c) {
@@ -163,9 +170,9 @@ func anyInside(poly []math.Point2, idx []int, ear int, a, b, c math.Point2) bool
 
 // pointInTriangle reports whether p is strictly inside CCW triangle abc.
 func pointInTriangle(p, a, b, c math.Point2) bool {
-	return predicate.Orient2D(a, b, p) > 0 &&
-		predicate.Orient2D(b, c, p) > 0 &&
-		predicate.Orient2D(c, a, p) > 0
+	return orient2p(a, b, p) > 0 &&
+		orient2p(b, c, p) > 0 &&
+		orient2p(c, a, p) > 0
 }
 
 // signedArea returns the shoelace signed area (positive = CCW).
@@ -202,7 +209,11 @@ func triangleArea2D(poly []math.Point2, tris [][3]int) float64 {
 	var area float64
 	for _, tri := range tris {
 		a, b, c := poly[tri[0]], poly[tri[1]], poly[tri[2]]
-		area += stdmath.Abs(predicate.Orient2D(a, b, c)) / 2
+		// Twice the signed area is the cross product (a−c)×(b−c); this needs the determinant
+		// MAGNITUDE, not an orientation sign, so it computes it directly rather than through the
+		// exact predicate (whose exact path returns ±1, not the area) — #2287.
+		det := (a.X-c.X)*(b.Y-c.Y) - (a.Y-c.Y)*(b.X-c.X)
+		area += stdmath.Abs(det) / 2
 	}
 	return area
 }
