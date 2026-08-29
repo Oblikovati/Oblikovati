@@ -60,10 +60,10 @@ func withoutRecorder(build func(target, tool *topo.Body) (*topo.Body, bool)) rul
 // See ADR-0045 for why each stays a distinct analytic handler rather than folding into the pipeline.
 var (
 	// Intersect — the band of the thin operand plus the fat operand's two lens caps.
-	curvedCrossingIntersect     = gatedCurved(Intersect, brep.CrossingCylinderIntersectGeneral) // two crossing cylinders
-	curvedSteinmetzIntersect    = gatedCurved(Intersect, brep.SteinmetzIntersectGeneral)        // equal-R bicylinder, general pipeline
-	curvedConeCylinderIntersect = gatedCurved(Intersect, brep.ConeCylinderIntersectGeneral)     // cone ∩ cylinder
-	curvedConeConeIntersect     = gatedCurved(Intersect, brep.ConeConeIntersectGeneral)         // cone ∩ fatter cone
+	curvedCrossingIntersect  = gatedCurved(Intersect, brep.CrossingCylinderIntersectGeneral) // two crossing cylinders
+	curvedSteinmetzIntersect = gatedCurved(Intersect, brep.SteinmetzIntersectGeneral)        // equal-R bicylinder, general pipeline
+	// cone ∩ cylinder AND cone ∩ fatter cone: one unified ruled-crossing driver (ADR-0058 phase 3).
+	curvedConeCrossingIntersect = gatedCurved(Intersect, brep.RuledConeCrossingIntersectGeneral)
 	curvedPartialIntersect      = gatedCurved(Intersect, brep.PartialPenetrationIntersectGeneral)
 	curvedBallRodIntersect      = gatedCurved(Intersect, withoutRecorder(brep.CoaxialSphereRodIntersect)) // coaxial ball ∩ rod: the plug
 

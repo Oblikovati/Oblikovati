@@ -105,18 +105,18 @@ func TestPointInsideConeSolid(t *testing.T) {
 	}
 }
 
-// TestConeConeIntersectGeneralDeclines: the exported entry and the driver decline a cone+cylinder (the
-// cone-cylinder case) and other non-frustum-crossing inputs, so kernel/ops keeps its fallback.
-func TestConeConeIntersectGeneralDeclines(t *testing.T) {
-	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
-	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	if _, ok := ConeConeIntersectGeneral(cone, cyl, nil); ok {
-		t.Error("cone∩cylinder should decline from the cone∩cone general path (ok=false)")
+// TestRuledConeCrossingDeclinesCylinderPair: the unified cone-crossing driver requires at least one cone
+// side, so a cylinder∩cylinder pair defers (ok=false) to the dedicated near-pinch driver.
+func TestRuledConeCrossingDeclinesCylinderPair(t *testing.T) {
+	c1, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1, 12)
+	c2, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	if _, ok := RuledConeCrossingIntersectGeneral(c1, c2, nil); ok {
+		t.Error("cylinder∩cylinder must defer from the cone-crossing driver (ok=false)")
 	}
 }
 
 // General curved∩curved pipeline (EPIC Oblikovati/Oblikovati#1403). The first pair routed through the
-// general SSI→trimByImprint→solid-membership→curvedStitch path (coneConeIntersectGeneral) must produce the
+// general SSI→trimByImprint→solid-membership→curvedStitch path (ruledConeCrossingIntersect) must produce the
 // SAME watertight three-face shape the bespoke ConeConeIntersect builds — a rod-cone band between the two
 // imprint loops plus the two fat-cone lens caps — but with NO per-pair loop→body constructor.
 
@@ -127,7 +127,7 @@ func TestConeConeIntersectGeneralMatchesBespoke(t *testing.T) {
 	thin, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
 	fat, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 
-	res, ok := coneConeIntersectGeneral(thin, fat, nil)
+	res, ok := ruledConeCrossingIntersect(thin, fat, nil)
 	if !ok {
 		t.Fatal("general cone∩cone declined; want the three-face intersection")
 	}
@@ -143,20 +143,20 @@ func TestConeConeIntersectGeneralMatchesBespoke(t *testing.T) {
 func TestConeConeIntersectGeneralOrderIndependent(t *testing.T) {
 	thin, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
 	fat, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
-	res, ok := coneConeIntersectGeneral(fat, thin, nil)
+	res, ok := ruledConeCrossingIntersect(fat, thin, nil)
 	if !ok {
 		t.Fatal("general cone∩cone should resolve with the fat cone passed first too")
 	}
 	assertWatertight(t, res)
 }
 
-// TestConeCylinderIntersectGeneral: cone∩cylinder through the general pipeline yields a watertight solid —
+// TestRuledConeCrossingIntersectGeneral: cone∩cylinder through the general pipeline yields a watertight solid —
 // the cone band inside the cylinder plus the two cylinder-wall lens caps — proving the two-sided recipe
 // reuses the cylinder side (one cone + one cylinder), the second EPIC #1403 migration.
-func TestConeCylinderIntersectGeneral(t *testing.T) {
+func TestRuledConeCrossingIntersectGeneral(t *testing.T) {
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	res, ok := coneCylinderIntersectGeneral(cone, cyl, nil)
+	res, ok := ruledConeCrossingIntersect(cone, cyl, nil)
 	if !ok {
 		t.Fatal("general cone∩cylinder declined; want the three-face intersection")
 	}
@@ -166,17 +166,8 @@ func TestConeCylinderIntersectGeneral(t *testing.T) {
 		t.Errorf("got %d cone + %d cyl + %d plane faces, want 1 cone band + 2 cylinder lens caps", cones, cyls, planes)
 	}
 	// Order-independent + exported entry.
-	if _, ok := ConeCylinderIntersectGeneral(cyl, cone, nil); !ok {
+	if _, ok := RuledConeCrossingIntersectGeneral(cyl, cone, nil); !ok {
 		t.Error("cone∩cylinder should resolve with the cylinder passed first too")
-	}
-}
-
-// TestConeCylinderIntersectGeneralDeclines: two cylinders are not the cone∩cylinder case.
-func TestConeCylinderIntersectGeneralDeclines(t *testing.T) {
-	c1, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1, 12)
-	c2, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	if _, ok := ConeCylinderIntersectGeneral(c1, c2, nil); ok {
-		t.Error("two cylinders should decline from the cone∩cylinder general path")
 	}
 }
 
