@@ -191,3 +191,29 @@ func TestClassifyPointTol(t *testing.T) {
 		t.Errorf("tight onTol: got %v, want Inside", got)
 	}
 }
+
+// InsideQuery flattens a body once and answers repeated strict-inside tests, matching PointInside.
+func TestInsideQueryBatch(t *testing.T) {
+	cyl, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
+	if err != nil {
+		t.Fatalf("SolidCylinder: %v", err)
+	}
+	q := NewInsideQuery(cyl)
+	pts := []struct {
+		p    math.Point3
+		want bool
+	}{
+		{math.P3(0, 0, 2), true},
+		{math.P3(1.5, 0, 2), true},
+		{math.P3(3, 0, 2), false},
+		{math.P3(0, 0, 5), false},
+	}
+	for _, c := range pts {
+		if got := q.Inside(c.p); got != c.want {
+			t.Errorf("InsideQuery.Inside(%v) = %v, want %v", c.p, got, c.want)
+		}
+	}
+	if NewInsideQuery(topo.BodyFromShells(topo.Lineage{}, true)).Inside(math.P3(0, 0, 0)) {
+		t.Error("empty-body query must report not inside")
+	}
+}

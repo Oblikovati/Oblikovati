@@ -465,20 +465,18 @@ func strictlyContains(outer, inner *topo.Body) bool {
 	return allVerticesInside(inner, outer) && !boundariesCross(outer, inner)
 }
 
-// allVerticesInside reports whether every vertex of inner lies strictly within outer. It
-// tessellates outer ONCE and reuses that mesh for every vertex query (#1317) — previously each
-// vertex re-tessellated the whole body, making boolean classification O(V·T) — and classifies
-// through insideMeshQuerier, whose winding-accelerated fast path is certified against the
-// exact brute loop (#1607), so the verdicts are identical.
+// allVerticesInside reports whether every vertex of inner lies strictly within outer, by exact
+// analytic ray casting on outer's B-rep — no tessellation (M48/C3 #3424/#3427). It flattens outer
+// ONCE into a brep.InsideQuery and reuses it for every vertex, keeping boolean classification off the
+// O(V·T) re-tessellation path the mesh querier was built to avoid (#1317/#1607).
 func allVerticesInside(inner, outer *topo.Body) bool {
 	verts := inner.Vertices()
 	if len(verts) == 0 {
 		return false
 	}
-	mesh, _ := TessellateBody(outer, DefaultQuality())
-	inMesh := insideMeshQuerier(mesh, len(verts))
+	q := brep.NewInsideQuery(outer)
 	for _, v := range verts {
-		if !inMesh(v.Point()) {
+		if !q.Inside(v.Point()) {
 			return false
 		}
 	}

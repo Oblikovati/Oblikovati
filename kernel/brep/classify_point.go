@@ -60,6 +60,27 @@ func PointInside(b *topo.Body, p math.Point3) bool {
 	return rayParityInside(faces, p, b.RangeBox())
 }
 
+// InsideQuery is a body flattened once for repeated [PointInside] queries — the analytic analog of a
+// reused tessellation. Build it when classifying many points against one body (a boolean's vertex
+// containment) so the faces are flattened a single time, not per point.
+type InsideQuery struct {
+	faces []curvedFace
+	box   math.Box
+}
+
+// NewInsideQuery flattens b once for repeated inside tests.
+func NewInsideQuery(b *topo.Body) *InsideQuery {
+	return &InsideQuery{faces: facesOfAny(b), box: b.RangeBox()}
+}
+
+// Inside reports whether p is strictly inside the body the query was built from.
+func (q *InsideQuery) Inside(p math.Point3) bool {
+	if len(q.faces) == 0 {
+		return false
+	}
+	return rayParityInside(q.faces, p, q.box)
+}
+
 // ClassifyPoint is [PointInside] widened to the tri-state Inside/OnSurface/Outside: a point within
 // the model weld tolerance of a trimmed face is OnSurface, otherwise the ray-parity verdict decides.
 func ClassifyPoint(b *topo.Body, p math.Point3) Containment {
