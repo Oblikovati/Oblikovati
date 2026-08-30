@@ -103,6 +103,35 @@ func TestFindUsingRayFaceHitAnalytic(t *testing.T) {
 	}
 }
 
+// TestRayCastFacesGrazingBoundaryEdge fires a ray that travels exactly along a box's bottom-face
+// plane so its pierce of the near side face lands precisely on their shared edge (a boundary point,
+// not a trim interior). The strict even-odd interior test rejects a boundary point; the pick must
+// still return that face — the mesh path counted it via inclusive triangle edges, and the rib
+// to-next depth (Oblikovati#1882) depends on it. Regression for the analytic-pick boundary-grazing
+// miss.
+func TestRayCastFacesGrazingBoundaryEdge(t *testing.T) {
+	// Box spanning X[6,10], Y[0,4], Z[-2,2].
+	body, err := brep.SolidBlock(math.P3(6, 0, -2), math.P3(10, 4, 2), "box")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	// A +X ray at Y=0, Z=0: it lies in the Y=0 bottom-face plane and strikes the X=6 near face
+	// exactly on its Y=0 edge (6,0,0).
+	origin := math.P3(4, 0, 0)
+	dir := math.V3(1, 0, 0)
+	_, dist, ok := RayCastFaces(body, origin, dir, DefaultQuality())
+	if !ok {
+		t.Fatal("grazing ray missed the box (boundary pierce rejected)")
+	}
+	if stdmath.Abs(dist-2) > 1e-9 {
+		t.Errorf("nearest hit t = %.12f, want 2 (the near face at X=6, not the far face at X=10)", dist)
+	}
+	// Quality-independent: the boundary here is a straight edge, discretized exactly.
+	if _, dHi, okHi := RayCastFaces(body, origin, dir, hiQuality()); !okHi || stdmath.Abs(dHi-2) > 1e-9 {
+		t.Errorf("grazing hit drifted/vanished at high quality: ok=%v t=%.12f", okHi, dHi)
+	}
+}
+
 // TestLocateUsingPointFaceAnalytic requires LocateUsingPoint's nearest-face point to be the exact
 // perpendicular foot on the analytic surface, independent of tessellation Quality. The query point
 // is at an off-seam azimuth so the mesh foot would drift.
