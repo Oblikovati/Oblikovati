@@ -491,9 +491,15 @@ func allVerticesInside(inner, outer *topo.Body) bool {
 // — ubiquitous on a closed surface — flipping the inside/outside result. The winding number
 // integrates the entire boundary, so it has no such degeneracy and tolerates small mesh cracks.
 //
-// NOTE: the analytic replacement brep.PointInside (M48/C3 #3426) is landed but NOT yet wired here —
-// it miscounts a valid faceted concave solid's interior (see exact-containment-oracle-batch); the
-// mesh oracle stays until the analytic classifier is robust on faceted bodies.
+// NOTE: the analytic replacement brep.PointInside (M48/C3 #3426, the solid-angle-flux generalized winding
+// number) is landed and wired at the brep layer (InsideQuery), but NOT yet routed here. The winding number
+// needs CONSISTENTLY-oriented faces: Σ_faces Ω is 4π inside only when every face's stored orientation
+// agrees. The imported STEP fixtures the fillet gates run on (J6/T5 elliptic hosts) carry INCONSISTENT
+// Reversed flags — the very defect those tests exist to route around — so the signed solid angles
+// partially cancel and an interior point reads |Ω|≈2π (half), classifying OUTSIDE. This oracle re-orients
+// the faces implicitly by tessellating (TessellateBody emits an outward-consistent mesh), which is why it
+// stays here. Routing through brep.PointInside needs a B-rep orientation-normalization pass first (a
+// separate healing operation), after which pointInMesh can retire (#3427).
 func PointInsideBody(b *topo.Body, p math.Point3) bool {
 	mesh, _ := TessellateBody(b, DefaultQuality())
 	return pointInMesh(mesh, p)
