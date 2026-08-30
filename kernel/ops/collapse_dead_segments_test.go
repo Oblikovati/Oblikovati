@@ -6,7 +6,9 @@ import (
 	"math"
 	"testing"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	m "oblikovati.org/math"
 )
 
@@ -20,7 +22,10 @@ func TestCollapseDeadLoopDropsZeroLengthSegment(t *testing.T) {
 		srcV:   []uint64{10, 11, 12, 13},
 		srcE:   []uint64{20, 21, 22, 23},
 	}
-	ring := collapseDeadLoop(l, []int{0, 1, 1, 2}, 1e-6)
+	ring, survived := collapseDeadLoop(l, []int{0, 1, 1, 2}, 1e-6)
+	if survived != -1 {
+		t.Fatalf("a loop that collapses to 3 vertices must not be refused; survived = %d", survived)
+	}
 	if got := ring; len(got) != 3 || got[0] != 0 || got[1] != 1 || got[2] != 2 {
 		t.Fatalf("ring = %v, want [0 1 2]", got)
 	}
@@ -46,7 +51,10 @@ func TestCollapseDeadLoopKeepsFullCircleSeam(t *testing.T) {
 		srcE:   []uint64{5, 6, 7, 8},
 	}
 	// segments 0 and 2 are full-circle rims (ring self-loop, real curve); 1 and 3 join them.
-	ring := collapseDeadLoop(l, []int{0, 0, 1, 1}, 1e-6)
+	ring, survived := collapseDeadLoop(l, []int{0, 0, 1, 1}, 1e-6)
+	if survived != -1 {
+		t.Fatalf("full-circle seams must not be refused; survived = %d", survived)
+	}
 	if len(ring) != 4 {
 		t.Fatalf("full-circle seams collapsed: ring len = %d, want 4 (kept)", len(ring))
 	}
@@ -60,9 +68,50 @@ func TestCollapseDeadLoopCleanNoOp(t *testing.T) {
 		srcV:   []uint64{1, 2, 3},
 		srcE:   []uint64{4, 5, 6},
 	}
-	ring := collapseDeadLoop(l, []int{0, 1, 2}, 1e-6)
+	ring, survived := collapseDeadLoop(l, []int{0, 1, 2}, 1e-6)
+	if survived != -1 {
+		t.Fatalf("a clean loop must not be refused; survived = %d", survived)
+	}
 	if len(ring) != 3 || len(l.pts) != 3 {
 		t.Errorf("clean loop mutated: ring=%v pts=%d", ring, len(l.pts))
+	}
+}
+
+// TestCollapseDeadLoopRefusesDegenerateLoop is the #3389 regression: a loop that is nothing but dead
+// zero-length segments collapses to fewer than three vertices, so it cannot bound a face. collapseDeadLoop
+// must REFUSE it (survived < 3, the surviving count) and keep the original ring, so assembleBody can
+// record a named defect here instead of deferring the malformed body to a later Validate.
+func TestCollapseDeadLoopRefusesDegenerateLoop(t *testing.T) {
+	// Three coincident points joined by nil zero-length stubs: every segment is dead.
+	l := &filletLoop{
+		pts:    []m.Point3{m.P3(2, 0, 0), m.P3(2, 0, 0), m.P3(2, 0, 0)},
+		curves: []geom.Curve3{nil, nil, nil},
+		srcV:   []uint64{1, 2, 3},
+		srcE:   []uint64{4, 5, 6},
+	}
+	ring, survived := collapseDeadLoop(l, []int{0, 0, 0}, 1e-6)
+	if survived < 0 || survived >= 3 {
+		t.Fatalf("an all-dead loop must be refused with a surviving count < 3; survived = %d", survived)
+	}
+	if len(ring) != 3 {
+		t.Errorf("a refused loop must keep its original ring for the builder; ring = %v", ring)
+	}
+}
+
+// TestRecordDeadLoopRefusalsDefects proves the refusal reaches the body as a Defect (#3389): recording
+// one refusal stamps the builder with a CodeAssembleDeadLoopCollapse Defect the built body carries.
+func TestRecordDeadLoopRefusalsDefects(t *testing.T) {
+	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok("t", "body", 0)))
+	recordDeadLoopRefusals(bld, []deadLoopRefusal{{face: 1, loop: 0, survived: 2, welded: 4}})
+	body := bld.Build()
+	found := false
+	for _, d := range body.BuildDiagnostics() {
+		if d.Code == CodeAssembleDeadLoopCollapse && d.Severity == diag.Defect {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("a refused dead loop did not reach the body as a %q Defect: %v", CodeAssembleDeadLoopCollapse, body.BuildDiagnostics())
 	}
 }
 
