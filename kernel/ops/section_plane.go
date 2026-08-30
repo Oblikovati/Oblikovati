@@ -6,6 +6,7 @@ import (
 	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -164,11 +165,10 @@ func FaceSilhouetteWires(f *topo.Face, viewDir math.Vector3, includeBoundary boo
 	if len(loops) == 0 {
 		return nil, fmt.Errorf("ops: face %d has no silhouette from %v", f.ID(), viewDir)
 	}
-	mesh := TessellateFace(f, q)
 	onTol := stdmath.Max(q.tol(), 1e-6) // tol:calibrated — floors the (already model-relative) quality chord tolerance
 	var segs [][2]math.Point3
 	for _, pl := range loops {
-		segs = append(segs, clipPolylineToFace(pl, mesh, f, onTol, includeBoundary)...)
+		segs = append(segs, clipPolylineToFace(pl, f, onTol, includeBoundary)...)
 	}
 	if len(segs) == 0 {
 		return nil, fmt.Errorf("ops: face %d's silhouette lies outside its trim", f.ID())
@@ -177,13 +177,13 @@ func FaceSilhouetteWires(f *topo.Face, viewDir math.Vector3, includeBoundary boo
 }
 
 // clipPolylineToFace keeps the polyline's segments whose midpoints lie on the
-// face (within onTol of its mesh), optionally dropping runs hugging the
-// face's boundary edges.
-func clipPolylineToFace(pl []math.Point3, mesh *Mesh, f *topo.Face, onTol float64, includeBoundary bool) [][2]math.Point3 {
+// face's trimmed surface (within onTol, analytic — no tessellation read),
+// optionally dropping runs hugging the face's boundary edges.
+func clipPolylineToFace(pl []math.Point3, f *topo.Face, onTol float64, includeBoundary bool) [][2]math.Point3 {
 	var out [][2]math.Point3
 	for i := 0; i+1 < len(pl); i++ {
 		mid := pl[i].TranslateBy(pl[i].VectorTo(pl[i+1]).Scale(0.5))
-		if meshContainment(mesh, mid, onTol) != ContainOn {
+		if !brep.PointOnFace(f, mid, onTol) {
 			continue
 		}
 		if !includeBoundary && pointNearFaceBoundary(mid, f, onTol) {

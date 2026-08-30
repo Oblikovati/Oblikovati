@@ -3,6 +3,7 @@
 package brep
 
 import (
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -24,4 +25,22 @@ import (
 //	if brep.PointInFaceTrim(f, hit.Point) { /* the ray truly pierced face f */ }
 func PointInFaceTrim(f *topo.Face, p math.Point3) bool {
 	return pointInTrimUV(curvedFaceOf(f), p)
+}
+
+// PointOnFace reports whether p lies on face f's trimmed surface within tol: within tol of
+// f.Geometry() AND inside f's trim region (or within tol of a trim boundary edge, matching the
+// mesh ContainOn slack it replaces). It is the single-face distillation of the analytic on-surface
+// test [onAnyFace] uses — the analytic replacement for a face-tessellation ContainOn read that a
+// silhouette-clip keep/discard decision needs (M48/C3, no tessellation in a topological decision).
+//
+// Example:
+//
+//	if brep.PointOnFace(f, mid, onTol) { /* the silhouette segment midpoint lands on face f */ }
+func PointOnFace(f *topo.Face, p math.Point3, tol float64) bool {
+	cf := curvedFaceOf(f)
+	_, _, foot := geom.ClosestPointOnSurface(cf.surface, p)
+	if float64(foot.DistanceTo(p)) < tol && pointInTrimUV(cf, p) {
+		return true
+	}
+	return nearFaceBoundary(cf, p, tol)
 }
