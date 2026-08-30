@@ -87,11 +87,18 @@ func drillWrappedHoles(pad *topo.Body, inner []sketch.Loop, plane sketch.Plane, 
 // loops become the pad's inner and outer faces, and the swept solid's caps close its walls.
 func wrappedSkin(poly []math.Point2, plane sketch.Plane, surf wrapSurface,
 	inner, outer float64, feat string) (*topo.Body, error) {
-	sections := [][]math.Point3{
-		wrappedLoop(poly, plane, surf, inner),
-		wrappedLoop(poly, plane, surf, outer),
+	innerLoop := wrappedLoop(poly, plane, surf, inner)
+	outerLoop := wrappedLoop(poly, plane, surf, outer)
+	// Build the inner/outer faces as their GENUINE curved surfaces when the wrap offers them (a
+	// cylindrical wrap): a flat cap over a wrapped loop is a non-coplanar face on a plane surface,
+	// invalid geometry the analytic classifier rejects. The cone wrap has no analytic cap yet and
+	// falls back to the faceted swept cap.
+	if innerCap, ok := surf.capSurface(inner); ok {
+		if outerCap, ok2 := surf.capSurface(outer); ok2 {
+			return wrappedPadSolid(innerLoop, outerLoop, innerCap, outerCap, feat)
+		}
 	}
-	body, err := sweptSolid(sections, false, feat)
+	body, err := sweptSolid([][]math.Point3{innerLoop, outerLoop}, false, feat)
 	if err != nil {
 		return nil, fmt.Errorf("emboss: wrap %s: %w", feat, err)
 	}

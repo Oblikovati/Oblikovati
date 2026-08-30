@@ -143,3 +143,7 @@ func (fr coneWrapFrame) offsets(depth float64, engrave bool) (inner, outer float
 	}
 	return -depth, pad, nil
 }
+
+// capSurface has no analytic form yet for the cone wrap (its level is a signed normal offset, not a
+// single cone), so the cone pad keeps the faceted swept cap. TODO: build the offset cone cap.
+func (fr coneWrapFrame) capSurface(float64) (geom.Surface, bool) { return nil, false }
