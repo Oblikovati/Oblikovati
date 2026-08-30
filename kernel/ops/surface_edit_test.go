@@ -3,9 +3,11 @@
 package ops
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -256,5 +258,33 @@ func TestMidSurfacesByPairsLostKeyErrors(t *testing.T) {
 	solid, _ := Stitch(boxFaces(4, 4, 1), 0, false, "box")
 	if _, err := MidSurfacesByPairs(solid, [][2][]byte{{[]byte("ghost"), []byte("gone")}}, "mid"); err == nil {
 		t.Error("a lost face-pair key should error")
+	}
+}
+
+// TestSurfaceEditDeclinesCurvedTrim is the #3393 regression: a curved face is REFUSED at
+// classification with a named decline (not a generic NotYetImplemented). The decline classifies as
+// ErrSurfaceEditUnsupported and its message names the offending configuration.
+func TestSurfaceEditDeclinesCurvedTrim(t *testing.T) {
+	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
+	if err != nil {
+		t.Fatalf("SolidCylinder: %v", err)
+	}
+	_, err = TrimByPlane(cyl, math.P3(0, 0, 2), math.V3(0, 0, 1), true, "trim")
+	if !errors.Is(err, ErrSurfaceEditUnsupported) {
+		t.Fatalf("TrimByPlane on a curved body = %v, want a decline classified as ErrSurfaceEditUnsupported", err)
+	}
+	if !strings.Contains(err.Error(), "curved face") {
+		t.Errorf("decline message %q does not name the offending curved face(s)", err.Error())
+	}
+}
+
+// TestSurfaceEditDeclinesCurvedOffset mirrors the trim decline for OffsetSurface (#3393).
+func TestSurfaceEditDeclinesCurvedOffset(t *testing.T) {
+	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
+	if err != nil {
+		t.Fatalf("SolidCylinder: %v", err)
+	}
+	if _, err := OffsetSurface(cyl, 0.5, "off"); !errors.Is(err, ErrSurfaceEditUnsupported) {
+		t.Fatalf("OffsetSurface on a curved body = %v, want ErrSurfaceEditUnsupported", err)
 	}
 }
