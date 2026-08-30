@@ -12,8 +12,11 @@ import (
 
 // Body locate/ray queries (M07-F07, Oblikovati/Oblikovati#630): find the
 // topology entity nearest a 3D point, and fire a ray (with a pick radius)
-// into the body. Distances are mesh-accurate at the given quality, matching
-// what picking and every other consumer sees.
+// into the body. Face distances and ray pierces are resolved against the
+// ANALYTIC B-rep surfaces (not a face tessellation), so a pick →
+// reference-key resolution is exact and Quality-independent (M48/C3). Edge and
+// vertex proximity still use the edge's curve discretization, a curve
+// discretizer — not a face mesh.
 
 // LocatedEntity is one query answer: which entity, of which kind, how far.
 type LocatedEntity struct {
@@ -64,15 +67,14 @@ func closerEdge(best *LocatedEntity, b *topo.Body, p math.Point3, q Quality) {
 	}
 }
 
+// closerFace updates best with the nearest face, measuring the ANALYTIC perpendicular distance from
+// p to each face (geom.ClosestPointOnSurface confirmed against the trim), not a per-triangle mesh
+// distance — so the located point is the exact foot on the B-rep and does not drift with the display
+// Quality (M48/C3, Oblikovati/Oblikovati#3469).
 func closerFace(best *LocatedEntity, b *topo.Body, p math.Point3, q Quality) {
 	for _, f := range b.Faces() {
-		m := TessellateFace(f, q)
-		for t := 0; t+2 < len(m.Indices); t += 3 {
-			cp := closestPointOnTriangle(p,
-				m.Positions[m.Indices[t]], m.Positions[m.Indices[t+1]], m.Positions[m.Indices[t+2]])
-			if d := float64(p.DistanceTo(cp)); d < best.Distance {
-				*best = LocatedEntity{Kind: topo.KindFace, Face: f, Point: cp, Distance: d}
-			}
+		if cp, d := analyticClosestOnFace(f, p, q); d < best.Distance {
+			*best = LocatedEntity{Kind: topo.KindFace, Face: f, Point: cp, Distance: d}
 		}
 	}
 }
@@ -106,7 +108,7 @@ func FindUsingRay(b *topo.Body, origin math.Point3, dir math.Vector3, radius flo
 	}
 	d := dir.Scale(math.Scalar(1 / l))
 	var hits []LocatedEntity
-	hits = append(hits, rayFaceHits(b, origin, d, q)...)
+	hits = append(hits, rayFaceHits(b, origin, d)...)
 	if radius > 0 {
 		hits = append(hits, rayEdgeHits(b, origin, d, radius, q)...)
 		hits = append(hits, rayVertexHits(b, origin, d, radius)...)
@@ -118,20 +120,16 @@ func FindUsingRay(b *topo.Body, origin math.Point3, dir math.Vector3, radius flo
 	return hits
 }
 
-func rayFaceHits(b *topo.Body, origin math.Point3, dir math.Vector3, q Quality) []LocatedEntity {
+// rayFaceHits collects every face the ray crosses, each at its nearest analytic pierce
+// (analyticFaceRayHit: exact ray∩surface confirmed against the trim), not a per-triangle mesh
+// crossing — so the reported hit point is on the exact B-rep and is Quality-independent (M48/C3,
+// Oblikovati/Oblikovati#3470). dir is unit (FindUsingRay normalizes it), so Distance is the true
+// distance along the ray.
+func rayFaceHits(b *topo.Body, origin math.Point3, dir math.Vector3) []LocatedEntity {
 	var out []LocatedEntity
 	for _, f := range b.Faces() {
-		m := TessellateFace(f, q)
-		bestT, hit := stdmath.Inf(1), false
-		for t := 0; t+2 < len(m.Indices); t += 3 {
-			if dist, ok := rayTriangleDist(origin, dir,
-				m.Positions[m.Indices[t]], m.Positions[m.Indices[t+1]], m.Positions[m.Indices[t+2]]); ok && dist < bestT {
-				bestT, hit = dist, true
-			}
-		}
-		if hit {
-			p := origin.TranslateBy(dir.Scale(math.Scalar(bestT)))
-			out = append(out, LocatedEntity{Kind: topo.KindFace, Face: f, Point: p, Distance: bestT})
+		if t, p, ok := analyticFaceRayHit(f, origin, dir); ok {
+			out = append(out, LocatedEntity{Kind: topo.KindFace, Face: f, Point: p, Distance: t})
 		}
 	}
 	return out
