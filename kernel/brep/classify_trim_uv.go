@@ -10,9 +10,10 @@ import (
 )
 
 // trimUVSamples is the per-edge sampling when a loop is projected into the surface's (u, v) domain.
-// The classifier only asks whether a point well inside the face is contained, so a modest polyline
-// approximation of each curved trim edge is enough — it is not a tessellation of the face.
-const trimUVSamples = 16
+// A point well inside the face classifies correctly from a modest polyline; a point nearer a curved
+// trim edge than the sampling error is handled by faceBoundaryBand reselection, not by more samples —
+// so this is a balance (fewer reselections) rather than an accuracy floor. It is not a face tessellation.
+const trimUVSamples = 32
 
 // domainPeriodTol accepts a parameter span as a full 2π turn; the analytic surfaces return an angular
 // domain of exactly [0, 2π], so this only guards floating comparison, not a model quantity.
@@ -112,4 +113,36 @@ func loopCentroid(ring []math.Point2) math.Point2 {
 	}
 	n := float64(len(ring))
 	return math.P2(su/n, sv/n)
+}
+
+// faceBoundaryBand is twice the largest gap between a trim edge and its sampled polyline (the chord
+// sagitta over one trimUVSamples segment). Inside this band of a curved trim edge the projected
+// polygon may misclassify a point, so the classifier reselects the ray rather than trust the polygon;
+// beyond it the sampled trim is reliable. A face with only straight edges (a planar polygon, a
+// cylinder/cone band whose bounds are circles-as-v-const) reports 0.
+func faceBoundaryBand(f curvedFace) float64 {
+	worst := 0.0
+	for _, loop := range f.loops {
+		for _, e := range loop.edges {
+			if s := edgeChordSagitta(e); s > worst {
+				worst = s
+			}
+		}
+	}
+	return 2 * worst
+}
+
+// edgeChordSagitta is the largest distance from an edge's true midpoint to its chord midpoint over
+// the trimUVSamples segments the trim polygon uses — the polygon's worst deviation from the edge.
+func edgeChordSagitta(e loopEdge) float64 {
+	worst := 0.0
+	for k := 0; k < trimUVSamples; k++ {
+		t0 := e.t0 + (e.t1-e.t0)*float64(k)/trimUVSamples
+		t1 := e.t0 + (e.t1-e.t0)*float64(k+1)/trimUVSamples
+		chordMid := e.curve.PointAt(t0).Midpoint(e.curve.PointAt(t1))
+		if s := float64(e.curve.PointAt((t0 + t1) / 2).DistanceTo(chordMid)); s > worst {
+			worst = s
+		}
+	}
+	return worst
 }

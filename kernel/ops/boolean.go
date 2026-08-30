@@ -485,12 +485,12 @@ func allVerticesInside(inner, outer *topo.Body) bool {
 	return true
 }
 
-// PointInsideBody reports whether p is inside a solid body, via the generalized winding number of
-// the body's tessellation (see pointInMesh/windingNumber). This replaces the old single fixed-ray
-// parity test (#1317), which miscounted whenever the ray grazed a shared edge or vertex of the mesh
-// — ubiquitous on a closed surface — flipping the inside/outside result. The winding number
-// integrates the entire boundary, so it has no such degeneracy and tolerates small mesh cracks.
+// PointInsideBody reports whether p is strictly inside a solid body, by exact analytic ray casting
+// on the B-rep (brep.ClassifyPoint). It reads no tessellation: a topological decision must not
+// depend on a mesh (the kernel ground rule; M48/C3 #3426/#3427). It supersedes the winding number
+// of the body's tessellation, which decided containment from a discretized approximation of the
+// boundary. A point ON the boundary surface is NOT strictly inside, matching the tessellated
+// winding number's <0.5 verdict there.
 func PointInsideBody(b *topo.Body, p math.Point3) bool {
-	mesh, _ := TessellateBody(b, DefaultQuality())
-	return pointInMesh(mesh, p)
+	return brep.PointInside(b, p)
 }

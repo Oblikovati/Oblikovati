@@ -39,43 +39,62 @@ var rayDirections = [][3]float64{
 	{2, 3, 5}, {3, -5, 2}, {-5, 2, 3}, {1, -1, 4}, {4, 4, -1}, {-3, 6, -2},
 }
 
-// ClassifyPoint reports whether p is inside, on, or outside the solid body b, by exact analytic ray
-// casting — the OCCT BRepClass3d_SolidClassifier analog. It counts the boundary crossings of a ray
-// from p (each crossing a ray∩surface pierce that lies within its face's trimmed region, via the
-// exact [RaySurfaceHits] and the parameter-space [pointInTrimUV]); even–odd parity gives
-// material membership independent of face orientation. A ray that grazes a face boundary or runs
-// tangent is discarded for the next candidate direction. It reads no tessellation — the analytic
-// replacement for the mesh winding oracle (M48/C3 #3427).
+// PointInside reports whether p is strictly inside the solid body b, by exact analytic ray casting —
+// the OCCT BRepClass3d_SolidClassifier analog. It counts the boundary crossings of a ray from p (each
+// crossing a ray∩surface pierce that lies within its face's trimmed region, via the exact
+// [RaySurfaceHits] and the parameter-space [pointInTrimUV]) and takes even–odd parity, so membership
+// is independent of face orientation (a legacy inside-out body classifies the same). A ray that
+// grazes a face boundary or runs tangent is discarded for the next candidate direction. It reads no
+// tessellation — the analytic replacement for the mesh winding oracle (M48/C3 #3426/#3427). A point
+// exactly on the boundary is not strictly inside; use [ClassifyPoint] when the on-surface case matters.
 //
 // Example — the centre of a unit cube is inside, a far point outside:
 //
-//	cube, _ := brep.Box(math.P3(0,0,0), math.P3(1,1,1))
-//	brep.ClassifyPoint(cube, math.P3(0.5, 0.5, 0.5)) // Inside
+//	cube, _ := brep.SolidBlock(math.P3(0,0,0), math.P3(1,1,1), "cube")
+//	brep.PointInside(cube, math.P3(0.5, 0.5, 0.5)) // true
+func PointInside(b *topo.Body, p math.Point3) bool {
+	faces := facesOfAny(b)
+	if len(faces) == 0 {
+		return false
+	}
+	inside, _ := rayParityInside(faces, p, castLimit(b), grazeTol(b))
+	return inside
+}
+
+// ClassifyPoint is [PointInside] widened to the tri-state Inside/OnSurface/Outside: a point within
+// the model weld tolerance of a trimmed face is OnSurface, otherwise the ray-parity verdict decides.
 func ClassifyPoint(b *topo.Body, p math.Point3) Containment {
 	faces := facesOfAny(b)
 	if len(faces) == 0 {
 		return Outside
 	}
-	tol := geom.ResolutionForBox(b.RangeBox()).Sew()
-	if onAnyFace(faces, p, tol) {
+	if onAnyFace(faces, p, geom.ResolutionForBox(b.RangeBox()).Weld()) {
 		return OnSurface
 	}
-	tMax := 2 * float64(b.RangeBox().Diagonal().Length())
-	for _, d := range rayDirections {
-		if crossings, ok := rayCrossings(faces, p, d, tMax, tol); ok {
-			return insideFromParity(crossings)
-		}
-	}
-	return Outside // every candidate direction grazed a boundary: astronomically unlikely
-}
-
-// insideFromParity maps an odd crossing count to Inside, even to Outside.
-func insideFromParity(crossings int) Containment {
-	if crossings%2 == 1 {
+	if inside, _ := rayParityInside(faces, p, castLimit(b), grazeTol(b)); inside {
 		return Inside
 	}
 	return Outside
 }
+
+// rayParityInside casts each candidate direction until one crosses the body without grazing, and
+// returns the even–odd verdict. ok is false only if every direction grazed (astronomically unlikely).
+func rayParityInside(faces []curvedFace, p math.Point3, tMax, tol float64) (inside, ok bool) {
+	for _, d := range rayDirections {
+		if crossings, clean := rayCrossings(faces, p, d, tMax, tol); clean {
+			return crossings%2 == 1, true
+		}
+	}
+	return false, false
+}
+
+// castLimit is the ray length that certainly clears the body — twice its bounding-box diagonal.
+func castLimit(b *topo.Body) float64 { return 2 * float64(b.RangeBox().Diagonal().Length()) }
+
+// grazeTol is the distance within which a pierce counts as on a trim edge (so the ray is reselected).
+// It is the coplanar/on-line classification tolerance, tight enough that a point a modelling epsilon
+// inside a thin wall still casts cleanly, loose enough to catch a genuine shared-edge pierce.
+func grazeTol(b *topo.Body) float64 { return geom.ResolutionForBox(b.RangeBox()).Plane() }
 
 // rayCrossings counts the boundary crossings of the ray p→dir within [0, tMax]. ok is false when a
 // pierce grazes a face boundary or runs tangent, signalling the caller to try another direction
@@ -97,11 +116,15 @@ func rayCrossings(faces []curvedFace, p math.Point3, dir [3]float64, tMax, tol f
 }
 
 // faceRayCrossings counts how many of the ray's pierces of one face's surface land inside that
-// face's trim. ok is false on a grazing/tangent pierce (see rayCrossings).
+// face's trim. ok is false on a grazing/tangent pierce (see rayCrossings). The reselection band is
+// widened to the face's own polygon-vs-curve error (faceBoundaryBand), so the sampled trim test is
+// trusted only where it is provably accurate — a pierce nearer a curved trim edge than the sampling
+// error forces a cleaner direction instead of a wrong count.
 func faceRayCrossings(f curvedFace, ray geom.Line, tMax, tol float64) (int, bool) {
+	band := stdmath.Max(tol, faceBoundaryBand(f))
 	count := 0
 	for _, hit := range geom.RaySurfaceHits(f.surface, ray, tMax) {
-		if rayGrazes(f, ray, hit, tol) {
+		if rayGrazes(f, ray, hit, band) {
 			return 0, false
 		}
 		if pointInTrimUV(f, hit.Point) {
