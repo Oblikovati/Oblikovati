@@ -144,14 +144,16 @@ func refineCell(s geom.Surface, u0, u1, v0, v1, tol, minU, minV float64, outer [
 
 // recordCapSaturation records a cap-saturation diagnostic on the mesh when the interior refinement
 // could not meet the chord tolerance within the cell-size floor — so a face that under-tessellates is
-// visible to the caller, not silently shipped (#1412).
+// visible to the caller, not silently shipped (#1412). A saturated cap does NOT meet the tolerance the
+// caller asked for, so it is a tracked degradation — Defect, not Warning: the mesh must not present as
+// a complete cap (#3391; the ground rule that an approximated element ships as a diag.Defect).
 func recordCapSaturation(m *Mesh, saturated bool, q Quality) {
 	if m == nil || !saturated {
 		return
 	}
 	m.Diagnose(diag.Diagnostic{
 		Code:     CodeTessellateCapSaturated,
-		Severity: diag.Warning,
+		Severity: diag.Defect,
 		Detail:   fmt.Sprintf("interior refinement saturated the %d-cell floor still above chord tol %g", maxInteriorCells, q.tol()),
 	})
 }
