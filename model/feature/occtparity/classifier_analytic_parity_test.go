@@ -20,12 +20,12 @@ var analyticParityProbes = []math.Point3{
 
 // TestAnalyticClassifierMatchesMeshOnSeamBodies is the regression gate for the analytic point-in-solid
 // classifier (brep.PointInside) on the B1 imported seam bodies — the curved (sphere/NURBS) faces that
-// exposed the trim-classification gaps. Every case except T9 must agree with the mesh oracle at every
-// probe; T9's free-form (NURBS) face still miscounts a couple of probes (a grazing double-count on the
-// numeric-ray path, tracked separately), so it is allowed a small residual rather than excluded.
+// exposed the trim-classification gaps. Every case must agree with the mesh winding oracle at EVERY
+// probe: the classifier cross-checks the nearest-point normal test against ray parity, so it is robust
+// both near an edge (where a ray grazes) and in the clear interior (where an imported face's orientation
+// fools the nearest-point test).
 func TestAnalyticClassifierMatchesMeshOnSeamBodies(t *testing.T) {
 	fixtureDir := CorpusFixtureDir()
-	residualBudget := map[string]int{"T9": 2}
 	for _, r := range Corpus() {
 		if r.Grid != "simple" || !b1SeamCases[r.Case] {
 			continue
@@ -34,15 +34,10 @@ func TestAnalyticClassifierMatchesMeshOnSeamBodies(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: import failed: %v", r.Case, err)
 		}
-		disagree := 0
 		for _, p := range analyticParityProbes {
-			if brep.PointInside(body, p) != ops.PointInsideBody(body, p) {
-				disagree++
+			if got, want := brep.PointInside(body, p), ops.PointInsideBody(body, p); got != want {
+				t.Errorf("%s: brep.PointInside(%v) = %v, mesh oracle = %v", r.Case, p, got, want)
 			}
-		}
-		if disagree > residualBudget[r.Case] {
-			t.Errorf("%s: analytic classifier disagrees with the mesh oracle at %d/%d probes (budget %d)",
-				r.Case, disagree, len(analyticParityProbes), residualBudget[r.Case])
 		}
 	}
 }
