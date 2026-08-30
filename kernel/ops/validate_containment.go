@@ -11,16 +11,13 @@ import (
 	"oblikovati.org/math"
 )
 
-// holeEdgeSamples is how many points per edge the containment check samples. A full-ellipse hole is a
-// single closed edge whose two endpoints weld to ONE seam vertex, so a vertex-only bbox would collapse
-// to a point and miss a protrusion — several samples per edge are required to trace the real rim.
-//
-// It must ALSO be dense enough that a sampled CURVED OUTER loop (a cylinder-cap rim: one closed circle
-// edge) does not under-approximate its own boundary and falsely flag a hole that is strictly inside the
-// true rim but outside the coarse inscribed polygon. A curved-boolean cap's exit-ellipse sits ~0.03·R
-// inside a circular rim; at 64 samples the inscribed polygon's chord sagitta is ~5e-4·R, well under
-// that margin, so a valid interior hole passes while a genuine (multi-unit) fillet protrusion still trips.
-const holeEdgeSamples = 64
+// nonAnalyticEdgeSegments is the polyline fallback density used ONLY for an edge that has no
+// closed-form plane projection (a spline, or a circle/arc seen edge-on). Every LINE, CIRCLE, and ARC
+// projects ANALYTICALLY (geom.ProjectCurveToPlane, ADR-0055) and never touches this count — the
+// containment decision for those is exact, retiring the tuned 64-sample chord test (#3478). A spline
+// has no exact plane conic, so it is discretized here; this is the codebase's standard treatment of a
+// non-analytic curve, not a tolerance that drives the analytic decision.
+const nonAnalyticEdgeSegments = 48
 
 // checkHoleContainment flags any PLANAR face whose hole loop is not strictly inside its outer loop — the
 // B-rep invariant that a hole is an interior void, not a protrusion. A fillet that shrinks a face's outer
@@ -28,27 +25,36 @@ const holeEdgeSamples = 64
 // the elliptical-prism blend cases): the tessellator then meshes malformed input and emits phantom
 // "fill"/crack artifacts that look like meshing bugs. Reported as a distinct HolesContained flag + issues
 // rather than folded into Valid, so it is a diagnostic tripwire until the fillet trim that fixes it lands.
-// Curved-face containment lives in surface (u,v) space and is a separate concern, out of scope here.
+//
+// The containment test is EXACT over the loops' analytic 2D geometry (#3478): each edge projects into the
+// face's own (u,v) frame as a line/arc/circle/ellipse (never a sampled polygon), so a curved outer rim is
+// its true conic, not an inscribed chord that under-approximates its own boundary. Curved-face containment
+// lives in surface (u,v) space and is a separate concern, out of scope here.
 func (r *ValidationReport) checkHoleContainment(b *topo.Body) {
 	r.HolesContained = true
 	for _, f := range b.Faces() {
-		if _, ok := f.Geometry().(geom.Plane); !ok || len(f.Loops()) < 2 {
+		pl, ok := f.Geometry().(geom.Plane)
+		if !ok || len(f.Loops()) < 2 {
 			continue
 		}
-		flat := planeProjector(f.Geometry().NormalAt(0, 0))
-		outer := planarLoopSamples(outerLoopOf(f), flat)
-		if len(outer) < 3 {
+		outer := loopCurves2d(outerLoopOf(f), pl)
+		if len(outer) == 0 {
 			continue
 		}
-		for _, l := range f.Loops() {
-			if l.IsOuter() || loopWithin(planarLoopSamples(l, flat), outer) {
-				continue
-			}
-			r.HolesContained = false
-			r.Issues = append(r.Issues, fmt.Sprintf(
-				"hole loop %d protrudes outside the outer loop of planar face %d (malformed B-rep face)",
-				l.ID(), f.ID()))
+		r.flagProtrudingHoles(f, outer, pl)
+	}
+}
+
+// flagProtrudingHoles records a HolesContained defect for every inner loop of f that escapes outer.
+func (r *ValidationReport) flagProtrudingHoles(f *topo.Face, outer []geom.Curve2, pl geom.Plane) {
+	for _, l := range f.Loops() {
+		if l.IsOuter() || holeInsideOuter(loopCurves2d(l, pl), outer) {
+			continue
 		}
+		r.HolesContained = false
+		r.Issues = append(r.Issues, fmt.Sprintf(
+			"hole loop %d protrudes outside the outer loop of planar face %d (malformed B-rep face)",
+			l.ID(), f.ID()))
 	}
 }
 
@@ -62,80 +68,213 @@ func outerLoopOf(f *topo.Face) *topo.Loop {
 	return nil
 }
 
-// planarLoopSamples projects holeEdgeSamples points from each of the loop's edges onto the face plane.
-// Sampling the curve (not just its vertices) is required because a closed curved edge — a full-ellipse
-// rim — has a single seam vertex yet a wide extent, so vertices alone would report a point, not the rim.
-func planarLoopSamples(l *topo.Loop, flat func(math.Point3) math.Point2) []math.Point2 {
+// loopCurves2d projects every edge of the loop into pl's (u,v) frame as an analytic 2D curve. Edge
+// traversal direction is dropped: containment is decided by point-in-region parity and boundary
+// crossings, both orientation-independent, so a per-edge sense would only add noise.
+func loopCurves2d(l *topo.Loop, pl geom.Plane) []geom.Curve2 {
 	if l == nil {
 		return nil
 	}
-	var pts []math.Point2
+	var cs []geom.Curve2
 	for _, u := range l.EdgeUses() {
-		c := u.Edge().Geometry()
-		for i := range holeEdgeSamples {
-			t := float64(i) / holeEdgeSamples
-			if u.Reversed() { // honour loop-traversal direction so the samples form an ordered ring
-				t = 1 - t
-			}
-			pts = append(pts, flat(c.PointAt(t)))
-		}
+		cs = append(cs, edgeCurves2d(pl, u.Edge().Geometry())...)
 	}
-	return pts
+	return cs
 }
 
-// loopWithin reports whether every sampled point of hole lies inside the outer polygon. A point is a
-// genuine protrusion only when it is outside AND farther from the boundary than a model-relative slack —
-// so a hole tangent to the outer loop (a vertex exactly on the boundary, MAXPROTRUDE≈0) is NOT falsely
-// flagged, while the fillet-② protrusion (a rim poking whole units past the shrunken outer) is. Two-tier:
-// a fast axis-aligned bbox accept skips the O(n·m) distance pass for a hole whose extent is clearly inside.
-func loopWithin(hole, outer []math.Point2) bool {
+// edgeCurves2d returns the analytic 2D projection of one edge, or its polyline fallback when the curve
+// has no closed-form plane projection (spline / edge-on conic; see nonAnalyticEdgeSegments).
+func edgeCurves2d(pl geom.Plane, c geom.Curve3) []geom.Curve2 {
+	if c2, ok := geom.ProjectCurveToPlane(pl, c); ok {
+		return []geom.Curve2{c2}
+	}
+	pts := geom.SampleCurve3(c, nonAnalyticEdgeSegments)
+	segs := make([]geom.Curve2, 0, len(pts))
+	for i := 0; i+1 < len(pts); i++ {
+		segs = append(segs, geom.NewLineSegment2d(planeUV2d(pl, pts[i]), planeUV2d(pl, pts[i+1])))
+	}
+	return segs
+}
+
+// planeUV2d gives p's coordinates in pl's orthonormal (u,v) frame (the exact in-plane position of an
+// edge that already lies on pl).
+func planeUV2d(pl geom.Plane, p math.Point3) math.Point2 {
+	d := pl.Origin.VectorTo(p)
+	return math.P2(d.Dot(pl.UAxis.AsVector()), d.Dot(pl.VAxis.AsVector()))
+}
+
+// holeInsideOuter reports whether the hole loop lies inside the region bounded by outer. It is exact
+// over the analytic edges (#3478): if any hole edge transversally crosses the outer boundary the hole
+// pokes out; otherwise the hole is wholly on one side of that boundary (Jordan), so a single hole point
+// decides it. A hole merely touching the outer boundary at a shared vertex is not a crossing and stays
+// contained, preserving the tangency the retired sampled test allowed.
+func holeInsideOuter(hole, outer []geom.Curve2) bool {
 	if len(hole) == 0 {
 		return true
 	}
-	tol := containmentSlack(outer)
-	if bboxInsideBy(hole, outer, tol) {
-		return true // hole bbox strictly inside outer bbox by more than slack: cannot protrude
+	res := regionResolution2d(outer)
+	if loopsCross2d(hole, outer, res) {
+		return false
 	}
-	for _, p := range hole {
-		if !pointInLoop2D(p, outer) && distToPolygon(p, outer) > tol {
-			return false
+	return pointInRegion2d(holeProbePoint(hole), outer, res)
+}
+
+// holeProbePoint returns an interior point of the hole's first edge — the decisive sample once the
+// hole is known not to cross the outer boundary.
+func holeProbePoint(hole []geom.Curve2) math.Point2 {
+	return hole[0].PointAt(curveMidParam(hole[0]))
+}
+
+// curveMidParam returns the midpoint parameter of c's domain, defaulting an unbounded domain to 0.5.
+func curveMidParam(c geom.Curve2) float64 {
+	lo, hi := c.Domain()
+	if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
+		return 0.5
+	}
+	return (lo + hi) / 2
+}
+
+// regionResolution2d derives the size-relative tolerance scale (ADR-0042) from the region's extent.
+// The three-point-per-edge sampling only sizes the tolerance and the parity ray; it never decides
+// containment.
+func regionResolution2d(edges []geom.Curve2) geom.Resolution {
+	var pts []math.Point2
+	for _, e := range edges {
+		lo, hi := e.Domain()
+		if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
+			lo, hi = 0, 1
+		}
+		pts = append(pts, e.PointAt(lo), e.PointAt((lo+hi)/2), e.PointAt(hi))
+	}
+	return geom.ResolutionForPoints2D(pts)
+}
+
+// loopsCross2d reports whether any hole edge transversally crosses any outer edge.
+func loopsCross2d(hole, outer []geom.Curve2, res geom.Resolution) bool {
+	for _, h := range hole {
+		for _, o := range outer {
+			if edgesCross2d(h, o, res) {
+				return true
+			}
 		}
 	}
-	return true
+	return false
 }
 
-// containmentSlack is the model-relative tangency tolerance: a hole point closer than this to the outer
-// boundary counts as touching, not protruding. Scaled to the outer loop's extent (ADR-0042), never a
-// bare constant.
-func containmentSlack(outer []math.Point2) float64 {
-	oxn, oxx, oyn, oyx := bounds2D(outer)
-	return 1e-6 * (oxx - oxn + oyx - oyn)
-}
-
-// bboxInsideBy reports whether inner's axis-aligned bounds sit inside outer's by more than slack on every
-// side — a conservative fast accept (a hole this far inside the outer bbox cannot reach the boundary).
-func bboxInsideBy(inner, outer []math.Point2, slack float64) bool {
-	ixn, ixx, iyn, iyx := bounds2D(inner)
-	oxn, oxx, oyn, oyx := bounds2D(outer)
-	return ixn > oxn+slack && ixx < oxx-slack && iyn > oyn+slack && iyx < oyx-slack
-}
-
-// distToPolygon returns the distance from p to the nearest edge of the closed polygon poly.
-func distToPolygon(p math.Point2, poly []math.Point2) float64 {
-	best := stdmath.Inf(1)
-	for i, n := 0, len(poly); i < n; i++ {
-		best = stdmath.Min(best, distToSegment(p, poly[i], poly[(i+1)%n]))
+// edgesCross2d reports whether the two analytic edges meet away from either edge's endpoints. A meeting
+// at a shared endpoint is a vertex the two loops touch at, not a protrusion; an interior meeting is the
+// hole crossing through the outer boundary.
+func edgesCross2d(h, o geom.Curve2, res geom.Resolution) bool {
+	for _, p := range curveCurve2dHits(h, o, res.Plane()) {
+		if !nearCurveEnd2d(p, h, res.Weld()) && !nearCurveEnd2d(p, o, res.Weld()) {
+			return true
+		}
 	}
-	return best
+	return false
 }
 
-// distToSegment returns the distance from p to segment ab.
-func distToSegment(p, a, b math.Point2) float64 {
-	vx, vy := b.X-a.X, b.Y-a.Y
-	l2 := vx*vx + vy*vy
-	t := 0.0
-	if l2 > 0 {
-		t = stdmath.Max(0, stdmath.Min(1, ((p.X-a.X)*vx+(p.Y-a.Y)*vy)/l2))
+// nearCurveEnd2d reports whether p sits within tol of either endpoint of c (an infinite line has none).
+func nearCurveEnd2d(p math.Point2, c geom.Curve2, tol float64) bool {
+	lo, hi := c.Domain()
+	if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
+		return false
 	}
-	return stdmath.Hypot(p.X-(a.X+t*vx), p.Y-(a.Y+t*vy))
+	return float64(p.DistanceTo(c.PointAt(lo))) <= tol || float64(p.DistanceTo(c.PointAt(hi))) <= tol
+}
+
+// curveCurve2dHits returns the intersection points of two analytic 2D curves, reusing the exact
+// analytic primitives (#3478): a segment/line against any curve, a circle against any curve, and an arc
+// through its support circle filtered onto its sweep. Only ellipse-vs-ellipse (no closed form in the
+// codebase) falls back to sampling one operand — a case a planar line/arc/circle face boundary never
+// reaches, so the arc discrimination stays exact.
+func curveCurve2dHits(a, b geom.Curve2, tol float64) []math.Point2 {
+	if seg, ok := a.(geom.LineSegment2d); ok {
+		return geom.SegmentCurve2dIntersection(seg, b)
+	}
+	if seg, ok := b.(geom.LineSegment2d); ok {
+		return geom.SegmentCurve2dIntersection(seg, a)
+	}
+	if ln, ok := a.(geom.Line2d); ok {
+		return geom.LineCurve2dIntersection(ln, b)
+	}
+	if ln, ok := b.(geom.Line2d); ok {
+		return geom.LineCurve2dIntersection(ln, a)
+	}
+	return circleFamilyHits(a, b, tol)
+}
+
+// circleFamilyHits dispatches the curved operands: a full circle against any curve is exact, and an arc
+// reuses that through its support circle, keeping only the hits that fall on the arc's real sweep.
+func circleFamilyHits(a, b geom.Curve2, tol float64) []math.Point2 {
+	if c, ok := a.(geom.Circle2d); ok {
+		return geom.CircleCurve2dIntersection(c, b)
+	}
+	if c, ok := b.(geom.Circle2d); ok {
+		return geom.CircleCurve2dIntersection(c, a)
+	}
+	if arc, ok := a.(geom.Arc2d); ok {
+		return arcCurve2dHits(arc, b, tol)
+	}
+	if arc, ok := b.(geom.Arc2d); ok {
+		return arcCurve2dHits(arc, a, tol)
+	}
+	return ellipsePairHits(a, b)
+}
+
+// arcCurve2dHits intersects arc's support circle with other, then keeps the hits that lie on the arc's
+// actual sweep (geom.Arc2d.ContainsPoint) — an exact arc-vs-curve crossing without chording the arc.
+func arcCurve2dHits(arc geom.Arc2d, other geom.Curve2, tol float64) []math.Point2 {
+	support := geom.NewCircle2d(arc.Center, arc.Radius)
+	var out []math.Point2
+	for _, p := range geom.CircleCurve2dIntersection(support, other) {
+		if arc.ContainsPoint(p, tol) {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// ellipsePairHits is the no-closed-form fallback for two elliptic/spline operands: sample a into
+// segments and intersect each against b. Unreached by a line/arc/circle face boundary; see
+// curveCurve2dHits.
+func ellipsePairHits(a, b geom.Curve2) []math.Point2 {
+	lo := a.PointAt(0)
+	var out []math.Point2
+	for i := 1; i <= nonAnalyticEdgeSegments; i++ {
+		hi := a.PointAt(float64(i) / nonAnalyticEdgeSegments)
+		out = append(out, geom.SegmentCurve2dIntersection(geom.NewLineSegment2d(lo, hi), b)...)
+		lo = hi
+	}
+	return out
+}
+
+// probeRayDirs are three generically-tilted parity-ray directions (#3478): none axis-aligned, so a ray
+// never runs along an edge, and mutually well-separated so a vertex or tangency grazed by one is cleared
+// by the other two.
+var probeRayDirs = []math.Vector2{math.V2(1, 0.11), math.V2(-0.37, 1), math.V2(-1, -0.61)}
+
+// pointInRegion2d reports whether q is inside the closed region bounded by edges, by exact analytic ray
+// parity: a ray from q crosses the boundary an odd number of times iff q is inside. Three rays vote so a
+// single grazing ray cannot flip the result. Crossings are found on the true analytic curves
+// (geom.SegmentCurve2dIntersection refines onto them), never on a chord — the retirement of the
+// 64-sample outer polygon (#3478).
+func pointInRegion2d(q math.Point2, edges []geom.Curve2, res geom.Resolution) bool {
+	length := 4 * res.Size() // a ray this long from any interior point clears the region bbox
+	votes := 0
+	for _, dir := range probeRayDirs {
+		if rayCrossings2d(q, dir, length, edges)%2 == 1 {
+			votes++
+		}
+	}
+	return votes >= 2
+}
+
+// rayCrossings2d counts how many times the ray from q along dir (of the given length) crosses edges.
+func rayCrossings2d(q math.Point2, dir math.Vector2, length float64, edges []geom.Curve2) int {
+	ray := geom.NewLineSegment2d(q, q.TranslateBy(dir.Scale(math.Scalar(length))))
+	n := 0
+	for _, e := range edges {
+		n += len(geom.SegmentCurve2dIntersection(ray, e))
+	}
+	return n
 }
