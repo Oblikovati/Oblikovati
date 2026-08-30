@@ -19,7 +19,10 @@ import (
 //     spectrally accurate for the analytic curved surfaces.
 //
 // Every 1-D integral is adaptive Gauss–Legendre so the same code serves a polynomial plane and
-// a periodic cylinder/cone/sphere/torus without a per-type branch.
+// a periodic cylinder/cone/sphere/torus without a per-type branch. The engine is GENERIC over the
+// term type: the same quadrature and Green reduction integrate both the divergence-flux mass terms
+// (volume/inertia) and the area-weighted surface moments the congruence signature needs (#3449),
+// so there is one adaptive engine, not two.
 
 const (
 	quadOrder      = 8     // Gauss points per adaptive cell — exact to degree 15
@@ -30,75 +33,85 @@ const (
 	fullDomainSeed = 4     // initial cells per axis for a boundary-less face's full-domain integral
 )
 
+// quadTerms is any component-wise accumulator the adaptive engine can integrate: it adds, scales,
+// and reports when a coarse estimate agrees with its refinement. Both massTerms (divergence flux)
+// and areaTerms (surface moments) satisfy it, so one engine serves both families (#3449).
+type quadTerms[T any] interface {
+	add(T) T
+	scale(float64) T
+	converged(T) bool
+}
+
+// pointEval maps one surface parameter point to its integrand contribution — integrandsAt for the
+// flux mass terms, areaIntegrandsAt for the surface moments.
+type pointEval[T any] func(u, v float64) T
+
+// faceRegion integrates a face's region terms: a boundary-less face over its full parameter
+// rectangle, a bounded face by Green's theorem over its uv loops. Both use `at` as the integrand.
+func faceRegion[T quadTerms[T]](f *topo.Face, at pointEval[T]) (T, bool) {
+	if len(f.Loops()) == 0 {
+		return fullDomainTerms(f.Geometry(), at)
+	}
+	return greenTerms(f, at)
+}
+
 // fullDomainTerms integrates g over a boundary-less face's entire finite parameter rectangle by
 // a nested adaptive rule (outer in v of an inner adaptive integral in u). An unbounded domain
 // cannot be integrated this way and declines (ok=false).
-func fullDomainTerms(s geom.Surface) (massTerms, bool) {
+func fullDomainTerms[T quadTerms[T]](s geom.Surface, at pointEval[T]) (T, bool) {
+	var zero T
 	uLo, uHi := s.UDomain()
 	vLo, vHi := s.VDomain()
 	if !allFinite(uLo, uHi, vLo, vHi) {
-		return massTerms{}, false
+		return zero, false
 	}
-	outer := func(v float64) massTerms {
-		return integrateU(s, uLo, uHi, v)
+	outer := func(v float64) T {
+		return integrateU(at, uLo, uHi, v)
 	}
 	return integrateSeeded(outer, vLo, vHi, fullDomainSeed), true
 }
 
 // integrateU adaptively integrates every surface integrand along the line at fixed v, u∈[a,b].
-func integrateU(s geom.Surface, a, b, v float64) massTerms {
-	eval := func(u float64) massTerms { return integrandsAt(s, u, v) }
+func integrateU[T quadTerms[T]](at pointEval[T], a, b, v float64) T {
+	eval := func(u float64) T { return at(u, v) }
 	return integrateAdaptive(eval, a, b, quadDepth)
 }
 
 // integrateSeeded splits [a,b] into `cells` equal pieces and adaptively integrates each — the
 // seed spreads the first refinement so a smooth periodic integrand is resolved from the start.
-func integrateSeeded(eval func(float64) massTerms, a, b float64, cells int) massTerms {
+func integrateSeeded[T quadTerms[T]](eval func(float64) T, a, b float64, cells int) T {
 	if cells < 1 {
 		cells = 1
 	}
 	h := (b - a) / float64(cells)
-	var acc massTerms
+	var acc T
 	for c := range cells {
 		acc = acc.add(integrateAdaptive(eval, a+float64(c)*h, a+float64(c+1)*h, quadDepth))
 	}
 	return acc
 }
 
-// integrateAdaptive integrates a massTerms-valued function over [a,b], subdividing until a
-// single Gauss cell agrees with its two-cell refinement within tolerance (or the depth cap).
-func integrateAdaptive(eval func(float64) massTerms, a, b float64, depth int) massTerms {
+// integrateAdaptive integrates a term-valued function over [a,b], subdividing until a single Gauss
+// cell agrees with its two-cell refinement within tolerance (or the depth cap).
+func integrateAdaptive[T quadTerms[T]](eval func(float64) T, a, b float64, depth int) T {
 	whole := gaussCellTerms(eval, a, b)
 	mid := (a + b) / 2
 	refined := gaussCellTerms(eval, a, mid).add(gaussCellTerms(eval, mid, b))
-	if depth <= 0 || termsConverged(whole, refined) {
+	if depth <= 0 || whole.converged(refined) {
 		return refined
 	}
 	return integrateAdaptive(eval, a, mid, depth-1).add(integrateAdaptive(eval, mid, b, depth-1))
 }
 
 // gaussCellTerms applies the fixed-order Gauss–Legendre rule to one cell.
-func gaussCellTerms(eval func(float64) massTerms, a, b float64) massTerms {
+func gaussCellTerms[T quadTerms[T]](eval func(float64) T, a, b float64) T {
 	nodes, weights := geom.GaussLegendre(quadOrder)
 	half, mid := (b-a)/2, (a+b)/2
-	var acc massTerms
+	var acc T
 	for i, x := range nodes {
 		acc = acc.add(eval(mid + half*x).scale(weights[i]))
 	}
 	return acc.scale(half)
-}
-
-// termsConverged reports whether the coarse and refined estimates agree to tolerance on every
-// component (mixed absolute/relative, so a component that is legitimately ~0 does not stall).
-func termsConverged(coarse, refined massTerms) bool {
-	c := [11]float64{coarse.vol, coarse.mx, coarse.my, coarse.mz, coarse.cxx, coarse.cyy, coarse.czz, coarse.cxy, coarse.cyz, coarse.czx, coarse.area}
-	r := [11]float64{refined.vol, refined.mx, refined.my, refined.mz, refined.cxx, refined.cyy, refined.czz, refined.cxy, refined.cyz, refined.czx, refined.area}
-	for i := range c {
-		if stdmath.Abs(c[i]-r[i]) > quadAbsTol+quadRelTol*stdmath.Abs(r[i]) {
-			return false
-		}
-	}
-	return true
 }
 
 // greenTerms integrates a bounded face by Green's theorem over its uv loops. Each loop edge is
@@ -109,20 +122,21 @@ func termsConverged(coarse, refined massTerms) bool {
 // loop CCW (adds), a hole loop CW (subtracts) — using the IsOuter flag rather than the winding,
 // because a boolean can leave a hole wound the SAME way as its outer (then a single outer-derived
 // sign would ADD the hole instead of subtracting it, over-counting a drilled/annular body). The
-// result is ∫∫_D g over the true region on the +normal side; faceTerms then applies the outward
-// sense (Face.Reversed) so a hole/inner wall's negative flux correctly subtracts.
-func greenTerms(f *topo.Face) (massTerms, bool) {
+// result is ∫∫_D g over the true region on the +normal side; the caller then applies (or, for the
+// unsigned surface moments, omits) the outward sense so a hole/inner wall contributes correctly.
+func greenTerms[T quadTerms[T]](f *topo.Face, at pointEval[T]) (T, bool) {
+	var zero T
 	s := f.Geometry()
 	loops, ok := buildFaceLoops(s, f)
 	if !ok {
-		return massTerms{}, false
+		return zero, false
 	}
 	u0 := minLoopU(loops)
-	var total massTerms
+	var total T
 	for _, fl := range loops {
-		var lt massTerms
+		var lt T
 		for _, le := range fl.edges {
-			lt = lt.add(edgeGreen(s, le, u0))
+			lt = lt.add(edgeGreen(s, le, u0, at))
 		}
 		total = total.add(lt.scale(loopSign(fl)))
 	}
@@ -248,14 +262,14 @@ func sampleLoopEdge(s geom.Surface, use *topo.EdgeUse, uPeriod, vPeriod float64,
 // edgeGreen returns ∮ Q dv along one edge, summed over its reference segments; each segment is
 // integrated on the true curve with a fixed Gauss rule (the reference is dense enough that a
 // segment is a smooth, seam-free arc).
-func edgeGreen(s geom.Surface, le loopEdge, u0 float64) massTerms {
-	var acc massTerms
+func edgeGreen[T quadTerms[T]](s geom.Surface, le loopEdge, u0 float64, at pointEval[T]) T {
+	var acc T
 	for k := 0; k+1 < len(le.samples); k++ {
 		a, b := le.samples[k], le.samples[k+1]
 		if a.t == b.t {
 			continue
 		}
-		acc = acc.add(segmentGreen(s, le, a, b, u0))
+		acc = acc.add(segmentGreen(s, le, a, b, u0, at))
 	}
 	return acc
 }
@@ -263,10 +277,10 @@ func edgeGreen(s geom.Surface, le loopEdge, u0 float64) massTerms {
 // segmentGreen integrates ∫ Q(u(t),v(t))·v′(t) dt over one edge segment [a.t, b.t] on the true
 // curve. u, v come from ParamAt (unwrapped to the linearly-interpolated reference so the branch
 // is right), and v′ is a central difference of the surface v-parameter along the curve.
-func segmentGreen(s geom.Surface, le loopEdge, a, b arcSample, u0 float64) massTerms {
+func segmentGreen[T quadTerms[T]](s geom.Surface, le loopEdge, a, b arcSample, u0 float64, at pointEval[T]) T {
 	nodes, weights := geom.GaussLegendre(6)
 	half, mid := (b.t-a.t)/2, (a.t+b.t)/2
-	var acc massTerms
+	var acc T
 	for i, x := range nodes {
 		t := mid + half*x
 		frac := (t - a.t) / (b.t - a.t)
@@ -274,7 +288,7 @@ func segmentGreen(s geom.Surface, le loopEdge, a, b arcSample, u0 float64) massT
 		seedV := a.v + (b.v-a.v)*frac
 		u, v := uvOnCurve(s, le, t, seedU, seedV)
 		vp := dvdt(s, le, t, b.t-a.t, seedV)
-		q := integrateU(s, u0, u, v)
+		q := integrateU(at, u0, u, v)
 		acc = acc.add(q.scale(weights[i] * vp))
 	}
 	return acc.scale(half)

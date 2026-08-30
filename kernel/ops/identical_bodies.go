@@ -56,16 +56,90 @@ func GroupIdenticalBodies(bodies []*topo.Body, opt IdenticalBodiesOptions, q Qua
 	return indexGroups(parent)
 }
 
-// bodySignature is the rigid-motion invariant fingerprint.
+// bodySignature is the rigid-motion invariant fingerprint. Volume, area and the sorted principal
+// SURFACE second moments are rotation/translation invariant. The skew is the signed surface third
+// moment ∮xyz dA that flips under a coordinate-plane mirror (the reflection discriminator); it is
+// computed in the WORLD frame (centroid-relative) and so is NOT itself rotation-invariant, so it is
+// compared ONLY when MatchReflection is off (see matches), where the reference semantics assume
+// axis-aligned/near-symmetric bodies; a truly rotation-invariant chirality pseudoscalar is out of
+// scope for #3449. Both the analytic and the mesh path integrate these SAME surface quantities
+// (surfaceCentroidalMoments vs centroidalMoments), so the two fingerprints are interchangeable —
+// two congruent bodies match even when one takes the analytic path and the other the mesh fallback.
 type bodySignature struct {
 	volume, area           float64
 	moments                [3]float64 // sorted principal second moments about the centroid
-	skew                   float64    // signed third moment — flips under reflection
+	skew                   float64    // signed third moment — flips under reflection (world frame)
 	faces, edges, vertices int
 }
 
-// signatureOf computes the fingerprint from the body's tessellation.
+// signatureOf computes the fingerprint from the body's ANALYTIC mass properties (#3449): the
+// kernel ground rules require an oracle that gates a result to be more exact than the result it
+// gates, so volume, area, centroid, the principal second moments and the reflection skew all
+// integrate the analytic B-rep. A solid the quadrature cannot reconstruct (analyticBodyTerms
+// declines) falls back to the whole-body tessellated path, so congruence stays robust; two
+// congruent bodies always share a path (integrability is itself a rigid-motion invariant), so the
+// analytic and mesh fingerprints are never cross-compared.
 func signatureOf(b *topo.Body, q Quality) bodySignature {
+	if sig, ok := analyticSignature(b); ok {
+		return sig
+	}
+	return meshSignature(b, q)
+}
+
+// analyticSignature builds the fingerprint from one analytic integration of the body. The volume,
+// area and centroid come from the divergence-flux terms; the principal moments and skew come from
+// the SURFACE (shell) moments — the SAME quantities the mesh path integrates over triangles
+// (centroidalMoments/triangleSkew), so the analytic and mesh fingerprints are INTERCHANGEABLE and a
+// body built one way (→ analytic) matches its congruent twin built another (→ mesh) (#3449). It
+// declines (ok=false) exactly when the analytic path declines, so the caller can fall back.
+func analyticSignature(b *topo.Body) (bodySignature, bool) {
+	mt, okM := analyticBodyTerms(b)
+	at, okA := analyticAreaTerms(b)
+	if !okM || !okA {
+		return bodySignature{}, false
+	}
+	gp := geometryFromTerms(mt)
+	moments, skew := surfaceCentroidalMoments(at, gp.Centroid)
+	return bodySignature{
+		volume: gp.Volume, area: gp.Area, moments: moments, skew: skew,
+		faces: len(b.Faces()), edges: len(b.Edges()), vertices: len(b.Vertices()),
+	}, true
+}
+
+// surfaceCentroidalMoments is the analytic twin of centroidalMoments: it shifts the origin shell
+// moments to the centroid, forms the surface second-moment (shell inertia) matrix, diagonalizes it
+// to the sorted principal moments, and returns the centroid-relative surface skew ∮xyz dA. It
+// matches centroidalMoments term for term — including the inertia sign convention on the products.
+func surfaceCentroidalMoments(t areaTerms, centroid math.Point3) ([3]float64, float64) {
+	dx, dy, dz := float64(centroid.X), float64(centroid.Y), float64(centroid.Z)
+	sxx, syy, szz, sxy, sxz, syz := shellSecondMoments(t, dx, dy, dz)
+	eig := symmetricEigenvalues3(syy+szz, sxx+szz, sxx+syy, -sxy, -sxz, -syz)
+	sort.Float64s(eig[:])
+	return eig, shellSkew(t, dx, dy, dz)
+}
+
+// shellSecondMoments shifts the origin surface moments to the centroid (parallel-axis for a shell),
+// returning the six centroid-relative products ∮(x−dx)², … , ∮(x−dx)(y−dy) dA.
+func shellSecondMoments(t areaTerms, dx, dy, dz float64) (sxx, syy, szz, sxy, sxz, syz float64) {
+	sxx = t.sxx - 2*dx*t.sx + dx*dx*t.area
+	syy = t.syy - 2*dy*t.sy + dy*dy*t.area
+	szz = t.szz - 2*dz*t.sz + dz*dz*t.area
+	sxy = t.sxy - dx*t.sy - dy*t.sx + dx*dy*t.area
+	sxz = t.sxz - dx*t.sz - dz*t.sx + dx*dz*t.area
+	syz = t.syz - dy*t.sz - dz*t.sy + dy*dz*t.area
+	return
+}
+
+// shellSkew is the centroid-relative surface third moment ∮(x−dx)(y−dy)(z−dz) dA — the reflection
+// discriminator, matching triangleSkew's ∮xyz over the mesh.
+func shellSkew(t areaTerms, dx, dy, dz float64) float64 {
+	return t.sxyz - dz*t.sxy - dy*t.sxz - dx*t.syz +
+		dx*dy*t.sz + dx*dz*t.sy + dy*dz*t.sx - dx*dy*dz*t.area
+}
+
+// meshSignature is the tessellated fallback: the same invariants integrated over the triangle mesh
+// for bodies the analytic path does not yet cover (a named, temporary migration seam).
+func meshSignature(b *topo.Body, q Quality) bodySignature {
 	mesh, _ := TessellateBody(b, q)
 	props := meshGeometryProperties(mesh)
 	moments, skew := centroidalMoments(mesh, props)

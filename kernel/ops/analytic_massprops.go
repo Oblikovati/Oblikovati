@@ -3,6 +3,8 @@
 package ops
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -59,6 +61,14 @@ func (a massTerms) scaleFlux(s float64) massTerms {
 	return out
 }
 
+// converged reports whether a coarse and a refined estimate agree to tolerance on every component
+// (mixed absolute/relative, so a component that is legitimately ~0 does not stall the refinement).
+func (a massTerms) converged(r massTerms) bool {
+	c := [11]float64{a.vol, a.mx, a.my, a.mz, a.cxx, a.cyy, a.czz, a.cxy, a.cyz, a.czx, a.area}
+	d := [11]float64{r.vol, r.mx, r.my, r.mz, r.cxx, r.cyy, r.czz, r.cxy, r.cyz, r.czx, r.area}
+	return componentsConverged(c[:], d[:])
+}
+
 // integrandsAt evaluates every divergence-theorem integrand (and the area element |∂P/∂u ×
 // ∂P/∂v|) at one surface parameter point. N = P_u × P_v is the UNNORMALIZED normal, so its
 // magnitude is the area element and its components carry the flux. The fields chosen give
@@ -76,6 +86,72 @@ func integrandsAt(s geom.Surface, u, v float64) massTerms {
 		cxx: px * px * px * nx / 3, cyy: py * py * py * ny / 3, czz: pz * pz * pz * nz / 3,
 		cxy: px * px * py * nx / 2, cyz: py * py * pz * ny / 2, czx: pz * pz * px * nz / 2,
 		area: float64(n.Length()),
+	}
+}
+
+// areaTerms are the surface (shell) moments over one face or a whole body's boundary, about the
+// ORIGIN, every integrand AREA-weighted by the analytic element dA=|∂P/∂u × ∂P/∂v| du dv. They are
+// the same quantities the mesh signature integrates over triangles (centroidalMoments/triangleSkew),
+// computed analytically so the two paths are INTERCHANGEABLE for congruence (#3449). A shell integral
+// does not carry an outward-flux sign: every face contributes its positive area weight.
+type areaTerms struct {
+	area          float64 // ∮ dA
+	sx, sy, sz    float64 // ∮ x, y, z dA
+	sxx, syy, szz float64 // ∮ x², y², z² dA
+	sxy, sxz, syz float64 // ∮ xy, xz, yz dA
+	sxyz          float64 // ∮ xyz dA — the surface third moment the signature reflects on
+}
+
+// add returns the component-wise sum.
+func (a areaTerms) add(b areaTerms) areaTerms {
+	return areaTerms{
+		area: a.area + b.area, sx: a.sx + b.sx, sy: a.sy + b.sy, sz: a.sz + b.sz,
+		sxx: a.sxx + b.sxx, syy: a.syy + b.syy, szz: a.szz + b.szz,
+		sxy: a.sxy + b.sxy, sxz: a.sxz + b.sxz, syz: a.syz + b.syz,
+		sxyz: a.sxyz + b.sxyz,
+	}
+}
+
+// scale multiplies every component (quadrature weights and the loop-orientation sign).
+func (a areaTerms) scale(s float64) areaTerms {
+	return areaTerms{
+		area: a.area * s, sx: a.sx * s, sy: a.sy * s, sz: a.sz * s,
+		sxx: a.sxx * s, syy: a.syy * s, szz: a.szz * s,
+		sxy: a.sxy * s, sxz: a.sxz * s, syz: a.syz * s,
+		sxyz: a.sxyz * s,
+	}
+}
+
+// converged mirrors massTerms.converged over the surface-moment components.
+func (a areaTerms) converged(r areaTerms) bool {
+	c := [11]float64{a.area, a.sx, a.sy, a.sz, a.sxx, a.syy, a.szz, a.sxy, a.sxz, a.syz, a.sxyz}
+	d := [11]float64{r.area, r.sx, r.sy, r.sz, r.sxx, r.syy, r.szz, r.sxy, r.sxz, r.syz, r.sxyz}
+	return componentsConverged(c[:], d[:])
+}
+
+// componentsConverged reports whether every paired component agrees within the mixed
+// absolute/relative adaptive-quadrature tolerance.
+func componentsConverged(coarse, refined []float64) bool {
+	for i := range coarse {
+		if stdmath.Abs(coarse[i]-refined[i]) > quadAbsTol+quadRelTol*stdmath.Abs(refined[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// areaIntegrandsAt evaluates the surface-moment integrands at one parameter point: each is the
+// monomial in position times the area element |∂P/∂u × ∂P/∂v| (so ∫∫_D g du dv = ∮ g dA).
+func areaIntegrandsAt(s geom.Surface, u, v float64) areaTerms {
+	p := s.PointAt(u, v)
+	du, dv := s.DerivativesAt(u, v)
+	nl := float64(du.Cross(dv).Length())
+	px, py, pz := float64(p.X), float64(p.Y), float64(p.Z)
+	return areaTerms{
+		area: nl, sx: px * nl, sy: py * nl, sz: pz * nl,
+		sxx: px * px * nl, syy: py * py * nl, szz: pz * pz * nl,
+		sxy: px * py * nl, sxz: px * pz * nl, syz: py * pz * nl,
+		sxyz: px * py * pz * nl,
 	}
 }
 
@@ -133,17 +209,29 @@ func analyticBodyTerms(b *topo.Body) (massTerms, bool) {
 	return total, true
 }
 
-// faceTerms integrates one face over its trimmed uv region and applies the face's outward
-// sense. A boundary-less face (a whole sphere or torus) spans its full parameter rectangle; a
-// bounded face reduces every integrand to a Green's-theorem line integral over its uv loops.
-func faceTerms(f *topo.Face) (massTerms, bool) {
-	var region massTerms
-	var ok bool
-	if len(f.Loops()) == 0 {
-		region, ok = fullDomainTerms(f.Geometry())
-	} else {
-		region, ok = greenTerms(f)
+// analyticAreaTerms sums every face's surface (shell) moments over the body's boundary. It declines
+// exactly when analyticBodyTerms would (a face the analytic path cannot reconstruct), so the
+// congruence signature falls back to the mesh path as one unit rather than mixing sources.
+func analyticAreaTerms(b *topo.Body) (areaTerms, bool) {
+	if b == nil || !b.IsSolid() {
+		return areaTerms{}, false
 	}
+	var total areaTerms
+	for _, f := range b.Faces() {
+		ft, ok := areaFaceTerms(f)
+		if !ok {
+			return areaTerms{}, false
+		}
+		total = total.add(ft)
+	}
+	return total, true
+}
+
+// faceTerms integrates one face's flux terms over its trimmed uv region and applies the face's
+// outward sense (Face.Reversed ⇒ the material side is opposite the surface normal).
+func faceTerms(f *topo.Face) (massTerms, bool) {
+	s := f.Geometry()
+	region, ok := faceRegion(f, func(u, v float64) massTerms { return integrandsAt(s, u, v) })
 	if !ok {
 		return massTerms{}, false
 	}
@@ -152,6 +240,14 @@ func faceTerms(f *topo.Face) (massTerms, bool) {
 		eps = -1
 	}
 	return region.scaleFlux(eps), true
+}
+
+// areaFaceTerms integrates one face's surface moments over its trimmed uv region. Unlike faceTerms
+// it applies NO outward-flux sign: a shell integral is unsigned, so every face — outer wall, cap or
+// bore wall — contributes its positive area weight (Face.Reversed does not flip a surface moment).
+func areaFaceTerms(f *topo.Face) (areaTerms, bool) {
+	s := f.Geometry()
+	return faceRegion(f, func(u, v float64) areaTerms { return areaIntegrandsAt(s, u, v) })
 }
 
 // geometryFromTerms turns origin sums into volume, area and centroid. The centroid is the first
