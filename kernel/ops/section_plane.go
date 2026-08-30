@@ -12,10 +12,11 @@ import (
 	"oblikovati.org/math"
 )
 
-// Plane sections (M07-F05, Oblikovati/Oblikovati#628): intersect a body with
-// a plane and return the section curves as wires on a new wire-only body —
-// the reference CreateIntersectionWithPlane. Mesh-accurate: each face mesh's
-// triangle×plane segments chain into polylines.
+// Plane sections (M07-F05, Oblikovati/Oblikovati#628): intersect a body with a plane and return the
+// section curves as wires on a new wire-only body — the reference CreateIntersectionWithPlane. The section
+// curves are EXACT surface-plane intersections (#3473): each face's analytic surface is intersected with the
+// section plane and the resulting curve clipped to the face trim; no tessellation drives the curve shape. A
+// face whose surface pair the analytic intersector cannot resolve falls back to slicing that one face's mesh.
 
 // SectionWithPlane sections the body with the plane (origin, normal).
 //
@@ -26,17 +27,127 @@ func SectionWithPlane(b *topo.Body, origin math.Point3, normal math.Vector3, q Q
 		return nil, fmt.Errorf("ops.SectionWithPlane: zero plane normal")
 	}
 	n := normal.Scale(math.Scalar(1 / l))
+	plane, err := geom.NewPlane(origin, n)
+	if err != nil {
+		return nil, fmt.Errorf("ops.SectionWithPlane: degenerate plane at %v: %w", origin, err)
+	}
+	res := geom.ResolutionForBox(b.RangeBox())
 	d := float64(origin.AsVector().Dot(n))
-	mesh, _ := TessellateBody(b, q)
-	segs := planeMeshSegments(mesh, n, d)
+	var segs [][2]math.Point3
+	for _, f := range b.Faces() {
+		if fs, ok := faceSectionSegments(f, plane, res); ok {
+			segs = append(segs, fs...)
+		} else {
+			segs = append(segs, faceMeshSection(f, n, d, q)...) // unresolved surface pair: slice this face's mesh
+		}
+	}
 	if len(segs) == 0 {
 		return nil, fmt.Errorf("ops.SectionWithPlane: the plane through %v misses the body", origin)
 	}
 	return wiresFromSegments(segs, "section")
 }
 
-// planeMeshSegments collects each triangle's crossing segment with the plane.
-func planeMeshSegments(mesh *Mesh, n math.Vector3, d float64) [][2]math.Point3 {
+// sectionCurveSamples is the sample count along a face's section curve within its box; a straight
+// intersection (plane∩plane) reads exact at any count, a curved one discretizes to this chord density.
+const sectionCurveSamples = 64
+
+// trimBisectSteps refines a run boundary onto the face trim edge to ~2⁻³⁶ of the parameter span, so two
+// faces meeting at a shared edge snap to the same section point and the loop chains closed.
+const trimBisectSteps = 36
+
+// faceSectionSegments returns the section segments of one face — the analytic surface∩plane curve clipped to
+// the face trim — and ok=false when the analytic intersector cannot resolve the surface pair or returns an
+// unbounded non-line the box cannot bracket, so the caller slices this face's mesh instead.
+func faceSectionSegments(f *topo.Face, plane geom.Plane, res geom.Resolution) (segs [][2]math.Point3, ok bool) {
+	box := f.RangeBox()
+	curves, handled := geom.SurfaceIntersect(f.Geometry(), plane, box, res)
+	if !handled {
+		return nil, false
+	}
+	for _, c := range curves {
+		lo, hi, bounded := sampleRange(c, box)
+		if !bounded {
+			return nil, false
+		}
+		segs = append(segs, curveTrimSegments(c, f, lo, hi, res.Plane())...)
+	}
+	return segs, true
+}
+
+// curveTrimSegments samples the section curve c over [lo, hi], gathers every maximal run of samples inside
+// face f's trim (each run's ends snapped to the trim boundary by bisection so adjacent faces meet at their
+// shared edge), decimates each run's collinear samples at chord tolerance chordTol, and emits the surviving
+// segments. Decimation collapses a straight run (a plane∩plane line) to one segment and keeps only the bends
+// of a curved one — so a section wire carries its real vertices, not one per sample.
+func curveTrimSegments(c geom.Curve3, f *topo.Face, lo, hi, chordTol float64) [][2]math.Point3 {
+	var run []math.Point3
+	var segs [][2]math.Point3
+	prevIn := false
+	for i := 0; i <= sectionCurveSamples; i++ {
+		t := lo + (hi-lo)*float64(i)/sectionCurveSamples
+		p := c.PointAt(t)
+		in := brep.PointInFaceTrim(f, p)
+		if in && !prevIn && i > 0 {
+			run = []math.Point3{bisectTrimBoundary(c, f, lo+(hi-lo)*float64(i-1)/sectionCurveSamples, t)}
+		}
+		if in {
+			run = append(run, p)
+		} else if prevIn {
+			run = append(run, bisectTrimBoundary(c, f, t, lo+(hi-lo)*float64(i-1)/sectionCurveSamples))
+			segs = append(segs, runSegments(run, chordTol)...)
+			run = nil
+		}
+		prevIn = in
+	}
+	return append(segs, runSegments(run, chordTol)...)
+}
+
+// runSegments decimates a run's collinear points (perpendicular deviation below chordTol) and returns the
+// segments between the survivors. A run of fewer than two points carries no segment.
+func runSegments(run []math.Point3, chordTol float64) [][2]math.Point3 {
+	pts := decimateCollinear(run, chordTol)
+	segs := make([][2]math.Point3, 0, len(pts))
+	for i := 0; i+1 < len(pts); i++ {
+		segs = append(segs, [2]math.Point3{pts[i], pts[i+1]})
+	}
+	return segs
+}
+
+// decimateCollinear keeps a point only when it deviates from the chord between the last kept point and its
+// successor by more than chordTol — so a straight run collapses to its two endpoints and a curved run keeps
+// its turning points.
+func decimateCollinear(run []math.Point3, chordTol float64) []math.Point3 {
+	if len(run) <= 2 {
+		return run
+	}
+	out := []math.Point3{run[0]}
+	for i := 1; i+1 < len(run); i++ {
+		if d := run[i].DistanceTo(closestPointOnSegment(run[i], out[len(out)-1], run[i+1])); float64(d) > chordTol {
+			out = append(out, run[i])
+		}
+	}
+	return append(out, run[len(run)-1])
+}
+
+// bisectTrimBoundary bisects [tOut, tIn] — c.PointAt(tOut) outside f's trim, c.PointAt(tIn) inside — onto the
+// trim edge, returning the last point proven inside so the emitted run stops on the face.
+func bisectTrimBoundary(c geom.Curve3, f *topo.Face, tOut, tIn float64) math.Point3 {
+	for i := 0; i < trimBisectSteps; i++ {
+		tm := 0.5 * (tOut + tIn)
+		if brep.PointInFaceTrim(f, c.PointAt(tm)) {
+			tIn = tm
+		} else {
+			tOut = tm
+		}
+	}
+	return c.PointAt(tIn)
+}
+
+// faceMeshSection slices one face's tessellation against the plane — the fallback for a surface pair the
+// analytic intersector declines (a rare exotic surface), keeping the section robust without tessellating the
+// resolved faces.
+func faceMeshSection(f *topo.Face, n math.Vector3, d float64, q Quality) [][2]math.Point3 {
+	mesh := TessellateFace(f, q)
 	var segs [][2]math.Point3
 	for t := 0; t+2 < len(mesh.Indices); t += 3 {
 		tri := [3]math.Point3{
