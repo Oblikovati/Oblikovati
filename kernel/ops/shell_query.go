@@ -64,11 +64,6 @@ func ShellSignedVolume(s *topo.Shell, q Quality) float64 {
 	return vol
 }
 
-// ShellIsVoid reports whether the shell is an inner void (cavity) skin.
-func ShellIsVoid(s *topo.Shell, q Quality) bool {
-	return s.IsClosed() && ShellSignedVolume(s, q) < 0
-}
-
 // ShellContainment classifies p against the region the shell bounds, analytically (M48/C3 #3428):
 // ON within onTol of a trimmed face, else INSIDE by the analytic ray-parity classifier over the
 // shell's own faces (brep.ClassifyShellPoint). No tessellation is read — the ground rule that a

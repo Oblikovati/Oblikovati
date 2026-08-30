@@ -19,7 +19,7 @@ func TestShellContainmentClassifiesSingleShell(t *testing.T) {
 	body := cavityBody(t)
 	q := DefaultQuality()
 
-	outer, void := pickCavityShells(t, body.Shells(), q)
+	outer, void := pickCavityShells(t, body)
 
 	// Outer shell bounds the whole 4³ box region ([0,4]³, ignoring the cavity).
 	if c := ShellContainment(outer, math.P3(0.5, 0.5, 0.5), q, 1e-6); c != ContainInside {
@@ -51,14 +51,15 @@ func TestShellContainmentClassifiesSingleShell(t *testing.T) {
 }
 
 // pickCavityShells splits the two shells of a cavity body into its outer
-// (material-enclosing) and void (cavity) skins by ShellIsVoid.
-func pickCavityShells(t *testing.T, shells []*topo.Shell, q Quality) (outer, void *topo.Shell) {
+// (material-enclosing) and void (cavity) skins by ShellIsVoidInBody.
+func pickCavityShells(t *testing.T, body *topo.Body) (outer, void *topo.Shell) {
 	t.Helper()
+	shells := body.Shells()
 	if len(shells) != 2 {
 		t.Fatalf("cavity body has %d shells, want 2 (outer + void)", len(shells))
 	}
 	for _, sh := range shells {
-		if ShellIsVoid(sh, q) {
+		if ShellIsVoidInBody(body, sh) {
 			void = sh
 		} else {
 			outer = sh

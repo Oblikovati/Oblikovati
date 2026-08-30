@@ -48,7 +48,7 @@ func TestCavityBodyHasVoidShell(t *testing.T) {
 		if !sh.IsClosed() {
 			t.Errorf("shell %d not closed", sh.Index())
 		}
-		if ShellIsVoid(sh, DefaultQuality()) {
+		if ShellIsVoidInBody(body, sh) {
 			voids++
 			if v := ShellSignedVolume(sh, DefaultQuality()); stdmath.Abs(v+8) > 0.05 {
 				t.Errorf("void shell signed volume = %g, want ~-8", v)
@@ -72,7 +72,7 @@ func TestShellKeysAndRangeBoxes(t *testing.T) {
 		t.Error("shell key must be kind-prefixed")
 	}
 	outer, void := a, b
-	if ShellIsVoid(a, DefaultQuality()) {
+	if ShellIsVoidInBody(body, a) {
 		outer, void = b, a
 	}
 	vd := float64(void.RangeBox().Diagonal().Length())

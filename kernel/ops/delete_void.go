@@ -18,13 +18,13 @@ import (
 // FacesOnVoidShell reports whether every selected face lies on an internal void shell — the
 // signal the Delete Face feature uses to route to void removal rather than a face delete.
 // An empty selection, a lost key, or any face on the outer shell reports false.
-func FacesOnVoidShell(b *topo.Body, faceKeys [][]byte, q Quality) bool {
+func FacesOnVoidShell(b *topo.Body, faceKeys [][]byte, _ Quality) bool {
 	if len(faceKeys) == 0 {
 		return false
 	}
 	for _, k := range faceKeys {
 		sh := shellOfFaceKey(b, k)
-		if sh == nil || !ShellIsVoid(sh, q) {
+		if sh == nil || !ShellIsVoidInBody(b, sh) {
 			return false
 		}
 	}
@@ -34,14 +34,14 @@ func FacesOnVoidShell(b *topo.Body, faceKeys [][]byte, q Quality) bool {
 // RemoveVoidShellByFaces drops every internal void shell that a selected face belongs to,
 // restoring the enclosed mass. It errors when a selected face reference is lost or names a face
 // that is not on an internal void shell, so the feature goes Sick rather than mangle the body.
-func RemoveVoidShellByFaces(b *topo.Body, faceKeys [][]byte, q Quality) (*topo.Body, error) {
+func RemoveVoidShellByFaces(b *topo.Body, faceKeys [][]byte, _ Quality) (*topo.Body, error) {
 	drop := map[*topo.Shell]bool{}
 	for _, k := range faceKeys {
 		sh := shellOfFaceKey(b, k)
 		if sh == nil {
 			return nil, fmt.Errorf("delete-face void: face reference %q lost", k)
 		}
-		if !ShellIsVoid(sh, q) {
+		if !ShellIsVoidInBody(b, sh) {
 			return nil, fmt.Errorf("delete-face void: face %q is not on an internal void shell", k)
 		}
 		drop[sh] = true
