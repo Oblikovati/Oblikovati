@@ -9,7 +9,7 @@ M48/C2 boolean cluster (#2248, #2250, #2251, #2252), reframing them. · **Supers
 [ADR-0052](ADR-0052-planar-boolean-corefined-seam-classification.md): the exact mesh arrangement returns
 to being a *curved-analytic-face recovery* and *last-resort rescue*, not the universal engine. **Builds
 on** [ADR-0043](ADR-0043-generalized-provenance-naming.md) (naming) and
-[ADR-0045](ADR-0045-boolean-kinds.md) (boolean kinds). · **Does NOT delete `brep.Boolean`** — it
+[ADR-0045](ADR-0045-curved-boolean-kind-taxonomy.md) (boolean kinds). · **Does NOT delete `brep.Boolean`** — it
 **promotes** it to the planar core of the general engine. · **Deletes when complete:** the
 `analyticFaceCount==0` framing as a *carve-out* (it becomes a *fast-path selector*), and the exact
 per-operation coincidence hacks the mesh path accreted (the coincident-opposite snap and the radial-edge
