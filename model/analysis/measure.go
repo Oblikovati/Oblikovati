@@ -21,9 +21,14 @@ func EdgeLengthMm(e *topo.Edge, q ops.Quality) float64 {
 	return lengthCm * cmToMM
 }
 
-// FaceAreaMm2 returns a face's area in square millimetres, summing its tessellated triangle areas
-// (exact for planar faces; converges with q for curved ones).
+// FaceAreaMm2 returns a face's area in square millimetres. It integrates the analytic surface
+// (∫∫ |∂P/∂u × ∂P/∂v| over the trimmed uv region — exact for planar faces, the surface integral
+// for curved ones, #3457), falling back to summing the tessellated triangle areas at quality q for
+// a face the analytic path cannot yet cover.
 func FaceAreaMm2(f *topo.Face, q ops.Quality) float64 {
+	if areaCm2, ok := ops.AnalyticFaceArea(f); ok {
+		return areaCm2 * cmToMM * cmToMM
+	}
 	mesh := ops.TessellateFace(f, q)
 	var areaCm2 float64
 	for t := 0; t+2 < len(mesh.Indices); t += 3 {

@@ -54,13 +54,13 @@ func TestMassPropertiesOfBox(t *testing.T) {
 	approx(t, "default mass", def.MassG, 30)
 }
 
-// TestMassPropertiesCurvedMatchesAnalytic gates the tessellation-driven volume/area accuracy of a
-// CURVED body (a cylinder), the case a planar box cannot exercise. Mass properties integrate over
-// the tessellated mesh, so a too-coarse facet count under-reports a curved solid's volume — this is
-// the −0.64%/curved-feature bias the display default produced against the Inventor analytic oracle.
-// Medium (the default) must land within 0.05% and High within 0.01% of the analytic value, so the
-// exporter corpus reads true volumes. If this loosens, the drift is back; do not relax the bound
-// without re-checking parity.
+// TestMassPropertiesCurvedMatchesAnalytic gates the volume/area accuracy of a CURVED body (a
+// cylinder), the case a planar box cannot exercise. Mass properties now integrate the ANALYTIC
+// B-rep (#3455/#3453), so a curved solid's volume and area are EXACT rather than the inscribed-
+// N-gon under-report the tessellated path produced (the historical −0.64%/curved-feature bias
+// against the Inventor analytic oracle). Every accuracy level must match the closed form to
+// ~1e-9 relative — the accuracy no longer depends on facet count. If this loosens, the analytic
+// path has regressed to tessellation; do not relax the bound.
 func TestMassPropertiesCurvedMatchesAnalytic(t *testing.T) {
 	const r, h = 2.0, 5.0                                    // cm
 	analyticVolMm3 := math.Pi * r * r * h * 1000             // πr²h cm³ → mm³
@@ -76,8 +76,9 @@ func TestMassPropertiesCurvedMatchesAnalytic(t *testing.T) {
 		acc    types.MassPropertiesAccuracy
 		relTol float64
 	}{
-		{types.MassPropertiesMedium, 5e-4}, // default: parity-grade
-		{types.MassPropertiesHigh, 1e-4},
+		{types.MassPropertiesLow, 1e-9}, // analytic ⇒ exact regardless of the fallback quality
+		{types.MassPropertiesMedium, 1e-9},
+		{types.MassPropertiesHigh, 1e-9},
 	} {
 		mp := MassPropertiesOf([]*topo.Body{cyl()}, 1, c.acc)
 		if rel := math.Abs(mp.VolumeMm3-analyticVolMm3) / analyticVolMm3; rel > c.relTol {
