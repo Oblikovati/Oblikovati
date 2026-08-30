@@ -49,24 +49,70 @@ func pointInTrimUV(f curvedFace, p math.Point3) bool {
 	return total%2 == 1
 }
 
-// castAxis picks the parameter axis the even-odd containment ray travels along: a NON-periodic,
-// UNBOUNDED axis, whose infinite end is unambiguously outside every trim loop (a plane's u/v, a
-// cylinder/cone's v). It prefers v. ok is false when neither axis qualifies — a sphere (latitude is
-// bounded, ending at a pole) or a torus (periodic both ways) — for which the caller uses the geodesic
-// winding instead, since a ray toward a pole or around a wrap has no exterior endpoint.
+// castAxis picks the parameter axis the even-odd containment ray travels along toward "outside": a
+// NON-periodic axis with an EXTERIOR ENDPOINT — either unbounded (a plane's u/v, a cylinder/cone's v,
+// exterior at ±∞) or bounded by a REGULAR domain edge (a NURBS patch's [uLo,uHi]×[vLo,vHi], exterior
+// beyond the edge). It prefers v. ok is false when neither axis qualifies — a sphere (latitude is
+// bounded by a degenerate POLE, not a boundary) or a torus (periodic both ways) — for which the caller
+// uses the pole-free geodesic winding, since a ray toward a pole or around a wrap has no exterior end.
 func castAxis(s geom.Surface, uPer, vPer bool) (alongV, ok bool) {
-	if lo, hi := s.VDomain(); !vPer && axisUnbounded(lo, hi) {
+	if lo, hi := s.VDomain(); !vPer && axisHasExterior(s, lo, hi, true) {
 		return true, true
 	}
-	if lo, hi := s.UDomain(); !uPer && axisUnbounded(lo, hi) {
+	if lo, hi := s.UDomain(); !uPer && axisHasExterior(s, lo, hi, false) {
 		return false, true
 	}
 	return false, false
 }
 
-// axisUnbounded reports whether a parameter domain runs to ±∞ (an infinite plane, an unbounded
-// cylinder/cone axis) — the property that makes the far end of a cast ray a definite exterior point.
-func axisUnbounded(lo, hi float64) bool { return stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) }
+// axisHasExterior reports whether casting along this non-periodic axis reaches a point outside the
+// surface: an unbounded domain reaches ±∞, and a bounded domain reaches its upper edge — provided that
+// edge is a regular boundary, not a degenerate pole where the surface collapses to a point.
+func axisHasExterior(s geom.Surface, lo, hi float64, alongV bool) bool {
+	if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
+		return true
+	}
+	return !edgeIsPole(s, hi, alongV)
+}
+
+// edgeIsPole reports whether the surface degenerates to a single point along the given domain edge —
+// the sphere's ±π/2 latitude, where every cross-axis parameter maps to one pole. It measures the
+// cross-axis span AT the edge against the span one step INTO the domain: a pole collapses the former to
+// ~0 while the latter stays finite, so the ratio is the scale-free degeneracy signal.
+func edgeIsPole(s geom.Surface, edge float64, alongV bool) bool {
+	clo, chi := s.UDomain()
+	if !alongV {
+		clo, chi = s.VDomain()
+	}
+	if stdmath.IsInf(clo, 0) || stdmath.IsInf(chi, 0) {
+		return false // an unbounded cross axis (a plane) never collapses to a point
+	}
+	a, b := clo+0.25*(chi-clo), clo+0.75*(chi-clo)
+	inside := edge - 0.1*edgeStep(s, alongV)
+	spanEdge := edgePoint(s, a, edge, alongV).DistanceTo(edgePoint(s, b, edge, alongV))
+	spanIn := edgePoint(s, a, inside, alongV).DistanceTo(edgePoint(s, b, inside, alongV))
+	return float64(spanEdge) < 1e-6*float64(spanIn) // tol:numeric — cross-axis span collapse ratio (dimensionless)
+}
+
+// edgeStep is a small step into the domain from an edge, along the cast axis, for the pole probe.
+func edgeStep(s geom.Surface, alongV bool) float64 {
+	lo, hi := s.VDomain()
+	if !alongV {
+		lo, hi = s.UDomain()
+	}
+	if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
+		return 1
+	}
+	return hi - lo
+}
+
+// edgePoint evaluates the surface at cross-axis param c and cast-axis param t.
+func edgePoint(s geom.Surface, c, t float64, alongV bool) math.Point3 {
+	if alongV {
+		return s.PointAt(c, t)
+	}
+	return s.PointAt(t, c)
+}
 
 // loopRayCrossings counts how many times a ray from q along the chosen non-periodic axis crosses one
 // trim loop. The query is first shifted into that loop's own parameter branch (loops unwrap
