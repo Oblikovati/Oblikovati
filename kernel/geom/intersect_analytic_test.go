@@ -65,6 +65,27 @@ func TestAnalyticPlanePlaneIsLine(t *testing.T) {
 	}
 }
 
+// PlanePlaneLine returns the exact line the planar B-rep imprint uses: the z=0 and x=0 planes meet along the
+// y-axis (a point on it and unit direction ±Y), and two parallel planes report ok=false.
+func TestPlanePlaneLineExactAndParallel(t *testing.T) {
+	p0, dir, ok := PlanePlaneLine(mustPlane(t, 0, 0, 0, 0, 0, 1), mustPlane(t, 0, 0, 0, 1, 0, 0))
+	if !ok {
+		t.Fatal("z=0 ∩ x=0 must be a line, got ok=false")
+	}
+	if stdmath.Abs(float64(p0.X)) > 1e-12 || stdmath.Abs(float64(p0.Z)) > 1e-12 {
+		t.Errorf("point on the intersection line %v must lie on the y-axis (x=z=0)", p0)
+	}
+	if l := float64(dir.Length()); stdmath.Abs(l-1) > 1e-12 {
+		t.Errorf("direction length %g, want unit", l)
+	}
+	if stdmath.Abs(float64(dir.X)) > 1e-12 || stdmath.Abs(float64(dir.Z)) > 1e-12 {
+		t.Errorf("direction %v must be ±Y (the shared y-axis)", dir)
+	}
+	if _, _, ok := PlanePlaneLine(mustPlane(t, 0, 0, 0, 0, 0, 1), mustPlane(t, 0, 0, 5, 0, 0, 1)); ok {
+		t.Error("parallel planes must report ok=false (no isolated intersection line)")
+	}
+}
+
 // Parallel planes are handled (no intersection curve).
 func TestAnalyticParallelPlanes(t *testing.T) {
 	curves, ok := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 0, 0, 0, 1), mustPlane(t, 0, 0, 5, 0, 0, 1), ResolutionForSize(1))

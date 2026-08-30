@@ -96,6 +96,21 @@ func planeTorusCurve(pl Plane, t Torus, res Resolution) ([]Curve3, bool) {
 	return []Curve3{outer, inner}, true
 }
 
+// PlanePlaneLine returns a point on, and the UNIT direction of, two planes' intersection line, or ok=false
+// when they are parallel/coincident (no isolated line). It is the plane∩plane fast path of the general
+// intersector, exposed so the planar B-rep imprint computes this surface pair ONCE here rather than
+// re-deriving it: the kernel ground rule keeps SSI and geometry-kind knowledge in kernel/geom.
+//
+//	p0, dir, ok := geom.PlanePlaneLine(faceA.Plane(), faceB.Plane())
+func PlanePlaneLine(a, b Plane) (p0 math.Point3, dir math.Vector3, ok bool) {
+	curves, _ := planePlaneCurve(a, b)
+	if len(curves) == 0 {
+		return math.Point3{}, math.Vector3{}, false // parallel or coincident
+	}
+	ln := curves[0].(Line)
+	return ln.Origin, ln.Dir.AsVector(), true
+}
+
 // planePlaneCurve returns the intersection line of two planes (empty when parallel).
 func planePlaneCurve(a, b Plane) ([]Curve3, bool) {
 	na, nb := unitVec3(a.Normal()), unitVec3(b.Normal())

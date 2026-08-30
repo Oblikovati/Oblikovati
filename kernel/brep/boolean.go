@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -137,7 +138,7 @@ func imprintAll(fa, fb []planarFace) (impA, impB [][][2]math.Point3) {
 // imprint returns the 3D segments of the intersection line of two faces' planes clipped
 // to where both faces overlap (empty when parallel or non-overlapping).
 func imprint(a, b planarFace) [][2]math.Point3 {
-	p0, dir, ok := planeLine(a.plane, b.plane)
+	p0, dir, ok := geom.PlanePlaneLine(a.plane, b.plane)
 	if !ok {
 		return nil
 	}
