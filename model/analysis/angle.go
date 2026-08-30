@@ -43,7 +43,7 @@ func entityDirection(e MeasureEntity, q ops.Quality) (math.Vector3, error) {
 	case e.Edge != nil:
 		return edgeDirection(e.Edge, q)
 	case e.Face != nil:
-		return faceNormal(e.Face, q)
+		return faceNormal(e.Face)
 	}
 	return math.Vector3{}, fmt.Errorf("angle: entity must be an edge or a face (got a vertex or nothing)")
 }
@@ -62,18 +62,44 @@ func edgeDirection(e *topo.Edge, q ops.Quality) (math.Vector3, error) {
 	return d, nil
 }
 
-// faceNormal is the outward normal of a face, from its first non-degenerate mesh triangle (constant
-// for a planar face; the first triangle's normal for a curved one).
-func faceNormal(f *topo.Face, q ops.Quality) (math.Vector3, error) {
-	mesh := ops.TessellateFace(f, q)
-	for t := 0; t+2 < len(mesh.Indices); t += 3 {
-		a := mesh.Positions[mesh.Indices[t]]
-		n := a.VectorTo(mesh.Positions[mesh.Indices[t+1]]).Cross(a.VectorTo(mesh.Positions[mesh.Indices[t+2]]))
-		if n.LengthSquared() > 0 {
-			return n, nil
-		}
+// faceNormal is the outward normal of a face from its ANALYTIC surface (#3456), not a mesh
+// triangle: the surface normal at a representative point on the face, negated when the face's
+// material side is opposite the surface normal (Face.Reversed). It is exact and constant for a
+// planar face; for a curved face it is the analytic normal at the representative point.
+func faceNormal(f *topo.Face) (math.Vector3, error) {
+	s := f.Geometry()
+	p, ok := faceRepresentativePoint(f)
+	if !ok {
+		return math.Vector3{}, fmt.Errorf("angle: face has no geometry to take a normal from")
 	}
-	return math.Vector3{}, fmt.Errorf("angle: face has no non-degenerate triangle to take a normal from")
+	u, v := s.ParamAt(p)
+	n := s.NormalAt(u, v)
+	if n.LengthSquared() == 0 {
+		return math.Vector3{}, fmt.Errorf("angle: face surface normal is degenerate at %v", p)
+	}
+	if f.Reversed() {
+		n = n.Scale(-1)
+	}
+	return n, nil
+}
+
+// faceRepresentativePoint returns a point on the face at which to evaluate the analytic normal:
+// a boundary vertex for a trimmed face, the parameter-domain midpoint for a boundary-less one.
+func faceRepresentativePoint(f *topo.Face) (math.Point3, bool) {
+	loops := f.Loops()
+	if len(loops) == 0 {
+		s := f.Geometry()
+		uLo, uHi := s.UDomain()
+		vLo, vHi := s.VDomain()
+		if stdmath.IsInf(uLo, 0) || stdmath.IsInf(uHi, 0) || stdmath.IsInf(vLo, 0) || stdmath.IsInf(vHi, 0) {
+			return math.Point3{}, false
+		}
+		return s.PointAt((uLo+uHi)/2, (vLo+vHi)/2), true
+	}
+	for _, use := range loops[0].EdgeUses() {
+		return use.Edge().StartVertex().Point(), true
+	}
+	return math.Point3{}, false
 }
 
 // angleBetweenDeg is the angle in degrees between two vectors, over [0,180].
