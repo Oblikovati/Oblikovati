@@ -60,18 +60,20 @@ func PointInside(b *topo.Body, p math.Point3) bool {
 // reused tessellation. It captures the representation choice: an all-planar body keeps a winding-number
 // probe (faces flattened once), a curved body keeps its flattened faces for ray casting.
 type InsideQuery struct {
-	probe *solidProbe  // set for an all-planar body: generalized winding number
-	faces []curvedFace // set for a curved body: ray-cast operands
+	probe *solidProbe // set for an all-planar body: generalized winding number
+	flux  *fluxQuery  // set for a curved body: generalized-winding solid-angle flux
 	box   math.Box
 }
 
-// NewInsideQuery prepares b once, choosing the winding-number path for an all-planar body and the
-// ray-cast path otherwise.
+// NewInsideQuery prepares b once, choosing the winding-number probe for an all-planar body and the
+// solid-angle flux winding for a curved body. Both are generalized winding numbers — robust to an
+// imported B-rep's seam gaps and unreliable face orientations, where ray parity and the nearest-point
+// normal test each fail on a different subset (see winding_flux.go).
 func NewInsideQuery(b *topo.Body) *InsideQuery {
 	if sp := newSolidProbe(b); sp.planar {
 		return &InsideQuery{probe: sp}
 	}
-	return &InsideQuery{faces: facesOfAny(b), box: b.RangeBox()}
+	return &InsideQuery{flux: newFluxQuery(facesOfAny(b)), box: b.RangeBox()}
 }
 
 // Inside reports whether p is strictly inside the body the query was built from.
@@ -79,73 +81,10 @@ func (q *InsideQuery) Inside(p math.Point3) bool {
 	if q.probe != nil {
 		return q.probe.inside(p)
 	}
-	if len(q.faces) == 0 {
+	if q.flux == nil {
 		return false
 	}
-	return curvedInside(q.faces, p, q.box)
-}
-
-// curvedInside classifies p against a curved body by CROSS-CHECKING two complementary methods, because
-// neither is robust alone on an imported B-rep. The nearest-point normal test (OCCT
-// BRepClass3d_SolidClassifier) is reliable near an edge, where a ray grazes and miscounts, but is fooled
-// in the clear interior by an inconsistently-oriented imported face. Ray parity is orientation-blind and
-// reliable in the clear interior, but grazes near an edge. When the two AGREE the answer is certain; when
-// they DISAGREE, p is in one method's blind spot — trust the nearest-point test when p sits near a
-// boundary edge (two faces nearly equidistant) and the ray-parity count when p is deep in the interior.
-func curvedInside(faces []curvedFace, p math.Point3, box math.Box) bool {
-	near, gap, found := nearestFaceInside(faces, p)
-	parity := rayParityInside(faces, p, box)
-	if !found || near == parity {
-		return parity
-	}
-	// tol:parametric — an edge is "near" when the second-nearest face's foot is within this fraction of
-	// the body diagonal of the nearest; below it ray parity grazes, so the nearest-point test wins.
-	const nearEdgeFraction = 0.2
-	if gap < nearEdgeFraction*float64(box.Diagonal().Length()) {
-		return near
-	}
-	return parity
-}
-
-// nearestFaceInside classifies p by the OUTWARD NORMAL at the closest point of the boundary — find the
-// nearest point on any trimmed face and test which side of that face's material-outward normal p lies on.
-// It also returns the GAP (second-nearest foot distance minus nearest), the near-edge signal the caller
-// uses to arbitrate. found is false when p projects outside every face's trimmed interior (over an edge
-// or corner, where every foot is on a boundary and the normal is ambiguous).
-func nearestFaceInside(faces []curvedFace, p math.Point3) (inside bool, gap float64, found bool) {
-	best, second := stdmath.Inf(1), stdmath.Inf(1)
-	for i := range faces {
-		d, in, ok := footInsideOnFace(faces[i], p)
-		if !ok {
-			continue
-		}
-		if d < best {
-			best, second, inside, found = d, best, in, true
-		} else if d < second {
-			second = d
-		}
-	}
-	return inside, second - best, found
-}
-
-// footInsideOnFace projects p onto a face's TRIMMED region and reports the distance to the foot and
-// whether p is on the material-inward side there (opposite the outward normal, which is the surface
-// normal flipped when the face is reversed). ok is false when the foot falls outside the trim (the true
-// nearest point is then on a boundary edge) or the normal is degenerate (a pole/apex) — such a face is
-// skipped in the nearest search.
-func footInsideOnFace(f curvedFace, p math.Point3) (dist float64, inside, ok bool) {
-	u, v, foot := geom.ClosestPointOnSurface(f.surface, p)
-	if len(f.loops) > 0 && !pointInTrimUV(f, foot) {
-		return 0, false, false
-	}
-	n := f.surface.NormalAt(u, v)
-	if n.LengthSquared() == 0 {
-		return 0, false, false
-	}
-	if f.reversed {
-		n = n.Scale(-1)
-	}
-	return float64(foot.DistanceTo(p)), float64(foot.VectorTo(p).Dot(n)) < 0, true
+	return q.flux.inside(p)
 }
 
 // ClassifyPoint is [PointInside] widened to the tri-state Inside/OnSurface/Outside: a point within
