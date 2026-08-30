@@ -38,19 +38,16 @@ type MassProperties struct {
 	PrincipalAxes        [3][3]float64
 }
 
-// qualityFor maps an accuracy level to a tessellation quality (planar bodies are exact regardless).
+// qualityFor maps an accuracy level to a tessellation quality for the FALLBACK path only.
 //
-// Mass properties are integrated over the TESSELLATED mesh (ops.BodyGeometryProperties sums signed
-// tetrahedra), so the facet count of a curved face sets the volume/area/inertia accuracy: an
-// inscribed N-gon approximation of a curved surface under-reports by ~π²/(3N²). At the display
-// default (ChordTolerance 0.05, AngleTolerance 10° → ~36 facets/circle) that is a systematic
-// −0.64% per curved feature — the exact bias that showed up as a recurring −0.6413% delta against
-// the Inventor (analytic) oracle across the exporter corpus, and compounded to several percent on
-// parts with many curved cuts/revolves. The default (Medium) accuracy therefore uses a far finer
-// tessellation than the display mesh: at AngleTolerance 1° (~360 facets/circle) the deficit is
-// ~−0.01%, and High (0.5°) is ~−0.003% — both well inside engineering parity. Low stays coarse for
-// a fast interactive preview. (An exact analytic integration over the B-rep faces would remove the
-// deficit entirely and is the eventual home for this; the fine mesh is the pragmatic equivalent.)
+// Mass properties integrate the ANALYTIC B-rep (ops.AnalyticGeometryProperties / AnalyticInertia,
+// M48/C3 #3455/#3453/#3452), so for every body the analytic surface integrals set the accuracy and
+// the result is exact for planar bodies and the analytic primitives — the old inscribed-N-gon
+// deficit (a systematic −π²/(3N²) per curved feature, historically −0.64% against the Inventor
+// oracle) is gone. A body the analytic path cannot yet cover (e.g. a trimmed NURBS whose uv
+// boundary cannot be reconstructed) falls back to the tessellated integration at this quality,
+// where the facet count still sets the accuracy: Low is a coarse interactive preview, Medium the
+// parity-grade default, High the finest.
 func qualityFor(accuracy types.MassPropertiesAccuracy) ops.Quality {
 	switch accuracy {
 	case types.MassPropertiesLow:
@@ -64,9 +61,11 @@ func qualityFor(accuracy types.MassPropertiesAccuracy) ops.Quality {
 }
 
 // MassPropertiesOf returns the combined mass properties of the given solid bodies for a material
-// density (g/cm³; ≤0 ⇒ 1.0) at the given accuracy. Volume/area/centroid come from each body's
-// tessellated geometry; the centroid is volume-weighted, and the inertia tensor is each body's
-// inertia (about its own centroid) shifted to the combined centroid by the parallel-axis theorem.
+// density (g/cm³; ≤0 ⇒ 1.0) at the given accuracy. Volume/area/centroid integrate each body's
+// ANALYTIC B-rep (exact for planar bodies and the analytic primitives), falling back to the
+// tessellated integration only for a body the analytic path cannot yet cover. The centroid is
+// volume-weighted, and the inertia tensor is each body's inertia (about its own centroid) shifted
+// to the combined centroid by the parallel-axis theorem.
 func MassPropertiesOf(bodies []*topo.Body, densityGCm3 float64, accuracy types.MassPropertiesAccuracy) MassProperties {
 	if densityGCm3 <= 0 {
 		densityGCm3 = 1
@@ -74,7 +73,7 @@ func MassPropertiesOf(bodies []*topo.Body, densityGCm3 float64, accuracy types.M
 	q := qualityFor(accuracy)
 	var volCm3, areaCm2, cx, cy, cz float64
 	for _, b := range bodies {
-		p := ops.BodyGeometryProperties(b, q)
+		p := bodyGeometryProperties(b, q)
 		volCm3 += p.Volume
 		areaCm2 += p.Area
 		cx += float64(p.Centroid.X) * p.Volume
@@ -95,4 +94,22 @@ func MassPropertiesOf(bodies []*topo.Body, densityGCm3 float64, accuracy types.M
 	}
 	applyInertia(&mp, bodies, q, densityGCm3, [3]float64{cx, cy, cz})
 	return mp
+}
+
+// bodyGeometryProperties integrates a body's volume/area/centroid over its analytic B-rep, falling
+// back to the tessellated path at quality q for a body the analytic path cannot yet cover (#3453).
+func bodyGeometryProperties(b *topo.Body, q ops.Quality) ops.GeometryProperties {
+	if p, ok := ops.AnalyticGeometryProperties(b); ok {
+		return p
+	}
+	return ops.BodyGeometryProperties(b, q)
+}
+
+// bodyInertia integrates a body's inertia tensor over its analytic B-rep, falling back to the
+// tessellated path at quality q for a body the analytic path cannot yet cover (#3452).
+func bodyInertia(b *topo.Body, q ops.Quality) ops.InertiaTensor {
+	if it, ok := ops.AnalyticInertia(b); ok {
+		return it
+	}
+	return ops.BodyInertia(b, q)
 }

@@ -102,6 +102,19 @@ func AnalyticInertia(b *topo.Body) (InertiaTensor, bool) {
 	return inertiaFromTerms(t), true
 }
 
+// AnalyticFaceArea returns one face's area by the analytic surface integral ∫∫ |∂P/∂u × ∂P/∂v|
+// over its trimmed uv region — the exact polygon area for a planar face, the surface integral for
+// a curved one. ok is false when the face is not analytically integrable (fall back to the mesh).
+//
+// Example: a, ok := ops.AnalyticFaceArea(cylinderSideFace) // ok ⇒ a == 2πrh
+func AnalyticFaceArea(f *topo.Face) (float64, bool) {
+	t, ok := faceTerms(f)
+	if !ok {
+		return 0, false
+	}
+	return t.area, true
+}
+
 // analyticBodyTerms sums every face's divergence-theorem contribution. A non-solid body has no
 // enclosed volume to integrate; any face the analytic path cannot cover forces a whole-body
 // fallback so the result never mixes analytic and mesh contributions.
