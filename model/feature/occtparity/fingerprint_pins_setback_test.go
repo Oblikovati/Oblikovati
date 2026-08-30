@@ -118,7 +118,15 @@ func setbackObstaclePins() []fingerprintPin {
 		// The triangle count rises 5850 → 5862, the 12 stations the mesher needs to follow four arcs it used
 		// to walk as straight lines. Face count (11), free edges (0) and folds (0) unchanged at BOTH gate
 		// qualities. No other case in the corpus changes by a single triangle.
-		{"U3", 17873.945817788, 5862, 0x718c0ef4145587bc, ""},
+		// ★ RE-CAPTURED AGAIN (#3388/#3390, commit 29702e9a — earclip completeness): 5862 → 5864, hash
+		// 0x718c0ef4…→0xd212e916…. A planar boundary face's single-loop ear clip used to BAIL EARLY on a
+		// near-degenerate corner (findEar returned no ear on a zero-area remainder) and ship the early-bail
+		// partial fan; bestSingleLoopTriangulation now prefers the COMPLETE earcut over an incomplete clip on
+		// an area tie, so that face triangulates fully (+2 tris). The added triangles subdivide an already-
+		// covered COPLANAR region, so the RAW volume is bit-identical (17873.945817788 passes at the 1e-9
+		// default tol — an INDEPENDENT witness that no coverage moved) and the body is the same solid; the
+		// mesh is strictly more complete. Face count (11), free edges (0), folds (0) unchanged.
+		{"U3", 17873.945817788, 5864, 0xd212e91687cd9bc9, ""},
 		// U4 (simple): the Group-C dual-host multi-rail corner-blend green (kernel/ops/fillet_obstacle_dual*.go,
 		// #2007 Group C — the U4-5 weld). U4 is a box + TWO bosses (Cylinder r8 on y=−20, oblique
 		// EllipticalCylinder on x=10) whose footprints BOTH dip into ONE r=5 convex-edge fillet (qualifying==2),
