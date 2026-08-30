@@ -213,23 +213,19 @@ func spanEdges(knots []float64, degree int) []float64 {
 	return append(append([]float64{lo}, interiorKnots(knots, degree)...), hi)
 }
 
-// gauss5 holds the 5-point Gauss–Legendre nodes and weights on [−1, 1].
-var gauss5 = struct{ x, w [5]float64 }{
-	x: [5]float64{-0.9061798459386640, -0.5384693101056831, 0, 0.5384693101056831, 0.9061798459386640},
-	w: [5]float64{0.2369268850561891, 0.4786286704993665, 0.5688888888888889, 0.4786286704993665, 0.2369268850561891},
-}
-
-// gaussCellArea integrates the area element over one parameter cell.
+// gaussCellArea integrates the area element |∂P/∂u × ∂P/∂v| over one parameter cell
+// with a tensor-product 5-point Gauss–Legendre rule (the integrand is smooth inside a span).
 func gaussCellArea(s Surface, u0, u1, v0, v1 float64) float64 {
 	hu, hv := (u1-u0)/2, (v1-v0)/2
 	if hu <= 0 || hv <= 0 {
 		return 0
 	}
+	x, w := GaussLegendre(5)
 	sum := 0.0
-	for i := range 5 {
-		for j := range 5 {
-			du, dv := s.DerivativesAt(u0+hu*(1+gauss5.x[i]), v0+hv*(1+gauss5.x[j]))
-			sum += gauss5.w[i] * gauss5.w[j] * float64(du.Cross(dv).Length())
+	for i := range x {
+		for j := range x {
+			du, dv := s.DerivativesAt(u0+hu*(1+x[i]), v0+hv*(1+x[j]))
+			sum += w[i] * w[j] * float64(du.Cross(dv).Length())
 		}
 	}
 	return sum * hu * hv
