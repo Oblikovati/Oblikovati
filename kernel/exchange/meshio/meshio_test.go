@@ -3,13 +3,41 @@
 package meshio
 
 import (
+	"errors"
 	stdmath "math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 )
+
+// nonManifoldSoup returns a watertight cube plus one extra triangle glued onto the cube's
+// bottom-front edge (corners 0=(0,0,0), 1=(1,0,0)), so that edge is shared by THREE faces —
+// the defining non-manifold signature (an edge used by more than two faces).
+func nonManifoldSoup() RawMesh {
+	m := cubeSoup(1)
+	m.AddTriangle(math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0.5, -1, 0.5))
+	return m
+}
+
+// TestSolidOrSurfaceRefusesNonManifold is the #3384 regression: a non-manifold weld is invalid
+// topology that would corrupt every downstream consumer, so the import FAILS with a named decline
+// (classified as ErrNonManifoldImport, naming the offending edge count) — not a usable body with a
+// mere warning.
+func TestSolidOrSurfaceRefusesNonManifold(t *testing.T) {
+	body, warns, err := SolidOrSurface(nonManifoldSoup(), "import:test#0", DefaultWeldTolerance)
+	if !errors.Is(err, ErrNonManifoldImport) {
+		t.Fatalf("non-manifold import = (%v, %v, %v), want an ErrNonManifoldImport decline", body, warns, err)
+	}
+	if body != nil {
+		t.Errorf("a refused non-manifold import returned a body; want nil so no broken body ships")
+	}
+	if !strings.Contains(err.Error(), "non-manifold edge") {
+		t.Errorf("decline %q does not name the offending non-manifold edge count", err.Error())
+	}
+}
 
 // cubeSoup returns a watertight 12-triangle triangle soup of an s-sided axis-aligned
 // cube at the origin, with vertices repeated per triangle (the STL/3MF shape). Outward
