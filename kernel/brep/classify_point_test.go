@@ -155,3 +155,39 @@ func TestRayGrazesTangentAndBoundary(t *testing.T) {
 		t.Errorf("a pierce on the cap-edge boundary must graze (hits=%d)", len(eh))
 	}
 }
+
+// ClassifyShellPoint classifies against a single shell's faces, matching the whole-body verdict for a
+// one-shell solid.
+func TestClassifyShellPoint(t *testing.T) {
+	box, err := SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "box")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	sh := box.Shells()[0]
+	cases := []classifyCase{
+		{"centre", math.P3(1, 1, 1), Inside},
+		{"outside", math.P3(3, 1, 1), Outside},
+		{"on face", math.P3(0, 1, 1), OnSurface},
+	}
+	for _, c := range cases {
+		if got := ClassifyShellPoint(sh, c.p, 0); got != c.want {
+			t.Errorf("ClassifyShellPoint(%s) = %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+// ClassifyPointTol honors the caller's on-surface band: a point a small distance inside a face reads
+// as OnSurface under a loose tolerance but Inside under a tight one.
+func TestClassifyPointTol(t *testing.T) {
+	box, err := SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "box")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	p := math.P3(0.01, 1, 1) // 0.01 inside the x=0 face
+	if got := ClassifyPointTol(box, p, 0.1); got != OnSurface {
+		t.Errorf("loose onTol: got %v, want OnSurface", got)
+	}
+	if got := ClassifyPointTol(box, p, 1e-9); got != Inside {
+		t.Errorf("tight onTol: got %v, want Inside", got)
+	}
+}

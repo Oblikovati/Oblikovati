@@ -57,44 +57,69 @@ func PointInside(b *topo.Body, p math.Point3) bool {
 	if len(faces) == 0 {
 		return false
 	}
-	inside, _ := rayParityInside(faces, p, castLimit(b), grazeTol(b))
-	return inside
+	return rayParityInside(faces, p, b.RangeBox())
 }
 
 // ClassifyPoint is [PointInside] widened to the tri-state Inside/OnSurface/Outside: a point within
 // the model weld tolerance of a trimmed face is OnSurface, otherwise the ray-parity verdict decides.
 func ClassifyPoint(b *topo.Body, p math.Point3) Containment {
-	faces := facesOfAny(b)
+	return ClassifyPointTol(b, p, geom.ResolutionForBox(b.RangeBox()).Weld())
+}
+
+// ClassifyPointTol is [ClassifyPoint] with the caller's on-surface tolerance: a point within onTol of
+// a trimmed face is OnSurface. A non-positive onTol falls back to the model weld tolerance.
+func ClassifyPointTol(b *topo.Body, p math.Point3, onTol float64) Containment {
+	return classifyFaces(facesOfAny(b), p, b.RangeBox(), onTol)
+}
+
+// ClassifyShellPoint classifies p against the region a single shell bounds (one shell of a body, or a
+// standalone shell), by the same analytic ray casting over just that shell's faces.
+func ClassifyShellPoint(s *topo.Shell, p math.Point3, onTol float64) Containment {
+	return classifyFaces(curvedFacesOfShell(s), p, s.RangeBox(), onTol)
+}
+
+// classifyFaces is the shared tri-state classifier over an already-flattened face set: OnSurface when
+// p is within onTol of a trimmed face, else the ray-parity verdict against box-sized cast limits.
+func classifyFaces(faces []curvedFace, p math.Point3, box math.Box, onTol float64) Containment {
 	if len(faces) == 0 {
 		return Outside
 	}
-	if onAnyFace(faces, p, geom.ResolutionForBox(b.RangeBox()).Weld()) {
+	if onTol <= 0 {
+		onTol = geom.ResolutionForBox(box).Weld()
+	}
+	if onAnyFace(faces, p, onTol) {
 		return OnSurface
 	}
-	if inside, _ := rayParityInside(faces, p, castLimit(b), grazeTol(b)); inside {
+	if rayParityInside(faces, p, box) {
 		return Inside
 	}
 	return Outside
 }
 
-// rayParityInside casts each candidate direction until one crosses the body without grazing, and
-// returns the even–odd verdict. ok is false only if every direction grazed (astronomically unlikely).
-func rayParityInside(faces []curvedFace, p math.Point3, tMax, tol float64) (inside, ok bool) {
-	for _, d := range rayDirections {
-		if crossings, clean := rayCrossings(faces, p, d, tMax, tol); clean {
-			return crossings%2 == 1, true
-		}
+// curvedFacesOfShell flattens one shell's faces for classification.
+func curvedFacesOfShell(s *topo.Shell) []curvedFace {
+	out := make([]curvedFace, 0, len(s.Faces()))
+	for _, f := range s.Faces() {
+		out = append(out, curvedFaceOf(f))
 	}
-	return false, false
+	return out
 }
 
-// castLimit is the ray length that certainly clears the body — twice its bounding-box diagonal.
-func castLimit(b *topo.Body) float64 { return 2 * float64(b.RangeBox().Diagonal().Length()) }
-
-// grazeTol is the distance within which a pierce counts as on a trim edge (so the ray is reselected).
-// It is the coplanar/on-line classification tolerance, tight enough that a point a modelling epsilon
-// inside a thin wall still casts cleanly, loose enough to catch a genuine shared-edge pierce.
-func grazeTol(b *topo.Body) float64 { return geom.ResolutionForBox(b.RangeBox()).Plane() }
+// rayParityInside casts each candidate direction until one crosses the faces without grazing, and
+// returns its even–odd verdict. It reports not-inside if every direction grazed (astronomically
+// unlikely — six mutually non-parallel directions all skimming a boundary).
+func rayParityInside(faces []curvedFace, p math.Point3, box math.Box) bool {
+	tMax := 2 * float64(box.Diagonal().Length())
+	// The graze band is the coplanar/on-line tolerance: tight enough that a point a modelling epsilon
+	// inside a thin wall still casts cleanly, loose enough to catch a genuine shared-edge pierce.
+	tol := geom.ResolutionForBox(box).Plane()
+	for _, d := range rayDirections {
+		if crossings, clean := rayCrossings(faces, p, d, tMax, tol); clean {
+			return crossings%2 == 1
+		}
+	}
+	return false
+}
 
 // rayCrossings counts the boundary crossings of the ray p→dir within [0, tMax]. ok is false when a
 // pierce grazes a face boundary or runs tangent, signalling the caller to try another direction

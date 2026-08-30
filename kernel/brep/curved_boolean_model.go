@@ -65,14 +65,14 @@ type curvedFace struct {
 func facesOfAny(b *topo.Body) []curvedFace {
 	out := make([]curvedFace, 0, len(b.Faces()))
 	for _, f := range b.Faces() {
-		out = append(out, curvedFace{
-			surface:  f.Geometry(),
-			reversed: f.Reversed(),
-			loops:    loopsOf(f),
-			lineage:  f.Lineage(),
-		})
+		out = append(out, curvedFaceOf(f))
 	}
 	return out
+}
+
+// curvedFaceOf flattens one topo.Face into a curvedFace (its analytic surface, sense and loops).
+func curvedFaceOf(f *topo.Face) curvedFace {
+	return curvedFace{surface: f.Geometry(), reversed: f.Reversed(), loops: loopsOf(f), lineage: f.Lineage()}
 }
 
 // loopsOf extracts a face's boundary loops as curvedLoops (outer loop first, matching

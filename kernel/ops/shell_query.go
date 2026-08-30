@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -68,18 +69,30 @@ func ShellIsVoid(s *topo.Shell, q Quality) bool {
 	return s.IsClosed() && ShellSignedVolume(s, q) < 0
 }
 
-// ShellContainment classifies p against the region the shell bounds: ON within
-// onTol of the shell's mesh, else INSIDE by odd ray crossings.
-func ShellContainment(s *topo.Shell, p math.Point3, q Quality, onTol float64) PointContainment {
-	return meshContainment(shellMesh(s, q), p, onTol)
+// ShellContainment classifies p against the region the shell bounds — ON within onTol of a trimmed
+// face, else INSIDE by odd ray crossings — from the analytic B-rep, reading no tessellation (the
+// Quality argument is now vestigial). M48/C3 #3428.
+func ShellContainment(s *topo.Shell, p math.Point3, _ Quality, onTol float64) PointContainment {
+	return fromBrepContainment(brep.ClassifyShellPoint(s, p, onTol))
 }
 
-// BodyContainment classifies p against the solid body: ON within onTol of any
-// face, INSIDE by odd crossings over all faces (a point inside a cavity is
-// outside the material — the cavity skin's crossings cancel an outer hit pair).
-func BodyContainment(b *topo.Body, p math.Point3, q Quality, onTol float64) PointContainment {
-	mesh, _ := TessellateBody(b, q)
-	return meshContainment(mesh, p, onTol)
+// BodyContainment classifies p against the solid body — ON within onTol of any trimmed face, INSIDE
+// by odd crossings over all faces (a point inside a cavity is outside the material) — from the
+// analytic B-rep, reading no tessellation (the Quality argument is now vestigial). M48/C3 #3429.
+func BodyContainment(b *topo.Body, p math.Point3, _ Quality, onTol float64) PointContainment {
+	return fromBrepContainment(brep.ClassifyPointTol(b, p, onTol))
+}
+
+// fromBrepContainment maps brep's classifier tri-state to the ops/api PointContainment.
+func fromBrepContainment(c brep.Containment) PointContainment {
+	switch c {
+	case brep.Inside:
+		return ContainInside
+	case brep.OnSurface:
+		return ContainOn
+	default:
+		return ContainOutside
+	}
 }
 
 // meshContainment is the shared mesh-level classifier: ON when p is within onTol of any facet, else
