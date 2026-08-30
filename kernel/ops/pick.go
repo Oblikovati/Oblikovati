@@ -5,7 +5,6 @@ package ops
 import (
 	stdmath "math"
 
-	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -13,86 +12,29 @@ import (
 // RayCastFaces returns the nearest face of a body hit by a ray, with the hit
 // distance — the geometric core of viewport picking (the renderer's ID-buffer is an
 // optimization of the same query). The closest hit wins. Pure Go, so the UI's
-// hit-test is headless-testable.
+// hit-test is headless-testable. q is retained for signature stability; the hit is now
+// resolved analytically (see rayCastFace) and no longer depends on the tessellation Quality.
 func RayCastFaces(b *topo.Body, origin math.Point3, dir math.Vector3, q Quality) (*topo.Face, float64, bool) {
 	var nearest *topo.Face
 	best := stdmath.Inf(1)
 	for _, f := range b.Faces() {
-		if t, ok := rayCastFace(f, origin, dir, q); ok && t < best {
+		if t, ok := rayCastFace(f, origin, dir); ok && t < best {
 			best, nearest = t, f
 		}
 	}
 	return nearest, best, nearest != nil
 }
 
-// rayCastFace returns the ray's forward hit distance to a face. A PLANAR face is hit-tested by
-// ray–plane intersection plus a point-in-polygon test on its boundary loops — O(m), no
-// triangulation — so the synchronous per-frame hover pick never triangulates a planar face. That
-// matters because tessellatePlanarFace runs the exact-predicate ear-clipper, which on a degenerate
-// (near-collinear) boundary escalates to O(m³) big.Rat arithmetic (seconds on a ~66-vertex face);
-// re-run every frame by the viewport's hovered-plane pick, it starved the frame-loop dispatcher an
-// async add-in build blocks on → a hard placement deadlock. A curved face still ray-tests its
-// tessellation (a bounded UV grid — no ear-clipping).
-func rayCastFace(f *topo.Face, origin math.Point3, dir math.Vector3, q Quality) (float64, bool) {
-	if _, ok := f.Geometry().(geom.Plane); ok {
-		return rayCastPlanarFace(f, origin, dir, q)
-	}
-	return rayCastMesh(pickFaceMesh(f, q), origin, dir)
-}
-
-// facePickTess is the ops-owned payload of topo.Face.pickTess: the mesh a curved face was last
-// tessellated to for picking, plus the quality it was built at (picking always uses DefaultQuality,
-// but the quality guard rebuilds correctly if a caller ever passes another).
-type facePickTess struct {
-	mesh *Mesh
-	q    Quality
-}
-
-// pickFaceMesh returns the curved face's tessellation for ray-casting, tessellating it once and
-// memoizing on the face. Without this the synchronous hover-pick re-tessellated every curved face
-// EVERY frame while merely orbiting — 151 µs and 151 allocs per analytic-sphere ball, ×16 balls, is
-// the self-aligning bearing's orbit stutter (and the general recurring pick-starvation class). The
-// face is immutable once its body is finalized, so the memo is valid until the face is replaced by a
-// recompute (which yields a fresh face with an empty memo — no stale geometry, no leak).
-func pickFaceMesh(f *topo.Face, q Quality) *Mesh {
-	if c, ok := f.PickTess().(facePickTess); ok && c.q == q {
-		return c.mesh
-	}
-	m := TessellateFace(f, q)
-	f.SetPickTess(facePickTess{mesh: m, q: q})
-	return m
-}
-
-// rayCastPlanarFace intersects the ray with the face's plane, then tests the hit point against the
-// face's boundary loops (inside the outer loop, outside every hole) — the same coverage a
-// triangulation of the face would give, since the boundary is discretized identically (loopBoundary),
-// but in O(m) with no ear-clipping.
-func rayCastPlanarFace(f *topo.Face, origin math.Point3, dir math.Vector3, q Quality) (float64, bool) {
-	outer3D := faceOuterBoundary(f, q)
-	if len(outer3D) < 3 {
-		return 0, false
-	}
-	normal := f.Geometry().NormalAt(0, 0)
-	denom := float64(dir.Dot(normal))
-	if stdmath.Abs(denom) < 1e-12 {
-		return 0, false // ray parallel to the face plane
-	}
-	t := float64(origin.VectorTo(outer3D[0]).Dot(normal)) / denom
-	if t <= 0 {
-		return 0, false // behind the ray origin
-	}
-	hit := origin.TranslateBy(dir.Scale(math.Scalar(t)))
-	flat := planeProjector(normal)
-	p := flat(hit)
-	if !pointInLoop2D(p, project2D(outer3D, flat)) {
-		return 0, false
-	}
-	for _, h := range faceHoleBoundaries(f, q) {
-		if pointInLoop2D(p, project2D(h, flat)) {
-			return 0, false // the ray passes through a hole
-		}
-	}
-	return t, true
+// rayCastFace returns the ray's forward hit parameter to a face, resolved analytically: the exact
+// ray∩surface pierce (geom.RaySurfaceHits) confirmed against the face's trimmed region with the
+// parameter-space classifier (brep.PointInFaceTrim). It reads no tessellation, so a pick →
+// reference-key resolution lands on the exact B-rep and is identical at every display Quality
+// (M48/C3). This replaced the per-frame face triangulation that starved the frame-loop dispatcher
+// on a degenerate planar boundary (the ear-clipper's O(m³) big.Rat escalation) — a hard placement
+// deadlock — and the curved-face pick-tessellation memo it needed.
+func rayCastFace(f *topo.Face, origin math.Point3, dir math.Vector3) (float64, bool) {
+	t, _, ok := analyticFaceRayHit(f, origin, dir)
+	return t, ok
 }
 
 // rayCastMesh returns the nearest positive hit distance of a ray against a mesh's
