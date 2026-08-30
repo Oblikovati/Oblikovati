@@ -465,30 +465,36 @@ func strictlyContains(outer, inner *topo.Body) bool {
 	return allVerticesInside(inner, outer) && !boundariesCross(outer, inner)
 }
 
-// allVerticesInside reports whether every vertex of inner lies strictly within outer, by exact
-// analytic ray casting on outer's B-rep — no tessellation (M48/C3 #3424/#3427). It flattens outer
-// ONCE into a brep.InsideQuery and reuses it for every vertex, keeping boolean classification off the
-// O(V·T) re-tessellation path the mesh querier was built to avoid (#1317/#1607).
+// allVerticesInside reports whether every vertex of inner lies strictly within outer. It
+// tessellates outer ONCE and reuses that mesh for every vertex query (#1317) — previously each
+// vertex re-tessellated the whole body, making boolean classification O(V·T) — and classifies
+// through insideMeshQuerier, whose winding-accelerated fast path is certified against the
+// exact brute loop (#1607), so the verdicts are identical.
 func allVerticesInside(inner, outer *topo.Body) bool {
 	verts := inner.Vertices()
 	if len(verts) == 0 {
 		return false
 	}
-	q := brep.NewInsideQuery(outer)
+	mesh, _ := TessellateBody(outer, DefaultQuality())
+	inMesh := insideMeshQuerier(mesh, len(verts))
 	for _, v := range verts {
-		if !q.Inside(v.Point()) {
+		if !inMesh(v.Point()) {
 			return false
 		}
 	}
 	return true
 }
 
-// PointInsideBody reports whether p is strictly inside a solid body, by exact analytic ray casting
-// on the B-rep (brep.ClassifyPoint). It reads no tessellation: a topological decision must not
-// depend on a mesh (the kernel ground rule; M48/C3 #3426/#3427). It supersedes the winding number
-// of the body's tessellation, which decided containment from a discretized approximation of the
-// boundary. A point ON the boundary surface is NOT strictly inside, matching the tessellated
-// winding number's <0.5 verdict there.
+// PointInsideBody reports whether p is inside a solid body, via the generalized winding number of
+// the body's tessellation (see pointInMesh/windingNumber). This replaces the old single fixed-ray
+// parity test (#1317), which miscounted whenever the ray grazed a shared edge or vertex of the mesh
+// — ubiquitous on a closed surface — flipping the inside/outside result. The winding number
+// integrates the entire boundary, so it has no such degeneracy and tolerates small mesh cracks.
+//
+// NOTE: the analytic replacement brep.PointInside (M48/C3 #3426) is landed but NOT yet wired here —
+// it miscounts a valid faceted concave solid's interior (see exact-containment-oracle-batch); the
+// mesh oracle stays until the analytic classifier is robust on faceted bodies.
 func PointInsideBody(b *topo.Body, p math.Point3) bool {
-	return brep.PointInside(b, p)
+	mesh, _ := TessellateBody(b, DefaultQuality())
+	return pointInMesh(mesh, p)
 }

@@ -39,12 +39,12 @@ var rayDirections = [][3]float64{
 	{2, 3, 5}, {3, -5, 2}, {-5, 2, 3}, {1, -1, 4}, {4, 4, -1}, {-3, 6, -2},
 }
 
-// PointInside reports whether p is strictly inside the solid body b, by exact analytic ray casting —
-// the OCCT BRepClass3d_SolidClassifier analog. It counts the boundary crossings of a ray from p (each
-// crossing a ray∩surface pierce that lies within its face's trimmed region, via the exact
-// [RaySurfaceHits] and the parameter-space [pointInTrimUV]) and takes even–odd parity, so membership
-// is independent of face orientation (a legacy inside-out body classifies the same). A ray that
-// grazes a face boundary or runs tangent is discarded for the next candidate direction. It reads no
+// PointInside reports whether p is strictly inside the solid body b — the OCCT
+// BRepClass3d_SolidClassifier analog — dispatched by the body's REPRESENTATION (the ground rule:
+// bucket by representation, not by case). An all-planar body uses the generalized winding number
+// (Jacobson) of its planar faces, which integrates the whole boundary and so is robust to a faceted
+// concave surface a single ray can cross twice; a body with any curved face uses analytic ray casting
+// ([RaySurfaceHits] + the parameter-space [pointInTrimUV]) with even–odd parity. Neither path reads a
 // tessellation — the analytic replacement for the mesh winding oracle (M48/C3 #3426/#3427). A point
 // exactly on the boundary is not strictly inside; use [ClassifyPoint] when the on-surface case matters.
 //
@@ -53,28 +53,32 @@ var rayDirections = [][3]float64{
 //	cube, _ := brep.SolidBlock(math.P3(0,0,0), math.P3(1,1,1), "cube")
 //	brep.PointInside(cube, math.P3(0.5, 0.5, 0.5)) // true
 func PointInside(b *topo.Body, p math.Point3) bool {
-	faces := facesOfAny(b)
-	if len(faces) == 0 {
-		return false
-	}
-	return rayParityInside(faces, p, b.RangeBox())
+	return NewInsideQuery(b).Inside(p)
 }
 
-// InsideQuery is a body flattened once for repeated [PointInside] queries — the analytic analog of a
-// reused tessellation. Build it when classifying many points against one body (a boolean's vertex
-// containment) so the faces are flattened a single time, not per point.
+// InsideQuery is a body prepared once for repeated [PointInside] queries — the analytic analog of a
+// reused tessellation. It captures the representation choice: an all-planar body keeps a winding-number
+// probe (faces flattened once), a curved body keeps its flattened faces for ray casting.
 type InsideQuery struct {
-	faces []curvedFace
+	probe *solidProbe  // set for an all-planar body: generalized winding number
+	faces []curvedFace // set for a curved body: ray-cast operands
 	box   math.Box
 }
 
-// NewInsideQuery flattens b once for repeated inside tests.
+// NewInsideQuery prepares b once, choosing the winding-number path for an all-planar body and the
+// ray-cast path otherwise.
 func NewInsideQuery(b *topo.Body) *InsideQuery {
+	if sp := newSolidProbe(b); sp.planar {
+		return &InsideQuery{probe: sp}
+	}
 	return &InsideQuery{faces: facesOfAny(b), box: b.RangeBox()}
 }
 
 // Inside reports whether p is strictly inside the body the query was built from.
 func (q *InsideQuery) Inside(p math.Point3) bool {
+	if q.probe != nil {
+		return q.probe.inside(p)
+	}
 	if len(q.faces) == 0 {
 		return false
 	}
@@ -82,7 +86,7 @@ func (q *InsideQuery) Inside(p math.Point3) bool {
 }
 
 // ClassifyPoint is [PointInside] widened to the tri-state Inside/OnSurface/Outside: a point within
-// the model weld tolerance of a trimmed face is OnSurface, otherwise the ray-parity verdict decides.
+// the model weld tolerance of a trimmed face is OnSurface, otherwise the inside/outside verdict decides.
 func ClassifyPoint(b *topo.Body, p math.Point3) Containment {
 	return ClassifyPointTol(b, p, geom.ResolutionForBox(b.RangeBox()).Weld())
 }
@@ -90,21 +94,30 @@ func ClassifyPoint(b *topo.Body, p math.Point3) Containment {
 // ClassifyPointTol is [ClassifyPoint] with the caller's on-surface tolerance: a point within onTol of
 // a trimmed face is OnSurface. A non-positive onTol falls back to the model weld tolerance.
 func ClassifyPointTol(b *topo.Body, p math.Point3, onTol float64) Containment {
-	return classifyFaces(facesOfAny(b), p, b.RangeBox(), onTol)
-}
-
-// ClassifyShellPoint classifies p against the region a single shell bounds (one shell of a body, or a
-// standalone shell), by the same analytic ray casting over just that shell's faces.
-func ClassifyShellPoint(s *topo.Shell, p math.Point3, onTol float64) Containment {
-	return classifyFaces(curvedFacesOfShell(s), p, s.RangeBox(), onTol)
-}
-
-// classifyFaces is the shared tri-state classifier over an already-flattened face set: OnSurface when
-// p is within onTol of a trimmed face, else the ray-parity verdict against box-sized cast limits.
-func classifyFaces(faces []curvedFace, p math.Point3, box math.Box, onTol float64) Containment {
+	faces := facesOfAny(b)
 	if len(faces) == 0 {
 		return Outside
 	}
+	if onTol <= 0 {
+		onTol = geom.ResolutionForBox(b.RangeBox()).Weld()
+	}
+	if onAnyFace(faces, p, onTol) {
+		return OnSurface
+	}
+	if NewInsideQuery(b).Inside(p) {
+		return Inside
+	}
+	return Outside
+}
+
+// ClassifyShellPoint classifies p against the region a single shell bounds (one shell of a body, or a
+// standalone shell), by analytic ray casting over just that shell's faces.
+func ClassifyShellPoint(s *topo.Shell, p math.Point3, onTol float64) Containment {
+	faces := curvedFacesOfShell(s)
+	if len(faces) == 0 {
+		return Outside
+	}
+	box := s.RangeBox()
 	if onTol <= 0 {
 		onTol = geom.ResolutionForBox(box).Weld()
 	}
@@ -127,8 +140,9 @@ func curvedFacesOfShell(s *topo.Shell) []curvedFace {
 }
 
 // rayParityInside casts each candidate direction until one crosses the faces without grazing, and
-// returns its even–odd verdict. It reports not-inside if every direction grazed (astronomically
-// unlikely — six mutually non-parallel directions all skimming a boundary).
+// returns its even–odd verdict. It reports not-inside only if every direction grazed (astronomically
+// unlikely — six mutually non-parallel directions all skimming a boundary). This path serves the
+// curved bodies the winding-number probe cannot handle.
 func rayParityInside(faces []curvedFace, p math.Point3, box math.Box) bool {
 	tMax := 2 * float64(box.Diagonal().Length())
 	// The graze band is the coplanar/on-line tolerance: tight enough that a point a modelling epsilon

@@ -29,33 +29,87 @@ func pointInTrimUV(f curvedFace, p math.Point3) bool {
 	if len(f.loops) == 0 {
 		return true
 	}
-	loops := faceUVLoops(f)
-	if len(loops) == 0 {
-		return true // no loop had enough extent to bound a region: treat the face as untrimmed
-	}
 	uPer, vPer := surfacePeriodic(f.surface)
+	alongV := castAlongV(uPer, vPer)
 	up, vp := f.surface.ParamAt(p)
-	c := loopCentroid(loops[0])
-	if uPer {
-		up = unwrapAzimuthNear(c.X, up)
+	total := 0
+	for _, loop := range f.loops {
+		poly := loopToUV(f.surface, loop, uPer, vPer)
+		if len(poly) < 2 {
+			continue
+		}
+		total += loopRayCrossings(math.P2(up, vp), poly, uPer, vPer, alongV)
 	}
-	if vPer {
-		vp = unwrapAzimuthNear(c.Y, vp)
-	}
-	return pointInUVLoops(math.P2(up, vp), loops)
+	return total%2 == 1
 }
 
-// faceUVLoops projects a face's boundary loops into the surface (u, v) domain (outer loop first, to
-// match pointInUVLoops), each edge sampled and its periodic parameters unwrapped into a continuous run.
-func faceUVLoops(f curvedFace) [][]math.Point2 {
-	uPer, vPer := surfacePeriodic(f.surface)
-	out := make([][]math.Point2, 0, len(f.loops))
-	for _, loop := range f.loops {
-		if ring := loopToUV(f.surface, loop, uPer, vPer); len(ring) >= 3 {
-			out = append(out, ring)
+// castAlongV chooses the parameter direction the containment ray travels: a NON-periodic axis, whose
+// +∞ end is unambiguously outside every trim loop. It casts along v unless v is the periodic axis and
+// u is not (a torus, periodic in both, has no non-periodic axis and falls back to v).
+func castAlongV(uPer, vPer bool) bool { return !vPer || uPer }
+
+// loopRayCrossings counts how many times a ray from q along the chosen non-periodic axis crosses one
+// trim loop. The query is first shifted into that loop's own parameter branch (loops unwrap
+// independently), and a loop that WRAPS the periodic cross-axis a full turn — a tunnel-wall end curve,
+// a wrapped-pad rim — is left OPEN, since closing it with a seam-spanning chord would add a spurious
+// second crossing and cancel the real one. This even-odd count over each loop is why a strip face
+// (two non-nested boundary loops) and a nested outer+hole face both classify correctly.
+func loopRayCrossings(q math.Point2, poly []math.Point2, uPer, vPer, alongV bool) int {
+	c := loopCentroid(poly)
+	qu, qv := q.X, q.Y
+	if uPer {
+		qu = unwrapAzimuthNear(c.X, qu)
+	}
+	if vPer {
+		qv = unwrapAzimuthNear(c.Y, qv)
+	}
+	closed := !loopWrapsCrossAxis(poly, uPer, vPer, alongV)
+	return rayCrossingCount(math.P2(qu, qv), poly, closed, alongV)
+}
+
+// loopWrapsCrossAxis reports whether the loop makes a full 2π circuit of the periodic axis that is
+// PERPENDICULAR to the cast direction (u when casting along v). Such a loop is an open curve spanning
+// the whole periodic range, not a closed ring.
+func loopWrapsCrossAxis(poly []math.Point2, uPer, vPer, alongV bool) bool {
+	crossPeriodic := uPer
+	net := poly[len(poly)-1].X - poly[0].X
+	if !alongV {
+		crossPeriodic = vPer
+		net = poly[len(poly)-1].Y - poly[0].Y
+	}
+	return crossPeriodic && stdmath.Abs(stdmath.Abs(net)-2*stdmath.Pi) < 0.5 // tol:parametric — full-turn circuit
+}
+
+// rayCrossingCount counts crossings of a ray from q toward +axis (v when alongV, else u) with the
+// polyline, standard crossing-number even-odd. An open polyline (closed=false) omits the last→first
+// segment.
+func rayCrossingCount(q math.Point2, poly []math.Point2, closed, alongV bool) int {
+	n, segs := len(poly), len(poly)-1
+	if closed {
+		segs = len(poly)
+	}
+	count := 0
+	for i := 0; i < segs; i++ {
+		if raySegmentCrosses(q, poly[i], poly[(i+1)%n], alongV) {
+			count++
 		}
 	}
-	return out
+	return count
+}
+
+// raySegmentCrosses reports whether the ray from q toward +axis crosses segment ab. The segment must
+// straddle q on the cross-axis, and its interpolated axis coordinate there must lie beyond q.
+func raySegmentCrosses(q, a, b math.Point2, alongV bool) bool {
+	ac, bc, qc := a.X, b.X, q.X // cross-axis (u) coordinates when casting along v
+	ap, bp, qp := a.Y, b.Y, q.Y // ray-axis (v) coordinates
+	if !alongV {
+		ac, bc, qc, ap, bp, qp = a.Y, b.Y, q.Y, a.X, b.X, q.X
+	}
+	if (ac > qc) == (bc > qc) {
+		return false // does not straddle q on the cross-axis
+	}
+	t := (qc - ac) / (bc - ac)
+	return ap+t*(bp-ap) > qp
 }
 
 // loopToUV walks a loop's edges into a continuous (u, v) polyline: each sample's periodic parameter is
