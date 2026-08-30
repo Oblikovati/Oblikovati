@@ -103,9 +103,14 @@ func termsConverged(coarse, refined massTerms) bool {
 
 // greenTerms integrates a bounded face by Green's theorem over its uv loops. Each loop edge is
 // integrated ALONG ITS TRUE CURVE (Gauss in the edge parameter, not chord-wise), so a circular
-// edge on a planar cap contributes exactly rather than as an inscribed polygon. The region is
-// oriented positive by the outer loop's uv shoelace sign, so the enclosed measure is positive
-// regardless of the stored loop orientation or the surface's uv handedness.
+// edge on a planar cap contributes exactly rather than as an inscribed polygon.
+//
+// Each loop is oriented for the positive-measure region by its OWN role and shoelace — an outer
+// loop CCW (adds), a hole loop CW (subtracts) — using the IsOuter flag rather than the winding,
+// because a boolean can leave a hole wound the SAME way as its outer (then a single outer-derived
+// sign would ADD the hole instead of subtracting it, over-counting a drilled/annular body). The
+// result is ∫∫_D g over the true region on the +normal side; faceTerms then applies the outward
+// sense (Face.Reversed) so a hole/inner wall's negative flux correctly subtracts.
 func greenTerms(f *topo.Face) (massTerms, bool) {
 	s := f.Geometry()
 	loops, ok := buildFaceLoops(s, f)
@@ -113,14 +118,33 @@ func greenTerms(f *topo.Face) (massTerms, bool) {
 		return massTerms{}, false
 	}
 	u0 := minLoopU(loops)
-	sigma := outerOrientation(loops)
 	var total massTerms
 	for _, fl := range loops {
+		var lt massTerms
 		for _, le := range fl.edges {
-			total = total.add(edgeGreen(s, le, u0))
+			lt = lt.add(edgeGreen(s, le, u0))
 		}
+		total = total.add(lt.scale(loopSign(fl)))
 	}
-	return total.scale(sigma), true
+	return total, true
+}
+
+// loopSign orients one loop's boundary integral for the positive-measure region: an outer loop is
+// made CCW (its enclosed area adds), a hole loop CW (its enclosed area subtracts). ∮_stored equals
+// +∫∫_enclosed for a CCW (positive-shoelace) loop and −∫∫_enclosed for a CW one, so the multiplier
+// is +1/−1 accordingly per role.
+func loopSign(fl faceLoop) float64 {
+	ccw := loopSignedArea(fl) >= 0
+	if fl.outer {
+		if ccw {
+			return 1
+		}
+		return -1
+	}
+	if ccw {
+		return -1
+	}
+	return 1
 }
 
 // arcSample is one point on an edge: its curve parameter t and the face-surface (u, v) it maps
@@ -162,7 +186,10 @@ func buildFaceLoops(s geom.Surface, f *topo.Face) ([]faceLoop, bool) {
 
 // buildLoopEdges walks a loop's edge uses in order and samples each edge's curve, inverting every
 // sample onto the surface (ParamAt is exact on-surface for the analytic surfaces) and unwrapping
-// periodic coordinates continuously across edges.
+// periodic coordinates continuously across edges. It declines (ok=false) when the loop does not
+// close in unwrapped uv — a net seam winding that the planar Green reconstruction cannot integrate
+// (a trimmed periodic face whose loop wraps the seam an unequal number of times); the caller then
+// falls back to the mesh path for the whole body rather than return a wrong region.
 func buildLoopEdges(s geom.Surface, l *topo.Loop, uPeriod, vPeriod float64) (faceLoop, bool) {
 	fl := faceLoop{outer: l.IsOuter()}
 	pu, pv, have := 0.0, 0.0, false
@@ -173,7 +200,23 @@ func buildLoopEdges(s geom.Surface, l *topo.Loop, uPeriod, vPeriod float64) (fac
 		}
 		fl.edges = append(fl.edges, le)
 	}
+	if !loopClosesInUV(fl) {
+		return faceLoop{}, false
+	}
 	return fl, true
+}
+
+// loopClosesInUV reports whether the loop's last unwrapped sample coincides with its first — the
+// condition for the reconstructed uv polyline to be a valid closed polygon. A seam-wrapping loop
+// with non-zero net winding ends a period away and fails this, so the face is declined.
+func loopClosesInUV(fl faceLoop) bool {
+	if len(fl.edges) == 0 || len(fl.edges[0].samples) == 0 {
+		return false
+	}
+	first := fl.edges[0].samples[0]
+	lastEdge := fl.edges[len(fl.edges)-1].samples
+	last := lastEdge[len(lastEdge)-1]
+	return closeUV(first.u, first.v, last.u, last.v)
 }
 
 // sampleLoopEdge samples one edge use in traversal order, inverting each point onto the surface
@@ -256,20 +299,6 @@ func dvdt(s geom.Surface, le loopEdge, t, span, seedV float64) float64 {
 	vp := unwrapPeriodic(vpRaw, seedV, le.vPeriod)
 	vm := unwrapPeriodic(vmRaw, seedV, le.vPeriod)
 	return (vp - vm) / (2 * d)
-}
-
-// outerOrientation returns +1 if the outer loop is already CCW in uv, −1 otherwise, so the
-// region integral comes out with positive area measure.
-func outerOrientation(loops []faceLoop) float64 {
-	for _, fl := range loops {
-		if fl.outer {
-			if loopSignedArea(fl) < 0 {
-				return -1
-			}
-			return 1
-		}
-	}
-	return 1
 }
 
 // loopSignedArea is the shoelace signed area of a loop's reference polyline (positive when CCW).
