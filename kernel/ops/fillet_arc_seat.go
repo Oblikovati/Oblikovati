@@ -5,6 +5,7 @@ package ops
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -75,10 +76,10 @@ func solveArcBallSeat(b *topo.Body, e *topo.Edge, capF *topo.Face, cyl geom.Cyli
 	if err != nil {
 		return arcBallSeat{}, err
 	}
-	mesh, _ := TessellateBody(b, DefaultQuality()) // one tessellation for up to four probes
+	inside := brep.NewInsideQuery(b) // one prepared analytic query for up to four probes
 	for _, s := range arcBallSeats(outwardPlaneNormal(capF, pl), cyl.Radius, r) {
 		centre := capCenter.TranslateBy(s.capSide.Scale(r))
-		if pointInMesh(mesh, centre.TranslateBy(refMid.AsVector().Scale(s.majorR))) == wantMaterial {
+		if inside.Inside(centre.TranslateBy(refMid.AsVector().Scale(s.majorR))) == wantMaterial {
 			return s, nil
 		}
 	}

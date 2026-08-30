@@ -5,6 +5,7 @@ package ops
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -38,7 +39,7 @@ import (
 // ★ AND THE VERIFICATION MUST BE SIGNED. An unsigned "is the ball centre inside the body?" is NOT
 // sufficient — that was measured, not assumed: it ACCEPTS simple/H6's wrong seat, whose ball at radius 40,
 // z = −60 is buried inside the lower cone and still completely wrong (w2h6-runout-report.md §9.4). So the
-// seat is verified with the SHIPPED signed predicate — arcBallInMaterial + pointInMesh, the pair
+// seat is verified with the SHIPPED signed predicate — arcBallInMaterial + brep.PointInside, the pair
 // solveArcBallSeat already uses — asking whether the centre is on the side the edge's own convexity
 // demands, not merely whether it is somewhere in the solid.
 
@@ -76,8 +77,7 @@ func rimBallCapSeat(b *topo.Body, e *topo.Edge, capF *topo.Face, pl geom.Plane,
 		return rimCapSeat{}, err
 	}
 	centre := capCenter.TranslateBy(seat.toCentre.Scale(r))
-	mesh, _ := TessellateBody(b, DefaultQuality()) // the expression solveRim's own probe uses
-	if pointInMesh(mesh, centre.TranslateBy(ref.AsVector().Scale(majorR))) != inMaterial {
+	if brep.PointInside(b, centre.TranslateBy(ref.AsVector().Scale(majorR))) != inMaterial {
 		return rimCapSeat{}, fmt.Errorf(
 			"fillet: rim cap seat at %v is not on the %s side the edge's convexity requires: %w",
 			centre, materialSideName(inMaterial), errConvexRimProbeFailed)
