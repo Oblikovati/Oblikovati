@@ -492,14 +492,15 @@ func allVerticesInside(inner, outer *topo.Body) bool {
 // integrates the entire boundary, so it has no such degeneracy and tolerates small mesh cracks.
 //
 // NOTE: the analytic replacement brep.PointInside (M48/C3 #3426, the solid-angle-flux generalized winding
-// number) is landed and wired at the brep layer (InsideQuery), but NOT yet routed here. The winding number
-// needs CONSISTENTLY-oriented faces: Σ_faces Ω is 4π inside only when every face's stored orientation
-// agrees. The imported STEP fixtures the fillet gates run on (J6/T5 elliptic hosts) carry INCONSISTENT
-// Reversed flags — the very defect those tests exist to route around — so the signed solid angles
-// partially cancel and an interior point reads |Ω|≈2π (half), classifying OUTSIDE. This oracle re-orients
-// the faces implicitly by tessellating (TessellateBody emits an outward-consistent mesh), which is why it
-// stays here. Routing through brep.PointInside needs a B-rep orientation-normalization pass first (a
-// separate healing operation), after which pointInMesh can retire (#3427).
+// number) is landed and wired at the brep layer (InsideQuery), and is now import-robust (orientFaceSigns
+// derives orientation from loop geometry), but is NOT yet routed here. Routing it through requires two more
+// pieces the mesh oracle provides for free, proven by attempting the cutover (#3427): (1) NEAR-SURFACE
+// CRISPNESS — the fillet convexity/band gates probe a small offset off an edge, where the smooth winding
+// reads ≈½ but the faceted mesh gives a hard 0/1; the crisp analytic answer is the nearest-boundary
+// outward-normal side test (OCCT BRepClass3d), used near a face and the winding used elsewhere; (2) a
+// per-face-RELIABLE orientation — loop handedness is averaging-tolerant for the winding but a single-face
+// normal test needs a topological BFS over shared edges. Until that fuller classifier lands, this oracle
+// re-orients implicitly by tessellating (TessellateBody emits an outward-consistent mesh), so it stays.
 func PointInsideBody(b *topo.Body, p math.Point3) bool {
 	mesh, _ := TessellateBody(b, DefaultQuality())
 	return pointInMesh(mesh, p)
