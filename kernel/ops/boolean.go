@@ -465,42 +465,33 @@ func strictlyContains(outer, inner *topo.Body) bool {
 	return allVerticesInside(inner, outer) && !boundariesCross(outer, inner)
 }
 
-// allVerticesInside reports whether every vertex of inner lies strictly within outer. It
-// tessellates outer ONCE and reuses that mesh for every vertex query (#1317) — previously each
-// vertex re-tessellated the whole body, making boolean classification O(V·T) — and classifies
-// through insideMeshQuerier, whose winding-accelerated fast path is certified against the
-// exact brute loop (#1607), so the verdicts are identical.
+// allVerticesInside reports whether every vertex of inner lies strictly within outer, analytically
+// (M48/C3 #3422). It prepares outer ONCE as a brep.InsideQuery and reuses that for every vertex query
+// — the analytic analog of tessellating outer once and reusing the mesh (#1317) — so classification
+// no longer reads a tessellation. The prepared query dispatches by representation exactly as
+// PointInsideBody does (all-planar → generalized winding, curved → nearest-crossing ray), so the
+// vertex verdicts match the retired mesh oracle on every consistently-oriented body.
 func allVerticesInside(inner, outer *topo.Body) bool {
 	verts := inner.Vertices()
 	if len(verts) == 0 {
 		return false
 	}
-	mesh, _ := TessellateBody(outer, DefaultQuality())
-	inMesh := insideMeshQuerier(mesh, len(verts))
+	inside := brep.NewInsideQuery(outer)
 	for _, v := range verts {
-		if !inMesh(v.Point()) {
+		if !inside.Inside(v.Point()) {
 			return false
 		}
 	}
 	return true
 }
 
-// PointInsideBody reports whether p is inside a solid body, via the generalized winding number of
-// the body's tessellation (see pointInMesh/windingNumber). This replaces the old single fixed-ray
-// parity test (#1317), which miscounted whenever the ray grazed a shared edge or vertex of the mesh
-// — ubiquitous on a closed surface — flipping the inside/outside result. The winding number
-// integrates the entire boundary, so it has no such degeneracy and tolerates small mesh cracks.
-//
-// NOTE: the analytic replacement brep.PointInside (M48/C3 #3426, the solid-angle-flux generalized winding
-// number) is landed and wired at the brep layer (InsideQuery), and is now import-robust (orientFaceSigns
-// derives orientation from loop geometry), but is NOT yet routed here. Routing it through requires two more
-// pieces the mesh oracle provides for free, proven by attempting the cutover (#3427): (1) NEAR-SURFACE
-// CRISPNESS — the fillet convexity/band gates probe a small offset off an edge, where the smooth winding
-// reads ≈½ but the faceted mesh gives a hard 0/1; the crisp analytic answer is the nearest-boundary
-// outward-normal side test (OCCT BRepClass3d), used near a face and the winding used elsewhere; (2) a
-// per-face-RELIABLE orientation — loop handedness is averaging-tolerant for the winding but a single-face
-// normal test needs a topological BFS over shared edges. Until that fuller classifier lands, this oracle
-// re-orients implicitly by tessellating (TessellateBody emits an outward-consistent mesh), so it stays.
+// PointInsideBody reports whether p is strictly inside a solid body, analytically (M48/C3 #3426/#3427):
+// it delegates to brep.PointInside, which dispatches by representation — an all-planar body to the
+// solid-angle-flux generalized winding number (Jacobson) and a curved body to the nearest-crossing ray
+// classifier (the classical solid classifier), neither of which reads a tessellation. It replaced the
+// mesh winding oracle once that classifier gained near-surface crispness (the nearest-crossing side
+// test is decisive a hair off a face, where the smooth winding reads ≈½) and import-robust orientation
+// (orientFaceSigns derives each face's outward sign from its loop geometry, not the stored Reversed flag).
 func PointInsideBody(b *topo.Body, p math.Point3) bool {
 	return brep.PointInside(b, p)
 }
