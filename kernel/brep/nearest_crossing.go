@@ -21,19 +21,15 @@ import (
 // (a classification, not a geometry nudge). ok is false only when every candidate direction grazes — the
 // rare degenerate case the winding-number fallback resolves.
 func (q *fluxQuery) nearestCrossingInside(p math.Point3, box math.Box) (inside, ok bool) {
-	tMax := 2 * float64(box.Diagonal().Length())
-	tol := geom.ResolutionForBox(box).Plane()
-	for _, d := range rayDirections {
-		if in, clean := q.firstHitSide(p, d, tMax, tol); clean {
-			return in, true
-		}
-	}
-	return false, false
+	return firstCleanDirection(box, func(dir [3]float64, tMax, tol float64) (bool, bool) {
+		return q.firstHitSide(p, dir, tMax, tol)
+	})
 }
 
 // firstHitSide casts one ray and returns the inside/outside verdict from its nearest in-trim crossing.
 // clean is false when any crossing along the ray grazes a boundary (ambiguous), so the caller re-selects
-// the direction; a ray with no crossing is a clean "outside".
+// the direction; a ray with no crossing is a clean "outside". The self-hit at the ray origin is dropped
+// (skipTol = tol): p ON the surface is the caller's ON case.
 func (q *fluxQuery) firstHitSide(p math.Point3, dir [3]float64, tMax, tol float64) (inside, clean bool) {
 	ray, err := geom.NewLine(p, math.V3(dir[0], dir[1], dir[2]))
 	if err != nil {
@@ -44,17 +40,12 @@ func (q *fluxQuery) firstHitSide(p math.Point3, dir [3]float64, tMax, tol float6
 	var bestU, bestV float64
 	for i := range q.faces {
 		f := &q.faces[i]
-		band := stdmath.Max(tol, faceBoundaryBand(f.cf))
-		for _, hit := range geom.RaySurfaceHits(f.cf.surface, ray, tMax) {
-			if hit.T <= tol {
-				continue // a hit at p itself; p on the surface is the caller's ON case
-			}
-			if rayGrazes(f.cf, ray, hit, band) {
-				return false, false // ambiguous crossing → re-select the direction
-			}
-			if hit.T < best && pointInTrimUV(f.cf, hit.Point) {
+		if !forEachInTrimHit(f.cf, ray, tMax, tol, tol, func(hit geom.RayHit) {
+			if hit.T < best {
 				best, bestFace, bestU, bestV = hit.T, f, hit.U, hit.V
 			}
+		}) {
+			return false, false // an ambiguous crossing → re-select the direction
 		}
 	}
 	if bestFace == nil {

@@ -142,21 +142,33 @@ func curvedFacesOfShell(s *topo.Shell) []curvedFace {
 	return out
 }
 
-// rayParityInside casts each candidate direction until one crosses the faces without grazing, and
-// returns its even–odd verdict. It reports not-inside only if every direction grazed (astronomically
-// unlikely — six mutually non-parallel directions all skimming a boundary). This path serves the
-// curved bodies the winding-number probe cannot handle.
-func rayParityInside(faces []curvedFace, p math.Point3, box math.Box) bool {
+// firstCleanDirection casts each candidate ray direction and returns the verdict of the first that
+// does NOT graze a boundary. tMax spans twice the body's diagonal and the graze band is the
+// coplanar/on-line tolerance — tight enough that a point a modelling epsilon inside a thin wall still
+// casts cleanly, loose enough to catch a genuine shared-edge pierce. ok is false only when every
+// direction grazes (astronomically unlikely — the whole ray-direction set skimming a boundary),
+// which is the winding-number fallback's cue. It is the shared direction driver of the parity and
+// nearest-crossing classifiers.
+func firstCleanDirection(box math.Box, probe func(dir [3]float64, tMax, tol float64) (bool, bool)) (verdict, ok bool) {
 	tMax := 2 * float64(box.Diagonal().Length())
-	// The graze band is the coplanar/on-line tolerance: tight enough that a point a modelling epsilon
-	// inside a thin wall still casts cleanly, loose enough to catch a genuine shared-edge pierce.
 	tol := geom.ResolutionForBox(box).Plane()
 	for _, d := range rayDirections {
-		if crossings, clean := rayCrossings(faces, p, d, tMax, tol); clean {
-			return crossings%2 == 1
+		if v, clean := probe(d, tMax, tol); clean {
+			return v, true
 		}
 	}
-	return false
+	return false, false
+}
+
+// rayParityInside casts each candidate direction until one crosses the faces without grazing, and
+// returns its even–odd verdict. It reports not-inside only if every direction grazed. This path
+// serves the curved bodies the winding-number probe cannot handle.
+func rayParityInside(faces []curvedFace, p math.Point3, box math.Box) bool {
+	inside, _ := firstCleanDirection(box, func(dir [3]float64, tMax, tol float64) (bool, bool) {
+		crossings, clean := rayCrossings(faces, p, dir, tMax, tol)
+		return crossings%2 == 1, clean
+	})
+	return inside
 }
 
 // rayCrossings counts the boundary crossings of the ray p→dir within [0, tMax]. ok is false when a
@@ -178,21 +190,37 @@ func rayCrossings(faces []curvedFace, p math.Point3, dir [3]float64, tMax, tol f
 	return count, true
 }
 
-// faceRayCrossings counts how many of the ray's pierces of one face's surface land inside that
-// face's trim. ok is false on a grazing/tangent pierce (see rayCrossings). The reselection band is
-// widened to the face's own polygon-vs-curve error (faceBoundaryBand), so the sampled trim test is
-// trusted only where it is provably accurate — a pierce nearer a curved trim edge than the sampling
-// error forces a cleaner direction instead of a wrong count.
-func faceRayCrossings(f curvedFace, ray geom.Line, tMax, tol float64) (int, bool) {
+// forEachInTrimHit walks the ray's pierces of one face's surface, invoking visit for each pierce that
+// lands inside the face's trim. It returns clean=false at the first grazing/tangent pierce (the
+// caller's cue to re-select the direction, not a geometry nudge). A pierce at parameter ≤ skipTol is
+// dropped — the nearest-crossing classifier passes tol there to ignore a hit at the ray origin (p on
+// the surface is that caller's ON case); the parity counter passes 0 so it counts every real pierce.
+// The reselection band is widened to the face's own polygon-vs-curve error (faceBoundaryBand), so the
+// sampled trim test is trusted only where it is provably accurate. This is the shared per-face pierce
+// traversal of the parity counter and the nearest-crossing side test.
+func forEachInTrimHit(f curvedFace, ray geom.Line, tMax, tol, skipTol float64, visit func(geom.RayHit)) (clean bool) {
 	band := stdmath.Max(tol, faceBoundaryBand(f))
-	count := 0
 	for _, hit := range geom.RaySurfaceHits(f.surface, ray, tMax) {
+		if hit.T <= skipTol {
+			continue
+		}
 		if rayGrazes(f, ray, hit, band) {
-			return 0, false
+			return false
 		}
 		if pointInTrimUV(f, hit.Point) {
-			count++
+			visit(hit)
 		}
+	}
+	return true
+}
+
+// faceRayCrossings counts how many of the ray's pierces of one face's surface land inside that
+// face's trim. ok is false on a grazing/tangent pierce (see rayCrossings).
+func faceRayCrossings(f curvedFace, ray geom.Line, tMax, tol float64) (int, bool) {
+	count := 0
+	clean := forEachInTrimHit(f, ray, tMax, tol, 0, func(geom.RayHit) { count++ })
+	if !clean {
+		return 0, false
 	}
 	return count, true
 }
