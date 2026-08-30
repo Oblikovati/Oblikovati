@@ -103,26 +103,6 @@ func toPointContainment(c brep.Containment) PointContainment {
 	}
 }
 
-// meshContainment is the shared mesh-level classifier: ON when p is within onTol of any facet, else
-// INSIDE/OUTSIDE by the generalized winding number (pointInMesh). The winding number replaces the
-// former skewed parity ray (#1317) — robust to grazing edges/vertices — and still gives the right
-// cavity verdict: an outer shell contributes +1 and a void shell −1, so a point in a cavity sums to
-// 0 (outside the material), exactly as the old crossing-cancellation intended.
-func meshContainment(mesh *Mesh, p math.Point3, onTol float64) PointContainment {
-	for t := 0; t+2 < len(mesh.Indices); t += 3 {
-		a := mesh.Positions[mesh.Indices[t]]
-		b := mesh.Positions[mesh.Indices[t+1]]
-		c := mesh.Positions[mesh.Indices[t+2]]
-		if pointTriangleDistance(p, a, b, c) <= onTol {
-			return ContainOn
-		}
-	}
-	if pointInMesh(mesh, p) {
-		return ContainInside
-	}
-	return ContainOutside
-}
-
 // pointTriangleDistance is the exact distance from p to triangle abc
 // (Ericson, Real-Time Collision Detection §5.1.5 — region tests on the
 // barycentric Voronoi regions).

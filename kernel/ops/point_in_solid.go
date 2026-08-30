@@ -32,16 +32,19 @@ func windingNumber(mesh *Mesh, p math.Point3) float64 {
 	return sum / (4 * stdmath.Pi)
 }
 
-// signedSolidAngle is geom.SignedSolidAngle (the Van Oosterom–Strackee formula), shared with the
-// planar-boolean fragment classifier since #1599.
+// signedSolidAngle is geom.SignedSolidAngle (the Van Oosterom–Strackee formula).
 func signedSolidAngle(p, a, b, c math.Point3) float64 {
 	return geom.SignedSolidAngle(p, a, b, c)
 }
 
 // pointInMesh reports whether p lies inside the solid bounded by an outward-oriented mesh, by
-// thresholding the generalized winding number. Hoisting the (already-tessellated) mesh in keeps a
-// multi-point query — e.g. classifying every vertex of one operand against another — at O(points·tris)
-// without re-tessellating per point (the cost that made allVerticesInside O(V·T) before #1317).
+// thresholding the generalized winding number.
+//
+// It has NO production caller: every topological inside/outside decision now uses the analytic
+// classifier brep.PointInside (M48/C3 #3422/#3423/#3426/#3427 retired the tessellated oracle). It is
+// kept as an INDEPENDENT test oracle — the certification suites cross-check the analytic classifier and
+// the exact boolean against this mesh winding number, so it must stay a separate implementation (a test
+// that checked the analytic classifier against itself would prove nothing).
 func pointInMesh(mesh *Mesh, p math.Point3) bool {
 	return windingNumber(mesh, p) > pointInsideWindingThreshold
 }
