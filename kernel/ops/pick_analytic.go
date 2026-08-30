@@ -39,11 +39,27 @@ func analyticFaceRayHit(f *topo.Face, origin math.Point3, dir math.Vector3) (flo
 		return 0, math.Point3{}, false
 	}
 	for _, h := range geom.RaySurfaceHits(f.Geometry(), line, boxRayReach(box, origin)) {
-		if h.T > 0 && brep.PointInFaceTrim(f, h.Point) {
+		if h.T > 0 && pierceOnFace(f, h.Point) {
 			return h.T / l, h.Point, true // h.T is arc length (unit line dir); rescale to dir-parameter
 		}
 	}
 	return 0, math.Point3{}, false
+}
+
+// pierceOnFace reports whether a ray's surface pierce p lies on face f: strictly inside its trim
+// (brep.PointInFaceTrim), OR exactly on the trim boundary. The boundary case is a ray grazing a
+// shared edge — the pierce lands on the edge between two faces (e.g. a ray travelling along a box's
+// bottom-face plane strikes the adjacent side face precisely on their common edge). The strict
+// even-odd interior test rejects a boundary point, but the solid IS entered there, so the mesh pick
+// counted it via inclusive triangle edges; matching that keeps RayCastFaces' nearest-pierce identical
+// to the mesh path (rib to-next depth, Oblikovati/Oblikovati#1882). A pierce within modelling
+// tolerance of a boundary edge is treated as on the face.
+func pierceOnFace(f *topo.Face, p math.Point3) bool {
+	if brep.PointInFaceTrim(f, p) {
+		return true
+	}
+	_, d := closestOnFaceBoundary(f, p, DefaultQuality())
+	return d <= math.DefaultTolerance // tol:model — pierce coincident with the trim boundary edge
 }
 
 // boxRayReach bounds how far along the ray a hit inside the surface range box can lie. The box is the
