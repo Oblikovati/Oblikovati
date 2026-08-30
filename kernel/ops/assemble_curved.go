@@ -70,10 +70,11 @@ func assembleBody(faces []filletFace) *topo.Body {
 	pts := collectLoopPoints(faces)
 	weld := ResolutionForPoints(pts).Weld()
 	w := newPointWelder(weld)
-	rings := weldRings(faces, w, weld)
+	rings, deadLoops := weldRings(faces, w, weld)
 	classes := pairEdgeClasses(faces, rings)
 	orientFilletShell(faces, rings, classes) // B2: unify loop windings before the catalog builds co-edges
 	bld := topo.NewBuilder(curvedSolid(faces, rings, classes), topo.NewLineage(topo.Tok(tag, "body", 0)))
+	recordDeadLoopRefusals(bld, deadLoops) // #3389: refuse a collapsing loop here, not at a later Validate
 	tv := make([]*topo.Vertex, len(w.points))
 	for i, p := range w.points {
 		tv[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(tag, "v", i)))

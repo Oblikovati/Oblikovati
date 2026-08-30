@@ -4,9 +4,9 @@ package ops
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
-	"oblikovati.org/build"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -18,7 +18,23 @@ import (
 // half-space trim (Sutherland–Hodgman clip of the boundary polygon), a planar offset
 // (translate along the face normal), and mid-surface extraction from antiparallel
 // planar face pairs. Curved-surface trimming/extension and offsetting are the
-// phase-C face-splitting / NURBS cases, deferred behind NotYetImplemented.
+// phase-C face-splitting / NURBS cases: each is REFUSED at classification with a named
+// decline (declineSurfaceEdit) that names the offending configuration and the shape the
+// operation supports, before any geometry is built (#3393) — never a generic
+// "not implemented" placeholder.
+
+// ErrSurfaceEditUnsupported classifies every surface-edit decline: a configuration the phase-A planar
+// engine does not handle (a curved face, a folded multi-face offset), refused before any geometry is
+// built. A caller tells a decline from a real failure with errors.Is(err, ErrSurfaceEditUnsupported);
+// the wrapped message names the offending value and the supported shape (#3393).
+var ErrSurfaceEditUnsupported = errors.New("surface edit: unsupported configuration")
+
+// declineSurfaceEdit builds a named classification decline: which op, the offending configuration
+// (with its value), and the shape the op supports — the CLAUDE.md exception-message contract — wrapping
+// ErrSurfaceEditUnsupported so callers can classify it.
+func declineSurfaceEdit(op, offending, supports string) error {
+	return fmt.Errorf("%s declined: %s; supports %s: %w", op, offending, supports, ErrSurfaceEditUnsupported)
+}
 
 // planarFaces returns the body's faces whose geometry is a plane.
 func planarFaces(body *topo.Body) []*topo.Face {
@@ -156,7 +172,9 @@ func (w *sheetWelder) ring(poly []math.Point3) []int {
 func TrimByPlane(body *topo.Body, origin math.Point3, normal math.Vector3, keepPositive bool, feat string) (*topo.Body, error) {
 	faces := planarFaces(body)
 	if len(faces) == 0 || len(faces) != len(body.Faces()) {
-		return nil, build.NotYetImplemented("PBI-111-trim-curved") // any curved face
+		return nil, declineSurfaceEdit("TrimByPlane",
+			fmt.Sprintf("body has %d curved face(s) of %d total", len(body.Faces())-len(faces), len(body.Faces())),
+			"an all-planar surface body (curved surface–surface trimming is phase C, unimplemented)")
 	}
 	var patches []sheetPatch
 	for _, f := range faces {
@@ -232,7 +250,9 @@ func planeCrossing(a, b math.Point3, da, db float64) math.Point3 {
 func OffsetSurface(body *topo.Body, distance float64, feat string) (*topo.Body, error) {
 	faces := planarFaces(body)
 	if len(faces) == 0 || len(faces) != len(body.Faces()) {
-		return nil, build.NotYetImplemented("PBI-112-offset-curved") // any curved face
+		return nil, declineSurfaceEdit("OffsetSurface",
+			fmt.Sprintf("body has %d curved face(s) of %d total", len(body.Faces())-len(faces), len(body.Faces())),
+			"an all-planar surface body (curved-face offset is phase C, unimplemented)")
 	}
 	// Each face translates along its own normal. That reconnects only when faces sharing an edge
 	// have the same normal (a coplanar quilt or a single face); a folded sheet would split at the
@@ -242,7 +262,9 @@ func OffsetSurface(body *topo.Body, distance float64, feat string) (*topo.Body, 
 	for i, f := range faces {
 		nrm := f.Geometry().(geom.Plane).Normal()
 		if i > 0 && !sameDirection(nrm, n0) {
-			return nil, build.NotYetImplemented("PBI-112-offset-folded-multiface")
+			return nil, declineSurfaceEdit("OffsetSurface",
+				fmt.Sprintf("face %d normal %v is not parallel to face 0 normal %v (a folded sheet)", i, nrm, n0),
+				"a coplanar quilt or a single planar face (a folded multi-face offset needs intersecting adjacent offset planes, unimplemented)")
 		}
 		shift := nrm.Scale(distance)
 		src := facePolygon(f)
@@ -265,11 +287,15 @@ func ExtendByEdge(body *topo.Body, edgeKey []byte, distance float64, feat string
 	}
 	faces := edge.Faces()
 	if len(faces) != 1 {
-		return nil, build.NotYetImplemented("PBI-111-extend-multiface")
+		return nil, declineSurfaceEdit("ExtendByEdge",
+			fmt.Sprintf("edge is shared by %d faces", len(faces)),
+			"a boundary edge on exactly one planar face (multi-face extend is phase C, unimplemented)")
 	}
 	pl, ok := faces[0].Geometry().(geom.Plane)
 	if !ok {
-		return nil, build.NotYetImplemented("PBI-111-extend-curved")
+		return nil, declineSurfaceEdit("ExtendByEdge",
+			fmt.Sprintf("host face geometry is %T, not a plane", faces[0].Geometry()),
+			"a planar host face (curved-surface extend is phase C, unimplemented)")
 	}
 	poly := facePolygon(faces[0])
 	a, b := edge.StartVertex().Point(), edge.EndVertex().Point()

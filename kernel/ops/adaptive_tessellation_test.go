@@ -111,6 +111,11 @@ func TestInteriorRefinementReportsSaturation(t *testing.T) {
 	if !hasDiag(m.Diagnostics, CodeTessellateCapSaturated) {
 		t.Errorf("saturation was not recorded as a %q diagnostic: %v", CodeTessellateCapSaturated, m.Diagnostics)
 	}
+	// #3391: a saturated cap under-tessellates the requested tolerance, so it is a Defect (a tracked
+	// degradation), not a benign Warning — the mesh must not present as a complete cap.
+	if m.Diagnostics[0].Severity != diag.Defect {
+		t.Errorf("cap saturation recorded at severity %v, want Defect", m.Diagnostics[0].Severity)
+	}
 }
 
 // hasDiag reports whether the diagnostics carry the given code.

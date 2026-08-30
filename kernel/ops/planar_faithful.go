@@ -3,8 +3,10 @@
 package ops
 
 import (
+	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -133,6 +135,26 @@ func planarAreaMatches(tris [][3]int, outer2D []math.Point2, holes2D [][]math.Po
 
 func triArea(a, b, c math.Point2) float64 {
 	return stdmath.Abs(float64((b.X-a.X)*(c.Y-a.Y)-(c.X-a.X)*(b.Y-a.Y))) / 2
+}
+
+// recordUncoveredPlanarFace flags a planar face mesh whose triangulation does not cover the face's
+// own domain — the same area coverage predicate planarTris gates on, run once more on the SHIPPED
+// tris. planarTris returns a bounded best-effort covering for a transient non-simple boundary
+// (loopsSelfCross) rather than blocking the pick path, but that covering is area-wrong: an overlap
+// or a gap. Before #3388 it shipped with no signal, so a consumer (render, mass properties, export)
+// saw a clean face where the mesh has a hole. The mesh still ships — a flagged partial beats a
+// missing face — but the shortfall now travels with it as a Defect. A covering triangulation is a
+// no-op. Reuses CodeTessellateDomainUncovered (the conformance path's code).
+func recordUncoveredPlanarFace(m *Mesh, tris [][3]int, outer2D []math.Point2, holes2D [][]math.Point2) {
+	if m == nil || planarAreaMatches(tris, outer2D, holes2D) {
+		return
+	}
+	m.Diagnose(diag.Diagnostic{
+		Code:     CodeTessellateDomainUncovered,
+		Severity: diag.Defect,
+		Detail: fmt.Sprintf("planar face triangulation (%d triangles over a %d-vertex outer + %d hole loop(s)) does not "+
+			"cover the face area; the trim boundary self-crosses and the mesh carries a hole or overlap", len(tris), len(outer2D), len(holes2D)),
+	})
 }
 
 // planarCDT re-triangulates the projected boundary with the constrained Delaunay, the manifold-

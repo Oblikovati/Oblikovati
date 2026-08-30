@@ -113,9 +113,12 @@ func recordUncoveredDomain(m *Mesh, covers bool) {
 	if m == nil || covers {
 		return
 	}
+	// A face mesh that does not cover its own domain leaves a hole or a leak the downstream consumers
+	// (render, mass properties, export, boolean input) read as real — a tracked degradation, so Defect,
+	// not Warning (#3388; the ground rule that a dropped/approximated element ships as a diag.Defect).
 	m.Diagnose(diag.Diagnostic{
 		Code:     CodeTessellateDomainUncovered,
-		Severity: diag.Warning,
+		Severity: diag.Defect,
 		Detail:   "constrained Delaunay did not cover the (u,v) domain its boundary loops bound",
 	})
 }

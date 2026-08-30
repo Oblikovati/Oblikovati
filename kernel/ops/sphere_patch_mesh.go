@@ -77,8 +77,10 @@ func diagnosePatchGridClamp(m *Mesh, c patchGridClamp, q Quality) {
 		return
 	}
 	m.Diagnose(diag.Diagnostic{
-		Code:     CodeTessellateCapSaturated,
-		Severity: diag.Warning,
+		Code: CodeTessellateCapSaturated,
+		// A clamped sphere-patch grid under-tessellates below the requested chord tolerance — a tracked
+		// degradation, so Defect not Warning (#3391), matching recordCapSaturation.
+		Severity: diag.Defect,
 		Detail: fmt.Sprintf("sphere-patch interior grid clamped to %dx%d of the %dx%d steps chord tol %g asked",
 			c.laidU, c.laidV, c.reqU, c.reqV, q.tol()),
 	})

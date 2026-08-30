@@ -144,7 +144,7 @@ func boundaryPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.P
 		}
 		tris = earcut(outer2D, holes2D)
 	} else {
-		tris = earClip(outer2D)
+		tris, _ = earClip(outer2D) // an incomplete clip is caught below by patchCoverageGate
 	}
 	// Ear clipping is only guaranteed on a simple polygon; a degenerate/self-touching trim makes it
 	// break early (a hole) or emit count-complete but OVERLAPPING triangles — the coverage gate
