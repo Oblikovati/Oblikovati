@@ -72,7 +72,7 @@ func TestCrossingCylinderImprintRecoveredBand(t *testing.T) {
 	const r = 3.0
 	recovered, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, 12)
 	recoveredZ, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r+2e-4, 12) // above the gate
-	body, ok := crossingCylinderIntersectGeneral(recovered, recoveredZ, nil)
+	body, ok := ruledCrossingIntersect(recovered, recoveredZ, nil)
 	if !ok {
 		t.Fatal("recovered-band crossing intersect declined; want the analytic three-face solid")
 	}
@@ -88,7 +88,7 @@ func TestCrossingCylinderIntersectNearPinchPerLoop(t *testing.T) {
 	const r = 3.0
 	thin, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, 12)
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r+5e-5, 12) // deep near-pinch (gap/chord < gate)
-	body, ok := crossingCylinderIntersectGeneral(thin, fat, nil)
+	body, ok := ruledCrossingIntersect(thin, fat, nil)
 	if !ok {
 		t.Fatal("near-pinch crossing intersect declined; #1818 per-loop path must build it")
 	}

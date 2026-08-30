@@ -8,47 +8,9 @@ import (
 	"sort"
 
 	"oblikovati.org/api/types"
-	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
-
-// draftPull reads a serialized pull direction [dx,dy,dz], defaulting to +Z when absent
-// (older recipes / the common Z-up mould pull).
-func draftPull(p []float64) math.Vector3 {
-	if len(p) != 3 {
-		return math.V3(0, 0, 1)
-	}
-	return math.V3(p[0], p[1], p[2])
-}
-
-// draftNeutral reads a serialized draft neutral (parting) plane from its origin and normal, or nil when
-// absent/degenerate — the implicit lowest-vertex hinge (#1801).
-func draftNeutral(origin, normal []float64) *geom.Plane {
-	if len(origin) != 3 || len(normal) != 3 {
-		return nil
-	}
-	pl, err := geom.NewPlane(math.P3(origin[0], origin[1], origin[2]), math.V3(normal[0], normal[1], normal[2]))
-	if err != nil {
-		return nil
-	}
-	return &pl
-}
-
-// neutralData serializes a draft neutral plane to (origin, normal) float triples, or (nil, nil) when
-// no neutral plane is set.
-func neutralData(pl *geom.Plane) (origin, normal []float64) {
-	if pl == nil {
-		return nil, nil
-	}
-	n := pl.Normal()
-	return []float64{pl.Origin.X, pl.Origin.Y, pl.Origin.Z}, []float64{float64(n.X), float64(n.Y), float64(n.Z)}
-}
-
-// This file holds the YAML codecs for the dress-up family (fillet/chamfer/shell/draft/
-// thread) and the reference-key + scalar helpers shared across feature codecs. Edge and
-// face reference keys are opaque lineage bytes, so they are base64-encoded (ADR-0020)
-// and re-bind to the regenerated topology after recompute.
 
 // EdgeDressData is an edge-based dress-up (fillet radius / chamfer distance): the
 // picked edges as reference keys plus the scalar value. FlatCorners is chamfer-only and a
@@ -110,115 +72,6 @@ type GeomEdgeRefData struct {
 	Direction []float64 `yaml:"direction,omitempty,flow"`
 }
 
-// FilletSetData is one serialized fillet edge set: constant (Radius) or variable
-// (StartRadius/EndRadius over one edge, plus optional intermediate RadiusPoints, #695).
-type FilletSetData struct {
-	Edges        []string                `yaml:"edges"`
-	Radius       float64                 `yaml:"radius,omitempty"`
-	StartRadius  float64                 `yaml:"startRadius,omitempty"`
-	EndRadius    float64                 `yaml:"endRadius,omitempty"`
-	RadiusPoints []FilletRadiusPointData `yaml:"radiusPoints,omitempty"`
-}
-
-// FilletRadiusPointData is one serialized intermediate radius stop on a variable fillet edge (#695).
-type FilletRadiusPointData struct {
-	T      float64 `yaml:"t"`
-	Radius float64 `yaml:"radius"`
-}
-
-// cornerTypeOrZero returns the fillet corner-treatment id, defaulting to 0 (miter) for an absent
-// payload or an older recipe.
-func (d *EdgeDressData) cornerTypeOrZero() int32 {
-	if d == nil {
-		return 0
-	}
-	return d.CornerType
-}
-
-// crossSectionOrArc returns the fillet cross-section, defaulting to the arc for an absent/older recipe.
-func (d *EdgeDressData) crossSectionOrArc() FilletCrossSection {
-	if d == nil {
-		return FilletArc
-	}
-	c, _ := types.ParseFilletCrossSection(d.CrossSection)
-	return c
-}
-
-// crossSectionWire is the cross-section's recipe spelling, empty for the arc default so omitempty
-// keeps older recipes byte-identical.
-func crossSectionWire(c FilletCrossSection) string {
-	if c.IsArc() {
-		return ""
-	}
-	return string(c)
-}
-
-// rhoOrZero returns the conic fullness rho (0 ⇒ default) for an absent/older recipe.
-func (d *EdgeDressData) rhoOrZero() float64 {
-	if d == nil {
-		return 0
-	}
-	return d.Rho
-}
-
-// serializeFilletSets encodes a fillet's edge sets (nil for the legacy single-set form).
-func serializeFilletSets(sets []FilletEdgeSet) []FilletSetData {
-	out := make([]FilletSetData, len(sets))
-	for i, s := range sets {
-		out[i] = FilletSetData{Edges: encodeKeys(s.EdgeKeys)}
-		if s.variable() {
-			out[i].StartRadius, out[i].EndRadius = evalFloat(s.StartRadius), evalFloat(s.EndRadius)
-			out[i].RadiusPoints = serializeRadiusPoints(s.RadiusPoints)
-			continue
-		}
-		out[i].Radius = evalFloat(s.Radius)
-	}
-	return out
-}
-
-// restoreFilletSets decodes the edge-set form back into definition sets.
-func restoreFilletSets(sets []FilletSetData) ([]FilletEdgeSet, error) {
-	out := make([]FilletEdgeSet, len(sets))
-	for i, s := range sets {
-		keys, err := decodeKeys(s.Edges)
-		if err != nil {
-			return nil, err
-		}
-		out[i] = FilletEdgeSet{EdgeKeys: keys}
-		if s.Radius > 0 {
-			out[i].Radius = constFloat(s.Radius)
-			continue
-		}
-		out[i].StartRadius, out[i].EndRadius = constFloat(s.StartRadius), constFloat(s.EndRadius)
-		out[i].RadiusPoints = restoreRadiusPoints(s.RadiusPoints)
-	}
-	return out, nil
-}
-
-// serializeRadiusPoints / restoreRadiusPoints round-trip a variable fillet's intermediate
-// radius stops (#695).
-func serializeRadiusPoints(pts []FilletRadiusPoint) []FilletRadiusPointData {
-	if len(pts) == 0 {
-		return nil
-	}
-	out := make([]FilletRadiusPointData, len(pts))
-	for i, p := range pts {
-		out[i] = FilletRadiusPointData{T: p.T, Radius: evalFloat(p.Radius)}
-	}
-	return out
-}
-
-func restoreRadiusPoints(pts []FilletRadiusPointData) []FilletRadiusPoint {
-	if len(pts) == 0 {
-		return nil
-	}
-	out := make([]FilletRadiusPoint, len(pts))
-	for i, p := range pts {
-		out[i] = FilletRadiusPoint{T: p.T, Radius: constFloat(p.Radius)}
-	}
-	return out
-}
-
 // FaceDressData is a face-based dress-up (shell thickness / draft angle): the picked
 // faces as reference keys plus the scalar value, and (draft only) the pull direction.
 type FaceDressData struct {
@@ -239,42 +92,12 @@ type FaceDressData struct {
 	FaceThicknesses []FaceThicknessData `yaml:"faceThicknesses,omitempty"`
 }
 
-// FaceThicknessData is one retained face's own wall thickness in a shell (#1864).
-type FaceThicknessData struct {
-	Face      string  `yaml:"face"`
-	Thickness float64 `yaml:"thickness"`
-}
-
 // GeomFaceRefData is the serialized form of a geometric face descriptor: the face's
 // centroid and outward normal in model space. It binds to a running-body face at recompute
 // via [topo.Body.FindFaceByGeometry] (ADR-0040).
 type GeomFaceRefData struct {
 	Centroid []float64 `yaml:"centroid,flow"`
 	Normal   []float64 `yaml:"normal,omitempty,flow"`
-}
-
-// FaceFilletData persists a face fillet (#694): the two face-set reference keys and the radius.
-type FaceFilletData struct {
-	FacesA []string `yaml:"facesA"`
-	FacesB []string `yaml:"facesB"`
-	Value  float64  `yaml:"value"`
-	// Width sizes the blend by its CHORD instead of by Value, the rolling ball's radius (#1887).
-	// Persisted separately so a reopened part still resolves the width against the angle its faces
-	// meet at, rather than freezing whatever radius that came to on the day it was authored.
-	Width float64 `yaml:"width,omitempty"`
-}
-
-// RuleFilletData persists a rule fillet (#486): the dihedral rule (wire spelling) and the radius.
-type RuleFilletData struct {
-	Rule  string  `yaml:"rule"`
-	Value float64 `yaml:"value"`
-}
-
-// FullRoundData persists a full-round fillet (#694): the three face-set reference keys.
-type FullRoundData struct {
-	Side1  []string `yaml:"side1"`
-	Center []string `yaml:"center"`
-	Side2  []string `yaml:"side2"`
 }
 
 // SnapFitData persists a cantilever snap-fit (#486): the beam and catch dimensions.

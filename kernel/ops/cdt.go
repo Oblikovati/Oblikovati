@@ -3,8 +3,7 @@
 package ops
 
 import (
-	"oblikovati.org/math"
-	"oblikovati.org/math/predicate"
+	"oblikovati.org/kernel/predicates"
 )
 
 // 2D constrained Delaunay triangulation (CDT) of a planar polygon (outer loop minus holes) with
@@ -93,19 +92,25 @@ func conKey(a, b int) [2]int {
 // collinear points (e.g. a face boundary discretized into many almost-straight samples), returning the
 // WRONG sign — which made the Bowyer–Watson cavity collection grab the wrong triangles and emit
 // inverted/overlapping triangles. The exact predicate's sign is always correct.
-func orient2d(a, b, c [2]float64) float64 {
-	return predicate.Orient2D(p2(a), p2(b), p2(c))
+func orient2d(a, b, c [2]float64) int {
+	return predicates.Orient2D(a[0], a[1], b[0], b[1], c[0], c[1])
 }
 
 // inCircle > 0 when d is strictly inside the circumcircle of CCW triangle abc. Delegates to the
 // adaptive-exact predicate for the same reason as orient2d: a planar face's circular hole is sampled
 // into (near-)cocircular points, where the naive float in-circle determinant (radius² terms swamping
 // their tiny difference) returns the wrong sign and tangles the triangulation.
-func inCircle(a, b, c, d [2]float64) float64 {
-	return predicate.InCircle(p2(a), p2(b), p2(c), p2(d))
+func inCircle(a, b, c, d [2]float64) int {
+	return predicates.InCircle(a[0], a[1], b[0], b[1], c[0], c[1], d[0], d[1])
 }
 
-func p2(p [2]float64) math.Point2 { return math.Point2{X: p[0], Y: p[1]} }
+// triTwiceSignedArea is 2× the signed area of triangle (a, b, c) — the orient2d determinant itself
+// (same formula, positive CCW). Area sums need this MAGNITUDE, not the exact-predicate sign: the exact
+// predicate returns ±1 on its big.Rat path, not the area, so area callers compute it directly while
+// topological (sign) decisions stay on [orient2d] (#2287).
+func triTwiceSignedArea(a, b, c [2]float64) float64 {
+	return (a[0]-c[0])*(b[1]-c[1]) - (a[1]-c[1])*(b[0]-c[0])
+}
 
 // newCDT builds the initial triangulation: a single super-triangle large enough to contain every
 // input point (the 3 super vertices are appended to pts at indices nsup, nsup+1, nsup+2).

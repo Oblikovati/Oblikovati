@@ -3,6 +3,7 @@
 package topo
 
 import (
+	"bytes"
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
@@ -206,6 +207,11 @@ type Face struct {
 	shell    *Shell
 	lineage  Lineage
 	reversed bool
+	// aliasKeys are ADDITIONAL reference keys this face resolves under beyond its primary
+	// (ReferenceKey, from lineage) — the reference keys of the coplanar operand faces a boolean
+	// merged into this one, so a pick on ANY merged parent survives the merge (ADR-0057 multi-parent
+	// identity, extending ADR-0043). Empty for an ordinary face.
+	aliasKeys [][]byte
 	// derived/cached* memoize the face's distinct edges/vertices, re-queried per frame by the
 	// drawlist and range-box paths (M34-F2b). Written once by finalizeDerived when the owning body
 	// is finalized (the loops are complete by then); before that the accessors derive live.
@@ -234,6 +240,23 @@ func (f *Face) ID() uint64           { return f.id }
 func (f *Face) Kind() EntityKind     { return KindFace }
 func (f *Face) Lineage() Lineage     { return f.lineage }
 func (f *Face) ReferenceKey() []byte { return referenceKey(KindFace, f.lineage) }
+
+// AliasKeys returns the additional reference keys this face resolves under beyond its primary
+// ReferenceKey — the keys of the coplanar operand faces merged into it by a boolean (ADR-0057).
+// Empty for an ordinary face. The returned slice aliases the face's own storage; callers must not
+// mutate it (the reference-key index and scan only read it).
+func (f *Face) AliasKeys() [][]byte { return f.aliasKeys }
+
+// AddAliasKey records an additional reference key this face resolves under (a merged coplanar
+// parent's key, ADR-0057). It is a no-op when key equals the face's own ReferenceKey or a key
+// already recorded, so the reference-key index never lists the face twice under one key. The key is
+// copied, so a caller may reuse its buffer.
+func (f *Face) AddAliasKey(key []byte) {
+	if bytes.Equal(key, f.ReferenceKey()) || containsKey(f.aliasKeys, key) {
+		return
+	}
+	f.aliasKeys = append(f.aliasKeys, append([]byte(nil), key...))
+}
 
 // Geometry returns the face's underlying transient surface (a Plane/Cylinder…).
 func (f *Face) Geometry() geom.Surface { return f.surface }

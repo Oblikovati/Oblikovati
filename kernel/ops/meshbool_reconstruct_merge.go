@@ -53,6 +53,22 @@ func mergeCoincidentTags(refs []faceSurfaceRef, res geom.Resolution) (rep []int,
 	return rep, size
 }
 
+// aliasKeysForGroups maps each merged group's representative tag to the reference keys of the OTHER
+// operand faces fused into it, so the reconstructed face resolves under every merged parent's key
+// (ADR-0057 multi-parent identity). A singleton group contributes nothing; the representative's own
+// key is the rebuilt face's primary, so it is excluded. Face.AddAliasKey drops any key equal to the
+// primary or a repeat, so no de-dup is needed here.
+func aliasKeysForGroups(refs []faceSurfaceRef, rep []int) map[int][][]byte {
+	out := map[int][][]byte{}
+	for i, r := range rep {
+		if i == r || refs[i].face == nil {
+			continue
+		}
+		out[r] = append(out[r], refs[i].face.ReferenceKey())
+	}
+	return out
+}
+
 // findRoot returns the union-find root of i in rep, compressing the path it walks.
 func findRoot(rep []int, i int) int {
 	for rep[i] != i {

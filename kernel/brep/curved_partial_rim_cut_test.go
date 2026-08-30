@@ -44,7 +44,7 @@ func freeEdgeCount(b *topo.Body) int {
 // through the still-full lower band, disjoint from the top notch) on an already-cut cylinder builds an EXACT
 // analytic solid, not a CSG fallback. It is watertight, Euler-valid, and genus-1 (the through-tunnel). Shape is
 // certified by CONSERVATION: because the rod is disjoint from the notch, it removes the identical plug from the
-// notched target as from a bare cylinder — cross-checked against the certified CrossingCylinderCutGeneral, so a
+// notched target as from a bare cylinder — cross-checked against the certified RuledCrossingCutGeneral, so a
 // right-volume-wrong-shape build (which the manifold/Euler checks miss) is caught.
 func TestPartialRimCutDisjointRodConservesRemoval(t *testing.T) {
 	target := notchedCylinderBody(t)
@@ -66,7 +66,7 @@ func TestPartialRimCutDisjointRodConservesRemoval(t *testing.T) {
 	// Shape gate (mesh-independent, the #1724 right-volume-wrong-shape check): the result must enclose exactly
 	// the analytic region {inside the notched target} ∧ {outside the rod}. A 96³ membership grid gives the
 	// smooth analytic volume; the tessellated result sits below it by the faceted-cylinder + SSI-polyline
-	// deficit — which is 2.81% for the ALREADY-CERTIFIED CrossingCylinderCutGeneral against this same oracle, so
+	// deficit — which is 2.81% for the ALREADY-CERTIFIED RuledCrossingCutGeneral against this same oracle, so
 	// the 3.5% budget here is that established deficit, not slack. A right-Euler wrong-shape build diverges far more.
 	analytic := analyticPartialRimVolume(96)
 	if rel := stdmath.Abs(vol(res)-analytic) / analytic; rel > 0.035 {
@@ -80,7 +80,7 @@ func TestPartialRimCutDisjointRodConservesRemoval(t *testing.T) {
 	// partial-rim machinery might introduce.
 	bare, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	rod2, _ := brep.SolidCylinder(math.P3(-6, 0, 3), math.V3(1, 0, 0), 1, 12)
-	bareRes, okB := brep.CrossingCylinderCutGeneral(bare, rod2, nil)
+	bareRes, okB := brep.RuledCrossingCutGeneral(bare, rod2, nil)
 	if !okB {
 		t.Fatal("bare crossing-cut oracle declined; cannot cross-check the removed plug")
 	}

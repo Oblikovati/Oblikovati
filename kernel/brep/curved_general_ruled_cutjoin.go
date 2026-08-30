@@ -200,50 +200,41 @@ func ruledPairGeneral(a, b *topo.Body, rec *diag.Recorder,
 	return combine(oa, ob, loops)
 }
 
-// CrossingCylinderCutGeneral routes crossing-cylinder subtract through the general ruled cut (#1403/#1476):
-// a fat cylinder drilled by a rod (one solid) or a rod sliced by a fat (two stubs). ok=false outside the
-// wired clean-side-breach crossing so kernel/ops keeps its CSG fallback.
-func CrossingCylinderCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if body, ok := nearPinchCrossingCut(target, tool, rec); ok { // #1818 near-pinch band (raw whole-loop faces)
+// ruledCrossingCutImprint is the imprint the unified cut/join drivers pass to ruledPairGeneral: for a bare
+// cylinder∩cylinder pair the near-pinch-DECLINING crossingCylinderImprint (the ordinary arrangement must not
+// run on a near-pinch band — nearPinchCrossingCut/Join already shipped that band), and for any cone-involving
+// pair the plain general imprint. It is the cut/join counterpart of ruledCrossingImprint, which the intersect
+// driver uses without the decline because its near-pinch branch is inline (ADR-0058 phase 3).
+func ruledCrossingCutImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
+	if !hasConeSide(a) && !hasConeSide(b) {
+		return crossingCylinderImprint(a, b, rec)
+	}
+	return curvedImprintLoops(a, b, rec)
+}
+
+// RuledCrossingCutGeneral routes EVERY ruled-crossing subtract through one driver (ADR-0058 phase 3):
+// cone∩cone, cone∩cylinder AND cylinder∩cylinder. The unequal-radius cylinder near-pinch (#1818) is one
+// conditioning branch (nearPinchCrossingCut, which self-gates to that band); every other clean-side-breach
+// crossing runs the general ruled cut (ruledPairGeneral over ruledOperandOf), a fat ruled solid drilled by a
+// crossing cone/cylinder or a rod sliced into two stubs. It replaces the former separate cone and
+// crossing-cylinder cut drivers.
+func RuledCrossingCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	if body, ok := nearPinchCrossingCut(target, tool, rec); ok {
 		return body, true
 	}
-	return ruledPairGeneral(target, tool, rec, crossingCylinderImprint, cylinderOperand, ruledCutGeneral)
+	return ruledPairGeneral(target, tool, rec, ruledCrossingCutImprint, ruledOperandOf, ruledCutGeneral)
 }
 
-// CrossingCylinderJoinGeneral routes crossing-cylinder JOIN through the general ruled join (#1403/#1476):
-// a fat cylinder side-breached by a rod, welded into one solid (keyhole holed wall + two stubs + whole caps).
-func CrossingCylinderJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if body, ok := nearPinchCrossingJoin(a, b, rec); ok { // #1818 near-pinch band (raw whole-loop faces)
+// RuledCrossingJoinGeneral routes EVERY ruled-crossing JOIN through one driver (ADR-0058 phase 3): the
+// unequal-radius cylinder near-pinch (#1818) as one conditioning branch (nearPinchCrossingJoin), every other
+// crossing as the general ruled join — a fat ruled solid side-breached by a crossing cone/cylinder, welded
+// into one solid (holed fat wall + a stub each side + whole caps). Replaces the former separate cone and
+// crossing-cylinder join drivers.
+func RuledCrossingJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	if body, ok := nearPinchCrossingJoin(a, b, rec); ok {
 		return body, true
 	}
-	return ruledPairGeneral(a, b, rec, crossingCylinderImprint, cylinderOperand, ruledJoinGeneral)
-}
-
-// ConeConeCutGeneral routes cone∩cone subtract through the general ruled cut (#1403): a fat frustum drilled by
-// a crossing rod frustum (one solid) or a rod frustum sliced by a fat (two tapered stubs). ok=false outside
-// the wired clean-side-breach frustum crossing.
-func ConeConeCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	return ruledPairGeneral(target, tool, rec, coneConeImprint, coneOperand, ruledCutGeneral)
-}
-
-// ConeConeJoinGeneral routes cone∩cone JOIN through the general ruled join (#1403): a fat frustum side-breached
-// by a crossing rod frustum, welded into one solid (holed fat wall + a tapered stub each side + whole caps).
-func ConeConeJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	return ruledPairGeneral(a, b, rec, coneConeImprint, coneOperand, ruledJoinGeneral)
-}
-
-// ConeCylinderCutGeneral routes cone∩cylinder subtract through the general ruled cut (#1403): a fat cylinder
-// drilled by a crossing cone (or vice-versa). The operands resolve by type (ruledOperandOf), so target/tool
-// may be cone-then-cylinder or the reverse. ok=false outside the wired clean-side-breach crossing.
-func ConeCylinderCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	return ruledPairGeneral(target, tool, rec, coneCylinderImprint, ruledOperandOf, ruledCutGeneral)
-}
-
-// ConeCylinderJoinGeneral routes cone∩cylinder JOIN through the general ruled join (#1403): a fat cylinder
-// side-breached by a crossing cone (or vice-versa), welded into one solid. ok=false outside the wired
-// clean-side-breach crossing.
-func ConeCylinderJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	return ruledPairGeneral(a, b, rec, coneCylinderImprint, ruledOperandOf, ruledJoinGeneral)
+	return ruledPairGeneral(a, b, rec, ruledCrossingCutImprint, ruledOperandOf, ruledJoinGeneral)
 }
 
 // partialImprint returns the SINGLE imprint loop of a partial penetration — a thin rod that breaches one wall

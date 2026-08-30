@@ -5,7 +5,6 @@ package brep
 import (
 	stdmath "math"
 
-	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -241,43 +240,10 @@ func loopsClearOfCaps(side ruledUV, loops []geom.Polyline) bool {
 	return true
 }
 
-// CrossingCylinderIntersectGeneral is the exported entry kernel/ops routes crossing-cylinder intersect
-// through: the GENERAL curved∩curved pipeline (#1403), no bespoke loop→body constructor. ok=false outside
-// the wired cylinder-through-cylinder crossing so the caller keeps its fallback.
-func CrossingCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	return crossingCylinderIntersectGeneral(a, b, rec)
-}
-
-// crossingCylinderIntersectGeneral builds cylinder ∩ cylinder (two crossing cylinders) through the GENERAL
-// pipeline (#1403): the SSI imprint, then trimByImprint on each cylinder side keeping the part inside the
-// other, then curvedStitch. The simplest pair — both sides are cylinders, so the recipe is fully symmetric
-// (no rod/fat split): the rod-wall band inside the fat plus the two fat-wall lens caps fall out of the same
-// two-sided trim. ok=false when the pair is not a cylinder-through-cylinder crossing.
-func crossingCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	loops, ok := crossingCylinderLoops(a, b, rec)
-	if !ok || len(loops) == 0 {
-		return nil, false
-	}
-	fA, cylA, bandA, okA := cylinderSideFace(a)
-	fB, cylB, bandB, okB := cylinderSideFace(b)
-	insideA, okMA := curvedSolidMembership(a)
-	insideB, okMB := curvedSolidMembership(b)
-	if !okA || !okB || !okMA || !okMB {
-		return nil, false
-	}
-	// Near-pinch (#1818): the two loops project to the LARGER-radius (fat) wall as two lens ovals whose tips
-	// nearly touch at the necks; a single (u,v) arrangement carrying both fuses them, so the fat wall is
-	// trimmed one loop at a time — each oval alone in its own arrangement, which is well-conditioned. The
-	// smaller (thin) wall carries the two loops as a single full-azimuth band bounded by both, so it keeps the
-	// both-loops trim. Away from the near-pinch band both sides take the both-loops trim unchanged.
-	nearPinch := nearPinchLoops(loops)
-	keptA, okA2 := keptOrNone(cylinderLensSplit(nearPinch && cylA.Radius > cylB.Radius, fA, cylA, bandA, loops, false, insideB))
-	keptB, okB2 := keptOrNone(cylinderLensSplit(nearPinch && cylB.Radius > cylA.Radius, fB, cylB, bandB, loops, true, insideA))
-	if !okA2 || !okB2 {
-		return nil, false
-	}
-	return curvedStitch(append(keptA, keptB...)), true
-}
+// Cylinder∩cylinder intersect (including the near-pinch band, #1818) is now built by the unified
+// ruledCrossingIntersect (curved_general_crossing.go, ADR-0058 phase 3), which routes the near-pinch fatter
+// wall through cylinderLensSplit below as one conditioning branch. The former crossingCylinderIntersectGeneral
+// driver collapsed into it.
 
 // cylinderLensSplit trims a cylinder side by the intersection imprint. perLoop trims each loop in a SEPARATE
 // arrangement — the #1818 near-pinch fat wall, whose two lens caps sit tip-to-tip at the necks and would fuse
@@ -299,78 +265,12 @@ func cylinderLensSplit(perLoop bool, f curvedFace, cyl geom.Cylinder, band coneS
 	return caps, nil, nil
 }
 
-// ConeCylinderIntersectGeneral is the exported entry kernel/ops routes cone∩cylinder intersect through: the
-// GENERAL curved∩curved pipeline (#1403), no bespoke loop→body constructor. ok=false outside the wired
-// frustum-through-cylinder case so the caller keeps its fallback.
-func ConeCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	return coneCylinderIntersectGeneral(a, b, rec)
-}
-
-// coneCylinderIntersectGeneral builds cone ∩ cylinder through the GENERAL pipeline (#1403): the SSI imprint,
-// then trimByImprint on the cone side and the cylinder side each keeping the part inside the other solid,
-// then curvedStitch. Same two-sided recipe as cone∩cone, with the cylinder side standing in for one cone —
-// the cone band inside the cylinder plus the two cylinder-wall lens caps. ok=false when the pair is not a
-// cone-through-cylinder crossing, so kernel/ops keeps the bespoke ConeCylinderIntersect fallback.
-func coneCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	loops, ok := coneCylinderImprint(a, b, rec)
-	if !ok || len(loops) == 0 {
-		return nil, false
-	}
-	coneBody, cylBody := a, b // identify which operand is the cone, which the cylinder
-	if _, _, _, okCone := coneSideFace(a); !okCone {
-		coneBody, cylBody = b, a
-	}
-	fCone, cone, coneBand, okCone := coneSideFace(coneBody)
-	fCyl, cyl, cylBand, okCyl := cylinderSideFace(cylBody)
-	insideCone, okMC := curvedSolidMembership(coneBody)
-	insideCyl, okMY := curvedSolidMembership(cylBody)
-	if !okCone || !okCyl || !okMC || !okMY {
-		return nil, false
-	}
-	imprint := polylineCurves(loops)
-	keptCone, okA := keptOrNone(coneSideSolidSplit(fCone, cone, coneBand, imprint, Intersection, coneBody == b, insideCyl))
-	keptCyl, okB := keptOrNone(cylinderSideSolidSplit(fCyl, cyl, cylBand, imprint, Intersection, cylBody == b, insideCone))
-	if !okA || !okB {
-		return nil, false
-	}
-	return curvedStitch(append(keptCone, keptCyl...)), true
-}
-
 // keptOrNone adapts a side split's (faces, lid, err) to (faces, ok): ok is true only when the split
 // succeeded and kept some geometry, so the two-sided drivers read as one short condition (#1403).
 func keptOrNone(faces []curvedFace, _ []loopEdge, err error) ([]curvedFace, bool) {
 	return faces, err == nil && len(faces) > 0
 }
 
-// ConeConeIntersectGeneral is the exported entry kernel/ops routes cone∩cone intersect through: the GENERAL
-// curved∩curved pipeline (#1403), with no bespoke loop→body constructor. It declines (ok=false) for
-// configurations outside the wired frustum-crossing case so the caller keeps its fallback.
-func ConeConeIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	return coneConeIntersectGeneral(a, b, rec)
-}
-
-// coneConeIntersectGeneral builds cone ∩ cone through the GENERAL pipeline (#1403): the SSI imprint, then
-// trimByImprint on EACH cone side keeping the part inside the other cone, then curvedStitch. The shared
-// imprint loops are emitted by both sides referencing the same polyline, so the welder fuses them into a
-// watertight body (the rod-wall band between the two loops + the two fat-wall lens caps). ok=false when the
-// pair is outside the wired frustum-crossing case, so kernel/ops keeps the bespoke ConeConeIntersect path.
-func coneConeIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	loops, ok := coneConeImprint(a, b, rec)
-	if !ok || len(loops) == 0 {
-		return nil, false
-	}
-	fa, coneA, bandA, okA := coneSideFace(a)
-	fb, coneB, bandB, okB := coneSideFace(b)
-	insideA, okMA := curvedSolidMembership(a)
-	insideB, okMB := curvedSolidMembership(b)
-	if !okA || !okB || !okMA || !okMB {
-		return nil, false
-	}
-	imprint := polylineCurves(loops)
-	keptA, _, errA := coneSideSolidSplit(fa, coneA, bandA, imprint, Intersection, false, insideB)
-	keptB, _, errB := coneSideSolidSplit(fb, coneB, bandB, imprint, Intersection, true, insideA)
-	if errA != nil || errB != nil || len(keptA) == 0 || len(keptB) == 0 {
-		return nil, false
-	}
-	return curvedStitch(append(keptA, keptB...)), true
-}
+// Cone∩cone and cone∩cylinder intersect are built by the unified ruledConeCrossingIntersect
+// (curved_general_crossing.go, ADR-0058 phase 3): the two former per-pair drivers had the identical
+// skeleton, so they collapsed into one general driver over curvedSideFace + curvedSideSolidSplit.

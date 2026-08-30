@@ -43,7 +43,7 @@ func TestBooleanMeshArrangementFallbackRescue(t *testing.T) {
 	if !rec.Has(CodeBooleanMeshArrangementFallback) {
 		t.Fatal("expected the mesh-arrangement fallback to fire (the primary path should tear here)")
 	}
-	if res == nil || !validBooleanSolid(res) || len(res.Faces()) == 0 {
+	if res == nil || !Validate(res).ValidSolid() || len(res.Faces()) == 0 {
 		t.Fatal("mesh-arrangement fallback did not produce a valid non-empty solid")
 	}
 }

@@ -43,7 +43,7 @@ func curvedConvexIntersect(op PartFeatureOperation, target, tool *topo.Body, _ *
 		}
 		body = res
 	}
-	if !validBooleanSolid(body) {
+	if !Validate(body).ValidSolid() {
 		return nil, false
 	}
 	return body, true

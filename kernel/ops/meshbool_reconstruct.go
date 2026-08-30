@@ -33,24 +33,28 @@ func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality) (*topo.Body,
 	refs := make([]faceSurfaceRef, 0, len(aRefs)+len(bRefs))
 	refs = append(append(refs, aRefs...), bRefs...)
 
+	// Reconcile cross-operand coincident planar faces onto one shared EXACT plane before the mesh
+	// boolean, so its exact coplanar classification sees the intended coincidence a sub-ULP
+	// tessellation jitter would otherwise hide (ADR-0056 Sew reconciliation; #2247 coincident-opposite).
+	snapCoincidentPlanes(&aSoup, &bSoup, refs, len(aRefs), res)
+
 	// Fuse coincident-surface tags (cocylindrical walls, coplanar faces) so their shared
 	// seam is interior to one face, not a false edge between two (ADR-0056 same-surface merge).
 	rep, groupSize := mergeCoincidentTags(refs, res)
 	relabelTags(aSoup.Tags, rep)
 	relabelTags(bSoup.Tags, rep)
 	inputCount := tagCounts(aSoup.Tags, bSoup.Tags)
-	result := meshbool.BooleanTagged(aSoup, bSoup, op)
-	result = weldResultSoup(result, res.Weld())
+	result := cleanResultSoup(meshbool.BooleanTagged(aSoup, bSoup, op), res.Weld())
 	relabelTags(result.Tags, rep)
 
 	arr := meshbool.ArrangementTopologyOf(result)
 	inputs, ok := reconstructFaces(arr, refs, len(aRefs), op, inputCount, tagCounts(result.Tags),
-		groupSize, catalogOriginalEdges(a, b), res)
+		groupSize, aliasKeysForGroups(refs, rep), catalogOriginalEdges(a, b), res)
 	if !ok {
 		return nil, false
 	}
 	body := brep.ReconstructBooleanBody(inputs)
-	if body == nil || len(body.Faces()) == 0 || !validBooleanSolid(body) {
+	if body == nil || len(body.Faces()) == 0 || !Validate(body).ValidSolid() {
 		// Reconstruction can assemble a solid that is closed+manifold yet Euler-inadmissible
 		// (an oblique conic exit that crosses an operand CORNER splits its ellipse across two
 		// faces, doubling a loop → χ too large). Decline those to the exact faceted fallback;
@@ -64,10 +68,10 @@ func reconstructBoolean(a, b *topo.Body, op meshbool.Op, q Quality) (*topo.Body,
 // reconstructFaces turns each arrangement face into a ReconInput, failing fast when any face
 // cannot be rebuilt (a run matching neither an original edge nor an analytic SSI).
 func reconstructFaces(arr meshbool.ArrangementTopology, refs []faceSurfaceRef, naRefs int, op meshbool.Op,
-	inputCount, resultCount, groupSize map[int]int, cat *origEdgeCatalog, res geom.Resolution) ([]brep.ReconInput, bool) {
+	inputCount, resultCount, groupSize map[int]int, aliasKeys map[int][][]byte, cat *origEdgeCatalog, res geom.Resolution) ([]brep.ReconInput, bool) {
 	inputs := make([]brep.ReconInput, 0, len(arr.Faces))
 	for _, f := range arr.Faces {
-		in, ok := reconstructFace(f, refs, naRefs, op, inputCount, resultCount, groupSize, arr.Verts, cat, res)
+		in, ok := reconstructFace(f, refs, naRefs, op, inputCount, resultCount, groupSize, aliasKeys, arr.Verts, cat, res)
 		if !ok {
 			return nil, false
 		}
@@ -79,7 +83,7 @@ func reconstructFaces(arr meshbool.ArrangementTopology, refs []faceSurfaceRef, n
 // reconstructFace turns one arrangement face into a ReconInput: a pass-through for an
 // untouched survivor, or a rebuilt face for a split one.
 func reconstructFace(f meshbool.ArrangementFace, refs []faceSurfaceRef, naRefs int, op meshbool.Op,
-	inputCount, resultCount, groupSize map[int]int, verts []meshbool.Point, cat *origEdgeCatalog, res geom.Resolution) (brep.ReconInput, bool) {
+	inputCount, resultCount, groupSize map[int]int, aliasKeys map[int][][]byte, verts []meshbool.Point, cat *origEdgeCatalog, res geom.Resolution) (brep.ReconInput, bool) {
 	ref := refs[f.Tag]
 	fromB := f.Tag >= naRefs
 	// Pass a face through only when it is a single original CURVED face kept whole — pass-through
@@ -99,10 +103,11 @@ func reconstructFace(f meshbool.ArrangementFace, refs []faceSurfaceRef, naRefs i
 		return brep.ReconInput{}, false
 	}
 	return brep.ReconInput{
-		Surface:  ref.surface,
-		Reversed: ref.reversed != (op == meshbool.Difference && fromB),
-		Loops:    loops,
-		Lineage:  ref.face.Lineage(),
+		Surface:   ref.surface,
+		Reversed:  ref.reversed != (op == meshbool.Difference && fromB),
+		Loops:     loops,
+		Lineage:   ref.face.Lineage(),
+		AliasKeys: aliasKeys[f.Tag],
 	}, true
 }
 
@@ -150,6 +155,15 @@ func tagCounts(tagSlices ...[]int) map[int]int {
 // runPoint rounds one run vertex to a kernel point.
 func runPoint(verts []meshbool.Point, run meshbool.ArrangementRun, i int) math.Point3 {
 	return verts[run.Verts[i]].Round()
+}
+
+// cleanResultSoup applies the cross-operand hygiene the exact mesh boolean leaves to the ops
+// layer (ADR-0056): weld near-coincident vertices the two operands inserted a sub-tolerance
+// step apart, then collapse the near-tangent sliver caps a coincident-wall imprint leaves
+// (T-junction re-stitch, #2247), so the arrangement never traces a degenerate face as a
+// "slit" run. Both use the weld tolerance; the meshbool core stays exact.
+func cleanResultSoup(soup meshbool.TaggedSoup, tol float64) meshbool.TaggedSoup {
+	return collapseSlivers(weldResultSoup(soup, tol), tol)
 }
 
 // weldResultSoup collapses result vertices that co-refinement placed within tol of each other to

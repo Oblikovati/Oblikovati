@@ -3,10 +3,17 @@
 package ops
 
 import (
+	"oblikovati.org/kernel/predicates"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
-	"oblikovati.org/math/predicate"
 )
+
+// orient3p is the sign of the signed volume of tetrahedron (a, b, c, d) via the one exact predicate
+// package (kernel/predicates, ADR-0042): it adapts math.Point3 to the flat-coord entry point so the
+// hull's face-visibility and seed-independence tests stay sign-exact on coplanar/cocircular inputs.
+func orient3p(a, b, c, d math.Point3) int {
+	return predicates.Orient3D(a.X, a.Y, a.Z, b.X, b.Y, b.Z, c.X, c.Y, c.Z, d.X, d.Y, d.Z)
+}
 
 // ConvexHull returns the convex hull of a point set as a closed, triangulated solid body.
 // It is the kernel behind OpenSCAD's hull() — the smallest convex solid containing the input
@@ -132,7 +139,7 @@ func visibleEdgeSet(faces [][3]int, visible []bool) map[[2]int]bool {
 // dot-product tolerance was fragile on the coplanar/cocircular inputs hull() is built for (boxes,
 // cylinders), producing inverted or extra sliver faces; predicate.Orient3D is sign-exact there.
 func faceVisible(pts []math.Point3, f [3]int, p math.Point3) bool {
-	return predicate.Orient3D(pts[f[0]], pts[f[1]], pts[f[2]], p) < 0
+	return orient3p(pts[f[0]], pts[f[1]], pts[f[2]], p) < 0
 }
 
 // initialFaces builds the seed tetrahedron's four faces, each wound so its normal points away

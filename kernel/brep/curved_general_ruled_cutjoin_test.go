@@ -18,11 +18,11 @@ func coneCutJoinPair() (fat, rod *topo.Body) {
 	return fat, rod
 }
 
-// TestConeConeJoinGeneral: fat ∪ rod (two crossing frustums) through the general pipeline is a watertight
+// TestRuledConeCrossingJoinGeneral: fat ∪ rod (two crossing frustums) through the general pipeline is a watertight
 // solid — the fat's keyhole-bridged holed wall, the two tapered rod stubs, and all four caps (#1403).
-func TestConeConeJoinGeneral(t *testing.T) {
+func TestRuledConeCrossingJoinGeneral(t *testing.T) {
 	fat, rod := coneCutJoinPair()
-	res, ok := ConeConeJoinGeneral(fat, rod, nil)
+	res, ok := RuledCrossingJoinGeneral(fat, rod, nil)
 	if !ok {
 		t.Fatal("general cone∪cone declined; want the welded solid")
 	}
@@ -34,11 +34,11 @@ func TestConeConeJoinGeneral(t *testing.T) {
 	}
 }
 
-// TestConeConeCutGeneral: fat − rod (drilling the fat frustum) through the general pipeline is a watertight
+// TestRuledConeCrossingCutGeneral: fat − rod (drilling the fat frustum) through the general pipeline is a watertight
 // solid — the breached fat wall, its whole caps, and the reversed rod tunnel (#1403).
-func TestConeConeCutGeneral(t *testing.T) {
+func TestRuledConeCrossingCutGeneral(t *testing.T) {
 	fat, rod := coneCutJoinPair()
-	res, ok := ConeConeCutGeneral(fat, rod, nil)
+	res, ok := RuledCrossingCutGeneral(fat, rod, nil)
 	if !ok {
 		t.Fatal("general cone−cone declined; want the drilled solid")
 	}
@@ -55,10 +55,10 @@ func TestConeConeCutGeneral(t *testing.T) {
 func TestConeCylinderCutJoinGeneralResolveOrder(t *testing.T) {
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
-	if _, ok := ConeCylinderJoinGeneral(cyl, cone, nil); !ok {
+	if _, ok := RuledCrossingJoinGeneral(cyl, cone, nil); !ok {
 		t.Error("cone∪cylinder declined with cylinder first")
 	}
-	if _, ok := ConeCylinderJoinGeneral(cone, cyl, nil); !ok {
+	if _, ok := RuledCrossingJoinGeneral(cone, cyl, nil); !ok {
 		t.Error("cone∪cylinder declined with cone first")
 	}
 }
@@ -67,10 +67,10 @@ func TestConeCylinderCutJoinGeneralResolveOrder(t *testing.T) {
 func TestConePairDecline(t *testing.T) {
 	a, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "a")
 	b, _ := SolidCylinderCone(math.P3(40, 0, 0), math.P3(52, 0, 0), 0.8, 1.5, "b") // far apart, no intersection
-	if _, ok := ConeConeJoinGeneral(a, b, nil); ok {
+	if _, ok := RuledCrossingJoinGeneral(a, b, nil); ok {
 		t.Error("non-intersecting frustums should decline from the join general path")
 	}
-	if _, ok := ConeConeCutGeneral(a, b, nil); ok {
+	if _, ok := RuledCrossingCutGeneral(a, b, nil); ok {
 		t.Error("non-intersecting frustums should decline from the cut general path")
 	}
 }
@@ -195,7 +195,7 @@ func TestCurvedBooleanWatertightAcrossScales(t *testing.T) {
 	for _, s := range []float64{1, 10, 50, 200} {
 		fat, _ := SolidCylinder(math.P3(0, 0, -1.2*s), math.V3(0, 0, 1), 0.6*s, 2.4*s)
 		rod, _ := SolidCylinder(math.P3(-1.2*s, 0, 0), math.V3(1, 0, 0), 0.3*s, 2.4*s)
-		if res, ok := CrossingCylinderCutGeneral(fat, rod, nil); ok {
+		if res, ok := RuledCrossingCutGeneral(fat, rod, nil); ok {
 			assertWatertight(t, res)
 		} else {
 			t.Errorf("scale %g: crossing-cylinder cut declined", s)
@@ -203,7 +203,7 @@ func TestCurvedBooleanWatertightAcrossScales(t *testing.T) {
 
 		fatC, _ := SolidCylinderCone(math.P3(0, 0, -1.2*s), math.P3(0, 0, 1.2*s), 0.4*s, 0.8*s, "fat")
 		rodC, _ := SolidCylinderCone(math.P3(-1.2*s, 0, 0), math.P3(1.2*s, 0, 0), 0.16*s, 0.3*s, "rod")
-		if res, ok := ConeConeCutGeneral(fatC, rodC, nil); ok {
+		if res, ok := RuledCrossingCutGeneral(fatC, rodC, nil); ok {
 			assertWatertight(t, res)
 		} else {
 			t.Errorf("scale %g: cone-cone cut declined", s)

@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"oblikovati.org/math"
-	"oblikovati.org/math/predicate"
 )
 
 // initialTetra picks four affinely-independent seed points: two extremes along the widest
@@ -80,7 +79,7 @@ func farthestFromPlane(pts []math.Point3, i0, i1, i2 int) int {
 	for i := range pts {
 		if d := stdmath.Abs(pts[i0].VectorTo(pts[i]).Dot(n)); d > bestDist {
 			// Guard with the exact predicate so a near-coplanar seed is rejected.
-			if predicate.Orient3D(pts[i0], pts[i1], pts[i2], pts[i]) != 0 {
+			if orient3p(pts[i0], pts[i1], pts[i2], pts[i]) != 0 {
 				best, bestDist = i, d
 			}
 		}

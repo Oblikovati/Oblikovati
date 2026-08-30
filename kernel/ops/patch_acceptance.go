@@ -57,11 +57,10 @@ func patchCovers(outer2D []math.Point2, holes2D [][]math.Point2, tris [][3]int) 
 	}
 	got := 0.0
 	for _, tr := range tris {
-		a := orient2d(pts[tr[0]], pts[tr[1]], pts[tr[2]]) / 2
-		if a < 0 {
-			return false // inverted against the covering: folded or self-crossing input
+		if orient2d(pts[tr[0]], pts[tr[1]], pts[tr[2]]) < 0 {
+			return false // inverted against the covering: folded or self-crossing input (exact sign)
 		}
-		got += a
+		got += triTwiceSignedArea(pts[tr[0]], pts[tr[1]], pts[tr[2]]) / 2
 	}
 	res := geom.ResolutionForPoints2D(outer2D)
 	return stdmath.Abs(got-want) <= res.Area()

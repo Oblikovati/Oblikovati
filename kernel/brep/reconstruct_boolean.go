@@ -44,6 +44,10 @@ type ReconInput struct {
 	Reversed bool
 	Loops    []ReconLoop
 	Lineage  topo.Lineage
+	// AliasKeys are the reference keys of coplanar operand faces the boolean merged into this rebuilt
+	// face; ReconstructBooleanBody registers the built face under each so a pick on any merged parent
+	// survives (ADR-0057). Empty for an unmerged face and always empty for a PassThrough.
+	AliasKeys [][]byte
 }
 
 // ReconstructBooleanBody welds reconstructed analytic faces into a watertight solid,
@@ -56,26 +60,51 @@ func ReconstructBooleanBody(inputs []ReconInput) *topo.Body {
 	for _, in := range inputs {
 		faces = append(faces, in.toCurvedFace())
 	}
-	return curvedStitch(faces)
+	// The mesh arrangement can split one straight edge across runs, leaving a spurious 2-valent
+	// collinear vertex the exact boolean never makes; dissolve those so the reconstructed topology
+	// matches brep's and a downstream near-tangent boolean is not broken by the extra edge (#2247).
+	return dissolveCollinearVertices(curvedStitch(faces))
 }
 
 // toCurvedFace converts one ReconInput to the internal curvedFace model.
 func (in ReconInput) toCurvedFace() curvedFace {
 	if in.PassThrough != nil {
 		f := in.PassThrough
-		return curvedFace{
+		return canonicalPlanarOutward(curvedFace{
 			surface:  f.Geometry(),
 			reversed: f.Reversed() != in.ForceReversed, // XOR: flip an untouched b wall for Difference
 			loops:    loopsOf(f),
 			lineage:  f.Lineage(),
-		}
+		})
 	}
-	return curvedFace{
-		surface:  in.Surface,
-		reversed: in.Reversed,
-		loops:    reconLoopsToCurved(in.Loops),
-		lineage:  in.Lineage,
+	return canonicalPlanarOutward(curvedFace{
+		surface:   in.Surface,
+		reversed:  in.Reversed,
+		loops:     reconLoopsToCurved(in.Loops),
+		lineage:   in.Lineage,
+		aliasKeys: in.AliasKeys,
+	})
+}
+
+// canonicalPlanarOutward enforces the kernel convention that a PLANAR face stores its surface with
+// the normal pointing OUTWARD (reversed=false). Many consumers read f.Geometry().NormalAt as the
+// face's outward normal — boss, hole, chamfer-corner, thicken, flat-pattern, pick — and brep upholds
+// the convention, so a reconstructed body must too or those consumers silently invert. A Difference
+// cut plane otherwise arrives reversed=true (surface normal inward). Swapping the plane's U/V axes
+// negates its normal over the IDENTICAL point-set, so clearing reversed keeps the exact same face —
+// same outward normal, same 3D loops — in the canonical representation. Curved faces keep reversed:
+// an inward-facing cylinder/sphere has no negated-normal surface, so reversed IS its legitimate form.
+func canonicalPlanarOutward(cf curvedFace) curvedFace {
+	if !cf.reversed {
+		return cf
 	}
+	pl, ok := cf.surface.(geom.Plane)
+	if !ok {
+		return cf
+	}
+	cf.surface = geom.Plane{Origin: pl.Origin, UAxis: pl.VAxis, VAxis: pl.UAxis} // U×V negates the normal
+	cf.reversed = false
+	return cf
 }
 
 // reconLoopsToCurved converts rebuilt loops to curvedLoops, outer loop first (curvedStitch

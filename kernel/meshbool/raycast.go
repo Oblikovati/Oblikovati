@@ -59,8 +59,17 @@ func rayCrossings(p Point, pf, dir [3]float64, mesh [][3]Point, grid *faceGrid) 
 func segmentPiercesTriExact(p, q, a, b, c Point) (crosses, degenerate bool) {
 	sp := Orient3D(a, b, c, p)
 	sq := Orient3D(a, b, c, q)
-	if sp == 0 || sq == 0 {
-		return false, true
+	// A coplanar endpoint is a genuine degeneracy ONLY when it lies within triangle abc (the point is
+	// actually on the surface). A point coplanar with abc's plane but OUTSIDE the triangle is a clean
+	// miss — the segment does not cross abc — not a reason to reject the whole ray direction. Before
+	// this guard, classifying a face centroid that sat at a feature height (e.g. a cut floor at the same
+	// z as a distant coplanar step floor) had EVERY ray direction rejected as degenerate, so insideExact
+	// fell through to its "all grazed" false, dropping a cut face and tearing chained booleans (#2247).
+	if sp == 0 {
+		return false, inTriangle([3]Point{a, b, c}, p)
+	}
+	if sq == 0 {
+		return false, inTriangle([3]Point{a, b, c}, q)
 	}
 	if sp == sq {
 		return false, false // both endpoints on the same side of the plane

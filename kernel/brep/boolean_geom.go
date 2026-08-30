@@ -73,21 +73,6 @@ func to3D(pl geom.Plane, q math.Point2) math.Point3 {
 	return pl.Origin.TranslateBy(pl.UAxis.AsVector().Scale(q.X).Add(pl.VAxis.AsVector().Scale(q.Y)))
 }
 
-// planeLine returns a point and unit direction of the intersection line of two planes,
-// or ok=false when they are parallel. n·x = d form is taken from each plane's normal and
-// origin.
-func planeLine(a, b geom.Plane) (p0 math.Point3, dir math.Vector3, ok bool) {
-	na, nb := unit(a.Normal()), unit(b.Normal())
-	d := na.Cross(nb)
-	if d.LengthSquared() < 1e-18 { // tol:numeric — degenerate-direction guard (squared length)
-		return p0, dir, false
-	}
-	da, db := na.Dot(a.Origin.AsVector()), nb.Dot(b.Origin.AsVector())
-	// Point on both planes nearest the origin: p0 = (da(nb×d) + db(d×na)) / |d|².
-	num := nb.Cross(d).Scale(da).Add(d.Cross(na).Scale(db))
-	return math.P3(0, 0, 0).TranslateBy(num.Scale(1 / d.LengthSquared())), unit(d), true
-}
-
 func unit(v math.Vector3) math.Vector3 {
 	u, err := math.UnitVector3FromVector(v)
 	if err != nil {

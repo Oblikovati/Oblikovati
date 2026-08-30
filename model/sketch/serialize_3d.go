@@ -5,7 +5,6 @@ package sketch
 import (
 	"fmt"
 
-	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 	"oblikovati.org/model/seq"
 )
@@ -217,26 +216,6 @@ func serializeSketch3D(s *Sketch3D) (SketchData3D, error) {
 	return sd, nil
 }
 
-// serializeDimension3D captures one 3D dimension: its kind, operands (points vs curves),
-// value expression, driving state, and the reference plane for a point-plane distance.
-func serializeDimension3D(d *DimensionConstraint3D) (Dimension3DRow, error) {
-	dr := Dimension3DRow{Kind: d.KindName(), Expression: d.param.Expression(), Driven: d.driven}
-	for _, ref := range d.refs {
-		if _, isPoint := ref.(*Point3D); isPoint {
-			dr.Points = append(dr.Points, int(ref.EntityID()))
-		} else {
-			dr.Curves = append(dr.Curves, int(ref.EntityID()))
-		}
-	}
-	if d.kind == PointPlaneDimKind3D {
-		dr.Plane = planeNameFromNormal(d.planeNormal)
-	}
-	if dr.Kind == "unknown" {
-		return Dimension3DRow{}, fmt.Errorf("cannot serialize 3D dimension of kind %d (no codec)", d.kind)
-	}
-	return dr, nil
-}
-
 // planeNameFromNormal maps an origin-plane normal to its label.
 func planeNameFromNormal(n math.Vector3) string {
 	switch {
@@ -247,25 +226,6 @@ func planeNameFromNormal(n math.Vector3) string {
 	default:
 		return "YZ"
 	}
-}
-
-// serializeEntity3D dispatches a 3D entity to its registered codec by its Kind
-// and stamps the kind onto the row, mirroring serializeEntity (#1624).
-func serializeEntity3D(e Entity) (Entity3DData, error) {
-	ke, ok := e.(kindedEntity)
-	if !ok {
-		return Entity3DData{}, fmt.Errorf("cannot serialize 3D entity of type %T: it has no Kind (register it in serialize_codecs_3d.go)", e)
-	}
-	c, ok := entityCodecs3D[ke.Kind()]
-	if !ok {
-		return Entity3DData{}, fmt.Errorf("cannot serialize 3D entity of type %T: kind %q has no 3D codec", e, ke.Kind())
-	}
-	ed, err := c.encode(e)
-	if err != nil {
-		return Entity3DData{}, err
-	}
-	ed.Kind = string(ke.Kind())
-	return ed, nil
 }
 
 // axisTriple flattens a unit axis to a serializable triple.
@@ -298,27 +258,6 @@ func unflattenPoint3s(coords []float64) []math.Point3 {
 		out = append(out, math.P3(math.Scalar(coords[i]), math.Scalar(coords[i+1]), math.Scalar(coords[i+2])))
 	}
 	return out
-}
-
-// serializeConstraint3D encodes through the paired 3D codec registry, keyed on
-// the constraint's self-reported kind (#1625) — no per-type switch, so an
-// encode half can no longer ship without its decode half (Equal3D did exactly
-// that: creatable, enumerable, and failing every save at runtime).
-func serializeConstraint3D(c Constraint) (Constraint3DRow, error) {
-	kc, ok := c.(KindedConstraint)
-	if !ok {
-		return Constraint3DRow{}, fmt.Errorf("cannot serialize 3D constraint of type %T (no ConstraintKind capability)", c)
-	}
-	codec, ok := constraintCodecs3D[kc.ConstraintKind()]
-	if !ok {
-		return Constraint3DRow{}, fmt.Errorf("cannot serialize 3D constraint kind %q of type %T (no codec)", kc.ConstraintKind(), c)
-	}
-	row, err := codec.encode(c)
-	if err != nil {
-		return Constraint3DRow{}, err
-	}
-	row.Kind = string(kc.ConstraintKind())
-	return row, nil
 }
 
 // entity3DIDPair returns two curve entities' ids in order.
@@ -395,78 +334,6 @@ func restorePoint3D(s *Sketch3D, pd Point3DData) *Point3D {
 	return s.newPoint3D(pos)
 }
 
-// restoreEntities3D recreates the sketch's 3D curve entities over the restored points,
-// pinning each saved id, and returns the entity map plus the largest id seen.
-func restoreEntities3D(s *Sketch3D, entities []Entity3DData, idmap map[int]*Point3D) (map[int]Entity, uint64, error) {
-	entmap := make(map[int]Entity, len(entities))
-	var maxID uint64
-	for _, ed := range entities {
-		e, err := restoreEntity3D(s, ed, idmap)
-		if err != nil {
-			return nil, 0, err
-		}
-		s.pinEntityID3D(e, ed.ID)
-		s.decodeEntityFormat(e.EntityID(), ed.FormatLine, ed.FormatColor, ed.FormatWeight)
-		entmap[ed.ID] = e
-		if uint64(ed.ID) > maxID {
-			maxID = uint64(ed.ID)
-		}
-	}
-	return entmap, maxID, nil
-}
-
-// restoreDimension3D re-adds one 3D dimension, binding operands through the id maps and
-// re-applying its value expression + driving state.
-func restoreDimension3D(s *Sketch3D, dr Dimension3DRow, idmap map[int]*Point3D, entmap map[int]Entity) error {
-	pts, err := lookupPoints3D(dr.Points, idmap)
-	if err != nil {
-		return fmt.Errorf("%s dimension: %w", dr.Kind, err)
-	}
-	d, err := buildRestoredDimension3D(s, dr, pts, entmap)
-	if err != nil {
-		return fmt.Errorf("%s dimension: %w", dr.Kind, err)
-	}
-	d.SetDriven(dr.Driven)
-	return nil
-}
-
-// buildRestoredDimension3D dispatches a serialized dimension kind to its factory.
-func buildRestoredDimension3D(s *Sketch3D, dr Dimension3DRow, pts []*Point3D, entmap map[int]Entity) (*DimensionConstraint3D, error) {
-	dc := s.DimensionConstraints3D()
-	switch dr.Kind {
-	case "distance":
-		return dc.AddDistance(pts[0], pts[1], dr.Expression)
-	case "lineLength":
-		l, err := lookupLines3D(dr.Curves, entmap)
-		if err != nil {
-			return nil, err
-		}
-		return dc.AddLineLength(l[0], dr.Expression)
-	case "radius":
-		c, err := lookupCircle3D(dr.Curves, entmap)
-		if err != nil {
-			return nil, err
-		}
-		return dc.AddRadius(c, dr.Expression)
-	case "pointPlaneDistance":
-		return dc.AddPointPlaneDistance(pts[0], planeNormalFromLabel(dr.Plane), dr.Expression)
-	case "twoLineAngle":
-		l, err := lookupLines3D(dr.Curves, entmap)
-		if err != nil {
-			return nil, err
-		}
-		return dc.AddTwoLineAngle(l[0], l[1], dr.Expression)
-	case "splineLength":
-		sp, err := lookupSpline3D(dr.Curves, entmap)
-		if err != nil {
-			return nil, err
-		}
-		return dc.AddSplineLength(sp, dr.Expression)
-	default:
-		return nil, fmt.Errorf("unknown 3D dimension kind %q", dr.Kind)
-	}
-}
-
 // planeNormalFromLabel maps an origin-plane label to its unit normal (default XY).
 func planeNormalFromLabel(plane string) math.Vector3 {
 	switch plane {
@@ -477,149 +344,6 @@ func planeNormalFromLabel(plane string) math.Vector3 {
 	default:
 		return math.V3(0, 0, 1)
 	}
-}
-
-// lookupCircle3D resolves a single saved entity id to a live 3D circle.
-func lookupCircle3D(ids []int, entmap map[int]Entity) (*Circle3D, error) {
-	if len(ids) != 1 {
-		return nil, fmt.Errorf("radius needs 1 circle operand, got %d", len(ids))
-	}
-	e, ok := entmap[ids[0]]
-	if !ok {
-		return nil, fmt.Errorf(errUnknownEntityRef, ids[0])
-	}
-	c, ok := e.(*Circle3D)
-	if !ok {
-		return nil, fmt.Errorf("entity id %d is %T, want a 3D circle", ids[0], e)
-	}
-	return c, nil
-}
-
-// restoreEntity3D re-creates one 3D curve entity over its already-restored points
-// through its kind's registered codec — the pair its encode came from (#1624).
-func restoreEntity3D(s *Sketch3D, ed Entity3DData, idmap map[int]*Point3D) (Entity, error) {
-	pts, err := lookupPoints3D(ed.Points, idmap)
-	if err != nil {
-		return nil, fmt.Errorf("%s entity: %w", ed.Kind, err)
-	}
-	c, ok := entityCodecs3D[EntityKind(ed.Kind)]
-	if !ok {
-		return nil, fmt.Errorf("unknown 3D entity kind %q", ed.Kind)
-	}
-	return c.decode(s, ed, pts)
-}
-
-// restoreConstraint3D decodes one geometric 3D constraint through the paired
-// codec registry (#1625), binding its point operands through idmap and its
-// curve operands through entmap. An unknown kind is a corrupt-recipe error.
-func restoreConstraint3D(s *Sketch3D, cd Constraint3DRow, idmap map[int]*Point3D, entmap map[int]Entity) error {
-	codec, ok := constraintCodecs3D[ConstraintKind(cd.Kind)]
-	if !ok {
-		return fmt.Errorf("unknown constraint kind %q", cd.Kind)
-	}
-	pts, err := lookupPoints3D(cd.Points, idmap)
-	if err != nil {
-		return fmt.Errorf(errConstraintWrap, cd.Kind, err)
-	}
-	if err := codec.decode(s, cd, pts, entmap); err != nil {
-		return fmt.Errorf(errConstraintWrap, cd.Kind, err)
-	}
-	return nil
-}
-
-// restoreBend3D rebuilds a bend from its arc + two lines, re-binding the exact saved
-// join endpoints and held radius.
-func restoreBend3D(cd Constraint3DRow, pts []*Point3D, entmap map[int]Entity) (Constraint, error) {
-	if len(cd.Curves) != 3 || len(pts) != 2 {
-		return nil, fmt.Errorf("needs an arc + 2 lines + 2 join points, got %d/%d", len(cd.Curves), len(pts))
-	}
-	arc, ok := entmap[cd.Curves[0]].(*Arc3D)
-	if !ok {
-		return nil, fmt.Errorf("entity id %d is %T, want a 3D arc", cd.Curves[0], entmap[cd.Curves[0]])
-	}
-	lines, err := lookupLines3D(cd.Curves[1:], entmap)
-	if err != nil {
-		return nil, err
-	}
-	return newBend3DBound(arc, lines[0], lines[1], pts[0], pts[1], cd.Radius), nil
-}
-
-// restoreHelical3D rebuilds a helix-on-circle constraint from its two curve operands.
-func restoreHelical3D(cd Constraint3DRow, entmap map[int]Entity) (Constraint, error) {
-	if len(cd.Curves) != 2 {
-		return nil, fmt.Errorf("needs a helix + circle, got %d curves", len(cd.Curves))
-	}
-	h, ok := entmap[cd.Curves[0]].(*HelicalCurve3D)
-	if !ok {
-		return nil, fmt.Errorf("entity id %d is %T, want a helical curve", cd.Curves[0], entmap[cd.Curves[0]])
-	}
-	circle, ok := entmap[cd.Curves[1]].(*Circle3D)
-	if !ok {
-		return nil, fmt.Errorf("entity id %d is %T, want a 3D circle", cd.Curves[1], entmap[cd.Curves[1]])
-	}
-	return NewHelical3D(h, circle)
-}
-
-// lookupSmoothCurve3D resolves a saved entity id to a tangent/smooth-capable curve.
-func lookupSmoothCurve3D(id int, entmap map[int]Entity) (SmoothCurve3D, error) {
-	e, ok := entmap[id]
-	if !ok {
-		return nil, fmt.Errorf(errUnknownEntityRef, id)
-	}
-	c, ok := e.(SmoothCurve3D)
-	if !ok {
-		return nil, fmt.Errorf("entity id %d is %T, want a line/arc/spline", id, e)
-	}
-	return c, nil
-}
-
-// lookupSpline3D resolves a single saved entity id to a live 3D spline.
-func lookupSpline3D(ids []int, entmap map[int]Entity) (*Spline3D, error) {
-	if len(ids) != 1 {
-		return nil, fmt.Errorf("needs 1 spline operand, got %d", len(ids))
-	}
-	sp, ok := entmap[ids[0]].(*Spline3D)
-	if !ok {
-		return nil, fmt.Errorf("entity id %d is %T, want a 3D spline", ids[0], entmap[ids[0]])
-	}
-	return sp, nil
-}
-
-// restoreConic3D rebuilds a full or partial ellipse from its serialized form.
-func restoreConic3D(s *Sketch3D, ed Entity3DData, center *Point3D) (Entity, error) {
-	normal, err := unitFromTriple(ed.Axis)
-	if err != nil {
-		return nil, fmt.Errorf("%s entity: normal %v: %w", ed.Kind, ed.Axis, err)
-	}
-	major, err := unitFromTriple(ed.MajorAxis)
-	if err != nil {
-		return nil, fmt.Errorf("%s entity: major axis %v: %w", ed.Kind, ed.MajorAxis, err)
-	}
-	if ed.Kind == "ellipse" {
-		e := s.addEllipse3DPt(center, normal, major, ed.Radius, ed.MinorRadius)
-		e.SetConstruction(ed.Construction)
-		return e, nil
-	}
-	e := s.addEllipticalArc3DPt(center, normal, major, ed.Radius, ed.MinorRadius, ed.StartAngle, ed.SweepAngle)
-	e.SetConstruction(ed.Construction)
-	return e, nil
-}
-
-// lookupLines3D resolves saved entity ids to live 3D lines through the entity map.
-func lookupLines3D(ids []int, entmap map[int]Entity) ([]*Line3D, error) {
-	out := make([]*Line3D, len(ids))
-	for i, id := range ids {
-		e, ok := entmap[id]
-		if !ok {
-			return nil, fmt.Errorf(errUnknownEntityRef, id)
-		}
-		l, ok := e.(*Line3D)
-		if !ok {
-			return nil, fmt.Errorf("entity id %d is %T, want a 3D line", id, e)
-		}
-		out[i] = l
-	}
-	return out, nil
 }
 
 // unitFromTriple builds a unit vector from a serialized triple.
@@ -638,78 +362,4 @@ func lookupPoints3D(ids []int, idmap map[int]*Point3D) ([]*Point3D, error) {
 		out[i] = p
 	}
 	return out, nil
-}
-
-// serializeSplineHandles3D renders a 3D spline's active handles in fit order
-// (M06-F11, #626).
-func serializeSplineHandles3D(sp *Spline3D) []SplineHandle3DData {
-	handles := sp.Handles()
-	if len(handles) == 0 {
-		return nil
-	}
-	out := make([]SplineHandle3DData, len(handles))
-	for i, h := range handles {
-		p := h.End.Position()
-		out[i] = SplineHandle3DData{FitIndex: h.FitIndex, End: [3]float64{float64(p.X), float64(p.Y), float64(p.Z)}}
-	}
-	return out
-}
-
-// serializeHelixDefinition renders the M06-F09 shape definition onto the
-// helix's row; a default constant/natural definition stays absent.
-func serializeHelixDefinition(ed *Entity3DData, h *HelicalCurve3D) {
-	def := h.Definition()
-	if def.ShapeKind != types.HelixShapePitchRevolution || def.Variable() {
-		ed.HelixShapeKind = def.ShapeKind.String()
-	}
-	for _, r := range def.Rows {
-		ed.HelixRows = append(ed.HelixRows, HelixRowData(r))
-	}
-	ed.HelixStart = helixEndData(def.Start)
-	ed.HelixEnd = helixEndData(def.End)
-}
-
-// helixEndData persists a non-natural end condition (nil for natural).
-func helixEndData(c HelixEndCondition) *HelixEndData {
-	if !c.flat() {
-		return nil
-	}
-	return &HelixEndData{Kind: c.Kind.String(), TransitionAngle: c.TransitionAngle, FlatAngle: c.FlatAngle}
-}
-
-// restoreHelixDefinition rebuilds the persisted definition.
-func restoreHelixDefinition(h *HelicalCurve3D, ed Entity3DData) error {
-	def := h.Definition()
-	if ed.HelixShapeKind != "" {
-		kind, ok := types.ParseHelicalShapeDefinitionKind(ed.HelixShapeKind)
-		if !ok {
-			return fmt.Errorf("helical entity: unknown shape kind %q", ed.HelixShapeKind)
-		}
-		def.ShapeKind = kind
-	}
-	for _, r := range ed.HelixRows {
-		def.Rows = append(def.Rows, HelixRow(r))
-	}
-	start, err := helixEndFromData(ed.HelixStart)
-	if err != nil {
-		return err
-	}
-	end, err := helixEndFromData(ed.HelixEnd)
-	if err != nil {
-		return err
-	}
-	h.SetEndConditions(start, end)
-	return nil
-}
-
-// helixEndFromData parses a persisted end condition (nil stays natural).
-func helixEndFromData(d *HelixEndData) (*HelixEndCondition, error) {
-	if d == nil {
-		return nil, nil
-	}
-	kind, ok := types.ParseHelixEndKind(d.Kind)
-	if !ok {
-		return nil, fmt.Errorf("helical entity: unknown end kind %q", d.Kind)
-	}
-	return &HelixEndCondition{Kind: kind, TransitionAngle: d.TransitionAngle, FlatAngle: d.FlatAngle}, nil
 }

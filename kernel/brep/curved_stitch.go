@@ -39,6 +39,9 @@ func curvedStitch(faces []curvedFace) *topo.Body {
 		if len(f.lineage.Key()) > 0 {
 			provByFace[built] = f.lineage
 		}
+		for _, k := range f.aliasKeys { // ADR-0057: resolve the merged coplanar parents' keys to this face
+			built.AddAliasKey(k)
+		}
 	}
 	body := bld.Build()
 	// ADR-0043 SSI-edge provenance: the welded edges are minted with build-order ordinals

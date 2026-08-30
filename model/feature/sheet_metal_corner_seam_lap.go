@@ -194,19 +194,33 @@ func seamCornerTag(feat string, i int) string { return fmt.Sprintf("%s/c%d", fea
 // the same corner, so the first match wins and the rest are dropped.
 func seamCorners(edges []*topo.Edge, prior []BendPlacement) []seamCorner {
 	junctions := allBendJunctions(prior)
-	out := make([]seamCorner, 0, len(edges))
-	seen := map[string]bool{}
+	best := map[string]seamCorner{}
+	bestRise := map[string]float64{}
+	var order []string
 	for _, e := range edges {
 		j, ok := junctionOnEdge(e, junctions)
 		if !ok {
 			continue
 		}
 		key := fmt.Sprintf("%.4f,%.4f,%.4f", j.at.X, j.at.Y, j.at.Z)
-		if seen[key] {
-			continue
+		// Several vertical edges stand over one corner: the two walls' flat-face edges (tall, rising
+		// along the wall) AND the sheet's own through-thickness corner edge (short, at the base). The
+		// tab lies on a wall's FLAT face, so pick the edge that rises highest above the junction — a
+		// geometric choice that does not depend on body edge ORDER, which the analytic and reconstructed
+		// booleans need not share (ADR-0057). First-match here silently picked the thickness edge on a
+		// reconstruction-shaped body, building a tab one thickness tall instead of one wall tall (#2247).
+		_, rise := edgeVerticalSpan(e, j.at, j.a.Up)
+		if cur, seen := bestRise[key]; !seen || rise > cur {
+			if !seen {
+				order = append(order, key)
+			}
+			bestRise[key] = rise
+			best[key] = seamCorner{j: j, edge: e}
 		}
-		seen[key] = true
-		out = append(out, seamCorner{j: j, edge: e})
+	}
+	out := make([]seamCorner, 0, len(order))
+	for _, key := range order {
+		out = append(out, best[key])
 	}
 	return out
 }
