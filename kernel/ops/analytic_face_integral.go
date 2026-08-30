@@ -22,12 +22,12 @@ import (
 // a periodic cylinder/cone/sphere/torus without a per-type branch.
 
 const (
-	quadOrder      = 8  // Gauss points per adaptive cell — exact to degree 15
-	quadDepth      = 24 // max adaptive-subdivision depth
-	quadRelTol     = 1e-11
-	quadAbsTol     = 1e-13
-	edgeUVSamples  = 48 // points sampled along each edge to reconstruct its uv boundary curve
-	fullDomainSeed = 4  // initial cells per axis for a boundary-less face's full-domain integral
+	quadOrder      = 8     // Gauss points per adaptive cell — exact to degree 15
+	quadDepth      = 24    // max adaptive-subdivision depth
+	quadRelTol     = 1e-11 // tol:numeric — adaptive-quadrature relative convergence (dimensionless)
+	quadAbsTol     = 1e-13 // tol:numeric — adaptive-quadrature absolute-floor convergence
+	edgeUVSamples  = 48    // points sampled along each edge to reconstruct its uv boundary curve
+	fullDomainSeed = 4     // initial cells per axis for a boundary-less face's full-domain integral
 )
 
 // fullDomainTerms integrates g over a boundary-less face's entire finite parameter rectangle by
@@ -247,7 +247,7 @@ func uvOnCurve(s geom.Surface, le loopEdge, t, seedU, seedV float64) (u, v float
 // dvdt is the rate of the surface v-parameter along the curve at t, by central difference (δ a
 // small fraction of the segment span), each sample unwrapped to the seed so no seam jump leaks in.
 func dvdt(s geom.Surface, le loopEdge, t, span, seedV float64) float64 {
-	d := stdmath.Abs(span) * 1e-4
+	d := stdmath.Abs(span) * 1e-4 // tol:numeric — central-difference step as a fraction of the param span
 	if d == 0 {
 		return 0
 	}
@@ -316,7 +316,7 @@ func minLoopU(loops []faceLoop) float64 {
 // periodOf reports a coordinate's period: 2π for a direction that wraps the axis (domain
 // exactly [0, 2π]), 0 for a non-periodic direction (which is never unwrapped).
 func periodOf(lo, hi float64) float64 {
-	if lo == 0 && stdmath.Abs(hi-2*stdmath.Pi) < 1e-9 {
+	if lo == 0 && stdmath.Abs(hi-2*stdmath.Pi) < 1e-9 { // tol:parametric — periodic-domain span compare
 		return 2 * stdmath.Pi
 	}
 	return 0
@@ -333,7 +333,7 @@ func unwrapPeriodic(raw, prev, period float64) float64 {
 
 // closeUV reports whether two uv points coincide to a tight parameter tolerance.
 func closeUV(u1, v1, u2, v2 float64) bool {
-	return stdmath.Abs(u1-u2) < 1e-9 && stdmath.Abs(v1-v2) < 1e-9
+	return stdmath.Abs(u1-u2) < 1e-9 && stdmath.Abs(v1-v2) < 1e-9 // tol:parametric — uv coincidence
 }
 
 // allFinite reports whether every value is finite (guards an unbounded parameter rectangle).

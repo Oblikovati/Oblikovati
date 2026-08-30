@@ -69,7 +69,7 @@ func refineLegendreRoot(n int, x float64) float64 {
 		p, dp := legendreValueDeriv(n, x)
 		dx := p / dp
 		x -= dx
-		if stdmath.Abs(dx) <= 1e-15 {
+		if stdmath.Abs(dx) <= 1e-15 { // tol:numeric — Newton convergence on a Legendre root
 			break
 		}
 	}
