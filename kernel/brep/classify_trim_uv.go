@@ -24,13 +24,19 @@ const domainPeriodTol = 1e-9 // tol:parametric — angular domain span ≈ 2π
 // classification production kernels use (OCCT BRepClass_FaceClassifier). Unlike the tangent-plane
 // geodesic winding, it is correct for a full periodic band (a whole cylinder/cone side bounded by two
 // complete circles), because a periodic parameter is unwrapped into one continuous branch before the
-// even-odd test. A boundary-less face (a whole sphere/torus) contains every surface point.
+// even-odd test. A boundary-less face (a whole sphere/torus) contains every surface point. When the
+// surface has no non-periodic, UNBOUNDED axis to cast the even-odd ray toward (a sphere's latitude ends
+// at a pole; a torus wraps both ways), it defers to the geodesic winding, which needs no exterior
+// endpoint.
 func pointInTrimUV(f curvedFace, p math.Point3) bool {
 	if len(f.loops) == 0 {
 		return true
 	}
 	uPer, vPer := surfacePeriodic(f.surface)
-	alongV := castAlongV(uPer, vPer)
+	alongV, ok := castAxis(f.surface, uPer, vPer)
+	if !ok {
+		return pointInCurvedFace(f, p) // sphere / torus: no unbounded axis; use the pole-free geodesic winding
+	}
 	up, vp := f.surface.ParamAt(p)
 	total := 0
 	for _, loop := range f.loops {
@@ -43,10 +49,24 @@ func pointInTrimUV(f curvedFace, p math.Point3) bool {
 	return total%2 == 1
 }
 
-// castAlongV chooses the parameter direction the containment ray travels: a NON-periodic axis, whose
-// +∞ end is unambiguously outside every trim loop. It casts along v unless v is the periodic axis and
-// u is not (a torus, periodic in both, has no non-periodic axis and falls back to v).
-func castAlongV(uPer, vPer bool) bool { return !vPer || uPer }
+// castAxis picks the parameter axis the even-odd containment ray travels along: a NON-periodic,
+// UNBOUNDED axis, whose infinite end is unambiguously outside every trim loop (a plane's u/v, a
+// cylinder/cone's v). It prefers v. ok is false when neither axis qualifies — a sphere (latitude is
+// bounded, ending at a pole) or a torus (periodic both ways) — for which the caller uses the geodesic
+// winding instead, since a ray toward a pole or around a wrap has no exterior endpoint.
+func castAxis(s geom.Surface, uPer, vPer bool) (alongV, ok bool) {
+	if lo, hi := s.VDomain(); !vPer && axisUnbounded(lo, hi) {
+		return true, true
+	}
+	if lo, hi := s.UDomain(); !uPer && axisUnbounded(lo, hi) {
+		return false, true
+	}
+	return false, false
+}
+
+// axisUnbounded reports whether a parameter domain runs to ±∞ (an infinite plane, an unbounded
+// cylinder/cone axis) — the property that makes the far end of a cast ray a definite exterior point.
+func axisUnbounded(lo, hi float64) bool { return stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) }
 
 // loopRayCrossings counts how many times a ray from q along the chosen non-periodic axis crosses one
 // trim loop. The query is first shifted into that loop's own parameter branch (loops unwrap

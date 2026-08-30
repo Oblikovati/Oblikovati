@@ -50,3 +50,26 @@ func TestContinueUVUnwrap(t *testing.T) {
 		t.Errorf("non-periodic v left = %g, want 0.1", keep)
 	}
 }
+
+// castAxis routes the even-odd uv ray to a non-periodic UNBOUNDED axis (plane, cylinder, cone) and
+// declines for a sphere/torus (no exterior endpoint), where the classifier uses the geodesic winding.
+func TestCastAxisRouting(t *testing.T) {
+	pl, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	cyl, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1)
+	cone, _ := geom.NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/4)
+	sph, _ := geom.NewSphere(math.P3(0, 0, 0), 1)
+	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
+	for _, c := range []struct {
+		name   string
+		s      geom.Surface
+		wantOK bool
+	}{
+		{"plane", pl, true}, {"cylinder", cyl, true}, {"cone", cone, true},
+		{"sphere", sph, false}, {"torus", tor, false},
+	} {
+		uPer, vPer := surfacePeriodic(c.s)
+		if _, ok := castAxis(c.s, uPer, vPer); ok != c.wantOK {
+			t.Errorf("castAxis(%s) ok=%v, want %v (sphere/torus must defer to the geodesic winding)", c.name, ok, c.wantOK)
+		}
+	}
+}
