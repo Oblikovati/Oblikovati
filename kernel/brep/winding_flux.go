@@ -37,7 +37,10 @@ type fluxQuery struct {
 	faces []fluxFace
 }
 
-// newFluxQuery projects every face's trim into (u, v) and captures its quadrature rectangle once.
+// newFluxQuery projects every face's trim into (u, v), captures its quadrature rectangle, and derives a
+// consistent outward orientation sign per face — see orientFaceSigns. The sign is derived from the loop
+// geometry, NOT the stored Face.Reversed flag, so an imported B-rep with inconsistent normal-side flags
+// still yields Σ Ω = 4π inside.
 func newFluxQuery(faces []curvedFace) *fluxQuery {
 	q := &fluxQuery{faces: make([]fluxFace, 0, len(faces))}
 	for _, f := range faces {
@@ -47,16 +50,17 @@ func newFluxQuery(faces []curvedFace) *fluxQuery {
 		if !ok {
 			continue
 		}
-		sign := 1.0
-		if f.reversed {
-			sign = -1
-		}
-		q.faces = append(q.faces, fluxFace{f.surface, polys, u0, u1, v0, v1, sign})
+		q.faces = append(q.faces, fluxFace{f.surface, polys, u0, u1, v0, v1, 1})
+	}
+	for i, s := range orientFaceSigns(q.faces) {
+		q.faces[i].sign = s
 	}
 	return q
 }
 
 // inside sums each prepared face's signed solid angle at p; a closed body gives ≈4π inside, ≈0 outside.
+// The per-face sign is the orientation-normalized outward sign (orientFaceSigns), so the winding is 4π
+// inside even when the stored Reversed flags are inconsistent.
 func (q *fluxQuery) inside(p math.Point3) bool {
 	total := 0.0
 	for i := range q.faces {
