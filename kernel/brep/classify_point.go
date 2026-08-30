@@ -107,10 +107,28 @@ func ClassifyPointTol(b *topo.Body, p math.Point3, onTol float64) Containment {
 	if onAnyFace(faces, p, onTol) {
 		return OnSurface
 	}
-	if NewInsideQuery(b).Inside(p) {
+	if classifyBodyInside(b, faces, p) {
 		return Inside
 	}
 	return Outside
+}
+
+// classifyBodyInside is the inside test for a whole-body containment query: an all-planar body uses the
+// generalized winding number ([solidProbe]); a curved body uses the orientation-INDEPENDENT even–odd ray
+// parity, falling back to the solid-angle winding only when every ray direction grazes a boundary (a
+// non-watertight import). Parity is used here rather than the nearest-crossing flux that [PointInside]
+// uses for the fillet gates' near-surface crispness: a containment query classifies arbitrary interior
+// points — including inside an internal void such as a bore or tunnel — where parity is correct without a
+// per-face outward sign, which a purely geometric orientation cannot supply for a full-wrap void wall.
+func classifyBodyInside(b *topo.Body, faces []curvedFace, p math.Point3) bool {
+	if sp := newSolidProbe(b); sp.planar {
+		return sp.inside(p)
+	}
+	box := b.RangeBox()
+	if in, ok := rayParityInsideClean(faces, p, box); ok {
+		return in
+	}
+	return newFluxQuery(faces).windingInside(p)
 }
 
 // ClassifyShellPoint classifies p against the region a single shell bounds (one shell of a body, or a
@@ -164,11 +182,20 @@ func firstCleanDirection(box math.Box, probe func(dir [3]float64, tMax, tol floa
 // returns its even–odd verdict. It reports not-inside only if every direction grazed. This path
 // serves the curved bodies the winding-number probe cannot handle.
 func rayParityInside(faces []curvedFace, p math.Point3, box math.Box) bool {
-	inside, _ := firstCleanDirection(box, func(dir [3]float64, tMax, tol float64) (bool, bool) {
+	inside, _ := rayParityInsideClean(faces, p, box)
+	return inside
+}
+
+// rayParityInsideClean is [rayParityInside] reporting whether a clean (non-grazing) direction was found.
+// ok is false when every candidate direction grazed a boundary — the caller's cue that even–odd parity is
+// unreliable here (a non-watertight import) and a winding-number fallback should decide. Parity is
+// orientation-INDEPENDENT, so unlike the winding it needs no per-face outward sign, which is what makes it
+// correct on an internal void wall a geometric orientation cannot sign.
+func rayParityInsideClean(faces []curvedFace, p math.Point3, box math.Box) (inside, ok bool) {
+	return firstCleanDirection(box, func(dir [3]float64, tMax, tol float64) (bool, bool) {
 		crossings, clean := rayCrossings(faces, p, dir, tMax, tol)
 		return crossings%2 == 1, clean
 	})
-	return inside
 }
 
 // rayCrossings counts the boundary crossings of the ray p→dir within [0, tMax]. ok is false when a
