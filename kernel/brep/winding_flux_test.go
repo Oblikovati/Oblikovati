@@ -15,7 +15,7 @@ func fluxTotal(q *fluxQuery, p math.Point3) float64 {
 	total := 0.0
 	for i := range q.faces {
 		f := &q.faces[i]
-		total += f.sign * integrateFluxCell(f.surface, p, f.polys, f.u0, f.u1, f.v0, f.v1, 0)
+		total += f.sign * integrateFluxCell(f.cf.surface, p, f.polys, f.u0, f.u1, f.v0, f.v1, 0)
 	}
 	return total
 }
@@ -55,9 +55,10 @@ func TestFluxQueryMatchesFreshBuild(t *testing.T) {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
 	faces := facesOfAny(cyl)
+	box := cyl.RangeBox()
 	prepared := newFluxQuery(faces)
 	for _, p := range []math.Point3{{X: 0, Y: 0, Z: 2}, {X: 1.5, Y: 0, Z: 2}, {X: 3, Y: 0, Z: 2}, {X: 0, Y: 0, Z: 5}} {
-		if prepared.inside(p) != newFluxQuery(faces).inside(p) {
+		if prepared.inside(p, box) != newFluxQuery(faces).inside(p, box) {
 			t.Errorf("prepared query disagrees with fresh build at %v", p)
 		}
 	}

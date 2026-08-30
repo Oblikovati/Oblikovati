@@ -19,6 +19,7 @@ func TestFluxOrientationIndependentOfReversedFlag(t *testing.T) {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
 	faces := facesOfAny(cyl)
+	box := cyl.RangeBox()
 	flipped := make([]curvedFace, len(faces))
 	for i, f := range faces {
 		f.reversed = !f.reversed
@@ -35,10 +36,10 @@ func TestFluxOrientationIndependentOfReversedFlag(t *testing.T) {
 	}
 	base, flip := newFluxQuery(faces), newFluxQuery(flipped)
 	for _, pr := range probes {
-		if got := base.inside(pr.p); got != pr.want {
+		if got := base.inside(pr.p, box); got != pr.want {
 			t.Errorf("base flux inside(%v) = %v, want %v", pr.p, got, pr.want)
 		}
-		if got := flip.inside(pr.p); got != pr.want {
+		if got := flip.inside(pr.p, box); got != pr.want {
 			t.Errorf("reversed-flag-flipped flux inside(%v) = %v, want %v (orientation must come from loop geometry)", pr.p, got, pr.want)
 		}
 	}
@@ -52,7 +53,7 @@ func TestSignedVolumeGlobalFlip(t *testing.T) {
 		t.Fatalf("SolidSphere: %v", err)
 	}
 	q := newFluxQuery(facesOfAny(sph))
-	if !q.inside(math.P3(0, 0, 0)) {
+	if !q.inside(math.P3(0, 0, 0), sph.RangeBox()) {
 		t.Error("sphere centre classified outside: the global volume sign did not orient the shell outward")
 	}
 }

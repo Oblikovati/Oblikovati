@@ -13,11 +13,11 @@ import (
 // (u, v) ONCE (loopToUV inverts ParamAt per sample — costly for a NURBS patch — so it must not run per
 // query), the quadrature rectangle, and the orientation sign.
 type fluxFace struct {
-	surface geom.Surface
-	polys   [][]math.Point2
-	u0, u1  float64
-	v0, v1  float64
-	sign    float64
+	cf     curvedFace // surface + trim loops, for the pointInTrimUV/rayGrazes helpers and NormalAt
+	polys  [][]math.Point2
+	u0, u1 float64
+	v0, v1 float64
+	sign   float64 // orientation-normalized outward sign (orientFaceSigns): +1 when S_u×S_v points out
 }
 
 // fluxQuery is the universally-robust point-in-solid classifier: the generalized winding number
@@ -50,7 +50,7 @@ func newFluxQuery(faces []curvedFace) *fluxQuery {
 		if !ok {
 			continue
 		}
-		q.faces = append(q.faces, fluxFace{f.surface, polys, u0, u1, v0, v1, 1})
+		q.faces = append(q.faces, fluxFace{f, polys, u0, u1, v0, v1, 1})
 	}
 	for i, s := range orientFaceSigns(q.faces) {
 		q.faces[i].sign = s
@@ -58,16 +58,28 @@ func newFluxQuery(faces []curvedFace) *fluxQuery {
 	return q
 }
 
-// inside sums each prepared face's signed solid angle at p; a closed body gives ≈4π inside, ≈0 outside.
-// The per-face sign is the orientation-normalized outward sign (orientFaceSigns), so the winding is 4π
-// inside even when the stored Reversed flags are inconsistent.
-func (q *fluxQuery) inside(p math.Point3) bool {
+// inside classifies p against the prepared body. The primary test is the ray-crossing solid classifier's
+// nearest-crossing ray cast (nearestCrossingInside) — crisp at any distance, the behaviour a fillet gate's
+// near-surface probe needs. It falls back to the solid-angle winding number only when every ray direction
+// grazes a boundary, where the winding — an integral over the whole boundary — has no such degeneracy.
+func (q *fluxQuery) inside(p math.Point3, box math.Box) bool {
+	if in, ok := q.nearestCrossingInside(p, box); ok {
+		return in
+	}
+	return q.windingInside(p)
+}
+
+// windingInside sums each prepared face's signed solid angle at p; a closed body gives ≈4π inside, ≈0
+// outside. The per-face sign is the orientation-normalized outward sign (orientFaceSigns), so it is 4π
+// inside even when the stored Reversed flags are inconsistent. It is the degeneracy-free fallback for a
+// point every ray direction leaves ambiguous.
+func (q *fluxQuery) windingInside(p math.Point3) bool {
 	total := 0.0
 	for i := range q.faces {
 		f := &q.faces[i]
 		// Halfway between the two attractors (0 outside, 4π inside): robust to the O(tolerance) residual the
 		// quadrature leaves on a non-watertight import, where the field lands near but not exactly on 4π/0.
-		total += f.sign * integrateFluxCell(f.surface, p, f.polys, f.u0, f.u1, f.v0, f.v1, 0)
+		total += f.sign * integrateFluxCell(f.cf.surface, p, f.polys, f.u0, f.u1, f.v0, f.v1, 0)
 	}
 	return stdmath.Abs(total) > 2*stdmath.Pi
 }

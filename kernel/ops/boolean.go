@@ -502,6 +502,5 @@ func allVerticesInside(inner, outer *topo.Body) bool {
 // normal test needs a topological BFS over shared edges. Until that fuller classifier lands, this oracle
 // re-orients implicitly by tessellating (TessellateBody emits an outward-consistent mesh), so it stays.
 func PointInsideBody(b *topo.Body, p math.Point3) bool {
-	mesh, _ := TessellateBody(b, DefaultQuality())
-	return pointInMesh(mesh, p)
+	return brep.PointInside(b, p)
 }

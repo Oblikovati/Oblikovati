@@ -39,14 +39,15 @@ var rayDirections = [][3]float64{
 	{2, 3, 5}, {3, -5, 2}, {-5, 2, 3}, {1, -1, 4}, {4, 4, -1}, {-3, 6, -2},
 }
 
-// PointInside reports whether p is strictly inside the solid body b — the OCCT
-// BRepClass3d_SolidClassifier analog — dispatched by the body's REPRESENTATION (the ground rule:
-// bucket by representation, not by case). An all-planar body uses the generalized winding number
-// (Jacobson) of its planar faces, which integrates the whole boundary and so is robust to a faceted
-// concave surface a single ray can cross twice; a body with any curved face uses analytic ray casting
-// ([RaySurfaceHits] + the parameter-space [pointInTrimUV]) with even–odd parity. Neither path reads a
-// tessellation — the analytic replacement for the mesh winding oracle (M48/C3 #3426/#3427). A point
-// exactly on the boundary is not strictly inside; use [ClassifyPoint] when the on-surface case matters.
+// PointInside reports whether p is strictly inside the solid body b, dispatched by the body's
+// REPRESENTATION (the ground rule: bucket by representation, not by case). An all-planar body uses the
+// generalized winding number (Jacobson) of its planar faces, which integrates the whole boundary and so is
+// robust to a faceted concave surface a single ray can cross twice; a body with any curved face uses the
+// nearest-crossing ray classifier ([nearestCrossingInside]) — cast a ray, take the nearest boundary
+// crossing, and read the side from the sign of ray·(outward normal) there — with the solid-angle winding
+// number as the fallback for a grazing direction. Neither path reads a tessellation — the analytic
+// replacement for the mesh winding oracle (M48/C3 #3426/#3427). A point exactly on the boundary is not
+// strictly inside; use [ClassifyPoint] when the on-surface case matters.
 //
 // Example — the centre of a unit cube is inside, a far point outside:
 //
@@ -84,7 +85,7 @@ func (q *InsideQuery) Inside(p math.Point3) bool {
 	if q.flux == nil {
 		return false
 	}
-	return q.flux.inside(p)
+	return q.flux.inside(p, q.box)
 }
 
 // ClassifyPoint is [PointInside] widened to the tri-state Inside/OnSurface/Outside: a point within

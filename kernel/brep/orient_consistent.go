@@ -65,7 +65,7 @@ func faceVolumeTerm(f *fluxFace) float64 {
 			if frac == 0 {
 				continue
 			}
-			sum += volumeIntegrand(f.surface, u0+0.5*du, v0+0.5*dv) * du * dv * frac
+			sum += volumeIntegrand(f.cf.surface, u0+0.5*du, v0+0.5*dv) * du * dv * frac
 		}
 	}
 	return sum
