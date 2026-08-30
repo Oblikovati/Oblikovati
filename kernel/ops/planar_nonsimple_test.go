@@ -5,6 +5,7 @@ package ops
 import (
 	"testing"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/math"
 )
 
@@ -36,6 +37,30 @@ func TestPlanarTrisNonSimpleFastPath(t *testing.T) {
 	}
 	if tris := planarTris(poly, nil); len(tris) == 0 {
 		t.Fatal("planarTris returned no triangles for a non-simple face; want a bounded best-effort mesh")
+	}
+}
+
+// TestUncoveredPlanarFaceRecordsDefect is the #3388 regression: the bounded best-effort mesh
+// planarTris returns for a self-crossing boundary does NOT cover the face area, and that shortfall
+// must travel with the mesh as a Defect — not ship silently as a clean face. A covering triangulation
+// records nothing.
+func TestUncoveredPlanarFaceRecordsDefect(t *testing.T) {
+	band := selfCrossingBand(16)
+	tris := planarTris(band, nil)
+	m := &Mesh{}
+	recordUncoveredPlanarFace(m, tris, band, nil)
+	if !hasDiag(m.Diagnostics, CodeTessellateDomainUncovered) {
+		t.Fatalf("a self-crossing planar face shipped without a %q defect: %v", CodeTessellateDomainUncovered, m.Diagnostics)
+	}
+	if m.Diagnostics[0].Severity != diag.Defect {
+		t.Errorf("domain-uncovered recorded at severity %v, want Defect", m.Diagnostics[0].Severity)
+	}
+
+	square := []math.Point2{math.P2(0, 0), math.P2(1, 0), math.P2(1, 1), math.P2(0, 1)}
+	clean := &Mesh{}
+	recordUncoveredPlanarFace(clean, planarTris(square, nil), square, nil)
+	if len(clean.Diagnostics) != 0 {
+		t.Errorf("a covering square face recorded a spurious defect: %v", clean.Diagnostics)
 	}
 }
 
