@@ -156,13 +156,14 @@ func TestVerticesOnSegment(t *testing.T) {
 	for _, p := range []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(1, 0, 0)} {
 		w.add(p)
 	}
+	tree := newTJPointTree(w.points)
 	// Vertex 2 (1,0,0), which is off the ring, lies on segment 0→1.
-	got := verticesOnSegment(0, 1, []int{0, 1}, w)
+	got := verticesOnSegment(0, 1, []int{0, 1}, w, tree)
 	if len(got) != 1 || got[0] != 2 {
 		t.Fatalf("verticesOnSegment = %v, want [2]", got)
 	}
 	// A zero-length segment yields nothing.
-	if verticesOnSegment(0, 0, []int{0, 1}, w) != nil {
+	if verticesOnSegment(0, 0, []int{0, 1}, w, tree) != nil {
 		t.Error("zero-length segment should have no interior vertices")
 	}
 }

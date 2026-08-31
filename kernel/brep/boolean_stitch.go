@@ -38,10 +38,14 @@ func stitch(faces []subFace, pass []curvedFace, prov []imprintSeg) (*topo.Body, 
 	}
 	// Pass 2: with all vertices known, split every loop edge at any welded vertex lying on
 	// it — propagating each imprint split-point to the neighbour face sharing that edge, so
-	// shared edges subdivide identically (eliminates cross-face T-junctions).
+	// shared edges subdivide identically (eliminates cross-face T-junctions). The vertex set is
+	// indexed once (a BoxTree over the welded points) so each edge queries only its own
+	// neighbourhood instead of scanning every vertex — the O(V·E) scan was the boolean's top
+	// profile cost after the stitch unification (ADR-0058).
+	tjTree := newTJPointTree(w.points)
 	for fi := range out {
 		for ri := range out[fi].rings {
-			out[fi].rings[ri] = splitRingTJunctions(out[fi].rings[ri], w)
+			out[fi].rings[ri] = splitRingTJunctions(out[fi].rings[ri], w, tjTree)
 		}
 	}
 	reorientFaces(out, w.points)
@@ -161,16 +165,26 @@ func hasTangentContact(uses map[[2]int][]loopEdgeUse) bool {
 // splitRingTJunctions inserts, into each edge of the ring, any other vertex that lies in
 // its interior (sorted along the edge) — so a vertex that is a corner of a neighbour face
 // also subdivides this face's coincident edge.
-func splitRingTJunctions(ring []int, w *welder3) []int {
+func splitRingTJunctions(ring []int, w *welder3, tree *geom.BoxTree) []int {
 	n := len(ring)
 	out := make([]int, 0, n)
 	for i := range n {
 		a, b := ring[i], ring[(i+1)%n]
 		out = append(out, a)
-		mids := verticesOnSegment(a, b, ring, w)
+		mids := verticesOnSegment(a, b, ring, w, tree)
 		out = append(out, mids...)
 	}
 	return out
+}
+
+// newTJPointTree indexes the welded vertex set for the T-junction pass's segment-neighbourhood
+// queries (each point as a degenerate box).
+func newTJPointTree(points []math.Point3) *geom.BoxTree {
+	boxes := make([]math.Box, len(points))
+	for i, p := range points {
+		boxes[i] = math.NewBox(p, p)
+	}
+	return geom.NewBoxTree(boxes)
 }
 
 // segHit is a vertex found lying on a segment at parameter t along it.
@@ -181,14 +195,14 @@ type segHit struct {
 
 // verticesOnSegment returns the vertices (excluding the ring's own) lying strictly on the
 // segment a→b, ordered by parameter along it.
-func verticesOnSegment(a, b int, ring []int, w *welder3) []int {
+func verticesOnSegment(a, b int, ring []int, w *welder3, tree *geom.BoxTree) []int {
 	pa := w.points[a]
 	ab := pa.VectorTo(w.points[b])
 	lenSq := ab.LengthSquared()
 	if lenSq == 0 {
 		return nil
 	}
-	hits := collectSegHits(pa, ab, lenSq, ringSet(ring), w)
+	hits := collectSegHits(pa, ab, lenSq, ringSet(ring), w, tree)
 	sort.Slice(hits, func(i, j int) bool { return hits[i].t < hits[j].t })
 	out := make([]int, len(hits))
 	for i, h := range hits {
@@ -207,10 +221,15 @@ func ringSet(ring []int) map[int]bool {
 }
 
 // collectSegHits gathers the off-ring vertices that lie strictly interior to segment pa+ab
-// (within the welder's own weld grid, the same coincidence scale the vertices merged on).
-func collectSegHits(pa math.Point3, ab math.Vector3, lenSq float64, onRing map[int]bool, w *welder3) []segHit {
+// (within the welder's own weld grid, the same coincidence scale the vertices merged on). The
+// BoxTree query over the grid-inflated segment box is a strict SUPERSET of every vertex the exact
+// predicate can accept (a hit lies within grid of a point on the segment, so inside the inflated
+// box); candidates are then evaluated in ascending index order — the retired full scan's order —
+// so the hit list, and therefore the (unstable) t-sort downstream, is byte-identical.
+func collectSegHits(pa math.Point3, ab math.Vector3, lenSq float64, onRing map[int]bool, w *welder3, tree *geom.BoxTree) []segHit {
+	cands := segCandidates(pa, pa.TranslateBy(ab), w.grid, tree)
 	var hits []segHit
-	for c := range w.points {
+	for _, c := range cands {
 		if onRing[c] {
 			continue
 		}
@@ -223,6 +242,21 @@ func collectSegHits(pa math.Point3, ab math.Vector3, lenSq float64, onRing map[i
 		}
 	}
 	return hits
+}
+
+// segCandidates returns the indexed vertices inside the segment's grid-inflated bounding box, in
+// ascending index order (the deterministic evaluation order the exact pass preserves).
+func segCandidates(pa, pb math.Point3, grid float64, tree *geom.BoxTree) []int {
+	g := math.Scalar(grid)
+	box := math.NewBox(pa, pa).ExtendPoint(pb)
+	box = math.NewBox(box.Min.TranslateBy(math.V3(-g, -g, -g)), box.Max.TranslateBy(math.V3(g, g, g)))
+	var cands []int
+	tree.Query(box, func(i int) bool {
+		cands = append(cands, i)
+		return false // collect every candidate (true would stop the query early)
+	})
+	sort.Ints(cands)
+	return cands
 }
 
 // builtFace is a welded sub-face ready for the unified stitch: its loop rings (vertex indices, outer
