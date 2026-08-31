@@ -149,13 +149,47 @@ func bandInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
 	if len(samples) < 2 {
 		return 0, 0, false
 	}
-	station := samples[len(samples)/2].u
-	lo, hi, found := vSpanAt(samples, station)
-	if !found {
-		return 0, 0, false
+	holes := nonWrappingPolygons(loops)
+	for _, i := range bandStationOrder(len(samples)) {
+		station := samples[i].u
+		lo, hi, found := vSpanAt(samples, station)
+		if !found {
+			continue
+		}
+		if mid := (lo + hi) / 2; !uvCrossingsOdd(holes, station, mid) {
+			return station, mid, true
+		}
 	}
-	return station, (lo + hi) / 2, true
+	return 0, 0, false // every station tried put the midpoint in a hole
 }
+
+// nonWrappingPolygons are the loops that close in the plane — the face's HOLES on a band, since a
+// band's own bounding curves are the ones that wrap. The midpoint of the boundary's span can fall
+// inside one of these, which is outside the face, so a station that does is rejected rather than
+// trusted.
+func nonWrappingPolygons(loops []faceLoop) [][]arcSample {
+	var out [][]arcSample
+	for i, fl := range loops {
+		if closeUV(fl.netU, fl.netV, 0, 0) {
+			out = append(out, loopUVPolygons(loops)[i])
+		}
+	}
+	return out
+}
+
+// bandStationOrder walks candidate stations from the middle of the sample range outward, so an
+// ordinary band answers on the first try and a holed one still gets alternatives to try.
+func bandStationOrder(n int) []int {
+	out := make([]int, 0, bandStationTries)
+	for k := range bandStationTries {
+		out = append(out, n*(2*k+1)/(2*bandStationTries))
+	}
+	return out
+}
+
+// bandStationTries is how many stations across the band are tried before declining. A band with
+// holes needs more than one; a plain band answers on the first.
+const bandStationTries = 9
 
 // allLoopSamples flattens every loop's uv samples, ordered by the wrapping parameter so the median
 // is a station the band actually spans.
