@@ -95,4 +95,3 @@ func MassPropertiesOf(bodies []*topo.Body, densityGCm3 float64, accuracy types.M
 	applyInertia(&mp, bodies, q, densityGCm3, [3]float64{cx, cy, cz})
 	return mp
 }
-
