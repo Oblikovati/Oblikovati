@@ -113,3 +113,18 @@ func TestDrillRejectsOversizeHole(t *testing.T) {
 		t.Error("expected an error for a hole larger than the face, got nil")
 	}
 }
+
+// TestDrillThroughHoleDeclinesEmbeddedTool is the span-gate regression: a tool cylinder that does not
+// axially SPAN the slab (an embedded or blind cut) must decline rather than drill the unbounded axis
+// as a full through-hole (the silent wrong-volume misfire the per-face dispatch exposed, ADR-0058).
+func TestDrillThroughHoleDeclinesEmbeddedTool(t *testing.T) {
+	block, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")
+	embedded, _ := brep.SolidCylinder(math.P3(5, 5, 3), math.V3(0, 0, 1), 1, 4)
+	if _, ok := brep.DrillThroughHole(block, embedded); ok {
+		t.Fatal("embedded (non-spanning) tool did not decline the through-hole recipe")
+	}
+	spanning, _ := brep.SolidCylinder(math.P3(5, 5, -1), math.V3(0, 0, 1), 1, 12)
+	if _, ok := brep.DrillThroughHole(block, spanning); !ok {
+		t.Fatal("spanning tool declined; the through-hole recipe should still accept it")
+	}
+}

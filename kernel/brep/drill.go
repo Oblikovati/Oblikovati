@@ -35,7 +35,8 @@ func CutCylindricalHole(slab *topo.Body, base math.Point3, axisDir math.Vector3,
 	if ua.LengthSquared() < 0.5 {
 		return nil, fmt.Errorf("brep: drill axis direction is degenerate: %+v", axisDir)
 	}
-	return drillThroughCurved(slab, base, ua, radius)
+	// A through-all drill: the axis is conceptually unbounded, so no tool-span gate applies.
+	return drillThroughCurved(slab, base, ua, radius, stdmath.Inf(-1), stdmath.Inf(1))
 }
 
 // DrillThroughHole cuts slab − cylinderTool as an EXACT through-hole when cylinderTool is a single
@@ -50,14 +51,16 @@ func CutCylindricalHole(slab *topo.Body, base math.Point3, axisDir math.Vector3,
 //
 //	res, ok := brep.DrillThroughHole(plate, rod) // plate − rod, exact round hole, ok==true
 func DrillThroughHole(slab, cylinderTool *topo.Body) (*topo.Body, bool) {
-	cyl, base, _, ok := cylinderSolidParams(facesOfAny(cylinderTool))
+	cyl, base, height, ok := cylinderSolidParams(facesOfAny(cylinderTool))
 	if !ok {
 		return nil, false // tool is not a single bare cylinder
 	}
 	ua := cyl.AxisDir.AsVector()
 	// One curvedStitch drill path serves both an all-planar slab and one that already carries curved faces
 	// (a prior bore's wall), so a drilled plate chains exactly instead of falling to CSG (#1336/#1403).
-	res, err := drillThroughCurved(slab, base, ua, cyl.Radius)
+	// The finite tool must SPAN the slab: both pierced caps must lie within its axial extent, or the
+	// cut is embedded/blind and drilling the unbounded axis would remove too much (wrong volume).
+	res, err := drillThroughCurved(slab, base, ua, cyl.Radius, 0, height)
 	if err != nil {
 		return nil, false // partial / clipped / overlapping / off-axis hole → defer to the general fallback
 	}
