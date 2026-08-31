@@ -54,3 +54,23 @@ func analyticVolumeOf(t *testing.T, b *topo.Body) float64 {
 	t.Helper()
 	return BodyGeometryProperties(b, DefaultQuality()).Volume
 }
+
+// TestBooleanEmbeddedCavityExactVolume is the regression for the DrillThroughHole span-gate misfire:
+// cutting a cylinder EMBEDDED inside a block (not spanning it) used to be mis-recognized as a full
+// through-hole (silently removing π·r²·H instead of π·r²·h). The drill now declines and the per-face
+// dispatch cuts the exact cavity.
+func TestBooleanEmbeddedCavityExactVolume(t *testing.T) {
+	block, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")
+	tool, _ := brep.SolidCylinder(math.P3(5, 5, 3), math.V3(0, 0, 1), 1, 4)
+	res, err := Boolean(Cut, block, tool)
+	if err != nil || res == nil {
+		t.Fatalf("embedded cavity cut failed: %v", err)
+	}
+	want := 1000 - stdmath.Pi*4 // NOT 1000 − π·10 (the old through-hole misfire)
+	if got := analyticVolumeOf(t, res); stdmath.Abs(got-want) > 0.5 {
+		t.Errorf("embedded cavity volume = %g, want %g", got, want)
+	}
+	if !Validate(res).ValidSolid() {
+		t.Error("embedded cavity result is not a valid solid")
+	}
+}

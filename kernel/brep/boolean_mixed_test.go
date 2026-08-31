@@ -115,3 +115,25 @@ func TestMixedBooleanDisjointDifference(t *testing.T) {
 		t.Errorf("disjoint difference volume = %g, want %g", got, want)
 	}
 }
+
+// TestMixedBooleanEmbeddedCavityCut: subtracting a cylinder wholly inside the block cuts an exact
+// cylindrical cavity — the tool's pass-through faces (curved wall + circular-edged caps) are kept
+// REVERSED into the void, welded by the unified stitch as an inner shell.
+func TestMixedBooleanEmbeddedCavityCut(t *testing.T) {
+	block, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")
+	tool, _ := brep.SolidCylinder(math.P3(5, 5, 3), math.V3(0, 0, 1), 1, 4)
+	res, err := brep.BooleanDiag(brep.Difference, block, tool, nil)
+	if err != nil {
+		t.Fatalf("embedded cavity cut declined: %v", err)
+	}
+	if !res.IsSolid() {
+		t.Fatal("cavity result is not a solid")
+	}
+	if n := cylinderFaceCount(res); n != 1 {
+		t.Errorf("cavity wall not analytic: %d cylinder faces, want 1", n)
+	}
+	want := 1000 - stdmath.Pi*1*4
+	if got := vol(res); stdmath.Abs(got-want) > 0.5 {
+		t.Errorf("cavity volume = %g, want %g", got, want)
+	}
+}

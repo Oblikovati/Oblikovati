@@ -15,9 +15,9 @@ import (
 // and welded by the same unified stitch. Scope is conservative and declines loudly (ErrNonPlanar →
 // the caller's curved/CSG fallbacks): every pass-through face must be box-disjoint from EVERY face of
 // the other operand, so no imprint can touch it, its membership in the other solid is uniform, and no
-// T-junction can appear on its boundary. A kept pass-through face that would need reversal (a
-// Difference tool face inside the target) also declines — the reversed-curved-wall class stays with
-// the bespoke curved handlers. Fragment classification against a mixed body uses the general analytic
+// T-junction can appear on its boundary. A kept Difference tool face (material inside the target) is
+// reversed whole into the cavity — the embedded-void cut (a block minus an interior cylinder) comes
+// out exact. Fragment classification against a mixed body uses the general analytic
 // point-in-solid classifier (the frustum fast paths, else ray parity — classify_point.go); an
 // all-planar operand keeps the winding-number solidProbe bit-for-bit.
 
@@ -126,8 +126,9 @@ func passDisjointFrom(p facePartition, other *topo.Body) bool {
 
 // passThroughKept classifies each pass-through face as a whole — its membership in the other solid is
 // uniform (box-disjoint from the other's boundary) — keeping or dropping it by the boolean's keep
-// table. ok=false declines the whole boolean: a face with no sample point (boundaryless), or a kept
-// face that would need reversal (Difference tool material inside the target).
+// table. A kept Difference tool face (material inside the target) is REVERSED into the cavity, the
+// same sense flip the planar classify applies to its fragments (reverseCurvedFaces). ok=false
+// declines the whole boolean: a face with no sample point (a boundaryless sphere/torus).
 func passThroughKept(pass []curvedFace, other insideOracle, op Op, isB bool) ([]curvedFace, bool) {
 	var out []curvedFace
 	for _, f := range pass {
@@ -139,7 +140,7 @@ func passThroughKept(pass []curvedFace, other insideOracle, op Op, isB bool) ([]
 			continue
 		}
 		if op == Difference && isB {
-			return nil, false // a kept tool face must reverse into the cavity — not supported whole
+			f = reverseCurvedFaces([]curvedFace{f})[0] // a kept tool face bounds the cavity
 		}
 		out = append(out, f)
 	}

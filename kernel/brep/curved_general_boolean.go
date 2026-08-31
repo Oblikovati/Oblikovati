@@ -225,6 +225,7 @@ func reverseCurvedLoop(lp curvedLoop) curvedLoop {
 	rev := make([]loopEdge, n)
 	for i, e := range lp.edges {
 		e.t0, e.t1 = e.t1, e.t0
+		e.v0, e.v1 = e.v1, e.v0 // keep the exact loop-oriented endpoint carry consistent (ADR-0058)
 		rev[n-1-i] = e
 	}
 	return curvedLoop{edges: rev}
