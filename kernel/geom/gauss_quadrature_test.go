@@ -4,6 +4,8 @@ package geom
 
 import (
 	stdmath "math"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -48,5 +50,42 @@ func TestIntegrate1DSine(t *testing.T) {
 	got := Integrate1D(12, 0, stdmath.Pi, stdmath.Sin)
 	if want := 2.0; stdmath.Abs(got-want) > 1e-9 {
 		t.Fatalf("∫₀^π sin = %v, want %v", got, want)
+	}
+}
+
+// TestGaussLegendreRejectsNonPositiveOrder: the order is a hard precondition, and the panic names the
+// offending value (the CLAUDE.md exception-message contract) through the fmt-free itoa path.
+func TestGaussLegendreRejectsNonPositiveOrder(t *testing.T) {
+	for _, n := range []int{0, -7} {
+		func() {
+			defer func() {
+				msg, ok := recover().(string)
+				if !ok {
+					t.Fatalf("GaussLegendre(%d) did not panic", n)
+				}
+				if !strings.Contains(msg, itoa(n)) {
+					t.Errorf("panic %q does not name the offending order %d", msg, n)
+				}
+			}()
+			GaussLegendre(n)
+		}()
+	}
+}
+
+// TestItoaRoundTrips pins the fmt-free integer formatter the panic path uses.
+func TestItoaRoundTrips(t *testing.T) {
+	for _, n := range []int{0, 7, -7, 1024, -1024} {
+		if got, want := itoa(n), strconv.Itoa(n); got != want {
+			t.Errorf("itoa(%d) = %q, want %q", n, got, want)
+		}
+	}
+}
+
+// TestLegendreValueDerivDegreeZero: P₀ ≡ 1 with a zero derivative — the base case the recurrence
+// cannot produce (its loop starts at k=1).
+func TestLegendreValueDerivDegreeZero(t *testing.T) {
+	p, dp := legendreValueDeriv(0, 0.5)
+	if p != 1 || dp != 0 {
+		t.Errorf("legendreValueDeriv(0, 0.5) = (%g, %g), want (1, 0)", p, dp)
 	}
 }

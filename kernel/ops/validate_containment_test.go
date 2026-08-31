@@ -140,3 +140,127 @@ func TestHoleContainmentSquareHoleInSquare(t *testing.T) {
 		t.Fatal("a hole square spanning x∈[8,18] crosses the outer wall at x=10 and must be rejected")
 	}
 }
+
+// The exact 2D curve-crossing dispatch behind hole containment (#3478). Every line/arc/circle pair has a
+// closed form; only an ellipse pair (no closed form in the codebase) samples one operand.
+
+// hitCount is the number of crossings curveCurve2dHits finds between two 2D curves.
+func hitCount(a, b geom.Curve2) int { return len(curveCurve2dHits(a, b, 1e-9)) }
+
+// TestCurve2dHitsSegmentAgainstCircleBothOrders: a segment through a circle's centre cuts it twice,
+// whichever operand carries the segment.
+func TestCurve2dHitsSegmentAgainstCircleBothOrders(t *testing.T) {
+	seg := geom.NewLineSegment2d(m.P2(-5, 0), m.P2(5, 0))
+	circ := geom.NewCircle2d(m.P2(0, 0), 2)
+	if got := hitCount(seg, circ); got != 2 {
+		t.Errorf("segment∩circle = %d hits, want 2", got)
+	}
+	if got := hitCount(circ, seg); got != 2 {
+		t.Errorf("circle∩segment = %d hits, want 2 (operand order must not matter)", got)
+	}
+}
+
+// TestCurve2dHitsInfiniteLineAgainstCircle: an unbounded line reaches the circle even when a segment of
+// the same support would not.
+func TestCurve2dHitsInfiniteLineAgainstCircle(t *testing.T) {
+	ln, err := geom.NewLine2d(m.P2(-50, 1), m.V2(1, 0))
+	if err != nil {
+		t.Fatalf("NewLine2d: %v", err)
+	}
+	circ := geom.NewCircle2d(m.P2(0, 0), 2)
+	if got := hitCount(ln, circ); got != 2 {
+		t.Errorf("line∩circle = %d hits, want 2", got)
+	}
+	if got := hitCount(circ, ln); got != 2 {
+		t.Errorf("circle∩line = %d hits, want 2 (operand order must not matter)", got)
+	}
+}
+
+// TestCurve2dHitsArcKeepsOnlyItsSweep: an arc is intersected through its SUPPORT circle, so the hit on
+// the half it does not cover is dropped — the discrimination a chorded arc would lose.
+func TestCurve2dHitsArcKeepsOnlyItsSweep(t *testing.T) {
+	upper := geom.NewArc2d(m.P2(0, 0), 2, 0, math.Pi) // the y ≥ 0 half of the r=2 circle
+	seg := geom.NewLineSegment2d(m.P2(0, -5), m.P2(0, 5))
+	hits := curveCurve2dHits(upper, seg, 1e-9)
+	if len(hits) != 1 {
+		t.Fatalf("arc∩segment = %d hits, want 1 (the (0,2) crossing only)", len(hits))
+	}
+	if !near(float64(hits[0].Y), 2, 1e-9) {
+		t.Errorf("arc∩segment hit at y=%g, want the arc's own half at y=2", hits[0].Y)
+	}
+	if got := len(curveCurve2dHits(seg, upper, 1e-9)); got != 1 {
+		t.Errorf("segment∩arc = %d hits, want 1 (operand order must not matter)", got)
+	}
+}
+
+// TestCurve2dHitsCircleAgainstArc: the circle branch is exact for a curved second operand too.
+func TestCurve2dHitsCircleAgainstArc(t *testing.T) {
+	arc := geom.NewArc2d(m.P2(3, 0), 2, 0, math.Pi)
+	circ := geom.NewCircle2d(m.P2(0, 0), 2)
+	if got := hitCount(circ, arc); got != 1 {
+		t.Errorf("circle∩arc = %d hits, want 1 (the arc covers only the upper crossing)", got)
+	}
+	if got := hitCount(arc, circ); got != 1 {
+		t.Errorf("arc∩circle = %d hits, want 1 (operand order must not matter)", got)
+	}
+}
+
+// TestCurve2dHitsEllipsePairFallback: two ellipses have no closed form here, so one is sampled. A
+// planar line/arc/circle boundary never reaches this path; the crossing count still has to be right.
+func TestCurve2dHitsEllipsePairFallback(t *testing.T) {
+	wide, err := geom.NewEllipseFull2d(m.P2(0, 0), m.V2(1, 0), 4, 1)
+	if err != nil {
+		t.Fatalf("NewEllipseFull2d: %v", err)
+	}
+	tall, err := geom.NewEllipseFull2d(m.P2(0, 0), m.V2(0, 1), 4, 1)
+	if err != nil {
+		t.Fatalf("NewEllipseFull2d: %v", err)
+	}
+	if got := hitCount(wide, tall); got != 4 {
+		t.Errorf("ellipse∩ellipse = %d hits, want 4 (two congruent ellipses at 90°)", got)
+	}
+}
+
+// TestNearCurveEnd2dOnUnboundedLine: an infinite line has no endpoint to be near, so the endpoint guard
+// reports false rather than sampling an infinite parameter.
+func TestNearCurveEnd2dOnUnboundedLine(t *testing.T) {
+	ln, err := geom.NewLine2d(m.P2(0, 0), m.V2(1, 0))
+	if err != nil {
+		t.Fatalf("NewLine2d: %v", err)
+	}
+	if nearCurveEnd2d(m.P2(0, 0), ln, 1e-6) {
+		t.Error("nearCurveEnd2d reported an endpoint on an unbounded line")
+	}
+	seg := geom.NewLineSegment2d(m.P2(0, 0), m.P2(4, 0))
+	if !nearCurveEnd2d(m.P2(4, 0), seg, 1e-9) {
+		t.Error("nearCurveEnd2d missed a segment's own endpoint")
+	}
+}
+
+// TestCurveMidParamOfUnboundedDomain: an unbounded domain has no finite midpoint, so the probe falls
+// back to 0.5 instead of an infinity.
+func TestCurveMidParamOfUnboundedDomain(t *testing.T) {
+	ln, err := geom.NewLine2d(m.P2(0, 0), m.V2(1, 0))
+	if err != nil {
+		t.Fatalf("NewLine2d: %v", err)
+	}
+	if got := curveMidParam(ln); got != 0.5 {
+		t.Errorf("curveMidParam(unbounded line) = %g, want 0.5", got)
+	}
+	if got := curveMidParam(geom.NewLineSegment2d(m.P2(0, 0), m.P2(4, 0))); got != 0.5 {
+		t.Errorf("curveMidParam(segment) = %g, want 0.5", got)
+	}
+}
+
+// TestRegionResolution2dHandlesUnboundedEdge: the tolerance scale sizes itself from an unbounded edge's
+// [0,1] substitute domain, never from an infinite point.
+func TestRegionResolution2dHandlesUnboundedEdge(t *testing.T) {
+	ln, err := geom.NewLine2d(m.P2(0, 0), m.V2(1, 0))
+	if err != nil {
+		t.Fatalf("NewLine2d: %v", err)
+	}
+	res := regionResolution2d([]geom.Curve2{ln, geom.NewLineSegment2d(m.P2(0, 0), m.P2(4, 0))})
+	if !(res.Weld() > 0) || math.IsInf(res.Weld(), 0) {
+		t.Errorf("regionResolution2d weld tolerance = %g, want a finite positive scale", res.Weld())
+	}
+}

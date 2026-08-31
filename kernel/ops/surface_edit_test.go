@@ -288,3 +288,69 @@ func TestSurfaceEditDeclinesCurvedOffset(t *testing.T) {
 		t.Fatalf("OffsetSurface on a curved body = %v, want ErrSurfaceEditUnsupported", err)
 	}
 }
+
+// TestSurfaceEditDeclinesFoldedOffset: offsetting translates each face along its OWN normal, which only
+// reconnects for a coplanar quilt. A folded sheet is refused at classification, before any geometry is
+// built, and the message names both normals (#3393).
+func TestSurfaceEditDeclinesFoldedOffset(t *testing.T) {
+	flat := quadBody("flat", math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(0, 2, 0))
+	wall := quadBody("wall", math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(2, 2, 2), math.P3(2, 0, 2))
+	folded, err := Stitch([]*topo.Body{flat, wall}, 0, true, "folded")
+	if err != nil {
+		t.Fatalf("Stitch setup: %v", err)
+	}
+	_, err = OffsetSurface(folded, 0.5, "off")
+	if !errors.Is(err, ErrSurfaceEditUnsupported) {
+		t.Fatalf("OffsetSurface on a folded sheet = %v, want ErrSurfaceEditUnsupported", err)
+	}
+	if !strings.Contains(err.Error(), "folded sheet") {
+		t.Errorf("decline message %q does not name the folded-sheet configuration", err.Error())
+	}
+}
+
+// TestSurfaceEditDeclinesSharedEdgeExtend: extending grows ONE face's boundary, so an interior edge
+// (shared by two faces) is refused with the offending face count named.
+func TestSurfaceEditDeclinesSharedEdgeExtend(t *testing.T) {
+	sheet := twoQuadSheet(t)
+	var key []byte // the interior seam at x=2, shared by both quads
+	for _, e := range sheet.Edges() {
+		if len(e.Faces()) == 2 {
+			key = e.ReferenceKey()
+		}
+	}
+	if key == nil {
+		t.Fatal("setup sheet has no shared edge")
+	}
+	_, err := ExtendByEdge(sheet, key, 1, "ext")
+	if !errors.Is(err, ErrSurfaceEditUnsupported) {
+		t.Fatalf("ExtendByEdge on a shared edge = %v, want ErrSurfaceEditUnsupported", err)
+	}
+	if !strings.Contains(err.Error(), "2 faces") {
+		t.Errorf("decline message %q does not name the offending face count", err.Error())
+	}
+}
+
+// TestSurfaceEditDeclinesCurvedHostExtend: a cylinder's seam edge belongs to exactly one face — the
+// cylindrical side — so the decline comes from the host surface kind, not the edge's face count.
+func TestSurfaceEditDeclinesCurvedHostExtend(t *testing.T) {
+	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
+	if err != nil {
+		t.Fatalf("SolidCylinder: %v", err)
+	}
+	var key []byte
+	for _, e := range cyl.Edges() {
+		if len(e.Faces()) == 1 {
+			key = e.ReferenceKey()
+		}
+	}
+	if key == nil {
+		t.Fatal("cylinder has no single-face seam edge")
+	}
+	_, err = ExtendByEdge(cyl, key, 1, "ext")
+	if !errors.Is(err, ErrSurfaceEditUnsupported) {
+		t.Fatalf("ExtendByEdge on a cylindrical host = %v, want ErrSurfaceEditUnsupported", err)
+	}
+	if !strings.Contains(err.Error(), "geom.Cylinder") {
+		t.Errorf("decline message %q does not name the offending surface type", err.Error())
+	}
+}
