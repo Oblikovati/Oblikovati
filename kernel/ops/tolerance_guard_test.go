@@ -69,6 +69,9 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../brep/curved_general_boolean.go",
 		"../brep/curved_general_ruled_cutjoin.go",
 		"../brep/curved_general_wrapping_band.go",
+		// brep: the mixed per-face boolean's uv×wall conic pairing and its island sampling (#3460).
+		"../brep/boolean_mixed_uvwall.go",
+		"../brep/curved_plane_face_uv_island.go",
 		"../brep/curved_subtract_prism.go",
 		"../brep/curved_coaxial_cylinder.go",
 		"../brep/curved_cylinder_boss.go",

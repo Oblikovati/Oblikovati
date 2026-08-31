@@ -61,12 +61,7 @@ func crossingFaceCandidates(fa, fb []curvedFace) facePairs {
 // paddedFaceBox returns the face's loop-point bounding box inflated by [facePairCullPad] on
 // every side.
 func paddedFaceBox(f curvedFace) math.Box {
-	box := math.EmptyBox()
-	for _, ring := range planarRings(f) {
-		for _, p := range ring {
-			box = box.ExtendPoint(p)
-		}
-	}
+	box := faceLoopBox(f)
 	pad := math.Scalar(facePairCullPad)
 	box.Min = math.Point3{X: box.Min.X - pad, Y: box.Min.Y - pad, Z: box.Min.Z - pad}
 	box.Max = math.Point3{X: box.Max.X + pad, Y: box.Max.Y + pad, Z: box.Max.Z + pad}

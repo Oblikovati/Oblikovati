@@ -93,11 +93,14 @@ type faceFrameCrossing struct {
 }
 
 // assembleSegments emits the exact frame loops (straight edges whole, circle edges sampled with the
-// imprint crossings injected) plus the imprint segments split at those crossings (uvSide).
+// imprint crossings injected) plus the imprint segments split at those crossings (uvSide). A CLOSED conic
+// island (a ruled wall's section — curved_plane_face_uv_island.go) crosses no frame edge by construction,
+// so it is sampled on its own and takes no part in the crossing injection.
 func (c *planeFaceUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
-	crossings := c.frameCrossings(imprint)
-	segs := c.frameSegs(crossings)
-	return append(segs, c.imprintSegs(imprint, crossings)...)
+	straight, islands := splitImprintByKind(imprint)
+	crossings := c.frameCrossings(straight)
+	segs := append(c.frameSegs(crossings), c.imprintSegs(straight, crossings)...)
+	return append(segs, c.islandSegs(islands)...)
 }
 
 // frameCrossings solves every conic-frame-edge ∩ imprint-segment crossing in closed form.
@@ -233,11 +236,14 @@ func planeFaceMaterial(c *planeFaceUV, keep func(math.Point3) bool) func() mater
 
 // planeFaceContactOK declines grazing contact before the trim runs: an imprint segment tangent to a
 // frame circle (a double root within the weld) risks a sliver cell the arrangement cannot resolve —
-// the same gate planeUV applies to its conic imprints (#1591).
+// the same gate planeUV applies to its conic imprints (#1591). Only the STRAIGHT imprints are tested: a
+// closed conic island reaches the trim already proven clear of every frame edge (wallSectionIsland), and a
+// conic-framed face never receives one (uvWallSharedImprint declines it).
 func planeFaceContactOK(c *planeFaceUV, imprint []geom.Curve3) bool {
+	straight, _ := splitImprintByKind(imprint)
 	for _, l := range c.loops {
 		for _, e := range l.edges {
-			if _, isCircle := e.curve.(geom.Circle); isCircle && !circleContactOK(c, e.curve, imprint) {
+			if _, isCircle := e.curve.(geom.Circle); isCircle && !circleContactOK(c, e.curve, straight) {
 				return false
 			}
 		}

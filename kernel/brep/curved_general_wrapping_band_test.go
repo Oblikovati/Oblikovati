@@ -5,6 +5,7 @@ package brep
 import (
 	"testing"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
@@ -28,14 +29,35 @@ func TestKeptComponentsSplitsDisjointBands(t *testing.T) {
 	}
 }
 
-// TestIsTopRim: a level nearer vMax is the top rim (reversed by the convention), nearer vMin the bottom.
-func TestIsTopRim(t *testing.T) {
-	c := ruledUV{band: coneSideBand_{vMin: 0, vMax: 12}}
-	if !c.isTopRim(11) {
-		t.Error("mv=11 should be the top rim (nearer vMax=12)")
+// TestSourceRimSense: a loop ON the vMax rim wants the source's top-rim sense, one ON the vMin rim its
+// negation, and a full-wrap IMPRINT circle between them is no rim at all — it keeps its arrangement winding
+// (#3460; the retired isTopRim halved the band and swallowed that circle).
+func TestSourceRimSense(t *testing.T) {
+	rim := func(mv float64) emittedLoop {
+		return emittedLoop{mv: mv, face: []loopEdge{{curve: geom.Circle{}, t0: 0, t1: 1}}}
 	}
-	if c.isTopRim(1) {
-		t.Error("mv=1 should be the bottom rim (nearer vMin=0)")
+	c := ruledUV{band: coneSideBand_{vMin: 0, vMax: 12, topRimReversed: true}}
+	if rev, isRim := c.sourceRimSense(rim(12)); !isRim || !rev {
+		t.Errorf("vMax rim = (%v,%v), want (true,true) — the source's top-rim sense", rev, isRim)
+	}
+	if rev, isRim := c.sourceRimSense(rim(0)); !isRim || rev {
+		t.Errorf("vMin rim = (%v,%v), want (false,true) — the negation of the top-rim sense", rev, isRim)
+	}
+	if _, isRim := c.sourceRimSense(rim(11)); isRim {
+		t.Error("a full-wrap circle at mv=11 is an imprint, not the vMax rim")
+	}
+}
+
+// TestChainReversed: an emitted loop is reversed exactly when its first edge runs t1<t0.
+func TestChainReversed(t *testing.T) {
+	if chainReversed(nil) {
+		t.Error("an empty chain is not reversed")
+	}
+	if !chainReversed([]loopEdge{{t0: 1, t1: 0}}) {
+		t.Error("t0=1,t1=0 is a reversed chain")
+	}
+	if chainReversed([]loopEdge{{t0: 0, t1: 1}}) {
+		t.Error("t0=0,t1=1 is a forward chain")
 	}
 }
 
