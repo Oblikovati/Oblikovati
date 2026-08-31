@@ -50,13 +50,48 @@ type quadTerms[T any] interface {
 // flux mass terms, areaIntegrandsAt for the surface moments.
 type pointEval[T any] func(u, v float64) T
 
-// faceRegion integrates a face's region terms: a boundary-less face over its full parameter
-// rectangle, a bounded face by Green's theorem over its uv loops. Both use `at` as the integrand.
+// faceRegion integrates a face's region terms under a work budget, so a face whose integral does not
+// settle DECLINES instead of subdividing until it stalls the caller.
 func faceRegion[T quadTerms[T]](f *topo.Face, at pointEval[T]) (T, bool) {
+	left := quadBudget
+	budgeted := withBudget(at, &left)
+	terms, ok := faceRegionWithin(f, budgeted)
+	if left <= 0 {
+		var zero T
+		return zero, false // the budget ran out: this face's integral never settled
+	}
+	return terms, ok
+}
+
+// faceRegionWithin integrates a face's region terms: a boundary-less face over its full parameter
+// rectangle, a bounded face by Green's theorem over its uv loops. Both use `at` as the integrand.
+func faceRegionWithin[T quadTerms[T]](f *topo.Face, at pointEval[T]) (T, bool) {
 	if len(f.Loops()) == 0 {
 		return fullDomainTerms(f.Geometry(), at)
 	}
 	return greenTerms(f, at)
+}
+
+// quadBudget is how many integrand evaluations one face's integration may spend. An analytic
+// surface's integrands are smooth and settle in a tiny fraction of it; a face that does NOT settle
+// would otherwise subdivide toward 2^quadDepth cells per one-dimensional integral, nested inside the
+// boundary walk — a torus rim face was observed stalling a whole recompute that way. Exhausting the
+// budget declines the face, and the tessellated fallback measures the body: slow is a defect, and a
+// kernel operation may not hang.
+const quadBudget = 2_000_000
+
+// withBudget wraps an integrand so it stops evaluating once the budget is spent. It returns the ZERO
+// term after that, which makes the adaptive rule's coarse and refined estimates agree and unwind
+// immediately, rather than keeping the recursion alive to the depth cap.
+func withBudget[T quadTerms[T]](at pointEval[T], left *int) pointEval[T] {
+	var zero T
+	return func(u, v float64) T {
+		if *left <= 0 {
+			return zero
+		}
+		*left--
+		return at(u, v)
+	}
 }
 
 // fullDomainTerms integrates g over a boundary-less face's entire finite parameter rectangle by
