@@ -28,25 +28,13 @@ const domainPeriodTol = 1e-9 // tol:parametric — angular domain span ≈ 2π
 // surface has no non-periodic, UNBOUNDED axis to cast the even-odd ray toward (a sphere's latitude ends
 // at a pole; a torus wraps both ways), it defers to the geodesic winding, which needs no exterior
 // endpoint.
+// It develops the loops on every call. A caller holding a topo.Face should reach it through
+// [faceTrimUVOf] instead, which memoizes that development on the face — the projection does not depend
+// on the query point, and on a B-spline surface it costs a NURBS inversion per loop sample (#3477).
+// This entry stays for the synthesized curvedFaces the curved boolean classifies before any topo.Face
+// exists for them.
 func pointInTrimUV(f curvedFace, p math.Point3) bool {
-	if len(f.loops) == 0 {
-		return true
-	}
-	uPer, vPer := surfacePeriodic(f.surface)
-	alongV, ok := castAxis(f.surface, uPer, vPer)
-	if !ok {
-		return pointInCurvedFace(f, p) // sphere / torus: no unbounded axis; use the pole-free geodesic winding
-	}
-	up, vp := f.surface.ParamAt(p)
-	total := 0
-	for _, loop := range f.loops {
-		poly := loopToUV(f.surface, loop, uPer, vPer)
-		if len(poly) < 2 {
-			continue
-		}
-		total += loopRayCrossings(math.P2(up, vp), poly, uPer, vPer, alongV)
-	}
-	return total%2 == 1
+	return developFaceTrim(f).contains(p)
 }
 
 // castAxis picks the parameter axis the even-odd containment ray travels along toward "outside": a

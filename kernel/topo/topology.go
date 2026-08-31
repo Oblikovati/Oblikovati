@@ -234,6 +234,18 @@ type Face struct {
 	// face on recompute, so no leak and no stale geometry), and written only by the single-threaded
 	// pick/tessellation path per body.
 	metricScaleMemo any
+	// trimUVMemo memoizes the brep-owned development of this face's boundary loops into the surface's
+	// (u,v) domain — the ring brep.PointInFaceTrim classifies against. Building it samples every loop
+	// edge and inverts each sample through geom.Surface.ParamAt, which for a B-spline surface is a
+	// multistart nearest-seed search; without the memo every containment query re-inverted the WHOLE
+	// boundary ring, so a point-to-face distance minimisation (brep.EntityDistance) paid that per
+	// evaluation and a self-intersection scan over a blended body did not finish (M48/C3, #3477).
+	// Same contract as pickTess and metricScaleMemo: opaque to topo (brep owns the payload type) and
+	// face-lifetime. It is SAFE because a Face is immutable once its body is built — loops are written
+	// only by the builder, and every operation that changes geometry builds new faces rather than
+	// mutating them (ops.ReplaceFaceSurface rebuilds through topo.NewBuilder), so the memo cannot go
+	// stale under its own face.
+	trimUVMemo any
 }
 
 func (f *Face) ID() uint64           { return f.id }
@@ -282,6 +294,16 @@ func (f *Face) MetricScaleMemo() any { return f.metricScaleMemo }
 // topo (the ops package defines and type-asserts it), keeping the metric computation out of the
 // topology layer while giving the memo the face's lifetime.
 func (f *Face) SetMetricScaleMemo(v any) { f.metricScaleMemo = v }
+
+// TrimUVMemo returns the opaque, brep-owned memo of this face's boundary loops developed into the
+// surface's (u,v) domain (nil until the first containment query builds it). See the trimUVMemo field
+// for why it exists and why a face's immutability makes it safe.
+func (f *Face) TrimUVMemo() any { return f.trimUVMemo }
+
+// SetTrimUVMemo stores the brep-owned developed-boundary memo for this face. The payload is opaque to
+// topo (the brep package defines and type-asserts it), keeping parameter-space classification out of
+// the topology layer while giving the memo the face's lifetime.
+func (f *Face) SetTrimUVMemo(v any) { f.trimUVMemo = v }
 
 // Reversed reports whether the face's outward (material) side is OPPOSITE its surface
 // normal — true for the cut wall a Difference carves, where the surface (e.g. a cylinder's
