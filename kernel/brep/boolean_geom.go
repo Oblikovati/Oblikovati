@@ -20,50 +20,48 @@ type planarFace struct {
 	lineage topo.Lineage
 }
 
-// facesOf flattens a body's planar faces. A non-planar face makes it return ok=false (the
-// planar B-rep boolean handles planar-faceted solids; curved faces need NURBS work).
+// facesOf flattens a body's planar faces, DERIVED from the unified curvedFace flatten (facesOfAny) so
+// there is one loop-extraction path (ADR-0058). A non-planar face makes it return ok=false (the planar
+// B-rep boolean handles planar-faceted solids; curved faces take the curved pipeline). The polygonal 3D
+// point rings the planar arrangement needs come from each loop edge's EXACT loop-oriented start vertex
+// (loopEdge.v0, stored by orientedLoopEdge from the topo vertex) — NOT PointAt(t0), which only
+// approximates a vertex on a curved edge (arc round-trip) and would drift the arrangement's welds. So this
+// is byte-identical to the retired loopRings/loopPoints on every face facesOf accepts, arc-bounded caps
+// included.
 func facesOf(b *topo.Body) ([]planarFace, bool) {
-	var out []planarFace
-	for _, f := range b.Faces() {
-		pl, ok := f.Geometry().(geom.Plane)
+	out := make([]planarFace, 0, len(b.Faces()))
+	for _, cf := range facesOfAny(b) {
+		pl, ok := cf.surface.(geom.Plane)
 		if !ok {
 			return nil, false
 		}
-		out = append(out, planarFace{plane: pl, normal: f.Geometry().NormalAt(0, 0), loops: loopRings(f), lineage: f.Lineage()})
+		out = append(out, planarFace{plane: pl, normal: pl.NormalAt(0, 0), loops: ringsOfLoops(cf.loops), lineage: cf.lineage})
 	}
 	return out, true
 }
 
-// loopRings returns a face's loops as ordered 3D point rings (outer loop first).
-func loopRings(f *topo.Face) [][]math.Point3 {
-	var outer [][]math.Point3
-	var holes [][]math.Point3
-	for _, l := range f.Loops() {
-		ring := loopPoints(l)
-		if l.IsOuter() {
-			outer = append(outer, ring)
-		} else {
-			holes = append(holes, ring)
+// ringsOfLoops projects a curved face's parametric loops onto the polygonal boolean's 3D point rings:
+// each loop's ordered edge EXACT start vertices (v0), outer loop already first (loopsOf order).
+func ringsOfLoops(loops []curvedLoop) [][]math.Point3 {
+	out := make([][]math.Point3, len(loops))
+	for i, l := range loops {
+		ring := make([]math.Point3, len(l.edges))
+		for j, e := range l.edges {
+			ring[j] = e.v0
 		}
+		out[i] = ring
 	}
-	return append(outer, holes...)
+	return out
 }
 
-// loopPoints returns a loop's ordered vertices (honoring each edge use's direction).
-func loopPoints(l *topo.Loop) []math.Point3 {
-	uses := l.EdgeUses()
-	pts := make([]math.Point3, 0, len(uses))
-	for _, u := range uses {
-		v := u.Edge().StartVertex()
-		if u.Reversed() {
-			v = u.Edge().EndVertex()
-		}
-		pts = append(pts, v.Point())
-	}
-	return pts
-}
-
-// to2D / to3D convert between model space and a plane's local (u,v) coordinates.
+// to2D / to3D convert between model space and a plane's local (u,v) coordinates. These are the planar
+// arrangement's OWN exact maps: to2D equals geom.Plane.ParamAt, but to3D keeps its single-translate lift
+// (Origin + (uU+vV), one rounding) rather than delegating to geom.Plane.PointAt (which does two). The
+// difference is ~1 ULP, but the planar arrangement's welds/coincidence tests depend on this exact lift,
+// and — critically — the planar and curved splits keep SEPARATE domain maps by design (exact vs sampled),
+// so they need not agree bit-for-bit. Aligning geom.Plane.PointAt to this form instead drifts every
+// tessellation/coincidence that uses PointAt (byte-identity-fingerprint regressions, ADR-0058 blocker-1
+// finding): the domain maps are correctly NOT unified.
 func to2D(pl geom.Plane, p math.Point3) math.Point2 {
 	d := pl.Origin.VectorTo(p)
 	return math.P2(d.Dot(pl.UAxis.AsVector()), d.Dot(pl.VAxis.AsVector()))
