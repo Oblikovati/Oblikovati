@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 )
@@ -83,7 +84,7 @@ func TestCurvedBooleanVolumesMatchOCC(t *testing.T) {
 				t.Fatalf("%s: Boolean(%s): %v", c.name, c.op, err)
 			}
 			got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
-			budget, source := occBudgetFor(c.name, res)
+			budget, source := occBudgetFor(c.name, target, tool, res)
 			rel := stdmath.Abs(got-want) / want
 			t.Logf("%-32s ours=%.6f  occ=%.6f  rel=%.6f (%s budget %.4f)", c.name, got, want, rel, source, budget)
 			if rel > budget {
@@ -93,11 +94,31 @@ func TestCurvedBooleanVolumesMatchOCC(t *testing.T) {
 	}
 }
 
-// occBudgetFor picks the budget by how the result's volume was measured, and names the source so a
-// failure says which regime it is in.
-func occBudgetFor(name string, res *topo.Body) (float64, string) {
+// occBudgetFor picks the budget by which regime the result is in, and names it so a failure says
+// which. A result DEMOTED to a faceted fallback is all-planar, so the analytic integrator accepts it
+// happily — its volume is the exact volume of an inscribed polyhedron, which is not the exact volume
+// of the shape. Asking whether the integrator accepted the body therefore cannot separate the
+// regimes; asking whether the result still carries the curved geometry its operands had, can.
+func occBudgetFor(name string, target, tool, res *topo.Body) (float64, string) {
+	if curvedFaceTotal(res) == 0 && curvedFaceTotal(target)+curvedFaceTotal(tool) > 0 {
+		return occBooleanTolerance(name), "faceted" // demoted: the curved operands left no curved face
+	}
 	if _, analytic := ops.AnalyticGeometryProperties(res); analytic {
 		return occAnalyticTolerance, "analytic"
 	}
-	return occBooleanTolerance(name), "faceted"
+	return occBooleanTolerance(name), "tessellated"
+}
+
+// curvedFaceTotal counts a body's non-planar faces — the analytic geometry a faceted fallback loses.
+func curvedFaceTotal(b *topo.Body) int {
+	if b == nil {
+		return 0
+	}
+	n := 0
+	for _, f := range b.Faces() {
+		if _, planar := f.Geometry().(geom.Plane); !planar {
+			n++
+		}
+	}
+	return n
 }
