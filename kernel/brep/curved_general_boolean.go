@@ -96,22 +96,28 @@ func coneSideSolidSplit(f curvedFace, cone geom.Cone, band coneSideBand_, imprin
 func curvedSolidMembership(b *topo.Body) (func(math.Point3) bool, bool) {
 	faces := facesOfAny(b)
 	if cone, vMin, vMax, ok := coneSolidParams(faces); ok {
-		return func(p math.Point3) bool { return pointInsideConeSolid(cone, vMin, vMax, p) }, true
+		return func(p math.Point3) bool { return pointInsideConeSolid(cone, vMin, vMax, p, false) }, true
 	}
 	if cyl, base, height, ok := cylinderSolidParams(faces); ok {
-		return func(p math.Point3) bool { return pointInsideCylinderSolid(cyl, base, height, p) }, true
+		return func(p math.Point3) bool { return pointInsideCylinderSolid(cyl, base, height, p, false) }, true
 	}
 	return nil, false
 }
 
 // pointInsideConeSolid reports whether p is inside a frustum solid: within the apex-distance band
-// [vMin, vMax] (between the caps) AND inside the cone radius v·tan(HalfAngle) at that height. A small
-// model-relative margin keeps the imprint loop itself (on the surface) from flickering across the boundary.
-func pointInsideConeSolid(cone geom.Cone, vMin, vMax float64, p math.Point3) bool {
+// [vMin, vMax] (between the caps) AND inside the cone radius v·tan(HalfAngle) at that height. When strict
+// is false a small model-relative margin keeps an imprint loop (on the surface) from flickering across
+// the boundary — the boolean-membership need. When strict is true the test is margin-free (exact
+// geometric inside): the point-in-solid CLASSIFIER wants that, having already peeled off the on-surface
+// band with its own onTol, so this fast path returns the same verdict the ray-parity path would.
+func pointInsideConeSolid(cone geom.Cone, vMin, vMax float64, p math.Point3, strict bool) bool {
 	axis := cone.AxisDir.AsVector()
 	v := float64(cone.Apex.VectorTo(p).Dot(axis))
-	rim := vMax * stdmath.Tan(cone.HalfAngle)
-	margin := geom.ResolutionForSize(rim + vMax).Plane() // model-relative inside-solid margin (#1399)
+	margin := 0.0
+	if !strict {
+		rim := vMax * stdmath.Tan(cone.HalfAngle)
+		margin = geom.ResolutionForSize(rim + vMax).Plane() // model-relative inside-solid margin (#1399)
+	}
 	if v < vMin+margin || v > vMax-margin {
 		return false
 	}

@@ -124,11 +124,45 @@ func classifyBodyInside(b *topo.Body, faces []curvedFace, p math.Point3) bool {
 	if sp := newSolidProbe(b); sp.planar {
 		return sp.inside(p)
 	}
+	if inside, ok := primitiveSolidInside(faces); ok {
+		return inside(p) // conditioning-gated closed form: a simple cone/cylinder frustum (ADR-0058)
+	}
 	box := b.RangeBox()
 	if in, ok := rayParityInsideClean(faces, p, box); ok {
 		return in
 	}
 	return newFluxQuery(faces).windingInside(p)
+}
+
+// primitiveSolidInside returns a margin-free closed-form inside test when the body is a SIMPLE cone or
+// cylinder frustum — exactly one curved side face plus its planar caps, nothing else — so the fast path
+// can never be handed a holed or compound body it would misclassify against the bare primitive. It is the
+// point-in-solid classifier's conditioning-gated fast path (ADR-0058 blocker-2 resolution): ~30× cheaper
+// than the general ray-parity cast, and it returns the same verdict a ray cast would because the
+// on-surface band is already peeled off by ClassifyPointTol's onTol (so strict=true, no margin).
+func primitiveSolidInside(faces []curvedFace) (func(math.Point3) bool, bool) {
+	if curvedSideCount(faces) != 1 {
+		return nil, false
+	}
+	if cone, vMin, vMax, ok := coneSolidParams(faces); ok {
+		return func(p math.Point3) bool { return pointInsideConeSolid(cone, vMin, vMax, p, true) }, true
+	}
+	if cyl, base, height, ok := cylinderSolidParams(faces); ok {
+		return func(p math.Point3) bool { return pointInsideCylinderSolid(cyl, base, height, p, true) }, true
+	}
+	return nil, false
+}
+
+// curvedSideCount is the number of non-planar faces of a flattened body — 1 for a simple frustum, more
+// for a tube (two cylindrical walls) or a compound solid, which the fast path must decline.
+func curvedSideCount(faces []curvedFace) int {
+	n := 0
+	for _, f := range faces {
+		if _, planar := f.surface.(geom.Plane); !planar {
+			n++
+		}
+	}
+	return n
 }
 
 // ClassifyShellPoint classifies p against the region a single shell bounds (one shell of a body, or a

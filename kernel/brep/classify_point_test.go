@@ -65,6 +65,48 @@ func TestClassifyPointCylinder(t *testing.T) {
 }
 
 // A sphere classifies inside/outside/on the surface.
+// TestPrimitiveSolidInsideMatchesRayParity is the blocker-2 guard (ADR-0058): the conditioning-gated
+// closed-form fast path for a simple frustum must return the SAME inside/outside verdict the general
+// ray-parity cast would, at every point off the surface — a fast path is a shortcut, not a second
+// algorithm. It grids a cone and a cylinder frustum and compares the two, skipping the on-surface band.
+func TestPrimitiveSolidInsideMatchesRayParity(t *testing.T) {
+	cone, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 6), 3, 1, "cone")
+	cyl, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 5)
+	for _, b := range []*topo.Body{cone, cyl} {
+		faces := facesOfAny(b)
+		fast, ok := primitiveSolidInside(faces)
+		if !ok {
+			t.Fatalf("primitiveSolidInside declined a simple frustum")
+		}
+		box := b.RangeBox()
+		onTol := geom.ResolutionForBox(box).Weld()
+		for _, z := range []float64{0.5, 1.5, 3, 4.5, 5.5} {
+			for _, r := range []float64{0.0, 0.7, 1.5, 2.2, 3.2} {
+				p := math.P3(math.Scalar(r), 0, math.Scalar(z))
+				if onAnyFace(faces, p, onTol) {
+					continue // on-surface band ClassifyPointTol peels off before the inside test
+				}
+				parity, clean := rayParityInsideClean(faces, p, box)
+				if clean && fast(p) != parity {
+					t.Errorf("fast vs ray-parity disagree at %v: fast=%v parity=%v", p, fast(p), parity)
+				}
+			}
+		}
+	}
+}
+
+// TestPrimitiveSolidInsideDeclinesTube: a compound/holed body (more than one curved side) must NOT take
+// the frustum fast path, which classifies against the bare primitive and would miss the bore. Two coaxial
+// cylinders' faces stand in for a tube's flattened faces (two cylindrical walls + caps).
+func TestPrimitiveSolidInsideDeclinesTube(t *testing.T) {
+	outer, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
+	inner, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1, 4)
+	compound := append(facesOfAny(outer), facesOfAny(inner)...) // 2 cylindrical sides → not a simple frustum
+	if _, ok := primitiveSolidInside(compound); ok {
+		t.Error("frustum fast path accepted two cylindrical walls; want decline to ray-parity")
+	}
+}
+
 func TestClassifyPointSphere(t *testing.T) {
 	sph, err := SolidSphere(math.P3(0, 0, 0), 3, "sphere")
 	if err != nil {
