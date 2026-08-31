@@ -130,17 +130,46 @@ func TestSharpCornerRunOutKeepsTheRemovedVolume(t *testing.T) {
 // TestSharpCornerRunOutDropsTheDoubleCountedArea: each flap counted its region twice — once on the
 // untrimmed side face and once on the cap. Removing both recovers 4·notch of area over the two
 // terminals, where notch = r²(1−π/4) is the corner the fillet takes out.
+//
+// The claim is a DELTA against the old build's 94.207048, and that baseline is a DefaultQuality
+// TESSELLATED measurement — the only meter ops.BodyGeometryProperties had when it was taken. Since
+// c94e5b61 that function integrates the analytic B-rep instead, which reads this body 0.012998
+// higher (an inscribed mesh under-measures every curved face); more than the 0.01 window, so a
+// baseline in one meter can no longer be compared against a reading in the other. The delta is
+// therefore measured where it is meaningful, and the exact surface is gated separately below
+// (Oblikovati/Oblikovati#3453).
 func TestSharpCornerRunOutDropsTheDoubleCountedArea(t *testing.T) {
 	const r = 0.25
 	res := sharpCornerRunOut(t)
 	notch := r * r * (1 - stdmath.Pi/4)
-	// Exact area: the 4 cm box's six faces, less what the two fillets took off each, is not worth
-	// re-deriving here — the point is the DELTA, so compare against the old build's 94.207048.
 	const before = 94.207048
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Area
+	mesh, _ := ops.TessellateBody(res, ops.DefaultQuality())
+	got := meshArea(mesh)
 	want := before - 4*notch
 	if stdmath.Abs(got-want) > 0.01 {
-		t.Errorf("area = %.6f, want ≈%.6f (the old %.6f less 4·notch = %.6f)", got, want, before, 4*notch)
+		t.Errorf("faceted area = %.6f, want ≈%.6f (the old %.6f less 4·notch = %.6f)", got, want, before, 4*notch)
+	}
+}
+
+// TestSharpCornerRunOutAreaConvergesOnTheExactSurface is what the faceted delta above cannot see: a
+// chord measurement is blind to any error smaller than its own deficit. The analytic integral is not,
+// and it is quality-independent, so the mesh must climb TOWARDS it as the facets refine and never
+// past it — an inscribed mesh runs under a curved face, never over. A build whose exact surface had
+// gained or lost a sliver would break the ordering here while sitting well inside the 0.01 window.
+func TestSharpCornerRunOutAreaConvergesOnTheExactSurface(t *testing.T) {
+	res := sharpCornerRunOut(t)
+	exact, ok := ops.AnalyticGeometryProperties(res)
+	if !ok {
+		t.Fatal("the run-out body no longer integrates analytically; the exact area has no oracle")
+	}
+	coarse, _ := ops.TessellateBody(res, ops.DefaultQuality())
+	fine, _ := ops.TessellateBody(res, ops.PropertyQuality())
+	cArea, fArea := meshArea(coarse), meshArea(fine)
+	if !(cArea < fArea && fArea < exact.Area) {
+		t.Errorf("areas must rise coarse < fine < exact; got %.6f, %.6f, %.6f", cArea, fArea, exact.Area)
+	}
+	if rel := (exact.Area - fArea) / exact.Area; rel > 1e-4 {
+		t.Errorf("at PropertyQuality the mesh is still %.3g short of the exact %.6f (want ≤1e-4)", rel, exact.Area)
 	}
 }
 
