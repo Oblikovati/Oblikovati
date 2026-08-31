@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
@@ -206,5 +207,81 @@ func TestGreenFormFollowsTheClosingAxis(t *testing.T) {
 		if ok != c.wantOKay || (ok && form.dv != c.wantDV) {
 			t.Errorf("%s: form.dv=%v ok=%v, want dv=%v ok=%v", c.name, form.dv, ok, c.wantDV, c.wantOKay)
 		}
+	}
+}
+
+// TestFaceInteriorPointOnSeamWrappingBand is the regression gate for the cone∩box false reject
+// (Oblikovati/Oblikovati#3447). The kept cone side is a BAND bounded by two loops that each circle the
+// parameter seam a full turn, so neither is a closed polygon in the plane and neither lands in the
+// other's branch. FaceInteriorPoint used to run the plain even-odd grid on them anyway and returned a
+// point in the band the operation DISCARDED — below the cutting plane — which the per-face boolean
+// certificate then correctly refused, demoting a correct analytic result to faceted CSG. The probe
+// must be on its own face or absent, never on the far side.
+func TestFaceInteriorPointOnSeamWrappingBand(t *testing.T) {
+	cone, err := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 6, 8), 3, 6, "cone")
+	if err != nil {
+		t.Fatalf("SolidCylinderCone: %v", err)
+	}
+	box, err := brep.SolidBlock(math.P3(-20, -20, 4), math.P3(20, 20, 30), "box")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	res, err := Boolean(Intersect, cone, box)
+	if err != nil {
+		t.Fatalf("Boolean: %v", err)
+	}
+	for i, f := range res.Faces() {
+		p, ok := FaceInteriorPoint(f)
+		if !ok {
+			continue // a probe the reconstruction cannot place is skipped, never guessed
+		}
+		if !brep.PointInFaceTrim(f, p) {
+			t.Errorf("face %d (%T) interior point %v is outside its own trim", i, f.Geometry(), p)
+		}
+		if float64(p.Z) < 4 {
+			t.Errorf("face %d (%T) interior point %v is below the cutting plane z=4 — outside the intersection", i, f.Geometry(), p)
+		}
+	}
+}
+
+// TestBoundaryIndexFindsABoundarylessFace: the box tree cannot return a face with no range box, and
+// a BOUNDARY-LESS face — the whole sphere a ball is made of — has none, because a range box is built
+// from vertices and edge curves. Those faces must still answer a boundary probe, or every coaxial
+// sphere boolean reads as fabricated.
+func TestBoundaryIndexFindsABoundarylessFace(t *testing.T) {
+	ball, err := brep.SolidSphere(math.P3(0, 0, 0), 5, "ball")
+	if err != nil {
+		t.Fatalf("SolidSphere: %v", err)
+	}
+	bi := newBoundaryIndex(ball)
+	if len(bi.unboxed) != 1 {
+		t.Fatalf("ball indexed %d unboxed faces, want its single boundary-less sphere", len(bi.unboxed))
+	}
+	tol := geom.ResolutionForBox(ball.RangeBox()).Sew()
+	if !bi.on(math.P3(0, 5, 0), tol) {
+		t.Error("a point on the ball's own surface did not register as on its boundary")
+	}
+	if bi.on(math.P3(0, 4, 0), tol) {
+		t.Error("a point strictly inside the ball registered as on its boundary")
+	}
+}
+
+// TestBoundaryIndexUsesTheTreeForBoundedFaces: a bounded face is found through the box tree, and a
+// point well away from every face is not.
+func TestBoundaryIndexUsesTheTreeForBoundedFaces(t *testing.T) {
+	block, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "block")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	bi := newBoundaryIndex(block)
+	if len(bi.unboxed) != 0 || len(bi.faces) != 6 {
+		t.Fatalf("block indexed %d bounded / %d unboxed faces, want 6 / 0", len(bi.faces), len(bi.unboxed))
+	}
+	tol := geom.ResolutionForBox(block.RangeBox()).Sew()
+	if !bi.on(math.P3(1, 1, 2), tol) {
+		t.Error("a point on the block's top face did not register as on its boundary")
+	}
+	if bi.on(math.P3(1, 1, 1), tol) {
+		t.Error("the block's centre registered as on its boundary")
 	}
 }
