@@ -192,16 +192,32 @@ func bandStationOrder(n int) []int {
 const bandStationTries = 9
 
 // allLoopSamples flattens every loop's uv samples, ordered by the wrapping parameter so the median
-// is a station the band actually spans.
+// is a station the band actually spans. The u values are folded into ONE period first: the two rims
+// of a band are unwrapped onto different branches of the covering space — one walks 0→2π, the next
+// 2π→4π — so their raw parameters never meet even though the rims sit directly above one another,
+// and a station window over raw u would see only one of them.
 func allLoopSamples(loops []faceLoop) []arcSample {
+	period := loopsUPeriod(loops)
 	var out []arcSample
 	for _, fl := range loops {
 		for _, le := range fl.edges {
-			out = append(out, le.samples...)
+			for _, sp := range le.samples {
+				out = append(out, arcSample{t: sp.t, u: foldU(sp.u, period), v: sp.v})
+			}
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].u < out[j].u })
 	return out
+}
+
+// loopsUPeriod is the face's wrapping period, or 0 when its surface does not wrap in u.
+func loopsUPeriod(loops []faceLoop) float64 {
+	for _, fl := range loops {
+		if p := loopUPeriod(fl); p > 0 {
+			return p
+		}
+	}
+	return 0
 }
 
 // vSpanAt returns the lowest and highest v the boundary reaches near the given u station. found is
@@ -397,4 +413,99 @@ func polygonCrossings(poly []arcSample, u, v float64) int {
 		}
 	}
 	return n
+}
+
+// bandLoopSigns signs each loop of a face whose loops WRAP the parameter seam, where the
+// enclosed-measure convention a closed polygon uses does not apply.
+//
+// Green's conjugate identity for a band is a DIFFERENCE of its two boundary curves taken the same
+// way round: ∫∫ g du dv = ∫ [P(u, v_hi) − P(u, v_lo)] du. So a rim is normalised to a +u traversal by
+// the sign of its own net travel, then signed by its ROLE — the rim BELOW the region adds, the one
+// above subtracts. Summing them instead, which is what a stored-orientation sum does whenever a
+// producer winds both rims the same way, reports a band larger than the whole surface it lies on:
+// a cone ∩ box band read a lateral area of 337.86 against a frustum of 295.19
+// (Oblikovati/Oblikovati#3489).
+//
+// ONE wrapping loop is a different shape and keeps its stored traversal: it carries both rims joined
+// by seam edges, the seam contributes nothing because du = 0 along it, and the antiderivative's base
+// sits on the lower rim, so the walk already telescopes to the region. That is how a drilled bore
+// wall integrates exactly, and this must not disturb it.
+//
+// A loop that does NOT wrap is a hole in the band, and subtracts its own enclosed measure.
+func bandLoopSigns(loops []faceLoop) []float64 {
+	signs := make([]float64, len(loops))
+	rims := wrappingLoopCount(loops)
+	station, interiorV, haveInterior := bandInteriorUV(loops)
+	for i, fl := range loops {
+		switch {
+		case !loopWraps(fl):
+			signs[i] = loopRegionSign(false, loopSignedArea(fl))
+		case rims == 1 || !haveInterior:
+			signs[i] = 1
+		default:
+			signs[i] = bandRimSign(fl, station, interiorV)
+		}
+	}
+	return signs
+}
+
+// bandRimSign is one rim's multiplier: its travel direction, so every rim reads as a +u traversal,
+// times its role, which is +1 below the region and −1 above it.
+func bandRimSign(fl faceLoop, station, interiorV float64) float64 {
+	direction := 1.0
+	if fl.netU < 0 {
+		direction = -1
+	}
+	if v, ok := loopVNear(fl, station); ok && v > interiorV {
+		return -direction
+	}
+	return direction
+}
+
+// loopWraps reports whether this loop alone fails to return to its starting parameters.
+func loopWraps(fl faceLoop) bool { return !closeUV(fl.netU, fl.netV, 0, 0) }
+
+// wrappingLoopCount is how many of the face's loops wrap the seam.
+func wrappingLoopCount(loops []faceLoop) int {
+	n := 0
+	for _, fl := range loops {
+		if loopWraps(fl) {
+			n++
+		}
+	}
+	return n
+}
+
+// loopVNear returns the loop's v where it passes closest to the given u station, comparing stations
+// MODULO the wrapping period: two rims of one band are unwrapped onto different branches (one walks
+// 0→2π, the other 2π→4π), so their raw u values never meet even though they sit above one another.
+func loopVNear(fl faceLoop, station float64) (float64, bool) {
+	period := loopUPeriod(fl)
+	target, nearest, v, found := foldU(station, period), stdmath.Inf(1), 0.0, false
+	for _, le := range fl.edges {
+		for _, sp := range le.samples {
+			if d := stdmath.Abs(foldU(sp.u, period) - target); d < nearest {
+				nearest, v, found = d, sp.v, true
+			}
+		}
+	}
+	return v, found
+}
+
+// loopUPeriod is the loop's wrapping period, or 0 when its surface does not wrap in u.
+func loopUPeriod(fl faceLoop) float64 {
+	for _, le := range fl.edges {
+		if le.uPeriod > 0 {
+			return le.uPeriod
+		}
+	}
+	return 0
+}
+
+// foldU brings a parameter into one period, so branches of the covering space compare.
+func foldU(u, period float64) float64 {
+	if period <= 0 {
+		return u
+	}
+	return u - period*stdmath.Floor(u/period)
 }

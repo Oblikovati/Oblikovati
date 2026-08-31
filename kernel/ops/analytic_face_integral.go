@@ -189,21 +189,22 @@ func greenTerms[T quadTerms[T]](f *topo.Face, at pointEval[T]) (T, bool) {
 // takes the nesting rule, which is what a hole needs: a producer may wind a hole the same way as the
 // loop enclosing it, and a stored-orientation sum would then ADD it.
 func enclosedTerms[T quadTerms[T]](s geom.Surface, loops []faceLoop, form greenAxis, at pointEval[T]) T {
+	signs := enclosedLoopSigns(loops)
 	var total T
-	if loopsWrapASeam(loops) {
-		for _, fl := range loops {
-			total = total.add(loopGreen(s, fl, form, at))
-		}
-		if total.measure() < 0 {
-			return total.scale(-1)
-		}
-		return total
-	}
-	signs := loopRegionSigns(loops)
 	for i, fl := range loops {
 		total = total.add(loopGreen(s, fl, form, at).scale(signs[i]))
 	}
 	return total
+}
+
+// enclosedLoopSigns gives every loop the multiplier that makes the sum the region's measure. One
+// place decides it, because the two families need different reasoning and mixing them silently is
+// what produced a band larger than the surface it lies on.
+func enclosedLoopSigns(loops []faceLoop) []float64 {
+	if !loopsWrapASeam(loops) {
+		return loopRegionSigns(loops)
+	}
+	return bandLoopSigns(loops)
 }
 
 // loopGreen is one loop's boundary integral in the chosen form.
