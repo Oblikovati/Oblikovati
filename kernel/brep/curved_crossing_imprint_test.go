@@ -55,7 +55,7 @@ func TestClosedTraceLoopsRecordsUnclosedChain(t *testing.T) {
 	res := geom.ResolutionForSize(10)
 	open := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0), math.P3(5, 0, 0)} // ends 5 apart
 	rec := &diag.Recorder{}
-	loops := closedTraceLoops([][]math.Point3{open}, res, rec)
+	loops := closedTraceLoops(geom.SurfaceIntersection{Curves: [][]math.Point3{open}}, res, rec)
 	if len(loops) != 0 {
 		t.Fatalf("an unclosed chain yielded %d loops, want 0 (it must be dropped)", len(loops))
 	}
@@ -74,7 +74,7 @@ func TestClosedTraceLoopsQuietOnCleanTrace(t *testing.T) {
 	square := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0), math.P3(0, 0, 0)}
 	marker := []math.Point3{math.P3(9, 9, 9)} // an isolated tangential contact, not a chain
 	rec := &diag.Recorder{}
-	loops := closedTraceLoops([][]math.Point3{square, marker}, res, rec)
+	loops := closedTraceLoops(geom.SurfaceIntersection{Curves: [][]math.Point3{square, marker}}, res, rec)
 	if len(loops) != 1 {
 		t.Fatalf("got %d loops, want 1 (the closed square; the marker is not a loop)", len(loops))
 	}

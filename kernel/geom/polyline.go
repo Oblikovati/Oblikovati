@@ -14,6 +14,12 @@ import (
 // (each segment spans an equal 1/(n−1) slice of t, regardless of its length).
 type Polyline struct {
 	Vertices []math.Point3
+	// Deviation is the polyline's ACHIEVED tolerance in model units: how far its chords sit off the
+	// curve it approximates. It is 0 for a polyline that IS the curve (a sketch chain, a chamfer
+	// profile) and >0 only for one MARCHED as an approximation of something exact — a surface–surface
+	// intersection ([MarchedDeviation], #3489). It rides on the value so the measurement survives the
+	// hand-off from the intersector to the edge that stores it; see [CurveDeviation].
+	Deviation float64
 }
 
 // NewPolyline builds a polyline from at least two vertices. It copies the slice
@@ -23,6 +29,22 @@ func NewPolyline(vertices []math.Point3) (Polyline, error) {
 		return Polyline{}, fmt.Errorf("geom: polyline needs >= 2 vertices, got %d", len(vertices))
 	}
 	return Polyline{Vertices: append([]math.Point3(nil), vertices...)}, nil
+}
+
+// NewMarchedPolyline is [NewPolyline] for a chain that APPROXIMATES an exact curve rather than being
+// one: it stamps the achieved deviation measured for those vertices ([MarchedDeviation]) onto the
+// value, so the edge built from it can record how exact its boundary really is (#3489).
+//
+// Example:
+//
+//	pl, err := geom.NewMarchedPolyline(loop, geom.MarchedDeviation(cylA, cylB, loop))
+func NewMarchedPolyline(vertices []math.Point3, deviation float64) (Polyline, error) {
+	pl, err := NewPolyline(vertices)
+	if err != nil {
+		return Polyline{}, err
+	}
+	pl.Deviation = deviation
+	return pl, nil
 }
 
 // PointAt returns the position at parameter t.

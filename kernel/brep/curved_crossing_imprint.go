@@ -59,7 +59,7 @@ func keepImprintLoops(tr geom.SurfaceIntersection, res geom.Resolution, rec *dia
 		rec.Recordf(CodeImprintFallbackContour, diag.Defect,
 			"SSI tracer found no curve; %d contour(s) supplied by the marching-squares fallback", len(tr.Curves))
 	}
-	return closedTraceLoops(tr.Curves, res, rec)
+	return closedTraceLoops(tr, res, rec)
 }
 
 // crossingCylinderLoops traces the intersection loops of two bare cylinder bodies as closed polylines,
@@ -186,9 +186,13 @@ func cylinderTraceWindow(c geom.Cylinder, base math.Point3, height float64) geom
 // tracer broke at a pinch it could not cross — is dropped from the watertight boundary, but no longer
 // silently: it raises a CodeImprintUnclosedChain diagnostic on rec so the degradation is visible (#1404).
 // Single/short point markers (an isolated tangential contact) are not chains and are skipped quietly.
-func closedTraceLoops(raw [][]math.Point3, res geom.Resolution, rec *diag.Recorder) []geom.Polyline {
+//
+// Each kept loop carries the trace's ACHIEVED deviation (tr.Deviation): the imprint is a chord
+// approximation of the true intersection, and every edge stitched from it inherits that tolerance so the
+// result body can report how exact its boundary is instead of claiming exactness (#3489).
+func closedTraceLoops(tr geom.SurfaceIntersection, res geom.Resolution, rec *diag.Recorder) []geom.Polyline {
 	var out []geom.Polyline
-	for _, pts := range raw {
+	for _, pts := range tr.Curves {
 		if len(pts) >= 4 && !samePoint(pts[0], pts[len(pts)-1], res) {
 			rec.Recordf(CodeImprintUnclosedChain, diag.Defect,
 				"SSI traced a %d-point chain that did not close (endpoint gap %g > weld %g): dropped from the imprint",
@@ -198,7 +202,7 @@ func closedTraceLoops(raw [][]math.Point3, res geom.Resolution, rec *diag.Record
 		if len(pts) < 4 || !samePoint(pts[0], pts[len(pts)-1], res) {
 			continue
 		}
-		if pl, err := geom.NewPolyline(pts); err == nil {
+		if pl, err := geom.NewMarchedPolyline(pts, tr.Deviation); err == nil {
 			out = append(out, pl)
 		}
 	}

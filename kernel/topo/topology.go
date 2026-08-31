@@ -121,8 +121,12 @@ func (e *Edge) SetSnappedCurve(polyline []math.Point3, residual float64) {
 	e.snapped, e.tolerance = polyline, residual
 }
 
-// Tolerance returns the edge's recorded healing residual in model units (0 for a native/clean edge
-// whose curve already lies on its surfaces).
+// Tolerance returns the edge's ACHIEVED tolerance in model units: how far its stored geometry sits off
+// the exact curve it describes. It is 0 for an edge whose curve is exact — an analytic curve, or a
+// native chain that IS its own geometry — and >0 for an approximation: an import-healing residual
+// ([Edge.SetSnappedCurve]) or the chord deviation of a marched intersection polyline, which
+// [Builder.AddEdge] records from the curve itself (#3489). See [Body.AchievedBoundaryTolerance] for the
+// body-wide worst case.
 func (e *Edge) Tolerance() float64 { return e.tolerance }
 
 // StartVertex and EndVertex return the bounding vertices.

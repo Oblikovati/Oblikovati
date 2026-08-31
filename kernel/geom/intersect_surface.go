@@ -50,7 +50,9 @@ func marchedCurves(base, other Surface, box math.Box) []Curve3 {
 	traced := TraceSurfaceIntersection(base, other, SurfaceWindow(base, box))
 	out := make([]Curve3, 0, len(traced.Curves))
 	for _, poly := range traced.Curves {
-		if c, err := NewPolyline(poly); err == nil {
+		// Stamp the trace's achieved deviation on every curve it produced: a marched Curve3 is a chord
+		// approximation, and the edge built from it must be able to say how exact it is (#3489).
+		if c, err := NewMarchedPolyline(poly, traced.Deviation); err == nil {
 			out = append(out, c)
 		}
 	}
