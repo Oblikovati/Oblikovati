@@ -93,6 +93,22 @@ func TestRetraceLengthIsTheExactArcLengthAtEveryQuality(t *testing.T) {
 	}
 }
 
+// TestVertexNeighbourhoodIsNotARetrace is the regression the OCCT blend-parity corpus produced the
+// moment the detector moved onto the exact curves: every pair of edges meeting at a shared vertex
+// coincides over a ball of the weld radius about it, so without a floor the detector reports the vertex
+// itself — 34 loops across 20 corpus cases, all between 1.4e-16 and 1.9e-10 long. Here the spike is a
+// REAL back-track, but 1e-11 of one on a 117-long face.
+func TestVertexNeighbourhoodIsNotARetrace(t *testing.T) {
+	loop := []math.Point3{
+		math.P3(0, 0, 0), math.P3(100, 0, 0), math.P3(100, 0, 40), math.P3(100, 0, 40-1e-11),
+		math.P3(100, 0, 60), math.P3(0, 0, 60),
+	}
+	body := planarLoopBody(t, math.P3(0, 0, 0), math.V3(0, 1, 0), loop)
+	if bad := RetracingFaceLoops(body, PropertyQuality()); len(bad) != 0 {
+		t.Errorf("a 1e-11 back-track is the shared vertex, not a retrace, got %d: %+v", len(bad), bad)
+	}
+}
+
 // TestPeriodicSeamIsNotARetrace is the guard on the one named exclusion: a closed cylindrical face
 // bounds itself with ONE seam edge used twice, forward and back. Those two uses genuinely cover the
 // same ground in opposite senses, and reporting them would condemn every seamed face in the kernel.

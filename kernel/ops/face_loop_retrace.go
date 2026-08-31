@@ -51,10 +51,11 @@ import (
 //
 // Condition (2) is what makes the false-positive direction structurally safe rather than
 // tolerance-dependent: a subdivided straight edge fails it outright, no matter how its pieces were
-// built, because they run the same way. Condition (1) needs no separate "minimum overlap" floor any
-// more: the stretch's endpoints are EXACT (coincidentSpanOn), so a pair that merely touches at a shared
-// vertex yields a stretch of zero length rather than a short one that has to be filtered out. A thin
-// but two-dimensional sliver is excluded by the weld alone — its two antiparallel edges are a real
+// built, because they run the same way. Condition (1) keeps one floor, and only one — every pair of
+// edges meeting at a shared vertex coincides over a ball of the weld radius about that vertex, so a
+// stretch no longer than the model's own coincidence neighbourhood is that vertex and not a stretch
+// (lengthAboveVertexNeighbourhood, with the corpus measurement that separates the two populations). A
+// thin but two-dimensional sliver never reaches even that: its two antiparallel edges are a real
 // distance apart, and that distance is measured on the exact curves (brep.EntityDistance), not on
 // chords of them.
 //
@@ -141,7 +142,24 @@ func useRetraceLength(ua, ub *topo.EdgeUse, res geom.Resolution) float64 {
 	if !ok || !oppositeTraversal(ua, ub, ca, cb, lo, hi) {
 		return 0
 	}
-	return geom.CurveLength3(ca, lo, hi)
+	return lengthAboveVertexNeighbourhood(ca, lo, hi, res)
+}
+
+// lengthAboveVertexNeighbourhood is the stretch's arc length, or 0 when the stretch is no longer than
+// the model's own coincidence neighbourhood.
+//
+// EVERY pair of edges meeting at a shared vertex coincides over a ball of the weld radius about it, so
+// without this floor the detector reports the vertex itself. Measured on the OCCT blend-parity corpus
+// the two populations are NINE DECADES apart: the vertex-neighbourhood reports run 1.4e-16 to 1.9e-10,
+// and the smallest real retrace is simple/W2's 0.2 (its fillet radius). res.Stitch() — 1e-6 of the
+// model size, the floor the chart predicate carried as retraceMinOverlap — sits in the middle of that
+// gap and is model-relative, so a µm or km copy of the same part classifies the same way (ADR-0042).
+func lengthAboveVertexNeighbourhood(ca geom.Curve3, lo, hi float64, res geom.Resolution) float64 {
+	span := geom.CurveLength3(ca, lo, hi)
+	if span <= res.Stitch() {
+		return 0
+	}
+	return span
 }
 
 // coincidentSpanOn returns the longest parameter interval of ca every point of which lies on cb,
