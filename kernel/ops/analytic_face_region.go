@@ -4,6 +4,7 @@ package ops
 
 import (
 	stdmath "math"
+	"sort"
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
@@ -117,7 +118,7 @@ func faceHoldsEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain boo
 // the probe steps inward from the boundary instead, which is well defined for any loop.
 func regionProbeUV(loops []faceLoop) (u, v float64, ok bool) {
 	if loopsWrapASeam(loops) {
-		return regionInwardOfBoundary(loops)
+		return bandInteriorUV(loops)
 	}
 	return regionInteriorUV(loops)
 }
@@ -133,63 +134,64 @@ func loopsWrapASeam(loops []faceLoop) bool {
 	return false
 }
 
-// regionInwardOfBoundary returns a point just inside the enclosed region, found by stepping off the
-// longest boundary segment along its inward normal. Inward is the LEFT of the traversal taken in the
-// loop's positive-measure direction, which loopRegionSigns already establishes, so this needs no
-// containment test and works on a loop that wraps a seam.
-func regionInwardOfBoundary(loops []faceLoop) (u, v float64, ok bool) {
-	fl, sign, found := widestPositiveLoop(loops)
+// bandInteriorUV returns a point deep inside a band whose loops WRAP the parameter seam. Such a
+// band is bounded in the parameter that closes and unbounded in the one that wraps, so at any fixed
+// station of the wrapping parameter its boundary curves sit above and below: the midpoint between
+// them is interior by construction, and it is far from the boundary rather than a hair off it.
+//
+// Stepping inward off a boundary chord instead — the previous construction — could land OUTSIDE the
+// true region and go undetected, because the check available at that point compares against the
+// loops' SAMPLED polygon, which does not track the true trim curve at that scale. A probe 5.2e-3
+// outside the operand read as in-trim, the per-face gate then correctly refused a correct body, and
+// a blind hole fell to a 1830-face rescue (Oblikovati/Oblikovati#2247).
+func bandInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
+	samples := allLoopSamples(loops)
+	if len(samples) < 2 {
+		return 0, 0, false
+	}
+	station := samples[len(samples)/2].u
+	lo, hi, found := vSpanAt(samples, station)
 	if !found {
 		return 0, 0, false
 	}
-	a, b, found := longestSegment(loopPolyline(fl))
-	if !found {
-		return 0, 0, false
-	}
-	du, dv := (b.u-a.u)*sign, (b.v-a.v)*sign
-	n := stdmath.Hypot(du, dv)
-	step := regionInwardStep * n
-	return (a.u+b.u)/2 - dv/n*step, (a.v+b.v)/2 + du/n*step, true
+	return station, (lo + hi) / 2, true
 }
 
-// regionInwardStep is how far inward of the boundary the probe sits, as a fraction of the segment it
-// steps off. Small enough to stay inside a slender band, large enough that the point is not on the
-// boundary itself.
-const regionInwardStep = 0.05 // tol:parametric — inward probe offset, relative to the local boundary
-
-// widestPositiveLoop returns the top-level loop of greatest enclosed measure and the direction sign
-// that walks it the positive-measure way.
-func widestPositiveLoop(loops []faceLoop) (faceLoop, float64, bool) {
-	signs := loopRegionSigns(loops)
-	best, bestArea, found := faceLoop{}, 0.0, false
-	for i, fl := range loops {
-		area := stdmath.Abs(loopSignedArea(fl))
-		if signs[i] > 0 && area >= bestArea {
-			best, bestArea, found = fl, area, true
+// allLoopSamples flattens every loop's uv samples, ordered by the wrapping parameter so the median
+// is a station the band actually spans.
+func allLoopSamples(loops []faceLoop) []arcSample {
+	var out []arcSample
+	for _, fl := range loops {
+		for _, le := range fl.edges {
+			out = append(out, le.samples...)
 		}
 	}
-	if !found {
-		return faceLoop{}, 0, false
-	}
-	if loopSignedArea(best) < 0 {
-		return best, -1, true
-	}
-	return best, 1, true
+	sort.Slice(out, func(i, j int) bool { return out[i].u < out[j].u })
+	return out
 }
 
-// longestSegment returns the polyline's longest edge — the one least likely to be a corner sliver,
-// so the inward step off its midpoint lands cleanly inside. The closing pair is NOT considered: on a
-// seam-wrapping loop the last sample sits a whole period from the first, and that phantom segment
-// would otherwise win every time.
-func longestSegment(pts []arcSample) (a, b arcSample, ok bool) {
-	best := 0.0
-	for i := 0; i+1 < len(pts); i++ {
-		p, q := pts[i], pts[i+1]
-		if d := stdmath.Hypot(q.u-p.u, q.v-p.v); d > best {
-			a, b, best, ok = p, q, d, true
+// vSpanAt returns the lowest and highest v the boundary reaches near the given u station. found is
+// false when the boundary has no thickness there — a station at the very end of the band, where the
+// midpoint would sit on the boundary itself.
+func vSpanAt(samples []arcSample, station float64) (lo, hi float64, found bool) {
+	lo, hi = stdmath.Inf(1), stdmath.Inf(-1)
+	window := bandStationWindow * uSpanOf(samples)
+	for _, s := range samples {
+		if stdmath.Abs(s.u-station) <= window {
+			lo, hi = stdmath.Min(lo, s.v), stdmath.Max(hi, s.v)
 		}
 	}
-	return a, b, ok
+	return lo, hi, hi-lo > 0
+}
+
+// bandStationWindow is how much of the band's wrapping extent counts as "at this station" when
+// reading the boundary's v span. Wide enough to catch both boundary curves through their sampling,
+// narrow enough that the span is local rather than the band's whole height.
+const bandStationWindow = 0.02 // tol:parametric — station window, relative to the band's u extent
+
+// uSpanOf is the total extent the samples cover in the wrapping parameter.
+func uSpanOf(samples []arcSample) float64 {
+	return samples[len(samples)-1].u - samples[0].u
 }
 
 // faceSpansMaterial reports whether the surface point at (u, v) separates material from air along
@@ -218,6 +220,18 @@ func faceBody(f *topo.Face) *topo.Body {
 	}
 	return sh.Body()
 }
+
+// FaceInteriorPoint returns one point strictly inside face f's trimmed region, taken from the
+// analytic surface and its uv loops — never from a tessellation. It is the representative point a
+// per-face gate classifies (M48/C3, Oblikovati/Oblikovati#3447). ok is false for a face whose loops
+// cannot be reconstructed in uv, or whose region is too slender for the probe to land inside.
+//
+// The probe goes through regionProbeUV, so a face whose loops WRAP the parameter seam — a cone or
+// cylinder band bounded by two full-turn loops — takes the inward-of-boundary route. Running the
+// plain even-odd grid on such loops returned a point in the band the operation DISCARDED, and the
+// per-face boolean certificate then refused a correct analytic result (Oblikovati/Oblikovati#3447).
+//
+// Example: p, ok := ops.FaceInteriorPoint(f) // ok ⇒ brep.PointInFaceTrim(f, p)
 
 // FaceInteriorPoint returns one point strictly inside face f's trimmed region, taken from the
 // analytic surface and its uv loops — never from a tessellation. It is the representative point a
