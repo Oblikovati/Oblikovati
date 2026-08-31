@@ -15,9 +15,14 @@ import (
 // Interference analysis (M12-F05, Oblikovati/Oblikovati#362/#368): where two placed components
 // occupy the same space. The host owns the body geometry, so the computation lives here — each
 // occurrence's bodies are transformed to world, broad-phased by bounding box, and (for
-// overlapping pairs) boolean-intersected to measure the real overlap volume.
+// overlapping pairs) boolean-intersected to measure the real overlap volume. The measurement
+// integrates the intersection's ANALYTIC B-rep (ops.BodyGeometryProperties, M48/C3 #3451): a
+// tessellated integral under-reports every curved overlap by ~π²/(3N²), and a bore-in-a-boss
+// interference is exactly the curved case an assembly check exists to catch.
 
-// interferenceVolumeEps ignores negligible overlaps (touching faces, numerical noise).
+// interferenceVolumeEps ignores negligible overlaps (touching faces, numerical noise). It is a
+// VOLUME gate on an already-measured lump, not a geometric distance, so it does not derive from
+// geom.Resolution. // tol:volume
 const interferenceVolumeEps = 1e-6
 
 // AnalyzeInterference reports the overlapping volumes between the assembly's occurrences.
@@ -70,8 +75,8 @@ func (a *AssemblyComponentDefinition) WouldContactBlock(occID uint64, newTransfo
 		if !ok {
 			continue
 		}
-		if vol, _, found := bodiesOverlapVolume(moved, occurrenceWorldBodies(p)); found && vol > interferenceVolumeEps {
-			return true
+		if _, _, found := bodiesOverlapVolume(moved, occurrenceWorldBodies(p)); found {
+			return true // found already excludes a negligible (touching-face) overlap
 		}
 	}
 	return false
@@ -113,41 +118,49 @@ func occurrenceWorldBodies(o *occurrence.Occurrence) []*topo.Body {
 }
 
 // bodiesOverlapVolume boolean-intersects every body pair and returns the total overlap volume
-// (cm³) and a representative point, or ok=false when the overlap is negligible.
+// (cm³) and a representative point, or ok=false when every overlap is negligible.
 func bodiesOverlapVolume(as, bs []*topo.Body) (float64, math.Point3, bool) {
-	total := 0.0
-	var center math.Point3
-	found := false
+	var overlap overlapSum
 	for _, ba := range as {
 		for _, bb := range bs {
 			inter, err := ops.Boolean(ops.Intersect, ba, bb)
 			if err != nil || inter == nil {
 				continue
 			}
-			v := bodyVolume(inter)
-			if v <= interferenceVolumeEps {
-				continue
-			}
-			total += v
-			if !found {
-				center = inter.RangeBox().Center()
-				found = true
-			}
+			overlap.fold(ops.BodyGeometryProperties(inter, ops.PropertyQuality()))
 		}
 	}
-	return total, center, found
+	return overlap.volume, overlap.centroid(), overlap.volume > 0
 }
 
-// bodyVolume is the absolute enclosed volume of a body (sum of its shells' signed volumes).
-func bodyVolume(b *topo.Body) float64 {
-	v := 0.0
-	for _, sh := range b.Shells() {
-		v += ops.ShellSignedVolume(sh, ops.DefaultQuality())
+// overlapSum accumulates the analytic mass properties of every intersecting body-pair lump, so a
+// multi-body occurrence pair reports ONE volume and ONE representative point. The point is the
+// volume-weighted centroid of the overlap region — a quantity of the same analytic integral that
+// yields the volume — replacing the first lump's bounding-box centre, which measured no lump but
+// the first and, for an L-shaped or annular overlap, named a point outside the overlap entirely
+// (M48/C3, Oblikovati/Oblikovati#3451).
+type overlapSum struct {
+	volume float64
+	moment math.Vector3 // ∑ volume · centroid, about the origin
+}
+
+// fold adds one intersection body's properties, dropping a negligible lump (a touching-face
+// contact) so numerical noise never creates an interference or drags the centroid.
+func (s *overlapSum) fold(p ops.GeometryProperties) {
+	if p.Volume <= interferenceVolumeEps {
+		return
 	}
-	if v < 0 {
-		v = -v
+	s.volume += p.Volume
+	s.moment = s.moment.Add(p.Centroid.AsVector().Scale(math.Scalar(p.Volume)))
+}
+
+// centroid is the volume-weighted centre of the folded lumps, or the origin when none was folded
+// (the caller reports no interference in that case, so the point is never read).
+func (s *overlapSum) centroid() math.Point3 {
+	if s.volume == 0 {
+		return math.P3(0, 0, 0)
 	}
-	return v
+	return s.moment.Scale(math.Scalar(1 / s.volume)).AsPoint()
 }
 
 // pairInSubset reports whether the pair is in scope: both ids in subset, or subset empty.
