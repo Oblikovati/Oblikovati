@@ -19,7 +19,7 @@ import (
 func TestLoopCornerRingIsOnePointPerEdgeUse(t *testing.T) {
 	corners := []math.Point3{math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 0, 3), math.P3(0, 0, 3)}
 	f := planarLoopBody(t, math.P3(0, 0, 0), math.V3(0, 1, 0), corners).Faces()[0]
-	ring := faceOuterCorners(f)
+	ring := faceOuterCornerRing(f).pts
 	if len(ring) != len(corners) {
 		t.Fatalf("corner ring has %d points, want one per edge use (%d)", len(ring), len(corners))
 	}
@@ -35,7 +35,7 @@ func TestLoopCornerRingIsOnePointPerEdgeUse(t *testing.T) {
 // property quality still yields the same ring. Falsify by routing the ring back through loopBoundary.
 func TestCornerRingIsTheSameAtEveryQuality(t *testing.T) {
 	f := lobedBandBody(t, 24, 30, 100, 8, 6).Faces()[0]
-	ring := faceOuterCorners(f)
+	ring := faceOuterCornerRing(f).pts
 	if len(ring) != 5 {
 		t.Fatalf("the lobed band's loop has 5 edge uses, its corner ring has %d points", len(ring))
 	}
@@ -53,11 +53,14 @@ func TestFaceCornerRingsPutTheOuterLoopFirst(t *testing.T) {
 	f := planarLoopBody(t, math.P3(0, 0, 0), math.V3(0, 1, 0),
 		[]math.Point3{math.P3(0, 0, 0), math.P3(9, 0, 0), math.P3(9, 0, 9), math.P3(0, 0, 9)}).Faces()[0]
 	rings := faceCornerRings(f)
-	if len(rings) != 1 || len(rings[0]) != 4 {
+	if len(rings) != 1 || len(rings[0].pts) != 4 {
 		t.Fatalf("a one-loop face yields one 4-corner ring, got %d ring(s) %v", len(rings), rings)
 	}
-	if rings[0][0].DistanceTo(math.P3(0, 0, 0)) > 1e-12 { // tol:numeric — verbatim vertex
-		t.Errorf("the first ring must be the outer loop, starting at its first vertex, got %v", rings[0][0])
+	if rings[0].pts[0].DistanceTo(math.P3(0, 0, 0)) > 1e-12 { // tol:numeric — verbatim vertex
+		t.Errorf("the first ring must be the outer loop, starting at its first vertex, got %v", rings[0].pts[0])
+	}
+	if len(rings[0].owners) != 4 || rings[0].owners[0] != f.Loops()[0].EdgeUses()[0].Edge() {
+		t.Errorf("each ring point must carry the edge its outgoing segment lies on, got %v", rings[0].owners)
 	}
 }
 
@@ -131,7 +134,8 @@ func wideCylBandUses(t *testing.T, bld *topo.Builder, cyl geom.Cylinder, corners
 func TestPeriodicRefinementDevelopsAWideBandAtItsTrueWidth(t *testing.T) {
 	const r, height = 24.0, 10.0
 	sweep := 3 * stdmath.Pi / 2
-	loops, ok := developedFaceLoops(wideCylBandBody(t, r, sweep, height).Faces()[0])
+	band := wideCylBandBody(t, r, sweep, height).Faces()[0]
+	loops, ok := developedFaceLoops(band, faceCornerRings(band))
 	if !ok || len(loops) != 1 {
 		t.Fatalf("the wide band must develop into exactly one loop (ok=%v, %d loops)", ok, len(loops))
 	}
@@ -154,6 +158,76 @@ func TestHalvesAgreeCatchesAWrongWayUnwrap(t *testing.T) {
 	}
 	if !halvesAgree(0, 3*stdmath.Pi/8, 3*stdmath.Pi/4) {
 		t.Error("a 3π/4 step unwraps correctly and must agree with its halves")
+	}
+}
+
+// archedNotchFaceBody builds a planar face in y = 0 whose top boundary is a SEMICIRCULAR arc and whose
+// bottom runs down to a spike. The arc's chord lies along z = 0 and the spike's two sides cross it, so
+// the corner ring's chart polygon self-crosses — while the true boundary, which bulges to z = 5 above
+// the spike's z = 2, is a simple closed curve.
+func archedNotchFaceBody(t *testing.T) *topo.Body {
+	t.Helper()
+	arc, err := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 1, 0), math.V3(1, 0, 0), 5, stdmath.Pi, stdmath.Pi)
+	if err != nil {
+		t.Fatalf("NewArc3d: %v", err)
+	}
+	pl, err := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 1, 0))
+	if err != nil {
+		t.Fatalf("NewPlane: %v", err)
+	}
+	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok("arch", "body", 0)))
+	corners := []math.Point3{arc.PointAt(0), arc.PointAt(1), math.P3(5, 0, -5), math.P3(0, 0, 2), math.P3(-5, 0, -5)}
+	bld.AddFace(pl, topo.NewLineage(topo.Tok("arch", "f", 0)), topo.OuterLoop(archedNotchUses(bld, arc, corners)...))
+	return bld.Build()
+}
+
+// archedNotchUses wires the arch: the semicircular top, then the four straight sides back to it.
+func archedNotchUses(bld *topo.Builder, arc geom.Arc3d, corners []math.Point3) []topo.Use {
+	lin := topo.NewLineage(topo.Tok("arch", "e", 0))
+	verts := make([]*topo.Vertex, len(corners))
+	for i, p := range corners {
+		verts[i] = bld.AddVertex(p, lin)
+	}
+	uses := make([]topo.Use, len(corners))
+	for i := range corners {
+		j := (i + 1) % len(corners)
+		var c geom.Curve3 = geom.NewLineSegment(corners[i], corners[j])
+		if i == 0 {
+			c = arc
+		}
+		uses[i] = topo.Fwd(bld.AddEdge(c, verts[i], verts[j], lin))
+	}
+	return uses
+}
+
+// TestArcChordDoesNotInventASelfCrossing is the regression the OCCT blend-parity corpus produced for
+// the corner ring's other error direction — six planar faces reported a crossing that their boundary
+// does not have. One chart segment per edge renders a curved edge as a straight line, and that line
+// cuts across ground the arc keeps clear of. Falsify by letting loopSelfCrossing accept every candidate:
+// this fixture then reports a crossing of an arch whose arch is simply not there.
+func TestArcChordDoesNotInventASelfCrossing(t *testing.T) {
+	if bad := SelfCrossingFaceLoops(archedNotchFaceBody(t), PropertyQuality()); len(bad) != 0 {
+		t.Errorf("an arc's chord invented %d self-crossing(s) on a simple boundary: %+v", len(bad), bad)
+	}
+}
+
+// TestSegmentDevelopsItsEdgeSeparatesAChordFromALine covers the certificate directly on the same
+// fixture: the arch's arc segment does NOT develop straight (its mid sits a radius off its chord) while
+// every straight side does.
+func TestSegmentDevelopsItsEdgeSeparatesAChordFromALine(t *testing.T) {
+	f := archedNotchFaceBody(t).Faces()[0]
+	rings := faceCornerRings(f)
+	loops, ok := developedFaceLoops(f, rings)
+	if !ok || len(loops) != 1 {
+		t.Fatalf("the arch must develop into exactly one loop (ok=%v, %d loops)", ok, len(loops))
+	}
+	if segmentDevelopsItsEdge(loops[0], 0) {
+		t.Error("the semicircular arc's chord must NOT certify as a straight development of it")
+	}
+	for i := 1; i < len(loops[0].pts); i++ {
+		if !segmentDevelopsItsEdge(loops[0], i) {
+			t.Errorf("straight side %d must certify as its own development", i)
+		}
 	}
 }
 

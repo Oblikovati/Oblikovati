@@ -29,13 +29,19 @@ import (
 // test. The split count is driven by the surface's periodicity, never by a chord tolerance: a plane
 // never splits, and neither does a wide edge that already unwraps correctly.
 //
-// ★ WHAT THE CORNER RING CANNOT SEE, NAMED. One segment per edge develops a curved edge as the chord
+// ★ WHAT THE CORNER RING CANNOT SEE, NAMED. One segment per edge develops a curved edge as the CHORD
 // between its ends, so two edges that bow INTO each other strictly between their endpoints — while
 // their corner chords stay clear — are not reported. Seeing those needs exact curve-curve intersection
 // in the surface's chart, which geom does not yet offer (it has no curve-curve intersector; the
 // closest primitive, brep.EntityDistance, answers distance, not the crossing parameters an Area
-// measurement needs). The decline is one-sided: everything the corner ring DOES report is a real
-// crossing of the exact boundary, because its vertices are the boundary's own.
+// measurement needs).
+//
+// A chord also errs the OTHER way — it can cut across ground the curve keeps clear of, and invent a
+// crossing. Measured on the OCCT blend-parity corpus that is not hypothetical: six planar faces
+// reported one. So the ring carries, per point, the EDGE its outgoing segment lies on, and a chart
+// crossing is corroborated against those two edges' own curves before it is reported
+// (crossingIsOnTheCurves). What is left is one-sided: every report is a real crossing of the exact
+// boundary, and only the bow-into-each-other case is missed.
 
 // chartStepsCap bounds the periodicity refinement (a COUNT, not a tolerance): an edge still leaping a
 // half period after 32 pieces winds the axis several times over, and unwrap declines such a loop
@@ -46,30 +52,41 @@ const (
 	chartStepAgreement = 1e-6 // tol:angular — radians of disagreement between a step and its halves
 )
 
+// cornerRing is one face loop's exact boundary ring: its points, for each point the EDGE whose own
+// curve the segment LEAVING that point lies on, and that segment's own MID-parameter point on the edge.
+// The owner and the mid are what let a chart verdict be corroborated against the geometry the chart
+// came from: developed, the mid must sit on the straight chart segment its two ends span, or the chart
+// is not rendering that piece of boundary at all.
+type cornerRing struct {
+	pts    []math.Point3
+	mids   []math.Point3 // the edge-curve point halfway along each segment, aligned with pts
+	owners []*topo.Edge
+}
+
 // faceCornerRings returns f's boundary rings — outer first, then the holes — as edge corners, the
 // same order [developedFaceLoops] develops them in, so a developed loop can be checked against its
 // own 3D points index for index.
-func faceCornerRings(f *topo.Face) [][]math.Point3 {
-	outer := faceOuterCorners(f)
-	if len(outer) == 0 {
+func faceCornerRings(f *topo.Face) []cornerRing {
+	outer := faceOuterCornerRing(f)
+	if len(outer.pts) == 0 {
 		return nil
 	}
-	return append([][]math.Point3{outer}, faceHoleCorners(f)...)
+	return append([]cornerRing{outer}, faceHoleCornerRings(f)...)
 }
 
-// faceOuterCorners returns the corner ring of a face's outer loop.
-func faceOuterCorners(f *topo.Face) []math.Point3 {
+// faceOuterCornerRing returns the corner ring of a face's outer loop.
+func faceOuterCornerRing(f *topo.Face) cornerRing {
 	for _, l := range f.Loops() {
 		if l.IsOuter() {
 			return loopCornerRing(l, f.Geometry())
 		}
 	}
-	return nil
+	return cornerRing{}
 }
 
-// faceHoleCorners returns the corner ring of each inner (hole) loop.
-func faceHoleCorners(f *topo.Face) [][]math.Point3 {
-	var holes [][]math.Point3
+// faceHoleCornerRings returns the corner ring of each inner (hole) loop.
+func faceHoleCornerRings(f *topo.Face) []cornerRing {
+	var holes []cornerRing
 	for _, l := range f.Loops() {
 		if !l.IsOuter() {
 			holes = append(holes, loopCornerRing(l, f.Geometry()))
@@ -79,27 +96,34 @@ func faceHoleCorners(f *topo.Face) [][]math.Point3 {
 }
 
 // loopCornerRing returns one point per edge use — the vertex that use starts at — in traversal order,
-// refined where s's periodicity demands it. The closing point is not repeated, matching what
-// loopBoundary returned for a closed ring.
-func loopCornerRing(l *topo.Loop, s geom.Surface) []math.Point3 {
-	var out []math.Point3
+// refined where s's periodicity demands it, each point tagged with the edge it belongs to. The closing
+// point is not repeated, matching what loopBoundary returned for a closed ring.
+func loopCornerRing(l *topo.Loop, s geom.Surface) cornerRing {
+	var out cornerRing
 	for _, u := range l.EdgeUses() {
-		out = append(out, edgeChartPoints(u, s)...)
+		pts, mids := edgeChartPoints(u, s)
+		out.pts, out.mids = append(out.pts, pts...), append(out.mids, mids...)
+		for range pts {
+			out.owners = append(out.owners, u.Edge())
+		}
 	}
 	return out
 }
 
-// edgeChartPoints is the use's own ring points in traversal order: the vertex it enters at, then any
-// interior points the periodicity refinement asks for. It stops BEFORE the vertex it leaves at, which
-// is the next use's first point.
-func edgeChartPoints(u *topo.EdgeUse, s geom.Surface) []math.Point3 {
+// edgeChartPoints is the use's own ring points in traversal order — the vertex it enters at, then any
+// interior points the periodicity refinement asks for — together with each step's mid-parameter point
+// on the edge curve. It stops BEFORE the vertex it leaves at, which is the next use's first point.
+func edgeChartPoints(u *topo.EdgeUse, s geom.Surface) (pts, mids []math.Point3) {
 	n := chartStepsFor(u, s)
-	out := make([]math.Point3, n)
-	out[0] = edgeUseStartPoint(u) // the exact vertex, not the curve's end evaluation
+	pts, mids = make([]math.Point3, n), make([]math.Point3, n)
+	pts[0] = edgeUseStartPoint(u) // the exact vertex, not the curve's end evaluation
 	for k := 1; k < n; k++ {
-		out[k] = edgeUsePointAt(u, float64(k)/float64(n))
+		pts[k] = edgeUsePointAt(u, float64(k)/float64(n))
 	}
-	return out
+	for k := range n {
+		mids[k] = edgeUsePointAt(u, (float64(k)+0.5)/float64(n))
+	}
+	return pts, mids
 }
 
 // edgeUseStartPoint is the vertex a use enters its edge at: the edge's start vertex when the use runs
