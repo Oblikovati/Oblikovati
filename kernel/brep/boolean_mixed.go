@@ -39,6 +39,8 @@ type facePartition struct {
 	planarHoles [][]curvedLoop // per planar face: curved hole loops detached before the polygonal split
 	uv          []curvedFace   // curved-OUTER planar faces the exact-frame chart can split (planeFaceUV)
 	uvBox       []math.Box
+	wall        []curvedFace // full-band cylinder walls the ruled chart can split (cylinderSideSolidSplit)
+	wallBox     []math.Box
 	pass        []curvedFace
 	passBox     []math.Box
 	body        *topo.Body
@@ -65,6 +67,11 @@ func partitionFaces(b *topo.Body) facePartition {
 		if _, ok := newPlaneFaceUV(cf, geom.ResolutionForBox(topoFaces[i].RangeBox())); ok {
 			p.uv = append(p.uv, cf)
 			p.uvBox = append(p.uvBox, topoFaces[i].RangeBox())
+			continue
+		}
+		if _, _, ok := fullCylinderSideBand(cf); ok {
+			p.wall = append(p.wall, cf)
+			p.wallBox = append(p.wallBox, topoFaces[i].RangeBox())
 			continue
 		}
 		p.pass = append(p.pass, cf)
@@ -142,7 +149,7 @@ func (mp *mixedProbe) inside(p math.Point3) bool {
 // classifier's rays must see, or every ray through the hole region counts a phantom crossing.
 func (p facePartition) allFaces() []curvedFace {
 	all := append(append([]curvedFace{}, p.planarFull...), p.uv...)
-	return append(all, p.pass...)
+	return append(append(all, p.wall...), p.pass...)
 }
 
 // passThroughKept classifies each pass-through face as a whole — its membership in the other solid is
@@ -197,21 +204,39 @@ func booleanMixed(op Op, a, b *topo.Body) (*topo.Body, bool, error) {
 	// (uv) faces' imprints run BEFORE the polygonal split, mirroring the same segments onto the other
 	// side's imprint lists so the two faces split on identical coordinates.
 	impA, impB, prov := imprintCandidates(pa.planarFull, pb.planarFull, pairs)
-	uvImpA, uvImpB, okU := bothUVImprints(&pa, &pb, impA, impB)
-	if !okU {
+	uvImpA, uvImpB, wallImpA, wallImpB, okI := mixedCurvedImprints(&pa, &pb, impA, impB)
+	if !okI {
 		return nil, false, ErrNonPlanar
 	}
-	keptA, okHA := selectFacesDetached(pa.planar, impA, prb, pb.planar, pairs.bForA, op, false, prov, pa.planarHoles)
-	keptB, okHB := selectFacesDetached(pb.planar, impB, pra, pa.planar, pairs.aForB, op, true, prov, pb.planarHoles)
-	if !okHA || !okHB {
-		return nil, false, ErrNonPlanar
-	}
-	kept := append(append([]subFace{}, keptA...), keptB...)
+	kept, okK := mixedKeptFragments(pa, pb, impA, impB, pra, prb, pairs, op, prov)
 	pass, okP := mixedPassFaces(pa, pb, pra, prb, uvImpA, uvImpB, op)
-	if !okP {
+	walls, okQ := mixedWallFaces(pa, pb, pra, prb, wallImpA, wallImpB, op)
+	if !okK || !okP || !okQ {
 		return nil, false, ErrNonPlanar
 	}
-	return stitch(kept, pass, prov)
+	return stitch(kept, append(pass, walls...), prov)
+}
+
+// mixedKeptFragments runs both operands' polygonal splits (with detached-hole re-attachment).
+func mixedKeptFragments(pa, pb facePartition, impA, impB [][][2]math.Point3, pra, prb insideOracle, pairs facePairs, op Op, prov []imprintSeg) ([]subFace, bool) {
+	keptA, okA := selectFacesDetached(pa.planar, impA, prb, pb.planar, pairs.bForA, op, false, prov, pa.planarHoles)
+	keptB, okB := selectFacesDetached(pb.planar, impB, pra, pa.planar, pairs.aForB, op, true, prov, pb.planarHoles)
+	return append(append([]subFace{}, keptA...), keptB...), okA && okB
+}
+
+// mixedCurvedImprints plans both operands' exact-frame and wall imprints in one pass.
+func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3) (uvA, uvB, wallA, wallB [][]geom.Curve3, ok bool) {
+	uvA, uvB, okU := bothUVImprints(pa, pb, impA, impB)
+	wallA, okWA := wallImprints(pa, pb, impB)
+	wallB, okWB := wallImprints(pb, pa, impA)
+	return uvA, uvB, wallA, wallB, okU && okWA && okWB
+}
+
+// mixedWallFaces trims both operands' walls into the stitch's pass list.
+func mixedWallFaces(pa, pb facePartition, pra, prb insideOracle, wallImpA, wallImpB [][]geom.Curve3, op Op) ([]curvedFace, bool) {
+	wallA, okA := wallSplitFaces(pa, wallImpA, prb, op, false)
+	wallB, okB := wallSplitFaces(pb, wallImpB, pra, op, true)
+	return append(wallA, wallB...), okA && okB
 }
 
 // mixedPassFaces assembles the stitch's pass list: both sides' whole pass-through faces plus the
@@ -337,6 +362,9 @@ func planUVImprints(p, other *facePartition, otherImp [][][2]math.Point3, _ bool
 	out := make([][]geom.Curve3, len(p.uv))
 	for i, uf := range p.uv {
 		box := inflateBox(p.uvBox[i], facePairCullPad)
+		if boxesOverlapAny(box, other.uvBox) || boxesOverlapAny(box, other.wallBox) {
+			return nil, false // uv×uv and uv×wall pairs have no imprint pairing yet: decline
+		}
 		for j := range other.planarFull {
 			if !box.Intersects(paddedFaceBox(other.planar[j])) {
 				continue
@@ -420,4 +448,14 @@ func bothUVImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3) (uvImp
 	uvImpA, okA := planUVImprints(pa, pb, impB, false)
 	uvImpB, okB := planUVImprints(pb, pa, impA, true)
 	return uvImpA, uvImpB, okA && okB
+}
+
+// boxesOverlapAny reports box intersecting any of the listed boxes.
+func boxesOverlapAny(box math.Box, boxes []math.Box) bool {
+	for _, b := range boxes {
+		if box.Intersects(b) {
+			return true
+		}
+	}
+	return false
 }

@@ -227,3 +227,66 @@ func TestMixedBooleanPocketInCylinderCap(t *testing.T) {
 		t.Errorf("cap pocket removed %g, want exactly 2.56", removed)
 	}
 }
+
+// TestMixedBooleanSlotThroughCylinderWall: a full-height slot box crossing a cylinder's WALL — the
+// wall splits through the ruled chart by its exact ruling-line imprints, the caps split through the
+// exact-frame chart (their rims staying exact circles crossed at the shared ruling azimuths), and the
+// tool's faces split on the mirrored segments. Removal matches the closed-form circular-segment
+// prism: 5·(∫√(4−y²)dy − 1.5·Δy) over y∈[−0.6, 0.6].
+func TestMixedBooleanSlotThroughCylinderWall(t *testing.T) {
+	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 5)
+	before := vol(cyl)
+	tool, _ := brep.SolidBlock(math.P3(1.5, -0.6, -1), math.P3(2.5, 0.6, 6), "tool")
+	res, err := brep.BooleanDiag(brep.Difference, cyl, tool, nil)
+	if err != nil {
+		t.Fatalf("wall slot declined: %v", err)
+	}
+	if !res.IsSolid() || cylinderFaceCount(res) != 1 {
+		t.Fatalf("wall slot invalid (solid=%v cyls=%d)", res.IsSolid(), cylinderFaceCount(res))
+	}
+	// The volume oracle integrates cylinder walls as an inscribed 32-gon (pre-existing quadrature
+	// bias: vol(r2 h5 cylinder) = 320·sin(π/16) exactly), so arc-boundary deltas cannot be asserted
+	// to closed form here; a loose bound catches gross errors and the geometry is asserted exactly.
+	want := 5 * (0.6*stdmath.Sqrt(4-0.36) + 4*stdmath.Asin(0.3) - 1.8)
+	if removed := before - vol(res); stdmath.Abs(removed-want) > 0.15 {
+		t.Errorf("wall slot removed %g, want ≈%g", removed, want)
+	}
+	if len(res.Faces()) != 6 {
+		t.Fatalf("wall slot has %d faces, want 6 (3 cavity walls + 2 split caps + breached wall)", len(res.Faces()))
+	}
+	assertSlotGeometry(t, res)
+}
+
+// assertSlotGeometry pins the slot result's EXACT geometry: the breach's ruling x sits at √(4−0.36)
+// on every touching face box, and each split cap keeps exactly one rim arc whose points stay on the
+// r=2 circle (the exact-frame guarantee).
+func assertSlotGeometry(t *testing.T, res *topo.Body) {
+	t.Helper()
+	xr := stdmath.Sqrt(4 - 0.36)
+	arcsSeen := 0
+	for _, f := range res.Faces() {
+		if _, isCyl := f.Geometry().(geom.Cylinder); isCyl {
+			if bx := f.RangeBox(); stdmath.Abs(float64(bx.Max.X)-xr) > 1e-9 {
+				t.Errorf("breached wall x-max = %g, want the exact ruling %g", float64(bx.Max.X), xr)
+			}
+			continue
+		}
+		for _, l := range f.Loops() {
+			for _, u := range l.EdgeUses() {
+				if arc, isArc := u.Edge().Geometry().(geom.Arc3d); isArc {
+					arcsSeen++
+					for _, tp := range []float64{0, 0.5, 1} {
+						p := arc.PointAt(tp)
+						r := stdmath.Hypot(float64(p.X), float64(p.Y))
+						if stdmath.Abs(r-2) > 1e-9 {
+							t.Errorf("cap rim arc point off the r=2 circle: r=%g", r)
+						}
+					}
+				}
+			}
+		}
+	}
+	if arcsSeen != 2 {
+		t.Errorf("split caps carry %d rim arcs, want 2 (one per cap, exact)", arcsSeen)
+	}
+}
