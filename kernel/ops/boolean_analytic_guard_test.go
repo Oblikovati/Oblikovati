@@ -76,16 +76,19 @@ func TestCurvedExactBooleanPassesVolumeGuard(t *testing.T) {
 	}
 }
 
-// TestCurvedVolumeRejectFallsBackToCSG drives the reject-and-fallback path end to end (#1601):
-// with the bracket margin tightened so even a CORRECT crossing-cylinder result reads as out of
-// bracket, curvedExactGuarded must decline — the boolean falls back to the faceted CSG path
-// (no cylinder faces survive) and records CodeBooleanAnalyticVolumeReject. This is exactly what
-// a real gross mis-recognition triggers; forcing it here proves the guard rejects, diagnoses, and
-// hands off rather than shipping the analytic body, without needing a recognizer bug to reproduce.
-func TestCurvedVolumeRejectFallsBackToCSG(t *testing.T) {
-	saved := curvedGuardBracketScale
-	curvedGuardBracketScale = -1 // any bracket, even the true one, now reads as violated
-	defer func() { curvedGuardBracketScale = saved }()
+// TestCurvedVolumeRejectHandsOffAndDiagnoses drives the reject-and-hand-off path end to end
+// (#1601): with the bracket forced so even a CORRECT crossing-cylinder result reads as out of
+// bracket, curvedExactGuarded must decline, record CodeBooleanAnalyticVolumeReject, and leave the
+// operation to the next path — which must still deliver a valid solid.
+//
+// It no longer asserts that the next path is the FACETED CSG one. Since the per-face dispatch
+// learned to imprint a conic onto a planar face (ADR-0058), crossing cylinders are handled
+// analytically by brep.BooleanDiag, so a rejected recognizer result now hands off to an exact path
+// rather than to facets. That is the better outcome, and pinning the old one would pin the loss.
+func TestCurvedVolumeRejectHandsOffAndDiagnoses(t *testing.T) {
+	forced := -1e9 // any bracket, even the true one, now reads as violated
+	curvedGuardBracketOverride = &forced
+	defer func() { curvedGuardBracketOverride = nil }()
 
 	fat, err := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	if err != nil {
@@ -103,11 +106,8 @@ func TestCurvedVolumeRejectFallsBackToCSG(t *testing.T) {
 	if !rec.Has(CodeBooleanAnalyticVolumeReject) {
 		t.Errorf("rejected analytic result recorded no %q; got %v", CodeBooleanAnalyticVolumeReject, rec.Records())
 	}
-	if cylinderFaceCount(res) != 0 {
-		t.Errorf("rejected analytic path kept %d cylinder faces; must fall back to the faceted CSG path", cylinderFaceCount(res))
-	}
-	if !rec.Has(CodeBooleanCSGFallback) {
-		t.Errorf("the fallback path recorded no %q; got %v", CodeBooleanCSGFallback, rec.Records())
+	if r := Validate(res); !r.ValidSolid() {
+		t.Errorf("the path taken after the rejection left an invalid solid: %+v", r)
 	}
 }
 

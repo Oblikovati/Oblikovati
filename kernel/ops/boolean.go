@@ -278,10 +278,13 @@ const CodeBooleanAnalyticVolumeReject diag.Code = "boolean.analytic-volume-rejec
 // not the boolean, was wrong).
 const curvedVolumeGuardFraction = 0.10 // tol:calibrated — bracket margin for a tessellated fallback volume
 
-// curvedGuardBracketScale scales the volume bracket's tolerance. Production leaves it at 1; a test
-// sets it negative so even a correct result reads as out of bracket, which drives the
-// reject-and-fallback path end to end without needing a recognizer bug to reproduce.
-var curvedGuardBracketScale = 1.0
+// curvedGuardBracketOverride, when non-nil, REPLACES the computed volume-bracket tolerance.
+// Production leaves it nil; a test sets it to a large negative value so even a correct result reads
+// as out of bracket, which drives the reject-and-diagnose path end to end without needing a
+// recognizer bug to reproduce. It replaces rather than scales because the analytic bracket's own
+// tolerance is a resolution cube — scaling that by −1 leaves a number far too small to force a
+// violation, so the hook silently stopped working when the bracket became exact.
+var curvedGuardBracketOverride *float64
 
 // curvedExactGuarded returns an exact analytic curved boolean only when a path applies AND the
 // result is CERTIFIED: every face passes Requicha's membership rule against the operands
@@ -324,10 +327,13 @@ const CodeBooleanAnalyticFaceReject diag.Code = "boolean.analytic-face-reject"
 // curvedVolumeGuardFraction of the larger operand when either fell back to the tessellation, whose
 // chord deficit the bracket must then absorb.
 func curvedGuardTolerance(target, tool *topo.Body, tv, wv float64) float64 {
-	if analyticVolumesExact(target, tool) {
-		return curvedGuardBracketScale * ResolutionForBodies(target, tool).Volume()
+	if curvedGuardBracketOverride != nil {
+		return *curvedGuardBracketOverride
 	}
-	return curvedGuardBracketScale * curvedVolumeGuardFraction * max(tv, wv)
+	if analyticVolumesExact(target, tool) {
+		return ResolutionForBodies(target, tool).Volume()
+	}
+	return curvedVolumeGuardFraction * max(tv, wv)
 }
 
 // analyticVolumesExact reports whether both operands integrate over their analytic B-rep, so their
