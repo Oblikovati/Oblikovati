@@ -98,9 +98,15 @@ func onBodyBoundary(b *topo.Body, p math.Point3, tol float64) bool {
 }
 
 // boxReaches reports whether p is inside box grown by tol — the broad-phase filter that keeps the
-// boundary scan off faces the point cannot possibly touch. A face on an unbounded surface still has
-// a bounded range box, so this never rejects a reachable face.
+// boundary scan off faces the point cannot possibly touch.
+//
+// An EMPTY box passes. topo.Face.RangeBox is built from the face's vertices and edge curves, so a
+// boundary-less face — a whole sphere, the only face of a ball — has no box at all, and filtering on
+// it would skip exactly the faces a coaxial sphere/rod boolean has to certify.
 func boxReaches(box math.Box, p math.Point3, tol float64) bool {
+	if box.IsEmpty() {
+		return true
+	}
 	t := math.Scalar(tol)
 	return box.Min.X-t <= p.X && p.X <= box.Max.X+t &&
 		box.Min.Y-t <= p.Y && p.Y <= box.Max.Y+t &&

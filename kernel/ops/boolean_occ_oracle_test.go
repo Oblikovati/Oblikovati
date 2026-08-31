@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 )
 
 // OCC getMass boolean oracle (M2 Phase 3, Oblikovati/Oblikovati#1336 — the independent ground-truth
@@ -19,10 +20,10 @@ import (
 // test needs no OCCT at run time. The cases ARE curvedExactCases — the same matrix the exactness guard
 // runs — so each documented curved boolean is validated both for staying exact AND for matching OCC mass.
 //
-// Our volume is the tessellated B-rep's (inscribed facets at DefaultQuality), so it sits slightly UNDER
-// OCC's exact analytic value by the chord deficit — never far over. The per-case budget reflects how much
-// curved area each result carries (a doubly-curved or many-arc result faceted more than a singly-curved
-// one); it is one-sided in spirit but written as |rel| for simplicity.
+// The budget depends on how the result's volume was measured. Where it integrates the ANALYTIC B-rep it
+// must match OCC outright (occAnalyticTolerance). Where the analytic integrator still declines and the
+// tessellation measures it, the volume sits UNDER OCC's exact value by the inscribed-facet chord deficit —
+// never far over — and the per-case budget below reflects how much curved area that result carries.
 
 func loadOCCBooleanOracle(t *testing.T) map[string]float64 {
 	t.Helper()
@@ -57,6 +58,17 @@ func occBooleanTolerance(name string) float64 {
 	}
 }
 
+// occAnalyticTolerance is the budget for a result whose volume comes from the ANALYTIC B-rep
+// (M48/C3 #3453). There is no faceting deficit to absorb then — the integral agrees with the closed
+// form to ~1e-11 relative — so the only slack needed is for OCC's own rounding in the stored oracle,
+// which carries four decimals. A case that misses THIS is a geometry error, and the loose budgets
+// above no longer hide it.
+const occAnalyticTolerance = 1e-4
+
+// TestCurvedBooleanVolumesMatchOCC is the corpus gate for the analytic boolean. Each case is held to
+// the tight analytic budget once its result integrates over the exact B-rep, and only a result that
+// still falls back to the tessellation keeps the old faceting budget — so the log below reads as a
+// scoreboard of which booleans are analytic yet, and tightens on its own as more of them become so.
 func TestCurvedBooleanVolumesMatchOCC(t *testing.T) {
 	oracle := loadOCCBooleanOracle(t)
 	for _, c := range curvedExactCases() {
@@ -71,11 +83,21 @@ func TestCurvedBooleanVolumesMatchOCC(t *testing.T) {
 				t.Fatalf("%s: Boolean(%s): %v", c.name, c.op, err)
 			}
 			got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+			budget, source := occBudgetFor(c.name, res)
 			rel := stdmath.Abs(got-want) / want
-			t.Logf("%-32s ours=%.4f  occ=%.4f  rel=%.4f (budget %.3f)", c.name, got, want, rel, occBooleanTolerance(c.name))
-			if rel > occBooleanTolerance(c.name) {
-				t.Errorf("%s: volume %.4f vs OCC getMass %.4f (rel %.4f > %.4f)", c.name, got, want, rel, occBooleanTolerance(c.name))
+			t.Logf("%-32s ours=%.6f  occ=%.6f  rel=%.6f (%s budget %.4f)", c.name, got, want, rel, source, budget)
+			if rel > budget {
+				t.Errorf("%s: volume %.6f vs OCC getMass %.6f (rel %.6f > %.6f, %s)", c.name, got, want, rel, budget, source)
 			}
 		})
 	}
+}
+
+// occBudgetFor picks the budget by how the result's volume was measured, and names the source so a
+// failure says which regime it is in.
+func occBudgetFor(name string, res *topo.Body) (float64, string) {
+	if _, analytic := ops.AnalyticGeometryProperties(res); analytic {
+		return occAnalyticTolerance, "analytic"
+	}
+	return occBooleanTolerance(name), "faceted"
 }
