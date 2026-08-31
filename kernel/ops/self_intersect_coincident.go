@@ -99,8 +99,13 @@ func boundaryCoveredBy(f, g *topo.Face, shared sharedContact, res geom.Resolutio
 // happens to run along a second surface (a planar cap's rim lying on the cylinder it caps) is not
 // mistaken for a co-sheet pair.
 func facesShareOneSheet(fa, fb *topo.Face, res geom.Resolution) bool {
-	return probesLieOnSurface(fb.Geometry(), faceTrimProbes(fa), res.Sew()) &&
-		probesLieOnSurface(fa.Geometry(), faceTrimProbes(fb), res.Sew())
+	return sheetHoldsBoth(fa.Geometry(), fb.Geometry(), faceTrimProbes(fa), faceTrimProbes(fb), res)
+}
+
+// sheetHoldsBoth is facesShareOneSheet over probes the caller already has, so a pairwise scan computes
+// each face's probes once instead of once per pair.
+func sheetHoldsBoth(sa, sb geom.Surface, probesA, probesB []math.Point3, res geom.Resolution) bool {
+	return probesLieOnSurface(sb, probesA, res.Sew()) && probesLieOnSurface(sa, probesB, res.Sew())
 }
 
 // probesLieOnSurface reports whether every probe sits on s within tol; an empty probe set (a face with

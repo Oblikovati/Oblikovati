@@ -55,6 +55,27 @@ func TestSelfIntersectionVerdictIsIndependentOfQuality(t *testing.T) {
 	}
 }
 
+// TestFaceScanCachesBoxesAndProbes is the guard on the fine-pitch coil hang. topo.Face.RangeBox walks
+// the face's edges and evaluates their curves, so an O(F²) pair scan that asks for it inside the loop
+// is O(F²·E) — measured, that took a coil's turn-clearance check (#2080, hundreds of swept faces) past
+// twenty minutes. The scan must capture each box once, and compute each face's probes at most once.
+func TestFaceScanCachesBoxesAndProbes(t *testing.T) {
+	body, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(2, 3, 4), "box")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	scan := newFaceScan(body.Faces())
+	for i, f := range body.Faces() {
+		if scan.boxes[i] != f.RangeBox() {
+			t.Fatalf("face %d's captured box %v is not its own %v", i, scan.boxes[i], f.RangeBox())
+		}
+	}
+	first := scan.trimProbes(0)
+	if again := scan.trimProbes(0); len(first) == 0 || &again[0] != &first[0] {
+		t.Error("a face's trim probes must be computed once and reused, not rebuilt per pair")
+	}
+}
+
 // TestUnresolvedSurfacePairDeclinesRatherThanReports pins the DIRECTION of the detector's one named
 // decline, which is the opposite of boundary_cross.go's for the same geom.SurfaceIntersect verdict: a
 // validity query that manufactured a defect on every pair the intersector cannot resolve would condemn

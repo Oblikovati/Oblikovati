@@ -52,17 +52,68 @@ type SelfIntersection struct {
 //
 // Example: if hits := ops.SelfIntersections(body, ops.DefaultQuality()); len(hits) > 0 { reject(body) }
 func SelfIntersections(b *topo.Body, _ Quality) []SelfIntersection {
-	faces := b.Faces()
 	res := geom.ResolutionForBox(b.RangeBox())
+	scan := newFaceScan(b.Faces())
 	var out []SelfIntersection
-	for i, fa := range faces {
-		for _, fb := range faces[i+1:] {
-			if p, hit := facesInterpenetrate(fa, fb, res); hit {
-				out = append(out, SelfIntersection{FaceA: fa, FaceB: fb, Witness: p})
+	for i := range scan.faces {
+		for j := i + 1; j < len(scan.faces); j++ {
+			if p, hit := scan.interpenetrate(i, j, res); hit {
+				out = append(out, SelfIntersection{FaceA: scan.faces[i], FaceB: scan.faces[j], Witness: p})
 			}
 		}
 	}
 	return out
+}
+
+// faceScan holds the per-face data a pairwise scan would otherwise recompute for every pair: each
+// face's range box, and (lazily) its trim probes.
+//
+// It is not a micro-optimization. topo.Face.RangeBox walks the face's edges and evaluates their
+// curves, so recomputing it inside the O(F²) loop is O(F²·E) — measured, that alone took a fine-pitch
+// coil's turn-clearance check (#2080, a body with hundreds of swept faces) past twenty minutes.
+type faceScan struct {
+	faces  []*topo.Face
+	boxes  []math.Box
+	probes [][]math.Point3 // nil per face until a same-sheet test needs it
+}
+
+// newFaceScan captures the faces and their range boxes once.
+func newFaceScan(faces []*topo.Face) *faceScan {
+	s := &faceScan{faces: faces, boxes: make([]math.Box, len(faces)), probes: make([][]math.Point3, len(faces))}
+	for i, f := range faces {
+		s.boxes[i] = f.RangeBox()
+	}
+	return s
+}
+
+// trimProbes returns face i's boundary probes, computing them the first time they are asked for.
+func (s *faceScan) trimProbes(i int) []math.Point3 {
+	if s.probes[i] == nil {
+		s.probes[i] = faceTrimProbes(s.faces[i])
+	}
+	return s.probes[i]
+}
+
+// interpenetrate returns a witness point where faces i and j pass through each other, on the exact
+// B-rep. Range boxes prune the pair first; a pair trimmed out of one surface sheet takes the
+// trim-overlap arm; every other pair takes the surface-surface intersection arm. The shared topology
+// is collected only once a crossing curve exists to test against it, because that walk is O(E) too.
+func (s *faceScan) interpenetrate(i, j int, res geom.Resolution) (math.Point3, bool) {
+	if !s.boxes[i].Intersects(s.boxes[j]) {
+		return math.Point3{}, false
+	}
+	fa, fb := s.faces[i], s.faces[j]
+	if sheetHoldsBoth(fa.Geometry(), fb.Geometry(), s.trimProbes(i), s.trimProbes(j), res) {
+		return coincidentTrimOverlap(fa, fb, sharedFaceContact(fa, fb), res)
+	}
+	curves, handled := geom.SurfaceIntersect(fa.Geometry(), fb.Geometry(), s.boxes[i].Union(s.boxes[j]), res)
+	if !handled {
+		return declineUnresolvedSurfacePair()
+	}
+	if len(curves) == 0 {
+		return math.Point3{}, false // the surfaces are known not to cross
+	}
+	return crossingWitness(curves, boxOverlap(s.boxes[i], s.boxes[j]), fa, fb, sharedFaceContact(fa, fb), res)
 }
 
 // declineUnresolvedSurfacePair is the ONE named decline of this detector, so the skip is on the record
@@ -80,25 +131,6 @@ func SelfIntersections(b *topo.Body, _ Quality) []SelfIntersection {
 // detector accepts knowingly and which shrinks as geom's intersector coverage grows.
 func declineUnresolvedSurfacePair() (math.Point3, bool) {
 	return math.Point3{}, false
-}
-
-// facesInterpenetrate returns a witness point where the two trimmed faces pass through each other, on
-// the exact B-rep. Range boxes prune the pair first; a pair trimmed out of one surface sheet takes the
-// trim-overlap arm; every other pair takes the surface-surface intersection arm.
-func facesInterpenetrate(fa, fb *topo.Face, res geom.Resolution) (math.Point3, bool) {
-	boxA, boxB := fa.RangeBox(), fb.RangeBox()
-	if !boxA.Intersects(boxB) {
-		return math.Point3{}, false
-	}
-	shared := sharedFaceContact(fa, fb)
-	if facesShareOneSheet(fa, fb, res) {
-		return coincidentTrimOverlap(fa, fb, shared, res)
-	}
-	curves, handled := geom.SurfaceIntersect(fa.Geometry(), fb.Geometry(), boxA.Union(boxB), res)
-	if !handled {
-		return declineUnresolvedSurfacePair()
-	}
-	return crossingWitness(curves, boxOverlap(boxA, boxB), fa, fb, shared, res)
 }
 
 // crossingWitness returns the first intersection curve's witness: a point that lies inside BOTH trims
