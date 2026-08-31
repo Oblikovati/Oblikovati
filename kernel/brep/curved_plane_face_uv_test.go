@@ -133,3 +133,33 @@ func TestPlaneFaceUVHoleSurvivesSplit(t *testing.T) {
 		t.Fatalf("fragment carries %d exact full-circle hole loops, want 1", holeLoops)
 	}
 }
+
+// TestCurvedFaceLineIntervals: exact even-odd line-in-face intervals on a disc and a holed square.
+func TestCurvedFaceLineIntervals(t *testing.T) {
+	f, _ := uvDiscFace(t, 2)
+	// A diameter line through the centre: one interval spanning [−2, 2] exactly.
+	iv, ok := curvedFaceLineIntervals(f, math.P3(0, 0, 0), math.V3(1, 0, 0), [2]float64{-5, 5})
+	if !ok || len(iv) != 1 || stdmath.Abs(iv[0][0]+2) > 1e-9 || stdmath.Abs(iv[0][1]-2) > 1e-9 {
+		t.Fatalf("disc diameter intervals = %v ok=%v, want [[-2,2]]", iv, ok)
+	}
+	// A line missing the disc entirely: no intervals.
+	iv, ok = curvedFaceLineIntervals(f, math.P3(0, 3, 0), math.V3(1, 0, 0), [2]float64{-5, 5})
+	if !ok || len(iv) != 0 {
+		t.Fatalf("miss intervals = %v ok=%v, want none", iv, ok)
+	}
+	// The holed square (hole r=0.5 at centre): a centre line yields TWO intervals around the hole.
+	pl, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	hole, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.5)
+	square := [][2]float64{{-2, -2}, {2, -2}, {2, 2}, {-2, 2}}
+	outer := curvedLoop{}
+	for i := range square {
+		a, b := square[i], square[(i+1)%len(square)]
+		outer.edges = append(outer.edges, loopEdge{curve: geom.NewLineSegment(
+			math.P3(math.Scalar(a[0]), math.Scalar(a[1]), 0), math.P3(math.Scalar(b[0]), math.Scalar(b[1]), 0)), t0: 0, t1: 1})
+	}
+	holed := curvedFace{surface: pl, loops: []curvedLoop{outer, {edges: []loopEdge{{curve: hole, t0: 1, t1: 0}}}}}
+	iv, ok = curvedFaceLineIntervals(holed, math.P3(0, 0, 0), math.V3(1, 0, 0), [2]float64{-5, 5})
+	if !ok || len(iv) != 2 || stdmath.Abs(iv[0][1]+0.5) > 1e-9 || stdmath.Abs(iv[1][0]-0.5) > 1e-9 {
+		t.Fatalf("holed-square intervals = %v ok=%v, want two intervals split at ±0.5", iv, ok)
+	}
+}

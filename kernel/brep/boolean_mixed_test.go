@@ -88,14 +88,36 @@ func TestMixedBooleanUnionAwayFromBoss(t *testing.T) {
 	}
 }
 
-// TestMixedBooleanDeclinesCurvedInteraction: a cut that reaches the boss region must DECLINE
-// (ErrNonPlanar) — the curved wall and the seat's circular hole would need imprinting, which is the
-// bespoke curved handlers' and the reconstruction path's job.
+// TestMixedBooleanDeclinesCurvedInteraction: a cut that genuinely CROSSES the boss wall must DECLINE
+// (ErrNonPlanar) — imprinting a cylinder wall is the bespoke curved handlers' and the reconstruction
+// path's job. The tool reaches x=8, well past the wall (radius 2 about (5,5)), and the exact
+// interaction gate proves the contact (a ruling-line pair inside the tool face's trim and the band).
 func TestMixedBooleanDeclinesCurvedInteraction(t *testing.T) {
 	bossed := bossedBlock(t)
-	through, _ := brep.SolidBlock(math.P3(4, 4, 9), math.P3(6, 6, 12), "through")
+	through, _ := brep.SolidBlock(math.P3(4, 4, 9), math.P3(8, 6, 12), "through")
 	if _, err := brep.BooleanDiag(brep.Difference, bossed, through, nil); err == nil {
-		t.Fatal("cut through the boss did not decline; want ErrNonPlanar (conservative scope)")
+		t.Fatal("cut crossing the boss wall did not decline; want ErrNonPlanar (conservative scope)")
+	}
+}
+
+// TestMixedBooleanCavityThroughSeatHole: a tool box passing through the SEAT PLANE inside the boss's
+// hole region — fully interior to the block∪boss solid, touching no face (the exact interaction gate
+// proves the wall clear; the exact trim clipping mints no imprint inside the hole void; the membership
+// oracle sees the TRUE hole boundary). The cut removes EXACTLY the tool volume as an embedded cavity.
+// Asserted as a volume DELTA against the uncut fixture, isolating the boolean from any fixture bias.
+func TestMixedBooleanCavityThroughSeatHole(t *testing.T) {
+	bossed := bossedBlock(t)
+	before := vol(bossed)
+	tool, _ := brep.SolidBlock(math.P3(4, 4, 9), math.P3(6, 6, 12), "tool")
+	res, err := brep.BooleanDiag(brep.Difference, bossed, tool, nil)
+	if err != nil {
+		t.Fatalf("through-seat-hole cavity declined: %v", err)
+	}
+	if !res.IsSolid() {
+		t.Fatal("cavity result is not a solid")
+	}
+	if removed := before - vol(res); stdmath.Abs(removed-12) > 1e-6 {
+		t.Errorf("cavity removed %g, want exactly 12 (the embedded tool's volume)", removed)
 	}
 }
 
@@ -159,5 +181,27 @@ func TestMixedBooleanPocketOnSeatFace(t *testing.T) {
 	want := 1000 + stdmath.Pi*4*3 - 1.8*1.8*1 // pocket bites 1 deep into the top
 	if got := vol(res); stdmath.Abs(got-want) > 0.5 {
 		t.Errorf("seat-face pocket volume = %g, want %g", got, want)
+	}
+}
+
+// TestMixedBooleanCavityInsideCylinder: a box wholly inside a cylinder — the box's faces overlap the
+// wall's bounding box everywhere, so the retired box gate always declined; the exact interaction gate
+// (plane∩cylinder ruling/circle curves against both trims, OCCT IntTools style) proves the wall clear
+// and the cut becomes an exact embedded cavity in a CURVED body.
+func TestMixedBooleanCavityInsideCylinder(t *testing.T) {
+	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 5)
+	before := vol(cyl)
+	tool, _ := brep.SolidBlock(math.P3(-0.5, -0.5, 2), math.P3(0.5, 0.5, 3), "tool")
+	res, err := brep.BooleanDiag(brep.Difference, cyl, tool, nil)
+	if err != nil {
+		t.Fatalf("cavity inside cylinder declined: %v", err)
+	}
+	if !res.IsSolid() || cylinderFaceCount(res) != 1 {
+		t.Fatalf("cavity-in-cylinder invalid (solid=%v cyls=%d)", res.IsSolid(), cylinderFaceCount(res))
+	}
+	// A volume DELTA against the uncut fixture: the cut must remove exactly the tool's volume,
+	// isolating the boolean from a pre-existing cylinder-wall mass-properties bias (~0.08·h at r=2).
+	if removed := before - vol(res); stdmath.Abs(removed-1) > 1e-6 {
+		t.Errorf("cavity-in-cylinder removed %g, want exactly 1", removed)
 	}
 }

@@ -48,7 +48,11 @@ func stitch(faces []subFace, pass []curvedFace, prov []imprintSeg) (*topo.Body, 
 			out[fi].rings[ri] = splitRingTJunctions(out[fi].rings[ri], w, tjTree)
 		}
 	}
-	reorientFaces(out, w.points)
+	if len(pass) == 0 {
+		reorientFaces(out, w.points) // the legacy closed-set path, byte-identical
+	} else {
+		reorientFacesConsistent(out) // partial subset: classification is the orientation authority
+	}
 	tangent := hasTangentContact(collectEdgeUses(out))
 	all := append(builtFacesToCurved(out, w.points), pass...)
 	body := curvedStitchNamed(all, planarStitchNaming(prov, w, out))

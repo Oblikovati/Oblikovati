@@ -3,6 +3,8 @@
 package brep
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -33,6 +35,7 @@ type insideOracle interface {
 // loop edge collapses to its seam point).
 type facePartition struct {
 	planar      []curvedFace
+	planarFull  []curvedFace   // per planar face: the UNstripped face (true trim, for exact imprint clipping)
 	planarHoles [][]curvedLoop // per planar face: curved hole loops detached before the polygonal split
 	pass        []curvedFace
 	passBox     []math.Box
@@ -53,6 +56,7 @@ func partitionFaces(b *topo.Body) facePartition {
 	for i, cf := range facesOfAny(b) {
 		if stripped, holes, ok := detachCurvedHoles(cf); ok {
 			p.planar = append(p.planar, stripped)
+			p.planarFull = append(p.planarFull, cf)
 			p.planarHoles = append(p.planarHoles, holes)
 			continue
 		}
@@ -126,25 +130,11 @@ func (mp *mixedProbe) inside(p math.Point3) bool {
 	return newFluxQuery(mp.faces).windingInside(p)
 }
 
-// allFaces is the partition's full flattened face list (planar then pass), for the membership oracle.
+// allFaces is the partition's full flattened face list (planar then pass) for the membership oracle —
+// the TRUE faces (planarFull), never the stripped ones: a detached hole is a real boundary the
+// classifier's rays must see, or every ray through the hole region counts a phantom crossing.
 func (p facePartition) allFaces() []curvedFace {
-	return append(append([]curvedFace{}, p.planar...), p.pass...)
-}
-
-// passDisjointFrom reports whether every pass-through face's box is clear of every face box of the
-// other body (padded by the pipeline's cull slack) — the scope gate: only then can no imprint,
-// membership boundary, or T-junction touch a pass-through face.
-func passDisjointFrom(p facePartition, other *topo.Body) bool {
-	pad := math.Scalar(facePairCullPad)
-	for _, pb := range p.passBox {
-		inflated := math.NewBox(pb.Min.TranslateBy(math.V3(-pad, -pad, -pad)), pb.Max.TranslateBy(math.V3(pad, pad, pad)))
-		for _, of := range other.Faces() {
-			if inflated.Intersects(of.RangeBox()) {
-				return false
-			}
-		}
-	}
-	return true
+	return append(append([]curvedFace{}, p.planarFull...), p.pass...)
 }
 
 // passThroughKept classifies each pass-through face as a whole — its membership in the other solid is
@@ -186,12 +176,17 @@ func passSamplePoint(f curvedFace) (math.Point3, bool) {
 // curved/CSG paths exactly as before.
 func booleanMixed(op Op, a, b *topo.Body) (*topo.Body, bool, error) {
 	pa, pb := partitionFaces(a), partitionFaces(b)
-	if !passDisjointFrom(pa, b) || !passDisjointFrom(pb, a) {
+	if !passClearOf(pa, pb) || !passClearOf(pb, pa) {
 		return nil, false, ErrNonPlanar
 	}
 	pra, prb := newInsideOracle(a, pa.allFaces()), newInsideOracle(b, pb.allFaces())
 	pairs := crossingFaceCandidates(pa.planar, pb.planar)
-	impA, impB, prov := imprintCandidates(pa.planar, pb.planar, pairs)
+	if coplanarCurvedContact(pa, pb, pairs) {
+		return nil, false, ErrNonPlanar // a flush contact on a curved-loop face is not modelled here
+	}
+	// Imprints clip against the TRUE trims (planarFull): a face's detached holes are void, so no
+	// imprint is minted inside them (the phantom that broke the detached-hole premise).
+	impA, impB, prov := imprintCandidates(pa.planarFull, pb.planarFull, pairs)
 	keptA, okHA := selectFacesDetached(pa.planar, impA, prb, pb.planar, pairs.bForA, op, false, prov, pa.planarHoles)
 	keptB, okHB := selectFacesDetached(pb.planar, impB, pra, pa.planar, pairs.aForB, op, true, prov, pb.planarHoles)
 	if !okHA || !okHB {
@@ -212,6 +207,9 @@ func booleanMixed(op Op, a, b *topo.Body) (*topo.Body, bool, error) {
 func selectFacesDetached(faces []curvedFace, imprints [][][2]math.Point3, other insideOracle, others []curvedFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg, detached [][]curvedLoop) ([]subFace, bool) {
 	var kept []subFace
 	for i, f := range faces {
+		if len(detached[i]) > 0 && imprintTouchesHole(imprints[i], detached[i]) {
+			return nil, false // the tool crosses a detached hole's rim: this split cannot model it
+		}
 		fromFace := selectFragments(f, imprints[i], other, facesAt(others, otherCand[i]), op, isB, prov)
 		if len(detached[i]) > 0 && !attachExactHoles(fromFace, detached[i], facePlane(f)) {
 			return nil, false
@@ -263,4 +261,43 @@ func polygonHoleContains(holes [][]math.Point3, q math.Point2, pl geom.Plane) bo
 		}
 	}
 	return false
+}
+
+// coplanarCurvedContact reports a candidate pair where either face carries curved loops AND the two
+// are coplanar — a flush contact whose ON/ON classification the mixed dispatch does not model yet.
+func coplanarCurvedContact(pa, pb facePartition, pairs facePairs) bool {
+	for i, js := range pairs.bForA {
+		for _, j := range js {
+			fa, fb := pa.planarFull[i], pb.planarFull[j]
+			if (!allStraightFace(fa) || !allStraightFace(fb)) && coplanar(fa, fb) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// imprintTouchesHole reports an imprint segment endpoint landing on (or within the weld pad of) a
+// detached hole circle — a tool crossing the hole boundary, which the detached-hole split cannot
+// model (the hole is invisible to the polygonal arrangement); the boolean declines to its fallbacks.
+func imprintTouchesHole(imprints [][2]math.Point3, holes []curvedLoop) bool {
+	for _, h := range holes {
+		for _, e := range h.edges {
+			c, isCircle := e.curve.(geom.Circle)
+			if !isCircle {
+				return true // unexpected hole kind: conservative
+			}
+			for _, seg := range imprints {
+				if onCirclePad(seg[0], c) || onCirclePad(seg[1], c) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// onCirclePad reports p within the cull pad of the circle's rim.
+func onCirclePad(p math.Point3, c geom.Circle) bool {
+	return stdmath.Abs(float64(c.Center.DistanceTo(p))-c.Radius) <= facePairCullPad
 }

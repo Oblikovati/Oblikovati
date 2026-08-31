@@ -150,13 +150,22 @@ func imprintAll(fa, fb []curvedFace) (impA, impB [][][2]math.Point3) {
 }
 
 // imprint returns the 3D segments of the intersection line of two faces' planes clipped
-// to where both faces overlap (empty when parallel or non-overlapping).
+// to where both faces overlap (empty when parallel or non-overlapping). The clip runs against each
+// face's TRUE trim: the exact polygon intervals for an all-straight face (the pure-planar boolean,
+// unchanged), the exact even-odd conic intervals for a face carrying curved loops — so an imprint is
+// never minted inside a hole's void or beyond a curved boundary (ADR-0058; the phantom hole-region
+// imprint broke the detached-hole split's premise).
 func imprint(a, b curvedFace) [][2]math.Point3 {
 	p0, dir, ok := geom.PlanePlaneLine(facePlane(a), facePlane(b))
 	if !ok {
 		return nil
 	}
-	overlap := intersectIntervals(faceLineIntervals(a, p0, dir), faceLineIntervals(b, p0, dir))
+	ivA, okA := exactFaceLineIntervals(a, p0, dir)
+	ivB, okB := exactFaceLineIntervals(b, p0, dir)
+	if !okA || !okB {
+		return nil // no exact trim clip for an edge kind: mint nothing; the mixed gates decline upstream
+	}
+	overlap := intersectIntervals(ivA, ivB)
 	var segs [][2]math.Point3
 	for _, iv := range overlap {
 		if iv[1]-iv[0] > 1e-9 { // tol:calibrated — planar imprint overlap length (see arrange2d arrTol)
