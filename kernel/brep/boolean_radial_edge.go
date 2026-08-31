@@ -84,7 +84,11 @@ func planarFaceDir(faces []builtFace) faceDirAt {
 func extractEdgeGroups(verts []math.Point3, uses map[[2]int][]loopEdgeUse, normalAt faceDirAt) []edgeGroup {
 	var groups []edgeGroup
 	for _, k := range sortedPairKeys(uses) {
-		for _, g := range resolveEdgeUses(k, uses[k], verts, normalAt) {
+		axisOf := func() (math.Vector3, math.Point3) { // the chord axis + midpoint of a straight edge
+			p0, p1 := verts[k[0]], verts[k[1]]
+			return p0.VectorTo(p1).AsUnit().AsVector(), math.P3((p0.X+p1.X)/2, (p0.Y+p1.Y)/2, (p0.Z+p1.Z)/2)
+		}
+		for _, g := range resolveEdgeUses(uses[k], axisOf, normalAt) {
 			groups = append(groups, edgeGroup{pair: k, uses: g})
 		}
 	}
@@ -159,16 +163,17 @@ func sortedPairKeys(uses map[[2]int][]loopEdgeUse) [][2]int {
 // along this edge: collapsing all uses onto one edge would make it non-manifold (>2 faces). The
 // half-edges are sorted by the azimuth of their face-interior direction about the edge axis, then
 // paired by filled wedge (pairTangentDihedrals) so each group is one manifold dihedral.
-func resolveEdgeUses(pair [2]int, uses []loopEdgeUse, verts []math.Point3, normalAt faceDirAt) [][]loopEdgeUse {
+// resolveEdgeUses partitions ONE edge's uses into manifold groups of two. edgeAxis lazily supplies the
+// edge's tangent direction and a point on it (the chord + midpoint for a straight edge, the curve tangent
+// + midpoint for a curved one) — evaluated only for an over-used (tangent-contact) edge.
+func resolveEdgeUses(uses []loopEdgeUse, edgeAxis func() (math.Vector3, math.Point3), normalAt faceDirAt) [][]loopEdgeUse {
 	if len(uses) <= 2 {
 		return [][]loopEdgeUse{uses}
 	}
-	p0, p1 := verts[pair[0]], verts[pair[1]]
-	axis := p0.VectorTo(p1).AsUnit().AsVector()
-	mid := math.P3((p0.X+p1.X)/2, (p0.Y+p1.Y)/2, (p0.Z+p1.Z)/2)
+	axis, edgePoint := edgeAxis()
 	u, v := perpBasis(axis)
 	sort.SliceStable(uses, func(i, j int) bool {
-		return edgeAzimuth(uses[i], axis, u, v, mid, normalAt) < edgeAzimuth(uses[j], axis, u, v, mid, normalAt)
+		return edgeAzimuth(uses[i], axis, u, v, edgePoint, normalAt) < edgeAzimuth(uses[j], axis, u, v, edgePoint, normalAt)
 	})
 	return pairTangentDihedrals(uses)
 }
