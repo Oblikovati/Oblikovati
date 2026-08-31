@@ -124,16 +124,17 @@ func (c ruledUV) orientWrappingBand(emitted []emittedLoop) []curvedLoop {
 	return out
 }
 
-// sourceRimSense returns the sense the SOURCE side face gave the band rim a loop sits ON: topRimReversed for
-// the vMax rim, its NEGATION for the vMin rim — a closed ruled side traverses its two rims in opposite
-// parameter senses, so the one stored flag fixes both. isRim=false for every other loop.
+// sourceRimSense returns the sense the SOURCE side face gave the band rim a loop sits ON — the flag the band
+// recorded for that rim when it was recovered (coneSideBand_). isRim=false for every other loop.
 //
 // The retired rule keyed only the vMax rim and assumed the vMin rim always wants the arrangement's forward
 // winding. That holds for a cylinder band, whose v is measured from its own bottom rim; a CONE band's v is
 // measured from the APEX, so with the apex above the frustum the vMin rim is the model's TOP circle and is
-// the rim the source reverses — it came out with the SAME sense as the cap it welds to (#3460). It also
-// keyed "nearer vMax than vMin", which swallowed a full-wrap imprint circle in the band's upper half and
-// flipped that too.
+// the rim the source reverses — it came out with the SAME sense as the cap it welds to (#3460). Each rim's
+// sense is read from the source rather than derived from the other's, because a band END can be SYNTHETIC:
+// an already-cut side recovers its vMax from the prior trim loop and there is no source rim there at all.
+// It also keyed "nearer vMax than vMin", which swallowed a full-wrap imprint circle in the band's upper
+// half and flipped that too.
 func (c ruledUV) sourceRimSense(e emittedLoop) (reversed, isRim bool) {
 	if !allRimEdges(e.face) {
 		return false, false
@@ -142,7 +143,7 @@ func (c ruledUV) sourceRimSense(e emittedLoop) (reversed, isRim bool) {
 		return c.band.topRimReversed, true
 	}
 	if c.atBandLevel(e.mv, c.band.vMin) {
-		return !c.band.topRimReversed, true
+		return c.band.botRimReversed, true
 	}
 	return false, false
 }

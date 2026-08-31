@@ -42,7 +42,7 @@ func cutCylinderSideBand(f curvedFace) (geom.Cylinder, coneSideBand_, priorTrimL
 	if !ok || len(f.loops) == 0 {
 		return geom.Cylinder{}, coneSideBand_{}, priorTrimLoop{}, false
 	}
-	anchor, prior, ok := anchorCircleAndPrior(f)
+	anchor, anchorReversed, prior, ok := anchorCircleAndPrior(f)
 	if !ok {
 		return geom.Cylinder{}, coneSideBand_{}, priorTrimLoop{}, false
 	}
@@ -55,6 +55,7 @@ func cutCylinderSideBand(f curvedFace) (geom.Cylinder, coneSideBand_, priorTrimL
 	band := coneSideBand_{
 		bottom: anchor.Center, top: top, bottomCirc: anchor,
 		vMin: 0, vMax: vMax, rBot: cyl.Radius, rTop: cyl.Radius,
+		botRimReversed: anchorReversed, // the vMax end is SYNTHETIC here, so only the anchor carries a source sense
 	}
 	return cyl, band, prior, true
 }
@@ -62,22 +63,23 @@ func cutCylinderSideBand(f curvedFace) (geom.Cylinder, coneSideBand_, priorTrimL
 // anchorCircleAndPrior partitions a cut cylinder side's edges into its single surviving full-circle rim (the
 // anchor) and the prior-trim loop (everything else). Exactly one full circle is the cut-side signature: two is
 // a BARE side (fullCylinderSideBand's job), zero means the first cut removed the anchor rim — both decline.
-func anchorCircleAndPrior(f curvedFace) (geom.Circle, priorTrimLoop, bool) {
+func anchorCircleAndPrior(f curvedFace) (anchor geom.Circle, anchorReversed bool, prior priorTrimLoop, ok bool) {
 	var circles []geom.Circle
-	var prior []loopEdge
+	var revs []bool
+	var rest []loopEdge
 	for _, lp := range f.loops {
 		for _, e := range lp.edges {
 			if c, isFull := fullRimCircle(e); isFull {
-				circles = append(circles, c)
+				circles, revs = append(circles, c), append(revs, e.t1 < e.t0)
 				continue
 			}
-			prior = append(prior, e)
+			rest = append(rest, e)
 		}
 	}
-	if len(circles) != 1 || len(prior) == 0 {
-		return geom.Circle{}, priorTrimLoop{}, false
+	if len(circles) != 1 || len(rest) == 0 {
+		return geom.Circle{}, false, priorTrimLoop{}, false
 	}
-	return circles[0], priorTrimLoop{edges: prior}, true
+	return circles[0], revs[0], priorTrimLoop{edges: rest}, true
 }
 
 // fullRimCircle reports whether an edge is a full-domain circle (a whole rim), returning that circle.

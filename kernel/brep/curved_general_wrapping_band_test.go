@@ -29,19 +29,25 @@ func TestKeptComponentsSplitsDisjointBands(t *testing.T) {
 	}
 }
 
-// TestSourceRimSense: a loop ON the vMax rim wants the source's top-rim sense, one ON the vMin rim its
-// negation, and a full-wrap IMPRINT circle between them is no rim at all — it keeps its arrangement winding
-// (#3460; the retired isTopRim halved the band and swallowed that circle).
+// TestSourceRimSense: each loop ON a band rim wants the sense the SOURCE recorded for THAT rim, and a
+// full-wrap IMPRINT circle between them is no rim at all — it keeps its arrangement winding (#3460; the
+// retired isTopRim halved the band and swallowed that circle).
 func TestSourceRimSense(t *testing.T) {
 	rim := func(mv float64) emittedLoop {
 		return emittedLoop{mv: mv, face: []loopEdge{{curve: geom.Circle{}, t0: 0, t1: 1}}}
 	}
-	c := ruledUV{band: coneSideBand_{vMin: 0, vMax: 12, topRimReversed: true}}
+	c := ruledUV{band: coneSideBand_{vMin: 0, vMax: 12, topRimReversed: true, botRimReversed: false}}
 	if rev, isRim := c.sourceRimSense(rim(12)); !isRim || !rev {
 		t.Errorf("vMax rim = (%v,%v), want (true,true) — the source's top-rim sense", rev, isRim)
 	}
 	if rev, isRim := c.sourceRimSense(rim(0)); !isRim || rev {
-		t.Errorf("vMin rim = (%v,%v), want (false,true) — the negation of the top-rim sense", rev, isRim)
+		t.Errorf("vMin rim = (%v,%v), want (false,true) — the source's bottom-rim sense", rev, isRim)
+	}
+	// Each rim reads its OWN recorded sense: an apex-at-top cone band reverses the vMin rim while leaving
+	// the vMax one forward, which a "negate the other flag" rule could not express for a synthetic end.
+	flipped := ruledUV{band: coneSideBand_{vMin: 0, vMax: 12, topRimReversed: false, botRimReversed: true}}
+	if rev, isRim := flipped.sourceRimSense(rim(0)); !isRim || !rev {
+		t.Errorf("apex-at-top vMin rim = (%v,%v), want (true,true)", rev, isRim)
 	}
 	if _, isRim := c.sourceRimSense(rim(11)); isRim {
 		t.Error("a full-wrap circle at mv=11 is an imprint, not the vMax rim")
