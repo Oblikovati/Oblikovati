@@ -43,6 +43,18 @@ func zoneTestRims(t *testing.T) (sph geom.Sphere, hi, lo geom.Circle) {
 // zoneTestArea is Archimedes' 2πRh for the belt between the two rim planes.
 func zoneTestArea() float64 { return 2 * stdmath.Pi * zoneTestR * (2 * zoneTestHalf) }
 
+// zoneTestCapsArea is the belt's complement — the two disjoint caps the OPPOSITE winding names.
+func zoneTestCapsArea() float64 { return 4*stdmath.Pi*zoneTestR*zoneTestR - zoneTestArea() }
+
+// zoneBodyMeshArea is the belt's TESSELLATED area at one quality. These tests gate the sphere-zone
+// mesher (sphereZoneBandFan, Oblikovati#2061), so they must reach it: BodyGeometryProperties is
+// analytic-first since e534110d and never tessellates a face the analytic region integral accepts.
+func zoneBodyMeshArea(t *testing.T, b *topo.Body, q Quality) float64 {
+	t.Helper()
+	mesh, _ := TessellateBody(b, q)
+	return zoneMeshArea(mesh)
+}
+
 // TestSphereZoneMeshesFromEitherLoopShape: a belt reaches the tessellator two ways — as two separate
 // loops (what the coaxial boolean builds) and as one loop with a doubled seam edge bridging the rims
 // (what revolution.go builds) — and BOTH must mesh to the same true area. The mesher reads the rims off
@@ -53,10 +65,10 @@ func TestSphereZoneMeshesFromEitherLoopShape(t *testing.T) {
 		name string
 		body func() *topo.Body
 	}{
-		{"two loops", func() *topo.Body { return twoLoopZone(t, sph, hi, lo) }},
+		{"two loops", func() *topo.Body { return twoLoopZone(t, sph, lo, hi) }},
 		{"one seamed loop", func() *topo.Body { return seamedZone(t, sph, hi, lo) }},
 	} {
-		area := BodyGeometryProperties(c.body(), DefaultQuality()).Area
+		area := zoneBodyMeshArea(t, c.body(), DefaultQuality())
 		want := zoneTestArea()
 		if rel := (area - want) / want; rel < -0.02 || rel > 0 {
 			t.Errorf("%s: belt area %.6f, want %.6f (%.2f%% off; an inscribed mesh may run under, never over)",
@@ -69,15 +81,40 @@ func TestSphereZoneMeshesFromEitherLoopShape(t *testing.T) {
 // the same three quarters of the belt however fine the facets got. An exact mesh must converge.
 func TestSphereZoneAreaConvergesWithQuality(t *testing.T) {
 	sph, hi, lo := zoneTestRims(t)
-	body := twoLoopZone(t, sph, hi, lo)
-	coarse := BodyGeometryProperties(body, DefaultQuality()).Area
-	fine := BodyGeometryProperties(body, PropertyQuality()).Area
+	body := twoLoopZone(t, sph, lo, hi)
+	coarse := zoneBodyMeshArea(t, body, DefaultQuality())
+	fine := zoneBodyMeshArea(t, body, PropertyQuality())
 	if fine <= coarse {
 		t.Fatalf("refining did not raise the belt area (%.6f → %.6f)", coarse, fine)
 	}
 	if rel := stdmath.Abs(fine-zoneTestArea()) / zoneTestArea(); rel > 1e-3 {
 		t.Errorf("at PropertyQuality the belt area is %.6f, want %.6f (off by %.3f%%)",
 			fine, zoneTestArea(), 100*rel)
+	}
+}
+
+// TestSphereZoneRegionIntegralNamesTheBelt gates the belt's winding convention from the READER's side.
+// A belt's loop directions name its region exactly as a cap's do (sphereBeltFace, af563908, #3447): the
+// LOW rim walked forward plus the HIGH rim as a reversed hole names the belt; the same two circles the
+// other way round name the sphere's complement of it, the two disjoint caps. The mesher is winding-blind
+// — it reads the rims off the face's edges — so only the analytic region integral can hold this line.
+func TestSphereZoneRegionIntegralNamesTheBelt(t *testing.T) {
+	sph, hi, lo := zoneTestRims(t)
+	for _, c := range []struct {
+		name string
+		body *topo.Body
+		want float64
+	}{
+		{"low rim encloses: the belt", twoLoopZone(t, sph, lo, hi), zoneTestArea()},
+		{"high rim encloses: the caps", twoLoopZone(t, sph, hi, lo), zoneTestCapsArea()},
+	} {
+		got, ok := AnalyticGeometryProperties(c.body)
+		if !ok {
+			t.Fatalf("%s: the analytic region integral declined a two-loop sphere zone", c.name)
+		}
+		if rel := stdmath.Abs(got.Area-c.want) / c.want; rel > 1e-12 {
+			t.Errorf("%s: region area %.9f, want %.9f (off by %.3g)", c.name, got.Area, c.want, rel)
+		}
 	}
 }
 
@@ -109,15 +146,18 @@ func TestSphereZoneBandFanDeclinesNonCoaxialRims(t *testing.T) {
 	}
 }
 
-// twoLoopZone builds the belt as an outer loop plus a hole — the shape the coaxial boolean assembles.
-func twoLoopZone(t *testing.T, sph geom.Sphere, outer, inner geom.Circle) *topo.Body {
+// twoLoopZone builds a sphere face as an enclosing loop plus a hole — the shape the coaxial boolean
+// assembles (brep.sphereBeltFace). `encloses` is walked forward and `hole` backward, so the face names
+// the region on the +normal side of `encloses` less the +normal side of `hole`: pass (lo, hi) for the
+// BELT and (hi, lo) for its complement, the two disjoint caps (af563908, #3447).
+func twoLoopZone(t *testing.T, sph geom.Sphere, encloses, hole geom.Circle) *topo.Body {
 	t.Helper()
 	lin := topo.NewLineage(topo.Tok("zonetest", "x", 0))
 	bld := topo.NewBuilder(true, lin)
-	vo := bld.AddVertex(outer.PointAt(0), lin)
-	vi := bld.AddVertex(inner.PointAt(0), lin)
-	eo := bld.AddEdge(outer, vo, vo, lin)
-	ei := bld.AddEdge(inner, vi, vi, lin)
+	vo := bld.AddVertex(encloses.PointAt(0), lin)
+	vi := bld.AddVertex(hole.PointAt(0), lin)
+	eo := bld.AddEdge(encloses, vo, vo, lin)
+	ei := bld.AddEdge(hole, vi, vi, lin)
 	bld.AddFace(sph, lin, topo.OuterLoop(topo.Fwd(eo)), topo.InnerLoop(topo.Rev(ei)))
 	return bld.Build()
 }
