@@ -4,7 +4,6 @@ package brep
 
 import (
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/math"
 )
 
 // orientFaceSigns derives a CONSISTENT outward orientation sign (±1) for each prepared face, INDEPENDENT
@@ -22,7 +21,7 @@ func orientFaceSigns(faces []fluxFace) []float64 {
 	signs := make([]float64, len(faces))
 	volume := 0.0
 	for i := range faces {
-		signs[i] = loopHandedness(faces[i].polys)
+		signs[i] = loopHandedness(faces[i].region)
 		volume += signs[i] * faceVolumeTerm(&faces[i])
 	}
 	if volume < 0 { // the loop handedness oriented the shell inward — flip the whole body outward
@@ -33,17 +32,25 @@ func orientFaceSigns(faces []fluxFace) []float64 {
 	return signs
 }
 
-// loopHandedness is the sign of the outer loop's signed area in (u, v): +1 when the loop runs CCW about
-// the surface normal S_u×S_v (so that normal is the outward one), −1 when CW. A boundaryless face (a whole
-// sphere/torus, its own closed body) has no loop to read; it returns +1 and leans on the volume sign.
-func loopHandedness(polys [][]math.Point2) float64 {
-	if len(polys) == 0 {
+// loopHandedness is the sign of the outer ring's signed area in (u, v): +1 when the ring runs CCW about
+// the surface normal S_u×S_v (so that normal is the outward one), −1 when CW — NEGATED when the face is
+// the ring's COMPLEMENT, because a ring that runs CCW around the region it encloses runs CW around
+// everything else on the domain. Without that negation the big spherical cap of a ball joined with a rod
+// took the inward normal as outward, and the ball's own centre read outside its solid
+// (Oblikovati/Oblikovati#3453, #3429). A boundaryless face (a whole sphere/torus, its own closed body)
+// has no ring to read; it returns +1 and leans on the volume sign.
+func loopHandedness(r trimRegion) float64 {
+	if len(r.rings) == 0 {
 		return 1
 	}
-	if signedArea2D(polys[0]) < 0 {
-		return -1
+	sign := 1.0
+	if signedArea2D(r.rings[0]) < 0 {
+		sign = -1
 	}
-	return 1
+	if r.complement {
+		return -sign
+	}
+	return sign
 }
 
 // volumeGridSteps is the fixed (u, v) sampling per face for the signed-volume sign probe. The probe needs
@@ -61,7 +68,7 @@ func faceVolumeTerm(f *fluxFace) float64 {
 	for i := 0; i < volumeGridSteps; i++ {
 		for j := 0; j < volumeGridSteps; j++ {
 			u0, v0 := f.u0+float64(i)*du, f.v0+float64(j)*dv
-			frac := cellTrimFraction(f.polys, u0, u0+du, v0, v0+dv)
+			frac := cellTrimFraction(f.region, u0, u0+du, v0, v0+dv)
 			if frac == 0 {
 				continue
 			}
