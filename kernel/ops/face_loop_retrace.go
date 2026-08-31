@@ -107,8 +107,8 @@ type RetracingLoop struct {
 func RetracingFaceLoops(b *topo.Body, q Quality) []RetracingLoop {
 	var out []RetracingLoop
 	for _, f := range b.Faces() {
-		loops, ok := developedFaceLoops(f, q)
-		rings := faceLoopRings(f, q)
+		loops, ok := developedFaceLoops(f)
+		rings := faceCornerRings(f)
 		if !ok || len(rings) != len(loops) {
 			continue
 		}
@@ -119,16 +119,6 @@ func RetracingFaceLoops(b *topo.Body, q Quality) []RetracingLoop {
 		}
 	}
 	return out
-}
-
-// faceLoopRings returns f's discretized boundary rings in the SAME order developedFaceLoops develops
-// them — outer first, then the holes — so a developed loop can be checked against its own 3D points.
-func faceLoopRings(f *topo.Face, q Quality) [][]math.Point3 {
-	outer := faceOuterBoundary(f, q)
-	if len(outer) == 0 {
-		return nil
-	}
-	return append([][]math.Point3{outer}, faceHoleBoundaries(f, q)...)
 }
 
 // loopRetrace returns the LONGEST stretch the loop covers twice in opposite directions, and whether

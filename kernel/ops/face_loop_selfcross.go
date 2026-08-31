@@ -77,13 +77,18 @@ const selfCrossChartFaithfulRatio = stdmath.Pi / 2
 // not a polygon at all), are skipped rather than guessed at, so a report here is always a real defect.
 // Each report carries ChartChordRatio so its Area can be read for what it is (see the field).
 //
+// The boundary it develops is the EXACT edge-corner ring (face_loop_corners.go), not a tessellation:
+// a topology verdict must not move with facet density (M48/C3, Oblikovati/Oblikovati#3476). The
+// Quality argument is therefore unused, and kept only so the call sites that thread one through do not
+// churn — the same reason [FillInternalVoids] ignores its own.
+//
 // Example: SelfCrossingFaceLoops(d8Body, PropertyQuality()) returns the two corner-round walls whose
 // far-end trim curve runs 0.2527 rad past their own u=0 ruling, each pinching off Area ≈ 1.2111.
-func SelfCrossingFaceLoops(b *topo.Body, q Quality) []SelfCrossingLoop {
+func SelfCrossingFaceLoops(b *topo.Body, _ Quality) []SelfCrossingLoop {
 	var out []SelfCrossingLoop
 	for _, f := range b.Faces() {
-		loops, ok := developedFaceLoops(f, q)
-		rings := faceLoopRings(f, q)
+		loops, ok := developedFaceLoops(f)
+		rings := faceCornerRings(f)
 		if !ok {
 			continue
 		}
@@ -145,14 +150,15 @@ type developedLoop struct{ pts []math.Point2 }
 
 // developedFaceLoops develops every loop of f into the metric chart of f's own surface: the plane's
 // own frame for a plane, the arc-length-scaled (u,v) for an analytic curved surface. ok=false for a
-// surface with no such chart, or when any loop wraps the seam.
-func developedFaceLoops(f *topo.Face, q Quality) ([]developedLoop, bool) {
+// surface with no such chart, or when any loop wraps the seam. The loops it develops are the exact
+// edge-corner rings, so the development carries no facet density (#3476).
+func developedFaceLoops(f *topo.Face) ([]developedLoop, bool) {
 	s := f.Geometry()
-	outer3D := faceOuterBoundary(f, q)
+	outer3D := faceOuterCorners(f)
 	if s == nil || len(outer3D) < 3 {
 		return nil, false
 	}
-	holes3D := faceHoleBoundaries(f, q)
+	holes3D := faceHoleCorners(f)
 	if pl, planar := s.(geom.Plane); planar {
 		flat := planeProjector(pl.NormalAt(0, 0))
 		return unitScaledLoops(append([][]math.Point2{project2D(outer3D, flat)}, project2DLoops(holes3D, flat)...)), true
