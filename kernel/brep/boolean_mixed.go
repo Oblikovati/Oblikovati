@@ -14,7 +14,7 @@ import (
 // unified, an operand no longer has to be all-planar: its straight-edged planar faces run the exact
 // planar imprint→split→classify pipeline, while every other face (a curved wall, or a planar face
 // bounded by a curved edge — a boss seat's circular hole) PASSES THROUGH whole, classified as a unit
-// and welded by the same unified stitch. Scope is conservative and declines loudly (ErrNonPlanar →
+// and welded by the same unified stitch. Scope is conservative and declines loudly (ErrUnsupportedMixedBoolean →
 // the caller's curved/CSG fallbacks): every pass-through face must be box-disjoint from EVERY face of
 // the other operand, so no imprint can touch it, its membership in the other solid is uniform, and no
 // T-junction can appear on its boundary. A kept Difference tool face (material inside the target) is
@@ -187,17 +187,17 @@ func passSamplePoint(f curvedFace) (math.Point3, bool) {
 }
 
 // booleanMixed is booleanOnce's per-face-dispatch counterpart for operands with pass-through faces.
-// It returns ErrNonPlanar whenever the conservative scope gate declines, so the caller falls to the
+// It returns ErrUnsupportedMixedBoolean whenever the conservative scope gate declines, so the caller falls to the
 // curved/CSG paths exactly as before.
 func booleanMixed(op Op, a, b *topo.Body) (*topo.Body, bool, error) {
 	pa, pb := partitionFaces(a), partitionFaces(b)
 	if !passClearOf(pa, pb) || !passClearOf(pb, pa) {
-		return nil, false, ErrNonPlanar
+		return nil, false, ErrUnsupportedMixedBoolean
 	}
 	pra, prb := newInsideOracle(a, pa.allFaces()), newInsideOracle(b, pb.allFaces())
 	pairs := crossingFaceCandidates(pa.planar, pb.planar)
 	if coplanarCurvedContact(pa, pb, pairs) {
-		return nil, false, ErrNonPlanar // a flush contact on a curved-loop face is not modelled here
+		return nil, false, ErrUnsupportedMixedBoolean // a flush contact on a curved-loop face is not modelled here
 	}
 	// Imprints clip against the TRUE trims (planarFull): a face's detached holes are void, so no
 	// imprint is minted inside them (the phantom that broke the detached-hole premise). The exact-frame
@@ -206,13 +206,13 @@ func booleanMixed(op Op, a, b *topo.Body) (*topo.Body, bool, error) {
 	impA, impB, prov := imprintCandidates(pa.planarFull, pb.planarFull, pairs)
 	uvImpA, uvImpB, wallImpA, wallImpB, okI := mixedCurvedImprints(&pa, &pb, impA, impB)
 	if !okI {
-		return nil, false, ErrNonPlanar
+		return nil, false, ErrUnsupportedMixedBoolean
 	}
 	kept, okK := mixedKeptFragments(pa, pb, impA, impB, pra, prb, pairs, op, prov)
 	pass, okP := mixedPassFaces(pa, pb, pra, prb, uvImpA, uvImpB, op)
 	walls, okQ := mixedWallFaces(pa, pb, pra, prb, wallImpA, wallImpB, op)
 	if !okK || !okP || !okQ {
-		return nil, false, ErrNonPlanar
+		return nil, false, ErrUnsupportedMixedBoolean
 	}
 	return stitch(kept, append(pass, walls...), prov)
 }

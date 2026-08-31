@@ -20,9 +20,17 @@ const (
 	Intersection           // A ∩ B
 )
 
-// ErrNonPlanar is returned when an operand has a non-planar face (the planar B-rep
-// boolean handles planar-faceted solids; curved-face booleans need NURBS work).
-var ErrNonPlanar = errors.New("brep: boolean requires planar-faceted solids")
+// ErrNonPlanar is returned by the APIs that genuinely require all-planar operands (the public
+// imprint, the drill assemblers). The boolean itself no longer refuses curved faces — see
+// ErrUnsupportedMixedBoolean.
+var ErrNonPlanar = errors.New("brep: operation requires planar-faceted solids")
+
+// ErrUnsupportedMixedBoolean is the mixed per-face boolean's NAMED decline (ADR-0058): the operands
+// carry curved faces in a contact configuration the dispatch does not model exactly yet (curved∩curved
+// contact, a conic imprint without its mirror, a flush contact on a curved-loop face, grazing
+// tangency). The caller falls to the bespoke curved recognizers and the mesh rescue, exactly as the
+// ground rules prescribe — a refusal at classification, never a wrong result.
+var ErrUnsupportedMixedBoolean = errors.New("brep: mixed boolean does not model this curved contact configuration yet")
 
 // subFace is one region a face is split into, with an interior point for classification
 // and the outward normal it should carry in the result. lineage carries the source face's
@@ -40,11 +48,15 @@ type subFace struct {
 	exactHoles []curvedLoop
 }
 
-// Boolean computes A op B as a clean planar B-rep: it imprints the face–face intersection
-// segments, splits each face along them (the 2D arrangement), classifies the sub-faces
-// against the other solid, keeps the ones the operation calls for (reversing B's where
-// needed), and stitches them into a watertight solid. Unlike the triangle-soup CSG this
-// produces a low-face-count result and is sound under chaining.
+// Boolean computes A op B as a clean B-rep by PER-FACE dispatch (ADR-0058, #2247): each face takes
+// the split its representation calls for — the exact planar 2D arrangement for straight-edged planar
+// faces (the conditioning-gated fast path), the exact-frame plane chart for curved-rimmed planar
+// faces, the ruled (u,v) chart for cylinder walls, whole-face pass-through for provably-clear curved
+// faces — classified against the other solid and stitched by the ONE unified radial stitch. All-planar
+// operands run the byte-stable planar pipeline unchanged; a curved contact configuration outside the
+// dispatch's exact scope declines loudly (ErrUnsupportedMixedBoolean) to the caller's curved
+// recognizers and mesh rescue. Unlike the triangle-soup CSG this produces a low-face-count exact
+// result and is sound under chaining.
 func Boolean(op Op, a, b *topo.Body) (*topo.Body, error) {
 	return BooleanDiag(op, a, b, nil)
 }
@@ -64,7 +76,7 @@ func BooleanDiag(op Op, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, error)
 	if !oka || !okb {
 		// Per-face dispatch (ADR-0058): straight-edged planar faces take the exact pipeline, the
 		// rest pass through whole under booleanMixed's conservative scope gate; out-of-scope
-		// operands still decline with ErrNonPlanar to the curved/CSG fallbacks.
+		// operands still decline with ErrUnsupportedMixedBoolean to the curved/CSG fallbacks.
 		res, tangent, err := booleanMixed(op, a, b)
 		return recordTangent(res, tangent, err, rec)
 	}

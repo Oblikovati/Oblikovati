@@ -247,7 +247,7 @@ func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *d
 // mixedPassThroughBoolean runs brep's per-face-dispatch boolean on MIXED operands (ADR-0058): only
 // when a curved face is present (an all-planar pair keeps its own guarded pipeline downstream,
 // byte-for-byte), and only adopted as a valid solid — brep's conservative scope gate declines the
-// rest (ErrNonPlanar), falling through to the mesh reconstruction exactly as before.
+// rest (ErrUnsupportedMixedBoolean), falling through to the mesh reconstruction exactly as before.
 func mixedPassThroughBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	if analyticFaceCount(target)+analyticFaceCount(tool) == 0 {
 		return nil, false

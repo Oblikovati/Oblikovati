@@ -48,7 +48,7 @@ func counterboreEnd(slab *topo.Body, copied []curvedFace, entry curvedFace, base
 		return end, -1, copied, nil
 	}
 	for i, f := range copied {
-		if float64(faceNormal(f).Dot(ua)) <= 1-1e-7 {
+		if float64(faceNormal(f).Dot(ua)) <= 1-1e-7 { // tol:angular — parallel-normals cosine
 			continue
 		}
 		c := base.TranslateBy(ua.Scale(math.Scalar(pierceParam(base, ua, facePlane(f)))))
