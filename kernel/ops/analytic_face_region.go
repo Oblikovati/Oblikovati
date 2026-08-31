@@ -7,7 +7,6 @@ import (
 	"sort"
 
 	"oblikovati.org/kernel/brep"
-	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -88,20 +87,18 @@ func loopRegionSign(depthEven bool, signedArea float64) float64 {
 // The loops' WINDING cannot answer it: a producer may wind a closed-surface face's loops either way
 // and lean on Reversed to place the material, and every torus band in the corpus comes out clockwise
 // whichever side it covers. So the question is put to the face's own TRIM — which of the two regions
-// does this face own? — and confirmed against the SOLID.
+// does this face own?
 //
-// Both halves are needed, and each fails alone. The trim test alone was wrong while brep's
-// closed-surface classifier projected loops orthographically onto the tangent plane, a 2-to-1 map
-// that read a region larger than a hemisphere as outside itself. The material test alone cannot tell
-// WHICH face owns a surface point: for the big cap of a ball joined to a rod, the deepest point of
-// the enclosed region is the sphere's far pole, where the solid really does separate material from
-// air — but that pole belongs to the TIP cap, so the material test answered "holds" for both faces
-// and the big cap integrated as the small one.
+// It was once ALSO confirmed against the solid, by stepping a hair either way along the normal and
+// asking which side held material. That step is gone. It was there because the trim test used to be
+// wrong — brep's closed-surface classifier projected loops orthographically onto the tangent plane, a
+// 2-to-1 map that read a region larger than a hemisphere as outside itself — and once that
+// classifier began answering from the nearest boundary FOOT, the material step stopped adding
+// anything and started subtracting: a probe a Sew() away from a curved face is a knife-edge query on
+// a boundary built by marching, and it answered "no material" on the correct side of a ball drilled
+// by a stud, so a 15.708 sphere zone integrated as its 298.451 complement. Dropping it moved four
+// corpus cases into the analytic regime with nothing else changed (Oblikovati/Oblikovati#3489).
 func faceHoldsEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain bool) {
-	body := faceBody(f)
-	if body == nil {
-		return false, false // no assembled solid to ask
-	}
 	u, v, ok := regionProbeUV(loops)
 	if !ok {
 		return false, false
@@ -109,7 +106,7 @@ func faceHoldsEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain boo
 	if !brep.PointInFaceTrim(f, f.Geometry().PointAt(u, v)) {
 		return false, true // the face owns the other region: its terms are the complement's
 	}
-	return faceSpansMaterial(body, f, u, v)
+	return true, true
 }
 
 // regionProbeUV returns a parameter point in the enclosed region for the side test. A loop that
@@ -256,33 +253,6 @@ const bandStationWindow = 0.02 // tol:parametric — station window, relative to
 // uSpanOf is the total extent the samples cover in the wrapping parameter.
 func uSpanOf(samples []arcSample) float64 {
 	return samples[len(samples)-1].u - samples[0].u
-}
-
-// faceSpansMaterial reports whether the surface point at (u, v) separates material from air along
-// the face's outward normal — the test that decides which region the face covers. certain is false
-// when the normal is degenerate there (a parametric pole), where no side can be read.
-func faceSpansMaterial(body *topo.Body, f *topo.Face, u, v float64) (holds, certain bool) {
-	s := f.Geometry()
-	n := s.NormalAt(u, v)
-	if f.Reversed() {
-		n = n.Scale(-1)
-	}
-	if n.LengthSquared() == 0 {
-		return false, false
-	}
-	step := n.AsUnit().AsVector().Scale(math.Scalar(geom.ResolutionForBox(body.RangeBox()).Sew()))
-	p := s.PointAt(u, v)
-	return brep.PointInside(body, p.TranslateBy(step.Scale(-1))) &&
-		!brep.PointInside(body, p.TranslateBy(step)), true
-}
-
-// faceBody returns the solid the face bounds, or nil while the body is still being assembled.
-func faceBody(f *topo.Face) *topo.Body {
-	sh := f.Shell()
-	if sh == nil {
-		return nil
-	}
-	return sh.Body()
 }
 
 // FaceInteriorPoint returns one point strictly inside face f's trimmed region, taken from the
