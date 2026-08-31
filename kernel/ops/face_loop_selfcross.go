@@ -59,10 +59,11 @@ type SelfCrossingLoop struct {
 // simple/Q5's two cylinder segments are axial rulings), and the two unfaithful ones measure 2.771 and
 // 77.06 — θ ≈ 4.42 and 6.20 rad.
 //
-// ★ IT IS A LABEL, NOT A FILTER, AND THAT IS THE WHOLE POINT. The obvious next move — mirror the
-// retrace detector's corroboratedIn3D and DISCARD an unfaithful pair — is wrong here, and the corpus
-// says so outright. corroboratedIn3D is sound because a retrace's two strands are SUPPOSED to resolve
-// to the same 3D points, so a disagreement can only be the chart's fault. A self-crossing carries no
+// ★ IT IS A LABEL, NOT A FILTER, AND THAT IS THE WHOLE POINT. The obvious next move — mirror what the
+// retrace detector does and DISCARD an unfaithful pair on a 3D check — is wrong here, and the corpus
+// says so outright. A retrace is a claim that two strands resolve to the SAME 3D points (which is why
+// that detector now asks the curves directly, #3475), so a 3D disagreement there can only be the
+// chart's fault, and it is sound to reject on it. A self-crossing carries no
 // such expectation: complex/F2's two unfaithful crossings are unfaithful because the boundary points
 // themselves lie 9.125 and 9.818 OFF the radius-10 cylinder they bound — 9.87026 at worst, 0.05596 of
 // that model's 176.4 diagonal, which is knownOffSurfaceDebt's complex/F2 entry read by a second ruler,
@@ -143,6 +144,17 @@ func segChartChordRatio(l developedLoop, ring []math.Point3, i int) float64 {
 	}
 	return chart / chord
 }
+
+// chartSeg is one directed segment of a developed loop, in the surface's metric chart.
+type chartSeg struct{ a, b [2]float64 }
+
+// chartSegAt is the segment leaving vertex i of a closed developed loop.
+func chartSegAt(pts []math.Point2, i int) chartSeg {
+	return chartSeg{a: xy(pts[i]), b: xy(pts[(i+1)%len(pts)])}
+}
+
+// length is the segment's extent in the metric chart.
+func (s chartSeg) length() float64 { return stdmath.Hypot(s.b[0]-s.a[0], s.b[1]-s.a[1]) }
 
 // developedLoop is one boundary loop in its surface's METRIC chart — u and v scaled to arc length, so
 // an area in it is an area on the surface.

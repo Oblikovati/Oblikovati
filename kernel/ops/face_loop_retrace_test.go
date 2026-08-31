@@ -27,7 +27,7 @@ func y4HostPlaneLoop() []math.Point3 {
 // TestRetracingFaceLoopsCatchesACollinearBackTrack is the falsifiable guard, positive direction: the
 // shipped Y4 host loop must be reported, and its overlap must be the closed-form 5.
 //
-// Falsify by dropping the opposite-direction test in collinearBacktrack (the loop then still reports,
+// Falsify by dropping the opposite-direction test in oppositeTraversal (the loop then still reports,
 // but so does every legitimate subdivided edge — see the negative guards), or by requiring a
 // transversal crossing: nothing is reported and this goes RED.
 func TestRetracingFaceLoopsCatchesACollinearBackTrack(t *testing.T) {
@@ -70,7 +70,8 @@ func TestRetracingFaceLoopsPassesASubdividedStraightEdge(t *testing.T) {
 
 // TestRetracingFaceLoopsPassesAThinSliver pins the other false-positive direction: two ANTI-parallel
 // edges that are nearly — but not degenerately — collinear. A 100 × 1e-5 sliver is a thin face, not a
-// zero-area one, and its width sits two decades above retraceCollinearTol × the loop's diagonal.
+// zero-area one, and its width sits two decades above the face's own geom.Resolution weld, so the
+// exact curve-to-curve distance between its two long edges keeps them apart.
 func TestRetracingFaceLoopsPassesAThinSliver(t *testing.T) {
 	const w = 1e-5
 	loop := []math.Point3{math.P3(0, 0, 0), math.P3(100, 0, 0), math.P3(100, 0, w), math.P3(0, 0, w)}
