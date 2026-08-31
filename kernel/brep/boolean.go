@@ -94,7 +94,7 @@ func exactTangentIsValid(b *topo.Body) bool {
 // booleanOnce runs one pass: imprint, split, classify, keep, stitch. The bool is true when the pass
 // resolved a tangent/grazing contact (a vertex pair used by more than two faces), so the caller can
 // note whether that contact shipped as a valid manifold.
-func booleanOnce(op Op, fa, fb []planarFace, a, b *topo.Body) (*topo.Body, bool, error) {
+func booleanOnce(op Op, fa, fb []curvedFace, a, b *topo.Body) (*topo.Body, bool, error) {
 	// One AABB-culled candidate set feeds imprint, provenance AND the coplanar-cover scans —
 	// the retired brute version recomputed the O(Fa·Fb) pairing 2–3× per pass — and each
 	// operand is flattened ONCE into a solidProbe for every ray-cast classification, instead
@@ -130,15 +130,15 @@ const CodeBooleanTangentUnresolved diag.Code = "boolean.tangent-unresolved"
 // edge, and imprints ITSELF with its own bottom edge. Since #1607 the pairing is AABB-culled
 // and shared with provenanceOf through imprintCandidates; this wrapper keeps the historical
 // contract for callers that only need the geometry.
-func imprintAll(fa, fb []planarFace) (impA, impB [][][2]math.Point3) {
+func imprintAll(fa, fb []curvedFace) (impA, impB [][][2]math.Point3) {
 	impA, impB, _ = imprintCandidates(fa, fb, crossingFaceCandidates(fa, fb))
 	return impA, impB
 }
 
 // imprint returns the 3D segments of the intersection line of two faces' planes clipped
 // to where both faces overlap (empty when parallel or non-overlapping).
-func imprint(a, b planarFace) [][2]math.Point3 {
-	p0, dir, ok := geom.PlanePlaneLine(a.plane, b.plane)
+func imprint(a, b curvedFace) [][2]math.Point3 {
+	p0, dir, ok := geom.PlanePlaneLine(facePlane(a), facePlane(b))
 	if !ok {
 		return nil
 	}
@@ -170,7 +170,7 @@ func intersectIntervals(a, b [][2]float64) [][2]float64 {
 // operation wants, classifying each via [classifySubFace]. `others` is the other solid's
 // face list (for the coplanar overlap test), culled per face to its box-overlap candidates
 // `otherCand` (#1607); `other` is the body's cached probe (for the winding-number cast).
-func selectFaces(faces []planarFace, imprints [][][2]math.Point3, other *solidProbe, others []planarFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg) []subFace {
+func selectFaces(faces []curvedFace, imprints [][][2]math.Point3, other *solidProbe, others []curvedFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg) []subFace {
 	var kept []subFace
 	for i, f := range faces {
 		near := facesAt(others, otherCand[i])
@@ -226,7 +226,7 @@ func splitLineage(parent topo.Lineage, k int) topo.Lineage {
 // the other solid follows the ON/ON table ([coplanarKeep]); otherwise it is kept by the
 // inside/outside table ([keep]) from a winding-number cast against the other solid's cached
 // probe, with B's difference faces reversed to form the cut walls.
-func classifySubFace(sf subFace, f planarFace, other *solidProbe, others []planarFace, op Op, isB bool) (subFace, bool) {
+func classifySubFace(sf subFace, f curvedFace, other *solidProbe, others []curvedFace, op Op, isB bool) (subFace, bool) {
 	if covered, sameNormal := coplanarCover(f, sf.point, others); covered {
 		return sf, coplanarKeep(op, isB, sameNormal)
 	}
@@ -281,7 +281,7 @@ const boundaryImprintTol = 1e-7 // tol:calibrated — planar imprint-on-boundary
 
 // interiorSegments filters out the segments that lie along f's boundary, keeping only the
 // ones that can actually split the face's interior.
-func interiorSegments(f planarFace, segs [][2]math.Point3) [][2]math.Point3 {
+func interiorSegments(f curvedFace, segs [][2]math.Point3) [][2]math.Point3 {
 	out := segs[:0:0]
 	for _, s := range segs {
 		if !segmentOnFaceBoundary(f, s) {
@@ -294,15 +294,15 @@ func interiorSegments(f planarFace, segs [][2]math.Point3) [][2]math.Point3 {
 // segmentOnFaceBoundary reports whether the whole segment lies on f's boundary (within
 // [boundaryImprintTol]). Endpoints AND midpoint are tested, so a segment that runs along a
 // boundary edge's line but crosses the interior elsewhere (a concave face) is kept.
-func segmentOnFaceBoundary(f planarFace, s [2]math.Point3) bool {
+func segmentOnFaceBoundary(f curvedFace, s [2]math.Point3) bool {
 	mid := math.P3((s[0].X+s[1].X)/2, (s[0].Y+s[1].Y)/2, (s[0].Z+s[1].Z)/2)
 	return pointOnFaceBoundary(f, s[0]) && pointOnFaceBoundary(f, mid) && pointOnFaceBoundary(f, s[1])
 }
 
 // pointOnFaceBoundary reports whether p lies within [boundaryImprintTol] of any of f's
 // boundary edges.
-func pointOnFaceBoundary(f planarFace, p math.Point3) bool {
-	for _, ring := range f.loops {
+func pointOnFaceBoundary(f curvedFace, p math.Point3) bool {
+	for _, ring := range planarRings(f) {
 		n := len(ring)
 		for i := range n {
 			if distPointSegment(p, ring[i], ring[(i+1)%n]) < boundaryImprintTol {

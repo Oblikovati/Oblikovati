@@ -14,10 +14,10 @@ import (
 // splitFace splits a face by its imprint segments via the 2D arrangement and returns the
 // material sub-faces (regions inside the original face), each carried back to 3D with an
 // interior point for classification. A face with no imprints yields itself unchanged.
-func splitFace(f planarFace, imprints [][2]math.Point3) []subFace {
+func splitFace(f curvedFace, imprints [][2]math.Point3) []subFace {
 	segs := faceBoundarySegments(f)
 	for _, s := range imprints {
-		segs = append(segs, [2]math.Point2{to2D(f.plane, s[0]), to2D(f.plane, s[1])})
+		segs = append(segs, [2]math.Point2{to2D(facePlane(f), s[0]), to2D(facePlane(f), s[1])})
 	}
 	var out []subFace
 	for _, r := range Arrange(segs) {
@@ -25,9 +25,9 @@ func splitFace(f planarFace, imprints [][2]math.Point3) []subFace {
 		if !ok || !pointInFace2D(ip, f) {
 			continue // a region outside the face's material (e.g. inside one of its holes)
 		}
-		sf := subFace{normal: f.normal, point: to3D(f.plane, ip), outer: ring3D(f.plane, r.Outer)}
+		sf := subFace{normal: faceNormal(f), point: to3D(facePlane(f), ip), outer: ring3D(facePlane(f), r.Outer)}
 		for _, h := range r.Holes {
-			sf.holes = append(sf.holes, ring3D(f.plane, h))
+			sf.holes = append(sf.holes, ring3D(facePlane(f), h))
 		}
 		out = append(out, sf)
 	}
@@ -97,12 +97,12 @@ func ringSignature(ring []math.Point3, pw *welder3) string {
 }
 
 // faceBoundarySegments returns a face's loop edges as 2D segments in its plane.
-func faceBoundarySegments(f planarFace) [][2]math.Point2 {
+func faceBoundarySegments(f curvedFace) [][2]math.Point2 {
 	var segs [][2]math.Point2
-	for _, ring := range f.loops {
+	for _, ring := range planarRings(f) {
 		n := len(ring)
 		for i := range n {
-			segs = append(segs, [2]math.Point2{to2D(f.plane, ring[i]), to2D(f.plane, ring[(i+1)%n])})
+			segs = append(segs, [2]math.Point2{to2D(facePlane(f), ring[i]), to2D(facePlane(f), ring[(i+1)%n])})
 		}
 	}
 	return segs

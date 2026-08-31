@@ -13,7 +13,7 @@ import (
 
 // provFaces builds a named box and returns its planar faces — the operand form provenanceOf
 // consumes. Box face indices follow subd.Box: 1 = top (+Z), 4 = left (−X).
-func provFaces(name string, px, py, pz, sx, sy, sz float64) []planarFace {
+func provFaces(name string, px, py, pz, sx, sy, sz float64) []curvedFace {
 	m := subd.Box(sx, sy, sz)
 	for i := range m.Verts {
 		m.Verts[i] = m.Verts[i].TranslateBy(math.V3(px, py, pz))

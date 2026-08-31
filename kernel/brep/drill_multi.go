@@ -124,7 +124,7 @@ func capsBoundMaterial(entry, exit curvedDrillCap, ua math.Vector3) bool {
 
 // circleVsCap classifies the hole circle against a perpendicular planar face: pierced when its centre is
 // inside the face (existing holes excluded), clean when the whole circle is strictly inside and clear of
-// every existing hole. It samples the curved loops into a planarFace so it can reuse the planar
+// every existing hole. It samples the curved loops into a curvedFace so it can reuse the planar
 // containment tests (pointInFace2D / circleInsideFace), which run even-odd over outer loop plus holes.
 func circleVsCap(c math.Point3, radius float64, f curvedFace, pl geom.Plane) (pierced, clean bool) {
 	pf := curvedCapAsPlanar(f, pl)
@@ -135,12 +135,12 @@ func circleVsCap(c math.Point3, radius float64, f curvedFace, pl geom.Plane) (pi
 
 // curvedCapAsPlanar samples a planar face's curved loops into 3D point rings (outer first) so the planar
 // containment helpers can run on it — a circle hole becomes a 32-gon, a straight edge its corner.
-func curvedCapAsPlanar(f curvedFace, pl geom.Plane) planarFace {
+func curvedCapAsPlanar(f curvedFace, pl geom.Plane) curvedFace {
 	rings := make([][]math.Point3, len(f.loops))
 	for i, lp := range f.loops {
 		rings[i] = sampleCurvedLoop(lp)
 	}
-	return planarFace{plane: pl, normal: unit(pl.Normal()), loops: rings, lineage: f.lineage}
+	return planarFaceFromRings(pl, rings, f.lineage)
 }
 
 // sampleCurvedLoop flattens a loop into an ordered 3D point ring.

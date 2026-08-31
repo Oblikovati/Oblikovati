@@ -47,7 +47,7 @@ func ImprintBodies(a, b *topo.Body) (ImprintResult, ImprintResult, error) {
 // back (no classification — nothing is removed; the stitcher re-derives
 // solidity from edge pairing), tracking the touched faces and the new
 // imprint-lying edges.
-func rebuildImprinted(faces []planarFace, imprints [][][2]math.Point3) (ImprintResult, error) {
+func rebuildImprinted(faces []curvedFace, imprints [][][2]math.Point3) (ImprintResult, error) {
 	var kept []subFace
 	touched := map[string]bool{}
 	for i, f := range faces {

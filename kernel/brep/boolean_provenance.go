@@ -35,7 +35,7 @@ type imprintSeg struct {
 // on each face: onA lies interior to a, onB interior to b. Shared by imprintAll (which needs the
 // geometry to split faces) and provenanceOf (which needs the same segments to tag), so the two
 // can never drift — see the boundary-segment caveat on imprintAll.
-func pairImprints(a, b planarFace) (onA, onB [][2]math.Point3) {
+func pairImprints(a, b curvedFace) (onA, onB [][2]math.Point3) {
 	if coplanar(a, b) {
 		return coplanarOverlapSegments(a, faceEdges3D(b)), coplanarOverlapSegments(b, faceEdges3D(a))
 	}
@@ -49,16 +49,16 @@ func pairImprints(a, b planarFace) (onA, onB [][2]math.Point3) {
 // canonicalizes it. The list is the input F03 names boolean edges from. Since #1607 the pairing
 // is AABB-culled and shared with imprintAll through imprintCandidates; this wrapper keeps the
 // historical contract for callers that only need the tags.
-func provenanceOf(fa, fb []planarFace) []imprintSeg {
+func provenanceOf(fa, fb []curvedFace) []imprintSeg {
 	_, _, prov := imprintCandidates(fa, fb, crossingFaceCandidates(fa, fb))
 	return prov
 }
 
 // appendTagged appends each segment tagged with the owner/other faces' lineages and normals.
-func appendTagged(prov []imprintSeg, segs [][2]math.Point3, owner, other planarFace) []imprintSeg {
+func appendTagged(prov []imprintSeg, segs [][2]math.Point3, owner, other curvedFace) []imprintSeg {
 	for _, s := range segs {
 		prov = append(prov, imprintSeg{a: s[0], b: s[1],
-			owner: owner.lineage, other: other.lineage, ownerN: owner.normal, otherN: other.normal})
+			owner: owner.lineage, other: other.lineage, ownerN: faceNormal(owner), otherN: faceNormal(other)})
 	}
 	return prov
 }

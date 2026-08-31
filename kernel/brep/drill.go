@@ -79,16 +79,16 @@ func pierceParam(base math.Point3, ua math.Vector3, pl geom.Plane) float64 {
 
 // circleInsideFace reports whether the hole circle (center, radius, in the face plane) lies
 // strictly inside the face — its center and a ring of rim samples are all in the face interior.
-func circleInsideFace(center math.Point3, f planarFace, radius float64) bool {
-	if !pointInFace2D(to2D(f.plane, center), f) {
+func circleInsideFace(center math.Point3, f curvedFace, radius float64) bool {
+	if !pointInFace2D(to2D(facePlane(f), center), f) {
 		return false
 	}
-	u, v := f.plane.UAxis.AsVector(), f.plane.VAxis.AsVector()
+	u, v := facePlane(f).UAxis.AsVector(), facePlane(f).VAxis.AsVector()
 	const samples = 24
 	for i := range samples {
 		a := 2 * stdmath.Pi * float64(i) / samples
 		rim := center.TranslateBy(u.Scale(math.Scalar(radius * stdmath.Cos(a)))).TranslateBy(v.Scale(math.Scalar(radius * stdmath.Sin(a))))
-		if !pointInFace2D(to2D(f.plane, rim), f) {
+		if !pointInFace2D(to2D(facePlane(f), rim), f) {
 			return false
 		}
 	}
@@ -97,11 +97,11 @@ func circleInsideFace(center math.Point3, f planarFace, radius float64) bool {
 
 // weldPlanarFaces welds every face's loops to shared vertex indices and tallies undirected
 // edge uses (so faces sharing a box edge resolve to one edge).
-func weldPlanarFaces(w *welder3, planar []planarFace) (rings [][][]int, edgeUse map[[2]int]int) {
+func weldPlanarFaces(w *welder3, planar []curvedFace) (rings [][][]int, edgeUse map[[2]int]int) {
 	rings = make([][][]int, len(planar))
 	edgeUse = map[[2]int]int{}
 	for fi, f := range planar {
-		for _, loop := range f.loops {
+		for _, loop := range planarRings(f) {
 			r := w.ring(loop)
 			rings[fi] = append(rings[fi], r)
 			for i := range r {

@@ -40,39 +40,39 @@ func CutBlindCylindricalHole(slab *topo.Body, base math.Point3, axisDir math.Vec
 
 // classifyBlindDrill finds the single planar entry face (perpendicular to the axis, with the
 // base on its plane and the circle inside) and returns every other face as copied-unchanged.
-func classifyBlindDrill(slab *topo.Body, base math.Point3, ua math.Vector3, radius float64) (copied []planarFace, entry planarFace, err error) {
+func classifyBlindDrill(slab *topo.Body, base math.Point3, ua math.Vector3, radius float64) (copied []curvedFace, entry curvedFace, err error) {
 	faces, ok := facesOf(slab)
 	if !ok {
-		return nil, planarFace{}, ErrNonPlanar
+		return nil, curvedFace{}, ErrNonPlanar
 	}
 	found := false
 	for _, f := range faces {
-		isEntry := float64(f.normal.Dot(ua)) < -1+1e-7 && stdmath.Abs(pierceParam(base, ua, f.plane)) < 1e-6 // tol:angular (cosine) + calibrated (pierce dist)
+		isEntry := float64(faceNormal(f).Dot(ua)) < -1+1e-7 && stdmath.Abs(pierceParam(base, ua, facePlane(f))) < 1e-6 // tol:angular (cosine) + calibrated (pierce dist)
 		if !isEntry {
 			copied = append(copied, f)
 			continue
 		}
 		if !circleInsideFace(base, f, radius) {
-			return nil, planarFace{}, fmt.Errorf("brep: blind hole circle (r=%g) does not fit inside the entry face", radius)
+			return nil, curvedFace{}, fmt.Errorf("brep: blind hole circle (r=%g) does not fit inside the entry face", radius)
 		}
 		if found {
-			return nil, planarFace{}, fmt.Errorf("brep: ambiguous entry face for blind hole at %+v", base)
+			return nil, curvedFace{}, fmt.Errorf("brep: ambiguous entry face for blind hole at %+v", base)
 		}
 		entry, found = f, true
 	}
 	if !found {
-		return nil, planarFace{}, fmt.Errorf("brep: no planar entry face perpendicular to the drill axis at %+v", base)
+		return nil, curvedFace{}, fmt.Errorf("brep: no planar entry face perpendicular to the drill axis at %+v", base)
 	}
 	return copied, entry, nil
 }
 
 // checkBlindFits verifies the hole bottom (centre and rim) stays strictly inside the part, so
 // the blind pocket does not exit or clip another face.
-func checkBlindFits(slab *topo.Body, entry planarFace, bottom math.Point3, radius float64) error {
+func checkBlindFits(slab *topo.Body, entry curvedFace, bottom math.Point3, radius float64) error {
 	if !insideSolid(slab, bottom) {
 		return fmt.Errorf("brep: blind hole bottom at %+v is outside the part (depth too large)", bottom)
 	}
-	u, v := entry.plane.UAxis.AsVector(), entry.plane.VAxis.AsVector()
+	u, v := facePlane(entry).UAxis.AsVector(), facePlane(entry).VAxis.AsVector()
 	const samples = 8
 	for i := range samples {
 		a := 2 * stdmath.Pi * float64(i) / samples
@@ -86,7 +86,7 @@ func checkBlindFits(slab *topo.Body, entry planarFace, bottom math.Point3, radiu
 
 // assembleBlind welds the bore (entry hole + cylinder wall) and caps it with a flat bottom disk
 // whose outward normal faces back toward the opening (−axis).
-func assembleBlind(copied []planarFace, entry planarFace, base, bottom math.Point3, ua math.Vector3, radius float64) (*topo.Body, error) {
+func assembleBlind(copied []curvedFace, entry curvedFace, base, bottom math.Point3, ua math.Vector3, radius float64) (*topo.Body, error) {
 	bld, holeBot, err := blindBore(copied, entry, base, bottom, ua, radius)
 	if err != nil {
 		return nil, err
@@ -102,9 +102,9 @@ func assembleBlind(copied []planarFace, entry planarFace, base, bottom math.Poin
 // blindBore welds the copied + entry planar faces, holes the entry, and adds the cylinder wall.
 // It returns the builder and the bottom rim edge so the caller can cap the bore (a flat disk for
 // a drilled flat bottom, or a cone for a conical drill point).
-func blindBore(copied []planarFace, entry planarFace, base, bottom math.Point3, ua math.Vector3, radius float64) (*topo.Builder, *topo.Edge, error) {
+func blindBore(copied []curvedFace, entry curvedFace, base, bottom math.Point3, ua math.Vector3, radius float64) (*topo.Builder, *topo.Edge, error) {
 	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("brep", "drill", 0)))
-	planar := append(append([]planarFace{}, copied...), entry)
+	planar := append(append([]curvedFace{}, copied...), entry)
 
 	w := newWelder3(planarStitchGrid)
 	rings, edgeUse := weldPlanarFaces(w, planar)
@@ -124,7 +124,7 @@ func blindBore(copied []planarFace, entry planarFace, base, bottom math.Point3, 
 		if fi == entryIdx {
 			specs = append(specs, topo.InnerLoop(topo.Fwd(holeEntry))) // entry keeps its key (K1a)
 		}
-		bld.AddFace(f.plane, f.lineage, specs...)
+		bld.AddFace(facePlane(f), f.lineage, specs...)
 	}
 	// Hole wall: surface normal is outward-radial, so its material side faces the axis.
 	bld.AddReversedFace(cyl, topo.NewLineage(topo.Tok("brep", "wall", 0)),

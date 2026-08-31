@@ -35,7 +35,7 @@ func insideSolid(b *topo.Body, p math.Point3) bool {
 // faces, the tolerance and the summation order are exactly insideSolid's, so every verdict is
 // bit-identical.
 type solidProbe struct {
-	faces   []planarFace
+	faces   []curvedFace
 	onPlane float64
 	planar  bool
 }
@@ -77,12 +77,12 @@ func (sp *solidProbe) inside(p math.Point3) bool {
 // the beltb regression, where the operands share their top/bottom planes). The coplanar-INTERIOR
 // point — genuinely on the solid's boundary — never reaches this classifier: classifySubFace
 // resolves it through the coplanarCover/ON-ON table first.
-func faceSolidAngle(f planarFace, p math.Point3, onPlaneTol float64) float64 {
-	if stdmath.Abs(float64(f.normal.Dot(f.plane.Origin.VectorTo(p)))) < onPlaneTol {
+func faceSolidAngle(f curvedFace, p math.Point3, onPlaneTol float64) float64 {
+	if stdmath.Abs(float64(faceNormal(f).Dot(facePlane(f).Origin.VectorTo(p)))) < onPlaneTol {
 		return 0
 	}
 	sum := 0.0
-	for _, ring := range f.loops {
+	for _, ring := range planarRings(f) {
 		for i := 1; i+1 < len(ring); i++ {
 			sum += geom.SignedSolidAngle(p, ring[0], ring[i], ring[i+1])
 		}

@@ -48,9 +48,9 @@ func CutCountersinkHole(slab *topo.Body, base math.Point3, axisDir math.Vector3,
 // assembleCountersink welds the planar faces, holes the entry with the sink opening, and closes
 // the recess with a cone frustum wall, a cylinder bore wall (sharing the transition circle), and
 // a holed exit or flat bottom.
-func assembleCountersink(copied []planarFace, entry planarFace, exitIdx int, base, trans, end math.Point3, ua math.UnitVector3, cone geom.Cone, boreRadius, sinkRadius float64, through bool) (*topo.Body, error) {
+func assembleCountersink(copied []curvedFace, entry curvedFace, exitIdx int, base, trans, end math.Point3, ua math.UnitVector3, cone geom.Cone, boreRadius, sinkRadius float64, through bool) (*topo.Body, error) {
 	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("brep", "csink", 0)))
-	planar := append(append([]planarFace{}, copied...), entry)
+	planar := append(append([]curvedFace{}, copied...), entry)
 	entryIdx := len(planar) - 1
 
 	w := newWelder3(planarStitchGrid)
@@ -89,7 +89,7 @@ func assembleCountersink(copied []planarFace, entry planarFace, exitIdx int, bas
 		case exitIdx:
 			specs = append(specs, topo.InnerLoop(topo.Fwd(eEnd)))
 		}
-		bld.AddFace(f.plane, f.lineage, specs...) // keeps reference keys (K1a)
+		bld.AddFace(facePlane(f), f.lineage, specs...) // keeps reference keys (K1a)
 	}
 	bld.AddReversedFace(cone, topo.NewLineage(topo.Tok("brep", "sinkwall", 0)),
 		topo.OuterLoop(topo.Rev(eEntry), topo.Fwd(coneSeam), topo.Rev(eTrans), topo.Rev(coneSeam)))
