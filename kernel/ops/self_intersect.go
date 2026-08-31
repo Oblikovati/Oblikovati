@@ -3,145 +3,219 @@
 package ops
 
 import (
+	stdmath "math"
+
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// Self-intersection detection (M07 PBI-084, Oblikovati/Oblikovati#300): pairs
-// of faces of one body that pass through each other. Topologically adjacent
-// faces (sharing an edge or vertex) legitimately touch along that boundary and
-// are excluded; what remains crossing is real interpenetration — the classic
-// outcome of a bad import or an over-folded offset.
+// Self-intersection detection (M07 PBI-084, Oblikovati/Oblikovati#300): pairs of faces of one body
+// that pass through each other. Topologically adjacent faces (sharing an edge or vertex) legitimately
+// touch along that boundary and are excluded; what remains crossing is real interpenetration — the
+// classic outcome of a bad import or an over-folded offset.
 //
-// This file is the BROAD PHASE and reporting: it tessellates each face, prunes
-// pairs by bounding box + a per-face BVH, excludes shared topology, and reports
-// a witness point. The per-triangle Möller narrow phase lives in
-// self_intersect_triangle.go; its coplanar branch in self_intersect_coplanar.go.
+// ★ IT READS NO TESSELLATION (M48/C3, Oblikovati/Oblikovati#3477). Until this slice the detector
+// tessellated every face, scanned triangle pairs with a Möller test, and then SUBTRACTED a per-face
+// faceting allowance (faceMeshDeviation) so tangent blends stopped reporting crossings that only the
+// facets had. That is a validity verdict taken on facets and then corrected with a facet-error budget:
+// the same body could be valid at one Quality and invalid at another. The decision now runs on the
+// exact B-rep, exactly as OCCT's IntTools_FaceFace decides face interference:
+//
+//   - two faces trimmed out of the SAME surface sheet interpenetrate where their TRIMS overlap, which
+//     no surface-surface intersection can see (the two surfaces have no isolated intersection curve).
+//     That arm lives in self_intersect_coincident.go.
+//   - otherwise they interpenetrate where their surfaces' exact intersection curve
+//     (geom.SurfaceIntersect) runs INSIDE both trims (brep.PointInFaceTrim) and away from the two
+//     faces' shared boundary — the same shape kernel/ops/boundary_cross.go uses for containment.
+//
+// The whole triangle narrow phase (the Möller straddle test, its coplanar SAT/Sutherland-Hodgman
+// branch, the triangle BVH and the faceting allowance) is DELETED with this change rather than kept
+// as a fallback: a generalization is only complete when the special cases it replaces are gone.
 
-// SelfIntersection is one interpenetrating, non-adjacent face pair, with a
-// witness point on the crossing.
+// SelfIntersection is one interpenetrating, non-adjacent face pair, with a witness point on the
+// crossing.
 type SelfIntersection struct {
 	FaceA, FaceB *topo.Face
 	Witness      math.Point3
 }
 
-// SelfIntersections tessellates each face at q and reports every non-adjacent
-// face pair whose triangles cross. The check is mesh-accurate: a crossing no
-// deeper than the two faces' own faceting error is not reported, because the
-// mesh carries no evidence that the true surfaces cross at all — which matches
-// what every downstream consumer (booleans, mass properties, export) sees anyway.
-// Two planar faces are meshed exactly and so are held to a crossing of zero.
+// SelfIntersections reports every face pair of b whose TRIMMED surfaces genuinely pass through each
+// other, decided on the exact B-rep — no tessellation, and so no dependence on facet density. The
+// Quality argument is kept only so the many call sites that thread one through do not churn; it is
+// deliberately unused (the same reason [FillInternalVoids] ignores its own).
+//
+// Faces that merely touch along shared topology (an edge or a vertex they have in common) are contact,
+// not interpenetration, and are excluded. A face pair whose surfaces the analytic intersector cannot
+// resolve is DECLINED rather than reported — see [declineUnresolvedSurfacePair].
 //
 // Example: if hits := ops.SelfIntersections(body, ops.DefaultQuality()); len(hits) > 0 { reject(body) }
-func SelfIntersections(b *topo.Body, q Quality) []SelfIntersection {
+func SelfIntersections(b *topo.Body, _ Quality) []SelfIntersection {
 	faces := b.Faces()
-	tris := make([][][3]math.Point3, len(faces))
-	boxes := make([]math.Box, len(faces))
-	bvhs := make([]*triBVH, len(faces)) // built lazily the first time a face is the queried-against side
-	for i, f := range faces {
-		tris[i] = meshTriangles(TessellateFace(f, q))
-		boxes[i] = f.RangeBox()
-	}
+	res := geom.ResolutionForBox(b.RangeBox())
 	var out []SelfIntersection
-	for i := range faces {
-		for j := i + 1; j < len(faces); j++ {
-			if !boxes[i].Intersects(boxes[j]) {
-				continue
-			}
-			// Don't skip the whole pair when the faces merely touch (#1321): test triangle pairs and
-			// discard only crossings that land ON the shared boundary (the legitimate edge/vertex
-			// contact). A crossing AWAY from the shared topology is a real interpenetration.
-			shared := sharedFaceBoundary(faces[i], faces[j])
-			if bvhs[j] == nil {
-				bvhs[j] = newTriBVH(tris[j])
-			}
-			// Two meshes may each stray from their true surface, so they can appear to cross by up
-			// to the SUM of their deviations with no real interpenetration behind it — which is what
-			// made every tangent blend (fillet/sphere/cone weld) report a false self-intersection
-			// (#2077). Planar faces contribute nothing, so plane-on-plane stays exact.
-			allow := faceMeshDeviation(faces[i], q) + faceMeshDeviation(faces[j], q)
-			if p, hit := meshCrossesOffBoundary(tris[i], bvhs[j], shared, q.tol(), allow); hit {
-				out = append(out, SelfIntersection{FaceA: faces[i], FaceB: faces[j], Witness: p})
+	for i, fa := range faces {
+		for _, fb := range faces[i+1:] {
+			if p, hit := facesInterpenetrate(fa, fb, res); hit {
+				out = append(out, SelfIntersection{FaceA: fa, FaceB: fb, Witness: p})
 			}
 		}
 	}
 	return out
 }
 
-// sharedFaceBoundary returns the geometry two faces legitimately share: their common edges as
-// segments and any common vertex as a degenerate (point) segment. Contact within tol of any of these
-// is the faces meeting along their shared topology, not an interpenetration.
-func sharedFaceBoundary(a, b *topo.Face) [][2]math.Point3 {
-	edgesB := map[*topo.Edge]bool{}
-	vertsB := map[*topo.Vertex]bool{}
-	for _, e := range b.Edges() {
-		edgesB[e] = true
-		vertsB[e.StartVertex()], vertsB[e.EndVertex()] = true, true
-	}
-	var shared [][2]math.Point3
-	seenV := map[*topo.Vertex]bool{}
-	for _, e := range a.Edges() {
-		if edgesB[e] {
-			shared = append(shared, [2]math.Point3{e.StartVertex().Point(), e.EndVertex().Point()})
-		}
-		for _, v := range [2]*topo.Vertex{e.StartVertex(), e.EndVertex()} {
-			if vertsB[v] && !seenV[v] {
-				seenV[v] = true
-				shared = append(shared, [2]math.Point3{v.Point(), v.Point()})
-			}
-		}
-	}
-	return shared
+// declineUnresolvedSurfacePair is the ONE named decline of this detector, so the skip is on the record
+// instead of being silent: it answers "no crossing" for a face pair the analytic intersector could not
+// resolve.
+//
+// geom.SurfaceIntersect reports handled=false when neither the closed form nor the general marcher
+// produced a curve and the two surfaces may still cross (an oblique cone section the conic solver
+// declines, a fitted patch the marcher fails to seed). kernel/ops/boundary_cross.go treats that case
+// as CROSSING, because there the conservative move is to demote the operands to the general boolean —
+// always correct, only slower. Here the conservative direction is the opposite one: SelfIntersections
+// is a VALIDITY verdict, and manufacturing a defect on every pair the intersector cannot resolve would
+// condemn healthy bodies (and, through ValidateBodyEntities, fail features that are perfectly sound).
+// An unresolvable pair is therefore reported as no crossing, which is a false-negative risk this
+// detector accepts knowingly and which shrinks as geom's intersector coverage grows.
+func declineUnresolvedSurfacePair() (math.Point3, bool) {
+	return math.Point3{}, false
 }
 
-// meshCrossesOffBoundary tests each triangle of mesh A against only the B triangles its box overlaps
-// (found through the B-side BVH, not an all-pairs scan, #1411) and returns the first crossing whose
-// witness lies farther than tol from the shared boundary — the first real interpenetration. The exact
-// Möller test and the boundary filter are unchanged, so detection is identical to the old scan; only
-// the candidates it runs on are pruned. Crossings on the shared boundary are legitimate contact.
-func meshCrossesOffBoundary(aTris [][3]math.Point3, bBVH *triBVH, shared [][2]math.Point3, tol, allow float64) (math.Point3, bool) {
-	var witness math.Point3
-	found := false
-	for _, t1 := range aTris {
-		box := math.BoxFromPoints(t1[0], t1[1], t1[2])
-		bBVH.query(box, func(j int) bool {
-			p, kind := triangleCrossing(t1, bBVH.tris[j], allow)
-			if kind == crossNone || onSharedBoundary(p, shared, tol) {
-				return false
-			}
-			witness, found = p, true
-			return true // stop the BVH walk at the first real crossing
-		})
-		if found {
-			return witness, true
+// facesInterpenetrate returns a witness point where the two trimmed faces pass through each other, on
+// the exact B-rep. Range boxes prune the pair first; a pair trimmed out of one surface sheet takes the
+// trim-overlap arm; every other pair takes the surface-surface intersection arm.
+func facesInterpenetrate(fa, fb *topo.Face, res geom.Resolution) (math.Point3, bool) {
+	boxA, boxB := fa.RangeBox(), fb.RangeBox()
+	if !boxA.Intersects(boxB) {
+		return math.Point3{}, false
+	}
+	shared := sharedFaceContact(fa, fb)
+	if facesShareOneSheet(fa, fb, res) {
+		return coincidentTrimOverlap(fa, fb, shared, res)
+	}
+	curves, handled := geom.SurfaceIntersect(fa.Geometry(), fb.Geometry(), boxA.Union(boxB), res)
+	if !handled {
+		return declineUnresolvedSurfacePair()
+	}
+	return crossingWitness(curves, boxOverlap(boxA, boxB), fa, fb, shared, res)
+}
+
+// crossingWitness returns the first intersection curve's witness: a point that lies inside BOTH trims
+// and off the faces' shared boundary, i.e. a place the two trimmed faces really do occupy together.
+func crossingWitness(curves []geom.Curve3, overlap math.Box, fa, fb *topo.Face,
+	shared sharedContact, res geom.Resolution) (math.Point3, bool) {
+	inBoth := func(p math.Point3) bool {
+		return brep.PointInFaceTrim(fa, p) && brep.PointInFaceTrim(fb, p) && !shared.holds(p, res.Sew())
+	}
+	for _, c := range curves {
+		if p, ok := midCrossingSample(c, overlap, inBoth); ok {
+			return p, true
 		}
 	}
 	return math.Point3{}, false
 }
 
-// faceMeshDeviation is how far a face's TESSELLATION may stray from its true surface. A planar
-// face is meshed exactly, so it gets no allowance at all; a curved face's chords sit up to the
-// chord tolerance away from the surface.
-func faceMeshDeviation(f *topo.Face, q Quality) float64 {
-	if _, planar := f.Geometry().(geom.Plane); planar {
-		return 0
+// midCrossingSample walks the interior samples of an intersection curve, bounded to the two faces'
+// box overlap (sampleRange — the closed form returns an UNBOUNDED line for a plane pair), and returns
+// the MIDDLE accepted sample.
+//
+// The middle, not the first: the witness is quoted to a human and filtered by callers against the
+// shared boundary, so it must sit well inside the interpenetration rather than at its rim. Two faces
+// that share only a vertex and then fan apart cross right from that vertex, and a first-hit witness
+// lands a sampling step away from it — indistinguishable from legitimate vertex contact (#1321).
+func midCrossingSample(c geom.Curve3, overlap math.Box, accept func(math.Point3) bool) (math.Point3, bool) {
+	lo, hi, ok := sampleRange(c, overlap)
+	if !ok || hi <= lo {
+		return math.Point3{}, false
 	}
-	return q.tol()
+	var hits []math.Point3
+	for i := 1; i < curveTrimSamples; i++ {
+		if p := c.PointAt(lo + (hi-lo)*float64(i)/curveTrimSamples); accept(p) {
+			hits = append(hits, p)
+		}
+	}
+	if len(hits) == 0 {
+		return math.Point3{}, false
+	}
+	return hits[len(hits)/2], true
 }
 
-// onSharedBoundary reports whether p lies within tol of any shared boundary segment/point.
-func onSharedBoundary(p math.Point3, shared [][2]math.Point3, tol float64) bool {
-	for _, s := range shared {
-		if pointToSegment(p, s[0], s[1]) <= tol {
+// sharedContact is the geometry two faces legitimately share: the EXACT curves of their common edges
+// and the points of their common vertices. Contact within tolerance of any of it is the faces meeting
+// along their shared topology, not an interpenetration.
+//
+// The curves are the edges' own geometry, never the chord between their vertices: a shared ARC (every
+// fillet's tangent edge) bows away from its chord by the sagitta, so a chord-based filter let the whole
+// tangent-blend population read as interpenetrating.
+type sharedContact struct {
+	curves []geom.Curve3
+	points []math.Point3
+}
+
+// sharedFaceContact collects the edges and vertices faces a and b have in common.
+func sharedFaceContact(a, b *topo.Face) sharedContact {
+	edgesB, vertsB := map[*topo.Edge]bool{}, map[*topo.Vertex]bool{}
+	for _, e := range b.Edges() {
+		edgesB[e] = true
+		vertsB[e.StartVertex()], vertsB[e.EndVertex()] = true, true
+	}
+	var out sharedContact
+	seenV := map[*topo.Vertex]bool{}
+	for _, e := range a.Edges() {
+		if edgesB[e] {
+			out.curves = append(out.curves, e.Geometry())
+		}
+		out.points = appendSharedVertices(out.points, e, vertsB, seenV)
+	}
+	return out
+}
+
+// appendSharedVertices adds edge e's ends to pts when face b uses them too, each at most once.
+func appendSharedVertices(pts []math.Point3, e *topo.Edge, vertsB, seenV map[*topo.Vertex]bool) []math.Point3 {
+	for _, v := range [2]*topo.Vertex{e.StartVertex(), e.EndVertex()} {
+		if vertsB[v] && !seenV[v] {
+			seenV[v] = true
+			pts = append(pts, v.Point())
+		}
+	}
+	return pts
+}
+
+// holds reports whether p lies within tol of the shared topology — on a common edge's exact curve or
+// at a common vertex.
+func (s sharedContact) holds(p math.Point3, tol float64) bool {
+	for _, q := range s.points {
+		if float64(p.DistanceTo(q)) <= tol {
+			return true
+		}
+	}
+	for _, c := range s.curves {
+		if brep.EntityDistance(brep.PointSupport(p), brep.CurveSupport(c)) <= tol {
 			return true
 		}
 	}
 	return false
 }
 
-func meshTriangle(m *Mesh, i int) [3]math.Point3 {
-	return [3]math.Point3{
-		m.Positions[m.Indices[i]], m.Positions[m.Indices[i+1]], m.Positions[m.Indices[i+2]],
+// faceTrimProbes returns the exact points a trim-overlap decision is taken at: every boundary vertex
+// and every boundary edge's curve midpoint. Vertices alone would miss an overlap whose corners all sit
+// outside the other trim (two crossing bars), and midpoints alone would miss a corner poking in.
+func faceTrimProbes(f *topo.Face) []math.Point3 {
+	edges := f.Edges()
+	out := make([]math.Point3, 0, 2*len(edges))
+	for _, e := range edges {
+		out = append(out, e.StartVertex().Point(), edgeCurveMidpoint(e))
 	}
+	return out
+}
+
+// edgeCurveMidpoint is the point at the middle of an edge's own parameter range, falling back to the
+// vertex chord midpoint for an unbounded curve (whose mid-parameter is not a number).
+func edgeCurveMidpoint(e *topo.Edge) math.Point3 {
+	lo, hi := e.Geometry().Domain()
+	if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
+		return e.StartVertex().Point().Lerp(e.EndVertex().Point(), 0.5)
+	}
+	return e.Geometry().PointAt((lo + hi) / 2)
 }
