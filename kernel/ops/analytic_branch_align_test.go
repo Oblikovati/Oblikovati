@@ -133,3 +133,29 @@ func TestAlignPolygonBranchesKeepsPolygonsAlreadyTogether(t *testing.T) {
 		t.Errorf("a hole already on the outer loop's branch moved to u=%g, want 3", got[1][0].u)
 	}
 }
+
+// TestLoopsWrapASeamAsksThePeriodNotZero pins the difference between a loop that WRAPS and a loop
+// that merely fails to close to the last bit. Net uv travel is accumulated from ParamAt round trips,
+// so a loop that closes perfectly still reports a residue — measured, 3.0e-8 on a torus section and
+// 1.8e-7 on its planar cap. Judging that against a bare absolute epsilon called both of them
+// seam-wrapping and sent ordinary bounded faces down the band path.
+func TestLoopsWrapASeamAsksThePeriodNotZero(t *testing.T) {
+	const tau = 2 * stdmath.Pi
+	closed := []arcSample{{u: 0, v: 0}, {u: 1, v: 0}, {u: 1, v: 1}}
+	periodic := func(net float64) []faceLoop {
+		return []faceLoop{{netU: net, edges: []loopEdge{{samples: closed, uPeriod: tau}}}}
+	}
+	if loopsWrapASeam(periodic(2.98e-8)) {
+		t.Error("a round-trip residue of 3e-8 is not a wrap; a wrap is a whole period")
+	}
+	if !loopsWrapASeam(periodic(tau)) {
+		t.Error("travelling one whole period IS a wrap")
+	}
+	if !loopsWrapASeam(periodic(-tau)) {
+		t.Error("travelling one period backwards is equally a wrap")
+	}
+	flat := []faceLoop{{netV: 1.788e-7, edges: []loopEdge{{samples: closed}}}}
+	if loopsWrapASeam(flat) {
+		t.Error("a parameter with no period cannot wrap, whatever residue it carries")
+	}
+}

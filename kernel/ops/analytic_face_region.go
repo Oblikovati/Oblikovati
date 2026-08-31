@@ -120,11 +120,20 @@ func regionProbeUV(loops []faceLoop) (u, v float64, ok bool) {
 	return regionInteriorUV(loops)
 }
 
-// loopsWrapASeam reports whether any loop fails to return to its starting parameters, which is what
-// makes it an open polyline in the covering space.
+// loopsWrapASeam reports whether any loop travels a WHOLE PERIOD in a parameter instead of returning
+// to where it started, which is what makes it an open polyline in the covering space.
+//
+// The question is asked of the period, not of zero. Net travel is accumulated from ParamAt round
+// trips, so a loop that closes perfectly still reports a residue — measured, 3.0e-8 in u on a torus
+// section and 1.8e-7 in v on its planar cap. Comparing that against a bare absolute epsilon called
+// every one of those loops seam-wrapping and sent ordinary bounded faces down the BAND path, which
+// reasons about a band's two rims and has no meaning for them. A wrap is one period (6.283 here) or
+// none; rounding the net travel to whole periods cannot be fooled by the residue, and a parameter
+// that does not wrap at all (a plane's) has period 0 and can never report one.
 func loopsWrapASeam(loops []faceLoop) bool {
+	uPeriod, vPeriod := loopsPeriod(loops, bandAxis{}), loopsPeriod(loops, bandAxis{alongV: true})
 	for _, fl := range loops {
-		if !closeUV(fl.netU, fl.netV, 0, 0) {
+		if wholePeriodOffset(fl.netU, uPeriod) != 0 || wholePeriodOffset(fl.netV, vPeriod) != 0 {
 			return true
 		}
 	}
