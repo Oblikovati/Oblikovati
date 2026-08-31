@@ -99,8 +99,8 @@ func SelfCrossingFaceLoops(b *topo.Body, _ Quality) []SelfCrossingLoop {
 }
 
 // crossingsOfFace reports each developed loop of f that crosses itself. Every candidate the chart
-// produces is corroborated on the exact edge curves before it is reported, so a chord that cuts where
-// its curve does not is never a defect.
+// produces is certified against the edges it is drawn from before it is reported, so a chart segment
+// that cuts where its own edge does not is never a defect (crossingIsCertified).
 func crossingsOfFace(f *topo.Face, loops []developedLoop, rings []cornerRing) []SelfCrossingLoop {
 	var out []SelfCrossingLoop
 	for i, l := range loops {
