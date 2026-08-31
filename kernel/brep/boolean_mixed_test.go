@@ -205,3 +205,25 @@ func TestMixedBooleanCavityInsideCylinder(t *testing.T) {
 		t.Errorf("cavity-in-cylinder removed %g, want exactly 1", removed)
 	}
 }
+
+// TestMixedBooleanPocketInCylinderCap: a pocket cut into a cylinder's TOP CAP — the cap (a planar
+// face with a full-circle OUTER loop) splits through the exact-frame chart (planeFaceUV): its rim
+// stays the exact circle, the pocket rim is the shared plane∩plane segments both sides split on, and
+// the untouched wall proves clear through the exact interaction gate. The pre-B3 dispatch declined
+// this whole class.
+func TestMixedBooleanPocketInCylinderCap(t *testing.T) {
+	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 5)
+	before := vol(cyl)
+	tool, _ := brep.SolidBlock(math.P3(-0.8, -0.8, 4), math.P3(0.8, 0.8, 6), "tool")
+	res, err := brep.BooleanDiag(brep.Difference, cyl, tool, nil)
+	if err != nil {
+		t.Fatalf("cap pocket declined: %v", err)
+	}
+	if !res.IsSolid() || cylinderFaceCount(res) != 1 {
+		t.Fatalf("cap pocket invalid (solid=%v cyls=%d)", res.IsSolid(), cylinderFaceCount(res))
+	}
+	// The pocket removes exactly its overlap with the solid: 1.6×1.6×1 (z∈[4,5]).
+	if removed := before - vol(res); stdmath.Abs(removed-2.56) > 1e-6 {
+		t.Errorf("cap pocket removed %g, want exactly 2.56", removed)
+	}
+}

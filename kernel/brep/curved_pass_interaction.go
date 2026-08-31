@@ -39,11 +39,12 @@ func passClearOf(p, other facePartition) bool {
 // gateFaces is the partition's full face list with a conservative box per face (the exact loop-point
 // box for a polygonal face, the true topo box for a pass face).
 func (p facePartition) gateFaces() ([]curvedFace, []math.Box) {
-	faces := append(append([]curvedFace{}, p.planar...), p.pass...)
+	faces := append(append(append([]curvedFace{}, p.planar...), p.uv...), p.pass...)
 	boxes := make([]math.Box, 0, len(faces))
 	for _, f := range p.planar {
 		boxes = append(boxes, paddedFaceBox(f))
 	}
+	boxes = append(boxes, p.uvBox...)
 	boxes = append(boxes, p.passBox...)
 	return faces, boxes
 }

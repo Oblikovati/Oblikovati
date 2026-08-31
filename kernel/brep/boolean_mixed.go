@@ -37,6 +37,8 @@ type facePartition struct {
 	planar      []curvedFace
 	planarFull  []curvedFace   // per planar face: the UNstripped face (true trim, for exact imprint clipping)
 	planarHoles [][]curvedLoop // per planar face: curved hole loops detached before the polygonal split
+	uv          []curvedFace   // curved-OUTER planar faces the exact-frame chart can split (planeFaceUV)
+	uvBox       []math.Box
 	pass        []curvedFace
 	passBox     []math.Box
 	body        *topo.Body
@@ -58,6 +60,11 @@ func partitionFaces(b *topo.Body) facePartition {
 			p.planar = append(p.planar, stripped)
 			p.planarFull = append(p.planarFull, cf)
 			p.planarHoles = append(p.planarHoles, holes)
+			continue
+		}
+		if _, ok := newPlaneFaceUV(cf, geom.ResolutionForBox(topoFaces[i].RangeBox())); ok {
+			p.uv = append(p.uv, cf)
+			p.uvBox = append(p.uvBox, topoFaces[i].RangeBox())
 			continue
 		}
 		p.pass = append(p.pass, cf)
@@ -134,7 +141,8 @@ func (mp *mixedProbe) inside(p math.Point3) bool {
 // the TRUE faces (planarFull), never the stripped ones: a detached hole is a real boundary the
 // classifier's rays must see, or every ray through the hole region counts a phantom crossing.
 func (p facePartition) allFaces() []curvedFace {
-	return append(append([]curvedFace{}, p.planarFull...), p.pass...)
+	all := append(append([]curvedFace{}, p.planarFull...), p.uv...)
+	return append(all, p.pass...)
 }
 
 // passThroughKept classifies each pass-through face as a whole — its membership in the other solid is
@@ -185,20 +193,38 @@ func booleanMixed(op Op, a, b *topo.Body) (*topo.Body, bool, error) {
 		return nil, false, ErrNonPlanar // a flush contact on a curved-loop face is not modelled here
 	}
 	// Imprints clip against the TRUE trims (planarFull): a face's detached holes are void, so no
-	// imprint is minted inside them (the phantom that broke the detached-hole premise).
+	// imprint is minted inside them (the phantom that broke the detached-hole premise). The exact-frame
+	// (uv) faces' imprints run BEFORE the polygonal split, mirroring the same segments onto the other
+	// side's imprint lists so the two faces split on identical coordinates.
 	impA, impB, prov := imprintCandidates(pa.planarFull, pb.planarFull, pairs)
+	uvImpA, uvImpB, okU := bothUVImprints(&pa, &pb, impA, impB)
+	if !okU {
+		return nil, false, ErrNonPlanar
+	}
 	keptA, okHA := selectFacesDetached(pa.planar, impA, prb, pb.planar, pairs.bForA, op, false, prov, pa.planarHoles)
 	keptB, okHB := selectFacesDetached(pb.planar, impB, pra, pa.planar, pairs.aForB, op, true, prov, pb.planarHoles)
 	if !okHA || !okHB {
 		return nil, false, ErrNonPlanar
 	}
 	kept := append(append([]subFace{}, keptA...), keptB...)
-	passA, okA := passThroughKept(pa.pass, prb, op, false)
-	passB, okB := passThroughKept(pb.pass, pra, op, true)
-	if !okA || !okB {
+	pass, okP := mixedPassFaces(pa, pb, pra, prb, uvImpA, uvImpB, op)
+	if !okP {
 		return nil, false, ErrNonPlanar
 	}
-	return stitch(kept, append(passA, passB...), prov)
+	return stitch(kept, pass, prov)
+}
+
+// mixedPassFaces assembles the stitch's pass list: both sides' whole pass-through faces plus the
+// exact-frame (uv) trims, all classified/reversed by the boolean's keep table.
+func mixedPassFaces(pa, pb facePartition, pra, prb insideOracle, uvImpA, uvImpB [][]geom.Curve3, op Op) ([]curvedFace, bool) {
+	passA, okA := passThroughKept(pa.pass, prb, op, false)
+	passB, okB := passThroughKept(pb.pass, pra, op, true)
+	uvA, okVA := uvSplitFaces(pa, uvImpA, prb, op, false)
+	uvB, okVB := uvSplitFaces(pb, uvImpB, pra, op, true)
+	if !okA || !okB || !okVA || !okVB {
+		return nil, false
+	}
+	return append(append(append(passA, passB...), uvA...), uvB...), true
 }
 
 // selectFacesDetached is selectFaces plus the exact-hole re-attachment: after a face's fragments are
@@ -300,4 +326,98 @@ func imprintTouchesHole(imprints [][2]math.Point3, holes []curvedLoop) bool {
 // onCirclePad reports p within the cull pad of the circle's rim.
 func onCirclePad(p math.Point3, c geom.Circle) bool {
 	return stdmath.Abs(float64(c.Center.DistanceTo(p))-c.Radius) <= facePairCullPad
+}
+
+// planUVImprints computes, for every exact-frame (uv) face of p, its imprint segments against the
+// other operand's planar faces — the plane∩plane line clipped exactly against BOTH trims — and
+// APPENDS the same segments to the other face's polygonal imprint list (otherImp, index-aligned with
+// other.planar), so both sides split on identical coordinates. ok=false declines: a coplanar contact
+// on a uv face, or a trim clip without a closed form.
+func planUVImprints(p, other *facePartition, otherImp [][][2]math.Point3, _ bool) ([][]geom.Curve3, bool) {
+	out := make([][]geom.Curve3, len(p.uv))
+	for i, uf := range p.uv {
+		box := inflateBox(p.uvBox[i], facePairCullPad)
+		for j := range other.planarFull {
+			if !box.Intersects(paddedFaceBox(other.planar[j])) {
+				continue
+			}
+			segs, ok := uvPairSegments(uf, other.planarFull[j])
+			if !ok {
+				return nil, false
+			}
+			for _, s := range segs {
+				out[i] = append(out[i], geom.NewLineSegment(s[0], s[1]))
+				otherImp[j] = append(otherImp[j], s)
+			}
+		}
+	}
+	return out, true
+}
+
+// uvPairSegments is the exact shared imprint of one (uv face, planar face) pair: the plane∩plane
+// line clipped to the polygonal face's intervals AND the uv face's exact conic intervals. ok=false
+// for a coplanar pair (flush contact, unmodelled) or a failed exact clip.
+func uvPairSegments(uf, of curvedFace) ([][2]math.Point3, bool) {
+	p0, dir, ok := geom.PlanePlaneLine(facePlane(uf), facePlane(of))
+	if !ok {
+		return nil, !coplanar(uf, of)
+	}
+	toolIv := faceLineIntervals(of, p0, dir)
+	if len(toolIv) == 0 {
+		return nil, true
+	}
+	uvIv, exact := curvedFaceLineIntervals(uf, p0, dir, lineWindowOf(uf, p0, dir))
+	if !exact {
+		return nil, false
+	}
+	var segs [][2]math.Point3
+	for _, iv := range intersectIntervals(toolIv, uvIv) {
+		if iv[1]-iv[0] > 1e-9 { // tol:calibrated — planar imprint overlap length (see arrange2d arrTol)
+			segs = append(segs, [2]math.Point3{p0.TranslateBy(dir.Scale(math.Scalar(iv[0]))), p0.TranslateBy(dir.Scale(math.Scalar(iv[1])))})
+		}
+	}
+	return segs, true
+}
+
+// uvSplitFaces trims each exact-frame face by its imprints through the shared (u,v) trimmer,
+// classifying cells by the boolean's keep table over the other operand's membership oracle. A face
+// with no imprints passes through whole (the pass-through classification). A kept Difference tool
+// face reverses into the cavity. ok=false declines: a grazing contact, or a trim error.
+func uvSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracle, op Op, isB bool) ([]curvedFace, bool) {
+	var out []curvedFace
+	for i, uf := range p.uv {
+		faces, ok := uvSplitOne(uf, p.uvBox[i], imprints[i], other, op, isB)
+		if !ok {
+			return nil, false
+		}
+		out = append(out, faces...)
+	}
+	return out, true
+}
+
+// uvSplitOne trims one exact-frame face (or classifies it whole when it has no imprints).
+func uvSplitOne(uf curvedFace, box math.Box, imprint []geom.Curve3, other insideOracle, op Op, isB bool) ([]curvedFace, bool) {
+	if len(imprint) == 0 {
+		return passThroughKept([]curvedFace{uf}, other, op, isB)
+	}
+	c, ok := newPlaneFaceUV(uf, geom.ResolutionForBox(box))
+	if !ok || !planeFaceContactOK(c, imprint) {
+		return nil, false
+	}
+	keepAt := func(pt math.Point3) bool { return keep(op, isB, other.inside(pt)) }
+	faces, _, err := trimByImprint(c, uf, uf.surface, imprint, planeFaceMaterial(c, keepAt))
+	if err != nil {
+		return nil, false
+	}
+	if op == Difference && isB {
+		faces = reverseCurvedFaces(faces)
+	}
+	return faces, true
+}
+
+// bothUVImprints plans both operands' exact-frame imprints (planUVImprints each way).
+func bothUVImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3) (uvImpA, uvImpB [][]geom.Curve3, ok bool) {
+	uvImpA, okA := planUVImprints(pa, pb, impB, false)
+	uvImpB, okB := planUVImprints(pb, pa, impA, true)
+	return uvImpA, uvImpB, okA && okB
 }
