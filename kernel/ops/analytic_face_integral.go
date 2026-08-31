@@ -313,25 +313,46 @@ func segmentGreen[T quadTerms[T]](s geom.Surface, le loopEdge, a, b arcSample, f
 	for i, x := range nodes {
 		t := mid + half*x
 		frac := (t - a.t) / (b.t - a.t)
-		n := greenNode{t: t, span: b.t - a.t, seedU: a.u + (b.u-a.u)*frac, seedV: a.v + (b.v-a.v)*frac}
-		n.u, n.v = uvOnCurve(s, le, t, n.seedU, n.seedV)
+		n := greenNode{t: t}
+		n.u, n.v = uvOnCurve(s, le, t, a.u+(b.u-a.u)*frac, a.v+(b.v-a.v)*frac)
 		acc = acc.add(greenIntegrand(s, le, form, at, n).scale(weights[i]))
 	}
 	return acc.scale(half)
 }
 
-// greenNode is one Gauss node on an edge: its curve parameter and segment span, the unwrapped
-// surface parameters there, and the seeds the derivative estimates unwrap against.
-type greenNode struct{ t, span, u, v, seedU, seedV float64 }
+// greenNode is one Gauss node on an edge: its curve parameter and the unwrapped surface parameters
+// there.
+type greenNode struct{ t, u, v float64 }
 
 // greenIntegrand is one node's contribution: Q(u,v)·v′ for the u-antiderivative form, or −P(u,v)·u′
 // for the v-antiderivative one. The two are the conjugate halves of the same identity — ∫∫ g du dv
 // equals ∮ Q dv and equals −∮ P du — so a face uses whichever its loops can close.
 func greenIntegrand[T quadTerms[T]](s geom.Surface, le loopEdge, form greenAxis, at pointEval[T], n greenNode) T {
+	du, dv := duvdtAt(s, le, n)
 	if form.dv {
-		return integrateU(at, form.base, n.u, n.v).scale(dvdt(s, le, n.t, n.span, n.seedV))
+		return integrateU(at, form.base, n.u, n.v).scale(dv)
 	}
-	return integrateV(at, form.base, n.v, n.u).scale(-dudt(s, le, n.t, n.span, n.seedU))
+	return integrateV(at, form.base, n.v, n.u).scale(-du)
+}
+
+// duvdtAt returns how fast the surface parameters move along the curve at the node: it solves
+// dP/dt = P_u·(du/dt) + P_v·(dv/dt) for the two rates, from the curve's OWN tangent and the surface's
+// OWN derivatives.
+//
+// This used to be a central difference of the inverted parameters. Differencing over a step a
+// fraction of the parameter span loses about four digits to cancellation, which put a floor of ~1e-11
+// under every analytic volume — enough that an exactly-additive line-kiss union read 1.99999999998
+// instead of 2. Reading both sides analytically has no such floor and needs no step size.
+func duvdtAt(s geom.Surface, le loopEdge, n greenNode) (du, dv float64) {
+	tangent := le.curve.TangentAt(n.t)
+	pu, pv := s.DerivativesAt(n.u, n.v)
+	a, b, c := float64(pu.Dot(pu)), float64(pu.Dot(pv)), float64(pv.Dot(pv))
+	d, e := float64(pu.Dot(tangent)), float64(pv.Dot(tangent))
+	det := a*c - b*b
+	if det == 0 {
+		return 0, 0 // a degenerate parametrization (a pole): the chart reads no direction here
+	}
+	return (d*c - e*b) / det, (a*e - b*d) / det
 }
 
 // greenAxis names which conjugate reduction a face's loops carry, with the antiderivative's lower
@@ -373,33 +394,6 @@ func loopsReturnTo(loops []faceLoop, net func(faceLoop) float64) bool {
 func uvOnCurve(s geom.Surface, le loopEdge, t, seedU, seedV float64) (u, v float64) {
 	ru, rv := s.ParamAt(le.curve.PointAt(t))
 	return unwrapPeriodic(ru, seedU, le.uPeriod), unwrapPeriodic(rv, seedV, le.vPeriod)
-}
-
-// dvdt is the rate of the surface v-parameter along the curve at t, by central difference (δ a
-// small fraction of the segment span), each sample unwrapped to the seed so no seam jump leaks in.
-func dvdt(s geom.Surface, le loopEdge, t, span, seedV float64) float64 {
-	d := stdmath.Abs(span) * 1e-4 // tol:numeric — central-difference step as a fraction of the param span
-	if d == 0 {
-		return 0
-	}
-	_, vpRaw := s.ParamAt(le.curve.PointAt(t + d))
-	_, vmRaw := s.ParamAt(le.curve.PointAt(t - d))
-	vp := unwrapPeriodic(vpRaw, seedV, le.vPeriod)
-	vm := unwrapPeriodic(vmRaw, seedV, le.vPeriod)
-	return (vp - vm) / (2 * d)
-}
-
-// dudt is dvdt for the u-parameter — the rate of the surface u-parameter along the curve at t.
-func dudt(s geom.Surface, le loopEdge, t, span, seedU float64) float64 {
-	d := stdmath.Abs(span) * 1e-4 // tol:numeric — central-difference step as a fraction of the param span
-	if d == 0 {
-		return 0
-	}
-	upRaw, _ := s.ParamAt(le.curve.PointAt(t + d))
-	umRaw, _ := s.ParamAt(le.curve.PointAt(t - d))
-	up := unwrapPeriodic(upRaw, seedU, le.uPeriod)
-	um := unwrapPeriodic(umRaw, seedU, le.uPeriod)
-	return (up - um) / (2 * d)
 }
 
 // loopSignedArea is the shoelace signed area of a loop's reference polyline (positive when CCW).
