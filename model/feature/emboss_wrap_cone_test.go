@@ -134,7 +134,19 @@ func TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial(t *testing.T) {
 	fs, rim := extrudedCylinderTopRim(t, 20, 40)
 	NewDressUpFeatures(fs).AddChamfer([][]byte{rim}, func() float64 { return 10 })
 	fs.Recompute()
-	before := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
+	// The raise is measured against the host the emboss's boolean ACTUALLY consumes, which is the
+	// planarized host, not the analytic one. The glyph tool is a planar wrapped prism, so combine
+	// takes the planar path and facets the cylinder+cone host first — a declared degradation
+	// (planarizedDiag records CodeBooleanAnalyticFaceted), permanent, and 87.09 cm³ of real material,
+	// 280× the glyph. Differencing the two bodies as-measured therefore reports the FACETING, not the
+	// emboss: the analytic host integrates to the exact 45029.494701 (π·20²·40 minus the 45° chamfer)
+	// while the result is a 175-face polyhedron at 44942.403579, so the raise read −87.09 cm³. Both
+	// numbers are right for their own body; the difference is not a raise. Against the host the
+	// operation consumed — planarized to 44942.091693, which is also exactly what the mesh integrator
+	// used to report for the analytic host, so this is the comparison the pre-analytic test was making
+	// all along — the raise is the glyph alone. (Making the emboss keep the analytic host is
+	// Oblikovati/Oblikovati#1601's curved-boolean gap, not this test's subject.)
+	before := ops.BodyGeometryProperties(planarized(fs.Result()[0], "combine-target"), ops.DefaultQuality()).Volume
 	cone, key := coneFaceOf(t, fs.Result()[0])
 
 	// Sketch origin mid-band on the chamfer cone (its slant runs ≈14→28); a 1×1 cm raise sits well
