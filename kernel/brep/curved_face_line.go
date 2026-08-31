@@ -19,14 +19,16 @@ import (
 // tangent grazing whose double root breaks the even-odd parity) so the caller stays conservative.
 
 // curvedFaceLineIntervals returns the sorted parameter intervals of the line (p0 + t·dir, dir in the
-// face plane) inside face f, exactly. window bounds the segment handed to the conic solver (the
-// caller's clip range, inflated by its own pad); crossings outside it are still found for straight
-// edges (unbounded line) and inside it for conics.
-func curvedFaceLineIntervals(f curvedFace, p0 math.Point3, dir math.Vector3, window [2]float64) ([][2]float64, bool) {
+// face plane) inside face f, exactly. The conic solver's segment is the face's OWN extent along the
+// line (lineWindowOf), never a caller's clip range: even-odd parity is sound only when every boundary
+// crossing is seen, and a narrow window silently reports a line lying wholly inside the face as
+// outside it. A caller that wants a sub-range clips the returned intervals.
+func curvedFaceLineIntervals(f curvedFace, p0 math.Point3, dir math.Vector3) ([][2]float64, bool) {
 	pl, isPlane := f.surface.(geom.Plane)
 	if !isPlane {
 		return nil, false
 	}
+	window := lineWindowOf(f, p0, dir)
 	o2, d2 := to2D(pl, p0), to2Dvec(pl, dir)
 	var ts []float64
 	for _, l := range f.loops {
@@ -96,7 +98,7 @@ func exactFaceLineIntervals(f curvedFace, p0 math.Point3, dir math.Vector3) ([][
 	if allStraightFace(f) {
 		return faceLineIntervals(f, p0, dir), true
 	}
-	return curvedFaceLineIntervals(f, p0, dir, lineWindowOf(f, p0, dir))
+	return curvedFaceLineIntervals(f, p0, dir)
 }
 
 // lineWindowOf is a conservative parameter window covering the face's extent along the line: every

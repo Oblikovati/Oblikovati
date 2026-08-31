@@ -394,7 +394,7 @@ func uvPairSegments(uf, of curvedFace) ([][2]math.Point3, bool) {
 	if len(toolIv) == 0 {
 		return nil, true
 	}
-	uvIv, exact := curvedFaceLineIntervals(uf, p0, dir, lineWindowOf(uf, p0, dir))
+	uvIv, exact := curvedFaceLineIntervals(uf, p0, dir)
 	if !exact {
 		return nil, false
 	}

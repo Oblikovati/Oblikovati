@@ -96,17 +96,11 @@ func planePassClear(pf, of curvedFace) bool {
 	if len(toolIv) == 0 {
 		return true
 	}
-	window := intervalsHull(toolIv, facePairCullPad)
-	passIv, exact := curvedFaceLineIntervals(pf, p0, dir, window)
+	passIv, exact := curvedFaceLineIntervals(pf, p0, dir)
 	if !exact {
 		return false
 	}
 	return len(intersectIntervals(inflateIntervals(toolIv, facePairCullPad), passIv)) == 0
-}
-
-// intervalsHull is the [lo, hi] hull of a sorted interval set, inflated by pad.
-func intervalsHull(iv [][2]float64, pad float64) [2]float64 {
-	return [2]float64{iv[0][0] - pad, iv[len(iv)-1][1] + pad}
 }
 
 // inflateIntervals grows each interval by pad on both ends (the conservative contact band).
