@@ -110,17 +110,56 @@ func TestPointInCurvedFaceBeltSweep(t *testing.T) {
 	}
 }
 
+// slitHemisphereFace builds the upper (y>0) hemisphere of a radius-r sphere the way an imported STEP
+// face carries it: the equator loop PLUS a meridian slit run out to the pole and straight back along the
+// same curve, so the loop closes as a polygon in the parameter plane. The slit borders nothing — the
+// hemisphere lies on both sides of it.
+func slitHemisphereFace(t *testing.T, r float64) curvedFace {
+	t.Helper()
+	f := capRegionFixture(t, r, 0, false) // the equator, walked to keep the y>0 side
+	meridian, err := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), r)
+	if err != nil {
+		t.Fatalf("meridian circle: %v", err)
+	}
+	ts, _ := geom.CurveParamAtPoint3(meridian, math.P3(math.Scalar(r), 0, 0)) // a station on the equator
+	te, _ := geom.CurveParamAtPoint3(meridian, math.P3(0, math.Scalar(r), 0)) // the +Y pole
+	if te-ts > 0.5 {
+		te-- // walk the QUARTER arc through the kept side, not the three quarters the other way round
+	}
+	f.loops[0].edges = append(f.loops[0].edges, loopEdge{curve: meridian, t0: ts, t1: te},
+		loopEdge{curve: meridian, t0: te, t1: ts})
+	return f
+}
+
+// TestPointInCurvedFaceIgnoresASlit: the slit must not be read as a border. Reading a side from it cut
+// the hemisphere down to the wedge on one side of the slit, which cost the sphere corpus its convex
+// edges — S6/S7 fillets refused with "edge is not convex" (#3453 follow-up).
+func TestPointInCurvedFaceIgnoresASlit(t *testing.T) {
+	const r = 13
+	f := slitHemisphereFace(t, r)
+	sphere := f.surface.(geom.Sphere)
+	for i := range 40 {
+		for j := range 40 {
+			u, v := 2*stdmath.Pi*float64(i)/40, -stdmath.Pi/2+stdmath.Pi*(float64(j)+0.5)/40
+			p := sphere.PointAt(u, v)
+			if got := pointInCurvedFace(f, p); got != (p.Y > 0) {
+				t.Fatalf("slit hemisphere claims %v (u=%g v=%g) = %v, want %v", p, u, v, got, p.Y > 0)
+			}
+		}
+	}
+}
+
 // TestBallJoinRodContainsBallCentre is the end-to-end reading of the same defect (#3453): a ball joined
 // with a rod through its top keeps the ball's BIG spherical cap below the seam at y=4, and the ball's own
 // centre must read as inside the solid. Every interior station read OUTSIDE while the trim classifier
 // disowned the big cap, because the ray parity behind [ClassifyPoint] counts only in-trim crossings.
 //
-// It reads containment through ClassifyPoint (ray parity) and NOT through PointInside: PointInside takes
-// the nearest-crossing/flux route, which derives each face's outward sign from the HANDEDNESS of its trim
-// loop in (u, v) (orientFaceSigns → loopHandedness) and integrates over that loop's (u, v) bounding box.
-// Both readings are inverted for exactly the face this test is about — a region that is the COMPLEMENT of
-// its ring in the parameter domain — so PointInside still reports the ball's centre outside. That is a
-// separate defect in orient_consistent.go/winding_flux.go, not in the trim classifier.
+// It reads containment through ClassifyPoint (ray parity), which is the route this classifier gates. The
+// SAME body read through PointInside — the nearest-crossing/flux route, which derives each face's outward
+// sign from the handedness of its trim ring in (u, v) and integrates over that ring — carried a second,
+// independent inversion for exactly this face: it is the COMPLEMENT of its ring in the parameter domain.
+// That one lives in orient_consistent.go/winding_flux.go/trim_region.go and is pinned separately by
+// orient_complement_test.go.
 func TestBallJoinRodContainsBallCentre(t *testing.T) {
 	ball, err := SolidSphere(math.P3(0, 0, 0), 5, "ball")
 	if err != nil {

@@ -59,40 +59,102 @@ type trimFoot struct {
 	inward     math.Vector3 // unit, tangent to the surface, pointing into the trimmed region
 }
 
+// trimEdge is one loop edge with its place in the face, so the classifier can reach the NEIGHBOURING
+// edge when a foot lands on a vertex the two share.
+type trimEdge struct {
+	le         loopEdge
+	loop, edge int
+}
+
 // pointInCurvedFace reports whether p (assumed on f's surface) lies within f's trimmed region. A
 // boundary-less face — a whole sphere or torus — contains every surface point.
 func pointInCurvedFace(f curvedFace, p math.Point3) bool {
 	if len(f.loops) == 0 {
 		return true
 	}
-	best, ok := closestTrimFoot(f, p)
+	border := borderEdges(f)
+	best, ok := closestTrimFoot(f, border, p)
 	if !ok {
-		return true // every edge degenerate: no boundary names a side, so the whole surface is the region
+		return true // no bordering edge names a side, so the whole surface is the region
 	}
-	return float64(best.point.VectorTo(p).Dot(cornerInward(f, best))) > 0
+	return float64(best.point.VectorTo(p).Dot(cornerInward(f, border, best))) > 0
 }
 
-// closestTrimFoot returns the closest approach to p over EVERY edge of every loop. One global minimum is
+// borderEdges lists the loop edges that actually BORDER the region — every edge except the seams. A face
+// on a closed surface is routinely walked with a SLIT: a bridge run out to a pole (or across the
+// parameter seam) and straight back along the same curve, so the loop closes as a polygon in the
+// parameter plane. The region lies on BOTH sides of such an edge, so it borders nothing, and a foot on it
+// would answer the query from a cut rather than from a boundary. The retired winding number cancelled the
+// two traversals arithmetically; a nearest-foot test has to drop them instead. An imported STEP
+// hemisphere is exactly this shape — the equator plus a meridian slit to the pole, walked both ways — and
+// reading a side from that slit cost the sphere corpus its convex edges (#3453 follow-up).
+func borderEdges(f curvedFace) []trimEdge {
+	all := flatTrimEdges(f)
+	out := make([]trimEdge, 0, len(all))
+	for i, te := range all {
+		if !walkedBothWays(all, i) {
+			out = append(out, te)
+		}
+	}
+	return out
+}
+
+// flatTrimEdges lists every loop edge of the face together with where it sits.
+func flatTrimEdges(f curvedFace) []trimEdge {
+	out := make([]trimEdge, 0, len(f.loops))
+	for li := range f.loops {
+		for ei, le := range f.loops[li].edges {
+			out = append(out, trimEdge{le: le, loop: li, edge: ei})
+		}
+	}
+	return out
+}
+
+// walkedBothWays reports whether another listed edge traces the same span BACKWARDS — the signature of a
+// seam. Both uses of one topo.Edge derive their parameters from that edge, so a seam's two intervals are
+// the same pair of floats swapped, and the comparison needs no tolerance.
+func walkedBothWays(all []trimEdge, i int) bool {
+	a := all[i].le
+	for j, b := range all {
+		if j != i && a.t0 == b.le.t1 && a.t1 == b.le.t0 && sameCurveSpan(a, b.le) {
+			return true
+		}
+	}
+	return false
+}
+
+// sameCurveSpan reports whether two loop edges trace the same points over the interval they share.
+// Evaluating both curves at the SAME parameters is bit-exact when they are the same curve value, so this
+// compares points rather than the curve interfaces, which need not be comparable at all.
+func sameCurveSpan(a, b loopEdge) bool {
+	for _, t := range []float64{a.t0, (a.t0 + a.t1) / 2, a.t1} {
+		if a.curve.PointAt(t) != b.curve.PointAt(t) {
+			return false
+		}
+	}
+	return true
+}
+
+// closestTrimFoot returns the closest approach to p over every BORDERING edge. One global minimum is
 // enough for the whole face — a hole's loop always sits between a point inside that hole and the outer
 // loop, so the nearest boundary point already belongs to whichever loop separates p from the region.
 // Ties break on the first edge in loop order, so the verdict is byte-identical across runs.
-func closestTrimFoot(f curvedFace, p math.Point3) (trimFoot, bool) {
+func closestTrimFoot(f curvedFace, border []trimEdge, p math.Point3) (trimFoot, bool) {
 	best, found := trimFoot{}, false
-	for li := range f.loops {
-		for ei := range f.loops[li].edges {
-			foot, ok := edgeFoot(f, li, ei, p)
-			if !ok || (found && foot.dist >= best.dist) {
-				continue
-			}
-			best, found = foot, true
+	for _, te := range border {
+		foot, ok := edgeFoot(f, te, p)
+		if !ok || (found && foot.dist >= best.dist) {
+			continue
 		}
+		best, found = foot, true
 	}
 	return best, found
 }
 
 // edgeFoot locates one edge's closest point to p and reads the inward direction there.
-func edgeFoot(f curvedFace, loop, edge int, p math.Point3) (trimFoot, bool) {
-	le := f.loops[loop].edges[edge]
+func edgeFoot(f curvedFace, te trimEdge, p math.Point3) (trimFoot, bool) {
+	le := te.le
+	loop, edge := te.loop, te.edge
 	u := closestParamOnEdge(le, p)
 	t := le.t0 + (le.t1-le.t0)*u
 	inward, ok := inwardAt(f.surface, le, t)
@@ -127,8 +189,8 @@ func inwardAt(s geom.Surface, le loopEdge, t float64) (math.Vector3, bool) {
 // the angle-weighted pseudonormal (Bærentzen & Aanæs, IEEE TVCG 2005): at a sharp corner either edge
 // alone reads the wrong side for a query sitting in the other's half-plane, while their sum reads it
 // right for every query in the corner's normal cone.
-func cornerInward(f curvedFace, best trimFoot) math.Vector3 {
-	neighbour, ok := inwardAcrossVertex(f, best)
+func cornerInward(f curvedFace, border []trimEdge, best trimFoot) math.Vector3 {
+	neighbour, ok := inwardAcrossVertex(f, border, best)
 	if !ok {
 		return best.inward
 	}
@@ -137,16 +199,31 @@ func cornerInward(f curvedFace, best trimFoot) math.Vector3 {
 
 // inwardAcrossVertex returns the inward direction of the edge that shares the vertex the closest approach
 // landed on — the next edge when the foot is at the end of its own edge, the previous one when it is at
-// the start. ok is false for a foot in the edge's interior, where there is no corner to blend.
-func inwardAcrossVertex(f curvedFace, best trimFoot) (math.Vector3, bool) {
-	edges := f.loops[best.loop].edges
+// the start. ok is false for a foot in the edge's interior, where there is no corner to blend, and for a
+// neighbour that is a SEAM rather than a border: the region runs straight across a slit, so the boundary
+// has no corner there to blend with.
+func inwardAcrossVertex(f curvedFace, border []trimEdge, best trimFoot) (math.Vector3, bool) {
+	n := len(f.loops[best.loop].edges)
 	if best.u > 1-footVertexBand {
-		next := edges[(best.edge+1)%len(edges)]
-		return inwardAt(f.surface, next, next.t0)
+		return borderInwardAt(f, border, best.loop, (best.edge+1)%n, true)
 	}
 	if best.u < footVertexBand {
-		prev := edges[(best.edge-1+len(edges))%len(edges)]
-		return inwardAt(f.surface, prev, prev.t1)
+		return borderInwardAt(f, border, best.loop, (best.edge-1+n)%n, false)
+	}
+	return math.V3(0, 0, 0), false
+}
+
+// borderInwardAt reads the neighbouring BORDER edge's inward direction at the vertex it shares with the
+// foot's edge: its t0 when it follows, its t1 when it precedes.
+func borderInwardAt(f curvedFace, border []trimEdge, loop, edge int, follows bool) (math.Vector3, bool) {
+	for _, te := range border {
+		if te.loop != loop || te.edge != edge {
+			continue
+		}
+		if follows {
+			return inwardAt(f.surface, te.le, te.le.t0)
+		}
+		return inwardAt(f.surface, te.le, te.le.t1)
 	}
 	return math.V3(0, 0, 0), false
 }
