@@ -145,7 +145,18 @@ func loopsWrapASeam(loops []faceLoop) bool {
 // outside the operand read as in-trim, the per-face gate then correctly refused a correct body, and
 // a blind hole fell to a 1830-face rescue (Oblikovati/Oblikovati#2247).
 func bandInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
-	samples := allLoopSamples(loops)
+	axis := bandAxisOf(loops)
+	along, across, found := bandInterior(loops, axis)
+	if !found {
+		return 0, 0, false
+	}
+	u, v = axis.pointOf(along, across)
+	return u, v, true
+}
+
+// bandInterior is bandInteriorUV in the band's own (along, across) frame.
+func bandInterior(loops []faceLoop, axis bandAxis) (along, across float64, ok bool) {
+	samples := allLoopSamples(loops, axis)
 	if len(samples) < 2 {
 		return 0, 0, false
 	}
@@ -156,7 +167,9 @@ func bandInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
 		if !found {
 			continue
 		}
-		if mid := (lo + hi) / 2; !uvCrossingsOdd(holes, station, mid) {
+		mid := (lo + hi) / 2
+		hu, hv := axis.pointOf(station, mid)
+		if !uvCrossingsOdd(holes, hu, hv) {
 			return station, mid, true
 		}
 	}
@@ -196,13 +209,14 @@ const bandStationTries = 9
 // of a band are unwrapped onto different branches of the covering space — one walks 0→2π, the next
 // 2π→4π — so their raw parameters never meet even though the rims sit directly above one another,
 // and a station window over raw u would see only one of them.
-func allLoopSamples(loops []faceLoop) []arcSample {
-	period := loopsUPeriod(loops)
+func allLoopSamples(loops []faceLoop, axis bandAxis) []arcSample {
+	period := loopsPeriod(loops, axis)
 	var out []arcSample
 	for _, fl := range loops {
 		for _, le := range fl.edges {
 			for _, sp := range le.samples {
-				out = append(out, arcSample{t: sp.t, u: foldU(sp.u, period), v: sp.v})
+				a, x := axis.coordsOf(sp)
+				out = append(out, arcSample{t: sp.t, u: foldU(a, period), v: x})
 			}
 		}
 	}
@@ -210,10 +224,10 @@ func allLoopSamples(loops []faceLoop) []arcSample {
 	return out
 }
 
-// loopsUPeriod is the face's wrapping period, or 0 when its surface does not wrap in u.
-func loopsUPeriod(loops []faceLoop) float64 {
+// loopsPeriod is the face's period in the wrapping parameter, or 0 when it does not wrap.
+func loopsPeriod(loops []faceLoop, axis bandAxis) float64 {
 	for _, fl := range loops {
-		if p := loopUPeriod(fl); p > 0 {
+		if p := axis.periodOf(fl); p > 0 {
 			return p
 		}
 	}
@@ -432,10 +446,11 @@ func polygonCrossings(poly []arcSample, u, v float64) int {
 // wall integrates exactly, and this must not disturb it.
 //
 // A loop that does NOT wrap is a hole in the band, and subtracts its own enclosed measure.
-func bandLoopSigns(loops []faceLoop) []float64 {
+func bandLoopSigns(loops []faceLoop, form greenAxis) []float64 {
 	signs := make([]float64, len(loops))
+	axis := bandAxisOf(loops)
 	rims := wrappingLoopCount(loops)
-	station, interiorV, haveInterior := bandInteriorUV(loops)
+	station, interiorAcross, haveInterior := bandInterior(loops, axis)
 	for i, fl := range loops {
 		switch {
 		case !loopWraps(fl):
@@ -443,7 +458,7 @@ func bandLoopSigns(loops []faceLoop) []float64 {
 		case rims == 1 || !haveInterior:
 			signs[i] = 1
 		default:
-			signs[i] = bandRimSign(fl, station, interiorV)
+			signs[i] = bandRimSign(fl, axis, form, station, interiorAcross)
 		}
 	}
 	return signs
@@ -451,15 +466,90 @@ func bandLoopSigns(loops []faceLoop) []float64 {
 
 // bandRimSign is one rim's multiplier: its travel direction, so every rim reads as a +u traversal,
 // times its role, which is +1 below the region and −1 above it.
-func bandRimSign(fl faceLoop, station, interiorV float64) float64 {
+func bandRimSign(fl faceLoop, axis bandAxis, form greenAxis, station, interiorAcross float64) float64 {
 	direction := 1.0
-	if fl.netU < 0 {
+	if axis.netOf(fl) < 0 {
 		direction = -1
 	}
-	if v, ok := loopVNear(fl, station); ok && v > interiorV {
-		return -direction
+	above := false
+	if a, ok := loopAcrossNear(fl, axis, station); ok {
+		above = a > interiorAcross
 	}
-	return direction
+	return direction * bandRimRole(above, form)
+}
+
+// bandRimRole is +1 for the rim whose side of the region ADDS under the Green form in use, −1 for
+// the other. Which side that is depends on the form, because the two are conjugates: the
+// u-antiderivative form integrates ∮ Q dv and reconstructs the region as Q(u_hi) − Q(u_lo), so the
+// rim at the LARGER across-coordinate adds; the v-antiderivative form integrates −∮ P du and gives
+// P(v_hi) − P(v_lo), which makes the SMALLER one add. Reading the role without the form flips every
+// band whose wrapping parameter is the other one — a torus band that wraps in v came out at
+// −173.99 for an area.
+func bandRimRole(above bool, form greenAxis) float64 {
+	if above == form.dv {
+		return 1
+	}
+	return -1
+}
+
+// bandAxis names which parameter a band wraps. Everything about a band is stated in ALONG (the one
+// that wraps, where the rims travel) and ACROSS (the one that closes, where the region has
+// thickness): a torus band can wrap either way, and reading a v-wrapping band's rims off u gives
+// both the direction and the role of every rim wrongly.
+type bandAxis struct{ alongV bool }
+
+// netOf is the loop's net travel in the wrapping parameter.
+func (a bandAxis) netOf(fl faceLoop) float64 {
+	if a.alongV {
+		return fl.netV
+	}
+	return fl.netU
+}
+
+// coordsOf splits one sample into (along, across).
+func (a bandAxis) coordsOf(sp arcSample) (along, across float64) {
+	if a.alongV {
+		return sp.v, sp.u
+	}
+	return sp.u, sp.v
+}
+
+// pointOf rebuilds surface parameters from (along, across).
+func (a bandAxis) pointOf(along, across float64) (u, v float64) {
+	if a.alongV {
+		return across, along
+	}
+	return along, across
+}
+
+// periodOf is the wrapping parameter's period on this loop, or 0 when it does not wrap.
+func (a bandAxis) periodOf(fl faceLoop) float64 {
+	for _, le := range fl.edges {
+		if a.alongV {
+			if le.vPeriod > 0 {
+				return le.vPeriod
+			}
+			continue
+		}
+		if le.uPeriod > 0 {
+			return le.uPeriod
+		}
+	}
+	return 0
+}
+
+// bandAxisOf reports which parameter the loops wrap. A face where none of them wraps is not a band
+// and never reaches here through bandLoopSigns; it reads as u-wrapping, which is the identity frame.
+func bandAxisOf(loops []faceLoop) bandAxis {
+	for _, fl := range loops {
+		if !closeUV(fl.netU, 0, 0, 0) {
+			return bandAxis{}
+		}
+		if !closeUV(fl.netV, 0, 0, 0) {
+			return bandAxis{alongV: true}
+		}
+	}
+	return bandAxis{}
 }
 
 // loopWraps reports whether this loop alone fails to return to its starting parameters.
@@ -476,30 +566,22 @@ func wrappingLoopCount(loops []faceLoop) int {
 	return n
 }
 
-// loopVNear returns the loop's v where it passes closest to the given u station, comparing stations
-// MODULO the wrapping period: two rims of one band are unwrapped onto different branches (one walks
-// 0→2π, the other 2π→4π), so their raw u values never meet even though they sit above one another.
-func loopVNear(fl faceLoop, station float64) (float64, bool) {
-	period := loopUPeriod(fl)
-	target, nearest, v, found := foldU(station, period), stdmath.Inf(1), 0.0, false
+// loopAcrossNear returns the loop's ACROSS coordinate where it passes closest to the given ALONG
+// station, comparing stations MODULO the wrapping period: two rims of one band are unwrapped onto
+// different branches (one walks 0→2π, the next 2π→4π), so their raw parameters never meet even
+// though the rims sit directly one side of the other.
+func loopAcrossNear(fl faceLoop, axis bandAxis, station float64) (float64, bool) {
+	period := axis.periodOf(fl)
+	target, nearest, across, found := foldU(station, period), stdmath.Inf(1), 0.0, false
 	for _, le := range fl.edges {
 		for _, sp := range le.samples {
-			if d := stdmath.Abs(foldU(sp.u, period) - target); d < nearest {
-				nearest, v, found = d, sp.v, true
+			a, x := axis.coordsOf(sp)
+			if d := stdmath.Abs(foldU(a, period) - target); d < nearest {
+				nearest, across, found = d, x, true
 			}
 		}
 	}
-	return v, found
-}
-
-// loopUPeriod is the loop's wrapping period, or 0 when its surface does not wrap in u.
-func loopUPeriod(fl faceLoop) float64 {
-	for _, le := range fl.edges {
-		if le.uPeriod > 0 {
-			return le.uPeriod
-		}
-	}
-	return 0
+	return across, found
 }
 
 // foldU brings a parameter into one period, so branches of the covering space compare.
@@ -508,4 +590,10 @@ func foldU(u, period float64) float64 {
 		return u
 	}
 	return u - period*stdmath.Floor(u/period)
+}
+
+// singleCycleBand reports a face bounded by exactly ONE seam-wrapping loop — a cycle carrying both
+// rims joined by seam edges, as opposed to a pair of separate rims.
+func singleCycleBand(loops []faceLoop) bool {
+	return loopsWrapASeam(loops) && wrappingLoopCount(loops) == 1
 }
