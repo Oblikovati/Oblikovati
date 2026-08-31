@@ -48,6 +48,13 @@ func SurfaceIntersect(a, b Surface, box math.Box, res Resolution) (curves []Curv
 // circle/ellipse is a later refinement, ADR-0058 phase 1b).
 func marchedCurves(base, other Surface, box math.Box) []Curve3 {
 	traced := TraceSurfaceIntersection(base, other, SurfaceWindow(base, box))
+	if traced.Declined {
+		// The continuation spent its corrector budget: what it has is a PARTIAL trace, and shipping a
+		// partial curve set as if it were the whole intersection is the silent degradation the ground
+		// rules forbid. Report nothing, so SurfaceIntersect answers handled=false and the caller takes
+		// its own named decline (#3477).
+		return nil
+	}
 	out := make([]Curve3, 0, len(traced.Curves))
 	for _, poly := range traced.Curves {
 		// Stamp the trace's achieved deviation on every curve it produced: a marched Curve3 is a chord

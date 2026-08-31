@@ -126,43 +126,91 @@ type ssiTracer struct {
 	eps         float64 // chordal sag budget ε (model-relative)
 	hMin, hMax  float64 // adaptive-step clamps
 	arcCap      float64 // max accumulated arc length per sweep
+	// spent counts corrector calls across the WHOLE trace, shared by every sweep (the tracer is copied
+	// by value into each ssiSweep, so this has to be a pointer to accumulate). See ssiMaxCorrections.
+	spent *int
 }
+
+// ssiMaxCorrections is a NON-TERMINATION GUARD on one trace's corrector calls, not a tuned threshold.
+// A kernel operation may not run without bound, so a continuation that cannot resolve a pair has to
+// stop; this is where it stops.
+//
+// ★ IT SHOULD NEVER FIRE ON A RESOLVABLE PAIR. If it does, that is a DEFECT TO INVESTIGATE, not a knob
+// to turn up. Measured, every trace that resolves is far below it: the whole kernel/ops corpus — real
+// filleted and boolean bodies — peaks at 921 corrections, and kernel/geom's deliberately hard cases
+// peak at 44032 (torus∩plane 17334, near-tangent sphere/cylinder 1844, ripple 1910, near-pinch 1616,
+// Steinmetz 1128, NURBS patch cut by a plane 299). The value here is that ceiling with an order of
+// magnitude of headroom, so a body harder than anything in the corpora still resolves.
+//
+// ★ IT IS A COUNT, NEVER A CLOCK. A wall-clock deadline would make the verdict depend on machine load,
+// and the kernel's output must be byte-identical across runs and platforms. A count is spent in a
+// deterministic traversal order, so the same pair declines on every machine.
+//
+// ★ IT IS NOT A FIX FOR SLOWNESS, AND MUST NOT BE MISTAKEN FOR ONE. The guard is PER TRACE while the
+// cost that motivated it is PER BODY: the U4 dual-host weld reaches the intersector on 17 face pairs,
+// so any guard generous enough not to decline correct work still admits millions of corrections across
+// one self-intersection scan. Each of those corrections is a NURBS point inversion that rebuilds a
+// knot-span seed lattice and rescans it (geom.BSplineSurface.ParamAt → nearestSeed), which is the
+// actual cost and is tracked as Oblikovati/Oblikovati#3490. Lowering this constant to make such a body
+// finish would decline correct work instead of making the work cheaper, and is the wrong trade.
+const ssiMaxCorrections = 1000000
+
+// charge records one corrector call and reports whether the trace may continue. A trace with no budget
+// installed (the zero tracer some tests build) is never charged.
+func (t ssiTracer) charge() bool {
+	if t.spent == nil {
+		return true
+	}
+	*t.spent++
+	return *t.spent <= ssiMaxCorrections
+}
+
+// exhausted reports whether the trace has spent its corrector budget.
+func (t ssiTracer) exhausted() bool { return t.spent != nil && *t.spent > ssiMaxCorrections }
 
 // traceIntersectionCurves returns the intersection curve(s) of base and other as polylines whose every
 // point lies on BOTH surfaces within tol. tol and the march step are model-relative (derived from the
 // base's domain extent in 3D). Tangential contacts yield a single-point "curve" flagged by being a
 // degenerate (1–2 point) polyline at a point where the normals are parallel.
-func traceIntersectionCurves(base, other Surface, grid SurfaceGrid) [][]math.Point3 {
+func traceIntersectionCurves(base, other Surface, grid SurfaceGrid) ([][]math.Point3, bool) {
 	g := resolveGrid(base, grid)
 	if g.UMax <= g.UMin || g.VMax <= g.VMin {
-		return nil
+		return nil, true
 	}
 	tr := newSSITracer(base, other, g)
 	var curves [][]math.Point3
 	for _, seed := range ssiSeeds(base, other, g) {
-		if len(curves) >= ssiMaxCurves {
+		if len(curves) >= ssiMaxCurves || tr.exhausted() {
 			break
 		}
-		// A seed where the surfaces are close AND their normals are (anti)parallel is a tangential
-		// contact, not a transversal curve: refine it to the contact point rather than running the
-		// (ill-conditioned, singular) curve corrector there, which would otherwise emit a spurious
-		// near-tangency point and suppress the true one.
-		if nearTangency(base, other, seed, tr.step) {
-			if contact, isT := refineTangency(base, other, seed, tr.tol); isT && !nearAnyCurve(curves, contact, tr.step) {
-				curves = append(curves, []math.Point3{contact})
-			}
-			continue
-		}
-		pc, nb, no, ok := correctToBothSurfaces(base, other, seed, tr.tol)
-		if !ok {
-			continue
-		}
-		if nearAnyCurve(curves, pc, tr.step*ssiDedupSteps) {
-			continue // this seed lands on an already-traced curve (within a march step of it)
-		}
-		curves = append(curves, tr.marchCurve(pc, nb, no))
+		curves = tr.growFromSeed(curves, seed)
 	}
-	return curves
+	return curves, !tr.exhausted()
+}
+
+// growFromSeed extends the curve set with whatever one seed yields: a tangential CONTACT point, a
+// newly marched curve, or nothing when the seed is a duplicate, fails to correct, or the trace has
+// spent its corrector budget.
+//
+// A seed where the surfaces are close AND their normals are (anti)parallel is a tangential contact,
+// not a transversal curve: it is refined to the contact point rather than run through the
+// (ill-conditioned, singular) curve corrector there, which would otherwise emit a spurious
+// near-tangency point and suppress the true one.
+func (t ssiTracer) growFromSeed(curves [][]math.Point3, seed math.Point3) [][]math.Point3 {
+	if nearTangency(t.base, t.other, seed, t.step) {
+		if contact, isT := refineTangency(t.base, t.other, seed, t.tol); isT && !nearAnyCurve(curves, contact, t.step) {
+			return append(curves, []math.Point3{contact})
+		}
+		return curves
+	}
+	if !t.charge() {
+		return curves
+	}
+	pc, nb, no, ok := correctToBothSurfaces(t.base, t.other, seed, t.tol)
+	if !ok || nearAnyCurve(curves, pc, t.step*ssiDedupSteps) {
+		return curves // failed to correct, or lands on an already-traced curve (within a march step)
+	}
+	return append(curves, t.marchCurve(pc, nb, no))
 }
 
 // marchCurve traces one curve through pc by stepping forward then backward along the curve tangent,
@@ -222,6 +270,7 @@ func newSSITracer(base, other Surface, g SurfaceGrid) ssiTracer {
 		eps:  ssiChordFraction * extent,
 		hMin: ssiMinStepFraction * extent, hMax: ssiMaxStepFraction * extent,
 		arcCap: ssiMaxArcExtents * extent,
+		spent:  new(int),
 	}
 }
 
@@ -258,6 +307,9 @@ type ssiSweep struct {
 // heading has jumped branches or folded), corrector displacement, tangent turn, window exit, closure.
 func (sw *ssiSweep) attemptStep() (math.Point3, math.Vector3, ssiStepVerdict) {
 	pred := sw.p.TranslateBy(sw.dir.Scale(math.Scalar(sw.h)))
+	if !sw.tr.charge() {
+		return pred, math.Vector3{}, ssiStepExited // corrector budget spent: stop marching, decline above
+	}
 	pc, nbc, noc, ok := correctToBothSurfaces(sw.tr.base, sw.tr.other, pred, sw.tr.tol)
 	if !ok {
 		return pc, math.Vector3{}, ssiStepRejected
