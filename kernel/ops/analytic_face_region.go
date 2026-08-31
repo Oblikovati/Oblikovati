@@ -398,37 +398,91 @@ func loopUVPolygons(loops []faceLoop) [][]arcSample {
 	return alignPolygonBranches(out, loopsPeriod(loops, bandAxis{}), loopsPeriod(loops, bandAxis{alongV: true}))
 }
 
-// alignPolygonBranches shifts every polygon onto the first one's branch in each periodic parameter.
+// alignPolygonBranches brings each inner loop onto the branch of the outer one, per parameter.
+//
+// The shift is SELF-VERIFYING: a whole period is applied only when it lands the inner loop inside the
+// outer loop's interval and the loop is not already there. Choosing the NEAREST branch instead is
+// wrong, and wrong in a way a real body reaches — a sphere zone's two rims sit exactly half a period
+// apart in their chart, which is the tie point of "nearest", so rounding moved a loop that was
+// already placed correctly and the belt went on to name the caps and report four times the area.
+// Refusing to move anything a shift cannot justify leaves that case alone and still repairs the one
+// this exists for.
 func alignPolygonBranches(polys [][]arcSample, uPeriod, vPeriod float64) [][]arcSample {
 	if len(polys) < 2 {
 		return polys
 	}
-	refU, refV := polygonMean(polys[0])
-	for i := 1; i < len(polys); i++ {
-		meanU, meanV := polygonMean(polys[i])
-		du := wholePeriodOffset(refU-meanU, uPeriod)
-		dv := wholePeriodOffset(refV-meanV, vPeriod)
-		if du == 0 && dv == 0 {
-			continue
-		}
-		shifted := make([]arcSample, len(polys[i]))
-		for j, sp := range polys[i] {
-			shifted[j] = arcSample{t: sp.t, u: sp.u + du, v: sp.v + dv}
-		}
-		polys[i] = shifted
-	}
+	alignAlongAxis(polys, uPeriod, bandAxis{})
+	alignAlongAxis(polys, vPeriod, bandAxis{alongV: true})
 	return polys
 }
 
-// polygonMean is the polygon's mean position, the anchor its branch is judged by.
-func polygonMean(poly []arcSample) (u, v float64) {
+// alignAlongAxis places the inner loops inside the outer loop's interval in ONE parameter. loops[0]
+// is the outer loop; a face with holes only (a closed surface's outerless face) has no interval that
+// should contain the rest, and the containment test then justifies no shift, which is correct.
+func alignAlongAxis(polys [][]arcSample, period float64, axis bandAxis) {
+	if period <= 0 {
+		return
+	}
+	outer, ok := polygonRangeAlong(polys[0], axis)
+	if !ok {
+		return
+	}
+	for i := 1; i < len(polys); i++ {
+		inner, ok := polygonRangeAlong(polys[i], axis)
+		if !ok || outer.holds(inner) {
+			continue
+		}
+		shift := wholePeriodOffset(outer.mid()-inner.mid(), period)
+		if shift == 0 || !outer.holds(inner.shifted(shift)) {
+			continue // no whole number of periods puts this loop inside the outer one
+		}
+		polys[i] = shiftPolygonAlong(polys[i], shift, axis)
+	}
+}
+
+// paramRange is a closed interval in one surface parameter.
+type paramRange struct{ lo, hi float64 }
+
+// holds reports whether the whole of r lies within p.
+func (p paramRange) holds(r paramRange) bool { return r.lo >= p.lo && r.hi <= p.hi }
+
+// mid is the interval's centre, the anchor a branch is chosen by.
+func (p paramRange) mid() float64 { return (p.lo + p.hi) / 2 }
+
+// shifted moves the whole interval.
+func (p paramRange) shifted(d float64) paramRange { return paramRange{p.lo + d, p.hi + d} }
+
+// polygonRangeAlong is the extent a polygon covers in one parameter.
+func polygonRangeAlong(poly []arcSample, axis bandAxis) (paramRange, bool) {
 	if len(poly) == 0 {
-		return 0, 0
+		return paramRange{}, false
 	}
+	at := func(sp arcSample) float64 {
+		if axis.alongV {
+			return sp.v
+		}
+		return sp.u
+	}
+	out := paramRange{at(poly[0]), at(poly[0])}
 	for _, sp := range poly {
-		u, v = u+sp.u, v+sp.v
+		out.lo, out.hi = stdmath.Min(out.lo, at(sp)), stdmath.Max(out.hi, at(sp))
 	}
-	return u / float64(len(poly)), v / float64(len(poly))
+	return out, true
+}
+
+// shiftPolygonAlong moves a whole polygon in one parameter, which preserves its shape — folding each
+// point separately would cut any polygon that straddles the fold.
+func shiftPolygonAlong(poly []arcSample, shift float64, axis bandAxis) []arcSample {
+	out := make([]arcSample, len(poly))
+	for i, sp := range poly {
+		out[i] = sp
+		if axis.alongV {
+			out[i].v += shift
+			continue
+		}
+		out[i].u += shift
+	}
+	return out
 }
 
 // wholePeriodOffset is the whole number of periods that best closes a gap, or zero when the

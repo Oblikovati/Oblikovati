@@ -36,17 +36,54 @@ func TestWholePeriodOffsetClosesAGapByWholePeriods(t *testing.T) {
 	}
 }
 
-func TestPolygonMeanOfAnEmptyPolygonIsTheOrigin(t *testing.T) {
-	u, v := polygonMean(nil)
-	if u != 0 || v != 0 {
-		t.Errorf("polygonMean(nil) = (%g, %g), want the origin; a degenerate loop keeps its slot and must not divide by zero", u, v)
+func TestPolygonRangeAlongOfAnEmptyPolygonIsRefused(t *testing.T) {
+	if _, ok := polygonRangeAlong(nil, bandAxis{}); ok {
+		t.Error("an empty polygon has no extent; a degenerate loop keeps its slot and must not report one")
 	}
 }
 
-func TestPolygonMeanAveragesEverySample(t *testing.T) {
-	u, v := polygonMean([]arcSample{{u: 1, v: 10}, {u: 2, v: 20}, {u: 3, v: 30}})
-	if stdmath.Abs(u-2) > 1e-12 || stdmath.Abs(v-20) > 1e-12 {
-		t.Errorf("polygonMean = (%g, %g), want (2, 20)", u, v)
+func TestPolygonRangeAlongSpansEverySample(t *testing.T) {
+	poly := []arcSample{{u: 2, v: 30}, {u: 1, v: 10}, {u: 3, v: 20}}
+	got, ok := polygonRangeAlong(poly, bandAxis{})
+	if !ok || got != (paramRange{1, 3}) {
+		t.Errorf("u range = %+v (ok=%v), want {1 3}", got, ok)
+	}
+	if got, _ := polygonRangeAlong(poly, bandAxis{alongV: true}); got != (paramRange{10, 30}) {
+		t.Errorf("v range = %+v, want {10 30}", got)
+	}
+}
+
+// TestALoopHalfAPeriodAwayIsNotMoved is the sphere-zone regression, in miniature. Two rims of a zone
+// sit exactly half a period apart in their chart, which is the TIE POINT of "shift to the nearest
+// branch": rounding sent one of them a whole period away, out of the region entirely, and the belt
+// went on to name the caps and report four times the area. A shift is applied only when it lands the
+// loop INSIDE the outer one, and no shift does here.
+func TestALoopHalfAPeriodAwayIsNotMoved(t *testing.T) {
+	const tau = 2 * stdmath.Pi
+	first := []arcSample{{u: 4.07, v: -0.64}, {u: 5.36, v: 0.64}}
+	second := []arcSample{{u: 0.93, v: -0.64}, {u: 2.21, v: 0.64}}
+
+	got := alignPolygonBranches([][]arcSample{first, second}, tau, 0)
+
+	if got[1][0].u != 0.93 {
+		t.Errorf("a loop half a period away moved to u=%g, want 0.93 unchanged: no whole period puts it inside the first loop, so none is justified", got[1][0].u)
+	}
+}
+
+// TestParamRangeHolds pins the containment test the shift is justified by.
+func TestParamRangeHolds(t *testing.T) {
+	outer := paramRange{-6.28, 0}
+	if !outer.holds(paramRange{-3.78, -2.78}) {
+		t.Error("an interval strictly within the outer one must read as held")
+	}
+	if outer.holds(paramRange{-1, 1}) {
+		t.Error("an interval running past the outer one's end must not read as held")
+	}
+	if got := (paramRange{2, 4}).mid(); got != 3 {
+		t.Errorf("mid = %g, want 3", got)
+	}
+	if got := (paramRange{2, 4}).shifted(-6); got != (paramRange{-4, -2}) {
+		t.Errorf("shifted = %+v, want {-4 -2}", got)
 	}
 }
 
