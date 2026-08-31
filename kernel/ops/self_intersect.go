@@ -113,8 +113,10 @@ func (s *faceScan) trimProbes(i int) []math.Point3 {
 
 // interpenetrate returns a witness point where faces i and j pass through each other, on the exact
 // B-rep. Their range boxes already overlap (the caller's broad phase); a pair trimmed out of one
-// surface sheet takes the trim-overlap arm; every other pair takes the surface-surface intersection arm. The shared topology
-// is collected only once a crossing curve exists to test against it, because that walk is O(E) too.
+// surface sheet takes the trim-overlap arm, every other pair the surface-surface intersection arm, and
+// each arm then has to separate a crossing from a TOUCH — a STRICTLY interior witness plus
+// facesOverlapMaterial here, an overlap REGION rather than a graze there. The shared topology is
+// collected only once a crossing curve exists to test against it, because that walk is O(E) too.
 func (s *faceScan) interpenetrate(i, j int, res geom.Resolution) (math.Point3, bool) {
 	fa, fb := s.faces[i], s.faces[j]
 	if sheetHoldsBoth(fa.Geometry(), fb.Geometry(), s.trimProbes(i), s.trimProbes(j), res) {
@@ -127,7 +129,11 @@ func (s *faceScan) interpenetrate(i, j int, res geom.Resolution) (math.Point3, b
 	if len(curves) == 0 {
 		return math.Point3{}, false // the surfaces are known not to cross
 	}
-	return crossingWitness(curves, boxOverlap(s.boxes[i], s.boxes[j]), fa, fb, sharedFaceContact(fa, fb), res)
+	p, hit := crossingWitness(curves, boxOverlap(s.boxes[i], s.boxes[j]), fa, fb, sharedFaceContact(fa, fb), res)
+	if !hit || !facesOverlapMaterial(fa, fb, s.trimProbes(i), s.trimProbes(j), res.Weld()) {
+		return math.Point3{}, false
+	}
+	return p, true
 }
 
 // declineUnresolvedSurfacePair is the ONE named decline of this detector, so the skip is on the record
@@ -147,12 +153,19 @@ func declineUnresolvedSurfacePair() (math.Point3, bool) {
 	return math.Point3{}, false
 }
 
-// crossingWitness returns the first intersection curve's witness: a point that lies inside BOTH trims
+// crossingWitness returns the first intersection curve's witness: a point STRICTLY inside both trims
 // and off the faces' shared boundary, i.e. a place the two trimmed faces really do occupy together.
+//
+// Strictly, because brep.PointInFaceTrim is inclusive and the boundary is exactly where CONTACT lives.
+// Two faces that meet at a right angle along one line — a side facet standing on the floor of the turn
+// above it, or a block set beside and above another — have that whole line inside both trims, so an
+// inclusive test reads every such touch as a crossing (543 of them on the coil #2080's
+// TestCoilAcceptsTurnsThatClear must build).
 func crossingWitness(curves []geom.Curve3, overlap math.Box, fa, fb *topo.Face,
 	shared sharedContact, res geom.Resolution) (math.Point3, bool) {
 	inBoth := func(p math.Point3) bool {
-		return brep.PointInFaceTrim(fa, p) && brep.PointInFaceTrim(fb, p) && !shared.holds(p, res.Sew())
+		return strictlyInsideTrim(fa, p, res.Weld()) && strictlyInsideTrim(fb, p, res.Weld()) &&
+			!shared.holds(p, res.Sew())
 	}
 	for _, c := range curves {
 		if p, ok := midCrossingSample(c, overlap, inBoth); ok {
@@ -185,6 +198,50 @@ func midCrossingSample(c geom.Curve3, overlap math.Box, accept func(math.Point3)
 		return math.Point3{}, false
 	}
 	return hits[len(hits)/2], true
+}
+
+// facesOverlapMaterial reports whether either face has a boundary point lying strictly INSIDE the
+// material the other one bounds — the invariant that separates INTERPENETRATION from CONTACT (#2075,
+// #2080), and the exact form of what the deleted Möller narrow phase measured on facets.
+//
+// An intersection curve running inside both trims is NOT enough on its own. Two faces that merely TOUCH
+// have one: a side facet meeting the top of the turn below it along their common line, or two facets
+// lying face to face, both put the curve inside both trims while the solids only kiss. Measured on the
+// coil fixture #2080 uses, the two populations are eight decades apart — at pitch = profile depth,
+// which must build, no probe reaches more than 4e-16 into the other face's material; at pitch 0.8,
+// which must be refused, they reach 0.7997.
+//
+// Both halves of the test are load-bearing. The depth alone is a HALF-SPACE test, and a face at a
+// concave corner legitimately sits behind its neighbour's plane — so the probe's foot must also land
+// STRICTLY inside that neighbour's own TRIM, which is what makes the question "is this point inside the
+// material THIS FACE bounds" rather than "is it behind its plane". Strictly, because a face that merely
+// abuts f lands its feet exactly ON f's trim boundary: two blocks stacked face to face put every probe
+// of the upper one's floor on the edge of the lower one's wall, two units deep behind its plane.
+//
+// It is a necessary condition read off the faces' own boundaries, so a crossing that dips through
+// without either boundary reaching in (a tangential dimple) is not seen. That is the same class the
+// corner ring declines in face_loop_corners.go, and for the same reason: seeing it needs the interior.
+func facesOverlapMaterial(fa, fb *topo.Face, probesA, probesB []math.Point3, tol float64) bool {
+	return probeInsideMaterial(fb, probesA, tol) || probeInsideMaterial(fa, probesB, tol)
+}
+
+// probeInsideMaterial reports whether any probe lies deeper than tol on f's material side, with its
+// foot STRICTLY inside f's own trim — clear of the trim boundary, where a face merely abutting f lands.
+func probeInsideMaterial(f *topo.Face, probes []math.Point3, tol float64) bool {
+	for _, p := range probes {
+		gap, foot := signedGapToFace(f, p)
+		if gap < -tol && strictlyInsideTrim(f, foot, tol) {
+			return true
+		}
+	}
+	return false
+}
+
+// signedGapToFace is p's signed distance to f's surface along f's own outward normal at the foot of the
+// projection — positive on the side f faces, negative inside the material it bounds — with that foot.
+func signedGapToFace(f *topo.Face, p math.Point3) (float64, math.Point3) {
+	_, _, foot := geom.ClosestPointOnSurface(f.Geometry(), p)
+	return float64(foot.VectorTo(p).Dot(outwardFaceNormalAt(f, foot))), foot
 }
 
 // sharedContact is the geometry two faces legitimately share: the EXACT curves of their common edges
@@ -244,24 +301,38 @@ func (s sharedContact) holds(p math.Point3, tol float64) bool {
 	return false
 }
 
-// faceTrimProbes returns the exact points a trim-overlap decision is taken at: every boundary vertex
-// and every boundary edge's curve midpoint. Vertices alone would miss an overlap whose corners all sit
-// outside the other trim (two crossing bars), and midpoints alone would miss a corner poking in.
+// edgeProbesPerEdge is how many points each boundary edge contributes to a face's probe set: its start
+// vertex and the quarter points of its own parameter range. It is a COUNT, not a tolerance.
+//
+// Two per edge is not enough, and a closed face is why. brep.SolidCylinder's side face is bounded by
+// two full-circle rims and a seam, so start-and-midpoint samples it at exactly TWO angles — the seam's
+// and its antipode. Measured on two cylinders overlapping by 0.01 whose seams sit 90° from the overlap,
+// both angles report the SAME distance to the other cylinder, so the crossing is invisible to any
+// predicate read off that set. Quartering the rims samples the near and far sides as well.
+const edgeProbesPerEdge = 4
+
+// faceTrimProbes returns the exact points a trim-overlap or straddle decision is taken at: every
+// boundary vertex and the quarter points of every boundary edge. Vertices alone would miss an overlap
+// whose corners all sit outside the other trim (two crossing bars), and interior points alone would
+// miss a corner poking in.
 func faceTrimProbes(f *topo.Face) []math.Point3 {
 	edges := f.Edges()
-	out := make([]math.Point3, 0, 2*len(edges))
+	out := make([]math.Point3, 0, edgeProbesPerEdge*len(edges))
 	for _, e := range edges {
-		out = append(out, e.StartVertex().Point(), edgeCurveMidpoint(e))
+		out = append(out, e.StartVertex().Point())
+		for k := 1; k < edgeProbesPerEdge; k++ {
+			out = append(out, edgeCurvePointAt(e, float64(k)/edgeProbesPerEdge))
+		}
 	}
 	return out
 }
 
-// edgeCurveMidpoint is the point at the middle of an edge's own parameter range, falling back to the
-// vertex chord midpoint for an unbounded curve (whose mid-parameter is not a number).
-func edgeCurveMidpoint(e *topo.Edge) math.Point3 {
+// edgeCurvePointAt is the point at fraction tau of an edge's own parameter range, falling back to the
+// vertex chord for an unbounded curve (whose interior parameters are not numbers).
+func edgeCurvePointAt(e *topo.Edge, tau float64) math.Point3 {
 	lo, hi := e.Geometry().Domain()
 	if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
-		return e.StartVertex().Point().Lerp(e.EndVertex().Point(), 0.5)
+		return e.StartVertex().Point().Lerp(e.EndVertex().Point(), math.Scalar(tau))
 	}
-	return e.Geometry().PointAt((lo + hi) / 2)
+	return e.Geometry().PointAt(lo + tau*(hi-lo))
 }

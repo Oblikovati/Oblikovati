@@ -23,8 +23,10 @@ import (
 // Two rules, both taken at exact probe points on the faces' own boundaries (faceTrimProbes):
 //
 //  1. PARTIAL overlap — a probe of one face lies STRICTLY inside the other's trim (inside, and clear of
-//     that trim's own boundary). This is the corner poking in, the bar crossing a bar, and the face
-//     wholly swallowed by another.
+//     that trim's own boundary), and the overlap is a REGION rather than a graze: either both
+//     boundaries cross into each other, or one face is wholly swallowed by the other. A boundary that
+//     merely dips a fraction of a millimetre into its neighbour at one corner and comes straight back
+//     out — which a sheet-metal lip's end cap does (#2086) — encloses no area and is not an overlap.
 //  2. DUPLICATE — every probe of each face lies on the other's trimmed region. Rule 1 cannot see two
 //     faces with the SAME trim, because then no probe is strictly inside; but that is the doubled-wall
 //     import defect, so it is reported here instead.
@@ -39,29 +41,46 @@ import (
 // arrangement in the surface's chart, which is a larger piece of work than this slice.
 
 // coincidentTrimOverlap returns a witness where two faces of ONE surface sheet overlap in their trims,
-// applying rule 1 (a probe strictly inside the other trim) before rule 2 (mutual full coverage).
+// applying rule 1 (an overlap REGION) before rule 2 (mutual full coverage).
+//
+// ★ IT DOES NOT READ THE TWO FACES' ORIENTATIONS, and that is deliberate. Two coincident faces that
+// FACE each other look, in any neighbourhood of the shared patch, exactly like two solids resting on
+// one another: material on both sides in both cases. What separates a wall folded through itself from a
+// block stacked on a block is global, not local, so orientation cannot decide it — an earlier revision
+// of this arm tried, and it retired the sheet-metal lip fold (#2086) that must be caught. The mesh
+// detector this replaced reported both as well, so the parity is deliberate too: two coincident,
+// overlapping faces are reported whichever way they face.
 func coincidentTrimOverlap(fa, fb *topo.Face, shared sharedContact, res geom.Resolution) (math.Point3, bool) {
-	if p, ok := probeStrictlyInside(fa, fb, shared, res); ok {
-		return p, true
+	ab, ba := probeIncursion(fa, fb, shared, res), probeIncursion(fb, fa, shared, res)
+	if ab.any && (ba.any || ab.all) {
+		return ab.witness, true
 	}
-	if p, ok := probeStrictlyInside(fb, fa, shared, res); ok {
-		return p, true
+	if ba.any && ba.all {
+		return ba.witness, true
 	}
 	return duplicateTrimWitness(fa, fb, shared, res)
 }
 
-// probeStrictlyInside returns f's first boundary probe that lies strictly inside g's trim and off the
-// two faces' shared topology — an overlap that cannot be explained as contact.
-func probeStrictlyInside(f, g *topo.Face, shared sharedContact, res geom.Resolution) (math.Point3, bool) {
+// trimIncursion is how one face's boundary sits inside another's trim: a witness strictly inside it,
+// whether any probe is, and whether EVERY probe is (which is containment).
+type trimIncursion struct {
+	witness  math.Point3
+	any, all bool
+}
+
+// probeIncursion measures f's boundary against g's trim.
+func probeIncursion(f, g *topo.Face, shared sharedContact, res geom.Resolution) trimIncursion {
+	inc := trimIncursion{all: true}
 	for _, p := range faceTrimProbes(f) {
-		if shared.holds(p, res.Sew()) {
+		if !strictlyInsideTrim(g, p, res.Sew()) {
+			inc.all = false
 			continue
 		}
-		if brep.PointInFaceTrim(g, p) && distanceToFaceBoundary(g, p) > res.Sew() {
-			return p, true
+		if !inc.any && !shared.holds(p, res.Sew()) {
+			inc.witness, inc.any = p, true
 		}
 	}
-	return math.Point3{}, false
+	return inc
 }
 
 // duplicateTrimWitness reports the doubled-face defect: each face's whole boundary lies on the other's
@@ -120,6 +139,14 @@ func probesLieOnSurface(s geom.Surface, probes []math.Point3, tol float64) bool 
 		}
 	}
 	return true
+}
+
+// strictlyInsideTrim reports whether p lies inside f's trimmed region AND clear of its trim boundary by
+// tol — the strict form of brep.PointInFaceTrim, which is inclusive and so accepts the boundary itself.
+// The boundary is exactly where a face TOUCHING another one meets it, so every contact decision in this
+// detector needs the strict form.
+func strictlyInsideTrim(f *topo.Face, p math.Point3, tol float64) bool {
+	return brep.PointInFaceTrim(f, p) && distanceToFaceBoundary(f, p) > tol
 }
 
 // distanceToFaceBoundary is the exact distance from p to the nearest of f's trim edges — how far

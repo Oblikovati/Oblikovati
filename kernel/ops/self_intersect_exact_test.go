@@ -55,6 +55,61 @@ func TestSelfIntersectionVerdictIsIndependentOfQuality(t *testing.T) {
 	}
 }
 
+// stackedBlocks merges two solid blocks that TOUCH — one resting on the other — into a single body,
+// sharing no topology. It is the kernel-scale form of what two turns of a coil do at pitch = profile
+// depth: separate walls of one body meeting, not passing through each other.
+func stackedBlocks(t *testing.T, lower, upper [2]math.Point3) *topo.Body {
+	t.Helper()
+	a, err := brep.SolidBlock(lower[0], lower[1], "lower")
+	if err != nil {
+		t.Fatalf("SolidBlock lower: %v", err)
+	}
+	b, err := brep.SolidBlock(upper[0], upper[1], "upper")
+	if err != nil {
+		t.Fatalf("SolidBlock upper: %v", err)
+	}
+	return topo.MergeBodies(topo.NewLineage(topo.Tok("stack", "body", 0)), true, a, b)
+}
+
+// TestCoincidentFacesAreReportedWhicheverWayTheyFace pins the ONE configuration this detector cannot
+// resolve locally, so the limit is on the record rather than discovered again. Two coincident faces
+// that FACE each other are, in any neighbourhood of the shared patch, indistinguishable from two solids
+// resting on one another — material on both sides in both cases — so a wall folded through itself
+// (#2086's sheet-metal lip, which must be caught) and a block stacked on a block (which is contact)
+// read the same. The detector reports both, exactly as the mesh detector it replaced did; separating
+// them needs a global containment query, not a face pair.
+func TestCoincidentFacesAreReportedWhicheverWayTheyFace(t *testing.T) {
+	p := math.P3
+	body := stackedBlocks(t, [2]math.Point3{p(0, 0, 0), p(2, 2, 1)}, [2]math.Point3{p(0, 0, 1), p(2, 2, 2)})
+	if hits := SelfIntersections(body, DefaultQuality()); len(hits) == 0 {
+		t.Error("two coincident overlapping faces must be reported, as the mesh detector reported them")
+	}
+}
+
+// TestPerpendicularFacesTouchingAlongALineAreContact is the other half of the same regression, and the
+// #2075 shape at body scale: a block set beside and above another touches it along ONE LINE, where each
+// one's side face meets the other's horizontal face at a right angle. Their surfaces do intersect, and
+// the intersection line runs inside both trims — which is exactly why an INCLUSIVE in-both-trims
+// witness cannot decide this. Falsify by relaxing crossingWitness back to brep.PointInFaceTrim without
+// strictlyInsideTrim: the contact line is inside both trims and every such touch reads as a crossing.
+func TestPerpendicularFacesTouchingAlongALineAreContact(t *testing.T) {
+	p := math.P3
+	body := stackedBlocks(t, [2]math.Point3{p(0, 0, 0), p(2, 2, 1)}, [2]math.Point3{p(2, 0, 1), p(4, 2, 2)})
+	if hits := SelfIntersections(body, DefaultQuality()); len(hits) != 0 {
+		t.Errorf("two blocks touching along one line report %d interpenetration(s): %+v", len(hits), hits)
+	}
+}
+
+// TestOverlappingBlocksAreStillReported is the positive control for both guards above: move the upper
+// block down so the two solids genuinely occupy the same space, and it must be reported.
+func TestOverlappingBlocksAreStillReported(t *testing.T) {
+	p := math.P3
+	body := stackedBlocks(t, [2]math.Point3{p(0, 0, 0), p(2, 2, 1)}, [2]math.Point3{p(0.5, 0.5, 0.5), p(2.5, 2.5, 2)})
+	if hits := SelfIntersections(body, DefaultQuality()); len(hits) == 0 {
+		t.Error("two blocks that genuinely overlap must be reported")
+	}
+}
+
 // TestFaceScanCachesBoxesAndProbes is the guard on the fine-pitch coil hang. topo.Face.RangeBox walks
 // the face's edges and evaluates their curves, so an O(F²) pair scan that asks for it inside the loop
 // is O(F²·E) — measured, that took a coil's turn-clearance check (#2080, hundreds of swept faces) past
@@ -179,14 +234,15 @@ func TestFacesShareOneSheetSeparatesCoplanarFromCrossing(t *testing.T) {
 	}
 }
 
-// TestFaceTrimProbesCoverVerticesAndEdgeMidpoints pins the probe set the trim-overlap rules are taken
-// at: a quad yields its four corners and its four edge midpoints, all on the face's own boundary.
-func TestFaceTrimProbesCoverVerticesAndEdgeMidpoints(t *testing.T) {
+// TestFaceTrimProbesQuarterEveryEdge pins the probe set the trim-overlap and straddle rules are taken
+// at: a quad yields its four corners and three interior points per edge, all on the face's own
+// boundary. Two per edge samples a closed rim at only two angles — see edgeProbesPerEdge.
+func TestFaceTrimProbesQuarterEveryEdge(t *testing.T) {
 	p := math.P3
 	f := quadBody("q", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2)).Faces()[0]
 	probes := faceTrimProbes(f)
-	if len(probes) != 8 {
-		t.Fatalf("a four-edge face must yield 8 probes (corner + midpoint per edge), got %d", len(probes))
+	if len(probes) != 4*edgeProbesPerEdge {
+		t.Fatalf("a four-edge face must yield %d probes, got %d", 4*edgeProbesPerEdge, len(probes))
 	}
 	for _, q := range probes {
 		if d := distanceToFaceBoundary(f, q); d > 1e-12 { // tol:numeric — a probe is ON the boundary by construction
@@ -195,9 +251,9 @@ func TestFaceTrimProbesCoverVerticesAndEdgeMidpoints(t *testing.T) {
 	}
 }
 
-// TestEdgeCurveMidpointFollowsTheCurveNotTheChord: on a quarter arc the parameter midpoint is the
+// TestEdgeCurvePointFollowsTheCurveNotTheChord: on a quarter arc the parameter midpoint is the
 // point at 45°, which is 1 − cos(π/4) away from the chord midpoint the fallback would return.
-func TestEdgeCurveMidpointFollowsTheCurveNotTheChord(t *testing.T) {
+func TestEdgeCurvePointFollowsTheCurveNotTheChord(t *testing.T) {
 	arc, err := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 1, 0, stdmath.Pi/2)
 	if err != nil {
 		t.Fatalf("NewArc3d: %v", err)
@@ -206,7 +262,7 @@ func TestEdgeCurveMidpointFollowsTheCurveNotTheChord(t *testing.T) {
 	lin := topo.NewLineage(topo.Tok("arc", "x", 0))
 	v0 := bld.AddVertex(arc.PointAt(0), lin)
 	v1 := bld.AddVertex(arc.PointAt(1), lin)
-	got := edgeCurveMidpoint(bld.AddEdge(arc, v0, v1, lin))
+	got := edgeCurvePointAt(bld.AddEdge(arc, v0, v1, lin), 0.5)
 	want := arc.PointAt(0.5)
 	if float64(got.DistanceTo(want)) > 1e-12 { // tol:numeric — the same evaluation twice
 		t.Errorf("edge midpoint %v, want the curve's own mid-parameter point %v", got, want)
