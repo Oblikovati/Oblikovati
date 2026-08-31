@@ -10,22 +10,26 @@ import (
 	"oblikovati.org/math"
 )
 
-// Weiler radial-edge manifold extraction for the planar-boolean stitch (ADR-0047, #1726).
+// Weiler radial-edge manifold extraction — the tangent-contact core of the ONE boolean stitch
+// (ADR-0047 #1726; surface-agnostic since ADR-0058, consumed by curved_stitch_plan.go for planar and
+// curved faces alike).
 //
 // A boolean of two solids that touch along a lower-dimensional locus — a tangent/grazing contact —
-// welds more than two face half-edges onto one vertex pair (a NON-manifold edge) and, at the
+// welds more than two face half-edges onto one geometric edge (a NON-manifold edge) and, at the
 // contact's endpoints, more than one face fan onto one vertex (a pinch). Neither is a valid closed
 // 2-manifold. This file is the PURE topological core that resolves both: around each non-manifold
-// edge it radially orders the half-edge uses and pairs the two boundaries of each filled dihedral
-// wedge into manifold edge-groups (resolveEdgeUses); around each vertex it partitions the incident
-// edge-groups into radial disks, each of which becomes one manifold vertex (partitionVertexDisks) —
-// so two solids kissing along a line become two coincident-but-distinct shells.
+// edge it radially orders the half-edge uses — by the dihedral azimuth of each face's outward surface
+// normal at the edge, injected via faceDirAt (OCCT GetFaceOff/GetFaceDir) — and pairs the two
+// boundaries of each filled dihedral wedge into manifold edge-groups (resolveEdgeUses); around each
+// vertex it partitions the incident edge-groups into radial disks, each of which becomes one manifold
+// vertex (partitionVertexDisks) — so two solids kissing along a line become two
+// coincident-but-distinct shells.
 //
-// It is a total function over a naming-free plan: it takes welded vertices, built faces and the
-// edge-use map and returns a sewPlan. It never moves a coordinate, never mints a topo entity and
-// never names one (that is boolean_mint.go's job, downstream). A contact the radial sort cannot pair
-// is encoded faithfully as an unpaired singleton group; the caller's solidity gate then declines the
-// body rather than shipping an invalid one (the CSG-fallback path). See ADR-0047.
+// It is a total function over a naming-free plan. It never moves a coordinate, never mints a topo
+// entity and never names one (naming: boolean_mint.go hooks; construction: curved_stitch.go). A
+// contact the radial sort cannot pair is encoded faithfully as an unpaired singleton group; the
+// caller's solidity gate then declines the body rather than shipping an invalid one (the CSG-fallback
+// path). See ADR-0047.
 
 // edgeGroup is one manifold edge extracted from a (possibly non-manifold) radial edge: exactly two
 // half-edge uses that bound one filled dihedral wedge — or, degenerately, a lone unpairable use.
@@ -71,12 +75,6 @@ func radialSew(verts []math.Point3, uses map[[2]int][]loopEdgeUse, normalAt face
 	}
 }
 
-// planarFaceDir is the faceDirAt for the planar boolean: a planar face's constant outward normal (the
-// edge point is unused). Passing this reproduces the pre-ADR-0058 azimuth bit-for-bit.
-func planarFaceDir(faces []builtFace) faceDirAt {
-	return func(h loopEdgeUse, _ math.Point3) math.Vector3 { return faces[h.face].normal }
-}
-
 // extractEdgeGroups walks the vertex pairs in sorted order and splits each into its manifold
 // edge-groups (resolveEdgeUses), so a pair used twice yields one group and an over-used tangent
 // contact yields one group per filled wedge. The order is deterministic (sorted pair keys) so the
@@ -115,7 +113,9 @@ func partitionVertexDisks(groups []edgeGroup) map[int][]vertexDisk {
 	incident := map[int][]int{}
 	for gi := range groups {
 		incident[groups[gi].pair[0]] = append(incident[groups[gi].pair[0]], gi)
-		incident[groups[gi].pair[1]] = append(incident[groups[gi].pair[1]], gi)
+		if groups[gi].pair[1] != groups[gi].pair[0] { // a closed seam edge touches its vertex once
+			incident[groups[gi].pair[1]] = append(incident[groups[gi].pair[1]], gi)
+		}
 	}
 	disks := make(map[int][]vertexDisk, len(incident))
 	for v, inc := range incident {

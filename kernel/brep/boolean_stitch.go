@@ -15,10 +15,13 @@ import (
 // shared edge per undirected vertex pair, and a face per sub-face (outer loop oriented CCW
 // about its normal, holes CW). The body is a solid when every edge is used exactly twice.
 // Result faces carry their source face's lineage (K1a), so a face surviving the boolean
-// keeps its reference key; edges/vertices still get fresh lineage (edge-key survival is a
-// follow-up, as edges are routinely split by the operation).
-// The second result is true when a tangent/grazing contact was resolved (an edge used by more than
-// two faces), so the caller can note whether that contact shipped as a valid manifold.
+// keeps its reference key. Since ADR-0058 the assembly itself is the ONE unified radial
+// stitch (curvedStitch): the planar fragments are welded and T-junction-conformed here, then
+// lifted onto the shared curvedFace model and built by the same surface-agnostic
+// weld/radial-sew/mint pass the curved boolean uses — tangent contacts resolve through the
+// Weiler radial sew and pinched vertices split per disk, exactly as before, in shared code.
+// The second result is true when a tangent/grazing contact was present (an edge used by more
+// than two faces), so the caller can note whether that contact shipped as a valid manifold.
 func stitch(faces []subFace, prov []imprintSeg) (*topo.Body, bool, error) {
 	if len(faces) == 0 {
 		return nil, false, nil
@@ -31,8 +34,7 @@ func stitch(faces []subFace, prov []imprintSeg) (*topo.Body, bool, error) {
 		for _, h := range sf.holes {
 			rings = append(rings, w.ring(orientRing(h, sf.normal, false)))
 		}
-		surf, _ := geom.NewPlane(centroid3(sf.outer), sf.normal)
-		out[i] = builtFace{rings: rings, surf: surf, normal: sf.normal, fromB: sf.fromB, lineage: sf.lineage}
+		out[i] = builtFace{rings: rings, normal: sf.normal, fromB: sf.fromB, lineage: sf.lineage}
 	}
 	// Pass 2: with all vertices known, split every loop edge at any welded vertex lying on
 	// it — propagating each imprint split-point to the neighbour face sharing that edge, so
@@ -43,8 +45,94 @@ func stitch(faces []subFace, prov []imprintSeg) (*topo.Body, bool, error) {
 		}
 	}
 	reorientFaces(out, w.points)
-	body, tangent := assemble(w.points, out, prov)
+	tangent := hasTangentContact(collectEdgeUses(out))
+	body := curvedStitchNamed(builtFacesToCurved(out, w.points), planarStitchNaming(prov, w, out))
 	return body, tangent, nil
+}
+
+// planarStitchNaming is the planar boolean's ADR-0043 naming policy for the unified stitch: every
+// intersection edge named by its generating parent face pair (disambiguated by rank along the parents'
+// intersection line), every intersection vertex by its meeting faces, originals keeping ordinal keys —
+// the same names the retired planar assemble minted. The curved relineage is off: these names are
+// already build-order-independent.
+func planarStitchNaming(prov []imprintSeg, w *welder3, faces []builtFace) stitchNaming {
+	return stitchNaming{
+		edges: func(groups []edgeGroup, verts []math.Point3) []topo.Lineage {
+			return planarEdgeLineages(groups, verts, prov)
+		},
+		vertex: planarVertexNamer(prov, w, faces),
+	}
+}
+
+// planarEdgeLineages resolves each stitch group's edge lineage from the imprint provenance
+// (nameEdgeGroups), assigning the unparented ordinal fallbacks in sorted-pair order — the retired
+// assemble's deterministic order.
+func planarEdgeLineages(groups []edgeGroup, verts []math.Point3, prov []imprintSeg) []topo.Lineage {
+	named := nameEdgeGroups(groups, verts, prov)
+	order := make([]int, len(groups))
+	for i := range order {
+		order[i] = i
+	}
+	sort.Slice(order, func(a, b int) bool { return pairLess(groups[order[a]].pair, groups[order[b]].pair) })
+	out := make([]topo.Lineage, len(groups))
+	idx := 0
+	for _, gi := range order {
+		out[gi] = edgeGroupLineage(&named[gi], &idx)
+	}
+	return out
+}
+
+// pairLess orders vertex pairs ascending (the retired sortedPairKeys order).
+func pairLess(a, b [2]int) bool {
+	if a[0] != b[0] {
+		return a[0] < b[0]
+	}
+	return a[1] < b[1]
+}
+
+// planarVertexNamer names each shared vertex by the retired assemble's vertexLineages verdict —
+// intersection vertices by their meeting faces, original corners by ordinal — resolved through the
+// planar welder (the coordinates handed to the unified stitch are exactly its welded points).
+func planarVertexNamer(prov []imprintSeg, w *welder3, faces []builtFace) func(math.Point3) topo.Lineage {
+	vlin := vertexLineages(w.points, faces, prov)
+	return func(p math.Point3) topo.Lineage { return vlin[w.add(p)] }
+}
+
+// builtFacesToCurved lifts the welded, T-junction-conformed planar fragments onto the unified
+// curvedFace model: each face's plane through its outer ring's centroid along its
+// (reorient-consistent) normal, its rings as exact straight-edged loops (loopEdge.v0 carries the
+// welded corner coordinates bit-for-bit). Fragment lineage is carried (K1a); a fragment without one
+// gets the ordinal fallback, as the retired planar assemble did.
+func builtFacesToCurved(faces []builtFace, verts []math.Point3) []curvedFace {
+	out := make([]curvedFace, len(faces))
+	for i, f := range faces {
+		rings := ringsPoints(f.rings, verts)
+		pl, _ := geom.NewPlane(ringCentroid(rings), f.normal)
+		out[i] = planarFaceFromRings(pl, rings, faceLineage(f, i))
+	}
+	return out
+}
+
+// ringsPoints resolves welded vertex-index rings back to their 3D points.
+func ringsPoints(rings [][]int, verts []math.Point3) [][]math.Point3 {
+	out := make([][]math.Point3, len(rings))
+	for ri, r := range rings {
+		ring := make([]math.Point3, len(r))
+		for j, vi := range r {
+			ring[j] = verts[vi]
+		}
+		out[ri] = ring
+	}
+	return out
+}
+
+// ringCentroid is the outer ring's centroid (the plane anchor), or the origin for a degenerate
+// ringless face — which mints no loops and vanishes downstream.
+func ringCentroid(rings [][]math.Point3) math.Point3 {
+	if len(rings) == 0 || len(rings[0]) == 0 {
+		return math.Point3{}
+	}
+	return centroid3(rings[0])
 }
 
 // hasTangentContact reports whether any vertex pair is used by more than two face half-edges — a
@@ -126,40 +214,14 @@ func collectSegHits(pa math.Point3, ab math.Vector3, lenSq float64, onRing map[i
 	return hits
 }
 
-// builtFace is a welded sub-face ready for assembly: its loop rings (vertex indices, outer
-// first), its planar surface, and the source lineage to carry onto the result face (K1a).
+// builtFace is a welded sub-face ready for the unified stitch: its loop rings (vertex indices, outer
+// first), its outward normal (the plane is re-derived from ring + normal at conversion), and the
+// source lineage to carry onto the result face (K1a).
 type builtFace struct {
 	rings   [][]int
-	surf    geom.Plane
 	normal  math.Vector3
 	fromB   bool
 	lineage topo.Lineage
-}
-
-// assemble builds the topo body from welded vertices and per-face loop rings. The Weiler
-// radial-edge sew (radialSew) resolves every directed loop edge to a shared topo edge: the common
-// case is two uses per undirected vertex pair (one shared edge). Where coincident geometry leaves a
-// pair used by MORE than twice — a tangent/grazing contact between the two operands — the uses are
-// split into manifold edge-groups by radial order around the edge, and pinched vertices are cut into
-// per-disk coincident duplicates, so a tangent union stays a valid manifold solid (M20-F01, #1726).
-// mintEntities then names and builds the resulting topo edges (ADR-0043 provenance).
-func assemble(verts []math.Point3, faces []builtFace, prov []imprintSeg) (*topo.Body, bool) {
-	uses := collectEdgeUses(faces)
-	bld := topo.NewBuilder(allUsesPaired(uses), topo.NewLineage(topo.Tok("brep", "body", 0)))
-	tv := make([]*topo.Vertex, len(verts))
-	vlin := vertexLineages(verts, faces, prov)
-	for i, p := range verts {
-		tv[i] = bld.AddVertex(p, vlin[i])
-	}
-	useEdge := mintEntities(bld, verts, tv, radialSew(verts, uses, planarFaceDir(faces)), prov)
-	for fi, f := range faces {
-		specs := make([]topo.LoopSpec, len(f.rings))
-		for ri, r := range f.rings {
-			specs[ri] = loopSpecResolved(ri == 0, r, fi, ri, useEdge)
-		}
-		bld.AddFace(f.surf, faceLineage(f, fi), specs...)
-	}
-	return bld.Build(), hasTangentContact(uses)
 }
 
 // faceLineage uses the source face's carried lineage when present (K1a reference-key
