@@ -77,14 +77,22 @@ func annulusFace(outer, inner geom.Circle, outerForward bool, outward math.Vecto
 }
 
 // sphereBeltFace builds the sphere face BETWEEN two coaxial circles on it — the belt a rod passing right
-// through a ball leaves. Unlike a cap it needs no winding to name its region: two distinct coaxial
-// circles bound exactly one connected region, since the complement is two disjoint caps and those cannot
-// be one face. So the directions here are fixed by convention (outer forwards, inner backwards) and it
-// is the neighbours sharing each rim that adapt. inverted turns the belt inward.
-func sphereBeltFace(sph geom.Sphere, outer, inner geom.Circle, inverted bool, lin topo.Lineage) curvedFace {
+// through a ball leaves, the shoulder ring one stopping part way through it does. Both rims carry the
+// same normal (coaxialRod.circleAt builds every rim with the axis normal), and `lo` is the rim the belt
+// lies on the +normal side OF.
+//
+// Its winding NAMES its region exactly as a cap's does, so the directions here are NOT free. A loop
+// walked forward — counter-clockwise about the circle's own normal — encloses the +normal side, so the
+// belt is named by walking `lo` forward (the belt is above it) and `hi` backward, as a hole. Walked the
+// other way round, the same two circles name the COMPLEMENT: on a sphere that is the two disjoint caps,
+// and every reader of the trim — brep's geodesic winding, ops' analytic region integral, the
+// tessellator — then measures the wrong region (Oblikovati/Oblikovati#3447). inverted turns the belt's
+// material side inward; it moves no loop, because a loop is wound about the SURFACE normal, not the
+// face sense.
+func sphereBeltFace(sph geom.Sphere, lo, hi geom.Circle, inverted bool, lin topo.Lineage) curvedFace {
 	return curvedFace{surface: sph, reversed: inverted, lineage: lin, loops: []curvedLoop{
-		{edges: []loopEdge{{curve: outer, t0: 0, t1: 1}}},
-		{edges: []loopEdge{{curve: inner, t0: 1, t1: 0}}},
+		{edges: []loopEdge{{curve: lo, t0: 0, t1: 1}}},
+		{edges: []loopEdge{{curve: hi, t0: 1, t1: 0}}},
 	}}
 }
 

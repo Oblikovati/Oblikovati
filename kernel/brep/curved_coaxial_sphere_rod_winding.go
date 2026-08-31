@@ -11,11 +11,12 @@ import (
 // opposite ways. That is not decidable face by face: a face walks all of ITS rims one way or the other
 // together (flipping a band swaps both its circles), so one choice propagates down the whole chain.
 //
-// The chain is seeded by the spherical CAPS, whose direction is not free — on a sphere the loop is what
-// NAMES which of the two caps survives, and kernel/ops reads exactly that (capAxis in sphere_cap_mesh.go)
-// to pick the pole it fans toward. Bands, discs, annuli and belts cover the same region either way, so
-// they take whatever the caps leave them. A component with no cap at all (an intersect's core, whose ball
-// faces are both belts) is free to start anywhere.
+// The chain is seeded by the SPHERE faces, whose direction is not free — on a closed surface the loop is
+// what NAMES the region, and kernel/ops reads exactly that (capAxis in sphere_cap_mesh.go) to pick the
+// pole it fans toward. Caps and belts alike are therefore fixed (Oblikovati/Oblikovati#3447: a belt
+// walked the other way names the sphere's complement of it, the two disjoint caps). Bands, discs and
+// annuli lie on OPEN surfaces, whose bounded trim is the region either way, so they take whatever the
+// sphere faces leave them.
 //
 // Getting this wrong is cheap to miss and expensive to ship: the result is still a closed, manifold solid
 // of the RIGHT volume, and only ops.Validate's per-edge orientation check catches it.
