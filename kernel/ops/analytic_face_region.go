@@ -223,25 +223,20 @@ func faceBody(f *topo.Face) *topo.Body {
 
 // FaceInteriorPoint returns one point strictly inside face f's trimmed region, taken from the
 // analytic surface and its uv loops — never from a tessellation. It is the representative point a
-// per-face gate classifies (M48/C3, Oblikovati/Oblikovati#3447). ok is false for a face whose loops
-// cannot be reconstructed in uv, or whose region is too slender for the probe to land inside.
+// per-face gate classifies (M48/C3, Oblikovati/Oblikovati#3447).
 //
-// The probe goes through regionProbeUV, so a face whose loops WRAP the parameter seam — a cone or
-// cylinder band bounded by two full-turn loops — takes the inward-of-boundary route. Running the
-// plain even-odd grid on such loops returned a point in the band the operation DISCARDED, and the
-// per-face boolean certificate then refused a correct analytic result (Oblikovati/Oblikovati#3447).
+// It DECLINES for a face whose loops wrap the parameter seam, and that is deliberate. A gate exists
+// to disprove a result; a probe it had to guess at can disprove a CORRECT one, and the cost of that
+// is not a weaker gate but a right answer thrown away — a five-face blind hole demoted to a
+// 1830-face faceted rescue. On a wrapping band no probe here has proved trustworthy: an even-odd
+// grid returns a point in the band the operation discards, and a step inward from the boundary can
+// land outside the true region while the loops' sampled polygon still calls it inside. Until a
+// wrapping band's interior can be certified exactly, the gate skips those faces under its own
+// "skipped rather than failed" rule and the volume bracket carries them.
 //
-// Example: p, ok := ops.FaceInteriorPoint(f) // ok ⇒ brep.PointInFaceTrim(f, p)
-
-// FaceInteriorPoint returns one point strictly inside face f's trimmed region, taken from the
-// analytic surface and its uv loops — never from a tessellation. It is the representative point a
-// per-face gate classifies (M48/C3, Oblikovati/Oblikovati#3447). ok is false for a face whose loops
-// cannot be reconstructed in uv, or whose region is too slender for the probe to land inside.
-//
-// The probe goes through regionProbeUV, so a face whose loops WRAP the parameter seam — a cone or
-// cylinder band bounded by two full-turn loops — takes the inward-of-boundary route. Running the
-// plain even-odd grid on such loops returned a point in the band the operation DISCARDED, and the
-// per-face boolean certificate then refused a correct analytic result (Oblikovati/Oblikovati#3447).
+// (The integrator's own side test does probe a wrapping band, through bandInteriorUV. That is sound
+// there for a different reason: a wrong answer is caught by the vector-area closure post-condition,
+// which declines the body rather than shipping it.)
 //
 // Example: p, ok := ops.FaceInteriorPoint(f) // ok ⇒ brep.PointInFaceTrim(f, p)
 func FaceInteriorPoint(f *topo.Face) (math.Point3, bool) {
@@ -255,10 +250,10 @@ func FaceInteriorPoint(f *topo.Face) (math.Point3, bool) {
 		return s.PointAt((uLo+uHi)/2, (vLo+vHi)/2), true
 	}
 	loops, ok := buildFaceLoops(s, f)
-	if !ok {
-		return math.Point3{}, false
+	if !ok || loopsWrapASeam(loops) {
+		return math.Point3{}, false // see the seam-wrapping note above
 	}
-	u, v, found := regionProbeUV(loops)
+	u, v, found := regionInteriorUV(loops)
 	if !found {
 		return math.Point3{}, false
 	}
