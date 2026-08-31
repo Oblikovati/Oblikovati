@@ -37,18 +37,20 @@ func (r *ValidationReport) checkHoleContainment(b *topo.Body) {
 		if !ok || len(f.Loops()) < 2 {
 			continue
 		}
-		outer := loopCurves2d(outerLoopOf(f), pl)
+		ol := outerLoopOf(f)
+		outer := loopCurves2d(ol, pl)
 		if len(outer) == 0 {
 			continue
 		}
-		r.flagProtrudingHoles(f, outer, pl)
+		r.flagProtrudingHoles(f, ol, outer, pl)
 	}
 }
 
 // flagProtrudingHoles records a HolesContained defect for every inner loop of f that escapes outer.
-func (r *ValidationReport) flagProtrudingHoles(f *topo.Face, outer []geom.Curve2, pl geom.Plane) {
+func (r *ValidationReport) flagProtrudingHoles(f *topo.Face, ol *topo.Loop, outer []geom.Curve2, pl geom.Plane) {
+	outerVerts := loopVertices2d(ol, pl)
 	for _, l := range f.Loops() {
-		if l.IsOuter() || holeInsideOuter(loopCurves2d(l, pl), outer) {
+		if l.IsOuter() || holeInsideOuter(loopCurves2d(l, pl), outer, loopVertices2d(l, pl), outerVerts) {
 			continue
 		}
 		r.HolesContained = false
@@ -104,19 +106,49 @@ func planeUV2d(pl geom.Plane, p math.Point3) math.Point2 {
 }
 
 // holeInsideOuter reports whether the hole loop lies inside the region bounded by outer. It is exact
-// over the analytic edges (#3478): if any hole edge transversally crosses the outer boundary the hole
-// pokes out; otherwise the hole is wholly on one side of that boundary (Jordan), so a single hole point
-// decides it. A hole merely touching the outer boundary at a shared vertex is not a crossing and stays
-// contained, preserving the tangency the retired sampled test allowed.
-func holeInsideOuter(hole, outer []geom.Curve2) bool {
+// over the analytic edges (#3478): if any hole edge crosses the outer boundary away from a point where
+// the two loops TOUCH, the hole pokes out; otherwise the hole is wholly on one side of that boundary
+// (Jordan), so a single hole point decides it. A hole meeting the outer boundary at a shared vertex is
+// the two loops kissing — a rim fillet's bore lip leaves a hole circle internally tangent to its face's
+// outer circle — and stays contained.
+func holeInsideOuter(hole, outer []geom.Curve2, holeVerts, outerVerts []math.Point2) bool {
 	if len(hole) == 0 {
 		return true
 	}
 	res := regionResolution2d(outer)
-	if loopsCross2d(hole, outer, res) {
+	if loopsCross2d(hole, outer, res, coincidentPoints2d(holeVerts, outerVerts, res.Plane())) {
 		return false
 	}
 	return pointInRegion2d(holeProbePoint(hole), outer, res)
+}
+
+// loopVertices2d returns the loop's vertex positions in pl's frame. These are the TOPOLOGICAL points a
+// loop is pinned to; a projected curve's parametric endpoints are not — a full circle's seam sits
+// wherever the chart's u-axis happens to point, so it moves with the plane's frame and names no vertex.
+func loopVertices2d(l *topo.Loop, pl geom.Plane) []math.Point2 {
+	if l == nil {
+		return nil
+	}
+	out := make([]math.Point2, 0, len(l.EdgeUses()))
+	for _, u := range l.EdgeUses() {
+		out = append(out, planeUV2d(pl, u.Edge().StartVertex().Point()), planeUV2d(pl, u.Edge().EndVertex().Point()))
+	}
+	return out
+}
+
+// coincidentPoints2d returns the points the two loops share within tol — the vertices at which they
+// touch. tol is the on-boundary classification band, the same band the crossing hits are located to.
+func coincidentPoints2d(a, b []math.Point2, tol float64) []math.Point2 {
+	var out []math.Point2
+	for _, p := range a {
+		for _, q := range b {
+			if float64(p.DistanceTo(q)) <= tol {
+				out = append(out, p)
+				break
+			}
+		}
+	}
+	return out
 }
 
 // holeProbePoint returns an interior point of the hole's first edge — the decisive sample once the
@@ -149,11 +181,11 @@ func regionResolution2d(edges []geom.Curve2) geom.Resolution {
 	return geom.ResolutionForPoints2D(pts)
 }
 
-// loopsCross2d reports whether any hole edge transversally crosses any outer edge.
-func loopsCross2d(hole, outer []geom.Curve2, res geom.Resolution) bool {
+// loopsCross2d reports whether any hole edge crosses any outer edge away from a shared vertex.
+func loopsCross2d(hole, outer []geom.Curve2, res geom.Resolution, touch []math.Point2) bool {
 	for _, h := range hole {
 		for _, o := range outer {
-			if edgesCross2d(h, o, res) {
+			if edgesCross2d(h, o, res, touch) {
 				return true
 			}
 		}
@@ -161,25 +193,26 @@ func loopsCross2d(hole, outer []geom.Curve2, res geom.Resolution) bool {
 	return false
 }
 
-// edgesCross2d reports whether the two analytic edges meet away from either edge's endpoints. A meeting
-// at a shared endpoint is a vertex the two loops touch at, not a protrusion; an interior meeting is the
-// hole crossing through the outer boundary.
-func edgesCross2d(h, o geom.Curve2, res geom.Resolution) bool {
+// edgesCross2d reports whether the two analytic edges meet anywhere other than a point at which the
+// loops touch. A meeting at a shared vertex is the two loops kissing, not a protrusion; any other
+// meeting is the hole crossing through the outer boundary.
+func edgesCross2d(h, o geom.Curve2, res geom.Resolution, touch []math.Point2) bool {
 	for _, p := range curveCurve2dHits(h, o, res.Plane()) {
-		if !nearCurveEnd2d(p, h, res.Weld()) && !nearCurveEnd2d(p, o, res.Weld()) {
+		if !nearAnyPoint2d(p, touch, res.Plane()) {
 			return true
 		}
 	}
 	return false
 }
 
-// nearCurveEnd2d reports whether p sits within tol of either endpoint of c (an infinite line has none).
-func nearCurveEnd2d(p math.Point2, c geom.Curve2, tol float64) bool {
-	lo, hi := c.Domain()
-	if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
-		return false
+// nearAnyPoint2d reports whether p sits within tol of any of the given points.
+func nearAnyPoint2d(p math.Point2, pts []math.Point2, tol float64) bool {
+	for _, q := range pts {
+		if float64(p.DistanceTo(q)) <= tol {
+			return true
+		}
 	}
-	return float64(p.DistanceTo(c.PointAt(lo))) <= tol || float64(p.DistanceTo(c.PointAt(hi))) <= tol
+	return false
 }
 
 // curveCurve2dHits returns the intersection points of two analytic 2D curves, reusing the exact

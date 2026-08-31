@@ -221,19 +221,17 @@ func TestCurve2dHitsEllipsePairFallback(t *testing.T) {
 	}
 }
 
-// TestNearCurveEnd2dOnUnboundedLine: an infinite line has no endpoint to be near, so the endpoint guard
-// reports false rather than sampling an infinite parameter.
-func TestNearCurveEnd2dOnUnboundedLine(t *testing.T) {
-	ln, err := geom.NewLine2d(m.P2(0, 0), m.V2(1, 0))
-	if err != nil {
-		t.Fatalf("NewLine2d: %v", err)
+// TestCoincidentPoints2dFindsTheTouchVertices: the shared vertices of two loops are the points at
+// which they may kiss; a vertex only one loop has is not one.
+func TestCoincidentPoints2dFindsTheTouchVertices(t *testing.T) {
+	hole := []m.Point2{m.P2(10, 0), m.P2(3, 4)}
+	outer := []m.Point2{m.P2(10, 1e-12), m.P2(-7, 2)}
+	got := coincidentPoints2d(hole, outer, 1e-9)
+	if len(got) != 1 || float64(got[0].DistanceTo(m.P2(10, 0))) > 1e-9 {
+		t.Errorf("coincidentPoints2d = %v, want just the shared (10,0)", got)
 	}
-	if nearCurveEnd2d(m.P2(0, 0), ln, 1e-6) {
-		t.Error("nearCurveEnd2d reported an endpoint on an unbounded line")
-	}
-	seg := geom.NewLineSegment2d(m.P2(0, 0), m.P2(4, 0))
-	if !nearCurveEnd2d(m.P2(4, 0), seg, 1e-9) {
-		t.Error("nearCurveEnd2d missed a segment's own endpoint")
+	if len(coincidentPoints2d(hole, outer, 0)) != 0 {
+		t.Error("a zero tolerance matched vertices that differ by 1e-12")
 	}
 }
 
@@ -262,5 +260,79 @@ func TestRegionResolution2dHandlesUnboundedEdge(t *testing.T) {
 	res := regionResolution2d([]geom.Curve2{ln, geom.NewLineSegment2d(m.P2(0, 0), m.P2(4, 0))})
 	if !(res.Weld() > 0) || math.IsInf(res.Weld(), 0) {
 		t.Errorf("regionResolution2d weld tolerance = %g, want a finite positive scale", res.Weld())
+	}
+}
+
+// arcEdgeUse adds a FULL-sweep Arc3d edge on the Z=0 plane — the shape a rim fillet emits, whose start
+// and end weld to one seam vertex.
+func arcEdgeUse(bld *topo.Builder, cx, cy, r float64) topo.Use {
+	a, err := geom.NewArc3d(m.P3(m.Scalar(cx), m.Scalar(cy), 0), m.V3(0, 0, 1), m.V3(1, 0, 0), r, 0, 2*math.Pi)
+	if err != nil {
+		panic(err)
+	}
+	seam := bld.AddVertex(a.PointAt(0), containLineage)
+	return topo.Fwd(bld.AddEdge(a, seam, seam, containLineage))
+}
+
+// circleEdgeUseAimed adds a full-circle edge whose SEAM VERTEX sits in the given in-plane direction
+// from the centre — how a real B-rep records two loops that touch: the touching point is a vertex both
+// loops carry.
+func circleEdgeUseAimed(bld *topo.Builder, cx, cy, r, refX, refY float64) topo.Use {
+	c, err := geom.NewCircle(m.P3(m.Scalar(cx), m.Scalar(cy), 0), m.V3(0, 0, 1), r)
+	if err != nil {
+		panic(err)
+	}
+	ref, err := m.UnitVector3FromVector(m.V3(m.Scalar(refX), m.Scalar(refY), 0))
+	if err != nil {
+		panic(err)
+	}
+	c.RefDir = ref
+	seam := bld.AddVertex(c.PointAt(0), containLineage)
+	return topo.Fwd(bld.AddEdge(c, seam, seam, containLineage))
+}
+
+// TestHoleContainmentInternallyTangentHole is the Z1 bore-lip regression (#2247): a rim fillet leaves a
+// face whose hole circle is INTERNALLY TANGENT to its outer circle (r=10 at the origin, r=5 at (5,0),
+// touching at (10,0), a vertex both loops carry). The hole is contained — it kisses the boundary, it
+// does not cross it. Both edge kinds must agree: a full-sweep arc, which a three-point projection fit
+// could not see at all (start and end coincide), so the loop fell back to an inscribed 48-gon whose
+// chords really do cross near the touch; and a full circle, whose projected seam sits wherever the
+// chart's u-axis points, so containment may not be decided from the parameterization.
+func TestHoleContainmentInternallyTangentHole(t *testing.T) {
+	arcs := planeFaceContained(func(bld *topo.Builder) ([]topo.Use, []topo.Use) {
+		return []topo.Use{arcEdgeUse(bld, 0, 0, 10)}, []topo.Use{arcEdgeUse(bld, 5, 0, 5)}
+	})
+	if !arcs {
+		t.Error("an internally tangent ARC hole was reported as protruding")
+	}
+	circles := planeFaceContained(func(bld *topo.Builder) ([]topo.Use, []topo.Use) {
+		return []topo.Use{circleEdgeUseAimed(bld, 0, 0, 10, 1, 0)}, []topo.Use{circleEdgeUseAimed(bld, 5, 0, 5, 1, 0)}
+	})
+	if !circles {
+		t.Error("an internally tangent CIRCLE hole was reported as protruding")
+	}
+}
+
+// TestHoleContainmentUnrecordedTangencyIsMalformed: the same tangent circles, but with each loop's seam
+// left wherever its own parameterization starts, so no vertex records the touch. A face whose loops meet
+// at a point its topology does not carry IS malformed, and the check must say so — the exemption is for
+// a shared VERTEX, never for a bare coincidence of geometry.
+func TestHoleContainmentUnrecordedTangencyIsMalformed(t *testing.T) {
+	ok := planeFaceContained(func(bld *topo.Builder) ([]topo.Use, []topo.Use) {
+		return []topo.Use{circleEdgeUseAimed(bld, 0, 0, 10, 1, 0)}, []topo.Use{circleEdgeUseAimed(bld, 5, 0, 5, 0, 1)}
+	})
+	if ok {
+		t.Error("a tangency no vertex records was accepted; the touch must be topological")
+	}
+}
+
+// TestHoleContainmentEscapingTangentHole: the same touching configuration pushed OUT — the hole circle
+// now straddles the outer boundary, so the shared vertex must not excuse the real crossings.
+func TestHoleContainmentEscapingTangentHole(t *testing.T) {
+	ok := planeFaceContained(func(bld *topo.Builder) ([]topo.Use, []topo.Use) {
+		return []topo.Use{circleEdgeUse(bld, 0, 0, 10)}, []topo.Use{circleEdgeUse(bld, 8, 0, 5)}
+	})
+	if ok {
+		t.Error("a hole straddling the outer boundary was reported as contained")
 	}
 }
