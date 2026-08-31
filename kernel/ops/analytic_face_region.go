@@ -6,7 +6,9 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Which side of its loops a face lies on (M48/C3, Oblikovati/Oblikovati#3453).
@@ -78,15 +80,169 @@ func loopRegionSign(depthEven bool, signedArea float64) float64 {
 	return role
 }
 
-// regionIsFace reports whether the region enclosed by the face's loops IS the face (true) or its
-// complement on a closed surface (false). ok is false when no interior probe point could be found,
-// so the caller declines the whole body to the mesh path rather than guess the side.
-func regionIsFace(f *topo.Face, loops []faceLoop) (isFace, ok bool) {
-	u, v, found := regionInteriorUV(loops)
-	if !found {
+// faceHoldsEnclosedRegion reports whether the face covers the region its loops enclose, or the
+// complement of it on a closed surface. certain is false when the question cannot be settled, so the
+// caller declines instead of integrating a guess.
+//
+// Neither of the two signals a face carries can answer this. The loops' WINDING cannot: a producer
+// may wind a closed-surface face's loops either way and lean on Reversed to place the material, and
+// every torus band in the corpus comes out clockwise whichever side it covers. A parameter-space
+// point-in-trim test cannot either: on a torus face brep's classifier is systematically inverted
+// (0 of 3540 sampled points agreed with the defining half-space on the perp off-centre case).
+//
+// So the question goes to the SOLID, which is the ground truth. At a probe point in the enclosed
+// region, step off the surface both ways along the face's outward normal: on a region the face
+// really covers, the outward step leaves the material and the inward step enters it; on a region it
+// does not cover, the surface there runs through solid or through air and both steps agree.
+func faceHoldsEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain bool) {
+	body := faceBody(f)
+	if body == nil {
+		return false, false // no assembled solid to ask
+	}
+	u, v, ok := regionProbeUV(loops)
+	if !ok {
 		return false, false
 	}
-	return brep.PointInFaceTrim(f, f.Geometry().PointAt(u, v)), true
+	return faceSpansMaterial(body, f, u, v)
+}
+
+// regionProbeUV returns a parameter point in the enclosed region for the side test. A loop that
+// WRAPS a periodic seam is not a closed polygon in the plane, so the even-odd search cannot be
+// asked about it — every torus band and every bore wall would get a meaningless answer. For those
+// the probe steps inward from the boundary instead, which is well defined for any loop.
+func regionProbeUV(loops []faceLoop) (u, v float64, ok bool) {
+	if loopsWrapASeam(loops) {
+		return regionInwardOfBoundary(loops)
+	}
+	return regionInteriorUV(loops)
+}
+
+// loopsWrapASeam reports whether any loop fails to return to its starting parameters, which is what
+// makes it an open polyline in the covering space.
+func loopsWrapASeam(loops []faceLoop) bool {
+	for _, fl := range loops {
+		if !closeUV(fl.netU, fl.netV, 0, 0) {
+			return true
+		}
+	}
+	return false
+}
+
+// regionInwardOfBoundary returns a point just inside the enclosed region, found by stepping off the
+// longest boundary segment along its inward normal. Inward is the LEFT of the traversal taken in the
+// loop's positive-measure direction, which loopRegionSigns already establishes, so this needs no
+// containment test and works on a loop that wraps a seam.
+func regionInwardOfBoundary(loops []faceLoop) (u, v float64, ok bool) {
+	fl, sign, found := widestPositiveLoop(loops)
+	if !found {
+		return 0, 0, false
+	}
+	a, b, found := longestSegment(loopPolyline(fl))
+	if !found {
+		return 0, 0, false
+	}
+	du, dv := (b.u-a.u)*sign, (b.v-a.v)*sign
+	n := stdmath.Hypot(du, dv)
+	step := regionInwardStep * n
+	return (a.u+b.u)/2 - dv/n*step, (a.v+b.v)/2 + du/n*step, true
+}
+
+// regionInwardStep is how far inward of the boundary the probe sits, as a fraction of the segment it
+// steps off. Small enough to stay inside a slender band, large enough that the point is not on the
+// boundary itself.
+const regionInwardStep = 0.05 // tol:parametric — inward probe offset, relative to the local boundary
+
+// widestPositiveLoop returns the top-level loop of greatest enclosed measure and the direction sign
+// that walks it the positive-measure way.
+func widestPositiveLoop(loops []faceLoop) (faceLoop, float64, bool) {
+	signs := loopRegionSigns(loops)
+	best, bestArea, found := faceLoop{}, 0.0, false
+	for i, fl := range loops {
+		area := stdmath.Abs(loopSignedArea(fl))
+		if signs[i] > 0 && area >= bestArea {
+			best, bestArea, found = fl, area, true
+		}
+	}
+	if !found {
+		return faceLoop{}, 0, false
+	}
+	if loopSignedArea(best) < 0 {
+		return best, -1, true
+	}
+	return best, 1, true
+}
+
+// longestSegment returns the polyline's longest edge — the one least likely to be a corner sliver,
+// so the inward step off its midpoint lands cleanly inside. The closing pair is NOT considered: on a
+// seam-wrapping loop the last sample sits a whole period from the first, and that phantom segment
+// would otherwise win every time.
+func longestSegment(pts []arcSample) (a, b arcSample, ok bool) {
+	best := 0.0
+	for i := 0; i+1 < len(pts); i++ {
+		p, q := pts[i], pts[i+1]
+		if d := stdmath.Hypot(q.u-p.u, q.v-p.v); d > best {
+			a, b, best, ok = p, q, d, true
+		}
+	}
+	return a, b, ok
+}
+
+// faceSpansMaterial reports whether the surface point at (u, v) separates material from air along
+// the face's outward normal — the test that decides which region the face covers. certain is false
+// when the normal is degenerate there (a parametric pole), where no side can be read.
+func faceSpansMaterial(body *topo.Body, f *topo.Face, u, v float64) (holds, certain bool) {
+	s := f.Geometry()
+	n := s.NormalAt(u, v)
+	if f.Reversed() {
+		n = n.Scale(-1)
+	}
+	if n.LengthSquared() == 0 {
+		return false, false
+	}
+	step := n.AsUnit().AsVector().Scale(math.Scalar(geom.ResolutionForBox(body.RangeBox()).Sew()))
+	p := s.PointAt(u, v)
+	return brep.PointInside(body, p.TranslateBy(step.Scale(-1))) &&
+		!brep.PointInside(body, p.TranslateBy(step)), true
+}
+
+// faceBody returns the solid the face bounds, or nil while the body is still being assembled.
+func faceBody(f *topo.Face) *topo.Body {
+	sh := f.Shell()
+	if sh == nil {
+		return nil
+	}
+	return sh.Body()
+}
+
+// FaceInteriorPoint returns one point strictly inside face f's trimmed region, taken from the
+// analytic surface and its uv loops — never from a tessellation. It is the representative point a
+// per-face gate classifies (M48/C3, Oblikovati/Oblikovati#3447). ok is false for a face whose loops
+// cannot be reconstructed in uv, or whose region is too slender for the probe to land inside.
+//
+// Example: p, ok := ops.FaceInteriorPoint(f) // ok ⇒ brep.PointInFaceTrim(f, p)
+func FaceInteriorPoint(f *topo.Face) (math.Point3, bool) {
+	s := f.Geometry()
+	if len(f.Loops()) == 0 {
+		uLo, uHi := s.UDomain()
+		vLo, vHi := s.VDomain()
+		if !allFinite(uLo, uHi, vLo, vHi) {
+			return math.Point3{}, false
+		}
+		return s.PointAt((uLo+uHi)/2, (vLo+vHi)/2), true
+	}
+	loops, ok := buildFaceLoops(s, f)
+	if !ok {
+		return math.Point3{}, false
+	}
+	u, v, found := regionInteriorUV(loops)
+	if !found {
+		return math.Point3{}, false
+	}
+	p := s.PointAt(u, v)
+	if !brep.PointInFaceTrim(f, p) {
+		return math.Point3{}, false // the enclosed side is the face's complement; no probe here
+	}
+	return p, true
 }
 
 // regionInteriorUV returns one parameter point strictly inside the region the loops enclose: of the

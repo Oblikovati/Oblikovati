@@ -83,9 +83,9 @@ func TestCurvedExactBooleanPassesVolumeGuard(t *testing.T) {
 // a real gross mis-recognition triggers; forcing it here proves the guard rejects, diagnoses, and
 // hands off rather than shipping the analytic body, without needing a recognizer bug to reproduce.
 func TestCurvedVolumeRejectFallsBackToCSG(t *testing.T) {
-	saved := curvedVolumeGuardFraction
-	curvedVolumeGuardFraction = -1 // any bracket, even the true one, now reads as violated
-	defer func() { curvedVolumeGuardFraction = saved }()
+	saved := curvedGuardBracketScale
+	curvedGuardBracketScale = -1 // any bracket, even the true one, now reads as violated
+	defer func() { curvedGuardBracketScale = saved }()
 
 	fat, err := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	if err != nil {

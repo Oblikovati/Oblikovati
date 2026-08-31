@@ -289,6 +289,14 @@ func (f *Face) SetMetricScaleMemo(v any) { f.metricScaleMemo = v }
 // negate the surface normal for such faces. Most faces (sense agrees with surface) are false.
 func (f *Face) Reversed() bool { return f.reversed }
 
+// Shell returns the shell this face belongs to, or nil before the body is assembled. It lets a
+// face-local computation reach the solid it bounds — the mass-properties integrator needs the body
+// to certify which side of a closed surface its trim covers, because a loop's winding alone cannot
+// say (M48/C3, Oblikovati/Oblikovati#3453).
+//
+// Example: if sh := f.Shell(); sh != nil { inside := brep.PointInside(sh.Body(), p) }
+func (f *Face) Shell() *Shell { return f.shell }
+
 // Loops returns the face's boundary loops (outer first by construction).
 func (f *Face) Loops() []*Loop { return append([]*Loop(nil), f.loops...) }
 

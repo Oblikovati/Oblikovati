@@ -96,12 +96,16 @@ func cornerBlendMeshesComplement(originalBody, built *topo.Body) bool {
 		return false // no sphere corner blend (a canal/coons4 patch) — its mesher is winding-independent
 	}
 	// The corner blend is ALWAYS the sub-hemisphere spherical triangle (Girard area ≤ ~448 for these
-	// corners, well under a hemisphere 2πr²). Reading the sphere-patch mesher's region directly — tessellate
-	// and compare to the hemisphere area — is robust where a loop-winding heuristic is not: a THIN wide
-	// triangle (C2's ~90° arcs, 206.9 area) confuses a single-pole winding test but its MESHED area cleanly
-	// separates the cap (< 2πr²) from the complement (> 2πr², D1's 1016.7). No false positive on a correct
-	// corner ⇒ the uniform flip never fires on B3 or the 60 greens (byte-identity holds).
-	area := meshGeometryProperties(TessellateFace(f, PropertyQuality())).Area
+	// corners, well under a hemisphere 2πr²). Reading the patch's own region area separates the cap
+	// (< 2πr²) from the complement (> 2πr², D1's 1016.7) where a loop-winding heuristic cannot: a THIN
+	// wide triangle (C2's ~90° arcs, 206.9 area) confuses a single-pole winding test. The area is the
+	// ANALYTIC surface integral over the trim (M48/C3, Oblikovati/Oblikovati#3432) — the decision is a
+	// topological one about which region the patch covers, and the facet sum it replaces both
+	// under-measured the patch and moved with the display Quality.
+	area, ok := AnalyticFaceArea(f)
+	if !ok {
+		return false // the patch is not analytically integrable: leave the assembled winding alone
+	}
 	return area > 2*stdmath.Pi*sph.Radius*sph.Radius
 }
 
