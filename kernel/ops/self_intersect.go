@@ -124,22 +124,35 @@ func (s *faceScan) trimProbes(i int) []math.Point3 {
 // scan that marched every box-overlapping pair before asking whether the faces reach each other at all
 // did not finish in 45 minutes. The shared topology is collected last, for the same reason: that walk
 // is O(E).
+//
+// THE GATE IS A Sew() COMPARISON, and the class matters (ADR-0042). A probe on face i's boundary and
+// face j's surface come from INDEPENDENT computations — two surfaces fitted by different operations,
+// their common edge marched — so how far apart they read is a Sew() question, never a Weld() one. Read
+// at Weld() it let a face and the blend that runs tangent to it through the gate on 3.3e-7 of marcher
+// noise (Weld() is 2.5e-7 on that body): corpus bfuseblend/B5's cylinder against its B-spline flank,
+// which then put geom's SSI seed field on a NURBS surface and did not return in nine minutes
+// (Oblikovati/Oblikovati#3477). Tangency is contact, and Sew() is the tolerance that says so.
+//
+// The intersector is bounded by the two boxes' OVERLAP, not their union: a point on both trimmed faces
+// lies in both range boxes, so nothing outside the overlap can witness a crossing, and the union asks
+// the marcher to trace a domain several times larger for answers that are discarded.
 func (s *faceScan) interpenetrate(i, j int, res geom.Resolution) (math.Point3, bool) {
 	fa, fb := s.faces[i], s.faces[j]
 	if sheetHoldsBoth(fa.Geometry(), fb.Geometry(), s.trimProbes(i), s.trimProbes(j), res) {
 		return coincidentTrimOverlap(fa, fb, sharedFaceContact(fa, fb), res)
 	}
-	if !facesOverlapMaterial(fa, fb, s.trimProbes(i), s.trimProbes(j), res.Weld()) {
+	if !facesOverlapMaterial(fa, fb, s.trimProbes(i), s.trimProbes(j), res.Sew()) {
 		return math.Point3{}, false
 	}
-	curves, handled := geom.SurfaceIntersect(fa.Geometry(), fb.Geometry(), s.boxes[i].Union(s.boxes[j]), res)
+	overlap := boxOverlap(s.boxes[i], s.boxes[j])
+	curves, handled := geom.SurfaceIntersect(fa.Geometry(), fb.Geometry(), overlap, res)
 	if !handled {
 		return declineUnresolvedSurfacePair()
 	}
 	if len(curves) == 0 {
 		return math.Point3{}, false // the surfaces are known not to cross
 	}
-	return crossingWitness(curves, boxOverlap(s.boxes[i], s.boxes[j]), fa, fb, sharedFaceContact(fa, fb), res)
+	return crossingWitness(curves, overlap, fa, fb, sharedFaceContact(fa, fb), res)
 }
 
 // declineUnresolvedSurfacePair is the ONE named decline of this detector, so the skip is on the record
@@ -182,8 +195,14 @@ func crossingWitness(curves []geom.Curve3, overlap math.Box, fa, fb *topo.Face,
 }
 
 // midCrossingSample walks the interior samples of an intersection curve, bounded to the two faces'
-// box overlap (sampleRange — the closed form returns an UNBOUNDED line for a plane pair), and returns
-// the MIDDLE accepted sample.
+// box overlap, and returns the MIDDLE accepted sample.
+//
+// Bounded TWICE, because sampleRange only narrows the PARAMETER interval and only does so for an
+// unbounded curve (the closed form returns an infinite line for a plane pair); a bounded curve — the
+// closed loop two curved faces meet on — is sampled over its whole domain and wanders far outside
+// either face. A witness lies on both TRIMMED faces, so it lies in both range boxes: sampling outside
+// their overlap can only produce a point neither face owns, and the trim test is then the only thing
+// standing between the scan and a fabricated crossing (Oblikovati/Oblikovati#3477).
 //
 // The middle, not the first: the witness is quoted to a human and filtered by callers against the
 // shared boundary, so it must sit well inside the interpenetration rather than at its rim. Two faces
@@ -196,7 +215,8 @@ func midCrossingSample(c geom.Curve3, overlap math.Box, accept func(math.Point3)
 	}
 	var hits []math.Point3
 	for i := 1; i < curveTrimSamples; i++ {
-		if p := c.PointAt(lo + (hi-lo)*float64(i)/curveTrimSamples); accept(p) {
+		p := c.PointAt(lo + (hi-lo)*float64(i)/curveTrimSamples)
+		if overlap.Contains(p) && accept(p) {
 			hits = append(hits, p)
 		}
 	}

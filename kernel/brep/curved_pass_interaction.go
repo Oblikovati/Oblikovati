@@ -23,7 +23,7 @@ import (
 func passClearOf(p, other facePartition) bool {
 	otherFaces, otherBoxes := other.gateFaces()
 	for i, pf := range p.pass {
-		pb := inflateBox(p.passBox[i], facePairCullPad)
+		pb := inflateBox(p.passBox[i])
 		for j := range otherFaces {
 			if !pb.Intersects(otherBoxes[j]) {
 				continue
@@ -50,9 +50,10 @@ func (p facePartition) gateFaces() ([]curvedFace, []math.Box) {
 	return faces, boxes
 }
 
-// inflateBox grows a box by pad on every axis.
-func inflateBox(b math.Box, pad float64) math.Box {
-	g := math.Scalar(pad)
+// inflateBox grows a box by the face-pair cull pad on every axis, so a broad-phase reject is only
+// taken when the pair is clear by more than the tolerance the narrow phase would decide on.
+func inflateBox(b math.Box) math.Box {
+	g := math.Scalar(facePairCullPad)
 	return math.NewBox(b.Min.TranslateBy(math.V3(-g, -g, -g)), b.Max.TranslateBy(math.V3(g, g, g)))
 }
 

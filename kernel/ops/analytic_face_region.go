@@ -41,11 +41,13 @@ const regionProbeGrid = 33
 // winding carry the role alone — a boolean may leave a hole wound the SAME way as its enclosing
 // loop, and a winding-only sum would then add that hole. Depth for the role and |∮| for the
 // magnitude is right in all three.
-func loopRegionSigns(loops []faceLoop) []float64 {
+// measures[i] is loop i's OWN boundary integral (∮), which is the signed enclosed measure the rule
+// needs — see enclosedTerms for why the sampled polyline's shoelace cannot carry that sign.
+func loopRegionSigns(loops []faceLoop, measures []float64) []float64 {
 	polys := loopUVPolygons(loops)
 	signs := make([]float64, len(loops))
-	for i, fl := range loops {
-		signs[i] = loopRegionSign(loopDepthIsEven(polys, i), loopSignedArea(fl))
+	for i := range loops {
+		signs[i] = loopRegionSign(loopDepthIsEven(polys, i), measures[i])
 	}
 	return signs
 }
@@ -69,12 +71,12 @@ func loopDepthIsEven(polys [][]arcSample, i int) bool {
 // loopRegionSign multiplies one loop's stored boundary integral so it contributes +|enclosed| at
 // even depth and −|enclosed| at odd depth. ∮_stored IS the signed enclosed measure, so the
 // multiplier is the depth's sign times the sign of that measure.
-func loopRegionSign(depthEven bool, signedArea float64) float64 {
+func loopRegionSign(depthEven bool, signedMeasure float64) float64 {
 	role := -1.0
 	if depthEven {
 		role = 1
 	}
-	if signedArea < 0 {
+	if signedMeasure < 0 {
 		return -role
 	}
 	return role
@@ -138,6 +140,74 @@ func loopsWrapASeam(loops []faceLoop) bool {
 		}
 	}
 	return false
+}
+
+// loopsCloseTheirWalk reports whether every loop's unwrapped uv walk RETURNS to where it started —
+// Green's theorem's own precondition, since ∮ over an open polyline measures nothing. A whole number
+// of periods is a return: that is a band crossing the parameter seam, and its conjugate form closes it.
+//
+// The walk can fail to close even though the loop is a closed circuit in 3-D, and two causes were
+// measured on the blend-parity corpus. A loop's edge uses are taken in stored order, and that order is
+// not always a connected traversal: a cylinder arm's loop came back as (wall line, far rim, wall line,
+// near rim) — every edge present, none adjacent to its neighbour — so the walk jumped the arm's whole
+// height twice and read a lateral area of −12075.67 where 9629.06 is right. And a surface with a POLE
+// collapses a whole isoparametric edge onto one 3-D point, so ParamAt cannot recover the parameter
+// along it and the walk restarts on the wrong branch of that edge.
+//
+// Neither is recoverable HERE — one is a topology-ordering question, the other needs the pcurve the
+// producer discarded — so the face is refused before any integral is built and the tessellated
+// fallback measures the body. The vector-area closure post-condition cannot substitute for this: a
+// full band's outward vector area is zero whichever region it takes, and the two pole-degenerate
+// flanks above were mirror images whose residuals CANCELLED, so both bodies passed the closure with a
+// 1.7% wrong volume (Oblikovati/Oblikovati#3453).
+func loopsCloseTheirWalk(loops []faceLoop) bool {
+	uPeriod, vPeriod := loopsPeriod(loops, bandAxis{}), loopsPeriod(loops, bandAxis{alongV: true})
+	for _, fl := range loops {
+		extent := loopUVExtent(fl)
+		if !closesUpToPeriod(fl.netU, uPeriod, extent) || !closesUpToPeriod(fl.netV, vPeriod, extent) {
+			return false
+		}
+	}
+	return true
+}
+
+// closesUpToPeriod reports whether a net travel is a return: zero, or a whole number of periods in a
+// parameter that HAS one. A non-periodic parameter has period 0, where only zero is a return.
+//
+// What is left after the whole periods is judged RELATIVE TO THE CONTOUR'S OWN SIZE, not against an
+// absolute parametric epsilon. A closed curve can carry a residue that is real and irreducible: a
+// spiric section TURNS at each end, where the branches meet at w = 1 ± 1e-16, and acos of that puts
+// the shared endpoint 2.98e-8 away in u — double rounding amplified by a square root, on a loop that
+// closes exactly. An absolute 1e-9 called every torus oval an open contour and refused faces the
+// integrator computes exactly. The breaks this gate exists to catch are nothing like that size: a
+// disconnected edge order jumped 57.57 of a face's height, a pole-degenerate flank jumped its whole
+// unit domain. Relative to the contour they are 1e0; the spiric residue is 1e-8.
+func closesUpToPeriod(net, period, extent float64) bool {
+	residue := stdmath.Abs(net - wholePeriodOffset(net, period))
+	return residue <= closedWalkRelTol*extent
+}
+
+// closedWalkRelTol is how much of its own parametric extent a contour may fail to close by. It is set
+// at the vector-area closure post-condition's tolerance, because that is what the gate feeds: a gap
+// this size perturbs the boundary integral by about as much, so anything it admits is still caught
+// downstream, and anything larger is a break rather than a rounding residue.
+const closedWalkRelTol = 1e-6 // tol:parametric — relative to the loop's own uv extent
+
+// loopUVExtent is how far a loop reaches in uv, the natural scale for judging its closure residue.
+func loopUVExtent(fl faceLoop) float64 {
+	uLo, uHi, vLo, vHi := 0.0, 0.0, 0.0, 0.0
+	seen := false
+	for _, le := range fl.edges {
+		for _, sp := range le.samples {
+			if !seen {
+				uLo, uHi, vLo, vHi, seen = sp.u, sp.u, sp.v, sp.v, true
+				continue
+			}
+			uLo, uHi = stdmath.Min(uLo, sp.u), stdmath.Max(uHi, sp.u)
+			vLo, vHi = stdmath.Min(vLo, sp.v), stdmath.Max(vHi, sp.v)
+		}
+	}
+	return stdmath.Max(uHi-uLo, vHi-vLo)
 }
 
 // bandInteriorUV returns a point deep inside a band whose loops WRAP the parameter seam. Such a
@@ -531,7 +601,7 @@ func polygonCrossings(poly []arcSample, u, v float64) int {
 // wall integrates exactly, and this must not disturb it.
 //
 // A loop that does NOT wrap is a hole in the band, and subtracts its own enclosed measure.
-func bandLoopSigns(loops []faceLoop, form greenAxis) []float64 {
+func bandLoopSigns(loops []faceLoop, measures []float64, form greenAxis) []float64 {
 	signs := make([]float64, len(loops))
 	axis := bandAxisOf(loops)
 	rims := wrappingLoopCount(loops)
@@ -539,7 +609,7 @@ func bandLoopSigns(loops []faceLoop, form greenAxis) []float64 {
 	for i, fl := range loops {
 		switch {
 		case !loopWraps(fl):
-			signs[i] = loopRegionSign(false, loopSignedArea(fl))
+			signs[i] = loopRegionSign(false, measures[i])
 		case rims == 1 || !haveInterior:
 			signs[i] = 1
 		default:

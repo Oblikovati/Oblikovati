@@ -55,8 +55,37 @@ func discFace(rim geom.Circle, forward bool, outward math.Vector3, lin topo.Line
 // the opposite direction from it, not the other way round. reversed additionally turns the cap inward —
 // a spherical dimple, where the material is outside the ball rather than inside it.
 func sphereCapFace(sph geom.Sphere, rim geom.Circle, keep math.Vector3, reversed bool, lin topo.Lineage) curvedFace {
-	return curvedFace{surface: sph, reversed: reversed, lineage: lin,
-		loops: []curvedLoop{{edges: []loopEdge{orientedCircle(rim, keep)}}}}
+	return withClosedSurfaceComplement(curvedFace{surface: sph, reversed: reversed, lineage: lin,
+		loops: []curvedLoop{{edges: []loopEdge{orientedCircle(rim, keep)}}}})
+}
+
+// withClosedSurfaceComplement records, on a face of a CLOSED surface, whether its loops bound a HOLE
+// rather than the face itself — the [curvedFace.outerless] case, which curvedStitch then mints as an
+// inner loop and every later reader recovers from topo.Loop.IsOuter.
+//
+// It reads the loops' handedness in (u, v), the same rule curved_halfspace_torus_uv.go applies to the
+// torus complement. Reading it HERE is sound and reading it at classification time is not: this builder
+// wound these loops itself, one line above, whereas a classifier handed an arbitrary body is reading a
+// datum that orients a shell only up to one global sign (orient_consistent.go fixes that sign from the
+// body's signed volume). Recording it at the source is what lets the trim classifier stay orientation-
+// free (Oblikovati/Oblikovati#3477).
+func withClosedSurfaceComplement(cf curvedFace) curvedFace {
+	cf.outerless = closedSurfaceRingsAreHoles(cf)
+	return cf
+}
+
+// closedSurfaceRingsAreHoles reports whether the face's freshly wound loops enclose everything BUT the
+// face, which only a closed parameter domain (a sphere, a torus — no axis reaching an exterior) admits.
+func closedSurfaceRingsAreHoles(cf curvedFace) bool {
+	uPer, vPer := surfacePeriodic(cf.surface)
+	if _, open := castAxis(cf.surface, uPer, vPer); open || len(cf.loops) == 0 {
+		return false
+	}
+	area := 0.0
+	for _, loop := range cf.loops {
+		area += signedArea2D(loopToUV(cf.surface, loop, uPer, vPer))
+	}
+	return area < 0
 }
 
 // annulusFace builds the planar ring between two coaxial circles in one plane — what is left of a rod's
@@ -90,10 +119,11 @@ func annulusFace(outer, inner geom.Circle, outerForward bool, outward math.Vecto
 // material side inward; it moves no loop, because a loop is wound about the SURFACE normal, not the
 // face sense.
 func sphereBeltFace(sph geom.Sphere, lo, hi geom.Circle, inverted bool, lin topo.Lineage) curvedFace {
-	return curvedFace{surface: sph, reversed: inverted, lineage: lin, loops: []curvedLoop{
-		{edges: []loopEdge{{curve: lo, t0: 0, t1: 1}}},
-		{edges: []loopEdge{{curve: hi, t0: 1, t1: 0}}},
-	}}
+	return withClosedSurfaceComplement(curvedFace{surface: sph, reversed: inverted, lineage: lin,
+		loops: []curvedLoop{
+			{edges: []loopEdge{{curve: lo, t0: 0, t1: 1}}},
+			{edges: []loopEdge{{curve: hi, t0: 1, t1: 0}}},
+		}})
 }
 
 // orientedCircle walks a circle forward when its normal agrees with want, backward otherwise.

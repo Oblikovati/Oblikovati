@@ -77,9 +77,30 @@ func facesOfAny(b *topo.Body) []curvedFace {
 	return out
 }
 
-// curvedFaceOf flattens one topo.Face into a curvedFace (its analytic surface, sense and loops).
+// curvedFaceOf flattens one topo.Face into a curvedFace (its analytic surface, sense, loops and
+// outerless flag).
 func curvedFaceOf(f *topo.Face) curvedFace {
-	return curvedFace{surface: f.Geometry(), reversed: f.Reversed(), loops: loopsOf(f), lineage: f.Lineage()}
+	return curvedFace{surface: f.Geometry(), reversed: f.Reversed(), loops: loopsOf(f),
+		lineage: f.Lineage(), outerless: isOuterlessFace(f)}
+}
+
+// isOuterlessFace reports whether the face has loops but NONE of them is the outer loop — the
+// closed-surface complement [curvedFace.outerless] names, which topo carries in
+// topo.LoopSpec/Loop.IsOuter and which [loopsOf] alone would drop on the way back in. Reading it here
+// is what lets a containment test on a closed surface (a sphere, a torus) know that the face is the
+// region OUTSIDE its rings without having to read a loop's traversal handedness — a datum only a
+// whole shell can orient (see orient_consistent.go).
+func isOuterlessFace(f *topo.Face) bool {
+	loops := f.Loops()
+	if len(loops) == 0 {
+		return false // boundary-less: the face is its whole surface, not a complement
+	}
+	for _, l := range loops {
+		if l.IsOuter() {
+			return false
+		}
+	}
+	return true
 }
 
 // loopsOf extracts a face's boundary loops as curvedLoops (outer loop first, matching

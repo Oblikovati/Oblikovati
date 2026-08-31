@@ -61,7 +61,7 @@ func (p facePartition) planarReceivesConic(i int, other *facePartition) bool {
 func wallConicEntersFace(f curvedFace, other *facePartition) bool {
 	box := paddedFaceBox(f)
 	for k, wf := range other.wall {
-		if !box.Intersects(inflateBox(other.wallBox[k], facePairCullPad)) {
+		if !box.Intersects(inflateBox(other.wallBox[k])) {
 			continue
 		}
 		if wallSectionConicsTouch(f, wf) {
@@ -94,9 +94,9 @@ func wallSectionConicsTouch(f, wf curvedFace) bool {
 // the two sides' fragments weld. ok=false declines the boolean with a named reason (see uvWallSharedImprint).
 func pairUVWallImprints(p, other *facePartition, uvImp, wallImp [][]geom.Curve3) bool {
 	for i, uf := range p.uv {
-		box := inflateBox(p.uvBox[i], facePairCullPad)
+		box := inflateBox(p.uvBox[i])
 		for k, wf := range other.wall {
-			if !box.Intersects(inflateBox(other.wallBox[k], facePairCullPad)) {
+			if !box.Intersects(inflateBox(other.wallBox[k])) {
 				continue
 			}
 			curves, ok := uvWallSharedImprint(uf, wf)

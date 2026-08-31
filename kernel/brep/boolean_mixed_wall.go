@@ -25,7 +25,7 @@ import (
 func wallImprints(p, other *facePartition, otherImp [][][2]math.Point3) ([][]geom.Curve3, bool) {
 	out := make([][]geom.Curve3, len(p.wall))
 	for i, wf := range p.wall {
-		box := inflateBox(p.wallBox[i], facePairCullPad)
+		box := inflateBox(p.wallBox[i])
 		if wallOverlapsUncovered(box, other) {
 			return nil, false
 		}

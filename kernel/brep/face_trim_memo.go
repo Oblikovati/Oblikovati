@@ -35,14 +35,17 @@ import (
 // TestTrimUVMemoChangesNoVerdict asserts directly by classifying with the memo cold and warm.
 
 // faceTrimUV is one face flattened for repeated containment queries: the curvedFace itself, its loops
-// already developed into (u,v), and the cast-axis choice those rings were developed for.
+// already developed into (u,v), the cast-axis choice those rings were developed for, and which side of
+// the rings the face is.
 type faceTrimUV struct {
-	face     curvedFace
-	rings    [][]math.Point2 // one per loop, in f.loops order; nil when the face defers to the winding
-	uPer     bool
-	vPer     bool
-	alongV   bool
-	castable bool // false ⇒ no exterior axis to cast toward; the geodesic winding decides instead
+	face       curvedFace
+	rings      [][]math.Point2 // one per loop, in f.loops order; nil when the face defers to the foot test
+	uPer       bool
+	vPer       bool
+	alongV     bool
+	castable   bool // false ⇒ no exterior axis to cast toward: a sphere, a torus
+	ringsBound bool // the rings close in the covering plane AND nest, so they bound one region there
+	complement bool // the face is the region OUTSIDE its rings (an outerless closed-surface face)
 }
 
 // faceTrimUVOf returns f's development, building it on first use and reusing it thereafter.
@@ -61,7 +64,7 @@ func faceTrimUVOf(f *topo.Face) *faceTrimUV {
 }
 
 // developFaceTrim projects a curved face's loops into (u,v) once — the work pointInTrimUV used to
-// repeat per query.
+// repeat per query — and settles, also once, which side of those rings the face is.
 func developFaceTrim(cf curvedFace) *faceTrimUV {
 	m := &faceTrimUV{face: cf}
 	if len(cf.loops) == 0 {
@@ -69,26 +72,88 @@ func developFaceTrim(cf curvedFace) *faceTrimUV {
 	}
 	m.uPer, m.vPer = surfacePeriodic(cf.surface)
 	m.alongV, m.castable = castAxis(cf.surface, m.uPer, m.vPer)
-	if !m.castable {
-		return m
-	}
 	for _, loop := range cf.loops {
 		m.rings = append(m.rings, loopToUV(cf.surface, loop, m.uPer, m.vPer))
+	}
+	if !m.castable {
+		m.alongV = true // no axis reaches an exterior, but a ring that CLOSES is left by either ray
+		m.ringsBound = ringsBoundOneRegion(m.rings, m.uPer, m.vPer)
+		m.complement = cf.outerless
 	}
 	return m
 }
 
 // contains reports whether p (on the face's surface) lies within the trimmed region, from the
 // developed rings. It is pointInTrimUV's decision with the projection already made.
+//
+// ★ ON A CLOSED SURFACE IT DOES NOT READ THE LOOPS' HANDEDNESS WHERE THE RINGS ALREADY BOUND A REGION
+// (Oblikovati/Oblikovati#3477). A sphere or a torus has no parameter axis reaching an exterior, so the
+// rings' interior and its complement are both admissible faces, and the classifier used to pick between
+// them from the loop's traversal direction ([pointInCurvedFace]). That direction is NOT a carrier this
+// kernel maintains — kernel/ops/analytic_face_region.go says so of the same corpus ("a producer may wind
+// a closed-surface face's loops either way … every torus band in the corpus comes out clockwise whichever
+// side it covers") — and an OCCT-parity fillet body (corpus simple/B3) and a blend body (bfuseblend/A6)
+// both carry torus and sphere PATCHES wound clockwise while the face is the rings' INTERIOR. Every such
+// face claimed the far side of its own surface, so ops.SelfIntersections found "crossings" at points
+// outside both faces' range boxes and refused a genuine watertight solid.
+//
+// Rings that CLOSE in the covering plane and NEST bound exactly one region there, and that region is the
+// face — the same orientation-free even-odd reading every open domain already takes here, with
+// [curvedFace.outerless] (a topological datum topo carries on the loop, recorded by the builder that
+// wound it) naming the one case where the face is their complement. A ring system that bounds no such
+// region — a ring wrapping a whole period, or two DISJOINT rings, where the face is genuinely either of
+// two two-sided regions (a sphere zone: the belt, or the two caps its rims equally bound) — has nothing
+// but the winding to go on, and keeps reading it.
 func (m *faceTrimUV) contains(p math.Point3) bool {
 	if len(m.face.loops) == 0 {
 		return true // a boundary-less closed face (a whole sphere/torus) contains every surface point
 	}
-	if !m.castable {
-		return pointInCurvedFace(m.face, p) // sphere / torus: no exterior axis; pole-free geodesic winding
+	if !m.castable && !m.ringsBound {
+		return pointInCurvedFace(m.face, p)
 	}
 	up, vp := m.face.surface.ParamAt(p)
-	return trimRingParity(m.rings, math.P2(up, vp), m.uPer, m.vPer, m.alongV)
+	return trimRingParity(m.rings, math.P2(up, vp), m.uPer, m.vPer, m.alongV) != m.complement
+}
+
+// ringsBoundOneRegion reports whether the developed rings enclose exactly one region of the covering
+// plane: every ring returns to its own start (rather than circling a periodic axis a full turn, which
+// leaves an open polyline enclosing nothing), and ONE of them contains all the rest (an outer ring with
+// its holes). Two disjoint rings fail it — they bound two regions and their complement equally, and only
+// the winding says which the face is.
+func ringsBoundOneRegion(rings [][]math.Point2, uPer, vPer bool) bool {
+	for _, ring := range rings {
+		if len(ring) < 3 {
+			return false
+		}
+		if uPer && ringMissingTurns(ring, false) != 0 {
+			return false
+		}
+		if vPer && ringMissingTurns(ring, true) != 0 {
+			return false
+		}
+	}
+	return len(rings) > 0 && ringsHaveOneContainer(rings)
+}
+
+// ringsHaveOneContainer reports whether some ring holds every other ring inside it.
+func ringsHaveOneContainer(rings [][]math.Point2) bool {
+	for i, outer := range rings {
+		if ringHoldsTheRest(rings, i, outer) {
+			return true
+		}
+	}
+	return false
+}
+
+// ringHoldsTheRest reports whether ring outer contains one vertex of every other ring — enough, since
+// trim rings of one face do not cross.
+func ringHoldsTheRest(rings [][]math.Point2, skip int, outer []math.Point2) bool {
+	for j, ring := range rings {
+		if j != skip && !pointInPolygon2D(ring[0], outer) {
+			return false
+		}
+	}
+	return true
 }
 
 // trimRingParity is the even-odd verdict over already-developed loop rings — the one place the
