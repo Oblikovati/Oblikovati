@@ -114,13 +114,23 @@ func (s *faceScan) trimProbes(i int) []math.Point3 {
 // interpenetrate returns a witness point where faces i and j pass through each other, on the exact
 // B-rep. Their range boxes already overlap (the caller's broad phase); a pair trimmed out of one
 // surface sheet takes the trim-overlap arm, every other pair the surface-surface intersection arm, and
-// each arm then has to separate a crossing from a TOUCH — a STRICTLY interior witness plus
-// facesOverlapMaterial here, an overlap REGION rather than a graze there. The shared topology is
-// collected only once a crossing curve exists to test against it, because that walk is O(E) too.
+// each arm then has to separate a crossing from a TOUCH — facesOverlapMaterial plus a STRICTLY interior
+// witness here, an overlap REGION rather than a graze there.
+//
+// ORDER IS PERFORMANCE, NOT VERDICT. facesOverlapMaterial is a NECESSARY condition, so asking it before
+// geom.SurfaceIntersect cannot change any answer — but it costs a handful of point projections, while
+// the intersector MARCHES for every pair with no closed form. Two B-spline faces put the marcher's
+// corrector inside BSplineSurface.ParamAt for thousands of steps; on the OCCT blend-parity corpus, a
+// scan that marched every box-overlapping pair before asking whether the faces reach each other at all
+// did not finish in 45 minutes. The shared topology is collected last, for the same reason: that walk
+// is O(E).
 func (s *faceScan) interpenetrate(i, j int, res geom.Resolution) (math.Point3, bool) {
 	fa, fb := s.faces[i], s.faces[j]
 	if sheetHoldsBoth(fa.Geometry(), fb.Geometry(), s.trimProbes(i), s.trimProbes(j), res) {
 		return coincidentTrimOverlap(fa, fb, sharedFaceContact(fa, fb), res)
+	}
+	if !facesOverlapMaterial(fa, fb, s.trimProbes(i), s.trimProbes(j), res.Weld()) {
+		return math.Point3{}, false
 	}
 	curves, handled := geom.SurfaceIntersect(fa.Geometry(), fb.Geometry(), s.boxes[i].Union(s.boxes[j]), res)
 	if !handled {
@@ -129,11 +139,7 @@ func (s *faceScan) interpenetrate(i, j int, res geom.Resolution) (math.Point3, b
 	if len(curves) == 0 {
 		return math.Point3{}, false // the surfaces are known not to cross
 	}
-	p, hit := crossingWitness(curves, boxOverlap(s.boxes[i], s.boxes[j]), fa, fb, sharedFaceContact(fa, fb), res)
-	if !hit || !facesOverlapMaterial(fa, fb, s.trimProbes(i), s.trimProbes(j), res.Weld()) {
-		return math.Point3{}, false
-	}
-	return p, true
+	return crossingWitness(curves, boxOverlap(s.boxes[i], s.boxes[j]), fa, fb, sharedFaceContact(fa, fb), res)
 }
 
 // declineUnresolvedSurfacePair is the ONE named decline of this detector, so the skip is on the record
