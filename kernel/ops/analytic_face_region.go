@@ -377,6 +377,15 @@ func uvDepthOf(polys [][]arcSample, u, v float64) float64 {
 
 // loopUVPolygons flattens each loop's edge samples into one closed uv polyline per loop, INDEX-
 // ALIGNED with loops: a degenerate loop keeps its (short) slot so a caller can address loop i.
+//
+// Every loop is unwrapped from its OWN first sample, so two loops of one face can come back on
+// different branches of the covering space — a cylinder wall's outer loop at u ∈ [−2π, 0] with its
+// window holes at [0, 2π). Nothing is wrong with either, but a nesting test comparing them across
+// branches reads a hole as OUTSIDE the loop that contains it, and the hole is then ADDED to the
+// region: a drilled cylinder wall measured 240.81 where 211.57 is right, and the body's volume came
+// out 9.8% over (Oblikovati/Oblikovati#3489). Each polygon is shifted onto the first one's branch as
+// a WHOLE, by whole periods, which preserves its shape — folding each point separately would cut any
+// polygon that straddles the fold.
 func loopUVPolygons(loops []faceLoop) [][]arcSample {
 	out := make([][]arcSample, len(loops))
 	for i, fl := range loops {
@@ -386,7 +395,50 @@ func loopUVPolygons(loops []faceLoop) [][]arcSample {
 		}
 		out[i] = poly
 	}
-	return out
+	return alignPolygonBranches(out, loopsPeriod(loops, bandAxis{}), loopsPeriod(loops, bandAxis{alongV: true}))
+}
+
+// alignPolygonBranches shifts every polygon onto the first one's branch in each periodic parameter.
+func alignPolygonBranches(polys [][]arcSample, uPeriod, vPeriod float64) [][]arcSample {
+	if len(polys) < 2 {
+		return polys
+	}
+	refU, refV := polygonMean(polys[0])
+	for i := 1; i < len(polys); i++ {
+		meanU, meanV := polygonMean(polys[i])
+		du := wholePeriodOffset(refU-meanU, uPeriod)
+		dv := wholePeriodOffset(refV-meanV, vPeriod)
+		if du == 0 && dv == 0 {
+			continue
+		}
+		shifted := make([]arcSample, len(polys[i]))
+		for j, sp := range polys[i] {
+			shifted[j] = arcSample{t: sp.t, u: sp.u + du, v: sp.v + dv}
+		}
+		polys[i] = shifted
+	}
+	return polys
+}
+
+// polygonMean is the polygon's mean position, the anchor its branch is judged by.
+func polygonMean(poly []arcSample) (u, v float64) {
+	if len(poly) == 0 {
+		return 0, 0
+	}
+	for _, sp := range poly {
+		u, v = u+sp.u, v+sp.v
+	}
+	return u / float64(len(poly)), v / float64(len(poly))
+}
+
+// wholePeriodOffset is the whole number of periods that best closes a gap, or zero when the
+// parameter does not wrap or the gap is already under half a period. (Distinct from
+// holed_cylinder_wall.go's branchShift, which brings one angle INTO a given range.)
+func wholePeriodOffset(gap, period float64) float64 {
+	if period <= 0 {
+		return 0
+	}
+	return period * stdmath.Round(gap/period)
 }
 
 // uvPolygonBounds is the parameter-space box of every polygon.
