@@ -40,8 +40,13 @@ func drillWithPlacement(t *testing.T, p HolePlacement) (*PartFeature, []*topo.Bo
 	return hole, fs.Result()
 }
 
-// blindBoreVolume is what one Ø2 × 1-deep faceted bore removes.
-func blindBoreVolume() float64 { return holeCylinderArea(1) * 1 }
+// facetedBlindBoreVolume is what one Ø2 × 1-deep bore removes when the exact blind drill declines
+// it and the faceted drillTool prism does the cut instead — the case for a bore that would clip a
+// side face (the corner bores below stand 1 cm in from the block's edges, so a Ø2 bore is tangent
+// to them). exactBlindBoreVolume is the same bore cut as a TRUE cylinder, πr²·depth; mass
+// properties integrate that analytic face directly (M48/C3 #3453).
+func facetedBlindBoreVolume() float64 { return drillToolPrismArea(1) * 1 }
+func exactBlindBoreVolume() float64   { return stdmath.Pi * 1 * 1 * 1 }
 
 // TestSketchPlacementDrillsOneHolePerCentrePoint is the placement that changes the shape of the
 // feature: ONE hole feature, four bores. Before this a four-hole pattern had to be four features
@@ -55,7 +60,7 @@ func TestSketchPlacementDrillsOneHolePerCentrePoint(t *testing.T) {
 	if !hole.Health().OK() {
 		t.Fatalf("sketch-placed hole sick: %+v", hole.Health())
 	}
-	want := 32 - 4*blindBoreVolume()
+	want := 32 - 4*facetedBlindBoreVolume()
 	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("volume = %g, want %g (block − FOUR Ø2×1 bores)", got, want)
 	}
@@ -74,7 +79,7 @@ func TestSketchPlacementIgnoresPlainPoints(t *testing.T) {
 	if !hole.Health().OK() {
 		t.Fatalf("sketch-placed hole sick: %+v", hole.Health())
 	}
-	want := 32 - blindBoreVolume()
+	want := 32 - exactBlindBoreVolume() // the single centre bore is clear of the sides: a true cylinder
 	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("volume = %g, want %g (ONE bore — the line's endpoints are not drill positions)", got, want)
 	}
