@@ -5,8 +5,6 @@ package brep
 import (
 	"testing"
 
-	stdmath "math"
-
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -72,15 +70,53 @@ func TestPointInCurvedFaceHuggingBoundary(t *testing.T) {
 	}
 }
 
-// TestEdgeWindingAngleRefinesLargeSubtend covers the adaptive split: an arc that subtends a large angle
-// from a nearby point is integrated to the true turning, not under-counted as one coarse step. A
-// half-circle seen from its own centre subtends exactly π; one bisected chord step would read far less.
-func TestEdgeWindingAngleRefinesLargeSubtend(t *testing.T) {
+// TestInwardAtPointsIntoTheKeptRegion pins the side convention the whole classifier rests on: a loop is
+// walked with its region on the LEFT seen from outside the surface, so n × T points into it. The equator
+// walked CLOCKWISE about +Z (as [lowerHemisphereCap] walks it) keeps the SOUTHERN cap, so its inward
+// direction at every station has a negative Z component.
+func TestInwardAtPointsIntoTheKeptRegion(t *testing.T) {
+	cap := lowerHemisphereCap(t, 5)
+	le := cap.loops[0].edges[0]
+	for _, u := range []float64{0, 0.17, 0.5, 0.83} {
+		inward, ok := inwardAt(cap.surface, le, le.t0+(le.t1-le.t0)*u)
+		if !ok {
+			t.Fatalf("no inward direction at u=%g of the equator", u)
+		}
+		if inward.Z >= 0 {
+			t.Errorf("inward at u=%g is %v, want a southward (negative Z) direction", u, inward)
+		}
+	}
+}
+
+// TestClosestParamOnEdgeFindsTheGlobalMinimum: the golden-section refinement must land on the true
+// closest point of a full circle, not on whichever coarse scan station happened to be nearest. A point
+// out along +X sees the circle's +X station as its closest, whatever parameter that station carries.
+func TestClosestParamOnEdgeFindsTheGlobalMinimum(t *testing.T) {
 	circle, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 4)
-	le := loopEdge{curve: circle, t0: 0, t1: 0.5} // the upper half-circle (t ∈ [0, 0.5] of a full turn)
-	normal := math.V3(0, 0, 1)
-	got := edgeWindingAngle(le, math.P3(0, 0, 0), normal, le.t0, le.t1, le.curve.PointAt(le.t0), le.curve.PointAt(le.t1), 0)
-	if d := got - stdmath.Pi; d < -1e-6 || d > 1e-6 {
-		t.Errorf("half-circle winding from the centre = %v, want pi (adaptive refinement under-integrated)", got)
+	le := loopEdge{curve: circle, t0: 0, t1: 1}
+	p := math.P3(9, 0, 0)
+	got := le.curve.PointAt(le.t0 + (le.t1-le.t0)*closestParamOnEdge(le, p))
+	if d := float64(got.DistanceTo(math.P3(4, 0, 0))); d > 1e-6 {
+		t.Errorf("closest point on the circle to %v is %v, want (4,0,0) (off by %g)", p, got, d)
+	}
+}
+
+// TestPointInCurvedFaceAcrossALoopCorner: a query whose closest boundary point is the VERTEX two edges
+// share is classified from the blended (pseudonormal) inward direction of both. Splitting the equator in
+// two must not change what the lower cap claims, above all right at the split.
+func TestPointInCurvedFaceAcrossALoopCorner(t *testing.T) {
+	cap := lowerHemisphereCap(t, 5)
+	circle := cap.loops[0].edges[0].curve
+	cap.loops = []curvedLoop{{edges: []loopEdge{{curve: circle, t0: 1, t1: 0.5}, {curve: circle, t0: 0.5, t1: 0}}}}
+	sphere := cap.surface.(geom.Sphere)
+	corner, _ := sphere.ParamAt(circle.PointAt(0.5)) // the longitude of the split vertex
+	for _, c := range []struct {
+		v    float64
+		want bool
+	}{{-0.05, true}, {0.05, false}, {-1.4, true}, {1.4, false}} {
+		p := sphere.PointAt(corner, c.v) // on the vertex's own meridian, so the closest foot IS the corner
+		if got := pointInCurvedFace(cap, p); got != c.want {
+			t.Errorf("the split-equator lower cap claims %v (v=%g) = %v, want %v", p, c.v, got, c.want)
+		}
 	}
 }
