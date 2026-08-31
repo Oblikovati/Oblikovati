@@ -56,12 +56,26 @@ func SelfIntersections(b *topo.Body, _ Quality) []SelfIntersection {
 	scan := newFaceScan(b.Faces())
 	var out []SelfIntersection
 	for i := range scan.faces {
-		for j := i + 1; j < len(scan.faces); j++ {
-			if p, hit := scan.interpenetrate(i, j, res); hit {
-				out = append(out, SelfIntersection{FaceA: scan.faces[i], FaceB: scan.faces[j], Witness: p})
-			}
-		}
+		out = append(out, scan.crossingsWith(i, res)...)
 	}
+	return out
+}
+
+// crossingsWith reports face i's interpenetrations with the later faces its range box reaches. The
+// candidates come from the shared box tree rather than an all-pairs walk: a body dense enough to need
+// this check at all is dense in FACES (a fine-pitch coil ships 18434 of them, #2080), and 170 million
+// box tests cost more than the exact geometry that follows them.
+func (s *faceScan) crossingsWith(i int, res geom.Resolution) []SelfIntersection {
+	var out []SelfIntersection
+	s.tree.Query(s.boxes[i], func(j int) bool {
+		if j <= i {
+			return false // each pair is tested once, from its lower-indexed face
+		}
+		if p, hit := s.interpenetrate(i, j, res); hit {
+			out = append(out, SelfIntersection{FaceA: s.faces[i], FaceB: s.faces[j], Witness: p})
+		}
+		return false
+	})
 	return out
 }
 
@@ -69,20 +83,23 @@ func SelfIntersections(b *topo.Body, _ Quality) []SelfIntersection {
 // face's range box, and (lazily) its trim probes.
 //
 // It is not a micro-optimization. topo.Face.RangeBox walks the face's edges and evaluates their
-// curves, so recomputing it inside the O(F²) loop is O(F²·E) — measured, that alone took a fine-pitch
-// coil's turn-clearance check (#2080, a body with hundreds of swept faces) past twenty minutes.
+// curves, so recomputing it inside the pair loop is O(F²·E) — measured, that alone took a fine-pitch
+// coil's turn-clearance check (#2080, a body of 18434 swept faces) past twenty minutes. The boxes then
+// index a geom.BoxTree, the same broad phase the deleted triangle scan used one level down.
 type faceScan struct {
 	faces  []*topo.Face
 	boxes  []math.Box
+	tree   *geom.BoxTree   // broad phase over boxes, so the scan is not all-pairs
 	probes [][]math.Point3 // nil per face until a same-sheet test needs it
 }
 
-// newFaceScan captures the faces and their range boxes once.
+// newFaceScan captures the faces, their range boxes and the broad-phase index over those boxes.
 func newFaceScan(faces []*topo.Face) *faceScan {
 	s := &faceScan{faces: faces, boxes: make([]math.Box, len(faces)), probes: make([][]math.Point3, len(faces))}
 	for i, f := range faces {
 		s.boxes[i] = f.RangeBox()
 	}
+	s.tree = geom.NewBoxTree(s.boxes)
 	return s
 }
 
@@ -95,13 +112,10 @@ func (s *faceScan) trimProbes(i int) []math.Point3 {
 }
 
 // interpenetrate returns a witness point where faces i and j pass through each other, on the exact
-// B-rep. Range boxes prune the pair first; a pair trimmed out of one surface sheet takes the
-// trim-overlap arm; every other pair takes the surface-surface intersection arm. The shared topology
+// B-rep. Their range boxes already overlap (the caller's broad phase); a pair trimmed out of one
+// surface sheet takes the trim-overlap arm; every other pair takes the surface-surface intersection arm. The shared topology
 // is collected only once a crossing curve exists to test against it, because that walk is O(E) too.
 func (s *faceScan) interpenetrate(i, j int, res geom.Resolution) (math.Point3, bool) {
-	if !s.boxes[i].Intersects(s.boxes[j]) {
-		return math.Point3{}, false
-	}
 	fa, fb := s.faces[i], s.faces[j]
 	if sheetHoldsBoth(fa.Geometry(), fb.Geometry(), s.trimProbes(i), s.trimProbes(j), res) {
 		return coincidentTrimOverlap(fa, fb, sharedFaceContact(fa, fb), res)

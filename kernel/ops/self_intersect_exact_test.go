@@ -76,6 +76,40 @@ func TestFaceScanCachesBoxesAndProbes(t *testing.T) {
 	}
 }
 
+// TestFaceScanBroadPhaseMatchesAnAllPairsWalk pins that the box tree is a PURE broad phase: it must
+// yield exactly the pairs whose range boxes overlap — no more (which would cost exact geometry) and no
+// fewer (which would hide an interpenetration). Falsify by querying a shrunken box: the counts diverge.
+func TestFaceScanBroadPhaseMatchesAnAllPairsWalk(t *testing.T) {
+	merged := topo.MergeBodies(topo.NewLineage(topo.Tok("bp", "body", 0)), true,
+		tetra(1, math.V3(0, 0, 0)), tetra(1, math.V3(0.2, 0.2, 0.2)), tetra(1, math.V3(9, 0, 0)))
+	scan := newFaceScan(merged.Faces())
+	got, want := map[[2]int]bool{}, map[[2]int]bool{}
+	for i := range scan.faces {
+		scan.tree.Query(scan.boxes[i], func(j int) bool {
+			if j > i {
+				got[[2]int{i, j}] = true
+			}
+			return false
+		})
+		for j := i + 1; j < len(scan.boxes); j++ {
+			if scan.boxes[i].Intersects(scan.boxes[j]) {
+				want[[2]int{i, j}] = true
+			}
+		}
+	}
+	if len(want) == 0 {
+		t.Fatal("the fixture produced no overlapping face pairs, so the comparison proves nothing")
+	}
+	for k := range want {
+		if !got[k] {
+			t.Errorf("the broad phase missed overlapping pair %v", k)
+		}
+	}
+	if len(got) != len(want) {
+		t.Errorf("the broad phase yielded %d pairs, an all-pairs walk yields %d", len(got), len(want))
+	}
+}
+
 // TestUnresolvedSurfacePairDeclinesRatherThanReports pins the DIRECTION of the detector's one named
 // decline, which is the opposite of boundary_cross.go's for the same geom.SurfaceIntersect verdict: a
 // validity query that manufactured a defect on every pair the intersector cannot resolve would condemn
