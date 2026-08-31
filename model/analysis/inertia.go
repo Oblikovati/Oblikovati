@@ -19,8 +19,8 @@ const cm2ToMm2 = 100.0
 func applyInertia(mp *MassProperties, bodies []*topo.Body, q ops.Quality, density float64, centroidCm [3]float64) {
 	var total sym3
 	for _, b := range bodies {
-		gp := bodyGeometryProperties(b, q)
-		it := bodyInertia(b, q) // about the body's own centroid, per unit density
+		gp := ops.BodyGeometryProperties(b, q)
+		it := ops.BodyInertia(b, q) // about the body's own centroid, per unit density
 		body := sym3{it.Ixx, it.Iyy, it.Izz, it.Ixy, it.Iyz, it.Izx}
 		d := [3]float64{centroidCm[0] - float64(gp.Centroid.X), centroidCm[1] - float64(gp.Centroid.Y), centroidCm[2] - float64(gp.Centroid.Z)}
 		total = total.add(body).add(parallelAxis(gp.Volume, d))

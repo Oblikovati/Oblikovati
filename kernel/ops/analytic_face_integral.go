@@ -118,12 +118,9 @@ func gaussCellTerms[T quadTerms[T]](eval func(float64) T, a, b float64) T {
 // integrated ALONG ITS TRUE CURVE (Gauss in the edge parameter, not chord-wise), so a circular
 // edge on a planar cap contributes exactly rather than as an inscribed polygon.
 //
-// Each loop is oriented for the positive-measure region by its OWN role and shoelace — an outer
-// loop CCW (adds), a hole loop CW (subtracts) — using the IsOuter flag rather than the winding,
-// because a boolean can leave a hole wound the SAME way as its outer (then a single outer-derived
-// sign would ADD the hole instead of subtracting it, over-counting a drilled/annular body). The
-// result is ∫∫_D g over the true region on the +normal side; the caller then applies (or, for the
-// unsigned surface moments, omits) the outward sense so a hole/inner wall contributes correctly.
+// Each loop is oriented for the positive-measure region by loopRegionSigns, so the result is
+// ∫∫_D g over the true region on the +normal side; the caller then applies (or, for the unsigned
+// surface moments, omits) the outward sense so a hole/inner wall contributes correctly.
 func greenTerms[T quadTerms[T]](f *topo.Face, at pointEval[T]) (T, bool) {
 	var zero T
 	s := f.Geometry()
@@ -132,33 +129,35 @@ func greenTerms[T quadTerms[T]](f *topo.Face, at pointEval[T]) (T, bool) {
 		return zero, false
 	}
 	u0 := minLoopU(loops)
-	var total T
-	for _, fl := range loops {
+	signs := loopRegionSigns(loops)
+	var enclosed T
+	for i, fl := range loops {
 		var lt T
 		for _, le := range fl.edges {
 			lt = lt.add(edgeGreen(s, le, u0, at))
 		}
-		total = total.add(lt.scale(loopSign(fl)))
+		enclosed = enclosed.add(lt.scale(signs[i]))
 	}
-	return total, true
+	return faceSideOfRegion(f, loops, enclosed, at)
 }
 
-// loopSign orients one loop's boundary integral for the positive-measure region: an outer loop is
-// made CCW (its enclosed area adds), a hole loop CW (its enclosed area subtracts). ∮_stored equals
-// +∫∫_enclosed for a CCW (positive-shoelace) loop and −∫∫_enclosed for a CW one, so the multiplier
-// is +1/−1 accordingly per role.
-func loopSign(fl faceLoop) float64 {
-	ccw := loopSignedArea(fl) >= 0
-	if fl.outer {
-		if ccw {
-			return 1
-		}
-		return -1
+// faceSideOfRegion returns the face's own terms given the terms of the region its loops ENCLOSE.
+// The two differ only on a closed surface, where the face may be the complement of that region (see
+// analytic_face_region.go); the complement's terms are the whole surface's minus the enclosed
+// region's, never the enclosed region's negation.
+func faceSideOfRegion[T quadTerms[T]](f *topo.Face, loops []faceLoop, enclosed T, at pointEval[T]) (T, bool) {
+	full, closed := fullDomainTerms(f.Geometry(), at)
+	if !closed {
+		return enclosed, true // an OPEN surface's complement is unbounded: the bounded side is the face
 	}
-	if ccw {
-		return -1
+	isFace, ok := regionIsFace(f, loops)
+	if !ok {
+		return enclosed, false
 	}
-	return 1
+	if isFace {
+		return enclosed, true
+	}
+	return full.add(enclosed.scale(-1)), true
 }
 
 // arcSample is one point on an edge: its curve parameter t and the face-surface (u, v) it maps
@@ -174,10 +173,11 @@ type loopEdge struct {
 	vPeriod float64
 }
 
-// faceLoop is a face boundary loop reconstructed in parameter space.
+// faceLoop is a face boundary loop reconstructed in parameter space. It carries no outer/hole
+// flag: loopRegionSigns derives the role from the loops' own nesting, because topo.Loop.IsOuter is
+// not well defined on a closed surface.
 type faceLoop struct {
 	edges []loopEdge
-	outer bool
 }
 
 // buildFaceLoops reconstructs every loop of a bounded face as continuous-in-uv edge sequences.
@@ -205,7 +205,7 @@ func buildFaceLoops(s geom.Surface, f *topo.Face) ([]faceLoop, bool) {
 // (a trimmed periodic face whose loop wraps the seam an unequal number of times); the caller then
 // falls back to the mesh path for the whole body rather than return a wrong region.
 func buildLoopEdges(s geom.Surface, l *topo.Loop, uPeriod, vPeriod float64) (faceLoop, bool) {
-	fl := faceLoop{outer: l.IsOuter()}
+	var fl faceLoop
 	pu, pv, have := 0.0, 0.0, false
 	for _, use := range l.EdgeUses() {
 		le, ok := sampleLoopEdge(s, use, uPeriod, vPeriod, &pu, &pv, &have)

@@ -73,7 +73,7 @@ func MassPropertiesOf(bodies []*topo.Body, densityGCm3 float64, accuracy types.M
 	q := qualityFor(accuracy)
 	var volCm3, areaCm2, cx, cy, cz float64
 	for _, b := range bodies {
-		p := bodyGeometryProperties(b, q)
+		p := ops.BodyGeometryProperties(b, q)
 		volCm3 += p.Volume
 		areaCm2 += p.Area
 		cx += float64(p.Centroid.X) * p.Volume
@@ -96,20 +96,3 @@ func MassPropertiesOf(bodies []*topo.Body, densityGCm3 float64, accuracy types.M
 	return mp
 }
 
-// bodyGeometryProperties integrates a body's volume/area/centroid over its analytic B-rep, falling
-// back to the tessellated path at quality q for a body the analytic path cannot yet cover (#3453).
-func bodyGeometryProperties(b *topo.Body, q ops.Quality) ops.GeometryProperties {
-	if p, ok := ops.AnalyticGeometryProperties(b); ok {
-		return p
-	}
-	return ops.BodyGeometryProperties(b, q)
-}
-
-// bodyInertia integrates a body's inertia tensor over its analytic B-rep, falling back to the
-// tessellated path at quality q for a body the analytic path cannot yet cover (#3452).
-func bodyInertia(b *topo.Body, q ops.Quality) ops.InertiaTensor {
-	if it, ok := ops.AnalyticInertia(b); ok {
-		return it
-	}
-	return ops.BodyInertia(b, q)
-}

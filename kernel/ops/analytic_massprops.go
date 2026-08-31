@@ -191,6 +191,28 @@ func AnalyticFaceArea(f *topo.Face) (float64, bool) {
 	return t.area, true
 }
 
+// AnalyticShellVolume integrates the SIGNED volume the shell bounds over its analytic faces
+// (M48/C3 #3482). The sign is the shell's material orientation and comes out of the divergence
+// theorem for free: an outer shell's material-outward normals point away from the region it
+// encloses (positive flux), a void shell's point into the cavity (negative). ok is false when a
+// face is not analytically integrable, so the caller falls back to the mesh sum as one unit.
+//
+// Example: v, ok := ops.AnalyticShellVolume(cavitySkin) // ok ⇒ v < 0
+func AnalyticShellVolume(s *topo.Shell) (float64, bool) {
+	if s == nil {
+		return 0, false
+	}
+	var total massTerms
+	for _, f := range s.Faces() {
+		ft, ok := faceTerms(f)
+		if !ok {
+			return 0, false
+		}
+		total = total.add(ft)
+	}
+	return total.vol, true
+}
+
 // analyticBodyTerms sums every face's divergence-theorem contribution. A non-solid body has no
 // enclosed volume to integrate; any face the analytic path cannot cover forces a whole-body
 // fallback so the result never mixes analytic and mesh contributions.

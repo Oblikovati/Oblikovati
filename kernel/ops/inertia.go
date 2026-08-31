@@ -15,12 +15,21 @@ type InertiaTensor struct {
 	Ixy, Iyz, Izx float64
 }
 
-// BodyInertia computes the body's inertia tensor about its centroid (per unit density) from its
-// tessellation at quality q. It uses the signed-tetrahedron covariance: each outward-wound triangle
-// (a,b,c) forms the tetra (0,a,b,c), whose second-moment (covariance) integral is the canonical
-// tetra covariance carried through the affine map [a b c]; the signed sum gives the body's
-// covariance about the origin, which is reduced to the inertia tensor and shifted to the centroid.
+// BodyInertia computes the body's inertia tensor about its centroid (per unit density) by
+// integrating its ANALYTIC B-rep (AnalyticInertia, M48/C3 #3452), so the tensor a caller reads
+// through the kernel entry point is the same exact one model/analysis reports.
+//
+// q parameterises only the FALLBACK for a body the analytic path declines, which uses the
+// signed-tetrahedron covariance over the tessellation: each outward-wound triangle (a,b,c) forms
+// the tetra (0,a,b,c), whose second-moment (covariance) integral is the canonical tetra covariance
+// carried through the affine map [a b c]; the signed sum gives the body's covariance about the
+// origin, which is reduced to the inertia tensor and shifted to the centroid.
+//
+// Example: it := ops.BodyInertia(cyl, ops.PropertyQuality()) // it.Izz == ½·V·r² about the axis
 func BodyInertia(b *topo.Body, q Quality) InertiaTensor {
+	if it, ok := AnalyticInertia(b); ok {
+		return it
+	}
 	mesh, _ := TessellateBody(b, q)
 	return meshInertia(mesh)
 }

@@ -17,18 +17,30 @@ type GeometryProperties struct {
 	Centroid math.Point3
 }
 
-// BodyGeometryProperties computes the volume, area, and centroid of a body from its
-// tessellation at quality q. Volume and centroid use the divergence-theorem
-// signed-tetrahedron sum over the triangulated surface (exact for planar faces; it
-// converges with q for curved ones); area sums the triangle areas. A non-solid or empty
-// body yields zero volume.
+// BodyGeometryProperties computes the volume, area, and centroid of a body by integrating its
+// ANALYTIC B-rep face by face (AnalyticGeometryProperties, M48/C3 #3453). This result gates the
+// boolean acceptance bracket and the identical-body signature, and "an oracle that gates a result
+// must be more exact than the result it gates" — a tessellated integral is not: an inscribed N-gon
+// under-measures every curved face by a systematic −π²/(3N²) (Oblikovati/Oblikovati#3485).
+//
+// q parameterises only the FALLBACK for a body the analytic path declines — a non-solid or empty
+// body, or a face whose uv boundary cannot be reconstructed — which integrates the tessellation at
+// that quality. A non-solid or empty body yields zero volume either way.
+//
+// Example: gp := ops.BodyGeometryProperties(cyl, ops.PropertyQuality()) // gp.Volume == πr²h
 func BodyGeometryProperties(b *topo.Body, q Quality) GeometryProperties {
+	if p, ok := AnalyticGeometryProperties(b); ok {
+		return p
+	}
 	mesh, _ := TessellateBody(b, q)
 	return meshGeometryProperties(mesh)
 }
 
-// meshGeometryProperties is the pure computation over a triangle mesh, factored out so it
-// is testable without a body. Each triangle (a,b,c) forms a tetrahedron with the origin;
+// meshGeometryProperties is the tessellated integral: no longer the kernel's mass-properties
+// oracle (M48/C3 #3454), but the named fallback BodyGeometryProperties takes for a body the
+// analytic path declines, and the display statistic for a mesh that has no B-rep behind it at all
+// (an imported soup). It is a pure computation over a triangle mesh, factored out so it is testable
+// without a body. Each triangle (a,b,c) forms a tetrahedron with the origin;
 // the signed tetra volumes sum to the enclosed volume regardless of where the origin sits
 // (the parts outside the body cancel), and the volume-weighted tetra centroids give the
 // body centroid. The triangles are first oriented consistently outward TOPOLOGICALLY (shared-

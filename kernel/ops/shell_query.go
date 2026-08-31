@@ -49,8 +49,16 @@ func shellMesh(s *topo.Shell, q Quality) *Mesh {
 // (material-enclosing) shell, NEGATIVE for an inner void shell, whose
 // material-outward face normals point into the cavity.
 //
+// It integrates the shell's ANALYTIC faces (AnalyticShellVolume, M48/C3 #3482) — the void-ness of
+// a shell is a topological decision and must not be read off a merged face mesh, whose chord
+// deficit shrinks a cavity skin's magnitude and, on a thin void, can reach zero. q parameterises
+// only the fallback for a shell whose faces the analytic path declines.
+//
 // Example: if ops.ShellSignedVolume(sh, ops.DefaultQuality()) < 0 { /* cavity skin */ }
 func ShellSignedVolume(s *topo.Shell, q Quality) float64 {
+	if v, ok := AnalyticShellVolume(s); ok {
+		return v
+	}
 	mesh := shellMesh(s, q)
 	vol := 0.0
 	for t := 0; t+2 < len(mesh.Indices); t += 3 {
