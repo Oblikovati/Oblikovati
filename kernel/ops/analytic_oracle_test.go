@@ -142,3 +142,69 @@ func TestFaceInteriorPointLandsInsideEveryTrim(t *testing.T) {
 		}
 	}
 }
+
+// TestDrilledPlateIntegratesAnalytically is the periodic-band regression (#3453): a plate with a
+// hole in it is the most ordinary body in CAD, and its bore wall is a band whose loop crosses the
+// parameter seam. Green's u-form cannot close such a loop, so the whole body used to fall back to
+// the tessellation; the conjugate v-form integrates it exactly.
+func TestDrilledPlateIntegratesAnalytically(t *testing.T) {
+	plate, err := brep.SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	drill, err := brep.SolidCylinder(math.P3(0, 0, -1), math.V3(0, 0, 1), 2, 4)
+	if err != nil {
+		t.Fatalf("SolidCylinder: %v", err)
+	}
+	res, err := Boolean(Cut, plate, drill)
+	if err != nil {
+		t.Fatalf("Boolean: %v", err)
+	}
+	gp, ok := AnalyticGeometryProperties(res)
+	if !ok {
+		t.Fatal("the drilled plate declined analytic integration; its bore wall is a periodic band")
+	}
+	want := 10*10*2 - stdmath.Pi*2*2*2
+	if analyticRelDiff(gp.Volume, want) > analyticQuadRelTol {
+		t.Errorf("drilled plate volume = %.9f, want %.9f", gp.Volume, want)
+	}
+}
+
+// TestVectorAreaClosureRejectsAResidual: the outward vector area of a closed surface is exactly
+// zero, so a residual means some face was integrated over the wrong region or with a flipped
+// orientation. The check must reject that rather than let a wrong number through.
+func TestVectorAreaClosureRejectsAResidual(t *testing.T) {
+	closed := massTerms{area: 100}
+	if !vectorAreaCloses(closed) {
+		t.Error("a body whose vector area vanishes must pass the closure check")
+	}
+	if vectorAreaCloses(massTerms{area: 100, ax: 1}) {
+		t.Error("a body with a 1%% vector-area residual must be declined, not integrated")
+	}
+	if vectorAreaCloses(massTerms{}) {
+		t.Error("a body with no area at all cannot be certified closed")
+	}
+}
+
+// TestGreenFormFollowsTheClosingAxis: the reduction is chosen by which parameter the loops return
+// to, and a loop that closes in neither is refused rather than integrated over a region that is not
+// bounded in the covering space.
+func TestGreenFormFollowsTheClosingAxis(t *testing.T) {
+	cases := []struct {
+		name     string
+		loop     faceLoop
+		wantDV   bool
+		wantOKay bool
+	}{
+		{"closes both ways", faceLoop{}, true, true},
+		{"wraps u, closes v", faceLoop{netU: 4 * stdmath.Pi}, false, true},
+		{"wraps v, closes u", faceLoop{netV: 2 * stdmath.Pi}, true, true},
+		{"wraps both", faceLoop{netU: 2 * stdmath.Pi, netV: 2 * stdmath.Pi}, false, false},
+	}
+	for _, c := range cases {
+		form, ok := greenFormFor([]faceLoop{c.loop})
+		if ok != c.wantOKay || (ok && form.dv != c.wantDV) {
+			t.Errorf("%s: form.dv=%v ok=%v, want dv=%v ok=%v", c.name, form.dv, ok, c.wantDV, c.wantOKay)
+		}
+	}
+}

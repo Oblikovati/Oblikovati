@@ -40,6 +40,10 @@ type quadTerms[T any] interface {
 	add(T) T
 	scale(float64) T
 	converged(T) bool
+	// measure is the component integrated from an UNSIGNED integrand (the surface area element).
+	// Its sign therefore reports the traversal's orientation, which is the only orientation signal
+	// available on a loop that wraps a seam and so has no meaningful shoelace.
+	measure() float64
 }
 
 // pointEval maps one surface parameter point to its integrand contribution — integrandsAt for the
@@ -138,16 +142,42 @@ func greenTerms[T quadTerms[T]](f *topo.Face, at pointEval[T]) (T, bool) {
 	if !ok {
 		return zero, false
 	}
-	signs := loopRegionSigns(loops)
-	var enclosed T
-	for i, fl := range loops {
-		var lt T
-		for _, le := range fl.edges {
-			lt = lt.add(edgeGreen(s, le, form, at))
-		}
-		enclosed = enclosed.add(lt.scale(signs[i]))
-	}
+	enclosed := enclosedTerms(s, loops, form, at)
 	return faceSideOfRegion(f, loops, enclosed, at)
+}
+
+// enclosedTerms sums the loops into the measure of the region they enclose, positively oriented.
+//
+// A loop that WRAPS a seam has no shoelace to read a role from — it is not a closed polygon in the
+// plane — so those faces take the loops with their stored orientation and normalise the total, which
+// is sound because a band's boundary loops are wound oppositely by construction. Everything else
+// takes the nesting rule, which is what a hole needs: a producer may wind a hole the same way as the
+// loop enclosing it, and a stored-orientation sum would then ADD it.
+func enclosedTerms[T quadTerms[T]](s geom.Surface, loops []faceLoop, form greenAxis, at pointEval[T]) T {
+	var total T
+	if loopsWrapASeam(loops) {
+		for _, fl := range loops {
+			total = total.add(loopGreen(s, fl, form, at))
+		}
+		if total.measure() < 0 {
+			return total.scale(-1)
+		}
+		return total
+	}
+	signs := loopRegionSigns(loops)
+	for i, fl := range loops {
+		total = total.add(loopGreen(s, fl, form, at).scale(signs[i]))
+	}
+	return total
+}
+
+// loopGreen is one loop's boundary integral in the chosen form.
+func loopGreen[T quadTerms[T]](s geom.Surface, fl faceLoop, form greenAxis, at pointEval[T]) T {
+	var acc T
+	for _, le := range fl.edges {
+		acc = acc.add(edgeGreen(s, le, form, at))
+	}
+	return acc
 }
 
 // faceSideOfRegion returns the face's own terms given the terms of the region its loops ENCLOSE.
