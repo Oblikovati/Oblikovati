@@ -151,7 +151,7 @@ func assemble(verts []math.Point3, faces []builtFace, prov []imprintSeg) (*topo.
 	for i, p := range verts {
 		tv[i] = bld.AddVertex(p, vlin[i])
 	}
-	useEdge := mintEntities(bld, verts, tv, radialSew(verts, faces, uses), prov)
+	useEdge := mintEntities(bld, verts, tv, radialSew(verts, uses, planarFaceDir(faces)), prov)
 	for fi, f := range faces {
 		specs := make([]topo.LoopSpec, len(f.rings))
 		for ri, r := range f.rings {

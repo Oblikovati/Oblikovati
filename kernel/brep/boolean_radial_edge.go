@@ -51,12 +51,19 @@ type sewPlan struct {
 	useGroup map[[3]int]int
 }
 
+// faceDirAt returns the outward material direction of a half-edge use at a point on the shared edge —
+// the surface normal of the using face there. It is the ONLY surface-dependent input to the radial sew;
+// injecting it (OCCT's GetFaceDir) is what makes the Weiler resolution surface-agnostic: a planar face
+// returns its constant normal, a curved face its normal evaluated on the surface at the edge (ADR-0058).
+type faceDirAt func(h loopEdgeUse, edgePoint math.Point3) math.Vector3
+
 // radialSew resolves every tangent/grazing contact in the welded face set into a manifold sew plan.
 // The common case (every vertex pair used exactly twice, every vertex one disk) passes through
 // unchanged — the radial machinery engages only where a pair is over-used or a vertex holds more
-// than one disk.
-func radialSew(verts []math.Point3, faces []builtFace, uses map[[2]int][]loopEdgeUse) sewPlan {
-	groups := extractEdgeGroups(verts, faces, uses)
+// than one disk. normalAt supplies each using face's surface normal at the edge, so the resolution is
+// surface-agnostic (planar and curved alike).
+func radialSew(verts []math.Point3, uses map[[2]int][]loopEdgeUse, normalAt faceDirAt) sewPlan {
+	groups := extractEdgeGroups(verts, uses, normalAt)
 	return sewPlan{
 		groups:   groups,
 		disks:    partitionVertexDisks(groups),
@@ -64,14 +71,20 @@ func radialSew(verts []math.Point3, faces []builtFace, uses map[[2]int][]loopEdg
 	}
 }
 
+// planarFaceDir is the faceDirAt for the planar boolean: a planar face's constant outward normal (the
+// edge point is unused). Passing this reproduces the pre-ADR-0058 azimuth bit-for-bit.
+func planarFaceDir(faces []builtFace) faceDirAt {
+	return func(h loopEdgeUse, _ math.Point3) math.Vector3 { return faces[h.face].normal }
+}
+
 // extractEdgeGroups walks the vertex pairs in sorted order and splits each into its manifold
 // edge-groups (resolveEdgeUses), so a pair used twice yields one group and an over-used tangent
 // contact yields one group per filled wedge. The order is deterministic (sorted pair keys) so the
 // downstream ordinal naming is stable.
-func extractEdgeGroups(verts []math.Point3, faces []builtFace, uses map[[2]int][]loopEdgeUse) []edgeGroup {
+func extractEdgeGroups(verts []math.Point3, uses map[[2]int][]loopEdgeUse, normalAt faceDirAt) []edgeGroup {
 	var groups []edgeGroup
 	for _, k := range sortedPairKeys(uses) {
-		for _, g := range resolveEdgeUses(k, uses[k], verts, faces) {
+		for _, g := range resolveEdgeUses(k, uses[k], verts, normalAt) {
 			groups = append(groups, edgeGroup{pair: k, uses: g})
 		}
 	}
@@ -146,14 +159,16 @@ func sortedPairKeys(uses map[[2]int][]loopEdgeUse) [][2]int {
 // along this edge: collapsing all uses onto one edge would make it non-manifold (>2 faces). The
 // half-edges are sorted by the azimuth of their face-interior direction about the edge axis, then
 // paired by filled wedge (pairTangentDihedrals) so each group is one manifold dihedral.
-func resolveEdgeUses(pair [2]int, uses []loopEdgeUse, verts []math.Point3, faces []builtFace) [][]loopEdgeUse {
+func resolveEdgeUses(pair [2]int, uses []loopEdgeUse, verts []math.Point3, normalAt faceDirAt) [][]loopEdgeUse {
 	if len(uses) <= 2 {
 		return [][]loopEdgeUse{uses}
 	}
-	axis := verts[pair[0]].VectorTo(verts[pair[1]]).AsUnit().AsVector()
+	p0, p1 := verts[pair[0]], verts[pair[1]]
+	axis := p0.VectorTo(p1).AsUnit().AsVector()
+	mid := math.P3((p0.X+p1.X)/2, (p0.Y+p1.Y)/2, (p0.Z+p1.Z)/2)
 	u, v := perpBasis(axis)
 	sort.SliceStable(uses, func(i, j int) bool {
-		return edgeAzimuth(uses[i], axis, u, v, faces) < edgeAzimuth(uses[j], axis, u, v, faces)
+		return edgeAzimuth(uses[i], axis, u, v, mid, normalAt) < edgeAzimuth(uses[j], axis, u, v, mid, normalAt)
 	})
 	return pairTangentDihedrals(uses)
 }
@@ -207,12 +222,12 @@ func nextFilledBoundary(uses []loopEdgeUse, used []bool, i int) int {
 // edgeAzimuth is the angle, about the edge axis, of a half-edge's face-interior direction —
 // the unit normal crossed with the ring's traversal direction (which keeps face material on
 // its left for both outer and hole loops). Used to order the faces radially around the edge.
-func edgeAzimuth(h loopEdgeUse, axis, u, v math.Vector3, faces []builtFace) float64 {
+func edgeAzimuth(h loopEdgeUse, axis, u, v math.Vector3, edgePoint math.Point3, normalAt faceDirAt) float64 {
 	travel := axis
 	if h.reversed {
 		travel = axis.Scale(-1)
 	}
-	interior := faces[h.face].normal.Cross(travel)
+	interior := normalAt(h, edgePoint).Cross(travel)
 	return stdmath.Atan2(interior.Dot(v), interior.Dot(u))
 }
 
