@@ -233,9 +233,34 @@ func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *d
 			return body, true
 		}
 	}
+	// General per-face dispatch (ADR-0058): when the curved faces are clear of the other operand,
+	// the exact planar pipeline splits the planar faces and the curved ones pass through whole —
+	// an EXACT analytic result where no bespoke recognizer applied, tried before the mesh rescue.
+	if body, ok := mixedPassThroughBoolean(op, target, tool, rec); ok {
+		return body, true
+	}
 	// Last resort (ADR-0056 L5): no analytic recognizer applied — rebuild the join from the
 	// exact mesh boolean's provenance on the operands' exact surfaces, instead of faceting.
 	return reconstructedCurvedBoolean(op, target, tool, rec)
+}
+
+// mixedPassThroughBoolean runs brep's per-face-dispatch boolean on MIXED operands (ADR-0058): only
+// when a curved face is present (an all-planar pair keeps its own guarded pipeline downstream,
+// byte-for-byte), and only adopted as a valid solid — brep's conservative scope gate declines the
+// rest (ErrUnsupportedMixedBoolean), falling through to the mesh reconstruction exactly as before.
+func mixedPassThroughBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	if analyticFaceCount(target)+analyticFaceCount(tool) == 0 {
+		return nil, false
+	}
+	bop, ok := toBrepOp(op)
+	if !ok {
+		return nil, false
+	}
+	body, err := brep.BooleanDiag(bop, target, tool, rec)
+	if err != nil || body == nil || !Validate(body).ValidSolid() {
+		return nil, false
+	}
+	return body, true
 }
 
 // CodeBooleanAnalyticVolumeReject marks a curved analytic boolean whose result fell OUTSIDE the
@@ -465,32 +490,33 @@ func strictlyContains(outer, inner *topo.Body) bool {
 	return allVerticesInside(inner, outer) && !boundariesCross(outer, inner)
 }
 
-// allVerticesInside reports whether every vertex of inner lies strictly within outer. It
-// tessellates outer ONCE and reuses that mesh for every vertex query (#1317) — previously each
-// vertex re-tessellated the whole body, making boolean classification O(V·T) — and classifies
-// through insideMeshQuerier, whose winding-accelerated fast path is certified against the
-// exact brute loop (#1607), so the verdicts are identical.
+// allVerticesInside reports whether every vertex of inner lies strictly within outer, analytically
+// (M48/C3 #3422). It prepares outer ONCE as a brep.InsideQuery and reuses that for every vertex query
+// — the analytic analog of tessellating outer once and reusing the mesh (#1317) — so classification
+// no longer reads a tessellation. The prepared query dispatches by representation exactly as
+// PointInsideBody does (all-planar → generalized winding, curved → nearest-crossing ray), so the
+// vertex verdicts match the retired mesh oracle on every consistently-oriented body.
 func allVerticesInside(inner, outer *topo.Body) bool {
 	verts := inner.Vertices()
 	if len(verts) == 0 {
 		return false
 	}
-	mesh, _ := TessellateBody(outer, DefaultQuality())
-	inMesh := insideMeshQuerier(mesh, len(verts))
+	inside := brep.NewInsideQuery(outer)
 	for _, v := range verts {
-		if !inMesh(v.Point()) {
+		if !inside.Inside(v.Point()) {
 			return false
 		}
 	}
 	return true
 }
 
-// PointInsideBody reports whether p is inside a solid body, via the generalized winding number of
-// the body's tessellation (see pointInMesh/windingNumber). This replaces the old single fixed-ray
-// parity test (#1317), which miscounted whenever the ray grazed a shared edge or vertex of the mesh
-// — ubiquitous on a closed surface — flipping the inside/outside result. The winding number
-// integrates the entire boundary, so it has no such degeneracy and tolerates small mesh cracks.
+// PointInsideBody reports whether p is strictly inside a solid body, analytically (M48/C3 #3426/#3427):
+// it delegates to brep.PointInside, which dispatches by representation — an all-planar body to the
+// solid-angle-flux generalized winding number (Jacobson) and a curved body to the nearest-crossing ray
+// classifier (the classical solid classifier), neither of which reads a tessellation. It replaced the
+// mesh winding oracle once that classifier gained near-surface crispness (the nearest-crossing side
+// test is decisive a hair off a face, where the smooth winding reads ≈½) and import-robust orientation
+// (orientFaceSigns derives each face's outward sign from its loop geometry, not the stored Reversed flag).
 func PointInsideBody(b *topo.Body, p math.Point3) bool {
-	mesh, _ := TessellateBody(b, DefaultQuality())
-	return pointInMesh(mesh, p)
+	return brep.PointInside(b, p)
 }

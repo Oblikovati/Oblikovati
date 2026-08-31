@@ -42,7 +42,7 @@ func UnifyCoplanarFaces(b *topo.Body, feat string) *topo.Body {
 	if len(merged) == 0 {
 		return b
 	}
-	body, _, err := stitch(merged, nil)
+	body, _, err := stitch(merged, nil, nil)
 	if err != nil || body == nil {
 		return b // never regress a valid input on a rebuild failure
 	}

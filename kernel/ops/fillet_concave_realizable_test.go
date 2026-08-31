@@ -5,27 +5,27 @@ package ops
 import (
 	"testing"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	m "oblikovati.org/math"
 )
 
-// unitBoxMesh tessellates the [0,1]³ prism and returns its mesh plus the model-relative nudge —
+// unitBoxQuery builds the [0,1]³ prism's analytic point-in-solid query plus the model-relative nudge —
 // a named fake solid for probing tangentBackedByMaterial without wiring a whole fillet.
-func unitBoxMesh(t *testing.T) (*Mesh, float64) {
+func unitBoxQuery(t *testing.T) (*brep.InsideQuery, float64) {
 	t.Helper()
 	box := zPrism([]m.Point2{{X: 0, Y: 0}, {X: 1, Y: 0}, {X: 1, Y: 1}, {X: 0, Y: 1}}, 0, 1, "box")
-	mesh, _ := TessellateBody(box, DefaultQuality())
-	return mesh, ResolutionForBody(box).Plane()
+	return brep.NewInsideQuery(box), ResolutionForBody(box).Plane()
 }
 
 // TestTangentBackedByMaterialPassesRealFace proves the gate is NOT a blanket inward ban: a tangent
 // point ON a bounded face (material behind, void in front) is material-backed, so a genuinely
 // realizable inward recess still builds.
 func TestTangentBackedByMaterialPassesRealFace(t *testing.T) {
-	mesh, eps := unitBoxMesh(t)
+	inside, eps := unitBoxQuery(t)
 	nZ := m.V3(0, 0, 1) // the box's +Z face outward normal
-	if !tangentBackedByMaterial(mesh, m.P3(0.5, 0.5, 1), nZ, eps) {
+	if !tangentBackedByMaterial(inside, m.P3(0.5, 0.5, 1), nZ, eps) {
 		t.Error("tangent on the box's +Z face must be material-backed (material behind, void in front)")
 	}
 }
@@ -34,12 +34,12 @@ func TestTangentBackedByMaterialPassesRealFace(t *testing.T) {
 // a BURIED tangent (material on both sides — the reflex-corner L case) and a FLOATING one (void on
 // both sides). Both must be rejected so the recess wall is never trimmed to a phantom line.
 func TestTangentBackedByMaterialRejectsBuriedAndFloating(t *testing.T) {
-	mesh, eps := unitBoxMesh(t)
+	inside, eps := unitBoxQuery(t)
 	nZ := m.V3(0, 0, 1)
-	if tangentBackedByMaterial(mesh, m.P3(0.5, 0.5, 0.5), nZ, eps) {
+	if tangentBackedByMaterial(inside, m.P3(0.5, 0.5, 0.5), nZ, eps) {
 		t.Error("a buried tangent (interior plane, material on both sides) must NOT be material-backed")
 	}
-	if tangentBackedByMaterial(mesh, m.P3(0.5, 0.5, 2), nZ, eps) {
+	if tangentBackedByMaterial(inside, m.P3(0.5, 0.5, 2), nZ, eps) {
 		t.Error("a floating tangent (void on both sides) must NOT be material-backed")
 	}
 }

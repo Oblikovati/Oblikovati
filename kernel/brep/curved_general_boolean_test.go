@@ -91,16 +91,16 @@ func TestCurvedSolidMembershipDeclinesNonCone(t *testing.T) {
 // TestPointInsideConeSolid pins the analytic frustum membership at the band edges and the rim.
 func TestPointInsideConeSolid(t *testing.T) {
 	cone, _ := geom.NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.5) // tan~0.546
-	if pointInsideConeSolid(cone, 2, 6, math.P3(0, 0, 1.5)) {
+	if pointInsideConeSolid(cone, 2, 6, math.P3(0, 0, 1.5), false) {
 		t.Error("point below vMin reported inside")
 	}
-	if pointInsideConeSolid(cone, 2, 6, math.P3(0, 0, 7)) {
+	if pointInsideConeSolid(cone, 2, 6, math.P3(0, 0, 7), false) {
 		t.Error("point above vMax reported inside")
 	}
-	if !pointInsideConeSolid(cone, 2, 6, math.P3(0, 0, 4)) {
+	if !pointInsideConeSolid(cone, 2, 6, math.P3(0, 0, 4), false) {
 		t.Error("on-axis mid-band point reported outside")
 	}
-	if pointInsideConeSolid(cone, 2, 6, math.P3(100, 0, 4)) {
+	if pointInsideConeSolid(cone, 2, 6, math.P3(100, 0, 4), false) {
 		t.Error("far-off-axis point reported inside")
 	}
 }

@@ -32,7 +32,10 @@ func tetra(s float64, off math.Vector3) *topo.Body {
 	bld.AddFace(pl(math.V3(0, 0, 0), math.V3(0, 0, -1)), lin("face", 0), topo.OuterLoop(topo.Fwd(ac), topo.Rev(bc), topo.Rev(ab)))
 	bld.AddFace(pl(math.V3(0, 0, 0), math.V3(0, -1, 0)), lin("face", 1), topo.OuterLoop(topo.Fwd(ab), topo.Fwd(bd), topo.Rev(ad)))
 	bld.AddFace(pl(math.V3(0, 0, 0), math.V3(-1, 0, 0)), lin("face", 2), topo.OuterLoop(topo.Fwd(ad), topo.Rev(cd), topo.Rev(ac)))
-	bld.AddFace(pl(math.V3(1, 1, 1), math.V3(1, 1, 1)), lin("face", 3), topo.OuterLoop(topo.Fwd(bc), topo.Fwd(cd), topo.Rev(bd)))
+	// The slant plane must actually contain b,c,d (the plane x+y+z=s): its origin is vertex b,
+	// scaled with s. A fixed (1,1,1) origin puts the plane at x+y+z=3 — off the face for any s≠3,
+	// which the analytic point classifier (unlike mesh tessellation) correctly rejects.
+	bld.AddFace(pl(math.V3(1, 0, 0).Scale(s), math.V3(1, 1, 1)), lin("face", 3), topo.OuterLoop(topo.Fwd(bc), topo.Fwd(cd), topo.Rev(bd)))
 	return bld.Build()
 }
 

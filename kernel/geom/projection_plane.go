@@ -40,18 +40,29 @@ func ProjectCurveToPlane(pl Plane, c Curve3) (Curve2, bool) {
 		return projectCircleToEllipse2d(pl, k) // oblique circle → ellipse
 	case Arc3d:
 		if normalParallelToPlane(k.Normal, pl) {
-			lo, hi := k.Domain()
-			arc, err := Arc2dByThreePoints(
-				planeUV(pl, k.PointAt(lo)), planeUV(pl, k.PointAt((lo+hi)/2)), planeUV(pl, k.PointAt(hi)))
-			if err != nil {
-				return nil, false
-			}
-			return arc, true
+			return projectParallelArc2d(pl, k), true
 		}
 		return projectArcToEllipse2d(pl, k) // oblique arc → elliptical arc
 	default:
 		return nil, false
 	}
+}
+
+// projectParallelArc2d projects an arc whose plane is parallel to pl. Orthographic projection preserves
+// in-plane distances, so the centre and radius carry over unchanged and only the angles move into pl's
+// frame. It is built from the arc's OWN defining data, never from three sampled points: a three-point
+// fit cannot see a FULL-sweep arc at all — its start and end coincide, so the fit is degenerate and the
+// whole projection used to decline to a 48-segment polyline (the Z1 bore-lip regression, #2247) — and it
+// is ill-conditioned near a half turn. The chart's positive rotation is U→V about pl's normal, so an arc
+// wound about the opposite normal sweeps the other way in the chart.
+func projectParallelArc2d(pl Plane, k Arc3d) Curve2 {
+	center := planeUV(pl, k.Center)
+	lo, _ := k.Domain()
+	sweep := k.SweepAngle
+	if float64(k.Normal.AsVector().Dot(pl.Normal())) < 0 {
+		sweep = -sweep
+	}
+	return NewArc2d(center, k.Radius, angleOf2d(center, planeUV(pl, k.PointAt(lo))), sweep)
 }
 
 // projectInfiniteLine projects an unbounded line onto pl through two of its points.

@@ -3,6 +3,7 @@
 package brep
 
 import (
+	stdmath "math"
 	"strings"
 	"testing"
 
@@ -24,7 +25,7 @@ func TestDrillThroughCurvedSecondHole(t *testing.T) {
 	if err != nil {
 		t.Fatalf("first (planar) hole: %v", err)
 	}
-	second, err := drillThroughCurved(first, math.P3(6, 0, -1), math.V3(0, 0, 1), 1.5)
+	second, err := drillThroughCurved(first, math.P3(6, 0, -1), math.V3(0, 0, 1), 1.5, stdmath.Inf(-1), stdmath.Inf(1))
 	if err != nil {
 		t.Fatalf("second (curved) hole: %v", err)
 	}
@@ -43,7 +44,7 @@ func TestDrillThroughCurvedSecondHole(t *testing.T) {
 func TestDrillThroughCurvedFiveHoles(t *testing.T) {
 	res, _ := SolidBlock(math.P3(-16, -10, 0), math.P3(16, 10, 6), "slab")
 	for i, cx := range []float64{-8, -4, 0, 4, 8} {
-		out, err := drillThroughCurved(res, math.P3(cx, 0, -1), math.V3(0, 0, 1), 1.5)
+		out, err := drillThroughCurved(res, math.P3(cx, 0, -1), math.V3(0, 0, 1), 1.5, stdmath.Inf(-1), stdmath.Inf(1))
 		if err != nil {
 			t.Fatalf("bore %d: %v", i, err)
 		}
@@ -59,7 +60,7 @@ func TestDrillThroughCurvedFiveHoles(t *testing.T) {
 // curved drill returns an error and the caller keeps its fallback.
 func TestDrillThroughCurvedRejectsClipped(t *testing.T) {
 	slab, _ := SolidBlock(math.P3(-16, -10, 0), math.P3(16, 10, 6), "slab")
-	if _, err := drillThroughCurved(slab, math.P3(15.5, 0, -1), math.V3(0, 0, 1), 1.5); err == nil {
+	if _, err := drillThroughCurved(slab, math.P3(15.5, 0, -1), math.V3(0, 0, 1), 1.5, stdmath.Inf(-1), stdmath.Inf(1)); err == nil {
 		t.Error("a hole clipping the slab edge should error (partial hole), got nil")
 	}
 }
@@ -69,7 +70,7 @@ func TestDrillThroughCurvedRejectsClipped(t *testing.T) {
 func TestDrillThroughCurvedRejectsOverlap(t *testing.T) {
 	slab, _ := SolidBlock(math.P3(-16, -10, 0), math.P3(16, 10, 6), "slab")
 	first, _ := CutCylindricalHole(slab, math.P3(0, 0, -1), math.V3(0, 0, 1), 1.5)
-	if _, err := drillThroughCurved(first, math.P3(1.5, 0, -1), math.V3(0, 0, 1), 1.5); err == nil {
+	if _, err := drillThroughCurved(first, math.P3(1.5, 0, -1), math.V3(0, 0, 1), 1.5, stdmath.Inf(-1), stdmath.Inf(1)); err == nil {
 		t.Error("a hole overlapping an existing hole should error, got nil")
 	}
 }
@@ -91,7 +92,7 @@ func TestDrillThroughCurvedRejectsOverlap(t *testing.T) {
 func TestDrillRejectsCapsAcrossAVoid(t *testing.T) {
 	slotted := slottedHead(t)
 	// The drill crosses the slot: material above it, the void, material below.
-	_, err := drillThroughCurved(slotted, math.P3(0.35, 0, -1), math.V3(0, 0, 1), 0.1)
+	_, err := drillThroughCurved(slotted, math.P3(0.35, 0, -1), math.V3(0, 0, 1), 0.1, stdmath.Inf(-1), stdmath.Inf(1))
 	if err == nil {
 		t.Fatal("drilling between two faces that bound a VOID must error, got nil (it would plug the slot)")
 	}
@@ -124,7 +125,7 @@ func slottedHead(t *testing.T) *topo.Body {
 // exactly what tells it apart from the facing-walls pair above, which has those signs inverted.
 func TestDrillStillTakesATrueThroughHole(t *testing.T) {
 	slab, _ := SolidBlock(math.P3(-16, -10, 0), math.P3(16, 10, 6), "slab")
-	res, err := drillThroughCurved(slab, math.P3(0, 0, -1), math.V3(0, 0, 1), 1.5)
+	res, err := drillThroughCurved(slab, math.P3(0, 0, -1), math.V3(0, 0, 1), 1.5, stdmath.Inf(-1), stdmath.Inf(1))
 	if err != nil {
 		t.Fatalf("a clean through-hole must still drill: %v", err)
 	}

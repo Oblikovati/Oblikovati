@@ -33,10 +33,15 @@ func radialOf(p math.Point3, ax crossAxis) math.Vector3 {
 	return v.Sub(ax.dir.Scale(v.Dot(ax.dir)))
 }
 
-// pointInsideCylinderSolid reports whether p is strictly inside the finite cylinder solid — within the
-// radius and between the caps, by a small model-relative margin so a point on the surface counts as outside.
-func pointInsideCylinderSolid(c geom.Cylinder, base math.Point3, height float64, p math.Point3) bool {
-	margin := geom.ResolutionForSize(c.Radius + height).Plane() // model-relative inside-solid margin (#1399)
+// pointInsideCylinderSolid reports whether p is inside the finite cylinder solid — within the radius and
+// between the caps. When strict is false a small model-relative margin keeps a surface point out (the
+// boolean-membership flicker guard); when strict is true it is margin-free (exact geometric inside), for
+// the point-in-solid classifier that peeled the on-surface band off with its own onTol.
+func pointInsideCylinderSolid(c geom.Cylinder, base math.Point3, height float64, p math.Point3, strict bool) bool {
+	margin := 0.0
+	if !strict {
+		margin = geom.ResolutionForSize(c.Radius + height).Plane() // model-relative inside-solid margin (#1399)
+	}
 	if float64(radialOf(p, cylAxis(c)).Length()) > c.Radius-margin {
 		return false
 	}

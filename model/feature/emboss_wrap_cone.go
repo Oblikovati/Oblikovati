@@ -143,3 +143,16 @@ func (fr coneWrapFrame) offsets(depth float64, engrave bool) (inner, outer float
 	}
 	return -depth, pad, nil
 }
+
+// capSurface returns the cone the pad's inner/outer face lies on at normal offset `level`: offsetting a
+// cone by d along its outward normal is a COAXIAL cone of the SAME half-angle whose apex shifts by
+// −d/sin α along the axis (the parallel surface of a cone is a cone). So the wrapped pad gets true cone
+// cap faces, not a flat cap over a curved loop.
+func (fr coneWrapFrame) capSurface(level float64) (geom.Surface, bool) {
+	apex := fr.apex.TranslateBy(fr.axis.Scale(math.Scalar(-level / fr.sinA)))
+	cone, err := geom.NewConeWithRef(apex, fr.axis, fr.radial0, fr.cone.HalfAngle)
+	if err != nil {
+		return nil, false
+	}
+	return cone, true
+}

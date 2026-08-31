@@ -45,7 +45,7 @@ func CutBlindConicalHole(slab *topo.Body, base math.Point3, axisDir math.Vector3
 
 // assembleBlindConical welds the bore and caps it with a cone tip (apex deep on the axis), whose
 // material side faces the axis (a reversed face) like the cylinder wall.
-func assembleBlindConical(copied []planarFace, entry planarFace, base, bottom, apex math.Point3, ua math.Vector3, radius, halfAngle float64) (*topo.Body, error) {
+func assembleBlindConical(copied []curvedFace, entry curvedFace, base, bottom, apex math.Point3, ua math.Vector3, radius, halfAngle float64) (*topo.Body, error) {
 	bld, holeBot, err := blindBore(copied, entry, base, bottom, ua, radius)
 	if err != nil {
 		return nil, err

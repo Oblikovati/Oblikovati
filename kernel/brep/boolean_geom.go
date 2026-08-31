@@ -10,60 +10,71 @@ import (
 	"oblikovati.org/math"
 )
 
-// planarFace is a planar face flattened for the boolean: its plane, outward normal,
-// boundary loops as 3D point rings (loops[0] = outer, the rest = holes), and the source
-// face's lineage so a result face can carry it forward (reference-key survival, K1a).
-type planarFace struct {
-	plane   geom.Plane
-	normal  math.Vector3
-	loops   [][]math.Point3
-	lineage topo.Lineage
-}
+// The planar B-rep boolean operates on the unified curvedFace model (ADR-0058): a planar face is a
+// curvedFace whose surface is a geom.Plane and whose loop edges are straight (their exact endpoints carried
+// in loopEdge.v0). The former separate planarFace{plane, normal, 3D rings} type is retired; facePlane,
+// faceNormal and faceRings read the same three things off a curvedFace, so the exact planar arrangement is
+// unchanged while the type is now shared with the curved boolean.
 
-// facesOf flattens a body's planar faces. A non-planar face makes it return ok=false (the
-// planar B-rep boolean handles planar-faceted solids; curved faces need NURBS work).
-func facesOf(b *topo.Body) ([]planarFace, bool) {
-	var out []planarFace
-	for _, f := range b.Faces() {
-		pl, ok := f.Geometry().(geom.Plane)
-		if !ok {
+// facesOf flattens a body's faces as curvedFaces and reports ok=false the moment one is non-planar (the
+// planar B-rep boolean handles planar-faceted solids; curved faces take the curved pipeline).
+func facesOf(b *topo.Body) ([]curvedFace, bool) {
+	faces := facesOfAny(b)
+	for i := range faces {
+		if _, ok := faces[i].surface.(geom.Plane); !ok {
 			return nil, false
 		}
-		out = append(out, planarFace{plane: pl, normal: f.Geometry().NormalAt(0, 0), loops: loopRings(f), lineage: f.Lineage()})
 	}
-	return out, true
+	return faces, true
 }
 
-// loopRings returns a face's loops as ordered 3D point rings (outer loop first).
-func loopRings(f *topo.Face) [][]math.Point3 {
-	var outer [][]math.Point3
-	var holes [][]math.Point3
-	for _, l := range f.Loops() {
-		ring := loopPoints(l)
-		if l.IsOuter() {
-			outer = append(outer, ring)
-		} else {
-			holes = append(holes, ring)
+// facePlane is a planar face's plane (the planar boolean only ever holds curvedFaces whose surface is a
+// geom.Plane — facesOf guarantees it).
+func facePlane(f curvedFace) geom.Plane { return f.surface.(geom.Plane) }
+
+// faceNormal is a planar face's outward surface normal (constant over a plane).
+func faceNormal(f curvedFace) math.Vector3 { return f.surface.NormalAt(0, 0) }
+
+// planarRings projects a planar face's parametric loops onto the polygonal arrangement's 3D point rings: each
+// loop's ordered edge EXACT start vertices (loopEdge.v0, bit-exact even for an arc-bounded cap), outer loop
+// first (loopsOf order). It is the arrangement's on-demand view of the shared curvedFace loop model.
+func planarRings(f curvedFace) [][]math.Point3 {
+	out := make([][]math.Point3, len(f.loops))
+	for i, l := range f.loops {
+		ring := make([]math.Point3, len(l.edges))
+		for j, e := range l.edges {
+			ring[j] = e.v0
 		}
+		out[i] = ring
 	}
-	return append(outer, holes...)
+	return out
 }
 
-// loopPoints returns a loop's ordered vertices (honoring each edge use's direction).
-func loopPoints(l *topo.Loop) []math.Point3 {
-	uses := l.EdgeUses()
-	pts := make([]math.Point3, 0, len(uses))
-	for _, u := range uses {
-		v := u.Edge().StartVertex()
-		if u.Reversed() {
-			v = u.Edge().EndVertex()
+// planarFaceFromRings builds a curvedFace for a planar face given its plane and 3D point rings (outer
+// first) — the drill/curved-on-planar handlers synthesize their planar operands this way. Each ring edge
+// becomes a straight loopEdge whose exact endpoints (v0/v1) are the ring vertices, so faceRings round-trips
+// them bit-for-bit.
+func planarFaceFromRings(pl geom.Plane, rings [][]math.Point3, lineage topo.Lineage) curvedFace {
+	loops := make([]curvedLoop, len(rings))
+	for i, ring := range rings {
+		edges := make([]loopEdge, len(ring))
+		for j := range ring {
+			a, b := ring[j], ring[(j+1)%len(ring)]
+			edges[j] = loopEdge{curve: geom.NewLineSegment(a, b), t0: 0, t1: 1, v0: a, v1: b}
 		}
-		pts = append(pts, v.Point())
+		loops[i] = curvedLoop{edges: edges}
 	}
-	return pts
+	return curvedFace{surface: pl, loops: loops, lineage: lineage}
 }
 
-// to2D / to3D convert between model space and a plane's local (u,v) coordinates.
+// to2D / to3D convert between model space and a plane's local (u,v) coordinates. These are the planar
+// arrangement's OWN exact maps: to2D equals geom.Plane.ParamAt, but to3D keeps its single-translate lift
+// (Origin + (uU+vV), one rounding) rather than delegating to geom.Plane.PointAt (which does two). The
+// difference is ~1 ULP, but the planar arrangement's welds/coincidence tests depend on this exact lift,
+// and — critically — the planar and curved splits keep SEPARATE domain maps by design (exact vs sampled),
+// so they need not agree bit-for-bit. Aligning geom.Plane.PointAt to this form instead drifts every
+// tessellation/coincidence that uses PointAt (byte-identity-fingerprint regressions, ADR-0058 blocker-1
+// finding): the domain maps are correctly NOT unified.
 func to2D(pl geom.Plane, p math.Point3) math.Point2 {
 	d := pl.Origin.VectorTo(p)
 	return math.P2(d.Dot(pl.UAxis.AsVector()), d.Dot(pl.VAxis.AsVector()))
@@ -84,14 +95,14 @@ func unit(v math.Vector3) math.Vector3 {
 // faceLineIntervals returns the parameter intervals (along p0+t·dir) where the line lies
 // inside the face (inside the outer ring and outside every hole), via even–odd crossings
 // projected into the face plane.
-func faceLineIntervals(f planarFace, p0 math.Point3, dir math.Vector3) [][2]float64 {
-	o2, d2 := to2D(f.plane, p0), to2Dvec(f.plane, dir)
+func faceLineIntervals(f curvedFace, p0 math.Point3, dir math.Vector3) [][2]float64 {
+	o2, d2 := to2D(facePlane(f), p0), to2Dvec(facePlane(f), dir)
 	if d2.LengthSquared() < 1e-18 { // tol:numeric — degenerate-direction guard (squared length)
 		return nil // the line is perpendicular to this plane (no in-plane extent)
 	}
 	var ts []float64
-	for _, ring := range f.loops {
-		ts = append(ts, ringCrossings(o2, d2, ring, f.plane)...)
+	for _, ring := range planarRings(f) {
+		ts = append(ts, ringCrossings(o2, d2, ring, facePlane(f))...)
 	}
 	stdSort(ts)
 	var out [][2]float64
@@ -114,13 +125,13 @@ func faceLineIntervals(f planarFace, p0 math.Point3, dir math.Vector3) [][2]floa
 // along the line (o2 + t·d2) — both endpoints within [arrTol] of the line. The span is the
 // edge endpoints projected onto the line; an edge meeting the line at a single point is not
 // collinear and is excluded.
-func collinearEdgeSpans(o2 math.Point2, d2 math.Vector2, f planarFace) [][2]float64 {
+func collinearEdgeSpans(o2 math.Point2, d2 math.Vector2, f curvedFace) [][2]float64 {
 	lenSq := d2.LengthSquared()
 	var out [][2]float64
-	for _, ring := range f.loops {
+	for _, ring := range planarRings(f) {
 		n := len(ring)
 		for i := range n {
-			a, b := to2D(f.plane, ring[i]), to2D(f.plane, ring[(i+1)%n])
+			a, b := to2D(facePlane(f), ring[i]), to2D(facePlane(f), ring[(i+1)%n])
 			if distPointLine2D(a, o2, d2) > arrTol || distPointLine2D(b, o2, d2) > arrTol {
 				continue
 			}
@@ -176,12 +187,13 @@ func lineSegCross(o math.Point2, d math.Vector2, a, b math.Point2) (float64, boo
 
 // pointInFace2D reports whether a 2D point is inside the face (in the outer ring, outside
 // holes).
-func pointInFace2D(q math.Point2, f planarFace) bool {
-	if len(f.loops) == 0 || !pointInPolygon2D(q, ring2D(f.plane, f.loops[0])) {
+func pointInFace2D(q math.Point2, f curvedFace) bool {
+	rings := planarRings(f)
+	if len(rings) == 0 || !pointInPolygon2D(q, ring2D(facePlane(f), rings[0])) {
 		return false
 	}
-	for _, h := range f.loops[1:] {
-		if pointInPolygon2D(q, ring2D(f.plane, h)) {
+	for _, h := range rings[1:] {
+		if pointInPolygon2D(q, ring2D(facePlane(f), h)) {
 			return false
 		}
 	}

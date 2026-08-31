@@ -5,16 +5,23 @@ package analysis
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// Minimum distance (M18-F01 PBI-164, #428): the closest approach between two model entities of any
-// kind. Each entity reduces to tessellated simplices — a vertex to a zero-length segment, an edge
-// to its polyline segments, a face to its mesh triangles — and the minimum distance is the smallest
-// over all simplex pairs (see kernel/ops mindistance). Result is millimetres; zero when the
+// Minimum distance (M18-F01 PBI-164, #428; analytic since M48/C3 #3458): the closest approach between
+// two model entities of any kind, computed against the EXACT trimmed B-rep — never a face's triangle
+// mesh, whose chord sagitta biased convex-curved clearances inward. Each entity becomes a
+// brep.DistSupport (a vertex → a point, an edge → its trimmed curve, a face → its trimmed surface) and
+// the kernel's OCCT-style distance recursion measures the pair. Result is millimetres; zero when the
 // entities touch or intersect.
+
+// probeOnTol is the boundary band for the probe's interior-collision test: a probe point within this
+// gap of a wall still reads as inside, matching OCC distToShape's overlap=0 verdict.
+const probeOnTol = 1e-6
 
 // MeasureEntity is a resolved model entity (exactly one of Vertex/Edge/Face) for distance queries.
 type MeasureEntity struct {
@@ -23,119 +30,69 @@ type MeasureEntity struct {
 	Face   *topo.Face
 }
 
-// segment is a line segment, triangle a mesh triangle — both in database units (centimetres).
-type segment struct{ a, b math.Point3 }
-type triangle struct{ a, b, c math.Point3 }
-
-// MinDistanceMm returns the minimum distance in millimetres between two entities.
-func MinDistanceMm(a, b MeasureEntity, q ops.Quality) float64 {
-	segA, triA := a.simplices(q)
-	segB, triB := b.simplices(q)
-	best := stdmath.Inf(1)
-	best = minSegSeg(best, segA, segB)
-	best = minSegTri(best, segA, triB)
-	best = minSegTri(best, segB, triA)
-	best = minTriTri(best, triA, triB)
-	return best * cmToMM
+// MinDistanceMm returns the minimum distance in millimetres between two entities. The Quality argument
+// is retained for call-site compatibility but no longer used now the measure is analytic.
+func MinDistanceMm(a, b MeasureEntity, _ ops.Quality) float64 {
+	return brep.EntityDistance(a.support(), b.support()) * cmToMM
 }
 
-// simplices returns the entity's segments and triangles in database units.
-func (e MeasureEntity) simplices(q ops.Quality) ([]segment, []triangle) {
+// support maps a resolved model entity onto the kernel's distance operand.
+func (e MeasureEntity) support() brep.DistSupport {
 	switch {
 	case e.Vertex != nil:
-		p := e.Vertex.Point()
-		return []segment{{p, p}}, nil
+		return brep.PointSupport(e.Vertex.Point())
 	case e.Edge != nil:
-		return edgeSegments(e.Edge, q), nil
-	case e.Face != nil:
-		return nil, faceTriangles(e.Face, q)
+		return brep.CurveSupport(e.Edge.Geometry())
+	default:
+		return brep.FaceSupport(e.Face)
 	}
-	return nil, nil
 }
 
 // MinDistanceProbeToBody returns the minimum distance, in database units (cm), between a transient
 // probe polyline and a body — the closest approach of an arbitrary travel path (e.g. a CAM linking
-// move) to the part. The probe reduces to its segments (a lone point becomes a zero-length segment),
-// the body to its face triangles, and the result is the smallest segment-triangle distance. It is
-// +Inf when the probe or the body has no geometry, and 0 when they touch or intersect. This is the
-// transient-operand counterpart of MinDistanceMm (which measures two resolved model entities), the
-// out-of-process projection of MeasureTools.GetMinimumDistance — Oblikovati/Oblikovati#630.
+// move) to the part, measured against the exact trimmed faces. The probe reduces to its segments (a
+// lone point becomes a zero-length segment), each measured against every face by the analytic
+// curve→face distance, and a probe point strictly inside the material is a collision (distance 0). It
+// is +Inf when the probe or the body has no geometry, and 0 when they touch or intersect. This is the
+// transient-operand counterpart of MinDistanceMm — the out-of-process projection of
+// MeasureTools.GetMinimumDistance (Oblikovati/Oblikovati#630).
 func MinDistanceProbeToBody(probe []math.Point3, body *topo.Body, q ops.Quality) float64 {
-	segs := probeSegments(probe)
-	if len(segs) == 0 {
+	if len(probe) == 0 {
 		return stdmath.Inf(1)
 	}
-	// Distance to a *solid*, not just its skin: a probe point inside the material is a collision
-	// (distance 0) even when no segment crosses a boundary face — a fully interior travel move would
-	// otherwise report the gap to the nearest wall. A segment that merely passes through is caught by
-	// the segment-triangle pass below (it crosses the boundary). Matches OCC distToShape's overlap=0.
+	// Distance to a *solid*, not just its skin: a probe point inside the material is a collision even
+	// when no segment crosses a boundary face — a fully interior travel move would otherwise report the
+	// gap to the nearest wall. A segment that merely passes through is caught below (it grazes a face).
 	for _, p := range probe {
-		if ops.BodyContainment(body, p, q, 1e-6) == ops.ContainInside {
+		if ops.BodyContainment(body, p, q, probeOnTol) == ops.ContainInside {
 			return 0
 		}
 	}
+	return probeToFacesDistance(probe, body)
+}
+
+// probeToFacesDistance is the smallest analytic curve→face distance between the probe's segments and
+// the body's faces.
+func probeToFacesDistance(probe []math.Point3, body *topo.Body) float64 {
 	best := stdmath.Inf(1)
-	for _, f := range body.Faces() {
-		best = minSegTri(best, segs, faceTriangles(f, q))
+	for _, seg := range probeSegments(probe) {
+		curve := brep.CurveSupport(seg)
+		for _, f := range body.Faces() {
+			best = stdmath.Min(best, brep.EntityDistance(curve, brep.FaceSupport(f)))
+		}
 	}
 	return best
 }
 
-// probeSegments turns a probe polyline into its consecutive segments; a single point becomes one
-// zero-length segment so it still measures point-to-body.
-func probeSegments(probe []math.Point3) []segment {
+// probeSegments turns a probe polyline into geom line segments; a single point becomes one zero-length
+// segment so it still measures point-to-body.
+func probeSegments(probe []math.Point3) []geom.Curve3 {
 	if len(probe) == 1 {
-		return []segment{{probe[0], probe[0]}}
+		return []geom.Curve3{geom.NewLineSegment(probe[0], probe[0])}
 	}
-	segs := make([]segment, 0, len(probe))
+	segs := make([]geom.Curve3, 0, len(probe)-1)
 	for i := 1; i < len(probe); i++ {
-		segs = append(segs, segment{probe[i-1], probe[i]})
+		segs = append(segs, geom.NewLineSegment(probe[i-1], probe[i]))
 	}
 	return segs
-}
-
-func edgeSegments(e *topo.Edge, q ops.Quality) []segment {
-	pts := ops.TessellateEdge(e, q)
-	segs := make([]segment, 0, len(pts))
-	for i := 1; i < len(pts); i++ {
-		segs = append(segs, segment{pts[i-1], pts[i]})
-	}
-	return segs
-}
-
-func faceTriangles(f *topo.Face, q ops.Quality) []triangle {
-	mesh := ops.TessellateFace(f, q)
-	tris := make([]triangle, 0, mesh.TriangleCount())
-	for t := 0; t+2 < len(mesh.Indices); t += 3 {
-		tris = append(tris, triangle{
-			mesh.Positions[mesh.Indices[t]], mesh.Positions[mesh.Indices[t+1]], mesh.Positions[mesh.Indices[t+2]]})
-	}
-	return tris
-}
-
-func minSegSeg(best float64, as, bs []segment) float64 {
-	for _, x := range as {
-		for _, y := range bs {
-			best = stdmath.Min(best, ops.SegmentSegmentDistance(x.a, x.b, y.a, y.b))
-		}
-	}
-	return best
-}
-
-func minSegTri(best float64, segs []segment, tris []triangle) float64 {
-	for _, s := range segs {
-		for _, t := range tris {
-			best = stdmath.Min(best, ops.SegmentTriangleDistance(s.a, s.b, t.a, t.b, t.c))
-		}
-	}
-	return best
-}
-
-func minTriTri(best float64, as, bs []triangle) float64 {
-	for _, x := range as {
-		for _, y := range bs {
-			best = stdmath.Min(best, ops.TriangleTriangleDistance(x.a, x.b, x.c, y.a, y.b, y.c))
-		}
-	}
-	return best
 }

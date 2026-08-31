@@ -84,8 +84,9 @@ func orbitScenario(win *native.Window, s *app.Session, frames int, hoverpick boo
 
 // frameHoverPick reproduces the live head's per-frame hover-pick: a ray through the viewport centre
 // against the scene. It is what turns an orbit slow when picking re-tessellates curved faces every
-// frame; measured here it guards the pick-tessellation memo (ops.pickFaceMesh) at scene scale. The
-// camera pixel size is set by DrawChrome's updateViewportCamera on the frame just drawn.
+// frame; since M48/C3 the pick resolves against the analytic surfaces (no face tessellation), and
+// measured here it guards that per-frame pick cost at scene scale. The camera pixel size is set by
+// DrawChrome's updateViewportCamera on the frame just drawn.
 func frameHoverPick(s *app.Session) {
 	cam := s.Camera()
 	if cam.Width <= 0 || cam.Height <= 0 {

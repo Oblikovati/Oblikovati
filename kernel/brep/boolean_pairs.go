@@ -36,7 +36,7 @@ type facePairs struct {
 
 // crossingFaceCandidates computes the candidate pair set once: a BoxTree over B's padded face
 // boxes, queried with each of A's padded face boxes.
-func crossingFaceCandidates(fa, fb []planarFace) facePairs {
+func crossingFaceCandidates(fa, fb []curvedFace) facePairs {
 	boxesB := make([]math.Box, len(fb))
 	for j := range fb {
 		boxesB[j] = paddedFaceBox(fb[j])
@@ -60,9 +60,9 @@ func crossingFaceCandidates(fa, fb []planarFace) facePairs {
 
 // paddedFaceBox returns the face's loop-point bounding box inflated by [facePairCullPad] on
 // every side.
-func paddedFaceBox(f planarFace) math.Box {
+func paddedFaceBox(f curvedFace) math.Box {
 	box := math.EmptyBox()
-	for _, ring := range f.loops {
+	for _, ring := range planarRings(f) {
 		for _, p := range ring {
 			box = box.ExtendPoint(p)
 		}
@@ -78,7 +78,7 @@ func paddedFaceBox(f planarFace) math.Box {
 // (provenanceOf's contract) from a single pairImprints call per pair — the duplicate pairing
 // the audit flagged (#1607). Pairs iterate (i asc, j asc), matching the retired brute scan, so
 // impA/impB/prov are element-for-element identical to it.
-func imprintCandidates(fa, fb []planarFace, pairs facePairs) (impA, impB [][][2]math.Point3, prov []imprintSeg) {
+func imprintCandidates(fa, fb []curvedFace, pairs facePairs) (impA, impB [][][2]math.Point3, prov []imprintSeg) {
 	impA = make([][][2]math.Point3, len(fa))
 	impB = make([][][2]math.Point3, len(fb))
 	for i := range fa {
@@ -96,8 +96,8 @@ func imprintCandidates(fa, fb []planarFace, pairs facePairs) (impA, impB [][][2]
 // facesAt selects faces by index, preserving order: the coplanar-cover scan sees the same
 // first-match order the full scan did, restricted to box-overlap candidates (sound — a cover
 // witnesses a point on both faces, so its pair is always a candidate).
-func facesAt(faces []planarFace, idx []int) []planarFace {
-	out := make([]planarFace, len(idx))
+func facesAt(faces []curvedFace, idx []int) []curvedFace {
+	out := make([]curvedFace, len(idx))
 	for k, j := range idx {
 		out[k] = faces[j]
 	}

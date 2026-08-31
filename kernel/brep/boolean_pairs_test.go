@@ -13,7 +13,7 @@ import (
 
 // bruteImprintPairs is the retired O(Fa·Fb) scan, kept here as the oracle: the culled
 // imprintCandidates must reproduce its impA/impB/prov element for element (#1607).
-func bruteImprintPairs(fa, fb []planarFace) (impA, impB [][][2]math.Point3, prov []imprintSeg) {
+func bruteImprintPairs(fa, fb []curvedFace) (impA, impB [][][2]math.Point3, prov []imprintSeg) {
 	impA = make([][][2]math.Point3, len(fa))
 	impB = make([][][2]math.Point3, len(fb))
 	for i := range fa {
@@ -30,7 +30,7 @@ func bruteImprintPairs(fa, fb []planarFace) (impA, impB [][][2]math.Point3, prov
 
 // randomPairFixture builds a base box and a randomly placed/sized tool box: overlapping,
 // tangent (snapped-to-face), and disjoint configurations all occur across seeds.
-func randomPairFixture(rng *stdrand.Rand) (fa, fb []planarFace) {
+func randomPairFixture(rng *stdrand.Rand) (fa, fb []curvedFace) {
 	fa = provFaces("base", 0, 0, 0, 8, 8, 4)
 	px := rng.Float64()*16 - 4
 	py := rng.Float64()*16 - 4

@@ -35,7 +35,8 @@ func CutCylindricalHole(slab *topo.Body, base math.Point3, axisDir math.Vector3,
 	if ua.LengthSquared() < 0.5 {
 		return nil, fmt.Errorf("brep: drill axis direction is degenerate: %+v", axisDir)
 	}
-	return drillThroughCurved(slab, base, ua, radius)
+	// A through-all drill: the axis is conceptually unbounded, so no tool-span gate applies.
+	return drillThroughCurved(slab, base, ua, radius, stdmath.Inf(-1), stdmath.Inf(1))
 }
 
 // DrillThroughHole cuts slab − cylinderTool as an EXACT through-hole when cylinderTool is a single
@@ -50,14 +51,16 @@ func CutCylindricalHole(slab *topo.Body, base math.Point3, axisDir math.Vector3,
 //
 //	res, ok := brep.DrillThroughHole(plate, rod) // plate − rod, exact round hole, ok==true
 func DrillThroughHole(slab, cylinderTool *topo.Body) (*topo.Body, bool) {
-	cyl, base, _, ok := cylinderSolidParams(facesOfAny(cylinderTool))
+	cyl, base, height, ok := cylinderSolidParams(facesOfAny(cylinderTool))
 	if !ok {
 		return nil, false // tool is not a single bare cylinder
 	}
 	ua := cyl.AxisDir.AsVector()
 	// One curvedStitch drill path serves both an all-planar slab and one that already carries curved faces
 	// (a prior bore's wall), so a drilled plate chains exactly instead of falling to CSG (#1336/#1403).
-	res, err := drillThroughCurved(slab, base, ua, cyl.Radius)
+	// The finite tool must SPAN the slab: both pierced caps must lie within its axial extent, or the
+	// cut is embedded/blind and drilling the unbounded axis would remove too much (wrong volume).
+	res, err := drillThroughCurved(slab, base, ua, cyl.Radius, 0, height)
 	if err != nil {
 		return nil, false // partial / clipped / overlapping / off-axis hole → defer to the general fallback
 	}
@@ -79,16 +82,16 @@ func pierceParam(base math.Point3, ua math.Vector3, pl geom.Plane) float64 {
 
 // circleInsideFace reports whether the hole circle (center, radius, in the face plane) lies
 // strictly inside the face — its center and a ring of rim samples are all in the face interior.
-func circleInsideFace(center math.Point3, f planarFace, radius float64) bool {
-	if !pointInFace2D(to2D(f.plane, center), f) {
+func circleInsideFace(center math.Point3, f curvedFace, radius float64) bool {
+	if !pointInFace2D(to2D(facePlane(f), center), f) {
 		return false
 	}
-	u, v := f.plane.UAxis.AsVector(), f.plane.VAxis.AsVector()
+	u, v := facePlane(f).UAxis.AsVector(), facePlane(f).VAxis.AsVector()
 	const samples = 24
 	for i := range samples {
 		a := 2 * stdmath.Pi * float64(i) / samples
 		rim := center.TranslateBy(u.Scale(math.Scalar(radius * stdmath.Cos(a)))).TranslateBy(v.Scale(math.Scalar(radius * stdmath.Sin(a))))
-		if !pointInFace2D(to2D(f.plane, rim), f) {
+		if !pointInFace2D(to2D(facePlane(f), rim), f) {
 			return false
 		}
 	}
@@ -97,11 +100,11 @@ func circleInsideFace(center math.Point3, f planarFace, radius float64) bool {
 
 // weldPlanarFaces welds every face's loops to shared vertex indices and tallies undirected
 // edge uses (so faces sharing a box edge resolve to one edge).
-func weldPlanarFaces(w *welder3, planar []planarFace) (rings [][][]int, edgeUse map[[2]int]int) {
+func weldPlanarFaces(w *welder3, planar []curvedFace) (rings [][][]int, edgeUse map[[2]int]int) {
 	rings = make([][][]int, len(planar))
 	edgeUse = map[[2]int]int{}
 	for fi, f := range planar {
-		for _, loop := range f.loops {
+		for _, loop := range planarRings(f) {
 			r := w.ring(loop)
 			rings[fi] = append(rings[fi], r)
 			for i := range r {

@@ -298,3 +298,23 @@ func TestEmbossFlavourAndWrapRoundTrip(t *testing.T) {
 		t.Error("an unknown emboss type should be a precise error, not a silent fall back to a raise")
 	}
 }
+
+// TestWrappedEmbossHasCurvedCapFaces locks in the fix that the wrapped pad's inner/outer faces are
+// genuine cylinder surfaces (not flat caps over a curved loop, which is an invalid non-planar-on-plane
+// B-rep). The tool must be a valid solid carrying at least two cylindrical faces at the pad's radii.
+func TestWrappedEmbossHasCurvedCapFaces(t *testing.T) {
+	_, emb := wrappedShaftEmboss(t, 0.2, EmbossFromFace)
+	if r := ops.Validate(emb.tool); !r.Valid || !emb.tool.IsSolid() {
+		t.Fatalf("wrapped emboss tool must be a valid solid: %+v", r.Issues)
+	}
+	cyls := 0
+	for _, f := range emb.tool.Faces() {
+		if _, ok := f.Geometry().(geom.Cylinder); ok {
+			cyls++
+		}
+	}
+	if cyls < 2 {
+		t.Errorf("wrapped pad has %d cylindrical faces, want ≥2 (its inner and outer surfaces must be "+
+			"true cylinders, not flat caps over a curved loop)", cyls)
+	}
+}

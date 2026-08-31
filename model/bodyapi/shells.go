@@ -24,19 +24,22 @@ var (
 // onTolDefault is the boundary band of point containment when callers pass 0.
 const onTolDefault = 1e-6
 
-// FaceShellAdapter exposes one kernel shell as a contract FaceShell.
+// FaceShellAdapter exposes one kernel shell as a contract FaceShell. It carries its owning body because
+// void-ness is a property of the shell RELATIVE TO THE BODY (a lone shell is identical solid or void), so
+// IsVoid classifies against the body rather than reading a tessellated signed volume (#3483).
 type FaceShellAdapter struct {
 	shell *topo.Shell
+	body  *topo.Body
 	q     ops.Quality
 }
 
-// NewFaceShell wraps a kernel shell at the given quality.
-func NewFaceShell(s *topo.Shell, q ops.Quality) *FaceShellAdapter {
-	return &FaceShellAdapter{shell: s, q: q}
+// NewFaceShell wraps a kernel shell of body b at the given quality.
+func NewFaceShell(s *topo.Shell, b *topo.Body, q ops.Quality) *FaceShellAdapter {
+	return &FaceShellAdapter{shell: s, body: b, q: q}
 }
 
 func (a *FaceShellAdapter) IsClosed() bool { return a.shell.IsClosed() }
-func (a *FaceShellAdapter) IsVoid() bool   { return ops.ShellIsVoid(a.shell, a.q) }
+func (a *FaceShellAdapter) IsVoid() bool   { return ops.ShellIsVoidInBody(a.body, a.shell) }
 
 // Volume is the magnitude of the shell region's volume (the API reports
 // sizes; the sign — void vs material — is IsVoid's job).
@@ -86,7 +89,7 @@ func NewFaceShells(b *topo.Body, q ops.Quality) *FaceShellsAdapter {
 func (a *FaceShellsAdapter) Count() int { return len(a.body.Shells()) }
 
 func (a *FaceShellsAdapter) Item(index int) contract.FaceShell {
-	return NewFaceShell(a.body.Shells()[index], a.q)
+	return NewFaceShell(a.body.Shells()[index], a.body, a.q)
 }
 
 // WireAdapter exposes one kernel wire as a contract Wire.

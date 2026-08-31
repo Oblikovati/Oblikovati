@@ -20,9 +20,17 @@ const (
 	Intersection           // A ∩ B
 )
 
-// ErrNonPlanar is returned when an operand has a non-planar face (the planar B-rep
-// boolean handles planar-faceted solids; curved-face booleans need NURBS work).
-var ErrNonPlanar = errors.New("brep: boolean requires planar-faceted solids")
+// ErrNonPlanar is returned by the APIs that genuinely require all-planar operands (the public
+// imprint, the drill assemblers). The boolean itself no longer refuses curved faces — see
+// ErrUnsupportedMixedBoolean.
+var ErrNonPlanar = errors.New("brep: operation requires planar-faceted solids")
+
+// ErrUnsupportedMixedBoolean is the mixed per-face boolean's NAMED decline (ADR-0058): the operands
+// carry curved faces in a contact configuration the dispatch does not model exactly yet (curved∩curved
+// contact, a conic imprint without its mirror, a flush contact on a curved-loop face, grazing
+// tangency). The caller falls to the bespoke curved recognizers and the mesh rescue, exactly as the
+// ground rules prescribe — a refusal at classification, never a wrong result.
+var ErrUnsupportedMixedBoolean = errors.New("brep: mixed boolean does not model this curved contact configuration yet")
 
 // subFace is one region a face is split into, with an interior point for classification
 // and the outward normal it should carry in the result. lineage carries the source face's
@@ -34,13 +42,21 @@ type subFace struct {
 	point   math.Point3
 	lineage topo.Lineage
 	fromB   bool // which operand this came from (false=A, true=B); fuses tangent contacts
+	// exactHoles are curved hole loops detached from the source face before the polygonal split and
+	// re-attached to the fragment that contains them (per-face dispatch, ADR-0058): a boss seat's rim
+	// circle survives the split EXACTLY, so it still welds with the pass-through wall's rim.
+	exactHoles []curvedLoop
 }
 
-// Boolean computes A op B as a clean planar B-rep: it imprints the face–face intersection
-// segments, splits each face along them (the 2D arrangement), classifies the sub-faces
-// against the other solid, keeps the ones the operation calls for (reversing B's where
-// needed), and stitches them into a watertight solid. Unlike the triangle-soup CSG this
-// produces a low-face-count result and is sound under chaining.
+// Boolean computes A op B as a clean B-rep by PER-FACE dispatch (ADR-0058, #2247): each face takes
+// the split its representation calls for — the exact planar 2D arrangement for straight-edged planar
+// faces (the conditioning-gated fast path), the exact-frame plane chart for curved-rimmed planar
+// faces, the ruled (u,v) chart for cylinder walls, whole-face pass-through for provably-clear curved
+// faces — classified against the other solid and stitched by the ONE unified radial stitch. All-planar
+// operands run the byte-stable planar pipeline unchanged; a curved contact configuration outside the
+// dispatch's exact scope declines loudly (ErrUnsupportedMixedBoolean) to the caller's curved
+// recognizers and mesh rescue. Unlike the triangle-soup CSG this produces a low-face-count exact
+// result and is sound under chaining.
 func Boolean(op Op, a, b *topo.Body) (*topo.Body, error) {
 	return BooleanDiag(op, a, b, nil)
 }
@@ -58,9 +74,19 @@ func BooleanDiag(op Op, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, error)
 	fa, oka := facesOf(a)
 	fb, okb := facesOf(b)
 	if !oka || !okb {
-		return nil, ErrNonPlanar
+		// Per-face dispatch (ADR-0058): straight-edged planar faces take the exact pipeline, the
+		// rest pass through whole under booleanMixed's conservative scope gate; out-of-scope
+		// operands still decline with ErrUnsupportedMixedBoolean to the curved/CSG fallbacks.
+		res, tangent, err := booleanMixed(op, a, b)
+		return recordTangent(res, tangent, err, rec)
 	}
 	res, tangent, err := booleanOnce(op, fa, fb, a, b)
+	return recordTangent(res, tangent, err, rec)
+}
+
+// recordTangent notes whether a tangent/grazing contact shipped as a valid manifold (Info) or not
+// (Defect — the caller then declines to the CSG fallback observably).
+func recordTangent(res *topo.Body, tangent bool, err error, rec *diag.Recorder) (*topo.Body, error) {
 	if err != nil || !tangent {
 		return res, err
 	}
@@ -94,7 +120,7 @@ func exactTangentIsValid(b *topo.Body) bool {
 // booleanOnce runs one pass: imprint, split, classify, keep, stitch. The bool is true when the pass
 // resolved a tangent/grazing contact (a vertex pair used by more than two faces), so the caller can
 // note whether that contact shipped as a valid manifold.
-func booleanOnce(op Op, fa, fb []planarFace, a, b *topo.Body) (*topo.Body, bool, error) {
+func booleanOnce(op Op, fa, fb []curvedFace, a, b *topo.Body) (*topo.Body, bool, error) {
 	// One AABB-culled candidate set feeds imprint, provenance AND the coplanar-cover scans —
 	// the retired brute version recomputed the O(Fa·Fb) pairing 2–3× per pass — and each
 	// operand is flattened ONCE into a solidProbe for every ray-cast classification, instead
@@ -104,7 +130,7 @@ func booleanOnce(op Op, fa, fb []planarFace, a, b *topo.Body) (*topo.Body, bool,
 	var kept []subFace
 	kept = append(kept, selectFaces(fa, impA, newSolidProbe(b), fb, pairs.bForA, op, false, prov)...)
 	kept = append(kept, selectFaces(fb, impB, newSolidProbe(a), fa, pairs.aForB, op, true, prov)...)
-	return stitch(kept, prov)
+	return stitch(kept, nil, prov)
 }
 
 // CodeBooleanTangentContact marks a boolean whose operands met at a tangent/grazing contact — a
@@ -130,19 +156,28 @@ const CodeBooleanTangentUnresolved diag.Code = "boolean.tangent-unresolved"
 // edge, and imprints ITSELF with its own bottom edge. Since #1607 the pairing is AABB-culled
 // and shared with provenanceOf through imprintCandidates; this wrapper keeps the historical
 // contract for callers that only need the geometry.
-func imprintAll(fa, fb []planarFace) (impA, impB [][][2]math.Point3) {
+func imprintAll(fa, fb []curvedFace) (impA, impB [][][2]math.Point3) {
 	impA, impB, _ = imprintCandidates(fa, fb, crossingFaceCandidates(fa, fb))
 	return impA, impB
 }
 
 // imprint returns the 3D segments of the intersection line of two faces' planes clipped
-// to where both faces overlap (empty when parallel or non-overlapping).
-func imprint(a, b planarFace) [][2]math.Point3 {
-	p0, dir, ok := geom.PlanePlaneLine(a.plane, b.plane)
+// to where both faces overlap (empty when parallel or non-overlapping). The clip runs against each
+// face's TRUE trim: the exact polygon intervals for an all-straight face (the pure-planar boolean,
+// unchanged), the exact even-odd conic intervals for a face carrying curved loops — so an imprint is
+// never minted inside a hole's void or beyond a curved boundary (ADR-0058; the phantom hole-region
+// imprint broke the detached-hole split's premise).
+func imprint(a, b curvedFace) [][2]math.Point3 {
+	p0, dir, ok := geom.PlanePlaneLine(facePlane(a), facePlane(b))
 	if !ok {
 		return nil
 	}
-	overlap := intersectIntervals(faceLineIntervals(a, p0, dir), faceLineIntervals(b, p0, dir))
+	ivA, okA := exactFaceLineIntervals(a, p0, dir)
+	ivB, okB := exactFaceLineIntervals(b, p0, dir)
+	if !okA || !okB {
+		return nil // no exact trim clip for an edge kind: mint nothing; the mixed gates decline upstream
+	}
+	overlap := intersectIntervals(ivA, ivB)
 	var segs [][2]math.Point3
 	for _, iv := range overlap {
 		if iv[1]-iv[0] > 1e-9 { // tol:calibrated — planar imprint overlap length (see arrange2d arrTol)
@@ -170,21 +205,27 @@ func intersectIntervals(a, b [][2]float64) [][2]float64 {
 // operation wants, classifying each via [classifySubFace]. `others` is the other solid's
 // face list (for the coplanar overlap test), culled per face to its box-overlap candidates
 // `otherCand` (#1607); `other` is the body's cached probe (for the winding-number cast).
-func selectFaces(faces []planarFace, imprints [][][2]math.Point3, other *solidProbe, others []planarFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg) []subFace {
+func selectFaces(faces []curvedFace, imprints [][][2]math.Point3, other insideOracle, others []curvedFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg) []subFace {
 	var kept []subFace
 	for i, f := range faces {
-		near := facesAt(others, otherCand[i])
-		var fromFace []subFace
-		for _, sf := range splitFace(f, imprints[i]) {
-			if out, ok := classifySubFace(sf, f, other, near, op, isB); ok {
-				fromFace = append(fromFace, out)
-			}
-		}
-		fromFace = mergeFilledHoles(fromFace)
-		nameFragments(fromFace, f.lineage, isB, prov)
-		kept = append(kept, fromFace...)
+		kept = append(kept, selectFragments(f, imprints[i], other, facesAt(others, otherCand[i]), op, isB, prov)...)
 	}
 	return kept
+}
+
+// selectFragments splits ONE face by its imprints, classifies and keeps its material sub-faces,
+// dissolves filled holes and names the pieces — the per-face body selectFaces and the mixed
+// dispatch's detached-hole variant share.
+func selectFragments(f curvedFace, imprints [][2]math.Point3, other insideOracle, near []curvedFace, op Op, isB bool, prov []imprintSeg) []subFace {
+	var fromFace []subFace
+	for _, sf := range splitFace(f, imprints) {
+		if out, ok := classifySubFace(sf, f, other, near, op, isB); ok {
+			fromFace = append(fromFace, out)
+		}
+	}
+	fromFace = mergeFilledHoles(fromFace)
+	nameFragments(fromFace, f.lineage, isB, prov)
+	return fromFace
 }
 
 // nameFragments assigns each kept piece of one source face its reference-key lineage. A face that
@@ -226,7 +267,7 @@ func splitLineage(parent topo.Lineage, k int) topo.Lineage {
 // the other solid follows the ON/ON table ([coplanarKeep]); otherwise it is kept by the
 // inside/outside table ([keep]) from a winding-number cast against the other solid's cached
 // probe, with B's difference faces reversed to form the cut walls.
-func classifySubFace(sf subFace, f planarFace, other *solidProbe, others []planarFace, op Op, isB bool) (subFace, bool) {
+func classifySubFace(sf subFace, f curvedFace, other insideOracle, others []curvedFace, op Op, isB bool) (subFace, bool) {
 	if covered, sameNormal := coplanarCover(f, sf.point, others); covered {
 		return sf, coplanarKeep(op, isB, sameNormal)
 	}
@@ -258,6 +299,9 @@ func keep(op Op, isB, inside bool) bool {
 // reverseSubFace flips a sub-face's orientation (normal and loop windings) so it faces
 // into the cavity a Difference carves.
 func reverseSubFace(sf subFace) subFace {
+	for i, h := range sf.exactHoles {
+		sf.exactHoles[i] = reverseCurvedLoop(h) // an exact hole flips with its face's sense
+	}
 	sf.normal = sf.normal.Scale(-1)
 	sf.outer = reverseRing(sf.outer)
 	for i := range sf.holes {
@@ -281,7 +325,7 @@ const boundaryImprintTol = 1e-7 // tol:calibrated — planar imprint-on-boundary
 
 // interiorSegments filters out the segments that lie along f's boundary, keeping only the
 // ones that can actually split the face's interior.
-func interiorSegments(f planarFace, segs [][2]math.Point3) [][2]math.Point3 {
+func interiorSegments(f curvedFace, segs [][2]math.Point3) [][2]math.Point3 {
 	out := segs[:0:0]
 	for _, s := range segs {
 		if !segmentOnFaceBoundary(f, s) {
@@ -294,15 +338,15 @@ func interiorSegments(f planarFace, segs [][2]math.Point3) [][2]math.Point3 {
 // segmentOnFaceBoundary reports whether the whole segment lies on f's boundary (within
 // [boundaryImprintTol]). Endpoints AND midpoint are tested, so a segment that runs along a
 // boundary edge's line but crosses the interior elsewhere (a concave face) is kept.
-func segmentOnFaceBoundary(f planarFace, s [2]math.Point3) bool {
+func segmentOnFaceBoundary(f curvedFace, s [2]math.Point3) bool {
 	mid := math.P3((s[0].X+s[1].X)/2, (s[0].Y+s[1].Y)/2, (s[0].Z+s[1].Z)/2)
 	return pointOnFaceBoundary(f, s[0]) && pointOnFaceBoundary(f, mid) && pointOnFaceBoundary(f, s[1])
 }
 
 // pointOnFaceBoundary reports whether p lies within [boundaryImprintTol] of any of f's
 // boundary edges.
-func pointOnFaceBoundary(f planarFace, p math.Point3) bool {
-	for _, ring := range f.loops {
+func pointOnFaceBoundary(f curvedFace, p math.Point3) bool {
+	for _, ring := range planarRings(f) {
 		n := len(ring)
 		for i := range n {
 			if distPointSegment(p, ring[i], ring[(i+1)%n]) < boundaryImprintTol {

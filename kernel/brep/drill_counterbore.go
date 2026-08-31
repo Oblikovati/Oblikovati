@@ -39,7 +39,7 @@ func CutCounterboreHole(slab *topo.Body, base math.Point3, axisDir math.Vector3,
 
 // counterboreEnd resolves where the bore ends: a through bore finds the exit face (returned via
 // its index in the copied list); a blind bore stops inside and is checked for containment.
-func counterboreEnd(slab *topo.Body, copied []planarFace, entry planarFace, base, shoulder math.Point3, ua math.Vector3, boreRadius, boreLen float64, through bool) (end math.Point3, exitIdx int, rest []planarFace, err error) {
+func counterboreEnd(slab *topo.Body, copied []curvedFace, entry curvedFace, base, shoulder math.Point3, ua math.Vector3, boreRadius, boreLen float64, through bool) (end math.Point3, exitIdx int, rest []curvedFace, err error) {
 	if !through {
 		end = shoulder.TranslateBy(ua.Scale(math.Scalar(boreLen)))
 		if err := checkBlindFits(slab, entry, end, boreRadius); err != nil {
@@ -48,10 +48,10 @@ func counterboreEnd(slab *topo.Body, copied []planarFace, entry planarFace, base
 		return end, -1, copied, nil
 	}
 	for i, f := range copied {
-		if float64(f.normal.Dot(ua)) <= 1-1e-7 {
+		if float64(faceNormal(f).Dot(ua)) <= 1-1e-7 { // tol:angular — parallel-normals cosine
 			continue
 		}
-		c := base.TranslateBy(ua.Scale(math.Scalar(pierceParam(base, ua, f.plane))))
+		c := base.TranslateBy(ua.Scale(math.Scalar(pierceParam(base, ua, facePlane(f)))))
 		if circleInsideFace(c, f, boreRadius) {
 			return c, i, copied, nil
 		}
@@ -62,11 +62,11 @@ func counterboreEnd(slab *topo.Body, copied []planarFace, entry planarFace, base
 // assembleCounterbore welds the planar faces (copied + entry + optional exit), holes the entry
 // with the recess and the exit with the bore, and adds the recess wall, annular shoulder, bore
 // wall, and (blind) flat bottom.
-func assembleCounterbore(copied []planarFace, entry planarFace, exitIdx int, base, shoulder, end math.Point3, ua math.Vector3, boreRadius, counterRadius float64, through bool) (*topo.Body, error) {
+func assembleCounterbore(copied []curvedFace, entry curvedFace, exitIdx int, base, shoulder, end math.Point3, ua math.Vector3, boreRadius, counterRadius float64, through bool) (*topo.Body, error) {
 	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("brep", "cbore", 0)))
 	// Copied faces lead the welded list, so a through exit keeps its copied-slice index here;
 	// entry is appended after them.
-	planar := append(append([]planarFace{}, copied...), entry)
+	planar := append(append([]curvedFace{}, copied...), entry)
 	entryIdx := len(planar) - 1
 
 	w := newWelder3(planarStitchGrid)
@@ -94,7 +94,7 @@ func assembleCounterbore(copied []planarFace, entry planarFace, exitIdx int, bas
 		case exitIdx:
 			specs = append(specs, topo.InnerLoop(topo.Fwd(eEnd)))
 		}
-		bld.AddFace(f.plane, f.lineage, specs...) // copied/holed faces keep their key (K1a)
+		bld.AddFace(facePlane(f), f.lineage, specs...) // copied/holed faces keep their key (K1a)
 	}
 
 	shPlane, err := geom.NewPlane(shoulder, ua.Scale(-1))

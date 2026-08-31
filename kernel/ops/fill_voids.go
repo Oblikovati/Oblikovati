@@ -14,11 +14,11 @@ import "oblikovati.org/kernel/topo"
 // through unchanged.
 //
 // Example: solid := ops.FillInternalVoids(hollowCasting, ops.DefaultQuality())
-func FillInternalVoids(b *topo.Body, q Quality) *topo.Body {
+func FillInternalVoids(b *topo.Body, _ Quality) *topo.Body {
 	shells := b.Shells()
 	kept := make([]*topo.Shell, 0, len(shells))
 	for _, sh := range shells {
-		if !ShellIsVoid(sh, q) {
+		if !ShellIsVoidInBody(b, sh) {
 			kept = append(kept, sh)
 		}
 	}

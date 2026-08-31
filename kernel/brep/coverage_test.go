@@ -11,16 +11,19 @@ import (
 	"oblikovati.org/math"
 )
 
-func TestBooleanRejectsNonPlanarOperand(t *testing.T) {
-	// A body with a cylindrical face cannot be handled by the planar B-rep boolean.
+func TestBooleanDeclinesUnmodelledCurvedContact(t *testing.T) {
+	// The boolean no longer refuses curved operands wholesale (#2247, ADR-0058): it dispatches per
+	// face and declines only a curved CONTACT configuration outside its exact scope — with the NAMED
+	// sentinel, so the caller falls to the curved recognizers. These overlapping one-face open bodies
+	// (a bare cylinder patch against a triangle crossing it) are exactly such a configuration.
 	cyl := oneFaceBody(t, true)
 	tri := oneFaceBody(t, false)
-	if _, err := Boolean(Union, cyl, tri); !errors.Is(err, ErrNonPlanar) {
-		t.Fatalf("Boolean(non-planar) err = %v, want ErrNonPlanar", err)
+	if _, err := Boolean(Union, cyl, tri); !errors.Is(err, ErrUnsupportedMixedBoolean) {
+		t.Fatalf("Boolean(curved contact) err = %v, want ErrUnsupportedMixedBoolean", err)
 	}
-	// Symmetric: a planar a with a non-planar b also rejects.
-	if _, err := Boolean(Union, tri, cyl); !errors.Is(err, ErrNonPlanar) {
-		t.Fatalf("Boolean(planar, non-planar) err = %v, want ErrNonPlanar", err)
+	// Symmetric.
+	if _, err := Boolean(Union, tri, cyl); !errors.Is(err, ErrUnsupportedMixedBoolean) {
+		t.Fatalf("Boolean(planar, curved contact) err = %v, want ErrUnsupportedMixedBoolean", err)
 	}
 }
 
@@ -156,13 +159,14 @@ func TestVerticesOnSegment(t *testing.T) {
 	for _, p := range []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(1, 0, 0)} {
 		w.add(p)
 	}
+	tree := newTJPointTree(w.points)
 	// Vertex 2 (1,0,0), which is off the ring, lies on segment 0→1.
-	got := verticesOnSegment(0, 1, []int{0, 1}, w)
+	got := verticesOnSegment(0, 1, []int{0, 1}, w, tree)
 	if len(got) != 1 || got[0] != 2 {
 		t.Fatalf("verticesOnSegment = %v, want [2]", got)
 	}
 	// A zero-length segment yields nothing.
-	if verticesOnSegment(0, 0, []int{0, 1}, w) != nil {
+	if verticesOnSegment(0, 0, []int{0, 1}, w, tree) != nil {
 		t.Error("zero-length segment should have no interior vertices")
 	}
 }

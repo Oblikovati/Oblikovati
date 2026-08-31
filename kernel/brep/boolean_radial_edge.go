@@ -10,22 +10,26 @@ import (
 	"oblikovati.org/math"
 )
 
-// Weiler radial-edge manifold extraction for the planar-boolean stitch (ADR-0047, #1726).
+// Weiler radial-edge manifold extraction — the tangent-contact core of the ONE boolean stitch
+// (ADR-0047 #1726; surface-agnostic since ADR-0058, consumed by curved_stitch_plan.go for planar and
+// curved faces alike).
 //
 // A boolean of two solids that touch along a lower-dimensional locus — a tangent/grazing contact —
-// welds more than two face half-edges onto one vertex pair (a NON-manifold edge) and, at the
+// welds more than two face half-edges onto one geometric edge (a NON-manifold edge) and, at the
 // contact's endpoints, more than one face fan onto one vertex (a pinch). Neither is a valid closed
 // 2-manifold. This file is the PURE topological core that resolves both: around each non-manifold
-// edge it radially orders the half-edge uses and pairs the two boundaries of each filled dihedral
-// wedge into manifold edge-groups (resolveEdgeUses); around each vertex it partitions the incident
-// edge-groups into radial disks, each of which becomes one manifold vertex (partitionVertexDisks) —
-// so two solids kissing along a line become two coincident-but-distinct shells.
+// edge it radially orders the half-edge uses — by the dihedral azimuth of each face's outward surface
+// normal at the edge, injected via faceDirAt (OCCT GetFaceOff/GetFaceDir) — and pairs the two
+// boundaries of each filled dihedral wedge into manifold edge-groups (resolveEdgeUses); around each
+// vertex it partitions the incident edge-groups into radial disks, each of which becomes one manifold
+// vertex (partitionVertexDisks) — so two solids kissing along a line become two
+// coincident-but-distinct shells.
 //
-// It is a total function over a naming-free plan: it takes welded vertices, built faces and the
-// edge-use map and returns a sewPlan. It never moves a coordinate, never mints a topo entity and
-// never names one (that is boolean_mint.go's job, downstream). A contact the radial sort cannot pair
-// is encoded faithfully as an unpaired singleton group; the caller's solidity gate then declines the
-// body rather than shipping an invalid one (the CSG-fallback path). See ADR-0047.
+// It is a total function over a naming-free plan. It never moves a coordinate, never mints a topo
+// entity and never names one (naming: boolean_mint.go hooks; construction: curved_stitch.go). A
+// contact the radial sort cannot pair is encoded faithfully as an unpaired singleton group; the
+// caller's solidity gate then declines the body rather than shipping an invalid one (the CSG-fallback
+// path). See ADR-0047.
 
 // edgeGroup is one manifold edge extracted from a (possibly non-manifold) radial edge: exactly two
 // half-edge uses that bound one filled dihedral wedge — or, degenerately, a lone unpairable use.
@@ -51,12 +55,19 @@ type sewPlan struct {
 	useGroup map[[3]int]int
 }
 
+// faceDirAt returns the outward material direction of a half-edge use at a point on the shared edge —
+// the surface normal of the using face there. It is the ONLY surface-dependent input to the radial sew;
+// injecting it (OCCT's GetFaceDir) is what makes the Weiler resolution surface-agnostic: a planar face
+// returns its constant normal, a curved face its normal evaluated on the surface at the edge (ADR-0058).
+type faceDirAt func(h loopEdgeUse, edgePoint math.Point3) math.Vector3
+
 // radialSew resolves every tangent/grazing contact in the welded face set into a manifold sew plan.
 // The common case (every vertex pair used exactly twice, every vertex one disk) passes through
 // unchanged — the radial machinery engages only where a pair is over-used or a vertex holds more
-// than one disk.
-func radialSew(verts []math.Point3, faces []builtFace, uses map[[2]int][]loopEdgeUse) sewPlan {
-	groups := extractEdgeGroups(verts, faces, uses)
+// than one disk. normalAt supplies each using face's surface normal at the edge, so the resolution is
+// surface-agnostic (planar and curved alike).
+func radialSew(verts []math.Point3, uses map[[2]int][]loopEdgeUse, normalAt faceDirAt) sewPlan {
+	groups := extractEdgeGroups(verts, uses, normalAt)
 	return sewPlan{
 		groups:   groups,
 		disks:    partitionVertexDisks(groups),
@@ -68,10 +79,14 @@ func radialSew(verts []math.Point3, faces []builtFace, uses map[[2]int][]loopEdg
 // edge-groups (resolveEdgeUses), so a pair used twice yields one group and an over-used tangent
 // contact yields one group per filled wedge. The order is deterministic (sorted pair keys) so the
 // downstream ordinal naming is stable.
-func extractEdgeGroups(verts []math.Point3, faces []builtFace, uses map[[2]int][]loopEdgeUse) []edgeGroup {
+func extractEdgeGroups(verts []math.Point3, uses map[[2]int][]loopEdgeUse, normalAt faceDirAt) []edgeGroup {
 	var groups []edgeGroup
 	for _, k := range sortedPairKeys(uses) {
-		for _, g := range resolveEdgeUses(k, uses[k], verts, faces) {
+		axisOf := func() (math.Vector3, math.Point3) { // the chord axis + midpoint of a straight edge
+			p0, p1 := verts[k[0]], verts[k[1]]
+			return p0.VectorTo(p1).AsUnit().AsVector(), math.P3((p0.X+p1.X)/2, (p0.Y+p1.Y)/2, (p0.Z+p1.Z)/2)
+		}
+		for _, g := range resolveEdgeUses(uses[k], axisOf, normalAt) {
 			groups = append(groups, edgeGroup{pair: k, uses: g})
 		}
 	}
@@ -98,7 +113,9 @@ func partitionVertexDisks(groups []edgeGroup) map[int][]vertexDisk {
 	incident := map[int][]int{}
 	for gi := range groups {
 		incident[groups[gi].pair[0]] = append(incident[groups[gi].pair[0]], gi)
-		incident[groups[gi].pair[1]] = append(incident[groups[gi].pair[1]], gi)
+		if groups[gi].pair[1] != groups[gi].pair[0] { // a closed seam edge touches its vertex once
+			incident[groups[gi].pair[1]] = append(incident[groups[gi].pair[1]], gi)
+		}
 	}
 	disks := make(map[int][]vertexDisk, len(incident))
 	for v, inc := range incident {
@@ -146,14 +163,17 @@ func sortedPairKeys(uses map[[2]int][]loopEdgeUse) [][2]int {
 // along this edge: collapsing all uses onto one edge would make it non-manifold (>2 faces). The
 // half-edges are sorted by the azimuth of their face-interior direction about the edge axis, then
 // paired by filled wedge (pairTangentDihedrals) so each group is one manifold dihedral.
-func resolveEdgeUses(pair [2]int, uses []loopEdgeUse, verts []math.Point3, faces []builtFace) [][]loopEdgeUse {
+// resolveEdgeUses partitions ONE edge's uses into manifold groups of two. edgeAxis lazily supplies the
+// edge's tangent direction and a point on it (the chord + midpoint for a straight edge, the curve tangent
+// + midpoint for a curved one) — evaluated only for an over-used (tangent-contact) edge.
+func resolveEdgeUses(uses []loopEdgeUse, edgeAxis func() (math.Vector3, math.Point3), normalAt faceDirAt) [][]loopEdgeUse {
 	if len(uses) <= 2 {
 		return [][]loopEdgeUse{uses}
 	}
-	axis := verts[pair[0]].VectorTo(verts[pair[1]]).AsUnit().AsVector()
+	axis, edgePoint := edgeAxis()
 	u, v := perpBasis(axis)
 	sort.SliceStable(uses, func(i, j int) bool {
-		return edgeAzimuth(uses[i], axis, u, v, faces) < edgeAzimuth(uses[j], axis, u, v, faces)
+		return edgeAzimuth(uses[i], axis, u, v, edgePoint, normalAt) < edgeAzimuth(uses[j], axis, u, v, edgePoint, normalAt)
 	})
 	return pairTangentDihedrals(uses)
 }
@@ -207,12 +227,12 @@ func nextFilledBoundary(uses []loopEdgeUse, used []bool, i int) int {
 // edgeAzimuth is the angle, about the edge axis, of a half-edge's face-interior direction —
 // the unit normal crossed with the ring's traversal direction (which keeps face material on
 // its left for both outer and hole loops). Used to order the faces radially around the edge.
-func edgeAzimuth(h loopEdgeUse, axis, u, v math.Vector3, faces []builtFace) float64 {
+func edgeAzimuth(h loopEdgeUse, axis, u, v math.Vector3, edgePoint math.Point3, normalAt faceDirAt) float64 {
 	travel := axis
 	if h.reversed {
 		travel = axis.Scale(-1)
 	}
-	interior := faces[h.face].normal.Cross(travel)
+	interior := normalAt(h, edgePoint).Cross(travel)
 	return stdmath.Atan2(interior.Dot(v), interior.Dot(u))
 }
 

@@ -30,13 +30,15 @@ func tessellatePlanarFace(f *topo.Face, q Quality) *Mesh {
 	if holes3D := faceHoleBoundaries(f, q); len(holes3D) > 0 {
 		return holedPlanarMesh(boundary2D, boundary3D, holes3D, flat, normal)
 	}
+	tris := planarTris(boundary2D, nil)
 	m := &Mesh{}
 	for _, p := range boundary3D {
 		m.addVertex(p, normal)
 	}
-	for _, tri := range planarTris(boundary2D, nil) {
+	for _, tri := range tris {
 		m.addTriangle(tri[0], tri[1], tri[2])
 	}
+	recordUncoveredPlanarFace(m, tris, boundary2D, nil) // flag a non-covering (self-crossing) face, never silent (#3388)
 	return m
 }
 
@@ -53,6 +55,7 @@ func holedPlanarMesh(outer2D []math.Point2, outer3D []math.Point3, holes3D [][]m
 		// arrangement so the mesh covers exactly outer − union(holes) (#873).
 		return unionHoledMesh(outer3D, holes3D, normal)
 	}
+	tris := planarTris(outer2D, holes2D)
 	m := &Mesh{}
 	for _, p := range outer3D {
 		m.addVertex(p, normal)
@@ -62,9 +65,10 @@ func holedPlanarMesh(outer2D []math.Point2, outer3D []math.Point3, holes3D [][]m
 			m.addVertex(p, normal)
 		}
 	}
-	for _, tri := range planarTris(outer2D, holes2D) {
+	for _, tri := range tris {
 		m.addTriangle(tri[0], tri[1], tri[2])
 	}
+	recordUncoveredPlanarFace(m, tris, outer2D, holes2D) // flag a non-covering (self-crossing) face, never silent (#3388)
 	return m
 }
 
@@ -98,12 +102,18 @@ func faceHoleBoundaries(f *topo.Face, q Quality) [][]math.Point3 {
 	return holes
 }
 
-// earClip triangulates a simple polygon, returning triangles as index triples into
-// poly. It orients the polygon CCW first, then repeatedly clips convex ears.
-func earClip(poly []math.Point2) [][3]int {
+// earClip triangulates a simple polygon, returning triangles as index triples into poly and whether
+// it triangulated the WHOLE polygon (complete). It orients the polygon CCW first, then repeatedly
+// clips convex ears. complete is false when a degenerate / non-simple polygon leaves an un-clippable
+// remainder — the two-ears theorem only holds for SIMPLE polygons, so on a self-touching or
+// self-crossing input ear clipping stalls and the returned triangles cover only part of it. A partial
+// covering that presents as complete is exactly the silent hole/overlap #3390 refuses: earClip now
+// SIGNALS the shortfall (complete=false) so the caller declines or flags it rather than shipping the
+// stump as if it were the whole face (see boundaryPatchMesh's coverage gate and bestSingleLoopTriangulation).
+func earClip(poly []math.Point2) (tris [][3]int, complete bool) {
 	n := len(poly)
 	if n < 3 {
-		return nil
+		return nil, false // fewer than three vertices bound no area — nothing to triangulate
 	}
 	idx := make([]int, n)
 	for i := range idx {
@@ -112,11 +122,10 @@ func earClip(poly []math.Point2) [][3]int {
 	if signedArea(poly) < 0 {
 		reverse(idx)
 	}
-	var tris [][3]int
 	for len(idx) > 3 {
 		i, ok := findEar(poly, idx)
 		if !ok {
-			break // degenerate / non-simple polygon: stop with what we have
+			return tris, false // degenerate / non-simple polygon: an un-clippable remainder is left uncovered
 		}
 		m := len(idx)
 		tris = append(tris, [3]int{idx[(i+m-1)%m], idx[i], idx[(i+1)%m]})
@@ -125,7 +134,7 @@ func earClip(poly []math.Point2) [][3]int {
 	if len(idx) == 3 {
 		tris = append(tris, [3]int{idx[0], idx[1], idx[2]})
 	}
-	return tris
+	return tris, true
 }
 
 // findEar returns the position in idx of a clippable ear (convex vertex whose
@@ -191,11 +200,17 @@ func reverse(idx []int) {
 	}
 }
 
+// bestSingleLoopTriangulation picks the lower-area-error of the two single-loop triangulators. A
+// stalled ear clip (complete=false on a non-simple loop) covers only part of the polygon, so its area
+// falls short and earcut wins on the area test — but a tie is broken toward the COMPLETE one so an
+// incomplete stump never ships when the alternative covers the loop. The planar coverage gate
+// (planar_faithful.go) is the backstop that flags a face both triangulators fail to cover (#3390).
 func bestSingleLoopTriangulation(poly []math.Point2) [][3]int {
-	clip := earClip(poly)
+	clip, clipComplete := earClip(poly)
 	cut := earcut(poly, nil)
 	want := stdmath.Abs(signedArea(poly))
-	if areaError(poly, cut, want) < areaError(poly, clip, want) {
+	clipErr, cutErr := areaError(poly, clip, want), areaError(poly, cut, want)
+	if cutErr < clipErr || (cutErr == clipErr && !clipComplete) {
 		return cut
 	}
 	return clip

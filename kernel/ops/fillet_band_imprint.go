@@ -7,6 +7,7 @@ import (
 
 	stdmath "math"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -26,9 +27,9 @@ import (
 //     (v = const). A cut is kept only where the intersection really lies inside that face's own
 //     trimmed boundary, so the far side of the body does not trim the band.
 //  2. CLASSIFY. The cuts arrange the ideal box into a grid of cells. A cell survives iff its interior
-//     is INSIDE the original solid — the generalized winding number of the body's own tessellation
-//     (pointInMesh), the same ground truth the concave-arm void gate already uses. The band is the
-//     part of the cylinder the material still backs; a cell in a slot is not.
+//     is INSIDE the original solid — the analytic point-in-solid classifier (brep.InsideQuery), the
+//     same ground truth the concave-arm void gate already uses. The band is the part of the cylinder
+//     the material still backs; a cell in a slot is not.
 //  3. VERIFY, then WALK. The arrangement is a HYPOTHESIS: it is right only if no cut was missed. Every
 //     cell is re-probed on an interior grid and must agree with its own classification throughout —
 //     one disagreement means an obstacle the cut step could not express, and the whole rebuild is
@@ -230,15 +231,15 @@ func bandGridLines(x []float64, lo, hi, tol float64) []float64 {
 // FALSIFIES the arrangement while doing it: all bandProbeGrid² interior stations of a cell must agree,
 // because a cell straddling an undrawn cut does not. ok=false on any disagreement.
 func bandClassifyCells(body *topo.Body, c bandChart, us, vs []float64) ([][]bool, bool) {
-	mesh, _ := TessellateBody(body, DefaultQuality())
-	if mesh == nil || len(mesh.Indices) == 0 {
+	if len(body.Faces()) == 0 {
 		return nil, false
 	}
+	inside := brep.NewInsideQuery(body)
 	solid := make([][]bool, len(us)-1)
 	for i := range solid {
 		solid[i] = make([]bool, len(vs)-1)
 		for j := range solid[i] {
-			in, ok := bandCellInside(mesh, c, us[i], us[i+1], vs[j], vs[j+1])
+			in, ok := bandCellInside(inside, c, us[i], us[i+1], vs[j], vs[j+1])
 			if !ok {
 				return nil, false
 			}
@@ -250,13 +251,13 @@ func bandClassifyCells(body *topo.Body, c bandChart, us, vs []float64) ([][]bool
 
 // bandCellInside probes one cell's interior. ok=false when the stations disagree — the arrangement
 // missed a cut through this cell, so nothing downstream may be trusted.
-func bandCellInside(mesh *Mesh, c bandChart, u0, u1, v0, v1 float64) (bool, bool) {
+func bandCellInside(inside *brep.InsideQuery, c bandChart, u0, u1, v0, v1 float64) (bool, bool) {
 	first, seen := false, false
 	for i := 1; i <= bandProbeGrid; i++ {
 		for j := 1; j <= bandProbeGrid; j++ {
 			u := u0 + (u1-u0)*float64(i)/float64(bandProbeGrid+1)
 			v := v0 + (v1-v0)*float64(j)/float64(bandProbeGrid+1)
-			in := pointInMesh(mesh, c.bandPointAt(u, v))
+			in := inside.Inside(c.bandPointAt(u, v))
 			if seen && in != first {
 				return false, false
 			}

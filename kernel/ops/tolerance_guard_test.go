@@ -85,6 +85,9 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../brep/boolean_provenance.go",
 		"../brep/definition.go",
 		"../brep/drill_blind.go",
+		// brep: the analytic minimum-distance recursion and its numeric minimisers (#3458).
+		"../brep/distance.go",
+		"../brep/distance_min.go",
 		// ops: the mesher vertex-weld path.
 		"../ops/edge_discretize.go",
 		"../ops/closed_surface_mesh.go",

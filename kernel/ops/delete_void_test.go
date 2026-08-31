@@ -36,7 +36,7 @@ func distinctCavityBody(t *testing.T, outer, inner string) *topo.Body {
 func voidFaceKey(t *testing.T, b *topo.Body) []byte {
 	t.Helper()
 	for _, sh := range b.Shells() {
-		if ShellIsVoid(sh, DefaultQuality()) {
+		if ShellIsVoidInBody(b, sh) {
 			return sh.Faces()[0].ReferenceKey()
 		}
 	}
@@ -48,7 +48,7 @@ func voidFaceKey(t *testing.T, b *topo.Body) []byte {
 func outerFaceKey(t *testing.T, b *topo.Body) []byte {
 	t.Helper()
 	for _, sh := range b.Shells() {
-		if !ShellIsVoid(sh, DefaultQuality()) {
+		if !ShellIsVoidInBody(b, sh) {
 			return sh.Faces()[0].ReferenceKey()
 		}
 	}

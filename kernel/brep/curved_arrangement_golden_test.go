@@ -114,7 +114,11 @@ func arrangementGoldenCases() []arrangementGoldenCase {
 			cone, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 			return brep.RuledCrossingCutGeneral(cyl, cone, nil)
 		}},
-		{"steinmetz-cut", "V4E6F6chi2free0", "V4E6F6chi2-9ebec3decb26122b", func() (*topo.Body, bool) {
+		// Re-baselined for the unified radial stitch (ADR-0058): the equal-radius Steinmetz cut leaves
+		// TWO wedge components touching at the two pinch points; the radial vertex-disk split now
+		// separates them into coincident-but-distinct shells (ADR-0047's bowtie rule, previously planar
+		// only) — V6/chi4 (two chi-2 shells) instead of the old shared-pinch-vertex V4/chi2 complex.
+		{"steinmetz-cut", "V6E6F6chi4free0", "V6E6F6chi4-ccc0e170dc8052c8", func() (*topo.Body, bool) {
 			return brep.SteinmetzCutGeneral(cylX(-6, 3, 12), cylZ(-6, 3, 12), nil)
 		}},
 		{"partial-penetration", "V4E5F5chi2free1", "V4E5F5chi2-324d24b080bb6f9b", func() (*topo.Body, bool) {

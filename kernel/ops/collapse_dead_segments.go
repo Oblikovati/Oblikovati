@@ -3,23 +3,61 @@
 package ops
 
 import (
+	"fmt"
+
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
+// CodeAssembleDeadLoopCollapse marks a fillet loop whose zero-length dead segments cannot be removed
+// without leaving fewer than three vertices — a loop that has collapsed to a point or an edge. Dropping
+// the dead segments would degenerate it; keeping them ships a zero-length edge that opens the shell.
+// Neither is a valid loop, so the assembly refuses it HERE with a named defect naming the loop, rather
+// than deferring the discovery to a later, generic Validate pass (#3389).
+const CodeAssembleDeadLoopCollapse diag.Code = "assemble.dead-loop-collapse"
+
+// deadLoopRefusal names a loop weldRings could not collapse to a valid ring: which face and loop, and
+// how many vertices survived the attempted collapse (< 3). assembleBody records one Defect per refusal.
+type deadLoopRefusal struct {
+	face, loop, survived, welded int
+}
+
 // weldRings welds each face loop's points to shared-vertex indices (identity-preserving, #1600) and
 // collapses its zero-length self-loop stubs in lock-step (collapseDeadLoop mutates the loop). Returns
-// the per-face rings the rest of assembleBody keys on.
-func weldRings(faces []filletFace, w *pointWelder, weld float64) [][][]int {
+// the per-face rings the rest of assembleBody keys on, plus the loops whose collapse was REFUSED
+// because it would degenerate the loop (< 3 vertices) — the caller records those as defects (#3389).
+func weldRings(faces []filletFace, w *pointWelder, weld float64) ([][][]int, []deadLoopRefusal) {
 	rings := make([][][]int, len(faces))
+	var refused []deadLoopRefusal
 	for i := range faces {
 		for li := range faces[i].loops {
 			l := &faces[i].loops[li]
 			ring := w.weldRingID(l.pts, l.srcV)
-			rings[i] = append(rings[i], collapseDeadLoop(l, ring, weld))
+			collapsed, survived := collapseDeadLoop(l, ring, weld)
+			if survived >= 0 {
+				refused = append(refused, deadLoopRefusal{face: i, loop: li, survived: survived, welded: len(ring)})
+			}
+			rings[i] = append(rings[i], collapsed)
 		}
 	}
-	return rings
+	return rings, refused
+}
+
+// recordDeadLoopRefusals stamps the builder with one Defect per loop weldRings could not collapse to a
+// valid ring. The detail names the offending face and loop and the surviving vertex count, so the
+// reader can reproduce it — the CLAUDE.md exception-message rule — rather than reading a generic
+// "invalid solid" from a downstream Validate. No refusals is a no-op.
+func recordDeadLoopRefusals(bld *topo.Builder, refused []deadLoopRefusal) {
+	for _, r := range refused {
+		bld.Diagnose(diag.Diagnostic{
+			Code:     CodeAssembleDeadLoopCollapse,
+			Severity: diag.Defect,
+			Detail: fmt.Sprintf("face %d loop %d: dead-segment collapse would leave %d vertices (welded %d), below the "+
+				"3 a loop needs; the loop has collapsed to a point or an edge and cannot bound a face", r.face, r.loop, r.survived, r.welded),
+		})
+	}
 }
 
 // collapseDeadLoop removes zero-length self-loop segments from a welded fillet loop — a segment whose
@@ -33,7 +71,11 @@ func weldRings(faces []filletFace, w *pointWelder, weld float64) [][][]int {
 // A LEGITIMATE closed seam is also ring[k]==ring[k+1] (a full-circle rim welds both ends to one vertex,
 // B1) — but its curve is a full-circle arc that travels 2·radius from its start, so deadCurve keeps it.
 // A clean loop (no dead segment) is left untouched — a no-op for the passing cases.
-func collapseDeadLoop(l *filletLoop, ring []int, weld float64) []int {
+//
+// survived is -1 when the loop is fine (collapsed or clean); when removing the dead segments would
+// leave fewer than three vertices it is that surviving count (< 3), signalling the caller to refuse
+// the loop with a named defect (#3389) instead of deferring the malformed body to a later Validate.
+func collapseDeadLoop(l *filletLoop, ring []int, weld float64) (result []int, survived int) {
 	n := len(ring)
 	outR := make([]int, 0, n)
 	var pts []math.Point3
@@ -50,10 +92,13 @@ func collapseDeadLoop(l *filletLoop, ring []int, weld float64) []int {
 		srcE = append(srcE, srcIDAt(l.srcE, k))
 	}
 	if len(outR) < 3 {
-		return ring // collapsing would degenerate the loop — leave it for Validate to reject honestly
+		// Collapsing would degenerate the loop. Keep the original ring so the builder still assembles
+		// (a partial body beats a nil), but report the surviving count so the caller refuses it loudly
+		// with a named defect rather than shipping it silently for a later Validate to reject.
+		return ring, len(outR)
 	}
 	l.pts, l.srcV, l.curves, l.srcE = pts, srcV, curves, srcE
-	return outR
+	return outR, -1
 }
 
 // deadCurve reports whether a curve is degenerate to a single point (a zero-length line or arc), as

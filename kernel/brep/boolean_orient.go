@@ -13,14 +13,24 @@ import "oblikovati.org/math"
 // For an already-consistent, outward shell this is a no-op: the flood fill flips nothing and the
 // signed volume is positive.
 func reorientFaces(faces []builtFace, verts []math.Point3) {
-	flip := orientationFlips(faces)
-	for i := range faces {
-		if flip[i] {
+	reorientFacesConsistent(faces)
+	if signedVolume(faces, verts) < 0 {
+		for i := range faces {
 			reverseFaceRings(&faces[i])
 		}
 	}
-	if signedVolume(faces, verts) < 0 {
-		for i := range faces {
+}
+
+// reorientFacesConsistent applies only the shared-edge consistency flips, WITHOUT the global
+// signed-volume outward flip. The mixed per-face boolean uses this when pass-through faces exist
+// (ADR-0058): the planar fragment subset is then PARTIAL — it can legitimately be a lone REVERSED
+// cavity shell whose signed volume is negative by design, which the legacy global flip (built for
+// closed all-planar sets from inside-out builders, #1600) would wrongly turn outward. Orientation
+// authority there is the classification (source normals + the explicit Difference reversal).
+func reorientFacesConsistent(faces []builtFace) {
+	flip := orientationFlips(faces)
+	for i := range faces {
+		if flip[i] {
 			reverseFaceRings(&faces[i])
 		}
 	}
@@ -84,6 +94,9 @@ func reverseFaceRings(f *builtFace) {
 		for i, j := 0, len(r)-1; i < j; i, j = i+1, j-1 {
 			r[i], r[j] = r[j], r[i]
 		}
+	}
+	for i, h := range f.exactHoles {
+		f.exactHoles[i] = reverseCurvedLoop(h) // detached exact holes flip with the face (ADR-0058)
 	}
 	f.normal = f.normal.Scale(-1)
 }

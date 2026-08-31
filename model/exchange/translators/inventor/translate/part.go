@@ -10,7 +10,6 @@ import (
 	"oblikovati.org/kernel/exchange/meshio"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
-	m "oblikovati.org/math"
 	"oblikovati.org/model/analysis"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/contentset"
@@ -138,12 +137,13 @@ func firstBodyIsSolid(def *compdef.PartComponentDefinition) bool {
 	return len(bodies) > 0 && bodies[0].IsSolid()
 }
 
-// nearlySolidEdgeLimit gates the dissolve fallback: a body with more open mesh edges than this was
-// never close to a solid, so per-region prisms cannot recover one. The largest dissolve REGRESSION
+// nearlySolidEdgeLimit gates the dissolve fallback: a body with more open (boundary) edges than this
+// was never close to a solid, so per-region prisms cannot recover one. The largest dissolve REGRESSION
 // observed (WheelSlider, a coincident-wall crack the merged tool tripped on an otherwise-solid part)
 // is 3 open edges; a fundamentally-cracked part is far above this (BigChunkyPlate: 94). The limit sits
 // well above the former and below the latter, so a genuine regression still triggers the fallback
-// while a hopeless part skips it.
+// while a hopeless part skips it. These reference tallies were welded-mesh counts; openEdgeCount now
+// reads the same open edges from topology (#3450), which tracks them on the planar machined corpus.
 const nearlySolidEdgeLimit = 40
 
 // nearlySolid reports whether the first body is close enough to closed that the dissolve fallback's
@@ -159,45 +159,19 @@ func nearlySolid(def *compdef.PartComponentDefinition) bool {
 	return openEdgeCount(bodies[0]) <= nearlySolidEdgeLimit
 }
 
-// openEdgeCount is the number of boundary (single-triangle) mesh edges of the body — 0 for a
-// watertight solid, growing with how cracked an open body is. Undirected edges are welded by
-// coordinate so the count is independent of per-face vertex indexing.
+// openEdgeCount is the number of boundary (open) edges of the body — an edge used by fewer than
+// two faces — read straight from the B-rep topology (ops.BoundaryEdges), 0 for a watertight solid
+// and growing with how cracked an open body is. It does NOT tessellate: an open-edge tally is a
+// topology metric the B-rep already carries (Oblikovati/Oblikovati#3450), so reading it from the
+// mesh would let a facet-welding artefact, or a curved edge's segment count, change a topology count.
+//
+// The count is thus one per boundary EDGE. On the machined planar corpus this closely tracks the
+// former welded-mesh tally (a straight boundary edge is one mesh segment), so nearlySolidEdgeLimit
+// still separates a small coincident-wall crack from a fundamentally-open body; a curved boundary
+// edge now counts once rather than per chord, which only makes the near-solid gate marginally more
+// permissive on curved parts — acceptable for a coarse heuristic.
 func openEdgeCount(b *topo.Body) int {
-	mesh, _ := ops.TessellateBody(b, ops.DefaultQuality())
-	const grid = 1e-6
-	key := func(p m.Point3) [3]int64 {
-		return [3]int64{int64(p.X / grid), int64(p.Y / grid), int64(p.Z / grid)}
-	}
-	count := map[[2][3]int64]int{}
-	for i := 0; i+2 < len(mesh.Indices); i += 3 {
-		for e := 0; e < 3; e++ {
-			a, bb := key(mesh.Positions[mesh.Indices[i+e]]), key(mesh.Positions[mesh.Indices[i+(e+1)%3]])
-			if a == bb {
-				continue
-			}
-			if lessKey(bb, a) {
-				a, bb = bb, a
-			}
-			count[[2][3]int64{a, bb}]++
-		}
-	}
-	open := 0
-	for _, c := range count {
-		if c == 1 {
-			open++
-		}
-	}
-	return open
-}
-
-func lessKey(a, b [3]int64) bool {
-	if a[0] != b[0] {
-		return a[0] < b[0]
-	}
-	if a[1] != b[1] {
-		return a[1] < b[1]
-	}
-	return a[2] < b[2]
+	return len(ops.BoundaryEdges(b))
 }
 
 // retryWithoutDissolve is the whole-part fallback for the abutting-prism dissolve (#38). The dissolve

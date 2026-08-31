@@ -35,11 +35,18 @@ type curvedDrillCap struct {
 // drillThroughCurved cuts target − (cylinder of axis base→ua, radius) as an exact through-hole, accepting a
 // target that already has curved faces (unlike CutCylindricalHole). It returns an error — so the caller
 // keeps its fallback — when the cylinder does not pierce exactly two perpendicular planar caps whose
-// interiors clear the circle and its existing holes (a partial / clipped / overlapping hole).
-func drillThroughCurved(target *topo.Body, base math.Point3, ua math.Vector3, radius float64) (*topo.Body, error) {
+// interiors clear the circle and its existing holes (a partial / clipped / overlapping hole). spanLo/spanHi
+// bound the DRILLING TOOL's axial extent (in axis parameters from base): both pierced caps must lie inside
+// it, or the tool does not actually reach through the target — an EMBEDDED or blind cylinder, which drilled
+// as an unbounded axis would silently remove a full through-hole's material (the pre-ADR-0058 wrong-volume
+// misfire). A through-all caller passes ±Inf.
+func drillThroughCurved(target *topo.Body, base math.Point3, ua math.Vector3, radius, spanLo, spanHi float64) (*topo.Body, error) {
 	faces := facesOfAny(target)
 	caps, err := findDrillCaps(faces, base, ua, radius)
 	if err != nil {
+		return nil, err
+	}
+	if err := capsWithinSpan(caps, spanLo, spanHi, target); err != nil {
 		return nil, err
 	}
 	circLo, err := geom.NewCircle(caps[0].center, ua, radius)
@@ -56,6 +63,19 @@ func drillThroughCurved(target *topo.Body, base math.Point3, ua math.Vector3, ra
 		return nil, fmt.Errorf("brep: multi-hole drill produced an empty body (r=%g at %+v)", radius, base)
 	}
 	return body, nil
+}
+
+// capsWithinSpan errors when a pierced cap lies outside the tool's axial extent (a flush cap, within the
+// model's weld band, still counts as through): the tool then ends INSIDE the target — an embedded/blind
+// configuration the through-hole recipe must refuse rather than over-drill.
+func capsWithinSpan(caps [2]curvedDrillCap, spanLo, spanHi float64, target *topo.Body) error {
+	tol := geom.ResolutionForBox(target.RangeBox()).Weld()
+	for _, c := range caps {
+		if c.param < spanLo-tol || c.param > spanHi+tol {
+			return fmt.Errorf("brep: drilling tool (axial span [%g, %g]) does not reach the pierced face at param %g — an embedded or blind cylinder; the general boolean handles it", spanLo, spanHi, c.param)
+		}
+	}
+	return nil
 }
 
 // findDrillCaps returns the exactly-two planar faces the axis pierces cleanly (perpendicular, the circle
@@ -124,7 +144,7 @@ func capsBoundMaterial(entry, exit curvedDrillCap, ua math.Vector3) bool {
 
 // circleVsCap classifies the hole circle against a perpendicular planar face: pierced when its centre is
 // inside the face (existing holes excluded), clean when the whole circle is strictly inside and clear of
-// every existing hole. It samples the curved loops into a planarFace so it can reuse the planar
+// every existing hole. It samples the curved loops into a curvedFace so it can reuse the planar
 // containment tests (pointInFace2D / circleInsideFace), which run even-odd over outer loop plus holes.
 func circleVsCap(c math.Point3, radius float64, f curvedFace, pl geom.Plane) (pierced, clean bool) {
 	pf := curvedCapAsPlanar(f, pl)
@@ -135,12 +155,12 @@ func circleVsCap(c math.Point3, radius float64, f curvedFace, pl geom.Plane) (pi
 
 // curvedCapAsPlanar samples a planar face's curved loops into 3D point rings (outer first) so the planar
 // containment helpers can run on it — a circle hole becomes a 32-gon, a straight edge its corner.
-func curvedCapAsPlanar(f curvedFace, pl geom.Plane) planarFace {
+func curvedCapAsPlanar(f curvedFace, pl geom.Plane) curvedFace {
 	rings := make([][]math.Point3, len(f.loops))
 	for i, lp := range f.loops {
 		rings[i] = sampleCurvedLoop(lp)
 	}
-	return planarFace{plane: pl, normal: unit(pl.Normal()), loops: rings, lineage: f.lineage}
+	return planarFaceFromRings(pl, rings, f.lineage)
 }
 
 // sampleCurvedLoop flattens a loop into an ordered 3D point ring.

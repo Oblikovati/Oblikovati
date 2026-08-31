@@ -35,6 +35,11 @@ type wrapSurface interface {
 	at(p math.Point2, plane sketch.Plane, level float64) math.Point3
 	angleSpan(a, b math.Point2, plane sketch.Plane) float64
 	offsets(depth float64, engrave bool) (inner, outer float64, err error)
+	// capSurface returns the analytic surface a pad's inner/outer face lies on at the given level (a
+	// cylinder for a cylindrical wrap), so the pad's curved faces are built as genuine curved faces
+	// rather than a flat cap over a wrapped loop (an invalid non-planar-on-plane B-rep). ok is false
+	// when no analytic cap is available (the caller falls back to the faceted swept cap).
+	capSurface(level float64) (surf geom.Surface, ok bool)
 }
 
 // wrapAngularStep is the finest angular step a wrapped loop is discretized to, matching the
@@ -167,6 +172,17 @@ func (fr embossWrapFrame) at(p math.Point2, plane sketch.Plane, radius float64) 
 // as the wrapSurface method (the cylinder's level is an absolute radius, so the offsets ARE radii).
 func (fr embossWrapFrame) offsets(depth float64, engrave bool) (inner, outer float64, err error) {
 	return wrapRadii(fr.cyl.Radius, depth, engrave)
+}
+
+// capSurface returns the cylinder of radius `level` (an absolute radius on a cylindrical wrap) about
+// the wrap face's axis, sharing the frame's angle-0 reference so the pad's cap face and the wrapped
+// loop that bounds it agree.
+func (fr embossWrapFrame) capSurface(level float64) (geom.Surface, bool) {
+	cyl, err := geom.NewCylinderWithRef(fr.cyl.Origin, fr.cyl.AxisDir.AsVector(), fr.cyl.Ref.AsVector(), level)
+	if err != nil {
+		return nil, false
+	}
+	return cyl, true
 }
 
 // angleSpan is the angle a sketch-space distance subtends on the cylinder — how the resampling
