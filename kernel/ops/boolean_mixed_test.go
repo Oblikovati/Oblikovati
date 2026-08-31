@@ -74,3 +74,28 @@ func TestBooleanEmbeddedCavityExactVolume(t *testing.T) {
 		t.Error("embedded cavity result is not a valid solid")
 	}
 }
+
+// TestBooleanRoutesMixedDeclineToFallback: when the per-face dispatch declines (here a boundaryless
+// sphere face, which carries no boundary point to classify the face as a whole), ops.Boolean routes on
+// the named sentinel to the curved/CSG paths and still returns the right solid — a decline is a change
+// of route, never a failure the caller sees.
+func TestBooleanRoutesMixedDeclineToFallback(t *testing.T) {
+	block, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	ball, err := brep.SolidSphere(math.P3(30, 30, 30), 2, "ball")
+	if err != nil {
+		t.Fatalf("SolidSphere: %v", err)
+	}
+	res, err := Boolean(Join, block, ball)
+	if err != nil {
+		t.Fatalf("Boolean(Join) after the mixed decline: %v", err)
+	}
+	if got := len(res.Shells()); got != 2 {
+		t.Errorf("union of two disjoint solids has %d shells, want 2", got)
+	}
+	if r := Validate(res); !r.Valid {
+		t.Errorf("union after the mixed decline is invalid: %v", r.Issues)
+	}
+}
