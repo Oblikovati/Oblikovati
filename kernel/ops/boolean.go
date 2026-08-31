@@ -233,9 +233,34 @@ func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *d
 			return body, true
 		}
 	}
+	// General per-face dispatch (ADR-0058): when the curved faces are clear of the other operand,
+	// the exact planar pipeline splits the planar faces and the curved ones pass through whole —
+	// an EXACT analytic result where no bespoke recognizer applied, tried before the mesh rescue.
+	if body, ok := mixedPassThroughBoolean(op, target, tool, rec); ok {
+		return body, true
+	}
 	// Last resort (ADR-0056 L5): no analytic recognizer applied — rebuild the join from the
 	// exact mesh boolean's provenance on the operands' exact surfaces, instead of faceting.
 	return reconstructedCurvedBoolean(op, target, tool, rec)
+}
+
+// mixedPassThroughBoolean runs brep's per-face-dispatch boolean on MIXED operands (ADR-0058): only
+// when a curved face is present (an all-planar pair keeps its own guarded pipeline downstream,
+// byte-for-byte), and only adopted as a valid solid — brep's conservative scope gate declines the
+// rest (ErrNonPlanar), falling through to the mesh reconstruction exactly as before.
+func mixedPassThroughBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	if analyticFaceCount(target)+analyticFaceCount(tool) == 0 {
+		return nil, false
+	}
+	bop, ok := toBrepOp(op)
+	if !ok {
+		return nil, false
+	}
+	body, err := brep.BooleanDiag(bop, target, tool, rec)
+	if err != nil || body == nil || !Validate(body).ValidSolid() {
+		return nil, false
+	}
+	return body, true
 }
 
 // CodeBooleanAnalyticVolumeReject marks a curved analytic boolean whose result fell OUTSIDE the

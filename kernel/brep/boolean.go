@@ -58,9 +58,19 @@ func BooleanDiag(op Op, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, error)
 	fa, oka := facesOf(a)
 	fb, okb := facesOf(b)
 	if !oka || !okb {
-		return nil, ErrNonPlanar
+		// Per-face dispatch (ADR-0058): straight-edged planar faces take the exact pipeline, the
+		// rest pass through whole under booleanMixed's conservative scope gate; out-of-scope
+		// operands still decline with ErrNonPlanar to the curved/CSG fallbacks.
+		res, tangent, err := booleanMixed(op, a, b)
+		return recordTangent(res, tangent, err, rec)
 	}
 	res, tangent, err := booleanOnce(op, fa, fb, a, b)
+	return recordTangent(res, tangent, err, rec)
+}
+
+// recordTangent notes whether a tangent/grazing contact shipped as a valid manifold (Info) or not
+// (Defect — the caller then declines to the CSG fallback observably).
+func recordTangent(res *topo.Body, tangent bool, err error, rec *diag.Recorder) (*topo.Body, error) {
 	if err != nil || !tangent {
 		return res, err
 	}
@@ -104,7 +114,7 @@ func booleanOnce(op Op, fa, fb []curvedFace, a, b *topo.Body) (*topo.Body, bool,
 	var kept []subFace
 	kept = append(kept, selectFaces(fa, impA, newSolidProbe(b), fb, pairs.bForA, op, false, prov)...)
 	kept = append(kept, selectFaces(fb, impB, newSolidProbe(a), fa, pairs.aForB, op, true, prov)...)
-	return stitch(kept, prov)
+	return stitch(kept, nil, prov)
 }
 
 // CodeBooleanTangentContact marks a boolean whose operands met at a tangent/grazing contact — a
@@ -170,7 +180,7 @@ func intersectIntervals(a, b [][2]float64) [][2]float64 {
 // operation wants, classifying each via [classifySubFace]. `others` is the other solid's
 // face list (for the coplanar overlap test), culled per face to its box-overlap candidates
 // `otherCand` (#1607); `other` is the body's cached probe (for the winding-number cast).
-func selectFaces(faces []curvedFace, imprints [][][2]math.Point3, other *solidProbe, others []curvedFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg) []subFace {
+func selectFaces(faces []curvedFace, imprints [][][2]math.Point3, other insideOracle, others []curvedFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg) []subFace {
 	var kept []subFace
 	for i, f := range faces {
 		near := facesAt(others, otherCand[i])
@@ -226,7 +236,7 @@ func splitLineage(parent topo.Lineage, k int) topo.Lineage {
 // the other solid follows the ON/ON table ([coplanarKeep]); otherwise it is kept by the
 // inside/outside table ([keep]) from a winding-number cast against the other solid's cached
 // probe, with B's difference faces reversed to form the cut walls.
-func classifySubFace(sf subFace, f curvedFace, other *solidProbe, others []curvedFace, op Op, isB bool) (subFace, bool) {
+func classifySubFace(sf subFace, f curvedFace, other insideOracle, others []curvedFace, op Op, isB bool) (subFace, bool) {
 	if covered, sameNormal := coplanarCover(f, sf.point, others); covered {
 		return sf, coplanarKeep(op, isB, sameNormal)
 	}

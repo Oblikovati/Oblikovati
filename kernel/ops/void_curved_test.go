@@ -2,9 +2,10 @@
 package ops
 
 import (
+	"testing"
+
 	"oblikovati.org/kernel/brep"
 	m "oblikovati.org/math"
-	"testing"
 )
 
 // TestShellIsVoidInBodyCurvedCavity: a solid block with a fully-enclosed SPHERICAL cavity — the void

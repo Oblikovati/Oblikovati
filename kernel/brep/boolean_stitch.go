@@ -22,8 +22,8 @@ import (
 // Weiler radial sew and pinched vertices split per disk, exactly as before, in shared code.
 // The second result is true when a tangent/grazing contact was present (an edge used by more
 // than two faces), so the caller can note whether that contact shipped as a valid manifold.
-func stitch(faces []subFace, prov []imprintSeg) (*topo.Body, bool, error) {
-	if len(faces) == 0 {
+func stitch(faces []subFace, pass []curvedFace, prov []imprintSeg) (*topo.Body, bool, error) {
+	if len(faces) == 0 && len(pass) == 0 {
 		return nil, false, nil
 	}
 	w := newWelder3(planarStitchGrid)
@@ -46,7 +46,8 @@ func stitch(faces []subFace, prov []imprintSeg) (*topo.Body, bool, error) {
 	}
 	reorientFaces(out, w.points)
 	tangent := hasTangentContact(collectEdgeUses(out))
-	body := curvedStitchNamed(builtFacesToCurved(out, w.points), planarStitchNaming(prov, w, out))
+	all := append(builtFacesToCurved(out, w.points), pass...)
+	body := curvedStitchNamed(all, planarStitchNaming(prov, w, out))
 	return body, tangent, nil
 }
 
@@ -95,7 +96,17 @@ func pairLess(a, b [2]int) bool {
 // planar welder (the coordinates handed to the unified stitch are exactly its welded points).
 func planarVertexNamer(prov []imprintSeg, w *welder3, faces []builtFace) func(math.Point3) topo.Lineage {
 	vlin := vertexLineages(w.points, faces, prov)
-	return func(p math.Point3) topo.Lineage { return vlin[w.add(p)] }
+	extra := 0
+	return func(p math.Point3) topo.Lineage {
+		if i := w.add(p); i < len(vlin) {
+			return vlin[i]
+		}
+		// A pass-through face's vertex (per-face dispatch, ADR-0058): not in the planar weld set, so
+		// it gets a deterministic ordinal in mint order.
+		lin := topo.NewLineage(topo.Tok("brep", "vx", extra))
+		extra++
+		return lin
+	}
 }
 
 // builtFacesToCurved lifts the welded, T-junction-conformed planar fragments onto the unified
