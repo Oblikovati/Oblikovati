@@ -84,16 +84,18 @@ func loopRegionSign(depthEven bool, signedArea float64) float64 {
 // complement of it on a closed surface. certain is false when the question cannot be settled, so the
 // caller declines instead of integrating a guess.
 //
-// Neither of the two signals a face carries can answer this. The loops' WINDING cannot: a producer
-// may wind a closed-surface face's loops either way and lean on Reversed to place the material, and
-// every torus band in the corpus comes out clockwise whichever side it covers. A parameter-space
-// point-in-trim test cannot either: on a torus face brep's classifier is systematically inverted
-// (0 of 3540 sampled points agreed with the defining half-space on the perp off-centre case).
+// The loops' WINDING cannot answer it: a producer may wind a closed-surface face's loops either way
+// and lean on Reversed to place the material, and every torus band in the corpus comes out clockwise
+// whichever side it covers. So the question is put to the face's own TRIM — which of the two regions
+// does this face own? — and confirmed against the SOLID.
 //
-// So the question goes to the SOLID, which is the ground truth. At a probe point in the enclosed
-// region, step off the surface both ways along the face's outward normal: on a region the face
-// really covers, the outward step leaves the material and the inward step enters it; on a region it
-// does not cover, the surface there runs through solid or through air and both steps agree.
+// Both halves are needed, and each fails alone. The trim test alone was wrong while brep's
+// closed-surface classifier projected loops orthographically onto the tangent plane, a 2-to-1 map
+// that read a region larger than a hemisphere as outside itself. The material test alone cannot tell
+// WHICH face owns a surface point: for the big cap of a ball joined to a rod, the deepest point of
+// the enclosed region is the sphere's far pole, where the solid really does separate material from
+// air — but that pole belongs to the TIP cap, so the material test answered "holds" for both faces
+// and the big cap integrated as the small one.
 func faceHoldsEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain bool) {
 	body := faceBody(f)
 	if body == nil {
@@ -102,6 +104,9 @@ func faceHoldsEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain boo
 	u, v, ok := regionProbeUV(loops)
 	if !ok {
 		return false, false
+	}
+	if !brep.PointInFaceTrim(f, f.Geometry().PointAt(u, v)) {
+		return false, true // the face owns the other region: its terms are the complement's
 	}
 	return faceSpansMaterial(body, f, u, v)
 }
