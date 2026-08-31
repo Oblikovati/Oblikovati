@@ -67,19 +67,35 @@ func TestTransformedReflectedToolCuts(t *testing.T) {
 // a face's reversed sense: retyping a bored (reversed) wall to an internal threaded cylinder
 // that cuts OUTWARD must REMOVE material (volume drops). Before the fix the new face came out
 // un-reversed, flipping its divergence-theorem contribution and ADDING ~0.9 cm³ instead.
+//
+// The sense is asserted DIRECTLY as well as through the volume. It used to be checked only through
+// that proxy, and the proxy broke for a reason with nothing to do with the sense: the analytic
+// integrator read the retyped surface's finite v-domain as CLOSEDNESS, took the wall's whole trim
+// for the complement of itself, and dropped its contribution — 0.5 cm³ and 3.77 cm² gone with the
+// sense entirely intact (Oblikovati/Oblikovati#3453). A proxy that can move on its own must be
+// backed by the thing it stands for.
 func TestReplaceFaceSurfacePreservesReversedSense(t *testing.T) {
 	bored, key, cyl := boredBlock(t)
-	plainVol := ops.BodyGeometryProperties(bored, ops.DefaultQuality()).Volume
+	plain := ops.BodyGeometryProperties(bored, ops.DefaultQuality())
+	plainVol := plain.Volume
 
-	// Depth 0 → identical geometry to the plain bore: volume must be unchanged (a pure
-	// sense/tessellation-path check, isolated from any thread geometry).
+	// Depth 0 → identical geometry to the plain bore: volume AND area must be unchanged (a pure
+	// sense/integration-path check, isolated from any thread geometry).
 	flat := geom.ThreadedCylinder{Cylinder: cyl, Pitch: 0.125, Depth: 0, Internal: true, RightHanded: true, VMin: 0, VMax: 1.5}
 	flatBody, err := ops.ReplaceFaceSurface(bored, key, flat)
 	if err != nil {
 		t.Fatalf("ReplaceFaceSurface(depth0): %v", err)
 	}
-	if got := ops.BodyGeometryProperties(flatBody, ops.DefaultQuality()).Volume; stdmath.Abs(got-plainVol) > 1e-3 {
-		t.Fatalf("depth-0 retype changed volume: got %.4f want %.4f (sense not preserved)", got, plainVol)
+	if !threadedWall(t, flatBody).Reversed() {
+		t.Error("the retyped wall lost its reversed sense: a bore's +radial normal points INTO the solid")
+	}
+	got := ops.BodyGeometryProperties(flatBody, ops.DefaultQuality())
+	if stdmath.Abs(got.Volume-plainVol) > 1e-3 {
+		t.Fatalf("depth-0 retype changed volume: got %.4f want %.4f", got.Volume, plainVol)
+	}
+	if stdmath.Abs(got.Area-plain.Area) > 1e-3 {
+		t.Fatalf("depth-0 retype changed area: got %.4f want %.4f (the wall's own contribution went missing)",
+			got.Area, plain.Area)
 	}
 
 	// A real internal thread cuts outward → removes material → volume strictly below the bore.
@@ -94,6 +110,18 @@ func TestReplaceFaceSurfacePreservesReversedSense(t *testing.T) {
 	if got := ops.BodyGeometryProperties(cutBody, ops.DefaultQuality()).Volume; got >= plainVol {
 		t.Fatalf("internal thread volume = %.4f, must be < bore %.4f (it cuts outward)", got, plainVol)
 	}
+}
+
+// threadedWall returns the body's threaded-cylinder face — the bore wall after a retype.
+func threadedWall(t *testing.T, b *topo.Body) *topo.Face {
+	t.Helper()
+	for _, f := range b.Faces() {
+		if _, ok := f.Geometry().(geom.ThreadedCylinder); ok {
+			return f
+		}
+	}
+	t.Fatal("threadedWall: the body carries no threaded-cylinder face")
+	return nil
 }
 
 // TestAngularDeflectionRoundsSmallHoles pins the facet floor: a small bore must not render as

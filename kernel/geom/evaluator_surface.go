@@ -266,6 +266,35 @@ func SurfaceAnomaly(s Surface) (uAnomaly, vAnomaly ParamAnomaly) {
 	}
 }
 
+// SurfaceIsClosed reports whether the surface runs out in every parameter direction WITHOUT a
+// boundary — a sphere, a torus. That is the one case where a set of loops on it bounds two candidate
+// regions, so a face has to say which of them it owns. Every other surface (plane, cylinder, cone,
+// threaded cylinder, an open patch) leaves an unbounded or open complement, and a bounded trim on it
+// can only be the region its loops enclose.
+//
+// A FINITE parameter rectangle is a different question and must not stand in for this one: a
+// ThreadedCylinder declares v ∈ [VMin, VMax] because that is the length of its threaded run, and its
+// v-ends are real boundary curves, not seams. Reading that rectangle as closedness made the analytic
+// mass-property integrator take a bore wall's whole trim for the complement of itself and contribute
+// exactly nothing — a bored block read 13.2487 against its exact 12.7460
+// (Oblikovati/Oblikovati#3453).
+//
+// Example: if geom.SurfaceIsClosed(f.Geometry()) { /* the loops name one of two regions */ }
+func SurfaceIsClosed(s Surface) bool {
+	u, v := SurfaceAnomaly(s)
+	return paramDirectionIsClosed(u) && paramDirectionIsClosed(v)
+}
+
+// paramDirectionIsClosed reports whether one parameter direction ends without a boundary: it either
+// wraps back onto itself, or it terminates in a singular point (a sphere's pole). A direction that
+// runs to infinity is neither, whatever else it is — a cone's apex does not close its v.
+func paramDirectionIsClosed(a ParamAnomaly) bool {
+	if a.Unbounded {
+		return false
+	}
+	return a.Periodic || a.Singular
+}
+
 // SurfaceRangeBox returns an enclosing axis-aligned box: exact for the sphere,
 // conservative per-axis bounds for the torus, the control-net box for NURBS
 // (enclosing but not minimal), ±Inf faces for unbounded surfaces.

@@ -216,13 +216,23 @@ func loopGreen[T quadTerms[T]](s geom.Surface, fl faceLoop, form greenAxis, at p
 }
 
 // faceSideOfRegion returns the face's own terms given the terms of the region its loops ENCLOSE.
-// The two differ only on a closed surface, where the face may be the complement of that region (see
+// The two differ only on a CLOSED surface, where the face may be the complement of that region (see
 // analytic_face_region.go); the complement's terms are the whole surface's minus the enclosed
 // region's, never the enclosed region's negation.
+//
+// Closedness is asked of the surface (geom.SurfaceIsClosed), never inferred from its parameter
+// rectangle being finite. A ThreadedCylinder bounds v to its threaded run, so the rectangle test
+// called a bore wall closed, the side test then named the trim the complement OF ITSELF, and the
+// wall contributed exactly zero to both area and flux — silently, because a full band's vector area
+// is zero either way, so the closure post-condition had nothing to catch (#3453).
 func faceSideOfRegion[T quadTerms[T]](f *topo.Face, loops []faceLoop, enclosed T, at pointEval[T]) (T, bool) {
-	full, closed := fullDomainTerms(f.Geometry(), at)
-	if !closed {
+	if !geom.SurfaceIsClosed(f.Geometry()) {
 		return enclosed, true // an OPEN surface's complement is unbounded: the bounded side is the face
+	}
+	full, integrable := fullDomainTerms(f.Geometry(), at)
+	if !integrable {
+		var zero T
+		return zero, false // a closed surface whose own domain will not integrate settles nothing
 	}
 	holds, certain := faceHoldsEnclosedRegion(f, loops)
 	if !certain {

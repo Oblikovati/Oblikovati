@@ -307,6 +307,37 @@ func TestSurfaceAnomalyAndContinuity(t *testing.T) {
 	}
 }
 
+// TestSurfaceIsClosedSeparatesAWrapFromAFiniteRange pins the distinction the analytic mass-property
+// integrator turns on: a surface with no boundary at all (sphere, torus) versus one that merely
+// declares a finite parameter range. A ThreadedCylinder is the case that matters — it bounds v to the
+// length of its threaded run, but those v-ends are real boundary curves, not seams, so a face on it
+// can only be the region its loops enclose. Reading the finite rectangle as closedness made a bore
+// wall the complement of itself and contribute nothing (Oblikovati/Oblikovati#3453).
+func TestSurfaceIsClosedSeparatesAWrapFromAFiniteRange(t *testing.T) {
+	sphere, _ := NewSphere(math.P3(0, 0, 0), 1)
+	torus, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 0.5)
+	plane, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	cyl, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4)
+	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4)
+	threaded := ThreadedCylinder{Cylinder: cyl, Pitch: 0.125, Depth: 0.068, Internal: true, VMin: 0, VMax: 1.5}
+	for _, c := range []struct {
+		name string
+		s    Surface
+		want bool
+	}{
+		{"sphere", sphere, true},
+		{"torus", torus, true},
+		{"plane", plane, false},
+		{"cylinder", cyl, false},
+		{"cone (apex is singular but v runs to infinity)", cone, false},
+		{"threaded cylinder (finite v, but its ends are boundaries)", threaded, false},
+	} {
+		if got := SurfaceIsClosed(c.s); got != c.want {
+			t.Errorf("SurfaceIsClosed(%s) = %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
 // TestSurfaceDersMatchExistingFirstOrder ties SurfaceDersAt to the
 // long-standing DerivativesAt implementation.
 func TestSurfaceDersMatchExistingFirstOrder(t *testing.T) {
