@@ -109,13 +109,17 @@ func trihedralCornerBody(body *topo.Body, fils []edgeFillet, blends map[uint64]*
 }
 
 // assembleCornerBlendBody welds the corner faces, then corrects the one thing orientFilletShell cannot
-// pin: the corner blend sphere patch's ABSOLUTE winding, which the sphere-patch mesher reads to pick which
-// of the two regions it bounds. orientFilletShell fixes only RELATIVE windings and pins the shell's global
-// sense to an arbitrary arm seed, so a cone-host corner blend can land inverted and mesh the COMPLEMENT
-// (D1: 1016.7 vs the exact 238.5). When the original body has no host sphere and the built patch meshes >
-// a hemisphere, the whole shell is UNIFORMLY reversed and re-welded — a uniform flip is invisible to every
-// mesher except the sphere patch (whose region it inverts). It fires ONLY on the genuinely-inverted case
-// (never B3 or the 60 greens, whose sub-hemisphere caps mesh correctly), so byte-identity holds.
+// pin: the assembled shell's ABSOLUTE sense. orientFilletShell fixes only RELATIVE windings and pins the
+// global sense to an arbitrary arm seed, so a cone-host corner blend can land genuinely INVERTED — its
+// corner face then owns the complement of the patch it should, and a faithful mesher meshes that
+// (D1: 1016.7 against an exact 238.5). The whole shell is uniformly reversed and re-welded.
+//
+// This is NOT the sphere-patch mesher misreading a winding — that was a separate defect, fixed by having
+// the mesher ask the face which region it owns (interiorAxis → brep.PointInFaceTrim). Deleting this fixup
+// on the strength of that was tried and reverted: D1's whole-body area drifted 10078.840 → 10858.450,
+// because the shell really is inverted and the mesher is now faithful to it. The real fix is for
+// orientFilletShell to pin the global sense from the host geometry, after which this disappears; until
+// then it repairs a topology defect rather than papering over a meshing one.
 func assembleCornerBlendBody(originalBody *topo.Body, faces []filletFace) *topo.Body {
 	built := assembleBody(faces)
 	if !cornerBlendMeshesComplement(originalBody, built) {

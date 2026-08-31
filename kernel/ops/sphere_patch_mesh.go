@@ -6,8 +6,10 @@ import (
 	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -32,12 +34,12 @@ const (
 
 // spherePatchMesh meshes a multi-arc sphere patch in a patch-centred chart. ok=false unless the surface
 // is a sphere whose boundary clears the chart's antipode — then the caller keeps its existing path.
-func spherePatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
+func spherePatchMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
 	sph, ok := s.(geom.Sphere)
 	if !ok || len(outer3D) < 3 {
 		return nil, false
 	}
-	chart, ok := chooseSphereChart(sph, outer3D, holes3D)
+	chart, ok := chooseSphereChart(f, sph, outer3D, holes3D)
 	if !ok {
 		return nil, false
 	}
@@ -96,8 +98,8 @@ type sphereChart interface {
 
 // chooseSphereChart picks the chart for a patch: gnomonic within a hemisphere, stereographic for a larger
 // patch that still clears the antipode, else ok=false. The axis is the boundary's mean direction.
-func chooseSphereChart(sph geom.Sphere, outer3D []math.Point3, holes3D [][]math.Point3) (sphereChart, bool) {
-	axis, minDot, ok := patchAxis(sph, outer3D, holes3D)
+func chooseSphereChart(f *topo.Face, sph geom.Sphere, outer3D []math.Point3, holes3D [][]math.Point3) (sphereChart, bool) {
+	axis, minDot, ok := patchAxis(f, sph, outer3D, holes3D)
 	if !ok {
 		return nil, false
 	}
@@ -115,8 +117,8 @@ func chooseSphereChart(sph geom.Sphere, outer3D []math.Point3, holes3D [][]math.
 // patchAxis returns the chart axis — a direction INSIDE the patch — and the minimum direction·axis over
 // the boundary (how far the patch reaches). The boundary's mean direction points at the patch for a small
 // patch but at the REMOVED region for a >hemisphere patch (e.g. a 7/8-sphere's boundary hugs the missing
-// octant), so the axis is whichever of ±mean the boundary loop winds positively around — the interior.
-func patchAxis(sph geom.Sphere, outer3D []math.Point3, holes3D [][]math.Point3) (math.Vector3, float64, bool) {
+// octant), so which of ±mean is the interior has to be decided rather than assumed.
+func patchAxis(f *topo.Face, sph geom.Sphere, outer3D []math.Point3, holes3D [][]math.Point3) (math.Vector3, float64, bool) {
 	pts := append(append([]math.Point3{}, outer3D...), flattenLoops(holes3D)...)
 	var sum math.Vector3
 	for _, p := range pts {
@@ -126,7 +128,7 @@ func patchAxis(sph geom.Sphere, outer3D []math.Point3, holes3D [][]math.Point3) 
 	if err != nil {
 		return math.Vector3{}, 0, false
 	}
-	axis := interiorAxis(sph, outer3D, mean.AsVector())
+	axis := interiorAxis(f, sph, outer3D, mean.AsVector())
 	minDot := 1.0
 	for _, p := range pts {
 		minDot = stdmath.Min(minDot, float64(sphereDir(sph, p).Dot(axis)))
@@ -134,12 +136,30 @@ func patchAxis(sph geom.Sphere, outer3D []math.Point3, holes3D [][]math.Point3) 
 	return axis, minDot, true
 }
 
-// interiorAxis chooses, between the mean direction and its opposite, the one the boundary loop winds
-// positively (≈ +2π) around — the side of the separating boundary that is the patch interior. Falls back
-// to the mean if neither reads clearly inside (a degenerate/non-convex boundary).
-func interiorAxis(sph geom.Sphere, outer3D []math.Point3, mean math.Vector3) math.Vector3 {
+// interiorAxis chooses, between the mean direction and its opposite, the one that lies inside the patch
+// — by asking the FACE which of the two regions its boundary bounds it actually owns
+// (brep.PointInFaceTrim), the same reader every other region decision in the kernel now uses.
+//
+// It used to read a geodesic WINDING off the boundary points instead, and that is not a property of the
+// region: a producer may wind a closed-surface face's loops either way and lean on Face.Reversed to place
+// the material, so the mesher could pick the complement and fill it. A whole fixup existed downstream to
+// notice that and uniformly reverse the assembled shell (cornerBlendMeshesComplement, deleted with this)
+// — D1's corner meshed 1016.7 against an exact 238.5, C8's 808.230 against 448.387. Asking the face
+// removes the guess rather than correcting it afterwards.
+//
+// Without a face there is no such reader — the boundary and its winding are then the ONLY definition
+// of the region the caller means, so a face-less call still reads the geodesic winding. That is not a
+// second algorithm for the same question; it is the answer to a different one, asked by a caller that
+// brought no topology.
+func interiorAxis(f *topo.Face, sph geom.Sphere, outer3D []math.Point3, mean math.Vector3) math.Vector3 {
 	for _, cand := range []math.Vector3{mean, mean.Scale(-1)} {
 		center := sph.Center.TranslateBy(cand.Scale(math.Scalar(sph.Radius)))
+		if f != nil {
+			if brep.PointInFaceTrim(f, center) {
+				return cand
+			}
+			continue
+		}
 		if loopWindingAround(outer3D, center, cand) > stdmath.Pi {
 			return cand
 		}

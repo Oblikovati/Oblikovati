@@ -30,7 +30,7 @@ func TestSpherePatchDeficitConverges(t *testing.T) {
 	closed := 2 * stdmath.Pi * radius * radius * (1 - stdmath.Sqrt2/2) // 2πR²(1−cos 45°)
 	deficits := make([]float64, 0, 3)
 	for _, ct := range []float64{1e-2, 1e-3, 2.5e-4} {
-		m, ok := spherePatchMesh(sph, cap45Rim(radius, 4096), nil, Quality{ChordTolerance: ct, AngleTolerance: stdmath.Pi / 180})
+		m, ok := spherePatchMesh(nil, sph, cap45Rim(radius, 4096), nil, Quality{ChordTolerance: ct, AngleTolerance: stdmath.Pi / 180})
 		if !ok {
 			t.Fatalf("spherePatchMesh declined the 45° cap rim at ct=%g", ct)
 		}
