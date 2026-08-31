@@ -239,7 +239,7 @@ func analyticBodyTerms(b *topo.Body) (massTerms, bool) {
 		}
 		total = total.add(ft)
 	}
-	if !vectorAreaCloses(total) {
+	if !vectorAreaCloses(b, total) {
 		return massTerms{}, false
 	}
 	return total, true
@@ -251,12 +251,41 @@ func analyticBodyTerms(b *topo.Body) (massTerms, bool) {
 // this is a post-condition that turns a wrong analytic answer into a DECLINE, and the tessellated
 // fallback then measures the body instead. It costs three more integrands and catches the whole
 // class (M48/C3, Oblikovati/Oblikovati#3453).
-func vectorAreaCloses(t massTerms) bool {
+//
+// It is deliberately NOT widened by the body's achieved boundary tolerance, though that number now
+// exists (AchievedBoundarySlack). Widening it was tried and reverted: the residual a marched
+// boundary produces and the residual a genuinely mis-taken face region produces are the SAME size on
+// the same bodies, so the widened gate admitted a crossing-cylinder cut whose volume was 9.8% wrong
+// while its boundary noise accounted for the residual. The tolerance is not the axis to move; the
+// approximate boundary is (#3489).
+func vectorAreaCloses(_ *topo.Body, t massTerms) bool {
 	if t.area <= 0 {
 		return false
 	}
 	residual := stdmath.Sqrt(t.ax*t.ax + t.ay*t.ay + t.az*t.az)
 	return residual <= vectorAreaClosureTol*t.area
+}
+
+// AchievedBoundarySlack is the largest error the body's own boundary approximation can produce in a
+// quantity integrated over its faces — the vector-area residual and the volume alike. It is the sum
+// over edges of twice the edge's achieved tolerance times its length: both faces meeting on an edge
+// invert its points onto THEIR OWN surface, so a point d off the true curve lands up to d away on
+// each, and the two faces disagree about that boundary by up to 2d along its length.
+//
+// It is zero for an all-analytic body, which is what keeps the exact case held to the exact standard.
+//
+// Example: if rel := math.Abs(got-want) / want; rel > ops.AchievedBoundarySlack(b)/want { /* real */ }
+func AchievedBoundarySlack(b *topo.Body) float64 {
+	slack := 0.0
+	for _, e := range b.Edges() {
+		tol := e.Tolerance()
+		if tol <= 0 {
+			continue
+		}
+		lo, hi := e.Geometry().Domain()
+		slack += 2 * tol * geom.CurveLength3(e.Geometry(), lo, hi)
+	}
+	return slack
 }
 
 // vectorAreaClosureTol is how much of the total area the vector-area residual may be. The adaptive

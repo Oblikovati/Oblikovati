@@ -84,7 +84,7 @@ func TestCurvedBooleanVolumesMatchOCC(t *testing.T) {
 				t.Fatalf("%s: Boolean(%s): %v", c.name, c.op, err)
 			}
 			got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
-			budget, source := occBudgetFor(c.name, target, tool, res)
+			budget, source := occBudgetFor(c.name, want, target, tool, res)
 			rel := stdmath.Abs(got-want) / want
 			t.Logf("%-32s ours=%.6f  occ=%.6f  rel=%.6f (%s budget %.4f)", c.name, got, want, rel, source, budget)
 			if rel > budget {
@@ -99,11 +99,18 @@ func TestCurvedBooleanVolumesMatchOCC(t *testing.T) {
 // happily — its volume is the exact volume of an inscribed polyhedron, which is not the exact volume
 // of the shape. Asking whether the integrator accepted the body therefore cannot separate the
 // regimes; asking whether the result still carries the curved geometry its operands had, can.
-func occBudgetFor(name string, target, tool, res *topo.Body) (float64, string) {
+func occBudgetFor(name string, want float64, target, tool, res *topo.Body) (float64, string) {
 	if curvedFaceTotal(res) == 0 && curvedFaceTotal(target)+curvedFaceTotal(tool) > 0 {
 		return occBooleanTolerance(name), "faceted" // demoted: the curved operands left no curved face
 	}
 	if _, analytic := ops.AnalyticGeometryProperties(res); analytic {
+		// A body measured analytically is held to the exact budget, WIDENED by what its own boundary
+		// approximation can account for: an edge built from a marched intersection carries its achieved
+		// deviation, and a body whose boundary is only good to 4.5e-4 cannot report a volume better than
+		// that however exactly it is integrated. An all-analytic body adds nothing here (#3489).
+		if slack := ops.AchievedBoundarySlack(res) / stdmath.Abs(want); slack > occAnalyticTolerance {
+			return slack, "analytic (boundary-limited)"
+		}
 		return occAnalyticTolerance, "analytic"
 	}
 	return occBooleanTolerance(name), "tessellated"

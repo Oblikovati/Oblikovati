@@ -175,15 +175,21 @@ func TestDrilledPlateIntegratesAnalytically(t *testing.T) {
 // zero, so a residual means some face was integrated over the wrong region or with a flipped
 // orientation. The check must reject that rather than let a wrong number through.
 func TestVectorAreaClosureRejectsAResidual(t *testing.T) {
-	closed := massTerms{area: 100}
-	if !vectorAreaCloses(closed) {
+	exact, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(1, 1, 1), "exact")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	if !vectorAreaCloses(exact, massTerms{area: 100}) {
 		t.Error("a body whose vector area vanishes must pass the closure check")
 	}
-	if vectorAreaCloses(massTerms{area: 100, ax: 1}) {
+	if vectorAreaCloses(exact, massTerms{area: 100, ax: 1}) {
 		t.Error("a body with a 1%% vector-area residual must be declined, not integrated")
 	}
-	if vectorAreaCloses(massTerms{}) {
+	if vectorAreaCloses(exact, massTerms{}) {
 		t.Error("a body with no area at all cannot be certified closed")
+	}
+	if s := AchievedBoundarySlack(exact); s != 0 {
+		t.Errorf("an all-analytic body claimed %g of boundary slack; its edges are exact", s)
 	}
 }
 
