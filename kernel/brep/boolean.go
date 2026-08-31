@@ -34,6 +34,10 @@ type subFace struct {
 	point   math.Point3
 	lineage topo.Lineage
 	fromB   bool // which operand this came from (false=A, true=B); fuses tangent contacts
+	// exactHoles are curved hole loops detached from the source face before the polygonal split and
+	// re-attached to the fragment that contains them (per-face dispatch, ADR-0058): a boss seat's rim
+	// circle survives the split EXACTLY, so it still welds with the pass-through wall's rim.
+	exactHoles []curvedLoop
 }
 
 // Boolean computes A op B as a clean planar B-rep: it imprints the face–face intersection
@@ -183,18 +187,24 @@ func intersectIntervals(a, b [][2]float64) [][2]float64 {
 func selectFaces(faces []curvedFace, imprints [][][2]math.Point3, other insideOracle, others []curvedFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg) []subFace {
 	var kept []subFace
 	for i, f := range faces {
-		near := facesAt(others, otherCand[i])
-		var fromFace []subFace
-		for _, sf := range splitFace(f, imprints[i]) {
-			if out, ok := classifySubFace(sf, f, other, near, op, isB); ok {
-				fromFace = append(fromFace, out)
-			}
-		}
-		fromFace = mergeFilledHoles(fromFace)
-		nameFragments(fromFace, f.lineage, isB, prov)
-		kept = append(kept, fromFace...)
+		kept = append(kept, selectFragments(f, imprints[i], other, facesAt(others, otherCand[i]), op, isB, prov)...)
 	}
 	return kept
+}
+
+// selectFragments splits ONE face by its imprints, classifies and keeps its material sub-faces,
+// dissolves filled holes and names the pieces — the per-face body selectFaces and the mixed
+// dispatch's detached-hole variant share.
+func selectFragments(f curvedFace, imprints [][2]math.Point3, other insideOracle, near []curvedFace, op Op, isB bool, prov []imprintSeg) []subFace {
+	var fromFace []subFace
+	for _, sf := range splitFace(f, imprints) {
+		if out, ok := classifySubFace(sf, f, other, near, op, isB); ok {
+			fromFace = append(fromFace, out)
+		}
+	}
+	fromFace = mergeFilledHoles(fromFace)
+	nameFragments(fromFace, f.lineage, isB, prov)
+	return fromFace
 }
 
 // nameFragments assigns each kept piece of one source face its reference-key lineage. A face that
@@ -268,6 +278,9 @@ func keep(op Op, isB, inside bool) bool {
 // reverseSubFace flips a sub-face's orientation (normal and loop windings) so it faces
 // into the cavity a Difference carves.
 func reverseSubFace(sf subFace) subFace {
+	for i, h := range sf.exactHoles {
+		sf.exactHoles[i] = reverseCurvedLoop(h) // an exact hole flips with its face's sense
+	}
 	sf.normal = sf.normal.Scale(-1)
 	sf.outer = reverseRing(sf.outer)
 	for i := range sf.holes {

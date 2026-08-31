@@ -34,7 +34,7 @@ func stitch(faces []subFace, pass []curvedFace, prov []imprintSeg) (*topo.Body, 
 		for _, h := range sf.holes {
 			rings = append(rings, w.ring(orientRing(h, sf.normal, false)))
 		}
-		out[i] = builtFace{rings: rings, normal: sf.normal, fromB: sf.fromB, lineage: sf.lineage}
+		out[i] = builtFace{rings: rings, normal: sf.normal, fromB: sf.fromB, lineage: sf.lineage, exactHoles: sf.exactHoles}
 	}
 	// Pass 2: with all vertices known, split every loop edge at any welded vertex lying on
 	// it — propagating each imprint split-point to the neighbour face sharing that edge, so
@@ -123,7 +123,9 @@ func builtFacesToCurved(faces []builtFace, verts []math.Point3) []curvedFace {
 	for i, f := range faces {
 		rings := ringsPoints(f.rings, verts)
 		pl, _ := geom.NewPlane(ringCentroid(rings), f.normal)
-		out[i] = planarFaceFromRings(pl, rings, faceLineage(f, i))
+		cf := planarFaceFromRings(pl, rings, faceLineage(f, i))
+		cf.loops = append(cf.loops, f.exactHoles...) // detached curved holes re-attach as exact inner loops
+		out[i] = cf
 	}
 	return out
 }
@@ -263,10 +265,11 @@ func segCandidates(pa, pb math.Point3, grid float64, tree *geom.BoxTree) []int {
 // first), its outward normal (the plane is re-derived from ring + normal at conversion), and the
 // source lineage to carry onto the result face (K1a).
 type builtFace struct {
-	rings   [][]int
-	normal  math.Vector3
-	fromB   bool
-	lineage topo.Lineage
+	rings      [][]int
+	normal     math.Vector3
+	fromB      bool
+	lineage    topo.Lineage
+	exactHoles []curvedLoop // curved hole loops re-attached exactly after the polygonal split (ADR-0058)
 }
 
 // faceLineage uses the source face's carried lineage when present (K1a reference-key

@@ -137,3 +137,27 @@ func TestMixedBooleanEmbeddedCavityCut(t *testing.T) {
 		t.Errorf("cavity volume = %g, want %g", got, want)
 	}
 }
+
+// TestMixedBooleanPocketOnSeatFace: cutting a pocket into the TOP face of the bossed block — the face
+// that carries the boss's rim circle as a hole. The curved hole is detached, the seat splits through
+// the exact polygonal pipeline, and the rim circle re-attaches EXACTLY to the fragment containing it,
+// so it still welds with the pass-through boss wall (previously this declined: the seat face was
+// pass-through-only and its box spans the whole top).
+func TestMixedBooleanPocketOnSeatFace(t *testing.T) {
+	bossed := bossedBlock(t)
+	pocket, _ := brep.SolidBlock(math.P3(1, 1, 9), math.P3(2.8, 2.8, 11), "pocket")
+	res, err := brep.BooleanDiag(brep.Difference, bossed, pocket, nil)
+	if err != nil {
+		t.Fatalf("seat-face pocket declined: %v", err)
+	}
+	if !res.IsSolid() {
+		t.Fatal("seat-face pocket result is not a solid")
+	}
+	if n := cylinderFaceCount(res); n != 1 {
+		t.Errorf("boss wall did not survive analytically: %d cylinder faces, want 1", n)
+	}
+	want := 1000 + stdmath.Pi*4*3 - 1.8*1.8*1 // pocket bites 1 deep into the top
+	if got := vol(res); stdmath.Abs(got-want) > 0.5 {
+		t.Errorf("seat-face pocket volume = %g, want %g", got, want)
+	}
+}

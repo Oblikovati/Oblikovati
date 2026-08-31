@@ -85,6 +85,9 @@ func reverseFaceRings(f *builtFace) {
 			r[i], r[j] = r[j], r[i]
 		}
 	}
+	for i, h := range f.exactHoles {
+		f.exactHoles[i] = reverseCurvedLoop(h) // detached exact holes flip with the face (ADR-0058)
+	}
 	f.normal = f.normal.Scale(-1)
 }
 

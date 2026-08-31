@@ -32,19 +32,28 @@ type insideOracle interface {
 // face's true topo bounding box (loop-point boxes underestimate curved faces — a rim circle's
 // loop edge collapses to its seam point).
 type facePartition struct {
-	planar  []curvedFace
-	pass    []curvedFace
-	passBox []math.Box
-	body    *topo.Body
+	planar      []curvedFace
+	planarHoles [][]curvedLoop // per planar face: curved hole loops detached before the polygonal split
+	pass        []curvedFace
+	passBox     []math.Box
+	body        *topo.Body
 }
 
-// partitionFaces flattens b and buckets each face for per-face dispatch.
+// partitionFaces flattens b and buckets each face for per-face dispatch. A planar face whose OUTER
+// loop is straight but which carries CURVED hole loops (a boss seat's rim circle, a drilled plate's
+// bore hole) is still splittable: the curved holes are DETACHED for the polygonal split and
+// re-attached exactly to the containing fragment afterwards. This is sound because every curved hole
+// loop borders a pass-through face of the SAME body (the bore/boss wall — a polygonal face cannot
+// carry the curved edge), and passDisjointFrom already keeps the whole tool a pad away from that
+// wall's box, which contains the hole: no imprint, membership boundary, or fragment probe can come
+// near a detached hole.
 func partitionFaces(b *topo.Body) facePartition {
 	p := facePartition{body: b}
 	topoFaces := b.Faces()
 	for i, cf := range facesOfAny(b) {
-		if polygonalPlanar(cf) {
-			p.planar = append(p.planar, cf)
+		if stripped, holes, ok := detachCurvedHoles(cf); ok {
+			p.planar = append(p.planar, stripped)
+			p.planarHoles = append(p.planarHoles, holes)
 			continue
 		}
 		p.pass = append(p.pass, cf)
@@ -53,20 +62,34 @@ func partitionFaces(b *topo.Body) facePartition {
 	return p
 }
 
-// polygonalPlanar reports whether a face can take the exact polygonal planar pipeline: a plane
-// surface whose every boundary edge is straight (a curved edge — a boss seat's rim circle — has no
-// faithful point-ring form there).
-func polygonalPlanar(f curvedFace) bool {
-	if _, isPlane := f.surface.(geom.Plane); !isPlane {
-		return false
+// detachCurvedHoles classifies a face for the polygonal split: a plane surface with an all-straight
+// outer loop qualifies; straight inner loops stay in the split, curved inner loops are detached (to
+// re-attach exactly). ok=false sends the face to the pass-through bucket (curved surface, or a curved
+// edge on the outer loop).
+func detachCurvedHoles(f curvedFace) (curvedFace, []curvedLoop, bool) {
+	if _, isPlane := f.surface.(geom.Plane); !isPlane || len(f.loops) == 0 || !straightLoop(f.loops[0]) {
+		return curvedFace{}, nil, false
 	}
-	for _, l := range f.loops {
-		for _, e := range l.edges {
-			switch e.curve.(type) {
-			case geom.LineSegment, geom.Line:
-			default:
-				return false
-			}
+	stripped := f
+	stripped.loops = []curvedLoop{f.loops[0]}
+	var detached []curvedLoop
+	for _, l := range f.loops[1:] {
+		if straightLoop(l) {
+			stripped.loops = append(stripped.loops, l)
+		} else {
+			detached = append(detached, l)
+		}
+	}
+	return stripped, detached, true
+}
+
+// straightLoop reports whether every edge of the loop is a straight segment.
+func straightLoop(l curvedLoop) bool {
+	for _, e := range l.edges {
+		switch e.curve.(type) {
+		case geom.LineSegment, geom.Line:
+		default:
+			return false
 		}
 	}
 	return true
@@ -169,13 +192,75 @@ func booleanMixed(op Op, a, b *topo.Body) (*topo.Body, bool, error) {
 	pra, prb := newInsideOracle(a, pa.allFaces()), newInsideOracle(b, pb.allFaces())
 	pairs := crossingFaceCandidates(pa.planar, pb.planar)
 	impA, impB, prov := imprintCandidates(pa.planar, pb.planar, pairs)
-	var kept []subFace
-	kept = append(kept, selectFaces(pa.planar, impA, prb, pb.planar, pairs.bForA, op, false, prov)...)
-	kept = append(kept, selectFaces(pb.planar, impB, pra, pa.planar, pairs.aForB, op, true, prov)...)
+	keptA, okHA := selectFacesDetached(pa.planar, impA, prb, pb.planar, pairs.bForA, op, false, prov, pa.planarHoles)
+	keptB, okHB := selectFacesDetached(pb.planar, impB, pra, pa.planar, pairs.aForB, op, true, prov, pb.planarHoles)
+	if !okHA || !okHB {
+		return nil, false, ErrNonPlanar
+	}
+	kept := append(append([]subFace{}, keptA...), keptB...)
 	passA, okA := passThroughKept(pa.pass, prb, op, false)
 	passB, okB := passThroughKept(pb.pass, pra, op, true)
 	if !okA || !okB {
 		return nil, false, ErrNonPlanar
 	}
 	return stitch(kept, append(passA, passB...), prov)
+}
+
+// selectFacesDetached is selectFaces plus the exact-hole re-attachment: after a face's fragments are
+// selected, each of its detached curved holes is attached to the fragment containing it. ok=false
+// (decline) when a hole's containing fragment cannot be identified.
+func selectFacesDetached(faces []curvedFace, imprints [][][2]math.Point3, other insideOracle, others []curvedFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg, detached [][]curvedLoop) ([]subFace, bool) {
+	var kept []subFace
+	for i, f := range faces {
+		fromFace := selectFragments(f, imprints[i], other, facesAt(others, otherCand[i]), op, isB, prov)
+		if len(detached[i]) > 0 && !attachExactHoles(fromFace, detached[i], facePlane(f)) {
+			return nil, false
+		}
+		kept = append(kept, fromFace...)
+	}
+	return kept, true
+}
+
+// attachExactHoles attaches each detached curved hole loop to the kept fragment whose polygon contains
+// it (a boundary sample point of the hole — strictly interior to exactly one fragment, since the tool
+// and its imprints are provably far from every detached hole). false when no kept fragment contains a
+// hole — the material around it was cut away in a configuration this dispatch does not model.
+func attachExactHoles(frags []subFace, holes []curvedLoop, pl geom.Plane) bool {
+	for _, h := range holes {
+		if len(h.edges) == 0 {
+			return false
+		}
+		q := to2D(pl, h.edges[0].start())
+		j := fragmentContaining(frags, q, pl)
+		if j < 0 {
+			return false
+		}
+		frags[j].exactHoles = append(frags[j].exactHoles, h)
+	}
+	return true
+}
+
+// fragmentContaining returns the index of the fragment whose outer polygon contains q (outside its
+// polygon holes), or -1.
+func fragmentContaining(frags []subFace, q math.Point2, pl geom.Plane) int {
+	for j := range frags {
+		if !pointInPolygon2D(q, ring2D(pl, frags[j].outer)) {
+			continue
+		}
+		if polygonHoleContains(frags[j].holes, q, pl) {
+			continue
+		}
+		return j
+	}
+	return -1
+}
+
+// polygonHoleContains reports whether q falls inside any of the fragment's polygon holes.
+func polygonHoleContains(holes [][]math.Point3, q math.Point2, pl geom.Plane) bool {
+	for _, hr := range holes {
+		if pointInPolygon2D(q, ring2D(pl, hr)) {
+			return true
+		}
+	}
+	return false
 }
