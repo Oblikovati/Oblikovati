@@ -236,11 +236,12 @@ func planeFaceMaterial(c *planeFaceUV, keep func(math.Point3) bool) func() mater
 
 // planeFaceContactOK declines grazing contact before the trim runs: an imprint segment tangent to a
 // frame circle (a double root within the weld) risks a sliver cell the arrangement cannot resolve —
-// the same gate planeUV applies to its conic imprints (#1591). Only the STRAIGHT imprints are tested: a
-// closed conic island reaches the trim already proven clear of every frame edge (wallSectionIsland), and a
-// conic-framed face never receives one (uvWallSharedImprint declines it).
+// the same gate planeUV applies to its conic imprints (#1591). The frame test reads only the STRAIGHT
+// imprints (a closed conic island reaches the trim already proven clear of every frame edge —
+// wallSectionIsland — and a conic-framed face never receives one); the islands are gated separately, on
+// meeting nothing they would have to meet on a sampled chord (islandContactOK).
 func planeFaceContactOK(c *planeFaceUV, imprint []geom.Curve3) bool {
-	straight, _ := splitImprintByKind(imprint)
+	straight, islands := splitImprintByKind(imprint)
 	for _, l := range c.loops {
 		for _, e := range l.edges {
 			if _, isCircle := e.curve.(geom.Circle); isCircle && !circleContactOK(c, e.curve, straight) {
@@ -248,7 +249,7 @@ func planeFaceContactOK(c *planeFaceUV, imprint []geom.Curve3) bool {
 			}
 		}
 	}
-	return true
+	return islandContactOK(c, islands, straight)
 }
 
 // circleContactOK reports whether no imprint segment grazes one frame circle tangentially.

@@ -121,3 +121,55 @@ func sampledRingArea(segs []uvSeg) float64 {
 	}
 	return stdmath.Abs(twice) / 2
 }
+
+// TestIslandContactOKDeclinesACrossedIsland: an island a straight imprint cuts through would be resolved
+// on the island's sampled chord, so the trim declines instead (#3460).
+func TestIslandContactOKDeclinesACrossedIsland(t *testing.T) {
+	c := islandChart(t)
+	circle, err := geom.NewCircle(math.P3(0, 0, 3), math.V3(0, 0, 1), 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	across := geom.NewLineSegment(math.P3(-8, 0, 3), math.P3(8, 0, 3))
+	clear := geom.NewLineSegment(math.P3(-8, 7, 3), math.P3(8, 7, 3))
+	if islandContactOK(c, []geom.Curve3{circle}, []geom.Curve3{across}) {
+		t.Error("a straight imprint crossing the island must decline")
+	}
+	if !islandContactOK(c, []geom.Curve3{circle}, []geom.Curve3{clear}) {
+		t.Error("a straight imprint clear of the island is fine")
+	}
+}
+
+// TestConicPairSeparated: apart and nested pass; overlapping (two crossing circles) declines.
+func TestConicPairSeparated(t *testing.T) {
+	at := func(x, r float64) planeConic {
+		return planeConic{center: math.P2(math.Scalar(x), 0), maj: math.V2(1, 0), A: r, B: r}
+	}
+	for _, c := range []struct {
+		name string
+		a, b planeConic
+		want bool
+	}{
+		{"apart", at(0, 2), at(10, 2), true},
+		{"nested", at(0, 5), at(0, 2), true},
+		{"crossing", at(0, 5), at(6, 3), false},
+		{"touching", at(0, 5), at(5, 5), false},
+	} {
+		if got := conicPairSeparated(c.a, c.b); got != c.want {
+			t.Errorf("%s: conicPairSeparated = %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+// TestConicsNestedOrApartScansEveryPair: one bad pair among many declines the whole set.
+func TestConicsNestedOrApartScansEveryPair(t *testing.T) {
+	at := func(x, r float64) planeConic {
+		return planeConic{center: math.P2(math.Scalar(x), 0), maj: math.V2(1, 0), A: r, B: r}
+	}
+	if !conicsNestedOrApart([]planeConic{at(0, 2), at(10, 2), at(20, 2)}) {
+		t.Error("three mutually apart islands are fine")
+	}
+	if conicsNestedOrApart([]planeConic{at(0, 2), at(10, 2), at(11, 3)}) {
+		t.Error("a crossing pair anywhere in the set must decline")
+	}
+}

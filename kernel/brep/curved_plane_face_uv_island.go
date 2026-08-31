@@ -54,3 +54,56 @@ func (c *planeFaceUV) islandSegs(islands []geom.Curve3) []uvSeg {
 	}
 	return out
 }
+
+// islandContactOK gates a closed-conic island against everything it must NOT meet inside the frame: a
+// straight imprint segment, and another island. The exact-crossing injection covers frame conics only, so
+// such a meeting would be resolved on the island's sampled CHORD — off the true conic by the sagitta —
+// while the wall's own arrangement places it on the conic, leaving a T-junction the stitch cannot weld.
+// Both are named declines, never approximations (#3460).
+func islandContactOK(c *planeFaceUV, islands, straight []geom.Curve3) bool {
+	conics := make([]planeConic, 0, len(islands))
+	for _, cv := range islands {
+		pc, ok := toPlaneConic(cv, c.plane)
+		if !ok {
+			return false
+		}
+		if !conicClearOfSegments(c, pc, straight) {
+			return false
+		}
+		conics = append(conics, pc)
+	}
+	return conicsNestedOrApart(conics)
+}
+
+// conicClearOfSegments reports one island crossing (or grazing) no straight imprint segment.
+func conicClearOfSegments(c *planeFaceUV, pc planeConic, straight []geom.Curve3) bool {
+	for _, imp := range straight {
+		a2, b2 := to2D(c.plane, imp.PointAt(0)), to2D(c.plane, imp.PointAt(1))
+		hits, tangent := conicEdgeHits(pc, a2, b2, c.res)
+		if tangent || len(hits) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// conicsNestedOrApart reports every island pair being strictly apart or strictly nested — the two
+// arrangements that need no conic∩conic inversion. The test is on each conic's circumscribed (A) and
+// inscribed (B) radii, so it is conservative for an ellipse and exact for a circle (A==B).
+func conicsNestedOrApart(conics []planeConic) bool {
+	for i := range conics {
+		for j := i + 1; j < len(conics); j++ {
+			if !conicPairSeparated(conics[i], conics[j]) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// conicPairSeparated reports one island pair being apart (centres farther than the two circumscribed
+// radii) or nested (one's circumscribed disc strictly inside the other's inscribed disc).
+func conicPairSeparated(a, b planeConic) bool {
+	d := float64(a.center.DistanceTo(b.center))
+	return d > a.A+b.A || d+b.A < a.B || d+a.A < b.B
+}
