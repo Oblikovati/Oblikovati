@@ -48,12 +48,27 @@ func toPlaneConic(curve geom.Curve3, pl geom.Plane) (planeConic, bool) {
 	}
 }
 
-// conicEdgeHits solves C ∩ (a→b) EXACTLY. It affine-normalises the ellipse to the unit circle (a linear map
-// whose condition number is A/B, exactly), then solves the STABLE quadratic |A'+s·d|²=1 with the Kahan
-// form qq=-½(β+sign(β)√Δ) so the cancellation that afflicts one root when β²≫4αγ never bites. The edge
-// parameter s is invariant under the affine map, so the crossing point is a+s·(b−a) in the original chart.
-// tangent=true when the two roots coincide within a weld (a grazing double root — a sliver risk to decline).
+// conicEdgeHits solves C ∩ (a→b) EXACTLY, keeping only crossings STRICTLY inside the edge.
 func conicEdgeHits(pc planeConic, a, b math.Point2, res geom.Resolution) (hits []conicHit, tangent bool) {
+	return conicSegmentHits(pc, a, b, res, tjTol)
+}
+
+// conicFrameHits is conicEdgeHits over the CLOSED segment: a root AT an endpoint counts as a crossing.
+// An imprint clipped to this very conic (uvPairSegments → curvedFaceLineIntervals) terminates ON it by
+// construction, so the strict-interior window drops precisely the crossings the conic frame needs; the
+// arrangement then resolves the contact against a SAMPLED chord of the circle instead, splitting the
+// shared vertex into two copies 1.5e-4 apart at imprintSampleCount=256 (#3488).
+func conicFrameHits(pc planeConic, a, b math.Point2, res geom.Resolution) (hits []conicHit, tangent bool) {
+	return conicSegmentHits(pc, a, b, res, -tjTol)
+}
+
+// conicSegmentHits solves C ∩ (a→b) EXACTLY, accepting roots in the window [sPad, 1−sPad]. It affine-
+// normalises the ellipse to the unit circle (a linear map whose condition number is A/B, exactly), then
+// solves the STABLE quadratic |A'+s·d|²=1 with the Kahan form qq=-½(β+sign(β)√Δ) so the cancellation that
+// afflicts one root when β²≫4αγ never bites. The edge parameter s is invariant under the affine map, so
+// the crossing point is a+s·(b−a) in the original chart. tangent=true when the two roots coincide within
+// a weld (a grazing double root — a sliver risk to decline).
+func conicSegmentHits(pc planeConic, a, b math.Point2, res geom.Resolution, sPad float64) (hits []conicHit, tangent bool) {
 	ax, ay := pc.normalize(a)
 	bx, by := pc.normalize(b)
 	dx, dy := bx-ax, by-ay
@@ -68,8 +83,8 @@ func conicEdgeHits(pc planeConic, a, b math.Point2, res geom.Resolution) (hits [
 		return nil, false // the edge line misses the conic
 	}
 	s1, s2 := stableQuadraticRoots(alpha, beta, gamma, disc)
-	hits = appendEdgeHit(hits, a, b, s1)
-	hits = appendEdgeHit(hits, a, b, s2)
+	hits = appendEdgeHit(hits, a, b, s1, sPad)
+	hits = appendEdgeHit(hits, a, b, s2, sPad)
 	return hits, conicTangent(a, b, s1, s2, disc, res)
 }
 
@@ -91,10 +106,12 @@ func stableQuadraticRoots(alpha, beta, gamma, disc float64) (float64, float64) {
 	return qq / alpha, gamma / qq
 }
 
-// appendEdgeHit adds the crossing at edge parameter s when s lies strictly inside the edge (endpoints are
-// resolved through the vertex-snap path, not here — tjTol matches the arrangement welder's tolerance).
-func appendEdgeHit(hits []conicHit, a, b math.Point2, s float64) []conicHit {
-	if s < tjTol || s > 1-tjTol {
+// appendEdgeHit adds the crossing at edge parameter s when s lies in the acceptance window
+// [sPad, 1−sPad]. A positive pad (conicEdgeHits) keeps the crossing strictly inside the edge, leaving
+// endpoints to the vertex-snap path; a negative one (conicFrameHits) admits them — tjTol matches the
+// arrangement welder's tolerance either way.
+func appendEdgeHit(hits []conicHit, a, b math.Point2, s, sPad float64) []conicHit {
+	if s < sPad || s > 1-sPad {
 		return hits
 	}
 	p := math.P2(a.X+(b.X-a.X)*math.Scalar(s), a.Y+(b.Y-a.Y)*math.Scalar(s))

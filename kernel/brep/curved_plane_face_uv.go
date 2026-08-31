@@ -125,7 +125,7 @@ func (c *planeFaceUV) circleEdgeCrossings(li, ei int, circle geom.Curve3, imprin
 	var out []faceFrameCrossing
 	for ii, imp := range imprint {
 		a2, b2 := to2D(c.plane, imp.PointAt(0)), to2D(c.plane, imp.PointAt(1))
-		hits, _ := conicEdgeHits(pc, a2, b2, c.res)
+		hits, _ := conicFrameHits(pc, a2, b2, c.res)
 		for _, h := range hits {
 			if tc, ok := conicParamAt(circle, to3D(c.plane, h.p)); ok {
 				out = append(out, faceFrameCrossing{loop: li, edge: ei, imp: ii, sImp: h.sEdge, tConic: tc, at: circle.PointAt(tc)})
@@ -197,17 +197,33 @@ func circleSampleParams(e loopEdge, crossings []faceFrameCrossing, li, ei int) [
 func (c *planeFaceUV) imprintSegs(imprint []geom.Curve3, crossings []faceFrameCrossing) []uvSeg {
 	var out []uvSeg
 	for ii, imp := range imprint {
-		verts := []math.Point3{imp.PointAt(0)}
-		for _, cr := range sortedImprintCrossings(crossings, ii) {
-			verts = append(verts, cr.at)
-		}
-		verts = append(verts, imp.PointAt(1))
+		verts := imprintVertices(imp, sortedImprintCrossings(crossings, ii))
 		for i := 1; i < len(verts); i++ {
 			seg := geom.NewLineSegment(verts[i-1], verts[i])
 			out = append(out, uvSeg{a: to2D(c.plane, verts[i-1]), b: to2D(c.plane, verts[i]), curve: seg, tA: 0, tB: 1, kind: segImprint})
 		}
 	}
 	return out
+}
+
+// imprintVertices is one imprint segment's vertex chain: its two endpoints, with every conic-frame
+// crossing ordered along it. A crossing AT an endpoint REPLACES that endpoint with conic.PointAt(t) —
+// the very point the neighbouring sub-arc terminates on — instead of inserting a near-duplicate ahead
+// of it. An imprint clipped to the frame conic ends ON it by construction, so without this the split
+// face's loop closes only to the sampling error of the frame ring (#3488).
+func imprintVertices(imp geom.Curve3, on []faceFrameCrossing) []math.Point3 {
+	head, tail, mid := imp.PointAt(0), imp.PointAt(1), make([]math.Point3, 0, len(on))
+	for _, cr := range on {
+		switch {
+		case cr.sImp <= tjTol:
+			head = cr.at
+		case cr.sImp >= 1-tjTol:
+			tail = cr.at
+		default:
+			mid = append(mid, cr.at)
+		}
+	}
+	return append(append([]math.Point3{head}, mid...), tail)
 }
 
 // sortedImprintCrossings returns the crossings on one imprint segment ordered along it.
