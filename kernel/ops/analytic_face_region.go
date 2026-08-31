@@ -262,8 +262,8 @@ func regionInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
 	if !(uLo < uHi && vLo < vHi) {
 		return 0, 0, false
 	}
-	best := -1.0
-	for i := 1; i < regionProbeGrid; i++ {
+	best, deepEnough := -1.0, regionProbeDeepEnough*stdmath.Hypot(uHi-uLo, vHi-vLo)
+	for i := 1; i < regionProbeGrid && best < deepEnough; i++ {
 		for j := 1; j < regionProbeGrid; j++ {
 			pu := uLo + (uHi-uLo)*float64(i)/regionProbeGrid
 			pv := vLo + (vHi-vLo)*float64(j)/regionProbeGrid
@@ -274,6 +274,13 @@ func regionInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
 	}
 	return u, v, best > 0
 }
+
+// regionProbeDeepEnough is the depth, as a fraction of the region's parameter box diagonal, past
+// which a probe is unambiguous and the search stops. The scan is over a grid of points each measured
+// against every boundary sample, so on an ordinary face — where the first row already lands well
+// inside — this turns a full sweep into a few rows. A slender region never reaches it and falls back
+// to the full sweep, which is the case that needs one.
+const regionProbeDeepEnough = 0.1 // tol:parametric — probe depth that ends the search, relative
 
 // uvDepthOf is how far (u, v) sits inside the region: its distance to the nearest boundary sample,
 // or −1 when it is outside the region altogether.
