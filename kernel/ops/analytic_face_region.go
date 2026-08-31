@@ -219,6 +219,11 @@ func faceBody(f *topo.Face) *topo.Body {
 // per-face gate classifies (M48/C3, Oblikovati/Oblikovati#3447). ok is false for a face whose loops
 // cannot be reconstructed in uv, or whose region is too slender for the probe to land inside.
 //
+// The probe goes through regionProbeUV, so a face whose loops WRAP the parameter seam — a cone or
+// cylinder band bounded by two full-turn loops — takes the inward-of-boundary route. Running the
+// plain even-odd grid on such loops returned a point in the band the operation DISCARDED, and the
+// per-face boolean certificate then refused a correct analytic result (Oblikovati/Oblikovati#3447).
+//
 // Example: p, ok := ops.FaceInteriorPoint(f) // ok ⇒ brep.PointInFaceTrim(f, p)
 func FaceInteriorPoint(f *topo.Face) (math.Point3, bool) {
 	s := f.Geometry()
@@ -234,7 +239,7 @@ func FaceInteriorPoint(f *topo.Face) (math.Point3, bool) {
 	if !ok {
 		return math.Point3{}, false
 	}
-	u, v, found := regionInteriorUV(loops)
+	u, v, found := regionProbeUV(loops)
 	if !found {
 		return math.Point3{}, false
 	}
