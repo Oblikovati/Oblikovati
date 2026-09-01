@@ -7,13 +7,14 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 )
 
 // Rebuilding a body's faces to clean Class-A NURBS (M36-F02). An imported or boolean-derived
 // face often carries a dense, unevenly-knotted freeform surface; RebuildFaceSurfaces refits
 // each such surface to a fresh low-degree NURBS with a small, even control net (geom.RebuildSurface)
-// and swaps it in with ReplaceFaceSurface, keeping the face's loops/edges. Because the rebuild
+// and swaps it in with transform.ReplaceFaceSurface, keeping the face's loops/edges. Because the rebuild
 // preserves the surface parameterization within tolerance, the face's trim loops still evaluate
 // onto the new surface, so no edge surgery is needed.
 
@@ -38,7 +39,7 @@ func RebuildFaceSurfaces(b *topo.Body, uDeg, vDeg, nu, nv, samples int) (*topo.B
 		if dev > maxDev {
 			maxDev = dev
 		}
-		if out, err = ReplaceFaceSurface(out, f.ReferenceKey(), clean); err != nil {
+		if out, err = transform.ReplaceFaceSurface(out, f.ReferenceKey(), clean); err != nil {
 			return nil, 0, fmt.Errorf("ops.RebuildFaceSurfaces: swap face %x: %w", f.ReferenceKey(), err)
 		}
 		rebuilt++

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -57,7 +58,7 @@ func ShellVaried(solid *topo.Body, removedKeys [][]byte, t float64, dir ShellDir
 	if t <= 0 {
 		return nil, fmt.Errorf("shell: thickness %g must be > 0", t)
 	}
-	removed, err := resolveFaceSet(solid, removedKeys)
+	removed, err := retopo.ResolveFaceSet(solid, removedKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +106,7 @@ func (w faceThickness) scaled(s float64) func(*topo.Face) float64 {
 	return func(f *topo.Face) float64 { return s * w.at(f) }
 }
 
-// resolveWallThickness binds the overrides to face IDs, rejecting a lost key (via resolveFaceSet's
+// resolveWallThickness binds the overrides to face IDs, rejecting a lost key (via retopo.ResolveFaceSet's
 // rules), a removed face, and a non-positive thickness — each of which would otherwise produce a
 // quietly wrong wall rather than a sick feature.
 func resolveWallThickness(solid *topo.Body, overrides []ShellFaceThickness, removed map[uint64]bool,
@@ -115,7 +116,7 @@ func resolveWallThickness(solid *topo.Body, overrides []ShellFaceThickness, remo
 		if o.Thickness <= 0 {
 			return wall, fmt.Errorf("shell: face thickness %g must be > 0 (face %x)", o.Thickness, o.FaceKey)
 		}
-		ids, err := resolveFaceSet(solid, [][]byte{o.FaceKey})
+		ids, err := retopo.ResolveFaceSet(solid, [][]byte{o.FaceKey})
 		if err != nil {
 			return wall, fmt.Errorf("shell: face thickness: %w", err)
 		}
@@ -133,7 +134,7 @@ func resolveWallThickness(solid *topo.Body, overrides []ShellFaceThickness, remo
 // offsetShellSolid rebuilds the solid with every kept face's plane moved by dist(f) along its
 // normal (negative inward); removed faces stay in place so the shell opens flush there.
 func offsetShellSolid(solid *topo.Body, removed map[uint64]bool, dist func(*topo.Face) float64) *topo.Body {
-	return rebuildWithPlanes(solid, "shell-offset", false, func(f *topo.Face) geom.Plane {
+	return retopo.RebuildWithPlanes(solid, "shell-offset", false, func(f *topo.Face) geom.Plane {
 		return shellFacePlane(f, removed, dist(f))
 	})
 }
@@ -147,24 +148,4 @@ func shellFacePlane(f *topo.Face, removed map[uint64]bool, d float64) geom.Plane
 	}
 	moved, _ := geom.NewPlaneFromAxes(pl.Origin.TranslateBy(pl.Normal().Scale(d)), pl.UAxis.AsVector(), pl.VAxis.AsVector())
 	return moved
-}
-
-// resolveFaceSet turns face reference keys into the set of face IDs they name, erroring if a
-// key no longer resolves (the feature must go Sick honestly).
-func resolveFaceSet(solid *topo.Body, keys [][]byte) (map[uint64]bool, error) {
-	set := make(map[uint64]bool, len(keys))
-	for _, k := range keys {
-		// ADR-0043 resolution guard: a key must bind to exactly one face. >1 is a topological-
-		// naming collision, surfaced as an honest error rather than a silent first-match.
-		match := solid.FacesByKey(k)
-		switch len(match) {
-		case 1:
-			set[match[0].ID()] = true
-		case 0:
-			return nil, fmt.Errorf("face reference lost: %x", k)
-		default:
-			return nil, fmt.Errorf("face reference %x is ambiguous — it matches %d faces (a topological-naming collision)", k, len(match))
-		}
-	}
-	return set, nil
 }

@@ -5,6 +5,7 @@ package feature
 import (
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -12,7 +13,7 @@ import (
 // Pattern and mirror features replicate the running solid into placed copies. Each
 // occurrence carries a rigid transform (a grid step, a rotation about an axis, a
 // sketch-point offset, or a plane reflection); recompute makes a real copy of every
-// running body per active occurrence via ops.TransformBody (with a distinct lineage
+// running body per active occurrence via transform.TransformBody (with a distinct lineage
 // so each copy has its own reference keys) and appends them as placed solids.
 //
 // The element bookkeeping — count driven by parameters, with per-element suppression
@@ -94,7 +95,7 @@ func (p *patternBase) placeCopies(bodies []*topo.Body, transforms []math.Matrix4
 			continue
 		}
 		for bi, b := range bodies {
-			c, err := ops.TransformBody(b, transforms[k], copyLineage(feat, k, bi))
+			c, err := transform.TransformBody(b, transforms[k], copyLineage(feat, k, bi))
 			if err != nil {
 				return nil, err
 			}
@@ -184,7 +185,7 @@ func (p *patternBase) replicateTools(bodies []*topo.Body, tools []groupTool, tra
 // rec collects the booleans' fallback diagnostics (#1601; nil discards).
 func applyGroupAt(running *topo.Body, tools []groupTool, xf math.Matrix4, feat string, k int, rec *diag.Recorder) (*topo.Body, error) {
 	for bi, t := range tools {
-		tk, err := ops.TransformBody(t.body, xf, copyLineage(feat, k, bi))
+		tk, err := transform.TransformBody(t.body, xf, copyLineage(feat, k, bi))
 		if err != nil {
 			return nil, err
 		}

@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -20,7 +21,7 @@ import (
 // heal does not produce a valid closed solid (a non-healable selection), so the feature can
 // go Sick rather than ship an open body.
 func DeleteFaces(solid *topo.Body, faceKeys [][]byte) (*topo.Body, error) {
-	del, err := resolveFaceSet(solid, faceKeys)
+	del, err := retopo.ResolveFaceSet(solid, faceKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func DeleteFaces(solid *topo.Body, faceKeys [][]byte) (*topo.Body, error) {
 
 // healedPositions returns, per vertex touching a deleted face, the position it heals to.
 func healedPositions(solid *topo.Body, del map[uint64]bool) map[uint64]math.Point3 {
-	vf := vertexFaceMap(solid)
+	vf := retopo.VertexFaceMap(solid)
 	ring := ringPlanes(solid, del)
 	moved := map[uint64]math.Point3{}
 	for _, v := range solid.Vertices() {
@@ -145,7 +146,7 @@ func meetOfPlanes(planes []geom.Plane) (math.Point3, bool) {
 			b[i] += nv[i] * d
 		}
 	}
-	x, ok := solve3(a, b)
+	x, ok := retopo.Solve3(a, b)
 	return math.P3(x[0], x[1], x[2]), ok
 }
 
@@ -166,7 +167,7 @@ func twoPlaneLine(a, b geom.Plane) (math.Point3, math.Vector3, bool) {
 func lineHitsPlane(p0 math.Point3, dir math.Vector3, c geom.Plane) (float64, bool) {
 	n := c.Normal()
 	den := dir.Dot(n)
-	if stdmath.Abs(den) < singularSolveTol {
+	if stdmath.Abs(den) < retopo.SingularSolveTol {
 		return 0, false
 	}
 	return (n.Dot(c.Origin.AsVector()) - n.Dot(p0.AsVector())) / den, true

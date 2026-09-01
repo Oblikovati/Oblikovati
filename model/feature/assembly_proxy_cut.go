@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/occurrence"
 )
@@ -84,7 +85,7 @@ func (f *AssemblyProxyCutFeature) resolveTools() ([]*topo.Body, error) {
 	world := f.source.Transform()
 	var tools []*topo.Body
 	for i, b := range def.SurfaceBodies().All() {
-		t, err := ops.TransformBody(b, world, proxyToolLineage(i))
+		t, err := transform.TransformBody(b, world, proxyToolLineage(i))
 		if err != nil {
 			return nil, fmt.Errorf("assemblyProxyCut: proxy source body %d into context: %w", i, err)
 		}

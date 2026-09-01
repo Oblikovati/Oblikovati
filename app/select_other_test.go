@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/scene"
@@ -18,7 +18,7 @@ func TestPickAllReturnsOccludedBodiesFrontToBack(t *testing.T) {
 	s := extrudedBox(t, 2, 4) // box [0,2]×[0,2]×[0,4], centre (1,1,2)
 	front := partBodies(s)()[0]
 	back := front
-	near, err := ops.TransformBody(front, math.Translation4(math.V3(10, 0, 0)), func(l topo.Lineage) topo.Lineage { return l })
+	near, err := transform.TransformBody(front, math.Translation4(math.V3(10, 0, 0)), func(l topo.Lineage) topo.Lineage { return l })
 	if err != nil {
 		t.Fatalf("TransformBody: %v", err)
 	}

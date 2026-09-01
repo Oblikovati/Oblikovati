@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops_test
+package transform_test
 
 import (
 	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -19,7 +20,7 @@ func identityLineage(l topo.Lineage) topo.Lineage { return l }
 func TestDeformBodyIdentity(t *testing.T) {
 	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 3, 4) // volume 24
-	out, err := ops.DeformBody(box, func(p math.Point3) math.Point3 { return p }, identityLineage)
+	out, err := transform.DeformBody(box, func(p math.Point3) math.Point3 { return p }, identityLineage)
 	if err != nil {
 		t.Fatalf("DeformBody: %v", err)
 	}
@@ -37,7 +38,7 @@ func TestDeformBodyShearPreservesVolume(t *testing.T) {
 	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2) // volume 8
 	shear := func(p math.Point3) math.Point3 { return math.P3(p.X+0.5*p.Z, p.Y, p.Z) }
-	out, err := ops.DeformBody(box, shear, identityLineage)
+	out, err := transform.DeformBody(box, shear, identityLineage)
 	if err != nil {
 		t.Fatalf("DeformBody: %v", err)
 	}
@@ -54,7 +55,7 @@ func TestDeformBodyShearPreservesVolume(t *testing.T) {
 func TestDeformBodyRigidMatchesMove(t *testing.T) {
 	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 1, 1, 1)
-	out, err := ops.DeformBody(box, func(p math.Point3) math.Point3 {
+	out, err := transform.DeformBody(box, func(p math.Point3) math.Point3 {
 		return math.P3(p.X+5, p.Y-2, p.Z+1)
 	}, identityLineage)
 	if err != nil {

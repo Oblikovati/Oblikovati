@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -207,9 +208,9 @@ func TestMirroredTetraFlipsSkewViaAnalytic(t *testing.T) {
 
 func transformed(t *testing.T, b *topo.Body, m math.Matrix4) *topo.Body {
 	t.Helper()
-	out, err := TransformBody(b, m, func(l topo.Lineage) topo.Lineage { return l })
+	out, err := transform.TransformBody(b, m, func(l topo.Lineage) topo.Lineage { return l })
 	if err != nil {
-		t.Fatalf("TransformBody: %v", err)
+		t.Fatalf("transform.TransformBody: %v", err)
 	}
 	return out
 }

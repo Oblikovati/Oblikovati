@@ -48,7 +48,7 @@ func BenchmarkVisibleInstances(b *testing.B) {
 	}
 }
 
-// BenchmarkWorldAssemblyBodies measures the picking/mass-props path: one ops.TransformBody
+// BenchmarkWorldAssemblyBodies measures the picking/mass-props path: one transform.TransformBody
 // per occurrence into world space (the F5 bottleneck, O(total placements)). The cache is
 // reset each iteration so the rebuild — not the cache hit — is timed.
 func BenchmarkWorldAssemblyBodies(b *testing.B) {

@@ -13,7 +13,7 @@ import (
 )
 
 // offsetBoxBody builds a 2×2×2 box translated to corner (dx,dy,dz) by offsetting the
-// cage vertices (no TransformBody), isolating the tessellation winding.
+// cage vertices (no transform.TransformBody), isolating the tessellation winding.
 func offsetBoxBody(dx, dy, dz float64) *ops.Mesh {
 	m := subd.Box(2, 2, 2)
 	for i := range m.Verts {

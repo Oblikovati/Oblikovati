@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package retopo
 
 import (
 	"oblikovati.org/kernel/geom"
@@ -8,7 +8,7 @@ import (
 	"oblikovati.org/math"
 )
 
-// rebuildWithPlanes clones a planar solid's topology, replacing each face's surface with
+// RebuildWithPlanes clones a planar solid's topology, replacing each face's surface with
 // planeOf(f) and moving each vertex to the meeting point of its adjacent faces' new planes
 // (the least-squares intersection — exact for a 3-face corner). The combinatorial structure
 // (faces, loops, edges) is preserved, so the result stays a valid solid as long as the moved
@@ -21,8 +21,8 @@ import (
 // survives. A throwaway tool (shell's cavity, fed to the boolean) instead takes fresh ordinal names
 // under tag, so its faces don't share lineages with the target and confuse the boolean's face-pair
 // edge naming.
-func rebuildWithPlanes(solid *topo.Body, tag string, keepIdentity bool, planeOf func(*topo.Face) geom.Plane) *topo.Body {
-	vf := vertexFaceMap(solid)
+func RebuildWithPlanes(solid *topo.Body, tag string, keepIdentity bool, planeOf func(*topo.Face) geom.Plane) *topo.Body {
+	vf := VertexFaceMap(solid)
 	planes := make(map[uint64]geom.Plane, len(solid.Faces()))
 	for _, f := range solid.Faces() {
 		planes[f.ID()] = planeOf(f)
@@ -31,22 +31,22 @@ func rebuildWithPlanes(solid *topo.Body, tag string, keepIdentity bool, planeOf 
 	bld := topo.NewBuilder(true, lin)
 	nv := make(map[uint64]*topo.Vertex, len(solid.Vertices()))
 	for i, v := range solid.Vertices() {
-		nv[v.ID()] = bld.AddVertex(vertexAtPlanes(v, vf[v.ID()], planes), cloneName(keepIdentity, v.Lineage(), tag, "v", i))
+		nv[v.ID()] = bld.AddVertex(vertexAtPlanes(v, vf[v.ID()], planes), CloneName(keepIdentity, v.Lineage(), tag, "v", i))
 	}
 	ne := make(map[uint64]*topo.Edge, len(solid.Edges()))
 	for i, e := range solid.Edges() {
 		a, b := nv[e.StartVertex().ID()], nv[e.EndVertex().ID()]
-		ne[e.ID()] = bld.AddEdge(geom.NewLineSegment(a.Point(), b.Point()), a, b, cloneName(keepIdentity, e.Lineage(), tag, "e", i))
+		ne[e.ID()] = bld.AddEdge(geom.NewLineSegment(a.Point(), b.Point()), a, b, CloneName(keepIdentity, e.Lineage(), tag, "e", i))
 	}
 	for i, f := range solid.Faces() {
-		bld.AddFace(planes[f.ID()], cloneName(keepIdentity, f.Lineage(), tag, "f", i), cloneLoops(f, ne)...)
+		bld.AddFace(planes[f.ID()], CloneName(keepIdentity, f.Lineage(), tag, "f", i), CloneLoops(f, ne)...)
 	}
 	return bld.Build()
 }
 
-// cloneName returns orig when a 1:1 rebuild keeps identity, else a fresh build-order ordinal under
-// tag — the per-entity naming choice rebuildWithPlanes makes (ADR-0043).
-func cloneName(keepIdentity bool, orig topo.Lineage, tag, role string, i int) topo.Lineage {
+// CloneName returns orig when a 1:1 rebuild keeps identity, else a fresh build-order ordinal under
+// tag — the per-entity naming choice RebuildWithPlanes makes (ADR-0043).
+func CloneName(keepIdentity bool, orig topo.Lineage, tag, role string, i int) topo.Lineage {
 	if keepIdentity {
 		return orig
 	}
@@ -71,16 +71,16 @@ func vertexAtPlanes(v *topo.Vertex, faces []*topo.Face, planes map[uint64]geom.P
 			b[i] += nv[i] * d
 		}
 	}
-	x, ok := solve3(a, b)
+	x, ok := Solve3(a, b)
 	if !ok {
 		return v.Point()
 	}
 	return math.P3(x[0], x[1], x[2])
 }
 
-// cloneLoops rebuilds a face's loop specs against the rebuilt-body edges, preserving each
+// CloneLoops rebuilds a face's loop specs against the rebuilt-body edges, preserving each
 // edge use's direction and the outer/inner role.
-func cloneLoops(f *topo.Face, ne map[uint64]*topo.Edge) []topo.LoopSpec {
+func CloneLoops(f *topo.Face, ne map[uint64]*topo.Edge) []topo.LoopSpec {
 	specs := make([]topo.LoopSpec, 0, len(f.Loops()))
 	for _, l := range f.Loops() {
 		uses := make([]topo.Use, 0, len(l.EdgeUses()))
@@ -96,8 +96,8 @@ func cloneLoops(f *topo.Face, ne map[uint64]*topo.Edge) []topo.LoopSpec {
 	return specs
 }
 
-// vertexFaceMap returns, per vertex ID, the faces meeting at that vertex.
-func vertexFaceMap(solid *topo.Body) map[uint64][]*topo.Face {
+// VertexFaceMap returns, per vertex ID, the faces meeting at that vertex.
+func VertexFaceMap(solid *topo.Body) map[uint64][]*topo.Face {
 	m := map[uint64][]*topo.Face{}
 	seen := map[[2]uint64]bool{}
 	for _, f := range solid.Faces() {
@@ -113,16 +113,16 @@ func vertexFaceMap(solid *topo.Body) map[uint64][]*topo.Face {
 	return m
 }
 
-// singularSolveTol is the magnitude below which a determinant or a ray/line·plane denominator
+// SingularSolveTol is the magnitude below which a determinant or a ray/line·plane denominator
 // is treated as zero — the linear solve is singular or the line is parallel to the plane. It
 // is below the linear DefaultTolerance because it bounds a product of (roughly unit) direction
 // terms, not a length.
-const singularSolveTol = 1e-12
+const SingularSolveTol = 1e-12
 
-// solve3 solves the 3×3 system a·x = b by Cramer's rule, ok=false when a is singular.
-func solve3(a [3][3]float64, b [3]float64) ([3]float64, bool) {
-	det := det3(a)
-	if det < singularSolveTol && det > -singularSolveTol {
+// Solve3 solves the 3×3 system a·x = b by Cramer's rule, ok=false when a is singular.
+func Solve3(a [3][3]float64, b [3]float64) ([3]float64, bool) {
+	det := Det3(a)
+	if det < SingularSolveTol && det > -SingularSolveTol {
 		return [3]float64{}, false
 	}
 	var x [3]float64
@@ -131,13 +131,13 @@ func solve3(a [3][3]float64, b [3]float64) ([3]float64, bool) {
 		for r := range 3 {
 			m[r][c] = b[r]
 		}
-		x[c] = det3(m) / det
+		x[c] = Det3(m) / det
 	}
 	return x, true
 }
 
-// det3 returns the determinant of a 3×3 matrix.
-func det3(m [3][3]float64) float64 {
+// Det3 returns the determinant of a 3×3 matrix.
+func Det3(m [3][3]float64) float64 {
 	return m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1]) -
 		m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0]) +
 		m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0])

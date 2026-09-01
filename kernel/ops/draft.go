@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -14,7 +15,7 @@ import (
 // operation. Each selected face is rotated about its hinge (the line where it meets the
 // neutral plane perpendicular to pull through the face's lowest vertex along pull), so the
 // face tilts by angle while its base stays put, and the neighbours retrim (via
-// [rebuildWithPlanes]). Faces perpendicular to pull (no hinge) are left unchanged. Sign:
+// [retopo.RebuildWithPlanes]). Faces perpendicular to pull (no hinge) are left unchanged. Sign:
 // a NEGATIVE angle leans the face inward going along pull (the mould-release draft — removes
 // material toward the far end); a POSITIVE angle leans it outward (adds material). See the
 // convention pinned by TestDraftTapersSideFace, which drafts inward with a negative angle.
@@ -39,7 +40,7 @@ func DraftFacesNeutral(solid *topo.Body, faceKeys [][]byte, pull math.Vector3, n
 	if err != nil {
 		return nil, err
 	}
-	return modifyBody(solid, mod, "draft"), nil
+	return transform.ModifyBody(solid, mod, "draft"), nil
 }
 
 // draftedPlane returns a face's plane rotated by angle about its draft hinge, pivoting on a point of

@@ -11,7 +11,7 @@ import (
 
 // Sheet-metal bend development (M13-F04, #377). A bend develops by a non-affine point map that
 // unrolls (unfold) or rolls (refold) the bend region around its neutral fibre, applied to the
-// whole body by [ops.DeformBody]. Because the map moves every vertex — including those a cut
+// whole body by [transform.DeformBody]. Because the map moves every vertex — including those a cut
 // added while flat — a slot that crosses the bend rides through it on refold, with no separate
 // folded↔flat entity map. This replaces the earlier rigid-rotation approximation, which left
 // the bend arc curved (so the bend looked broken and a crossing cut reached only one face).

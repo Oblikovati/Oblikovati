@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -37,7 +38,7 @@ func TestObliquePartialPenetrationFlushBottomStaysManifold(t *testing.T) {
 	t.Parallel()
 	box := subd.ToBody(subd.Box(6, 6, 3), "box")
 	corner := subd.ToBody(subd.Box(3, 3, 4), "cut")
-	cornerT, err := ops.TransformBody(corner, math.Translation4(math.V3(1.5, 1.5, 0)), ppLineage)
+	cornerT, err := transform.TransformBody(corner, math.Translation4(math.V3(1.5, 1.5, 0)), ppLineage)
 	if err != nil {
 		t.Fatalf("position corner: %v", err)
 	}
@@ -52,7 +53,7 @@ func TestObliquePartialPenetrationFlushBottomStaysManifold(t *testing.T) {
 	zAxis, _ := math.UnitVector3FromVector(math.V3(0, 0, 1))
 	blade := subd.ToBody(subd.Box(0.6, 0.6, 1.0), "blade")
 	m := math.Translation4(math.V3(-0.4, -0.4, 0)).Mul(math.Rotation4(45*stdmath.Pi/180, zAxis, math.P3(0, 0, 0)))
-	bladeT, err := ops.TransformBody(blade, m, ppLineage)
+	bladeT, err := transform.TransformBody(blade, m, ppLineage)
 	if err != nil {
 		t.Fatalf("position blade: %v", err)
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -29,7 +30,7 @@ type draftMod struct {
 // touches a relocated vertex. Errors if a selected face is not planar (curved-face draft is future
 // work — the plane-only tilt does not yet apply to a cylinder/cone selected face).
 func newDraftMod(solid *topo.Body, faceKeys [][]byte, pull math.UnitVector3, neutral *geom.Plane, angle float64) (*draftMod, error) {
-	sel, err := resolveFaceSet(solid, faceKeys)
+	sel, err := retopo.ResolveFaceSet(solid, faceKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func (d *draftMod) tiltSelectedFaces(solid *topo.Body, pull math.UnitVector3, ne
 // new surfaces (a 3-surface Gauss-Newton solve from the old position), and returns the set of moved
 // vertex IDs so the edge re-intersection knows which edges changed.
 func (d *draftMod) relocateVertices(solid *topo.Body) map[uint64]bool {
-	vf := vertexFaceMap(solid)
+	vf := retopo.VertexFaceMap(solid)
 	moved := map[uint64]bool{}
 	for _, v := range solid.Vertices() {
 		if !d.vertexOnSelected(vf[v.ID()]) {

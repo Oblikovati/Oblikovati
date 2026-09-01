@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -226,7 +227,7 @@ func TestAngleRevolveRecipeIsUnchanged(t *testing.T) {
 func wallAcrossTheSweep(depth float64) *topo.Body {
 	b := subd.ToBody(subd.Box(10, 4, 0.5), "wall")
 	keep := func(l topo.Lineage) topo.Lineage { return l }
-	moved, err := ops.TransformBody(b, math.Translation4(math.V3(-5, -1, -depth-0.5)), keep)
+	moved, err := transform.TransformBody(b, math.Translation4(math.V3(-5, -1, -depth-0.5)), keep)
 	if err != nil {
 		panic(err) // a translation of a box cannot fail; a panic here is a broken fixture, not a case
 	}

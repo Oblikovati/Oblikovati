@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -1222,7 +1223,7 @@ func solvePlanarBlend(v *topo.Vertex, faces []*topo.Face, r float64) (*cornerBle
 		a[i] = [3]float64{n.X, n.Y, n.Z}
 		b[i] = n.Dot(pl.Origin.AsVector()) - r // distance r on the inside of each face
 	}
-	x, ok := solve3(a, b)
+	x, ok := retopo.Solve3(a, b)
 	if !ok {
 		return nil, fmt.Errorf("fillet: cannot solve corner blend sphere (degenerate faces)")
 	}

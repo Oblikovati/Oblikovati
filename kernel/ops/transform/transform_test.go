@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops_test
+package transform_test
 
 import (
 	stdmath "math"
@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -43,12 +44,12 @@ func TestTransformedReflectedToolCuts(t *testing.T) {
 	t.Parallel()
 	block := subd.ToBody(subd.Box(4, 2, 2), "blk") // x∈[0,4], volume 16
 	tool := subd.ToBody(subd.Box(1, 2, 2), "tool") // volume 4
-	left, err := ops.TransformBody(tool, math.Translation4(math.V3(0.5, 0, 0)), keepLineage)
+	left, err := transform.TransformBody(tool, math.Translation4(math.V3(0.5, 0, 0)), keepLineage)
 	if err != nil {
 		t.Fatalf("translate tool: %v", err)
 	}
 	nrm, _ := math.UnitVector3FromVector(math.V3(1, 0, 0))
-	mirrored, err := ops.TransformBody(left, math.Reflection4(math.P3(2, 0, 0), nrm), keepLineage)
+	mirrored, err := transform.TransformBody(left, math.Reflection4(math.P3(2, 0, 0), nrm), keepLineage)
 	if err != nil {
 		t.Fatalf("reflect tool: %v", err)
 	}
@@ -84,7 +85,7 @@ func TestReplaceFaceSurfacePreservesReversedSense(t *testing.T) {
 	// Depth 0 → identical geometry to the plain bore: volume AND area must be unchanged (a pure
 	// sense/integration-path check, isolated from any thread geometry).
 	flat := geom.ThreadedCylinder{Cylinder: cyl, Pitch: 0.125, Depth: 0, Internal: true, RightHanded: true, VMin: 0, VMax: 1.5}
-	flatBody, err := ops.ReplaceFaceSurface(bored, key, flat)
+	flatBody, err := transform.ReplaceFaceSurface(bored, key, flat)
 	if err != nil {
 		t.Fatalf("ReplaceFaceSurface(depth0): %v", err)
 	}
@@ -102,7 +103,7 @@ func TestReplaceFaceSurfacePreservesReversedSense(t *testing.T) {
 
 	// A real internal thread cuts outward → removes material → volume strictly below the bore.
 	cut := geom.ThreadedCylinder{Cylinder: cyl, Pitch: 0.125, Depth: 0.068, Internal: true, RightHanded: true, VMin: 0, VMax: 1.5}
-	cutBody, err := ops.ReplaceFaceSurface(bored, key, cut)
+	cutBody, err := transform.ReplaceFaceSurface(bored, key, cut)
 	if err != nil {
 		t.Fatalf("ReplaceFaceSurface(cut): %v", err)
 	}
@@ -159,7 +160,7 @@ func TestTransformBodyTranslatePreservesVolume(t *testing.T) {
 	src := boxBody(t)
 	srcVol := ops.BodyGeometryProperties(src, ops.DefaultQuality()).Volume
 
-	dst, err := ops.TransformBody(src, math.Translation4(math.V3(10, 0, 0)), keepLineage)
+	dst, err := transform.TransformBody(src, math.Translation4(math.V3(10, 0, 0)), keepLineage)
 	if err != nil {
 		t.Fatalf("TransformBody: %v", err)
 	}
@@ -184,7 +185,7 @@ func TestTransformBodyReflectStaysManifoldAndOutward(t *testing.T) {
 	srcVol := ops.BodyGeometryProperties(src, ops.DefaultQuality()).Volume
 
 	reflect := math.Scale4(-1, 1, 1) // determinant -1
-	dst, err := ops.TransformBody(src, reflect, keepLineage)
+	dst, err := transform.TransformBody(src, reflect, keepLineage)
 	if err != nil {
 		t.Fatalf("TransformBody: %v", err)
 	}
@@ -208,7 +209,7 @@ func TestTransformBodyIdentityLineageRebindsKeys(t *testing.T) {
 	src := boxBody(t)
 	srcFaceKey := src.Faces()[0].ReferenceKey()
 
-	dst, err := ops.TransformBody(src, math.Translation4(math.V3(1, 2, 3)), keepLineage)
+	dst, err := transform.TransformBody(src, math.Translation4(math.V3(1, 2, 3)), keepLineage)
 	if err != nil {
 		t.Fatalf("TransformBody: %v", err)
 	}
@@ -225,7 +226,7 @@ func TestTransformBodyCopyLineageGivesDistinctKeys(t *testing.T) {
 		return topo.NewLineage(append(l.Tokens(), topo.Tok("pattern", "copy", 1))...)
 	}
 
-	dst, err := ops.TransformBody(src, math.Translation4(math.V3(5, 0, 0)), copyN)
+	dst, err := transform.TransformBody(src, math.Translation4(math.V3(5, 0, 0)), copyN)
 	if err != nil {
 		t.Fatalf("TransformBody: %v", err)
 	}
@@ -240,7 +241,7 @@ func TestTransformBodyCopyLineageGivesDistinctKeys(t *testing.T) {
 func TestTransformBodyRejectsNonUniformScale(t *testing.T) {
 	t.Parallel()
 	src := boxBody(t)
-	if _, err := ops.TransformBody(src, math.Scale4(2, 1, 1), keepLineage); err == nil {
+	if _, err := transform.TransformBody(src, math.Scale4(2, 1, 1), keepLineage); err == nil {
 		t.Fatal("non-uniform scale should be rejected (analytic types cannot represent it)")
 	}
 }

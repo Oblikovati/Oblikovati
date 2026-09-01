@@ -3,7 +3,7 @@
 package app
 
 import (
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -84,7 +84,7 @@ func (s *Session) assemblyInstances(asm *compdef.AssemblyComponentDefinition) []
 // once through VisibleBodies lights up rendering AND picking for assemblies, which were
 // previously invisible (VisibleBodies was part-only).
 //
-// Transforming a body re-derives its geometry (ops.TransformBody), so the result is cached and
+// Transforming a body re-derives its geometry (transform.TransformBody), so the result is cached and
 // only rebuilt when the occurrence structure changes (placement, suppression, add/remove — all
 // bump occurrences.Revision). The cache returns STABLE *topo.Body pointers between rebuilds, so
 // the head's per-body tessellation cache keeps hitting.
@@ -111,7 +111,7 @@ func (s *Session) worldAssemblyBodies(asm *compdef.AssemblyComponentDefinition) 
 	bodies := make([]*topo.Body, 0, len(placed))
 	owner := make(map[*topo.Body]*occurrence.Occurrence, len(placed))
 	for i, pb := range placed {
-		world, err := ops.TransformBody(pb.Body, pb.Transform, occurrenceBodyLineage(i))
+		world, err := transform.TransformBody(pb.Body, pb.Transform, occurrenceBodyLineage(i))
 		if err != nil {
 			s.notice = "assembly render: " + err.Error()
 			continue

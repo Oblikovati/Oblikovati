@@ -5,7 +5,7 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -48,7 +48,7 @@ func (m *MoveFeature) Recompute(in Input) (Output, error) {
 	if !validIndex(m.def.BodyIndex, in.Bodies) {
 		return Output{}, fmt.Errorf("move: invalid body index %d (have %d)", m.def.BodyIndex, len(in.Bodies))
 	}
-	moved, err := ops.TransformBody(in.Bodies[m.def.BodyIndex], m.def.transform(), keepLineage)
+	moved, err := transform.TransformBody(in.Bodies[m.def.BodyIndex], m.def.transform(), keepLineage)
 	if err != nil {
 		return Output{}, err
 	}

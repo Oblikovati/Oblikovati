@@ -1,24 +1,25 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package transform
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
 // MoveFaces translates the selected faces of a planar solid by delta, retrimming the
 // neighbours: each selected face's plane is translated (normal unchanged) and every vertex
-// re-solves at its faces' new plane intersections (via [rebuildWithPlanes]). The
+// re-solves at its faces' new plane intersections (via [retopo.RebuildWithPlanes]). The
 // combinatorial topology is preserved, so the result stays a valid solid for a modest move
 // (a move large enough to collapse or invert a face is a follow-up needing retopology).
 func MoveFaces(solid *topo.Body, faceKeys [][]byte, delta math.Vector3) (*topo.Body, error) {
-	sel, err := resolveFaceSet(solid, faceKeys)
+	sel, err := retopo.ResolveFaceSet(solid, faceKeys)
 	if err != nil {
 		return nil, err
 	}
-	return rebuildWithPlanes(solid, "move-face", true, func(f *topo.Face) geom.Plane {
+	return retopo.RebuildWithPlanes(solid, "move-face", true, func(f *topo.Face) geom.Plane {
 		pl := f.Geometry().(geom.Plane)
 		if !sel[f.ID()] {
 			return pl
@@ -30,11 +31,11 @@ func MoveFaces(solid *topo.Body, faceKeys [][]byte, delta math.Vector3) (*topo.B
 // OffsetFaces moves each selected face along its own outward normal by dist (positive grows
 // the solid there, negative shaves it) — MoveFaces applied per face in its normal direction.
 func OffsetFaces(solid *topo.Body, faceKeys [][]byte, dist float64) (*topo.Body, error) {
-	sel, err := resolveFaceSet(solid, faceKeys)
+	sel, err := retopo.ResolveFaceSet(solid, faceKeys)
 	if err != nil {
 		return nil, err
 	}
-	return rebuildWithPlanes(solid, "offset-face", true, func(f *topo.Face) geom.Plane {
+	return retopo.RebuildWithPlanes(solid, "offset-face", true, func(f *topo.Face) geom.Plane {
 		pl := f.Geometry().(geom.Plane)
 		if !sel[f.ID()] {
 			return pl
@@ -48,12 +49,12 @@ func OffsetFaces(solid *topo.Body, faceKeys [][]byte, dist float64) (*topo.Body,
 // (#331). Same contract as [MoveFaces]: topology is preserved, so a rotation large enough
 // to collapse or invert a face is a follow-up needing retopology.
 func RotateFaces(solid *topo.Body, faceKeys [][]byte, axisPoint math.Point3, axisDir math.UnitVector3, angle float64) (*topo.Body, error) {
-	sel, err := resolveFaceSet(solid, faceKeys)
+	sel, err := retopo.ResolveFaceSet(solid, faceKeys)
 	if err != nil {
 		return nil, err
 	}
 	rot := math.Rotation4(angle, axisDir, axisPoint)
-	return rebuildWithPlanes(solid, "rotate-face", true, func(f *topo.Face) geom.Plane {
+	return retopo.RebuildWithPlanes(solid, "rotate-face", true, func(f *topo.Face) geom.Plane {
 		pl := f.Geometry().(geom.Plane)
 		if !sel[f.ID()] {
 			return pl

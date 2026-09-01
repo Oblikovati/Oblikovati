@@ -6,6 +6,7 @@ import (
 	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -22,7 +23,7 @@ import (
 //
 // Example: CapHoles(plateWithBore, boreWallKeys) → the solid plate (bore filled).
 func CapHoles(body *topo.Body, wallFaceKeys [][]byte) (*topo.Body, error) {
-	removed, err := resolveFaceSet(body, wallFaceKeys)
+	removed, err := retopo.ResolveFaceSet(body, wallFaceKeys)
 	if err != nil {
 		return nil, err
 	}

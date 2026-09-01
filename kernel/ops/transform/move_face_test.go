@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops_test
+package transform_test
 
 import (
 	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/math"
 )
 
@@ -15,7 +16,7 @@ import (
 func TestMoveFaceGrowsBox(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
-	res, err := ops.MoveFaces(box, [][]byte{topFaceKey(t, box)}, math.V3(0, 0, 1))
+	res, err := transform.MoveFaces(box, [][]byte{topFaceKey(t, box)}, math.V3(0, 0, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +33,7 @@ func TestMoveFaceGrowsBox(t *testing.T) {
 func TestOffsetFaceShavesBox(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
-	res, err := ops.OffsetFaces(box, [][]byte{topFaceKey(t, box)}, -0.5)
+	res, err := transform.OffsetFaces(box, [][]byte{topFaceKey(t, box)}, -0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +49,7 @@ func TestOffsetFaceShavesBox(t *testing.T) {
 func TestMoveFaceLostKeyErrors(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
-	if _, err := ops.MoveFaces(box, [][]byte{[]byte("ghost")}, math.V3(0, 0, 1)); err == nil {
+	if _, err := transform.MoveFaces(box, [][]byte{[]byte("ghost")}, math.V3(0, 0, 1)); err == nil {
 		t.Error("move-face with a lost key should error")
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -476,7 +477,7 @@ func stampStations(tool *topo.Body, path []math.Point3) []math.Point3 {
 // lineage at station 0 so the first stamp IS the tool's footprint there).
 func stampAt(tool *topo.Body, origin, at math.Point3, feat string, i int) (*topo.Body, error) {
 	m := math.Translation4(origin.VectorTo(at))
-	return ops.TransformBody(tool, m, func(l topo.Lineage) topo.Lineage {
+	return transform.TransformBody(tool, m, func(l topo.Lineage) topo.Lineage {
 		return topo.NewLineage(append(l.Tokens(), topo.Tok(feat, "stamp", i))...)
 	})
 }

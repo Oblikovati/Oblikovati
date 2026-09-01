@@ -28,7 +28,7 @@ import (
 //     as JoinToOriginal — a bool — and not as an ops.PartFeatureOperation, because ops.Join is that
 //     enum's ZERO value: a definition built without naming an operation would silently join.
 //
-// A reflection has a negative determinant, so it turns a solid inside out; ops.TransformBody
+// A reflection has a negative determinant, so it turns a solid inside out; transform.TransformBody
 // already detects that and flips face senses, which is what keeps the mirrored half's volume
 // positive and its tessellation wound outward.
 

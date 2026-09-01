@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops_test
+package transform_test
 
 import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/math"
 )
 
 func TestEditControlPointsLiftsNurbsFace(t *testing.T) {
 	t.Parallel()
 	body := surfaceFaceBody(t, multiSpanPatch(t)) // helpers in rebuild_faces_test.go
-	out, err := ops.EditControlPoints(body, []geom.ControlPointDelta{{U: 2, V: 2, Delta: math.V3(0, 0, 1.5)}})
+	out, err := transform.EditControlPoints(body, []geom.ControlPointDelta{{U: 2, V: 2, Delta: math.V3(0, 0, 1.5)}})
 	if err != nil {
 		t.Fatalf("EditControlPoints: %v", err)
 	}
@@ -30,7 +30,7 @@ func TestEditControlPointsLiftsNurbsFace(t *testing.T) {
 func TestEditControlPointsErrorsWithoutNurbsFace(t *testing.T) {
 	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 1, 1, 1) // planar faces only
-	if _, err := ops.EditControlPoints(box, []geom.ControlPointDelta{{U: 0, V: 0, Delta: math.V3(0, 0, 1)}}); err == nil {
+	if _, err := transform.EditControlPoints(box, []geom.ControlPointDelta{{U: 0, V: 0, Delta: math.V3(0, 0, 1)}}); err == nil {
 		t.Error("a body with no NURBS face should error")
 	}
 }
@@ -38,7 +38,7 @@ func TestEditControlPointsErrorsWithoutNurbsFace(t *testing.T) {
 func TestEditControlPointsRejectsOutOfRange(t *testing.T) {
 	t.Parallel()
 	body := surfaceFaceBody(t, multiSpanPatch(t))
-	if _, err := ops.EditControlPoints(body, []geom.ControlPointDelta{{U: 99, V: 0, Delta: math.V3(0, 0, 1)}}); err == nil {
+	if _, err := transform.EditControlPoints(body, []geom.ControlPointDelta{{U: 99, V: 0, Delta: math.V3(0, 0, 1)}}); err == nil {
 		t.Error("an out-of-range control index should error")
 	}
 }

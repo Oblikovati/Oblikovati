@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -276,7 +277,7 @@ func planePairLineSigned(planes [2]*topo.Face, r, s0, s1 float64, vertex math.Po
 		n1.Dot(pl1.Origin.AsVector()) + s1*r,
 		d.Dot(vertex.AsVector()),
 	}
-	x, ok := solve3(a, b)
+	x, ok := retopo.Solve3(a, b)
 	if !ok {
 		return math.Point3{}, math.Vector3{}, false
 	}

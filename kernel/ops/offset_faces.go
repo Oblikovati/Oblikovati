@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -23,7 +24,7 @@ func OffsetFaceSurfaces(b *topo.Body, faceKeys [][]byte, distance float64, rever
 		return nil, fmt.Errorf("ops.OffsetFaceSurfaces: no faces selected")
 	}
 	// Swap each selected face's surface for its offset while the body is still the original solid
-	// (single shell), then keep only those faces — so ReplaceFaceSurface never sees a split body.
+	// (single shell), then keep only those faces — so transform.ReplaceFaceSurface never sees a split body.
 	out := b
 	for _, key := range faceKeys {
 		f, ok := out.FindFaceByKey(key)
@@ -34,7 +35,7 @@ func OffsetFaceSurfaces(b *topo.Body, faceKeys [][]byte, distance float64, rever
 		if err != nil {
 			return nil, fmt.Errorf("ops.OffsetFaceSurfaces: offset face %x: %w", key, err)
 		}
-		if out, err = ReplaceFaceSurface(out, key, off); err != nil {
+		if out, err = transform.ReplaceFaceSurface(out, key, off); err != nil {
 			return nil, fmt.Errorf("ops.OffsetFaceSurfaces: offset face %x: %w", key, err)
 		}
 	}

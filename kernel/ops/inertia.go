@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -72,7 +73,7 @@ func accumulateCovariance(mesh *Mesh) (cov mat3, vol, cx, cy, cz float64) {
 			{float64(a.Y), float64(b.Y), float64(c.Y)},
 			{float64(a.Z), float64(b.Z), float64(c.Z)},
 		}
-		det := det3([3][3]float64(col))
+		det := retopo.Det3([3][3]float64(col))
 		// ∫ p pᵀ dV over this tetra = det · A · Ccanon · Aᵀ.
 		contrib := mul3(mul3(col, canonTetraCovariance), transpose3(col))
 		cov = add3(cov, scale3(contrib, det))
@@ -102,7 +103,7 @@ func inertiaFromCovariance(c mat3, vol float64, d math.Point3) InertiaTensor {
 	}
 }
 
-// mat3 is a 3×3 matrix indexed [row][col]. (det3 for [3][3]float64 lives in retopo.go.)
+// mat3 is a 3×3 matrix indexed [row][col]. (retopo.Det3 for [3][3]float64 lives in retopo.go.)
 type mat3 [3][3]float64
 
 func transpose3(m mat3) mat3 {

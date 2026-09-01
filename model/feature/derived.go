@@ -5,7 +5,7 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -115,13 +115,13 @@ func (d *DerivedPartComponent) build() ([]*topo.Body, error) {
 }
 
 // placeBody applies the derive transform to one source body. The identity short-circuits
-// to the source body unchanged; otherwise [ops.TransformBody] transforms it (flipping
+// to the source body unchanged; otherwise [transform.TransformBody] transforms it (flipping
 // winding for a reflection) under a distinct lineage so the copy gets independent keys.
 func (d *DerivedPartComponent) placeBody(b *topo.Body, index int) (*topo.Body, error) {
 	if d.transform.Cells() == math.Identity4().Cells() {
 		return b, nil
 	}
-	return ops.TransformBody(b, d.transform, derivedPartLineage(index))
+	return transform.TransformBody(b, d.transform, derivedPartLineage(index))
 }
 
 // derivedPartLineage gives each transformed copy a distinct lineage prefix, so the

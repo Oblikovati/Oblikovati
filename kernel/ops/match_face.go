@@ -6,12 +6,13 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 )
 
 // Matching one surface body's NURBS face to a target body's face (M36-F05): rebuild the source
 // face's surface against the target to the chosen continuity (geom.MatchSurface) and swap it back in
-// with ReplaceFaceSurface (loops preserved). Both bodies must carry a single NURBS face whose chosen
+// with transform.ReplaceFaceSurface (loops preserved). Both bodies must carry a single NURBS face whose chosen
 // edges correspond along the seam.
 
 // MatchFaceTo returns a copy of src whose NURBS face is matched to target's NURBS face along the
@@ -30,7 +31,7 @@ func MatchFaceTo(src, target *topo.Body, srcEdge, tgtEdge geom.Boundary, order i
 	if err != nil {
 		return nil, fmt.Errorf("ops.MatchFaceTo: %w", err)
 	}
-	return ReplaceFaceSurface(src, sf.ReferenceKey(), matched)
+	return transform.ReplaceFaceSurface(src, sf.ReferenceKey(), matched)
 }
 
 // firstNurbsFace returns a body's first B-spline-surface face and its geometry.

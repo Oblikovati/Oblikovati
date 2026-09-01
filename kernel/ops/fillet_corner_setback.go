@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -128,7 +129,7 @@ func voidSphereCentre(faces []*topo.Face, r float64) (math.Point3, bool) {
 		a[i] = [3]float64{n.X, n.Y, n.Z}
 		b[i] = n.Dot(pl.Origin.AsVector()) + r
 	}
-	x, ok := solve3(a, b)
+	x, ok := retopo.Solve3(a, b)
 	if !ok {
 		return math.Point3{}, false
 	}

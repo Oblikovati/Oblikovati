@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -256,13 +257,13 @@ func (f *MoveFaceFeature) Rotation() (point math.Point3, dir math.Vector3, angle
 func (f *MoveFaceFeature) Recompute(in Input) (Output, error) {
 	return retopoFacesBody(in, f.faceKeys, f.kind, func(b *topo.Body, keys [][]byte) (*topo.Body, error) {
 		if f.angle == nil {
-			return ops.MoveFaces(b, keys, f.translation)
+			return transform.MoveFaces(b, keys, f.translation)
 		}
 		dir, err := math.UnitVector3FromVector(f.axisDir)
 		if err != nil {
 			return nil, fmt.Errorf("rotate axis %v is degenerate", f.axisDir)
 		}
-		return ops.RotateFaces(b, keys, f.axisPoint, dir, f.angle())
+		return transform.RotateFaces(b, keys, f.axisPoint, dir, f.angle())
 	})
 }
 
@@ -285,7 +286,7 @@ func (f *FaceOffsetFeature) Approximation() types.FeatureApproximationType { ret
 // Recompute offsets the picked faces on the running body (see kernel/ops/move_face.go).
 func (f *FaceOffsetFeature) Recompute(in Input) (Output, error) {
 	return retopoFacesBody(in, f.faceKeys, f.kind, func(b *topo.Body, keys [][]byte) (*topo.Body, error) {
-		return ops.OffsetFaces(b, keys, f.distance())
+		return transform.OffsetFaces(b, keys, f.distance())
 	})
 }
 

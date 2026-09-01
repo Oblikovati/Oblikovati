@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -102,7 +103,7 @@ func TestRuledSurfaceBetweenSquares(t *testing.T) {
 	t.Parallel()
 	_, w1 := squareWireBody(1)
 	_, w2raw := squareWireBody(1)
-	lifted, err := TransformBody(w2raw.Body(), math.Translation4(math.V3(0, 0, 2)), func(l topo.Lineage) topo.Lineage { return l })
+	lifted, err := transform.TransformBody(w2raw.Body(), math.Translation4(math.V3(0, 0, 2)), func(l topo.Lineage) topo.Lineage { return l })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,9 +126,9 @@ func TestRuledSurfaceBetweenSquares(t *testing.T) {
 func TestGroupIdenticalBodies(t *testing.T) {
 	t.Parallel()
 	a := boxBody(math.P3(0, 0, 0), 1, 2, 3)
-	moved, _ := TransformBody(a, math.Translation4(math.V3(10, 0, 0)), func(l topo.Lineage) topo.Lineage { return l })
+	moved, _ := transform.TransformBody(a, math.Translation4(math.V3(10, 0, 0)), func(l topo.Lineage) topo.Lineage { return l })
 	axis, _ := math.UnitVector3FromVector(math.V3(0, 0, 1))
-	rotated, _ := TransformBody(a, math.Rotation4(0.7, axis, math.P3(5, 5, 5)), func(l topo.Lineage) topo.Lineage { return l })
+	rotated, _ := transform.TransformBody(a, math.Rotation4(0.7, axis, math.P3(5, 5, 5)), func(l topo.Lineage) topo.Lineage { return l })
 	other := boxBody(math.P3(0, 0, 0), 1, 2, 4)
 	groups := GroupIdenticalBodies([]*topo.Body{a, moved, rotated, other},
 		IdenticalBodiesOptions{MatchReflection: true}, DefaultQuality())

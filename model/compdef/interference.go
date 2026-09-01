@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/assembly"
@@ -109,7 +110,7 @@ func occurrenceWorldBodies(o *occurrence.Occurrence) []*topo.Body {
 	}
 	var out []*topo.Body
 	for _, b := range part.SurfaceBodies().All() {
-		world, err := ops.TransformBody(b, o.Transform(), func(l topo.Lineage) topo.Lineage { return l })
+		world, err := transform.TransformBody(b, o.Transform(), func(l topo.Lineage) topo.Lineage { return l })
 		if err == nil && world != nil {
 			out = append(out, world)
 		}

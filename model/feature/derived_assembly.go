@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/occurrence"
@@ -272,7 +273,7 @@ func (d *DerivedAssemblyComponent) derive(rec *diag.Recorder) ([]*topo.Body, err
 		if style == DeriveExclude {
 			continue
 		}
-		placed, err := ops.TransformBody(pb.Body, pb.Transform, deriveLineage(i))
+		placed, err := transform.TransformBody(pb.Body, pb.Transform, deriveLineage(i))
 		if err != nil {
 			return nil, fmt.Errorf("feature: derive-assembly transform of body %d: %w", i, err)
 		}

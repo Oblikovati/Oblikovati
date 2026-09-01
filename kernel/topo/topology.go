@@ -247,7 +247,7 @@ type Face struct {
 	// Same contract as pickTess and metricScaleMemo: opaque to topo (brep owns the payload type) and
 	// face-lifetime. It is SAFE because a Face is immutable once its body is built — loops are written
 	// only by the builder, and every operation that changes geometry builds new faces rather than
-	// mutating them (ops.ReplaceFaceSurface rebuilds through topo.NewBuilder), so the memo cannot go
+	// mutating them (transform.ReplaceFaceSurface rebuilds through topo.NewBuilder), so the memo cannot go
 	// stale under its own face.
 	trimUVMemo any
 }

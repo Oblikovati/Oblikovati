@@ -8,7 +8,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
 )
@@ -37,7 +37,7 @@ func threadedCylinderBody(t *testing.T, radius float64, designation string, righ
 		Cylinder: cyl, Pitch: 0.125, Depth: 0.05, Designation: designation,
 		RightHanded: rightHanded, VMin: 0, VMax: 5,
 	}
-	tb, err := ops.ReplaceFaceSurface(body, key, threaded)
+	tb, err := transform.ReplaceFaceSurface(body, key, threaded)
 	if err != nil {
 		t.Fatalf("ReplaceFaceSurface: %v", err)
 	}

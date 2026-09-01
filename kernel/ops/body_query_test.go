@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -98,9 +99,9 @@ func TestOrientedMinimumRangeBoxRotatedBox(t *testing.T) {
 	src := tetraBox(t, math.P3(0, 0, 0), 2)
 	axis, _ := math.UnitVector3FromVector(math.V3(0, 0, 1))
 	rot := math.Rotation4(stdmath.Pi/4, axis, math.P3(0, 0, 0))
-	rotated, err := TransformBody(src, rot, func(l topo.Lineage) topo.Lineage { return l })
+	rotated, err := transform.TransformBody(src, rot, func(l topo.Lineage) topo.Lineage { return l })
 	if err != nil {
-		t.Fatalf("TransformBody: %v", err)
+		t.Fatalf("transform.TransformBody: %v", err)
 	}
 	obb, err := OrientedMinimumRangeBox(rotated)
 	if err != nil {

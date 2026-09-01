@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -159,7 +160,7 @@ func CopyTopoBody(src *topo.Body, copyIndex int) (*topo.Body, error) {
 	derive := func(l topo.Lineage) topo.Lineage {
 		return topo.NewLineage(append(l.Tokens(), topo.Tok("transient", "copy", copyIndex))...)
 	}
-	return ops.TransformBody(src, math.Identity4(), derive)
+	return transform.TransformBody(src, math.Identity4(), derive)
 }
 
 // Transform maps the body in place by a similarity matrix; scale/shear that
@@ -169,7 +170,7 @@ func (t *TransientBRep) Transform(body contract.TransientBody, m types.Matrix) e
 	if !ok {
 		return fmt.Errorf("bodyapi: Transform needs a registry body, got %T", body)
 	}
-	moved, err := ops.TransformBody(tb.body, matrix4(m), func(l topo.Lineage) topo.Lineage { return l })
+	moved, err := transform.TransformBody(tb.body, matrix4(m), func(l topo.Lineage) topo.Lineage { return l })
 	if err != nil {
 		return err
 	}

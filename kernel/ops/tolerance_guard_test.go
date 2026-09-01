@@ -112,7 +112,7 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../ops/stitch.go",
 		"../ops/oriented_box.go",
 		"../ops/ruled_surface.go",
-		"../ops/deform.go",
+		"../ops/transform/deform.go",
 		"../ops/smooth_normals.go",
 		"../ops/csg_body.go",
 		"../ops/assemble_curved.go",

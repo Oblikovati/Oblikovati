@@ -7,21 +7,22 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
 // ReplaceFaces replaces the surface of each selected face with the target plane and retrims
-// the neighbours (via [rebuildWithPlanes]): the selected faces are moved onto target and
+// the neighbours (via [retopo.RebuildWithPlanes]): the selected faces are moved onto target and
 // every vertex re-solves at its faces' new plane intersections. It is the planar form of
 // "replace face with a surface" — e.g. raising a step's top onto a higher face's plane. The
 // topology is preserved, so the result stays valid for a target that does not invert a face.
 func ReplaceFaces(solid *topo.Body, faceKeys [][]byte, target geom.Plane) (*topo.Body, error) {
-	sel, err := resolveFaceSet(solid, faceKeys)
+	sel, err := retopo.ResolveFaceSet(solid, faceKeys)
 	if err != nil {
 		return nil, err
 	}
-	return rebuildWithPlanes(solid, "replace-face", true, func(f *topo.Face) geom.Plane {
+	return retopo.RebuildWithPlanes(solid, "replace-face", true, func(f *topo.Face) geom.Plane {
 		if sel[f.ID()] {
 			return target
 		}
@@ -38,7 +39,7 @@ func ReplaceFacesMulti(solid *topo.Body, faceKeys [][]byte, targets []geom.Plane
 	if len(targets) == 0 {
 		return nil, fmt.Errorf("replace-face: no new faces")
 	}
-	sel, err := resolveFaceSet(solid, faceKeys)
+	sel, err := retopo.ResolveFaceSet(solid, faceKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +49,7 @@ func ReplaceFacesMulti(solid *topo.Body, faceKeys [][]byte, targets []geom.Plane
 			assign[f.ID()] = nearestPlane(centroidPts(facePolygon(f)), targets)
 		}
 	}
-	return rebuildWithPlanes(solid, "replace-face", true, func(f *topo.Face) geom.Plane {
+	return retopo.RebuildWithPlanes(solid, "replace-face", true, func(f *topo.Face) geom.Plane {
 		if pl, ok := assign[f.ID()]; ok {
 			return pl
 		}

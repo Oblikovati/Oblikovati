@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -109,7 +110,7 @@ func capThroughHoles(world []*topo.Body, maxDiameter float64) []*topo.Body {
 func worldBodies(placed []PlacedBody) ([]*topo.Body, error) {
 	out := make([]*topo.Body, 0, len(placed))
 	for i, pb := range placed {
-		b, err := ops.TransformBody(pb.Body, pb.Transform, deriveLineage(i))
+		b, err := transform.TransformBody(pb.Body, pb.Transform, deriveLineage(i))
 		if err != nil {
 			return nil, fmt.Errorf("feature: shrinkwrap transform of body %d: %w", i, err)
 		}
