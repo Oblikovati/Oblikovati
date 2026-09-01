@@ -4,8 +4,6 @@ package geom
 
 import (
 	stdmath "math"
-
-	"oblikovati.org/math"
 )
 
 // Knot-structure-aware seeding for NURBS point/surface inversion (Oblikovati#1608).
@@ -56,20 +54,6 @@ func domainBreakpoints(knots []float64, degree int) []float64 {
 	out = append(out, hi)
 	sortFloats(out)
 	return out
-}
-
-// nearestSeed returns the (u, v) from the us×vs seed lattice whose surface point is
-// closest to q — the Gauss–Newton starting guess for point inversion.
-func nearestSeed(s Surface, q math.Point3, us, vs []float64) (float64, float64) {
-	bu, bv, bd := us[0], vs[0], stdmath.Inf(1)
-	for _, u := range us {
-		for _, v := range vs {
-			if d := s.PointAt(u, v).DistanceSquaredTo(q); d < bd {
-				bu, bv, bd = u, v, d
-			}
-		}
-	}
-	return bu, bv
 }
 
 // ssiSpanCounter reports a surface's distinct-knot-span counts so the SSI seeder can start its

@@ -254,9 +254,8 @@ type surfaceSeed struct{ u, v float64 }
 // refines the near-minimal cells with the seeded projector, and clusters the winners so
 // a point equidistant from several feet is reported as DistinctlyManySolutions.
 func bsplineParamAtPoint(g BSplineSurface, p math.Point3) (float64, float64, SolutionNature) {
-	uSeeds := knotSpanSeedParams(g.UKnots, g.UDegree)
-	vSeeds := knotSpanSeedParams(g.VKnots, g.VDegree)
-	us, vs, ds, best := seedLatticeDistances(g, p, uSeeds, vSeeds)
+	uSeeds, vSeeds, pts := g.seedLattice() // memoized per surface (#3490)
+	us, vs, ds, best := seedLatticeDistances(pts, p, uSeeds, vSeeds)
 	uW, vW := minSeedSpacing(uSeeds), minSeedSpacing(vSeeds)
 	bestU, bestV, clusters := refineSeedClusters(g, p, us, vs, ds, best, uW, vW)
 	if len(clusters) > 1 {
@@ -289,11 +288,11 @@ func refineSeedClusters(g BSplineSurface, p math.Point3, us, vs, ds []float64, b
 
 // seedLatticeDistances evaluates the distance field on the uSeeds×vSeeds knot-span lattice,
 // returning the flattened (u, v, d) samples and the minimum distance found.
-func seedLatticeDistances(s Surface, p math.Point3, uSeeds, vSeeds []float64) (us, vs, ds []float64, best float64) {
+func seedLatticeDistances(pts [][]math.Point3, p math.Point3, uSeeds, vSeeds []float64) (us, vs, ds []float64, best float64) {
 	best = stdmath.Inf(1)
-	for _, u := range uSeeds {
-		for _, v := range vSeeds {
-			d := s.PointAt(u, v).DistanceTo(p)
+	for i, u := range uSeeds {
+		for j, v := range vSeeds {
+			d := float64(pts[i][j].DistanceTo(p))
 			us, vs, ds = append(us, u), append(vs, v), append(ds, d)
 			best = stdmath.Min(best, d)
 		}

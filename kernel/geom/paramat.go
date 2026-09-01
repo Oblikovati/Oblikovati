@@ -67,9 +67,8 @@ const (
 // point inversion (Piegl & Tiller §6.1), with an early convergence exit — and finally a
 // retry from the opposite bound when the foot came back pinned on one (retryAcrossPinnedBound).
 func (s BSplineSurface) ParamAt(q math.Point3) (u, v float64) {
-	us := knotSpanSeedParams(s.UKnots, s.UDegree)
-	vs := knotSpanSeedParams(s.VKnots, s.VDegree)
-	u, v = nearestSeed(s, q, us, vs)
+	us, vs, pts := s.seedLattice() // memoized: the lattice and its evaluations are per-surface work (#3490)
+	u, v = nearestSeedPoint(us, vs, pts, q)
 	u, v, _, _ = refineSurfaceParam(s, q, u, v, surfaceInvertMaxIter)
 	return retryAcrossPinnedBound(s, q, u, v)
 }
