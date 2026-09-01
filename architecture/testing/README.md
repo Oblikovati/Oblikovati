@@ -5,7 +5,9 @@
 renderer gets its own deep treatment — [testing/00](00-renderer-oracle-pipeline.md) —
 because it is the hardest surface to test and the hardest for an LLM to debug. Core
 and integration testing: [testing/01](01-core-and-integration-testing.md).
-Performance, UI, and add-in conformance: [testing/02](02-performance-ui-and-conformance.md).*
+Performance, UI, and add-in conformance: [testing/02](02-performance-ui-and-conformance.md).
+How the suite stays fast enough to run on every edit — the two tiers, `t.Parallel()`,
+and change-based selection: [testing/03](03-test-tiers-and-selection.md).*
 
 ## The guiding principle: give the model a numeric, localized signal
 
@@ -63,14 +65,16 @@ strategy is built to handle.
 
 ## CI shape
 
-- **Tier 1 (every change, minutes):** `CGO_ENABLED=0 go test ./math/... ./kernel/...
-  ./model/... ./solve/...` + renderer `null`-backend unit tests + analytic/metamorphic
-  renderer tests on **software Vulkan (Mesa lavapipe)**. No GPU, deterministic.
-- **Tier 2 (PR):** CPU-reference renderer differentials; integration goldens; the
-  gRPC-API dogfood suite; validation-layers-on renderer runs.
+- **Tier 1 (every change, ~20s):** `make test` — `CGO_ENABLED=0 go test -short ./...`
+  + renderer `null`-backend unit tests + analytic/metamorphic renderer tests on
+  **software Vulkan (Mesa lavapipe)**. No GPU, deterministic. `make test-impacted`
+  narrows it further to the packages the change can reach ([testing/03](03-test-tiers-and-selection.md)).
+- **Tier 2 (PR, minutes):** `make test-corpus` — the corpus, oracle, parity and
+  real-file tests tier 1 skips; CPU-reference renderer differentials; integration
+  goldens; the API dogfood suite; validation-layers-on renderer runs.
 - **Tier 3 (nightly / on renderer changes):** Blender-oracle full-PBR goldens
-  (containerized, pinned Blender); large-scene perf/soak; the **bless** workflow to
-  review and update goldens when a visual change is intentional.
+  (containerized, pinned Blender); large-scene perf/soak; `-race`; the **bless**
+  workflow to review and update goldens when a visual change is intentional.
 
 ## What "Claude debugs this" demands, concretely
 
