@@ -20,19 +20,28 @@ import (
 )
 
 func main() {
-	base := flag.String("base", "origin/develop", "revision to compare against; empty compares the working tree only")
-	root := flag.String("root", ".", "module root to analyse")
-	flag.Parse()
-
-	if err := run(os.Stdout, *root, *base); err != nil {
+	if err := run(os.Args[1:], os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, "testimpact:", err)
 		os.Exit(1)
 	}
 }
 
-// run resolves the module root, selects the impacted packages against the real git
-// working copy and package graph, and writes one import path per line to w.
-func run(w io.Writer, root, base string) error {
+// run parses args and writes the impacted import paths, one per line, to w.
+func run(args []string, w io.Writer) error {
+	fs := flag.NewFlagSet("testimpact", flag.ContinueOnError)
+	fs.SetOutput(w)
+	base := fs.String("base", "origin/develop",
+		"revision to compare against; empty compares the working tree only")
+	root := fs.String("root", ".", "module root to analyse")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	return printImpacted(w, *root, *base)
+}
+
+// printImpacted resolves the module root, runs the selection against the real git
+// working copy and package graph, and writes the result to w.
+func printImpacted(w io.Writer, root, base string) error {
 	abs, err := filepath.Abs(root)
 	if err != nil {
 		return fmt.Errorf("resolve root %q: %w", root, err)

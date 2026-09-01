@@ -13,6 +13,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -21,35 +22,50 @@ import (
 	"oblikovati.org/test-utilities/testtiming"
 )
 
-func main() {
-	top := flag.Int("top", 25, "how many of the slowest tests to print")
-	budget := flag.Float64("budget", 0, "seconds one test may take on a SEQUENTIAL run; 0 disables the gate")
-	pkgBudget := flag.Float64("package-budget", 0, "seconds one package may take; 0 disables the gate")
-	flag.Parse()
+// errBudgetExceeded is returned when a budget is breached, so the process exits
+// non-zero without main having to interpret a boolean.
+var errBudgetExceeded = errors.New("time budget exceeded")
 
-	ok, err := run(os.Stdin, os.Stdout, os.Stderr, *top, *budget, *pkgBudget)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "testslowest:", err)
-		os.Exit(1)
-	}
-	if !ok {
+func main() {
+	if err := run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr); err != nil {
+		if !errors.Is(err, errBudgetExceeded) {
+			fmt.Fprintln(os.Stderr, "testslowest:", err)
+		}
 		os.Exit(1)
 	}
 }
 
-// run reads the stream, writes the ranking to out, writes any budget breach to errOut
-// and reports whether every budget held.
-func run(in io.Reader, out, errOut io.Writer, top int, budget, pkgBudget float64) (bool, error) {
+// run parses args, reads the stream, writes the ranking to out and any budget breach
+// to errOut. It returns errBudgetExceeded when a budget did not hold.
+func run(args []string, in io.Reader, out, errOut io.Writer) error {
+	fs := flag.NewFlagSet("testslowest", flag.ContinueOnError)
+	fs.SetOutput(errOut)
+	top := fs.Int("top", 25, "how many of the slowest tests to print")
+	budget := fs.Float64("budget", 0, "seconds one test may take on a SEQUENTIAL run; 0 disables the gate")
+	pkgBudget := fs.Float64("package-budget", 0, "seconds one package may take; 0 disables the gate")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
 	runs, pkgs, err := testtiming.ParseAll(in)
 	if err != nil {
-		return false, err
+		return err
 	}
-	report(out, runs, top)
-	ok := budget <= 0 || withinBudget(errOut, runs, budget)
-	if pkgBudget > 0 && !packagesWithinBudget(errOut, pkgs, pkgBudget) {
+	report(out, runs, *top)
+	return checkBudgets(errOut, runs, pkgs, *budget, *pkgBudget)
+}
+
+// checkBudgets applies both gates, reporting every breach before it returns.
+func checkBudgets(w io.Writer, runs []testtiming.TestRun, pkgs []testtiming.PackageRun,
+	budget, pkgBudget float64,
+) error {
+	ok := budget <= 0 || withinBudget(w, runs, budget)
+	if pkgBudget > 0 && !packagesWithinBudget(w, pkgs, pkgBudget) {
 		ok = false
 	}
-	return ok, nil
+	if !ok {
+		return errBudgetExceeded
+	}
+	return nil
 }
 
 // report prints the suite's total test time and its slowest tests.

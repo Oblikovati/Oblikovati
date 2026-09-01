@@ -162,7 +162,11 @@ jobs:
       # a same-named _test.go beside it, purely because it was missing from this list. `event/...`
       # (the pub/sub Bus, #2170's generic-methods conversion) hit the identical failure mode the
       # moment its new code grew past a handful of lines: 0% on new code despite `go test
-      # ./event/...` itself reading 100% locally.
+      # ./event/...` itself reading 100% locally. `cmd/...` joined for the same reason when
+      # cmd/testimpact and cmd/testslowest landed with their own tests: -coverpkg gives a
+      # package NO coverage at all when it is absent from the list, even from its own test
+      # binary. test-utilities/ deliberately stays out — it is already in
+      # sonar.coverage.exclusions as dev tooling, so instrumenting it would buy nothing.
       #
       # Ubuntu-only because that is the single leg whose profile feeds the `sonar` job (see the
       # upload step below); the macOS/Windows legs keep the uninstrumented command so the slowest
@@ -171,7 +175,7 @@ jobs:
         run: |
           COVERPKG=""
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            COVERPKG="-coverpkg=./kernel/...,./model/...,./app/...,./addin/...,./renderer/...,./event/..."
+            COVERPKG="-coverpkg=./kernel/...,./model/...,./app/...,./addin/...,./renderer/...,./event/...,./cmd/..."
           fi
           gotestsum --junitfile test-results-${{ matrix.os }}.xml -- \
             -coverprofile=coverage.out -covermode=count $COVERPKG -timeout 60m ./...

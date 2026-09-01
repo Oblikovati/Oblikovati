@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -16,18 +17,18 @@ const stream = `{"Action":"pass","Package":"m/fast","Test":"TestQuick","Elapsed"
 {"Action":"pass","Package":"m/slow","Elapsed":121}
 `
 
-func runStream(t *testing.T, budget, pkgBudget float64) (bool, string, string) {
+func runStream(t *testing.T, args ...string) (bool, string, string) {
 	t.Helper()
 	var out, errOut bytes.Buffer
-	ok, err := run(strings.NewReader(stream), &out, &errOut, 5, budget, pkgBudget)
-	if err != nil {
+	err := run(append([]string{"-top", "5"}, args...), strings.NewReader(stream), &out, &errOut)
+	if err != nil && !errors.Is(err, errBudgetExceeded) {
 		t.Fatalf("run: %v", err)
 	}
-	return ok, out.String(), errOut.String()
+	return err == nil, out.String(), errOut.String()
 }
 
 func TestRunRanksTheSlowestTestFirst(t *testing.T) {
-	_, out, _ := runStream(t, 0, 0)
+	_, out, _ := runStream(t)
 	if !strings.Contains(out, "2 tests, 120s of test time") {
 		t.Errorf("report header missing from %q", out)
 	}
@@ -37,13 +38,13 @@ func TestRunRanksTheSlowestTestFirst(t *testing.T) {
 }
 
 func TestRunPassesWhenNoBudgetIsSet(t *testing.T) {
-	if ok, _, errOut := runStream(t, 0, 0); !ok || errOut != "" {
+	if ok, _, errOut := runStream(t); !ok || errOut != "" {
 		t.Errorf("run() = %v, stderr %q, want a clean pass", ok, errOut)
 	}
 }
 
 func TestRunFailsAndNamesTheTestOverTheTestBudget(t *testing.T) {
-	ok, _, errOut := runStream(t, 5, 0)
+	ok, _, errOut := runStream(t, "-budget", "5")
 	if ok {
 		t.Error("run() passed, want a failure for the 120s test")
 	}
@@ -53,7 +54,7 @@ func TestRunFailsAndNamesTheTestOverTheTestBudget(t *testing.T) {
 }
 
 func TestRunFailsAndNamesThePackageOverThePackageBudget(t *testing.T) {
-	ok, _, errOut := runStream(t, 0, 90)
+	ok, _, errOut := runStream(t, "-package-budget", "90")
 	if ok {
 		t.Error("run() passed, want a failure for the 121s package")
 	}
@@ -64,8 +65,15 @@ func TestRunFailsAndNamesThePackageOverThePackageBudget(t *testing.T) {
 
 func TestRunReportsAMalformedStream(t *testing.T) {
 	var out, errOut bytes.Buffer
-	if _, err := run(errReader{}, &out, &errOut, 5, 0, 0); err == nil {
+	if err := run(nil, errReader{}, &out, &errOut); err == nil {
 		t.Fatal("run() succeeded, want the read error")
+	}
+}
+
+func TestRunRejectsAnUnknownFlag(t *testing.T) {
+	var out, errOut bytes.Buffer
+	if err := run([]string{"-nonsense"}, strings.NewReader(stream), &out, &errOut); err == nil {
+		t.Fatal("run() succeeded, want a flag-parse error")
 	}
 }
 
