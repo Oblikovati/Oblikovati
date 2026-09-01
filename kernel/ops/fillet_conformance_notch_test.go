@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -21,16 +22,16 @@ func TestSimpleLoop2D(t *testing.T) {
 	// The real self-intersecting loop from the notched-box fillet (edge z=90,x∈[80,90] crosses
 	// edge x=85,z∈[0,100] at (85,90)).
 	selfInt := []math.Point2{math.P2(80, 100), math.P2(80, 90), math.P2(90, 90), math.P2(90, 100), math.P2(85, 100), math.P2(85, 0), math.P2(0, 0), math.P2(0, 100)}
-	if simpleLoop2D(selfInt) {
+	if tessellate.SimpleLoop2D(selfInt) {
 		t.Error("self-intersecting loop reported as simple")
 	}
 	square := []math.Point2{math.P2(0, 0), math.P2(10, 0), math.P2(10, 10), math.P2(0, 10)}
-	if !simpleLoop2D(square) {
+	if !tessellate.SimpleLoop2D(square) {
 		t.Error("convex square reported as non-simple")
 	}
 	// An L-shape (concave but simple) must pass.
 	ell := []math.Point2{math.P2(0, 0), math.P2(10, 0), math.P2(10, 4), math.P2(4, 4), math.P2(4, 10), math.P2(0, 10)}
-	if !simpleLoop2D(ell) {
+	if !tessellate.SimpleLoop2D(ell) {
 		t.Error("simple concave L reported as non-simple")
 	}
 }
@@ -56,7 +57,7 @@ func TestConformancePreservesNotchedFaceArea(t *testing.T) {
 	bodyArea := BodyGeometryProperties(res, q).Area
 	var faceSum float64
 	for _, f := range res.Faces() {
-		faceSum += y2FaceArea(TessellateFace(f, q))
+		faceSum += y2FaceArea(tessellate.TessellateFace(f, q))
 	}
 	if rel := (bodyArea - 61050.1) / 61050.1; rel < -0.01 || rel > 0.01 {
 		t.Fatalf("body area %.5g not within 1%% of OCCT 61050.1 (rel %+.2f%%) — conformance collapse regressed", bodyArea, rel*100)

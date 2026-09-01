@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -64,7 +65,7 @@ func TestCapCrossingCutIsWatertightAndFoldFree(t *testing.T) {
 		t.Fatalf("Boolean(Cut): %v", err)
 	}
 	for _, gq := range certGateQualities() {
-		mesh, _ := TessellateBody(res, gq.q)
+		mesh, _ := tessellate.TessellateBody(res, gq.q)
 		if free := freeEdgeCount(mesh); free != 0 {
 			t.Errorf("%s quality: cap-crossing cut tessellated with %d free edges; want 0 — a cross-face T-junction crack "+
 				"(regression of the by-value ellipse imprint fix, #1724)", gq.name, free)
@@ -133,7 +134,7 @@ func TestCapCrossingCutMembershipMatchesCSG(t *testing.T) {
 		zCap := stdmath.Min(stdmath.Abs(float64(p.Z)), stdmath.Abs(float64(p.Z)-10))
 		return rWall < shell || rTool < shell || zCap < shell
 	}
-	mesh, _ := TessellateBody(res, DefaultQuality()) // tessellate ONCE; the O(n³) grid would re-mesh per point via PointInsideBody
+	mesh, _ := tessellate.TessellateBody(res, DefaultQuality()) // tessellate ONCE; the O(n³) grid would re-mesh per point via PointInsideBody
 	mismatches := 0
 	const n = 60
 	for i := range n {

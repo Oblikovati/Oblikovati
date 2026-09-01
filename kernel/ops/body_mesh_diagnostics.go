@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -32,7 +33,7 @@ func BodyMeshDiagnostics(b *topo.Body, q Quality) []diag.Diagnostic {
 	if b == nil {
 		return nil
 	}
-	_, meshes := tessellateBodyFaces(b, q)
+	_, meshes := tessellate.TessellateBodyFaces(b, q)
 	tallies := newMeshDiagTallies()
 	for _, m := range meshes {
 		tallies.addMesh(m)

@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/meshbool"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -104,7 +105,7 @@ func taggedSoupWithImprints(b *topo.Body, q Quality, tagBase int, imprints map[*
 // conformalPolyline returns a circle/arc edge's canonical absolute-angle sampling with the given
 // imprint points inserted at the segment each lies on; ok=false for a non-circular edge.
 func conformalPolyline(e *topo.Edge, imprints []math.Point3, q Quality) ([]math.Point3, bool) {
-	pts, _, ok := conformalCircularSamples(e, q.Tol(), q.AngleTol())
+	pts, _, ok := tessellate.ConformalCircularSamples(e, q.Tol(), q.AngleTol())
 	if !ok {
 		return nil, false
 	}

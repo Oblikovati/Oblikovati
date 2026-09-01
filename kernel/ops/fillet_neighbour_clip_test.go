@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 )
 
 // TestNotchFilletFaceLoopsSimple documents Bug B, a KNOWN LIMITATION (skipped, tracked).
@@ -44,8 +45,8 @@ func TestNotchFilletFaceLoopsSimple(t *testing.T) {
 		if !ok {
 			continue
 		}
-		loop2D := project2D(faceOuterBoundary(f, PropertyQuality()), planeProjector(pl.Normal()))
-		if !simpleLoop2D(loop2D) {
+		loop2D := tessellate.Project2D(tessellate.FaceOuterBoundary(f, PropertyQuality()), tessellate.PlaneProjector(pl.Normal()))
+		if !tessellate.SimpleLoop2D(loop2D) {
 			t.Errorf("face[%d] outer loop self-intersects", i)
 		}
 	}

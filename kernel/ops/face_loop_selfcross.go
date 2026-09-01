@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -247,22 +248,22 @@ func developedFaceLoops(f *topo.Face, rings []cornerRing) ([]developedLoop, bool
 // plane, the arc-length-scaled (u,v) for an analytic curved surface.
 func developRings(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) ([][]math.Point2, bool) {
 	if pl, planar := s.(geom.Plane); planar {
-		flat := planeProjector(pl.NormalAt(0, 0))
-		return scaledLoops(append([][]math.Point2{project2D(outer3D, flat)}, project2DLoops(holes3D, flat)...), 1, 1), true
+		flat := tessellate.PlaneProjector(pl.NormalAt(0, 0))
+		return scaledLoops(append([][]math.Point2{tessellate.Project2D(outer3D, flat)}, tessellate.Project2DLoops(holes3D, flat)...), 1, 1), true
 	}
 	if !developableSurface(s) {
 		return nil, false
 	}
-	outerUV, holesUV, ok := toUVLoops(s, outer3D, holes3D)
+	outerUV, holesUV, ok := tessellate.ToUVLoops(s, outer3D, holes3D)
 	if !ok {
 		return nil, false
 	}
-	su, sv := metricScale(s)
+	su, sv := tessellate.MetricScale(s)
 	return scaledLoops(append([][]math.Point2{outerUV}, holesUV...), su, sv), true
 }
 
 // wovenRings interleaves each ring as corner, segment-mid, corner, segment-mid … so the certifying
-// points pass through the SAME development and the SAME periodic unwrap as the corners they certify —
+// points pass through the SAME development and the SAME periodic tessellate.Unwrap as the corners they certify —
 // developing them separately would re-open the wrap ambiguity the weave closes.
 func wovenRings(rings []cornerRing) [][]math.Point3 {
 	out := make([][]math.Point3, len(rings))
@@ -336,7 +337,7 @@ func loopSelfCrossing(l developedLoop, accept func(i, j int) bool) (area float64
 				continue // edges n-1→0 and 0→1 are adjacent (share vertex 0)
 			}
 			c, d := probe.XY(l.pts[j]), probe.XY(l.pts[(j+1)%n])
-			if !segmentsCross(a, b, c, d) || !accept(i, j) {
+			if !tessellate.SegmentsCross(a, b, c, d) || !accept(i, j) {
 				continue
 			}
 			return pinchedOffArea(l.pts, i, j), i, j, true

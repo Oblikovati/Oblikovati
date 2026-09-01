@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	m "oblikovati.org/math"
 )
@@ -14,7 +15,7 @@ import (
 // Regression for Oblikovati/Oblikovati#1318: mass properties used to orient triangles from summed
 // per-vertex shading normals, which flip at random on coarse high-curvature meshes (saddles,
 // silhouette slivers) and corrupt the divergence-theorem sum. The orientation is now topological
-// (consistentOutwardFlips), so volume/centroid/inertia converge cleanly with no sign-flip spikes.
+// (tessellate.ConsistentOutwardFlips), so volume/centroid/inertia converge cleanly with no sign-flip spikes.
 
 // sphereVolume returns the analytic volume of a sphere of the given radius.
 func sphereVolume(r float64) float64 { return 4.0 / 3.0 * math.Pi * r * r * r }
@@ -30,8 +31,8 @@ func sphereVolume(r float64) float64 { return 4.0 / 3.0 * math.Pi * r * r * r }
 // announces itself. These tests drive the tessellated path on purpose.
 func meshVolumeAt(t *testing.T, b *topo.Body, q Quality) float64 {
 	t.Helper()
-	mesh, _ := TessellateBody(b, q)
-	return meshGeometryProperties(mesh).Volume
+	mesh, _ := tessellate.TessellateBody(b, q)
+	return MeshGeometryProperties(mesh).Volume
 }
 
 // TestCoarseSphereVolumeConvergesMonotonically tessellates a sphere at successively finer qualities
@@ -206,7 +207,7 @@ func inconsistentCubeMesh(s float64) *Mesh {
 func TestInconsistentlyWoundMeshVolumeMagnitude(t *testing.T) {
 	const s = 2.0
 	mesh := inconsistentCubeMesh(s)
-	gp := meshGeometryProperties(mesh)
+	gp := MeshGeometryProperties(mesh)
 	want := s * s * s
 	if math.Abs(gp.Volume-want) > 1e-9 {
 		t.Errorf("volume = %g, want %g (topological orientation failed on inconsistent input)", gp.Volume, want)

@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -76,7 +77,7 @@ func TestPartialBossTessellationIsWatertight(t *testing.T) {
 	t.Parallel()
 	res := straddlingBoss(t)
 	for _, gq := range gateQualities() {
-		mesh, _ := TessellateBody(res, gq.q)
+		mesh, _ := tessellate.TessellateBody(res, gq.q)
 		if free := cornerMeshFreeEdges(mesh); free != 0 {
 			t.Errorf("%s quality: straddling boss tessellation has %d free edges (want 0) — a visible crack at the "+
 				"clipped seat", gq.name, free)
@@ -111,7 +112,7 @@ func TestPartialBossJoinsViaAnalyticDispatch(t *testing.T) {
 		t.Error("union kept no analytic cylinder face — the boss wall was not preserved (CSG fallback)")
 	}
 	for _, gq := range gateQualities() {
-		mesh, _ := TessellateBody(res, gq.q)
+		mesh, _ := tessellate.TessellateBody(res, gq.q)
 		if free := cornerMeshFreeEdges(mesh); free != 0 {
 			t.Errorf("%s quality: dispatched union tessellation has %d free edges (want 0)", gq.name, free)
 		}

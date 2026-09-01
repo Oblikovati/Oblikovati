@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -260,7 +261,7 @@ func TestLoftClosedTwistMeshStaysBounded(t *testing.T) {
 	}
 	t.Parallel()
 	body := closedMobiusLoftBody(t, 36, 3.0, 1.6, 0.2, mobiusSectionEllipseSketch)
-	mesh, _ := ops.TessellateBody(body, ops.DefaultQuality())
+	mesh, _ := tessellate.TessellateBody(body, ops.DefaultQuality())
 	if got := mesh.TriangleCount(); got > 30000 { // correct ≈14k; the monodromy bug produced ~166k
 		t.Errorf("elliptical Möbius tessellated to %d triangles — the closed-twist seam is over-subdividing every section", got)
 	}

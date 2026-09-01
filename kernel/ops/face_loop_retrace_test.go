@@ -46,7 +46,7 @@ func TestRetracingFaceLoopsCatchesACollinearBackTrack(t *testing.T) {
 // TestSelfCrossingFaceLoopsIsBlindToACollinearBackTrack pins the GAP this detector closes, so the two
 // predicates can never be confused for one another: the very same shipped Y4 loop scores ZERO
 // transversal self-crossings, because two overlapping collinear segments never straddle each other's
-// line and every orient2d in segmentsCross is exactly 0.
+// line and every orient2d in tessellate.SegmentsCross is exactly 0.
 func TestSelfCrossingFaceLoopsIsBlindToACollinearBackTrack(t *testing.T) {
 	t.Parallel()
 	body := planarLoopBody(t, math.P3(0, 0, 0), math.V3(0, 1, 0), y4HostPlaneLoop())

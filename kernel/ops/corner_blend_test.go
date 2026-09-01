@@ -5,6 +5,7 @@ package ops
 import (
 	"testing"
 
+	"oblikovati.org/kernel/ops/tessellate"
 	m "oblikovati.org/math"
 )
 
@@ -32,7 +33,7 @@ func blendScale() Resolution {
 
 // validCert is a certificate comfortably inside every tolerance at weld w.
 func validCert(w float64) Certificate {
-	return Certificate{Closed: true, WeldsArms: true, NoFold: true, MaxDev: w / 2, MaxAngleDev: seamAngularTol / 2}
+	return Certificate{Closed: true, WeldsArms: true, NoFold: true, MaxDev: w / 2, MaxAngleDev: tessellate.SeamAngularTol / 2}
 }
 
 func provider(kind CornerBlendKind, cert Certificate) fakeCornerProvider {
@@ -68,13 +69,13 @@ func TestResolveCornerBlendReturnsValid(t *testing.T) {
 }
 
 // TestResolveCornerBlendSkipsInvalidCertificate pins that a G1-kinked patch (MaxAngleDev over
-// seamAngularTol) is passed over and the next valid tier is taken — the anti-crease guarantee.
+// tessellate.SeamAngularTol) is passed over and the next valid tier is taken — the anti-crease guarantee.
 func TestResolveCornerBlendSkipsInvalidCertificate(t *testing.T) {
 	t.Parallel()
 	scale := blendScale()
 	req := CornerBlendRequest{Setback: scale}
 	kinked := validCert(scale.Weld())
-	kinked.MaxAngleDev = seamAngularTol * 10 // tangent kink: shades as a crease
+	kinked.MaxAngleDev = tessellate.SeamAngularTol * 10 // tangent kink: shades as a crease
 	tiers := []CornerBlendProvider{provider("kinked", kinked), provider(BlendKindBSpline, validCert(scale.Weld()))}
 	patch, ok := resolveCornerBlend(req, tiers)
 	if !ok || patch.Kind != BlendKindBSpline {
@@ -109,7 +110,7 @@ func TestCertificateValid(t *testing.T) {
 		"arm not welded":  func(c *Certificate) { c.WeldsArms = false },
 		"folded":          func(c *Certificate) { c.NoFold = false },
 		"G0 over weld":    func(c *Certificate) { c.MaxDev = w * 2 },
-		"G1 tangent kink": func(c *Certificate) { c.MaxAngleDev = seamAngularTol * 2 },
+		"G1 tangent kink": func(c *Certificate) { c.MaxAngleDev = tessellate.SeamAngularTol * 2 },
 	}
 	for name, violate := range mut {
 		c := validCert(w)

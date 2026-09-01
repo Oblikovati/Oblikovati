@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
@@ -137,7 +138,7 @@ func TestAngularDeflectionRoundsSmallHoles(t *testing.T) {
 		if _, ok := e.Geometry().(geom.Circle); !ok {
 			continue
 		}
-		if facets := len(ops.TessellateEdge(e, ops.DefaultQuality())) - 1; facets < 24 {
+		if facets := len(tessellate.TessellateEdge(e, ops.DefaultQuality())) - 1; facets < 24 {
 			t.Fatalf("bore circle tessellated to %d facets, want ≥24 (looks polygonal)", facets)
 		}
 	}

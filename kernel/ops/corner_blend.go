@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -107,13 +108,13 @@ type Certificate struct {
 }
 
 // Valid reports whether the patch is admissible at the junction's model scale: structurally sound AND
-// within tolerance — G0 within the model weld (ADR-0042), G1 below seamAngularTol (a G0-tight but
+// within tolerance — G0 within the model weld (ADR-0042), G1 below tessellate.SeamAngularTol (a G0-tight but
 // tangent-kinked patch shades as a crease and is rejected), and the interior within the model weld of
 // the declared rolling-ball envelope. scale carries the model-relative weld. No tolerance here was
 // widened to admit MaxBallDev: it is gated at the SAME scale.Weld() MaxDev already used.
 func (c Certificate) Valid(scale Resolution) bool {
 	return c.Closed && c.WeldsArms && c.NoFold &&
-		c.MaxDev <= scale.Weld() && c.MaxAngleDev <= seamAngularTol && c.MaxBallDev <= scale.Weld()
+		c.MaxDev <= scale.Weld() && c.MaxAngleDev <= tessellate.SeamAngularTol && c.MaxBallDev <= scale.Weld()
 }
 
 // CornerBlendProvider produces the corner/miter patch for one junction, or declines. Fits is a cheap

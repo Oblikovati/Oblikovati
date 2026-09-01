@@ -12,7 +12,7 @@ import (
 // whose winding conflicts with its neighbours (B2). The fillet rebuild seeds cylinder/sphere blend
 // patches by geometry alone (fillet_blend_faces.go / fillet_sphere_patch.go), so a concave corner can emit a patch wound the same
 // way as its neighbour — two co-parallel co-edges that ops.Validate rejects. This is the topological
-// analogue of the mesh-level consistentOutwardFlips pass and, like it, is a NO-OP on an already-
+// analogue of the mesh-level tessellate.ConsistentOutwardFlips pass and, like it, is a NO-OP on an already-
 // consistent shell (the 34 baseline-passing corpus cases have zero conflicts, so they are untouched).
 //
 // Only RELATIVE consistency matters here: ops.Validate compares the two co-edges of each manifold

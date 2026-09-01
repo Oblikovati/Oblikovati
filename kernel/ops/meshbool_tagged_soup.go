@@ -5,6 +5,7 @@ package ops
 import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/meshbool"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -31,12 +32,12 @@ type faceSurfaceRef struct {
 // caller assigns operand A tagBase 0 and operand B tagBase len(aRefs), then indexes
 // the concatenated refs by a result triangle's tag.
 func bodyToTaggedSoup(b *topo.Body, q Quality, tagBase int) (meshbool.TaggedSoup, []faceSurfaceRef) {
-	faces, fm := tessellateBodyFaces(b, q)
+	faces, fm := tessellate.TessellateBodyFaces(b, q)
 	merged := &Mesh{}
 	var triTags []int
 	for i, m := range fm {
 		before := merged.TriangleCount()
-		mergeMesh(merged, m)
+		tessellate.MergeMesh(merged, m)
 		for t := before; t < merged.TriangleCount(); t++ {
 			triTags = append(triTags, tagBase+i)
 		}

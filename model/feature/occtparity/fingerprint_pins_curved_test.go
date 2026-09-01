@@ -86,7 +86,7 @@ func curvedWeldPins() []fingerprintPin {
 		// RE-CAPTURED (rim-station-report.md), and PROVEN improved, not merely different: its cone face
 		// spans rims of r=99.999929 (1024 stations) and r=51.893513 (512), and the seam-bridged band GRID
 		// tiled BOTH at 1024 — so the 512-station rim it shares with the torus band cracked the whole way
-		// round. Its welded mesh leaked 1536 free edges at PropertyQuality (ops.FreeEdgeCount over
+		// round. Its welded mesh leaked 1536 free edges at PropertyQuality (tessellate.FreeEdgeCount over
 		// CalculateBodyFacets(body,q).Mesh) and now leaks ZERO at BOTH gate qualities. The cone is lofted
 		// rim-to-rim instead, so tris drop by exactly 512 (2048 → 1536 on that face, 69116 → 68604 on the
 		// body — the arithmetic of one grid row lost, and nothing else moved). Its cone mesh area moves

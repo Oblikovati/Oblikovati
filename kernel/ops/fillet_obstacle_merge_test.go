@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	m "oblikovati.org/math"
 )
 
@@ -64,7 +65,7 @@ func nodesForT6(t *testing.T) [2]crossing {
 // zPlaneProjector is the flat/back pair for the T6 host plane z=0 — planeProjector's own
 // inverse for a +Z-normal plane (earclip.go: a +Z normal drops Z, keeps (X,Y) in order).
 func zPlaneProjector() (func(m.Point3) m.Point2, func(m.Point2) m.Point3) {
-	flat := planeProjector(m.V3(0, 0, 1))
+	flat := tessellate.PlaneProjector(m.V3(0, 0, 1))
 	back := func(p m.Point2) m.Point3 { return m.P3(p.X, p.Y, 0) }
 	return flat, back
 }
@@ -82,7 +83,7 @@ func loopMinY(loop filletLoop) float64 {
 
 // loop2DArea is the shoelace area of loop's 2D projection (unsigned — winding-independent).
 func loop2DArea(loop filletLoop, flat func(m.Point3) m.Point2) float64 {
-	pts := project2D(loop.pts, flat)
+	pts := tessellate.Project2D(loop.pts, flat)
 	n := len(pts)
 	var sum2 float64
 	for i := range n {

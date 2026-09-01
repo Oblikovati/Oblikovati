@@ -15,6 +15,7 @@ package hlr
 
 import (
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -67,7 +68,7 @@ type Segment struct {
 //	view := hlr.NewView(center, math.V3(0,1,0), math.V3(0,0,1)) // front view
 //	segs := hlr.Project(body, view, ops.DefaultQuality())
 func Project(body *topo.Body, view View, q ops.Quality) []Segment {
-	mesh, _ := ops.TessellateBody(body, q)
+	mesh, _ := tessellate.TessellateBody(body, q)
 	// The occlusion bias must clear two sources of false self-occlusion at an edge: the
 	// faceting error of curved faces (≈ChordTolerance) and a silhouette edge's nearly
 	// edge-on adjacent face, which a midpoint ray can graze. Scaling it to the model size
@@ -76,7 +77,7 @@ func Project(body *topo.Body, view View, q ops.Quality) []Segment {
 	bias := max(2*q.ChordTolerance, 0.005*meshDiagonal(mesh)) + 1e-9
 	var segs []Segment
 	for _, e := range body.Edges() {
-		poly := ops.TessellateEdge(e, q)
+		poly := tessellate.TessellateEdge(e, q)
 		key := e.ReferenceKey()
 		for i := 0; i+1 < len(poly); i++ {
 			if seg, ok := classifySegment(mesh, view, poly[i], poly[i+1], key, bias); ok {

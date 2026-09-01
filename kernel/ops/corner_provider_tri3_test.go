@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -66,8 +67,8 @@ func TestTri3FitsAndBuilds(t *testing.T) {
 	if patch.Kind != BlendKindTri3 {
 		t.Errorf("Kind = %q, want %q", patch.Kind, BlendKindTri3)
 	}
-	if cert.MaxAngleDev >= seamAngularTol {
-		t.Errorf("MaxAngleDev = %g, want < %g (fill not tangent to sphere)", cert.MaxAngleDev, seamAngularTol)
+	if cert.MaxAngleDev >= tessellate.SeamAngularTol {
+		t.Errorf("MaxAngleDev = %g, want < %g (fill not tangent to sphere)", cert.MaxAngleDev, tessellate.SeamAngularTol)
 	}
 	assertTri3InterpolatesRails(t, loop, patch.Surface.(geom.BSplineSurface))
 }

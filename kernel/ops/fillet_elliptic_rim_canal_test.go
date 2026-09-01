@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -302,7 +303,7 @@ func TestEllipticRimCanalBandMeshMatchesTheExactEnvelopeArea(t *testing.T) {
 			body := importEllipticFixture(t, tc.name)
 			rim := closedEllipticRimNear(t, body, tc.rimAt)
 			band := weldedCanalBandFace(t, body, rim, tc.radius)
-			got := validate.MeshArea(TessellateFace(band, PropertyQuality()))
+			got := validate.MeshArea(tessellate.TessellateFace(band, PropertyQuality()))
 			if rel := stdmath.Abs(got-tc.exactArea) / tc.exactArea; rel > ellipticRimMeshAreaRelTol {
 				t.Errorf("%s MESHED band area = %.6g, want the exact envelope %.6g (rel %.3g > %.0e — a v-labelling "+
 					"shear inflates the mesh while leaving the surface exact)", tc.name, got, tc.exactArea, rel, ellipticRimMeshAreaRelTol)
@@ -369,10 +370,10 @@ func TestCanalBandMeshRecognisesOnlyTheVClosedBand(t *testing.T) {
 	if !ok {
 		t.Fatal("the J6 canal band was not built")
 	}
-	if !closesAlongV(canal.surf) {
+	if !tessellate.ClosesAlongV(canal.surf) {
 		t.Error("closesAlongV rejected the canal band (it repeats its first station last, so it MUST close along v)")
 	}
-	if closesAlongV(transposedSurface(canal.surf)) {
+	if tessellate.ClosesAlongV(transposedSurface(canal.surf)) {
 		t.Error("closesAlongV accepted the TRANSPOSED band — a u-closed tube patch must be left to the NURBS meshers")
 	}
 }

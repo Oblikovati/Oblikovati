@@ -44,7 +44,7 @@ type bsplineHostCanal struct {
 // bsplineHostArmSurface carries the canal payload through edgeFillet.armSurface (whose
 // struct is frozen this wave): it IS the canal B-spline via embedding, so every generic
 // consumer sees a plain surface, while the wave-G body builders key on the concrete type.
-// The wrapper never reaches a built face — body builders unwrap to the inner BSplineSurface.
+// The wrapper never reaches a built face — body builders tessellate.Unwrap to the inner BSplineSurface.
 type bsplineHostArmSurface struct {
 	geom.BSplineSurface
 	canal *bsplineHostCanal

@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -85,7 +86,7 @@ func assertOneToriusCoveBand(t *testing.T, name string, body *topo.Body) {
 	t.Helper()
 	bands := 0
 	for _, f := range body.Faces() {
-		m := ops.TessellateFace(f, ops.PropertyQuality())
+		m := tessellate.TessellateFace(f, ops.PropertyQuality())
 		area := ops.MeshArea(m)
 		if area <= 0 || stdmath.IsInf(area, 0) || stdmath.IsNaN(area) {
 			t.Fatalf("%s %T face meshed to %.4f, want a finite positive area", name, f.Geometry(), area)
@@ -106,7 +107,7 @@ func assertConcaveRimMeshArea(t *testing.T, name string, body *topo.Body, want f
 	t.Helper()
 	total := 0.0
 	for _, f := range body.Faces() {
-		total += ops.MeshArea(ops.TessellateFace(f, ops.PropertyQuality()))
+		total += ops.MeshArea(tessellate.TessellateFace(f, ops.PropertyQuality()))
 	}
 	if rel := stdmath.Abs(total-want) / want; rel > 0.01 {
 		t.Fatalf("%s total mesh area %.2f, want OCCT %.0f within deps 0.01 (rel %.5f)", name, total, want, rel)

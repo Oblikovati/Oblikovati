@@ -42,7 +42,7 @@ func hostTangent(c corner, hostIsA bool) math.Point3 {
 // the TRUE rim instead of its inscribed chords — the chords left the re-clipped host plane the whole
 // inscribed-polygon surplus Σ (r²/2)(θ−sinθ) (T3's plane +4.38498, t3-plane-sliver-report.md). The
 // per-segment restriction (never the full curve on a sub-edge) is the same N7 rule
-// sampleCurve3OpenTrimmed states — a full curve per sub-edge would make sampleEdgeCurve re-trace it
+// sampleCurve3OpenTrimmed states — a full curve per sub-edge would make tessellate.SampleEdgeCurve re-trace it
 // once per segment and self-cross the boundary. Contact LOCI ride the same rule since the railB
 // interpolated-locus carry (railb-locus-report.md): their segments carry sub-spans of the locus rail —
 // the very TrimmedCurve3 values the patch loop offers — where the old degree-1 locus (whose straight

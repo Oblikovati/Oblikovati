@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
+	"oblikovati.org/kernel/ops/tessellate"
 )
 
 // Tessellation must be a PURE function of the body: the same body re-tessellated must give a byte-for-
@@ -28,12 +29,12 @@ func TestConstrainedDelaunayDeterministic(t *testing.T) {
 			pts = append(pts, [2]float64{float64(i), float64(j)})
 		}
 	}
-	first := constrainedDelaunay(pts, [][]int{{0, 1, 2, 3}})
+	first := tessellate.ConstrainedDelaunay(pts, [][]int{{0, 1, 2, 3}})
 	if len(first) == 0 {
 		t.Fatal("constrainedDelaunay returned no triangles")
 	}
 	for run := range 200 {
-		got := constrainedDelaunay(pts, [][]int{{0, 1, 2, 3}})
+		got := tessellate.ConstrainedDelaunay(pts, [][]int{{0, 1, 2, 3}})
 		if !triIndexEqual(first, got) {
 			t.Fatalf("run %d: constrainedDelaunay non-deterministic (%d vs %d tris / differing order)", run, len(first), len(got))
 		}
@@ -56,9 +57,9 @@ func TestTessellateBodyDeterministicOnImportedSolid(t *testing.T) {
 			t.Fatalf("import %s: %v (n=%d)", name, err, len(bodies))
 		}
 		q := DefaultQuality()
-		first, _ := TessellateBody(bodies[0], q)
+		first, _ := tessellate.TessellateBody(bodies[0], q)
 		for run := range 20 {
-			got, _ := TessellateBody(bodies[0], q)
+			got, _ := tessellate.TessellateBody(bodies[0], q)
 			if !meshIdentical(first, got) {
 				t.Fatalf("%s run %d: TessellateBody non-deterministic on a fixed body", name, run)
 			}

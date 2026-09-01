@@ -14,6 +14,7 @@ import (
 	"sort"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -21,8 +22,8 @@ import (
 // FacetStore is the per-session facet/stroke cache. Zero value is NOT ready —
 // use NewFacetStore.
 type FacetStore struct {
-	facets  map[*topo.Body]map[float64]*ops.BodyFacets
-	strokes map[*topo.Body]map[float64]*ops.BodyStrokes
+	facets  map[*topo.Body]map[float64]*tessellate.BodyFacets
+	strokes map[*topo.Body]map[float64]*tessellate.BodyStrokes
 }
 
 // NewFacetStore returns an empty store.
@@ -30,8 +31,8 @@ type FacetStore struct {
 // Example: st := facetstore.NewFacetStore(); fs := st.CalculateFacets(body, 0.01)
 func NewFacetStore() *FacetStore {
 	return &FacetStore{
-		facets:  map[*topo.Body]map[float64]*ops.BodyFacets{},
-		strokes: map[*topo.Body]map[float64]*ops.BodyStrokes{},
+		facets:  map[*topo.Body]map[float64]*tessellate.BodyFacets{},
+		strokes: map[*topo.Body]map[float64]*tessellate.BodyStrokes{},
 	}
 }
 
@@ -43,14 +44,14 @@ func quality(tolerance float64) ops.Quality {
 
 // CalculateFacets facets the body at the tolerance and caches the set under
 // that tolerance; an already-cached set returns without re-faceting.
-func (st *FacetStore) CalculateFacets(b *topo.Body, tolerance float64) *ops.BodyFacets {
+func (st *FacetStore) CalculateFacets(b *topo.Body, tolerance float64) *tessellate.BodyFacets {
 	if fs, ok := st.ExistingFacets(b, tolerance); ok {
 		return fs
 	}
-	fs := ops.CalculateBodyFacets(b, quality(tolerance))
+	fs := tessellate.CalculateBodyFacets(b, quality(tolerance))
 	perBody, ok := st.facets[b]
 	if !ok {
-		perBody = map[float64]*ops.BodyFacets{}
+		perBody = map[float64]*tessellate.BodyFacets{}
 		st.facets[b] = perBody
 	}
 	perBody[tolerance] = fs
@@ -59,7 +60,7 @@ func (st *FacetStore) CalculateFacets(b *topo.Body, tolerance float64) *ops.Body
 
 // ExistingFacets retrieves the facet set previously calculated at exactly this
 // tolerance, without faceting.
-func (st *FacetStore) ExistingFacets(b *topo.Body, tolerance float64) (*ops.BodyFacets, bool) {
+func (st *FacetStore) ExistingFacets(b *topo.Body, tolerance float64) (*tessellate.BodyFacets, bool) {
 	fs, ok := st.facets[b][tolerance]
 	return fs, ok
 }
@@ -72,14 +73,14 @@ func (st *FacetStore) FacetTolerances(b *topo.Body) []float64 {
 
 // CalculateStrokes samples the body's edges at the tolerance and caches the
 // stroke set; an already-cached set returns without re-sampling.
-func (st *FacetStore) CalculateStrokes(b *topo.Body, tolerance float64) *ops.BodyStrokes {
+func (st *FacetStore) CalculateStrokes(b *topo.Body, tolerance float64) *tessellate.BodyStrokes {
 	if ss, ok := st.ExistingStrokes(b, tolerance); ok {
 		return ss
 	}
-	ss := ops.CalculateBodyStrokes(b, quality(tolerance))
+	ss := tessellate.CalculateBodyStrokes(b, quality(tolerance))
 	perBody, ok := st.strokes[b]
 	if !ok {
-		perBody = map[float64]*ops.BodyStrokes{}
+		perBody = map[float64]*tessellate.BodyStrokes{}
 		st.strokes[b] = perBody
 	}
 	perBody[tolerance] = ss
@@ -88,7 +89,7 @@ func (st *FacetStore) CalculateStrokes(b *topo.Body, tolerance float64) *ops.Bod
 
 // ExistingStrokes retrieves the stroke set previously calculated at exactly
 // this tolerance.
-func (st *FacetStore) ExistingStrokes(b *topo.Body, tolerance float64) (*ops.BodyStrokes, bool) {
+func (st *FacetStore) ExistingStrokes(b *topo.Body, tolerance float64) (*tessellate.BodyStrokes, bool) {
 	ss, ok := st.strokes[b][tolerance]
 	return ss, ok
 }
@@ -114,7 +115,7 @@ func (st *FacetStore) FaceFacets(b *topo.Body, f *topo.Face, tolerance float64) 
 // FaceStrokes samples one face's boundary edges at the tolerance (uncached —
 // boundary sampling is cheap next to faceting).
 func (st *FacetStore) FaceStrokes(f *topo.Face, tolerance float64) [][]math.Point3 {
-	return ops.CalculateFaceStrokes(f, quality(tolerance)).Polylines
+	return tessellate.CalculateFaceStrokes(f, quality(tolerance)).Polylines
 }
 
 // DropBody evicts every cached set of a body (a caller replacing bodies in
@@ -124,7 +125,7 @@ func (st *FacetStore) DropBody(b *topo.Body) {
 	delete(st.strokes, b)
 }
 
-func keysOfFacets(m map[float64]*ops.BodyFacets) []float64 {
+func keysOfFacets(m map[float64]*tessellate.BodyFacets) []float64 {
 	out := make([]float64, 0, len(m))
 	for t := range m {
 		out = append(out, t)
@@ -132,7 +133,7 @@ func keysOfFacets(m map[float64]*ops.BodyFacets) []float64 {
 	return out
 }
 
-func keysOfStrokes(m map[float64]*ops.BodyStrokes) []float64 {
+func keysOfStrokes(m map[float64]*tessellate.BodyStrokes) []float64 {
 	out := make([]float64, 0, len(m))
 	for t := range m {
 		out = append(out, t)

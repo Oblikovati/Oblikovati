@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/tessellate"
 	m "oblikovati.org/math"
 )
 
@@ -188,8 +189,8 @@ func TestAnalyticConeAgreesWithFineMesh(t *testing.T) {
 	if e := relErrMP(gp.Volume, wantVol); e > massRelTol {
 		t.Errorf("Volume = %v, want %v (rel %g)", gp.Volume, wantVol, e)
 	}
-	mesh, _ := TessellateBody(body, Quality{ChordTolerance: 1e-4, AngleTolerance: 0.5 * stdmath.Pi / 180})
-	meshVol := meshGeometryProperties(mesh).Volume
+	mesh, _ := tessellate.TessellateBody(body, Quality{ChordTolerance: 1e-4, AngleTolerance: 0.5 * stdmath.Pi / 180})
+	meshVol := MeshGeometryProperties(mesh).Volume
 	if e := relErrMP(gp.Volume, meshVol); e > 1e-3 {
 		t.Errorf("analytic %v vs fine mesh %v disagree (rel %g)", gp.Volume, meshVol, e)
 	}

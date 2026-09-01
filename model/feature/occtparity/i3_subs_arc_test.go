@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -61,7 +62,7 @@ func TestI3ConeFoldFree(t *testing.T) {
 			continue
 		}
 		cones++
-		m := ops.TessellateFace(f, ops.PropertyQuality())
+		m := tessellate.TessellateFace(f, ops.PropertyQuality())
 		if a := ops.MeshArea(m); a <= 0 || stdmath.IsInf(a, 0) || stdmath.IsNaN(a) {
 			t.Fatalf("I3 cone face meshed to %.4f, want a finite positive area", a)
 		}

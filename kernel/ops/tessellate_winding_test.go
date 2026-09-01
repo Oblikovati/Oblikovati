@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -19,7 +20,7 @@ func offsetBoxBody(dx, dy, dz float64) *ops.Mesh {
 	for i := range m.Verts {
 		m.Verts[i] = m.Verts[i].TranslateBy(math.V3(dx, dy, dz))
 	}
-	mesh, _ := ops.TessellateBody(subd.ToBody(m, "s"), ops.DefaultQuality())
+	mesh, _ := tessellate.TessellateBody(subd.ToBody(m, "s"), ops.DefaultQuality())
 	return mesh
 }
 

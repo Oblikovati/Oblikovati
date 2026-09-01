@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -29,7 +30,7 @@ import (
 // mesh renders with cracks, exports an unprintable STL, and hands the next boolean a non-closed operand
 // — and every one of those failures is invisible to an area gate, because a torn rim removes no area.
 //
-// WHAT IT MEASURES. ops.FreeEdgeCount over ops.CalculateBodyFacets(body, q).Mesh — i.e. the SHIPPED
+// WHAT IT MEASURES. tessellate.FreeEdgeCount over tessellate.CalculateBodyFacets(body, q).Mesh — i.e. the SHIPPED
 // tessellation of the SHIPPED body, welded at the MODEL's own resolution (ADR-0042), counting triangle
 // edges not used by exactly two triangles. The weld ruler is deliberately NOT an absolute quantum: a
 // fixed grid over-merges whenever the model's own feature separation drops below it and then reports the
@@ -68,8 +69,8 @@ func TestEveryShippedMeshIsWatertight(t *testing.T) {
 func assertMeshIntegrityWithinDebt(t *testing.T, r Record, body *topo.Body, leak, fold meshDebtEntry) {
 	t.Helper()
 	for _, gq := range gateQualities() {
-		facets := ops.CalculateBodyFacets(body, gq.q)
-		if free := ops.FreeEdgeCount(facets.Mesh); free > leak.ceilingAt(gq.name) {
+		facets := tessellate.CalculateBodyFacets(body, gq.q)
+		if free := tessellate.FreeEdgeCount(facets.Mesh); free > leak.ceilingAt(gq.name) {
 			t.Errorf("%s/%s: welded body mesh leaks %d free edge(s) at %s quality, recorded debt %d — the "+
 				"tessellation is not a closed surface even though the B-rep validates as a solid",
 				r.Grid, r.Case, free, gq.name, leak.ceilingAt(gq.name))
@@ -86,19 +87,19 @@ func assertMeshIntegrityWithinDebt(t *testing.T, r Record, body *topo.Body, leak
 //
 // It reads BodyFacets.Mesh — the merged mesh CalculateBodyFacets already builds — rather than re-welding
 // the per-face meshes behind a hand-picked quantum, so the ruler is the production one
-// (ops.FreeEdgeCount) and adjacent faces' shared boundary vertices weld exactly as the renderer and
+// (tessellate.FreeEdgeCount) and adjacent faces' shared boundary vertices weld exactly as the renderer and
 // exporter weld them.
 //
 // Example:
 //
 //	if free := shippedMeshFreeEdges(body, ops.PropertyQuality()); free != 0 { /* the mesh leaks */ }
 func shippedMeshFreeEdges(body *topo.Body, q ops.Quality) int {
-	return ops.FreeEdgeCount(ops.CalculateBodyFacets(body, q).Mesh)
+	return tessellate.FreeEdgeCount(tessellate.CalculateBodyFacets(body, q).Mesh)
 }
 
 // meshFoldEdges is the body's total fold-edge count over its per-face meshes — folds are a per-face
 // property, so they are summed rather than read off the merged mesh.
-func meshFoldEdges(facets *ops.BodyFacets) int {
+func meshFoldEdges(facets *tessellate.BodyFacets) int {
 	n := 0
 	for _, m := range facets.FaceMeshes {
 		n += ops.FoldEdgeCount(m)

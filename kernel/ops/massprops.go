@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -32,11 +33,11 @@ func BodyGeometryProperties(b *topo.Body, q Quality) GeometryProperties {
 	if p, ok := AnalyticGeometryProperties(b); ok {
 		return p
 	}
-	mesh, _ := TessellateBody(b, q)
-	return meshGeometryProperties(mesh)
+	mesh, _ := tessellate.TessellateBody(b, q)
+	return MeshGeometryProperties(mesh)
 }
 
-// meshGeometryProperties is the tessellated integral: no longer the kernel's mass-properties
+// MeshGeometryProperties is the tessellated integral: no longer the kernel's mass-properties
 // oracle (M48/C3 #3454), but the named fallback BodyGeometryProperties takes for a body the
 // analytic path declines, and the display statistic for a mesh that has no B-rep behind it at all
 // (an imported soup). It is a pure computation over a triangle mesh, factored out so it is testable
@@ -44,16 +45,16 @@ func BodyGeometryProperties(b *topo.Body, q Quality) GeometryProperties {
 // the signed tetra volumes sum to the enclosed volume regardless of where the origin sits
 // (the parts outside the body cancel), and the volume-weighted tetra centroids give the
 // body centroid. The triangles are first oriented consistently outward TOPOLOGICALLY (shared-
-// edge 2-colouring, see consistentOutwardFlips), so the sum is correct even when a tessellator
+// edge 2-colouring, see tessellate.ConsistentOutwardFlips), so the sum is correct even when a tessellator
 // does not guarantee globally consistent winding across faces, and — unlike the old shading-
 // normal test — without spurious per-triangle flips at saddles/silhouette slivers
 // (Oblikovati/Oblikovati#1318). It stays translation-invariant (see TestVolumeIsTranslationInvariant).
-func meshGeometryProperties(mesh *Mesh) GeometryProperties {
-	flips := consistentOutwardFlips(mesh)
+func MeshGeometryProperties(mesh *Mesh) GeometryProperties {
+	flips := tessellate.ConsistentOutwardFlips(mesh)
 	origin := math.P3(0, 0, 0)
 	var vol, area, cx, cy, cz float64
 	for ti, n := 0, mesh.TriangleCount(); ti < n; ti++ {
-		a, b, c := triVerts(mesh, ti)
+		a, b, c := tessellate.TriVerts(mesh, ti)
 		if flips[ti] {
 			b, c = c, b
 		}

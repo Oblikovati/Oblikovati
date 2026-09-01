@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -63,7 +64,7 @@ func TestConeCapCrossingCutIsWatertightAndValid(t *testing.T) {
 			r.Manifold, r.Closed, r.OrientationOK, r.EulerConsistent, r.Issues)
 	}
 	for _, gq := range certGateQualities() {
-		mesh, _ := TessellateBody(res, gq.q)
+		mesh, _ := tessellate.TessellateBody(res, gq.q)
 		if free := freeEdgeCount(mesh); free != 0 {
 			t.Errorf("%s quality: cone-cap cut tessellated with %d free edges; want 0 — a cross-face crack at the cap ellipse", gq.name, free)
 		}
@@ -136,7 +137,7 @@ func TestConeCapCrossingCutMembershipMatchesCSG(t *testing.T) {
 		zCap := stdmath.Min(stdmath.Abs(float64(p.Z)), stdmath.Abs(float64(p.Z)-10))
 		return rWall < shell || rCone < shell || zCap < shell
 	}
-	mesh, _ := TessellateBody(res, DefaultQuality())
+	mesh, _ := tessellate.TessellateBody(res, DefaultQuality())
 	mismatches := 0
 	const n = 60
 	for i := range n {

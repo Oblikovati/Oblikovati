@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -23,7 +24,7 @@ import (
 // of a curve.
 //
 // THE ONE REFINEMENT, AND WHY IT IS NOT TESSELLATION. On a PERIODIC surface the chart is only defined
-// up to whole periods, and the unwrap that develops a loop assumes each step is the SHORT way round
+// up to whole periods, and the tessellate.Unwrap that develops a loop assumes each step is the SHORT way round
 // (wrapPi). One point per edge breaks that assumption the moment an edge spans more than half a period
 // — a 270° rim arc unwraps as −90° and the developed polygon is nonsense. So a step is split until it
 // AGREES WITH ITS OWN HALVES (stepAgreesWithHalves), the standard "does refining change the answer"
@@ -45,7 +46,7 @@ import (
 // boundary, and only the bow-into-each-other case is missed.
 
 // chartStepsCap bounds the periodicity refinement (a COUNT, not a tolerance): an edge still leaping a
-// half period after 32 pieces winds the axis several times over, and unwrap declines such a loop
+// half period after 32 pieces winds the axis several times over, and tessellate.Unwrap declines such a loop
 // anyway. chartStepAgreement is the residual below which a step and the sum of its halves are the same
 // angle — many decades above double-precision noise on a parameter and many below a half period.
 const (
@@ -166,7 +167,7 @@ func chartStepsFor(u *topo.EdgeUse, s geom.Surface) int {
 // surfaceIsPeriodic reports whether s wraps in either parameter direction, the only case in which a
 // ring step can be unwrapped the wrong way.
 func surfaceIsPeriodic(s geom.Surface) bool {
-	return isPeriodic(s.UDomain()) || isPeriodic(s.VDomain())
+	return tessellate.IsPeriodic(s.UDomain()) || tessellate.IsPeriodic(s.VDomain())
 }
 
 // chartStepsAgree reports whether splitting the edge into n pieces already renders it faithfully: every
@@ -195,10 +196,10 @@ func stepAgreesWithHalves(s geom.Surface, pa, pm, pb math.Point3) bool {
 // direction reports 0, which agrees trivially and so never forces a split.
 func periodicParams(s geom.Surface, p math.Point3) (u, v float64) {
 	u, v = s.ParamAt(p)
-	if !isPeriodic(s.UDomain()) {
+	if !tessellate.IsPeriodic(s.UDomain()) {
 		u = 0
 	}
-	if !isPeriodic(s.VDomain()) {
+	if !tessellate.IsPeriodic(s.VDomain()) {
 		v = 0
 	}
 	return u, v

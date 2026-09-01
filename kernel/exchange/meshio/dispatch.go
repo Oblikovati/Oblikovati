@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -192,7 +193,7 @@ func TessellateBodies(bodies []*topo.Body, q ops.Quality) ([]BodyMesh, error) {
 		if b == nil {
 			return nil, fmt.Errorf("tessellate: body at index %d is nil", i)
 		}
-		mesh, _ := ops.TessellateBody(b, q)
+		mesh, _ := tessellate.TessellateBody(b, q)
 		if mesh == nil {
 			return nil, fmt.Errorf("tessellate body %d: nil mesh", b.ID())
 		}

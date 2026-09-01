@@ -66,7 +66,7 @@ func (analyticSphereProvider) Build(loop RailLoop, scale Resolution) (CornerBlen
 }
 
 // sphereFitRelTol is Fits' cheap classification tolerance, relative to a representative arc radius —
-// Build's certifySphere (gated by scale.Weld()/seamAngularTol via Certificate.Valid) is the real,
+// Build's certifySphere (gated by scale.Weld()/tessellate.SeamAngularTol via Certificate.Valid) is the real,
 // model-relative admissibility gate (ADR-0042); this one only decides whether Build is worth trying.
 const sphereFitRelTol = 1e-6
 
@@ -158,7 +158,7 @@ func sampleCurveN(c geom.Curve3, n int, rev bool) []math.Point3 {
 // point, ADR-C4-2/F3) AND, per sample i, the base curve RESTRICTED to that sample's little sub-span
 // [t_i, t_{i+1}] (a geom.TrimmedCurve3). Every NORMAL kernel edge carries its curve trimmed to exactly
 // that edge (curveSpan==vGap); a canal boundary sub-edge must too, else the shared tessellator
-// (sampleEdgeCurve) sweeps the WHOLE rail once per sub-edge, self-overlapping the loop → the cylinder
+// (tessellate.SampleEdgeCurve) sweeps the WHOLE rail once per sub-edge, self-overlapping the loop → the cylinder
 // mesher tiles exactly half and the NURBS patch mesher folds+diverges (N7 defect, 2000× slowdown;
 // .superpowers/sdd/n7-tessellation-diagnosis.md). The far endpoint is excluded from pts (open sampling,
 // like sampleCurve3Open) but IS the Hi of the last sub-curve, so consecutive sides still concatenate

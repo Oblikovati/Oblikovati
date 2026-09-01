@@ -113,7 +113,7 @@ func torusContactCircle(host geom.Surface, tor geom.Torus, res Resolution) (math
 // §2): the arm's rolling ball, centred on the torus spine circle (radius R_s at apex-height h on the
 // axis), touches the host cone along the circle of radius s*·sinα centred on the axis at A + s*·cosα·â,
 // with s* = h·cosα + R_s·sinα. The result circle lies in a plane ⊥ â (the same frame as the torus, so
-// curvedHostArc's [0→φ*] sweep — including D9's reflex unwrap for C6's 270° edge — lands the pinch at
+// curvedHostArc's [0→φ*] sweep — including D9's reflex tessellate.Unwrap for C6's 270° edge — lands the pinch at
 // PointAt(1)). Rejects a torus not coaxial with the cone or whose tube is not internally tangent
 // (h·sinα − R_s·cosα ≠ r) — CONVEX-external only (the do-no-harm firewall
 // TestConvexContactCircleRejectsConcaveTorus pins this: a genuinely edge-concave cove torus (S2's

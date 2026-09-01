@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -44,7 +45,7 @@ func TestExtrusionFixturesTessellateWatertight(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: import: %v", id, err)
 		}
-		m, _ := ops.TessellateBody(b, ops.Quality{})
+		m, _ := tessellate.TessellateBody(b, ops.Quality{})
 		if open := openMeshEdgeCount(m); open != 0 {
 			t.Errorf("%s: %d non-manifold mesh edges, want 0 (watertight)", id, open)
 		}

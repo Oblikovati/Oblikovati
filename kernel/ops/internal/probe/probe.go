@@ -17,6 +17,7 @@ import (
 	"slices"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -249,4 +250,36 @@ func Sign(x float64) int {
 		return -1
 	}
 	return 0
+}
+
+// meetOfPlanes returns the least-squares meeting point of ≥3 planes (exact for 3).
+func MeetOfPlanes(planes []geom.Plane) (math.Point3, bool) {
+	var a [3][3]float64
+	var b [3]float64
+	for _, pl := range planes {
+		n := pl.Normal()
+		d := n.Dot(pl.Origin.AsVector())
+		nv := [3]float64{n.X, n.Y, n.Z}
+		for i := range 3 {
+			for j := range 3 {
+				a[i][j] += nv[i] * nv[j]
+			}
+			b[i] += nv[i] * d
+		}
+	}
+	x, ok := retopo.Solve3(a, b)
+	return math.P3(x[0], x[1], x[2]), ok
+}
+
+// TwoPlaneLine returns a point and direction of the intersection line of two planes, or
+// ok=false when they are parallel.
+func TwoPlaneLine(a, b geom.Plane) (math.Point3, math.Vector3, bool) {
+	na, nb := a.Normal(), b.Normal()
+	dir := na.Cross(nb)
+	if dir.LengthSquared() < 1e-18 {
+		return math.Point3{}, math.Vector3{}, false
+	}
+	da, db := na.Dot(a.Origin.AsVector()), nb.Dot(b.Origin.AsVector())
+	num := nb.Cross(dir).Scale(da).Add(dir.Cross(na).Scale(db))
+	return math.P3(0, 0, 0).TranslateBy(num.Scale(1 / dir.LengthSquared())), dir, true
 }

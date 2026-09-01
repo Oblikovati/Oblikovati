@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -134,8 +135,8 @@ func assertSurfaceMomentsAgree(t *testing.T, b *topo.Body, tol float64) {
 	}
 	mt, _ := analyticBodyTerms(b)
 	am, askew := surfaceCentroidalMoments(at, geometryFromTerms(mt).Centroid)
-	mesh, _ := TessellateBody(b, Quality{ChordTolerance: 1e-4, AngleTolerance: 0.25 * stdmath.Pi / 180})
-	props := meshGeometryProperties(mesh)
+	mesh, _ := tessellate.TessellateBody(b, Quality{ChordTolerance: 1e-4, AngleTolerance: 0.25 * stdmath.Pi / 180})
+	props := MeshGeometryProperties(mesh)
 	mm, mskew := centroidalMoments(mesh, props)
 	for i := range am {
 		if !relClose(am[i], mm[i], tol) {

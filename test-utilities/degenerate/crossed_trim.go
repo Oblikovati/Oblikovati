@@ -25,7 +25,7 @@ import (
 var crossedTrimUV = [][2]float64{{0, 0}, {0.6, 1.2}, {0.1, 4}, {0.7, 0.4}}
 
 // CrossedTrimBody returns an open body whose faces each carry a self-crossing trim boundary, so
-// tessellating it raises ops.CodePatchCoverage — one Defect per face. It has TWO such faces (the
+// tessellating it raises tessellate.CodePatchCoverage — one Defect per face. It has TWO such faces (the
 // same bow-tie at two heights on one elliptical cone) so a consumer that aggregates per-face
 // diagnostics is exercised on a repeat, not just on a single occurrence.
 //
@@ -35,7 +35,7 @@ var crossedTrimUV = [][2]float64{{0, 0}, {0.6, 1.2}, {0.1, 4}, {0.7, 0.4}}
 //
 // Example:
 //
-//	m, _ := ops.TessellateBody(degenerate.CrossedTrimBody(), ops.DefaultQuality())
+//	m, _ := tessellate.TessellateBody(degenerate.CrossedTrimBody(), ops.DefaultQuality())
 //	// m.Diagnostics carries two tessellate.patch-coverage defects
 func CrossedTrimBody() *topo.Body {
 	cone, err := geom.NewEllipticalCone(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 0.5, 0.3)

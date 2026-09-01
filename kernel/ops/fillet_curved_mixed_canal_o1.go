@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -72,7 +73,7 @@ func (f o1BallFrame) centerAt(alpha float64) (math.Point3, bool) {
 func newO1BallFrame(midAxisOrigin math.Point3, midAxis math.Vector3, lat geom.Cylinder, rho, tube float64) (o1BallFrame, bool) {
 	k := unit(midAxis)
 	j := unit(lat.AxisDir.AsVector())
-	if stdmath.Abs(float64(j.Dot(k))) > seamAngularTol {
+	if stdmath.Abs(float64(j.Dot(k))) > tessellate.SeamAngularTol {
 		return o1BallFrame{}, false
 	}
 	u := j.Cross(k)

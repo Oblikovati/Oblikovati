@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
 // TestStarvedRailAspectGateOff is the do-no-harm sanity check at the unit level (the CLAUDE.md "every
 // new function gets a test" rule): a LOW-aspect cylindrical strip (arc length comparable to height,
-// A well under aspectDensifyThreshold) must leave discretizeEdge's straight-rail output at exactly 2
+// A well under tessellate.AspectDensifyThreshold) must leave discretizeEdge's straight-rail output at exactly 2
 // points — byte-identical to the pre-#2009 path — even though the rail is still perfectly straight.
 // Complements the fingerprint-pin byte-identity sweep (T6 A=2.13 and friends) with a minimal,
 // self-contained repro that does not depend on the corpus fixtures.
@@ -21,13 +22,13 @@ func TestStarvedRailAspectGateOff(t *testing.T) {
 	const r, sweep, h = 2.0, 1.0, 2.5 // arc length r*sweep=2, height 2.5 → aspect 1.25 (<= 4)
 	s := cylindricalStripSurface(t, r, sweep, h)
 	face, rails := cylindricalStripFace(t, s, r, sweep, h)
-	su, sv := metricScale(s)
-	if a := faceAspect(s, su, sv); a > aspectDensifyThreshold {
-		t.Fatalf("low-aspect fixture measured aspect=%.2f, want <= %.1f", a, aspectDensifyThreshold)
+	su, sv := tessellate.MetricScale(s)
+	if a := tessellate.FaceAspect(s, su, sv); a > tessellate.AspectDensifyThreshold {
+		t.Fatalf("low-aspect fixture measured aspect=%.2f, want <= %.1f", a, tessellate.AspectDensifyThreshold)
 	}
 	_ = face
 	for i, e := range rails {
-		pts := discretizeEdge(e, DefaultQuality())
+		pts := tessellate.DiscretizeEdge(e, DefaultQuality())
 		if len(pts) != 2 {
 			t.Errorf("rail %d: discretizeEdge returned %d points at aspect<=threshold, want 2 (byte-identical do-no-harm path)", i, len(pts))
 		}
@@ -73,7 +74,7 @@ func TestStarvedRailNoCrackAgainstNeighbourFace(t *testing.T) {
 
 	// The neighbour: a plain rectangular PLANE hanging off the SAME railV0 edge (reversed, the
 	// standard two-face-per-edge B-rep convention), width w in an arbitrary outward direction. A
-	// low-aspect, non-B-spline face — the ordinary earclip path never gates on faceAspect at all.
+	// low-aspect, non-B-spline face — the ordinary earclip path never gates on tessellate.FaceAspect at all.
 	const w = 5.0
 	outward := math.V3(0, -1, 0)
 	c20 := c10.TranslateBy(outward.Scale(w))
@@ -96,14 +97,14 @@ func TestStarvedRailNoCrackAgainstNeighbourFace(t *testing.T) {
 		topo.OuterLoop(topo.Fwd(railV0), topo.Fwd(eB1), topo.Fwd(eB2), topo.Fwd(eB3)))
 
 	for _, gq := range gateQualities() {
-		canonical := discretizeEdge(railV0, gq.q)
+		canonical := tessellate.DiscretizeEdge(railV0, gq.q)
 		if len(canonical) <= 2 {
 			t.Fatalf("%s quality: shared rail did not densify (len=%d); high-aspect neighbour faceA should have "+
 				"triggered it", gq.name, len(canonical))
 		}
 
-		meshA := TessellateFace(faceA, gq.q)
-		meshB := TessellateFace(faceB, gq.q)
+		meshA := tessellate.TessellateFace(faceA, gq.q)
+		meshB := tessellate.TessellateFace(faceB, gq.q)
 		if meshA == nil || meshB == nil {
 			t.Fatalf("%s quality: TessellateFace returned nil (faceA=%v faceB=%v)", gq.name, meshA == nil, meshB == nil)
 		}
@@ -123,8 +124,8 @@ func TestStarvedRailNoCrackAgainstNeighbourFace(t *testing.T) {
 		// conformance ALONG THE SHARED RAIL specifically: each of its N-1 segments must be used by
 		// EXACTLY 2 triangles (one from meshA, one from meshB) after welding.
 		merged := &Mesh{}
-		mergeMesh(merged, meshA)
-		mergeMesh(merged, meshB)
+		tessellate.MergeMesh(merged, meshA)
+		tessellate.MergeMesh(merged, meshB)
 		for i, deg := range railEdgeDegrees(t, merged, canonical) {
 			if deg != 2 {
 				t.Errorf("%s quality: rail segment %d (%v→%v) has %d incident triangles, want 2 — a crack",
@@ -143,13 +144,13 @@ func railEdgeDegrees(t *testing.T, m *Mesh, rail []math.Point3) []int {
 	grid := ResolutionForPoints(m.Positions).Weld()
 	canon := map[[3]int64]int{}
 	for i, p := range m.Positions {
-		if _, ok := canon[weldKey(p, grid)]; !ok {
-			canon[weldKey(p, grid)] = i
+		if _, ok := canon[tessellate.WeldKey(p, grid)]; !ok {
+			canon[tessellate.WeldKey(p, grid)] = i
 		}
 	}
 	weld := make([]int, len(m.Positions))
 	for i, p := range m.Positions {
-		weld[i] = canon[weldKey(p, grid)]
+		weld[i] = canon[tessellate.WeldKey(p, grid)]
 	}
 	deg := map[[2]int]int{}
 	for tr := 0; 3*tr+2 < len(m.Indices); tr++ {
@@ -164,8 +165,8 @@ func railEdgeDegrees(t *testing.T, m *Mesh, rail []math.Point3) []int {
 	}
 	degrees := make([]int, len(rail)-1)
 	for i := 0; i+1 < len(rail); i++ {
-		a, aok := canon[weldKey(rail[i], grid)]
-		b, bok := canon[weldKey(rail[i+1], grid)]
+		a, aok := canon[tessellate.WeldKey(rail[i], grid)]
+		b, bok := canon[tessellate.WeldKey(rail[i+1], grid)]
 		if !aok || !bok {
 			t.Fatalf("rail point %d or %d not found in merged mesh", i, i+1)
 		}

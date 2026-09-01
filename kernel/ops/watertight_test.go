@@ -8,17 +8,18 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// freeEdgeCount is the package's watertightness metric, delegating to the production FreeEdgeCount so
+// freeEdgeCount is the package's watertightness metric, delegating to the production tessellate.FreeEdgeCount so
 // every gate in this package welds at the MODEL's own resolution. It used to carry its own fixed 1e-6
 // grid; that over-merges a model whose features are finer than 1e-6 and reports the over-merge as a free
-// edge (see FreeEdgeCount's receipt on the near-pinch crossing).
+// edge (see tessellate.FreeEdgeCount's receipt on the near-pinch crossing).
 func freeEdgeCount(m *Mesh) int {
-	return FreeEdgeCount(m)
+	return tessellate.FreeEdgeCount(m)
 }
 
 // TestCleanCurvedSolidIsWatertight pins the invariant that a clean curved solid tessellates watertight
@@ -34,7 +35,7 @@ func TestCleanCurvedSolidIsWatertight(t *testing.T) {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
 	for _, gq := range gateQualities() {
-		mesh, _ := TessellateBody(cyl, gq.q)
+		mesh, _ := tessellate.TessellateBody(cyl, gq.q)
 		if free := freeEdgeCount(mesh); free != 0 {
 			t.Errorf("%s quality: clean cylinder solid tessellated with %d free edges; want 0 (watertight)", gq.name, free)
 		}
@@ -69,7 +70,7 @@ func TestImportedNurbsDuctWatertight(t *testing.T) {
 	for _, gq := range gateQualities() {
 		total := 0
 		for i, body := range bodies {
-			mesh, _ := TessellateBody(body, gq.q)
+			mesh, _ := tessellate.TessellateBody(body, gq.q)
 			free := freeEdgeCount(mesh)
 			total += free
 			if free != 0 {
@@ -115,7 +116,7 @@ func TestImportedNurbsDuctVolumeAndFolds(t *testing.T) {
 		var volume float64
 		folds := 0
 		for _, body := range bodies {
-			mesh, _ := TessellateBody(body, gq.q)
+			mesh, _ := tessellate.TessellateBody(body, gq.q)
 			folds += validate.FoldEdgeCount(mesh)
 			volume += BodyGeometryProperties(body, gq.q).Volume
 		}

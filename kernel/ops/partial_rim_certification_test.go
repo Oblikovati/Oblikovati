@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -91,7 +92,7 @@ func TestPartialRimDisjointCutMembershipMatchesCSG(t *testing.T) {
 		zCap := stdmath.Min(stdmath.Abs(float64(p.Z)), stdmath.Abs(float64(p.Z)-10))
 		return rWall < shell || rNotch < shell || rRod < shell || zCap < shell
 	}
-	mesh, _ := TessellateBody(res, DefaultQuality())
+	mesh, _ := tessellate.TessellateBody(res, DefaultQuality())
 	mismatches := 0
 	const n = 60
 	for i := range n {

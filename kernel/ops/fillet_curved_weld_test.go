@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -269,7 +270,7 @@ func TestFilletEdges_B3VolumeRegression(t *testing.T) {
 	if rep := Validate(body); !rep.Valid || !rep.HolesContained {
 		t.Fatalf("B3 weld invalid: Valid=%v HolesContained=%v issues=%v", rep.Valid, rep.HolesContained, rep.Issues)
 	}
-	mesh, _ := TessellateBody(body, DefaultQuality())
+	mesh, _ := tessellate.TessellateBody(body, DefaultQuality())
 	if rel := relErrVol(bodyVolume(mesh), b3OracleVolume); rel > 0.01 {
 		t.Fatalf("B3 tessellated volume %.2f, want %.1f ±1%% (rel %.4f) — a wrong-sign/mis-trimmed weld",
 			bodyVolume(mesh), b3OracleVolume, rel)
@@ -298,13 +299,13 @@ func assertInsideOutTorusFailsVolume(t *testing.T, body *topo.Body) {
 func torusFlippedVolumes(body *topo.Body) (base, flipped float64) {
 	merged, mutated := &Mesh{}, &Mesh{}
 	for _, f := range body.Faces() {
-		fm := TessellateFace(f, DefaultQuality())
-		mergeMesh(merged, fm)
+		fm := tessellate.TessellateFace(f, DefaultQuality())
+		tessellate.MergeMesh(merged, fm)
 		if _, isTorus := f.Geometry().(geom.Torus); isTorus {
-			mergeMesh(mutated, reversedWinding(fm))
+			tessellate.MergeMesh(mutated, reversedWinding(fm))
 			continue
 		}
-		mergeMesh(mutated, fm)
+		tessellate.MergeMesh(mutated, fm)
 	}
 	return bodyVolume(merged), bodyVolume(mutated)
 }

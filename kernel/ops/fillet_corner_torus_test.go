@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -161,7 +162,7 @@ func edgeKeysAtVertex(b *topo.Body, p math.Point3) [][]byte {
 // faceTriArea sums the Property-quality tessellation triangle areas of face f — the trimmed corner
 // patch's area (a torus patch has no closed-form area from the body alone; its mesh area is measured).
 func faceTriArea(f *topo.Face) float64 {
-	m := TessellateFace(f, PropertyQuality())
+	m := tessellate.TessellateFace(f, PropertyQuality())
 	if m == nil {
 		return 0
 	}

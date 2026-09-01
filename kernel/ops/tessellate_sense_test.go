@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -41,8 +42,8 @@ func unitQuadFace(reversed bool) *topo.Face {
 func TestReversedFaceFlipsNormalsAndWinding(t *testing.T) {
 	t.Parallel()
 	q := ops.DefaultQuality()
-	plain := ops.TessellateFace(unitQuadFace(false), q)
-	rev := ops.TessellateFace(unitQuadFace(true), q)
+	plain := tessellate.TessellateFace(unitQuadFace(false), q)
+	rev := tessellate.TessellateFace(unitQuadFace(true), q)
 	if plain.TriangleCount() != rev.TriangleCount() || plain.VertexCount() != rev.VertexCount() {
 		t.Fatalf("reversed face changed mesh size: %d/%d vs %d/%d", plain.TriangleCount(), plain.VertexCount(), rev.TriangleCount(), rev.VertexCount())
 	}

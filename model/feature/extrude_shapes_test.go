@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -344,7 +345,7 @@ func polygonArea(poly []math.Point2) float64 {
 // tetrahedron sum (divergence theorem). Each triangle is first oriented outward using
 // its vertex normals, so the sum is correct regardless of the tessellator's winding.
 func meshVolume(b *topo.Body) float64 {
-	mesh, _ := ops.TessellateBody(b, ops.DefaultQuality())
+	mesh, _ := tessellate.TessellateBody(b, ops.DefaultQuality())
 	vol := 0.0
 	for t := 0; t < mesh.TriangleCount(); t++ {
 		i, j, k := mesh.Indices[3*t], mesh.Indices[3*t+1], mesh.Indices[3*t+2]

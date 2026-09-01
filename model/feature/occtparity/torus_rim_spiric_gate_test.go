@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -104,7 +104,7 @@ func TestWaveETorusRimWatertight(t *testing.T) {
 			assertWatertight(t, c.tc.name, body, len(c.tc.drawexe))
 			assertPositiveVolume(t, c.tc.name, body)
 			for _, gq := range gateQualities() {
-				if n := ops.FreeEdgeCount(ops.CalculateBodyFacets(body, gq.q).Mesh); n != 0 {
+				if n := tessellate.FreeEdgeCount(tessellate.CalculateBodyFacets(body, gq.q).Mesh); n != 0 {
 					t.Errorf("%s: %d free edges at %s quality, want 0", c.tc.name, n, gq.name)
 				}
 			}

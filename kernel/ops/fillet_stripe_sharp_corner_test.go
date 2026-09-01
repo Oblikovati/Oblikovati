@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
 )
@@ -149,7 +150,7 @@ func TestSharpCornerRunOutDropsTheDoubleCountedArea(t *testing.T) {
 	res := sharpCornerRunOut(t)
 	notch := r * r * (1 - stdmath.Pi/4)
 	const before = 94.207048
-	mesh, _ := ops.TessellateBody(res, ops.DefaultQuality())
+	mesh, _ := tessellate.TessellateBody(res, ops.DefaultQuality())
 	got := meshArea(mesh)
 	want := before - 4*notch
 	if stdmath.Abs(got-want) > 0.01 {
@@ -169,8 +170,8 @@ func TestSharpCornerRunOutAreaConvergesOnTheExactSurface(t *testing.T) {
 	if !ok {
 		t.Fatal("the run-out body no longer integrates analytically; the exact area has no oracle")
 	}
-	coarse, _ := ops.TessellateBody(res, ops.DefaultQuality())
-	fine, _ := ops.TessellateBody(res, ops.PropertyQuality())
+	coarse, _ := tessellate.TessellateBody(res, ops.DefaultQuality())
+	fine, _ := tessellate.TessellateBody(res, ops.PropertyQuality())
 	cArea, fArea := meshArea(coarse), meshArea(fine)
 	if !(cArea < fArea && fArea < exact.Area) {
 		t.Errorf("areas must rise coarse < fine < exact; got %.6f, %.6f, %.6f", cArea, fArea, exact.Area)

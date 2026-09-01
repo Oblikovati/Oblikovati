@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/meshbool"
+	"oblikovati.org/kernel/ops/tessellate"
 )
 
 // A near-tangent cap patch (#2247): N owns the long edge (p→q); the cap (p,m,q) bridges to
@@ -55,7 +56,7 @@ func sliverBoundaryFingerprint(soup meshbool.TaggedSoup) []string {
 	return out
 }
 
-// TestCollapseSliversRemovesCapWatertight pins the fix: collapseSlivers drops the near-tangent
+// TestCollapseSliversRemovesCapWatertight pins the fix: tessellate.CollapseSlivers drops the near-tangent
 // cap and re-stitches its long-edge neighbour, so no sub-resolution sliver survives AND the
 // patch boundary (its watertightness fingerprint) is exactly preserved.
 func TestCollapseSliversRemovesCapWatertight(t *testing.T) {
@@ -63,7 +64,7 @@ func TestCollapseSliversRemovesCapWatertight(t *testing.T) {
 	in := capPatch()
 	before := sliverBoundaryFingerprint(in)
 
-	out := collapseSlivers(in, 1e-9)
+	out := tessellate.CollapseSlivers(in, 1e-9)
 
 	// The cap (near-collinear, area² ~ (4·1e-12)² ≈ 1.6e-23) must be gone: every surviving
 	// triangle has a real area. Threshold well above the cap, well below the real triangles.
@@ -91,7 +92,7 @@ func TestCollapseSliversLeavesCleanMeshUnchanged(t *testing.T) {
 		Tris: [][3]meshbool.Point{{p, q, x}, {q, p, y}},
 		Tags: []int{0, 1},
 	}
-	out := collapseSlivers(clean, 1e-9)
+	out := tessellate.CollapseSlivers(clean, 1e-9)
 	if len(out.Tris) != 2 {
 		t.Fatalf("clean mesh changed: %d triangles, want 2", len(out.Tris))
 	}

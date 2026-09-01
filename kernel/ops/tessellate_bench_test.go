@@ -12,6 +12,7 @@ import (
 
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -55,7 +56,7 @@ func BenchmarkTessellateBody(b *testing.B) {
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				for _, body := range bodies {
-					TessellateBody(body, DefaultQuality())
+					tessellate.TessellateBody(body, DefaultQuality())
 				}
 			}
 		})
@@ -69,7 +70,7 @@ func BenchmarkConstrainedDelaunay(b *testing.B) {
 		pts, loops := circleWithInteriorGrid(n)
 		b.Run(fmt.Sprintf("boundary%d", n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				constrainedDelaunay(pts, loops)
+				tessellate.ConstrainedDelaunay(pts, loops)
 			}
 		})
 	}
@@ -111,7 +112,7 @@ func TestTessellationBudget(t *testing.T) {
 	start := time.Now()
 	for _, bs := range bodies {
 		for _, body := range bs {
-			TessellateBody(body, DefaultQuality())
+			tessellate.TessellateBody(body, DefaultQuality())
 		}
 	}
 	if d := time.Since(start); d > budget {
@@ -133,7 +134,7 @@ func TestHeavyModelBudget(t *testing.T) {
 	const budget = 700 * time.Millisecond // ~14× the ~50 ms baseline; the metricWall freeze was 3.5 s
 	start := time.Now()
 	for _, body := range bodies {
-		TessellateBody(body, DefaultQuality())
+		tessellate.TessellateBody(body, DefaultQuality())
 	}
 	if d := time.Since(start); d > budget {
 		t.Errorf("tessellating %s took %v; budget %v — a mesher perf regression?", path, d, budget)

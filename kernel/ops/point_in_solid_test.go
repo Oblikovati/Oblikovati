@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/tessellate"
 	m "oblikovati.org/math"
 )
 
@@ -24,7 +25,7 @@ func TestSignedSolidAngleClosedMeshIsQuantized(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
 	}
-	mesh, _ := TessellateBody(cube, DefaultQuality())
+	mesh, _ := tessellate.TessellateBody(cube, DefaultQuality())
 	if w := windingNumber(mesh, m.P3(1, 1, 1)); math.Abs(w-1) > 1e-6 {
 		t.Errorf("interior winding = %g, want 1", w)
 	}
@@ -86,7 +87,7 @@ func TestSphereContainmentMatchesAnalytic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidSphere: %v", err)
 	}
-	mesh, _ := TessellateBody(sphere, Quality{ChordTolerance: 0.02, AngleTolerance: 5 * math.Pi / 180})
+	mesh, _ := tessellate.TessellateBody(sphere, Quality{ChordTolerance: 0.02, AngleTolerance: 5 * math.Pi / 180})
 	shell := 0.1 // exclude points within this band of the surface (chord/sagitta ambiguity)
 	rng := rand.New(rand.NewSource(1317))
 	tested, mism := 0, 0
@@ -126,7 +127,7 @@ func TestTorusContainmentMatchesAnalytic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidTorus: %v", err)
 	}
-	mesh, _ := TessellateBody(torus, Quality{ChordTolerance: 0.02, AngleTolerance: 4 * math.Pi / 180})
+	mesh, _ := tessellate.TessellateBody(torus, Quality{ChordTolerance: 0.02, AngleTolerance: 4 * math.Pi / 180})
 	// Sanity: the axis centre and the hole are OUTSIDE the solid; the tube core is INSIDE.
 	if pointInMesh(mesh, m.P3(0, 0, 0)) {
 		t.Error("torus axis centre classified inside (it is in the hole)")

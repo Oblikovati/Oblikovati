@@ -3,6 +3,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -34,10 +35,10 @@ func mergeHoleIntoNotch(outer, hole filletLoop, nodes [2]crossing,
 // nodes[1] and ends at nodes[0] (Task 2's fixed dip-range convention: dip = nodes[0].I+1..nodes[1].I,
 // host = the complement), so it is reversed exactly when nodes[0] is the nearer one.
 //
-// (The brief's alternative — try native, keep it unless loopsSelfCross flags it, else reverse —
+// (The brief's alternative — try native, keep it unless tessellate.LoopsSelfCross flags it, else reverse —
 // has a blind spot here: the WRONG pairing's connector chord lies COLLINEAR with, and passes
 // through, the arc's own far endpoint (both sit on the straight receded-boundary line), which is a
-// touch/overlap, not a transversal crossing, so segmentsCross never flags it — the wrong pairing
+// touch/overlap, not a transversal crossing, so tessellate.SegmentsCross never flags it — the wrong pairing
 // silently produces a self-consistent but semantically inverted loop (area 760+426.9 instead of
 // 760-426.9, confirmed while debugging RED→GREEN, see task-5-report.md). The near/far pairing below
 // is exact and sidesteps the blind spot entirely; selfCrosses stays as the final honest-reject net.)
@@ -168,5 +169,5 @@ func spliceSubArc(outer filletLoop, seg int, arc filletLoop) filletLoop {
 // selfCrosses reports whether the loop's 2D projection is a non-simple (self-intersecting) polygon
 // — the orientation gate mergeHoleIntoNotch uses to pick the splice direction that stays simple.
 func selfCrosses(loop filletLoop, flat func(math.Point3) math.Point2) bool {
-	return loopsSelfCross(project2D(loop.pts, flat), nil)
+	return tessellate.LoopsSelfCross(tessellate.Project2D(loop.pts, flat), nil)
 }

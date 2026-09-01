@@ -22,7 +22,7 @@ type gateQuality struct {
 // Example:
 //
 //	for _, gq := range gateQualities() {
-//		mesh, _ := TessellateBody(b, gq.q)
+//		mesh, _ := tessellate.TessellateBody(b, gq.q)
 //		if free := freeEdgeCount(mesh); free != 0 {
 //			t.Errorf("%s quality: %d free edges; want 0 (watertight)", gq.name, free)
 //		}

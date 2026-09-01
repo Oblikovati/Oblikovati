@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -80,7 +81,7 @@ func TestScallopTessellationIsWatertight(t *testing.T) {
 	t.Parallel()
 	res := scallopPlate(t)
 	for _, gq := range gateQualities() {
-		mesh, _ := TessellateBody(res, gq.q)
+		mesh, _ := tessellate.TessellateBody(res, gq.q)
 		if free := cornerMeshFreeEdges(mesh); free != 0 {
 			t.Errorf("%s quality: scallop tessellation has %d free edges (want 0) — a visible crack at the clipped edge",
 				gq.name, free)
@@ -114,7 +115,7 @@ func TestScallopCutViaAnalyticDispatch(t *testing.T) {
 		t.Error("cut kept no analytic cylinder face — the scallop wall was not preserved (CSG fallback)")
 	}
 	for _, gq := range gateQualities() {
-		mesh, _ := TessellateBody(res, gq.q)
+		mesh, _ := tessellate.TessellateBody(res, gq.q)
 		if free := cornerMeshFreeEdges(mesh); free != 0 {
 			t.Errorf("%s quality: dispatched scallop tessellation has %d free edges (want 0)", gq.name, free)
 		}

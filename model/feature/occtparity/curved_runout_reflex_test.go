@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -80,7 +81,7 @@ func assertReflexRunoutMesh(t *testing.T, name string, body *topo.Body, wantTota
 	t.Helper()
 	total := 0.0
 	for _, f := range body.Faces() {
-		m := ops.TessellateFace(f, ops.PropertyQuality())
+		m := tessellate.TessellateFace(f, ops.PropertyQuality())
 		area := ops.MeshArea(m)
 		total += area
 		if area <= 0 || stdmath.IsInf(area, 0) || stdmath.IsNaN(area) {

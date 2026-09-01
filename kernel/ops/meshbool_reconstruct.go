@@ -6,6 +6,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/meshbool"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -163,7 +164,7 @@ func runPoint(verts []meshbool.Point, run meshbool.ArrangementRun, i int) math.P
 // (T-junction re-stitch, #2247), so the arrangement never traces a degenerate face as a
 // "slit" run. Both use the weld tolerance; the meshbool core stays exact.
 func cleanResultSoup(soup meshbool.TaggedSoup, tol float64) meshbool.TaggedSoup {
-	return collapseSlivers(weldResultSoup(soup, tol), tol)
+	return tessellate.CollapseSlivers(weldResultSoup(soup, tol), tol)
 }
 
 // weldResultSoup collapses result vertices that co-refinement placed within tol of each other to

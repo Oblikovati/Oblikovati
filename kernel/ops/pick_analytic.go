@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -100,7 +101,7 @@ func closestOnFaceBoundary(f *topo.Face, p math.Point3, q Quality) (math.Point3,
 	best := math.Point3{}
 	bestD := stdmath.Inf(1)
 	for _, e := range f.Edges() {
-		pl := discretizeEdge(e, q)
+		pl := tessellate.DiscretizeEdge(e, q)
 		for i := 0; i+1 < len(pl); i++ {
 			cp := closestPointOnSegment(p, pl[i], pl[i+1])
 			if d := float64(p.DistanceTo(cp)); d < bestD {

@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -40,7 +41,7 @@ func ProjectSection(body *topo.Body, view View, q ops.Quality) []Segment {
 // The cut plane, its bold outline and hatch are unchanged by the options; only the retained
 // half — the material kept behind the plane — narrows (Depth) or flips (Reverse).
 func ProjectSectionOpts(body *topo.Body, view View, q ops.Quality, o SectionOptions) []Segment {
-	mesh, _ := ops.TessellateBody(body, q)
+	mesh, _ := tessellate.TessellateBody(body, q)
 	bias := max(2*q.ChordTolerance, 0.005*meshDiagonal(mesh)) + 1e-9
 	clip := newSectionClip(view, o)
 	keep := clip.clipMesh(mesh) // occlusion tests against the retained half only
@@ -96,7 +97,7 @@ func (c sectionClip) clipMesh(mesh *ops.Mesh) *ops.Mesh {
 func sectionEdges(body *topo.Body, view View, clip sectionClip, keep *ops.Mesh, q ops.Quality, bias float64) []Segment {
 	var out []Segment
 	for _, e := range body.Edges() {
-		poly := ops.TessellateEdge(e, q)
+		poly := tessellate.TessellateEdge(e, q)
 		key := e.ReferenceKey()
 		for i := 0; i+1 < len(poly); i++ {
 			a, b, ok := clip.clipSegment(poly[i], poly[i+1])
@@ -147,7 +148,7 @@ func sectionOutline(body *topo.Body, view View, q ops.Quality) (loops [][]math.P
 	for _, w := range sec.Wires() {
 		var pts []math.Point2
 		for _, e := range w.Edges() {
-			for _, p := range ops.TessellateEdge(e, q) {
+			for _, p := range tessellate.TessellateEdge(e, q) {
 				pts = append(pts, project2D(view, p))
 			}
 		}

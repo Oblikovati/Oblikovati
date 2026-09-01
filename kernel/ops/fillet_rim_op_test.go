@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -51,7 +52,7 @@ func TestFilletEdgesRoutesRim(t *testing.T) {
 		t.Errorf("torus faces = %d, want 1", tor)
 	}
 	for _, tol := range []float64{0.05, 1e-2, 1e-3, 1e-4} {
-		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
+		m, _ := tessellate.TessellateBody(res, ops.Quality{ChordTolerance: tol})
 		if open := meshOpenEdges(m); open != 0 {
 			t.Errorf("rim fillet at tol %g: %d open edges", tol, open)
 		}

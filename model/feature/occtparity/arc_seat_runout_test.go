@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -110,7 +111,7 @@ func assertArcBandSeat(t *testing.T, body *topo.Body, name string, majorR, minor
 func assertBodyIsWatertightAndSimple(t *testing.T, body *topo.Body, name string) {
 	t.Helper()
 	for _, q := range gateQualities() {
-		if n := ops.FreeEdgeCount(ops.CalculateBodyFacets(body, q.q).Mesh); n != 0 {
+		if n := tessellate.FreeEdgeCount(tessellate.CalculateBodyFacets(body, q.q).Mesh); n != 0 {
 			t.Errorf("%s: %d free edge(s) in the welded mesh at %s quality, want 0", name, n, q.name)
 		}
 	}

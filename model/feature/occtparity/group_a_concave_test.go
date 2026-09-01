@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -51,7 +52,7 @@ func TestGroupAConcaveFoldFreeArea(t *testing.T) {
 			body := caseResultBody(t, tc.name)
 			total := 0.0
 			for _, f := range body.Faces() {
-				m := ops.TessellateFace(f, ops.PropertyQuality())
+				m := tessellate.TessellateFace(f, ops.PropertyQuality())
 				total += assertConcaveFaceSane(t, tc.name, f, m)
 			}
 			if rel := stdmath.Abs(total-tc.area) / tc.area; rel > 0.01 {

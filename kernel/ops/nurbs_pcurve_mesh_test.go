@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -23,17 +24,17 @@ func TestMetricScaleReflectsAnisotropy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewBSplineSurface: %v", err)
 	}
-	su, sv := metricScale(s)
+	su, sv := tessellate.MetricScale(s)
 	if r := su / sv; r < 8 || r > 12 {
-		t.Errorf("metricScale su/sv = %.2f, want ~10 (u spans 10×, v spans 1×)", r)
+		t.Errorf("tessellate.MetricScale su/sv = %.2f, want ~10 (u spans 10×, v spans 1×)", r)
 	}
 }
 
 func TestMetricScaleNeverZero(t *testing.T) {
 	t.Parallel()
-	su, sv := metricScale(cProfileSurfaceOps(t))
+	su, sv := tessellate.MetricScale(cProfileSurfaceOps(t))
 	if su <= 0 || sv <= 0 {
-		t.Errorf("metricScale returned non-positive (%g, %g)", su, sv)
+		t.Errorf("tessellate.MetricScale returned non-positive (%g, %g)", su, sv)
 	}
 }
 

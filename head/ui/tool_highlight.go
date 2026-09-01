@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -43,7 +44,7 @@ func drawSelectable(sel app.Selectable, color [4]float32) []renderer.DrawItem {
 func edgeWire(edges []*topo.Edge, color [4]float32) []renderer.DrawItem {
 	acc := &segAccum{}
 	for _, e := range edges {
-		pts := ops.TessellateEdge(e, ops.DefaultQuality())
+		pts := tessellate.TessellateEdge(e, ops.DefaultQuality())
 		for i := 0; i+1 < len(pts); i++ {
 			acc.addSegment(pts[i], pts[i+1])
 		}
@@ -139,7 +140,7 @@ func regionFillItem(plane sketch.Plane, verts []math.Point2, tris [][3]int, colo
 // of a face highlight (the highlighted face is the front-most hit, so drawing it on top reads
 // cleanly without z-fighting the model's own edges). Used for both preselect and selected faces.
 func faceFill(fh app.FaceHandle, color [4]float32) renderer.DrawItem {
-	mesh := ops.TessellateFace(fh.Face, ops.DefaultQuality())
+	mesh := tessellate.TessellateFace(fh.Face, ops.DefaultQuality())
 	return renderer.DrawItem{
 		Primitive: renderer.Triangles,
 		Positions: mesh.Positions,

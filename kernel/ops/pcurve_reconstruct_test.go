@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/tessellate"
 )
 
 func TestReconstructFacePcurvesRoundTrips(t *testing.T) {
@@ -17,7 +18,7 @@ func TestReconstructFacePcurvesRoundTrips(t *testing.T) {
 	for _, l := range f.Loops() {
 		for _, u := range l.EdgeUses() {
 			pc := u.Pcurve()
-			pts := discretizeEdge(u.Edge(), q)
+			pts := tessellate.DiscretizeEdge(u.Edge(), q)
 			if u.Reversed() {
 				pts = probe.ReversedPoints(pts)
 			}

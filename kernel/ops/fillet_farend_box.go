@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -57,7 +58,7 @@ func faceParamBox(f *topo.Face, tol float64) (paramBox, bool) {
 
 // ringParamBox measures a boundary ring's parameter box on its own surface, or declines when the ring is
 // not a box patch — when any edge varies in BOTH parameters, or when the ring wraps a periodic seam
-// (where the unwrap is not a polygon at all). tol is a model-relative LENGTH: the box is measured in the
+// (where the tessellate.Unwrap is not a polygon at all). tol is a model-relative LENGTH: the box is measured in the
 // surface's metric chart, so an angular parameter is compared after arc-length scaling and no bare
 // epsilon is used (ADR-0042). It is topo-free, the same seam chainRetrimLoop keeps.
 func ringParamBox(s geom.Surface, segs []endSeg, tol float64) (paramBox, bool) {
@@ -65,7 +66,7 @@ func ringParamBox(s geom.Surface, segs []endSeg, tol float64) (paramBox, bool) {
 	if !ok {
 		return paramBox{}, false
 	}
-	su, sv := metricScale(s)
+	su, sv := tessellate.MetricScale(s)
 	for _, e := range edges {
 		if spanOf(e.us)*su > tol && spanOf(e.vs)*sv > tol {
 			return paramBox{}, false // a boundary edge that is not an iso-curve: this ring is not a box
@@ -79,20 +80,20 @@ type edgeParams struct{ us, vs []float64 }
 
 // ringEdgeParams develops every segment of a face's outer ring into the surface's (u,v) chart, sampling
 // each segment through its OWN carried curve and unwrapping the periodic parameter along the ring so the
-// samples read continuously. It declines a ring shorter than a triangle or one whose unwrap fails.
+// samples read continuously. It declines a ring shorter than a triangle or one whose tessellate.Unwrap fails.
 func ringEdgeParams(s geom.Surface, segs []endSeg) ([]edgeParams, bool) {
 	if len(segs) < 3 {
 		return nil, false
 	}
 	us, vs := ringParamSequence(s, segs)
 	var ok bool
-	if isPeriodic(s.UDomain()) {
-		if us, ok = unwrap(us); !ok {
+	if tessellate.IsPeriodic(s.UDomain()) {
+		if us, ok = tessellate.Unwrap(us); !ok {
 			return nil, false
 		}
 	}
-	if isPeriodic(s.VDomain()) {
-		if vs, ok = unwrap(vs); !ok {
+	if tessellate.IsPeriodic(s.VDomain()) {
+		if vs, ok = tessellate.Unwrap(vs); !ok {
 			return nil, false
 		}
 	}
@@ -100,7 +101,7 @@ func ringEdgeParams(s geom.Surface, segs []endSeg) ([]edgeParams, bool) {
 }
 
 // ringParamSequence is the ring's samples inverted to (u,v), in traversal order, paramBoxStations+1 per
-// segment (the segments' shared endpoints are sampled twice, which the unwrap needs and the box ignores).
+// segment (the segments' shared endpoints are sampled twice, which the tessellate.Unwrap needs and the box ignores).
 func ringParamSequence(s geom.Surface, segs []endSeg) (us, vs []float64) {
 	for _, seg := range segs {
 		for i := 0; i <= paramBoxStations; i++ {
@@ -136,10 +137,10 @@ func boxOfEdges(edges []edgeParams) paramBox {
 // cut reads as "just past" rather than as a whole period away.
 func boxParamAt(s geom.Surface, b paramBox, p math.Point3) (u, v float64) {
 	u, v = s.ParamAt(p)
-	if isPeriodic(s.UDomain()) {
+	if tessellate.IsPeriodic(s.UDomain()) {
 		u = onBranch(u, (b.uLo+b.uHi)/2)
 	}
-	if isPeriodic(s.VDomain()) {
+	if tessellate.IsPeriodic(s.VDomain()) {
 		v = onBranch(v, (b.vLo+b.vHi)/2)
 	}
 	return u, v
@@ -161,7 +162,7 @@ func boxSideOfPoint(s geom.Surface, b paramBox, p math.Point3, tol float64) boxS
 // excursion; sideInside when it is within tol of every bound (a landing exactly ON a bound — which is
 // where a correct trim ends — counts as inside).
 func boxExitSide(s geom.Surface, b paramBox, u, v, tol float64) boxSide {
-	su, sv := metricScale(s)
+	su, sv := tessellate.MetricScale(s)
 	best, side := tol, sideInside
 	for _, c := range []struct {
 		d    float64
@@ -217,7 +218,7 @@ func ringIndexOnBoxSide(s geom.Surface, segs []endSeg, b paramBox, side boxSide,
 	if !ok {
 		return 0, false
 	}
-	su, sv := metricScale(s)
+	su, sv := tessellate.MetricScale(s)
 	scale := su
 	if side == sideVLo || side == sideVHi {
 		scale = sv

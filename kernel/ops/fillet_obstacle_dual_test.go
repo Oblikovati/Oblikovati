@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -153,7 +154,7 @@ func TestFilletU4DualHostWatertight(t *testing.T) {
 		if len(f.Loops()) != 1 {
 			t.Errorf("U4 face has %d loops, want 1 (every result face WIRE:1)", len(f.Loops()))
 		}
-		total += validate.MeshArea(TessellateFace(f, Quality{ChordTolerance: 1e-3}))
+		total += validate.MeshArea(tessellate.TessellateFace(f, Quality{ChordTolerance: 1e-3}))
 	}
 	const wholeBodyOracle, corpusDeps = 6583.29, 0.01
 	if rel := absDiff(total, wholeBodyOracle) / wholeBodyOracle; rel > corpusDeps {
@@ -175,7 +176,7 @@ func TestFilletU4PerFaceProductionTessellation(t *testing.T) {
 		if _, isBS := f.Geometry().(geom.BSplineSurface); !isBS {
 			continue
 		}
-		m := TessellateFace(f, Quality{ChordTolerance: 1e-3})
+		m := tessellate.TessellateFace(f, Quality{ChordTolerance: 1e-3})
 		area := validate.MeshArea(m)
 		if folds := validate.FoldEdgeCount(m); folds != 0 {
 			t.Errorf("U4 fillet panel (prodArea %.4f): %d fold edges, want 0 — production tessellation folds", area, folds)
@@ -251,7 +252,7 @@ func filletFaceArea(t *testing.T, f filletFace) float64 {
 	if len(faces) != 1 {
 		t.Fatalf("filletFaceArea: assembleBody produced %d faces, want 1", len(faces))
 	}
-	mesh := TessellateFace(faces[0], Quality{ChordTolerance: 1e-3})
+	mesh := tessellate.TessellateFace(faces[0], Quality{ChordTolerance: 1e-3})
 	return validate.MeshArea(mesh)
 }
 

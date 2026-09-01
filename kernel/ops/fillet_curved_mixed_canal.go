@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -41,7 +42,7 @@ import (
 // n4CanalStationCount / n4CanalEndCluster set the station distribution along the ball-centre curve. Every
 // station column is EXACT on the true envelope, so the patch's only residual is the loft's CUBIC
 // v-interpolation between stations, and the certificate that gates it is the G1 crease against the four
-// analytic neighbours (seamAngularTol = 1e-6 rad). Two distinct residuals compete there and they want
+// analytic neighbours (tessellate.SeamAngularTol = 1e-6 rad). Two distinct residuals compete there and they want
 // opposite spacings, which is why the distribution is a BLEND rather than uniform:
 //
 //   - the two ARM sides (v=0 / v=1) hold G1 against their arm cylinder through the loft's END v-tangent,
@@ -170,7 +171,7 @@ func (f n4BallFrame) holdsStation(m math.Point3, psi, tol float64) bool {
 func vplaneParallelToTorusAxis(torus geom.Torus, vplane geom.Plane) bool {
 	k := unit(torus.AxisDir.AsVector())
 	n := unit(vplane.Normal())
-	return stdmath.Abs(float64(n.Dot(k))) <= seamAngularTol
+	return stdmath.Abs(float64(n.Dot(k))) <= tessellate.SeamAngularTol
 }
 
 // newN4BallFrame builds the frame from the lateral torus arm, the shared vertical plane, and the two arm
@@ -193,7 +194,7 @@ func newN4BallFrame(torus geom.Torus, vplane geom.Plane, m0, m1 math.Point3, tol
 	}
 	psi0, sign0, ok0 := f.meridianOf(m0, tol)
 	psi1, sign1, ok1 := f.meridianOf(m1, tol)
-	if !ok0 || !ok1 || sign0 != sign1 || stdmath.Abs(psi1-psi0) <= seamAngularTol {
+	if !ok0 || !ok1 || sign0 != sign1 || stdmath.Abs(psi1-psi0) <= tessellate.SeamAngularTol {
 		return n4BallFrame{}, false
 	}
 	f.sign, f.psi0, f.psi1 = sign0, psi0, psi1

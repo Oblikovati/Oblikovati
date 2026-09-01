@@ -209,7 +209,7 @@ func inwardCrossU(s geom.BSplineSurface, atMax bool) math.Vector3 {
 // corner window is excluded (certify). Refinement is geometry-exact (knot insertion), so it changes
 // neither the boundary nor the patch shape/area — only the DOF available to localize the corner
 // clobber. The value obstacleG1Ctrl=28 and the window 0.15 are measured together (task-4-report):
-// interior crease drops to ~0 (wall) / ~1.5e-8 (wings), below seamAngularTol=1e-6.
+// interior crease drops to ~0 (wall) / ~1.5e-8 (wings), below tessellate.SeamAngularTol=1e-6.
 func refineForG1(c0, c1, d0, d1 geom.BSplineCurve) (rc0, rc1, rd0, rd1 geom.BSplineCurve, ok bool) {
 	uk := refinementKnots(c0, obstacleG1Ctrl)
 	vk := refinementKnots(d0, obstacleG1Ctrl)

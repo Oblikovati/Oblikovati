@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -48,7 +49,7 @@ func snapEdge(e *topo.Edge, q Quality) {
 		e.SetSnappedCurve(nil, 0)
 		return
 	}
-	raw := sampleEdgeCurve(e, q)
+	raw := tessellate.SampleEdgeCurve(e, q)
 	snapped, residual := reconcileOntoSurfaces(raw, surfs)
 	if residual < snapResidualFloor {
 		e.SetSnappedCurve(nil, 0) // already on its surfaces (a native/accurate edge): leave it untouched

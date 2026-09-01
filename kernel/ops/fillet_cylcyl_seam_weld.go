@@ -109,7 +109,7 @@ func rebuildCylCylValleyLine(body *topo.Body, e *topo.Edge, r float64, res Resol
 		return nil, fmt.Sprintf("cyl∧cyl seam weld: valley line edge %d no longer solves on the rebuilt body", e.ID())
 	}
 	band := ef.armSurface.(*cylCylSeamBand)
-	ef.armSurface = band.Surface // unwrap: hand the runout weld the plain exact cylinder arm
+	ef.armSurface = band.Surface // tessellate.Unwrap: hand the runout weld the plain exact cylinder arm
 	return singleArmRunoutBody(body, ef, res)
 }
 

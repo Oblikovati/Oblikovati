@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -88,7 +89,7 @@ func ringPlanes(solid *topo.Body, del map[uint64]bool) []geom.Plane {
 func healedVertex(v *topo.Vertex, faces []*topo.Face, del map[uint64]bool, ring []geom.Plane) math.Point3 {
 	survivors := survivingPlanes(faces, del)
 	if len(survivors) >= 3 {
-		if p, ok := meetOfPlanes(survivors); ok {
+		if p, ok := probe.MeetOfPlanes(survivors); ok {
 			return p
 		}
 	}
@@ -114,7 +115,7 @@ func survivingPlanes(faces []*topo.Face, del map[uint64]bool) []geom.Plane {
 // slideToNearest intersects the line of planes a,b with each ring plane and returns the
 // intersection nearest the original vertex (the face the heal extends to meet).
 func slideToNearest(a, b geom.Plane, ring []geom.Plane, v math.Point3) (math.Point3, bool) {
-	p0, dir, ok := twoPlaneLine(a, b)
+	p0, dir, ok := probe.TwoPlaneLine(a, b)
 	if !ok {
 		return math.Point3{}, false
 	}
@@ -130,38 +131,6 @@ func slideToNearest(a, b geom.Plane, ring []geom.Plane, v math.Point3) (math.Poi
 		}
 	}
 	return best, found
-}
-
-// meetOfPlanes returns the least-squares meeting point of ≥3 planes (exact for 3).
-func meetOfPlanes(planes []geom.Plane) (math.Point3, bool) {
-	var a [3][3]float64
-	var b [3]float64
-	for _, pl := range planes {
-		n := pl.Normal()
-		d := n.Dot(pl.Origin.AsVector())
-		nv := [3]float64{n.X, n.Y, n.Z}
-		for i := range 3 {
-			for j := range 3 {
-				a[i][j] += nv[i] * nv[j]
-			}
-			b[i] += nv[i] * d
-		}
-	}
-	x, ok := retopo.Solve3(a, b)
-	return math.P3(x[0], x[1], x[2]), ok
-}
-
-// twoPlaneLine returns a point and direction of the intersection line of two planes, or
-// ok=false when they are parallel.
-func twoPlaneLine(a, b geom.Plane) (math.Point3, math.Vector3, bool) {
-	na, nb := a.Normal(), b.Normal()
-	dir := na.Cross(nb)
-	if dir.LengthSquared() < 1e-18 {
-		return math.Point3{}, math.Vector3{}, false
-	}
-	da, db := na.Dot(a.Origin.AsVector()), nb.Dot(b.Origin.AsVector())
-	num := nb.Cross(dir).Scale(da).Add(dir.Cross(na).Scale(db))
-	return math.P3(0, 0, 0).TranslateBy(num.Scale(1 / dir.LengthSquared())), dir, true
 }
 
 // lineHitsPlane returns the parameter t where line p0+t·dir meets plane c.

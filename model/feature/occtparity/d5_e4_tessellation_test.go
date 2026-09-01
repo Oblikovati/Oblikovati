@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -63,7 +64,7 @@ func TestD5E4TessellationFoldGate(t *testing.T) {
 			var meshTotal float64
 			foldingFaces := 0
 			for _, f := range body.Faces() {
-				m := ops.TessellateFace(f, ops.PropertyQuality())
+				m := tessellate.TessellateFace(f, ops.PropertyQuality())
 				area := ops.MeshArea(m)
 				meshTotal += area
 				assertFaceFinitePositive(t, name, f, area)

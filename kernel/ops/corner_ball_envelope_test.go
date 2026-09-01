@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -35,10 +36,10 @@ func TestMaxBallDevRejectsAnInteriorBulgeTheOldCertificateAccepted(t *testing.T)
 	assertBoundaryUnmoved(t, surf, bulged)
 
 	old := certifyRunoutCanalPatch(bulged, loop, maxLoopSurfaceDev(bulged, runoutPatchLoops(loop)), res)
-	if !old.Closed || !old.WeldsArms || !old.NoFold || old.MaxDev > weld || old.MaxAngleDev > seamAngularTol {
+	if !old.Closed || !old.WeldsArms || !old.NoFold || old.MaxDev > weld || old.MaxAngleDev > tessellate.SeamAngularTol {
 		t.Fatalf("the bulge was meant to be invisible to the OLD fields; got Closed=%v WeldsArms=%v NoFold=%v "+
 			"MaxDev=%g (weld %g) MaxAngleDev=%g (tol %g) — re-tune the mutation, do not weaken the claim",
-			old.Closed, old.WeldsArms, old.NoFold, old.MaxDev, weld, old.MaxAngleDev, seamAngularTol)
+			old.Closed, old.WeldsArms, old.NoFold, old.MaxDev, weld, old.MaxAngleDev, tessellate.SeamAngularTol)
 	}
 
 	bulgedDev := maxBallDev(bulged, loop.Envelope)

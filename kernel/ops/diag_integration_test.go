@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -76,15 +77,15 @@ func TestBooleanNilRecorderStillWorks(t *testing.T) {
 }
 
 // TestMeshCarriesDiagnostics covers the tessellation carrier: a diagnostic recorded on a component mesh
-// surfaces on the composed mesh through mergeMesh — the path a deep tessellation degradation takes to
+// surfaces on the composed mesh through tessellate.MergeMesh — the path a deep tessellation degradation takes to
 // the final face/body mesh (#1412).
 func TestMeshCarriesDiagnostics(t *testing.T) {
 	t.Parallel()
 	child := &Mesh{}
 	child.Diagnose(diag.Diagnostic{Code: "tessellate.cap-saturated", Severity: diag.Defect, Detail: "face X below tol"})
 	parent := &Mesh{}
-	mergeMesh(parent, child)
+	tessellate.MergeMesh(parent, child)
 	if len(parent.Diagnostics) != 1 || parent.Diagnostics[0].Code != "tessellate.cap-saturated" {
-		t.Errorf("mergeMesh did not carry the child mesh's diagnostics up: %v", parent.Diagnostics)
+		t.Errorf("tessellate.MergeMesh did not carry the child mesh's diagnostics up: %v", parent.Diagnostics)
 	}
 }

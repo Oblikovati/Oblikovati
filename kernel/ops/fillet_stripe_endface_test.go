@@ -203,7 +203,7 @@ func TestSoleEdgeBoundingDeclinesTwoCandidates(t *testing.T) {
 
 // TestCurveBetweenRestrictsACurvedBoundary is the case the box fixtures cannot show: their end-face
 // boundaries are straight, so a remnant carrying the WHOLE parent curve would still tessellate to the
-// same chord. On a CURVED boundary it does not — sampleEdgeCurve walks the curve's whole domain and
+// same chord. On a CURVED boundary it does not — tessellate.SampleEdgeCurve walks the curve's whole domain and
 // only snaps the two end samples, so an untrimmed remnant would be drawn along the original sweep.
 func TestCurveBetweenRestrictsACurvedBoundary(t *testing.T) {
 	t.Parallel()

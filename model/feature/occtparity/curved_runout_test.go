@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -105,7 +106,7 @@ func TestM7TessellationFoldGate(t *testing.T) {
 	body := caseResultBody(t, "M7")
 	total := 0.0
 	for _, f := range body.Faces() {
-		m := ops.TessellateFace(f, ops.PropertyQuality())
+		m := tessellate.TessellateFace(f, ops.PropertyQuality())
 		area := ops.MeshArea(m)
 		total += area
 		assertM7FaceSane(t, f, m, area)

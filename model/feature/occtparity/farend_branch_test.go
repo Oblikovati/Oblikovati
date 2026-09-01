@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -183,7 +184,7 @@ func assertBandTilesItsClosedFormArea(t *testing.T, body *topo.Body, band *topo.
 // consumer sees, and is not the same thing as TessellateFace(f) on its own.
 func shippedFaceMesh(t *testing.T, body *topo.Body, f *topo.Face) *ops.Mesh {
 	t.Helper()
-	facets := ops.CalculateBodyFacets(body, ops.PropertyQuality())
+	facets := tessellate.CalculateBodyFacets(body, ops.PropertyQuality())
 	for i, g := range facets.Faces {
 		if g == f {
 			return facets.FaceMeshes[i]

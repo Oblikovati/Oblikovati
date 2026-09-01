@@ -7,6 +7,7 @@ import (
 
 	stdmath "math"
 
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -140,8 +141,8 @@ func shellSkew(t areaTerms, dx, dy, dz float64) float64 {
 // meshSignature is the tessellated fallback: the same invariants integrated over the triangle mesh
 // for bodies the analytic path does not yet cover (a named, temporary migration seam).
 func meshSignature(b *topo.Body, q Quality) bodySignature {
-	mesh, _ := TessellateBody(b, q)
-	props := meshGeometryProperties(mesh)
+	mesh, _ := tessellate.TessellateBody(b, q)
+	props := MeshGeometryProperties(mesh)
 	moments, skew := centroidalMoments(mesh, props)
 	return bodySignature{
 		volume: props.Volume, area: props.Area, moments: moments, skew: skew,

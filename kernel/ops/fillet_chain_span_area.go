@@ -97,7 +97,7 @@ func wrapPeriod(lo, hi float64) float64 {
 }
 
 // unwrapParam shifts x by whole periods so it lands within half a period of ref — the standard phase
-// unwrap, applied per sample so a ring's chart image stays connected across the seam.
+// tessellate.Unwrap, applied per sample so a ring's chart image stays connected across the seam.
 func unwrapParam(x, ref, period float64) float64 {
 	if period <= 0 {
 		return x

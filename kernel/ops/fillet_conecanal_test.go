@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/kernel/exchange"
 	stepio "oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -333,8 +334,8 @@ func assertArmMeshesFoldFree(t *testing.T, name string, surf geom.BSplineSurface
 	for i, p := range outerUV {
 		outer3D[i] = surf.PointAt(float64(p.X), float64(p.Y))
 	}
-	su, sv := metricScale(surf)
-	m := foldDrivenPatch(surf, su, sv, DefaultQuality(), outer3D, outerUV, nil, nil)
+	su, sv := tessellate.MetricScale(surf)
+	m := tessellate.FoldDrivenPatch(surf, su, sv, DefaultQuality(), outer3D, outerUV, nil, nil)
 	if m == nil || m.TriangleCount() == 0 {
 		t.Fatalf("%s canal arm produced no mesh", name)
 	}

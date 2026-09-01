@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -55,7 +56,7 @@ func TestPlanarFaceFollowsCurvedEdge(t *testing.T) {
 	t.Parallel()
 	const r = 2.0
 	f := halfDiskFace(t, r)
-	mesh := TessellateFace(f, Quality{ChordTolerance: 1e-3})
+	mesh := tessellate.TessellateFace(f, Quality{ChordTolerance: 1e-3})
 	if mesh.VertexCount() <= 4 {
 		t.Fatalf("arc boundary not subdivided: %d vertices", mesh.VertexCount())
 	}
@@ -79,8 +80,8 @@ func TestDiscretizeEdgeIsShared(t *testing.T) {
 	if arc == nil {
 		t.Fatal("no arc edge on the half-disk")
 	}
-	fwd := discretizeEdge(arc, Quality{ChordTolerance: 1e-2})
-	rev := probe.ReversedPoints(discretizeEdge(arc, Quality{ChordTolerance: 1e-2}))
+	fwd := tessellate.DiscretizeEdge(arc, Quality{ChordTolerance: 1e-2})
+	rev := probe.ReversedPoints(tessellate.DiscretizeEdge(arc, Quality{ChordTolerance: 1e-2}))
 	if len(fwd) != len(rev) {
 		t.Fatalf("forward %d vs reversed %d points", len(fwd), len(rev))
 	}

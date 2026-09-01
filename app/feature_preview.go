@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
@@ -152,13 +153,13 @@ func operationColor(op ops.PartFeatureOperation) [4]float32 {
 // translucent volume legible, the way Inventor draws a feature preview.
 func bodyPreviewItems(b *topo.Body, color [4]float32) []renderer.DrawItem {
 	q := ops.DefaultQuality()
-	mesh, _ := ops.TessellateBody(b, q)
+	mesh, _ := tessellate.TessellateBody(b, q)
 	if mesh == nil || mesh.TriangleCount() == 0 {
 		return nil
 	}
 	// Smooth the normals across facets meeting below the crease angle so a curved delta (a
 	// fillet's round wedge) reads as one surface instead of flat-shaded stripes.
-	mesh.Normals = ops.SmoothShadeNormals(mesh, ops.DefaultCreaseAngle())
+	mesh.Normals = tessellate.SmoothShadeNormals(mesh, tessellate.DefaultCreaseAngle())
 	items := []renderer.DrawItem{previewBodyFill(mesh, color)}
 	if line := previewEdgeLines(b, q, color); line != nil {
 		items = append(items, *line)
@@ -170,7 +171,7 @@ func bodyPreviewItems(b *topo.Body, color [4]float32) []renderer.DrawItem {
 // model renderer) as one opaque line item in the preview hue — so a curved delta shows only
 // its real boundary outline, not a web of tessellation seams.
 func previewEdgeLines(b *topo.Body, q ops.Quality, color [4]float32) *renderer.DrawItem {
-	polylines := ops.VisibleEdges(b, q, ops.DefaultCreaseAngle())
+	polylines := ops.VisibleEdges(b, q, tessellate.DefaultCreaseAngle())
 	var pts []math.Point3
 	var idx []int
 	for _, pl := range polylines {
@@ -261,7 +262,7 @@ func changedFacePreview(base, result []*topo.Body) []renderer.DrawItem {
 	if totalVolume(result) < totalVolume(base) {
 		color = previewRemoveColor
 	}
-	mesh.Normals = ops.SmoothShadeNormals(mesh, ops.DefaultCreaseAngle())
+	mesh.Normals = tessellate.SmoothShadeNormals(mesh, tessellate.DefaultCreaseAngle())
 	items := []renderer.DrawItem{previewBodyFill(mesh, color)}
 	if line := changedFaceEdges(result, newFaces, color); line != nil {
 		items = append(items, *line)
@@ -281,7 +282,7 @@ func collectNewFaces(base, result []*topo.Body) (*ops.Mesh, map[*topo.Face]bool)
 			if surfaceInBase(baseSurf, f) {
 				continue
 			}
-			if m := ops.TessellateFace(f, q); m != nil && m.TriangleCount() > 0 {
+			if m := tessellate.TessellateFace(f, q); m != nil && m.TriangleCount() > 0 {
 				newFaces[f] = true
 				appendMesh(mesh, m)
 			}
@@ -301,7 +302,7 @@ func changedFaceEdges(result []*topo.Body, newFaces map[*topo.Face]bool, color [
 			if !edgeTouchesNewFace(e, newFaces) || isTangentEdge(e) {
 				continue
 			}
-			pl := ops.TessellateEdge(e, q)
+			pl := tessellate.TessellateEdge(e, q)
 			base := len(pts)
 			pts = append(pts, pl...)
 			for i := 0; i+1 < len(pl); i++ {
@@ -333,7 +334,7 @@ func isTangentEdge(e *topo.Edge) bool {
 		return false
 	}
 	mid := e.Geometry().PointAt(0.5)
-	cos := math.Scalar(stdmath.Cos(ops.DefaultCreaseAngle()))
+	cos := math.Scalar(stdmath.Cos(tessellate.DefaultCreaseAngle()))
 	return faceNormalAt(faces[0], mid).Dot(faceNormalAt(faces[1], mid)) > cos
 }
 
@@ -436,7 +437,7 @@ func axisFoot(origin math.Point3, dir math.Vector3) math.Point3 {
 
 // faceAreaCentroid returns a face's tessellated area and area-weighted centroid.
 func faceAreaCentroid(f *topo.Face) (math.Point3, float64) {
-	m := ops.TessellateFace(f, ops.DefaultQuality())
+	m := tessellate.TessellateFace(f, ops.DefaultQuality())
 	if m == nil {
 		return math.P3(0, 0, 0), 0
 	}

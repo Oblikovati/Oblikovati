@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -199,7 +200,7 @@ func TestFilletCornerBlendMeshWatertight(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
-		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
+		m, _ := tessellate.TessellateBody(res, ops.Quality{ChordTolerance: tol})
 		if open := meshOpenEdges(m); open != 0 {
 			t.Errorf("corner-blend mesh at tol %g has %d open edges, want watertight", tol, open)
 		}
@@ -221,7 +222,7 @@ func TestFilletCornerBlendPatchOnSphere(t *testing.T) {
 	for _, f := range res.Faces() {
 		if s, ok := f.Geometry().(geom.Sphere); ok {
 			sphere = &s
-			m := ops.TessellateFace(f, ops.Quality{ChordTolerance: 1e-3})
+			m := tessellate.TessellateFace(f, ops.Quality{ChordTolerance: 1e-3})
 			for _, p := range m.Positions {
 				if d := sphere.Center.DistanceTo(p); stdmath.Abs(float64(d)-sphere.Radius) > 1e-3 {
 					t.Fatalf("sphere-patch vertex %v is %g from centre, want radius %g", p, d, sphere.Radius)
@@ -311,7 +312,7 @@ func TestFilletCornerRoundAddsThirdEdge(t *testing.T) {
 		t.Errorf("got %d cylinder + %d sphere faces, want 3 + 1 (the third edge auto-rounded into a sphere)", c, s)
 	}
 	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
-		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
+		m, _ := tessellate.TessellateBody(res, ops.Quality{ChordTolerance: tol})
 		if open := meshOpenEdges(m); open != 0 {
 			t.Errorf("rounded corner at tol %g: %d open edges", tol, open)
 		}
@@ -359,7 +360,7 @@ func TestFilletTwoEdgeCornerMiterMeshWatertight(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
-		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
+		m, _ := tessellate.TessellateBody(res, ops.Quality{ChordTolerance: tol})
 		if open := meshOpenEdges(m); open != 0 {
 			t.Errorf("two-edge miter mesh at tol %g has %d open edges, want watertight", tol, open)
 		}
@@ -510,7 +511,7 @@ func TestFilletEdgesRoutesArc(t *testing.T) {
 		t.Errorf("torus faces = %d, want 1", tor)
 	}
 	for _, tol := range []float64{0.05, 1e-2, 1e-3, 1e-4} {
-		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
+		m, _ := tessellate.TessellateBody(res, ops.Quality{ChordTolerance: tol})
 		if open := meshOpenEdges(m); open != 0 {
 			t.Errorf("arc fillet at tol %g: %d open edges", tol, open)
 		}

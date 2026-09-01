@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -54,8 +55,8 @@ func TestConeApexSectorAreaOrientationIndependent(t *testing.T) {
 	analytic := sweep / 2 * radius * slant // (θ/2)·R·slant, the exact cone-sector lateral area
 	fUp := coneApexSectorFace(t, math.P3(0, 0, 250), math.V3(0, 0, -1), half, baseV, sweep)
 	fDown := coneApexSectorFace(t, math.P3(0, 0, -250), math.V3(0, 0, 1), half, baseV, sweep)
-	areaUp := validate.MeshArea(TessellateFace(fUp, PropertyQuality()))
-	areaDown := validate.MeshArea(TessellateFace(fDown, PropertyQuality()))
+	areaUp := validate.MeshArea(tessellate.TessellateFace(fUp, PropertyQuality()))
+	areaDown := validate.MeshArea(tessellate.TessellateFace(fDown, PropertyQuality()))
 	if rel := stdmath.Abs(areaUp-areaDown) / analytic; rel > 1e-6 {
 		t.Fatalf("cone-sector area is orientation-dependent: up=%.4f down=%.4f (rel %.2g)", areaUp, areaDown, rel)
 	}

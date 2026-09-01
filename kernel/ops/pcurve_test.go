@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -43,7 +44,7 @@ func selfIntersections(raw []math.Point2) int {
 			if i == 0 && j == n-1 {
 				continue // the closing edge is adjacent to edge 0
 			}
-			if segmentsCross(at(i), at((i+1)%n), at(j), at((j+1)%n)) {
+			if tessellate.SegmentsCross(at(i), at((i+1)%n), at(j), at((j+1)%n)) {
 				count++
 			}
 		}

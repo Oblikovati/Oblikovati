@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -71,7 +72,7 @@ func TestSnapEdgesLeavesCleanSolidUnchanged(t *testing.T) {
 		}
 	}
 	for _, gq := range gateQualities() {
-		mesh, _ := TessellateBody(cyl, gq.q)
+		mesh, _ := tessellate.TessellateBody(cyl, gq.q)
 		if free := freeEdgeCount(mesh); free != 0 {
 			t.Errorf("%s quality: snapped clean cylinder tessellated with %d free edges; want 0 (still watertight)",
 				gq.name, free)
@@ -118,13 +119,13 @@ func TestSnapEdgesLandsOffSurfaceRimOnCylinder(t *testing.T) {
 func TestSnapEdgesMakesOffSurfaceWatertight(t *testing.T) {
 	t.Parallel()
 	body := offSurfaceCylinder(t, 5.0, 4.8, 10.0)
-	before, _ := TessellateBody(body, DefaultQuality())
+	before, _ := tessellate.TessellateBody(body, DefaultQuality())
 	if freeEdgeCount(before) == 0 {
 		t.Fatal("off-surface body was already watertight; the fixture must leak to exercise the snap")
 	}
 	SnapEdgesToSurfaces(body, DefaultQuality())
 	for _, gq := range gateQualities() {
-		after, _ := TessellateBody(body, gq.q)
+		after, _ := tessellate.TessellateBody(body, gq.q)
 		if free := freeEdgeCount(after); free != 0 {
 			t.Errorf("%s quality: snapped off-surface body has %d free edges; want 0 (watertight)", gq.name, free)
 		}
@@ -143,7 +144,7 @@ func TestSnapEdgesSharesIdenticalBoundary(t *testing.T) {
 		if snapped == nil {
 			continue
 		}
-		got := discretizeEdge(e, DefaultQuality())
+		got := tessellate.DiscretizeEdge(e, DefaultQuality())
 		if len(got) != len(snapped) {
 			t.Fatalf("edge %d: discretizeEdge len %d != snapped len %d", e.ID(), len(got), len(snapped))
 		}

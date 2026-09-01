@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -114,7 +115,7 @@ func resolveOBJIndex(tok string, n int) (int, error) {
 //
 //	data := meshio.EncodeOBJ(body, meshio.QualityFor(types.ResolutionMedium))
 func EncodeOBJ(body *topo.Body, q ops.Quality) []byte {
-	mesh, _ := ops.TessellateBody(body, q)
+	mesh, _ := tessellate.TessellateBody(body, q)
 	return encodeOBJMesh(mesh)
 }
 

@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -148,7 +149,7 @@ func bisectTrimBoundary(c geom.Curve3, f *topo.Face, tOut, tIn float64) math.Poi
 // analytic intersector declines (a rare exotic surface), keeping the section robust without tessellating the
 // resolved faces.
 func faceMeshSection(f *topo.Face, n math.Vector3, d float64, q Quality) [][2]math.Point3 {
-	mesh := TessellateFace(f, q)
+	mesh := tessellate.TessellateFace(f, q)
 	var segs [][2]math.Point3
 	for t := 0; t+2 < len(mesh.Indices); t += 3 {
 		tri := [3]math.Point3{

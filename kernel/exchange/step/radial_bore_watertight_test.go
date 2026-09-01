@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -30,7 +31,7 @@ func TestRadialBoreThroughCurvedWallWatertight(t *testing.T) {
 		name string
 		q    ops.Quality
 	}{{"default", ops.DefaultQuality()}, {"property", ops.PropertyQuality()}} {
-		mesh, _ := ops.TessellateBody(b, c.q)
+		mesh, _ := tessellate.TessellateBody(b, c.q)
 		if free := openEdgeCount(mesh); free != 0 {
 			t.Errorf("%s quality: tessellation has %d free edges; want 0 (non-watertight curved wall)", c.name, free)
 		}
@@ -65,7 +66,7 @@ func TestRadialBoreWallIsAManifoldDiscAtPropertyQuality(t *testing.T) {
 			continue
 		}
 		wall++
-		m := ops.TessellateFace(f, ops.PropertyQuality())
+		m := tessellate.TessellateFace(f, ops.PropertyQuality())
 		if m == nil {
 			t.Fatalf("barrel wall face %d did not tessellate", f.ID())
 		}
@@ -95,9 +96,9 @@ func importCandRadial(t *testing.T) *topo.Body {
 	return bodies[0]
 }
 
-// openEdgeCount is this package's watertightness metric, delegating to ops.FreeEdgeCount so it welds at
+// openEdgeCount is this package's watertightness metric, delegating to tessellate.FreeEdgeCount so it welds at
 // the MODEL's own resolution (ADR-0042). It used to carry its own fixed 1e-6 grid, which over-merges any
 // model whose feature separation falls below it and reports the over-merge as a free edge.
 func openEdgeCount(m *ops.Mesh) int {
-	return ops.FreeEdgeCount(m)
+	return tessellate.FreeEdgeCount(m)
 }

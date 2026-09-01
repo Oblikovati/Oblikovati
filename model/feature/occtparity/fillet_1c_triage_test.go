@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -155,7 +156,7 @@ func vertexTouchesCurved(v *topo.Vertex) bool {
 func sumFaceTess(b *topo.Body) float64 {
 	var sum float64
 	for _, f := range b.Faces() {
-		m := ops.TessellateFace(f, ops.PropertyQuality())
+		m := tessellate.TessellateFace(f, ops.PropertyQuality())
 		for k := 0; k+2 < len(m.Indices); k += 3 {
 			p, q, r := m.Positions[m.Indices[k]], m.Positions[m.Indices[k+1]], m.Positions[m.Indices[k+2]]
 			sum += float64(p.VectorTo(q).Cross(p.VectorTo(r)).Length()) / 2

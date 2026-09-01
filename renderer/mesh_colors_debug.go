@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/scene"
@@ -43,7 +44,7 @@ func meshColorItem(b *topo.Body, q ops.Quality, perTriangle bool, shading Shadin
 	var cols [][4]float32
 	var idx []int
 	for _, f := range b.Faces() {
-		m := ops.TessellateFace(f, q)
+		m := tessellate.TessellateFace(f, q)
 		if perTriangle {
 			addTriangleColored(&pos, &nrm, &cols, &idx, m, index)
 		} else {
@@ -93,7 +94,7 @@ func primitiveCount(b *topo.Body, q ops.Quality, perTriangle bool) int {
 	}
 	n := 0
 	for _, f := range b.Faces() {
-		n += ops.TessellateFace(f, q).TriangleCount()
+		n += tessellate.TessellateFace(f, q).TriangleCount()
 	}
 	return n
 }

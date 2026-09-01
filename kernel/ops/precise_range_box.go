@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -88,7 +89,7 @@ const preciseCurveSamples = 32
 // cannot be enumerated in closed form. It under-measures a bulge by the facet sagitta; it is used
 // only where nothing exact exists yet.
 func tessellatedFaceBox(f *topo.Face, q Quality) math.Box {
-	return math.BoxFromPoints(TessellateFace(f, q).Positions...)
+	return math.BoxFromPoints(tessellate.TessellateFace(f, q).Positions...)
 }
 
 // boxUnbounded reports whether any of the box's corners runs off to infinity — the marker

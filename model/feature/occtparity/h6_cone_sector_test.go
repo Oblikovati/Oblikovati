@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 )
 
 // occtH6ConeArea is OCCT's per-face reference area for each of H6's two host cones (drawexe sprops on
@@ -34,7 +35,7 @@ func TestH6HostConesTessellateToOCCTArea(t *testing.T) {
 		if _, isCone := f.Geometry().(geom.Cone); !isCone {
 			continue
 		}
-		areas = append(areas, ops.MeshArea(ops.TessellateFace(f, ops.PropertyQuality())))
+		areas = append(areas, ops.MeshArea(tessellate.TessellateFace(f, ops.PropertyQuality())))
 	}
 	if len(areas) != 2 {
 		t.Fatalf("H6 imported body has %d cone faces, want 2 (the two host cone sectors)", len(areas))

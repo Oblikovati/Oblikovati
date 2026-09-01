@@ -176,7 +176,7 @@ func edgeBounds(e *topo.Edge, f *topo.Face) bool {
 // curveBetween restricts c to the span from a to b, presented over [0,1] in that direction.
 //
 // It is not enough to hand the parent curve to a shorter edge: an edge's curve must span exactly that
-// edge, because sampleEdgeCurve walks the curve's WHOLE domain and only snaps the two end samples to
+// edge, because tessellate.SampleEdgeCurve walks the curve's WHOLE domain and only snaps the two end samples to
 // the vertices. A curved boundary cut back to a section foot would otherwise be tessellated along its
 // original sweep — the same class of defect as the canal sub-edge TrimmedCurve3 was written for.
 //
@@ -211,7 +211,7 @@ func paramOn(c geom.Curve3, p math.Point3, weld float64) (float64, error) {
 
 // addEndRemnants cuts back the two end-face boundary edges that met at a consumed terminal corner,
 // each to its section foot. The remnant carries the ORIGINAL curve restricted to the surviving span,
-// so a curved boundary stays curved — an edge's curve must span exactly that edge (sampleEdgeCurve
+// so a curved boundary stays curved — an edge's curve must span exactly that edge (tessellate.SampleEdgeCurve
 // walks the whole domain), which is why this trims rather than reusing the parent outright.
 func (g *stripeBuild) addEndRemnants(t int, feet [2]*topo.Vertex, lin func(string, int) topo.Lineage) error {
 	var err error

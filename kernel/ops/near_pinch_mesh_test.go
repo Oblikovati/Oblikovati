@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -29,7 +30,7 @@ func TestNearPinchSnapMeshWatertight(t *testing.T) {
 		t.Fatalf("Boolean(Intersect near-equal): %v", err)
 	}
 	for _, gq := range gateQualities() {
-		m, _ := TessellateBody(res, gq.q)
+		m, _ := tessellate.TessellateBody(res, gq.q)
 		if free := freeEdgeCount(m); free != 0 {
 			t.Errorf("%s quality: snapped near-equal bicylinder meshed with %d free edges; want 0 (watertight surface)",
 				gq.name, free)

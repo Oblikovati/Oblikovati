@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -24,7 +25,7 @@ func VisibleEdges(b *topo.Body, q Quality, creaseAngle float64) [][]math.Point3 
 		if isTangentEdge(e, cosThresh) {
 			continue
 		}
-		out = append(out, TessellateEdge(e, q))
+		out = append(out, tessellate.TessellateEdge(e, q))
 	}
 	return out
 }

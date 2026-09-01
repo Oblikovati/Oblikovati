@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -161,7 +162,7 @@ func countSurfaceFacesNear[S geom.Surface](body *topo.Body, want, tol float64) i
 		if _, ok := f.Geometry().(S); !ok {
 			continue
 		}
-		if a := tessArea(TessellateFace(f, PropertyQuality())); a >= want-tol && a <= want+tol {
+		if a := tessArea(tessellate.TessellateFace(f, PropertyQuality())); a >= want-tol && a <= want+tol {
 			n++
 		}
 	}

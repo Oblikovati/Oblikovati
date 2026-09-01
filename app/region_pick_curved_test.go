@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -34,7 +35,7 @@ func cylinderPart(t *testing.T, radius, height float64) *Session {
 func curvedEdgeOf(t *testing.T, b *topo.Body) *topo.Edge {
 	t.Helper()
 	for _, e := range b.Edges() {
-		if len(ops.TessellateEdge(e, ops.DefaultQuality())) > 2 {
+		if len(tessellate.TessellateEdge(e, ops.DefaultQuality())) > 2 {
 			return e
 		}
 	}
@@ -63,7 +64,7 @@ func TestPickRegionCurvedEdgeSampledNotEndpoints(t *testing.T) {
 	}
 
 	// A mid-span sample of the rim (far from the seam vertex), and a tiny rect around it.
-	samples := ops.TessellateEdge(edge, ops.DefaultQuality())
+	samples := tessellate.TessellateEdge(edge, ops.DefaultQuality())
 	mid, ok := proj(samples[len(samples)/2])
 	if !ok {
 		t.Fatal("mid-span rim sample did not project")
@@ -98,7 +99,7 @@ func TestPickRegionCurvedEdgeWindowNeedsWholeSpan(t *testing.T) {
 	p := NewRayPicker(cam, partBodies(s))
 	edges := NewSelectionFilter(SelectEdge)
 
-	samples := ops.TessellateEdge(edge, ops.DefaultQuality())
+	samples := tessellate.TessellateEdge(edge, ops.DefaultQuality())
 	midX, _, _ := renderer.Project(cam, regionNear, regionFar, samples[len(samples)/2])
 	// A vertical band over part of the rim: tall enough in Y to cover that side, narrow in X so
 	// the far side of the rim falls outside it.

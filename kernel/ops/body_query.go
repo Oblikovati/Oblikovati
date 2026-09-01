@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"sort"
 
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -57,7 +58,7 @@ func closerVertex(best *LocatedEntity, b *topo.Body, p math.Point3) {
 
 func closerEdge(best *LocatedEntity, b *topo.Body, p math.Point3, q Quality) {
 	for _, e := range b.Edges() {
-		pl := discretizeEdge(e, q)
+		pl := tessellate.DiscretizeEdge(e, q)
 		for i := 0; i+1 < len(pl); i++ {
 			cp := closestPointOnSegment(p, pl[i], pl[i+1])
 			if d := float64(p.DistanceTo(cp)); d < best.Distance {
@@ -138,7 +139,7 @@ func rayFaceHits(b *topo.Body, origin math.Point3, dir math.Vector3) []LocatedEn
 func rayEdgeHits(b *topo.Body, origin math.Point3, dir math.Vector3, radius float64, q Quality) []LocatedEntity {
 	var out []LocatedEntity
 	for _, e := range b.Edges() {
-		if t, p, ok := rayPolylineApproach(origin, dir, discretizeEdge(e, q), radius); ok {
+		if t, p, ok := rayPolylineApproach(origin, dir, tessellate.DiscretizeEdge(e, q), radius); ok {
 			out = append(out, LocatedEntity{Kind: topo.KindEdge, Edge: e, Point: p, Distance: t})
 		}
 	}

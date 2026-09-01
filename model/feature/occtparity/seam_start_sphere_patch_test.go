@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -104,7 +105,7 @@ func assertSeamWindingPatchMeshes(t *testing.T, body *topo.Body) {
 	f := hits[0]
 	sph := f.Geometry().(geom.Sphere)
 	want := exactSphericalPolygonArea(t, f, sph)
-	m := ops.TessellateFace(f, ops.PropertyQuality())
+	m := tessellate.TessellateFace(f, ops.PropertyQuality())
 	got := ops.MeshArea(m)
 	if got > want*(1+1e-9) {
 		t.Errorf("face %d meshes %.10g, ABOVE its exact spherical area %.10g — an inscribed mesh cannot, so the patch overlaps itself",
@@ -155,7 +156,7 @@ func denseOuterLoop(f *topo.Face) []math.Point3 {
 			continue
 		}
 		for _, u := range l.EdgeUses() {
-			pts := ops.TessellateEdge(u.Edge(), ops.PropertyQuality())
+			pts := tessellate.TessellateEdge(u.Edge(), ops.PropertyQuality())
 			if u.Reversed() {
 				pts = reversedPoints(pts)
 			}

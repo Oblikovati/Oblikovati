@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -42,7 +43,7 @@ func TestCornerRingIsTheSameAtEveryQuality(t *testing.T) {
 		t.Fatalf("the lobed band's loop has 5 edge uses, its corner ring has %d points", len(ring))
 	}
 	for _, q := range []Quality{DefaultQuality(), PropertyQuality()} {
-		if got := len(loopBoundary(f.Loops()[0], q)); got == len(ring) {
+		if got := len(tessellate.LoopBoundary(f.Loops()[0], q)); got == len(ring) {
 			t.Errorf("the discretized boundary at chord tol %g has %d points too, so this fixture "+
 				"cannot tell the two apart", q.Tol(), got)
 		}
@@ -155,7 +156,7 @@ func TestPeriodicRefinementDevelopsAWideBandAtItsTrueWidth(t *testing.T) {
 }
 
 // TestHalvesAgreeCatchesAWrongWayUnwrap covers the refinement's predicate directly: a step of 3π/2 is
-// unwrapped as −π/2 while its halves each unwrap as +3π/4, so the two disagree and the step splits. A
+// unwrapped as −π/2 while its halves each Unwrap as +3π/4, so the two disagree and the step splits. A
 // step of 3π/4 agrees with its halves and does not.
 func TestHalvesAgreeCatchesAWrongWayUnwrap(t *testing.T) {
 	t.Parallel()

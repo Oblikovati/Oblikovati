@@ -5,6 +5,7 @@ package ops
 import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -18,7 +19,7 @@ func ReconstructFacePcurves(f *topo.Face, q Quality) {
 	s := f.Geometry()
 	for _, l := range f.Loops() {
 		for _, u := range l.EdgeUses() {
-			pts := discretizeEdge(u.Edge(), q)
+			pts := tessellate.DiscretizeEdge(u.Edge(), q)
 			if u.Reversed() {
 				pts = probe.ReversedPoints(pts)
 			}

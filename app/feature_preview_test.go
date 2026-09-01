@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -147,7 +148,7 @@ func previewExtent(items []renderer.DrawItem) (dx, dy, dz float64) {
 func firstVerticalEdge(t *testing.T, b *topo.Body) *topo.Edge {
 	t.Helper()
 	for _, e := range b.Edges() {
-		pts := ops.TessellateEdge(e, ops.DefaultQuality())
+		pts := tessellate.TessellateEdge(e, ops.DefaultQuality())
 		if len(pts) >= 2 {
 			dz := pts[0].Z - pts[len(pts)-1].Z
 			if dz < 0 {

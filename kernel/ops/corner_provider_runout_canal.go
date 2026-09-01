@@ -67,7 +67,7 @@ func (runoutCanalProvider) Build(l RailLoop, res Resolution) (CornerBlendPatch, 
 // runoutPatchLoops traces the RECEIVED rails into one assembly-ready boundary loop whose sample points
 // are byte-identical to railLoopToFilletLoops' (so the wall rim / host notch / wing welds are unchanged)
 // but where each sub-edge carries its rail curve TRIMMED to its own sub-span. The trim is load-bearing
-// on a canal: with the whole rail attached to every sub-edge the shared tessellator (sampleEdgeCurve)
+// on a canal: with the whole rail attached to every sub-edge the shared tessellator (tessellate.SampleEdgeCurve)
 // sweeps the entire rail once per sub-edge, the boundary self-overlaps, and the NURBS patch mesher folds
 // — measured here as a 158.14 mesh area over a surface whose true area is 26.5949. This is the same N7
 // defect canalPatchLoops already cures (n7-tessellation-diagnosis.md §3); the Coons fill this tier

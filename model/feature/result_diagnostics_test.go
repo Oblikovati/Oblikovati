@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/diag"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/test-utilities/degenerate"
 )
@@ -65,9 +65,9 @@ func TestFeatureReportsTheTessellatorsDefect(t *testing.T) {
 	fs := NewPartFeatures(nil)
 	pf := fs.Add(crossedTrimFeature{})
 	fs.Recompute()
-	if !hasDiagCode(pf.Diagnostics(), ops.CodePatchCoverage) {
+	if !hasDiagCode(pf.Diagnostics(), tessellate.CodePatchCoverage) {
 		t.Fatalf("a feature whose body fails to mesh reports %v, want a %s defect",
-			pf.Diagnostics(), ops.CodePatchCoverage)
+			pf.Diagnostics(), tessellate.CodePatchCoverage)
 	}
 }
 
@@ -80,8 +80,8 @@ func TestDegradationIsFiledOnTheProducingFeature(t *testing.T) {
 	bad := fs.Add(crossedTrimFeature{})
 	quiet := fs.Add(passThroughFeature{})
 	fs.Recompute()
-	if !hasDiagCode(bad.Diagnostics(), ops.CodePatchCoverage) {
-		t.Fatalf("the producing feature lost its %s defect: %v", ops.CodePatchCoverage, bad.Diagnostics())
+	if !hasDiagCode(bad.Diagnostics(), tessellate.CodePatchCoverage) {
+		t.Fatalf("the producing feature lost its %s defect: %v", tessellate.CodePatchCoverage, bad.Diagnostics())
 	}
 	if n := len(quiet.Diagnostics()); n != 0 {
 		t.Errorf("the pass-through feature reports %d diagnostics, want 0: %v", n, quiet.Diagnostics())

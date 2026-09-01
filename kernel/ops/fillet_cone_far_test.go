@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -410,8 +411,8 @@ func meshFarCapFace(t *testing.T, surf geom.BSplineSurface, trim geom.Curve3, fe
 	for i, p := range outerUV {
 		outer3D[i] = surf.PointAt(float64(p.X), float64(p.Y))
 	}
-	su, sv := metricScale(surf)
-	return foldDrivenPatch(surf, su, sv, DefaultQuality(), outer3D, outerUV, nil, nil)
+	su, sv := tessellate.MetricScale(surf)
+	return tessellate.FoldDrivenPatch(surf, su, sv, DefaultQuality(), outer3D, outerUV, nil, nil)
 }
 
 // invertTrimUV maps the trim's 3D samples to arm (u,v) parameters by a grid search plus local refine, so

@@ -14,11 +14,11 @@ import (
 // A face's boundary must not run BACK OVER ground it has already covered.
 //
 // THE GAP THIS CLOSES. SelfCrossingFaceLoops develops each face's boundary into its own metric chart
-// and asks simpleLoop2D's predicate — segmentsCross — whether two non-adjacent edges TRANSVERSALLY
+// and asks simpleLoop2D's predicate — tessellate.SegmentsCross — whether two non-adjacent edges TRANSVERSALLY
 // intersect (both straddle tests strictly signed). A boundary that instead back-tracks along a
 // COLLINEAR sibling, running back over the top of a stretch it already traversed, scores exactly ZERO
 // under that predicate: two overlapping collinear segments never straddle each other's line, so every
-// orient2d in segmentsCross is 0 and `d1*d2 < 0` is false. The loop is just as malformed — it is not a
+// orient2d in tessellate.SegmentsCross is 0 and `d1*d2 < 0` is false. The loop is just as malformed — it is not a
 // simple polygon and it has no well-defined interior — but nothing in the kernel saw it. Worse, the
 // defect is invisible to an AREA gate as well: the two traversals of the retraced stretch contribute
 // equal and opposite terms to the shoelace, so a loop can carry one and still measure exactly right.
@@ -63,7 +63,7 @@ import (
 // with ONE seam edge used TWICE by its own loop, forward and back. Those two uses do cover the same
 // ground in opposite senses, and they are the one configuration where that is correct rather than a
 // defect, so a pair of uses of the SAME edge is excluded by identity (not by tolerance). It is also
-// what the old chart predicate was really buying with its unwrap/seam guard, at the cost of skipping
+// what the old chart predicate was really buying with its tessellate.Unwrap/seam guard, at the cost of skipping
 // every seamed face entirely; here only the seam's own pair is skipped, and the rest of the loop is
 // still checked.
 //

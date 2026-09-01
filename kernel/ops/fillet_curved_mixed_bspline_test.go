@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -231,7 +232,7 @@ func TestN4CertificateMeasuresGeometryItDoesNotOwn(t *testing.T) {
 		}
 		// MaxDev must be the SOLE catcher, or this proves nothing about MaxDev: the mutation keeps the arc's
 		// endpoints, so the 4-cycle still closes, and a mid-span radial bulge barely tilts the tangent plane.
-		if !lifted.Closed || lifted.MaxAngleDev > seamAngularTol {
+		if !lifted.Closed || lifted.MaxAngleDev > tessellate.SeamAngularTol {
 			t.Fatalf("the %.0e bulge also tripped Closed=%v / MaxAngleDev=%.3e, so it does not isolate the G0 "+
 				"axis — pick a mutation only MaxDev can see", lift, lifted.Closed, lifted.MaxAngleDev)
 		}

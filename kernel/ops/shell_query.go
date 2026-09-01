@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -39,7 +40,7 @@ func (c PointContainment) String() string {
 func shellMesh(s *topo.Shell, q Quality) *Mesh {
 	mesh := &Mesh{}
 	for _, f := range s.Faces() {
-		mergeMesh(mesh, TessellateFace(f, q))
+		tessellate.MergeMesh(mesh, tessellate.TessellateFace(f, q))
 	}
 	return mesh
 }

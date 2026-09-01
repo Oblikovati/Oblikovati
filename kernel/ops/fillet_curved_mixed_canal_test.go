@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -49,7 +50,7 @@ func n4AcceptedBallFrameInputs(t *testing.T) n4BallFrameInputs {
 
 // TestN4BallFrameDeclinesVPlaneNotParallelToTorusAxis exercises the n̂·k̂ CLASS guard: the closed-form curve
 // is {n̂·(P−O) = a} ∩ {2r-torus} only while the host plane contains the torus axis direction, because only
-// then is the plane constraint ρ·cosθ = a. It brackets the predicate itself at its own seamAngularTol AND
+// then is the plane constraint ρ·cosθ = a. It brackets the predicate itself at its own tessellate.SeamAngularTol AND
 // asserts that a host the predicate rejects makes newN4BallFrame decline.
 //
 // The predicate is bracketed separately from the frame on purpose: an out-of-plane tilt of ε also moves the
@@ -65,16 +66,16 @@ func TestN4BallFrameDeclinesVPlaneNotParallelToTorusAxis(t *testing.T) {
 		want bool
 	}{
 		{"an untilted host is in class", 0, true},
-		{"half an angular tolerance of tilt is in class", 0.5 * seamAngularTol, true},
-		{"twice the angular tolerance is out of class", 2 * seamAngularTol, false},
+		{"half an angular tolerance of tilt is in class", 0.5 * tessellate.SeamAngularTol, true},
+		{"twice the angular tolerance is out of class", 2 * tessellate.SeamAngularTol, false},
 		{"a grossly tilted host is out of class", 0.5, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			tilted := tiltPlaneNormalTowardAxis(t, in.vplane, in.torus.AxisDir.AsVector(), tc.tilt)
 			if got := vplaneParallelToTorusAxis(in.torus, tilted); got != tc.want {
 				t.Fatalf("vplaneParallelToTorusAxis = %v for a host tilted %.3e rad out of the torus "+
-					"equatorial plane, want %v (n̂·k̂ = %.3e vs seamAngularTol %.0e)",
-					got, tc.tilt, tc.want, stdmath.Sin(tc.tilt), seamAngularTol)
+					"equatorial plane, want %v (n̂·k̂ = %.3e vs tessellate.SeamAngularTol %.0e)",
+					got, tc.tilt, tc.want, stdmath.Sin(tc.tilt), tessellate.SeamAngularTol)
 			}
 			if tc.want {
 				return
@@ -154,7 +155,7 @@ func displaceStation(t *testing.T, torus geom.Torus, p math.Point3, d float64, a
 
 // TestN4BallFrameDeclinesDegenerateMeridianSpan exercises the meridian-SPAN guard: a corner whose two arm
 // stations sit at the same ψ has no span to loft over. It also pins the ADR-0042 unit fix — that guard
-// compares two ANGLES and is thresholded by seamAngularTol, never by the model-scaled weld DISTANCE — by
+// compares two ANGLES and is thresholded by tessellate.SeamAngularTol, never by the model-scaled weld DISTANCE — by
 // bracketing it at the angular tolerance while the passed-in distance tol (1.4e-6 here, five times larger)
 // stays fixed.
 func TestN4BallFrameDeclinesDegenerateMeridianSpan(t *testing.T) {
@@ -171,8 +172,8 @@ func TestN4BallFrameDeclinesDegenerateMeridianSpan(t *testing.T) {
 		want bool
 	}{
 		{"the same station twice declines", 0, false},
-		{"half an angular tolerance of span declines", 0.5 * seamAngularTol, false},
-		{"ten angular tolerances of span accepts", 10 * seamAngularTol, true},
+		{"half an angular tolerance of span declines", 0.5 * tessellate.SeamAngularTol, false},
+		{"ten angular tolerances of span accepts", 10 * tessellate.SeamAngularTol, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			m1, ok := f.centerAt(f.psi0 + tc.span) // a station ON the curve, so only the span guard can fire
@@ -181,7 +182,7 @@ func TestN4BallFrameDeclinesDegenerateMeridianSpan(t *testing.T) {
 			}
 			if _, ok := newN4BallFrame(in.torus, in.vplane, in.m0, m1, in.tol); ok != tc.want {
 				t.Fatalf("newN4BallFrame accepted=%v for a meridian span of %.3e rad, want accepted=%v "+
-					"(seamAngularTol %.0e, distance tol %.3e)", ok, tc.span, tc.want, seamAngularTol, in.tol)
+					"(tessellate.SeamAngularTol %.0e, distance tol %.3e)", ok, tc.span, tc.want, tessellate.SeamAngularTol, in.tol)
 			}
 		})
 	}

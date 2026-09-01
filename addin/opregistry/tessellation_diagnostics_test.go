@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -14,6 +13,7 @@ import (
 	"oblikovati.org/test-utilities/degenerate"
 
 	"oblikovati.org/app"
+	"oblikovati.org/kernel/ops/tessellate"
 )
 
 // crossedTrimFeature is a feature whose result is deliberately BAD INPUT for the tessellator — a
@@ -52,11 +52,11 @@ func TestFeatureReplyCarriesTessellationDiagnostics(t *testing.T) {
 		t.Fatalf("unmarshal reply: %v", err)
 	}
 	for _, d := range r.Diagnostics {
-		if d.Code == string(ops.CodePatchCoverage) && d.Severity == "defect" {
+		if d.Code == string(tessellate.CodePatchCoverage) && d.Severity == "defect" {
 			return
 		}
 	}
-	t.Errorf("feature reply carries no %q defect; got %s", ops.CodePatchCoverage, out)
+	t.Errorf("feature reply carries no %q defect; got %s", tessellate.CodePatchCoverage, out)
 }
 
 // emptyPart seeds a session with one empty part document.

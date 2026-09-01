@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -65,8 +66,8 @@ func TestCoons4FitsAndBuilds(t *testing.T) {
 	if patch.Kind != BlendKindCoons4 {
 		t.Errorf("Kind = %q, want %q", patch.Kind, BlendKindCoons4)
 	}
-	if cert.MaxAngleDev >= seamAngularTol {
-		t.Errorf("MaxAngleDev = %g, want < %g (fill not tangent to cylinder)", cert.MaxAngleDev, seamAngularTol)
+	if cert.MaxAngleDev >= tessellate.SeamAngularTol {
+		t.Errorf("MaxAngleDev = %g, want < %g (fill not tangent to cylinder)", cert.MaxAngleDev, tessellate.SeamAngularTol)
 	}
 	assertInterpolatesRails(t, loop, patch.Surface.(geom.BSplineSurface))
 }

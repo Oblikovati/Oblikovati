@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/ops/internal/retopo"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -31,7 +32,7 @@ func BodyInertia(b *topo.Body, q Quality) InertiaTensor {
 	if it, ok := AnalyticInertia(b); ok {
 		return it
 	}
-	mesh, _ := TessellateBody(b, q)
+	mesh, _ := tessellate.TessellateBody(b, q)
 	return meshInertia(mesh)
 }
 
@@ -58,12 +59,12 @@ func meshInertia(mesh *Mesh) InertiaTensor {
 
 // accumulateCovariance sums each outward-wound triangle's tetra covariance (∫ p pᵀ dV about the
 // origin) and signed volume / centroid numerator over the mesh. Triangles are oriented consistently
-// outward TOPOLOGICALLY (consistentOutwardFlips), not from shading normals, so a saddle/silhouette
+// outward TOPOLOGICALLY (tessellate.ConsistentOutwardFlips), not from shading normals, so a saddle/silhouette
 // facet can no longer flip its covariance sign at random (Oblikovati/Oblikovati#1318).
 func accumulateCovariance(mesh *Mesh) (cov mat3, vol, cx, cy, cz float64) {
-	flips := consistentOutwardFlips(mesh)
+	flips := tessellate.ConsistentOutwardFlips(mesh)
 	for ti, n := 0, mesh.TriangleCount(); ti < n; ti++ {
-		a, b, c := triVerts(mesh, ti)
+		a, b, c := tessellate.TriVerts(mesh, ti)
 		if flips[ti] {
 			b, c = c, b
 		}

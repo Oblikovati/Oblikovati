@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -101,7 +102,7 @@ func assertQ5MeshIsWatertightAtEveryQuality(t *testing.T, body *topo.Body) {
 	t.Helper()
 	for _, gq := range gateQualities() {
 		folds := 0
-		for _, m := range ops.CalculateBodyFacets(body, gq.q).FaceMeshes {
+		for _, m := range tessellate.CalculateBodyFacets(body, gq.q).FaceMeshes {
 			folds += ops.FoldEdgeCount(m)
 		}
 		if free := shippedMeshFreeEdges(body, gq.q); folds != 0 || free != 0 {

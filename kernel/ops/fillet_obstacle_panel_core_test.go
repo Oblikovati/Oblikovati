@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -380,7 +381,7 @@ func TestExtractPanelLoopU4CoreSplitProductionTessConverges(t *testing.T) {
 	prevErr := stdmath.Inf(1)
 	for _, tol := range []float64{0.05, 0.01, 0.001, 0.0001} {
 		q := Quality{ChordTolerance: tol, AngleTolerance: DefaultQuality().AngleTolerance}
-		m := nurbsPcurveMesh(face, q)
+		m := tessellate.NurbsPcurveMesh(face, q)
 		if m == nil {
 			t.Fatalf("nurbsPcurveMesh declined the core split-half panel at tol=%g", tol)
 		}

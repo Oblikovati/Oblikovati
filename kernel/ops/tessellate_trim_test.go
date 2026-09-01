@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -55,7 +56,7 @@ func TestTrimmedCurvedFaceArea(t *testing.T) {
 	t.Parallel()
 	const r, h = 2.0, 3.0
 	f := quarterCylinderFace(t, r, h)
-	mesh := TessellateFace(f, Quality{ChordTolerance: 1e-3})
+	mesh := tessellate.TessellateFace(f, Quality{ChordTolerance: 1e-3})
 	want := r * (stdmath.Pi / 2) * h // ≈ 9.4248
 	if got := meshArea(mesh); stdmath.Abs(got-want) > 0.02 {
 		t.Errorf("quarter-cylinder mesh area = %g, want ≈ %g", got, want)
@@ -97,7 +98,7 @@ func fullCylinderFace(t *testing.T, r, h float64) *topo.Face {
 func TestFullPeriodicCylinderFaceArea(t *testing.T) {
 	t.Parallel()
 	const r, h = 2.0, 5.0
-	mesh := TessellateFace(fullCylinderFace(t, r, h), DefaultQuality())
+	mesh := tessellate.TessellateFace(fullCylinderFace(t, r, h), DefaultQuality())
 	want := 2 * stdmath.Pi * r * h // ≈ 62.83
 	if got := meshArea(mesh); got > want+1e-9 || (want-got)/want > 0.03 {
 		t.Errorf("full cylinder side area = %g, want a hair under %g (2π·r·h, inscribed)", got, want)
@@ -139,7 +140,7 @@ func TestConeFrustumFaceArea(t *testing.T) {
 	t.Parallel()
 	const ha = stdmath.Pi / 4 // 45°, tan = 1
 	const v1, v2 = 2.0, 4.0   // r1=2, r2=4
-	mesh := TessellateFace(fullConeFrustumFace(t, ha, v1, v2), DefaultQuality())
+	mesh := tessellate.TessellateFace(fullConeFrustumFace(t, ha, v1, v2), DefaultQuality())
 	r1, r2 := v1*stdmath.Tan(ha), v2*stdmath.Tan(ha)
 	slant := (v2 - v1) / stdmath.Cos(ha)
 	want := stdmath.Pi * (r1 + r2) * slant // ≈ 53.3
@@ -174,7 +175,7 @@ func coneApexFace(t *testing.T, halfAngle, vRim float64) *topo.Face {
 func TestConeApexFaceArea(t *testing.T) {
 	t.Parallel()
 	const ha, vRim = stdmath.Pi / 4, 2.0 // 45°, rim radius 2
-	mesh := TessellateFace(coneApexFace(t, ha, vRim), DefaultQuality())
+	mesh := tessellate.TessellateFace(coneApexFace(t, ha, vRim), DefaultQuality())
 	r := vRim * stdmath.Tan(ha)
 	want := stdmath.Pi * r * r / stdmath.Sin(ha) // π·r²/sin(halfAngle) ≈ 17.77
 	if got := meshArea(mesh); got > want+1e-9 || (want-got)/want > 0.03 {
@@ -189,7 +190,7 @@ func TestTrimmedCurvedFaceOutwardWinding(t *testing.T) {
 	t.Parallel()
 	f := quarterCylinderFace(t, 2, 3)
 	cyl := f.Geometry()
-	mesh := TessellateFace(f, Quality{ChordTolerance: 1e-2})
+	mesh := tessellate.TessellateFace(f, Quality{ChordTolerance: 1e-2})
 	for i := 0; i+2 < len(mesh.Indices); i += 3 {
 		a, b, c := mesh.Positions[mesh.Indices[i]], mesh.Positions[mesh.Indices[i+1]], mesh.Positions[mesh.Indices[i+2]]
 		n := a.VectorTo(b).Cross(a.VectorTo(c))

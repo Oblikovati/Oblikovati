@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -120,7 +121,7 @@ func assertComposedWatertight(t *testing.T, res *topo.Body) {
 		t.Fatalf("composed body not watertight: valid=%v closed=%v holes=%v solid=%v",
 			rep.Valid, rep.Closed, rep.HolesContained, res.IsSolid())
 	}
-	if mesh, _ := TessellateBody(res, PropertyQuality()); validate.FoldEdgeCount(mesh) != 0 {
+	if mesh, _ := tessellate.TessellateBody(res, PropertyQuality()); validate.FoldEdgeCount(mesh) != 0 {
 		t.Fatalf("composed body mesh has %d fold edges, want 0 (non-manifold weld)", validate.FoldEdgeCount(mesh))
 	}
 }

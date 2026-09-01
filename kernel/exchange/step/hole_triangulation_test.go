@@ -12,6 +12,7 @@ import (
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -52,7 +53,7 @@ func holeCoveringTriangles(f *topo.Face) int {
 	if len(holes) == 0 {
 		return 0
 	}
-	m := ops.TessellateFace(f, ops.DefaultQuality())
+	m := tessellate.TessellateFace(f, ops.DefaultQuality())
 	n := 0
 	for t := 0; t+2 < len(m.Indices); t += 3 {
 		a, b, c := m.Positions[m.Indices[t]], m.Positions[m.Indices[t+1]], m.Positions[m.Indices[t+2]]
@@ -80,7 +81,7 @@ func faceHoleDiscs(f *topo.Face) []holeDisc {
 		}
 		var pts []math.Point3
 		for _, u := range l.EdgeUses() {
-			pts = append(pts, ops.TessellateEdge(u.Edge(), ops.DefaultQuality())...)
+			pts = append(pts, tessellate.TessellateEdge(u.Edge(), ops.DefaultQuality())...)
 		}
 		if len(pts) < 3 {
 			continue

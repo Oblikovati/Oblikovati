@@ -19,7 +19,7 @@ import (
 // pinches off is a triangle of area h·d²/(2(W+d)) in the developed metric — no oracle needed — and
 // that is the quantity the shipped face's shoelace is wrong by.
 //
-// Falsify by relaxing segmentsCross to a non-strict test, or by dropping the crossing point from
+// Falsify by relaxing tessellate.SegmentsCross to a non-strict test, or by dropping the crossing point from
 // pinchedOffArea: the area then stops matching the closed form and this goes RED.
 func TestSelfCrossingFaceLoopsMeasuresThePinchedOffArea(t *testing.T) {
 	t.Parallel()

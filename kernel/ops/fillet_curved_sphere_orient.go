@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -143,7 +144,7 @@ func sphereLoopVectorArea(sph geom.Sphere, ring []math.Point3) math.Vector3 {
 func compactSpherePole(sph geom.Sphere, pts []math.Point3) (math.Vector3, bool) {
 	var sum math.Vector3
 	for _, p := range pts {
-		sum = sum.Add(sphereDir(sph, p))
+		sum = sum.Add(tessellate.SphereDir(sph, p))
 	}
 	mean, err := math.UnitVector3FromVector(sum)
 	if err != nil {
@@ -151,7 +152,7 @@ func compactSpherePole(sph geom.Sphere, pts []math.Point3) (math.Vector3, bool) 
 	}
 	pole := mean.AsVector()
 	for _, p := range pts {
-		if float64(sphereDir(sph, p).Dot(pole)) <= 0 {
+		if float64(tessellate.SphereDir(sph, p).Dot(pole)) <= 0 {
 			return math.Vector3{}, false // a vertex >90° from the mean — a wide (E4-like) bite, not compact
 		}
 	}
@@ -162,7 +163,7 @@ func compactSpherePole(sph geom.Sphere, pts []math.Point3) (math.Vector3, bool) 
 // pole — the winding sense the sphere-patch mesher's sign test misreads as the complement.
 func loopTurnsNegative(sph geom.Sphere, pole math.Vector3, pts []math.Point3) bool {
 	center := sph.Center.TranslateBy(pole.Scale(math.Scalar(sph.Radius)))
-	return loopWindingAround(pts, center, pole) < 0
+	return tessellate.LoopWindingAround(pts, center, pole) < 0
 }
 
 // reverseFilletFace reverses every loop of a face (metadata-preserving), so orientForSphereHost can wind

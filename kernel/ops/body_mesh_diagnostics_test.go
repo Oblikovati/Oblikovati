@@ -8,22 +8,23 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/test-utilities/degenerate"
 )
 
 // TestBodyMeshDiagnosticsHarvestsTheTessellatorsReport is the #2058 kernel-side regression: what the
-// mesher recorded onto its Mesh must be readable from outside this package, or it reaches nobody.
+// mesher recorded onto its tessellate.Mesh must be readable from outside this package, or it reaches nobody.
 func TestBodyMeshDiagnosticsHarvestsTheTessellatorsReport(t *testing.T) {
 	t.Parallel()
-	got := BodyMeshDiagnostics(degenerate.CrossedTrimBody(), DefaultQuality())
+	got := BodyMeshDiagnostics(degenerate.CrossedTrimBody(), tessellate.DefaultQuality())
 	if len(got) != 1 {
 		t.Fatalf("harvested %d diagnostics from a two-face self-crossing trim, want 1 collapsed entry: %v",
 			len(got), got)
 	}
-	if got[0].Code != CodePatchCoverage || got[0].Severity != diag.Defect {
-		t.Errorf("harvested %v, want a %s Defect", got[0], CodePatchCoverage)
+	if got[0].Code != tessellate.CodePatchCoverage || got[0].Severity != diag.Defect {
+		t.Errorf("harvested %v, want a %s Defect", got[0], tessellate.CodePatchCoverage)
 	}
 	// Both faces carry the flaw, so the collapsed entry must say so rather than imply a single face.
 	if !strings.Contains(got[0].Detail, "meshing 2 of the body's faces") {
@@ -37,7 +38,7 @@ func TestBodyMeshDiagnosticsHarvestsTheTessellatorsReport(t *testing.T) {
 func TestBodyMeshDiagnosticsStaysSilentOnCleanBodies(t *testing.T) {
 	t.Parallel()
 	for name, b := range cleanPrimitiveBodies(t) {
-		if got := BodyMeshDiagnostics(b, DefaultQuality()); len(got) != 0 {
+		if got := BodyMeshDiagnostics(b, tessellate.DefaultQuality()); len(got) != 0 {
 			t.Errorf("clean %s reported %v, want none", name, got)
 		}
 	}
@@ -65,7 +66,7 @@ func cleanPrimitiveBodies(t *testing.T) map[string]*topo.Body {
 // a nil body in that slice must not panic the recompute it is reporting on.
 func TestBodyMeshDiagnosticsOnNilBodyIsEmpty(t *testing.T) {
 	t.Parallel()
-	if got := BodyMeshDiagnostics(nil, DefaultQuality()); got != nil {
+	if got := BodyMeshDiagnostics(nil, tessellate.DefaultQuality()); got != nil {
 		t.Errorf("nil body reported %v, want nil", got)
 	}
 }

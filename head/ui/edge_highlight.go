@@ -5,6 +5,7 @@ package ui
 import (
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/renderer"
 )
@@ -23,7 +24,7 @@ func selectedEdgeOverlay(s *app.Session) []renderer.DrawItem {
 	}
 	acc := &segAccum{}
 	for _, e := range edges {
-		pts := ops.TessellateEdge(e, ops.DefaultQuality())
+		pts := tessellate.TessellateEdge(e, ops.DefaultQuality())
 		for i := 0; i+1 < len(pts); i++ {
 			acc.addSegment(pts[i], pts[i+1])
 		}

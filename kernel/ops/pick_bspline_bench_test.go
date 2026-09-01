@@ -14,7 +14,7 @@ import (
 // panel — the #2010 hot path. LocateUsingPoint(kind=KindEdge) runs closerEdge → discretizeEdge →
 // densifyStarvedRail → starvedEdgeTarget for every edge every call, and UNLIKE curved-face picking
 // (RayCastFaces, memoized wholesale by pickTess) it has NO whole-face memo, so before this fix each
-// pick re-ran metricScale (~25 DerivativesAt per incident B-spline face) on both starved rails every
+// pick re-ran tessellate.MetricScale (~25 DerivativesAt per incident B-spline face) on both starved rails every
 // frame. With faceMetricScale the metric is computed once per face lifetime and every subsequent pick
 // reuses it. This benchmark lives in package ops (not the ops_test pick_bench_test.go beside
 // BenchmarkRayCastFacesSphere) because it reuses the unexported #2009 cylindricalStripBody fixture.

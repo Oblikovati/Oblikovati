@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/meshbool"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -20,7 +21,7 @@ import (
 
 // bodyToSoup returns body b, tessellated at quality q, as an exact triangle soup.
 func bodyToSoup(b *topo.Body, q Quality) [][3]meshbool.Point {
-	mesh, _ := TessellateBody(b, q)
+	mesh, _ := tessellate.TessellateBody(b, q)
 	return soupFromMesh(mesh)
 }
 

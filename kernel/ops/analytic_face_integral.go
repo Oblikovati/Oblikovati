@@ -559,7 +559,7 @@ func periodOf(lo, hi float64) float64 {
 	return 0
 }
 
-// unwrap returns the period-multiple of raw nearest prev, giving a continuous coordinate across
+// tessellate.Unwrap returns the period-multiple of raw nearest prev, giving a continuous coordinate across
 // a periodic seam. A zero period (non-periodic) passes raw through unchanged.
 func unwrapPeriodic(raw, prev, period float64) float64 {
 	if period == 0 {

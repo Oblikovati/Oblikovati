@@ -11,6 +11,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -132,8 +133,8 @@ func TestClusterACornerGreensPinnedAndWatertight(t *testing.T) {
 func assertClusterAWatertight(t *testing.T, body *topo.Body) {
 	t.Helper()
 	for _, gq := range gateQualities() {
-		facets := ops.CalculateBodyFacets(body, gq.q)
-		if free := ops.FreeEdgeCount(facets.Mesh); free != 0 {
+		facets := tessellate.CalculateBodyFacets(body, gq.q)
+		if free := tessellate.FreeEdgeCount(facets.Mesh); free != 0 {
 			t.Fatalf("%s quality: %d free edges, want 0", gq.name, free)
 		}
 		if folds := meshFoldEdges(facets); folds != 0 {
@@ -156,7 +157,7 @@ func TestClusterACornerPatchClosedForms(t *testing.T) {
 		if _, isCyl := f.Geometry().(geom.Cylinder); !isCyl {
 			continue
 		}
-		if a := ops.MeshArea(ops.TessellateFace(f, ops.PropertyQuality())); relErr(a, 148.148) > 1e-3 {
+		if a := ops.MeshArea(tessellate.TessellateFace(f, ops.PropertyQuality())); relErr(a, 148.148) > 1e-3 {
 			t.Fatalf("D4 band area %.4f, want 148.148 (DRAWEXE, ±0.1%%)", a)
 		}
 	}
@@ -172,7 +173,7 @@ func assertUniqueKindFaceArea(t *testing.T, body *topo.Body, kind string, want, 
 			continue
 		}
 		found++
-		if a := ops.MeshArea(ops.TessellateFace(f, ops.PropertyQuality())); relErr(a, want) > tol {
+		if a := ops.MeshArea(tessellate.TessellateFace(f, ops.PropertyQuality())); relErr(a, want) > tol {
 			t.Fatalf("%s patch area %.6f, want %.6f (rel %.3g > %.1g)", kind, a, want, relErr(a, want), tol)
 		}
 	}

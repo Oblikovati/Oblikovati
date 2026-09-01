@@ -33,7 +33,7 @@ const (
 // XY), so G1 is neither achievable nor wanted there; a single tensor patch cannot be corner-twist
 // compatible. G1 is therefore asserted only on the SMOOTH seam interiors, f ∈ [excl, 1−excl]. 0.15
 // comfortably contains the corner-adjacent 2-column band once the rails are refined to obstacleG1Ctrl
-// columns (refineForG1) — measured so the interior crease falls below seamAngularTol (task-4-report).
+// columns (refineForG1) — measured so the interior crease falls below tessellate.SeamAngularTol (task-4-report).
 const obstacleCornerExcl = 0.15
 
 // certifyObstaclePatch measures the patch's admissibility. Closed/WeldsArms are structural givens

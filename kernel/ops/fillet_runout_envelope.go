@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -82,7 +83,7 @@ func (f runoutEnvelope) surfRstCentre(tangent, restrict geom.Plane, s float64, q
 	}
 	d := nb.Cross(f.spine)
 	sigma := float64(na.Dot(d))
-	if stdmath.Abs(sigma) < stdmath.Sin(seamAngularTol) {
+	if stdmath.Abs(sigma) < stdmath.Sin(tessellate.SeamAngularTol) {
 		return math.Point3{}, false // hosts near-parallel: the branch sign is undefined (pitfall 5)
 	}
 	a := f.axisPoint(s)

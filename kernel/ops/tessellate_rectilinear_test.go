@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -14,7 +15,7 @@ import (
 // take, and the shapes it must leave to the paths that already own them.
 
 // rectilinearUnitLoop is the [0,4]×[0,10] rectangle with the [3,4]×[8,10] corner removed, sampled the
-// way toUVLoops delivers a trim (many collinear samples along each run, as an arc discretization does).
+// way ToUVLoops delivers a trim (many collinear samples along each run, as an arc discretization does).
 func rectilinearUnitLoop() []math.Point2 {
 	corners := []math.Point2{
 		math.P2(0, 0), math.P2(4, 0), math.P2(4, 8), math.P2(3, 8), math.P2(3, 10), math.P2(0, 10),
@@ -34,9 +35,9 @@ func rectilinearUnitLoop() []math.Point2 {
 func TestIsoRectilinearGridDecomposesANotchedRectangle(t *testing.T) {
 	t.Parallel()
 	loop := rectilinearUnitLoop()
-	us, vs, skip, ok := isoRectilinearGrid(loop)
+	us, vs, skip, ok := tessellate.IsoRectilinearGrid(loop)
 	if !ok {
-		t.Fatal("isoRectilinearGrid declined a notched rectangle")
+		t.Fatal("tessellate.IsoRectilinearGrid declined a notched rectangle")
 	}
 	kept := 0.0
 	for i := 0; i+1 < len(us); i++ {
@@ -64,8 +65,8 @@ func TestIsoRectilinearGridDeclinesAPlainRectangle(t *testing.T) {
 			loop = append(loop, a.Lerp(b, math.Scalar(float64(k)/5)))
 		}
 	}
-	if _, _, _, ok := isoRectilinearGrid(loop); ok {
-		t.Error("isoRectilinearGrid claimed a plain rectangle, which belongs to isoRectangleGrid")
+	if _, _, _, ok := tessellate.IsoRectilinearGrid(loop); ok {
+		t.Error("tessellate.IsoRectilinearGrid claimed a plain rectangle, which belongs to isoRectangleGrid")
 	}
 }
 
@@ -75,8 +76,8 @@ func TestIsoRectilinearGridDeclinesAPlainRectangle(t *testing.T) {
 func TestIsoRectilinearGridDeclinesAnObliqueRun(t *testing.T) {
 	t.Parallel()
 	loop := []math.Point2{math.P2(0, 0), math.P2(4, 0), math.P2(4, 8), math.P2(3, 10), math.P2(0, 10)}
-	if _, _, _, ok := isoRectilinearGrid(loop); ok {
-		t.Error("isoRectilinearGrid accepted a trim with an oblique run")
+	if _, _, _, ok := tessellate.IsoRectilinearGrid(loop); ok {
+		t.Error("tessellate.IsoRectilinearGrid accepted a trim with an oblique run")
 	}
 }
 
@@ -89,8 +90,8 @@ func TestIsoRectilinearGridDeclinesASelfTouchingTrim(t *testing.T) {
 		math.P2(0, 0), math.P2(4, 0), math.P2(4, 4), math.P2(0, 4),
 		math.P2(0, 8), math.P2(4, 8), math.P2(4, 4), math.P2(0, 4),
 	}
-	if _, _, _, ok := isoRectilinearGrid(loop); ok {
-		t.Error("isoRectilinearGrid accepted a self-touching trim")
+	if _, _, _, ok := tessellate.IsoRectilinearGrid(loop); ok {
+		t.Error("tessellate.IsoRectilinearGrid accepted a self-touching trim")
 	}
 }
 
@@ -114,7 +115,7 @@ func TestIsoRectilinearGridMeshesTheImprintedBandExactly(t *testing.T) {
 			t.Fatalf("%s: the imprint declined", c.name)
 		}
 		bandBody := assembleBody([]filletFace{set.band})
-		mesh := tessellateFaceSurface(bandBody.Faces()[0], PropertyQuality())
+		mesh := tessellate.TessellateFaceSurface(bandBody.Faces()[0], PropertyQuality())
 		want := c.r*stdmath.Pi/2*100 - c.r*c.bite*10
 		got := meshTriangleArea(mesh)
 		// The mesh chords the band's own boundary discretization, so it under-measures by that
@@ -126,7 +127,7 @@ func TestIsoRectilinearGridMeshesTheImprintedBandExactly(t *testing.T) {
 }
 
 // meshTriangleArea is the summed triangle area of a mesh.
-func meshTriangleArea(m *Mesh) float64 {
+func meshTriangleArea(m *tessellate.Mesh) float64 {
 	a := 0.0
 	for i := 0; i+2 < len(m.Indices); i += 3 {
 		p0, p1, p2 := m.Positions[m.Indices[i]], m.Positions[m.Indices[i+1]], m.Positions[m.Indices[i+2]]

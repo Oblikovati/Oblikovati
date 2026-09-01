@@ -21,7 +21,7 @@ package occtparity
 // numbers exactly.
 //
 // PROVEN IMPROVED, four independent measures, none of them our own number. Whole-body mesh area
-// (Σ ops.MeshArea ∘ ops.TessellateFace at PropertyQuality) against OCCT's own checkprops reference —
+// (Σ ops.MeshArea ∘ tessellate.TessellateFace at PropertyQuality) against OCCT's own checkprops reference —
 // confirmed this session as live DRAWEXE 8.0.0 `sprops result 1.e-12`, relative error of mass
 // computation ≤ 9e-16 on every case:
 //
@@ -62,7 +62,7 @@ package occtparity
 // regression): the dissent is the SPHERE-HOST face, on BOTH sphere cases, S6 AND S7. OCCT does not
 // trim that sphere at all — verified against the closed hemisphere 2π·13² = 1061.858347 by area,
 // CoG z = R/2 AND inertia. Sphere-face area at PropertyQuality, base → HEAD (ops.MeshArea ∘
-// ops.TessellateFace, measured here): S6 1061.302202 → 1061.235258, S7 1061.291184 → 1061.179147;
+// tessellate.TessellateFace, measured here): S6 1061.302202 → 1061.235258, S7 1061.291184 → 1061.179147;
 // at the review's CONVERGED tessellation limit: S6 1061.313591 → 1061.273914 and S7 1061.301549 →
 // 1061.264052, against the closed 1061.858347. (★★ fix wave: those "CONVERGED" figures were never
 // converged limits — they are readings of spherePatchMesh's patchGridCap-clamped PLATEAU under that
@@ -101,7 +101,7 @@ package occtparity
 // surplus, a trim-loop region defect on a plane that cannot be wrong as a surface.
 //
 // PROVEN IMPROVED, every case, two oracle axes measured this session (functions and qualities named):
-// whole-body mesh area (Σ ops.MeshArea ∘ ops.TessellateFace at PropertyQuality) against OCCT's
+// whole-body mesh area (Σ ops.MeshArea ∘ tessellate.TessellateFace at PropertyQuality) against OCCT's
 // checkprops reference, adoption HEAD → this HEAD:
 //
 //	S1 +6.396e-05→−1.047e-05 (6.1×)   S4 +9.129e-05→−7.068e-06 (12.9×)  S6 +1.682e-04→−1.594e-04 (1.06×)
@@ -146,7 +146,7 @@ package occtparity
 // PROVEN IMPROVED — per-face against live DRAWEXE 8.0.0 `sprops <face> 1.e-12` (per-face rel err
 // ≤ 1e-15), blend rebuilt from each case's own STEP fixture with the pick edge matched by lprops
 // CoG to the corpus locator at ≤ 9e-16 and the face count matching ours EXACTLY on every case
-// (S1/S4/T1/T4/T7 15, S6 10, S9/T3 11, S7 14); ours = ops.MeshArea ∘ ops.TessellateFace at
+// (S1/S4/T1/T4/T7 15, S6 10, S9/T3 11, S7 14); ours = ops.MeshArea ∘ tessellate.TessellateFace at
 // PropertyQuality, faces rank-paired by area. The ONLY faces that move on any body are the pInner
 // host plane and its runout patch(es) — face-ID-paired movers, complementary by construction — and
 // EVERY mover moves TOWARD its oracle row (21 of 21; no face regresses on any case):

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -65,10 +66,10 @@ func TestPartialRimCornerCutMomentsMatchOCC(t *testing.T) {
 }
 
 // cornerMeshFreeEdges is the corner-certification watertightness metric, delegating to the production
-// FreeEdgeCount so it welds at the MODEL's own resolution rather than a fixed 1e-6 grid — a fixed grid
+// tessellate.FreeEdgeCount so it welds at the MODEL's own resolution rather than a fixed 1e-6 grid — a fixed grid
 // over-merges any model finer than itself and reports the over-merge as a free edge.
 func cornerMeshFreeEdges(m *Mesh) int {
-	return FreeEdgeCount(m)
+	return tessellate.FreeEdgeCount(m)
 }
 
 // TestPartialRimCornerCutTessellationIsWatertight is the top-priority tessellation gate (CLAUDE.md: the user
@@ -82,7 +83,7 @@ func TestPartialRimCornerCutTessellationIsWatertight(t *testing.T) {
 		t.Fatalf("Boolean(Cut): %v", err)
 	}
 	for _, gq := range gateQualities() {
-		mesh, _ := TessellateBody(res, gq.q)
+		mesh, _ := tessellate.TessellateBody(res, gq.q)
 		if free := cornerMeshFreeEdges(mesh); free != 0 {
 			t.Errorf("%s quality: corner-junction tessellation has %d free edges (want 0) — a visible crack in the "+
 				"rendered mesh", gq.name, free)
@@ -112,7 +113,7 @@ func TestPartialRimCornerCutMembershipMatchesCSG(t *testing.T) {
 		zCap := stdmath.Min(stdmath.Abs(float64(p.Z)), stdmath.Abs(float64(p.Z)-10))
 		return rWall < shell || rNotch < shell || rRod < shell || zCap < shell
 	}
-	mesh, _ := TessellateBody(res, DefaultQuality())
+	mesh, _ := tessellate.TessellateBody(res, DefaultQuality())
 	mismatches := 0
 	const n = 60
 	for i := range n {

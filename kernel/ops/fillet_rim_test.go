@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -41,7 +42,7 @@ func TestRimFilletTorusBand(t *testing.T) {
 		t.Errorf("faces: torus=%d cyl=%d plane=%d, want 1/1/2", tor, cyl, pln)
 	}
 	for _, tol := range []float64{0.05, 1e-2, 1e-3, 1e-4} {
-		m, _ := ops.TessellateBody(b, ops.Quality{ChordTolerance: tol})
+		m, _ := tessellate.TessellateBody(b, ops.Quality{ChordTolerance: tol})
 		if open := meshOpenEdges(m); open != 0 {
 			t.Errorf("rim-fillet mesh at tol %g has %d open edges, want watertight", tol, open)
 		}
@@ -69,7 +70,7 @@ func TestRimFilletWatertightAcrossSizes(t *testing.T) {
 			t.Errorf("R=%g r=%g: not a valid solid: %+v", c.R, c.r, rep.Issues)
 		}
 		for _, tol := range []float64{0.05, 1e-2, 1e-3, 1e-4} {
-			m, _ := ops.TessellateBody(b, ops.Quality{ChordTolerance: tol})
+			m, _ := tessellate.TessellateBody(b, ops.Quality{ChordTolerance: tol})
 			if open := meshOpenEdges(m); open != 0 {
 				t.Errorf("R=%g h=%g r=%g at tol %g: %d open edges", c.R, c.h, c.r, tol, open)
 			}

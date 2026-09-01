@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -90,7 +91,7 @@ func assertWatertightCrossing(t *testing.T, got *topo.Body, r, dr float64) {
 		t.Errorf("result has %d faces, want 3 (rod band + two lens caps)", n)
 	}
 	for _, gq := range gateQualities() {
-		m, _ := TessellateBody(got, gq.q)
+		m, _ := tessellate.TessellateBody(got, gq.q)
 		if free := freeEdgeCount(m); free != 0 {
 			t.Errorf("R=%g dr=%g at %s quality meshed with %d free edges; want 0 (watertight)", r, dr, gq.name, free)
 		}
@@ -145,7 +146,7 @@ func assertWatertightSolid(t *testing.T, got *topo.Body) {
 		t.Fatalf("result not a valid closed manifold solid: %+v", v)
 	}
 	for _, gq := range gateQualities() {
-		if m, _ := TessellateBody(got, gq.q); freeEdgeCount(m) != 0 {
+		if m, _ := tessellate.TessellateBody(got, gq.q); freeEdgeCount(m) != 0 {
 			t.Errorf("%s quality: meshed with %d free edges; want 0 (watertight)", gq.name, freeEdgeCount(m))
 		}
 	}

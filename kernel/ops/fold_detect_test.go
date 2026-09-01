@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/tessellate"
 	gm "oblikovati.org/math"
 )
 
@@ -71,7 +72,7 @@ func TestFoldEdgeCountOnCleanCurvedSolid(t *testing.T) {
 		t.Fatalf("build cylinder: %v", err)
 	}
 	for _, gq := range gateQualities() {
-		mesh, _ := TessellateBody(cyl, gq.q)
+		mesh, _ := tessellate.TessellateBody(cyl, gq.q)
 		if got := FoldEdgeCount(mesh); got != 0 {
 			t.Errorf("%s quality: clean cylinder tessellated with %d fold edges; want 0", gq.name, got)
 		}

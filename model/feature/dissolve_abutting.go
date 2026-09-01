@@ -5,7 +5,7 @@ package feature
 import (
 	stdmath "math"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -55,7 +55,7 @@ func dissolveGroup(profiles []*sketch.Profile, group []int) ([]mergedRegion, boo
 	if !ok {
 		return nil, false
 	}
-	merged := ops.MergeAbuttingLoops(polys)
+	merged := tessellate.MergeAbuttingLoops(polys)
 	if len(merged) == 0 || len(merged) >= len(polys) {
 		return nil, false
 	}

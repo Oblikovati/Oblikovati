@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -135,7 +136,7 @@ func TestConeCornerWeldFoldFree(t *testing.T) {
 		t.Run(fx.name, func(t *testing.T) {
 			welded := weldConeCornerFixture(t, fx)
 			for _, f := range welded.Faces() {
-				if folds := validate.FoldEdgeCount(TessellateFace(f, PropertyQuality())); folds != 0 {
+				if folds := validate.FoldEdgeCount(tessellate.TessellateFace(f, PropertyQuality())); folds != 0 {
 					t.Fatalf("%s: %T face has %d fold edges (mesh over-counts its area)", fx.name, f.Geometry(), folds)
 				}
 			}
@@ -159,7 +160,7 @@ func TestConeCornerGirardArea(t *testing.T) {
 			if !ok {
 				t.Fatalf("%s: no corner sphere face", fx.name)
 			}
-			area := meshGeometryProperties(mesh).Area
+			area := MeshGeometryProperties(mesh).Area
 			if stdmath.Abs(area-fx.girard) > 0.01*fx.girard {
 				t.Fatalf("%s: corner Girard area %.3f != exact %.3f (>1%%) — cap/complement mis-mesh?", fx.name, area, fx.girard)
 			}
@@ -172,7 +173,7 @@ func TestConeCornerGirardArea(t *testing.T) {
 func cornerSphereMesh(b *topo.Body) (geom.Sphere, *Mesh, bool) {
 	for _, f := range b.Faces() {
 		if s, ok := f.Geometry().(geom.Sphere); ok {
-			return s, TessellateFace(f, PropertyQuality()), true
+			return s, tessellate.TessellateFace(f, PropertyQuality()), true
 		}
 	}
 	return geom.Sphere{}, nil, false

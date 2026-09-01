@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -42,7 +43,7 @@ func tetra(s float64, off math.Vector3) *topo.Body {
 func TestPlanarFaceTessellationIsWatertight(t *testing.T) {
 	t.Parallel()
 	body := tetra(1, math.V3(0, 0, 0))
-	mesh := TessellateFace(body.Faces()[0], DefaultQuality())
+	mesh := tessellate.TessellateFace(body.Faces()[0], DefaultQuality())
 	// A triangle face → exactly one triangle over its 3 boundary vertices.
 	if mesh.TriangleCount() != 1 || mesh.VertexCount() != 3 {
 		t.Fatalf("triangle face → %d tris / %d verts, want 1/3", mesh.TriangleCount(), mesh.VertexCount())
@@ -56,7 +57,7 @@ func TestEdgeTessellationHonorsChordTolerance(t *testing.T) {
 	v := bld.AddVertex(math.P3(5, 0, 0), topo.NewLineage(topo.Tok("f", "vertex", 0)))
 	e := bld.AddEdge(circle, v, v, topo.NewLineage(topo.Tok("f", "edge", 0)))
 	tol := 0.01
-	poly := TessellateEdge(e, Quality{ChordTolerance: tol})
+	poly := tessellate.TessellateEdge(e, Quality{ChordTolerance: tol})
 	if len(poly) < 4 {
 		t.Fatalf("circle tessellated into only %d points", len(poly))
 	}
@@ -77,7 +78,7 @@ func TestCurvedFaceTessellationOnSphere(t *testing.T) {
 	v := bld.AddVertex(math.P3(2, 0, 0), topo.NewLineage(topo.Tok("f", "vertex", 0)))
 	e := bld.AddEdge(geom.NewLineSegment(math.P3(2, 0, 0), math.P3(2, 0, 0)), v, v, topo.NewLineage(topo.Tok("f", "edge", 0)))
 	f := bld.AddFace(sphere, topo.NewLineage(topo.Tok("f", "face", 0)), topo.OuterLoop(topo.Fwd(e)))
-	mesh := TessellateFace(f, Quality{ChordTolerance: 0.05})
+	mesh := tessellate.TessellateFace(f, Quality{ChordTolerance: 0.05})
 	if mesh.TriangleCount() == 0 {
 		t.Fatal("sphere face produced no triangles")
 	}
@@ -227,7 +228,7 @@ func quadFace() *topo.Face {
 
 func TestQuadFaceEarClipping(t *testing.T) {
 	t.Parallel()
-	mesh := TessellateFace(quadFace(), DefaultQuality())
+	mesh := tessellate.TessellateFace(quadFace(), DefaultQuality())
 	if mesh.TriangleCount() != 2 || mesh.VertexCount() != 4 {
 		t.Errorf("quad → %d tris / %d verts, want 2/4", mesh.TriangleCount(), mesh.VertexCount())
 	}

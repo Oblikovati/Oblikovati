@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -66,7 +67,7 @@ func TestOffsetFaceSurfacesCylinderArea(t *testing.T) {
 			if len(off.Faces()) != 1 {
 				t.Fatalf("offset body has %d faces, want 1 (just the offset wall)", len(off.Faces()))
 			}
-			got := meshArea(ops.TessellateFace(off.Faces()[0], ops.DefaultQuality()))
+			got := meshArea(tessellate.TessellateFace(off.Faces()[0], ops.DefaultQuality()))
 			want := 2 * stdmath.Pi * c.wantR * h
 			if stdmath.Abs(got-want)/want > 0.02 {
 				t.Errorf("offset (%s) area = %.3f, want %.3f (2π·%g·%g)", c.name, got, want, c.wantR, h)

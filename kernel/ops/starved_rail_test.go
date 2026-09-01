@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -143,8 +144,8 @@ func maxTriangleArea(m *Mesh) float64 {
 // bunchedPanel is the shared ~15:1 aspect, deliberately BUNCHED synthetic panel every test in this
 // file drives: radius 2, sweep 1 rad (arc length 2), height 30 (aspect 15) — matching the brief's
 // "~15:1 developable panel" — with bunch=10 concentrating the v-parameterization's speed near the
-// v=0 rail (aspect measured via metricScale drops from 15.15 unbunched to 6.75 bunched, still
-// comfortably > aspectDensifyThreshold=4, but now exhibits the recon's real local-metric-spike
+// v=0 rail (aspect measured via tessellate.MetricScale drops from 15.15 unbunched to 6.75 bunched, still
+// comfortably > tessellate.AspectDensifyThreshold=4, but now exhibits the recon's real local-metric-spike
 // mechanism: TestStarvedRailFixShrinksOverEnclosureTriangle shows the UNFIXED 2-point rail produces
 // a single triangle carrying 23% of the panel's whole area at this bunch level — an unbunched exact
 // cylinder (bunch=1) is too well-behaved (near-isometric (u,v)) to reproduce the over-enclosure at
@@ -174,15 +175,15 @@ func TestNurbsPcurveMeshConvergesHighAspectPanel(t *testing.T) {
 	s, truth := bunchedPanel(t)
 	face, _ := cylindricalStripFace(t, s, bunchedR, bunchedSweep, bunchedH)
 
-	su, sv := metricScale(s)
-	if a := faceAspect(s, su, sv); a <= aspectDensifyThreshold {
-		t.Fatalf("synthetic panel aspect=%.2f, want > %.1f (test setup must exercise the gate)", a, aspectDensifyThreshold)
+	su, sv := tessellate.MetricScale(s)
+	if a := tessellate.FaceAspect(s, su, sv); a <= tessellate.AspectDensifyThreshold {
+		t.Fatalf("synthetic panel aspect=%.2f, want > %.1f (test setup must exercise the gate)", a, tessellate.AspectDensifyThreshold)
 	}
 
 	prevErr := stdmath.Inf(1)
 	for _, tol := range []float64{0.05, 0.01, 0.001, 0.0001} {
 		q := Quality{ChordTolerance: tol, AngleTolerance: DefaultQuality().AngleTolerance}
-		m := nurbsPcurveMesh(face, q)
+		m := tessellate.NurbsPcurveMesh(face, q)
 		if m == nil {
 			t.Fatalf("nurbsPcurveMesh declined the synthetic high-aspect panel at tol=%g", tol)
 		}
@@ -220,7 +221,7 @@ func TestNurbsPcurveMeshConvergesHighAspectPanel(t *testing.T) {
 // TestStarvedRailFixShrinksOverEnclosureTriangle is the discriminative proof that the fix matters —
 // not merely that the production path happens to look fine. It compares the FIXED path (production
 // discretizeEdge, which densifies the starved rail) against the UNFIXED path (the literal pre-#2009
-// behavior: the rail's bare 2-point sampleEdgeCurve output, bypassing densifyStarvedRail) on the
+// behavior: the rail's bare 2-point tessellate.SampleEdgeCurve output, bypassing densifyStarvedRail) on the
 // IDENTICAL bunched panel + quality. Plain validate.MeshArea alone does not discriminate here (both land
 // within ~1% — the over-enclosed triangle's excess area is masked by under-enclosure elsewhere, an
 // aggregate coincidence, recon's own warning about area-only gates) — maxTriangleArea does: the
@@ -232,14 +233,14 @@ func TestStarvedRailFixShrinksOverEnclosureTriangle(t *testing.T) {
 	s, truth := bunchedPanel(t)
 	face, rails := cylindricalStripFace(t, s, bunchedR, bunchedSweep, bunchedH)
 	q := DefaultQuality()
-	su, sv := metricScale(s)
+	su, sv := tessellate.MetricScale(s)
 
-	fixed := nurbsPcurveMesh(face, q)
+	fixed := tessellate.NurbsPcurveMesh(face, q)
 	if fixed == nil {
 		t.Fatal("nurbsPcurveMesh returned nil")
 	}
 	unfixedUV, unfixed3D := unfixedRailLoop(t, face, rails, q)
-	unfixed, _ := metricCDTPatch(s, su, sv, q, unfixed3D, unfixedUV, nil, nil, 1)
+	unfixed, _ := tessellate.MetricCDTPatch(s, su, sv, q, unfixed3D, unfixedUV, nil, nil, 1)
 	if unfixed == nil {
 		t.Fatal("metricCDTPatch (unfixed) returned nil")
 	}
@@ -260,16 +261,16 @@ func TestStarvedRailFixShrinksOverEnclosureTriangle(t *testing.T) {
 }
 
 // unfixedRailLoop reproduces concatLoopPcurve's boundary assembly but with the straight rails' RAW
-// sampleEdgeCurve output (2 points, bypassing densifyStarvedRail) — the literal pre-#2009 behavior —
+// tessellate.SampleEdgeCurve output (2 points, bypassing densifyStarvedRail) — the literal pre-#2009 behavior —
 // so it can be compared directly against the production (fixed) mesh on the identical panel.
 func unfixedRailLoop(t *testing.T, f *topo.Face, rails [2]*topo.Edge, q Quality) ([]math.Point2, []math.Point3) {
 	t.Helper()
 	isRail := func(e *topo.Edge) bool { return e == rails[0] || e == rails[1] }
 	raw := func(e *topo.Edge) []math.Point3 {
 		if isRail(e) {
-			return sampleEdgeCurve(e, q) // bypasses densifyStarvedRail: the pre-#2009 2-point rail
+			return tessellate.SampleEdgeCurve(e, q) // bypasses densifyStarvedRail: the pre-#2009 2-point rail
 		}
-		return discretizeEdge(e, q)
+		return tessellate.DiscretizeEdge(e, q)
 	}
 	return assembleLoop(t, f, raw)
 }
@@ -287,16 +288,16 @@ func TestStarvedRailHSweepMonotoneConvergence(t *testing.T) {
 	s, truth := bunchedPanel(t)
 	face, rails := cylindricalStripFace(t, s, bunchedR, bunchedSweep, bunchedH)
 	q := DefaultQuality()
-	su, sv := metricScale(s)
+	su, sv := tessellate.MetricScale(s)
 
 	prevMax := stdmath.Inf(1)
 	for _, target := range []float64{30.0, 15.0, 8.0, 4.0, 2.0, 1.0, 0.5, 0.25} { // coarse (~undensified) → fine
 		outerUV, outer3D := starvedSweepLoop(t, face, rails, q, target)
-		m, loops := metricCDTPatch(s, su, sv, q, outer3D, outerUV, nil, nil, 1)
+		m, loops := tessellate.MetricCDTPatch(s, su, sv, q, outer3D, outerUV, nil, nil, 1)
 		if m == nil {
 			t.Fatalf("h=%g: metricCDTPatch returned nil", target)
 		}
-		if !patchIsManifold(m, loops) {
+		if !tessellate.PatchIsManifold(m, loops) {
 			t.Fatalf("h=%g: patch is not manifold", target)
 		}
 		area, mx := validate.MeshArea(m), maxTriangleArea(m)
@@ -327,9 +328,9 @@ func starvedSweepLoop(t *testing.T, f *topo.Face, rails [2]*topo.Edge, q Quality
 	isRail := func(e *topo.Edge) bool { return e == rails[0] || e == rails[1] }
 	dense := func(e *topo.Edge) []math.Point3 {
 		if isRail(e) {
-			return densifyStraightEdgeCurve(e, target)
+			return tessellate.DensifyStraightEdgeCurve(e, target)
 		}
-		return discretizeEdge(e, q) // the curved arcs: sagitta-adaptive, untouched
+		return tessellate.DiscretizeEdge(e, q) // the curved arcs: sagitta-adaptive, untouched
 	}
 	return assembleLoop(t, f, dense)
 }

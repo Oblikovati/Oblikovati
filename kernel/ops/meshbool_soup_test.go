@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/meshbool"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -21,7 +22,7 @@ func TestBodyToSoupClosedBox(t *testing.T) {
 	body := subd.ToBody(subd.Box(2, 3, 4), "box")
 	soup := bodyToSoup(body, PropertyQuality())
 
-	mesh, _ := TessellateBody(body, PropertyQuality())
+	mesh, _ := tessellate.TessellateBody(body, PropertyQuality())
 	if len(soup) != mesh.TriangleCount() {
 		t.Fatalf("soup has %d triangles, tessellation %d", len(soup), mesh.TriangleCount())
 	}

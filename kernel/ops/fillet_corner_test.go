@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -25,7 +26,7 @@ import (
 func assertWatertight(t *testing.T, res *topo.Body, label string) {
 	t.Helper()
 	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
-		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
+		m, _ := tessellate.TessellateBody(res, ops.Quality{ChordTolerance: tol})
 		if open := meshOpenEdges(m); open != 0 {
 			t.Errorf("%s at tol %g: %d open edges", label, tol, open)
 		}

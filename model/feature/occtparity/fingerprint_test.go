@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -53,7 +54,7 @@ type meshFingerprint struct {
 
 // foldFaceTriangles adds each of face f's canonical triangle hashes into sum and counts them.
 func foldFaceTriangles(f *topo.Face, quant float64, sum uint64, tris int) (uint64, int) {
-	m := ops.TessellateFace(f, ops.PropertyQuality())
+	m := tessellate.TessellateFace(f, ops.PropertyQuality())
 	if m == nil {
 		return sum, tris
 	}

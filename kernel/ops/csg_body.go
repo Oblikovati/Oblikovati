@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -67,7 +68,7 @@ func bodyTriangles(b *topo.Body) []mesh.Tri {
 // chord-only booleanInputQuality for robustness; Facet, whose cage feeds the exact planar boolean
 // instead, needs the angle-bounded one so small curved faces survive (see Facet).
 func bodyTrianglesAt(b *topo.Body, q Quality) []mesh.Tri {
-	m, _ := TessellateBody(b, q)
+	m, _ := tessellate.TessellateBody(b, q)
 	var out []mesh.Tri
 	for i := 0; i+2 < len(m.Indices); i += 3 {
 		ia, ib, ic := m.Indices[i], m.Indices[i+1], m.Indices[i+2]

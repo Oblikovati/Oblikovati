@@ -124,9 +124,9 @@ func armContactSweep(edge *topo.Edge, tor geom.Torus, phi float64) float64 {
 	}
 	sgn := edgeWindingSign(arc, tor.AxisDir.AsVector())
 	if sgn*phi >= 0 {
-		return phi // reflex edge yet station already turns the arm's way — nothing to unwrap (defensive)
+		return phi // reflex edge yet station already turns the arm's way — nothing to tessellate.Unwrap (defensive)
 	}
-	return phi + sgn*2*stdmath.Pi // reflex (>180° edge): unwrap phi into the edge's rotational sense — the major arc
+	return phi + sgn*2*stdmath.Pi // reflex (>180° edge): tessellate.Unwrap phi into the edge's rotational sense — the major arc
 }
 
 // edgeWindingSign is +1/−1 as the arm's filleted circular edge turns CCW/CW about the torus arm's axis

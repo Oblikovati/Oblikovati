@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -217,7 +218,7 @@ func bandCrossings(ef edgeFillet, hostIsA bool, pl geom.Plane, fp *topo.Edge, re
 	}
 	side = filletBandSide(ef, boundary, flat)
 	sampled = sampleHoleRim(fp.Geometry(), fp.ID())
-	rim2D := project2D(sampled.pts, flat)
+	rim2D := tessellate.Project2D(sampled.pts, flat)
 	nodes, ok = obstacleNodes(rim2D, boundary, res)
 	if !ok {
 		return filletLoop{}, [2]crossing{}, flat, back, boundary, side, false
