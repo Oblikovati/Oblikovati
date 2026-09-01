@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -118,7 +119,7 @@ func orientedEdgePolylines(f *topo.Face, q Quality, drop func(*topo.Edge) bool) 
 			}
 			pts := discretizeEdge(eu.Edge(), q)
 			if eu.Reversed() {
-				pts = reverse3(pts)
+				pts = probe.ReversedPoints(pts)
 			}
 			if len(pts) >= 2 {
 				segs = append(segs, pts)

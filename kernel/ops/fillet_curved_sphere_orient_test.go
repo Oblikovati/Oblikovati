@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -39,7 +40,7 @@ func TestSphereLoopVectorArea(t *testing.T) {
 	if err != nil || float64(a.AsVector().Z) < 0.99 {
 		t.Fatalf("sphereLoopVectorArea(+Z cap) = (%v,%v), want ≈+Z (the cap centroid)", a, err)
 	}
-	r, _ := math.UnitVector3FromVector(sphereLoopVectorArea(sph, reverse3(loop)))
+	r, _ := math.UnitVector3FromVector(sphereLoopVectorArea(sph, probe.ReversedPoints(loop)))
 	if float64(r.AsVector().Z) > -0.99 {
 		t.Fatalf("sphereLoopVectorArea(reversed) = %v, want ≈−Z (the complement side)", r)
 	}
@@ -50,7 +51,7 @@ func TestLoopTurnsNegativeFlipsWithOrder(t *testing.T) {
 	sph := geom.Sphere{Center: math.P3(0, 0, 0), Radius: 10}
 	pole := math.V3(0, 0, 1)
 	loop := spherePatchLoop(sph, 30*stdmath.Pi/180, 6)
-	rev := reverse3(loop)
+	rev := probe.ReversedPoints(loop)
 	if loopTurnsNegative(sph, pole, loop) == loopTurnsNegative(sph, pole, rev) {
 		t.Fatal("loopTurnsNegative gave the same sign for a loop and its reverse; the winding test is broken")
 	}

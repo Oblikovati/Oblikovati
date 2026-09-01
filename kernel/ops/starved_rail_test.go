@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -344,7 +345,7 @@ func assembleLoop(t *testing.T, f *topo.Face, pointsFor func(*topo.Edge) []math.
 	for _, u := range f.Loops()[0].EdgeUses() {
 		pts := pointsFor(u.Edge())
 		if u.Reversed() {
-			pts = reverse3(pts)
+			pts = probe.ReversedPoints(pts)
 		}
 		if len(p3) > 0 {
 			pts = pts[1:]

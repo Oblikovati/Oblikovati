@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -97,7 +98,7 @@ func seamlessRimRing(l *topo.Loop, seam *topo.Edge, q Quality) ([]math.Point3, b
 		}
 		pts := discretizeEdge(u.Edge(), q)
 		if u.Reversed() {
-			pts = reverse3(pts)
+			pts = probe.ReversedPoints(pts)
 		}
 		segs = append(segs, pts)
 	}

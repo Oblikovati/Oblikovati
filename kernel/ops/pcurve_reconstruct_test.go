@@ -4,6 +4,8 @@ package ops
 
 import (
 	"testing"
+
+	"oblikovati.org/kernel/ops/internal/probe"
 )
 
 func TestReconstructFacePcurvesRoundTrips(t *testing.T) {
@@ -17,7 +19,7 @@ func TestReconstructFacePcurvesRoundTrips(t *testing.T) {
 			pc := u.Pcurve()
 			pts := discretizeEdge(u.Edge(), q)
 			if u.Reversed() {
-				pts = reverse3(pts)
+				pts = probe.ReversedPoints(pts)
 			}
 			if len(pc) != len(pts) {
 				t.Fatalf("pcurve has %d points, edge discretization has %d", len(pc), len(pts))

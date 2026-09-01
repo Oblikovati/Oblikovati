@@ -4,6 +4,7 @@ package ops
 
 import (
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/kernel/predicates"
 	"oblikovati.org/kernel/topo"
@@ -120,7 +121,7 @@ func earClip(poly []math.Point2) (tris [][3]int, complete bool) {
 		idx[i] = i
 	}
 	if signedArea(poly) < 0 {
-		reverse(idx)
+		slices.Reverse(idx)
 	}
 	for len(idx) > 3 {
 		i, ok := findEar(poly, idx)
@@ -192,12 +193,6 @@ func signedArea(poly []math.Point2) float64 {
 		s += p.X*q.Y - q.X*p.Y
 	}
 	return s / 2
-}
-
-func reverse(idx []int) {
-	for i, j := 0, len(idx)-1; i < j; i, j = i+1, j-1 {
-		idx[i], idx[j] = idx[j], idx[i]
-	}
 }
 
 // bestSingleLoopTriangulation picks the lower-area-error of the two single-loop triangulators. A

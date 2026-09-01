@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -76,7 +77,7 @@ func sampleUse(u topo.Use, per int) []math.Point3 {
 // alignRail re-orients (and for closed rails re-phases) rail 2 to minimize
 // total ruling length, so the surface doesn't twist.
 func alignRail(r1, r2 []math.Point3, closed bool) []math.Point3 {
-	rev := reverse3(r2)
+	rev := probe.ReversedPoints(r2)
 	best, bestCost := r2, railCost(r1, r2)
 	if c := railCost(r1, rev); c < bestCost {
 		best, bestCost = rev, c

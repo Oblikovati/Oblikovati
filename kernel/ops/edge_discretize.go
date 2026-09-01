@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -83,7 +84,7 @@ func loopBoundary(l *topo.Loop, q Quality) []math.Point3 {
 	for _, u := range l.EdgeUses() {
 		pts := discretizeEdge(u.Edge(), q)
 		if u.Reversed() {
-			pts = reverse3(pts)
+			pts = probe.ReversedPoints(pts)
 		}
 		if len(out) > 0 {
 			pts = pts[1:] // drop the point shared with the previous edge's end
@@ -94,15 +95,6 @@ func loopBoundary(l *topo.Loop, q Quality) []math.Point3 {
 	// the loop's size so a sub-µm loop is not falsely seen as closed.
 	if n := len(out); n > 1 && out[0].DistanceTo(out[n-1]) < ResolutionForPoints(out).Weld() {
 		out = out[:n-1] // drop the closing duplicate (last == first)
-	}
-	return out
-}
-
-// reverse3 returns the points in reverse order (new slice).
-func reverse3(pts []math.Point3) []math.Point3 {
-	out := make([]math.Point3, len(pts))
-	for i, p := range pts {
-		out[len(pts)-1-i] = p
 	}
 	return out
 }

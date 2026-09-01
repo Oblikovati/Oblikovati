@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/topo"
 	m "oblikovati.org/math"
 )
 
@@ -17,6 +18,21 @@ import (
 
 // sphereVolume returns the analytic volume of a sphere of the given radius.
 func sphereVolume(r float64) float64 { return 4.0 / 3.0 * math.Pi * r * r * r }
+
+// meshVolumeAt integrates the TESSELLATED body at q.
+//
+// The volume tests below are about the tessellated integrator's orientation handling
+// (#1318: a flipped saddle facet on a coarse sphere). BodyGeometryProperties now answers
+// a sphere or torus ANALYTICALLY and ignores q entirely (M48/C3), so routing them through
+// it made every assertion here vacuous — the volume came back bit-identical at every
+// quality. TestCoarseSphereVolumeConvergesMonotonically then compared machine noise
+// against noise/5 and failed on macOS while passing on Linux, which is how a dead premise
+// announces itself. These tests drive the tessellated path on purpose.
+func meshVolumeAt(t *testing.T, b *topo.Body, q Quality) float64 {
+	t.Helper()
+	mesh, _ := TessellateBody(b, q)
+	return meshGeometryProperties(mesh).Volume
+}
 
 // TestCoarseSphereVolumeConvergesMonotonically tessellates a sphere at successively finer qualities
 // and asserts the volume rises monotonically toward the analytic value from below (an inscribed
@@ -36,7 +52,7 @@ func TestCoarseSphereVolumeConvergesMonotonically(t *testing.T) {
 	}
 	var coarseErr, prevErr = 0.0, math.Inf(1)
 	for i, q := range qualities {
-		v := BodyGeometryProperties(sphere, q).Volume
+		v := meshVolumeAt(t, sphere, q)
 		if v <= 0 {
 			t.Fatalf("q[%d]: non-positive volume %g (sign flip)", i, v)
 		}
@@ -73,7 +89,7 @@ func TestCoarseSphereVolumeWithinChordBound(t *testing.T) {
 		t.Fatalf("SolidSphere: %v", err)
 	}
 	const chord = 0.5
-	v := BodyGeometryProperties(sphere, Quality{ChordTolerance: chord, AngleTolerance: 40 * math.Pi / 180}).Volume
+	v := meshVolumeAt(t, sphere, Quality{ChordTolerance: chord, AngleTolerance: 40 * math.Pi / 180})
 	// Shell bound: an inscribed polyhedron's volume deficit is at most the surface area times the
 	// chord deviation (a shell of that thickness). A flipped saddle facet blows past this bound.
 	area := 4 * math.Pi * r * r
@@ -101,7 +117,7 @@ func TestSaddleRichTorusVolumeStable(t *testing.T) {
 	}
 	var prevErr = math.Inf(1)
 	for i, q := range qualities {
-		v := BodyGeometryProperties(torus, q).Volume
+		v := meshVolumeAt(t, torus, q)
 		if v <= 0 {
 			t.Fatalf("q[%d]: non-positive torus volume %g (saddle sign flip)", i, v)
 		}

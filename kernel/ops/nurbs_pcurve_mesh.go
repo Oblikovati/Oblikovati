@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -323,7 +324,7 @@ func concatLoopPcurve(s geom.Surface, l *topo.Loop, q Quality) (uv []math.Point2
 	for _, u := range l.EdgeUses() {
 		pts := discretizeEdge(u.Edge(), q) // #2009: may already carry starved-rail densification (edge-level, both faces see it)
 		if u.Reversed() {
-			pts = reverse3(pts)
+			pts = probe.ReversedPoints(pts)
 		}
 		pc := u.Pcurve()
 		if len(pc) != len(pts) {

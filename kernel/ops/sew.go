@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -221,7 +222,7 @@ func orientToEdge(poly []math.Point3, e *topo.Edge) []math.Point3 {
 	if first.DistanceTo(s) <= last.DistanceTo(s) {
 		return poly
 	}
-	return reverse3(poly)
+	return probe.ReversedPoints(poly)
 }
 
 // alignSnapDeltas matches the curve's natural ends to the welded edge's

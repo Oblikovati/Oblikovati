@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -19,7 +20,7 @@ func ReconstructFacePcurves(f *topo.Face, q Quality) {
 		for _, u := range l.EdgeUses() {
 			pts := discretizeEdge(u.Edge(), q)
 			if u.Reversed() {
-				pts = reverse3(pts)
+				pts = probe.ReversedPoints(pts)
 			}
 			u.SetPcurve(geom.ProjectCurveToSurface(s, pts))
 		}

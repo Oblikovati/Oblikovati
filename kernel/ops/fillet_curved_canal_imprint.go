@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -146,7 +147,7 @@ func chainBulge(chain []endSeg, from math.Point3) []math.Point3 {
 	}
 	interior := poly[1 : len(poly)-1]
 	if float64(from.DistanceTo(poly[len(poly)-1])) <= float64(from.DistanceTo(poly[0])) {
-		return reversedPoints(interior) // `from` is the chain's far end — walk back toward ring[0]
+		return probe.ReversedPoints(interior) // `from` is the chain's far end — walk back toward ring[0]
 	}
 	return interior
 }
@@ -191,13 +192,4 @@ func curve3InteriorPoints(c geom.Curve3, from math.Point3, k int) []math.Point3 
 		pts = append(pts, c.PointAt(lo+t*(hi-lo)))
 	}
 	return pts
-}
-
-// reversedPoints returns pts in reverse order (a fresh slice).
-func reversedPoints(pts []math.Point3) []math.Point3 {
-	out := make([]math.Point3, len(pts))
-	for i, p := range pts {
-		out[len(pts)-1-i] = p
-	}
-	return out
 }

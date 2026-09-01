@@ -6,6 +6,7 @@ import (
 	maps0 "maps"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -243,7 +244,7 @@ func orderedWallInserts(ef edgeFillet, og obstacleGeom, of *ObstacleFeature) []m
 	}
 	start := ef.edge.StartVertex().Point()
 	if start.DistanceTo(front[0]) > start.DistanceTo(front[len(front)-1]) {
-		return reversedPoints(front)
+		return probe.ReversedPoints(front)
 	}
 	return append([]math.Point3(nil), front...)
 }

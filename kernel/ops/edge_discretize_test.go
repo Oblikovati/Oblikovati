@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -79,7 +80,7 @@ func TestDiscretizeEdgeIsShared(t *testing.T) {
 		t.Fatal("no arc edge on the half-disk")
 	}
 	fwd := discretizeEdge(arc, Quality{ChordTolerance: 1e-2})
-	rev := reverse3(discretizeEdge(arc, Quality{ChordTolerance: 1e-2}))
+	rev := probe.ReversedPoints(discretizeEdge(arc, Quality{ChordTolerance: 1e-2}))
 	if len(fwd) != len(rev) {
 		t.Fatalf("forward %d vs reversed %d points", len(fwd), len(rev))
 	}

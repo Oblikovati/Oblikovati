@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -129,7 +130,7 @@ func slabCaps(f *topo.Face, n math.Vector3, top, bottom float64) []ploop {
 	for _, l := range f.Loops() {
 		pts := loopPoints3(l)
 		tc.rings = append(tc.rings, offsetRing(pts, n, top))
-		bc.rings = append(bc.rings, reverse3(offsetRing(pts, n, bottom)))
+		bc.rings = append(bc.rings, probe.ReversedPoints(offsetRing(pts, n, bottom)))
 	}
 	return []ploop{tc, bc}
 }

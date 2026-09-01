@@ -14,6 +14,7 @@ package probe
 
 import (
 	stdmath "math"
+	"slices"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
@@ -180,4 +181,12 @@ func RayTriangleDist(orig math.Point3, dir math.Vector3, a, b, c math.Point3) (f
 	}
 	t := e2.Dot(qv) * inv
 	return t, t > eps
+}
+
+// ReversedPoints returns a reversed COPY of pts, leaving the input alone — the shape a
+// caller needs when it must keep the original orientation as well.
+func ReversedPoints(pts []math.Point3) []math.Point3 {
+	out := slices.Clone(pts)
+	slices.Reverse(out)
+	return out
 }
