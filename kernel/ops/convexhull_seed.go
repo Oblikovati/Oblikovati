@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"strconv"
 
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/math"
 )
 
@@ -93,7 +94,7 @@ func dedupPoints(points []math.Point3, grid float64) []math.Point3 {
 	seen := map[[3]int64]bool{}
 	out := make([]math.Point3, 0, len(points))
 	for _, p := range points {
-		k := [3]int64{quantize(p.X, grid), quantize(p.Y, grid), quantize(p.Z, grid)}
+		k := [3]int64{mesh.Quantize(p.X, grid), mesh.Quantize(p.Y, grid), mesh.Quantize(p.Z, grid)}
 		if seen[k] {
 			continue
 		}

@@ -107,3 +107,32 @@ func (m *Mesh) CellNormal(a, b, c int) math.Vector3 {
 	pa, pb, pc := m.Positions[a], m.Positions[b], m.Positions[c]
 	return pa.VectorTo(pb).Cross(pa.VectorTo(pc))
 }
+
+// Tri is a triangle with its supporting plane (unit normal n, offset w: n·p = w).
+type Tri struct {
+	A, B, C math.Point3
+	N       math.Vector3
+	W       float64
+}
+
+// Flipped returns the triangle with the opposite winding and outward sense.
+func (t Tri) Flipped() Tri {
+	return Tri{A: t.A, B: t.C, C: t.B, N: t.N.Scale(-1), W: -t.W}
+}
+
+// Points returns the triangle's three corners in winding order.
+func (t Tri) Points() [3]math.Point3 { return [3]math.Point3{t.A, t.B, t.C} }
+
+func NewTri(a, b, c math.Point3) (Tri, bool) {
+	n, err := math.UnitVector3FromVector(a.VectorTo(b).Cross(a.VectorTo(c)))
+	if err != nil {
+		return Tri{}, false // degenerate (zero-area) triangle: drop it
+	}
+	nv := n.AsVector()
+	return Tri{A: a, B: b, C: c, N: nv, W: nv.Dot(a.AsVector())}, true
+}
+
+// Quantize snaps a coordinate to a weld grid (database units), so points within a
+// grid cell collapse to one vertex. The grid is the model-relative resolution the
+// caller derives (ADR-0042), not a fixed constant.
+func Quantize(v, grid float64) int64 { return int64(stdmath.Round(v / grid)) }

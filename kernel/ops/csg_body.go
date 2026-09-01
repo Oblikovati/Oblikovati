@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -58,23 +59,23 @@ func Facet(b *topo.Body, feat string) *topo.Body {
 // boolean whose minuend is a curved body: the BSP misclassifies inside/outside and
 // subtracts nothing (cylinder − tool returned the uncut cylinder). We fix the
 // winding here with the per-vertex shading normals, which point outward.
-func bodyTriangles(b *topo.Body) []tri {
+func bodyTriangles(b *topo.Body) []mesh.Tri {
 	return bodyTrianglesAt(b, booleanInputQuality())
 }
 
 // bodyTrianglesAt is [bodyTriangles] at an explicit faceting quality. The BSP CSG needs its
 // chord-only booleanInputQuality for robustness; Facet, whose cage feeds the exact planar boolean
 // instead, needs the angle-bounded one so small curved faces survive (see Facet).
-func bodyTrianglesAt(b *topo.Body, q Quality) []tri {
-	mesh, _ := TessellateBody(b, q)
-	var out []tri
-	for i := 0; i+2 < len(mesh.Indices); i += 3 {
-		ia, ib, ic := mesh.Indices[i], mesh.Indices[i+1], mesh.Indices[i+2]
-		a, bb, c := mesh.Positions[ia], mesh.Positions[ib], mesh.Positions[ic]
-		if outwardRef(mesh, ia, ib, ic).Dot(a.VectorTo(bb).Cross(a.VectorTo(c))) < 0 {
+func bodyTrianglesAt(b *topo.Body, q Quality) []mesh.Tri {
+	m, _ := TessellateBody(b, q)
+	var out []mesh.Tri
+	for i := 0; i+2 < len(m.Indices); i += 3 {
+		ia, ib, ic := m.Indices[i], m.Indices[i+1], m.Indices[i+2]
+		a, bb, c := m.Positions[ia], m.Positions[ib], m.Positions[ic]
+		if outwardRef(m, ia, ib, ic).Dot(a.VectorTo(bb).Cross(a.VectorTo(c))) < 0 {
 			bb, c = c, bb // flip to outward winding
 		}
-		if t, ok := newTri(a, bb, c); ok {
+		if t, ok := mesh.NewTri(a, bb, c); ok {
 			out = append(out, t)
 		}
 	}
@@ -84,7 +85,7 @@ func bodyTrianglesAt(b *topo.Body, q Quality) []tri {
 // trianglesToBody welds CSG output triangles into a watertight B-rep: coincident
 // vertices merge, T-junctions are split out so the cage is combinatorially closed, and
 // the welded triangle cage becomes a body. Returns nil when the result is empty.
-func trianglesToBody(tris []tri, feat string) *topo.Body {
+func trianglesToBody(tris []mesh.Tri, feat string) *topo.Body {
 	// One model-relative resolution for the whole triangle set (ADR-0042): a tight
 	// vertex weld and a wider on-line tolerance, both scaling with the operand size,
 	// so a sub-µm part is no longer welded out of existence while a finely-detailed
@@ -160,11 +161,11 @@ func sortedTri(f [3]int) ([3]int, bool) {
 
 // weldTriangles merges coincident triangle corners onto a shared vertex list, dropping
 // triangles that collapse to a degenerate (a repeated corner).
-func weldTriangles(tris []tri, grid float64) ([]math.Point3, [][3]int) {
+func weldTriangles(tris []mesh.Tri, grid float64) ([]math.Point3, [][3]int) {
 	index := map[[3]int64]int{}
 	var verts []math.Point3
 	weld := func(p math.Point3) int {
-		k := [3]int64{quantize(p.X, grid), quantize(p.Y, grid), quantize(p.Z, grid)}
+		k := [3]int64{mesh.Quantize(p.X, grid), mesh.Quantize(p.Y, grid), mesh.Quantize(p.Z, grid)}
 		if i, ok := index[k]; ok {
 			return i
 		}
@@ -174,44 +175,12 @@ func weldTriangles(tris []tri, grid float64) ([]math.Point3, [][3]int) {
 	}
 	var faces [][3]int
 	for _, t := range tris {
-		a, b, c := weld(t.a), weld(t.b), weld(t.c)
+		a, b, c := weld(t.A), weld(t.B), weld(t.C)
 		if a != b && b != c && a != c {
 			faces = append(faces, [3]int{a, b, c})
 		}
 	}
 	return verts, faces
-}
-
-// quantize snaps a coordinate to a weld grid (database units), so points within a
-// grid cell collapse to one vertex. The grid is the model-relative resolution the
-// caller derives (ADR-0042), not a fixed constant.
-func quantize(v, grid float64) int64 { return int64(stdmath.Round(v / grid)) }
-
-// removeTJunctions eliminates T-junctions so every undirected edge of the cage is shared by exactly two
-// triangles (the prerequisite for a closed solid). For each triangle it collects the mesh vertices lying
-// on the interior of its three edges and re-fans the triangle through them in ONE pass — no cascade and
-// no full-vertex scan: a sorted sweep index (axisIndex) makes the per-edge lookup local, so the pass is
-// near-linear in the triangle count and needs NO face budget. The cage always comes back combinatorially
-// closed, however many facets a curved wall contributed — this is acceptance #3 of the curved-boolean
-// umbrella (Oblikovati/Oblikovati#1336, #1320 #3), replacing the bounded O(faces·verts) cascade of
-// M20-F01 #470 that BAILED above tjunctionFaceBudget and left the cage open (the chained-bore drift the
-// guard catches). Two triangles sharing an edge collect the same on-edge points off the same segment, so
-// their subdivisions match and weld. Returns the (possibly grown) vertex list — a subdivided triangle
-// gains an interior centroid hub — alongside the new faces.
-func removeTJunctions(verts []math.Point3, faces [][3]int, lineTol float64) ([]math.Point3, [][3]int) {
-	idx := newAxisIndex(verts)
-	out := make([][3]int, 0, len(faces))
-	for _, f := range faces {
-		poly := edgeSubdividedBoundary(verts, f, idx, lineTol)
-		if len(poly) == 3 {
-			out = append(out, f) // no T-junction on this triangle: keep it as-is
-			continue
-		}
-		hub := len(verts)
-		verts = append(verts, triangleCentroid(verts, f))
-		out = append(out, fanFromHub(hub, poly)...)
-	}
-	return verts, out
 }
 
 // edgeSubdividedBoundary walks the triangle boundary, emitting each corner followed by the mesh vertices
@@ -471,4 +440,31 @@ func trianglePlane(verts []math.Point3, f [3]int) geom.Surface {
 		p, _ = geom.NewPlane(centroid, math.V3(0, 0, 1))
 	}
 	return p
+}
+
+// removeTJunctions eliminates T-junctions so every undirected edge of the cage is shared by exactly two
+// triangles (the prerequisite for a closed solid). For each triangle it collects the mesh vertices lying
+// on the interior of its three edges and re-fans the triangle through them in ONE pass — no cascade and
+// no full-vertex scan: a sorted sweep index (axisIndex) makes the per-edge lookup local, so the pass is
+// near-linear in the triangle count and needs NO face budget. The cage always comes back combinatorially
+// closed, however many facets a curved wall contributed — this is acceptance #3 of the curved-boolean
+// umbrella (Oblikovati/Oblikovati#1336, #1320 #3), replacing the bounded O(faces·verts) cascade of
+// M20-F01 #470 that BAILED above tjunctionFaceBudget and left the cage open (the chained-bore drift the
+// guard catches). Two triangles sharing an edge collect the same on-edge points off the same segment, so
+// their subdivisions match and weld. Returns the (possibly grown) vertex list — a subdivided triangle
+// gains an interior centroid hub — alongside the new faces.
+func removeTJunctions(verts []math.Point3, faces [][3]int, lineTol float64) ([]math.Point3, [][3]int) {
+	idx := newAxisIndex(verts)
+	out := make([][3]int, 0, len(faces))
+	for _, f := range faces {
+		poly := edgeSubdividedBoundary(verts, f, idx, lineTol)
+		if len(poly) == 3 {
+			out = append(out, f) // no T-junction on this triangle: keep it as-is
+			continue
+		}
+		hub := len(verts)
+		verts = append(verts, triangleCentroid(verts, f))
+		out = append(out, fanFromHub(hub, poly)...)
+	}
+	return verts, out
 }

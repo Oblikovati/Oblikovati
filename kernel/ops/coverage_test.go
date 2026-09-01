@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/math"
 )
 
@@ -95,10 +96,10 @@ func TestDropRepeats(t *testing.T) {
 
 func TestNewTriRejectsDegenerate(t *testing.T) {
 	t.Parallel()
-	if _, ok := newTri(math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0)); ok {
+	if _, ok := mesh.NewTri(math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0)); ok {
 		t.Error("a collinear (zero-area) triangle should be dropped")
 	}
-	if _, ok := newTri(math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)); !ok {
+	if _, ok := mesh.NewTri(math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)); !ok {
 		t.Error("a valid triangle should be accepted")
 	}
 }

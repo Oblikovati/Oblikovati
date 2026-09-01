@@ -2,7 +2,10 @@
 
 package ops
 
-import "oblikovati.org/math"
+import (
+	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/math"
+)
 
 // Vertex/polygon classification for the BSP split (csg.js convention).
 const (
@@ -15,12 +18,12 @@ const (
 // splitTri classifies triangle t against the plane (n·p = w) and appends its pieces to
 // the four buckets, fan-triangulating any split so every bucket holds triangles. A
 // triangle spanning the plane is cut along it into a front and a back polygon.
-func splitTri(n math.Vector3, w float64, t tri, coFront, coBack, fr, bk *[]tri, planeTol float64) {
-	pts := t.points()
+func splitTri(n math.Vector3, w float64, t mesh.Tri, coFront, coBack, fr, bk *[]mesh.Tri, planeTol float64) {
+	pts := t.Points()
 	types, polyType := classifyVertices(n, w, pts, planeTol)
 	switch polyType {
 	case coplanar:
-		if n.Dot(t.n) > 0 {
+		if n.Dot(t.N) > 0 {
 			*coFront = append(*coFront, t)
 		} else {
 			*coBack = append(*coBack, t)
@@ -80,9 +83,9 @@ func splitSpanning(n math.Vector3, w float64, pts [3]math.Point3, types []int) (
 
 // appendFan fan-triangulates a convex vertex loop (3 or 4 points) into dst, dropping
 // degenerate triangles.
-func appendFan(dst *[]tri, loop []math.Point3) {
+func appendFan(dst *[]mesh.Tri, loop []math.Point3) {
 	for i := 1; i+1 < len(loop); i++ {
-		if t, ok := newTri(loop[0], loop[i], loop[i+1]); ok {
+		if t, ok := mesh.NewTri(loop[0], loop[i], loop[i+1]); ok {
 			*dst = append(*dst, t)
 		}
 	}

@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -34,14 +35,14 @@ func MeshToBRep(verts []math.Point3, facets [][]int, feat string) *topo.Body {
 
 // facetTriangles fan-triangulates each facet loop into CSG triangles, dropping degenerate ones
 // and any facet whose indices are out of range.
-func facetTriangles(verts []math.Point3, facets [][]int) []tri {
-	var tris []tri
+func facetTriangles(verts []math.Point3, facets [][]int) []mesh.Tri {
+	var tris []mesh.Tri
 	for _, f := range facets {
 		if len(f) < 3 || !facetInRange(f, len(verts)) {
 			continue
 		}
 		for i := 1; i+1 < len(f); i++ {
-			if t, ok := newTri(verts[f[0]], verts[f[i]], verts[f[i+1]]); ok {
+			if t, ok := mesh.NewTri(verts[f[0]], verts[f[i]], verts[f[i+1]]); ok {
 				tris = append(tris, t)
 			}
 		}
@@ -59,10 +60,10 @@ func facetInRange(f []int, n int) bool {
 }
 
 // reversedTris flips each triangle's winding (swapping two corners).
-func reversedTris(tris []tri) []tri {
-	out := make([]tri, 0, len(tris))
+func reversedTris(tris []mesh.Tri) []mesh.Tri {
+	out := make([]mesh.Tri, 0, len(tris))
 	for _, t := range tris {
-		if rt, ok := newTri(t.a, t.c, t.b); ok {
+		if rt, ok := mesh.NewTri(t.A, t.C, t.B); ok {
 			out = append(out, rt)
 		}
 	}

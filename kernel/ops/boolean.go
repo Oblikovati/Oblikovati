@@ -5,6 +5,7 @@ package ops
 import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -470,7 +471,7 @@ func booleanCSG(op PartFeatureOperation, target, tool *topo.Body, lin topo.Linea
 	// One model-relative on-plane tolerance for the BSP, scaled to the larger operand
 	// (ADR-0042) so a sub-µm boolean classifies coplanarity correctly.
 	planeTol := ResolutionForBodies(target, tool).Plane()
-	var result []tri
+	var result []mesh.Tri
 	switch op {
 	case Join:
 		result = csgUnion(a, b, planeTol)

@@ -5,24 +5,25 @@ package ops
 import (
 	"testing"
 
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/math"
 )
 
 // tetTris returns the four CCW-outward triangles of a tetrahedron with apex at p and a small
 // base offset so the two test tets meet the shared point only at their apexes.
-func tetTris(base math.Point3, dir float64) []tri {
+func tetTris(base math.Point3, dir float64) []mesh.Tri {
 	a := base
 	b := math.P3(base.X+dir, base.Y, base.Z-dir)
 	c := math.P3(base.X+dir, base.Y+0.6*math.Scalar(dir), base.Z-dir)
 	d := math.P3(base.X+0.4*math.Scalar(dir), base.Y+0.2*math.Scalar(dir), base.Z-1.6*math.Scalar(dir))
-	mk := func(p, q, r math.Point3) tri {
-		t, _ := newTri(p, q, r)
+	mk := func(p, q, r math.Point3) mesh.Tri {
+		t, _ := mesh.NewTri(p, q, r)
 		return t
 	}
 	if dir > 0 {
-		return []tri{mk(a, b, c), mk(a, c, d), mk(a, d, b), mk(b, d, c)}
+		return []mesh.Tri{mk(a, b, c), mk(a, c, d), mk(a, d, b), mk(b, d, c)}
 	}
-	return []tri{mk(a, c, b), mk(a, d, c), mk(a, b, d), mk(b, c, d)}
+	return []mesh.Tri{mk(a, c, b), mk(a, d, c), mk(a, b, d), mk(b, c, d)}
 }
 
 // TestCSGCageSplitsPinchedVertex pins #1693: a triangle soup whose two closed shells meet at ONE

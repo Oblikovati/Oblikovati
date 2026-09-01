@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -47,10 +48,10 @@ func ResolutionForBodies(bodies ...*topo.Body) Resolution {
 // resolutionForTris builds a Resolution from CSG triangles' combined bounding-box diagonal
 // — the entry point for the BSP-CSG / triangle-weld path, where the triangles themselves
 // are the geometry being welded.
-func resolutionForTris(tris []tri) Resolution {
+func resolutionForTris(tris []mesh.Tri) Resolution {
 	box := math.EmptyBox()
 	for _, t := range tris {
-		box = box.ExtendPoint(t.a).ExtendPoint(t.b).ExtendPoint(t.c)
+		box = box.ExtendPoint(t.A).ExtendPoint(t.B).ExtendPoint(t.C)
 	}
 	return geom.ResolutionForBox(box)
 }

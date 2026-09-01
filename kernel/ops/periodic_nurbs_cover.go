@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
@@ -347,5 +348,5 @@ func weldGrid(groups [][]math.Point3) float64 {
 // quantizePoint snaps a 3D point to the weld grid, so coincident points (period-shifted seam copies)
 // hash to one key. It reuses the per-coordinate quantize (csg_body.go).
 func quantizePoint(p math.Point3, grid float64) [3]int64 {
-	return [3]int64{quantize(float64(p.X), grid), quantize(float64(p.Y), grid), quantize(float64(p.Z), grid)}
+	return [3]int64{mesh.Quantize(float64(p.X), grid), mesh.Quantize(float64(p.Y), grid), mesh.Quantize(float64(p.Z), grid)}
 }

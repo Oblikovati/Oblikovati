@@ -5,6 +5,7 @@ package ops
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -54,35 +55,9 @@ func rayCastMesh(m *Mesh, origin math.Point3, dir math.Vector3) (float64, bool) 
 		a := m.Positions[m.Indices[i]]
 		b := m.Positions[m.Indices[i+1]]
 		c := m.Positions[m.Indices[i+2]]
-		if t, ok := rayTriangleDist(origin, dir, a, b, c); ok && t < best {
+		if t, ok := probe.RayTriangleDist(origin, dir, a, b, c); ok && t < best {
 			best, hit = t, true
 		}
 	}
 	return best, hit
-}
-
-// rayTriangleDist returns the positive distance along the ray to triangle abc, via
-// Möller–Trumbore, or ok=false if there is no forward hit.
-func rayTriangleDist(orig math.Point3, dir math.Vector3, a, b, c math.Point3) (float64, bool) {
-	const eps = 1e-9
-	e1 := a.VectorTo(b)
-	e2 := a.VectorTo(c)
-	pv := dir.Cross(e2)
-	det := e1.Dot(pv)
-	if det > -eps && det < eps {
-		return 0, false
-	}
-	inv := 1 / det
-	tv := a.VectorTo(orig)
-	u := tv.Dot(pv) * inv
-	if u < 0 || u > 1 {
-		return 0, false
-	}
-	qv := tv.Cross(e1)
-	v := dir.Dot(qv) * inv
-	if v < 0 || u+v > 1 {
-		return 0, false
-	}
-	t := e2.Dot(qv) * inv
-	return t, t > eps
 }

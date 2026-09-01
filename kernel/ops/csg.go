@@ -2,7 +2,10 @@
 
 package ops
 
-import "oblikovati.org/math"
+import (
+	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/math"
+)
 
 // General intersecting boolean (PBI-171). Our solids are planar-faceted, so the robust
 // path is a BSP-tree CSG (the Thibault–Naylor / csg.js algorithm) over the triangles of
@@ -10,32 +13,10 @@ import "oblikovati.org/math"
 // and the kept triangles are welded back into a watertight B-rep. Correctness depends on
 // the tessellation being consistently outward-wound (see planeProjector).
 
-// tri is a triangle with its supporting plane (unit normal n, offset w: n·p = w).
-type tri struct {
-	a, b, c math.Point3
-	n       math.Vector3
-	w       float64
-}
-
-func newTri(a, b, c math.Point3) (tri, bool) {
-	n, err := math.UnitVector3FromVector(a.VectorTo(b).Cross(a.VectorTo(c)))
-	if err != nil {
-		return tri{}, false // degenerate (zero-area) triangle: drop it
-	}
-	nv := n.AsVector()
-	return tri{a: a, b: b, c: c, n: nv, w: nv.Dot(a.AsVector())}, true
-}
-
-func (t tri) flipped() tri {
-	return tri{a: t.a, b: t.c, c: t.b, n: t.n.Scale(-1), w: -t.w}
-}
-
-func (t tri) points() [3]math.Point3 { return [3]math.Point3{t.a, t.b, t.c} }
-
 // csgUnion / csgSubtract / csgIntersect implement A∪B, A−B and A∩B over triangle sets
 // via BSP clipping (the csg.js operation sequences). planeTol is the model-relative
 // on-plane resolution (ADR-0042) the BSP uses to classify a point coplanar.
-func csgUnion(a, b []tri, planeTol float64) []tri {
+func csgUnion(a, b []mesh.Tri, planeTol float64) []mesh.Tri {
 	na, nb := newBSP(a, planeTol), newBSP(b, planeTol)
 	na.clipTo(nb)
 	nb.clipTo(na)
@@ -46,7 +27,7 @@ func csgUnion(a, b []tri, planeTol float64) []tri {
 	return na.all()
 }
 
-func csgSubtract(a, b []tri, planeTol float64) []tri {
+func csgSubtract(a, b []mesh.Tri, planeTol float64) []mesh.Tri {
 	na, nb := newBSP(a, planeTol), newBSP(b, planeTol)
 	na.invert()
 	na.clipTo(nb)
@@ -59,7 +40,7 @@ func csgSubtract(a, b []tri, planeTol float64) []tri {
 	return na.all()
 }
 
-func csgIntersect(a, b []tri, planeTol float64) []tri {
+func csgIntersect(a, b []mesh.Tri, planeTol float64) []mesh.Tri {
 	na, nb := newBSP(a, planeTol), newBSP(b, planeTol)
 	na.invert()
 	nb.clipTo(na)
@@ -77,12 +58,12 @@ type bspNode struct {
 	n           math.Vector3
 	w           float64
 	hasPlane    bool
-	tris        []tri
+	tris        []mesh.Tri
 	front, back *bspNode
 	planeTol    float64 // model-relative on-plane resolution, propagated to every subtree
 }
 
-func newBSP(tris []tri, planeTol float64) *bspNode {
+func newBSP(tris []mesh.Tri, planeTol float64) *bspNode {
 	node := &bspNode{planeTol: planeTol}
 	node.build(tris)
 	return node
@@ -92,7 +73,7 @@ func newBSP(tris []tri, planeTol float64) *bspNode {
 // swapped) — turning keep-inside into keep-outside.
 func (node *bspNode) invert() {
 	for i := range node.tris {
-		node.tris[i] = node.tris[i].flipped()
+		node.tris[i] = node.tris[i].Flipped()
 	}
 	node.n = node.n.Scale(-1)
 	node.w = -node.w
@@ -106,11 +87,11 @@ func (node *bspNode) invert() {
 }
 
 // clip returns the parts of tris that fall outside the solid this tree represents.
-func (node *bspNode) clip(tris []tri) []tri {
+func (node *bspNode) clip(tris []mesh.Tri) []mesh.Tri {
 	if !node.hasPlane {
-		return append([]tri(nil), tris...)
+		return append([]mesh.Tri(nil), tris...)
 	}
-	var front, back []tri
+	var front, back []mesh.Tri
 	for _, t := range tris {
 		splitTri(node.n, node.w, t, &front, &back, &front, &back, node.planeTol)
 	}
@@ -137,8 +118,8 @@ func (node *bspNode) clipTo(other *bspNode) {
 }
 
 // all returns every triangle in the tree.
-func (node *bspNode) all() []tri {
-	out := append([]tri(nil), node.tris...)
+func (node *bspNode) all() []mesh.Tri {
+	out := append([]mesh.Tri(nil), node.tris...)
 	if node.front != nil {
 		out = append(out, node.front.all()...)
 	}
@@ -150,14 +131,14 @@ func (node *bspNode) all() []tri {
 
 // build inserts triangles, using this node's plane (the first triangle's) to partition
 // the rest into the coplanar set and the front/back subtrees.
-func (node *bspNode) build(tris []tri) {
+func (node *bspNode) build(tris []mesh.Tri) {
 	if len(tris) == 0 {
 		return
 	}
 	if !node.hasPlane {
-		node.n, node.w, node.hasPlane = tris[0].n, tris[0].w, true
+		node.n, node.w, node.hasPlane = tris[0].N, tris[0].W, true
 	}
-	var front, back []tri
+	var front, back []mesh.Tri
 	for _, t := range tris {
 		splitTri(node.n, node.w, t, &node.tris, &node.tris, &front, &back, node.planeTol)
 	}

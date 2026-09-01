@@ -65,7 +65,6 @@ func TestScriptsRunRejectsEmptySource(t *testing.T) {
 // TestScriptsRunHonorsWallClock: an infinite loop is cut by the per-run wall-clock and
 // reported as a script error, promptly — the host is never hung.
 func TestScriptsRunHonorsWallClock(t *testing.T) {
-	t.Parallel()
 	r, s := seededSession(t)
 	start := time.Now()
 	var res wire.ScriptRunResult

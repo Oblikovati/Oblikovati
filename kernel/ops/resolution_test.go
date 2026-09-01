@@ -6,6 +6,7 @@ import (
 	"math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
@@ -50,8 +51,8 @@ func TestResolutionForTris(t *testing.T) {
 	if got := resolutionForTris(nil).Size(); got != 1 {
 		t.Errorf("resolutionForTris(nil).Size() = %v, want floor 1", got)
 	}
-	a, _ := newTri(gmath.P3(0, 0, 0), gmath.P3(3, 0, 0), gmath.P3(3, 4, 12))
-	if got := resolutionForTris([]tri{a}).Size(); !approxRelOps(got, 13) {
+	a, _ := mesh.NewTri(gmath.P3(0, 0, 0), gmath.P3(3, 0, 0), gmath.P3(3, 4, 12))
+	if got := resolutionForTris([]mesh.Tri{a}).Size(); !approxRelOps(got, 13) {
 		t.Errorf("resolutionForTris(3-4-12).Size() = %v, want 13", got)
 	}
 }

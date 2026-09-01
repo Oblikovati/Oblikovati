@@ -163,7 +163,6 @@ func TestThreadDisplayPartialSpan(t *testing.T) {
 // threaded surface in O(1) — microseconds, no boolean — giving a valid solid whose volume
 // drops (the grooves are real geometry).
 func TestThreadCutModelsRealThreadFast(t *testing.T) {
-	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.5, 2.0)
 	before := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
 	fs := NewPartFeatures(nil)

@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -352,7 +353,7 @@ func newPointWelder(grid float64) *pointWelder {
 
 // pointCell quantizes p to the weld grid cell used to detect coordinate coincidence.
 func pointCell(p math.Point3, grid float64) [3]int64 {
-	return [3]int64{quantize(p.X, grid), quantize(p.Y, grid), quantize(p.Z, grid)}
+	return [3]int64{mesh.Quantize(p.X, grid), mesh.Quantize(p.Y, grid), mesh.Quantize(p.Z, grid)}
 }
 
 func (w *pointWelder) add(p math.Point3) int {

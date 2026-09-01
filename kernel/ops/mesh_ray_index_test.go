@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -33,7 +34,7 @@ func gridMesh(n int) ([]math.Point3, [][3]int32) {
 func bruteNearest(pos []math.Point3, tris [][3]int32, o math.Point3, d math.Vector3) (int, float64, bool) {
 	best, hit := stdmath.Inf(1), -1
 	for i, t := range tris {
-		if dist, ok := rayTriangleDist(o, d, pos[t[0]], pos[t[1]], pos[t[2]]); ok && dist < best {
+		if dist, ok := probe.RayTriangleDist(o, d, pos[t[0]], pos[t[1]], pos[t[2]]); ok && dist < best {
 			best, hit = dist, i
 		}
 	}
