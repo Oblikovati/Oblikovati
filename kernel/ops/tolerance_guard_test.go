@@ -109,7 +109,7 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		// ops: self-intersection, section, stitch, and the degeneracy/weld helpers.
 		"../ops/validate/self_intersect.go",
 		"../ops/section_plane.go",
-		"../ops/stitch.go",
+		"../ops/heal/stitch.go",
 		"../ops/query/oriented_box.go",
 		"../ops/ruled_surface.go",
 		"../ops/transform/deform.go",
@@ -132,8 +132,8 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../ops/tessellate/holed_cylinder_wall.go",
 		"../ops/wire_offset.go",
 		"../ops/wire_offset_corners.go",
-		"../ops/fill_nsided.go",
-		"../ops/fill_opening.go",
+		"../ops/heal/fill_nsided.go",
+		"../ops/heal/fill_opening.go",
 		// topo: evaluator / wire / provenance coincidence gates (#1610).
 		"../topo/evaluators.go",
 		"../topo/face_evaluator.go",

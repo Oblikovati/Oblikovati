@@ -5,6 +5,8 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
@@ -86,7 +88,7 @@ func patchHoles(world []*topo.Body) []*topo.Body {
 	q := ops.DefaultQuality()
 	out := make([]*topo.Body, 0, len(world))
 	for _, b := range world {
-		out = append(out, ops.FillInternalVoids(b, q))
+		out = append(out, heal.FillInternalVoids(b, q))
 	}
 	return out
 }
@@ -96,7 +98,7 @@ func patchHoles(world []*topo.Body) []*topo.Body {
 func capThroughHoles(world []*topo.Body, maxDiameter float64) []*topo.Body {
 	out := make([]*topo.Body, 0, len(world))
 	for _, b := range world {
-		if capped, err := ops.CapHolesByDiameter(b, maxDiameter); err == nil {
+		if capped, err := heal.CapHolesByDiameter(b, maxDiameter); err == nil {
 			out = append(out, capped)
 			continue
 		}

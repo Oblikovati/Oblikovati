@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
@@ -202,7 +204,7 @@ func TestBooleanNewBodyAndStrings(t *testing.T) {
 // sew_test.go; an already-closed body simply promotes to a solid.
 func TestSewClosedTetraSucceeds(t *testing.T) {
 	t.Parallel()
-	solid, err := Sew(tetra(1, math.V3(0, 0, 0)), 1e-6)
+	solid, err := heal.Sew(tetra(1, math.V3(0, 0, 0)), 1e-6)
 	if err != nil {
 		t.Fatalf("Sew on a closed body: %v", err)
 	}

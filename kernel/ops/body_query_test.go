@@ -6,6 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/opfixture"
+
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/transform"
@@ -18,7 +22,7 @@ import (
 // restricts the search.
 func TestLocateUsingPointFindsEachKind(t *testing.T) {
 	t.Parallel()
-	b := tetraBox(t, math.P3(0, 0, 0), 2)
+	b := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	q := DefaultQuality()
 	if hit, ok := query.LocateUsingPoint(b, 0, math.P3(-0.01, -0.01, -0.01), 0.1, q); !ok || hit.Kind != topo.KindVertex {
 		t.Errorf("corner query = (%v, %v), want a vertex", hit.Kind, ok)
@@ -41,7 +45,7 @@ func TestLocateUsingPointFindsEachKind(t *testing.T) {
 // faces nearest-first; findFirstOnly truncates; radius picks up a grazed edge.
 func TestFindUsingRayOrdersHits(t *testing.T) {
 	t.Parallel()
-	b := tetraBox(t, math.P3(0, 0, 0), 2)
+	b := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	q := DefaultQuality()
 	hits := query.FindUsingRay(b, math.P3(1, 1, -5), math.V3(0, 0, 1), 0, q, false)
 	if len(hits) != 2 {
@@ -73,7 +77,7 @@ func TestFindUsingRayOrdersHits(t *testing.T) {
 // TestBodyEdgeConvexityCube: every cube edge is convex.
 func TestBodyEdgeConvexityCube(t *testing.T) {
 	t.Parallel()
-	byClass := blend.BodyEdgeConvexity(tetraBox(t, math.P3(0, 0, 0), 2))
+	byClass := blend.BodyEdgeConvexity(brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2))
 	if n := len(byClass[blend.EdgeConvex]); n != 12 {
 		t.Errorf("cube has %d convex edges, want 12 (got concave=%d tangent=%d unknown=%d)",
 			n, len(byClass[blend.EdgeConcave]), len(byClass[blend.EdgeTangent]), len(byClass[blend.EdgeConvexityUnknown]))
@@ -84,7 +88,7 @@ func TestBodyEdgeConvexityCube(t *testing.T) {
 // the material's perspective (the material wraps 270° around them).
 func TestBodyEdgeConvexityCavity(t *testing.T) {
 	t.Parallel()
-	byClass := blend.BodyEdgeConvexity(cavityBody(t))
+	byClass := blend.BodyEdgeConvexity(opfixture.Cavity(t))
 	if n := len(byClass[blend.EdgeConcave]); n != 12 {
 		t.Errorf("cavity body has %d concave edges, want the 12 inner ones (convex=%d)",
 			n, len(byClass[blend.EdgeConvex]))
@@ -98,7 +102,7 @@ func TestBodyEdgeConvexityCavity(t *testing.T) {
 // a tight OBB of its true dimensions (an AABB would inflate by √2).
 func TestOrientedMinimumRangeBoxRotatedBox(t *testing.T) {
 	t.Parallel()
-	src := tetraBox(t, math.P3(0, 0, 0), 2)
+	src := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	axis, _ := math.UnitVector3FromVector(math.V3(0, 0, 1))
 	rot := math.Rotation4(stdmath.Pi/4, axis, math.P3(0, 0, 0))
 	rotated, err := transform.TransformBody(src, rot, func(l topo.Lineage) topo.Lineage { return l })
@@ -131,7 +135,7 @@ func TestOrientedMinimumRangeBoxRotatedBox(t *testing.T) {
 // the point is query.PreciseRangeBox includes mesh interiors and wires.
 func TestPreciseRangeBoxCoversBody(t *testing.T) {
 	t.Parallel()
-	b := tetraBox(t, math.P3(1, 1, 1), 2)
+	b := brepfixture.Box(math.P3(1, 1, 1), 2, 2, 2)
 	box := query.PreciseRangeBox(b, DefaultQuality())
 	if box.Min.X > 1+1e-9 || box.Max.X < 3-1e-9 {
 		t.Errorf("precise box = %+v, want [1,3] on X", box)
@@ -143,7 +147,7 @@ func TestPreciseRangeBoxCoversBody(t *testing.T) {
 // face problems carrying keys.
 func TestValidateBodyEntitiesLevels(t *testing.T) {
 	t.Parallel()
-	clean := tetraBox(t, math.P3(0, 0, 0), 2)
+	clean := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	if ok, problems := ValidateBodyEntities(clean, CheckGeometry, DefaultQuality()); !ok {
 		t.Errorf("clean box reports problems: %+v", problems)
 	}
@@ -165,7 +169,7 @@ func TestValidateBodyEntitiesLevels(t *testing.T) {
 // TestEntityLevelChecks: per-entity validity verdicts.
 func TestEntityLevelChecks(t *testing.T) {
 	t.Parallel()
-	b := tetraBox(t, math.P3(0, 0, 0), 2)
+	b := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	for _, e := range b.Edges() {
 		if !EdgeEntityValid(e) {
 			t.Fatalf("cube edge %d should be valid", e.ID())
@@ -182,7 +186,7 @@ func TestEntityLevelChecks(t *testing.T) {
 // key reports false.
 func TestBindTransientKey(t *testing.T) {
 	t.Parallel()
-	b := tetraBox(t, math.P3(0, 0, 0), 2)
+	b := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	f := b.Faces()[2]
 	ref, ok := b.BindTransientKey(f.ID())
 	if !ok || ref.Kind != topo.KindFace || ref.Face != f {

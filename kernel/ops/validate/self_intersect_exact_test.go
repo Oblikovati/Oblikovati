@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/mesh"
@@ -207,8 +209,8 @@ func TestSelfIntersectionsPassATangentBlend(t *testing.T) {
 func TestCoplanarNeighbourFacesAreClean(t *testing.T) {
 	t.Parallel()
 	p := math.P3
-	left := quadBody("left", p(0, 0, 0), p(0, 2, 0), p(0, 2, 2), p(0, 0, 2))
-	right := quadBody("right", p(0, 2, 0), p(0, 4, 0), p(0, 4, 2), p(0, 2, 2))
+	left := brepfixture.QuadBody("left", p(0, 0, 0), p(0, 2, 0), p(0, 2, 2), p(0, 0, 2))
+	right := brepfixture.QuadBody("right", p(0, 2, 0), p(0, 4, 0), p(0, 4, 2), p(0, 2, 2))
 	merged := topo.MergeBodies(topo.NewLineage(topo.Tok("imp", "body", 0)), false, left, right)
 	if hits := SelfIntersections(merged, mesh.DefaultQuality()); len(hits) != 0 {
 		t.Errorf("coplanar faces meeting along an edge report %d self-intersection(s): %+v", len(hits), hits)
@@ -221,8 +223,8 @@ func TestCoplanarNeighbourFacesAreClean(t *testing.T) {
 func TestDuplicateCoincidentFacesAreReported(t *testing.T) {
 	t.Parallel()
 	p := math.P3
-	one := quadBody("w1", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
-	two := quadBody("w2", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
+	one := brepfixture.QuadBody("w1", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
+	two := brepfixture.QuadBody("w2", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
 	merged := topo.MergeBodies(topo.NewLineage(topo.Tok("imp", "body", 0)), false, one, two)
 	if hits := SelfIntersections(merged, mesh.DefaultQuality()); len(hits) != 1 {
 		t.Errorf("a doubled coincident wall reports %d self-intersection(s), want 1: %+v", len(hits), hits)
@@ -234,9 +236,9 @@ func TestDuplicateCoincidentFacesAreReported(t *testing.T) {
 func TestFacesShareOneSheetSeparatesCoplanarFromCrossing(t *testing.T) {
 	t.Parallel()
 	p := math.P3
-	flat := quadBody("a", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
-	same := quadBody("b", p(1, 0, 1), p(3, 0, 1), p(3, 0, 3), p(1, 0, 3))
-	cross := quadBody("c", p(1, -1, 1), p(1, 1, 1), p(1, 1, 3), p(1, -1, 3))
+	flat := brepfixture.QuadBody("a", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
+	same := brepfixture.QuadBody("b", p(1, 0, 1), p(3, 0, 1), p(3, 0, 3), p(1, 0, 3))
+	cross := brepfixture.QuadBody("c", p(1, -1, 1), p(1, 1, 1), p(1, 1, 3), p(1, -1, 3))
 	res := geom.ResolutionForSize(4)
 	if !facesShareOneSheet(flat.Faces()[0], same.Faces()[0], res) {
 		t.Error("two quads on the same plane must read as one surface sheet")
@@ -252,7 +254,7 @@ func TestFacesShareOneSheetSeparatesCoplanarFromCrossing(t *testing.T) {
 func TestFaceTrimProbesQuarterEveryEdge(t *testing.T) {
 	t.Parallel()
 	p := math.P3
-	f := quadBody("q", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2)).Faces()[0]
+	f := brepfixture.QuadBody("q", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2)).Faces()[0]
 	probes := faceTrimProbes(f)
 	if len(probes) != 4*edgeProbesPerEdge {
 		t.Fatalf("a four-edge face must yield %d probes, got %d", 4*edgeProbesPerEdge, len(probes))

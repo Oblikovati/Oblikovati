@@ -44,28 +44,6 @@ func tetra(s float64, off math.Vector3) *topo.Body {
 	return bld.Build()
 }
 
-// quadBody builds a one-face surface body from four points wound CCW as seen from
-// outside, so the plane normal points outward. Each face is an independent body —
-// stitching must weld their coincident corners/edges.
-func quadBody(feat string, p0, p1, p2, p3 math.Point3) *topo.Body {
-	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok(feat, "body", 0)))
-	normal := p0.VectorTo(p1).Cross(p1.VectorTo(p2))
-	surf, _ := geom.NewPlane(p0, normal)
-	pts := []math.Point3{p0, p1, p2, p3}
-	v := make([]*topo.Vertex, 4)
-	for i, p := range pts {
-		v[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(feat, "vertex", i)))
-	}
-	uses := make([]topo.Use, 4)
-	for i := range 4 {
-		j := (i + 1) % 4
-		e := bld.AddEdge(geom.NewLineSegment(pts[i], pts[j]), v[i], v[j], topo.NewLineage(topo.Tok(feat, "edge", i)))
-		uses[i] = topo.Fwd(e)
-	}
-	bld.AddFace(surf, topo.NewLineage(topo.Tok(feat, "face", 0)), topo.OuterLoop(uses...))
-	return bld.Build()
-}
-
 // near reports whether two parameter samples coincide within tol (inclusive, so exact
 // duplicates collapse even on a degenerate zero-span axis).
 func near(a, b, tol float64) bool { return stdmath.Abs(a-b) <= tol }

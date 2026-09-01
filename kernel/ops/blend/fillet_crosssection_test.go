@@ -6,10 +6,12 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/math"
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/validate"
-	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -17,7 +19,7 @@ import (
 // returns the validated result body's volume (fine tessellation).
 func filletCross(t *testing.T, cross blend.FilletCrossSection, rho float64) float64 {
 	t.Helper()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	res, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{
 		{Key: verticalEdgeKey(t, box), R0: 0.5, R1: 0.5, Cross: cross, Rho: rho},
 	})
@@ -70,11 +72,6 @@ func TestFilletG2DiffersFromArc(t *testing.T) {
 	if stdmath.Abs(arc-g2) < 1e-3 {
 		t.Errorf("G2 (%g) should differ from arc (%g) — it is a genuinely different cross-section", g2, arc)
 	}
-}
-
-// shellBox builds an axis-aligned box [0,sx]×[0,sy]×[0,sz].
-func shellBox(sx, sy, sz float64) *topo.Body {
-	return subd.ToBody(subd.Box(sx, sy, sz), "box")
 }
 
 // verticalEdgeKey returns a vertical edge (start/end share X,Y) of a box.

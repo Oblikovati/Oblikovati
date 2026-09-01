@@ -6,6 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/math"
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
@@ -30,7 +33,7 @@ const (
 // shelledTray builds an open-top tray: a trayW×trayD×trayH box shelled to trayWall, top removed.
 func shelledTray(t *testing.T) *topo.Body {
 	t.Helper()
-	box := shellBox(trayW, trayD, trayH)
+	box := brepfixture.Box(math.P3(0, 0, 0), trayW, trayD, trayH)
 	tray, err := ops.Shell(box, [][]byte{topFaceKey(t, box)}, trayWall)
 	if err != nil {
 		t.Fatalf("shell: %v", err)

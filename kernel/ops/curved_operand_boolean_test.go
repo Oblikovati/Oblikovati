@@ -37,7 +37,7 @@ func analyticFilletedBarVolume() float64 {
 // filleted corner so the overlap is an exact planar 1.0 while the operand stays curved.
 func curvedBarWithStraddlingTool(t *testing.T) (bar, tool *topo.Body) {
 	t.Helper()
-	box := shellBox(4, 3, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 3, 2)
 	curved, err := blend.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0.5)
 	if err != nil {
 		t.Fatalf("fillet: %v", err)

@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -85,7 +86,7 @@ func ThickenSolid(surface *topo.Body, t float64, dir ThickenDirection, faceKeys 
 		return nil, fmt.Errorf("thicken: no faces selected")
 	}
 	top, bottom := dir.slabOffsets(t)
-	var loops []ploop
+	var loops []retopo.PlanarLoop
 	for _, f := range surface.Faces() {
 		if !selected[f.ID()] {
 			continue
@@ -96,7 +97,7 @@ func ThickenSolid(surface *topo.Body, t float64, dir ThickenDirection, faceKeys 
 			loops = append(loops, slabWalls(f, n, top, bottom, selected)...)
 		}
 	}
-	body := buildSolidFromLoops(loops)
+	body := retopo.BuildSolidFromLoops(loops)
 	if r := Validate(body); !r.Valid || !body.IsSolid() {
 		return nil, fmt.Errorf("thicken: result is not a valid solid %v", r.Issues)
 	}
@@ -124,21 +125,21 @@ func selectedFaceSet(surface *topo.Body, faceKeys [][]byte) map[uint64]bool {
 
 // slabCaps returns the top (offset +top, same winding) and bottom (offset +bottom, reversed)
 // copies of a face — the two outer skins of the slab.
-func slabCaps(f *topo.Face, n math.Vector3, top, bottom float64) []ploop {
-	tc := ploop{normal: n}
-	bc := ploop{normal: n.Scale(-1)}
+func slabCaps(f *topo.Face, n math.Vector3, top, bottom float64) []retopo.PlanarLoop {
+	tc := retopo.PlanarLoop{Normal: n}
+	bc := retopo.PlanarLoop{Normal: n.Scale(-1)}
 	for _, l := range f.Loops() {
 		pts := loopPoints3(l)
-		tc.rings = append(tc.rings, offsetRing(pts, n, top))
-		bc.rings = append(bc.rings, probe.ReversedPoints(offsetRing(pts, n, bottom)))
+		tc.Rings = append(tc.Rings, offsetRing(pts, n, top))
+		bc.Rings = append(bc.Rings, probe.ReversedPoints(offsetRing(pts, n, bottom)))
 	}
-	return []ploop{tc, bc}
+	return []retopo.PlanarLoop{tc, bc}
 }
 
 // slabWalls returns a side-wall quad for each subset-boundary edge of the face — an edge with
 // exactly one use on a selected face — connecting the top and bottom skins.
-func slabWalls(f *topo.Face, n math.Vector3, top, bottom float64, selected map[uint64]bool) []ploop {
-	var walls []ploop
+func slabWalls(f *topo.Face, n math.Vector3, top, bottom float64, selected map[uint64]bool) []retopo.PlanarLoop {
+	var walls []retopo.PlanarLoop
 	for _, l := range f.Loops() {
 		for _, u := range l.EdgeUses() {
 			if selectedUses(u.Edge(), selected) != 1 {
@@ -148,7 +149,7 @@ func slabWalls(f *topo.Face, n math.Vector3, top, bottom float64, selected map[u
 			at, ab := a.TranslateBy(n.Scale(top)), a.TranslateBy(n.Scale(bottom))
 			bt, bb := b.TranslateBy(n.Scale(top)), b.TranslateBy(n.Scale(bottom))
 			wn := outwardWall(a.VectorTo(b), n)
-			walls = append(walls, ploop{normal: wn, rings: [][]math.Point3{{at, ab, bb, bt}}})
+			walls = append(walls, retopo.PlanarLoop{Normal: wn, Rings: [][]math.Point3{{at, ab, bb, bt}}})
 		}
 	}
 	return walls
@@ -174,7 +175,7 @@ func useEndpoints(u *topo.EdgeUse) (math.Point3, math.Point3) {
 	return s.Point(), e.Point()
 }
 
-// outwardWall returns the wall's outward normal: perpendicular to the edge and the face
+// outwardWall returns the wall's outward Normal: perpendicular to the edge and the face
 // normal, pointing away from the face interior (edge × normal for a CCW loop).
 func outwardWall(edge, n math.Vector3) math.Vector3 {
 	w, err := math.UnitVector3FromVector(edge.Cross(n))

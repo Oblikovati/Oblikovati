@@ -5,6 +5,8 @@ package validate
 import (
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/topo"
@@ -56,7 +58,7 @@ const grazeDepth = 1e-6
 func TestProbeInsideMaterialSeparatesTheToleranceClasses(t *testing.T) {
 	t.Parallel()
 	p := math.P3
-	wall := quadBody("wall", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2)).Faces()[0]
+	wall := brepfixture.QuadBody("wall", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2)).Faces()[0]
 	res := geom.ResolutionForBox(wall.RangeBox())
 	if res.Weld() >= grazeDepth || res.Sew() <= grazeDepth {
 		t.Fatalf("the fixture no longer straddles the classes: Weld()=%g Sew()=%g against %g",

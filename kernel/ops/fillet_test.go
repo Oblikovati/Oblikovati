@@ -8,6 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/math"
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
@@ -47,7 +50,7 @@ func filletNotch(r float64) float64 { return r*r - stdmath.Pi*r*r/4 }
 // cylinder face, volume 8 − (r²−πr²/4)·L (L=2). The headline rolling-ball-fillet acceptance.
 func TestFilletOneEdge(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	res, err := blend.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0.5)
 	if err != nil {
 		t.Fatal(err)
@@ -71,7 +74,7 @@ func TestFilletOneEdge(t *testing.T) {
 // acceptance). Volume 8 − 4·(r²−πr²/4)·L.
 func TestFilletFourVerticalEdges(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	var keys [][]byte
 	for _, e := range box.Edges() {
 		if a, c := e.StartVertex().Point(), e.EndVertex().Point(); a.X == c.X && a.Y == c.Y {
@@ -101,7 +104,7 @@ func TestFilletFourVerticalEdges(t *testing.T) {
 // producing garbage. A box has no concave edges, so a lost key stands in for the error path.
 func TestFilletLostKeyErrors(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	if _, err := blend.FilletEdges(box, [][]byte{[]byte("ghost")}, 0.5); err == nil {
 		t.Error("fillet with a lost key should error")
 	}
@@ -136,7 +139,7 @@ func hasSphereFaces(b *topo.Body) int {
 // with material removed (volume < 8). The corner-blend acceptance.
 func TestFilletCornerBlend(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	keys := cornerEdgeKeys(t, box)
 	if len(keys) != 3 {
 		t.Fatalf("found %d edges at the corner, want 3", len(keys))
@@ -195,7 +198,7 @@ func meshOpenEdges(m *ops.Mesh) int {
 // the pole, so it must be flattened onto a tangent plane (else the ear-clip stalls and cracks).
 func TestFilletCornerBlendMeshWatertight(t *testing.T) {
 	t.Parallel()
-	box := shellBox(4, 3, 5)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 3, 5)
 	keys := cornerEdgeKeys(t, box)
 	res, err := blend.FilletEdges(box, keys, 0.5)
 	if err != nil {
@@ -215,7 +218,7 @@ func TestFilletCornerBlendMeshWatertight(t *testing.T) {
 // dented/bulged patch — invisible to the volume and open-edge checks, only to the eye).
 func TestFilletCornerBlendPatchOnSphere(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	res, err := blend.FilletEdges(box, cornerEdgeKeys(t, box), 0.3)
 	if err != nil {
 		t.Fatal(err)
@@ -252,7 +255,7 @@ func TestFilletAllBoxEdges(t *testing.T) {
 	if runtime.GOOS == "darwin" {
 		t.Skip("macOS runner over-counts the fully-rounded-box tessellated volume (≈8.035 > 8); analytic volume ≈7.573 confirms the premise — kernel/tessellation discrepancy")
 	}
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	var keys [][]byte
 	for _, e := range box.Edges() {
 		keys = append(keys, e.ReferenceKey())
@@ -278,7 +281,7 @@ func TestFilletAllBoxEdges(t *testing.T) {
 // corner is sharp, so no sphere patch is built.
 func TestFilletTwoEdgeCornerMiters(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	keys := cornerEdgeKeys(t, box)[:2] // two of the three edges meeting at the corner
 	res, err := blend.FilletEdges(box, keys, 0.3)
 	if err != nil {
@@ -300,7 +303,7 @@ func TestFilletTwoEdgeCornerMiters(t *testing.T) {
 // becomes a watertight 3-edge sphere blend (3 cylinders + 1 sphere), not a 2-cylinder miter crease.
 func TestFilletCornerRoundAddsThirdEdge(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	keys := cornerEdgeKeys(t, box)[:2] // two of the three edges meeting at the corner
 	picks := []blend.EdgeFilletRadii{{Key: keys[0], R0: 0.3, R1: 0.3}, {Key: keys[1], R0: 0.3, R1: 0.3}}
 	res, err := blend.FilletEdgesCorner(box, picks, blend.CornerRound, blend.FillConcaveOutward)
@@ -339,7 +342,7 @@ func TestFilletCornerRoundAddsThirdEdge(t *testing.T) {
 // criterion of #2020. See also 8f8668f6 (a boundary-missing NURBS patch is no longer a candidate).
 func TestFilletRunOutToZero(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	res, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{{Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0}})
 	if err != nil {
 		t.Fatal(err)
@@ -355,7 +358,7 @@ func TestFilletRunOutToZero(t *testing.T) {
 // must have no cracks where they meet.
 func TestFilletTwoEdgeCornerMiterMeshWatertight(t *testing.T) {
 	t.Parallel()
-	box := shellBox(4, 3, 5)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 3, 5)
 	keys := cornerEdgeKeys(t, box)[:2]
 	res, err := blend.FilletEdges(box, keys, 0.5)
 	if err != nil {
@@ -373,7 +376,7 @@ func TestFilletTwoEdgeCornerMiterMeshWatertight(t *testing.T) {
 // two sharp arc cap edges — the input for the curved-adjacent (fillet-of-fillet) tests.
 func filletBoxVertical(t *testing.T, hx, hy, r float64) *topo.Body {
 	t.Helper()
-	box := shellBox(hx, hy, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), hx, hy, 2)
 	var vert []byte
 	for _, e := range box.Edges() {
 		a, c := e.StartVertex().Point(), e.EndVertex().Point()
@@ -428,7 +431,7 @@ func TestFilletCurvedAdjacentReported(t *testing.T) {
 // reads like a caller bug rather than an unsupported operation (the live scenario-07 defect).
 func TestFilletOnCurvedSeamRejectsClearly(t *testing.T) {
 	t.Parallel()
-	box := shellBox(4, 3, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 3, 2)
 	// The two top edges meeting at corner (4,3,2): along X at y=3, and along Y at x=4.
 	var top [][]byte
 	for _, e := range box.Edges() {
@@ -526,7 +529,7 @@ func TestFilletEdgesRoutesArc(t *testing.T) {
 // TestFilletRadiusMustBePositive guards the radius.
 func TestFilletRadiusMustBePositive(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	if _, err := blend.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0); err == nil {
 		t.Error("zero radius should error")
 	}

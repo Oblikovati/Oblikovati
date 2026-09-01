@@ -6,6 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/math"
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
@@ -46,7 +49,7 @@ func shellVolume(t *testing.T, box *topo.Body, removed [][]byte, thick float64,
 // 1.5. The cavity loses exactly the extra 1.0 off its X span, and nothing else moves.
 func TestShellThickensOneWallInward(t *testing.T) {
 	t.Parallel()
-	box := shellBox(4, 4, 4)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
 	over := []ops.ShellFaceThickness{{FaceKey: faceKeyByNormal(t, box, 1, 0, 0), Thickness: 1.5}}
 	got := shellVolume(t, box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellInside, over)
 	// Cavity [0.5,2.5]×[0.5,3.5]×[0.5,4] = 2·3·3.5 = 21 → wall 64 − 21 = 43.
@@ -60,7 +63,7 @@ func TestShellThickensOneWallInward(t *testing.T) {
 // uniform shell, which is the case where getting it wrong makes a part that cannot be moulded.
 func TestShellThinsOneWallInward(t *testing.T) {
 	t.Parallel()
-	box := shellBox(4, 4, 4)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
 	over := []ops.ShellFaceThickness{{FaceKey: faceKeyByNormal(t, box, 1, 0, 0), Thickness: 0.25}}
 	got := shellVolume(t, box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellInside, over)
 	// Cavity [0.5,3.75]×[0.5,3.5]×[0.5,4] = 3.25·3·3.5 = 34.125 → wall 64 − 34.125 = 29.875.
@@ -73,7 +76,7 @@ func TestShellThinsOneWallInward(t *testing.T) {
 // surface, so the part's overall size changes by the override and not by the default.
 func TestShellVariedOutsideGrowsOnlyThatFace(t *testing.T) {
 	t.Parallel()
-	box := shellBox(4, 4, 4)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
 	over := []ops.ShellFaceThickness{{FaceKey: faceKeyByNormal(t, box, 1, 0, 0), Thickness: 1.5}}
 	got := shellVolume(t, box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellOutside, over)
 	// Outer [-0.5,5.5]×[-0.5,4.5]×[-0.5,4] = 6·5·4.5 = 135, minus the original 64 → 71.
@@ -86,7 +89,7 @@ func TestShellVariedOutsideGrowsOnlyThatFace(t *testing.T) {
 // thickness for it is a selection mistake and honouring it silently would move the opening.
 func TestShellVariedRejectsARemovedFace(t *testing.T) {
 	t.Parallel()
-	box := shellBox(4, 4, 4)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
 	top := topFaceKey(t, box)
 	_, err := ops.ShellVaried(box, [][]byte{top}, 0.5, ops.ShellInside,
 		[]ops.ShellFaceThickness{{FaceKey: top, Thickness: 1.0}})
@@ -99,7 +102,7 @@ func TestShellVariedRejectsARemovedFace(t *testing.T) {
 // part from the outside; a lost key must go sick rather than fall back to the default wall.
 func TestShellVariedRejectsBadThickness(t *testing.T) {
 	t.Parallel()
-	box := shellBox(4, 4, 4)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
 	side := faceKeyByNormal(t, box, 1, 0, 0)
 	if _, err := ops.ShellVaried(box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellInside,
 		[]ops.ShellFaceThickness{{FaceKey: side, Thickness: 0}}); err == nil {
@@ -115,7 +118,7 @@ func TestShellVariedRejectsBadThickness(t *testing.T) {
 // existing shell in every existing document changes.
 func TestShellVariedWithNoOverridesIsTheUniformShell(t *testing.T) {
 	t.Parallel()
-	box := shellBox(4, 4, 4)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
 	got := shellVolume(t, box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellInside, nil)
 	if want := 64.0 - 3*3*3.5; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("uniform shell through ShellVaried = %g, want %g", got, want)

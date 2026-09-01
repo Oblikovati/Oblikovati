@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -18,7 +20,7 @@ import (
 // with the given continuation order. It errors when the body has no NURBS face or the extend is
 // invalid.
 func ExtendFaceSurface(b *topo.Body, edge geom.Boundary, distance float64, order int) (*topo.Body, error) {
-	_, s, ok := firstNurbsFace(b)
+	_, s, ok := probe.FirstNurbsFace(b)
 	if !ok {
 		return nil, fmt.Errorf("ops.ExtendFaceSurface: body has no NURBS surface face")
 	}
@@ -26,5 +28,5 @@ func ExtendFaceSurface(b *topo.Body, edge geom.Boundary, distance float64, order
 	if err != nil {
 		return nil, fmt.Errorf("ops.ExtendFaceSurface: %w", err)
 	}
-	return fullDomainBody(ext, "extend"), nil
+	return retopo.FullDomainBody(ext, "extend"), nil
 }

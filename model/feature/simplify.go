@@ -5,6 +5,8 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/kernel/ops"
 )
 
@@ -39,12 +41,12 @@ func (s *SimplifyFeature) Recompute(in Input) (Output, error) {
 	}
 	result := body
 	if len(s.def.RemoveFaceKeys) > 0 {
-		if result, err = ops.DeleteFaces(result, s.def.RemoveFaceKeys); err != nil {
+		if result, err = heal.DeleteFaces(result, s.def.RemoveFaceKeys); err != nil {
 			return Output{}, fmt.Errorf("simplify: %w", err)
 		}
 	}
 	if s.def.FillVoids {
-		result = ops.FillInternalVoids(result, ops.DefaultQuality())
+		result = heal.FillInternalVoids(result, ops.DefaultQuality())
 	}
 	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
 }

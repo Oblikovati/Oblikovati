@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -30,7 +31,7 @@ func NetworkSurfaceBody(uPolylines, vPolylines [][]math.Point3) (*topo.Body, err
 	if err != nil {
 		return nil, err
 	}
-	return fullDomainBody(surf, "network"), nil
+	return retopo.FullDomainBody(surf, "network"), nil
 }
 
 // fitCurves fits each polyline to a B-spline curve, erroring on a degenerate (too-short) input.

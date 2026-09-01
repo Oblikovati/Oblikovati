@@ -14,7 +14,7 @@ import (
 
 func TestExtendFaceSurfaceGrowsDomain(t *testing.T) {
 	t.Parallel()
-	body := surfaceFaceBody(t, multiSpanPatch(t)) // helpers in rebuild_faces_test.go
+	body := brepfixture.SurfaceFaceBody(t, multiSpanPatch(t)) // helpers in rebuild_faces_test.go
 	out, err := ops.ExtendFaceSurface(body, geom.UMaxEdge, 0.5, 2)
 	if err != nil {
 		t.Fatalf("ExtendFaceSurface: %v", err)

@@ -5,6 +5,9 @@ package ops_test
 import (
 	"testing"
 
+	"oblikovati.org/math"
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 )
@@ -39,7 +42,7 @@ func farVerticalEdgeFrom(t *testing.T, b *topo.Body, skipX, skipY float64) *topo
 // going Sick → no geometry change.
 func TestSecondFilletOnUntouchedEdge(t *testing.T) {
 	t.Parallel()
-	box := shellBox(4, 3, 5)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 3, 5)
 	corner := verticalEdgeKey(t, box)
 	f1, err := blend.FilletEdges(box, [][]byte{corner}, 0.5)
 	if err != nil {

@@ -5,6 +5,8 @@ package transform_test
 import (
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/math"
@@ -12,7 +14,7 @@ import (
 
 func TestEditControlPointsLiftsNurbsFace(t *testing.T) {
 	t.Parallel()
-	body := surfaceFaceBody(t, multiSpanPatch(t)) // helpers in rebuild_faces_test.go
+	body := brepfixture.SurfaceFaceBody(t, multiSpanPatch(t)) // helpers in rebuild_faces_test.go
 	out, err := transform.EditControlPoints(body, []geom.ControlPointDelta{{U: 2, V: 2, Delta: math.V3(0, 0, 1.5)}})
 	if err != nil {
 		t.Fatalf("EditControlPoints: %v", err)
@@ -37,7 +39,7 @@ func TestEditControlPointsErrorsWithoutNurbsFace(t *testing.T) {
 
 func TestEditControlPointsRejectsOutOfRange(t *testing.T) {
 	t.Parallel()
-	body := surfaceFaceBody(t, multiSpanPatch(t))
+	body := brepfixture.SurfaceFaceBody(t, multiSpanPatch(t))
 	if _, err := transform.EditControlPoints(body, []geom.ControlPointDelta{{U: 99, V: 0, Delta: math.V3(0, 0, 1)}}); err == nil {
 		t.Error("an out-of-range control index should error")
 	}

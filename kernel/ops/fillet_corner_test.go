@@ -6,6 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/math"
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/query"
@@ -92,7 +95,7 @@ func TestFilletCornerStrategiesValidWatertight(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.strategy+"-"+c.scenario, func(t *testing.T) {
-			box := shellBox(2, 2, 2)
+			box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 			res, err := blend.FilletEdgesCorner(box, cornerStrategyPicks(t, box, c.scenario), cornerStrategyOf(c.strategy), blend.FillConcaveOutward)
 			if err != nil {
 				t.Fatalf("%s/%s: %v", c.strategy, c.scenario, err)
@@ -118,7 +121,7 @@ func TestFilletCornerStrategiesValidWatertight(t *testing.T) {
 func TestFilletCornerVolumeOrdering(t *testing.T) {
 	t.Parallel()
 	vol := func(strategy string) float64 {
-		box := shellBox(2, 2, 2)
+		box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 		res, err := blend.FilletEdgesCorner(box, cornerStrategyPicks(t, box, "oneCorner"), cornerStrategyOf(strategy), blend.FillConcaveOutward)
 		if err != nil {
 			t.Fatalf("%s: %v", strategy, err)
@@ -135,7 +138,7 @@ func TestFilletCornerVolumeOrdering(t *testing.T) {
 // error, not a degenerate body (a single end at 0 is the valid run-out, TestFilletRunOutToZero).
 func TestFilletRunOutBothEndsZeroRejected(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	_, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{{Key: verticalEdgeKey(t, box), R0: 0, R1: 0}})
 	if err == nil || !strings.Contains(err.Error(), "at least one") {
 		t.Fatalf("both-ends-zero err = %v, want the >=0 / at-least-one rejection", err)
@@ -150,7 +153,7 @@ func TestFilletRunOutBothEndsZeroRejected(t *testing.T) {
 // BUILDS instead of declining; see TestFilletCornerRadiusTorusBuilds for that positive case.)
 func TestFilletCornerRadiusMismatchRejected(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	keys := cornerEdgeKeys(t, box)
 	_, err := blend.FilletEdgesCorner(box, []blend.EdgeFilletRadii{
 		{Key: keys[0], R0: 0.3, R1: 0.3},
@@ -173,7 +176,7 @@ func TestFilletCornerRadiusMismatchRejected(t *testing.T) {
 // beyond simple/A4's specific dimensions.
 func TestFilletCornerRadiusTorusBuilds(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	keys := cornerEdgeKeys(t, box)
 	res, err := blend.FilletEdgesCorner(box, []blend.EdgeFilletRadii{
 		{Key: keys[0], R0: 0.3, R1: 0.3},

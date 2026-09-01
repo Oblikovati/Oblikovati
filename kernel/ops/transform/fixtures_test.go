@@ -56,32 +56,6 @@ func multiSpanPatch(t *testing.T) geom.BSplineSurface {
 	return s
 }
 
-// surfaceFaceBody wraps a B-spline surface in a single-face surface body with straight boundary
-// edges at the domain corners. The loop geometry is incidental — RebuildFaceSurfaces reads only
-// the face surface and preserves the loops.
-func surfaceFaceBody(t *testing.T, s geom.BSplineSurface) *topo.Body {
-	t.Helper()
-	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok("rebuild", "body", 0)))
-	corners := [4]math.Point3{s.PointAt(0, 0), s.PointAt(1, 0), s.PointAt(1, 1), s.PointAt(0, 1)}
-	v := make([]*topo.Vertex, 4)
-	for i, p := range corners {
-		v[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok("rebuild", "v", i)))
-	}
-	uses := make([]topo.Use, 4)
-	for i := range 4 {
-		j := (i + 1) % 4
-		e := bld.AddEdge(geom.NewLineSegment(corners[i], corners[j]), v[i], v[j], topo.NewLineage(topo.Tok("rebuild", "e", i)))
-		uses[i] = topo.Fwd(e)
-	}
-	bld.AddFace(s, topo.NewLineage(topo.Tok("rebuild", "face", 0)), topo.OuterLoop(uses...))
-	return bld.Build()
-}
-
-// shellBox builds an axis-aligned box [0,sx]×[0,sy]×[0,sz].
-func shellBox(sx, sy, sz float64) *topo.Body {
-	return subd.ToBody(subd.Box(sx, sy, sz), "box")
-}
-
 // topFaceKey returns the reference key of the +Z (top) face.
 func topFaceKey(t *testing.T, b *topo.Body) []byte {
 	t.Helper()

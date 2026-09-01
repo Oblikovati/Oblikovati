@@ -7,40 +7,21 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/opfixture"
+
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/query"
-	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
-
-// cavityBody is a 4×4×4 cube with a centered 2×2×2 cavity — the canonical
-// two-shell solid (#629): the outer skin plus the void skin.
-func cavityBody(t *testing.T) *topo.Body {
-	t.Helper()
-	big := tetraBox(t, math.P3(0, 0, 0), 4)
-	small := tetraBox(t, math.P3(1, 1, 1), 2)
-	res, err := Boolean(Cut, big, small)
-	if err != nil {
-		t.Fatalf("cavity cut: %v", err)
-	}
-	return res
-}
-
-func tetraBox(t *testing.T, p math.Point3, s float64) *topo.Body {
-	t.Helper()
-	m := subd.Box(s, s, s)
-	for i := range m.Verts {
-		m.Verts[i] = m.Verts[i].TranslateBy(p.AsVector())
-	}
-	return subd.ToBody(m, "box")
-}
 
 // TestCavityBodyHasVoidShell: the cut regroups into two closed shells; the
 // inner one classifies as a void with negative signed volume ≈ −8.
 func TestCavityBodyHasVoidShell(t *testing.T) {
 	t.Parallel()
-	body := cavityBody(t)
+	body := opfixture.Cavity(t)
 	shells := body.Shells()
 	if len(shells) != 2 {
 		t.Fatalf("cavity body has %d shells, want 2 (outer + void)", len(shells))
@@ -50,7 +31,7 @@ func TestCavityBodyHasVoidShell(t *testing.T) {
 		if !sh.IsClosed() {
 			t.Errorf("shell %d not closed", sh.Index())
 		}
-		if ShellIsVoidInBody(body, sh) {
+		if heal.ShellIsVoidInBody(body, sh) {
 			voids++
 			if v := query.ShellSignedVolume(sh, DefaultQuality()); stdmath.Abs(v+8) > 0.05 {
 				t.Errorf("void shell signed volume = %g, want ~-8", v)
@@ -66,7 +47,7 @@ func TestCavityBodyHasVoidShell(t *testing.T) {
 // prefixed) and connectivity-true range boxes.
 func TestShellKeysAndRangeBoxes(t *testing.T) {
 	t.Parallel()
-	body := cavityBody(t)
+	body := opfixture.Cavity(t)
 	a, b := body.Shells()[0], body.Shells()[1]
 	if bytes.Equal(a.ReferenceKey(), b.ReferenceKey()) {
 		t.Error("the two shells must carry distinct reference keys")
@@ -75,7 +56,7 @@ func TestShellKeysAndRangeBoxes(t *testing.T) {
 		t.Error("shell key must be kind-prefixed")
 	}
 	outer, void := a, b
-	if ShellIsVoidInBody(body, a) {
+	if heal.ShellIsVoidInBody(body, a) {
 		outer, void = b, a
 	}
 	vd := float64(void.RangeBox().Diagonal().Length())
@@ -92,7 +73,7 @@ func TestShellKeysAndRangeBoxes(t *testing.T) {
 // shell region but the body classifies cavity points as outside material.
 func TestShellContainmentVerdicts(t *testing.T) {
 	t.Parallel()
-	body := cavityBody(t)
+	body := opfixture.Cavity(t)
 	q := DefaultQuality()
 	if c := query.BodyContainment(body, math.P3(0.5, 0.5, 0.5), q, 1e-6); c != query.ContainInside {
 		t.Errorf("material point = %v, want inside", c)

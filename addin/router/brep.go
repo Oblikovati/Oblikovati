@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
@@ -216,7 +218,7 @@ func brepDeleteFaces(s *app.Session, in wire.BrepDeleteFacesArgs) (wire.BrepHand
 	for i, k := range in.FaceKeys {
 		keys[i] = []byte(k)
 	}
-	res, err := ops.DropFaces(tb.Topo(), keys, in.KeepInstead)
+	res, err := heal.DropFaces(tb.Topo(), keys, in.KeepInstead)
 	if err != nil {
 		return wire.BrepHandleResult{}, err
 	}

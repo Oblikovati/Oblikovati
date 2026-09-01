@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/heal"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -40,7 +41,7 @@ func NewFaceShell(s *topo.Shell, b *topo.Body, q ops.Quality) *FaceShellAdapter 
 }
 
 func (a *FaceShellAdapter) IsClosed() bool { return a.shell.IsClosed() }
-func (a *FaceShellAdapter) IsVoid() bool   { return ops.ShellIsVoidInBody(a.body, a.shell) }
+func (a *FaceShellAdapter) IsVoid() bool   { return heal.ShellIsVoidInBody(a.body, a.shell) }
 
 // Volume is the magnitude of the shell region's volume (the API reports
 // sizes; the sign — void vs material — is IsVoid's job).

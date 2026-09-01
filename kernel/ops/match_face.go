@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 )
@@ -19,11 +20,11 @@ import (
 // given edges to the continuity order (0=G0..3=G3). It errors when either body lacks a NURBS face or
 // the match is invalid.
 func MatchFaceTo(src, target *topo.Body, srcEdge, tgtEdge geom.Boundary, order int) (*topo.Body, error) {
-	sf, ss, ok := firstNurbsFace(src)
+	sf, ss, ok := probe.FirstNurbsFace(src)
 	if !ok {
 		return nil, fmt.Errorf("ops.MatchFaceTo: source body has no NURBS surface face")
 	}
-	_, ts, ok := firstNurbsFace(target)
+	_, ts, ok := probe.FirstNurbsFace(target)
 	if !ok {
 		return nil, fmt.Errorf("ops.MatchFaceTo: target body has no NURBS surface face")
 	}
@@ -32,14 +33,4 @@ func MatchFaceTo(src, target *topo.Body, srcEdge, tgtEdge geom.Boundary, order i
 		return nil, fmt.Errorf("ops.MatchFaceTo: %w", err)
 	}
 	return transform.ReplaceFaceSurface(src, sf.ReferenceKey(), matched)
-}
-
-// firstNurbsFace returns a body's first B-spline-surface face and its geometry.
-func firstNurbsFace(b *topo.Body) (*topo.Face, geom.BSplineSurface, bool) {
-	for _, f := range b.Faces() {
-		if s, ok := f.Geometry().(geom.BSplineSurface); ok {
-			return f, s, true
-		}
-	}
-	return nil, geom.BSplineSurface{}, false
 }

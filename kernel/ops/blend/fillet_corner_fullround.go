@@ -7,7 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops/internal/retopo"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/internal/tol"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -187,7 +187,7 @@ func commonTangentSphereCentre(faces []*topo.Face, r float64) (math.Point3, floa
 			atb[i] += row[i] * d
 		}
 	}
-	x, ok := retopo.Solve3(ata, atb)
+	x, ok := probe.Solve3(ata, atb)
 	if !ok {
 		return math.Point3{}, 0, fmt.Errorf("fillet: full-round corner planes are degenerate (normal equations singular)")
 	}

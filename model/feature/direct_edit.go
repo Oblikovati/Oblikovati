@@ -5,8 +5,9 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/api/types"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -57,7 +58,7 @@ func (f *DirectEditFeature) Recompute(in Input) (Output, error) {
 	case types.DirectEditRotateOperation:
 		return f.recomputeRotate(in)
 	case types.DirectEditDeleteOperation:
-		return retopoFacesBody(in, f.def.FaceKeys, "directEdit delete", ops.DeleteFaces)
+		return retopoFacesBody(in, f.def.FaceKeys, "directEdit delete", heal.DeleteFaces)
 	case types.DirectEditScaleOperation:
 		return f.recomputeScale(in)
 	default:

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/heal"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 )
@@ -39,7 +40,7 @@ func OffsetFaceSurfaces(b *topo.Body, faceKeys [][]byte, distance float64, rever
 			return nil, fmt.Errorf("ops.OffsetFaceSurfaces: offset face %x: %w", key, err)
 		}
 	}
-	kept, err := DropFaces(out, faceKeys, true)
+	kept, err := heal.DropFaces(out, faceKeys, true)
 	if err != nil {
 		return nil, fmt.Errorf("ops.OffsetFaceSurfaces: isolate offset faces: %w", err)
 	}

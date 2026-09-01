@@ -19,7 +19,7 @@ import (
 // the face hinges at its base (z=0) and leans in, removing a 4·tan(angle)=1 wedge ⇒ vol 7.
 func TestDraftTapersSideFace(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	var side []byte
 	for _, f := range box.Faces() {
 		if f.Geometry().NormalAt(0, 0).X > 0.99 {
@@ -43,7 +43,7 @@ func TestDraftTapersSideFace(t *testing.T) {
 // untouched neighbour — survives. Before, the rebuild renamed everything to draft:f#N / draft:e#N.
 func TestDraftPreservesFaceIdentity(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	var side, top []byte
 	for _, f := range box.Faces() {
 		if n := f.Geometry().NormalAt(0, 0); n.X > 0.99 {
@@ -67,7 +67,7 @@ func TestDraftPreservesFaceIdentity(t *testing.T) {
 // TestDraftLostKeyErrors reports a vanished face key so the feature can go Sick.
 func TestDraftLostKeyErrors(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	if _, err := blend.DraftFaces(box, [][]byte{[]byte("ghost")}, math.V3(0, 0, 1), 0.1); err == nil {
 		t.Error("draft with a lost key should error")
 	}

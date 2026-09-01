@@ -6,6 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/query"
@@ -45,14 +49,14 @@ func boxBody(p math.Point3, sx, sy, sz float64) *topo.Body {
 		return math.P3(p.X+math.Scalar(x*sx), p.Y+math.Scalar(y*sy), p.Z+math.Scalar(z*sz))
 	}
 	faces := []*topo.Body{
-		quadBody("bottom", s(0, 0, 0), s(0, 1, 0), s(1, 1, 0), s(1, 0, 0)),
-		quadBody("top", s(0, 0, 1), s(1, 0, 1), s(1, 1, 1), s(0, 1, 1)),
-		quadBody("front", s(0, 0, 0), s(1, 0, 0), s(1, 0, 1), s(0, 0, 1)),
-		quadBody("back", s(0, 1, 0), s(0, 1, 1), s(1, 1, 1), s(1, 1, 0)),
-		quadBody("left", s(0, 0, 0), s(0, 0, 1), s(0, 1, 1), s(0, 1, 0)),
-		quadBody("right", s(1, 0, 0), s(1, 1, 0), s(1, 1, 1), s(1, 0, 1)),
+		brepfixture.QuadBody("bottom", s(0, 0, 0), s(0, 1, 0), s(1, 1, 0), s(1, 0, 0)),
+		brepfixture.QuadBody("top", s(0, 0, 1), s(1, 0, 1), s(1, 1, 1), s(0, 1, 1)),
+		brepfixture.QuadBody("front", s(0, 0, 0), s(1, 0, 0), s(1, 0, 1), s(0, 0, 1)),
+		brepfixture.QuadBody("back", s(0, 1, 0), s(0, 1, 1), s(1, 1, 1), s(1, 1, 0)),
+		brepfixture.QuadBody("left", s(0, 0, 0), s(0, 0, 1), s(0, 1, 1), s(0, 1, 0)),
+		brepfixture.QuadBody("right", s(1, 0, 0), s(1, 1, 0), s(1, 1, 1), s(1, 0, 1)),
 	}
-	body, _ := Stitch(faces, 0, false, "box")
+	body, _ := heal.Stitch(faces, 0, false, "box")
 	return body
 }
 
@@ -147,7 +151,7 @@ func TestDropFacesKeepsSelectionSemantics(t *testing.T) {
 	t.Parallel()
 	b := boxBody(math.P3(0, 0, 0), 1, 1, 1)
 	key := b.Faces()[0].ReferenceKey()
-	open, err := DropFaces(b, [][]byte{key}, false)
+	open, err := heal.DropFaces(b, [][]byte{key}, false)
 	if err != nil {
 		t.Fatalf("DropFaces: %v", err)
 	}
@@ -157,14 +161,14 @@ func TestDropFacesKeepsSelectionSemantics(t *testing.T) {
 	if len(BoundaryEdges(open)) != 4 {
 		t.Errorf("opened box has %d boundary edges, want 4", len(BoundaryEdges(open)))
 	}
-	only, err := DropFaces(b, [][]byte{key}, true)
+	only, err := heal.DropFaces(b, [][]byte{key}, true)
 	if err != nil {
 		t.Fatalf("DropFaces keep: %v", err)
 	}
 	if len(only.Faces()) != 1 {
 		t.Errorf("keep-instead result has %d faces, want 1", len(only.Faces()))
 	}
-	if _, err := DropFaces(only, [][]byte{only.Faces()[0].ReferenceKey()}, false); err == nil {
+	if _, err := heal.DropFaces(only, [][]byte{only.Faces()[0].ReferenceKey()}, false); err == nil {
 		t.Error("removing every face must error")
 	}
 }

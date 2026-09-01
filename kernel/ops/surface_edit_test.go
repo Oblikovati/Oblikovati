@@ -7,6 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
@@ -20,18 +24,18 @@ func approx(a, b float64) bool { return a-b < 1e-9 && b-a < 1e-9 }
 func boxFaces(sx, sy, sz float64) []*topo.Body {
 	p := math.P3
 	return []*topo.Body{
-		quadBody("bottom", p(0, 0, 0), p(0, sy, 0), p(sx, sy, 0), p(sx, 0, 0)),
-		quadBody("top", p(0, 0, sz), p(sx, 0, sz), p(sx, sy, sz), p(0, sy, sz)),
-		quadBody("front", p(0, 0, 0), p(sx, 0, 0), p(sx, 0, sz), p(0, 0, sz)),
-		quadBody("back", p(0, sy, 0), p(0, sy, sz), p(sx, sy, sz), p(sx, sy, 0)),
-		quadBody("left", p(0, 0, 0), p(0, 0, sz), p(0, sy, sz), p(0, sy, 0)),
-		quadBody("right", p(sx, 0, 0), p(sx, sy, 0), p(sx, sy, sz), p(sx, 0, sz)),
+		brepfixture.QuadBody("bottom", p(0, 0, 0), p(0, sy, 0), p(sx, sy, 0), p(sx, 0, 0)),
+		brepfixture.QuadBody("top", p(0, 0, sz), p(sx, 0, sz), p(sx, sy, sz), p(0, sy, sz)),
+		brepfixture.QuadBody("front", p(0, 0, 0), p(sx, 0, 0), p(sx, 0, sz), p(0, 0, sz)),
+		brepfixture.QuadBody("back", p(0, sy, 0), p(0, sy, sz), p(sx, sy, sz), p(sx, sy, 0)),
+		brepfixture.QuadBody("left", p(0, 0, 0), p(0, 0, sz), p(0, sy, sz), p(0, sy, 0)),
+		brepfixture.QuadBody("right", p(sx, 0, 0), p(sx, sy, 0), p(sx, sy, sz), p(sx, 0, sz)),
 	}
 }
 
 func TestTrimByPlaneKeepsHalf(t *testing.T) {
 	t.Parallel()
-	patch := quadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
+	patch := brepfixture.QuadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
 	trimmed, err := TrimByPlane(patch, math.P3(2, 0, 0), math.V3(1, 0, 0), true, "trim")
 	if err != nil {
 		t.Fatalf("TrimByPlane: %v", err)
@@ -48,9 +52,9 @@ func TestTrimByPlaneKeepsHalf(t *testing.T) {
 // twoQuadSheet is a 2-face coplanar quilt (two unit-deep quads sharing the x=2 edge on z=0).
 func twoQuadSheet(t *testing.T) *topo.Body {
 	t.Helper()
-	q1 := quadBody("q1", math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(0, 2, 0))
-	q2 := quadBody("q2", math.P3(2, 0, 0), math.P3(4, 0, 0), math.P3(4, 2, 0), math.P3(2, 2, 0))
-	sheet, err := Stitch([]*topo.Body{q1, q2}, 0, true, "sheet")
+	q1 := brepfixture.QuadBody("q1", math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(0, 2, 0))
+	q2 := brepfixture.QuadBody("q2", math.P3(2, 0, 0), math.P3(4, 0, 0), math.P3(4, 2, 0), math.P3(2, 2, 0))
+	sheet, err := heal.Stitch([]*topo.Body{q1, q2}, 0, true, "sheet")
 	if err != nil {
 		t.Fatalf("Stitch setup: %v", err)
 	}
@@ -121,7 +125,7 @@ func TestOffsetMultiFaceCoplanar(t *testing.T) {
 // K5: extending a planar surface's boundary edge grows the face outward by the distance.
 func TestExtendByEdgeGrowsFace(t *testing.T) {
 	t.Parallel()
-	patch := quadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
+	patch := brepfixture.QuadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
 	var key []byte // the bottom edge (both endpoints at y=0)
 	for _, e := range patch.Edges() {
 		if approx(float64(e.StartVertex().Point().Y), 0) && approx(float64(e.EndVertex().Point().Y), 0) {
@@ -146,7 +150,7 @@ func TestExtendByEdgeGrowsFace(t *testing.T) {
 
 func TestExtendByEdgeLostEdgeErrors(t *testing.T) {
 	t.Parallel()
-	patch := quadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
+	patch := brepfixture.QuadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
 	if _, err := ExtendByEdge(patch, []byte("ghost"), 2, "ext"); err == nil {
 		t.Error("extending a lost edge should error")
 	}
@@ -154,7 +158,7 @@ func TestExtendByEdgeLostEdgeErrors(t *testing.T) {
 
 func TestTrimByPlaneEmptyErrors(t *testing.T) {
 	t.Parallel()
-	patch := quadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
+	patch := brepfixture.QuadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
 	// Keep the x ≥ 10 side — nothing remains.
 	if _, err := TrimByPlane(patch, math.P3(10, 0, 0), math.V3(1, 0, 0), true, "trim"); err == nil {
 		t.Error("trimming away the whole patch should error")
@@ -165,7 +169,7 @@ func TestTrimByPlaneEmptyErrors(t *testing.T) {
 // body, and rejects a non-coplanar body — the Trim surface-body tool (#1880).
 func TestBodyPlaneOfPlanarSurface(t *testing.T) {
 	t.Parallel()
-	quad := quadBody("q", math.P3(0, 0, 5), math.P3(4, 0, 5), math.P3(4, 4, 5), math.P3(0, 4, 5)) // z=5 plane
+	quad := brepfixture.QuadBody("q", math.P3(0, 0, 5), math.P3(4, 0, 5), math.P3(4, 4, 5), math.P3(0, 4, 5)) // z=5 plane
 	pl, ok := BodyPlane(quad)
 	if !ok {
 		t.Fatal("BodyPlane should resolve a single planar face")
@@ -179,7 +183,7 @@ func TestBodyPlaneOfPlanarSurface(t *testing.T) {
 	if _, ok := BodyPlane(twoQuadSheet(t)); !ok {
 		t.Error("a coplanar quilt should resolve one plane")
 	}
-	box, _ := Stitch(boxFaces(2, 2, 2), 0, false, "box")
+	box, _ := heal.Stitch(boxFaces(2, 2, 2), 0, false, "box")
 	if _, ok := BodyPlane(box); ok {
 		t.Error("a multi-plane body should not resolve a single tool plane")
 	}
@@ -187,7 +191,7 @@ func TestBodyPlaneOfPlanarSurface(t *testing.T) {
 
 func TestOffsetSurfaceMovesAlongNormal(t *testing.T) {
 	t.Parallel()
-	patch := quadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
+	patch := brepfixture.QuadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
 	offset, err := OffsetSurface(patch, 3, "offset")
 	if err != nil {
 		t.Fatalf("OffsetSurface: %v", err)
@@ -201,7 +205,7 @@ func TestOffsetSurfaceMovesAlongNormal(t *testing.T) {
 func TestMidSurfacesThinBox(t *testing.T) {
 	t.Parallel()
 	// A 4×4×1 thin plate: only the top/bottom faces (separation 1) are a thin pair.
-	solid, _ := Stitch(boxFaces(4, 4, 1), 0, false, "box")
+	solid, _ := heal.Stitch(boxFaces(4, 4, 1), 0, false, "box")
 	patches, err := MidSurfaces(solid, 0, 2, "mid")
 	if err != nil {
 		t.Fatalf("MidSurfaces: %v", err)
@@ -225,7 +229,7 @@ func TestMidSurfacesThinBox(t *testing.T) {
 
 func TestMidSurfacesNoThinPairErrors(t *testing.T) {
 	t.Parallel()
-	solid, _ := Stitch(boxFaces(1, 1, 1), 0, false, "box")
+	solid, _ := heal.Stitch(boxFaces(1, 1, 1), 0, false, "box")
 	if _, err := MidSurfaces(solid, 0, 0.5, "mid"); err == nil {
 		t.Error("a cube with all separations 1 should have no pair within 0.5")
 	}
@@ -235,7 +239,7 @@ func TestMidSurfacesNoThinPairErrors(t *testing.T) {
 // plate's separations are 1 (caps) and 4 (sides); the window [2,3] excludes both, so no pair.
 func TestMidSurfacesMinThicknessFloor(t *testing.T) {
 	t.Parallel()
-	solid, _ := Stitch(boxFaces(4, 4, 1), 0, false, "box")
+	solid, _ := heal.Stitch(boxFaces(4, 4, 1), 0, false, "box")
 	if _, err := MidSurfaces(solid, 2, 3, "mid"); err == nil {
 		t.Error("the window [2,3] should exclude the sep-1 caps and sep-4 sides")
 	}
@@ -245,7 +249,7 @@ func TestMidSurfacesMinThicknessFloor(t *testing.T) {
 // mid-patch on z=0.5 with thickness 1 (#1885).
 func TestMidSurfacesByPairs(t *testing.T) {
 	t.Parallel()
-	solid, _ := Stitch(boxFaces(4, 4, 1), 0, false, "box")
+	solid, _ := heal.Stitch(boxFaces(4, 4, 1), 0, false, "box")
 	var top, bot []byte
 	for _, f := range solid.Faces() {
 		if n := f.Geometry().NormalAt(0, 0); approx(n.Z, 1) {
@@ -269,7 +273,7 @@ func TestMidSurfacesByPairs(t *testing.T) {
 // TestMidSurfacesByPairsLostKeyErrors: an unresolved face key makes the op error.
 func TestMidSurfacesByPairsLostKeyErrors(t *testing.T) {
 	t.Parallel()
-	solid, _ := Stitch(boxFaces(4, 4, 1), 0, false, "box")
+	solid, _ := heal.Stitch(boxFaces(4, 4, 1), 0, false, "box")
 	if _, err := MidSurfacesByPairs(solid, [][2][]byte{{[]byte("ghost"), []byte("gone")}}, "mid"); err == nil {
 		t.Error("a lost face-pair key should error")
 	}
@@ -310,9 +314,9 @@ func TestSurfaceEditDeclinesCurvedOffset(t *testing.T) {
 // built, and the message names both normals (#3393).
 func TestSurfaceEditDeclinesFoldedOffset(t *testing.T) {
 	t.Parallel()
-	flat := quadBody("flat", math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(0, 2, 0))
-	wall := quadBody("wall", math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(2, 2, 2), math.P3(2, 0, 2))
-	folded, err := Stitch([]*topo.Body{flat, wall}, 0, true, "folded")
+	flat := brepfixture.QuadBody("flat", math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(0, 2, 0))
+	wall := brepfixture.QuadBody("wall", math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(2, 2, 2), math.P3(2, 0, 2))
+	folded, err := heal.Stitch([]*topo.Body{flat, wall}, 0, true, "folded")
 	if err != nil {
 		t.Fatalf("Stitch setup: %v", err)
 	}

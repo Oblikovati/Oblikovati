@@ -289,7 +289,7 @@ func (b *Body) FindVertexByKey(key []byte) (*Vertex, bool) {
 
 // BodyFromShells builds a body owning exactly the given shells, re-parenting each. It
 // rebuilds a body from a subset of another body's shells — e.g. dropping the inner
-// void shells to fill internal cavities (ops.FillInternalVoids, M11-F06 shrinkwrap).
+// void shells to fill internal cavities (heal.FillInternalVoids, M11-F06 shrinkwrap).
 // The donor shells must not be reused afterward, as their owning body is rewritten.
 //
 // The donors' build reports are NOT carried over — the result's BuildDiagnostics is empty, because

@@ -17,7 +17,6 @@ import (
 	"slices"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -267,7 +266,7 @@ func MeetOfPlanes(planes []geom.Plane) (math.Point3, bool) {
 			b[i] += nv[i] * d
 		}
 	}
-	x, ok := retopo.Solve3(a, b)
+	x, ok := Solve3(a, b)
 	return math.P3(x[0], x[1], x[2]), ok
 }
 
@@ -354,3 +353,46 @@ func Unit2(v math.Vector2) math.Vector2 {
 	}
 	return v.Scale(math.Scalar(1 / l))
 }
+
+// FirstNurbsFace returns a body's first B-spline-surface face and its geometry — the face a
+// NURBS-only operation acts on, and the guard that refuses a body that has none.
+//
+// Example: f, s, ok := probe.FirstNurbsFace(body)
+func FirstNurbsFace(b *topo.Body) (*topo.Face, geom.BSplineSurface, bool) {
+	for _, f := range b.Faces() {
+		if s, ok := f.Geometry().(geom.BSplineSurface); ok {
+			return f, s, true
+		}
+	}
+	return nil, geom.BSplineSurface{}, false
+}
+
+// Solve3 solves the 3×3 system a·x = b by Cramer's rule, ok=false when a is singular.
+func Solve3(a [3][3]float64, b [3]float64) ([3]float64, bool) {
+	det := Det3(a)
+	if det < SingularSolveTol && det > -SingularSolveTol {
+		return [3]float64{}, false
+	}
+	var x [3]float64
+	for c := range 3 {
+		m := a
+		for r := range 3 {
+			m[r][c] = b[r]
+		}
+		x[c] = Det3(m) / det
+	}
+	return x, true
+}
+
+// Det3 returns the determinant of a 3×3 matrix.
+func Det3(m [3][3]float64) float64 {
+	return m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1]) -
+		m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0]) +
+		m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0])
+}
+
+// SingularSolveTol is the magnitude below which a determinant or a ray/line·plane denominator
+// is treated as zero — the linear solve is singular or the line is parallel to the plane. It
+// is below the linear DefaultTolerance because it bounds a product of (roughly unit) direction
+// terms, not a length.
+const SingularSolveTol = 1e-12

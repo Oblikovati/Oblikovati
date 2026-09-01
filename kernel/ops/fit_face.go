@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/fit"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -23,5 +24,5 @@ func FitSurfaceToPoints(points []math.Point3, degree, nu, nv int) (*topo.Body, e
 	if err != nil {
 		return nil, fmt.Errorf("ops.FitSurfaceToPoints: %w", err)
 	}
-	return fullDomainBody(surf, "fit-surface"), nil
+	return retopo.FullDomainBody(surf, "fit-surface"), nil
 }

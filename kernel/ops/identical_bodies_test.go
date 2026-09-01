@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/kernel/ops/query"
 
 	"oblikovati.org/kernel/brep"
@@ -96,7 +98,7 @@ func stitchedTetra(t *testing.T, feat string, verts [4]math.Point3) *topo.Body {
 	for fi, c := range tetraFaceCorners {
 		faces[fi] = triFaceBody(feat, verts[c[0]], verts[c[1]], verts[c[2]])
 	}
-	body, err := Stitch(faces, 0, false, feat)
+	body, err := heal.Stitch(faces, 0, false, feat)
 	if err != nil {
 		t.Fatalf("Stitch: %v", err)
 	}

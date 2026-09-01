@@ -5,6 +5,10 @@ package ops
 import (
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -13,7 +17,7 @@ import (
 // touching along shared edges must not count.
 func TestSelfIntersectionsCleanSolid(t *testing.T) {
 	t.Parallel()
-	body, err := Stitch(cubeFaces(), 0, false, "clean")
+	body, err := heal.Stitch(brepfixture.CubeFaces(), 0, false, "clean")
 	if err != nil {
 		t.Fatalf("Stitch: %v", err)
 	}
@@ -57,8 +61,8 @@ func TestSelfIntersectionsDisjointShells(t *testing.T) {
 func TestSelfIntersectionsCoplanarOverlap(t *testing.T) {
 	t.Parallel()
 	p := math.P3
-	q1 := quadBody("w1", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
-	q2 := quadBody("w2", p(1, 0, 1), p(3, 0, 1), p(3, 0, 3), p(1, 0, 3)) // overlaps q1's corner
+	q1 := brepfixture.QuadBody("w1", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
+	q2 := brepfixture.QuadBody("w2", p(1, 0, 1), p(3, 0, 1), p(3, 0, 3), p(1, 0, 3)) // overlaps q1's corner
 	merged := topo.MergeBodies(topo.NewLineage(topo.Tok("imp", "body", 0)), false, q1, q2)
 	if hits := SelfIntersections(merged, DefaultQuality()); len(hits) == 0 {
 		t.Error("coplanar overlapping faces must report a self-intersection")

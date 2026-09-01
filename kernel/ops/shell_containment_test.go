@@ -5,6 +5,10 @@ package ops
 import (
 	"testing"
 
+	"oblikovati.org/test-utilities/opfixture"
+
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -18,7 +22,7 @@ import (
 // small 2³ region as inside. That distinction is the point of this test.
 func TestShellContainmentClassifiesSingleShell(t *testing.T) {
 	t.Parallel()
-	body := cavityBody(t)
+	body := opfixture.Cavity(t)
 	q := DefaultQuality()
 
 	outer, void := pickCavityShells(t, body)
@@ -61,7 +65,7 @@ func pickCavityShells(t *testing.T, body *topo.Body) (outer, void *topo.Shell) {
 		t.Fatalf("cavity body has %d shells, want 2 (outer + void)", len(shells))
 	}
 	for _, sh := range shells {
-		if ShellIsVoidInBody(body, sh) {
+		if heal.ShellIsVoidInBody(body, sh) {
 			void = sh
 		} else {
 			outer = sh

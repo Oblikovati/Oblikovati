@@ -6,11 +6,12 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/opfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/transform"
-	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -19,28 +20,6 @@ import (
 // test helper cannot be imported, and a shared fixture package would import kernel/ops,
 // which kernel/ops' own tests could then not use (import cycle). This is the test
 // scaffolding sonar.cpd.exclusions already accounts for.
-
-// cavityBody is a 4×4×4 cube with a centered 2×2×2 cavity — the canonical
-// two-shell solid (#629): the outer skin plus the void skin.
-func cavityBody(t *testing.T) *topo.Body {
-	t.Helper()
-	big := tetraBox(t, math.P3(0, 0, 0), 4)
-	small := tetraBox(t, math.P3(1, 1, 1), 2)
-	res, err := ops.Boolean(ops.Cut, big, small)
-	if err != nil {
-		t.Fatalf("cavity cut: %v", err)
-	}
-	return res
-}
-
-func tetraBox(t *testing.T, p math.Point3, s float64) *topo.Body {
-	t.Helper()
-	m := subd.Box(s, s, s)
-	for i := range m.Verts {
-		m.Verts[i] = m.Verts[i].TranslateBy(p.AsVector())
-	}
-	return subd.ToBody(m, "box")
-}
 
 // squareWireBody attaches a unit-square wire (CCW in the XY plane) to a body.
 func squareWireBody(side float64) (*topo.Body, *topo.Wire) {
@@ -71,7 +50,7 @@ func squareWireBody(side float64) (*topo.Body, *topo.Wire) {
 
 func TestTransformBodyCavityPreservesShellsAndVolume(t *testing.T) {
 	t.Parallel()
-	body := cavityBody(t)
+	body := opfixture.Cavity(t)
 	moved, err := transform.TransformBody(body, math.Translation4(math.V3(10, 0, 0)), func(l topo.Lineage) topo.Lineage { return l })
 	if err != nil {
 		t.Fatalf("TransformBody: %v", err)

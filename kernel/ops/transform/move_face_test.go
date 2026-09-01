@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/transform"
@@ -16,7 +18,7 @@ import (
 // 2×2×3 box (vol 12) and stays a valid manifold.
 func TestMoveFaceGrowsBox(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	res, err := transform.MoveFaces(box, [][]byte{topFaceKey(t, box)}, math.V3(0, 0, 1))
 	if err != nil {
 		t.Fatal(err)
@@ -33,7 +35,7 @@ func TestMoveFaceGrowsBox(t *testing.T) {
 // normal): the box shrinks to 2×2×1.5 (vol 6).
 func TestOffsetFaceShavesBox(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	res, err := transform.OffsetFaces(box, [][]byte{topFaceKey(t, box)}, -0.5)
 	if err != nil {
 		t.Fatal(err)
@@ -49,7 +51,7 @@ func TestOffsetFaceShavesBox(t *testing.T) {
 // TestMoveFaceLostKeyErrors reports a vanished face key so the feature can go Sick.
 func TestMoveFaceLostKeyErrors(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	if _, err := transform.MoveFaces(box, [][]byte{[]byte("ghost")}, math.V3(0, 0, 1)); err == nil {
 		t.Error("move-face with a lost key should error")
 	}

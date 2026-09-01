@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops/internal/retopo"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -27,7 +27,7 @@ func intersectSurfacesNear(start math.Point3, surfaces []geom.Surface, tol float
 		if !ok {
 			return p, false
 		}
-		step, ok := retopo.Solve3(a, b)
+		step, ok := probe.Solve3(a, b)
 		if !ok {
 			return p, false
 		}

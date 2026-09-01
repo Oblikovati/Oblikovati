@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"slices"
 
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
@@ -114,7 +116,7 @@ func (f *ThickenFeature) Recompute(in Input) (Output, error) {
 func (f *ThickenFeature) recomputeAsSurface(in Input, surface *topo.Body) (Output, error) {
 	src := surface
 	if len(f.faceKeys) > 0 {
-		kept, err := ops.DropFaces(surface, f.faceKeys, true)
+		kept, err := heal.DropFaces(surface, f.faceKeys, true)
 		if err != nil {
 			return Output{}, fmt.Errorf("thicken surface: %w", err)
 		}
@@ -218,12 +220,12 @@ func (f *DeleteFaceFeature) Recompute(in Input) (Output, error) {
 	q := ops.DefaultQuality()
 	var result *topo.Body
 	switch {
-	case ops.FacesOnVoidShell(body, f.faceKeys, q):
-		result, err = ops.RemoveVoidShellByFaces(body, f.faceKeys, q)
+	case heal.FacesOnVoidShell(body, f.faceKeys, q):
+		result, err = heal.RemoveVoidShellByFaces(body, f.faceKeys, q)
 	case f.heal:
-		result, err = ops.DeleteFaces(body, f.faceKeys)
+		result, err = heal.DeleteFaces(body, f.faceKeys)
 	default:
-		result, err = ops.DropFaces(body, f.faceKeys, false)
+		result, err = heal.DropFaces(body, f.faceKeys, false)
 	}
 	if err != nil {
 		return Output{}, fmt.Errorf("%s: %w", f.kind, err)

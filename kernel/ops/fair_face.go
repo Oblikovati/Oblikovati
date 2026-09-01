@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -16,10 +18,10 @@ import (
 // FairFaceSurface returns a surface body whose NURBS face is faired (interior smoothed, boundary held
 // to holdOrder) by strength over iterations. It errors when the body has no NURBS face.
 func FairFaceSurface(b *topo.Body, holdOrder int, strength float64, iterations int) (*topo.Body, error) {
-	_, s, ok := firstNurbsFace(b)
+	_, s, ok := probe.FirstNurbsFace(b)
 	if !ok {
 		return nil, fmt.Errorf("ops.FairFaceSurface: body has no NURBS surface face")
 	}
 	faired := geom.FairSurface(s, holdOrder, strength, iterations)
-	return fullDomainBody(faired, "fair"), nil
+	return retopo.FullDomainBody(faired, "fair"), nil
 }

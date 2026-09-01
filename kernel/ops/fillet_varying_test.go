@@ -7,6 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/math"
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
@@ -29,7 +32,7 @@ func smoothNotchFactor() float64 { return 1 - stdmath.Pi/4 }
 // and chorded end fans are all planar, so the tessellation adds no error.
 func TestFilletVaryingRadiusVolume(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	pick := blend.EdgeFilletRadii{Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0.6}
 	res, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{pick})
 	if err != nil {
@@ -73,7 +76,7 @@ func blendSurfaceFaces(b *topo.Body) int {
 // ruling strip is still planar, so the tessellation adds no error.
 func TestFilletIntermediateRadiiVolume(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	pick := blend.EdgeFilletRadii{
 		Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0.4,
 		Mids: []blend.FilletRadiusPoint{{T: 0.5, R: 0.7}},
@@ -99,7 +102,7 @@ func TestFilletIntermediateRadiiVolume(t *testing.T) {
 // TestFilletIntermediateRadiiValidation rejects out-of-range and non-increasing points (#695).
 func TestFilletIntermediateRadiiValidation(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	key := verticalEdgeKey(t, box)
 	cases := map[string][]blend.FilletRadiusPoint{
 		"must be strictly between 0 and 1": {{T: 0, R: 0.5}},
@@ -118,7 +121,7 @@ func TestFilletIntermediateRadiiValidation(t *testing.T) {
 // must reproduce the constant cylinder fillet exactly.
 func TestFilletVaryingCollapsesToConstant(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	key := verticalEdgeKey(t, box)
 	res, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{{Key: key, R0: 0.5, R1: 0.5}})
 	if err != nil {
@@ -134,7 +137,7 @@ func TestFilletVaryingCollapsesToConstant(t *testing.T) {
 // broken body.
 func TestFilletVaryingAtSharedCornerRejected(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	vert := verticalEdgeKey(t, box)
 	v, _ := box.FindEdgeByKey(vert)
 	ends := map[uint64]bool{v.StartVertex().ID(): true, v.EndVertex().ID(): true}
@@ -160,7 +163,7 @@ func TestFilletVaryingAtSharedCornerRejected(t *testing.T) {
 // G1 across its interior (machine-precision normal continuity — it is one analytic patch).
 func TestFilletVaryingBlendIsExactAndG1(t *testing.T) {
 	t.Parallel()
-	box := shellBox(2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	pick := blend.EdgeFilletRadii{Key: verticalEdgeKey(t, box), R0: 0.2, R1: 0.7}
 	res, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{pick})
 	if err != nil {

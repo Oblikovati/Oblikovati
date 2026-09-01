@@ -17,7 +17,7 @@ import (
 // points, it does not change degree/knots).
 func TestFairFaceSurfaceFairsBody(t *testing.T) {
 	t.Parallel()
-	body := surfaceFaceBody(t, multiSpanPatch(t))
+	body := brepfixture.SurfaceFaceBody(t, multiSpanPatch(t))
 	out, err := ops.FairFaceSurface(body, 1, 0.5, 10)
 	if err != nil {
 		t.Fatalf("FairFaceSurface: %v", err)

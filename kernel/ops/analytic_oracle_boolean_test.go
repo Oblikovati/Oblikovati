@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/opfixture"
+
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
@@ -110,7 +112,7 @@ func TestFaceInteriorPointOnSeamWrappingBand(t *testing.T) {
 // mesh reported.
 func TestAnalyticShellVolumeSignsTheCavity(t *testing.T) {
 	t.Parallel()
-	body := cavityBody(t)
+	body := opfixture.Cavity(t)
 	var outer, void float64
 	for _, sh := range body.Shells() {
 		v, ok := query.AnalyticShellVolume(sh)

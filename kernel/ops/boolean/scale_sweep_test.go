@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
@@ -171,7 +173,7 @@ func TestScaleSweepSewDefaultGap(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: SolidBlock: %v", sc.name, err)
 		}
-		sewn, err := ops.Sew(box, 0) // 0 ⇒ model-relative default gap
+		sewn, err := heal.Sew(box, 0) // 0 ⇒ model-relative default gap
 		if err != nil {
 			t.Errorf("%s: Sew: %v", sc.name, err)
 			continue

@@ -15,7 +15,7 @@ import (
 func TestUntrimFaceRecoversFullSurface(t *testing.T) {
 	t.Parallel()
 	src := multiSpanPatch(t) // helper in rebuild_faces_test.go
-	body := surfaceFaceBody(t, src)
+	body := brepfixture.SurfaceFaceBody(t, src)
 	out, err := ops.UntrimFace(body, body.Faces()[0].ReferenceKey())
 	if err != nil {
 		t.Fatalf("UntrimFace: %v", err)

@@ -6,37 +6,13 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
-	"oblikovati.org/math"
 )
-
-// halfDiskFace builds a planar (XY) half-disk face of radius r: a CCW outer loop of
-// the semicircle arc (angle 0→π through the top) plus the diameter segment back.
-func halfDiskFace(t *testing.T, r float64) *topo.Face {
-	t.Helper()
-	lin := topo.NewLineage(topo.Tok("test", "halfdisk", 0))
-	bld := topo.NewBuilder(false, lin)
-	a := math.P3(r, 0, 0)  // angle 0
-	b := math.P3(-r, 0, 0) // angle π
-	va := bld.AddVertex(a, lin)
-	vb := bld.AddVertex(b, lin)
-	arc, err := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), r, 0, stdmath.Pi)
-	if err != nil {
-		t.Fatal(err)
-	}
-	eArc := bld.AddEdge(arc, va, vb, lin)                       // A→B along the top arc
-	eSeg := bld.AddEdge(geom.NewLineSegment(b, a), vb, va, lin) // B→A along the diameter
-	plane, err := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
-	if err != nil {
-		t.Fatal(err)
-	}
-	bld.AddFace(plane, lin,
-		topo.OuterLoop(topo.Use{Edge: eArc}, topo.Use{Edge: eSeg}))
-	return bld.Build().Faces()[0]
-}
 
 // meshArea sums the triangle areas of a mesh.
 func meshArea(m *Mesh) float64 {
@@ -55,7 +31,7 @@ func meshArea(m *Mesh) float64 {
 func TestPlanarFaceFollowsCurvedEdge(t *testing.T) {
 	t.Parallel()
 	const r = 2.0
-	f := halfDiskFace(t, r)
+	f := brepfixture.HalfDiskFace(t, r)
 	mesh := tessellate.TessellateFace(f, Quality{ChordTolerance: 1e-3})
 	if mesh.VertexCount() <= 4 {
 		t.Fatalf("arc boundary not subdivided: %d vertices", mesh.VertexCount())
@@ -70,7 +46,7 @@ func TestPlanarFaceFollowsCurvedEdge(t *testing.T) {
 // identical point set (reversed) — the property that keeps shared edges crack-free.
 func TestDiscretizeEdgeIsShared(t *testing.T) {
 	t.Parallel()
-	f := halfDiskFace(t, 2)
+	f := brepfixture.HalfDiskFace(t, 2)
 	var arc *topo.Edge
 	for _, e := range f.Edges() {
 		if _, ok := e.Geometry().(geom.Arc3d); ok {

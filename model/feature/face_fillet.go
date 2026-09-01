@@ -6,9 +6,10 @@ import (
 	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -99,7 +100,7 @@ func nonAdjacentFaceFilletBody(in Input, body *topo.Body, faceKeysA, faceKeysB [
 		return Output{}, fmt.Errorf("%s: the two face sets are not separated by a fillable gap "+
 			"(parallel or disjoint faces are not supported)", feat)
 	}
-	healed, err := ops.DeleteFaces(planarizedDiag(body, feat, in.Diag), gap)
+	healed, err := heal.DeleteFaces(planarizedDiag(body, feat, in.Diag), gap)
 	if err != nil {
 		return Output{}, fmt.Errorf("%s: healing the gap between the faces: %w", feat, err)
 	}
