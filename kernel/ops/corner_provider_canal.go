@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -250,7 +251,7 @@ func canalSideCrease(surf geom.BSplineSurface, s Side) float64 {
 		u, v, _ := geom.ProjectPointToSurface(surf, p)
 		du, dv := surf.DerivativesAt(u, v)
 		au, av := s.Adjacent.ParamAt(p)
-		m = stdmath.Max(m, creaseAngle(du.Cross(dv), s.Adjacent.NormalAt(au, av)))
+		m = stdmath.Max(m, probe.CreaseAngle(du.Cross(dv), s.Adjacent.NormalAt(au, av)))
 	}
 	return m
 }
@@ -279,7 +280,7 @@ func footLocusOnHost(surf geom.BSplineSurface, uEdge float64, host geom.Surface)
 		hu, hv := host.ParamAt(p)
 		dev = stdmath.Max(dev, float64(host.PointAt(hu, hv).DistanceTo(p)))
 		du, dv := surf.DerivativesAt(uEdge, v)
-		crease = stdmath.Max(crease, creaseAngle(du.Cross(dv), host.NormalAt(hu, hv)))
+		crease = stdmath.Max(crease, probe.CreaseAngle(du.Cross(dv), host.NormalAt(hu, hv)))
 	}
 	return dev, crease
 }

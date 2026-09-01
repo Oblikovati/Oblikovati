@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -169,7 +170,7 @@ func seamCrease(s, nbr geom.BSplineSurface, e fillEdge) float64 {
 		f := obstacleCornerExcl + float64(k)/float64(obstacleAngleSamples)*span
 		u, v := e.fillParam(s, f)
 		nbrN := surfaceNormal(nbr, ru0+f*(ru1-ru0), rv0)
-		m = stdmath.Max(m, creaseAngle(surfaceNormal(s, u, v), nbrN))
+		m = stdmath.Max(m, probe.CreaseAngle(surfaceNormal(s, u, v), nbrN))
 	}
 	return m
 }
@@ -205,22 +206,4 @@ func (e fillEdge) fillParam(s geom.BSplineSurface, f float64) (u, v float64) {
 func surfaceNormal(s geom.BSplineSurface, u, v float64) math.Vector3 {
 	du, dv := s.DerivativesAt(u, v)
 	return du.Cross(dv)
-}
-
-// creaseAngle is the acute angle between the two normals' LINES — min(θ, π−θ) — so an
-// orientation-flipped (antiparallel) but tangent-continuous seam reads as 0 crease, not π.
-func creaseAngle(a, b math.Vector3) float64 {
-	t := vectorAngle(a, b)
-	return stdmath.Min(t, stdmath.Pi-t)
-}
-
-// vectorAngle is the angle (radians) between two vectors; a degenerate (zero-length) input returns π
-// (worst case) so it cannot mask a fold as a passing seam.
-func vectorAngle(a, b math.Vector3) float64 {
-	la, lb := a.Length(), b.Length()
-	if la == 0 || lb == 0 {
-		return stdmath.Pi
-	}
-	c := a.Dot(b) / (la * lb)
-	return stdmath.Acos(stdmath.Max(-1, stdmath.Min(1, c)))
 }

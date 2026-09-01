@@ -102,3 +102,56 @@ func UnitOr(v math.Vector3) math.Vector3 {
 // colinearRelTol is the chord-relative straightness bound for an unbounded section curve: a true line's
 // midpoint deviates only by float rounding, far below this, while any conic bows well above it.
 const colinearRelTol = 1e-9 // tol:relative — dimensionless straightness fraction of the chord length
+
+// centroid returns the average of a polygon's vertices.
+func Centroid(poly []math.Point3) math.Point3 {
+	var sx, sy, sz float64
+	for _, p := range poly {
+		sx, sy, sz = sx+p.X, sy+p.Y, sz+p.Z
+	}
+	n := float64(len(poly))
+	return math.P3(sx/n, sy/n, sz/n)
+}
+
+// creaseAngle is the acute angle between the two normals' LINES — min(θ, π−θ) — so an
+// orientation-flipped (antiparallel) but tangent-continuous seam reads as 0 crease, not π.
+func CreaseAngle(a, b math.Vector3) float64 {
+	t := vectorAngle(a, b)
+	return stdmath.Min(t, stdmath.Pi-t)
+}
+
+// vectorAngle is the angle (radians) between two vectors; a degenerate (zero-length) input returns π
+// (worst case) so it cannot mask a fold as a passing seam.
+func vectorAngle(a, b math.Vector3) float64 {
+	la, lb := a.Length(), b.Length()
+	if la == 0 || lb == 0 {
+		return stdmath.Pi
+	}
+	c := a.Dot(b) / (la * lb)
+	return stdmath.Acos(stdmath.Max(-1, stdmath.Min(1, c)))
+}
+
+// isClosedCircularEdge reports whether e is a full circular rim: closed (its start and end vertex are
+// the SAME vertex) AND its geometry is a geom.Circle, or a geom.Arc3d sweeping ~2π (within
+// zoneFullCircleTol) back to that shared vertex. The STEP importer never emits geom.Circle — every
+// imported full circle round-trips as a full-sweep Arc3d (0 geom.Circle construction sites in
+// kernel/exchange/**) — so both forms must count as "a closed circular rim". This is the SOLE such
+// predicate in the package: the rim-fillet pick gate (loneRimPick, resolveRim below) and the
+// sphere-zone cap fan's fullCircleRimGeom (sphere_zone_mesh.go) both call it, so a full-sweep Arc3d is
+// recognized identically everywhere a closed circular edge is classified.
+func IsClosedCircularEdge(e *topo.Edge) bool {
+	if e.StartVertex() != e.EndVertex() {
+		return false
+	}
+	switch c := e.Geometry().(type) {
+	case geom.Circle:
+		return true
+	case geom.Arc3d:
+		return stdmath.Abs(stdmath.Abs(c.SweepAngle)-2*stdmath.Pi) < zoneFullCircleTol
+	}
+	return false
+}
+
+// zoneFullCircleTol: a swept edge is a full circle when its sweep is within this of 2π (radians;
+// scale-free, an angle).
+const zoneFullCircleTol = 1e-6

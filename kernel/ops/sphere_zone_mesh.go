@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -26,10 +27,6 @@ import (
 // sample) when its signed distance from the rim plane exceeds this fraction of the sphere radius
 // (model-relative, ADR-0042). A rim vertex sits on the plane (distance 0); a pole is a full radius off.
 const zoneOffPlaneRelTol = 1e-3
-
-// zoneFullCircleTol: a swept edge is a full circle when its sweep is within this of 2π (radians;
-// scale-free, an angle).
-const zoneFullCircleTol = 1e-6
 
 // sphereZoneCapFan meshes a sphere face whose outer boundary is one full-circle rim plus a meridian
 // seam to an enclosed POLE off the rim plane — the large zone one off-centre plane cuts from a sphere
@@ -97,7 +94,7 @@ func singleFullCircleRim(l *topo.Loop) (rim *topo.Edge, center math.Point3, norm
 // The closed-full-circle test itself is isClosedCircularEdge (fillet_rim.go) — the SAME predicate the
 // rim-fillet pick gate uses, so a full-sweep Arc3d classifies identically here and there.
 func fullCircleRimGeom(e *topo.Edge) (center math.Point3, normal math.Vector3, ok bool) {
-	if !isClosedCircularEdge(e) {
+	if !probe.IsClosedCircularEdge(e) {
 		return math.Point3{}, math.Vector3{}, false
 	}
 	switch c := e.Geometry().(type) {

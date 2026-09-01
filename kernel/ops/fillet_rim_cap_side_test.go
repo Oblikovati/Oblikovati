@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -68,7 +69,7 @@ func headUnderside(t *testing.T, b *topo.Body) *topo.Face {
 func headLowerRim(t *testing.T, b *topo.Body) *topo.Edge {
 	t.Helper()
 	for _, e := range b.Edges() {
-		if !isClosedCircularEdge(e) {
+		if !probe.IsClosedCircularEdge(e) {
 			continue
 		}
 		p := e.Geometry().PointAt(0)

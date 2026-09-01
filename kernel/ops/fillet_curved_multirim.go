@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -51,7 +52,7 @@ func allDisjointClosedRims(fils []edgeFillet) bool {
 	}
 	seen := map[*topo.Face]bool{}
 	for _, ef := range fils {
-		if ef.varying || ef.edge == nil || !isClosedCircularEdge(ef.edge) {
+		if ef.varying || ef.edge == nil || !probe.IsClosedCircularEdge(ef.edge) {
 			return false
 		}
 		if _, _, ok := cylinderPlaneEdge(ef.edge); !ok {

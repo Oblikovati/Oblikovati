@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -45,7 +46,7 @@ func extendEdges(body *topo.Body, edgeKeys [][]byte, feat string, shift func(pl 
 	}
 	pl := face.Geometry().(geom.Plane)
 	poly := facePolygon(face)
-	c := centroid(poly)
+	c := probe.Centroid(poly)
 	disp := make([]math.Vector3, len(poly))
 	for _, key := range edgeKeys {
 		edge, _ := body.FindEdgeByKey(key) // resolved in singleExtendFace

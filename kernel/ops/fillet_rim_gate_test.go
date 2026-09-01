@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -38,7 +39,7 @@ func TestIsClosedCircularEdgeAcceptsGeomCircle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e := gateEdge(t, c, true); !isClosedCircularEdge(e) {
+	if e := gateEdge(t, c, true); !probe.IsClosedCircularEdge(e) {
 		t.Error("a closed geom.Circle edge must be recognized as a circular rim")
 	}
 }
@@ -52,7 +53,7 @@ func TestIsClosedCircularEdgeAcceptsFullSweepArc3d(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e := gateEdge(t, a, true); !isClosedCircularEdge(e) {
+	if e := gateEdge(t, a, true); !probe.IsClosedCircularEdge(e) {
 		t.Error("a closed full-sweep (2π) Arc3d edge must be recognized as a circular rim")
 	}
 }
@@ -66,7 +67,7 @@ func TestIsClosedCircularEdgeRejectsPartialArc(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e := gateEdge(t, a, false); isClosedCircularEdge(e) {
+	if e := gateEdge(t, a, false); probe.IsClosedCircularEdge(e) {
 		t.Error("an open half-turn Arc3d edge must NOT be recognized as a circular rim")
 	}
 }
@@ -80,7 +81,7 @@ func TestIsClosedCircularEdgeRejectsClosedShortSweep(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e := gateEdge(t, a, true); isClosedCircularEdge(e) {
+	if e := gateEdge(t, a, true); probe.IsClosedCircularEdge(e) {
 		t.Error("a closed edge with a quarter-turn sweep must NOT be recognized as a full circular rim")
 	}
 }

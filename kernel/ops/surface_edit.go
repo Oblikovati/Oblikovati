@@ -12,6 +12,7 @@ import (
 	"oblikovati.org/math"
 
 	stdmath "math"
+	"oblikovati.org/kernel/ops/internal/probe"
 )
 
 // Surface-editing geometry (M10-F02). Phase A operates on planar surface bodies: a
@@ -299,7 +300,7 @@ func ExtendByEdge(body *topo.Body, edgeKey []byte, distance float64, feat string
 	}
 	poly := facePolygon(faces[0])
 	a, b := edge.StartVertex().Point(), edge.EndVertex().Point()
-	shift := extendDir(pl.Normal(), a, b, centroid(poly)).Scale(distance)
+	shift := extendDir(pl.Normal(), a, b, probe.Centroid(poly)).Scale(distance)
 	moved := make([]math.Point3, len(poly))
 	for i, p := range poly {
 		if coincidentPt(p, a) || coincidentPt(p, b) {
@@ -399,7 +400,7 @@ func MidSurfacesByPairs(body *topo.Body, pairs [][2][]byte, feat string) ([]MidP
 // within [minThickness, maxThickness] (a thin-wall pair), returning its index or -1.
 func matchOpposite(faces []*topo.Face, used []bool, i int, minThickness, maxThickness float64) int {
 	ni := faces[i].Geometry().(geom.Plane).Normal()
-	ci := centroid(facePolygon(faces[i]))
+	ci := probe.Centroid(facePolygon(faces[i]))
 	for j := i + 1; j < len(faces); j++ {
 		if used[j] {
 			continue
@@ -408,7 +409,7 @@ func matchOpposite(faces []*topo.Face, used []bool, i int, minThickness, maxThic
 		if ni.Dot(nj) > -0.999 { // not antiparallel
 			continue
 		}
-		sep := stdmath.Abs(ci.VectorTo(centroid(facePolygon(faces[j]))).Dot(ni))
+		sep := stdmath.Abs(ci.VectorTo(probe.Centroid(facePolygon(faces[j]))).Dot(ni))
 		if sep > 1e-9 && sep >= minThickness && sep <= maxThickness {
 			return j
 		}
@@ -421,9 +422,9 @@ func matchOpposite(faces []*topo.Face, used []bool, i int, minThickness, maxThic
 func midPatch(a, b *topo.Face, feat string, idx int) MidPatch {
 	na := a.Geometry().(geom.Plane).Normal()
 	polyA := facePolygon(a)
-	sep := stdmath.Abs(centroid(polyA).VectorTo(centroid(facePolygon(b))).Dot(na))
+	sep := stdmath.Abs(probe.Centroid(polyA).VectorTo(probe.Centroid(facePolygon(b))).Dot(na))
 	shift := na.Scale(sep / 2) // a's normal points toward b's side or away; sign set below
-	if centroid(polyA).VectorTo(centroid(facePolygon(b))).Dot(na) < 0 {
+	if probe.Centroid(polyA).VectorTo(probe.Centroid(facePolygon(b))).Dot(na) < 0 {
 		shift = shift.Negate()
 	}
 	moved := make([]math.Point3, len(polyA))
@@ -446,14 +447,4 @@ func midThicknessRange(polyA []math.Point3, planeB geom.Plane) (float64, float64
 		lo, hi = stdmath.Min(lo, d), stdmath.Max(hi, d)
 	}
 	return lo, hi
-}
-
-// centroid returns the average of a polygon's vertices.
-func centroid(poly []math.Point3) math.Point3 {
-	var sx, sy, sz float64
-	for _, p := range poly {
-		sx, sy, sz = sx+p.X, sy+p.Y, sz+p.Z
-	}
-	n := float64(len(poly))
-	return math.P3(sx/n, sy/n, sz/n)
 }
