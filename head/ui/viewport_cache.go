@@ -9,7 +9,6 @@ import (
 	"oblikovati.org/api/contract"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
-	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/renderer"
 	"oblikovati.org/scene"

@@ -110,7 +110,7 @@ func appendProfileFill(items []renderer.DrawItem, ph app.ProfileHandle, color [4
 		holes = append(holes, h.Polygon())
 		verts = append(verts, h.Polygon()...)
 	}
-	tris := ops.FillTriangles(outer, holes)
+	tris := tessellate.FillTriangles(outer, holes)
 	if len(tris) == 0 {
 		return items
 	}
