@@ -1121,26 +1121,12 @@ func (c ruledUV) emitSeamRun(run []recoveredEdge) (loopEdge, bool) {
 }
 
 // isClosedCurve reports whether a curve closes on itself, so its parameter wraps and a boundary run along it
-// must be unwrapped to a monotone span before re-emission. An ellipse/circle always closes; a SpiricArc
-// closes only when it spans the WHOLE tube period (V0,V1 a full 2π, the two-oval band's branches) — a
-// single-oval branch over a partial v-range is an open arc that meets its twin at the oval pinches (#1406).
-func isClosedCurve(curve geom.Curve3) bool {
-	switch c := curve.(type) {
-	case geom.EllipseFull, geom.Circle:
-		return true
-	case geom.SpiricArc:
-		return stdmath.Abs(stdmath.Abs(c.V1-c.V0)-2*stdmath.Pi) < 1e-9
-	case *geom.Polyline:
-		// An SSI imprint loop is a closed polyline (first point ≈ last). Recognising it as closed makes
-		// emitImprintRun re-emit the WHOLE loop [lo,hi] from PointAt(0), so both operand sides emit the same
-		// shared edge and the welder fuses them (#1403). The gap gauge is the loop's own stitch
-		// resolution — a distance test, not grid-cell equality, so a genuinely closed loop cannot be
-		// misread as open by cell straddling (#1602).
-		gap := float64(c.PointAt(0).DistanceTo(c.PointAt(1)))
-		return gap <= geom.ResolutionForPoints(c.Vertices).Stitch()
-	}
-	return false
-}
+// must be unwrapped to a monotone span before re-emission. The answer comes from geom.CurveIsClosed — a
+// measurement of whether the curve's ends meet, against its own scale — because the type switch that used to
+// live here classed every curve kind it did not list as open, and the exact ruled∩quadric section then
+// skipped the closed-loop re-emission both walls rely on to weld (#3489). A full spiric band closes and a
+// single-oval branch does not, exactly as before, but now because their ends do or do not meet (#1406).
+func isClosedCurve(curve geom.Curve3) bool { return geom.CurveIsClosed(curve) }
 
 // sameRun reports whether two recovered edges belong to one re-emittable run: the same kind, and for an
 // imprint the same source curve, for a rim the same rim level (a rim sits at constant v, so equal v).

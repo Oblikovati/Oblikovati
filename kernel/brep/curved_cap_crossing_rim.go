@@ -60,7 +60,7 @@ func classifyRimCross(target, tool *topo.Body, rec *diag.Recorder) (rimCrossPlan
 	if !ok {
 		return rimCrossPlan{}, false
 	}
-	entry, exitChain, ok := traceEntryAndExit(tgtCyl, toolCyl, target, rec)
+	entry, exitChain, dev, ok := traceEntryAndExit(tgtCyl, toolCyl, target, rec)
 	if !ok {
 		return rimCrossPlan{}, false
 	}
@@ -68,13 +68,25 @@ func classifyRimCross(target, tool *topo.Body, rec *diag.Recorder) (rimCrossPlan
 	if !ok {
 		return rimCrossPlan{}, false
 	}
-	entryPL, e1 := geom.NewPolyline(entry)
-	exitPL, e2 := geom.NewPolyline(snapEndsToCorners(exitChain, corners))
-	if e1 != nil || e2 != nil {
+	entryPL, exitPL, ok := marchedRimChains(tgtCyl, toolCyl, entry, exitChain, corners, dev)
+	if !ok {
 		return rimCrossPlan{}, false
 	}
 	return rimCrossPlan{tgt: tgtOp, tool: toolOp, exitCap: exitCap, rimArc: rimArc,
 		ellipseArc: ellArc, entry: entryPL, exitChain: exitPL}, true
+}
+
+// marchedRimChains builds the two marched imprint polylines with their achieved deviation — the edges
+// stitched from them are what lets the body answer AchievedBoundaryTolerance (#3489). The exit chain's
+// ends are additionally SNAPPED to the exact rim corners, so its deviation is RE-MEASURED on the
+// snapped chain rather than inherited: achieved tolerance is a measured output, and the corner lies on
+// the true section, so the snap costs a chord's sagitta, not the snap distance.
+func marchedRimChains(tgtCyl, toolCyl geom.Cylinder, entry, exitChain []math.Point3,
+	corners []capRimCorner, dev float64) (entryPL, exitPL geom.Polyline, ok bool) {
+	snapped := snapEndsToCorners(exitChain, corners)
+	entryPL, e1 := geom.NewMarchedPolyline(entry, dev)
+	exitPL, e2 := geom.NewMarchedPolyline(snapped, geom.MarchedDeviation(tgtCyl, toolCyl, snapped))
+	return entryPL, exitPL, e1 == nil && e2 == nil
 }
 
 // rimCrossExitCap finds the single target cap whose exit ellipse crosses that cap's rim at exactly two
@@ -116,7 +128,7 @@ const CodeRimCrossTraceTopology diag.Code = "cap-crossing.rim-trace-topology"
 // CLOSED entry loop and one OPEN exit chain (the rim-crossing signature). ok=false for any other topology
 // (no separate entry hole, multiple exit chains) so the recognizer declines; because the two-corner cap gate
 // has already passed by the time this runs, an unexpected count is recorded as a tracked defect.
-func traceEntryAndExit(tgtCyl, toolCyl geom.Cylinder, target *topo.Body, rec *diag.Recorder) ([]math.Point3, []math.Point3, bool) {
+func traceEntryAndExit(tgtCyl, toolCyl geom.Cylinder, target *topo.Body, rec *diag.Recorder) (entryPts, exitPts []math.Point3, deviation float64, ok bool) {
 	band := cylinderBand(target)
 	tr := geom.TraceSurfaceIntersection(tgtCyl, toolCyl, band)
 	var entry, exit [][]math.Point3
@@ -133,9 +145,9 @@ func traceEntryAndExit(tgtCyl, toolCyl geom.Cylinder, target *topo.Body, rec *di
 	if len(entry) != 1 || len(exit) != 1 {
 		rec.Recordf(CodeRimCrossTraceTopology, diag.Defect,
 			"rim-crossing wall trace gave %d closed + %d open chains, want 1 + 1; declining to CSG", len(entry), len(exit))
-		return nil, nil, false
+		return nil, nil, 0, false
 	}
-	return entry[0], exit[0], true
+	return entry[0], exit[0], tr.Deviation, true
 }
 
 // cylinderBand returns the target cylinder's axial (u,v) trace window from its own extent.

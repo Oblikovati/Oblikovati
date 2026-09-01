@@ -6,6 +6,7 @@ import (
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Curved-boolean CAP-CROSSING with a CONE tool (EPIC Oblikovati/Oblikovati#1724, ADR-0046). The cylinder-tool
@@ -72,16 +73,7 @@ func wallEntryLoops(side ruledUV, loops []geom.Curve3) ([]geom.Curve3, bool) {
 	var kept []geom.Curve3
 	for _, lp := range loops {
 		pts := imprintLoopPoints(lp)
-		below, above := 0, 0
-		for _, p := range pts {
-			v := float64(side.base.VectorTo(p).Dot(side.axis))
-			switch {
-			case v < lo:
-				below++
-			case v > hi:
-				above++
-			}
-		}
+		below, above := loopBandTally(side, pts, lo, hi)
 		switch {
 		case below == 0 && above == 0:
 			kept = append(kept, lp) // strictly in-band: a real wall-entry hole
@@ -92,6 +84,20 @@ func wallEntryLoops(side ruledUV, loops []geom.Curve3) ([]geom.Curve3, bool) {
 		}
 	}
 	return kept, true
+}
+
+// loopBandTally counts how many of a loop's points sit below and above the band's interior [lo, hi].
+func loopBandTally(side ruledUV, pts []math.Point3, lo, hi float64) (below, above int) {
+	for _, p := range pts {
+		v := float64(side.base.VectorTo(p).Dot(side.axis))
+		switch {
+		case v < lo:
+			below++
+		case v > hi:
+			above++
+		}
+	}
+	return below, above
 }
 
 // coneInteriorExitCap returns the single target cap the cone exits through an ellipse strictly inside that

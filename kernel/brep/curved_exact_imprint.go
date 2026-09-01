@@ -49,7 +49,16 @@ func exactImprintLoops(base, other geom.Surface, window geom.SurfaceGrid, res ge
 // only case in which "the section wraps every azimuth" describes the whole clipped intersection.
 // geom.SurfaceWindow only ever narrows an UNBOUNDED direction, so a ruled side's u always qualifies;
 // asserting it keeps the exact path honest if that ever changes.
+//
+// An UNSET u — UMin == UMax == 0 — is the tracer's own "use the surface's whole domain" convention
+// (geom.resolveGrid), and several callers hand their window over that way (the partial-rim cut's
+// cylinderTraceWindow narrows only v). Reading the zero literally compared 0 == 2π, declined every
+// such window, and sent an imprint the closed form covers back to the marcher: the partial-rim drill's
+// tunnel came back as chord polylines at 1.04e-3 while the bare drill's came back exact (#3489).
 func windowSpansFullAzimuth(base geom.Surface, window geom.SurfaceGrid) bool {
+	if window.UMin == window.UMax {
+		return true // unset: the tracer resolves it to the full domain
+	}
 	lo, hi := base.UDomain()
 	return window.UMin == lo && window.UMax == hi
 }

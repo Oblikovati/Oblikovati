@@ -102,4 +102,3 @@ func ruledQuadricConditioning(base Surface, quad Quadric, res Resolution) bool {
 	}
 	return minGap > 0 && minGap >= ruledQuadricBranchSeparation*maxGap
 }
-
