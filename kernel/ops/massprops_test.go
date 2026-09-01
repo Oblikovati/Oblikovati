@@ -6,6 +6,7 @@ import (
 	"math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/query"
 	m "oblikovati.org/math"
 )
 
@@ -15,7 +16,7 @@ import (
 func TestTetraVolumeAndCentroid(t *testing.T) {
 	t.Parallel()
 	const s = 2.0
-	gp := BodyGeometryProperties(tetra(s, m.V3(0, 0, 0)), DefaultQuality())
+	gp := query.BodyGeometryProperties(tetra(s, m.V3(0, 0, 0)), DefaultQuality())
 
 	wantVol := s * s * s / 6
 	if math.Abs(gp.Volume-wantVol) > 1e-6 {
@@ -33,8 +34,8 @@ func TestTetraVolumeAndCentroid(t *testing.T) {
 // origin — the off-origin parts cancel.
 func TestVolumeIsTranslationInvariant(t *testing.T) {
 	t.Parallel()
-	atOrigin := BodyGeometryProperties(tetra(2, m.V3(0, 0, 0)), DefaultQuality())
-	moved := BodyGeometryProperties(tetra(2, m.V3(100, -50, 25)), DefaultQuality())
+	atOrigin := query.BodyGeometryProperties(tetra(2, m.V3(0, 0, 0)), DefaultQuality())
+	moved := query.BodyGeometryProperties(tetra(2, m.V3(100, -50, 25)), DefaultQuality())
 	if math.Abs(atOrigin.Volume-moved.Volume) > 1e-6 {
 		t.Errorf("volume changed under translation: %v vs %v", atOrigin.Volume, moved.Volume)
 	}

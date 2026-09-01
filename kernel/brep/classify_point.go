@@ -12,7 +12,7 @@ import (
 
 // Containment is where a point sits relative to a solid: strictly outside the material, on its
 // boundary surface, or strictly inside. It is brep's own tri-state because brep cannot import ops
-// (ops depends on brep); ops.BodyContainment maps it to the public PointContainment.
+// (ops depends on brep); query.BodyContainment maps it to the public PointContainment.
 type Containment uint8
 
 const (

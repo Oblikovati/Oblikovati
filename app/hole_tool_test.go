@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -88,7 +89,7 @@ func TestHoleToolEndToEnd(t *testing.T) {
 	// Removed = a Ø2 cylinder (32-gon faceted) over the full thickness 2 ⇒ block − that.
 	ngonArea := 0.5 * 32 * stdmath.Sin(2*stdmath.Pi/32) // r=1
 	want := 32 - ngonArea*2
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.01 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.01 {
 		t.Errorf("drilled volume = %g, want ≈%g", got, want)
 	}
 	if s.ActiveTool() != nil {
@@ -267,7 +268,7 @@ func TestHoleViaRibbonCommand(t *testing.T) {
 		t.Fatalf("OK: %v", err)
 	}
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 32 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 32 {
 		t.Errorf("hole did not remove material: volume %g, want < 32", v)
 	}
 }

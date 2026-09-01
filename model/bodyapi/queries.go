@@ -7,6 +7,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -26,7 +27,7 @@ func NewBodyQueries(b *topo.Body, q ops.Quality) *BodyQueriesAdapter {
 
 // IsPointInside classifies a point against the body's material.
 func (a *BodyQueriesAdapter) IsPointInside(x, y, z float64) types.Containment {
-	c := ops.BodyContainment(a.body, math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(z)), a.q, onTolDefault)
+	c := query.BodyContainment(a.body, math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(z)), a.q, onTolDefault)
 	return containmentOf(c)
 }
 

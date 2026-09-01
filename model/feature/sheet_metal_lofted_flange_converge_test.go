@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -71,7 +72,7 @@ func TestLoftedFlangeConvergeRemovesCornerMaterial(t *testing.T) {
 			unmodelled = 1
 		}
 		valid, _ := ops.ValidateBodyEntities(body, ops.CheckGeometry, ops.DefaultQuality())
-		return ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume, valid, unmodelled
+		return query.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume, valid, unmodelled
 	}
 	ref, refValid, _ := build(false)
 	conv, convValid, unmodelled := build(true)

@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -46,7 +47,7 @@ func TestApexFilletMatchesOCCT(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: apex fillet errored: %v", c.name, err)
 		}
-		got := ops.BodyGeometryProperties(res, ops.PropertyQuality()).Area
+		got := query.BodyGeometryProperties(res, ops.PropertyQuality()).Area
 		if rel := (got - c.area) / c.area; rel < -0.01 || rel > 0.01 {
 			t.Fatalf("%s: apex fillet area %.1f != OCCT %.1f (rel %.2f%%) — G5 corner-reconstruction fix pending", c.name, got, c.area, rel*100)
 		}

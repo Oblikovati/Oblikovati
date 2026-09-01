@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
@@ -139,7 +140,7 @@ func TestSharpCornerRunOutKeepsTheRemovedVolume(t *testing.T) {
 // terminals, where notch = r²(1−π/4) is the corner the fillet takes out.
 //
 // The claim is a DELTA against the old build's 94.207048, and that baseline is a DefaultQuality
-// TESSELLATED measurement — the only meter ops.BodyGeometryProperties had when it was taken. Since
+// TESSELLATED measurement — the only meter query.BodyGeometryProperties had when it was taken. Since
 // c94e5b61 that function integrates the analytic B-rep instead, which reads this body 0.012998
 // higher (an inscribed mesh under-measures every curved face); more than the 0.01 window, so a
 // baseline in one meter can no longer be compared against a reading in the other. The delta is
@@ -167,7 +168,7 @@ func TestSharpCornerRunOutDropsTheDoubleCountedArea(t *testing.T) {
 func TestSharpCornerRunOutAreaConvergesOnTheExactSurface(t *testing.T) {
 	t.Parallel()
 	res := sharpCornerRunOut(t)
-	exact, ok := ops.AnalyticGeometryProperties(res)
+	exact, ok := query.AnalyticGeometryProperties(res)
 	if !ok {
 		t.Fatal("the run-out body no longer integrates analytically; the exact area has no oracle")
 	}

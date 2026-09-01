@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -58,7 +59,7 @@ func TestHalfSpaceCutSphereIsExactCap(t *testing.T) {
 				t.Fatalf("cap not a valid closed manifold solid: %+v", r)
 			}
 			assertSphereAndPlaneFaces(t, cap)
-			got := ops.BodyGeometryProperties(cap, ops.DefaultQuality()).Volume
+			got := query.BodyGeometryProperties(cap, ops.DefaultQuality()).Volume
 			want := capVolume(R, tc.height)
 			if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 				t.Errorf("cap volume %.4f, want %.4f (rel err %.4f > 2%%)", got, want, rel)
@@ -97,7 +98,7 @@ func TestHalfSpaceCutCylinderPerpendicularIsFrustum(t *testing.T) {
 	const r, h = 3.0, 4.0
 	facetedVol := func(height float64) float64 {
 		c, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, height)
-		return ops.BodyGeometryProperties(c, ops.DefaultQuality()).Volume
+		return query.BodyGeometryProperties(c, ops.DefaultQuality()).Volume
 	}
 	cases := []struct {
 		name        string
@@ -131,7 +132,7 @@ func TestHalfSpaceCutCylinderPerpendicularIsFrustum(t *testing.T) {
 				t.Fatalf("frustum not a valid closed manifold solid: %+v", r)
 			}
 			assertCylinderAndPlaneFaces(t, res)
-			got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+			got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 			want := facetedVol(tc.keptHeight)
 			if rel := stdmath.Abs(got-want) / want; rel > 1e-6 {
 				t.Errorf("kept volume %.6f, want %.6f (rel %.2e)", got, want, rel)
@@ -159,7 +160,7 @@ func TestHalfSpaceCutCylinderObliqueExact(t *testing.T) {
 	if !bodyHasCylinderFace(res) || !bodyHasEllipticalEdge(res) {
 		t.Error("result lacks the analytic cylinder face or the elliptical section edge — it fell back to CSG")
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := 18 * stdmath.Pi
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 		t.Errorf("kept volume %.4f, want analytic %.4f (rel %.4f > 0.02)", got, want, rel)
@@ -216,14 +217,14 @@ func assertCylinderAndPlaneFaces(t *testing.T, body *topo.Body) {
 func TestHalfSpaceCutSpherePlaneMissKeepsOrEmpties(t *testing.T) {
 	t.Parallel()
 	sphere, _ := brep.SolidSphere(math.P3(0, 0, 0), 5, "s")
-	full := ops.BodyGeometryProperties(sphere, ops.DefaultQuality()).Volume
+	full := query.BodyGeometryProperties(sphere, ops.DefaultQuality()).Volume
 
 	below, _ := geom.NewPlane(math.P3(0, 0, 8), math.V3(0, 0, 1)) // sphere entirely on −z (kept) side
 	kept, err := brep.HalfSpaceCut(sphere, below)
 	if err != nil {
 		t.Fatalf("HalfSpaceCut (miss, keep): %v", err)
 	}
-	if got := ops.BodyGeometryProperties(kept, ops.DefaultQuality()).Volume; stdmath.Abs(got-full) > 1e-6 {
+	if got := query.BodyGeometryProperties(kept, ops.DefaultQuality()).Volume; stdmath.Abs(got-full) > 1e-6 {
 		t.Errorf("plane clear above sphere should keep it whole: volume %.4f, want %.4f", got, full)
 	}
 

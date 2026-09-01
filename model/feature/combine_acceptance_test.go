@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -43,7 +44,7 @@ func TestCombineJoinIntersectingUnionVolume(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() || !r.Manifold {
 		t.Fatalf("union body not a valid manifold solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 12) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 12) > 1e-6 {
 		t.Errorf("A∪B volume = %g, want 12", v)
 	}
 }
@@ -65,7 +66,7 @@ func TestCombineIntersectOverlapVolume(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("intersection body not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
 		t.Errorf("A∩B volume = %g, want 4", v)
 	}
 }
@@ -99,7 +100,7 @@ func TestCombineCutRoundTrip(t *testing.T) {
 		t.Fatalf("restored combine = op %v target %d tools %v; want Cut 0 [1]", cd.Operation, cd.TargetIndex, cd.ToolIndices)
 	}
 	fresh.Recompute()
-	if v := ops.BodyGeometryProperties(fresh.Result()[0], ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
+	if v := query.BodyGeometryProperties(fresh.Result()[0], ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
 		t.Errorf("restored A−B volume = %g, want 4", v)
 	}
 }
@@ -120,13 +121,13 @@ func TestCombineRecomputesOnParameterChange(t *testing.T) {
 	NewModifyFeatures(fs).AddCombine(0, 1, ops.Cut)
 
 	fs.Recompute()
-	if v := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
+	if v := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
 		t.Fatalf("height 2 ⇒ A−B = %g, want 4 (removed 1×2×2)", v)
 	}
 	height = 1.0        // shrink the tool: overlap becomes 1×2×1 = 2, so A−B = 6
 	fs.MarkDirty(toolB) // a parameter change invalidates the driven feature and its dependents
 	fs.Recompute()
-	if v := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(v, 6) > 1e-6 {
+	if v := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(v, 6) > 1e-6 {
 		t.Errorf("height 1 ⇒ A−B = %g, want 6 (removed 1×2×1)", v)
 	}
 }

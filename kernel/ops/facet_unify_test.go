@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -68,7 +69,7 @@ func topRimEdges(b *topo.Body) [][]byte {
 func TestFacetUnifiesCoplanarFrame(t *testing.T) {
 	t.Parallel()
 	tray := shelledTray(t)
-	wantVol := ops.BodyGeometryProperties(tray, ops.DefaultQuality()).Volume
+	wantVol := query.BodyGeometryProperties(tray, ops.DefaultQuality()).Volume
 
 	faceted := ops.Facet(tray, "facet")
 	if faceted == nil {
@@ -88,7 +89,7 @@ func TestFacetUnifiesCoplanarFrame(t *testing.T) {
 	if got := len(topRimEdges(faceted)); got != 8 {
 		t.Errorf("top rim has %d edges, want 8 (outer+inner rect, no diagonals)", got)
 	}
-	if got := ops.BodyGeometryProperties(faceted, ops.DefaultQuality()).Volume; stdmath.Abs(got-wantVol) > 1e-6 {
+	if got := query.BodyGeometryProperties(faceted, ops.DefaultQuality()).Volume; stdmath.Abs(got-wantVol) > 1e-6 {
 		t.Errorf("faceted tray volume = %g, want %g", got, wantVol)
 	}
 }
@@ -99,7 +100,7 @@ func TestFacetUnifiesCoplanarFrame(t *testing.T) {
 func TestFilletOnFacetedRimStaysManifold(t *testing.T) {
 	t.Parallel()
 	faceted := ops.Facet(shelledTray(t), "facet")
-	before := ops.BodyGeometryProperties(faceted, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(faceted, ops.DefaultQuality()).Volume
 
 	// r must clear the max-radius bound (#1800): the outer AND inner rim edges are both filleted
 	// and their bands recede toward each other across the 0.2-wide top frame, so each must stay
@@ -117,7 +118,7 @@ func TestFilletOnFacetedRimStaysManifold(t *testing.T) {
 		t.Errorf("filleted tray χ = %d, want 2", r.EulerCharacteristic)
 	}
 	// The rim round removes a sliver of material, so the volume drops a little but stays close.
-	if after := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; after >= before || after < before-1.0 {
+	if after := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; after >= before || after < before-1.0 {
 		t.Errorf("filleted volume = %g, want a little under %g", after, before)
 	}
 }

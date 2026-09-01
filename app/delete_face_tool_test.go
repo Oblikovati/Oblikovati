@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -60,7 +61,7 @@ func TestDeleteFaceToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("healed body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 8) > 1e-6 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 8) > 1e-6 {
 		t.Errorf("healed volume = %g, want 8", got)
 	}
 	if s.ActiveTool() != nil {
@@ -87,7 +88,7 @@ func TestDeleteFaceViaRibbonCommand(t *testing.T) {
 	if err := s.OK(); err != nil {
 		t.Fatalf("OK: %v", err)
 	}
-	if v := ops.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 8) > 1e-6 {
+	if v := query.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 8) > 1e-6 {
 		t.Errorf("delete-face did not heal to 8: volume %g", v)
 	}
 }

@@ -32,7 +32,7 @@ func partWithCylinder(t *testing.T, baseZ, radius, height float64) *PartComponen
 // an inscribed N-gon under-reports a curved face by ~π²/(3N²): it read 3.121445 — 0.64% low, four
 // times the tolerance asserted here — while the analytic-first path reads 3.141277.
 //
-// The residual ~1e-4 is not this site's: ops.BodyGeometryProperties still declines a body whose
+// The residual ~1e-4 is not this site's: query.BodyGeometryProperties still declines a body whose
 // cylindrical wall the boolean left as a seam-wrapping loop, and falls back to the mesh. Closing
 // that coverage gap (#3453) makes this assertion exact with no change here.
 func TestAnalyzeInterferenceMeasuresACurvedOverlap(t *testing.T) {

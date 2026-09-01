@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -38,7 +39,7 @@ func TestCoilToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("coil body not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
 		t.Errorf("coil volume = %g, want > 0", v)
 	}
 	// Helix climbs along Y by pitch·revs (6) plus the profile height (1).

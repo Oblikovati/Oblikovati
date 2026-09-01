@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // b1SeamCases are the OCCT blend cases whose surviving periodic faces carry a closed seam edge
@@ -46,7 +47,7 @@ func TestB1ClosedSeamValidSolid(t *testing.T) {
 		}
 		res, filletOK, reason := runFillet(body, sets)
 		valid := filletOK && len(res) == 1 && res[0] != nil &&
-			ops.BodyGeometryProperties(res[0], ops.PropertyQuality()).Volume > 0
+			query.BodyGeometryProperties(res[0], ops.PropertyQuality()).Volume > 0
 		if !valid {
 			t.Errorf("%s: fillet did not produce a valid solid (filletOK=%v n=%d): %s",
 				r.Case, filletOK, len(res), reason)

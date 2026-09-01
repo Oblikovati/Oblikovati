@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -35,7 +36,7 @@ func revolveWith(t *testing.T, apply func(rv *RevolveTool)) ops.GeometryProperti
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("revolved body not a valid solid: %+v", r)
 	}
-	return ops.BodyGeometryProperties(body, ops.DefaultQuality())
+	return query.BodyGeometryProperties(body, ops.DefaultQuality())
 }
 
 // quarterWasherApp is the volume of a 90° sweep of the 2×2 square at x∈[2,4].
@@ -119,7 +120,7 @@ func TestLeavingAsymmetricDropsTheSecondAngle(t *testing.T) {
 	}
 
 	body := part.SurfaceBodies().Item(0)
-	got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 	if stdmath.Abs(got-quarterWasherApp)/quarterWasherApp > 0.01 {
 		t.Errorf("volume %g, want ≈%g — the abandoned Angle B kept widening the sweep", got, quarterWasherApp)
 	}

@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -61,7 +62,7 @@ func TestDrilledWallAreaSubtractsItsWindows(t *testing.T) {
 	if wall == nil {
 		t.Fatalf("no face on the drilled cylinder of radius %g in the result", bigR)
 	}
-	got, ok := ops.AnalyticFaceArea(wall)
+	got, ok := query.AnalyticFaceArea(wall)
 	if !ok {
 		t.Fatalf("the drilled wall declined analytic integration; it is a plain trimmed cylinder")
 	}

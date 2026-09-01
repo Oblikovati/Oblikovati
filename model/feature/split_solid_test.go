@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 )
@@ -39,7 +40,7 @@ func TestSplitSolidFeatureDividesBox(t *testing.T) {
 		t.Fatalf("split result = %d bodies, want 2", len(pieces))
 	}
 	for _, p := range pieces {
-		if v := ops.BodyGeometryProperties(p, ops.DefaultQuality()).Volume; stdmath.Abs(v-32) > 1e-6 {
+		if v := query.BodyGeometryProperties(p, ops.DefaultQuality()).Volume; stdmath.Abs(v-32) > 1e-6 {
 			t.Errorf("piece volume = %g, want 32", v)
 		}
 	}
@@ -58,7 +59,7 @@ func TestSplitSolidFeatureTrimsOneSide(t *testing.T) {
 	if len(pieces) != 1 {
 		t.Fatalf("trim result = %d bodies, want 1 (kept side)", len(pieces))
 	}
-	if v := ops.BodyGeometryProperties(pieces[0], ops.DefaultQuality()).Volume; stdmath.Abs(v-32) > 1e-6 {
+	if v := query.BodyGeometryProperties(pieces[0], ops.DefaultQuality()).Volume; stdmath.Abs(v-32) > 1e-6 {
 		t.Errorf("kept volume = %g, want 32", v)
 	}
 }
@@ -105,7 +106,7 @@ func TestSplitFacesImprintsWithoutRemovingMaterial(t *testing.T) {
 	if r := ops.Validate(pieces[0]); !r.Valid || !pieces[0].IsSolid() {
 		t.Fatalf("imprinted body not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(pieces[0], ops.DefaultQuality()).Volume; stdmath.Abs(v-64) > 1e-9 {
+	if v := query.BodyGeometryProperties(pieces[0], ops.DefaultQuality()).Volume; stdmath.Abs(v-64) > 1e-9 {
 		t.Errorf("imprinted volume = %g, want 64 (unchanged)", v)
 	}
 	if n := len(pieces[0].Faces()); n != 10 {

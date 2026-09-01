@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -46,7 +47,7 @@ func sweepDefRecompute(t *testing.T, fs *PartFeatures, def *SweepDefinition) *to
 
 // bodyVolume is the tessellated volume at display quality.
 func bodyVolume(b *topo.Body) float64 {
-	return ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 }
 
 // TestSweepTaperFrustum: a tapered straight sweep of a square is the analytic

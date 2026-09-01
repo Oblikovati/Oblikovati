@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
@@ -65,7 +65,7 @@ func TestSpherePatchOctantVolume(t *testing.T) {
 	if r := validate.Validate(body); !r.Valid || !r.Closed || !r.Manifold || !body.IsSolid() {
 		t.Fatalf("octant not a valid closed manifold solid: %+v", r)
 	}
-	got := ops.BodyGeometryProperties(body, tessellate.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(body, tessellate.DefaultQuality()).Volume
 	want := stdmath.Pi * R * R * R / 6
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 		t.Errorf("octant volume %.4f, want %.4f (rel %.4f > 2%%) — multi-arc sphere patch mis-meshed", got, want, rel)

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	stdmath "math"
@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -18,6 +19,18 @@ import (
 // to its own relative tolerance (quadRelTol), so the analytic values agree with the closed forms to
 // ~1e-11 relative. The tessellated sums they replaced were wrong in the THIRD digit.
 const analyticQuadRelTol = 1e-9
+
+// boundaryIndex is one operand prepared for repeated "does this point lie on the boundary?"
+// questions: its faces, with a box tree over their range boxes, so a probe only reaches the faces
+// whose box covers it. It is built ONCE per boolean — scanning every face per probe made the gate
+// cost O(result faces × operand faces) exact projections, which on a body of tens of thousands of
+// faces costs far more than the boolean it is checking.
+type boundaryIndex struct {
+	body    *topo.Body
+	faces   []*topo.Face
+	tree    *geom.BoxTree
+	unboxed []*topo.Face // faces with no range box: a BOUNDARY-LESS face has no vertices to build one
+}
 
 // analyticRelDiff is |got-want|/|want|, the scale-free comparison these closed-form checks need.
 func analyticRelDiff(got, want float64) float64 {
@@ -63,32 +76,6 @@ func TestBodyInertiaIsExactForACylinder(t *testing.T) {
 	}
 }
 
-// TestAnalyticShellVolumeSignsTheCavity: a void shell's material-outward normals point INTO the
-// cavity, so its signed volume is negative — and now exactly −8, not −8±0.05 as the merged face
-// mesh reported.
-func TestAnalyticShellVolumeSignsTheCavity(t *testing.T) {
-	t.Parallel()
-	body := cavityBody(t)
-	var outer, void float64
-	for _, sh := range body.Shells() {
-		v, ok := AnalyticShellVolume(sh)
-		if !ok {
-			t.Fatalf("shell %d declined analytic integration", sh.Index())
-		}
-		if v < 0 {
-			void = v
-		} else {
-			outer = v
-		}
-	}
-	if analyticRelDiff(outer, 64) > analyticQuadRelTol {
-		t.Errorf("outer shell volume = %.12f, want 64", outer)
-	}
-	if analyticRelDiff(void, -8) > analyticQuadRelTol {
-		t.Errorf("void shell volume = %.12f, want -8", void)
-	}
-}
-
 // TestPreciseRangeBoxSpansTheFullSphere: the equator bulges past every boundary curve, so a box
 // read off facet chords is short by the sagitta on all six faces. The analytic box is not.
 func TestPreciseRangeBoxSpansTheFullSphere(t *testing.T) {
@@ -122,62 +109,6 @@ func TestPreciseRangeBoxSpansACylinderRadius(t *testing.T) {
 	}
 }
 
-// TestFaceInteriorPointLandsInsideEveryTrim: the probe a per-face gate classifies must really be on
-// the face it came from, on every face of a body with curved trims.
-func TestFaceInteriorPointLandsInsideEveryTrim(t *testing.T) {
-	t.Parallel()
-	ball, err := brep.SolidSphere(math.P3(0, 0, 0), 5, "ball")
-	if err != nil {
-		t.Fatalf("SolidSphere: %v", err)
-	}
-	rod, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 1, 0), 3, 4.5)
-	if err != nil {
-		t.Fatalf("SolidCylinder: %v", err)
-	}
-	res, err := Boolean(Cut, rod, ball)
-	if err != nil {
-		t.Fatalf("Boolean: %v", err)
-	}
-	for i, f := range res.Faces() {
-		p, ok := FaceInteriorPoint(f)
-		if !ok {
-			t.Errorf("face %d (%T) yielded no interior point", i, f.Geometry())
-			continue
-		}
-		if !brep.PointInFaceTrim(f, p) {
-			t.Errorf("face %d interior point %v is outside its own trim", i, p)
-		}
-	}
-}
-
-// TestDrilledPlateIntegratesAnalytically is the periodic-band regression (#3453): a plate with a
-// hole in it is the most ordinary body in CAD, and its bore wall is a band whose loop crosses the
-// parameter seam. Green's u-form cannot close such a loop, so the whole body used to fall back to
-// the tessellation; the conjugate v-form integrates it exactly.
-func TestDrilledPlateIntegratesAnalytically(t *testing.T) {
-	t.Parallel()
-	plate, err := brep.SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
-	if err != nil {
-		t.Fatalf("SolidBlock: %v", err)
-	}
-	drill, err := brep.SolidCylinder(math.P3(0, 0, -1), math.V3(0, 0, 1), 2, 4)
-	if err != nil {
-		t.Fatalf("SolidCylinder: %v", err)
-	}
-	res, err := Boolean(Cut, plate, drill)
-	if err != nil {
-		t.Fatalf("Boolean: %v", err)
-	}
-	gp, ok := AnalyticGeometryProperties(res)
-	if !ok {
-		t.Fatal("the drilled plate declined analytic integration; its bore wall is a periodic band")
-	}
-	want := 10*10*2 - stdmath.Pi*2*2*2
-	if analyticRelDiff(gp.Volume, want) > analyticQuadRelTol {
-		t.Errorf("drilled plate volume = %.9f, want %.9f", gp.Volume, want)
-	}
-}
-
 // TestVectorAreaClosureRejectsAResidual: the outward vector area of a closed surface is exactly
 // zero, so a residual means some face was integrated over the wrong region or with a flipped
 // orientation. The check must reject that rather than let a wrong number through.
@@ -187,13 +118,13 @@ func TestVectorAreaClosureRejectsAResidual(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
 	}
-	if !vectorAreaCloses(exact, massTerms{area: 100}) {
+	if !vectorAreaCloses(exact, MassTerms{Area: 100}) {
 		t.Error("a body whose vector area vanishes must pass the closure check")
 	}
-	if vectorAreaCloses(exact, massTerms{area: 100, ax: 1}) {
+	if vectorAreaCloses(exact, MassTerms{Area: 100, Ax: 1}) {
 		t.Error("a body with a 1%% vector-area residual must be declined, not integrated")
 	}
-	if vectorAreaCloses(exact, massTerms{}) {
+	if vectorAreaCloses(exact, MassTerms{}) {
 		t.Error("a body with no area at all cannot be certified closed")
 	}
 	if s := AchievedBoundarySlack(exact); s != 0 {
@@ -221,41 +152,6 @@ func TestGreenFormFollowsTheClosingAxis(t *testing.T) {
 		form, ok := greenFormFor([]faceLoop{c.loop})
 		if ok != c.wantOKay || (ok && form.dv != c.wantDV) {
 			t.Errorf("%s: form.dv=%v ok=%v, want dv=%v ok=%v", c.name, form.dv, ok, c.wantDV, c.wantOKay)
-		}
-	}
-}
-
-// TestFaceInteriorPointOnSeamWrappingBand is the regression gate for the cone∩box false reject
-// (Oblikovati/Oblikovati#3447). The kept cone side is a BAND bounded by two loops that each circle the
-// parameter seam a full turn, so neither is a closed polygon in the plane and neither lands in the
-// other's branch. FaceInteriorPoint used to run the plain even-odd grid on them anyway and returned a
-// point in the band the operation DISCARDED — below the cutting plane — which the per-face boolean
-// certificate then correctly refused, demoting a correct analytic result to faceted CSG. The probe
-// must be on its own face or absent, never on the far side.
-func TestFaceInteriorPointOnSeamWrappingBand(t *testing.T) {
-	t.Parallel()
-	cone, err := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 6, 8), 3, 6, "cone")
-	if err != nil {
-		t.Fatalf("SolidCylinderCone: %v", err)
-	}
-	box, err := brep.SolidBlock(math.P3(-20, -20, 4), math.P3(20, 20, 30), "box")
-	if err != nil {
-		t.Fatalf("SolidBlock: %v", err)
-	}
-	res, err := Boolean(Intersect, cone, box)
-	if err != nil {
-		t.Fatalf("Boolean: %v", err)
-	}
-	for i, f := range res.Faces() {
-		p, ok := FaceInteriorPoint(f)
-		if !ok {
-			continue // a probe the reconstruction cannot place is skipped, never guessed
-		}
-		if !brep.PointInFaceTrim(f, p) {
-			t.Errorf("face %d (%T) interior point %v is outside its own trim", i, f.Geometry(), p)
-		}
-		if float64(p.Z) < 4 {
-			t.Errorf("face %d (%T) interior point %v is below the cutting plane z=4 — outside the intersection", i, f.Geometry(), p)
 		}
 	}
 }
@@ -302,4 +198,43 @@ func TestBoundaryIndexUsesTheTreeForBoundedFaces(t *testing.T) {
 	if bi.on(math.P3(1, 1, 1), tol) {
 		t.Error("the block's centre registered as on its boundary")
 	}
+}
+
+// newBoundaryIndex prepares b's faces for boundary probes. A face with an empty range box cannot be
+// found by a tree query, so those are kept aside and always tested — that is the whole sphere a ball
+// is made of, exactly the face a coaxial sphere/rod boolean has to certify.
+func newBoundaryIndex(b *topo.Body) *boundaryIndex {
+	bi := &boundaryIndex{body: b}
+	var boxes []math.Box
+	for _, f := range b.Faces() {
+		if box := f.RangeBox(); !box.IsEmpty() {
+			bi.faces = append(bi.faces, f)
+			boxes = append(boxes, box)
+			continue
+		}
+		bi.unboxed = append(bi.unboxed, f)
+	}
+	bi.tree = geom.NewBoxTree(boxes)
+	return bi
+}
+
+// on reports whether p lies on any of the body's trimmed faces, within tol.
+func (bi *boundaryIndex) on(p math.Point3, tol float64) bool {
+	for _, f := range bi.unboxed {
+		if brep.PointOnFace(f, p, tol) {
+			return true
+		}
+	}
+	found := false
+	bi.tree.Query(pointReach(p, tol), func(i int) bool {
+		found = brep.PointOnFace(bi.faces[i], p, tol)
+		return found
+	})
+	return found
+}
+
+// pointReach is the query box for a probe: the point grown by the on-boundary tolerance.
+func pointReach(p math.Point3, tol float64) math.Box {
+	t := math.Scalar(tol)
+	return math.NewBox(math.P3(p.X-t, p.Y-t, p.Z-t), math.P3(p.X+t, p.Y+t, p.Z+t))
 }

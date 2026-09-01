@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -63,7 +64,7 @@ func TestAnalyticChamferOfCylinderRimIsACone(t *testing.T) {
 	}
 	full := stdmath.Pi * r * r * h
 	removed := stdmath.Pi*r*r*d - stdmath.Pi*d*(3*r*r-3*r*d+d*d)/3
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, full-removed) > 0.03 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, full-removed) > 0.03 {
 		t.Errorf("chamfered cylinder volume = %g, want ≈%g", got, full-removed)
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -16,7 +17,7 @@ func TestRayCastFacesHitsNearestFace(t *testing.T) {
 	// top face and the bottom z=0 face; the nearest hit is the top one.
 	origin := math.P3(0.3, 0.3, 10)
 	dir := math.V3(0, 0, -1)
-	face, dist, ok := RayCastFaces(body, origin, dir, DefaultQuality())
+	face, dist, ok := query.RayCastFaces(body, origin, dir, DefaultQuality())
 	if !ok || face == nil {
 		t.Fatal("ray missed a body it passes through")
 	}
@@ -31,7 +32,7 @@ func TestRayCastFacesMisses(t *testing.T) {
 	t.Parallel()
 	body := tetra(1, math.V3(0, 0, 0))
 	// A ray nowhere near the body.
-	if _, _, ok := RayCastFaces(body, math.P3(100, 100, 100), math.V3(0, 0, -1), DefaultQuality()); ok {
+	if _, _, ok := query.RayCastFaces(body, math.P3(100, 100, 100), math.V3(0, 0, -1), DefaultQuality()); ok {
 		t.Error("ray that misses the body reported a hit")
 	}
 }

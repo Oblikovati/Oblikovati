@@ -52,7 +52,7 @@ func TestReconstructCocylindricalCapOnWall(t *testing.T) {
 	if n := cylinderFaceCount(body); n != 1 {
 		t.Fatalf("cocylindrical join has %d analytic cylinder walls, want 1 (merged)", n)
 	}
-	// Exact stacked volume: the cylinder plus the D-segment prism (disc minus the minor
+	// Exact stacked Volume: the cylinder plus the D-segment prism (disc minus the minor
 	// segment the chord cuts). Re-tessellated fine, the analytic body holds it under 0.5%.
 	minor := 0.5 * 9 * (1.2 - stdmath.Sin(1.2))
 	want := stdmath.Pi*9*6 + (stdmath.Pi*9-minor)*4

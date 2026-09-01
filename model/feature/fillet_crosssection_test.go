@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestFilletCrossG2BuildsValidSolid: a G2 cross-section fillet through the feature engine rounds a box
@@ -32,7 +33,7 @@ func TestFilletCrossConicFullness(t *testing.T) {
 		fs, keys := boxAndVerticalEdges(t)
 		NewDressUpFeatures(fs).AddFilletDef(&FilletDefinition{EdgeKeys: [][]byte{keys[0]}, Radius: angleConst(0.5), CornerType: types.FilletCornerMiter, CrossSection: FilletConic, Rho: rho})
 		fs.Recompute()
-		return ops.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-3}).Volume
+		return query.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-3}).Volume
 	}
 	if flat, full := vol(0.3), vol(0.7); full <= flat {
 		t.Errorf("conic fullness not monotonic in rho: 0.3→%g, 0.7→%g", flat, full)

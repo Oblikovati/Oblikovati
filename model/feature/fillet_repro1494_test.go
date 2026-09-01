@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -126,7 +127,7 @@ func TestSecondFilletSeparateFeature1494(t *testing.T) {
 	// Two rounded vertical edges of length 5: V = 60 − 2·(r²−πr²/4)·5. Matching this analytic
 	// frustum-free value also confirms the FIRST fillet's cylinder survived (was not faceted away).
 	want := 4*3*5 - 2*(r*r-stdmath.Pi*r*r/4)*5
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
 		t.Errorf("two-fillet volume = %g, want ≈%g", got, want)
 	}
 }

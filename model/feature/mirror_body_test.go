@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -44,7 +45,7 @@ func TestMirroredBodyKeepsPositiveVolume(t *testing.T) {
 		if r := ops.Validate(b); !r.Valid || !b.IsSolid() || !r.Manifold {
 			t.Fatalf("body %d is not a valid manifold solid: %+v", i, r)
 		}
-		v := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+		v := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 		if stdmath.Abs(v-1) > 1e-9 {
 			t.Fatalf("body %d volume = %g, want +1 (a reflected solid must not be inside out)", i, v)
 		}
@@ -81,7 +82,7 @@ func TestMirrorJoinUnionsTheHalves(t *testing.T) {
 	if r := ops.Validate(bodies[0]); !r.Valid || !bodies[0].IsSolid() || !r.Manifold {
 		t.Fatalf("joined body is not a valid manifold solid: %+v", r)
 	}
-	v := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	v := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 	if stdmath.Abs(v-2) > 1e-6 {
 		t.Fatalf("joined volume = %g, want 2 (both halves in one solid)", v)
 	}

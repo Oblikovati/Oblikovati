@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -74,7 +75,7 @@ func TestTwistedSweepVolumeIsNotWildlyWrong(t *testing.T) {
 		t.Fatalf("sweptSolid: %v", err)
 	}
 	want := ruledLoftVolume(twist, 1.75*0.16, 1.4)
-	got := ops.BodyGeometryProperties(blade, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(blade, ops.DefaultQuality()).Volume
 	if rel := stdmath.Abs(got-want) / want; rel > 0.25 {
 		t.Errorf("twisted blade volume = %g, want ~%g (off by %.1f%%; measured 18.4%%, unrefined was 55%% low)",
 			got, want, rel*100)

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	"oblikovati.org/kernel/ops/tessellate"
@@ -18,7 +18,7 @@ import (
 // body, or a face whose uv boundary cannot be reconstructed — which integrates the tessellation at
 // that quality. A non-solid or empty body yields zero volume either way.
 //
-// Example: gp := ops.BodyGeometryProperties(cyl, ops.PropertyQuality()) // gp.Volume == πr²h
+// Example: gp := query.BodyGeometryProperties(cyl, query.PropertyQuality()) // gp.Volume == πr²h
 func BodyGeometryProperties(b *topo.Body, q Quality) GeometryProperties {
 	if p, ok := AnalyticGeometryProperties(b); ok {
 		return p
@@ -27,8 +27,8 @@ func BodyGeometryProperties(b *topo.Body, q Quality) GeometryProperties {
 	return MeshGeometryProperties(mesh)
 }
 
-// outwardRef returns the triangle's reference outward direction — the sum of its three
+// OutwardRef returns the triangle's reference outward direction — the sum of its three
 // vertex normals (the tessellator writes outward shading normals).
-func outwardRef(mesh *Mesh, ia, ib, ic int) math.Vector3 {
+func OutwardRef(mesh *Mesh, ia, ib, ic int) math.Vector3 {
 	return mesh.Normals[ia].Add(mesh.Normals[ib]).Add(mesh.Normals[ic])
 }

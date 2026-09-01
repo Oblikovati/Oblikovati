@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
@@ -58,7 +59,7 @@ func TestGrillToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("grill body not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(v, 46) > 0.01 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(v, 46) > 0.01 {
 		t.Errorf("grill volume = %g, want ≈46 (72 − 13×2 vent)", v)
 	}
 }

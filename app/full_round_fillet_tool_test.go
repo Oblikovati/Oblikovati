@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/feature"
 )
@@ -55,7 +56,7 @@ func TestFullRoundToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("full-round body not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= 8 {
+	if v := query.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= 8 {
 		t.Errorf("full round did not remove the top corners: volume %g, want < 8", v)
 	}
 }

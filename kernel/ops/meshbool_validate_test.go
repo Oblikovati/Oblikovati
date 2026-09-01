@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/meshbool"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -54,9 +55,9 @@ func TestValidateCrossingCylinders(t *testing.T) {
 	if r := Validate(res); !r.Valid {
 		t.Fatalf("union result invalid: %+v", r)
 	}
-	volA := BodyGeometryProperties(a, q).Volume
-	volB := BodyGeometryProperties(b, q).Volume
-	if volU := BodyGeometryProperties(res, q).Volume; volU < volA || volU > volA+volB {
+	volA := query.BodyGeometryProperties(a, q).Volume
+	volB := query.BodyGeometryProperties(b, q).Volume
+	if volU := query.BodyGeometryProperties(res, q).Volume; volU < volA || volU > volA+volB {
 		t.Fatalf("union volume %.3f out of range [%.3f, %.3f]", volU, volA, volA+volB)
 	}
 }
@@ -126,7 +127,7 @@ func TestValidateGrazingSeamUnion(t *testing.T) {
 	if r := Validate(res); !r.Valid {
 		t.Fatalf("grazing-seam union invalid: %+v", r)
 	}
-	if vol := BodyGeometryProperties(res, q).Volume; vol < 676 || vol > 678 {
+	if vol := query.BodyGeometryProperties(res, q).Volume; vol < 676 || vol > 678 {
 		t.Fatalf("grazing-seam union volume %.3f out of analytic range [676, 678]", vol)
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -69,7 +70,7 @@ func TestSweepPathParameterEditResweeps(t *testing.T) {
 		t.Fatalf("sweep sick: %+v", sweep.Health())
 	}
 	volumeAt := func() float64 {
-		return ops.BodyGeometryProperties(def.Features().Result()[0], ops.DefaultQuality()).Volume
+		return query.BodyGeometryProperties(def.Features().Result()[0], ops.DefaultQuality()).Volume
 	}
 	before := volumeAt()
 

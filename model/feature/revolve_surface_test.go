@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestRevolveSurfacePartialOpenSheet: a 90° Surface-operation revolve of the square (r 2..4, h 2)
@@ -27,7 +28,7 @@ func TestRevolveSurfacePartialOpenSheet(t *testing.T) {
 		t.Error("partial surface-operation revolve should be an OPEN sheet, got a solid")
 	}
 	want := stdmath.Pi/2*2*(2+4) + stdmath.Pi/2*(4*4-2*2) // 12π
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Area; relErr(got, want) > 0.03 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Area; relErr(got, want) > 0.03 {
 		t.Errorf("open surface-of-revolution area = %g, want ≈%g (12π) within 3%%", got, want)
 	}
 }
@@ -45,7 +46,7 @@ func TestRevolveSurfaceFullClosedSheet(t *testing.T) {
 	}
 	body := fs.Result()[0]
 	want := 2*stdmath.Pi*2*(2+4) + 2*stdmath.Pi*(4*4-2*2) // 48π
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Area; relErr(got, want) > 0.03 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Area; relErr(got, want) > 0.03 {
 		t.Errorf("closed surface-of-revolution area = %g, want ≈%g (48π) within 3%%", got, want)
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -55,7 +56,7 @@ func TestConformancePreservesNotchedFaceArea(t *testing.T) {
 		t.Fatalf("fillet: %v", err)
 	}
 	q := PropertyQuality()
-	bodyArea := BodyGeometryProperties(res, q).Area
+	bodyArea := query.BodyGeometryProperties(res, q).Area
 	var faceSum float64
 	for _, f := range res.Faces() {
 		faceSum += y2FaceArea(tessellate.TessellateFace(f, q))

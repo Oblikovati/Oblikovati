@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -96,7 +97,7 @@ func assertWatertightCrossing(t *testing.T, got *topo.Body, r, dr float64) {
 			t.Errorf("R=%g dr=%g at %s quality meshed with %d free edges; want 0 (watertight)", r, dr, gq.name, free)
 		}
 	}
-	vol := BodyGeometryProperties(got, DefaultQuality()).Volume
+	vol := query.BodyGeometryProperties(got, DefaultQuality()).Volume
 	want := nearPinchIntersectVolume(r, r+dr)
 	if rel := stdmath.Abs(vol-want) / want; rel > 0.04 {
 		t.Errorf("R=%g dr=%g volume %.4f, want %.4f (analytic) — rel %.3f > 4%%", r, dr, vol, want, rel)
@@ -163,7 +164,7 @@ func assertCutJoinVolume(t *testing.T, op PartFeatureOperation, got *topo.Body, 
 	if op == Join {
 		want = rod + fat - inter
 	}
-	vol := BodyGeometryProperties(got, DefaultQuality()).Volume
+	vol := query.BodyGeometryProperties(got, DefaultQuality()).Volume
 	if rel := stdmath.Abs(vol-want) / want; rel > 0.04 {
 		t.Errorf("%v R=%g dr=%g volume %.4f, want %.4f (analytic) — rel %.3f > 4%%", op, r, dr, vol, want, rel)
 	}

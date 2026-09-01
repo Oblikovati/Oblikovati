@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -128,5 +129,5 @@ func featureByIDOf(t *testing.T, s *app.Session, id uint64) *feature.FreeformFea
 
 // bodyVolume measures the part's first body (for before/after cage-edit comparisons).
 func bodyVolume(def *compdef.PartComponentDefinition) float64 {
-	return float64(ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume)
+	return float64(query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume)
 }

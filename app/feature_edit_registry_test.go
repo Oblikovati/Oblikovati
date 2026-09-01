@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -129,7 +130,7 @@ func TestLoftEditCommitPreservesGeometry(t *testing.T) {
 	t.Parallel()
 	s, h := loftedFeatureSession(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
-	before := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	s.BeginEditFeature(h)
 	if err := s.OK(); err != nil {
 		t.Fatalf("commit loft edit: %v", err)
@@ -137,7 +138,7 @@ func TestLoftEditCommitPreservesGeometry(t *testing.T) {
 	if def.SurfaceBodies().Count() != 1 {
 		t.Fatalf("part has %d bodies after a no-op loft edit, want 1", def.SurfaceBodies().Count())
 	}
-	after := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	if relErrApp(after, before) > 0.001 {
 		t.Errorf("a no-op loft edit changed the volume: %g → %g", before, after)
 	}
@@ -202,7 +203,7 @@ func TestSweepEditPreservesPath(t *testing.T) {
 	t.Parallel()
 	s, h := sweptFeatureSession(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
-	before := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	s.BeginEditFeature(h)
 	setGenericEditParam(s, "Twist", 0) // a real edit through the generic path; geometry unchanged at twist 0
 	if err := s.OK(); err != nil {
@@ -211,7 +212,7 @@ func TestSweepEditPreservesPath(t *testing.T) {
 	if def.SurfaceBodies().Count() != 1 {
 		t.Fatalf("sweep edit wiped the body (path lost?): %d bodies", def.SurfaceBodies().Count())
 	}
-	after := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	if relErrApp(after, before) > 0.001 {
 		t.Errorf("a twist-0 sweep edit changed the volume: %g → %g", before, after)
 	}

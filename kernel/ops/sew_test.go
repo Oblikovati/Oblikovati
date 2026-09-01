@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -51,7 +52,7 @@ func TestSewClosesGappedLid(t *testing.T) {
 	if r := Validate(solid); !r.Valid || !r.Closed || !r.Manifold {
 		t.Errorf("sewn body validation = %+v, want fully valid", r)
 	}
-	if v := BodyGeometryProperties(solid, DefaultQuality()).Volume; stdmath.Abs(v-1) > 1e-3 {
+	if v := query.BodyGeometryProperties(solid, DefaultQuality()).Volume; stdmath.Abs(v-1) > 1e-3 {
 		t.Errorf("sewn cube volume = %g, want ~1", v)
 	}
 }

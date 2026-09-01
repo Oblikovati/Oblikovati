@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"oblikovati.org/kernel/geom"
+	dset "oblikovati.org/kernel/ops/internal/disjoint"
 	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -118,7 +119,7 @@ func unionNearbyEndpoints(cells map[[3]int64][]int32, pts []math.Point3, i int, 
 	for _, d := range sewCellNeighborhood {
 		for _, j := range cells[[3]int64{c[0] + d[0], c[1] + d[1], c[2] + d[2]}] {
 			if int(j) > i && float64(pts[i].DistanceTo(pts[int(j)])) <= tol {
-				union(cluster, i, int(j))
+				dset.Union(cluster, i, int(j))
 			}
 		}
 	}
@@ -146,35 +147,19 @@ func boundaryEndpoints(open []*topo.Edge) []math.Point3 {
 	return pts
 }
 
-// union joins i's and j's clusters (plain union-find with path squash on find).
-func union(parent []int, i, j int) {
-	ri, rj := find(parent, i), find(parent, j)
-	if ri != rj {
-		parent[rj] = ri
-	}
-}
-
-func find(parent []int, i int) int {
-	for parent[i] != i {
-		parent[i] = parent[parent[i]]
-		i = parent[i]
-	}
-	return i
-}
-
 // clusterCentroids averages each cluster's members and indexes the centroid by
 // every member's fine-grid cell, so apply() can look any member up.
 func clusterCentroids(pts []math.Point3, cluster []int) *boundaryClusters {
 	sums := map[int]math.Vector3{}
 	counts := map[int]int{}
 	for i, p := range pts {
-		r := find(cluster, i)
+		r := dset.Find(cluster, i)
 		sums[r] = sums[r].Add(p.AsVector())
 		counts[r]++
 	}
 	bc := &boundaryClusters{grid: ResolutionForPoints(pts).Plane(), centers: map[vKey]math.Point3{}} // model-relative (#1399)
 	for i, p := range pts {
-		r := find(cluster, i)
+		r := dset.Find(cluster, i)
 		c := sums[r].Scale(math.Scalar(1 / float64(counts[r]))).AsPoint()
 		bc.centers[bc.cell(p)] = c
 	}

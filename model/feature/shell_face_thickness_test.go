@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 )
@@ -51,13 +52,13 @@ func TestShellFaceThicknessIsParameterDriven(t *testing.T) {
 	if !sh.Health().OK() {
 		t.Fatalf("shell with a face thickness went sick: %+v", sh.Health())
 	}
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-43) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-43) > 1e-6 {
 		t.Fatalf("shell volume = %g, want 43 (a 1.5 wall on +X)", got)
 	}
 	wall = 0.25      // the parameter moves
 	fs.MarkDirty(sh) // as a parameter change does
 	fs.Recompute()
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-29.875) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-29.875) > 1e-6 {
 		t.Errorf("after the parameter changed, volume = %g, want 29.875 — the override was frozen", got)
 	}
 }

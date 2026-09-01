@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -94,7 +95,7 @@ func TestFlushSlotCutOnClipHull(t *testing.T) {
 	base := prismBody(rectPts(-0.8, -0.09, 0.8, 0.09), 0, 0.5, "foot")
 	post := prismBody(rectPts(-0.2, -0.45, 0.2, 0.45), 0, 0.5, "post")
 	top := prismBody(regularPolygonPoints(math.P3(-0.55, 0.62, 0), 0.22, 24, 0), 0, 0.5, "loop")
-	hull, err := ops.ConvexHullOf("clip-hull", base, post, top)
+	hull, err := query.ConvexHullOf("clip-hull", base, post, top)
 	if err != nil {
 		t.Fatalf("hull: %v", err)
 	}
@@ -109,7 +110,7 @@ func TestNonFlushSlotCutOnClipHull(t *testing.T) {
 	base := prismBody(rectPts(-0.8, -0.09, 0.8, 0.09), 0, 0.5, "foot")
 	post := prismBody(rectPts(-0.2, -0.45, 0.2, 0.45), 0, 0.5, "post")
 	top := prismBody(regularPolygonPoints(math.P3(-0.55, 0.62, 0), 0.22, 24, 0), 0, 0.5, "loop")
-	hull, err := ops.ConvexHullOf("clip-hull", base, post, top)
+	hull, err := query.ConvexHullOf("clip-hull", base, post, top)
 	if err != nil {
 		t.Fatalf("hull: %v", err)
 	}
@@ -136,7 +137,7 @@ func TestFlushInteriorSlotOnClipHull(t *testing.T) {
 	base := prismBody(rectPts(-0.8, -0.09, 0.8, 0.09), 0, 0.5, "foot")
 	post := prismBody(rectPts(-0.2, -0.45, 0.2, 0.45), 0, 0.5, "post")
 	top := prismBody(regularPolygonPoints(math.P3(-0.55, 0.62, 0), 0.22, 24, 0), 0, 0.5, "loop")
-	hull, err := ops.ConvexHullOf("clip-hull", base, post, top)
+	hull, err := query.ConvexHullOf("clip-hull", base, post, top)
 	if err != nil {
 		t.Fatalf("hull: %v", err)
 	}

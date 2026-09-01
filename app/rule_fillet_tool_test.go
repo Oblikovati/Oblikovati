@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -17,7 +18,7 @@ func TestRuleFilletToolEndToEnd(t *testing.T) {
 	t.Parallel()
 	s, _ := newPartWithBlock(t, 6) // 6×6×2 block, vol 72
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
-	before := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 
 	rf := NewRuleFilletTool()
 	rf.SetRule(int(feature.RuleFilletAllRounds))
@@ -37,7 +38,7 @@ func TestRuleFilletToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("rule-filleted body not a valid solid: %+v", r)
 	}
-	if after := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; after >= before {
+	if after := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; after >= before {
 		t.Errorf("volume %g did not drop from %g — All Rounds should round the convex edges", after, before)
 	}
 }

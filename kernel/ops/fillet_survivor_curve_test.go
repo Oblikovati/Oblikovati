@@ -12,6 +12,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -38,7 +39,7 @@ func TestFilletPreservesCurvedSurvivorEdge(t *testing.T) {
 	if !hasArcEdge(res) {
 		t.Error("no Arc3d edge survived the fillet — a curved neighbour edge was straightened")
 	}
-	area := ops.BodyGeometryProperties(res, ops.PropertyQuality()).Area
+	area := query.BodyGeometryProperties(res, ops.PropertyQuality()).Area
 	if rel := (area - 11.8686) / 11.8686; rel < -0.01 || rel > 0.01 {
 		t.Fatalf("filleted area %.5g, want OCCT 11.8686 within 1%% (rel %+.2f%%) — curved survivor edge straightened", area, rel*100)
 	}

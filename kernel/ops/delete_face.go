@@ -199,7 +199,7 @@ func buildSolidFromLoops(faces []ploop) *topo.Body {
 	rings := make([][][]int, len(faces))
 	for i, f := range faces {
 		for _, r := range f.rings {
-			rings[i] = append(rings[i], dropRepeats(w.WeldRing(r)))
+			rings[i] = append(rings[i], DropRepeats(w.WeldRing(r)))
 		}
 	}
 	edgeUse := map[[2]int]int{}
@@ -280,7 +280,7 @@ func indexLoop(outer bool, ring []int, edges map[[2]int]*topo.Edge) topo.LoopSpe
 
 // dropRepeats removes consecutive (and wrap-around) duplicate indices — the degenerate edges
 // a heal collapses.
-func dropRepeats(r []int) []int {
+func DropRepeats(r []int) []int {
 	var out []int
 	for _, x := range r {
 		if len(out) == 0 || out[len(out)-1] != x {

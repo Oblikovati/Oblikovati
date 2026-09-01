@@ -108,7 +108,7 @@ package occtparity
 //	S7 +1.434e-04→−1.051e-04 (1.36×)  S9 +3.608e-04→+1.196e-06 (302×)   T1 +3.745e-04→−2.378e-06 (157×)
 //	T3 +2.653e-04→−7.484e-06 (35×)    T4 +2.816e-04→−6.112e-06 (46×)    T7 +6.075e-05→−6.228e-06 (9.8×)
 //
-// and mesh volume (ops.BodyGeometryProperties at PropertyQuality) against live DRAWEXE `vprops … 1.e-12`
+// and mesh volume (query.BodyGeometryProperties at PropertyQuality) against live DRAWEXE `vprops … 1.e-12`
 // re-read this session (6-s.f. print resolution, so ±~4e-6 relative): S1 −4.522e-04→−3.790e-05,
 // S4 −3.943e-04→−1.797e-05, S6 −3.581e-04→−3.221e-04, S7 −2.831e-04→−1.771e-04, S9 −1.179e-05→−9.139e-06,
 // T1 −2.236e-05→−7.332e-06, T3 −2.816e-06→+2.264e-06 (flat at the oracle's resolution), T4

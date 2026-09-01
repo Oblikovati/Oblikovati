@@ -86,7 +86,7 @@ func cylindricalStripFace(t testing.TB, s geom.BSplineSurface, r, sweep, h float
 
 // cylindricalStripBody builds the single-face strip body and returns it whole (plus its two straight
 // rails), the shared plumbing behind cylindricalStripFace. Split out so the #2010 pick benchmark can
-// drive body-level queries (ops.LocateUsingPoint → closerEdge → discretizeEdge → starvedEdgeTarget)
+// drive body-level queries (query.LocateUsingPoint → closerEdge → discretizeEdge → starvedEdgeTarget)
 // on the exact same fixture without duplicating the builder.
 func cylindricalStripBody(t testing.TB, s geom.BSplineSurface, r, sweep, h float64) (body *topo.Body, rails [2]*topo.Edge) {
 	t.Helper()

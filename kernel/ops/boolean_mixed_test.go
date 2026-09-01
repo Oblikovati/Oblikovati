@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -53,7 +54,7 @@ func TestBooleanMixedPassThroughBeforeReconstruction(t *testing.T) {
 // analyticVolumeOf reads the body's volume through the mass-properties pipeline.
 func analyticVolumeOf(t *testing.T, b *topo.Body) float64 {
 	t.Helper()
-	return BodyGeometryProperties(b, DefaultQuality()).Volume
+	return query.BodyGeometryProperties(b, DefaultQuality()).Volume
 }
 
 // TestBooleanEmbeddedCavityExactVolume is the regression for the DrillThroughHole span-gate misfire:

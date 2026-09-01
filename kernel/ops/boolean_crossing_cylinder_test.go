@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -58,7 +59,7 @@ func TestBooleanIntersectCrossingCylinders(t *testing.T) {
 	if n := len(res.Faces()); n != 3 {
 		t.Errorf("result has %d faces, want 3 (rod band + two lens caps)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := crossingIntersectVolume(rRod, rFat)
 	// 4%: the two fat-wall lens caps inscribe their curvature, so the DefaultQuality meshed volume runs a
 	// little under the analytic intersection. The B-rep is exact — at a 10× finer chord tolerance the
@@ -96,7 +97,7 @@ func TestBooleanCutDrillCrossingCylinder(t *testing.T) {
 	if n := len(res.Faces()); n != 4 {
 		t.Errorf("drilled cylinder has %d faces, want 4 (two caps, holed wall, tunnel)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := stdmath.Pi*rFat*rFat*hFat - crossingIntersectVolume(rRod, rFat)
 	// 4%: the concave tunnel and the drilled wall inscribe their curvature, so the meshed volume runs a
 	// little under the analytic fat − tunnel (the B-rep is exact; this bounds the property-mesh error).
@@ -131,7 +132,7 @@ func TestBooleanJoinCrossingCylinders(t *testing.T) {
 	if n := len(res.Faces()); n != 7 {
 		t.Errorf("joined cylinders have %d faces, want 7 (two fat caps, holed wall, two stubs, two rod caps)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := stdmath.Pi*rFat*rFat*hFat + stdmath.Pi*rRod*rRod*hRod - crossingIntersectVolume(rRod, rFat)
 	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
 		t.Errorf("joined volume %.4f, want %.4f (fat + rod − intersection) — rel %.4f > 4%%", got, want, rel)
@@ -157,7 +158,7 @@ func TestBooleanCutRodMinusFatStubs(t *testing.T) {
 	if n := len(res.Shells()); n != 2 {
 		t.Errorf("rod − fat has %d shells, want 2 (a disconnected stub each side)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := stdmath.Pi*rRod*rRod*hRod - crossingIntersectVolume(rRod, rFat)
 	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
 		t.Errorf("rod − fat volume %.4f, want %.4f (rod − intersection) — rel %.4f > 4%%", got, want, rel)
@@ -191,7 +192,7 @@ func TestBooleanIntersectPartialPenetration(t *testing.T) {
 	if n := len(res.Faces()); n != 3 {
 		t.Errorf("rod plug has %d faces, want 3 (lens, stub band, blind end cap)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := crossingIntersectVolume(rRod, rFat) / 2 // the plug is half the full crossing intersection
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 		t.Errorf("plug volume %.4f, want %.4f (half the crossing intersection) — rel %.4f > 2%%", got, want, rel)
@@ -224,7 +225,7 @@ func TestBooleanCutPartialPenetrationBlindHole(t *testing.T) {
 	if n := len(res.Faces()); n != 5 {
 		t.Errorf("blind hole has %d faces, want 5 (two caps, holed wall, tunnel, blind bottom)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := stdmath.Pi*rFat*rFat*hFat - crossingIntersectVolume(rRod, rFat)/2 // fat − the plug
 	// 4%: the curved tunnel and holed wall inscribe their curvature, so the meshed volume runs a little
 	// under the analytic fat − plug (the B-rep is exact; this bounds the property-mesh error, as for the
@@ -253,7 +254,7 @@ func TestBooleanCutPartialPenetrationRodMinusFat(t *testing.T) {
 	if n := len(res.Shells()); n != 1 {
 		t.Errorf("rod − fat has %d shells, want 1 (the rod breaches only one wall)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := stdmath.Pi*rRod*rRod*hRod - crossingIntersectVolume(rRod, rFat)/2 // rod − the plug
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 		t.Errorf("rod − fat volume %.4f, want %.4f (rod − plug) — rel %.4f > 2%%", got, want, rel)
@@ -286,7 +287,7 @@ func TestBooleanJoinPartialPenetration(t *testing.T) {
 	if n := len(res.Faces()); n != 5 {
 		t.Errorf("partial join has %d faces, want 5 (two caps, holed wall, stub band, entry cap)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := stdmath.Pi*rFat*rFat*hFat + stdmath.Pi*rRod*rRod*hRod - crossingIntersectVolume(rRod, rFat)/2
 	// 4%: the curved holed wall and stub inscribe their curvature, so the meshed volume runs a little under
 	// the analytic fat + rod − plug (the B-rep is exact; this bounds the property-mesh error).
@@ -320,7 +321,7 @@ func TestBooleanIntersectEqualRadiusSteinmetz(t *testing.T) {
 	if n := len(res.Faces()); n != 4 {
 		t.Errorf("Steinmetz has %d faces, want 4 (two lobes per cylinder)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := 16.0 / 3.0 * r * r * r // the Steinmetz bicylinder volume
 	// 4%: the four lobes inscribe their curvature and pinch to a sharp corner at each pinch vertex, so the
 	// meshed volume runs a little under the analytic 16/3·R³ (the B-rep is exact; this bounds the
@@ -356,7 +357,7 @@ func TestBooleanCutEqualRadiusSteinmetz(t *testing.T) {
 	if n := len(res.Faces()); n != 6 {
 		t.Errorf("Steinmetz cut has %d faces, want 6 (two bands, two lobes, two caps)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := stdmath.Pi*r*r*h - 16.0/3.0*r*r*r // the cylinder minus the bicylinder
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 		t.Errorf("Steinmetz cut volume %.4f, want %.4f (cyl − bicylinder) — rel %.4f > 2%%", got, want, rel)
@@ -389,7 +390,7 @@ func TestBooleanJoinEqualRadiusSteinmetz(t *testing.T) {
 	if n := len(res.Faces()); n != 8 {
 		t.Errorf("Steinmetz join has %d faces, want 8 (two bands + two caps per cylinder)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := 2*stdmath.Pi*r*r*h - 16.0/3.0*r*r*r // two cylinders minus the bicylinder
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 		t.Errorf("Steinmetz join volume %.4f, want %.4f (2·cyl − bicylinder) — rel %.4f > 2%%", got, want, rel)
@@ -436,7 +437,7 @@ func TestBooleanIntersectNearPinchContinuity(t *testing.T) {
 				t.Errorf("δ=%.3g (snap band): %d faces, want the four-lobe bicylinder", s.d, n)
 			}
 		}
-		got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+		got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 		want := crossingIntersectVolume(r, r+s.d)
 		if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
 			t.Errorf("δ=%.3g: volume %.4f, want %.4f (analytic) — rel %.4f > 4%%", s.d, got, want, rel)

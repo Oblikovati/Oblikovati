@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -50,7 +51,7 @@ func TestFilletEdgesRoutesArc3dRim(t *testing.T) {
 		}
 	}
 	full := stdmath.Pi * 2.0
-	if v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= full || v < full-0.5 {
+	if v := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= full || v < full-0.5 {
 		t.Errorf("Arc3d-rim-fillet volume = %g, want under %g (rim notch removed)", v, full)
 	}
 }

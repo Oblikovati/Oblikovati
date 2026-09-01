@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -50,7 +51,7 @@ func frustumSideRemoved(d float64) float64 {
 func TestHalfSpaceCutConeSideArcBandVolume(t *testing.T) {
 	t.Parallel()
 	frustum, _ := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6, "frustum")
-	full := ops.BodyGeometryProperties(frustum, ops.DefaultQuality()).Volume
+	full := query.BodyGeometryProperties(frustum, ops.DefaultQuality()).Volume
 	removed := frustumSideRemoved(2)
 
 	axisOrigin, axisNormal := math.P3(2, 0, 0), math.V3(1, 0, 0) // keep x ≤ 2 (axis side, major part)
@@ -80,7 +81,7 @@ func TestHalfSpaceCutConeSideArcBandVolume(t *testing.T) {
 func TestHalfSpaceCutConeSideAnnulusTongueComplementary(t *testing.T) {
 	t.Parallel()
 	frustum, _ := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6, "frustum")
-	full := ops.BodyGeometryProperties(frustum, ops.DefaultQuality()).Volume
+	full := query.BodyGeometryProperties(frustum, ops.DefaultQuality()).Volume
 	removed := frustumSideRemoved(4)
 
 	annOrigin, annNormal := math.P3(4, 0, 0), math.V3(1, 0, 0)  // keep x ≤ 4 → annulus (apex kept)
@@ -97,8 +98,8 @@ func TestHalfSpaceCutConeSideAnnulusTongueComplementary(t *testing.T) {
 		t.Fatalf("HalfSpaceCut(tongue): %v", err)
 	}
 
-	annVol := ops.BodyGeometryProperties(annulus, ops.DefaultQuality()).Volume
-	tonVol := ops.BodyGeometryProperties(tongue, ops.DefaultQuality()).Volume
+	annVol := query.BodyGeometryProperties(annulus, ops.DefaultQuality()).Volume
+	tonVol := query.BodyGeometryProperties(tongue, ops.DefaultQuality()).Volume
 	assertKeptVolume(t, annulus, full-removed, 0.02, "annulus (x≤4)")
 	assertKeptVolume(t, tongue, removed, 0.05, "tongue (x≥4)") // thin sliver → looser inscription tol
 	if annVol <= tonVol {
@@ -114,7 +115,7 @@ func TestHalfSpaceCutConeSideAnnulusTongueComplementary(t *testing.T) {
 func TestHalfSpaceCutConeSideClearsKeepsFullVolume(t *testing.T) {
 	t.Parallel()
 	frustum, _ := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6, "frustum")
-	full := ops.BodyGeometryProperties(frustum, ops.DefaultQuality()).Volume
+	full := query.BodyGeometryProperties(frustum, ops.DefaultQuality()).Volume
 	keep, _ := geom.NewPlane(math.P3(7, 0, 0), math.V3(1, 0, 0)) // x ≤ 7 ⊇ whole frustum (top r=6)
 	res, err := brep.HalfSpaceCut(frustum, keep)
 	if err != nil {
@@ -127,8 +128,8 @@ func TestHalfSpaceCutConeSideClearsKeepsFullVolume(t *testing.T) {
 // to the whole volume and are individually non-empty (neither side swallowed the whole or nothing).
 func assertComplementaryPartition(t *testing.T, a, b *topo.Body, full float64, label string) {
 	t.Helper()
-	va := ops.BodyGeometryProperties(a, ops.DefaultQuality()).Volume
-	vb := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+	va := query.BodyGeometryProperties(a, ops.DefaultQuality()).Volume
+	vb := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 	if rel := stdmath.Abs(va+vb-full) / full; rel > 0.01 {
 		t.Errorf("%s: complementary cuts sum to %.4f, want %.4f (full) — rel %.4f > 1%% (not a partition)",
 			label, va+vb, full, rel)

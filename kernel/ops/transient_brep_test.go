@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -115,7 +116,7 @@ func TestRuledSurfaceBetweenSquares(t *testing.T) {
 	if surf.IsSolid() {
 		t.Error("a ruled surface is a surface body, not a solid")
 	}
-	props := BodyGeometryProperties(surf, DefaultQuality())
+	props := query.BodyGeometryProperties(surf, DefaultQuality())
 	if stdmath.Abs(props.Area-8) > 0.1 {
 		t.Errorf("ruled surface area = %g, want ~8", props.Area)
 	}
@@ -130,8 +131,8 @@ func TestGroupIdenticalBodies(t *testing.T) {
 	axis, _ := math.UnitVector3FromVector(math.V3(0, 0, 1))
 	rotated, _ := transform.TransformBody(a, math.Rotation4(0.7, axis, math.P3(5, 5, 5)), func(l topo.Lineage) topo.Lineage { return l })
 	other := boxBody(math.P3(0, 0, 0), 1, 2, 4)
-	groups := GroupIdenticalBodies([]*topo.Body{a, moved, rotated, other},
-		IdenticalBodiesOptions{MatchReflection: true}, DefaultQuality())
+	groups := query.GroupIdenticalBodies([]*topo.Body{a, moved, rotated, other},
+		query.IdenticalBodiesOptions{MatchReflection: true}, DefaultQuality())
 	if len(groups) != 2 {
 		t.Fatalf("grouping = %v, want 2 groups", groups)
 	}

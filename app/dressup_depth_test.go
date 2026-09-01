@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/feature"
 )
 
@@ -44,7 +45,7 @@ func TestFilletToolVariableRadius(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("variable-filleted body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; got >= 8 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; got >= 8 {
 		t.Errorf("volume after variable fillet = %g, want < 8 (material removed)", got)
 	}
 }
@@ -85,7 +86,7 @@ func TestSplitToolFacesOnly(t *testing.T) {
 	// instead made the test a check on the integrator's last bit — and since mass
 	// properties went analytic (M48/C3) a 6×6×2 box integrates to 72.000000000000014,
 	// one ulp off, BEFORE the split runs. The split's own delta is exactly zero (#3495).
-	before := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 
 	split := NewSplitTool()
 	s.StartTool(split)
@@ -104,7 +105,7 @@ func TestSplitToolFacesOnly(t *testing.T) {
 	if n := len(body.Faces()); n != 10 {
 		t.Errorf("after split faces: %d faces, want 10", n)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; got != before {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; got != before {
 		t.Errorf("volume after split faces = %.17g, before = %.17g — an imprint removes no material",
 			got, before)
 	}

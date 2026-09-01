@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	"fmt"
@@ -26,7 +26,7 @@ import (
 //
 // Example:
 //
-//	for _, d := range ops.BodyMeshDiagnostics(body, ops.DefaultQuality()) {
+//	for _, d := range query.BodyMeshDiagnostics(body, query.DefaultQuality()) {
 //		rec.Record(d)
 //	}
 func BodyMeshDiagnostics(b *topo.Body, q Quality) []diag.Diagnostic {

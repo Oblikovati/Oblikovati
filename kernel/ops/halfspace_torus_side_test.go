@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -69,7 +70,7 @@ func TestHalfSpaceCutTorusPerpendicularBandVolume(t *testing.T) {
 func TestHalfSpaceCutTorusMidPlaneHalvesAreComplementary(t *testing.T) {
 	t.Parallel()
 	tor, _ := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), torusR, torusr, "torus")
-	full := ops.BodyGeometryProperties(tor, ops.DefaultQuality()).Volume
+	full := query.BodyGeometryProperties(tor, ops.DefaultQuality()).Volume
 
 	below, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))  // keep z ≤ 0
 	above, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, -1)) // keep z ≥ 0
@@ -81,8 +82,8 @@ func TestHalfSpaceCutTorusMidPlaneHalvesAreComplementary(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HalfSpaceCut(above): %v", err)
 	}
-	vlo := ops.BodyGeometryProperties(lo, ops.DefaultQuality()).Volume
-	vhi := ops.BodyGeometryProperties(hi, ops.DefaultQuality()).Volume
+	vlo := query.BodyGeometryProperties(lo, ops.DefaultQuality()).Volume
+	vhi := query.BodyGeometryProperties(hi, ops.DefaultQuality()).Volume
 	if rel := stdmath.Abs(vlo+vhi-full) / full; rel > 0.01 {
 		t.Errorf("torus halves sum to %.4f, want %.4f (full) — rel %.4f > 1%% (not a partition)", vlo+vhi, full, rel)
 	}
@@ -97,7 +98,7 @@ func TestHalfSpaceCutTorusMidPlaneHalvesAreComplementary(t *testing.T) {
 func TestHalfSpaceCutTorusClearsKeepsFullVolume(t *testing.T) {
 	t.Parallel()
 	tor, _ := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), torusR, torusr, "torus")
-	full := ops.BodyGeometryProperties(tor, ops.DefaultQuality()).Volume
+	full := query.BodyGeometryProperties(tor, ops.DefaultQuality()).Volume
 	clear, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1)) // z ≤ 3 holds the whole tube (to z=2)
 	res, err := brep.HalfSpaceCut(tor, clear)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -18,7 +19,7 @@ import (
 // mesher recorded onto its tessellate.Mesh must be readable from outside this package, or it reaches nobody.
 func TestBodyMeshDiagnosticsHarvestsTheTessellatorsReport(t *testing.T) {
 	t.Parallel()
-	got := BodyMeshDiagnostics(degenerate.CrossedTrimBody(), tessellate.DefaultQuality())
+	got := query.BodyMeshDiagnostics(degenerate.CrossedTrimBody(), tessellate.DefaultQuality())
 	if len(got) != 1 {
 		t.Fatalf("harvested %d diagnostics from a two-face self-crossing trim, want 1 collapsed entry: %v",
 			len(got), got)
@@ -38,7 +39,7 @@ func TestBodyMeshDiagnosticsHarvestsTheTessellatorsReport(t *testing.T) {
 func TestBodyMeshDiagnosticsStaysSilentOnCleanBodies(t *testing.T) {
 	t.Parallel()
 	for name, b := range cleanPrimitiveBodies(t) {
-		if got := BodyMeshDiagnostics(b, tessellate.DefaultQuality()); len(got) != 0 {
+		if got := query.BodyMeshDiagnostics(b, tessellate.DefaultQuality()); len(got) != 0 {
 			t.Errorf("clean %s reported %v, want none", name, got)
 		}
 	}
@@ -66,7 +67,7 @@ func cleanPrimitiveBodies(t *testing.T) map[string]*topo.Body {
 // a nil body in that slice must not panic the recompute it is reporting on.
 func TestBodyMeshDiagnosticsOnNilBodyIsEmpty(t *testing.T) {
 	t.Parallel()
-	if got := BodyMeshDiagnostics(nil, tessellate.DefaultQuality()); got != nil {
+	if got := query.BodyMeshDiagnostics(nil, tessellate.DefaultQuality()); got != nil {
 		t.Errorf("nil body reported %v, want nil", got)
 	}
 }

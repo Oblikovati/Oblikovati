@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/test-utilities/nopscad"
 )
@@ -52,7 +53,7 @@ func TestNopWasherCSG(t *testing.T) {
 		t.Fatalf("washer has %d boundary edges, want 0 (watertight)", len(open))
 	}
 
-	got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 
 	// Analytic annulus volume — faceted CSG inscribes the circle, so the result
 	// is slightly under; allow a faceting band.

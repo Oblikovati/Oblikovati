@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -28,7 +29,7 @@ func TestLoftPointSharpCone(t *testing.T) {
 	secs := []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(4), 4)}
 	b := conditionedLoft(t, secs, false, LoftEnd{}, LoftEnd{Condition: LoftSharpPoint})
 	want := stdmath.Pi * 4 / 3 * 4 // πr²h/3, r=2 h=4
-	if v := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; relErr(v, want) > 0.03 {
+	if v := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; relErr(v, want) > 0.03 {
 		t.Errorf("cone volume = %g, want ≈%g", v, want)
 	}
 }
@@ -43,8 +44,8 @@ func TestLoftPointTangentDomes(t *testing.T) {
 	base := func() []LoftSection {
 		return []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(4), 4)}
 	}
-	cone := ops.BodyGeometryProperties(conditionedLoft(t, base(), false, LoftEnd{}, LoftEnd{Condition: LoftSharpPoint}), ops.DefaultQuality()).Volume
-	dome := ops.BodyGeometryProperties(conditionedLoft(t, base(), false, LoftEnd{}, LoftEnd{Condition: LoftTangentToPlane}), ops.DefaultQuality()).Volume
+	cone := query.BodyGeometryProperties(conditionedLoft(t, base(), false, LoftEnd{}, LoftEnd{Condition: LoftSharpPoint}), ops.DefaultQuality()).Volume
+	dome := query.BodyGeometryProperties(conditionedLoft(t, base(), false, LoftEnd{}, LoftEnd{Condition: LoftTangentToPlane}), ops.DefaultQuality()).Volume
 	if dome <= cone*1.05 {
 		t.Errorf("tangent-to-plane apex did not dome out: dome vol %.3f, cone vol %.3f", dome, cone)
 	}
@@ -59,8 +60,8 @@ func TestLoftPointImpactScalesDome(t *testing.T) {
 	mk := func() []LoftSection {
 		return []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(4), 4)}
 	}
-	soft := ops.BodyGeometryProperties(conditionedLoft(t, mk(), false, LoftEnd{}, LoftEnd{Condition: LoftTangentToPlane, Impact: 1}), ops.DefaultQuality()).Volume
-	hard := ops.BodyGeometryProperties(conditionedLoft(t, mk(), false, LoftEnd{}, LoftEnd{Condition: LoftTangentToPlane, Impact: 2}), ops.DefaultQuality()).Volume
+	soft := query.BodyGeometryProperties(conditionedLoft(t, mk(), false, LoftEnd{}, LoftEnd{Condition: LoftTangentToPlane, Impact: 1}), ops.DefaultQuality()).Volume
+	hard := query.BodyGeometryProperties(conditionedLoft(t, mk(), false, LoftEnd{}, LoftEnd{Condition: LoftTangentToPlane, Impact: 2}), ops.DefaultQuality()).Volume
 	if hard <= soft {
 		t.Errorf("higher impact did not dome more: impact1 vol %.3f, impact2 vol %.3f", soft, hard)
 	}
@@ -76,8 +77,8 @@ func TestLoftPointReversedDishes(t *testing.T) {
 	mk := func() []LoftSection {
 		return []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(4), 4)}
 	}
-	cone := ops.BodyGeometryProperties(conditionedLoft(t, mk(), false, LoftEnd{}, LoftEnd{Condition: LoftSharpPoint}), ops.DefaultQuality()).Volume
-	dish := ops.BodyGeometryProperties(conditionedLoft(t, mk(), false, LoftEnd{}, LoftEnd{Condition: LoftTangentToPlane, Reversed: true}), ops.DefaultQuality()).Volume
+	cone := query.BodyGeometryProperties(conditionedLoft(t, mk(), false, LoftEnd{}, LoftEnd{Condition: LoftSharpPoint}), ops.DefaultQuality()).Volume
+	dish := query.BodyGeometryProperties(conditionedLoft(t, mk(), false, LoftEnd{}, LoftEnd{Condition: LoftTangentToPlane, Reversed: true}), ops.DefaultQuality()).Volume
 	if dish >= cone {
 		t.Errorf("reversed tangent apex did not dish concave: dished vol %.3f, cone vol %.3f", dish, cone)
 	}
@@ -89,7 +90,7 @@ func TestLoftPointSquarePyramid(t *testing.T) {
 	secs := []LoftSection{sec(centeredSquareOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(6), 6)}
 	b := conditionedLoft(t, secs, false, LoftEnd{}, LoftEnd{Condition: LoftSharpPoint})
 	want := 16.0 * 6 / 3 // base area (4×4) × h / 3
-	if v := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; relErr(v, want) > 0.03 {
+	if v := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; relErr(v, want) > 0.03 {
 		t.Errorf("pyramid volume = %g, want ≈%g", v, want)
 	}
 }
@@ -101,7 +102,7 @@ func TestLoftPointAtStart(t *testing.T) {
 	secs := []LoftSection{apexPoint(sketch.XYPlane(), 0), sec(circleOn(planeAtZ(4), 2))}
 	b := conditionedLoft(t, secs, false, LoftEnd{Condition: LoftSharpPoint}, LoftEnd{})
 	want := stdmath.Pi * 4 / 3 * 4
-	if v := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; relErr(v, want) > 0.03 {
+	if v := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; relErr(v, want) > 0.03 {
 		t.Errorf("inverted cone volume = %g, want ≈%g", v, want)
 	}
 }

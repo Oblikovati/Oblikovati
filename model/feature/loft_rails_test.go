@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -65,8 +66,8 @@ func TestLoftRailIsLocalized(t *testing.T) {
 // holds less than the un-railed cylinder.
 func TestLoftRailNecksReducesVolume(t *testing.T) {
 	t.Parallel()
-	free := ops.BodyGeometryProperties(railedCircles(t, nil), ops.DefaultQuality()).Volume
-	neck := ops.BodyGeometryProperties(railedCircles(t, []func() []math.Point3{railThroughX(1.0)}), ops.DefaultQuality()).Volume
+	free := query.BodyGeometryProperties(railedCircles(t, nil), ops.DefaultQuality()).Volume
+	neck := query.BodyGeometryProperties(railedCircles(t, []func() []math.Point3{railThroughX(1.0)}), ops.DefaultQuality()).Volume
 	if neck >= free {
 		t.Errorf("necking rail did not reduce volume: necked %.3f, free %.3f", neck, free)
 	}

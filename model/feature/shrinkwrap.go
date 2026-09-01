@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -136,7 +137,7 @@ func keepLargerThan(world []*topo.Body, minVolume float64) []*topo.Body {
 	q := ops.DefaultQuality()
 	kept := make([]*topo.Body, 0, len(world))
 	for _, b := range world {
-		if ops.BodyGeometryProperties(b, q).Volume >= minVolume {
+		if query.BodyGeometryProperties(b, q).Volume >= minVolume {
 			kept = append(kept, b)
 		}
 	}

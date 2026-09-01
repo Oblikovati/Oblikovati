@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -22,7 +23,7 @@ func csgBox(p math.Point3, sx, sy, sz float64) *topo.Body {
 }
 
 func csgVolume(b *topo.Body) float64 {
-	return ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 }
 
 // Two 2×2×2 boxes overlapping in a 1×2×2 = 4 slab: A=[0,2]³ (8), B=[1,3]×[0,2]² (8),

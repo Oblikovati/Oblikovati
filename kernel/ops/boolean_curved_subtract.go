@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -90,7 +91,7 @@ func boxAxialCrossSection(tool *topo.Body, cyl geom.Cylinder, base math.Point3) 
 		r := base.VectorTo(v.Point())
 		pts = append(pts, math.P2(r.Dot(e1), r.Dot(e2)))
 	}
-	hull := convexHull2D(pts)
+	hull := query.ConvexHull2D(pts)
 	out := make([]math.Point3, len(hull))
 	for i, p := range hull {
 		out[i] = base.TranslateBy(e1.Scale(p.X)).TranslateBy(e2.Scale(p.Y))

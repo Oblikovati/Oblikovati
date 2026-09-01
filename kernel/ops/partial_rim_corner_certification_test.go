@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -51,7 +52,7 @@ func TestPartialRimCornerCutMomentsMatchOCC(t *testing.T) {
 	if n := len(res.Faces()); n != occCornerFaces {
 		t.Errorf("corner-junction cut has %d faces; want %d (holed wall + 3 caps + tunnel)", n, occCornerFaces)
 	}
-	gp := BodyGeometryProperties(res, capCertQuality())
+	gp := query.BodyGeometryProperties(res, capCertQuality())
 	if rel := stdmath.Abs(gp.Volume-occCornerVol) / occCornerVol; rel > 0.006 {
 		t.Errorf("volume %.4f vs OCC %.4f (rel %.4f > 0.006) — beyond the SSI-imprint facet deficit", gp.Volume, occCornerVol, rel)
 	}
@@ -123,7 +124,7 @@ func TestPartialRimCornerCutMembershipMatchesCSG(t *testing.T) {
 				if nearSurface(p) {
 					continue
 				}
-				if pointInMesh(mesh, p) != (inTarget(p) && !aboveNotch(p) && !inRod(p)) {
+				if query.PointInMesh(mesh, p) != (inTarget(p) && !aboveNotch(p) && !inRod(p)) {
 					mismatches++
 				}
 			}

@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
 )
@@ -43,7 +44,7 @@ func directEditVolume(t *testing.T, fs *PartFeatures, def *DirectEditDefinition)
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("directEdit %v result not a valid solid: %+v", def.Operation, r)
 	}
-	return ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 }
 
 func TestDirectEditMovePushesFace(t *testing.T) {

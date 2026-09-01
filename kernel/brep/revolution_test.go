@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -22,7 +23,7 @@ func revVolume(t *testing.T, b *topo.Body) float64 {
 	if open := ops.BoundaryEdges(b); len(open) != 0 {
 		t.Fatalf("revolution has %d boundary edges, want 0 (watertight)", len(open))
 	}
-	return ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 }
 
 // TestRevolutionTubeIsAnalyticAnnulus revolves a rectangular annular meridian into a tube and

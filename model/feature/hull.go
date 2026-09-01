@@ -5,7 +5,7 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -32,7 +32,7 @@ func (f *HullFeature) Recompute(in Input) (Output, error) {
 	for i, s := range solids {
 		solids[i] = planarized(s, featOr(f.featName, "hull"))
 	}
-	hull, err := ops.ConvexHullOf(featOr(f.featName, "hull"), solids...)
+	hull, err := query.ConvexHullOf(featOr(f.featName, "hull"), solids...)
 	if err != nil {
 		return Output{}, err
 	}

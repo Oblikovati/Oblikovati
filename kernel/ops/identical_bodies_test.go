@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/query"
+
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/tessellate"
@@ -86,7 +88,7 @@ func triFaceBody(feat string, p0, p1, p2 math.Point3) *topo.Body {
 }
 
 // stitchedTetra builds the same geometry as tetraSolid but by STITCHING four independent triangle
-// faces. Stitch's loop reordering makes analyticBodyTerms decline, so this body forces the MESH
+// faces. Stitch's loop reordering makes query.AnalyticBodyTerms decline, so this body forces the MESH
 // signature path — the twin used to prove the two paths are interchangeable.
 func stitchedTetra(t *testing.T, feat string, verts [4]math.Point3) *topo.Body {
 	t.Helper()
@@ -110,7 +112,7 @@ func mapVerts(m math.Matrix4, verts [4]math.Point3) [4]math.Point3 {
 	return out
 }
 
-// The analytic surface moments must reproduce the mesh surface moments (centroidalMoments/
+// The analytic surface moments must reproduce the mesh surface moments (query.CentroidalMoments/
 // triangleSkew) — the SAME quantities by two methods — so the analytic and mesh signature paths are
 // interchangeable (#3449). A flat tetra tessellates to exact triangles, so the two agree to
 // round-off; a cylinder's curved wall agrees as the tessellation refines.
@@ -129,17 +131,17 @@ func TestAnalyticSurfaceMomentsMatchMesh(t *testing.T) {
 // (fine-tessellation) values for the same body.
 func assertSurfaceMomentsAgree(t *testing.T, b *topo.Body, tol float64) {
 	t.Helper()
-	at, ok := analyticAreaTerms(b)
+	at, ok := query.AnalyticAreaTerms(b)
 	if !ok {
 		t.Fatal("body not analytically integrable")
 	}
-	mt, _ := analyticBodyTerms(b)
-	am, askew := surfaceCentroidalMoments(at, geometryFromTerms(mt).Centroid)
+	mt, _ := query.AnalyticBodyTerms(b)
+	am, askew := query.SurfaceCentroidalMoments(at, query.GeometryFromTerms(mt).Centroid)
 	mesh, _ := tessellate.TessellateBody(b, Quality{ChordTolerance: 1e-4, AngleTolerance: 0.25 * stdmath.Pi / 180})
-	props := MeshGeometryProperties(mesh)
-	mm, mskew := centroidalMoments(mesh, props)
+	props := query.MeshGeometryProperties(mesh)
+	mm, mskew := query.CentroidalMoments(mesh, props)
 	for i := range am {
-		if !relClose(am[i], mm[i], tol) {
+		if !query.RelClose(am[i], mm[i], tol) {
 			t.Errorf("principal moment %d: analytic %v vs mesh %v (tol %g)", i, am[i], mm[i], tol)
 		}
 	}
@@ -155,15 +157,15 @@ func TestSignatureInterchangeableAcrossPaths(t *testing.T) {
 	t.Parallel()
 	analytic := tetraSolid("clean", scaleneVerts)
 	meshed := stitchedTetra(t, "stitch", scaleneVerts)
-	if _, ok := analyticSignature(analytic); !ok {
+	if _, ok := query.AnalyticSignature(analytic); !ok {
 		t.Fatal("clean tetra must take the analytic path")
 	}
-	if _, ok := analyticSignature(meshed); ok {
+	if _, ok := query.AnalyticSignature(meshed); ok {
 		t.Fatal("stitched tetra must DECLINE analytic and take the mesh path")
 	}
-	assertRigidInvariant(t, signatureOf(analytic, DefaultQuality()), signatureOf(meshed, DefaultQuality()))
-	if g := GroupIdenticalBodies([]*topo.Body{analytic, meshed},
-		IdenticalBodiesOptions{MatchReflection: true}, DefaultQuality()); len(g) != 1 {
+	assertRigidInvariant(t, query.SignatureOf(analytic, DefaultQuality()), query.SignatureOf(meshed, DefaultQuality()))
+	if g := query.GroupIdenticalBodies([]*topo.Body{analytic, meshed},
+		query.IdenticalBodiesOptions{MatchReflection: true}, DefaultQuality()); len(g) != 1 {
 		t.Errorf("cross-path congruent bodies groups = %v, want 1", g)
 	}
 }
@@ -176,9 +178,9 @@ func TestCongruentAcrossPathsRotated(t *testing.T) {
 	axis, _ := math.UnitVector3FromVector(math.V3(1, 2, 3))
 	m := math.Rotation4(0.9, axis, math.P3(1, 1, 1)).Mul(math.Translation4(math.V3(7, -4, 2)))
 	meshed := stitchedTetra(t, "stitch", mapVerts(m, scaleneVerts))
-	assertRigidInvariant(t, signatureOf(analytic, DefaultQuality()), signatureOf(meshed, DefaultQuality()))
-	if g := GroupIdenticalBodies([]*topo.Body{analytic, meshed},
-		IdenticalBodiesOptions{MatchReflection: true}, DefaultQuality()); len(g) != 1 {
+	assertRigidInvariant(t, query.SignatureOf(analytic, DefaultQuality()), query.SignatureOf(meshed, DefaultQuality()))
+	if g := query.GroupIdenticalBodies([]*topo.Body{analytic, meshed},
+		query.IdenticalBodiesOptions{MatchReflection: true}, DefaultQuality()); len(g) != 1 {
 		t.Errorf("rigid-motion cross-path copy groups = %v, want 1", g)
 	}
 }
@@ -190,19 +192,19 @@ func TestMirroredTetraFlipsSkewViaAnalytic(t *testing.T) {
 	orig := tetraSolid("orig", scaleneVerts)
 	xNormal, _ := math.UnitVector3FromVector(math.V3(1, 0, 0))
 	mirror := transformed(t, orig, math.Reflection4(math.P3(0, 0, 0), xNormal))
-	so := signatureOf(orig, DefaultQuality())
-	sm := signatureOf(mirror, DefaultQuality())
-	if stdmath.Abs(so.skew+sm.skew) > 1e-6*stdmath.Abs(so.skew) {
-		t.Errorf("mirror skew = %v, want %v (negated original)", sm.skew, -so.skew)
+	so := query.SignatureOf(orig, DefaultQuality())
+	sm := query.SignatureOf(mirror, DefaultQuality())
+	if stdmath.Abs(so.Skew+sm.Skew) > 1e-6*stdmath.Abs(so.Skew) {
+		t.Errorf("mirror skew = %v, want %v (negated original)", sm.Skew, -so.Skew)
 	}
-	if stdmath.Abs(so.skew) < 1e-3 {
-		t.Fatalf("chiral tetra skew ~0 (%v): mirror test is vacuous", so.skew)
+	if stdmath.Abs(so.Skew) < 1e-3 {
+		t.Fatalf("chiral tetra skew ~0 (%v): mirror test is vacuous", so.Skew)
 	}
 	bodies := []*topo.Body{orig, mirror}
-	if g := GroupIdenticalBodies(bodies, IdenticalBodiesOptions{MatchReflection: true}, DefaultQuality()); len(g) != 1 {
+	if g := query.GroupIdenticalBodies(bodies, query.IdenticalBodiesOptions{MatchReflection: true}, DefaultQuality()); len(g) != 1 {
 		t.Errorf("MatchReflection=true groups = %v, want 1", g)
 	}
-	if g := GroupIdenticalBodies(bodies, IdenticalBodiesOptions{MatchReflection: false}, DefaultQuality()); len(g) != 2 {
+	if g := query.GroupIdenticalBodies(bodies, query.IdenticalBodiesOptions{MatchReflection: false}, DefaultQuality()); len(g) != 2 {
 		t.Errorf("MatchReflection=false groups = %v, want 2", g)
 	}
 }
@@ -218,14 +220,14 @@ func transformed(t *testing.T, b *topo.Body, m math.Matrix4) *topo.Body {
 
 // assertRigidInvariant checks the rotation/translation-invariant signature parts — volume, area and
 // the sorted principal second moments — agree to the signature tolerance.
-func assertRigidInvariant(t *testing.T, a, b bodySignature) {
+func assertRigidInvariant(t *testing.T, a, b query.BodySignature) {
 	t.Helper()
-	if !relClose(a.volume, b.volume, 1e-6) || !relClose(a.area, b.area, 1e-6) {
+	if !query.RelClose(a.Volume, b.Volume, 1e-6) || !query.RelClose(a.Area, b.Area, 1e-6) {
 		t.Errorf("volume/area differ: %+v vs %+v", a, b)
 	}
-	for i := range a.moments {
-		if stdmath.Abs(a.moments[i]-b.moments[i]) > 1e-6*stdmath.Max(a.moments[2], 1e-12) {
-			t.Errorf("principal moment %d differs: %v vs %v", i, a.moments[i], b.moments[i])
+	for i := range a.Moments {
+		if stdmath.Abs(a.Moments[i]-b.Moments[i]) > 1e-6*stdmath.Max(a.Moments[2], 1e-12) {
+			t.Errorf("principal moment %d differs: %v vs %v", i, a.Moments[i], b.Moments[i])
 		}
 	}
 }

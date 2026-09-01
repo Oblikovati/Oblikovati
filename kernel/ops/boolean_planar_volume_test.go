@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -24,7 +25,7 @@ func planarVolumeCheck(t *testing.T, name string, op ops.PartFeatureOperation, a
 	if r := ops.Validate(res); !r.Valid || !r.Closed || !r.Manifold {
 		t.Errorf("%s: result invalid: %+v", name, r)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	if stdmath.Abs(got-want) > 1e-6+1e-9*want {
 		t.Errorf("%s: volume = %.9f, want %.9f (analytic)", name, got, want)
 	}

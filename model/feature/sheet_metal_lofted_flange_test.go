@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/param"
@@ -56,7 +57,7 @@ func TestLoftedFlangeLoftsTransition(t *testing.T) {
 	if open := ops.BoundaryEdges(body); len(open) != 0 {
 		t.Errorf("lofted flange not watertight: %d boundary edges", len(open))
 	}
-	if v := ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 0 {
 		t.Errorf("lofted flange volume = %g, want positive", v)
 	}
 }

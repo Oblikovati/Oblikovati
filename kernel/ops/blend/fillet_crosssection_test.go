@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
@@ -27,7 +27,7 @@ func filletCross(t *testing.T, cross blend.FilletCrossSection, rho float64) floa
 	if r := validate.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("cross=%s fillet not a valid solid: %+v", cross, r)
 	}
-	return ops.BodyGeometryProperties(res, blend.Quality{ChordTolerance: 1e-3}).Volume
+	return query.BodyGeometryProperties(res, blend.Quality{ChordTolerance: 1e-3}).Volume
 }
 
 // TestFilletG2EdgeIsValidSolid: a G2 cross-section fillet of a box edge builds a watertight solid

@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -149,7 +150,7 @@ func TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial(t *testing.T) {
 	// used to report for the analytic host, so this is the comparison the pre-analytic test was making
 	// all along — the raise is the glyph alone. (Making the emboss keep the analytic host is
 	// Oblikovati/Oblikovati#1601's curved-boolean gap, not this test's subject.)
-	before := ops.BodyGeometryProperties(planarized(fs.Result()[0], "combine-target"), ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(planarized(fs.Result()[0], "combine-target"), ops.DefaultQuality()).Volume
 	cone, key := coneFaceOf(t, fs.Result()[0])
 
 	// Sketch origin mid-band on the chamfer cone (its slant runs ≈14→28); a 1×1 cm raise sits well
@@ -165,7 +166,7 @@ func TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("cone-wrapped emboss is not a valid solid: %+v", r.Issues)
 	}
-	raise := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume - before
+	raise := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume - before
 	if raise < 0.1 || raise > 0.6 {
 		t.Errorf("cone emboss raised %g cm³, want a ~1cm²×0.3cm glyph-sized raise in [0.1, 0.6]", raise)
 	}

@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -56,7 +57,7 @@ func TestUnifyCoplanarMergesTriBox(t *testing.T) {
 	if !r.Valid || !u.IsSolid() || r.EulerCharacteristic != 2 {
 		t.Fatalf("unified box invalid: valid=%v solid=%v χ=%d issues=%v", r.Valid, u.IsSolid(), r.EulerCharacteristic, r.Issues)
 	}
-	if got := ops.BodyGeometryProperties(u, ops.DefaultQuality()).Volume; stdmath.Abs(got-24) > 1e-6 {
+	if got := query.BodyGeometryProperties(u, ops.DefaultQuality()).Volume; stdmath.Abs(got-24) > 1e-6 {
 		t.Errorf("unified box volume = %g, want 24", got)
 	}
 }

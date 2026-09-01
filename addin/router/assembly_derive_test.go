@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -59,7 +60,7 @@ func activePartVolume(t *testing.T, s *app.Session) float64 {
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	v := 0.0
 	for _, b := range def.SurfaceBodies().All() {
-		v += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+		v += query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 	}
 	return v
 }

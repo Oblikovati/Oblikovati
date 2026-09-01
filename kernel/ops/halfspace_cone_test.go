@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -48,7 +49,7 @@ func TestHalfSpaceCutConeBaseSideIsFrustum(t *testing.T) {
 		t.Fatalf("frustum is not a valid closed manifold solid: %+v", v)
 	}
 	coneAndPlaneFaces(t, res)
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := frustumVolume(5, 3, 1.5)
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 		t.Errorf("frustum volume %.4f, want %.4f (analytic) — rel %.4f > 2%%", got, want, rel)
@@ -68,7 +69,7 @@ func TestHalfSpaceCutConeApexSideIsCone(t *testing.T) {
 		t.Fatalf("tip cone is not a valid closed manifold solid: %+v", v)
 	}
 	coneAndPlaneFaces(t, res)
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := frustumVolume(5, 1.5, 0) // a cone is a frustum with one radius zero
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 		t.Errorf("tip cone volume %.4f, want %.4f (analytic) — rel %.4f > 2%%", got, want, rel)
@@ -79,13 +80,13 @@ func TestHalfSpaceCutConeApexSideIsCone(t *testing.T) {
 func TestHalfSpaceCutConeClearsKeepsWhole(t *testing.T) {
 	t.Parallel()
 	cone, _ := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 0, "cone")
-	full := ops.BodyGeometryProperties(cone, ops.DefaultQuality()).Volume
+	full := query.BodyGeometryProperties(cone, ops.DefaultQuality()).Volume
 	plane, _ := geom.NewPlane(math.P3(0, 0, 12), math.V3(0, 0, 1)) // z ≤ 12 ⊇ the whole z∈[0,10] cone
 	res, err := brep.HalfSpaceCut(cone, plane)
 	if err != nil {
 		t.Fatalf("cone ⟂ cut: %v", err)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	if stdmath.Abs(got-full) > 1e-6 {
 		t.Errorf("cleared cone volume %.6f, want %.6f (whole)", got, full)
 	}

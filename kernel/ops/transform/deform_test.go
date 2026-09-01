@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -27,7 +28,7 @@ func TestDeformBodyIdentity(t *testing.T) {
 	if r := ops.Validate(out); !r.Valid {
 		t.Fatalf("identity deform invalid: %v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(out, ops.DefaultQuality()).Volume; stdmath.Abs(v-24) > 1e-6 {
+	if v := query.BodyGeometryProperties(out, ops.DefaultQuality()).Volume; stdmath.Abs(v-24) > 1e-6 {
 		t.Errorf("identity deform volume = %v, want 24", v)
 	}
 }
@@ -45,7 +46,7 @@ func TestDeformBodyShearPreservesVolume(t *testing.T) {
 	if r := ops.Validate(out); !r.Valid {
 		t.Fatalf("sheared box invalid: %v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(out, ops.DefaultQuality()).Volume; stdmath.Abs(v-8) > 1e-6 {
+	if v := query.BodyGeometryProperties(out, ops.DefaultQuality()).Volume; stdmath.Abs(v-8) > 1e-6 {
 		t.Errorf("sheared box volume = %v, want 8 (shear preserves volume)", v)
 	}
 }
@@ -64,7 +65,7 @@ func TestDeformBodyRigidMatchesMove(t *testing.T) {
 	if r := ops.Validate(out); !r.Valid {
 		t.Fatalf("translated box invalid: %v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(out, ops.DefaultQuality()).Volume; stdmath.Abs(v-1) > 1e-6 {
+	if v := query.BodyGeometryProperties(out, ops.DefaultQuality()).Volume; stdmath.Abs(v-1) > 1e-6 {
 		t.Errorf("translated box volume = %v, want 1", v)
 	}
 	if c := out.RangeBox().Center(); stdmath.Abs(c.X-5.5) > 1e-6 || stdmath.Abs(c.Y-(-1.5)) > 1e-6 {

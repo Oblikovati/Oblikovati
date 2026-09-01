@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
@@ -60,7 +61,7 @@ func TestThreadCosmeticOnCylinder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
-	before := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
 	th := NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{FaceKey: cylinderFaceKey(t, cyl), Designation: "M8x1.25", Cut: false})
@@ -69,7 +70,7 @@ func TestThreadCosmeticOnCylinder(t *testing.T) {
 	if !th.Health().OK() {
 		t.Fatalf("cosmetic thread went sick: %+v", th.Health())
 	}
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-before) > 1e-9 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-before) > 1e-9 {
 		t.Errorf("cosmetic thread changed the volume: %.6f → %.6f", before, got)
 	}
 	spec := th.Definition().(*ThreadFeature).Spec()
@@ -164,7 +165,7 @@ func TestThreadDisplayPartialSpan(t *testing.T) {
 // drops (the grooves are real geometry).
 func TestThreadCutModelsRealThreadFast(t *testing.T) {
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.5, 2.0)
-	before := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
 	th := NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{FaceKey: cylinderFaceKey(t, cyl), Designation: "M8x1.25", Cut: true})
@@ -181,7 +182,7 @@ func TestThreadCutModelsRealThreadFast(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("modeled thread not a valid solid: %+v", r)
 	}
-	after := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	if after >= before || after <= 0 {
 		t.Errorf("modeled thread volume %.4f not in (0, %.4f) — grooves should remove material", after, before)
 	}

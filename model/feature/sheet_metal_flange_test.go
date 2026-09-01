@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/param"
@@ -73,7 +74,7 @@ func TestFlangeBuildsWatertightSolid(t *testing.T) {
 	sheetVol := side * side * th
 	bandArea := (math.Pi/2)*th*(r+th/2) + h*th // arc band + straight band
 	want := sheetVol + bandArea*side
-	got := ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-4}).Volume
+	got := query.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-4}).Volume
 	if math.Abs(got-want)/want > 0.03 {
 		t.Errorf("flanged volume = %.4f cm³, want ~%.4f (±3%%)", got, want)
 	}

@@ -6,6 +6,7 @@ import (
 	"math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/query"
 	m "oblikovati.org/math"
 )
 
@@ -25,14 +26,14 @@ func cubeCorners(s float64) []m.Point3 {
 func TestConvexHullCubeExactFaceCountAndVolume(t *testing.T) {
 	t.Parallel()
 	const s = 2.0
-	body, err := ConvexHull(cubeCorners(s), "cube")
+	body, err := query.ConvexHull(cubeCorners(s), "cube")
 	if err != nil {
-		t.Fatalf("ConvexHull: %v", err)
+		t.Fatalf("query.ConvexHull: %v", err)
 	}
 	if nf := len(body.Faces()); nf != 12 {
 		t.Errorf("cube hull has %d triangular faces, want 12 (6 quads)", nf)
 	}
-	if v := BodyGeometryProperties(body, DefaultQuality()).Volume; math.Abs(v-s*s*s) > 1e-9 {
+	if v := query.BodyGeometryProperties(body, DefaultQuality()).Volume; math.Abs(v-s*s*s) > 1e-9 {
 		t.Errorf("cube hull volume = %g, want %g", v, s*s*s)
 	}
 }
@@ -55,14 +56,14 @@ func TestConvexHullStableUnderReordering(t *testing.T) {
 		for i, idx := range order {
 			pts[i] = base[idx]
 		}
-		body, err := ConvexHull(pts, "cube")
+		body, err := query.ConvexHull(pts, "cube")
 		if err != nil {
-			t.Fatalf("order %d: ConvexHull: %v", oi, err)
+			t.Fatalf("order %d: query.ConvexHull: %v", oi, err)
 		}
 		if nf := len(body.Faces()); nf != 12 {
 			t.Errorf("order %d: %d faces, want 12", oi, nf)
 		}
-		if v := BodyGeometryProperties(body, DefaultQuality()).Volume; math.Abs(v-s*s*s) > 1e-9 {
+		if v := query.BodyGeometryProperties(body, DefaultQuality()).Volume; math.Abs(v-s*s*s) > 1e-9 {
 			t.Errorf("order %d: volume %g, want %g", oi, v, s*s*s)
 		}
 	}
@@ -76,9 +77,9 @@ func TestConvexHullNearCoplanarValid(t *testing.T) {
 	pts := cubeCorners(2)
 	// A point just above the centre of the top face (z = 2 + tiny): the hull gains a shallow apex.
 	pts = append(pts, m.P3(1, 1, 2+1e-9))
-	body, err := ConvexHull(pts, "near-coplanar")
+	body, err := query.ConvexHull(pts, "near-coplanar")
 	if err != nil {
-		t.Fatalf("ConvexHull: %v", err)
+		t.Fatalf("query.ConvexHull: %v", err)
 	}
 	if !body.IsSolid() {
 		t.Error("near-coplanar hull is not a solid")
@@ -87,7 +88,7 @@ func TestConvexHullNearCoplanarValid(t *testing.T) {
 		t.Errorf("near-coplanar hull invalid: %+v", r)
 	}
 	// Volume is essentially the cube (the apex adds a negligible sliver).
-	if v := BodyGeometryProperties(body, DefaultQuality()).Volume; math.Abs(v-8) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, DefaultQuality()).Volume; math.Abs(v-8) > 1e-6 {
 		t.Errorf("near-coplanar hull volume = %g, want ~8", v)
 	}
 }

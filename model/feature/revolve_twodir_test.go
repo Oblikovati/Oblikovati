@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -31,7 +32,7 @@ func TestRevolveTwoDirectionalVolume(t *testing.T) {
 		t.Fatalf("two-directional revolve not a valid solid: %+v", r)
 	}
 	want := stdmath.Pi * (4*4 - 2*2) * 2 / 2 // half the 24π washer
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.01 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.01 {
 		t.Errorf("two-directional half washer = %g, want ≈%g (12π)", got, want)
 	}
 }
@@ -72,7 +73,7 @@ func TestRevolveTwoDirectionalFullTurnCollapses(t *testing.T) {
 		t.Fatalf("revolve sick: %+v", pf.Health())
 	}
 	want := stdmath.Pi * (4*4 - 2*2) * 2 // the full 24π washer
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, want) > 0.01 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, want) > 0.01 {
 		t.Errorf("collapsed full revolve = %g, want ≈%g (24π)", got, want)
 	}
 }

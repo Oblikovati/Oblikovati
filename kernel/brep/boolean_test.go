@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -22,7 +23,7 @@ func box(px, py, pz, sx, sy, sz float64) *topo.Body {
 	return subd.ToBody(m, "box")
 }
 
-func vol(b *topo.Body) float64 { return ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume }
+func vol(b *topo.Body) float64 { return query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume }
 
 func checkSolid(t *testing.T, name string, b *topo.Body, want float64) {
 	t.Helper()

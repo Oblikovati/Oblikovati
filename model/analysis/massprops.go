@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -40,7 +41,7 @@ type MassProperties struct {
 
 // qualityFor maps an accuracy level to a tessellation quality for the FALLBACK path only.
 //
-// Mass properties integrate the ANALYTIC B-rep (ops.AnalyticGeometryProperties / AnalyticInertia,
+// Mass properties integrate the ANALYTIC B-rep (query.AnalyticGeometryProperties / AnalyticInertia,
 // M48/C3 #3455/#3453/#3452), so for every body the analytic surface integrals set the accuracy and
 // the result is exact for planar bodies and the analytic primitives — the old inscribed-N-gon
 // deficit (a systematic −π²/(3N²) per curved feature, historically −0.64% against the Inventor
@@ -73,7 +74,7 @@ func MassPropertiesOf(bodies []*topo.Body, densityGCm3 float64, accuracy types.M
 	q := qualityFor(accuracy)
 	var volCm3, areaCm2, cx, cy, cz float64
 	for _, b := range bodies {
-		p := ops.BodyGeometryProperties(b, q)
+		p := query.BodyGeometryProperties(b, q)
 		volCm3 += p.Volume
 		areaCm2 += p.Area
 		cx += float64(p.Centroid.X) * p.Volume

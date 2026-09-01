@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -44,7 +45,7 @@ func TestBooleanCutCylinderAxialSquareHole(t *testing.T) {
 	if cylFaces != 1 {
 		t.Errorf("result has %d cylinder faces, want 1 (the side survived the axial tunnel)", cylFaces)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := stdmath.Pi*r*r*h - (2*a)*(2*a)*h
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 		t.Errorf("cylinder−box volume %.4f, want %.4f (analytic) — rel %.4f > 2%%", got, want, rel)

@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -30,7 +31,7 @@ func analyticUnionVolume(t *testing.T, b *topo.Body) float64 {
 	if open := ops.BoundaryEdges(b); len(open) != 0 {
 		t.Fatalf("union has %d boundary edges, want 0 (watertight)", len(open))
 	}
-	props, ok := ops.AnalyticGeometryProperties(b)
+	props, ok := query.AnalyticGeometryProperties(b)
 	if !ok {
 		t.Fatal("union is not analytically integrable: the boolean fell back to faceted geometry")
 	}

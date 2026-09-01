@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -56,13 +57,13 @@ func boxTopFace(t *testing.T, s *app.Session) (string, math.Point3) {
 // bodyVolume returns the active part body's volume.
 func bodyVolume(t *testing.T, s *app.Session) float64 {
 	t.Helper()
-	return ops.BodyGeometryProperties(activePartBody(t, s), ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(activePartBody(t, s), ops.DefaultQuality()).Volume
 }
 
 // bodyCentroidX returns the active part body's center-of-mass X coordinate.
 func bodyCentroidX(t *testing.T, s *app.Session) float64 {
 	t.Helper()
-	return float64(ops.BodyGeometryProperties(activePartBody(t, s), ops.DefaultQuality()).Centroid.X)
+	return float64(query.BodyGeometryProperties(activePartBody(t, s), ops.DefaultQuality()).Centroid.X)
 }
 
 // drilledBox seeds a fresh 4×3×1 cm box and drills a blind hole on its top face; center is the

@@ -5,7 +5,7 @@ package brep_test
 import (
 	"testing"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -20,7 +20,7 @@ func TestNopMainsSocketHolesCSG(t *testing.T) {
 	}
 	left := prismBody(regularPolygonPoints(math.P3(-0.45, 0, 0), 0.45, 32, 0), -0.05, 0.2, "mains-socket-left")
 	right := prismBody(regularPolygonPoints(math.P3(0.45, 0, 0), 0.45, 32, 0), -0.05, 0.2, "mains-socket-right")
-	aperture, err := ops.ConvexHullOf("mains-socket-aperture", left, right)
+	aperture, err := query.ConvexHullOf("mains-socket-aperture", left, right)
 	if err != nil {
 		t.Fatalf("ConvexHullOf(mains socket aperture): %v", err)
 	}

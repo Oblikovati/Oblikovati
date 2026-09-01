@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	dset "oblikovati.org/kernel/ops/internal/disjoint"
 	"oblikovati.org/math"
 )
 
@@ -20,7 +21,7 @@ func bruteEndpointClusterSnap(pts []math.Point3, tol float64) *boundaryClusters 
 	for i := range pts {
 		for j := i + 1; j < len(pts); j++ {
 			if float64(pts[i].DistanceTo(pts[j])) <= tol {
-				union(cluster, i, j)
+				dset.Union(cluster, i, j)
 			}
 		}
 	}

@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 )
 
@@ -106,7 +107,7 @@ func checkOracle(t *testing.T, dir, name string, want oracleEntry) {
 				t.Errorf("%s: body %d is now fold-free — delete it from knownFolds (#1011)", name, i)
 			}
 		}
-		got += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+		got += query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 	}
 	rel := (got - want.Volume) / want.Volume
 	if rel < 0 {

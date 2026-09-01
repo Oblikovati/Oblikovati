@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -52,7 +53,7 @@ func TestCombineCutsByEveryTool(t *testing.T) {
 		t.Fatalf("multi-tool cut result invalid: %+v", r)
 	}
 	// 8 − two 0.5×2×2 slabs = 8 − 2 − 2 = 4. Cutting by only the first would leave 6.
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
 		t.Errorf("volume after cutting by both tools = %g, want 4 (6 means only one applied)", v)
 	}
 }
@@ -74,11 +75,11 @@ func TestCombineKeepsToolBodies(t *testing.T) {
 		t.Fatalf("keep-tools left %d bodies, want 3 (two tools + the result)", len(res))
 	}
 	for i, b := range res[:2] {
-		if v := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; relErr(v, 2) > 1e-6 {
+		if v := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; relErr(v, 2) > 1e-6 {
 			t.Errorf("kept tool %d volume = %g, want the untouched 2", i, v)
 		}
 	}
-	if v := ops.BodyGeometryProperties(res[2], ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
+	if v := query.BodyGeometryProperties(res[2], ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
 		t.Errorf("keep-tools cut volume = %g, want 4", v)
 	}
 }

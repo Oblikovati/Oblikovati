@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -67,7 +68,7 @@ func TestSculptToolEndToEnd(t *testing.T) {
 	if !body.IsSolid() {
 		t.Error("sculpt of a closed shell should yield a solid")
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-1) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-1) > 1e-6 {
 		t.Errorf("sculpted volume = %g, want 1 (unit cube)", v)
 	}
 }

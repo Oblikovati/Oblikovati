@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	omath "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -67,7 +68,7 @@ func TestRevolveSurfaceOperation(t *testing.T) {
 
 	const r1, r2, h, theta = 2.0, 4.0, 3.0, math.Pi // 180°
 	want := theta*h*(r1+r2) + theta*(r2*r2-r1*r1)   // 30π ≈ 94.25 (OCCT-confirmed formula)
-	got := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Area
+	got := query.BodyGeometryProperties(b, ops.DefaultQuality()).Area
 	if got < 0.90*want || got > 1.02*want {
 		t.Errorf("surface-of-revolution area = %.4f, want ≈ %.4f (analytic; faceted within tolerance)", got, want)
 	}

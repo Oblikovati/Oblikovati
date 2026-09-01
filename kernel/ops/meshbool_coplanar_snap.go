@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/meshbool"
+	"oblikovati.org/kernel/ops/internal/probe"
 )
 
 // Cross-operand coincident-plane reconciliation for reconstruction (ADR-0056 / #2247).
@@ -106,10 +107,10 @@ func crossOperandPlanes(rep []int, refs []faceSurfaceRef, naRefs int) map[int]ra
 // opposite-facing coincident pair (the annihilating interface of a gluing union) groups too.
 func planesShareSurface(a, b geom.Plane, tol float64) bool {
 	na, nb := unit3(a.Normal()), unit3(b.Normal())
-	if absFloat(na.Dot(nb)) < 1-directionTol {
+	if probe.AbsFloat(na.Dot(nb)) < 1-directionTol {
 		return false
 	}
-	return absFloat(a.Origin.VectorTo(b.Origin).Dot(na)) <= tol
+	return probe.AbsFloat(a.Origin.VectorTo(b.Origin).Dot(na)) <= tol
 }
 
 // buildPlaneSnapRemap maps each grouped-face vertex to its exact projection onto the group's
@@ -243,11 +244,4 @@ func ratDot(a, b [3]*big.Rat) *big.Rat {
 
 func ratF(x float64) *big.Rat {
 	return new(big.Rat).SetFloat64(x)
-}
-
-func absFloat(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
 }

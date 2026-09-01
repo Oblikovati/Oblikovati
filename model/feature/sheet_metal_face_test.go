@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
 )
@@ -45,7 +46,7 @@ func TestSheetMetalFaceCreatesWall(t *testing.T) {
 		t.Errorf("wall has %d boundary edges, want 0 (watertight)", len(open))
 	}
 	want := 4.0 * 4.0 * 0.2 // side²·thickness (cm³)
-	if got := ops.BodyGeometryProperties(bodies[0], ops.Quality{ChordTolerance: 1e-4}).Volume; math.Abs(got-want) > 1e-6 {
+	if got := query.BodyGeometryProperties(bodies[0], ops.Quality{ChordTolerance: 1e-4}).Volume; math.Abs(got-want) > 1e-6 {
 		t.Errorf("wall volume = %.6f cm³, want %.6f", got, want)
 	}
 }
@@ -60,14 +61,14 @@ func TestSheetMetalFaceIsParameterBacked(t *testing.T) {
 	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Operation: ops.NewBody})
 
 	fs.Recompute()
-	thin := ops.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-4}).Volume
+	thin := query.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-4}).Volume
 
 	if err := ps.SetExpression(thickness.ID(), "3 mm"); err != nil {
 		t.Fatalf("set Thickness: %v", err)
 	}
 	fs.MarkAllDirty() // a parameter edit invalidates the whole program (as the host does)
 	fs.Recompute()
-	thick := ops.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-4}).Volume
+	thick := query.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-4}).Volume
 
 	if !(thick > thin*2.5) { // 3× thickness ⇒ ~3× volume
 		t.Errorf("thicker gauge did not grow the wall: 1mm=%.4f 3mm=%.4f", thin, thick)
@@ -170,7 +171,7 @@ func TestSheetMetalFaceDirections(t *testing.T) {
 		if len(bodies) != 1 || !bodies[0].IsSolid() {
 			t.Fatalf("direction %d: not a single solid", dir)
 		}
-		if got := ops.BodyGeometryProperties(bodies[0], ops.Quality{ChordTolerance: 1e-4}).Volume; math.Abs(got-want) > 1e-6 {
+		if got := query.BodyGeometryProperties(bodies[0], ops.Quality{ChordTolerance: 1e-4}).Volume; math.Abs(got-want) > 1e-6 {
 			t.Errorf("direction %d: volume = %.6f, want %.6f", dir, got, want)
 		}
 	}

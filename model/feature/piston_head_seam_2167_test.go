@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -74,7 +75,7 @@ func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
 	minorSeg := 0.5 * r * r * (2*theta - stdmath.Sin(2*theta))
 	dArea := stdmath.Pi*r*r - minorSeg
 	analytic := stdmath.Pi*r*r*h1 + dArea*h2
-	if v := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; relErr(v, analytic) > 5e-3 {
+	if v := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; relErr(v, analytic) > 5e-3 {
 		t.Fatalf("piston-head join volume = %g, want %g — faceted, not the analytic union", v, analytic)
 	}
 }

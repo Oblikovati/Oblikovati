@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	stdmath "math"
@@ -351,7 +351,7 @@ func uSpanOf(samples []arcSample) float64 {
 // there for a different reason: a wrong answer is caught by the vector-area closure post-condition,
 // which declines the body rather than shipping it.)
 //
-// Example: p, ok := ops.FaceInteriorPoint(f) // ok ⇒ brep.PointInFaceTrim(f, p)
+// Example: p, ok := query.FaceInteriorPoint(f) // ok ⇒ brep.PointInFaceTrim(f, p)
 func FaceInteriorPoint(f *topo.Face) (math.Point3, bool) {
 	s := f.Geometry()
 	if len(f.Loops()) == 0 {

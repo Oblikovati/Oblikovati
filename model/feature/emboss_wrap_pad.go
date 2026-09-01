@@ -5,6 +5,7 @@ package feature
 import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -21,7 +22,7 @@ func wrappedPadSolid(innerLoop, outerLoop []math.Point3, innerCap, outerCap geom
 	if err != nil {
 		return nil, err
 	}
-	if ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
+	if query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
 		// The cage is consistently wound but inside-out; reversing both loops flips every face's
 		// normal together (the manual analog of sweptSolid's reverseFaces volume flip).
 		return buildWrappedPad(reversedPts(innerLoop), reversedPts(outerLoop), innerCap, outerCap, feat)

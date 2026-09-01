@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -37,7 +38,7 @@ func worldVerticalEdge(t *testing.T, s *Session) EdgeHandle {
 func participantMachinedVolume(asm *compdef.AssemblyComponentDefinition, o *occurrence.Occurrence) float64 {
 	var v float64
 	for _, b := range asm.Features().Result(o) {
-		v += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+		v += query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 	}
 	return v
 }

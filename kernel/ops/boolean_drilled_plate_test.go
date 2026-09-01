@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -58,7 +59,7 @@ func hasCylinderFace(b *topo.Body) bool {
 func TestDrilledPlateIsExact(t *testing.T) {
 	t.Parallel()
 	slab := slabBody(t)
-	v0 := ops.BodyGeometryProperties(slab, ops.DefaultQuality()).Volume
+	v0 := query.BodyGeometryProperties(slab, ops.DefaultQuality()).Volume
 	const r = 1.5
 
 	res, err := ops.Boolean(ops.Cut, slab, throughRod(t, 0, 0, r))
@@ -71,7 +72,7 @@ func TestDrilledPlateIsExact(t *testing.T) {
 	if !hasCylinderFace(res) {
 		t.Error("drilled plate has no geom.Cylinder face — the hole wall fell back to a faceted prism (CSG)")
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := v0 - stdmath.Pi*r*r*6 // slab − πr²·thickness, exact
 	// The analytic hole is exact; only the tessellation of the curved wall for the volume integral carries
 	// chord error, well under 1% at DefaultQuality. A CSG faceted hole would miss by the inscribed-polygon

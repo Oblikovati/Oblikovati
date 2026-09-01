@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -71,7 +72,7 @@ func TestFaceFilletRoundsSharedEdge(t *testing.T) {
 	}
 	notch := func(r float64) float64 { return r*r - stdmath.Pi*r*r/4 } // cross-section removed per unit length
 	want := 8 - notch(0.3)*2                                           // one edge of length 2
-	if got := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, want) > 1e-3 {
+	if got := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, want) > 1e-3 {
 		t.Errorf("face fillet volume = %g, want ≈ %g", got, want)
 	}
 }
@@ -102,7 +103,7 @@ func TestFaceFilletNonAdjacentHealsAndRounds(t *testing.T) {
 		t.Error("non-adjacent face fillet produced no cylindrical face")
 	}
 	want := 64 - (1*1-stdmath.Pi/4)*4 // full box minus the quarter-round notch, length 4
-	if got := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, want) > 2e-3 {
+	if got := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, want) > 2e-3 {
 		t.Errorf("non-adjacent face fillet volume = %g, want ≈ %g", got, want)
 	}
 }
@@ -201,5 +202,5 @@ func faceFilletVolume(t *testing.T, set func(*FaceFilletDefinition)) float64 {
 	if !pf.Health().OK() {
 		t.Fatalf("face fillet sick: %+v", pf.Health())
 	}
-	return ops.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-4}).Volume
+	return query.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-4}).Volume
 }

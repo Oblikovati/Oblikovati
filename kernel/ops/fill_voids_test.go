@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -15,14 +16,14 @@ import (
 func TestFillInternalVoidsRemovesCavity(t *testing.T) {
 	t.Parallel()
 	body := cavityBody(t)
-	if v := BodyGeometryProperties(body, DefaultQuality()).Volume; stdmath.Abs(v-56) > 0.1 {
+	if v := query.BodyGeometryProperties(body, DefaultQuality()).Volume; stdmath.Abs(v-56) > 0.1 {
 		t.Fatalf("fixture volume = %g, want 56 (4³ minus 2³ cavity)", v)
 	}
 	filled := FillInternalVoids(body, DefaultQuality())
 	if got := len(filled.Shells()); got != 1 {
 		t.Fatalf("filled body has %d shells, want 1 (void removed)", got)
 	}
-	if v := BodyGeometryProperties(filled, DefaultQuality()).Volume; stdmath.Abs(v-64) > 0.1 {
+	if v := query.BodyGeometryProperties(filled, DefaultQuality()).Volume; stdmath.Abs(v-64) > 0.1 {
 		t.Errorf("filled volume = %g, want 64 (cavity filled to solid 4³)", v)
 	}
 	if r := Validate(filled); !r.Valid {

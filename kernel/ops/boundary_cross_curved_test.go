@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/query"
 	m "oblikovati.org/math"
 )
 
 // These regressions exercise the ANALYTIC boundary-crossing guard (boundary_cross.go, #3423) on CURVED
 // faces. The existing #1315 regression (TestClassifyNonConvexVertexInsideButBoundaryCrosses) only covers
-// planar crossings; boundariesCross now intersects true cylinder/plane surface pairs via
+// planar crossings; query.BoundariesCross now intersects true cylinder/plane surface pairs via
 // geom.SurfaceIntersect + brep.PointInFaceTrim, so a curved case must prove both verdicts.
 //
 // A cylinder (not a sphere) is the inner curved solid: brep.SolidSphere is a boundary-less single face
@@ -35,8 +36,8 @@ func TestBoundariesCrossCurvedContainedIsFalse(t *testing.T) {
 	if !allVerticesInside(inner, outer) {
 		t.Fatal("test premise broken: not all cylinder vertices are inside the box")
 	}
-	if boundariesCross(outer, inner) {
-		t.Error("boundariesCross = true, want false (the cylinder is fully interior; no face touches a wall)")
+	if query.BoundariesCross(outer, inner) {
+		t.Error("query.BoundariesCross = true, want false (the cylinder is fully interior; no face touches a wall)")
 	}
 	if rel := classify(outer, inner); rel != targetContainsTool {
 		t.Errorf("classify = %v, want targetContainsTool (curved contains fast-path)", rel)
@@ -60,8 +61,8 @@ func TestBoundariesCrossCurvedStraddleIsTrue(t *testing.T) {
 	}
 	// The top rim vertex is at x=12 (outside), so this is not a candidate-containment pair: the guard is
 	// asserted directly, and classify falls through to intersecting.
-	if !boundariesCross(outer, inner) {
-		t.Error("boundariesCross = false, want true (the cylinder side pierces the x=10 wall)")
+	if !query.BoundariesCross(outer, inner) {
+		t.Error("query.BoundariesCross = false, want true (the cylinder side pierces the x=10 wall)")
 	}
 	if rel := classify(outer, inner); rel != intersecting {
 		t.Errorf("classify = %v, want intersecting (the cylinder straddles a wall)", rel)

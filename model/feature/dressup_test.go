@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
@@ -43,7 +44,7 @@ func TestChamferBevelsEdgeForReal(t *testing.T) {
 		t.Fatalf("chamfered body not a valid solid: %+v", r)
 	}
 	want := 8 - 0.5*0.5*0.5*2 // box 8 − wedge (½·d²·length, d=0.5, length=2) = 7.75
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("chamfer volume = %g, want %g", got, want)
 	}
 }
@@ -75,7 +76,7 @@ func TestChamferAllFourVerticalEdges(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("octagonal prism not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 7) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 7) > 1e-6 {
 		t.Errorf("four-edge chamfer volume = %g, want 7", got)
 	}
 }
@@ -213,8 +214,8 @@ func TestChamferFlatCornerBlendsThreeEdges(t *testing.T) {
 	if hasFlatCornerFace(pointy) {
 		t.Error("pointy chamfer unexpectedly produced a flat triangular corner face")
 	}
-	volFlat := ops.BodyGeometryProperties(flat, ops.DefaultQuality()).Volume
-	volPointy := ops.BodyGeometryProperties(pointy, ops.DefaultQuality()).Volume
+	volFlat := query.BodyGeometryProperties(flat, ops.DefaultQuality()).Volume
+	volPointy := query.BodyGeometryProperties(pointy, ops.DefaultQuality()).Volume
 	if volFlat >= volPointy {
 		t.Errorf("flat corner volume %g should be less than pointy %g (it trims the tip)", volFlat, volPointy)
 	}
@@ -309,8 +310,8 @@ func TestChamferFlatCornerBlendsAsymmetric(t *testing.T) {
 	if got := cornerBlendFaces(pointy); got != 0 {
 		t.Errorf("asymmetric pointy corner produced %d triangular blend faces, want 0", got)
 	}
-	volFlat := ops.BodyGeometryProperties(flat, ops.DefaultQuality()).Volume
-	volPointy := ops.BodyGeometryProperties(pointy, ops.DefaultQuality()).Volume
+	volFlat := query.BodyGeometryProperties(flat, ops.DefaultQuality()).Volume
+	volPointy := query.BodyGeometryProperties(pointy, ops.DefaultQuality()).Volume
 	if volFlat >= volPointy {
 		t.Errorf("flat asymmetric corner volume %g should be less than pointy %g (it trims the tip)", volFlat, volPointy)
 	}
@@ -345,7 +346,7 @@ func TestFilletRoundsEdgeForReal(t *testing.T) {
 		t.Fatalf("filleted body not a valid solid: %+v", r)
 	}
 	want := 8 - (0.5*0.5-stdmath.Pi*0.25*0.25)*2
-	if got := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, want) > 1e-3 {
+	if got := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, want) > 1e-3 {
 		t.Errorf("fillet volume = %g, want ≈ %g", got, want)
 	}
 }
@@ -424,7 +425,7 @@ func TestDraftTapersFaceForReal(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("drafted body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 7) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 7) > 1e-6 {
 		t.Errorf("draft volume = %g, want 7", got)
 	}
 }
@@ -451,7 +452,7 @@ func TestShellHollowsRunningBodyForReal(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("shelled body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 64-3*3*3.5) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 64-3*3*3.5) > 1e-6 {
 		t.Errorf("shell volume = %g, want %g", got, 64-3*3*3.5)
 	}
 }

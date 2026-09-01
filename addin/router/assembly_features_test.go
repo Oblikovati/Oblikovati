@@ -12,6 +12,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -42,7 +43,7 @@ func assemblySessionWithBoxes(t *testing.T, xs ...float64) (*Router, *app.Sessio
 func featureResultVolume(asm *compdef.AssemblyComponentDefinition, o *occurrence.Occurrence) float64 {
 	v := 0.0
 	for _, b := range asm.Features().Result(o) {
-		v += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+		v += query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 	}
 	return v
 }
@@ -288,7 +289,7 @@ func TestAssemblySetSuppressedOverWire(t *testing.T) {
 func pathResultVolume(asm *compdef.AssemblyComponentDefinition, path occurrence.OccurrencePath) float64 {
 	v := 0.0
 	for _, b := range asm.Features().ResultPath(path) {
-		v += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+		v += query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 	}
 	return v
 }

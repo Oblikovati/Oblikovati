@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -36,8 +37,8 @@ func TestGeometricEdgeFilletBindsAndRounds(t *testing.T) {
 	if len(res) != 1 {
 		t.Fatalf("result has %d bodies, want 1", len(res))
 	}
-	boxVol := ops.BodyGeometryProperties(geomRefBox(), ops.DefaultQuality()).Volume
-	gotVol := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume
+	boxVol := query.BodyGeometryProperties(geomRefBox(), ops.DefaultQuality()).Volume
+	gotVol := query.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume
 	if !(gotVol < boxVol) {
 		t.Errorf("fillet did not reduce volume: got %g, box %g", gotVol, boxVol)
 	}

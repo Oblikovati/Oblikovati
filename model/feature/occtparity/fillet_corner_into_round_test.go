@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // cornerIntoRoundCases are corner-into-round cases (a planar-hosted cylinder fillet whose endpoint
@@ -49,7 +50,7 @@ func TestCornerIntoRoundBuildsValidSolid(t *testing.T) {
 		if rep := ops.Validate(res[0]); !rep.Valid || !rep.Closed || !rep.Manifold || !res[0].IsSolid() {
 			t.Errorf("%s (%s round): not a valid closed manifold solid: %+v", r.Case, round, rep)
 		}
-		if v := ops.BodyGeometryProperties(res[0], ops.PropertyQuality()).Volume; v <= 0 {
+		if v := query.BodyGeometryProperties(res[0], ops.PropertyQuality()).Volume; v <= 0 {
 			t.Errorf("%s (%s round): enclosed volume %.4f is not positive", r.Case, round, v)
 		}
 	}

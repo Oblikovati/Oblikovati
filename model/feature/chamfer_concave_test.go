@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -63,7 +64,7 @@ func TestChamferConcaveOutwardFills(t *testing.T) {
 	const d = 0.4
 	res := chamferedConcave(t, d, types.ChamferConcaveOutward)
 	want := 3 + 0.5*d*d // L volume 3 + triangular fill ½·d·d·length(1)
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("outward concave chamfer volume = %g, want %g (notch should be filled)", got, want)
 	}
 }
@@ -75,7 +76,7 @@ func TestChamferConcaveInwardRelieves(t *testing.T) {
 	const d = 0.4
 	res := chamferedConcave(t, d, types.ChamferConcaveInward)
 	want := 3 - 0.5*d*d // L volume 3 − triangular relief ½·d·d·length(1)
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("inward concave chamfer volume = %g, want %g (corner should be relieved)", got, want)
 	}
 }
@@ -95,7 +96,7 @@ func TestChamferConcaveOutwardIsDefault(t *testing.T) {
 	}
 	res := fs.Result()[0]
 	want := 3 + 0.5*d*d
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("default concave chamfer volume = %g, want %g (default must fill outward)", got, want)
 	}
 }

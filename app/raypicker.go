@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -451,7 +452,7 @@ func (p *RayPicker) nearestFace(origin math.Point3, dir math.Vector3) (*topo.Fac
 	var hitBody *topo.Body
 	best := stdmath.Inf(1)
 	for _, b := range p.candidateBodies(origin, dir) {
-		if f, t, ok := ops.RayCastFaces(b, origin, dir, ops.DefaultQuality()); ok && t < best {
+		if f, t, ok := query.RayCastFaces(b, origin, dir, ops.DefaultQuality()); ok && t < best {
 			best, hitFace, hitBody = t, f, b
 		}
 	}

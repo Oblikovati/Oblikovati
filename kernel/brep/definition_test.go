@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -58,7 +59,7 @@ func TestCompileDefinitionTetra(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !r.Closed {
 		t.Fatalf("compiled tetra invalid: %+v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
 		t.Errorf("compiled tetra volume = %g, want 1/6", v)
 	}
 	if len(body.Vertices()) != 4 || len(body.Edges()) != 6 || len(body.Faces()) != 4 {

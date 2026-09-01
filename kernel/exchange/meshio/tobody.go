@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 )
@@ -69,7 +70,7 @@ func nonManifoldEdgeCount(r ops.ValidationReport) int {
 // volume is not used to flip it.
 func orientedBody(cage subd.Mesh, feat string) *topo.Body {
 	body := subd.ToBody(cage, feat)
-	if body.IsSolid() && ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
+	if body.IsSolid() && query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
 		return subd.ToBody(reverseFaces(cage), feat)
 	}
 	return body

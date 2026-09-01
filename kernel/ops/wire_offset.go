@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -187,24 +188,13 @@ func (s *wireSeg) tangentAt(f float64) math.Vector2 {
 	case wsPoly:
 		pts := s.poly
 		if f == 0 {
-			return unit2(pts[0].VectorTo(pts[1]))
+			return probe.Unit2(pts[0].VectorTo(pts[1]))
 		}
-		return unit2(pts[len(pts)-2].VectorTo(pts[len(pts)-1]))
+		return probe.Unit2(pts[len(pts)-2].VectorTo(pts[len(pts)-1]))
 	default:
-		return unit2(s.a.VectorTo(s.b))
+		return probe.Unit2(s.a.VectorTo(s.b))
 	}
 }
-
-func unit2(v math.Vector2) math.Vector2 {
-	l := float64(v.Length())
-	if l == 0 {
-		return v
-	}
-	return v.Scale(math.Scalar(1 / l))
-}
-
-// perpLeft rotates a direction 90° counterclockwise — the positive-offset side.
-func perpLeft(v math.Vector2) math.Vector2 { return math.V2(-v.Y, v.X) }
 
 // wireSegments2D converts the wire's oriented edges into 2D segs.
 func wireSegments2D(w *topo.Wire, pl wirePlane) ([]wireSeg, error) {
@@ -292,7 +282,7 @@ func offsetSegments(segs []wireSeg, d, tol float64) ([]wireSeg, error) {
 func offsetSegment(s wireSeg, d, tol float64) (wireSeg, error) {
 	switch s.kind {
 	case wsLine:
-		shift := perpLeft(unit2(s.a.VectorTo(s.b))).Scale(math.Scalar(d))
+		shift := probe.PerpLeft(probe.Unit2(s.a.VectorTo(s.b))).Scale(math.Scalar(d))
 		return wireSeg{kind: wsLine, a: s.a.TranslateBy(shift), b: s.b.TranslateBy(shift)}, nil
 	case wsArc:
 		r := s.r - d
@@ -327,12 +317,12 @@ func polyOffsetDir(pts []math.Point2, i int, d float64) math.Vector2 {
 	last := len(pts) - 1
 	switch i {
 	case 0:
-		return perpLeft(unit2(pts[0].VectorTo(pts[1]))).Scale(math.Scalar(d))
+		return probe.PerpLeft(probe.Unit2(pts[0].VectorTo(pts[1]))).Scale(math.Scalar(d))
 	case last:
-		return perpLeft(unit2(pts[last-1].VectorTo(pts[last]))).Scale(math.Scalar(d))
+		return probe.PerpLeft(probe.Unit2(pts[last-1].VectorTo(pts[last]))).Scale(math.Scalar(d))
 	}
-	n1 := perpLeft(unit2(pts[i-1].VectorTo(pts[i])))
-	n2 := perpLeft(unit2(pts[i].VectorTo(pts[i+1])))
+	n1 := probe.PerpLeft(probe.Unit2(pts[i-1].VectorTo(pts[i])))
+	n2 := probe.PerpLeft(probe.Unit2(pts[i].VectorTo(pts[i+1])))
 	bis := n1.Add(n2)
 	denom := 1 + float64(n1.Dot(n2))
 	if denom < 1.0/8 { // miter longer than 4|d| → bevel via plain average

@@ -6,14 +6,15 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
 // BenchmarkLocateEdgeBSplineStrip measures the per-pick cost of edge picking a high-aspect B-spline
-// panel — the #2010 hot path. LocateUsingPoint(kind=KindEdge) runs closerEdge → discretizeEdge →
+// panel — the #2010 hot path. query.LocateUsingPoint(kind=KindEdge) runs closerEdge → discretizeEdge →
 // densifyStarvedRail → starvedEdgeTarget for every edge every call, and UNLIKE curved-face picking
-// (RayCastFaces, memoized wholesale by pickTess) it has NO whole-face memo, so before this fix each
+// (query.RayCastFaces, memoized wholesale by pickTess) it has NO whole-face memo, so before this fix each
 // pick re-ran tessellate.MetricScale (~25 DerivativesAt per incident B-spline face) on both starved rails every
 // frame. With faceMetricScale the metric is computed once per face lifetime and every subsequent pick
 // reuses it. This benchmark lives in package ops (not the ops_test pick_bench_test.go beside
@@ -29,7 +30,7 @@ func BenchmarkLocateEdgeBSplineStrip(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, ok := LocateUsingPoint(body, topo.KindEdge, p, 1.0, q); !ok {
+		if _, ok := query.LocateUsingPoint(body, topo.KindEdge, p, 1.0, q); !ok {
 			b.Fatal("edge pick missed the rail it is aimed at")
 		}
 	}

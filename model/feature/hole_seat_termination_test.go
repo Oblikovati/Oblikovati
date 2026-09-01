@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -72,7 +73,7 @@ func TestClearanceHoleDrivesTheBore(t *testing.T) {
 	// geom.Plane:7) and mass properties integrate it analytically (M48/C3 #3453), so the exact
 	// answer is πr²·depth — the 32-gon area this used to expect was the old mesh's approximation.
 	want := 32 - stdmath.Pi*(0.7/2)*(0.7/2)*1
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("clearance-bored volume = %g, want %g (Ø7 mm free fit, not the zero Diameter)", got, want)
 	}
 }
@@ -107,7 +108,7 @@ func seatedHoleVolume(t *testing.T, seat HoleType) float64 {
 	if !hole.Health().OK() {
 		t.Fatalf("seat %v sick: %+v", seat, hole.Health())
 	}
-	return ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
 }
 
 // TestTapIsOrthogonalToTheSeat: in Inventor the seat (drilled/counterbore/countersink/spotface) and
@@ -210,7 +211,7 @@ func terminatedHoleVolume(t *testing.T, set func(*HoleDefinition)) float64 {
 	if !hole.Health().OK() {
 		t.Fatalf("terminated hole sick: %+v", hole.Health())
 	}
-	return ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
 }
 
 // holeStopPlane is a plane parallel to the block's top face at height z — square to a bore drilled

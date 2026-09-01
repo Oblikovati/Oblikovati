@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
@@ -131,7 +132,7 @@ func TestSculptDirectedFillsVolume(t *testing.T) {
 	if !body.IsSolid() {
 		t.Fatal("directed sculpt should fill a solid")
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; !approxEq(v, 1) {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; !approxEq(v, 1) {
 		t.Errorf("directed sculpt volume = %g, want 1 (unit cube)", v)
 	}
 }

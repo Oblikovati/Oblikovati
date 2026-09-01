@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
@@ -95,7 +96,7 @@ func TestCrossingCylinderCutIsSeamIndependent(t *testing.T) {
 		if r := validate.Validate(body); !r.Valid || !body.IsSolid() {
 			t.Fatalf("φ=%g°: not a valid solid: %+v", deg, r.Issues)
 		}
-		got := ops.BodyGeometryProperties(body, tessellate.PropertyQuality()).Volume
+		got := query.BodyGeometryProperties(body, tessellate.PropertyQuality()).Volume
 		if rel := stdmath.Abs(got-want) / want; rel > 1e-3 {
 			t.Errorf("φ=%g°: volume %.6f, want %.6f (rel %+.4f) — the bore straddles the disk's seam (#2038)",
 				deg, got, want, (got-want)/want)
@@ -152,7 +153,7 @@ func TestCrossingCylinderBooleanStaysExactAtScale(t *testing.T) {
 				k, n, len(body.Faces()))
 		}
 		want := stdmath.Pi*25*k*k*0.4*k - stdmath.Pi*0.15*0.15*k*k*10*k
-		got := ops.BodyGeometryProperties(body, tessellate.PropertyQuality()).Volume
+		got := query.BodyGeometryProperties(body, tessellate.PropertyQuality()).Volume
 		if rel := stdmath.Abs(got-want) / want; rel > 1e-3 {
 			t.Errorf("k=%v: volume %.6f, want %.6f (rel %+.4f)", k, got, want, (got-want)/want)
 		}

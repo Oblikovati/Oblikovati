@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	m "oblikovati.org/math"
@@ -23,7 +24,7 @@ func sphereVolume(r float64) float64 { return 4.0 / 3.0 * math.Pi * r * r * r }
 // meshVolumeAt integrates the TESSELLATED body at q.
 //
 // The volume tests below are about the tessellated integrator's orientation handling
-// (#1318: a flipped saddle facet on a coarse sphere). BodyGeometryProperties now answers
+// (#1318: a flipped saddle facet on a coarse sphere). query.BodyGeometryProperties now answers
 // a sphere or torus ANALYTICALLY and consults q only for a fallback these bodies never
 // take (M48/C3, #3453), so routing them through it made every assertion here vacuous —
 // the volume came back bit-identical at every quality.
@@ -34,7 +35,7 @@ func sphereVolume(r float64) float64 { return 4.0 / 3.0 * math.Pi * r * r * r }
 func meshVolumeAt(t *testing.T, b *topo.Body, q Quality) float64 {
 	t.Helper()
 	mesh, _ := tessellate.TessellateBody(b, q)
-	return MeshGeometryProperties(mesh).Volume
+	return query.MeshGeometryProperties(mesh).Volume
 }
 
 // TestCoarseSphereVolumeConvergesMonotonically tessellates a sphere at successively finer qualities
@@ -83,14 +84,14 @@ func TestCoarseSphereVolumeConvergesMonotonically(t *testing.T) {
 }
 
 // assertAnalyticVolumeIgnoresQuality pins what replaced the convergence above:
-// BodyGeometryProperties integrates the analytic B-rep, so a sphere's volume is EXACT at
+// query.BodyGeometryProperties integrates the analytic B-rep, so a sphere's volume is EXACT at
 // every quality rather than converging toward exactness. That is the stronger contract,
 // and stating it here keeps the two meters distinguishable — which is precisely why the
 // convergence assertion had to move off this entry point.
 func assertAnalyticVolumeIgnoresQuality(t *testing.T, sphere *topo.Body, want float64, qualities []Quality) {
 	t.Helper()
 	for i, q := range qualities {
-		got := BodyGeometryProperties(sphere, q).Volume
+		got := query.BodyGeometryProperties(sphere, q).Volume
 		if rel := math.Abs(got-want) / want; rel > 1e-12 {
 			t.Errorf("q[%d]: analytic volume %.17g vs exact %.17g (rel %.3g) — the analytic path must not "+
 				"depend on tessellation quality", i, got, want, rel)
@@ -162,8 +163,8 @@ func TestSolidSphereInertiaIsotropic(t *testing.T) {
 		t.Fatalf("SolidSphere: %v", err)
 	}
 	q := Quality{ChordTolerance: 0.01, AngleTolerance: 3 * math.Pi / 180}
-	it := BodyInertia(sphere, q)
-	v := BodyGeometryProperties(sphere, q).Volume
+	it := query.BodyInertia(sphere, q)
+	v := query.BodyGeometryProperties(sphere, q).Volume
 	want := 0.4 * v * r * r
 	tol := want * 5e-3
 	for _, c := range []struct {
@@ -226,7 +227,7 @@ func inconsistentCubeMesh(s float64) *Mesh {
 func TestInconsistentlyWoundMeshVolumeMagnitude(t *testing.T) {
 	const s = 2.0
 	mesh := inconsistentCubeMesh(s)
-	gp := MeshGeometryProperties(mesh)
+	gp := query.MeshGeometryProperties(mesh)
 	want := s * s * s
 	if math.Abs(gp.Volume-want) > 1e-9 {
 		t.Errorf("volume = %g, want %g (topological orientation failed on inconsistent input)", gp.Volume, want)

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -40,7 +41,7 @@ func TestLipRaisesBeadAlongTopEdge(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("lip body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; got <= base {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; got <= base {
 		t.Errorf("lip volume = %g, want > %g (lip adds material)", got, base)
 	}
 }
@@ -68,7 +69,7 @@ func TestLipGrooveCutsAlongTopEdge(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("groove body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; got >= 8.0 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; got >= 8.0 {
 		t.Errorf("groove volume = %g, want < 8 (groove removes material)", got)
 	}
 }

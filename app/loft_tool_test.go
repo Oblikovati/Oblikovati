@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -91,7 +92,7 @@ func TestLoftToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("lofted body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 140.0/3) > 0.02 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 140.0/3) > 0.02 {
 		t.Errorf("frustum volume = %g, want ≈46.667", got)
 	}
 	if s.ActiveTool() != nil {
@@ -194,7 +195,7 @@ func TestLoftToolPointSectionCone(t *testing.T) {
 		t.Fatalf("cone body not a valid solid: %+v", r)
 	}
 	want := stdmath.Pi * 4 / 3 * 4 // πr²h/3, r=2 h=4
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.03 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.03 {
 		t.Errorf("cone volume = %g, want ≈%g", got, want)
 	}
 }
@@ -354,7 +355,7 @@ func TestLoftToolCenterlineBends(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("centerlined loft not a valid solid: %+v", r)
 	}
-	if cx := float64(ops.BodyGeometryProperties(body, ops.DefaultQuality()).Centroid.X); cx < 0.5 {
+	if cx := float64(query.BodyGeometryProperties(body, ops.DefaultQuality()).Centroid.X); cx < 0.5 {
 		t.Errorf("loft did not bend along the centerline: centroid x = %.3f, want > 0.5", cx)
 	}
 }

@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -68,7 +69,7 @@ func TestChamferTwoDistancesAsymmetric(t *testing.T) {
 		t.Fatalf("two-distance chamfer not a valid solid: %+v", r)
 	}
 	want := 8 - 0.5*0.3*0.6*2 // box 8 − asymmetric wedge ½·d1·d2·length
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("two-distance chamfer volume = %g, want %g", got, want)
 	}
 	ds := cornerSetbacks(res)
@@ -100,7 +101,7 @@ func TestChamferDistanceAngle(t *testing.T) {
 	}
 	d2 := d * stdmath.Tan(angle)
 	want := 8 - 0.5*d*d2*2
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("distance-angle chamfer volume = %g, want %g (d2=%g)", got, want, d2)
 	}
 }
@@ -226,7 +227,7 @@ func TestPartialChamferBevelsOnlyItsSpan(t *testing.T) {
 		t.Fatalf("partial chamfer not a valid solid: %+v", r)
 	}
 	want := 8 - 0.5*0.4*0.4*1.0 // the wedge over ONE cm of the 2 cm edge, not the whole of it
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("partial chamfer volume = %g, want %g (the span, exactly — no overhang past it)", got, want)
 	}
 }

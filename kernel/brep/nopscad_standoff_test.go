@@ -5,14 +5,14 @@ package brep_test
 import (
 	"testing"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
 func TestNopStandoffCSG(t *testing.T) {
 	t.Parallel()
 	post := prismBody(regularPolygonPoints(math.P3(0, 0, 0), 0.25, 48, 0), 0, 1.2, "standoff-post")
-	capsule, err := ops.ConvexHull(standoffSphereSamples(0.18, -0.06, 1.56), "standoff-capsule")
+	capsule, err := query.ConvexHull(standoffSphereSamples(0.18, -0.06, 1.56), "standoff-capsule")
 	if err != nil {
 		t.Fatalf("ConvexHull(standoff capsule): %v", err)
 	}

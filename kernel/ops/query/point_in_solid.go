@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	stdmath "math"
@@ -37,7 +37,7 @@ func signedSolidAngle(p, a, b, c math.Point3) float64 {
 	return geom.SignedSolidAngle(p, a, b, c)
 }
 
-// pointInMesh reports whether p lies inside the solid bounded by an outward-oriented mesh, by
+// PointInMesh reports whether p lies inside the solid bounded by an outward-oriented mesh, by
 // thresholding the generalized winding number.
 //
 // It has NO production caller: every topological inside/outside decision now uses the analytic
@@ -45,6 +45,6 @@ func signedSolidAngle(p, a, b, c math.Point3) float64 {
 // kept as an INDEPENDENT test oracle — the certification suites cross-check the analytic classifier and
 // the exact boolean against this mesh winding number, so it must stay a separate implementation (a test
 // that checked the analytic classifier against itself would prove nothing).
-func pointInMesh(mesh *Mesh, p math.Point3) bool {
+func PointInMesh(mesh *Mesh, p math.Point3) bool {
 	return windingNumber(mesh, p) > pointInsideWindingThreshold
 }

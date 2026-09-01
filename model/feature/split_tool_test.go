@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -31,7 +32,7 @@ func solidVolumes(fs *PartFeatures) []float64 {
 	var out []float64
 	for _, b := range fs.Result() {
 		if b.IsSolid() {
-			out = append(out, ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume)
+			out = append(out, query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume)
 		}
 	}
 	return out

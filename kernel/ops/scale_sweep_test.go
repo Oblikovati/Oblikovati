@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -48,7 +49,7 @@ func TestScaleSweepInvariance(t *testing.T) {
 		if open := ops.BoundaryEdges(body); len(open) != 0 {
 			t.Fatalf("%s: %d boundary edges, want 0 (watertight)", sc.name, len(open))
 		}
-		vol := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+		vol := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 		got[i] = sig{len(body.Faces()), len(body.Edges()), len(body.Vertices()), vol / (sc.s * sc.s * sc.s)}
 	}
 
@@ -150,7 +151,7 @@ func TestFarFromOriginDrilledPlateWatertight(t *testing.T) {
 		if !hasCylinderFace(drilled) {
 			t.Errorf("off %g: hole wall is not an analytic cylinder — the cut demoted to CSG far from origin", off)
 		}
-		if v := ops.BodyGeometryProperties(drilled, ops.DefaultQuality()).Volume; stdmath.Abs(v-wantVol)/wantVol > 0.01 {
+		if v := query.BodyGeometryProperties(drilled, ops.DefaultQuality()).Volume; stdmath.Abs(v-wantVol)/wantVol > 0.01 {
 			t.Errorf("off %g: volume %.4f, want %.4f within 1%%", off, v, wantVol)
 		}
 	}

@@ -336,3 +336,21 @@ func Unit(v math.Vector3) math.Vector3 {
 	}
 	return v
 }
+
+func AbsFloat(x float64) float64 {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+// perpLeft rotates a direction 90° counterclockwise — the positive-offset side.
+func PerpLeft(v math.Vector2) math.Vector2 { return math.V2(-v.Y, v.X) }
+
+func Unit2(v math.Vector2) math.Vector2 {
+	l := float64(v.Length())
+	if l == 0 {
+		return v
+	}
+	return v.Scale(math.Scalar(1 / l))
+}

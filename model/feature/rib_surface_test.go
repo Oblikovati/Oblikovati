@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -27,7 +28,7 @@ func TestRibSurfaceMakesOpenSheet(t *testing.T) {
 		}
 		return fs.Result()[0]
 	}
-	area := func(b *topo.Body) float64 { return ops.BodyGeometryProperties(b, ops.DefaultQuality()).Area }
+	area := func(b *topo.Body) float64 { return query.BodyGeometryProperties(b, ops.DefaultQuality()).Area }
 
 	sheet, solid := mk(ops.Surface), mk(ops.NewBody)
 	if sheet.IsSolid() {

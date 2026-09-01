@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -66,7 +67,7 @@ func revolvedGroovedWasherVolumes(t *testing.T, sk *sketch.Sketch) (mesh, pappus
 	if err != nil {
 		t.Fatalf("resolve profile: %v", err)
 	}
-	return ops.BodyGeometryProperties(res[0], ops.PropertyQuality()).Volume, pappusVolume(prof)
+	return query.BodyGeometryProperties(res[0], ops.PropertyQuality()).Volume, pappusVolume(prof)
 }
 
 // TestGroovedFlatBackWasherVolume is the CONTROL: the 511xx grooved shaft washer (FLAT back) revolves

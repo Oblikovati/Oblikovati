@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -63,7 +64,7 @@ func TestPartialBossVolumeMatchesAnalytic(t *testing.T) {
 	t.Parallel()
 	res := straddlingBoss(t)
 	want := 200 + 12*stdmath.Pi // plate + cantilevered boss, no overlap
-	got := BodyGeometryProperties(res, DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, DefaultQuality()).Volume
 	if rel := stdmath.Abs(got-want) / want; rel > 0.01 {
 		t.Errorf("straddling boss volume %.4f vs analytic %.4f (200+12π); rel %.4f > 0.01", got, want, rel)
 	}
@@ -118,7 +119,7 @@ func TestPartialBossJoinsViaAnalyticDispatch(t *testing.T) {
 		}
 	}
 	want := 200 + 12*stdmath.Pi
-	if got := BodyGeometryProperties(res, DefaultQuality()).Volume; stdmath.Abs(got-want)/want > 0.01 {
+	if got := query.BodyGeometryProperties(res, DefaultQuality()).Volume; stdmath.Abs(got-want)/want > 0.01 {
 		t.Errorf("dispatched union volume %.4f vs analytic %.4f (200+12π); rel %.4f > 0.01", got, want, stdmath.Abs(got-want)/want)
 	}
 }

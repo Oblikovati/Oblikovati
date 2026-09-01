@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -19,19 +20,19 @@ func TestLocateUsingPointFindsEachKind(t *testing.T) {
 	t.Parallel()
 	b := tetraBox(t, math.P3(0, 0, 0), 2)
 	q := DefaultQuality()
-	if hit, ok := LocateUsingPoint(b, 0, math.P3(-0.01, -0.01, -0.01), 0.1, q); !ok || hit.Kind != topo.KindVertex {
+	if hit, ok := query.LocateUsingPoint(b, 0, math.P3(-0.01, -0.01, -0.01), 0.1, q); !ok || hit.Kind != topo.KindVertex {
 		t.Errorf("corner query = (%v, %v), want a vertex", hit.Kind, ok)
 	}
-	if hit, ok := LocateUsingPoint(b, 0, math.P3(1, -0.01, -0.01), 0.1, q); !ok || hit.Kind != topo.KindEdge {
+	if hit, ok := query.LocateUsingPoint(b, 0, math.P3(1, -0.01, -0.01), 0.1, q); !ok || hit.Kind != topo.KindEdge {
 		t.Errorf("mid-edge query = (%v, %v), want an edge", hit.Kind, ok)
 	}
-	if hit, ok := LocateUsingPoint(b, 0, math.P3(1, 1, 2.01), 0.1, q); !ok || hit.Kind != topo.KindFace {
+	if hit, ok := query.LocateUsingPoint(b, 0, math.P3(1, 1, 2.01), 0.1, q); !ok || hit.Kind != topo.KindFace {
 		t.Errorf("face-center query = (%v, %v), want a face", hit.Kind, ok)
 	}
-	if hit, ok := LocateUsingPoint(b, topo.KindFace, math.P3(-0.01, -0.01, -0.01), 0.1, q); !ok || hit.Kind != topo.KindFace {
+	if hit, ok := query.LocateUsingPoint(b, topo.KindFace, math.P3(-0.01, -0.01, -0.01), 0.1, q); !ok || hit.Kind != topo.KindFace {
 		t.Errorf("kind-filtered corner query = (%v, %v), want the nearest FACE", hit.Kind, ok)
 	}
-	if _, ok := LocateUsingPoint(b, 0, math.P3(5, 5, 5), 0.1, q); ok {
+	if _, ok := query.LocateUsingPoint(b, 0, math.P3(5, 5, 5), 0.1, q); ok {
 		t.Error("a far point must not locate anything within tolerance")
 	}
 }
@@ -42,22 +43,22 @@ func TestFindUsingRayOrdersHits(t *testing.T) {
 	t.Parallel()
 	b := tetraBox(t, math.P3(0, 0, 0), 2)
 	q := DefaultQuality()
-	hits := FindUsingRay(b, math.P3(1, 1, -5), math.V3(0, 0, 1), 0, q, false)
+	hits := query.FindUsingRay(b, math.P3(1, 1, -5), math.V3(0, 0, 1), 0, q, false)
 	if len(hits) != 2 {
 		t.Fatalf("through-ray hit %d faces, want 2 (entry+exit)", len(hits))
 	}
 	if hits[0].Distance >= hits[1].Distance {
 		t.Error("hits must be sorted nearest first")
 	}
-	if first := FindUsingRay(b, math.P3(1, 1, -5), math.V3(0, 0, 1), 0, q, true); len(first) != 1 {
+	if first := query.FindUsingRay(b, math.P3(1, 1, -5), math.V3(0, 0, 1), 0, q, true); len(first) != 1 {
 		t.Errorf("findFirstOnly returned %d hits, want 1", len(first))
 	}
 	// A ray skimming 1e-3 outside the x=0,y=0 vertical edge only shows up
 	// with a radius.
-	if grazing := FindUsingRay(b, math.P3(-0.001, -0.001, -5), math.V3(0, 0, 1), 0, q, false); len(grazing) != 0 {
+	if grazing := query.FindUsingRay(b, math.P3(-0.001, -0.001, -5), math.V3(0, 0, 1), 0, q, false); len(grazing) != 0 {
 		t.Errorf("zero-radius grazing ray hit %d entities, want 0", len(grazing))
 	}
-	grazed := FindUsingRay(b, math.P3(-0.001, -0.001, -5), math.V3(0, 0, 1), 0.01, q, false)
+	grazed := query.FindUsingRay(b, math.P3(-0.001, -0.001, -5), math.V3(0, 0, 1), 0.01, q, false)
 	foundEdge := false
 	for _, h := range grazed {
 		if h.Kind == topo.KindEdge {
@@ -104,9 +105,9 @@ func TestOrientedMinimumRangeBoxRotatedBox(t *testing.T) {
 	if err != nil {
 		t.Fatalf("transform.TransformBody: %v", err)
 	}
-	obb, err := OrientedMinimumRangeBox(rotated)
+	obb, err := query.OrientedMinimumRangeBox(rotated)
 	if err != nil {
-		t.Fatalf("OrientedMinimumRangeBox: %v", err)
+		t.Fatalf("query.OrientedMinimumRangeBox: %v", err)
 	}
 	if v := obb.Volume(); stdmath.Abs(v-8) > 1e-6 {
 		t.Errorf("rotated-box OBB volume = %g, want 8 (tight)", v)
@@ -127,11 +128,11 @@ func TestOrientedMinimumRangeBoxRotatedBox(t *testing.T) {
 
 // TestPreciseRangeBoxSeesFaceBulge is guarded by the analytic cylinder: the
 // topology RangeBox already samples edges, so both should agree on a box —
-// the point is PreciseRangeBox includes mesh interiors and wires.
+// the point is query.PreciseRangeBox includes mesh interiors and wires.
 func TestPreciseRangeBoxCoversBody(t *testing.T) {
 	t.Parallel()
 	b := tetraBox(t, math.P3(1, 1, 1), 2)
-	box := PreciseRangeBox(b, DefaultQuality())
+	box := query.PreciseRangeBox(b, DefaultQuality())
 	if box.Min.X > 1+1e-9 || box.Max.X < 3-1e-9 {
 		t.Errorf("precise box = %+v, want [1,3] on X", box)
 	}

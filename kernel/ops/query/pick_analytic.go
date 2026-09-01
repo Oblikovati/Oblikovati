@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	stdmath "math"
@@ -103,7 +103,7 @@ func closestOnFaceBoundary(f *topo.Face, p math.Point3, q Quality) (math.Point3,
 	for _, e := range f.Edges() {
 		pl := tessellate.DiscretizeEdge(e, q)
 		for i := 0; i+1 < len(pl); i++ {
-			cp := closestPointOnSegment(p, pl[i], pl[i+1])
+			cp := ClosestPointOnSegment(p, pl[i], pl[i+1])
 			if d := float64(p.DistanceTo(cp)); d < bestD {
 				best, bestD = cp, d
 			}

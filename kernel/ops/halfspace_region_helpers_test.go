@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -21,7 +22,7 @@ import (
 // inscribes the true surface, so the measured volume runs slightly UNDER analytic; relTol absorbs that.
 func assertKeptVolume(t *testing.T, body *topo.Body, want, relTol float64, label string) {
 	t.Helper()
-	got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 	if rel := stdmath.Abs(got-want) / want; rel > relTol {
 		t.Errorf("%s: kept volume %.4f, want %.4f — rel %.4f > %.2f%% (wrong region kept or wrong depth)",
 			label, got, want, rel, relTol*100)
@@ -34,7 +35,7 @@ func assertKeptVolume(t *testing.T, body *topo.Body, want, relTol float64, label
 // normal even when the complementary regions happen to have equal volume (e.g. a symmetric mid-plane).
 func assertCentroidKeptSide(t *testing.T, body *topo.Body, origin math.Point3, normal math.Vector3, label string) {
 	t.Helper()
-	c := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Centroid
+	c := query.BodyGeometryProperties(body, ops.DefaultQuality()).Centroid
 	signed := origin.VectorTo(c).Dot(normal)
 	if signed > -1e-6 {
 		t.Errorf("%s: centroid signed distance %.4f from plane is not on the kept side (want < 0; wrong half kept)",

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -75,7 +76,7 @@ func TestHullWithSingleFlushCutStaysValid(t *testing.T) {
 			if r := ops.Validate(body); !r.Valid {
 				t.Errorf("body invalid: %+v", r.Issues)
 			}
-			if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 || stdmath.IsNaN(v) {
+			if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 || stdmath.IsNaN(v) {
 				t.Errorf("volume = %v, want positive", v)
 			}
 		})
@@ -96,7 +97,7 @@ func TestHullWithChainedFlushCutsStaysValid(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid {
 		t.Errorf("chained flush cuts produced an invalid body: %v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 || stdmath.IsNaN(v) {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 || stdmath.IsNaN(v) {
 		t.Errorf("volume = %v, want positive", v)
 	}
 }

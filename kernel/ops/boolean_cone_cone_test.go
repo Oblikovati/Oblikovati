@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -67,7 +68,7 @@ func TestBooleanIntersectConeCone(t *testing.T) {
 	if n := len(res.Faces()); n != 3 {
 		t.Errorf("cone∩cone has %d faces, want 3 (rod band + 2 fat-cone lens caps)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := coneConeIntersectVolume()
 	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
 		t.Errorf("cone∩cone volume %.4f, want %.4f (analytic) — rel %.4f > 3%%", got, want, rel)
@@ -95,7 +96,7 @@ func TestBooleanCutConeConeDrillsFat(t *testing.T) {
 	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
 		t.Fatalf("drilled fat cone is not a valid closed manifold solid: %+v", v)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := coneFrustumVolume(2, 4, 12) - coneConeIntersectVolume()
 	// 4%: the faceted fat-cone wall/caps and the tapered tunnel inscribe their curvature, so the meshed
 	// volume runs under the analytic fat − tunnel (the B-rep is exact; this bounds the property-mesh error).
@@ -119,7 +120,7 @@ func TestBooleanCutConeConeStubs(t *testing.T) {
 	if n := len(res.Shells()); n != 2 {
 		t.Errorf("rod − fat (cones) has %d shells, want 2 (a disconnected stub each side)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := coneFrustumVolume(0.8, 1.5, 12) - coneConeIntersectVolume()
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 		t.Errorf("rod − fat (cones) volume %.4f, want %.4f (rod − cone∩cone) — rel %.4f > 2%%", got, want, rel)
@@ -139,7 +140,7 @@ func TestBooleanJoinConeCone(t *testing.T) {
 	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
 		t.Fatalf("joined cone∪cone is not a valid closed manifold solid: %+v", v)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := coneFrustumVolume(2, 4, 12) + coneFrustumVolume(0.8, 1.5, 12) - coneConeIntersectVolume()
 	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
 		t.Errorf("joined cone∪cone volume %.4f, want %.4f (fat + rod − cone∩cone) — rel %.4f > 4%%", got, want, rel)

@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -42,7 +43,7 @@ func (t *TransientBody) Volume() float64 {
 	if !t.body.IsSolid() {
 		return 0
 	}
-	return ops.BodyGeometryProperties(t.body, t.q).Volume
+	return query.BodyGeometryProperties(t.body, t.q).Volume
 }
 
 // TransientBRep is the session's transient body factory and registry

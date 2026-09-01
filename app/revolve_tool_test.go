@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -93,7 +94,7 @@ func TestRevolveToolPreselectsCenterline(t *testing.T) {
 	}
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	want := stdmath.Pi * (4*4 - 2*2) * 2
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, want) > 0.01 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, want) > 0.01 {
 		t.Errorf("pre-selected centerline washer = %g, want ≈%g", v, want)
 	}
 }
@@ -124,7 +125,7 @@ func TestRevolveToolMultipleCenterlinesNeedsPick(t *testing.T) {
 	}
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	want := stdmath.Pi * (4*4 - 2*2) * 2
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, want) > 0.01 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, want) > 0.01 {
 		t.Errorf("about the vertical centerline = %g, want ≈%g (24π)", v, want)
 	}
 }
@@ -152,7 +153,7 @@ func TestRevolveToolAboutCenterline(t *testing.T) {
 		t.Fatalf("centerline-revolved body not a valid solid: %+v", r)
 	}
 	want := stdmath.Pi * (4*4 - 2*2) * 2
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.01 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.01 {
 		t.Errorf("centerline-revolved washer = %g, want ≈%g (24π)", got, want)
 	}
 }
@@ -182,7 +183,7 @@ func TestRevolveToolEndToEnd(t *testing.T) {
 		t.Fatalf("revolved body not a valid solid: %+v", r)
 	}
 	want := stdmath.Pi * (4*4 - 2*2) * 2 // 24π
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.01 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.01 {
 		t.Errorf("washer volume = %g, want ≈%g (24π)", got, want)
 	}
 	if def.Features().Count() != 1 || !def.Features().Item(0).Health().OK() {
@@ -221,7 +222,7 @@ func TestRevolveViaCommandAlias(t *testing.T) {
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	body := def.SurfaceBodies().Item(0)
 	want := stdmath.Pi * (4*4 - 2*2) * 2 / 4 // quarter washer
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.02 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.02 {
 		t.Errorf("quarter-washer volume = %g, want ≈%g", got, want)
 	}
 }

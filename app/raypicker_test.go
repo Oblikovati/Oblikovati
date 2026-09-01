@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -108,7 +109,7 @@ func TestRayPickerSetCameraAndDirectQuery(t *testing.T) {
 	}
 	// Sanity: the kernel query agrees the box is hit from above.
 	o, d := cam.RayThrough(200, 200)
-	if _, _, ok := ops.RayCastFaces(partBodies(s)()[0], o, d, ops.DefaultQuality()); !ok {
+	if _, _, ok := query.RayCastFaces(partBodies(s)()[0], o, d, ops.DefaultQuality()); !ok {
 		t.Error("kernel RayCastFaces missed the box from above")
 	}
 }

@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 )
@@ -129,7 +130,7 @@ func TestAssemblyMirrorIntoPartOverWire(t *testing.T) {
 	if len(bodies) != 1 {
 		t.Fatalf("mirror part has %d bodies, want 1 (the reflected source)", len(bodies))
 	}
-	props := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality())
+	props := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality())
 	if stdmath.Abs(props.Volume-1) > 1e-6 {
 		t.Errorf("mirror part volume = %g, want 1 (reflection preserves the unit box)", props.Volume)
 	}

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -37,7 +38,7 @@ func TestRibGeneratesWall(t *testing.T) {
 	if r := ops.Validate(bodies[0]); !r.Valid {
 		t.Fatalf("rib body invalid: %+v", r)
 	}
-	vol := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	vol := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 	if stdmath.Abs(vol-8) > 1e-6 { // 4 (length) × 1 (thickness) × 2 (depth)
 		t.Errorf("rib volume = %g, want 8", vol)
 	}
@@ -58,7 +59,7 @@ func TestRibFeaturesAddNamesAndBuilds(t *testing.T) {
 	if pf.Name() != "Rib1" {
 		t.Errorf("rib name = %q, want Rib1", pf.Name())
 	}
-	if vol := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(vol-8) > 1e-6 {
+	if vol := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(vol-8) > 1e-6 {
 		t.Errorf("rib volume = %g, want 8", vol)
 	}
 }

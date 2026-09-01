@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/math"
 )
@@ -25,9 +26,9 @@ func cubeCorners(s float64) []math.Point3 {
 
 func hullVolume(t *testing.T, pts []math.Point3) float64 {
 	t.Helper()
-	body, err := ops.ConvexHull(pts, "hull")
+	body, err := query.ConvexHull(pts, "hull")
 	if err != nil {
-		t.Fatalf("ConvexHull: %v", err)
+		t.Fatalf("query.ConvexHull: %v", err)
 	}
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("hull is not a valid solid: %+v", r)
@@ -35,7 +36,7 @@ func hullVolume(t *testing.T, pts []math.Point3) float64 {
 	if open := ops.BoundaryEdges(body); len(open) != 0 {
 		t.Fatalf("hull has %d boundary edges, want 0 (watertight)", len(open))
 	}
-	return ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 }
 
 // TestConvexHullCube hulls a cube's 8 corners — the hull is the cube itself.
@@ -76,7 +77,7 @@ func TestConvexHullSphere(t *testing.T) {
 	}
 }
 
-// TestConvexHullOfTwoBoxes hulls two separated unit boxes via ConvexHullOf — the result spans
+// TestConvexHullOfTwoBoxes hulls two separated unit boxes via query.ConvexHullOf — the result spans
 // both and is a valid solid no smaller than either box.
 func TestConvexHullOfTwoBoxes(t *testing.T) {
 	t.Parallel()
@@ -86,16 +87,16 @@ func TestConvexHullOfTwoBoxes(t *testing.T) {
 		bm.Verts[i] = bm.Verts[i].TranslateBy(math.V3(3, 0, 0)) // [3,4]×[0,1]×[0,1]
 	}
 	b := subd.ToBody(bm, "b")
-	hull, err := ops.ConvexHullOf("hull", a, b)
+	hull, err := query.ConvexHullOf("hull", a, b)
 	if err != nil {
-		t.Fatalf("ConvexHullOf: %v", err)
+		t.Fatalf("query.ConvexHullOf: %v", err)
 	}
 	if r := ops.Validate(hull); !r.Valid || !hull.IsSolid() {
 		t.Fatalf("hull of two boxes invalid: %+v", r)
 	}
 	// The hull spans x∈[0,4]; its volume strictly exceeds the two boxes (2) and is bounded by
 	// the enclosing 4×1×1 box (4).
-	v := ops.BodyGeometryProperties(hull, ops.DefaultQuality()).Volume
+	v := query.BodyGeometryProperties(hull, ops.DefaultQuality()).Volume
 	if v <= 2 || v > 4+1e-9 {
 		t.Errorf("hull(two boxes) volume = %.4f, want in (2, 4]", v)
 	}
@@ -105,7 +106,7 @@ func TestConvexHullOfTwoBoxes(t *testing.T) {
 func TestConvexHullDegenerate(t *testing.T) {
 	t.Parallel()
 	planar := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(1, 1, 0)}
-	if _, err := ops.ConvexHull(planar, "hull"); err == nil {
+	if _, err := query.ConvexHull(planar, "hull"); err == nil {
 		t.Error("expected an error hulling coplanar points, got nil")
 	}
 }

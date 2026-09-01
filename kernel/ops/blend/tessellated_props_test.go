@@ -11,7 +11,7 @@ import (
 
 // mustTessellate meshes b at the property tolerance.
 //
-// These area gates used ops.BodyGeometryProperties, which this package cannot import —
+// These area gates used query.BodyGeometryProperties, which this package cannot import —
 // kernel/ops imports it. BodyGeometryProperties is analytic-first with a tessellated
 // fallback, so the number here is the fallback's: a PropertyQuality mesh, the tolerance
 // that exists for property readouts. The OCCT gates below are ±1%, and the mesh lands

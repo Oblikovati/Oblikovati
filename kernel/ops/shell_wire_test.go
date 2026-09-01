@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -51,7 +52,7 @@ func TestCavityBodyHasVoidShell(t *testing.T) {
 		}
 		if ShellIsVoidInBody(body, sh) {
 			voids++
-			if v := ShellSignedVolume(sh, DefaultQuality()); stdmath.Abs(v+8) > 0.05 {
+			if v := query.ShellSignedVolume(sh, DefaultQuality()); stdmath.Abs(v+8) > 0.05 {
 				t.Errorf("void shell signed volume = %g, want ~-8", v)
 			}
 		}
@@ -93,16 +94,16 @@ func TestShellContainmentVerdicts(t *testing.T) {
 	t.Parallel()
 	body := cavityBody(t)
 	q := DefaultQuality()
-	if c := BodyContainment(body, math.P3(0.5, 0.5, 0.5), q, 1e-6); c != ContainInside {
+	if c := query.BodyContainment(body, math.P3(0.5, 0.5, 0.5), q, 1e-6); c != query.ContainInside {
 		t.Errorf("material point = %v, want inside", c)
 	}
-	if c := BodyContainment(body, math.P3(2, 2, 2), q, 1e-6); c != ContainOutside {
+	if c := query.BodyContainment(body, math.P3(2, 2, 2), q, 1e-6); c != query.ContainOutside {
 		t.Errorf("cavity center = %v, want outside (no material there)", c)
 	}
-	if c := BodyContainment(body, math.P3(0, 2, 2), q, 1e-6); c != ContainOn {
+	if c := query.BodyContainment(body, math.P3(0, 2, 2), q, 1e-6); c != query.ContainOn {
 		t.Errorf("outer wall point = %v, want on", c)
 	}
-	if c := BodyContainment(body, math.P3(10, 0, 0), q, 1e-6); c != ContainOutside {
+	if c := query.BodyContainment(body, math.P3(10, 0, 0), q, 1e-6); c != query.ContainOutside {
 		t.Errorf("far point = %v, want outside", c)
 	}
 }

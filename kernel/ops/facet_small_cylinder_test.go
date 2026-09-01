@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -37,7 +38,7 @@ func TestFacetKeepsASmallCylindersVolume(t *testing.T) {
 		t.Fatal("Facet returned nil for a plain cylinder")
 	}
 	want := stdmath.Pi * r * r * h
-	got := ops.BodyGeometryProperties(faceted, ops.PropertyQuality()).Volume
+	got := query.BodyGeometryProperties(faceted, ops.PropertyQuality()).Volume
 	if stdmath.Abs(got-want)/want > 0.03 {
 		square := 2 * r * r * h // what a 4-facet collapse yields
 		t.Errorf("faceted cylinder volume = %g cm³, want %g +/-3%% (a 4-facet square prism would give %g)",

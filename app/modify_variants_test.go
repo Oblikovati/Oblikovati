@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/feature"
 )
 
@@ -168,7 +169,7 @@ func TestSimplifyToolReducesTheBody(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("simplified body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(got-8) > 1e-6 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(got-8) > 1e-6 {
 		t.Errorf("simplified volume = %g, want the healed 8", got)
 	}
 }

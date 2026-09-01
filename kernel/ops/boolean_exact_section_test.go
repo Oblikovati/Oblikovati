@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // The ruled∩quadric intersection is exact — along each straight ruling of a cylinder or cone the other
@@ -33,13 +34,13 @@ func TestCrossingCylinderCutIsExactToTheEllipticOracle(t *testing.T) {
 		t.Fatalf("the drilled body has %d shells, want 1: the two walls did not weld on the shared section loops", shells)
 	}
 
-	gp, ok := ops.AnalyticGeometryProperties(res)
+	gp, ok := query.AnalyticGeometryProperties(res)
 	if !ok {
 		t.Fatal("the drilled body declined analytic integration; its section edges should now be exact")
 	}
 	// The window integrand and its Simpson oracle live with TestDrilledWallAreaSubtractsItsWindows.
 	wantWall := 2*math.Pi*bigR*height - 2*crossingCylinderWindowArea(bigR, drillR)
-	gotWall, ok := ops.AnalyticFaceArea(widestCylinderFace(res, bigR))
+	gotWall, ok := query.AnalyticFaceArea(widestCylinderFace(res, bigR))
 	if !ok {
 		t.Fatal("the drilled wall declined analytic area")
 	}
@@ -52,7 +53,7 @@ func TestCrossingCylinderCutIsExactToTheEllipticOracle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("intersect: %v", err)
 	}
-	ip, ok := ops.AnalyticGeometryProperties(inter)
+	ip, ok := query.AnalyticGeometryProperties(inter)
 	if !ok {
 		t.Fatal("the intersect body declined analytic integration")
 	}

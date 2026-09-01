@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/math"
@@ -17,7 +18,7 @@ func TestVisibleEdgesKeepsSharpBoxEdges(t *testing.T) {
 	t.Parallel()
 	m := subd.Box(2, 2, 2)
 	b := subd.ToBody(m, "box")
-	got := len(ops.VisibleEdges(b, ops.DefaultQuality(), tessellate.DefaultCreaseAngle()))
+	got := len(query.VisibleEdges(b, ops.DefaultQuality(), tessellate.DefaultCreaseAngle()))
 	if want := len(b.Edges()); got != want {
 		t.Errorf("box visible edges = %d, want all %d (no sharp edge should be suppressed)", got, want)
 	}
@@ -32,7 +33,7 @@ func TestVisibleEdgesSuppressesCylinderSeam(t *testing.T) {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
 	total := len(cyl.Edges())
-	got := len(ops.VisibleEdges(cyl, ops.DefaultQuality(), tessellate.DefaultCreaseAngle()))
+	got := len(query.VisibleEdges(cyl, ops.DefaultQuality(), tessellate.DefaultCreaseAngle()))
 	if got >= total {
 		t.Errorf("cylinder visible edges = %d, want < %d (the seam should be suppressed)", got, total)
 	}

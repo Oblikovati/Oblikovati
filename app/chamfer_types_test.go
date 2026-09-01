@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/feature"
 )
 
@@ -37,7 +38,7 @@ func chamferBlockEdge(t *testing.T, setup func(*ChamferTool)) (*feature.ChamferD
 		t.Fatalf("chamfered body not a valid solid: %+v", r)
 	}
 	def := ch.AddedFeature().Definition().(*feature.ChamferFeature).Definition()
-	return def, ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	return def, query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 }
 
 func TestChamferToolBuildsTwoDistanceChamfer(t *testing.T) {

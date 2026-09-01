@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -59,7 +60,7 @@ func TestSweepToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("swept body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 20) > 0.02 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 20) > 0.02 {
 		t.Errorf("swept volume = %g, want ≈20 (area 4 × length 5)", got)
 	}
 	if s.ActiveTool() != nil {
@@ -112,7 +113,7 @@ func sweepVolume(t *testing.T, s *Session) float64 {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("swept body is not a valid solid: %+v", r)
 	}
-	return ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 }
 
 // TestSweepParallelOrientation checks the Parallel ("Fixed") orientation is wired into the

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -61,7 +62,7 @@ func outerFaceKey(t *testing.T, b *topo.Body) []byte {
 func TestRemoveVoidShellRestoresMass(t *testing.T) {
 	t.Parallel()
 	body := distinctCavityBody(t, "outer", "inner")
-	if v := BodyGeometryProperties(body, DefaultQuality()).Volume; stdmath.Abs(v-56) > 0.1 {
+	if v := query.BodyGeometryProperties(body, DefaultQuality()).Volume; stdmath.Abs(v-56) > 0.1 {
 		t.Fatalf("fixture volume = %g, want 56 (4³ minus 2³ cavity)", v)
 	}
 	key := voidFaceKey(t, body)
@@ -75,7 +76,7 @@ func TestRemoveVoidShellRestoresMass(t *testing.T) {
 	if got := len(solid.Shells()); got != 1 {
 		t.Fatalf("result has %d shells, want 1 (void removed)", got)
 	}
-	if v := BodyGeometryProperties(solid, DefaultQuality()).Volume; stdmath.Abs(v-64) > 0.1 {
+	if v := query.BodyGeometryProperties(solid, DefaultQuality()).Volume; stdmath.Abs(v-64) > 0.1 {
 		t.Errorf("result volume = %g, want 64 (void filled)", v)
 	}
 	if r := Validate(solid); !r.Valid {

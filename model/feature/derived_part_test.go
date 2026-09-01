@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -32,7 +33,7 @@ func TestDerivedPartAppliesReflection(t *testing.T) {
 	if !pf.Health().OK() || len(fs.Result()) != 1 {
 		t.Fatalf("derived reflection: health=%+v bodies=%d, want ok and one body", pf.Health(), len(fs.Result()))
 	}
-	props := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality())
+	props := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality())
 	if !approx(props.Volume, 1) {
 		t.Errorf("mirrored volume = %g, want 1 (reflection preserves volume; winding stays outward)", props.Volume)
 	}

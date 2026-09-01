@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/feature"
@@ -17,7 +18,7 @@ import (
 
 // flatVolume is the developed flat body's mesh volume at a fine chord tolerance.
 func flatVolume(body *topo.Body) float64 {
-	return ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume
+	return query.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume
 }
 
 // developedTabLength is the expected flat tab length for the default-rule fixture: the bend

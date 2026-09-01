@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -17,7 +18,7 @@ import (
 // occupy the same space. The host owns the body geometry, so the computation lives here — each
 // occurrence's bodies are transformed to world, broad-phased by bounding box, and (for
 // overlapping pairs) boolean-intersected to measure the real overlap volume. The measurement
-// integrates the intersection's ANALYTIC B-rep (ops.BodyGeometryProperties, M48/C3 #3451): a
+// integrates the intersection's ANALYTIC B-rep (query.BodyGeometryProperties, M48/C3 #3451): a
 // tessellated integral under-reports every curved overlap by ~π²/(3N²), and a bore-in-a-boss
 // interference is exactly the curved case an assembly check exists to catch.
 
@@ -128,7 +129,7 @@ func bodiesOverlapVolume(as, bs []*topo.Body) (float64, math.Point3, bool) {
 			if err != nil || inter == nil {
 				continue
 			}
-			overlap.fold(ops.BodyGeometryProperties(inter, ops.PropertyQuality()))
+			overlap.fold(query.BodyGeometryProperties(inter, ops.PropertyQuality()))
 		}
 	}
 	return overlap.volume, overlap.centroid(), overlap.volume > 0

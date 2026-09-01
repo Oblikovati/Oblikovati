@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -124,7 +125,7 @@ func decimateCollinear(run []math.Point3, chordTol float64) []math.Point3 {
 	}
 	out := []math.Point3{run[0]}
 	for i := 1; i+1 < len(run); i++ {
-		if d := run[i].DistanceTo(closestPointOnSegment(run[i], out[len(out)-1], run[i+1])); float64(d) > chordTol {
+		if d := run[i].DistanceTo(query.ClosestPointOnSegment(run[i], out[len(out)-1], run[i+1])); float64(d) > chordTol {
 			out = append(out, run[i])
 		}
 	}

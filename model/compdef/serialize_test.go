@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/contentset"
@@ -622,7 +623,7 @@ func TestRevolveTwoDirectionalSurvivesReopen(t *testing.T) {
 	}
 	reopened.Recompute()
 	want := stdmath.Pi * (4*4 - 2*2) * 2 / 2 // the 12π half washer
-	got := ops.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
 	if stdmath.Abs(got-want)/want > 0.01 {
 		t.Errorf("reopened two-directional revolve volume = %g, want ≈%g", got, want)
 	}
@@ -667,7 +668,7 @@ func TestSweepUnionSurvivesReopen(t *testing.T) {
 	}
 	feature.NewSweepFeatures(def.Features()).AddDefinition(sdef)
 	def.Recompute()
-	before := ops.BodyGeometryProperties(def.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(def.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
 
 	reopened := reopenThroughStore(t, d)
 	sw, ok := featureByKind(reopened.Features(), "sweep")
@@ -682,7 +683,7 @@ func TestSweepUnionSurvivesReopen(t *testing.T) {
 		t.Errorf("restored union fields = %+v stations / %v scaling", rdef.TwistStations, rdef.Scaling)
 	}
 	reopened.Recompute()
-	after := ops.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
 	if stdmath.Abs(after-before)/before > 0.01 {
 		t.Errorf("reopened sweep volume = %g, want %g", after, before)
 	}
@@ -728,7 +729,7 @@ func TestFilletEdgeSetsSurviveReopen(t *testing.T) {
 	if !pf.Health().OK() {
 		t.Fatalf("edge-set fillet before save = %v, want OK", pf.Health())
 	}
-	before := ops.BodyGeometryProperties(def.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(def.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
 
 	reopened := reopenThroughStore(t, d)
 	got, ok := featureByKind(reopened.Features(), "fillet")
@@ -742,7 +743,7 @@ func TestFilletEdgeSetsSurviveReopen(t *testing.T) {
 	if len(rdef.EdgeSets) != 2 || rdef.EdgeSets[1].Radius != nil || rdef.EdgeSets[1].EndRadius() != 0.7 {
 		t.Errorf("restored edge sets = %d sets, want the constant+variable pair back", len(rdef.EdgeSets))
 	}
-	after := ops.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
 	if stdmath.Abs(after-before) > 1e-9 {
 		t.Errorf("reopened fillet volume = %g, want %g", after, before)
 	}

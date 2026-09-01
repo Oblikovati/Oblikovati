@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/compdef"
 )
 
@@ -43,7 +44,7 @@ func TestUnwrapToolFlattensTheCylindricalFace(t *testing.T) {
 	patch := def.SurfaceBodies().Item(def.SurfaceBodies().Count() - 1)
 	// The development of a full r=0.5 h=2 cylinder is 2πr × h.
 	want := 2 * stdmath.Pi * 0.5 * 2
-	if got := ops.BodyGeometryProperties(patch, ops.DefaultQuality()).Area; stdmath.Abs(got-want) > 1e-6 {
+	if got := query.BodyGeometryProperties(patch, ops.DefaultQuality()).Area; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("flat patch area = %g, want the development %g (2πr·h)", got, want)
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/math"
 )
 
@@ -25,7 +26,7 @@ func TestRemoveTJunctionsClosesCage(t *testing.T) {
 	if len(faces) < 2 {
 		t.Errorf("T-junction at vertex 3 not split: got %d faces, want ≥2", len(faces))
 	}
-	if uses := edgeUseCounts(faces); uses[edgeKeyOf(0, 3)] == 0 || uses[edgeKeyOf(3, 1)] == 0 {
+	if uses := mesh.EdgeUseCounts(faces); uses[mesh.EdgeKeyOf(0, 3)] == 0 || uses[mesh.EdgeKeyOf(3, 1)] == 0 {
 		t.Errorf("split did not subdivide edge 0→1 at the on-edge vertex 3: edge uses %v", uses)
 	}
 }
@@ -61,10 +62,10 @@ func TestRemoveTJunctionsScalesPastOldBudget(t *testing.T) {
 	}
 
 	_, out := removeTJunctions(verts, faces, lineTol)
-	uses := edgeUseCounts(out)
-	if uses[edgeKeyOf(0, 3)] == 0 || uses[edgeKeyOf(3, 1)] == 0 {
+	uses := mesh.EdgeUseCounts(out)
+	if uses[mesh.EdgeKeyOf(0, 3)] == 0 || uses[mesh.EdgeKeyOf(3, 1)] == 0 {
 		t.Fatalf("T-junction in a %d-face mesh not split (old budget would have bailed): edge uses around vertex 3 = %d, %d",
-			len(faces), uses[edgeKeyOf(0, 3)], uses[edgeKeyOf(3, 1)])
+			len(faces), uses[mesh.EdgeKeyOf(0, 3)], uses[mesh.EdgeKeyOf(3, 1)])
 	}
 }
 

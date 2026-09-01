@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -63,7 +64,7 @@ func TestDraftFacesNeutralVolumeMatchesOCCT(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("neutral-plane draft is not a valid solid: %+v", r.Issues)
 	}
-	vol := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	vol := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	const occtWedge = 0.3526540 // 8 − 7.6473460386, from BRepOffsetAPI_DraftAngle
 	if got := stdmath.Abs(vol - 8); stdmath.Abs(got-occtWedge) > 1e-4 {
 		t.Errorf("neutral-draft wedge = %g (vol %g), OCCT oracle wants %g", got, vol, occtWedge)

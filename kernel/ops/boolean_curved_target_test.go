@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -27,7 +28,7 @@ func TestBooleanCutCurvedTargetRemovesTunnel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
-	full := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
+	full := query.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
 	tool := csgBox(math.P3(-1, -1, -1), 2, 2, 6) // 2x2 cross-section, pokes through both caps
 
 	res, err := ops.Boolean(ops.Cut, cyl, tool)
@@ -37,7 +38,7 @@ func TestBooleanCutCurvedTargetRemovesTunnel(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("cut result not a valid solid: %+v", r)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	if want := full - 16; stdmath.Abs(got-want) > 1e-3 {
 		t.Errorf("curved-target cut volume = %.5f, want %.5f (full %.5f − 16)", got, want, full)
 	}
@@ -71,7 +72,7 @@ func TestBooleanNearTangentCylindersStayManifold(t *testing.T) {
 			if rec.Has(brep.CodeImprintNearPinchDeclined) {
 				t.Fatalf("dr=%g must stay on the general analytic path, not decline (#1781)", dr)
 			}
-			got := ops.BodyGeometryProperties(union, ops.DefaultQuality()).Volume
+			got := query.BodyGeometryProperties(union, ops.DefaultQuality()).Volume
 			if stdmath.Abs(got-want) > 0.02*want {
 				t.Errorf("union volume = %.4f, want ≈ %.4f (2·cyl − Steinmetz)", got, want)
 			}
@@ -88,7 +89,7 @@ func TestBooleanNearTangentCylindersStayManifold(t *testing.T) {
 		if rec.Has(brep.CodeImprintNearPinchDeclined) {
 			t.Fatalf("residual near-pinch union must ship the analytic path, not decline (#1818)")
 		}
-		if got := ops.BodyGeometryProperties(union, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 0.02*want {
+		if got := query.BodyGeometryProperties(union, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 0.02*want {
 			t.Errorf("union volume = %.4f, want ≈ %.4f (2·cyl − Steinmetz)", got, want)
 		}
 	})

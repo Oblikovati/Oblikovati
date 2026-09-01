@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -71,7 +72,7 @@ func assertChainSolid(t *testing.T, b *topo.Body, step string) {
 // cumulative volume is the plate minus five single-bore removals with no drift, and no body ever opens.
 func TestCurvedBooleanChainDriftBores(t *testing.T) {
 	t.Parallel()
-	v0 := ops.BodyGeometryProperties(chainSlab(t), ops.DefaultQuality()).Volume
+	v0 := query.BodyGeometryProperties(chainSlab(t), ops.DefaultQuality()).Volume
 	centers := []float64{-8, -4, 0, 4, 8} // spacing 4 > 2r=3: the bores never touch
 
 	ref, err := ops.Boolean(ops.Cut, chainSlab(t), chainRod(t, centers[0], 0))
@@ -79,7 +80,7 @@ func TestCurvedBooleanChainDriftBores(t *testing.T) {
 		t.Fatalf("reference bore: %v", err)
 	}
 	assertChainSolid(t, ref, "reference bore")
-	removed := v0 - ops.BodyGeometryProperties(ref, ops.DefaultQuality()).Volume
+	removed := v0 - query.BodyGeometryProperties(ref, ops.DefaultQuality()).Volume
 
 	res := chainSlab(t)
 	for i, cx := range centers {
@@ -94,7 +95,7 @@ func TestCurvedBooleanChainDriftBores(t *testing.T) {
 		res = out
 	}
 
-	got, want := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume, v0-5*removed
+	got, want := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume, v0-5*removed
 	if drift := stdmath.Abs(got - want); drift > 0.005*v0 {
 		t.Errorf("five chained bores: volume %.4f, want %.4f (drift %.4f > %.4f = 0.5%% of slab)",
 			got, want, drift, 0.005*v0)
@@ -105,9 +106,9 @@ func TestCurvedBooleanChainDriftBores(t *testing.T) {
 // same exact volume — chaining is path-independent, not just stable for one ordering.
 func TestCurvedBooleanChainDriftOrderIndependent(t *testing.T) {
 	t.Parallel()
-	want := ops.BodyGeometryProperties(chainSlab(t), ops.DefaultQuality()).Volume
+	want := query.BodyGeometryProperties(chainSlab(t), ops.DefaultQuality()).Volume
 	ref, _ := ops.Boolean(ops.Cut, chainSlab(t), chainRod(t, 0, 0))
-	want -= 5 * (ops.BodyGeometryProperties(chainSlab(t), ops.DefaultQuality()).Volume - ops.BodyGeometryProperties(ref, ops.DefaultQuality()).Volume)
+	want -= 5 * (query.BodyGeometryProperties(chainSlab(t), ops.DefaultQuality()).Volume - query.BodyGeometryProperties(ref, ops.DefaultQuality()).Volume)
 
 	res := chainSlab(t)
 	for _, cx := range []float64{0, 8, -4, 4, -8} { // shuffled
@@ -117,7 +118,7 @@ func TestCurvedBooleanChainDriftOrderIndependent(t *testing.T) {
 		}
 		res = out
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	if stdmath.Abs(got-want) > 0.005*want {
 		t.Errorf("shuffled-order chain volume %.4f, want %.4f (drift > 0.5%%)", got, want)
 	}

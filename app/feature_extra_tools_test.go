@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -16,7 +17,7 @@ import (
 // blockVolume returns the part's first body volume (analytic comparisons need it).
 func blockVolume(def *compdef.PartComponentDefinition) float64 {
 	b := def.SurfaceBodies().Item(0)
-	return float64(ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume)
+	return float64(query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume)
 }
 
 // TestBossToolEndToEnd raises a Ø2 × 1.5 stud on the block top: the volume grows by the

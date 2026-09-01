@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -199,13 +200,13 @@ func TestBuriedRodLeavesAnInteriorVoid(t *testing.T) {
 		t.Errorf("ball − buried rod is %d shell(s), want 2 (the ball plus the void)", n)
 	}
 	assertWithin(t, "ball − buried rod volume",
-		BodyGeometryProperties(bored, PropertyQuality()).Volume, vBall-vRod)
+		query.BodyGeometryProperties(bored, PropertyQuality()).Volume, vBall-vRod)
 	union, err := Boolean(Join, ball, rod)
 	if err != nil {
 		t.Fatalf("ball ∪ buried rod: %v", err)
 	}
 	assertWithin(t, "ball ∪ buried rod volume",
-		BodyGeometryProperties(union, PropertyQuality()).Volume, vBall)
+		query.BodyGeometryProperties(union, PropertyQuality()).Volume, vBall)
 }
 
 // TestBeadIsGenusOne pins the bead's topology, which no volume or area check can see: a ball with a
@@ -249,7 +250,7 @@ func runCoaxialCases(t *testing.T, cases []coaxialCase) {
 			continue
 		}
 		assertAnalyticSolid(t, c.name, got, c.faces)
-		props := BodyGeometryProperties(got, PropertyQuality())
+		props := query.BodyGeometryProperties(got, PropertyQuality())
 		assertWithin(t, c.name+" volume", props.Volume, c.wantVol)
 		assertWithin(t, c.name+" area", props.Area, c.wantArea)
 	}
@@ -323,11 +324,11 @@ func TestBallStudVolumeIsQualityIndependent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("join: %v", err)
 	}
-	if _, ok := AnalyticGeometryProperties(stud); !ok {
+	if _, ok := query.AnalyticGeometryProperties(stud); !ok {
 		t.Fatal("the ball stud declined analytic integration; the faceted fallback is back")
 	}
-	coarse := BodyGeometryProperties(stud, DefaultQuality()).Volume
-	fine := BodyGeometryProperties(stud, PropertyQuality()).Volume
+	coarse := query.BodyGeometryProperties(stud, DefaultQuality()).Volume
+	fine := query.BodyGeometryProperties(stud, PropertyQuality()).Volume
 	if coarse != fine {
 		t.Errorf("volume moved with tessellation quality (%.9f → %.9f); an analytic integral cannot", coarse, fine)
 	}

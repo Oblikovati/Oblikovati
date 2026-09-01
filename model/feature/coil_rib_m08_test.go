@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
 	"oblikovati.org/model/sketch"
@@ -37,7 +38,7 @@ func coilRecompute(t *testing.T, def *CoilDefinition) float64 {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("coil not a valid solid: %+v", r)
 	}
-	return ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 }
 
 // TestCoilHeightModes: pitch+height and revolutions+height match the
@@ -150,7 +151,7 @@ func TestRibToNextReachesPlate(t *testing.T) {
 	}
 	// Plate 100 + wall: thickness 0.5 × length 8 × the 2 drop from z=3 to z=1.
 	want := 100 + 0.5*8*2
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
 		t.Errorf("to-next rib volume = %g, want ≈%g", got, want)
 	}
 }

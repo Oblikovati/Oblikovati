@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // objTetra is a hand-authored OBJ tetrahedron (independent of our encoder), proving the
@@ -68,7 +69,7 @@ func TestOBJRoundTripCubePreservesSolidAndVolume(t *testing.T) {
 	if !body.IsSolid() {
 		t.Fatalf("round-tripped OBJ cube is not a solid")
 	}
-	got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 	if want := 8.0; stdmath.Abs(got-want) > 1e-4 {
 		t.Errorf("OBJ round-trip volume = %v, want %v", got, want)
 	}

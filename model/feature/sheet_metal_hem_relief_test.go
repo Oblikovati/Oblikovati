@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -43,10 +44,10 @@ func hemCorneredSheet(t *testing.T, corner CornerReliefSpec) *topo.Body {
 // hem placed its bend but relieved nothing, so the junction it formed was left full of material.
 func TestHemCornerReliefRemovesTheSharedCorner(t *testing.T) {
 	t.Parallel()
-	relieved := ops.BodyGeometryProperties(
+	relieved := query.BodyGeometryProperties(
 		hemCorneredSheet(t, CornerReliefSpec{Shape: types.CornerSquare, Size: 0.4}), ops.DefaultQuality()).Volume
 	// The same part with the corner left to tear removes nothing there, so it has MORE material.
-	torn := ops.BodyGeometryProperties(
+	torn := query.BodyGeometryProperties(
 		hemCorneredSheet(t, CornerReliefSpec{Shape: types.CornerTear}), ops.DefaultQuality()).Volume
 
 	if relieved >= torn-1e-6 {

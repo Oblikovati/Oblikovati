@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -113,7 +113,7 @@ func TestSphereZoneRegionIntegralNamesTheBelt(t *testing.T) {
 		{"low rim encloses: the belt", twoLoopZone(t, sph, lo, hi), zoneTestArea()},
 		{"high rim encloses: the caps", twoLoopZone(t, sph, hi, lo), zoneTestCapsArea()},
 	} {
-		got, ok := ops.AnalyticGeometryProperties(c.body)
+		got, ok := query.AnalyticGeometryProperties(c.body)
 		if !ok {
 			t.Fatalf("%s: the analytic region integral declined a two-loop sphere zone", c.name)
 		}

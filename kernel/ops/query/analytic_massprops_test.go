@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	stdmath "math"
@@ -49,7 +49,7 @@ func TestAnalyticBoxMatchesClosedForm(t *testing.T) {
 			t.Errorf("Centroid.%s = %v, want %v", d.name, d.got, d.want)
 		}
 	}
-	it, _ := AnalyticInertia(body)
+	it, _ := analyticInertia(body)
 	// Per-unit-density inertia about the centroid: Ixx = V(b²+c²)/12, etc.
 	wantIxx := wantVol * (b*b + c*c) / 12
 	wantIyy := wantVol * (a*a + c*c) / 12
@@ -87,7 +87,7 @@ func TestAnalyticSphereMatchesClosedForm(t *testing.T) {
 	if e := relErrMP(gp.Area, 4*stdmath.Pi*r*r); e > massRelTol {
 		t.Errorf("Area rel err %g", e)
 	}
-	it, _ := AnalyticInertia(body)
+	it, _ := analyticInertia(body)
 	wantI := 2.0 / 5 * (4.0 / 3 * stdmath.Pi * r * r * r) * r * r
 	for _, d := range []struct {
 		got  float64
@@ -124,7 +124,7 @@ func TestAnalyticCylinderMatchesClosedForm(t *testing.T) {
 		stdmath.Abs(float64(gp.Centroid.X)) > 1e-6 || stdmath.Abs(float64(gp.Centroid.Y)) > 1e-6 {
 		t.Errorf("Centroid = %v, want (0,0,%v)", gp.Centroid, h/2)
 	}
-	it, _ := AnalyticInertia(body)
+	it, _ := analyticInertia(body)
 	wantIzz := wantVol * r * r / 2
 	wantIxx := wantVol * (3*r*r + h*h) / 12
 	if e := relErrMP(it.Izz, wantIzz); e > 1e-5 {
@@ -184,7 +184,7 @@ func TestAnalyticConeAgreesWithFineMesh(t *testing.T) {
 	if !ok {
 		t.Fatal("cone not analytically integrable")
 	}
-	// Closed-form frustum volume: πh(R²+Rr+r²)/3.
+	// Closed-form frustum Volume: πh(R²+Rr+r²)/3.
 	wantVol := stdmath.Pi * 8 * (9 + 4.5 + 2.25) / 3
 	if e := relErrMP(gp.Volume, wantVol); e > massRelTol {
 		t.Errorf("Volume = %v, want %v (rel %g)", gp.Volume, wantVol, e)

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/sketch"
 )
@@ -94,8 +95,8 @@ func TestLoftFaceSmoothIsRealCurvature(t *testing.T) {
 		t.Skip("corpus tier (~12s): `make test-corpus`")
 	}
 	t.Parallel()
-	tan := ops.BodyGeometryProperties(loftFromCylinderTop(t, LoftEnd{Condition: LoftTangent}), ops.DefaultQuality()).Volume
-	smooth := ops.BodyGeometryProperties(loftFromCylinderTop(t, LoftEnd{Condition: LoftSmooth}), ops.DefaultQuality()).Volume
+	tan := query.BodyGeometryProperties(loftFromCylinderTop(t, LoftEnd{Condition: LoftTangent}), ops.DefaultQuality()).Volume
+	smooth := query.BodyGeometryProperties(loftFromCylinderTop(t, LoftEnd{Condition: LoftSmooth}), ops.DefaultQuality()).Volume
 	if relErr(tan, smooth) < 1e-3 {
 		t.Errorf("Smooth (%.4f) should differ from Tangent (%.4f) now that G2 imposes real curvature, not an alias", smooth, tan)
 	}

@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
@@ -103,7 +104,7 @@ func TestFilletCornerStrategiesValidWatertight(t *testing.T) {
 				t.Errorf("%s/%s: %d sphere faces, want %d", c.strategy, c.scenario, s, c.wantSphere)
 			}
 			assertWatertight(t, res, c.strategy+"/"+c.scenario)
-			if v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= 8 {
+			if v := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= 8 {
 				t.Errorf("%s/%s volume = %g, want < 8 (material removed)", c.strategy, c.scenario, v)
 			}
 		})
@@ -122,7 +123,7 @@ func TestFilletCornerVolumeOrdering(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", strategy, err)
 		}
-		return ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume
+		return query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume
 	}
 	miter, setback, round := vol("miter"), vol("setback"), vol("round")
 	if !(miter > setback && setback > round) {

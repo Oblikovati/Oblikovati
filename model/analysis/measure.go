@@ -4,6 +4,7 @@ package analysis
 
 import (
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -27,7 +28,7 @@ func EdgeLengthMm(e *topo.Edge, q ops.Quality) float64 {
 // for curved ones, #3457), falling back to summing the tessellated triangle areas at quality q for
 // a face the analytic path cannot yet cover.
 func FaceAreaMm2(f *topo.Face, q ops.Quality) float64 {
-	if areaCm2, ok := ops.AnalyticFaceArea(f); ok {
+	if areaCm2, ok := query.AnalyticFaceArea(f); ok {
 		return areaCm2 * cmToMM * cmToMM
 	}
 	mesh := tessellate.TessellateFace(f, q)

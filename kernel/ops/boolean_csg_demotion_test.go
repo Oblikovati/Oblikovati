@@ -19,7 +19,7 @@ import (
 // regression net that keeps it that way — it runs a representative boolean from EVERY exact-path family
 // through the public ops.Boolean and asserts the result is the EXACT analytic B-rep, not faceted CSG.
 //
-// The witness is the result faces: the CSG fallback (trianglesToBody) emits ONLY planar triangle facets —
+// The witness is the result Faces: the CSG fallback (trianglesToBody) emits ONLY planar triangle facets —
 // hundreds of them, zero analytic curved faces. So a curved-boolean result that carries an analytic
 // cylinder/cone/sphere face, no non-analytic face, and a small face count provably took the exact path.
 // If a refactor makes any exact path silently return ok=false, its case here flips from a handful of

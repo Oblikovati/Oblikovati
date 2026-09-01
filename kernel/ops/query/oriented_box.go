@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	stdmath "math"
 	"sort"
 
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -25,7 +26,7 @@ import (
 // OrientedMinimumRangeBox computes the minimal oriented box over the body's
 // sampled geometry (vertices + 32 samples per curved edge).
 //
-// Example: obb := ops.OrientedMinimumRangeBox(body)
+// Example: obb := query.OrientedMinimumRangeBox(body)
 func OrientedMinimumRangeBox(b *topo.Body) (math.OrientedBox, error) {
 	pts := bodySamplePoints(b)
 	hull, err := ConvexHull(pts, "obb")
@@ -133,14 +134,14 @@ func liftRectangle(r rect2, u, v, w math.Vector3, wLo, wHi float64) math.Oriente
 // minAreaRectangle runs rotating calipers over the 2D convex hull: the minimum
 // rectangle is flush with a hull edge.
 func minAreaRectangle(pts []math.Point2) (rect2, bool) {
-	hull := convexHull2D(pts)
+	hull := ConvexHull2D(pts)
 	if len(hull) < 3 {
 		return degenerateRect(hull)
 	}
 	best, bestArea := rect2{}, stdmath.Inf(1)
 	for i := range hull {
 		j := (i + 1) % len(hull)
-		dir := unit2(hull[i].VectorTo(hull[j]))
+		dir := probe.Unit2(hull[i].VectorTo(hull[j]))
 		if float64(dir.Length()) == 0 {
 			continue
 		}
@@ -154,7 +155,7 @@ func minAreaRectangle(pts []math.Point2) (rect2, bool) {
 
 // rectAlong bounds the hull in the (dir, perp) frame.
 func rectAlong(hull []math.Point2, dir math.Vector2) rect2 {
-	perp := perpLeft(dir)
+	perp := probe.PerpLeft(dir)
 	xLo, xHi := stdmath.Inf(1), stdmath.Inf(-1)
 	yLo, yHi := stdmath.Inf(1), stdmath.Inf(-1)
 	for _, p := range hull {
@@ -182,8 +183,8 @@ func degenerateRect(hull []math.Point2) (rect2, bool) {
 	}
 }
 
-// convexHull2D is Andrew's monotone chain.
-func convexHull2D(pts []math.Point2) []math.Point2 {
+// ConvexHull2D is Andrew's monotone chain.
+func ConvexHull2D(pts []math.Point2) []math.Point2 {
 	sorted := append([]math.Point2(nil), pts...)
 	sortPoints2(sorted)
 	sorted = dedupePoints2(sorted)

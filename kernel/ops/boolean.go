@@ -6,6 +6,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -340,10 +341,10 @@ func curvedGuardTolerance(target, tool *topo.Body, tv, wv float64) float64 {
 // analyticVolumesExact reports whether both operands integrate over their analytic B-rep, so their
 // volumes carry no tessellation deficit for the bracket to absorb.
 func analyticVolumesExact(target, tool *topo.Body) bool {
-	if _, ok := AnalyticGeometryProperties(target); !ok {
+	if _, ok := query.AnalyticGeometryProperties(target); !ok {
 		return false
 	}
-	_, ok := AnalyticGeometryProperties(tool)
+	_, ok := query.AnalyticGeometryProperties(tool)
 	return ok
 }
 
@@ -403,15 +404,15 @@ func invalidBooleanVolume(op PartFeatureOperation, target, tool, body *topo.Body
 }
 
 // boolVolumes measures the target, tool and result volumes for the acceptance bracket. All three go
-// through BodyGeometryProperties, which integrates the ANALYTIC B-rep (M48/C3 #3448), so the bracket
+// through query.BodyGeometryProperties, which integrates the ANALYTIC B-rep (M48/C3 #3448), so the bracket
 // no longer compares three tessellations whose chord deficits it had to be widened to absorb. The
 // quality is shared and only reaches a body the analytic path declines, where having all three
 // measured the same way still lets their deficits partly cancel.
 func boolVolumes(target, tool, body *topo.Body) (targetVol, toolVol, bodyVol float64) {
 	q := DefaultQuality()
-	return BodyGeometryProperties(target, q).Volume,
-		BodyGeometryProperties(tool, q).Volume,
-		BodyGeometryProperties(body, q).Volume
+	return query.BodyGeometryProperties(target, q).Volume,
+		query.BodyGeometryProperties(tool, q).Volume,
+		query.BodyGeometryProperties(body, q).Volume
 }
 
 // volumeOutOfBracket reports whether a result volume falls outside the Requicha two-sided
@@ -542,7 +543,7 @@ func classify(target, tool *topo.Body) relation {
 // outer between inner's vertices (#1315). Without it such a pair skips face splitting and returns a
 // silently wrong solid. The crossing test runs only after the (cheap) vertex test passes.
 func strictlyContains(outer, inner *topo.Body) bool {
-	return allVerticesInside(inner, outer) && !boundariesCross(outer, inner)
+	return allVerticesInside(inner, outer) && !query.BoundariesCross(outer, inner)
 }
 
 // allVerticesInside reports whether every vertex of inner lies strictly within outer, analytically

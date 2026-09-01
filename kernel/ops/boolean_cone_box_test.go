@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -94,7 +95,7 @@ func TestConeIntersectBoxVolume(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Boolean: %v", err)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := frustumCapBeyondPlaneVolume(0.3, 0, 10, 2)
 	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
 		t.Errorf("kept wedge volume %.4f vs numeric %.4f (rel %.4f > 0.03)", got, want, rel)
@@ -161,7 +162,7 @@ func TestConeVertexInsideVolumes(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: Boolean: %v", c.name, err)
 		}
-		got := ops.BodyGeometryProperties(res, fine).Volume
+		got := query.BodyGeometryProperties(res, fine).Volume
 		if rel := stdmath.Abs(got-c.want) / c.want; rel > 0.01 {
 			t.Errorf("%s volume %.4f vs numeric %.4f (rel %.4f > 0.01)", c.name, got, c.want, rel)
 		}

@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/sheetmetal"
 )
@@ -69,7 +70,7 @@ func (d *PartComponentDefinition) FlatPlates() ([]FlatPlate, error) {
 	}
 	area := 0.0
 	if fp.Thickness > 0 {
-		area = ops.BodyGeometryProperties(fp.Body, ops.Quality{ChordTolerance: 1e-3}).Volume / fp.Thickness
+		area = query.BodyGeometryProperties(fp.Body, ops.Quality{ChordTolerance: 1e-3}).Volume / fp.Thickness
 	}
 	return []FlatPlate{{Length: length, Width: width, Area: area}}, nil
 }

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // Moving the top face of a block outward grows its volume.
@@ -15,7 +16,7 @@ func TestMoveFaceTool(t *testing.T) {
 	s, block := newPartWithBlock(t, 4)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	def := activePartDef(t, s)
-	vol0 := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	vol0 := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 
 	tool := NewMoveFaceTool()
 	tool.dz = 2
@@ -31,7 +32,7 @@ func TestMoveFaceTool(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid {
 		t.Fatalf("moved body invalid: %+v", r)
 	}
-	vol1 := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	vol1 := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 	if vol1 <= vol0 {
 		t.Fatalf("moving top face +Z should grow volume: %g → %g", vol0, vol1)
 	}

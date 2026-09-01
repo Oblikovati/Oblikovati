@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestShellToolEndToEnd drives the Shell UI: start the tool, click the block's top face
@@ -35,7 +36,7 @@ func TestShellToolEndToEnd(t *testing.T) {
 		t.Fatalf("shelled body not a valid solid: %+v", r)
 	}
 	want := 32.0 - 3*3*1.5
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 1e-6 {
 		t.Errorf("shell volume = %g, want %g", got, want)
 	}
 	if s.ActiveTool() != nil {
@@ -62,7 +63,7 @@ func TestShellViaRibbonCommand(t *testing.T) {
 		t.Fatalf("OK: %v", err)
 	}
 	def := activePartDef(t, s)
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 32 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 32 {
 		t.Errorf("shell did not hollow the body: volume %g, want < 32", v)
 	}
 }

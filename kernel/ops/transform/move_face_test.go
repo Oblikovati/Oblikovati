@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/math"
 )
@@ -23,7 +24,7 @@ func TestMoveFaceGrowsBox(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("moved-face body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-12) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-12) > 1e-6 {
 		t.Errorf("move-face volume = %g, want 12", got)
 	}
 }
@@ -40,7 +41,7 @@ func TestOffsetFaceShavesBox(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("offset-face body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-6) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-6) > 1e-6 {
 		t.Errorf("offset-face volume = %g, want 6", got)
 	}
 }

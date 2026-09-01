@@ -12,6 +12,7 @@ import (
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -46,7 +47,7 @@ func TestBoxSharedCornerArea(t *testing.T) {
 		// flipped-normal sphere (which lands outside / self-intersects) is caught.
 		nativeRound := filletBoxCorner(t, mustBox5(t), blend.CornerRound)
 		importedRound := filletBoxCorner(t, importOrientedBox5(t), blend.CornerRound)
-		want := ops.BodyGeometryProperties(nativeRound, ops.PropertyQuality()).Area
+		want := query.BodyGeometryProperties(nativeRound, ops.PropertyQuality()).Area
 		assertCornerArea(t, importedRound, want)
 	})
 }
@@ -83,7 +84,7 @@ func boxCornerEdge(a, c, p, q math.Point3) bool {
 func assertCornerArea(t *testing.T, res *topo.Body, want float64) {
 	t.Helper()
 	assertWatertight(t, res, "box shared-corner fillet")
-	got := ops.BodyGeometryProperties(res, ops.PropertyQuality()).Area
+	got := query.BodyGeometryProperties(res, ops.PropertyQuality()).Area
 	if rel := (got - want) / want; rel < -0.01 || rel > 0.01 {
 		t.Fatalf("box shared-corner area %.4f, want %.4f within 1%% (rel %.4f)", got, want, rel)
 	}

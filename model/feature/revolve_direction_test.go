@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -31,7 +32,7 @@ func revolveCentroid(t *testing.T, angle float64, dir ExtentDirection, angle2 fu
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("revolve not a valid solid: %+v", r)
 	}
-	return ops.BodyGeometryProperties(body, ops.DefaultQuality())
+	return query.BodyGeometryProperties(body, ops.DefaultQuality())
 }
 
 // quarterWasher is a 90° sweep of the 2×2 square at x∈[2,4]: a quarter of the 24π washer.

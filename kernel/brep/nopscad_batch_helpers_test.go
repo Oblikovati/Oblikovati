@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -201,7 +202,7 @@ func tearSlotBody(t *testing.T, radius, span, depth float64, vertical bool, feat
 		a = prismBody(teardropPoints(-span/2, 0, radius, false), -depth/2, depth/2, feat+"-a")
 		b = prismBody(teardropPoints(span/2, 0, radius, false), -depth/2, depth/2, feat+"-b")
 	}
-	body, err := ops.ConvexHullOf(feat+"-hull", a, b)
+	body, err := query.ConvexHullOf(feat+"-hull", a, b)
 	if err != nil {
 		t.Fatalf("ConvexHullOf(%s): %v", feat, err)
 	}
@@ -231,7 +232,7 @@ func e3dFanDuctBody(t *testing.T) *topo.Body {
 	t.Helper()
 	left := box(-0.8, -1.15, 0, 0.05, 2.3, 2.6)
 	right := box(1.5, -1.5, 0, 0.05, 3.0, 3.0)
-	body, err := ops.ConvexHullOf("e3d-fan-duct-hull", left, right)
+	body, err := query.ConvexHullOf("e3d-fan-duct-hull", left, right)
 	if err != nil {
 		t.Fatalf("ConvexHullOf(e3d fan duct): %v", err)
 	}

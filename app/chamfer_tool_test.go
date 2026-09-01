@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -56,7 +57,7 @@ func TestChamferToolEndToEnd(t *testing.T) {
 		t.Fatalf("chamfered body not a valid solid: %+v", r)
 	}
 	want := 8 - 0.5*0.5*0.5*2 // 8 − wedge (½·d²·length) = 7.75
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 1e-6 {
 		t.Errorf("chamfer volume = %g, want %g", got, want)
 	}
 	if s.ActiveTool() != nil {
@@ -82,7 +83,7 @@ func TestChamferViaRibbonCommand(t *testing.T) {
 		t.Fatalf("OK: %v", err)
 	}
 	def := activePartDef(t, s)
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 8 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 8 {
 		t.Errorf("chamfer did not remove material: volume %g, want < 8", v)
 	}
 }

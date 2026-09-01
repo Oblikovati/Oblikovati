@@ -19,33 +19,33 @@ func TestOnSegment(t *testing.T) {
 	t.Parallel()
 	a, b := math.P3(0, 0, 0), math.P3(2, 0, 0)
 	tol := geom.ResolutionForPoints([]math.Point3{a, b}).Plane()
-	if !onSegment(math.P3(1, 0, 0), a, b, tol) {
+	if !mesh.OnSegment(math.P3(1, 0, 0), a, b, tol) {
 		t.Error("midpoint should be on the segment")
 	}
-	if onSegment(math.P3(5, 0, 0), a, b, tol) {
+	if mesh.OnSegment(math.P3(5, 0, 0), a, b, tol) {
 		t.Error("a point past the end should be off the segment")
 	}
-	if onSegment(math.P3(0, 0, 0), a, a, tol) {
+	if mesh.OnSegment(math.P3(0, 0, 0), a, a, tol) {
 		t.Error("a zero-length segment contains nothing")
 	}
 }
 
 func TestIsClosedCage(t *testing.T) {
 	t.Parallel()
-	if !isClosedCage(map[[2]int]int{{0, 1}: 2, {1, 2}: 2}) {
+	if !mesh.IsClosedCage(map[[2]int]int{{0, 1}: 2, {1, 2}: 2}) {
 		t.Error("a fully-paired cage should be closed")
 	}
-	if isClosedCage(map[[2]int]int{{0, 1}: 1}) {
+	if mesh.IsClosedCage(map[[2]int]int{{0, 1}: 1}) {
 		t.Error("an unpaired edge means open")
 	}
-	if isClosedCage(map[[2]int]int{}) {
+	if mesh.IsClosedCage(map[[2]int]int{}) {
 		t.Error("an empty cage is not closed")
 	}
 }
 
 func TestDropRepeats(t *testing.T) {
 	t.Parallel()
-	got := dropRepeats([]int{1, 1, 2, 3, 1})
+	got := DropRepeats([]int{1, 1, 2, 3, 1})
 	if len(got) != 3 { // consecutive dup removed + closing 1 dropped
 		t.Fatalf("dropRepeats = %v, want 3 unique", got)
 	}
@@ -65,7 +65,7 @@ func TestTrianglePlaneDegenerateFallback(t *testing.T) {
 	t.Parallel()
 	// Collinear triangle vertices ⇒ zero normal ⇒ fallback to +Z.
 	verts := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0)}
-	n := trianglePlane(verts, [3]int{0, 1, 2}).NormalAt(0, 0)
+	n := mesh.TrianglePlane(verts, [3]int{0, 1, 2}).NormalAt(0, 0)
 	if n.Z == 0 {
 		t.Errorf("degenerate trianglePlane normal = %v, want a +Z fallback", n)
 	}

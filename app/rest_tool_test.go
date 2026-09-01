@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestRestToolEndToEnd drives the Rest UI: pick a region, set a depth, OK — and asserts the
@@ -32,7 +33,7 @@ func TestRestToolEndToEnd(t *testing.T) {
 	if v := ops.Validate(body); !v.Valid || !body.IsSolid() {
 		t.Fatalf("rest body not a valid solid: %+v", v)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(v, 76) > 0.01 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(v, 76) > 0.01 {
 		t.Errorf("rest volume = %g, want ≈76 (72 + 2×2×1)", v)
 	}
 }
@@ -51,7 +52,7 @@ func TestRestToolRecesses(t *testing.T) {
 	if err := s.OK(); err != nil {
 		t.Fatalf("OK: %v", err)
 	}
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 68) > 0.01 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 68) > 0.01 {
 		t.Errorf("recessed volume = %g, want ≈68 (72 − 2×2×1)", v)
 	}
 }

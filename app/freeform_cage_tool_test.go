@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -116,7 +117,7 @@ func TestFreeformCageCreaseSharpensTheEdgesAtAHandle(t *testing.T) {
 	// Subdivide first, so creasing has a visible effect on the limit surface.
 	tool.SetLevel(2)
 	s.ApplyActiveCageLevel()
-	before := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 
 	if s.CreaseActiveCageHandle() {
 		t.Fatal("crease should refuse before a handle has been dragged")
@@ -125,7 +126,7 @@ func TestFreeformCageCreaseSharpensTheEdgesAtAHandle(t *testing.T) {
 	if !s.CreaseActiveCageHandle() {
 		t.Fatal("crease found no edges at the dragged handle")
 	}
-	after := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	if after <= before {
 		t.Errorf("creasing left the volume at %g (was %g) — a sharpened corner should push it out", after, before)
 	}

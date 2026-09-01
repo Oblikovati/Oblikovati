@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/feature"
 )
@@ -55,7 +56,7 @@ func TestDeleteFaceHealsChamfer(t *testing.T) {
 	if r := ops.Validate(healed); !r.Valid || !healed.IsSolid() {
 		t.Fatalf("healed body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(healed, ops.DefaultQuality()).Volume; stdmath.Abs(got-8) > 1e-6 {
+	if got := query.BodyGeometryProperties(healed, ops.DefaultQuality()).Volume; stdmath.Abs(got-8) > 1e-6 {
 		t.Errorf("healed volume = %g, want 8 (sharp box restored)", got)
 	}
 }

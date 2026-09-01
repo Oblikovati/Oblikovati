@@ -5,6 +5,7 @@ package ops
 import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -37,7 +38,7 @@ func certifyBooleanFaces(op PartFeatureOperation, target, tool, body *topo.Body)
 	tol := geom.ResolutionForBox(target.RangeBox().Union(tool.RangeBox())).Sew()
 	ta, to := newBoundaryIndex(target), newBoundaryIndex(tool)
 	for _, f := range body.Faces() {
-		p, ok := FaceInteriorPoint(f)
+		p, ok := query.FaceInteriorPoint(f)
 		if !ok {
 			continue
 		}

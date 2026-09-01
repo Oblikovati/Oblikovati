@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -71,7 +72,7 @@ func TestRibThickenSidePlacesWallOffThePath(t *testing.T) {
 				t.Errorf("wall spans Y [%g, %g], want [%g, %g]", b.Min.Y, b.Max.Y, c.minY, c.maxY)
 			}
 			// 4 (length) × 1 (thickness) × 2 (depth), whichever side it sits on.
-			if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-8) > 1e-6 {
+			if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-8) > 1e-6 {
 				t.Errorf("wall volume = %g, want 8 — the side must not change the thickness", v)
 			}
 		})

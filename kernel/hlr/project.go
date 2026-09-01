@@ -15,6 +15,7 @@ package hlr
 
 import (
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -115,7 +116,7 @@ func project2D(view View, p math.Point3) math.Point2 {
 func occluded(mesh *ops.Mesh, view View, p math.Point3, bias float64) bool {
 	toViewer := view.ViewDir.Negate()
 	origin := p.TranslateBy(toViewer.Scale(math.Scalar(bias)))
-	d, hit := ops.RayCastMesh(mesh, origin, toViewer)
+	d, hit := query.RayCastMesh(mesh, origin, toViewer)
 	return hit && d > bias
 }
 

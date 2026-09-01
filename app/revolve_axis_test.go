@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -38,7 +39,7 @@ func revolvedBodyVolume(t *testing.T, s *Session) float64 {
 	if def.SurfaceBodies().Count() != 1 {
 		t.Fatalf("part has %d bodies after revolve, want 1", def.SurfaceBodies().Count())
 	}
-	return ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 }
 
 // TestAxisChipNamesThePreselectedCenterline is the #2018 regression: the panel must name the axis

@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/analysis"
@@ -32,7 +33,7 @@ func bodyLocateUsingPoint(_ *app.Session, part *compdef.PartComponentDefinition,
 	if err != nil {
 		return wire.LocateUsingPointResult{}, err
 	}
-	hit, found := ops.LocateUsingPoint(b, kind, p, in.ProximityTolerance, ops.DefaultQuality())
+	hit, found := query.LocateUsingPoint(b, kind, p, in.ProximityTolerance, ops.DefaultQuality())
 	out := wire.LocateUsingPointResult{Found: found}
 	if found {
 		out.Entity = locatedInfo(hit)
@@ -56,7 +57,7 @@ func entityKindFilter(spelling string) (topo.EntityKind, error) {
 	}
 }
 
-func locatedInfo(hit ops.LocatedEntity) wire.LocatedEntityInfo {
+func locatedInfo(hit query.LocatedEntity) wire.LocatedEntityInfo {
 	key, tkey := locatedKeys(hit)
 	return wire.LocatedEntityInfo{
 		Kind: hit.Kind.String(), Key: key, TransientKey: tkey,
@@ -65,7 +66,7 @@ func locatedInfo(hit ops.LocatedEntity) wire.LocatedEntityInfo {
 	}
 }
 
-func locatedKeys(hit ops.LocatedEntity) (string, uint64) {
+func locatedKeys(hit query.LocatedEntity) (string, uint64) {
 	switch hit.Kind {
 	case topo.KindVertex:
 		return string(hit.Vertex.ReferenceKey()), hit.Vertex.ID()
@@ -91,7 +92,7 @@ func bodyFindUsingRay(_ *app.Session, part *compdef.PartComponentDefinition, in 
 		return wire.FindUsingRayResult{}, err
 	}
 	var out wire.FindUsingRayResult
-	for _, hit := range ops.FindUsingRay(b, origin, dir, in.Radius, ops.DefaultQuality(), in.FindFirstOnly) {
+	for _, hit := range query.FindUsingRay(b, origin, dir, in.Radius, ops.DefaultQuality(), in.FindFirstOnly) {
 		out.Hits = append(out.Hits, locatedInfo(hit))
 	}
 	return out, nil
@@ -118,23 +119,23 @@ func bodyIsPointInside(_ *app.Session, part *compdef.PartComponentDefinition, in
 	return wire.IsPointInsideResult{Containment: containmentSpelling(verdict)}, nil
 }
 
-func pointContainmentOf(b *topo.Body, shellIndex *int, p math.Point3, onTol float64) (ops.PointContainment, error) {
+func pointContainmentOf(b *topo.Body, shellIndex *int, p math.Point3, onTol float64) (query.PointContainment, error) {
 	q := ops.DefaultQuality()
 	if shellIndex == nil {
-		return ops.BodyContainment(b, p, q, onTol), nil
+		return query.BodyContainment(b, p, q, onTol), nil
 	}
 	shells := b.Shells()
 	if *shellIndex < 0 || *shellIndex >= len(shells) {
 		return 0, fmt.Errorf("shell index %d out of range (body has %d shells)", *shellIndex, len(shells))
 	}
-	return ops.ShellContainment(shells[*shellIndex], p, q, onTol), nil
+	return query.ShellContainment(shells[*shellIndex], p, q, onTol), nil
 }
 
-func containmentSpelling(c ops.PointContainment) string {
+func containmentSpelling(c query.PointContainment) string {
 	switch c {
-	case ops.ContainInside:
+	case query.ContainInside:
 		return types.InsideContainment.String()
-	case ops.ContainOn:
+	case query.ContainOn:
 		return types.OnContainment.String()
 	default:
 		return types.OutsideContainment.String()
@@ -241,7 +242,7 @@ func bodyRangeBox(_ *app.Session, part *compdef.PartComponentDefinition, in wire
 	}
 	box := b.RangeBox()
 	if in.Precise {
-		box = ops.PreciseRangeBox(b, ops.DefaultQuality())
+		box = query.PreciseRangeBox(b, ops.DefaultQuality())
 	}
 	return wire.BodyRangeBoxResult{
 		Min: []float64{float64(box.Min.X), float64(box.Min.Y), float64(box.Min.Z)},
@@ -250,7 +251,7 @@ func bodyRangeBox(_ *app.Session, part *compdef.PartComponentDefinition, in wire
 }
 
 func orientedRangeBoxReply(b *topo.Body) (wire.BodyRangeBoxResult, error) {
-	obb, err := ops.OrientedMinimumRangeBox(b)
+	obb, err := query.OrientedMinimumRangeBox(b)
 	if err != nil {
 		return wire.BodyRangeBoxResult{}, err
 	}

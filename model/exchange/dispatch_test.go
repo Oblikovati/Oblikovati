@@ -11,6 +11,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/exchange"
@@ -48,7 +49,7 @@ func TestStepRoundTripThroughDispatch(t *testing.T) {
 	if _, err := exchange.Import(src, stepFixture("cube.step"), types.FormatSTEP); err != nil {
 		t.Fatalf("import: %v", err)
 	}
-	v0 := ops.BodyGeometryProperties(src.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	v0 := query.BodyGeometryProperties(src.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 
 	out := filepath.Join(t.TempDir(), "roundtrip.step")
 	if _, err := exchange.Export(src, out, types.FormatSTEP, ""); err != nil {
@@ -62,7 +63,7 @@ func TestStepRoundTripThroughDispatch(t *testing.T) {
 	if r := ops.Validate(b); !r.Valid || !b.IsSolid() {
 		t.Fatalf("round-tripped step body not a valid solid: %+v", r)
 	}
-	if v1 := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; relErr(v0, v1) > 0.02 {
+	if v1 := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; relErr(v0, v1) > 0.02 {
 		t.Errorf("step round-trip volume changed: %.4f → %.4f", v0, v1)
 	}
 }
@@ -134,7 +135,7 @@ func TestMeshExportImportThroughDispatch(t *testing.T) {
 	if _, err := exchange.Import(src, stepFixture("cube.step"), types.FormatSTEP); err != nil {
 		t.Fatalf("seed import: %v", err)
 	}
-	v0 := ops.BodyGeometryProperties(src.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	v0 := query.BodyGeometryProperties(src.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	out := filepath.Join(t.TempDir(), "m.stl")
 	if _, err := exchange.Export(src, out, types.FormatSTL, types.ResolutionHigh); err != nil {
 		t.Fatalf("export stl: %v", err)
@@ -143,7 +144,7 @@ func TestMeshExportImportThroughDispatch(t *testing.T) {
 	if _, err := exchange.Import(back, out, types.FormatSTL); err != nil {
 		t.Fatalf("re-import stl: %v", err)
 	}
-	v1 := ops.BodyGeometryProperties(back.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	v1 := query.BodyGeometryProperties(back.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	if relErr(v0, v1) > 0.05 {
 		t.Errorf("mesh dispatch round-trip volume %.4f → %.4f", v0, v1)
 	}

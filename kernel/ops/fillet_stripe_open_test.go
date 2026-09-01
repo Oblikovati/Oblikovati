@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
 )
@@ -34,7 +35,7 @@ func countPlanes(b *topo.Body) int {
 func TestFilletOpenCurvedTangentStripe(t *testing.T) {
 	t.Parallel()
 	filleted := boxWithRoundedVerticals(t, 4, 0.5)
-	before := ops.BodyGeometryProperties(filleted, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(filleted, ops.DefaultQuality()).Volume
 	planesBefore := countPlanes(filleted)
 
 	seed := firstStraightTopEdge(t, filleted)
@@ -66,7 +67,7 @@ func TestFilletOpenCurvedTangentStripe(t *testing.T) {
 	if tori := countTorus(res); tori != 1 {
 		t.Errorf("torus faces = %d, want 1 (the single arc segment)", tori)
 	}
-	after := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	removed := before - after
 	want := openStripeRemovedVolume(r)
 	// Cross-check against OCCT: BRepFilletAPI_MakeFillet removes 0.198382 over the WHOLE 15.14-long
@@ -122,7 +123,7 @@ func TestFilletSingleVerticalOpenChain(t *testing.T) {
 	if err != nil {
 		t.Fatalf("single vertical fillet: %v", err)
 	}
-	before := ops.BodyGeometryProperties(f, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(f, ops.DefaultQuality()).Volume
 
 	chain, closed, err := blend.TangentEdgeChain(f, firstStraightTopEdge(t, f), blend.DefaultTangentChainAngle)
 	if err != nil {
@@ -140,7 +141,7 @@ func TestFilletSingleVerticalOpenChain(t *testing.T) {
 		t.Fatalf("open sas result invalid: valid=%v solid=%v chi=%d issues=%v",
 			rep.Valid, res.IsSolid(), rep.EulerCharacteristic, rep.Issues)
 	}
-	after := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	const occt = 0.103246
 	if removed := before - after; math.Abs(removed-occt) > 0.05*occt {
 		t.Errorf("removed volume = %g, want ≈%g (OCCT oracle)", removed, occt)

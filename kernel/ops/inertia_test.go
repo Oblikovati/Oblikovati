@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/query"
 	gmath "oblikovati.org/math"
 )
 
@@ -20,7 +21,7 @@ func TestBodyInertiaBox(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
 	}
-	it := BodyInertia(block, DefaultQuality())
+	it := query.BodyInertia(block, DefaultQuality())
 
 	v := lx * ly * lz
 	wantXX := v * (ly*ly + lz*lz) / 12

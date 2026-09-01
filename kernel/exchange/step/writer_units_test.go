@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -84,7 +85,7 @@ func TestExportImportUnitRoundTrip(t *testing.T) {
 		if err != nil || len(bodies) != 1 {
 			t.Fatalf("re-import %s: %v (%d bodies)", unit, err, len(bodies))
 		}
-		got := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+		got := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 		if rel := (got - 216) / 216; rel < -0.01 || rel > 0.01 {
 			t.Errorf("%s round-trip volume = %.3f cm³, want 216", unit, got)
 		}
@@ -106,7 +107,7 @@ func TestImportScalesFileUnitToCentimetres(t *testing.T) {
 	if err != nil || len(bodies) != 1 {
 		t.Fatalf("import: %v (%d bodies)", err, len(bodies))
 	}
-	got := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 	if rel := (got - 216) / 216; rel < -0.01 || rel > 0.01 {
 		t.Errorf("imported volume = %.3f cm³, want 216 (a 60 mm cube is 6 cm)", got)
 	}

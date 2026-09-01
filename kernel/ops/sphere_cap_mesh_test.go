@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -70,7 +71,7 @@ func TestSphereCapTessellatesToAnalyticVolume(t *testing.T) {
 			if r := Validate(body); !r.Valid || !r.Closed || !r.Manifold || !body.IsSolid() {
 				t.Fatalf("cap body not a valid closed manifold solid: %+v", r)
 			}
-			got := BodyGeometryProperties(body, DefaultQuality()).Volume
+			got := query.BodyGeometryProperties(body, DefaultQuality()).Volume
 			h := R + tc.d
 			want := stdmath.Pi * h * h * (3*R - h) / 3
 			if got < 0.5*want {

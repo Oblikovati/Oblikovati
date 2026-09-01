@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/meshbool"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -37,7 +38,7 @@ func TestChainedReconstructionCutStaysValid(t *testing.T) {
 		t.Fatalf("chained cut is not a valid solid: manifold=%v closed=%v euler=%v issues=%v", r.Manifold, r.Closed, r.EulerConsistent, r.Issues)
 	}
 	// The combined cut leaves an L-prism of volume 4*2*2 - 2*2*1 = 12.
-	if v := BodyGeometryProperties(target2, PropertyQuality()).Volume; v < 11.9 || v > 12.1 {
+	if v := query.BodyGeometryProperties(target2, PropertyQuality()).Volume; v < 11.9 || v > 12.1 {
 		t.Errorf("chained cut volume = %.3f, want ~12", v)
 	}
 }

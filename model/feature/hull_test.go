@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/math"
 )
@@ -38,7 +39,7 @@ func TestHullFeatureWrapsTwoBodies(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("hull body invalid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-24) > 1e-9 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-24) > 1e-9 {
 		t.Errorf("hull volume = %.6f, want 24 (enclosing 6×2×2 box)", v)
 	}
 }

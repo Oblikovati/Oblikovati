@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/sketch"
 )
@@ -36,7 +37,7 @@ func solidCoilBody(t *testing.T, fs *PartFeatures, pf *PartFeature, what string)
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("%s is not a valid solid: %+v", what, r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
 		t.Fatalf("%s volume = %g, want > 0", what, v)
 	}
 	return body
@@ -64,8 +65,8 @@ func TestLeftHandedCoilWindsOppositeToRight(t *testing.T) {
 			lb.Min.Z, lb.Max.Z)
 	}
 	// Mirroring the winding must not change the amount of material or the climb.
-	rv := ops.BodyGeometryProperties(right, ops.DefaultQuality()).Volume
-	lv := ops.BodyGeometryProperties(left, ops.DefaultQuality()).Volume
+	rv := query.BodyGeometryProperties(right, ops.DefaultQuality()).Volume
+	lv := query.BodyGeometryProperties(left, ops.DefaultQuality()).Volume
 	if relErr(lv, rv) > 0.01 {
 		t.Errorf("left-handed volume %g != right-handed %g — handedness must only mirror", lv, rv)
 	}

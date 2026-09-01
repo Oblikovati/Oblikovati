@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 func TestCoilSweepsValidHelix(t *testing.T) {
@@ -27,7 +28,7 @@ func TestCoilSweepsValidHelix(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("coil is not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
 		t.Errorf("coil volume = %g, want > 0", v)
 	}
 	// The helix climbs along Y by pitch·revolutions plus the profile height.

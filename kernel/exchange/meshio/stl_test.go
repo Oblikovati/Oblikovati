@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -97,7 +98,7 @@ func TestBinarySTLRoundTripCubePreservesSolidAndVolume(t *testing.T) {
 	if !body.IsSolid() {
 		t.Fatalf("round-tripped cube is not a solid")
 	}
-	got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 	if want := 27.0; stdmath.Abs(got-want) > 1e-4 { // 3³
 		t.Errorf("round-trip volume = %v, want %v", got, want)
 	}

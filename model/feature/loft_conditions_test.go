@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -134,7 +135,7 @@ func TestLoftConditionAnglePipe(t *testing.T) {
 	end := LoftEnd{Condition: LoftAngle, Angle: rad(45)}
 	b := conditionedLoft(t, []LoftSection{{Sketch: sb, ProfileIndex: ib}, {Sketch: st, ProfileIndex: it}}, false, end, end)
 	// Hollow: volume must be well below the solid bounding cylinder (a filled body would be ~π·2²·4).
-	if v := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; v > stdmath.Pi*2*2*4*0.85 {
+	if v := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; v > stdmath.Pi*2*2*4*0.85 {
 		t.Errorf("angled pipe looks filled (bore lost): volume = %.3f", v)
 	}
 }
@@ -188,8 +189,8 @@ func TestLoftConditionClosedIgnoresEnds(t *testing.T) {
 	end := LoftEnd{Condition: LoftAngle, Angle: rad(45)}
 	free := conditionedLoft(t, mk(), true, LoftEnd{}, LoftEnd{})
 	cond := conditionedLoft(t, mk(), true, end, end)
-	vf := ops.BodyGeometryProperties(free, ops.DefaultQuality()).Volume
-	vc := ops.BodyGeometryProperties(cond, ops.DefaultQuality()).Volume
+	vf := query.BodyGeometryProperties(free, ops.DefaultQuality()).Volume
+	vc := query.BodyGeometryProperties(cond, ops.DefaultQuality()).Volume
 	if relErr(vf, vc) > 1e-9 {
 		t.Errorf("closed loft honored end conditions: free vol %.6f != conditioned %.6f", vf, vc)
 	}

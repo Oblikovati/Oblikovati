@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -55,7 +56,7 @@ func TestFullRoundRoundsRibTop(t *testing.T) {
 	}
 	// rib 4×10×5 = 200; rounded = lower box 4×10×3 (120) + half-cylinder r2 len10 (≈62.8) ≈ 182.8.
 	// The boolean facets the round, so the value lands a little under; bound it generously.
-	v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume
+	v := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume
 	if v <= 178 || v >= 185 {
 		t.Errorf("full-round volume = %g, want ≈ 182.8 (lower box + half cylinder, faceted)", v)
 	}
@@ -86,7 +87,7 @@ func TestFullRoundConvergingSides(t *testing.T) {
 	rib := buildPrism(trap, sketch.XYPlane(), span{near: 0, far: 6}, 0, "rib")
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(rib)
-	orig := ops.BodyGeometryProperties(rib, ops.DefaultQuality()).Volume
+	orig := query.BodyGeometryProperties(rib, ops.DefaultQuality()).Volume
 
 	top := faceKeyByNormal(t, rib, math.V3(0, 1, 0)) // narrow +Y top = center
 	pf := NewDressUpFeatures(fs).AddFullRoundFillet(
@@ -99,7 +100,7 @@ func TestFullRoundConvergingSides(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("converging full round not a valid solid: %+v", r)
 	}
-	v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume
+	v := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume
 	if v >= orig {
 		t.Errorf("converging full round volume = %g, want < %g (corners rounded off)", v, orig)
 	}

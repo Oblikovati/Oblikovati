@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -81,7 +82,7 @@ func TestNopCapScrewCSG(t *testing.T) {
 		t.Fatalf("cap screw has %d boundary edges, want 0 (watertight)", len(open))
 	}
 
-	got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 	wantExact := stdmath.Pi*headRad*headRad*headHeight +
 		stdmath.Pi*shaftRad*shaftRad*length -
 		3*stdmath.Sqrt(3)/2*socketRad*socketRad*socketDepth

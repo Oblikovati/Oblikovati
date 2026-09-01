@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -45,7 +46,7 @@ func TestBooleanIntersectSphereBoxExact(t *testing.T) {
 	if spheres != 1 {
 		t.Errorf("result has %d sphere faces, want 1 (the curved cap survived as exact geometry)", spheres)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	capV := stdmath.Pi * 9 * (3*R - 3) / 3 // x>2 spherical cap (height 3); its z<0 half is removed
 	want := (2.0/3.0)*stdmath.Pi*R*R*R - capV/2
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
@@ -83,7 +84,7 @@ func TestBooleanIntersectCylinderBoxExact(t *testing.T) {
 	if cylFaces != 4 {
 		t.Errorf("result has %d cylinder faces, want 4 (one exact arc per clipped corner)", cylFaces)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	segs := r*r*stdmath.Acos(a/r) - a*stdmath.Sqrt(r*r-a*a) // one minor segment beyond a wall
 	want := (stdmath.Pi*r*r - 4*segs) * h
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
@@ -101,7 +102,7 @@ func TestBooleanIntersectSphereContainedBoxUnaffected(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Boolean(Intersect): %v", err)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	if stdmath.Abs(got-8) > 1e-6 { // the 2×2×2 box
 		t.Errorf("sphere ∩ contained box volume %.6f, want 8", got)
 	}

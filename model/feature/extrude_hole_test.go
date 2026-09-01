@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/param"
 )
 
@@ -38,7 +39,7 @@ func TestExtrudeHonorsHole(t *testing.T) {
 		t.Fatalf("extrude produced %d bodies (want 1 solid)", len(bodies))
 	}
 	want := (side*side - hole*hole) * height // 16-4 = 12 * 3 = 36
-	got := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 	if stdmath.Abs(got-want)/want > 1e-3 {
 		t.Errorf("hollow extrude volume = %.4f, want %.4f (hole not honored?)", got, want)
 	}
@@ -76,7 +77,7 @@ func TestExtrudeHonorsMultipleHoles(t *testing.T) {
 		t.Fatalf("4-hole extrude is not a valid solid: %+v", rep)
 	}
 	want := (w*h - 4*hole*hole) * height
-	got := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 	if stdmath.Abs(got-want)/want > 1e-3 {
 		t.Errorf("4-hole extrude volume = %.4f, want %.4f (multi-hole cap mis-tessellated?)", got, want)
 	}

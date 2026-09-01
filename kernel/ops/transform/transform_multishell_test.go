@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
@@ -78,7 +79,7 @@ func TestTransformBodyCavityPreservesShellsAndVolume(t *testing.T) {
 	if got := len(moved.Shells()); got != 2 {
 		t.Errorf("moved cavity body has %d shells, want 2", got)
 	}
-	if v := ops.BodyGeometryProperties(moved, ops.DefaultQuality()).Volume; stdmath.Abs(v-56) > 0.1 {
+	if v := query.BodyGeometryProperties(moved, ops.DefaultQuality()).Volume; stdmath.Abs(v-56) > 0.1 {
 		t.Errorf("moved cavity volume = %g, want 56 (face sense must survive)", v)
 	}
 	if r := ops.Validate(moved); !r.Valid {

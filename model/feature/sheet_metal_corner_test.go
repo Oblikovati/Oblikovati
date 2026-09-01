@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -45,7 +46,7 @@ func verticalCornerEdge(t *testing.T, body *topo.Body) *topo.Edge {
 const flatSheetVolume = 4.0 * 4.0 * 0.2
 
 func sheetVolume(body *topo.Body) float64 {
-	return ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-4}).Volume
+	return query.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-4}).Volume
 }
 
 // TestCornerChamferRemovesCorner a corner chamfer cuts a triangular notch off the sheet

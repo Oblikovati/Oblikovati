@@ -5,7 +5,7 @@ package brep_test
 import (
 	"testing"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -14,7 +14,7 @@ func TestNopSingleCableClipCSG(t *testing.T) {
 	base := prismBody(roundedRectPoints(1.6, 0.18, 0.08, 4), 0, 0.5, "cable-clip-foot")
 	post := prismBody(roundedRectPoints(0.4, 0.9, 0.08, 4), 0, 0.5, "cable-clip-post")
 	top := prismBody(regularPolygonPoints(math.P3(-0.55, 0.62, 0), 0.22, 24, 0), 0, 0.5, "cable-clip-loop")
-	body, err := ops.ConvexHullOf("single-cable-clip-hull", base, post, top)
+	body, err := query.ConvexHullOf("single-cable-clip-hull", base, post, top)
 	if err != nil {
 		t.Fatalf("ConvexHullOf(single cable clip): %v", err)
 	}

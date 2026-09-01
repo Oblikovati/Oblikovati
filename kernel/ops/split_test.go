@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -32,7 +33,7 @@ func TestSplitSolidByMidPlane(t *testing.T) {
 		if r := ops.Validate(p); !r.Valid || !p.IsSolid() {
 			t.Fatalf("piece %d not a valid solid: %+v", i, r)
 		}
-		if v := ops.BodyGeometryProperties(p, ops.DefaultQuality()).Volume; stdmath.Abs(v-32) > 1e-6 {
+		if v := query.BodyGeometryProperties(p, ops.DefaultQuality()).Volume; stdmath.Abs(v-32) > 1e-6 {
 			t.Errorf("piece %d volume = %g, want 32 (half the box)", i, v)
 		}
 	}
@@ -67,7 +68,7 @@ func TestSplitSolidByObliquePlane(t *testing.T) {
 		if r := ops.Validate(p); !r.Valid || !p.IsSolid() {
 			t.Fatalf("oblique piece not a valid solid: %+v", r)
 		}
-		sum += ops.BodyGeometryProperties(p, ops.DefaultQuality()).Volume
+		sum += query.BodyGeometryProperties(p, ops.DefaultQuality()).Volume
 	}
 	if stdmath.Abs(sum-64) > 1e-6 {
 		t.Errorf("oblique split volumes sum to %g, want 64 (the whole box)", sum)

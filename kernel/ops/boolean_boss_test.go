@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -40,7 +41,7 @@ func TestCylindricalBossUnionIsExact(t *testing.T) {
 	if !hasCylinderFace(res) {
 		t.Error("boss union has no geom.Cylinder face — it fell back to faceted CSG")
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := 200.0 + stdmath.Pi*1.5*1.5*3 // plate 10×10×2 + boss πr²h
 	if rel := stdmath.Abs(got-want) / want; rel > 0.01 {
 		t.Errorf("boss union volume %.4f, want %.4f (rel %.4f > 0.01); union is not exact", got, want, rel)

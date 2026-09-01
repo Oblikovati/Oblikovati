@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/meshbool"
+	"oblikovati.org/kernel/ops/query"
 	m "oblikovati.org/math"
 )
 
@@ -48,7 +49,7 @@ func TestReconstructDeclinesCornerCrossingObliqueCut(t *testing.T) {
 	if r := Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("faceted fallback is not a valid solid: %+v", r)
 	}
-	if v := BodyGeometryProperties(res, DefaultQuality()).Volume; v <= 0.9 || v >= 1.0 {
+	if v := query.BodyGeometryProperties(res, DefaultQuality()).Volume; v <= 0.9 || v >= 1.0 {
 		t.Fatalf("faceted fallback volume = %.5f, want a box (1.0) with a bore removed (0.9..1.0)", v)
 	}
 }
@@ -85,10 +86,10 @@ func TestReconstructPerpendicularDisjointCutRebuilds(t *testing.T) {
 	if n := cylinderFaceCount(recon); n != 2 {
 		t.Fatalf("disjoint cut kept %d cylinder bore walls, want 2 (one per segment)", n)
 	}
-	// exact remaining volume: block 1.0 minus slot (0.4·1.2·0.2=0.096, clipped to block = 0.4·1·0.2=0.08)
+	// exact remaining Volume: block 1.0 minus slot (0.4·1.2·0.2=0.096, clipped to block = 0.4·1·0.2=0.08)
 	// minus the bore through the solid (height 1 - slot 0.2 = 0.8): pi·0.15²·0.8.
 	want := 1.0 - 0.4*1.0*0.2 - stdmath.Pi*0.15*0.15*0.8
-	if v := BodyGeometryProperties(recon, PropertyQuality()).Volume; stdmath.Abs(v-want) > 5e-3*want {
+	if v := query.BodyGeometryProperties(recon, PropertyQuality()).Volume; stdmath.Abs(v-want) > 5e-3*want {
 		t.Fatalf("disjoint cut volume = %.5f, want ~%.5f", v, want)
 	}
 }

@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -27,7 +28,7 @@ func MeshToBRep(verts []math.Point3, facets [][]int, feat string) *topo.Body {
 	}
 	// cageToBody trusts the facet winding for face normals; if the mesh was wound inward
 	// (negative volume) flip every facet so the result is a proper outward solid.
-	if BodyGeometryProperties(body, DefaultQuality()).Volume < 0 {
+	if query.BodyGeometryProperties(body, DefaultQuality()).Volume < 0 {
 		body = trianglesToBody(reversedTris(tris), feat)
 	}
 	return body

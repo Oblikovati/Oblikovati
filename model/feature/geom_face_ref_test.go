@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -28,8 +29,8 @@ func TestGeometricFaceShellBindsAndHollows(t *testing.T) {
 	if !pf.Health().OK() {
 		t.Fatalf("geometric-face shell is not healthy: %+v", pf.Health())
 	}
-	boxVol := ops.BodyGeometryProperties(geomRefBox(), ops.DefaultQuality()).Volume
-	gotVol := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
+	boxVol := query.BodyGeometryProperties(geomRefBox(), ops.DefaultQuality()).Volume
+	gotVol := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
 	if !(gotVol < boxVol) {
 		t.Errorf("shell did not hollow the body: got %g, box %g", gotVol, boxVol)
 	}
@@ -55,8 +56,8 @@ func TestGeometricFaceHoleBindsAndDrills(t *testing.T) {
 	if !pf.Health().OK() {
 		t.Fatalf("geometric-face hole is not healthy: %+v", pf.Health())
 	}
-	boxVol := ops.BodyGeometryProperties(geomRefBox(), ops.DefaultQuality()).Volume
-	gotVol := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
+	boxVol := query.BodyGeometryProperties(geomRefBox(), ops.DefaultQuality()).Volume
+	gotVol := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
 	if !(gotVol < boxVol) {
 		t.Errorf("hole did not remove material: got %g, box %g", gotVol, boxVol)
 	}

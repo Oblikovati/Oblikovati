@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -38,7 +39,7 @@ func shellVolume(t *testing.T, box *topo.Body, removed [][]byte, thick float64,
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("varied shell not a valid solid: %+v", r)
 	}
-	return ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 }
 
 // TestShellThickensOneWallInward: an open-top 4³ box walled 0.5, with the +X wall thickened to

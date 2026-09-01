@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -41,7 +42,7 @@ func bodyMeshFingerprint(b *topo.Body) meshFingerprint {
 	for _, f := range b.Faces() {
 		sum, tris = foldFaceTriangles(f, quant, sum, tris)
 	}
-	vol := ops.BodyGeometryProperties(b, ops.PropertyQuality()).Volume
+	vol := query.BodyGeometryProperties(b, ops.PropertyQuality()).Volume
 	return meshFingerprint{Volume: vol, Triangles: tris, Hash: sum}
 }
 

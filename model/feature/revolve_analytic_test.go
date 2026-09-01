@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -49,7 +50,7 @@ func TestAnalyticRevolveHasCylinderWalls(t *testing.T) {
 		t.Fatalf("analytic tube has %d cylinder faces, want 2 (bore + outer wall)", got)
 	}
 	want := stdmath.Pi * (4*4 - 2*2) * 2 // 24π
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
 		t.Errorf("analytic tube volume = %g, want ≈%g (24π)", got, want)
 	}
 }
@@ -82,7 +83,7 @@ func TestArcProfileRevolveMakesAnalyticSphere(t *testing.T) {
 		t.Fatalf("sphere revolve has %d cylinder + %d cone faces, want 0", c, k)
 	}
 	want := 4.0 / 3.0 * stdmath.Pi * 8 // (4/3)πR³, R=2
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
 		t.Errorf("analytic sphere volume = %g, want ≈%g", got, want)
 	}
 }
@@ -128,7 +129,7 @@ func TestAnalyticRevolveTubeBooleanCutsHalf(t *testing.T) {
 	// The donut is uniform in y over [0,2]; removing y>1 leaves the bottom half: 2π·R̄·A with the
 	// section now 2 wide (r∈[2,4]) × 1 tall, R̄=3 ⇒ 2π·3·2 = 12π.
 	want := 2 * stdmath.Pi * 3 * 2
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
 		t.Fatalf("revolve+cut volume = %g, want ≈%g (12π half-donut) — extent too small?", got, want)
 	}
 }
@@ -186,7 +187,7 @@ func TestDomedRevolveMakesAnalyticSphereCap(t *testing.T) {
 		t.Fatalf("domed revolve has %d faces, want 3 (bottom disk + cylinder wall + sphere cap)", got)
 	}
 	want := stdmath.Pi*r*r*h + 2.0/3.0*stdmath.Pi*r*r*r // cylinder + hemisphere
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
 		t.Errorf("domed revolve volume = %g, want ≈%g (πr²h + ⅔πr³)", got, want)
 	}
 }
@@ -224,7 +225,7 @@ func TestSphereZoneRevolveMakesAnalyticSphere(t *testing.T) {
 		t.Fatalf("sphere-zone revolve has %d faces, want 4 (bottom annulus + bore + OD + sphere zone)", got)
 	}
 	want := sphereZoneShellVolume(rIn, rOut, radius, zc)
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
 		t.Errorf("sphere-zone revolve volume = %g, want ≈%g", got, want)
 	}
 }
@@ -259,7 +260,7 @@ func TestCircleRevolveMakesAnalyticTorus(t *testing.T) {
 		t.Fatalf("revolved circle has %d torus faces, want exactly 1 analytic torus (got %d total faces)", got, len(body.Faces()))
 	}
 	want := 2 * stdmath.Pi * stdmath.Pi * 5 * 2 * 2 // 40π²
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
 		t.Errorf("revolved torus volume = %g, want ≈%g (40π²)", got, want)
 	}
 }

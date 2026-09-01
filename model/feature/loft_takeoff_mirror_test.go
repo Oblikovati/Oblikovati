@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -220,7 +221,7 @@ func TestReversedTakeoffStillUndercuts(t *testing.T) {
 	if z := float64(b.RangeBox().Min.Z); z > -0.02 {
 		t.Errorf("min z = %.4f, want < -0.02 — the undercut was lost to the mirror", z)
 	}
-	if v := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; v <= 0 {
 		t.Errorf("the undercut body has volume %g", v)
 	}
 }

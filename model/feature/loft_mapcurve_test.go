@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -53,9 +54,9 @@ func TestLoftMapCurveForcesTwist(t *testing.T) {
 		t.Skip("corpus tier (~3s): `make test-corpus`")
 	}
 	t.Parallel()
-	auto := ops.BodyGeometryProperties(mappedSquares(t, nil), ops.DefaultQuality()).Volume
+	auto := query.BodyGeometryProperties(mappedSquares(t, nil), ops.DefaultQuality()).Volume
 	mc := func() []math.Point3 { return []math.Point3{math.P3(2, 2, 0), math.P3(-2, 2, 4)} }
-	twisted := ops.BodyGeometryProperties(mappedSquares(t, []func() []math.Point3{mc}), ops.DefaultQuality()).Volume
+	twisted := query.BodyGeometryProperties(mappedSquares(t, []func() []math.Point3{mc}), ops.DefaultQuality()).Volume
 	if twisted >= auto*0.9 {
 		t.Errorf("map curve did not change the correspondence: twisted vol %.3f vs auto %.3f (want twisted clearly less, the mid pinches)", twisted, auto)
 	}

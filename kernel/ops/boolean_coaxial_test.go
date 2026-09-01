@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -39,7 +40,7 @@ func TestCoaxialCylinderUnionIsExact(t *testing.T) {
 	if !hasCylinderFace(res) {
 		t.Error("coaxial union has no geom.Cylinder face — it fell back to faceted CSG")
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := stdmath.Pi * 2 * 2 * 7 // one cylinder r=2, merged height 7
 	if rel := stdmath.Abs(got-want) / want; rel > 0.01 {
 		t.Errorf("coaxial union volume %.4f, want %.4f (rel %.4f > 0.01); union is not exact", got, want, rel)

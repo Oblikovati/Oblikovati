@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/feature"
 )
 
@@ -55,7 +56,7 @@ func TestFilletToolG2CommitsValidSolid(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("G2-filleted body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; got >= 8 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; got >= 8 {
 		t.Errorf("volume after G2 fillet = %g, want < 8 (material removed)", got)
 	}
 }

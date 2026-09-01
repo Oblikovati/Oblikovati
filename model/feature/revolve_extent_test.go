@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
@@ -52,7 +53,7 @@ func revolveWithExtent(t *testing.T, set func(*RevolveDefinition)) *ops.Geometry
 	// its volume is EXACT and only the display-grade mesh under-reports it. Measure at PropertyQuality
 	// — the codebase's grade for reported property values (tessellate.go) — not the display default,
 	// which biases an analytic curved volume ~1.5% low and would fail the 1% wedge gate below.
-	props := ops.BodyGeometryProperties(fs.Result()[0], ops.PropertyQuality())
+	props := query.BodyGeometryProperties(fs.Result()[0], ops.PropertyQuality())
 	return &props
 }
 

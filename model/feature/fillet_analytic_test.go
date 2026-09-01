@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -46,7 +47,7 @@ func TestAnalyticFilletOfCylinderRimIsATorus(t *testing.T) {
 	sqMoment := (r - f/2) * (f * f)
 	qdMoment := ((r - f) + 4*f/(3*stdmath.Pi)) * (stdmath.Pi * f * f / 4)
 	want := stdmath.Pi*r*r*h - 2*stdmath.Pi*(sqMoment-qdMoment)
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
 		t.Errorf("filleted cylinder volume = %g, want ≈%g", got, want)
 	}
 }

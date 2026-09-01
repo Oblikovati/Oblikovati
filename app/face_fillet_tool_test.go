@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/feature"
 )
 
@@ -51,7 +52,7 @@ func TestFaceFilletToolEndToEnd(t *testing.T) {
 	if cyls != 1 {
 		t.Errorf("face-filleted body has %d cylinder faces, want 1 (the rounded shared edge)", cyls)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v >= 8 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v >= 8 {
 		t.Errorf("face fillet did not round material: volume %g, want < 8", v)
 	}
 }

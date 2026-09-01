@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -70,8 +71,8 @@ func TestShadowValidateAgainstExistingEngine(t *testing.T) {
 				t.Errorf("%s/%s: mesh-arrangement result invalid: %+v", pc.name, op, r)
 				continue
 			}
-			ve := BodyGeometryProperties(existing, q).Volume
-			vm := BodyGeometryProperties(mine, q).Volume
+			ve := query.BodyGeometryProperties(existing, q).Volume
+			vm := query.BodyGeometryProperties(mine, q).Volume
 			oracle, source := ve, "existing"
 			if pc.truth != nil {
 				if tv, ok := pc.truth[op]; ok {

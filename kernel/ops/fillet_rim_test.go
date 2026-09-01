@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
@@ -39,7 +40,7 @@ func TestRimFilletTorusBand(t *testing.T) {
 		}
 	}
 	if tor != 1 || cyl != 1 || pln != 2 {
-		t.Errorf("faces: torus=%d cyl=%d plane=%d, want 1/1/2", tor, cyl, pln)
+		t.Errorf("Faces: torus=%d cyl=%d plane=%d, want 1/1/2", tor, cyl, pln)
 	}
 	for _, tol := range []float64{0.05, 1e-2, 1e-3, 1e-4} {
 		m, _ := tessellate.TessellateBody(b, ops.Quality{ChordTolerance: tol})
@@ -48,7 +49,7 @@ func TestRimFilletTorusBand(t *testing.T) {
 		}
 	}
 	full := stdmath.Pi * 1.0 * 1.0 * 2.0 // π·R²·h
-	v := ops.BodyGeometryProperties(b, ops.Quality{ChordTolerance: 1e-3}).Volume
+	v := query.BodyGeometryProperties(b, ops.Quality{ChordTolerance: 1e-3}).Volume
 	if v >= full || v < full-0.5 {
 		t.Errorf("rim-fillet volume = %g, want a little under the full cylinder %g (rim notch removed)", v, full)
 	}

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	"math"
@@ -14,7 +14,7 @@ import (
 
 // Regression suite for Oblikovati/Oblikovati#1317: point-in-solid was a single fixed-ray parity test
 // that miscounted on grazing edges/vertices (ubiquitous on a closed mesh) and re-tessellated per call.
-// It is now the generalized winding number (pointInMesh/windingNumber).
+// It is now the generalized winding number (PointInMesh/windingNumber).
 
 // TestSignedSolidAngleClosedMeshIsQuantized verifies the core identity the winding number rests on:
 // the signed solid angle summed over a closed outward mesh is 4π at an interior point and 0 at an
@@ -37,46 +37,8 @@ func TestSignedSolidAngleClosedMeshIsQuantized(t *testing.T) {
 // TestPointInsideRayThroughCornerIsRobust is the direct degeneracy regression: a cube centred so the
 // OLD skewed ray (0.5773,0.5774,0.5775) from the interior point passes essentially through the cube's
 // far CORNER (a vertex shared by three faces), the exact case that made the single ray miscount.
-func TestPointInsideRayThroughCornerIsRobust(t *testing.T) {
-	t.Parallel()
-	// Cube [0,2]^3: centre (1,1,1); (1,1,1)+t·(0.5773,0.5774,0.5775) reaches the corner (2,2,2).
-	cube, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(2, 2, 2), "cube")
-	if err != nil {
-		t.Fatalf("SolidBlock: %v", err)
-	}
-	if !PointInsideBody(cube, m.P3(1, 1, 1)) {
-		t.Error("centre of cube classified outside — the corner-grazing ray degeneracy is not handled")
-	}
-	if PointInsideBody(cube, m.P3(3, 3, 3)) {
-		t.Error("far point classified inside")
-	}
-}
-
 // TestPointInsideCubeFacePlanes checks classification just inside and just outside the plane of each
 // cube face — points the surface-grazing ray handled poorly.
-func TestPointInsideCubeFacePlanes(t *testing.T) {
-	t.Parallel()
-	cube, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(2, 2, 2), "cube")
-	if err != nil {
-		t.Fatalf("SolidBlock: %v", err)
-	}
-	const eps = 1e-4
-	cases := []struct {
-		p    m.Point3
-		want bool
-	}{
-		{m.P3(eps, 1, 1), true}, {m.P3(-eps, 1, 1), false},
-		{m.P3(2-eps, 1, 1), true}, {m.P3(2+eps, 1, 1), false},
-		{m.P3(1, eps, 1), true}, {m.P3(1, -eps, 1), false},
-		{m.P3(1, 1, 2-eps), true}, {m.P3(1, 1, 2+eps), false},
-	}
-	for _, c := range cases {
-		if got := PointInsideBody(cube, c.p); got != c.want {
-			t.Errorf("PointInsideBody(%v) = %v, want %v", c.p, got, c.want)
-		}
-	}
-}
-
 // TestSphereContainmentMatchesAnalytic stress-tests the winding number against the analytic sphere
 // membership |p-c| < r over many random points, requiring 100% agreement outside a thin surface shell.
 func TestSphereContainmentMatchesAnalytic(t *testing.T) {
@@ -98,7 +60,7 @@ func TestSphereContainmentMatchesAnalytic(t *testing.T) {
 			continue
 		}
 		tested++
-		if pointInMesh(mesh, p) != (d < r) {
+		if PointInMesh(mesh, p) != (d < r) {
 			mism++
 		}
 	}
@@ -129,10 +91,10 @@ func TestTorusContainmentMatchesAnalytic(t *testing.T) {
 	}
 	mesh, _ := tessellate.TessellateBody(torus, Quality{ChordTolerance: 0.02, AngleTolerance: 4 * math.Pi / 180})
 	// Sanity: the axis centre and the hole are OUTSIDE the solid; the tube core is INSIDE.
-	if pointInMesh(mesh, m.P3(0, 0, 0)) {
+	if PointInMesh(mesh, m.P3(0, 0, 0)) {
 		t.Error("torus axis centre classified inside (it is in the hole)")
 	}
-	if !pointInMesh(mesh, m.P3(major, 0, 0)) {
+	if !PointInMesh(mesh, m.P3(major, 0, 0)) {
 		t.Error("torus tube core classified outside")
 	}
 	rng := rand.New(rand.NewSource(424242))
@@ -146,7 +108,7 @@ func TestTorusContainmentMatchesAnalytic(t *testing.T) {
 			continue
 		}
 		tested++
-		if pointInMesh(mesh, p) != insideTorus(p, major, minor) {
+		if PointInMesh(mesh, p) != insideTorus(p, major, minor) {
 			mism++
 		}
 	}
@@ -174,27 +136,9 @@ func TestSignedSolidAngleDegenerate(t *testing.T) {
 // TestAllVerticesInsideCubeInCube confirms allVerticesInside (the boolean classifier helper) is
 // correct for nested and non-nested convex bodies — and, with the tessellation hoisted, returns the
 // same verdicts as before for the cases the boolean relies on.
-func TestAllVerticesInsideCubeInCube(t *testing.T) {
-	t.Parallel()
-	outer, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(10, 10, 10), "outer")
-	if err != nil {
-		t.Fatalf("outer: %v", err)
-	}
-	inner, err := brep.SolidBlock(m.P3(3, 3, 3), m.P3(6, 6, 6), "inner")
-	if err != nil {
-		t.Fatalf("inner: %v", err)
-	}
-	if !allVerticesInside(inner, outer) {
-		t.Error("inner cube vertices should all be inside outer cube")
-	}
-	if allVerticesInside(outer, inner) {
-		t.Error("outer cube vertices should not be inside inner cube")
-	}
-	apart, err := brep.SolidBlock(m.P3(20, 20, 20), m.P3(22, 22, 22), "apart")
-	if err != nil {
-		t.Fatalf("apart: %v", err)
-	}
-	if allVerticesInside(apart, outer) {
-		t.Error("disjoint cube vertices should not be inside outer cube")
-	}
-}
+// allVerticesInside reports whether every vertex of inner lies strictly within outer, analytically
+// (M48/C3 #3422). It prepares outer ONCE as a brep.InsideQuery and reuses that for every vertex query
+// — the analytic analog of tessellating outer once and reusing the mesh (#1317) — so classification
+// no longer reads a tessellation. The prepared query dispatches by representation exactly as
+// PointInsideBody does (all-planar → generalized winding, curved → nearest-crossing ray), so the
+// vertex verdicts match the retired mesh oracle on every consistently-oriented body.

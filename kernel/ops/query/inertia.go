@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	"oblikovati.org/kernel/ops/internal/retopo"
@@ -27,9 +27,9 @@ type InertiaTensor struct {
 // carried through the affine map [a b c]; the signed sum gives the body's covariance about the
 // origin, which is reduced to the inertia tensor and shifted to the centroid.
 //
-// Example: it := ops.BodyInertia(cyl, ops.PropertyQuality()) // it.Izz == ½·V·r² about the axis
+// Example: it := query.BodyInertia(cyl, query.PropertyQuality()) // it.Izz == ½·V·r² about the axis
 func BodyInertia(b *topo.Body, q Quality) InertiaTensor {
-	if it, ok := AnalyticInertia(b); ok {
+	if it, ok := analyticInertia(b); ok {
 		return it
 	}
 	mesh, _ := tessellate.TessellateBody(b, q)

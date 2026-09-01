@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -48,7 +49,7 @@ func TestTubeSolidIsWatertightWithCorrectVolume(t *testing.T) {
 		t.Fatalf("tube is not a valid solid: valid=%v solid=%v closed=%v", r.Valid, body.IsSolid(), r.Closed)
 	}
 	want := stdmath.Pi * (4 - 1) * 4 // (R²−r²)·h
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, want) > 0.02 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, want) > 0.02 {
 		t.Errorf("tube volume = %g, want ≈%g", v, want)
 	}
 }
@@ -67,7 +68,7 @@ func TestTubeSolidWindingInvariant(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ccw=%v tubeSolid: %v", ccw, err)
 		}
-		gp := ops.BodyGeometryProperties(body, ops.DefaultQuality())
+		gp := query.BodyGeometryProperties(body, ops.DefaultQuality())
 		if r := ops.Validate(body); !r.Valid || !body.IsSolid() || gp.Volume <= 0 {
 			t.Fatalf("ccw=%v tube invalid: valid=%v solid=%v vol=%g", ccw, r.Valid, body.IsSolid(), gp.Volume)
 		}

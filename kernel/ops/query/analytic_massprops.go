@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -21,58 +22,58 @@ import (
 // not yet cover fall back, per body, to the tessellated path — a named, temporary migration
 // seam, not a silent degrade.
 
-// massTerms are the density-independent divergence-theorem sums for one face or a whole body,
+// MassTerms are the density-independent divergence-theorem sums for one face or a whole body,
 // taken about the ORIGIN: the enclosed volume, the three first moments ∫x_i dV, the six
 // second moments ∫x_i x_j dV (the covariance that reduces to the inertia tensor), and the
 // surface area. Volume/moments/covariance carry the outward-flux sign; area is unsigned.
-type massTerms struct {
-	vol           float64 // ∫∫∫ 1 dV
-	mx, my, mz    float64 // ∫∫∫ x, y, z dV
-	cxx, cyy, czz float64 // ∫∫∫ x², y², z² dV
-	cxy, cyz, czx float64 // ∫∫∫ xy, yz, zx dV
-	ax, ay, az    float64 // ∮∮ N dA — the outward VECTOR area, zero over a closed surface
-	area          float64 // ∮∮ dA
+type MassTerms struct {
+	Vol           float64 // ∫∫∫ 1 dV
+	Mx, My, Mz    float64 // ∫∫∫ x, y, z dV
+	Cxx, Cyy, Czz float64 // ∫∫∫ x², y², z² dV
+	Cxy, Cyz, Czx float64 // ∫∫∫ xy, yz, zx dV
+	Ax, Ay, Az    float64 // ∮∮ N dA — the outward VECTOR area, zero over a closed surface
+	Area          float64 // ∮∮ dA
 }
 
 // add returns the component-wise sum (used to accumulate cells, segments, loops and faces).
-func (a massTerms) add(b massTerms) massTerms {
-	return massTerms{
-		vol: a.vol + b.vol, mx: a.mx + b.mx, my: a.my + b.my, mz: a.mz + b.mz,
-		cxx: a.cxx + b.cxx, cyy: a.cyy + b.cyy, czz: a.czz + b.czz,
-		cxy: a.cxy + b.cxy, cyz: a.cyz + b.cyz, czx: a.czx + b.czx,
-		ax: a.ax + b.ax, ay: a.ay + b.ay, az: a.az + b.az,
-		area: a.area + b.area,
+func (a MassTerms) add(b MassTerms) MassTerms {
+	return MassTerms{
+		Vol: a.Vol + b.Vol, Mx: a.Mx + b.Mx, My: a.My + b.My, Mz: a.Mz + b.Mz,
+		Cxx: a.Cxx + b.Cxx, Cyy: a.Cyy + b.Cyy, Czz: a.Czz + b.Czz,
+		Cxy: a.Cxy + b.Cxy, Cyz: a.Cyz + b.Cyz, Czx: a.Czx + b.Czx,
+		Ax: a.Ax + b.Ax, Ay: a.Ay + b.Ay, Az: a.Az + b.Az,
+		Area: a.Area + b.Area,
 	}
 }
 
 // scale multiplies every component (used by quadrature weights and the region-orientation sign).
-func (a massTerms) scale(s float64) massTerms {
-	return massTerms{
-		vol: a.vol * s, mx: a.mx * s, my: a.my * s, mz: a.mz * s,
-		cxx: a.cxx * s, cyy: a.cyy * s, czz: a.czz * s,
-		cxy: a.cxy * s, cyz: a.cyz * s, czx: a.czx * s,
-		ax: a.ax * s, ay: a.ay * s, az: a.az * s,
-		area: a.area * s,
+func (a MassTerms) scale(s float64) MassTerms {
+	return MassTerms{
+		Vol: a.Vol * s, Mx: a.Mx * s, My: a.My * s, Mz: a.Mz * s,
+		Cxx: a.Cxx * s, Cyy: a.Cyy * s, Czz: a.Czz * s,
+		Cxy: a.Cxy * s, Cyz: a.Cyz * s, Czx: a.Czx * s,
+		Ax: a.Ax * s, Ay: a.Ay * s, Az: a.Az * s,
+		Area: a.Area * s,
 	}
 }
 
 // scaleFlux multiplies only the outward-flux (divergence) components by s, leaving the
 // unsigned area untouched — this is where a face's outward sense (Face.Reversed ⇒ −1) applies.
-func (a massTerms) scaleFlux(s float64) massTerms {
+func (a MassTerms) scaleFlux(s float64) MassTerms {
 	out := a.scale(s)
-	out.area = a.area
+	out.Area = a.Area
 	return out
 }
 
 // measure is the area component — the term integrated from an unsigned integrand, so its sign
 // reports the boundary traversal's orientation.
-func (a massTerms) measure() float64 { return a.area }
+func (a MassTerms) measure() float64 { return a.Area }
 
 // converged reports whether a coarse and a refined estimate agree to tolerance on every component
 // (mixed absolute/relative, so a component that is legitimately ~0 does not stall the refinement).
-func (a massTerms) converged(r massTerms) bool {
-	c := [14]float64{a.vol, a.mx, a.my, a.mz, a.cxx, a.cyy, a.czz, a.cxy, a.cyz, a.czx, a.ax, a.ay, a.az, a.area}
-	d := [14]float64{r.vol, r.mx, r.my, r.mz, r.cxx, r.cyy, r.czz, r.cxy, r.cyz, r.czx, r.ax, r.ay, r.az, r.area}
+func (a MassTerms) converged(r MassTerms) bool {
+	c := [14]float64{a.Vol, a.Mx, a.My, a.Mz, a.Cxx, a.Cyy, a.Czz, a.Cxy, a.Cyz, a.Czx, a.Ax, a.Ay, a.Az, a.Area}
+	d := [14]float64{r.Vol, r.Mx, r.My, r.Mz, r.Cxx, r.Cyy, r.Czz, r.Cxy, r.Cyz, r.Czx, r.Ax, r.Ay, r.Az, r.Area}
 	return componentsConverged(c[:], d[:])
 }
 
@@ -81,19 +82,19 @@ func (a massTerms) converged(r massTerms) bool {
 // magnitude is the area element and its components carry the flux. The fields chosen give
 // ∇·F = the desired volume integrand: F=(x,y,z)/3→1, F=(x²/2,0,0)→x, F=(x³/3,0,0)→x²,
 // F=(x²y/2,0,0)→xy (and cyclic).
-func integrandsAt(s geom.Surface, u, v float64) massTerms {
+func integrandsAt(s geom.Surface, u, v float64) MassTerms {
 	p := s.PointAt(u, v)
 	du, dv := s.DerivativesAt(u, v)
 	n := du.Cross(dv)
 	px, py, pz := float64(p.X), float64(p.Y), float64(p.Z)
 	nx, ny, nz := float64(n.X), float64(n.Y), float64(n.Z)
-	return massTerms{
-		vol: (px*nx + py*ny + pz*nz) / 3,
-		mx:  px * px * nx / 2, my: py * py * ny / 2, mz: pz * pz * nz / 2,
-		cxx: px * px * px * nx / 3, cyy: py * py * py * ny / 3, czz: pz * pz * pz * nz / 3,
-		cxy: px * px * py * nx / 2, cyz: py * py * pz * ny / 2, czx: pz * pz * px * nz / 2,
-		ax: nx, ay: ny, az: nz,
-		area: float64(n.Length()),
+	return MassTerms{
+		Vol: (px*nx + py*ny + pz*nz) / 3,
+		Mx:  px * px * nx / 2, My: py * py * ny / 2, Mz: pz * pz * nz / 2,
+		Cxx: px * px * px * nx / 3, Cyy: py * py * py * ny / 3, Czz: pz * pz * pz * nz / 3,
+		Cxy: px * px * py * nx / 2, Cyz: py * py * pz * ny / 2, Czx: pz * pz * px * nz / 2,
+		Ax: nx, Ay: ny, Az: nz,
+		Area: float64(n.Length()),
 	}
 }
 
@@ -170,19 +171,19 @@ func areaIntegrandsAt(s geom.Surface, u, v float64) areaTerms {
 // B-rep faces. ok is false when a face is not yet analytically integrable (e.g. a trimmed NURBS
 // whose uv boundary cannot be reconstructed), so the caller can fall back to the mesh path.
 //
-// Example: gp, ok := ops.AnalyticGeometryProperties(cyl) // ok ⇒ gp.Volume == πr²h exactly
+// Example: gp, ok := query.AnalyticGeometryProperties(cyl) // ok ⇒ gp.Volume == πr²h exactly
 func AnalyticGeometryProperties(b *topo.Body) (GeometryProperties, bool) {
-	t, ok := analyticBodyTerms(b)
+	t, ok := AnalyticBodyTerms(b)
 	if !ok {
 		return GeometryProperties{}, false
 	}
-	return geometryFromTerms(t), true
+	return GeometryFromTerms(t), true
 }
 
-// AnalyticInertia integrates the body's inertia tensor (about its centroid, per unit density)
+// analyticInertia integrates the body's inertia tensor (about its centroid, per unit density)
 // over its analytic B-rep faces. ok mirrors AnalyticGeometryProperties.
-func AnalyticInertia(b *topo.Body) (InertiaTensor, bool) {
-	t, ok := analyticBodyTerms(b)
+func analyticInertia(b *topo.Body) (InertiaTensor, bool) {
+	t, ok := AnalyticBodyTerms(b)
 	if !ok {
 		return InertiaTensor{}, false
 	}
@@ -193,13 +194,13 @@ func AnalyticInertia(b *topo.Body) (InertiaTensor, bool) {
 // over its trimmed uv region — the exact polygon area for a planar face, the surface integral for
 // a curved one. ok is false when the face is not analytically integrable (fall back to the mesh).
 //
-// Example: a, ok := ops.AnalyticFaceArea(cylinderSideFace) // ok ⇒ a == 2πrh
+// Example: a, ok := query.AnalyticFaceArea(cylinderSideFace) // ok ⇒ a == 2πrh
 func AnalyticFaceArea(f *topo.Face) (float64, bool) {
-	t, ok := faceTerms(f)
+	t, ok := FaceTerms(f)
 	if !ok {
 		return 0, false
 	}
-	return t.area, true
+	return t.Area, true
 }
 
 // AnalyticShellVolume integrates the SIGNED volume the shell bounds over its analytic faces
@@ -208,39 +209,39 @@ func AnalyticFaceArea(f *topo.Face) (float64, bool) {
 // encloses (positive flux), a void shell's point into the cavity (negative). ok is false when a
 // face is not analytically integrable, so the caller falls back to the mesh sum as one unit.
 //
-// Example: v, ok := ops.AnalyticShellVolume(cavitySkin) // ok ⇒ v < 0
+// Example: v, ok := query.AnalyticShellVolume(cavitySkin) // ok ⇒ v < 0
 func AnalyticShellVolume(s *topo.Shell) (float64, bool) {
 	if s == nil {
 		return 0, false
 	}
-	var total massTerms
+	var total MassTerms
 	for _, f := range s.Faces() {
-		ft, ok := faceTerms(f)
+		ft, ok := FaceTerms(f)
 		if !ok {
 			return 0, false
 		}
 		total = total.add(ft)
 	}
-	return total.vol, true
+	return total.Vol, true
 }
 
-// analyticBodyTerms sums every face's divergence-theorem contribution. A non-solid body has no
+// AnalyticBodyTerms sums every face's divergence-theorem contribution. A non-solid body has no
 // enclosed volume to integrate; any face the analytic path cannot cover forces a whole-body
 // fallback so the result never mixes analytic and mesh contributions.
-func analyticBodyTerms(b *topo.Body) (massTerms, bool) {
+func AnalyticBodyTerms(b *topo.Body) (MassTerms, bool) {
 	if b == nil || !b.IsSolid() {
-		return massTerms{}, false
+		return MassTerms{}, false
 	}
-	var total massTerms
+	var total MassTerms
 	for _, f := range b.Faces() {
-		ft, ok := faceTerms(f)
+		ft, ok := FaceTerms(f)
 		if !ok {
-			return massTerms{}, false
+			return MassTerms{}, false
 		}
 		total = total.add(ft)
 	}
 	if !vectorAreaCloses(b, total) {
-		return massTerms{}, false
+		return MassTerms{}, false
 	}
 	return total, true
 }
@@ -258,12 +259,12 @@ func analyticBodyTerms(b *topo.Body) (massTerms, bool) {
 // the same bodies, so the widened gate admitted a crossing-cylinder cut whose volume was 9.8% wrong
 // while its boundary noise accounted for the residual. The tolerance is not the axis to move; the
 // approximate boundary is (#3489).
-func vectorAreaCloses(_ *topo.Body, t massTerms) bool {
-	if t.area <= 0 {
+func vectorAreaCloses(_ *topo.Body, t MassTerms) bool {
+	if t.Area <= 0 {
 		return false
 	}
-	residual := stdmath.Sqrt(t.ax*t.ax + t.ay*t.ay + t.az*t.az)
-	return residual <= vectorAreaClosureTol*t.area
+	residual := stdmath.Sqrt(t.Ax*t.Ax + t.Ay*t.Ay + t.Az*t.Az)
+	return residual <= vectorAreaClosureTol*t.Area
 }
 
 // AchievedBoundarySlack is the largest error the body's own boundary approximation can produce in a
@@ -274,7 +275,7 @@ func vectorAreaCloses(_ *topo.Body, t massTerms) bool {
 //
 // It is zero for an all-analytic body, which is what keeps the exact case held to the exact standard.
 //
-// Example: if rel := math.Abs(got-want) / want; rel > ops.AchievedBoundarySlack(b)/want { /* real */ }
+// Example: if rel := math.Abs(got-want) / want; rel > query.AchievedBoundarySlack(b)/want { /* real */ }
 func AchievedBoundarySlack(b *topo.Body) float64 {
 	slack := 0.0
 	for _, e := range b.Edges() {
@@ -293,10 +294,10 @@ func AchievedBoundarySlack(b *topo.Body) float64 {
 // while still catching a single mis-oriented face, whose residual is twice that face's own area.
 const vectorAreaClosureTol = 1e-6 // tol:numeric — relative closure of the outward vector area
 
-// analyticAreaTerms sums every face's surface (shell) moments over the body's boundary. It declines
+// AnalyticAreaTerms sums every face's surface (shell) moments over the body's boundary. It declines
 // exactly when analyticBodyTerms would (a face the analytic path cannot reconstruct), so the
 // congruence signature falls back to the mesh path as one unit rather than mixing sources.
-func analyticAreaTerms(b *topo.Body) (areaTerms, bool) {
+func AnalyticAreaTerms(b *topo.Body) (areaTerms, bool) {
 	if b == nil || !b.IsSolid() {
 		return areaTerms{}, false
 	}
@@ -311,13 +312,13 @@ func analyticAreaTerms(b *topo.Body) (areaTerms, bool) {
 	return total, true
 }
 
-// faceTerms integrates one face's flux terms over its trimmed uv region and applies the face's
+// FaceTerms integrates one face's flux terms over its trimmed uv region and applies the face's
 // outward sense (Face.Reversed ⇒ the material side is opposite the surface normal).
-func faceTerms(f *topo.Face) (massTerms, bool) {
+func FaceTerms(f *topo.Face) (MassTerms, bool) {
 	s := f.Geometry()
-	region, ok := faceRegion(f, func(u, v float64) massTerms { return integrandsAt(s, u, v) })
+	region, ok := faceRegion(f, func(u, v float64) MassTerms { return integrandsAt(s, u, v) })
 	if !ok {
-		return massTerms{}, false
+		return MassTerms{}, false
 	}
 	eps := 1.0
 	if f.Reversed() { // outward material side is opposite the surface normal
@@ -334,33 +335,33 @@ func areaFaceTerms(f *topo.Face) (areaTerms, bool) {
 	return faceRegion(f, func(u, v float64) areaTerms { return areaIntegrandsAt(s, u, v) })
 }
 
-// geometryFromTerms turns origin sums into volume, area and centroid. The centroid is the first
+// GeometryFromTerms turns origin sums into volume, area and centroid. The centroid is the first
 // moment over the (signed) volume, so it is orientation-independent; the reported volume is the
 // magnitude (a solid encloses positive volume regardless of parametrization handedness).
-func geometryFromTerms(t massTerms) GeometryProperties {
+func GeometryFromTerms(t MassTerms) GeometryProperties {
 	centroid := math.P3(0, 0, 0)
-	if t.vol != 0 {
-		centroid = math.P3(math.Scalar(t.mx/t.vol), math.Scalar(t.my/t.vol), math.Scalar(t.mz/t.vol))
+	if t.Vol != 0 {
+		centroid = math.P3(math.Scalar(t.Mx/t.Vol), math.Scalar(t.My/t.Vol), math.Scalar(t.Mz/t.Vol))
 	}
-	return GeometryProperties{Volume: absFloat(t.vol), Area: t.area, Centroid: centroid}
+	return GeometryProperties{Volume: probe.AbsFloat(t.Vol), Area: t.Area, Centroid: centroid}
 }
 
 // inertiaFromTerms reduces the origin covariance to the inertia tensor about the centroid. The
 // covariance and volume share the flux sign, so both are normalized to the positive orientation
 // before the reduction (mirroring meshInertia), keeping ∫x_i x_j dV physically positive.
-func inertiaFromTerms(t massTerms) InertiaTensor {
-	if t.vol == 0 {
+func inertiaFromTerms(t MassTerms) InertiaTensor {
+	if t.Vol == 0 {
 		return InertiaTensor{}
 	}
 	sgn := 1.0
-	if t.vol < 0 {
+	if t.Vol < 0 {
 		sgn = -1
 	}
 	cov := mat3{
-		{sgn * t.cxx, sgn * t.cxy, sgn * t.czx},
-		{sgn * t.cxy, sgn * t.cyy, sgn * t.cyz},
-		{sgn * t.czx, sgn * t.cyz, sgn * t.czz},
+		{sgn * t.Cxx, sgn * t.Cxy, sgn * t.Czx},
+		{sgn * t.Cxy, sgn * t.Cyy, sgn * t.Cyz},
+		{sgn * t.Czx, sgn * t.Cyz, sgn * t.Czz},
 	}
-	d := math.P3(math.Scalar(t.mx/t.vol), math.Scalar(t.my/t.vol), math.Scalar(t.mz/t.vol))
-	return inertiaFromCovariance(cov, sgn*t.vol, d)
+	d := math.P3(math.Scalar(t.Mx/t.Vol), math.Scalar(t.My/t.Vol), math.Scalar(t.Mz/t.Vol))
+	return inertiaFromCovariance(cov, sgn*t.Vol, d)
 }

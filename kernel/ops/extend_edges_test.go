@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -45,7 +46,7 @@ func TestExtendEdgesByDistanceGrows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := ops.BodyGeometryProperties(out, ops.DefaultQuality()).Area; stdmath.Abs(got-9) > 1e-6 {
+	if got := query.BodyGeometryProperties(out, ops.DefaultQuality()).Area; stdmath.Abs(got-9) > 1e-6 {
 		t.Errorf("area = %g, want 9 (2×3 grown to 3×3)", got)
 	}
 }
@@ -59,7 +60,7 @@ func TestExtendEdgesMultiGrows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := ops.BodyGeometryProperties(out, ops.DefaultQuality()).Area; stdmath.Abs(got-12) > 1e-6 {
+	if got := query.BodyGeometryProperties(out, ops.DefaultQuality()).Area; stdmath.Abs(got-12) > 1e-6 {
 		t.Errorf("area = %g, want 12 (both sides +1 ⇒ 4×3)", got)
 	}
 }
@@ -74,7 +75,7 @@ func TestExtendEdgesToPlane(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := ops.BodyGeometryProperties(out, ops.DefaultQuality()).Area; stdmath.Abs(got-15) > 1e-6 {
+	if got := query.BodyGeometryProperties(out, ops.DefaultQuality()).Area; stdmath.Abs(got-15) > 1e-6 {
 		t.Errorf("area = %g, want 15 (right edge reached x=5 ⇒ 5×3)", got)
 	}
 }

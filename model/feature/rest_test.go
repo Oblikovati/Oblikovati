@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // A raised rest pad adds a 4×4×1 landing on the top face → block volume + 16 (#486).
@@ -23,7 +24,7 @@ func TestRestRaisesPad(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("rest body not valid: %+v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-216) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-216) > 1e-6 {
 		t.Errorf("raised rest volume = %g, want 216 (200 + 4×4×1)", v)
 	}
 }
@@ -38,7 +39,7 @@ func TestRestRecesses(t *testing.T) {
 	if !pad.Health().OK() {
 		t.Fatalf("recessed rest went sick: %+v", pad.Health())
 	}
-	if v := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(v-184) > 1e-6 {
+	if v := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(v-184) > 1e-6 {
 		t.Errorf("recessed rest volume = %g, want 184 (200 − 4×4×1)", v)
 	}
 }

@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -34,7 +35,7 @@ func TestRuleFilletAllRoundsRoundsWholeBox(t *testing.T) {
 	if !hasCylinderFace(res) {
 		t.Error("rule fillet (all rounds) produced no cylindrical face")
 	}
-	if v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 0 || v >= 64 {
+	if v := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 0 || v >= 64 {
 		t.Errorf("rounded box volume = %g, want 0 < v < 64 (material removed at every edge)", v)
 	}
 }
@@ -75,7 +76,7 @@ func TestRuleFilletNoMatchNoOp(t *testing.T) {
 	if !pf.Health().OK() {
 		t.Fatalf("no-match rule fillet sick: %+v", pf.Health())
 	}
-	if v := ops.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-3}).Volume; relErr(v, 8) > 1e-6 {
+	if v := query.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-3}).Volume; relErr(v, 8) > 1e-6 {
 		t.Errorf("box volume after no-match all-fillets = %g, want 8 (unchanged)", v)
 	}
 }

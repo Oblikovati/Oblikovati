@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -52,7 +53,7 @@ func TestRibParallelRotatesTheWall90(t *testing.T) {
 		if r := ops.Validate(b); !r.Valid || !b.IsSolid() {
 			t.Fatalf("%s rib is not a valid solid: %+v", name, r)
 		}
-		if v := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; stdmath.Abs(v-8) > 1e-6 {
+		if v := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; stdmath.Abs(v-8) > 1e-6 {
 			t.Errorf("%s rib volume = %g, want 8 (4×1×2 either way — only the orientation differs)", name, v)
 		}
 	}
@@ -125,7 +126,7 @@ func TestRibParallelToNextGrowsOntoThePart(t *testing.T) {
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(6), 0, ops.NewBody, func() float64 { return 4 })
 	fs.Recompute()
-	boxVol := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
+	boxVol := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
 
 	// A section plane through the box (y = 3), X in-plane, Z in-plane; a path above the box top.
 	plane, err := sketch.NewPlane(math.P3(0, 3, 0), math.V3(1, 0, 0).AsUnit(), math.V3(0, 0, 1).AsUnit())
@@ -147,7 +148,7 @@ func TestRibParallelToNextGrowsOntoThePart(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("parallel to-next rib is not a valid solid: %+v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= boxVol {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= boxVol {
 		t.Errorf("parallel to-next rib added no material (volume %g ≤ box %g) — it did not grow onto the part", v, boxVol)
 	}
 	// The wall grew from the profile (z=5) down onto the box top (z=4), so the body still reaches z=5.

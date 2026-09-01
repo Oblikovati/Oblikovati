@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestLipToolEndToEnd drives the Lip UI: start the tool, click a vertical edge of a 2×2×2
@@ -14,7 +15,7 @@ import (
 func TestLipToolEndToEnd(t *testing.T) {
 	t.Parallel()
 	s, block := newPartWithBlock(t, 2) // 2×2×2, vol 8
-	before := ops.BodyGeometryProperties(block, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(block, ops.DefaultQuality()).Volume
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 
 	lt := NewLipTool()
@@ -35,7 +36,7 @@ func TestLipToolEndToEnd(t *testing.T) {
 	if v := ops.Validate(body); !v.Valid || !body.IsSolid() {
 		t.Fatalf("lip body not a valid solid: %+v", v)
 	}
-	if after := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; after <= before {
+	if after := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; after <= before {
 		t.Errorf("lip volume %g did not rise from %g — a raised lip adds material", after, before)
 	}
 }
@@ -44,7 +45,7 @@ func TestLipToolEndToEnd(t *testing.T) {
 func TestLipToolGrooves(t *testing.T) {
 	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
-	before := ops.BodyGeometryProperties(block, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(block, ops.DefaultQuality()).Volume
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 
 	lt := NewLipTool()
@@ -60,7 +61,7 @@ func TestLipToolGrooves(t *testing.T) {
 	if v := ops.Validate(body); !v.Valid || !body.IsSolid() {
 		t.Fatalf("grooved body not a valid solid: %+v", v)
 	}
-	if after := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; after >= before {
+	if after := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; after >= before {
 		t.Errorf("groove volume %g did not drop from %g — a groove cuts material", after, before)
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -36,7 +37,7 @@ func TestTextEmbossRaisesMaterial(t *testing.T) {
 		t.Fatalf("text-embossed body not valid: %+v", r)
 	}
 	// The boss adds material, so the volume must exceed the bare 10×10×2 block (200).
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 200 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 200 {
 		t.Errorf("text emboss volume = %g, want > 200 (raised glyph adds material)", v)
 	}
 }

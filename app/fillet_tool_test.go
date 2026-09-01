@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/feature"
 )
 
@@ -75,7 +76,7 @@ func TestFilletToolEndToEnd(t *testing.T) {
 		t.Errorf("filleted body has %d cylinder faces, want 1", cyls)
 	}
 	want := 8 - (0.5*0.5-stdmath.Pi*0.25*0.25)*2
-	if got := ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-4}).Volume; relErrApp(got, want) > 1e-3 {
+	if got := query.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-4}).Volume; relErrApp(got, want) > 1e-3 {
 		t.Errorf("fillet volume = %g, want ≈ %g", got, want)
 	}
 	if s.ActiveTool() != nil {
@@ -101,7 +102,7 @@ func TestFilletViaRibbonCommand(t *testing.T) {
 	if err := s.OK(); err != nil {
 		t.Fatalf("OK: %v", err)
 	}
-	if v := ops.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 8 {
+	if v := query.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 8 {
 		t.Errorf("fillet did not round material: volume %g, want < 8", v)
 	}
 }
@@ -126,7 +127,7 @@ func TestFilletUnbuildableSurfacesNotice(t *testing.T) {
 	if s.Notice() == "" {
 		t.Error("a failed commit should set a status-bar notice, not fail silently")
 	}
-	if v := ops.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 8) > 1e-6 {
+	if v := query.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 8) > 1e-6 {
 		t.Errorf("body should be unchanged (vol 8) after a failed fillet, got %g", v)
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -65,7 +66,7 @@ func TestSketchPlacementDrillsOneHolePerCentrePoint(t *testing.T) {
 		t.Fatalf("sketch-placed hole sick: %+v", hole.Health())
 	}
 	want := 32 - 4*facetedBlindBoreVolume()
-	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("volume = %g, want %g (block − FOUR Ø2×1 bores)", got, want)
 	}
 }
@@ -85,7 +86,7 @@ func TestSketchPlacementIgnoresPlainPoints(t *testing.T) {
 		t.Fatalf("sketch-placed hole sick: %+v", hole.Health())
 	}
 	want := 32 - exactBlindBoreVolume() // the single centre bore is clear of the sides: a true cylinder
-	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("volume = %g, want %g (ONE bore — the line's endpoints are not drill positions)", got, want)
 	}
 }

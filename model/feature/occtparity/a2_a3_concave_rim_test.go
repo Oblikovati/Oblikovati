@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
@@ -75,7 +76,7 @@ func bfuseblendResultBody(t *testing.T, name string) *topo.Body {
 // concave cove band's winding flip guards (an un-flipped band would fill the material and read ≤ 0).
 func assertPositiveVolume(t *testing.T, name string, body *topo.Body) {
 	t.Helper()
-	if vol := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; vol <= 0 {
+	if vol := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; vol <= 0 {
 		t.Fatalf("%s result volume %.4f, want positive (an un-flipped concave band would read ≤ 0)", name, vol)
 	}
 }

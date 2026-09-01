@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -45,8 +46,8 @@ func centerlinedCircles(t *testing.T, cl func() []math.Point3) *topo.Body {
 // centroid moves well off the axis) — the spine bends — whereas a straight loft is centred.
 func TestLoftCenterlineBendsSpine(t *testing.T) {
 	t.Parallel()
-	straight := ops.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(0)), ops.DefaultQuality())
-	bent := ops.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(2)), ops.DefaultQuality())
+	straight := query.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(0)), ops.DefaultQuality())
+	bent := query.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(2)), ops.DefaultQuality())
 	if float64(straight.Centroid.X) < -0.05 || float64(straight.Centroid.X) > 0.05 {
 		t.Errorf("straight-centerline loft is off-axis: centroid x = %.3f, want ≈0", float64(straight.Centroid.X))
 	}
@@ -59,8 +60,8 @@ func TestLoftCenterlineBendsSpine(t *testing.T) {
 // holds about the same volume as the straight one (a rail, by contrast, changes the volume).
 func TestLoftCenterlinePreservesVolume(t *testing.T) {
 	t.Parallel()
-	straight := ops.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(0)), ops.DefaultQuality()).Volume
-	bent := ops.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(2)), ops.DefaultQuality()).Volume
+	straight := query.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(0)), ops.DefaultQuality()).Volume
+	bent := query.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(2)), ops.DefaultQuality()).Volume
 	if relErr(bent, straight) > 0.15 {
 		t.Errorf("spine bend changed the volume too much: bent %.3f vs straight %.3f", bent, straight)
 	}

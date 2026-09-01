@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -83,7 +84,7 @@ func TestLoftShapeCylindrical(t *testing.T) {
 	// circle→circle = a cone frustum. V = πh/3·(R²+Rr+r²).
 	body := loftSolid(t, []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), sec(circleOn(planeAtZ(4), 1))}, false)
 	want := stdmath.Pi * 4 / 3 * (4 + 2 + 1)
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, want) > 0.03 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, want) > 0.03 {
 		t.Errorf("cone-frustum volume = %g, want ≈%g", v, want)
 	}
 }
@@ -99,7 +100,7 @@ func TestLoftShapeTwistedSquares(t *testing.T) {
 	// square → square rotated 45°: the correspondence must untwist (no self-intersection),
 	// giving a valid solid. Volume ≈ a prism of the square area × height (twist preserves it).
 	body := loftSolid(t, []LoftSection{sec(centeredSquareOn(sketch.XYPlane(), 2)), sec(rotatedSquareOn(planeAtZ(4), 2, stdmath.Pi/4))}, false)
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
 		t.Fatalf("twisted loft volume %g <= 0", v)
 	}
 }
@@ -141,7 +142,7 @@ func TestLoftShapePipe(t *testing.T) {
 	body := loftSolid(t, []LoftSection{{Sketch: sb, ProfileIndex: ib}, {Sketch: st, ProfileIndex: it}}, false)
 	cone := func(rr, r, h float64) float64 { return stdmath.Pi * h / 3 * (rr*rr + rr*r + r*r) }
 	want := cone(2.0, 1.4, 4) - cone(1.5, 1.0, 4)
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, want) > 0.05 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, want) > 0.05 {
 		t.Errorf("lofted pipe volume = %g, want ≈%g (hollow tube)", v, want)
 	}
 }

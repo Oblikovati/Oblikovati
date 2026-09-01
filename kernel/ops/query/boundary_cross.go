@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	"oblikovati.org/kernel/brep"
@@ -10,7 +10,7 @@ import (
 	"oblikovati.org/math"
 )
 
-// boundariesCross reports whether the boundary of body a crosses the boundary of body b, analytically
+// BoundariesCross reports whether the boundary of body a crosses the boundary of body b, analytically
 // (M48/C3 #3423). It is the missing half of containment classification (#1315): all-vertices-inside does
 // NOT imply containment for non-convex operands — an edge or face of the inner body can pass back out
 // through the outer body BETWEEN the inner's vertices — so a boundary crossing must demote the pair to
@@ -22,7 +22,7 @@ import (
 // BOTH trims (facesCross), which catches an interior-interior crossing an edge-pierce test would miss.
 // It runs only after allVerticesInside already passed (the candidate-containment case), so it never
 // burdens the common intersecting path, which exits classify earlier.
-func boundariesCross(a, b *topo.Body) bool {
+func BoundariesCross(a, b *topo.Body) bool {
 	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox()))
 	bFaces := b.Faces()
 	for _, fa := range a.Faces() {

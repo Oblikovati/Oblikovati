@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/feature"
 )
@@ -59,7 +60,7 @@ func TestDraftToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("drafted body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 7) > 1e-6 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 7) > 1e-6 {
 		t.Errorf("draft volume = %g, want 7", got)
 	}
 	if s.ActiveTool() != nil {
@@ -87,7 +88,7 @@ func TestDraftViaRibbonCommand(t *testing.T) {
 	}
 	def := activePartDef(t, s)
 	// The default angle is +3° (taper outward), so the volume changes from the 8 baseline.
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; stdmath.Abs(v-8) < 1e-6 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; stdmath.Abs(v-8) < 1e-6 {
 		t.Errorf("draft did not change the body: volume %g, want ≠ 8", v)
 	}
 }

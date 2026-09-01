@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestSnapFitToolEndToEnd drives the Snap Fit UI: keep the default beam/catch dimensions, OK —
@@ -30,7 +31,7 @@ func TestSnapFitToolEndToEnd(t *testing.T) {
 	if v := ops.Validate(body); !v.Valid || !body.IsSolid() {
 		t.Fatalf("snap-fit body not a valid solid: %+v", v)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
 		t.Errorf("snap-fit volume = %g, want a positive solid", v)
 	}
 }

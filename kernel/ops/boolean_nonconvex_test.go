@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	m "oblikovati.org/math"
@@ -66,7 +67,7 @@ func TestClassifyNonConvexVertexInsideButBoundaryCrosses(t *testing.T) {
 		t.Fatal("test premise broken: not all bar vertices are inside the U material")
 	}
 	// Precondition: the boundaries genuinely cross (the bar pierces the slot walls).
-	if !boundariesCross(outer, bar) {
+	if !query.BoundariesCross(outer, bar) {
 		t.Fatal("test premise broken: boundaries do not cross")
 	}
 	if rel := classify(outer, bar); rel != intersecting {
@@ -78,7 +79,7 @@ func TestClassifyNonConvexVertexInsideButBoundaryCrosses(t *testing.T) {
 }
 
 // TestNonConvexJoinVolumeMatchesAnalytic checks the boolean now routed through booleanGeneral yields
-// the correct union volume: V(A) + V(B) - V(A∩B) = 304 + 12 - 4 = 312.
+// the correct union Volume: V(A) + V(B) - V(A∩B) = 304 + 12 - 4 = 312.
 func TestNonConvexJoinVolumeMatchesAnalytic(t *testing.T) {
 	t.Parallel()
 	outer := uSlotPrism()
@@ -90,7 +91,7 @@ func TestNonConvexJoinVolumeMatchesAnalytic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Boolean(Join): %v", err)
 	}
-	got := BodyGeometryProperties(joined, DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(joined, DefaultQuality()).Volume
 	const want = 312.0
 	if math.Abs(got-want) > 1e-6*want {
 		t.Errorf("union volume = %g, want %g", got, want)
@@ -115,7 +116,7 @@ func TestGenuineContainmentStillFastPaths(t *testing.T) {
 	if rel := classify(outer, inner); rel != targetContainsTool {
 		t.Errorf("classify = %v, want targetContainsTool (strict interior)", rel)
 	}
-	if boundariesCross(outer, inner) {
+	if query.BoundariesCross(outer, inner) {
 		t.Error("strictly interior tool should not cross the outer boundary")
 	}
 }

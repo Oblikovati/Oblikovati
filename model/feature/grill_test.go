@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/sketch"
 )
 
@@ -41,7 +42,7 @@ func TestGrillCutsVentLeavingRibs(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("grill body not a valid solid: %+v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-69) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-69) > 1e-6 {
 		t.Errorf("grill volume = %g, want 69 (100 − 31 vent), so >64 ⇒ ribs remain", v)
 	}
 }
@@ -74,7 +75,7 @@ func TestGrillCrossingBarsVolume(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("crossing-bar grill body not a valid solid: %+v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-64.92) > 1e-3 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-64.92) > 1e-3 {
 		t.Errorf("crossing-bar grill volume = %g, want 64.92 (100 − vent 35.08)", v)
 	}
 }
@@ -97,7 +98,7 @@ func TestGrillBoundaryOnlyIsAWindow(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("windowed body not a valid solid: %+v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-64) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-64) > 1e-6 {
 		t.Errorf("window volume = %g, want 64 (100 − 36)", v)
 	}
 }

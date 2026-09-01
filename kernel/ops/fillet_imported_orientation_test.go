@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -40,7 +41,7 @@ func TestFilletConvexEdgeOnImportedBox(t *testing.T) {
 	if err != nil {
 		t.Fatalf("fillet of a convex imported-box edge failed: %v", err)
 	}
-	area := ops.BodyGeometryProperties(res, ops.PropertyQuality()).Area
+	area := query.BodyGeometryProperties(res, ops.PropertyQuality()).Area
 	if rel := (area - 59527.9) / 59527.9; rel < -0.01 || rel > 0.01 {
 		t.Fatalf("filleted area %.1f, want 59527.9 within 1%% (rel %.4f)", area, rel)
 	}

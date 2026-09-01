@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -32,7 +33,7 @@ func segmentArea(r, m float64) float64 {
 func TestHalfSpaceCutCylinderHalvesBySymmetry(t *testing.T) {
 	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), cylR, cylH)
-	full := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
+	full := query.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
 
 	plane, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(1, 0, 0)) // keep x ≤ 0
 	half, err := brep.HalfSpaceCut(cyl, plane)
@@ -43,7 +44,7 @@ func TestHalfSpaceCutCylinderHalvesBySymmetry(t *testing.T) {
 		t.Fatalf("half cylinder is not a valid closed manifold solid: %+v", r)
 	}
 	assertOnlyCylinderAndPlaneFaces(t, half)
-	got := ops.BodyGeometryProperties(half, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(half, ops.DefaultQuality()).Volume
 	if rel := stdmath.Abs(got-full/2) / (full / 2); rel > 0.02 {
 		t.Errorf("symmetric half volume %.4f, want %.4f (full/2) — rel %.4f > 2%%", got, full/2, rel)
 	}
@@ -64,7 +65,7 @@ func TestHalfSpaceCutCylinderSegmentVsAnalytic(t *testing.T) {
 		t.Fatalf("clipped cylinder is not a valid closed manifold solid: %+v", r)
 	}
 	assertOnlyCylinderAndPlaneFaces(t, clipped)
-	got := ops.BodyGeometryProperties(clipped, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(clipped, ops.DefaultQuality()).Volume
 	want := (stdmath.Pi*cylR*cylR - segmentArea(cylR, 1.5)) * cylH // major part of the disk × height
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 		t.Errorf("clipped cylinder volume %.4f, want %.4f (analytic) — rel %.4f > 2%%", got, want, rel)
@@ -92,7 +93,7 @@ func TestHalfSpaceCutCylinderSlab(t *testing.T) {
 		t.Fatalf("slab is not a valid closed manifold solid: %+v", r)
 	}
 	assertOnlyCylinderAndPlaneFaces(t, slab)
-	got := ops.BodyGeometryProperties(slab, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(slab, ops.DefaultQuality()).Volume
 	want := (stdmath.Pi*cylR*cylR - 2*segmentArea(cylR, 1.5)) * cylH
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 		t.Errorf("slab volume %.4f, want %.4f (analytic) — rel %.4f > 2%%", got, want, rel)

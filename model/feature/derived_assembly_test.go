@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/occurrence"
@@ -43,7 +44,7 @@ func solidBlock(t *testing.T, min, max math.Point3) *topo.Body {
 }
 
 func volumeOf(b *topo.Body) float64 {
-	return ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 }
 
 func approx(got, want float64) bool { d := got - want; return d < 1e-6 && d > -1e-6 }

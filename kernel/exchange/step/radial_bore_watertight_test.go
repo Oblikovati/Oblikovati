@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
@@ -38,7 +39,7 @@ func TestRadialBoreThroughCurvedWallWatertight(t *testing.T) {
 		if folds := ops.FoldEdgeCount(mesh); folds != 0 {
 			t.Errorf("%s quality: tessellation has %d fold edges; want 0", c.name, folds)
 		}
-		vol := ops.BodyGeometryProperties(b, c.q).Volume
+		vol := query.BodyGeometryProperties(b, c.q).Volume
 		if rel := (vol - occMass) / occMass; rel < -0.03 || rel > 0.03 {
 			t.Errorf("%s quality: volume %.4f vs OCC %.4f (rel %.5f); want within 3%%", c.name, vol, occMass, rel)
 		}

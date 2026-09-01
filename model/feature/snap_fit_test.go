@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // cf wraps a constant as a func() float64 dimension.
@@ -27,7 +28,7 @@ func TestSnapFitBuildsValidHookSolid(t *testing.T) {
 		t.Fatalf("snap-fit hook is not a valid solid: %+v", r.Issues)
 	}
 	beam, catch := 20.0*2*6, 3.0*1.5*6
-	if got := ops.BodyGeometryProperties(res[0], ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, beam+catch) > 1e-3 {
+	if got := query.BodyGeometryProperties(res[0], ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, beam+catch) > 1e-3 {
 		t.Errorf("snap-fit volume = %g, want ≈ %g (beam %g + catch %g)", got, beam+catch, beam, catch)
 	}
 }

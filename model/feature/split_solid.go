@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -194,7 +195,7 @@ func keepSplitSides(pieces []*topo.Body, plane geom.Plane, keep SplitSide) []*to
 	}
 	var out []*topo.Body
 	for _, p := range pieces {
-		c := ops.BodyGeometryProperties(p, ops.DefaultQuality()).Centroid
+		c := query.BodyGeometryProperties(p, ops.DefaultQuality()).Centroid
 		side := float64(plane.Origin.VectorTo(c).Dot(plane.Normal()))
 		if (keep == SplitPositive && side > 0) || (keep == SplitNegative && side < 0) {
 			out = append(out, p)

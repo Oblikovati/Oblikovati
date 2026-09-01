@@ -3,7 +3,7 @@
 package math
 
 // NewOrientedBoxFromEdges builds an oriented box from a corner and the three edge vectors
-// spanning from it — the corner+edge-vectors form kernel/ops.OrientedMinimumRangeBox
+// spanning from it — the corner+edge-vectors form kernel/query.OrientedMinimumRangeBox
 // produces and the reference types.OrientedBox exposes (audit B9, #1620: the seam that let
 // the former kernel/ops.OrientedBox twin be collapsed into [OrientedBox]). The edges are
 // assumed mutually orthogonal; each becomes a unit axis with half its length as the

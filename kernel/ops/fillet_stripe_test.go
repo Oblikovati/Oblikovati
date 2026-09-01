@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -41,7 +42,7 @@ func TestFilletTangentStripeTopPerimeter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("vertical fillet setup: %v", err)
 	}
-	before := ops.BodyGeometryProperties(filleted, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(filleted, ops.DefaultQuality()).Volume
 
 	top := topPerimeterKeys(t, filleted)
 	if len(top) != 8 {
@@ -66,7 +67,7 @@ func TestFilletTangentStripeTopPerimeter(t *testing.T) {
 	if cyls := hasCylinderFaces(res); cyls != 8 {
 		t.Errorf("cylinder faces = %d, want 8 (4 vertical + 4 straight blends)", cyls)
 	}
-	after := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	if removed := before - after; removed < 0.18 || removed > 0.22 {
 		// OCCT BRepFilletAPI_MakeFillet oracle removes 0.198382 for this exact fixture; we read 0.2027
 		// — a ~2% tessellation overshoot on the curved blend faces at DefaultQuality (verified against a

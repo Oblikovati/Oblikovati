@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -84,7 +85,7 @@ func TestLoftUserCirclesIssue1495(t *testing.T) {
 	// V = (π h/3)(r0² + r0·r1 + r1²); tessellated circles undershoot the analytic value slightly.
 	const r0, r1, h = 0.512836453031296, 0.8760172654982382, 5.0
 	want := stdmath.Pi * h / 3 * (r0*r0 + r0*r1 + r1*r1)
-	got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 	if got <= 0 {
 		t.Fatalf("lofted solid has non-positive volume %g", got)
 	}

@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
 	"oblikovati.org/model/sketch"
@@ -54,7 +55,7 @@ func TestFilletSetsMixedConstantRadii(t *testing.T) {
 	}
 	notch := func(r float64) float64 { return r*r - stdmath.Pi*r*r/4 }
 	want := 8 - notch(0.3)*2 - notch(0.6)*2
-	if got := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, want) > 1e-3 {
+	if got := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, want) > 1e-3 {
 		t.Errorf("mixed-set fillet volume = %g, want ≈ %g", got, want)
 	}
 }
@@ -75,7 +76,7 @@ func TestFilletVariableSetThroughEngine(t *testing.T) {
 	res := fs.Result()[0]
 	removed := (1 - stdmath.Pi/4) * 2 * (0.3*0.3 + 0.3*0.6 + 0.6*0.6) / 3
 	want := 8 - removed
-	if got := ops.BodyGeometryProperties(res, fineFilletQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
+	if got := query.BodyGeometryProperties(res, fineFilletQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
 		t.Errorf("variable fillet volume = %g, want %g (smooth blend, 3%%-of-notch band)", got, want)
 	}
 	if pf.Definition().(*FilletFeature).Definition().FilletType() != 61697 {
@@ -106,7 +107,7 @@ func TestFilletRadiusPointsThroughEngine(t *testing.T) {
 	seg := func(ra, rb float64) float64 { return 1.0 * (ra*ra + ra*rb + rb*rb) / 3 }
 	removed := (1 - stdmath.Pi/4) * (seg(0.3, 0.7) + seg(0.7, 0.4))
 	want := 8 - removed
-	if got := ops.BodyGeometryProperties(res, fineFilletQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
+	if got := query.BodyGeometryProperties(res, fineFilletQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
 		t.Errorf("radius-points fillet volume = %g, want %g (smooth blend, 3%%-of-notch band)", got, want)
 	}
 }

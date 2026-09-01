@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -54,7 +55,7 @@ func TestThreadToolEndToEnd(t *testing.T) {
 	t.Parallel()
 	s, cyl := newPartWithCylinder(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
-	before := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
 	face := cylinderFaceOf(t, cyl)
 
 	// Ribbon: click "Thread" → the tool; pick the cylindrical face; configure; OK.
@@ -84,7 +85,7 @@ func TestThreadToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("threaded body not a valid solid: %+v", r)
 	}
-	after := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 	if after >= before {
 		t.Errorf("modeled cut thread should remove material: %.4f → %.4f", before, after)
 	}

@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -45,7 +46,7 @@ func TestFilletVaryingRadiusVolume(t *testing.T) {
 	// Measure at fine quality: the exact blend CONVERGES to the smooth integral as the chord
 	// tolerance tightens — the discriminating property the old C0 strips could never satisfy
 	// (they converge to the chord integral regardless of tessellation).
-	if got := ops.BodyGeometryProperties(res, fineQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
+	if got := query.BodyGeometryProperties(res, fineQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
 		t.Errorf("variable fillet volume = %g, want %g (smooth-blend integral, 3%%-of-notch band)", got, want)
 	}
 }
@@ -90,7 +91,7 @@ func TestFilletIntermediateRadiiVolume(t *testing.T) {
 	seg := func(ra, rb, length float64) float64 { return length * (ra*ra + ra*rb + rb*rb) / 3 }
 	removed := smoothNotchFactor() * (seg(0.3, 0.7, 1.0) + seg(0.7, 0.4, 1.0))
 	want := 8 - removed
-	if got := ops.BodyGeometryProperties(res, fineQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
+	if got := query.BodyGeometryProperties(res, fineQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
 		t.Errorf("intermediate-radii fillet volume = %g, want %g (smooth-blend integral, 3%%-of-notch band)", got, want)
 	}
 }

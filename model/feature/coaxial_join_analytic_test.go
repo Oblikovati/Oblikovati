@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -50,7 +51,7 @@ func TestCoaxialCylinderJoinKeepsAnalyticFace(t *testing.T) {
 	// 5e-4 discriminates the analytic union (~−0.01% at PropertyQuality) from a shattered 24-gon
 	// prism (~−1.1%): only the analytic cylinder passes.
 	analytic := stdmath.Pi * r * r * (h1 + h2)
-	if v := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; relErr(v, analytic) > 5e-4 {
+	if v := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; relErr(v, analytic) > 5e-4 {
 		t.Errorf("coaxial-join volume = %g, want %g (πr²·%g) — faceted, not the analytic union", v, analytic, h1+h2)
 	}
 }
@@ -74,7 +75,7 @@ func TestUnequalCoaxialCylinderJoinStillFacets(t *testing.T) {
 	// ~−1.1% under the analytic value) — a wide bound just confirms it is a sane solid, not the
 	// analytic union.
 	analytic := stdmath.Pi*3*3*4 + stdmath.Pi*2*2*3
-	if v := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; relErr(v, analytic) > 2e-2 {
+	if v := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; relErr(v, analytic) > 2e-2 {
 		t.Errorf("shoulder volume = %g, want ~%g", v, analytic)
 	}
 }

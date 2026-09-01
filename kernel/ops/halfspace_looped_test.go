@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -31,7 +32,7 @@ func TestLoopedSplitHalvesACapBySymmetry(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cap cut: %v", err)
 	}
-	capVol := ops.BodyGeometryProperties(cap, ops.DefaultQuality()).Volume
+	capVol := query.BodyGeometryProperties(cap, ops.DefaultQuality()).Volume
 
 	for _, sym := range []struct {
 		name   string
@@ -50,7 +51,7 @@ func TestLoopedSplitHalvesACapBySymmetry(t *testing.T) {
 				t.Fatalf("looped cut is not a valid closed manifold solid: %+v", r)
 			}
 			assertOnlyAnalyticFaces(t, half)
-			got := ops.BodyGeometryProperties(half, ops.DefaultQuality()).Volume
+			got := query.BodyGeometryProperties(half, ops.DefaultQuality()).Volume
 			want := capVol / 2
 			if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 				t.Errorf("symmetric half volume %.4f, want %.4f (cap/2) — rel %.4f > 2%%", got, want, rel)
@@ -81,7 +82,7 @@ func TestHalfSpaceCutSphereBoxVsAnalytic(t *testing.T) {
 		t.Fatalf("sphere∩box corner is not a valid closed manifold solid: %+v", r)
 	}
 	assertOnlyAnalyticFaces(t, res)
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	// Lower hemisphere minus the z<0 half of the x>2 spherical cap (height R−2=3); the two removed
 	// regions do not overlap, so the volume is exact.
 	capV := stdmath.Pi * 9 * (3*R - 3) / 3

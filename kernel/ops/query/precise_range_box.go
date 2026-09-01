@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	stdmath "math"
@@ -22,7 +22,7 @@ import (
 // culling keyed on it inherits that error — and the error moves with the display Quality. q survives
 // only for the per-face fallback below.
 //
-// Example: box := ops.PreciseRangeBox(sphereBody, ops.DefaultQuality()) // spans the full diameter
+// Example: box := query.PreciseRangeBox(sphereBody, query.DefaultQuality()) // spans the full diameter
 func PreciseRangeBox(b *topo.Body, q Quality) math.Box {
 	box := math.EmptyBox()
 	for _, f := range b.Faces() {

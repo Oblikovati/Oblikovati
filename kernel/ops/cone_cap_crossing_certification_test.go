@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
@@ -84,7 +85,7 @@ func TestConeCapCrossingCutMomentsMatchOCC(t *testing.T) {
 	if n := len(res.Faces()); n != occConeCapFaces {
 		t.Errorf("cone-cap cut has %d faces; want %d (holed wall + holed top cap + bottom cap + tunnel)", n, occConeCapFaces)
 	}
-	gp := BodyGeometryProperties(res, capCertQuality())
+	gp := query.BodyGeometryProperties(res, capCertQuality())
 	if rel := stdmath.Abs(gp.Volume-occConeCapVol) / occConeCapVol; rel > 0.006 {
 		t.Errorf("volume %.4f vs OCC %.4f (rel %.4f > 0.006) — beyond the SSI-imprint facet deficit", gp.Volume, occConeCapVol, rel)
 	}
@@ -147,7 +148,7 @@ func TestConeCapCrossingCutMembershipMatchesCSG(t *testing.T) {
 				if nearSurface(p) {
 					continue
 				}
-				if pointInMesh(mesh, p) != (inTarget(p) && !inTool(p)) {
+				if query.PointInMesh(mesh, p) != (inTarget(p) && !inTool(p)) {
 					mismatches++
 				}
 			}

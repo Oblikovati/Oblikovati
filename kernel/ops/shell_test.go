@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 )
@@ -42,7 +43,7 @@ func TestShellOpenTopBox(t *testing.T) {
 		t.Fatalf("shelled box not a valid solid: %+v", r)
 	}
 	want := 64.0 - 3*3*3.5
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("shell volume = %g, want %g", got, want)
 	}
 }
@@ -61,7 +62,7 @@ func TestShellOutsideBox(t *testing.T) {
 		t.Fatalf("outward-shelled box not a valid solid: %+v", r)
 	}
 	want := 5.0*5.0*4.5 - 64.0
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("outside shell volume = %g, want %g", got, want)
 	}
 }
@@ -79,7 +80,7 @@ func TestShellBothBox(t *testing.T) {
 		t.Fatalf("both-sides-shelled box not a valid solid: %+v", r)
 	}
 	want := 4.5*4.5*4.25 - 3.5*3.5*3.75
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("both-sides shell volume = %g, want %g", got, want)
 	}
 }

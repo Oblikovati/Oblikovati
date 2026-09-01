@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestReplaceFaceToolEndToEnd drives the Replace Face UI: click the top face to replace,
@@ -37,7 +38,7 @@ func TestReplaceFaceToolEndToEnd(t *testing.T) {
 	if rr := ops.Validate(body); !rr.Valid || !body.IsSolid() {
 		t.Fatalf("replaced body not a valid solid: %+v", rr)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 8) > 1e-6 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 8) > 1e-6 {
 		t.Errorf("identity replace volume = %g, want 8", got)
 	}
 	if s.ActiveTool() != nil {

@@ -4,6 +4,7 @@ package renderer
 
 import (
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -182,7 +183,7 @@ func BuildDrawListStyled(bodies []*topo.Body, cam scene.Camera, q ops.Quality, l
 		// crisp. Mass properties keep the raw per-face mesh (BodyGeometryProperties calls
 		// TessellateBody directly), so volume/orientation are unaffected.
 		mesh.Normals = tessellate.SmoothShadeNormals(mesh, tessellate.DefaultCreaseAngle())
-		edges := ops.VisibleEdges(b, q, tessellate.DefaultCreaseAngle())
+		edges := query.VisibleEdges(b, q, tessellate.DefaultCreaseAngle())
 		items = appendBodyItems(items, b.ID(), mesh, edges, surfaceFor(b, lookup), pass, dashWorld)
 	}
 	return DrawList{Items: items}

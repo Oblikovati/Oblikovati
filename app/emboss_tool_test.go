@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
@@ -50,7 +51,7 @@ func TestEmbossToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("embossed body not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(v, 76) > 0.01 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(v, 76) > 0.01 {
 		t.Errorf("embossed volume = %g, want ≈76 (72 + 2×2×1)", v)
 	}
 }
@@ -69,7 +70,7 @@ func TestEmbossToolEngraves(t *testing.T) {
 	if err := s.OK(); err != nil {
 		t.Fatalf("OK: %v", err)
 	}
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 68) > 0.01 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 68) > 0.01 {
 		t.Errorf("engraved volume = %g, want ≈68 (72 − 2×2×1)", v)
 	}
 }

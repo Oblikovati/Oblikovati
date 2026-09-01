@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -48,7 +49,7 @@ func TestThickenPatchToSlab(t *testing.T) {
 	if r := ops.Validate(slab); !r.Valid || !slab.IsSolid() {
 		t.Fatalf("thickened patch not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(slab, ops.DefaultQuality()).Volume; stdmath.Abs(got-3) > 1e-6 {
+	if got := query.BodyGeometryProperties(slab, ops.DefaultQuality()).Volume; stdmath.Abs(got-3) > 1e-6 {
 		t.Errorf("slab volume = %g, want 3", got)
 	}
 }
@@ -107,7 +108,7 @@ func TestThickenDirectionPlacesSlab(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			p := ops.BodyGeometryProperties(slab, ops.DefaultQuality())
+			p := query.BodyGeometryProperties(slab, ops.DefaultQuality())
 			if stdmath.Abs(p.Volume-2) > 1e-6 {
 				t.Errorf("volume = %g, want 2", p.Volume)
 			}
@@ -130,7 +131,7 @@ func TestThickenFaceSubset(t *testing.T) {
 	if r := ops.Validate(solid); !r.Valid || !solid.IsSolid() {
 		t.Fatalf("subset thicken not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(solid, ops.DefaultQuality()).Volume; stdmath.Abs(got-1) > 1e-6 {
+	if got := query.BodyGeometryProperties(solid, ops.DefaultQuality()).Volume; stdmath.Abs(got-1) > 1e-6 {
 		t.Errorf("subset volume = %g, want 1 (one 1×2 face × 0.5)", got)
 	}
 }

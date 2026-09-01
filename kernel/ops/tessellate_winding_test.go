@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
@@ -63,7 +64,7 @@ func TestConcaveSingleLoopPlanarFaceVolume(t *testing.T) {
 	}
 	body := concavePrismBody(section, 3.5)
 	want := polygonAreaXY(section) * 3.5
-	got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 	if stdmath.Abs(got-want) > 1e-9 {
 		t.Errorf("concave prism volume = %.6f, want %.6f", got, want)
 	}

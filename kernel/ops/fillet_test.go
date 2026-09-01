@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
@@ -60,7 +61,7 @@ func TestFilletOneEdge(t *testing.T) {
 	// The cylinder face is exact; the measured volume is its faceted approximation, so check
 	// at a fine tessellation tolerance where it has converged to the analytic value.
 	want := 8 - filletNotch(0.5)*2
-	if got := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; stdmath.Abs(got-want) > 1e-3 {
+	if got := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; stdmath.Abs(got-want) > 1e-3 {
 		t.Errorf("fillet volume = %g, want ≈ %g", got, want)
 	}
 }
@@ -91,7 +92,7 @@ func TestFilletFourVerticalEdges(t *testing.T) {
 		t.Errorf("filleted box has %d cylinder faces, want 4", n)
 	}
 	want := 8 - 4*filletNotch(0.5)*2
-	if got := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; stdmath.Abs(got-want) > 1e-3 {
+	if got := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; stdmath.Abs(got-want) > 1e-3 {
 		t.Errorf("four-edge fillet volume = %g, want ≈ %g", got, want)
 	}
 }
@@ -150,7 +151,7 @@ func TestFilletCornerBlend(t *testing.T) {
 	if c, s := hasCylinderFaces(res), hasSphereFaces(res); c != 3 || s != 1 {
 		t.Errorf("got %d cylinder + %d sphere faces, want 3 + 1", c, s)
 	}
-	if v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 7.5 || v >= 8 {
+	if v := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 7.5 || v >= 8 {
 		t.Errorf("corner-blend volume = %g, want material removed (7.5 < v < 8)", v)
 	}
 }
@@ -266,7 +267,7 @@ func TestFilletAllBoxEdges(t *testing.T) {
 	if c, s := hasCylinderFaces(res), hasSphereFaces(res); c != 12 || s != 8 {
 		t.Errorf("got %d cylinder + %d sphere faces, want 12 + 8", c, s)
 	}
-	if v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= 8 {
+	if v := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= 8 {
 		t.Errorf("fully-rounded box volume = %g, want < 8", v)
 	}
 }
@@ -289,7 +290,7 @@ func TestFilletTwoEdgeCornerMiters(t *testing.T) {
 	if c, s := hasCylinderFaces(res), hasSphereFaces(res); c != 2 || s != 0 {
 		t.Errorf("got %d cylinder + %d sphere faces, want 2 + 0 (a miter, not a sphere blend)", c, s)
 	}
-	if v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 7.5 || v >= 8 {
+	if v := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 7.5 || v >= 8 {
 		t.Errorf("two-edge miter volume = %g, want material removed (7.5 < v < 8)", v)
 	}
 }
@@ -491,7 +492,7 @@ func TestFilletEdgesRoutesArc(t *testing.T) {
 	if arc == nil {
 		t.Fatal("no sharp arc cap edge on the filleted box")
 	}
-	beforeV := ops.BodyGeometryProperties(f1, ops.Quality{ChordTolerance: 1e-3}).Volume
+	beforeV := query.BodyGeometryProperties(f1, ops.Quality{ChordTolerance: 1e-3}).Volume
 	res, err := blend.FilletEdges(f1, [][]byte{arc}, 0.1)
 	if err != nil {
 		t.Fatal(err)
@@ -517,7 +518,7 @@ func TestFilletEdgesRoutesArc(t *testing.T) {
 			t.Errorf("arc fillet at tol %g: %d open edges", tol, open)
 		}
 	}
-	if v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= beforeV || v < beforeV-0.05 {
+	if v := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= beforeV || v < beforeV-0.05 {
 		t.Errorf("arc-fillet volume = %g, want just under %g (arc notch removed)", v, beforeV)
 	}
 }

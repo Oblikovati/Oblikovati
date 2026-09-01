@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/subd"
@@ -61,7 +62,7 @@ func TestTransformedReflectedToolCuts(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("cut result not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-12) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-12) > 1e-6 {
 		t.Fatalf("reflected-tool cut volume = %.4f, want 12 (16−4); >16 means the mirror added material", got)
 	}
 }
@@ -80,7 +81,7 @@ func TestTransformedReflectedToolCuts(t *testing.T) {
 func TestReplaceFaceSurfacePreservesReversedSense(t *testing.T) {
 	t.Parallel()
 	bored, key, cyl := boredBlock(t)
-	plain := ops.BodyGeometryProperties(bored, ops.DefaultQuality())
+	plain := query.BodyGeometryProperties(bored, ops.DefaultQuality())
 	plainVol := plain.Volume
 
 	// Depth 0 → identical geometry to the plain bore: volume AND area must be unchanged (a pure
@@ -93,7 +94,7 @@ func TestReplaceFaceSurfacePreservesReversedSense(t *testing.T) {
 	if !threadedWall(t, flatBody).Reversed() {
 		t.Error("the retyped wall lost its reversed sense: a bore's +radial normal points INTO the solid")
 	}
-	got := ops.BodyGeometryProperties(flatBody, ops.DefaultQuality())
+	got := query.BodyGeometryProperties(flatBody, ops.DefaultQuality())
 	if stdmath.Abs(got.Volume-plainVol) > 1e-3 {
 		t.Fatalf("depth-0 retype changed volume: got %.4f want %.4f", got.Volume, plainVol)
 	}
@@ -111,7 +112,7 @@ func TestReplaceFaceSurfacePreservesReversedSense(t *testing.T) {
 	if r := ops.Validate(cutBody); !r.Valid || !r.Closed || !r.Manifold {
 		t.Fatalf("threaded body not a valid closed solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(cutBody, ops.DefaultQuality()).Volume; got >= plainVol {
+	if got := query.BodyGeometryProperties(cutBody, ops.DefaultQuality()).Volume; got >= plainVol {
 		t.Fatalf("internal thread volume = %.4f, must be < bore %.4f (it cuts outward)", got, plainVol)
 	}
 }
@@ -159,7 +160,7 @@ func keepLineage(l topo.Lineage) topo.Lineage { return l }
 func TestTransformBodyTranslatePreservesVolume(t *testing.T) {
 	t.Parallel()
 	src := boxBody(t)
-	srcVol := ops.BodyGeometryProperties(src, ops.DefaultQuality()).Volume
+	srcVol := query.BodyGeometryProperties(src, ops.DefaultQuality()).Volume
 
 	dst, err := transform.TransformBody(src, math.Translation4(math.V3(10, 0, 0)), keepLineage)
 	if err != nil {
@@ -175,7 +176,7 @@ func TestTransformBodyTranslatePreservesVolume(t *testing.T) {
 	if stdmath.Abs(box.Min.X-10) > 1e-9 || stdmath.Abs(box.Max.X-12) > 1e-9 {
 		t.Fatalf("range box X = [%g,%g], want [10,12]", box.Min.X, box.Max.X)
 	}
-	if got := ops.BodyGeometryProperties(dst, ops.DefaultQuality()).Volume; stdmath.Abs(got-srcVol) > 1e-6 {
+	if got := query.BodyGeometryProperties(dst, ops.DefaultQuality()).Volume; stdmath.Abs(got-srcVol) > 1e-6 {
 		t.Fatalf("volume changed under translation: got %g want %g", got, srcVol)
 	}
 }
@@ -183,7 +184,7 @@ func TestTransformBodyTranslatePreservesVolume(t *testing.T) {
 func TestTransformBodyReflectStaysManifoldAndOutward(t *testing.T) {
 	t.Parallel()
 	src := boxBody(t)
-	srcVol := ops.BodyGeometryProperties(src, ops.DefaultQuality()).Volume
+	srcVol := query.BodyGeometryProperties(src, ops.DefaultQuality()).Volume
 
 	reflect := math.Scale4(-1, 1, 1) // determinant -1
 	dst, err := transform.TransformBody(src, reflect, keepLineage)
@@ -200,7 +201,7 @@ func TestTransformBodyReflectStaysManifoldAndOutward(t *testing.T) {
 	}
 	// Volume magnitude is preserved by a reflection (the divergence-theorem sum
 	// stays positive because the winding flip keeps normals outward).
-	if got := ops.BodyGeometryProperties(dst, ops.DefaultQuality()).Volume; got <= 0 || stdmath.Abs(got-srcVol) > 1e-6 {
+	if got := query.BodyGeometryProperties(dst, ops.DefaultQuality()).Volume; got <= 0 || stdmath.Abs(got-srcVol) > 1e-6 {
 		t.Fatalf("reflected volume = %g, want +%g (outward normals)", got, srcVol)
 	}
 }

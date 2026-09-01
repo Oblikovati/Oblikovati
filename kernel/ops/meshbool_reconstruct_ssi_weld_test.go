@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/meshbool"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	m "oblikovati.org/math"
 )
@@ -43,7 +44,7 @@ func facetedVolume(t *testing.T, op PartFeatureOperation, target, tool *topo.Bod
 	if faceted == nil {
 		t.Fatal("faceted oracle produced no body")
 	}
-	return BodyGeometryProperties(faceted, PropertyQuality()).Volume
+	return query.BodyGeometryProperties(faceted, PropertyQuality()).Volume
 }
 
 // TestReconstructObliqueBoreRebuilds: a tilted cylinder bored cleanly through a slab's top and
@@ -73,7 +74,7 @@ func TestReconstructObliqueBoreRebuilds(t *testing.T) {
 		t.Fatal("oblique bore has no analytic elliptical rim edge — it faceted the ellipse")
 	}
 	want := facetedVolume(t, Cut, slab, bore)
-	if v := BodyGeometryProperties(recon, PropertyQuality()).Volume; stdmath.Abs(v-want) > 5e-3*want {
+	if v := query.BodyGeometryProperties(recon, PropertyQuality()).Volume; stdmath.Abs(v-want) > 5e-3*want {
 		t.Fatalf("oblique bore volume = %.5f, want ~%.5f (the exact mesh union)", v, want)
 	}
 }
@@ -106,7 +107,7 @@ func TestReconstructObliqueCylinderBoxUnion(t *testing.T) {
 		t.Fatal("cyl∪box union has no analytic elliptical seam edge — it faceted the ellipse")
 	}
 	want := facetedVolume(t, Join, box, stub)
-	if v := BodyGeometryProperties(recon, PropertyQuality()).Volume; stdmath.Abs(v-want) > 5e-3*want {
+	if v := query.BodyGeometryProperties(recon, PropertyQuality()).Volume; stdmath.Abs(v-want) > 5e-3*want {
 		t.Fatalf("cyl∪box union volume = %.5f, want ~%.5f (the exact mesh union)", v, want)
 	}
 }

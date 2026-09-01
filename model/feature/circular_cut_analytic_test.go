@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -74,7 +75,7 @@ func TestCircularCutKeepsCircleEdge(t *testing.T) {
 
 	// Volume: 4·4·5 box − π·1²·5 cylinder = 80 − 5π.
 	want := 4.0*4.0*5.0 - stdmath.Pi*1.0*1.0*5.0
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.01 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.01 {
 		t.Errorf("drilled box volume = %g, want ≈%g (80 − 5π)", got, want)
 	}
 }

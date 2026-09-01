@@ -12,6 +12,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange/meshio"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -129,7 +130,7 @@ func TestFeatureOnTopOfImportedBody(t *testing.T) {
 	if !bodies[0].IsSolid() {
 		t.Fatalf("cut result on imported body is not a solid")
 	}
-	volAfter := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	volAfter := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 	if volAfter >= volBefore {
 		t.Errorf("cut did not remove material: before=%v after=%v", volBefore, volAfter)
 	}
@@ -153,7 +154,7 @@ func writeNamedCubeSTL(t *testing.T, dir, name string, s float64) string {
 func totalVolume(part *compdef.PartComponentDefinition) float64 {
 	var v float64
 	for _, b := range part.SurfaceBodies().All() {
-		v += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+		v += query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 	}
 	return v
 }

@@ -5,6 +5,8 @@ package ops
 import (
 	stdmath "math"
 	"testing"
+
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestSculptDirectedFromBoxFaces closes the six outward-facing box planes (keep each −normal side,
@@ -20,7 +22,7 @@ func TestSculptDirectedFromBoxFaces(t *testing.T) {
 	if !solid.IsSolid() {
 		t.Fatal("directed sculpt should yield a solid")
 	}
-	if v := BodyGeometryProperties(solid, DefaultQuality()).Volume; stdmath.Abs(v-32) > 0.1 {
+	if v := query.BodyGeometryProperties(solid, DefaultQuality()).Volume; stdmath.Abs(v-32) > 0.1 {
 		t.Errorf("volume = %g, want 32 (the 4×4×2 box the planes bound)", v)
 	}
 }

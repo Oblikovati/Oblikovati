@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	m "oblikovati.org/math"
 )
@@ -41,7 +42,7 @@ func TestJoinNestedReturnsOuterOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Boolean(Join): %v", err)
 	}
-	if got := BodyGeometryProperties(joined, DefaultQuality()).Volume; math.Abs(got-1000) > 1e-6 {
+	if got := query.BodyGeometryProperties(joined, DefaultQuality()).Volume; math.Abs(got-1000) > 1e-6 {
 		t.Errorf("union volume = %g, want 1000 (no double-counted inner shell)", got)
 	}
 	if nf := len(joined.Faces()); nf != 6 {
@@ -64,7 +65,7 @@ func TestJoinNestedToolContainsTargetReturnsTool(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Boolean(Join): %v", err)
 	}
-	if got := BodyGeometryProperties(joined, DefaultQuality()).Volume; math.Abs(got-1000) > 1e-6 {
+	if got := query.BodyGeometryProperties(joined, DefaultQuality()).Volume; math.Abs(got-1000) > 1e-6 {
 		t.Errorf("union volume = %g, want 1000", got)
 	}
 	if nf := len(joined.Faces()); nf != 6 {
@@ -81,7 +82,7 @@ func TestIntersectNestedReturnsInner(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Boolean(Intersect): %v", err)
 	}
-	if v := BodyGeometryProperties(got, DefaultQuality()).Volume; math.Abs(v-27) > 1e-6 {
+	if v := query.BodyGeometryProperties(got, DefaultQuality()).Volume; math.Abs(v-27) > 1e-6 {
 		t.Errorf("intersection volume = %g, want 27", v)
 	}
 	if !Validate(got).ValidSolid() {
@@ -99,7 +100,7 @@ func TestJoinNestedTranslationInvariant(t *testing.T) {
 		if err != nil {
 			t.Fatalf("shift %g: Boolean(Join): %v", shift, err)
 		}
-		if got := BodyGeometryProperties(joined, DefaultQuality()).Volume; math.Abs(got-1000) > 1e-6 {
+		if got := query.BodyGeometryProperties(joined, DefaultQuality()).Volume; math.Abs(got-1000) > 1e-6 {
 			t.Errorf("shift %g: union volume = %g, want 1000", shift, got)
 		}
 	}
@@ -114,7 +115,7 @@ func TestCutNestedToolInsideRemovesCavity(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Boolean(Cut): %v", err)
 	}
-	if v := BodyGeometryProperties(got, DefaultQuality()).Volume; math.Abs(v-973) > 1e-6 {
+	if v := query.BodyGeometryProperties(got, DefaultQuality()).Volume; math.Abs(v-973) > 1e-6 {
 		t.Errorf("cut volume = %g, want 973 (outer minus interior cavity)", v)
 	}
 }

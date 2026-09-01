@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -37,7 +38,7 @@ func scallopPlate(t *testing.T) *topo.Body {
 	return res
 }
 
-// scallopAnalyticVolume is the exact removed-then-subtracted volume: plate 200 minus the inside-plate disk
+// scallopAnalyticVolume is the exact removed-then-subtracted Volume: plate 200 minus the inside-plate disk
 // area A_in = r²(π−arccos(d/r)) + d·√(r²−d²) (d=5−cx=1, r=2) times the thickness h=2.
 func scallopAnalyticVolume() float64 {
 	d, r, h := 1.0, 2.0, 2.0
@@ -69,7 +70,7 @@ func TestScallopVolumeMatchesAnalytic(t *testing.T) {
 	t.Parallel()
 	res := scallopPlate(t)
 	want := scallopAnalyticVolume()
-	got := BodyGeometryProperties(res, DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, DefaultQuality()).Volume
 	if rel := stdmath.Abs(got-want) / want; rel > 0.01 {
 		t.Errorf("scallop volume %.4f vs analytic %.4f; rel %.4f > 0.01", got, want, rel)
 	}

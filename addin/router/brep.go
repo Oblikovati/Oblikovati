@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/bodyapi"
 )
@@ -343,11 +344,11 @@ func brepIdenticalBodies(s *app.Session, in wire.BrepIdenticalBodiesArgs) (wire.
 		}
 		bodies = append(bodies, src.Topo())
 	}
-	opt := ops.IdenticalBodiesOptions{
+	opt := query.IdenticalBodiesOptions{
 		Tolerance: in.Tolerance, MatchTopology: in.MatchTopology,
 		MatchReflection: in.MatchReflection == nil || *in.MatchReflection,
 	}
-	groups := ops.GroupIdenticalBodies(bodies, opt, ops.DefaultQuality())
+	groups := query.GroupIdenticalBodies(bodies, opt, ops.DefaultQuality())
 	return wire.BrepIdenticalBodiesResult{Groups: groups}, nil
 }
 

@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -34,7 +35,7 @@ func TestMeshToBRepTetraSolid(t *testing.T) {
 	if n := len(body.Faces()); n != 4 {
 		t.Errorf("face count = %d, want 4", n)
 	}
-	if v := BodyGeometryProperties(body, DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
+	if v := query.BodyGeometryProperties(body, DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
 		t.Errorf("volume = %v, want %v", v, 1.0/6)
 	}
 }
@@ -51,7 +52,7 @@ func TestMeshToBRepReorientsInwardMesh(t *testing.T) {
 	if body == nil {
 		t.Fatal("MeshToBRep returned nil for an inward-wound tetra")
 	}
-	if v := BodyGeometryProperties(body, DefaultQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, DefaultQuality()).Volume; v <= 0 {
 		t.Errorf("volume = %v, want positive after re-orientation", v)
 	}
 }
@@ -82,7 +83,7 @@ func TestMeshToBRepQuadFacet(t *testing.T) {
 	if r := Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("cube B-rep not a valid solid: %v", r.Issues)
 	}
-	if v := BodyGeometryProperties(body, DefaultQuality()).Volume; stdmath.Abs(v-1.0) > 1e-9 {
+	if v := query.BodyGeometryProperties(body, DefaultQuality()).Volume; stdmath.Abs(v-1.0) > 1e-9 {
 		t.Errorf("volume = %v, want 1", v)
 	}
 }

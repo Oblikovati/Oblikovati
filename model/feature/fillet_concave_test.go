@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -44,7 +45,7 @@ func TestFilletConcaveOutwardFills(t *testing.T) {
 	const r = 0.6
 	res := filletConcaved(t, r, types.FilletConcaveOutward)
 	want := 3 + concaveFilletNotch(r) // L volume 3 + fillet fill over edge length 1
-	got := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume
+	got := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume
 	if stdmath.Abs(got-want) > 2e-3 {
 		t.Errorf("outward concave fillet volume = %g, want %g±2e-3 (notch should be filled)", got, want)
 	}

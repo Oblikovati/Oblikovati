@@ -13,6 +13,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/analysis"
@@ -165,7 +166,7 @@ func bodyShells(_ *app.Session, part *compdef.PartComponentDefinition, in wire.B
 }
 
 func shellInfo(i int, sh *topo.Shell, q ops.Quality) wire.FaceShellInfo {
-	vol := ops.ShellSignedVolume(sh, q)
+	vol := query.ShellSignedVolume(sh, q)
 	box := sh.RangeBox()
 	return wire.FaceShellInfo{
 		Index: i, Closed: sh.IsClosed(), Void: sh.IsClosed() && vol < 0,

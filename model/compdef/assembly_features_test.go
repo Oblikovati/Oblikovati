@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/event"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
@@ -33,7 +34,7 @@ func topHalfCutter(t *testing.T) *topo.Body {
 func resultVolume(fs *AssemblyFeatures, o *occurrence.Occurrence) float64 {
 	v := 0.0
 	for _, b := range fs.Result(o) {
-		v += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+		v += query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 	}
 	return v
 }
@@ -94,7 +95,7 @@ func TestAssemblyFeatureMachinesParticipantsGated(t *testing.T) {
 	}
 	// The shared part definition is unchanged — its own body is still a full unit box.
 	shared := occs[0].Definition().(*PartComponentDefinition)
-	sharedVol := ops.BodyGeometryProperties(shared.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	sharedVol := query.BodyGeometryProperties(shared.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	if stdmath.Abs(sharedVol-1.0) > 1e-6 {
 		t.Errorf("shared part definition volume = %g, want 1.0 (assembly cut must not edit it)", sharedVol)
 	}
@@ -162,7 +163,7 @@ func TestEndOfFeaturesRollsBackTrailingFeatures(t *testing.T) {
 func pathVolume(fs *AssemblyFeatures, path occurrence.OccurrencePath) float64 {
 	v := 0.0
 	for _, b := range fs.ResultPath(path) {
-		v += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+		v += query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 	}
 	return v
 }

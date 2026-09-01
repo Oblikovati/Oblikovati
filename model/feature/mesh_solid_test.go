@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -40,7 +41,7 @@ func TestMeshSolidConvertsTetra(t *testing.T) {
 	if n := len(solid.Faces()); n != 4 {
 		t.Errorf("face count = %d, want 4", n)
 	}
-	if v := ops.BodyGeometryProperties(solid, ops.DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
+	if v := query.BodyGeometryProperties(solid, ops.DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
 		t.Errorf("volume = %v, want %v", v, 1.0/6)
 	}
 }
@@ -94,7 +95,7 @@ func TestMeshSolidRoundTrip(t *testing.T) {
 	if r := ops.Validate(solid); !r.Valid || !solid.IsSolid() {
 		t.Fatalf("restored body not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(solid, ops.DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
+	if v := query.BodyGeometryProperties(solid, ops.DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
 		t.Errorf("restored volume = %v, want %v", v, 1.0/6)
 	}
 }

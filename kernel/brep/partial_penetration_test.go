@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestPartialPenetrationBlindPocket is the minimal repro for M20-F01 PBI-199 (#470): a square
@@ -28,7 +29,7 @@ func TestPartialPenetrationBlindPocket(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid {
 		t.Errorf("blind pocket body invalid: manifold=%v closed=%v orient=%v", r.Manifold, r.Closed, r.OrientationOK)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := 1000.0 - 4*4*5 // overlap [3,7]x[3,7]x[5,10] = 80 removed
 	if stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("blind pocket volume = %g, want %g", got, want)

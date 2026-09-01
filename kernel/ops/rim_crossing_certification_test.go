@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
@@ -83,7 +84,7 @@ func TestRimCrossingCutMomentsMatchOCC(t *testing.T) {
 		t.Errorf("rim-crossing cut has %d faces; want %d (notched holed wall + mixed-arc top cap + bottom cap "+
 			"+ tunnel)", n, occRimFaces)
 	}
-	gp := BodyGeometryProperties(res, capCertQuality())
+	gp := query.BodyGeometryProperties(res, capCertQuality())
 	if rel := stdmath.Abs(gp.Volume-occRimVol) / occRimVol; rel > 0.006 {
 		t.Errorf("volume %.4f vs OCC %.4f (rel %.4f > 0.006) — beyond the SSI-imprint facet deficit", gp.Volume, occRimVol, rel)
 	}
@@ -138,7 +139,7 @@ func TestRimCrossingCutMembershipMatchesCSG(t *testing.T) {
 				if nearSurface(p) {
 					continue
 				}
-				if pointInMesh(mesh, p) != (inTarget(p) && !inTool(p)) {
+				if query.PointInMesh(mesh, p) != (inTarget(p) && !inTool(p)) {
 					mismatches++
 				}
 			}

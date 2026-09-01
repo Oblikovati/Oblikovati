@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -44,7 +45,7 @@ func TestRotateFacesTiltsTopIntoWedge(t *testing.T) {
 		t.Fatalf("rotated-face box not a valid solid: %+v", r)
 	}
 	want := 8 - 4*stdmath.Tan(theta)
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-9 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-9 {
 		t.Errorf("wedge volume = %g, want %g", got, want)
 	}
 }

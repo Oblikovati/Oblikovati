@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -75,7 +76,7 @@ func TestBooleanIntersectConeCylinder(t *testing.T) {
 	if cones != 1 || cyls != 2 {
 		t.Errorf("got %d cone + %d cylinder faces, want 1 (band) + 2 (lens caps)", cones, cyls)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := coneCylinderIntersectVolume(rFat)
 	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
 		t.Errorf("cone∩cylinder volume %.4f, want %.4f (analytic) — rel %.4f > 3%%", got, want, rel)
@@ -105,7 +106,7 @@ func TestBooleanCutConeCylinderDrillsFat(t *testing.T) {
 		t.Fatalf("drilled cylinder is not a valid closed manifold solid: %+v", v)
 	}
 	assertConeCylinderAnalytic(t, res)
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := stdmath.Pi*rFat*rFat*hFat - coneCylinderIntersectVolume(rFat)
 	// 4%: the tapered tunnel and the drilled wall inscribe their curvature, so the meshed volume runs a
 	// little under the analytic fat − tunnel (the B-rep is exact; this bounds the property-mesh error).
@@ -132,7 +133,7 @@ func TestBooleanCutConeMinusCylinderStubs(t *testing.T) {
 	if n := len(res.Shells()); n != 2 {
 		t.Errorf("cone − fat has %d shells, want 2 (a disconnected stub each side)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := coneFrustumVolume(1, 2.5, 12) - coneCylinderIntersectVolume(rFat)
 	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
 		t.Errorf("cone − fat volume %.4f, want %.4f (cone − cone∩cyl) — rel %.4f > 4%%", got, want, rel)
@@ -156,7 +157,7 @@ func TestBooleanJoinConeCylinder(t *testing.T) {
 		t.Fatalf("joined cone∪cylinder is not a valid closed manifold solid: %+v", v)
 	}
 	assertConeCylinderAnalytic(t, res)
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := stdmath.Pi*rFat*rFat*hFat + coneFrustumVolume(1, 2.5, 12) - coneCylinderIntersectVolume(rFat)
 	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
 		t.Errorf("joined volume %.4f, want %.4f (fat + cone − cone∩cyl) — rel %.4f > 4%%", got, want, rel)
@@ -219,7 +220,7 @@ func TestBooleanIntersectConePartialPlug(t *testing.T) {
 		t.Fatalf("cone plug is not a valid closed manifold solid: %+v", v)
 	}
 	assertConeCylinderAnalytic(t, res)
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := conePartialPlugVolume(rFat)
 	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
 		t.Errorf("cone plug volume %.4f, want %.4f (analytic) — rel %.4f > 3%%", got, want, rel)
@@ -239,7 +240,7 @@ func TestBooleanCutConePartialBlindHole(t *testing.T) {
 		t.Fatalf("cone blind hole is not a valid closed manifold solid: %+v", v)
 	}
 	assertConeCylinderAnalytic(t, res)
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := stdmath.Pi*rFat*rFat*hFat - conePartialPlugVolume(rFat)
 	// 4%: the faceted fat wall and the inscribed tapered pocket run the meshed volume a little under the
 	// analytic fat − plug (the B-rep is exact; this bounds the property-mesh error).
@@ -266,7 +267,7 @@ func TestBooleanCutConePartialStub(t *testing.T) {
 	if n := len(res.Shells()); n != 1 {
 		t.Errorf("cone − fat (partial) has %d shells, want 1 (a single one-sided stub)", n)
 	}
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := coneFrustumVolume(1, 1.75, 6) - conePartialPlugVolume(rFat)
 	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
 		t.Errorf("cone − fat (partial) volume %.4f, want %.4f (frustum − plug) — rel %.4f > 3%%", got, want, rel)
@@ -289,7 +290,7 @@ func TestBooleanJoinConePartial(t *testing.T) {
 		t.Fatalf("fat ∪ cone (partial) is not a valid closed manifold solid: %+v", v)
 	}
 	assertConeCylinderAnalytic(t, res)
-	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	want := stdmath.Pi*rFat*rFat*hFat + coneFrustumVolume(1, 1.75, 6) - conePartialPlugVolume(rFat)
 	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
 		t.Errorf("fat ∪ cone (partial) volume %.4f, want %.4f (fat + frustum − plug) — rel %.4f > 4%%", got, want, rel)

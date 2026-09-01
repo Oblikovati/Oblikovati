@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -171,7 +172,7 @@ func bodyPreviewItems(b *topo.Body, color [4]float32) []renderer.DrawItem {
 // model renderer) as one opaque line item in the preview hue — so a curved delta shows only
 // its real boundary outline, not a web of tessellation seams.
 func previewEdgeLines(b *topo.Body, q ops.Quality, color [4]float32) *renderer.DrawItem {
-	polylines := ops.VisibleEdges(b, q, tessellate.DefaultCreaseAngle())
+	polylines := query.VisibleEdges(b, q, tessellate.DefaultCreaseAngle())
 	var pts []math.Point3
 	var idx []int
 	for _, pl := range polylines {
@@ -199,7 +200,7 @@ func totalVolume(bodies []*topo.Body) float64 {
 	var v float64
 	for _, b := range bodies {
 		if b.IsSolid() {
-			v += ops.BodyGeometryProperties(b, q).Volume
+			v += query.BodyGeometryProperties(b, q).Volume
 		}
 	}
 	return v
@@ -242,7 +243,7 @@ func solidDifference(target, tool *topo.Body) *topo.Body {
 	if err != nil || diff == nil || len(diff.Faces()) == 0 || !diff.IsSolid() {
 		return nil
 	}
-	if ops.BodyGeometryProperties(diff, ops.DefaultQuality()).Volume < 1e-9 {
+	if query.BodyGeometryProperties(diff, ops.DefaultQuality()).Volume < 1e-9 {
 		return nil
 	}
 	return diff
@@ -327,7 +328,7 @@ func edgeTouchesNewFace(e *topo.Edge, newFaces map[*topo.Face]bool) bool {
 }
 
 // isTangentEdge reports whether an edge's two faces meet smoothly (within the crease angle), so
-// it should not be drawn as a feature edge — mirrors ops.VisibleEdges' tangent suppression.
+// it should not be drawn as a feature edge — mirrors query.VisibleEdges' tangent suppression.
 func isTangentEdge(e *topo.Edge) bool {
 	faces := e.Faces()
 	if len(faces) != 2 {

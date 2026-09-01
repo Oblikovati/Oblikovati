@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
@@ -118,7 +119,7 @@ func TestImportedNurbsDuctVolumeAndFolds(t *testing.T) {
 		for _, body := range bodies {
 			mesh, _ := tessellate.TessellateBody(body, gq.q)
 			folds += validate.FoldEdgeCount(mesh)
-			volume += BodyGeometryProperties(body, gq.q).Volume
+			volume += query.BodyGeometryProperties(body, gq.q).Volume
 		}
 		if rel := stdmath.Abs(volume-wantVolume) / wantVolume; rel > edfVolumeTol {
 			t.Errorf("%s quality: imported duct total volume %.4f vs OCC %.4f (rel %.4f > %.4f) — an over-enclosure regression",

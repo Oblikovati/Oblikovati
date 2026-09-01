@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	stdmath "math"
@@ -33,7 +33,7 @@ type LocatedEntity struct {
 // the proximity tolerance. kind 0 matches vertices, edges and faces, nearest
 // of any.
 //
-// Example: hit, ok := ops.LocateUsingPoint(b, 0, p, 1e-3, ops.DefaultQuality())
+// Example: hit, ok := query.LocateUsingPoint(b, 0, p, 1e-3, query.DefaultQuality())
 func LocateUsingPoint(b *topo.Body, kind topo.EntityKind, p math.Point3, proximityTol float64, q Quality) (LocatedEntity, bool) {
 	best := LocatedEntity{Distance: stdmath.Inf(1)}
 	if kind == 0 || kind == topo.KindVertex {
@@ -60,7 +60,7 @@ func closerEdge(best *LocatedEntity, b *topo.Body, p math.Point3, q Quality) {
 	for _, e := range b.Edges() {
 		pl := tessellate.DiscretizeEdge(e, q)
 		for i := 0; i+1 < len(pl); i++ {
-			cp := closestPointOnSegment(p, pl[i], pl[i+1])
+			cp := ClosestPointOnSegment(p, pl[i], pl[i+1])
 			if d := float64(p.DistanceTo(cp)); d < best.Distance {
 				*best = LocatedEntity{Kind: topo.KindEdge, Edge: e, Point: cp, Distance: d}
 			}
@@ -80,8 +80,8 @@ func closerFace(best *LocatedEntity, b *topo.Body, p math.Point3, q Quality) {
 	}
 }
 
-// closestPointOnSegment clamps p's projection onto segment ab.
-func closestPointOnSegment(p, a, b math.Point3) math.Point3 {
+// ClosestPointOnSegment clamps p's projection onto segment ab.
+func ClosestPointOnSegment(p, a, b math.Point3) math.Point3 {
 	ab := a.VectorTo(b)
 	denom := float64(ab.LengthSquared())
 	if denom == 0 {
@@ -101,7 +101,7 @@ func closestPointOnSegment(p, a, b math.Point3) math.Point3 {
 // faces where the ray crosses their mesh, plus edges and vertices passing
 // within radius of the ray. findFirstOnly truncates to the nearest hit.
 //
-// Example: hits := ops.FindUsingRay(b, origin, dir, 0.05, ops.DefaultQuality(), false)
+// Example: hits := query.FindUsingRay(b, origin, dir, 0.05, query.DefaultQuality(), false)
 func FindUsingRay(b *topo.Body, origin math.Point3, dir math.Vector3, radius float64, q Quality, findFirstOnly bool) []LocatedEntity {
 	l := float64(dir.Length())
 	if l == 0 {

@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
@@ -39,7 +40,7 @@ func TestE7WholeBodyWatertightFoldFree(t *testing.T) {
 // weld reads ≤ 0).
 func assertE7VolumePositive(t *testing.T, body *topo.Body) {
 	t.Helper()
-	if v := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; v <= 0 {
 		t.Fatalf("E7 body volume %.4f, want positive (a valid enclosed solid)", v)
 	}
 }

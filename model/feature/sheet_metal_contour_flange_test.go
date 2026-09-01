@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -28,7 +29,7 @@ func lProfile() *sketch.Sketch {
 func TestContourFlangeSweepsProfile(t *testing.T) {
 	t.Parallel()
 	fs, edge := seedSheetMetalSheet(t, 4, nil)
-	flat := ops.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-4}).Volume
+	flat := query.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-4}).Volume
 
 	pf := NewSheetMetalContourFlangeFeatures(fs).Add(&SheetMetalContourFlangeDefinition{
 		EdgeKey: edge.ReferenceKey(), Profile: lProfile(),
@@ -47,7 +48,7 @@ func TestContourFlangeSweepsProfile(t *testing.T) {
 	if open := ops.BoundaryEdges(body); len(open) != 0 {
 		t.Errorf("contour flange not watertight: %d boundary edges", len(open))
 	}
-	vol := ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-4}).Volume
+	vol := query.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-4}).Volume
 	if !(vol > flat) {
 		t.Errorf("contour flange added no material: flat=%.4f flanged=%.4f", flat, vol)
 	}

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/sketch"
 )
@@ -36,12 +37,12 @@ func areaGraphCircles(t *testing.T, graph []LoftAreaStop) *topo.Body {
 // radius grows by √2 (≈2.83) — the body bulges past the section radius, holding more volume.
 func TestLoftAreaGraphBulges(t *testing.T) {
 	t.Parallel()
-	plain := ops.BodyGeometryProperties(areaGraphCircles(t, nil), ops.DefaultQuality()).Volume
+	plain := query.BodyGeometryProperties(areaGraphCircles(t, nil), ops.DefaultQuality()).Volume
 	b := areaGraphCircles(t, []LoftAreaStop{{T: 0.5, Scale: 2}})
 	if maxX := float64(b.RangeBox().Max.X); maxX < 2.5 {
 		t.Errorf("area graph did not bulge: max x = %.3f, want ≈2.83 (√2·2)", maxX)
 	}
-	if v := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; v <= plain*1.1 {
+	if v := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; v <= plain*1.1 {
 		t.Errorf("area-graph bulge did not add volume: %.3f vs plain %.3f", v, plain)
 	}
 }
@@ -50,8 +51,8 @@ func TestLoftAreaGraphBulges(t *testing.T) {
 // the body waists in and holds less than the plain cylinder.
 func TestLoftAreaGraphWaists(t *testing.T) {
 	t.Parallel()
-	plain := ops.BodyGeometryProperties(areaGraphCircles(t, nil), ops.DefaultQuality()).Volume
-	waisted := ops.BodyGeometryProperties(areaGraphCircles(t, []LoftAreaStop{{T: 0.5, Scale: 0.25}}), ops.DefaultQuality()).Volume
+	plain := query.BodyGeometryProperties(areaGraphCircles(t, nil), ops.DefaultQuality()).Volume
+	waisted := query.BodyGeometryProperties(areaGraphCircles(t, []LoftAreaStop{{T: 0.5, Scale: 0.25}}), ops.DefaultQuality()).Volume
 	if waisted >= plain {
 		t.Errorf("area-graph waist did not reduce volume: %.3f vs plain %.3f", waisted, plain)
 	}

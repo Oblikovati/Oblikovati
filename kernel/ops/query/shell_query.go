@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package query
 
 import (
 	"oblikovati.org/kernel/brep"
@@ -55,7 +55,7 @@ func shellMesh(s *topo.Shell, q Quality) *Mesh {
 // deficit shrinks a cavity skin's magnitude and, on a thin void, can reach zero. q parameterises
 // only the fallback for a shell whose faces the analytic path declines.
 //
-// Example: if ops.ShellSignedVolume(sh, ops.DefaultQuality()) < 0 { /* cavity skin */ }
+// Example: if query.ShellSignedVolume(sh, query.DefaultQuality()) < 0 { /* cavity skin */ }
 func ShellSignedVolume(s *topo.Shell, q Quality) float64 {
 	if v, ok := AnalyticShellVolume(s); ok {
 		return v
@@ -65,7 +65,7 @@ func ShellSignedVolume(s *topo.Shell, q Quality) float64 {
 	for t := 0; t+2 < len(mesh.Indices); t += 3 {
 		ia, ib, ic := mesh.Indices[t], mesh.Indices[t+1], mesh.Indices[t+2]
 		a, b, c := mesh.Positions[ia], mesh.Positions[ib], mesh.Positions[ic]
-		if outwardRef(mesh, ia, ib, ic).Dot(a.VectorTo(b).Cross(a.VectorTo(c))) < 0 {
+		if OutwardRef(mesh, ia, ib, ic).Dot(a.VectorTo(b).Cross(a.VectorTo(c))) < 0 {
 			b, c = c, b // align geometric winding to the outward shading normal
 		}
 		vol += float64(a.AsVector().Dot(b.AsVector().Cross(c.AsVector()))) / 6

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -173,7 +174,7 @@ func TestClosedMobiusLoftClosesWithoutCram(t *testing.T) {
 		t.Fatalf("Möbius loft is not a valid solid: %+v", r)
 	}
 	wantV := W * T * 2 * stdmath.Pi * R // cross-section · centroid path length
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, wantV) > 0.03 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, wantV) > 0.03 {
 		t.Errorf("Möbius volume = %g, want ≈%g (W·T·2πR)", v, wantV)
 	}
 }
@@ -206,7 +207,7 @@ func TestLoftMobiusStripDesign(t *testing.T) {
 	t.Parallel()
 	const R, W, T = 3.0, 1.6, 0.2 // cm: ring 30 mm, band 16×2 mm (model units = cm)
 	body := closedMobiusLoftBody(t, 36, R, W, T, mobiusSectionSketch)
-	props := ops.BodyGeometryProperties(body, ops.DefaultQuality())
+	props := query.BodyGeometryProperties(body, ops.DefaultQuality())
 	if wantV := W * T * 2 * stdmath.Pi * R; relErr(props.Volume, wantV) > 0.03 { // 6.032 cm³
 		t.Errorf("Möbius volume = %g cm³, want ≈%g (w·t·2πR); ~%g would mean corners are being cut",
 			props.Volume, wantV, 0.5625*wantV)
@@ -244,8 +245,8 @@ func TestLoftMobiusStripEllipseDesign(t *testing.T) {
 	const R, W, T = 3.0, 1.6, 0.2 // cm: ring 30 mm, ellipse 16×2 mm
 	body := closedMobiusLoftBody(t, 36, R, W, T, mobiusSectionEllipseSketch)
 	a, b := W/2, T/2
-	if wantV := stdmath.Pi * a * b * 2 * stdmath.Pi * R; relErr(ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume, wantV) > 0.05 {
-		got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	if wantV := stdmath.Pi * a * b * 2 * stdmath.Pi * R; relErr(query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume, wantV) > 0.05 {
+		got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 		t.Errorf("elliptical Möbius volume = %g cm³, want ≈%g (π·a·b·2πR)", got, wantV)
 	}
 }
@@ -285,7 +286,7 @@ func TestLoftElongatedRectKeepsVolume(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("lofted body is not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 40) > 0.02 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 40) > 0.02 {
 		t.Errorf("elongated-rect prism volume = %g, want ≈40 (area 8 × height 5)", v)
 	}
 }
@@ -329,7 +330,7 @@ func TestSweepAlongPathMakesValidSolid(t *testing.T) {
 		t.Fatalf("swept body is not a valid solid: %+v", r)
 	}
 	// Cross-section area 4 along a path of length 10 → volume on the order of 40.
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v < 20 || v > 60 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v < 20 || v > 60 {
 		t.Errorf("swept volume = %g, want roughly 40 (area 4 × path 10)", v)
 	}
 }
@@ -351,7 +352,7 @@ func TestLoftBetweenSquaresIsFrustum(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("lofted body is not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 140.0/3) > 0.02 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 140.0/3) > 0.02 {
 		t.Errorf("frustum volume = %g, want ≈46.667", v)
 	}
 }
@@ -383,7 +384,7 @@ func TestLoftBetweenOppositeNormalPlanesIsFrustum(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("opposite-normal lofted body is not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 140.0/3) > 0.02 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 140.0/3) > 0.02 {
 		t.Errorf("opposite-normal frustum volume = %g, want ≈46.667 (a bow-tie would be ~1/3)", v)
 	}
 }

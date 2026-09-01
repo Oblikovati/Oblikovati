@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/exchange"
 	stepio "oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -36,5 +37,5 @@ func importInput(stepPath string) (*topo.Body, error) {
 // inputArea is the imported body's surface area, used to sanity-check STEP round-trip
 // fidelity before blaming a fillet defect on our engine.
 func inputArea(b *topo.Body) float64 {
-	return ops.BodyGeometryProperties(b, ops.PropertyQuality()).Area
+	return query.BodyGeometryProperties(b, ops.PropertyQuality()).Area
 }

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
 	"oblikovati.org/model/sketch"
@@ -45,7 +46,7 @@ func TestRevolveSeedResolvesAtRecomputeNotStaleIndex(t *testing.T) {
 	}
 
 	want := stdmath.Pi * (2*2 - 1*1) * 1 // near washer: π(R²−r²)·h = 3π
-	got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
 	if relErr(got, want) > 0.02 {
 		t.Errorf("seeded revolve volume = %g, want ≈%g (3π, the NEAR region the seed selects, not the far index's 16π)", got, want)
 	}
@@ -69,7 +70,7 @@ func TestRevolveAboutSketchCenterline(t *testing.T) {
 		t.Fatalf("centerline-revolved body not a valid solid: %+v", r)
 	}
 	want := stdmath.Pi * (4*4 - 2*2) * 2 // 24π washer
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.01 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.01 {
 		t.Errorf("centerline-revolved washer = %g, want ≈%g (24π)", got, want)
 	}
 }
@@ -124,7 +125,7 @@ func TestRevolveFullMakesValidWasher(t *testing.T) {
 		t.Fatalf("revolved washer not a valid solid: %+v solid=%v", r, body.IsSolid())
 	}
 	want := stdmath.Pi * (4*4 - 2*2) * 2
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.01 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.01 {
 		t.Errorf("washer volume = %g, want ≈%g (24π) within 1%%", got, want)
 	}
 }
@@ -145,7 +146,7 @@ func TestRevolvePartialIsCappedSolid(t *testing.T) {
 		t.Fatalf("partial revolve not a valid solid: %+v", r)
 	}
 	want := stdmath.Pi * (4*4 - 2*2) * 2 / 4
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
 		t.Errorf("quarter-washer volume = %g, want ≈%g (6π)", got, want)
 	}
 }

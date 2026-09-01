@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
@@ -56,7 +57,7 @@ func TestCombineCutOverlappingForReal(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("cut body not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
 		t.Errorf("A−B volume = %g, want 4 (8 − 4 overlap)", v)
 	}
 }
@@ -112,7 +113,7 @@ func TestMoveAndOffsetFaceRealGeometry(t *testing.T) {
 	if !mv.Health().OK() {
 		t.Fatalf("move-face sick: %+v", mv.Health())
 	}
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 12) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 12) > 1e-6 {
 		t.Errorf("move-face volume = %g, want 12", got)
 	}
 }
@@ -144,7 +145,7 @@ func TestDeleteFaceHealsInModel(t *testing.T) {
 	if !del.Health().OK() {
 		t.Fatalf("delete-face sick: %+v", del.Health())
 	}
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
 		t.Errorf("healed volume = %g, want 8", got)
 	}
 }
@@ -196,7 +197,7 @@ func TestReplaceFaceIdentityIsValid(t *testing.T) {
 	if !rf.Health().OK() {
 		t.Fatalf("replace-face sick: %+v", rf.Health())
 	}
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
 		t.Errorf("identity replace-face volume = %g, want 8", got)
 	}
 }
@@ -217,7 +218,7 @@ func TestThickenSurfaceToSlab(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("thickened patch not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 3) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 3) > 1e-6 {
 		t.Errorf("slab volume = %g, want 3", got)
 	}
 }
@@ -247,7 +248,7 @@ func TestThickenAsSurfaceOffset(t *testing.T) {
 			if res.IsSolid() {
 				t.Error("operation surface should leave a non-solid surface body")
 			}
-			if a := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Area; relErr(a, 6) > 1e-6 {
+			if a := query.BodyGeometryProperties(res, ops.DefaultQuality()).Area; relErr(a, 6) > 1e-6 {
 				t.Errorf("surface area = %g, want 6", a)
 			}
 			// Centroid is ill-defined for a zero-volume sheet, so check the offset via vertex z.
@@ -278,7 +279,7 @@ func TestThickenCutIntoSolid(t *testing.T) {
 	if len(res) != 1 {
 		t.Fatalf("after cut there are %d bodies, want 1 (surface consumed)", len(res))
 	}
-	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; relErr(got, 6) > 1e-3 {
+	if got := query.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; relErr(got, 6) > 1e-3 {
 		t.Errorf("cut volume = %g, want 6 (8 minus a 2×2×0.5 slab)", got)
 	}
 }
@@ -338,7 +339,7 @@ func TestReplaceFacePlanesFlattens(t *testing.T) {
 	if !rf.Health().OK() {
 		t.Fatalf("replace-face (planes) sick: %+v", rf.Health())
 	}
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 12) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 12) > 1e-6 {
 		t.Errorf("replaced volume = %g, want 12 (top raised to z=3)", got)
 	}
 }

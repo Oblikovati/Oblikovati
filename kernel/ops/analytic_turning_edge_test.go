@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/query"
+
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
@@ -114,12 +116,12 @@ func solePlanarFace(t *testing.T, b *topo.Body) *topo.Face {
 func TestSpiricCapAreaMatchesSectionOracle(t *testing.T) {
 	t.Parallel()
 	body := spiricOvalCapBody(t)
-	got, ok := AnalyticFaceArea(soleCurvedFace(t, body))
+	got, ok := query.AnalyticFaceArea(soleCurvedFace(t, body))
 	if !ok {
 		t.Fatalf("the torus patch declined analytic integration")
 	}
 	want := spiricCapAreaOracle(spiricCapMajor, spiricCapMinor, spiricCapY)
-	if rel := relErrMP(got, want); rel > 1e-9 {
+	if rel := relErrTerms(got, want); rel > 1e-9 {
 		t.Errorf("spiric cap area %.9f vs section oracle %.9f (rel %.3e > 1e-9)", got, want, rel)
 	}
 }
@@ -131,18 +133,18 @@ func TestSpiricCapAreaMatchesSectionOracle(t *testing.T) {
 func TestSpiricCapVectorAreaCancelsItsLid(t *testing.T) {
 	t.Parallel()
 	body := spiricOvalCapBody(t)
-	cap, capOK := faceTerms(soleCurvedFace(t, body))
-	lid, lidOK := faceTerms(solePlanarFace(t, body))
+	cap, capOK := query.FaceTerms(soleCurvedFace(t, body))
+	lid, lidOK := query.FaceTerms(solePlanarFace(t, body))
 	if !capOK || !lidOK {
 		t.Fatalf("analytic integration declined: cap=%v lid=%v", capOK, lidOK)
 	}
-	if rel := relErrMP(vectorMagnitude(lid.ax, lid.ay, lid.az), lid.area); rel > 1e-12 {
-		t.Fatalf("the planar lid's |A| %.9f is not its area %.9f (rel %.3e)", vectorMagnitude(lid.ax, lid.ay, lid.az), lid.area, rel)
+	if rel := relErrTerms(vectorMagnitude(lid.Ax, lid.Ay, lid.Az), lid.Area); rel > 1e-12 {
+		t.Fatalf("the planar lid's |A| %.9f is not its area %.9f (rel %.3e)", vectorMagnitude(lid.Ax, lid.Ay, lid.Az), lid.Area, rel)
 	}
-	residual := vectorMagnitude(cap.ax+lid.ax, cap.ay+lid.ay, cap.az+lid.az)
-	if rel := residual / lid.area; rel > 1e-9 {
+	residual := vectorMagnitude(cap.Ax+lid.Ax, cap.Ay+lid.Ay, cap.Az+lid.Az)
+	if rel := residual / lid.Area; rel > 1e-9 {
 		t.Errorf("cap A=(%.9f,%.9f,%.9f) does not cancel lid A=(%.9f,%.9f,%.9f): residual %.3e of %.6f",
-			cap.ax, cap.ay, cap.az, lid.ax, lid.ay, lid.az, residual, lid.area)
+			cap.Ax, cap.Ay, cap.Az, lid.Ax, lid.Ay, lid.Az, residual, lid.Area)
 	}
 }
 
@@ -152,13 +154,13 @@ func TestSpiricCapVectorAreaCancelsItsLid(t *testing.T) {
 // closed form.
 func TestSpiricCapVectorAreaMatchesOvalSection(t *testing.T) {
 	t.Parallel()
-	terms, ok := faceTerms(soleCurvedFace(t, spiricOvalCapBody(t)))
+	terms, ok := query.FaceTerms(soleCurvedFace(t, spiricOvalCapBody(t)))
 	if !ok {
 		t.Fatalf("the torus patch declined analytic integration")
 	}
-	got := vectorMagnitude(terms.ax, terms.ay, terms.az)
+	got := vectorMagnitude(terms.Ax, terms.Ay, terms.Az)
 	want := spiricOvalAreaOracle(spiricCapMajor, spiricCapMinor, spiricCapY)
-	if rel := relErrMP(got, want); rel > 1e-9 {
+	if rel := relErrTerms(got, want); rel > 1e-9 {
 		t.Errorf("spiric cap |A| %.9f vs oval section area %.9f (rel %.3e > 1e-9)", got, want, rel)
 	}
 }
@@ -180,4 +182,13 @@ func spiricOvalAreaOracle(major, minor, yCut float64) float64 {
 // vectorMagnitude is |(x, y, z)| — the length of a face's outward vector area.
 func vectorMagnitude(x, y, z float64) float64 {
 	return stdmath.Sqrt(x*x + y*y + z*z)
+}
+
+// relErrTerms is the relative error the mass-properties assertions in this file measure against; a
+// zero expectation degrades to the absolute magnitude.
+func relErrTerms(got, want float64) float64 {
+	if want == 0 {
+		return stdmath.Abs(got)
+	}
+	return stdmath.Abs(got-want) / stdmath.Abs(want)
 }
