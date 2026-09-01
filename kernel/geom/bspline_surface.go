@@ -16,6 +16,10 @@ type BSplineSurface struct {
 	Ctrl             [][]math.Point3
 	Weights          [][]float64
 	UKnots, VKnots   []float64
+	// seed shares the lazily-filled inversion seed lattice across every copy of this value — see
+	// bsplineSeedGrid. Set once by NewBSplineSurface; nil on a zero-value literal, which then
+	// computes the same lattice per call.
+	seed *bsplineSeedGrid
 }
 
 // NewBSplineSurface builds a rational B-spline surface, validating that the
@@ -39,6 +43,7 @@ func NewBSplineSurface(uDeg, vDeg int, ctrl [][]math.Point3, weights [][]float64
 	return BSplineSurface{
 		UDegree: uDeg, VDegree: vDeg, Ctrl: copyNet(ctrl), Weights: copyWeights(weights),
 		UKnots: append([]float64(nil), uKnots...), VKnots: append([]float64(nil), vKnots...),
+		seed: &bsplineSeedGrid{},
 	}, nil
 }
 

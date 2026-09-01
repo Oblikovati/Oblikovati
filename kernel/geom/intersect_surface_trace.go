@@ -151,7 +151,8 @@ type ssiTracer struct {
 // so any guard generous enough not to decline correct work still admits millions of corrections across
 // one self-intersection scan. Each of those corrections is a NURBS point inversion that rebuilds a
 // knot-span seed lattice and rescans it (geom.BSplineSurface.ParamAt → nearestSeed), which is the
-// actual cost and is tracked as Oblikovati/Oblikovati#3490. Lowering this constant to make such a body
+// actual cost and is tracked as Oblikovati/Oblikovati#3490; the seed lattice itself is memoized
+// per surface now, which removes the rebuild-and-rescan half of that term. Lowering this constant to make such a body
 // finish would decline correct work instead of making the work cheaper, and is the wrong trade.
 const ssiMaxCorrections = 1000000
 
