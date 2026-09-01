@@ -24,11 +24,13 @@ func sphereVolume(r float64) float64 { return 4.0 / 3.0 * math.Pi * r * r * r }
 //
 // The volume tests below are about the tessellated integrator's orientation handling
 // (#1318: a flipped saddle facet on a coarse sphere). BodyGeometryProperties now answers
-// a sphere or torus ANALYTICALLY and ignores q entirely (M48/C3), so routing them through
-// it made every assertion here vacuous — the volume came back bit-identical at every
-// quality. TestCoarseSphereVolumeConvergesMonotonically then compared machine noise
-// against noise/5 and failed on macOS while passing on Linux, which is how a dead premise
-// announces itself. These tests drive the tessellated path on purpose.
+// a sphere or torus ANALYTICALLY and consults q only for a fallback these bodies never
+// take (M48/C3, #3453), so routing them through it made every assertion here vacuous —
+// the volume came back bit-identical at every quality.
+// TestCoarseSphereVolumeConvergesMonotonically then compared 2.51e-16 against 5.03e-17
+// and tipped on floating-point noise: green on amd64, red on CI's arm64 macOS, where FMA
+// contraction rounds differently. That is a dead premise announcing itself, not a
+// regression. These tests drive the tessellated path on purpose.
 func meshVolumeAt(t *testing.T, b *topo.Body, q Quality) float64 {
 	t.Helper()
 	mesh, _ := tessellate.TessellateBody(b, q)
@@ -76,6 +78,23 @@ func TestCoarseSphereVolumeConvergesMonotonically(t *testing.T) {
 	}
 	if prevErr > 1e-2 {
 		t.Errorf("finest rel error %g too large for a converged sphere mesh", prevErr)
+	}
+	assertAnalyticVolumeIgnoresQuality(t, sphere, want, qualities)
+}
+
+// assertAnalyticVolumeIgnoresQuality pins what replaced the convergence above:
+// BodyGeometryProperties integrates the analytic B-rep, so a sphere's volume is EXACT at
+// every quality rather than converging toward exactness. That is the stronger contract,
+// and stating it here keeps the two meters distinguishable — which is precisely why the
+// convergence assertion had to move off this entry point.
+func assertAnalyticVolumeIgnoresQuality(t *testing.T, sphere *topo.Body, want float64, qualities []Quality) {
+	t.Helper()
+	for i, q := range qualities {
+		got := BodyGeometryProperties(sphere, q).Volume
+		if rel := math.Abs(got-want) / want; rel > 1e-12 {
+			t.Errorf("q[%d]: analytic volume %.17g vs exact %.17g (rel %.3g) — the analytic path must not "+
+				"depend on tessellation quality", i, got, want, rel)
+		}
 	}
 }
 
