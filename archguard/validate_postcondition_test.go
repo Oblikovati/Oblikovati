@@ -24,10 +24,10 @@ import (
 // did nothing wrong. Validate at the exit is what keeps a failure local to the operation that
 // caused it.
 //
-// Nothing checked this (#2190). 54 exported operations that return a *topo.Body never reach
+// Nothing checked this (#2190). 53 exported operations that return a *topo.Body never reach
 // Validate — notably the whole surface family (17) and the whole transform family (8), neither
-// of which validates anything it builds, and boolean.Facet (#3329), whose faceted cage the
-// planar boolean then trusts as a valid operand.
+// of which validates anything it builds. boolean.Facet was one of them until #3329 gave it the
+// post-condition; its 53 remaining siblings have not had that yet.
 //
 // "Reaches Validate" follows only the calls whose RESULT IS RETURNED — `return join(...)`,
 // `return boolean.Boolean(...)` — because the thing that must be validated is the thing the
@@ -43,14 +43,15 @@ import (
 // validateDebt is the per-package count of exported functions returning *topo.Body that never
 // reach Validate. Baseline 2026-09-01. It may only shrink.
 var validateDebt = map[string]int{
-	// The facade's own operations, plus its Facet/MeshToBRep forwarders to boolean.
-	"kernel/ops": 6,
+	// The facade's own operations, plus its MeshToBRep forwarder. Its Facet forwarder dropped
+	// out with #3329: a forwarder inherits its target's post-condition.
+	"kernel/ops": 5,
 	// Draft, the two cylinder-fillet entry points, and all four FilletEdges* entries.
 	"kernel/ops/blend": 8,
-	// Facet and MeshToBRep: both BUILD a body from a mesh and hand it back unchecked. Facet is
-	// #3329 — the faceted cage is what the planar boolean then trusts, so an invalid cage is a
-	// defect laundered into a valid-looking operand.
-	"kernel/ops/boolean": 2,
+	// MeshToBRep still builds a body from an external mesh and hands it back unchecked. Facet
+	// dropped out here: #3329 made validity its post-condition, so an invalid cage is refused
+	// rather than laundered into an operand the planar boolean trusts.
+	"kernel/ops/boolean": 1,
 	// Healing builds a body FROM a broken one, so its post-condition matters most of all: a
 	// repair that leaves the body invalid has done nothing but hide the original defect.
 	"kernel/ops/heal":            8,

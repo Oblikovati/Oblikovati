@@ -41,6 +41,32 @@ func booleanInputQuality() Quality {
 // before any boolean ran, and the cut that followed was then exactly as wrong as its input. The
 // angle bound is radius-independent (~32 facets/circle at any size, DefaultQuality), which costs
 // the documented ~0.64% inscribed-N-gon bias instead of 36%.
+// # Validity is a post-condition (#3329)
+//
+// The cage this returns becomes an operand the exact planar boolean TRUSTS as valid, so handing
+// back an invalid one launders a defect into a body that looks sound — the boolean then fails, or
+// worse succeeds, somewhere with no connection to the faceting that caused it. An invalid cage is
+// therefore refused (nil) rather than returned, which callers already treat as "keep the analytic
+// body" and route down a path that can report its own failure.
+//
+// This is insurance, not a behaviour change: measured over the whole tier-2 corpus
+// (kernel/... + model/feature) on 2026-09-01, Facet produced an invalid cage ZERO times.
+//
+// # What deletes this (#3459)
+//
+// Facet exists only because the planar boolean could not take a curved operand, and a strangler
+// must name the gate that retires it. Measured the same day by disabling the facet branch in
+// model/feature/planarize.go and running tier 2: kernel/ is entirely clean, and the whole product
+// depends on Facet in FOUR places, each a distinct capability gap —
+//
+//	TestAnalyticPatternedCutDoesNotExplode                 the cut blows up to 7874 edges
+//	TestPatternOfHoleCutsEachOccurrence                    invalid solid: open + misoriented edges
+//	TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial   raises -87.09 cm³, wants +0.1…0.6
+//	TestChamferOfTaperShaftRimDoesNotCollapse              "chamfer: degenerate edge"
+//
+// Delete Facet when those four pass with the facet branch removed. Three are boolean/containment
+// gaps ADR-0058 closes; the fourth is the BLEND engine on an analytic taper rim (ADR-0050
+// strangler work), so this is blocked on two subsystems, not one.
 func Facet(b *topo.Body, feat string) *topo.Body {
 	cage := trianglesToBody(bodyTrianglesAt(b, DefaultQuality()), feat)
 	if cage == nil {
@@ -49,7 +75,11 @@ func Facet(b *topo.Body, feat string) *topo.Body {
 	// A one-face-per-triangle cage is combinatorially valid but shreds every flat region into a
 	// diagonal-laced fan; unifying coplanar faces restores each flat region to the single face it
 	// is, so a downstream fillet/boolean does not choke on spurious diagonals (Oblikovati#1693).
-	return brep.UnifyCoplanarFaces(cage, feat)
+	out := brep.UnifyCoplanarFaces(cage, feat)
+	if !Validate(out).ValidSolid() {
+		return nil // refuse rather than launder an invalid cage into a trusted operand (#3329)
+	}
+	return out
 }
 
 // bodyTriangles returns a body's tessellation as CSG triangles, each oriented

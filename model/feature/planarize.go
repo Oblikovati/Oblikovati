@@ -74,6 +74,11 @@ func curvedBooleanWorthTrying(target, tool *topo.Body) bool {
 	return oc == 1 || (tc == 1 && oc == 0)
 }
 
+// DELETING THIS PATH (#3459): the facet branch below is measured, not guessed. Disabling it and
+// running tier 2 leaves kernel/ entirely clean and breaks exactly four tests — see
+// [boolean.Facet]'"'"'s doc for the list and what each one needs. Three are boolean/containment gaps
+// (ADR-0058); the fourth is the blend engine on an analytic taper rim (ADR-0050).
+//
 // planarized converts a body with analytic curved faces into a planar B-rep the exact boolean can
 // consume (it hangs on a full periodic curved face, #129). A SIMPLE extrude-circle cylinder becomes
 // a clean, key-stable N-gon prism (the fast path that keeps downstream edge identity); any OTHER
