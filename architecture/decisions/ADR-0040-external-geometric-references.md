@@ -137,4 +137,4 @@ Two call sites now probe in an ordered ladder rather than classifying once —
 `resolveHoleFace` (centroid match → plane-through the drill centre → plane-through the recorded
 centroid) and `addin/opregistry/extrude.go:210-217` (the same first two tiers). The ground rules
 forbid an ordered try-list: *"Dispatch is a classification that selects exactly one path."*
-Tracked by #3498; this ADR does not sanction the ladder.
+Tracked by #3059; this ADR does not sanction the ladder.

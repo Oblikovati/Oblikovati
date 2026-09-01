@@ -4,7 +4,7 @@
 through epic #1539; re-verified against the tree 2026-09-01, #2198). Every per-operation
 provenance phase (P0's seam, P1-P5, P6a-P6c) is in the product. The two **cross-cutting**
 items of P0 — §3 per-feature unique tags and §4 the resolution uniqueness guard — are not,
-and are tracked as #3500 and #3499. Do not read this ADR as fully realized; see
+and are tracked as #2997 and #2979. Do not read this ADR as fully realized; see
 [As-built](#as-built). **Builds on / refines:** the M31 topological-naming
 work — provenance naming for the planar boolean (`kernel/brep/boolean_provenance.go`,
 `boolean_nonmanifold.go`; #1152/#1153/#1155), tiered binding (`model/identity/binding.go`, F06),
@@ -176,8 +176,8 @@ is not.
 | P4 curved boolean + SSI edges | shipped | `kernel/brep/{curved_stitch,reconstruct_boolean}.go` |
 | P5 remaining generators | shipped | `kernel/ops/surface/surface_edit.go`, `model/feature/{freeform,work_plane_cloud_fit}.go` |
 | P6a/P6b/P6c | shipped | `model/identity/recover.go`, `model/feature/identity_adapter.go` |
-| **§3 per-feature unique tags** | **not shipped** | `kernel/ops/blend/assemble_curved.go:64` still hardcodes `const filletAssemblyTag = "fillet"`, so two Fillet features share one namespace → **#3500** |
-| **§4 resolution uniqueness guard** | **half shipped** | `EdgesByKey`/`FacesByKey` return every match, but `Find{Edge,Face,Vertex}ByKey` take `m[0]`; only `model/feature.resolveEdges` applies the guard → **#3499** |
+| **§3 per-feature unique tags** | **not shipped** | `kernel/ops/blend/assemble_curved.go:64` still hardcodes `const filletAssemblyTag = "fillet"`, so two Fillet features share one namespace → **#2997** |
+| **§4 resolution uniqueness guard** | **half shipped** | `EdgesByKey`/`FacesByKey` return every match, but `Find{Edge,Face,Vertex}ByKey` take `m[0]`; only `model/feature.resolveEdges` applies the guard → **#2979** |
 
 The two gaps are one hazard, not two: a shared namespace makes a collision *possible*, and an
 unguarded first-match makes it *silent*. Either one alone is survivable; together they are the
