@@ -13,6 +13,9 @@ import (
 // TestNopOpengrabTargetCSG pins the target plate as a square slab with six circular
 // through-cuts, matching opengrab_target before MCP sketch/profile integration.
 func TestNopOpengrabTargetCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~5s): `make test-corpus`")
+	}
 	t.Parallel()
 	body := box(-2, -2, 0, 4, 4, 0.1)
 	removed := 0.0

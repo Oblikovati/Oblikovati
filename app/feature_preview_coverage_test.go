@@ -129,6 +129,9 @@ func TestEveryFeatureToolPreviews(t *testing.T) {
 // own end-to-end setup, and asserts ToolPreview() yields a ghost. This pins the DraftFeature
 // path of every tool that does NOT go through the changed-face/result-body fallbacks.
 func TestSweptAndDressUpToolsPreview(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~57s): `make test-corpus`")
+	}
 	t.Parallel()
 	t.Run("revolve", func(t *testing.T) {
 		s, profile := newPartWithOffsetSquare(t, 2, 2)

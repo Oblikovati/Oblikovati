@@ -8,6 +8,9 @@ import (
 )
 
 func TestNopGrubScrewPositionsCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~8s): `make test-corpus`")
+	}
 	t.Parallel()
 	body := annularPrism(t, 0.6, 0.25, 2.0, "grub-coupling")
 	for _, z := range []float64{0.5, 1.5} {

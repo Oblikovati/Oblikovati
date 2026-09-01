@@ -52,6 +52,9 @@ func exactBlindBoreVolume() float64   { return stdmath.Pi * 1 * 1 * 1 }
 // feature: ONE hole feature, four bores. Before this a four-hole pattern had to be four features
 // with four frozen coordinates.
 func TestSketchPlacementDrillsOneHolePerCentrePoint(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	sk := sketch.NewSketches().Add(topOfBlockPlane())
 	for _, at := range [][2]float64{{1, 1}, {3, 1}, {3, 3}, {1, 3}} {

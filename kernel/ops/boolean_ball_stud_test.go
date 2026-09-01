@@ -342,6 +342,9 @@ func TestBallStudVolumeIsQualityIndependent(t *testing.T) {
 // reports as IntAna_NoGeometricSolution. The handler must decline rather than build a circle that is
 // not there, leaving the (faceted, but honest) fallback to produce a valid solid.
 func TestOffAxisRodDoesNotTakeTheCoaxialPath(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
 	t.Parallel()
 	ball := ballOf(t)
 	rod, err := brep.SolidCylinder(math.P3(0.2, 0, 0), math.V3(0, 1, 0), ballStudRod, ballStudLen)

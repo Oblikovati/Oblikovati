@@ -115,6 +115,9 @@ func corpusFile(t *testing.T, name string) []byte {
 // TestImportDWGPlanarRealFile imports a real planar drawing and checks it lands in
 // a single 2D sketch on the chosen plane.
 func TestImportDWGPlanarRealFile(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~28s): `make test-corpus`")
+	}
 	t.Parallel()
 	part := compdef.NewPartComponentDefinition()
 	res, err := ImportDWG(part, corpusFile(t, "testfile-7.dwg"), xyPlane(t))

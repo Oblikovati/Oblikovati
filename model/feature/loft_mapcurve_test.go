@@ -49,6 +49,9 @@ func TestLoftMapCurveDefaultIsUntwisted(t *testing.T) {
 // twist pinches the mid section to the inscribed diamond (half the area), so the twisted loft holds
 // distinctly less volume than the auto-aligned (untwisted) prism — proving the override took effect.
 func TestLoftMapCurveForcesTwist(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	auto := ops.BodyGeometryProperties(mappedSquares(t, nil), ops.DefaultQuality()).Volume
 	mc := func() []math.Point3 { return []math.Point3{math.P3(2, 2, 0), math.P3(-2, 2, 4)} }

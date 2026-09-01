@@ -111,6 +111,9 @@ func TestDirectEditToolScaleNeedsNoFaces(t *testing.T) {
 // TestSketchDrivenPatternToolEndToEnd patterns a boss at three sketch points: each extra
 // point adds one stud's volume.
 func TestSketchDrivenPatternToolEndToEnd(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	s, block := newPartWithBlock(t, 6)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)

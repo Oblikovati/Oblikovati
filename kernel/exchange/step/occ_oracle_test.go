@@ -30,6 +30,9 @@ type oracleEntry struct {
 }
 
 func TestOCCOracleVolumes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~8s): `make test-corpus`")
+	}
 	t.Parallel()
 	dir := filepath.Join("testdata", "occ")
 	oracle := map[string]oracleEntry{}

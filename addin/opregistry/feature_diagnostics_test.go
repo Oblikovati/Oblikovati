@@ -36,6 +36,9 @@ func circledPart(t *testing.T) *app.Session {
 // facets its analytic operands (cylinder on cylinder, no exact curved path) must report the
 // degradation in the feature reply's diagnostics — the API caller's only window into it.
 func TestFeatureReplyCarriesFallbackDiagnostics(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	s := circledPart(t)
 	if _, err := apply(t, s, "extrude", `{"sketchIndex":0,"distance":"30 mm","operation":"new"}`); err != nil {

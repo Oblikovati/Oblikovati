@@ -15,6 +15,9 @@ import (
 // the DEFAULT engine recompute (it used to vanish: ops.Boolean was called with rec=nil, and the
 // pre-facet happened before ops.Boolean could even see curved operands).
 func TestCombineRecordsAnalyticFaceting(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	fs := NewPartFeatures(nil)
 	extrudes := NewExtrudeFeatures(fs)

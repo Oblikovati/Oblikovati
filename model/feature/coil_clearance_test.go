@@ -31,6 +31,9 @@ func pitchedCoil(t *testing.T, pitch, wire float64) (*PartFeatures, *PartFeature
 // TestCoilRefusesTurnsThatRunIntoEachOther: below the profile's own depth the coil must refuse,
 // not deliver a solid whose turns occupy the same space.
 func TestCoilRefusesTurnsThatRunIntoEachOther(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
 	t.Parallel()
 	for _, pitch := range []float64{0.8, 0.5} {
 		_, pf := pitchedCoil(t, pitch, 1)
@@ -43,6 +46,9 @@ func TestCoilRefusesTurnsThatRunIntoEachOther(t *testing.T) {
 // TestCoilAcceptsTurnsThatClear is the other half: the gate must not blunt ordinary coils. Pitch
 // equal to the profile depth is the boundary — the turns touch but do not overlap — and must build.
 func TestCoilAcceptsTurnsThatClear(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~6s): `make test-corpus`")
+	}
 	t.Parallel()
 	for _, pitch := range []float64{1.0, 1.5, 2.0} {
 		fs, pf := pitchedCoil(t, pitch, 1)

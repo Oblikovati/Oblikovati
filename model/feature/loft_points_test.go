@@ -36,6 +36,9 @@ func TestLoftPointSharpCone(t *testing.T) {
 // TestLoftPointTangentDomes: a TangentToPlane apex domes OUTWARD, so the solid holds more volume
 // than the straight cone between the same base and tip.
 func TestLoftPointTangentDomes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
 	t.Parallel()
 	base := func() []LoftSection {
 		return []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(4), 4)}
@@ -49,6 +52,9 @@ func TestLoftPointTangentDomes(t *testing.T) {
 
 // TestLoftPointImpactScalesDome: a larger impact bulges the dome more.
 func TestLoftPointImpactScalesDome(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
 	t.Parallel()
 	mk := func() []LoftSection {
 		return []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(4), 4)}
@@ -63,6 +69,9 @@ func TestLoftPointImpactScalesDome(t *testing.T) {
 // TestLoftPointReversedDishes: reversing the tangent-to-plane apex pulls it inward, dishing the
 // tip concave — less volume than the straight cone.
 func TestLoftPointReversedDishes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
 	t.Parallel()
 	mk := func() []LoftSection {
 		return []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(4), 4)}

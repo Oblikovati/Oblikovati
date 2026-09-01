@@ -73,6 +73,9 @@ func TestInTriangleCoplanarVsOracle(t *testing.T) {
 // rational and tests strict containment, over random segments plus segments aimed
 // through the centroid so genuine pierces are exercised.
 func TestSegmentPiercesTriangleVsOracle(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	r := rand.New(rand.NewSource(0x2072))
 	pierces := 0

@@ -176,6 +176,9 @@ func dipRimRingOf(loop filletLoop) filletLoop {
 // 5.918872e-09 — inside that rim's OWN interior per-segment bar of 1.771921e-07, which is what the
 // comparative bar asserts. Boss A's ring is a circle and its arcs read ~3.2e-15 against a 1.004e-12 bar.
 func TestDualSplitWallRimSegmentsTraceTheRim(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~5s): `make test-corpus`")
+	}
 	t.Parallel()
 	for _, kase := range dualRimCases() {
 		t.Run(kase.name, func(t *testing.T) {

@@ -10,6 +10,9 @@ import (
 )
 
 func TestNopDoorLatchStlCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~5s): `make test-corpus`")
+	}
 	t.Parallel()
 	body := prismBody(roundedRectPoints(3.5, 1.2, 0.3, 8), 0, 0.5, "door-latch-rounded-base")
 	body = joinOrFatal(t, body, box(-1.75, -0.2, 0.25, 3.5, 0.4, 0.35), "door-latch-ridge")

@@ -9,6 +9,9 @@ import (
 )
 
 func TestNopSquareButtonCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
 	t.Parallel()
 	body := prismBody(roundedRectPoints(1.2, 1.2, 0.12, 8), 0, 0.35, "button-base")
 	for _, x := range []float64{-0.4, 0.4} {

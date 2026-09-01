@@ -8,6 +8,9 @@ import (
 )
 
 func TestNopRdElectrolyticCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~5s): `make test-corpus`")
+	}
 	t.Parallel()
 	body := frustumBody(0.48, 0.44, 0, 1.15, 48, "rd-electrolytic-can")
 	body = joinOrFatal(t, body, annularPrismRange(t, 0.5, 0.16, 0.02, 1.1, "rd-electrolytic-jacket"), "rd electrolytic jacket")

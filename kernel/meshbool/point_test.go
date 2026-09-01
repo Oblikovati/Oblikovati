@@ -74,6 +74,9 @@ func TestOrient3DMatchesPredicates(t *testing.T) {
 // the edge direction; each coordinate between the endpoints), over random
 // straddling edges. This is the conforming-vertex guarantee at the atom level.
 func TestEdgePlaneCrossExact(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
 	t.Parallel()
 	r := rand.New(rand.NewSource(0x1c02))
 	built := 0

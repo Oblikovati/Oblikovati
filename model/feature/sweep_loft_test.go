@@ -152,6 +152,9 @@ func TestClosureShiftDetectsMonodromy(t *testing.T) {
 // whole twist into the wrap segment — the old behaviour blew the wrap up to loftMaxSegmentSamples
 // (a pinched notch); the monodromy-aware closure keeps every segment at the floor.
 func TestClosedMobiusLoftClosesWithoutCram(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~5s): `make test-corpus`")
+	}
 	t.Parallel()
 	const n, R, W, T = 36, 30.0, 16.0, 2.0
 	loops := mobiusSectionLoops(n, R, W, T, 0.5)
@@ -196,6 +199,9 @@ func mobiusSectionSketch(u, twist, radius, width, thick float64) *sketch.Sketch 
 // (seamless seam). A thin band of section w×t swept along the ring centroid (length 2πR) has
 // volume w·t·2πR and one-sided surface area ≈ 2(w+t)·2πR, independent of the twist.
 func TestLoftMobiusStripDesign(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~5s): `make test-corpus`")
+	}
 	t.Parallel()
 	const R, W, T = 3.0, 1.6, 0.2 // cm: ring 30 mm, band 16×2 mm (model units = cm)
 	body := closedMobiusLoftBody(t, 36, R, W, T, mobiusSectionSketch)
@@ -230,6 +236,9 @@ func mobiusSectionEllipseSketch(u, twist, radius, width, thick float64) *sketch.
 // the rounded band must also close seamlessly with the right mass. An elliptical band of semi-axes
 // a,b swept along the ring centroid has volume π·a·b·2πR.
 func TestLoftMobiusStripEllipseDesign(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~33s): `make test-corpus`")
+	}
 	t.Parallel()
 	const R, W, T = 3.0, 1.6, 0.2 // cm: ring 30 mm, ellipse 16×2 mm
 	body := closedMobiusLoftBody(t, 36, R, W, T, mobiusSectionEllipseSketch)
@@ -246,6 +255,9 @@ func TestLoftMobiusStripEllipseDesign(t *testing.T) {
 // ~166k triangles and stalling the viewport (14 ms/frame just to flatten). The correct mesh tracks
 // the loop density (≈ longitudinal sections × ellipse points); this pins it well under the blow-up.
 func TestLoftClosedTwistMeshStaysBounded(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~17s): `make test-corpus`")
+	}
 	t.Parallel()
 	body := closedMobiusLoftBody(t, 36, 3.0, 1.6, 0.2, mobiusSectionEllipseSketch)
 	mesh, _ := ops.TessellateBody(body, ops.DefaultQuality())

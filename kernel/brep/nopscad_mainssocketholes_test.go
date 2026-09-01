@@ -10,6 +10,9 @@ import (
 )
 
 func TestNopMainsSocketHolesCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	body := box(-1.8, -1.2, 0, 3.6, 2.4, 0.12)
 	for _, x := range []float64{-1.25, 1.25} {

@@ -211,6 +211,9 @@ func TestFaceTangentTakeoffMirrorsToo(t *testing.T) {
 // TestReversedTakeoffStillUndercuts keeps the behaviour the mirror must not cost: the reversed
 // takeoff exists to dip the surface below the start plane, and it still does.
 func TestReversedTakeoffStillUndercuts(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
 	t.Parallel()
 	rev := LoftEnd{Condition: LoftAngle, Angle: rad(45), Reversed: true}
 	b := conditionedLoft(t, twoCircles(2), false, rev, rev)

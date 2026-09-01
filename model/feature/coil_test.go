@@ -9,6 +9,9 @@ import (
 )
 
 func TestCoilSweepsValidHelix(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	// A small square offset from the Y axis, swept 3 turns with pitch 2 → a helical
 	// solid that climbs 3·2 = 6 plus the profile's own height (1).

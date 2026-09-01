@@ -180,6 +180,9 @@ func TestCornerReliefCutsAtTheCornerItself(t *testing.T) {
 // TestRoundCornerReliefTakesLessThanTheSquare: the round relief seats a disc in the corner instead
 // of a square, so it removes π/4 of the square's area — and leaves no inside corner.
 func TestRoundCornerReliefTakesLessThanTheSquare(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	bare := smSolidVolume(corneredSheet(t, CornerReliefSpec{Shape: types.CornerTear}))
 	squareCut := bare - smSolidVolume(corneredSheet(t, CornerReliefSpec{Shape: types.CornerSquare, Size: 0.4}))

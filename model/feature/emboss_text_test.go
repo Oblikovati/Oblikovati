@@ -45,6 +45,9 @@ func TestTextEmbossRaisesMaterial(t *testing.T) {
 // recipe must store a REFERENCE to the text entity (sketch index + entity id) — never baked
 // outline geometry — and round-trip back to a working text emboss.
 func TestTextEmbossStoresReferenceNotGeometry(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
 	t.Parallel()
 	fs := NewPartFeatures(nil)
 	block := squareSketch(10)

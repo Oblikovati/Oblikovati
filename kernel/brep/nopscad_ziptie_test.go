@@ -7,6 +7,9 @@ import (
 )
 
 func TestNopZiptieCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
 	t.Parallel()
 	outer := stadiumBandPoints(0, 0, 1.0, 0.45, 24)
 	inner := stadiumBandPoints(0, 0, 0.82, 0.27, 24)

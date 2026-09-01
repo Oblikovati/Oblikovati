@@ -251,6 +251,9 @@ func TestBooleanCutConePartialBlindHole(t *testing.T) {
 // TestBooleanCutConePartialStub subtracts the fat from the frustum (cone − fat): the single tapered stub
 // sticking out the entry side (one shell) whose volume is the frustum minus the plug.
 func TestBooleanCutConePartialStub(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
 	t.Parallel()
 	const rFat = 3.0
 	res, err := ops.Boolean(ops.Cut, conePartialFrustum(), conePartialFat())
@@ -273,6 +276,9 @@ func TestBooleanCutConePartialStub(t *testing.T) {
 // TestBooleanJoinConePartial joins the fat and the partially-penetrating frustum (fat ∪ cone): one connected
 // solid whose volume is fat + frustum − the plug.
 func TestBooleanJoinConePartial(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~5s): `make test-corpus`")
+	}
 	t.Parallel()
 	const rFat, hFat = 3.0, 12.0
 	res, err := ops.Boolean(ops.Join, conePartialFat(), conePartialFrustum())

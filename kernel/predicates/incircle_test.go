@@ -29,6 +29,9 @@ func TestInCircleBasic(t *testing.T) {
 // (rational circumcentre + squared-distance compare, orientation-corrected), with
 // the naive float determinant proven to disagree on a non-trivial share.
 func TestInCircleVsOracleUnderStress(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
 	t.Parallel()
 	r := rand.New(rand.NewSource(0x1c1c))
 	teeth := 0

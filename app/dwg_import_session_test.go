@@ -67,6 +67,9 @@ func TestDWGPlaneChoices(t *testing.T) {
 // TestSessionImportDWGPlanar imports a real planar drawing onto the first plane and
 // checks it lands as a populated 2D sketch (undoable edit).
 func TestSessionImportDWGPlanar(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~23s): `make test-corpus`")
+	}
 	t.Parallel()
 	s := sessionWithPart(t)
 	choices, err := s.DWGPlaneChoices()

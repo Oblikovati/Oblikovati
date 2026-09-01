@@ -79,6 +79,9 @@ func TestLeftHandedCoilWindsOppositeToRight(t *testing.T) {
 // not height (#1883). Profile x∈[4,5], pitch 2, 3 turns → the outer edge reaches 5 + 2·3 = 11,
 // and the coil stays as thin axially as the profile itself (1).
 func TestSpiralCoilGrowsRadiallyWithoutRise(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	fs, pf := placedCoil(t, 3, func(d *CoilDefinition) { d.Spiral = true })
 	body := solidCoilBody(t, fs, pf, "spiral coil")

@@ -50,6 +50,9 @@ func nearlyEqual(a, b float64) bool { return a-b < 1e-9 && b-a < 1e-9 }
 // thickness. The live failure is at 0.5 mm — half the 1 mm gauge — and the existing fixtures only
 // ever tried 0 and a gap wider than the sheet, so they stepped straight over it.
 func TestAutoMiterAtStyleDefaultsDoesNotInterpenetrate(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~17s): `make test-corpus`")
+	}
 	t.Parallel()
 	for _, gap := range []string{"0.2 mm", "0.5 mm", "0.8 mm", "1 mm", "3 mm"} {
 		s, _ := seedSheetMetalSheet(t)

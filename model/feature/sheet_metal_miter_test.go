@@ -52,6 +52,9 @@ func miteredCorner(t *testing.T, miter bool, gap float64) (*topo.Body, *PartFeat
 // miter carries each wall past the corner until it meets the other, which is material the part did
 // not have — so the volume rises, and it rises by the corner the two walls now share.
 func TestAutoMiterFillsTheOpenCorner(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
 	t.Parallel()
 	open, _ := miteredCorner(t, false, 0)
 	mitered, _ := miteredCorner(t, true, 0)
@@ -73,6 +76,9 @@ func TestAutoMiterFillsTheOpenCorner(t *testing.T) {
 // TestAutoMiterGapSeparatesTheWalls: the two extensions meet on the bisector, and without a cut
 // there they occupy the same corner. The gap is what lets the part fold.
 func TestAutoMiterGapSeparatesTheWalls(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
 	t.Parallel()
 	solid, _ := miteredCorner(t, true, 0)
 	slotted, _ := miteredCorner(t, true, 0.1)

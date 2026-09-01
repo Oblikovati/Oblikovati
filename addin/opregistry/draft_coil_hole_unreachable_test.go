@@ -175,6 +175,9 @@ func springCoilVolume(t *testing.T, extra map[string]any) float64 {
 // TestCoilEndConditions: start/end transition + flat sweeps are accepted and build a healthy coil
 // with more geometry (the flat/transition turns) than the plain helix (#1883).
 func TestCoilEndConditions(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~12s): `make test-corpus`")
+	}
 	t.Parallel()
 	plain := springCoilVolume(t, nil)
 	ground := springCoilVolume(t, map[string]any{

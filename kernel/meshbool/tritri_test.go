@@ -66,6 +66,9 @@ func TestIntersectTrianglesTouching(t *testing.T) {
 // Crossing has P!=Q while a Touching has P==Q. Ground truth is exact rational
 // containment, independent of the segment-construction path.
 func TestIntersectTrianglesProperties(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~5s): `make test-corpus`")
+	}
 	t.Parallel()
 	r := rand.New(rand.NewSource(0x1c03))
 	crossings, touches := 0, 0
@@ -100,6 +103,9 @@ func TestIntersectTrianglesProperties(t *testing.T) {
 // TestIntersectTrianglesSymmetric checks IntersectTriangles(t1,t2) and (t2,t1)
 // agree in kind and endpoint set — the intersection is a property of the pair.
 func TestIntersectTrianglesSymmetric(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~7s): `make test-corpus`")
+	}
 	t.Parallel()
 	r := rand.New(rand.NewSource(0x1c04))
 	for i := range 30000 {

@@ -7,6 +7,9 @@ import (
 )
 
 func TestNopE3dFanCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
 	t.Parallel()
 	body := e3dFanDuctBody(t)
 	body = joinOrFatal(t, body, box(1.5, -1.5, 0.2, 1.0, 3.0, 0.3), "e3d fan frame")

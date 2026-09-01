@@ -48,6 +48,9 @@ func TestSketchTextAddEditGet(t *testing.T) {
 // features.add API: a base block, then an emboss that references a sketch TEXT entity
 // (textEntity), producing a raised solid without baking glyph geometry.
 func TestTextEmbossByReferenceThroughRouter(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~6s): `make test-corpus`")
+	}
 	t.Parallel()
 	r, s := emptyPartSession(t)
 

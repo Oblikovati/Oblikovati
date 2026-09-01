@@ -35,6 +35,9 @@ func tubeRings(ccw bool) (outer, inner [][]math.Point3) {
 // TestTubeSolidIsWatertightWithCorrectVolume checks the direct tube mesh: an outer/inner
 // cylindrical pair skins a watertight pipe whose volume is the annulus area × height.
 func TestTubeSolidIsWatertightWithCorrectVolume(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	outer, inner := tubeRings(true)
 	body, err := tubeSolid(skinnedSections(outer, 48, false, loftEnds{}, loftGuides{}), skinnedSections(inner, 48, false, loftEnds{}, loftGuides{}), false, "tube")
@@ -54,6 +57,9 @@ func TestTubeSolidIsWatertightWithCorrectVolume(t *testing.T) {
 // valid outward solid with positive volume — the coherent mesh lets the signed-volume flip pick
 // the global orientation, so callers need not pre-normalize ring winding.
 func TestTubeSolidWindingInvariant(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~6s): `make test-corpus`")
+	}
 	t.Parallel()
 	for _, ccw := range []bool{true, false} {
 		outer, inner := tubeRings(ccw)
@@ -71,6 +77,9 @@ func TestTubeSolidWindingInvariant(t *testing.T) {
 // TestTubeSolidClosedIsToroidal checks a closed-loop tube (no caps): the section sequence wraps,
 // giving a hollow torus-like shell that is still a valid watertight solid.
 func TestTubeSolidClosedIsToroidal(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
 	t.Parallel()
 	const n, segs = 32, 24
 	outer := make([][]math.Point3, segs)

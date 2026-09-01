@@ -203,6 +203,9 @@ func TestLoftToolPointSectionCone(t *testing.T) {
 // circle above, with a Tangent condition on the face — the loft must flare out tangent to the
 // planar top (exact G1), beyond the ruled radius. Exercises face-section picking end to end.
 func TestLoftToolFaceSectionTangent(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~6s): `make test-corpus`")
+	}
 	t.Parallel()
 	s := NewSession()
 	def := compdef.NewPartComponentDefinition()

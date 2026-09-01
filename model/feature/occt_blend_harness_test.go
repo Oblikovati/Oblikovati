@@ -13,6 +13,9 @@ import (
 // RunCase; the remaining reds are the ADR-0050 greening backlog and must never be loosened —
 // this suite is the parity gate, so it stays red until the engine closes those gaps.
 func runCorpusGrids(t *testing.T, grids ...string) {
+	if testing.Short() {
+		t.Skip("corpus tier (~100-170s per grid): `make test-corpus`")
+	}
 	want := map[string]bool{}
 	for _, g := range grids {
 		want[g] = true

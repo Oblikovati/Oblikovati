@@ -169,6 +169,9 @@ func slitRimFace(t *testing.T, radius float64) *topo.Face {
 // 13.7× over the 2^18 budget; the old R=13/60° fixture (78k cells) is honoured now and moved to the
 // coarse (cry-wolf) arm's family of honoured grids.
 func TestSpherePatchGridClampIsDiagnosed(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
 	t.Parallel()
 	const radius = 150.0
 	sph, err := geom.NewSphere(math.P3(0, 0, 0), radius)

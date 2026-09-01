@@ -28,6 +28,9 @@ func twoBodyPart(t *testing.T) *app.Session {
 // TestAdditiveOperations drives the additive profile features to their feature-building
 // success path (recomputeResult never errors for a well-formed request).
 func TestAdditiveOperations(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~5s): `make test-corpus`")
+	}
 	t.Parallel()
 	cases := []struct{ name, op, args string }{
 		{"revolve default axis", "revolve", `{"sketchIndex":0,"angle":"360 deg"}`},

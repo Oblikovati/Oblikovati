@@ -38,6 +38,9 @@ func TestSpecularConductorZeroBelowSurface(t *testing.T) {
 // hemispherical reflectance of every base lobe must not exceed 1, across a sweep of
 // roughness/metalness-adjacent parameter values, at a representative view angle.
 func TestEnergyConservationSweep(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~41s): `make test-corpus`")
+	}
 	t.Parallel()
 	const cosThetaO = 0.6
 	const tolerance = 1.03 // numerical-quadrature slack, not a physical allowance

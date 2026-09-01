@@ -20,6 +20,9 @@ import (
 // identities a downstream re-weld needs — each case must still be a valid solid after a top-rim
 // fillet. Clearance and overlap (the non-degenerate neighbours) must stay clean too (ADR-0047).
 func TestTangentContactUnionStaysManifold(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
 	t.Parallel()
 	for _, tc := range []struct {
 		name    string

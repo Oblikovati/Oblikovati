@@ -94,6 +94,9 @@ func TestLoftConditionImpactScalesBulge(t *testing.T) {
 // the surface dips BELOW the start section (and above the end section) — an undercut/overhang —
 // while a non-reversed takeoff stays within the section planes.
 func TestLoftConditionReversedUndercut(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	end := LoftEnd{Condition: LoftAngle, Angle: rad(45)}
 	rev := LoftEnd{Condition: LoftAngle, Angle: rad(45), Reversed: true}
@@ -122,6 +125,9 @@ func TestLoftConditionAngleSquare(t *testing.T) {
 // TestLoftConditionAnglePipe: the takeoff applies through the tube path too — an annulus→annulus
 // loft with an angle condition is still a watertight HOLLOW pipe (bore preserved), now flared.
 func TestLoftConditionAnglePipe(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	sb, ib := annulusOn(sketch.XYPlane(), 2.0, 1.4)
 	st, it := annulusOn(planeAtZ(4), 2.0, 1.4)
@@ -157,6 +163,9 @@ func ringStationPlane(r, phi float64) sketch.Plane {
 // TestLoftConditionClosedIgnoresEnds: a closed loft has no end sections, so end conditions are
 // ignored — a closed loft with angle conditions matches the Free closed loft exactly.
 func TestLoftConditionClosedIgnoresEnds(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~10s): `make test-corpus`")
+	}
 	t.Parallel()
 	// The sections are placed AROUND a ring, not stacked. Three coaxial circles closed into a loop
 	// cannot be a solid — the closing leg runs back through the tube the others already occupy — and

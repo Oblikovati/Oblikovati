@@ -36,6 +36,9 @@ func partWithCylinder(t *testing.T, baseZ, radius, height float64) *PartComponen
 // cylindrical wall the boolean left as a seam-wrapping loop, and falls back to the mesh. Closing
 // that coverage gap (#3453) makes this assertion exact with no change here.
 func TestAnalyzeInterferenceMeasuresACurvedOverlap(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
 	t.Parallel()
 	lower := partWithCylinder(t, 0, 1, 2) // z ∈ [0, 2]
 	upper := partWithCylinder(t, 0, 1, 2)
@@ -57,6 +60,9 @@ func TestAnalyzeInterferenceMeasuresACurvedOverlap(t *testing.T) {
 // bounding-box centre of the intersection lump the retired code reported only coincides here
 // because the lump is symmetric, so the assertion is on the value, not on the method.
 func TestAnalyzeInterferenceCenterIsOverlapCentroid(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
 	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	asm.Place("lower:1", partWithCylinder(t, 0, 1, 2), math.Identity4())

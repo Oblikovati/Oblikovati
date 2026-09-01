@@ -78,6 +78,9 @@ func TestSweepUnionGuideRailOverWire(t *testing.T) {
 // TestSweepUnionSolidOverWire: the solid variant drags an existing body along
 // the path; a missing toolBodyIndex is a precise schema-level error.
 func TestSweepUnionSolidOverWire(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~133s): `make test-corpus`")
+	}
 	t.Parallel()
 	r, s := sweepFixture(t)
 	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"profileIndex":0,"distance":"10 mm"}}`, &sweepAddResult{})

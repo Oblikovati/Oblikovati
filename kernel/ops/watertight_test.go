@@ -105,6 +105,9 @@ const (
 // (the definitive #585 over-enclosure guard, whose emergent failure does not fit a small fixture) and
 // its reference volume.
 func TestImportedNurbsDuctVolumeAndFolds(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
 	t.Parallel()
 	bodies, wantVolume, foldCeiling := nurbsDuctSubject(t)
 	for _, gq := range gateQualities() {

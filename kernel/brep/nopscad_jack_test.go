@@ -11,6 +11,9 @@ import (
 )
 
 func TestNopJackCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	if runtime.GOOS == "darwin" {
 		t.Skip("macOS CI currently leaves this boolean acceptance body open")

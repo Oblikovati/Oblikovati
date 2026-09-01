@@ -12,6 +12,9 @@ import (
 // TestNopSbrRailCSG pins the SBR16S source geometry: the translated concave rail
 // base section, its screw clearance cuts, and the supported rod drawn by sbr_rail().
 func TestNopSbrRailCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~5s): `make test-corpus`")
+	}
 	t.Parallel()
 	base := prismBody(sbrRailSectionPoints(), -1.75, 1.75, "sbr-rail-base")
 	requireValidNopSolid(t, "sbr_rail base", base)

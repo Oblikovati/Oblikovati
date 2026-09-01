@@ -69,6 +69,9 @@ type curvedExactCase struct {
 // silently degrades to CSG — the standing guard that BSP-CSG is the last-resort fallback, not the primary
 // curved path.
 func TestCurvedBooleansStayExact(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~6s): `make test-corpus`")
+	}
 	t.Parallel()
 	for _, c := range curvedExactCases() {
 		t.Run(c.name, func(t *testing.T) {

@@ -43,6 +43,9 @@ func coilRecompute(t *testing.T, def *CoilDefinition) float64 {
 // TestCoilHeightModes: pitch+height and revolutions+height match the
 // equivalent pitch+revolutions coil.
 func TestCoilHeightModes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~11s): `make test-corpus`")
+	}
 	t.Parallel()
 	pr := coilRecompute(t, &CoilDefinition{
 		Sketch: coilProfileSketch(), Axis: zWorkAxis(),
@@ -89,6 +92,9 @@ func TestCoilShapeSpecValidation(t *testing.T) {
 // TestCoilTaperGrowsRadius: a tapered coil's top turn sits farther from the
 // axis — the range box grows by ≈ tan(taper)·height over the untapered coil.
 func TestCoilTaperGrowsRadius(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
 	t.Parallel()
 	const taper, pitch, revs = 0.2, 2.0, 3.0
 	mk := func(tp float64) *CoilDefinition {

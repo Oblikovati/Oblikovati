@@ -74,6 +74,9 @@ func TestLoftFaceFreeIsRuled(t *testing.T) {
 // TestLoftFaceTangentFlares: a Tangent condition leaves the planar top face tangent to its plane,
 // so the loft flares OUT past the face radius (a smooth trumpet continuation) — exact G1.
 func TestLoftFaceTangentFlares(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
 	t.Parallel()
 	b := loftFromCylinderTop(t, LoftEnd{Condition: LoftTangent})
 	if maxX := float64(b.RangeBox().Max.X); maxX < 2.15 {
@@ -87,6 +90,9 @@ func TestLoftFaceTangentFlares(t *testing.T) {
 // takeoff stays in-plane longer than G1's cubic). The numeric curvature-continuity proof against a
 // CURVED face is TestLoftG2MatchesFaceCurvature.
 func TestLoftFaceSmoothIsRealCurvature(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~12s): `make test-corpus`")
+	}
 	t.Parallel()
 	tan := ops.BodyGeometryProperties(loftFromCylinderTop(t, LoftEnd{Condition: LoftTangent}), ops.DefaultQuality()).Volume
 	smooth := ops.BodyGeometryProperties(loftFromCylinderTop(t, LoftEnd{Condition: LoftSmooth}), ops.DefaultQuality()).Volume
@@ -97,6 +103,9 @@ func TestLoftFaceSmoothIsRealCurvature(t *testing.T) {
 
 // TestLoftFaceImpactScalesFlare: a larger impact flares the tangent continuation more.
 func TestLoftFaceImpactScalesFlare(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~7s): `make test-corpus`")
+	}
 	t.Parallel()
 	soft := float64(loftFromCylinderTop(t, LoftEnd{Condition: LoftTangent, Impact: 1}).RangeBox().Max.X)
 	hard := float64(loftFromCylinderTop(t, LoftEnd{Condition: LoftTangent, Impact: 2}).RangeBox().Max.X)
