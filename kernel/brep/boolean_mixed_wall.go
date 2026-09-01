@@ -26,7 +26,7 @@ func wallImprints(p, other *facePartition, otherImp [][][2]math.Point3) ([][]geo
 	out := make([][]geom.Curve3, len(p.wall))
 	for i, wf := range p.wall {
 		box := inflateBox(p.wallBox[i])
-		if wallOverlapsUncovered(box, other) {
+		if wallOverlapsUncovered(wf, box, other) {
 			return nil, false
 		}
 		for j := range other.planarFull {
@@ -43,11 +43,32 @@ func wallImprints(p, other *facePartition, otherImp [][][2]math.Point3) ([][]geo
 	return out, true
 }
 
-// wallOverlapsUncovered reports a wall box overlapping an other-operand face the ruling imprint cannot
+// wallOverlapsUncovered reports a wall overlapping an other-operand face the ruling imprint cannot
 // cover (a wall or pass face — curved-vs-curved contact stays with the bespoke handlers). A uv face is
 // NOT uncovered any more: pairUVWallImprints imprints every uv×wall pair in closed form (#3460).
-func wallOverlapsUncovered(box math.Box, other *facePartition) bool {
-	return boxesOverlapAny(box, other.wallBox) || boxesOverlapAny(box, other.passBox)
+//
+// A box overlap alone is not contact. Where the two SURFACES are provably apart everywhere
+// (geom.SurfacesApart) the pair cannot touch however their boxes sit, so it does not make the wall
+// uncovered — an emboss pad seated on a chamfer cone overlaps that cone's box completely while
+// riding a constant sagitta clear of it (#3459).
+func wallOverlapsUncovered(wf curvedFace, box math.Box, other *facePartition) bool {
+	return overlapsUnprovenPair(wf, box, other.wall, other.wallBox) ||
+		overlapsUnprovenPair(wf, box, other.pass, other.passBox)
+}
+
+// overlapsUnprovenPair reports whether wf's box overlaps any of the given faces WITHOUT a
+// surface-separation proof for that pair.
+func overlapsUnprovenPair(wf curvedFace, box math.Box, faces []curvedFace, boxes []math.Box) bool {
+	for i, b := range boxes {
+		if !box.Intersects(b) {
+			continue
+		}
+		if i < len(faces) && geom.SurfacesApart(wf.surface, faces[i].surface, facePairCullPad) {
+			continue
+		}
+		return true
+	}
+	return false
 }
 
 // ruledSide is a wall face resolved to the ruled surface it lies on, its rim band, and its axis —
@@ -109,22 +130,25 @@ func wallPairImprint(wf, of curvedFace, otherImp [][][2]math.Point3, j int) ([]g
 // than a cylinder, so a cone side band goes through the same clip (ADR-0058: the wall route is the
 // ruled route, not the cylinder route).
 func wallCurveSegments(cv geom.Curve3, of curvedFace, axis math.Vector3, band coneSideBand_) ([][2]math.Point3, bool) {
-	switch c := cv.(type) {
-	case geom.Line:
+	if line, ok := cv.(geom.Line); ok {
 		var segs [][2]math.Point3
-		for _, iv := range faceLineIntervals(of, c.Origin, c.Dir.AsVector()) {
+		for _, iv := range faceLineIntervals(of, line.Origin, line.Dir.AsVector()) {
 			if iv[1]-iv[0] > 1e-9 { // tol:calibrated — planar imprint overlap length (see arrange2d arrTol)
-				segs = append(segs, [2]math.Point3{c.PointAt(iv[0]), c.PointAt(iv[1])})
+				segs = append(segs, [2]math.Point3{line.PointAt(iv[0]), line.PointAt(iv[1])})
 			}
 		}
 		return segs, true
-	case geom.Circle:
-		return nil, !conicTouchesTool(cv, of, axis, band, 0)
-	case geom.EllipseFull:
-		return nil, !conicTouchesTool(cv, of, axis, band, ellipseAxialAmplitude(c, axis))
-	default:
+	}
+	// Every other section a plane can cut from a ruled wall is a CONIC — a circle or ellipse when
+	// the plane crosses the axis, a hyperbola branch when it runs parallel to one (an emboss pad's
+	// side face on a chamfer cone). All three get the same verdict: clear of the tool's trim is no
+	// imprint, entering it moves the receiving face to the exact-frame bucket, which carries the
+	// curve itself rather than these straight segments (promoteConicReceivers).
+	cf, ok := geom.AsConic(cv)
+	if !ok {
 		return nil, false
 	}
+	return nil, !conicTouchesTool(cv, of, axis, band, cf.AxialAmplitude(axis))
 }
 
 // wallSplitFaces trims each wall by its imprints through the ruled chart, classifying kept cells by

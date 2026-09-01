@@ -156,6 +156,13 @@ func wallSectionIsland(cv geom.Curve3, uf curvedFace, rs ruledSide) (island, ok 
 	}
 	inFace, exact := conicIslandInFace(cv, uf)
 	if !exact {
+		// The section CROSSES this face's trim rather than sitting inside it. Both sides can now
+		// clip a hyperbola exactly (toPlaneConic/conicSegmentHits handle the branch), but emitting
+		// a partial arc still declines: the uv side would terminate it where it meets THIS face's
+		// polygon and the wall side where it meets the ADJACENT sections, two routes to the same
+		// corner that produce one loop each side which do not close into a shared footprint. The
+		// missing piece is co-refining the sections into one loop before either side clips
+		// (ADR-0052); until then this is a named decline, not a wrong answer (#3459).
 		return false, false
 	}
 	if !inFace {
@@ -168,14 +175,11 @@ func wallSectionIsland(cv geom.Curve3, uf curvedFace, rs ruledSide) (island, ok 
 // conicAxialSpan returns the section conic's centre and its axial half-amplitude about that centre — zero
 // for a circle (its plane is perpendicular to the wall axis). isConic=false for any other curve kind.
 func conicAxialSpan(cv geom.Curve3, axis math.Vector3) (center math.Point3, amp float64, isConic bool) {
-	switch c := cv.(type) {
-	case geom.Circle:
-		return c.Center, 0, true
-	case geom.EllipseFull:
-		return c.Center, ellipseAxialAmplitude(c, axis), true
-	default:
+	cf, ok := geom.AsConic(cv)
+	if !ok {
 		return math.Point3{}, 0, false
 	}
+	return cf.Center, cf.AxialAmplitude(axis), true
 }
 
 // conicBandPlacement classifies a conic's axial span against the wall band: inside it strictly (a clean

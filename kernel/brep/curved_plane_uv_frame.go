@@ -22,9 +22,27 @@ import (
 // IntersectSurfacesAnalytic returns, projected through to2D/to2Dvec.
 type planeConic struct {
 	center math.Point2
-	maj    math.Vector2 // unit major-axis direction in (u,v)
-	A, B   float64      // semi-axes, A>=B
+	maj    math.Vector2 // unit major/transverse-axis direction in (u,v)
+	A, B   float64      // semi-axes; A>=B for an ellipse, transverse/conjugate for a hyperbola
+	// hyper selects the SIGNED metric: false is the ellipse xi²+eta²=1, true the hyperbola
+	// xi²-eta²=1. The zero value is an ellipse, so every existing literal keeps its meaning.
+	// One representation carries both because a plane cuts a cone in either, depending only on
+	// how the plane is tilted, and an imprint must not care which it got (#3459).
+	hyper bool
 }
+
+// sig is the metric's sign: +1 for the ellipse, -1 for the hyperbola.
+func (pc planeConic) sig() float64 {
+	if pc.hyper {
+		return -1
+	}
+	return 1
+}
+
+// onBranch reports whether a normalized xi lies on the branch this conic represents. An ellipse has
+// no branches. geom.Hyperbola is ONE branch, opening along +transverse (xi = cosh(theta) >= 1), so a
+// root on the mirror branch is not on this curve at all and must be dropped.
+func (pc planeConic) onBranch(xi float64) bool { return !pc.hyper || xi > 0 }
 
 // conicHit is one exact crossing of the conic with a polygon edge: the edge parameter in [0,1] and the
 // crossing point in the (u,v) chart (exactly on the edge; on the conic to the quadratic's precision).
@@ -34,18 +52,20 @@ type conicHit struct {
 }
 
 // toPlaneConic projects a 3-D imprint conic (which lies in the seat plane pl) into pl's (u,v) chart. It
-// handles the two shapes a cylinder/cone∩plane yields; ok=false for an open arm (parabola/hyperbola) or any
+// handles the shapes a cylinder/cone∩plane yields — circle, ellipse and hyperbola branch; ok=false for a parabola or any
 // other curve, which the planeUV gate declines to CSG for now (#1591).
 func toPlaneConic(curve geom.Curve3, pl geom.Plane) (planeConic, bool) {
-	switch c := curve.(type) {
-	case geom.Circle:
-		return planeConic{center: to2D(pl, c.Center), maj: math.V2(1, 0), A: c.Radius, B: c.Radius}, true
-	case geom.EllipseFull:
-		maj := unitVec2(to2Dvec(pl, c.MajorAxis.AsVector()))
-		return planeConic{center: to2D(pl, c.Center), maj: maj, A: c.MajorRadius, B: c.MinorRadius}, true
-	default:
+	cf, ok := geom.AsConic(curve)
+	if !ok {
 		return planeConic{}, false
 	}
+	return planeConic{
+		center: to2D(pl, cf.Center),
+		maj:    unitVec2(to2Dvec(pl, cf.Major.AsVector())),
+		A:      cf.A,
+		B:      cf.B,
+		hyper:  cf.Hyperbolic,
+	}, true
 }
 
 // conicEdgeHits solves C ∩ (a→b) EXACTLY, keeping only crossings STRICTLY inside the edge.
@@ -69,23 +89,51 @@ func conicFrameHits(pc planeConic, a, b math.Point2, res geom.Resolution) (hits 
 // the crossing point is a+s·(b−a) in the original chart. tangent=true when the two roots coincide within
 // a weld (a grazing double root — a sliver risk to decline).
 func conicSegmentHits(pc planeConic, a, b math.Point2, res geom.Resolution, sPad float64) (hits []conicHit, tangent bool) {
+	if float64(a.DistanceTo(b)) < res.Weld() {
+		return nil, false // a degenerate (sub-weld) edge
+	}
 	ax, ay := pc.normalize(a)
 	bx, by := pc.normalize(b)
 	dx, dy := bx-ax, by-ay
-	alpha := dx*dx + dy*dy
-	if alpha < res.Weld()*res.Weld() {
-		return nil, false // a degenerate (sub-weld) edge
+	sg := pc.sig()
+	alpha := dx*dx + sg*dy*dy
+	beta := 2 * (ax*dx + sg*ay*dy)
+	gamma := ax*ax + sg*ay*ay - 1
+	// alpha vanishes when the edge runs parallel to an ASYMPTOTE — a hyperbola-only case, and not
+	// a degeneracy. (For an ellipse alpha is a sum of squares, so it can only vanish on the
+	// degenerate edge already rejected above.)
+	if stdmath.Abs(alpha) < res.Weld()*res.Weld() {
+		return pc.asymptoteParallelHit(a, b, ax, dx, beta, gamma, res, sPad)
 	}
-	beta := 2 * (ax*dx + ay*dy)
-	gamma := ax*ax + ay*ay - 1
 	disc := beta*beta - 4*alpha*gamma
 	if disc < 0 {
 		return nil, false // the edge line misses the conic
 	}
 	s1, s2 := stableQuadraticRoots(alpha, beta, gamma, disc)
-	hits = appendEdgeHit(hits, a, b, s1, sPad)
-	hits = appendEdgeHit(hits, a, b, s2, sPad)
+	hits = pc.appendBranchHit(hits, a, b, ax, dx, s1, sPad)
+	hits = pc.appendBranchHit(hits, a, b, ax, dx, s2, sPad)
 	return hits, conicTangent(a, b, s1, s2, disc, res)
+}
+
+// asymptoteParallelHit solves the degenerate-quadratic case: the edge runs parallel to a
+// hyperbola's asymptote, so the quadratic collapses to a linear equation with a single root. An
+// edge lying ON the asymptote has no isolated crossing at all.
+func (pc planeConic) asymptoteParallelHit(a, b math.Point2, ax, dx, beta, gamma float64,
+	res geom.Resolution, sPad float64,
+) (hits []conicHit, tangent bool) {
+	if stdmath.Abs(beta) < res.Weld()*res.Weld() {
+		return nil, false
+	}
+	return pc.appendBranchHit(nil, a, b, ax, dx, -gamma/beta, sPad), false
+}
+
+// appendBranchHit adds the crossing at edge parameter s, unless it lands on the mirror branch of a
+// hyperbola — a root of the same equation that is not on this curve.
+func (pc planeConic) appendBranchHit(hits []conicHit, a, b math.Point2, ax, dx, s, sPad float64) []conicHit {
+	if !pc.onBranch(ax + s*dx) {
+		return hits
+	}
+	return appendEdgeHit(hits, a, b, s, sPad)
 }
 
 // normalize maps a chart point into the frame where the conic is the unit circle: (ξ,η) = ((p−c)·maj/A,
