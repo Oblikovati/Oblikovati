@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -33,7 +34,7 @@ func analyticFilletedBarVolume() float64 {
 func curvedBarWithStraddlingTool(t *testing.T) (bar, tool *topo.Body) {
 	t.Helper()
 	box := shellBox(4, 3, 2)
-	curved, err := ops.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0.5)
+	curved, err := blend.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0.5)
 	if err != nil {
 		t.Fatalf("fillet: %v", err)
 	}

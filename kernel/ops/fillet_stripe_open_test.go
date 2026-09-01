@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
 )
@@ -37,14 +38,14 @@ func TestFilletOpenCurvedTangentStripe(t *testing.T) {
 	planesBefore := countPlanes(filleted)
 
 	seed := firstStraightTopEdge(t, filleted)
-	chain, _, err := ops.TangentEdgeChain(filleted, seed, ops.DefaultTangentChainAngle)
+	chain, _, err := blend.TangentEdgeChain(filleted, seed, blend.DefaultTangentChainAngle)
 	if err != nil {
 		t.Fatal(err)
 	}
 	open := chain[:3] // straight, arc, straight — a contiguous open sub-run of the closed loop
 	const r = 0.25
 
-	res, err := ops.FilletEdges(filleted, open, r)
+	res, err := blend.FilletEdges(filleted, open, r)
 	if err != nil {
 		t.Fatalf("open curved tangent-stripe fillet failed: %v", err)
 	}
@@ -117,20 +118,20 @@ func TestFilletSingleVerticalOpenChain(t *testing.T) {
 			break
 		}
 	}
-	f, err := ops.FilletEdges(box, one, 0.5)
+	f, err := blend.FilletEdges(box, one, 0.5)
 	if err != nil {
 		t.Fatalf("single vertical fillet: %v", err)
 	}
 	before := ops.BodyGeometryProperties(f, ops.DefaultQuality()).Volume
 
-	chain, closed, err := ops.TangentEdgeChain(f, firstStraightTopEdge(t, f), ops.DefaultTangentChainAngle)
+	chain, closed, err := blend.TangentEdgeChain(f, firstStraightTopEdge(t, f), blend.DefaultTangentChainAngle)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if closed || len(chain) != 3 {
 		t.Fatalf("expected an OPEN 3-edge (straight–arc–straight) chain, got closed=%v len=%d", closed, len(chain))
 	}
-	res, err := ops.FilletEdges(f, chain, 0.25)
+	res, err := blend.FilletEdges(f, chain, 0.25)
 	if err != nil {
 		t.Fatalf("open sas-chain fillet failed: %v", err)
 	}
@@ -155,7 +156,7 @@ func TestFilletStripeUnbuildableIsLocalized(t *testing.T) {
 	filleted := boxWithRoundedVerticals(t, 4, 0.5)
 	top := topPerimeterKeys(t, filleted)
 
-	res, err := ops.FilletEdges(filleted, top, 0.5) // r == arc radius ⇒ no rolling-ball fit on the arcs
+	res, err := blend.FilletEdges(filleted, top, 0.5) // r == arc radius ⇒ no rolling-ball fit on the arcs
 	if err == nil {
 		t.Fatal("expected a localized partial-result error for the unbuildable radius, got a body")
 	}
@@ -179,7 +180,7 @@ func boxWithRoundedVerticals(t *testing.T, side, vr float64) *topo.Body {
 			verts = append(verts, e.ReferenceKey())
 		}
 	}
-	filleted, err := ops.FilletEdges(box, verts, vr)
+	filleted, err := blend.FilletEdges(box, verts, vr)
 	if err != nil {
 		t.Fatalf("vertical fillet setup: %v", err)
 	}

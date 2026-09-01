@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -22,7 +23,7 @@ func TestDraftFacesNeutralPivotsOnNeutralPlane(t *testing.T) {
 	side := plusXFaceKey(t, box)
 	neutral, _ := geom.NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1)) // z=1, the mid-height parting plane
 
-	res, err := ops.DraftFacesNeutral(box, [][]byte{side}, math.V3(0, 0, 1), &neutral, stdmath.Atan(0.2))
+	res, err := blend.DraftFacesNeutral(box, [][]byte{side}, math.V3(0, 0, 1), &neutral, stdmath.Atan(0.2))
 	if err != nil {
 		t.Fatalf("draft with neutral plane: %v", err)
 	}
@@ -55,7 +56,7 @@ func TestDraftFacesNeutralVolumeMatchesOCCT(t *testing.T) {
 	side := plusXFaceKey(t, box)
 	neutral, _ := geom.NewPlane(math.P3(0, 0, 0.5), math.V3(0, 0, 1))
 
-	res, err := ops.DraftFacesNeutral(box, [][]byte{side}, math.V3(0, 0, 1), &neutral, 10*stdmath.Pi/180)
+	res, err := blend.DraftFacesNeutral(box, [][]byte{side}, math.V3(0, 0, 1), &neutral, 10*stdmath.Pi/180)
 	if err != nil {
 		t.Fatalf("draft with neutral plane: %v", err)
 	}

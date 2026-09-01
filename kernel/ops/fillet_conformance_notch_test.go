@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -39,7 +40,7 @@ func TestSimpleLoop2D(t *testing.T) {
 // TestConformancePreservesNotchedFaceArea regresses the body-tessellation collapse (corpus
 // simple/Y2). Filleting the top edge of a notched prism (r=15) produces a planar face whose
 // boundary self-intersects (a protruding notch pokes into the removed strip — the still-open Bug B
-// in FilletEdges). conformCylConeFaces re-meshed that face with the boundary-faithful CDT, which
+// in blend.FilletEdges). conformCylConeFaces re-meshed that face with the boundary-faithful CDT, which
 // collapsed it 8475→675 and dropped the whole body's measured area 61147→53337 (−12.6%), even
 // though the B-rep and the per-face meshes are correct (OCCT area 61050). The guard keeps the robust
 // initial mesh instead of the collapsed one; the measured body area must match OCCT within 1% and
@@ -49,7 +50,7 @@ func TestConformancePreservesNotchedFaceArea(t *testing.T) {
 	t.Parallel()
 	body := importNotchedPrism(t)
 	edge := notchTopEdge(t, body) // the filleted top edge (0,0,100)-(100,0,100)
-	res, err := FilletEdges(body, [][]byte{edge.ReferenceKey()}, 15)
+	res, err := blend.FilletEdges(body, [][]byte{edge.ReferenceKey()}, 15)
 	if err != nil {
 		t.Fatalf("fillet: %v", err)
 	}

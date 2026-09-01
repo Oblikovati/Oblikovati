@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -35,7 +36,7 @@ func TestFilletConvexEdgeOnImportedBox(t *testing.T) {
 	body := bodies[0]
 
 	edge := edgeNearest(t, body, math.P3(100, 0, 50))
-	res, err := ops.FilletEdges(body, [][]byte{edge.ReferenceKey()}, 10)
+	res, err := blend.FilletEdges(body, [][]byte{edge.ReferenceKey()}, 10)
 	if err != nil {
 		t.Fatalf("fillet of a convex imported-box edge failed: %v", err)
 	}

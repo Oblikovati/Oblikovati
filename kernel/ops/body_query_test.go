@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -71,10 +72,10 @@ func TestFindUsingRayOrdersHits(t *testing.T) {
 // TestBodyEdgeConvexityCube: every cube edge is convex.
 func TestBodyEdgeConvexityCube(t *testing.T) {
 	t.Parallel()
-	byClass := BodyEdgeConvexity(tetraBox(t, math.P3(0, 0, 0), 2))
-	if n := len(byClass[EdgeConvex]); n != 12 {
+	byClass := blend.BodyEdgeConvexity(tetraBox(t, math.P3(0, 0, 0), 2))
+	if n := len(byClass[blend.EdgeConvex]); n != 12 {
 		t.Errorf("cube has %d convex edges, want 12 (got concave=%d tangent=%d unknown=%d)",
-			n, len(byClass[EdgeConcave]), len(byClass[EdgeTangent]), len(byClass[EdgeConvexityUnknown]))
+			n, len(byClass[blend.EdgeConcave]), len(byClass[blend.EdgeTangent]), len(byClass[blend.EdgeConvexityUnknown]))
 	}
 }
 
@@ -82,12 +83,12 @@ func TestBodyEdgeConvexityCube(t *testing.T) {
 // the material's perspective (the material wraps 270° around them).
 func TestBodyEdgeConvexityCavity(t *testing.T) {
 	t.Parallel()
-	byClass := BodyEdgeConvexity(cavityBody(t))
-	if n := len(byClass[EdgeConcave]); n != 12 {
+	byClass := blend.BodyEdgeConvexity(cavityBody(t))
+	if n := len(byClass[blend.EdgeConcave]); n != 12 {
 		t.Errorf("cavity body has %d concave edges, want the 12 inner ones (convex=%d)",
-			n, len(byClass[EdgeConvex]))
+			n, len(byClass[blend.EdgeConvex]))
 	}
-	if n := len(byClass[EdgeConvex]); n != 12 {
+	if n := len(byClass[blend.EdgeConvex]); n != 12 {
 		t.Errorf("cavity body has %d convex edges, want the 12 outer ones", n)
 	}
 }

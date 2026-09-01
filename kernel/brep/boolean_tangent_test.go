@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -57,7 +58,7 @@ func assertFilletable(t *testing.T, b *topo.Body, label string) {
 			bz, top = z, e
 		}
 	}
-	out, err := ops.FilletEdges(b, [][]byte{top.ReferenceKey()}, 0.1)
+	out, err := blend.FilletEdges(b, [][]byte{top.ReferenceKey()}, 0.1)
 	if err != nil {
 		t.Fatalf("%s: fillet after tangent union failed: %v", label, err)
 	}

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -17,7 +17,7 @@ import (
 func TestTangentChainBoxHasNoPropagation(t *testing.T) {
 	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
-	keys, closed, err := ops.TangentEdgeChain(box, verticalEdgeKey(t, box), ops.DefaultTangentChainAngle)
+	keys, closed, err := blend.TangentEdgeChain(box, verticalEdgeKey(t, box), blend.DefaultTangentChainAngle)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,12 +33,12 @@ func TestTangentChainBoxHasNoPropagation(t *testing.T) {
 func TestTangentChainRoundedRimIsClosedLoop(t *testing.T) {
 	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
-	rounded, err := ops.FilletEdges(box, verticalEdgeKeys(t, box), 0.5)
+	rounded, err := blend.FilletEdges(box, verticalEdgeKeys(t, box), 0.5)
 	if err != nil {
 		t.Fatalf("fillet setup: %v", err)
 	}
 	seed := longestTopRimEdge(t, rounded, 2.0)
-	keys, closed, err := ops.TangentEdgeChain(rounded, seed, ops.DefaultTangentChainAngle)
+	keys, closed, err := blend.TangentEdgeChain(rounded, seed, blend.DefaultTangentChainAngle)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestTangentChainCylinderRimClosesOnOneEdge(t *testing.T) {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
 	rim := convexEdgeKey(t, cyl)
-	keys, closed, err := ops.TangentEdgeChain(cyl, rim, ops.DefaultTangentChainAngle)
+	keys, closed, err := blend.TangentEdgeChain(cyl, rim, blend.DefaultTangentChainAngle)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func longestTopRimEdge(t *testing.T, b *topo.Body, top float64) []byte {
 func convexEdgeKey(t *testing.T, b *topo.Body) []byte {
 	t.Helper()
 	for _, e := range b.Edges() {
-		if ops.ClassifyEdgeConvexity(e) == ops.EdgeConvex {
+		if blend.ClassifyEdgeConvexity(e) == blend.EdgeConvex {
 			return e.ReferenceKey()
 		}
 	}

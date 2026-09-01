@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -82,7 +83,7 @@ func TestRuleFilletNoMatchNoOp(t *testing.T) {
 func concaveEdgeCount(b *topo.Body) int {
 	n := 0
 	for _, e := range b.Edges() {
-		if ops.ClassifyEdgeConvexity(e) == ops.EdgeConcave {
+		if blend.ClassifyEdgeConvexity(e) == blend.EdgeConcave {
 			n++
 		}
 	}

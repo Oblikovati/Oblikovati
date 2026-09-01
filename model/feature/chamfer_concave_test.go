@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -24,7 +25,7 @@ func lExtrude(t *testing.T) (*topo.Body, []byte) {
 	for _, e := range body.Edges() {
 		a, b := e.StartVertex().Point(), e.EndVertex().Point()
 		at11 := func(p math.Point3) bool { return stdmath.Abs(p.X-1) < 1e-9 && stdmath.Abs(p.Y-1) < 1e-9 }
-		if at11(a) && at11(b) && ops.ClassifyEdgeConvexity(e) == ops.EdgeConcave {
+		if at11(a) && at11(b) && blend.ClassifyEdgeConvexity(e) == blend.EdgeConcave {
 			return body, e.ReferenceKey()
 		}
 	}

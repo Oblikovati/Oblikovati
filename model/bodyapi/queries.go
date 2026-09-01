@@ -6,6 +6,7 @@ import (
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -31,11 +32,11 @@ func (a *BodyQueriesAdapter) IsPointInside(x, y, z float64) types.Containment {
 
 // ConvexEdgeCount and ConcaveEdgeCount report the dihedral classification.
 func (a *BodyQueriesAdapter) ConvexEdgeCount() int {
-	return len(ops.BodyEdgeConvexity(a.body)[ops.EdgeConvex])
+	return len(blend.BodyEdgeConvexity(a.body)[blend.EdgeConvex])
 }
 
 func (a *BodyQueriesAdapter) ConcaveEdgeCount() int {
-	return len(ops.BodyEdgeConvexity(a.body)[ops.EdgeConcave])
+	return len(blend.BodyEdgeConvexity(a.body)[blend.EdgeConcave])
 }
 
 // IsEntityValid checks the body at the given level (1 topology, 2 + the

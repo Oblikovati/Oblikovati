@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/analysis"
@@ -183,7 +184,7 @@ func bodyConvexityEdges(_ *app.Session, part *compdef.PartComponentDefinition, i
 		return wire.ConvexityEdgesResult{}, err
 	}
 	var out wire.ConvexityEdgesResult
-	for _, e := range ops.BodyEdgeConvexity(b)[class] {
+	for _, e := range blend.BodyEdgeConvexity(b)[class] {
 		out.Edges = append(out.Edges, wire.TopologyRef{
 			Key:   string(e.ReferenceKey()),
 			Point: topoRefPoint(e.RangeBox().Center()),
@@ -192,20 +193,20 @@ func bodyConvexityEdges(_ *app.Session, part *compdef.PartComponentDefinition, i
 	return out, nil
 }
 
-func convexityClass(spelling string) (ops.EdgeConvexity, error) {
+func convexityClass(spelling string) (blend.EdgeConvexity, error) {
 	kind, ok := types.ParseEdgeCollectionKind(spelling)
 	if !ok {
 		return 0, fmt.Errorf("unknown edge collection %q (want allConvex, allConcave or tangentiallyConnected)", spelling)
 	}
 	switch kind {
 	case types.AllConvexEdges:
-		return ops.EdgeConvex, nil
+		return blend.EdgeConvex, nil
 	case types.AllConcaveEdges:
-		return ops.EdgeConcave, nil
+		return blend.EdgeConcave, nil
 	case types.TangentiallyConnectedEdges:
-		return ops.EdgeTangent, nil
+		return blend.EdgeTangent, nil
 	default:
-		return ops.EdgeConvexityUnknown, nil
+		return blend.EdgeConvexityUnknown, nil
 	}
 }
 

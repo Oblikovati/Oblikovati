@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -106,11 +107,11 @@ func nonAdjacentFaceFilletBody(in Input, body *topo.Body, faceKeysA, faceKeysB [
 	if len(edgeKeys) == 0 {
 		return Output{}, fmt.Errorf("%s: the faces did not heal to a shared edge to round", feat)
 	}
-	picks := make([]ops.EdgeFilletRadii, len(edgeKeys))
+	picks := make([]blend.EdgeFilletRadii, len(edgeKeys))
 	for i, k := range edgeKeys {
-		picks[i] = ops.EdgeFilletRadii{Key: k, R0: radius, R1: radius}
+		picks[i] = blend.EdgeFilletRadii{Key: k, R0: radius, R1: radius}
 	}
-	result, err := ops.FilletEdgesCorner(healed, picks, ops.CornerMiter, ops.FillConcaveOutward)
+	result, err := blend.FilletEdgesCorner(healed, picks, blend.CornerMiter, blend.FillConcaveOutward)
 	if err != nil {
 		return Output{}, fmt.Errorf("%s: %w", feat, err)
 	}

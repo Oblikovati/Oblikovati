@@ -53,7 +53,7 @@ func countTorusF(b *topo.Body) int {
 
 // TestFilletAllAroundTopRimThroughFeaturePath is the MISSING regression for Discord item #1 (#1797):
 // rampam's exact interactive workflow, driven through the real FEATURE path (AddFillet + Recompute),
-// NOT the raw ops.FilletEdges call the kernel test uses. Round the 4 vertical edges of a cube, then
+// NOT the raw blend.FilletEdges call the kernel test uses. Round the 4 vertical edges of a cube, then
 // fillet the whole top perimeter (a closed tangent chain of 4 straight + 4 arc edges) — it must build
 // ONE continuous rounded stripe (4 torus + straight-blend cylinders), a valid closed manifold solid,
 // not a faceted/distorted cage. If this fails, the feature layer diverges from the green kernel test.

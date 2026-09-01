@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/kernel/ops/blend"
 	m "oblikovati.org/math"
 )
 
@@ -20,7 +21,7 @@ func TestConcaveFilletOverRadiusRejected(t *testing.T) {
 	var key []byte
 	for _, e := range b.Edges() {
 		a, c := e.StartVertex().Point(), e.EndVertex().Point()
-		if a.X == c.X && a.Y == c.Y && ClassifyEdgeConvexity(e) == EdgeConcave {
+		if a.X == c.X && a.Y == c.Y && blend.ClassifyEdgeConvexity(e) == blend.EdgeConcave {
 			key = e.ReferenceKey()
 			break
 		}
@@ -30,12 +31,12 @@ func TestConcaveFilletOverRadiusRejected(t *testing.T) {
 	}
 
 	for _, r := range []float64{1.0, 1.9} {
-		if _, err := FilletEdges(b, [][]byte{key}, r); err != nil {
+		if _, err := blend.FilletEdges(b, [][]byte{key}, r); err != nil {
 			t.Errorf("concave fillet r=%.1f should fit the 2-deep pocket, got: %v", r, err)
 		}
 	}
 	for _, r := range []float64{3.0, 10.0, 20.0} {
-		_, err := FilletEdges(b, [][]byte{key}, r)
+		_, err := blend.FilletEdges(b, [][]byte{key}, r)
 		if err == nil {
 			t.Errorf("concave fillet r=%.0f overruns the 2-deep pocket but was accepted (self-intersects)", r)
 			continue

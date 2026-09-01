@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -63,7 +64,7 @@ func bossOnPlate(t *testing.T) (*topo.Body, []byte) {
 func TestFilletRimBossRootOrientationConsistent(t *testing.T) {
 	t.Parallel()
 	body, rimKey := bossOnPlate(t)
-	res, err := ops.FilletEdges(body, [][]byte{rimKey}, 1.0)
+	res, err := blend.FilletEdges(body, [][]byte{rimKey}, 1.0)
 	if err != nil {
 		t.Fatalf("boss-root rim fillet declined: %v", err)
 	}

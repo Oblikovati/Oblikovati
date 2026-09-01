@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -26,7 +27,7 @@ func topRimKey(t *testing.T, b *topo.Body, topZ float64) []byte {
 	return nil
 }
 
-// TestFilletEdgesRoutesRim drives the public FilletEdges with a circular cylinder/cap rim: it routes
+// TestFilletEdgesRoutesRim drives the public blend.FilletEdges with a circular cylinder/cap rim: it routes
 // to the toroidal-band rim fillet, producing a valid solid with one torus face, watertight across
 // tolerances, with the rim material removed.
 func TestFilletEdgesRoutesRim(t *testing.T) {
@@ -35,7 +36,7 @@ func TestFilletEdgesRoutesRim(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	res, err := ops.FilletEdges(b, [][]byte{topRimKey(t, b, 2.0)}, 0.3)
+	res, err := blend.FilletEdges(b, [][]byte{topRimKey(t, b, 2.0)}, 0.3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +68,7 @@ func TestFilletEdgesRoutesRim(t *testing.T) {
 func TestFilletRimRadiusTooLarge(t *testing.T) {
 	t.Parallel()
 	b, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1.0, 2.0)
-	if _, err := ops.FilletEdges(b, [][]byte{topRimKey(t, b, 2.0)}, 1.5); err == nil {
+	if _, err := blend.FilletEdges(b, [][]byte{topRimKey(t, b, 2.0)}, 1.5); err == nil {
 		t.Fatal("a rim radius larger than the cylinder radius should fail")
 	}
 }

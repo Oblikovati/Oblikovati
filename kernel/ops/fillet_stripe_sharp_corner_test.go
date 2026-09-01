@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
@@ -32,18 +33,18 @@ func sharpCornerRunOut(t *testing.T) *topo.Body {
 			break
 		}
 	}
-	rounded, err := ops.FilletEdges(box, one, 0.5)
+	rounded, err := blend.FilletEdges(box, one, 0.5)
 	if err != nil {
 		t.Fatalf("single vertical fillet: %v", err)
 	}
-	chain, closed, err := ops.TangentEdgeChain(rounded, firstStraightTopEdge(t, rounded), ops.DefaultTangentChainAngle)
+	chain, closed, err := blend.TangentEdgeChain(rounded, firstStraightTopEdge(t, rounded), blend.DefaultTangentChainAngle)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if closed || len(chain) != 3 {
 		t.Fatalf("expected an OPEN 3-edge chain, got closed=%v len=%d", closed, len(chain))
 	}
-	res, err := ops.FilletEdges(rounded, chain, 0.25)
+	res, err := blend.FilletEdges(rounded, chain, 0.25)
 	if err != nil {
 		t.Fatalf("sharp-corner run-out fillet: %v", err)
 	}

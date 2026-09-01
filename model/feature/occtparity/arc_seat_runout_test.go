@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
@@ -115,10 +116,10 @@ func assertBodyIsWatertightAndSimple(t *testing.T, body *topo.Body, name string)
 			t.Errorf("%s: %d free edge(s) in the welded mesh at %s quality, want 0", name, n, q.name)
 		}
 	}
-	if bad := ops.RetracingFaceLoops(body, ops.PropertyQuality()); len(bad) != 0 {
+	if bad := blend.RetracingFaceLoops(body, ops.PropertyQuality()); len(bad) != 0 {
 		t.Errorf("%s: %d retracing face loop(s): %s", name, len(bad), describeRetracing(bad))
 	}
-	if bad := ops.SelfCrossingFaceLoops(body, ops.PropertyQuality()); len(bad) != 0 {
+	if bad := blend.SelfCrossingFaceLoops(body, ops.PropertyQuality()); len(bad) != 0 {
 		t.Errorf("%s: %d self-crossing face loop(s): %s", name, len(bad), describeSelfCrossing(bad))
 	}
 }

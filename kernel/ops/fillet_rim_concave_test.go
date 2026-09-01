@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -55,7 +56,7 @@ func TestConcaveRimBuildsRPlusRTorus(t *testing.T) {
 	const size, height, boreCenter, radius, r = 20.0, 4.0, 10.0, 3.0, 1.0
 	drilled := slabWithBore(t, size, height, boreCenter, radius)
 	rimKey := circularRimKeyAtZ(t, drilled, height)
-	res, err := ops.FilletEdges(drilled, [][]byte{rimKey}, r)
+	res, err := blend.FilletEdges(drilled, [][]byte{rimKey}, r)
 	if err != nil {
 		t.Fatalf("bore-lip rim fillet: %v", err)
 	}
@@ -93,7 +94,7 @@ func TestConvexBossRimStaysRMinusR(t *testing.T) {
 		t.Fatal(err)
 	}
 	rimKey := circularRimKeyAtZ(t, b, height)
-	res, err := ops.FilletEdges(b, [][]byte{rimKey}, r)
+	res, err := blend.FilletEdges(b, [][]byte{rimKey}, r)
 	if err != nil {
 		t.Fatalf("convex boss rim fillet: %v", err)
 	}

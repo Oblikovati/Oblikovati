@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -85,9 +86,9 @@ func scaledFilletedPart(t *testing.T, s float64) *topo.Body {
 	if err != nil {
 		t.Fatalf("Boolean Cut (s=%g): %v", s, err)
 	}
-	filleted, err := ops.FilletEdges(cut, [][]byte{longestVerticalEdge(t, cut, s)}, 0.5*s)
+	filleted, err := blend.FilletEdges(cut, [][]byte{longestVerticalEdge(t, cut, s)}, 0.5*s)
 	if err != nil {
-		t.Fatalf("FilletEdges (s=%g): %v", s, err)
+		t.Fatalf("blend.FilletEdges (s=%g): %v", s, err)
 	}
 	return filleted
 }

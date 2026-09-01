@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/tessellate"
 )
 
@@ -36,7 +37,7 @@ func TestNotchFilletFaceLoopsSimple(t *testing.T) {
 		"(earclip-robust; Bug A guards conformance), so simple/Y2 still passes the gate.")
 
 	body := importNotchedPrism(t)
-	res, err := FilletEdges(body, [][]byte{notchTopEdge(t, body).ReferenceKey()}, 15)
+	res, err := blend.FilletEdges(body, [][]byte{notchTopEdge(t, body).ReferenceKey()}, 15)
 	if err != nil {
 		t.Fatalf("fillet: %v", err)
 	}

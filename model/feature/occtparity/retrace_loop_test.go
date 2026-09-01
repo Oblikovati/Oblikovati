@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 )
 
 // TestNoFaceLoopRetracesItself is the corpus-wide RATCHET on the half of "is this boundary a simple
@@ -40,13 +41,13 @@ func TestNoFaceLoopRetracesItself(t *testing.T) {
 		if !ok {
 			continue // skipped / faulty: no single healthy body to measure
 		}
-		assertRetraceWithinDebt(t, r, ops.RetracingFaceLoops(body, q), debt[r.Grid+"/"+r.Case])
+		assertRetraceWithinDebt(t, r, blend.RetracingFaceLoops(body, q), debt[r.Grid+"/"+r.Case])
 	}
 }
 
 // assertRetraceWithinDebt fails when a case carries more retracing loops than its recorded debt, or one
 // that retraces further than recorded. A case with no entry may carry none at all.
-func assertRetraceWithinDebt(t *testing.T, r Record, bad []ops.RetracingLoop, debt retraceDebtEntry) {
+func assertRetraceWithinDebt(t *testing.T, r Record, bad []blend.RetracingLoop, debt retraceDebtEntry) {
 	t.Helper()
 	if len(bad) > debt.loops {
 		t.Errorf("%s/%s: %d face loop(s) retrace their own boundary, recorded debt %d — %s",
@@ -61,7 +62,7 @@ func assertRetraceWithinDebt(t *testing.T, r Record, bad []ops.RetracingLoop, de
 }
 
 // describeRetracing names each offending face, its surface and the length it covers twice.
-func describeRetracing(bad []ops.RetracingLoop) string {
+func describeRetracing(bad []blend.RetracingLoop) string {
 	out := ""
 	for _, b := range bad {
 		out += fmt.Sprintf(" [%T face %d loop %d retraces %.6g]", b.Face.Geometry(), b.Face.ID(), b.Loop, b.Overlap)
@@ -110,7 +111,7 @@ func retraceDebtIndex() map[string]retraceDebtEntry {
 // qualities — so their knownMeshLeaks rows went with them, which is the correspondence that table
 // predicted ("closing the retracing root should retire these four").
 //
-// MEASURING FUNCTION: ops.RetracingFaceLoops on the EDGES' OWN CURVES — pairwise coincident spans of
+// MEASURING FUNCTION: blend.RetracingFaceLoops on the EDGES' OWN CURVES — pairwise coincident spans of
 // one loop's edge uses, traversed in opposite senses (M48/C3, Oblikovati/Oblikovati#3475). The quantity
 // is an ARC LENGTH on those curves — a retrace encloses zero area, so there is no area to quote. It
 // reads no tessellation, so the Quality this test still passes is ignored; the numbers below were

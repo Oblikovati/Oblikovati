@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
@@ -105,7 +106,7 @@ func fillet1c(t *testing.T, dir, c string, e *topo.Edge) *topo.Body {
 	}
 	body, _ := importInput(filepath.Join(dir, rec.InputStep))
 	e2, _ := locateEdge(body, rec.Picks[0].Locator, importTol(body))
-	res, err := ops.FilletEdges(body, [][]byte{e2.ReferenceKey()}, rec.Picks[0].Radius)
+	res, err := blend.FilletEdges(body, [][]byte{e2.ReferenceKey()}, rec.Picks[0].Radius)
 	if err != nil {
 		t.Fatalf("simple/%s fillet: %v", c, err)
 	}

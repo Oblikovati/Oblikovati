@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -36,7 +37,7 @@ func TestFilletTangentStripeTopPerimeter(t *testing.T) {
 			verts = append(verts, e.ReferenceKey())
 		}
 	}
-	filleted, err := ops.FilletEdges(box, verts, 0.5)
+	filleted, err := blend.FilletEdges(box, verts, 0.5)
 	if err != nil {
 		t.Fatalf("vertical fillet setup: %v", err)
 	}
@@ -47,7 +48,7 @@ func TestFilletTangentStripeTopPerimeter(t *testing.T) {
 		t.Fatalf("expected 8 top-perimeter edges, got %d", len(top))
 	}
 
-	res, err := ops.FilletEdges(filleted, top, 0.25)
+	res, err := blend.FilletEdges(filleted, top, 0.25)
 	if err != nil {
 		t.Fatalf("tangent-stripe top-perimeter fillet failed: %v", err)
 	}

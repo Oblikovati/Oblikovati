@@ -3,7 +3,7 @@
 package app
 
 import (
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -29,7 +29,7 @@ func (s *Session) tangentChainHandles(seed EdgeHandle) []EdgeHandle {
 	if b == nil {
 		return []EdgeHandle{seed}
 	}
-	keys, _, err := ops.TangentEdgeChain(b, seed.Edge.ReferenceKey(), ops.DefaultTangentChainAngle)
+	keys, _, err := blend.TangentEdgeChain(b, seed.Edge.ReferenceKey(), blend.DefaultTangentChainAngle)
 	if err != nil {
 		return []EdgeHandle{seed}
 	}

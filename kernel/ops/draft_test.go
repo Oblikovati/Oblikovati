@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/math"
 )
 
@@ -22,7 +23,7 @@ func TestDraftTapersSideFace(t *testing.T) {
 			side = f.ReferenceKey()
 		}
 	}
-	res, err := ops.DraftFaces(box, [][]byte{side}, math.V3(0, 0, 1), -stdmath.Atan(0.25))
+	res, err := blend.DraftFaces(box, [][]byte{side}, math.V3(0, 0, 1), -stdmath.Atan(0.25))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +49,7 @@ func TestDraftPreservesFaceIdentity(t *testing.T) {
 			top = f.ReferenceKey()
 		}
 	}
-	res, err := ops.DraftFaces(box, [][]byte{side}, math.V3(0, 0, 1), -stdmath.Atan(0.25))
+	res, err := blend.DraftFaces(box, [][]byte{side}, math.V3(0, 0, 1), -stdmath.Atan(0.25))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +65,7 @@ func TestDraftPreservesFaceIdentity(t *testing.T) {
 func TestDraftLostKeyErrors(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
-	if _, err := ops.DraftFaces(box, [][]byte{[]byte("ghost")}, math.V3(0, 0, 1), 0.1); err == nil {
+	if _, err := blend.DraftFaces(box, [][]byte{[]byte("ghost")}, math.V3(0, 0, 1), 0.1); err == nil {
 		t.Error("draft with a lost key should error")
 	}
 }
@@ -76,7 +77,7 @@ func TestDraftLostKeyErrors(t *testing.T) {
 func TestDraftFilletedBodyTapers(t *testing.T) {
 	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
-	filleted, err := ops.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0.5)
+	filleted, err := blend.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0.5)
 	if err != nil {
 		t.Fatalf("fillet setup: %v", err)
 	}
@@ -92,7 +93,7 @@ func TestDraftFilletedBodyTapers(t *testing.T) {
 	if side == nil {
 		t.Fatal("no planar +X face to draft on the filleted body")
 	}
-	res, err := ops.DraftFaces(filleted, [][]byte{side}, math.V3(0, 0, 1), -stdmath.Atan(0.2))
+	res, err := blend.DraftFaces(filleted, [][]byte{side}, math.V3(0, 0, 1), -stdmath.Atan(0.2))
 	if err != nil {
 		t.Fatalf("draft on a filleted body must taper it, not fail: %v", err)
 	}

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -74,7 +75,7 @@ func TestB2ArcFilletMergesItsSetbackCapsIntoTheSectorWalls(t *testing.T) {
 	} {
 		assertFaceMeshesToClosedForm(t, body, "simple/B2", tc.lineage, tc.want)
 	}
-	if bad := ops.RetracingFaceLoops(body, ops.PropertyQuality()); len(bad) != 0 {
+	if bad := blend.RetracingFaceLoops(body, ops.PropertyQuality()); len(bad) != 0 {
 		t.Errorf("simple/B2 still retraces on %d face loop(s): %s", len(bad), describeRetracing(bad))
 	}
 }
@@ -117,7 +118,7 @@ func TestN6ArcFilletTerminatesBothEndsOnTheirWalls(t *testing.T) {
 	} {
 		assertFaceMeshesToDrawexe(t, body, "simple/N6", tc.lineage, tc.drawexe, 1e-4)
 	}
-	if bad := ops.RetracingFaceLoops(body, ops.PropertyQuality()); len(bad) != 0 {
+	if bad := blend.RetracingFaceLoops(body, ops.PropertyQuality()); len(bad) != 0 {
 		t.Errorf("simple/N6 still retraces on %d face loop(s): %s", len(bad), describeRetracing(bad))
 	}
 }

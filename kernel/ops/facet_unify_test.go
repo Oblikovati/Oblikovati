@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -103,7 +104,7 @@ func TestFilletOnFacetedRimStaysManifold(t *testing.T) {
 	// r must clear the max-radius bound (#1800): the outer AND inner rim edges are both filleted
 	// and their bands recede toward each other across the 0.2-wide top frame, so each must stay
 	// under 0.1 (0.08 leaves a 0.04 margin). r=0.15 self-intersected but only faceting hid it.
-	res, err := ops.FilletEdges(faceted, topRimEdges(faceted), 0.08)
+	res, err := blend.FilletEdges(faceted, topRimEdges(faceted), 0.08)
 	if err != nil {
 		t.Fatalf("rim fillet on faceted tray failed: %v", err)
 	}

@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -117,7 +117,7 @@ func (f *SheetMetalCornerFeature) roundManySets(in Input, body *topo.Body, sets 
 		return Output{}, err
 	}
 	work := planarizeFilletPicks(body, picks, f.featName)
-	res, err := ops.FilletEdgesCornerDiag(work, picks, cornerStrategy(types.FilletCornerMiter), concaveFill(0), in.Diag)
+	res, err := blend.FilletEdgesCornerDiag(work, picks, cornerStrategy(types.FilletCornerMiter), concaveFill(0), in.Diag)
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal corner round: %w", err)
 	}
@@ -126,15 +126,15 @@ func (f *SheetMetalCornerFeature) roundManySets(in Input, body *topo.Body, sets 
 
 // cornerRoundPicks flattens the round edge sets into per-edge radius picks, erroring on a
 // non-positive radius.
-func cornerRoundPicks(sets []CornerRoundSet) ([]ops.EdgeFilletRadii, error) {
-	var picks []ops.EdgeFilletRadii
+func cornerRoundPicks(sets []CornerRoundSet) ([]blend.EdgeFilletRadii, error) {
+	var picks []blend.EdgeFilletRadii
 	for _, set := range sets {
 		radius := evalFloat(set.Radius)
 		if radius <= 0 {
 			return nil, fmt.Errorf("sheet-metal corner round: radius must be positive, got %g", radius)
 		}
 		for _, k := range set.EdgeKeys {
-			picks = append(picks, ops.EdgeFilletRadii{Key: k, R0: radius, R1: radius})
+			picks = append(picks, blend.EdgeFilletRadii{Key: k, R0: radius, R1: radius})
 		}
 	}
 	return picks, nil
@@ -152,7 +152,7 @@ func (f *SheetMetalCornerFeature) roundSets() []CornerRoundSet {
 }
 
 // roundOneSet fillets one edge set on the running body at its radius. It heals the keys before the
-// kernel pass (ops.FilletEdges re-resolves by exact key) so a recovered reference reaches the Output.
+// kernel pass (blend.FilletEdges re-resolves by exact key) so a recovered reference reaches the Output.
 func (f *SheetMetalCornerFeature) roundOneSet(body *topo.Body, set CornerRoundSet) (*topo.Body, []ReferenceHeal, error) {
 	radius := evalFloat(set.Radius)
 	if radius <= 0 {
@@ -162,7 +162,7 @@ func (f *SheetMetalCornerFeature) roundOneSet(body *topo.Body, set CornerRoundSe
 	if err != nil {
 		return nil, nil, err
 	}
-	res, err := ops.FilletEdges(body, currentKeys(edges), radius)
+	res, err := blend.FilletEdges(body, currentKeys(edges), radius)
 	if err != nil {
 		return nil, nil, fmt.Errorf("sheet-metal corner round: %w", err)
 	}

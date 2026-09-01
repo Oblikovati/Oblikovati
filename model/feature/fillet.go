@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -65,27 +65,27 @@ func bindGeomFaces(in Input, keys [][]byte, geom []topo.GeometricFaceRef, feat s
 }
 
 // cornerStrategy maps the public corner-type discriminator to the kernel's 2-edge corner strategy.
-func cornerStrategy(t types.FilletCornerType) ops.CornerStrategy {
+func cornerStrategy(t types.FilletCornerType) blend.CornerStrategy {
 	switch t {
 	case types.FilletCornerSetback:
-		return ops.CornerSetback
+		return blend.CornerSetback
 	case types.FilletCornerRound:
-		return ops.CornerRound
+		return blend.CornerRound
 	default:
-		return ops.CornerMiter
+		return blend.CornerMiter
 	}
 }
 
 // concaveFill maps the public concave-edge strategy to the kernel's fill direction (zero ⇒ outward).
-func concaveFill(t types.FilletConcaveStrategy) ops.ConcaveFill {
+func concaveFill(t types.FilletConcaveStrategy) blend.ConcaveFill {
 	if t == types.FilletConcaveInward {
-		return ops.FillConcaveInward
+		return blend.FillConcaveInward
 	}
-	return ops.FillConcaveOutward
+	return blend.FillConcaveOutward
 }
 
 // filletBody rounds the selected convex edges of the running body to the given radius via
-// ops.FilletEdgesCorner (a real rolling-ball blend with cylinder faces), replacing it in the body
+// blend.FilletEdgesCorner (a real rolling-ball blend with cylinder faces), replacing it in the body
 // list. corner selects how a 2-edge corner is treated. A lost edge, a non-convex edge, or a
 // non-positive radius is an error so the feature goes Sick. See kernel/ops/fillet.go for the geometry.
 // blendProfile is the cross-section shape (M36-F08) carried from the feature into the kernel picks:
@@ -129,12 +129,12 @@ func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCorner
 // FilletEdgesCorner, carrying any reference heals onto the result (ADR-0043 P6).
 func blendFilletEdges(in Input, body *topo.Body, keys0 [][]byte, radius float64, corner FilletCornerType, concave types.FilletConcaveStrategy, prof blendProfile, feat string, heals []ReferenceHeal) (Output, error) {
 	work, keys := planarizedFillet(body, keys0, feat)
-	picks := make([]ops.EdgeFilletRadii, len(keys))
+	picks := make([]blend.EdgeFilletRadii, len(keys))
 	cross := prof.cross
 	for i, k := range keys {
-		picks[i] = ops.EdgeFilletRadii{Key: k, R0: radius, R1: radius, Cross: cross, Rho: prof.rho}
+		picks[i] = blend.EdgeFilletRadii{Key: k, R0: radius, R1: radius, Cross: cross, Rho: prof.rho}
 	}
-	result, err := ops.FilletEdgesCornerDiag(work, picks, cornerStrategy(corner), concaveFill(concave), in.Diag)
+	result, err := blend.FilletEdgesCornerDiag(work, picks, cornerStrategy(corner), concaveFill(concave), in.Diag)
 	if err != nil {
 		return Output{}, err
 	}
@@ -151,10 +151,10 @@ func analyticFilletFastPath(in Input, body *topo.Body, edgeKeys [][]byte, radius
 			return Output{Bodies: replaceBody(in.Bodies, body, res)}, true, nil
 		}
 	}
-	if !ops.IsLoneCurvedAdjacentEdge(body, edgeKeys) {
+	if !blend.IsLoneCurvedAdjacentEdge(body, edgeKeys) {
 		return Output{}, false, nil
 	}
-	res, err := ops.FilletEdges(body, edgeKeys, radius)
+	res, err := blend.FilletEdges(body, edgeKeys, radius)
 	if err != nil {
 		return Output{}, true, err
 	}
@@ -206,7 +206,7 @@ func filletBodySets(in Input, sets []FilletEdgeSet, corner FilletCornerType, con
 		return Output{}, err
 	}
 	work := planarizeFilletPicks(body, picks, feat)
-	result, err := ops.FilletEdgesCornerDiag(work, picks, cornerStrategy(corner), concaveFill(concave), in.Diag)
+	result, err := blend.FilletEdgesCornerDiag(work, picks, cornerStrategy(corner), concaveFill(concave), in.Diag)
 	if err != nil {
 		return Output{}, err
 	}
@@ -216,7 +216,7 @@ func filletBodySets(in Input, sets []FilletEdgeSet, corner FilletCornerType, con
 // healPickKeys resolves every pick's edge key against the body and rewrites it to the
 // resolved edge's CURRENT key (so a healed reference becomes the live sibling's key the
 // kernel can exact-match), returning the heals that occurred. See resolveEdges.
-func healPickKeys(body *topo.Body, picks []ops.EdgeFilletRadii) ([]ReferenceHeal, error) {
+func healPickKeys(body *topo.Body, picks []blend.EdgeFilletRadii) ([]ReferenceHeal, error) {
 	keys := make([][]byte, len(picks))
 	for i, p := range picks {
 		keys[i] = p.Key
@@ -234,21 +234,21 @@ func healPickKeys(body *topo.Body, picks []ops.EdgeFilletRadii) ([]ReferenceHeal
 // filletPicksOf flattens the edge sets into per-edge radius picks, rejecting a variable set
 // that holds more than one edge (a variable radius runs along ONE edge; tangent chains are a
 // follow-up).
-func filletPicksOf(sets []FilletEdgeSet, prof blendProfile, feat string) ([]ops.EdgeFilletRadii, error) {
-	var out []ops.EdgeFilletRadii
+func filletPicksOf(sets []FilletEdgeSet, prof blendProfile, feat string) ([]blend.EdgeFilletRadii, error) {
+	var out []blend.EdgeFilletRadii
 	cross := prof.cross
 	for _, s := range sets {
 		if !s.variable() {
 			r := callOrZero(s.Radius)
 			for _, k := range s.EdgeKeys {
-				out = append(out, ops.EdgeFilletRadii{Key: k, R0: r, R1: r, Cross: cross, Rho: prof.rho})
+				out = append(out, blend.EdgeFilletRadii{Key: k, R0: r, R1: r, Cross: cross, Rho: prof.rho})
 			}
 			continue
 		}
 		if len(s.EdgeKeys) != 1 {
 			return nil, fmt.Errorf("%s: a variable-radius set must hold exactly 1 edge, got %d (tangent chains are a follow-up)", feat, len(s.EdgeKeys))
 		}
-		out = append(out, ops.EdgeFilletRadii{
+		out = append(out, blend.EdgeFilletRadii{
 			Key: s.EdgeKeys[0], R0: callOrZero(s.StartRadius), R1: callOrZero(s.EndRadius),
 			Mids: midRadiiOf(s.RadiusPoints), Cross: cross, Rho: prof.rho,
 		})
@@ -257,13 +257,13 @@ func filletPicksOf(sets []FilletEdgeSet, prof blendProfile, feat string) ([]ops.
 }
 
 // midRadiiOf evaluates the feature-layer radius-point closures into kernel FilletRadiusPoints (#695).
-func midRadiiOf(pts []FilletRadiusPoint) []ops.FilletRadiusPoint {
+func midRadiiOf(pts []FilletRadiusPoint) []blend.FilletRadiusPoint {
 	if len(pts) == 0 {
 		return nil
 	}
-	out := make([]ops.FilletRadiusPoint, len(pts))
+	out := make([]blend.FilletRadiusPoint, len(pts))
 	for i, p := range pts {
-		out[i] = ops.FilletRadiusPoint{T: p.T, R: callOrZero(p.Radius)}
+		out[i] = blend.FilletRadiusPoint{T: p.T, R: callOrZero(p.Radius)}
 	}
 	return out
 }
@@ -271,7 +271,7 @@ func midRadiiOf(pts []FilletRadiusPoint) []ops.FilletRadiusPoint {
 // planarizeFilletPicks re-facets a curved body for the picks' edges (remapping each pick's
 // key to the faceted segment, see planarizeForEdges); a planar body — or an unresolvable
 // key, surfaced later by the kernel — passes through unchanged.
-func planarizeFilletPicks(body *topo.Body, picks []ops.EdgeFilletRadii, feat string) *topo.Body {
+func planarizeFilletPicks(body *topo.Body, picks []blend.EdgeFilletRadii, feat string) *topo.Body {
 	keys := make([][]byte, len(picks))
 	for i, p := range picks {
 		keys[i] = p.Key

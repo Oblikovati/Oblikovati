@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -21,7 +21,7 @@ func TestFilletRejectsOverLargeRadius(t *testing.T) {
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
 	edge := verticalEdgeKey(t, box)
 
-	_, err := ops.FilletEdges(box, [][]byte{edge}, 20)
+	_, err := blend.FilletEdges(box, [][]byte{edge}, 20)
 	if err == nil {
 		t.Fatal("fillet with r=20 on a 2×2×2 box must be rejected, not shipped")
 	}
@@ -29,7 +29,7 @@ func TestFilletRejectsOverLargeRadius(t *testing.T) {
 		t.Errorf("error should report the geometric maximum, got: %v", err)
 	}
 
-	if _, err := ops.FilletEdges(box, [][]byte{edge}, 0.5); err != nil {
+	if _, err := blend.FilletEdges(box, [][]byte{edge}, 0.5); err != nil {
 		t.Fatalf("a radius within the bound (0.5) must still succeed: %v", err)
 	}
 }
@@ -42,10 +42,10 @@ func TestFilletRejectsCollidingNeighbours(t *testing.T) {
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
 	a, b := adjacentVerticalEdges(t, box)
 
-	if _, err := ops.FilletEdges(box, [][]byte{a, b}, 1.5); err == nil {
+	if _, err := blend.FilletEdges(box, [][]byte{a, b}, 1.5); err == nil {
 		t.Error("two r=1.5 fillets on a shared 2-wide face collide and must be rejected")
 	}
-	if _, err := ops.FilletEdges(box, [][]byte{a, b}, 0.8); err != nil {
+	if _, err := blend.FilletEdges(box, [][]byte{a, b}, 0.8); err != nil {
 		t.Errorf("two r=0.8 fillets fit within the shared face and must succeed: %v", err)
 	}
 }

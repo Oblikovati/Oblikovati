@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -16,7 +17,7 @@ import (
 // TestFilletEdgesRoutesArc3dRim is the end-to-end regression for the rim-fillet pick gate widening
 // (fillet_rim.go's isClosedCircularEdge): a cylinder/cap rim stored as a closed full-sweep geom.Arc3d —
 // the shape the STEP importer actually produces (kernel/exchange never emits geom.Circle) — must route
-// through FilletEdges to the SAME toroidal-band rim fillet as TestFilletEdgesRoutesRim's geom.Circle
+// through blend.FilletEdges to the SAME toroidal-band rim fillet as TestFilletEdgesRoutesRim's geom.Circle
 // rim. Before this fix, loneRimPick/resolveRim's geom.Circle-only gate rejected this edge outright, the
 // pick fell through to loneArcPick, and cylSideEdgeAt correctly declined the self-closed vertex it was
 // never designed to see — the rim path was dead for every imported circular rim (OCCT blend I9 et al).
@@ -26,9 +27,9 @@ func TestFilletEdgesRoutesArc3dRim(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	res, err := ops.FilletEdges(b, [][]byte{arc3dTopRimKey(t, b, 2.0)}, 0.3)
+	res, err := blend.FilletEdges(b, [][]byte{arc3dTopRimKey(t, b, 2.0)}, 0.3)
 	if err != nil {
-		t.Fatalf("FilletEdges on a full-sweep Arc3d rim: %v", err)
+		t.Fatalf("blend.FilletEdges on a full-sweep Arc3d rim: %v", err)
 	}
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("Arc3d-rim-filleted cylinder not a valid solid: %+v", r)

@@ -20,7 +20,7 @@ import (
 // chain's traversal order; each edge is traversed entry→exit even when its intrinsic curve runs
 // the other way (see forward).
 //
-// Build it from a tangent chain (ops.TangentEdgeChain):
+// Build it from a tangent chain (blend.TangentEdgeChain):
 //
 //	sp, err := blend.NewSpine(edges, closed)
 //	p := sp.PointAt(sp.Length() / 2) // midpoint of the guideline

@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -28,7 +29,7 @@ func PreciseRangeBox(b *topo.Body, q Quality) math.Box {
 		box = unionNonEmpty(box, analyticFaceBox(f, q))
 	}
 	for _, w := range b.Wires() {
-		box = wireExtend(box, w)
+		box = blend.WireExtend(box, w)
 	}
 	return box
 }

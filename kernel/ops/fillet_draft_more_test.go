@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -29,7 +30,7 @@ func horizontalEdgeKey(t *testing.T, b *topo.Body, topZ float64) []byte {
 func TestFilletHorizontalEdge(t *testing.T) {
 	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
-	res, err := ops.FilletEdges(box, [][]byte{horizontalEdgeKey(t, box, 2)}, 0.4)
+	res, err := blend.FilletEdges(box, [][]byte{horizontalEdgeKey(t, box, 2)}, 0.4)
 	if err != nil {
 		t.Fatalf("fillet top edge: %v", err)
 	}
@@ -52,7 +53,7 @@ func TestDraftPositiveAngle(t *testing.T) {
 			side = f.ReferenceKey()
 		}
 	}
-	res, err := ops.DraftFaces(box, [][]byte{side}, math.V3(0, 0, 1), stdmath.Atan(0.2))
+	res, err := blend.DraftFaces(box, [][]byte{side}, math.V3(0, 0, 1), stdmath.Atan(0.2))
 	if err != nil {
 		t.Fatalf("positive draft: %v", err)
 	}

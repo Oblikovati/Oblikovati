@@ -73,7 +73,7 @@ type Body struct {
 // fresh Body with an empty report — so one boolean, transform or face deletion between an assembler
 // and a reader silently zeroes everything the assembler said. A gate that asserts "no body reports
 // X" must therefore also assert that the bodies it reads DID come from the assembler it means; the
-// fillet's edge catalog does this with a positive marker (ops.CodeAssembleEdgeCatalog) rather than
+// fillet's edge catalog does this with a positive marker (blend.CodeAssembleEdgeCatalog) rather than
 // trusting an empty slice.
 func (b *Body) BuildDiagnostics() []diag.Diagnostic {
 	return append([]diag.Diagnostic(nil), b.buildDiags...)

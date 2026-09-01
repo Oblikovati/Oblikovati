@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	opsblend "oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -22,7 +23,7 @@ func blendRoundedBox(box *topo.Body) (*topo.Body, error) {
 			keys = append(keys, e.ReferenceKey())
 		}
 	}
-	return ops.FilletEdges(box, keys, 0.5)
+	return opsblend.FilletEdges(box, keys, 0.5)
 }
 
 // fakeSolver is a named stand-in for the Phase-4 marcher, so the builder's dispatch can be tested

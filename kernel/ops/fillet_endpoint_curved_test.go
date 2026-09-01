@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/math"
 )
 
@@ -18,12 +18,12 @@ import (
 func TestFilletIntoExistingRoundRejectedHonestly_1797(t *testing.T) {
 	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 4, 4, 4)
-	rounded, err := ops.FilletEdges(box, topPerimeterKeys(t, box), 0.5)
+	rounded, err := blend.FilletEdges(box, topPerimeterKeys(t, box), 0.5)
 	if err != nil {
 		t.Fatalf("top-rim fillet setup: %v", err)
 	}
 
-	_, err = ops.FilletEdges(rounded, verticalEdgeKeys(t, rounded), 0.5)
+	_, err = blend.FilletEdges(rounded, verticalEdgeKeys(t, rounded), 0.5)
 	if err == nil {
 		t.Fatal("filleting an edge that runs into an existing round must be rejected, got nil error")
 	}
@@ -45,7 +45,7 @@ func TestFilletAdjacentEdgesTogetherNotRejected(t *testing.T) {
 	if len(top) < 2 {
 		t.Fatalf("plain box top edges = %d, want ≥2", len(top))
 	}
-	if _, err := ops.FilletEdges(box, top[:2], 0.5); err != nil {
+	if _, err := blend.FilletEdges(box, top[:2], 0.5); err != nil {
 		t.Fatalf("filleting two adjacent edges together must succeed, got: %v", err)
 	}
 }

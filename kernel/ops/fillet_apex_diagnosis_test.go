@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -41,7 +42,7 @@ func TestApexFilletMatchesOCCT(t *testing.T) {
 	for _, c := range []apexCase{{"A9", 21308.8}, {"B4", 44956.6}} {
 		body := importPartCyl(t, c.name)
 		apex := edgeNearestMid(t, body, math.P3(0, 0, 50))
-		res, err := ops.FilletEdges(body, [][]byte{apex.ReferenceKey()}, 10)
+		res, err := blend.FilletEdges(body, [][]byte{apex.ReferenceKey()}, 10)
 		if err != nil {
 			t.Fatalf("%s: apex fillet errored: %v", c.name, err)
 		}

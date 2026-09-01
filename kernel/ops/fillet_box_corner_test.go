@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -32,19 +33,19 @@ func TestBoxSharedCornerArea(t *testing.T) {
 	const occtArea = 145.137 // OCCT checkprops -s for simple/P8 and simple/V8
 
 	t.Run("native/miter", func(t *testing.T) {
-		assertCornerArea(t, filletBoxCorner(t, mustBox5(t), ops.CornerMiter), occtArea)
+		assertCornerArea(t, filletBoxCorner(t, mustBox5(t), blend.CornerMiter), occtArea)
 	})
 	t.Run("imported/miter", func(t *testing.T) {
 		box := importOrientedBox5(t)
-		assertCornerArea(t, filletBoxCorner(t, box, ops.CornerMiter), occtArea)
+		assertCornerArea(t, filletBoxCorner(t, box, blend.CornerMiter), occtArea)
 	})
 	t.Run("imported/round", func(t *testing.T) {
 		// CornerRound rounds the sharp third edge into a full sphere corner; its area differs from
 		// the miter, but on the imported box solveBlend must still place the sphere on the material
 		// side. We assert only that the result is watertight and near the native round's area, so a
 		// flipped-normal sphere (which lands outside / self-intersects) is caught.
-		nativeRound := filletBoxCorner(t, mustBox5(t), ops.CornerRound)
-		importedRound := filletBoxCorner(t, importOrientedBox5(t), ops.CornerRound)
+		nativeRound := filletBoxCorner(t, mustBox5(t), blend.CornerRound)
+		importedRound := filletBoxCorner(t, importOrientedBox5(t), blend.CornerRound)
 		want := ops.BodyGeometryProperties(nativeRound, ops.PropertyQuality()).Area
 		assertCornerArea(t, importedRound, want)
 	})
@@ -52,20 +53,20 @@ func TestBoxSharedCornerArea(t *testing.T) {
 
 // filletBoxCorner fillets the two top edges sharing vertex (5,0,5) — the +Y edge at x=5,z=5 and
 // the +X edge at y=0,z=5 (the corpus P8/V8 picks) — at r=1 with the given corner strategy.
-func filletBoxCorner(t *testing.T, b *topo.Body, strategy ops.CornerStrategy) *topo.Body {
+func filletBoxCorner(t *testing.T, b *topo.Body, strategy blend.CornerStrategy) *topo.Body {
 	t.Helper()
-	var picks []ops.EdgeFilletRadii
+	var picks []blend.EdgeFilletRadii
 	for _, e := range b.Edges() {
 		a, c := e.StartVertex().Point(), e.EndVertex().Point()
 		if boxCornerEdge(a, c, math.P3(5, 0, 5), math.P3(5, 5, 5)) ||
 			boxCornerEdge(a, c, math.P3(0, 0, 5), math.P3(5, 0, 5)) {
-			picks = append(picks, ops.EdgeFilletRadii{Key: e.ReferenceKey(), R0: 1, R1: 1})
+			picks = append(picks, blend.EdgeFilletRadii{Key: e.ReferenceKey(), R0: 1, R1: 1})
 		}
 	}
 	if len(picks) != 2 {
 		t.Fatalf("expected 2 corner-sharing top edges, found %d", len(picks))
 	}
-	res, err := ops.FilletEdgesCorner(b, picks, strategy, ops.FillConcaveOutward)
+	res, err := blend.FilletEdgesCorner(b, picks, strategy, blend.FillConcaveOutward)
 	if err != nil {
 		t.Fatalf("FilletEdgesCorner(%v): %v", strategy, err)
 	}

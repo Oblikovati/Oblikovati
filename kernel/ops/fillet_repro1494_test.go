@@ -5,7 +5,7 @@ package ops_test
 import (
 	"testing"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -41,7 +41,7 @@ func TestSecondFilletOnUntouchedEdge(t *testing.T) {
 	t.Parallel()
 	box := shellBox(4, 3, 5)
 	corner := verticalEdgeKey(t, box)
-	f1, err := ops.FilletEdges(box, [][]byte{corner}, 0.5)
+	f1, err := blend.FilletEdges(box, [][]byte{corner}, 0.5)
 	if err != nil {
 		t.Fatalf("first fillet: %v", err)
 	}
@@ -53,7 +53,7 @@ func TestSecondFilletOnUntouchedEdge(t *testing.T) {
 	far := farVerticalEdgeFrom(t, f1, -2, -1.5) // away from the (0,0)-ish first corner
 	key := far.ReferenceKey()
 
-	f2, err := ops.FilletEdges(f1, [][]byte{key}, 0.5)
+	f2, err := blend.FilletEdges(f1, [][]byte{key}, 0.5)
 	if err != nil {
 		t.Fatalf("second fillet on untouched edge: %v", err)
 	}

@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -28,8 +29,8 @@ func smoothNotchFactor() float64 { return 1 - stdmath.Pi/4 }
 func TestFilletVaryingRadiusVolume(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
-	pick := ops.EdgeFilletRadii{Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0.6}
-	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{pick})
+	pick := blend.EdgeFilletRadii{Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0.6}
+	res, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{pick})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,11 +73,11 @@ func blendSurfaceFaces(b *topo.Body) int {
 func TestFilletIntermediateRadiiVolume(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
-	pick := ops.EdgeFilletRadii{
+	pick := blend.EdgeFilletRadii{
 		Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0.4,
-		Mids: []ops.FilletRadiusPoint{{T: 0.5, R: 0.7}},
+		Mids: []blend.FilletRadiusPoint{{T: 0.5, R: 0.7}},
 	}
-	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{pick})
+	res, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{pick})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,13 +100,13 @@ func TestFilletIntermediateRadiiValidation(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
 	key := verticalEdgeKey(t, box)
-	cases := map[string][]ops.FilletRadiusPoint{
+	cases := map[string][]blend.FilletRadiusPoint{
 		"must be strictly between 0 and 1": {{T: 0, R: 0.5}},
 		"radius":                           {{T: 0.5, R: 0}},
 		"strictly increasing in T":         {{T: 0.6, R: 0.4}, {T: 0.6, R: 0.5}},
 	}
 	for want, mids := range cases {
-		_, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{{Key: key, R0: 0.3, R1: 0.4, Mids: mids}})
+		_, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{{Key: key, R0: 0.3, R1: 0.4, Mids: mids}})
 		if err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("mids %+v: err = %v, want %q", mids, err, want)
 		}
@@ -118,7 +119,7 @@ func TestFilletVaryingCollapsesToConstant(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
 	key := verticalEdgeKey(t, box)
-	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{{Key: key, R0: 0.5, R1: 0.5}})
+	res, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{{Key: key, R0: 0.5, R1: 0.5}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +144,7 @@ func TestFilletVaryingAtSharedCornerRejected(t *testing.T) {
 			break
 		}
 	}
-	_, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{
+	_, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{
 		{Key: vert, R0: 0.2, R1: 0.5},
 		{Key: neighbour, R0: 0.2, R1: 0.2},
 	})
@@ -159,8 +160,8 @@ func TestFilletVaryingAtSharedCornerRejected(t *testing.T) {
 func TestFilletVaryingBlendIsExactAndG1(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
-	pick := ops.EdgeFilletRadii{Key: verticalEdgeKey(t, box), R0: 0.2, R1: 0.7}
-	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{pick})
+	pick := blend.EdgeFilletRadii{Key: verticalEdgeKey(t, box), R0: 0.2, R1: 0.7}
+	res, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{pick})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
@@ -46,7 +47,7 @@ func filletNotch(r float64) float64 { return r*r - stdmath.Pi*r*r/4 }
 func TestFilletOneEdge(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
-	res, err := ops.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0.5)
+	res, err := blend.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +80,7 @@ func TestFilletFourVerticalEdges(t *testing.T) {
 	if len(keys) != 4 {
 		t.Fatalf("found %d vertical edges, want 4", len(keys))
 	}
-	res, err := ops.FilletEdges(box, keys, 0.5)
+	res, err := blend.FilletEdges(box, keys, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +101,7 @@ func TestFilletFourVerticalEdges(t *testing.T) {
 func TestFilletLostKeyErrors(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
-	if _, err := ops.FilletEdges(box, [][]byte{[]byte("ghost")}, 0.5); err == nil {
+	if _, err := blend.FilletEdges(box, [][]byte{[]byte("ghost")}, 0.5); err == nil {
 		t.Error("fillet with a lost key should error")
 	}
 }
@@ -139,7 +140,7 @@ func TestFilletCornerBlend(t *testing.T) {
 	if len(keys) != 3 {
 		t.Fatalf("found %d edges at the corner, want 3", len(keys))
 	}
-	res, err := ops.FilletEdges(box, keys, 0.3)
+	res, err := blend.FilletEdges(box, keys, 0.3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -195,7 +196,7 @@ func TestFilletCornerBlendMeshWatertight(t *testing.T) {
 	t.Parallel()
 	box := shellBox(4, 3, 5)
 	keys := cornerEdgeKeys(t, box)
-	res, err := ops.FilletEdges(box, keys, 0.5)
+	res, err := blend.FilletEdges(box, keys, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +215,7 @@ func TestFilletCornerBlendMeshWatertight(t *testing.T) {
 func TestFilletCornerBlendPatchOnSphere(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
-	res, err := ops.FilletEdges(box, cornerEdgeKeys(t, box), 0.3)
+	res, err := blend.FilletEdges(box, cornerEdgeKeys(t, box), 0.3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,7 +256,7 @@ func TestFilletAllBoxEdges(t *testing.T) {
 	for _, e := range box.Edges() {
 		keys = append(keys, e.ReferenceKey())
 	}
-	res, err := ops.FilletEdges(box, keys, 0.3)
+	res, err := blend.FilletEdges(box, keys, 0.3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,7 +279,7 @@ func TestFilletTwoEdgeCornerMiters(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
 	keys := cornerEdgeKeys(t, box)[:2] // two of the three edges meeting at the corner
-	res, err := ops.FilletEdges(box, keys, 0.3)
+	res, err := blend.FilletEdges(box, keys, 0.3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -300,8 +301,8 @@ func TestFilletCornerRoundAddsThirdEdge(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
 	keys := cornerEdgeKeys(t, box)[:2] // two of the three edges meeting at the corner
-	picks := []ops.EdgeFilletRadii{{Key: keys[0], R0: 0.3, R1: 0.3}, {Key: keys[1], R0: 0.3, R1: 0.3}}
-	res, err := ops.FilletEdgesCorner(box, picks, ops.CornerRound, ops.FillConcaveOutward)
+	picks := []blend.EdgeFilletRadii{{Key: keys[0], R0: 0.3, R1: 0.3}, {Key: keys[1], R0: 0.3, R1: 0.3}}
+	res, err := blend.FilletEdgesCorner(box, picks, blend.CornerRound, blend.FillConcaveOutward)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -338,7 +339,7 @@ func TestFilletCornerRoundAddsThirdEdge(t *testing.T) {
 func TestFilletRunOutToZero(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
-	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{{Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0}})
+	res, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{{Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -355,7 +356,7 @@ func TestFilletTwoEdgeCornerMiterMeshWatertight(t *testing.T) {
 	t.Parallel()
 	box := shellBox(4, 3, 5)
 	keys := cornerEdgeKeys(t, box)[:2]
-	res, err := ops.FilletEdges(box, keys, 0.5)
+	res, err := blend.FilletEdges(box, keys, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,7 +380,7 @@ func filletBoxVertical(t *testing.T, hx, hy, r float64) *topo.Body {
 			vert = e.ReferenceKey()
 		}
 	}
-	f1, err := ops.FilletEdges(box, [][]byte{vert}, r)
+	f1, err := blend.FilletEdges(box, [][]byte{vert}, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -399,13 +400,13 @@ func TestFilletCurvedAdjacentReported(t *testing.T) {
 		m := e.RangeBox().Center()
 		switch {
 		case near(m.X, 4) && near(m.Y, 2.7): // tangent line: cylinder G1-smooth into the x=4 plane
-			_, err := ops.FilletEdges(f1, [][]byte{e.ReferenceKey()}, 0.1)
+			_, err := blend.FilletEdges(f1, [][]byte{e.ReferenceKey()}, 0.1)
 			if err == nil || !strings.Contains(err.Error(), "smooth") {
 				t.Errorf("tangent line should be rejected as smooth, got: %v", err)
 			}
 			checked++
 		case near(m.X, 3.85) && near(m.Y, 2.85) && m.Z > 1.9: // sharp arc cap (cylinder ∩ top plane)
-			res, err := ops.FilletEdges(f1, [][]byte{e.ReferenceKey()}, 0.1)
+			res, err := blend.FilletEdges(f1, [][]byte{e.ReferenceKey()}, 0.1)
 			if err != nil {
 				t.Errorf("arc cap should round, got: %v", err)
 			} else if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
@@ -441,12 +442,12 @@ func TestFilletOnCurvedSeamRejectsClearly(t *testing.T) {
 	if len(top) != 2 {
 		t.Fatalf("expected 2 adjacent top edges, got %d", len(top))
 	}
-	f1, err := ops.FilletEdges(box, top, 0.5) // miter: two cylinders meeting at a seam
+	f1, err := blend.FilletEdges(box, top, 0.5) // miter: two cylinders meeting at a seam
 	if err != nil {
 		t.Fatalf("first two-edge fillet: %v", err)
 	}
 	seam := cylinderCylinderEdge(t, f1)
-	_, err = ops.FilletEdges(f1, [][]byte{seam.ReferenceKey()}, 0.2)
+	_, err = blend.FilletEdges(f1, [][]byte{seam.ReferenceKey()}, 0.2)
 	if err == nil {
 		t.Fatal("filleting a cylinder∩cylinder seam edge should be rejected, got nil")
 	}
@@ -473,7 +474,7 @@ func cylinderCylinderEdge(t *testing.T, b *topo.Body) *topo.Edge {
 	return nil
 }
 
-// TestFilletEdgesRoutesArc drives the public FilletEdges with the sharp ARC cap a prior vertical-edge
+// TestFilletEdgesRoutesArc drives the public blend.FilletEdges with the sharp ARC cap a prior vertical-edge
 // fillet leaves: it routes to the torus + setback end-cap arc fillet, producing a valid watertight
 // solid with one torus face and two planar setback end-caps, with the arc material removed.
 func TestFilletEdgesRoutesArc(t *testing.T) {
@@ -491,7 +492,7 @@ func TestFilletEdgesRoutesArc(t *testing.T) {
 		t.Fatal("no sharp arc cap edge on the filleted box")
 	}
 	beforeV := ops.BodyGeometryProperties(f1, ops.Quality{ChordTolerance: 1e-3}).Volume
-	res, err := ops.FilletEdges(f1, [][]byte{arc}, 0.1)
+	res, err := blend.FilletEdges(f1, [][]byte{arc}, 0.1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -525,7 +526,7 @@ func TestFilletEdgesRoutesArc(t *testing.T) {
 func TestFilletRadiusMustBePositive(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
-	if _, err := ops.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0); err == nil {
+	if _, err := blend.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0); err == nil {
 		t.Error("zero radius should error")
 	}
 }

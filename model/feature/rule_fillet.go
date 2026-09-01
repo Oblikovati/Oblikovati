@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -94,7 +94,7 @@ func ruleFilletBody(in Input, rule RuleFilletRule, radius float64, feat string) 
 func ruleEdgeKeys(body *topo.Body, rule RuleFilletRule) [][]byte {
 	var out [][]byte
 	for _, e := range body.Edges() {
-		if matchesFilletRule(rule, ops.ClassifyEdgeConvexity(e)) {
+		if matchesFilletRule(rule, blend.ClassifyEdgeConvexity(e)) {
 			out = append(out, e.ReferenceKey())
 		}
 	}
@@ -102,14 +102,14 @@ func ruleEdgeKeys(body *topo.Body, rule RuleFilletRule) [][]byte {
 }
 
 // matchesFilletRule reports whether a dihedral class is selected by rule.
-func matchesFilletRule(rule RuleFilletRule, c ops.EdgeConvexity) bool {
+func matchesFilletRule(rule RuleFilletRule, c blend.EdgeConvexity) bool {
 	switch rule {
 	case RuleFilletAllRounds:
-		return c == ops.EdgeConvex
+		return c == blend.EdgeConvex
 	case RuleFilletAllFillets:
-		return c == ops.EdgeConcave
+		return c == blend.EdgeConcave
 	case RuleFilletAllEdges:
-		return c == ops.EdgeConvex || c == ops.EdgeConcave
+		return c == blend.EdgeConvex || c == blend.EdgeConcave
 	}
 	return false
 }

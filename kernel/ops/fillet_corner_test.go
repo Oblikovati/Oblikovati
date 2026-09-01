@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
@@ -49,28 +50,28 @@ func topLoopKeys(t *testing.T, b *topo.Body, top float64) [][]byte {
 }
 
 // cornerStrategyOf maps a wire-style spelling to the kernel strategy (the test's own small table).
-func cornerStrategyOf(name string) ops.CornerStrategy {
+func cornerStrategyOf(name string) blend.CornerStrategy {
 	switch name {
 	case "round":
-		return ops.CornerRound
+		return blend.CornerRound
 	case "setback":
-		return ops.CornerSetback
+		return blend.CornerSetback
 	default:
-		return ops.CornerMiter
+		return blend.CornerMiter
 	}
 }
 
 // cornerStrategyPicks selects the fillet edges for a scenario: two of one vertex's three edges
 // ("oneCorner"), or the whole top loop ("allTop"), all at radius 0.3.
-func cornerStrategyPicks(t *testing.T, box *topo.Body, scenario string) []ops.EdgeFilletRadii {
+func cornerStrategyPicks(t *testing.T, box *topo.Body, scenario string) []blend.EdgeFilletRadii {
 	t.Helper()
 	keys := topLoopKeys(t, box, 2)
 	if scenario == "oneCorner" {
 		keys = cornerEdgeKeys(t, box)[:2]
 	}
-	picks := make([]ops.EdgeFilletRadii, len(keys))
+	picks := make([]blend.EdgeFilletRadii, len(keys))
 	for i, k := range keys {
-		picks[i] = ops.EdgeFilletRadii{Key: k, R0: 0.3, R1: 0.3}
+		picks[i] = blend.EdgeFilletRadii{Key: k, R0: 0.3, R1: 0.3}
 	}
 	return picks
 }
@@ -91,7 +92,7 @@ func TestFilletCornerStrategiesValidWatertight(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.strategy+"-"+c.scenario, func(t *testing.T) {
 			box := shellBox(2, 2, 2)
-			res, err := ops.FilletEdgesCorner(box, cornerStrategyPicks(t, box, c.scenario), cornerStrategyOf(c.strategy), ops.FillConcaveOutward)
+			res, err := blend.FilletEdgesCorner(box, cornerStrategyPicks(t, box, c.scenario), cornerStrategyOf(c.strategy), blend.FillConcaveOutward)
 			if err != nil {
 				t.Fatalf("%s/%s: %v", c.strategy, c.scenario, err)
 			}
@@ -117,7 +118,7 @@ func TestFilletCornerVolumeOrdering(t *testing.T) {
 	t.Parallel()
 	vol := func(strategy string) float64 {
 		box := shellBox(2, 2, 2)
-		res, err := ops.FilletEdgesCorner(box, cornerStrategyPicks(t, box, "oneCorner"), cornerStrategyOf(strategy), ops.FillConcaveOutward)
+		res, err := blend.FilletEdgesCorner(box, cornerStrategyPicks(t, box, "oneCorner"), cornerStrategyOf(strategy), blend.FillConcaveOutward)
 		if err != nil {
 			t.Fatalf("%s: %v", strategy, err)
 		}
@@ -134,7 +135,7 @@ func TestFilletCornerVolumeOrdering(t *testing.T) {
 func TestFilletRunOutBothEndsZeroRejected(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
-	_, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{{Key: verticalEdgeKey(t, box), R0: 0, R1: 0}})
+	_, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{{Key: verticalEdgeKey(t, box), R0: 0, R1: 0}})
 	if err == nil || !strings.Contains(err.Error(), "at least one") {
 		t.Fatalf("both-ends-zero err = %v, want the >=0 / at-least-one rejection", err)
 	}
@@ -150,11 +151,11 @@ func TestFilletCornerRadiusMismatchRejected(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
 	keys := cornerEdgeKeys(t, box)
-	_, err := ops.FilletEdgesCorner(box, []ops.EdgeFilletRadii{
+	_, err := blend.FilletEdgesCorner(box, []blend.EdgeFilletRadii{
 		{Key: keys[0], R0: 0.3, R1: 0.3},
 		{Key: keys[1], R0: 0.4, R1: 0.4},
 		{Key: keys[2], R0: 0.5, R1: 0.5},
-	}, ops.CornerMiter, ops.FillConcaveOutward)
+	}, blend.CornerMiter, blend.FillConcaveOutward)
 	// A mixed-radius TRIHEDRAL corner with three DISTINCT radii (r0.3/0.4/0.5) has no common sphere
 	// and no [rB,rS,rS] torus pattern (no two radii are equal) — still declined. It must not silently
 	// build a wrong (equal-radius) sphere.
@@ -173,11 +174,11 @@ func TestFilletCornerRadiusTorusBuilds(t *testing.T) {
 	t.Parallel()
 	box := shellBox(2, 2, 2)
 	keys := cornerEdgeKeys(t, box)
-	res, err := ops.FilletEdgesCorner(box, []ops.EdgeFilletRadii{
+	res, err := blend.FilletEdgesCorner(box, []blend.EdgeFilletRadii{
 		{Key: keys[0], R0: 0.3, R1: 0.3},
 		{Key: keys[1], R0: 0.3, R1: 0.3},
 		{Key: keys[2], R0: 0.5, R1: 0.5},
-	}, ops.CornerMiter, ops.FillConcaveOutward)
+	}, blend.CornerMiter, blend.FillConcaveOutward)
 	if err != nil {
 		t.Fatalf("radius-torus corner: %v", err)
 	}

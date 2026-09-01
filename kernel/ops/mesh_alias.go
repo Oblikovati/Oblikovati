@@ -2,7 +2,10 @@
 
 package ops
 
-import "oblikovati.org/kernel/ops/internal/mesh"
+import (
+	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/ops/tessellate"
+)
 
 // Mesh and Quality are ALIASES, not new types: the value types moved down to
 // kernel/ops/internal/mesh so every operation family can share them without making
@@ -20,3 +23,12 @@ func DefaultQuality() Quality { return mesh.DefaultQuality() }
 // PropertyQuality returns the tolerance for mass/geometry property readouts.
 // See [mesh.PropertyQuality].
 func PropertyQuality() Quality { return mesh.PropertyQuality() }
+
+// GeometryProperties is an alias: the tessellated integrator that produces it lives with
+// the tessellator (kernel/ops/tessellate), so the type does too. ops.GeometryProperties
+// and tessellate.GeometryProperties are the same type, leaving every call site outside
+// the kernel untouched.
+type GeometryProperties = tessellate.GeometryProperties
+
+// MeshGeometryProperties integrates a triangle mesh. See [tessellate.MeshGeometryProperties].
+func MeshGeometryProperties(m *Mesh) GeometryProperties { return tessellate.MeshGeometryProperties(m) }

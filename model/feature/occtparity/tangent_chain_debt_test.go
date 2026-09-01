@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -19,7 +19,7 @@ import (
 // WHAT IT MEASURES. For every record whose input STEP imports, every pick that locates is expanded
 // by occtTangentChain (this harness's INDEPENDENT port of OCCT ChFi3d_Builder::PerformElement,
 // occt_tangent_chain_test.go) and the chain members the FILLET would not blend — neither picked by
-// the record nor reached by the product's own spine propagation (ops.TangentEdgeChain, the walk
+// the record nor reached by the product's own spine propagation (blend.TangentEdgeChain, the walk
 // every pick expands through in kernel/ops/fillet_chain_propagate.go) — are counted, UNIONED over
 // the case's picks. The measurement is on the IMPORTED INPUT body, so it stays visible on a case
 // whose fillet declines and ships no body at all. The oracle walker is deliberately NOT the product
@@ -57,7 +57,7 @@ func assertPicksCoverTheirChains(t *testing.T, r Record, dir string, ceiling int
 
 // unblendedChainEdges is the union, over every located pick, of that pick's OCCT tangent-chain
 // members that the fillet would NOT blend: not picked by the record AND not reached by the
-// product's own spine propagation (ops.TangentEdgeChain — the PerformElement walk every pick now
+// product's own spine propagation (blend.TangentEdgeChain — the PerformElement walk every pick now
 // expands through before the fillet dispatch, kernel/ops/fillet_chain_propagate.go). The oracle
 // walker stays this harness's INDEPENDENT port; what retired the debt is the product walker
 // reaching the same edges, measured member-for-member here on every record.
@@ -82,7 +82,7 @@ func unblendedChainEdges(body *topo.Body, r Record) int {
 // addProductSpineMembers marks every edge the PRODUCT's spine walk reaches from seed — the edges
 // the fillet actually widens the pick to.
 func addProductSpineMembers(body *topo.Body, seed *topo.Edge, covered map[uint64]bool) {
-	keys, _, err := ops.TangentEdgeChain(body, seed.ReferenceKey(), ops.DefaultTangentChainAngle)
+	keys, _, err := blend.TangentEdgeChain(body, seed.ReferenceKey(), blend.DefaultTangentChainAngle)
 	if err != nil {
 		return
 	}
@@ -113,7 +113,7 @@ func locatedPickEdges(body *topo.Body, r Record) []*topo.Edge {
 // the old 1° gate), so the union measurement stays 0 while the walker itself is wrong. This gate
 // cross-examines the walkers PER PICK, as edge SETS: every located pick of every importable record
 // must expand to exactly the oracle's spine membership. Measured 0 mismatches corpus-wide;
-// mutating ops.TangentEdgeChain's turn-back gate back to the 1° antiparallel band fails this loud
+// mutating blend.TangentEdgeChain's turn-back gate back to the 1° antiparallel band fails this loud
 // on complex/C5's shortened chains.
 func TestProductSpineWalkerMatchesOraclePerPick(t *testing.T) {
 	t.Parallel()
@@ -170,7 +170,7 @@ func tangentChainDebtIndex() map[string]int {
 // knownTangentChainDebt is the measured population of picks whose OCCT blend spine runs past what
 // the fillet blends. It is EMPTY: the 14-case / 51-edge population the detection slice recorded was
 // fully RETIRED by pick propagation (kernel/ops/fillet_chain_propagate.go — every pick expands
-// through ops.TangentEdgeChain, whose gates were aligned to PerformElement's FaceTangency + π/2
+// through blend.TangentEdgeChain, whose gates were aligned to PerformElement's FaceTangency + π/2
 // no-turn-back rule, replacing the KNOWN-divergent 1° antiparallel band + same-convexity gates).
 // Re-measured across every importable record after the alignment: 0 uncovered edges corpus-wide —
 // including the closed 8-edge rim-spine deciders (complex/D8 FAIL(area), complex/F2 FAIL(faulty)

@@ -43,7 +43,7 @@ func TestBuildReportTravelsWithTheBody(t *testing.T) {
 // ★ This is why an empty report cannot be read as "the assembler had nothing to say". A gate that
 // asserts "no shipped body reports X" over bodies that passed through one ops.Boolean would be
 // asserting nothing at all, silently and forever. The fillet's edge catalog therefore stamps a
-// POSITIVE marker (ops.CodeAssembleEdgeCatalog) and its corpus gate asserts the marked population
+// POSITIVE marker (blend.CodeAssembleEdgeCatalog) and its corpus gate asserts the marked population
 // exactly; this test is the property that makes that necessary.
 func TestBuildReportDoesNotSurviveARebuild(t *testing.T) {
 	bld := NewBuilder(true, NewLineage(Tok("t", "body", 2)))
