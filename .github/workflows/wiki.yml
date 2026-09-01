@@ -44,7 +44,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
 
       # Resolve + wire the oblikovati.org/api release so `go run ./cmd/command-manual` builds.
       - uses: ./.github/actions/api-contract

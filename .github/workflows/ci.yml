@@ -33,7 +33,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       - id: pin
         run: echo "version=$(scripts/sync-api-version.sh)" >> "$GITHUB_OUTPUT"
       - name: Commit the pin if it changed
@@ -59,7 +66,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       # Check out the latest api release and wire the build against it (ADR-0018).
       - uses: ./.github/actions/api-contract
       - uses: golangci/golangci-lint-action@9fae48acfc02a90574d7c304a1758ef9895495fa # v7
@@ -113,7 +127,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       - uses: ./.github/actions/api-contract
         # Wire the API replace into the translator modules too, not just the root: they are
         # separate modules whose COMMITTED `replace oblikovati.org/api => ../../../../../Oblikovati.API`
@@ -228,7 +249,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       - uses: ./.github/actions/api-contract
       # The OCCT blend-parity corpus is excluded here, NOT because it is unverified under the race
       # detector but because instrumenting it on a CI runner buys no signal for hours of compute: it
@@ -259,7 +287,14 @@ jobs:
         with:
           # Match build.yml's head-linux toolchain.
           go-version: "1.27"
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       - uses: ./.github/actions/api-contract
         with:
           modules: head
@@ -302,7 +337,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: "1.27"
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       - uses: ./.github/actions/api-contract
         with:
           modules: head
@@ -381,7 +423,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       - uses: ./.github/actions/api-contract
       - name: Cross-compile
         run: |
