@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -261,7 +262,7 @@ func cellIsMaterial(cell brep.Face2D, holes [][]math.Point2) bool {
 	}
 	p := probeInsideOuter(cell.Outer)
 	for _, h := range holes {
-		if pointInLoop2D(p, h) {
+		if probe.PointInLoop2D(p, h) {
 			return false
 		}
 	}
@@ -275,21 +276,6 @@ func probeInsideOuter(loop []math.Point2) math.Point2 {
 	e := a.VectorTo(b)
 	mid := math.P2((a.X+b.X)/2, (a.Y+b.Y)/2)
 	return mid.TranslateBy(math.V2(-e.Y, e.X).Scale(1e-4)) // left normal = interior of a CCW loop
-}
-
-// pointInLoop2D is a ray-cast point-in-polygon test for a closed loop.
-func pointInLoop2D(p math.Point2, loop []math.Point2) bool {
-	in := false
-	for i, j := 0, len(loop)-1; i < len(loop); j, i = i, i+1 {
-		yi, yj := loop[i].Y, loop[j].Y
-		if (yi > p.Y) != (yj > p.Y) {
-			x := loop[i].X + (p.Y-yi)/(yj-yi)*(loop[j].X-loop[i].X)
-			if p.X < x {
-				in = !in
-			}
-		}
-	}
-	return in
 }
 
 // holesOverlap reports whether any two hole loops overlap — their edges cross, or a vertex of
@@ -310,13 +296,10 @@ func holesOverlap(holes [][]math.Point2) bool {
 func loopsOverlap(a, b []math.Point2) bool {
 	for _, sa := range loopSegments(a) {
 		for _, sb := range loopSegments(b) {
-			if segmentsCross(xy(sa[0]), xy(sa[1]), xy(sb[0]), xy(sb[1])) {
+			if segmentsCross(probe.XY(sa[0]), probe.XY(sa[1]), probe.XY(sb[0]), probe.XY(sb[1])) {
 				return true
 			}
 		}
 	}
-	return pointInLoop2D(a[0], b) || pointInLoop2D(b[0], a)
+	return probe.PointInLoop2D(a[0], b) || probe.PointInLoop2D(b[0], a)
 }
-
-// xy converts a Point2 to the [2]float64 form the shared geometry predicates use.
-func xy(p math.Point2) [2]float64 { return [2]float64{p.X, p.Y} }

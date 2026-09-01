@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -38,7 +39,7 @@ func closedBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	// of the two arcs between the rings the band spans. A torus cut keeps the long (seam-wrapping) arc;
 	// using min→max would loft the short complement instead (the dropped tube arc, Oblikovati#1375).
 	vLo, vHiRaw, vMid := vParam(s, lo[0]), vParam(s, hi[0]), vParam(s, seamMid)
-	vHi := vLo + wrapPi(vMid-vLo) + wrapPi(vHiRaw-vMid) // unwrapped so vLo→vMid→vHi is monotone
+	vHi := vLo + probe.WrapPi(vMid-vLo) + probe.WrapPi(vHiRaw-vMid) // unwrapped so vLo→vMid→vHi is monotone
 	mid := make([]float64, 0, seamN-2)
 	for k := 1; k < seamN-1; k++ {
 		mid = append(mid, vLo+(vHi-vLo)*float64(k)/float64(seamN-1))
@@ -50,18 +51,6 @@ func closedBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 // fillet-band rim), distinguishing it from the partial seam arc across the tube.
 func isFullCircleArc(a geom.Arc3d) bool {
 	return stdmath.Abs(stdmath.Abs(a.SweepAngle)-2*stdmath.Pi) < seamAngularTol
-}
-
-// wrapPi folds an angle into (−π, π] — the signed shortest step between two tube parameters.
-func wrapPi(a float64) float64 {
-	const twoPi = 2 * stdmath.Pi
-	for a > stdmath.Pi {
-		a -= twoPi
-	}
-	for a <= -stdmath.Pi {
-		a += twoPi
-	}
-	return a
 }
 
 // bandRingsAndSeam reads the band face's boundary edges: each closed circle (with its closing

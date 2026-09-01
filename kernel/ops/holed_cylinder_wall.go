@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
@@ -280,9 +281,9 @@ func loopWinding(us []float64) float64 {
 	if len(us) < 2 {
 		return 0
 	}
-	w := wrapPi(us[0] - us[len(us)-1]) // the CLOSING step, the one an open chain never forms
+	w := probe.WrapPi(us[0] - us[len(us)-1]) // the CLOSING step, the one an open chain never forms
 	for i := 1; i < len(us); i++ {
-		w += wrapPi(us[i] - us[i-1])
+		w += probe.WrapPi(us[i] - us[i-1])
 	}
 	return w
 }

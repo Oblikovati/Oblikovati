@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -113,7 +114,7 @@ func zoneRimRings(f *topo.Face, q Quality) [][]math.Point3 {
 // diameter normal to its own plane. ok=false when the normals diverge (two obliquely cut rims bound
 // a lune, not a belt).
 func parallelRimAxis(sph geom.Sphere, rims [][]math.Point3) (math.Vector3, bool) {
-	a, b := newellUnit(rims[0]), newellUnit(rims[1])
+	a, b := probe.NewellUnit(rims[0]), probe.NewellUnit(rims[1])
 	if !rimIsCircle(sph, rims[0], a) || !rimIsCircle(sph, rims[1], b) {
 		return math.Vector3{}, false
 	}

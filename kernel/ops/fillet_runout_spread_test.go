@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -261,8 +262,8 @@ func TestRunoutPieceIsArcOnCylinder(t *testing.T) {
 func assertMidBisectsSpan(t *testing.T, fan endCornerFan, uhat, ref math.Vector3, id uint64, tIn, tOut, mid math.Point3) {
 	t.Helper()
 	angleIn := angleAbout(uhat, ref, fan.center, tIn)
-	angleOut := wrapPi(angleAbout(uhat, ref, fan.center, tOut) - angleIn)
-	angleMid := wrapPi(angleAbout(uhat, ref, fan.center, mid) - angleIn)
+	angleOut := probe.WrapPi(angleAbout(uhat, ref, fan.center, tOut) - angleIn)
+	angleMid := probe.WrapPi(angleAbout(uhat, ref, fan.center, mid) - angleIn)
 	if stdmath.Abs(angleOut) >= stdmath.Pi {
 		t.Fatalf("face %d span %.3g rad is not the minor arc (>= pi)", id, angleOut)
 	}

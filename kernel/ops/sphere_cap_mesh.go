@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -44,7 +45,7 @@ func sphereCapFan(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3
 // rim circle's plane normal, flipped to the face's material side). ok=false when the rim is not a
 // single planar circle on the sphere (an arc-bounded patch), which sphereCapFan does not handle.
 func capAxis(sph geom.Sphere, outer3D []math.Point3) (math.Vector3, bool) {
-	a := newellUnit(outer3D) // rim plane normal (unit)
+	a := probe.NewellUnit(outer3D) // rim plane normal (unit)
 	if !rimIsCircle(sph, outer3D, a) {
 		return math.Vector3{}, false
 	}

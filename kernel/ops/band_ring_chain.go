@@ -91,7 +91,7 @@ func torusMeridianSeam(f *topo.Face, tor geom.Torus, q Quality) (*topo.Edge, boo
 func edgeTubeVSpan(tor geom.Torus, e *topo.Edge) float64 {
 	_, v0 := tor.ParamAt(e.StartVertex().Point())
 	_, v1 := tor.ParamAt(e.EndVertex().Point())
-	return stdmath.Abs(wrapPi(v1 - v0))
+	return stdmath.Abs(probe.WrapPi(v1 - v0))
 }
 
 // faceBoundaryWeld is the model-relative weld length (ADR-0042) of the face's whole boundary — the
@@ -152,7 +152,7 @@ func aroundAdvance(tor geom.Torus, ring []math.Point3) (signed, variation float6
 		us[i], _ = tor.ParamAt(p)
 	}
 	for i := range us {
-		d := wrapPi(us[(i+1)%len(us)] - us[i])
+		d := probe.WrapPi(us[(i+1)%len(us)] - us[i])
 		signed += d
 		variation += stdmath.Abs(d)
 	}

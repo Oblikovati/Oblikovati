@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -131,5 +132,5 @@ func assembleRimBand(ef edgeFillet, devF, capF *topo.Face, tor geom.Torus, ref m
 func rimBandSeamMid(tor geom.Torus, devTan, capTan geom.Circle) math.Point3 {
 	_, vDev := tor.ParamAt(devTan.PointAt(0))
 	_, vCap := tor.ParamAt(capTan.PointAt(0))
-	return tor.PointAt(0, vDev+wrapPi(vCap-vDev)/2)
+	return tor.PointAt(0, vDev+probe.WrapPi(vCap-vDev)/2)
 }

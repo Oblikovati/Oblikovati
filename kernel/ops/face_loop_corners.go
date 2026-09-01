@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -205,5 +206,5 @@ func periodicParams(s geom.Surface, p math.Point3) (u, v float64) {
 
 // halvesAgree compares the unwrapped whole step with the sum of its two halves.
 func halvesAgree(a, m, b float64) bool {
-	return stdmath.Abs(wrapPi(b-a)-(wrapPi(m-a)+wrapPi(b-m))) <= chartStepAgreement
+	return stdmath.Abs(probe.WrapPi(b-a)-(probe.WrapPi(m-a)+probe.WrapPi(b-m))) <= chartStepAgreement
 }

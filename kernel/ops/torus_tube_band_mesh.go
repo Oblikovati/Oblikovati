@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -74,7 +75,7 @@ func wrapsTube(t geom.Torus, pts []math.Point3) bool {
 	_, prev := t.ParamAt(pts[0])
 	for _, p := range pts[1:] {
 		_, v := t.ParamAt(p)
-		total += wrapPi(v - prev)
+		total += probe.WrapPi(v - prev)
 		prev = v
 	}
 	return stdmath.Abs(stdmath.Abs(total)-2*stdmath.Pi) < 0.5 // half a radian of slack: winding is 0 or ±2π, nothing between
@@ -127,7 +128,7 @@ func tubeParamOf(t geom.Torus, p math.Point3) float64 { _, v := t.ParamAt(p); re
 func uSpread(us []float64) float64 {
 	lo, hi := 0.0, 0.0
 	for _, u := range us[1:] {
-		d := wrapPi(u - us[0])
+		d := probe.WrapPi(u - us[0])
 		lo, hi = stdmath.Min(lo, d), stdmath.Max(hi, d)
 	}
 	return hi - lo
@@ -142,13 +143,13 @@ func loftTubeRows(t geom.Torus, circ, rail tubeRing, seamMid math.Point3, seamN 
 	m := &Mesh{}
 	uc := circ.us[0]
 	uMid, _ := t.ParamAt(seamMid)
-	duMid := wrapPi(uMid - uc)
+	duMid := probe.WrapPi(uMid - uc)
 	rows := []bandRow{addTubeRow(m, t, circ.pts, circ.vs)}
 	for k := 1; k < seamN-1; k++ {
 		frac := float64(k) / float64(seamN-1)
 		pts := make([]math.Point3, len(rail.pts))
 		for i := range rail.pts {
-			du := duMid + wrapPi(rail.us[i]-uMid) // circle → seam-mid → rail: monotone unwrap
+			du := duMid + probe.WrapPi(rail.us[i]-uMid) // circle → seam-mid → rail: monotone unwrap
 			pts[i] = t.PointAt(uc+frac*du, rail.vs[i])
 		}
 		rows = append(rows, addTubeRow(m, t, pts, rail.vs))

@@ -10,6 +10,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -258,7 +259,7 @@ func windsMonotone(uhat, ref math.Vector3, c math.Point3, seq []math.Point3) boo
 	sign, total := 0.0, 0.0
 	for i := 1; i < len(seq); i++ {
 		a := angleAbout(uhat, ref, c, seq[i])
-		d := wrapPi(a - prev)
+		d := probe.WrapPi(a - prev)
 		if stdmath.Abs(d) < eps || (sign != 0 && d*sign < 0) {
 			return false
 		}

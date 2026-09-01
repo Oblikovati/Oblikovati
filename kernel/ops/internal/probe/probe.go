@@ -190,3 +190,63 @@ func ReversedPoints(pts []math.Point3) []math.Point3 {
 	slices.Reverse(out)
 	return out
 }
+
+// XY converts a Point2 to the [2]float64 form the shared geometry predicates use.
+func XY(p math.Point2) [2]float64 { return [2]float64{p.X, p.Y} }
+
+// WrapPi folds an angle into (−π, π] — the signed shortest step between two tube parameters.
+func WrapPi(a float64) float64 {
+	const twoPi = 2 * stdmath.Pi
+	for a > stdmath.Pi {
+		a -= twoPi
+	}
+	for a <= -stdmath.Pi {
+		a += twoPi
+	}
+	return a
+}
+
+// NewellUnit returns a loop's unit normal by Newell's method (robust for non-planar loops).
+func NewellUnit(loop []math.Point3) math.Vector3 {
+	var nx, ny, nz float64
+	n := len(loop)
+	for i := range n {
+		c, d := loop[i], loop[(i+1)%n]
+		nx += (c.Y - d.Y) * (c.Z + d.Z)
+		ny += (c.Z - d.Z) * (c.X + d.X)
+		nz += (c.X - d.X) * (c.Y + d.Y)
+	}
+	u, err := math.UnitVector3FromVector(math.V3(nx, ny, nz))
+	if err != nil {
+		return math.V3(0, 0, 1)
+	}
+	return u.AsVector()
+}
+
+// PointInLoop2D is a ray-cast point-in-polygon test for a closed loop.
+func PointInLoop2D(p math.Point2, loop []math.Point2) bool {
+	in := false
+	for i, j := 0, len(loop)-1; i < len(loop); j, i = i, i+1 {
+		yi, yj := loop[i].Y, loop[j].Y
+		if (yi > p.Y) != (yj > p.Y) {
+			x := loop[i].X + (p.Y-yi)/(yj-yi)*(loop[j].X-loop[i].X)
+			if p.X < x {
+				in = !in
+			}
+		}
+	}
+	return in
+}
+
+// Sign returns -1, 0 or +1 for a negative, zero or positive value. It compares against
+// exact zero on purpose: callers pass an already-computed orientation determinant, and
+// widening that to a tolerance here would hide the decision from the predicate that made it.
+func Sign(x float64) int {
+	if x > 0 {
+		return 1
+	}
+	if x < 0 {
+		return -1
+	}
+	return 0
+}

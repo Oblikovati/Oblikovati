@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
@@ -68,7 +69,7 @@ func unwrap(a []float64) ([]float64, bool) {
 	out[0] = a[0]
 	lo, hi := a[0], a[0]
 	for i := 1; i < len(a); i++ {
-		out[i] = out[i-1] + wrapPi(a[i]-a[i-1])
+		out[i] = out[i-1] + probe.WrapPi(a[i]-a[i-1])
 		lo, hi = stdmath.Min(lo, out[i]), stdmath.Max(hi, out[i])
 	}
 	if seamWindingLeap(a, out) {
@@ -96,7 +97,7 @@ func seamWindingLeap(a, out []float64) bool {
 	if n < 2 {
 		return false
 	}
-	closing := wrapPi(a[0] - a[n-1])
+	closing := probe.WrapPi(a[0] - a[n-1])
 	return stdmath.Abs(out[0]-out[n-1]-closing) > seamAngularTol
 }
 
@@ -193,7 +194,7 @@ func patchProjection(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Poi
 // projectToPlane flattens the boundary loops onto the outer loop's best-fit plane (Newell
 // normal + an in-plane basis) — a non-degenerate 2D embedding of a single-valued patch.
 func projectToPlane(outer3D []math.Point3, holes3D [][]math.Point3) ([]math.Point2, [][]math.Point2) {
-	n := newellUnit(outer3D)
+	n := probe.NewellUnit(outer3D)
 	e1, e2 := planeBasis(n)
 	o := outer3D[0]
 	flat := func(p math.Point3) math.Point2 {
@@ -213,23 +214,6 @@ func projectToPlane(outer3D []math.Point3, holes3D [][]math.Point3) ([]math.Poin
 		holes2D[i] = hp
 	}
 	return outer2D, holes2D
-}
-
-// newellUnit returns a loop's unit normal by Newell's method (robust for non-planar loops).
-func newellUnit(loop []math.Point3) math.Vector3 {
-	var nx, ny, nz float64
-	n := len(loop)
-	for i := range n {
-		c, d := loop[i], loop[(i+1)%n]
-		nx += (c.Y - d.Y) * (c.Z + d.Z)
-		ny += (c.Z - d.Z) * (c.X + d.X)
-		nz += (c.X - d.X) * (c.Y + d.Y)
-	}
-	u, err := math.UnitVector3FromVector(math.V3(nx, ny, nz))
-	if err != nil {
-		return math.V3(0, 0, 1)
-	}
-	return u.AsVector()
 }
 
 // planeBasis returns two orthonormal in-plane vectors for the plane with unit normal n.

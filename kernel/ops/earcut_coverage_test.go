@@ -2,7 +2,11 @@
 
 package ops
 
-import "testing"
+import (
+	"testing"
+
+	"oblikovati.org/kernel/ops/internal/probe"
+)
 
 func TestEarcutSegmentPredicates(t *testing.T) {
 	t.Parallel()
@@ -23,7 +27,7 @@ func TestEarcutSegmentPredicates(t *testing.T) {
 	if tc.intersects(n[0], n[1], n[2], n[3]) {
 		t.Fatal("parallel separated segments should not intersect")
 	}
-	if sign(-1) != -1 || sign(0) != 0 || sign(1) != 1 {
+	if probe.Sign(-1) != -1 || probe.Sign(0) != 0 || probe.Sign(1) != 1 {
 		t.Fatal("sign returned unexpected values")
 	}
 }

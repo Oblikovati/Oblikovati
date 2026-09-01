@@ -5,6 +5,7 @@ package ops
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -397,10 +398,10 @@ func (tc *triContext) equalsNode(p, q *triNode) bool {
 
 // intersects reports whether segments p1p2 and q1q2 properly intersect.
 func (tc *triContext) intersects(p1, p2, q1, q2 *triNode) bool {
-	o1 := sign(tc.area(p1, p2, q1))
-	o2 := sign(tc.area(p1, p2, q2))
-	o3 := sign(tc.area(q1, q2, p1))
-	o4 := sign(tc.area(q1, q2, p2))
+	o1 := probe.Sign(tc.area(p1, p2, q1))
+	o2 := probe.Sign(tc.area(p1, p2, q2))
+	o3 := probe.Sign(tc.area(q1, q2, p1))
+	o4 := probe.Sign(tc.area(q1, q2, p2))
 	if o1 != o2 && o3 != o4 {
 		return true
 	}
@@ -474,16 +475,6 @@ func (tc *triContext) signedArea(start, end int) float64 {
 		j = i
 	}
 	return sum
-}
-
-func sign(x float64) int {
-	if x > 0 {
-		return 1
-	}
-	if x < 0 {
-		return -1
-	}
-	return 0
 }
 
 // pointInTri reports whether (px,py) lies inside triangle (ax,ay)(bx,by)(cx,cy).

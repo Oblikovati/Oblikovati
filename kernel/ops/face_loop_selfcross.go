@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -145,7 +146,7 @@ func segmentDevelopsItsEdge(l developedLoop, i int) bool {
 	if span == 0 {
 		return false
 	}
-	return pointToSegment2D(xy(l.mids[i]), seg.a, seg.b) <= chartFaithfulFraction*span
+	return pointToSegment2D(probe.XY(l.mids[i]), seg.a, seg.b) <= chartFaithfulFraction*span
 }
 
 // chartFaithfulFraction is how far a segment's own mid may sit off it and still count as a straight
@@ -211,7 +212,7 @@ type chartSeg struct{ a, b [2]float64 }
 
 // chartSegAt is the segment leaving vertex i of a closed developed loop.
 func chartSegAt(pts []math.Point2, i int) chartSeg {
-	return chartSeg{a: xy(pts[i]), b: xy(pts[(i+1)%len(pts)])}
+	return chartSeg{a: probe.XY(pts[i]), b: probe.XY(pts[(i+1)%len(pts)])}
 }
 
 // length is the segment's extent in the metric chart.
@@ -329,12 +330,12 @@ func loopSelfCrossing(l developedLoop, accept func(i, j int) bool) (area float64
 		return 0, -1, -1, false
 	}
 	for i := range n {
-		a, b := xy(l.pts[i]), xy(l.pts[(i+1)%n])
+		a, b := probe.XY(l.pts[i]), probe.XY(l.pts[(i+1)%n])
 		for j := i + 2; j < n; j++ {
 			if i == 0 && j == n-1 {
 				continue // edges n-1→0 and 0→1 are adjacent (share vertex 0)
 			}
-			c, d := xy(l.pts[j]), xy(l.pts[(j+1)%n])
+			c, d := probe.XY(l.pts[j]), probe.XY(l.pts[(j+1)%n])
 			if !segmentsCross(a, b, c, d) || !accept(i, j) {
 				continue
 			}
@@ -361,7 +362,7 @@ func segmentsCrossPoint(a, b, c, d [2]float64) math.Point2 {
 // the sub-loop is traversed with the opposite orientation to the rest.
 func pinchedOffArea(pts []math.Point2, i, j int) float64 {
 	n := len(pts)
-	sub := []math.Point2{segmentsCrossPoint(xy(pts[i]), xy(pts[(i+1)%n]), xy(pts[j]), xy(pts[(j+1)%n]))}
+	sub := []math.Point2{segmentsCrossPoint(probe.XY(pts[i]), probe.XY(pts[(i+1)%n]), probe.XY(pts[j]), probe.XY(pts[(j+1)%n]))}
 	for k := i + 1; k <= j; k++ {
 		sub = append(sub, pts[k%n])
 	}

@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -346,12 +347,12 @@ func simpleLoop2D(pts []math.Point2) bool {
 		return true
 	}
 	for i := range n {
-		a, b := xy(pts[i]), xy(pts[(i+1)%n])
+		a, b := probe.XY(pts[i]), probe.XY(pts[(i+1)%n])
 		for j := i + 2; j < n; j++ {
 			if i == 0 && j == n-1 {
 				continue // edges n-1→0 and 0→1 are adjacent (share vertex 0)
 			}
-			if segmentsCross(a, b, xy(pts[j]), xy(pts[(j+1)%n])) {
+			if segmentsCross(a, b, probe.XY(pts[j]), probe.XY(pts[(j+1)%n])) {
 				return false
 			}
 		}

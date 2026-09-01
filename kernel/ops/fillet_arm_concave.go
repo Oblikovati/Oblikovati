@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -261,7 +262,7 @@ func planeFootOnTrimmedFace(planeFace *topo.Face, pl geom.Plane, foot math.Point
 	}
 	f2, inOuter := uv(foot), false
 	for _, l := range planeFace.Loops() {
-		if !pointInLoop2D(f2, loopUVPolygon(l, uv)) {
+		if !probe.PointInLoop2D(f2, loopUVPolygon(l, uv)) {
 			continue
 		}
 		if !l.IsOuter() {

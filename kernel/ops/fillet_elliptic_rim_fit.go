@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -58,7 +59,7 @@ func capFaceContainsFeet(capF *topo.Face, pl geom.Plane, feet []math.Point3) boo
 func uvPointInTrimmedRegion(q math.Point2, polys [][]math.Point2, outer []bool) bool {
 	in := false
 	for i, poly := range polys {
-		if !pointInLoop2D(q, poly) {
+		if !probe.PointInLoop2D(q, poly) {
 			continue
 		}
 		if !outer[i] {

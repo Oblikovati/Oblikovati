@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -240,7 +241,7 @@ func cylinderFaceCoversAzimuthOf(f *topo.Face, cyl geom.Cylinder, p math.Point3)
 			continue // a degenerate boundary contributes no azimuth extent
 		}
 		for _, q := range pl.Vertices {
-			off := wrapPi(azimuth(q) - phi0)
+			off := probe.WrapPi(azimuth(q) - phi0)
 			lo, hi = stdmath.Min(lo, off), stdmath.Max(hi, off)
 		}
 	}
@@ -308,7 +309,7 @@ func seamLoopWrapsAxis(e *topo.Edge, cyl geom.Cylinder) bool {
 		u := cyl.Origin.VectorTo(p)
 		phi := stdmath.Atan2(float64(u.Dot(e2)), float64(u.Dot(e1)))
 		if i > 0 {
-			total += wrapPi(phi - prev)
+			total += probe.WrapPi(phi - prev)
 		}
 		prev = phi
 	}

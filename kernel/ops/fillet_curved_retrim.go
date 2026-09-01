@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -473,7 +474,7 @@ func chartPointInLoop(ch hostChart, q2 math.Point2, segs []endSeg) bool {
 	for i, p := range ring3 {
 		loop2[i] = ch.to2(p)
 	}
-	return pointInLoop2D(q2, loop2)
+	return probe.PointInLoop2D(q2, loop2)
 }
 
 // rulingChartRay develops the host and returns the arm ruling as a chart ray: origin ch.to2(tHost),
