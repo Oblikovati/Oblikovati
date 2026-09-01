@@ -55,18 +55,29 @@ func booleanInputQuality() Quality {
 // # What deletes this (#3459)
 //
 // Facet exists only because the planar boolean could not take a curved operand, and a strangler
-// must name the gate that retires it. Measured the same day by disabling the facet branch in
-// model/feature/planarize.go and running tier 2: kernel/ is entirely clean, and the whole product
-// depends on Facet in FOUR places, each a distinct capability gap —
+// must name the gate that retires it. The gate is measured, not guessed: disable the facet branch
+// in model/feature/planarize.go and run tier 2. kernel/ is entirely clean — every dependence is in
+// model/feature.
 //
-//	TestAnalyticPatternedCutDoesNotExplode                 the cut blows up to 7874 edges
-//	TestPatternOfHoleCutsEachOccurrence                    invalid solid: open + misoriented edges
-//	TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial   raises -87.09 cm³, wants +0.1…0.6
-//	TestChamferOfTaperShaftRimDoesNotCollapse              "chamfer: degenerate edge"
+// It was FOUR tests on 2026-09-01. Two were not kernel gaps at all: the hole feature recorded a
+// 32-gon prism as its replay tool while cutting with the exact drill, so patterns faceted
+// everything to cope (#3463). Fixing the tool retired both:
 //
-// Delete Facet when those four pass with the facet branch removed. Three are boolean/containment
-// gaps ADR-0058 closes; the fourth is the BLEND engine on an analytic taper rim (ADR-0050
-// strangler work), so this is blocked on two subsystems, not one.
+//	TestAnalyticPatternedCutDoesNotExplode   FIXED — 8 faces / 18 edges, analytic
+//	TestPatternOfHoleCutsEachOccurrence      FIXED — 9 faces / 21 edges, analytic
+//
+// TWO remain, each a real capability gap in a different subsystem:
+//
+//	TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial  raises -87.09 cm³, wants +0.1…0.6 —
+//	                                                      containment/orientation on a concave
+//	                                                      analytic interior (ADR-0058)
+//	TestChamferOfTaperShaftRimDoesNotCollapse             "chamfer: degenerate edge" — the BLEND
+//	                                                      engine on an analytic taper rim, not the
+//	                                                      boolean at all (ADR-0050 strangler work)
+//
+// Delete Facet when those two pass with the facet branch removed. Before assuming a remaining
+// failure is a kernel gap, check whether the feature layer is handing the kernel a faceted operand
+// — that is what the first two turned out to be.
 func Facet(b *topo.Body, feat string) *topo.Body {
 	cage := trianglesToBody(bodyTrianglesAt(b, DefaultQuality()), feat)
 	if cage == nil {
