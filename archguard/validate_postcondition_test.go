@@ -24,22 +24,33 @@ import (
 // did nothing wrong. Validate at the exit is what keeps a failure local to the operation that
 // caused it.
 //
-// Nothing checked this (#2190). 45 exported operations that return a *topo.Body never reach
+// Nothing checked this (#2190). 54 exported operations that return a *topo.Body never reach
 // Validate — notably the whole surface family (17) and the whole transform family (8), neither
-// of which validates anything it builds.
+// of which validates anything it builds, and boolean.Facet (#3329), whose faceted cage the
+// planar boolean then trusts as a valid operand.
 //
-// "Reaches Validate" is computed transitively: through same-package calls and through a
-// qualified call into a sibling kernel/ops family, so a facade forwarder counts as validating
-// when what it forwards to does. Without that, ops.Boolean and ops.Shell would read as
-// violations when the packages behind them validate properly.
+// "Reaches Validate" follows only the calls whose RESULT IS RETURNED — `return join(...)`,
+// `return boolean.Boolean(...)` — because the thing that must be validated is the thing the
+// caller gets back. Following every call instead credits validation that did not happen: an
+// early version of this guard reported boolean.Facet clean because it calls
+// tessellate.TessellateBody, which validates the MESH it builds on the way. Validating something
+// en route is not validating the result.
+//
+// That rule keeps the real delegation chains honest — ops.Boolean returns
+// BooleanWithDiagnostics, which returns join/cut/intersect, which return booleanGeneral, which
+// does validate — without extending credit to every caller of a validating helper.
 
 // validateDebt is the per-package count of exported functions returning *topo.Body that never
 // reach Validate. Baseline 2026-09-01. It may only shrink.
 var validateDebt = map[string]int{
-	// The facade's own operations: silhouette wires and the two face splits.
-	"kernel/ops": 3,
-	// DraftFaces/DraftFacesNeutral and the two cylinder-fillet entry points.
-	"kernel/ops/blend": 4,
+	// The facade's own operations, plus its Facet/MeshToBRep forwarders to boolean.
+	"kernel/ops": 6,
+	// Draft, the two cylinder-fillet entry points, and all four FilletEdges* entries.
+	"kernel/ops/blend": 8,
+	// Facet and MeshToBRep: both BUILD a body from a mesh and hand it back unchecked. Facet is
+	// #3329 — the faceted cage is what the planar boolean then trusts, so an invalid cage is a
+	// defect laundered into a valid-looking operand.
+	"kernel/ops/boolean": 2,
 	// Healing builds a body FROM a broken one, so its post-condition matters most of all: a
 	// repair that leaves the body invalid has done nothing but hide the original defect.
 	"kernel/ops/heal":            8,
@@ -162,35 +173,49 @@ func parseOpsFuncs(t *testing.T) map[string]*opFunc {
 	return all
 }
 
-// reachesValidate reports whether f calls something that validates, in its own package or in a
-// sibling ops family (the facade-forwarder case).
+// reachesValidate reports whether f returns the result of a call that itself counts as
+// validating, in its own package or in a sibling ops family. Only RETURNED calls are followed —
+// see the package comment for why crediting every call is wrong.
 func reachesValidate(f *opFunc, validates map[string]bool) bool {
-	found := false
-	ast.Inspect(f.decl.Body, func(n ast.Node) bool {
-		c, ok := n.(*ast.CallExpr)
-		if !ok {
-			return true
-		}
-		switch fun := c.Fun.(type) {
+	for _, call := range returnedCalls(f.decl.Body) {
+		switch fun := call.Fun.(type) {
 		case *ast.Ident:
 			if validates[f.dir+"::"+fun.Name] {
-				found = true
+				return true
 			}
 		case *ast.SelectorExpr:
 			id, ok := fun.X.(*ast.Ident)
 			if !ok {
-				return true
+				continue
 			}
 			for k := range validates {
 				dir, name, _ := strings.Cut(k, "::")
 				if name == fun.Sel.Name && path.Base(dir) == id.Name {
-					found = true
+					return true
 				}
+			}
+		}
+	}
+	return false
+}
+
+// returnedCalls collects the top-level call in each returned expression: the value the caller
+// actually receives, not every call made on the way to computing it.
+func returnedCalls(b *ast.BlockStmt) []*ast.CallExpr {
+	var out []*ast.CallExpr
+	ast.Inspect(b, func(n ast.Node) bool {
+		ret, ok := n.(*ast.ReturnStmt)
+		if !ok {
+			return true
+		}
+		for _, r := range ret.Results {
+			if call, ok := r.(*ast.CallExpr); ok {
+				out = append(out, call)
 			}
 		}
 		return true
 	})
-	return found
+	return out
 }
 
 // returnsTopoBody reports whether the result list contains a *topo.Body.
