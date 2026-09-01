@@ -3,6 +3,8 @@
 package app
 
 import (
+	stdmath "math"
+
 	"testing"
 
 	"oblikovati.org/api/types"
@@ -78,6 +80,12 @@ func TestFilletEditSeedsVariableState(t *testing.T) {
 func TestSplitToolFacesOnly(t *testing.T) {
 	t.Parallel()
 	s, def, wp := partWithMidPlane(t, 6) // 6×6×2 block, vol 72
+	// Measured BEFORE the split, with the same integrator: "no material removed" is a
+	// statement about this operation, not about the absolute value. Asserting `== 72`
+	// instead made the test a check on the integrator's last bit — and since mass
+	// properties went analytic (M48/C3) a 6×6×2 box integrates to 72.000000000000014,
+	// one ulp off, BEFORE the split runs. The split's own delta is exactly zero (#3495).
+	before := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 
 	split := NewSplitTool()
 	s.StartTool(split)
@@ -96,8 +104,12 @@ func TestSplitToolFacesOnly(t *testing.T) {
 	if n := len(body.Faces()); n != 10 {
 		t.Errorf("after split faces: %d faces, want 10", n)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; got != 72 {
-		t.Errorf("volume after split faces = %g, want exactly 72 (no material removed)", got)
+	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; got != before {
+		t.Errorf("volume after split faces = %.17g, before = %.17g — an imprint removes no material",
+			got, before)
+	}
+	if stdmath.Abs(before-72) > 1e-12 {
+		t.Errorf("block volume %.17g is not the analytic 72 within 1e-12 — the fixture changed", before)
 	}
 }
 
