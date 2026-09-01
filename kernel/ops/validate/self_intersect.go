@@ -7,7 +7,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"

@@ -7,7 +7,7 @@ import (
 	"sort"
 
 	"oblikovati.org/kernel/brep"
-	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"

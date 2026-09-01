@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 )
 
 // The OPC scaffolding 3MF requires: a content-types map and a root relationship pointing
@@ -35,7 +35,7 @@ const (
 
 // modelXML serializes a tessellated mesh into the 3MF <model> XML (one object),
 // declaring the given unit.
-func modelXML(mesh *ops.Mesh, unit string) []byte {
+func modelXML(mesh *tessellate.Mesh, unit string) []byte {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, modelOpenFmt, unit)
 	buf.WriteString("<vertices>")

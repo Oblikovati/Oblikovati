@@ -10,7 +10,7 @@ package heal
 
 import (
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/internal/tol"
 	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"

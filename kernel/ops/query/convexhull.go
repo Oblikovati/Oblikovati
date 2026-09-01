@@ -3,7 +3,7 @@
 package query
 
 import (
-	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/internal/tol"
 	"oblikovati.org/kernel/predicates"
 	"oblikovati.org/kernel/topo"

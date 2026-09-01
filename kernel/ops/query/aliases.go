@@ -11,7 +11,7 @@
 package query
 
 import (
-	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/tessellate"
 )
 

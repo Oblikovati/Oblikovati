@@ -157,32 +157,6 @@ func IsClosedCircularEdge(e *topo.Edge) bool {
 // scale-free, an angle).
 const zoneFullCircleTol = 1e-6
 
-// RayTriangleDist returns the positive distance along the ray to triangle abc, via
-// Möller–Trumbore, or ok=false if there is no forward hit.
-func RayTriangleDist(orig math.Point3, dir math.Vector3, a, b, c math.Point3) (float64, bool) {
-	const eps = 1e-9
-	e1 := a.VectorTo(b)
-	e2 := a.VectorTo(c)
-	pv := dir.Cross(e2)
-	det := e1.Dot(pv)
-	if det > -eps && det < eps {
-		return 0, false
-	}
-	inv := 1 / det
-	tv := a.VectorTo(orig)
-	u := tv.Dot(pv) * inv
-	if u < 0 || u > 1 {
-		return 0, false
-	}
-	qv := tv.Cross(e1)
-	v := dir.Dot(qv) * inv
-	if v < 0 || u+v > 1 {
-		return 0, false
-	}
-	t := e2.Dot(qv) * inv
-	return t, t > eps
-}
-
 // ReversedPoints returns a reversed COPY of pts, leaving the input alone — the shape a
 // caller needs when it must keep the original orientation as well.
 func ReversedPoints(pts []math.Point3) []math.Point3 {
@@ -299,14 +273,6 @@ func CentroidPts(pts []math.Point3) math.Point3 {
 	}
 	n := float64(len(pts))
 	return math.P3(sx/n, sy/n, sz/n)
-}
-
-// SrcIDAt returns ids[i] or 0 when the point has no carried identity.
-func SrcIDAt(ids []uint64, i int) uint64 {
-	if i < len(ids) {
-		return ids[i]
-	}
-	return 0
 }
 
 // FaceCentroid averages a face's outer-loop edge start points — the face's position, valid for any

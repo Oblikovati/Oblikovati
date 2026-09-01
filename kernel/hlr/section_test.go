@@ -36,7 +36,7 @@ func TestSectionBoxCutsHatchesAndClips(t *testing.T) {
 	b := box(2, 2, 2)
 	// Plane through (1,1,1) with normal +X; screen up = +Z, so screen = (worldY, worldZ).
 	view := NewView(math.P3(1, 1, 1), math.V3(1, 0, 0), math.V3(0, 0, 1))
-	segs := ProjectSection(b, view, ops.DefaultQuality())
+	segs := ProjectSection(b, view, ops.DefaultQuality(), SectionOptions{Section: ops.SectionWithPlane})
 
 	edge, cut, hatch := kindCounts(segs)
 	if cut < 4 {
@@ -107,8 +107,8 @@ func TestSectionReverseKeepsOppositeHalf(t *testing.T) {
 	b := lPrism(2)
 	// Plane through (1.5,1,1) normal +X; screen X = +Y, screen Y = +Z (so 2D Y tracks model Z−1).
 	view := NewView(math.P3(1.5, 1, 1), math.V3(1, 0, 0), math.V3(0, 0, 1))
-	fwd := maxCurveY(ProjectSectionOpts(b, view, ops.DefaultQuality(), SectionOptions{}))
-	rev := maxCurveY(ProjectSectionOpts(b, view, ops.DefaultQuality(), SectionOptions{Reverse: true}))
+	fwd := maxCurveY(ProjectSection(b, view, ops.DefaultQuality(), SectionOptions{Section: ops.SectionWithPlane}))
+	rev := maxCurveY(ProjectSection(b, view, ops.DefaultQuality(), SectionOptions{Reverse: true, Section: ops.SectionWithPlane}))
 	// Forward keeps only the short flange (model z≤1 ⇒ 2D Y≤0); reverse keeps the tall web
 	// (model z up to 2 ⇒ 2D Y up to +1). A symmetric box would give fwd==rev.
 	if rev <= fwd+0.5 {
@@ -133,8 +133,8 @@ func TestSectionLimitedDepthClipsFarGeometry(t *testing.T) {
 	b := box(2, 2, 2)
 	view := NewView(math.P3(1, 1, 1), math.V3(1, 0, 0), math.V3(0, 0, 1))
 	q := ops.DefaultQuality()
-	full := ProjectSectionOpts(b, view, q, SectionOptions{})
-	limited := ProjectSectionOpts(b, view, q, SectionOptions{Depth: 0.5})
+	full := ProjectSection(b, view, q, SectionOptions{Section: ops.SectionWithPlane})
+	limited := ProjectSection(b, view, q, SectionOptions{Depth: 0.5, Section: ops.SectionWithPlane})
 
 	edgeFull, cutFull, _ := kindCounts(full)
 	edgeLim, cutLim, hatchLim := kindCounts(limited)
@@ -157,7 +157,7 @@ func TestSectionLimitedDepthClipsFarGeometry(t *testing.T) {
 func TestSectionEdgesAllVisible(t *testing.T) {
 	b := box(2, 3, 4) // distinct dims
 	view := NewView(math.P3(1, 1.5, 2), math.V3(0, 1, 0), math.V3(0, 0, 1))
-	segs := ProjectSection(b, view, ops.DefaultQuality())
+	segs := ProjectSection(b, view, ops.DefaultQuality(), SectionOptions{Section: ops.SectionWithPlane})
 	for _, s := range segs {
 		if s.Kind == KindEdge && !s.Visible {
 			t.Errorf("retained-half edge %v→%v hidden, want visible in a cut-away", s.A, s.B)

@@ -5,7 +5,7 @@ package hlr
 import (
 	stdmath "math"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -27,28 +27,37 @@ import (
 type SectionOptions struct {
 	Reverse bool
 	Depth   float64
+	// Section computes the body ∩ plane wires that become the bold cut outline and the hatch
+	// boundary. It is INJECTED rather than imported (#2196): the dependency direction is
+	// geom → topo → brep → ops, and hidden-line removal is a consumer of geometry for drawing
+	// views, so it must not reach sideways into the operation layer to build one. Pass
+	// ops.SectionWithPlane. A nil Section draws the retained half with no cut outline or hatch.
+	Section SectionCurves
 }
 
-// ProjectSection projects a full-depth forward section cut of body through the plane
-// (view.Origin, view.ViewDir). It returns the retained half's edge segments (KindEdge,
-// visible/hidden), the cut outline (KindCut, always visible) and hatch lines (KindHatch) filling
-// the cut cross-section.
-func ProjectSection(body *topo.Body, view View, q ops.Quality) []Segment {
-	return ProjectSectionOpts(body, view, q, SectionOptions{})
-}
+// SectionCurves intersects a body with the plane (origin, normal) and returns the section curves
+// as wires on a new wire-only body — the shape of ops.SectionWithPlane.
+type SectionCurves func(body *topo.Body, origin math.Point3, normal math.Vector3, q mesh.Quality) (*topo.Body, error)
 
-// ProjectSectionOpts is ProjectSection with reverse-direction and limited-depth options (#1982).
-// The cut plane, its bold outline and hatch are unchanged by the options; only the retained
-// half — the material kept behind the plane — narrows (Depth) or flips (Reverse).
-func ProjectSectionOpts(body *topo.Body, view View, q ops.Quality, o SectionOptions) []Segment {
-	mesh, _ := tessellate.TessellateBody(body, q)
-	bias := max(2*q.ChordTolerance, 0.005*meshDiagonal(mesh)) + 1e-9
+// ProjectSection projects a section cut of body through the plane (view.Origin, view.ViewDir).
+// It returns the retained half's edge segments (KindEdge, visible/hidden), the cut outline
+// (KindCut, always visible) and hatch lines (KindHatch) filling the cut cross-section. Reverse
+// and Depth (#1982) narrow or flip the retained half; the cut plane, its outline and its hatch
+// are unchanged by them.
+//
+// Example:
+//
+//	segs := hlr.ProjectSection(body, view, tessellate.DefaultQuality(),
+//		hlr.SectionOptions{Section: ops.SectionWithPlane})
+func ProjectSection(body *topo.Body, view View, q mesh.Quality, o SectionOptions) []Segment {
+	tess, _ := tessellate.TessellateBody(body, q)
+	bias := max(2*q.ChordTolerance, 0.005*meshDiagonal(tess)) + 1e-9
 	clip := newSectionClip(view, o)
-	keep := clip.clipMesh(mesh) // occlusion tests against the retained half only
+	keep := clip.clipMesh(tess) // occlusion tests against the retained half only
 	segs := sectionEdges(body, view, clip, keep, q, bias)
-	loops, cut := sectionOutline(body, view, q)
+	loops, cut := sectionOutline(body, view, q, o.Section)
 	segs = append(segs, cut...)
-	return append(segs, hatchLoops(loops, meshDiagonal(mesh)/30)...)
+	return append(segs, hatchLoops(loops, meshDiagonal(tess)/30)...)
 }
 
 // sectionClip is the retained-material test for one section: the origin on the cut plane, the
@@ -80,11 +89,11 @@ func (c sectionClip) side(p math.Point3) float64 {
 // clipMesh keeps the triangles whose centroid lies in the retained slab, so the occlusion mesh is
 // the cut-away half — removed material can no longer hide edges. It shares the original positions
 // and only filters the index triples.
-func (c sectionClip) clipMesh(mesh *ops.Mesh) *ops.Mesh {
-	kept := &ops.Mesh{Positions: mesh.Positions}
-	for t := 0; t+2 < len(mesh.Indices); t += 3 {
-		i0, i1, i2 := mesh.Indices[t], mesh.Indices[t+1], mesh.Indices[t+2]
-		s := c.side(centroid3(mesh.Positions[i0], mesh.Positions[i1], mesh.Positions[i2]))
+func (c sectionClip) clipMesh(tess *mesh.Mesh) *mesh.Mesh {
+	kept := &mesh.Mesh{Positions: tess.Positions}
+	for t := 0; t+2 < len(tess.Indices); t += 3 {
+		i0, i1, i2 := tess.Indices[t], tess.Indices[t+1], tess.Indices[t+2]
+		s := c.side(centroid3(tess.Positions[i0], tess.Positions[i1], tess.Positions[i2]))
 		if s >= 0 && (c.depth <= 0 || s <= c.depth) {
 			kept.Indices = append(kept.Indices, i0, i1, i2)
 		}
@@ -94,7 +103,7 @@ func (c sectionClip) clipMesh(mesh *ops.Mesh) *ops.Mesh {
 
 // sectionEdges projects every B-rep edge, clipped to the retained slab, with hidden-line
 // classification against the cut-away mesh.
-func sectionEdges(body *topo.Body, view View, clip sectionClip, keep *ops.Mesh, q ops.Quality, bias float64) []Segment {
+func sectionEdges(body *topo.Body, view View, clip sectionClip, keep *mesh.Mesh, q mesh.Quality, bias float64) []Segment {
 	var out []Segment
 	for _, e := range body.Edges() {
 		poly := tessellate.TessellateEdge(e, q)
@@ -140,8 +149,11 @@ func clipHalfSpace(a, b math.Point3, sa, sb float64) (math.Point3, math.Point3, 
 
 // sectionOutline intersects the body with the cut plane and projects the resulting loops: the
 // bold cut-outline segments (KindCut) and the 2D loops the hatch fills.
-func sectionOutline(body *topo.Body, view View, q ops.Quality) (loops [][]math.Point2, cut []Segment) {
-	sec, err := ops.SectionWithPlane(body, view.Origin, view.ViewDir, q)
+func sectionOutline(body *topo.Body, view View, q mesh.Quality, section SectionCurves) (loops [][]math.Point2, cut []Segment) {
+	if section == nil {
+		return nil, nil
+	}
+	sec, err := section(body, view.Origin, view.ViewDir, q)
 	if err != nil {
 		return nil, nil
 	}

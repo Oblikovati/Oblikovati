@@ -7,7 +7,6 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -36,7 +35,7 @@ func TestDispatchDecodeImportAndExportErrors(t *testing.T) {
 	if raw, err := Decode(types.FormatOBJ, []byte("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n")); err != nil || raw.TriangleCount() != 1 {
 		t.Fatalf("Decode OBJ triangles = %d, %v", raw.TriangleCount(), err)
 	}
-	data := EncodeBinarySTL(body, ops.DefaultQuality())
+	data := EncodeBinarySTL(tessellateOne(body))
 	imported, warns, err := ImportBody(types.FormatSTL, data, "import:stl", DefaultWeldTolerance, exchange.TranslationOptions{})
 	if err != nil {
 		t.Fatalf("ImportBody STL: %v", err)
@@ -44,7 +43,7 @@ func TestDispatchDecodeImportAndExportErrors(t *testing.T) {
 	if !imported.IsSolid() || len(warns) != 0 {
 		t.Fatalf("ImportBody STL solid=%v warnings=%v", imported.IsSolid(), warns)
 	}
-	threeMF, err := Encode3MF(body, ops.DefaultQuality())
+	threeMF, err := Encode3MF(tessellateOne(body), "millimeter")
 	if err != nil {
 		t.Fatalf("Encode3MF: %v", err)
 	}

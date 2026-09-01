@@ -9,13 +9,15 @@ import (
 	"strings"
 	"testing"
 
-	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange/meshio"
+
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
+	"oblikovati.org/test-utilities/opfixture"
 )
 
 // cubeSoup returns a watertight 12-triangle triangle soup of an s-sided axis-aligned cube
@@ -47,7 +49,7 @@ func writeCubeSTL(t *testing.T, dir string, s float64) string {
 	if err != nil {
 		t.Fatalf("build fixture cube: %v", err)
 	}
-	data := meshio.EncodeBinarySTL(body, ops.DefaultQuality())
+	data := opfixture.STLBytes(body)
 	path := filepath.Join(dir, "cube.stl")
 	if err := os.WriteFile(path, data, 0o644); err != nil {
 		t.Fatalf("write fixture: %v", err)
@@ -144,7 +146,7 @@ func writeNamedCubeSTL(t *testing.T, dir, name string, s float64) string {
 		t.Fatalf("build fixture cube: %v", err)
 	}
 	path := filepath.Join(dir, name)
-	if err := os.WriteFile(path, meshio.EncodeBinarySTL(body, ops.DefaultQuality()), 0o644); err != nil {
+	if err := os.WriteFile(path, opfixture.STLBytes(body), 0o644); err != nil {
 		t.Fatalf("write fixture: %v", err)
 	}
 	return path

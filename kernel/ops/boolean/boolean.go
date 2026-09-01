@@ -5,7 +5,7 @@ package boolean
 import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
-	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"

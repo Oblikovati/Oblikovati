@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/kernel/exchange/meshio"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
-	"oblikovati.org/kernel/exchange/meshio"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
+	"oblikovati.org/test-utilities/opfixture"
 )
 
 // cubeSTLFixture writes a watertight cube STL to a temp dir and returns its path.
@@ -23,7 +24,7 @@ func cubeSTLFixture(t *testing.T, s float64) string {
 		t.Fatalf("build cube: %v", err)
 	}
 	path := filepath.Join(t.TempDir(), "cube.stl")
-	if err := os.WriteFile(path, meshio.EncodeBinarySTL(body, ops.DefaultQuality()), 0o644); err != nil {
+	if err := os.WriteFile(path, opfixture.STLBytes(body), 0o644); err != nil {
 		t.Fatalf("write fixture: %v", err)
 	}
 	return path

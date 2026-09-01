@@ -5,7 +5,6 @@ package query
 import (
 	stdmath "math"
 
-	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -36,28 +35,4 @@ func RayCastFaces(b *topo.Body, origin math.Point3, dir math.Vector3, q Quality)
 func rayCastFace(f *topo.Face, origin math.Point3, dir math.Vector3) (float64, bool) {
 	t, _, ok := analyticFaceRayHit(f, origin, dir)
 	return t, ok
-}
-
-// rayCastMesh returns the nearest positive hit distance of a ray against a mesh's
-// triangles.
-// RayCastMesh returns the nearest forward hit distance of the ray (origin, dir) against the
-// mesh's triangles, and whether any was hit. It lets callers ray-test against a mesh they
-// already hold (e.g. the hidden-line engine occlusion-tests projected edge points against a
-// once-tessellated body) without re-tessellating per ray.
-func RayCastMesh(m *Mesh, origin math.Point3, dir math.Vector3) (float64, bool) {
-	return rayCastMesh(m, origin, dir)
-}
-
-func rayCastMesh(m *Mesh, origin math.Point3, dir math.Vector3) (float64, bool) {
-	best := stdmath.Inf(1)
-	hit := false
-	for i := 0; i+2 < len(m.Indices); i += 3 {
-		a := m.Positions[m.Indices[i]]
-		b := m.Positions[m.Indices[i+1]]
-		c := m.Positions[m.Indices[i+2]]
-		if t, ok := probe.RayTriangleDist(origin, dir, a, b, c); ok && t < best {
-			best, hit = t, true
-		}
-	}
-	return best, hit
 }

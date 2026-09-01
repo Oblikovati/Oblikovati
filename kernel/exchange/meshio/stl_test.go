@@ -6,10 +6,12 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/validate"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/brep"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -73,7 +75,7 @@ func TestDecodeASCIISTLTetrahedronIsWatertightSolid(t *testing.T) {
 	if !body.IsSolid() {
 		t.Fatalf("hand-authored tetra did not import as a solid; warnings=%v", warns)
 	}
-	if r := ops.Validate(body); !r.Valid {
+	if r := validate.Validate(body); !r.Valid {
 		t.Fatalf("tetra is not valid: %v", r.Issues)
 	}
 }
@@ -83,7 +85,7 @@ func TestBinarySTLRoundTripCubePreservesSolidAndVolume(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build source: %v", err)
 	}
-	data := EncodeBinarySTL(src, ops.DefaultQuality())
+	data := EncodeBinarySTL(tessellateOne(src))
 	if !isBinarySTL(data) {
 		t.Fatalf("encoded STL is not detected as binary")
 	}
@@ -98,7 +100,7 @@ func TestBinarySTLRoundTripCubePreservesSolidAndVolume(t *testing.T) {
 	if !body.IsSolid() {
 		t.Fatalf("round-tripped cube is not a solid")
 	}
-	got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(body, tessellate.DefaultQuality()).Volume
 	if want := 27.0; stdmath.Abs(got-want) > 1e-4 { // 3³
 		t.Errorf("round-trip volume = %v, want %v", got, want)
 	}

@@ -6,8 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 )
@@ -42,7 +43,7 @@ func SolidOrSurface(raw RawMesh, feat string, weldTol float64) (*topo.Body, []st
 		warns = append(warns, fmt.Sprintf("%d of %d triangles were degenerate after welding and were dropped", dropped, raw.TriangleCount()))
 	}
 	body := orientedBody(cage, feat)
-	r := ops.Validate(body)
+	r := validate.Validate(body)
 	if !r.Manifold {
 		// A non-manifold body is not a warn-and-continue case: it is invalid topology that would
 		// silently corrupt every downstream consumer. Refuse the import, naming the offending count.
@@ -55,7 +56,7 @@ func SolidOrSurface(raw RawMesh, feat string, weldTol float64) (*topo.Body, []st
 
 // nonManifoldEdgeCount counts the non-manifold edges the validation reported — the offending value the
 // decline names.
-func nonManifoldEdgeCount(r ops.ValidationReport) int {
+func nonManifoldEdgeCount(r validate.ValidationReport) int {
 	n := 0
 	for _, issue := range r.Issues {
 		if len(issue) >= 17 && issue[:17] == "non-manifold edge" {
@@ -70,7 +71,7 @@ func nonManifoldEdgeCount(r ops.ValidationReport) int {
 // volume is not used to flip it.
 func orientedBody(cage subd.Mesh, feat string) *topo.Body {
 	body := subd.ToBody(cage, feat)
-	if body.IsSolid() && query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
+	if body.IsSolid() && query.BodyGeometryProperties(body, tessellate.DefaultQuality()).Volume < 0 {
 		return subd.ToBody(reverseFaces(cage), feat)
 	}
 	return body
@@ -95,7 +96,7 @@ func reverseFaces(m subd.Mesh) subd.Mesh {
 // a hard decline in SolidOrSurface (#3384) — so this only covers an inconsistently-oriented solid and
 // an open (non-watertight) surface body, which are legitimate importable outcomes. It takes the
 // already-computed report so the body is validated once.
-func softValidateWarnings(b *topo.Body, r ops.ValidationReport) []string {
+func softValidateWarnings(b *topo.Body, r validate.ValidationReport) []string {
 	var warns []string
 	if b.IsSolid() && !r.OrientationOK {
 		warns = append(warns, "imported solid has inconsistent face orientation")

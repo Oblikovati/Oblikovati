@@ -7,8 +7,7 @@ import (
 
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops/internal/mesh"
-	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -89,9 +88,9 @@ func collapseDeadLoop(l *filletLoop, ring []int, weld float64) (result []int, su
 		}
 		outR = append(outR, ring[k])
 		pts = append(pts, l.pts[k])
-		srcV = append(srcV, probe.SrcIDAt(l.srcV, k))
+		srcV = append(srcV, mesh.SrcIDAt(l.srcV, k))
 		curves = append(curves, curveAt(l.curves, k))
-		srcE = append(srcE, probe.SrcIDAt(l.srcE, k))
+		srcE = append(srcE, mesh.SrcIDAt(l.srcE, k))
 	}
 	if len(outR) < 3 {
 		// Collapsing would degenerate the loop. Keep the original ring so the builder still assembles

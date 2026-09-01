@@ -12,19 +12,19 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// gltfTestMesh builds an ops.Mesh from parallel position/normal/index slices —
+// gltfTestMesh builds an tessellate.Mesh from parallel position/normal/index slices —
 // the direct fixture shape for the sanitizer and document tests.
-func gltfTestMesh(positions []math.Point3, normals []math.Vector3, indices []int) *ops.Mesh {
-	return &ops.Mesh{Positions: positions, Normals: normals, Indices: indices}
+func gltfTestMesh(positions []math.Point3, normals []math.Vector3, indices []int) *tessellate.Mesh {
+	return &tessellate.Mesh{Positions: positions, Normals: normals, Indices: indices}
 }
 
 // gltfBodyMesh wraps a mesh as a BodyMesh record with a stable id/name.
-func gltfBodyMesh(id, name string, m *ops.Mesh) BodyMesh {
+func gltfBodyMesh(id, name string, m *tessellate.Mesh) BodyMesh {
 	return BodyMesh{ID: id, Name: name, Mesh: m}
 }
 

@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"

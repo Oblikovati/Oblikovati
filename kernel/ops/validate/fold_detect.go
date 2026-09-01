@@ -3,7 +3,7 @@
 package validate
 
 import (
-	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/mesh"
 )
 
 // FoldEdgeCount returns the number of interior mesh edges (each shared by exactly two triangles)

@@ -7,9 +7,7 @@ import (
 	"encoding/binary"
 	stdmath "math"
 
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/tessellate"
-	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -25,20 +23,14 @@ func (e *decodeError) Error() string {
 	return e.format + ": " + e.what + " \"" + e.value + "\""
 }
 
-// EncodeBinarySTL tessellates body at quality q and writes a little-endian binary STL.
-// Per-facet normals are the triangle's geometric normal. This is the resolution knob: a
-// finer q yields more triangles for curved bodies.
+// EncodeBinarySTL writes an already-tessellated mesh as a little-endian binary STL.
+// Per-facet normals are the triangle's geometric normal. The resolution knob lives with
+// whoever tessellated: an encoder RECEIVES a mesh, it does not compute one (#2195).
 //
 // Example:
 //
-//	data := meshio.EncodeBinarySTL(body, meshio.QualityFor(types.ResolutionHigh))
-func EncodeBinarySTL(body *topo.Body, q ops.Quality) []byte {
-	mesh, _ := tessellate.TessellateBody(body, q)
-	return encodeBinarySTLMesh(mesh)
-}
-
-// encodeBinarySTLMesh writes an already-tessellated mesh as binary STL.
-func encodeBinarySTLMesh(mesh *ops.Mesh) []byte {
+//	data := meshio.EncodeBinarySTL(m)
+func EncodeBinarySTL(mesh *tessellate.Mesh) []byte {
 	var buf bytes.Buffer
 	buf.Write(make([]byte, 80)) // 80-byte header (zeroed)
 	writeUint32(&buf, uint32(mesh.TriangleCount()))
@@ -50,7 +42,7 @@ func encodeBinarySTLMesh(mesh *ops.Mesh) []byte {
 
 // writeFacet emits one 50-byte STL facet (normal + 3 vertices + attr count) for the
 // triangle starting at index t in mesh.
-func writeFacet(buf *bytes.Buffer, mesh *ops.Mesh, t int) {
+func writeFacet(buf *bytes.Buffer, mesh *tessellate.Mesh, t int) {
 	a := mesh.Positions[mesh.Indices[t]]
 	b := mesh.Positions[mesh.Indices[t+1]]
 	c := mesh.Positions[mesh.Indices[t+2]]

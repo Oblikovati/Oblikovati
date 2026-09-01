@@ -5,7 +5,7 @@ package tessellate
 import (
 	stdmath "math"
 
-	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/math"
 )
 
@@ -139,7 +139,7 @@ func (idx *MeshRayIndex) nearest(ni int32, origin math.Point3, dir math.Vector3,
 func (idx *MeshRayIndex) testLeaf(n *meshRayNode, origin math.Point3, dir math.Vector3, best *float64, hit *int32) {
 	for k := n.first; k < n.first+n.count; k++ {
 		tr := idx.tris[idx.order[k]]
-		if t, ok := probe.RayTriangleDist(origin, dir, idx.pos[tr[0]], idx.pos[tr[1]], idx.pos[tr[2]]); ok && t < *best {
+		if t, ok := mesh.RayTriangleDist(origin, dir, idx.pos[tr[0]], idx.pos[tr[1]], idx.pos[tr[2]]); ok && t < *best {
 			*best, *hit = t, idx.order[k]
 		}
 	}

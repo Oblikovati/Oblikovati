@@ -7,12 +7,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/kernel/exchange/meshio"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange"
-	"oblikovati.org/kernel/exchange/meshio"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
+	"oblikovati.org/test-utilities/opfixture"
 )
 
 // emptySketches is a SketchIndexer with no sketches — an imported body consumes none.
@@ -37,7 +39,7 @@ func writeCubeSTL(t *testing.T, dir string) string {
 		t.Fatalf("build cube: %v", err)
 	}
 	path := filepath.Join(dir, "cube.stl")
-	if err := os.WriteFile(path, meshio.EncodeBinarySTL(body, ops.DefaultQuality()), 0o644); err != nil {
+	if err := os.WriteFile(path, opfixture.STLBytes(body), 0o644); err != nil {
 		t.Fatalf("write fixture: %v", err)
 	}
 	return path

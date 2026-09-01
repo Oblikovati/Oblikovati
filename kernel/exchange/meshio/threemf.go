@@ -9,9 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/tessellate"
-	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -142,21 +140,15 @@ func addTriangleByIndex(m *RawMesh, verts []math.Point3, t threeMFTriangle, obj 
 	return nil
 }
 
-// Encode3MF tessellates body at quality q and writes a minimal valid 3MF: a ZIP holding
-// the OPC content-types/relationships parts and the 3D model XML with one object. The
-// resolution knob applies through q.
+// Encode3MF writes an already-tessellated mesh as a minimal valid 3MF: a ZIP holding the
+// OPC content-types/relationships parts and the 3D model XML with one object, declaring the
+// given 3MF unit spelling (e.g. "millimeter", "inch"). An encoder RECEIVES a mesh, it does
+// not compute one (#2195).
 //
 // Example:
 //
-//	data, err := meshio.Encode3MF(body, meshio.QualityFor(types.ResolutionHigh))
-func Encode3MF(body *topo.Body, q ops.Quality) ([]byte, error) {
-	mesh, _ := tessellate.TessellateBody(body, q)
-	return encode3MFMesh(mesh, "millimeter")
-}
-
-// encode3MFMesh writes an already-tessellated mesh as a 3MF ZIP container declaring
-// the given 3MF unit spelling (e.g. "millimeter", "inch").
-func encode3MFMesh(mesh *ops.Mesh, unit string) ([]byte, error) {
+//	data, err := meshio.Encode3MF(m, "millimeter")
+func Encode3MF(mesh *tessellate.Mesh, unit string) ([]byte, error) {
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	parts := map[string][]byte{
