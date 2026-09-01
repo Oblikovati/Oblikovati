@@ -1,6 +1,14 @@
 # ADR-0056 — Analytic-face reconstruction from the mesh-arrangement boolean
 
-**Status:** Accepted — building on `feat/analytic-boolean-reconstruction`. · **Scopes**
+**Status:** Accepted and **shipped as a last-resort rescue, not as the cutover this ADR
+proposed** (status corrected 2026-09-01, #2203). The Layer-5 switch
+(`reconstructionCutover`, `kernel/ops/boolean/meshbool_recovery.go`) is ON, but scoped to
+curved operands under a face-count limit and self-validated before adoption.
+[ADR-0058](ADR-0058-tolerant-analytic-boolean.md) re-scopes this ADR: the exact mesh
+arrangement is curved-analytic-face recovery and a rescue, never the universal engine — the
+`brep.Boolean` deletion that [ADR-0057](ADR-0057-reconstruction-canonical-boolean.md) proposed
+is reversed on measured performance grounds. See [What this deletes](#what-this-deletes),
+which this ADR shipped without. · **Scopes**
 [Oblikovati#2153](https://github.com/Oblikovati/Oblikovati/issues/2153) (the arrangement emits faceted
 bodies) and closes [Oblikovati#2167](https://github.com/Oblikovati/Oblikovati/issues/2167) (visible
 seam between two cocylindrical extrude walls). · **Builds on**
@@ -8,6 +16,37 @@ seam between two cocylindrical extrude walls). · **Builds on**
 boolean core `kernel/meshbool`) and [ADR-0043](ADR-0043-generalized-provenance-naming.md) (edge/vertex
 provenance). · **Touches:** `kernel/meshbool/*`, `kernel/ops/meshbool_body.go`,
 `kernel/ops/meshbool_soup.go`, a new `kernel/ops/reconstruct_*.go`.
+
+## What this deletes
+
+*Added 2026-09-01 by #2203. The ground rules require an ADR that adds a capability to name what
+it deletes, and the gate that unlocks the deletion. This ADR shipped without either, so "a new
+engine beside the old one as a fallback" is the state it produced.*
+
+**The delete target:** `curvedExactPaths` in `kernel/ops/boolean/boolean.go` — today an ordered
+first-fit list of **26** bespoke analytic recognizers (`curvedCylindricalHoleCut`,
+`curvedSteinmetzJoin`, `curvedBallRodIntersect`, `curvedRuledCrossing*`, …), grouped by
+operation with a *load-bearing try-order*. Every recognizer that reconstruction can subsume
+must be deleted, not left as a faster rung; the list itself must become a classification that
+selects exactly one path. Tracked by
+[#3397](https://github.com/Oblikovati/Oblikovati/issues/3397) (replace the first-fit list with a
+classification) under [#2246](https://github.com/Oblikovati/Oblikovati/issues/2246).
+
+**The current ladder**, which is what a delete must collapse — `curvedExactBoolean` tries, in
+order: the 26 recognizers → `mixedPassThroughBoolean` (ADR-0058's general per-face dispatch) →
+`reconstructedCurvedBoolean` (this ADR's L5) → the faceted fallback. Four tiers for one
+operation.
+
+**The gate that unlocks it:** a recognizer may be deleted when its cases pass through the
+general path — the `kernel/ops/boolean` corpus plus the OCCT parity assertions in
+`model/feature/occtparity`, both tier 2 (`make test-corpus`). Per-face acceptance against the
+oracle, never a whole-body volume match: a body-level volume agreement is a smoke test, and
+this ADR's own guard (the Requicha volume bracket in `reconstructedCurvedBoolean`) is exactly
+that kind of smoke test, sufficient to *adopt* a rescue result but not to *retire* a
+recognizer.
+
+**Not a delete target:** `brep.Boolean`. ADR-0057 proposed deleting it and ADR-0058 reverses
+that; it is promoted to the planar core of the general engine.
 
 ## Context
 

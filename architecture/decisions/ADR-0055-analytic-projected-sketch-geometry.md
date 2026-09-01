@@ -2,7 +2,12 @@
 
 # ADR-0055 — Projected sketch geometry is an analytic reference, never a sampled polyline
 
-**Status:** Proposed (2026-08-27). Refines the projection seam introduced in M07
+**Status:** **Accepted** (2026-08-27; status corrected 2026-09-01, #2202 — it was left at
+"Proposed" while phases 1-3 shipped, and a Proposed ADR must never be a dependency of shipping
+work). Phases 1, 2 and 3 are landed and the wrapper they replaced is deleted (see
+[What this deletes](#what-this-deletes)); **phase 4** (free-form NURBS) is the one open phase,
+tracked by [#3501](https://github.com/Oblikovati/Oblikovati/issues/3501).
+Refines the projection seam introduced in M07
 ([`model/sketch/projection.go`](../../model/sketch/projection.go),
 [`model/compdef/reference_source.go`](../../model/compdef/reference_source.go)); relies on the
 ADR-0043 topological-naming reference keys for the source handle. Drives the fix for the
@@ -188,6 +193,32 @@ lost/frozen source still shows its last analytic shape.
   free-form projection is a reference spline that `OffsetEntity` declines rather than facets.
 - **Phase 4 (free-form).** Project NURBS edges to same-degree sketch splines (control-point
   projection); reserve a sampled fallback only as an explicit non-associative snapshot.
+
+## What this deletes
+
+*Added 2026-09-01 by #2202. An ADR that adds a capability must name what it removes; this one
+did the removal but never stated it, so a reader could not tell the generalization was complete.*
+
+Phase 3E deleted the parallel representation rather than shipping it beside the new one:
+
+- the `ProjectedCurve` wrapper entity, `AnalyticCurveEntity` and `RenderPolyline`;
+- the re-fit-from-points machinery — `projectedShape`, `fitProjectedShape`, `fitCircleThrough`,
+  `allOnCircle`, `collinearPolyline`, `arcSpan`;
+- every projected-curve special case in its consumers: `analyticSegFromProjected` and
+  `circleLoop` in extrude; `offsetProjectedCurve`, `projectedAnalyticSeg` and
+  `circleCenterRadius` in offset; the branches in `arrangement`, `offset_chain`,
+  `entity_shape`, `capability_coverage`, `entity_kind`, the router, the app tools, and the head
+  `projectedCurveOverlay`;
+- the three separate fixed-16 curve samplers, consolidated into `geom.SampleCurve3`.
+
+`ProjectedCurveKind` survives only as the persisted-row tag its codec needs
+(`model/sketch/serialize_restore_entity.go`), not as a live representation. One analytic form —
+the `geom.Curve2` on a concrete reference entity — is consumed by extrude, offset, arrangement
+and serialization, with no second representation to keep in step.
+
+**Still to delete (phase 4, #3501):** `Sketch.addReferencePolyline` as the default path for a
+free-form source. Until then a projected NURBS edge is still stored as sampled points, which is
+the defect this ADR opened against.
 
 ## Consequences
 

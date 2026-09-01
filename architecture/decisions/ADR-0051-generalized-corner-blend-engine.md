@@ -2,7 +2,15 @@
 
 # ADR-0051 — Generalized corner-blend engine (RailLoop currency)
 
-**Status:** accepted (2026-07-14). Supersedes the Phase-2 scoping of
+**Status:** accepted (2026-07-14); the corner engine ships **inside `kernel/ops/blend`, not
+`kernel/blend`**, so it inherits ADR-0050's incomplete strangler migration — read
+[ADR-0050 §Strangler status](ADR-0050-occt-parity-blend-engine.md#strangler-status) for what
+deletes the old system and the corpus gate that unlocks it (#2200, 2026-09-01). The tier
+ladders this ADR's `CornerBlendProvider` seam introduced are themselves being retired:
+[#2258](https://github.com/Oblikovati/Oblikovati/issues/2258) deletes the provider tier system,
+and [#3296](https://github.com/Oblikovati/Oblikovati/issues/3296)-[#3299](https://github.com/Oblikovati/Oblikovati/issues/3299)
+delete the four `trihedralCornerBody` rungs — a first-fit ladder is not a classification.
+Supersedes the Phase-2 scoping of
 `docs/superpowers/specs/2026-07-13-curved-corner-miter-blend-engine-design.md`
 (which shipped Slices 0–1 and the mid-span obstacle, ADR-4/4a). Extends, does not
 replace, ADR-0050 (OCCT-parity blend engine) and the `CornerBlendProvider` seam.

@@ -1,7 +1,12 @@
 # ADR-0052 — Co-refined shared-seam classification for the planar boolean (near-tangent grazing seams)
 
-**Status:** Accepted — Track A in progress on `feat/exact-boolean-core` (Phase 1a exact predicates
-landed 2026-08-24). · **Scopes** the architectural fix for
+**Status:** Accepted and **shipped, then re-scoped** (status corrected 2026-09-01, #2201).
+Track A is merged: the exact core is `kernel/predicates` + `kernel/meshbool` (23 source files),
+and #2084 is fixed with a regression. What changed after this ADR was written is the *role* of
+that core — [ADR-0058](ADR-0058-tolerant-analytic-boolean.md) reverses the plan to make it the
+universal engine, on measured performance grounds, and demotes it to curved-analytic-face
+recovery plus a last-resort rescue. Read [As-built](#as-built) before this document's phase
+plan, which describes a cutover that will not happen. · **Scopes** the architectural fix for
 [Oblikovati#2084](https://github.com/Oblikovati/Oblikovati/issues/2084) (a coil/core join tears when
 the coil mesh is refined) and unblocks
 [Oblikovati#2081](https://github.com/Oblikovati/Oblikovati/issues/2081) (the finer centre-fan
@@ -71,7 +76,7 @@ near-tangent grazing seam, and is far too slow at 24 578 faces. The CSG fallback
 a viable fix for this class. This is a property of the geometry (two smooth surfaces faceted near
 tangency), not of any one boolean engine.
 
-## Decision (proposed)
+## Decision
 
 **The seam is already shared.** `pairImprints` computes `imprint(a, b)` **once** and hands the
 identical `Point3` values to both operands (`interiorSegments(a, segs)`, `interiorSegments(b, segs)`
@@ -116,7 +121,7 @@ every future near-tangent faceted case; **Track B** is the higher-leverage targe
 families where analytic surfaces survive to the boolean. Both are large; pick per appetite (Track B is
 narrower and reuses the existing curved SSI machinery).
 
-### Decision (updated 2026-08-24): build Track A on exact geometric predicates
+### Decision, updated 2026-08-24: build Track A on exact geometric predicates
 
 Track A is the chosen path — it makes the kernel reliable for *all* near-tangent faceted booleans,
 not one family, and lets the `maxFacetWarpRatio` mitigation be retired. Its foundation is a set of
@@ -165,6 +170,45 @@ Phase 1 is a **dedicated multi-session effort**, not a batch drive-by: the hones
 from-scratch boolean core plus a full corpus-gating cycle. Landing a rushed or partial version would
 violate the corpus-safety invariant this ADR itself establishes, so it is deliberately **not**
 attempted inside the current sheet-metal batch.
+
+## As-built
+
+*Added 2026-09-01 by #2201. Verified against the tree.*
+
+| Phase | State | Evidence |
+| --- | --- | --- |
+| 0 — root cause | done | recorded on #2084 |
+| 1a — exact predicates | **shipped** | `kernel/predicates` (`Orient2D`/`Orient3D`, static filter + exact `big.Rat`, FMA-guarded) |
+| 1b/1c/1d — exact primitives, co-refined complex, cell labelling | **shipped** | `kernel/meshbool` (23 source files) |
+| 1e — shadow validation | **done**; **cutover abandoned** | the core validated in the shadow of the existing engine, then wired as a *fallback* in `kernel/ops/boolean`, never as the default — see below |
+| 2 — remove the `swept_refine.go` mitigation | **not done** | `model/feature/swept_refine.go:36` still reads `const maxFacetWarpRatio = 0.03` |
+
+### Why 1e did not become the default
+
+The arrangement's output is a **faceted** triangle soup. Making it the universal engine would
+have handed faceted bodies to the fillet engine, the analytic mass-property integrator and the
+STEP writer, all of which need analytic faces. [ADR-0056](ADR-0056-analytic-face-reconstruction-boolean.md)
+was written to close that by reconstructing analytic faces from the arrangement's provenance,
+and [ADR-0057](ADR-0057-reconstruction-canonical-boolean.md) then proposed deleting
+`brep.Boolean` outright. [ADR-0058](ADR-0058-tolerant-analytic-boolean.md) **supersedes
+ADR-0057 and reverses that**: exact `big.Rat` mesh reconstruction for all planar input measured
+~1.5× slower and did not scale, so `brep.Boolean` is **promoted** to the planar core of the one
+general engine instead of being deleted.
+
+### What this core is today
+
+A **curved-analytic-face recovery path and a last-resort rescue**, not the universal engine.
+The live switch is `reconstructionCutover` in `kernel/ops/boolean/meshbool_recovery.go` — ON,
+scoped to curved operands under a face-count limit, self-validated for validity *and* a Requicha
+volume bracket, falling through to the exact faceted boolean where it declines.
+
+### What deletes the old path
+
+**Nothing — deliberately.** This ADR was written expecting a cutover that would retire the
+planar engine; ADR-0058 keeps it. The remaining debt this ADR still owns is **Phase 2 only**:
+lower or retire `maxFacetWarpRatio` once #2084's repro is watertight at `0.02`, gated on
+`TestCoilJoinFinePitchWatertight` (`model/feature/coil_join_fine_pitch_test.go`) at the finer
+budget.
 
 ## Consequences
 

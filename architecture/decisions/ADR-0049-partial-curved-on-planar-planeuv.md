@@ -113,6 +113,20 @@ differently, leaving sliver free-edges).
   and model-scaled; the crossings, conic parameters and the shared weld point are **EXACT**. This
   ledger is explicit so the class of "looked exact, shipped a sliver" bug cannot recur.
 
+## The taxonomy row this ADR adds
+
+[ADR-0045](ADR-0045-curved-boolean-kind-taxonomy.md) named three curved-boolean KINDs and left
+partial curved-on-planar contact as a known gap that fell to CSG. This ADR closes that gap by
+splitting the curved-on-planar KIND in two. Read this row as an addendum to ADR-0045's table, not
+as an edit of it:
+
+| KIND | Contact | SSI defined? | Handler | Examples |
+| --- | --- | --- | --- | --- |
+| **Curved-on-planar (interior)** — ADR-0045's original `[P]` row, unchanged | one closed conic **strictly inside** a planar face, added as an inner loop | degenerate (no band to subdivide) | build the pierced face + wall + cap and `curvedStitch` | drill through-hole, cylinder boss |
+| **Curved-on-planar (partial)** — **added here** | the imprint conic **CLIPS** the planar face boundary (pierced but not clean) | degenerate | trim the pierced face(s) through a bounded non-periodic `planeUV` `(u,v)` arrangement + assemble the partial wall/cap | edge scallop (partial drill), straddling boss |
+
+The interior row keeps its fast path deliberately: see the third rejected alternative below.
+
 ## Rejected alternatives
 
 - **A parallel planar imprint pipeline** (ADR-0045's implied path if `planeUV` were ever built):
@@ -189,6 +203,9 @@ Vertical slices, each independently shippable and green, gate = **volume-vs-anal
 - **Slice C — DONE (PR#1748):** DRY the shared `planarCapPerpTo`/`circleClipsCap` contact gate and
   pin the keep-interior characterization (a strictly-interior drill/boss declines the partial path and
   stays on its analytic fast-path).
-- **Slice D — DONE (this):** this ADR → Accepted; ADR-0045's taxonomy table gains the partial
-  curved-on-planar case; live capture `head/cmd/scallopshot` renders the edge scallop **crack-free**
-  (the live equivalent of the headless `freeEdgeCount==0` tessellation gate).
+- **Slice D — DONE (this):** this ADR → Accepted; live capture `head/cmd/scallopshot` renders the
+  edge scallop **crack-free** (the live equivalent of the headless `freeEdgeCount==0` tessellation
+  gate). Slice D also **edited ADR-0045's taxonomy table and Consequences in place** to add the
+  partial row. That was wrong — *"An ADR is superseded by a new ADR, never edited in place"* — and
+  #2199 reverted ADR-0045 to its as-decided text. The partial KIND now lives here, in the
+  [taxonomy row](#the-taxonomy-row-this-adr-adds) below, which is where a reader should look for it.

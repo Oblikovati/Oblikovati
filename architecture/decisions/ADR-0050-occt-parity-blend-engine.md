@@ -1,6 +1,12 @@
 # ADR-0050 — OCCT-parity blend engine: one section-driven pipeline for fillet/chamfer, a separate modifier-visitor for draft
 
-**Status:** Accepted (2026-07-07). · **Sets the direction for** fillet/chamfer/draft feature
+**Status:** Accepted (2026-07-07); **migration incomplete — see
+[Strangler status](#strangler-status)** (added 2026-09-01, #2200). The `kernel/blend` engine
+this ADR specifies exists and is correct, but it carries one arm of the fillet, not the
+pipeline: 13 files / ~1,060 LOC against ~47,700 LOC of analytic special cases still in
+`kernel/ops/blend`. Two engines have now been alive for several milestones, which the ground
+rules call a defect, so this ADR now names **what deletes the old one** and **the gate that
+unlocks it**. · **Sets the direction for** fillet/chamfer/draft feature
 parity with OpenCASCADE (OCCT), reported from the Oblikovati Discord `#bug-tracker`:
 [Oblikovati#1797](https://github.com/Oblikovati/Oblikovati/issues/1797) (fillet all-around drops
 tangency → faceted top), [#1798](https://github.com/Oblikovati/Oblikovati/issues/1798)
@@ -16,6 +22,52 @@ engine package), `kernel/ops/modify/` (new draft modifier-visitor), `model/featu
 pull/neutral, chamfer modes), `app` selection (tangent-chain), `head/ui` dialogs. · **Supersedes**
 the plane-only draft retopo (`kernel/ops/retopo.go rebuildWithPlanes` for the draft path) and the
 `planarizedFillet` faceting fallback — retired case-by-case as the marcher covers each.
+
+## Strangler status
+
+*Added 2026-09-01 by #2200. A strangler migration must carry the ticket that deletes the old
+system and the corpus gate that unlocks it; this ADR shipped without either.*
+
+**Where the code is** (measured on the tree, 2026-09-01):
+
+| Package | Src files | Src LOC | Role |
+| --- | --- | --- | --- |
+| `kernel/blend` | 13 | ~1,060 | The engine this ADR specifies: `Spine` → `SectionFunctional` → `Marcher` → `Result`. |
+| `kernel/ops/blend` | 222 | ~47,700 | The analytic special-case catalog this ADR set out to replace, plus the corner engine of [ADR-0051](ADR-0051-generalized-corner-blend-engine.md). |
+
+`kernel/blend` has exactly **two** consumers, both the tangent-stripe arm:
+`kernel/ops/blend/fillet_stripe.go` and `fillet_stripe_junction.go`. Every other blend path —
+`runFilletPipeline`, `solveBlend`, `computeEdgeFillet`, `FilletCylinderRim`,
+`FilletCylinderArc`, `assemblePlanarFilletBody`, `weldCurvedArmOrFloor`, `ops.DraftFaces` —
+still solves its own geometry.
+
+**What deletes the old system:** epic [#2246](https://github.com/Oblikovati/Oblikovati/issues/2246)
+(C2, one implementation per operation), through eleven per-entry-point tickets —
+[#2270](https://github.com/Oblikovati/Oblikovati/issues/2270) `ops.DraftFaces`,
+[#2271](https://github.com/Oblikovati/Oblikovati/issues/2271) `filletEdgesCornerRec`,
+[#2272](https://github.com/Oblikovati/Oblikovati/issues/2272) `runFilletPipeline`,
+[#2273](https://github.com/Oblikovati/Oblikovati/issues/2273) `filletResolvedEdges`,
+[#2274](https://github.com/Oblikovati/Oblikovati/issues/2274) `assemblePlanarFilletBody`,
+[#2275](https://github.com/Oblikovati/Oblikovati/issues/2275) `computeEdgeFillet`,
+[#2276](https://github.com/Oblikovati/Oblikovati/issues/2276) `solveBlend`,
+[#2277](https://github.com/Oblikovati/Oblikovati/issues/2277) `FilletCylinderArc`,
+[#2278](https://github.com/Oblikovati/Oblikovati/issues/2278) `weldCurvedArmOrFloor`,
+[#2279](https://github.com/Oblikovati/Oblikovati/issues/2279) `FilletCylinderRim`,
+[#2280](https://github.com/Oblikovati/Oblikovati/issues/2280) `filletTangentStripe` —
+plus [#2269](https://github.com/Oblikovati/Oblikovati/issues/2269), which merges
+`kernel/blend`'s `ClassifyKnownPart` with `kernel/ops/blend`'s host recognizers so there is one
+classifier rather than two.
+
+**The gate that unlocks each deletion:** the OCCT blend-parity corpus,
+`model/feature/occt_blend_{simple,buildevol,encreg,tolblend,bfuse}_test.go` driven by
+`occt_blend_harness_test.go`, generated from OCCT's own `tests/blend/<grid>/<case>` scripts by
+`test-utilities/occt-blend/gen`. It is tier 2 (`make test-corpus`). An entry point may be
+deleted when its cases pass **through `kernel/blend`** — not when a replacement merely exists
+beside it. Reds are the greening backlog and are never loosened to unlock a deletion.
+
+**Until then**, CLAUDE.md's rule stands and is the operative one: new blend work lands in
+`kernel/blend`, never in a new `kernel/ops/blend/fillet_*.go`. Adding to the catalog widens the
+gap this section exists to close.
 
 ## Context
 
