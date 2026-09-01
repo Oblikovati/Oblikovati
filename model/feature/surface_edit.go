@@ -5,8 +5,9 @@ package feature
 import (
 	"errors"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -57,7 +58,7 @@ func (t *TrimFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	trimmed, err := ops.TrimByPlane(target, t.def.CutOrigin, t.def.CutNormal, t.def.KeepPositive, t.featName)
+	trimmed, err := surface.TrimByPlane(target, t.def.CutOrigin, t.def.CutNormal, t.def.KeepPositive, t.featName)
 	if err != nil {
 		return Output{}, err
 	}
@@ -114,9 +115,9 @@ func (e *ExtendFeature) Recompute(in Input) (Output, error) {
 	}
 	var extended *topo.Body
 	if e.def.TargetPlane != nil {
-		extended, err = ops.ExtendEdgesToPlane(body, e.def.EdgeKeys, *e.def.TargetPlane, e.featName)
+		extended, err = surface.ExtendEdgesToPlane(body, e.def.EdgeKeys, *e.def.TargetPlane, e.featName)
 	} else {
-		extended, err = ops.ExtendEdgesByDistance(body, e.def.EdgeKeys, callOrZero(e.def.Distance), e.featName)
+		extended, err = surface.ExtendEdgesByDistance(body, e.def.EdgeKeys, callOrZero(e.def.Distance), e.featName)
 	}
 	if err != nil {
 		return Output{}, err
@@ -171,7 +172,7 @@ func (o *SurfaceOffsetFeature) Recompute(in Input) (Output, error) {
 	if dist == 0 {
 		return Output{}, errors.New("face offset: distance is zero")
 	}
-	offset, err := ops.OffsetSurface(target, dist, o.featName)
+	offset, err := surface.OffsetSurface(target, dist, o.featName)
 	if err != nil {
 		return Output{}, err
 	}
@@ -214,7 +215,7 @@ func (ts *MidSurfaceThicknesses) Count() int                      { return len(t
 func (ts *MidSurfaceThicknesses) Item(i int) *MidSurfaceThickness { return ts.items[i] }
 
 func (ts *MidSurfaceThicknesses) reset() { ts.items = nil }
-func (ts *MidSurfaceThicknesses) add(p ops.MidPatch) {
+func (ts *MidSurfaceThicknesses) add(p surface.MidPatch) {
 	ts.items = append(ts.items, &MidSurfaceThickness{Value: p.Thickness, Min: p.Min, Max: p.Max})
 }
 
@@ -262,7 +263,7 @@ func (m *MidSurfaceFeature) recomputeByPairs(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	patches, err := ops.MidSurfacesByPairs(target, m.def.Pairs, m.featName)
+	patches, err := surface.MidSurfacesByPairs(target, m.def.Pairs, m.featName)
 	if err != nil {
 		return Output{}, err
 	}
@@ -276,13 +277,13 @@ func (m *MidSurfaceFeature) recomputeAuto(in Input) (Output, error) {
 	}
 	selected := m.selectedBodies(len(in.Bodies))
 	var kept []*topo.Body
-	var patches []ops.MidPatch
+	var patches []surface.MidPatch
 	for i, b := range in.Bodies {
 		if !selected[i] {
 			kept = append(kept, b)
 			continue
 		}
-		got, err := ops.MidSurfaces(b, m.def.MinThickness, m.def.MaxThickness, m.featName)
+		got, err := surface.MidSurfaces(b, m.def.MinThickness, m.def.MaxThickness, m.featName)
 		if err != nil {
 			return Output{}, err
 		}
@@ -307,7 +308,7 @@ func (m *MidSurfaceFeature) selectedBodies(n int) map[int]bool {
 }
 
 // emit appends the patch bodies to the kept bodies and records each pair's thickness range.
-func (m *MidSurfaceFeature) emit(kept []*topo.Body, patches []ops.MidPatch) Output {
+func (m *MidSurfaceFeature) emit(kept []*topo.Body, patches []surface.MidPatch) Output {
 	bodies := append([]*topo.Body(nil), kept...)
 	for _, p := range patches {
 		bodies = append(bodies, p.Body)

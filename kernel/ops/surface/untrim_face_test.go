@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops_test
+package surface_test
 
 import (
 	"testing"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/test-utilities/brepfixture"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 )
 
@@ -16,7 +17,7 @@ func TestUntrimFaceRecoversFullSurface(t *testing.T) {
 	t.Parallel()
 	src := multiSpanPatch(t) // helper in rebuild_faces_test.go
 	body := brepfixture.SurfaceFaceBody(t, src)
-	out, err := ops.UntrimFace(body, body.Faces()[0].ReferenceKey())
+	out, err := surface.UntrimFace(body, body.Faces()[0].ReferenceKey())
 	if err != nil {
 		t.Fatalf("UntrimFace: %v", err)
 	}
@@ -61,10 +62,10 @@ func onSurfaceBoundary(s geom.BSplineSurface, p math.Point3) bool {
 func TestUntrimFaceErrorsOnNonNurbs(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 1, 1, 1) // planar faces
-	if _, err := ops.UntrimFace(box, box.Faces()[0].ReferenceKey()); err == nil {
+	if _, err := surface.UntrimFace(box, box.Faces()[0].ReferenceKey()); err == nil {
 		t.Error("untrimming a planar face should error (not a NURBS surface)")
 	}
-	if _, err := ops.UntrimFace(box, []byte("nope")); err == nil {
+	if _, err := surface.UntrimFace(box, []byte("nope")); err == nil {
 		t.Error("untrimming with an unknown key should error")
 	}
 }

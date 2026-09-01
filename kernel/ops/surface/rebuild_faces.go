@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package surface
 
 import (
 	"fmt"
@@ -34,18 +34,18 @@ func RebuildFaceSurfaces(b *topo.Body, uDeg, vDeg, nu, nv, samples int) (*topo.B
 		}
 		clean, dev, err := geom.RebuildSurface(surf, uDeg, vDeg, nu, nv, samples)
 		if err != nil {
-			return nil, 0, fmt.Errorf("ops.RebuildFaceSurfaces: rebuild face %x: %w", f.ReferenceKey(), err)
+			return nil, 0, fmt.Errorf("surface.RebuildFaceSurfaces: rebuild face %x: %w", f.ReferenceKey(), err)
 		}
 		if dev > maxDev {
 			maxDev = dev
 		}
 		if out, err = transform.ReplaceFaceSurface(out, f.ReferenceKey(), clean); err != nil {
-			return nil, 0, fmt.Errorf("ops.RebuildFaceSurfaces: swap face %x: %w", f.ReferenceKey(), err)
+			return nil, 0, fmt.Errorf("surface.RebuildFaceSurfaces: swap face %x: %w", f.ReferenceKey(), err)
 		}
 		rebuilt++
 	}
 	if rebuilt == 0 {
-		return nil, 0, fmt.Errorf("ops.RebuildFaceSurfaces: body has no rebuildable (finite-domain) face")
+		return nil, 0, fmt.Errorf("surface.RebuildFaceSurfaces: body has no rebuildable (finite-domain) face")
 	}
 	return out, maxDev, nil
 }

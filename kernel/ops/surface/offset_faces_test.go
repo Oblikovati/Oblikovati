@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops_test
+package surface_test
 
 import (
 	stdmath "math"
 	"testing"
+
+	"oblikovati.org/kernel/ops/surface"
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
@@ -13,16 +15,6 @@ import (
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
-
-// meshArea sums the triangle areas of a mesh.
-func meshArea(m *ops.Mesh) float64 {
-	area := 0.0
-	for i := 0; i+2 < len(m.Indices); i += 3 {
-		a, b, c := m.Positions[m.Indices[i]], m.Positions[m.Indices[i+1]], m.Positions[m.Indices[i+2]]
-		area += 0.5 * float64(a.VectorTo(b).Cross(a.VectorTo(c)).Length())
-	}
-	return area
-}
 
 // cylindricalFaceKey returns the reference key of the body's lateral cylindrical face.
 func cylindricalFaceKey(t *testing.T, b *topo.Body) []byte {
@@ -60,14 +52,14 @@ func TestOffsetFaceSurfacesCylinderArea(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			off, err := ops.OffsetFaceSurfaces(body, [][]byte{key}, c.dist, c.reverse)
+			off, err := surface.OffsetFaceSurfaces(body, [][]byte{key}, c.dist, c.reverse)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if len(off.Faces()) != 1 {
 				t.Fatalf("offset body has %d faces, want 1 (just the offset wall)", len(off.Faces()))
 			}
-			got := meshArea(tessellate.TessellateFace(off.Faces()[0], ops.DefaultQuality()))
+			got := tessellate.TessellateFace(off.Faces()[0], ops.DefaultQuality()).Area()
 			want := 2 * stdmath.Pi * c.wantR * h
 			if stdmath.Abs(got-want)/want > 0.02 {
 				t.Errorf("offset (%s) area = %.3f, want %.3f (2π·%g·%g)", c.name, got, want, c.wantR, h)
@@ -75,10 +67,10 @@ func TestOffsetFaceSurfacesCylinderArea(t *testing.T) {
 		})
 	}
 
-	if _, err := ops.OffsetFaceSurfaces(body, nil, 1, false); err == nil {
+	if _, err := surface.OffsetFaceSurfaces(body, nil, 1, false); err == nil {
 		t.Error("offsetting no faces must error")
 	}
-	if _, err := ops.OffsetFaceSurfaces(body, [][]byte{[]byte("nope")}, 1, false); err == nil {
+	if _, err := surface.OffsetFaceSurfaces(body, [][]byte{[]byte("nope")}, 1, false); err == nil {
 		t.Error("offsetting an unknown face key must error")
 	}
 }

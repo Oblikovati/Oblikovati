@@ -14,16 +14,6 @@ import (
 	"oblikovati.org/kernel/topo"
 )
 
-// meshArea sums the triangle areas of a mesh.
-func meshArea(m *Mesh) float64 {
-	var sum float64
-	for i := 0; i+2 < len(m.Indices); i += 3 {
-		a, b, c := m.Positions[m.Indices[i]], m.Positions[m.Indices[i+1]], m.Positions[m.Indices[i+2]]
-		sum += a.VectorTo(b).Cross(a.VectorTo(c)).Length() / 2
-	}
-	return sum
-}
-
 // TestPlanarFaceFollowsCurvedEdge tessellates a half-disk whose curved boundary is an
 // arc edge: the boundary must follow the arc (area → πr²/2), not chord straight across
 // the diameter of the semicircle (which would halve the area). Regression for the
@@ -37,7 +27,7 @@ func TestPlanarFaceFollowsCurvedEdge(t *testing.T) {
 		t.Fatalf("arc boundary not subdivided: %d vertices", mesh.VertexCount())
 	}
 	want := stdmath.Pi * r * r / 2
-	if got := meshArea(mesh); stdmath.Abs(got-want) > 0.01 {
+	if got := mesh.Area(); stdmath.Abs(got-want) > 0.01 {
 		t.Errorf("half-disk mesh area = %g, want ≈ %g", got, want)
 	}
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package surface
 
 import (
 	"fmt"
@@ -22,11 +22,11 @@ import (
 func ExtendFaceSurface(b *topo.Body, edge geom.Boundary, distance float64, order int) (*topo.Body, error) {
 	_, s, ok := probe.FirstNurbsFace(b)
 	if !ok {
-		return nil, fmt.Errorf("ops.ExtendFaceSurface: body has no NURBS surface face")
+		return nil, fmt.Errorf("surface.ExtendFaceSurface: body has no NURBS surface face")
 	}
 	ext, err := geom.ExtendSurface(s, edge, distance, order)
 	if err != nil {
-		return nil, fmt.Errorf("ops.ExtendFaceSurface: %w", err)
+		return nil, fmt.Errorf("surface.ExtendFaceSurface: %w", err)
 	}
 	return retopo.FullDomainBody(ext, "extend"), nil
 }

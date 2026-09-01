@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package surface
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ import (
 // correctly with no edge surgery. The result is a surface (non-solid) body.
 func OffsetFaceSurfaces(b *topo.Body, faceKeys [][]byte, distance float64, reverse bool) (*topo.Body, error) {
 	if len(faceKeys) == 0 {
-		return nil, fmt.Errorf("ops.OffsetFaceSurfaces: no faces selected")
+		return nil, fmt.Errorf("surface.OffsetFaceSurfaces: no faces selected")
 	}
 	// Swap each selected face's surface for its offset while the body is still the original solid
 	// (single shell), then keep only those faces — so transform.ReplaceFaceSurface never sees a split body.
@@ -30,19 +30,19 @@ func OffsetFaceSurfaces(b *topo.Body, faceKeys [][]byte, distance float64, rever
 	for _, key := range faceKeys {
 		f, ok := out.FindFaceByKey(key)
 		if !ok {
-			return nil, fmt.Errorf("ops.OffsetFaceSurfaces: no face with key %x", key)
+			return nil, fmt.Errorf("surface.OffsetFaceSurfaces: no face with key %x", key)
 		}
 		off, err := geom.NewOffsetSurface(f.Geometry(), signedOffset(distance, reverse, f.Reversed()))
 		if err != nil {
-			return nil, fmt.Errorf("ops.OffsetFaceSurfaces: offset face %x: %w", key, err)
+			return nil, fmt.Errorf("surface.OffsetFaceSurfaces: offset face %x: %w", key, err)
 		}
 		if out, err = transform.ReplaceFaceSurface(out, key, off); err != nil {
-			return nil, fmt.Errorf("ops.OffsetFaceSurfaces: offset face %x: %w", key, err)
+			return nil, fmt.Errorf("surface.OffsetFaceSurfaces: offset face %x: %w", key, err)
 		}
 	}
 	kept, err := heal.DropFaces(out, faceKeys, true)
 	if err != nil {
-		return nil, fmt.Errorf("ops.OffsetFaceSurfaces: isolate offset faces: %w", err)
+		return nil, fmt.Errorf("surface.OffsetFaceSurfaces: isolate offset faces: %w", err)
 	}
 	return kept, nil
 }

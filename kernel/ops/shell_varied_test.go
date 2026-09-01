@@ -51,7 +51,7 @@ func TestShellThickensOneWallInward(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
 	over := []ops.ShellFaceThickness{{FaceKey: faceKeyByNormal(t, box, 1, 0, 0), Thickness: 1.5}}
-	got := shellVolume(t, box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellInside, over)
+	got := shellVolume(t, box, [][]byte{brepfixture.TopFaceKey(t, box)}, 0.5, ops.ShellInside, over)
 	// Cavity [0.5,2.5]×[0.5,3.5]×[0.5,4] = 2·3·3.5 = 21 → wall 64 − 21 = 43.
 	// The uniform shell would leave 32.5, so an ignored override is unmissable here.
 	if want := 43.0; stdmath.Abs(got-want) > 1e-6 {
@@ -65,7 +65,7 @@ func TestShellThinsOneWallInward(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
 	over := []ops.ShellFaceThickness{{FaceKey: faceKeyByNormal(t, box, 1, 0, 0), Thickness: 0.25}}
-	got := shellVolume(t, box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellInside, over)
+	got := shellVolume(t, box, [][]byte{brepfixture.TopFaceKey(t, box)}, 0.5, ops.ShellInside, over)
 	// Cavity [0.5,3.75]×[0.5,3.5]×[0.5,4] = 3.25·3·3.5 = 34.125 → wall 64 − 34.125 = 29.875.
 	if want := 29.875; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("thinned-wall shell volume = %g, want %g", got, want)
@@ -78,7 +78,7 @@ func TestShellVariedOutsideGrowsOnlyThatFace(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
 	over := []ops.ShellFaceThickness{{FaceKey: faceKeyByNormal(t, box, 1, 0, 0), Thickness: 1.5}}
-	got := shellVolume(t, box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellOutside, over)
+	got := shellVolume(t, box, [][]byte{brepfixture.TopFaceKey(t, box)}, 0.5, ops.ShellOutside, over)
 	// Outer [-0.5,5.5]×[-0.5,4.5]×[-0.5,4] = 6·5·4.5 = 135, minus the original 64 → 71.
 	if want := 71.0; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("outward varied shell volume = %g, want %g", got, want)
@@ -90,7 +90,7 @@ func TestShellVariedOutsideGrowsOnlyThatFace(t *testing.T) {
 func TestShellVariedRejectsARemovedFace(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
-	top := topFaceKey(t, box)
+	top := brepfixture.TopFaceKey(t, box)
 	_, err := ops.ShellVaried(box, [][]byte{top}, 0.5, ops.ShellInside,
 		[]ops.ShellFaceThickness{{FaceKey: top, Thickness: 1.0}})
 	if err == nil {
@@ -104,11 +104,11 @@ func TestShellVariedRejectsBadThickness(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
 	side := faceKeyByNormal(t, box, 1, 0, 0)
-	if _, err := ops.ShellVaried(box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellInside,
+	if _, err := ops.ShellVaried(box, [][]byte{brepfixture.TopFaceKey(t, box)}, 0.5, ops.ShellInside,
 		[]ops.ShellFaceThickness{{FaceKey: side, Thickness: 0}}); err == nil {
 		t.Error("a zero face thickness should be refused")
 	}
-	if _, err := ops.ShellVaried(box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellInside,
+	if _, err := ops.ShellVaried(box, [][]byte{brepfixture.TopFaceKey(t, box)}, 0.5, ops.ShellInside,
 		[]ops.ShellFaceThickness{{FaceKey: []byte("gone"), Thickness: 1}}); err == nil {
 		t.Error("a lost face key in an override should be refused")
 	}
@@ -119,7 +119,7 @@ func TestShellVariedRejectsBadThickness(t *testing.T) {
 func TestShellVariedWithNoOverridesIsTheUniformShell(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
-	got := shellVolume(t, box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellInside, nil)
+	got := shellVolume(t, box, [][]byte{brepfixture.TopFaceKey(t, box)}, 0.5, ops.ShellInside, nil)
 	if want := 64.0 - 3*3*3.5; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("uniform shell through ShellVaried = %g, want %g", got, want)
 	}

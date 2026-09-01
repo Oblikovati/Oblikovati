@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package surface
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ import (
 func FitSurfaceToPoints(points []math.Point3, degree, nu, nv int) (*topo.Body, error) {
 	surf, err := fit.SurfaceToPoints(points, degree, nu, nv)
 	if err != nil {
-		return nil, fmt.Errorf("ops.FitSurfaceToPoints: %w", err)
+		return nil, fmt.Errorf("surface.FitSurfaceToPoints: %w", err)
 	}
 	return retopo.FullDomainBody(surf, "fit-surface"), nil
 }

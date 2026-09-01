@@ -51,7 +51,7 @@ func TestTwoRimHoledBandMeshesFullBand(t *testing.T) {
 		t.Fatal("twoRimHoledBandMesh declined a full two-rim band with a lens hole")
 	}
 	full := 2 * stdmath.Pi * 3 * 10 // 188.50
-	area := meshArea(m)
+	area := m.Area()
 	if area < full-3 || area > full+0.5 {
 		t.Errorf("band area %.3f; want ≈ %.3f (full band minus a small lens), got a flat/torn patch?", area, full)
 	}

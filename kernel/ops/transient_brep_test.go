@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/test-utilities/brepfixture"
 
 	"oblikovati.org/kernel/ops/heal"
@@ -113,9 +115,9 @@ func TestRuledSurfaceBetweenSquares(t *testing.T) {
 		t.Fatal(err)
 	}
 	w2 := lifted.Wires()[0]
-	surf, err := RuledSurfaceBetweenWires(w1, w2)
+	surf, err := surface.RuledSurfaceBetweenWires(w1, w2)
 	if err != nil {
-		t.Fatalf("RuledSurfaceBetweenWires: %v", err)
+		t.Fatalf("surface.RuledSurfaceBetweenWires: %v", err)
 	}
 	if surf.IsSolid() {
 		t.Error("a ruled surface is a surface body, not a solid")

@@ -6,8 +6,9 @@ import (
 	"errors"
 	"fmt"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -97,7 +98,7 @@ func sheetToolPlane(candidates []*topo.Body, index int, what string) (geom.Plane
 		return geom.Plane{}, fmt.Errorf("split: %s %d is a SOLID, not a sheet; a solid tool is a "+
 			"combine, not a split", what, index)
 	}
-	pl, ok := ops.BodyPlane(sheet)
+	pl, ok := surface.BodyPlane(sheet)
 	if !ok {
 		return geom.Plane{}, fmt.Errorf("split: %s %d is not planar, and a curved cutting surface "+
 			"needs a general surface partitioner rather than a plane; use a planar surface or a "+

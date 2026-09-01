@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/kernel/ops/heal"
 
 	"oblikovati.org/api/types"
@@ -261,7 +263,7 @@ func brepOffsetFaces(s *app.Session, in wire.BrepOffsetFacesArgs) (wire.BrepHand
 	for i, k := range in.FaceKeys {
 		keys[i] = []byte(k)
 	}
-	off, err := ops.OffsetFaceSurfaces(src.Topo(), keys, in.Distance, in.Reverse)
+	off, err := surface.OffsetFaceSurfaces(src.Topo(), keys, in.Distance, in.Reverse)
 	if err != nil {
 		return wire.BrepHandleResult{}, err
 	}
@@ -278,7 +280,7 @@ func brepRuledSurface(s *app.Session, in wire.BrepRuledSurfaceArgs) (wire.BrepHa
 	if err != nil {
 		return wire.BrepHandleResult{}, err
 	}
-	surf, err := ops.RuledSurfaceBetweenWires(w1, w2)
+	surf, err := surface.RuledSurfaceBetweenWires(w1, w2)
 	if err != nil {
 		return wire.BrepHandleResult{}, err
 	}

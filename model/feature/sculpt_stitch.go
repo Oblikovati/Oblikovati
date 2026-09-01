@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"slices"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/kernel/ops/heal"
 
 	"oblikovati.org/kernel/ops"
@@ -145,7 +147,7 @@ func (s *SculptFeature) partition(bodies []*topo.Body) (surfaces, others []*topo
 // directed halfspaces of the (possibly open) bounding surfaces.
 func (s *SculptFeature) buildSolid(surfaces []*topo.Body) (*topo.Body, error) {
 	if len(s.def.Directions) > 0 {
-		return ops.SculptDirected(surfaces, s.def.Directions, s.featName)
+		return surface.SculptDirected(surfaces, s.def.Directions, s.featName)
 	}
 	solid, err := heal.Stitch(surfaces, s.def.Tolerance, false, s.featName)
 	if err != nil {

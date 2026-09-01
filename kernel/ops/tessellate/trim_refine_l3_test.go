@@ -86,8 +86,8 @@ func TestBSplineTrimInteriorRefinementArea(t *testing.T) {
 		t.Errorf("refined mesh has %d triangles, boundary-only %d — no interior Steiner points added",
 			refined.TriangleCount(), boundaryOnly.TriangleCount())
 	}
-	errBoundary := stdmath.Abs(meshArea(boundaryOnly) - ref)
-	errRefined := stdmath.Abs(meshArea(refined) - ref)
+	errBoundary := stdmath.Abs(boundaryOnly.Area() - ref)
+	errRefined := stdmath.Abs(refined.Area() - ref)
 	if errRefined >= errBoundary {
 		t.Errorf("interior refinement did not reduce area error: refined %g vs boundary-only %g (ref %g)",
 			errRefined, errBoundary, ref)
@@ -95,7 +95,7 @@ func TestBSplineTrimInteriorRefinementArea(t *testing.T) {
 	// At chord 0.01 the interior-refined area is within ~1% of truth (it tightens further with the
 	// chord — see TestBSplineTrimAreaConvergesWithQuality); the boundary-only mesh is far worse.
 	if rel := errRefined / ref; rel > 1.5e-2 {
-		t.Errorf("refined area rel error %g exceeds tolerance (area %g, ref %g)", rel, meshArea(refined), ref)
+		t.Errorf("refined area rel error %g exceeds tolerance (area %g, ref %g)", rel, refined.Area(), ref)
 	}
 }
 
@@ -110,7 +110,7 @@ func TestBSplineTrimAreaConvergesWithQuality(t *testing.T) {
 	for _, chord := range []float64{0.05, 0.01, 0.002} {
 		q := Quality{ChordTolerance: chord, AngleTolerance: 5 * stdmath.Pi / 180}
 		m := MetricPatchMesh(s, q, p3, nil, uv, nil)
-		relErr := stdmath.Abs(meshArea(m)-ref) / ref
+		relErr := stdmath.Abs(m.Area()-ref) / ref
 		if relErr > prev+1e-9 {
 			t.Errorf("chord %g: rel area error %g grew vs previous %g (non-monotone)", chord, relErr, prev)
 		}

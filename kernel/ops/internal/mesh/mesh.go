@@ -226,3 +226,17 @@ func (w *PointWelder) WeldRingID(pts []math.Point3, ids []uint64) []int {
 	}
 	return out
 }
+
+// Area is the summed area of the mesh's triangles. It is a measurement OF THE MESH, not of the
+// B-rep it came from: an approximation whose error falls with the chord tolerance. A test that
+// wants the true area of a face must ask the analytic integrator (kernel/ops/query), not this.
+//
+// Example: if a := m.Area(); math.Abs(a-want)/want > 0.01 { /* the tessellation lost a facet */ }
+func (m *Mesh) Area() float64 {
+	area := 0.0
+	for i := 0; i+2 < len(m.Indices); i += 3 {
+		a, b, c := m.Positions[m.Indices[i]], m.Positions[m.Indices[i+1]], m.Positions[m.Indices[i+2]]
+		area += 0.5 * float64(a.VectorTo(b).Cross(a.VectorTo(c)).Length())
+	}
+	return area
+}

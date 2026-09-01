@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package surface
 
 import (
 	"fmt"
@@ -25,15 +25,15 @@ const ruledSamples = 64
 
 // RuledSurfaceBetweenWires builds the ruled surface body between two wires.
 //
-// Example: surf, err := ops.RuledSurfaceBetweenWires(w1, w2)
+// Example: surf, err := surface.RuledSurfaceBetweenWires(w1, w2)
 func RuledSurfaceBetweenWires(w1, w2 *topo.Wire) (*topo.Body, error) {
 	r1, r2 := wireRailPoints(w1, ruledSamples), wireRailPoints(w2, ruledSamples)
 	if len(r1) < 2 || len(r2) < 2 {
-		return nil, fmt.Errorf("ops.RuledSurfaceBetweenWires: wires sample to %d and %d points; need 2+ each",
+		return nil, fmt.Errorf("surface.RuledSurfaceBetweenWires: wires sample to %d and %d points; need 2+ each",
 			len(r1), len(r2))
 	}
 	if w1.IsClosed() != w2.IsClosed() {
-		return nil, fmt.Errorf("ops.RuledSurfaceBetweenWires: one wire closed, the other open")
+		return nil, fmt.Errorf("surface.RuledSurfaceBetweenWires: one wire closed, the other open")
 	}
 	r2 = alignRail(r1, r2, w2.IsClosed())
 	if len(r2) != len(r1) {

@@ -7,6 +7,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/test-utilities/opfixture"
 
 	"oblikovati.org/kernel/ops/heal"
@@ -175,9 +177,9 @@ func wireLength(w *topo.Wire) float64 {
 func TestOffsetSquareInwardTrims(t *testing.T) {
 	t.Parallel()
 	_, w := squareWireBody(1)
-	out, err := OffsetPlanarWire(w, math.V3(0, 0, 1), 0.1, WireCornerLinear)
+	out, err := surface.OffsetPlanarWire(w, math.V3(0, 0, 1), 0.1, surface.WireCornerLinear)
 	if err != nil {
-		t.Fatalf("OffsetPlanarWire: %v", err)
+		t.Fatalf("surface.OffsetPlanarWire: %v", err)
 	}
 	ow := out.Wires()[0]
 	if len(ow.Edges()) != 4 {
@@ -193,9 +195,9 @@ func TestOffsetSquareInwardTrims(t *testing.T) {
 func TestOffsetSquareOutwardCircular(t *testing.T) {
 	t.Parallel()
 	_, w := squareWireBody(1)
-	out, err := OffsetPlanarWire(w, math.V3(0, 0, 1), -0.25, WireCornerCircular)
+	out, err := surface.OffsetPlanarWire(w, math.V3(0, 0, 1), -0.25, surface.WireCornerCircular)
 	if err != nil {
-		t.Fatalf("OffsetPlanarWire: %v", err)
+		t.Fatalf("surface.OffsetPlanarWire: %v", err)
 	}
 	ow := out.Wires()[0]
 	if len(ow.Edges()) != 8 {
@@ -213,9 +215,9 @@ func TestOffsetSquareOutwardCircular(t *testing.T) {
 func TestOffsetSquareOutwardLinear(t *testing.T) {
 	t.Parallel()
 	_, w := squareWireBody(1)
-	out, err := OffsetPlanarWire(w, math.V3(0, 0, 1), -0.25, WireCornerLinear)
+	out, err := surface.OffsetPlanarWire(w, math.V3(0, 0, 1), -0.25, surface.WireCornerLinear)
 	if err != nil {
-		t.Fatalf("OffsetPlanarWire: %v", err)
+		t.Fatalf("surface.OffsetPlanarWire: %v", err)
 	}
 	want := 4 * 1.5
 	if l := wireLength(out.Wires()[0]); stdmath.Abs(l-want) > 1e-9 {
@@ -237,16 +239,16 @@ func circleWireBody(r float64) *topo.Wire {
 func TestOffsetCircleRadiusShift(t *testing.T) {
 	t.Parallel()
 	w := circleWireBody(2)
-	out, err := OffsetPlanarWire(w, math.V3(0, 0, 1), 0.5, WireCornerCircular)
+	out, err := surface.OffsetPlanarWire(w, math.V3(0, 0, 1), 0.5, surface.WireCornerCircular)
 	if err != nil {
-		t.Fatalf("OffsetPlanarWire: %v", err)
+		t.Fatalf("surface.OffsetPlanarWire: %v", err)
 	}
 	want := 2 * stdmath.Pi * 1.5
 	// chord sampling reads the circle ~2.4e-4 short at 64 segments.
 	if l := wireLength(out.Wires()[0]); stdmath.Abs(l-want) > 1e-2 {
 		t.Errorf("offset circle length = %g, want %g", l, want)
 	}
-	if _, err := OffsetPlanarWire(w, math.V3(0, 0, 1), 2.5, WireCornerCircular); err == nil {
+	if _, err := surface.OffsetPlanarWire(w, math.V3(0, 0, 1), 2.5, surface.WireCornerCircular); err == nil {
 		t.Error("an offset past the radius must error (arc collapse)")
 	}
 }
@@ -256,7 +258,7 @@ func TestOffsetCircleRadiusShift(t *testing.T) {
 func TestOffsetRejectsOutOfPlane(t *testing.T) {
 	t.Parallel()
 	_, w := squareWireBody(1)
-	if _, err := OffsetPlanarWire(w, math.V3(1, 0, 0), 0.1, WireCornerLinear); err == nil {
+	if _, err := surface.OffsetPlanarWire(w, math.V3(1, 0, 0), 0.1, surface.WireCornerLinear); err == nil {
 		t.Error("offsetting an XY wire in a YZ plane must error")
 	}
 }

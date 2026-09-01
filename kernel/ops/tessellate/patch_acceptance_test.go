@@ -50,7 +50,7 @@ func TestBoundaryPatchSelfTouchRecoveredByCDT(t *testing.T) {
 	poly := []math.Point2{math.P2(0, 0), math.P2(4, 0), math.P2(4, 4), math.P2(2, 0), math.P2(0, 4)}
 	m := planarBoundaryPatch(t, poly)
 	const want = 8.0 // |shoelace| of the self-touching pentagon
-	if got := meshArea(m); stdmath.Abs(got-want) > 1e-9*want {
+	if got := m.Area(); stdmath.Abs(got-want) > 1e-9*want {
 		t.Errorf("self-touching patch area = %.6f, want %.6f (ear-clip overlap not recovered)", got, want)
 	}
 	if free := WeldedFreeEdgeCount(m); free > len(poly)+2 {
@@ -83,7 +83,7 @@ func TestBoundaryPatchCleanTrimUnflagged(t *testing.T) {
 	poly := []math.Point2{math.P2(0, 0), math.P2(6, 0), math.P2(6, 2), math.P2(2, 2), math.P2(2, 4), math.P2(0, 4)}
 	m := planarBoundaryPatch(t, poly)
 	const want = 16.0 // L-shape: 6×2 + 2×2
-	if got := meshArea(m); stdmath.Abs(got-want) > 1e-9*want {
+	if got := m.Area(); stdmath.Abs(got-want) > 1e-9*want {
 		t.Errorf("clean trim area = %.6f, want %.6f", got, want)
 	}
 	if n := patchCoverageDefects(m); n != 0 {

@@ -5,8 +5,9 @@ package feature
 import (
 	"errors"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
 )
 
 // Surface extend and untrim features (M36-F11). Extend lengthens the running surface body's NURBS
@@ -40,7 +41,7 @@ func (e *ExtendSurfaceFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	out, err := ops.ExtendFaceSurface(target, e.def.Edge, e.def.Distance, e.def.Order)
+	out, err := surface.ExtendFaceSurface(target, e.def.Edge, e.def.Distance, e.def.Order)
 	if err != nil {
 		return Output{}, err
 	}
@@ -78,7 +79,7 @@ func (u *UntrimFeature) Recompute(in Input) (Output, error) {
 	}
 	for _, f := range target.Faces() {
 		if _, ok := f.Geometry().(geom.BSplineSurface); ok {
-			out, err := ops.UntrimFace(target, f.ReferenceKey())
+			out, err := surface.UntrimFace(target, f.ReferenceKey())
 			if err != nil {
 				return Output{}, err
 			}

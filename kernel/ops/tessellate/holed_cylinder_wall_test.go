@@ -76,7 +76,7 @@ func TestHoledCylinderWallAreaMatchesAnalytic(t *testing.T) {
 	if mesh == nil || len(mesh.Indices) == 0 {
 		t.Fatal("holed cylinder wall produced no mesh")
 	}
-	got := meshArea(mesh)
+	got := mesh.Area()
 	want := 2*stdmath.Pi*wallR*wallH - wallR*(uHi-uLo)*(vHi-vLo)
 	// 3% tolerance: the drilled wall is triangulated boundary-only (interior Steiner points make the
 	// hole's constrained-Delaunay recovery leak — like trimmedPatchMesh's documented pole/seam case), so

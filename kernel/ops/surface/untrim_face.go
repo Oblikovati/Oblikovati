@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package surface
 
 import (
 	"fmt"
@@ -20,11 +20,11 @@ import (
 func UntrimFace(b *topo.Body, faceKey []byte) (*topo.Body, error) {
 	f, ok := b.FindFaceByKey(faceKey)
 	if !ok {
-		return nil, fmt.Errorf("ops.UntrimFace: no face with key %x", faceKey)
+		return nil, fmt.Errorf("surface.UntrimFace: no face with key %x", faceKey)
 	}
 	surf, ok := f.Geometry().(geom.BSplineSurface)
 	if !ok {
-		return nil, fmt.Errorf("ops.UntrimFace: face is not a NURBS surface (%T)", f.Geometry())
+		return nil, fmt.Errorf("surface.UntrimFace: face is not a NURBS surface (%T)", f.Geometry())
 	}
 	return retopo.FullDomainBody(surf, "untrim"), nil
 }

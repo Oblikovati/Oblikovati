@@ -2,12 +2,12 @@
 
 package feature
 
-import "oblikovati.org/kernel/ops"
+import "oblikovati.org/kernel/ops/surface"
 
 // The Fair feature (M36-F04) smooths curvature wrinkles out of the running surface body's NURBS face
 // while holding its boundary continuity (G0/G1/G2) to neighbours — the Class-A "take the wrinkles
 // out" move. It replaces the running surface. The fairing math is kernel/geom.FairSurface via
-// ops.FairFaceSurface; F13 is the boundary-continuity gate.
+// surface.FairFaceSurface; F13 is the boundary-continuity gate.
 
 // FairDefinition is the recipe for a fairing: the boundary continuity to hold (0=G0,1=G1,2=G2), the
 // per-iteration relaxation strength (0<s≤1), and the iteration count.
@@ -35,7 +35,7 @@ func (f *FairFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	out, err := ops.FairFaceSurface(target, f.def.HoldOrder, f.def.Strength, f.def.Iterations)
+	out, err := surface.FairFaceSurface(target, f.def.HoldOrder, f.def.Strength, f.def.Iterations)
 	if err != nil {
 		return Output{}, err
 	}

@@ -11,20 +11,7 @@ import (
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
-	"oblikovati.org/kernel/topo"
 )
-
-// topFaceKey returns the reference key of the +Z (top) face.
-func topFaceKey(t *testing.T, b *topo.Body) []byte {
-	t.Helper()
-	for _, f := range b.Faces() {
-		if f.Geometry().NormalAt(0, 0).Z > 0.99 {
-			return f.ReferenceKey()
-		}
-	}
-	t.Fatal("no +Z face found")
-	return nil
-}
 
 // TestShellOpenTopBox shells a 4×4×4 box with the top removed to wall thickness 0.5: a
 // 5-wall open cup. Outer 64 minus the open cavity [0.5,3.5]×[0.5,3.5]×[0.5,4] (3·3·3.5 =
@@ -32,7 +19,7 @@ func topFaceKey(t *testing.T, b *topo.Body) []byte {
 func TestShellOpenTopBox(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
-	res, err := ops.Shell(box, [][]byte{topFaceKey(t, box)}, 0.5)
+	res, err := ops.Shell(box, [][]byte{brepfixture.TopFaceKey(t, box)}, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +38,7 @@ func TestShellOpenTopBox(t *testing.T) {
 func TestShellOutsideBox(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
-	res, err := ops.ShellDirected(box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellOutside)
+	res, err := ops.ShellDirected(box, [][]byte{brepfixture.TopFaceKey(t, box)}, 0.5, ops.ShellOutside)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +56,7 @@ func TestShellOutsideBox(t *testing.T) {
 func TestShellBothBox(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
-	res, err := ops.ShellDirected(box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellBoth)
+	res, err := ops.ShellDirected(box, [][]byte{brepfixture.TopFaceKey(t, box)}, 0.5, ops.ShellBoth)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +73,7 @@ func TestShellBothBox(t *testing.T) {
 func TestShellDirectedUnknownDirection(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
-	if _, err := ops.ShellDirected(box, [][]byte{topFaceKey(t, box)}, 0.2, ops.ShellDirection(9)); err == nil {
+	if _, err := ops.ShellDirected(box, [][]byte{brepfixture.TopFaceKey(t, box)}, 0.2, ops.ShellDirection(9)); err == nil {
 		t.Error("unknown shell direction should error")
 	}
 }
@@ -105,7 +92,7 @@ func TestShellLostFaceErrors(t *testing.T) {
 func TestShellThicknessMustBePositive(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
-	if _, err := ops.Shell(box, [][]byte{topFaceKey(t, box)}, 0); err == nil {
+	if _, err := ops.Shell(box, [][]byte{brepfixture.TopFaceKey(t, box)}, 0); err == nil {
 		t.Error("zero thickness should error")
 	}
 }

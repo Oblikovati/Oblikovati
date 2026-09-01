@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package surface
 
 import (
 	"fmt"
@@ -22,15 +22,15 @@ import (
 func MatchFaceTo(src, target *topo.Body, srcEdge, tgtEdge geom.Boundary, order int) (*topo.Body, error) {
 	sf, ss, ok := probe.FirstNurbsFace(src)
 	if !ok {
-		return nil, fmt.Errorf("ops.MatchFaceTo: source body has no NURBS surface face")
+		return nil, fmt.Errorf("surface.MatchFaceTo: source body has no NURBS surface face")
 	}
 	_, ts, ok := probe.FirstNurbsFace(target)
 	if !ok {
-		return nil, fmt.Errorf("ops.MatchFaceTo: target body has no NURBS surface face")
+		return nil, fmt.Errorf("surface.MatchFaceTo: target body has no NURBS surface face")
 	}
 	matched, err := geom.MatchSurface(ss, ts, srcEdge, tgtEdge, order)
 	if err != nil {
-		return nil, fmt.Errorf("ops.MatchFaceTo: %w", err)
+		return nil, fmt.Errorf("surface.MatchFaceTo: %w", err)
 	}
 	return transform.ReplaceFaceSurface(src, sf.ReferenceKey(), matched)
 }

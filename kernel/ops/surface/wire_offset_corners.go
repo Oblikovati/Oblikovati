@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package surface
 
 import (
 	"fmt"
@@ -40,7 +40,7 @@ func joinOffsetCorners(src, offs []wireSeg, d, tol float64, corner WireOffsetCor
 		out = append(out, inserted[i]...)
 	}
 	if len(out) == 0 {
-		return nil, fmt.Errorf("ops.OffsetPlanarWire: offset %g consumed the whole wire", d)
+		return nil, fmt.Errorf("surface.OffsetPlanarWire: offset %g consumed the whole wire", d)
 	}
 	return out, nil
 }

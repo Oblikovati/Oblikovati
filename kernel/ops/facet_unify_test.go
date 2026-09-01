@@ -34,7 +34,7 @@ const (
 func shelledTray(t *testing.T) *topo.Body {
 	t.Helper()
 	box := brepfixture.Box(math.P3(0, 0, 0), trayW, trayD, trayH)
-	tray, err := ops.Shell(box, [][]byte{topFaceKey(t, box)}, trayWall)
+	tray, err := ops.Shell(box, [][]byte{brepfixture.TopFaceKey(t, box)}, trayWall)
 	if err != nil {
 		t.Fatalf("shell: %v", err)
 	}

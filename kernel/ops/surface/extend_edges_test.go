@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops_test
+package surface_test
 
 import (
 	stdmath "math"
 	"testing"
+
+	"oblikovati.org/kernel/ops/surface"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
@@ -42,7 +44,7 @@ func keyedPatch(t *testing.T, w, h float64) (*topo.Body, [][]byte) {
 func TestExtendEdgesByDistanceGrows(t *testing.T) {
 	t.Parallel()
 	patch, keys := keyedPatch(t, 2, 3)
-	out, err := ops.ExtendEdgesByDistance(patch, [][]byte{keys[1]}, 1, "ext")
+	out, err := surface.ExtendEdgesByDistance(patch, [][]byte{keys[1]}, 1, "ext")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +58,7 @@ func TestExtendEdgesByDistanceGrows(t *testing.T) {
 func TestExtendEdgesMultiGrows(t *testing.T) {
 	t.Parallel()
 	patch, keys := keyedPatch(t, 2, 3)
-	out, err := ops.ExtendEdgesByDistance(patch, [][]byte{keys[1], keys[3]}, 1, "ext")
+	out, err := surface.ExtendEdgesByDistance(patch, [][]byte{keys[1], keys[3]}, 1, "ext")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +73,7 @@ func TestExtendEdgesToPlane(t *testing.T) {
 	t.Parallel()
 	patch, keys := keyedPatch(t, 2, 3)
 	target, _ := geom.NewPlane(math.P3(5, 0, 0), math.V3(1, 0, 0))
-	out, err := ops.ExtendEdgesToPlane(patch, [][]byte{keys[1]}, target, "ext")
+	out, err := surface.ExtendEdgesToPlane(patch, [][]byte{keys[1]}, target, "ext")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,10 +86,10 @@ func TestExtendEdgesToPlane(t *testing.T) {
 func TestExtendEdgesLostKeyErrors(t *testing.T) {
 	t.Parallel()
 	patch, _ := keyedPatch(t, 2, 3)
-	if _, err := ops.ExtendEdgesByDistance(patch, [][]byte{[]byte("ghost")}, 1, "ext"); err == nil {
+	if _, err := surface.ExtendEdgesByDistance(patch, [][]byte{[]byte("ghost")}, 1, "ext"); err == nil {
 		t.Error("extend with a lost edge key should error")
 	}
-	if _, err := ops.ExtendEdgesByDistance(patch, nil, 1, "ext"); err == nil {
+	if _, err := surface.ExtendEdgesByDistance(patch, nil, 1, "ext"); err == nil {
 		t.Error("extend with no edges should error")
 	}
 }

@@ -58,7 +58,7 @@ func TestTrimmedCurvedFaceArea(t *testing.T) {
 	f := quarterCylinderFace(t, r, h)
 	mesh := tessellate.TessellateFace(f, Quality{ChordTolerance: 1e-3})
 	want := r * (stdmath.Pi / 2) * h // ≈ 9.4248
-	if got := meshArea(mesh); stdmath.Abs(got-want) > 0.02 {
+	if got := mesh.Area(); stdmath.Abs(got-want) > 0.02 {
 		t.Errorf("quarter-cylinder mesh area = %g, want ≈ %g", got, want)
 	}
 	if mesh.VertexCount() <= 4 {
@@ -100,7 +100,7 @@ func TestFullPeriodicCylinderFaceArea(t *testing.T) {
 	const r, h = 2.0, 5.0
 	mesh := tessellate.TessellateFace(fullCylinderFace(t, r, h), DefaultQuality())
 	want := 2 * stdmath.Pi * r * h // ≈ 62.83
-	if got := meshArea(mesh); got > want+1e-9 || (want-got)/want > 0.03 {
+	if got := mesh.Area(); got > want+1e-9 || (want-got)/want > 0.03 {
 		t.Errorf("full cylinder side area = %g, want a hair under %g (2π·r·h, inscribed)", got, want)
 	}
 }
@@ -144,7 +144,7 @@ func TestConeFrustumFaceArea(t *testing.T) {
 	r1, r2 := v1*stdmath.Tan(ha), v2*stdmath.Tan(ha)
 	slant := (v2 - v1) / stdmath.Cos(ha)
 	want := stdmath.Pi * (r1 + r2) * slant // ≈ 53.3
-	if got := meshArea(mesh); got > want+1e-9 || (want-got)/want > 0.03 {
+	if got := mesh.Area(); got > want+1e-9 || (want-got)/want > 0.03 {
 		t.Errorf("cone frustum area = %g, want a hair under %g (π(r1+r2)·slant, inscribed)", got, want)
 	}
 }
@@ -178,7 +178,7 @@ func TestConeApexFaceArea(t *testing.T) {
 	mesh := tessellate.TessellateFace(coneApexFace(t, ha, vRim), DefaultQuality())
 	r := vRim * stdmath.Tan(ha)
 	want := stdmath.Pi * r * r / stdmath.Sin(ha) // π·r²/sin(halfAngle) ≈ 17.77
-	if got := meshArea(mesh); got > want+1e-9 || (want-got)/want > 0.03 {
+	if got := mesh.Area(); got > want+1e-9 || (want-got)/want > 0.03 {
 		t.Errorf("cone apex area = %g, want a hair under %g (π·r²/sin, inscribed)", got, want)
 	}
 }

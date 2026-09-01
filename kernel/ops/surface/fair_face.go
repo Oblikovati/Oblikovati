@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package surface
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ import (
 func FairFaceSurface(b *topo.Body, holdOrder int, strength float64, iterations int) (*topo.Body, error) {
 	_, s, ok := probe.FirstNurbsFace(b)
 	if !ok {
-		return nil, fmt.Errorf("ops.FairFaceSurface: body has no NURBS surface face")
+		return nil, fmt.Errorf("surface.FairFaceSurface: body has no NURBS surface face")
 	}
 	faired := geom.FairSurface(s, holdOrder, strength, iterations)
 	return retopo.FullDomainBody(faired, "fair"), nil

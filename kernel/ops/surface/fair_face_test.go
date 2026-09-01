@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops_test
+package surface_test
 
 import (
 	"testing"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/test-utilities/brepfixture"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 )
 
@@ -18,7 +19,7 @@ import (
 func TestFairFaceSurfaceFairsBody(t *testing.T) {
 	t.Parallel()
 	body := brepfixture.SurfaceFaceBody(t, multiSpanPatch(t))
-	out, err := ops.FairFaceSurface(body, 1, 0.5, 10)
+	out, err := surface.FairFaceSurface(body, 1, 0.5, 10)
 	if err != nil {
 		t.Fatalf("FairFaceSurface: %v", err)
 	}
@@ -34,7 +35,7 @@ func TestFairFaceSurfaceFairsBody(t *testing.T) {
 func TestFairFaceSurfaceRejectsNonNurbs(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 1, 1, 1)
-	if _, err := ops.FairFaceSurface(box, 1, 0.5, 10); err == nil {
+	if _, err := surface.FairFaceSurface(box, 1, 0.5, 10); err == nil {
 		t.Error("fairing a body with no NURBS face should error")
 	}
 }

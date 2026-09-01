@@ -44,7 +44,7 @@ func TestHoledWallMeshesLensStraddlingTheSeam(t *testing.T) {
 			if !ok {
 				t.Fatal("holedConicWallMesh declined a drilled wall; the flat CDT fallback covers half the wrap (#2038)")
 			}
-			if area := meshArea(m); area < full-3 || area > full+0.5 {
+			if area := m.Area(); area < full-3 || area > full+0.5 {
 				t.Errorf("wall area %.3f, want ≈%.3f (full wrap minus a small lens) — half-covered wrap?", area, full)
 			}
 		})
@@ -202,14 +202,4 @@ func lensLoop(s geom.Surface, theta0, v0, rTheta, rV float64, n int) []math.Poin
 		out = append(out, s.PointAt(theta0+rTheta*stdmath.Cos(a), v0+rV*stdmath.Sin(a)))
 	}
 	return out
-}
-
-// meshArea sums the triangle areas of a mesh.
-func meshArea(m *tessellate.Mesh) float64 {
-	var sum float64
-	for i := 0; i+2 < len(m.Indices); i += 3 {
-		a, b, c := m.Positions[m.Indices[i]], m.Positions[m.Indices[i+1]], m.Positions[m.Indices[i+2]]
-		sum += a.VectorTo(b).Cross(a.VectorTo(c)).Length() / 2
-	}
-	return sum
 }

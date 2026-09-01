@@ -3,6 +3,7 @@
 package ops_test
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -32,8 +33,11 @@ import (
 // (geom.ResolutionForBox/ForSize(...).Weld()/.Plane()) or justify it with the right annotation.
 func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 	t.Parallel()
-	// In-scope hot-path files (relative to this package dir, kernel/ops). Kept explicit rather than
-	// globbed so widening the guard's reach is a deliberate, reviewable act.
+	// In-scope hot-path files, named by their path under kernel/. Kept explicit rather than
+	// globbed so widening the guard's reach is a deliberate, reviewable act. The paths are
+	// RESOLVED BY BASENAME under kernel/ (resolveScope), because splitting a package moves a
+	// file without changing what it does: a stale path here must report as a moved file, not
+	// as a tolerance regression.
 	scope := []string{
 		// geom: the analytic + numeric surface-intersection classifiers and the SSI tracer.
 		"../geom/intersect_analytic.go",
@@ -144,7 +148,7 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../brep/revolution.go",
 	}
 	var offenders []string
-	for _, rel := range scope {
+	for _, rel := range resolveScope(t, scope) {
 		src, err := os.ReadFile(rel)
 		if err != nil {
 			t.Fatalf("reading %s: %v", rel, err)
@@ -228,4 +232,43 @@ func itoa(n int) string {
 		n /= 10
 	}
 	return string(b[i:])
+}
+
+// resolveScope maps each listed path to the file that is there now. A path that still exists is
+// returned unchanged; one that does not is looked up by basename under kernel/, so a file that
+// moved with a package split is still guarded. An unresolvable or ambiguous name is a hard
+// failure: silently dropping a hot-path file would make the guard pass by not looking.
+func resolveScope(t *testing.T, scope []string) []string {
+	t.Helper()
+	out := make([]string, 0, len(scope))
+	for _, rel := range scope {
+		if _, err := os.Stat(rel); err == nil {
+			out = append(out, rel)
+			continue
+		}
+		matches := findByBase(t, filepath.Base(rel))
+		if len(matches) != 1 {
+			t.Fatalf("hot-path file %q is gone and %d files under kernel/ are named %q: %v — "+
+				"update the scope list", rel, len(matches), filepath.Base(rel), matches)
+		}
+		out = append(out, matches[0])
+	}
+	return out
+}
+
+// findByBase returns every non-test .go file under kernel/ with the given base name.
+func findByBase(t *testing.T, base string) []string {
+	t.Helper()
+	var hits []string
+	err := filepath.WalkDir("..", func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || d.Name() != base {
+			return err
+		}
+		hits = append(hits, p)
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walking kernel/ for %q: %v", base, err)
+	}
+	return hits
 }

@@ -75,7 +75,7 @@ func TestUnionHoledMeshArea(t *testing.T) {
 	}
 	holes3D := [][]math.Point3{hole(3, 3, 6, 6), hole(5, 5, 8, 8)}
 	m := unionHoledMesh(outer3D, holes3D, normal)
-	if got := meshArea(m); stdmath.Abs(got-83) > 1e-4 {
+	if got := m.Area(); stdmath.Abs(got-83) > 1e-4 {
 		t.Errorf("3D mesh area = %g, want 83 (100 − union 17)", got)
 	}
 }
@@ -94,7 +94,7 @@ func TestHoledPlanarMeshRoutesOverlapToUnion(t *testing.T) {
 	}
 	holes3D := [][]math.Point3{hole(3, 3, 6, 6), hole(5, 5, 8, 8)}
 	m := holedPlanarMesh(Project2D(outer3D, flat), outer3D, holes3D, flat, normal)
-	if got := meshArea(m); stdmath.Abs(got-83) > 1e-4 {
+	if got := m.Area(); stdmath.Abs(got-83) > 1e-4 {
 		t.Errorf("holedPlanarMesh area = %g, want 83 (overlap routed to union)", got)
 	}
 }

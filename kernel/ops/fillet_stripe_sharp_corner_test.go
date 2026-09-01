@@ -155,7 +155,7 @@ func TestSharpCornerRunOutDropsTheDoubleCountedArea(t *testing.T) {
 	notch := r * r * (1 - stdmath.Pi/4)
 	const before = 94.207048
 	mesh, _ := tessellate.TessellateBody(res, ops.DefaultQuality())
-	got := meshArea(mesh)
+	got := mesh.Area()
 	want := before - 4*notch
 	if stdmath.Abs(got-want) > 0.01 {
 		t.Errorf("faceted area = %.6f, want ≈%.6f (the old %.6f less 4·notch = %.6f)", got, want, before, 4*notch)
@@ -176,7 +176,7 @@ func TestSharpCornerRunOutAreaConvergesOnTheExactSurface(t *testing.T) {
 	}
 	coarse, _ := tessellate.TessellateBody(res, ops.DefaultQuality())
 	fine, _ := tessellate.TessellateBody(res, ops.PropertyQuality())
-	cArea, fArea := meshArea(coarse), meshArea(fine)
+	cArea, fArea := coarse.Area(), fine.Area()
 	if !(cArea < fArea && fArea < exact.Area) {
 		t.Errorf("areas must rise coarse < fine < exact; got %.6f, %.6f, %.6f", cArea, fArea, exact.Area)
 	}

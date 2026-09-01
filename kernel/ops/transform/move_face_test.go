@@ -19,7 +19,7 @@ import (
 func TestMoveFaceGrowsBox(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
-	res, err := transform.MoveFaces(box, [][]byte{topFaceKey(t, box)}, math.V3(0, 0, 1))
+	res, err := transform.MoveFaces(box, [][]byte{brepfixture.TopFaceKey(t, box)}, math.V3(0, 0, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func TestMoveFaceGrowsBox(t *testing.T) {
 func TestOffsetFaceShavesBox(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
-	res, err := transform.OffsetFaces(box, [][]byte{topFaceKey(t, box)}, -0.5)
+	res, err := transform.OffsetFaces(box, [][]byte{brepfixture.TopFaceKey(t, box)}, -0.5)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"slices"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/kernel/ops/heal"
 
 	"oblikovati.org/api/types"
@@ -94,29 +96,29 @@ func (f *ThickenFeature) SetThickenOptions(dir ops.ThickenDirection, op ops.Part
 // cut/intersect boolean the solid into the running solid body. See kernel/ops/thicken.go. A
 // non-surface / non-thickenable body or a missing boolean target makes the feature go Sick.
 func (f *ThickenFeature) Recompute(in Input) (Output, error) {
-	surface, err := runningBody(in)
+	sheet, err := runningBody(in)
 	if err != nil {
 		return Output{}, err
 	}
 	if f.asSurface {
-		return f.recomputeAsSurface(in, surface)
+		return f.recomputeAsSurface(in, sheet)
 	}
-	solid, err := ops.ThickenSolid(surface, f.thickness(), f.direction, f.faceKeys, f.walls)
+	solid, err := ops.ThickenSolid(sheet, f.thickness(), f.direction, f.faceKeys, f.walls)
 	if err != nil {
 		return Output{}, fmt.Errorf("thicken: %w", err)
 	}
 	if f.operation == ops.Cut || f.operation == ops.Intersect {
-		return thickenBoolean(in, surface, solid, f.operation)
+		return thickenBoolean(in, sheet, solid, f.operation)
 	}
-	return Output{Bodies: replaceBody(in.Bodies, surface, solid)}, nil
+	return Output{Bodies: replaceBody(in.Bodies, sheet, solid)}, nil
 }
 
 // recomputeAsSurface offsets the (optionally subset) surface into a parallel surface body; a zero
 // distance yields a copy (Inventor's Thicken surface, Distance 0).
-func (f *ThickenFeature) recomputeAsSurface(in Input, surface *topo.Body) (Output, error) {
-	src := surface
+func (f *ThickenFeature) recomputeAsSurface(in Input, sheet *topo.Body) (Output, error) {
+	src := sheet
 	if len(f.faceKeys) > 0 {
-		kept, err := heal.DropFaces(surface, f.faceKeys, true)
+		kept, err := heal.DropFaces(sheet, f.faceKeys, true)
 		if err != nil {
 			return Output{}, fmt.Errorf("thicken surface: %w", err)
 		}
@@ -126,11 +128,11 @@ func (f *ThickenFeature) recomputeAsSurface(in Input, surface *topo.Body) (Outpu
 	if f.direction == ops.ThickenNegative {
 		d = -d
 	}
-	result, err := ops.OffsetSurface(src, d, f.featName)
+	result, err := surface.OffsetSurface(src, d, f.featName)
 	if err != nil {
 		return Output{}, fmt.Errorf("thicken surface: %w", err)
 	}
-	return Output{Bodies: replaceBody(in.Bodies, surface, result)}, nil
+	return Output{Bodies: replaceBody(in.Bodies, sheet, result)}, nil
 }
 
 // thickenBoolean cuts/intersects the thickened solid into the most recent running solid body
@@ -187,13 +189,13 @@ func (f *ReplaceFaceFeature) TargetPlanes() []geom.Plane { return f.targetPlanes
 func (f *ReplaceFaceFeature) Recompute(in Input) (Output, error) {
 	return retopoFacesBody(in, f.faceKeys, f.kind, func(b *topo.Body, keys [][]byte) (*topo.Body, error) {
 		if len(f.targetPlanes) > 0 {
-			return ops.ReplaceFacesMulti(b, keys, f.targetPlanes)
+			return surface.ReplaceFacesMulti(b, keys, f.targetPlanes)
 		}
-		target, ok := ops.PlaneOfFace(b, f.targetKey)
+		target, ok := surface.PlaneOfFace(b, f.targetKey)
 		if !ok {
 			return nil, fmt.Errorf("replace-face: target face reference lost")
 		}
-		return ops.ReplaceFaces(b, keys, target)
+		return surface.ReplaceFaces(b, keys, target)
 	})
 }
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package surface
 
 import (
 	"fmt"
@@ -55,10 +55,10 @@ func wireVertexPoints(w *topo.Wire) []math.Point3 {
 // OffsetPlanarWire offsets w by distance in the plane with the given normal,
 // returning a new wire-only body. The wire must lie in that plane.
 //
-// Example: out, err := ops.OffsetPlanarWire(w, math.V3(0, 0, 1), 0.5, ops.WireCornerCircular)
+// Example: out, err := surface.OffsetPlanarWire(w, math.V3(0, 0, 1), 0.5, surface.WireCornerCircular)
 func OffsetPlanarWire(w *topo.Wire, normal math.Vector3, distance float64, corner WireOffsetCorner) (*topo.Body, error) {
 	if distance == 0 {
-		return nil, fmt.Errorf("ops.OffsetPlanarWire: distance must be non-zero")
+		return nil, fmt.Errorf("surface.OffsetPlanarWire: distance must be non-zero")
 	}
 	pl, err := newWirePlane(w, normal)
 	if err != nil {
@@ -91,12 +91,12 @@ type wirePlane struct {
 func newWirePlane(w *topo.Wire, normal math.Vector3) (wirePlane, error) {
 	l := float64(normal.Length())
 	if l == 0 {
-		return wirePlane{}, fmt.Errorf("ops.OffsetPlanarWire: zero plane normal")
+		return wirePlane{}, fmt.Errorf("surface.OffsetPlanarWire: zero plane normal")
 	}
 	n := normal.Scale(math.Scalar(1 / l))
 	uses := w.Uses()
 	if len(uses) == 0 {
-		return wirePlane{}, fmt.Errorf("ops.OffsetPlanarWire: empty wire")
+		return wirePlane{}, fmt.Errorf("surface.OffsetPlanarWire: empty wire")
 	}
 	pl := frameAbout(uses[0].Edge.StartVertex().Point(), n)
 	if err := verifyWireInPlane(w, pl); err != nil {
@@ -126,7 +126,7 @@ func verifyWireInPlane(w *topo.Wire, pl wirePlane) error {
 		for i := 0; i <= 16; i++ {
 			p := c.PointAt(lo + (hi-lo)*float64(i)/16)
 			if dev := stdmath.Abs(float64(pl.origin.VectorTo(p).Dot(pl.n))); dev > tol {
-				return fmt.Errorf("ops.OffsetPlanarWire: edge %d leaves the plane by %g (max %g)", u.Edge.ID(), dev, tol)
+				return fmt.Errorf("surface.OffsetPlanarWire: edge %d leaves the plane by %g (max %g)", u.Edge.ID(), dev, tol)
 			}
 		}
 	}
@@ -269,7 +269,7 @@ func offsetSegments(segs []wireSeg, d, tol float64) ([]wireSeg, error) {
 	for i := range segs {
 		off, err := offsetSegment(segs[i], d, tol)
 		if err != nil {
-			return nil, fmt.Errorf("ops.OffsetPlanarWire: segment %d: %w", i, err)
+			return nil, fmt.Errorf("surface.OffsetPlanarWire: segment %d: %w", i, err)
 		}
 		out[i] = off
 	}

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops_test
+package surface_test
 
 import (
 	stdmath "math"
 	"testing"
+
+	"oblikovati.org/kernel/ops/surface"
 
 	"oblikovati.org/test-utilities/brepfixture"
 
@@ -20,7 +22,7 @@ func TestReplaceFaceParallelGrows(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	target, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
-	res, err := ops.ReplaceFaces(box, [][]byte{topFaceKey(t, box)}, target)
+	res, err := surface.ReplaceFaces(box, [][]byte{brepfixture.TopFaceKey(t, box)}, target)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +40,7 @@ func TestReplaceFaceTiltedIsValid(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	target, _ := geom.NewPlane(math.P3(0, 0, 2), math.V3(0, 1, 4)) // tilts about X through z=2
-	res, err := ops.ReplaceFaces(box, [][]byte{topFaceKey(t, box)}, target)
+	res, err := surface.ReplaceFaces(box, [][]byte{brepfixture.TopFaceKey(t, box)}, target)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +54,7 @@ func TestReplaceFaceLostKeyErrors(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	target, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
-	if _, err := ops.ReplaceFaces(box, [][]byte{[]byte("ghost")}, target); err == nil {
+	if _, err := surface.ReplaceFaces(box, [][]byte{[]byte("ghost")}, target); err == nil {
 		t.Error("replace-face with a lost key should error")
 	}
 }
@@ -65,7 +67,7 @@ func TestReplaceFacesMultiPicksNearest(t *testing.T) {
 	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	near, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
 	far, _ := geom.NewPlane(math.P3(0, 0, 100), math.V3(0, 0, 1))
-	res, err := ops.ReplaceFacesMulti(box, [][]byte{topFaceKey(t, box)}, []geom.Plane{far, near})
+	res, err := surface.ReplaceFacesMulti(box, [][]byte{brepfixture.TopFaceKey(t, box)}, []geom.Plane{far, near})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +83,7 @@ func TestReplaceFacesMultiPicksNearest(t *testing.T) {
 func TestReplaceFacesMultiEmptyErrors(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
-	if _, err := ops.ReplaceFacesMulti(box, [][]byte{topFaceKey(t, box)}, nil); err == nil {
+	if _, err := surface.ReplaceFacesMulti(box, [][]byte{brepfixture.TopFaceKey(t, box)}, nil); err == nil {
 		t.Error("ReplaceFacesMulti with no targets should error")
 	}
 }
@@ -91,14 +93,14 @@ func TestReplaceFacesMultiEmptyErrors(t *testing.T) {
 func TestPlaneOfFace(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
-	pl, ok := ops.PlaneOfFace(box, topFaceKey(t, box))
+	pl, ok := surface.PlaneOfFace(box, brepfixture.TopFaceKey(t, box))
 	if !ok {
 		t.Fatal("PlaneOfFace should resolve the +Z face")
 	}
 	if n := pl.Normal(); stdmath.Abs(n.Z-1) > 1e-9 {
 		t.Errorf("+Z face normal = %v, want ≈ (0,0,1)", n)
 	}
-	if _, ok := ops.PlaneOfFace(box, []byte("ghost")); ok {
+	if _, ok := surface.PlaneOfFace(box, []byte("ghost")); ok {
 		t.Error("PlaneOfFace should miss on an unknown key")
 	}
 }

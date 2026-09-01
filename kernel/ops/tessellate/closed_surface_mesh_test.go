@@ -53,7 +53,7 @@ func TestClosedDomainMeshSphereArea(t *testing.T) {
 		t.Fatalf("NewSphere: %v", err)
 	}
 	us, vs := sphereGrid(s, DefaultQuality())
-	got := meshArea(closedDomainMesh(s, us, vs))
+	got := closedDomainMesh(s, us, vs).Area()
 	want := 4 * stdmath.Pi * r * r
 	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
 		t.Errorf("sphere mesh area %.3f; want ~%.3f (4πr²), off by %.1f%%", got, want, rel*100)

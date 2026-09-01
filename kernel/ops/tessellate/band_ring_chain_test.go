@@ -82,7 +82,7 @@ func TestChainBoundaryRings_ChordedTorusMeshesAsBand(t *testing.T) {
 		t.Fatalf("synthesized face is not a torus — it will not route through bandRingsAndSeam")
 	}
 	m := TessellateFace(f, DefaultQuality())
-	got := meshArea(m)
+	got := m.Area()
 	if stdmath.Abs(got-wantArea)/wantArea > 0.01 {
 		t.Fatalf("chorded torus band meshed to %.3f, want ≈%.3f (±1%%) — full-donut %.1f means the chained-ring fallback did not engage",
 			got, wantArea, 4*stdmath.Pi*stdmath.Pi*20*5)
@@ -195,14 +195,4 @@ func undirectedEdge(a, b int) [2]int {
 		return [2]int{b, a}
 	}
 	return [2]int{a, b}
-}
-
-// meshArea sums the triangle areas of a mesh.
-func meshArea(m *Mesh) float64 {
-	var sum float64
-	for i := 0; i+2 < len(m.Indices); i += 3 {
-		a, b, c := m.Positions[m.Indices[i]], m.Positions[m.Indices[i+1]], m.Positions[m.Indices[i+2]]
-		sum += a.VectorTo(b).Cross(a.VectorTo(c)).Length() / 2
-	}
-	return sum
 }

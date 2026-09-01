@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package surface
 
 import (
 	"fmt"
@@ -40,7 +40,7 @@ func fitCurves(polylines [][]math.Point3, dir string) ([]geom.BSplineCurve, erro
 	for i, pts := range polylines {
 		c, err := geom.NewFittedBSplineCurve(pts)
 		if err != nil {
-			return nil, fmt.Errorf("ops.NetworkSurfaceBody: %s-curve %d: %w", dir, i, err)
+			return nil, fmt.Errorf("surface.NetworkSurfaceBody: %s-curve %d: %w", dir, i, err)
 		}
 		out[i] = c
 	}

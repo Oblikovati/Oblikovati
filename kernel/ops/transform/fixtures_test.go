@@ -55,15 +55,3 @@ func multiSpanPatch(t *testing.T) geom.BSplineSurface {
 	}
 	return s
 }
-
-// topFaceKey returns the reference key of the +Z (top) face.
-func topFaceKey(t *testing.T, b *topo.Body) []byte {
-	t.Helper()
-	for _, f := range b.Faces() {
-		if f.Geometry().NormalAt(0, 0).Z > 0.99 {
-			return f.ReferenceKey()
-		}
-	}
-	t.Fatal("no +Z face found")
-	return nil
-}

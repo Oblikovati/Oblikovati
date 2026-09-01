@@ -1,21 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops_test
+package surface_test
 
 import (
 	"testing"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/test-utilities/brepfixture"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 )
 
 func TestExtendFaceSurfaceGrowsDomain(t *testing.T) {
 	t.Parallel()
 	body := brepfixture.SurfaceFaceBody(t, multiSpanPatch(t)) // helpers in rebuild_faces_test.go
-	out, err := ops.ExtendFaceSurface(body, geom.UMaxEdge, 0.5, 2)
+	out, err := surface.ExtendFaceSurface(body, geom.UMaxEdge, 0.5, 2)
 	if err != nil {
 		t.Fatalf("ExtendFaceSurface: %v", err)
 	}
@@ -34,7 +35,7 @@ func TestExtendFaceSurfaceGrowsDomain(t *testing.T) {
 func TestExtendFaceSurfaceErrorsOnNonNurbs(t *testing.T) {
 	t.Parallel()
 	box := brepfixture.Box(math.P3(0, 0, 0), 1, 1, 1)
-	if _, err := ops.ExtendFaceSurface(box, geom.UMaxEdge, 0.5, 2); err == nil {
+	if _, err := surface.ExtendFaceSurface(box, geom.UMaxEdge, 0.5, 2); err == nil {
 		t.Error("extending a planar body should error (no NURBS face)")
 	}
 }

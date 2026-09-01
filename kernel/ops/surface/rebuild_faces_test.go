@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops_test
+package surface_test
 
 import (
 	"testing"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/test-utilities/brepfixture"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 )
 
@@ -47,7 +48,7 @@ func TestRebuildFaceSurfacesCollapsesMultiSpan(t *testing.T) {
 	t.Parallel()
 	src := multiSpanPatch(t)
 	body := brepfixture.SurfaceFaceBody(t, src)
-	out, dev, err := ops.RebuildFaceSurfaces(body, 3, 3, 4, 4, 0)
+	out, dev, err := surface.RebuildFaceSurfaces(body, 3, 3, 4, 4, 0)
 	if err != nil {
 		t.Fatalf("RebuildFaceSurfaces: %v", err)
 	}
@@ -71,7 +72,7 @@ func TestRebuildFaceSurfacesErrorsWhenNoFreeformFace(t *testing.T) {
 	t.Parallel()
 	// A planar box has only unbounded-domain analytic faces → nothing to rebuild.
 	box := brepfixture.Box(math.P3(0, 0, 0), 1, 1, 1)
-	if _, _, err := ops.RebuildFaceSurfaces(box, 3, 3, 4, 4, 0); err == nil {
+	if _, _, err := surface.RebuildFaceSurfaces(box, 3, 3, 4, 4, 0); err == nil {
 		t.Error("a body with only analytic (unbounded-domain) faces should report nothing to rebuild")
 	}
 }

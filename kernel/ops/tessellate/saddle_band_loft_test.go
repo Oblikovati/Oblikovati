@@ -71,7 +71,7 @@ func TestSaddleBandLoftAreaMatchesAnalytic(t *testing.T) {
 	if mesh == nil || len(mesh.Indices) == 0 {
 		t.Fatal("saddle band produced no mesh")
 	}
-	got := meshArea(mesh)
+	got := mesh.Area()
 	want := analyticBandArea(bandr, bandR)
 	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
 		t.Errorf("saddle band area %.4f, want %.4f (analytic) — rel %.4f > 2%%", got, want, rel)

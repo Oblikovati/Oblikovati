@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
@@ -205,7 +207,7 @@ func trimBodyPlane(part *compdef.PartComponentDefinition, index int) (math.Point
 	if index < 0 || index >= len(bodies) {
 		return math.Point3{}, math.Vector3{}, fmt.Errorf("trim: tool body index %d out of range (have %d)", index, len(bodies))
 	}
-	pl, ok := ops.BodyPlane(bodies[index])
+	pl, ok := surface.BodyPlane(bodies[index])
 	if !ok {
 		return math.Point3{}, math.Vector3{}, fmt.Errorf("trim: tool body %d is not a planar surface", index)
 	}
