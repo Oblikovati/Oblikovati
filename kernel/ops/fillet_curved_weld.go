@@ -105,31 +105,19 @@ func trihedralCornerBody(body *topo.Body, fils []edgeFillet, blends map[uint64]*
 	if reason != "" {
 		return nil, reason
 	}
-	return assembleCornerBlendBody(body, faces), ""
+	return assembleCornerBlendBody(faces), ""
 }
 
-// assembleCornerBlendBody welds the corner faces, then corrects the one thing orientFilletShell cannot
-// pin: the assembled shell's ABSOLUTE sense. orientFilletShell fixes only RELATIVE windings and pins the
-// global sense to an arbitrary arm seed, so a cone-host corner blend can land genuinely INVERTED — its
-// corner face then owns the complement of the patch it should, and a faithful mesher meshes that
-// (D1: 1016.7 against an exact 238.5). The whole shell is uniformly reversed and re-welded.
-//
-// This is NOT the sphere-patch mesher misreading a winding — that was a separate defect, fixed by having
-// the mesher ask the face which region it owns (interiorAxis → brep.PointInFaceTrim). Deleting this fixup
-// on the strength of that was tried and reverted: D1's whole-body area drifted 10078.840 → 10858.450,
-// because the shell really is inverted and the mesher is now faithful to it. The real fix is for
-// orientFilletShell to pin the global sense from the host geometry, after which this disappears; until
-// then it repairs a topology defect rather than papering over a meshing one.
-func assembleCornerBlendBody(originalBody *topo.Body, faces []filletFace) *topo.Body {
-	built := assembleBody(faces)
-	if !cornerBlendMeshesComplement(originalBody, built) {
-		return built
-	}
-	flipped := make([]filletFace, len(faces))
-	for i, f := range faces {
-		flipped[i] = reverseFilletFace(f)
-	}
-	return assembleBody(flipped)
+// assembleCornerBlendBody welds the corner faces. It used to follow up with a whole-shell uniform
+// flip when the assembled corner-blend sphere patch meshed the COMPLEMENT of its region — a repair
+// for orientFilletShell pinning the shell's absolute sense to an arbitrary arm seed. That fixup is
+// GONE (M48/C3, Oblikovati/Oblikovati#3432): the sphere-patch mesher now asks the face which region
+// it owns (interiorAxis → brep.PointInFaceTrim), and measured on the corner bodies the fixup was
+// built for — D1 10078.811 against OCCT 10078.800, with C2/C6/B3/C8 equally on target — it no longer
+// fires anywhere in the fillet and parity corpora. Deleting it also removes the last modelling
+// decision in this path that read a tessellation.
+func assembleCornerBlendBody(faces []filletFace) *topo.Body {
+	return assembleBody(faces)
 }
 
 // curvedArmsOf returns the fils carrying an exact analytic arm surface (the curved Plane∧Cylinder

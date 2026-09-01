@@ -319,7 +319,7 @@ func addRebuildCandidate(cands map[rebuildChoice]*topo.Body, choice rebuildChoic
 // corpus deps absorbed silently (patchgridcap-report.md §region).
 func assembleFilletFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, enableObstacles, enableRunout bool) *topo.Body {
 	faces, _ := filletResultFaces(body, fils, blends, enableObstacles, enableRunout)
-	return assembleCornerBlendBody(body, faces)
+	return assembleCornerBlendBody(faces)
 }
 
 // obstacleImprovedSolid reports whether an obstacle-rebuilt body is a watertight, hole-contained solid —
