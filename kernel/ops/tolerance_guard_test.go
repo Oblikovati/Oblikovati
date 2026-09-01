@@ -44,6 +44,8 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../geom/intersect2d.go",
 		"../geom/intersect2d_circle.go",
 		"../geom/intersect_surface_trace.go",
+		"../geom/intersect_surface_sweep.go",     // split out of intersect_surface_trace.go (#2214)
+		"../geom/intersect_surface_corrector.go", // ditto — the guard follows the code, not the filename
 		"../geom/trace_surface_zero.go",
 		"../geom/network_surface.go",
 		// geom: line/plane/line queries, 2D arc containment, and the curve evaluators
