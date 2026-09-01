@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -144,7 +145,7 @@ func (s *faceScan) interpenetrate(i, j int, res geom.Resolution) (math.Point3, b
 	if !facesOverlapMaterial(fa, fb, s.trimProbes(i), s.trimProbes(j), res.Sew()) {
 		return math.Point3{}, false
 	}
-	overlap := boxOverlap(s.boxes[i], s.boxes[j])
+	overlap := probe.BoxOverlap(s.boxes[i], s.boxes[j])
 	curves, handled := geom.SurfaceIntersect(fa.Geometry(), fb.Geometry(), overlap, res)
 	if !handled {
 		return declineUnresolvedSurfacePair()
@@ -219,7 +220,7 @@ func offSurface(f *topo.Face, p math.Point3) float64 {
 // midCrossingSample walks the interior samples of an intersection curve, bounded to the two faces'
 // box overlap, and returns the MIDDLE accepted sample.
 //
-// Bounded TWICE, because sampleRange only narrows the PARAMETER interval and only does so for an
+// Bounded TWICE, because probe.SampleRange only narrows the PARAMETER interval and only does so for an
 // unbounded curve (the closed form returns an infinite line for a plane pair); a bounded curve — the
 // closed loop two curved faces meet on — is sampled over its whole domain and wanders far outside
 // either face. A witness lies on both TRIMMED faces, so it lies in both range boxes: sampling outside
@@ -231,13 +232,13 @@ func offSurface(f *topo.Face, p math.Point3) float64 {
 // that share only a vertex and then fan apart cross right from that vertex, and a first-hit witness
 // lands a sampling step away from it — indistinguishable from legitimate vertex contact (#1321).
 func midCrossingSample(c geom.Curve3, overlap math.Box, accept func(math.Point3) bool) (math.Point3, bool) {
-	lo, hi, ok := sampleRange(c, overlap)
+	lo, hi, ok := probe.SampleRange(c, overlap)
 	if !ok || hi <= lo {
 		return math.Point3{}, false
 	}
 	var hits []math.Point3
-	for i := 1; i < curveTrimSamples; i++ {
-		p := c.PointAt(lo + (hi-lo)*float64(i)/curveTrimSamples)
+	for i := 1; i < probe.CurveTrimSamples; i++ {
+		p := c.PointAt(lo + (hi-lo)*float64(i)/probe.CurveTrimSamples)
 		if overlap.Contains(p) && accept(p) {
 			hits = append(hits, p)
 		}
@@ -289,7 +290,7 @@ func probeInsideMaterial(f *topo.Face, probes []math.Point3, tol float64) bool {
 // projection — positive on the side f faces, negative inside the material it bounds — with that foot.
 func signedGapToFace(f *topo.Face, p math.Point3) (float64, math.Point3) {
 	_, _, foot := geom.ClosestPointOnSurface(f.Geometry(), p)
-	return float64(foot.VectorTo(p).Dot(outwardFaceNormalAt(f, foot))), foot
+	return float64(foot.VectorTo(p).Dot(probe.OutwardFaceNormalAt(f, foot))), foot
 }
 
 // sharedContact is the geometry two faces legitimately share: the EXACT curves of their common edges

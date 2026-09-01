@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"sort"
 
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -17,7 +18,7 @@ const foldDihedralTol = 0.2
 
 // repairFolds flips interior edges whose two triangles fold (oppose in 3D) to the quad's other
 // diagonal when that removes the fold, sweeping up to maxPasses times. Each new triangle is rewound
-// to agree with its vertex normals (windingOpposesNormals), so orientation stays consistent.
+// to agree with its vertex normals (probe.WindingOpposesNormals), so orientation stays consistent.
 // Returns the number of flips applied.
 func repairFolds(m *Mesh, maxPasses int) int {
 	total := 0
@@ -185,7 +186,7 @@ func degenerateNormal(n math.Vector3) bool { return float64(n.Dot(n)) < 1e-20 }
 // writeTriangle sets triangle t to (i,j,k), rewound so its geometric normal agrees with the
 // vertices' surface normals (consistent with the rest of the patch).
 func writeTriangle(m *Mesh, t, i, j, k int) {
-	if windingOpposesNormals(m.Positions[i], m.Positions[j], m.Positions[k], m.Normals[i], m.Normals[j], m.Normals[k]) {
+	if probe.WindingOpposesNormals(m.Positions[i], m.Positions[j], m.Positions[k], m.Normals[i], m.Normals[j], m.Normals[k]) {
 		j, k = k, j
 	}
 	m.Indices[3*t], m.Indices[3*t+1], m.Indices[3*t+2] = i, j, k

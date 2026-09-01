@@ -7,6 +7,7 @@ import (
 	"maps"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -132,7 +133,7 @@ func buildCurvedMixedArms(roles mixedRoleArms) (curvedMixedArms, bool) {
 		return curvedMixedArms{}, false // the two concave bands share no host plane
 	}
 	topPl := topFace.Geometry().(geom.Plane)
-	topOut, err := math.UnitVector3FromVector(outwardFaceNormalAt(topFace, faceCentroid(topFace)))
+	topOut, err := math.UnitVector3FromVector(probe.OutwardFaceNormalAt(topFace, faceCentroid(topFace)))
 	if err != nil {
 		return curvedMixedArms{}, false
 	}

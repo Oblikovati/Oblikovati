@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -212,7 +213,7 @@ func secondFilletedEdgeAt(far *topo.Vertex, armEdge *topo.Edge, filletedEdges ma
 }
 
 // uniqueNonHostTransverseFace returns the single face at v that is neither host a/b and is transverse to
-// the edge tangent tan (|tan·n̂| above the scale-free sinFloor, n̂ via outwardFaceNormalAt so it works for
+// the edge tangent tan (|tan·n̂| above the scale-free sinFloor, n̂ via probe.OutwardFaceNormalAt so it works for
 // any surface type), together with the COUNT of such faces (the caller admits only count==1 as the
 // capping face; 0 or several ⇒ not a simple trihedral runout). The plane-only transverseNonHostPlane
 // sibling, generalized past planes. The count is returned so the decline reason can carry it.
@@ -223,7 +224,7 @@ func uniqueNonHostTransverseFace(v *topo.Vertex, a, b *topo.Face, tan math.UnitV
 		if f.ID() == a.ID() || f.ID() == b.ID() {
 			continue
 		}
-		nrm := outwardFaceNormalAt(f, v.Point())
+		nrm := probe.OutwardFaceNormalAt(f, v.Point())
 		if stdmath.Abs(float64(tan.AsVector().Dot(nrm))) <= sinFloor {
 			continue // f runs along the edge (tangent), not across it — not a capping face
 		}

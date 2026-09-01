@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -126,7 +127,7 @@ func emitClosedTri(m *Mesh, a, b, c int) {
 	if a == b || b == c || a == c {
 		return
 	}
-	if windingOpposesNormals(m.Positions[a], m.Positions[b], m.Positions[c], m.Normals[a], m.Normals[b], m.Normals[c]) {
+	if probe.WindingOpposesNormals(m.Positions[a], m.Positions[b], m.Positions[c], m.Normals[a], m.Normals[b], m.Normals[c]) {
 		b, c = c, b
 	}
 	m.AddTriangle(a, b, c)

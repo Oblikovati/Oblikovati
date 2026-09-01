@@ -321,7 +321,7 @@ func patchLoops2D(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3
 // orientation: a triangle wound CCW in (u,v) faces +NormalAt in 3D (the surface contract is NormalAt ≡
 // du×dv normalised, and a CCW (u,v) triangle's geometric normal lies along +du×dv), so the whole patch
 // is oriented one way and TessellateFace flips it once for a reversed face. Winding per-triangle by the
-// 3D vertex normals instead (windingOpposesNormals) flips UNRELIABLY on a high-curvature freeform patch,
+// 3D vertex normals instead (probe.WindingOpposesNormals) flips UNRELIABLY on a high-curvature freeform patch,
 // where a flat triangle's geometric normal is nearly perpendicular to its averaged vertex normals — the
 // back-facing red triangles seen on the EDF duct's NURBS walls. uv is the same 2D space the CDT ran in
 // (the surface (u,v) or a positively-scaled metric (u,v), so its orientation matches (u,v)).

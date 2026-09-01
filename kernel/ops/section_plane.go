@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -65,7 +66,7 @@ func faceSectionSegments(f *topo.Face, plane geom.Plane, res geom.Resolution) (s
 		return nil, false
 	}
 	for _, c := range curves {
-		lo, hi, bounded := sampleRange(c, box)
+		lo, hi, bounded := probe.SampleRange(c, box)
 		if !bounded {
 			return nil, false
 		}

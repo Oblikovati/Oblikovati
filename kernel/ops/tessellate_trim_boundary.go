@@ -252,12 +252,3 @@ func triangleFlipped(s geom.Surface, a, b, c math.Point3) bool {
 	u, v := s.ParamAt(cen)
 	return n.Dot(s.NormalAt(u, v)) < 0
 }
-
-// windingOpposesNormals reports whether triangle abc's geometric (cross-product) normal opposes
-// the triangle's per-vertex shading normals (their sum). Used to wind a patch consistently with
-// the normals each vertex actually carries — robust on a curved patch where the flat triangle's
-// centroid is off the surface (unlike triangleFlipped's centroid sample).
-func windingOpposesNormals(a, b, c math.Point3, na, nb, nc math.Vector3) bool {
-	gn := a.VectorTo(b).Cross(a.VectorTo(c))
-	return gn.Dot(na.Add(nb).Add(nc)) < 0
-}

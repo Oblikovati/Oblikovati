@@ -5,6 +5,7 @@ package ops
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -42,10 +43,10 @@ func SmoothShadeNormals(m *Mesh, creaseAngle float64) []math.Vector3 {
 // smoothedNormal averages vertex i's normal with the coincident vertices whose normals are
 // within the crease angle (dot ≥ cosThresh), falling back to the original when nothing matches.
 func smoothedNormal(m *Mesh, i int, group []int, cosThresh float64) math.Vector3 {
-	ni := unitOr(m.Normals[i])
+	ni := probe.UnitOr(m.Normals[i])
 	var sum math.Vector3
 	for _, j := range group {
-		nj := unitOr(m.Normals[j])
+		nj := probe.UnitOr(m.Normals[j])
 		if float64(ni.Dot(nj)) >= cosThresh {
 			sum = sum.Add(nj)
 		}
@@ -53,16 +54,7 @@ func smoothedNormal(m *Mesh, i int, group []int, cosThresh float64) math.Vector3
 	if sum.LengthSquared() < math.DefaultTolerance {
 		return ni
 	}
-	return unitOr(sum)
-}
-
-// unitOr normalizes v, returning it unchanged when degenerate (zero length).
-func unitOr(v math.Vector3) math.Vector3 {
-	l := v.Length()
-	if l < math.Scalar(stdmath.Sqrt(float64(math.DefaultTolerance))) {
-		return v
-	}
-	return v.Scale(1 / l)
+	return probe.UnitOr(sum)
 }
 
 // weldKey quantizes a position onto a model-relative grid (Resolution.Weld) so coincident

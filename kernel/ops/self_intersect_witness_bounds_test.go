@@ -14,7 +14,7 @@ import (
 // blend-parity corpus (Oblikovati/Oblikovati#3477):
 //
 //  1. A witness lies on BOTH trimmed faces, so it lies in both faces' range boxes. The scan sampled a
-//     BOUNDED intersection curve over its whole domain — sampleRange narrows the parameter interval
+//     BOUNDED intersection curve over its whole domain — probe.SampleRange narrows the parameter interval
 //     only for the unbounded plane-pair line — so a closed curve two curved faces meet on was sampled
 //     far outside either of them, and only the trim test stood between the scan and a fabricated
 //     crossing. On corpus simple/B3 the trim test on a torus and a sphere patch answered the far side

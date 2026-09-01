@@ -5,6 +5,7 @@ package ops
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -40,18 +41,7 @@ func isTangentEdge(e *topo.Edge, cosThresh float64) bool {
 		return false // a boundary or non-manifold edge — always keep
 	}
 	mid := e.Geometry().PointAt(0.5)
-	n0 := outwardFaceNormalAt(faces[0], mid)
-	n1 := outwardFaceNormalAt(faces[1], mid)
+	n0 := probe.OutwardFaceNormalAt(faces[0], mid)
+	n1 := probe.OutwardFaceNormalAt(faces[1], mid)
 	return float64(n0.Dot(n1)) > cosThresh
-}
-
-// outwardFaceNormalAt is a face's outward unit normal at point p on it (the surface normal,
-// flipped when the face is reversed).
-func outwardFaceNormalAt(f *topo.Face, p math.Point3) math.Vector3 {
-	u, v := f.Geometry().ParamAt(p)
-	n := f.Geometry().NormalAt(u, v)
-	if f.Reversed() {
-		n = n.Scale(-1)
-	}
-	return unitOr(n)
 }
