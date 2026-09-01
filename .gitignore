@@ -420,6 +420,7 @@ FodyWeavers.xsd
 head/dist/
 # Test & coverage output
 coverage.out
+test-results.json
 *.coverprofile
 test-results*.xml
 # Go workspace files

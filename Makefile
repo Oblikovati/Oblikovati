@@ -87,6 +87,10 @@ CORPUS_TIMEOUT ?= 60m
 # elapsed stretches with core contention (see cmd/testslowest).
 TIER1_PACKAGE_BUDGET ?= 90
 
+# Scratch file the timing targets write `go test -json` into. A file, not a pipe: see
+# the note on test-budget.
+TESTJSON ?= test-results.json
+
 .PHONY: test
 test: ## Tier 1: fast cgo-free unit tests (skips the corpus tier)
 	CGO_ENABLED=0 $(GO) test -short $(PKG)
@@ -109,20 +113,25 @@ test-impacted-corpus: ## Tier 2 on only the packages the current change set can 
 	  echo "$$pkgs" | sed 's/^/  → /'; \
 	  CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) $$pkgs
 
+# The report is fed from a FILE, not a pipe: `sh` reports the exit status of the last
+# command in a pipeline, so `go test | testslowest` would go green on a red suite.
 .PHONY: test-budget
 test-budget: ## Tier 1 with the per-package time budget enforced (the CI gate)
-	@CGO_ENABLED=0 $(GO) test -short -json $(PKG) \
-	  | $(GO) run ./cmd/testslowest -top 15 -package-budget $(TIER1_PACKAGE_BUDGET)
+	@CGO_ENABLED=0 $(GO) test -short -json $(PKG) > $(TESTJSON); status=$$?; \
+	  $(GO) run ./cmd/testslowest -top 15 -package-budget $(TIER1_PACKAGE_BUDGET) < $(TESTJSON) \
+	    || status=1; \
+	  rm -f $(TESTJSON); \
+	  exit $$status
 
 .PHONY: test-slowest
 test-slowest: ## Rank the whole suite by test time (what to guard next)
-	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(PKG) \
-	  | $(GO) run ./cmd/testslowest -top 40
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(PKG) > $(TESTJSON); status=$$?; \
+	  $(GO) run ./cmd/testslowest -top 40 < $(TESTJSON); rm -f $(TESTJSON); exit $$status
 
 .PHONY: test-slowest-serial
 test-slowest-serial: ## Rank tier 2 with NO parallelism — the measurement the 2s guard rule uses
-	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -p 1 -parallel 1 -json $(PKG) \
-	  | $(GO) run ./cmd/testslowest -top 40
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -p 1 -parallel 1 -json $(PKG) > $(TESTJSON); \
+	  status=$$?; $(GO) run ./cmd/testslowest -top 40 < $(TESTJSON); rm -f $(TESTJSON); exit $$status
 
 .PHONY: test-race
 test-race: ## Run the suite under the race detector (needs cgo)
@@ -175,4 +184,4 @@ hooks: ## Point git at the repo's pre-commit hook
 
 .PHONY: clean
 clean: ## Remove build artifacts
-	rm -rf $(DIST) coverage.out
+	rm -rf $(DIST) coverage.out $(TESTJSON)
