@@ -30,13 +30,5 @@ func ResolutionForBody(b *topo.Body) Resolution { return tol.ForBody(b) }
 // ResolutionForBodies builds a Resolution from the largest operand. See [tol.ForBodies].
 func ResolutionForBodies(bodies ...*topo.Body) Resolution { return tol.ForBodies(bodies...) }
 
-// resolutionForTris builds a Resolution from CSG triangles' combined bounding-box diagonal
-// — the entry point for the BSP-CSG / triangle-weld path, where the triangles themselves
-// are the geometry being welded.
-func resolutionForTris(tris []mesh.Tri) Resolution {
-	box := math.EmptyBox()
-	for _, t := range tris {
-		box = box.ExtendPoint(t.A).ExtendPoint(t.B).ExtendPoint(t.C)
-	}
-	return geom.ResolutionForBox(box)
-}
+// ResolutionForTris builds a Resolution from CSG triangles. See [tol.ForTris].
+func ResolutionForTris(tris []mesh.Tri) Resolution { return tol.ForTris(tris) }

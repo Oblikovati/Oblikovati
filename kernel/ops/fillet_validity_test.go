@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -18,7 +20,7 @@ import (
 // geometry that only passes topological validation. A radius within the bound still succeeds.
 func TestFilletRejectsOverLargeRadius(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	edge := verticalEdgeKey(t, box)
 
 	_, err := blend.FilletEdges(box, [][]byte{edge}, 20)
@@ -39,7 +41,7 @@ func TestFilletRejectsOverLargeRadius(t *testing.T) {
 // overshoots (1.5+1.5 > 2) and is rejected; r=0.8 each (1.6 < 2) fits.
 func TestFilletRejectsCollidingNeighbours(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	a, b := adjacentVerticalEdges(t, box)
 
 	if _, err := blend.FilletEdges(box, [][]byte{a, b}, 1.5); err == nil {

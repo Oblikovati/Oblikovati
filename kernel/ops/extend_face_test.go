@@ -5,6 +5,8 @@ package ops_test
 import (
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
@@ -31,7 +33,7 @@ func TestExtendFaceSurfaceGrowsDomain(t *testing.T) {
 
 func TestExtendFaceSurfaceErrorsOnNonNurbs(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 1, 1, 1)
+	box := brepfixture.Box(math.P3(0, 0, 0), 1, 1, 1)
 	if _, err := ops.ExtendFaceSurface(box, geom.UMaxEdge, 0.5, 2); err == nil {
 		t.Error("extending a planar body should error (no NURBS face)")
 	}

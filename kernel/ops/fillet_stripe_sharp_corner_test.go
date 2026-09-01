@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
@@ -26,7 +28,7 @@ import (
 // rim is then an OPEN straight–arc–straight run, filleted at 0.25. Both terminals are sharp corners.
 func sharpCornerRunOut(t *testing.T) *topo.Body {
 	t.Helper()
-	box := csgBox(gmath.P3(0, 0, 0), 4, 4, 4)
+	box := brepfixture.Box(gmath.P3(0, 0, 0), 4, 4, 4)
 	var one [][]byte
 	for _, e := range box.Edges() {
 		if a, c := e.StartVertex().Point(), e.EndVertex().Point(); a.X == c.X && a.Y == c.Y {

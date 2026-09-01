@@ -5,6 +5,8 @@ package ops_test
 import (
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
@@ -58,7 +60,7 @@ func onSurfaceBoundary(s geom.BSplineSurface, p math.Point3) bool {
 
 func TestUntrimFaceErrorsOnNonNurbs(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 1, 1, 1) // planar faces
+	box := brepfixture.Box(math.P3(0, 0, 0), 1, 1, 1) // planar faces
 	if _, err := ops.UntrimFace(box, box.Faces()[0].ReferenceKey()); err == nil {
 		t.Error("untrimming a planar face should error (not a NURBS surface)")
 	}

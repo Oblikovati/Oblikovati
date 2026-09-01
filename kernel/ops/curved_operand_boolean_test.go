@@ -6,6 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/query"
+
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
@@ -41,7 +45,7 @@ func curvedBarWithStraddlingTool(t *testing.T) (bar, tool *topo.Body) {
 	if hasCylinderFaces(curved) == 0 {
 		t.Fatal("operand has no curved face — the reconstruction path would not be exercised")
 	}
-	return curved, csgBox(math.P3(3, 1, 0.5), 2, 1, 1)
+	return curved, brepfixture.Box(math.P3(3, 1, 0.5), 2, 1, 1)
 }
 
 // assertReconstructedSolid checks the result is a valid solid whose fillet wall survives as an
@@ -58,7 +62,7 @@ func assertReconstructedSolid(t *testing.T, res *topo.Body, wantCyl int, wantVol
 	if n := hasCylinderFaces(res); n != wantCyl {
 		t.Errorf("result kept %d cylinder faces, want %d (reconstruction preserves the fillet)", n, wantCyl)
 	}
-	if got := csgVolume(res); stdmath.Abs(got-wantVol) > 1e-2 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-wantVol) > 1e-2 {
 		t.Errorf("volume = %g, want ≈ %g (±0.01)", got, wantVol)
 	}
 }

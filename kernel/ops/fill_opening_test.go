@@ -5,6 +5,8 @@ package ops_test
 import (
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -84,7 +86,7 @@ func cornerSpansOpening(p, _ math.Point3) bool {
 
 func TestFillFourSidedErrorsOnNonNurbs(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 1, 1, 1)
+	box := brepfixture.Box(math.P3(0, 0, 0), 1, 1, 1)
 	good := flatNeighbour(t, -1, 0, 0, 1, false)
 	if _, err := ops.FillFourSided([4]*topo.Body{good, box, good, good}, 0); err == nil {
 		t.Error("a non-NURBS neighbour should make FillFourSided error")

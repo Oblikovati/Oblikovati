@@ -11,6 +11,7 @@ package tol
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -44,4 +45,17 @@ func ForBodies(bodies ...*topo.Body) Resolution {
 		}
 	}
 	return geom.ResolutionForSize(size)
+}
+
+// ForTris builds a Resolution from CSG triangles' combined bounding-box diagonal — the entry
+// point for the BSP-CSG / triangle-weld path, where the triangles themselves are the geometry
+// being welded.
+//
+// Example: res := tol.ForTris(tris) // the weld scale for a soup with no body to measure
+func ForTris(tris []mesh.Tri) Resolution {
+	box := math.EmptyBox()
+	for _, t := range tris {
+		box = box.ExtendPoint(t.A).ExtendPoint(t.B).ExtendPoint(t.C)
+	}
+	return geom.ResolutionForBox(box)
 }

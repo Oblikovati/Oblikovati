@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
@@ -111,7 +113,7 @@ func notchCentroidOffset(r float64) float64 {
 // for a right-angle terminal, to tessellation tolerance.
 func TestFilletSingleVerticalOpenChain(t *testing.T) {
 	t.Parallel()
-	box := csgBox(gmath.P3(0, 0, 0), 4, 4, 4)
+	box := brepfixture.Box(gmath.P3(0, 0, 0), 4, 4, 4)
 	var one [][]byte
 	for _, e := range box.Edges() {
 		if a, c := e.StartVertex().Point(), e.EndVertex().Point(); a.X == c.X && a.Y == c.Y {
@@ -174,7 +176,7 @@ func TestFilletStripeUnbuildableIsLocalized(t *testing.T) {
 // boxWithRoundedVerticals builds a box of the given side with its four vertical edges filleted at vr.
 func boxWithRoundedVerticals(t *testing.T, side, vr float64) *topo.Body {
 	t.Helper()
-	box := csgBox(gmath.P3(0, 0, 0), side, side, side)
+	box := brepfixture.Box(gmath.P3(0, 0, 0), side, side, side)
 	var verts [][]byte
 	for _, e := range box.Edges() {
 		if a, c := e.StartVertex().Point(), e.EndVertex().Point(); a.X == c.X && a.Y == c.Y {

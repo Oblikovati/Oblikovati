@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
@@ -77,7 +79,7 @@ func TestDraftLostKeyErrors(t *testing.T) {
 // fillet face — instead of panicking in the plane-only rebuild (the Phase-0 stopgap it supersedes).
 func TestDraftFilletedBodyTapers(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	filleted, err := blend.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0.5)
 	if err != nil {
 		t.Fatalf("fillet setup: %v", err)

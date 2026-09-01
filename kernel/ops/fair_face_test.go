@@ -5,6 +5,8 @@ package ops_test
 import (
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
@@ -31,7 +33,7 @@ func TestFairFaceSurfaceFairsBody(t *testing.T) {
 
 func TestFairFaceSurfaceRejectsNonNurbs(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 1, 1, 1)
+	box := brepfixture.Box(math.P3(0, 0, 0), 1, 1, 1)
 	if _, err := ops.FairFaceSurface(box, 1, 0.5, 10); err == nil {
 		t.Error("fairing a body with no NURBS face should error")
 	}

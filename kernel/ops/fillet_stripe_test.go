@@ -5,6 +5,8 @@ package ops_test
 import (
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
@@ -31,7 +33,7 @@ func countTorus(b *topo.Body) int {
 // miter corner solver ("outer face must be planar"); the tangent junctions are G1, not miters.
 func TestFilletTangentStripeTopPerimeter(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 4, 4, 4)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
 	var verts [][]byte
 	for _, e := range box.Edges() {
 		if a, c := e.StartVertex().Point(), e.EndVertex().Point(); a.X == c.X && a.Y == c.Y {

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/math"
 )
@@ -17,7 +19,7 @@ import (
 // solid" that shipped a facet-cage octagon.
 func TestFilletIntoExistingRoundRejectedHonestly_1797(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 4, 4, 4)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
 	rounded, err := blend.FilletEdges(box, topPerimeterKeys(t, box), 0.5)
 	if err != nil {
 		t.Fatalf("top-rim fillet setup: %v", err)
@@ -40,7 +42,7 @@ func TestFilletIntoExistingRoundRejectedHonestly_1797(t *testing.T) {
 // not exist yet, so it is this op's own corner, solved normally.
 func TestFilletAdjacentEdgesTogetherNotRejected(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 4, 4, 4)
+	box := brepfixture.Box(math.P3(0, 0, 0), 4, 4, 4)
 	top := topPerimeterKeys(t, box)
 	if len(top) < 2 {
 		t.Fatalf("plain box top edges = %d, want ≥2", len(top))

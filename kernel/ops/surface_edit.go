@@ -314,7 +314,7 @@ func ExtendByEdge(body *topo.Body, edgeKey []byte, distance float64, feat string
 // extendDir is the in-plane unit direction perpendicular to edge a→b pointing away from the
 // face centroid c (so an extended boundary grows outward).
 func extendDir(normal math.Vector3, a, b, c math.Point3) math.Vector3 {
-	perp := unit3(normal.Cross(a.VectorTo(b)))
+	perp := probe.Unit(normal.Cross(a.VectorTo(b)))
 	if float64(perp.Dot(a.Midpoint(b).VectorTo(c))) > 0 { // points toward the interior → flip
 		perp = perp.Scale(-1)
 	}
@@ -325,14 +325,7 @@ func coincidentPt(a, b math.Point3) bool { return float64(a.DistanceTo(b)) < 1e-
 
 // sameDirection reports whether two normals point the same way (within tolerance).
 func sameDirection(a, b math.Vector3) bool {
-	return float64(unit3(a).Dot(unit3(b))) > 1-1e-7
-}
-
-func unit3(v math.Vector3) math.Vector3 {
-	if u, err := math.UnitVector3FromVector(v); err == nil {
-		return u.AsVector()
-	}
-	return v
+	return float64(probe.Unit(a).Dot(probe.Unit(b))) > 1-1e-7
 }
 
 // MidPatch is one extracted mid-surface: the surface body lying halfway between a

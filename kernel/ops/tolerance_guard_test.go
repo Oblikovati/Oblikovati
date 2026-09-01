@@ -114,7 +114,7 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../ops/ruled_surface.go",
 		"../ops/transform/deform.go",
 		"../ops/tessellate/smooth_normals.go",
-		"../ops/csg_body.go",
+		"../ops/boolean/csg_body.go",
 		"../ops/blend/assemble_curved.go",
 		// solve + sketch: the constraint solver and 2D arrangement.
 		"../../solve/solve.go",

@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
@@ -20,7 +22,7 @@ import (
 // The result is a valid tapered solid.
 func TestDraftFacesNeutralPivotsOnNeutralPlane(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	side := plusXFaceKey(t, box)
 	neutral, _ := geom.NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1)) // z=1, the mid-height parting plane
 
@@ -53,7 +55,7 @@ func TestDraftFacesNeutralPivotsOnNeutralPlane(t *testing.T) {
 // Analytic: ∫₀²2·(z−0.5)·tan10° dz = tan10° = 0.1763269, ×2 = 0.3526538 (OCCT 0.3526540).
 func TestDraftFacesNeutralVolumeMatchesOCCT(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	side := plusXFaceKey(t, box)
 	neutral, _ := geom.NewPlane(math.P3(0, 0, 0.5), math.V3(0, 0, 1))
 

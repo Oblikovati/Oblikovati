@@ -6,6 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/query"
+
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -25,7 +29,7 @@ func boxWithThroughHole(t *testing.T) *topo.Body {
 	feature.NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 2 })
 	fs.Recompute()
 	holey := fs.Result()[0]
-	if v := csgVolume(holey); stdmath.Abs(v-24) > 1e-6 {
+	if v := query.BodyGeometryProperties(holey, ops.DefaultQuality()).Volume; stdmath.Abs(v-24) > 1e-6 {
 		t.Fatalf("holey block volume = %g, want 24 (32 − 8 hole)", v)
 	}
 	return holey
@@ -54,7 +58,7 @@ func TestCapHolesByDiameterFillsThroughHole(t *testing.T) {
 	if r := ops.Validate(capped); !r.Valid || !capped.IsSolid() {
 		t.Fatalf("capped body not a valid solid: %+v", r.Issues)
 	}
-	if v := csgVolume(capped); stdmath.Abs(v-32) > 1e-6 {
+	if v := query.BodyGeometryProperties(capped, ops.DefaultQuality()).Volume; stdmath.Abs(v-32) > 1e-6 {
 		t.Errorf("capped volume = %g, want 32 (hole filled flush)", v)
 	}
 }
@@ -76,7 +80,7 @@ func TestCapHolesExplicitSelection(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CapHoles: %v", err)
 	}
-	if v := csgVolume(capped); stdmath.Abs(v-32) > 1e-6 || !capped.IsSolid() {
+	if v := query.BodyGeometryProperties(capped, ops.DefaultQuality()).Volume; stdmath.Abs(v-32) > 1e-6 || !capped.IsSolid() {
 		t.Errorf("capped volume = %g solid=%v, want 32 solid", v, capped.IsSolid())
 	}
 }
@@ -127,7 +131,7 @@ func TestCapHolesByDiameterIgnoresWideOpening(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CapHolesByDiameter: %v", err)
 	}
-	if v := csgVolume(out); stdmath.Abs(v-24) > 1e-6 {
+	if v := query.BodyGeometryProperties(out, ops.DefaultQuality()).Volume; stdmath.Abs(v-24) > 1e-6 {
 		t.Errorf("volume = %g, want 24 (hole left intact)", v)
 	}
 }
@@ -135,7 +139,7 @@ func TestCapHolesByDiameterIgnoresWideOpening(t *testing.T) {
 // TestCapHolesEmptySelection rejects an empty wall set.
 func TestCapHolesEmptySelection(t *testing.T) {
 	t.Parallel()
-	if _, err := ops.CapHoles(csgBox(math.P3(0, 0, 0), 1, 1, 1), nil); err == nil {
+	if _, err := ops.CapHoles(brepfixture.Box(math.P3(0, 0, 0), 1, 1, 1), nil); err == nil {
 		t.Error("expected an error for an empty wall selection")
 	}
 }

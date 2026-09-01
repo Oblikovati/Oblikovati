@@ -5,6 +5,8 @@ package ops_test
 import (
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -56,7 +58,7 @@ func TestBridgeBodiesG2IsValidSurface(t *testing.T) {
 
 func TestBridgeBodiesErrorsOnNonNurbs(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 1, 1, 1)
+	box := brepfixture.Box(math.P3(0, 0, 0), 1, 1, 1)
 	good := bridgePatchBody(t, 2, func(i, j int) float64 { return 0 })
 	if _, err := ops.BridgeBodies(box, good, 1, 1); err == nil {
 		t.Error("bridging a non-NURBS body should error")

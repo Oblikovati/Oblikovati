@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
@@ -16,7 +18,7 @@ import (
 // seeding any one yields just that edge and no loop closure.
 func TestTangentChainBoxHasNoPropagation(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	keys, closed, err := blend.TangentEdgeChain(box, verticalEdgeKey(t, box), blend.DefaultTangentChainAngle)
 	if err != nil {
 		t.Fatal(err)
@@ -32,7 +34,7 @@ func TestTangentChainBoxHasNoPropagation(t *testing.T) {
 // "pick one edge → select tangent chain" the chamfer/fillet tools were missing.
 func TestTangentChainRoundedRimIsClosedLoop(t *testing.T) {
 	t.Parallel()
-	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	rounded, err := blend.FilletEdges(box, verticalEdgeKeys(t, box), 0.5)
 	if err != nil {
 		t.Fatalf("fillet setup: %v", err)

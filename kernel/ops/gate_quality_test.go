@@ -33,10 +33,3 @@ func gateQualities() []gateQuality {
 		{"property", PropertyQuality()},
 	}
 }
-
-// certGateQualities adds the crossing-certification suites' own intermediate faceting (capCertQuality,
-// chord 0.005 / angle 2°) to gateQualities, so those gates sample three samplings rather than the one
-// their moment tolerances were calibrated at.
-func certGateQualities() []gateQuality {
-	return append(gateQualities(), gateQuality{"cert", capCertQuality()})
-}
