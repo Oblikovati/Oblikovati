@@ -83,9 +83,12 @@ var allowedTreeImports = map[string][]string{
 		"clientgraphics", "event", "kernel", "math", "model", "osfont", "script"},
 	"addin/trace": {"api"},
 
-	// Composition roots may reach anything below them.
+	// Composition roots may reach anything below them. cmd -> test-utilities is the
+	// developer test tooling only: cmd/testimpact and cmd/testslowest are thin CLIs over
+	// test-utilities/testimpact and /testtiming, which ship in no binary the user runs
+	// (architecture/testing/03-test-tiers-and-selection.md).
 	"cmd": {"addin/opregistry", "addin/router", "api", "app", "build", "kernel", "math",
-		"model", "perf", "persistence", "release", "script", "update"},
+		"model", "perf", "persistence", "release", "script", "test-utilities", "update"},
 
 	// The guard itself (shells out to go list; imports nothing first-party).
 	"archguard": {},
