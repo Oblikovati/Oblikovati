@@ -182,16 +182,38 @@ func declineUnresolvedSurfacePair() (math.Point3, bool) {
 // TestCoilAcceptsTurnsThatClear must build).
 func crossingWitness(curves []geom.Curve3, overlap math.Box, fa, fb *topo.Face,
 	shared sharedContact, res geom.Resolution) (math.Point3, bool) {
-	inBoth := func(p math.Point3) bool {
-		return strictlyInsideTrim(fa, p, res.Weld()) && strictlyInsideTrim(fb, p, res.Weld()) &&
-			!shared.holds(p, res.Sew())
-	}
 	for _, c := range curves {
+		// A witness is only as certain as the CURVE IT CAME FROM. A marched intersection is a chord
+		// approximation carrying a measured deviation, so a point it places d off the true curve can
+		// read as d inside a trim it actually lies ON, and as d clear of a boundary it actually touches.
+		// Judging that against Weld/Sew alone compares a marched position to a tolerance three decades
+		// tighter than its own accuracy, and six filleted corpus bodies were condemned as
+		// self-intersecting by witnesses sitting 5.5e-5 to 7e-5 off both surfaces — the marcher's error,
+		// not an interpenetration (Oblikovati/Oblikovati#3477). The achieved tolerance is a measured
+		// output of the intersector, so it is what this decision reads.
+		stamped := geom.CurveDeviation(c)
+		inBoth := func(p math.Point3) bool {
+			// How far the witness actually sits off the two surfaces IS its uncertainty, measured on
+			// the spot rather than taken from metadata the curve may not carry. A point the marcher
+			// placed d away cannot be trusted to be more than d inside a trim, nor more than d clear
+			// of a boundary.
+			reach := stdmath.Max(stamped, stdmath.Max(offSurface(fa, p), offSurface(fb, p)))
+			insideBy, clearOf := stdmath.Max(res.Weld(), reach), stdmath.Max(res.Sew(), reach)
+			return strictlyInsideTrim(fa, p, insideBy) && strictlyInsideTrim(fb, p, insideBy) &&
+				!shared.holds(p, clearOf)
+		}
 		if p, ok := midCrossingSample(c, overlap, inBoth); ok {
 			return p, true
 		}
 	}
 	return math.Point3{}, false
+}
+
+// offSurface is how far p lies off the face's own surface — the witness's measured uncertainty.
+func offSurface(f *topo.Face, p math.Point3) float64 {
+	s := f.Geometry()
+	u, v := s.ParamAt(p)
+	return float64(p.DistanceTo(s.PointAt(u, v)))
 }
 
 // midCrossingSample walks the interior samples of an intersection curve, bounded to the two faces'
