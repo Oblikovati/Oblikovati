@@ -120,7 +120,7 @@ func edgeByEndpoints(t *testing.T, b *topo.Body, p, q math.Point3) *topo.Edge {
 
 func importMaxWidthFixture(t *testing.T, name string) *topo.Body {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join("..", "testdata", name))
+	data, err := os.ReadFile(filepath.Join("testdata", name))
 	if err != nil {
 		t.Fatalf("read %s: %v", name, err)
 	}

@@ -157,29 +157,73 @@ breaks the four head CI jobs — which is what the `kernel/ops/tessellate` extra
 `make vet` and `make lint` both descend into `head/` for that reason; running
 `golangci-lint run` or `go vet ./...` directly does not, and is how the gap opens.
 
+## The kernel/ops split (#2183)
+
+`kernel/ops` was 120 000 lines in one package, so a change anywhere in it re-ran every
+test it owned and rebuilt the 300+ packages that imported it. It is now packaged BY
+OPERATION, as the kernel ground rules require:
+
+| Package | Source files | Test files | What it owns |
+|---|---:|---:|---|
+| `kernel/ops` | 9 | 14 | the façade, plus section/shell/split/thicken |
+| `kernel/ops/blend` | 222 | 190 | fillet, chamfer, draft — one engine (ADR-0050/0051) |
+| `kernel/ops/boolean` | 23 | 88 | classification, curved pairs, CSG, mesh arrangement |
+| `kernel/ops/tessellate` | 55 | 65 | the tolerance-driven mesher |
+| `kernel/ops/query` | 19 | 22 | pick, mass properties, boxes, containment |
+| `kernel/ops/surface` | 17 | 14 | extend, offset, replace, rebuild, fair, untrim |
+| `kernel/ops/heal` | 16 | 21 | sew, stitch, snap, cap, fill, drop, voids |
+| `kernel/ops/validate` | 8 | 10 | the ordered validity levels |
+| `kernel/ops/transform` | 5 | 6 | move, deform, re-surface |
+
+Shared substrate sits below all of them in `kernel/ops/internal`: `mesh` (the Mesh type
+and the point welder), `probe` (read-only geometric questions), `retopo` (rebuild
+helpers), `tol` (model-relative tolerance constructors) and `disjoint` (union-find).
+
+### The method
+
+A subpackage can only be carved where the symbol edge is ONE-WAY, because Go rejects the
+cycle otherwise. Every extraction followed the same three steps:
+
+1. **Measure, do not guess.** A small AST analyser reports the symbols crossing a proposed
+   group boundary in each direction. Skip `SelectorExpr.Sel`, composite-literal keys and
+   field names, or field accesses read as package symbols and the numbers are fiction.
+   Locals shadowing a package-level name still produce false edges — `weld` and `cut` both
+   did — so a one-symbol edge is worth reading before acting on it.
+2. **Move the shared substrate DOWN, not sideways.** `validate`'s outgoing set fell from
+   seven symbols to two that way; `blend`'s from 34 to 9. Exporting a symbol to reach it
+   across the new seam is the move that makes the next extraction impossible.
+3. **Fix the layer that owns it.** Four things blocked `heal`, and none was solved by an
+   export: the boundary iso-curves are a property of a B-spline surface, so they became
+   `geom.BSplineSurface.BoundaryUIso`/`BoundaryVIso`; `firstNurbsFace` is a read-only
+   question, so it became `probe.FirstNurbsFace`; `fullDomainBody` and the planar-loop soup
+   builder are re-topology, so they became `retopo.FullDomainBody` and
+   `retopo.PlanarLoop`/`BuildSolidFromLoops`.
+
+The direction is now pinned by `archguard/ops_family_layering_test.go`: every edge between
+families is a declared row, and a family importing the `kernel/ops` façade is an error.
+
+### Two seams the split forces
+
+**Test fixtures.** Go does not share `_test.go` helpers across packages, so a fixture two
+families both need must become real code. `test-utilities/brepfixture` is that home — plain
+constructors over `geom`/`topo`/`subd` with no operation and no assertion in them, so they
+cannot make a test pass for the wrong reason. It absorbed the copies of `quadBody`,
+`cubeFaces`, `tetra`, `shellBox`, `topFaceKey`, `verticalEdgeKey` and the #2009 bunched
+strip that had accumulated in four packages. Fixtures that need an operation to build them
+live in `test-utilities/opfixture` instead, because `kernel/ops/validate`'s own tests use
+`brepfixture` and `validate` sits below the operations — one package importing an operation
+would close a cycle.
+
+**Where a test lives.** A test follows the code it exercises, not the file it was in. Two
+that had drifted: `point_in_solid_test.go` was covering `query`'s winding number AND
+`boolean`'s `PointInsideBody`, and `analytic_oracle_test.go` mixed `query` internals with
+cases whose operand only the general boolean driver can build. Each split along that line.
+
+**The public seam.** `boolean` keeps ops-level forwarders because ~1100 call sites name
+`ops.Boolean`/`ops.Cut`; `heal` (61 sites), `query` and `surface` (88) do not, so consumers
+name the narrow package and stop rebuilding when an unrelated family changes.
+
 ## What this does not fix
 
-The packages are still too large to be a selection unit: `kernel/ops` (120 000
-lines), `app` (85 000), `model/feature` (64 000), `addin/router` (40 000). Splitting
-them by operation is what the kernel ground rules already require ("Package by
-operation, not by case: split `kernel/ops` into boolean, blend, tessellate, validate,
-heal, query") and is tracked under **#2183**.
-
-`kernel/ops` now has five neighbours where it had none — `transform` (#2210),
-`validate` (#2211) and the `internal/mesh`, `internal/probe`, `internal/retopo`
-leaves — so those tests are their own binaries. The remaining six extractions are
-blocked on entanglement that a move cannot fix, measured rather than guessed:
-
-| Group | Files | Blocked on |
-|---|---:|---|
-| blend | 230 | the tessellation core it meshes through |
-| tessellate | 48 | 43 symbols across 18 files, mutual with blend and validate |
-| query | 18 | reads TESSELLATED data for mass properties (#3420) — a ground-rule violation, not a move |
-| boolean, surface, heal | — | follow the three above |
-
-The rule that decides all of them: a subpackage can only be carved where the symbol
-edge is ONE-WAY, because Go rejects the cycle otherwise. What made `transform` and
-`validate` possible was moving shared substrate DOWN into `internal/` leaves first —
-`validate`'s outgoing edge set fell from seven symbols to two that way. The same
-method applies to the rest, but `query` needs #3420 resolved before it can move at
-all: it is phase-2 algorithmic work, outside #2183's refactor-only phase 1.
+The other large packages are still too large to be a selection unit: `app` (85 000 lines),
+`model/feature` (64 000), `addin/router` (40 000).

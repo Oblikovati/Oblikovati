@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/ops/heal"
 
 	"oblikovati.org/kernel/geom"
@@ -14,37 +16,9 @@ import (
 	"oblikovati.org/math"
 )
 
-// tetra builds a unit tetrahedron scaled by s and translated by off, with lineage.
-func tetra(s float64, off math.Vector3) *topo.Body {
-	feat := "f"
-	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok(feat, "body", 0)))
-	p := func(x, y, z float64) math.Point3 { return math.P3(x*s, y*s, z*s).TranslateBy(off) }
-	lin := func(role string, i int) topo.Lineage { return topo.NewLineage(topo.Tok(feat, role, i)) }
-	a := bld.AddVertex(p(0, 0, 0), lin("vertex", 0))
-	b := bld.AddVertex(p(1, 0, 0), lin("vertex", 1))
-	c := bld.AddVertex(p(0, 1, 0), lin("vertex", 2))
-	d := bld.AddVertex(p(0, 0, 1), lin("vertex", 3))
-	seg := func(x, y *topo.Vertex, i int) *topo.Edge {
-		return bld.AddEdge(geom.NewLineSegment(x.Point(), y.Point()), x, y, lin("edge", i))
-	}
-	ab, ac, ad := seg(a, b, 0), seg(a, c, 1), seg(a, d, 2)
-	bc, bd, cd := seg(b, c, 3), seg(b, d, 4), seg(c, d, 5)
-	pl := func(o, n math.Vector3) geom.Surface { s, _ := geom.NewPlane(o.AsPoint().TranslateBy(off), n); return s }
-	// Consistently-outward loops: each shared edge is traversed in opposite
-	// directions by its two faces (one Fwd, one Rev), as a valid manifold requires.
-	bld.AddFace(pl(math.V3(0, 0, 0), math.V3(0, 0, -1)), lin("face", 0), topo.OuterLoop(topo.Fwd(ac), topo.Rev(bc), topo.Rev(ab)))
-	bld.AddFace(pl(math.V3(0, 0, 0), math.V3(0, -1, 0)), lin("face", 1), topo.OuterLoop(topo.Fwd(ab), topo.Fwd(bd), topo.Rev(ad)))
-	bld.AddFace(pl(math.V3(0, 0, 0), math.V3(-1, 0, 0)), lin("face", 2), topo.OuterLoop(topo.Fwd(ad), topo.Rev(cd), topo.Rev(ac)))
-	// The slant plane must actually contain b,c,d (the plane x+y+z=s): its origin is vertex b,
-	// scaled with s. A fixed (1,1,1) origin puts the plane at x+y+z=3 — off the face for any s≠3,
-	// which the analytic point classifier (unlike mesh tessellation) correctly rejects.
-	bld.AddFace(pl(math.V3(1, 0, 0).Scale(s), math.V3(1, 1, 1)), lin("face", 3), topo.OuterLoop(topo.Fwd(bc), topo.Fwd(cd), topo.Rev(bd)))
-	return bld.Build()
-}
-
 func TestPlanarFaceTessellationIsWatertight(t *testing.T) {
 	t.Parallel()
-	body := tetra(1, math.V3(0, 0, 0))
+	body := brepfixture.Tetra(1, math.V3(0, 0, 0))
 	mesh := tessellate.TessellateFace(body.Faces()[0], DefaultQuality())
 	// A triangle face → exactly one triangle over its 3 boundary vertices.
 	if mesh.TriangleCount() != 1 || mesh.VertexCount() != 3 {
@@ -94,11 +68,11 @@ func TestCurvedFaceTessellationOnSphere(t *testing.T) {
 
 func TestValidateManifoldSolid(t *testing.T) {
 	t.Parallel()
-	r := Validate(tetra(1, math.V3(0, 0, 0)))
+	r := Validate(brepfixture.Tetra(1, math.V3(0, 0, 0)))
 	if !r.Valid || !r.Manifold || !r.Closed || !r.OrientationOK {
 		t.Errorf("tetra validation = %+v, want fully valid", r)
 	}
-	if len(BoundaryEdges(tetra(1, math.V3(0, 0, 0)))) != 0 {
+	if len(BoundaryEdges(brepfixture.Tetra(1, math.V3(0, 0, 0)))) != 0 {
 		t.Error("closed solid should have no boundary edges")
 	}
 }
@@ -129,7 +103,7 @@ func TestValidateOpenSurfaceReportsBoundary(t *testing.T) {
 
 func TestPointInsideBody(t *testing.T) {
 	t.Parallel()
-	body := tetra(10, math.V3(0, 0, 0)) // big tetra: simplex x,y,z>=0, x+y+z<=10
+	body := brepfixture.Tetra(10, math.V3(0, 0, 0)) // big tetra: simplex x,y,z>=0, x+y+z<=10
 	if !PointInsideBody(body, math.P3(2, 2, 2)) {
 		t.Error("interior point reported outside")
 	}
@@ -143,8 +117,8 @@ func TestPointInsideBody(t *testing.T) {
 
 func TestBooleanDisjoint(t *testing.T) {
 	t.Parallel()
-	a := tetra(1, math.V3(0, 0, 0))
-	b := tetra(1, math.V3(10, 0, 0)) // far away → disjoint bounding boxes
+	a := brepfixture.Tetra(1, math.V3(0, 0, 0))
+	b := brepfixture.Tetra(1, math.V3(10, 0, 0)) // far away → disjoint bounding boxes
 
 	join, err := Boolean(Join, a, b)
 	if err != nil {
@@ -154,12 +128,12 @@ func TestBooleanDisjoint(t *testing.T) {
 		t.Errorf("disjoint join → %d faces, valid=%v; want 8 faces / valid", len(join.Faces()), Validate(join).Valid)
 	}
 
-	inter, _ := Boolean(Intersect, tetra(1, math.V3(0, 0, 0)), tetra(1, math.V3(10, 0, 0)))
+	inter, _ := Boolean(Intersect, brepfixture.Tetra(1, math.V3(0, 0, 0)), brepfixture.Tetra(1, math.V3(10, 0, 0)))
 	if len(inter.Faces()) != 0 {
 		t.Errorf("disjoint intersect → %d faces, want 0 (empty)", len(inter.Faces()))
 	}
 
-	cut, _ := Boolean(Cut, tetra(1, math.V3(0, 0, 0)), tetra(1, math.V3(10, 0, 0)))
+	cut, _ := Boolean(Cut, brepfixture.Tetra(1, math.V3(0, 0, 0)), brepfixture.Tetra(1, math.V3(10, 0, 0)))
 	if len(cut.Faces()) != 4 {
 		t.Errorf("disjoint cut → %d faces, want 4 (target unchanged)", len(cut.Faces()))
 	}
@@ -167,8 +141,8 @@ func TestBooleanDisjoint(t *testing.T) {
 
 func TestBooleanContainment(t *testing.T) {
 	t.Parallel()
-	big := tetra(10, math.V3(0, 0, 0))
-	small := tetra(1, math.V3(2, 2, 2)) // strictly inside big
+	big := brepfixture.Tetra(10, math.V3(0, 0, 0))
+	small := brepfixture.Tetra(1, math.V3(2, 2, 2)) // strictly inside big
 
 	inter, err := Boolean(Intersect, big, small)
 	if err != nil {
@@ -179,7 +153,7 @@ func TestBooleanContainment(t *testing.T) {
 	}
 	// Cutting a fully-enclosed tool hollows the target into a cavity (a solid with a
 	// void): the BSP CSG keeps the outer shell and the tool's inward-facing walls.
-	cav, err := Boolean(Cut, tetra(10, math.V3(0, 0, 0)), tetra(1, math.V3(2, 2, 2)))
+	cav, err := Boolean(Cut, brepfixture.Tetra(10, math.V3(0, 0, 0)), brepfixture.Tetra(1, math.V3(2, 2, 2)))
 	if err != nil {
 		t.Fatalf("cavity cut: %v", err)
 	}
@@ -190,8 +164,8 @@ func TestBooleanContainment(t *testing.T) {
 
 func TestBooleanNewBodyAndStrings(t *testing.T) {
 	t.Parallel()
-	tool := tetra(1, math.V3(0, 0, 0))
-	got, _ := Boolean(NewBody, tetra(1, math.V3(5, 0, 0)), tool)
+	tool := brepfixture.Tetra(1, math.V3(0, 0, 0))
+	got, _ := Boolean(NewBody, brepfixture.Tetra(1, math.V3(5, 0, 0)), tool)
 	if got != tool {
 		t.Error("NewBody should return the tool as a separate body")
 	}
@@ -204,7 +178,7 @@ func TestBooleanNewBodyAndStrings(t *testing.T) {
 // sew_test.go; an already-closed body simply promotes to a solid.
 func TestSewClosedTetraSucceeds(t *testing.T) {
 	t.Parallel()
-	solid, err := heal.Sew(tetra(1, math.V3(0, 0, 0)), 1e-6)
+	solid, err := heal.Sew(brepfixture.Tetra(1, math.V3(0, 0, 0)), 1e-6)
 	if err != nil {
 		t.Fatalf("Sew on a closed body: %v", err)
 	}
@@ -240,8 +214,8 @@ func TestBooleanIntersectingProducesValidSolids(t *testing.T) {
 	t.Parallel()
 	// Two tetra that overlap with neither containing the other → the intersecting case,
 	// now handled by the BSP CSG (PBI-171): each operation yields a valid solid.
-	a := tetra(3, math.V3(0, 0, 0))
-	b := tetra(3, math.V3(0.5, 0.5, 0.5)) // overlaps a's volume, neither contains the other
+	a := brepfixture.Tetra(3, math.V3(0, 0, 0))
+	b := brepfixture.Tetra(3, math.V3(0.5, 0.5, 0.5)) // overlaps a's volume, neither contains the other
 	for _, op := range []PartFeatureOperation{Join, Cut, Intersect} {
 		res, err := Boolean(op, a, b)
 		if err != nil {

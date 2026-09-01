@@ -12,7 +12,6 @@ import (
 	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/validate"
-	"oblikovati.org/kernel/topo"
 )
 
 // filletCross fillets one vertical edge of a 2×2×2 box at r=0.5 with the given cross-section, and
@@ -21,7 +20,7 @@ func filletCross(t *testing.T, cross blend.FilletCrossSection, rho float64) floa
 	t.Helper()
 	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	res, err := blend.FilletEdgesVarying(box, []blend.EdgeFilletRadii{
-		{Key: verticalEdgeKey(t, box), R0: 0.5, R1: 0.5, Cross: cross, Rho: rho},
+		{Key: brepfixture.VerticalEdgeKey(t, box), R0: 0.5, R1: 0.5, Cross: cross, Rho: rho},
 	})
 	if err != nil {
 		t.Fatalf("fillet (cross=%s rho=%g): %v", cross, rho, err)
@@ -72,16 +71,4 @@ func TestFilletG2DiffersFromArc(t *testing.T) {
 	if stdmath.Abs(arc-g2) < 1e-3 {
 		t.Errorf("G2 (%g) should differ from arc (%g) — it is a genuinely different cross-section", g2, arc)
 	}
-}
-
-// verticalEdgeKey returns a vertical edge (start/end share X,Y) of a box.
-func verticalEdgeKey(t *testing.T, b *topo.Body) []byte {
-	t.Helper()
-	for _, e := range b.Edges() {
-		if a, c := e.StartVertex().Point(), e.EndVertex().Point(); a.X == c.X && a.Y == c.Y {
-			return e.ReferenceKey()
-		}
-	}
-	t.Fatal("no vertical edge")
-	return nil
 }

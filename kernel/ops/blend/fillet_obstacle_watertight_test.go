@@ -112,7 +112,7 @@ func assertObstacleFilletIsASolid(t *testing.T, body *topo.Body, name string) {
 // imported B-rep, not a hand-welded stub.
 func slabWithColumn(t *testing.T) *topo.Body {
 	t.Helper()
-	return importStepSolid(t, filepath.Join("..", "testdata", "obstacle_slab_column.step"))
+	return importStepSolid(t, filepath.Join("testdata", "obstacle_slab_column.step"))
 }
 
 // slabWithObliqueColumn imports the same slab+column shape with the column's elliptical footprint turned
@@ -122,7 +122,7 @@ func slabWithColumn(t *testing.T) *topo.Body {
 // identical, so the two fixtures differ in exactly the property under test.
 func slabWithObliqueColumn(t *testing.T) *topo.Body {
 	t.Helper()
-	return importStepSolid(t, filepath.Join("..", "testdata", "obstacle_slab_oblique_column.step"))
+	return importStepSolid(t, filepath.Join("testdata", "obstacle_slab_oblique_column.step"))
 }
 
 // filletFrontTopEdge drives the real fillet feature over the slab's front-top edge (midpoint

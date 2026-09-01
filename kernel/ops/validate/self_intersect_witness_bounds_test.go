@@ -32,8 +32,8 @@ import (
 // both faces own, so both range boxes contain it.
 func TestSelfIntersectionWitnessLiesInBothFaceBoxes(t *testing.T) {
 	t.Parallel()
-	a := tetra(1, math.V3(0, 0, 0))
-	b := tetra(1, math.V3(0.2, 0.2, 0.2))
+	a := brepfixture.Tetra(1, math.V3(0, 0, 0))
+	b := brepfixture.Tetra(1, math.V3(0.2, 0.2, 0.2))
 	merged := topo.MergeBodies(topo.NewLineage(topo.Tok("imp", "body", 0)), true, a, b)
 	hits := SelfIntersections(merged, mesh.DefaultQuality())
 	if len(hits) == 0 {

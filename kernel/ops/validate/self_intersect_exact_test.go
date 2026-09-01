@@ -145,7 +145,7 @@ func TestFaceScanCachesBoxesAndProbes(t *testing.T) {
 func TestFaceScanBroadPhaseMatchesAnAllPairsWalk(t *testing.T) {
 	t.Parallel()
 	merged := topo.MergeBodies(topo.NewLineage(topo.Tok("bp", "body", 0)), true,
-		tetra(1, math.V3(0, 0, 0)), tetra(1, math.V3(0.2, 0.2, 0.2)), tetra(1, math.V3(9, 0, 0)))
+		brepfixture.Tetra(1, math.V3(0, 0, 0)), brepfixture.Tetra(1, math.V3(0.2, 0.2, 0.2)), brepfixture.Tetra(1, math.V3(9, 0, 0)))
 	scan := newFaceScan(merged.Faces())
 	got, want := map[[2]int]bool{}, map[[2]int]bool{}
 	for i := range scan.faces {
