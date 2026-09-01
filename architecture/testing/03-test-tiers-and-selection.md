@@ -199,8 +199,13 @@ cycle otherwise. Every extraction followed the same three steps:
    builder are re-topology, so they became `retopo.FullDomainBody` and
    `retopo.PlanarLoop`/`BuildSolidFromLoops`.
 
-The direction is now pinned by `archguard/ops_family_layering_test.go`: every edge between
-families is a declared row, and a family importing the `kernel/ops` façade is an error.
+The direction is now pinned by archguard's edge allowlist, which splits `kernel/*` and
+`kernel/ops/*` one level deeper than it did (#2194): every edge between families is a declared
+row, and no family may name the `kernel/ops` façade — the façade forwards to them, so that
+edge is a cycle waiting to happen. Seeding the rows from the real graph also made the two
+known inversions visible where they are enforced: `kernel/exchange` and `kernel/hlr` both sit
+above the operation layer but live inside `kernel/`, and carry a TODO with the issue that
+moves them (#2195, #2196).
 
 ### Two seams the split forces
 

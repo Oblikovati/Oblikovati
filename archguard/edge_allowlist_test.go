@@ -4,7 +4,6 @@ package archguard
 
 import (
 	"os/exec"
-	"slices"
 	"strings"
 	"testing"
 )
@@ -24,7 +23,77 @@ import (
 // belt-and-braces for the domain roots.
 var allowedTreeImports = map[string][]string{
 	// Domain (ADR-0014: pure, headless, cgo-free; also held by TestDomainPackagesAreGpuFree).
-	"kernel": {"api", "build", "math"},
+	// The kernel's rows are one level deep (#2194) because the ground rules pin its INTERNAL
+	// direction — geom → topo → brep → ops → model — and a single "kernel" row hid every edge
+	// inside it. Read down the list: each package may depend only on the ones below it.
+	"kernel/diag":       {},
+	"kernel/predicates": {},
+	"kernel/geom":       {"api", "build", "math"},
+	"kernel/topo":       {"kernel/diag", "kernel/geom", "math"},
+	"kernel/brep":       {"kernel/diag", "kernel/geom", "kernel/topo", "math"},
+	"kernel/subd":       {"kernel/geom", "kernel/topo", "math"},
+	"kernel/fit":        {"kernel/geom", "math"},
+	"kernel/blend":      {"kernel/geom", "kernel/topo", "math"},
+	"kernel/meshbool":   {"kernel/predicates", "math"},
+	"kernel/shading":    {"math"},
+	"kernel/geomapi":    {"api", "kernel/geom", "math"},
+
+	// kernel/ops is packaged BY OPERATION (#2183), so each family is its own row. The split
+	// only buys anything — a change to one family that neither rebuilds nor re-tests the
+	// others — while these edges stay declared, and NO family may name the kernel/ops façade:
+	// the façade forwards to them, so that edge is a cycle waiting to happen.
+	//
+	// The substrate leaves, lowest first.
+	"kernel/ops/internal/probe":    {"kernel/geom", "kernel/topo", "math"},
+	"kernel/ops/internal/disjoint": {},
+	"kernel/ops/internal/mesh":     {"kernel/diag", "kernel/geom", "kernel/ops/internal/probe", "kernel/topo", "math"},
+	"kernel/ops/internal/tol":      {"kernel/geom", "kernel/ops/internal/mesh", "kernel/topo", "math"},
+	"kernel/ops/internal/retopo": {"kernel/geom", "kernel/ops/internal/mesh", "kernel/ops/internal/probe",
+		"kernel/ops/internal/tol", "kernel/topo", "math"},
+
+	// validate is the post-condition every other family runs, so it sits lowest of the families;
+	// tessellate is a DERIVED view of the B-rep, below everything that models with it.
+	"kernel/ops/validate": {"kernel/brep", "kernel/geom", "kernel/ops/internal/mesh",
+		"kernel/ops/internal/probe", "kernel/topo", "math"},
+	"kernel/ops/tessellate": {"kernel/brep", "kernel/diag", "kernel/geom", "kernel/meshbool",
+		"kernel/ops/internal/mesh", "kernel/ops/internal/probe", "kernel/ops/validate",
+		"kernel/predicates", "kernel/topo", "math"},
+	"kernel/ops/transform": {"kernel/geom", "kernel/ops/internal/retopo", "kernel/topo", "math"},
+	// blend is the one fillet/chamfer/draft engine (ADR-0050/0051).
+	"kernel/ops/blend": {"api", "kernel/blend", "kernel/brep", "kernel/diag", "kernel/geom",
+		"kernel/ops/internal/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
+		"kernel/ops/internal/tol", "kernel/ops/tessellate", "kernel/ops/transform",
+		"kernel/ops/validate", "kernel/topo", "math"},
+	// query asks read-only questions of a body, and reads blend's edge convexity.
+	"kernel/ops/query": {"kernel/brep", "kernel/diag", "kernel/geom", "kernel/ops/blend",
+		"kernel/ops/internal/disjoint", "kernel/ops/internal/mesh", "kernel/ops/internal/probe",
+		"kernel/ops/internal/tol", "kernel/ops/tessellate", "kernel/predicates", "kernel/topo", "math"},
+	// boolean is the top of the modelling stack: it certifies each result face against query's
+	// analytic oracle, so nothing below it may import boolean.
+	"kernel/ops/boolean": {"kernel/brep", "kernel/diag", "kernel/geom", "kernel/meshbool",
+		"kernel/ops/internal/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/tol",
+		"kernel/ops/query", "kernel/ops/tessellate", "kernel/ops/validate", "kernel/topo", "math"},
+	// heal repairs a body on a copy, independent of the modelling stack; surface rebuilds faces
+	// and heals what it rebuilt.
+	"kernel/ops/heal": {"kernel/brep", "kernel/geom", "kernel/ops/internal/disjoint",
+		"kernel/ops/internal/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
+		"kernel/ops/internal/tol", "kernel/ops/tessellate", "kernel/ops/validate", "kernel/topo", "math"},
+	"kernel/ops/surface": {"kernel/brep", "kernel/fit", "kernel/geom", "kernel/ops/heal",
+		"kernel/ops/internal/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
+		"kernel/ops/internal/tol", "kernel/ops/transform", "kernel/ops/validate", "kernel/topo", "math"},
+	// The façade: it forwards the boolean enum and entry points, and keeps the general
+	// operations that belong to no family (section, shell, split, thicken).
+	"kernel/ops": {"kernel/brep", "kernel/diag", "kernel/geom", "kernel/ops/boolean",
+		"kernel/ops/internal/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
+		"kernel/ops/internal/tol", "kernel/ops/query", "kernel/ops/tessellate",
+		"kernel/ops/validate", "kernel/topo", "math"},
+
+	// TODO(#2195, #2196): exchange and hlr sit ABOVE the kernel's operation layer but live
+	// inside kernel/, so these two rows are inversions the ground rules do not allow. They stay
+	// listed — visible where they are enforced — until those issues move the packages out.
+	"kernel/exchange": {"api", "kernel/geom", "kernel/ops", "kernel/ops/query",
+		"kernel/ops/tessellate", "kernel/subd", "kernel/topo", "math"},
+	"kernel/hlr": {"kernel/ops", "kernel/ops/query", "kernel/ops/tessellate", "kernel/topo", "math"},
 	// model -> yamlcodec: the domain serializes recipes/materials through the neutral YAML
 	// leaf (yamlcodec wraps yaml.v3 and imports nothing first-party), NOT the persistence
 	// layer — the B4 (#1615) inversion is gone. Held transitively by TestModelDoesNotImportPersistence.
@@ -125,7 +194,7 @@ func reportForbiddenEdges(t *testing.T, pkg, src string, imports, allowed []stri
 		if dst == src {
 			continue
 		}
-		if !slices.Contains(allowed, dst) {
+		if !edgeAllowed(allowed, dst) {
 			t.Errorf("%s imports %s: edge %q -> %q is not in allowedTreeImports — either the "+
 				"import is an architecture violation, or the edge is a deliberate decision that "+
 				"belongs in the table with a comment (#1623).", pkg, imp, src, dst)
@@ -133,12 +202,42 @@ func reportForbiddenEdges(t *testing.T, pkg, src string, imports, allowed []stri
 	}
 }
 
+// edgeAllowed reports whether dst is covered by the row. A row entry matches the destination
+// tree exactly, or as a PARENT of it: "kernel" covers every kernel subtree, so a consumer that
+// may depend on the kernel says so once instead of listing the eleven packages it happens to
+// reach today. Inside a tree the rows are exact, which is what makes the direction enforceable.
+func edgeAllowed(allowed []string, dst string) bool {
+	for _, a := range allowed {
+		if a == dst || strings.HasPrefix(dst, a+"/") {
+			return true
+		}
+	}
+	return false
+}
+
 // packageTree maps an import path to its allowlist row: the top-level directory, except
-// addin/* which is split one level deeper (the router's allowances are its own).
+// where a tree's internal direction is itself an architecture decision and one row for the
+// whole tree would hide it (#2194).
+//
+//   - addin/* — the router's allowances must not leak to the other add-in infrastructure.
+//   - kernel/* — the ground rules pin the direction geom → topo → brep → ops → model and
+//     say archguard enforces it; with one "kernel" row every edge inside the kernel, and
+//     every inversion, is invisible.
+//   - kernel/ops/* — kernel/ops is packaged by OPERATION (#2183). The split only buys
+//     anything while the edges between the families stay declared, so each is its own row.
 func packageTree(importPath string) string {
 	p := strings.TrimPrefix(importPath, "oblikovati.org/")
 	parts := strings.Split(p, "/")
-	if parts[0] == "addin" && len(parts) > 1 {
+	if len(parts) < 2 {
+		return parts[0]
+	}
+	if parts[0] == "kernel" && parts[1] == "ops" && len(parts) > 2 {
+		if parts[2] == "internal" && len(parts) > 3 {
+			return "kernel/ops/internal/" + parts[3]
+		}
+		return "kernel/ops/" + parts[2]
+	}
+	if parts[0] == "addin" || parts[0] == "kernel" {
 		return parts[0] + "/" + parts[1]
 	}
 	return parts[0]
