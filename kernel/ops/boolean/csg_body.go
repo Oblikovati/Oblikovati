@@ -59,25 +59,32 @@ func booleanInputQuality() Quality {
 // in model/feature/planarize.go and run tier 2. kernel/ is entirely clean — every dependence is in
 // model/feature.
 //
-// It was FOUR tests on 2026-09-01. Two were not kernel gaps at all: the hole feature recorded a
-// 32-gon prism as its replay tool while cutting with the exact drill, so patterns faceted
-// everything to cope (#3463). Fixing the tool retired both:
+// It was FOUR tests on 2026-09-01. Three are gone, and none of them was the kernel gap it looked
+// like:
 //
-//	TestAnalyticPatternedCutDoesNotExplode   FIXED — 8 faces / 18 edges, analytic
-//	TestPatternOfHoleCutsEachOccurrence      FIXED — 9 faces / 21 edges, analytic
+//	TestAnalyticPatternedCutDoesNotExplode   FIXED (#3463) — the hole feature recorded a 32-gon
+//	TestPatternOfHoleCutsEachOccurrence      FIXED (#3463)   prism as its replay tool while cutting
+//	                                                         with the exact drill, so patterns
+//	                                                         faceted everything to cope
+//	TestChamferOfTaperShaftRimDoesNotCollapse FIXED (#1689) — a chamfer section is swept along its
+//	                                                         edge, and only the LINEAR sweep
+//	                                                         existed; a closed rim needs the
+//	                                                         rotational one
 //
-// TWO remain, each a real capability gap in a different subsystem:
+// ONE remains:
 //
-//	TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial  raises -87.09 cm³, wants +0.1…0.6 —
-//	                                                      containment/orientation on a concave
-//	                                                      analytic interior (ADR-0058)
-//	TestChamferOfTaperShaftRimDoesNotCollapse             "chamfer: degenerate edge" — the BLEND
-//	                                                      engine on an analytic taper rim, not the
-//	                                                      boolean at all (ADR-0050 strangler work)
+//	TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial — a pad seated on a chamfer cone. Its side
+//	faces cut the host cone in HYPERBOLA branches, which the exact conic clipper now handles, and
+//	the pass/wall gates now clear the pad's own cone patches (geom.SurfacesApart). What is missing
+//	is the last step: those four sections must be CO-REFINED into one footprint loop before either
+//	side clips them, or the uv side terminates its arc where it meets the face polygon while the
+//	wall side terminates where it meets the adjacent sections — two routes to the same corner, one
+//	loop each side, no shared boundary to weld. That is ADR-0052 co-refinement; until it lands,
+//	wallSectionIsland declines by name rather than returning a wrong answer.
 //
-// Delete Facet when those two pass with the facet branch removed. Before assuming a remaining
+// Delete Facet when that one passes with the facet branch removed. Before assuming a remaining
 // failure is a kernel gap, check whether the feature layer is handing the kernel a faceted operand
-// — that is what the first two turned out to be.
+// — that is what three of the four turned out to be.
 func Facet(b *topo.Body, feat string) *topo.Body {
 	cage := trianglesToBody(bodyTrianglesAt(b, DefaultQuality()), feat)
 	if cage == nil {
