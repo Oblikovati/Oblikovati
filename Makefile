@@ -58,8 +58,17 @@ fmt-check: ## Fail if any file is not gofmt-clean
 	@out=$$(gofmt -l .); if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
 
 .PHONY: vet
-vet: ## Run go vet (cgo-free)
+vet: ## Run go vet on BOTH modules (root cgo-free, then the cgo head)
 	CGO_ENABLED=0 $(GO) vet $(PKG)
+	$(MAKE) vet-head
+
+# head/ is a SEPARATE module: `go vet ./...` from the repo root does not compile a single
+# file of it. A change that renames or moves a kernel symbol therefore passes every
+# root-level check and still breaks the four head CI jobs — which is exactly what the
+# kernel/ops/tessellate extraction did. `vet` and `ci` cover it now.
+.PHONY: vet-head
+vet-head: ## go vet the cgo head module (needs the native deps; see head/Makefile)
+	CGO_ENABLED=1 $(GO) vet -C head ./...
 
 .PHONY: lint
 lint: ## Run golangci-lint (install with `make tools`)
@@ -182,7 +191,7 @@ run-cli: ## Run the headless CLI
 # `test-race` is the release gate (ci.yml runs it only on push to `release`), not a
 # per-change one; use `make ci-race` before cutting a release.
 .PHONY: ci
-ci: fmt-check vet lint cover ## Everything a PR must pass, locally
+ci: fmt-check vet lint cover ## Everything a PR must pass, locally (both modules)
 
 .PHONY: ci-race
 ci-race: ci test-race ## `make ci` plus the race detector (the pre-release gate)

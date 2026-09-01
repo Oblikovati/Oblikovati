@@ -150,6 +150,13 @@ kernel ground rule, so it has to be checked on each.
 `make ci` runs `fmt-check vet lint cover` — one suite run, not three. `make ci-race`
 adds the race detector for a release.
 
+**Both modules, every time.** `head/` is a separate module, so `go build ./...`,
+`go vet ./...` and `go test ./...` from the repo root do not compile one file of it. A
+change that renames or moves a kernel symbol passes every root-level check and still
+breaks the four head CI jobs — which is what the `kernel/ops/tessellate` extraction did.
+`make vet` and `make lint` both descend into `head/` for that reason; running
+`golangci-lint run` or `go vet ./...` directly does not, and is how the gap opens.
+
 ## What this does not fix
 
 The packages are still too large to be a selection unit: `kernel/ops` (120 000
