@@ -207,6 +207,19 @@ known inversions visible where they are enforced: `kernel/exchange` and `kernel/
 above the operation layer but live inside `kernel/`, and carry a TODO with the issue that
 moves them (#2195, #2196).
 
+### What it bought
+
+`kernel/ops` ran one test binary of ~1550 tests, so every change to any operation re-ran all
+of them. The families now hold 813 (blend), 231 (boolean), 208 (tessellate), 81 (query), 59
+(the façade), 55 (heal), 52 (validate), 47 (surface) and 19 (transform): a fillet change no
+longer runs the boolean suite, and neither runs the other's.
+
+Package SELECTION improves less, and it is worth being precise about why. A change under
+`kernel/ops/heal` selects 31 of 148 packages where anything in `kernel/ops` used to select 51;
+a change under `blend`, `boolean` or `query` still selects 51, because `model/feature` imports
+all three and `app` imports `model/feature`. Narrowing that is a different cut — splitting
+`app` and `model/feature` — not this one.
+
 ### Two seams the split forces
 
 **Test fixtures.** Go does not share `_test.go` helpers across packages, so a fixture two
