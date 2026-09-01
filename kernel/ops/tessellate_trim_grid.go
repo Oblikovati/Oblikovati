@@ -77,7 +77,7 @@ func structuredGridMeshSkip(s geom.Surface, us, vs []float64, skip func(i, j int
 	for i, u := range us {
 		idx[i] = make([]int, len(vs))
 		for j, v := range vs {
-			idx[i][j] = m.addVertex(s.PointAt(u, v), s.NormalAt(u, v))
+			idx[i][j] = m.AddVertex(s.PointAt(u, v), s.NormalAt(u, v))
 		}
 	}
 	for i := 0; i+1 < len(us); i++ {
@@ -94,20 +94,14 @@ func structuredGridMeshSkip(s geom.Surface, us, vs []float64, skip func(i, j int
 // emitCellOutward adds the two triangles of a grid cell, winding them so their geometric
 // normal agrees with the surface normal at the cell centre.
 func emitCellOutward(m *Mesh, s geom.Surface, u0, u1, v0, v1 float64, a, b, c, d int) {
-	flip := m.cellNormal(a, b, c).Dot(s.NormalAt((u0+u1)/2, (v0+v1)/2)) < 0
+	flip := m.CellNormal(a, b, c).Dot(s.NormalAt((u0+u1)/2, (v0+v1)/2)) < 0
 	if flip {
-		m.addTriangle(a, c, b)
-		m.addTriangle(a, d, c)
+		m.AddTriangle(a, c, b)
+		m.AddTriangle(a, d, c)
 		return
 	}
-	m.addTriangle(a, b, c)
-	m.addTriangle(a, c, d)
-}
-
-// cellNormal returns the (unnormalized) normal of triangle abc by position.
-func (m *Mesh) cellNormal(a, b, c int) math.Vector3 {
-	pa, pb, pc := m.Positions[a], m.Positions[b], m.Positions[c]
-	return pa.VectorTo(pb).Cross(pa.VectorTo(pc))
+	m.AddTriangle(a, b, c)
+	m.AddTriangle(a, c, d)
 }
 
 // periodicBandGrid handles a full-period curved band — a complete cylinder/cone side whose

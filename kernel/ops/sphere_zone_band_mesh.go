@@ -188,7 +188,7 @@ func buildSphereZoneBand(sph geom.Sphere, near, far zoneRing, fr zoneFrame, q Qu
 // zoneRingCount picks how many latitude steps the belt is swept in, so each step stays inside the
 // quality's angle tolerance — the same rule capRingCount applies to a cap.
 func zoneRingCount(span float64, q Quality) int {
-	n := int(stdmath.Ceil(stdmath.Abs(span) / q.angleTol()))
+	n := int(stdmath.Ceil(stdmath.Abs(span) / q.AngleTol()))
 	if n < 1 {
 		return 1
 	}
@@ -199,7 +199,7 @@ func zoneRingCount(span float64, q Quality) int {
 func addZoneRow(m *Mesh, sph geom.Sphere, pts []math.Point3, ang []float64) bandRow {
 	idx := make([]int, len(pts))
 	for i, p := range pts {
-		idx[i] = m.addVertex(p, sph.Center.VectorTo(p).Scale(math.Scalar(1/sph.Radius)))
+		idx[i] = m.AddVertex(p, sph.Center.VectorTo(p).Scale(math.Scalar(1/sph.Radius)))
 	}
 	return bandRow{idx: idx, ang: ang}
 }
@@ -209,7 +209,7 @@ func addZoneRing(m *Mesh, sph geom.Sphere, fr zoneFrame, ang []float64, polar fl
 	idx := make([]int, len(ang))
 	for i, a := range ang {
 		p, n := fr.pointAt(sph, a, polar)
-		idx[i] = m.addVertex(p, n)
+		idx[i] = m.AddVertex(p, n)
 	}
 	return bandRow{idx: idx, ang: ang}
 }

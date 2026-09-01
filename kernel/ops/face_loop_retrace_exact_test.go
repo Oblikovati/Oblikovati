@@ -85,11 +85,11 @@ func TestRetraceLengthIsTheExactArcLengthAtEveryQuality(t *testing.T) {
 	for _, q := range []Quality{DefaultQuality(), PropertyQuality()} {
 		bad := RetracingFaceLoops(body, q)
 		if len(bad) != 1 {
-			t.Fatalf("at chord tol %g the arc spike reports %d retracing loop(s), want 1", q.tol(), len(bad))
+			t.Fatalf("at chord tol %g the arc spike reports %d retracing loop(s), want 1", q.Tol(), len(bad))
 		}
 		if rel := stdmath.Abs(bad[0].Overlap-want) / want; rel > 1e-12 { // tol:numeric (relative length)
 			t.Errorf("at chord tol %g the retrace measures %.12g, closed form %.12g (rel %.4g)",
-				q.tol(), bad[0].Overlap, want, rel)
+				q.Tol(), bad[0].Overlap, want, rel)
 		}
 	}
 }

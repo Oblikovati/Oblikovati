@@ -84,7 +84,7 @@ func diagnosePatchGridClamp(m *Mesh, c patchGridClamp, q Quality) {
 		// degradation, so Defect not Warning (#3391), matching recordCapSaturation.
 		Severity: diag.Defect,
 		Detail: fmt.Sprintf("sphere-patch interior grid clamped to %dx%d of the %dx%d steps chord tol %g asked",
-			c.laidU, c.laidV, c.reqU, c.reqV, q.tol()),
+			c.laidU, c.laidV, c.reqU, c.reqV, q.Tol()),
 	})
 }
 
@@ -214,7 +214,7 @@ func (c gnomonicChart) lift(a, b float64) (math.Point3, math.Vector3) {
 // gridSpacing: a gnomonic step h near the axis lifts to ≈ h on the sphere, so the chord error R(1−cos
 // h/R) ≈ h²/2R ≤ tol gives h = √(2R·tol).
 func (c gnomonicChart) gridSpacing(q Quality) float64 {
-	return stdmath.Sqrt(2 * c.sph.Radius * q.tol())
+	return stdmath.Sqrt(2 * c.sph.Radius * q.Tol())
 }
 
 // stereoChart is the stereographic projection of a sphere from the antipode of axis (−axis) onto the
@@ -246,7 +246,7 @@ func (c stereoChart) lift(a, b float64) (math.Point3, math.Vector3) {
 // gridSpacing: stereographic magnifies most at the axis (a step h there lifts to ≈ 2h on the sphere), so
 // halve the gnomonic spacing to keep the worst-case (central) chord error within tol.
 func (c stereoChart) gridSpacing(q Quality) float64 {
-	return stdmath.Sqrt(2*c.sph.Radius*q.tol()) / 2
+	return stdmath.Sqrt(2*c.sph.Radius*q.Tol()) / 2
 }
 
 // projectPatchBoundary maps every boundary loop to the chart, keeping the EXACT 3D points and radial

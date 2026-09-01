@@ -44,7 +44,7 @@ func TestCornerRingIsTheSameAtEveryQuality(t *testing.T) {
 	for _, q := range []Quality{DefaultQuality(), PropertyQuality()} {
 		if got := len(loopBoundary(f.Loops()[0], q)); got == len(ring) {
 			t.Errorf("the discretized boundary at chord tol %g has %d points too, so this fixture "+
-				"cannot tell the two apart", q.tol(), got)
+				"cannot tell the two apart", q.Tol(), got)
 		}
 	}
 }

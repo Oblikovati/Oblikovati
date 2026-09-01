@@ -19,7 +19,7 @@ import (
 func frustumRimStations(r float64) int {
 	q := PropertyQuality()
 	n := 1
-	for r*(1-stdmath.Cos(stdmath.Pi/float64(n))) > q.tol() || 2*stdmath.Pi/float64(n) > q.angleTol() {
+	for r*(1-stdmath.Cos(stdmath.Pi/float64(n))) > q.Tol() || 2*stdmath.Pi/float64(n) > q.AngleTol() {
 		n *= 2
 	}
 	return n
@@ -49,7 +49,7 @@ func TestFrustumBandTilesEachRimAtItsOwnStations(t *testing.T) {
 		mesh, _ := TessellateBody(body, q)
 		if n := FreeEdgeCount(mesh); n != 0 {
 			t.Errorf("frustum body mesh leaks %d free edge(s) at chord tol %g — the two faces sharing a rim "+
-				"tiled it differently (a T-junction crack)", n, q.tol())
+				"tiled it differently (a T-junction crack)", n, q.Tol())
 		}
 	}
 	if got, want := coneFaceTriangles(t, body), small+big; got != want {

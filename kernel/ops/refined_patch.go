@@ -328,7 +328,7 @@ func patchLoops2D(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3
 func patchMeshFrom(pos []math.Point3, nrm []math.Vector3, tris [][3]int) *Mesh {
 	m := &Mesh{}
 	for i := range pos {
-		m.addVertex(pos[i], nrm[i])
+		m.AddVertex(pos[i], nrm[i])
 	}
 	// The CDT returns a CONSISTENTLY-oriented triangulation (every interior edge traversed once each way).
 	// Re-winding per-triangle to agree with its vertex normals BREAKS that consistency on a curved patch:
@@ -344,9 +344,9 @@ func patchMeshFrom(pos []math.Point3, nrm []math.Vector3, tris [][3]int) *Mesh {
 	flip := agree < 0
 	for _, t := range tris {
 		if flip {
-			m.addTriangle(t[0], t[2], t[1])
+			m.AddTriangle(t[0], t[2], t[1])
 		} else {
-			m.addTriangle(t[0], t[1], t[2])
+			m.AddTriangle(t[0], t[1], t[2])
 		}
 	}
 	return m

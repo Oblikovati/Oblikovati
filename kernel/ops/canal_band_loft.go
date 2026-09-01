@@ -260,7 +260,7 @@ func canalLoftRows(s geom.Surface, lo []math.Point3, loV []float64, hi []math.Po
 func canalAddRow(m *Mesh, s geom.Surface, pts []math.Point3, vs []float64, u float64) bandRow {
 	idx := make([]int, len(pts))
 	for i, p := range pts {
-		idx[i] = m.addVertex(p, s.NormalAt(u, vs[i]))
+		idx[i] = m.AddVertex(p, s.NormalAt(u, vs[i]))
 	}
 	return bandRow{idx: idx, ang: vs}
 }

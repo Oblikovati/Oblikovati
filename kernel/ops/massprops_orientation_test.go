@@ -160,7 +160,7 @@ func inconsistentCubeMesh(s float64) *Mesh {
 		m.P3(0, 0, s), m.P3(s, 0, s), m.P3(s, s, s), m.P3(0, s, s),
 	}
 	for _, p := range c {
-		mesh.addVertex(p, m.Vector3{}) // zeroed normals: prove they are unused
+		mesh.AddVertex(p, m.Vector3{}) // zeroed normals: prove they are unused
 	}
 	// Outward-wound quads (CCW seen from outside), each split into two triangles.
 	quads := [6][4]int{
@@ -178,8 +178,8 @@ func inconsistentCubeMesh(s float64) *Mesh {
 			t0[1], t0[2] = t0[2], t0[1]
 			t1[1], t1[2] = t1[2], t1[1]
 		}
-		mesh.addTriangle(t0[0], t0[1], t0[2])
-		mesh.addTriangle(t1[0], t1[1], t1[2])
+		mesh.AddTriangle(t0[0], t0[1], t0[2])
+		mesh.AddTriangle(t1[0], t1[1], t1[2])
 	}
 	return mesh
 }

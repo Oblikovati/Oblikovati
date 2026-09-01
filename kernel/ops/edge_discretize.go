@@ -46,7 +46,7 @@ func discretizeEdge(e *topo.Edge, q Quality) []math.Point3 {
 func sampleEdgeCurve(e *topo.Edge, q Quality) []math.Point3 {
 	c := e.Geometry()
 	lo, hi := c.Domain()
-	ts := adaptiveParams(func(t float64) math.Point3 { return c.PointAt(t) }, lo, hi, q.tol(), q.angleTol())
+	ts := adaptiveParams(func(t float64) math.Point3 { return c.PointAt(t) }, lo, hi, q.Tol(), q.AngleTol())
 	pts := make([]math.Point3, len(ts))
 	for i, t := range ts {
 		pts[i] = c.PointAt(t)

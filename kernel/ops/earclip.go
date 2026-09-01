@@ -33,10 +33,10 @@ func tessellatePlanarFace(f *topo.Face, q Quality) *Mesh {
 	tris := planarTris(boundary2D, nil)
 	m := &Mesh{}
 	for _, p := range boundary3D {
-		m.addVertex(p, normal)
+		m.AddVertex(p, normal)
 	}
 	for _, tri := range tris {
-		m.addTriangle(tri[0], tri[1], tri[2])
+		m.AddTriangle(tri[0], tri[1], tri[2])
 	}
 	recordUncoveredPlanarFace(m, tris, boundary2D, nil) // flag a non-covering (self-crossing) face, never silent (#3388)
 	return m
@@ -58,15 +58,15 @@ func holedPlanarMesh(outer2D []math.Point2, outer3D []math.Point3, holes3D [][]m
 	tris := planarTris(outer2D, holes2D)
 	m := &Mesh{}
 	for _, p := range outer3D {
-		m.addVertex(p, normal)
+		m.AddVertex(p, normal)
 	}
 	for _, h := range holes3D {
 		for _, p := range h {
-			m.addVertex(p, normal)
+			m.AddVertex(p, normal)
 		}
 	}
 	for _, tri := range tris {
-		m.addTriangle(tri[0], tri[1], tri[2])
+		m.AddTriangle(tri[0], tri[1], tri[2])
 	}
 	recordUncoveredPlanarFace(m, tris, outer2D, holes2D) // flag a non-covering (self-crossing) face, never silent (#3388)
 	return m

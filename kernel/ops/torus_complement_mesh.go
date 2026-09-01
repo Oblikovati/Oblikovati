@@ -31,8 +31,8 @@ func torusComplementMesh(s geom.Torus, holes3D [][]math.Point3, q Quality) *Mesh
 		return fullDomainGridMesh(s, q)
 	}
 	uc, vc := centroidUV(ovalUV)
-	us := adaptiveParams(func(u float64) math.Point3 { return s.PointAt(u, vc) }, uc-stdmath.Pi, uc+stdmath.Pi, q.tol(), q.angleTol())
-	vs := adaptiveParams(func(v float64) math.Point3 { return s.PointAt(uc, v) }, vc-stdmath.Pi, vc+stdmath.Pi, q.tol(), q.angleTol())
+	us := adaptiveParams(func(u float64) math.Point3 { return s.PointAt(u, vc) }, uc-stdmath.Pi, uc+stdmath.Pi, q.Tol(), q.AngleTol())
+	vs := adaptiveParams(func(v float64) math.Point3 { return s.PointAt(uc, v) }, vc-stdmath.Pi, vc+stdmath.Pi, q.Tol(), q.AngleTol())
 	i0, i1, j0, j1 := ovalWindow(us, vs, ovalUV)
 	m := gridOutsideWindow(s, us, vs, i0, i1, j0, j1)
 	win3D, winUV := windowRectLoop(s, us, vs, i0, i1, j0, j1)

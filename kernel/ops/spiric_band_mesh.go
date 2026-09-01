@@ -122,7 +122,7 @@ func spiricBandColumns(plus, minus geom.SpiricArc, q Quality) int {
 			maxSpan = span
 		}
 	}
-	if n := int(stdmath.Ceil(maxSpan / q.angleTol())); n > 2 {
+	if n := int(stdmath.Ceil(maxSpan / q.AngleTol())); n > 2 {
 		return n
 	}
 	return 2

@@ -363,15 +363,15 @@ func simpleLoop2D(pts []math.Point2) bool {
 func planarMeshFromTris(outer3D []math.Point3, holes3D [][]math.Point3, tris [][3]int, normal math.Vector3) *Mesh {
 	m := &Mesh{}
 	for _, p := range outer3D {
-		m.addVertex(p, normal)
+		m.AddVertex(p, normal)
 	}
 	for _, h := range holes3D {
 		for _, p := range h {
-			m.addVertex(p, normal)
+			m.AddVertex(p, normal)
 		}
 	}
 	for _, t := range tris {
-		m.addTriangle(t[0], t[1], t[2])
+		m.AddTriangle(t[0], t[1], t[2])
 	}
 	return m
 }

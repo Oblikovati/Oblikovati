@@ -48,7 +48,7 @@ func unionIsoparmParams(s geom.Surface, uLo, uHi, vLo, vHi float64, alongU bool,
 			}
 			return s.PointAt(fixed, t)
 		}
-		merged = mergeSortedParams(merged, adaptiveParams(eval, lo, hi, q.tol(), q.angleTol()))
+		merged = mergeSortedParams(merged, adaptiveParams(eval, lo, hi, q.Tol(), q.AngleTol()))
 	}
 	return merged
 }

@@ -44,10 +44,10 @@ func unionHoledMesh(outer3D []math.Point3, holes3D [][]math.Point3, normal math.
 	verts2D, tris := unionTris(outer2D, holes2D)
 	m := &Mesh{}
 	for _, q := range verts2D {
-		m.addVertex(to3D(q), normal)
+		m.AddVertex(to3D(q), normal)
 	}
 	for _, t := range tris {
-		m.addTriangle(t[0], t[1], t[2])
+		m.AddTriangle(t[0], t[1], t[2])
 	}
 	return m
 }

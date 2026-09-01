@@ -19,8 +19,8 @@ import (
 func sphereGrid(s geom.Sphere, q Quality) (us, vs []float64) {
 	uLo, uHi := s.UDomain()
 	vLo, vHi := s.VDomain()
-	us = adaptiveParams(func(u float64) math.Point3 { return s.PointAt(u, (vLo+vHi)/2) }, uLo, uHi, q.tol(), q.angleTol())
-	vs = adaptiveParams(func(v float64) math.Point3 { return s.PointAt((uLo+uHi)/2, v) }, vLo, vHi, q.tol(), q.angleTol())
+	us = adaptiveParams(func(u float64) math.Point3 { return s.PointAt(u, (vLo+vHi)/2) }, uLo, uHi, q.Tol(), q.AngleTol())
+	vs = adaptiveParams(func(v float64) math.Point3 { return s.PointAt((uLo+uHi)/2, v) }, vLo, vHi, q.Tol(), q.AngleTol())
 	return us, vs
 }
 

@@ -17,10 +17,10 @@ func TestEmitCellOutwardFlipsInwardCell(t *testing.T) {
 		t.Fatalf("NewPlane: %v", err)
 	}
 	m := &Mesh{}
-	a := m.addVertex(math.P3(0, 0, 0), math.V3(0, 0, 1))
-	b := m.addVertex(math.P3(0, 1, 0), math.V3(0, 0, 1))
-	c := m.addVertex(math.P3(1, 1, 0), math.V3(0, 0, 1))
-	d := m.addVertex(math.P3(1, 0, 0), math.V3(0, 0, 1))
+	a := m.AddVertex(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	b := m.AddVertex(math.P3(0, 1, 0), math.V3(0, 0, 1))
+	c := m.AddVertex(math.P3(1, 1, 0), math.V3(0, 0, 1))
+	d := m.AddVertex(math.P3(1, 0, 0), math.V3(0, 0, 1))
 	emitCellOutward(m, pl, 0, 1, 0, 1, a, b, c, d)
 	want := []int{0, 2, 1, 0, 3, 2}
 	if len(m.Indices) != len(want) {

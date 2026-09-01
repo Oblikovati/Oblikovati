@@ -66,7 +66,7 @@ func poleRowVertices(m *Mesh, s geom.Surface, us, vs []float64, weld float64) []
 	for j, v := range vs {
 		out[j] = -1
 		if rowIsPole(s, us, v, weld) {
-			out[j] = m.addVertex(s.PointAt(us[0], v), s.NormalAt(us[0], v))
+			out[j] = m.AddVertex(s.PointAt(us[0], v), s.NormalAt(us[0], v))
 		}
 	}
 	return out
@@ -95,7 +95,7 @@ func closedGridVertices(m *Mesh, s geom.Surface, us, vs []float64, poles []int) 
 				idx[i][j] = poles[j]
 				continue
 			}
-			idx[i][j] = m.addVertex(s.PointAt(u, v), s.NormalAt(u, v))
+			idx[i][j] = m.AddVertex(s.PointAt(u, v), s.NormalAt(u, v))
 		}
 	}
 	return idx
@@ -129,5 +129,5 @@ func emitClosedTri(m *Mesh, a, b, c int) {
 	if windingOpposesNormals(m.Positions[a], m.Positions[b], m.Positions[c], m.Normals[a], m.Normals[b], m.Normals[c]) {
 		b, c = c, b
 	}
-	m.addTriangle(a, b, c)
+	m.AddTriangle(a, b, c)
 }

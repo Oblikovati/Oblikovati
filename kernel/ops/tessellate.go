@@ -5,93 +5,10 @@ package ops
 import (
 	stdmath "math"
 
-	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
-
-// Mesh is a triangle mesh for display/export: positions, per-vertex normals, and
-// triangle indices (triples). float64 here; the renderer narrows to float32 at the
-// GPU boundary (core/03).
-type Mesh struct {
-	Positions []math.Point3
-	Normals   []math.Vector3
-	Indices   []int
-	// Diagnostics carries any degradation the tessellator recorded while building this mesh — a cap it
-	// saturated, an exact path it declined — the diag channel's tessellation carrier, so a consumer sees
-	// the mesh may not meet tolerance instead of discovering it downstream (Oblikovati#1412). Empty means
-	// a clean tessellation.
-	Diagnostics []diag.Diagnostic
-}
-
-// Diagnose records a diagnostic onto the mesh — the emission site for a tessellator that degraded while
-// building it (e.g. saturated the interior-cell cap below the chord tolerance, #1412).
-func (m *Mesh) Diagnose(d diag.Diagnostic) { m.Diagnostics = append(m.Diagnostics, d) }
-
-// carryDiagnostics lifts a sub-mesh's diagnostics into m when the tessellator composes meshes, so a
-// degradation recorded deep in a component surfaces on the final face mesh.
-func (m *Mesh) carryDiagnostics(child *Mesh) {
-	if child != nil && len(child.Diagnostics) > 0 {
-		m.Diagnostics = append(m.Diagnostics, child.Diagnostics...)
-	}
-}
-
-// TriangleCount returns the number of triangles.
-func (m *Mesh) TriangleCount() int { return len(m.Indices) / 3 }
-
-// VertexCount returns the number of vertices.
-func (m *Mesh) VertexCount() int { return len(m.Positions) }
-
-func (m *Mesh) addVertex(p math.Point3, n math.Vector3) int {
-	m.Positions = append(m.Positions, p)
-	m.Normals = append(m.Normals, n)
-	return len(m.Positions) - 1
-}
-
-func (m *Mesh) addTriangle(i, j, k int) { m.Indices = append(m.Indices, i, j, k) }
-
-// Quality controls faceting density via two tolerances: a chordal deviation (max gap
-// between a facet and the true geometry) and an angular deflection (max turn per facet).
-// The angle bound guarantees small-radius curves still get enough facets to read as round
-// — a 4 mm bore would pass the chord test at 8 facets (an octagon) on chord tolerance
-// alone, so the angle bound forces the minimum segment count a circle needs.
-type Quality struct {
-	ChordTolerance float64
-	AngleTolerance float64 // max turning angle per facet, radians (0 → default)
-}
-
-// DefaultQuality returns a reasonable display tolerance. The angle bound is a max
-// chord-to-chord deflection; with recursive bisection it gives a full circle 32 facets
-// regardless of radius, so even tiny holes (a 4 mm bore) render round, not polygonal.
-func DefaultQuality() Quality {
-	return Quality{ChordTolerance: 0.05, AngleTolerance: 10 * stdmath.Pi / 180}
-}
-
-// PropertyQuality returns the tessellation tolerance for MASS/GEOMETRY PROPERTY readouts (volume,
-// area, centroid, inertia), which are integrated over the mesh (see BodyGeometryProperties) and so
-// need far finer faceting than the display default. An inscribed N-gon approximation of a curved
-// face under-reports its area/volume by ~π²/(3N²): the display default's ~36 facets/circle biases
-// a curved solid's volume by ~−0.64% (the recurring delta the exporter saw against Inventor's
-// analytic oracle), whereas this ~1°/360-facets tolerance holds it under ~0.01% — engineering
-// parity. Use it wherever a property value is reported, never for display (it is ~10× the facets).
-func PropertyQuality() Quality {
-	return Quality{ChordTolerance: 1e-3, AngleTolerance: 1 * stdmath.Pi / 180}
-}
-
-func (q Quality) tol() float64 {
-	if q.ChordTolerance <= 0 {
-		return DefaultQuality().ChordTolerance
-	}
-	return q.ChordTolerance
-}
-
-func (q Quality) angleTol() float64 {
-	if q.AngleTolerance <= 0 {
-		return DefaultQuality().AngleTolerance
-	}
-	return q.AngleTolerance
-}
 
 // TessellateEdge facets an edge into a polyline honoring the chordal and angular tolerances.
 func TessellateEdge(e *topo.Edge, q Quality) []math.Point3 {
@@ -117,7 +34,7 @@ func tessellateEdgeWithParams(e *topo.Edge, q Quality) ([]math.Point3, []float64
 		return snapped, params
 	}
 	lo, hi := c.Domain()
-	params := adaptiveParams(c.PointAt, lo, hi, q.tol(), q.angleTol())
+	params := adaptiveParams(c.PointAt, lo, hi, q.Tol(), q.AngleTol())
 	pts := make([]math.Point3, len(params))
 	for i, t := range params {
 		pts[i] = c.PointAt(t)
@@ -206,7 +123,7 @@ func tessellateThreadedFace(f *topo.Face, s geom.ThreadedCylinder, q Quality) *M
 	for i, u := range us {
 		idx[i] = make([]int, len(vs))
 		for j, v := range vs {
-			idx[i][j] = m.addVertex(s.PointAt(u, v), base.NormalAt(u, v))
+			idx[i][j] = m.AddVertex(s.PointAt(u, v), base.NormalAt(u, v))
 		}
 	}
 	for i := 0; i+1 < len(us); i++ {
@@ -238,7 +155,7 @@ func mergeMesh(dst, src *Mesh) {
 	for _, idx := range src.Indices {
 		dst.Indices = append(dst.Indices, base+idx)
 	}
-	dst.carryDiagnostics(src) // a face's tessellation diagnostics surface on the whole-body mesh
+	dst.CarryDiagnostics(src) // a face's tessellation diagnostics surface on the whole-body mesh
 }
 
 // adaptiveParams returns the parameter breakpoints (lo…hi inclusive) at which eval's chord

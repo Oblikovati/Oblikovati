@@ -41,9 +41,9 @@ import (
 //
 // "Never loses it" needs one derived allowance, because the repair legitimately CHANGES the boundary
 // polygon: it restores the near-collinear boundary points the absorbing mesher dropped. A point the
-// mesher was entitled to drop lies within the chordal tolerance q.tol() of the segment it splits, so
-// restoring it moves the enclosed area by at most ½·q.tol()·(that segment's length); summed over the
-// whole boundary that is bounded by q.tol() × the face's boundary length. Nothing else about a
+// mesher was entitled to drop lies within the chordal tolerance q.Tol() of the segment it splits, so
+// restoring it moves the enclosed area by at most ½·q.Tol()·(that segment's length); summed over the
+// whole boundary that is bounded by q.Tol() × the face's boundary length. Nothing else about a
 // faithful re-mesh may move the area. The bound scales with the model (a length × a tolerance, both
 // in model units), so a µm part and a 1000× fixture get the same test — and it is provably not fitted
 // to the corpus: every one of the 141 faithful adoptions sits ≥10 DECADES inside it (worst |loss| /
@@ -66,7 +66,7 @@ func conformingMeshIsFaithful(m, old *Mesh, f *topo.Face, q Quality) bool {
 // tolerance times the face's own discretized boundary length, the bound on how far restoring the
 // dropped near-collinear boundary points can move the enclosed area (see the file comment).
 func conformAreaSlack(f *topo.Face, q Quality) float64 {
-	return q.tol() * faceBoundaryLength(f, q)
+	return q.Tol() * faceBoundaryLength(f, q)
 }
 
 // faceBoundaryLength is the total length of f's discretized boundary rings — outer plus every hole —

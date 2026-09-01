@@ -176,7 +176,7 @@ func addRow(m *Mesh, s geom.Surface, pts []math.Point3, ang []float64) bandRow {
 	idx := make([]int, len(pts))
 	for i, p := range pts {
 		u, v := s.ParamAt(p)
-		idx[i] = m.addVertex(p, s.NormalAt(u, v))
+		idx[i] = m.AddVertex(p, s.NormalAt(u, v))
 	}
 	return bandRow{idx: idx, ang: ang}
 }

@@ -56,7 +56,7 @@ func adaptiveInteriorNodes(s geom.Surface, outer []math.Point2, holes [][]math.P
 	}
 	margin := 0.3 * stdmath.Min(stepU, stepV)
 	pts := baseStaggeredGrid(umin, umax, vmin, vmax, stepU, stepV, outer, holes, margin)
-	saturated := stepSaturates(s, umin, umax, vmin, vmax, stepU, stepV, q.tol())
+	saturated := stepSaturates(s, umin, umax, vmin, vmax, stepU, stepV, q.Tol())
 	if localRefine && refineLocalCurvature(s, umin, umax, vmin, vmax, stepU, stepV, q, outer, holes, margin, &pts) {
 		saturated = true
 	}
@@ -107,7 +107,7 @@ func baseStaggeredGrid(umin, umax, vmin, vmax, stepU, stepV float64, outer []mat
 // localRefineThreshold·tol, appending the new finer nodes to pts. It returns whether any cell saturated
 // the cell-size floor while still over tolerance.
 func refineLocalCurvature(s geom.Surface, umin, umax, vmin, vmax, stepU, stepV float64, q Quality, outer []math.Point2, holes [][]math.Point2, margin float64, pts *[][2]float64) bool {
-	tol := q.tol() * localRefineThreshold
+	tol := q.Tol() * localRefineThreshold
 	minU, minV := (umax-umin)/maxInteriorCells, (vmax-vmin)/maxInteriorCells
 	saturated := false
 	for u0 := umin; u0 < umax-1e-12; u0 += stepU {
@@ -154,7 +154,7 @@ func recordCapSaturation(m *Mesh, saturated bool, q Quality) {
 	m.Diagnose(diag.Diagnostic{
 		Code:     CodeTessellateCapSaturated,
 		Severity: diag.Defect,
-		Detail:   fmt.Sprintf("interior refinement saturated the %d-cell floor still above chord tol %g", maxInteriorCells, q.tol()),
+		Detail:   fmt.Sprintf("interior refinement saturated the %d-cell floor still above chord tol %g", maxInteriorCells, q.Tol()),
 	})
 }
 

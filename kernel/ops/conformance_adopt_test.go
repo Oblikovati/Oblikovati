@@ -91,12 +91,12 @@ func TestConformingMeshIsFaithfulStillRejectsAddedFolds(t *testing.T) {
 func quadMesh(w, h float64) *Mesh {
 	m := &Mesh{}
 	n := math.V3(0, 0, 1)
-	m.addVertex(math.P3(0, 0, 0), n)
-	m.addVertex(math.P3(w, 0, 0), n)
-	m.addVertex(math.P3(w, h, 0), n)
-	m.addVertex(math.P3(0, h, 0), n)
-	m.addTriangle(0, 1, 2)
-	m.addTriangle(0, 2, 3)
+	m.AddVertex(math.P3(0, 0, 0), n)
+	m.AddVertex(math.P3(w, 0, 0), n)
+	m.AddVertex(math.P3(w, h, 0), n)
+	m.AddVertex(math.P3(0, h, 0), n)
+	m.AddTriangle(0, 1, 2)
+	m.AddTriangle(0, 2, 3)
 	return m
 }
 
@@ -106,9 +106,9 @@ func foldedQuadMesh() *Mesh {
 	m := &Mesh{}
 	n := math.V3(0, 0, 1)
 	for _, p := range []math.Point3{math.P3(0, 0, 0), math.P3(10, 0, 0), math.P3(10, 10, 0), math.P3(5, 30, 0.5)} {
-		m.addVertex(p, n)
+		m.AddVertex(p, n)
 	}
-	m.addTriangle(0, 1, 2) // geometric normal +z
-	m.addTriangle(1, 0, 3) // hinged on edge 0–1, creased back: normal ≈ −z, area 150 (total 200 > 100)
+	m.AddTriangle(0, 1, 2) // geometric normal +z
+	m.AddTriangle(1, 0, 3) // hinged on edge 0–1, creased back: normal ≈ −z, area 150 (total 200 > 100)
 	return m
 }

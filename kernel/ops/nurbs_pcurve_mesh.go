@@ -166,7 +166,7 @@ func starvedEdgeTarget(e *topo.Edge) float64 {
 // densifyStraightEdgeCurve samples edge e's own curve into ⌈L3d/h⌉+1 evenly-parameterized points,
 // start vertex → end vertex (discretizeEdge's natural order) — called only when e is already known
 // to be (near-)straight (densifyStarvedRail's len(pts)==2 gate: discretizeEdge's own chord-sagitta
-// test already proved it flat to within q.tol()). Endpoints are the edge's own vertices, exactly
+// test already proved it flat to within q.Tol()). Endpoints are the edge's own vertices, exactly
 // matching discretizeEdge, so every inserted point sits on the SAME edge curve every caller — on
 // either side of the shared boundary — already agrees on.
 func densifyStraightEdgeCurve(e *topo.Edge, h float64) []math.Point3 {

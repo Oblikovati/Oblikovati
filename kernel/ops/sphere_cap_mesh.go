@@ -86,7 +86,7 @@ func buildSphereCap(sph geom.Sphere, outer3D []math.Point3, axis math.Vector3, q
 	rows := capRingCount(alpha, q)
 	m := &Mesh{}
 	grid := capRingVertices(m, sph, outer3D, axis, alpha, rows)
-	pole := m.addVertex(sph.Center.TranslateBy(axis.Scale(math.Scalar(r))), axis)
+	pole := m.AddVertex(sph.Center.TranslateBy(axis.Scale(math.Scalar(r))), axis)
 	emitCapGrid(m, grid, pole)
 	return m
 }
@@ -105,7 +105,7 @@ func rimPolarAngle(sph geom.Sphere, outer3D []math.Point3, axis math.Vector3) fl
 // capRingCount picks the number of latitude rings so each ring's angular step stays within the
 // angle tolerance (so the meridian chord error matches the rim's own faceting), at least one ring.
 func capRingCount(alpha float64, q Quality) int {
-	n := int(stdmath.Ceil(alpha / q.angleTol()))
+	n := int(stdmath.Ceil(alpha / q.AngleTol()))
 	if n < 1 {
 		return 1
 	}
@@ -120,10 +120,10 @@ func capRingVertices(m *Mesh, sph geom.Sphere, outer3D []math.Point3, axis math.
 	for i, p := range outer3D {
 		perp := meridianPerp(sph, p, axis)
 		grid[i] = make([]int, rows)
-		grid[i][0] = m.addVertex(p, sph.Center.VectorTo(p).Scale(math.Scalar(1/sph.Radius)))
+		grid[i][0] = m.AddVertex(p, sph.Center.VectorTo(p).Scale(math.Scalar(1/sph.Radius)))
 		for k := 1; k < rows; k++ {
 			ang := alpha * float64(rows-k) / float64(rows) // rows→pole as k grows; k=0 is the rim
-			grid[i][k] = m.addVertex(capPoint(sph, axis, perp, ang), capNormal(axis, perp, ang))
+			grid[i][k] = m.AddVertex(capPoint(sph, axis, perp, ang), capNormal(axis, perp, ang))
 		}
 	}
 	return grid

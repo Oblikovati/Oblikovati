@@ -51,7 +51,7 @@ func TestSelfIntersectionVerdictIsIndependentOfQuality(t *testing.T) {
 	}{{"default", DefaultQuality()}, {"property", PropertyQuality()}} {
 		if hits := SelfIntersections(body, q.q); len(hits) == 0 {
 			t.Errorf("%s quality (chord tol %g) missed a 0.01-deep crossing of two cylinder sides",
-				q.name, q.q.tol())
+				q.name, q.q.Tol())
 		}
 	}
 }
@@ -195,7 +195,7 @@ func TestSelfIntersectionsPassATangentBlend(t *testing.T) {
 	for _, q := range []Quality{DefaultQuality(), PropertyQuality()} {
 		if hits := SelfIntersections(body, q); len(hits) != 0 {
 			t.Errorf("a tangent fillet band reports %d self-intersection(s) at chord tol %g: %+v",
-				len(hits), q.tol(), hits)
+				len(hits), q.Tol(), hits)
 		}
 	}
 }

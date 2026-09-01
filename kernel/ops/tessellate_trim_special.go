@@ -82,18 +82,18 @@ func coneApexFan(s geom.Surface, outer3D []math.Point3) (*Mesh, bool) {
 		return nil, false
 	}
 	m := &Mesh{}
-	apex := m.addVertex(cone.Apex, cone.AxisDir.AsVector().Scale(-1)) // axial normal at the pole
+	apex := m.AddVertex(cone.Apex, cone.AxisDir.AsVector().Scale(-1)) // axial normal at the pole
 	rim := make([]int, len(outer3D))
 	for i, p := range outer3D {
 		u, v := cone.ParamAt(p)
-		rim[i] = m.addVertex(p, cone.NormalAt(u, v))
+		rim[i] = m.AddVertex(p, cone.NormalAt(u, v))
 	}
 	for i := range outer3D {
 		b, c := rim[i], rim[(i+1)%len(outer3D)]
 		if triangleFlipped(cone, cone.Apex, m.Positions[b], m.Positions[c]) {
 			b, c = c, b
 		}
-		m.addTriangle(apex, b, c)
+		m.AddTriangle(apex, b, c)
 	}
 	return m, true
 }
@@ -167,18 +167,18 @@ func rimExcludingApex(loop []math.Point3, apex math.Point3, tol float64) []math.
 // meridian rulings, watertight with the sector's neighbour cap and ring faces (shared discretization).
 func coneSectorFan(cone geom.Cone, rim []math.Point3) *Mesh {
 	m := &Mesh{}
-	apex := m.addVertex(cone.Apex, cone.AxisDir.AsVector().Scale(-1)) // axial normal at the pole
+	apex := m.AddVertex(cone.Apex, cone.AxisDir.AsVector().Scale(-1)) // axial normal at the pole
 	idx := make([]int, len(rim))
 	for i, p := range rim {
 		u, v := cone.ParamAt(p)
-		idx[i] = m.addVertex(p, cone.NormalAt(u, v))
+		idx[i] = m.AddVertex(p, cone.NormalAt(u, v))
 	}
 	for i := 0; i+1 < len(rim); i++ {
 		b, c := idx[i], idx[i+1]
 		if triangleFlipped(cone, cone.Apex, rim[i], rim[i+1]) {
 			b, c = c, b
 		}
-		m.addTriangle(apex, b, c)
+		m.AddTriangle(apex, b, c)
 	}
 	return m
 }

@@ -276,7 +276,7 @@ func FaceSilhouetteWires(f *topo.Face, viewDir math.Vector3, includeBoundary boo
 	if len(loops) == 0 {
 		return nil, fmt.Errorf("ops: face %d has no silhouette from %v", f.ID(), viewDir)
 	}
-	onTol := stdmath.Max(q.tol(), 1e-6) // tol:calibrated — floors the (already model-relative) quality chord tolerance
+	onTol := stdmath.Max(q.Tol(), 1e-6) // tol:calibrated — floors the (already model-relative) quality chord tolerance
 	var segs [][2]math.Point3
 	for _, pl := range loops {
 		segs = append(segs, clipPolylineToFace(pl, f, onTol, includeBoundary)...)

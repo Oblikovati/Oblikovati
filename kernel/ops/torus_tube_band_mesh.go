@@ -166,7 +166,7 @@ func addTubeRow(m *Mesh, t geom.Torus, pts []math.Point3, vs []float64) bandRow 
 	idx := make([]int, len(pts))
 	for i, p := range pts {
 		u, v := t.ParamAt(p)
-		idx[i] = m.addVertex(p, t.NormalAt(u, v))
+		idx[i] = m.AddVertex(p, t.NormalAt(u, v))
 	}
 	return bandRow{idx: idx, ang: vs}
 }

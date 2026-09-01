@@ -217,7 +217,7 @@ func pinchedRowParams(bs geom.BSplineSurface, b *pinchedBand, q Quality) []float
 	}
 	vMid := widestSectionV(bs, b)
 	return adaptiveParams(func(u float64) math.Point3 { return bs.PointAt(u, vMid) },
-		firstOf(bs.UDomain()), secondOf(bs.UDomain()), q.tol(), q.angleTol())
+		firstOf(bs.UDomain()), secondOf(bs.UDomain()), q.Tol(), q.AngleTol())
 }
 
 func firstOf(lo, _ float64) float64  { return lo }
@@ -283,7 +283,7 @@ func addPinchedRow(m *Mesh, bs geom.BSplineSurface, pts []math.Point3, vs []floa
 	idx := make([]int, len(pts))
 	for i, p := range pts {
 		v := stdmath.Max(vLo+inset, stdmath.Min(vHi-inset, vs[i]))
-		idx[i] = m.addVertex(p, bs.NormalAt(u, v))
+		idx[i] = m.AddVertex(p, bs.NormalAt(u, v))
 	}
 	return bandRow{idx: idx, ang: vs}
 }
@@ -311,13 +311,13 @@ func addPinchFans(m *Mesh, bs geom.BSplineSurface, rows []bandRow, pinchLo, pinc
 	vLo, vHi := bs.VDomain()
 	uMid := 0.5 * (uLo + uHi)
 	if pinchLo {
-		p := m.addVertex(bs.PointAt(uMid, vLo), pinchNormal(bs, uMid, vLo, vHi, true))
+		p := m.AddVertex(bs.PointAt(uMid, vLo), pinchNormal(bs, uMid, vLo, vHi, true))
 		for i := 0; i+1 < len(rows); i++ {
 			emitClosedTri(m, p, rows[i].idx[0], rows[i+1].idx[0])
 		}
 	}
 	if pinchHi {
-		p := m.addVertex(bs.PointAt(uMid, vHi), pinchNormal(bs, uMid, vLo, vHi, false))
+		p := m.AddVertex(bs.PointAt(uMid, vHi), pinchNormal(bs, uMid, vLo, vHi, false))
 		for i := 0; i+1 < len(rows); i++ {
 			emitClosedTri(m, rows[i].idx[len(rows[i].idx)-1], p, rows[i+1].idx[len(rows[i+1].idx)-1])
 		}
