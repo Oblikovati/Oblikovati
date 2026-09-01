@@ -5,14 +5,13 @@ package ops
 import (
 	"errors"
 	"fmt"
+	stdmath "math"
 	"strconv"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
-
-	stdmath "math"
-	"oblikovati.org/kernel/ops/internal/probe"
 )
 
 // Surface-editing geometry (M10-F02). Phase A operates on planar surface bodies: a
