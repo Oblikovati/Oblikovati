@@ -42,7 +42,7 @@ func (g *GitChanges) ChangedPaths() ([]string, error) {
 
 // collect runs one git command and adds each output line to the set.
 func (g *GitChanges) collect(set map[string]bool, args []string) error {
-	cmd := exec.Command("git", args...)
+	cmd := exec.Command(gitBinary(), args...)
 	cmd.Dir = g.root
 	out, err := cmd.Output()
 	if err != nil {

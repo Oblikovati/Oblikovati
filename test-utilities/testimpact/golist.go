@@ -27,7 +27,7 @@ func NewGoListLoader(root string) *GoListLoader {
 
 // LoadGraph runs go list and parses its output into the package graph.
 func (l *GoListLoader) LoadGraph() ([]Package, error) {
-	cmd := exec.Command("go", "list", "-test", "-e", "-f", graphFormat, l.pattern)
+	cmd := exec.Command(goBinary(), "list", "-test", "-e", "-f", graphFormat, l.pattern)
 	cmd.Dir = l.root
 	cmd.Env = append(cmd.Environ(), "CGO_ENABLED=0")
 	out, err := cmd.Output()
