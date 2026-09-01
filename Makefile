@@ -87,6 +87,12 @@ CORPUS_TIMEOUT ?= 60m
 # elapsed stretches with core contention (see cmd/testslowest).
 TIER1_PACKAGE_BUDGET ?= 90
 
+# Seconds an UNGUARDED test may take in a TIER 2 run. This is the gate CI gets for
+# free: it reads the tier-2 stream that already exists, so nothing is run twice. The
+# limit is loose because tier-2 elapsed is stretched by core contention — the slowest
+# honest test measured 22s against 40-434s for the corpus.
+UNGUARDED_BUDGET ?= 60
+
 # Scratch file the timing targets write `go test -json` into. A file, not a pipe: see
 # the note on test-budget.
 TESTJSON ?= test-results.json
@@ -116,10 +122,19 @@ test-impacted-corpus: ## Tier 2 on only the packages the current change set can 
 # The report is fed from a FILE, not a pipe: `sh` reports the exit status of the last
 # command in a pipeline, so `go test | testslowest` would go green on a red suite.
 .PHONY: test-budget
-test-budget: ## Tier 1 with the per-package time budget enforced (the CI gate)
+test-budget: ## Tier 1 with the per-package time budget enforced (local, tight gate)
 	@CGO_ENABLED=0 $(GO) test -short -json $(PKG) > $(TESTJSON); status=$$?; \
 	  $(GO) run ./cmd/testslowest -top 15 -package-budget $(TIER1_PACKAGE_BUDGET) < $(TESTJSON) \
 	    || status=1; \
+	  rm -f $(TESTJSON); \
+	  exit $$status
+
+# What CI enforces, and it costs no extra run: one tier-2 pass gates itself.
+.PHONY: test-guards
+test-guards: ## Tier 2 with the tier-1 guard gate enforced (what CI runs)
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(PKG) > $(TESTJSON); status=$$?; \
+	  $(GO) run ./cmd/testslowest -top 25 -unguarded-budget $(UNGUARDED_BUDGET) -module-root . \
+	    < $(TESTJSON) || status=1; \
 	  rm -f $(TESTJSON); \
 	  exit $$status
 

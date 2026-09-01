@@ -98,24 +98,47 @@ Selection is a convenience, not a gate. `kernel/geom` is imported by 49 of 128
 packages and `math` by 77, so touching the low layers still selects most of the
 module. What bounds the cost there is rules 1 and 2, not the selection.
 
-## Rule 4 — the tiers hold their budget
+## Rule 4 — the tier-1 promise is gated without running anything twice
 
-`make test-budget` fails when a tier-1 package exceeds `TIER1_PACKAGE_BUDGET`
-(90 s). A new corpus test that forgets its `testing.Short()` guard costs 100 s or
-more, so the gate catches it; the slowest honest tier-1 package sits near 15 s on 32
-cores. CI runs this on the Linux leg.
+Tier 2 is a **superset** of tier 1, so a CI job that runs `-short` on the same OS as
+the full run re-runs ~9400 tests for nothing. CI therefore has no tier-1 job. The
+gate reads the tier-2 JSON that the Linux leg already writes, and fails on any test
+that was slow **and does not guard itself**:
 
-The budget is **per package**, not per test, because package wall time is the only
-figure that does not move with how the tests inside were scheduled.
+```
+go run ./cmd/testslowest -top 25 -unguarded-budget 60 -module-root .
+```
+
+Guarded-ness is decided by a static scan of the source
+(`test-utilities/testguard`), which follows a guard one call deep into a harness —
+`model/feature`'s OCCT tests reach `testing.Short()` through `runCorpusGrids`, so a
+direct-body check would misread them. Cross-checked against a real `-short` run:
+9665 of 9669 tests agreed, and the four that did not had been added between the two
+runs.
+
+The limit is deliberately loose. Elapsed time in tier 2 is stretched by core
+contention, so guarded and unguarded tests are separated by a wide margin, not a
+tight one: the slowest honest test measured **22 s** against **40–434 s** for the
+corpus. 60 s sits in that gap. It catches the class that actually hurt — a 100 s+
+corpus test with no guard — and does not resolve a 2 s-class one.
+
+For the tight gate, `make test-budget` fails when a tier-1 **package** exceeds
+`TIER1_PACKAGE_BUDGET` (90 s). It costs a `-short` run, so it is a local command, not
+a CI job. The budget is per package, not per test, because package wall time is the
+only figure that does not move with how the tests inside were scheduled.
 
 ## What runs where
 
-| Gate | When | Command |
+| Gate | When | Runs |
 |---|---|---|
-| pre-commit hook | every commit | `make test-impacted IMPACT_BASE=HEAD` |
-| CI `test` | every PR, 3 OSes | tier 1, plus `test-budget` on Linux |
-| CI `test-corpus` | every PR, Linux | tier 2 with coverage |
-| CI `race` | push to `release` | tier 2 under `-race` |
+| pre-commit hook | every commit | tier 1 on the impacted packages |
+| CI `test` | every PR, 3 OSes | tier 2; the Linux leg adds coverage and the guard gate |
+| CI `head` | every PR | the head module only — a separate module, no overlap |
+| CI `race` | push to `release` | tier 2 under `-race`, corpus skipped |
+
+Nothing in that table runs the same test twice on the same platform. The three OS
+legs run the same tests deliberately: byte-identical output across platforms is a
+kernel ground rule, so it has to be checked on each.
 
 `make ci` runs `fmt-check vet lint cover` — one suite run, not three. `make ci-race`
 adds the race detector for a release.

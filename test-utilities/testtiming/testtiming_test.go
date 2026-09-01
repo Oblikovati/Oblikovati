@@ -124,3 +124,35 @@ func TestPackageRunStringRendersAnAlignedLine(t *testing.T) {
 		t.Errorf("PackageRun.String() = %q", got)
 	}
 }
+
+// FakeGuards answers the guard question from a fixed set, standing in for the static
+// source scan.
+type FakeGuards map[string]bool
+
+func (f FakeGuards) Guards(pkgDir, test string) bool { return f[pkgDir+"::"+test] }
+
+func TestUnguardedOverBudgetIgnoresAGuardedSlowTest(t *testing.T) {
+	runs := []TestRun{{Package: "m/ops", Name: "TestCorpus", Elapsed: 200}}
+	guards := FakeGuards{"ops::TestCorpus": true}
+	if got := UnguardedOverBudget(runs, "m", guards, 60); len(got) != 0 {
+		t.Errorf("UnguardedOverBudget() = %+v, want none — the test guards itself", got)
+	}
+}
+
+func TestUnguardedOverBudgetNamesAnUnguardedSlowTest(t *testing.T) {
+	runs := []TestRun{
+		{Package: "m/ops", Name: "TestCorpus", Elapsed: 200},
+		{Package: "m/ops", Name: "TestQuick", Elapsed: 1},
+	}
+	got := UnguardedOverBudget(runs, "m", FakeGuards{}, 60)
+	if len(got) != 1 || got[0].Name != "TestCorpus" {
+		t.Errorf("UnguardedOverBudget() = %+v, want only TestCorpus", got)
+	}
+}
+
+func TestUnguardedOverBudgetMapsTheRootPackageToDot(t *testing.T) {
+	runs := []TestRun{{Package: "m", Name: "TestRootLevel", Elapsed: 200}}
+	if got := UnguardedOverBudget(runs, "m", FakeGuards{".::TestRootLevel": true}, 60); len(got) != 0 {
+		t.Errorf("UnguardedOverBudget() = %+v, want none — the module root maps to \".\"", got)
+	}
+}

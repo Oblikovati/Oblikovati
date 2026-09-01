@@ -153,3 +153,34 @@ func Total(runs []TestRun) float64 {
 	}
 	return sum
 }
+
+// GuardLookup answers whether a test excludes itself from the fast tier. It is an
+// interface so this package does not depend on how that is decided (a static scan,
+// today, in test-utilities/testguard).
+type GuardLookup interface {
+	Guards(pkgDir, test string) bool
+}
+
+// UnguardedOverBudget returns the tests slower than budget seconds that do NOT guard
+// themselves, longest first — a corpus test that forgot its testing.Short().
+//
+// It reads a TIER 2 run, which is why the budget must be generous: elapsed time there
+// is stretched by core contention, so the honest tests and the corpus tests are only
+// separated by a wide margin, not a tight one.
+func UnguardedOverBudget(runs []TestRun, modulePath string, guards GuardLookup, budget float64) []TestRun {
+	var out []TestRun
+	for _, r := range runs {
+		if r.Elapsed > budget && !guards.Guards(packageDir(r.Package, modulePath), r.Name) {
+			out = append(out, r)
+		}
+	}
+	return Slowest(out, 0)
+}
+
+// packageDir turns an import path back into its directory relative to the module root.
+func packageDir(importPath, modulePath string) string {
+	if importPath == modulePath {
+		return "."
+	}
+	return strings.TrimPrefix(importPath, modulePath+"/")
+}

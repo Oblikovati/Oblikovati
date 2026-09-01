@@ -5,6 +5,11 @@
 //
 //	go test -json ./... | go run ./cmd/testslowest -top 25
 //	go test -short -json ./... | go run ./cmd/testslowest -package-budget 90
+//	go test -json ./... | go run ./cmd/testslowest -unguarded-budget 60
+//
+// -unguarded-budget is the gate CI runs. It reads the TIER 2 stream that already
+// exists and fails on a slow test that does not guard itself with testing.Short(),
+// so catching an unguarded corpus test costs no second run of the suite.
 //
 // -package-budget is the gate a tier can hold: package WALL time does not move with
 // how the tests inside were scheduled. -budget gates a single test instead, and is
@@ -19,6 +24,7 @@ import (
 	"io"
 	"os"
 
+	"oblikovati.org/test-utilities/testguard"
 	"oblikovati.org/test-utilities/testtiming"
 )
 
@@ -43,6 +49,9 @@ func run(args []string, in io.Reader, out, errOut io.Writer) error {
 	top := fs.Int("top", 25, "how many of the slowest tests to print")
 	budget := fs.Float64("budget", 0, "seconds one test may take on a SEQUENTIAL run; 0 disables the gate")
 	pkgBudget := fs.Float64("package-budget", 0, "seconds one package may take; 0 disables the gate")
+	unguarded := fs.Float64("unguarded-budget", 0,
+		"seconds an UNGUARDED test may take in a tier-2 run; 0 disables the gate")
+	root := fs.String("module-root", ".", "module root to scan for testing.Short() guards")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -51,7 +60,35 @@ func run(args []string, in io.Reader, out, errOut io.Writer) error {
 		return err
 	}
 	report(out, runs, *top)
-	return checkBudgets(errOut, runs, pkgs, *budget, *pkgBudget)
+	if err := checkBudgets(errOut, runs, pkgs, *budget, *pkgBudget); err != nil {
+		return err
+	}
+	return checkUnguarded(errOut, runs, *root, *unguarded)
+}
+
+// checkUnguarded fails when a slow test does not exclude itself from the fast tier.
+func checkUnguarded(w io.Writer, runs []testtiming.TestRun, root string, budget float64) error {
+	if budget <= 0 {
+		return nil
+	}
+	guards, err := testguard.Scan(root)
+	if err != nil {
+		return err
+	}
+	modulePath, err := testguard.ModulePath(root)
+	if err != nil {
+		return err
+	}
+	over := testtiming.UnguardedOverBudget(runs, modulePath, guards, budget)
+	if len(over) == 0 {
+		return nil
+	}
+	fmt.Fprintf(w, "\n%d test(s) over the %.0fs tier-2 limit with no testing.Short() guard —\n"+
+		"add one, or they land in the fast tier every developer runs:\n", len(over), budget)
+	for _, r := range over {
+		fmt.Fprintln(w, " ", r)
+	}
+	return errBudgetExceeded
 }
 
 // checkBudgets applies both gates, reporting every breach before it returns.
