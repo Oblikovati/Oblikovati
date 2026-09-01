@@ -42,7 +42,10 @@ func (g *GitChanges) ChangedPaths() ([]string, error) {
 
 // collect runs one git command and adds each output line to the set.
 func (g *GitChanges) collect(set map[string]bool, args []string) error {
-	cmd := exec.Command(gitBinary(), args...)
+	// NOSONAR go:S4036 — gitBinary() has already resolved this through exec.LookPath. This is
+	// developer tooling invoked from make in the developer's own shell; a PATH that can
+	// substitute `git` owns that shell already.
+	cmd := exec.Command(gitBinary(), args...) // NOSONAR
 	cmd.Dir = g.root
 	out, err := cmd.Output()
 	if err != nil {

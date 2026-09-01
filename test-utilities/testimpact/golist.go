@@ -27,7 +27,10 @@ func NewGoListLoader(root string) *GoListLoader {
 
 // LoadGraph runs go list and parses its output into the package graph.
 func (l *GoListLoader) LoadGraph() ([]Package, error) {
-	cmd := exec.Command(goBinary(), "list", "-test", "-e", "-f", graphFormat, l.pattern)
+	// NOSONAR go:S4036 — goBinary() has already resolved this through exec.LookPath, and
+	// a PATH that can substitute `go` has substituted the toolchain that built and ran this
+	// program. There is no additional exposure here to close.
+	cmd := exec.Command(goBinary(), "list", "-test", "-e", "-f", graphFormat, l.pattern) // NOSONAR
 	cmd.Dir = l.root
 	cmd.Env = append(cmd.Environ(), "CGO_ENABLED=0")
 	out, err := cmd.Output()
