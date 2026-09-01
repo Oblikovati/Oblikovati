@@ -54,9 +54,9 @@ func TestExtractPanelLoopU4SliverIsValence4AndClosed(t *testing.T) {
 // 3.039 within the corpus's own relative tolerance (corpus.json "U4".deps=0.01, the SAME 1% OCCT uses
 // body-wide). Area is measured by surfaceArea (corner_blend_obstacle_test.go's fine-quadrature
 // integrator, the established test-only convention for a coons/obstacle patch's area, NOT
-// TessellateFace/MeshArea): the production tessellator (nurbsPcurveMesh) does not converge for this
+// TessellateFace/validate.MeshArea): the production tessellator (nurbsPcurveMesh) does not converge for this
 // shape's extreme aspect ratio (~0.4 wide × ~7.85 long, a genuine "sliver") — probed empirically,
-// MeshArea at ChordTolerance 1e-2/1e-3/1e-4/1e-5 gives 1.69/6.06/6.21/13.98, never converging toward
+// validate.MeshArea at ChordTolerance 1e-2/1e-3/1e-4/1e-5 gives 1.69/6.06/6.21/13.98, never converging toward
 // the oracle — a pre-existing tessellation-pipeline limitation this gated-off slice does not exercise
 // live (assembleDualObstacleSet still honest-rejects, so no dual-host body is ever tessellated for
 // real yet) but that MUST be fixed before U4-5 turns the gate on and renders these panels for the live

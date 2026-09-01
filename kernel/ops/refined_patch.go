@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
 
@@ -55,7 +56,7 @@ func patchIsManifold(m *Mesh, loops [][]int) bool {
 
 // FreeEdgeCount welds coincident vertices at the MODEL's own resolution and counts mesh edges not used
 // by exactly two triangles — the watertightness metric (0 = a closed manifold surface). It is
-// FoldEdgeCount's sibling: a mesh must be free-edge-free to be closed and fold-free to bound a
+// validate.FoldEdgeCount's sibling: a mesh must be free-edge-free to be closed and fold-free to bound a
 // well-defined volume.
 //
 // The weld grid is model-relative (ADR-0042), and that is load-bearing rather than stylistic. A fixed
@@ -194,7 +195,7 @@ func pointInUVPoly(poly []math.Point2, p [2]float64) bool {
 // isotropic Delaunay twists in 3D. Scaling each axis by its mean 3D length (√E, √G via metricScale)
 // makes the parameter space ≈ isometric to 3D, so the triangulation is well-shaped and fold-free.
 // Boundary loops keep their exact 3D edge points (watertight); interior nodes are deflection-adaptive;
-// residual folds are swept by repairFolds. Falls back to the best-fit-plane boundary triangulation if
+// residual folds are swept by validate.RepairFolds. Falls back to the best-fit-plane boundary triangulation if
 // the CDT degenerates or tears (a pole/seam-distorted cap).
 func metricPatchMesh(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
 	su, sv := trimMetricScale(s, outerUV)
@@ -202,15 +203,15 @@ func metricPatchMesh(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [
 	if m == nil {
 		return boundaryPatchMesh(s, outer3D, holes3D)
 	}
-	if patchIsManifold(m, loops) && FoldEdgeCount(m) == 0 {
+	if patchIsManifold(m, loops) && validate.FoldEdgeCount(m) == 0 {
 		return m
 	}
 	// The metric CDT tore (a pole/seam-distorted cap) or still folds (a cap whose boundary touches
-	// the sphere pole — the degenerate sliver where all u collapse, which repairFolds can't flip).
+	// the sphere pole — the degenerate sliver where all u collapse, which validate.RepairFolds can't flip).
 	// The boundary-only best-fit-plane triangulation is watertight and, for such a small cap,
 	// fold-free; keep the metric mesh only when it is manifold and folds no more than the fallback.
 	fallback := boundaryPatchMesh(s, outer3D, holes3D)
-	if !patchIsManifold(m, loops) || FoldEdgeCount(fallback) < FoldEdgeCount(m) {
+	if !patchIsManifold(m, loops) || validate.FoldEdgeCount(fallback) < validate.FoldEdgeCount(m) {
 		return fallback
 	}
 	return m
@@ -236,7 +237,7 @@ func metricCDTPatch(s geom.Surface, su, sv float64, q Quality, outer3D []math.Po
 		return nil, loops
 	}
 	m := patchMeshFrom(b.pos, b.nrm, tris)
-	repairFolds(m, 8)
+	validate.RepairFolds(m, 8)
 	recordCapSaturation(m, saturated, q)
 	return m, loops
 }
@@ -293,7 +294,7 @@ func trimmedPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Po
 		return boundaryPatchMesh(s, outer3D, holes3D)
 	}
 	m := patchMeshFrom(pos, nrm, tris)
-	repairFolds(m, 8) // a pole/seam-distorted cap's CDT can crease; flip the folding diagonals (#585)
+	validate.RepairFolds(m, 8) // a pole/seam-distorted cap's CDT can crease; flip the folding diagonals (#585)
 	return m
 }
 

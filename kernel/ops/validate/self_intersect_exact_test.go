@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package validate
 
 import (
 	stdmath "math"
@@ -8,14 +8,15 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
 // Guards for the EXACT self-intersection detector (M48/C3, Oblikovati/Oblikovati#3477). The old
 // detector tessellated both faces, scanned triangle pairs and then forgave any crossing shallower
-// than the two meshes' own faceting error — so the verdict moved with the caller's Quality. These
-// tests pin the two halves of the replacement: the verdict no longer depends on Quality at all, and
+// than the two meshes' own faceting error — so the verdict moved with the caller's mesh.Quality. These
+// tests pin the two halves of the replacement: the verdict no longer depends on mesh.Quality at all, and
 // a face pair trimmed out of one surface sheet is still caught even though it has no intersection
 // curve to find.
 
@@ -47,8 +48,8 @@ func TestSelfIntersectionVerdictIsIndependentOfQuality(t *testing.T) {
 	body := twoBarelyOverlappingCylinders(t, 1, 0.01)
 	for _, q := range []struct {
 		name string
-		q    Quality
-	}{{"default", DefaultQuality()}, {"property", PropertyQuality()}} {
+		q    mesh.Quality
+	}{{"default", mesh.DefaultQuality()}, {"property", mesh.PropertyQuality()}} {
 		if hits := SelfIntersections(body, q.q); len(hits) == 0 {
 			t.Errorf("%s quality (chord tol %g) missed a 0.01-deep crossing of two cylinder sides",
 				q.name, q.q.Tol())
@@ -83,7 +84,7 @@ func TestCoincidentFacesAreReportedWhicheverWayTheyFace(t *testing.T) {
 	t.Parallel()
 	p := math.P3
 	body := stackedBlocks(t, [2]math.Point3{p(0, 0, 0), p(2, 2, 1)}, [2]math.Point3{p(0, 0, 1), p(2, 2, 2)})
-	if hits := SelfIntersections(body, DefaultQuality()); len(hits) == 0 {
+	if hits := SelfIntersections(body, mesh.DefaultQuality()); len(hits) == 0 {
 		t.Error("two coincident overlapping faces must be reported, as the mesh detector reported them")
 	}
 }
@@ -98,7 +99,7 @@ func TestPerpendicularFacesTouchingAlongALineAreContact(t *testing.T) {
 	t.Parallel()
 	p := math.P3
 	body := stackedBlocks(t, [2]math.Point3{p(0, 0, 0), p(2, 2, 1)}, [2]math.Point3{p(2, 0, 1), p(4, 2, 2)})
-	if hits := SelfIntersections(body, DefaultQuality()); len(hits) != 0 {
+	if hits := SelfIntersections(body, mesh.DefaultQuality()); len(hits) != 0 {
 		t.Errorf("two blocks touching along one line report %d interpenetration(s): %+v", len(hits), hits)
 	}
 }
@@ -109,7 +110,7 @@ func TestOverlappingBlocksAreStillReported(t *testing.T) {
 	t.Parallel()
 	p := math.P3
 	body := stackedBlocks(t, [2]math.Point3{p(0, 0, 0), p(2, 2, 1)}, [2]math.Point3{p(0.5, 0.5, 0.5), p(2.5, 2.5, 2)})
-	if hits := SelfIntersections(body, DefaultQuality()); len(hits) == 0 {
+	if hits := SelfIntersections(body, mesh.DefaultQuality()); len(hits) == 0 {
 		t.Error("two blocks that genuinely overlap must be reported")
 	}
 }
@@ -192,7 +193,7 @@ func TestSelfIntersectionsPassATangentBlend(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidCylinderFilletedTop: %v", err)
 	}
-	for _, q := range []Quality{DefaultQuality(), PropertyQuality()} {
+	for _, q := range []mesh.Quality{mesh.DefaultQuality(), mesh.PropertyQuality()} {
 		if hits := SelfIntersections(body, q); len(hits) != 0 {
 			t.Errorf("a tangent fillet band reports %d self-intersection(s) at chord tol %g: %+v",
 				len(hits), q.Tol(), hits)
@@ -209,7 +210,7 @@ func TestCoplanarNeighbourFacesAreClean(t *testing.T) {
 	left := quadBody("left", p(0, 0, 0), p(0, 2, 0), p(0, 2, 2), p(0, 0, 2))
 	right := quadBody("right", p(0, 2, 0), p(0, 4, 0), p(0, 4, 2), p(0, 2, 2))
 	merged := topo.MergeBodies(topo.NewLineage(topo.Tok("imp", "body", 0)), false, left, right)
-	if hits := SelfIntersections(merged, DefaultQuality()); len(hits) != 0 {
+	if hits := SelfIntersections(merged, mesh.DefaultQuality()); len(hits) != 0 {
 		t.Errorf("coplanar faces meeting along an edge report %d self-intersection(s): %+v", len(hits), hits)
 	}
 }
@@ -223,7 +224,7 @@ func TestDuplicateCoincidentFacesAreReported(t *testing.T) {
 	one := quadBody("w1", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
 	two := quadBody("w2", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
 	merged := topo.MergeBodies(topo.NewLineage(topo.Tok("imp", "body", 0)), false, one, two)
-	if hits := SelfIntersections(merged, DefaultQuality()); len(hits) != 1 {
+	if hits := SelfIntersections(merged, mesh.DefaultQuality()); len(hits) != 1 {
 		t.Errorf("a doubled coincident wall reports %d self-intersection(s), want 1: %+v", len(hits), hits)
 	}
 }

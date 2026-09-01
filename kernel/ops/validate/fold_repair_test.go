@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package validate
 
 import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/math"
 )
 
-func countFolds(m *Mesh) int {
+func countFolds(m *mesh.Mesh) int {
 	c := 0
 	for _, ts := range edgeTriMap(m) {
 		if len(ts) == 2 && trianglesFold(m, ts[0], ts[1]) {
@@ -23,7 +24,7 @@ func TestRepairFoldsFixesAFold(t *testing.T) {
 	t.Parallel()
 	// A non-planar quad triangulated on the diagonal that folds (normals oppose); flipping to the
 	// other diagonal removes the fold.
-	m := &Mesh{
+	m := &mesh.Mesh{
 		Positions: []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 1), math.P3(2, 0, 0), math.P3(1, 1, 1)},
 		Normals:   []math.Vector3{math.V3(0, 1, 0), math.V3(0, 1, 0), math.V3(0, 1, 0), math.V3(0, 1, 0)},
 		Indices:   []int{0, 1, 2, 0, 2, 3},
@@ -32,9 +33,9 @@ func TestRepairFoldsFixesAFold(t *testing.T) {
 		t.Fatal("test setup should contain a fold")
 	}
 	folded := totalTriArea(m)
-	repairFolds(m, 4)
+	RepairFolds(m, 4)
 	if c := countFolds(m); c != 0 {
-		t.Errorf("repairFolds left %d fold edges; want 0", c)
+		t.Errorf("RepairFolds left %d fold edges; want 0", c)
 	}
 	if m.TriangleCount() != 2 {
 		t.Errorf("a flip must preserve the triangle count, got %d", m.TriangleCount())
@@ -46,7 +47,7 @@ func TestRepairFoldsFixesAFold(t *testing.T) {
 	}
 }
 
-func totalTriArea(m *Mesh) float64 {
+func totalTriArea(m *mesh.Mesh) float64 {
 	var a float64
 	for t := 0; 3*t+2 < len(m.Indices); t++ {
 		n := triGeomNormal(m, t)
@@ -57,19 +58,33 @@ func totalTriArea(m *Mesh) float64 {
 
 func TestRepairFoldsPreservesCleanMesh(t *testing.T) {
 	t.Parallel()
-	// A flat, fold-free quad: repairFolds must do nothing.
-	m := &Mesh{
+	// A flat, fold-free quad: RepairFolds must do nothing.
+	m := &mesh.Mesh{
 		Positions: []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0)},
 		Normals:   []math.Vector3{math.V3(0, 0, 1), math.V3(0, 0, 1), math.V3(0, 0, 1), math.V3(0, 0, 1)},
 		Indices:   []int{0, 1, 2, 0, 2, 3},
 	}
 	before := append([]int(nil), m.Indices...)
-	if n := repairFolds(m, 4); n != 0 {
+	if n := RepairFolds(m, 4); n != 0 {
 		t.Errorf("clean mesh needed %d flips; want 0", n)
 	}
 	for i := range before {
 		if m.Indices[i] != before[i] {
 			t.Errorf("clean mesh was modified at index %d", i)
+		}
+	}
+}
+
+// TestSortedEdgeKeysOrders pins that fold-repair visits edges in a fixed (a,b) order, not Go's
+// randomized map order — the property that makes repairFoldPass reproducible.
+func TestSortedEdgeKeysOrders(t *testing.T) {
+	t.Parallel()
+	adj := map[EdgeKey][]int{{2, 5}: nil, {0, 9}: nil, {2, 3}: nil, {0, 1}: nil}
+	got := sortedEdgeKeys(adj)
+	want := []EdgeKey{{0, 1}, {0, 9}, {2, 3}, {2, 5}}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("sortedEdgeKeys[%d] = %v; want %v (order %v)", i, got[i], want[i], got)
 		}
 	}
 }

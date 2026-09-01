@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
 
@@ -40,14 +41,14 @@ func TestFoldDrivenPatchIsFoldFree(t *testing.T) {
 	if m == nil || m.TriangleCount() == 0 {
 		t.Fatal("foldDrivenPatch produced no mesh")
 	}
-	if n := FoldEdgeCount(m); n != 0 {
+	if n := validate.FoldEdgeCount(m); n != 0 {
 		t.Errorf("foldDrivenPatch left %d fold edges; want 0", n)
 	}
 }
 
 // TestSpherePoleCapFoldFree guards the sphere pole-cap fix (#585): a cap whose boundary reaches the
 // pole (v = π/2, where every u collapses to one 3D point) must tessellate fold-free — the metric
-// (u,v) CDT folds the degenerate sliver and repairFolds can't flip it, so metricPatchMesh falls back
+// (u,v) CDT folds the degenerate sliver and RepairFolds can't flip it, so metricPatchMesh falls back
 // to the watertight boundary triangulation. The mesh must also stay watertight (no tear).
 func TestSpherePoleCapFoldFree(t *testing.T) {
 	t.Parallel()
@@ -72,7 +73,7 @@ func TestSpherePoleCapFoldFree(t *testing.T) {
 	if m == nil || m.TriangleCount() == 0 {
 		t.Fatal("sphere pole cap produced no mesh")
 	}
-	if n := FoldEdgeCount(m); n != 0 {
+	if n := validate.FoldEdgeCount(m); n != 0 {
 		t.Errorf("sphere pole cap left %d fold edges; want 0", n)
 	}
 }

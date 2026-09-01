@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
 
@@ -109,7 +110,7 @@ func assertCoveringMeshSpansThePeriod(t *testing.T, quality string, m *Mesh) {
 	if m == nil || m.TriangleCount() == 0 {
 		t.Fatalf("%s quality: covering mesh is empty", quality)
 	}
-	if folds := FoldEdgeCount(m); folds != 0 {
+	if folds := validate.FoldEdgeCount(m); folds != 0 {
 		t.Errorf("%s quality: covering mesh has %d fold edges; want 0", quality, folds)
 	}
 	var xmin, xmax, ymin, ymax float64

@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -200,7 +201,7 @@ func bestConformingPatch(s geom.Surface, q Quality, outer3D []math.Point3, holes
 		return boundaryConformingPatch(s, outer3D, holes3D, outerUV, holesUV)
 	}
 	m := patchMeshFrom(b.pos, b.nrm, tris)
-	repairFolds(m, 8) // an interior node in an anisotropic metric can crease; flip the folding diagonals
+	validate.RepairFolds(m, 8) // an interior node in an anisotropic metric can crease; flip the folding diagonals
 	recordCapSaturation(m, saturated, q)
 	return m
 }

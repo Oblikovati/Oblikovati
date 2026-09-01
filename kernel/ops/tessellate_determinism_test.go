@@ -40,20 +40,6 @@ func TestConstrainedDelaunayDeterministic(t *testing.T) {
 	}
 }
 
-// TestSortedEdgeKeysOrders pins that fold-repair visits edges in a fixed (a,b) order, not Go's
-// randomized map order — the property that makes repairFoldPass reproducible.
-func TestSortedEdgeKeysOrders(t *testing.T) {
-	t.Parallel()
-	adj := map[edgeKey][]int{{2, 5}: nil, {0, 9}: nil, {2, 3}: nil, {0, 1}: nil}
-	got := sortedEdgeKeys(adj)
-	want := []edgeKey{{0, 1}, {0, 9}, {2, 3}, {2, 5}}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Fatalf("sortedEdgeKeys[%d] = %v; want %v (order %v)", i, got[i], want[i], got)
-		}
-	}
-}
-
 // TestTessellateBodyDeterministicOnImportedSolid re-tessellates the SAME imported body and requires an
 // identical mesh — filleted_box is the fixture whose free-edge count used to flicker; sphere exercises
 // the sphere-cap CDT path. End-to-end guard on TessellateBody.

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -365,7 +366,7 @@ func straightRail(foot, inner math.Point3) endSeg {
 
 // TestConeCanalFarCap_FoldFree is the highest-priority tessellation gate (CLAUDE.md): the far-capped canal
 // arm face — the arm patch below its new far-cap trim — meshes to a positive area with NO fold edges
-// (FoldEdgeCount == 0). The far boundary is the cap trim (⊥-axis swept polyline for C2/C6, the snout arc
+// (validate.FoldEdgeCount == 0). The far boundary is the cap trim (⊥-axis swept polyline for C2/C6, the snout arc
 // for D1); the near boundary is a near iso-cut. A folded trim (the x_f-sweep defect the ψ-sweep fixes)
 // would crease the mesh here.
 func TestConeCanalFarCap_FoldFree(t *testing.T) {
@@ -386,10 +387,10 @@ func TestConeCanalFarCap_FoldFree(t *testing.T) {
 			if m == nil || m.TriangleCount() == 0 {
 				t.Fatalf("%s far-cap face produced no mesh", fx.name)
 			}
-			if n := FoldEdgeCount(m); n != 0 {
+			if n := validate.FoldEdgeCount(m); n != 0 {
 				t.Fatalf("%s far-cap face meshed with %d fold edges; want 0", fx.name, n)
 			}
-			if a := MeshArea(m); a <= 0 || stdmath.IsInf(a, 0) || stdmath.IsNaN(a) {
+			if a := validate.MeshArea(m); a <= 0 || stdmath.IsInf(a, 0) || stdmath.IsNaN(a) {
 				t.Fatalf("%s far-cap face area %g; want finite positive", fx.name, a)
 			}
 		})

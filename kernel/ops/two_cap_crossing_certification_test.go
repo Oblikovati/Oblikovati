@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -63,7 +64,7 @@ func TestTwoCapCrossingCutIsWatertightAndValid(t *testing.T) {
 		if free := freeEdgeCount(mesh); free != 0 {
 			t.Errorf("%s quality: two-cap cut tessellated with %d free edges; want 0 — a cross-face crack at a cap ellipse", gq.name, free)
 		}
-		if folds := FoldEdgeCount(mesh); folds != 0 {
+		if folds := validate.FoldEdgeCount(mesh); folds != 0 {
 			t.Errorf("%s quality: two-cap cut mesh has %d fold edges; want 0", gq.name, folds)
 		}
 	}

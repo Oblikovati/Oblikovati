@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -50,7 +51,7 @@ func spherePatchMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3
 		return nil, false
 	}
 	m := patchMeshFrom(pos, nrm, tris)
-	repairFolds(m, 8)
+	validate.RepairFolds(m, 8)
 	diagnosePatchGridClamp(m, clamp, q)
 	return m, true
 }

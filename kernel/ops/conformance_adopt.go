@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -56,10 +57,10 @@ import (
 // Example: conformingMeshIsFaithful(remesh, current, face, PropertyQuality()) == false when the
 // boundary-only CDT chords across a cylinder it has no interior node to follow.
 func conformingMeshIsFaithful(m, old *Mesh, f *topo.Face, q Quality) bool {
-	if FoldEdgeCount(m) > FoldEdgeCount(old) {
+	if validate.FoldEdgeCount(m) > validate.FoldEdgeCount(old) {
 		return false
 	}
-	return MeshArea(m) >= MeshArea(old)-conformAreaSlack(f, q)
+	return validate.MeshArea(m) >= validate.MeshArea(old)-conformAreaSlack(f, q)
 }
 
 // conformAreaSlack is the most area a FAITHFUL conformance re-mesh of f can lose: the chordal

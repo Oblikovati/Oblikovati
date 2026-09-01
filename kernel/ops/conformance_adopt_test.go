@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
 
@@ -75,12 +76,12 @@ func TestConformingMeshIsFaithfulStillRejectsAddedFolds(t *testing.T) {
 	f := planarFaceFromLoop(t, squareLoop())
 	q := Quality{ChordTolerance: 1e-3, AngleTolerance: 1}
 	folded := foldedQuadMesh()
-	if FoldEdgeCount(folded) == 0 {
+	if validate.FoldEdgeCount(folded) == 0 {
 		t.Fatal("fixture does not fold — the fold arm would be untested")
 	}
-	if MeshArea(folded) <= MeshArea(quadMesh(10, 10)) {
+	if validate.MeshArea(folded) <= validate.MeshArea(quadMesh(10, 10)) {
 		t.Fatalf("folded fixture area %.6g does not exceed the flat quad's %.6g — the area arm would mask the fold arm",
-			MeshArea(folded), MeshArea(quadMesh(10, 10)))
+			validate.MeshArea(folded), validate.MeshArea(quadMesh(10, 10)))
 	}
 	if conformingMeshIsFaithful(folded, quadMesh(10, 10), f, q) {
 		t.Error("adopted a re-mesh that ADDS folds — the fold arm regressed")

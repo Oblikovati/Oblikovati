@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package validate
 
 import (
 	stdmath "math"
 	"sort"
 
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
@@ -13,14 +14,14 @@ import (
 // foldDihedralTol: two triangles sharing an edge are a FOLD when their geometric (cross-product)
 // normals point apart by more than this — cos(angle) < −foldDihedralTol — i.e. the meshed surface
 // creases back on itself. A (u,v) Delaunay triangulation lifted to 3D can fold where the (u,v)→3D
-// map is strongly non-conformal (the imported-NURBS "staircase"); repairFolds flips such edges.
+// map is strongly non-conformal (the imported-NURBS "staircase"); RepairFolds flips such edges.
 const foldDihedralTol = 0.2
 
-// repairFolds flips interior edges whose two triangles fold (oppose in 3D) to the quad's other
+// RepairFolds flips interior edges whose two triangles fold (oppose in 3D) to the quad's other
 // diagonal when that removes the fold, sweeping up to maxPasses times. Each new triangle is rewound
 // to agree with its vertex normals (probe.WindingOpposesNormals), so orientation stays consistent.
 // Returns the number of flips applied.
-func repairFolds(m *Mesh, maxPasses int) int {
+func RepairFolds(m *mesh.Mesh, maxPasses int) int {
 	total := 0
 	for range maxPasses {
 		flips := repairFoldPass(m)
@@ -36,7 +37,7 @@ func repairFolds(m *Mesh, maxPasses int) int {
 // flipped this pass (their adjacency is stale until the next pass rebuilds it). Returns the flips.
 // Edges are visited in sorted order, not Go's randomized map order, so the flip set — and thus the
 // repaired mesh — is reproducible (which edge flips first changes which triangles become dirty).
-func repairFoldPass(m *Mesh) int {
+func repairFoldPass(m *mesh.Mesh) int {
 	adj := edgeTriMap(m)
 	dirty := map[int]bool{}
 	flips := 0
@@ -54,8 +55,8 @@ func repairFoldPass(m *Mesh) int {
 }
 
 // sortedEdgeKeys returns adj's edge keys in ascending (a, b) order — a deterministic visit order.
-func sortedEdgeKeys(adj map[edgeKey][]int) []edgeKey {
-	keys := make([]edgeKey, 0, len(adj))
+func sortedEdgeKeys(adj map[EdgeKey][]int) []EdgeKey {
+	keys := make([]EdgeKey, 0, len(adj))
 	for e := range adj {
 		keys = append(keys, e)
 	}
@@ -70,7 +71,7 @@ func sortedEdgeKeys(adj map[edgeKey][]int) []edgeKey {
 
 // tryFlipFold flips edge e (shared by t0,t1) to the quad's other diagonal if t0,t1 fold and the
 // flip is valid (apexes found, no duplicate edge, new triangles non-degenerate + not folding).
-func tryFlipFold(m *Mesh, e edgeKey, t0, t1 int, adj map[edgeKey][]int) bool {
+func tryFlipFold(m *mesh.Mesh, e EdgeKey, t0, t1 int, adj map[EdgeKey][]int) bool {
 	if !trianglesFold(m, t0, t1) {
 		return false
 	}
@@ -84,18 +85,18 @@ func tryFlipFold(m *Mesh, e edgeKey, t0, t1 int, adj map[edgeKey][]int) bool {
 	return attemptFlip(m, t0, t1, e.a, e.b, c, d)
 }
 
-type edgeKey struct{ a, b int }
+type EdgeKey struct{ a, b int }
 
-func sortedEdge(a, b int) edgeKey {
+func sortedEdge(a, b int) EdgeKey {
 	if a > b {
 		a, b = b, a
 	}
-	return edgeKey{a, b}
+	return EdgeKey{a, b}
 }
 
 // edgeTriMap maps each undirected edge to the triangles using it.
-func edgeTriMap(m *Mesh) map[edgeKey][]int {
-	adj := make(map[edgeKey][]int, len(m.Indices))
+func edgeTriMap(m *mesh.Mesh) map[EdgeKey][]int {
+	adj := make(map[EdgeKey][]int, len(m.Indices))
 	for t := 0; 3*t+2 < len(m.Indices); t++ {
 		v := [3]int{m.Indices[3*t], m.Indices[3*t+1], m.Indices[3*t+2]}
 		for k := range 3 {
@@ -107,7 +108,7 @@ func edgeTriMap(m *Mesh) map[edgeKey][]int {
 }
 
 // apexOf returns triangle t's vertex not on edge e, or -1 if e is not an edge of t.
-func apexOf(m *Mesh, t int, e edgeKey) int {
+func apexOf(m *mesh.Mesh, t int, e EdgeKey) int {
 	v := [3]int{m.Indices[3*t], m.Indices[3*t+1], m.Indices[3*t+2]}
 	onEdge := func(x int) bool { return x == e.a || x == e.b }
 	if onEdge(v[0]) && onEdge(v[1]) && !onEdge(v[2]) {
@@ -123,13 +124,13 @@ func apexOf(m *Mesh, t int, e edgeKey) int {
 }
 
 // triGeomNormal returns triangle t's (un-normalized) geometric normal.
-func triGeomNormal(m *Mesh, t int) math.Vector3 {
+func triGeomNormal(m *mesh.Mesh, t int) math.Vector3 {
 	a, b, c := m.Positions[m.Indices[3*t]], m.Positions[m.Indices[3*t+1]], m.Positions[m.Indices[3*t+2]]
 	return a.VectorTo(b).Cross(a.VectorTo(c))
 }
 
 // trianglesFold reports whether triangles t0,t1 oppose (a fold).
-func trianglesFold(m *Mesh, t0, t1 int) bool {
+func trianglesFold(m *mesh.Mesh, t0, t1 int) bool {
 	return normalsOppose(triGeomNormal(m, t0), triGeomNormal(m, t1))
 }
 
@@ -170,7 +171,7 @@ func normalsOppose(n0, n1 math.Vector3) bool {
 // attemptFlip rewrites triangles t0,t1 (sharing edge a-b, apexes c,d) to the diagonal c-d when the
 // new triangles are non-degenerate and do not themselves fold — otherwise leaves the mesh unchanged
 // and returns false. New triangles are rewound to their vertex normals.
-func attemptFlip(m *Mesh, t0, t1, a, b, c, d int) bool {
+func attemptFlip(m *mesh.Mesh, t0, t1, a, b, c, d int) bool {
 	n0 := m.Positions[c].VectorTo(m.Positions[a]).Cross(m.Positions[c].VectorTo(m.Positions[d]))
 	n1 := m.Positions[c].VectorTo(m.Positions[d]).Cross(m.Positions[c].VectorTo(m.Positions[b]))
 	if degenerateNormal(n0) || degenerateNormal(n1) || normalsOppose(n0, n1) {
@@ -185,7 +186,7 @@ func degenerateNormal(n math.Vector3) bool { return float64(n.Dot(n)) < 1e-20 }
 
 // writeTriangle sets triangle t to (i,j,k), rewound so its geometric normal agrees with the
 // vertices' surface normals (consistent with the rest of the patch).
-func writeTriangle(m *Mesh, t, i, j, k int) {
+func writeTriangle(m *mesh.Mesh, t, i, j, k int) {
 	if probe.WindingOpposesNormals(m.Positions[i], m.Positions[j], m.Positions[k], m.Normals[i], m.Normals[j], m.Normals[k]) {
 		j, k = k, j
 	}

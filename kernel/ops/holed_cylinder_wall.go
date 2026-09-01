@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
 
@@ -102,7 +103,7 @@ func unrolledWallCDT(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [
 		return boundaryPatchMesh(s, outer3D, holes3D)
 	}
 	m := patchMeshFrom(pos, nrm, tris)
-	repairFolds(m, 8)
+	validate.RepairFolds(m, 8)
 	recordCapSaturation(m, saturated, q)
 	recordConstraintLeak(m, unrecovered, leaked) // #1410: surface non-recovery; never a silent boundary leak
 	return m

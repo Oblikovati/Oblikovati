@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package validate
 
 import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -32,7 +33,7 @@ func TestSelfIntersectionWitnessLiesInBothFaceBoxes(t *testing.T) {
 	a := tetra(1, math.V3(0, 0, 0))
 	b := tetra(1, math.V3(0.2, 0.2, 0.2))
 	merged := topo.MergeBodies(topo.NewLineage(topo.Tok("imp", "body", 0)), true, a, b)
-	hits := SelfIntersections(merged, DefaultQuality())
+	hits := SelfIntersections(merged, mesh.DefaultQuality())
 	if len(hits) == 0 {
 		t.Fatal("interpenetrating shells must report self-intersections")
 	}

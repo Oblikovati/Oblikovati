@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -54,7 +55,7 @@ func sphereZoneCapFan(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 // enclosed pole) for a pole-reaching sphere zone, or ok=false when the outer loop is not one
 // full-circle rim plus a single off-plane pole vertex.
 func zoneRimAxis(f *topo.Face, sph geom.Sphere, q Quality) (rim []math.Point3, axis math.Vector3, ok bool) {
-	loop := outerLoopOf(f)
+	loop := validate.OuterLoopOf(f)
 	if loop == nil {
 		return nil, math.Vector3{}, false
 	}

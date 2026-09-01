@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package validate
 
 import (
 	"math"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
 )
@@ -117,7 +118,7 @@ func TestSharedContactUsesTheEdgeCurveNotItsChord(t *testing.T) {
 // apex vertex but one pierces the other far from it. Exactly one self-intersection, witness off apex.
 func TestSelfIntersectionSharedVertexPokeThrough(t *testing.T) {
 	t.Parallel()
-	hits := SelfIntersections(bowtieBody(), DefaultQuality())
+	hits := SelfIntersections(bowtieBody(), mesh.DefaultQuality())
 	if len(hits) == 0 {
 		t.Fatal("shared-vertex poke-through must be reported (was hidden by the vertex-skip rule)")
 	}
@@ -132,7 +133,7 @@ func TestSelfIntersectionSharedVertexPokeThrough(t *testing.T) {
 // shared edge (a roof ridge) are legitimate and must report nothing.
 func TestSelfIntersectionSharedEdgeClean(t *testing.T) {
 	t.Parallel()
-	if hits := SelfIntersections(tentBody(), DefaultQuality()); len(hits) != 0 {
+	if hits := SelfIntersections(tentBody(), mesh.DefaultQuality()); len(hits) != 0 {
 		t.Errorf("tent (clean shared edge) reports %d self-intersections, want 0: %+v", len(hits), hits)
 	}
 }

@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
 
@@ -117,7 +118,7 @@ func nonRectangularMesh(s geom.Surface, q Quality, outer3D []math.Point3, holes3
 		// cyl/cone, a freeform B-spline. metricPatchMesh triangulates in a TRIM-LOCAL metric-scaled (u,v)
 		// (√E,√G over the trim's own (u,v) bbox, so even a cone — whose metric degenerates only toward
 		// the far-off apex — stays well conditioned) with deflection-adaptive interior nodes kept
-		// strictly inside the trim (adaptiveInteriorNodes/clearOfTrim), plus repairFolds and a
+		// strictly inside the trim (adaptiveInteriorNodes/clearOfTrim), plus validate.RepairFolds and a
 		// boundary-only fallback. This was the bulk of the EDF over-enclosure (#585) and, for B-splines,
 		// removes the interior chord error of the old boundary-only triangulation (#1323 L3).
 		return metricPatchMesh(s, q, outer3D, holes3D, outerUV, holesUV)
@@ -160,7 +161,7 @@ func boundaryPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.P
 		nrm[i] = s.NormalAt(u, v)
 	}
 	m := patchMeshFrom(pos, nrm, tris)
-	repairFolds(m, 8) // a curved cap's boundary triangulation can crease; flip the folding diagonals (#585)
+	validate.RepairFolds(m, 8) // a curved cap's boundary triangulation can crease; flip the folding diagonals (#585)
 	diagnosePatchCoverage(m, accepted)
 	return m
 }

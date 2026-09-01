@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -115,7 +116,7 @@ func TestImportedNurbsDuctVolumeAndFolds(t *testing.T) {
 		folds := 0
 		for _, body := range bodies {
 			mesh, _ := TessellateBody(body, gq.q)
-			folds += FoldEdgeCount(mesh)
+			folds += validate.FoldEdgeCount(mesh)
 			volume += BodyGeometryProperties(body, gq.q).Volume
 		}
 		if rel := stdmath.Abs(volume-wantVolume) / wantVolume; rel > edfVolumeTol {

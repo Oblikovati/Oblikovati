@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package validate
 
 import (
 	"fmt"
@@ -37,7 +37,7 @@ func (r *ValidationReport) checkHoleContainment(b *topo.Body) {
 		if !ok || len(f.Loops()) < 2 {
 			continue
 		}
-		ol := outerLoopOf(f)
+		ol := OuterLoopOf(f)
 		outer := loopCurves2d(ol, pl)
 		if len(outer) == 0 {
 			continue
@@ -60,8 +60,8 @@ func (r *ValidationReport) flagProtrudingHoles(f *topo.Face, ol *topo.Loop, oute
 	}
 }
 
-// outerLoopOf returns the face's outer loop, or nil if it has none.
-func outerLoopOf(f *topo.Face) *topo.Loop {
+// OuterLoopOf returns the face's outer loop, or nil if it has none.
+func OuterLoopOf(f *topo.Face) *topo.Loop {
 	for _, l := range f.Loops() {
 		if l.IsOuter() {
 			return l

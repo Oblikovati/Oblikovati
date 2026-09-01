@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -190,7 +191,7 @@ func densifyStraightEdgeCurve(e *topo.Edge, h float64) []math.Point3 {
 // nurbsRefineFactors are the interior-grid density multipliers the fold-driven loop tries in turn
 // (1 = the curvature-adaptive grid, then 2×, 4× denser). A B-spline lip whose curvature the chord
 // estimate under-resolves leaves large triangles that fold across it; a denser interior grid shrinks
-// them below the fold threshold. repairFolds handles the rest; refinement stops as soon as a density
+// them below the fold threshold. validate.RepairFolds handles the rest; refinement stops as soon as a density
 // is fold-free (#585).
 var nurbsRefineFactors = []float64{1, 0.5, 0.25}
 
@@ -207,7 +208,7 @@ func foldDrivenPatch(s geom.BSplineSurface, su, sv float64, q Quality, outer3D [
 		if m == nil {
 			continue
 		}
-		folds := FoldEdgeCount(m)
+		folds := validate.FoldEdgeCount(m)
 		if folds < bestAnyFolds {
 			bestAny, bestAnyFolds = m, folds
 		}

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -139,12 +140,12 @@ func TestConformingRemeshFollowsTheCylinderInsteadOfChordingIt(t *testing.T) {
 	if m == nil {
 		t.Fatal("conformingCylConeMesh declined a well-formed cylindrical band")
 	}
-	got := MeshArea(m)
+	got := validate.MeshArea(m)
 	if rel := (got - exact) / exact; rel < -1e-4 || rel > 1e-4 { // tol:numeric (relative area fraction)
 		t.Errorf("conformance re-mesh tiles %.6g of the band, closed form %.6g (rel %+.4f%%) — the "+
 			"triangulation is chording across the cylinder instead of following it", got, exact, rel*100)
 	}
-	if n := FoldEdgeCount(m); n != 0 {
+	if n := validate.FoldEdgeCount(m); n != 0 {
 		t.Errorf("conformance re-mesh folds on %d edge(s); a developable metric (u,v) must not fold", n)
 	}
 }

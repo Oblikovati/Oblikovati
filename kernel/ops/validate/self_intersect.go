@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package validate
 
 import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -21,7 +22,7 @@ import (
 // tessellated every face, scanned triangle pairs with a Möller test, and then SUBTRACTED a per-face
 // faceting allowance (faceMeshDeviation) so tangent blends stopped reporting crossings that only the
 // facets had. That is a validity verdict taken on facets and then corrected with a facet-error budget:
-// the same body could be valid at one Quality and invalid at another. The decision now runs on the
+// the same body could be valid at one mesh.Quality and invalid at another. The decision now runs on the
 // exact B-rep, exactly as OCCT's IntTools_FaceFace decides face interference:
 //
 //   - two faces trimmed out of the SAME surface sheet interpenetrate where their TRIMS overlap, which
@@ -44,7 +45,7 @@ type SelfIntersection struct {
 
 // SelfIntersections reports every face pair of b whose TRIMMED surfaces genuinely pass through each
 // other, decided on the exact B-rep — no tessellation, and so no dependence on facet density. The
-// Quality argument is kept only so the many call sites that thread one through do not churn; it is
+// mesh.Quality argument is kept only so the many call sites that thread one through do not churn; it is
 // deliberately unused (the same reason [FillInternalVoids] ignores its own).
 //
 // Faces that merely touch along shared topology (an edge or a vertex they have in common) are contact,
@@ -52,7 +53,7 @@ type SelfIntersection struct {
 // resolve is DECLINED rather than reported — see [declineUnresolvedSurfacePair].
 //
 // Example: if hits := ops.SelfIntersections(body, ops.DefaultQuality()); len(hits) > 0 { reject(body) }
-func SelfIntersections(b *topo.Body, _ Quality) []SelfIntersection {
+func SelfIntersections(b *topo.Body, _ mesh.Quality) []SelfIntersection {
 	res := geom.ResolutionForBox(b.RangeBox())
 	scan := newFaceScan(b.Faces())
 	var out []SelfIntersection

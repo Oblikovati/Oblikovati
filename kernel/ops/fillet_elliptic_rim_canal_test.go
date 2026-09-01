@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -301,7 +302,7 @@ func TestEllipticRimCanalBandMeshMatchesTheExactEnvelopeArea(t *testing.T) {
 			body := importEllipticFixture(t, tc.name)
 			rim := closedEllipticRimNear(t, body, tc.rimAt)
 			band := weldedCanalBandFace(t, body, rim, tc.radius)
-			got := MeshArea(TessellateFace(band, PropertyQuality()))
+			got := validate.MeshArea(TessellateFace(band, PropertyQuality()))
 			if rel := stdmath.Abs(got-tc.exactArea) / tc.exactArea; rel > ellipticRimMeshAreaRelTol {
 				t.Errorf("%s MESHED band area = %.6g, want the exact envelope %.6g (rel %.3g > %.0e — a v-labelling "+
 					"shear inflates the mesh while leaving the surface exact)", tc.name, got, tc.exactArea, rel, ellipticRimMeshAreaRelTol)

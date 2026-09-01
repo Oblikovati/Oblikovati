@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -336,7 +337,7 @@ func TestExtractPanelLoopU4CoreCanalFootAtRadius(t *testing.T) {
 
 // measureIntegratorArea resolves loop through coons4 and returns its area via surfaceArea (the
 // fine-quadrature test-only integrator, corner_blend_obstacle_test.go — the SAME convention U4-3 uses,
-// not TessellateFace/MeshArea).
+// not TessellateFace/validate.MeshArea).
 func measureIntegratorArea(t *testing.T, loop RailLoop, res Resolution) float64 {
 	t.Helper()
 	patch, ok := resolveBlend(loop, res)
@@ -383,11 +384,11 @@ func TestExtractPanelLoopU4CoreSplitProductionTessConverges(t *testing.T) {
 		if m == nil {
 			t.Fatalf("nurbsPcurveMesh declined the core split-half panel at tol=%g", tol)
 		}
-		area := MeshArea(m)
+		area := validate.MeshArea(m)
 		rel := stdmath.Abs(area-integratorArea) / integratorArea
 		t.Logf("tol=%g: nurbsPcurveMesh area=%.6f (integrator=%.6f, rel=%.4f%%) folds=%d",
-			tol, area, integratorArea, rel*100, FoldEdgeCount(m))
-		if folds := FoldEdgeCount(m); folds != 0 {
+			tol, area, integratorArea, rel*100, validate.FoldEdgeCount(m))
+		if folds := validate.FoldEdgeCount(m); folds != 0 {
 			t.Errorf("tol=%g: %d fold edges, want 0", tol, folds)
 		}
 		if rel > 0.02 {

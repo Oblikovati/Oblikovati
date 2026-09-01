@@ -48,7 +48,7 @@ func TestConstrainRecordsOnlyRecoveredEdges(t *testing.T) {
 
 // TestDomainLeakedFlagsFilledLoopNotFold checks the detector that gates the fallback: a loop dissolved
 // into the domain interior (a hole the flood filled) is a leak, while an isolated interior edge (a local
-// fold repairFolds later removes) and a cleanly cut loop are not — so a single fold never discards the
+// fold validate.RepairFolds later removes) and a cleanly cut loop are not — so a single fold never discards the
 // refined mesh (#1410).
 func TestDomainLeakedFlagsFilledLoopNotFold(t *testing.T) {
 	t.Parallel()

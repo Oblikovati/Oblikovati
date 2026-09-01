@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -44,7 +45,7 @@ func sphereSeamedCapFan(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 // coplanar rim ring validated through the SAME capAxis the plain cap uses. ok=false on any miss, so
 // the caller declines and the face keeps its existing mesh path.
 func recognizeSeamedCapRim(f *topo.Face, sph geom.Sphere, q Quality) ([]math.Point3, math.Vector3, bool) {
-	loop := outerLoopOf(f)
+	loop := validate.OuterLoopOf(f)
 	if loop == nil {
 		return nil, math.Vector3{}, false
 	}

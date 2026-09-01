@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -184,15 +185,15 @@ func TestNurbsPcurveMeshConvergesHighAspectPanel(t *testing.T) {
 		if m == nil {
 			t.Fatalf("nurbsPcurveMesh declined the synthetic high-aspect panel at tol=%g", tol)
 		}
-		area := MeshArea(m)
+		area := validate.MeshArea(m)
 		rel := relErr(area, truth)
 		mx := maxTriangleArea(m)
 		t.Logf("tol=%g area=%.4f relErr=%.5f folds=%d maxTri=%.4f (%.2f%% of panel)",
-			tol, area, rel, FoldEdgeCount(m), mx, 100*mx/truth)
+			tol, area, rel, validate.FoldEdgeCount(m), mx, 100*mx/truth)
 		if rel > 0.01 {
 			t.Errorf("tol=%g: mesh area %.4f vs analytic %.4f (rel %.4f > 1%%)", tol, area, truth, rel)
 		}
-		if folds := FoldEdgeCount(m); folds != 0 {
+		if folds := validate.FoldEdgeCount(m); folds != 0 {
 			t.Errorf("tol=%g: %d fold edges, want 0", tol, folds)
 		}
 		// Over-enclosure guard (recon's real invariant — the dihedral fold test provably misses
@@ -219,7 +220,7 @@ func TestNurbsPcurveMeshConvergesHighAspectPanel(t *testing.T) {
 // not merely that the production path happens to look fine. It compares the FIXED path (production
 // discretizeEdge, which densifies the starved rail) against the UNFIXED path (the literal pre-#2009
 // behavior: the rail's bare 2-point sampleEdgeCurve output, bypassing densifyStarvedRail) on the
-// IDENTICAL bunched panel + quality. Plain MeshArea alone does not discriminate here (both land
+// IDENTICAL bunched panel + quality. Plain validate.MeshArea alone does not discriminate here (both land
 // within ~1% — the over-enclosed triangle's excess area is masked by under-enclosure elsewhere, an
 // aggregate coincidence, recon's own warning about area-only gates) — maxTriangleArea does: the
 // UNFIXED single worst triangle carries a large fraction of the whole panel, which the fix shrinks
@@ -243,8 +244,8 @@ func TestStarvedRailFixShrinksOverEnclosureTriangle(t *testing.T) {
 	}
 
 	fixedMax, unfixedMax := maxTriangleArea(fixed), maxTriangleArea(unfixed)
-	t.Logf("FIXED   area=%.4f maxTri=%.4f (%.1f%% of panel)", MeshArea(fixed), fixedMax, 100*fixedMax/truth)
-	t.Logf("UNFIXED area=%.4f maxTri=%.4f (%.1f%% of panel)", MeshArea(unfixed), unfixedMax, 100*unfixedMax/truth)
+	t.Logf("FIXED   area=%.4f maxTri=%.4f (%.1f%% of panel)", validate.MeshArea(fixed), fixedMax, 100*fixedMax/truth)
+	t.Logf("UNFIXED area=%.4f maxTri=%.4f (%.1f%% of panel)", validate.MeshArea(unfixed), unfixedMax, 100*unfixedMax/truth)
 
 	if unfixedMax < 0.15*truth {
 		t.Fatalf("test setup: UNFIXED max triangle %.4f is not a giant fan (< 15%% of panel %.4f) — bunch/geometry no longer reproduces the bug", unfixedMax, truth)
@@ -277,8 +278,8 @@ func unfixedRailLoop(t *testing.T, f *topo.Face, rails [2]*topo.Edge, q Quality)
 // metricCDTPatch at successively smaller boundary targets h (independent of kBoundaryCells/Quality)
 // on the bunched panel and asserting the "giant fan triangle" signal — maxTriangleArea, the
 // over-enclosure invariant the dihedral fold test misses — shrinks MONOTONICALLY (non-increasing,
-// small slack) as h tightens, converging well below the panel's whole area; MeshArea and
-// FoldEdgeCount stay bounded throughout. Proof of the underlying MECHANISM (recon's own metric),
+// small slack) as h tightens, converging well below the panel's whole area; validate.MeshArea and
+// validate.FoldEdgeCount stay bounded throughout. Proof of the underlying MECHANISM (recon's own metric),
 // not just the one production density TestNurbsPcurveMeshConvergesHighAspectPanel checks.
 func TestStarvedRailHSweepMonotoneConvergence(t *testing.T) {
 	t.Parallel()
@@ -297,10 +298,10 @@ func TestStarvedRailHSweepMonotoneConvergence(t *testing.T) {
 		if !patchIsManifold(m, loops) {
 			t.Fatalf("h=%g: patch is not manifold", target)
 		}
-		area, mx := MeshArea(m), maxTriangleArea(m)
+		area, mx := validate.MeshArea(m), maxTriangleArea(m)
 		t.Logf("h=%.3g boundaryPts=%d tris=%d area=%.4f relErr=%.5f folds=%d maxTri=%.4f",
-			target, len(outer3D), len(m.Indices)/3, area, relErr(area, truth), FoldEdgeCount(m), mx)
-		if FoldEdgeCount(m) != 0 {
+			target, len(outer3D), len(m.Indices)/3, area, relErr(area, truth), validate.FoldEdgeCount(m), mx)
+		if validate.FoldEdgeCount(m) != 0 {
 			t.Errorf("h=%g: folds present, want 0", target)
 		}
 		if relErr(area, truth) > 0.05 {

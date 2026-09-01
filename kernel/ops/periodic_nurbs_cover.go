@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
 
@@ -35,7 +36,7 @@ func coveringPeriodicMesh(s geom.BSplineSurface, q Quality, ulo, uhi float64, ri
 	}
 	pos, nrm, idx := weldCoverTriangles(b.pos, b.nrm, kept)
 	m := patchMeshFrom(pos, nrm, idx)
-	repairFolds(m, 8)
+	validate.RepairFolds(m, 8)
 	return m
 }
 

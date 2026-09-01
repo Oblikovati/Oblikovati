@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -64,7 +65,7 @@ func TestRimCrossingCutIsWatertightAndFoldFree(t *testing.T) {
 			t.Errorf("%s quality: rim-crossing cut tessellated with %d free edges; want 0 — a cross-face crack (notched two-rim "+
 				"wall mesher or the mixed-arc cap winding, #1724 slice 2)", gq.name, free)
 		}
-		if folds := FoldEdgeCount(mesh); folds != 0 {
+		if folds := validate.FoldEdgeCount(mesh); folds != 0 {
 			t.Errorf("%s quality: rim-crossing cut mesh has %d fold edges; want 0 (no self-overlap)", gq.name, folds)
 		}
 	}

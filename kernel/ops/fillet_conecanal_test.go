@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/kernel/exchange"
 	stepio "oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -337,10 +338,10 @@ func assertArmMeshesFoldFree(t *testing.T, name string, surf geom.BSplineSurface
 	if m == nil || m.TriangleCount() == 0 {
 		t.Fatalf("%s canal arm produced no mesh", name)
 	}
-	if n := FoldEdgeCount(m); n != 0 {
+	if n := validate.FoldEdgeCount(m); n != 0 {
 		t.Fatalf("%s canal arm meshed with %d fold edges; want 0", name, n)
 	}
-	if a := MeshArea(m); a <= 0 || stdmath.IsInf(a, 0) || stdmath.IsNaN(a) {
+	if a := validate.MeshArea(m); a <= 0 || stdmath.IsInf(a, 0) || stdmath.IsNaN(a) {
 		t.Fatalf("%s canal arm meshed to area %g; want finite positive", name, a)
 	}
 }

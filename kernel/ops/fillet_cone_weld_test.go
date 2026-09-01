@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -123,7 +124,7 @@ func everyEdgeTwoIncident(b *topo.Body) int {
 
 // TestConeCornerWeldFoldFree is the brief's HIGHEST-priority gate: every welded face (the re-lofted canal
 // arm band, the corner spherical triangle, the retrimmed cone/plane hosts) meshes to its true area with NO
-// folds. A folded mesh over-counts area and corrupts every downstream consumer, so FoldEdgeCount must be 0
+// folds. A folded mesh over-counts area and corrupts every downstream consumer, so validate.FoldEdgeCount must be 0
 // on every face of C2/C6/D1.
 func TestConeCornerWeldFoldFree(t *testing.T) {
 	if testing.Short() {
@@ -134,7 +135,7 @@ func TestConeCornerWeldFoldFree(t *testing.T) {
 		t.Run(fx.name, func(t *testing.T) {
 			welded := weldConeCornerFixture(t, fx)
 			for _, f := range welded.Faces() {
-				if folds := FoldEdgeCount(TessellateFace(f, PropertyQuality())); folds != 0 {
+				if folds := validate.FoldEdgeCount(TessellateFace(f, PropertyQuality())); folds != 0 {
 					t.Fatalf("%s: %T face has %d fold edges (mesh over-counts its area)", fx.name, f.Geometry(), folds)
 				}
 			}

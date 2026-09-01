@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
 
@@ -41,7 +42,7 @@ func TestSpherePatchDeficitConverges(t *testing.T) {
 		if hasDiag(m.Diagnostics, CodeTessellateCapSaturated) {
 			t.Fatalf("ct=%g saturated the cell budget — the fixture must stay budget-honoured for the sweep to mean convergence", ct)
 		}
-		deficits = append(deficits, stdmath.Abs(MeshArea(m)-closed))
+		deficits = append(deficits, stdmath.Abs(validate.MeshArea(m)-closed))
 	}
 	for i := 1; i < len(deficits); i++ {
 		if deficits[i] > 0.6*deficits[i-1] {

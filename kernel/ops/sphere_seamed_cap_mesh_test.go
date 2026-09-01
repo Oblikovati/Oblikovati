@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -81,7 +82,7 @@ func TestSeamedHemisphereMeshesToItsClosedFormArea(t *testing.T) {
 	face := seamedHemisphereFace(t, radius, 6)
 	m := TessellateFace(face, PropertyQuality())
 	closed := 2 * stdmath.Pi * radius * radius
-	if got := MeshArea(m); stdmath.Abs(got-closed)/closed > 1e-4 {
+	if got := validate.MeshArea(m); stdmath.Abs(got-closed)/closed > 1e-4 {
 		t.Fatalf("seamed hemisphere meshed %.6f, closed form 2πR²=%.6f (rel %.3g > 1e-4) — "+
 			"the density-capped patch path is back", got, closed, stdmath.Abs(got-closed)/closed)
 	}

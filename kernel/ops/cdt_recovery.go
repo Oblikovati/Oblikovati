@@ -59,7 +59,7 @@ func loopPoints(pts [][2]float64, idx []int) []math.Point2 {
 // kept on exactly one side is a clean domain boundary (use==1); shared by TWO kept triangles it is
 // interior (use≥2), meaning that segment dissolved into the domain. A properly cut loop is (almost) all
 // boundary; a FILLED loop is (almost) all interior. We flag a leak only when a loop is PREDOMINANTLY
-// dissolved (interior edges outnumber boundary edges) — an isolated use≥2 edge is a local fold repairFolds
+// dissolved (interior edges outnumber boundary edges) — an isolated use≥2 edge is a local fold validate.RepairFolds
 // later removes, not a missing cut, so a single fold must not discard the higher-quality refined mesh
 // (#1410). use==0 (bordering the excluded super region, e.g. an unrecovered outer seam) is benign.
 func (m *cdt) domainLeaked(tris [][3]int, loops [][]int) bool {

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -152,7 +153,7 @@ func TestFilletU4DualHostWatertight(t *testing.T) {
 		if len(f.Loops()) != 1 {
 			t.Errorf("U4 face has %d loops, want 1 (every result face WIRE:1)", len(f.Loops()))
 		}
-		total += MeshArea(TessellateFace(f, Quality{ChordTolerance: 1e-3}))
+		total += validate.MeshArea(TessellateFace(f, Quality{ChordTolerance: 1e-3}))
 	}
 	const wholeBodyOracle, corpusDeps = 6583.29, 0.01
 	if rel := absDiff(total, wholeBodyOracle) / wholeBodyOracle; rel > corpusDeps {
@@ -175,8 +176,8 @@ func TestFilletU4PerFaceProductionTessellation(t *testing.T) {
 			continue
 		}
 		m := TessellateFace(f, Quality{ChordTolerance: 1e-3})
-		area := MeshArea(m)
-		if folds := FoldEdgeCount(m); folds != 0 {
+		area := validate.MeshArea(m)
+		if folds := validate.FoldEdgeCount(m); folds != 0 {
 			t.Errorf("U4 fillet panel (prodArea %.4f): %d fold edges, want 0 — production tessellation folds", area, folds)
 		}
 		switch {
@@ -242,7 +243,7 @@ func u4ClosureFixture(t *testing.T) (edgeFillet, []obstacleDetection, []panelSpa
 // filletFaceArea tessellates a single filletFace and sums its triangle areas — the empirical way to
 // prove buildSplitObstacleWall's rim split does not change the wall's true surface area: assembleBody
 // welds one face's loop into real topo geometry (it does not require the input set to be watertight, so
-// a lone wall face builds fine), and TessellateFace/MeshArea then measure it exactly the way the corpus
+// a lone wall face builds fine), and TessellateFace/validate.MeshArea then measure it exactly the way the corpus
 // oracle's own area gates do elsewhere in this package.
 func filletFaceArea(t *testing.T, f filletFace) float64 {
 	t.Helper()
@@ -251,7 +252,7 @@ func filletFaceArea(t *testing.T, f filletFace) float64 {
 		t.Fatalf("filletFaceArea: assembleBody produced %d faces, want 1", len(faces))
 	}
 	mesh := TessellateFace(faces[0], Quality{ChordTolerance: 1e-3})
-	return MeshArea(mesh)
+	return validate.MeshArea(mesh)
 }
 
 // pointOnStraightLoopSegment reports whether p lies within tol of one of loop's STRAIGHT (curve==nil)

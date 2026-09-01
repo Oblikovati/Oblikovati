@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package ops
+package validate
 
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/ops/internal/mesh"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -35,7 +36,7 @@ type ProblemEntity struct {
 // the verdict and each offending entity.
 //
 // Example: ok, problems := ops.ValidateBodyEntities(b, ops.CheckGeometry, ops.DefaultQuality())
-func ValidateBodyEntities(b *topo.Body, level EntityCheckLevel, q Quality) (bool, []ProblemEntity) {
+func ValidateBodyEntities(b *topo.Body, level EntityCheckLevel, q mesh.Quality) (bool, []ProblemEntity) {
 	problems := topologyProblems(b)
 	if level >= CheckGeometry {
 		for _, hit := range SelfIntersections(b, q) {
