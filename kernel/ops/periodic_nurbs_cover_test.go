@@ -77,6 +77,7 @@ func sampleMouth(s geom.BSplineSurface, cu, cv, r float64, n int) cylLoop {
 // TestSurfaceClosedInUNotV pins the closure detector: the synthetic cylinder is closed in u (the seam
 // joins) and open in v (bottom≠top), so only the u-periodic covering path applies.
 func TestSurfaceClosedInUNotV(t *testing.T) {
+	t.Parallel()
 	s := closedBSplineCylinder(t, 10, 8)
 	if !surfaceClosedInU(s) {
 		t.Error("cylinder must be detected closed in u")
@@ -92,6 +93,7 @@ func TestSurfaceClosedInUNotV(t *testing.T) {
 // #1510 bug was a half-strip), and that its only open edges are the band's own rim/mouth boundaries (no
 // interior crack) — an isolated tube band is legitimately open top and bottom.
 func TestCoveringPeriodicMeshCoversFullPeriod(t *testing.T) {
+	t.Parallel()
 	s := closedBSplineCylinder(t, 10, 8)
 	rims := []cylLoop{sampleRim(s, 0, 40), sampleRim(s, 1, 40)}
 	mouths := []cylLoop{sampleMouth(s, 0.5, 0.5, 0.08, 20)}
@@ -132,6 +134,7 @@ func assertCoveringMeshSpansThePeriod(t *testing.T, quality string, m *Mesh) {
 // over the period rather than clamp flat at both ends. The seam midpoint u = 0 ≡ u = 1 lies exactly
 // halfway between v = 3 and v = 1, so its exact value is 2 — a closed-form target, not a captured one.
 func TestInterpRimInterpolatesV(t *testing.T) {
+	t.Parallel()
 	f := interpRim([][2]float64{{0.1, 1}, {0.5, 2}, {0.9, 3}}, 1)
 	for _, c := range []struct{ u, want float64 }{{0.3, 1.5}, {0.7, 2.5}, {0.0, 2}, {1.0, 2}, {0.05, 1.5}, {0.95, 2.5}} {
 		if got := f(c.u); stdmath.Abs(got-c.want) > 1e-9 {
@@ -147,6 +150,7 @@ func TestInterpRimInterpolatesV(t *testing.T) {
 // cand_radial's rims are constant-v (measured vspan 1.9e-17 and 0), so closing the seam segment must
 // leave the interpolant identically flat — the receipt that this change moves no shipped mesh.
 func TestInterpRimIsFlatOnAConstantVRim(t *testing.T) {
+	t.Parallel()
 	f := interpRim([][2]float64{{0.1, 7}, {0.4, 7}, {0.8, 7}}, 1)
 	for _, u := range []float64{0, 0.05, 0.25, 0.6, 0.9, 1} {
 		if got := f(u); got != 7 {
@@ -158,6 +162,7 @@ func TestInterpRimIsFlatOnAConstantVRim(t *testing.T) {
 // TestMaterialPointInsideBandOutsideMouth pins the region test: inside the band and clear of the mouth is
 // material; below the bottom rim, above the top rim, or inside the mouth is not.
 func TestMaterialPointInsideBandOutsideMouth(t *testing.T) {
+	t.Parallel()
 	vBot := func(float64) float64 { return 0 }
 	vTop := func(float64) float64 { return 1 }
 	mouths := []cylLoop{{u: []float64{0.4, 0.6, 0.6, 0.4}, v: []float64{0.4, 0.4, 0.6, 0.6}}}
@@ -174,6 +179,7 @@ func TestMaterialPointInsideBandOutsideMouth(t *testing.T) {
 
 // TestClassifyCylinderLoops pins that a full-period wrap is a rim and a localized loop is a mouth.
 func TestClassifyCylinderLoops(t *testing.T) {
+	t.Parallel()
 	rim := cylLoop{u: []float64{0, 0.25, 0.5, 0.75, 0.97}, v: []float64{0, 0, 0, 0, 0}}
 	mouth := cylLoop{u: []float64{0.40, 0.46, 0.51, 0.46}, v: []float64{0.3, 0.3, 0.7, 0.7}}
 	rims, mouths := classifyCylinderLoops([]cylLoop{rim, mouth}, 1)
@@ -185,6 +191,7 @@ func TestClassifyCylinderLoops(t *testing.T) {
 // TestWeldCoverTrianglesMergesCoincident pins that coincident 3D positions (period-shifted seam copies)
 // collapse to one vertex, so the compacted triangle references the shared index.
 func TestWeldCoverTrianglesMergesCoincident(t *testing.T) {
+	t.Parallel()
 	pos := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(0, 0, 0)}
 	nrm := make([]math.Vector3, 4)
 	outPos, _, tris := weldCoverTriangles(pos, nrm, [][3]int{{0, 1, 2}, {3, 1, 2}})
@@ -199,6 +206,7 @@ func TestWeldCoverTrianglesMergesCoincident(t *testing.T) {
 // TestConstrainedTriangulationAllCoversHull pins that the flood-free triangulation returns the full set of
 // non-super triangles of a square (two triangles), the entry the covering selector consumes.
 func TestConstrainedTriangulationAllCoversHull(t *testing.T) {
+	t.Parallel()
 	pts := [][2]float64{{0, 0}, {1, 0}, {1, 1}, {0, 1}}
 	tris := constrainedTriangulationAll(pts, [][]int{{0, 1, 2, 3}})
 	if len(tris) != 2 {
@@ -208,6 +216,7 @@ func TestConstrainedTriangulationAllCoversHull(t *testing.T) {
 
 // TestDistToSeg2D pins the point-to-segment distance used in the mouth-clearance margin test.
 func TestDistToSeg2D(t *testing.T) {
+	t.Parallel()
 	if d := distToSeg2D(0.5, 1, 0, 0, 1, 0); stdmath.Abs(d-1) > 1e-9 {
 		t.Errorf("distToSeg2D perpendicular = %.4f, want 1", d)
 	}

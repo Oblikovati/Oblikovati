@@ -14,6 +14,7 @@ import (
 // about a neutral plane at z=1 must pivot on the line x=2,z=1 (direction ±Y), not the face's lowest
 // vertex. Both the direction and a point on it are verified against the two planes exactly.
 func TestNeutralHingeIsPlaneIntersection(t *testing.T) {
+	t.Parallel()
 	face, _ := geom.NewPlane(math.P3(2, 0, 0), math.V3(1, 0, 0))    // +X face at x=2
 	neutral, _ := geom.NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1)) // z=1
 
@@ -37,6 +38,7 @@ func TestNeutralHingeIsPlaneIntersection(t *testing.T) {
 
 // TestNeutralHingeParallelPlanesNoHinge: a neutral plane parallel to the face has no intersection line.
 func TestNeutralHingeParallelPlanesNoHinge(t *testing.T) {
+	t.Parallel()
 	face, _ := geom.NewPlane(math.P3(2, 0, 0), math.V3(1, 0, 0))
 	neutral, _ := geom.NewPlane(math.P3(5, 0, 0), math.V3(1, 0, 0)) // parallel to the face
 	if _, _, ok := neutralHinge(face, neutral); ok {

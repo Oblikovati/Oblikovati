@@ -31,6 +31,7 @@ func k2LikeSeamSpine(t *testing.T) cylCylSeamSpine {
 // cylinders and its feet at EXACTLY ball distance r — the closed-form guarantee the loft's
 // foot-at-radius assert consumes.
 func TestCylCylSeamStationExactness(t *testing.T) {
+	t.Parallel()
 	sp := k2LikeSeamSpine(t)
 	seed := math.P3(80, 10, 70) // K2's rim vertex: on the bore at azimuth toward +x, front branch
 	st, ok := sp.closedStationsAt(sp.wrapAzimuthAt(seed), 1, sp.wrapAxialAt(seed), 64, 1e-9)
@@ -63,6 +64,7 @@ func assertFootAtBallDistance(t *testing.T, j int, c, foot math.Point3, r float6
 // front branch — every station's y strictly below the crossing mid-plane y=50 — and the walk
 // seeded at the BACK exit symmetric above it. A nearest-root regression would jump branches.
 func TestCylCylSeamBranchContinuity(t *testing.T) {
+	t.Parallel()
 	sp := k2LikeSeamSpine(t)
 	front := math.P3(80, 10, 70)
 	st, ok := sp.closedStationsAt(sp.wrapAzimuthAt(front), 1, sp.wrapAxialAt(front), 128, 1e-9)
@@ -79,6 +81,7 @@ func TestCylCylSeamBranchContinuity(t *testing.T) {
 // TestSeamNearestQuadRoot: root selection nearest the seed, and the honest declines (negative
 // discriminant, degenerate quadratic).
 func TestSeamNearestQuadRoot(t *testing.T) {
+	t.Parallel()
 	// t² − 2·(3)t·(−1)... encode: a=1, 2b=−8, c=12 → roots 2 and 6.
 	if r, ok := seamNearestQuadRoot(1, -4, 12, 1); !ok || r != 2 {
 		t.Fatalf("nearest root to 1: got %v ok=%v, want 2", r, ok)
@@ -98,6 +101,7 @@ func TestSeamNearestQuadRoot(t *testing.T) {
 // within the model-relative envelope bound the resolver enforces — and the measure is HONEST: a
 // coarse 8-station loft of the same closed spine must read a LARGER error than the 64-station one.
 func TestCylCylSeamLoftEnvelope(t *testing.T) {
+	t.Parallel()
 	sp := k2LikeSeamSpine(t)
 	seed := math.P3(80, 10, 70)
 	phi0, t0 := sp.wrapAzimuthAt(seed), sp.wrapAxialAt(seed)
@@ -126,6 +130,7 @@ func seamLoftEnvelopeAt(t *testing.T, sp cylCylSeamSpine, phi0, t0 float64, n in
 
 // TestDistanceToCylinderSurface: the closed-form signed wall distance the envelope measure rides.
 func TestDistanceToCylinderSurface(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 10)
 	if err != nil {
 		t.Fatal(err)
@@ -140,6 +145,7 @@ func TestDistanceToCylinderSurface(t *testing.T) {
 
 // TestCylCylSeamFootOn: the radial foot projection preserves azimuth and lands on the wall.
 func TestCylCylSeamFootOn(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 30)
 	if err != nil {
 		t.Fatal(err)

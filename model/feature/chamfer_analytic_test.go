@@ -46,6 +46,7 @@ func bodyConeCount(b *topo.Body) int {
 // (an analytic cylinder) yields a TRUE conical chamfer — one geom.Cone
 // face on a valid watertight solid — not the non-manifold/faceted result the rim used to give.
 func TestAnalyticChamferOfCylinderRimIsACone(t *testing.T) {
+	t.Parallel()
 	const r, h, d = 5.0, 10.0, 2.0
 	fs, rim := extrudedCylinderTopRim(t, r, h)
 	pf := NewDressUpFeatures(fs).AddChamfer([][]byte{rim}, func() float64 { return d })
@@ -71,6 +72,7 @@ func TestAnalyticChamferOfCylinderRimIsACone(t *testing.T) {
 // disturb an ordinary straight-edge chamfer: a box edge isn't a cylinder rim,
 // so it falls through to the general wedge-cut and stays a valid solid with no spurious cone face.
 func TestAnalyticChamferLeavesBoxChamferAlone(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var edge []byte
 	for _, e := range box.Edges() {

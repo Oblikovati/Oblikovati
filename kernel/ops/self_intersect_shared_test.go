@@ -74,6 +74,7 @@ func addTriWithRidge(bld *topo.Builder, feat string, ridge *topo.Edge, va, vb, a
 // SECOND shared curve must match (the scan continues past a non-matching first), a point at a shared
 // vertex must match, and a point off all of it must not — plus the empty-contact case.
 func TestSharedContactHoldsACurvePointAndAVertex(t *testing.T) {
+	t.Parallel()
 	p := gmath.P3
 	shared := sharedContact{
 		curves: []geom.Curve3{
@@ -101,6 +102,7 @@ func TestSharedContactHoldsACurvePointAndAVertex(t *testing.T) {
 // legitimate contact along a tangent blend's edge as an interpenetration. Here the arc's midpoint sits
 // 1 − cos(π/4) ≈ 0.293 off its own chord, three decades above the tolerance asked for.
 func TestSharedContactUsesTheEdgeCurveNotItsChord(t *testing.T) {
+	t.Parallel()
 	arc, err := geom.NewArc3d(gmath.P3(0, 0, 0), gmath.V3(0, 0, 1), gmath.V3(1, 0, 0), 1, 0, math.Pi/2)
 	if err != nil {
 		t.Fatalf("NewArc3d: %v", err)
@@ -114,6 +116,7 @@ func TestSharedContactUsesTheEdgeCurveNotItsChord(t *testing.T) {
 // TestSelfIntersectionSharedVertexPokeThrough is the core #1321 regression: two faces share one
 // apex vertex but one pierces the other far from it. Exactly one self-intersection, witness off apex.
 func TestSelfIntersectionSharedVertexPokeThrough(t *testing.T) {
+	t.Parallel()
 	hits := SelfIntersections(bowtieBody(), DefaultQuality())
 	if len(hits) == 0 {
 		t.Fatal("shared-vertex poke-through must be reported (was hidden by the vertex-skip rule)")
@@ -128,6 +131,7 @@ func TestSelfIntersectionSharedVertexPokeThrough(t *testing.T) {
 // TestSelfIntersectionSharedEdgeClean is the negative control: two faces meeting only along their
 // shared edge (a roof ridge) are legitimate and must report nothing.
 func TestSelfIntersectionSharedEdgeClean(t *testing.T) {
+	t.Parallel()
 	if hits := SelfIntersections(tentBody(), DefaultQuality()); len(hits) != 0 {
 		t.Errorf("tent (clean shared edge) reports %d self-intersections, want 0: %+v", len(hits), hits)
 	}
@@ -136,6 +140,7 @@ func TestSelfIntersectionSharedEdgeClean(t *testing.T) {
 // TestSharedFaceContactFindsEdgeAndVertex checks the collector directly: the tent's two faces share an
 // edge (so the contact carries its curve); the bowtie's share only the apex vertex (points, no curve).
 func TestSharedFaceContactFindsEdgeAndVertex(t *testing.T) {
+	t.Parallel()
 	tent := tentBody()
 	shared := sharedFaceContact(tent.Faces()[0], tent.Faces()[1])
 	if len(shared.curves) != 1 {

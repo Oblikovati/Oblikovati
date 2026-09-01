@@ -47,6 +47,7 @@ func cubeFaces() []*topo.Body {
 }
 
 func TestStitchClosedSurfacesYieldsSolid(t *testing.T) {
+	t.Parallel()
 	body, err := Stitch(cubeFaces(), 0, false, "stitch")
 	if err != nil {
 		t.Fatalf("Stitch: %v", err)
@@ -69,6 +70,7 @@ func TestStitchClosedSurfacesYieldsSolid(t *testing.T) {
 // source faces it joins (and the body keeps each source face's identity), not by a synthesized
 // weld-edge ordinal — so a selection on a sewn edge/face survives an upstream edit.
 func TestStitchSeamEdgesAreProvenanceNamed(t *testing.T) {
+	t.Parallel()
 	body, err := Stitch(cubeFaces(), 0, false, "stitch")
 	if err != nil {
 		t.Fatalf("Stitch: %v", err)
@@ -105,6 +107,7 @@ func TestStitchSeamEdgesAreProvenanceNamed(t *testing.T) {
 }
 
 func TestStitchMaintainAsSurfaceKeepsOpen(t *testing.T) {
+	t.Parallel()
 	// Even when the quilt closes, maintainSurface keeps it a surface body.
 	body, err := Stitch(cubeFaces(), 0, true, "stitch")
 	if err != nil {
@@ -116,6 +119,7 @@ func TestStitchMaintainAsSurfaceKeepsOpen(t *testing.T) {
 }
 
 func TestStitchOpenQuiltStaysSurface(t *testing.T) {
+	t.Parallel()
 	// Drop the top face → the quilt cannot close, so the result is a surface body.
 	faces := cubeFaces()[1:] // omit bottom? no — omit one to leave an opening
 	body, err := Stitch(faces, 0, false, "stitch")
@@ -131,6 +135,7 @@ func TestStitchOpenQuiltStaysSurface(t *testing.T) {
 }
 
 func TestStitchNoBodiesErrors(t *testing.T) {
+	t.Parallel()
 	if _, err := Stitch(nil, 0, false, "stitch"); err == nil {
 		t.Error("stitching no bodies should error")
 	}

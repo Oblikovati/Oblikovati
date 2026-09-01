@@ -48,6 +48,7 @@ func frustumSideRemoved(d float64) float64 {
 // each side, and checks: each kept volume matches its analytic value (frustum ∓ removed), the two sides
 // partition the frustum, and each centroid is on its kept side. The axis side is the major part.
 func TestHalfSpaceCutConeSideArcBandVolume(t *testing.T) {
+	t.Parallel()
 	frustum, _ := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6, "frustum")
 	full := ops.BodyGeometryProperties(frustum, ops.DefaultQuality()).Volume
 	removed := frustumSideRemoved(2)
@@ -77,6 +78,7 @@ func TestHalfSpaceCutConeSideArcBandVolume(t *testing.T) {
 // top r=6) keeping each side: the axis side is the notched ANNULUS (#1374), the far side the TONGUE.
 // They must partition the frustum, the annulus must dwarf the tongue, and each be on its kept side.
 func TestHalfSpaceCutConeSideAnnulusTongueComplementary(t *testing.T) {
+	t.Parallel()
 	frustum, _ := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6, "frustum")
 	full := ops.BodyGeometryProperties(frustum, ops.DefaultQuality()).Volume
 	removed := frustumSideRemoved(4)
@@ -110,6 +112,7 @@ func TestHalfSpaceCutConeSideAnnulusTongueComplementary(t *testing.T) {
 // TestHalfSpaceCutConeSideClearsKeepsFullVolume strengthens the brep-package face-count check: a side
 // plane clear of the whole frustum (|D| ≥ top radius) on the axis side keeps the WHOLE volume.
 func TestHalfSpaceCutConeSideClearsKeepsFullVolume(t *testing.T) {
+	t.Parallel()
 	frustum, _ := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6, "frustum")
 	full := ops.BodyGeometryProperties(frustum, ops.DefaultQuality()).Volume
 	keep, _ := geom.NewPlane(math.P3(7, 0, 0), math.V3(1, 0, 0)) // x ≤ 7 ⊇ whole frustum (top r=6)

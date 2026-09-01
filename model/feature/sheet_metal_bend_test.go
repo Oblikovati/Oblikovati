@@ -31,6 +31,7 @@ func sheetForBend(t *testing.T, side, mid float64) (*PartFeatures, *sketch.Sketc
 // TestSheetMetalBendFoldsValidSolid bending a flat sheet along a line over the rule radius
 // yields one valid solid that folded up.
 func TestSheetMetalBendFoldsValidSolid(t *testing.T) {
+	t.Parallel()
 	fs, line := sheetForBend(t, 4, 2)
 	pf := NewSheetMetalBendFeatures(fs).Add(&SheetMetalBendDefinition{
 		Sketch: line, LineIndex: 0, Angle: func() float64 { return stdmath.Pi / 2 }, // radius from rule
@@ -58,6 +59,7 @@ func TestSheetMetalBendFoldsValidSolid(t *testing.T) {
 // TestSheetMetalBendUsesRuleRadius with no radius override the bend reads the rule's
 // BendRadius parameter (a missing parameter ⇒ sick), and the 90° default applies.
 func TestSheetMetalBendUsesRuleRadius(t *testing.T) {
+	t.Parallel()
 	// No BendRadius parameter ⇒ radius resolves to 0 ⇒ sick.
 	ps := param.NewParameters()
 	mustParam(t, ps, "Thickness", "2 mm")
@@ -74,6 +76,7 @@ func TestSheetMetalBendUsesRuleRadius(t *testing.T) {
 
 // TestSheetMetalBendDefinitionAndKind the accessors return the recipe.
 func TestSheetMetalBendDefinitionAndKind(t *testing.T) {
+	t.Parallel()
 	def := &SheetMetalBendDefinition{LineIndex: 1}
 	f := &SheetMetalBendFeature{def: def}
 	if f.Definition() != def || f.Kind() != "sheet-metal-bend" {
@@ -84,6 +87,7 @@ func TestSheetMetalBendDefinitionAndKind(t *testing.T) {
 // TestSheetMetalBendRoundTrip the bend recipe (sketch + line + angle + radius + flip)
 // marshals and restores, preserving the kind and payload.
 func TestSheetMetalBendRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 0))
 	fs := NewPartFeatures(nil)
@@ -114,6 +118,7 @@ func TestSheetMetalBendRoundTrip(t *testing.T) {
 // TestSheetMetalBendSerializeUnknownSketch serializing a bend whose sketch is not in the part
 // errors rather than dropping the line reference.
 func TestSheetMetalBendSerializeUnknownSketch(t *testing.T) {
+	t.Parallel()
 	def := &SheetMetalBendDefinition{Sketch: sketch.NewSketches().Add(sketch.XYPlane())}
 	if _, err := serializeSheetMetalBend(def, oneSketch{s: sketch.NewSketches().Add(sketch.XYPlane())}); err == nil {
 		t.Error("serializeSheetMetalBend with an unknown sketch must error")
@@ -122,6 +127,7 @@ func TestSheetMetalBendSerializeUnknownSketch(t *testing.T) {
 
 // TestSheetMetalBendMissingPayload restoring a bend record with no payload errors.
 func TestSheetMetalBendMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreSheetMetalBend(NewPartFeatures(nil), nil, oneSketch{}); err == nil {
 		t.Error("restoreSheetMetalBend(nil) must error")
 	}

@@ -42,6 +42,7 @@ func cornerRod(t *testing.T) *topo.Body {
 }
 
 func TestPartialRimCornerCutMomentsMatchOCC(t *testing.T) {
+	t.Parallel()
 	res, err := Boolean(Cut, notchedTarget(t), cornerRod(t))
 	if err != nil {
 		t.Fatalf("Boolean(Cut): %v", err)
@@ -75,6 +76,7 @@ func cornerMeshFreeEdges(m *Mesh) int {
 // crack-free surface — every triangle edge shared by exactly two triangles — so the rendered frame shows no
 // tear at the triple points. This is the reproducible headless equivalent of the live render check.
 func TestPartialRimCornerCutTessellationIsWatertight(t *testing.T) {
+	t.Parallel()
 	res, err := Boolean(Cut, notchedTarget(t), cornerRod(t))
 	if err != nil {
 		t.Fatalf("Boolean(Cut): %v", err)
@@ -92,6 +94,7 @@ func TestPartialRimCornerCutTessellationIsWatertight(t *testing.T) {
 // must agree with ((target \ notch) \ rod) everywhere away from the boundary — so a right-volume-but-wrong-
 // shape build (correct moments, displaced material) still fails. The rod is at z=7 (crossing the notch).
 func TestPartialRimCornerCutMembershipMatchesCSG(t *testing.T) {
+	t.Parallel()
 	res, err := Boolean(Cut, notchedTarget(t), cornerRod(t))
 	if err != nil {
 		t.Fatalf("Boolean(Cut): %v", err)

@@ -12,6 +12,7 @@ import (
 // --- CircleByThreePoints / PlaneByThreePoints ------------------------------
 
 func TestCircleByThreePoints(t *testing.T) {
+	t.Parallel()
 	// Three points on the unit circle in the XY plane at angles 0, 90, 180.
 	a, b, c := math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(-1, 0, 0)
 	circ, err := CircleByThreePoints(a, b, c)
@@ -32,6 +33,7 @@ func TestCircleByThreePoints(t *testing.T) {
 }
 
 func TestCircleByThreePointsCollinearFails(t *testing.T) {
+	t.Parallel()
 	_, err := CircleByThreePoints(math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0))
 	if err == nil {
 		t.Error("collinear points should not define a circle")
@@ -39,6 +41,7 @@ func TestCircleByThreePointsCollinearFails(t *testing.T) {
 }
 
 func TestPlaneByThreePoints(t *testing.T) {
+	t.Parallel()
 	a, b, c := math.P3(0, 0, 1), math.P3(2, 0, 1), math.P3(0, 3, 1)
 	pl, err := PlaneByThreePoints(a, b, c)
 	if err != nil {
@@ -58,6 +61,7 @@ func TestPlaneByThreePoints(t *testing.T) {
 }
 
 func TestPlaneByThreePointsCollinearFails(t *testing.T) {
+	t.Parallel()
 	_, err := PlaneByThreePoints(math.P3(0, 0, 0), math.P3(1, 1, 1), math.P3(2, 2, 2))
 	if err == nil {
 		t.Error("collinear points should not define a plane")
@@ -67,6 +71,7 @@ func TestPlaneByThreePointsCollinearFails(t *testing.T) {
 // --- EllipticalCylinder ----------------------------------------------------
 
 func TestEllipticalCylinderPointAndParam(t *testing.T) {
+	t.Parallel()
 	c, err := NewEllipticalCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 3, 1)
 	if err != nil {
 		t.Fatalf("NewEllipticalCylinder: %v", err)
@@ -87,6 +92,7 @@ func TestEllipticalCylinderPointAndParam(t *testing.T) {
 }
 
 func TestEllipticalCylinderNormalOutwardUnit(t *testing.T) {
+	t.Parallel()
 	c, _ := NewEllipticalCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 3, 1)
 	n := c.NormalAt(0, 0)
 	if stdmath.Abs(n.Length()-1) > 1e-9 {
@@ -100,6 +106,7 @@ func TestEllipticalCylinderNormalOutwardUnit(t *testing.T) {
 // --- EllipticalCone --------------------------------------------------------
 
 func TestEllipticalConePointAndParam(t *testing.T) {
+	t.Parallel()
 	c, err := NewEllipticalCone(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), stdmath.Pi/4, stdmath.Pi/6)
 	if err != nil {
 		t.Fatalf("NewEllipticalCone: %v", err)
@@ -117,6 +124,7 @@ func TestEllipticalConePointAndParam(t *testing.T) {
 }
 
 func TestEllipticalConeRejectsBadAngle(t *testing.T) {
+	t.Parallel()
 	if _, err := NewEllipticalCone(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 0, stdmath.Pi/6); err == nil {
 		t.Error("a zero half angle should be rejected")
 	}
@@ -128,6 +136,7 @@ func TestEllipticalConeRejectsBadAngle(t *testing.T) {
 // --- BSplineCurve2d --------------------------------------------------------
 
 func TestBSplineCurve2dQuadratic(t *testing.T) {
+	t.Parallel()
 	// A clamped degree-2 curve over three control points is the quadratic Bézier.
 	ctrl := []math.Point2{math.P2(0, 0), math.P2(1, 2), math.P2(2, 0)}
 	knots := []float64{0, 0, 0, 1, 1, 1}
@@ -149,6 +158,7 @@ func TestBSplineCurve2dQuadratic(t *testing.T) {
 // --- PolylineFromCurve -----------------------------------------------------
 
 func TestPolylineFromCurve3OnCircle(t *testing.T) {
+	t.Parallel()
 	circ, _ := NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	pl, err := PolylineFromCurve3(circ, 8)
 	if err != nil {
@@ -165,6 +175,7 @@ func TestPolylineFromCurve3OnCircle(t *testing.T) {
 }
 
 func TestPolylineFromCurveRejectsUnbounded(t *testing.T) {
+	t.Parallel()
 	line, _ := NewLine(math.P3(0, 0, 0), math.V3(1, 0, 0)) // infinite domain
 	if _, err := PolylineFromCurve3(line, 4); err == nil {
 		t.Error("an unbounded curve has no finite polyline")
@@ -178,6 +189,7 @@ func TestPolylineFromCurveRejectsUnbounded(t *testing.T) {
 // --- FittedBSplineCurve ----------------------------------------------------
 
 func TestFittedBSplineCurve3dInterpolates(t *testing.T) {
+	t.Parallel()
 	pts := []math.Point3{math.P3(0, 0, 0), math.P3(1, 1, 0), math.P3(2, 0, 1), math.P3(3, 1, 0)}
 	c, err := NewFittedBSplineCurve(pts)
 	if err != nil {
@@ -191,6 +203,7 @@ func TestFittedBSplineCurve3dInterpolates(t *testing.T) {
 }
 
 func TestFittedBSplineCurve2dInterpolates(t *testing.T) {
+	t.Parallel()
 	pts := []math.Point2{math.P2(0, 0), math.P2(1, 2), math.P2(3, 1)}
 	c, err := NewFittedBSplineCurve2d(pts)
 	if err != nil {
@@ -204,6 +217,7 @@ func TestFittedBSplineCurve2dInterpolates(t *testing.T) {
 }
 
 func TestFittedBSplineTwoPointsIsLine(t *testing.T) {
+	t.Parallel()
 	c, err := NewFittedBSplineCurve([]math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0)})
 	if err != nil {
 		t.Fatalf("NewFittedBSplineCurve: %v", err)
@@ -217,6 +231,7 @@ func TestFittedBSplineTwoPointsIsLine(t *testing.T) {
 }
 
 func TestFittedBSplineRejectsCoincident(t *testing.T) {
+	t.Parallel()
 	_, err := NewFittedBSplineCurve([]math.Point3{math.P3(1, 1, 1), math.P3(1, 1, 1)})
 	if err == nil {
 		t.Error("coincident points have no chord length and should be rejected")

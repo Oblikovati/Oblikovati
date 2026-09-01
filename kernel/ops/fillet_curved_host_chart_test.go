@@ -70,6 +70,7 @@ func hostFaceFor(t *testing.T, cyl geom.Cylinder) *topo.Face {
 // ruling must terminate at the first forward crossing (the notch-top rim z=80), NOT slide to the loop's
 // global axial extreme (z=130) as axialExtremeEnd did. Wall R=50 axis ẑ; ruling θ₀=0 up from z=15.
 func TestArmRulingEnd_StopsAtNotchTopNotGlobalExtreme(t *testing.T) {
+	t.Parallel()
 	cyl := mustCylinder(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 50) // wall R=50, axis ẑ
 	tHost := math.P3(50, 0, 15)                                    // s_4 setback foot, θ₀=0
 	v := math.P3(50, 0, 10)                                        // bitten corner vertex (below → ruling runs up)
@@ -90,6 +91,7 @@ func TestArmRulingEnd_StopsAtNotchTopNotGlobalExtreme(t *testing.T) {
 // TestArmRulingEnd_CleanWallReducesToGlobalExtreme is the B3 wall reduction: on a clean wall the first
 // crossing IS the single rim, so armRulingEnd returns exactly what axialExtremeEnd returned.
 func TestArmRulingEnd_CleanWallReducesToGlobalExtreme(t *testing.T) {
+	t.Parallel()
 	cyl := mustCylinder(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 50)
 	tHost := math.P3(50, 0, 15)
 	v := math.P3(50, 0, 10)
@@ -110,6 +112,7 @@ func TestArmRulingEnd_CleanWallReducesToGlobalExtreme(t *testing.T) {
 // crossing falls through to the interior-station fallback (rulingStationOuter), and that fallback
 // declines because the station's chart point is OUTSIDE the loop — the authority still bites off-face.
 func TestArmRulingEnd_AuthorityRejectsWrongRim(t *testing.T) {
+	t.Parallel()
 	cyl := mustCylinder(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 50)
 	tHost := math.P3(50, 0, 15)
 	v := math.P3(50, 0, 10)
@@ -126,6 +129,7 @@ func TestArmRulingEnd_AuthorityRejectsWrongRim(t *testing.T) {
 // the true outer end is the interior far-vertex STATION, not the crossing. armRulingEnd falls back to
 // rulingStationOuter and returns the station z=60 — the same mechanism that greens D9's cap ruling.
 func TestArmRulingEnd_InteriorStationAccepted(t *testing.T) {
+	t.Parallel()
 	cyl := mustCylinder(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 50)
 	tHost := math.P3(50, 0, 15)
 	v := math.P3(50, 0, 10)
@@ -162,6 +166,7 @@ func reentrantWallLoop(t *testing.T) []endSeg {
 // territory. armRulingEnd must DECLINE rather than fabricate it — an endpoint-only interiority test would
 // wrongly accept. (Reverting stationRunReached re-accepts, re-reddening this.)
 func TestArmRulingEnd_UndershootStationDeclined(t *testing.T) {
+	t.Parallel()
 	cyl := mustCylinder(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 50)
 	tHost := math.P3(50, 0, 15)
 	v := math.P3(50, 0, 10)
@@ -177,6 +182,7 @@ func TestArmRulingEnd_UndershootStationDeclined(t *testing.T) {
 // azimuth+height and back to itself. The wall's ref is pinned to x̂ so θ is deterministic (NewCylinder
 // picks an arbitrary in-plane ref).
 func TestCylChart_RoundTrip(t *testing.T) {
+	t.Parallel()
 	wall, err := geom.NewCylinderWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 50)
 	if err != nil {
 		t.Fatalf("build wall with ref x̂: %v", err)

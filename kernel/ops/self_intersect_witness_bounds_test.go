@@ -28,6 +28,7 @@ import (
 // TestSelfIntersectionWitnessLiesInBothFaceBoxes: whatever the scan reports, the witness is a point
 // both faces own, so both range boxes contain it.
 func TestSelfIntersectionWitnessLiesInBothFaceBoxes(t *testing.T) {
+	t.Parallel()
 	a := tetra(1, math.V3(0, 0, 0))
 	b := tetra(1, math.V3(0.2, 0.2, 0.2))
 	merged := topo.MergeBodies(topo.NewLineage(topo.Tok("imp", "body", 0)), true, a, b)
@@ -52,6 +53,7 @@ const grazeDepth = 1e-6
 // probe reaching grazeDepth past a face is INSIDE it at Weld() (float noise) and OUTSIDE it at Sew()
 // (independent computations), and Sew() is what two separately built faces have to be compared at.
 func TestProbeInsideMaterialSeparatesTheToleranceClasses(t *testing.T) {
+	t.Parallel()
 	p := math.P3
 	wall := quadBody("wall", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2)).Faces()[0]
 	res := geom.ResolutionForBox(wall.RangeBox())

@@ -11,6 +11,7 @@ import (
 // TestFreeformBoxToolEndToEnd places a sub-D box from the tool: at level 1 the cage
 // subdivides but the body stays a valid closed solid.
 func TestFreeformBoxToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 
 	tool := NewFreeformBoxTool()
@@ -32,6 +33,7 @@ func TestFreeformBoxToolEndToEnd(t *testing.T) {
 
 // TestFreeformPlaneToolMakesASurface places the open plane cage — a sheet, not a solid.
 func TestFreeformPlaneToolMakesASurface(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 
 	s.StartTool(NewFreeformPlaneTool())
@@ -45,6 +47,7 @@ func TestFreeformPlaneToolMakesASurface(t *testing.T) {
 
 // TestFreeformQuadBallToolMakesASolid places the closed sphere-like cage.
 func TestFreeformQuadBallToolMakesASolid(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 
 	tool := NewFreeformQuadBallTool()
@@ -62,6 +65,7 @@ func TestFreeformQuadBallToolMakesASolid(t *testing.T) {
 // TestFreeformToolsDraftFeature: each freeform tool drafts the primitive it would commit for
 // the commit gate (#1626) once its sizes are valid, and refuses with a non-positive size.
 func TestFreeformToolsDraftFeature(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	box := NewFreeformBoxTool()
 	box.sx = 0
@@ -78,6 +82,7 @@ func TestFreeformToolsDraftFeature(t *testing.T) {
 
 // TestFreeformToolsViaRibbonCommands asserts each Freeform panel command starts its tool.
 func TestFreeformToolsViaRibbonCommands(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

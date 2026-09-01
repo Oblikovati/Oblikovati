@@ -13,6 +13,7 @@ import (
 // TestUnitDisplayConversionsDefault covers the metric defaults (mm / deg): the
 // converters are identity-ish but exercise the ToPreferred/FromPreferred path.
 func TestUnitDisplayConversionsDefault(t *testing.T) {
+	t.Parallel()
 	s := NewSession() // no document ⇒ default mm/deg units
 	if got := s.LengthToDisplay(1); got != 10 {
 		t.Errorf("LengthToDisplay(1 cm) = %g, want 10 mm", got)
@@ -31,6 +32,7 @@ func TestUnitDisplayConversionsDefault(t *testing.T) {
 // TestUnitDisplayConversionsInchRadian sets the document to inches and radians
 // and checks the converters honor it.
 func TestUnitDisplayConversionsInchRadian(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	part, err := compdef.AddPart(s.Workspace(), "widget.opd", true)
 	if err != nil {

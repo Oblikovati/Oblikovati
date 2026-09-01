@@ -13,6 +13,7 @@ import (
 // Show Format's documented behaviour is the inverse of its name: on suppresses the overrides and
 // draws with default attributes; off shows user formatting again.
 func TestShowFormatSuppressesOverrides(t *testing.T) {
+	t.Parallel()
 	_, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(10, 0))
 	sk.SetEntityFormat(l.EntityID(), sketch.EntityFormat{
@@ -35,6 +36,7 @@ func TestShowFormatSuppressesOverrides(t *testing.T) {
 
 // An unstyled entity resolves the same either way — there is nothing to suppress.
 func TestShowFormatIsANoOpForUnstyledGeometry(t *testing.T) {
+	t.Parallel()
 	_, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(10, 0))
 	if SketchEntityStyle(sk, l, false).LineWeight != SketchEntityStyle(sk, l, true).LineWeight {
@@ -43,6 +45,7 @@ func TestShowFormatIsANoOpForUnstyledGeometry(t *testing.T) {
 }
 
 func TestShowFormatTogglePersistsInOptions(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	if s.ShowFormat() {
 		t.Fatal("Show Format starts off, so user formatting is visible")

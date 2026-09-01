@@ -31,6 +31,7 @@ func countPlanes(b *topo.Body) int {
 // two new planar cap faces, and the removed volume matches the exact rolling-ball notch integral (the
 // ground truth OCCT approximates) — verifying the caps orient the tube outward, not inside-out.
 func TestFilletOpenCurvedTangentStripe(t *testing.T) {
+	t.Parallel()
 	filleted := boxWithRoundedVerticals(t, 4, 0.5)
 	before := ops.BodyGeometryProperties(filleted, ops.DefaultQuality()).Volume
 	planesBefore := countPlanes(filleted)
@@ -107,6 +108,7 @@ func notchCentroidOffset(r float64) float64 {
 // BRepFilletAPI_MakeFillet oracle (0.103246) — confirming our flat cap matches OCCT's intersection-at-end
 // for a right-angle terminal, to tessellation tolerance.
 func TestFilletSingleVerticalOpenChain(t *testing.T) {
+	t.Parallel()
 	box := csgBox(gmath.P3(0, 0, 0), 4, 4, 4)
 	var one [][]byte
 	for _, e := range box.Edges() {
@@ -149,6 +151,7 @@ func TestFilletSingleVerticalOpenChain(t *testing.T) {
 // centre curve collapses on the arc segments) fails with a localized, actionable error naming the faulty
 // segment and guide point — not a panic, not a silently wrong body. Mirrors OCCT ChFiDS_ErrorStatus.
 func TestFilletStripeUnbuildableIsLocalized(t *testing.T) {
+	t.Parallel()
 	filleted := boxWithRoundedVerticals(t, 4, 0.5)
 	top := topPerimeterKeys(t, filleted)
 

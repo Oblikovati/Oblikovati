@@ -40,6 +40,7 @@ func partBodyFaces(t *testing.T, s *app.Session) int {
 }
 
 func TestFreeformSetLevelOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, id := freeformBoxViaAPI(t)
 	// One Catmull–Clark round splits each cage quad into 4: 6 → 24 at the default level 1.
 	if got := partBodyFaces(t, s); got != 24 {
@@ -56,6 +57,7 @@ func TestFreeformSetLevelOverWire(t *testing.T) {
 }
 
 func TestFreeformMoveVerticesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, id := freeformBoxViaAPI(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	before := bodyVolume(def)
@@ -71,6 +73,7 @@ func TestFreeformMoveVerticesOverWire(t *testing.T) {
 }
 
 func TestFreeformCreaseEdgesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, id := freeformBoxViaAPI(t)
 	var detail wire.FeatureDetailResult
 	call(t, r, s, "freeform.setLevel", fmt.Sprintf(`{"id":%d,"level":2}`, id), &detail)
@@ -97,6 +100,7 @@ func TestFreeformCreaseEdgesOverWire(t *testing.T) {
 }
 
 func TestFreeformEditRejectsBadInputs(t *testing.T) {
+	t.Parallel()
 	r, s, id := freeformBoxViaAPI(t)
 	if _, err := r.Handle(s, "freeform.moveVertices",
 		[]byte(fmt.Sprintf(`{"id":%d,"vertices":[99],"translation":[1,0,0]}`, id))); err == nil {

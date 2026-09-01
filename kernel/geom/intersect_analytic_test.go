@@ -21,6 +21,7 @@ func mustPlane(t *testing.T, ox, oy, oz, nx, ny, nz float64) Plane {
 // A plane perpendicular to a cylinder axis cuts it in an exact circle of the cylinder's
 // radius.
 func TestAnalyticPlaneCylinderIsCircle(t *testing.T) {
+	t.Parallel()
 	cyl, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	curves, ok := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 0, 0, 0, 1), cyl, ResolutionForSize(1))
 	if !ok || len(curves) != 1 {
@@ -34,6 +35,7 @@ func TestAnalyticPlaneCylinderIsCircle(t *testing.T) {
 
 // Cutting a plane at z=3 through a sphere of radius 5 gives a circle of radius 4.
 func TestAnalyticPlaneSphereSmallCircle(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 5)
 	curves, ok := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 3, 0, 0, 1), sp, ResolutionForSize(1))
 	if !ok || len(curves) != 1 {
@@ -47,6 +49,7 @@ func TestAnalyticPlaneSphereSmallCircle(t *testing.T) {
 
 // A plane clear of the sphere is handled with no curve (not a fallback).
 func TestAnalyticPlaneSphereMiss(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 5)
 	curves, ok := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 10, 0, 0, 1), sp, ResolutionForSize(1))
 	if !ok || len(curves) != 0 {
@@ -56,6 +59,7 @@ func TestAnalyticPlaneSphereMiss(t *testing.T) {
 
 // Two planes meet in a line; argument order does not matter.
 func TestAnalyticPlanePlaneIsLine(t *testing.T) {
+	t.Parallel()
 	curves, ok := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 0, 0, 0, 1), mustPlane(t, 0, 0, 0, 1, 0, 0), ResolutionForSize(1))
 	if !ok || len(curves) != 1 {
 		t.Fatalf("plane∩plane = %v ok=%v, want one line", curves, ok)
@@ -68,6 +72,7 @@ func TestAnalyticPlanePlaneIsLine(t *testing.T) {
 // PlanePlaneLine returns the exact line the planar B-rep imprint uses: the z=0 and x=0 planes meet along the
 // y-axis (a point on it and unit direction ±Y), and two parallel planes report ok=false.
 func TestPlanePlaneLineExactAndParallel(t *testing.T) {
+	t.Parallel()
 	p0, dir, ok := PlanePlaneLine(mustPlane(t, 0, 0, 0, 0, 0, 1), mustPlane(t, 0, 0, 0, 1, 0, 0))
 	if !ok {
 		t.Fatal("z=0 ∩ x=0 must be a line, got ok=false")
@@ -88,6 +93,7 @@ func TestPlanePlaneLineExactAndParallel(t *testing.T) {
 
 // Parallel planes are handled (no intersection curve).
 func TestAnalyticParallelPlanes(t *testing.T) {
+	t.Parallel()
 	curves, ok := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 0, 0, 0, 1), mustPlane(t, 0, 0, 5, 0, 0, 1), ResolutionForSize(1))
 	if !ok || len(curves) != 0 {
 		t.Errorf("parallel planes = %v ok=%v, want handled with no curve", curves, ok)
@@ -97,6 +103,7 @@ func TestAnalyticParallelPlanes(t *testing.T) {
 // An oblique plane∩cylinder is an exact ellipse: minor = radius, major = radius/|cosA|
 // (here the 45° tilt gives cosA = 1/√2, so major = 2√2).
 func TestAnalyticObliquePlaneCylinderIsEllipse(t *testing.T) {
+	t.Parallel()
 	cyl, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	curves, ok := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 0, 1, 0, 1), cyl, ResolutionForSize(1))
 	if !ok || len(curves) != 1 {
@@ -111,6 +118,7 @@ func TestAnalyticObliquePlaneCylinderIsEllipse(t *testing.T) {
 // A plane parallel to the cylinder axis, cutting inside the radius, grazes the cylinder along a
 // pair of axis-parallel lines (the section edges of a box-wall subtraction).
 func TestAnalyticPlaneParallelToCylinderIsLinePair(t *testing.T) {
+	t.Parallel()
 	cyl, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	curves, ok := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 0, 1, 0, 0), cyl, ResolutionForSize(1)) // x = 0
 	if !ok || len(curves) != 2 {
@@ -130,6 +138,7 @@ func TestAnalyticPlaneParallelToCylinderIsLinePair(t *testing.T) {
 // A plane parallel to the axis but clear of (or tangent to) the cylinder grazes no enclosed
 // region: handled, with no curves, so the half-space cut keeps the cylinder whole.
 func TestAnalyticPlaneParallelClearsCylinder(t *testing.T) {
+	t.Parallel()
 	cyl, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	curves, ok := IntersectSurfacesAnalytic(mustPlane(t, 3, 0, 0, 1, 0, 0), cyl, ResolutionForSize(1)) // x = 3, radius 2
 	if !ok || len(curves) != 0 {
@@ -139,6 +148,7 @@ func TestAnalyticPlaneParallelClearsCylinder(t *testing.T) {
 
 // A plane perpendicular to a cone's axis cuts a circle of radius distance×tan(halfAngle).
 func TestAnalyticPlaneConeIsCircle(t *testing.T) {
+	t.Parallel()
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/4) // tan 45° = 1
 	curves, ok := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 3, 0, 0, 1), cone, ResolutionForSize(1))
 	if !ok || len(curves) != 1 {
@@ -152,6 +162,7 @@ func TestAnalyticPlaneConeIsCircle(t *testing.T) {
 
 // Argument order is symmetric (cylinder first).
 func TestAnalyticOrderIndependent(t *testing.T) {
+	t.Parallel()
 	cyl, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	curves, ok := IntersectSurfacesAnalytic(cyl, mustPlane(t, 0, 0, 0, 0, 0, 1), ResolutionForSize(1))
 	if !ok || len(curves) != 1 {
@@ -162,6 +173,7 @@ func TestAnalyticOrderIndependent(t *testing.T) {
 // A plane perpendicular to a torus axis cuts the tube in two concentric circles (the outer R+√(r²−d²)
 // and inner R−√(r²−d²)); an oblique plane that cuts the tube is a spiric quartic, deferred (handled=false).
 func TestAnalyticPlaneTorusPerpendicularIsTwoCircles(t *testing.T) {
+	t.Parallel()
 	tor, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
 	curves, handled := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 1, 0, 0, 1), tor, ResolutionForSize(1)) // perpendicular at z=1
 	if !handled || len(curves) != 2 {
@@ -180,6 +192,7 @@ func TestAnalyticPlaneTorusPerpendicularIsTwoCircles(t *testing.T) {
 }
 
 func TestAnalyticPlaneTorusObliqueDefers(t *testing.T) {
+	t.Parallel()
 	tor, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
 	if _, handled := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 0, 1, 0, 1), tor, ResolutionForSize(1)); handled {
 		t.Error("an oblique torus cut (a spiric quartic) must defer, got handled=true")
@@ -187,6 +200,7 @@ func TestAnalyticPlaneTorusObliqueDefers(t *testing.T) {
 }
 
 func TestAnalyticPlaneTorusClearsIsEmpty(t *testing.T) {
+	t.Parallel()
 	tor, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
 	curves, handled := IntersectSurfacesAnalytic(mustPlane(t, 20, 0, 0, 1, 0, 0), tor, ResolutionForSize(1)) // axis-parallel, far clear
 	if !handled || len(curves) != 0 {

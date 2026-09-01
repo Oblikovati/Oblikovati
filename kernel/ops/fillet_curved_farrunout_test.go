@@ -17,6 +17,7 @@ import (
 // criterion splices out the tiny corner (keeping the large region). Asserting the result keeps the far
 // vertex F and drops the corner vertex P0 fails loudly if the count proxy ever returns.
 func TestSpliceCornerBite_RemovesSmallAreaNotFewestSegs(t *testing.T) {
+	t.Parallel()
 	b0, b1 := math.P3(2, 0, 0), math.P3(0, 2, 0)
 	a, p0, b := math.P3(1, 0, 0), math.P3(0, 0, 0), math.P3(0, 1, 0)
 	far := math.P3(20, 20, 0)
@@ -45,6 +46,7 @@ func TestSpliceCornerBite_RemovesSmallAreaNotFewestSegs(t *testing.T) {
 // two-edge span (b1→far→b0) encloses with a straight closing chord must equal the shoelace triangle
 // area (38), so the splice's small-vs-large decision rests on a correct measure, not the sampling noise.
 func TestCornerBiteArea_MatchesTriangle(t *testing.T) {
+	t.Parallel()
 	b0, b1, far := math.P3(2, 0, 0), math.P3(0, 2, 0), math.P3(20, 20, 0)
 	span := []endSeg{straightSeg(b1, far), straightSeg(far, b0)}
 	chord := straightSeg(b0, b1) // straight closing edge → exact triangle, no arc sampling

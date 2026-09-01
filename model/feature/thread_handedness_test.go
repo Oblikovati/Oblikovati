@@ -55,6 +55,7 @@ func threadedPart(t *testing.T, def *ThreadDefinition) *PartFeatures {
 // TestLeftHandedCutThreadReversesTheGroove: the flag has to reach the modeled surface, not just
 // the spec — a cut thread whose groove still winds right is the wrong solid.
 func TestLeftHandedCutThreadReversesTheGroove(t *testing.T) {
+	t.Parallel()
 	if tc := threadedFaceOf(t, threadedPart(t, &ThreadDefinition{Designation: "M8x1.25", Cut: true})); !tc.RightHanded {
 		t.Error("the default cut thread should wind right-handed")
 	}
@@ -89,6 +90,7 @@ func helixTurnSign(pts []math.Point3) float64 {
 // handedness is only ever visible in what it DRAWS. A helix that keeps winding right is the
 // drawing telling the machinist the opposite of the spec.
 func TestLeftHandedCosmeticThreadMirrorsItsHelix(t *testing.T) {
+	t.Parallel()
 	right := ThreadDisplayCurves(threadedPart(t, &ThreadDefinition{Designation: "M8x1.25"}))
 	left := ThreadDisplayCurves(threadedPart(t, &ThreadDefinition{Designation: "M8x1.25", LeftHanded: true}))
 	if len(right) != 1 || len(left) != 1 {
@@ -106,6 +108,7 @@ func TestLeftHandedCosmeticThreadMirrorsItsHelix(t *testing.T) {
 // one fact. Setting both must not cancel back to a right-hand thread, and the suffix alone must
 // still work now that the flag exists.
 func TestLeftHandedFlagAndSuffixAgree(t *testing.T) {
+	t.Parallel()
 	for name, def := range map[string]*ThreadDefinition{
 		"suffix only": {Designation: "M8x1.25-LH"},
 		"flag only":   {Designation: "M8x1.25", LeftHanded: true},
@@ -124,6 +127,7 @@ func TestLeftHandedFlagAndSuffixAgree(t *testing.T) {
 // TestThreadHandednessRoundTrips: handedness is part of the thread, so a reopened document must
 // not quietly serve a right-hand thread where a left-hand one was authored.
 func TestThreadHandednessRoundTrips(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{
 		FaceKey: []byte("face-1"), Designation: "M8x1.25", Cut: true, LeftHanded: true,

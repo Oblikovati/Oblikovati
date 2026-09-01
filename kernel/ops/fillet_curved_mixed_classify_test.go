@@ -42,6 +42,7 @@ func roleTorus(t *testing.T) geom.Torus {
 // or a CONVEX torus (the N4 boss cap-rim arm) is rejected. Guards the classifier against admitting the
 // wrong sense/surface as the M8 cove.
 func TestIsCoveTorusArmDeclines(t *testing.T) {
+	t.Parallel()
 	if isCoveTorusArm(edgeFillet{armSurface: roleCyl(t), armConcave: true}) {
 		t.Error("isCoveTorusArm accepted a Cylinder arm — must be a Torus")
 	}
@@ -56,6 +57,7 @@ func TestIsCoveTorusArmDeclines(t *testing.T) {
 // TestIsConvexCylArmDeclines pins the convex-pivot predicate: only a Cylinder arm that is neither concave
 // nor flipped qualifies. The concave cyl (N3/M4/N9), the flipped planar band, and a torus are all rejected.
 func TestIsConvexCylArmDeclines(t *testing.T) {
+	t.Parallel()
 	if isConvexCylArm(edgeFillet{armSurface: roleTorus(t)}) {
 		t.Error("isConvexCylArm accepted a Torus arm")
 	}
@@ -75,6 +77,7 @@ func TestIsConvexCylArmDeclines(t *testing.T) {
 // decline. The non-flip case must short-circuit BEFORE touching a/b (they may be nil), so it is tested with
 // nil faces.
 func TestIsPlanarBandArmDeclines(t *testing.T) {
+	t.Parallel()
 	if isPlanarBandArm(edgeFillet{flip: false}) {
 		t.Error("isPlanarBandArm accepted a non-flip arm")
 	}
@@ -98,6 +101,7 @@ func TestIsPlanarBandArmDeclines(t *testing.T) {
 // so a non-M8 valence/sense can never reach the 2r-torus solve. The happy path (1 convex + 1 cove + 1
 // planar) still classifies.
 func TestClassifyMixedRoleArmsGuards(t *testing.T) {
+	t.Parallel()
 	pl := rolePlane(t)
 	convex := edgeFillet{armSurface: roleCyl(t)}
 	cove := edgeFillet{armSurface: roleTorus(t), armConcave: true}

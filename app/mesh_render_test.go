@@ -14,6 +14,7 @@ import (
 // tetra STL is 4 facets → 4 flat-shaded triangles, each with its own three vertices and a unit
 // face normal.
 func TestMeshDrawItemsRendersPlacedMesh(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6)
 	pf, err := s.ImportMeshFile(tempSTL(t))
 	if err != nil {
@@ -49,6 +50,7 @@ func TestMeshDrawItemsRendersPlacedMesh(t *testing.T) {
 // mesh is placed and drops to absent when the only mesh is suppressed — so the head's flatten cache
 // rebuilds exactly when the visible mesh set changes, not on an orbit.
 func TestMeshDisplaySignatureTracksSet(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6)
 	if _, ok := s.MeshDisplaySignature(); ok {
 		t.Fatal("signature should be absent before any mesh is placed")

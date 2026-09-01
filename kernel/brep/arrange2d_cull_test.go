@@ -57,6 +57,7 @@ func bruteNarrowPhasePairs(segments [][2]math.Point2) [][2]int {
 // randomized fixtures, the grid candidate set must contain every pair the brute narrow phase
 // accepts — a miss would silently drop an arrangement crossing.
 func TestSegmentCullGridSupersetOfNarrowPhase(t *testing.T) {
+	t.Parallel()
 	rng := stdrand.New(stdrand.NewSource(7))
 	for trial := range 20 {
 		segments := randomArrangementSegments(rng, 60)
@@ -132,6 +133,7 @@ func bruteSplitTJunctions(pts []math.Point2, edges map[[2]int]bool) {
 // against the brute oracle on randomized fixtures: same welded points (same order), same
 // elementary edge set.
 func TestPlanarizeGridMatchesBrute(t *testing.T) {
+	t.Parallel()
 	rng := stdrand.New(stdrand.NewSource(11))
 	for trial := range 20 {
 		segments := randomArrangementSegments(rng, 80)
@@ -150,6 +152,7 @@ func TestPlanarizeGridMatchesBrute(t *testing.T) {
 // random welded point sets and edges, the grid-backed lowest-qualifying-vertex answer equals
 // the full scan's (via the one-giant-cell degradation).
 func TestVertexOnEdgeInteriorGridMatchesFullScan(t *testing.T) {
+	t.Parallel()
 	rng := stdrand.New(stdrand.NewSource(13))
 	for trial := range 20 {
 		pts, edges := planarize(randomArrangementSegments(rng, 40))

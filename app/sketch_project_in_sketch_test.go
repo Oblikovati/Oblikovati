@@ -30,6 +30,7 @@ func (p stubEdgePicker) Pick(_, _ float64, f *SelectionFilter) (Selectable, bool
 // picker, which knows nothing about B-rep edges, so the tool silently received nothing and committing
 // produced no projected curve ("the button does nothing").
 func TestProjectGeometryPicksModelEdgeInSketch(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4) // [0,2]x[0,2]x[0,4]
 	part, _ := activePart(s)
 	body := partBodies(s)()[0]
@@ -69,6 +70,7 @@ func TestProjectGeometryPicksModelEdgeInSketch(t *testing.T) {
 // picks model references (Project Geometry) diverts in-sketch clicks to the 3D picker; a plain
 // sketch-entity tool (Trim) keeps using the 2D sketch picker, and so does no-tool selection.
 func TestInSketchRoutingOnlyForReferenceTools(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, err := s.CreateSketch(sketch.XYPlane()); err != nil {
 		t.Fatalf("CreateSketch: %v", err)

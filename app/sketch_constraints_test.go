@@ -30,6 +30,7 @@ func cosBetween(l1, l2 *sketch.Line) float64 {
 }
 
 func TestPerpendicularConstraintSolves(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l1 := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 	l2 := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 4)) // 45°, not perpendicular
@@ -42,6 +43,7 @@ func TestPerpendicularConstraintSolves(t *testing.T) {
 }
 
 func TestParallelConstraintSolves(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l1 := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 	l2 := sk.Lines().AddByTwoPoints(math.P2(0, 2), math.P2(4, 3))
@@ -54,6 +56,7 @@ func TestParallelConstraintSolves(t *testing.T) {
 }
 
 func TestHorizontalConstraintOnLine(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 2))
 	if err := applyHorizontal(s, entList(l)); err != nil {
@@ -65,6 +68,7 @@ func TestHorizontalConstraintOnLine(t *testing.T) {
 }
 
 func TestVerticalConstraintOnLine(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(2, 4))
 	if err := applyVertical(s, entList(l)); err != nil {
@@ -76,6 +80,7 @@ func TestVerticalConstraintOnLine(t *testing.T) {
 }
 
 func TestCollinearConstraint(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l1 := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 	l2 := sk.Lines().AddByTwoPoints(math.P2(0, 1), math.P2(4, 1))
@@ -88,6 +93,7 @@ func TestCollinearConstraint(t *testing.T) {
 }
 
 func TestCoincidentConstraintOnPoints(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	p1 := sk.Points().Add(math.P2(0, 0))
 	p2 := sk.Points().Add(math.P2(2, 1))
@@ -100,6 +106,7 @@ func TestCoincidentConstraintOnPoints(t *testing.T) {
 }
 
 func TestEqualRadiusAndLength(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	c1 := sk.Circles().AddByCenterRadius(math.P2(0, 0), 2)
 	c2 := sk.Circles().AddByCenterRadius(math.P2(8, 0), 5)
@@ -120,6 +127,7 @@ func TestEqualRadiusAndLength(t *testing.T) {
 }
 
 func TestConcentricOnCircles(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	c1 := sk.Circles().AddByCenterRadius(math.P2(0, 0), 2)
 	c2 := sk.Circles().AddByCenterRadius(math.P2(5, 3), 4)
@@ -132,6 +140,7 @@ func TestConcentricOnCircles(t *testing.T) {
 }
 
 func TestTangentLineToCircle(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	c := sk.Circles().AddByCenterRadius(math.P2(0, 0), 2)
 	l := sk.Lines().AddByTwoPoints(math.P2(-4, 3), math.P2(4, 3)) // above the circle
@@ -147,6 +156,7 @@ func TestTangentLineToCircle(t *testing.T) {
 // TestCircularConstraintsAcceptArcs checks the apply* layer treats an arc like a circle:
 // concentric, equal-radius, point-on-curve coincidence, and tangent all accept arcs.
 func TestCircularConstraintsAcceptArcs(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	arc := sk.Arcs().AddByCenterStartEnd(math.P2(0, 0), math.P2(3, 0), math.P2(0, 3), true)
 	circ := sk.Circles().AddByCenterRadius(math.P2(6, 4), 5)
@@ -177,6 +187,7 @@ func TestCircularConstraintsAcceptArcs(t *testing.T) {
 // TestTangentTwoCircles checks the polymorphic Tangent applies a curve-to-curve tangent
 // when two circles (no line) are picked.
 func TestTangentTwoCircles(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	a := sk.Circles().AddByCenterRadius(math.P2(0, 0), 2)
 	b := sk.Circles().AddByCenterRadius(math.P2(6, 0), 3) // separated ⇒ external tangency
@@ -190,6 +201,7 @@ func TestTangentTwoCircles(t *testing.T) {
 }
 
 func TestFixAddsConstraint(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	p := sk.Points().Add(math.P2(1, 1))
 	before := len(sk.GeometricConstraints().All())
@@ -202,6 +214,7 @@ func TestFixAddsConstraint(t *testing.T) {
 }
 
 func TestSymmetryConstraintSolves(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	axis := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 0)) // the X axis
 	sk.GeometricConstraints().AddFix(axis.A)                        // pin the mirror axis so
@@ -221,6 +234,7 @@ func TestSymmetryConstraintSolves(t *testing.T) {
 }
 
 func TestSymmetryWrongInputErrors(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	p1, p2 := sk.Points().Add(math.P2(0, 0)), sk.Points().Add(math.P2(1, 1))
 	if err := applySymmetry(s, entList(p1, p2)); err == nil {
@@ -229,6 +243,7 @@ func TestSymmetryWrongInputErrors(t *testing.T) {
 }
 
 func TestSmoothConstraintJoinsSplineToLine(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	line := sk.Lines().AddByTwoPoints(math.P2(-2, 0), math.P2(0, 0))
 	sk.GeometricConstraints().AddFix(line.A)
@@ -248,6 +263,7 @@ func TestSmoothConstraintJoinsSplineToLine(t *testing.T) {
 }
 
 func TestSmoothWithoutSplineErrors(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l1 := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 0))
 	l2 := sk.Lines().AddByTwoPoints(math.P2(1, 0), math.P2(2, 1))
@@ -257,6 +273,7 @@ func TestSmoothWithoutSplineErrors(t *testing.T) {
 }
 
 func TestConstraintWrongInputErrors(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 0))
 	if err := applyParallel(s, entList(l)); err == nil {
@@ -268,6 +285,7 @@ func TestConstraintWrongInputErrors(t *testing.T) {
 }
 
 func TestDimensionFromEntities(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	p1 := sk.Points().Add(math.P2(0, 0))
 	p2 := sk.Points().Add(math.P2(3, 0))
@@ -289,6 +307,7 @@ func TestDimensionFromEntities(t *testing.T) {
 }
 
 func TestDimensionNothingErrors(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	if err := applyDimension(s, nil); err == nil {
 		t.Error("dimension with no entities should error")
@@ -296,6 +315,7 @@ func TestDimensionNothingErrors(t *testing.T) {
 }
 
 func TestSketchClickSelectsEntity(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	// A line through the origin; clicking the viewport centre (maps to sketch 0,0) selects it.
 	sk.Lines().AddByTwoPoints(math.P2(-2, -2), math.P2(2, 2))

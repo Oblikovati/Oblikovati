@@ -33,6 +33,7 @@ func collidingTriBody() (body *topo.Body, dupKey, uniqueKey []byte) {
 // silently dressing up the first match — the wrong-rebind that breaks an unintended edge (#1536
 // hazard class). A clean key still resolves, and a lost key reports honestly.
 func TestResolveEdgesRejectsAmbiguousKey(t *testing.T) {
+	t.Parallel()
 	body, dupKey, uniqueKey := collidingTriBody()
 
 	if _, _, err := resolveEdges(body, [][]byte{uniqueKey}, nil); err != nil {
@@ -64,6 +65,7 @@ func appendKindByte(lin topo.Lineage) []byte {
 // reads "<empty>", a real key has its leading kind byte stripped, and a key without a kind byte
 // passes through unchanged.
 func TestKeyText(t *testing.T) {
+	t.Parallel()
 	if got := keyText(nil); got != "<empty>" {
 		t.Errorf("keyText(nil) = %q, want <empty>", got)
 	}

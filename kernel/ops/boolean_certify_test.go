@@ -24,6 +24,7 @@ func certifyTestOperands() (target, tool *boundaryIndex) {
 }
 
 func TestMembershipRuleOnEachOperandBoundary(t *testing.T) {
+	t.Parallel()
 	target, tool := certifyTestOperands()
 	const tol = 1e-7 // tol:numeric — the probe's on-boundary reach, well under the 5-unit overlap
 
@@ -65,6 +66,7 @@ func TestMembershipRuleOnEachOperandBoundary(t *testing.T) {
 // TestAFabricatedFaceIsRefusedByEveryOperation is the certificate's reason to exist: a result face
 // lying on NEITHER operand was invented by the operation, and no membership rule can justify it.
 func TestAFabricatedFaceIsRefusedByEveryOperation(t *testing.T) {
+	t.Parallel()
 	target, tool := certifyTestOperands()
 	away := math.P3(40, 40, 40)
 	for _, op := range []PartFeatureOperation{Join, Cut, Intersect} {
@@ -78,6 +80,7 @@ func TestAFabricatedFaceIsRefusedByEveryOperation(t *testing.T) {
 // contact, where the shared wall survives once. The rule accepts it before the per-op split, and this
 // pins that, because deciding it per-op would drop the shared wall from one side or keep it twice.
 func TestACoincidentContactSurvivesEveryOperation(t *testing.T) {
+	t.Parallel()
 	target, tool := certifyTestOperands()
 	shared := math.P3(5, 7, 10) // on the target's top face AND on the tool's x=5 wall
 	for _, op := range []PartFeatureOperation{Join, Cut, Intersect} {
@@ -91,6 +94,7 @@ func TestACoincidentContactSurvivesEveryOperation(t *testing.T) {
 // intersect. Anything else has nothing to check, and must not be refused by a rule that does not
 // apply to it.
 func TestAnOperationWithNoMembershipRuleCertifiesEverything(t *testing.T) {
+	t.Parallel()
 	target, tool := certifyTestOperands()
 	if !pointKeptBy(NewBody, target, tool, math.P3(40, 40, 40), 1e-7) {
 		t.Error("an operation outside the membership rule must certify, not refuse")
@@ -102,6 +106,7 @@ func TestAnOperationWithNoMembershipRuleCertifiesEverything(t *testing.T) {
 // empty range box, so a tree query silently never returns it. Those faces are held aside and always
 // tested.
 func TestBoundaryIndexKeepsFacesThatHaveNoRangeBox(t *testing.T) {
+	t.Parallel()
 	ball := wholeSphereBody(t, 4)
 	bi := newBoundaryIndex(ball)
 	if len(bi.faces)+len(bi.unboxed) != len(ball.Faces()) {

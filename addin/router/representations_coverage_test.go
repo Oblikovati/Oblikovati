@@ -13,6 +13,7 @@ import (
 // does not: activate / list / delete for each rep kind, plus the appearance/section/
 // flexible setters and modelStates.delete.
 func TestRepresentationLifecycle(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	a, b := occs[0], occs[1]
 
@@ -61,6 +62,7 @@ func TestRepresentationLifecycle(t *testing.T) {
 
 // TestRepresentationErrors covers the no-assembly and bad-id error paths.
 func TestRepresentationErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t) // a PART, not an assembly
 	for _, m := range []string{"designReps.capture", "positionalReps.capture", "lodReps.capture"} {
 		if err := tryCall(t, r, s, m, `{"name":"x"}`); err == nil {

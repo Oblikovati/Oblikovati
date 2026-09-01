@@ -29,6 +29,7 @@ func circleSketchOnPlaneZ(z, cx, cy, r float64) *sketch.Sketch {
 // both-operands-cylinder case, so it faceted BOTH cylinders into 24-gon prisms before the union —
 // losing analyticity (74 planar faces, 0 cylinders) and under-reporting the volume.
 func TestCoaxialCylinderJoinKeepsAnalyticFace(t *testing.T) {
+	t.Parallel()
 	const r, h1, h2 = 2.0, 4.0, 3.0
 	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
@@ -58,6 +59,7 @@ func TestCoaxialCylinderJoinKeepsAnalyticFace(t *testing.T) {
 // radii (a shoulder — Ø4 over Ø6) is NOT the single-cylinder case, so it must NOT take the analytic
 // coaxial path; it stays a valid solid of the correct volume (whether or not it keeps analytic faces).
 func TestUnequalCoaxialCylinderJoinStillFacets(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
 	ex.AddByDistanceExtent(circleSketchAt(0, 0, 3), 0, ops.NewBody, func() float64 { return 4 })       // Ø6 z[0,4]

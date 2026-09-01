@@ -16,6 +16,7 @@ import (
 // swept over every start phase, since starting a rim ON the seam is exactly what broke the sibling
 // classifier in tessellate_trim.go (TestUnwrapRejectsFullWrapWhereverItStarts).
 func TestLoopWindingIsExactlyQuantised(t *testing.T) {
+	t.Parallel()
 	for _, n := range []int{3, 5, 8, 17, 64} {
 		for phase := range n {
 			us := make([]float64, n)
@@ -40,6 +41,7 @@ func TestLoopWindingIsExactlyQuantised(t *testing.T) {
 // exactly 0 however wide its angular excursion is. This is why wrappedWallUV keeps the u-RANGE test:
 // its loop's winding is 0 by construction, so a winding test would be the wrong question there.
 func TestLoopWindingIsZeroForAContractibleLoop(t *testing.T) {
+	t.Parallel()
 	for _, span := range []float64{0.2, 1.5, 3.0, 6.0} { // up to 6 rad — nearly the whole period
 		us := []float64{0, span / 3, 2 * span / 3, span, 2 * span / 3, span / 3}
 		if w := loopWinding(us); stdmath.Abs(w) > 1e-12 {
@@ -57,6 +59,7 @@ func TestLoopWindingIsZeroForAContractibleLoop(t *testing.T) {
 // The old expression is recomputed here rather than described, so this test states the defect it guards
 // against instead of merely asserting the new answer.
 func TestHoleWrapsPeriodSeesACoarselySampledRim(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
@@ -85,6 +88,7 @@ func TestHoleWrapsPeriodSeesACoarselySampledRim(t *testing.T) {
 // 340° of the wall must stay a LENS. Its u-range (5.93) CLEARS the old 2π − 0.5 threshold, so the range
 // classifier would have promoted it to a rim and sent a well-formed drilled wall down the two-rim path.
 func TestHoleWrapsPeriodStillRejectsAWideLens(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)

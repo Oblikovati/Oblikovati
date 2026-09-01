@@ -17,6 +17,7 @@ import (
 // cracks) and the shared trim-grid tolerance left T-junctions in the metric direction;
 // both now derive from the model's own resolution (ADR-0042).
 func TestTessellationWatertightAcrossScales(t *testing.T) {
+	t.Parallel()
 	for _, s := range []float64{1e-4, 1e-3, 1, 1e3, 1e4} {
 		t.Run(fmt.Sprintf("scale=%g", s), func(t *testing.T) {
 			for _, gq := range gateQualities() {

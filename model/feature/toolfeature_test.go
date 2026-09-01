@@ -34,6 +34,7 @@ var _ OperationalFeature = (*BossFeature)(nil)
 // reference), so operationOf resolves it for the pattern engine rather than defaulting to a
 // new-body copy.
 func TestEveryBooleanFeatureExposesItsTool(t *testing.T) {
+	t.Parallel()
 	var f Feature = &ExtrudeFeature{def: &ExtrudeDefinition{Operation: ops.Cut}}
 	tf, ok := f.(ToolFeature)
 	if !ok {

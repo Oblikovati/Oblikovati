@@ -7,6 +7,7 @@ import (
 )
 
 func TestNopRoundedCornerCSG(t *testing.T) {
+	t.Parallel()
 	body := prismBody(roundedCornerRectPoints(1.6, 2.4, 0.35, 20), 0, 0.2, "rounded-corner")
 	requireValidNopSolid(t, "rounded_corner", body)
 	if got := vol(body); got <= 0 || got >= 1.6*2.4*0.2 {

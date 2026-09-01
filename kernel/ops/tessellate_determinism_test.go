@@ -21,6 +21,7 @@ import (
 // Steiner grid — enough points to force repeated cavity rebuilds) and requires identical output every
 // time. This is the direct guard on the cavity-order fix (cdt_build.go).
 func TestConstrainedDelaunayDeterministic(t *testing.T) {
+	t.Parallel()
 	pts := [][2]float64{{0, 0}, {6, 0}, {6, 6}, {0, 6}}
 	for i := 1; i < 6; i++ {
 		for j := 1; j < 6; j++ {
@@ -42,6 +43,7 @@ func TestConstrainedDelaunayDeterministic(t *testing.T) {
 // TestSortedEdgeKeysOrders pins that fold-repair visits edges in a fixed (a,b) order, not Go's
 // randomized map order — the property that makes repairFoldPass reproducible.
 func TestSortedEdgeKeysOrders(t *testing.T) {
+	t.Parallel()
 	adj := map[edgeKey][]int{{2, 5}: nil, {0, 9}: nil, {2, 3}: nil, {0, 1}: nil}
 	got := sortedEdgeKeys(adj)
 	want := []edgeKey{{0, 1}, {0, 9}, {2, 3}, {2, 5}}
@@ -56,6 +58,7 @@ func TestSortedEdgeKeysOrders(t *testing.T) {
 // identical mesh — filleted_box is the fixture whose free-edge count used to flicker; sphere exercises
 // the sphere-cap CDT path. End-to-end guard on TessellateBody.
 func TestTessellateBodyDeterministicOnImportedSolid(t *testing.T) {
+	t.Parallel()
 	dir := filepath.Join("..", "exchange", "step", "testdata", "occ")
 	for _, name := range []string{"filleted_box", "sphere"} {
 		data, err := os.ReadFile(filepath.Join(dir, name+".step"))

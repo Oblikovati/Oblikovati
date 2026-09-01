@@ -12,6 +12,7 @@ import (
 // top face, set a +1 offset, OK — and asserts the solid grew along the normal. Block 4×4×2
 // (vol 32); offsetting the top +1 → 4×4×3 = 48.
 func TestFaceOffsetToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -42,6 +43,7 @@ func TestFaceOffsetToolEndToEnd(t *testing.T) {
 
 // TestFaceOffsetViaRibbonCommand drives the Offset Face from its ribbon command.
 func TestFaceOffsetViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -65,6 +67,7 @@ func TestFaceOffsetViaRibbonCommand(t *testing.T) {
 
 // TestFaceOffsetToolNeedsFace checks the tool is not committable until a face is picked.
 func TestFaceOffsetToolNeedsFace(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	off := NewFaceOffsetTool()

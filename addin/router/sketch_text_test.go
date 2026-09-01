@@ -11,6 +11,7 @@ import (
 // TestSketchTextAddEditGet drives the by-reference text methods end to end: add a styled
 // text entity, read it back, edit a subset of fields, and confirm the edit took.
 func TestSketchTextAddEditGet(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 
@@ -47,6 +48,7 @@ func TestSketchTextAddEditGet(t *testing.T) {
 // features.add API: a base block, then an emboss that references a sketch TEXT entity
 // (textEntity), producing a raised solid without baking glyph geometry.
 func TestTextEmbossByReferenceThroughRouter(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 
 	// Base 50×50 block on XY.

@@ -16,6 +16,7 @@ import (
 // close. It must fail with an actionable, rounded-cause message — never the misleading "not a valid
 // solid" that shipped a facet-cage octagon.
 func TestFilletIntoExistingRoundRejectedHonestly_1797(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 4, 4, 4)
 	rounded, err := ops.FilletEdges(box, topPerimeterKeys(t, box), 0.5)
 	if err != nil {
@@ -38,6 +39,7 @@ func TestFilletIntoExistingRoundRejectedHonestly_1797(t *testing.T) {
 // edges in ONE op (their shared corner) must NOT trip the endpoint guard — the adjacent round does
 // not exist yet, so it is this op's own corner, solved normally.
 func TestFilletAdjacentEdgesTogetherNotRejected(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 4, 4, 4)
 	top := topPerimeterKeys(t, box)
 	if len(top) < 2 {

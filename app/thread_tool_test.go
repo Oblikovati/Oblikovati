@@ -51,6 +51,7 @@ func cylinderFaceOf(t *testing.T, b *topo.Body) *topo.Face {
 // cylindrical face, choose M8 / 1.25 / cut, OK — and asserts a real modeled thread reduced the
 // volume and the tool closed.
 func TestThreadToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, cyl := newPartWithCylinder(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	before := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
@@ -96,6 +97,7 @@ func TestThreadToolEndToEnd(t *testing.T) {
 // (SetLeftHanded) must reach ThreadDefinition.LeftHanded, so a left-hand thread is authorable from
 // the UI and not only over /api. The default stays right-handed.
 func TestThreadToolAuthorsLeftHandThread(t *testing.T) {
+	t.Parallel()
 	s, cyl := newPartWithCylinder(t)
 	face := cylinderFaceOf(t, cyl)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: face, Body: cyl}})
@@ -122,6 +124,7 @@ func TestThreadToolAuthorsLeftHandThread(t *testing.T) {
 
 // TestThreadToolRejectsPlanarFace checks the tool ignores a non-cylindrical pick.
 func TestThreadToolRejectsPlanarFace(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})

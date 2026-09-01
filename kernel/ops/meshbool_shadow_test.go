@@ -19,6 +19,7 @@ import (
 // is the ADR-0052 cutover gate — the new engine becomes the default only once it
 // clears it. Skipped in -short (it runs both engines on curved solids).
 func TestShadowValidateAgainstExistingEngine(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("shadow validation runs both boolean engines on curved solids")
 	}

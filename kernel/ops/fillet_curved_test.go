@@ -36,6 +36,7 @@ func nearCapZ(p math.Point3) bool { return stdmath.Abs(float64(p.Z)-100) < 1e-3 
 // `5 0 0 90 … 40 10`) instead of the old curvedFilletError. The MajorRadius=40 (=R−r, not the
 // concave R+r=60) is the convex/concave discrimination assertion: a flipped material side fails it.
 func TestComputeEdgeFillet_B3TorusArm(t *testing.T) {
+	t.Parallel()
 	body := importCorpusSolid(t, "simple/B3")
 	e := b3TopRimEdge(t, body)
 	if ClassifyEdgeConvexity(e) != EdgeConvex {
@@ -61,6 +62,7 @@ func TestComputeEdgeFillet_B3TorusArm(t *testing.T) {
 // constant-radius primitives, so a VARYING pick on the same Cyl∧Plane edge must decline the arm and
 // fall through to the honest curvedFilletError — never a wrong single-radius torus.
 func TestComputeEdgeFillet_VaryingCurvedFallsBack(t *testing.T) {
+	t.Parallel()
 	body := importCorpusSolid(t, "simple/B3")
 	e := b3TopRimEdge(t, body)
 	if _, err := computeEdgeFillet(body, filletPick{edge: e, r0: 10, r1: 5}, nil, nil, FillConcaveOutward); err == nil {

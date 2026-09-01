@@ -33,6 +33,7 @@ func boxForRefs(t *testing.T, def *compdef.PartComponentDefinition) {
 // sketch, pick a box edge and a box vertex and OK — both become reference geometry on the
 // active 2D sketch.
 func TestProjectGeometryToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	boxForRefs(t, def)
 	body := def.SurfaceBodies().All()[0]
@@ -73,6 +74,7 @@ func projectedCount(sk *sketch.Sketch) int {
 // TestIncludeGeometry3DToolEndToEnd drives the 3D Include Geometry tool: while editing a 3D
 // sketch, pick a box edge and vertex and OK — both become included reference geometry.
 func TestIncludeGeometry3DToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	boxForRefs(t, def)
 	body := def.SurfaceBodies().All()[0]
@@ -106,6 +108,7 @@ func TestIncludeGeometry3DToolEndToEnd(t *testing.T) {
 // TestSurfaceCurve3DToolEndToEnd drives the Surface Curve tool: pick two box faces and OK
 // for an intersection curve, then one face for a silhouette.
 func TestSurfaceCurve3DToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	boxForRefs(t, def)
 	faces := def.SurfaceBodies().All()[0].Faces()
@@ -150,6 +153,7 @@ func TestSurfaceCurve3DToolEndToEnd(t *testing.T) {
 // TestReferenceToolCommands checks the ribbon commands start the matching tools (the
 // "Project Geometry" 2D button and the 3D "Include Geometry" / "Surface Curve" buttons).
 func TestReferenceToolCommands(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register: %v", err)
@@ -188,6 +192,7 @@ func TestReferenceToolCommands(t *testing.T) {
 // TestReferenceToolsGuards checks each reference tool refuses to commit before input and
 // errors outside the matching sketch environment.
 func TestReferenceToolsGuards(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	proj, inc, surf := NewProjectGeometryTool(), NewIncludeGeometry3DTool(), NewSurfaceCurve3DTool()
 	for _, tl := range []Tool{proj, inc, surf} {

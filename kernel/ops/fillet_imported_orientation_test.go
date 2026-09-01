@@ -20,6 +20,7 @@ import (
 // the rolling-ball centre was computed on the wrong side and the fillet failed with "edge is not
 // convex". Filleting it must now succeed and land at OCCT's reference area (59527.9 ± 1%).
 func TestFilletConvexEdgeOnImportedBox(t *testing.T) {
+	t.Parallel()
 	data, err := os.ReadFile(filepath.Join("testdata", "box100_oriented.step"))
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)

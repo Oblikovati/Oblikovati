@@ -21,6 +21,7 @@ func trisArea(verts []math.Point2, tris [][3]int) float64 {
 // TestUnionTrisTwoOverlappingSquares: outer 10×10 minus two 3×3 holes overlapping in a 1×1
 // square ⇒ union area 9+9−1 = 17, material 83 — area-exact (#873).
 func TestUnionTrisTwoOverlappingSquares(t *testing.T) {
+	t.Parallel()
 	outer := rectHole(0, 0, 10, 10)
 	holes := [][]math.Point2{rectHole(3, 3, 6, 6), rectHole(5, 5, 8, 8)}
 	verts, tris := unionTris(outer, holes)
@@ -33,6 +34,7 @@ func TestUnionTrisTwoOverlappingSquares(t *testing.T) {
 // (width 0.4, length 8) ⇒ union 9.6+9.6−1.44 = 17.76, material 82.24 — the exact area earcut on
 // the raw overlapping loops could not produce.
 func TestUnionTrisGridHoles(t *testing.T) {
+	t.Parallel()
 	outer := rectHole(0, 0, 10, 10)
 	var holes [][]math.Point2
 	for _, x := range []float64{3, 5, 7} {
@@ -50,6 +52,7 @@ func TestUnionTrisGridHoles(t *testing.T) {
 // TestHolesOverlapDetection: crossing/overlapping loops are detected; disjoint ones are not (so
 // the fast direct-earcut path is kept for clean faces).
 func TestHolesOverlapDetection(t *testing.T) {
+	t.Parallel()
 	overlapping := [][]math.Point2{rectHole(3, 3, 6, 6), rectHole(5, 5, 8, 8)}
 	if !holesOverlap(overlapping) {
 		t.Error("overlapping holes not detected")
@@ -63,6 +66,7 @@ func TestHolesOverlapDetection(t *testing.T) {
 // TestUnionHoledMeshArea lifts the union to 3D (the holedPlanarMesh overlap path) and checks the
 // mesh area equals outer − union, exercising the orthonormal project/unproject round-trip.
 func TestUnionHoledMeshArea(t *testing.T) {
+	t.Parallel()
 	normal := math.V3(0, 0, 1)
 	lift := func(x, y float64) math.Point3 { return math.P3(x, y, 5) }
 	outer3D := []math.Point3{lift(0, 0), lift(10, 0), lift(10, 10), lift(0, 10)}
@@ -80,6 +84,7 @@ func TestUnionHoledMeshArea(t *testing.T) {
 // overlapping-hole face through the union path (area-exact), exercising holesOverlap + the
 // projector handoff.
 func TestHoledPlanarMeshRoutesOverlapToUnion(t *testing.T) {
+	t.Parallel()
 	normal := math.V3(0, 0, 1)
 	flat := planeProjector(normal)
 	lift := func(x, y float64) math.Point3 { return math.P3(x, y, 0) }

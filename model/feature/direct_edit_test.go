@@ -47,6 +47,7 @@ func directEditVolume(t *testing.T, fs *PartFeatures, def *DirectEditDefinition)
 }
 
 func TestDirectEditMovePushesFace(t *testing.T) {
+	t.Parallel()
 	fs, top := directEditBox(t, math.V3(0, 0, 1))
 	got := directEditVolume(t, fs, &DirectEditDefinition{
 		Operation: types.DirectEditMoveOperation, FaceKeys: [][]byte{top}, Translation: math.V3(0, 0, 1),
@@ -57,6 +58,7 @@ func TestDirectEditMovePushesFace(t *testing.T) {
 }
 
 func TestDirectEditSizePushesAlongDirection(t *testing.T) {
+	t.Parallel()
 	fs, side := directEditBox(t, math.V3(1, 0, 0))
 	got := directEditVolume(t, fs, &DirectEditDefinition{
 		Operation: types.DirectEditSizeOperation, FaceKeys: [][]byte{side},
@@ -68,6 +70,7 @@ func TestDirectEditSizePushesAlongDirection(t *testing.T) {
 }
 
 func TestDirectEditRotateTiltsFace(t *testing.T) {
+	t.Parallel()
 	fs, top := directEditBox(t, math.V3(0, 0, 1))
 	const theta = 0.1
 	got := directEditVolume(t, fs, &DirectEditDefinition{
@@ -82,6 +85,7 @@ func TestDirectEditRotateTiltsFace(t *testing.T) {
 }
 
 func TestDirectEditScaleAboutPoint(t *testing.T) {
+	t.Parallel()
 	fs, _ := directEditBox(t, math.V3(0, 0, 1))
 	got := directEditVolume(t, fs, &DirectEditDefinition{
 		Operation: types.DirectEditScaleOperation, ScaleFactor: constFloat(1.5), BasePoint: math.P3(2, 2, 2),
@@ -92,6 +96,7 @@ func TestDirectEditScaleAboutPoint(t *testing.T) {
 }
 
 func TestDirectEditDeleteDispatches(t *testing.T) {
+	t.Parallel()
 	// Delete reuses the same kernel op the standalone delete-face feature pins
 	// (healable cases live in its tests); here the dispatch path must go Sick
 	// on an unhealable pick — a box cap has nowhere to heal to — instead of
@@ -107,6 +112,7 @@ func TestDirectEditDeleteDispatches(t *testing.T) {
 }
 
 func TestDirectEditUnknownOperationSick(t *testing.T) {
+	t.Parallel()
 	fs, top := directEditBox(t, math.V3(0, 0, 1))
 	pf := NewModifyFeatures(fs).AddDirectEdit(&DirectEditDefinition{
 		Operation: types.DirectEditUnknownOperation, FaceKeys: [][]byte{top},
@@ -118,6 +124,7 @@ func TestDirectEditUnknownOperationSick(t *testing.T) {
 }
 
 func TestDirectEditRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewModifyFeatures(fs).AddDirectEdit(&DirectEditDefinition{
 		Operation: types.DirectEditRotateOperation, FaceKeys: [][]byte{[]byte("f")},

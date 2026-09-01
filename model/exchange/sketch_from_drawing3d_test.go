@@ -14,6 +14,7 @@ import (
 // polyline drawing imported as a near-empty 3D sketch. Every entity must now be placed, with
 // no warnings.
 func TestAdd3DEntitiesMapsPolylineAndEllipse(t *testing.T) {
+	t.Parallel()
 	sk := compdef.NewPartComponentDefinition().Sketches3D().Add()
 	entities := []drawing.Entity{
 		&drawing.Line{Start: [3]float64{0, 0, 0}, End: [3]float64{1, 0, 5}},

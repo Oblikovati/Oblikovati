@@ -40,6 +40,7 @@ func flatNeighbour(t *testing.T, x0, x1, y0, y1 float64, flipV bool) *topo.Body 
 // TestFillFourSidedG0InterpolatesOpening fills the unit-square opening bounded by four planar
 // neighbours (east flipped to exercise edge reversal) and checks the fill spans the opening at z=0.
 func TestFillFourSidedG0InterpolatesOpening(t *testing.T) {
+	t.Parallel()
 	west := flatNeighbour(t, -1, 0, 0, 1, false)
 	east := flatNeighbour(t, 1, 2, 0, 1, true) // flipped v ⇒ inner edge reversed during chaining
 	south := flatNeighbour(t, 0, 1, -1, 0, false)
@@ -82,6 +83,7 @@ func cornerSpansOpening(p, _ math.Point3) bool {
 }
 
 func TestFillFourSidedErrorsOnNonNurbs(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 1, 1, 1)
 	good := flatNeighbour(t, -1, 0, 0, 1, false)
 	if _, err := ops.FillFourSided([4]*topo.Body{good, box, good, good}, 0); err == nil {
@@ -117,6 +119,7 @@ func planeNeighbour(t *testing.T, tag string, x0, x1, y0, y1 float64) *topo.Body
 // boundary-patch case — closes the opening with a valid surface body in the shared plane (G0 on every
 // side, since planar neighbours have no curvature to match).
 func TestFillFourSidedPlanarNeighbours(t *testing.T) {
+	t.Parallel()
 	ns := [4]*topo.Body{
 		planeNeighbour(t, "w", -1, 0, 0, 1),
 		planeNeighbour(t, "e", 1, 2, 0, 1),

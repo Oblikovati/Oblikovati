@@ -14,6 +14,7 @@ import (
 // ResetMarkingMenu restores the enriched defaults (WorkPlane.Offset in base,
 // Sketch.Finish in sketch).
 func TestResetMarkingMenuRestoresEnrichedDefaults(t *testing.T) {
+	t.Parallel()
 	store := markingmenu.NewMemStore()
 	s := NewSession()
 	if err := s.UseMarkingMenuStore(store); err != nil {
@@ -58,6 +59,7 @@ func TestResetMarkingMenuRestoresEnrichedDefaults(t *testing.T) {
 // TestResetMarkingMenuSketch: ResetMarkingMenu restores sketch defaults, including
 // Sketch.Finish as a radial slot and empty overflow.
 func TestResetMarkingMenuSketch(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	// Overwrite sketch with a single-slot menu.
 	custom := wire.MarkingMenuView{

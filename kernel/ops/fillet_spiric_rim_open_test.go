@@ -22,6 +22,7 @@ import (
 // side ψ_mid sits on selects dir=−1 with the CW span instead — proving the "which way around the tube"
 // decision is driven by the actual arc content, not an arbitrary default.
 func TestSpiricArcSweep_ResolvesTheRealArcDirection(t *testing.T) {
+	t.Parallel()
 	const eighthPi = stdmath.Pi / 4
 	// ψ0=0, ψ_mid=π/4 (CCW of ψ0), ψ1=π/2: the short CCW arc [0, π/2] contains π/4.
 	if dir, span, ok := spiricArcSweep(0, eighthPi, stdmath.Pi/2); !ok || dir != 1 || stdmath.Abs(span-stdmath.Pi/2) > 1e-9 {
@@ -38,6 +39,7 @@ func TestSpiricArcSweep_ResolvesTheRealArcDirection(t *testing.T) {
 // neither the CCW nor the CW arc between ψ0 and ψ1 (impossible for a genuine simple arc, but a
 // defensive input) must decline, never silently pick a direction that does not contain it.
 func TestSpiricArcSweep_RejectsMidOutsideEitherPath(t *testing.T) {
+	t.Parallel()
 	// ψ0=ψ1 (a zero-length arc): neither direction has a positive span, so no direction can bracket
 	// any interior point.
 	if _, _, ok := spiricArcSweep(0, stdmath.Pi/4, 0); ok {
@@ -77,6 +79,7 @@ func findOpenSpiricArmEdge(t *testing.T, body *topo.Body) *topo.Edge {
 // REAL imported cap plane, and both feet sit at exactly radius r from the ball centre — the same
 // independent-certificate rigor TestSpiricStationExactness applies to the closed J3 spine.
 func TestSpiricOpenArcArmEdge_RealFixtures(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"E6", "E8", "F1", "F3"} {
 		t.Run(name, func(t *testing.T) {
 			body := corpusFixture(t, "simple/"+name+".step")
@@ -137,6 +140,7 @@ func assertOpenSpiricArmExact(t *testing.T, name string, spine spiricRimSpine, h
 // mutation witness for the A2 refactor (a shared function split by a boolean, not two copies that
 // could silently diverge).
 func TestNewSpiricRimSpine_ClosedLoopGuardStillFires(t *testing.T) {
+	t.Parallel()
 	// A horn torus (Rm=Rt=100): with r=10, convex (side=-1), b = a - r = 90, R - b = 100 - 90 = 10.
 	// |w| = |capD + side*r| = |0 - 10| = 10, so R - b (=10) <= |w| (=10) -- exactly the guard's fail
 	// condition (not one closed loop around the tube).

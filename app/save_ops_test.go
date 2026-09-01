@@ -37,6 +37,7 @@ func savedSession(t *testing.T) (*Session, *fakeDocStore, *doc.Document, *doc.Do
 // TestSaveDependentsPolicySavesDirtyReferences: with the policy on, saving the
 // owner first saves its dirty referenced documents (M03-F09).
 func TestSaveDependentsPolicySavesDirtyReferences(t *testing.T) {
+	t.Parallel()
 	s, _, owner, part := savedSession(t)
 	part.MarkDirty()
 
@@ -61,6 +62,7 @@ func TestSaveDependentsPolicySavesDirtyReferences(t *testing.T) {
 // TestSetSaveOptionsRejectsDeadSettings: unsupported thumbnail modes and
 // negative retention are rejected, never persisted (the no-dead-settings rule).
 func TestSetSaveOptionsRejectsDeadSettings(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.SetSaveOptions(options.Save{Thumbnail: types.ThumbnailIsoViewOnSave}); err == nil {
 		t.Error("an unimplemented thumbnail mode must be rejected")
@@ -79,6 +81,7 @@ func TestSetSaveOptionsRejectsDeadSettings(t *testing.T) {
 // TestSavePolicyControlContract: the contract.SaveOptions view reads and
 // writes the same group.
 func TestSavePolicyControlContract(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	c := s.SavePolicy()
 	if c.Thumbnail() != types.ThumbnailNone || c.SaveDependents() || c.OldVersionsToKeep() != 0 {
@@ -99,6 +102,7 @@ func TestSavePolicyControlContract(t *testing.T) {
 // TestBatchSavePerFileOutcomes: one bad item does not abort the batch; the
 // queue drains on execute (M03-F09).
 func TestBatchSavePerFileOutcomes(t *testing.T) {
+	t.Parallel()
 	s, store, owner, part := savedSession(t)
 	q := s.NewBatchSave()
 	if err := q.AddFileToSave(part, "exports/pin-copy.opd"); err != nil {

@@ -51,6 +51,7 @@ func drawingWithModelSession(t *testing.T) *Session {
 }
 
 func TestBaseViewToolPlacesViaCursor(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	tool := NewBaseViewTool()
 	tool.Start(s)
@@ -91,6 +92,7 @@ func drawingWithFrontBase(t *testing.T) *Session {
 }
 
 func TestAuxiliaryViewToolFoldsOffBase(t *testing.T) {
+	t.Parallel()
 	s := drawingWithFrontBase(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewAuxiliaryViewTool()
@@ -120,6 +122,7 @@ func TestAuxiliaryViewToolFoldsOffBase(t *testing.T) {
 }
 
 func TestAuxiliaryViewToolWithoutBaseView(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	tool := NewAuxiliaryViewTool()
 	if tool.Name() != "Auxiliary View" {
@@ -140,6 +143,7 @@ func TestAuxiliaryViewToolWithoutBaseView(t *testing.T) {
 }
 
 func TestSectionViewToolCutsThroughBase(t *testing.T) {
+	t.Parallel()
 	s := drawingWithFrontBase(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewSectionViewTool()
@@ -162,6 +166,7 @@ func TestSectionViewToolCutsThroughBase(t *testing.T) {
 }
 
 func TestSectionViewToolWithoutBaseView(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	tool := NewSectionViewTool()
 	if tool.Name() != "Section View" {
@@ -182,6 +187,7 @@ func TestSectionViewToolWithoutBaseView(t *testing.T) {
 }
 
 func TestDetailViewToolMagnifiesBase(t *testing.T) {
+	t.Parallel()
 	s := drawingWithFrontBase(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewDetailViewTool()
@@ -205,6 +211,7 @@ func TestDetailViewToolMagnifiesBase(t *testing.T) {
 }
 
 func TestDetailViewToolWithoutBaseView(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	tool := NewDetailViewTool()
 	tool.Start(s)
@@ -220,6 +227,7 @@ func TestDetailViewToolWithoutBaseView(t *testing.T) {
 }
 
 func TestBreakViewToolCompressesBase(t *testing.T) {
+	t.Parallel()
 	s := drawingWithFrontBase(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewBreakViewTool()
@@ -240,6 +248,7 @@ func TestBreakViewToolCompressesBase(t *testing.T) {
 }
 
 func TestBreakViewToolWithoutBaseView(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	tool := NewBreakViewTool()
 	tool.Start(s)
@@ -255,6 +264,7 @@ func TestBreakViewToolWithoutBaseView(t *testing.T) {
 }
 
 func TestSliceAndBreakoutViewTools(t *testing.T) {
+	t.Parallel()
 	s := drawingWithFrontBase(t)
 	c, _ := ActiveDrawing(s)
 	slice := NewSliceViewTool()
@@ -287,6 +297,7 @@ func TestSliceAndBreakoutViewTools(t *testing.T) {
 }
 
 func TestDraftViewToolNeedsNoModel(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t) // a drawing; draft ignores the model
 	c, _ := ActiveDrawing(s)
 	tool := NewDraftViewTool()
@@ -310,6 +321,7 @@ func TestDraftViewToolNeedsNoModel(t *testing.T) {
 }
 
 func TestSliceBreakoutToolsWithoutBase(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	for _, tool := range []interface {
 		Start(*Session)
@@ -331,6 +343,7 @@ func TestSliceBreakoutToolsWithoutBase(t *testing.T) {
 }
 
 func TestPickSelectEditDeleteDrawingView(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	views := c.Sheets().Active().Views()
@@ -365,6 +378,7 @@ func TestPickSelectEditDeleteDrawingView(t *testing.T) {
 }
 
 func TestProjectedViewToolAndEditCommit(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	views := c.Sheets().Active().Views()
@@ -403,6 +417,7 @@ func TestProjectedViewToolAndEditCommit(t *testing.T) {
 }
 
 func TestDrawingViewBrowserNodesAndMenu(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	if _, err := c.Sheets().Active().Views().AddBase(drawing.BaseViewSpec{Orientation: types.BaseViewFront, Scale: 1}); err != nil {

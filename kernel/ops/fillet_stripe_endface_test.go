@@ -60,6 +60,7 @@ func planarFaceThrough(t *testing.T, b *topo.Body, p math.Point3, n math.Vector3
 // TestTerminalSectionPlaneComesFromTheCapArcPoints: the plane is read off the three points that
 // already define the section arc, so it can never disagree with the arc the blend is bounded by.
 func TestTerminalSectionPlaneComesFromTheCapArcPoints(t *testing.T) {
+	t.Parallel()
 	tm := stripeTerm{topA: math.P3(0.75, 1, 1), apex: math.P3(0.927, 1, 0.927), wallA: math.P3(1, 1, 0.75)}
 	origin, n, ok := terminalSectionPlane(tm)
 	if !ok {
@@ -79,6 +80,7 @@ func TestTerminalSectionPlaneComesFromTheCapArcPoints(t *testing.T) {
 // TestTerminalSectionPlaneRefusesACollapsedSection: three collinear section points define no plane,
 // and returning one anyway would let a degenerate terminal claim a coincident face.
 func TestTerminalSectionPlaneRefusesACollapsedSection(t *testing.T) {
+	t.Parallel()
 	tm := stripeTerm{topA: math.P3(0, 0, 0), apex: math.P3(1, 0, 0), wallA: math.P3(2, 0, 0)}
 	if _, _, ok := terminalSectionPlane(tm); ok {
 		t.Error("three collinear section points were accepted as a plane")
@@ -89,6 +91,7 @@ func TestTerminalSectionPlaneRefusesACollapsedSection(t *testing.T) {
 // different plane, and a face through the same point at an angle is too. Either alone would let the
 // wrong face be picked as the run-out's host.
 func TestPlaneMatchesNeedsBothParallelAndCoincident(t *testing.T) {
+	t.Parallel()
 	b := squareFaceBody(t)
 	top := planarFaceThrough(t, b, math.P3(0.5, 0.5, 1), math.V3(0, 0, 1))
 	n := math.V3(0, 0, 1)
@@ -106,6 +109,7 @@ func TestPlaneMatchesNeedsBothParallelAndCoincident(t *testing.T) {
 // TestPlaneMatchesOffsetIsModelRelative: the offset test is a DISTANCE, so it must scale with the
 // model (ADR-0042). A fixed epsilon would reject a real coincidence on a large part.
 func TestPlaneMatchesOffsetIsModelRelative(t *testing.T) {
+	t.Parallel()
 	b := squareFaceBody(t)
 	top := planarFaceThrough(t, b, math.P3(0.5, 0.5, 1), math.V3(0, 0, 1))
 	n := math.V3(0, 0, 1)
@@ -120,6 +124,7 @@ func TestPlaneMatchesOffsetIsModelRelative(t *testing.T) {
 // TestCoplanarFaceAtSkipsTheStripesOwnFaces: the shared face and the wall are excluded by hand,
 // because at a run-out they meet the corner too and one of them can be parallel to the section.
 func TestCoplanarFaceAtSkipsTheStripesOwnFaces(t *testing.T) {
+	t.Parallel()
 	b := squareFaceBody(t)
 	corner := vertexAt(t, b, math.P3(1, 1, 1))
 	side := planarFaceThrough(t, b, math.P3(0.5, 1, 0.5), math.V3(0, 1, 0))
@@ -139,6 +144,7 @@ func TestCoplanarFaceAtSkipsTheStripesOwnFaces(t *testing.T) {
 // TestEdgeSharedByFindsTheSingleCommonEdge: the two boundary edges to cut back are named by the face
 // pair they separate, so this lookup has to be exact — and must decline rather than guess.
 func TestEdgeSharedByFindsTheSingleCommonEdge(t *testing.T) {
+	t.Parallel()
 	b := squareFaceBody(t)
 	corner := vertexAt(t, b, math.P3(1, 1, 1))
 	top := planarFaceThrough(t, b, math.P3(0.5, 0.5, 1), math.V3(0, 0, 1))
@@ -162,6 +168,7 @@ func TestEdgeSharedByFindsTheSingleCommonEdge(t *testing.T) {
 // run-out this path rebuilds, so it must hand back to the flat cap rather than pick one. The pair
 // here is the top face of two unit boxes side by side — genuinely distinct faces, genuinely coplanar.
 func TestSoleCoplanarFaceDeclinesTwoCandidates(t *testing.T) {
+	t.Parallel()
 	left, right := squareFaceBody(t), squareFaceBody(t)
 	a := planarFaceThrough(t, left, math.P3(0.5, 0.5, 1), math.V3(0, 0, 1))
 	b := planarFaceThrough(t, right, math.P3(0.5, 0.5, 1), math.V3(0, 0, 1))
@@ -180,6 +187,7 @@ func TestSoleCoplanarFaceDeclinesTwoCandidates(t *testing.T) {
 // TestSoleEdgeBoundingDeclinesTwoCandidates is the same refusal on the edge lookup: given two edges
 // bounding the same face pair, neither is the one to cut back.
 func TestSoleEdgeBoundingDeclinesTwoCandidates(t *testing.T) {
+	t.Parallel()
 	b := squareFaceBody(t)
 	corner := vertexAt(t, b, math.P3(1, 1, 1))
 	top := planarFaceThrough(t, b, math.P3(0.5, 0.5, 1), math.V3(0, 0, 1))
@@ -198,6 +206,7 @@ func TestSoleEdgeBoundingDeclinesTwoCandidates(t *testing.T) {
 // same chord. On a CURVED boundary it does not — sampleEdgeCurve walks the curve's whole domain and
 // only snaps the two end samples, so an untrimmed remnant would be drawn along the original sweep.
 func TestCurveBetweenRestrictsACurvedBoundary(t *testing.T) {
+	t.Parallel()
 	// A quarter circle of radius 1 in the xy plane, from (1,0,0) to (0,1,0).
 	arc, err := geom.Arc3dByThreePoints(math.P3(1, 0, 0), math.P3(stdmath.Sqrt2/2, stdmath.Sqrt2/2, 0), math.P3(0, 1, 0))
 	if err != nil {
@@ -225,6 +234,7 @@ func TestCurveBetweenRestrictsACurvedBoundary(t *testing.T) {
 // TestCurveBetweenRefusesAPointOffTheCurve: a foot that is not on the boundary means the corner is
 // not the one this path assumed, and a silent nearest-parameter guess would misdraw the face.
 func TestCurveBetweenRefusesAPointOffTheCurve(t *testing.T) {
+	t.Parallel()
 	seg := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(1, 0, 0))
 	if _, err := curveBetween(seg, math.P3(0.5, 5, 0), math.P3(1, 0, 0), 1e-9); err == nil {
 		t.Error("a point 5 off the line was accepted as a cut-back foot")
@@ -240,6 +250,7 @@ func dom(c geom.Curve3) float64 {
 // TestResolveStripeEndsIsANoOpForAClosedLoop: a closed stripe has no terminals at all, so the
 // detection must not read term[] — which is unset there.
 func TestResolveStripeEndsIsANoOpForAClosedLoop(t *testing.T) {
+	t.Parallel()
 	ends := resolveStripeEnds(&tangentStripe{closed: true}, 1e-9)
 	for t2, e := range ends {
 		if e.active() {

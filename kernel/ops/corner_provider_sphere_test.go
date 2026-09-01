@@ -32,6 +32,7 @@ func sphereTriLoop(t *testing.T, r float64) RailLoop {
 // TestSphereTriLoopFixtureIsClosed pins the fixture itself: the three quarter-arcs must chain into a
 // single closed cycle (Task requires verifying the arcs' endpoints actually meet).
 func TestSphereTriLoopFixtureIsClosed(t *testing.T) {
+	t.Parallel()
 	if !sphereTriLoop(t, 4).Closed(1e-9) {
 		t.Fatal("sphereTriLoop fixture must be a closed loop")
 	}
@@ -40,6 +41,7 @@ func TestSphereTriLoopFixtureIsClosed(t *testing.T) {
 // TestAnalyticSphereFitsAndBuilds pins the happy path: three equal-radius concentric rail arcs
 // recognise as a sphere, and Build returns a valid, correctly-sized certified patch.
 func TestAnalyticSphereFitsAndBuilds(t *testing.T) {
+	t.Parallel()
 	loop := sphereTriLoop(t, 4)
 	p := analyticSphereProvider{}
 	if !p.Fits(loop) {
@@ -74,6 +76,7 @@ func TestAnalyticSphereFitsAndBuilds(t *testing.T) {
 // TestAnalyticSphereRejectsNonConcentric pins the rejection path: shifting one rail arc's center far
 // off the other two's must fail both Fits and Build, so the tier walk moves on (ADR-3).
 func TestAnalyticSphereRejectsNonConcentric(t *testing.T) {
+	t.Parallel()
 	loop := sphereTriLoop(t, 4)
 	shifted, err := geom.NewArc3d(math.P3(1, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 4, 0, stdmath.Pi/2)
 	if err != nil {
@@ -93,6 +96,7 @@ func TestAnalyticSphereRejectsNonConcentric(t *testing.T) {
 // TestAnalyticSphereRejectsNonArc pins that a loop with any non-arc side (here a straight line) is
 // never recognised as a sphere corner — recognition depends on every side being an exact Arc3d.
 func TestAnalyticSphereRejectsNonArc(t *testing.T) {
+	t.Parallel()
 	loop := sphereTriLoop(t, 4)
 	loop.Sides[1] = Side{
 		Curve: geom.NewLineSegment(curveStart(loop.Sides[1].Curve), curveEnd(loop.Sides[1].Curve)),

@@ -10,6 +10,7 @@ import (
 
 // The chart-window helpers behind torusComplementMesh: index search and clamping over the grid lines.
 func TestComplementWindowHelpers(t *testing.T) {
+	t.Parallel()
 	xs := []float64{0, 1, 2, 3, 4}
 	if got := lastBelow(xs, 2.5); got != 2 {
 		t.Errorf("lastBelow(2.5)=%d, want 2", got)
@@ -32,6 +33,7 @@ func TestComplementWindowHelpers(t *testing.T) {
 
 // centroidUV returns the mean (u,v) of a loop, and ovalWindow brackets the oval's bbox inside the chart.
 func TestComplementCentroidAndWindow(t *testing.T) {
+	t.Parallel()
 	loop := []math.Point2{math.P2(1, 2), math.P2(3, 2), math.P2(3, 4), math.P2(1, 4)}
 	if uc, vc := centroidUV(loop); uc != 2 || vc != 3 {
 		t.Errorf("centroidUV = (%g,%g), want (2,3)", uc, vc)

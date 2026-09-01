@@ -5,6 +5,7 @@ package ops
 import "testing"
 
 func TestEarcutSegmentPredicates(t *testing.T) {
+	t.Parallel()
 	tc := &triContext{
 		x: []float64{0, 2, 2, 0, 1, 1, 3},
 		y: []float64{0, 0, 2, 2, -1, 3, 0},
@@ -28,6 +29,7 @@ func TestEarcutSegmentPredicates(t *testing.T) {
 }
 
 func TestEarcutPolygonPredicates(t *testing.T) {
+	t.Parallel()
 	tc, nodes := earcutTestRing([][2]float64{{0, 0}, {4, 0}, {4, 4}, {2, 2}, {0, 4}})
 	if !tc.middleInside(nodes[0], nodes[2]) {
 		t.Fatal("diagonal midpoint should be inside polygon")
@@ -47,6 +49,7 @@ func TestEarcutPolygonPredicates(t *testing.T) {
 }
 
 func TestEarcutSplitFallbackDirect(t *testing.T) {
+	t.Parallel()
 	tc, nodes := earcutTestRing([][2]float64{{0, 0}, {3, 0}, {3, 1}, {1, 1}, {1, 3}, {0, 3}})
 	var tris [][3]int
 	tc.splitEarcut(nodes[0], &tris)

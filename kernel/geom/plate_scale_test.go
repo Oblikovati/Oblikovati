@@ -52,6 +52,7 @@ func scaledFieldConstraints(u0, v0, l float64) ([]PlateConstraint, [][]float64) 
 // off-origin patch — must be reproduced to the same relative accuracy. If normalization were not
 // an exact similarity transform, the far/large instances would drift; they do not.
 func TestPlateScaleInvariance(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name      string
 		u0, v0, l float64
@@ -97,6 +98,7 @@ func worstFieldReproduction(c PlateCoeffs, u0, v0, l float64) float64 {
 // normalized PlateSolveMulti solves the identical data to machine accuracy. This is the exact
 // mechanism (matrix scaling, not rank) the advisory §2/§3 identifies and cures.
 func TestPlateNormalizationCuresConditioning(t *testing.T) {
+	t.Parallel()
 	const l = 1e5
 	cs, vals := scaledFieldConstraints(0, 0, l)
 
@@ -124,6 +126,7 @@ func TestPlateNormalizationCuresConditioning(t *testing.T) {
 // errors), reproduces every G0 foot value, and yields a G1-consistent world gradient (EvalGrad,
 // after the chain-rule 1/L rescale, matches the prescribed derivative targets).
 func TestPlateG1ConvergesAtModelScale(t *testing.T) {
+	t.Parallel()
 	const l = 10.0
 	cs, vals := scaledFieldConstraints(0, 0, l)
 	coeffs, err := PlateSolveMulti(cs, vals)

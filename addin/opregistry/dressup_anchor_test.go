@@ -15,6 +15,7 @@ import (
 // so a wire/MCP-authored fillet carries the geometric-recovery witness. Before the fix this map
 // was always empty for API-authored dress-ups and the geometric tier was silently unreachable.
 func TestFilletViaWireAPICapturesAnchors(t *testing.T) {
+	t.Parallel()
 	s, edge, _ := extrudedSolid(t)
 
 	if _, err := applyMap(t, s, "fillet", map[string]any{"edgeRefs": []string{edge}, "radius": "1 mm"}); err != nil {

@@ -68,6 +68,7 @@ func buildPerpFarFixture(t *testing.T) perpFarFixture {
 // perpendicular far vertex returns the SAME cross-section arc farCrossSectionArc produces today, with the
 // host rails passed through untouched — identity by call-graph, not tolerance.
 func TestArmFarRunout_PerpendicularCallGraphIdentity(t *testing.T) {
+	t.Parallel()
 	fx := buildPerpFarFixture(t)
 	want, wok := farCrossSectionArc(fx.arm, fx.r, fx.h0.from, fx.h1.from)
 	if !wok {
@@ -113,6 +114,7 @@ func onlyArmFilleted(ef edgeFillet) map[uint64]bool {
 
 // TestCappingFaceAtFarVertex_UniqueCap: the synthetic trihedral vertex yields exactly the cap face.
 func TestCappingFaceAtFarVertex_UniqueCap(t *testing.T) {
+	t.Parallel()
 	fx := buildPerpFarFixture(t)
 	far := farEndVertex(fx.ef.edge, fx.w.center)
 	got, ok, reason := cappingFaceAtFarVertex(far, fx.ef, onlyArmFilleted(fx.ef))
@@ -124,6 +126,7 @@ func TestCappingFaceAtFarVertex_UniqueCap(t *testing.T) {
 // TestCappingFaceAtFarVertex_DeclinesNValent: a far vertex with TWO non-host transverse faces (a second
 // capping face meeting at F — the setback regime) must decline, never pick one arbitrarily.
 func TestCappingFaceAtFarVertex_DeclinesNValent(t *testing.T) {
+	t.Parallel()
 	ef, far := buildNValentFarVertex(t)
 	if got, ok, _ := cappingFaceAtFarVertex(far, ef, onlyArmFilleted(ef)); ok {
 		t.Fatalf("cappingFaceAtFarVertex accepted an n-valent far vertex (returned %v); want decline", got.ID())
@@ -137,6 +140,7 @@ func TestCappingFaceAtFarVertex_DeclinesNValent(t *testing.T) {
 // interference, out of scope) and the engine must decline. Proven by flipping ONLY the pick set: accept
 // when the arm is the sole pick, decline the instant e₂ joins it.
 func TestCappingFaceAtFarVertex_DeclinesSecondPickedEdge(t *testing.T) {
+	t.Parallel()
 	fx := buildPerpFarFixture(t)
 	far := farEndVertex(fx.ef.edge, fx.w.center)
 	if _, ok, reason := cappingFaceAtFarVertex(far, fx.ef, onlyArmFilleted(fx.ef)); !ok {
@@ -178,6 +182,7 @@ func buildNValentFarVertex(t *testing.T) (edgeFillet, *topo.Vertex) {
 // on the arm's section ellipse, so the §0 on-arm certificate declines — the oblique branch still floors
 // honestly on invalid feet (do-no-harm), as it must until FR3 supplies authoritative closed-form feet.
 func TestIntersectArmCapping_DeclinesInvalidFeet(t *testing.T) {
+	t.Parallel()
 	arm, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 10)
 	pl := planeOn(t, math.P3(0, 0, 100), math.V3(1, 0, 1))
 	if c, ok := intersectArmCapping(edgeFillet{armSurface: arm}, pl, [2]math.Point3{{}, {}}, 10, ResolutionForSize(200)); ok || c != nil {
@@ -232,6 +237,7 @@ func buildObliqueTorusFarFixture(t *testing.T) obliqueTorusFarFixture {
 // FAILING both asserts below. Restoring the check greens it. (The pre-existing D5 decline test could NOT
 // catch this: it feeds degenerate coincident feet, so farCrossSectionArc fails regardless of regime.)
 func TestArmFarRunout_ObliqueRegime(t *testing.T) {
+	t.Parallel()
 	fx := buildObliqueTorusFarFixture(t)
 	// Precondition: the feet are DISTINCT and valid — farCrossSectionArc succeeds on them, so a
 	// mis-classification as perpendicular would actually build an arc (that is the mutant this test kills).
@@ -254,6 +260,7 @@ func TestArmFarRunout_ObliqueRegime(t *testing.T) {
 // orders apart with sinFloor (1e-6) safely between them, so wiring armRailBundle onto armFarRunout (FR3)
 // can never make a current green silently evaluate the oblique branch, nor an oblique case take the arc.
 func TestFarRunoutPopulationProbe(t *testing.T) {
+	t.Parallel()
 	perp := allPerpendicularFarGaps(t, "simple/B3")
 	if len(perp) == 0 {
 		t.Fatal("B3: no perpendicular far vertices collected — the probe would be vacuous")

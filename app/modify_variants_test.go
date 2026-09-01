@@ -16,6 +16,7 @@ import (
 // TestMoveFaceToolBuildsARotation drives the rotate mode: the tool used to call AddMoveFace
 // only, so rotating a face was API-only.
 func TestMoveFaceToolBuildsARotation(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	face, body := boxTopFace(t, def)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: face, Body: body}})
@@ -43,6 +44,7 @@ func TestMoveFaceToolBuildsARotation(t *testing.T) {
 // The rotate toggle switches which parameters the panel shows, so the axis and angle are
 // reachable at all.
 func TestMoveFaceToolExposesRotateParameters(t *testing.T) {
+	t.Parallel()
 	tool := NewMoveFaceTool()
 	if got := len(tool.Params().Floats); got != 3 {
 		t.Errorf("translate mode shows %d float rows, want 3 (Δ X/Y/Z)", got)
@@ -59,6 +61,7 @@ func TestMoveFaceToolExposesRotateParameters(t *testing.T) {
 // TestReplaceFaceToolTargetsAWorkPlane: the tool used to call AddReplaceFace only, so a work
 // plane could never be the target.
 func TestReplaceFaceToolTargetsAWorkPlane(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	face, body := boxTopFace(t, def)
 
@@ -91,6 +94,7 @@ func TestReplaceFaceToolTargetsAWorkPlane(t *testing.T) {
 
 // A face target still wins after a plane was picked, and vice versa — the two are exclusive.
 func TestReplaceFaceTargetIsExclusive(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	face, body := boxTopFace(t, def)
 	tool := NewReplaceFaceTool()
@@ -106,6 +110,7 @@ func TestReplaceFaceTargetIsExclusive(t *testing.T) {
 // TestThickenToolCarriesTheOptions: the tool set none of the #1876 options, so the ribbon could
 // only ever build the symmetric, joined, solid thicken.
 func TestThickenToolCarriesTheOptions(t *testing.T) {
+	t.Parallel()
 	tool := NewThickenTool()
 	tool.SetThickness(0.5)
 	tool.SetDirectionIndex(1) // positive
@@ -128,6 +133,7 @@ func TestThickenToolCarriesTheOptions(t *testing.T) {
 // A fresh thicken keeps the pre-#1876 defaults, so adding the options changed no behaviour for
 // anyone who does not touch them.
 func TestThickenToolDefaultsAreUnchanged(t *testing.T) {
+	t.Parallel()
 	pf := NewThickenTool().addThicken(feature.NewPartFeatures(nil))
 	def := pf.Definition().(*feature.ThickenFeature)
 	if def.Direction() != ops.ThickenSymmetric || def.Operation() != ops.Join || def.AsSurface() {
@@ -139,6 +145,7 @@ func TestThickenToolDefaultsAreUnchanged(t *testing.T) {
 // TestSimplifyToolReducesTheBody: the Simplify panel held only Derive and Shrinkwrap, so the
 // reduction itself had no tool at all.
 func TestSimplifyToolReducesTheBody(t *testing.T) {
+	t.Parallel()
 	// Chamfer a 2×2×2 block (vol 7.75), then simplify the chamfer away — a face whose opening
 	// the neighbours CAN heal, so the reduction is the sharp box again.
 	s, block := newPartWithBlock(t, 2)
@@ -168,6 +175,7 @@ func TestSimplifyToolReducesTheBody(t *testing.T) {
 
 // Fill voids alone is enough to commit: the reduction need not remove any face.
 func TestSimplifyToolCommitsOnFillVoidsAlone(t *testing.T) {
+	t.Parallel()
 	tool := NewSimplifyTool()
 	tool.SetFillVoids(true)
 	if !tool.CanCommit() {
@@ -177,6 +185,7 @@ func TestSimplifyToolCommitsOnFillVoidsAlone(t *testing.T) {
 
 // Simplify is reachable from the ribbon, beside Derive and Shrinkwrap.
 func TestSimplifyIsOnTheManageSimplifyPanel(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	tab, ok := BuildRibbon(s).Tab("Manage")
 	if !ok {

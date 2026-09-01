@@ -85,6 +85,7 @@ func surfaceProbe(s Surface) (u, v float64) {
 // TestSurfacePartialsMatchFiniteDifferences oracles the closed-form second and
 // third partials with central differences of DerivativesAt.
 func TestSurfacePartialsMatchFiniteDifferences(t *testing.T) {
+	t.Parallel()
 	const h = 1e-5
 	for name, s := range evaluatorSurfaces(t) {
 		u, v := surfaceProbe(s)
@@ -113,6 +114,7 @@ func TestSurfacePartialsMatchFiniteDifferences(t *testing.T) {
 
 // TestSurfaceCurvaturesClosedForms pins the analytic principal curvatures.
 func TestSurfaceCurvaturesClosedForms(t *testing.T) {
+	t.Parallel()
 	sphere, _ := NewSphere(math.P3(0, 0, 0), 2)
 	_, kMax, kMin := SurfaceCurvatures(sphere, 0.7, 0.3)
 	// Umbilic split tolerance is loose: √(H²−K) amplifies ~1e-17 rounding into
@@ -145,6 +147,7 @@ func TestSurfaceCurvaturesClosedForms(t *testing.T) {
 
 // TestSurfaceAreaClosedForms pins the bounded areas and NURBS quadrature.
 func TestSurfaceAreaClosedForms(t *testing.T) {
+	t.Parallel()
 	sphere, _ := NewSphere(math.P3(0, 0, 0), 2)
 	if got := SurfaceArea(sphere); stdmath.Abs(got-2*twoPi*4) > 1e-9 {
 		t.Errorf("sphere area = %g, want 4πR² = %g", got, 2*twoPi*4)
@@ -171,6 +174,7 @@ func TestSurfaceAreaClosedForms(t *testing.T) {
 
 // TestSurfaceIsoCurvesLieOnSurface samples every iso-curve against PointAt.
 func TestSurfaceIsoCurvesLieOnSurface(t *testing.T) {
+	t.Parallel()
 	for name, s := range evaluatorSurfaces(t) {
 		u, v := surfaceProbe(s)
 		for _, uDir := range []bool{true, false} {
@@ -209,6 +213,7 @@ func isoCurveOnSurface(s Surface, c Curve3) bool {
 
 // TestSurfaceParamAtPointClassification pins the SolutionNature cases.
 func TestSurfaceParamAtPointClassification(t *testing.T) {
+	t.Parallel()
 	cyl, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	if _, _, nature := SurfaceParamAtPoint(cyl, math.P3(0, 0, 3)); nature != InfinitelyManySolutions {
 		t.Errorf("cylinder axis query: nature = %v", nature)
@@ -246,6 +251,7 @@ func TestSurfaceParamAtPointClassification(t *testing.T) {
 // TestSurfaceNormalAtPoint projects an off-surface point and compares with the
 // on-surface normal.
 func TestSurfaceNormalAtPoint(t *testing.T) {
+	t.Parallel()
 	sphere, _ := NewSphere(math.P3(0, 0, 0), 2)
 	n := SurfaceNormalAtPoint(sphere, math.P3(5, 0, 0))
 	if float64(n.Sub(math.V3(1, 0, 0)).Length()) > 1e-9 {
@@ -255,6 +261,7 @@ func TestSurfaceNormalAtPoint(t *testing.T) {
 
 // TestSurfaceRangeBoxes covers exact, conservative and unbounded boxes.
 func TestSurfaceRangeBoxes(t *testing.T) {
+	t.Parallel()
 	sphere, _ := NewSphere(math.P3(1, 2, 3), 2)
 	b := SurfaceRangeBox(sphere)
 	if b.Min.DistanceTo(math.P3(-1, 0, 1)) > 1e-12 || b.Max.DistanceTo(math.P3(3, 4, 5)) > 1e-12 {
@@ -290,6 +297,7 @@ func TestSurfaceRangeBoxes(t *testing.T) {
 
 // TestSurfaceAnomalyAndContinuity pins the classification members.
 func TestSurfaceAnomalyAndContinuity(t *testing.T) {
+	t.Parallel()
 	sphere, _ := NewSphere(math.P3(0, 0, 0), 1)
 	uA, vA := SurfaceAnomaly(sphere)
 	if !uA.Periodic || uA.Period != twoPi || !vA.Singular {
@@ -314,6 +322,7 @@ func TestSurfaceAnomalyAndContinuity(t *testing.T) {
 // can only be the region its loops enclose. Reading the finite rectangle as closedness made a bore
 // wall the complement of itself and contribute nothing (Oblikovati/Oblikovati#3453).
 func TestSurfaceIsClosedSeparatesAWrapFromAFiniteRange(t *testing.T) {
+	t.Parallel()
 	sphere, _ := NewSphere(math.P3(0, 0, 0), 1)
 	torus, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 0.5)
 	plane, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
@@ -341,6 +350,7 @@ func TestSurfaceIsClosedSeparatesAWrapFromAFiniteRange(t *testing.T) {
 // TestSurfaceDersMatchExistingFirstOrder ties SurfaceDersAt to the
 // long-standing DerivativesAt implementation.
 func TestSurfaceDersMatchExistingFirstOrder(t *testing.T) {
+	t.Parallel()
 	s := evaluatorBSplineSurface(t)
 	u, v := 0.3, 0.7
 	ders := s.SurfaceDersAt(u, v, 1, 1)
@@ -356,6 +366,7 @@ func TestSurfaceDersMatchExistingFirstOrder(t *testing.T) {
 
 // TestCurveDersMatchExistingFirstOrder ties DersAt to TangentAt.
 func TestCurveDersMatchExistingFirstOrder(t *testing.T) {
+	t.Parallel()
 	curves := evaluatorCurves3(t)
 	b := curves["bspline"].(BSplineCurve)
 	ders := b.DersAt(0.37, 1)

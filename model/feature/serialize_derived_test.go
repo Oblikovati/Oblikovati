@@ -41,6 +41,7 @@ func roundTripDerive(t *testing.T, pf *PartFeature) (*DerivedAssemblyComponent, 
 // TestDerivedAssemblySourceLinkSurvivesRoundTrip checks the source identity link round-trips
 // through the feature codec, restoring UNBOUND (no source) until a later BindSource.
 func TestDerivedAssemblySourceLinkSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	src, _, _ := sourceWithTwoBlocks(t)
 	link := DeriveSourceLink{Document: "src.obk", InternalName: "GUID-1", DatabaseRevisionID: "rev-1"}
 	fs := NewPartFeatures(nil)
@@ -59,6 +60,7 @@ func TestDerivedAssemblySourceLinkSurvivesRoundTrip(t *testing.T) {
 // derive, rebinds an equivalent source, and checks the excluded occurrence is still omitted
 // — the base body is the single included block (volume 1, not 2).
 func TestDerivedAssemblyStyleSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	src, _, b := sourceWithTwoBlocks(t)
 	fs := NewPartFeatures(nil)
 	pf := NewDerivedAssemblyComponents(fs).AddDerived(src, DeriveSourceLink{DatabaseRevisionID: "rev-1"})
@@ -80,6 +82,7 @@ func TestDerivedAssemblyStyleSurvivesRoundTrip(t *testing.T) {
 // TestDeriveAcknowledgeSourceClearsOutOfDate checks AcknowledgeSource re-stamps the link's
 // source revision and clears the out-of-date flag — the model side of deriveUpdate (#751).
 func TestDeriveAcknowledgeSourceClearsOutOfDate(t *testing.T) {
+	t.Parallel()
 	src, _, _ := sourceWithTwoBlocks(t)
 	fs := NewPartFeatures(nil)
 	pf := NewDerivedAssemblyComponents(fs).AddDerived(src, DeriveSourceLink{DatabaseRevisionID: "rev-1"})
@@ -100,6 +103,7 @@ func TestDeriveAcknowledgeSourceClearsOutOfDate(t *testing.T) {
 // TestDerivedAssemblyOutOfDateByRevision checks BindSource flags out-of-date exactly when
 // the source's current revision differs from the one captured in the link.
 func TestDerivedAssemblyOutOfDateByRevision(t *testing.T) {
+	t.Parallel()
 	src, _, _ := sourceWithTwoBlocks(t)
 	cases := []struct {
 		name         string

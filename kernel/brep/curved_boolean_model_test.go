@@ -31,6 +31,7 @@ func cylSide(t *testing.T, faces []curvedFace) curvedFace {
 // three curvedFaces — two planar caps and one true cylindrical side — each carrying its surface,
 // loops, and lineage.
 func TestFacesOfAnyFlattensCylinder(t *testing.T) {
+	t.Parallel()
 	cyl, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -65,6 +66,7 @@ func TestFacesOfAnyFlattensCylinder(t *testing.T) {
 // TestLoopEdgesWalkContiguously: a planar block face's loop edges must chain — each edge's
 // oriented end meets the next edge's oriented start — so the loop is a closed contiguous ring.
 func TestLoopEdgesWalkContiguously(t *testing.T) {
+	t.Parallel()
 	box, err := SolidBlock(math.P3(0, 0, 0), math.P3(2, 3, 4), "box")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
@@ -88,6 +90,7 @@ func TestLoopEdgesWalkContiguously(t *testing.T) {
 // (start vertex == end vertex); its loopEdge must span the curve's whole [0,1] domain so the
 // ring closes on itself rather than collapsing to a point.
 func TestClosedCircleEdgeSpansDomain(t *testing.T) {
+	t.Parallel()
 	cyl, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -115,6 +118,7 @@ func TestClosedCircleEdgeSpansDomain(t *testing.T) {
 // TestCurvedImprintCylinderPlaneIsCircle: a cylinder side imprinted against a plane ⟂ its axis
 // is the exact section circle — at the plane's height, with the cylinder's radius.
 func TestCurvedImprintCylinderPlaneIsCircle(t *testing.T) {
+	t.Parallel()
 	cyl, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
 	side := cylSide(t, facesOfAny(cyl))
 	plane, _ := geom.NewPlane(math.P3(0, 0, 2.5), math.V3(0, 0, 1))
@@ -137,6 +141,7 @@ func TestCurvedImprintCylinderPlaneIsCircle(t *testing.T) {
 // TestCurvedImprintSpherePlaneIsCircle: a sphere imprinted against an offset plane is the circle
 // of radius sqrt(r²−d²) at the plane.
 func TestCurvedImprintSpherePlaneIsCircle(t *testing.T) {
+	t.Parallel()
 	sphere, _ := geom.NewSphere(math.P3(0, 0, 0), 5)
 	plane, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
 	curves, ok := curvedImprint(curvedFace{surface: sphere}, curvedFace{surface: plane}, geom.ResolutionForSize(1))
@@ -152,6 +157,7 @@ func TestCurvedImprintSpherePlaneIsCircle(t *testing.T) {
 // TestCurvedImprintPlanePlaneIsLine: two non-parallel planar faces imprint to a line (the planar
 // case still flows through the curved model).
 func TestCurvedImprintPlanePlaneIsLine(t *testing.T) {
+	t.Parallel()
 	box, _ := SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "box")
 	faces := facesOfAny(box)
 	a, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
@@ -170,6 +176,7 @@ func TestCurvedImprintPlanePlaneIsLine(t *testing.T) {
 // (#3489) — the two exact section loops, not the marched chains it used to defer to. The imprint must
 // hand those on, since every edge stitched from them inherits their exactness.
 func TestCurvedImprintRuledPairIsExactSection(t *testing.T) {
+	t.Parallel()
 	a, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
 	b, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 2)
 	curves, ok := curvedImprint(curvedFace{surface: a}, curvedFace{surface: b}, geom.ResolutionForSize(1))
@@ -187,6 +194,7 @@ func TestCurvedImprintRuledPairIsExactSection(t *testing.T) {
 // quadric, so no closed form applies and curvedImprint must report handled=false (the caller routes the
 // pair to the SSI tracer), NOT an empty "they don't cross" result.
 func TestCurvedImprintTorusPairDefers(t *testing.T) {
+	t.Parallel()
 	a, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
 	b, _ := geom.NewCylinder(math.P3(4, 0, 0), math.V3(0, 0, 1), 0.5)
 	if _, ok := curvedImprint(curvedFace{surface: a}, curvedFace{surface: b}, geom.ResolutionForSize(1)); ok {

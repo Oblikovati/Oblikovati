@@ -32,6 +32,7 @@ type splitAddResult struct {
 // TestSplitBodyThenCombineOverWire: type splitBody yields two solids; combine
 // joins them back into one.
 func TestSplitBodyThenCombineOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := splitFixture(t)
 	var res splitAddResult
 	call(t, r, s, "features.add", `{"kind":"splitSolid","args":{"workPlaneIndex":3,"type":"splitBody"}}`, &res)
@@ -48,6 +49,7 @@ func TestSplitBodyThenCombineOverWire(t *testing.T) {
 // TestSplitFacesOverWire: type splitFaces keeps one body (volume untouched)
 // but the box gains the imprint faces.
 func TestSplitFacesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := splitFixture(t)
 	var res splitAddResult
 	call(t, r, s, "features.add", `{"kind":"splitSolid","args":{"workPlaneIndex":3,"type":"splitFaces"}}`, &res)
@@ -68,6 +70,7 @@ func TestSplitFacesOverWire(t *testing.T) {
 
 // TestSplitTrimSolidOverWire: type trimSolid keeps one side (default positive).
 func TestSplitTrimSolidOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := splitFixture(t)
 	var res splitAddResult
 	call(t, r, s, "features.add", `{"kind":"splitSolid","args":{"workPlaneIndex":3,"type":"trimSolid"}}`, &res)

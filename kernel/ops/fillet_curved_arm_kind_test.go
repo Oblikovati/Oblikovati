@@ -37,6 +37,7 @@ func planeWithNormal(nx, ny, nz float64) geom.Plane {
 }
 
 func TestClassifyCurvedArm(t *testing.T) {
+	t.Parallel()
 	res := testArmResolution()
 	// axis ⊥ plane (|s|=1) → torus arm (B3 top-rim edge)
 	if k := classifyCurvedArm(cylAxis(0, 0, 1, 50), planeWithNormal(0, 0, 1), res); k != armTorus {

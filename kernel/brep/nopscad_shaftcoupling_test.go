@@ -8,6 +8,7 @@ import (
 )
 
 func TestNopShaftCouplingCSG(t *testing.T) {
+	t.Parallel()
 	body := annularPrismRange(t, 0.6, 0.2, -1.0, 0, "shaft-coupling-small")
 	body = joinOrFatal(t, body, annularPrismRange(t, 0.6, 0.3, 0, 1.0, "shaft-coupling-large"), "coupling second bore")
 	for _, z := range []float64{-0.5, 0.5} {

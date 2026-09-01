@@ -10,6 +10,7 @@ import (
 )
 
 func TestPriorityFilterMapping(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		p      SelectionPriority
 		kind   SelectionKind
@@ -32,6 +33,7 @@ func TestPriorityFilterMapping(t *testing.T) {
 }
 
 func TestPickFilterUsesToolFilterThenPriority(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.SetSelectionPriority(PriorityEdge)
 	// No tool → the priority filter (edge-only).
@@ -58,6 +60,7 @@ func rayPickerSession(t *testing.T) *Session {
 }
 
 func TestSelectionPriorityRibbonCombo(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -74,6 +77,7 @@ func TestSelectionPriorityRibbonCombo(t *testing.T) {
 }
 
 func TestSelectionPriorityBiasesClick(t *testing.T) {
+	t.Parallel()
 	s := rayPickerSession(t)
 
 	// General priority: a click on a face selects the face.

@@ -16,6 +16,7 @@ import (
 // face must resolve from BOTH parents' reference keys — so a pick on either operand's +x face survives
 // the merge. Without the alias wiring only the representative parent's key would resolve.
 func TestReconstructionMergedFaceKeepsBothParentKeys(t *testing.T) {
+	t.Parallel()
 	a, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "a")
 	if err != nil {
 		t.Fatal(err)

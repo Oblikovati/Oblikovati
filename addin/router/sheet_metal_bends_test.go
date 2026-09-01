@@ -70,6 +70,7 @@ func topXEdgeKey(t *testing.T, s *app.Session) string {
 // TestSheetMetalBendsOverWire a flanged sheet reports its bend lineage: one 90° bend with a
 // positive developed allowance, and the total allowance equals that bend's.
 func TestSheetMetalBendsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := flangedSheet(t)
 	var res wire.BendsResult
 	call(t, r, s, wire.MethodSheetMetalBends, "{}", &res)
@@ -90,6 +91,7 @@ func TestSheetMetalBendsOverWire(t *testing.T) {
 
 // TestSheetMetalBendsEmptyWithoutBends a flat base sheet (no folds) reports no bends.
 func TestSheetMetalBendsEmptyWithoutBends(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[0,0],[4,3]]}`, &struct{}{})
@@ -104,6 +106,7 @@ func TestSheetMetalBendsEmptyWithoutBends(t *testing.T) {
 
 // TestSheetMetalBendsRejectsPlainPart bends on an ordinary part errors (no sheet-metal rule).
 func TestSheetMetalBendsRejectsPlainPart(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, wire.MethodSheetMetalBends, []byte("{}")); err == nil {
 		t.Fatal("bends on a plain part must error")
@@ -113,6 +116,7 @@ func TestSheetMetalBendsRejectsPlainPart(t *testing.T) {
 // TestSheetMetalUnfoldOverWire a flanged sheet unfolds over the wire to a flat with a positive
 // gauge/area, extents that exceed the folded footprint (the developed tab), and one fold line.
 func TestSheetMetalUnfoldOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := flangedSheet(t) // 40×30 mm base, 10 mm flange
 	var res wire.UnfoldResult
 	call(t, r, s, wire.MethodSheetMetalUnfold, "{}", &res)
@@ -131,6 +135,7 @@ func TestSheetMetalUnfoldOverWire(t *testing.T) {
 
 // TestSheetMetalUnfoldRejectsPlainPart unfold on an ordinary part errors (no sheet-metal rule).
 func TestSheetMetalUnfoldRejectsPlainPart(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, wire.MethodSheetMetalUnfold, []byte("{}")); err == nil {
 		t.Fatal("unfold on a plain part must error")

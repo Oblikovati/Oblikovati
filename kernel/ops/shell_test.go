@@ -32,6 +32,7 @@ func topFaceKey(t *testing.T, b *topo.Body) []byte {
 // 5-wall open cup. Outer 64 minus the open cavity [0.5,3.5]×[0.5,3.5]×[0.5,4] (3·3·3.5 =
 // 31.5) = 32.5, and the result must be a valid solid.
 func TestShellOpenTopBox(t *testing.T) {
+	t.Parallel()
 	box := shellBox(4, 4, 4)
 	res, err := ops.Shell(box, [][]byte{topFaceKey(t, box)}, 0.5)
 	if err != nil {
@@ -50,6 +51,7 @@ func TestShellOpenTopBox(t *testing.T) {
 // outside, so the outer solid [-0.5,4.5]×[-0.5,4.5]×[-0.5,4] (5·5·4.5 = 112.5) minus the original
 // 64 leaves a 48.5 wall, and the result must be a valid solid.
 func TestShellOutsideBox(t *testing.T) {
+	t.Parallel()
 	box := shellBox(4, 4, 4)
 	res, err := ops.ShellDirected(box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellOutside)
 	if err != nil {
@@ -67,6 +69,7 @@ func TestShellOutsideBox(t *testing.T) {
 // TestShellBothBox centres a 0.5 wall on the faces of the 4×4×4 open-top box: outer offset +0.25
 // (4.5·4.5·4.25 = 86.0625) minus inner offset −0.25 (3.5·3.5·3.75 = 45.9375) = 40.125.
 func TestShellBothBox(t *testing.T) {
+	t.Parallel()
 	box := shellBox(4, 4, 4)
 	res, err := ops.ShellDirected(box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellBoth)
 	if err != nil {
@@ -83,6 +86,7 @@ func TestShellBothBox(t *testing.T) {
 
 // TestShellDirectedUnknownDirection guards the direction switch.
 func TestShellDirectedUnknownDirection(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	if _, err := ops.ShellDirected(box, [][]byte{topFaceKey(t, box)}, 0.2, ops.ShellDirection(9)); err == nil {
 		t.Error("unknown shell direction should error")
@@ -92,6 +96,7 @@ func TestShellDirectedUnknownDirection(t *testing.T) {
 // TestShellLostFaceErrors checks a vanished removed-face key is reported (so the feature
 // can go Sick) rather than silently shelling a closed box.
 func TestShellLostFaceErrors(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	if _, err := ops.Shell(box, [][]byte{[]byte("ghost")}, 0.2); err == nil {
 		t.Error("shell with a lost face key should error")
@@ -100,6 +105,7 @@ func TestShellLostFaceErrors(t *testing.T) {
 
 // TestShellThicknessMustBePositive guards the thickness.
 func TestShellThicknessMustBePositive(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	if _, err := ops.Shell(box, [][]byte{topFaceKey(t, box)}, 0); err == nil {
 		t.Error("zero thickness should error")

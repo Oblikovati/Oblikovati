@@ -16,6 +16,7 @@ func nearPoint(p, q math.Point3) bool { return p.DistanceTo(q) < 1e-9 }
 // --- similarityScale -------------------------------------------------------
 
 func TestSimilarityScaleUniform(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name string
 		m    math.Matrix4
@@ -43,12 +44,14 @@ func TestSimilarityScaleUniform(t *testing.T) {
 }
 
 func TestSimilarityScaleRejectsNonUniform(t *testing.T) {
+	t.Parallel()
 	if _, err := similarityScale(math.Scale4(2, 3, 2)); err == nil {
 		t.Error("non-uniform scale should be rejected")
 	}
 }
 
 func TestSimilarityScaleRejectsDegenerate(t *testing.T) {
+	t.Parallel()
 	if _, err := similarityScale(math.Scale4(0, 1, 1)); err == nil {
 		t.Error("zero-length axis should be rejected")
 	}
@@ -57,6 +60,7 @@ func TestSimilarityScaleRejectsDegenerate(t *testing.T) {
 // --- TransformCurve --------------------------------------------------------
 
 func TestTransformLineSegment(t *testing.T) {
+	t.Parallel()
 	seg := NewLineSegment(math.P3(0, 0, 0), math.P3(1, 0, 0))
 	out, err := TransformCurve(seg, math.Translation4(math.V3(1, 2, 3)))
 	if err != nil {
@@ -69,6 +73,7 @@ func TestTransformLineSegment(t *testing.T) {
 }
 
 func TestTransformLine(t *testing.T) {
+	t.Parallel()
 	ln, err := NewLine(math.P3(0, 0, 0), math.V3(1, 0, 0))
 	if err != nil {
 		t.Fatal(err)
@@ -84,6 +89,7 @@ func TestTransformLine(t *testing.T) {
 }
 
 func TestTransformCircleScalesRadius(t *testing.T) {
+	t.Parallel()
 	c, err := NewCircle(math.P3(1, 0, 0), math.V3(0, 0, 1), 2)
 	if err != nil {
 		t.Fatal(err)
@@ -102,6 +108,7 @@ func TestTransformCircleScalesRadius(t *testing.T) {
 }
 
 func TestTransformArcPreservesAngles(t *testing.T) {
+	t.Parallel()
 	a, err := NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 2, 0.25, 1.5)
 	if err != nil {
 		t.Fatal(err)
@@ -117,6 +124,7 @@ func TestTransformArcPreservesAngles(t *testing.T) {
 }
 
 func TestTransformCurveRejectsNonUniform(t *testing.T) {
+	t.Parallel()
 	c, _ := NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 1)
 	if _, err := TransformCurve(c, math.Scale4(2, 3, 2)); err == nil {
 		t.Error("non-uniform scale should be rejected before transforming a curve")
@@ -124,6 +132,7 @@ func TestTransformCurveRejectsNonUniform(t *testing.T) {
 }
 
 func TestTransformCurveUnsupportedType(t *testing.T) {
+	t.Parallel()
 	p, err := NewPolyline([]math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0)})
 	if err != nil {
 		t.Fatal(err)
@@ -136,6 +145,7 @@ func TestTransformCurveUnsupportedType(t *testing.T) {
 // --- TransformSurface ------------------------------------------------------
 
 func TestTransformPlane(t *testing.T) {
+	t.Parallel()
 	pl, err := NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1))
 	if err != nil {
 		t.Fatal(err)
@@ -150,6 +160,7 @@ func TestTransformPlane(t *testing.T) {
 }
 
 func TestTransformCylinderScalesRadius(t *testing.T) {
+	t.Parallel()
 	cyl, err := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	if err != nil {
 		t.Fatal(err)
@@ -164,6 +175,7 @@ func TestTransformCylinderScalesRadius(t *testing.T) {
 }
 
 func TestTransformConePreservesHalfAngle(t *testing.T) {
+	t.Parallel()
 	cone, err := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6)
 	if err != nil {
 		t.Fatal(err)
@@ -179,6 +191,7 @@ func TestTransformConePreservesHalfAngle(t *testing.T) {
 }
 
 func TestTransformSphereScalesRadius(t *testing.T) {
+	t.Parallel()
 	s, err := NewSphere(math.P3(1, 1, 1), 2)
 	if err != nil {
 		t.Fatal(err)
@@ -194,6 +207,7 @@ func TestTransformSphereScalesRadius(t *testing.T) {
 }
 
 func TestTransformTorusScalesBothRadii(t *testing.T) {
+	t.Parallel()
 	tor, err := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
 	if err != nil {
 		t.Fatal(err)
@@ -209,6 +223,7 @@ func TestTransformTorusScalesBothRadii(t *testing.T) {
 }
 
 func TestTransformSurfaceRejectsNonUniform(t *testing.T) {
+	t.Parallel()
 	s, _ := NewSphere(math.P3(0, 0, 0), 1)
 	if _, err := TransformSurface(s, math.Scale4(2, 3, 2)); err == nil {
 		t.Error("non-uniform scale should be rejected before transforming a surface")
@@ -228,6 +243,7 @@ func (unsupportedSurface) VDomain() (lo, hi float64)                        { re
 func (unsupportedSurface) ParamAt(p math.Point3) (u, v float64)             { return 0, 0 }
 
 func TestTransformSurfaceUnsupportedType(t *testing.T) {
+	t.Parallel()
 	if _, err := TransformSurface(unsupportedSurface{}, math.Identity4()); err == nil {
 		t.Error("an unsupported surface type should return NotYetImplemented")
 	}
@@ -271,6 +287,7 @@ func nurbsTestSimilarity(t *testing.T) math.Matrix4 {
 // rational basis is a partition of unity, transform-then-evaluate equals
 // evaluate-then-transform at every parameter.
 func TestTransformBSplineCurveMatchesAffineOnEval(t *testing.T) {
+	t.Parallel()
 	c := quarterCircleNURBS(t)
 	m := nurbsTestSimilarity(t)
 	got, err := TransformCurve(c, m)
@@ -287,6 +304,7 @@ func TestTransformBSplineCurveMatchesAffineOnEval(t *testing.T) {
 
 // TestTransformBSplineCurvePreservesWeightsKnotsDegree: only the control points move.
 func TestTransformBSplineCurvePreservesWeightsKnotsDegree(t *testing.T) {
+	t.Parallel()
 	c := quarterCircleNURBS(t)
 	out, err := TransformCurve(c, math.Translation4(math.V3(1, 2, 3)))
 	if err != nil {
@@ -309,6 +327,7 @@ func TestTransformBSplineCurvePreservesWeightsKnotsDegree(t *testing.T) {
 
 // TestTransformBSplineCurveDoesNotMutateInput: the input value stays immutable.
 func TestTransformBSplineCurveDoesNotMutateInput(t *testing.T) {
+	t.Parallel()
 	c := quarterCircleNURBS(t)
 	before := append([]math.Point3(nil), c.Ctrl...)
 	if _, err := TransformCurve(c, math.Scale4(2, 2, 2)); err != nil {
@@ -323,6 +342,7 @@ func TestTransformBSplineCurveDoesNotMutateInput(t *testing.T) {
 
 // TestTransformBSplineSurfaceMatchesAffineOnEval is the surface metamorphic identity.
 func TestTransformBSplineSurfaceMatchesAffineOnEval(t *testing.T) {
+	t.Parallel()
 	s := sampleBSplineSurface(t)
 	m := nurbsTestSimilarity(t)
 	got, err := TransformSurface(s, m)

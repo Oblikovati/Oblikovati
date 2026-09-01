@@ -25,6 +25,7 @@ func (l lineCurve3) Domain() (float64, float64)     { return 0, 1 }
 // length must equal its Euclidean chord length, not merely approximate it (the polyline
 // sampling is exact on a line, so there is no discretization slack to hide behind).
 func TestNewEdgeArcTableLengthMatchesChord(t *testing.T) {
+	t.Parallel()
 	c := lineCurve3{p0: math.P3(0, 0, 0), p1: math.P3(30, 40, 0)} // 3-4-5 triangle, chord=50
 	tab, ok := newEdgeArcTable(c)
 	if !ok {
@@ -39,6 +40,7 @@ func TestNewEdgeArcTableLengthMatchesChord(t *testing.T) {
 // s=0, s=L/2 and s=L, and checks the tangent direction is the line's own direction throughout
 // (a straight line has no curvature, so the tangent must never wobble).
 func TestEdgeArcTableAtEndpointsAndMidpoint(t *testing.T) {
+	t.Parallel()
 	c := lineCurve3{p0: math.P3(0, 0, 0), p1: math.P3(10, 0, 0)}
 	tab, ok := newEdgeArcTable(c)
 	if !ok {
@@ -67,6 +69,7 @@ func TestEdgeArcTableAtEndpointsAndMidpoint(t *testing.T) {
 // endpoints coincide must decline (ok=false), never build a table with length 0 that a caller
 // could divide by.
 func TestNewEdgeArcTableDeclinesDegenerateCurve(t *testing.T) {
+	t.Parallel()
 	c := lineCurve3{p0: math.P3(1, 1, 1), p1: math.P3(1, 1, 1)}
 	if _, ok := newEdgeArcTable(c); ok {
 		t.Fatal("newEdgeArcTable accepted a zero-length curve")
@@ -77,6 +80,7 @@ func TestNewEdgeArcTableDeclinesDegenerateCurve(t *testing.T) {
 // arc-length steps) and that dir=+1 starts at P0 while dir=-1 starts at P1 (the walk-direction
 // contract bsplineHostWalkDirection and the closed-loop march both depend on).
 func TestUniformAnchorsSpacingAndEndpoints(t *testing.T) {
+	t.Parallel()
 	c := lineCurve3{p0: math.P3(0, 0, 0), p1: math.P3(12, 0, 0)}
 	tab, _ := newEdgeArcTable(c)
 	fwd := tab.uniformAnchors(4, 1)

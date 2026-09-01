@@ -31,6 +31,7 @@ func cylinderRuledUV(r, vMin, vMax float64) ruledUV {
 // TestRuledParamOfInvertsPoint3: paramOf is the exact inverse of point3 over the band — a sampled (u,v)
 // round-trips through the surface point and back to itself (Oblikovati#1405).
 func TestRuledParamOfInvertsPoint3(t *testing.T) {
+	t.Parallel()
 	c := cylinderRuledUV(3, -5, 5)
 	for i := range 16 {
 		u := 2 * stdmath.Pi * float64(i) / 16
@@ -52,6 +53,7 @@ func TestRuledParamOfInvertsPoint3(t *testing.T) {
 // parameters map back (via the circle) to the segment's (u,v) — the round-trip the boundary re-emission
 // relies on (Oblikovati#1405).
 func TestSampleImprintUVOnRimCircle(t *testing.T) {
+	t.Parallel()
 	const r, vMin = 3.0, -5.0
 	c := cylinderRuledUV(r, vMin, 5)
 	rim, _ := geom.NewCircle(math.P3(0, 0, vMin), math.V3(0, 0, 1), r) // the bottom rim, z=vMin
@@ -77,6 +79,7 @@ func TestSampleImprintUVOnRimCircle(t *testing.T) {
 // crosses u=0≡2π) is split into two segments meeting exactly at the seam, with v and the curve parameter
 // interpolated; a non-straddling segment passes through unchanged (Oblikovati#1405).
 func TestSplitSeamCrossingSplitsAtSeam(t *testing.T) {
+	t.Parallel()
 	twoPi := 2 * stdmath.Pi
 	// climbs past 2π: a=(6.0, 1) -> b=(0.2, 3); the short arc crosses the seam at u=2π.
 	up := uvSeg{a: math.P2(6.0, 1), b: math.P2(0.2, 3), curve: nil, tA: 0, tB: 1, kind: segImprint}
@@ -105,6 +108,7 @@ func TestSplitSeamCrossingSplitsAtSeam(t *testing.T) {
 // into two meeting AT v=0/2π, with u and the curve parameter interpolated — the v-analogue of the azimuth
 // split, needed for the two-oval band whose ovals wrap the tube (Oblikovati#1406).
 func TestSplitVSeamCrossingSplitsAtTubeSeam(t *testing.T) {
+	t.Parallel()
 	twoPi := 2 * stdmath.Pi
 	// climbs past 2π in v: a=(1, 6.0) -> b=(3, 0.2); the short arc crosses the tube seam at v=2π.
 	up := uvSeg{a: math.P2(1, 6.0), b: math.P2(3, 0.2), tA: 0, tB: 1, kind: segImprint}
@@ -132,6 +136,7 @@ func TestSplitVSeamCrossingSplitsAtTubeSeam(t *testing.T) {
 // parameter rectangle — the four frame edges span [0,2π]×[vMin,vMax] and share the rectangle corners — and
 // no assembled segment spans the seam discontinuity (Oblikovati#1405).
 func TestAssembleBandSegmentsClosesRectangle(t *testing.T) {
+	t.Parallel()
 	const vMin, vMax = -5.0, 5.0
 	c := cylinderRuledUV(3, vMin, vMax)
 	rim, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 3) // a v=0 horizontal cut imprint
@@ -173,6 +178,7 @@ func (c ruledUV) horizontalCutImprint(t *testing.T, v float64) []uvSeg {
 // TestKeptCellsClassifiesByMaterial: two horizontal imprint cuts split the band into three v-bands; the
 // material predicate selects which are kept — the middle band (one cell) or the two outer bands (#1405).
 func TestKeptCellsClassifiesByMaterial(t *testing.T) {
+	t.Parallel()
 	c := cylinderRuledUV(3, -5, 5)
 	imprint := append(c.horizontalCutImprint(t, -2), c.horizontalCutImprint(t, 2)...)
 	cells := arrangeBand(c.assembleBandSegments(imprint))
@@ -192,6 +198,7 @@ func TestKeptCellsClassifiesByMaterial(t *testing.T) {
 // TestHalfSpaceMaterialKeepsNegativeSide: with g(u,v)=v the half-space predicate keeps exactly the v<0
 // cell of a v=0 cut — the plane-cut classification the analytic walk produced, now via the arrangement.
 func TestHalfSpaceMaterialKeepsNegativeSide(t *testing.T) {
+	t.Parallel()
 	c := cylinderRuledUV(3, -5, 5)
 	c.s = 1 // g(u,v) = p + v·s = v  -> kept where v < 0
 	cells := arrangeBand(c.assembleBandSegments(c.horizontalCutImprint(t, 0)))
@@ -207,6 +214,7 @@ func TestHalfSpaceMaterialKeepsNegativeSide(t *testing.T) {
 // TestInteriorPointOfConcave: interiorPointOf returns a point genuinely inside even for a concave (L-shaped)
 // polygon whose centroid lies outside it — the robustness keptCells relies on for non-convex cells.
 func TestInteriorPointOfConcave(t *testing.T) {
+	t.Parallel()
 	lShape := []math.Point2{
 		math.P2(0, 0), math.P2(4, 0), math.P2(4, 1), math.P2(1, 1), math.P2(1, 4), math.P2(0, 4),
 	}
@@ -220,6 +228,7 @@ func TestInteriorPointOfConcave(t *testing.T) {
 // boundary must be two closed loops (the bottom rim and the section), with the artificial seam edges
 // dissolved by the cross-seam cancellation (Oblikovati#1405).
 func TestKeptBoundaryWrappingBandTwoLoops(t *testing.T) {
+	t.Parallel()
 	c := cylinderRuledUV(3, -5, 5)
 	c.s = 1 // g(u,v)=v -> keep v<0
 	cells := arrangeBand(c.assembleBandSegments(c.horizontalCutImprint(t, 0)))
@@ -249,6 +258,7 @@ func TestKeptBoundaryWrappingBandTwoLoops(t *testing.T) {
 // seam; keeping the middle span is a non-wrapping tongue whose boundary is a single loop (two rulings + two
 // rim arcs), with no seam edge involved (Oblikovati#1405).
 func TestKeptBoundaryTongueSingleLoop(t *testing.T) {
+	t.Parallel()
 	c := cylinderRuledUV(3, -5, 5)
 	left := c.sampleImprintUV(geom.NewLineSegment(c.point3(stdmath.Pi/2, -5), c.point3(stdmath.Pi/2, 5)))
 	right := c.sampleImprintUV(geom.NewLineSegment(c.point3(3*stdmath.Pi/2, -5), c.point3(3*stdmath.Pi/2, 5)))
@@ -266,6 +276,7 @@ func TestKeptBoundaryTongueSingleLoop(t *testing.T) {
 // curvedFace with two boundary loops whose edges lie on the cylinder, plus a non-empty lid section — the
 // whole project→assemble→subdivide→classify→boundary→re-emit pipeline (Oblikovati#1405).
 func TestTrimByImprintProducesValidFace(t *testing.T) {
+	t.Parallel()
 	c := cylinderRuledUV(3, -5, 5)
 	c.s = 1 // g(u,v)=v -> keep v<0
 	surf, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
@@ -294,6 +305,7 @@ func TestTrimByImprintProducesValidFace(t *testing.T) {
 // the kept wrapping band's hi boundary is the PURE top rim, orientLoops reverses that loop so the rebuilt
 // rim stays opposite its cap — the analytic splitSide convention reproduced through the arrangement (#1405).
 func TestTrimByImprintReversesTopRim(t *testing.T) {
+	t.Parallel()
 	c := cylinderRuledUV(3, -5, 5)
 	c.s = -1                     // g(u,v) = -v -> keep v>0, so the hi boundary is the top rim
 	c.band.topRimReversed = true // the source side traverses the top rim reversed
@@ -314,6 +326,7 @@ func TestTrimByImprintReversesTopRim(t *testing.T) {
 // both lie in the band (the joining vertex falls below it), so clipParams must return TWO parameter ranges,
 // each spanning the band height — the multi-arm windowing a cone cut needs (Oblikovati#1405).
 func TestClipParamsMultiArmHyperbola(t *testing.T) {
+	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6, "c")
 	plane, _ := geom.NewPlane(math.P3(2, 0, 0), math.V3(1, 0, 0)) // axis-parallel → hyperbola, two arms
 	var sf *topo.Face
@@ -348,6 +361,7 @@ func TestClipParamsMultiArmHyperbola(t *testing.T) {
 // curved∩curved generality). The material is given as a seam-aware 3D test (point3 handles the shifted
 // frame), the form a curved∩curved membership predicate takes.
 func TestTrimByImprintIslandHole(t *testing.T) {
+	t.Parallel()
 	c := cylinderRuledUV(3, -5, 5)
 	corners := []math.Point2{math.P2(2, -1), math.P2(3, -1), math.P2(3, 1), math.P2(2, 1)}
 	var curves []geom.Curve3
@@ -403,6 +417,7 @@ func distFromAxis(p math.Point3, c ruledUV) float64 {
 // 3D endpoints lie exactly on the cylinder, whose consecutive edges connect, and that close — the bridge
 // from the (u,v) arrangement back to a valid B-rep boundary (Oblikovati#1405).
 func TestEmitLoopEdgesStructurallyValid(t *testing.T) {
+	t.Parallel()
 	c := cylinderRuledUV(3, -5, 5)
 	c.s = 1 // g(u,v)=v -> keep v<0
 	segs := c.assembleBandSegments(c.horizontalCutImprint(t, 0))

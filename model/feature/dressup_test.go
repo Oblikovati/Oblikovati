@@ -17,6 +17,7 @@ import (
 // TestChamferBevelsEdgeForReal drills a real 45° chamfer on a box edge and checks the
 // removed volume (a right-triangle prism of legs d along the full edge).
 func TestChamferBevelsEdgeForReal(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var edge []byte
 	for _, e := range box.Edges() {
@@ -52,6 +53,7 @@ func TestChamferBevelsEdgeForReal(t *testing.T) {
 // triangle-soup CSG got wrong; the B-rep boolean must keep it exact. Volume =
 // (4 − 4·½·0.5²)·2 = 7.
 func TestChamferAllFourVerticalEdges(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var verticals [][]byte
 	for _, e := range box.Edges() {
@@ -201,6 +203,7 @@ func hasFlatCornerFace(b *topo.Body) bool {
 // box corner trims the pointy three-plane tip into a triangular face, removing the extra
 // sliver of material the pointy treatment keeps.
 func TestChamferFlatCornerBlendsThreeEdges(t *testing.T) {
+	t.Parallel()
 	flat := chamferedCorner(t, true)
 	pointy := chamferedCorner(t, false)
 
@@ -222,6 +225,7 @@ func TestChamferFlatCornerBlendsThreeEdges(t *testing.T) {
 // faces — adding exactly one bevel face — not leave the lip remnants (extra sliver faces) the
 // per-edge wedge used to leave where a chamfered edge runs into a face.
 func TestChamferCornerEdgeIsFlush(t *testing.T) {
+	t.Parallel()
 	// First chamfer: the vertical edge at (2,2) (midpoint (2,2,1)), setback 0.3 → a chamfer strip.
 	// Its top corner edge then sits at midpoint (2-0.15, 2-0.15, 2).
 	first := func(b *topo.Body) [][]byte { return [][]byte{edgeKeyByMid(t, b, math.P3(2, 2, 1))} }
@@ -238,6 +242,7 @@ func TestChamferCornerEdgeIsFlush(t *testing.T) {
 // dies into a complex vertex. The second chamfer must add exactly one flush bevel face, not the
 // slivered spike the per-edge wedge used to leave at that vertex.
 func TestChamferMiterEdgeIsFlush(t *testing.T) {
+	t.Parallel()
 	first := func(b *topo.Body) [][]byte { return topEdgeKeys(b, 2) }
 	second := func(b *topo.Body) []byte { return nearestEdgeKey(t, b, math.P3(2, 2, 2)) }
 	after1, after2 := rechamferBody(t, first, 0.3, 0.15, second)
@@ -294,6 +299,7 @@ func cornerBlendFaces(b *topo.Body) int {
 // blend was gated to symmetric setbacks (dressup.go) and reconstructed from a single distance
 // (chamfer.go). The flat blend trims the pointy tip, so it removes material vs. the pointy one.
 func TestChamferFlatCornerBlendsAsymmetric(t *testing.T) {
+	t.Parallel()
 	flat := chamferedCornerAsym(t, 0.5, 0.8, true)
 	pointy := chamferedCornerAsym(t, 0.5, 0.8, false)
 
@@ -318,6 +324,7 @@ func prismBody() *topo.Body {
 // TestFilletRoundsEdgeForReal rounds a vertical edge of a 2×2×2 box (r=0.5) through the
 // feature engine: a healthy feature whose result is a valid solid with a cylinder face.
 func TestFilletRoundsEdgeForReal(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var edge []byte
 	for _, e := range box.Edges() {
@@ -344,6 +351,7 @@ func TestFilletRoundsEdgeForReal(t *testing.T) {
 }
 
 func TestFilletGoesSickOnLostEdge(t *testing.T) {
+	t.Parallel()
 	body := prismBody()
 	bogus := []byte("not-an-edge-key")
 
@@ -357,6 +365,7 @@ func TestFilletGoesSickOnLostEdge(t *testing.T) {
 }
 
 func TestDressUpWithNoBodyIsSick(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	fillet := NewDressUpFeatures(fs).AddFillet([][]byte{[]byte("x")}, func() float64 { return 1 })
 	fs.Recompute() // no preceding body
@@ -369,6 +378,7 @@ func TestDressUpWithNoBodyIsSick(t *testing.T) {
 // face (a planar one is Sick — the healthy cylinder case is in thread_test.go) and that a
 // lost-face shell goes Sick.
 func TestThreadRejectsPlanarFaceAndShellLostFace(t *testing.T) {
+	t.Parallel()
 	body := prismBody()
 	face := body.Faces()[0].ReferenceKey()
 
@@ -395,6 +405,7 @@ func TestThreadRejectsPlanarFaceAndShellLostFace(t *testing.T) {
 // TestDraftTapersFaceForReal drafts one side face of a 2×2×2 box inward by atan(0.25)
 // about +Z: the side tilts, removing a 4·tan = 1 wedge ⇒ vol 7, a valid solid.
 func TestDraftTapersFaceForReal(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var side []byte
 	for _, f := range box.Faces() {
@@ -421,6 +432,7 @@ func TestDraftTapersFaceForReal(t *testing.T) {
 // TestShellHollowsRunningBodyForReal shells the running body (a unit prism) with its top
 // face removed and checks the feature is healthy and the result a valid hollow solid.
 func TestShellHollowsRunningBodyForReal(t *testing.T) {
+	t.Parallel()
 	body := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 4}, 0, "box")
 	var top []byte
 	for _, f := range body.Faces() {
@@ -445,6 +457,7 @@ func TestShellHollowsRunningBodyForReal(t *testing.T) {
 }
 
 func TestDressUpDefinitionsAccessible(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	du := NewDressUpFeatures(fs)
 	f := du.AddFillet([][]byte{[]byte("e")}, func() float64 { return 0.2 })

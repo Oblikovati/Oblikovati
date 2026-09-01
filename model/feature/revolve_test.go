@@ -19,6 +19,7 @@ import (
 // washers; the index points at the far (large) one while the seed points at the near (small)
 // one — the seed must win.
 func TestRevolveSeedResolvesAtRecomputeNotStaleIndex(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	l := sk.Lines()
 	cl := l.AddByTwoPoints(math.P2(0, 0), math.P2(0, 1)) // Y-axis centerline
@@ -53,6 +54,7 @@ func TestRevolveSeedResolvesAtRecomputeNotStaleIndex(t *testing.T) {
 // TestRevolveAboutSketchCenterline spins a profile about the sketch's own centerline (Inventor's
 // common flow), producing the same washer as revolving about an explicit Y work axis.
 func TestRevolveAboutSketchCenterline(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := offsetSquareSketch(2, 2)                                // square x∈[2,4], y∈[0,2]
 	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2)) // vertical centerline = Y axis
@@ -74,6 +76,7 @@ func TestRevolveAboutSketchCenterline(t *testing.T) {
 
 // A revolve with neither an axis nor a sketch centerline is sick.
 func TestRevolveNoAxisOrCenterlineSick(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewRevolveFeatures(fs).AddAboutCenterline(offsetSquareSketch(2, 2), 0, nil, ops.NewBody)
 	fs.Recompute()
@@ -103,6 +106,7 @@ func yAxis() *WorkAxis {
 }
 
 func TestRevolveFullMakesValidWasher(t *testing.T) {
+	t.Parallel()
 	// Square x∈[2,4], y∈[0,2] revolved 360° about Y → a washer: inner r=2, outer r=4,
 	// height 2 → volume π(4²−2²)·2 = 24π.
 	fs := NewPartFeatures(nil)
@@ -126,6 +130,7 @@ func TestRevolveFullMakesValidWasher(t *testing.T) {
 }
 
 func TestRevolvePartialIsCappedSolid(t *testing.T) {
+	t.Parallel()
 	// A 90° revolve of the same square → a quarter washer, volume 24π/4 = 6π, capped.
 	fs := NewPartFeatures(nil)
 	pf := NewRevolveFeatures(fs).Add(offsetSquareSketch(2, 2), 0, yAxis(),
@@ -146,6 +151,7 @@ func TestRevolvePartialIsCappedSolid(t *testing.T) {
 }
 
 func TestRevolveOpenProfileGoesSick(t *testing.T) {
+	t.Parallel()
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	c0 := s.Points().Add(math.P2(2, 0))
 	c1 := s.Points().Add(math.P2(4, 0))

@@ -13,6 +13,7 @@ import (
 // UNBOUND, rebinds a newer-revision source, and checks it flags out of date and
 // re-simplifies the source into one enveloped body.
 func TestShrinkwrapSourceLinkAndOptionsRoundTrip(t *testing.T) {
+	t.Parallel()
 	block := solidBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2)) // volume 8
 	src := &fakeAssemblySource{placed: []PlacedBody{
 		{Body: block, Transform: math.Identity4(), Source: occFor("a:1")},

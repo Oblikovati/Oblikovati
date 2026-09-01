@@ -27,6 +27,7 @@ func countConeFaces(b *topo.Body) int {
 // A through countersink: a 90° cone widening to Ø4 at the surface, narrowing to a Ø2 bore
 // through a 10×10×6 slab. Valid watertight solid with a cone wall + a cylinder bore wall.
 func TestCutCountersinkThrough(t *testing.T) {
+	t.Parallel()
 	const ha = stdmath.Pi / 4 // 90° included → 45° half-angle, tan = 1
 	d, err := brep.CutCountersinkHole(box(0, 0, 0, 10, 10, 6), math.P3(5, 5, 6), math.V3(0, 0, -1), 1, 0, 2, ha, true)
 	if err != nil {
@@ -56,6 +57,7 @@ func TestCutCountersinkThrough(t *testing.T) {
 }
 
 func TestCutCountersinkRejectsInvalidInputs(t *testing.T) {
+	t.Parallel()
 	slab := box(0, 0, 0, 10, 10, 6)
 	for _, tc := range []struct {
 		name       string

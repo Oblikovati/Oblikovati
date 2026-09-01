@@ -14,6 +14,7 @@ import (
 // part sketch's distance dimension is resolved to a ModelDimension with the parameter name, the
 // solved value, and the two world endpoints via the sketch plane (#1991).
 func TestSketchDistanceDimensionExtraction(t *testing.T) {
+	t.Parallel()
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	a := s.Points().Add(math.P2(0, 0))
 	b := s.Points().Add(math.P2(3, 0)) // starts 3 cm apart

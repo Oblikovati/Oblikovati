@@ -26,6 +26,7 @@ func smoothNotchFactor() float64 { return 1 - stdmath.Pi/4 }
 // chord-geometry integral c·∫r(z)²dz = c·L·(r0²+r0·r1+r1²)/3 — the strip faces
 // and chorded end fans are all planar, so the tessellation adds no error.
 func TestFilletVaryingRadiusVolume(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	pick := ops.EdgeFilletRadii{Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0.6}
 	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{pick})
@@ -69,6 +70,7 @@ func blendSurfaceFaces(b *topo.Body) int {
 // the end (#695). The removed volume is the per-segment chord integral summed — every
 // ruling strip is still planar, so the tessellation adds no error.
 func TestFilletIntermediateRadiiVolume(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	pick := ops.EdgeFilletRadii{
 		Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0.4,
@@ -94,6 +96,7 @@ func TestFilletIntermediateRadiiVolume(t *testing.T) {
 
 // TestFilletIntermediateRadiiValidation rejects out-of-range and non-increasing points (#695).
 func TestFilletIntermediateRadiiValidation(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	key := verticalEdgeKey(t, box)
 	cases := map[string][]ops.FilletRadiusPoint{
@@ -112,6 +115,7 @@ func TestFilletIntermediateRadiiValidation(t *testing.T) {
 // TestFilletVaryingCollapsesToConstant: equal end radii through the varying API
 // must reproduce the constant cylinder fillet exactly.
 func TestFilletVaryingCollapsesToConstant(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	key := verticalEdgeKey(t, box)
 	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{{Key: key, R0: 0.5, R1: 0.5}})
@@ -127,6 +131,7 @@ func TestFilletVaryingCollapsesToConstant(t *testing.T) {
 // filleted edge at a corner has no watertight blend — a precise error, not a
 // broken body.
 func TestFilletVaryingAtSharedCornerRejected(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	vert := verticalEdgeKey(t, box)
 	v, _ := box.FindEdgeByKey(vert)
@@ -152,6 +157,7 @@ func TestFilletVaryingAtSharedCornerRejected(t *testing.T) {
 // surface. Assert every boundary vertex lies exactly on the blend surface and the surface is
 // G1 across its interior (machine-precision normal continuity — it is one analytic patch).
 func TestFilletVaryingBlendIsExactAndG1(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	pick := ops.EdgeFilletRadii{Key: verticalEdgeKey(t, box), R0: 0.2, R1: 0.7}
 	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{pick})

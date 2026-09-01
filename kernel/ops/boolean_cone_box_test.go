@@ -30,6 +30,7 @@ func coneBoxFrustum(t *testing.T) *topo.Body {
 // TestConeIntersectBoxExact keeps the +x wedge of the frustum (x ≥ 2): an exact cone arc-band face,
 // two cap segments and the planar lid, watertight, with no faceted soup.
 func TestConeIntersectBoxExact(t *testing.T) {
+	t.Parallel()
 	frustum := coneBoxFrustum(t)
 	box, err := brep.SolidBlock(math.P3(2, -20, -5), math.P3(20, 20, 15), "box")
 	if err != nil {
@@ -45,6 +46,7 @@ func TestConeIntersectBoxExact(t *testing.T) {
 // TestConeCutBoxExact removes the +x wedge (the box spans the frustum on every side but x), leaving
 // the cone minus a flat — still an exact cone arc-band face.
 func TestConeCutBoxExact(t *testing.T) {
+	t.Parallel()
 	frustum := coneBoxFrustum(t)
 	box, err := brep.SolidBlock(math.P3(2, -20, -5), math.P3(20, 20, 15), "box")
 	if err != nil {
@@ -85,6 +87,7 @@ func assertConeBoxExact(t *testing.T, res *topo.Body) {
 // TestConeIntersectBoxVolume cross-checks the kept +x wedge volume against a dense numeric integral of
 // the frustum cross-section area beyond x=2 (independent of the B-rep), so a wrong cut shape is caught.
 func TestConeIntersectBoxVolume(t *testing.T) {
+	t.Parallel()
 	frustum := coneBoxFrustum(t)
 	box, _ := brep.SolidBlock(math.P3(2, -20, -5), math.P3(20, 20, 15), "box")
 	res, err := ops.Boolean(ops.Intersect, frustum, box)
@@ -115,6 +118,7 @@ func coneVertexInsideBox(t *testing.T) *topo.Body {
 // TestConeIntersectBoxVertexInsideExact keeps the +x tongue (x ≥ 4) — an exact cone face narrowing to
 // the hyperbola vertex, with the small rim wholly dropped.
 func TestConeIntersectBoxVertexInsideExact(t *testing.T) {
+	t.Parallel()
 	res, err := ops.Boolean(ops.Intersect, coneBoxFrustum(t), coneVertexInsideBox(t))
 	if err != nil {
 		t.Fatalf("Boolean(Intersect): %v", err)
@@ -125,6 +129,7 @@ func TestConeIntersectBoxVertexInsideExact(t *testing.T) {
 // TestConeCutBoxVertexInsideExact removes the +x tongue, leaving the cone minus a flat that fades out
 // before the small rim — an exact notched-annulus cone face.
 func TestConeCutBoxVertexInsideExact(t *testing.T) {
+	t.Parallel()
 	res, err := ops.Boolean(ops.Cut, coneBoxFrustum(t), coneVertexInsideBox(t))
 	if err != nil {
 		t.Fatalf("Boolean(Cut): %v", err)
@@ -139,6 +144,7 @@ func TestConeCutBoxVertexInsideExact(t *testing.T) {
 // (proving the B-rep is exact, not just close), so this verifies the cut SHAPE at a fine quality where
 // chord error is negligible — the geometry is right, independent of display tessellation density.
 func TestConeVertexInsideVolumes(t *testing.T) {
+	t.Parallel()
 	tongue := frustumCapBeyondPlaneVolume(0.3, 0, 10, 4)
 	full := 210 * stdmath.Pi
 	fine := ops.Quality{ChordTolerance: 0.005, AngleTolerance: 5 * stdmath.Pi / 180}
@@ -188,6 +194,7 @@ func obliqueConeBox(t *testing.T) *topo.Body {
 // TestConeIntersectBoxObliqueExact keeps the frustum above z=4 — an exact cone band bounded below by the
 // elliptical lid, no faceted soup.
 func TestConeIntersectBoxObliqueExact(t *testing.T) {
+	t.Parallel()
 	res, err := ops.Boolean(ops.Intersect, obliqueConeBoxFrustum(t), obliqueConeBox(t))
 	if err != nil {
 		t.Fatalf("Boolean(Intersect): %v", err)
@@ -200,6 +207,7 @@ func TestConeIntersectBoxObliqueExact(t *testing.T) {
 
 // TestConeCutBoxObliqueExact removes the frustum above z=4, leaving the lower piece — also exact.
 func TestConeCutBoxObliqueExact(t *testing.T) {
+	t.Parallel()
 	res, err := ops.Boolean(ops.Cut, obliqueConeBoxFrustum(t), obliqueConeBox(t))
 	if err != nil {
 		t.Fatalf("Boolean(Cut): %v", err)
@@ -248,6 +256,7 @@ func obliqueHyperbolaBox(t *testing.T) *topo.Body {
 // TestConeIntersectBoxObliqueHyperbolaExact keeps the +x wedge (x ≥ 2) of the tilted frustum — an exact
 // cone arc-band bounded by the hyperbola arms, no faceted soup.
 func TestConeIntersectBoxObliqueHyperbolaExact(t *testing.T) {
+	t.Parallel()
 	res, err := ops.Boolean(ops.Intersect, obliqueHyperbolaFrustum(t), obliqueHyperbolaBox(t))
 	if err != nil {
 		t.Fatalf("Boolean(Intersect): %v", err)
@@ -260,6 +269,7 @@ func TestConeIntersectBoxObliqueHyperbolaExact(t *testing.T) {
 
 // TestConeCutBoxObliqueHyperbolaExact removes the +x wedge, leaving the rest — also exact.
 func TestConeCutBoxObliqueHyperbolaExact(t *testing.T) {
+	t.Parallel()
 	res, err := ops.Boolean(ops.Cut, obliqueHyperbolaFrustum(t), obliqueHyperbolaBox(t))
 	if err != nil {
 		t.Fatalf("Boolean(Cut): %v", err)
@@ -295,6 +305,7 @@ func obliqueVertexInsideBox(t *testing.T) *topo.Body {
 }
 
 func TestConeIntersectBoxObliqueVertexInsideExact(t *testing.T) {
+	t.Parallel()
 	res, err := ops.Boolean(ops.Intersect, obliqueHyperbolaFrustum(t), obliqueVertexInsideBox(t))
 	if err != nil {
 		t.Fatalf("Boolean(Intersect): %v", err)
@@ -306,6 +317,7 @@ func TestConeIntersectBoxObliqueVertexInsideExact(t *testing.T) {
 }
 
 func TestConeCutBoxObliqueVertexInsideExact(t *testing.T) {
+	t.Parallel()
 	res, err := ops.Boolean(ops.Cut, obliqueHyperbolaFrustum(t), obliqueVertexInsideBox(t))
 	if err != nil {
 		t.Fatalf("Boolean(Cut): %v", err)
@@ -344,6 +356,7 @@ func parabolaBox(t *testing.T) *topo.Body {
 // TestConeIntersectBoxParabolaExact keeps the +x wedge of the tilted frustum — an exact cone arc-band
 // bounded by the parabola arms.
 func TestConeIntersectBoxParabolaExact(t *testing.T) {
+	t.Parallel()
 	res, err := ops.Boolean(ops.Intersect, parabolaFrustum(t), parabolaBox(t))
 	if err != nil {
 		t.Fatalf("Boolean(Intersect): %v", err)
@@ -356,6 +369,7 @@ func TestConeIntersectBoxParabolaExact(t *testing.T) {
 
 // TestConeCutBoxParabolaExact removes the +x wedge — also exact.
 func TestConeCutBoxParabolaExact(t *testing.T) {
+	t.Parallel()
 	res, err := ops.Boolean(ops.Cut, parabolaFrustum(t), parabolaBox(t))
 	if err != nil {
 		t.Fatalf("Boolean(Cut): %v", err)

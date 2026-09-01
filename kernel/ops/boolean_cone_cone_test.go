@@ -48,6 +48,7 @@ func coneConeIntersectVolume() float64 {
 // TestBooleanIntersectConeCone crosses a narrow frustum through a fatter frustum and checks the result is the
 // exact three-face analytic solid (all cone faces) with the analytic cone∩cone volume.
 func TestBooleanIntersectConeCone(t *testing.T) {
+	t.Parallel()
 	thin, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
 	fat, _ := brep.SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 
@@ -85,6 +86,7 @@ func coneConeBodies() (thin, fat *topo.Body) {
 // analytic solid (two fat-cone caps, the holed fat-cone wall, the rod-cone tunnel) whose volume is the fat
 // cone minus the cone∩cone.
 func TestBooleanCutConeConeDrillsFat(t *testing.T) {
+	t.Parallel()
 	thin, fat := coneConeBodies()
 	res, err := ops.Boolean(ops.Cut, fat, thin)
 	if err != nil {
@@ -105,6 +107,7 @@ func TestBooleanCutConeConeDrillsFat(t *testing.T) {
 // TestBooleanCutConeConeStubs subtracts the fat cone from the rod cone (cone − fat): the two disconnected
 // tapered stubs (a two-shell solid) whose total volume is the rod cone minus the cone∩cone.
 func TestBooleanCutConeConeStubs(t *testing.T) {
+	t.Parallel()
 	thin, fat := coneConeBodies()
 	res, err := ops.Boolean(ops.Cut, thin, fat)
 	if err != nil {
@@ -127,6 +130,7 @@ func TestBooleanCutConeConeStubs(t *testing.T) {
 // solid (fat-cone caps, holed fat-cone wall, a tapered stub each side) whose volume is fat + rod − the
 // cone∩cone.
 func TestBooleanJoinConeCone(t *testing.T) {
+	t.Parallel()
 	thin, fat := coneConeBodies()
 	res, err := ops.Boolean(ops.Join, fat, thin)
 	if err != nil {

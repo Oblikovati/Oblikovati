@@ -43,6 +43,7 @@ func rowByName(rows []ParameterRow, name string) (ParameterRow, bool) {
 // TestImportParametersRollsBackOnError: a rejected parameter import restores the pre-import
 // snapshot and adds nothing — the snapshot/rollback path (now on the fast snapshot codec).
 func TestImportParametersRollsBackOnError(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	ps := partParams(t, s)
 	if _, err := ps.AddUserParameter("keep", "3 mm"); err != nil {
@@ -63,6 +64,7 @@ func TestImportParametersRollsBackOnError(t *testing.T) {
 }
 
 func TestParametersCommandOpensDialog(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -87,6 +89,7 @@ func TestParametersCommandOpensDialog(t *testing.T) {
 
 // TestParameterRowsSplitAndFilter checks Model vs User splitting and the search filter.
 func TestParameterRowsSplitAndFilter(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	ps := partParams(t, s)
 	if _, err := ps.AddModelParameter("d0", "10 mm"); err != nil {
@@ -115,6 +118,7 @@ func TestParameterRowsSplitAndFilter(t *testing.T) {
 
 // TestParameterEditFlow drives the dialog's edit verbs end to end.
 func TestParameterEditFlow(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	if err := s.AddNumericUserParameter("len", "10 mm"); err != nil {
 		t.Fatalf("AddNumericUserParameter: %v", err)
@@ -174,6 +178,7 @@ func TestParameterEditFlow(t *testing.T) {
 
 // TestAddBooleanAndTextParameters covers the non-numeric add verbs and their rows.
 func TestAddBooleanAndTextParameters(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	if err := s.AddBooleanUserParameter("vented", true); err != nil {
 		t.Fatalf("AddBooleanUserParameter: %v", err)

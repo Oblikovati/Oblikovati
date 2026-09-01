@@ -26,6 +26,7 @@ func partWithTwoPanels(t *testing.T) (*Session, *compdef.PartComponentDefinition
 }
 
 func TestBridgeSurfaceToolConnectsPanels(t *testing.T) {
+	t.Parallel()
 	s, def := partWithTwoPanels(t)
 	tool := NewBridgeSurfaceTool() // G2 both sides
 	s.StartTool(tool)
@@ -45,6 +46,7 @@ func TestBridgeSurfaceToolConnectsPanels(t *testing.T) {
 }
 
 func TestBridgeSurfaceToolParams(t *testing.T) {
+	t.Parallel()
 	tool := NewBridgeSurfaceTool()
 	if tool.Name() != "Bridge Surface" || tool.Prompt(nil) == "" || !tool.CanCommit() {
 		t.Error("bridge tool should name, prompt and be committable by default")
@@ -65,6 +67,7 @@ func TestBridgeSurfaceToolParams(t *testing.T) {
 }
 
 func TestBridgeSurfaceViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithTwoPanels(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
@@ -80,6 +83,7 @@ func TestBridgeSurfaceViaRibbonCommand(t *testing.T) {
 // TestBridgeSurfaceToolDraftFeature pins the #1626 commit-gate seam: no draft with an
 // out-of-range continuity, a non-nil draft once commit-ready.
 func TestBridgeSurfaceToolDraftFeature(t *testing.T) {
+	t.Parallel()
 	tool := NewBridgeSurfaceTool()
 	tool.SetContinuity(3, 2) // 3 is past G2: out of range
 	if _, ok := tool.DraftFeature(nil); ok {

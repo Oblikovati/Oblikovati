@@ -13,6 +13,7 @@ import (
 // TestSplineFitMethodOverWire: a spline created with a fit method reports it
 // in the entity enumeration; unknown spellings are rejected (M06-F11, #626).
 func TestSplineFitMethodOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var added wire.AddSketchEntityResult
 	call(t, r, s, "sketch.addEntity",
@@ -45,6 +46,7 @@ func TestSplineFitMethodOverWire(t *testing.T) {
 // TestSplineHandleOverWire: activate → edit → deactivate, with the handle
 // visible in the entity enumeration while active.
 func TestSplineHandleOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var added wire.AddSketchEntityResult
 	call(t, r, s, "sketch.addEntity",
@@ -85,6 +87,7 @@ func TestSplineHandleOverWire(t *testing.T) {
 // TestTextBoxAnchorOverWire: the auto-created anchor enumerates as a
 // non-deletable textBox constraint and deleteConstraint refuses it.
 func TestTextBoxAnchorOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "sketch.addText",
 		`{"sketchIndex":0,"anchor":[1,1],"text":"label","height":"5 mm"}`, nil)
@@ -112,6 +115,7 @@ func TestTextBoxAnchorOverWire(t *testing.T) {
 // TestCustomConstraintOverWire: an add-in tags entities; the tag enumerates
 // with its owner; an anonymous tag is rejected.
 func TestCustomConstraintOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var ents wire.EnumerateEntitiesResult
 	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)

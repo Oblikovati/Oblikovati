@@ -10,6 +10,7 @@ import (
 )
 
 func TestExplicitSuppressionPassesBodiesThrough(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	fs.Add(body())
 	mid := fs.Add(body())
@@ -29,6 +30,7 @@ func TestExplicitSuppressionPassesBodiesThrough(t *testing.T) {
 }
 
 func TestConditionalSuppressionTogglesWithExpression(t *testing.T) {
+	t.Parallel()
 	ps := param.NewParameters()
 	count, _ := ps.AddUserParameter("count", "1")
 	fs := NewPartFeatures(ps)
@@ -52,6 +54,7 @@ func TestConditionalSuppressionTogglesWithExpression(t *testing.T) {
 }
 
 func TestReorderRejectedPastDependency(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	base := fs.Add(body())
 	dependent := fs.Add(body(), base.ID()) // dependent must stay after base
@@ -67,6 +70,7 @@ func TestReorderRejectedPastDependency(t *testing.T) {
 }
 
 func TestValidReorderReEvaluates(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	a := fs.Add(body())
 	b := fs.Add(body())
@@ -86,6 +90,7 @@ func TestValidReorderReEvaluates(t *testing.T) {
 }
 
 func TestEndOfPartExcludesTrailingFeatures(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	fs.Add(body())
 	fs.Add(body())
@@ -111,6 +116,7 @@ func TestEndOfPartExcludesTrailingFeatures(t *testing.T) {
 }
 
 func TestComparisonOperators(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		v   float64
 		cmp ComparisonType
@@ -134,6 +140,7 @@ func TestComparisonOperators(t *testing.T) {
 }
 
 func TestFeatureAccessorsAndEdges(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	f := fs.Add(body())
 	if f.Name() != "box" || f.Definition() == nil || f.Suppressed() {

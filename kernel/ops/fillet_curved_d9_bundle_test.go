@@ -30,6 +30,7 @@ var d9CapStation = math.P3(-10, 0, 129.9038105676658)
 // contact rail whose outer end is the interior far-vertex station. Reverting the rulingStationOuter
 // fallback re-reddens this (the D9-T1 mutation check).
 func TestD9CylinderArmBundleBuilds(t *testing.T) {
+	t.Parallel()
 	body := corpusFixture(t, "simple/D9.step")
 	arms, w, res := d9CornerArms(t, body)
 	i := d9CylinderArmIndex(t, w)

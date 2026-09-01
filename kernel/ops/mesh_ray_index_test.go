@@ -44,6 +44,7 @@ func bruteNearest(pos []math.Point3, tris [][3]int32, o math.Point3, d math.Vect
 // distance as an exhaustive scan, over many rays aimed at a grid mesh — the correctness the
 // hover-safe pick depends on.
 func TestMeshRayIndexMatchesBruteForce(t *testing.T) {
+	t.Parallel()
 	pos, tris := gridMesh(16)
 	idx := NewMeshRayIndex(pos, tris)
 	if idx == nil {
@@ -65,6 +66,7 @@ func TestMeshRayIndexMatchesBruteForce(t *testing.T) {
 // TestMeshRayIndexMissAndEmpty: a ray that misses the mesh returns ok=false, and an empty mesh
 // yields a nil index.
 func TestMeshRayIndexMissAndEmpty(t *testing.T) {
+	t.Parallel()
 	pos, tris := gridMesh(4)
 	idx := NewMeshRayIndex(pos, tris)
 	if _, _, ok := idx.Nearest(math.P3(-5, -5, 10), math.V3(0, 0, -1)); ok {

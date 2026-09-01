@@ -23,6 +23,7 @@ func placeDistanceDim(t *testing.T, s *Session, sk *sketch.Sketch, a, b math.Poi
 }
 
 func TestPlacingDimensionMakesItPending(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	placeDistanceDim(t, s, sk, math.P2(0, 0), math.P2(3, 0))
 	if s.PendingDimension() == nil {
@@ -34,6 +35,7 @@ func TestPlacingDimensionMakesItPending(t *testing.T) {
 }
 
 func TestCommitPendingDimensionDrivesGeometry(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	a := sk.Points().Add(math.P2(0, 0))
 	b := sk.Points().Add(math.P2(3, 0)) // 3 cm apart
@@ -59,6 +61,7 @@ func TestCommitPendingDimensionDrivesGeometry(t *testing.T) {
 // number typed into the value box means the document's display unit (7 → 7 mm), not the raw
 // database unit (which would drive 7 cm = 70 mm). The default document is millimetres (#1783).
 func TestCommitBareNumberUsesDocumentUnit(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	a := sk.Points().Add(math.P2(0, 0))
 	b := sk.Points().Add(math.P2(3, 0)) // 3 cm apart
@@ -78,6 +81,7 @@ func TestCommitBareNumberUsesDocumentUnit(t *testing.T) {
 }
 
 func TestCommitInvalidExpressionKeepsPending(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	placeDistanceDim(t, s, sk, math.P2(0, 0), math.P2(3, 0))
 	if err := s.CommitPendingDimension("not a number ++"); err == nil {
@@ -89,6 +93,7 @@ func TestCommitInvalidExpressionKeepsPending(t *testing.T) {
 }
 
 func TestCancelPendingDimensionKeepsMeasuredValue(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	placeDistanceDim(t, s, sk, math.P2(0, 0), math.P2(3, 0))
 	s.CancelPendingDimension()
@@ -101,6 +106,7 @@ func TestCancelPendingDimensionKeepsMeasuredValue(t *testing.T) {
 }
 
 func TestFinishSketchClearsPendingDimension(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	placeDistanceDim(t, s, sk, math.P2(0, 0), math.P2(3, 0))
 	if err := s.FinishSketch(); err != nil {
@@ -112,6 +118,7 @@ func TestFinishSketchClearsPendingDimension(t *testing.T) {
 }
 
 func TestBeginEditDimensionReopens(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	placeDistanceDim(t, s, sk, math.P2(0, 0), math.P2(3, 0))
 	d := sk.DimensionConstraints().Item(0)

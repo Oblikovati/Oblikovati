@@ -35,6 +35,7 @@ func onBothSurfaces(t *testing.T, a, b Surface, loops [][]math.Point3, tol float
 // TestSSISmallOverlapCircleIsClosed: two equal spheres overlapping by a little intersect in a small
 // circle. The tracer must return ONE closed loop at the right plane and radius, every point on both.
 func TestSSISmallOverlapCircleIsClosed(t *testing.T) {
+	t.Parallel()
 	const r, d = 5.0, 9.5
 	a, _ := NewSphere(math.P3(0, 0, 0), r)
 	b, _ := NewSphere(math.P3(0, 0, d), r)
@@ -66,6 +67,7 @@ func TestSSISmallOverlapCircleIsClosed(t *testing.T) {
 // TestSSITangentSpheresReturnPoint: two externally tangent spheres touch at one point. The tracer must
 // return a (degenerate) result AT the contact, not empty — the case a sign-change contour drops.
 func TestSSITangentSpheresReturnPoint(t *testing.T) {
+	t.Parallel()
 	a, _ := NewSphere(math.P3(0, 0, 0), 5)
 	b, _ := NewSphere(math.P3(10, 0, 0), 5) // tangent at (5,0,0)
 	loops := IntersectSurfaceSurface(a, b, SurfaceGrid{})
@@ -84,6 +86,7 @@ func TestSSITangentSpheresReturnPoint(t *testing.T) {
 // TestSSIPointsLieOnBothSurfaces: a sphere cut by an offset plane — every traced point must lie on
 // both, projected onto each.
 func TestSSIPointsLieOnBothSurfaces(t *testing.T) {
+	t.Parallel()
 	a, _ := NewSphere(math.P3(0, 0, 0), 6)
 	pl, _ := NewPlane(math.P3(0, 0, 2), math.V3(0, 0, 1)) // z=2 cut
 	loops := IntersectSurfaceSurface(a, pl, SurfaceGrid{})
@@ -101,6 +104,7 @@ func TestSSIPointsLieOnBothSurfaces(t *testing.T) {
 // NURBS bump patch cut by a plane through the bump. Every traced point must land on both surfaces via
 // the surface's Gauss–Newton inversion, and the cut must be a closed loop (the bump is a single hump).
 func TestSSINurbsPatchCutByPlane(t *testing.T) {
+	t.Parallel()
 	s := nurbsBump(t) // biquadratic bump on [0,1]², rising to ~0.5 in the middle, 0 at the corners
 	pl, _ := NewPlane(math.P3(0, 0, 0.3), math.V3(0, 0, 1))
 	loops := IntersectSurfaceSurface(s, pl, SurfaceGrid{})
@@ -155,6 +159,7 @@ func planarDiagonal(loop []math.Point3) bool {
 // topologically-complete closed loops — not stop at the first pinch and silently drop the open arcs, the
 // old behaviour that forced the bespoke curved_steinmetz analytic family.
 func TestSSITracesThroughSteinmetzPinch(t *testing.T) {
+	t.Parallel()
 	const r = 3.0
 	a, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), r) // axis x
 	b, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r) // axis z
@@ -179,6 +184,7 @@ func TestSSITracesThroughSteinmetzPinch(t *testing.T) {
 // corrector's near-tangency descent must follow that turn so BOTH loops come back closed — no silently
 // dropped chain (Oblikovati#1404).
 func TestSSINearPinchKeepsBothLoops(t *testing.T) {
+	t.Parallel()
 	a, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 3.0)
 	b, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3.0-1e-6)
 	loops := closedOnly(IntersectSurfaceSurface(a, b, SurfaceGrid{VMin: -4, VMax: 4}))
@@ -192,6 +198,7 @@ func TestSSINearPinchKeepsBothLoops(t *testing.T) {
 // in two near-tangent circles; the descent corrector traces both as closed loops through the shallow
 // (near-parallel-normal) crossing rather than dropping them (Oblikovati#1404).
 func TestSSINearTangentSphereCylinderClosesLoops(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 3.0001)
 	cy, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3.0)
 	loops := closedOnly(IntersectSurfaceSurface(sp, cy, SurfaceGrid{}))
@@ -204,6 +211,7 @@ func TestSSINearTangentSphereCylinderClosesLoops(t *testing.T) {
 // TestSSIAgreesWithAnalyticOnSpherePlane: the tracer's sphere∩plane circle must match the analytic
 // equator (radius and planarity), the acceptance cross-check against the analytic path.
 func TestSSIAgreesWithAnalyticOnSpherePlane(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 5)
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	curves, handled := IntersectSurfacesAnalytic(sp, pl, ResolutionForSize(1))
@@ -227,6 +235,7 @@ func TestSSIAgreesWithAnalyticOnSpherePlane(t *testing.T) {
 // collapsing step and tolerance until every trace silently fell back to marching squares. The sampled
 // lattice keeps each closed direction's girth in the bounding box.
 func TestSSIExtentClosedSurfaceSampledBox(t *testing.T) {
+	t.Parallel()
 	torus, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 50, 10)
 	if ext := ssiExtent(torus, resolveGrid(torus, SurfaceGrid{})); ext < 120 || ext > 180 {
 		t.Errorf("torus R=50/r=10 extent %g, want the sampled-box diagonal ≈170.9 (corner estimate was ~1e-14)", ext)
@@ -241,6 +250,7 @@ func TestSSIExtentClosedSurfaceSampledBox(t *testing.T) {
 // analytic circles r=40 and r=60 VIA THE TRACER — the #1597 regression: with the collapsed extent
 // every seed failed to march and the (coarser) marching-squares fallback silently supplied the curves.
 func TestSSITorusPlaneTwoCircles(t *testing.T) {
+	t.Parallel()
 	torus, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 50, 10)
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	tr := TraceSurfaceIntersection(torus, pl, SurfaceGrid{})
@@ -284,6 +294,7 @@ func loopAxisRadius(loop []math.Point3) (mean, worst float64) {
 // of stepping clean over the feature. A sphere of radius 0.002 centred on the unit sphere meets it in a
 // circle of circumference ≈ 0.0126 < h₀ ≈ 0.0139.
 func TestSSITracesLoopSmallerThanBootstrapStep(t *testing.T) {
+	t.Parallel()
 	big, _ := NewSphere(math.P3(0, 0, 0), 1)
 	centre := big.PointAt(0.31, 0.21) // off the coarse seed lattice, as in the #1400 fixture
 	small, _ := NewSphere(centre, 0.002)
@@ -305,6 +316,7 @@ func TestSSITracesLoopSmallerThanBootstrapStep(t *testing.T) {
 // against the analytic circle must stay within the chordal budget ε = 1e-4·extent that drives the
 // h = 2√(2ε/κ) step law.
 func TestSSIChordalDeviationOnTightCircle(t *testing.T) {
+	t.Parallel()
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	cyl, _ := NewCylinder(math.P3(0.37, 0.11, 0), math.V3(0, 0, 1), 0.05)
 	grid := SurfaceGrid{UMin: -5, UMax: 5, VMin: -5, VMax: 5}

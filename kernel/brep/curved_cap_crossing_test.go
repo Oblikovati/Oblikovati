@@ -24,6 +24,7 @@ func capCrossTool45(baseX float64) *topo.Body {
 
 // TestCapCrossingAcceptsInteriorExit is the positive control: the certified slice-1 fixture builds.
 func TestCapCrossingAcceptsInteriorExit(t *testing.T) {
+	t.Parallel()
 	target, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	res, ok := CapCrossingCutGeneral(target, capCrossTool45(-6.5), nil)
 	if !ok {
@@ -37,6 +38,7 @@ func TestCapCrossingAcceptsInteriorExit(t *testing.T) {
 // TestCapCrossingDeclinesRimCrossing: shifting the tool outward pushes the exit ellipse PAST the cap rim (a
 // rim-crossing corner, the deferred sub-family), so ellipseInsideRim fails and slice 1 declines.
 func TestCapCrossingDeclinesRimCrossing(t *testing.T) {
+	t.Parallel()
 	target, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	// base x=-5.6 → exit-ellipse centre near x=2.4, semi-major 1.27 reaches ~3.67 > rim 3 → crosses the rim.
 	if _, ok := CapCrossingCutGeneral(target, capCrossTool45(-5.6), nil); ok {
@@ -48,6 +50,7 @@ func TestCapCrossingDeclinesRimCrossing(t *testing.T) {
 // caps has no cap-exit ellipse — the plain crossing cut CrossingCylinderCutGeneral owns it, so the
 // cap-crossing recognizer declines.
 func TestCapCrossingDeclinesNoCapExit(t *testing.T) {
+	t.Parallel()
 	target, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	horizontal, _ := SolidCylinder(math.P3(-6, 0, 5), math.V3(1, 0, 0), 0.9, 12)
 	if _, ok := CapCrossingCutGeneral(target, horizontal, nil); ok {
@@ -59,6 +62,7 @@ func TestCapCrossingDeclinesNoCapExit(t *testing.T) {
 // head-on (|n·d| > capEllipseCosMax), so there is no transversal wall crossing — capExitEllipse gates it
 // out and slice 1 declines (near-coaxial is the drill/boss family, not a cap crossing).
 func TestCapCrossingDeclinesNearCoaxial(t *testing.T) {
+	t.Parallel()
 	target, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	nearAxial, _ := SolidCylinder(math.P3(1, 0, -2), math.V3(0.02, 0, 1), 0.9, 16)
 	if _, ok := CapCrossingCutGeneral(target, nearAxial, nil); ok {

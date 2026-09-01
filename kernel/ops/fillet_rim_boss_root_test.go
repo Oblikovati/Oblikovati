@@ -61,6 +61,7 @@ func bossOnPlate(t *testing.T) (*topo.Body, []byte) {
 // parametrization, not the fresh replacement circles solveRim builds). It must now build a genuinely
 // valid, manifold solid with every edge 2-incident and antiparallel — not just "no error returned".
 func TestFilletRimBossRootOrientationConsistent(t *testing.T) {
+	t.Parallel()
 	body, rimKey := bossOnPlate(t)
 	res, err := ops.FilletEdges(body, [][]byte{rimKey}, 1.0)
 	if err != nil {

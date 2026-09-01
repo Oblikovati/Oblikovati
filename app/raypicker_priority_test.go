@@ -12,6 +12,7 @@ import (
 // logic under test (highestPriority, nearestCandidate) depends solely on each candidate's kind.
 
 func TestHighestPriorityDefaultOrder(t *testing.T) {
+	t.Parallel()
 	p := &RayPicker{}
 	// Vertex outranks edge by default (the historical snap order), independent of insertion order.
 	got, ok := p.highestPriority([]Selectable{EdgeHandle{}, VertexHandle{}})
@@ -24,6 +25,7 @@ func TestHighestPriorityDefaultOrder(t *testing.T) {
 }
 
 func TestHighestPriorityHonoursUserRank(t *testing.T) {
+	t.Parallel()
 	p := &RayPicker{}
 	st := NewSelectionFilterState()
 	st.Move(st.Rank(SelectEdge), 0) // drag Edges above Vertices
@@ -35,6 +37,7 @@ func TestHighestPriorityHonoursUserRank(t *testing.T) {
 }
 
 func TestNearestCandidateProximityWinsBeyondWindow(t *testing.T) {
+	t.Parallel()
 	p := &RayPicker{} // zero camera ⇒ depthTieEpsilon 0, so only the nearer hit qualifies
 	cands := []pickCandidate{
 		{t: 5.0, sel: ProfileHandle{}}, // nearer (in front)
@@ -50,6 +53,7 @@ func TestNearestCandidateProximityWinsBeyondWindow(t *testing.T) {
 }
 
 func TestNearestCandidateCoincidentResolvesByPriority(t *testing.T) {
+	t.Parallel()
 	p := &RayPicker{}
 	// Exactly coincident depth (within the zero-epsilon window): default order prefers the face
 	// over the profile (a solid on its sketch), matching the historical append precedence.
@@ -67,6 +71,7 @@ func TestNearestCandidateCoincidentResolvesByPriority(t *testing.T) {
 // coincident vertex+edge by the live SelectionFilterState order, and reordering then re-pushing
 // flips the winner — the seam the Selection Filter window relies on (#1222).
 func TestSessionPushesPriorityRankToPicker(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	p := NewRayPicker(s.Camera(), func() []*topo.Body { return nil })
 	s.SetPicker(p) // pushes s.selectionFilterState.Rank

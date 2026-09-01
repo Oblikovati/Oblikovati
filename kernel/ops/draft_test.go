@@ -14,6 +14,7 @@ import (
 // TestDraftTapersSideFace drafts the +X face of a 2×2×2 box inward by atan(0.25) about +Z:
 // the face hinges at its base (z=0) and leans in, removing a 4·tan(angle)=1 wedge ⇒ vol 7.
 func TestDraftTapersSideFace(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	var side []byte
 	for _, f := range box.Faces() {
@@ -37,6 +38,7 @@ func TestDraftTapersSideFace(t *testing.T) {
 // face/edge's identity (a 1:1 rebuild), so a selection on ANY face — the drafted one or an
 // untouched neighbour — survives. Before, the rebuild renamed everything to draft:f#N / draft:e#N.
 func TestDraftPreservesFaceIdentity(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	var side, top []byte
 	for _, f := range box.Faces() {
@@ -60,6 +62,7 @@ func TestDraftPreservesFaceIdentity(t *testing.T) {
 
 // TestDraftLostKeyErrors reports a vanished face key so the feature can go Sick.
 func TestDraftLostKeyErrors(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	if _, err := ops.DraftFaces(box, [][]byte{[]byte("ghost")}, math.V3(0, 0, 1), 0.1); err == nil {
 		t.Error("draft with a lost key should error")
@@ -71,6 +74,7 @@ func TestDraftLostKeyErrors(t *testing.T) {
 // tilts the plane and re-intersects the cylinder (the shared edge becoming an arc), preserving the
 // fillet face — instead of panicking in the plane-only rebuild (the Phase-0 stopgap it supersedes).
 func TestDraftFilletedBodyTapers(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
 	filleted, err := ops.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0.5)
 	if err != nil {

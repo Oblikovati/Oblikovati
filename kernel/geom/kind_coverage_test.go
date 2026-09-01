@@ -25,6 +25,7 @@ var surfaceKindProbes = map[SurfaceKind]KindedSurface{
 }
 
 func TestSurfaceKindCoverage(t *testing.T) {
+	t.Parallel()
 	if len(surfaceKindProbes) != int(surfaceKindCount) {
 		t.Fatalf("surfaceKindProbes has %d entries, want %d (one per SurfaceKind) — a new kind needs a probe",
 			len(surfaceKindProbes), int(surfaceKindCount))
@@ -60,6 +61,7 @@ var curveKindProbes = map[CurveKind]KindedCurve{
 }
 
 func TestCurveKindCoverage(t *testing.T) {
+	t.Parallel()
 	if len(curveKindProbes) != int(curveKindCount) {
 		t.Fatalf("curveKindProbes has %d entries, want %d (one per CurveKind) — a new kind needs a probe",
 			len(curveKindProbes), int(curveKindCount))
@@ -79,6 +81,7 @@ func TestCurveKindCoverage(t *testing.T) {
 // TestSurfaceKindNamesComplete asserts every SurfaceKind has a distinct non-placeholder name
 // (used verbatim in error messages), so a new kind cannot ship with a "SurfaceKind(?)" label.
 func TestSurfaceKindNamesComplete(t *testing.T) {
+	t.Parallel()
 	seen := map[string]bool{}
 	for k := range surfaceKindCount {
 		name := k.String()
@@ -91,6 +94,7 @@ func TestSurfaceKindNamesComplete(t *testing.T) {
 
 // TestCurveKindNamesComplete is the curve analogue.
 func TestCurveKindNamesComplete(t *testing.T) {
+	t.Parallel()
 	seen := map[string]bool{}
 	for k := range curveKindCount {
 		name := k.String()

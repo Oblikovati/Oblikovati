@@ -27,6 +27,7 @@ func cylLoop(pts ...[2]float64) geom.Curve3 {
 // notched cylinder (first cut = the plane x+z<=9.5, notch floor at the front reaching z=6.5). The prior loop is
 // the notched top boundary.
 func TestDisjointFromPriorClassifies(t *testing.T) {
+	t.Parallel()
 	c := cutUVFromNotched(t)
 	pi := stdmath.Pi
 	cases := []struct {

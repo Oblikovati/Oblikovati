@@ -12,6 +12,7 @@ import (
 // block, set the bead width/height, OK — and asserts the raised lip added material to a
 // still-valid solid.
 func TestLipToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2) // 2×2×2, vol 8
 	before := ops.BodyGeometryProperties(block, ops.DefaultQuality()).Volume
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
@@ -41,6 +42,7 @@ func TestLipToolEndToEnd(t *testing.T) {
 
 // TestLipToolGrooves confirms the groove mode cuts material (volume drops).
 func TestLipToolGrooves(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	before := ops.BodyGeometryProperties(block, ops.DefaultQuality()).Volume
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
@@ -66,6 +68,7 @@ func TestLipToolGrooves(t *testing.T) {
 // TestLipToolParams exercises the property-dialog surface: name, width/height/groove accessors
 // (the dimensions reject a non-positive value), and the Params model the head renders.
 func TestLipToolParams(t *testing.T) {
+	t.Parallel()
 	tl := NewLipTool()
 	if tl.Name() != "Lip" {
 		t.Errorf("name = %q, want Lip", tl.Name())
@@ -96,6 +99,7 @@ func TestLipToolParams(t *testing.T) {
 
 // TestLipToolPreviewAndCancel covers the draft preview (before/after a pick) and Cancel.
 func TestLipToolPreviewAndCancel(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	edge := verticalEdgeOf(t, block)
 	tl := NewLipTool()
@@ -117,6 +121,7 @@ func TestLipToolPreviewAndCancel(t *testing.T) {
 
 // TestLipToolCommitNoPart covers the no-active-part error path.
 func TestLipToolCommitNoPart(t *testing.T) {
+	t.Parallel()
 	if err := NewLipTool().Commit(NewSession()); err == nil {
 		t.Error("commit with no active part should error")
 	}
@@ -124,6 +129,7 @@ func TestLipToolCommitNoPart(t *testing.T) {
 
 // TestLipViaRibbonCommand confirms the Modify-panel ribbon command starts the tool.
 func TestLipViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	if err := RegisterStandardCommands(s); err != nil {

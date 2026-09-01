@@ -13,6 +13,7 @@ import (
 // TestUnmeshedWallWrapIsFlagged: if a full-wrap wall ever reaches the flat patch CDT again, the
 // half-covered mesh it produces must ship as a Defect, not silently (#2038's third acceptance).
 func TestUnmeshedWallWrapIsFlagged(t *testing.T) {
+	t.Parallel()
 	s := bandCylinder(10)
 	wrapping := bridgedWallLoop(s, 0, 10, 96)
 	m := &Mesh{}
@@ -29,6 +30,7 @@ func TestUnmeshedWallWrapIsFlagged(t *testing.T) {
 // TestUnmeshedWallWrapIgnoresLegitimateFlatPatches: a sphere cap straddling its pole belongs on the
 // flat CDT, and so does a wall patch that does not wrap, so neither may be flagged.
 func TestUnmeshedWallWrapIgnoresLegitimateFlatPatches(t *testing.T) {
+	t.Parallel()
 	sph, err := geom.NewSphere(math.P3(0, 0, 0), 3)
 	if err != nil {
 		t.Fatalf("sphere: %v", err)

@@ -45,6 +45,7 @@ func contactCircleFeet(radius, sweep float64) (math.Point3, math.Point3) {
 // sector (|sweep| ≈ 270° > π), joins the two feet, and passes through the material midpoint at 135° — NOT the
 // 90° minor complement a three-point re-fit would return.
 func TestReflexContactRailKeepsMajorSector(t *testing.T) {
+	t.Parallel()
 	const railRadius = 42.28
 	sweep := 1.5 * stdmath.Pi // +270°
 	foot0, foot1 := contactCircleFeet(railRadius, sweep)
@@ -69,6 +70,7 @@ func TestReflexContactRailKeepsMajorSector(t *testing.T) {
 // TestReflexContactRailDeclinesConvexRim asserts a convex (<180°) rim and the nil edge both decline, so the
 // caller keeps the byte-identical three-point minor rail (never routed through subArcMajor).
 func TestReflexContactRailDeclinesConvexRim(t *testing.T) {
+	t.Parallel()
 	const railRadius = 42.28
 	sweep := 0.5 * stdmath.Pi // +90°, convex
 	foot0, foot1 := contactCircleFeet(railRadius, sweep)

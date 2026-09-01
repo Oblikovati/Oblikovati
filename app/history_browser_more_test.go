@@ -12,6 +12,7 @@ import (
 
 // TestHistoryBrowserWindowState covers the open/close/toggle accessors.
 func TestHistoryBrowserWindowState(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.HistoryBrowserOpen() {
 		t.Fatal("a fresh session should not have the History Browser open")
@@ -34,6 +35,7 @@ func TestHistoryBrowserWindowState(t *testing.T) {
 // TestRecordActiveEditAndAddInEdit records a delta made directly on the active part through the
 // central seam and the add-in seam, covering both entry points and the resulting steps.
 func TestRecordActiveEditAndAddInEdit(t *testing.T) {
+	t.Parallel()
 	s, id := partSessionWithEdits(t, 1)
 	part := partOf(t, s)
 
@@ -58,6 +60,7 @@ func TestRecordActiveEditAndAddInEdit(t *testing.T) {
 // TestEnsureActiveEditBaselineOpensStream covers the active-document branch: it opens the stream
 // so the very first edit is recorded against the empty baseline.
 func TestEnsureActiveEditBaselineOpensStream(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, err := compdef.AddPart(s.Workspace(), "baseline.obk", true); err != nil {
 		t.Fatalf("AddPart: %v", err)
@@ -73,6 +76,7 @@ func TestEnsureActiveEditBaselineOpensStream(t *testing.T) {
 
 // TestUndoRedoRecordSeamsNoActiveDocument covers the no-active-document guards of the seams.
 func TestUndoRedoRecordSeamsNoActiveDocument(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.RecordActiveEdit("noop")   // no active document — must not panic
 	s.EnsureActiveEditBaseline() // ditto
@@ -86,6 +90,7 @@ func TestUndoRedoRecordSeamsNoActiveDocument(t *testing.T) {
 
 // TestJumpDocumentToGuards covers the error branches: unknown document and an open transaction.
 func TestJumpDocumentToGuards(t *testing.T) {
+	t.Parallel()
 	s, id := partSessionWithEdits(t, 1)
 
 	if err := s.JumpDocumentTo(doc.ID(999999), 0); err == nil {
@@ -107,6 +112,7 @@ func TestJumpDocumentToGuards(t *testing.T) {
 // TestSaveCheckpointDedupAndTruncation covers markSaved's same-depth dedup and
 // savedDepthsWithin dropping a checkpoint stranded on a truncated branch.
 func TestSaveCheckpointDedupAndTruncation(t *testing.T) {
+	t.Parallel()
 	s, id := partSessionWithEdits(t, 2)
 	d := s.ActiveDocument()
 

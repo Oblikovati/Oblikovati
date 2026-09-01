@@ -44,6 +44,7 @@ func discThenCutPatterned(t *testing.T) *topo.Body {
 // from feeding a raw periodic cylinder to the planar boolean. (Disc-level reference-key stability vs a
 // direct faceted extrude is pinned separately by TestPlanarizedDiscMatchesFacetedExtrude.)
 func TestAnalyticPatternedCutDoesNotExplode(t *testing.T) {
+	t.Parallel()
 	body := discThenCutPatterned(t)
 	if vr := ops.Validate(body); !vr.Valid || !body.IsSolid() {
 		t.Fatalf("patterned cut is not a valid solid: %+v", vr.Issues)

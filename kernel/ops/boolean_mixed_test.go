@@ -18,6 +18,7 @@ import (
 // and the mesh-arrangement reconstruction is never consulted (no CodeBooleanAnalyticReconstruction
 // note). Before the dispatch, this class fell to the reconstruction rescue.
 func TestBooleanMixedPassThroughBeforeReconstruction(t *testing.T) {
+	t.Parallel()
 	block, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")
 	cyl, _ := brep.SolidCylinder(math.P3(5, 5, 10), math.V3(0, 0, 1), 2, 3)
 	bossed, ok := brep.JoinCylindricalBoss(block, cyl)
@@ -60,6 +61,7 @@ func analyticVolumeOf(t *testing.T, b *topo.Body) float64 {
 // through-hole (silently removing π·r²·H instead of π·r²·h). The drill now declines and the per-face
 // dispatch cuts the exact cavity.
 func TestBooleanEmbeddedCavityExactVolume(t *testing.T) {
+	t.Parallel()
 	block, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")
 	tool, _ := brep.SolidCylinder(math.P3(5, 5, 3), math.V3(0, 0, 1), 1, 4)
 	res, err := Boolean(Cut, block, tool)
@@ -80,6 +82,7 @@ func TestBooleanEmbeddedCavityExactVolume(t *testing.T) {
 // the named sentinel to the curved/CSG paths and still returns the right solid — a decline is a change
 // of route, never a failure the caller sees.
 func TestBooleanRoutesMixedDeclineToFallback(t *testing.T) {
+	t.Parallel()
 	block, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)

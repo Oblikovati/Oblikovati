@@ -37,6 +37,7 @@ func findCapAt(t *testing.T, b *topo.Body, z float64) *topo.Face {
 }
 
 func TestPointInFaceTrimCylinderSide(t *testing.T) {
+	t.Parallel()
 	const r, h = 3.0, 8.0
 	body, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
 	if err != nil {
@@ -60,6 +61,7 @@ func TestPointInFaceTrimCylinderSide(t *testing.T) {
 }
 
 func TestPointInFaceTrimCap(t *testing.T) {
+	t.Parallel()
 	const r, h = 3.0, 8.0
 	body, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
 	if err != nil {

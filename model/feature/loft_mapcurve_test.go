@@ -38,6 +38,7 @@ func mappedSquares(t *testing.T, mapCurves []func() []math.Point3) *topo.Body {
 // TestLoftMapCurveDefaultIsUntwisted: identical squares with NO map curve auto-align to a straight
 // prism — max x stays at the section half-width.
 func TestLoftMapCurveDefaultIsUntwisted(t *testing.T) {
+	t.Parallel()
 	if maxX := float64(mappedSquares(t, nil).RangeBox().Max.X); maxX > 2.05 {
 		t.Errorf("auto-aligned identical squares twisted: max x = %.3f, want ≈2.0", maxX)
 	}
@@ -48,6 +49,7 @@ func TestLoftMapCurveDefaultIsUntwisted(t *testing.T) {
 // twist pinches the mid section to the inscribed diamond (half the area), so the twisted loft holds
 // distinctly less volume than the auto-aligned (untwisted) prism — proving the override took effect.
 func TestLoftMapCurveForcesTwist(t *testing.T) {
+	t.Parallel()
 	auto := ops.BodyGeometryProperties(mappedSquares(t, nil), ops.DefaultQuality()).Volume
 	mc := func() []math.Point3 { return []math.Point3{math.P3(2, 2, 0), math.P3(-2, 2, 4)} }
 	twisted := ops.BodyGeometryProperties(mappedSquares(t, []func() []math.Point3{mc}), ops.DefaultQuality()).Volume
@@ -58,6 +60,7 @@ func TestLoftMapCurveForcesTwist(t *testing.T) {
 
 // TestLoftMapCurveRoundTrip: a map curve survives a recipe save/restore.
 func TestLoftMapCurveRoundTrip(t *testing.T) {
+	t.Parallel()
 	bottom := centeredSquareOn(sketch.XYPlane(), 2)
 	top := centeredSquareOn(planeAtZ(4), 2)
 	idx := sketchList{sks: []*sketch.Sketch{bottom, top}}

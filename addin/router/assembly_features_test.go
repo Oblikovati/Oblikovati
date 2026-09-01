@@ -56,6 +56,7 @@ func topHalfCut() string {
 // TestAssemblyFeaturesAddAndListOverWire adds a cut over the wire and checks it lists
 // with default participation, machining each participant to half volume.
 func TestAssemblyFeaturesAddAndListOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0, 5)
 
 	var added wire.AssemblyFeatureResult
@@ -81,6 +82,7 @@ func TestAssemblyFeaturesAddAndListOverWire(t *testing.T) {
 // the participant — gated against the analytic value (unit box minus a 0.5×1×0.6
 // pocket = 0.7; the database unit is the centimetre, so a 1 cm profile is 1 unit).
 func TestAssemblyExtrudeOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
 
 	var sk wire.CreateSketchResult
@@ -108,6 +110,7 @@ func TestAssemblyExtrudeOverWire(t *testing.T) {
 // removes more material (gated against the analytic value), while the box cut exposes no
 // editable scalars (its tool is fixed at construction) so editing it is rejected.
 func TestAssemblyFeatureEditOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
 
 	var sk wire.CreateSketchResult
@@ -157,6 +160,7 @@ func TestAssemblyFeatureEditOverWire(t *testing.T) {
 // consuming the body. (The tight analytic gate is the model unit test; the boolean
 // re-facets the small-radius cylinder coarsely here.)
 func TestAssemblyRevolveOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
 
 	var sk wire.CreateSketchResult
@@ -186,6 +190,7 @@ func TestAssemblyRevolveOverWire(t *testing.T) {
 // occurrence's geometry, gated against the analytic value and shown to be associative:
 // moving the source component re-resolves the cut on the next recompute.
 func TestAssemblyProxyCutOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
 	// A tool occurrence: a unit box straddling the top half of the participant at occs[0].
 	tool := asm.Place("tool:1", blockPart(t, math.P3(0, 0, 0), math.P3(1, 1, 1)), math.Translation4(math.V3(0, 0, 0.5)))
@@ -216,6 +221,7 @@ func TestAssemblyProxyCutOverWire(t *testing.T) {
 // TestAssemblyAddHoleOverWire drills a parametric hole through the participant and
 // checks it removed material (a faceted bore) without consuming the whole body.
 func TestAssemblyAddHoleOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
 
 	var added wire.AssemblyFeatureResult
@@ -237,6 +243,7 @@ func TestAssemblyAddHoleOverWire(t *testing.T) {
 // TestAssemblySetParticipantsOverWire narrows participation to one occurrence; the
 // dropped one is left whole.
 func TestAssemblySetParticipantsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0, 5)
 	var added wire.AssemblyFeatureResult
 	call(t, r, s, "assemblyFeatures.add", topHalfCut(), &added)
@@ -257,6 +264,7 @@ func TestAssemblySetParticipantsOverWire(t *testing.T) {
 
 // TestAssemblySetSuppressedOverWire suppresses then unsuppresses a feature in batch.
 func TestAssemblySetSuppressedOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
 	var added wire.AssemblyFeatureResult
 	call(t, r, s, "assemblyFeatures.add", topHalfCut(), &added)
@@ -288,6 +296,7 @@ func pathResultVolume(asm *compdef.AssemblyComponentDefinition, path occurrence.
 // TestAssemblySetParticipantPathsOverWire restricts a feature to one placement of a
 // sub-assembly placed twice; only that placement is machined.
 func TestAssemblySetParticipantPathsOverWire(t *testing.T) {
+	t.Parallel()
 	s := app.NewSession()
 	d, err := compdef.AddAssembly(s.Workspace(), "top.obk", true)
 	if err != nil {
@@ -326,6 +335,7 @@ func TestAssemblySetParticipantPathsOverWire(t *testing.T) {
 
 // TestAssemblyEndOfFeaturesOverWire rolls the program back and reads the marker.
 func TestAssemblyEndOfFeaturesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t, 0)
 	call(t, r, s, "assemblyFeatures.add", topHalfCut(), &wire.AssemblyFeatureResult{})
 	call(t, r, s, "assemblyFeatures.add", topHalfCut(), &wire.AssemblyFeatureResult{})
@@ -350,6 +360,7 @@ func TestAssemblyEndOfFeaturesOverWire(t *testing.T) {
 // TestAssemblyFeaturesRejectsBadInput pins the error paths: a bad operation, an unknown
 // participant, and a non-assembly active document.
 func TestAssemblyFeaturesRejectsBadInput(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0)
 	if _, err := r.Handle(s, "assemblyFeatures.add", []byte(`{"toolMin":[0,0,0],"toolMax":[1,1,1],"operation":"bogus"}`)); err == nil {
 		t.Error("add with a bad operation should fail")
@@ -372,6 +383,7 @@ func TestAssemblyFeaturesRejectsBadInput(t *testing.T) {
 // Diameter/Depth scalars and that assemblyFeatures.edit re-dimensions it, re-drilling the
 // participant — a wider bore removes more material (#752).
 func TestAssemblyHoleEditOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
 
 	var added wire.AssemblyFeatureResult
@@ -411,6 +423,7 @@ func verticalBoxEdgeKey(t *testing.T, occ *occurrence.Occurrence) string {
 // of that component is machined from the one feature — the occurrence-relative resolution
 // (#735). Two unit boxes share the component lineage, so both lose the chamfer wedge.
 func TestAssemblyChamferOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0, 5)
 	edge := verticalBoxEdgeKey(t, occs[0])
 
@@ -435,6 +448,7 @@ func TestAssemblyChamferOverWire(t *testing.T) {
 // TestAssemblyFilletOverWire rounds a component edge on every participant, gated below the
 // box volume (a fillet removes the convex corner material).
 func TestAssemblyFilletOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
 	edge := verticalBoxEdgeKey(t, occs[0])
 
@@ -473,6 +487,7 @@ func topBoxFaceKey(t *testing.T, occ *occurrence.Occurrence) string {
 // gates the grown volume (#735): pushing the unit box's top face +0.5z makes a 1.5 box, on
 // both placed instances from one feature.
 func TestAssemblyMoveFaceOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0, 5)
 	face := topBoxFaceKey(t, occs[0])
 
@@ -497,6 +512,7 @@ func TestAssemblyMoveFaceOverWire(t *testing.T) {
 // below the box and stays a valid solid); the assembly-sketch profile + path wiring is what
 // this gates (the swept-solid geometry itself is covered by the part sweep tests).
 func TestAssemblySweepOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
 
 	var sk wire.CreateSketchResult

@@ -13,6 +13,7 @@ import (
 // TestNopVariacDialCSG pins variac_dial as a round dial with one shaft hole and
 // three screw holes through the plate.
 func TestNopVariacDialCSG(t *testing.T) {
+	t.Parallel()
 	body := prismBody(regularPolygonPoints(math.P3(0, 0, 0), 2.5, 64, 0), 0, 0.3, "variac-dial")
 	for _, hole := range append([]math.Point3{math.P3(0, 0, 0)}, regularPolygonPoints(math.P3(0, 0, 0), 1.6, 3, -stdmath.Pi/2)...) {
 		radius := 0.25

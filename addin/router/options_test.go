@@ -10,6 +10,7 @@ import (
 )
 
 func TestOptionsListGroups(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var res wire.ListOptionGroupsResult
 	call(t, r, s, "options.listGroups", "{}", &res)
@@ -19,6 +20,7 @@ func TestOptionsListGroups(t *testing.T) {
 }
 
 func TestOptionsGeneralRoundTripOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "options.setGroup", `{"group":"general","general":{"startupAction":1}}`, nil)
 	var view wire.OptionGroupView
@@ -29,6 +31,7 @@ func TestOptionsGeneralRoundTripOverWire(t *testing.T) {
 }
 
 func TestOptionsSketchAppliesToLiveGrid(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "options.setGroup",
 		`{"group":"sketch","sketch":{"gridSpacingCm":2,"gridVisible":false,"gridMajorEvery":8,"snapToPoints":true,"snapToGrid":false}}`, nil)
@@ -43,6 +46,7 @@ func TestOptionsSketchAppliesToLiveGrid(t *testing.T) {
 }
 
 func TestOptionsDisplayProxiesThemeAndViewCube(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var before wire.OptionGroupView
 	call(t, r, s, "options.getGroup", `{"group":"display"}`, &before)
@@ -64,6 +68,7 @@ func TestOptionsDisplayProxiesThemeAndViewCube(t *testing.T) {
 }
 
 func TestOptionsRejectsMismatchedPayload(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, "options.setGroup",
 		[]byte(`{"group":"general","part":{"chamferFlatCorners":false}}`)); err == nil {

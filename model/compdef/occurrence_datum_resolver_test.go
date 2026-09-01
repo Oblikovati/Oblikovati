@@ -13,6 +13,7 @@ import (
 // resolve into the assembly's space with the occurrence's placement transform applied — the core of
 // #1857 (both the AC3 input path via ResolvePlaneRef/ResolvePointRef, and the AC1 context helper).
 func TestOccurrenceDatumTransform(t *testing.T) {
+	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	part := NewPartComponentDefinition()
 	wp := part.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 5 }) // z = 5 in part space
@@ -66,6 +67,7 @@ func TestOccurrenceDatumTransform(t *testing.T) {
 // TestOccurrenceContextUnresolvable: an unknown occurrence path, and a ref whose leaf is not a part,
 // both fail cleanly rather than panicking (#1857).
 func TestOccurrenceContextUnresolvable(t *testing.T) {
+	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	if _, _, ok := asm.ResolveOccurrenceContext([]string{"missing:1"}); ok {
 		t.Error("an unknown occurrence path should not resolve")

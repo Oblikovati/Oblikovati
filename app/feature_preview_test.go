@@ -32,6 +32,7 @@ func addSquareSketch(def *compdef.PartComponentDefinition, ox, oy, side float64)
 // TestFeaturePreviewCutIsRed builds a base solid, then previews an extrude-cut that bores a
 // hole through it. Removing material drops the volume, so the live preview is RED.
 func TestFeaturePreviewCutIsRed(t *testing.T) {
+	t.Parallel()
 	s, base := newPartWithSquare(t, 4)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 
@@ -74,6 +75,7 @@ func TestFeaturePreviewCutIsRed(t *testing.T) {
 // TestPreviewDeltaHelpers covers the dress-up delta path (boolean difference) used when a
 // feature has no separable tool body.
 func TestPreviewDeltaHelpers(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 4, 4)
 	base := s.VisibleBodies()
 	// Identical body sets differ by nothing → no delta solid to show.
@@ -91,6 +93,7 @@ func TestPreviewDeltaHelpers(t *testing.T) {
 // solid ghost), NOT the whole part. We assert the preview's footprint is thin in X and Y (the
 // wedge spans one edge) — a flooded preview would span the full 4-unit box.
 func TestDressUpPreviewIsTheDeltaSolid(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 4, 4)
 	edge := firstVerticalEdge(t, s.VisibleBodies()[0])
 
@@ -162,6 +165,7 @@ func firstVerticalEdge(t *testing.T, b *topo.Body) *topo.Edge {
 // TestFeaturePreviewEmptyUntilReady asserts no preview is drawn before the tool has enough
 // input to commit (no region picked yet).
 func TestFeaturePreviewEmptyUntilReady(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithSquare(t, 2)
 	ext := NewExtrudeTool()
 	s.StartTool(ext)
@@ -173,6 +177,7 @@ func TestFeaturePreviewEmptyUntilReady(t *testing.T) {
 // TestFeaturePreviewIsAGhostSolid checks the tool-body preview is one translucent mesh of the
 // whole feature solid (the prism), accompanied by its opaque feature edges.
 func TestFeaturePreviewIsAGhostSolid(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	s.SetPicker(stubPicker{sel: profile})
 	ext := NewExtrudeTool()
@@ -212,6 +217,7 @@ func edgeLines(frame renderer.DrawList) int {
 // signature (signNorm), the freeform branch compares area+centroid (exercising maxVal), and a
 // different kind/anchor/radius never matches.
 func TestFaceSigHelpers(t *testing.T) {
+	t.Parallel()
 	// signNorm flips a vector so its dominant component is positive, so opposite normals match.
 	up, down := math.V3(0, 0, 1), math.V3(0, 0, -1)
 	if !signNorm(up).IsEqualTo(signNorm(down), 1e-9) {

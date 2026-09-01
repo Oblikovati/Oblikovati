@@ -15,6 +15,7 @@ import (
 // Y,Z extent — their convex hull is exactly the enclosing 6×2×2 box (volume 24). The feature
 // must leave one valid solid.
 func TestHullFeatureWrapsTwoBodies(t *testing.T) {
+	t.Parallel()
 	a := subd.ToBody(subd.Box(2, 2, 2), "a") // [0,2]^3
 	bm := subd.Box(2, 2, 2)
 	for i := range bm.Verts {

@@ -34,6 +34,7 @@ func matchPatch(t *testing.T, xoff float64, z func(i, j int) float64) geom.BSpli
 }
 
 func TestMatchFeatureMakesSurfaceTangent(t *testing.T) {
+	t.Parallel()
 	target := surfaceBodyFrom(t, matchPatch(t, 0, func(i, j int) float64 { return 0.3 * float64(i) }))
 	src := surfaceBodyFrom(t, matchPatch(t, 1, func(i, j int) float64 { return 0 }))
 
@@ -61,6 +62,7 @@ func TestMatchFeatureMakesSurfaceTangent(t *testing.T) {
 }
 
 func TestMatchFeatureErrorsWithoutTarget(t *testing.T) {
+	t.Parallel()
 	src := surfaceBodyFrom(t, matchPatch(t, 1, func(i, j int) float64 { return 0 }))
 	f := &MatchFeature{def: &MatchDefinition{Order: 1}}
 	if _, err := f.Recompute(Input{Bodies: []*topo.Body{src}}); err == nil {
@@ -69,6 +71,7 @@ func TestMatchFeatureErrorsWithoutTarget(t *testing.T) {
 }
 
 func TestMatchFeatureKind(t *testing.T) {
+	t.Parallel()
 	f := &MatchFeature{def: &MatchDefinition{}}
 	if f.Kind() != "match-surface" {
 		t.Errorf("Kind = %q, want match-surface", f.Kind())
@@ -76,6 +79,7 @@ func TestMatchFeatureKind(t *testing.T) {
 }
 
 func TestMatchFeatureRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewMatchFeatures(fs).Add(2, geom.UMinEdge, geom.UMaxEdge)
 	data, err := fs.MarshalRecipe(oneSketch{})
@@ -93,6 +97,7 @@ func TestMatchFeatureRoundTrip(t *testing.T) {
 }
 
 func TestRestoreMatchRejectsMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreMatch(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreMatch(nil) should error")
 	}

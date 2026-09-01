@@ -13,6 +13,7 @@ import (
 
 // A box has only sharp (90°) edges, so tangent-edge suppression must keep every one.
 func TestVisibleEdgesKeepsSharpBoxEdges(t *testing.T) {
+	t.Parallel()
 	m := subd.Box(2, 2, 2)
 	b := subd.ToBody(m, "box")
 	got := len(ops.VisibleEdges(b, ops.DefaultQuality(), ops.DefaultCreaseAngle()))
@@ -24,6 +25,7 @@ func TestVisibleEdgesKeepsSharpBoxEdges(t *testing.T) {
 // A solid cylinder's vertical seam is a parametric seam internal to the smooth side face — it
 // must be suppressed — while the two rim circles (side meets cap at 90°) are kept.
 func TestVisibleEdgesSuppressesCylinderSeam(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 10)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)

@@ -19,6 +19,7 @@ import (
 
 // TestM20MoveOpsIntegration folds a rotate-then-slide composed move into one valid solid.
 func TestM20MoveOpsIntegration(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(subd.ToBody(subd.Box(4, 3, 1), "block"))
 	NewModifyFeatures(fs).AddMoveOps(0, []MoveOperation{
@@ -36,6 +37,7 @@ func TestM20MoveOpsIntegration(t *testing.T) {
 
 // TestM20PatternBoundaryIntegration clips a 3×3 grid to the 6 occurrences inside the boundary.
 func TestM20PatternBoundaryIntegration(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	src := NewBaseFeatures(fs).AddBase(subd.ToBody(subd.Box(1, 1, 1), "cell"))
 	boundary, err := NewPatternBoundary(math.P3(0, 0, 0), math.V3(0, 0, 1),
@@ -54,6 +56,7 @@ func TestM20PatternBoundaryIntegration(t *testing.T) {
 
 // TestM20BendIntegration folds a flat bar 90° into one valid solid that rises above the bar.
 func TestM20BendIntegration(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(subd.ToBody(subd.Box(10, 3, 1), "bar"))
 	bendSk := sketch.NewSketches().Add(planeAtZ(1)) // bend line on the top face
@@ -74,6 +77,7 @@ func TestM20BendIntegration(t *testing.T) {
 // TestM20WorkSurfaceIntegration produces a boundary-patch sheet (an open surface body, not a
 // solid) — the kind gathered into the WorkSurfaces collection.
 func TestM20WorkSurfaceIntegration(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.AddRectangleByCorners(math.P2(0, 0), math.P2(4, 3))

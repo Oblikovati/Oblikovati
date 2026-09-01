@@ -28,6 +28,7 @@ func sumFillArea(verts []math.Point2, tris [][3]int) float64 {
 
 // TestFillTrianglesSquare: a unit square triangulates to its full area (2 triangles).
 func TestFillTrianglesSquare(t *testing.T) {
+	t.Parallel()
 	outer := []math.Point2{math.P2(0, 0), math.P2(4, 0), math.P2(4, 4), math.P2(0, 4)}
 	tris := FillTriangles(outer, nil)
 	if len(tris) != 2 {
@@ -41,6 +42,7 @@ func TestFillTrianglesSquare(t *testing.T) {
 // TestFillTrianglesWithHole: a 10×10 square with a 2×2 hole fills to area 100−4 = 96, and every
 // triangle index addresses outer++hole in order — the contract the region-fill overlay relies on.
 func TestFillTrianglesWithHole(t *testing.T) {
+	t.Parallel()
 	outer := []math.Point2{math.P2(0, 0), math.P2(10, 0), math.P2(10, 10), math.P2(0, 10)}
 	hole := []math.Point2{math.P2(4, 4), math.P2(6, 4), math.P2(6, 6), math.P2(4, 6)}
 	verts := append(append([]math.Point2(nil), outer...), hole...)
@@ -62,6 +64,7 @@ func TestFillTrianglesWithHole(t *testing.T) {
 
 // TestFillTrianglesDegenerate: fewer than 3 points bounds no area, so no triangles.
 func TestFillTrianglesDegenerate(t *testing.T) {
+	t.Parallel()
 	if tris := FillTriangles([]math.Point2{math.P2(0, 0), math.P2(1, 0)}, nil); len(tris) != 0 {
 		t.Errorf("a 2-point loop gave %d triangles, want 0", len(tris))
 	}

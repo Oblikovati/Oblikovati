@@ -14,6 +14,7 @@ import (
 // DisplayModeEnum member and asserts the mode + label survive the round trip — the dogfood
 // proof that the public display-mode contract reaches the session and back.
 func TestViewDisplayModeRoundTrips(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	for _, m := range types.AllDisplayModes() {
 		var set wire.DisplayModeView
@@ -32,6 +33,7 @@ func TestViewDisplayModeRoundTrips(t *testing.T) {
 // TestViewSetDisplayModeRejectsUnknown checks an undefined mode id is an error, not a silent
 // fallback.
 func TestViewSetDisplayModeRejectsUnknown(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, "view.setDisplayMode", []byte(`{"mode":1}`)); err == nil {
 		t.Fatal("expected error for unknown display mode id 1")
@@ -41,6 +43,7 @@ func TestViewSetDisplayModeRejectsUnknown(t *testing.T) {
 // TestViewListDisplayModesFlagsActive checks the enumeration returns all 11 modes with exactly
 // the active one flagged.
 func TestViewListDisplayModesFlagsActive(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "view.setDisplayMode", `{"mode":`+strconv.Itoa(int(types.RealisticRendering))+`}`, nil)
 	var list wire.ListDisplayModesResult

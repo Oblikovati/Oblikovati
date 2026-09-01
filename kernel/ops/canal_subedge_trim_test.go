@@ -14,6 +14,7 @@ import (
 // weld shares vertices by point, ADR-C4-2/F3 — a perturbed point cracks the seam). Only the per-sub-
 // edge curves change (whole-curve → trimmed sub-span). Bytes, not tolerance, for both directions.
 func TestSampleCurve3OpenTrimmedPtsUnchanged(t *testing.T) {
+	t.Parallel()
 	arc := trimTestArc(t)
 	for _, rev := range []bool{false, true} {
 		want := sampleCurve3Open(arc, rev)
@@ -34,6 +35,7 @@ func TestSampleCurve3OpenTrimmedPtsUnchanged(t *testing.T) {
 // endpoints map to that sub-edge's own two vertices, and its interior lies ON the base arc (not on
 // the chord) — the property that meshes the patch fold-free.
 func TestSampleCurve3OpenTrimmedSubSpans(t *testing.T) {
+	t.Parallel()
 	arc := trimTestArc(t)
 	lo, hi := arc.Domain()
 	for _, rev := range []bool{false, true} {

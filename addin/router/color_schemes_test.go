@@ -12,6 +12,7 @@ import (
 // TestColorSchemesListAndActivate drives list -> getActive -> setActive, checking the active
 // flag tracks the switch and the background type follows the activated scheme.
 func TestColorSchemesListAndActivate(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var list wire.ColorSchemesResult
@@ -44,6 +45,7 @@ func TestColorSchemesListAndActivate(t *testing.T) {
 
 // TestColorSchemesSetActiveUnknownErrors checks an unknown scheme name is rejected.
 func TestColorSchemesSetActiveUnknownErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if err := tryCall(t, r, s, "colorSchemes.setActive", `{"name":"Nope"}`); err == nil {
 		t.Error("activating an unknown scheme should error")

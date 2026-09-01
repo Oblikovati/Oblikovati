@@ -20,6 +20,7 @@ import (
 // pick fell through to loneArcPick, and cylSideEdgeAt correctly declined the self-closed vertex it was
 // never designed to see — the rim path was dead for every imported circular rim (OCCT blend I9 et al).
 func TestFilletEdgesRoutesArc3dRim(t *testing.T) {
+	t.Parallel()
 	b, err := solidCylinderArc3dTopRim(math.P3(0, 0, 0), math.V3(0, 0, 1), 1.0, 2.0)
 	if err != nil {
 		t.Fatal(err)

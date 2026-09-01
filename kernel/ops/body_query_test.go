@@ -14,6 +14,7 @@ import (
 // near a mid-edge the edge, near a face center the face — and the kind filter
 // restricts the search.
 func TestLocateUsingPointFindsEachKind(t *testing.T) {
+	t.Parallel()
 	b := tetraBox(t, math.P3(0, 0, 0), 2)
 	q := DefaultQuality()
 	if hit, ok := LocateUsingPoint(b, 0, math.P3(-0.01, -0.01, -0.01), 0.1, q); !ok || hit.Kind != topo.KindVertex {
@@ -36,6 +37,7 @@ func TestLocateUsingPointFindsEachKind(t *testing.T) {
 // TestFindUsingRayOrdersHits: a ray through the box reports entry and exit
 // faces nearest-first; findFirstOnly truncates; radius picks up a grazed edge.
 func TestFindUsingRayOrdersHits(t *testing.T) {
+	t.Parallel()
 	b := tetraBox(t, math.P3(0, 0, 0), 2)
 	q := DefaultQuality()
 	hits := FindUsingRay(b, math.P3(1, 1, -5), math.V3(0, 0, 1), 0, q, false)
@@ -67,6 +69,7 @@ func TestFindUsingRayOrdersHits(t *testing.T) {
 
 // TestBodyEdgeConvexityCube: every cube edge is convex.
 func TestBodyEdgeConvexityCube(t *testing.T) {
+	t.Parallel()
 	byClass := BodyEdgeConvexity(tetraBox(t, math.P3(0, 0, 0), 2))
 	if n := len(byClass[EdgeConvex]); n != 12 {
 		t.Errorf("cube has %d convex edges, want 12 (got concave=%d tangent=%d unknown=%d)",
@@ -77,6 +80,7 @@ func TestBodyEdgeConvexityCube(t *testing.T) {
 // TestBodyEdgeConvexityCavity: the cavity's inner skin edges are concave from
 // the material's perspective (the material wraps 270° around them).
 func TestBodyEdgeConvexityCavity(t *testing.T) {
+	t.Parallel()
 	byClass := BodyEdgeConvexity(cavityBody(t))
 	if n := len(byClass[EdgeConcave]); n != 12 {
 		t.Errorf("cavity body has %d concave edges, want the 12 inner ones (convex=%d)",
@@ -90,6 +94,7 @@ func TestBodyEdgeConvexityCavity(t *testing.T) {
 // TestOrientedMinimumRangeBoxRotatedBox: a box rotated 45° about Z still gets
 // a tight OBB of its true dimensions (an AABB would inflate by √2).
 func TestOrientedMinimumRangeBoxRotatedBox(t *testing.T) {
+	t.Parallel()
 	src := tetraBox(t, math.P3(0, 0, 0), 2)
 	axis, _ := math.UnitVector3FromVector(math.V3(0, 0, 1))
 	rot := math.Rotation4(stdmath.Pi/4, axis, math.P3(0, 0, 0))
@@ -122,6 +127,7 @@ func TestOrientedMinimumRangeBoxRotatedBox(t *testing.T) {
 // topology RangeBox already samples edges, so both should agree on a box —
 // the point is PreciseRangeBox includes mesh interiors and wires.
 func TestPreciseRangeBoxCoversBody(t *testing.T) {
+	t.Parallel()
 	b := tetraBox(t, math.P3(1, 1, 1), 2)
 	box := PreciseRangeBox(b, DefaultQuality())
 	if box.Min.X > 1+1e-9 || box.Max.X < 3-1e-9 {
@@ -133,6 +139,7 @@ func TestPreciseRangeBoxCoversBody(t *testing.T) {
 // interpenetrating shells pass topology but fail the geometry level with
 // face problems carrying keys.
 func TestValidateBodyEntitiesLevels(t *testing.T) {
+	t.Parallel()
 	clean := tetraBox(t, math.P3(0, 0, 0), 2)
 	if ok, problems := ValidateBodyEntities(clean, CheckGeometry, DefaultQuality()); !ok {
 		t.Errorf("clean box reports problems: %+v", problems)
@@ -154,6 +161,7 @@ func TestValidateBodyEntitiesLevels(t *testing.T) {
 
 // TestEntityLevelChecks: per-entity validity verdicts.
 func TestEntityLevelChecks(t *testing.T) {
+	t.Parallel()
 	b := tetraBox(t, math.P3(0, 0, 0), 2)
 	for _, e := range b.Edges() {
 		if !EdgeEntityValid(e) {
@@ -170,6 +178,7 @@ func TestEntityLevelChecks(t *testing.T) {
 // TestBindTransientKey: each entity's session id binds back to it; an unknown
 // key reports false.
 func TestBindTransientKey(t *testing.T) {
+	t.Parallel()
 	b := tetraBox(t, math.P3(0, 0, 0), 2)
 	f := b.Faces()[2]
 	ref, ok := b.BindTransientKey(f.ID())

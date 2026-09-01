@@ -29,6 +29,7 @@ func lContourProfile() *sketch.Sketch {
 // allowance and any DXF cut from it was undersized. The corner defers to the rule's radius, so the
 // developed allowance is the rule's own bend allowance for a 90° corner.
 func TestBendsReportsContourFlangeCorners(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if _, err := d.EnableSheetMetal(); err != nil {
 		t.Fatalf("EnableSheetMetal: %v", err)

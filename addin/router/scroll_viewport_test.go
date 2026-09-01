@@ -22,6 +22,7 @@ func eyeTargetDistance(v wire.CameraView) float64 {
 // TestScrollZoomsTheCamera: a positive dy (scroll up) is the zoom-IN direction — the
 // camera moves closer to its target.
 func TestScrollZoomsTheCamera(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "view.setCamera", `{"eye":[0,0,10],"target":[0,0,0],"up":[0,1,0],"fov":0.8}`, &wire.CameraView{})
 	var before wire.CameraView
@@ -40,6 +41,7 @@ func TestScrollZoomsTheCamera(t *testing.T) {
 // TestScrollZeroDeltaIsANoOp: dy=0 must leave the camera untouched, not e.g. treat a
 // missing field as some default notch count.
 func TestScrollZeroDeltaIsANoOp(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "view.setCamera", `{"eye":[0,0,10],"target":[0,0,0],"up":[0,1,0],"fov":0.8}`, &wire.CameraView{})
 	var before wire.CameraView

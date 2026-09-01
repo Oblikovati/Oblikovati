@@ -26,6 +26,7 @@ func squareRailLoop(n int) RailLoop {
 // non-core loop never reaches the loft) — the do-no-harm invariant that keeps every non-core loop on
 // coons4.
 func TestCanalStationProviderBuildRejectsNilStations(t *testing.T) {
+	t.Parallel()
 	loop := squareRailLoop(4) // valence 4 but Stations == nil
 	if (canalStationProvider{}).Fits(loop) {
 		t.Errorf("Fits(nil-Stations valence-4 loop) = true, want false")
@@ -39,6 +40,7 @@ func TestCanalStationProviderBuildRejectsNilStations(t *testing.T) {
 // payload, a loop that is not valence-4 is declined — a canal panel is a four-sided (A-rim / seam / B-rim
 // / seam) loop, never a triangle.
 func TestCanalStationProviderBuildRejectsWrongValence(t *testing.T) {
+	t.Parallel()
 	loop := squareRailLoop(3)
 	loop.Stations = &CanalStationFill{
 		Centers: []math.Point3{math.P3(0, 0, 0), math.P3(0, 0, 1)},
@@ -59,6 +61,7 @@ func TestCanalStationProviderBuildRejectsWrongValence(t *testing.T) {
 // fidelity gate (assertFootAtRadius) — a mis-supplied station is a construction bug, honest-rejected
 // (ok=false) so resolveBlend falls through to coons4, never lofting a non-envelope surface.
 func TestCanalStationProviderBuildRejectsOffRadiusStation(t *testing.T) {
+	t.Parallel()
 	loop := squareRailLoop(4)
 	loop.Stations = &CanalStationFill{
 		Centers: []math.Point3{math.P3(0, 0, 0), math.P3(0, 0, 1)},

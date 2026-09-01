@@ -10,6 +10,7 @@ import (
 // TestRibbonSeamNonFoldingAcceptsOutwardCoons4 proves the probe passes the shipped, correct
 // coons4 patch (outward ribbons) built from the quarter-cylinder fixture.
 func TestRibbonSeamNonFoldingAcceptsOutwardCoons4(t *testing.T) {
+	t.Parallel()
 	loop := quarterCylLoop(t, 4)
 	fill, rails, sides, ok := coons4Fill(loop)
 	if !ok {
@@ -23,6 +24,7 @@ func TestRibbonSeamNonFoldingAcceptsOutwardCoons4(t *testing.T) {
 // TestRibbonSeamNonFoldingRejectsInwardRibbon proves the probe FLAGS a deliberately inward-signed
 // ribbon (the latent obstacle defect) — the sign check creaseAngle cannot see.
 func TestRibbonSeamNonFoldingRejectsInwardRibbon(t *testing.T) {
+	t.Parallel()
 	loop := quarterCylLoop(t, 4)
 	c0, c1, d0, d1, ok := loopRails(loop)
 	if !ok {

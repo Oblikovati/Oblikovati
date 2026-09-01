@@ -40,6 +40,7 @@ func pickFullRoundSets(t *testing.T) (*Session, *FullRoundFilletTool) {
 // TestFullRoundToolEndToEnd drives the Full Round UI: pick the three faces, OK — and asserts a valid
 // solid that rounded the center face (volume below the box, the top corners gone).
 func TestFullRoundToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, tool := pickFullRoundSets(t)
 	if !tool.CanCommit() {
 		t.Fatal("full round not ready after all three sets")
@@ -61,6 +62,7 @@ func TestFullRoundToolEndToEnd(t *testing.T) {
 
 // TestFullRoundToolActiveSet checks picks land in the armed set and a face is never double-counted.
 func TestFullRoundToolActiveSet(t *testing.T) {
+	t.Parallel()
 	_, tool := pickFullRoundSets(t)
 	if tool.ActiveSet() != 2 {
 		t.Errorf("active set = %d after ArmSide2, want 2", tool.ActiveSet())
@@ -80,6 +82,7 @@ func TestFullRoundToolActiveSet(t *testing.T) {
 
 // TestFullRoundToolNeedsThreeSets gates commit until all three sets have a face.
 func TestFullRoundToolNeedsThreeSets(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	tool := NewFullRoundFilletTool()
 	s.StartTool(tool)
@@ -98,6 +101,7 @@ func TestFullRoundToolNeedsThreeSets(t *testing.T) {
 
 // TestFullRoundToolClearSets checks each set's clear empties only that set.
 func TestFullRoundToolClearSets(t *testing.T) {
+	t.Parallel()
 	_, tool := pickFullRoundSets(t)
 	tool.ClearCenter()
 	if tool.CountCenter() != 0 || tool.Count1() != 1 || tool.Count2() != 1 {
@@ -114,6 +118,7 @@ func TestFullRoundToolClearSets(t *testing.T) {
 // TestFullRoundToolPromptAndName covers the name, the step-by-step prompt, the session accessor,
 // and the non-edit Cancel path.
 func TestFullRoundToolPromptAndName(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	tool := NewFullRoundFilletTool()
 	s.StartTool(tool)
@@ -145,6 +150,7 @@ func TestFullRoundToolPromptAndName(t *testing.T) {
 
 // TestFullRoundDraftPreview offers the viewport draft only once all three sets are picked.
 func TestFullRoundDraftPreview(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	tool := NewFullRoundFilletTool()
 	s.StartTool(tool)
@@ -164,6 +170,7 @@ func TestFullRoundDraftPreview(t *testing.T) {
 // TestFullRoundEditRoundTrip re-edits a committed full round and asserts the three sets seed back,
 // then re-commits and cancels an edit (covering commitEdit and the edit-cancel branch).
 func TestFullRoundEditRoundTrip(t *testing.T) {
+	t.Parallel()
 	s, tool := pickFullRoundSets(t)
 	if err := s.OK(); err != nil {
 		t.Fatalf("OK: %v", err)
@@ -191,6 +198,7 @@ func TestFullRoundEditRoundTrip(t *testing.T) {
 // TestFullRoundViaRibbonCommand checks the Full Round command (a Fillet split-button variant) starts
 // the tool.
 func TestFullRoundViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 2)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

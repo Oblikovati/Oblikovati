@@ -64,6 +64,7 @@ func surfaceFaceBody(t *testing.T, s geom.BSplineSurface) *topo.Body {
 }
 
 func TestRebuildFaceSurfacesCollapsesMultiSpan(t *testing.T) {
+	t.Parallel()
 	src := multiSpanPatch(t)
 	body := surfaceFaceBody(t, src)
 	out, dev, err := ops.RebuildFaceSurfaces(body, 3, 3, 4, 4, 0)
@@ -87,6 +88,7 @@ func TestRebuildFaceSurfacesCollapsesMultiSpan(t *testing.T) {
 }
 
 func TestRebuildFaceSurfacesErrorsWhenNoFreeformFace(t *testing.T) {
+	t.Parallel()
 	// A planar box has only unbounded-domain analytic faces → nothing to rebuild.
 	box := csgBox(math.P3(0, 0, 0), 1, 1, 1)
 	if _, _, err := ops.RebuildFaceSurfaces(box, 3, 3, 4, 4, 0); err == nil {

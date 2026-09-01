@@ -39,6 +39,7 @@ func cornerBends() []BendPlacement {
 // TestSeamCornersPicksWallFaceEdgeRegardlessOfOrder: with the short thickness edge before OR after
 // the tall wall edge, the seam finishes the same corner on the tall wall edge.
 func TestSeamCornersPicksWallFaceEdgeRegardlessOfOrder(t *testing.T) {
+	t.Parallel()
 	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("t", "body", 0)))
 	thickness := vertEdge(t, bld, 0, 0, 0.0, 0.2, 0) // sheet corner, sits AT the junction, 0.2 tall
 	wallA := vertEdge(t, bld, 0, -0.3, 0.5, 1.5, 1)  // wall flat-face edge, stands off, 1.0 tall

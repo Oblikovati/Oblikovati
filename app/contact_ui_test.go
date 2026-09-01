@@ -13,6 +13,7 @@ import (
 // from the selection groups them, the solver toggles, and Analyze Interference reports the
 // overlap (M12-F05).
 func TestContactPanelAndActions(t *testing.T) {
+	t.Parallel()
 	tab, ok := BuildRibbon(assemblySession(t)).Tab("Assemble")
 	if !ok {
 		t.Fatal("assembly should show the Assemble tab")

@@ -8,6 +8,7 @@ import "testing"
 // its selectors in sync: it must report the ACTIVE part's assignment, so switching documents
 // reports a different material (the doc-scoped-selection bug fix).
 func TestActivePartMaterialIDTracksActiveDocument(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	mats := s.Materials().Materials()
 	if len(mats) < 2 {
@@ -44,6 +45,7 @@ func TestActivePartMaterialIDTracksActiveDocument(t *testing.T) {
 // TestActivePartAppearanceID covers the appearance accessor (and the no-active-part branch of
 // both accessors) the Materials UI uses to keep its selectors synced.
 func TestActivePartAppearanceID(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if got := s.ActivePartMaterialID(); got != "" {
 		t.Errorf("no-part material = %q, want empty", got)

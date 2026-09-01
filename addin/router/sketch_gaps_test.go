@@ -12,6 +12,7 @@ import (
 // TestControlPointSplineKind (#150): a control-point spline is created by the first-class kind
 // and enumerates distinctly from a fit spline.
 func TestControlPointSplineKind(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"controlPointSpline","points":[[0,0],[2,1],[4,0]]}`, &wire.AddSketchEntityResult{})
@@ -31,6 +32,7 @@ func TestControlPointSplineKind(t *testing.T) {
 // TestSlotPlacementVariants (#149): the by-overall straight slot and the by-center-point arc
 // slot (sweep angle via endAngle) create closed profiles over the wire.
 func TestSlotPlacementVariants(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 
@@ -57,6 +59,7 @@ func TestSlotPlacementVariants(t *testing.T) {
 // tangent point. With the line on y=0 and the circle centered at (0,5) r=2, near = 5-2 = 3,
 // far = 5+2 = 7.
 func TestTangentDistanceDimension(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var line, circle wire.AddSketchEntityResult
@@ -79,6 +82,7 @@ func TestTangentDistanceDimension(t *testing.T) {
 
 // TestTangentDistanceDimensionBadOperands: wrong operand count/kind is a clear rejection.
 func TestTangentDistanceDimensionBadOperands(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var line wire.AddSketchEntityResult

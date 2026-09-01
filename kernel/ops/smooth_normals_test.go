@@ -23,6 +23,7 @@ func twoFacets(dihedral float64) *Mesh {
 }
 
 func TestSmoothShadeNormalsAveragesBelowCrease(t *testing.T) {
+	t.Parallel()
 	// 20° dihedral is below the 35° crease → the shared-edge vertices average to a tilted normal.
 	sm := SmoothShadeNormals(twoFacets(20*stdmath.Pi/180), DefaultCreaseAngle())
 	got := sm[0] // facet A's copy of the shared vertex s0
@@ -39,6 +40,7 @@ func TestSmoothShadeNormalsAveragesBelowCrease(t *testing.T) {
 }
 
 func TestSmoothShadeNormalsKeepsSharpEdge(t *testing.T) {
+	t.Parallel()
 	// 90° dihedral exceeds the crease → the shared-edge vertices keep their facet normals.
 	sm := SmoothShadeNormals(twoFacets(90*stdmath.Pi/180), DefaultCreaseAngle())
 	if got := sm[0]; stdmath.Abs(float64(got.Z)-1) > 1e-9 || stdmath.Abs(float64(got.Y)) > 1e-9 {
@@ -49,6 +51,7 @@ func TestSmoothShadeNormalsKeepsSharpEdge(t *testing.T) {
 // TestSmoothShadeNormalsDoesNotMutateInput guards that mass-properties (which use the raw mesh)
 // are unaffected: SmoothShadeNormals returns a new slice and leaves m.Normals alone.
 func TestSmoothShadeNormalsDoesNotMutateInput(t *testing.T) {
+	t.Parallel()
 	m := twoFacets(20 * stdmath.Pi / 180)
 	before := m.Normals[0]
 	_ = SmoothShadeNormals(m, DefaultCreaseAngle())

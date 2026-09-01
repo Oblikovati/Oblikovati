@@ -43,6 +43,7 @@ func hemisphereCappedMeridian(r, h float64) []brep.RevolveVertex {
 // hundreds of cone slivers the faceted swept solid leaves — so the mesh carries true curvature and the
 // per-frame hover-pick stays cheap. The body is a cylinder (r=2,h=5) topped by a hemisphere.
 func TestSolidOfRevolutionSphereCap(t *testing.T) {
+	t.Parallel()
 	r, h := 2.0, 5.0
 	body, err := brep.SolidOfRevolutionMeridian(math.P3(0, 0, 0), math.V3(0, 0, 1), hemisphereCappedMeridian(r, h), "capped")
 	if err != nil || body == nil {
@@ -68,6 +69,7 @@ func TestSolidOfRevolutionSphereCap(t *testing.T) {
 // (ccwMeridianVerts), so a caller need not know the projected winding. The result is the identical valid
 // hemisphere-capped solid.
 func TestSolidOfRevolutionSphereCapAutoOrients(t *testing.T) {
+	t.Parallel()
 	r, h := 2.0, 5.0
 	c := math.P2(0, h)
 	// Clockwise traversal: (0,0) → pole (0,h+r) → rim (r,h) → (r,0). The arc edge is (0,h+r)→(r,h)
@@ -101,6 +103,7 @@ func TestSolidOfRevolutionSphereCapAutoOrients(t *testing.T) {
 // ~75% short in area. sphereZoneBandFan sweeps latitude rings about the rims' own axis and meshes it
 // exactly, so the restriction is gone (#2061). Sphere centre (0,2) radius √8; the band runs z∈[0,4].
 func TestSolidOfRevolutionEquatorCrossingZone(t *testing.T) {
+	t.Parallel()
 	c := math.P2(0, 2) // on the axis, both arc endpoints at r=2 and on OPPOSITE sides of the equator z=2
 	zone := []brep.RevolveVertex{
 		{P: math.P2(0, 0)},
@@ -133,6 +136,7 @@ func TestSolidOfRevolutionEquatorCrossingZone(t *testing.T) {
 // radius 5; the band runs z∈[1,3] (both above the equator), so the arc bulges OUTWARD (dz>0 ⇒ AddFace).
 // The revolved region is {0≤r≤√(25−z²), 1≤z≤3}, volume π∫₁³(25−z²)dz.
 func TestSolidOfRevolutionSphereZoneConvex(t *testing.T) {
+	t.Parallel()
 	c := math.P2(0, 0) // sphere centre on the axis; both rims (z=1,z=3) sit above the equator z=0
 	rLo := stdmath.Sqrt(24)
 	zone := []brep.RevolveVertex{
@@ -162,6 +166,7 @@ func TestSolidOfRevolutionSphereZoneConvex(t *testing.T) {
 // — the housing washer's outboard spherical seat. Same sphere (centre (0,0), R=5), band z∈[1,3], wrapped
 // by an r=6 cylinder. Revolved region {√(25−z²)≤r≤6, 1≤z≤3}, volume π∫₁³(36−(25−z²))dz = π∫₁³(11+z²)dz.
 func TestSolidOfRevolutionSphereZoneConcave(t *testing.T) {
+	t.Parallel()
 	c := math.P2(0, 0)
 	rLo := stdmath.Sqrt(24)
 	annulus := []brep.RevolveVertex{
@@ -191,6 +196,7 @@ func TestSolidOfRevolutionSphereZoneConcave(t *testing.T) {
 // parameterization here (SolidSphere is that route), so revolveArcsAnalytic returns false and the builder
 // falls back (nil,nil). Half-disc: axis segment (0,0)→(0,4) closed by the 180° arc back about (0,2).
 func TestSolidOfRevolutionPoleToPoleArcFallsBack(t *testing.T) {
+	t.Parallel()
 	c := math.P2(0, 2) // on the axis; the arc's two endpoints (0,0) and (0,4) are on the axis too
 	halfDisc := []brep.RevolveVertex{
 		{P: math.P2(0, 0)},
@@ -210,6 +216,7 @@ func TestSolidOfRevolutionPoleToPoleArcFallsBack(t *testing.T) {
 // band, so sphereZoneAnalytic declines it and the builder falls back. Centre (0,2), rims (2,2) [on the
 // equator z=2] and (√3,3).
 func TestSolidOfRevolutionSphereZoneEquatorRimFallsBack(t *testing.T) {
+	t.Parallel()
 	c := math.P2(0, 2)
 	zone := []brep.RevolveVertex{
 		{P: math.P2(0, 2)},

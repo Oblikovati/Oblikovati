@@ -23,6 +23,7 @@ func capPoints(n int, r, half float64) []math.Point3 {
 }
 
 func TestFitSurfaceToPointsBuildsOneFace(t *testing.T) {
+	t.Parallel()
 	body, err := FitSurfaceToPoints(capPoints(12, 10, 3), 3, 5, 5)
 	if err != nil {
 		t.Fatalf("FitSurfaceToPoints: %v", err)
@@ -33,6 +34,7 @@ func TestFitSurfaceToPointsBuildsOneFace(t *testing.T) {
 }
 
 func TestFitSurfaceToPointsRejectsSparseRegion(t *testing.T) {
+	t.Parallel()
 	if _, err := FitSurfaceToPoints(capPoints(4, 10, 3), 3, 5, 5); err == nil {
 		t.Error("a region with fewer points than control points should error")
 	}

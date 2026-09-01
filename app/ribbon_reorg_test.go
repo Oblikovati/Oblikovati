@@ -10,6 +10,7 @@ import (
 // TestWithTabsRibbonTabs covers the multi-tab primitive directly: the first tab is primary
 // (Tab()), all are returned by ribbonTabs, and an unset tab falls back to the default.
 func TestWithTabsRibbonTabs(t *testing.T) {
+	t.Parallel()
 	multi := NewCommand("X", "X", "Cat", noop).WithTabs("A", "B", "C")
 	if multi.Tab() != "A" {
 		t.Errorf("primary tab = %q, want A", multi.Tab())
@@ -28,6 +29,7 @@ func TestWithTabsRibbonTabs(t *testing.T) {
 // TestSketchPanelAppearsOnBothModellingTabs locks the WithTabs multi-tab behaviour: the sketch
 // starters repeat on the Create & Modify and Surfaces & Mesh tabs from a single registration.
 func TestSketchPanelAppearsOnBothModellingTabs(t *testing.T) {
+	t.Parallel()
 	r := BuildRibbon(registeredSession(t))
 	for _, tabName := range []string{"Create & Modify", "Surfaces & Mesh"} {
 		tab, ok := r.Tab(tabName)
@@ -46,6 +48,7 @@ func TestSketchPanelAppearsOnBothModellingTabs(t *testing.T) {
 
 // TestWorkFeaturesPanelHeadsCreateModifyTab locks the panel order: Work Features is first.
 func TestWorkFeaturesPanelHeadsCreateModifyTab(t *testing.T) {
+	t.Parallel()
 	tab, ok := BuildRibbon(registeredSession(t)).Tab("Create & Modify")
 	if !ok {
 		t.Fatal("Part ribbon has no Create & Modify tab")
@@ -64,6 +67,7 @@ func firstPanelName(t RibbonTab) string {
 
 // TestSurfacesMeshTabPanelOrder locks the requested panel order on the new tab.
 func TestSurfacesMeshTabPanelOrder(t *testing.T) {
+	t.Parallel()
 	tab, ok := BuildRibbon(registeredSession(t)).Tab("Surfaces & Mesh")
 	if !ok {
 		t.Fatal("Part ribbon has no Surfaces & Mesh tab")
@@ -84,6 +88,7 @@ func TestSurfacesMeshTabPanelOrder(t *testing.T) {
 // Test3DSketchTabIsContextual: the 3D Sketch tab is absent on the part ribbon and appears only
 // once a 3D sketch is open (its own environment, distinct from the 2D Sketch tab).
 func Test3DSketchTabIsContextual(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if _, ok := BuildRibbon(s).Tab("3D Sketch"); ok {
 		t.Error("3D Sketch tab should be absent outside the 3D-sketch environment")
@@ -108,6 +113,7 @@ func Test3DSketchTabIsContextual(t *testing.T) {
 
 // Test2DAnd3DSketchTabsNeverCoexist: opening a 2D sketch shows the Sketch tab, not the 3D one.
 func Test2DAnd3DSketchTabsNeverCoexist(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	enterSketchEnv(t, s)
 	r := BuildRibbon(s)
@@ -122,6 +128,7 @@ func Test2DAnd3DSketchTabsNeverCoexist(t *testing.T) {
 // TestViewAndInspectTabsOnAssemblyRibbon: the View and Inspect tabs are shared with the
 // Assembly ribbon (onRibbons), not Part-only.
 func TestViewAndInspectTabsOnAssemblyRibbon(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if _, err := s.NewAssembly(); err != nil {
 		t.Fatalf("NewAssembly: %v", err)
@@ -140,6 +147,7 @@ func TestViewAndInspectTabsOnAssemblyRibbon(t *testing.T) {
 // TestGetStartedManagePanel: the ZeroDoc ribbon offers the AddIn Catalogue and Preferences
 // launch buttons, and each command raises the matching head-window request.
 func TestGetStartedManagePanel(t *testing.T) {
+	t.Parallel()
 	s := zeroDocSession(t)
 	panel, ok := BuildRibbon(s).Panel("Manage")
 	if !ok {
@@ -166,6 +174,7 @@ func TestGetStartedManagePanel(t *testing.T) {
 
 // TestWindowOpenRequestsAreOneShot: Take* returns true once, then false (one-shot consumption).
 func TestWindowOpenRequestsAreOneShot(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.TakeAddInCatalogueRequest() || s.TakePreferencesRequest() {
 		t.Fatal("requests should start clear")

@@ -28,6 +28,7 @@ func unitPatch(t *testing.T) geom.BSplineSurface {
 }
 
 func TestRefinedTrimmedMeshConcavePatch(t *testing.T) {
+	t.Parallel()
 	s := unitPatch(t)
 	// An L-shaped (concave) trim on the patch: the mesh must cover exactly the L, not bridge the
 	// notch (the over-count) and not tear (the under-count) — verified by total 3D triangle area.
@@ -62,6 +63,7 @@ func TestRefinedTrimmedMeshConcavePatch(t *testing.T) {
 // must mesh with INTERIOR (u,v) nodes (a refined surface), not a boundary-only fan of long flat
 // triangles (the inner-bell-mouth slivers), and every triangle must agree with its vertex normals.
 func TestGridPatchMeshAddsInteriorNodes(t *testing.T) {
+	t.Parallel()
 	s, err := geom.NewSphere(math.P3(0, 0, 0), 10)
 	if err != nil {
 		t.Fatalf("NewSphere: %v", err)
@@ -113,6 +115,7 @@ func TestGridPatchMeshAddsInteriorNodes(t *testing.T) {
 // TestWeldedFreeEdgeCount pins the watertightness metric the sphere-cap fallback decision uses: a
 // closed tetrahedron welds to 0 free edges; dropping a face exposes 3 boundary edges.
 func TestWeldedFreeEdgeCount(t *testing.T) {
+	t.Parallel()
 	m := &Mesh{
 		Positions: []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(0, 0, 1)},
 		Indices:   []int{0, 2, 1, 0, 1, 3, 1, 2, 3, 0, 3, 2}, // all 4 faces: closed
@@ -129,6 +132,7 @@ func TestWeldedFreeEdgeCount(t *testing.T) {
 // TestPatchIsManifoldTolerance pins the fallback threshold: a patch whose welded free edges do not
 // exceed its loop boundary is kept (manifold), one that exceeds it (a torn cap) is rejected.
 func TestPatchIsManifoldTolerance(t *testing.T) {
+	t.Parallel()
 	// one triangle, loop of its 3 vertices: 3 boundary edges == want 3 → kept.
 	tri := &Mesh{Positions: []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)}, Indices: []int{0, 1, 2}}
 	if !patchIsManifold(tri, [][]int{{0, 1, 2}}) {
@@ -144,6 +148,7 @@ func TestPatchIsManifoldTolerance(t *testing.T) {
 // anisotropic — a unit step in u (angle) spans R in 3D, in v (axial) spans 1 — and its v-domain is
 // INFINITE, which metricScale must clamp instead of sampling ±Inf. So su≈R, sv≈1.
 func TestMetricScaleCylinder(t *testing.T) {
+	t.Parallel()
 	const r = 7.0
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r)
 	if err != nil {

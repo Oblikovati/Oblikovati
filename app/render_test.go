@@ -9,6 +9,7 @@ import (
 )
 
 func TestRenderFrameDrawsTheModeledSolid(t *testing.T) {
+	t.Parallel()
 	// Build a box through the UI, then render — the null backend records the frame.
 	s := extrudedBox(t, 2, 4)
 	null := &renderer.NullBackend{}
@@ -25,6 +26,7 @@ func TestRenderFrameDrawsTheModeledSolid(t *testing.T) {
 }
 
 func TestPersistentOverlayInFrame(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4)
 	before := frameItems(s)
 	s.AddOverlay(renderer.DrawItem{Primitive: renderer.Lines, Positions: nil, Indices: []int{0, 1}})
@@ -41,6 +43,7 @@ func TestPersistentOverlayInFrame(t *testing.T) {
 }
 
 func TestExtrudeToolLivePreview(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	s.SetPicker(stubPicker{sel: profile})
 	ext := NewExtrudeTool()
@@ -110,6 +113,7 @@ func previewTriangles(items []renderer.DrawItem) int {
 }
 
 func TestRenderFrameNoActivePart(t *testing.T) {
+	t.Parallel()
 	s := NewSession() // no document
 	null := &renderer.NullBackend{}
 	s.RenderFrame(null)
@@ -119,6 +123,7 @@ func TestRenderFrameNoActivePart(t *testing.T) {
 }
 
 func TestRenderFrameSkipsHiddenBody(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4)
 	body := s.VisibleBodies()[0]
 	s.SetBodyVisible(body, false)

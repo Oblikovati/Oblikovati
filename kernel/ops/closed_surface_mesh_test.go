@@ -28,6 +28,7 @@ func sphereGrid(s geom.Sphere, q Quality) (us, vs []float64) {
 // pole-capped surface) meshes WATERTIGHT — the seam wraps and each pole is one shared vertex, so no
 // edge is left unpaired. A naive UV grid duplicated the seam and degenerated the poles (66 free edges).
 func TestClosedDomainMeshSphereWatertight(t *testing.T) {
+	t.Parallel()
 	s, err := geom.NewSphere(math.P3(0, 0, 0), 5)
 	if err != nil {
 		t.Fatalf("NewSphere: %v", err)
@@ -45,6 +46,7 @@ func TestClosedDomainMeshSphereWatertight(t *testing.T) {
 // (a chord-faceted inscribed mesh is slightly under 4πr²) — i.e. wrapping the seam and collapsing the
 // poles did not drop or double-count any area.
 func TestClosedDomainMeshSphereArea(t *testing.T) {
+	t.Parallel()
 	const r = 5.0
 	s, err := geom.NewSphere(math.P3(0, 0, 0), r)
 	if err != nil {
@@ -65,6 +67,7 @@ func TestClosedDomainMeshSphereArea(t *testing.T) {
 // still pair with their neighbours. Boundary-trimmed primitives (partial_*, drilled/chamfered box) guard
 // that the fixes did not break the non-closed paths.
 func TestImportedAnalyticPrimitivesWatertight(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{
 		"sphere", "cylinder", "cone_frustum", "cone_sharp", "torus",
 		"partial_cylinder", "drilled_box", "chamfered_box", "box_with_boss",
@@ -94,6 +97,7 @@ func TestImportedAnalyticPrimitivesWatertight(t *testing.T) {
 // TestClosedDomainMeshOpenSurfaceIsPlainGrid pins the no-op case: a non-closed surface (a clamped plane
 // patch — no periodic seam, no pole) tessellates as a plain (cols-1)×(rows-1)×2 grid, unchanged.
 func TestClosedDomainMeshOpenSurfaceIsPlainGrid(t *testing.T) {
+	t.Parallel()
 	p, err := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	if err != nil {
 		t.Fatalf("NewPlane: %v", err)

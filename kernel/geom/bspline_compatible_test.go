@@ -9,6 +9,7 @@ import (
 )
 
 func TestMakeCompatibleEqualizesDegreeAndKnots(t *testing.T) {
+	t.Parallel()
 	// a: quadratic with an interior knot at 0.5; b: cubic with an interior knot at 0.25,
 	// over a different parameter range. After MakeCompatible both must share degree and knots.
 	a, err := NewBSplineCurveUniformWeights(
@@ -49,6 +50,7 @@ func TestMakeCompatibleEqualizesDegreeAndKnots(t *testing.T) {
 }
 
 func TestMakeCompatiblePreservesGeometry(t *testing.T) {
+	t.Parallel()
 	a, err := NewBSplineCurveUniformWeights(
 		2,
 		[]math.Point3{math.P3(0, 0, 0), math.P3(1, 2, 0), math.P3(3, 0, 0)},
@@ -83,6 +85,7 @@ func TestMakeCompatiblePreservesGeometry(t *testing.T) {
 }
 
 func TestMakeCompatibleElevatesEitherSide(t *testing.T) {
+	t.Parallel()
 	// a is the higher-degree curve here, exercising the b<a branch of matchDegree.
 	a, err := NewBSplineCurveUniformWeights(
 		3,
@@ -110,6 +113,7 @@ func TestMakeCompatibleElevatesEitherSide(t *testing.T) {
 }
 
 func TestExpandKnots(t *testing.T) {
+	t.Parallel()
 	got := expandKnots([]float64{0.25, 0.5}, []int{1, 2})
 	want := []float64{0.25, 0.5, 0.5}
 	if len(got) != len(want) {

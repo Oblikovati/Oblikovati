@@ -13,6 +13,7 @@ import (
 // the program from an index keeps the earlier features (same objects, same cached recompute
 // counts) and rebuilds only the tail, so the next Recompute re-evaluates just the tail.
 func TestReplaceFromKeepsPrefixRebuildsTail(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	for range 3 {
@@ -50,6 +51,7 @@ func TestReplaceFromKeepsPrefixRebuildsTail(t *testing.T) {
 }
 
 func TestReplaceFromRejectsOutOfRangePrefix(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
@@ -64,6 +66,7 @@ func TestReplaceFromRejectsOutOfRangePrefix(t *testing.T) {
 // TestReplaceFromTruncatesTail: replacing from a prefix with no tail data drops the old tail and
 // removes its id bindings (a restore that undid feature additions).
 func TestReplaceFromTruncatesTail(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	for range 3 {

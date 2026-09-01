@@ -19,6 +19,7 @@ import (
 // deterministic, so the chained result must be too: a downstream feature can never flip between the
 // coplanar and imprint code paths from run to run. Ten runs, one canonical geometry hash.
 func TestTangentBooleanChainedRecomputeIsDeterministic(t *testing.T) {
+	t.Parallel()
 	var want string
 	for i := range 10 {
 		a := guardBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2), "a")

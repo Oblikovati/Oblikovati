@@ -49,6 +49,7 @@ func twoBodyPart(t *testing.T) (*Session, *compdef.PartComponentDefinition) {
 }
 
 func TestDeleteBodyRemovesOnlyThatBody(t *testing.T) {
+	t.Parallel()
 	s, def := twoBodyPart(t)
 	survivor := def.SurfaceBodies().Item(0).ReferenceKey()
 	if err := s.DeleteBody(def.SurfaceBodies().Item(1)); err != nil {
@@ -65,6 +66,7 @@ func TestDeleteBodyRemovesOnlyThatBody(t *testing.T) {
 // The deletion is a recipe feature, not a destructive edit — so it lands in the browser and
 // suppressing it brings the body back.
 func TestDeleteBodyIsASuppressibleFeature(t *testing.T) {
+	t.Parallel()
 	s, def := twoBodyPart(t)
 	before := def.Features().Count()
 	if err := s.DeleteBody(def.SurfaceBodies().Item(1)); err != nil {
@@ -82,6 +84,7 @@ func TestDeleteBodyIsASuppressibleFeature(t *testing.T) {
 }
 
 func TestDeleteBodyRejectsNilBody(t *testing.T) {
+	t.Parallel()
 	s, _ := twoBodyPart(t)
 	if err := s.DeleteBody(nil); err == nil {
 		t.Error("DeleteBody(nil) should error rather than silently do nothing")
@@ -91,6 +94,7 @@ func TestDeleteBodyRejectsNilBody(t *testing.T) {
 // The browser body node carries the Delete action, which is the surface the issue asks for and
 // the one the reference application uses.
 func TestBrowserBodyNodeOffersDelete(t *testing.T) {
+	t.Parallel()
 	s, def := twoBodyPart(t)
 	menu := BrowserMenu(s, findNode(t, BuildBrowser(s), "body"))
 	var invoke func(*Session) error

@@ -36,6 +36,7 @@ func nurbsBump(t *testing.T) BSplineSurface {
 // TestOffsetParamAtInvertsNurbs is the core #1322 fix: for a NURBS base, ParamAt(PointAt(u,v)) must
 // round-trip to (u,v) — the old o.Base.ParamAt returned the base projection (wrong) here.
 func TestOffsetParamAtInvertsNurbs(t *testing.T) {
+	t.Parallel()
 	off := OffsetSurface{Base: nurbsBump(t), Distance: 0.25}
 	for _, u := range []float64{0.2, 0.5, 0.8} {
 		for _, v := range []float64{0.2, 0.5, 0.8} {
@@ -79,6 +80,7 @@ func relDiff(a, b math.Vector3) float64 {
 // analytic base ([0,2π] domain) and a NURBS base ([0,1] domain) — two parameter scales, both within
 // tolerance now that the FD step scales to the domain span.
 func TestOffsetDerivativesMatchReference(t *testing.T) {
+	t.Parallel()
 	sphere, err := NewSphere(math.P3(0, 0, 0), 4)
 	if err != nil {
 		t.Fatalf("NewSphere: %v", err)
@@ -113,6 +115,7 @@ func TestOffsetDerivativesMatchReference(t *testing.T) {
 // offset inward by MORE than its radius inverts (self-intersects) and must be rejected; a safe inward
 // offset is accepted.
 func TestOffsetSelfIntersectionRejected(t *testing.T) {
+	t.Parallel()
 	cyl, err := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
@@ -140,6 +143,7 @@ func TestOffsetSelfIntersectionRejected(t *testing.T) {
 // TestOffsetSphereDoesNotFalseFoldAtPole guards the degenerate-point skip: a sphere's poles have a
 // zero normal, which must not be misread as a fold for a safe offset.
 func TestOffsetSphereDoesNotFalseFoldAtPole(t *testing.T) {
+	t.Parallel()
 	sphere, err := NewSphere(math.P3(0, 0, 0), 4)
 	if err != nil {
 		t.Fatalf("NewSphere: %v", err)

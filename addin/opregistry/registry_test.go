@@ -13,6 +13,7 @@ import (
 // subtractive/dress-up family, and that each descriptor is complete with valid-JSON schema —
 // so add_feature (and the MCP bridge) can drive every one of them.
 func TestDefaultDescriptors(t *testing.T) {
+	t.Parallel()
 	r := Default()
 	all := []string{
 		"extrude", "revolve", "rib", "emboss", "coil", "loft",
@@ -43,6 +44,7 @@ func TestDefaultDescriptors(t *testing.T) {
 }
 
 func TestRegisterValidates(t *testing.T) {
+	t.Parallel()
 	r := New()
 	if err := r.Register(&OperationDescriptor{Name: "", Apply: dummyApply}); err == nil {
 		t.Error("expected error for empty name")
@@ -59,6 +61,7 @@ func TestRegisterValidates(t *testing.T) {
 }
 
 func TestAllInRegistrationOrder(t *testing.T) {
+	t.Parallel()
 	r := New()
 	_ = r.Register(&OperationDescriptor{Name: "a", Apply: dummyApply})
 	_ = r.Register(&OperationDescriptor{Name: "b", Apply: dummyApply})

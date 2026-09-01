@@ -7,6 +7,7 @@ import "testing"
 // TestSheetMetalUnfoldRefoldApply seeds a flanged sheet, flattens it (unfold), and refolds it
 // — each yields one merged solid — then checks the error paths.
 func TestSheetMetalUnfoldRefoldApply(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{"edge": edge, "height": "10 mm", "radius": "2 mm"}); err != nil {
 		t.Fatalf("flange apply: %v", err)

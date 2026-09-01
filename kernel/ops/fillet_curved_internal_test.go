@@ -11,6 +11,7 @@ import (
 // TestSurfaceKindNames covers every branch of the error-message surface namer, including the
 // %T fallback for a surface the switch does not special-case.
 func TestSurfaceKindNames(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		s    geom.Surface
 		want string

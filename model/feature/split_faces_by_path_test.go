@@ -33,6 +33,7 @@ func straddleSketch() *sketch.Sketch {
 // sketch profile onto the running solid and scores its faces, adding faces while removing no
 // material and keeping one body.
 func TestSplitFacesByPathScoresTheBox(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(boxBody()) // [0,4]³
 	split := NewModifyFeatures(fs).AddSplitFacesByPath(straddleSketch(), 0)
@@ -60,6 +61,7 @@ func TestSplitFacesByPathScoresTheBox(t *testing.T) {
 // TestSplitFacesByPathRoundTrip persists the path split and reads it back, resolving the sketch by
 // index, so a document carrying a split-by-path re-resolves its profile.
 func TestSplitFacesByPathRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := straddleSketch()
 	idx := oneSketch{s: sk}
 	fs := NewPartFeatures(nil)

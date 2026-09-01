@@ -31,6 +31,7 @@ func blockFaceRef(t *testing.T, r *Router, s *app.Session) string {
 // TestSketch3DIntersectionFaceWorkPlaneOverWire intersects a part face with an origin work plane
 // (#1854).
 func TestSketch3DIntersectionFaceWorkPlaneOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	faceRef := blockFaceRef(t, r, s)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
@@ -48,6 +49,7 @@ func TestSketch3DIntersectionFaceWorkPlaneOverWire(t *testing.T) {
 // TestSketch3DIntersectionWrongOperandCountErrors: fewer or more than two operands is a clean error
 // (#1854 AC2).
 func TestSketch3DIntersectionWrongOperandCountErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	faceRef := blockFaceRef(t, r, s)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
@@ -63,6 +65,7 @@ func TestSketch3DIntersectionWrongOperandCountErrors(t *testing.T) {
 // TestSketch3DIntersectionUnresolvedWorkPlaneIsUnhealthy: an unresolved work-plane ref reports
 // unhealthy rather than erroring, matching the face path (#1854).
 func TestSketch3DIntersectionUnresolvedWorkPlaneIsUnhealthy(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	faceRef := blockFaceRef(t, r, s)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})

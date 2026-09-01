@@ -57,6 +57,7 @@ func n4AcceptedBallFrameInputs(t *testing.T) n4BallFrameInputs {
 // frame-level bracket could not attribute the decline. Testing the named predicate at the threshold, plus the
 // frame's decline on a host it rejects, does attribute it.
 func TestN4BallFrameDeclinesVPlaneNotParallelToTorusAxis(t *testing.T) {
+	t.Parallel()
 	in := n4AcceptedBallFrameInputs(t)
 	for _, tc := range []struct {
 		name string
@@ -109,6 +110,7 @@ func tiltPlaneNormalTowardAxis(t *testing.T, pl geom.Plane, axis math.Vector3, t
 // thresholded rather than merely present; meridianOf's ρ and azimuth-side checks are unaffected by a radial
 // push and the meridian span stays wide, so holdsStation is the only guard that can fire.
 func TestN4BallFrameDeclinesStationOffTheDerivedCurve(t *testing.T) {
+	t.Parallel()
 	in := n4AcceptedBallFrameInputs(t)
 	for _, tc := range []struct {
 		name  string
@@ -156,6 +158,7 @@ func displaceStation(t *testing.T, torus geom.Torus, p math.Point3, d float64, a
 // bracketing it at the angular tolerance while the passed-in distance tol (1.4e-6 here, five times larger)
 // stays fixed.
 func TestN4BallFrameDeclinesDegenerateMeridianSpan(t *testing.T) {
+	t.Parallel()
 	in := n4AcceptedBallFrameInputs(t)
 	f, ok := newN4BallFrame(in.torus, in.vplane, in.m0, in.m1, in.tol)
 	if !ok {
@@ -189,6 +192,7 @@ func TestN4BallFrameDeclinesDegenerateMeridianSpan(t *testing.T) {
 // caller's, so pinning the end stations in place wrote THROUGH and destroyed the two derived end stations —
 // which is also what left them unverified by TestN4BallPathRollsOnPlaneAndTorusArm.
 func TestN4CanalSurfaceDoesNotMutateTheCallerPath(t *testing.T) {
+	t.Parallel()
 	arms, _ := classifyN4MixedArms(n4TestArms(t))
 	res := ResolutionForPoints([]math.Point3{math.P3(0, 0, 0), math.P3(200, 200, 60)})
 	pts := n4TestCornerPts(t, arms)

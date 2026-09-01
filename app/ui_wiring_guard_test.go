@@ -22,6 +22,7 @@ import (
 // compile-checked. On-canvas overlay buttons hold direct func pointers, so their gap is input
 // plumbing, not a missing id — covered by the Navigation Bar click test in head/ui.)
 func TestRibbonDropdownEntriesAreExecutable(t *testing.T) {
+	t.Parallel()
 	s := app.NewSession()
 	if err := app.RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)

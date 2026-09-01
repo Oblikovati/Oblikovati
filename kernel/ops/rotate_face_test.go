@@ -30,6 +30,7 @@ func faceWithNormal(t *testing.T, b *topo.Body, dir math.Vector3) *topo.Face {
 // the y-axis line along its x=0 top edge: the top plane becomes z = 2 − x·tanθ
 // and the volume the analytic wedge 8 − 4·tanθ.
 func TestRotateFacesTiltsTopIntoWedge(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	top := faceWithNormal(t, box, math.V3(0, 0, 1))
 	const theta = 0.15
@@ -49,6 +50,7 @@ func TestRotateFacesTiltsTopIntoWedge(t *testing.T) {
 
 // TestRotateFacesLostKey: a missing face key errors with the key.
 func TestRotateFacesLostKey(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	axisDir, _ := math.UnitVector3FromVector(math.V3(0, 1, 0))
 	if _, err := ops.RotateFaces(box, [][]byte{[]byte("gone")}, math.P3(0, 0, 2), axisDir, 0.1); err == nil {

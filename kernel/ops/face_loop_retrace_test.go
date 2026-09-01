@@ -31,6 +31,7 @@ func y4HostPlaneLoop() []math.Point3 {
 // but so does every legitimate subdivided edge — see the negative guards), or by requiring a
 // transversal crossing: nothing is reported and this goes RED.
 func TestRetracingFaceLoopsCatchesACollinearBackTrack(t *testing.T) {
+	t.Parallel()
 	body := planarLoopBody(t, math.P3(0, 0, 0), math.V3(0, 1, 0), y4HostPlaneLoop())
 	bad := RetracingFaceLoops(body, PropertyQuality())
 	if len(bad) != 1 {
@@ -47,6 +48,7 @@ func TestRetracingFaceLoopsCatchesACollinearBackTrack(t *testing.T) {
 // transversal self-crossings, because two overlapping collinear segments never straddle each other's
 // line and every orient2d in segmentsCross is exactly 0.
 func TestSelfCrossingFaceLoopsIsBlindToACollinearBackTrack(t *testing.T) {
+	t.Parallel()
 	body := planarLoopBody(t, math.P3(0, 0, 0), math.V3(0, 1, 0), y4HostPlaneLoop())
 	if bad := SelfCrossingFaceLoops(body, PropertyQuality()); len(bad) != 0 {
 		t.Errorf("the transversal predicate is expected to be blind here, got %d: %+v", len(bad), bad)
@@ -58,6 +60,7 @@ func TestSelfCrossingFaceLoopsIsBlindToACollinearBackTrack(t *testing.T) {
 // whose bottom edge is split into three collinear pieces is a perfectly legitimate boundary: the
 // pieces are collinear and consecutive, but they run the SAME way and cover disjoint ground.
 func TestRetracingFaceLoopsPassesASubdividedStraightEdge(t *testing.T) {
+	t.Parallel()
 	loop := []math.Point3{
 		math.P3(0, 0, 0), math.P3(30, 0, 0), math.P3(60, 0, 0), math.P3(100, 0, 0),
 		math.P3(100, 0, 60), math.P3(60, 0, 60), math.P3(0, 0, 60),
@@ -73,6 +76,7 @@ func TestRetracingFaceLoopsPassesASubdividedStraightEdge(t *testing.T) {
 // zero-area one, and its width sits two decades above the face's own geom.Resolution weld, so the
 // exact curve-to-curve distance between its two long edges keeps them apart.
 func TestRetracingFaceLoopsPassesAThinSliver(t *testing.T) {
+	t.Parallel()
 	const w = 1e-5
 	loop := []math.Point3{math.P3(0, 0, 0), math.P3(100, 0, 0), math.P3(100, 0, w), math.P3(0, 0, w)}
 	body := planarLoopBody(t, math.P3(0, 0, 0), math.V3(0, 1, 0), loop)
@@ -86,6 +90,7 @@ func TestRetracingFaceLoopsPassesAThinSliver(t *testing.T) {
 // violation as Y4's at zero separation, and the direction test admits it while still passing the
 // subdivided edge above, which shares the identical adjacency.
 func TestRetracingFaceLoopsCatchesAZeroWidthSpike(t *testing.T) {
+	t.Parallel()
 	loop := []math.Point3{
 		math.P3(0, 0, 0), math.P3(100, 0, 0), math.P3(100, 0, 40), math.P3(100, 0, 10),
 		math.P3(100, 0, 60), math.P3(0, 0, 60),

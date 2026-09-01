@@ -102,6 +102,7 @@ func countConstruction(ents []sketch.Entity) int {
 
 // TestSketch2DCommandsHaveAnEffect walks the 2D sketch environment's commands.
 func TestSketch2DCommandsHaveAnEffect(t *testing.T) {
+	t.Parallel()
 	assertEnvironmentCommandsAct(t, SketchEnvironment, sketch2DEffectFixture)
 }
 
@@ -131,6 +132,7 @@ func sketch3DEffectFixture(t *testing.T) *Session {
 // TestSketch3DCommandsHaveAnEffect walks the 3D sketch environment's commands — the ones the
 // audit found inert.
 func TestSketch3DCommandsHaveAnEffect(t *testing.T) {
+	t.Parallel()
 	assertEnvironmentCommandsAct(t, Sketch3DEnvironment, sketch3DEffectFixture)
 }
 
@@ -191,6 +193,7 @@ func environmentCommandIDs(t *testing.T, env Environment, fixture func(*testing.
 // fixture with one line selected and require the SAME KIND of state to move. A 2D control that
 // converts the selection while its 3D twin only flips a flag fails here.
 func TestSketchCommandParityAcrossEnvironments(t *testing.T) {
+	t.Parallel()
 	for _, pair := range pairedSketchCommands(t) {
 		t.Run(pair.name, func(t *testing.T) {
 			got2D := runAndDiff(t, pair.id2D, sketch2DEffectFixture)

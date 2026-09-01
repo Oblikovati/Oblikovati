@@ -17,6 +17,7 @@ import (
 // TestResolutionForBody covers the body entry point: nil and empty floor to 1, and a
 // populated body derives its size from the true RangeBox diagonal.
 func TestResolutionForBody(t *testing.T) {
+	t.Parallel()
 	if got := ResolutionForBody(nil).Size(); got != 1 {
 		t.Errorf("ResolutionForBody(nil).Size() = %v, want floor 1", got)
 	}
@@ -32,6 +33,7 @@ func TestResolutionForBody(t *testing.T) {
 // TestResolutionForBodies takes the largest operand's size, so a boolean's tolerance
 // suits the bigger body rather than a tiny tool.
 func TestResolutionForBodies(t *testing.T) {
+	t.Parallel()
 	small := subd.ToBody(subd.Box(1, 1, 1), "s")
 	big := subd.ToBody(subd.Box(3, 4, 12), "b") // diagonal 13
 	if got := ResolutionForBodies(small, big).Size(); !approxRelOps(got, 13) {
@@ -44,6 +46,7 @@ func TestResolutionForBodies(t *testing.T) {
 
 // TestResolutionForTris derives the size from CSG triangles' combined bbox.
 func TestResolutionForTris(t *testing.T) {
+	t.Parallel()
 	if got := resolutionForTris(nil).Size(); got != 1 {
 		t.Errorf("resolutionForTris(nil).Size() = %v, want floor 1", got)
 	}

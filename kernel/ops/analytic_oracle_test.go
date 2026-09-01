@@ -30,6 +30,7 @@ func analyticRelDiff(got, want float64) float64 {
 // TestBodyGeometryPropertiesIsExactForACylinder: πr²h and 2πr(r+h) to the last digits, where the
 // tessellated sum was low by the chord deficit of its inscribed polygon.
 func TestBodyGeometryPropertiesIsExactForACylinder(t *testing.T) {
+	t.Parallel()
 	const r, h = 3.0, 7.0
 	body, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
 	if err != nil {
@@ -49,6 +50,7 @@ func TestBodyGeometryPropertiesIsExactForACylinder(t *testing.T) {
 
 // TestBodyInertiaIsExactForACylinder: Izz = ½Vr² about the axis, from the analytic integral.
 func TestBodyInertiaIsExactForACylinder(t *testing.T) {
+	t.Parallel()
 	const r, h = 3.0, 7.0
 	body, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
 	if err != nil {
@@ -65,6 +67,7 @@ func TestBodyInertiaIsExactForACylinder(t *testing.T) {
 // cavity, so its signed volume is negative — and now exactly −8, not −8±0.05 as the merged face
 // mesh reported.
 func TestAnalyticShellVolumeSignsTheCavity(t *testing.T) {
+	t.Parallel()
 	body := cavityBody(t)
 	var outer, void float64
 	for _, sh := range body.Shells() {
@@ -89,6 +92,7 @@ func TestAnalyticShellVolumeSignsTheCavity(t *testing.T) {
 // TestPreciseRangeBoxSpansTheFullSphere: the equator bulges past every boundary curve, so a box
 // read off facet chords is short by the sagitta on all six faces. The analytic box is not.
 func TestPreciseRangeBoxSpansTheFullSphere(t *testing.T) {
+	t.Parallel()
 	const r = 5.0
 	body, err := brep.SolidSphere(math.P3(1, 2, 3), r, "ball")
 	if err != nil {
@@ -103,6 +107,7 @@ func TestPreciseRangeBoxSpansTheFullSphere(t *testing.T) {
 // TestPreciseRangeBoxSpansACylinderRadius: the side face's rim circles carry the bulge, and their
 // closed-form extrema put the box on the true radius rather than on an inscribed polygon's apothem.
 func TestPreciseRangeBoxSpansACylinderRadius(t *testing.T) {
+	t.Parallel()
 	const r, h = 3.0, 7.0
 	body, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
 	if err != nil {
@@ -120,6 +125,7 @@ func TestPreciseRangeBoxSpansACylinderRadius(t *testing.T) {
 // TestFaceInteriorPointLandsInsideEveryTrim: the probe a per-face gate classifies must really be on
 // the face it came from, on every face of a body with curved trims.
 func TestFaceInteriorPointLandsInsideEveryTrim(t *testing.T) {
+	t.Parallel()
 	ball, err := brep.SolidSphere(math.P3(0, 0, 0), 5, "ball")
 	if err != nil {
 		t.Fatalf("SolidSphere: %v", err)
@@ -149,6 +155,7 @@ func TestFaceInteriorPointLandsInsideEveryTrim(t *testing.T) {
 // parameter seam. Green's u-form cannot close such a loop, so the whole body used to fall back to
 // the tessellation; the conjugate v-form integrates it exactly.
 func TestDrilledPlateIntegratesAnalytically(t *testing.T) {
+	t.Parallel()
 	plate, err := brep.SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
@@ -175,6 +182,7 @@ func TestDrilledPlateIntegratesAnalytically(t *testing.T) {
 // zero, so a residual means some face was integrated over the wrong region or with a flipped
 // orientation. The check must reject that rather than let a wrong number through.
 func TestVectorAreaClosureRejectsAResidual(t *testing.T) {
+	t.Parallel()
 	exact, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(1, 1, 1), "exact")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
@@ -197,6 +205,7 @@ func TestVectorAreaClosureRejectsAResidual(t *testing.T) {
 // to, and a loop that closes in neither is refused rather than integrated over a region that is not
 // bounded in the covering space.
 func TestGreenFormFollowsTheClosingAxis(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name     string
 		loop     faceLoop
@@ -224,6 +233,7 @@ func TestGreenFormFollowsTheClosingAxis(t *testing.T) {
 // certificate then correctly refused, demoting a correct analytic result to faceted CSG. The probe
 // must be on its own face or absent, never on the far side.
 func TestFaceInteriorPointOnSeamWrappingBand(t *testing.T) {
+	t.Parallel()
 	cone, err := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 6, 8), 3, 6, "cone")
 	if err != nil {
 		t.Fatalf("SolidCylinderCone: %v", err)
@@ -255,6 +265,7 @@ func TestFaceInteriorPointOnSeamWrappingBand(t *testing.T) {
 // from vertices and edge curves. Those faces must still answer a boundary probe, or every coaxial
 // sphere boolean reads as fabricated.
 func TestBoundaryIndexFindsABoundarylessFace(t *testing.T) {
+	t.Parallel()
 	ball, err := brep.SolidSphere(math.P3(0, 0, 0), 5, "ball")
 	if err != nil {
 		t.Fatalf("SolidSphere: %v", err)
@@ -275,6 +286,7 @@ func TestBoundaryIndexFindsABoundarylessFace(t *testing.T) {
 // TestBoundaryIndexUsesTheTreeForBoundedFaces: a bounded face is found through the box tree, and a
 // point well away from every face is not.
 func TestBoundaryIndexUsesTheTreeForBoundedFaces(t *testing.T) {
+	t.Parallel()
 	block, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "block")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)

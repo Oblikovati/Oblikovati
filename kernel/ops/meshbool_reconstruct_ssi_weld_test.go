@@ -50,6 +50,7 @@ func facetedVolume(t *testing.T, op PartFeatureOperation, target, tool *topo.Bod
 // bottom faces (an ellipse at each) reconstructs to a valid analytic genus-1 solid — both
 // elliptical rims analytic, the bore wall a single cylinder face, the exact volume.
 func TestReconstructObliqueBoreRebuilds(t *testing.T) {
+	t.Parallel()
 	slab, err := brep.SolidBlock(m.P3(-1, -1, 0), m.P3(1, 1, 0.5), "slab")
 	if err != nil {
 		t.Fatalf("slab: %v", err)
@@ -82,6 +83,7 @@ func TestReconstructObliqueBoreRebuilds(t *testing.T) {
 // wall meets the box top is a shared analytic edge, and the exposed stub keeps its cylinder wall
 // and circular cap. This is the #2167-sibling "cyl∪box" the Layer-4 weld unlocks.
 func TestReconstructObliqueCylinderBoxUnion(t *testing.T) {
+	t.Parallel()
 	box, err := brep.SolidBlock(m.P3(-1, -1, 0), m.P3(1, 1, 1), "box")
 	if err != nil {
 		t.Fatalf("box: %v", err)

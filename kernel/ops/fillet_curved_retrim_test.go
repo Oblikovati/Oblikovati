@@ -112,6 +112,7 @@ func buildRadialFaceWithHole(t *testing.T) (*topo.Face, []math.Point3) {
 // buildRadialFaceWithHole plants the inner loop at index 0 precisely so a Loops()[0]-reading retrim
 // bites the hole (wrong shape / wrong area / decline) instead of the rectangle's boundary.
 func TestRetrimCurvedHost_InnerLoopSurvives(t *testing.T) {
+	t.Parallel()
 	sphere, arms := b3CornerArms(t)
 	res := geom.ResolutionForSize(150)
 	w, ok := solveCurvedCorner(sphere, arms, res)
@@ -154,6 +155,7 @@ func assertLoopPointsEqual(t *testing.T, loop filletLoop, want []math.Point3) {
 // cross-section bite is produced by spliceCornerBite (fillet_curved_farrunout.go), covered end-to-end
 // by the B3 weld volume regression, not by retrimCurvedHost.
 func TestRetrimCurvedHost_B3(t *testing.T) {
+	t.Parallel()
 	sphere, arms := b3CornerArms(t)
 	res := geom.ResolutionForSize(150)
 	w, ok := solveCurvedCorner(sphere, arms, res)
@@ -320,6 +322,7 @@ func newTieLoopFace(t *testing.T) *topo.Face {
 // vertex on the INNER notch loop (min dist 0, exact), far from the outer rim (min dist ≈51) — the
 // bitten loop must be the inner one, not the outer rim T5.3's original code assumed.
 func TestBittenLoop_SelectsInnerNotchLoop(t *testing.T) {
+	t.Parallel()
 	c := math.P3(50, 0, 10) // corner-sphere centre near the inner loop
 	host := newTwoLoopFace(t,
 		squareRim(0, 100),      // outer rim vertices, min dist to c ≈ 51
@@ -340,6 +343,7 @@ func TestBittenLoop_SelectsInnerNotchLoop(t *testing.T) {
 // single-loop, so bittenLoop must return that (outer) loop regardless of C — the generalized selector
 // must not change behaviour on the clean wedge.
 func TestBittenLoop_SingleLoopReducesToOuter(t *testing.T) {
+	t.Parallel()
 	c := math.P3(10, -38.7298, 90) // B3 corner centre
 	host := newSingleLoopFace(t, squareRim(0, 100))
 
@@ -354,6 +358,7 @@ func TestBittenLoop_SingleLoopReducesToOuter(t *testing.T) {
 // means the retrim cannot tell which wire the corner actually bit, so bittenLoop must decline rather
 // than guess (a wrong pick would bite the wrong loop and corrupt the mesh silently).
 func TestBittenLoop_TieRejects(t *testing.T) {
+	t.Parallel()
 	c := math.P3(0, 0, 0)
 	host := newTieLoopFace(t)
 
@@ -366,6 +371,7 @@ func TestBittenLoop_TieRejects(t *testing.T) {
 // order, as endSegs — the primitive that lets retrimCurvedHost retrim whichever loop bittenLoop picked
 // (outer or inner), generalizing the old "always read the outer loop" originalHostSegs.
 func TestSegsFromLoop_MatchesLoopEdgeOrder(t *testing.T) {
+	t.Parallel()
 	pts := squareRim(0, 10)
 	host := newSingleLoopFace(t, pts)
 	loop := host.Loops()[0]
@@ -386,6 +392,7 @@ func TestSegsFromLoop_MatchesLoopEdgeOrder(t *testing.T) {
 // one — on the N7 wall that is the outer rim, once bittenLoop has picked the inner notch as L*,
 // generalizing innerHostLoops' "carry every hole" to "carry every OTHER loop".
 func TestLoopsExcept_CarriesEveryOtherLoopVerbatim(t *testing.T) {
+	t.Parallel()
 	outer, inner := squareRim(0, 100), notchWindow(50, 0, 10)
 	host := newTwoLoopFace(t, outer, inner)
 	var bitten *topo.Loop

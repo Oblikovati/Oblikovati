@@ -14,6 +14,7 @@ import (
 // duplicated constraint reports a healthy DOF while the solver settles on a degenerate
 // configuration.
 func TestToolCommitsAreRigid(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name   string
 		dof    int

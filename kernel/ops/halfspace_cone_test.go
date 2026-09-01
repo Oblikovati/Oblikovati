@@ -37,6 +37,7 @@ func coneAndPlaneFaces(t *testing.T, body *topo.Body) {
 // TestHalfSpaceCutConeBaseSideIsFrustum keeps the base side of a cone (apex at z=10, base radius 3 at
 // z=0) below z=5: an exact frustum of end radii 3 and 1.5.
 func TestHalfSpaceCutConeBaseSideIsFrustum(t *testing.T) {
+	t.Parallel()
 	cone, _ := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 0, "cone")
 	plane, _ := geom.NewPlane(math.P3(0, 0, 5), math.V3(0, 0, 1)) // keep z ≤ 5 (the wide base side)
 	res, err := brep.HalfSpaceCut(cone, plane)
@@ -56,6 +57,7 @@ func TestHalfSpaceCutConeBaseSideIsFrustum(t *testing.T) {
 
 // TestHalfSpaceCutConeApexSideIsCone keeps the apex side above z=5: a smaller exact cone (radius 1.5).
 func TestHalfSpaceCutConeApexSideIsCone(t *testing.T) {
+	t.Parallel()
 	cone, _ := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 0, "cone")
 	plane, _ := geom.NewPlane(math.P3(0, 0, 5), math.V3(0, 0, -1)) // keep z ≥ 5 (the apex tip)
 	res, err := brep.HalfSpaceCut(cone, plane)
@@ -75,6 +77,7 @@ func TestHalfSpaceCutConeApexSideIsCone(t *testing.T) {
 
 // TestHalfSpaceCutConeClearsKeepsWhole: a perpendicular plane beyond the base keeps the cone whole.
 func TestHalfSpaceCutConeClearsKeepsWhole(t *testing.T) {
+	t.Parallel()
 	cone, _ := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 0, "cone")
 	full := ops.BodyGeometryProperties(cone, ops.DefaultQuality()).Volume
 	plane, _ := geom.NewPlane(math.P3(0, 0, 12), math.V3(0, 0, 1)) // z ≤ 12 ⊇ the whole z∈[0,10] cone

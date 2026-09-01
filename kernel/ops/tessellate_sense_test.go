@@ -39,6 +39,7 @@ func unitQuadFace(reversed bool) *topo.Face {
 // winding, so a curved cut wall (whose surface normal points into the removed material)
 // presents its true material side to shading and the divergence-theorem volume.
 func TestReversedFaceFlipsNormalsAndWinding(t *testing.T) {
+	t.Parallel()
 	q := ops.DefaultQuality()
 	plain := ops.TessellateFace(unitQuadFace(false), q)
 	rev := ops.TessellateFace(unitQuadFace(true), q)

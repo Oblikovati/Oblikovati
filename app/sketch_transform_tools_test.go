@@ -18,6 +18,7 @@ func near2(t *testing.T, got gmath.Point2, x, y float64) {
 }
 
 func TestSketchMoveTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(gmath.P2(0, 0), gmath.P2(1, 0))
 	tool := NewSketchMoveTool()
@@ -35,6 +36,7 @@ func TestSketchMoveTool(t *testing.T) {
 }
 
 func TestSketchCopyTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(gmath.P2(0, 0), gmath.P2(1, 0))
 	tool := NewSketchCopyTool()
@@ -51,6 +53,7 @@ func TestSketchCopyTool(t *testing.T) {
 }
 
 func TestSketchRotateTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(gmath.P2(1, 0), gmath.P2(2, 0))
 	tool := NewSketchRotateTool()
@@ -66,6 +69,7 @@ func TestSketchRotateTool(t *testing.T) {
 }
 
 func TestSketchScaleTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	c := sk.Circles().AddByCenterRadius(gmath.P2(2, 0), 1)
 	tool := NewSketchScaleTool()
@@ -83,6 +87,7 @@ func TestSketchScaleTool(t *testing.T) {
 }
 
 func TestSketchScaleToolRejectsNonPositive(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	c := sk.Circles().AddByCenterRadius(gmath.P2(2, 0), 1)
 	tool := NewSketchScaleTool()
@@ -95,6 +100,7 @@ func TestSketchScaleToolRejectsNonPositive(t *testing.T) {
 }
 
 func TestSketchRectPatternTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	c := sk.Circles().AddByCenterRadius(gmath.P2(0, 0), 0.5)
 	tool := NewSketchRectPatternTool()
@@ -111,6 +117,7 @@ func TestSketchRectPatternTool(t *testing.T) {
 }
 
 func TestSketchCircPatternTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	c := sk.Circles().AddByCenterRadius(gmath.P2(2, 0), 0.5)
 	tool := NewSketchCircPatternTool()
@@ -128,6 +135,7 @@ func TestSketchCircPatternTool(t *testing.T) {
 }
 
 func TestSketchStretchTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(gmath.P2(0, 0), gmath.P2(4, 0))
 	tool := NewSketchStretchTool()
@@ -146,6 +154,7 @@ func TestSketchStretchTool(t *testing.T) {
 
 // A pattern that would make only one instance is not ready to commit.
 func TestSketchRectPatternNeedsMoreThanOne(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	c := sk.Circles().AddByCenterRadius(gmath.P2(0, 0), 0.5)
 	tool := NewSketchRectPatternTool()

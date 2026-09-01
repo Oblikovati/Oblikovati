@@ -37,6 +37,7 @@ func dProfileSketchOnPlaneZ(z, r, theta float64) *sketch.Sketch {
 // re-tessellate against one surface (aligned grids, no seam) — asserted here as analytic
 // cylinder faces surviving the join plus the exact stacked volume.
 func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
+	t.Parallel()
 	// #2167 at the feature level: an EXTRUDE-built full cylinder JOINED to a stacked D-prism whose
 	// arc wall is cocylindrical must keep BOTH walls analytic — the ADR-0056 Layer-5 reconstruction
 	// (reconstructionCutover, now the default) rebuilds them on the exact cylinder surface, merged to

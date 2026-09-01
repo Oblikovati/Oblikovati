@@ -12,6 +12,7 @@ import (
 // they are covered here once, on the verb, not per driver.
 
 func TestParameterGroupVerbsRoundTrip(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	g, err := s.AddParameterGroup("frame", "Frame", "com.example")
 	if err != nil {
@@ -36,6 +37,7 @@ func TestParameterGroupVerbsRoundTrip(t *testing.T) {
 }
 
 func TestDetachParameterFromGroupKeepsOtherMemberships(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	ps := partParams(t, s)
 	p, err := ps.AddUserParameter("len", "10 mm")
@@ -59,6 +61,7 @@ func TestDetachParameterFromGroupKeepsOtherMemberships(t *testing.T) {
 }
 
 func TestDeleteParameterGroupFlagControlsCascade(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	ps := partParams(t, s)
 	p, _ := ps.AddUserParameter("len", "10 mm")
@@ -93,6 +96,7 @@ func TestDeleteParameterGroupFlagControlsCascade(t *testing.T) {
 // TestDeleteParameterRefusalSetsNotice: the UI surfaces the aggregate's
 // refusal through the session notice (the B1 UI path, #1612).
 func TestDeleteParameterRefusalSetsNotice(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	ps := partParams(t, s)
 	w, _ := ps.AddUserParameter("width", "10 mm")

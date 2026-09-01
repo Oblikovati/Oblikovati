@@ -51,6 +51,7 @@ func circularRimKeyAtZ(t *testing.T, b *topo.Body, z float64) []byte {
 // solveRim's convex R−r, and the result stays a fully watertight solid (Valid && Closed && Manifold &&
 // HolesContained && IsSolid).
 func TestConcaveRimBuildsRPlusRTorus(t *testing.T) {
+	t.Parallel()
 	const size, height, boreCenter, radius, r = 20.0, 4.0, 10.0, 3.0, 1.0
 	drilled := slabWithBore(t, size, height, boreCenter, radius)
 	rimKey := circularRimKeyAtZ(t, drilled, height)
@@ -85,6 +86,7 @@ func TestConcaveRimBuildsRPlusRTorus(t *testing.T) {
 // convex solveRim path — torus major R−r, never the concave R+r mirror — confirming the new concave
 // branch in resolveRim (fillet_rim.go) never fires on a rim solveRim already builds.
 func TestConvexBossRimStaysRMinusR(t *testing.T) {
+	t.Parallel()
 	const radius, height, r = 5.0, 8.0, 1.5
 	b, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), radius, height)
 	if err != nil {

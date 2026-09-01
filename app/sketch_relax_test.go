@@ -31,6 +31,7 @@ func dimensionedSketchSession(t *testing.T, length float64) (*Session, *sketch.S
 }
 
 func TestRelaxModeTogglePersistsAndReports(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.RelaxMode() {
 		t.Fatal("Relax Mode should be off by default")
@@ -47,6 +48,7 @@ func TestRelaxModeTogglePersistsAndReports(t *testing.T) {
 // TestRelaxModeRefusedDragWithoutMode confirms the baseline: a fully-dimensioned line cannot
 // be direct-dragged when Relax Mode is off (it click-selects instead).
 func TestRelaxModeRefusedDragWithoutMode(t *testing.T) {
+	t.Parallel()
 	s, _, b := dimensionedSketchSession(t, 3)
 	centerOnSketchPoint(s, 3) // endpoint b (3,0) at screen centre
 	if s.BeginEntityDrag(100, 100) {
@@ -58,6 +60,7 @@ func TestRelaxModeRefusedDragWithoutMode(t *testing.T) {
 // TestRelaxModeDragsDimensionedLine confirms that with Relax Mode on the same fully-dimensioned
 // endpoint drags, the geometry follows the cursor, and the driving dimension relaxes to it.
 func TestRelaxModeDragsDimensionedLine(t *testing.T) {
+	t.Parallel()
 	s, sk, b := dimensionedSketchSession(t, 3)
 	s.SetRelaxMode(true)
 	centerOnSketchPoint(s, 3) // endpoint b (3,0) at screen centre

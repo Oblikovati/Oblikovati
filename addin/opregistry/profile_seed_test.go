@@ -50,6 +50,7 @@ func twoRegionPart(t *testing.T) *app.Session {
 // region (area 1 × 1 cm = 1 cm³), proving the host resolves the seed by containment rather than
 // extruding the default region 0.
 func TestExtrudeProfileSeedSelectsContainingRegion(t *testing.T) {
+	t.Parallel()
 	s := twoRegionPart(t)
 	if _, err := apply(t, s, "extrude",
 		`{"sketchIndex":0,"distance":"10 mm","profileSeeds":[[6.5,0.5]]}`); err != nil {
@@ -63,6 +64,7 @@ func TestExtrudeProfileSeedSelectsContainingRegion(t *testing.T) {
 // TestExtrudeProfileSeedBeatsIndex: with the seed inside the big region but profileIndex left at 0,
 // the seed wins — a second seed pointing at the big region yields area 12 × 1 = 12 cm³.
 func TestExtrudeProfileSeedBeatsIndex(t *testing.T) {
+	t.Parallel()
 	s := twoRegionPart(t)
 	if _, err := apply(t, s, "extrude",
 		`{"sketchIndex":0,"profileIndex":0,"distance":"10 mm","profileSeeds":[[2,1.5]]}`); err != nil {

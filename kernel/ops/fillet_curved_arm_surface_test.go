@@ -52,6 +52,7 @@ func b3VerticalWallEdge(t *testing.T) *topo.Edge {
 // (`5 0 0 90 0 0 1 … 40 10`): convex ⟹ major = R−r = 40, minor = r = 10, centre offset r below the
 // cap (z = 100−10 = 90). A flipped material-side sign would give major R+r = 60 instead.
 func TestTorusArmSurface_B3(t *testing.T) {
+	t.Parallel()
 	res := testArmResolution()
 	tor, ok := torusArmSurface(cylAxis(0, 0, 1, 50), planeAtZ(100), armOutward(0, 0, 1), 10, 1, res)
 	if !ok {
@@ -67,6 +68,7 @@ func TestTorusArmSurface_B3(t *testing.T) {
 // onto (or through) the axis — a self-intersecting spindle/horn torus — so the constructor must
 // honest-reject rather than emit degenerate geometry (§Numerical pitfalls).
 func TestTorusArmSurface_Spindle(t *testing.T) {
+	t.Parallel()
 	res := testArmResolution()
 	if _, ok := torusArmSurface(cylAxis(0, 0, 1, 50), planeAtZ(100), armOutward(0, 0, 1), 50, 1, res); ok {
 		t.Fatalf("torusArmSurface accepted r=R=50 (major R−r=0): a spindle torus must be rejected")
@@ -76,6 +78,7 @@ func TestTorusArmSurface_Spindle(t *testing.T) {
 // TestCylinderArmSurface_B3 pins the config-(ii) cylinder arm: a rolling-ball cylinder of radius
 // r=10 about the selected ruling of P_r∩C_ρ on the vertical wall (OCCT BREP `2 … 10`).
 func TestCylinderArmSurface_B3(t *testing.T) {
+	t.Parallel()
 	cyl, ok := cylinderArmSurface(b3VerticalWallEdge(t), cylAxis(0, 0, 1, 50), planeWithNormal(1, 0, 0), armOutward(1, 0, 0), 10, 1)
 	if !ok || !nearlyArm(cyl.Radius, 10) {
 		t.Fatalf("B3 cylinder arm radius = %.6f (ok=%v), want 10", cyl.Radius, ok)
@@ -89,6 +92,7 @@ func TestCylinderArmSurface_B3(t *testing.T) {
 // TestCylinderArmSurface_Clears is the existence guard: when P_r never reaches C_ρ (the offset plane
 // clears the offset cylinder, |m| > ρ) there is no real ruling, so the constructor rejects the edge.
 func TestCylinderArmSurface_Clears(t *testing.T) {
+	t.Parallel()
 	far, err := geom.NewPlane(math.P3(200, 0, 0), math.V3(1, 0, 0)) // 200 ≫ ρ = R−r = 40
 	if err != nil {
 		t.Fatalf("plane: %v", err)

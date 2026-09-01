@@ -19,6 +19,7 @@ import (
 // TestCoaxialCylinderUnionIsExact unions z∈[0,4] with z∈[3,7] (radius 2) and checks the result keeps a
 // cylinder face and has the exact merged volume πr²·7.
 func TestCoaxialCylinderUnionIsExact(t *testing.T) {
+	t.Parallel()
 	a, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder a: %v", err)

@@ -10,6 +10,7 @@ import (
 func seg(a, b [3]float64) [2]Point { return [2]Point{pt(a), pt(b)} }
 
 func TestRefineFaceSingleChord(t *testing.T) {
+	t.Parallel()
 	face := tri([3]float64{0, 0, 0}, [3]float64{10, 0, 0}, [3]float64{0, 10, 0})
 	segments := [][2]Point{seg([3]float64{5, 0, 0}, [3]float64{0, 5, 0})} // boundary-to-boundary chord
 	tris := RefineFace(face, segments)
@@ -17,6 +18,7 @@ func TestRefineFaceSingleChord(t *testing.T) {
 }
 
 func TestRefineFaceTwoCrossing(t *testing.T) {
+	t.Parallel()
 	face := tri([3]float64{0, 0, 0}, [3]float64{10, 0, 0}, [3]float64{0, 10, 0})
 	segments := [][2]Point{
 		seg([3]float64{5, 0, 0}, [3]float64{0, 5, 0}), // x+y=5
@@ -32,6 +34,7 @@ func TestRefineFaceTwoCrossing(t *testing.T) {
 }
 
 func TestRefineFaceTiltedPlane(t *testing.T) {
+	t.Parallel()
 	// Same topology on a non-axis-aligned face, exercising planeAxis in the driver.
 	face := tri([3]float64{0, 0, 0}, [3]float64{6, 0, 3}, [3]float64{0, 6, 3})
 	// Two points on distinct edges, giving an interior chord in the face plane.
@@ -41,6 +44,7 @@ func TestRefineFaceTiltedPlane(t *testing.T) {
 }
 
 func TestRefineFaceSegmentAlongEdge(t *testing.T) {
+	t.Parallel()
 	// A constraint lying along the face's own bottom edge: the face corners are
 	// collinear with it but beyond its endpoints, exercising the range guard in
 	// verticesOnSegment.
@@ -54,6 +58,7 @@ func TestRefineFaceSegmentAlongEdge(t *testing.T) {
 }
 
 func TestRefineFacePreservesOrientation(t *testing.T) {
+	t.Parallel()
 	// A face wound clockwise in its projection: every refined sub-triangle must keep
 	// that same (input) orientation, not the internal CCW-normalized one.
 	face := tri([3]float64{0, 0, 0}, [3]float64{0, 4, 0}, [3]float64{4, 0, 0})

@@ -85,6 +85,7 @@ func s1RebuildMaps(body *topo.Body, ef edgeFillet) filletRebuildMaps {
 // watertight, hole-contained solid whose tessellated area is within OCCT's 1% (ref 3662.79, forensics
 // §8.2). A partial fill (an open shell) or a surviving hole would fail here.
 func TestBuildSetbackFaces_S1Watertight(t *testing.T) {
+	t.Parallel()
 	body := s1SetbackAssembled(t)
 	if !body.IsSolid() {
 		t.Fatalf("S1 intact-boss shell is not a solid: %d open edges", len(openEdges(body)))
@@ -105,6 +106,7 @@ func TestBuildSetbackFaces_S1Watertight(t *testing.T) {
 // area is a straight-chord polygon of the footprint rim, so a sub-1% band under the analytic value is
 // the subdivision, not a lost region.
 func TestBuildSetbackFaces_S1BossWallsIntact(t *testing.T) {
+	t.Parallel()
 	body := s1SetbackAssembled(t)
 	if got := countCylFacesNear(body, 753.982, 7.6); got != 1 {
 		t.Fatalf("want exactly ONE intact r8 boss wall near 753.982 (un-split), got %d", got)
@@ -117,6 +119,7 @@ func TestBuildSetbackFaces_S1BossWallsIntact(t *testing.T) {
 // TestBuildSetbackFaces_S1HostsSingleLoop pins forensics §3/§8.2: every result face is WIRE:1 — the boss
 // footprint holes are OPENED into the fillet cut (re-clipped host planes), not preserved as inner loops.
 func TestBuildSetbackFaces_S1HostsSingleLoop(t *testing.T) {
+	t.Parallel()
 	body := s1SetbackAssembled(t)
 	for _, f := range body.Faces() {
 		if n := len(f.Loops()); n != 1 {
@@ -129,6 +132,7 @@ func TestBuildSetbackFaces_S1HostsSingleLoop(t *testing.T) {
 // fixture, whose bosses never reach the receded band) detects no setback bands, so buildSetbackFaces is
 // never reached — but resolveSetbackTiling on its empty bands must decline, so the whole edge falls back.
 func TestBuildSetbackFaces_HonestReject(t *testing.T) {
+	t.Parallel()
 	ef, res := runoutFixtureBehindBand(t)
 	b, _ := detectSetbackBands(ef, res)
 	set := runoutSet{replace: map[uint64]filletFace{}}
@@ -195,6 +199,7 @@ func s4SetbackEdge(t *testing.T) (edgeFillet, *topo.Body) {
 // must be a watertight, hole-contained solid whose tessellated area is within OCCT's 1% (ref 7004.23,
 // forensics §8.3, window [6934.2, 7074.3]). The cone Adjacent must resolve for extractSetbackPatches.
 func TestBuildSetbackFaces_S4Watertight(t *testing.T) {
+	t.Parallel()
 	body := s4SetbackAssembled(t)
 	if !body.IsSolid() {
 		t.Fatalf("S4 intact-boss shell is not a solid: %d open edges", len(openEdges(body)))
@@ -213,6 +218,7 @@ func TestBuildSetbackFaces_S4Watertight(t *testing.T) {
 // cone face near its analytic 1218.1 and the r10 cylinder as ONE face near 942.478 (forensics §8.3) —
 // never split into sub-faces. This is what the old split path violated (area-coincidental green).
 func TestBuildSetbackFaces_S4BossWallsIntact(t *testing.T) {
+	t.Parallel()
 	body := s4SetbackAssembled(t)
 	// The tessellated area is a straight-chord polygon of the footprint rim, so it sits a sub-2% band
 	// UNDER the analytic value (the intact-boss subdivision, not a lost region): cone 1203.45 vs 1218.1,
@@ -229,6 +235,7 @@ func TestBuildSetbackFaces_S4BossWallsIntact(t *testing.T) {
 // TestBuildSetbackFaces_S4HostsSingleLoop pins forensics §8.3: every S4 result face is WIRE:1 — both boss
 // footprint holes (cone base + r10) are opened into the fillet cut, never preserved as inner loops.
 func TestBuildSetbackFaces_S4HostsSingleLoop(t *testing.T) {
+	t.Parallel()
 	body := s4SetbackAssembled(t)
 	for _, f := range body.Faces() {
 		if n := len(f.Loops()); n != 1 {
@@ -242,6 +249,7 @@ func TestBuildSetbackFaces_S4HostsSingleLoop(t *testing.T) {
 // bosses INTACT — r6 565.487, r8 753.982 (forensics §8.2) — not split. Total area alone (the corpus
 // gate) can be right by coincidence; one intact face per boss is the topology-faithful proof.
 func TestFilletEdges_S1WallsIntact(t *testing.T) {
+	t.Parallel()
 	body := filletedCorpusEdge(t, "simple/S1", math.P3(0, -10, 10), 6)
 	if got := countCylFacesNear(body, 753.982, 8); got != 1 {
 		t.Fatalf("wired S1: want ONE intact r8 boss wall near 753.982 (un-split), got %d", got)
@@ -255,6 +263,7 @@ func TestFilletEdges_S1WallsIntact(t *testing.T) {
 // boss (≈1218.1) and the r10 cylinder (≈942.478) each as ONE intact face (forensics §8.3) — the proof
 // that the cone routes through the new path faithfully, not the old area-coincidental split.
 func TestFilletEdges_S4WallsIntact(t *testing.T) {
+	t.Parallel()
 	body := filletedCorpusEdge(t, "simple/S4", math.P3(0, -15, 0), 8)
 	if got := countConeFacesNear(body, 1218.1, 18); got != 1 {
 		t.Fatalf("wired S4: want ONE intact cone boss wall near 1218.1 (un-split), got %d", got)
@@ -280,6 +289,7 @@ func countEllipCylFacesNear(body *topo.Body, want, tol float64) int {
 // proof that the ellipse footprint (geom.EllipseFull) rails to the intact wall — total area alone (the
 // corpus gate) can be right by coincidence.
 func TestFilletEdges_T7WallsIntact(t *testing.T) {
+	t.Parallel()
 	body := filletedCorpusEdge(t, "simple/T7", math.P3(0, -13, 0), 6)
 	if got := countEllipCylFacesNear(body, 2381.68, 24); got != 1 {
 		t.Fatalf("wired T7: want ONE intact oblique-ellipse boss wall near 2381.68 (un-split), got %d", got)
@@ -313,6 +323,7 @@ func filletedCorpusEdge(t *testing.T, rel string, mid math.Point3, r float64) *t
 // (565.487) as ONE intact face. The torus tessellates as a chorded band (band_ring_chain.go), not the full
 // parametric donut; a single face near 1144 proves both the intact-boss topology AND the band mesher.
 func TestFilletEdges_T1TorusIntact(t *testing.T) {
+	t.Parallel()
 	body := filletedCorpusEdge(t, "simple/T1", math.P3(0, -30, 0), 8)
 	if got := countSurfaceFacesNear[geom.Torus](body, 1144.04, 11); got != 1 {
 		t.Fatalf("wired T1: want ONE intact torus boss wall near 1144.04 (NOT the 3947.68 donut), got %d", got)
@@ -329,6 +340,7 @@ func TestFilletEdges_T1TorusIntact(t *testing.T) {
 // intact setback path FAITHFULLY, not by the do-no-harm area coincidence. (The task brief's "942.478" is an
 // S4 copy-paste; T4's cylinder is r10×h10 = 628.30, measured pre-fillet and confirmed intact post-fillet.)
 func TestFilletEdges_T4TorusIntact(t *testing.T) {
+	t.Parallel()
 	body := filletedCorpusEdge(t, "simple/T4", math.P3(0, -30, 0), 8)
 	if got := countSurfaceFacesNear[geom.Torus](body, 2826.04, 28); got != 1 {
 		t.Fatalf("wired T4: want ONE intact torus boss wall near 2826.04 (NOT the 13816.88 donut), got %d", got)
@@ -344,6 +356,7 @@ func TestFilletEdges_T4TorusIntact(t *testing.T) {
 // NOT the 3947 full donut. The old split path left this seam a full-domain-grid donut and could not weld;
 // the intact path keeps the torus whole and welds the setback patches to its subdivided footprint rim.
 func TestFilletEdges_T1SetbackSeamWatertight(t *testing.T) {
+	t.Parallel()
 	body := filletedCorpusEdge(t, "simple/T1", math.P3(0, -30, 0), 8)
 	if !body.IsSolid() {
 		t.Fatalf("T1 intact-torus setback shell is not a solid: %d open edges", len(openEdges(body)))
@@ -366,6 +379,7 @@ func TestFilletEdges_T1SetbackSeamWatertight(t *testing.T) {
 // sphere now closes faithfully like S1/S4/T1. (m5-s7-spike.md: OCCT keeps the hemisphere intact 1061.86;
 // our path meshes it 1069.75, whole body +0.732% in-gate, census matching OCCT.)
 func TestFilletEdges_S7SphereIntact(t *testing.T) {
+	t.Parallel()
 	body := filletedCorpusEdge(t, "simple/S7", math.P3(0, -15, 0), 3)
 	if !body.IsSolid() {
 		t.Fatalf("S7 intact-sphere setback shell is not a solid: %d open edges", len(openEdges(body)))
@@ -405,6 +419,7 @@ func assertSingleBossWatertight(t *testing.T, body *topo.Body, name string) {
 // R=13 hemisphere stays ONE intact geom.Sphere face near 2πR²=1061.86. The sphere host footprint arc is
 // densified (densifyHostArc, one-boss only) so the whole-footprint host notch matches the analytic disc.
 func TestFilletEdges_S6SphereSingleBoss(t *testing.T) {
+	t.Parallel()
 	body := filletedCorpusEdge(t, "simple/S6", math.P3(0, -15, 0), 3)
 	assertSingleBossWatertight(t, body, "S6")
 	if got := countSurfaceFacesNear[geom.Sphere](body, 1061.86, 12); got != 1 {
@@ -416,6 +431,7 @@ func TestFilletEdges_S6SphereSingleBoss(t *testing.T) {
 // + ONE crossing Torus(20,5) boss. The single-boss tiling must weld watertight and keep the torus wall as
 // ONE intact chorded band near its area ≈1144 (NOT the full donut), footprint absorbed, every face WIRE:1.
 func TestFilletEdges_S9TorusSingleBoss(t *testing.T) {
+	t.Parallel()
 	body := filletedCorpusEdge(t, "simple/S9", math.P3(0, -30, 0), 10)
 	assertSingleBossWatertight(t, body, "S9")
 	if got := countSurfaceFacesNear[geom.Torus](body, 1144.04, 12); got != 1 {
@@ -431,6 +447,7 @@ func TestFilletEdges_S9TorusSingleBoss(t *testing.T) {
 // holds for a non-normal boss axis too. Torus band area (measured post-fillet via TessellateFace, the
 // same probe S6/S9's 1061.86/1144.04 constants came from) is ~2827.23.
 func TestFilletEdges_T3TorusObliqueSingleBoss(t *testing.T) {
+	t.Parallel()
 	body := filletedCorpusEdge(t, "simple/T3", math.P3(-8.056074683, -25.47882455, 13.63558433), 8)
 	assertSingleBossWatertight(t, body, "T3")
 	if got := countSurfaceFacesNear[geom.Torus](body, 2827.23, 28); got != 1 {
@@ -441,6 +458,7 @@ func TestFilletEdges_T3TorusObliqueSingleBoss(t *testing.T) {
 // TestResolveSetbackTiling_TwoBossUnchanged pins the do-no-harm gate for the single-boss addition: the
 // 2-boss S1 shape still resolves to the S1 tiling (outer+inner bosses, both hosts distinct).
 func TestResolveSetbackTiling_TwoBossUnchanged(t *testing.T) {
+	t.Parallel()
 	ef, res := runoutFixtureCrossingBoss(t)
 	b, ok := detectSetbackBands(ef, res)
 	if !ok || len(b.bosses) != 2 {
@@ -487,6 +505,7 @@ func synthTorusSetbackBoss(t *testing.T) (crossingBoss, geom.Cylinder, math.Poin
 // notch 57° + host 61.6°), not the 118° out-and-back slit the old local minor/major midpoint test emitted
 // on a large footprint (m4-spike.md §CRITICAL — 242° dropped).
 func TestBossRimSubArcs_TorusFootprintSpansFullCircle(t *testing.T) {
+	t.Parallel()
 	boss, fillet, seam, c1, c2 := synthTorusSetbackBoss(t)
 	subs, ok := bossRimSubArcs(boss, fillet, seam, c1, c2, nil)
 	if !ok {

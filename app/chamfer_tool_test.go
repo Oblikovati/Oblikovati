@@ -34,6 +34,7 @@ func verticalEdgeOf(t *testing.T, b *topo.Body) EdgeHandle {
 // TestChamferToolEndToEnd drives the Chamfer UI: start the tool, click a vertical edge of
 // a 2×2×2 block, set the distance, OK — and asserts the bevel removed the wedge volume.
 func TestChamferToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2) // 2×2×2, vol 8
 	edge := verticalEdgeOf(t, block)
 	s.SetPicker(stubPicker{sel: edge})
@@ -64,6 +65,7 @@ func TestChamferToolEndToEnd(t *testing.T) {
 }
 
 func TestChamferViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -88,6 +90,7 @@ func TestChamferViaRibbonCommand(t *testing.T) {
 // TestChamferToolSeedsCornerPreference checks the tool adopts the session's default
 // corner treatment on Start, and that the chosen treatment reaches the committed feature.
 func TestChamferToolSeedsCornerPreference(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	s.SetChamferFlatCorners(false)
@@ -109,6 +112,7 @@ func TestChamferToolSeedsCornerPreference(t *testing.T) {
 // TestChamferToolSeedsConcaveStrategy checks the tool adopts the session's default concave-edge
 // strategy on Start and carries it (via the combo index) to the committed feature's definition.
 func TestChamferToolSeedsConcaveStrategy(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	s.SetChamferConcaveStrategy(types.ChamferConcaveInward)
@@ -129,6 +133,7 @@ func TestChamferToolSeedsConcaveStrategy(t *testing.T) {
 }
 
 func TestChamferToolNeedsEdge(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	ch := NewChamferTool()

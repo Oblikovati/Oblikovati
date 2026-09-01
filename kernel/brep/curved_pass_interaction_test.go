@@ -83,6 +83,7 @@ func fullRimEdge(c geom.Circle, reversed bool) loopEdge {
 // TestPassPairDeclinesCurvedTool: the proofs are stated against a POLYGONAL tool trim, so a curve-edged
 // other face has no closed form here and stays conservative (interacting).
 func TestPassPairDeclinesCurvedTool(t *testing.T) {
+	t.Parallel()
 	if passPairClear(discPassFace(t, 2), discPassFace(t, 3)) {
 		t.Error("passPairClear cleared a curve-edged tool face; want the conservative decline")
 	}
@@ -91,6 +92,7 @@ func TestPassPairDeclinesCurvedTool(t *testing.T) {
 // TestPlanePassClearLineMissesTool: the plane∩plane line runs outside the tool's trim, so the pair is
 // clear whatever the pass face contains — the tool interval set is empty.
 func TestPlanePassClearLineMissesTool(t *testing.T) {
+	t.Parallel()
 	// Tool: a square in the x=10 plane lifted to z ∈ [5,6]; the shared line is z=0, x=10.
 	tool := rectFace(t, math.P3(10, 0, 5.5), math.V3(0, 1, 0), math.V3(0, 0, 1), 1, 0.5)
 	if !planePassClear(discPassFace(t, 2), tool) {
@@ -101,6 +103,7 @@ func TestPlanePassClearLineMissesTool(t *testing.T) {
 // TestPlanePassClearIntervalsDisjoint: the shared line crosses BOTH trims, but on disjoint spans — the
 // chord of the disc is y ∈ ±√(r²−x²) ≈ ±1.936, the tool sits at y ∈ [5,6].
 func TestPlanePassClearIntervalsDisjoint(t *testing.T) {
+	t.Parallel()
 	tool := rectFace(t, math.P3(0.5, 5.5, 0), math.V3(0, 1, 0), math.V3(0, 0, 1), 0.5, 1)
 	if !planePassClear(discPassFace(t, 2), tool) {
 		t.Error("planePassClear reported contact for disjoint intervals on the shared line")
@@ -113,6 +116,7 @@ func TestPlanePassClearIntervalsDisjoint(t *testing.T) {
 // inside the disc's chord (±1.936), so a conic solver bounded by the tool's own range saw no crossing at
 // all and reported the pass face clear. curvedFaceLineIntervals now always solves over the face's extent.
 func TestPlanePassInteractsOverlappingIntervals(t *testing.T) {
+	t.Parallel()
 	tool := rectFace(t, math.P3(0.5, 0, 0), math.V3(0, 1, 0), math.V3(0, 0, 1), 1, 1)
 	if planePassClear(discPassFace(t, 2), tool) {
 		t.Error("planePassClear cleared a tool crossing the disc's chord")
@@ -121,6 +125,7 @@ func TestPlanePassInteractsOverlappingIntervals(t *testing.T) {
 
 // TestPlanePassClearParallelPlanes: parallel planes share no line; only a coplanar pair is a contact.
 func TestPlanePassClearParallelPlanes(t *testing.T) {
+	t.Parallel()
 	above := rectFace(t, math.P3(0, 0, 5), math.V3(1, 0, 0), math.V3(0, 1, 0), 4, 4)
 	if !planePassClear(discPassFace(t, 2), above) {
 		t.Error("planePassClear reported contact between parallel planes 5 apart")
@@ -130,6 +135,7 @@ func TestPlanePassClearParallelPlanes(t *testing.T) {
 // TestCylinderPassClearToolInsideWall is the motivating case (#2247): a tool wholly inside the bore
 // overlaps the wall's box on every axis, yet the section circle lies outside the tool's trim.
 func TestCylinderPassClearToolInsideWall(t *testing.T) {
+	t.Parallel()
 	inside := rectFace(t, math.P3(0, 0, 2), math.V3(1, 0, 0), math.V3(0, 1, 0), 0.5, 0.5)
 	if !cylinderPassClear(cylinderWallFace(t, 2, 4), inside) {
 		t.Error("cylinderPassClear reported contact for a tool strictly inside the bore")
@@ -139,6 +145,7 @@ func TestCylinderPassClearToolInsideWall(t *testing.T) {
 // TestCylinderPassInteractsToolCrossingWall: the same section circle now crosses the tool's edges inside
 // the band — a real wall cut, which must not pass through.
 func TestCylinderPassInteractsToolCrossingWall(t *testing.T) {
+	t.Parallel()
 	across := rectFace(t, math.P3(0, 0, 2), math.V3(1, 0, 0), math.V3(0, 1, 0), 3, 0.5)
 	if cylinderPassClear(cylinderWallFace(t, 2, 4), across) {
 		t.Error("cylinderPassClear cleared a tool whose section circle crosses the wall")
@@ -148,6 +155,7 @@ func TestCylinderPassInteractsToolCrossingWall(t *testing.T) {
 // TestCylinderPassInteractsTangentToolEdge: a tool edge exactly tangent to the section circle gives no
 // sound parity, so the grazing contact is reported as interacting.
 func TestCylinderPassInteractsTangentToolEdge(t *testing.T) {
+	t.Parallel()
 	tangent := rectFace(t, math.P3(3, 0, 2), math.V3(1, 0, 0), math.V3(0, 1, 0), 1, 1)
 	if cylinderPassClear(cylinderWallFace(t, 2, 4), tangent) {
 		t.Error("cylinderPassClear cleared a tool edge tangent to the section circle")
@@ -157,6 +165,7 @@ func TestCylinderPassInteractsTangentToolEdge(t *testing.T) {
 // TestCylinderPassClearRulingsAboveBand: a tool plane parallel to the axis sections the cylinder in a
 // LINE PAIR; the tool's intervals on those rulings sit above the wall's band, so the pair is clear.
 func TestCylinderPassClearRulingsAboveBand(t *testing.T) {
+	t.Parallel()
 	above := rectFace(t, math.P3(0, 0, 11), math.V3(1, 0, 0), math.V3(0, 0, 1), 3, 1)
 	if !cylinderPassClear(cylinderWallFace(t, 2, 4), above) {
 		t.Error("cylinderPassClear reported contact for rulings clipped above the wall band")
@@ -166,6 +175,7 @@ func TestCylinderPassClearRulingsAboveBand(t *testing.T) {
 // TestCylinderPassInteractsRulingsInBand: the same tool lowered onto the band crosses the rulings inside
 // it — the wall is really cut.
 func TestCylinderPassInteractsRulingsInBand(t *testing.T) {
+	t.Parallel()
 	through := rectFace(t, math.P3(0, 0, 2), math.V3(1, 0, 0), math.V3(0, 0, 1), 3, 1)
 	if cylinderPassClear(cylinderWallFace(t, 2, 4), through) {
 		t.Error("cylinderPassClear cleared a tool crossing the wall's rulings inside the band")
@@ -176,6 +186,7 @@ func TestCylinderPassInteractsRulingsInBand(t *testing.T) {
 // encloses it, so the decision is the conic's axial span (centre ± half-amplitude, r for a 45° plane)
 // against the band — here 9 to 13 against [0,4].
 func TestCylinderPassClearEllipseAboveBand(t *testing.T) {
+	t.Parallel()
 	oblique := rectFace(t, math.P3(0, 0, 11), math.V3(1, 0, 0), math.V3(0, 1, 1).AsUnit().AsVector(), 6, 6)
 	if !cylinderPassClear(cylinderWallFace(t, 2, 4), oblique) {
 		t.Error("cylinderPassClear reported contact for an ellipse section above the wall band")

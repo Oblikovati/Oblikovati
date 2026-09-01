@@ -7,6 +7,7 @@ import "testing"
 // TestMoveBodyOperations drives the ordered move-operation builders (free-drag, along-ray,
 // rotate-about-line) — the parametric move path moveBody exposes.
 func TestMoveBodyOperations(t *testing.T) {
+	t.Parallel()
 	ops := []map[string]any{
 		{"type": "freeDrag", "x": "1 mm", "y": "2 mm", "z": "3 mm"},
 		{"type": "alongRay", "dir": []float64{1, 0, 0}, "dist": "5 mm"},
@@ -27,6 +28,7 @@ func TestMoveBodyOperations(t *testing.T) {
 
 // TestDirectEditOperations drives each direct-edit mode (move/size/rotate/scale) on a face.
 func TestDirectEditOperations(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		mode string
 		args func(face string) map[string]any
@@ -60,6 +62,7 @@ func TestDirectEditOperations(t *testing.T) {
 // TestHoleTypes drives the simple/counterbore/countersink hole geometries (the two- and
 // three-length resolvers).
 func TestHoleTypes(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name string
 		args func(face string) map[string]any
@@ -85,6 +88,7 @@ func TestHoleTypes(t *testing.T) {
 // TestSweepVariants exercises the optional sweep fields (profile scaling and the
 // path-and-section twist stations) — their parsing runs before any geometry build.
 func TestSweepVariants(t *testing.T) {
+	t.Parallel()
 	base := func() map[string]any {
 		return map[string]any{"sketchIndex": 0, "profileIndex": 0, "pathSketchIndex": 1, "pathIndex": 0}
 	}
@@ -115,6 +119,7 @@ func TestSweepVariants(t *testing.T) {
 // TestMoveFaceRotate drives the rotational move-face path (vs the translate path already
 // covered).
 func TestMoveFaceRotate(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	assertNoPanic(t, "moveFace", s, map[string]any{
 		"faceRefs": []string{face}, "axisPoint": []float64{0, 0, 0}, "axisDir": []float64{0, 0, 1}, "angle": "15 deg",
@@ -123,6 +128,7 @@ func TestMoveFaceRotate(t *testing.T) {
 
 // TestPartingAndSplit drives the parting (core/cavity) and split-solid resolvers.
 func TestPartingAndSplit(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	assertNoPanic(t, "coreCavity", s, map[string]any{"axis": "z", "position": "5 mm", "shrinkage": "0.02"})
 	assertNoPanic(t, "splitSolid", s, map[string]any{"workPlaneIndex": 0, "keep": "both"})
@@ -131,6 +137,7 @@ func TestPartingAndSplit(t *testing.T) {
 
 // TestLoftGuides drives the loft end-conditions and area-graph guide paths.
 func TestLoftGuides(t *testing.T) {
+	t.Parallel()
 	sections := []map[string]any{{"sketchIndex": 0, "profileIndex": 0}, {"sketchIndex": 1, "profileIndex": 0}}
 	t.Run("end conditions", func(t *testing.T) {
 		assertNoPanic(t, "loft", profiledPart(t), map[string]any{
@@ -149,12 +156,14 @@ func TestLoftGuides(t *testing.T) {
 
 // TestEmbossOnSolid drives the emboss feature against a solid face.
 func TestEmbossOnSolid(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	assertNoPanic(t, "emboss", s, map[string]any{"sketchIndex": 1, "profileIndex": 0, "depth": "1 mm", "engrave": true})
 }
 
 // TestModelTolerance drives a GD&T feature-control frame.
 func TestModelTolerance(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	assertNoPanic(t, "modelTolerance", s, map[string]any{
 		"frames": []map[string]any{{"geometry": face, "characteristic": "flatness", "value": "0.1 mm"}},

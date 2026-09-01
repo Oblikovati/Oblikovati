@@ -13,6 +13,7 @@ import (
 // radius, pick two chained lines, and the corner becomes a tangent arc with its
 // maintaining constraint.
 func TestSketch3DBendToolAppliesViaPicks(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	l1 := sk.AddLine3D(math.P3(0, 0, 0), math.P3(1, 0, 0))
 	l2 := sk.AddLine3D(math.P3(1, 0, 0), math.P3(1, 1, 0))
@@ -47,6 +48,7 @@ func TestSketch3DBendToolAppliesViaPicks(t *testing.T) {
 
 // TestSketch3DBendToolRejectsNonLines guards the accept filter and repeats.
 func TestSketch3DBendToolRejectsNonLines(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	p := sk.AddPoint3D(math.P3(0, 0, 0))
 	l := sk.AddLine3D(math.P3(0, 0, 0), math.P3(1, 0, 0))

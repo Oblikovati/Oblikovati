@@ -44,6 +44,7 @@ func sphereCornerBlendFixture(t *testing.T, r float64) *cornerBlend {
 // TestExtractTrihedralRecognizesSphere proves the extracted 3-arc loop is claimed by the exact sphere
 // tier and yields the SAME sphere as the cornerBlend (center + radius within weld).
 func TestExtractTrihedralRecognizesSphere(t *testing.T) {
+	t.Parallel()
 	cb := sphereCornerBlendFixture(t, 4)
 	loop, ok := extractTrihedral(cb)
 	if !ok {
@@ -65,6 +66,7 @@ func TestExtractTrihedralRecognizesSphere(t *testing.T) {
 // TestExtractTrihedralDeclinesNonTriadic pins the honest-reject floor: a cornerBlend without exactly
 // three arcs is not a planar trihedral, so extractTrihedral declines and the strangler falls back.
 func TestExtractTrihedralDeclinesNonTriadic(t *testing.T) {
+	t.Parallel()
 	cb := sphereCornerBlendFixture(t, 4)
 	cb.arcs = cb.arcs[:2]
 	if _, ok := extractTrihedral(cb); ok {
@@ -128,6 +130,7 @@ func singleBlend(t *testing.T, blends map[uint64]*cornerBlend) *cornerBlend {
 // claimed by the exact sphere tier and yield the SAME sphere as the cornerBlend. This fails with the
 // pre-fix append-order extractor (RailLoop.Closed false) and passes after the chain-order fix.
 func TestExtractTrihedralRecognizesRealCorner(t *testing.T) {
+	t.Parallel()
 	cb := realTrihedralBlend(t)
 	if len(cb.arcs) != 3 {
 		t.Fatalf("real corner produced %d arcs, want 3", len(cb.arcs))

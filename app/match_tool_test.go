@@ -66,6 +66,7 @@ func partWithTwoPatches(t *testing.T) (*Session, *compdef.PartComponentDefinitio
 }
 
 func TestMatchToolG2VerifiedByContinuityChecker(t *testing.T) {
+	t.Parallel()
 	s, def := partWithTwoPatches(t)
 	tool := NewMatchTool() // defaults: G2, source U Min, target U Max
 	s.StartTool(tool)
@@ -88,6 +89,7 @@ func TestMatchToolG2VerifiedByContinuityChecker(t *testing.T) {
 }
 
 func TestMatchToolG1LeavesCurvatureBreak(t *testing.T) {
+	t.Parallel()
 	s, def := partWithTwoPatches(t)
 	tool := NewMatchTool()
 	tool.order = 1 // G1 only
@@ -107,6 +109,7 @@ func TestMatchToolG1LeavesCurvatureBreak(t *testing.T) {
 }
 
 func TestMatchToolParams(t *testing.T) {
+	t.Parallel()
 	tool := NewMatchTool()
 	if tool.Prompt(nil) == "" || !tool.CanCommit() {
 		t.Error("match tool should prompt and be committable")
@@ -121,6 +124,7 @@ func TestMatchToolParams(t *testing.T) {
 }
 
 func TestEdgeParamOfAllEdges(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		edge           geom.Boundary
 		wantU0, wantV0 float64 // (u,v) at t=0
@@ -142,6 +146,7 @@ func TestEdgeParamOfAllEdges(t *testing.T) {
 }
 
 func TestMatchToolErrorsWithoutTarget(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	def.Features().Add(&seedSurfaceFeature{body: matchPatchBody(t, 0, func(i, j int) float64 { return 0 })})
@@ -154,6 +159,7 @@ func TestMatchToolErrorsWithoutTarget(t *testing.T) {
 }
 
 func TestMatchViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithTwoPatches(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
@@ -170,6 +176,7 @@ func TestMatchViaRibbonCommand(t *testing.T) {
 // commit-ready (its choices are always valid), so the draft is always available — a missing
 // target body is caught by the gate's preview, not by the draft.
 func TestMatchToolDraftFeature(t *testing.T) {
+	t.Parallel()
 	if draft, ok := NewMatchTool().DraftFeature(nil); !ok || draft == nil {
 		t.Fatalf("DraftFeature = (%v, %v), want a non-nil draft from the defaults", draft, ok)
 	}

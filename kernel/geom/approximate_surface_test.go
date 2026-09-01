@@ -25,6 +25,7 @@ func paramGrid(n int, height func(u, v float64) float64) (pts []math.Point3, us,
 // TestApproximateSurfaceLSFitsPlane: a planar point grid is reproduced (within round-off) by the
 // least-squares fit — the simplest exactness check.
 func TestApproximateSurfaceLSFitsPlane(t *testing.T) {
+	t.Parallel()
 	pts, us, vs := paramGrid(8, func(u, v float64) float64 { return 2*u - 3*v + 1 })
 	s, err := ApproximateSurfaceLS(pts, us, vs, 3, 3, 5, 5)
 	if err != nil {
@@ -41,6 +42,7 @@ func TestApproximateSurfaceLSFitsPlane(t *testing.T) {
 // TestApproximateSurfaceLSFitsQuadratic: a smooth bump is approximated within a tight tolerance by a
 // bicubic fit.
 func TestApproximateSurfaceLSFitsQuadratic(t *testing.T) {
+	t.Parallel()
 	pts, us, vs := paramGrid(10, func(u, v float64) float64 { return (u-0.5)*(u-0.5) + (v-0.5)*(v-0.5) })
 	s, err := ApproximateSurfaceLS(pts, us, vs, 3, 3, 6, 6)
 	if err != nil {
@@ -58,6 +60,7 @@ func TestApproximateSurfaceLSFitsQuadratic(t *testing.T) {
 }
 
 func TestApproximateSurfaceLSValidates(t *testing.T) {
+	t.Parallel()
 	pts, us, vs := paramGrid(6, func(u, v float64) float64 { return 0 })
 	cases := []struct {
 		name                   string
@@ -77,6 +80,7 @@ func TestApproximateSurfaceLSValidates(t *testing.T) {
 }
 
 func TestApproximateSurfaceLSRejectsMismatchedParams(t *testing.T) {
+	t.Parallel()
 	pts, us, vs := paramGrid(6, func(u, v float64) float64 { return 0 })
 	if _, err := ApproximateSurfaceLS(pts, us[:5], vs, 3, 3, 5, 5); err == nil {
 		t.Error("mismatched u-param length should error")
@@ -84,6 +88,7 @@ func TestApproximateSurfaceLSRejectsMismatchedParams(t *testing.T) {
 }
 
 func TestUniformClampedKnotsClampedAndEven(t *testing.T) {
+	t.Parallel()
 	k := uniformClampedKnots(6, 3) // 6 ctrl, degree 3 → length 10, 2 interior at 1/3,2/3
 	if len(k) != 10 {
 		t.Fatalf("knot length = %d, want 10", len(k))

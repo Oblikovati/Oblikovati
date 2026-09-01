@@ -100,6 +100,7 @@ func openAssembly(t *testing.T, store *persistence.PackageStore, name string) *c
 // TestEmptyAssemblyRoundTrips checks a placed-component-free assembly round-trips with
 // zero occurrences.
 func TestEmptyAssemblyRoundTrips(t *testing.T) {
+	t.Parallel()
 	store, ws, dir := assemblyWorkspace(t)
 	asm, _ := newAssembly(t, ws, dir, "empty.obk")
 
@@ -112,6 +113,7 @@ func TestEmptyAssemblyRoundTrips(t *testing.T) {
 // transforms and per-instance state, and checks both occurrences — names, placements,
 // suppression, grounding — restore through the reference graph.
 func TestAssemblyOccurrencesRoundTrip(t *testing.T) {
+	t.Parallel()
 	store, ws, asm, widget, asmDef := placedAssembly(t)
 	at3 := math.Translation4(math.V3(3, 0, 0))
 	placeFromFile(t, asm, widget, asmDef, "widget:1", math.Identity4()).SetGrounded(true)
@@ -140,6 +142,7 @@ func TestAssemblyOccurrencesRoundTrip(t *testing.T) {
 // assembly→component reference edge and a single persisted file-reference record (the
 // referenced-by count must not inflate with placement count).
 func TestAssemblyReferenceDeduped(t *testing.T) {
+	t.Parallel()
 	_, ws, asm, widget, asmDef := placedAssembly(t)
 	placeFromFile(t, asm, widget, asmDef, "widget:1", math.Identity4())
 	placeFromFile(t, asm, widget, asmDef, "widget:2", math.Identity4())
@@ -159,6 +162,7 @@ func TestAssemblyReferenceDeduped(t *testing.T) {
 // file is gone still succeeds: the occurrence restores as an unresolved placeholder
 // (empty range box), never a panic or a failed open.
 func TestAssemblyMissingComponentIsNotFatal(t *testing.T) {
+	t.Parallel()
 	store, ws, dir := assemblyWorkspace(t)
 	widget := savePartDoc(t, ws, dir, "gone.obk")
 	asm, asmDef := newAssembly(t, ws, dir, "asm.obk")
@@ -183,6 +187,7 @@ func TestAssemblyMissingComponentIsNotFatal(t *testing.T) {
 // document, via Place) is omitted from the recipe — it has no file to resolve on reopen,
 // so persisting it would yield an unrestorable record.
 func TestInMemoryPlaceNotPersisted(t *testing.T) {
+	t.Parallel()
 	store, ws, asm, widget, asmDef := placedAssembly(t)
 	placeFromFile(t, asm, widget, asmDef, "widget:1", math.Identity4())
 	asmDef.Place("loose:1", widget.Content().(occurrence.Definition), math.Identity4())
@@ -197,6 +202,7 @@ func TestInMemoryPlaceNotPersisted(t *testing.T) {
 // places a part) restores recursively: opening the top assembly hidden-opens the
 // sub-assembly, which hidden-opens the part, and every placement is rebound.
 func TestNestedAssemblyRoundTrip(t *testing.T) {
+	t.Parallel()
 	store, ws, dir := assemblyWorkspace(t)
 	widget := savePartDoc(t, ws, dir, "widget.obk")
 	sub, subDef := newAssembly(t, ws, dir, "sub.obk")

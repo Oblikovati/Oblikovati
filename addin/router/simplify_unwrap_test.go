@@ -11,6 +11,7 @@ import (
 // TestSimplifyFillVoidsOverWire runs simplify(fillVoids) on a box (a no-op fill that must keep
 // a valid solid) and rejects an empty request (M20-F13 #490).
 func TestSimplifyFillVoidsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _ := filletBoxFixture(t)
 	call(t, r, s, "features.add", `{"kind":"simplify","args":{"fillVoids":true}}`, &struct {
 		Bodies int `json:"bodies"`
@@ -28,6 +29,7 @@ func TestSimplifyFillVoidsOverWire(t *testing.T) {
 // TestUnwrapOverWire extrudes a cylinder, unwraps its side face, and checks a second (sheet)
 // body appears — the flattened patch (M20-F13 #490).
 func TestUnwrapOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"20 mm"}`, &struct{}{})

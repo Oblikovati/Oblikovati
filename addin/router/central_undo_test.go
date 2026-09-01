@@ -51,6 +51,7 @@ func undoState(t *testing.T, r *Router, s *app.Session) wire.UndoState {
 // the central seam in Handle records it. Before this change the extrude was silently
 // un-undoable (recomputeResult recomputes but never recorded). Undo must drop the new body.
 func TestCentralSeamRecordsFeatureUndo(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t) // active part with one rectangle profile on sketch 0
 	if got := activePartBodies(t, s); got != 0 {
 		t.Fatalf("seeded part already has %d bodies, want 0", got)
@@ -79,6 +80,7 @@ func TestCentralSeamRecordsFeatureUndo(t *testing.T) {
 // TestCentralSeamRecordsSketchTextUndo proves sketch annotation text added over the wire (sketch.addText)
 // is undoable — a sketch-authoring path missed by the original mutating table (#1426).
 func TestCentralSeamRecordsSketchTextUndo(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addText", `{"sketchIndex":0,"anchor":[1,1],"text":"PART A","height":"5 mm"}`, &wire.AddEntityIDResult{})
@@ -97,6 +99,7 @@ func TestCentralSeamRecordsSketchTextUndo(t *testing.T) {
 // TestCentralSeamRecordsBodyDeleteUndo proves deleting a body over the wire (body.delete, which records
 // a DeleteBody feature) is one undo step that restores the body — body editing was read-only before #1426.
 func TestCentralSeamRecordsBodyDeleteUndo(t *testing.T) {
+	t.Parallel()
 	r, s, def := twoBodyPartSession(t)
 
 	call(t, r, s, "body.delete", `{"bodyIndex":0}`, &wire.BodyListResult{})
@@ -121,6 +124,7 @@ func TestCentralSeamRecordsBodyDeleteUndo(t *testing.T) {
 // recipe-snapshot support (#1448): with no MarshalSnapshot the central seam recorded nothing. This
 // is the activation test for that support — addBase adds a view, undo removes it, redo restores it.
 func TestCentralSeamRecordsDrawingViewUndo(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t) // a part with geometry + an active drawing referencing it
 	if got := activeDrawingViews(t, s); got != 0 {
 		t.Fatalf("fresh drawing already has %d views, want 0", got)
@@ -152,6 +156,7 @@ func TestCentralSeamRecordsDrawingViewUndo(t *testing.T) {
 // family was registered read-only before #1426, so wire-driven placements were silently non-undoable and
 // not replicated to collaborators.
 func TestCentralSeamRecordsAssemblyPlacementUndo(t *testing.T) {
+	t.Parallel()
 	r, s, asm, _ := assemblySessionWithBoxes(t) // empty assembly, kept active
 	pin := openPartDoc(t, s, "pin.obk")         // a doc-backed component the snapshot can reference
 
@@ -178,6 +183,7 @@ func TestCentralSeamRecordsAssemblyPlacementUndo(t *testing.T) {
 // sketch3d authoring family was absent from the mutating table — silently non-undoable; wiring it through
 // the MutatingMethod interface fixes the drift.
 func TestCentralSeamRecordsSketch3DEntityUndo(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0,0],[3,0,4]]}`, &wire.AddSketch3DEntityResult{})
@@ -196,6 +202,7 @@ func TestCentralSeamRecordsSketch3DEntityUndo(t *testing.T) {
 // TestCentralSeamRecordsSketchEntityUndo proves sketch geometry added over the wire
 // (sketch.addEntity) is undoable — another path that previously recorded nothing.
 func TestCentralSeamRecordsSketchEntityUndo(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, nil)
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"10 mm"}`, nil)
@@ -209,6 +216,7 @@ func TestCentralSeamRecordsSketchEntityUndo(t *testing.T) {
 // TestCentralSeamRecordsWorkPlaneUndo proves a work feature created over the wire
 // (workPlanes.create) is undoable.
 func TestCentralSeamRecordsWorkPlaneUndo(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, nil)
 
@@ -224,6 +232,7 @@ func TestCentralSeamRecordsWorkPlaneUndo(t *testing.T) {
 //     while moving the cursor would corrupt the stream;
 //   - the families the central seam unblocked must keep a non-empty label (a regression tripwire).
 func TestMutatingMethodLabels(t *testing.T) {
+	t.Parallel()
 	mut := New(opregistry.Default()).MutatingMethods()
 
 	for _, m := range []string{
@@ -251,6 +260,7 @@ func TestMutatingMethodLabels(t *testing.T) {
 // method cannot exist without implementing the contract (and declaring its UndoLabel), so it can never
 // silently drift out of undo/replication.
 func TestMutatingMethodsImplementInterface(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	for method, h := range r.handlers {
 		_, implementsInterface := h.(MutatingMethod)
@@ -274,6 +284,7 @@ func TestMutatingMethodsImplementInterface(t *testing.T) {
 // through readOnly() deliberately does NOT, so the router never records or replicates it. This is the one
 // pattern a document-editing method must follow — there is no second list to forget.
 func TestRegistrationHelpersProduceCorrectInterface(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	nop := func(_ *app.Session, _ json.RawMessage) (json.RawMessage, error) { return nil, nil }
 
@@ -295,6 +306,7 @@ func TestRegistrationHelpersProduceCorrectInterface(t *testing.T) {
 // TestDuplicateRegistrationPanics guards against a copy-paste handler that would silently shadow another
 // (and could change its mutation classification). set() is the one registration chokepoint.
 func TestDuplicateRegistrationPanics(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	nop := func(_ *app.Session, _ json.RawMessage) (json.RawMessage, error) { return nil, nil }
 	defer func() {

@@ -21,6 +21,7 @@ type featureAddResult struct {
 // reference key. The new body must terminate at that face, not at a typed distance (#1226 engine
 // → API). This is the add-in-drivable form of Extrude To-Face.
 func TestExtrudeToFaceOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t) // base body: 40×30×50 mm, top face at z = 5 cm
 
 	var keys wire.ReferenceKeysResult
@@ -58,6 +59,7 @@ func TestExtrudeToFaceOverWire(t *testing.T) {
 // TestExtrudeToFaceRequiresTarget: the to-face extent without a toFace reference is a clear error,
 // not a silent default.
 func TestExtrudeToFaceRequiresTarget(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":1,"width":"10 mm","height":"10 mm"}`, &wire.SketchRectangleResult{})

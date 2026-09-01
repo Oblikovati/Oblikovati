@@ -21,6 +21,7 @@ func zHelix(t *testing.T, startR, axialPerTurn, radialPerTurn, turns float64, cw
 }
 
 func TestNewHelix3dErrors(t *testing.T) {
+	t.Parallel()
 	if _, err := NewHelix3d(math.P3(0, 0, 0), math.V3(0, 0, 0), math.V3(1, 0, 0), 1, 1, 0, 3, false); err == nil {
 		t.Error("a zero axis should error")
 	}
@@ -38,6 +39,7 @@ func TestNewHelix3dErrors(t *testing.T) {
 // TestHelixCylindricalGeometry checks the endpoints, constant radius, and axial advance
 // of a right-handed cylindrical helix.
 func TestHelixCylindricalGeometry(t *testing.T) {
+	t.Parallel()
 	h := zHelix(t, 4, 10, 0, 3, false)
 
 	start := h.StartPoint()
@@ -69,6 +71,7 @@ func TestHelixCylindricalGeometry(t *testing.T) {
 
 // TestHelixClockwiseFlipsWinding checks the handedness flag negates the winding sense.
 func TestHelixClockwiseFlipsWinding(t *testing.T) {
+	t.Parallel()
 	ccw := zHelix(t, 4, 10, 0, 3, false)
 	cw := zHelix(t, 4, 10, 0, 3, true)
 	if float64(ccw.PointAt(1.0/12.0).Y) <= 0 || float64(cw.PointAt(1.0/12.0).Y) >= 0 {
@@ -78,6 +81,7 @@ func TestHelixClockwiseFlipsWinding(t *testing.T) {
 
 // TestHelixLengthCylindricalClosedForm checks the analytic length √((2πr)²+pitch²)·turns.
 func TestHelixLengthCylindricalClosedForm(t *testing.T) {
+	t.Parallel()
 	h := zHelix(t, 4, 10, 0, 3, false)
 	want := stdmath.Hypot(twoPi*4, 10) * 3
 	if got := h.Length(); stdmath.Abs(got-want) > 1e-9 {
@@ -88,6 +92,7 @@ func TestHelixLengthCylindricalClosedForm(t *testing.T) {
 // TestHelixLengthTaperedMatchesReference cross-checks the Simpson length of a tapered
 // helix against an independent fine-grained trapezoid integral.
 func TestHelixLengthTaperedMatchesReference(t *testing.T) {
+	t.Parallel()
 	h := zHelix(t, 2, 6, 1.5, 4, false) // conical: radius grows 1.5/turn
 	ref := trapezoidSpeed(h, 20000)
 	if got := h.Length(); stdmath.Abs(got-ref) > 1e-6 {
@@ -98,6 +103,7 @@ func TestHelixLengthTaperedMatchesReference(t *testing.T) {
 // TestHelixSpiral checks a flat spiral (no axial advance) stays in its plane and grows
 // in radius.
 func TestHelixSpiral(t *testing.T) {
+	t.Parallel()
 	h := zHelix(t, 1, 0, 2, 5, false) // pitch 0 ⇒ flat spiral, radius grows 2/turn
 	for _, tt := range []float64{0, 0.5, 1} {
 		if z := float64(h.PointAt(tt).Z); stdmath.Abs(z) > 1e-9 {
@@ -118,6 +124,7 @@ func TestHelixSpiral(t *testing.T) {
 // finite difference of PointAt for cylindrical, tapered and spiral helices (the standard
 // curve oracle that catches missing chain factors).
 func TestHelixTangentMatchesFiniteDifference(t *testing.T) {
+	t.Parallel()
 	cases := []Helix3d{
 		zHelix(t, 4, 10, 0, 3, false),
 		zHelix(t, 4, 10, 0, 3, true),
@@ -140,6 +147,7 @@ func TestHelixTangentMatchesFiniteDifference(t *testing.T) {
 // everywhere) and advances monotonically (each consecutive sample is a positive step,
 // and the accumulated polyline length approaches the analytic arc length from below).
 func TestHelixRegularAndAdvancing(t *testing.T) {
+	t.Parallel()
 	h := zHelix(t, 3, 8, 0.5, 4, false)
 	const n = 2000
 	var accum float64

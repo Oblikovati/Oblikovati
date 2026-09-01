@@ -34,6 +34,7 @@ func sketchSession(t *testing.T) (*Router, *app.Session) {
 // TestSketchCustomLineTypeLoadGetPersist drives the full path: load DASHDOT, read it
 // back, and confirm sketch.get reports lineType=custom.
 func TestSketchCustomLineTypeLoadGetPersist(t *testing.T) {
+	t.Parallel()
 	r, s := sketchSession(t)
 	lin := writeLINFixture(t)
 
@@ -60,6 +61,7 @@ func TestSketchCustomLineTypeLoadGetPersist(t *testing.T) {
 // TestSketchCustomLineTypeReplaceExisting pins the replace contract: re-loading the
 // same name fails without the flag and succeeds with it.
 func TestSketchCustomLineTypeReplaceExisting(t *testing.T) {
+	t.Parallel()
 	r, s := sketchSession(t)
 	lin := writeLINFixture(t)
 	args := fmt.Sprintf(`{"sketchIndex":0,"fullFileName":%q,"lineTypeName":"DASHDOT"}`, lin)
@@ -79,6 +81,7 @@ func TestSketchCustomLineTypeReplaceExisting(t *testing.T) {
 // TestSketchCustomLineTypeErrors covers the failure paths: no sketch, missing file,
 // unknown definition name, empty name, and unloaded get.
 func TestSketchCustomLineTypeErrors(t *testing.T) {
+	t.Parallel()
 	r, s := sketchSession(t)
 	lin := writeLINFixture(t)
 	bad := []string{

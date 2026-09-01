@@ -20,6 +20,7 @@ func sampleEllipse(n int) []m.Point2 {
 }
 
 func TestRimCrossingsT6(t *testing.T) {
+	t.Parallel()
 	rim := sampleEllipse(720)
 	boundary := boundaryLine2{origin: m.P2(0, -7), dir: m.V2(1, 0)} // the receded boundary y=-7
 	res := ResolutionForSize(50)
@@ -36,6 +37,7 @@ func TestRimCrossingsT6(t *testing.T) {
 }
 
 func TestObstacleNodesTangentRejected(t *testing.T) {
+	t.Parallel()
 	rim := sampleEllipse(720)
 	boundary := boundaryLine2{origin: m.P2(0, -10), dir: m.V2(1, 0)} // tangent to the ellipse bottom
 	res := ResolutionForSize(50)
@@ -62,6 +64,7 @@ func diamondDipRim() []m.Point2 {
 // on the negative side — must return true, and a rim whose sampled arc bulges to the host
 // (positive) side must return false.
 func TestDipsPast(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(50)
 	rim := sampleEllipse(720)
 
@@ -131,6 +134,7 @@ func obliqueEllipseWrapDipRim(n int, a, b, rot float64) []m.Point2 {
 // called before dipsPast in bandCrossings, picks the SHORTER of the two candidate arcs — here the wrap
 // arc — and dipsPast on THAT arc correctly reports TRUE.
 func TestDipArcOrderRecoversU3WrapDip(t *testing.T) {
+	t.Parallel()
 	const n = 64
 	a, b, rot := 20.0, 6.0, 25*math.Pi/180
 	rim := obliqueEllipseWrapDipRim(n, a, b, rot)
@@ -164,6 +168,7 @@ func TestDipArcOrderRecoversU3WrapDip(t *testing.T) {
 // (T6's shape family — the existing TestDipsPast fixtures above), dipArcOrder must return the SAME
 // (ascending) order rimCrossings already hands it, so every currently-green obstacle case is untouched.
 func TestDipArcOrderUnchangedForRoundFootprint(t *testing.T) {
+	t.Parallel()
 	rim := sampleEllipse(720)
 	boundary := boundaryLine2{origin: m.P2(0, -7), dir: m.V2(1, 0)}
 	res := ResolutionForSize(50)
@@ -192,6 +197,7 @@ func TestDipArcOrderUnchangedForRoundFootprint(t *testing.T) {
 // the literal case dipsPast's docstring describes, and the robustness this slice adds against sampling
 // noise or a future non-conic obstacle wall.
 func TestDipsPastExtremalIgnoresMisleadingMidSample(t *testing.T) {
+	t.Parallel()
 	// index:  0    1   2   3   4     5   6   7    8
 	// y:     +10  -5  -5  -5  +0.5  -5  -5  +10  +10
 	rim := []m.Point2{
@@ -223,6 +229,7 @@ func TestDipsPastExtremalIgnoresMisleadingMidSample(t *testing.T) {
 // ~1e-2 off (so the premise cannot silently evaporate), and that analyticNode lands on √44 at the
 // parametric floor.
 func TestAnalyticNodeSolvesOnTheRimCurveNotItsChords(t *testing.T) {
+	t.Parallel()
 	rim, err := geom.NewCircle(m.P3(0, 0, 0), m.V3(0, 0, 1), 12)
 	if err != nil {
 		t.Fatalf("fixture circle: %v", err)
@@ -257,6 +264,7 @@ func TestAnalyticNodeSolvesOnTheRimCurveNotItsChords(t *testing.T) {
 // curve does not strictly change sign across the sample's own parameter bracket, the chord's crossing is
 // kept unchanged rather than bisected to some other root.
 func TestAnalyticNodeKeepsTheChordWhenTheCurveDoesNotStraddle(t *testing.T) {
+	t.Parallel()
 	rim, err := geom.NewCircle(m.P3(0, 0, 0), m.V3(0, 0, 1), 12)
 	if err != nil {
 		t.Fatalf("fixture circle: %v", err)
@@ -273,6 +281,7 @@ func TestAnalyticNodeKeepsTheChordWhenTheCurveDoesNotStraddle(t *testing.T) {
 // TestOtherHostDetectionOnlyPairsDualHost pins the coupled-station guard's pairing: only a qualifying==2
 // (dual-host) edge has an "other" host whose boss can already be setting the ball back at a node.
 func TestOtherHostDetectionOnlyPairsDualHost(t *testing.T) {
+	t.Parallel()
 	one := []obstacleDetection{{hostIsA: true}}
 	if got := otherHostDetection(one, 0); got != nil {
 		t.Errorf("a single-host edge must have no other detection, got %+v", got)

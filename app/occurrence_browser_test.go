@@ -25,6 +25,7 @@ func findBrowserNode(n BrowserNode, kind, label string) *BrowserNode {
 // as a selectable browser row carrying an OccurrenceHandle, so clicking it selects the occurrence
 // (#764). A part document's browser never grew an occurrence row, so this is the assembly path.
 func TestAssemblyBrowserListsOccurrences(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 
@@ -44,6 +45,7 @@ func TestAssemblyBrowserListsOccurrences(t *testing.T) {
 // TestOccurrenceLabelReflectsState: the browser row annotates grounded and suppressed state in
 // its label so the text tree is self-describing.
 func TestOccurrenceLabelReflectsState(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	o := asm.Occurrences().Item(0)
@@ -61,6 +63,7 @@ func TestOccurrenceLabelReflectsState(t *testing.T) {
 // TestOccurrenceMenuTogglesLabels: the right-click menu offers Ground/Suppress/Delete, and the
 // toggle labels reflect the occurrence's current state (Ground→Unground, Suppress→Unsuppress).
 func TestOccurrenceMenuTogglesLabels(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	o := asm.Occurrences().Item(0)
@@ -79,6 +82,7 @@ func TestOccurrenceMenuTogglesLabels(t *testing.T) {
 // TestSuppressOccurrenceIsUndoable: suppressing a component is one undo step — undo unsuppresses,
 // redo re-suppresses — proving the change records a recipe delta (#764).
 func TestSuppressOccurrenceIsUndoable(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	trackFromHere(s) // baseline: placed, unsuppressed
@@ -106,6 +110,7 @@ func TestSuppressOccurrenceIsUndoable(t *testing.T) {
 // TestOccurrenceToggleToCurrentStateRecordsNothing: setting an occurrence to the state it is
 // already in is a no-op — it must not push an undo step (#764).
 func TestOccurrenceToggleToCurrentStateRecordsNothing(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	o := asm.Occurrences().Item(0)
@@ -125,6 +130,7 @@ func TestOccurrenceToggleToCurrentStateRecordsNothing(t *testing.T) {
 // TestGroundOccurrenceIsUndoable: grounding a component is one undo step (the grounded flag
 // round-trips through the recipe).
 func TestGroundOccurrenceIsUndoable(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	trackFromHere(s) // baseline: placed, not grounded
@@ -146,6 +152,7 @@ func TestGroundOccurrenceIsUndoable(t *testing.T) {
 // TestDeleteOccurrenceIsUndoable: deleting a component removes it and clears the selection; undo
 // restores it through the assembly recipe (#764).
 func TestDeleteOccurrenceIsUndoable(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	s.selection.Add(OccurrenceHandle{Occurrence: asm.Occurrences().Item(0)})
@@ -171,6 +178,7 @@ func TestDeleteOccurrenceIsUndoable(t *testing.T) {
 // TestOccurrenceActionsRejectNonAssembly: the occurrence actions error on a part document (no
 // active assembly), rather than mutating the wrong content.
 func TestOccurrenceActionsRejectNonAssembly(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if err := s.SuppressOccurrence(nil, true); err == nil {
 		t.Error("SuppressOccurrence on a part should error")
@@ -182,6 +190,7 @@ func TestOccurrenceActionsRejectNonAssembly(t *testing.T) {
 
 // TestOccurrenceHandleSelectionKind pins the new selection kind.
 func TestOccurrenceHandleSelectionKind(t *testing.T) {
+	t.Parallel()
 	if got := (OccurrenceHandle{}).SelectionKind(); got != SelectOccurrence {
 		t.Errorf("OccurrenceHandle kind = %d, want SelectOccurrence", got)
 	}

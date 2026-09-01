@@ -53,6 +53,7 @@ func curvedFaceCount(b *topo.Body) int {
 // through a 16×16×2 plate. The union must keep the cylinder wall as two true cylindrical bands (below and
 // above the plate) and have the closed-form volume block + cylinder − overlap.
 func TestUnionCylinderThroughPlateKeepsCylindricalWall(t *testing.T) {
+	t.Parallel()
 	const r, h, side, thick = 5.0, 4.0, 16.0, 2.0
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
 	if err != nil {
@@ -80,6 +81,7 @@ func TestUnionCylinderThroughPlateKeepsCylindricalWall(t *testing.T) {
 // TestUnionConeThroughPlateKeepsConicalWall is the same contact with a CONE side band: the section circles
 // have DIFFERENT radii on the two plate faces, so it also pins that the promotion is per receiving face.
 func TestUnionConeThroughPlateKeepsConicalWall(t *testing.T) {
+	t.Parallel()
 	const rBot, rTop, h, side = 4.0, 1.0, 6.0, 16.0
 	cone, err := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, h), rBot, rTop, "cone")
 	if err != nil {
@@ -112,6 +114,7 @@ func frustumVolume(r0, r1, h float64) float64 {
 // reversal too — a kept Difference tool wall is flipped into the cavity, and the shared circle must still
 // weld.
 func TestDifferencePlateMinusCylinderKeepsBoreWall(t *testing.T) {
+	t.Parallel()
 	const r, side, thick = 5.0, 16.0, 2.0
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, 4)
 	if err != nil {

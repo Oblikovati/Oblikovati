@@ -68,6 +68,7 @@ func newPartWithStackedSquares(t *testing.T) (*Session, ProfileHandle, ProfileHa
 // TestLoftToolEndToEnd drives the Loft UI: start the tool, click two sections in order,
 // OK — and asserts a validated frustum solid (V = 140/3) lands in the part.
 func TestLoftToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, bottom, top := newPartWithStackedSquares(t)
 	s.SetPicker(&seqPicker{sels: []Selectable{bottom, top}})
 
@@ -99,6 +100,7 @@ func TestLoftToolEndToEnd(t *testing.T) {
 }
 
 func TestLoftViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, bottom, top := newPartWithStackedSquares(t)
 	s.SetPicker(&seqPicker{sels: []Selectable{bottom, top}})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -125,6 +127,7 @@ func TestLoftViaRibbonCommand(t *testing.T) {
 // sections (two EQUAL squares) and asserts the body curves OUT past the ruled prism — the
 // end-to-end S2 behavior the dialog exposes (a Free loft of equal squares is a straight prism).
 func TestLoftToolAngleConditionCurves(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	def := compdef.NewPartComponentDefinition()
 	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
@@ -161,6 +164,7 @@ func TestLoftToolAngleConditionCurves(t *testing.T) {
 // an apex (Sharp condition) — the tool must build a cone (V = πr²h/3), exercising point-section
 // picking end to end.
 func TestLoftToolPointSectionCone(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	def := compdef.NewPartComponentDefinition()
 	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
@@ -199,6 +203,7 @@ func TestLoftToolPointSectionCone(t *testing.T) {
 // circle above, with a Tangent condition on the face — the loft must flare out tangent to the
 // planar top (exact G1), beyond the ruled radius. Exercises face-section picking end to end.
 func TestLoftToolFaceSectionTangent(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	def := compdef.NewPartComponentDefinition()
 	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
@@ -257,6 +262,7 @@ func TestLoftToolFaceSectionTangent(t *testing.T) {
 // TestLoftToolRailGuides drives the Loft UI picking two circle sections plus an open PATH (a rail
 // that bulges to x=3.5) — the loft must follow the rail and bulge past the ruled radius.
 func TestLoftToolRailGuides(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	def := compdef.NewPartComponentDefinition()
 	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
@@ -304,6 +310,7 @@ func TestLoftToolRailGuides(t *testing.T) {
 // TestLoftToolCenterlineBends drives the Loft UI in centerline mode: two circle sections plus a
 // spine PATH that bows to x=2 — the loft must bend along it (its centroid moves off-axis).
 func TestLoftToolCenterlineBends(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	def := compdef.NewPartComponentDefinition()
 	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
@@ -350,6 +357,7 @@ func TestLoftToolCenterlineBends(t *testing.T) {
 }
 
 func TestLoftToolNeedsTwoSections(t *testing.T) {
+	t.Parallel()
 	s, bottom, top := newPartWithStackedSquares(t)
 	s.SetPicker(&seqPicker{sels: []Selectable{bottom, top}})
 	l := NewLoftTool()

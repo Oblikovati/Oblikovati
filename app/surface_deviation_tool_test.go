@@ -28,6 +28,7 @@ func partWithTwoOffsetSurfaces(t *testing.T, dz float64) (*Session, *compdef.Par
 }
 
 func TestSurfaceDeviationToolReportsOffset(t *testing.T) {
+	t.Parallel()
 	const dz = 0.3
 	s, _ := partWithTwoOffsetSurfaces(t, dz)
 	tool := NewSurfaceDeviationTool()
@@ -45,6 +46,7 @@ func TestSurfaceDeviationToolReportsOffset(t *testing.T) {
 }
 
 func TestSurfaceDeviationToolParams(t *testing.T) {
+	t.Parallel()
 	tool := NewSurfaceDeviationTool()
 	if tool.Name() != "Surface Deviation" || tool.CanCommit() {
 		t.Error("deviation is a display tool (no commit)")
@@ -57,6 +59,7 @@ func TestSurfaceDeviationToolParams(t *testing.T) {
 }
 
 func TestSurfaceDeviationViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithTwoOffsetSurfaces(t, 0.2)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

@@ -55,6 +55,7 @@ func uSlotPrism() *topo.Body {
 // corners all lie in the U's two arms (inside its material), but the bar spans the empty slot and so
 // crosses the slot walls. classify must report `intersecting`, not targetContainsTool.
 func TestClassifyNonConvexVertexInsideButBoundaryCrosses(t *testing.T) {
+	t.Parallel()
 	outer := uSlotPrism()
 	bar, err := brep.SolidBlock(m.P3(2, 5.5, 1), m.P3(8, 6.5, 3), "bar")
 	if err != nil {
@@ -79,6 +80,7 @@ func TestClassifyNonConvexVertexInsideButBoundaryCrosses(t *testing.T) {
 // TestNonConvexJoinVolumeMatchesAnalytic checks the boolean now routed through booleanGeneral yields
 // the correct union volume: V(A) + V(B) - V(A∩B) = 304 + 12 - 4 = 312.
 func TestNonConvexJoinVolumeMatchesAnalytic(t *testing.T) {
+	t.Parallel()
 	outer := uSlotPrism()
 	bar, err := brep.SolidBlock(m.P3(2, 5.5, 1), m.P3(8, 6.5, 3), "bar")
 	if err != nil {
@@ -101,6 +103,7 @@ func TestNonConvexJoinVolumeMatchesAnalytic(t *testing.T) {
 // TestGenuineContainmentStillFastPaths guards against a perf/behaviour regression: a strictly interior
 // tool (no boundary crossing) must still be recognized as contained, taking the fast path.
 func TestGenuineContainmentStillFastPaths(t *testing.T) {
+	t.Parallel()
 	outer, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(10, 10, 10), "outer")
 	if err != nil {
 		t.Fatalf("outer: %v", err)

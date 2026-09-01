@@ -35,6 +35,7 @@ func nestedCubes(t *testing.T, shift float64) (outer, inner *topo.Body) {
 // TestJoinNestedReturnsOuterOnly asserts Join(outer, inner) with inner ⊂ outer is exactly the outer
 // body: outer's volume (1000, not 1027), outer's six faces (no interior wall), and a valid solid.
 func TestJoinNestedReturnsOuterOnly(t *testing.T) {
+	t.Parallel()
 	outer, inner := nestedCubes(t, 0)
 	joined, err := Boolean(Join, outer, inner)
 	if err != nil {
@@ -57,6 +58,7 @@ func TestJoinNestedReturnsOuterOnly(t *testing.T) {
 // TestJoinNestedToolContainsTargetReturnsTool covers the mirror branch: when the TOOL contains the
 // target, the union is the tool. Volume is the outer cube's (1000), with no interior wall.
 func TestJoinNestedToolContainsTargetReturnsTool(t *testing.T) {
+	t.Parallel()
 	outer, inner := nestedCubes(t, 0)
 	joined, err := Boolean(Join, inner, outer) // target=inner (small), tool=outer (large)
 	if err != nil {
@@ -73,6 +75,7 @@ func TestJoinNestedToolContainsTargetReturnsTool(t *testing.T) {
 // TestIntersectNestedReturnsInner asserts Intersect(outer, inner) with inner ⊂ outer is the inner
 // body's geometry (volume 27).
 func TestIntersectNestedReturnsInner(t *testing.T) {
+	t.Parallel()
 	outer, inner := nestedCubes(t, 0)
 	got, err := Boolean(Intersect, outer, inner)
 	if err != nil {
@@ -89,6 +92,7 @@ func TestIntersectNestedReturnsInner(t *testing.T) {
 // TestJoinNestedTranslationInvariant repeats the nested Join far from the origin: the result volume
 // must be unchanged, guarding both the shell-discard fix and the divergence-sum origin handling.
 func TestJoinNestedTranslationInvariant(t *testing.T) {
+	t.Parallel()
 	for _, shift := range []float64{0, 500, -250} {
 		outer, inner := nestedCubes(t, shift)
 		joined, err := Boolean(Join, outer, inner)
@@ -104,6 +108,7 @@ func TestJoinNestedTranslationInvariant(t *testing.T) {
 // TestCutNestedToolInsideRemovesCavity confirms Cut still routes correctly: cutting an interior tool
 // from the target produces a body with a cavity (volume 1000-27 = 973) and remains valid.
 func TestCutNestedToolInsideRemovesCavity(t *testing.T) {
+	t.Parallel()
 	outer, inner := nestedCubes(t, 0)
 	got, err := Boolean(Cut, outer, inner)
 	if err != nil {

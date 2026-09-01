@@ -67,6 +67,7 @@ func coneCanalSpineFor(t *testing.T, c coneCanalCase) coneCanalSpine {
 // radial plane, the cone foot on the cone — all to ≤1e-9 (algebraically exact, not marched). |T − m| = r
 // is the load-bearing identity ζ·sinα − ρ·cosα = r the canal is built on.
 func TestConeCanalSpine_ExactFeet(t *testing.T) {
+	t.Parallel()
 	for _, c := range coneCanalCases() {
 		t.Run(c.name, func(t *testing.T) {
 			s := coneCanalSpineFor(t, c)
@@ -151,6 +152,7 @@ func assertPointOnCone(t *testing.T, name string, co geom.Cone, p math.Point3) {
 // and stays regular (> 0). A full-tube check would spuriously reject D1 — this pins that the band-only
 // guard accepts it while the full-tube factor is genuinely negative.
 func TestConeCanalBandFoldGuard(t *testing.T) {
+	t.Parallel()
 	s := coneCanalSpineFor(t, coneCanalCases()[2]) // D1
 	m := s.center(0)                               // the vertex station
 	fP := s.planeFoot(m)
@@ -172,6 +174,7 @@ func TestConeCanalBandFoldGuard(t *testing.T) {
 // TestConeCanalStationOf pins the closed-form armStation canal case: a point placed ON the spine at a
 // known x_f is recovered exactly, and a point pushed off the r-offset plane is rejected (do-no-harm).
 func TestConeCanalStationOf(t *testing.T) {
+	t.Parallel()
 	s := coneCanalSpineFor(t, coneCanalCases()[0]) // C2
 	res := ResolutionForSize(300)
 	const xf = 42.0
@@ -192,6 +195,7 @@ func TestConeCanalStationOf(t *testing.T) {
 // (2) the trimmed BSpline arm meshes FOLD-FREE with positive area. This is the crux gate: a real
 // non-analytic arm through the fillet engine, exact and fold-free.
 func TestConeCanalArm_RealImport(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"C2", "C6", "D1"} {
 		t.Run(name, func(t *testing.T) {
 			body := importSimpleFixture(t, name)
@@ -216,6 +220,7 @@ func TestConeCanalArm_RealImport(t *testing.T) {
 // count left at the D1 snout. It also pins that the count ADAPTS (D1's high-curvature snout gets many more
 // stations than C2/C6's smooth arms), not that a constant was merely bumped.
 func TestConeCanalArm_BetweenStationBounded(t *testing.T) {
+	t.Parallel()
 	counts := map[string]int{}
 	for _, name := range []string{"C2", "C6", "D1"} {
 		s, e, res := realConeCanalSpine(t, name)

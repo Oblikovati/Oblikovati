@@ -30,6 +30,7 @@ func d8RoundSurface(t *testing.T) geom.Cylinder {
 // TestRingParamBoxReadsD8sCornerRoundAsItsOwnQuarter: the round's face is bounded by two full-height
 // rulings and two rim arcs, so it IS a parameter box — a quarter turn wide and the plate's own 100 tall.
 func TestRingParamBoxReadsD8sCornerRoundAsItsOwnQuarter(t *testing.T) {
+	t.Parallel()
 	box, ok := ringParamBox(d8RoundSurface(t), d8RoundRing(), retrimChainTol)
 	if !ok {
 		t.Fatal("ringParamBox declined D8's corner round, which is bounded by rulings and rims only")
@@ -45,6 +46,7 @@ func TestRingParamBoxReadsD8sCornerRoundAsItsOwnQuarter(t *testing.T) {
 // TestRingParamBoxDeclinesABoundaryThatIsNotAnIsoCurve: a face whose boundary cuts diagonally across the
 // chart is not a box, and the split must say so rather than invent bounds for it.
 func TestRingParamBoxDeclinesABoundaryThatIsNotAnIsoCurve(t *testing.T) {
+	t.Parallel()
 	ring := d8RoundRing()
 	ring[1] = endSeg{from: ring[1].from, to: ring[2].to} // a helical chord replacing the u = −π/2 ruling
 	ring = ring[:len(ring)-1]
@@ -59,6 +61,7 @@ func TestRingParamBoxDeclinesABoundaryThatIsNotAnIsoCurve(t *testing.T) {
 // The split must name that ruling — ring index 3 — as the boundary the landing leaves through, because
 // the face across it is the flat wall that carries the rest of the trim.
 func TestRingIndexOnBoxSideFindsD8sExitRuling(t *testing.T) {
+	t.Parallel()
 	s, ring := d8RoundSurface(t), d8RoundRing()
 	box, ok := ringParamBox(s, ring, retrimChainTol)
 	if !ok {
@@ -78,6 +81,7 @@ func TestRingIndexOnBoxSideFindsD8sExitRuling(t *testing.T) {
 // TestBoxExitSideAcceptsALandingExactlyOnTheBound: a correct trim ENDS on the stop face's boundary, so a
 // landing on a bound must read as inside — else the junction itself would be classed as an overrun.
 func TestBoxExitSideAcceptsALandingExactlyOnTheBound(t *testing.T) {
+	t.Parallel()
 	s, ring := d8RoundSurface(t), d8RoundRing()
 	box, ok := ringParamBox(s, ring, retrimChainTol)
 	if !ok {
@@ -92,6 +96,7 @@ func TestBoxExitSideAcceptsALandingExactlyOnTheBound(t *testing.T) {
 // TestSingleOffRunTakesOneTailRunAndRefusesEverythingElse pins the "one entry, one exit" precondition:
 // only a single contiguous run of off-face stations, crossing ONE bound, touching ONE end of the section.
 func TestSingleOffRunTakesOneTailRunAndRefusesEverythingElse(t *testing.T) {
+	t.Parallel()
 	in, up := sideInside, sideUHi
 	for _, tc := range []struct {
 		name    string
@@ -118,6 +123,7 @@ func TestSingleOffRunTakesOneTailRunAndRefusesEverythingElse(t *testing.T) {
 // TestBisectOutwardZeroLandsOnTheAnalyticRoot: the junction solver is a plain bisection, so its accuracy
 // is the bracket halved farEndJunctionSteps times. Gated on an exact root, not a tolerance.
 func TestBisectOutwardZeroLandsOnTheAnalyticRoot(t *testing.T) {
+	t.Parallel()
 	got, ok := bisectOutwardZero(func(x float64) (float64, bool) { return x - 1.0/3.0, true }, 0, 1)
 	if !ok {
 		t.Fatal("bisectOutwardZero declined a bracket that straddles its root")
@@ -131,6 +137,7 @@ func TestBisectOutwardZeroLandsOnTheAnalyticRoot(t *testing.T) {
 // section arc on itself, translated — an EXACT circle, which must ship as a geom.Arc3d rather than as a
 // b-spline fit of it. Anything that is not on one circle must still be carried, as the fit.
 func TestPieceSegKeepsAnExactArcAndFitsAnythingElse(t *testing.T) {
+	t.Parallel()
 	circle, helix := make([]math.Point3, 9), make([]math.Point3, 9)
 	for i := range circle {
 		a := float64(i) / 8 * stdmath.Pi / 2
@@ -161,6 +168,7 @@ func TestPieceSegKeepsAnExactArcAndFitsAnythingElse(t *testing.T) {
 // to the reversed segment's `from`). The endpoint-only reversal puts it at 0.25 — the wrong half —
 // which is the assertion below going red.
 func TestAReversedChainSegmentTrimsToTheCorrectHalf(t *testing.T) {
+	t.Parallel()
 	c := d8TrimCurve{lo: -stdmath.Pi / 2, hi: 0}
 	fwd := endSeg{from: c.PointAt(0), to: c.PointAt(1), curve: c, mid: c.PointAt(0.5)}
 	rev := reversedEndSeg(fwd)

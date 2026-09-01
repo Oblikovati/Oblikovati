@@ -33,6 +33,7 @@ func j2SphereMeridian() geom.Arc3d {
 // is returned as the parent's OWN sub-arc, running from→to in the caller's order, with every interior
 // station on the parent circle — and NOT on the chord, which is the whole point.
 func TestExactRetainedSpanCarriesAnArcMeridian(t *testing.T) {
+	t.Parallel()
 	parent := j2SphereMeridian()
 	from, to := parent.PointAt(0.1), parent.PointAt(0.9)
 	sub := exactRetainedSpanOnParent(parent, from, to)
@@ -67,6 +68,7 @@ func TestExactRetainedSpanCarriesAnArcMeridian(t *testing.T) {
 // parent means the parent's sub-span is NOT the boundary, so nil (the caller's own fallback) is returned
 // rather than a guess.
 func TestExactRetainedSpanDeclinesAnOffParentEndpoint(t *testing.T) {
+	t.Parallel()
 	parent := j2SphereMeridian()
 	from := parent.PointAt(0.1)
 	off := parent.PointAt(0.9).TranslateBy(math.V3(0, 0, 5)) // 5 off the meridian circle
@@ -80,6 +82,7 @@ func TestExactRetainedSpanDeclinesAnOffParentEndpoint(t *testing.T) {
 // the rebuild shipping the very LineSegment it always shipped. Every rim-fillet green but J2/J4 depends on
 // this (I9 J1 K1 R8 U6 W6 W8 W9 Z1 J6 J8, bfuseblend A1 A2 A7 B1).
 func TestExactRetainedSpanDeclinesAStraightParent(t *testing.T) {
+	t.Parallel()
 	line := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(0, 0, 100))
 	if got := exactRetainedSpanOnParent(line, math.P3(0, 0, 10), math.P3(0, 0, 90)); got != nil {
 		t.Errorf("carried %T for a straight ruling parent, want nil (the ruling is already on the host)", got)
@@ -89,6 +92,7 @@ func TestExactRetainedSpanDeclinesAStraightParent(t *testing.T) {
 // TestExactRetainedSpanCarriesAnEllipticParent pins the elliptic arm's reuse: the ellipse's own
 // exactness-gated sub-span is returned, so the one choke point covers both conic families.
 func TestExactRetainedSpanCarriesAnEllipticParent(t *testing.T) {
+	t.Parallel()
 	ea := f6CapRim(t)
 	sub := exactRetainedSpanOnParent(ea, ea.PointAt(0.05), ea.PointAt(0.95))
 	if _, ok := sub.(geom.EllipticalArc); !ok {

@@ -12,6 +12,7 @@ import (
 // locate-by-point across entity kinds, ray hit, point containment, convexity, validate,
 // and range box.
 func TestBodyQueries(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 
 	for _, kind := range []string{"face", "edge", "vertex"} {

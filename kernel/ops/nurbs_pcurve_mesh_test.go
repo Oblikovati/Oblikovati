@@ -13,6 +13,7 @@ import (
 // the CDT scales u/v into a ≈isometric space (the fix that stopped the (u,v) Delaunay from twisting
 // in 3D and folding — M25). su = mean |∂P/∂u|, sv = mean |∂P/∂v|.
 func TestMetricScaleReflectsAnisotropy(t *testing.T) {
+	t.Parallel()
 	ctrl := [][]math.Point3{
 		{math.P3(0, 0, 0), math.P3(0, 1, 0)},
 		{math.P3(10, 0, 0), math.P3(10, 1, 0)},
@@ -29,6 +30,7 @@ func TestMetricScaleReflectsAnisotropy(t *testing.T) {
 }
 
 func TestMetricScaleNeverZero(t *testing.T) {
+	t.Parallel()
 	su, sv := metricScale(cProfileSurfaceOps(t))
 	if su <= 0 || sv <= 0 {
 		t.Errorf("metricScale returned non-positive (%g, %g)", su, sv)

@@ -25,6 +25,7 @@ import (
 // The exact-volume checks are the shadow oracle the cutover's runtime guard (validity + the
 // Requicha bracket) is trusted against.
 func TestReconstructionCutoverShadow(t *testing.T) {
+	t.Parallel()
 	const r = 3.0
 	cases := []struct {
 		name     string

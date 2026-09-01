@@ -10,6 +10,7 @@ import "testing"
 // floor at the same z as a distant coplanar step floor) rejected EVERY ray direction and insideExact
 // fell through to a wrong "outside", dropping a cut face and tearing chained booleans.
 func TestSegmentCoplanarOutsideIsMiss(t *testing.T) {
+	t.Parallel()
 	// A triangle in the z=1 plane spanning x in [3,4].
 	a, b, c := pt([3]float64{3, 0, 1}), pt([3]float64{4, 0, 1}), pt([3]float64{3, 2, 1})
 
@@ -31,6 +32,7 @@ func TestSegmentCoplanarOutsideIsMiss(t *testing.T) {
 // TestInsideExactInteriorAtFeaturePlane is the insideExact-level regression: a point strictly inside a
 // notched solid but sitting at the z of a distant coplanar face must classify as INSIDE.
 func TestInsideExactInteriorAtFeaturePlane(t *testing.T) {
+	t.Parallel()
 	// An L-shaped solid: the [0,4]x[0,2]x[0,2] box with the [3,4]x[0,2]x[1,2] corner removed, whose
 	// step floor lies in the z=1 plane. Built as a soup by BooleanTagged difference (the engine under
 	// test's own union of the two boxes is exercised elsewhere).

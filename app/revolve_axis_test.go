@@ -45,6 +45,7 @@ func revolvedBodyVolume(t *testing.T, s *Session) float64 {
 // the feature will actually use. A profile whose sketch carries a centerline pre-selects it, and
 // before this the panel went on showing the origin-axis combo's "Y Axis".
 func TestAxisChipNamesThePreselectedCenterline(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	cl := profile.Sketch.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
 	cl.SetCenterline(true)
@@ -65,6 +66,7 @@ func TestAxisChipNamesThePreselectedCenterline(t *testing.T) {
 // TestAxisChipNamesTheOriginAxisWhenNothingIsPicked: with no centerline anywhere the chip falls
 // back to the quick-pick's axis, and the quick-pick stays live.
 func TestAxisChipNamesTheOriginAxisWhenNothingIsPicked(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	s.SetPicker(stubPicker{sel: profile})
 
@@ -87,6 +89,7 @@ func TestAxisChipNamesTheOriginAxisWhenNothingIsPicked(t *testing.T) {
 // TestClearAxisReturnsToTheOriginAxis: the chip's × drops the pick, and both the caption and the
 // geometry go back to the quick-pick's axis.
 func TestClearAxisReturnsToTheOriginAxis(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	horiz := profile.Sketch.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(2, 0))
 	horiz.SetCenterline(true) // an X-axis centerline: revolving about it is NOT the washer
@@ -112,6 +115,7 @@ func TestClearAxisReturnsToTheOriginAxis(t *testing.T) {
 // axis. Before #2018 the tool's filter admitted only sketch entities, so a work axis could not be
 // picked at all and the origin axes were reachable only through the combo.
 func TestRevolveAcceptsAWorkAxisPick(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	s.SetPicker(stubPicker{sel: profile})
 	part := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
@@ -149,6 +153,7 @@ func acceptsKind(kinds []SelectionKind, kind SelectionKind) bool {
 // used to discard everything but a centerline, so a construction line drawn as the axis did
 // nothing at all when clicked.
 func TestRevolveAcceptsAPlainSketchLineAsAxis(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	// A plain line at x=1 (NOT a centerline): revolving about it gives 16π, which the tool's Y
 	// default cannot produce.
@@ -172,6 +177,7 @@ func TestRevolveAcceptsAPlainSketchLineAsAxis(t *testing.T) {
 // definition's axis against the three ORIGIN refs only, so a user work axis matched nothing and
 // the tool fell back to its Y default — silently rewriting the axis on the next OK (#2018).
 func TestEditingARevolveKeepsItsUserWorkAxis(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	part := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	sideways, err := math.UnitVector3FromVector(math.V3(1, 0, 0))

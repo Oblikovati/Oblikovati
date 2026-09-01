@@ -9,6 +9,7 @@ import (
 )
 
 func TestPolylineEvaluationAndLength(t *testing.T) {
+	t.Parallel()
 	p, err := NewPolyline([]math.Point3{
 		math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0),
 	})
@@ -34,6 +35,7 @@ func TestPolylineEvaluationAndLength(t *testing.T) {
 }
 
 func TestPolylineCopiesVertices(t *testing.T) {
+	t.Parallel()
 	src := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0)}
 	p, _ := NewPolyline(src)
 	src[0] = math.P3(99, 99, 99) // mutating the source must not affect the polyline
@@ -43,12 +45,14 @@ func TestPolylineCopiesVertices(t *testing.T) {
 }
 
 func TestNewPolylineTooFewVerticesFails(t *testing.T) {
+	t.Parallel()
 	if _, err := NewPolyline([]math.Point3{math.P3(0, 0, 0)}); err == nil {
 		t.Fatal("expected error for single vertex")
 	}
 }
 
 func TestPolyline2dEvaluation(t *testing.T) {
+	t.Parallel()
 	p, err := NewPolyline2d([]math.Point2{math.P2(0, 0), math.P2(2, 0), math.P2(2, 2)})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

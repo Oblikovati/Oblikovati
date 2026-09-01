@@ -10,6 +10,7 @@ import (
 // TestMixSubsurfaceZeroWeightReproducesDiffuseExactly is PBI-343's explicit regression
 // guard: subsurface_weight=0 must reproduce PBI-342's (diffuse) output exactly.
 func TestMixSubsurfaceZeroWeightReproducesDiffuseExactly(t *testing.T) {
+	t.Parallel()
 	diffuse := NewColor3(0.31, 0.22, 0.05)
 	got := MixSubsurface(diffuse, Gray(0.9), 0)
 	if got != diffuse {
@@ -20,6 +21,7 @@ func TestMixSubsurfaceZeroWeightReproducesDiffuseExactly(t *testing.T) {
 // TestSubsurfaceExtinctionIsReciprocalMFP checks the hand-derivable identity (spec:
 // "the reciprocal of the MFP per channel").
 func TestSubsurfaceExtinctionIsReciprocalMFP(t *testing.T) {
+	t.Parallel()
 	got := SubsurfaceExtinction(2, Color3{R: 1, G: 0.5, B: 0.25})
 	want := Color3{R: 0.5, G: 1, B: 2}
 	if math.Abs(got.R-want.R) > 1e-9 || math.Abs(got.G-want.G) > 1e-9 || math.Abs(got.B-want.B) > 1e-9 {
@@ -30,6 +32,7 @@ func TestSubsurfaceExtinctionIsReciprocalMFP(t *testing.T) {
 // TestSubsurfaceExtinctionRegularizesZeroMFP checks the zero-MFP guard produces a large,
 // finite extinction (opaque-diffuse limit) rather than +Inf/NaN.
 func TestSubsurfaceExtinctionRegularizesZeroMFP(t *testing.T) {
+	t.Parallel()
 	got := SubsurfaceExtinction(0, Gray(1))
 	if math.IsInf(got.R, 1) || math.IsNaN(got.R) {
 		t.Errorf("SubsurfaceExtinction(radius=0) = %v, want a large finite value", got.R)
@@ -41,6 +44,7 @@ func TestSubsurfaceExtinctionRegularizesZeroMFP(t *testing.T) {
 // subsurfaceColorFromAlbedoChannel (its own forward van de Hulst formula) — composing
 // color→albedo→color must be the identity, for every anisotropy and color in range.
 func TestVanDeHulstRoundTrip(t *testing.T) {
+	t.Parallel()
 	for _, g := range []float64{-0.5, 0, 0.3, 0.7} {
 		for _, c := range []float64{0.05, 0.3, 0.5, 0.8, 0.95} {
 			alpha := subsurfaceAlbedoFromColorChannel(c, g)
@@ -57,6 +61,7 @@ func TestVanDeHulstRoundTrip(t *testing.T) {
 // single-scattering albedo close to 1 (near-conservative scattering), matching the
 // "energy always conserved... white passes the furnace test" guarantee.
 func TestSubsurfaceSingleScatterAlbedoWhiteApproachesOne(t *testing.T) {
+	t.Parallel()
 	got := SubsurfaceSingleScatterAlbedo(Gray(1), 0)
 	if got.R < 0.99 {
 		t.Errorf("SubsurfaceSingleScatterAlbedo(color=1) = %v, want close to 1", got.R)
@@ -66,6 +71,7 @@ func TestSubsurfaceSingleScatterAlbedoWhiteApproachesOne(t *testing.T) {
 // TestPhaseHenyeyGreensteinIsotropicAtZeroAnisotropy checks the closed-form reduction:
 // g=0 must give the exactly isotropic 1/(4π) phase function at every angle.
 func TestPhaseHenyeyGreensteinIsotropicAtZeroAnisotropy(t *testing.T) {
+	t.Parallel()
 	want := 1 / (4 * math.Pi)
 	for _, cosTheta := range []float64{-1, -0.3, 0, 0.5, 1} {
 		if got := PhaseHenyeyGreenstein(cosTheta, 0); math.Abs(got-want) > 1e-9 {
@@ -78,6 +84,7 @@ func TestPhaseHenyeyGreensteinIsotropicAtZeroAnisotropy(t *testing.T) {
 // normalization property (∫ p(cosθ) dω = 1 over the full sphere) via numerical
 // integration, for a sweep of anisotropy values.
 func TestPhaseHenyeyGreensteinIntegratesToOne(t *testing.T) {
+	t.Parallel()
 	for _, g := range []float64{-0.7, -0.3, 0, 0.3, 0.7} {
 		const n = 256
 		var sum float64
@@ -96,6 +103,7 @@ func TestPhaseHenyeyGreensteinIntegratesToOne(t *testing.T) {
 // forward scattering (cosTheta=1, same direction as travel) must be more probable than
 // backscattering (cosTheta=-1).
 func TestPhaseHenyeyGreensteinForwardScatteringPeak(t *testing.T) {
+	t.Parallel()
 	forward := PhaseHenyeyGreenstein(1, 0.7)
 	back := PhaseHenyeyGreenstein(-1, 0.7)
 	if forward <= back {
@@ -106,6 +114,7 @@ func TestPhaseHenyeyGreensteinForwardScatteringPeak(t *testing.T) {
 // TestResolveSubsurfaceMediumBundlesTheResolvedParameters is a smoke test that the
 // bundling function wires its three resolvers correctly.
 func TestResolveSubsurfaceMediumBundlesTheResolvedParameters(t *testing.T) {
+	t.Parallel()
 	m := ResolveSubsurfaceMedium(NewColor3(0.8, 0.5, 0.3), 1, Color3{R: 1, G: 0.5, B: 0.25}, 0.2)
 	if m.Anisotropy != 0.2 {
 		t.Errorf("Anisotropy = %v, want 0.2", m.Anisotropy)

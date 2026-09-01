@@ -32,6 +32,7 @@ func addSecondSquareBody(def *compdef.PartComponentDefinition) {
 // step must undo without leaving the metadata behind (the pre-#1641 hybrid). Undoing both the geometry
 // and the color returns the document to its exact starting state.
 func TestMetadataMixedHistoryNoHybrid(t *testing.T) {
+	t.Parallel()
 	s, def := boxBodySession(t)
 	key := bodyKeyOf(t, def)
 	s.EnsureActiveEditBaseline() // baseline: one box body, no color
@@ -61,6 +62,7 @@ func TestMetadataMixedHistoryNoHybrid(t *testing.T) {
 
 // TestSketchSettingsUndoable checks a per-document sketch-settings change is a real undo step (S6).
 func TestSketchSettingsUndoable(t *testing.T) {
+	t.Parallel()
 	s, _ := boxBodySession(t)
 	base, _ := s.DocumentSketchSettings(0)
 	changed := base
@@ -81,6 +83,7 @@ func TestSketchSettingsUndoable(t *testing.T) {
 
 // TestDisplaySettingsUndoable checks a per-document display-settings change is a real undo step (S6).
 func TestDisplaySettingsUndoable(t *testing.T) {
+	t.Parallel()
 	s, _ := boxBodySession(t)
 	base := s.DisplaySettings(0)
 	changed := base

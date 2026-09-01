@@ -16,6 +16,7 @@ import (
 // TestBodyMeshDiagnosticsHarvestsTheTessellatorsReport is the #2058 kernel-side regression: what the
 // mesher recorded onto its Mesh must be readable from outside this package, or it reaches nobody.
 func TestBodyMeshDiagnosticsHarvestsTheTessellatorsReport(t *testing.T) {
+	t.Parallel()
 	got := BodyMeshDiagnostics(degenerate.CrossedTrimBody(), DefaultQuality())
 	if len(got) != 1 {
 		t.Fatalf("harvested %d diagnostics from a two-face self-crossing trim, want 1 collapsed entry: %v",
@@ -34,6 +35,7 @@ func TestBodyMeshDiagnosticsHarvestsTheTessellatorsReport(t *testing.T) {
 // analytic corpus meshes cleanly, and a channel that cries on healthy geometry is one users learn to
 // ignore (#2058's third acceptance).
 func TestBodyMeshDiagnosticsStaysSilentOnCleanBodies(t *testing.T) {
+	t.Parallel()
 	for name, b := range cleanPrimitiveBodies(t) {
 		if got := BodyMeshDiagnostics(b, DefaultQuality()); len(got) != 0 {
 			t.Errorf("clean %s reported %v, want none", name, got)
@@ -62,6 +64,7 @@ func cleanPrimitiveBodies(t *testing.T) map[string]*topo.Body {
 // TestBodyMeshDiagnosticsOnNilBodyIsEmpty: the harvest is called on whatever a feature returned, and
 // a nil body in that slice must not panic the recompute it is reporting on.
 func TestBodyMeshDiagnosticsOnNilBodyIsEmpty(t *testing.T) {
+	t.Parallel()
 	if got := BodyMeshDiagnostics(nil, DefaultQuality()); got != nil {
 		t.Errorf("nil body reported %v, want nil", got)
 	}

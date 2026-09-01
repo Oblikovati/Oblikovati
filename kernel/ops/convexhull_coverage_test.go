@@ -10,6 +10,7 @@ import (
 )
 
 func TestConvexHullDegenerateDiagnostics(t *testing.T) {
+	t.Parallel()
 	if got := itoa(42); got != "42" {
 		t.Fatalf("itoa(42) = %q", got)
 	}
@@ -24,6 +25,7 @@ func TestConvexHullDegenerateDiagnostics(t *testing.T) {
 }
 
 func TestConvexHullSeedHelpersDegenerate(t *testing.T) {
+	t.Parallel()
 	pts := []math.Point3{math.P3(1, 1, 1), math.P3(1, 1, 1)}
 	if got := boundsDiagonal(pts); got != 1 {
 		t.Fatalf("boundsDiagonal coincident = %v, want 1", got)

@@ -105,6 +105,7 @@ func samePlaneGeom(a, b geom.Plane, tol float64) bool {
 // the arm carries NO extension (extHost nil) and the imprint splices the terminal VERBATIM — byte-identical
 // to farRunoutFace's single-bite splice (the derivation's "verbatim B3 spliceCornerBite").
 func TestCanalImprint_Y30Verbatim(t *testing.T) {
+	t.Parallel()
 	h := n7RealHostInputs(t)
 	i := cylinderArmAlong(t, h.arms, math.V3(0, 1, 0)) // s_10: axis ŷ
 	b := h.armBundle(i)
@@ -130,6 +131,7 @@ func TestCanalImprint_Y30Verbatim(t *testing.T) {
 // loop, so a CO-CIRCULAR extension arc (on the wall∩{z=80} circle R=50) sweeps asin(1/9) from the far vertex
 // (50,0,80) to the wall foot; the imprint splices [ext, arc terminal] and closes.
 func TestCanalImprint_Z80ArcExtension(t *testing.T) {
+	t.Parallel()
 	h := n7RealHostInputs(t)
 	i := cylinderArmAlong(t, h.arms, math.V3(0, 0, 1)) // s_4: axis ẑ
 	b := h.armBundle(i)
@@ -156,6 +158,7 @@ func TestCanalImprint_Z80ArcExtension(t *testing.T) {
 // of length r on the wall∩{x=80} ruling from the far vertex (80,10,10) to the wall foot (80,10,5), and the
 // bite is the SPIRIC section (a geom.SpiricArc, threaded UNREVERSED — never a chord). The imprint closes.
 func TestCanalImprint_X80SpiricExtension(t *testing.T) {
+	t.Parallel()
 	h := n7RealHostInputs(t)
 	i := torusArmIndex(t, h.arms) // s_5 (torus)
 	b := h.armBundle(i)
@@ -184,6 +187,7 @@ func TestCanalImprint_X80SpiricExtension(t *testing.T) {
 // window loop AUGMENTED by the two extension edges (the F1 floor "far span will not close — outer ends off
 // the bitten loop A=5.0 B=5.5642" is gone). The wall retrims to a valid face.
 func TestCanalCloseFar_WallAugmentedLoop(t *testing.T) {
+	t.Parallel()
 	h := n7RealHostInputs(t)
 	wall := h.wallFace(t)
 	ff, reason := canalHostBite(wall, h.bundles, h.boundaries, h.rolls, h.w, h.res)
@@ -200,6 +204,7 @@ func TestCanalCloseFar_WallAugmentedLoop(t *testing.T) {
 // F_far imprint face AND the wall's far path — its two endpoints (far vertex q, wall foot) are point-
 // identical on both, and both extensions land on the wall (extHost == wall).
 func TestCanalExtension_SharedEdgeIdentity(t *testing.T) {
+	t.Parallel()
 	h := n7RealHostInputs(t)
 	wall := h.wallFace(t)
 	exts := extensionsOnHost(wall, h.bundles)
@@ -228,6 +233,7 @@ func TestCanalExtension_SharedEdgeIdentity(t *testing.T) {
 // and the z=80/x=80 imprint splices DECLINE (a bite foot off the loop) and the wall far span DECLINES (the
 // F1-era floor) — proving the extensions are load-bearing, not cosmetic.
 func TestCanalImprint_NoExtensionMutationDeclines(t *testing.T) {
+	t.Parallel()
 	h := n7RealHostInputs(t)
 	tol := h.res.Weld() * h.w.radius
 	bare := stripExtensions(h.bundles)
@@ -250,6 +256,7 @@ func TestCanalImprint_NoExtensionMutationDeclines(t *testing.T) {
 // chorded: the chain area with the true SpiricArc bulge differs measurably from the chord (straight-segment)
 // approximation and matches a fine-sampled reference — so the smaller-area splice pick stays principled.
 func TestChainBiteArea_SpiricSampledNotChorded(t *testing.T) {
+	t.Parallel()
 	h := n7RealHostInputs(t)
 	i := torusArmIndex(t, h.arms)
 	b := h.armBundle(i)

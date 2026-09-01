@@ -22,6 +22,7 @@ import (
 // produced, and the tessellated fallback measured the body ~3% off; a corpus regime gate at 5% cannot
 // see that regression, so the bar here is the oracle itself.
 func TestCrossingCylinderCutIsExactToTheEllipticOracle(t *testing.T) {
+	t.Parallel()
 	const bigR, drillR, height = 3.0, 1.5, 12.0
 	fat, drill := crossingCylinders(t)
 	res, err := ops.Boolean(ops.Cut, fat, drill)

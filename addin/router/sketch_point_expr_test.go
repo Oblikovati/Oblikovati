@@ -13,6 +13,7 @@ import (
 // parameter engine (so generated line/arc/point geometry is parametric at construction), while the
 // literal Points path is unchanged when no expressions are given (Oblikovati.API#189).
 func TestResolvePointsEvaluatesExpressions(t *testing.T) {
+	t.Parallel()
 	part := partWith(t, map[string]string{"bore_r": "10 mm", "slot_depth": "5 mm"})
 
 	pts, err := resolvePoints(part, wire.AddSketchEntityArgs{
@@ -42,6 +43,7 @@ func TestResolvePointsEvaluatesExpressions(t *testing.T) {
 // TestResolvePointsRejectsMalformedExpr: a point expression without exactly two coordinates errors
 // with the offending index, per the house exception-message rule.
 func TestResolvePointsRejectsMalformedExpr(t *testing.T) {
+	t.Parallel()
 	part := partWith(t, nil)
 	if _, err := resolvePoints(part, wire.AddSketchEntityArgs{PointExprs: [][]string{{"1"}}}); err == nil {
 		t.Error("a one-coordinate pointExprs entry should error")

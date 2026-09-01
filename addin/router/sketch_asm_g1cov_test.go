@@ -36,6 +36,7 @@ func sacovAllReject(t *testing.T, r *Router, s *app.Session, cases []sacovMethod
 // --- parameters.go: get/set/add error branches (unknown name, missing field, bad expr) ---
 
 func TestSacovParametersErrorBranches(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	sacovAllReject(t, r, s, []sacovMethodArgs{
 		{"parameters.get", `{"name":"ghost"}`},                     // getParameter: ByName miss
@@ -50,6 +51,7 @@ func TestSacovParametersErrorBranches(t *testing.T) {
 // --- views.go: unknown document + out-of-range index error branches ---
 
 func TestSacovViewsUnknownDocument(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	sacovAllReject(t, r, s, []sacovMethodArgs{
 		{"views.list", `{"document":999999}`},
@@ -63,6 +65,7 @@ func TestSacovViewsUnknownDocument(t *testing.T) {
 }
 
 func TestSacovViewsOutOfRangeIndex(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	sacovAllReject(t, r, s, []sacovMethodArgs{
 		{"views.activate", `{"index":99}`}, // Views().Activate out of range
@@ -76,6 +79,7 @@ func TestSacovViewsOutOfRangeIndex(t *testing.T) {
 // TestSacovAddTextVerticalAlignments exercises the parseVJustify lower/upper branches and its
 // default (an unrecognised spelling maps to baseline), read back through vAlignString.
 func TestSacovAddTextVerticalAlignments(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	want := map[string]string{"lower": "lower", "upper": "upper", "garbage": "baseline"}
 	for in, exp := range want {
@@ -107,6 +111,7 @@ func sacovAddText(t *testing.T, r *Router, s *app.Session) uint64 {
 // TestSacovEditTextAllFields drives applyTextLengths (height/fontSize/rotation) and the
 // applyTextEdit font + vJustify branches in one partial edit.
 func TestSacovEditTextAllFields(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	id := sacovAddText(t, r, s)
 	var edited wire.SketchTextResult
@@ -123,6 +128,7 @@ func TestSacovEditTextAllFields(t *testing.T) {
 // TestSacovSketchTextImageErrors pins the add/edit/get text and add-image error branches:
 // bad unit-bearing metrics, bad anchor, bad sketch index, and missing/mistyped entity refs.
 func TestSacovSketchTextImageErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	id := sacovAddText(t, r, s)
 	lineID := skcovLineIDs(t, r, s)[0]
@@ -161,6 +167,7 @@ func sacovImageErrorCases() []sacovMethodArgs {
 // TestSacovAddSketchImageSucceeds drives the addSketchImage happy path + imageMetrics with a
 // rotation, so the placed entity carries an id (Ref is just a package-store string — no I/O).
 func TestSacovAddSketchImageSucceeds(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var res wire.AddSketchImageResult
 	call(t, r, s, "sketch.addImage",
@@ -174,6 +181,7 @@ func TestSacovAddSketchImageSucceeds(t *testing.T) {
 // sketch index, non-positive distance) ---
 
 func TestSacovAssemblyFeatureAddErrors(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t, 0, 5)
 	sacovAllReject(t, r, s, []sacovMethodArgs{
 		{"assemblyFeatures.addProxyCut", `{"source":123,"operation":"bogus"}`},                                      // cutOperation
@@ -187,6 +195,7 @@ func TestSacovAssemblyFeatureAddErrors(t *testing.T) {
 // TestSacovAssemblyExtrudeRejectsNonPositiveDistance reaches the distance<=0 guard, which
 // needs a real assembly sketch profile before the distance is validated.
 func TestSacovAssemblyExtrudeRejectsNonPositiveDistance(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t, 0)
 	var sk wire.CreateSketchResult
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &sk)
@@ -201,6 +210,7 @@ func TestSacovAssemblyExtrudeRejectsNonPositiveDistance(t *testing.T) {
 // --- drawing.go: sheet + title-block + export error branches, and the activeDrawing guard ---
 
 func TestSacovDrawingErrorBranches(t *testing.T) {
+	t.Parallel()
 	r, s := drawingSession(t)
 	sacovAllReject(t, r, s, []sacovMethodArgs{
 		{"drawing.addSheet", `{"size":"bogus"}`},          // sheetSpecOf: size
@@ -213,6 +223,7 @@ func TestSacovDrawingErrorBranches(t *testing.T) {
 }
 
 func TestSacovDrawingHandlersRequireDrawingDoc(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t) // active part, not a drawing → activeDrawing guard
 	sacovAllReject(t, r, s, []sacovMethodArgs{
 		{"drawing.listSheets", `{}`},
@@ -225,6 +236,7 @@ func TestSacovDrawingHandlersRequireDrawingDoc(t *testing.T) {
 // TestSacovDrawingViewStyleAndSection covers parseViewStyle's valid non-default branch
 // ("shaded") and the previously-untested drawingViewsAddSection happy path.
 func TestSacovDrawingViewStyleAndSection(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	var base wire.ViewResult
 	call(t, r, s, "drawingViews.addBase",
@@ -241,6 +253,7 @@ func TestSacovDrawingViewStyleAndSection(t *testing.T) {
 }
 
 func TestSacovDrawingViewErrorBranches(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","scale":2,"centerXmm":120,"centerYmm":100}`, nil)
 	sacovAllReject(t, r, s, []sacovMethodArgs{

@@ -30,6 +30,7 @@ type oracleEntry struct {
 }
 
 func TestOCCOracleVolumes(t *testing.T) {
+	t.Parallel()
 	dir := filepath.Join("testdata", "occ")
 	oracle := map[string]oracleEntry{}
 	raw, err := os.ReadFile(filepath.Join(dir, "oracle.json"))

@@ -13,6 +13,7 @@ import (
 // open solid of the right volume. Block 4×4×2 (vol 32); cavity [0.5,3.5]²×[0.5,2] =
 // 3·3·1.5 = 13.5 ⇒ 18.5.
 func TestShellToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -44,6 +45,7 @@ func TestShellToolEndToEnd(t *testing.T) {
 
 // TestShellViaRibbonCommand drives the Shell from its ribbon command.
 func TestShellViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -67,6 +69,7 @@ func TestShellViaRibbonCommand(t *testing.T) {
 
 // TestShellToolNeedsFace checks the tool is not committable until a face is picked.
 func TestShellToolNeedsFace(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	sh := NewShellTool()

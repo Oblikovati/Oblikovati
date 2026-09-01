@@ -9,6 +9,7 @@ import (
 )
 
 func TestRayCastFacesHitsNearestFace(t *testing.T) {
+	t.Parallel()
 	body := tetra(2, math.V3(0, 0, 0)) // simplex scaled ×2
 	// A ray from far +Z straight down −Z toward (0.3,0.3) passes through the slanted
 	// top face and the bottom z=0 face; the nearest hit is the top one.
@@ -26,6 +27,7 @@ func TestRayCastFacesHitsNearestFace(t *testing.T) {
 }
 
 func TestRayCastFacesMisses(t *testing.T) {
+	t.Parallel()
 	body := tetra(1, math.V3(0, 0, 0))
 	// A ray nowhere near the body.
 	if _, _, ok := RayCastFaces(body, math.P3(100, 100, 100), math.V3(0, 0, -1), DefaultQuality()); ok {
@@ -34,6 +36,7 @@ func TestRayCastFacesMisses(t *testing.T) {
 }
 
 func TestRayTriangleDistForwardOnly(t *testing.T) {
+	t.Parallel()
 	a, b, c := math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)
 	// Ray from below pointing up hits the triangle at distance 5.
 	if t1, ok := rayTriangleDist(math.P3(0.2, 0.2, -5), math.V3(0, 0, 1), a, b, c); !ok || t1 < 4.99 || t1 > 5.01 {

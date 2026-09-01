@@ -80,6 +80,7 @@ func BenchmarkPiracicabaImport(b *testing.B) {
 // the classification — would route it to the 3D path: ~3.4x slower to build and the wrong
 // representation. See kernel/exchange/drawing.planarInlierFraction.
 func TestPiracicabaImportsAs2D(t *testing.T) {
+	t.Parallel()
 	data := piracicabaData(t)
 	part := compdef.NewPartComponentDefinition()
 	res, err := ImportDWG(part, data, piracicabaPlane(t))

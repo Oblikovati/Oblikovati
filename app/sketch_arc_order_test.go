@@ -44,6 +44,7 @@ func endpointsMatch(a *sketch.Arc, want1, want2 math.Point2) bool {
 // TestThreePointArcInterpretsItsClicksAsStartEndThrough pins ArcTool's documented order: the
 // first two clicks are the endpoints and the THIRD is the point the arc passes through.
 func TestThreePointArcInterpretsItsClicksAsStartEndThrough(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewArcTool())
 	for _, p := range []math.Point2{arcStart, arcEnd, arcThrough} {
@@ -69,6 +70,7 @@ func TestThreePointArcInterpretsItsClicksAsStartEndThrough(t *testing.T) {
 // give both tools the same arc span. Before the fix the slot read the SECOND click as the point
 // on the arc, so its arc ran (0,0)..(2,2) while the plain arc ran (0,0)..(4,0).
 func TestBothThreePointArcToolsAgreeOnPickOrder(t *testing.T) {
+	t.Parallel()
 	sPlain, skPlain := sketchSession(t)
 	sPlain.StartTool(NewArcTool())
 	for _, p := range []math.Point2{arcStart, arcEnd, arcThrough} {

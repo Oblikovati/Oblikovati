@@ -16,6 +16,7 @@ import (
 // rectangle's lines into a definition, instances place/enumerate with their
 // placement decomposed, and in-use deletion is refused (M06-F07, #622).
 func TestBlockLifecycleOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var ents wire.EnumerateEntitiesResult
 	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)
@@ -70,6 +71,7 @@ func TestBlockLifecycleOverWire(t *testing.T) {
 // TestBlockRecipeRoundTripOverDocument: a part with a block survives the
 // document save→load path (the M21 DoD round-trip requirement).
 func TestBlockRoundTripThroughRecipe(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var ents wire.EnumerateEntitiesResult
 	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)

@@ -176,6 +176,7 @@ func dipRimRingOf(loop filletLoop) filletLoop {
 // 5.918872e-09 — inside that rim's OWN interior per-segment bar of 1.771921e-07, which is what the
 // comparative bar asserts. Boss A's ring is a circle and its arcs read ~3.2e-15 against a 1.004e-12 bar.
 func TestDualSplitWallRimSegmentsTraceTheRim(t *testing.T) {
+	t.Parallel()
 	for _, kase := range dualRimCases() {
 		t.Run(kase.name, func(t *testing.T) {
 			r := runDualRim(t, kase)
@@ -304,6 +305,7 @@ func nonSampleSegments(ring filletLoop, d obstacleDetection) []int {
 // leak four times; the recorded exceptions are asserted exactly, in both directions, so neither a new one
 // nor a silently retired one can pass.
 func TestDualDipRimConsumersAgreeByValue(t *testing.T) {
+	t.Parallel()
 	for _, kase := range dualRimCases() {
 		t.Run(kase.name, func(t *testing.T) {
 			r := runDualRim(t, kase)

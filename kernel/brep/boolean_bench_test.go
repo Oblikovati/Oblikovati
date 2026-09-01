@@ -46,6 +46,7 @@ func pocketChain(tb testing.TB, n int) *topo.Body {
 // yield a valid solid with the analytic volume (plate minus n² pockets of 2×2×1), so the
 // benchmark keeps measuring real boolean work rather than an error path.
 func TestPocketChainFixtureIsSound(t *testing.T) {
+	t.Parallel()
 	n := 3
 	res := pocketChain(t, n)
 	if !res.IsSolid() {

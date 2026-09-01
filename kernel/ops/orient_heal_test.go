@@ -27,6 +27,7 @@ func bodyVolume(m *Mesh) float64 {
 // orientFacesOutward must flip it back via edge-adjacency 2-colouring. Simulated by flipping one face's
 // mesh of a clean cylinder, then asserting the heal restores a fully outward (positive-volume) mesh.
 func TestOrientHealRestoresFlippedFace(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 10)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -72,6 +73,7 @@ func TestOrientHealRestoresFlippedFace(t *testing.T) {
 // TestOrientHealLeavesCleanSolidUnchanged pins that the heal NEVER flips a correctly-oriented face: a
 // clean solid's tessellated volume is unchanged (still positive) after the heal.
 func TestOrientHealLeavesCleanSolidUnchanged(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 10)
 	faces := cyl.Faces()
 	fm := make([]*Mesh, len(faces))

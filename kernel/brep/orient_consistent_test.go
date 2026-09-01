@@ -14,6 +14,7 @@ import (
 // normal-side flags (Oblikovati#3427, the J6/T5 elliptic hosts). Flipping EVERY face's reversed flag (the
 // worst inconsistency) must leave the inside/outside verdict unchanged.
 func TestFluxOrientationIndependentOfReversedFlag(t *testing.T) {
+	t.Parallel()
 	cyl, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -48,6 +49,7 @@ func TestFluxOrientationIndependentOfReversedFlag(t *testing.T) {
 // TestSignedVolumeGlobalFlip checks the global orientation safety net: orientFaceSigns must sign the faces
 // so the enclosed signed volume is positive (outward), so a sphere's interior gives a positive winding.
 func TestSignedVolumeGlobalFlip(t *testing.T) {
+	t.Parallel()
 	sph, err := SolidSphere(math.P3(0, 0, 0), 3, "sphere")
 	if err != nil {
 		t.Fatalf("SolidSphere: %v", err)
@@ -65,6 +67,7 @@ func TestSignedVolumeGlobalFlip(t *testing.T) {
 // volume term came out ≈0, orientFaceSigns read the body's signed volume as negative and flipped every
 // face outward-sign — and the ray classifier then reported every INTERIOR point of the cone as outside.
 func TestPointInsideFullCone(t *testing.T) {
+	t.Parallel()
 	cone, err := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 6, 8), 3, 0, "cone")
 	if err != nil {
 		t.Fatalf("SolidCylinderCone: %v", err)
@@ -91,6 +94,7 @@ func TestPointInsideFullCone(t *testing.T) {
 // TestFullConeFaceSignsAreOutward pins the mechanism the test above gates: every prepared face of a
 // full cone must carry the +1 (outward) sign, and the body's signed volume term must be positive.
 func TestFullConeFaceSignsAreOutward(t *testing.T) {
+	t.Parallel()
 	cone, err := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 0, "cone")
 	if err != nil {
 		t.Fatalf("SolidCylinderCone: %v", err)

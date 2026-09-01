@@ -7,6 +7,7 @@ import "testing"
 // TestBrepHandlersRejectMissingHandle covers the "no transient body with handle" branches: every
 // handle-addressed brep op rejects an unknown handle (999 was never created).
 func TestBrepHandlersRejectMissingHandle(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	const bad = `{"handle":999}`
 	cases := map[string]string{

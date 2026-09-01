@@ -14,6 +14,7 @@ import (
 // guards in app/views.go: each preference round-trips, and the active-view operations are safe
 // no-ops when no document is open.
 func TestSessionViewPreferences(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 
 	s.SetLockToSelection(true)
@@ -51,6 +52,7 @@ func TestSessionViewPreferences(t *testing.T) {
 // TestSessionViewManagement covers the per-document view/camera management (NewView,
 // CloseActiveView, ViewCamera/SetViewCamera, ViewCameraAt/SetViewCameraAt) against an open part.
 func TestSessionViewManagement(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	part, err := compdef.AddPart(s.Workspace(), "v.opd", true)
 	if err != nil {
@@ -83,6 +85,7 @@ func TestSessionViewManagement(t *testing.T) {
 
 // TestFaceAligned covers the axis-aligned view test used by the ViewCube snapping.
 func TestFaceAligned(t *testing.T) {
+	t.Parallel()
 	if !faceAligned(math.P3(0, 0, 10), math.P3(0, 0, 0)) {
 		t.Error("a straight-down-Z view should be face-aligned")
 	}

@@ -37,6 +37,7 @@ func edgeGeomRef(mid, dir [3]float64) string {
 // box in the part, an edge-midpoint point resolves to the edge midpoint. Regression for the
 // ParseWorkRef mangling that had every edge datum go unhealthy over the wire (#1840, #1842).
 func TestEdgeMidpointResolvesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := unitBoxPartSession(t)
 	ref := edgeGeomRef([3]float64{0.5, 0, 1}, [3]float64{1, 0, 0}) // top edge (0,0,1)-(1,0,1)
 	var res wire.CreateWorkPointResult
@@ -49,6 +50,7 @@ func TestEdgeMidpointResolvesOverWire(t *testing.T) {
 // TestCurveEntityResolvesOverWire: a box edge pierces the YZ origin plane, and the curve-and-entity
 // point resolves over the wire (#1842) — depends on the edge ref surviving ParseWorkRef.
 func TestCurveEntityResolvesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := unitBoxPartSession(t)
 	ref := edgeGeomRef([3]float64{0.5, 0, 1}, [3]float64{1, 0, 0}) // top edge (0,0,1)-(1,0,1), meets x=0 at (0,0,1)
 	var res wire.CreateWorkPointResult
@@ -60,6 +62,7 @@ func TestCurveEntityResolvesOverWire(t *testing.T) {
 
 // TestCentroidResolvesOverWire: the centroid of two box edges resolves over the wire (#1842).
 func TestCentroidResolvesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := unitBoxPartSession(t)
 	e0 := edgeGeomRef([3]float64{0.5, 0, 0}, [3]float64{1, 0, 0}) // (0,0,0)-(1,0,0)
 	e1 := edgeGeomRef([3]float64{1, 0.5, 0}, [3]float64{0, 1, 0}) // (1,0,0)-(1,1,0)
@@ -72,6 +75,7 @@ func TestCentroidResolvesOverWire(t *testing.T) {
 
 // TestCurveEntityCentroidBadArgs: arity/argument guards report clean errors, not panics (#1842).
 func TestCurveEntityCentroidBadArgs(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	bad := []string{
 		`{"kind":"curve-and-entity","refs":["edge/AAAA"]}`,                                     // needs 2 refs

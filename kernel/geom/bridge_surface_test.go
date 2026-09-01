@@ -22,6 +22,7 @@ func edgeRow(t *testing.T, s BSplineSurface, atUMax bool) BSplineCurve {
 // B at x∈[2,3]) at G2 on both sides, and checks the bridge interpolates each edge (G0) and continues
 // each neighbour's tangent and curvature across the seam (the cross-derivative control curves match).
 func TestBridgeSurfaceG2MatchesBothNeighbours(t *testing.T) {
+	t.Parallel()
 	sA := uPatch(t, 0, func(i, j int) float64 { return 0.4 * float64(i*i) })
 	sB := uPatch(t, 2, func(i, j int) float64 { return 0.3 * float64((4-i)*(4-i)) })
 	cA := edgeRow(t, sA, true)  // sA's u-max edge (x=1)
@@ -65,6 +66,7 @@ func TestBridgeSurfaceG2MatchesBothNeighbours(t *testing.T) {
 
 // TestBridgeSurfaceRejectsAboveG2: the 6-row bridge cannot hold G3.
 func TestBridgeSurfaceRejectsAboveG2(t *testing.T) {
+	t.Parallel()
 	sA := uPatch(t, 0, func(i, j int) float64 { return 0 })
 	sB := uPatch(t, 2, func(i, j int) float64 { return 0 })
 	cA := edgeRow(t, sA, true)

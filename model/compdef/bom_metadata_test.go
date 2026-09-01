@@ -14,6 +14,7 @@ import (
 // component's part number, description, and custom property columns, sourced from the component
 // document's iProperties — not the blank default.
 func TestBOMReadsComponentIProperties(t *testing.T) {
+	t.Parallel()
 	part := NewPartComponentDefinition()
 	part.Properties().Set(attr.DesignTracking).Put(propPartNumber, attr.StringValue("BRK-001"))
 	part.Properties().Set(attr.DesignTracking).Put(propDescription, attr.StringValue("Bracket"))
@@ -41,6 +42,7 @@ func TestBOMReadsComponentIProperties(t *testing.T) {
 // TestBOMStructureFromProperty: a component's BOM structure is read from its "BOM Structure"
 // Design Tracking property (default Normal when unset).
 func TestBOMStructureFromProperty(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if got := d.BOMStructure(); got != bom.Normal {
 		t.Errorf("default BOMStructure = %v, want Normal", got)
@@ -54,6 +56,7 @@ func TestBOMStructureFromProperty(t *testing.T) {
 // TestEmptyDocumentBOMMetadataIsBlank: a document with no iProperties reports blank metadata (the
 // BOM falls back to a normal, unnamed line), so the default is unchanged.
 func TestEmptyDocumentBOMMetadataIsBlank(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if d.PartNumber() != "" || d.Description() != "" || d.CustomProperties() != nil {
 		t.Errorf("empty document metadata = (%q, %q, %v), want blank", d.PartNumber(), d.Description(), d.CustomProperties())

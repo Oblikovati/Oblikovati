@@ -41,6 +41,7 @@ func hexPrismBody(r, z0, z1 float64) *topo.Body {
 //
 // Reference: NopSCADlib/vitamins/screw.scad (head_type hs_cap branch) + screws.scad.
 func TestNopCapScrewCSG(t *testing.T) {
+	t.Parallel()
 	const (
 		headRad     = 2.75
 		headHeight  = 3.0

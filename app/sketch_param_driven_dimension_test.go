@@ -33,6 +33,7 @@ func parameterisedSketch(t *testing.T) (*Session, *sketch.Sketch, *param.Paramet
 // TestUserParameterDrivesADimension: naming a parameter as the dimension's expression must resolve
 // to that parameter's value, not to zero or a parse failure.
 func TestUserParameterDrivesADimension(t *testing.T) {
+	t.Parallel()
 	_, sk, ps := parameterisedSketch(t)
 	if _, err := ps.AddUserParameter("width", "40 mm"); err != nil {
 		t.Fatalf("AddUserParameter: %v", err)
@@ -58,6 +59,7 @@ func TestUserParameterDrivesADimension(t *testing.T) {
 // TestEditingTheParameterMovesTheGeometry is the point of driving a dimension with a parameter:
 // change the parameter, and every dimension naming it re-solves.
 func TestEditingTheParameterMovesTheGeometry(t *testing.T) {
+	t.Parallel()
 	_, sk, ps := parameterisedSketch(t)
 	if _, err := ps.AddUserParameter("width", "40 mm"); err != nil {
 		t.Fatalf("AddUserParameter: %v", err)
@@ -89,6 +91,7 @@ func TestEditingTheParameterMovesTheGeometry(t *testing.T) {
 // TestFormulaOverParametersDrivesADimension: a dimension may name an EXPRESSION over parameters,
 // which is how a derived dimension is stated (CLAUDE.md: use formulas for derived dimensions).
 func TestFormulaOverParametersDrivesADimension(t *testing.T) {
+	t.Parallel()
 	_, sk, ps := parameterisedSketch(t)
 	if _, err := ps.AddUserParameter("width", "40 mm"); err != nil {
 		t.Fatalf("AddUserParameter width: %v", err)
@@ -110,6 +113,7 @@ func TestFormulaOverParametersDrivesADimension(t *testing.T) {
 // (Parameters.onParameterAdded). What must not happen is the unbound expression's ZERO reaching
 // the solver: a mistyped "widht" drove a 40 mm line to 4.6e-12 and the solve reported success.
 func TestUnresolvedParameterIsFlaggedAndDoesNotDrive(t *testing.T) {
+	t.Parallel()
 	_, sk, _ := parameterisedSketch(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 
@@ -136,6 +140,7 @@ func TestUnresolvedParameterIsFlaggedAndDoesNotDrive(t *testing.T) {
 // TestLateDefinedParameterBindsAndDrives is the other half: once the named parameter exists, the
 // dimension binds to it and starts driving, without the dimension being re-authored.
 func TestLateDefinedParameterBindsAndDrives(t *testing.T) {
+	t.Parallel()
 	_, sk, ps := parameterisedSketch(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 	d, err := sk.DimensionConstraints().AddDistance(l.A, l.B, "late_w")
@@ -162,6 +167,7 @@ func TestLateDefinedParameterBindsAndDrives(t *testing.T) {
 // locked value creates a real driving dimension, and that dimension is an expression in the same
 // DAG — so it can be RE-STATED as a parameter afterwards and keep driving the shape.
 func TestParameterDrivesARectanglesLockedDimension(t *testing.T) {
+	t.Parallel()
 	s, sk, ps := parameterisedSketch(t)
 	if _, err := ps.AddUserParameter("plate_w", "80 mm"); err != nil {
 		t.Fatalf("AddUserParameter: %v", err)

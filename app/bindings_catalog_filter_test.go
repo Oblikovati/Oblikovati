@@ -12,6 +12,7 @@ import (
 // filtered catalog is ordered by command name case-insensitively, regardless of the
 // registration order the raw Catalog preserves.
 func TestCatalogFilteredIsAlphabetical(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	got := s.Bindings().CatalogFiltered("")
 	if len(got) < 2 {
@@ -29,6 +30,7 @@ func TestCatalogFilteredIsAlphabetical(t *testing.T) {
 // TestCatalogFilteredNarrowsByName guards the filter (issue #1232): a query returns only the
 // actions whose name contains it (case-insensitive), and includes the new Delete action.
 func TestCatalogFilteredNarrowsByName(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	got := s.Bindings().CatalogFiltered("del")
 	if len(got) == 0 {
@@ -51,6 +53,7 @@ func TestCatalogFilteredNarrowsByName(t *testing.T) {
 
 // TestCatalogFilteredEmptyForNoMatch: a query matching nothing returns an empty slice.
 func TestCatalogFilteredEmptyForNoMatch(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if got := s.Bindings().CatalogFiltered("zzz-no-such-command"); len(got) != 0 {
 		t.Errorf("filter for a missing command returned %d entries, want 0", len(got))

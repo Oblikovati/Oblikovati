@@ -31,6 +31,7 @@ func tetTris(base math.Point3, dir float64) []tri {
 // two shells), never a χ = 3 one-vertex pinch that ships as a silently inadmissible solid. This is
 // the minimized fan-blade-tip-on-rim-wall failure (13 red bridge e2e, MCPBridge#86).
 func TestCSGCageSplitsPinchedVertex(t *testing.T) {
+	t.Parallel()
 	apex := math.P3(0, 0, 0)
 	soup := append(tetTris(apex, 1), tetTris(apex, -1)...)
 	b := trianglesToBody(soup, "pinch")
@@ -56,6 +57,7 @@ func TestCSGCageSplitsPinchedVertex(t *testing.T) {
 // A chained curved cut (a second Cut on an already-cut, partial-rim body) declines to CSG and hit exactly
 // this — the fallback must decline gracefully, never crash (#1693).
 func TestSplitPinchedVerticesToleratesOrphanVertex(t *testing.T) {
+	t.Parallel()
 	// One triangle (verts 0,1,2) plus an ORPHAN vertex at index 3 that no face references.
 	verts := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(5, 5, 5)}
 	faces := [][3]int{{0, 1, 2}}

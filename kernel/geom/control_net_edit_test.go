@@ -30,6 +30,7 @@ func flatGrid(t *testing.T, n int) BSplineSurface {
 }
 
 func TestDisplaceControlPointsMovesLimitSurfaceAndKeepsStructure(t *testing.T) {
+	t.Parallel()
 	s := flatGrid(t, 5)
 	before := s.PointAt(0.5, 0.5)
 	moved, err := s.DisplaceControlPoints([]ControlPointDelta{{U: 2, V: 2, Delta: math.V3(0, 0, 1)}})
@@ -60,6 +61,7 @@ func TestDisplaceControlPointsMovesLimitSurfaceAndKeepsStructure(t *testing.T) {
 }
 
 func TestDisplaceControlPointsRejectsOutOfRange(t *testing.T) {
+	t.Parallel()
 	s := flatGrid(t, 5)
 	if _, err := s.DisplaceControlPoints([]ControlPointDelta{{U: 5, V: 0, Delta: math.V3(0, 0, 1)}}); err == nil {
 		t.Error("out-of-range U index should error")
@@ -70,6 +72,7 @@ func TestDisplaceControlPointsRejectsOutOfRange(t *testing.T) {
 }
 
 func TestFalloffDeltasSingleDriver(t *testing.T) {
+	t.Parallel()
 	s := flatGrid(t, 5)
 	// radius 0 → only the driver moves.
 	d := s.FalloffDeltas([][2]int{{2, 2}}, math.V3(0, 0, 1), 0, FalloffSmooth)
@@ -82,6 +85,7 @@ func TestFalloffDeltasSingleDriver(t *testing.T) {
 }
 
 func TestFalloffDeltasRegionDecays(t *testing.T) {
+	t.Parallel()
 	s := flatGrid(t, 5)
 	// CV spacing is 0.25; a radius of 0.6 reaches the immediate and diagonal neighbours.
 	deltas := s.FalloffDeltas([][2]int{{2, 2}}, math.V3(0, 0, 1), 0.6, FalloffSmooth)
@@ -102,6 +106,7 @@ func TestFalloffDeltasRegionDecays(t *testing.T) {
 }
 
 func TestFalloffDeltasLinearVsSmooth(t *testing.T) {
+	t.Parallel()
 	s := flatGrid(t, 5)
 	lin := weightAt(s.FalloffDeltas([][2]int{{2, 2}}, math.V3(0, 0, 1), 0.6, FalloffLinear), 2, 3)
 	smooth := weightAt(s.FalloffDeltas([][2]int{{2, 2}}, math.V3(0, 0, 1), 0.6, FalloffSmooth), 2, 3)
@@ -126,6 +131,7 @@ func weightAt(deltas []ControlPointDelta, u, v int) float64 {
 }
 
 func TestFalloffDeltasRowDriver(t *testing.T) {
+	t.Parallel()
 	s := flatGrid(t, 5)
 	// Drive an entire V-row (constant U index 2): rigid row, radius 0.
 	drivers := [][2]int{{2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4}}

@@ -13,6 +13,7 @@ import (
 // seeds a CLEAN, precision-rounded expression ("10 mm"), not the raw "9.999999998 mm" — so the
 // stored parameter carries the on-screen number (Oblikovati/Oblikovati#146 follow-up).
 func TestDimensionSeedRespectsPrecision(t *testing.T) {
+	t.Parallel()
 	units := param.DefaultUnitsOfMeasure() // mm, 3 length decimals; deg, 2 angle decimals
 	if got := lengthExpr(units, 0.9999999998); got != "10 mm" {
 		t.Errorf("length seed = %q, want \"10 mm\"", got)
@@ -26,6 +27,7 @@ func TestDimensionSeedRespectsPrecision(t *testing.T) {
 // TestDimensionLabelRespectsPrecision: the on-screen label is formatted DOWN from the live
 // measured float to the document's display precision, never printed losslessly.
 func TestDimensionLabelRespectsPrecision(t *testing.T) {
+	t.Parallel()
 	units := param.DefaultUnitsOfMeasure()
 	if got := lengthLabel(units, 0.9999999998); got != "10.000 mm" {
 		t.Errorf("length label = %q, want \"10.000 mm\"", got)

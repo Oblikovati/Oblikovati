@@ -112,6 +112,7 @@ func solePlanarFace(t *testing.T, b *topo.Body) *topo.Face {
 // TestSpiricCapAreaMatchesSectionOracle holds the turning-edge patch to an oracle built from the
 // torus section itself, not from the walk that integrates it.
 func TestSpiricCapAreaMatchesSectionOracle(t *testing.T) {
+	t.Parallel()
 	body := spiricOvalCapBody(t)
 	got, ok := AnalyticFaceArea(soleCurvedFace(t, body))
 	if !ok {
@@ -128,6 +129,7 @@ func TestSpiricCapAreaMatchesSectionOracle(t *testing.T) {
 // boundary must come out exactly equal and opposite. The lid is the trustworthy half — a plane's
 // |A| IS its area — so this pins the curved patch to it.
 func TestSpiricCapVectorAreaCancelsItsLid(t *testing.T) {
+	t.Parallel()
 	body := spiricOvalCapBody(t)
 	cap, capOK := faceTerms(soleCurvedFace(t, body))
 	lid, lidOK := faceTerms(solePlanarFace(t, body))
@@ -149,6 +151,7 @@ func TestSpiricCapVectorAreaCancelsItsLid(t *testing.T) {
 // boundary bounds, so the cap's |A| is the plane area of the spiric oval, taken from the section's own
 // closed form.
 func TestSpiricCapVectorAreaMatchesOvalSection(t *testing.T) {
+	t.Parallel()
 	terms, ok := faceTerms(soleCurvedFace(t, spiricOvalCapBody(t)))
 	if !ok {
 		t.Fatalf("the torus patch declined analytic integration")

@@ -34,6 +34,7 @@ const dipHalfLen = 0.4445 // size.x/2 = 8.89/2 mm
 // TestBlindStraddleCurvedCutWatertight below: it currently breaks watertightness and is the
 // open spec for that bug, so it is kept out of this (passing) body coverage.
 func TestNopDipCSG(t *testing.T) {
+	t.Parallel()
 	body := prismBodyAlongY(dipOctagon(), -dipHalfLen, dipHalfLen, "dip-bar")
 
 	// Central 4 mm slot, over-sized in height + length ⇒ splits the bar into two wings.
@@ -82,6 +83,7 @@ func TestNopDipCSG(t *testing.T) {
 //
 // Repro distilled from NopSCADlib dip()'s pin-1 index notch (circle d=3 at y=size.x/2).
 func TestBlindStraddleCurvedCutWatertight(t *testing.T) {
+	t.Parallel()
 	body := prismBodyAlongY(dipOctagon(), -dipHalfLen, dipHalfLen, "bar")
 	body = cutOrFatal(t, body, cylinderZAt(0, dipHalfLen, 0, 0.16, 0.15, "notch"), "index notch")
 	if open := ops.BoundaryEdges(body); len(open) != 0 {

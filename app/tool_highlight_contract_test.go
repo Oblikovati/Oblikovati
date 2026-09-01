@@ -43,6 +43,7 @@ func viewGeometryPickers() []Tool {
 }
 
 func TestViewPickingToolsExposeHighlightAccessor(t *testing.T) {
+	t.Parallel()
 	for _, tool := range viewGeometryPickers() {
 		if !exposesPickAccessor(tool) {
 			t.Errorf("tool %q picks viewport geometry but exposes no highlight accessor "+

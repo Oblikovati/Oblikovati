@@ -43,6 +43,7 @@ func boxBodySession(t *testing.T) (*Session, *compdef.PartComponentDefinition) {
 // per-package coverage does not credit): a face/edge/vertex resolves from BOTH the raw
 // reference-key form (model.referenceKeys) and the "face/…"/"vertex/…" form (model.selection).
 func TestResolveRefOnBodiesBothForms(t *testing.T) {
+	t.Parallel()
 	_, def := boxBodySession(t)
 	bodies := def.SurfaceBodies().All()
 	if len(bodies) == 0 {
@@ -72,6 +73,7 @@ func TestResolveRefOnBodiesBothForms(t *testing.T) {
 // Selection.References() (was "" — #1492), and that reference resolves back to the SAME body's
 // BodyHandle through ResolveRefOnBodies, so an add-in can read and re-select a directly-picked body.
 func TestBodySelectionRefRoundTrips(t *testing.T) {
+	t.Parallel()
 	_, def := boxBodySession(t)
 	bodies := def.SurfaceBodies().All()
 	if len(bodies) == 0 {
@@ -104,6 +106,7 @@ func TestBodySelectionRefRoundTrips(t *testing.T) {
 // TestSessionResolveReference covers the session entry point, its no-part guard, and the lazily
 // created highlight-set registry.
 func TestSessionResolveReference(t *testing.T) {
+	t.Parallel()
 	s, def := boxBodySession(t)
 	if s.HighlightSets() == nil {
 		t.Fatal("HighlightSets() returned nil")
@@ -119,6 +122,7 @@ func TestSessionResolveReference(t *testing.T) {
 
 // TestHighlightSetState covers the registry/accessors directly in the app package.
 func TestHighlightSetState(t *testing.T) {
+	t.Parallel()
 	hs := NewHighlightSets()
 	set, err := hs.Create("guide", types.NewColor(255, 0, 255))
 	if err != nil {

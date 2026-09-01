@@ -24,6 +24,7 @@ func reproPoints() [][2]float64 {
 // at P=(0.3,−0.4) (R=0.25, log R=−1.3862944) — this is the transcription-grade guard on the
 // error-prone derivative table.
 func TestPlateKernelPartialsMatchKit(t *testing.T) {
+	t.Parallel()
 	const du, dv, floor = 0.3, -0.4, 1e-30
 	cases := []struct {
 		name string
@@ -47,6 +48,7 @@ func TestPlateKernelPartialsMatchKit(t *testing.T) {
 // TestPlateKernelPartialsVsFiniteDiff cross-checks every §1 partial against a central finite
 // difference of plateE at (0.3,−0.4) — the independent oracle for the derivative formulas.
 func TestPlateKernelPartialsVsFiniteDiff(t *testing.T) {
+	t.Parallel()
 	const du, dv, floor, h = 0.3, -0.4, 1e-30, 1e-6
 	fdU := (plateE(du+h, dv, floor) - plateE(du-h, dv, floor)) / (2 * h)
 	fdV := (plateE(du, dv+h, floor) - plateE(du, dv-h, floor)) / (2 * h)
@@ -72,6 +74,7 @@ func TestPlateKernelPartialsVsFiniteDiff(t *testing.T) {
 // TestPlateSingularityIsRemovable confirms E and every partial return the exact 0 limit inside
 // the rFloor guard (self-term P_i−P_i = 0) instead of log-ing a clamped R.
 func TestPlateSingularityIsRemovable(t *testing.T) {
+	t.Parallel()
 	const floor = 1e-18
 	for _, f := range []func(a, b, c float64) float64{plateE, plateEu, plateEv, plateEuu, plateEvv, plateEuv} {
 		if v := f(0, 0, floor); v != 0 {
@@ -88,6 +91,7 @@ func TestPlateSingularityIsRemovable(t *testing.T) {
 // raw poly-coefficient equality (it also certifies the normalization is an exact identity: the
 // world surface is unchanged, only its internal frame moved).
 func TestPlateReproducesQuadratic(t *testing.T) {
+	t.Parallel()
 	var cs []PlateConstraint
 	for _, p := range reproPoints() {
 		cs = append(cs, PlateConstraint{U: p[0], V: p[1], Order: [2]int{0, 0}, Value: reproQuad(p[0], p[1])})
@@ -108,6 +112,7 @@ func TestPlateReproducesQuadratic(t *testing.T) {
 // the derivative rows in K and P (and, since P2.1, the G1 RHS ×L normalization scaling). The
 // interpolant is still exactly q, λ still 0.
 func TestPlateReproducesQuadraticWithG1(t *testing.T) {
+	t.Parallel()
 	var cs []PlateConstraint
 	for _, p := range reproPoints() {
 		u, v := p[0], p[1]
@@ -148,6 +153,7 @@ func assertReproducesQuadratic(t *testing.T, c PlateCoeffs) {
 
 // TestPlateEvalGradMatchesQuadratic checks EvalGrad reproduces q's analytic gradient across Ω.
 func TestPlateEvalGradMatchesQuadratic(t *testing.T) {
+	t.Parallel()
 	var cs []PlateConstraint
 	for _, p := range reproPoints() {
 		cs = append(cs, PlateConstraint{U: p[0], V: p[1], Order: [2]int{0, 0}, Value: reproQuad(p[0], p[1])})
@@ -168,6 +174,7 @@ func TestPlateEvalGradMatchesQuadratic(t *testing.T) {
 // TestPlateSolveMultiSharesMatrix confirms the multi-RHS entry point (P4a's X/Y/Z path) yields
 // exactly the same fields as independent single-field solves — one factorisation, many RHS.
 func TestPlateSolveMultiSharesMatrix(t *testing.T) {
+	t.Parallel()
 	pts := reproPoints()
 	fieldA := make([]float64, len(pts))
 	fieldB := make([]float64, len(pts))
@@ -194,6 +201,7 @@ func TestPlateSolveMultiSharesMatrix(t *testing.T) {
 // (→ the provider falls through to coons4). The failure is in the P block, unfixable by any
 // K-diagonal ridge, so the honest-reject is robust.
 func TestPlateRejectsRankDeficient(t *testing.T) {
+	t.Parallel()
 	var cs []PlateConstraint
 	for i := range 7 {
 		s := float64(i)
@@ -207,6 +215,7 @@ func TestPlateRejectsRankDeficient(t *testing.T) {
 // TestPlateRejectsMismatchedValues guards the input validation: a value field shorter than the
 // constraint set is a caller error carrying both counts.
 func TestPlateRejectsMismatchedValues(t *testing.T) {
+	t.Parallel()
 	cs := []PlateConstraint{{U: 0, V: 0, Order: [2]int{0, 0}}, {U: 1, V: 0, Order: [2]int{0, 0}}}
 	if _, err := PlateSolveMulti(cs, [][]float64{{1.0}}); err == nil {
 		t.Fatal("PlateSolveMulti accepted a value field of the wrong length; want error")
@@ -224,6 +233,7 @@ func TestPlateRejectsMismatchedValues(t *testing.T) {
 // every existing target lies in the reproduction span. This test (plus
 // TestPlateInterpolatesNonPolynomialTarget below) closes that gap.
 func TestPlateAssemblyIsSymmetric(t *testing.T) {
+	t.Parallel()
 	var cs []PlateConstraint
 	for _, p := range reproPoints() {
 		u, v := p[0], p[1]
@@ -286,6 +296,7 @@ func bumpPoints() [][2]float64 {
 // mutation, either of which breaks that consistency while leaving the quadratic self-checks —
 // where λ≈0 makes the RBF term a no-op — untouched).
 func TestPlateInterpolatesNonPolynomialTarget(t *testing.T) {
+	t.Parallel()
 	pts := bumpPoints()
 	bump := []float64{1, 0, 0, 0, 0, 0, 0, 0}
 	var cs []PlateConstraint

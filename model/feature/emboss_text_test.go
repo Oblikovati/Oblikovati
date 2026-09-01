@@ -23,6 +23,7 @@ func textOn(plane sketch.Plane, content string, height, dx, dy float64) (*sketch
 // TestTextEmbossRaisesMaterial proves an emboss that references a text entity recomputes to
 // real raised geometry from the text's derived glyph profiles (not baked lines).
 func TestTextEmbossRaisesMaterial(t *testing.T) {
+	t.Parallel()
 	fs := embossedBlock(t)
 	es, tb := textOn(planeAtZ(2), "I", 1.5, 2, 1) // a counter-less glyph keeps the test simple
 	emb := NewEmbossFeatures(fs).AddText(es, tb, func() float64 { return 1 }, EmbossFromFace, 0)
@@ -44,6 +45,7 @@ func TestTextEmbossRaisesMaterial(t *testing.T) {
 // recipe must store a REFERENCE to the text entity (sketch index + entity id) — never baked
 // outline geometry — and round-trip back to a working text emboss.
 func TestTextEmbossStoresReferenceNotGeometry(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	block := squareSketch(10)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(block, 0, ops.NewBody, func() float64 { return 2 })

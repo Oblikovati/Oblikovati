@@ -36,6 +36,7 @@ func e7HostTorus(t *testing.T) geom.Torus {
 // M_a = 166.4395, centre (0,0,60.7107), minor r — an exact closed form of {r, torus, cap} (a wrong η sign
 // or branch moves the major by tens of units). This is the "latitude accept" leg of the regression.
 func TestTorusHostArmSurface_E7(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(300)
 	host := e7HostTorus(t)
 	tor, reason := torusHostArmSurface(host, e7CapZ, e7Rho, torusArmR, +1, res)
@@ -58,6 +59,7 @@ func TestTorusHostArmSurface_E7(t *testing.T) {
 // host) to its derived centre z = (a/b)·η = 67.4563 and radius R + (a/b)·√(b²−η²) = 173.8217, built from
 // the real arm — the (a/b)-scaled circle the E7 derivation gives (fillet_torusarm.go header).
 func TestTorusHostContactCircle_E7(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(300)
 	host := e7HostTorus(t)
 	arm, reason := torusHostArmSurface(host, e7CapZ, e7Rho, torusArmR, +1, res)
@@ -83,6 +85,7 @@ func TestTorusHostContactCircle_E7(t *testing.T) {
 // TestTorusLatitudeCut gates the accept/reject boundary: a cap ⊥ the axis (|ẑ·n̂|=1, E7) is admitted; a
 // meridian cap ∥ the axis (|ẑ·n̂|=0, the spiric E5/E9) is rejected — the gate that keeps E5/E9 flooring.
 func TestTorusLatitudeCut(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(300)
 	if !torusLatitudeCut(1.0, e7Rho, res) {
 		t.Fatal("latitude cap (|ẑ·n̂|=1) must be admitted")
@@ -98,6 +101,7 @@ func TestTorusLatitudeCut(t *testing.T) {
 // TestTorusHostArmSurface_Rejects covers the spindle (r ≥ a → b ≤ 0) and clearance (cap clears the offset
 // torus → d² ≤ 0) declines, each an honest do-no-harm reject rather than a wrong arm.
 func TestTorusHostArmSurface_Rejects(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(300)
 	host := e7HostTorus(t)
 	if _, reason := torusHostArmSurface(host, e7CapZ, e7Rho, 100, +1, res); reason != torusArmSpindle {

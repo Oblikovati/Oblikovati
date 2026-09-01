@@ -11,6 +11,7 @@ import (
 // The dual rule the issue describes: with geometry selected the button converts the selection;
 // with nothing selected it toggles a creation mode for what is drawn next.
 func TestFormatToggleConvertsSelection(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(10, 0))
 	s.Select(SketchEntityHandle{Entity: l})
@@ -27,6 +28,7 @@ func TestFormatToggleConvertsSelection(t *testing.T) {
 }
 
 func TestFormatToggleArmsModeWithNoSelection(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	if n := s.ToggleConstruction(); n != 0 {
 		t.Fatalf("converted = %d, want 0 — nothing was selected", n)
@@ -42,6 +44,7 @@ func TestFormatToggleArmsModeWithNoSelection(t *testing.T) {
 
 // The rule is the same for all four toggles, so they cannot drift apart.
 func TestEveryFormatToggleFollowsTheDualRule(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name   string
 		toggle func(*Session) int
@@ -71,6 +74,7 @@ func TestEveryFormatToggleFollowsTheDualRule(t *testing.T) {
 
 // Armed construction mode marks what is drawn next, through the recipe commit path.
 func TestConstructionModeMarksNewGeometry(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.ToggleConstruction() // arm the mode
 	tool := NewRectangleTool()
@@ -87,6 +91,7 @@ func TestConstructionModeMarksNewGeometry(t *testing.T) {
 
 // With no mode armed, new geometry is ordinary — the mode must not leak.
 func TestNoModeLeavesNewGeometryOrdinary(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	tool := NewRectangleTool()
 	tool.corners = []math.Point2{math.P2(0, 0), math.P2(10, 8)}
@@ -100,6 +105,7 @@ func TestNoModeLeavesNewGeometryOrdinary(t *testing.T) {
 
 // Centerline mode marks new lines; a centreline is always construction too.
 func TestCenterlineModeMarksNewLines(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.ToggleCenterline()
 	tool := NewLineTool()
@@ -115,6 +121,7 @@ func TestCenterlineModeMarksNewLines(t *testing.T) {
 
 // Centre-point mode marks points the Point tool places.
 func TestCenterPointModeMarksNewPoints(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.ToggleCenterPoint()
 	tool := NewPointTool()
@@ -132,6 +139,7 @@ func TestCenterPointModeMarksNewPoints(t *testing.T) {
 
 // Converting a selected dimension flips it between driving and driven.
 func TestDrivenToggleConvertsSelectedDimension(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	a := sk.Points().Add(math.P2(0, 0))
 	b := sk.Points().Add(math.P2(10, 0))
@@ -155,6 +163,7 @@ func TestDrivenToggleConvertsSelectedDimension(t *testing.T) {
 // Driven mode combined with #2014's redundancy demotion must yield one driven dimension, not an
 // error — both paths set the same flag.
 func TestDrivenModeWithLockedField(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.ToggleDrivenDimension()
 	tool := NewRectangleTool()
@@ -180,6 +189,7 @@ func TestDrivenModeWithLockedField(t *testing.T) {
 
 // Driven mode touches only the dimensions this commit created, not ones already in the sketch.
 func TestDrivenModeLeavesExistingDimensionsAlone(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	a := sk.Points().Add(math.P2(0, 0))
 	b := sk.Points().Add(math.P2(10, 0))

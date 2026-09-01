@@ -13,6 +13,7 @@ import (
 
 // TestColorStyleCRUD drives list -> set(add) -> get -> set(update) -> delete.
 func TestColorStyleCRUD(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var list wire.ColorStylesResult
@@ -50,6 +51,7 @@ func TestColorStyleCRUD(t *testing.T) {
 // TestImportStyleLibrary writes a JSON library file, imports it, and checks it joins the
 // cascade and merges a new style.
 func TestImportStyleLibrary(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	path := filepath.Join(t.TempDir(), "metals.json")
 	body := `{"name":"Metals","styles":[{"name":"Titanium","diffuse":{"r":180,"g":184,"b":190,"opacity":1,"source":79105},"opacity":1,"shininess":0.6}]}`

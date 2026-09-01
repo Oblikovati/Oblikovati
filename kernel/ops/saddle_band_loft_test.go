@@ -65,6 +65,7 @@ func saddleRimPoints(samples int) (lo, hi []math.Point3) {
 // area against the analytic lateral area — confirming the loft follows the saddle rims, not a flat or
 // full-domain fallback.
 func TestSaddleBandLoftAreaMatchesAnalytic(t *testing.T) {
+	t.Parallel()
 	face := rodInsideFatBand(t, 64)
 	mesh := tessellateCurvedFace(face, DefaultQuality())
 	if mesh == nil || len(mesh.Indices) == 0 {
@@ -80,6 +81,7 @@ func TestSaddleBandLoftAreaMatchesAnalytic(t *testing.T) {
 // TestSaddleBandLoftMeshIsRouted confirms the dispatch reaches saddleBandLoftMesh for this band (a
 // non-circular-rim periodic face) rather than a fallback: the helper returns ok.
 func TestSaddleBandLoftMeshIsRouted(t *testing.T) {
+	t.Parallel()
 	face := rodInsideFatBand(t, 48)
 	if _, ok := saddleBandLoftMesh(face, face.Geometry(), DefaultQuality()); !ok {
 		t.Error("saddleBandLoftMesh declined the rod-inside-fat band; the dispatch would fall back")
@@ -89,6 +91,7 @@ func TestSaddleBandLoftMeshIsRouted(t *testing.T) {
 // TestSaddleBandLoftDeclinesNonBand: a planar face is not a singly-periodic ruled band, so the loft must
 // decline (ok=false) and leave the dispatch to its other meshers.
 func TestSaddleBandLoftDeclinesNonBand(t *testing.T) {
+	t.Parallel()
 	block, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(1, 1, 1), "b")
 	face := block.Faces()[0] // a planar face: both parameter directions are non-periodic
 	if _, ok := saddleBandLoftMesh(face, face.Geometry(), DefaultQuality()); ok {
@@ -141,6 +144,7 @@ func densePinchRing(cyl geom.Cylinder, n int, tinyGap float64) []math.Point3 {
 // this fails, because densePinchRing's spliced-in sample sits at a sub-radian gap that trips it even
 // though the ring is genuinely single-valued.
 func TestRingSingleValuedInAngleAcceptsDenseNearPinchSampling(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3.0)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
@@ -159,6 +163,7 @@ func TestRingSingleValuedInAngleAcceptsDenseNearPinchSampling(t *testing.T) {
 // a miter rail / seam-line remnant / bridge riser leaves in a rim. The scale-aware rewrite must still
 // decline this, or the near-pinch fix would just be reverting the guard rather than sharpening it.
 func TestRingSingleValuedInAngleDeclinesGenuineVerticalStep(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3.0)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
@@ -174,6 +179,7 @@ func TestRingSingleValuedInAngleDeclinesGenuineVerticalStep(t *testing.T) {
 }
 
 func TestBandWrapRingsReadsTheSharedEdgeDiscretization(t *testing.T) {
+	t.Parallel()
 	face := rodInsideFatBand(t, 48)
 	var healed *topo.Edge
 	for _, e := range face.Edges() {

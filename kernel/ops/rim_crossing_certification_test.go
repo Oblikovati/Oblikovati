@@ -48,6 +48,7 @@ func rimCrossFixture(t *testing.T) (target, tool *topo.Body) {
 }
 
 func TestRimCrossingCutIsWatertightAndFoldFree(t *testing.T) {
+	t.Parallel()
 	target, tool := rimCrossFixture(t)
 	res, err := Boolean(Cut, target, tool)
 	if err != nil {
@@ -70,6 +71,7 @@ func TestRimCrossingCutIsWatertightAndFoldFree(t *testing.T) {
 }
 
 func TestRimCrossingCutMomentsMatchOCC(t *testing.T) {
+	t.Parallel()
 	target, tool := rimCrossFixture(t)
 	res, err := Boolean(Cut, target, tool)
 	if err != nil {
@@ -97,6 +99,7 @@ func TestRimCrossingCutMomentsMatchOCC(t *testing.T) {
 // agrees with the analytic CSG predicate target\tool everywhere away from the boundary — so a right-volume-
 // wrong-shape build (correct moments, displaced material at the notch or the tunnel) still fails.
 func TestRimCrossingCutMembershipMatchesCSG(t *testing.T) {
+	t.Parallel()
 	target, tool := rimCrossFixture(t)
 	res, err := Boolean(Cut, target, tool)
 	if err != nil {

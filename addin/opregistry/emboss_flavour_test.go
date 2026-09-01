@@ -34,6 +34,7 @@ func lastEmbossDef(t *testing.T, s *app.Session) *feature.EmbossDefinition {
 // wire could not ask for. A request that merely succeeds proves nothing here, so the test reads the
 // angle back off the definition (#1893).
 func TestEmbossTaperReachesTheDefinition(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	if _, err := applyMap(t, s, "emboss", map[string]any{
 		"sketchIndex": 0, "depth": "1 mm", "taper": "10 deg",
@@ -47,6 +48,7 @@ func TestEmbossTaperReachesTheDefinition(t *testing.T) {
 
 // TestEmbossTypeReachesTheDefinition: each flavour spelling maps to its EmbossType.
 func TestEmbossTypeReachesTheDefinition(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		spelling string
 		want     feature.EmbossType
@@ -72,6 +74,7 @@ func TestEmbossTypeReachesTheDefinition(t *testing.T) {
 // TestEmbossTypeRejectsAContradictoryEngrave: the older `engrave` shorthand and an explicit
 // non-engraving type disagree, and honouring either would invert the other's intent.
 func TestEmbossTypeRejectsAContradictoryEngrave(t *testing.T) {
+	t.Parallel()
 	for _, spelling := range []string{"fromFace", "fromPlane"} {
 		s, _, _ := extrudedSolid(t)
 		if _, err := applyMap(t, s, "emboss", map[string]any{
@@ -84,6 +87,7 @@ func TestEmbossTypeRejectsAContradictoryEngrave(t *testing.T) {
 
 // TestEmbossEngraveShorthandStillWorks: the shipped two-valued spelling keeps working on its own.
 func TestEmbossEngraveShorthandStillWorks(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	if _, err := applyMap(t, s, "emboss", map[string]any{
 		"sketchIndex": 0, "depth": "1 mm", "engrave": true,
@@ -98,6 +102,7 @@ func TestEmbossEngraveShorthandStillWorks(t *testing.T) {
 // TestEmbossUnknownTypeIsAnError: an unrecognised flavour is refused rather than defaulting to a
 // raise, which would be the opposite of an engrave the caller misspelled.
 func TestEmbossUnknownTypeIsAnError(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	if _, err := applyMap(t, s, "emboss", map[string]any{
 		"sketchIndex": 0, "depth": "1 mm", "type": "raised",
@@ -111,6 +116,7 @@ func TestEmbossUnknownTypeIsAnError(t *testing.T) {
 // geometrically — what is under test is that the key arrives AND that the resulting refusal comes
 // from the model looking at the face, which is only possible if it got there.
 func TestEmbossWrapToFaceReachesTheDefinition(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	out, err := applyMap(t, s, "emboss", map[string]any{
 		"sketchIndex": 0, "depth": "1 mm", "wrapToFace": face,

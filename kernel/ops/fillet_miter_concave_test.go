@@ -23,6 +23,7 @@ import (
 // ball centre r INTO the material (z=95); the concave builder gives major R+r=55 (O2's Radii 55 5) with
 // the ball centre r into the VOID (z=105). A flipped sign would swap 45↔55 and the centre side.
 func TestMiterTorusArmSideSelection(t *testing.T) {
+	t.Parallel()
 	res := testArmResolution()
 	cyl, pl, n := cylAxis(0, 0, 1, 50), planeAtZ(100), armOutward(0, 0, 1)
 	convex, ok := torusArmSurface(cyl, pl, n, 5, 1, res)
@@ -57,6 +58,7 @@ func TestMiterTorusArmSideSelection(t *testing.T) {
 // plane offset +10 into the VOID). The radial distance of the arm centre from the host axis is the
 // R−r vs R+r discriminant.
 func TestMiterCylinderArmSideSelection(t *testing.T) {
+	t.Parallel()
 	res := testArmResolution()
 	e, cyl, pl, n := concaveBossFixture(t)
 	convex, ok := cylinderArmSurface(e, cyl, pl, n, 10, 1)
@@ -84,6 +86,7 @@ func TestMiterCylinderArmSideSelection(t *testing.T) {
 // wall at R+r=55 (ball OUTSIDE both walls, in the void valley — P2/P3). The arm axis' distance to EACH
 // host axis is the discriminant; 55>R=50 (void) vs 45<R (material) shows the side.
 func TestMiterEqualParallelValleySideSelection(t *testing.T) {
+	t.Parallel()
 	res := testArmResolution()
 	e, cA, cB := valleyBossFixture(t)
 	for _, tc := range []struct {

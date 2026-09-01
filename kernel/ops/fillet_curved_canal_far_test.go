@@ -96,6 +96,7 @@ func armTermini(t *testing.T, arm edgeFillet, centre math.Point3, w cornerWeld, 
 // TestCanalFar_S4CylinderArmTerminus pins the s_4 arm (F_far = z=80 plane ⊥ spine): m_far = (45,50−√2000,
 // 80), the two host feet, and the terminal cross-section arc sweep arccos(−1/9), all to res.Weld·scale.
 func TestCanalFar_S4CylinderArmTerminus(t *testing.T) {
+	t.Parallel()
 	w, arms, centres, _, scale, res := n7RealArms(t)
 	i := cylinderArmAlong(t, arms, math.V3(0, 0, 1)) // s_4: axis ẑ
 	tol := res.Weld() * scale
@@ -113,6 +114,7 @@ func TestCanalFar_S4CylinderArmTerminus(t *testing.T) {
 // TestCanalFar_S10CylinderArmTerminus pins the s_10 arm (F_far = y=30 plane ⊥ spine): terminal arc centre
 // (55,30,15), feet (50,30,15)/(55,30,10), sweep π/2 — exact.
 func TestCanalFar_S10CylinderArmTerminus(t *testing.T) {
+	t.Parallel()
 	w, arms, centres, _, scale, res := n7RealArms(t)
 	i := cylinderArmAlong(t, arms, math.V3(0, 1, 0)) // s_10: axis ŷ
 	tol := res.Weld() * scale
@@ -130,6 +132,7 @@ func TestCanalFar_S10CylinderArmTerminus(t *testing.T) {
 // is the SPIRIC section (geom.SpiricArc, NOT an arc), pointwise ON the derivation's P(v) form to the
 // oracle tol; its endpoints are the wall foot (80,10,5) and the extended cap foot (80,50−√1125,10).
 func TestCanalFar_S5TorusArmSpiricTerminus(t *testing.T) {
+	t.Parallel()
 	w, arms, centres, _, scale, res := n7RealArms(t)
 	i := torusArmIndex(t, arms)
 	tol := res.Weld() * scale
@@ -155,6 +158,7 @@ func TestCanalFar_S5TorusArmSpiricTerminus(t *testing.T) {
 // the SAME points. Also asserts the s_5 CAP rail carries the +δ_cap extension (its far foot reaches the
 // cap section (80,50−√1125,10), beyond the far-vertex azimuth).
 func TestCanalFar_HostRailFeetShared(t *testing.T) {
+	t.Parallel()
 	w, arms, centres, _, scale, res := n7RealArms(t)
 	tol := res.Weld() * scale
 	for i := range arms {
@@ -172,6 +176,7 @@ func TestCanalFar_HostRailFeetShared(t *testing.T) {
 // the far-vertex azimuth (the wall crossing (80,16.20…,10)); with the δ_cap = asin(d/ρ)−asin(d/(ρ+r))
 // extension it reaches the cap section (80,50−√1125,10) = (80,16.4589…,10), 0.0862 rad (3.88u) further.
 func TestCanalFar_S5CapRailExtension(t *testing.T) {
+	t.Parallel()
 	w, arms, centres, _, scale, res := n7RealArms(t)
 	i := torusArmIndex(t, arms)
 	tol := res.Weld() * scale
@@ -193,6 +198,7 @@ func TestCanalFar_S5CapRailExtension(t *testing.T) {
 // TestCanalFar_ThreeArmFacesBuildOnRealBody is THE W4-blocker-gone deliverable: all three canalArmFace
 // loops now CLOSE on the REAL N7 body (each builds, every junction chains through the W2 chainOnto gates).
 func TestCanalFar_ThreeArmFacesBuildOnRealBody(t *testing.T) {
+	t.Parallel()
 	w, arms, centres, boundaries, scale, res := n7RealArms(t)
 	faces, reason := canalArmFaces(arms, w, boundaries, centres, scale, res)
 	if reason != "" {
@@ -213,6 +219,7 @@ func TestCanalFar_ThreeArmFacesBuildOnRealBody(t *testing.T) {
 // rejects it against the far vertex z=80 (the exact W4 blocker). The F1 geometric terminus builds the
 // same arm at z=80. Proof the F_far section, not a loop crossing, is what closes the loop on the real body.
 func TestCanalFar_LoopCrossingMutationFails(t *testing.T) {
+	t.Parallel()
 	w, arms, centres, _, scale, res := n7RealArms(t)
 	i := cylinderArmAlong(t, arms, math.V3(0, 0, 1)) // s_4
 	set, ok := solveArmSetback(arms[i], centres[i], w.radius, scale, res)
@@ -243,6 +250,7 @@ func TestCanalFar_LoopCrossingMutationFails(t *testing.T) {
 // radius-r cross-section, and canalTerminalSection (arc branch, reached here via an OBLIQUE F_far that
 // takes neither the spiric nor the ⊥-cylinder path) declines with it.
 func TestCanalFar_ArcBranchGuardDeclinesObliqueFeet(t *testing.T) {
+	t.Parallel()
 	tor, err := geom.NewTorus(math.P3(50, 50, 5), math.V3(0, 0, 1), 45, 5)
 	if err != nil {
 		t.Fatalf("build torus: %v", err)

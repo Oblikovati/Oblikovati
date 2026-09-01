@@ -23,6 +23,7 @@ func cloudPicker(s *Session) *RayPicker {
 // TestPickSnapsToCloudPoint: a click at the screen position of a scan point snaps to it, returning
 // a PointCloudPointHandle at the point's model-space location (M17-F06, #645).
 func TestPickSnapsToCloudPoint(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t) // camera at (0,0,10) → origin projects to screen centre (100,100)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
 	if _, err := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(0, 0, 0)}); err != nil {
@@ -45,6 +46,7 @@ func TestPickSnapsToCloudPoint(t *testing.T) {
 // TestPickMissesHiddenCloud: a hidden cloud's points do not snap, and a click away from any point
 // returns no hit (#645).
 func TestPickMissesHiddenCloud(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
 	pc, _ := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(0, 0, 0)})
@@ -61,6 +63,7 @@ func TestPickMissesHiddenCloud(t *testing.T) {
 
 // TestPointCloudPointHandleKind: the snap handle reports its selection kind (#645).
 func TestPointCloudPointHandleKind(t *testing.T) {
+	t.Parallel()
 	if k := (PointCloudPointHandle{}).SelectionKind(); k != SelectPointCloudPoint {
 		t.Errorf("SelectionKind = %v, want SelectPointCloudPoint", k)
 	}
@@ -69,6 +72,7 @@ func TestPointCloudPointHandleKind(t *testing.T) {
 // TestSelectedCloudPointHighlight: selecting a snapped scan point yields an on-top highlight marker
 // at its location; a non-cloud selection yields none (#645).
 func TestSelectedCloudPointHighlight(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, ok := s.SelectedCloudPointHighlight(0.5); ok {
 		t.Error("no selection should yield no highlight")

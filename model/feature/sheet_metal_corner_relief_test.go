@@ -132,6 +132,7 @@ func sameRun(a, b, fa, fb math.Point3) bool {
 // TestCornerReliefRemovesTheSharedCorner: two walls meeting at a corner leave material neither can
 // fold. A square relief takes it away; without one, nothing is removed at all.
 func TestCornerReliefRemovesTheSharedCorner(t *testing.T) {
+	t.Parallel()
 	square := CornerReliefSpec{Shape: types.CornerSquare, Size: 0.4}
 	relieved := smSolidVolume(corneredSheet(t, square))
 	bare := smSolidVolume(corneredSheet(t, CornerReliefSpec{Shape: types.CornerTear}))
@@ -145,6 +146,7 @@ func TestCornerReliefRemovesTheSharedCorner(t *testing.T) {
 // TestCornerReliefCutsAtTheCornerItself: the notch belongs AT the shared corner and nowhere else.
 // A cut placed at the wrong end of either bend would remove the same volume and still be wrong.
 func TestCornerReliefCutsAtTheCornerItself(t *testing.T) {
+	t.Parallel()
 	body, at := corneredSheetAt(t, CornerReliefSpec{Shape: types.CornerSquare, Size: 0.4})
 	// Sample INTO the sheet from the junction: the notch reaches 0.4 along both edges, so a point
 	// 0.2 in is inside it and one 0.6 in is past it. The sheet spans x,y ∈ [0,4].
@@ -178,6 +180,7 @@ func TestCornerReliefCutsAtTheCornerItself(t *testing.T) {
 // TestRoundCornerReliefTakesLessThanTheSquare: the round relief seats a disc in the corner instead
 // of a square, so it removes π/4 of the square's area — and leaves no inside corner.
 func TestRoundCornerReliefTakesLessThanTheSquare(t *testing.T) {
+	t.Parallel()
 	bare := smSolidVolume(corneredSheet(t, CornerReliefSpec{Shape: types.CornerTear}))
 	squareCut := bare - smSolidVolume(corneredSheet(t, CornerReliefSpec{Shape: types.CornerSquare, Size: 0.4}))
 	roundCut := bare - smSolidVolume(corneredSheet(t, CornerReliefSpec{Shape: types.CornerRound, Size: 0.4}))
@@ -194,6 +197,7 @@ func TestRoundCornerReliefTakesLessThanTheSquare(t *testing.T) {
 // relieves, not by the style — trimming "to the bend" means back to where each bend's outer surface
 // leaves the flat, which is its radius plus the thickness.
 func TestTrimToBendSizesItselfFromTheBends(t *testing.T) {
+	t.Parallel()
 	bare := smSolidVolume(corneredSheet(t, CornerReliefSpec{Shape: types.CornerTear}))
 	// The style size is deliberately absurd: trimToBend must ignore it and use the bends.
 	trimmed := smSolidVolume(corneredSheet(t, CornerReliefSpec{Shape: types.CornerTrimToBend, Size: 99}))
@@ -206,6 +210,7 @@ func TestTrimToBendSizesItselfFromTheBends(t *testing.T) {
 // TestUnbuiltCornerShapesAreRefused: the shapes that need the two walls' own outlines are refused
 // rather than approximated by a square, which would cut the wrong corner and still look plausible.
 func TestUnbuiltCornerShapesAreRefused(t *testing.T) {
+	t.Parallel()
 	for _, shape := range []types.CornerReliefShape{
 		types.CornerFullRound, types.CornerRoundWithRadius, types.CornerIntersection,
 	} {
@@ -219,6 +224,7 @@ func TestUnbuiltCornerShapesAreRefused(t *testing.T) {
 // TestSizedCornerShapeNeedsASize: round and square are sized by the style, so a zero size is a
 // style mistake worth naming rather than a corner quietly left unrelieved.
 func TestSizedCornerShapeNeedsASize(t *testing.T) {
+	t.Parallel()
 	pf, _ := corneredSheetFeature(t, CornerReliefSpec{Shape: types.CornerSquare, Size: 0})
 	if pf.Health().OK() {
 		t.Error("a square corner relief with no size should be refused")
@@ -228,6 +234,7 @@ func TestSizedCornerShapeNeedsASize(t *testing.T) {
 // TestOneFlangeHasNoCorner: a lone wall corners with nothing, so nothing is cut — and a part with
 // two flanges on OPPOSITE edges has two bends that never meet either.
 func TestOneFlangeHasNoCorner(t *testing.T) {
+	t.Parallel()
 	fs, edge := seedSheetMetalSheet(t, 4, nil)
 	fs.SetReliefSpec(func() ReliefSpec { return ReliefSpec{} })
 	fs.SetCornerReliefSpec(func() CornerReliefSpec {
@@ -253,6 +260,7 @@ func TestOneFlangeHasNoCorner(t *testing.T) {
 // TestParallelBendsShareNoCorner: two stretches of ONE edge are not a corner. Relieving between
 // them would notch the middle of a straight run.
 func TestParallelBendsShareNoCorner(t *testing.T) {
+	t.Parallel()
 	a := BendPlacement{AxisStart: math.P3(0, 0, 0), AxisEnd: math.P3(2, 0, 0)}
 	b := BendPlacement{AxisStart: math.P3(2, 0, 0), AxisEnd: math.P3(4, 0, 0)}
 	if _, ok := findBendJunction(a, []BendPlacement{b}); ok {
@@ -268,6 +276,7 @@ func TestParallelBendsShareNoCorner(t *testing.T) {
 // face beside it, so a part whose style names one it never reaches must build fine. Refusing on
 // the style alone would break every single-flange part the moment the style changed.
 func TestBendTransitionOnlyMattersAtAJunction(t *testing.T) {
+	t.Parallel()
 	fs, edge := seedSheetMetalSheet(t, 4, nil)
 	fs.SetReliefSpec(func() ReliefSpec { return ReliefSpec{} })
 	fs.SetBendTransition(func() types.BendTransition { return types.ArcBendTransition })
@@ -285,6 +294,7 @@ func TestBendTransitionOnlyMattersAtAJunction(t *testing.T) {
 // refused where they would apply rather than silently ignored, which would report a part shaped one
 // way and build it another.
 func TestUnbuiltBendTransitionsAreRefusedAtAJunction(t *testing.T) {
+	t.Parallel()
 	for _, kind := range []types.BendTransition{
 		types.IntersectionBendTransition, types.StraightLineBendTransition,
 		types.ArcBendTransition, types.TrimToBendBendTransition,
@@ -299,6 +309,7 @@ func TestUnbuiltBendTransitionsAreRefusedAtAJunction(t *testing.T) {
 // TestNoTransitionBuildsTheJunction: "none" is Inventor's default and what this build makes, so a
 // junction under it is healthy.
 func TestNoTransitionBuildsTheJunction(t *testing.T) {
+	t.Parallel()
 	pf, _ := corneredSheetFeatureWith(t, CornerReliefSpec{Shape: types.CornerTear}, types.NoBendTransition)
 	if !pf.Health().OK() {
 		t.Errorf("a junction with no transition went sick: %+v", pf.Health())
@@ -308,6 +319,7 @@ func TestNoTransitionBuildsTheJunction(t *testing.T) {
 // TestPerBendTransitionOverridesTheStyle: one bend can name its own transition, and "default"
 // defers — so a feature that sets other options does not accidentally opt out of the style's.
 func TestPerBendTransitionOverridesTheStyle(t *testing.T) {
+	t.Parallel()
 	f := &SheetMetalFlangeFeature{def: &SheetMetalFlangeDefinition{}}
 	style := Input{Transition: types.ArcBendTransition}
 	if got := f.bendTransition(style); got != types.ArcBendTransition {

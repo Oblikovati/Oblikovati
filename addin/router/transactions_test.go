@@ -15,6 +15,7 @@ import (
 // (and exposes redo), transaction.redo moves it forward. NewPart opens the stream at the
 // empty-part baseline, and AddNumericUserParameter is a recording Session edit.
 func TestTransactionUndoRedoOverTheAPI(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	if _, err := s.NewPart(); err != nil {
@@ -48,6 +49,7 @@ func TestTransactionUndoRedoOverTheAPI(t *testing.T) {
 
 // TestTransactionUndoNoActiveDocument: undo with no document errors cleanly (not a panic).
 func TestTransactionUndoNoActiveDocument(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	if _, err := r.Handle(s, "transaction.undo", nil); err == nil {

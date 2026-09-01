@@ -21,6 +21,7 @@ import (
 // both decline — the payload pointer is the ONLY classification signal (ADR-C2; canal-corner-seam-
 // architecture.md §2), not loop shape alone.
 func TestCanalProviderFits(t *testing.T) {
+	t.Parallel()
 	p := canalProvider{}
 
 	unmarkedV4 := quarterCylLoop(t, 8) // Canal defaults to nil
@@ -46,6 +47,7 @@ func TestCanalProviderFits(t *testing.T) {
 // != 2), so Build honest-rejects (ok=false) → resolveBlend falls through to coons4. A solver that
 // cannot build the surface never fabricates a patch (ADR-0051 ADR-3).
 func TestCanalProviderBuildDeclinesOnIncompletePayload(t *testing.T) {
+	t.Parallel()
 	loop := quarterCylLoop(t, 8)
 	loop.Canal = &CanalCorner{Radius: 5} // no Rolls, no Ends
 	p := canalProvider{}
@@ -67,6 +69,7 @@ func TestCanalProviderBuildDeclinesOnIncompletePayload(t *testing.T) {
 // canal's OWN four boundary isoparms (watertight — every boundary lies ON the surface, unlike the
 // received amid rail which sits 0.28 off it). The certificate is independently Valid at the model scale.
 func TestN7LoopResolvesCanal(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	loop, ok := extractCurvedCorner(w, arms, res)
 	if !ok || loop.Valence() != 4 || loop.Canal == nil {
@@ -89,6 +92,7 @@ func TestN7LoopResolvesCanal(t *testing.T) {
 // the on-surface property TESTED, so re-introducing the received rails is a red test, not a silently
 // malformed trim edge (a face with an edge 0.28 off its own surface).
 func TestCanalPatchLoopsOnSurface(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	loop, _ := extractCurvedCorner(w, arms, res)
 	patch, ok := resolveBlend(loop, res)
@@ -122,6 +126,7 @@ func maxLoopToSurface(surf geom.BSplineSurface, loops []filletLoop) float64 {
 // to its two fillet arms (the end cross-sections) AND is tangent to both roll hosts (the foot-loci),
 // so all five fields pass at the model scale.
 func TestN7CanalCertificateValid(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	loop, _ := extractCurvedCorner(w, arms, res)
 	_, cert, ok := canalProvider{}.Build(loop, res)
@@ -139,6 +144,7 @@ func TestN7CanalCertificateValid(t *testing.T) {
 // whose surface is the CANAL BSpline patch — NOT the do-no-harm sphere fallback — so the canal patch
 // is not silently dropped by the whitelist's default arm.
 func TestCurvedCornerFaceAdmitsCanal(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	dummy, err := geom.NewSphere(w.center, 5) // the fallback surface, distinct from the canal BSpline
 	if err != nil {

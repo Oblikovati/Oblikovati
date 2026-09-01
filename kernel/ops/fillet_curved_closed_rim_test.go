@@ -43,6 +43,7 @@ func topRimCircleEdge(t *testing.T, b *topo.Body, topZ float64) *topo.Edge {
 // one edge, not a 2-edge miter corner — so solveCorner takes no corner treatment and the rim reaches the
 // closed-band arm assembly. A pick pair on an OPEN edge (distinct endpoints) is NOT a closed rim.
 func TestClosedRimPick_DemuxesClosedRim(t *testing.T) {
+	t.Parallel()
 	b := coneCapRimFrustum(t)
 	rim := topRimCircleEdge(t, b, 200)
 	if rim.StartVertex().ID() != rim.EndVertex().ID() {
@@ -75,6 +76,7 @@ func openSeamEdge(t *testing.T, b *topo.Body) *topo.Edge {
 // convex cone-cap rim and asserts a watertight torus-band solid: 4 faces (receded cone, receded cap disk,
 // untouched bottom cap, one torus band), every edge 2-incident, valid + solid, watertight across tolerances.
 func TestConeCapRimFillet_WeldsTorusBand(t *testing.T) {
+	t.Parallel()
 	b := coneCapRimFrustum(t)
 	rim := topRimCircleEdge(t, b, 200)
 	res, err := FilletEdgesCorner(b, []EdgeFilletRadii{{Key: rim.ReferenceKey(), R0: 10, R1: 10}}, CornerMiter, FillConcaveOutward)

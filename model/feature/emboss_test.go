@@ -35,6 +35,7 @@ func embossedBlock(t *testing.T) *PartFeatures {
 
 // A raised emboss adds a 4×4×1 boss on the top face → block volume + 16.
 func TestEmbossRaisesMaterial(t *testing.T) {
+	t.Parallel()
 	fs := embossedBlock(t)
 	es := squareOn(planeAtZ(2), 4, 3) // 4×4 square centred-ish on the z=2 top
 	emb := NewEmbossFeatures(fs).Add(es, []int{0}, func() float64 { return 1 }, EmbossFromFace, 0)
@@ -53,6 +54,7 @@ func TestEmbossRaisesMaterial(t *testing.T) {
 
 // An engraved emboss cuts a 4×4×1 pocket into the top face → block volume − 16.
 func TestEmbossEngravesMaterial(t *testing.T) {
+	t.Parallel()
 	fs := embossedBlock(t)
 	es := squareOn(planeAtZ(2), 4, 3)
 	emb := NewEmbossFeatures(fs).Add(es, []int{0}, func() float64 { return 1 }, EngraveFromFace, 0) // engrave
@@ -66,6 +68,7 @@ func TestEmbossEngravesMaterial(t *testing.T) {
 }
 
 func TestEmbossNeedsDepthAndProfile(t *testing.T) {
+	t.Parallel()
 	fs := embossedBlock(t)
 	es := squareOn(planeAtZ(2), 4, 3)
 	emb := NewEmbossFeatures(fs).Add(es, nil, func() float64 { return 1 }, EmbossFromFace, 0) // no profile

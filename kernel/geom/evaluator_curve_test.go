@@ -49,6 +49,7 @@ func evaluatorCurves3(t *testing.T) map[string]Curve3 {
 // TestCurveDerivativesMatchFiniteDifferences uses central differences of
 // PointAt as the oracle for the closed-form derivatives.
 func TestCurveDerivativesMatchFiniteDifferences(t *testing.T) {
+	t.Parallel()
 	for name, c := range evaluatorCurves3(t) {
 		// Sample away from 0.5: the cubic's third derivative jumps at its
 		// interior knot, where a straddling finite difference is meaningless.
@@ -84,6 +85,7 @@ func fdDers3(c Curve3, t float64) (d1, d2, d3 math.Vector3) {
 // TestCurveCurvatureClosedForms pins the analytic curvature of the circle and
 // the cylindrical helix.
 func TestCurveCurvatureClosedForms(t *testing.T) {
+	t.Parallel()
 	circle, _ := NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	dir, k := CurveCurvature3(circle, 0.125)
 	if stdmath.Abs(k-0.5) > 1e-12 {
@@ -109,6 +111,7 @@ func TestCurveCurvatureClosedForms(t *testing.T) {
 
 // TestCurveLengthAgreesWithDenseSampling uses a fine chord sum as the oracle.
 func TestCurveLengthAgreesWithDenseSampling(t *testing.T) {
+	t.Parallel()
 	for name, c := range evaluatorCurves3(t) {
 		got := CurveLength3(c, 0.1, 0.9)
 		want := chordLength3(c, 0.1, 0.9, 20000)
@@ -138,6 +141,7 @@ func chordLength3(c Curve3, a, b float64, n int) float64 {
 
 // TestParamAtLengthInvertsLength checks ParamAtLength ∘ Length ≈ identity.
 func TestParamAtLengthInvertsLength(t *testing.T) {
+	t.Parallel()
 	for name, c := range evaluatorCurves3(t) {
 		for _, target := range []float64{0.35, 0.7} {
 			l := CurveLength3(c, 0.1, target)
@@ -155,6 +159,7 @@ func TestParamAtLengthInvertsLength(t *testing.T) {
 // TestStrokesStayWithinTolerance verifies every dense curve sample sits within
 // tolerance of the stroked polyline.
 func TestStrokesStayWithinTolerance(t *testing.T) {
+	t.Parallel()
 	const tol = 1e-3
 	for name, c := range evaluatorCurves3(t) {
 		pts := CurveStrokes3(c, 0, 1, tol)
@@ -184,6 +189,7 @@ func distanceToPolyline(pts []math.Point3, p math.Point3) float64 {
 
 // TestCurveParamAtPointClassification pins the SolutionNature cases.
 func TestCurveParamAtPointClassification(t *testing.T) {
+	t.Parallel()
 	// Explicit RefDir = +X so the expected angle is exact (NewCircle picks an
 	// arbitrary in-plane reference).
 	circle := Circle{Center: math.P3(0, 0, 0), Normal: mustUnit3(t, 0, 0, 1),
@@ -225,6 +231,7 @@ func TestCurveParamAtPointClassification(t *testing.T) {
 
 // TestCurveRangeBoxes pins closed-form boxes and containment of sampled boxes.
 func TestCurveRangeBoxes(t *testing.T) {
+	t.Parallel()
 	// Quarter arc in XY from angle 0 to π/2: box [cx, cx+r] × [cy, cy+r].
 	arc := Arc3d{Center: math.P3(1, 1, 0), Normal: mustUnit3(t, 0, 0, 1),
 		RefDir: mustUnit3(t, 1, 0, 0), Radius: 2, StartAngle: 0, SweepAngle: stdmath.Pi / 2}
@@ -270,6 +277,7 @@ func mustUnit3(t *testing.T, x, y, z float64) math.UnitVector3 {
 
 // TestCurveAnomalyAndContinuity pins the classification members.
 func TestCurveAnomalyAndContinuity(t *testing.T) {
+	t.Parallel()
 	line, _ := NewLine(math.P3(0, 0, 0), math.V3(0, 1, 0))
 	if a := CurveAnomaly3(line); !a.Unbounded || a.Periodic {
 		t.Errorf("line anomaly = %+v", a)
@@ -313,6 +321,7 @@ func TestCurveAnomalyAndContinuity(t *testing.T) {
 
 // TestCurveEndPoints covers bounded and unbounded domains.
 func TestCurveEndPoints(t *testing.T) {
+	t.Parallel()
 	seg := NewLineSegment(math.P3(1, 2, 3), math.P3(4, 5, 6))
 	start, end, bounded := CurveEndPoints3(seg)
 	if !bounded || start != seg.StartPoint || end != seg.EndPoint {
@@ -326,6 +335,7 @@ func TestCurveEndPoints(t *testing.T) {
 
 // TestCurve2dEvaluatorMirrors spot-checks the 2D twins against the same oracles.
 func TestCurve2dEvaluatorMirrors(t *testing.T) {
+	t.Parallel()
 	arc := NewArc2d(math.P2(1, 1), 2, 0.3, 1.9)
 	d1, d2, _ := CurveDerivatives2(arc, 0.4)
 	const h = 1e-6

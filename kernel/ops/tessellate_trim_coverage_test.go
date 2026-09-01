@@ -11,6 +11,7 @@ import (
 )
 
 func TestEmitCellOutwardFlipsInwardCell(t *testing.T) {
+	t.Parallel()
 	pl, err := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	if err != nil {
 		t.Fatalf("NewPlane: %v", err)
@@ -33,6 +34,7 @@ func TestEmitCellOutwardFlipsInwardCell(t *testing.T) {
 }
 
 func TestUVLoopHelpersAndPeriodClosure(t *testing.T) {
+	t.Parallel()
 	pl, err := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	if err != nil {
 		t.Fatalf("NewPlane: %v", err)

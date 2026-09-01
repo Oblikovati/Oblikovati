@@ -29,6 +29,7 @@ func topRimKey(t *testing.T, b *topo.Body, topZ float64) []byte {
 // to the toroidal-band rim fillet, producing a valid solid with one torus face, watertight across
 // tolerances, with the rim material removed.
 func TestFilletEdgesRoutesRim(t *testing.T) {
+	t.Parallel()
 	b, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1.0, 2.0)
 	if err != nil {
 		t.Fatal(err)
@@ -63,6 +64,7 @@ func TestFilletEdgesRoutesRim(t *testing.T) {
 
 // TestFilletRimRadiusTooLarge rejects a rim radius at/over the cylinder radius.
 func TestFilletRimRadiusTooLarge(t *testing.T) {
+	t.Parallel()
 	b, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1.0, 2.0)
 	if _, err := ops.FilletEdges(b, [][]byte{topRimKey(t, b, 2.0)}, 1.5); err == nil {
 		t.Fatal("a rim radius larger than the cylinder radius should fail")

@@ -82,6 +82,7 @@ func maxRadialDev(arc geom.Arc3d, samples [][3]float64) float64 {
 // rail. Method A (radiusArcRail) meets all three, so U4-3/U4-4's coons4 fill is de-risked: the seam
 // rails it consumes are exact.
 func TestSetbackSectionMatchesOCCTSectionOracle(t *testing.T) {
+	t.Parallel()
 	_, fils, res := u4Fillet(t)
 	ef := fils[0]
 	dets, ok := detectObstacles(ef, res)
@@ -147,6 +148,7 @@ func assertEndpointsWeldToOracle(t *testing.T, rail geom.Curve3, samples [][3]fl
 // endpoints are BIT-IDENTICAL to the independently-evaluated boss-rim points a neighbour panel's A-rim /
 // B-rim rail would end at — so the panels share their corners with no seam-opening float drift.
 func TestSetbackSectionEndpointsPinnedToRim(t *testing.T) {
+	t.Parallel()
 	_, fils, res := u4Fillet(t)
 	ef := fils[0]
 	dets, _ := detectObstacles(ef, res)
@@ -176,6 +178,7 @@ func TestSetbackSectionEndpointsPinnedToRim(t *testing.T) {
 // the arc diameter (a vanishingly thin, near-collinear section) no radius-r circle spans them — the apex
 // collapses onto the chord and the rail degrades to a straight segment rather than returning a bogus arc.
 func TestSetbackSectionCollinearFallsBackToLineSegment(t *testing.T) {
+	t.Parallel()
 	_, fils, _ := u4Fillet(t)
 	ef := fils[0]
 	pA := math.P3(5, -20, 0)
@@ -195,6 +198,7 @@ func TestSetbackSectionCollinearFallsBackToLineSegment(t *testing.T) {
 // TestSetbackSectionRejectsNonDualHost pins that setbackSection is defined only for the qualifying==2
 // dual-host case: a single-host detection list has no A/B pair to bridge, so hostDetections → ok=false.
 func TestSetbackSectionRejectsNonDualHost(t *testing.T) {
+	t.Parallel()
 	_, fils, res := u4Fillet(t)
 	ef := fils[0]
 	dets, _ := detectObstacles(ef, res)

@@ -13,6 +13,7 @@ import (
 // the pick empties, the tool stops being committable, and the breadcrumb name follows.
 
 func TestRevolveClearProfileEmptiesSelection(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	rv := NewRevolveTool()
 	s.StartTool(rv)
@@ -33,6 +34,7 @@ func TestRevolveClearProfileEmptiesSelection(t *testing.T) {
 }
 
 func TestSweepClearsProfileAndPathIndependently(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	sw := NewSweepTool()
 	s.StartTool(sw)
@@ -55,6 +57,7 @@ func TestSweepClearsProfileAndPathIndependently(t *testing.T) {
 }
 
 func TestHoleClearFaceEmptiesSelection(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithSquare(t, 2)
 	h := NewHoleTool()
 	s.StartTool(h)
@@ -71,6 +74,7 @@ func TestHoleClearFaceEmptiesSelection(t *testing.T) {
 // TestEdgeAndFaceToolClears sweeps the simple multi-pick tools: each Clear empties its
 // pick set so the chip returns to its required/empty state.
 func TestEdgeAndFaceToolClears(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithSquare(t, 2)
 	fl := NewFilletTool()
 	s.StartTool(fl)
@@ -118,6 +122,7 @@ func faceToolsForClearTest(s *Session) map[string]func() int {
 
 // TestReplaceFaceClearsFacesAndTargetIndependently locks the two chips' clears.
 func TestReplaceFaceClearsFacesAndTargetIndependently(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithSquare(t, 2)
 	r := NewReplaceFaceTool()
 	s.StartTool(r)
@@ -142,6 +147,7 @@ func TestReplaceFaceClearsFacesAndTargetIndependently(t *testing.T) {
 
 // TestSplitCoilOffsetPlaneLoftClears locks the single-pick and loft clears.
 func TestSplitCoilOffsetPlaneLoftClears(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	co := NewCoilTool()
 	s.StartTool(co)
@@ -178,6 +184,7 @@ func TestSplitCoilOffsetPlaneLoftClears(t *testing.T) {
 
 // TestThreadClearFaceEmptiesSelection uses a real cylinder (Pick validates the face).
 func TestThreadClearFaceEmptiesSelection(t *testing.T) {
+	t.Parallel()
 	s, cyl := newPartWithCylinder(t)
 	tt := NewThreadTool()
 	s.StartTool(tt)

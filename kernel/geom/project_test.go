@@ -23,6 +23,7 @@ func perpendicularToSurface(t *testing.T, s Surface, p math.Point3) (u, v float6
 }
 
 func TestClosestPointOnPlane(t *testing.T) {
+	t.Parallel()
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	_, _, foot := perpendicularToSurface(t, pl, math.P3(2, 3, 5))
 	if foot.DistanceTo(math.P3(2, 3, 0)) > 1e-9 {
@@ -31,6 +32,7 @@ func TestClosestPointOnPlane(t *testing.T) {
 }
 
 func TestClosestPointOnSphere(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 5)
 	_, _, foot := perpendicularToSurface(t, sp, math.P3(10, 0, 0))
 	if stdmath.Abs(float64(foot.AsVector().Length())-5) > 1e-6 {
@@ -42,6 +44,7 @@ func TestClosestPointOnSphere(t *testing.T) {
 }
 
 func TestClosestPointOnCylinder(t *testing.T) {
+	t.Parallel()
 	cy, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
 	u, _, foot := perpendicularToSurface(t, cy, math.P3(10, 0, 7))
 	_ = u
@@ -52,6 +55,7 @@ func TestClosestPointOnCylinder(t *testing.T) {
 }
 
 func TestClosestPointOnConeAndTorus(t *testing.T) {
+	t.Parallel()
 	// The cone and torus exercise the Gauss–Newton refinement (ParamAt is approximate).
 	co, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6)
 	perpendicularToSurface(t, co, math.P3(4, 1, 3))
@@ -64,6 +68,7 @@ func TestClosestPointOnConeAndTorus(t *testing.T) {
 }
 
 func TestSignedDistanceToPlane(t *testing.T) {
+	t.Parallel()
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	if d := SignedDistanceToSurface(pl, math.P3(0, 0, 4)); stdmath.Abs(d-4) > 1e-9 {
 		t.Errorf("signed distance above plane = %v, want +4", d)
@@ -76,6 +81,7 @@ func TestSignedDistanceToPlane(t *testing.T) {
 // TestClosestPointDegenerateFrame exercises the degenerate-frame guard by projecting a
 // point at a sphere pole (where ∂P/∂v vanishes).
 func TestClosestPointDegenerateFrame(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 2)
 	_, _, foot := ClosestPointOnSurface(sp, math.P3(0, 0, 10))
 	if foot.DistanceTo(math.P3(0, 0, 2)) > 1e-6 {
@@ -87,6 +93,7 @@ func TestClosestPointDegenerateFrame(t *testing.T) {
 // tangent frame collapses (du = 0 at v = 0); the iteration must bail safely rather than
 // divide by a zero determinant.
 func TestClosestPointConeApexGuard(t *testing.T) {
+	t.Parallel()
 	co, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6)
 	u, v, foot := ClosestPointOnSurface(co, math.P3(1, 0, 0))
 	if stdmath.IsNaN(u) || stdmath.IsNaN(v) || stdmath.IsNaN(float64(foot.X)) {
@@ -96,6 +103,7 @@ func TestClosestPointConeApexGuard(t *testing.T) {
 
 // TestGaussNewtonStepDegenerate covers the singular normal-equation guard directly.
 func TestGaussNewtonStepDegenerate(t *testing.T) {
+	t.Parallel()
 	if _, _, ok := gaussNewtonStep(math.V3(0, 0, 0), math.V3(0, 0, 0), 1, 1); ok {
 		t.Error("a zero tangent frame should report a non-invertible step")
 	}
@@ -106,6 +114,7 @@ func TestGaussNewtonStepDegenerate(t *testing.T) {
 
 // TestClampFinite covers the lower/upper/unbounded clamp branches.
 func TestClampFinite(t *testing.T) {
+	t.Parallel()
 	if clampFinite(-5, 0, 10) != 0 || clampFinite(15, 0, 10) != 10 || clampFinite(5, 0, 10) != 5 {
 		t.Error("clampFinite should pin to [lo,hi]")
 	}

@@ -13,6 +13,7 @@ import (
 // that body does not reach.
 
 func TestWholePeriodOffsetClosesAGapByWholePeriods(t *testing.T) {
+	t.Parallel()
 	const tau = 2 * stdmath.Pi
 	cases := []struct {
 		name        string
@@ -37,12 +38,14 @@ func TestWholePeriodOffsetClosesAGapByWholePeriods(t *testing.T) {
 }
 
 func TestPolygonRangeAlongOfAnEmptyPolygonIsRefused(t *testing.T) {
+	t.Parallel()
 	if _, ok := polygonRangeAlong(nil, bandAxis{}); ok {
 		t.Error("an empty polygon has no extent; a degenerate loop keeps its slot and must not report one")
 	}
 }
 
 func TestPolygonRangeAlongSpansEverySample(t *testing.T) {
+	t.Parallel()
 	poly := []arcSample{{u: 2, v: 30}, {u: 1, v: 10}, {u: 3, v: 20}}
 	got, ok := polygonRangeAlong(poly, bandAxis{})
 	if !ok || got != (paramRange{1, 3}) {
@@ -59,6 +62,7 @@ func TestPolygonRangeAlongSpansEverySample(t *testing.T) {
 // went on to name the caps and report four times the area. A shift is applied only when it lands the
 // loop INSIDE the outer one, and no shift does here.
 func TestALoopHalfAPeriodAwayIsNotMoved(t *testing.T) {
+	t.Parallel()
 	const tau = 2 * stdmath.Pi
 	first := []arcSample{{u: 4.07, v: -0.64}, {u: 5.36, v: 0.64}}
 	second := []arcSample{{u: 0.93, v: -0.64}, {u: 2.21, v: 0.64}}
@@ -72,6 +76,7 @@ func TestALoopHalfAPeriodAwayIsNotMoved(t *testing.T) {
 
 // TestParamRangeHolds pins the containment test the shift is justified by.
 func TestParamRangeHolds(t *testing.T) {
+	t.Parallel()
 	outer := paramRange{-6.28, 0}
 	if !outer.holds(paramRange{-3.78, -2.78}) {
 		t.Error("an interval strictly within the outer one must read as held")
@@ -91,6 +96,7 @@ func TestParamRangeHolds(t *testing.T) {
 // unwrapped onto the NEXT branch up must come back beside the loop that contains it, or the nesting
 // test reads it as outside and the region ADDS it.
 func TestAlignPolygonBranchesBringsAHoleOntoItsOuterLoopsBranch(t *testing.T) {
+	t.Parallel()
 	const tau = 2 * stdmath.Pi
 	outer := []arcSample{{u: -tau, v: 0}, {u: 0, v: 0}, {u: 0, v: 12}, {u: -tau, v: 12}}
 	hole := []arcSample{{u: 2.5, v: 5}, {u: 3.5, v: 5}, {u: 3.5, v: 7}, {u: 2.5, v: 7}} // one branch up
@@ -115,6 +121,7 @@ func TestAlignPolygonBranchesBringsAHoleOntoItsOuterLoopsBranch(t *testing.T) {
 // TestAlignPolygonBranchesLeavesASinglePolygonAlone: with nothing to agree with, there is no branch
 // to move to — and a face with one loop is the common case, so this path must stay free.
 func TestAlignPolygonBranchesLeavesASinglePolygonAlone(t *testing.T) {
+	t.Parallel()
 	only := []arcSample{{u: 99, v: 1}}
 	got := alignPolygonBranches([][]arcSample{only}, 2*stdmath.Pi, 0)
 	if len(got) != 1 || got[0][0].u != 99 {
@@ -125,6 +132,7 @@ func TestAlignPolygonBranchesLeavesASinglePolygonAlone(t *testing.T) {
 // TestAlignPolygonBranchesKeepsPolygonsAlreadyTogether guards the false-positive direction: loops that
 // already share a branch must come back untouched, not nudged by a spurious whole period.
 func TestAlignPolygonBranchesKeepsPolygonsAlreadyTogether(t *testing.T) {
+	t.Parallel()
 	const tau = 2 * stdmath.Pi
 	outer := []arcSample{{u: 0, v: 0}, {u: tau, v: 0}, {u: tau, v: 4}, {u: 0, v: 4}}
 	hole := []arcSample{{u: 3, v: 1}, {u: 4, v: 1}, {u: 4, v: 2}, {u: 3, v: 2}}
@@ -140,6 +148,7 @@ func TestAlignPolygonBranchesKeepsPolygonsAlreadyTogether(t *testing.T) {
 // 1.8e-7 on its planar cap. Judging that against a bare absolute epsilon called both of them
 // seam-wrapping and sent ordinary bounded faces down the band path.
 func TestLoopsWrapASeamAsksThePeriodNotZero(t *testing.T) {
+	t.Parallel()
 	const tau = 2 * stdmath.Pi
 	closed := []arcSample{{u: 0, v: 0}, {u: 1, v: 0}, {u: 1, v: 1}}
 	periodic := func(net float64) []faceLoop {

@@ -13,6 +13,7 @@ import (
 // TestCosmeticBendLeavesGeometryUnchanged a cosmetic bend records the fold but does not deform
 // the sheet — the body is the flat base, unchanged, and the feature is healthy.
 func TestCosmeticBendLeavesGeometryUnchanged(t *testing.T) {
+	t.Parallel()
 	fs, line := sheetForBend(t, 4, 2)
 	fs.Recompute()
 	flat := fs.Result()[0]
@@ -32,6 +33,7 @@ func TestCosmeticBendLeavesGeometryUnchanged(t *testing.T) {
 // TestCosmeticBendReportsBendSpec the cosmetic bend contributes its angle/radius to the bend
 // table (BendLineage), defaulting to a 90° fold at the rule radius.
 func TestCosmeticBendReportsBendSpec(t *testing.T) {
+	t.Parallel()
 	f := &SheetMetalCosmeticBendFeature{def: &SheetMetalCosmeticBendDefinition{}}
 	specs := f.BendSpecs(0.2)
 	if len(specs) != 1 {
@@ -48,6 +50,7 @@ func TestCosmeticBendReportsBendSpec(t *testing.T) {
 // TestCosmeticBendRejectsBadLine a line index outside the sketch makes the feature sick (the
 // dangling bend line is reported, not silently ignored).
 func TestCosmeticBendRejectsBadLine(t *testing.T) {
+	t.Parallel()
 	fs, line := sheetForBend(t, 4, 2)
 	pf := NewSheetMetalCosmeticBendFeatures(fs).Add(&SheetMetalCosmeticBendDefinition{Sketch: line, LineIndex: 7})
 	fs.Recompute()
@@ -58,6 +61,7 @@ func TestCosmeticBendRejectsBadLine(t *testing.T) {
 
 // TestCosmeticBendRoundTrip a cosmetic bend persists its bend line + angle/radius and restores.
 func TestCosmeticBendRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(2, 0), math.P2(2, 4))

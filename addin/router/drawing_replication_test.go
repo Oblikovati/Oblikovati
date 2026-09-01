@@ -19,6 +19,7 @@ import (
 // DrawingContent recipe-snapshot support, the same mutating classification now also records an undo
 // step, so a wire drawing edit both replicates and is undoable.
 func TestDrawingEditsReplicate(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t) // a part with geometry + a drawing whose model reference is set
 
 	var got []app.EditCommitted

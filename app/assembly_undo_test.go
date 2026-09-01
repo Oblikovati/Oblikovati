@@ -48,6 +48,7 @@ func placedWidget(t *testing.T, s *Session, asm *compdef.AssemblyComponentDefini
 // one transaction event, navigated through the same generalized recipe-store stream a part edit
 // uses. Undo removes the occurrence (restore the prior recipe, then re-bind), redo restores it.
 func TestAssemblyPlaceIsUndoable(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	trackFromHere(s) // baseline = empty assembly, the state undo returns to
 
@@ -79,6 +80,7 @@ func TestAssemblyPlaceIsUndoable(t *testing.T) {
 // undo as a single step — the assembly path through Begin/EndTransaction now that the
 // transaction guards accept any recipe store, not only parts (#763).
 func TestAssemblyEditUndoIsOneStep(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	trackFromHere(s)
 

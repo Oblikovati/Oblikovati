@@ -68,6 +68,7 @@ func wallPoint(u, v float64) math.Point3 {
 // TestHoledCylinderWallAreaMatchesAnalytic meshes a windowed cylinder wall and checks the area equals the
 // full lateral area minus the window's R·Δu·Δv — i.e. the hole really is cut, with correct curved area.
 func TestHoledCylinderWallAreaMatchesAnalytic(t *testing.T) {
+	t.Parallel()
 	const uLo, uHi, vLo, vHi = stdmath.Pi / 4, stdmath.Pi / 2, 4.0, 8.0
 	face := windowedCylinderWall(t, uLo, uHi, vLo, vHi)
 
@@ -89,6 +90,7 @@ func TestHoledCylinderWallAreaMatchesAnalytic(t *testing.T) {
 // TestHoledCylinderWallMeshIsRouted confirms the dispatch reaches holedConicWallMesh for a holed
 // periodic cylinder side rather than falling through to the full-domain grid (which ignores holes).
 func TestHoledCylinderWallMeshIsRouted(t *testing.T) {
+	t.Parallel()
 	face := windowedCylinderWall(t, stdmath.Pi/4, stdmath.Pi/2, 4, 8)
 	outer := faceOuterBoundary(face, DefaultQuality())
 	holes := faceHoleBoundaries(face, DefaultQuality())
@@ -100,6 +102,7 @@ func TestHoledCylinderWallMeshIsRouted(t *testing.T) {
 // TestHoledCylinderWallDeclinesNoHoles: a plain (hole-free) cylinder side is the periodicBandGrid case, so
 // the holed mesher must decline it.
 func TestHoledCylinderWallDeclinesNoHoles(t *testing.T) {
+	t.Parallel()
 	side, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), wallR)
 	outer := []math.Point3{wallPoint(0, 0), wallPoint(2, 0), wallPoint(4, 0), wallPoint(0, wallH)}
 	if _, ok := holedConicWallMesh(side, outer, nil, DefaultQuality()); ok {
@@ -110,6 +113,7 @@ func TestHoledCylinderWallDeclinesNoHoles(t *testing.T) {
 // TestHoledCylinderWallDeclinesNonCylinder: only a cylinder unrolls with a flat metric, so a holed sphere
 // (or any other surface) must defer — the unroll-and-CDT path is cylinder-specific.
 func TestHoledCylinderWallDeclinesNonCylinder(t *testing.T) {
+	t.Parallel()
 	sph, _ := geom.NewSphere(math.P3(0, 0, 0), wallR)
 	outer := []math.Point3{wallPoint(0, 0), wallPoint(2, 0), wallPoint(4, 0)}
 	hole := []math.Point3{wallPoint(1, 1), wallPoint(1.2, 1), wallPoint(1.1, 1.2)}
@@ -121,6 +125,7 @@ func TestHoledCylinderWallDeclinesNonCylinder(t *testing.T) {
 // TestHoledCylinderWallDeclinesNonWrappingOuter: an outer loop that does NOT wrap the full period is an
 // ordinary contractible patch (toUVLoops handles it), so the wrapping-wall mesher must decline.
 func TestHoledCylinderWallDeclinesNonWrappingOuter(t *testing.T) {
+	t.Parallel()
 	side, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), wallR)
 	outer := []math.Point3{wallPoint(0, 0), wallPoint(0.5, 0), wallPoint(0.5, wallH), wallPoint(0, wallH)}
 	hole := []math.Point3{wallPoint(0.2, 4), wallPoint(0.3, 4), wallPoint(0.25, 6)}
@@ -138,6 +143,7 @@ func squareHoleUV(du float64) []math.Point2 {
 }
 
 func TestMeanLoopChord2D(t *testing.T) {
+	t.Parallel()
 	if got := meanLoopChord2D(squareHoleUV(0)); stdmath.Abs(got-1) > 1e-9 { // every edge is a unit segment
 		t.Errorf("meanLoopChord2D = %g, want 1", got)
 	}
@@ -147,6 +153,7 @@ func TestMeanLoopChord2D(t *testing.T) {
 }
 
 func TestMinCrossVertexDistance(t *testing.T) {
+	t.Parallel()
 	// squares at u∈[0,1] and u∈[5,6]: nearest vertices are u=1 and u=5, gap 4.
 	if got := minCrossVertexDistance(squareHoleUV(0), squareHoleUV(5)); stdmath.Abs(got-4) > 1e-9 {
 		t.Errorf("minCrossVertexDistance = %g, want 4", got)
@@ -154,6 +161,7 @@ func TestMinCrossVertexDistance(t *testing.T) {
 }
 
 func TestNeckCorridorNodes(t *testing.T) {
+	t.Parallel()
 	// Two holes 0.2 apart (gap/chord = 0.2 < nearNeckChords): the corridor between them is seeded.
 	if got := neckCorridorNodes([][]math.Point2{squareHoleUV(0), squareHoleUV(1.2)}); len(got) == 0 {
 		t.Error("neckCorridorNodes seeded nothing for near-touching holes (gap 0.2)")

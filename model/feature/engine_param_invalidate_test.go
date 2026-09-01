@@ -34,6 +34,7 @@ func mustUserParam(t *testing.T, ps *param.Parameters, name, expr string) *param
 }
 
 func TestMarkDirtyForChangeTargetsDirectReaderAndTail(t *testing.T) {
+	t.Parallel()
 	ps := param.NewParameters()
 	a := mustUserParam(t, ps, "a", "10 mm")
 	b := mustUserParam(t, ps, "b", "20 mm")
@@ -64,6 +65,7 @@ func TestMarkDirtyForChangeTargetsDirectReaderAndTail(t *testing.T) {
 }
 
 func TestMarkDirtyForChangeAlwaysRetriesSickFeature(t *testing.T) {
+	t.Parallel()
 	ps := param.NewParameters()
 	unrelated := mustUserParam(t, ps, "x", "1 mm")
 	fs := NewPartFeatures(ps)
@@ -91,6 +93,7 @@ func TestMarkDirtyForChangeAlwaysRetriesSickFeature(t *testing.T) {
 // change to that key rebuilds the feature and its tail — proving the generalization is real,
 // not speculative.
 func TestMarkDirtyForChangeAttributesExternalGeometryKey(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(param.NewParameters())
 	fs.Add(body()) // 0: independent
 	fs.Add(body()) // 1: stands in for a feature adapted to external geometry
@@ -111,6 +114,7 @@ func TestMarkDirtyForChangeAttributesExternalGeometryKey(t *testing.T) {
 }
 
 func TestMarkDirtyForChangeEmptyChangeIsNoOp(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(param.NewParameters())
 	fs.Add(body())
 	fs.Recompute()

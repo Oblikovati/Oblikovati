@@ -23,6 +23,7 @@ func hiQuality() Quality {
 // hit lands ON the sphere (|hit − centre| = R) to a tight tolerance — a tessellated pick lands on a
 // facet, inside the true surface by the facet sagitta.
 func TestRayCastFaceHitLiesExactlyOnSphere(t *testing.T) {
+	t.Parallel()
 	const r = 3.0
 	center := math.P3(0, 0, 0)
 	body, err := brep.SolidSphere(center, r, "sphere")
@@ -46,6 +47,7 @@ func TestRayCastFaceHitLiesExactlyOnSphere(t *testing.T) {
 // tessellation qualities and requires an identical face and hit distance, plus a hit exactly on the
 // analytic radius. The old per-facet mesh path drifts with facet count; the analytic path is exact.
 func TestRayCastFacesQualityIndependent(t *testing.T) {
+	t.Parallel()
 	const r, h = 3.0, 8.0
 	body, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
 	if err != nil {
@@ -81,6 +83,7 @@ func TestRayCastFacesQualityIndependent(t *testing.T) {
 // TestFindUsingRayFaceHitAnalytic requires FindUsingRay's face hit to land on the analytic surface
 // and be Quality-independent, for a facet-interior ray.
 func TestFindUsingRayFaceHitAnalytic(t *testing.T) {
+	t.Parallel()
 	const r, h = 2.0, 6.0
 	body, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
 	if err != nil {
@@ -110,6 +113,7 @@ func TestFindUsingRayFaceHitAnalytic(t *testing.T) {
 // to-next depth (Oblikovati#1882) depends on it. Regression for the analytic-pick boundary-grazing
 // miss.
 func TestRayCastFacesGrazingBoundaryEdge(t *testing.T) {
+	t.Parallel()
 	// Box spanning X[6,10], Y[0,4], Z[-2,2].
 	body, err := brep.SolidBlock(math.P3(6, 0, -2), math.P3(10, 4, 2), "box")
 	if err != nil {
@@ -136,6 +140,7 @@ func TestRayCastFacesGrazingBoundaryEdge(t *testing.T) {
 // perpendicular foot on the analytic surface, independent of tessellation Quality. The query point
 // is at an off-seam azimuth so the mesh foot would drift.
 func TestLocateUsingPointFaceAnalytic(t *testing.T) {
+	t.Parallel()
 	const r, h = 4.0, 10.0
 	body, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
 	if err != nil {

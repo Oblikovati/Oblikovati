@@ -15,6 +15,7 @@ import (
 // orientable solid must be EVEN and ≤ 2 per shell (χ = Σ 2−2g, genus ≥ 0). It catches the odd or
 // too-large χ a dropped/doubled face would produce while every edge stays used twice (#1407).
 func TestEulerAdmissible(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		chi, shells int
 		want        bool
@@ -40,6 +41,7 @@ func TestEulerAdmissible(t *testing.T) {
 // Valid, confirming the check admits real B-reps (including holed and periodic faces) rather than
 // false-positiving on them.
 func TestValidateEulerCharacteristic(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	cutTarget, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
 	plane, _ := geom.NewPlane(math.P3(0, 0, 2), math.V3(1, 0, 2))

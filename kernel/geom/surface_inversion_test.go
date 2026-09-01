@@ -61,6 +61,7 @@ func perAxisStep(s Surface, q math.Point3, u, v float64) (float64, float64) {
 // skewed patch, the shared damped Gauss–Newton inversion reaches the perpendicularity
 // tolerance in a small fixed budget where the per-axis projection does not.
 func TestGaussNewtonConvergesWherePerAxisStalls(t *testing.T) {
+	t.Parallel()
 	s := skewedPatch(t)
 	// A target above the patch: the surface point at (0.3, 0.7) pushed out along the normal.
 	foot := s.PointAt(0.3, 0.7)
@@ -93,6 +94,7 @@ func TestGaussNewtonConvergesWherePerAxisStalls(t *testing.T) {
 // patch lands the foot perpendicular AND the refinement exits before the iteration cap
 // (rather than always running 40).
 func TestParamAtConvergesAndStopsEarly(t *testing.T) {
+	t.Parallel()
 	s := skewedPatch(t)
 	foot := s.PointAt(0.6, 0.25)
 	q := foot.TranslateBy(s.NormalAt(0.6, 0.25).Scale(0.3))
@@ -113,6 +115,7 @@ func TestParamAtConvergesAndStopsEarly(t *testing.T) {
 // TestParamNearRecoversParameters checks ParamNear (the mesher/SSI seed-march entry point)
 // recovers the parameters of a known surface point from a nearby seed, perpendicular.
 func TestParamNearRecoversParameters(t *testing.T) {
+	t.Parallel()
 	s := skewedPatch(t)
 	want := s.PointAt(0.42, 0.58)
 	u, v := s.ParamNear(want, 0.4, 0.6)

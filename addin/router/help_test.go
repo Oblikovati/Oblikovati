@@ -9,6 +9,7 @@ import (
 )
 
 func TestHelpOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "help.registerContext",
 		`{"source":"com.x.sim","base":"https://docs.example.org/sim/"}`, nil)

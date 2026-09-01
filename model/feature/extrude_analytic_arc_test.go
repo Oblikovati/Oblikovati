@@ -64,6 +64,7 @@ func capEdgeCurveCounts(f *topo.Face) (arcs, lines, other int) {
 // TestExtrudeStadiumKeepsAnalyticArcCapEdges: the stadium (two arcs + two lines) must extrude to a
 // cap bounded by exactly two arc edges and two line edges — not a chord polygon (#2164).
 func TestExtrudeStadiumKeepsAnalyticArcCapEdges(t *testing.T) {
+	t.Parallel()
 	const l, r, h = 10.0, 3.0, 4.0
 	sk := stadiumSketch(l, r)
 	b := extrudeProfile(t, sk, 0, h)
@@ -96,6 +97,7 @@ func concaveNotchSketch() *sketch.Sketch {
 // is OUTSIDE the material must build a REVERSED cylinder wall. A wrong orientation makes the solid
 // non-watertight or adds the bite instead of removing it — both caught here.
 func TestExtrudeConcaveArcNotchReversedCylinder(t *testing.T) {
+	t.Parallel()
 	const h = 3.0
 	sk := concaveNotchSketch()
 	b := extrudeProfile(t, sk, 0, h)
@@ -114,6 +116,7 @@ func TestExtrudeConcaveArcNotchReversedCylinder(t *testing.T) {
 // inverted. (Analyticity itself is asserted by the cap-edge test; meshing an arc always undershoots
 // the exact value slightly, so this uses the 2% curved-volume tolerance, not an exact match.)
 func TestExtrudeStadiumAnalyticVolume(t *testing.T) {
+	t.Parallel()
 	const l, r, h = 10.0, 3.0, 4.0
 	sk := stadiumSketch(l, r)
 	b := extrudeProfile(t, sk, 0, h)

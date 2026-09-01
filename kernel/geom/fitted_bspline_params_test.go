@@ -16,6 +16,7 @@ var fitTestPoints = []math.Point2{
 // TestFittedParamCurvePassesThroughPoints: every parameterization must
 // interpolate — curve(ūₖ) = pₖ exactly (to solver tolerance).
 func TestFittedParamCurvePassesThroughPoints(t *testing.T) {
+	t.Parallel()
 	for _, param := range []FitParameterization{FitCentripetal, FitChordLength, FitUniform} {
 		curve, ubar, err := NewFittedBSplineCurve2dParam(fitTestPoints, param)
 		if err != nil {
@@ -37,6 +38,7 @@ func TestFittedParamCurvePassesThroughPoints(t *testing.T) {
 // parameterizations must produce genuinely different curves between points —
 // otherwise the public fit methods would be dead settings.
 func TestFitParameterizationsDiffer(t *testing.T) {
+	t.Parallel()
 	centr, _, err := NewFittedBSplineCurve2dParam(fitTestPoints, FitCentripetal)
 	if err != nil {
 		t.Fatalf("centripetal: %v", err)
@@ -61,6 +63,7 @@ func TestFitParameterizationsDiffer(t *testing.T) {
 // every loop point at its returned parameter and returns to points[0] at the
 // final (wrap) parameter, with a tangent-continuous seam.
 func TestClosedFittedCurveInterpolatesAndCloses(t *testing.T) {
+	t.Parallel()
 	loop := []math.Point2{math.P2(2, 0), math.P2(0, 1.5), math.P2(-2, 0), math.P2(0, -1.5)}
 	curve, ubar, err := NewClosedFittedBSplineCurve2d(loop, FitCentripetal)
 	if err != nil {
@@ -87,6 +90,7 @@ func TestClosedFittedCurveInterpolatesAndCloses(t *testing.T) {
 
 // TestClosedFitRejectsTinyLoops: fewer than 3 points cannot enclose a loop.
 func TestClosedFitRejectsTinyLoops(t *testing.T) {
+	t.Parallel()
 	if _, _, err := NewClosedFittedBSplineCurve2d(fitTestPoints[:2], FitCentripetal); err == nil {
 		t.Error("a 2-point closed fit must be rejected")
 	}
@@ -94,6 +98,7 @@ func TestClosedFitRejectsTinyLoops(t *testing.T) {
 
 // TestFittedBSplineCurve3dParamInterpolates: the 3D variant interpolates too.
 func TestFittedBSplineCurve3dParamInterpolates(t *testing.T) {
+	t.Parallel()
 	pts := []math.Point3{
 		math.P3(0, 0, 0), math.P3(1, 2, 1), math.P3(3, 2, -1), math.P3(4, 0, 0),
 	}
@@ -110,6 +115,7 @@ func TestFittedBSplineCurve3dParamInterpolates(t *testing.T) {
 
 // TestClosedFittedBSplineCurve3dCloses: 3D closed loops seam back to start.
 func TestClosedFittedBSplineCurve3dCloses(t *testing.T) {
+	t.Parallel()
 	loop := []math.Point3{math.P3(1, 0, 0), math.P3(0, 1, 0.5), math.P3(-1, 0, 0), math.P3(0, -1, -0.5)}
 	curve, ubar, err := NewClosedFittedBSplineCurve(loop, FitCentripetal)
 	if err != nil {

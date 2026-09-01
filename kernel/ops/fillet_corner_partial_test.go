@@ -51,6 +51,7 @@ func boxEdgeMatches(a, c, p, q math.Point3) bool {
 // face — matching the ordinary trihedral solveBlend's own face count, even though this box corner
 // is never actually routed through solvePartialCorner (its vertex valence is 3, not >3).
 func TestTouchedFacesOfPicksBoxCorner(t *testing.T) {
+	t.Parallel()
 	ps := boxCornerPicks(t, testBox5(t), 1)
 	touched := touchedFacesOfPicks(ps)
 	if len(touched) != 3 {
@@ -64,6 +65,7 @@ func TestTouchedFacesOfPicksBoxCorner(t *testing.T) {
 // them. This is the structural condition that makes chainArcs panic (see the file doc comment);
 // asserting it here, independent of solveCorner's dispatch, pins the pure detector's own logic.
 func TestPartialCornerLoopGapDetectsOpenFan(t *testing.T) {
+	t.Parallel()
 	ps := boxCornerPicks(t, testBox5(t), 1)
 	touched := touchedFacesOfPicks(ps)
 	gap := partialCornerLoopGap(touched, ps)
@@ -77,6 +79,7 @@ func TestPartialCornerLoopGapDetectsOpenFan(t *testing.T) {
 // face reached by two independent picks (or, degenerately, one pick counted twice) satisfies
 // closure. This regresses the degree-counting arithmetic itself, decoupled from any real topology.
 func TestPartialCornerLoopGapNilOnFullCycle(t *testing.T) {
+	t.Parallel()
 	ps := boxCornerPicks(t, testBox5(t), 1)
 	touched := touchedFacesOfPicks(ps)
 	doubled := append(append([]filletPick{}, ps...), ps...) // every touched face now has degree 2 or 4
@@ -90,6 +93,7 @@ func TestPartialCornerLoopGapNilOnFullCycle(t *testing.T) {
 // partial planar corner (its cone has no seam with a cylinder) — same precondition the full-round
 // K-gon (fullRoundArmsSupported) and the ordinary miter both enforce.
 func TestPartialCornerArmsSupportedRejectsVaryingRadius(t *testing.T) {
+	t.Parallel()
 	ps := boxCornerPicks(t, testBox5(t), 1)
 	ps[0].r1 = 2 // varying: r0=1, r1=2
 	if err := partialCornerArmsSupported(ps); err == nil {
@@ -119,6 +123,7 @@ func sharedCornerVertexID(t *testing.T, ps []filletPick) uint64 {
 // solvePartialCorner) — pinned here against known-good geometry instead of only exercised
 // indirectly through the corpus fixtures that currently never reach it.
 func TestArmSpinePerpDistanceZeroAtTrihedralSphereCentre(t *testing.T) {
+	t.Parallel()
 	box := testBox5(t)
 	ps := boxCornerPicks(t, box, 1)
 	v := vertexByID(edgesOf(ps), sharedCornerVertexID(t, ps))

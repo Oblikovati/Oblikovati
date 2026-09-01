@@ -32,6 +32,7 @@ func triSetArea(tris [][3]int, outer []math.Point2, holes [][]math.Point2) float
 // (overlapping) bar holes used to collapse a ring and nil-deref in cureLocalIntersections /
 // splitEarcut. It must now triangulate without panicking (best-effort on this degenerate input).
 func TestEarcutOverlappingGridHolesNoPanic(t *testing.T) {
+	t.Parallel()
 	outer := rectHole(0, 0, 10, 10)
 	var holes [][]math.Point2
 	for _, x := range []float64{3, 5, 7} {
@@ -48,6 +49,7 @@ func TestEarcutOverlappingGridHolesNoPanic(t *testing.T) {
 
 // TestEarcutPairOverlapNoPanic: a pair of overlapping holes also triangulates without panic.
 func TestEarcutPairOverlapNoPanic(t *testing.T) {
+	t.Parallel()
 	outer := rectHole(0, 0, 10, 10)
 	holes := [][]math.Point2{rectHole(3, 3, 6, 6), rectHole(5, 5, 8, 8)}
 	_ = earcut(outer, holes) // must not panic
@@ -56,6 +58,7 @@ func TestEarcutPairOverlapNoPanic(t *testing.T) {
 // TestEarcutDisjointHolesExactArea guards against regression: with valid, non-overlapping
 // holes the triangulation still covers exactly outer − holes.
 func TestEarcutDisjointHolesExactArea(t *testing.T) {
+	t.Parallel()
 	outer := rectHole(0, 0, 10, 10)
 	holes := [][]math.Point2{rectHole(1, 1, 3, 9), rectHole(4, 1, 6, 9), rectHole(7, 1, 9, 9)}
 	want := 100.0

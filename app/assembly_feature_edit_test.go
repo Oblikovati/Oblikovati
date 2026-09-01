@@ -40,6 +40,7 @@ func setEditParam(t *testing.T, tool *AssemblyFeatureEditTool, label string, v f
 // TestAssemblyBrowserListsFeatures: a committed machining feature appears in a Features folder as a
 // selectable AssemblyFeatureHandle row (#766).
 func TestAssemblyBrowserListsFeatures(t *testing.T) {
+	t.Parallel()
 	s, asm, _ := chamferedAssembly(t)
 	name := asm.Features().Item(0).Name()
 
@@ -55,6 +56,7 @@ func TestAssemblyBrowserListsFeatures(t *testing.T) {
 // TestAssemblyFeatureEditChangesParameter: editing the chamfer's distance re-machines the
 // participant — a bigger setback removes more material (#766).
 func TestAssemblyFeatureEditChangesParameter(t *testing.T) {
+	t.Parallel()
 	s, asm, occ := chamferedAssembly(t)
 	before := participantMachinedVolume(asm, occ) // 16 − 0.2²/2·4 = 15.92
 
@@ -75,6 +77,7 @@ func TestAssemblyFeatureEditChangesParameter(t *testing.T) {
 
 // TestAssemblyFeatureEditCancelRestores: cancelling an edit restores the parameter captured at open.
 func TestAssemblyFeatureEditCancelRestores(t *testing.T) {
+	t.Parallel()
 	s, asm, occ := chamferedAssembly(t)
 	original := participantMachinedVolume(asm, occ)
 
@@ -88,6 +91,7 @@ func TestAssemblyFeatureEditCancelRestores(t *testing.T) {
 
 // TestAssemblyFeatureEditIsUndoable: a committed parameter edit is one undo step.
 func TestAssemblyFeatureEditIsUndoable(t *testing.T) {
+	t.Parallel()
 	s, asm, occ := chamferedAssembly(t)
 	original := participantMachinedVolume(asm, occ)
 	trackFromHere(s) // baseline: the 0.2 chamfer
@@ -110,6 +114,7 @@ func TestAssemblyFeatureEditIsUndoable(t *testing.T) {
 // TestSuppressAssemblyFeatureToCurrentStateRecordsNothing: suppressing a feature to the state it is
 // already in is a no-op and pushes no undo step (#766).
 func TestSuppressAssemblyFeatureToCurrentStateRecordsNothing(t *testing.T) {
+	t.Parallel()
 	s, asm, _ := chamferedAssembly(t)
 	trackFromHere(s) // baseline: the feature is unsuppressed
 	if err := s.SuppressAssemblyFeature(asm.Features().Item(0), false); err != nil {
@@ -123,6 +128,7 @@ func TestSuppressAssemblyFeatureToCurrentStateRecordsNothing(t *testing.T) {
 // TestDeleteAssemblyFeatureRejectsUnknown: deleting a feature that is not in the assembly (here, a
 // second delete of an already-removed feature) errors and names the feature is not present.
 func TestDeleteAssemblyFeatureRejectsUnknown(t *testing.T) {
+	t.Parallel()
 	s, asm, _ := chamferedAssembly(t)
 	af := asm.Features().Item(0)
 	if err := s.DeleteAssemblyFeature(af); err != nil {
@@ -136,6 +142,7 @@ func TestDeleteAssemblyFeatureRejectsUnknown(t *testing.T) {
 // TestAssemblyFeatureMenuAndDelete: the feature menu offers Edit/Suppress/Delete, and Delete
 // removes the feature (undoably).
 func TestAssemblyFeatureMenuAndDelete(t *testing.T) {
+	t.Parallel()
 	s, asm, _ := chamferedAssembly(t)
 	af := asm.Features().Item(0)
 	node := findBrowserNode(BuildBrowser(s), "assemblyFeature", af.Name())

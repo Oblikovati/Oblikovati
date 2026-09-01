@@ -32,6 +32,7 @@ func rectilinearUnitLoop() []math.Point2 {
 // TestIsoRectilinearGridDecomposesANotchedRectangle is the shape the imprint produces: the grid lines
 // are the loop's own coordinates, and the cells it keeps reproduce the loop's area exactly.
 func TestIsoRectilinearGridDecomposesANotchedRectangle(t *testing.T) {
+	t.Parallel()
 	loop := rectilinearUnitLoop()
 	us, vs, skip, ok := isoRectilinearGrid(loop)
 	if !ok {
@@ -54,6 +55,7 @@ func TestIsoRectilinearGridDecomposesANotchedRectangle(t *testing.T) {
 // already meshes: with no cell removed there is nothing this decomposition adds, and answering here
 // would divert an existing green.
 func TestIsoRectilinearGridDeclinesAPlainRectangle(t *testing.T) {
+	t.Parallel()
 	var loop []math.Point2
 	corners := []math.Point2{math.P2(0, 0), math.P2(4, 0), math.P2(4, 10), math.P2(0, 10)}
 	for i := range corners {
@@ -71,6 +73,7 @@ func TestIsoRectilinearGridDeclinesAPlainRectangle(t *testing.T) {
 // that is neither an iso-u nor an iso-v line means the trim is NOT a union of grid cells, and filling
 // cells would cover area the trim does not have.
 func TestIsoRectilinearGridDeclinesAnObliqueRun(t *testing.T) {
+	t.Parallel()
 	loop := []math.Point2{math.P2(0, 0), math.P2(4, 0), math.P2(4, 8), math.P2(3, 10), math.P2(0, 10)}
 	if _, _, _, ok := isoRectilinearGrid(loop); ok {
 		t.Error("isoRectilinearGrid accepted a trim with an oblique run")
@@ -81,6 +84,7 @@ func TestIsoRectilinearGridDeclinesAnObliqueRun(t *testing.T) {
 // whose runs are all iso-lines but which pinches shut encloses less than its cells would fill, so the
 // cover check must reject it rather than mesh the pinched-off lobe.
 func TestIsoRectilinearGridDeclinesASelfTouchingTrim(t *testing.T) {
+	t.Parallel()
 	loop := []math.Point2{
 		math.P2(0, 0), math.P2(4, 0), math.P2(4, 4), math.P2(0, 4),
 		math.P2(0, 8), math.P2(4, 8), math.P2(4, 4), math.P2(0, 4),
@@ -95,6 +99,7 @@ func TestIsoRectilinearGridDeclinesASelfTouchingTrim(t *testing.T) {
 // (π/2·25·100 − 25·(asin .6 − asin .2)·10 = 3816.455) to the boundary's own chord budget. Through the
 // generic CDT the same face costs ~40 s and lands on the boundary-only ear-clip, 0.59 % OVER.
 func TestIsoRectilinearGridMeshesTheImprintedBandExactly(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		bandCase
 		bite float64

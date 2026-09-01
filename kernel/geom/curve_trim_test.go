@@ -11,6 +11,7 @@ import (
 // TestTrimmedCurve3RestrictsDomain: a forward restriction re-presents [Lo,Hi] over [0,1],
 // mapping the unit endpoints to the base points at Lo and Hi.
 func TestTrimmedCurve3RestrictsDomain(t *testing.T) {
+	t.Parallel()
 	base := NewLineSegment(math.P3(0, 0, 0), math.P3(9, 0, 0))
 	tc := TrimmedCurve3{Base: base, Lo: 1.0 / 3, Hi: 2.0 / 3}
 	if lo, hi := tc.Domain(); lo != 0 || hi != 1 {
@@ -32,6 +33,7 @@ func TestTrimmedCurve3RestrictsDomain(t *testing.T) {
 // is the HIGH base point and the tangent flips sign, so a canal sub-edge sampled in reverse still
 // runs pts[i]→pts[i+1] in loop order.
 func TestTrimmedCurve3ReversedOrientation(t *testing.T) {
+	t.Parallel()
 	base := NewLineSegment(math.P3(0, 0, 0), math.P3(9, 0, 0))
 	tc := TrimmedCurve3{Base: base, Lo: 2.0 / 3, Hi: 1.0 / 3}
 	if got := tc.PointAt(0); got != base.PointAt(2.0/3) {
@@ -49,6 +51,7 @@ func TestTrimmedCurve3ReversedOrientation(t *testing.T) {
 // the chord) — the property that lets the trimmed sub-span kill the residual patch folds a straight
 // chord would leave (n7-tessellation-diagnosis.md §2).
 func TestTrimmedCurve3FollowsCurvedBase(t *testing.T) {
+	t.Parallel()
 	arc, err := Arc3dByThreePoints(math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(-1, 0, 0))
 	if err != nil {
 		t.Fatalf("Arc3dByThreePoints: %v", err)

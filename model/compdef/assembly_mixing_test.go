@@ -13,6 +13,7 @@ import (
 // the placement transform, so its geometry lands at the right size. A same-unit placement is
 // unchanged.
 func TestAssemblyMixingConvertsAtPlacement(t *testing.T) {
+	t.Parallel()
 	// Same block geometry, but the part's working unit is the millimetre (0.1 cm), while the
 	// assembly works in centimetres. Placing it must shrink the stored coordinates by 0.1.
 	part := partWithBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2))

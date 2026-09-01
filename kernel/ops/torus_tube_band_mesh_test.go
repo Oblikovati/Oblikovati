@@ -13,6 +13,7 @@ import (
 // azimuth, tube angle sweeping 2π) wraps the tube; a LATITUDE circle (fixed tube angle, azimuth
 // sweeping 2π) does not.
 func TestWrapsTube(t *testing.T) {
+	t.Parallel()
 	tor := weTestTorus(t, 200, 50)
 	meridian := make([]math.Point3, 0, 65)
 	latitude := make([]math.Point3, 0, 65)
@@ -32,6 +33,7 @@ func TestWrapsTube(t *testing.T) {
 // TestUSpread pins the iso-u census: a constant azimuth set spreads 0; a ±0.1 rad wander spreads 0.2;
 // the measure is wrap-safe across the 0/2π seam.
 func TestUSpread(t *testing.T) {
+	t.Parallel()
 	if s := uSpread([]float64{1.5, 1.5, 1.5}); s != 0 {
 		t.Fatalf("constant azimuths spread %.3g, want 0", s)
 	}
@@ -46,6 +48,7 @@ func TestUSpread(t *testing.T) {
 // TestTubeBandCircleAndRail pins the ring classification: an iso-u meridian ring is the CIRCLE, a
 // wandering ring is the RAIL, and two wandering rings are ambiguous (decline).
 func TestTubeBandCircleAndRail(t *testing.T) {
+	t.Parallel()
 	tor := weTestTorus(t, 200, 50)
 	iso := make([]math.Point3, 0, 64)
 	wander := make([]math.Point3, 0, 64)

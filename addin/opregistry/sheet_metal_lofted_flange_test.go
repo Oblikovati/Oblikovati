@@ -25,6 +25,7 @@ func addLProfile(def *compdef.PartComponentDefinition, plane sketch.Plane, w, h 
 // TestSheetMetalLoftedFlangeApply lofts a wall between two open profiles on a sheet-metal part
 // and confirms one healthy solid; then checks the error paths.
 func TestSheetMetalLoftedFlangeApply(t *testing.T) {
+	t.Parallel()
 	s := sheetMetalProfiledPart(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	planeB, _ := sketch.NewPlane(math.P3(0, 0, 3), math.V3(1, 0, 0).AsUnit(), math.V3(0, 1, 0).AsUnit())

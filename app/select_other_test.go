@@ -14,6 +14,7 @@ import (
 // TestPickAllReturnsOccludedBodiesFrontToBack aims a ray through two stacked boxes and checks
 // PickAll returns both, the nearer one first — the occluded-geometry list Select Other walks.
 func TestPickAllReturnsOccludedBodiesFrontToBack(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4) // box [0,2]×[0,2]×[0,4], centre (1,1,2)
 	front := partBodies(s)()[0]
 	back := front
@@ -51,6 +52,7 @@ func (f fakeMultiPicker) Pick(_, _ float64, _ *SelectionFilter) (Selectable, boo
 func (f fakeMultiPicker) PickAll(_, _ float64, _ *SelectionFilter) []Selectable { return f.all }
 
 func TestSelectOtherCyclesAndCommits(t *testing.T) {
+	t.Parallel()
 	a, b, c := FaceHandle{Face: aFace()}, EdgeHandle{}, FaceHandle{Face: aFace()}
 	s := NewSession()
 	s.SetPicker(fakeMultiPicker{all: []Selectable{a, b, c}})
@@ -81,6 +83,7 @@ func TestSelectOtherCyclesAndCommits(t *testing.T) {
 }
 
 func TestBeginSelectOtherNoopWhenNothingOccluded(t *testing.T) {
+	t.Parallel()
 	a := FaceHandle{Face: aFace()}
 	// Fewer than two candidates → not worth cycling.
 	one := NewSession()

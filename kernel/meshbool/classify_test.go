@@ -8,6 +8,7 @@ import (
 )
 
 func TestCentroidInterior(t *testing.T) {
+	t.Parallel()
 	tr := tri([3]float64{0, 0, 0}, [3]float64{6, 0, 0}, [3]float64{0, 6, 0})
 	if got := centroid(tr); !got.Equal(pt([3]float64{2, 2, 0})) {
 		t.Fatalf("centroid = %v, want (2,2,0)", got.Round())
@@ -18,6 +19,7 @@ func TestCentroidInterior(t *testing.T) {
 // outward-oriented solid, so its divergence-theorem volume is the positive box
 // volume. Downstream Boolean volume checks rely on this.
 func TestBoxMeshVolumeSign(t *testing.T) {
+	t.Parallel()
 	got := meshVolume(boxMesh([3]float64{0, 0, 0}, [3]float64{2, 1, 3}))
 	if math.Abs(got-6) > 1e-9 {
 		t.Fatalf("box volume = %.6f, want 6 (outward orientation)", got)

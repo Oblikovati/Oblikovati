@@ -40,6 +40,7 @@ func lensLoop(s geom.Surface, theta0, v0, rTheta, rV float64, n int) []math.Poin
 // through the seam bridge to the unrolled CDT with the correct curved area (≈ 2πRh, minus the small lens) —
 // NOT the flat best-fit-plane patch the generic trim path would give (which would grossly under-report area).
 func TestTwoRimHoledBandMeshesFullBand(t *testing.T) {
+	t.Parallel()
 	s := bandCylinder(10)
 	top := rimLoop(s, 10, 96)
 	bot := rimLoop(s, 0, 96)
@@ -62,6 +63,7 @@ func TestTwoRimHoledBandMeshesFullBand(t *testing.T) {
 // TestTwoRimHoledBandDeclinesWithoutWrappingRim: with no second full-wrap rim among the holes (only a lens),
 // the face is the ordinary drilled-wall case holedConicWallMesh owns, so this mesher must defer.
 func TestTwoRimHoledBandDeclinesWithoutWrappingRim(t *testing.T) {
+	t.Parallel()
 	s := bandCylinder(10)
 	seamWrap := rimLoop(s, 10, 64) // a single seam-wrapping outer (stand-in) — no rim among the holes
 	lens := lensLoop(s, 0, 5, 0.12, 0.35, 40)
@@ -72,6 +74,7 @@ func TestTwoRimHoledBandDeclinesWithoutWrappingRim(t *testing.T) {
 
 // TestSplitWrappingHolesPartitions: a full-circle rim is classed as a wrapping rim, a small lens as a lens.
 func TestSplitWrappingHolesPartitions(t *testing.T) {
+	t.Parallel()
 	s := bandCylinder(10)
 	rim := rimLoop(s, 0, 64)
 	lens := lensLoop(s, stdmath.Pi, 5, 0.1, 0.3, 32)

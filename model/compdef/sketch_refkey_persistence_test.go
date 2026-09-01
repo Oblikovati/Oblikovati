@@ -60,6 +60,7 @@ func firstLine(t *testing.T, part *compdef.PartComponentDefinition) sketch.Entit
 // the file from disk — tying the persistence store, the document GUID, verbatim-id restore,
 // and key derivation together (not just the in-memory recipe codec).
 func TestSketchKeySurvivesRealFileRoundTrip(t *testing.T) {
+	t.Parallel()
 	store, ws, dir := assemblyWorkspace(t)
 	path := filepath.Join(dir, "keyed.obk")
 

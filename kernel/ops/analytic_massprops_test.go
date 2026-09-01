@@ -22,6 +22,7 @@ func relErrMP(got, want float64) float64 {
 // A box is six planar faces; the analytic (exact polygon) integration must reproduce the closed
 // forms for volume, area, centroid and per-unit-density inertia to machine precision.
 func TestAnalyticBoxMatchesClosedForm(t *testing.T) {
+	t.Parallel()
 	a, b, c := 4.0, 2.0, 1.0
 	body, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(m.Scalar(a), m.Scalar(b), m.Scalar(c)), "box")
 	if err != nil {
@@ -69,6 +70,7 @@ func TestAnalyticBoxMatchesClosedForm(t *testing.T) {
 // A sphere is one boundary-less analytic face — the full-domain quadrature must recover
 // V=4/3πr³, A=4πr² and I=2/5·V·r² about the centre.
 func TestAnalyticSphereMatchesClosedForm(t *testing.T) {
+	t.Parallel()
 	r := 3.0
 	body, err := brep.SolidSphere(m.P3(0, 0, 0), r, "sphere")
 	if err != nil {
@@ -99,6 +101,7 @@ func TestAnalyticSphereMatchesClosedForm(t *testing.T) {
 // A cylinder is two planar caps plus a periodic side face whose loop wraps the seam — the uv
 // reconstruction and Green's-theorem integral must recover the closed forms.
 func TestAnalyticCylinderMatchesClosedForm(t *testing.T) {
+	t.Parallel()
 	r, h := 2.0, 5.0
 	body, err := brep.SolidCylinder(m.P3(0, 0, 0), m.V3(0, 0, 1), r, h)
 	if err != nil {
@@ -133,6 +136,7 @@ func TestAnalyticCylinderMatchesClosedForm(t *testing.T) {
 
 // A torus is one boundary-less face; check volume 2π²Rr² and area 4π²Rr.
 func TestAnalyticTorusMatchesClosedForm(t *testing.T) {
+	t.Parallel()
 	bigR, smallR := 5.0, 1.0
 	body, err := brep.SolidTorus(m.P3(0, 0, 0), m.V3(0, 0, 1), bigR, smallR, "torus")
 	if err != nil {
@@ -153,6 +157,7 @@ func TestAnalyticTorusMatchesClosedForm(t *testing.T) {
 // The analytic volume must be translation-invariant (the divergence integrand references the
 // origin, but the off-origin parts cancel).
 func TestAnalyticVolumeTranslationInvariant(t *testing.T) {
+	t.Parallel()
 	at := func(x, y, z float64) float64 {
 		body, _ := brep.SolidCylinder(m.P3(m.Scalar(x), m.Scalar(y), m.Scalar(z)), m.V3(0, 0, 1), 2, 5)
 		gp, ok := AnalyticGeometryProperties(body)
@@ -169,6 +174,7 @@ func TestAnalyticVolumeTranslationInvariant(t *testing.T) {
 // Cross-check the analytic path against a fine tessellation for a cone frustum (a bounded
 // curved side face). The analytic value is the exact one; the fine mesh should be close.
 func TestAnalyticConeAgreesWithFineMesh(t *testing.T) {
+	t.Parallel()
 	body, err := brep.SolidCylinderCone(m.P3(0, 0, 0), m.P3(0, 0, 8), 3, 1.5, "frustum")
 	if err != nil {
 		t.Fatalf("SolidCylinderCone: %v", err)

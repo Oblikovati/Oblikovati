@@ -55,6 +55,7 @@ func planarCapFace(t *testing.T, body *topo.Body) *topo.Face {
 // committing must project that face's perimeter — one projected curve, a real circle. Before the
 // fix the tool accepted only edges/vertices, so the face never highlighted and nothing projected.
 func TestProjectGeometryProjectsCircularCapPerimeter(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	buildCylinderPart(def, 2, 4)
 	body := def.SurfaceBodies().All()[0]
@@ -97,6 +98,7 @@ func TestProjectGeometryProjectsCircularCapPerimeter(t *testing.T) {
 // dialog, so a pick projects immediately (no OK step) and the tool stays armed for the next pick —
 // the reported gap where a click on a highlighted face produced no projected geometry.
 func TestProjectGeometryProjectsOnPickWithoutOK(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	buildCylinderPart(def, 2, 4)
 	body := def.SurfaceBodies().All()[0]
@@ -122,6 +124,7 @@ func TestProjectGeometryProjectsOnPickWithoutOK(t *testing.T) {
 // face must project every one of its bounding edges, not just one, so a polygonal face yields its
 // whole outline (#2158).
 func TestProjectGeometryProjectsAllFaceEdges(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4) // box [0,2]×[0,2]×[0,4]
 	body := partBodies(s)()[0]
 

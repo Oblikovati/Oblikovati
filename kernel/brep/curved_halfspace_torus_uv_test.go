@@ -13,6 +13,7 @@ import (
 // TestTorusUVParamOfInvertsPoint: torusUV.paramOf inverts the torus surface point (seam-shifted) back to its
 // (u,v) — the round-trip the spiric imprint sampling relies on (Oblikovati#1406).
 func TestTorusUVParamOfInvertsPoint(t *testing.T) {
+	t.Parallel()
 	tor, _ := geom.NewTorus(math.P3(1, -2, 3), math.V3(0, 0, 1), 5, 2)
 	c := torusUV{torus: tor, seamU: 0.7, seamV: 2.1}
 	for i := range 8 {
@@ -43,6 +44,7 @@ func angGap(a, b float64) float64 {
 // torusSpiricSection returns its two ±1 branches over a centred [v0,v1] (v0<v1, not 2π-shifted), each lying
 // on both the torus and the plane (Oblikovati#1406).
 func TestTorusSpiricSectionCap(t *testing.T) {
+	t.Parallel()
 	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
 	plane, _ := geom.NewPlane(math.P3(0, 6, 0), math.V3(0, -1, 0)) // |K|/M = 6, between R−r=3 and R+r=7
 	section, ok := torusSpiricSection(tor, plane)
@@ -69,6 +71,7 @@ func TestTorusSpiricSectionCap(t *testing.T) {
 // TestTorusSpiricSectionPerpendicularDefers: a plane perpendicular to the axis has no spiric section (it cuts
 // two circles, handled analytically), so torusSpiricSection reports ok=false (Oblikovati#1406).
 func TestTorusSpiricSectionPerpendicularDefers(t *testing.T) {
+	t.Parallel()
 	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
 	plane, _ := geom.NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1))
 	if _, ok := torusSpiricSection(tor, plane); ok {
@@ -80,6 +83,7 @@ func TestTorusSpiricSectionPerpendicularDefers(t *testing.T) {
 // reversed loop traversal (t0>t1), so the direction-sensitive spiric mesher charts the same patch either way
 // — the fix that made the unified cap match the analytic cap's mesh exactly (Oblikovati#1406).
 func TestSpiricArcOfNativeOrdering(t *testing.T) {
+	t.Parallel()
 	base := geom.SpiricArc{Phi: 0.3, M: 1, K: -6, C: 0, Branch: 1, V0: -1, V1: 1}
 	fwd := spiricArcOf(base, 0, 1).(geom.SpiricArc)
 	rev := spiricArcOf(base, 1, 0).(geom.SpiricArc) // reversed traversal

@@ -22,6 +22,7 @@ func addAliased(t *testing.T, s *Session, id, alias string, ran *bool) {
 }
 
 func TestCommandInputCommitsCustomAlias(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := false
 	addAliased(t, s, "Test.Extrude", "EXT", &ran)
@@ -42,6 +43,7 @@ func TestCommandInputCommitsCustomAlias(t *testing.T) {
 }
 
 func TestCommandInputRejectsSingleLetter(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := false
 	cmd := NewCommand("Test.Line", "Line", "Test", func(*Session) error { ran = true; return nil }).WithDefaultChord("Ctrl+L")
@@ -60,6 +62,7 @@ func TestCommandInputRejectsSingleLetter(t *testing.T) {
 }
 
 func TestCommandInputMatchesPrefix(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := false
 	addAliased(t, s, "Test.Extrude", "EXT", &ran)
@@ -73,6 +76,7 @@ func TestCommandInputMatchesPrefix(t *testing.T) {
 }
 
 func TestCommandInputCommitMissStaysOpen(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.BeginCommandInput()
 	s.SetCommandInputText("nope")
@@ -88,6 +92,7 @@ func TestCommandInputCommitMissStaysOpen(t *testing.T) {
 }
 
 func TestCommandInputBufferEditingViaPressKey(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := false
 	addAliased(t, s, "Test.Extrude", "EXT", &ran)
@@ -110,6 +115,7 @@ func TestCommandInputBufferEditingViaPressKey(t *testing.T) {
 }
 
 func TestCommandInputEscapeCancels(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.BeginCommandInput()
 	s.SetCommandInputText("ex")
@@ -124,6 +130,7 @@ func TestCommandInputEscapeCancels(t *testing.T) {
 // While the box is open, a chord must NOT trigger its global shortcut — the keystroke is
 // captured by the buffer instead (the head additionally gates this on text focus).
 func TestCommandInputCapturesKeysFromShortcuts(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := false
 	cmd := NewCommand("Test.Line", "Line", "Test", func(*Session) error { ran = true; return nil }).WithAlias("L")

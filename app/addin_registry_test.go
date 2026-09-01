@@ -62,6 +62,7 @@ func manifestedAddIn(id string) *FakeManifestedAddIn {
 }
 
 func TestDescribeReadsManifestAndRuntimeState(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := manifestedAddIn("com.x.a")
 	if err := s.AddIns().Register(a); err != nil {
@@ -87,12 +88,14 @@ func TestDescribeReadsManifestAndRuntimeState(t *testing.T) {
 }
 
 func TestDescribeUnknownAddInFails(t *testing.T) {
+	t.Parallel()
 	if _, err := NewSession().AddIns().Describe("com.x.ghost"); err == nil {
 		t.Fatal("Describe(unknown) should fail")
 	}
 }
 
 func TestDescribeToleratesMalformedManifest(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := &FakeManifestedAddIn{id: "com.x.bad", manifest: "{not json"}
 	if err := s.AddIns().Register(a); err != nil {
@@ -105,6 +108,7 @@ func TestDescribeToleratesMalformedManifest(t *testing.T) {
 }
 
 func TestSetLoadBehaviorPersistsNonDefaultsOnly(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	store := &FakeBehaviorStore{}
 	if err := s.AddIns().UseBehaviorStore(store); err != nil {
@@ -134,12 +138,14 @@ func TestSetLoadBehaviorPersistsNonDefaultsOnly(t *testing.T) {
 }
 
 func TestSetLoadBehaviorUnknownAddInFails(t *testing.T) {
+	t.Parallel()
 	if err := NewSession().AddIns().SetLoadBehavior("com.x.ghost", types.LoadDisabled); err == nil {
 		t.Fatal("SetLoadBehavior(unknown) should fail")
 	}
 }
 
 func TestUseBehaviorStoreSeedsStoredBehaviors(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	store := &FakeBehaviorStore{stored: map[string]types.AddInLoadBehavior{
 		"com.x.a": types.LoadDisabled,
@@ -153,6 +159,7 @@ func TestUseBehaviorStoreSeedsStoredBehaviors(t *testing.T) {
 }
 
 func TestActivateRefusesDisabledAddIn(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.AddIns().Register(manifestedAddIn("com.x.a")); err != nil {
 		t.Fatalf("Register: %v", err)
@@ -171,6 +178,7 @@ func TestActivateRefusesDisabledAddIn(t *testing.T) {
 // TestCallAutomationRoutesBetweenAddIns is the #252 acceptance at the registry
 // level: one add-in reaches another's automation surface through the host.
 func TestCallAutomationRoutesBetweenAddIns(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	target := manifestedAddIn("com.x.calc")
 	for _, a := range []AddIn{manifestedAddIn("com.x.caller"), target} {
@@ -202,6 +210,7 @@ func TestCallAutomationRoutesBetweenAddIns(t *testing.T) {
 }
 
 func TestCallAutomationRequiresActiveTarget(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.AddIns().Register(manifestedAddIn("com.x.calc")); err != nil {
 		t.Fatalf("Register: %v", err)
@@ -212,6 +221,7 @@ func TestCallAutomationRequiresActiveTarget(t *testing.T) {
 }
 
 func TestCallAutomationHonorsProbe(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := manifestedAddIn("com.x.mute")
 	a.automated = false // the wrapper has the method but the export is absent

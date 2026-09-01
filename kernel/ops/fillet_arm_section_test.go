@@ -13,6 +13,7 @@ import (
 // S1 fillet at the +x fillet-cut station: it must run from the plane-A contact (·,-10,4) to the
 // plane-B contact (·,-4,10) through the 45° bisector, all at radius 6 from the cylinder axis.
 func TestArmSectionArcSpansFilletQuarterCircle(t *testing.T) {
+	t.Parallel()
 	ef, _ := runoutFixtureCrossingBoss(t)
 	planeA, _ := geom.NewPlane(math.P3(0, -10, 0), math.V3(0, 1, 0))
 	planeB, _ := geom.NewPlane(math.P3(0, 0, 10), math.V3(0, 0, 1))
@@ -34,6 +35,7 @@ func TestArmSectionArcSpansFilletQuarterCircle(t *testing.T) {
 // seam-bottom and a seam-top, with the endpoints preserved exactly (bit-identical) so the two
 // flanking setback patches can share it.
 func TestInternalSeamConnectsFeatureCorners(t *testing.T) {
+	t.Parallel()
 	bottom := math.P3(3.465, -10, 4.898)
 	top := math.P3(3.465, -7.211, 10)
 	seam := internalSeam(bottom, top)

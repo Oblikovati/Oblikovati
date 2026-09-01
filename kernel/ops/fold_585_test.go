@@ -15,6 +15,7 @@ import (
 // staircase folds; refine == 1 is the unrefined curvature-adaptive grid. domeSurface is the shared
 // strongly-curved B-spline fixture from nurbs_interior_test.go.
 func TestAdaptiveInteriorNodesRefineDensifies(t *testing.T) {
+	t.Parallel()
 	s := domeSurface(t)
 	outer := []math.Point2{math.P2(0, 0), math.P2(1, 0), math.P2(1, 1), math.P2(0, 1)}
 	base := interiorNodesOnly(s, outer, nil, DefaultQuality(), 1)
@@ -27,6 +28,7 @@ func TestAdaptiveInteriorNodesRefineDensifies(t *testing.T) {
 // TestFoldDrivenPatchIsFoldFree pins the property the refinement loop delivers: a curved B-spline
 // trim tessellates with zero fold edges and a non-empty, consistently wound mesh.
 func TestFoldDrivenPatchIsFoldFree(t *testing.T) {
+	t.Parallel()
 	s := domeSurface(t)
 	outerUV := []math.Point2{math.P2(0, 0), math.P2(1, 0), math.P2(1, 1), math.P2(0, 1)}
 	outer3D := make([]math.Point3, len(outerUV))
@@ -48,6 +50,7 @@ func TestFoldDrivenPatchIsFoldFree(t *testing.T) {
 // (u,v) CDT folds the degenerate sliver and repairFolds can't flip it, so metricPatchMesh falls back
 // to the watertight boundary triangulation. The mesh must also stay watertight (no tear).
 func TestSpherePoleCapFoldFree(t *testing.T) {
+	t.Parallel()
 	s, err := geom.NewSphere(math.P3(0, 0, 0), 1)
 	if err != nil {
 		t.Fatalf("NewSphere: %v", err)

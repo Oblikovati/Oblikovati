@@ -22,6 +22,7 @@ func patchedSurfacePartViaAPI(t *testing.T) (*Router, *app.Session) {
 }
 
 func TestWorkSurfacesListReportsPatchSurface(t *testing.T) {
+	t.Parallel()
 	r, s := patchedSurfacePartViaAPI(t)
 	var got wire.ListWorkSurfacesResult
 	call(t, r, s, "workSurfaces.list", `{}`, &got)
@@ -35,6 +36,7 @@ func TestWorkSurfacesListReportsPatchSurface(t *testing.T) {
 }
 
 func TestWorkSurfacesSetVisibleAndRename(t *testing.T) {
+	t.Parallel()
 	r, s := patchedSurfacePartViaAPI(t)
 
 	var hidden wire.WorkSurfaceDetailResult
@@ -58,6 +60,7 @@ func TestWorkSurfacesSetVisibleAndRename(t *testing.T) {
 }
 
 func TestWorkSurfacesRenameRejectsEmpty(t *testing.T) {
+	t.Parallel()
 	r, s := patchedSurfacePartViaAPI(t)
 	if _, err := r.Handle(s, "workSurfaces.rename", []byte(mustJSON(t, wire.RenameWorkSurfaceArgs{Index: 0, Name: ""}))); err == nil {
 		t.Error("empty rename must be rejected")
@@ -65,6 +68,7 @@ func TestWorkSurfacesRenameRejectsEmpty(t *testing.T) {
 }
 
 func TestWorkSurfacesGetOutOfRangeFails(t *testing.T) {
+	t.Parallel()
 	r, s := patchedSurfacePartViaAPI(t)
 	if _, err := r.Handle(s, "workSurfaces.get", []byte(mustJSON(t, wire.WorkSurfaceRefArgs{Index: 9}))); err == nil {
 		t.Error("get with an out-of-range index must fail")

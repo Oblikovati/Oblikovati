@@ -45,6 +45,7 @@ func twoCylSyntheticFixture(t *testing.T) (*topo.Vertex, []*topo.Face, float64) 
 // TestTwoCylinderHostCorner_Recognizes checks twoParallelCylinderHostCorner accepts exactly the
 // {2 cylinder, 1 plane} host set and returns the cylinder faces + plane face.
 func TestTwoCylinderHostCorner_Recognizes(t *testing.T) {
+	t.Parallel()
 	_, faces, _ := twoCylSyntheticFixture(t)
 	cylFaces, planeFace, ok := twoParallelCylinderHostCorner(faces)
 	if !ok {
@@ -66,6 +67,7 @@ func TestTwoCylinderHostCorner_Recognizes(t *testing.T) {
 // intersectCoplanarCircles): a=(d²+ρA²−ρB²)/(2d), h=√(ρA²−a²), centre=(a,±h,axialC) with d=14,
 // ρA=13, ρB=15, axialC=20 — the classic 5-12-13/9-12-15 integer right-triangle pair.
 func TestTwoCylinderHostCorner_ExactSyntheticCentre(t *testing.T) {
+	t.Parallel()
 	v, faces, r := twoCylSyntheticFixture(t)
 	cb, err := solveBlend(nil, v, faces, r)
 	if err != nil {
@@ -88,6 +90,7 @@ func TestTwoCylinderHostCorner_ExactSyntheticCentre(t *testing.T) {
 // axes, must decline with the exact historical string — the crossing-axis corner is out of scope
 // (a follow-on, per the R4 wave report).
 func TestTwoCylinderHostCorner_CrossingAxisDeclines(t *testing.T) {
+	t.Parallel()
 	lin := topo.NewLineage(topo.Tok("test", "twocyl-corner-crossing", 0))
 	bld := topo.NewBuilder(true, lin)
 	v := bld.AddVertex(math.P3(0, 0, 0), lin)
@@ -107,6 +110,7 @@ func TestTwoCylinderHostCorner_CrossingAxisDeclines(t *testing.T) {
 // gate: tilting the cap plane off the shared axis (but keeping the cylinders parallel) must decline
 // — proving the |n̂·â|≈1 check is load-bearing, not a no-op.
 func TestTwoCylCornerCenter_NonPerpendicularPlaneDeclines(t *testing.T) {
+	t.Parallel()
 	lin := topo.NewLineage(topo.Tok("test", "twocyl-corner-tilted", 0))
 	bld := topo.NewBuilder(true, lin)
 	v := bld.AddVertex(math.P3(5, 12, 20), lin)
@@ -126,6 +130,7 @@ func TestTwoCylCornerCenter_NonPerpendicularPlaneDeclines(t *testing.T) {
 // TestTwoCylCornerConsistent_RejectsPerturbedCentre is the certificate regression fence, sibling of
 // TestConeCornerConsistent_RejectsPerturbedCentre.
 func TestTwoCylCornerConsistent_RejectsPerturbedCentre(t *testing.T) {
+	t.Parallel()
 	v, faces, r := twoCylSyntheticFixture(t)
 	cylFaces, planeFace, ok := twoParallelCylinderHostCorner(faces)
 	if !ok {
@@ -204,11 +209,13 @@ func assertTwoCylCentreIndependent(t *testing.T, c math.Point3, cylA, cylB geom.
 // the R4 wave report), so this test certifies the corner math alone, matching the sibling files'
 // "this file solves the SPHERE, the weld is a follow-on" precedent.
 func TestTwoCylinderHostCorner_O9Imported(t *testing.T) {
+	t.Parallel()
 	twoCylImportedCorner(t, "simple/O9.step", math.P3(65, 2.303039929, 70), 5)
 }
 
 // TestTwoCylinderHostCorner_P7Imported is O9's sibling certification for simple/P7.
 func TestTwoCylinderHostCorner_P7Imported(t *testing.T) {
+	t.Parallel()
 	twoCylImportedCorner(t, "simple/P7.step", math.P3(75, 6.698729811, 150), 5)
 }
 
@@ -216,6 +223,7 @@ func TestTwoCylinderHostCorner_P7Imported(t *testing.T) {
 // crossing (non-parallel) cylinder axes — confirming the do-no-harm decline is the right call for
 // this specific corpus fixture, not just the synthetic crossing-axis case above.
 func TestTwoCylinderHostCorner_O4CrossingAxisImportedDeclines(t *testing.T) {
+	t.Parallel()
 	body := corpusFixture(t, "simple/O4.step")
 	v := vertexNearest(t, body, math.P3(30, 4.174243050442, 90))
 	faces := facesAtVertex(v)

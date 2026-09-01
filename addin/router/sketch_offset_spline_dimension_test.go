@@ -12,6 +12,7 @@ import (
 // TestSketchOffsetSplineDimensionOverWire creates a spline, offsets it, dimensions the offset via
 // sketch.addDimension kind=offsetSplineDim, and confirms the driven value and enumeration (#1874).
 func TestSketchOffsetSplineDimensionOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var sp wire.AddSketchEntityResult
@@ -43,6 +44,7 @@ func TestSketchOffsetSplineDimensionOverWire(t *testing.T) {
 // TestSketchOffsetSplineDimensionRejectsNonOffsetSpline: pointing the dimension at a plain spline is
 // a clean error (#1874).
 func TestSketchOffsetSplineDimensionRejectsNonOffsetSpline(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var sp wire.AddSketchEntityResult
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"spline","points":[[0,0],[1,1],[2,0]]}`, &sp)

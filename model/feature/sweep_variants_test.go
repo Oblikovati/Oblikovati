@@ -52,6 +52,7 @@ func bodyVolume(b *topo.Body) float64 {
 // TestSweepTaperFrustum: a tapered straight sweep of a square is the analytic
 // draft solid — side(s) = a + 2·tan(τ)·s, V = ∫ side² ds.
 func TestSweepTaperFrustum(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	const a, L, taper = 2.0, 5.0, 0.1
 	def := &SweepDefinition{
@@ -72,6 +73,7 @@ func TestSweepTaperFrustum(t *testing.T) {
 // diagonal path SHEARS the prism (sections stay horizontal), so its volume is
 // base area × HEIGHT, not base area × path length.
 func TestSweepParallelOrientationShears(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	diag := sketch.NewPath3D([]*sketch.Point3D{
 		sketch.NewPoint3D(math.P3(0, 0, 0)),
@@ -92,6 +94,7 @@ func TestSweepParallelOrientationShears(t *testing.T) {
 // TestSweepSectionTwistsHold: a station table that twists to 90° by mid-path
 // and holds keeps the prism volume (rigid sections) and stays valid.
 func TestSweepSectionTwistsHold(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	def := &SweepDefinition{
 		Sketch: centeredSquareOn(sketch.XYPlane(), 1), ProfileIndex: 0,
@@ -113,6 +116,7 @@ func TestSweepSectionTwistsHold(t *testing.T) {
 // TestSweepGuideRailScalesXY: a rail diverging linearly from the path scales
 // the section linearly — the analytic square frustum.
 func TestSweepGuideRailScalesXY(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	const a, L = 2.0, 6.0
 	rail := func() *sketch.Path3D { // x = 2 at s=0 → x = 4 at s=L: scale 1 → 2
@@ -143,6 +147,7 @@ func TestSweepGuideRailScalesXY(t *testing.T) {
 // TestSweepGuideRailNoScaling: the same diverging rail with scaling "none"
 // keeps the prism size (the rail steers orientation only).
 func TestSweepGuideRailNoScaling(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	rail := func() *sketch.Path3D {
 		return sketch.NewPath3D([]*sketch.Point3D{
@@ -165,6 +170,7 @@ func TestSweepGuideRailNoScaling(t *testing.T) {
 
 // TestSweepGuideRailTouchingPathSick: a rail crossing the path is a precise error.
 func TestSweepGuideRailTouchingPathSick(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	rail := func() *sketch.Path3D {
 		return sketch.NewPath3D([]*sketch.Point3D{
@@ -189,6 +195,7 @@ func TestSweepGuideRailTouchingPathSick(t *testing.T) {
 // TestSweepGuideSurfaceConstantNormal: a planar guide face (constant normal)
 // steers without distorting — prism volume preserved, type discriminated.
 func TestSweepGuideSurfaceConstantNormal(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	// Base body whose +X face guides the sweep.
 	base := centeredSquareOn(sketch.XYPlane(), 4)
@@ -232,6 +239,7 @@ func straightZPathFrom(z0, length float64, samples int) *sketch.Path3D {
 // TestSolidSweepExtendsBox: dragging a unit-cube tool body along a straight
 // 4-long X path sweeps the exact 5×1×1 envelope.
 func TestSolidSweepExtendsBox(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(centeredSquareOn(sketch.XYPlane(), 0.5), 0, ops.NewBody, func() float64 { return 1 })
 	fs.Recompute()

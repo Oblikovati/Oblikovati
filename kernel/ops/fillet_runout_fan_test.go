@@ -50,6 +50,7 @@ func vertexNear(t *testing.T, b *topo.Body, p math.Point3) *topo.Vertex {
 // faces separated by 2 interior far edges, and that vertex must be marked owned so the trihedral ends
 // path skips it. Its other end (valence 3) stays trihedral and produces no fan.
 func TestClassifyEndCornersV3(t *testing.T) {
+	t.Parallel()
 	b := importCorpusSolid(t, "simple/V3")
 	fils := solvedFilsForCase(t, b, "simple/V3")
 	fans, fanV := classifyEndCorners(fils)
@@ -155,6 +156,7 @@ func edgeBetween(t *testing.T, b *topo.Body, p, q *topo.Vertex) *topo.Edge {
 // own STEP data (see fillet_maxwidth_test.go's use of the same points for V3), so a mismatch here
 // means the fixture changed underneath us, not that the geometry moved.
 func TestVertexValence(t *testing.T) {
+	t.Parallel()
 	b := importCorpusSolid(t, "simple/V3")
 	if got := vertexValence(vertexNear(t, b, math.P3(34.2, 94, 50))); got != 5 {
 		t.Errorf("V3 vertex near (34.2,94,50) valence = %d, want 5", got)
@@ -192,6 +194,7 @@ func TestVertexValence(t *testing.T) {
 // reachable at k<=1, and fanForEndCorner's existing `c.blend || c.miter` gate already excludes k>=2
 // without any code change.
 func TestClassifyEndCornersExcludesKGreaterThanOne(t *testing.T) {
+	t.Parallel()
 	b := importCorpusSolid(t, "simple/V3")
 	v := vertexNear(t, b, math.P3(34.202014332567, 93.969262078591, 50))
 	if got := vertexValence(v); got <= 3 {
@@ -230,6 +233,7 @@ func TestClassifyEndCornersExcludesKGreaterThanOne(t *testing.T) {
 // TestVertexFacesDeduplicates covers the helper vertexValence is built on: a vertex incident to
 // several edges that share the same face must count that face once, not once per edge.
 func TestVertexFacesDeduplicates(t *testing.T) {
+	t.Parallel()
 	b := importCorpusSolid(t, "simple/V3")
 	v := vertexNear(t, b, math.P3(-0.612, 86, 59.7))
 	faces := vertexFaces(v)

@@ -9,6 +9,7 @@ import (
 
 // TestThreadCatalog pins the standards/sizes/pitches and the parseable designations they build.
 func TestThreadCatalog(t *testing.T) {
+	t.Parallel()
 	if got := ThreadStandards(); len(got) != 3 {
 		t.Fatalf("standards = %v, want 3 (ISO/ANSI/JIS)", got)
 	}

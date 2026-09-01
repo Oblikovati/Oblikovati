@@ -50,6 +50,7 @@ func tetraDefinition() brep.SurfaceBodyDefinition {
 // TestCompileDefinitionTetra: the graph compiles into a valid solid of the
 // analytic volume 1/6, with caller-stable vertex keys.
 func TestCompileDefinitionTetra(t *testing.T) {
+	t.Parallel()
 	body, issues := brep.CompileSurfaceBodyDefinition(tetraDefinition(), "addin")
 	if len(issues) > 0 {
 		t.Fatalf("compile issues: %+v", issues)
@@ -68,6 +69,7 @@ func TestCompileDefinitionTetra(t *testing.T) {
 // TestCompileDefinitionReportsProblems: bad indices and detached curves are
 // reported per definition with their graph path, and no body is built.
 func TestCompileDefinitionReportsProblems(t *testing.T) {
+	t.Parallel()
 	def := tetraDefinition()
 	def.Edges[2].EndVertex = 99 // out of range
 	body, issues := brep.CompileSurfaceBodyDefinition(def, "addin")
@@ -87,6 +89,7 @@ func TestCompileDefinitionReportsProblems(t *testing.T) {
 
 // TestCompileDefinitionWires: wire definitions land as body wires.
 func TestCompileDefinitionWires(t *testing.T) {
+	t.Parallel()
 	def := tetraDefinition()
 	def.Faces = nil
 	def.Solid = false
@@ -104,6 +107,7 @@ func TestCompileDefinitionWires(t *testing.T) {
 // big box's top face splits along the small box's footprint, both bodies keep
 // their volumes, and the touched faces/edges are reported.
 func TestImprintBodiesSplitsContact(t *testing.T) {
+	t.Parallel()
 	big, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(4, 4, 1), "big")
 	small, _ := brep.SolidBlock(math.P3(1, 1, 1), math.P3(3, 3, 2), "small")
 	ra, rb, err := brep.ImprintBodies(big, small)

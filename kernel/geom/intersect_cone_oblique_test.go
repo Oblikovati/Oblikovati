@@ -13,6 +13,7 @@ import (
 // ELLIPSE on one nappe (Oblikovati/Oblikovati#1375). Every sampled point must lie on BOTH the cone
 // surface and the plane, and the curve must be a geom.EllipseFull.
 func TestPlaneConeObliqueEllipse(t *testing.T) {
+	t.Parallel()
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6) // α = 30°
 	pl, _ := NewPlane(math.P3(0, 0, 5), math.V3(1, 0, 1))                // tilt 45° > 30° → ellipse on the +z nappe
 	curves, handled := IntersectSurfacesAnalytic(pl, cone, ResolutionForSize(1))
@@ -34,6 +35,7 @@ func TestPlaneConeObliqueEllipse(t *testing.T) {
 // An oblique plane tilted SHALLOWER than the generators cuts a HYPERBOLA; the returned branch lies on
 // the cone's real (+axis) nappe, every point on both surfaces.
 func TestPlaneConeObliqueHyperbola(t *testing.T) {
+	t.Parallel()
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/3) // α = 60°, steep cone
 	pl, _ := NewPlane(math.P3(3, 0, 0), math.V3(1, 0, 0.6))              // tilt ~31° < 60° → hyperbola
 	curves, handled := IntersectSurfacesAnalytic(pl, cone, ResolutionForSize(1))
@@ -56,6 +58,7 @@ func TestPlaneConeObliqueHyperbola(t *testing.T) {
 // sampled point lies on both the cone and the plane (Oblikovati/Oblikovati#1375). A cone whose axis is
 // tilted by its own half-angle has one generator vertical, so an axis-aligned x-plane is parallel to it.
 func TestPlaneConeParabola(t *testing.T) {
+	t.Parallel()
 	a := stdmath.Atan(0.3)
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(stdmath.Sin(a), 0, stdmath.Cos(a)), a)
 	pl, _ := NewPlane(math.P3(2, 0, 0), math.V3(1, 0, 0)) // x=2, parallel to the vertical generator
@@ -74,6 +77,7 @@ func TestPlaneConeParabola(t *testing.T) {
 
 // A plane through the apex is degenerate (the section collapses through the centre) and defers.
 func TestPlaneConeObliqueThroughApexDeferred(t *testing.T) {
+	t.Parallel()
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6)
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(1, 0, 1)) // oblique AND through the apex
 	if _, handled := IntersectSurfacesAnalytic(pl, cone, ResolutionForSize(1)); handled {
@@ -84,6 +88,7 @@ func TestPlaneConeObliqueThroughApexDeferred(t *testing.T) {
 // A hyperbolic oblique cut on the OPPOSITE side of the axis (x = −3) exercises the branch-direction
 // flip: the transverse axis must still point to the vertex on the cone's real nappe.
 func TestPlaneConeObliqueHyperbolaOtherSide(t *testing.T) {
+	t.Parallel()
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/3)
 	pl, _ := NewPlane(math.P3(-3, 0, 0), math.V3(1, 0, -0.6)) // mirror of the +x hyperbola case
 	curves, handled := IntersectSurfacesAnalytic(pl, cone, ResolutionForSize(1))
@@ -102,6 +107,7 @@ func TestPlaneConeObliqueHyperbolaOtherSide(t *testing.T) {
 // symmetricEig2 on an already-diagonal form (h=0) returns axis-aligned eigenvectors — the branch
 // eigenvector2 takes when the quadratic form has no cross term.
 func TestSymmetricEig2Diagonal(t *testing.T) {
+	t.Parallel()
 	l1, l2, u1, u2 := symmetricEig2(4, 0, 1)
 	if stdmath.Abs(l1-4) > 1e-12 || stdmath.Abs(l2-1) > 1e-12 {
 		t.Errorf("eigenvalues (%g,%g), want (4,1)", l1, l2)

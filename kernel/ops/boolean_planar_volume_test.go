@@ -33,6 +33,7 @@ func planarVolumeCheck(t *testing.T, name string, op ops.PartFeatureOperation, a
 // TestPlanarBooleanVolumesAnalytic pins the planar boolean's fragment classification to analytic
 // volumes on overlapping boxes and an L-bracket cut (#1599): every op, both operand orders.
 func TestPlanarBooleanVolumesAnalytic(t *testing.T) {
+	t.Parallel()
 	mk := func() (*topo.Body, *topo.Body) {
 		a, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "a") // V=8
 		b, _ := brep.SolidBlock(math.P3(1, 1, 1), math.P3(3, 3, 3), "b") // V=8, overlap 1

@@ -43,6 +43,7 @@ func sampleBSplineSurface(t *testing.T) BSplineSurface {
 }
 
 func TestNURBSQuarterCircleStaysOnUnitCircle(t *testing.T) {
+	t.Parallel()
 	c := quarterCircleNURBS(t)
 	if !c.PointAt(0).IsEqualTo(math.P3(1, 0, 0), 1e-12) {
 		t.Errorf("start = %v, want {1 0 0}", c.PointAt(0))
@@ -57,6 +58,7 @@ func TestNURBSQuarterCircleStaysOnUnitCircle(t *testing.T) {
 }
 
 func TestNURBSDegree1ReproducesSegment(t *testing.T) {
+	t.Parallel()
 	c, err := NewBSplineCurveUniformWeights(
 		1,
 		[]math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0)},
@@ -75,6 +77,7 @@ func TestNURBSDegree1ReproducesSegment(t *testing.T) {
 }
 
 func TestNURBSCurveConstructorErrors(t *testing.T) {
+	t.Parallel()
 	ctrl := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0)}
 	if _, err := NewBSplineCurve(1, ctrl, []float64{1, 1}, []float64{0, 0, 1}); err == nil {
 		t.Error("wrong knot count should error")
@@ -88,6 +91,7 @@ func TestNURBSCurveConstructorErrors(t *testing.T) {
 }
 
 func TestNURBSSurfaceBilinearClosedForm(t *testing.T) {
+	t.Parallel()
 	s := sampleBSplineSurface(t)
 	for _, uv := range [][2]float64{{0, 0}, {1, 1}, {0.5, 0.5}, {0.25, 0.8}} {
 		u, v := uv[0], uv[1]
@@ -99,6 +103,7 @@ func TestNURBSSurfaceBilinearClosedForm(t *testing.T) {
 }
 
 func TestNURBSSurfaceConstructorErrors(t *testing.T) {
+	t.Parallel()
 	ctrl := [][]math.Point3{
 		{math.P3(0, 0, 0), math.P3(0, 1, 0)},
 		{math.P3(1, 0, 0), math.P3(1, 1, 0)},

@@ -12,6 +12,7 @@ import (
 // (wi != reflect(wo)) the single-scatter term must be exactly zero (h != macronormal, so
 // D→0 in the limit) — checked at a direction well off the mirror reflection.
 func TestSpecularDielectricOffMirrorDirectionIsNegligible(t *testing.T) {
+	t.Parallel()
 	wo := Vec3{Z: 1}
 	// wi far from the mirror direction (which is also straight up when wo is straight up).
 	wi := Vec3{X: 0.9, Z: math.Sqrt(1 - 0.81)}
@@ -24,6 +25,7 @@ func TestSpecularDielectricOffMirrorDirectionIsNegligible(t *testing.T) {
 // TestSpecularConductorZeroAtGrazingCosine checks the microfacetSingleScatter guard: a
 // direction with cosTheta<=0 (below the surface) must contribute nothing.
 func TestSpecularConductorZeroBelowSurface(t *testing.T) {
+	t.Parallel()
 	wo := Vec3{Z: -1} // below the surface
 	wi := Vec3{Z: 1}
 	got := SpecularConductor(wi, wo, 0.3, Gray(0.9), Gray(1))
@@ -36,6 +38,7 @@ func TestSpecularConductorZeroBelowSurface(t *testing.T) {
 // hemispherical reflectance of every base lobe must not exceed 1, across a sweep of
 // roughness/metalness-adjacent parameter values, at a representative view angle.
 func TestEnergyConservationSweep(t *testing.T) {
+	t.Parallel()
 	const cosThetaO = 0.6
 	const tolerance = 1.03 // numerical-quadrature slack, not a physical allowance
 

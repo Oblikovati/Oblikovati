@@ -17,6 +17,7 @@ import (
 // Complements the fingerprint-pin byte-identity sweep (T6 A=2.13 and friends) with a minimal,
 // self-contained repro that does not depend on the corpus fixtures.
 func TestStarvedRailAspectGateOff(t *testing.T) {
+	t.Parallel()
 	const r, sweep, h = 2.0, 1.0, 2.5 // arc length r*sweep=2, height 2.5 → aspect 1.25 (<= 4)
 	s := cylindricalStripSurface(t, r, sweep, h)
 	face, rails := cylindricalStripFace(t, s, r, sweep, h)
@@ -43,6 +44,7 @@ func TestStarvedRailAspectGateOff(t *testing.T) {
 // both by direct point-set comparison and by per-triangle-edge conformance ALONG THE SHARED RAIL —
 // TRUE conformance, not merely a "no gap" collinearity argument).
 func TestStarvedRailNoCrackAgainstNeighbourFace(t *testing.T) {
+	t.Parallel()
 	const r, sweep, h = bunchedR, bunchedSweep, bunchedH
 	s := cylindricalStripSurfaceBunched(t, r, sweep, h, bunchedK)
 

@@ -37,6 +37,7 @@ func torusBelowVolume(major, minor, c float64) float64 {
 // apart — the centroid-side check is what distinguishes keep-below from keep-above); the off-centre
 // plane yields a distinct analytic slab volume.
 func TestHalfSpaceCutTorusPerpendicularBandVolume(t *testing.T) {
+	t.Parallel()
 	halfVol := torusBelowVolume(torusR, torusr, 0) // = π²Rr², half the torus
 	for _, tc := range []struct {
 		name   string
@@ -66,6 +67,7 @@ func TestHalfSpaceCutTorusPerpendicularBandVolume(t *testing.T) {
 // opposite sides. A cut that ignored the plane normal would return the same region twice and fail the
 // opposite-side requirement.
 func TestHalfSpaceCutTorusMidPlaneHalvesAreComplementary(t *testing.T) {
+	t.Parallel()
 	tor, _ := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), torusR, torusr, "torus")
 	full := ops.BodyGeometryProperties(tor, ops.DefaultQuality()).Volume
 
@@ -93,6 +95,7 @@ func TestHalfSpaceCutTorusMidPlaneHalvesAreComplementary(t *testing.T) {
 // clear of the tube must keep the WHOLE torus volume, not merely the same face count (a sliver shave
 // preserves face count but loses volume).
 func TestHalfSpaceCutTorusClearsKeepsFullVolume(t *testing.T) {
+	t.Parallel()
 	tor, _ := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), torusR, torusr, "torus")
 	full := ops.BodyGeometryProperties(tor, ops.DefaultQuality()).Volume
 	clear, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1)) // z ≤ 3 holds the whole tube (to z=2)

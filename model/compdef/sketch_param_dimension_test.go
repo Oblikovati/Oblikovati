@@ -16,6 +16,7 @@ import (
 // geometry. The fix shares the part's parameter DAG into every sketch at creation
 // (compdef wires it via Sketches.ShareParameters), mirroring the live and assembly paths.
 func TestParameterDrivenDimensionResolvesAfterRestore(t *testing.T) {
+	t.Parallel()
 	src := compdef.NewPartComponentDefinition()
 	if _, err := src.Parameters().AddUserParameter("width", "40 mm"); err != nil {
 		t.Fatalf("AddUserParameter: %v", err)
@@ -48,6 +49,7 @@ func TestParameterDrivenDimensionResolvesAfterRestore(t *testing.T) {
 // wired in NewPartComponentDefinition), so a 3D dimension expression that references a user
 // parameter resolves on reopen instead of collapsing to 0.
 func TestParameterDriven3DDimensionResolvesAfterRestore(t *testing.T) {
+	t.Parallel()
 	src := compdef.NewPartComponentDefinition()
 	if _, err := src.Parameters().AddUserParameter("len", "40 mm"); err != nil {
 		t.Fatalf("AddUserParameter: %v", err)

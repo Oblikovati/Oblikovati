@@ -47,6 +47,7 @@ func uniformClampedKnots(n, p int) []float64 {
 }
 
 func TestControlPointEditLiftsSurfaceKeepingStructure(t *testing.T) {
+	t.Parallel()
 	body := nurbsGridBody(t, 5)
 	deltas := []geom.ControlPointDelta{{U: 2, V: 2, Delta: math.V3(0, 0, 1)}}
 	f := &ControlPointEditFeature{def: &ControlPointEditDefinition{Deltas: deltas}, featName: "EditControlPoints"}
@@ -67,6 +68,7 @@ func TestControlPointEditLiftsSurfaceKeepingStructure(t *testing.T) {
 }
 
 func TestControlPointEditErrorsWithoutBody(t *testing.T) {
+	t.Parallel()
 	f := &ControlPointEditFeature{def: &ControlPointEditDefinition{}}
 	if _, err := f.Recompute(Input{}); err == nil {
 		t.Error("control-point edit with no target body should error")
@@ -74,6 +76,7 @@ func TestControlPointEditErrorsWithoutBody(t *testing.T) {
 }
 
 func TestControlPointEditKind(t *testing.T) {
+	t.Parallel()
 	f := &ControlPointEditFeature{def: &ControlPointEditDefinition{}}
 	if f.Kind() != "control-point-edit" {
 		t.Errorf("Kind = %q, want control-point-edit", f.Kind())
@@ -81,6 +84,7 @@ func TestControlPointEditKind(t *testing.T) {
 }
 
 func TestControlPointEditRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewControlPointEditFeatures(fs).Add([]geom.ControlPointDelta{
 		{U: 1, V: 2, Delta: math.V3(0.1, -0.2, 0.3)},
@@ -104,6 +108,7 @@ func TestControlPointEditRoundTrip(t *testing.T) {
 }
 
 func TestRestoreControlPointEditRejectsMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreControlPointEdit(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreControlPointEdit(nil) should error")
 	}

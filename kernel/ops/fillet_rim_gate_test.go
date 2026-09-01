@@ -33,6 +33,7 @@ func gateEdge(t *testing.T, curve geom.Curve3, closed bool) *topo.Edge {
 }
 
 func TestIsClosedCircularEdgeAcceptsGeomCircle(t *testing.T) {
+	t.Parallel()
 	c, err := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatal(err)
@@ -46,6 +47,7 @@ func TestIsClosedCircularEdgeAcceptsGeomCircle(t *testing.T) {
 // is a full turn (the shape every STEP-imported circular rim actually has) must count as a circular
 // rim, exactly like a geom.Circle — before this fix, loneRimPick/resolveRim rejected every such edge.
 func TestIsClosedCircularEdgeAcceptsFullSweepArc3d(t *testing.T) {
+	t.Parallel()
 	a, err := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 5, 0, 2*stdmath.Pi)
 	if err != nil {
 		t.Fatal(err)
@@ -59,6 +61,7 @@ func TestIsClosedCircularEdgeAcceptsFullSweepArc3d(t *testing.T) {
 // turn, with distinct start/end vertices) declined — the widen must not swallow the ordinary
 // loneArcPick territory.
 func TestIsClosedCircularEdgeRejectsPartialArc(t *testing.T) {
+	t.Parallel()
 	a, err := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 5, 0, stdmath.Pi)
 	if err != nil {
 		t.Fatal(err)
@@ -72,6 +75,7 @@ func TestIsClosedCircularEdgeRejectsPartialArc(t *testing.T) {
 // (start==end) Arc3d must still be rejected if its sweep is far from 2π (a degenerate/malformed edge),
 // so the predicate gates on sweep angle, not merely on vertex identity.
 func TestIsClosedCircularEdgeRejectsClosedShortSweep(t *testing.T) {
+	t.Parallel()
 	a, err := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 5, 0, stdmath.Pi/2)
 	if err != nil {
 		t.Fatal(err)

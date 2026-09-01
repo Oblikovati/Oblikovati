@@ -43,6 +43,7 @@ func coilRecompute(t *testing.T, def *CoilDefinition) float64 {
 // TestCoilHeightModes: pitch+height and revolutions+height match the
 // equivalent pitch+revolutions coil.
 func TestCoilHeightModes(t *testing.T) {
+	t.Parallel()
 	pr := coilRecompute(t, &CoilDefinition{
 		Sketch: coilProfileSketch(), Axis: zWorkAxis(),
 		Pitch: angleConst(2), Revolutions: angleConst(3), Operation: ops.NewBody,
@@ -63,6 +64,7 @@ func TestCoilHeightModes(t *testing.T) {
 // TestCoilShapeSpecValidation: all three (overdetermined) and fewer than two
 // are precise errors.
 func TestCoilShapeSpecValidation(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewCoilFeatures(fs).AddDefinition(&CoilDefinition{
 		Sketch: coilProfileSketch(), Axis: zWorkAxis(),
@@ -87,6 +89,7 @@ func TestCoilShapeSpecValidation(t *testing.T) {
 // TestCoilTaperGrowsRadius: a tapered coil's top turn sits farther from the
 // axis — the range box grows by ≈ tan(taper)·height over the untapered coil.
 func TestCoilTaperGrowsRadius(t *testing.T) {
+	t.Parallel()
 	const taper, pitch, revs = 0.2, 2.0, 3.0
 	mk := func(tp float64) *CoilDefinition {
 		return &CoilDefinition{
@@ -116,6 +119,7 @@ func TestCoilTaperGrowsRadius(t *testing.T) {
 // TestRibToNextReachesPlate: a rib sketched above a plate with toNext extends
 // exactly down to the plate's top face and joins it.
 func TestRibToNextReachesPlate(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	// Plate: z ∈ [0, 1], spanning xy ∈ [-5, 5].
 	plate := centeredSquareOn(sketch.XYPlane(), 5)
@@ -148,6 +152,7 @@ func TestRibToNextReachesPlate(t *testing.T) {
 // TestRibToNextNoMaterialSick: a to-next rib with nothing to land on is sick
 // with a precise message.
 func TestRibToNextNoMaterialSick(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	def := &RibDefinition{
 		Sketch: lineSketchOn(planeAtZ(3)), ProfileIndex: 0,

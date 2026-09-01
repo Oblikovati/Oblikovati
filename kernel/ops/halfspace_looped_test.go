@@ -23,6 +23,7 @@ import (
 // TestLoopedSplitHalvesACapBySymmetry cuts a small spherical cap (kept z ≤ −3, a sub-hemisphere cap) by
 // a plane of symmetry (x ≤ 0, y ≤ 0): the result must be a valid analytic solid of half the cap's volume.
 func TestLoopedSplitHalvesACapBySymmetry(t *testing.T) {
+	t.Parallel()
 	const R = 5.0
 	sphere, _ := brep.SolidSphere(math.P3(0, 0, 0), R, "s")
 	capPlane, _ := geom.NewPlane(math.P3(0, 0, -3), math.V3(0, 0, 1)) // keep z ≤ −3
@@ -62,6 +63,7 @@ func TestLoopedSplitHalvesACapBySymmetry(t *testing.T) {
 // kept sphere face exceeds a hemisphere, so it exercises the stereographic patch chart. The result is an
 // exact curved B-rep whose volume matches the analytic lower-hemisphere-minus-side-cap (acceptance #1).
 func TestHalfSpaceCutSphereBoxVsAnalytic(t *testing.T) {
+	t.Parallel()
 	const R = 5.0
 	sphere, _ := brep.SolidSphere(math.P3(0, 0, 0), R, "s")
 	pZ, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1)) // keep z ≤ 0 (lower hemisphere)

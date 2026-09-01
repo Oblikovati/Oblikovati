@@ -22,6 +22,7 @@ func newPartSession(t *testing.T) *Session {
 // TestCommitEmitsTransactionCommitted pins the happy path: one edit fires
 // Before then After with the step's label and document id (M04-F05).
 func TestCommitEmitsTransactionCommitted(t *testing.T) {
+	t.Parallel()
 	s := newPartSession(t)
 	var phases []event.Phase
 	var got TransactionCommitted
@@ -50,6 +51,7 @@ func TestCommitEmitsTransactionCommitted(t *testing.T) {
 // commit rolls the model back to the pre-edit snapshot, records no undo step,
 // and announces a TransactionAborted instead.
 func TestVetoedCommitRevertsEditAndReportsAbort(t *testing.T) {
+	t.Parallel()
 	s := newPartSession(t)
 	event.Subscribe(s.Events(), event.Before, func(_ event.Context, e TransactionCommitted) event.Outcome {
 		return event.Veto("policy: parameters are locked")
@@ -80,6 +82,7 @@ func TestVetoedCommitRevertsEditAndReportsAbort(t *testing.T) {
 // TestUndoRedoEmitEventsAndHonorVeto covers the navigation events: undo/redo
 // fire with the moved step's label, and a Before veto blocks the move.
 func TestUndoRedoEmitEventsAndHonorVeto(t *testing.T) {
+	t.Parallel()
 	s := newPartSession(t)
 	if err := s.AddNumericUserParameter("w", "5 mm"); err != nil {
 		t.Fatalf("AddNumericUserParameter: %v", err)
@@ -128,6 +131,7 @@ func TestUndoRedoEmitEventsAndHonorVeto(t *testing.T) {
 // the whole batch, records nothing, and announces the abort with the group's
 // label — the seam behind wire transaction.abort.
 func TestAbortTransactionDiscardsTheGroup(t *testing.T) {
+	t.Parallel()
 	s := newPartSession(t)
 	if err := s.AbortTransaction(); err != ErrNoOpenTransaction {
 		t.Fatalf("abort with nothing open = %v, want ErrNoOpenTransaction", err)
@@ -161,6 +165,7 @@ func TestAbortTransactionDiscardsTheGroup(t *testing.T) {
 // TestDocumentCloseDeletesTransactionStream: closing a document discards its
 // stream (no history leak) and announces TransactionDeleted.
 func TestDocumentCloseDeletesTransactionStream(t *testing.T) {
+	t.Parallel()
 	s := newPartSession(t)
 	if err := s.AddNumericUserParameter("w", "5 mm"); err != nil {
 		t.Fatalf("AddNumericUserParameter: %v", err)

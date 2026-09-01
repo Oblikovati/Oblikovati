@@ -18,6 +18,7 @@ import (
 // hole bridge that crossed the concave notch. A convex outer with many holes (veroboard) and a
 // concave outer with one hole both worked; only concave + multiple holes exposed it.
 func TestEarcutConcaveOuterTwoHoles(t *testing.T) {
+	t.Parallel()
 	// L outer (CCW), area 4·4 − 2.5·2.5 = 9.75.
 	outer := []math.Point2{
 		math.P2(0, 0), math.P2(4, 0), math.P2(4, 1.5),

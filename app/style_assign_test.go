@@ -24,6 +24,7 @@ func bodyKeyOf(t *testing.T, def *compdef.PartComponentDefinition) string {
 // TestAssignColorStyleToBody checks a body's color-style assignment round-trips on the active
 // document and that an unknown style is rejected (M16-F02 #403/#408, S5 #1640).
 func TestAssignColorStyleToBody(t *testing.T) {
+	t.Parallel()
 	s, def := boxBodySession(t)
 	key := bodyKeyOf(t, def)
 	if err := s.AssignColorStyleToBody(key, "Brass"); err != nil {
@@ -44,6 +45,7 @@ func TestAssignColorStyleToBody(t *testing.T) {
 // TestAssignColorStyleIsPerDocument checks the assignment lives on the document, not the session — a
 // second document does not see the first's color (the pre-#1640 session-global map leaked across docs).
 func TestAssignColorStyleIsPerDocument(t *testing.T) {
+	t.Parallel()
 	s, def := boxBodySession(t)
 	key := bodyKeyOf(t, def)
 	if err := s.AssignColorStyleToBody(key, "Brass"); err != nil {
@@ -59,6 +61,7 @@ func TestAssignColorStyleIsPerDocument(t *testing.T) {
 
 // TestBodyColorStyleUndoRedo: assign → undo clears it → redo restores it (S5 #1640 undo lifecycle).
 func TestBodyColorStyleUndoRedo(t *testing.T) {
+	t.Parallel()
 	s, def := boxBodySession(t)
 	key := bodyKeyOf(t, def)
 	if err := s.AssignColorStyleToBody(key, "Brass"); err != nil {
@@ -81,6 +84,7 @@ func TestBodyColorStyleUndoRedo(t *testing.T) {
 // TestBodyColorStyleEmitsEvent checks exactly one BodyColorStyleChanged fires on assign, carrying the
 // body key and style name (the granular appearance event add-ins observe, S5 #1640).
 func TestBodyColorStyleEmitsEvent(t *testing.T) {
+	t.Parallel()
 	s, def := boxBodySession(t)
 	key := bodyKeyOf(t, def)
 	var got []BodyColorStyleChanged
@@ -103,6 +107,7 @@ func TestBodyColorStyleEmitsEvent(t *testing.T) {
 // TestColorStyleNoActiveDocument covers the guard branches: with no document open, reads report "no
 // style" and a clear is a safe no-op that surfaces errNoActiveDocument rather than panicking.
 func TestColorStyleNoActiveDocument(t *testing.T) {
+	t.Parallel()
 	s := NewSession() // no documents open → ActiveDocument() is nil
 	if _, ok := s.BodyColorStyle("k"); ok {
 		t.Error("BodyColorStyle with no active document should report no assignment")
@@ -112,6 +117,7 @@ func TestColorStyleNoActiveDocument(t *testing.T) {
 
 // TestBodyColorStyleChangedEventID pins the event's stable type id.
 func TestBodyColorStyleChangedEventID(t *testing.T) {
+	t.Parallel()
 	if got := (BodyColorStyleChanged{}).EventID(); got != tidBodyColorStyleChanged {
 		t.Errorf("EventID = %v, want tidBodyColorStyleChanged", got)
 	}
@@ -120,6 +126,7 @@ func TestBodyColorStyleChangedEventID(t *testing.T) {
 // TestStyleSurfaceUsesDiffuseAlbedo checks the style→surface conversion drives albedo from the
 // diffuse color and roughness from shininess.
 func TestStyleSurfaceUsesDiffuseAlbedo(t *testing.T) {
+	t.Parallel()
 	cs := style.ColorStyle{Diffuse: types.NewColor(255, 0, 0), Shininess: 1, Opacity: 1}
 	surf := styleSurface(cs)
 	if surf.Albedo[0] != 1 || surf.Albedo[1] != 0 {

@@ -29,6 +29,7 @@ func sheetWithHem(t *testing.T, hemType HemType, lengthCm, gapCm float64) *topo.
 // TestClosedHemBuildsWatertightSolid a closed hem folds the edge back as one valid watertight
 // solid, adding material above the sheet.
 func TestClosedHemBuildsWatertightSolid(t *testing.T) {
+	t.Parallel()
 	body := sheetWithHem(t, SingleHem, 0.8, 0)
 	if !body.IsSolid() {
 		t.Fatal("hemmed sheet is not a solid")
@@ -54,6 +55,7 @@ func TestClosedHemBuildsWatertightSolid(t *testing.T) {
 // TestOpenHemLeavesLargerLoop an open hem with a gap folds over a larger radius than a closed
 // hem, so it rises higher.
 func TestOpenHemLeavesLargerLoop(t *testing.T) {
+	t.Parallel()
 	closedTop := topZOf(sheetWithHem(t, SingleHem, 0.8, 0))
 	openTop := topZOf(sheetWithHem(t, SingleHem, 0.8, 0.6)) // gap 6 mm ⇒ radius 3 mm
 	if !(openTop > closedTop) {
@@ -73,6 +75,7 @@ func topZOf(body *topo.Body) float64 {
 
 // TestHemTypeParse the wire spellings resolve, and an unknown one is rejected.
 func TestHemTypeParse(t *testing.T) {
+	t.Parallel()
 	for s, want := range map[string]HemType{"": SingleHem, "closed": SingleHem, "open": SingleHem, "single": SingleHem, "double": DoubleHem, "rolled": RolledHem, "teardrop": TeardropHem} {
 		if got, ok := ParseHemType(s); !ok || got != want {
 			t.Errorf("ParseHemType(%q) = (%d,%v), want (%d,true)", s, got, ok, want)
@@ -85,6 +88,7 @@ func TestHemTypeParse(t *testing.T) {
 
 // TestHemRoundTrip the hem recipe (edge + length + type + gap + flip) marshals and restores.
 func TestHemRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewSheetMetalHemFeatures(fs).Add(&SheetMetalHemDefinition{
 		EdgeKey: []byte("edge"),
@@ -115,6 +119,7 @@ func TestHemRoundTrip(t *testing.T) {
 
 // TestHemDefinitionAccessor Definition/Kind return the stored recipe.
 func TestHemDefinitionAccessor(t *testing.T) {
+	t.Parallel()
 	def := &SheetMetalHemDefinition{EdgeKey: []byte("k"), Length: func() float64 { return 1 }, Type: SingleHem}
 	f := &SheetMetalHemFeature{def: def}
 	if f.Definition() != def || f.Kind() != "sheet-metal-hem" {
@@ -124,6 +129,7 @@ func TestHemDefinitionAccessor(t *testing.T) {
 
 // TestHemMissingPayload restoring a hem record with no payload errors.
 func TestHemMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreSheetMetalHem(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreSheetMetalHem(nil) must error")
 	}
@@ -131,6 +137,7 @@ func TestHemMissingPayload(t *testing.T) {
 
 // TestHemRejectsBadDims a zero-length hem goes sick.
 func TestHemRejectsBadDims(t *testing.T) {
+	t.Parallel()
 	fs, edge := seedSheetMetalSheet(t, 4, nil)
 	pf := NewSheetMetalHemFeatures(fs).Add(&SheetMetalHemDefinition{EdgeKey: edge.ReferenceKey(), Length: func() float64 { return 0 }})
 	fs.Recompute()

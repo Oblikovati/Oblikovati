@@ -16,6 +16,7 @@ import (
 // TestLineToolChainsSegments is the headline regression: four clicks make three connected
 // segments without re-activating the tool.
 func TestLineToolChainsSegments(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewLineTool())
 	for _, p := range [][2]float64{{40, 40}, {80, 40}, {80, 80}, {40, 80}} {
@@ -35,6 +36,7 @@ func TestLineToolChainsSegments(t *testing.T) {
 // segments must share one Point, not merely touch at coincident coordinates. Independent
 // endpoints look identical on screen but drag apart and never solve as a closed profile.
 func TestChainedSegmentsShareEndpoints(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewLineTool())
 	s.Click(40, 40)
@@ -55,6 +57,7 @@ func TestChainedSegmentsShareEndpoints(t *testing.T) {
 // TestEscapeEndsChainKeepingSegments: Escape is how CAD users say "done" mid-polyline, and it
 // must not throw away the geometry they have already placed.
 func TestEscapeEndsChainKeepingSegments(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewLineTool())
 	s.Click(40, 40)
@@ -73,6 +76,7 @@ func TestEscapeEndsChainKeepingSegments(t *testing.T) {
 // TestEscapeBeforeAnySegmentStillCancels keeps Escape's ordinary meaning where there is
 // nothing to keep: one click has placed no segment, so it abandons.
 func TestEscapeBeforeAnySegmentStillCancels(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewLineTool())
 	s.Click(40, 40)
@@ -90,6 +94,7 @@ func TestEscapeBeforeAnySegmentStillCancels(t *testing.T) {
 // segment after the first previewed from the wrong end (or not at all) — #2024. The chain is
 // previewed whole now, so the guarantee is on its LAST segment: that is the one at the cursor.
 func TestChainPreviewFollowsTheLastPoint(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	tool := NewLineTool()
 	s.StartTool(tool)
@@ -119,6 +124,7 @@ func TestChainPreviewFollowsTheLastPoint(t *testing.T) {
 // that can show the segments already placed. It showed just the one at the cursor, leaving the
 // rest of the chain invisible until the command finished (#2032).
 func TestChainPreviewsEverySegmentPlaced(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	tool := NewLineTool()
 	s.StartTool(tool)
@@ -150,6 +156,7 @@ func TestChainPreviewsEverySegmentPlaced(t *testing.T) {
 // undo baseline, and without it Undo reports "nothing to undo" for ANY tool (verified against a
 // plain circle commit), which would make this test pass or fail for the wrong reason.
 func TestChainedLineIsOneUndoStep(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, err := s.CreateSketch(sketch.XYPlane())
 	if err != nil {

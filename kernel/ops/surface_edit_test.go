@@ -30,6 +30,7 @@ func boxFaces(sx, sy, sz float64) []*topo.Body {
 }
 
 func TestTrimByPlaneKeepsHalf(t *testing.T) {
+	t.Parallel()
 	patch := quadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
 	trimmed, err := TrimByPlane(patch, math.P3(2, 0, 0), math.V3(1, 0, 0), true, "trim")
 	if err != nil {
@@ -61,6 +62,7 @@ func twoQuadSheet(t *testing.T) *topo.Body {
 
 // K5: trimming a MULTI-FACE planar sheet clips each face and welds the kept ones back.
 func TestTrimMultiFaceSheet(t *testing.T) {
+	t.Parallel()
 	trimmed, err := TrimByPlane(twoQuadSheet(t), math.P3(1, 0, 0), math.V3(1, 0, 0), true, "trim")
 	if err != nil {
 		t.Fatalf("TrimByPlane multi-face: %v", err)
@@ -79,6 +81,7 @@ func TestTrimMultiFaceSheet(t *testing.T) {
 // upstream edit. They must now be named by their patch provenance — a shared seam by its two patches,
 // a boundary edge by its one patch — so a reference to a sheet edge survives a re-weld.
 func TestSheetEdgesAreProvenanceNamed(t *testing.T) {
+	t.Parallel()
 	off, err := OffsetSurface(twoQuadSheet(t), 0.5, "off")
 	if err != nil {
 		t.Fatalf("OffsetSurface: %v", err)
@@ -101,6 +104,7 @@ func TestSheetEdgesAreProvenanceNamed(t *testing.T) {
 
 // K5: offsetting a MULTI-FACE coplanar quilt translates every face along the shared normal.
 func TestOffsetMultiFaceCoplanar(t *testing.T) {
+	t.Parallel()
 	off, err := OffsetSurface(twoQuadSheet(t), 0.5, "off")
 	if err != nil {
 		t.Fatalf("OffsetSurface multi-face: %v", err)
@@ -116,6 +120,7 @@ func TestOffsetMultiFaceCoplanar(t *testing.T) {
 
 // K5: extending a planar surface's boundary edge grows the face outward by the distance.
 func TestExtendByEdgeGrowsFace(t *testing.T) {
+	t.Parallel()
 	patch := quadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
 	var key []byte // the bottom edge (both endpoints at y=0)
 	for _, e := range patch.Edges() {
@@ -140,6 +145,7 @@ func TestExtendByEdgeGrowsFace(t *testing.T) {
 }
 
 func TestExtendByEdgeLostEdgeErrors(t *testing.T) {
+	t.Parallel()
 	patch := quadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
 	if _, err := ExtendByEdge(patch, []byte("ghost"), 2, "ext"); err == nil {
 		t.Error("extending a lost edge should error")
@@ -147,6 +153,7 @@ func TestExtendByEdgeLostEdgeErrors(t *testing.T) {
 }
 
 func TestTrimByPlaneEmptyErrors(t *testing.T) {
+	t.Parallel()
 	patch := quadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
 	// Keep the x ≥ 10 side — nothing remains.
 	if _, err := TrimByPlane(patch, math.P3(10, 0, 0), math.V3(1, 0, 0), true, "trim"); err == nil {
@@ -157,6 +164,7 @@ func TestTrimByPlaneEmptyErrors(t *testing.T) {
 // TestBodyPlaneOfPlanarSurface returns the plane of a single-face (and a coplanar two-face) surface
 // body, and rejects a non-coplanar body — the Trim surface-body tool (#1880).
 func TestBodyPlaneOfPlanarSurface(t *testing.T) {
+	t.Parallel()
 	quad := quadBody("q", math.P3(0, 0, 5), math.P3(4, 0, 5), math.P3(4, 4, 5), math.P3(0, 4, 5)) // z=5 plane
 	pl, ok := BodyPlane(quad)
 	if !ok {
@@ -178,6 +186,7 @@ func TestBodyPlaneOfPlanarSurface(t *testing.T) {
 }
 
 func TestOffsetSurfaceMovesAlongNormal(t *testing.T) {
+	t.Parallel()
 	patch := quadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
 	offset, err := OffsetSurface(patch, 3, "offset")
 	if err != nil {
@@ -190,6 +199,7 @@ func TestOffsetSurfaceMovesAlongNormal(t *testing.T) {
 }
 
 func TestMidSurfacesThinBox(t *testing.T) {
+	t.Parallel()
 	// A 4×4×1 thin plate: only the top/bottom faces (separation 1) are a thin pair.
 	solid, _ := Stitch(boxFaces(4, 4, 1), 0, false, "box")
 	patches, err := MidSurfaces(solid, 0, 2, "mid")
@@ -214,6 +224,7 @@ func TestMidSurfacesThinBox(t *testing.T) {
 }
 
 func TestMidSurfacesNoThinPairErrors(t *testing.T) {
+	t.Parallel()
 	solid, _ := Stitch(boxFaces(1, 1, 1), 0, false, "box")
 	if _, err := MidSurfaces(solid, 0, 0.5, "mid"); err == nil {
 		t.Error("a cube with all separations 1 should have no pair within 0.5")
@@ -223,6 +234,7 @@ func TestMidSurfacesNoThinPairErrors(t *testing.T) {
 // TestMidSurfacesMinThicknessFloor: a min floor excludes pairs thinner than it (#1885). A 4×4×1
 // plate's separations are 1 (caps) and 4 (sides); the window [2,3] excludes both, so no pair.
 func TestMidSurfacesMinThicknessFloor(t *testing.T) {
+	t.Parallel()
 	solid, _ := Stitch(boxFaces(4, 4, 1), 0, false, "box")
 	if _, err := MidSurfaces(solid, 2, 3, "mid"); err == nil {
 		t.Error("the window [2,3] should exclude the sep-1 caps and sep-4 sides")
@@ -232,6 +244,7 @@ func TestMidSurfacesMinThicknessFloor(t *testing.T) {
 // TestMidSurfacesByPairs pairs the 4×4×1 plate's top and bottom caps explicitly, yielding one
 // mid-patch on z=0.5 with thickness 1 (#1885).
 func TestMidSurfacesByPairs(t *testing.T) {
+	t.Parallel()
 	solid, _ := Stitch(boxFaces(4, 4, 1), 0, false, "box")
 	var top, bot []byte
 	for _, f := range solid.Faces() {
@@ -255,6 +268,7 @@ func TestMidSurfacesByPairs(t *testing.T) {
 
 // TestMidSurfacesByPairsLostKeyErrors: an unresolved face key makes the op error.
 func TestMidSurfacesByPairsLostKeyErrors(t *testing.T) {
+	t.Parallel()
 	solid, _ := Stitch(boxFaces(4, 4, 1), 0, false, "box")
 	if _, err := MidSurfacesByPairs(solid, [][2][]byte{{[]byte("ghost"), []byte("gone")}}, "mid"); err == nil {
 		t.Error("a lost face-pair key should error")
@@ -265,6 +279,7 @@ func TestMidSurfacesByPairsLostKeyErrors(t *testing.T) {
 // classification with a named decline (not a generic NotYetImplemented). The decline classifies as
 // ErrSurfaceEditUnsupported and its message names the offending configuration.
 func TestSurfaceEditDeclinesCurvedTrim(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -280,6 +295,7 @@ func TestSurfaceEditDeclinesCurvedTrim(t *testing.T) {
 
 // TestSurfaceEditDeclinesCurvedOffset mirrors the trim decline for OffsetSurface (#3393).
 func TestSurfaceEditDeclinesCurvedOffset(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -293,6 +309,7 @@ func TestSurfaceEditDeclinesCurvedOffset(t *testing.T) {
 // reconnects for a coplanar quilt. A folded sheet is refused at classification, before any geometry is
 // built, and the message names both normals (#3393).
 func TestSurfaceEditDeclinesFoldedOffset(t *testing.T) {
+	t.Parallel()
 	flat := quadBody("flat", math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(0, 2, 0))
 	wall := quadBody("wall", math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(2, 2, 2), math.P3(2, 0, 2))
 	folded, err := Stitch([]*topo.Body{flat, wall}, 0, true, "folded")
@@ -311,6 +328,7 @@ func TestSurfaceEditDeclinesFoldedOffset(t *testing.T) {
 // TestSurfaceEditDeclinesSharedEdgeExtend: extending grows ONE face's boundary, so an interior edge
 // (shared by two faces) is refused with the offending face count named.
 func TestSurfaceEditDeclinesSharedEdgeExtend(t *testing.T) {
+	t.Parallel()
 	sheet := twoQuadSheet(t)
 	var key []byte // the interior seam at x=2, shared by both quads
 	for _, e := range sheet.Edges() {
@@ -333,6 +351,7 @@ func TestSurfaceEditDeclinesSharedEdgeExtend(t *testing.T) {
 // TestSurfaceEditDeclinesCurvedHostExtend: a cylinder's seam edge belongs to exactly one face — the
 // cylindrical side — so the decline comes from the host surface kind, not the edge's face count.
 func TestSurfaceEditDeclinesCurvedHostExtend(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)

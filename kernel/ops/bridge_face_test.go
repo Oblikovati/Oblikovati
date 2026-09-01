@@ -37,6 +37,7 @@ func bridgePatchBody(t *testing.T, xoff float64, z func(i, j int) float64) *topo
 // TestBridgeBodiesG2IsValidSurface bridges the gap between two curved panels (x∈[0,1] and x∈[2,3]) at
 // G2 on both sides and checks the result is a valid single-face surface body spanning the gap.
 func TestBridgeBodiesG2IsValidSurface(t *testing.T) {
+	t.Parallel()
 	a := bridgePatchBody(t, 0, func(i, j int) float64 { return 0.4 * float64(i*i) })
 	b := bridgePatchBody(t, 2, func(i, j int) float64 { return 0.3 * float64((4-i)*(4-i)) })
 	out, err := ops.BridgeBodies(a, b, 2, 2)
@@ -54,6 +55,7 @@ func TestBridgeBodiesG2IsValidSurface(t *testing.T) {
 }
 
 func TestBridgeBodiesErrorsOnNonNurbs(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 1, 1, 1)
 	good := bridgePatchBody(t, 2, func(i, j int) float64 { return 0 })
 	if _, err := ops.BridgeBodies(box, good, 1, 1); err == nil {

@@ -26,6 +26,7 @@ func b5Wall(t *testing.T) geom.Cylinder {
 // TestSlideOntoWallHitsTheClosedFormCrossing pins the core of the trim: sliding a section point along the
 // band's own ruling lands it exactly where the wall's implicit equation says, for each analytic wall family.
 func TestSlideOntoWallHitsTheClosedFormCrossing(t *testing.T) {
+	t.Parallel()
 	axisX := math.V3(1, 0, 0)
 	sphere, err := geom.NewSphere(math.P3(0, 0, 0), 150)
 	if err != nil {
@@ -69,6 +70,7 @@ func TestSlideOntoWallHitsTheClosedFormCrossing(t *testing.T) {
 // TestSlideOntoWallDeclinesWhenTheRulingMissesTheWall pins the honest decline: a ruling parallel to the wall
 // (or one whose crossing lies outside the band's own axial span) must leave the section alone.
 func TestSlideOntoWallDeclinesWhenTheRulingMissesTheWall(t *testing.T) {
+	t.Parallel()
 	wall := b5Wall(t)
 	if _, ok := slideOntoWall(math.P3(0, 0, 0), wall, axialSlide{axis: math.V3(0, 0, 1), reach: 200}); ok {
 		t.Error("a ruling ALONG the cylinder axis has no crossing, want decline")
@@ -82,6 +84,7 @@ func TestSlideOntoWallDeclinesWhenTheRulingMissesTheWall(t *testing.T) {
 // on its stop face must NOT be trimmed (that is what keeps every correctly-built band unchanged), while B5's
 // run-on cap must be.
 func TestSectionLeavesWallGatesOnlyOffWallCaps(t *testing.T) {
+	t.Parallel()
 	onWall, err := geom.Arc3dByThreePoints(math.P3(50, 0, 90), math.P3(35.35533905932738, 35.35533905932738, 90), math.P3(0, 50, 90))
 	if err != nil {
 		t.Fatalf("Arc3dByThreePoints: %v", err)
@@ -102,6 +105,7 @@ func TestSectionLeavesWallGatesOnlyOffWallCaps(t *testing.T) {
 // whose implicit form extends past the face's own trim. A fitted patch must be refused — ClosestPointOnSurface
 // clamps to its parametric box, so a slide off the patch would converge onto the patch BOUNDARY.
 func TestExtendableWallAcceptsOnlyImplicitWalls(t *testing.T) {
+	t.Parallel()
 	pl, err := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	if err != nil {
 		t.Fatalf("NewPlane: %v", err)
@@ -118,6 +122,7 @@ func TestExtendableWallAcceptsOnlyImplicitWalls(t *testing.T) {
 
 // TestBandAxialSpanIsTheCentreSeparationAlongTheAxis pins the slide cap.
 func TestBandAxialSpanIsTheCentreSeparationAlongTheAxis(t *testing.T) {
+	t.Parallel()
 	c0 := corner{cen: math.P3(10, 10, 90)}
 	c1 := corner{cen: math.P3(50, 10, 90)}
 	if got := bandAxialSpan(c0, c1, math.V3(1, 0, 0)); stdmath.Abs(got-40) > 1e-12 {
@@ -132,6 +137,7 @@ func TestBandAxialSpanIsTheCentreSeparationAlongTheAxis(t *testing.T) {
 // A blend / miter / run-out end has no stop face, and a variable fillet's chorded or conic section is emitted
 // by the ruled-strip path with its own end geometry.
 func TestPlainWallStopExcludesEveryNonWallEnd(t *testing.T) {
+	t.Parallel()
 	face := someFaceOf(t)
 	cases := []struct {
 		name string

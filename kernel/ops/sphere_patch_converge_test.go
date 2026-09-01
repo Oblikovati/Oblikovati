@@ -22,6 +22,7 @@ import (
 // sampled at 4096 points so the fixed boundary's own inscription (~2π³r²/3N² ≈ 1e-4) stays two
 // decades under the finest interior deficit being asserted.
 func TestSpherePatchDeficitConverges(t *testing.T) {
+	t.Parallel()
 	const radius = 13.0
 	sph, err := geom.NewSphere(math.P3(0, 0, 0), radius)
 	if err != nil {

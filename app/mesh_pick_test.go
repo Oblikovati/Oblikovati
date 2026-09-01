@@ -24,6 +24,7 @@ func meshBoundsCenterAbove(g *feature.MeshGeometry) (math.Point3, math.Vector3) 
 // TestRayPickerHitsPlacedMeshFacet pins #1776: a ray onto a placed mesh returns a MeshFaceHandle for
 // the owning mesh, a ray beside it misses, and a filter that excludes mesh faces returns nothing.
 func TestRayPickerHitsPlacedMeshFacet(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6)
 	if _, err := s.ImportMeshFile(tempSTL(t)); err != nil {
 		t.Fatalf("ImportMeshFile: %v", err)
@@ -62,6 +63,7 @@ func TestRayPickerHitsPlacedMeshFacet(t *testing.T) {
 // TestRayPickerMeshIndexIsCached: the per-mesh BVH is built once and reused across picks (the
 // hover-safe retention), so a second pick returns the same cached entry.
 func TestRayPickerMeshIndexIsCached(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6)
 	if _, err := s.ImportMeshFile(tempSTL(t)); err != nil {
 		t.Fatalf("ImportMeshFile: %v", err)

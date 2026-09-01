@@ -42,6 +42,7 @@ func tangentTwoBoxUnion(t *testing.T) *topo.Body {
 // faces ("non-manifold edge used by 4 faces") and the fillet failed. The carried source-edge id
 // (method C) keeps them distinct, so the tangency survives the re-weld.
 func TestFilletOnExactTangentStaysManifold(t *testing.T) {
+	t.Parallel()
 	body := tangentTwoBoxUnion(t)
 	top := highestEdge(t, body)
 	out, err := FilletEdges(body, [][]byte{top.ReferenceKey()}, 0.1)
@@ -83,6 +84,7 @@ func highestEdge(t *testing.T, b *topo.Body) *topo.Edge {
 // bit-identical result on every recompute. A residual 1e-5 nudge made downstream coplanar/imprint
 // classification flip nondeterministically between runs; the exact, undisplaced result removes that.
 func TestTangentContactChainedRecomputeDeterministic(t *testing.T) {
+	t.Parallel()
 	var want string
 	for i := range 10 {
 		body := tangentTwoBoxUnion(t)

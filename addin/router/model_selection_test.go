@@ -12,6 +12,7 @@ import (
 )
 
 func TestModelSelectionReportsReferences(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {

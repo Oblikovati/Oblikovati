@@ -40,6 +40,7 @@ func solidVolumes(fs *PartFeatures) []float64 {
 // TestSplitBySurfaceBodyHalvesTheSolid: the sheet at z=2 cuts the 4³ box into two 32s, and the
 // sheet itself survives — it is the tool, not a target.
 func TestSplitBySurfaceBodyHalvesTheSolid(t *testing.T) {
+	t.Parallel()
 	fs := boxAndSheetPart()
 	sp := NewModifyFeatures(fs).AddSplitByDefinition(&SplitSolidDefinition{
 		Tool: SplitBySurfaceBody, ToolIndex: 1, Keep: SplitBoth,
@@ -67,6 +68,7 @@ func TestSplitBySurfaceBodyHalvesTheSolid(t *testing.T) {
 // not its bodies, which is a different numbering the moment the part holds a solid too — index 0
 // here is the sheet, while body 0 is the box.
 func TestSplitByWorkSurfaceAddressesTheSheets(t *testing.T) {
+	t.Parallel()
 	fs := boxAndSheetPart()
 	sp := NewModifyFeatures(fs).AddSplitByDefinition(&SplitSolidDefinition{
 		Tool: SplitByWorkSurface, ToolIndex: 0, Keep: SplitPositive,
@@ -108,6 +110,7 @@ func bentSheetBody() *topo.Body {
 // approximating it by one of its faces would trim the part along the wrong surface. The refusal
 // is the honest answer until there is a general surface partitioner.
 func TestSplitRefusesANonPlanarTool(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(subd.ToBody(subd.Box(4, 4, 4), "box"))
 	NewBaseFeatures(fs).AddBase(bentSheetBody())
@@ -124,6 +127,7 @@ func TestSplitRefusesANonPlanarTool(t *testing.T) {
 // refusal — a solid tool would fail anyway for having no single plane, and "not planar" would
 // send the caller looking for a flatter solid instead of the surface they meant to pick.
 func TestSplitToolMisuseIsRefused(t *testing.T) {
+	t.Parallel()
 	for name, c := range map[string]struct {
 		def  *SplitSolidDefinition
 		want string
@@ -152,6 +156,7 @@ func TestSplitToolMisuseIsRefused(t *testing.T) {
 // must keep writing its plane reference alone — an existing document is not touched by the tool
 // option existing.
 func TestSplitToolRoundTrips(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewModifyFeatures(fs).AddSplitByDefinition(&SplitSolidDefinition{
 		Tool: SplitBySurfaceBody, ToolIndex: 2, Keep: SplitNegative,
@@ -176,6 +181,7 @@ func TestSplitToolRoundTrips(t *testing.T) {
 // TestUnknownSplitToolNameIsRefused: a misspelled tool must not fall back to the work plane,
 // which would cut along a datum the caller never asked for.
 func TestUnknownSplitToolNameIsRefused(t *testing.T) {
+	t.Parallel()
 	if _, ok := ParseSplitTool("surface"); ok {
 		t.Error(`ParseSplitTool("surface") should not resolve`)
 	}

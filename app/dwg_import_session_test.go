@@ -48,6 +48,7 @@ func corpusDWG(t *testing.T, name string) string {
 // TestDWGPlaneChoices lists the planes a 2D DWG import can target: at least the
 // three origin planes of the active part.
 func TestDWGPlaneChoices(t *testing.T) {
+	t.Parallel()
 	s := sessionWithPart(t)
 	choices, err := s.DWGPlaneChoices()
 	if err != nil {
@@ -66,6 +67,7 @@ func TestDWGPlaneChoices(t *testing.T) {
 // TestSessionImportDWGPlanar imports a real planar drawing onto the first plane and
 // checks it lands as a populated 2D sketch (undoable edit).
 func TestSessionImportDWGPlanar(t *testing.T) {
+	t.Parallel()
 	s := sessionWithPart(t)
 	choices, err := s.DWGPlaneChoices()
 	if err != nil {
@@ -89,6 +91,7 @@ func TestSessionImportDWGPlanar(t *testing.T) {
 // imported sketch at once (then redo brings it back). This also exercises the fast undo snapshot
 // codec on a real large import.
 func TestSessionImportDWGIsOneUndoStep(t *testing.T) {
+	t.Parallel()
 	s := sessionWithPart(t)
 	choices, err := s.DWGPlaneChoices()
 	if err != nil {

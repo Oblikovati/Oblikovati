@@ -89,6 +89,7 @@ func nearestCornerVertex(b *topo.Body, p math.Point3) *topo.Vertex {
 // TestConeCornerWeldWatertight pins the whole-body health gate: every cone-host corner welds to a valid,
 // hole-contained, volume-positive solid (C2/C6/D1). The exact same gate the corpus harness applies.
 func TestConeCornerWeldWatertight(t *testing.T) {
+	t.Parallel()
 	for _, fx := range coneWeldFixtures() {
 		t.Run(fx.name, func(t *testing.T) {
 			welded := weldConeCornerFixture(t, fx)
@@ -122,6 +123,7 @@ func everyEdgeTwoIncident(b *topo.Body) int {
 // folds. A folded mesh over-counts area and corrupts every downstream consumer, so FoldEdgeCount must be 0
 // on every face of C2/C6/D1.
 func TestConeCornerWeldFoldFree(t *testing.T) {
+	t.Parallel()
 	for _, fx := range coneWeldFixtures() {
 		t.Run(fx.name, func(t *testing.T) {
 			welded := weldConeCornerFixture(t, fx)
@@ -139,6 +141,7 @@ func TestConeCornerWeldFoldFree(t *testing.T) {
 // corner blend meshes the sub-hemisphere CAP (not the complement) — the assembleCornerBlendBody uniform-flip
 // fix — since the complement area would be 4πr² − girard ≈ 1000+, far outside the 1% tolerance.
 func TestConeCornerGirardArea(t *testing.T) {
+	t.Parallel()
 	for _, fx := range coneWeldFixtures() {
 		t.Run(fx.name, func(t *testing.T) {
 			welded := weldConeCornerFixture(t, fx)
@@ -170,6 +173,7 @@ func cornerSphereMesh(b *topo.Body) (geom.Sphere, *Mesh, bool) {
 // APPROXIMATION (9940.87) — asserted against the EXACT value, with the OCCT gap documented as an honest
 // exact-vs-OCCT deviation (like C8), forensically confirmed against DRAWEXE.
 func TestConeCornerWholeArea(t *testing.T) {
+	t.Parallel()
 	for _, fx := range coneWeldFixtures() {
 		t.Run(fx.name, func(t *testing.T) {
 			welded := weldConeCornerFixture(t, fx)

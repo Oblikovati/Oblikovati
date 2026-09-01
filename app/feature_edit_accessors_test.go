@@ -7,6 +7,7 @@ import "testing"
 // TestFeatureEditAccessorGuards covers the feature-edit accessors' no-edit guards: with no edit
 // active they return zero values rather than panicking (the head dialog reads them every frame).
 func TestFeatureEditAccessorGuards(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.IsEditingFeature() || s.ActiveFeatureEdit() != nil {
 		t.Fatal("a fresh session is not editing a feature")
@@ -29,6 +30,7 @@ func TestFeatureEditAccessorGuards(t *testing.T) {
 // TestBeginEditExtrudeStartsDedicatedTool covers editToolFor / the extrude edit tool path: editing
 // an extrude starts its dedicated edit tool and rolls the edit scope back to that feature.
 func TestBeginEditExtrudeStartsDedicatedTool(t *testing.T) {
+	t.Parallel()
 	s, _, f1, f2 := twoExtrudePart(t)
 	s.BeginEditFeature(FeatureHandle{Feature: f1})
 

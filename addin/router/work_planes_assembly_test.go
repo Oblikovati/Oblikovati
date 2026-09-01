@@ -29,6 +29,7 @@ func emptyAssemblySession(t *testing.T) (*Router, *app.Session) {
 // TestWorkPlanesListServesAssembly: an assembly answers workPlanes.list with its three origin
 // planes — before, the handler rejected an assembly ("not a part").
 func TestWorkPlanesListServesAssembly(t *testing.T) {
+	t.Parallel()
 	r, s := emptyAssemblySession(t)
 	var list wire.ListWorkPlanesResult
 	call(t, r, s, "workPlanes.list", "{}", &list)
@@ -46,6 +47,7 @@ func TestWorkPlanesListServesAssembly(t *testing.T) {
 // created, healthy, and lands at the expected position — the same flow a part supports (its offset
 // plane needs no body), now served for an assembly. Shares the assertion with the part test.
 func TestWorkPlanesCreateOffsetInAssembly(t *testing.T) {
+	t.Parallel()
 	r, s := emptyAssemblySession(t)
 	assertOffsetPlaneOnXY(t, r, s)
 }
@@ -53,6 +55,7 @@ func TestWorkPlanesCreateOffsetInAssembly(t *testing.T) {
 // TestWorkPlanesCreateThreePointsInAssembly: a three-point plane through the assembly's origin
 // datums is created and healthy — exercising a reference-only constructor against an assembly.
 func TestWorkPlanesCreateThreePointsInAssembly(t *testing.T) {
+	t.Parallel()
 	r, s := emptyAssemblySession(t)
 	var res wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create",
@@ -65,6 +68,7 @@ func TestWorkPlanesCreateThreePointsInAssembly(t *testing.T) {
 // TestWorkPointCreateInAssembly: a datum point fixed at a position is added to an assembly and
 // returns a usable reference.
 func TestWorkPointCreateInAssembly(t *testing.T) {
+	t.Parallel()
 	r, s := emptyAssemblySession(t)
 	var res wire.CreateWorkPointResult
 	call(t, r, s, "workPoints.create", `{"at":[1,2,3]}`, &res)

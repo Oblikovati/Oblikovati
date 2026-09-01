@@ -25,6 +25,7 @@ import (
 // ray-cast point-in-solid classifier removed that residual, so the union now
 // validates end to end.
 func TestValidateCrossingCylinders(t *testing.T) {
+	t.Parallel()
 	a, err := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	if err != nil {
 		t.Fatalf("cylinder a: %v", err)
@@ -96,6 +97,7 @@ func soupOpenEdges(soup [][3]meshbool.Point) int {
 // analytic volume — two r=3, h=12 cylinders (339.29 each) minus the thin lens
 // overlap (~1.5), about 677.
 func TestValidateGrazingSeamUnion(t *testing.T) {
+	t.Parallel()
 	a, err := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	if err != nil {
 		t.Fatalf("cylinder a: %v", err)

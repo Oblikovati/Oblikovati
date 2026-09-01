@@ -26,6 +26,7 @@ func activeLog(t *testing.T, s *Session) *command.SnapshotLog {
 // parameter changes a localised region of the recipe, so the stream must retain deltas — well
 // under the naive O(edits × recipeSize) the old RecipeEvent before+after held.
 func TestUndoStreamStoresDeltasNotFullSnapshots(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithSquare(t, 2)
 	trackFromHere(s)
 	def := partOf(t, s)
@@ -53,6 +54,7 @@ func TestUndoStreamStoresDeltasNotFullSnapshots(t *testing.T) {
 // edit restores the identical model state, proving the delta-log reconstruction is lossless at
 // every cursor position (the parity acceptance criterion).
 func TestUndoRedoParityThroughDeltaLog(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithSquare(t, 2)
 	trackFromHere(s)
 	def := partOf(t, s)
@@ -96,6 +98,7 @@ func TestUndoRedoParityThroughDeltaLog(t *testing.T) {
 // document with surviving events keeps its log trimmed to the earliest live position; a document
 // whose events all aged out has its log discarded. Tested directly so it needs no 2000-event run.
 func TestReclaimAuditLogsTrimsAndDiscards(t *testing.T) {
+	t.Parallel()
 	keptDoc, goneDoc := doc.ID(1), doc.ID(2)
 	audit := map[doc.ID]*command.SnapshotLog{
 		keptDoc: command.NewSnapshotLogEvery(2),

@@ -35,6 +35,7 @@ func commitLine3D(t *testing.T, s *Session, a, b math.Point3) *sketch.Line3D {
 }
 
 func TestSketch3DConstructionModeMarksNewGeometry(t *testing.T) {
+	t.Parallel()
 	s, _ := sketch3DSession(t)
 	if n := s.ToggleConstruction(); n != 0 {
 		t.Fatalf("with nothing selected ToggleConstruction converted %d entities, want 0 (it should arm)", n)
@@ -46,6 +47,7 @@ func TestSketch3DConstructionModeMarksNewGeometry(t *testing.T) {
 }
 
 func TestSketch3DConstructionModeDisarmedLeavesGeometryNormal(t *testing.T) {
+	t.Parallel()
 	s, _ := sketch3DSession(t)
 	l := commitLine3D(t, s, math.P3(0, 0, 0), math.P3(10, 0, 0))
 	if l.IsConstruction() {
@@ -56,6 +58,7 @@ func TestSketch3DConstructionModeDisarmedLeavesGeometryNormal(t *testing.T) {
 // The convert branch already worked in 3D — the ray picker puts a 3D entity in the selection as
 // a SketchEntityHandle — so this pins it against a regression while the arm branch is added.
 func TestSketch3DConstructionConvertsSelection(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	l := sk.AddLine3D(math.P3(0, 0, 0), math.P3(10, 0, 0))
 	s.Selection().Add(SketchEntityHandle{Entity: l})
@@ -71,6 +74,7 @@ func TestSketch3DConstructionConvertsSelection(t *testing.T) {
 }
 
 func TestSketch3DDrivenDimensionModeMarksNewDimensions(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	l := sk.AddLine3D(math.P3(0, 0, 0), math.P3(10, 0, 0))
 	if n := s.ToggleDrivenDimension(); n != 0 {
@@ -93,6 +97,7 @@ func TestSketch3DDrivenDimensionModeMarksNewDimensions(t *testing.T) {
 }
 
 func TestSketch3DFormatListsEditTheSelection(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	l := sk.AddLine3D(math.P3(0, 0, 0), math.P3(10, 0, 0))
 	s.Selection().Add(SketchEntityHandle{Entity: l})
@@ -122,6 +127,7 @@ func TestSketch3DFormatListsEditTheSelection(t *testing.T) {
 // The style resolver is what the 3D overlay draws through: a construction curve dashes, an
 // override colour and weight reach the screen, and Show Format suppresses the overrides.
 func TestSketch3DEntityStyleResolvesOverrides(t *testing.T) {
+	t.Parallel()
 	_, sk := sketch3DSession(t)
 	l := sk.AddLine3D(math.P3(0, 0, 0), math.P3(10, 0, 0))
 

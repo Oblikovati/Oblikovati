@@ -9,6 +9,7 @@ import (
 )
 
 func TestSegment2dIntersection(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name   string
 		a, b   LineSegment2d

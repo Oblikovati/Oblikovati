@@ -29,6 +29,7 @@ func partWithSquareRegion(t *testing.T) (*Session, *compdef.PartComponentDefinit
 // TestPatchToolEndToEnd drives the Patch UI: click a closed region — it auto-commits a surface
 // (a one-face sheet body, not a solid).
 func TestPatchToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def, region := partWithSquareRegion(t)
 	s.SetPicker(stubPicker{sel: region})
 
@@ -51,6 +52,7 @@ func TestPatchToolEndToEnd(t *testing.T) {
 }
 
 func TestPatchViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _, region := partWithSquareRegion(t)
 	s.SetPicker(stubPicker{sel: region})
 	if err := RegisterStandardCommands(s); err != nil {

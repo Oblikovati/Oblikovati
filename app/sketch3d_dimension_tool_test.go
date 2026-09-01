@@ -14,6 +14,7 @@ import (
 // inferred dimension kind: a line sizes its length, a circle its radius, a spline its
 // arc length, two points their distance.
 func TestSketch3DDimensionToolInfersKinds(t *testing.T) {
+	t.Parallel()
 	zAxis, err := math.NewUnitVector3(0, 0, 1)
 	if err != nil {
 		t.Fatalf("axis: %v", err)
@@ -62,6 +63,7 @@ func TestSketch3DDimensionToolInfersKinds(t *testing.T) {
 // TestSketch3DDimensionSeedsMeasuredValue checks the created dimension's expression
 // evaluates to the picked geometry's current size (a 3-4-5 line → 5 cm).
 func TestSketch3DDimensionSeedsMeasuredValue(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	l := sk.AddLine3D(math.P3(0, 0, 0), math.P3(3, 0, 4))
 	if err := s.Execute("Sketch3D.Dimension"); err != nil {

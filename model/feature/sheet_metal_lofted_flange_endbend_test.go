@@ -20,6 +20,7 @@ import (
 // origin tangent to +Y, turning to +X, every point sits on the circle of radius r about (r,0,0), and
 // the sampled tangents match +Y at the start and +X at the end.
 func TestFoldArcHasRadiusAndTangents(t *testing.T) {
+	t.Parallel()
 	const r = 0.5
 	pts, end := foldArc(math.P3(0, 0, 0), math.V3(0, 1, 0), math.V3(1, 0, 0), r, endBendFoldSamples)
 	if len(pts) != endBendFoldSamples+1 {
@@ -61,6 +62,7 @@ func assertDir(t *testing.T, got, want math.Vector3, label string) {
 // each profile's plane and sit outboard of the profile by the lip length, so the wall really gains a
 // flat lip before it folds up.
 func TestEndBendLipLiesInProfilePlane(t *testing.T) {
+	t.Parallel()
 	up := math.V3(0, 0, 1).AsUnit()
 	bandA := []math.Point3{math.P3(-1, -1, 0), math.P3(1, -1, 0), math.P3(1, 1, 0), math.P3(-1, 1, 0)}
 	bandB := []math.Point3{math.P3(-2, -2, 3), math.P3(2, -2, 3), math.P3(2, 2, 3), math.P3(-2, 2, 3)}
@@ -118,6 +120,7 @@ func loftedFlangeWall(t *testing.T, radius float64) (*topo.Body, *PartFeature) {
 // so the wall keeps it: the solid is self-intersection-free, reports no lip-dropped fallback, and
 // flares OUTWARD past the sharp reference (the lip really extends the wall in the profile plane).
 func TestLoftedFlangeEndBendKeepsLipWhenItFits(t *testing.T) {
+	t.Parallel()
 	reach := func(b *topo.Body) float64 { box := b.RangeBox(); return float64(box.Min.DistanceTo(box.Max)) }
 	sharp, _ := loftedFlangeWall(t, 0)
 	body, pf := loftedFlangeWall(t, 0.05) // small enough that the lip fits the L-profile band
@@ -133,6 +136,7 @@ func TestLoftedFlangeEndBendKeepsLipWhenItFits(t *testing.T) {
 // the wall must fall back to the fold alone — still a valid (self-intersection-free) solid — and
 // report the lip-dropped diagnostic rather than ship an interpenetrating wall.
 func TestLoftedFlangeEndBendFallsBackOnTightRadius(t *testing.T) {
+	t.Parallel()
 	_, pf := loftedFlangeWall(t, 0.3) // fatals inside if the solid self-intersects
 	if !hasDiagCode(pf.Diagnostics(), codeLoftedFlangeLipDropped) {
 		t.Errorf("a self-intersecting lip must report %q so the fallback is visible: %v",

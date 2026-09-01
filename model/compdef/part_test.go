@@ -24,6 +24,7 @@ func bodyWithCorner(x, y, z float64) *topo.Body {
 }
 
 func TestPartContentImplementsDocContent(t *testing.T) {
+	t.Parallel()
 	var _ doc.Content = NewPartComponentDefinition()
 	if NewPartComponentDefinition().DocumentType() != doc.Part {
 		t.Error("part content should report DocumentType Part")
@@ -31,6 +32,7 @@ func TestPartContentImplementsDocContent(t *testing.T) {
 }
 
 func TestPartDocumentExposesBodiesAndBoundingBox(t *testing.T) {
+	t.Parallel()
 	def := NewPartComponentDefinition()
 	def.SurfaceBodies().Add(bodyWithCorner(4, 3, 2))
 
@@ -57,6 +59,7 @@ func TestPartDocumentExposesBodiesAndBoundingBox(t *testing.T) {
 }
 
 func TestGeometryVersionChangesOnEdit(t *testing.T) {
+	t.Parallel()
 	def := NewPartComponentDefinition()
 	v0 := def.ModelGeometryVersion()
 	def.MarkChanged()
@@ -71,6 +74,7 @@ func TestGeometryVersionChangesOnEdit(t *testing.T) {
 }
 
 func TestEmptyDefinitionAccessors(t *testing.T) {
+	t.Parallel()
 	def := NewPartComponentDefinition()
 	if def.SurfaceBodies().Count() != 0 || def.Parameters().Count() != 0 || def.Sketches().Count() != 0 {
 		t.Error("new definition should be empty")
@@ -81,6 +85,7 @@ func TestEmptyDefinitionAccessors(t *testing.T) {
 }
 
 func TestEndOfPartRollback(t *testing.T) {
+	t.Parallel()
 	def := NewPartComponentDefinition()
 	if def.IsRolledBack() || def.EndOfPartPosition() != -1 {
 		t.Fatal("new definition should be at end-of-part, not rolled back")

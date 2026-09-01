@@ -62,6 +62,7 @@ const dimTol = 1e-6
 // A 2D distance dimension bound to a user parameter must take the parameter's value on the
 // first recompute and follow every later edit.
 func TestSketch2DDistanceDimensionFollowsParameterOnRecompute(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	mustUserParam(t, def, "w", "3 cm")
 	_, p0, p1 := dimLine2D(t, def, sketch.XYPlane(), "w")
@@ -81,6 +82,7 @@ func TestSketch2DDistanceDimensionFollowsParameterOnRecompute(t *testing.T) {
 // A dimension bound to a parameter whose expression references ANOTHER parameter must follow
 // the transitive edit (w changes → h = w/2 changes → the dimension moves).
 func TestSketch2DDimensionFollowsDependentParameterExpression(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	mustUserParam(t, def, "w", "10 cm")
 	mustUserParam(t, def, "h", "w / 2")
@@ -101,6 +103,7 @@ func TestSketch2DDimensionFollowsDependentParameterExpression(t *testing.T) {
 // Independent dimensions on independent parameters in the same 2D sketch must each follow
 // their own parameter, and editing one must not disturb the other.
 func TestSketch2DIndependentDimensionsTrackOwnParameters(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	mustUserParam(t, def, "a", "4 cm")
 	mustUserParam(t, def, "b", "9 cm")
@@ -139,6 +142,7 @@ func dimLine3D(t *testing.T, def *compdef.PartComponentDefinition, expr string) 
 // follow the transitive edit on recompute (the 3D analogue of the 2D dependent-expression
 // test, and a guard that 3D re-solving honours the parameter graph — Oblikovati#1566).
 func TestSketch3DDimensionFollowsDependentParameterExpression(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	mustUserParam(t, def, "w", "10 cm")
 	mustUserParam(t, def, "h", "w / 2")
@@ -159,6 +163,7 @@ func TestSketch3DDimensionFollowsDependentParameterExpression(t *testing.T) {
 // Independent dimensions on independent parameters across two 3D sketches must each follow
 // their own parameter, and editing one must not disturb the other.
 func TestSketch3DIndependentDimensionsTrackOwnParameters(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	mustUserParam(t, def, "p", "4 cm")
 	mustUserParam(t, def, "q", "9 cm")
@@ -198,6 +203,7 @@ func dist3D(a, b *sketch.IncludedPoint3D) float64 { return a.Position().Distance
 // separation in 3D — and follow when the parameters change. This covers the chain
 // SetExpression → 2D solve → UpdateIncluded (the 2D→3D include refresh) end to end.
 func TestIncludedGeometryFromConstrained2DSketchesFollowsParametersInto3D(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	mustUserParam(t, def, "ax", "3 cm")
 	mustUserParam(t, def, "by", "4 cm")
@@ -244,6 +250,7 @@ func TestIncludedGeometryFromConstrained2DSketchesFollowsParametersInto3D(t *tes
 // must present the source's parameter-driven length in 3D and follow edits — exercising the
 // IncludeCurve3D path alongside IncludePoint3D.
 func TestIncludedCurveFromConstrained2DSketchFollowsParameterInto3D(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	mustUserParam(t, def, "len", "5 cm")
 	sk, p0, p1 := dimLine2D(t, def, sketch.XYPlane(), "len")
@@ -272,6 +279,7 @@ func TestIncludedCurveFromConstrained2DSketchFollowsParameterInto3D(t *testing.T
 // on its solve, so a stale (pre-solve) include anchor would place the dependent 3D point at
 // the wrong distance; this pins the single-recompute ordering.
 func TestSketch3DDimensionAgainstIncluded2DPointIsCorrectInOneRecompute(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	mustUserParam(t, def, "seg", "5 cm") // drives the 2D source (moves the included point)
 	mustUserParam(t, def, "gap", "7 cm") // drives the 3D dimension against the included anchor

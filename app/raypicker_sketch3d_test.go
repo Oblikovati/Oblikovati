@@ -32,6 +32,7 @@ func sketch3DPicker(t *testing.T, target math.Point3) (*Session, *sketch.Sketch3
 // TestRayPickerSelectsSketch3DLine checks a viewport click lands on a 3D-sketch line —
 // what feeds the 3D constraint tools their picks (issue #142).
 func TestRayPickerSelectsSketch3DLine(t *testing.T) {
+	t.Parallel()
 	s, sk3 := sketch3DPicker(t, math.P3(1, 1, 0))
 	l := sk3.AddLine3D(math.P3(0, 1, 0), math.P3(2, 1, 0)) // passes under the centre pixel
 
@@ -48,6 +49,7 @@ func TestRayPickerSelectsSketch3DLine(t *testing.T) {
 // TestRayPickerSelectsSketch3DCurveAndPoint checks sampled-curve picking (a helix seen
 // down its axis) and standalone-point picking.
 func TestRayPickerSelectsSketch3DCurveAndPoint(t *testing.T) {
+	t.Parallel()
 	zAxis, err := math.NewUnitVector3(0, 0, 1)
 	if err != nil {
 		t.Fatalf("axis: %v", err)
@@ -72,6 +74,7 @@ func TestRayPickerSelectsSketch3DCurveAndPoint(t *testing.T) {
 // TestRayPickerSketch3DRespectsFilter: with a face-only filter, a 3D-sketch entity
 // under the cursor must not be picked.
 func TestRayPickerSketch3DRespectsFilter(t *testing.T) {
+	t.Parallel()
 	s, sk3 := sketch3DPicker(t, math.P3(1, 1, 0))
 	sk3.AddLine3D(math.P3(0, 1, 0), math.P3(2, 1, 0))
 	s.Selection().SetFilter(NewSelectionFilter(SelectFace))

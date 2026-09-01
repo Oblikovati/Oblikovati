@@ -95,6 +95,7 @@ func spanAreaTowerArea() float64 {
 // is exact at the ring's coarse production sampling because a z = const arc's chart image is a straight
 // line whatever the sample count.
 func TestDevelopedSpanAreaIsExactOnACylinderPatch(t *testing.T) {
+	t.Parallel()
 	ring := append(spanAreaRimArc(0, 0, 2.0),
 		endSeg{from: spanAreaAt(2.0, 0), to: spanAreaAt(2.0, 3.0)})
 	ring = append(ring, spanAreaRimArc(3.0, 2.0, 0)...)
@@ -109,6 +110,7 @@ func TestDevelopedSpanAreaIsExactOnACylinderPatch(t *testing.T) {
 // TestDevelopedSpanAreaIsTheNewellAreaOnAPlane is the no-regression half: on a planar host the criterion
 // must be the SAME NUMBER the projected one produced, bit for bit, so no planar corpus pick can move.
 func TestDevelopedSpanAreaIsTheNewellAreaOnAPlane(t *testing.T) {
+	t.Parallel()
 	ring := []math.Point3{math.P3(0, 0, 0), math.P3(10, 0, 0), math.P3(10, 0, 4), math.P3(3, 0, 4)}
 	plane := chainPlaneThrough(math.P3(0, 0, 0), math.V3(0, 1, 0))
 	newell := float64(newellNormal(ring).Length()) / 2
@@ -127,6 +129,7 @@ func TestDevelopedSpanAreaIsTheNewellAreaOnAPlane(t *testing.T) {
 // of its width in projection while the tower's 0.3 rad costs it 0.4 %. A projected criterion therefore
 // removes the band: it keeps 24 of a 81-unit face and throws away 57.
 func TestProjectedSpanAreaPicksTheWRONGCornerWhereTheDevelopedOnePicksRight(t *testing.T) {
+	t.Parallel()
 	host, ring, chain := spanAreaCylinder(), spanAreaLRing(), spanAreaChain()
 	band, tower := spanAreaSpans(t, ring, chain)
 

@@ -25,6 +25,7 @@ func unitZ(t *testing.T) math.UnitVector3 {
 }
 
 func TestSphereArmSurfaceBuildsAndDeclines(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForPoints([]math.Point3{math.P3(0, 0, 0), math.P3(0, 0, 300)})
 	sp := geom.Sphere{Center: math.P3(0, 0, 0), Radius: 150}
 	capPlane, _ := geom.NewPlane(math.P3(0, 0, 129.9038), math.V3(0, 0, 1))
@@ -45,6 +46,7 @@ func TestSphereArmSurfaceBuildsAndDeclines(t *testing.T) {
 }
 
 func TestSphereArmErrorMessages(t *testing.T) {
+	t.Parallel()
 	sp := geom.Sphere{Center: math.P3(0, 0, 0), Radius: 150}
 	for _, tc := range []struct {
 		reason sphereArmReject

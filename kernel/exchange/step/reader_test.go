@@ -39,6 +39,7 @@ func importOneSolid(t *testing.T, name string) *topo.Body {
 }
 
 func TestImportCubeIsValidSolid(t *testing.T) {
+	t.Parallel()
 	body := importOneSolid(t, "cube.step")
 	if !body.IsSolid() {
 		t.Error("imported cube should be a solid")
@@ -52,6 +53,7 @@ func TestImportCubeIsValidSolid(t *testing.T) {
 }
 
 func TestImportCubeVolume(t *testing.T) {
+	t.Parallel()
 	body := importOneSolid(t, "cube.step")
 	props := ops.BodyGeometryProperties(body, ops.DefaultQuality())
 	const want = 1000.0 // 10mm cube
@@ -70,6 +72,7 @@ func approx(got, want, relTol float64) bool {
 }
 
 func TestImportCylinderIsValidSolid(t *testing.T) {
+	t.Parallel()
 	body := importOneSolid(t, "cylinder.step")
 	if !body.IsSolid() {
 		t.Error("imported cylinder should be a solid")
@@ -83,6 +86,7 @@ func TestImportCylinderIsValidSolid(t *testing.T) {
 }
 
 func TestImportCylinderVolume(t *testing.T) {
+	t.Parallel()
 	body := importOneSolid(t, "cylinder.step")
 	// Curved-body volume converges with faceting density (the divergence sum is exact
 	// only for planar faces), so the gate uses a fine chord/angle tolerance.
@@ -100,6 +104,7 @@ func fineQuality() ops.Quality {
 }
 
 func TestImportBoxWithHoleIsValidSolid(t *testing.T) {
+	t.Parallel()
 	body := importOneSolid(t, "box_hole.step")
 	if r := ops.Validate(body); !r.Valid {
 		t.Errorf("imported box-with-hole is invalid: %+v", r)
@@ -110,6 +115,7 @@ func TestImportBoxWithHoleIsValidSolid(t *testing.T) {
 }
 
 func TestImportBoxWithHoleVolume(t *testing.T) {
+	t.Parallel()
 	body := importOneSolid(t, "box_hole.step")
 	props := ops.BodyGeometryProperties(body, fineQuality())
 	const want = 20.0*20.0*20.0 - 3.141592653589793*5.0*5.0*20.0 // block - bore
@@ -119,6 +125,7 @@ func TestImportBoxWithHoleVolume(t *testing.T) {
 }
 
 func TestImportCubeSharesEdges(t *testing.T) {
+	t.Parallel()
 	body := importOneSolid(t, "cube.step")
 	// A closed manifold cube has 12 edges, each used by exactly two faces with
 	// opposite orientation — the proof the STEP sense triple composed correctly.

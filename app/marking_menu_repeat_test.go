@@ -21,6 +21,7 @@ func countingCommand(t *testing.T, s *Session, id string) *int {
 // TestLastCommandTrackedAndRepeated: executing a command records it as the last, and
 // RepeatLastCommand re-runs it (#915 C5).
 func TestLastCommandTrackedAndRepeated(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	runs := countingCommand(t, s, "Test.Ping")
 
@@ -44,6 +45,7 @@ func TestLastCommandTrackedAndRepeated(t *testing.T) {
 
 // TestRepeatLastNoPriorCommandIsNoOp: with no prior command, repeat does nothing.
 func TestRepeatLastNoPriorCommandIsNoOp(t *testing.T) {
+	t.Parallel()
 	if err := NewSession().RepeatLastCommand(); err != nil {
 		t.Errorf("repeat with no prior command should be a no-op, got %v", err)
 	}
@@ -52,6 +54,7 @@ func TestRepeatLastNoPriorCommandIsNoOp(t *testing.T) {
 // TestRepeatMenuEntryIdleAndActive: the Repeat entry shows the last command's name when idle, and
 // is withheld while a tool is active or before any command has run (#915 C5).
 func TestRepeatMenuEntryIdleAndActive(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	countingCommand(t, s, "Test.Extrude")
 
@@ -77,6 +80,7 @@ func TestRepeatMenuEntryIdleAndActive(t *testing.T) {
 // TestContextMenuStyleToggle: the right-click style defaults to the radial marking menu and flips
 // to the classic linear menu (#915 C8).
 func TestContextMenuStyleToggle(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.ClassicContextMenu() {
 		t.Error("the right-click menu should default to the radial marking menu")

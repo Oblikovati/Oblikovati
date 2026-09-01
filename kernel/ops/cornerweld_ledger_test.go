@@ -20,6 +20,7 @@ func zzLedgerSeg(x float64) endSeg {
 // rather than a habit — a future refactor that drops one face's claim (the crack that has cost this vein a
 // case at a time) fails HERE, with the rail named, instead of surfacing downstream as Validate.Closed=false.
 func TestLedgerEveryRailTwoIncident(t *testing.T) {
+	t.Parallel()
 	led := newCornerWeldLedger()
 	shared := led.add("arm/near", zzLedgerSeg(0))
 	if why := led.certifyTwoIncident(); !strings.Contains(why, "0-incident") {
@@ -43,6 +44,7 @@ func TestLedgerEveryRailTwoIncident(t *testing.T) {
 // claiming the same rail twice used to certify as clean 2-incidence, so a boundary the neighbouring face
 // never closed could reach assembleBody. The certificate must count DISTINCT faces and name the self-pair.
 func TestLedgerSelfPairedRailFailsTheCertificate(t *testing.T) {
+	t.Parallel()
 	led := newCornerWeldLedger()
 	shared := led.add("arm/near", zzLedgerSeg(0))
 	led.seg(shared, railForward, blendClaimant(0))
@@ -57,6 +59,7 @@ func TestLedgerSelfPairedRailFailsTheCertificate(t *testing.T) {
 // reads the SAME registered curve traversed backwards — never a re-derived congruent one. The endpoints must
 // therefore swap exactly, with no re-fitting.
 func TestLedgerReversedClaimIsTheSameCurve(t *testing.T) {
+	t.Parallel()
 	led := newCornerWeldLedger()
 	id := led.add("host/rail", zzLedgerSeg(3))
 	fwd, okF := led.seg(id, railForward, blendClaimant(0))
@@ -72,6 +75,7 @@ func TestLedgerReversedClaimIsTheSameCurve(t *testing.T) {
 // TestLedgerChainClaimsEveryPiece checks a rail CHAIN claims each piece once per read, in order forward and
 // end-to-end reversed — the property the two faces of a split boundary rely on.
 func TestLedgerChainClaimsEveryPiece(t *testing.T) {
+	t.Parallel()
 	led := newCornerWeldLedger()
 	ids := []railID{led.add("c0", zzLedgerSeg(0)), led.add("c1", zzLedgerSeg(1))}
 	fwd, okF := led.chain(ids, railForward, blendClaimant(0))
@@ -90,6 +94,7 @@ func TestLedgerChainClaimsEveryPiece(t *testing.T) {
 // TestLedgerEndsDoesNotClaim pins that reading a chain's feet is NOT a claim — the executor needs the feet
 // to build neighbouring geometry, and counting that as a face claim would make the certificate vacuous.
 func TestLedgerEndsDoesNotClaim(t *testing.T) {
+	t.Parallel()
 	led := newCornerWeldLedger()
 	ids := []railID{led.add("c0", zzLedgerSeg(0))}
 	if _, _, ok := led.ends(ids); !ok {
@@ -104,6 +109,7 @@ func TestLedgerEndsDoesNotClaim(t *testing.T) {
 // iterates the REGISTERED rails, and nothing is registered under noRail — so resolving one must decline
 // outright rather than hand back a zero endSeg that would weld a degenerate segment into a face loop.
 func TestLedgerUnsetHandleDeclines(t *testing.T) {
+	t.Parallel()
 	led := newCornerWeldLedger()
 	led.add("only", zzLedgerSeg(0))
 	if _, ok := led.seg(noRail, railForward, blendClaimant(0)); ok {

@@ -47,6 +47,7 @@ func participantMachinedVolume(asm *compdef.AssemblyComponentDefinition, o *occu
 // removes the analytic wedge from the participant — proving the picked world edge resolves to the
 // right component-local edge (a wrong suffix would no-op, leaving the volume unchanged).
 func TestAssemblyChamferMachinesParticipant(t *testing.T) {
+	t.Parallel()
 	s, asm, occ := assemblyWithBoxComponent(t, 0) // box [0,2]×[0,2]×[0,4], volume 16
 
 	tool := NewAssemblyChamferTool()
@@ -71,6 +72,7 @@ func TestAssemblyChamferMachinesParticipant(t *testing.T) {
 // one edge on one placed instance chamfers that edge on EVERY instance of the component — a single
 // feature, resolved per participant by the component-local suffix.
 func TestAssemblyChamferAppliesToAllInstances(t *testing.T) {
+	t.Parallel()
 	s, asm, occ1 := assemblyWithBoxComponent(t, 0)
 	box := s.Workspace().Documents()[0] // the box component document
 	occ2, err := asm.PlaceComponentFromFile(s.ActiveDocument(), box, "box:2", math.Translation4(math.V3(20, 0, 0)))
@@ -94,6 +96,7 @@ func TestAssemblyChamferAppliesToAllInstances(t *testing.T) {
 // TestAssemblyFilletMachinesParticipant: rounding a component edge removes the convex corner
 // material from the participant (volume drops below the box, by a small rounded amount).
 func TestAssemblyFilletMachinesParticipant(t *testing.T) {
+	t.Parallel()
 	s, asm, occ := assemblyWithBoxComponent(t, 0)
 
 	tool := NewAssemblyFilletTool()
@@ -115,6 +118,7 @@ func TestAssemblyFilletMachinesParticipant(t *testing.T) {
 // TestAssemblyDressupNeedsEdge: committing with nothing picked errors rather than adding an empty
 // feature.
 func TestAssemblyDressupNeedsEdge(t *testing.T) {
+	t.Parallel()
 	s, _, _ := assemblyWithBoxComponent(t, 0)
 	if NewAssemblyChamferTool().CanCommit() {
 		t.Error("a chamfer with no edge picked should not be committable")
@@ -127,6 +131,7 @@ func TestAssemblyDressupNeedsEdge(t *testing.T) {
 // TestComponentEdgeSuffixStripsOccurrencePrefix pins the resolution helper: a world key
 // [kind]+"occurrence:occ#3/extrude:edge#2" yields the bare component suffix "extrude:edge#2".
 func TestComponentEdgeSuffixStripsOccurrencePrefix(t *testing.T) {
+	t.Parallel()
 	worldKey := append([]byte{byte(topo.KindEdge)}, []byte("occurrence:occ#3/extrude:edge#2")...)
 	if got := string(componentEdgeSuffix(worldKey)); got != "extrude:edge#2" {
 		t.Errorf("componentEdgeSuffix = %q, want extrude:edge#2", got)

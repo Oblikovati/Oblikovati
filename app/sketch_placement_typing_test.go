@@ -31,6 +31,7 @@ func placingRectangle(t *testing.T) *Session {
 // TestDigitWhilePlacingDoesNotGrabTheCommandWindow is the regression: the keystroke must not steal
 // keyboard focus, or every digit after the first lands in the command line.
 func TestDigitWhilePlacingDoesNotGrabTheCommandWindow(t *testing.T) {
+	t.Parallel()
 	s := placingRectangle(t)
 
 	if err := s.PressKey(KeyEvent{Key: "1"}); err != nil {
@@ -49,6 +50,7 @@ func TestDigitWhilePlacingDoesNotGrabTheCommandWindow(t *testing.T) {
 // digits that exposed it. A letter would take the keyboard just as effectively, and the placement's
 // entry surfaces would go dead the same way.
 func TestNoKeyWhilePlacingFocusesTheCommandWindow(t *testing.T) {
+	t.Parallel()
 	for _, key := range []string{"1", "L", "7", "x"} {
 		s := placingRectangle(t)
 
@@ -70,6 +72,7 @@ func TestNoKeyWhilePlacingFocusesTheCommandWindow(t *testing.T) {
 // still take the keystroke. The inhibition begins at the first MOUSE-placed point, not at the
 // tool starting.
 func TestCommandWindowStaysOpenBeforeTheFirstClick(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	s.StartTool(NewRectangleTool()) // started, nothing clicked
 
@@ -89,6 +92,7 @@ func TestCommandWindowStaysOpenBeforeTheFirstClick(t *testing.T) {
 // not hand the keyboard away — the user is plainly working there, and would otherwise be unable to
 // type the second point.
 func TestTypedFirstPointKeepsTheCommandWindow(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	s.StartTool(NewLineTool())
 	if err := s.CommandLine().Submit(s, "0,0"); err != nil {
@@ -111,6 +115,7 @@ func TestTypedFirstPointKeepsTheCommandWindow(t *testing.T) {
 // again — otherwise the first shape drawn in a session would poison the Command Window for the
 // rest of it.
 func TestNextCommandStartsWithTheKeyboardFree(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	// Switch commands MID-placement — the ribbon button clicked with a point already down. That
 	// path cancels the running tool inside StartTool rather than through CancelTool/commit, so it
@@ -134,6 +139,7 @@ func TestNextCommandStartsWithTheKeyboardFree(t *testing.T) {
 // Once the tool is gone a bare key starts a command again, or the fix would break command typing
 // for the rest of the session.
 func TestPlacementInhibitionEndsWithTheTool(t *testing.T) {
+	t.Parallel()
 	s := placingRectangle(t)
 	s.CancelTool()
 
@@ -148,6 +154,7 @@ func TestPlacementInhibitionEndsWithTheTool(t *testing.T) {
 // TestDigitStillStartsACommandOutsideASketch: the dimension boxes only own digits while a shape is
 // being placed. With no sketch tool running, a digit begins a command as it always did.
 func TestDigitStillStartsACommandOutsideASketch(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 
 	if err := s.PressKey(KeyEvent{Key: "1"}); err != nil {
@@ -162,6 +169,7 @@ func TestDigitStillStartsACommandOutsideASketch(t *testing.T) {
 // TestDigitsAccumulateAndTabAdvances is the user-visible behaviour end to end: several digits fill
 // one box, Tab locks it and moves to the next.
 func TestDigitsAccumulateAndTabAdvances(t *testing.T) {
+	t.Parallel()
 	s := placingRectangle(t)
 	for _, r := range "125" {
 		s.PlacementFieldInput(r)
@@ -182,6 +190,7 @@ func TestDigitsAccumulateAndTabAdvances(t *testing.T) {
 // to the in-place boxes, not drop it. The head feeds them from its own character queue, so this is
 // what every other caller — the wire's viewport.key, a script — depends on.
 func TestKeystrokeReachesTheBoxesNotNowhere(t *testing.T) {
+	t.Parallel()
 	s := placingRectangle(t)
 
 	for _, key := range []string{"2", "5"} {
@@ -199,6 +208,7 @@ func TestKeystrokeReachesTheBoxesNotNowhere(t *testing.T) {
 // creates. The commit created the dimension but never re-solved, so the rectangle kept the size the
 // cursor happened to be at while its dimension claimed the typed one (#2034).
 func TestLockedValueShapesTheCommittedGeometry(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewRectangleTool())
 	s.Click(40, 40)
@@ -224,6 +234,7 @@ func TestLockedValueShapesTheCommittedGeometry(t *testing.T) {
 // cursor's size (23.1 x 24.6 mm) carrying dimensions that said 10 x 30, and only snapped to them
 // when the user dragged the geometry and forced a re-solve (#2034).
 func TestBothLockedValuesShapeTheCommittedRectangle(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewRectangleTool())
 	s.Click(40, 40)
@@ -258,6 +269,7 @@ func edgeLength(sk *sketch.Sketch, i int) float64 {
 // TestLockedValueShapesEveryGeometryKind: the defect was in the shared recipe commit, so it hit
 // every tool that routes through it — not only the rectangle it was reported on.
 func TestLockedValueShapesEveryGeometryKind(t *testing.T) {
+	t.Parallel()
 	t.Run("circle diameter", func(t *testing.T) {
 		s, sk := sketchSession(t)
 		s.StartTool(NewCircleTool())

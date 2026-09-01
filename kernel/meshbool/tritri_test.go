@@ -13,6 +13,7 @@ func tri(pts ...[3]float64) [3]Point {
 }
 
 func TestIntersectTrianglesKnownCrossing(t *testing.T) {
+	t.Parallel()
 	// t1 in z=0, t2 in x=0; planes meet on the y-axis. t1 spans y∈[-2,2] there,
 	// t2 spans y∈[-1,1]; the overlap is the segment (0,-1,0)-(0,1,0).
 	t1 := tri([3]float64{-2, -2, 0}, [3]float64{2, -2, 0}, [3]float64{0, 2, 0})
@@ -28,6 +29,7 @@ func TestIntersectTrianglesKnownCrossing(t *testing.T) {
 }
 
 func TestIntersectTrianglesDisjoint(t *testing.T) {
+	t.Parallel()
 	t1 := tri([3]float64{0, 0, 0}, [3]float64{2, 0, 0}, [3]float64{0, 2, 0})
 	t2 := tri([3]float64{0, 0, 5}, [3]float64{1, 0, 5}, [3]float64{0, 1, 5})
 	if got := IntersectTriangles(t1, t2); got.Kind != Disjoint {
@@ -36,6 +38,7 @@ func TestIntersectTrianglesDisjoint(t *testing.T) {
 }
 
 func TestIntersectTrianglesCoplanar(t *testing.T) {
+	t.Parallel()
 	t1 := tri([3]float64{0, 0, 0}, [3]float64{4, 0, 0}, [3]float64{0, 4, 0})
 	t2 := tri([3]float64{1, 1, 0}, [3]float64{3, 1, 0}, [3]float64{1, 3, 0})
 	if got := IntersectTriangles(t1, t2); got.Kind != Coplanar {
@@ -44,6 +47,7 @@ func TestIntersectTrianglesCoplanar(t *testing.T) {
 }
 
 func TestIntersectTrianglesTouching(t *testing.T) {
+	t.Parallel()
 	// t2's crossing span on the y-axis starts exactly where t1's ends (y=2).
 	t1 := tri([3]float64{-2, -2, 0}, [3]float64{2, -2, 0}, [3]float64{0, 2, 0})
 	t2 := tri([3]float64{0, 2, 0}, [3]float64{0, 4, -1}, [3]float64{0, 4, 1})
@@ -62,6 +66,7 @@ func TestIntersectTrianglesTouching(t *testing.T) {
 // Crossing has P!=Q while a Touching has P==Q. Ground truth is exact rational
 // containment, independent of the segment-construction path.
 func TestIntersectTrianglesProperties(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewSource(0x1c03))
 	crossings, touches := 0, 0
 	for i := range 30000 {
@@ -95,6 +100,7 @@ func TestIntersectTrianglesProperties(t *testing.T) {
 // TestIntersectTrianglesSymmetric checks IntersectTriangles(t1,t2) and (t2,t1)
 // agree in kind and endpoint set — the intersection is a property of the pair.
 func TestIntersectTrianglesSymmetric(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewSource(0x1c04))
 	for i := range 30000 {
 		t1, t2 := smallTri(r), smallTri(r)
@@ -157,6 +163,7 @@ func inTriRat(tri [3]Point, p Point) bool {
 }
 
 func TestAppendUniqueDedup(t *testing.T) {
+	t.Parallel()
 	p := pt([3]float64{1, 2, 3})
 	pts := appendUnique(nil, p)
 	pts = appendUnique(pts, pt([3]float64{1, 2, 3})) // equal position → not appended

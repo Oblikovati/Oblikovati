@@ -57,6 +57,7 @@ func writeCubeSTL(t *testing.T, dir string, s float64) string {
 // TestMeshExchangeGLTFCapability: Formats includes glTF; CanImport excludes it
 // (export-only honesty, R1-2); CanExport includes it.
 func TestMeshExchangeGLTFCapability(t *testing.T) {
+	t.Parallel()
 	me := MeshExchange{}
 	found := false
 	for _, f := range me.Formats() {
@@ -76,6 +77,7 @@ func TestMeshExchangeGLTFCapability(t *testing.T) {
 }
 
 func TestImportIntoMakesAWatertightMeshASolid(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	path := writeCubeSTL(t, dir, 4)
 	part := compdef.NewPartComponentDefinition()
@@ -101,6 +103,7 @@ func TestImportIntoMakesAWatertightMeshASolid(t *testing.T) {
 // other (an overlapping subtraction), proving downstream modeling operates on the
 // imported geometry.
 func TestFeatureOnTopOfImportedBody(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	big := writeNamedCubeSTL(t, dir, "big.stl", 6)
 	small := writeNamedCubeSTL(t, dir, "small.stl", 3)
@@ -156,6 +159,7 @@ func totalVolume(part *compdef.PartComponentDefinition) float64 {
 }
 
 func TestExportThenImportRoundTripsACylinderVolume(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	part := compdef.NewPartComponentDefinition()
 	src := writeCubeSTL(t, dir, 5)
@@ -181,6 +185,7 @@ func TestExportThenImportRoundTripsACylinderVolume(t *testing.T) {
 // TestExportFromGLTFWritesValidGLB: MeshExchange{}.ExportFrom with FormatGLTF
 // delegates to the canonical Export path and writes a valid GLB (CHG2-2).
 func TestExportFromGLTFWritesValidGLB(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	part := compdef.NewPartComponentDefinition()
 	src := writeCubeSTL(t, dir, 4)
@@ -209,6 +214,7 @@ func TestExportFromGLTFWritesValidGLB(t *testing.T) {
 // enforces the canonical .glb-only contract from the second entry point
 // (CHG2-2).
 func TestExportFromGLTFRejectsGLTFDestination(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	part := compdef.NewPartComponentDefinition()
 	src := writeCubeSTL(t, dir, 4)
@@ -230,6 +236,7 @@ func TestExportFromGLTFRejectsGLTFDestination(t *testing.T) {
 // destination is replaced via temp+rename and no temp files are left behind
 // (CHG2-3).
 func TestExportFromSTLWritesAtomically(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	part := compdef.NewPartComponentDefinition()
 	src := writeCubeSTL(t, dir, 4)
@@ -272,6 +279,7 @@ func TestExportFromSTLWritesAtomically(t *testing.T) {
 // public entry point too). On POSIX, rename over a read-only file succeeds,
 // so the failure injection is Windows-only.
 func TestExportFromSTLWriteFailureLeavesDestinationUntouched(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS != "windows" {
 		t.Skip("rename over a read-only destination succeeds on POSIX; failure injection is Windows-only (CHG-6 limitation)")
 	}

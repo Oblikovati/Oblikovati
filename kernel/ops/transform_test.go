@@ -40,6 +40,7 @@ func boredBlock(t *testing.T) (*topo.Body, []byte, geom.Cylinder) {
 // the classification and the volume went UP (a mirrored hole added material). The fix keeps
 // the reflected normal outward; here a tool reflected onto the block must cut a clean slot.
 func TestTransformedReflectedToolCuts(t *testing.T) {
+	t.Parallel()
 	block := subd.ToBody(subd.Box(4, 2, 2), "blk") // x∈[0,4], volume 16
 	tool := subd.ToBody(subd.Box(1, 2, 2), "tool") // volume 4
 	left, err := ops.TransformBody(tool, math.Translation4(math.V3(0.5, 0, 0)), keepLineage)
@@ -75,6 +76,7 @@ func TestTransformedReflectedToolCuts(t *testing.T) {
 // sense entirely intact (Oblikovati/Oblikovati#3453). A proxy that can move on its own must be
 // backed by the thing it stands for.
 func TestReplaceFaceSurfacePreservesReversedSense(t *testing.T) {
+	t.Parallel()
 	bored, key, cyl := boredBlock(t)
 	plain := ops.BodyGeometryProperties(bored, ops.DefaultQuality())
 	plainVol := plain.Volume
@@ -128,6 +130,7 @@ func threadedWall(t *testing.T, b *topo.Body) *topo.Face {
 // a coarse polygon. The angular-deflection bound in DefaultQuality forces a full circle to at
 // least 24 facets regardless of radius (a chord tolerance alone left a 4 mm bore an octagon).
 func TestAngularDeflectionRoundsSmallHoles(t *testing.T) {
+	t.Parallel()
 	bored, _, _ := boredBlock(t)
 	for _, e := range bored.Edges() {
 		if _, ok := e.Geometry().(geom.Circle); !ok {
@@ -152,6 +155,7 @@ func boxBody(t *testing.T) *topo.Body {
 func keepLineage(l topo.Lineage) topo.Lineage { return l }
 
 func TestTransformBodyTranslatePreservesVolume(t *testing.T) {
+	t.Parallel()
 	src := boxBody(t)
 	srcVol := ops.BodyGeometryProperties(src, ops.DefaultQuality()).Volume
 
@@ -175,6 +179,7 @@ func TestTransformBodyTranslatePreservesVolume(t *testing.T) {
 }
 
 func TestTransformBodyReflectStaysManifoldAndOutward(t *testing.T) {
+	t.Parallel()
 	src := boxBody(t)
 	srcVol := ops.BodyGeometryProperties(src, ops.DefaultQuality()).Volume
 
@@ -199,6 +204,7 @@ func TestTransformBodyReflectStaysManifoldAndOutward(t *testing.T) {
 }
 
 func TestTransformBodyIdentityLineageRebindsKeys(t *testing.T) {
+	t.Parallel()
 	src := boxBody(t)
 	srcFaceKey := src.Faces()[0].ReferenceKey()
 
@@ -212,6 +218,7 @@ func TestTransformBodyIdentityLineageRebindsKeys(t *testing.T) {
 }
 
 func TestTransformBodyCopyLineageGivesDistinctKeys(t *testing.T) {
+	t.Parallel()
 	src := boxBody(t)
 	srcFaceKey := src.Faces()[0].ReferenceKey()
 	copyN := func(l topo.Lineage) topo.Lineage {
@@ -231,6 +238,7 @@ func TestTransformBodyCopyLineageGivesDistinctKeys(t *testing.T) {
 }
 
 func TestTransformBodyRejectsNonUniformScale(t *testing.T) {
+	t.Parallel()
 	src := boxBody(t)
 	if _, err := ops.TransformBody(src, math.Scale4(2, 1, 1), keepLineage); err == nil {
 		t.Fatal("non-uniform scale should be rejected (analytic types cannot represent it)")

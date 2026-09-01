@@ -26,6 +26,7 @@ func boxEdgeKey(t *testing.T, occ *occurrence.Occurrence) string {
 // axis over the wire, checks the free component is left one DOF, then lists, flips, limits,
 // and deletes it (#359/#364).
 func TestAssemblyRotationalJointOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	occs[0].SetGrounded(true)
 	edge := boxEdgeKey(t, occs[0])
@@ -69,6 +70,7 @@ func TestAssemblyRotationalJointOverWire(t *testing.T) {
 
 // TestDSJointOverWire drives the DS-joint surface: add, lock a DOF, and list.
 func TestDSJointOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	edge := boxEdgeKey(t, occs[0])
 
@@ -99,6 +101,7 @@ func TestDSJointOverWire(t *testing.T) {
 
 // TestAssemblyJointUnknownKeyRejected checks an unresolvable joint origin is a clean error.
 func TestAssemblyJointUnknownKeyRejected(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	args := mustJSON(t, wire.AddJointArgs{
 		A: wire.ConstraintGeomRef{Occurrence: occs[0].ID(), Entity: "bogus"},
@@ -112,6 +115,7 @@ func TestAssemblyJointUnknownKeyRejected(t *testing.T) {
 // TestAssemblyJointSetOriginOverWire adds a joint, offsets its first origin over the wire, and checks
 // the joint info reports the offset mode and X/Y, and that an unknown mode is rejected (#1973).
 func TestAssemblyJointSetOriginOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	occs[0].SetGrounded(true)
 	edge := boxEdgeKey(t, occs[0])

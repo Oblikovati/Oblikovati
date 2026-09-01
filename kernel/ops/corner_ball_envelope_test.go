@@ -22,6 +22,7 @@ import (
 //
 // A certificate that has not been falsified is a claim, not a guard; this is the guard.
 func TestMaxBallDevRejectsAnInteriorBulgeTheOldCertificateAccepted(t *testing.T) {
+	t.Parallel()
 	loop, surf, res := s1FlankCanal(t)
 	weld := res.Weld()
 
@@ -53,6 +54,7 @@ func TestMaxBallDevRejectsAnInteriorBulgeTheOldCertificateAccepted(t *testing.T)
 // roll hosts reading 5–19% even on OCCT's own CORRECT patches, so an inferred payload would reject good
 // geometry — the claim has to come from the extractor that knows the topology.
 func TestMaxBallDevIsZeroWithoutAnExtractorPayload(t *testing.T) {
+	t.Parallel()
 	_, surf, _ := s1FlankCanal(t)
 	if got := maxBallDev(surf, nil); got != 0 {
 		t.Errorf("maxBallDev(nil envelope) = %g, want 0", got)
@@ -132,6 +134,7 @@ func assertBoundaryUnmoved(t *testing.T, a, b geom.BSplineSurface) {
 // point, normal to the spine, meets a footprint circle twice, and the measure must take the crossing on
 // the sample's own side — the far one is a different part of the boss entirely.
 func TestSectionCurvePointFindsTheBandSideCrossing(t *testing.T) {
+	t.Parallel()
 	circle, err := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 13)
 	if err != nil {
 		t.Fatalf("NewCircle: %v", err)
@@ -150,6 +153,7 @@ func TestSectionCurvePointFindsTheBandSideCrossing(t *testing.T) {
 // TestSectionCurvePointDeclinesOffSpan pins the no-crossing reject: a section plane beyond the conic's
 // spine span meets nothing, and the measure must say so rather than fall back on an unrelated point.
 func TestSectionCurvePointDeclinesOffSpan(t *testing.T) {
+	t.Parallel()
 	circle, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 13)
 	if _, ok := sectionCurvePoint(circle, math.P3(40, 0, 0), math.V3(1, 0, 0)); ok {
 		t.Errorf("sectionCurvePoint accepted a plane 40 out on a radius-13 circle; want a decline")
@@ -163,6 +167,7 @@ func TestSectionCurvePointDeclinesOffSpan(t *testing.T) {
 // boundary/structural fields alone, i.e. the exact certificate this slice exists to replace. Build now
 // refuses the loop outright, which makes the pairing structural rather than a convention.
 func TestRunoutCanalDeclinesWithoutAnEnvelope(t *testing.T) {
+	t.Parallel()
 	loop, _, res := s1FlankCanal(t)
 	if _, cert, ok := (runoutCanalProvider{}).Build(loop, res); !ok || !cert.Valid(res) {
 		t.Fatalf("the intact S1 flank loop must build and certify: ok=%v cert=%+v", ok, cert)

@@ -49,6 +49,7 @@ func clippedDiskArea(r, h float64) float64 {
 // (axis z) and checks the result is the exact three-face analytic solid (cone band + two lens caps) with the
 // analytic cone∩cylinder volume.
 func TestBooleanIntersectConeCylinder(t *testing.T) {
+	t.Parallel()
 	const rFat = 3.0
 	cone, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, 12)
@@ -91,6 +92,7 @@ func coneFrustumVolume(r0, r1, h float64) float64 {
 // 1→2.5, axis x): Cut must give the exact analytic solid (two fat caps, the holed fat wall, the cone tunnel)
 // whose volume is the fat minus the cone∩cylinder, not triangle-soup CSG.
 func TestBooleanCutConeCylinderDrillsFat(t *testing.T) {
+	t.Parallel()
 	const rFat, hFat = 3.0, 12.0
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, hFat)
 	cone, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
@@ -115,6 +117,7 @@ func TestBooleanCutConeCylinderDrillsFat(t *testing.T) {
 // TestBooleanCutConeMinusCylinderStubs subtracts a fat cylinder from a crossing frustum: Cut must give the
 // two disconnected tapered stubs (a two-shell solid) whose total volume is the cone minus the cone∩cylinder.
 func TestBooleanCutConeMinusCylinderStubs(t *testing.T) {
+	t.Parallel()
 	const rFat = 3.0
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, 12)
 	cone, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
@@ -140,6 +143,7 @@ func TestBooleanCutConeMinusCylinderStubs(t *testing.T) {
 // x): Join must give the connected analytic solid (fat caps, holed fat wall, a tapered stub each side) whose
 // volume is fat + cone − the cone∩cylinder, not triangle-soup CSG.
 func TestBooleanJoinConeCylinder(t *testing.T) {
+	t.Parallel()
 	const rFat, hFat = 3.0, 12.0
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, hFat)
 	cone, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
@@ -205,6 +209,7 @@ func conePartialFat() *topo.Body {
 // result is the exact three-face plug (cone band + lens cap + blind cap) with the analytic cone∩cylinder
 // volume.
 func TestBooleanIntersectConePartialPlug(t *testing.T) {
+	t.Parallel()
 	const rFat = 3.0
 	res, err := ops.Boolean(ops.Intersect, conePartialFat(), conePartialFrustum())
 	if err != nil {
@@ -224,6 +229,7 @@ func TestBooleanIntersectConePartialPlug(t *testing.T) {
 // TestBooleanCutConePartialBlindHole subtracts the frustum from the fat (fat − cone): a blind tapered pocket
 // whose volume is the fat minus the plug.
 func TestBooleanCutConePartialBlindHole(t *testing.T) {
+	t.Parallel()
 	const rFat, hFat = 3.0, 12.0
 	res, err := ops.Boolean(ops.Cut, conePartialFat(), conePartialFrustum())
 	if err != nil {
@@ -245,6 +251,7 @@ func TestBooleanCutConePartialBlindHole(t *testing.T) {
 // TestBooleanCutConePartialStub subtracts the fat from the frustum (cone − fat): the single tapered stub
 // sticking out the entry side (one shell) whose volume is the frustum minus the plug.
 func TestBooleanCutConePartialStub(t *testing.T) {
+	t.Parallel()
 	const rFat = 3.0
 	res, err := ops.Boolean(ops.Cut, conePartialFrustum(), conePartialFat())
 	if err != nil {
@@ -266,6 +273,7 @@ func TestBooleanCutConePartialStub(t *testing.T) {
 // TestBooleanJoinConePartial joins the fat and the partially-penetrating frustum (fat ∪ cone): one connected
 // solid whose volume is fat + frustum − the plug.
 func TestBooleanJoinConePartial(t *testing.T) {
+	t.Parallel()
 	const rFat, hFat = 3.0, 12.0
 	res, err := ops.Boolean(ops.Join, conePartialFat(), conePartialFrustum())
 	if err != nil {

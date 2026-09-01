@@ -34,6 +34,7 @@ func oneBody() *topo.Body {
 }
 
 func TestDerivedComponentPullsSourceAssociatively(t *testing.T) {
+	t.Parallel()
 	// The source is a BodySource (compdef.PartComponentDefinition in production).
 	source := newFakeBodySource()
 	source.SurfaceBodies().Add(oneBody())
@@ -60,6 +61,7 @@ func TestDerivedComponentPullsSourceAssociatively(t *testing.T) {
 }
 
 func TestNonParametricBaseFeatureIsDownstreamEditable(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	base := NewBaseFeatures(fs).AddBase(oneBody())
 	// A downstream derived/extrude feature consumes the base body's running state.

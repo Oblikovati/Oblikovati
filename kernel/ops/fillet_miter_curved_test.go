@@ -78,6 +78,7 @@ func w4MiterCorner(t *testing.T) fakeMiterCorner {
 // solver; here it proves the two branches diverge and that the physical (low-y, edge-side) ruling is the
 // concave–convex one.
 func TestEqualParallelArmBranchDiscriminator(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForPoints([]math.Point3{math.P3(50, 50, 0), math.P3(80, 50, 0)})
 	axis := math.V3(0, 0, 1)
 	shared, outer := math.P3(50, 50, 0), math.P3(80, 50, 0)
@@ -104,6 +105,7 @@ func TestEqualParallelArmBranchDiscriminator(t *testing.T) {
 // the cyl arm at z=150 ((48.333,5.031,150)/r5), taking the crossing nearer the corner vertex. DRAWEXE:
 // sBot=(53.332,5.124,150) on the top-plane contact circle R−r=45.
 func TestCurvedMiterSeamBottomOnTorusOuterHost(t *testing.T) {
+	t.Parallel()
 	ax, ay := p5CylArmAxisXY()
 	res := ResolutionForPoints([]math.Point3{math.P3(50, 50, 150), math.P3(ax, ay, 150)})
 	p0, p1, ok := intersectCoplanarCircles(math.P3(50, 50, 150), 45, math.P3(ax, ay, 150), 5, math.V3(0, 0, 1), res)
@@ -146,6 +148,7 @@ func assertXY(t *testing.T, what string, p math.Point3, x, y, tol float64) {
 // equidistant = r from BOTH arm spines to machine precision (the equal-r bisector holds). P5 samples
 // pin 5.0/5.0, W4 0.2/0.2.
 func TestCurvedMiterSeamEquidistant(t *testing.T) {
+	t.Parallel()
 	for _, fx := range []fakeMiterCorner{p5MiterCorner(t), w4MiterCorner(t)} {
 		res := ResolutionForPoints([]math.Point3{fx.center, fx.vertex})
 		center, ok := miterCornerBallCenter(fx.arms, fx.vertex, res)

@@ -45,6 +45,7 @@ func activeTargetPart(t *testing.T, s *Session) *compdef.PartComponentDefinition
 // TestDeriveAssemblyCreatesBaseBody: Derive merges the source assembly into the active part as a
 // derivedAssembly feature producing a base body (#767).
 func TestDeriveAssemblyCreatesBaseBody(t *testing.T) {
+	t.Parallel()
 	s, source := partAndSourceAssembly(t)
 	target := activeTargetPart(t, s)
 
@@ -63,6 +64,7 @@ func TestDeriveAssemblyCreatesBaseBody(t *testing.T) {
 // TestShrinkwrapCreatesBaseBody: Shrinkwrap merges the source into the part as a simplified base
 // body (a single whole-assembly bounding box here).
 func TestShrinkwrapCreatesBaseBody(t *testing.T) {
+	t.Parallel()
 	s, source := partAndSourceAssembly(t)
 	target := activeTargetPart(t, s)
 
@@ -82,6 +84,7 @@ func TestShrinkwrapCreatesBaseBody(t *testing.T) {
 // TestDeriveCommandsGatedOnOpenAssembly: the Simplify commands are enabled only when a part is
 // active AND an assembly is open to derive.
 func TestDeriveCommandsGatedOnOpenAssembly(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t) // a part is active, no assembly open
 	derive, _ := s.Commands().ByID("Manage.Derive")
 	if derive == nil {
@@ -108,6 +111,7 @@ func TestDeriveCommandsGatedOnOpenAssembly(t *testing.T) {
 // TestDerivedFeatureMenuHasUpdateAndBreakLink: a derived feature's browser menu carries Update and
 // Break Link; a plain feature does not.
 func TestDerivedFeatureMenuHasUpdateAndBreakLink(t *testing.T) {
+	t.Parallel()
 	s, source := partAndSourceAssembly(t)
 	f, err := s.DeriveAssembly(source)
 	if err != nil {
@@ -123,6 +127,7 @@ func TestDerivedFeatureMenuHasUpdateAndBreakLink(t *testing.T) {
 // TestDeriveOutOfDateBadgeAndUpdate: a source edited after the derive marks the node out of date
 // (badge in the label, Update enabled); Update re-syncs and clears it (#767).
 func TestDeriveOutOfDateBadgeAndUpdate(t *testing.T) {
+	t.Parallel()
 	s, source := partAndSourceAssembly(t)
 	stampRevision(source, "rev-A")
 	f, err := s.DeriveAssembly(source)
@@ -155,6 +160,7 @@ func TestDeriveOutOfDateBadgeAndUpdate(t *testing.T) {
 
 // TestBreakDerivedLinkFreezes: Break Link severs the source link so the part keeps its geometry.
 func TestBreakDerivedLinkFreezes(t *testing.T) {
+	t.Parallel()
 	s, source := partAndSourceAssembly(t)
 	f, err := s.DeriveAssembly(source)
 	if err != nil {
@@ -173,6 +179,7 @@ func TestBreakDerivedLinkFreezes(t *testing.T) {
 
 // TestDeriveIsUndoable: deriving an assembly is one undo step — undo removes the derived feature.
 func TestDeriveIsUndoable(t *testing.T) {
+	t.Parallel()
 	s, source := partAndSourceAssembly(t)
 	target := activeTargetPart(t, s)
 	trackFromHere(s)

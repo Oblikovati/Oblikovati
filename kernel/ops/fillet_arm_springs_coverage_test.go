@@ -15,6 +15,7 @@ import (
 // and the line∩plane foot. Real analytic inputs, exact assertions — no coverage padding.
 
 func TestSpherePlaneHostsOrderIndependent(t *testing.T) {
+	t.Parallel()
 	sp := geom.Sphere{Center: math.P3(0, 0, 0), Radius: 150}
 	pl, err := geom.NewPlane(math.P3(0, 0, 10), math.V3(0, 0, 1))
 	if err != nil {
@@ -34,6 +35,7 @@ func TestSpherePlaneHostsOrderIndependent(t *testing.T) {
 // TestCylinderArmSpringsTwoPlaneHosts drives the cylinder-arm branch of armSprings: a cylinder tangent to
 // two orthogonal plane hosts yields two axis rulings through the tangent-contact points.
 func TestCylinderArmSpringsTwoPlaneHosts(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinderWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 10)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
@@ -66,6 +68,7 @@ func TestCylinderArmSpringsTwoPlaneHosts(t *testing.T) {
 // TestSpringCapFootLine covers the ruling∩capping-plane foot and the two declines (non-plane capping, and a
 // ruling parallel to the capping plane).
 func TestSpringCapFootLine(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForPoints([]math.Point3{math.P3(0, 0, 0), math.P3(20, 20, 20)})
 	ruling, _ := geom.NewLine(math.P3(10, 0, 0), math.V3(0, 0, 1)) // vertical ruling at x=10
 	capPlane, _ := geom.NewPlane(math.P3(0, 0, 5), math.V3(0, 0, 1))

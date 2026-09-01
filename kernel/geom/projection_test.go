@@ -10,6 +10,7 @@ import (
 )
 
 func TestProjectPointToSurfaceOnSurface(t *testing.T) {
+	t.Parallel()
 	s := cProfileSurface(t)
 	for _, uv := range [][2]float64{{0.5, 0.5}, {0.25, 0.7}, {0.8, 0.15}} {
 		want := s.PointAt(uv[0], uv[1])
@@ -24,6 +25,7 @@ func TestProjectPointToSurfaceOnSurface(t *testing.T) {
 }
 
 func TestProjectPointToSurfaceResidualIsOffSurfaceGap(t *testing.T) {
+	t.Parallel()
 	s := cProfileSurface(t)
 	// Offset a surface point along the normal by a known gap (the M25 edge-off-surface case).
 	u0, v0 := 0.5, 0.5
@@ -38,6 +40,7 @@ func TestProjectPointToSurfaceResidualIsOffSurfaceGap(t *testing.T) {
 }
 
 func TestProjectCurveToSurfaceIsContinuousPcurve(t *testing.T) {
+	t.Parallel()
 	s := cProfileSurface(t)
 	// A polyline of on-surface points along v=0.5, increasing u: its pcurve must round-trip and stay
 	// continuous + monotone in u (no branch jump).
@@ -62,6 +65,7 @@ func TestProjectCurveToSurfaceIsContinuousPcurve(t *testing.T) {
 }
 
 func TestProjectCurveToSurfaceEmpty(t *testing.T) {
+	t.Parallel()
 	if got := ProjectCurveToSurface(cProfileSurface(t), nil); len(got) != 0 {
 		t.Errorf("empty input gave %d points", len(got))
 	}

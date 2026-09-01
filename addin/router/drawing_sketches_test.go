@@ -11,6 +11,7 @@ import (
 // TestDrawingSketchesOverWire drives the sketch surface: add a sketch, add a rectangle + circle,
 // list them — producing the curves through the live stack.
 func TestDrawingSketchesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 
 	var sk wire.DrawingSketchResult

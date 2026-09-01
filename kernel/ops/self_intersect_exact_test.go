@@ -43,6 +43,7 @@ func twoBarelyOverlappingCylinders(t *testing.T, r, depth float64) *topo.Body {
 // and INVALID for a property caller. Falsify by reinstating any faceting allowance and the
 // DefaultQuality row goes red.
 func TestSelfIntersectionVerdictIsIndependentOfQuality(t *testing.T) {
+	t.Parallel()
 	body := twoBarelyOverlappingCylinders(t, 1, 0.01)
 	for _, q := range []struct {
 		name string
@@ -79,6 +80,7 @@ func stackedBlocks(t *testing.T, lower, upper [2]math.Point3) *topo.Body {
 // read the same. The detector reports both, exactly as the mesh detector it replaced did; separating
 // them needs a global containment query, not a face pair.
 func TestCoincidentFacesAreReportedWhicheverWayTheyFace(t *testing.T) {
+	t.Parallel()
 	p := math.P3
 	body := stackedBlocks(t, [2]math.Point3{p(0, 0, 0), p(2, 2, 1)}, [2]math.Point3{p(0, 0, 1), p(2, 2, 2)})
 	if hits := SelfIntersections(body, DefaultQuality()); len(hits) == 0 {
@@ -93,6 +95,7 @@ func TestCoincidentFacesAreReportedWhicheverWayTheyFace(t *testing.T) {
 // witness cannot decide this. Falsify by relaxing crossingWitness back to brep.PointInFaceTrim without
 // strictlyInsideTrim: the contact line is inside both trims and every such touch reads as a crossing.
 func TestPerpendicularFacesTouchingAlongALineAreContact(t *testing.T) {
+	t.Parallel()
 	p := math.P3
 	body := stackedBlocks(t, [2]math.Point3{p(0, 0, 0), p(2, 2, 1)}, [2]math.Point3{p(2, 0, 1), p(4, 2, 2)})
 	if hits := SelfIntersections(body, DefaultQuality()); len(hits) != 0 {
@@ -103,6 +106,7 @@ func TestPerpendicularFacesTouchingAlongALineAreContact(t *testing.T) {
 // TestOverlappingBlocksAreStillReported is the positive control for both guards above: move the upper
 // block down so the two solids genuinely occupy the same space, and it must be reported.
 func TestOverlappingBlocksAreStillReported(t *testing.T) {
+	t.Parallel()
 	p := math.P3
 	body := stackedBlocks(t, [2]math.Point3{p(0, 0, 0), p(2, 2, 1)}, [2]math.Point3{p(0.5, 0.5, 0.5), p(2.5, 2.5, 2)})
 	if hits := SelfIntersections(body, DefaultQuality()); len(hits) == 0 {
@@ -115,6 +119,7 @@ func TestOverlappingBlocksAreStillReported(t *testing.T) {
 // is O(F²·E) — measured, that took a coil's turn-clearance check (#2080, hundreds of swept faces) past
 // twenty minutes. The scan must capture each box once, and compute each face's probes at most once.
 func TestFaceScanCachesBoxesAndProbes(t *testing.T) {
+	t.Parallel()
 	body, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(2, 3, 4), "box")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
@@ -135,6 +140,7 @@ func TestFaceScanCachesBoxesAndProbes(t *testing.T) {
 // yield exactly the pairs whose range boxes overlap — no more (which would cost exact geometry) and no
 // fewer (which would hide an interpenetration). Falsify by querying a shrunken box: the counts diverge.
 func TestFaceScanBroadPhaseMatchesAnAllPairsWalk(t *testing.T) {
+	t.Parallel()
 	merged := topo.MergeBodies(topo.NewLineage(topo.Tok("bp", "body", 0)), true,
 		tetra(1, math.V3(0, 0, 0)), tetra(1, math.V3(0.2, 0.2, 0.2)), tetra(1, math.V3(9, 0, 0)))
 	scan := newFaceScan(merged.Faces())
@@ -170,6 +176,7 @@ func TestFaceScanBroadPhaseMatchesAnAllPairsWalk(t *testing.T) {
 // validity query that manufactured a defect on every pair the intersector cannot resolve would condemn
 // healthy bodies and fail sound features through ValidateBodyEntities.
 func TestUnresolvedSurfacePairDeclinesRatherThanReports(t *testing.T) {
+	t.Parallel()
 	if _, hit := declineUnresolvedSurfacePair(); hit {
 		t.Error("an unresolvable surface pair must answer NO crossing, not a defect")
 	}
@@ -180,6 +187,7 @@ func TestUnresolvedSurfacePairDeclinesRatherThanReports(t *testing.T) {
 // meshes of it stray to opposite sides of the true surfaces and appear to cross. On the exact B-rep
 // the tangency is a shared edge and there is nothing to forgive — at either quality.
 func TestSelfIntersectionsPassATangentBlend(t *testing.T) {
+	t.Parallel()
 	body, err := brep.SolidCylinderFilletedTop(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 10, 1)
 	if err != nil {
 		t.Fatalf("SolidCylinderFilletedTop: %v", err)
@@ -196,6 +204,7 @@ func TestSelfIntersectionsPassATangentBlend(t *testing.T) {
 // deleted triangle coplanar branch: two coplanar quads meeting along a shared edge — the shape a
 // sheet-metal wall's end cap makes with the sheet's side — must report no self-intersection.
 func TestCoplanarNeighbourFacesAreClean(t *testing.T) {
+	t.Parallel()
 	p := math.P3
 	left := quadBody("left", p(0, 0, 0), p(0, 2, 0), p(0, 2, 2), p(0, 0, 2))
 	right := quadBody("right", p(0, 2, 0), p(0, 4, 0), p(0, 4, 2), p(0, 2, 2))
@@ -209,6 +218,7 @@ func TestCoplanarNeighbourFacesAreClean(t *testing.T) {
 // trim have no probe strictly inside the other, so only the mutual-coverage rule can see them — and
 // they are the doubled-wall defect a bad import leaves behind.
 func TestDuplicateCoincidentFacesAreReported(t *testing.T) {
+	t.Parallel()
 	p := math.P3
 	one := quadBody("w1", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
 	two := quadBody("w2", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
@@ -221,6 +231,7 @@ func TestDuplicateCoincidentFacesAreReported(t *testing.T) {
 // TestFacesShareOneSheetSeparatesCoplanarFromCrossing pins the arm SELECTOR: two quads on one plane
 // are a same-sheet pair, and a quad meeting another at right angles is not.
 func TestFacesShareOneSheetSeparatesCoplanarFromCrossing(t *testing.T) {
+	t.Parallel()
 	p := math.P3
 	flat := quadBody("a", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
 	same := quadBody("b", p(1, 0, 1), p(3, 0, 1), p(3, 0, 3), p(1, 0, 3))
@@ -238,6 +249,7 @@ func TestFacesShareOneSheetSeparatesCoplanarFromCrossing(t *testing.T) {
 // at: a quad yields its four corners and three interior points per edge, all on the face's own
 // boundary. Two per edge samples a closed rim at only two angles — see edgeProbesPerEdge.
 func TestFaceTrimProbesQuarterEveryEdge(t *testing.T) {
+	t.Parallel()
 	p := math.P3
 	f := quadBody("q", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2)).Faces()[0]
 	probes := faceTrimProbes(f)
@@ -254,6 +266,7 @@ func TestFaceTrimProbesQuarterEveryEdge(t *testing.T) {
 // TestEdgeCurvePointFollowsTheCurveNotTheChord: on a quarter arc the parameter midpoint is the
 // point at 45°, which is 1 − cos(π/4) away from the chord midpoint the fallback would return.
 func TestEdgeCurvePointFollowsTheCurveNotTheChord(t *testing.T) {
+	t.Parallel()
 	arc, err := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 1, 0, stdmath.Pi/2)
 	if err != nil {
 		t.Fatalf("NewArc3d: %v", err)
@@ -274,6 +287,7 @@ func TestEdgeCurvePointFollowsTheCurveNotTheChord(t *testing.T) {
 // it from legitimate vertex contact (#1321). Accepting x ≥ 4 on a line through [0,8] must therefore
 // answer near 6, not near 4.
 func TestMidCrossingSampleReturnsTheMiddleOfTheAcceptedRun(t *testing.T) {
+	t.Parallel()
 	seg := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(8, 0, 0))
 	box := math.NewBox(math.P3(0, -1, -1), math.P3(8, 1, 1))
 	got, ok := midCrossingSample(seg, box, func(p math.Point3) bool { return float64(p.X) >= 4 })

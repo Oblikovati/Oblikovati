@@ -97,6 +97,7 @@ func coneCornerExactFixture(t *testing.T, c coneCornerCase) (*topo.Vertex, []*to
 // cos²α-quadratic + nappe filter + nearer-vertex pick reproducing C2/C6/C8/D1's certified centres. Also
 // asserts the host set is exactly {1 cone, 2 planes} and the corner sphere radius is r.
 func TestConeHostCornerCentre_Exact(t *testing.T) {
+	t.Parallel()
 	for _, c := range coneCornerCases {
 		t.Run(c.name, func(t *testing.T) {
 			v, faces := coneCornerExactFixture(t, c)
@@ -122,6 +123,7 @@ func TestConeHostCornerCentre_Exact(t *testing.T) {
 // DRAWEXE table — the imported-geometry gate the brief requires (the closed form fed by the real cone +
 // plane faces, not hardcoded). Residuals are logged so the achieved precision is on the record.
 func TestConeHostCornerCentre_Imported(t *testing.T) {
+	t.Parallel()
 	for _, c := range coneCornerCases {
 		t.Run(c.name, func(t *testing.T) {
 			body := corpusFixture(t, c.step)
@@ -146,6 +148,7 @@ func TestConeHostCornerCentre_Imported(t *testing.T) {
 // i.e. (T − C)·â = −r·sin α (3.16227766 for C2/C6, 3.84615385 for C8/D1). A wrong ĝ (axis/radial swapped)
 // or a wrong sign moves this by more than r, so the identity is a tight witness of coneTangentPoint.
 func TestConeTangentPointIdentity(t *testing.T) {
+	t.Parallel()
 	for _, c := range coneCornerCases {
 		t.Run(c.name, func(t *testing.T) {
 			co := coneOf(t, c)
@@ -182,6 +185,7 @@ func coneCornerCertFixture(t *testing.T) (math.Point3, geom.Cone, [2]*topo.Face,
 // (along +ẑ, which leaves both plane distances at r but moves the exact signed cone distance). Mutation
 // witness: forcing coneCornerConsistent → true fails the two reject arms.
 func TestConeCornerConsistent_RejectsPerturbedCentre(t *testing.T) {
+	t.Parallel()
 	center, co, planes, res := coneCornerCertFixture(t)
 	if !coneCornerConsistent(center, co, planes, coneCornerR, 1, res) {
 		t.Fatalf("certified C8 centre %v rejected by the certificate; want accept", center)
@@ -253,6 +257,7 @@ func coneCornerQuadratic(t *testing.T, c coneCornerCase) (qa, qb, qc float64, u,
 // that wrong root; WITH it, only the opening-side root (z ≈ 60.06) survives. This test proves the filter
 // changes the answer — deleting it flips C8 to the wrong centre — and that the filtered answer is correct.
 func TestConeNappeFilter_C8LoadBearing(t *testing.T) {
+	t.Parallel()
 	c := caseByName(t, "C8")
 	qa, qb, qc, u, d, ahat, p0, _, res := coneCornerQuadratic(t, c)
 	roots, ok := coneRealRoots(qa, qb, qc, d, res)
@@ -283,6 +288,7 @@ func TestConeNappeFilter_C8LoadBearing(t *testing.T) {
 // leading term, unlike a Euclidean tangency). The solve must still find the centre — which the exact-centre
 // test already confirms — but this pins that C8 genuinely exercises the negative-qa quadratic branch.
 func TestConeQuadCoeffs_C8NegativeQa(t *testing.T) {
+	t.Parallel()
 	c := caseByName(t, "C8")
 	qa, _, _, _, d, _, _, co, _ := coneCornerQuadratic(t, c)
 	if qa >= 0 {
@@ -300,6 +306,7 @@ func TestConeQuadCoeffs_C8NegativeQa(t *testing.T) {
 // linear root t = −qc/qb, and a vanishing qb too honest-rejects (line on the offset cone). Driven directly
 // on the coefficients (this regime is not in the corpus — the corpus is all quadratic).
 func TestConeRealRoots_LinearFallback(t *testing.T) {
+	t.Parallel()
 	d := math.V3(1, 0, 0)
 	res := ResolutionForSize(100)
 	roots, ok := coneRealRoots(0, 2, -4, d, res) // 2t − 4 = 0 → t = 2
@@ -314,6 +321,7 @@ func TestConeRealRoots_LinearFallback(t *testing.T) {
 // TestConeRealRoots_GrazingRejects exercises the grazing branch: two coalescing roots whose point-space
 // separation falls below the band are a geometric degeneracy, not an imprecise solve — honest-reject.
 func TestConeRealRoots_GrazingRejects(t *testing.T) {
+	t.Parallel()
 	d := math.V3(1, 0, 0)
 	res := ResolutionForSize(1e5) // band = curvedCornerBandK·res.Weld() ≈ 4e-4
 	x0 := 1 - 1e-12
@@ -347,6 +355,7 @@ func coneConcaveFixture(t *testing.T) (*topo.Vertex, []*topo.Face) {
 // satisfy the 45°-cone identity radial = axial·tanα directly from the C2 case's tanα = 1/3 (mirrored
 // here — coneConcaveFixture reuses C2's tanα).
 func TestConeHostCornerConcave_Solves(t *testing.T) {
+	t.Parallel()
 	v, faces := coneConcaveFixture(t)
 	cb, err := solveBlend(nil, v, faces, coneCornerR)
 	if err != nil {
@@ -397,6 +406,7 @@ func assertConeMeridianDistance(t *testing.T, centre math.Point3, co geom.Cone, 
 // a no-op (a mutant that drops the sign, e.g. hardcoding +r, would accept both and this test would
 // catch it).
 func TestConeCornerConsistent_SignSensitive(t *testing.T) {
+	t.Parallel()
 	v, faces := coneConcaveFixture(t)
 	cb, err := solveBlend(nil, v, faces, coneCornerR)
 	if err != nil {
@@ -420,6 +430,7 @@ func TestConeCornerConsistent_SignSensitive(t *testing.T) {
 // true cylinder host takes the M5 path), while a healthy cone passes. Driven directly, since NewCone's open
 // interval keeps a genuinely-degenerate α out of the corpus.
 func TestConeAlphaInBand_NearCylinderRejects(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(1e6) // weld ≈ 1e-3, so band = coneAlphaBandCoef·weld/|A−p₀|
 	p0 := math.P3(1, 0, 0)        // |A − p₀| = 1 ⇒ band ≈ 3e-3
 	small, _ := geom.NewCone(math.P3(0, 0, 0), math.V3(0, 0, -1), 1e-4)
@@ -438,6 +449,7 @@ func TestConeAlphaInBand_NearCylinderRejects(t *testing.T) {
 // is NOT {1 cone, 2 planes} (here two cones + one plane) must NOT reach solveConeBlend — coneHostCorner
 // returns ok=false and solveBlend falls through to solvePlanarBlend, declining with the exact string.
 func TestConeHostCornerUnsupportedMixDeclines(t *testing.T) {
+	t.Parallel()
 	c := caseByName(t, "C2")
 	lin := topo.NewLineage(topo.Tok("test", "cone-corner-mix", 0))
 	bld := topo.NewBuilder(true, lin)
@@ -462,6 +474,7 @@ func TestConeHostCornerUnsupportedMixDeclines(t *testing.T) {
 // ARM guard is a separate, unowned file — see the R4 wave report) — this test certifies the CORNER
 // PATCH capability this file owns, independent of that companion gap.
 func TestConeHostCornerConcave_I4Imported(t *testing.T) {
+	t.Parallel()
 	body := corpusFixture(t, "simple/I4.step")
 	v := vertexNearest(t, body, math.P3(-200, 250, 0))
 	faces := facesAtVertex(v)

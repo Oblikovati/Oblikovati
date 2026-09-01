@@ -15,6 +15,7 @@ import (
 // sub-assembly occurrence positions its child independently, and a non-flexible occurrence is
 // rejected (#822).
 func TestSetFlexibleChildOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, _ := assemblySessionWithBoxes(t) // empty parent assembly
 
 	subDef := compdef.NewAssemblyComponentDefinition()

@@ -35,6 +35,7 @@ func frustumRimStations(r float64) int {
 // every one of them a T-junction. The gate asserts the welded body mesh is a CLOSED surface at both gate
 // qualities and that the cone face tiles each rim at exactly that rim's own count.
 func TestFrustumBandTilesEachRimAtItsOwnStations(t *testing.T) {
+	t.Parallel()
 	body, err := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 200), 100, 50, "frustum")
 	if err != nil {
 		t.Fatalf("frustum fixture: %v", err)
@@ -73,6 +74,7 @@ func coneFaceTriangles(t *testing.T, body *topo.Body) int {
 // so they discretize identically and the band grid already satisfies the shared-edge invariant. It must
 // keep the grid (a full quad strip, 2 triangles per station), not divert to the loft.
 func TestEqualRimBandKeepsTheGrid(t *testing.T) {
+	t.Parallel()
 	body, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 100, 200)
 	if err != nil {
 		t.Fatalf("cylinder fixture: %v", err)

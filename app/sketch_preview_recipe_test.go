@@ -36,6 +36,7 @@ func startWithPoints(t *testing.T, s *Session, tool Tool, pts ...math.Point2) {
 // TestEveryCreateToolPreviews is the coverage gate for #2014: before it, only five of the
 // seventeen Create tools drew anything while placing.
 func TestEveryCreateToolPreviews(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name    string
 		tool    Tool
@@ -82,6 +83,7 @@ func TestEveryCreateToolPreviews(t *testing.T) {
 // point of both reading one recipe, and it is what a separate preview implementation kept
 // getting wrong.
 func TestPreviewMatchesCommit(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	tool := NewRectangleTool()
 	startWithPoints(t, s, tool, math.P2(0, 0))
@@ -111,6 +113,7 @@ func TestPreviewMatchesCommit(t *testing.T) {
 // Construction geometry must be distinguishable in the preview, so the head can draw the
 // centre rectangle's diagonals dashed rather than as solid edges.
 func TestPreviewSeparatesConstructionGeometry(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	startWithPoints(t, s, NewCenterRectangleTool(), math.P2(0, 0))
 	curves := s.ActiveToolPreviewCurves(math.P2(5, 4))

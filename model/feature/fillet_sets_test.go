@@ -38,6 +38,7 @@ func boxAndVerticalEdges(t *testing.T) (*PartFeatures, [][]byte) {
 // TestFilletSetsMixedConstantRadii rounds two vertical edges at different
 // radii via two constant sets in one feature — the cylinder-exact volume.
 func TestFilletSetsMixedConstantRadii(t *testing.T) {
+	t.Parallel()
 	fs, keys := boxAndVerticalEdges(t)
 	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{
 		{EdgeKeys: [][]byte{keys[0]}, Radius: angleConst(0.3)},
@@ -62,6 +63,7 @@ func TestFilletSetsMixedConstantRadii(t *testing.T) {
 // engine — the smooth-blend volume, since the variable blend is the exact rational ruled
 // surface (#1606; the pre-A10 planar strips followed the chord integral instead).
 func TestFilletVariableSetThroughEngine(t *testing.T) {
+	t.Parallel()
 	fs, keys := boxAndVerticalEdges(t)
 	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{
 		{EdgeKeys: [][]byte{keys[0]}, StartRadius: angleConst(0.3), EndRadius: angleConst(0.6)},
@@ -85,6 +87,7 @@ func TestFilletVariableSetThroughEngine(t *testing.T) {
 // radius stop (0.3 → 0.7 at T=0.5 → 0.4) through the feature engine — the per-segment
 // smooth-blend volume (#695, exact spans since #1606).
 func TestFilletRadiusPointsThroughEngine(t *testing.T) {
+	t.Parallel()
 	fs, keys := boxAndVerticalEdges(t)
 	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{{
 		EdgeKeys:     [][]byte{keys[0]},
@@ -117,6 +120,7 @@ func fineFilletQuality() ops.Quality {
 // TestFilletVariableSetNeedsOneEdge: a variable set over two edges is a
 // precise Sick, not a broken body.
 func TestFilletVariableSetNeedsOneEdge(t *testing.T) {
+	t.Parallel()
 	fs, keys := boxAndVerticalEdges(t)
 	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{
 		{EdgeKeys: [][]byte{keys[0], keys[1]}, StartRadius: angleConst(0.2), EndRadius: angleConst(0.4)},
@@ -129,6 +133,7 @@ func TestFilletVariableSetNeedsOneEdge(t *testing.T) {
 
 // TestFilletSetsLostEdgeSick: any lost key in any set makes the feature Sick.
 func TestFilletSetsLostEdgeSick(t *testing.T) {
+	t.Parallel()
 	fs, keys := boxAndVerticalEdges(t)
 	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{
 		{EdgeKeys: [][]byte{keys[0]}, Radius: angleConst(0.3)},

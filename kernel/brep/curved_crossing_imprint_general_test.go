@@ -18,6 +18,7 @@ import (
 // TestPrimaryCurvedSurfaceRecognisesConeAndCylinder: a cone body yields its cone surface, a cylinder body
 // its cylinder surface, and a planar block none.
 func TestPrimaryCurvedSurfaceRecognisesConeAndCylinder(t *testing.T) {
+	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 4), 1, 2, "cone")
 	if s, ok := primaryCurvedSurface(cone); !ok {
 		t.Error("a cone body must yield a primary curved surface")
@@ -54,6 +55,7 @@ func worstImprintOffset(loops []geom.Curve3, a, b geom.Surface) float64 {
 // TestCurvedImprintLoopsTracesEveryCrossingPair: the one general imprint traces the two crossing loops for
 // each ruled pair (cone∩cone, cone∩cylinder, cylinder∩cylinder), every loop vertex on BOTH surfaces.
 func TestCurvedImprintLoopsTracesEveryCrossingPair(t *testing.T) {
+	t.Parallel()
 	coneA, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
 	coneB, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 	coneC, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
@@ -85,6 +87,7 @@ func TestCurvedImprintLoopsTracesEveryCrossingPair(t *testing.T) {
 // TestCurvedImprintLoopsDeclinesPlanarPair: two planar blocks have no curved side, so the general imprint
 // declines (ok=false) rather than tracing.
 func TestCurvedImprintLoopsDeclinesPlanarPair(t *testing.T) {
+	t.Parallel()
 	x, _ := SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "x")
 	y, _ := SolidBlock(math.P3(1, 1, 1), math.P3(3, 3, 3), "y")
 	if _, ok := curvedImprintLoops(x, y, nil); ok {

@@ -25,6 +25,7 @@ func asmcovContactSet(t *testing.T, r *Router, s *app.Session, name string) uint
 
 // TestAsmcovContactSetsList lists the created contact sets in creation order (contactSets.list).
 func TestAsmcovContactSetsList(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t, 0, 2)
 	asmcovContactSet(t, r, s, "alpha")
 	asmcovContactSet(t, r, s, "beta")
@@ -38,6 +39,7 @@ func TestAsmcovContactSetsList(t *testing.T) {
 
 // TestAsmcovContactSetsRemoveMember drops one member and leaves the other (contactSets.removeMember).
 func TestAsmcovContactSetsRemoveMember(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 2)
 	id := asmcovContactSet(t, r, s, "g")
 	call(t, r, s, "contactSets.addMember", mustJSON(t, wire.ContactMemberArgs{Set: id, Occurrence: occs[0].ID()}), nil)
@@ -52,6 +54,7 @@ func TestAsmcovContactSetsRemoveMember(t *testing.T) {
 
 // TestAsmcovContactRemoveMemberUnknownSet pins the removeMember error path (unknown set id).
 func TestAsmcovContactRemoveMemberUnknownSet(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 2)
 	args := mustJSON(t, wire.ContactMemberArgs{Set: 99999, Occurrence: occs[0].ID()})
 	if _, err := r.Handle(s, "contactSets.removeMember", []byte(args)); err == nil {
@@ -62,6 +65,7 @@ func TestAsmcovContactRemoveMemberUnknownSet(t *testing.T) {
 // TestAsmcovContactSolverStatus reads the solver status before (disabled/0) and after
 // creating a set and toggling it on (enabled/1) — contactSolver.status.
 func TestAsmcovContactSolverStatus(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t, 0, 2)
 	var initial wire.ContactSolverResult
 	call(t, r, s, "contactSolver.status", `{}`, &initial)
@@ -81,6 +85,7 @@ func TestAsmcovContactSolverStatus(t *testing.T) {
 // TestAsmcovRectangularPattern replicates a seed in a 2x2 grid: three new occurrences
 // beyond the seed, growing the tree to four (rectangularArrangement).
 func TestAsmcovRectangularPattern(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0)
 	var created wire.NewOccurrencesResult
 	args := mustJSON(t, wire.CreatePatternArgs{
@@ -103,6 +108,7 @@ func TestAsmcovRectangularPattern(t *testing.T) {
 // TestAsmcovRectangularPatternRejectsBadInput pins the three rectangularArrangement error
 // branches: a zero first/second direction and a zero grid count.
 func TestAsmcovRectangularPatternRejectsBadInput(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0)
 	rect := func(extra string) []byte {
 		return []byte(fmt.Sprintf(`{"seed":%d,"kind":"rectangular",%s}`, occs[0].ID(), extra))
@@ -133,6 +139,7 @@ func asmcovDSJoint(t *testing.T, r *Router, s *app.Session, occs []*occurrence.O
 // TestAsmcovDSJointTypes exercises every dsJointType mapping branch, including the
 // default (an unknown kind maps to rigid).
 func TestAsmcovDSJointTypes(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	want := map[string]string{
 		"rotational": "rotational", "prismatic": "prismatic",
@@ -148,6 +155,7 @@ func TestAsmcovDSJointTypes(t *testing.T) {
 // TestAsmcovDSJointImposedMotionAndDelete drives a DOF, then deletes the joint
 // (dsJoints.setImposedMotion driven branch + dsJoints.delete).
 func TestAsmcovDSJointImposedMotionAndDelete(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	added := asmcovDSJoint(t, r, s, occs, "cylindrical")
 
@@ -166,6 +174,7 @@ func TestAsmcovDSJointImposedMotionAndDelete(t *testing.T) {
 
 // TestAsmcovDSJointErrors pins the DS-joint mutator error paths (unknown ids).
 func TestAsmcovDSJointErrors(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t, 0, 5)
 	if _, err := r.Handle(s, "dsJoints.delete", []byte(mustJSON(t, wire.DeleteDSJointArgs{ID: 99999}))); err == nil {
 		t.Error("deleting an unknown DS joint should fail")
@@ -195,6 +204,7 @@ func asmcovShrinkwrapKind(t *testing.T, r *Router, s *app.Session, src uint64, r
 // TestAsmcovShrinkwrapStyles exercises the removeStyle/envelopeStyle mapping branches:
 // remove-small + per-part envelope, and remove-internal + no envelope.
 func TestAsmcovShrinkwrapStyles(t *testing.T) {
+	t.Parallel()
 	r1, s1, src1 := asmcovShrinkwrap(t)
 	if k := asmcovShrinkwrapKind(t, r1, s1, src1, 1, 1); k != "shrinkwrap" {
 		t.Errorf("remove-small/per-part kind = %q, want shrinkwrap", k)
@@ -207,6 +217,7 @@ func TestAsmcovShrinkwrapStyles(t *testing.T) {
 
 // TestAsmcovShrinkwrapRejectsUnknownStyles pins the removeStyle/envelopeStyle error branches.
 func TestAsmcovShrinkwrapRejectsUnknownStyles(t *testing.T) {
+	t.Parallel()
 	r, s, src := asmcovShrinkwrap(t)
 	if _, err := r.Handle(s, "assembly.shrinkwrapCreate", []byte(fmt.Sprintf(`{"source":%d,"removeStyle":99}`, src))); err == nil {
 		t.Error("an unknown removeStyle should fail")

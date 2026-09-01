@@ -12,6 +12,7 @@ import (
 // TestCreateWorkPointAtSelectedCloudPoint: with a snapped scan point selected, the command adds a
 // datum point at that location; with nothing selected it is disabled and errors (#645).
 func TestCreateWorkPointAtSelectedCloudPoint(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
 	pc, err := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(3, 4, 5)})

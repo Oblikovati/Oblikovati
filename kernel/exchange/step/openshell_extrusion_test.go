@@ -14,6 +14,7 @@ import (
 // reads the SAME file as a valid 4-face closed solid, area 108534 (oracle). The fixture is the corpus
 // G3 base body; we now recover the swept face and match OCCT to ~1e-5. See NewExtrudedBSplineSurface.
 func TestExtrudedBSplineImportsClosed(t *testing.T) {
+	t.Parallel()
 	body := importOneSolid(t, "extruded_bspline_solid.step")
 	rep := ops.Validate(body)
 	if !rep.Valid || !rep.Closed {

@@ -30,6 +30,7 @@ func u4SliverFixture(t *testing.T) (edgeFillet, []obstacleDetection, [2]panelSpa
 // TestExtractPanelLoopU4SliverIsValence4AndClosed pins the coons4-fillable precondition (derivation
 // §1.5): both sliver spans build a Valence-4, Closed RailLoop coons4Provider.Fits accepts.
 func TestExtractPanelLoopU4SliverIsValence4AndClosed(t *testing.T) {
+	t.Parallel()
 	ef, dets, slivers, res := u4SliverFixture(t)
 	for i, span := range slivers {
 		loop, ok := extractPanelLoop(span, dets, ef, res)
@@ -61,6 +62,7 @@ func TestExtractPanelLoopU4SliverIsValence4AndClosed(t *testing.T) {
 // real yet) but that MUST be fixed before U4-5 turns the gate on and renders these panels for the live
 // MCP screenshot. Flagged as a concern in the U4-3 report; out of THIS slice's scope to fix.
 func TestExtractPanelLoopU4SliverAreaMatchesOracle(t *testing.T) {
+	t.Parallel()
 	ef, dets, slivers, res := u4SliverFixture(t)
 	const oracleArea = 3.039
 	const corpusDeps = 0.01 // corpus.json "U4".deps
@@ -93,6 +95,7 @@ func TestExtractPanelLoopU4SliverAreaMatchesOracle(t *testing.T) {
 // setbackSection's return value directly as the loop's 4th side (buildSliverLoop), never re-deriving
 // the corner independently, so this test is a receipt of that reuse, not a tolerance check.
 func TestExtractPanelLoopU4SliverCornerCoincidesWithSetbackSection(t *testing.T) {
+	t.Parallel()
 	ef, dets, slivers, res := u4SliverFixture(t)
 	for i, span := range slivers {
 		activeIsB, ok := sliverActiveHost(span)
@@ -154,6 +157,7 @@ func loopCarriesExactPoint(loop RailLoop, p math.Point3) bool {
 // defect introduced here): the "line reaches exactly x=5 at the node" is the derivation's idealization,
 // the true (and OCCT's own) section is already a hair off it there.
 func TestExtractPanelLoopU4SliverAWeldsToNotchTangent(t *testing.T) {
+	t.Parallel()
 	ef, dets, slivers, res := u4SliverFixture(t)
 	hostRadial, _, _ := cornerRadials(ef, true) // host A's own tangent radial (ef.c0.cen -> c0.ta)
 	for i, span := range slivers {
@@ -179,6 +183,7 @@ func TestExtractPanelLoopU4SliverAWeldsToNotchTangent(t *testing.T) {
 // to that host's own detection node — the SAME point buildObstacleWings' node section anchors to, so a
 // future weld (U4-5) has no T-junction there.
 func TestExtractPanelLoopU4SliverBWeldsToWingArc(t *testing.T) {
+	t.Parallel()
 	ef, dets, slivers, res := u4SliverFixture(t)
 	detA, detB, ok := hostDetections(dets)
 	if !ok {
@@ -212,6 +217,7 @@ func TestExtractPanelLoopU4SliverBWeldsToWingArc(t *testing.T) {
 // a CORE span (both hosts active) now builds a valid Valence-4 loop — that shape landed in U4-4
 // (fillet_obstacle_panel_core.go); the U4-4 report covers its area/fidelity gates in detail.
 func TestExtractPanelLoopBuildsCoreSpan(t *testing.T) {
+	t.Parallel()
 	ef, dets, _, res := u4SliverFixture(t)
 	spans := partitionUnionStations(dets, ef)
 	core := spans[1]
@@ -230,6 +236,7 @@ func TestExtractPanelLoopBuildsCoreSpan(t *testing.T) {
 // TestPanelSideInactiveHostIsG1TangentLine pins panelSide's inactive branch (derivation §3.1): a
 // straight G1 line to the host plane, exactly connecting the two points it is given.
 func TestPanelSideInactiveHostIsG1TangentLine(t *testing.T) {
+	t.Parallel()
 	ef, dets, _, _ := u4SliverFixture(t)
 	detA, _, ok := hostDetections(dets)
 	if !ok {
@@ -260,6 +267,7 @@ func TestPanelSideInactiveHostIsG1TangentLine(t *testing.T) {
 // TestPanelSideActiveHostIsG0RimSubArc pins panelSide's active branch: a G0 rim sub-arc (never G1 —
 // the base-rim crease, the T6 fold lesson obstacleSides already documents) pinned exactly to from/to.
 func TestPanelSideActiveHostIsG0RimSubArc(t *testing.T) {
+	t.Parallel()
 	ef, dets, _, _ := u4SliverFixture(t)
 	_, detB, ok := hostDetections(dets)
 	if !ok {

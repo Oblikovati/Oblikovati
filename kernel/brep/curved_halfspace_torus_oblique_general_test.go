@@ -13,6 +13,7 @@ import (
 // A plane oblique to the torus axis (tilted torus, axis-aligned cut) bites a single asymmetric spiric oval:
 // the kept solid is the small contractible CAP or its genus-1 COMPLEMENT, watertight, no CSG (Oblikovati#1375).
 func TestHalfSpaceCutTorusObliqueOval(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name   string
 		normal math.Vector3
@@ -49,6 +50,7 @@ func TestHalfSpaceCutTorusObliqueOval(t *testing.T) {
 // of the analytic-builder test cases — is trimmed EXACTLY by the unified (u,v)-arrangement trimmer with NO
 // bespoke builder: one analytic torus face + one planar oval lid, watertight, no faceted CSG fallback.
 func TestHalfSpaceCutTorusObliqueOffMatrix(t *testing.T) {
+	t.Parallel()
 	tor, _ := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 6, 1.5, "torus")
 	plane, _ := geom.NewPlane(math.P3(0, 6, 1.5), math.V3(0, 0.7, 0.7)) // tilted ~45°, bites one oval
 	res, err := HalfSpaceCut(tor, plane)
@@ -79,6 +81,7 @@ func TestHalfSpaceCutTorusObliqueOffMatrix(t *testing.T) {
 // torusObliqueOvalRange finds the oval's tube-angle interval and pinch sign from the closed-form w=±1
 // crossings, exactly where the sampled section starts/ends.
 func TestTorusObliqueOvalRange(t *testing.T) {
+	t.Parallel()
 	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2)
 	plane, _ := geom.NewPlane(math.P3(0, 0, 3.6), math.V3(0, 0, 1))
 	_, m, k, c := geom.TorusSectionCoeffs(tor, plane)
@@ -101,6 +104,7 @@ func TestTorusObliqueOvalRange(t *testing.T) {
 // A tilted plane through the central hole cuts TWO oblique ovals (the section is valid at every tube angle):
 // the kept solid is a v-wrapping band + two oval lids, watertight, no CSG (Oblikovati#1375).
 func TestHalfSpaceCutTorusTwoObliqueOval(t *testing.T) {
+	t.Parallel()
 	tor, _ := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2, "torus")
 	torS, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2)
 	plane, _ := geom.NewPlane(math.P3(0, 0, 0.5), math.V3(0, 0, 1)) // tilted, through the hole

@@ -38,6 +38,7 @@ func assertRootsMatch(t *testing.T, name string, got, want []float64) {
 // TestRealQuarticRoots_FourDistinctRoots cross-checks against (t−1)(t−2)(t−3)(t−4), expanded by
 // hand: t⁴−10t³+35t²−50t+24 = 0.
 func TestRealQuarticRoots_FourDistinctRoots(t *testing.T) {
+	t.Parallel()
 	got := realQuarticRoots(24, -50, 35, -10, 1)
 	assertRootsMatch(t, "four distinct", got, []float64{1, 2, 3, 4})
 }
@@ -45,6 +46,7 @@ func TestRealQuarticRoots_FourDistinctRoots(t *testing.T) {
 // TestRealQuarticRoots_TwoRealTwoComplex cross-checks (t−1)(t+1)(t²+1) = t⁴−1 = 0: real roots
 // ±1, the other two (±i) must NOT appear.
 func TestRealQuarticRoots_TwoRealTwoComplex(t *testing.T) {
+	t.Parallel()
 	got := realQuarticRoots(-1, 0, 0, 0, 1)
 	assertRootsMatch(t, "two real two complex", got, []float64{-1, 1})
 }
@@ -52,6 +54,7 @@ func TestRealQuarticRoots_TwoRealTwoComplex(t *testing.T) {
 // TestRealQuarticRoots_AllComplex cross-checks t⁴+1=0 (all four roots complex, the classic
 // "no real roots" quartic): the physical filter must return nothing.
 func TestRealQuarticRoots_AllComplex(t *testing.T) {
+	t.Parallel()
 	got := realQuarticRoots(1, 0, 0, 0, 1)
 	if len(got) != 0 {
 		t.Fatalf("t⁴+1=0: got real roots %v, want none", got)
@@ -63,6 +66,7 @@ func TestRealQuarticRoots_AllComplex(t *testing.T) {
 // product = (t²-4t+4)(t²-4t-5). Let u=t²-4t: (u+4)(u-5)=u²-u-20 = (t²-4t)²-(t²-4t)-20
 // = t⁴-8t³+16t²-t²+4t-20 = t⁴-8t³+15t²+4t-20.
 func TestRealQuarticRoots_RepeatedRoot(t *testing.T) {
+	t.Parallel()
 	got := realQuarticRoots(-20, 4, 15, -8, 1)
 	assertRootsMatch(t, "repeated root", got, []float64{-1, 2, 5}) // 2 appears once (deduplicated)
 }
@@ -70,6 +74,7 @@ func TestRealQuarticRoots_RepeatedRoot(t *testing.T) {
 // TestRealQuarticRoots_Biquadratic exercises the q≈0 fast path directly: t⁴−5t²+4=0 factors as
 // (t²−1)(t²−4) = 0, roots ±1, ±2.
 func TestRealQuarticRoots_Biquadratic(t *testing.T) {
+	t.Parallel()
 	got := realQuarticRoots(4, 0, -5, 0, 1)
 	assertRootsMatch(t, "biquadratic", got, []float64{-2, -1, 1, 2})
 }
@@ -77,6 +82,7 @@ func TestRealQuarticRoots_Biquadratic(t *testing.T) {
 // TestLargestRealRootOfCubic_KnownRoots cross-checks (m−1)(m−2)(m+5) = m³+2m²-13m+10... recompute:
 // (m-1)(m-2)=m²-3m+2; ×(m+5) = m³+5m²-3m²-15m+2m+10 = m³+2m²-13m+10. Largest root is 2.
 func TestLargestRealRootOfCubic_KnownRoots(t *testing.T) {
+	t.Parallel()
 	got := largestRealRootOfCubic(1, 2, -13, 10)
 	if stdmath.Abs(got-2) > quarticTol {
 		t.Fatalf("largest root = %.12f, want 2", got)
@@ -86,6 +92,7 @@ func TestLargestRealRootOfCubic_KnownRoots(t *testing.T) {
 // TestLargestRealRootOfCubic_ThreeRealRoots exercises the trigonometric (disc<0) branch directly:
 // m³−7m+6 = (m−1)(m−2)(m+3), three real roots, largest is 2.
 func TestLargestRealRootOfCubic_ThreeRealRoots(t *testing.T) {
+	t.Parallel()
 	got := largestRealRootOfCubic(1, 0, -7, 6)
 	if stdmath.Abs(got-2) > quarticTol {
 		t.Fatalf("largest root = %.12f, want 2", got)
@@ -95,6 +102,7 @@ func TestLargestRealRootOfCubic_ThreeRealRoots(t *testing.T) {
 // TestLargestRealRootOfCubic_OneRealRoot exercises the Cardano radical (disc>0) branch: m³+m+10
 // has exactly one real root (the other two are complex); Newton from a bracket confirms it's ≈-1.847.
 func TestLargestRealRootOfCubic_OneRealRoot(t *testing.T) {
+	t.Parallel()
 	got := largestRealRootOfCubic(1, 0, 1, 10)
 	f := got*got*got + got + 10
 	if stdmath.Abs(f) > quarticTol {

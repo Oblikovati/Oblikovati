@@ -40,6 +40,7 @@ func cylindricalFaceKey(t *testing.T, b *topo.Body) []byte {
 // the analytic lateral area 2π·7·10 (per the tessellation-correctness rule, validated against the
 // closed form). The reverse direction gives the radius-3 inner surface (2π·3·10).
 func TestOffsetFaceSurfacesCylinderArea(t *testing.T) {
+	t.Parallel()
 	const r, h = 5.0, 10.0
 	body, err := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, h), r, r, "test")
 	if err != nil {

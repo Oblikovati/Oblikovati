@@ -15,6 +15,7 @@ const refEps = 1e-9
 
 // TestWorkPointRefSourceResolvesOriginCenter: the origin centre point projects to (0,0,0).
 func TestWorkPointRefSourceResolvesOriginCenter(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	src := NewWorkPointRefSource(d, feature.OriginCenter)
 	if src.SourceID() != string(feature.OriginCenter) {
@@ -31,6 +32,7 @@ func TestWorkPointRefSourceResolvesOriginCenter(t *testing.T) {
 
 // TestWorkPointRefSourceLostReference: an unknown datum reference reports lost, not a panic.
 func TestWorkPointRefSourceLostReference(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if _, ok := NewWorkPointRefSource(d, "origin/point/bogus").Position(); ok {
 		t.Error("unknown datum point should report ok=false")
@@ -40,6 +42,7 @@ func TestWorkPointRefSourceLostReference(t *testing.T) {
 // TestWorkAxisRefSourceSamplesAlongAxis: the origin X axis samples a segment centred on the
 // origin and directed along +X, sized by the default half-span on an empty part.
 func TestWorkAxisRefSourceSamplesAlongAxis(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	pts, ok := NewWorkAxisRefSource(d, feature.OriginXAxis).SamplePoints()
 	if !ok || len(pts) != 2 {
@@ -54,6 +57,7 @@ func TestWorkAxisRefSourceSamplesAlongAxis(t *testing.T) {
 // TestWorkPlaneRefSourceIntersectsSketchPlane: projecting the origin XZ plane onto an XY sketch
 // yields the X axis line (the planes meet along y=0, z=0).
 func TestWorkPlaneRefSourceIntersectsSketchPlane(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	pts, ok := NewWorkPlaneRefSource(d, feature.OriginXZPlane, sketch.XYPlane()).SamplePoints()
 	if !ok || len(pts) != 2 {
@@ -72,6 +76,7 @@ func TestWorkPlaneRefSourceIntersectsSketchPlane(t *testing.T) {
 // TestWorkPlaneRefSourceParallelHasNoLine: an XY work plane projected onto an XY sketch is
 // parallel — there is no intersection line, so the source reports lost.
 func TestWorkPlaneRefSourceParallelHasNoLine(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if _, ok := NewWorkPlaneRefSource(d, feature.OriginXYPlane, sketch.XYPlane()).SamplePoints(); ok {
 		t.Error("parallel planes should report ok=false (no intersection line)")
@@ -80,6 +85,7 @@ func TestWorkPlaneRefSourceParallelHasNoLine(t *testing.T) {
 
 // TestReferenceLineHalfSpanDefaultsOnEmptyPart: with no geometry the span is the default.
 func TestReferenceLineHalfSpanDefaultsOnEmptyPart(t *testing.T) {
+	t.Parallel()
 	if got := NewPartComponentDefinition().referenceLineHalfSpan(); got != referenceLineHalfSpan {
 		t.Errorf("empty-part span = %v, want %v", got, referenceLineHalfSpan)
 	}
@@ -88,6 +94,7 @@ func TestReferenceLineHalfSpanDefaultsOnEmptyPart(t *testing.T) {
 // TestWorkKeyResolvesClassifiesDatums: the resolves helpers classify each origin reference and
 // reject a B-rep-style key.
 func TestWorkKeyResolvesClassifiesDatums(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if !d.WorkPointKeyResolves(string(feature.OriginCenter)) {
 		t.Error("origin centre should resolve as a work point")
@@ -105,6 +112,7 @@ func TestWorkKeyResolvesClassifiesDatums(t *testing.T) {
 
 // TestWorkAxisAndPlaneSourceID: the axis/plane sources report their datum reference.
 func TestWorkAxisAndPlaneSourceID(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if got := NewWorkAxisRefSource(d, feature.OriginXAxis).SourceID(); got != string(feature.OriginXAxis) {
 		t.Errorf("axis SourceID = %q, want %q", got, feature.OriginXAxis)
@@ -117,6 +125,7 @@ func TestWorkAxisAndPlaneSourceID(t *testing.T) {
 // TestWorkAxisRefSourceLostReference / TestWorkPlaneRefSourceLostReference: an unknown datum
 // reference reports lost rather than panicking.
 func TestWorkAxisRefSourceLostReference(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if _, ok := NewWorkAxisRefSource(d, "origin/axis/bogus").SamplePoints(); ok {
 		t.Error("unknown datum axis should report ok=false")
@@ -124,6 +133,7 @@ func TestWorkAxisRefSourceLostReference(t *testing.T) {
 }
 
 func TestWorkPlaneRefSourceLostReference(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if _, ok := NewWorkPlaneRefSource(d, "origin/plane/bogus", sketch.XYPlane()).SamplePoints(); ok {
 		t.Error("unknown datum plane should report ok=false")
@@ -133,6 +143,7 @@ func TestWorkPlaneRefSourceLostReference(t *testing.T) {
 // TestWorkPlaneIntersectsSketch: the viability probe is true for a meeting plane, false for a
 // parallel one.
 func TestWorkPlaneIntersectsSketch(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if !d.WorkPlaneIntersectsSketch(feature.OriginXZPlane, sketch.XYPlane()) {
 		t.Error("XZ plane should meet the XY sketch in a line")
@@ -145,6 +156,7 @@ func TestWorkPlaneIntersectsSketch(t *testing.T) {
 // TestReferenceLineHalfSpanScalesWithModel: a large body grows the reference-line span beyond
 // the empty-part default (half the model range-box diagonal).
 func TestReferenceLineHalfSpanScalesWithModel(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	sk := d.Sketches().Add(sketch.XYPlane())
 	c0 := sk.Points().Add(math.P2(0, 0))
@@ -165,6 +177,7 @@ func TestReferenceLineHalfSpanScalesWithModel(t *testing.T) {
 // TestReferenceLineHalfSpanSmallModelKeepsDefault: a tiny body (half-diagonal below the
 // default) keeps the default span so the reference line stays visible.
 func TestReferenceLineHalfSpanSmallModelKeepsDefault(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	sk := d.Sketches().Add(sketch.XYPlane())
 	c0 := sk.Points().Add(math.P2(0, 0))

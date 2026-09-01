@@ -28,6 +28,7 @@ func unitSquareMesh(consistentWinding bool) *Mesh {
 
 // TestFoldEdgeCountCleanMesh: a consistently wound patch has no folds.
 func TestFoldEdgeCountCleanMesh(t *testing.T) {
+	t.Parallel()
 	if got := FoldEdgeCount(unitSquareMesh(true)); got != 0 {
 		t.Fatalf("clean mesh FoldEdgeCount = %d, want 0", got)
 	}
@@ -39,6 +40,7 @@ func TestFoldEdgeCountCleanMesh(t *testing.T) {
 // TestFoldEdgeCountDetectsFold: the reversed triangle folds across the shared diagonal (vertices
 // 0 and 2), and the detector reports exactly that one interior edge.
 func TestFoldEdgeCountDetectsFold(t *testing.T) {
+	t.Parallel()
 	m := unitSquareMesh(false)
 	if got := FoldEdgeCount(m); got != 1 {
 		t.Fatalf("folded mesh FoldEdgeCount = %d, want 1", got)
@@ -52,6 +54,7 @@ func TestFoldEdgeCountDetectsFold(t *testing.T) {
 // TestMeshAreaSumsTriangles: MeshArea is the true surface area, independent of winding (it sums
 // |triangle| areas), so both the clean and folded unit squares measure 1.0.
 func TestMeshAreaSumsTriangles(t *testing.T) {
+	t.Parallel()
 	for _, consistent := range []bool{true, false} {
 		if got := MeshArea(unitSquareMesh(consistent)); math.Abs(got-1.0) > 1e-12 {
 			t.Errorf("MeshArea(consistent=%v) = %.12f, want 1.0", consistent, got)
@@ -62,6 +65,7 @@ func TestMeshAreaSumsTriangles(t *testing.T) {
 // TestFoldEdgeCountOnCleanCurvedSolid: a clean analytic cylinder solid tessellates fold-free, the
 // production prerequisite the detector guards (it pairs with the watertight free-edge guard).
 func TestFoldEdgeCountOnCleanCurvedSolid(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(gm.P3(0, 0, 0), gm.V3(0, 0, 1), 5, 10)
 	if err != nil {
 		t.Fatalf("build cylinder: %v", err)
@@ -80,6 +84,7 @@ func TestFoldEdgeCountOnCleanCurvedSolid(t *testing.T) {
 // triangle adjacent to a 0.0937-area one on a face of 234 — so the guard cannot be widened into a
 // blanket "ignore small triangles" without this failing.
 func TestFoldDetectorIgnoresNullSliver(t *testing.T) {
+	t.Parallel()
 	sliver := &Mesh{
 		Positions: []gm.Point3{
 			gm.P3(9.807852804032304, 1.9509032201612806, 20),

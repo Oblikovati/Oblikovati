@@ -13,6 +13,7 @@ import (
 // the cone surface and the plane (Oblikovati/Oblikovati#1372). The vertex distance from the apex
 // along the axis is |D|/tanα, where D is the apex-to-plane offset.
 func TestPlaneConeAxisParallelHyperbola(t *testing.T) {
+	t.Parallel()
 	cone, err := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6) // tanα = 1/√3
 	if err != nil {
 		t.Fatalf("NewCone: %v", err)
@@ -46,6 +47,7 @@ func TestPlaneConeAxisParallelHyperbola(t *testing.T) {
 
 // A plane through the apex (D≈0) is the degenerate two-generator case and is deferred.
 func TestPlaneConeThroughApexDeferred(t *testing.T) {
+	t.Parallel()
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6)
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 1, 0)) // contains the apex and the axis
 	if _, handled := IntersectSurfacesAnalytic(pl, cone, ResolutionForSize(1)); handled {

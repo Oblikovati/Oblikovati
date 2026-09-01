@@ -17,6 +17,7 @@ import (
 // TestFilletToolVariableRadius blends a vertical block edge from 0.3 to 0.8: the commit
 // goes through AddFilletSets (one variable set) and the solid stays valid.
 func TestFilletToolVariableRadius(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2) // 2×2×2, vol 8
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 
@@ -48,6 +49,7 @@ func TestFilletToolVariableRadius(t *testing.T) {
 
 // Re-editing a committed variable fillet must seed the panel's variable state.
 func TestFilletEditSeedsVariableState(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	f := NewFilletTool()
@@ -74,6 +76,7 @@ func TestFilletEditSeedsVariableState(t *testing.T) {
 // TestSplitToolFacesOnly imprints the mid-plane: the body count and volume stay, the
 // crossed faces split (4 sides × 2 + top + bottom = 10 faces).
 func TestSplitToolFacesOnly(t *testing.T) {
+	t.Parallel()
 	s, def, wp := partWithMidPlane(t, 6) // 6×6×2 block, vol 72
 
 	split := NewSplitTool()
@@ -101,6 +104,7 @@ func TestSplitToolFacesOnly(t *testing.T) {
 // TestThreadToolParityOptions commits class/tapered/model-diameter into the definition,
 // and blocks the cut+tapered combination.
 func TestThreadToolParityOptions(t *testing.T) {
+	t.Parallel()
 	s, cyl := newPartWithCylinder(t)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: cylinderFaceOf(t, cyl), Body: cyl}})
 
@@ -127,6 +131,7 @@ func TestThreadToolParityOptions(t *testing.T) {
 
 // TestFaceOffsetToolApproximation records the #331 request on the committed feature.
 func TestFaceOffsetToolApproximation(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 6)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 
@@ -145,6 +150,7 @@ func TestFaceOffsetToolApproximation(t *testing.T) {
 
 // TestThickenToolApproximation records the #331 request on the committed thicken.
 func TestThickenToolApproximation(t *testing.T) {
+	t.Parallel()
 	s, def, region := partWithSquareRegion(t)
 	feature.NewBoundaryPatchFeatures(def.Features()).Add(region.Sketch, region.ProfileIndex, feature.PatchFree)
 	def.Recompute()

@@ -17,6 +17,7 @@ func xyPlaneAt(z float64) Plane {
 
 // TestProjectLineSegmentToPlane: a 3D segment projects to the 2D segment of its projected endpoints.
 func TestProjectLineSegmentToPlane(t *testing.T) {
+	t.Parallel()
 	seg := NewLineSegment(math.P3(1, 2, 5), math.P3(4, 6, 9))
 	c2, ok := ProjectCurveToPlane(xyPlaneAt(0), seg)
 	if !ok {
@@ -34,6 +35,7 @@ func TestProjectLineSegmentToPlane(t *testing.T) {
 // TestProjectParallelCircleToPlane: a circle whose plane is parallel to the sketch plane (any z
 // offset) projects to a circle of the SAME radius, centre projected — the piston-rim case.
 func TestProjectParallelCircleToPlane(t *testing.T) {
+	t.Parallel()
 	circ, _ := NewCircle(math.P3(3, -2, 8), math.V3(0, 0, 1), 4.3)
 	c2, ok := ProjectCurveToPlane(xyPlaneAt(0), circ)
 	if !ok {
@@ -51,6 +53,7 @@ func TestProjectParallelCircleToPlane(t *testing.T) {
 // TestProjectAntiParallelCircleToPlane: a circle whose normal is -Z (anti-parallel) still projects
 // to a circle of the same radius (|cos| = 1).
 func TestProjectAntiParallelCircleToPlane(t *testing.T) {
+	t.Parallel()
 	circ, _ := NewCircle(math.P3(0, 0, 2), math.V3(0, 0, -1), 1.5)
 	c2, ok := ProjectCurveToPlane(xyPlaneAt(0), circ)
 	if !ok {
@@ -64,6 +67,7 @@ func TestProjectAntiParallelCircleToPlane(t *testing.T) {
 // TestProjectObliqueCircleToEllipse: a circle tilted 45° about Y projects to an ellipse whose
 // major axis (the rotation axis, Y) keeps radius r and whose minor axis (the tilt, X) is r·cos45°.
 func TestProjectObliqueCircleToEllipse(t *testing.T) {
+	t.Parallel()
 	circ, _ := NewCircle(math.P3(1, 1, 0), math.V3(1, 0, 1), 2) // normal 45° from +Z, in the X–Z plane
 	c2, ok := ProjectCurveToPlane(xyPlaneAt(0), circ)
 	if !ok {
@@ -88,6 +92,7 @@ func TestProjectObliqueCircleToEllipse(t *testing.T) {
 // same geometry — its endpoints match the projected 3D endpoints, and every projected arc point lies
 // on it.
 func TestProjectObliqueArcToEllipticalArc(t *testing.T) {
+	t.Parallel()
 	arc, _ := NewArc3d(math.P3(0, 0, 0), math.V3(1, 0, 1), math.V3(0, 1, 0), 3, 0.3, stdmath.Pi*0.8)
 	pl := xyPlaneAt(0)
 	c2, ok := ProjectCurveToPlane(pl, arc)
@@ -123,6 +128,7 @@ func TestProjectObliqueArcToEllipticalArc(t *testing.T) {
 // TestProjectParallelArcToPlane: an arc parallel to the plane projects to a 2D arc of the same
 // radius through its projected endpoints, with a point at the projected midpoint.
 func TestProjectParallelArcToPlane(t *testing.T) {
+	t.Parallel()
 	arc, _ := NewArc3d(math.P3(0, 0, 3), math.V3(0, 0, 1), math.V3(1, 0, 0), 2, 0, stdmath.Pi/2)
 	c2, ok := ProjectCurveToPlane(xyPlaneAt(0), arc)
 	if !ok {
@@ -143,6 +149,7 @@ func TestProjectParallelArcToPlane(t *testing.T) {
 
 // TestSampleCurve3Count: the shared sampler returns n+1 points spanning the domain endpoints.
 func TestSampleCurve3Count(t *testing.T) {
+	t.Parallel()
 	seg := NewLineSegment(math.P3(0, 0, 0), math.P3(10, 0, 0))
 	pts := SampleCurve3(seg, 16)
 	if len(pts) != 17 {

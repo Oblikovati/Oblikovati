@@ -91,6 +91,7 @@ func polygonAreaXY(loop []math.Point3) float64 {
 // resample turned an 8×1 rectangle (area 8) into a 4.5-area quad (0.5625×); resampleLoop now
 // preserves the corners, so the area is unchanged whether n equals or exceeds the vertex count.
 func TestResampleLoopPreservesArea(t *testing.T) {
+	t.Parallel()
 	rect := []math.Point3{
 		math.P3(-4, -0.5, 0), math.P3(4, -0.5, 0), math.P3(4, 0.5, 0), math.P3(-4, 0.5, 0),
 	}
@@ -134,6 +135,7 @@ func mobiusSectionLoops(n int, radius, width, thick, turns float64) [][]math.Poi
 // 180°-symmetric (rectangular) section comes back shifted by half its points; an untwisted ring
 // does not. The closure (blend + mesh wrap) applies this offset so the seam doesn't pinch.
 func TestClosureShiftDetectsMonodromy(t *testing.T) {
+	t.Parallel()
 	if got := closureShift(mobiusSectionLoops(12, 30, 16, 2, 0.5), true); got != 2 {
 		t.Errorf("closureShift(Möbius rects) = %d, want 2 (rectangle 180° monodromy)", got)
 	}
@@ -150,6 +152,7 @@ func TestClosureShiftDetectsMonodromy(t *testing.T) {
 // whole twist into the wrap segment — the old behaviour blew the wrap up to loftMaxSegmentSamples
 // (a pinched notch); the monodromy-aware closure keeps every segment at the floor.
 func TestClosedMobiusLoftClosesWithoutCram(t *testing.T) {
+	t.Parallel()
 	const n, R, W, T = 36, 30.0, 16.0, 2.0
 	loops := mobiusSectionLoops(n, R, W, T, 0.5)
 
@@ -193,6 +196,7 @@ func mobiusSectionSketch(u, twist, radius, width, thick float64) *sketch.Sketch 
 // (seamless seam). A thin band of section w×t swept along the ring centroid (length 2πR) has
 // volume w·t·2πR and one-sided surface area ≈ 2(w+t)·2πR, independent of the twist.
 func TestLoftMobiusStripDesign(t *testing.T) {
+	t.Parallel()
 	const R, W, T = 3.0, 1.6, 0.2 // cm: ring 30 mm, band 16×2 mm (model units = cm)
 	body := closedMobiusLoftBody(t, 36, R, W, T, mobiusSectionSketch)
 	props := ops.BodyGeometryProperties(body, ops.DefaultQuality())
@@ -226,6 +230,7 @@ func mobiusSectionEllipseSketch(u, twist, radius, width, thick float64) *sketch.
 // the rounded band must also close seamlessly with the right mass. An elliptical band of semi-axes
 // a,b swept along the ring centroid has volume π·a·b·2πR.
 func TestLoftMobiusStripEllipseDesign(t *testing.T) {
+	t.Parallel()
 	const R, W, T = 3.0, 1.6, 0.2 // cm: ring 30 mm, ellipse 16×2 mm
 	body := closedMobiusLoftBody(t, 36, R, W, T, mobiusSectionEllipseSketch)
 	a, b := W/2, T/2
@@ -241,6 +246,7 @@ func TestLoftMobiusStripEllipseDesign(t *testing.T) {
 // ~166k triangles and stalling the viewport (14 ms/frame just to flatten). The correct mesh tracks
 // the loop density (≈ longitudinal sections × ellipse points); this pins it well under the blow-up.
 func TestLoftClosedTwistMeshStaysBounded(t *testing.T) {
+	t.Parallel()
 	body := closedMobiusLoftBody(t, 36, 3.0, 1.6, 0.2, mobiusSectionEllipseSketch)
 	mesh, _ := ops.TessellateBody(body, ops.DefaultQuality())
 	if got := mesh.TriangleCount(); got > 30000 { // correct ≈14k; the monodromy bug produced ~166k
@@ -249,6 +255,7 @@ func TestLoftClosedTwistMeshStaysBounded(t *testing.T) {
 }
 
 func TestLoftElongatedRectKeepsVolume(t *testing.T) {
+	t.Parallel()
 	// An 8×1 rectangle lofted straight from z=0 to z=5 is a prism: V = area·h = 8·5 = 40.
 	// The arc-length-resample bug skinned a 4.5-area quad → ~22.5; the corner-preserving
 	// resample restores the full cross-section.
@@ -290,6 +297,7 @@ func (l sketchList) At(i int) (*sketch.Sketch, bool) {
 }
 
 func TestSweepAlongPathMakesValidSolid(t *testing.T) {
+	t.Parallel()
 	// A 2×2 square swept along an L-path (up Z, then over X) → a valid elbow solid.
 	fs := NewPartFeatures(nil)
 	path := sketch.NewPath3D([]*sketch.Point3D{
@@ -314,6 +322,7 @@ func TestSweepAlongPathMakesValidSolid(t *testing.T) {
 }
 
 func TestLoftBetweenSquaresIsFrustum(t *testing.T) {
+	t.Parallel()
 	// A 4×4 square at z=0 lofted to a 2×2 square at z=5 → a square frustum:
 	// V = h/3·(A1 + A2 + √(A1·A2)) = 5/3·(16 + 4 + 8) = 140/3 ≈ 46.667.
 	fs := NewPartFeatures(nil)
@@ -347,6 +356,7 @@ func planeAtZFlipped(z float64) sketch.Plane {
 // must still be the correct square frustum (V=140/3), not a winding-crossed bow-tie at ~1/3 the
 // volume. matchWinding reverses the oppositely-wound top section so the ribs connect point-for-point.
 func TestLoftBetweenOppositeNormalPlanesIsFrustum(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	bottom := centeredSquareOn(sketch.XYPlane(), 2)
 	top := centeredSquareOn(planeAtZFlipped(5), 1)
@@ -366,6 +376,7 @@ func TestLoftBetweenOppositeNormalPlanesIsFrustum(t *testing.T) {
 }
 
 func TestSweepAndLoftRoundTrip(t *testing.T) {
+	t.Parallel()
 	prof := centeredSquareOn(sketch.XYPlane(), 1)
 	bottom := centeredSquareOn(sketch.XYPlane(), 2)
 	top := centeredSquareOn(planeAtZ(5), 1)
@@ -400,6 +411,7 @@ func TestSweepAndLoftRoundTrip(t *testing.T) {
 // start and a reversed-Direction end restores with the same conditions, angles, impacts and
 // reversed flags (so a reopened .obk rebuilds the curved loft, not a ruled one).
 func TestLoftConditionsRoundTrip(t *testing.T) {
+	t.Parallel()
 	bottom := centeredSquareOn(sketch.XYPlane(), 2)
 	top := centeredSquareOn(planeAtZ(5), 1)
 	idx := sketchList{sks: []*sketch.Sketch{bottom, top}}

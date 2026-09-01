@@ -39,6 +39,7 @@ func straddlingBoss(t *testing.T) *topo.Body {
 }
 
 func TestPartialBossIsWatertightManifold(t *testing.T) {
+	t.Parallel()
 	res := straddlingBoss(t)
 	if !res.IsSolid() {
 		t.Fatal("straddling boss is not a solid")
@@ -58,6 +59,7 @@ func TestPartialBossIsWatertightManifold(t *testing.T) {
 }
 
 func TestPartialBossVolumeMatchesAnalytic(t *testing.T) {
+	t.Parallel()
 	res := straddlingBoss(t)
 	want := 200 + 12*stdmath.Pi // plate + cantilevered boss, no overlap
 	got := BodyGeometryProperties(res, DefaultQuality()).Volume
@@ -71,6 +73,7 @@ func TestPartialBossVolumeMatchesAnalytic(t *testing.T) {
 // crack-free surface — every triangle edge shared by exactly two triangles — so the rendered frame shows no
 // tear where the base conic crosses the plate edge.
 func TestPartialBossTessellationIsWatertight(t *testing.T) {
+	t.Parallel()
 	res := straddlingBoss(t)
 	for _, gq := range gateQualities() {
 		mesh, _ := TessellateBody(res, gq.q)
@@ -87,6 +90,7 @@ func TestPartialBossTessellationIsWatertight(t *testing.T) {
 // apart — the analytic result is distinguished by KEEPING the boss's cylinder wall as one analytic face (a
 // handful of faces), where CSG shatters it into ~200 planar facets and loses the exact surface.
 func TestPartialBossJoinsViaAnalyticDispatch(t *testing.T) {
+	t.Parallel()
 	plate, _ := brep.SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
 	boss, _ := brep.SolidCylinder(math.P3(4, 0, 2), math.V3(0, 0, 1), 2, 3)
 	res, err := Boolean(Join, plate, boss)

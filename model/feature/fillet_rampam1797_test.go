@@ -58,6 +58,7 @@ func countTorusF(b *topo.Body) int {
 // ONE continuous rounded stripe (4 torus + straight-blend cylinders), a valid closed manifold solid,
 // not a faceted/distorted cage. If this fails, the feature layer diverges from the green kernel test.
 func TestFilletAllAroundTopRimThroughFeaturePath(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}},
 		sketch.XYPlane(), span{near: 0, far: 4}, 0, "box")
 

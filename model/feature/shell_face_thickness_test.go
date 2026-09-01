@@ -40,6 +40,7 @@ func boxFaceKey(t *testing.T, b *topo.Body, nx, ny, nz float64) []byte {
 // feature has to re-read it. A value captured once at authoring time would leave the thick wall
 // behind when the parameter that sizes it changes.
 func TestShellFaceThicknessIsParameterDriven(t *testing.T) {
+	t.Parallel()
 	fs, box := shellSeed(t)
 	wall := 1.5
 	sh := NewDressUpFeatures(fs).AddShell([][]byte{boxFaceKey(t, box, 0, 0, 1)}, constFloat(0.5))
@@ -64,6 +65,7 @@ func TestShellFaceThicknessIsParameterDriven(t *testing.T) {
 // TestShellFaceThicknessRoundTrips: a reopened document must shell the same walls. Losing the
 // overrides would silently rebuild the part at the uniform thickness.
 func TestShellFaceThicknessRoundTrips(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).addShell(&ShellDefinition{
 		RemovedFaceKeys: [][]byte{[]byte("top")}, Thickness: constFloat(0.5),

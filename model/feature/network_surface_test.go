@@ -29,6 +29,7 @@ func gridPolylines() (u, v [][]math.Point3) {
 }
 
 func TestNetworkFeatureBuildsSurface(t *testing.T) {
+	t.Parallel()
 	u, v := gridPolylines()
 	f := &NetworkFeature{def: &NetworkDefinition{UCurves: u, VCurves: v}, featName: "Network"}
 	out, err := f.Recompute(Input{})
@@ -48,6 +49,7 @@ func TestNetworkFeatureBuildsSurface(t *testing.T) {
 }
 
 func TestNetworkFeatureErrorsWithoutGrid(t *testing.T) {
+	t.Parallel()
 	u, v := gridPolylines()
 	f := &NetworkFeature{def: &NetworkDefinition{UCurves: u[:1], VCurves: v}}
 	if _, err := f.Recompute(Input{}); err == nil {
@@ -56,12 +58,14 @@ func TestNetworkFeatureErrorsWithoutGrid(t *testing.T) {
 }
 
 func TestNetworkKind(t *testing.T) {
+	t.Parallel()
 	if (&NetworkFeature{def: &NetworkDefinition{}}).Kind() != "network-surface" {
 		t.Error("network kind")
 	}
 }
 
 func TestNetworkSurfaceRoundTrip(t *testing.T) {
+	t.Parallel()
 	u, v := gridPolylines()
 	fs := NewPartFeatures(nil)
 	NewNetworkFeatures(fs).Add(u, v)
@@ -80,6 +84,7 @@ func TestNetworkSurfaceRoundTrip(t *testing.T) {
 }
 
 func TestRestoreNetworkRejectsMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreNetworkSurface(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreNetworkSurface(nil) should error")
 	}

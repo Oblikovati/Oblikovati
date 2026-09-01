@@ -13,6 +13,7 @@ func lineSide(a, b math.Point3, cont Continuity) Side {
 }
 
 func TestRailLoopClosedAndValence(t *testing.T) {
+	t.Parallel()
 	p0, p1, p2 := math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0)
 	loop := RailLoop{Sides: []Side{
 		lineSide(p0, p1, G1), lineSide(p1, p2, G1), lineSide(p2, p0, G0),
@@ -26,6 +27,7 @@ func TestRailLoopClosedAndValence(t *testing.T) {
 }
 
 func TestRailLoopOpenIsNotClosed(t *testing.T) {
+	t.Parallel()
 	p0, p1, p2 := math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0)
 	open := RailLoop{Sides: []Side{lineSide(p0, p1, G1), lineSide(p1, p2, G1)}} // gap p2->p0
 	if open.Closed(1e-9) {

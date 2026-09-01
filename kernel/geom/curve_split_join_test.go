@@ -24,6 +24,7 @@ func arcLikeCurve(t *testing.T) BSplineCurve {
 // TestSplitCurveReproducesOriginal: the two halves, sampled over their own [0,1], trace the same
 // points as the original curve's two parameter halves.
 func TestSplitCurveReproducesOriginal(t *testing.T) {
+	t.Parallel()
 	c := arcLikeCurve(t)
 	a, b, err := SplitCurve(c, 0.5)
 	if err != nil {
@@ -41,6 +42,7 @@ func TestSplitCurveReproducesOriginal(t *testing.T) {
 }
 
 func TestSplitCurveRejectsOutOfDomain(t *testing.T) {
+	t.Parallel()
 	c := arcLikeCurve(t)
 	if _, _, err := SplitCurve(c, 0); err == nil {
 		t.Error("split at the domain start should error")
@@ -53,6 +55,7 @@ func TestSplitCurveRejectsOutOfDomain(t *testing.T) {
 // TestJoinCurvesRoundTripsSplit: splitting then re-joining yields a curve tracing the SAME image as
 // the original (the seam reparametrizes, so identity is checked as path containment, not per-param).
 func TestJoinCurvesRoundTripsSplit(t *testing.T) {
+	t.Parallel()
 	c := arcLikeCurve(t)
 	a, b, err := SplitCurve(c, 0.4)
 	if err != nil {
@@ -90,6 +93,7 @@ func TestJoinCurvesRoundTripsSplit(t *testing.T) {
 // TestJoinCurvesElevatesMixedDegree: a degree-1 segment and a degree-3 curve join into one curve
 // passing through both, interpolating the seam corner.
 func TestJoinCurvesElevatesMixedDegree(t *testing.T) {
+	t.Parallel()
 	seg, _ := NewBSplineCurve(1, []math.Point3{math.P3(4, 0, 0), math.P3(6, 0, 0)}, []float64{1, 1}, []float64{0, 0, 1, 1})
 	c := arcLikeCurve(t)
 	joined, err := JoinCurves([]BSplineCurve{c, seg})
@@ -105,6 +109,7 @@ func TestJoinCurvesElevatesMixedDegree(t *testing.T) {
 }
 
 func TestJoinCurvesRejectsGap(t *testing.T) {
+	t.Parallel()
 	a, _ := NewBSplineCurve(1, []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0)}, []float64{1, 1}, []float64{0, 0, 1, 1})
 	b, _ := NewBSplineCurve(1, []math.Point3{math.P3(5, 5, 5), math.P3(6, 6, 6)}, []float64{1, 1}, []float64{0, 0, 1, 1})
 	if _, err := JoinCurves([]BSplineCurve{a, b}); err == nil {

@@ -5,6 +5,7 @@ package app
 import "testing"
 
 func TestSelectionFilterStateDefaultAcceptsAll(t *testing.T) {
+	t.Parallel()
 	st := NewSelectionFilterState()
 	f := st.Filter()
 	if f.IsRestricted() {
@@ -18,6 +19,7 @@ func TestSelectionFilterStateDefaultAcceptsAll(t *testing.T) {
 }
 
 func TestSelectionFilterStateDisableRestricts(t *testing.T) {
+	t.Parallel()
 	st := NewSelectionFilterState()
 	st.SetEnabled(SelectFace, false)
 	f := st.Filter()
@@ -33,6 +35,7 @@ func TestSelectionFilterStateDisableRestricts(t *testing.T) {
 }
 
 func TestSelectionFilterStateDeselectAllBlocks(t *testing.T) {
+	t.Parallel()
 	st := NewSelectionFilterState()
 	st.DisableAll()
 	f := st.Filter()
@@ -47,6 +50,7 @@ func TestSelectionFilterStateDeselectAllBlocks(t *testing.T) {
 }
 
 func TestSelectionFilterStateEnableAllRestoresDefault(t *testing.T) {
+	t.Parallel()
 	st := NewSelectionFilterState()
 	st.DisableAll()
 	st.EnableAll()
@@ -56,6 +60,7 @@ func TestSelectionFilterStateEnableAllRestoresDefault(t *testing.T) {
 }
 
 func TestSelectionFilterStateMoveReordersRank(t *testing.T) {
+	t.Parallel()
 	st := NewSelectionFilterState()
 	if st.Rank(SelectEdge) >= st.Rank(SelectFace) {
 		t.Fatalf("default: edge (%d) should outrank face (%d)", st.Rank(SelectEdge), st.Rank(SelectFace))
@@ -71,6 +76,7 @@ func TestSelectionFilterStateMoveReordersRank(t *testing.T) {
 }
 
 func TestSelectionFilterStateMoveIgnoresOutOfRange(t *testing.T) {
+	t.Parallel()
 	st := NewSelectionFilterState()
 	before := st.Order()
 	st.Move(-1, 0)
@@ -85,6 +91,7 @@ func TestSelectionFilterStateMoveIgnoresOutOfRange(t *testing.T) {
 }
 
 func TestSelectionFilterStateOrderIsCopy(t *testing.T) {
+	t.Parallel()
 	st := NewSelectionFilterState()
 	got := st.Order()
 	got[0] = SelectFace
@@ -96,6 +103,7 @@ func TestSelectionFilterStateOrderIsCopy(t *testing.T) {
 // TestSelectionPriorityPresetsMatchPriorityFilter pins that the four priority presets write the
 // exact kind set priorityFilter defines, so the ribbon combo and the window agree (#1222).
 func TestSelectionPriorityPresetsMatchPriorityFilter(t *testing.T) {
+	t.Parallel()
 	priorities := []SelectionPriority{PriorityGeneral, PriorityPart, PriorityFace, PriorityEdge}
 	kinds := []SelectionKind{SelectFace, SelectEdge, SelectBody, SelectOccurrence, SelectVertex, SelectProfile}
 	for _, p := range priorities {
@@ -112,6 +120,7 @@ func TestSelectionPriorityPresetsMatchPriorityFilter(t *testing.T) {
 }
 
 func TestSelectionFilterWindowOpenAccessors(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.SelectionFilterWindowOpen() {
 		t.Fatal("the window must start closed")
@@ -132,6 +141,7 @@ func TestSelectionFilterWindowOpenAccessors(t *testing.T) {
 }
 
 func TestSelectionFilterCommandTogglesWindow(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -145,6 +155,7 @@ func TestSelectionFilterCommandTogglesWindow(t *testing.T) {
 }
 
 func TestSelectionKindLabelCoversFilterableKinds(t *testing.T) {
+	t.Parallel()
 	for _, k := range defaultFilterableKinds() {
 		if label := SelectionKindLabel(k); label == "" || label == "Unknown" {
 			t.Errorf("filterable kind %d has no human label (got %q)", k, label)
@@ -153,6 +164,7 @@ func TestSelectionKindLabelCoversFilterableKinds(t *testing.T) {
 }
 
 func TestPickFilterReflectsAmbientState(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.SelectionFilterState().SetEnabled(SelectFace, false)
 	if s.pickFilter().Accepts(SelectFace) {

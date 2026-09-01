@@ -51,6 +51,7 @@ func topEdgeAlongX(t *testing.T, body *topo.Body) *topo.Edge {
 // TestFlangeBuildsWatertightSolid the flange unions onto the sheet as one valid, watertight
 // solid whose volume is the sheet plus the developed bend+wall band.
 func TestFlangeBuildsWatertightSolid(t *testing.T) {
+	t.Parallel()
 	const side, r, h, th = 4.0, 0.2, 1.0, 0.2
 	bodies := sheetWithFlange(t, side, r, h)
 	if len(bodies) != 1 {
@@ -81,6 +82,7 @@ func TestFlangeBuildsWatertightSolid(t *testing.T) {
 // TestFlangeRisesAboveSheet the flange folds up — the body extends well above the flat
 // sheet's thickness in +Z.
 func TestFlangeRisesAboveSheet(t *testing.T) {
+	t.Parallel()
 	const side, r, h = 4.0, 0.2, 1.0
 	body := sheetWithFlange(t, side, r, h)[0]
 	maxZ := math.Inf(-1)
@@ -100,6 +102,7 @@ func TestFlangeRisesAboveSheet(t *testing.T) {
 // parameter, the default 90° angle applies, and flip folds the wall to the opposite (−Z)
 // side. Also exercises the Definition accessor.
 func TestFlangeDefaultsAndFlip(t *testing.T) {
+	t.Parallel()
 	fs, edge := seedSheetMetalSheet(t, 4, map[string]string{"BendRadius": "2 mm"}) // rule radius the flange reads
 	pf := NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
 		EdgeKey: edge.ReferenceKey(),
@@ -139,6 +142,7 @@ func mustParam(t *testing.T, ps *param.Parameters, name, expr string) {
 // TestFlangeRejectsBadDims a flange with a non-positive height (and no Thickness parameter)
 // goes sick rather than building degenerate geometry.
 func TestFlangeRejectsBadDims(t *testing.T) {
+	t.Parallel()
 	fs, edge := seedSheetMetalSheet(t, 4, nil)
 	pf := NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
 		EdgeKey: edge.ReferenceKey(),
@@ -154,6 +158,7 @@ func TestFlangeRejectsBadDims(t *testing.T) {
 // TestFlangeRoundTrip the flange recipe (edge key + height + angle + radius + flip) marshals
 // and restores, preserving the kind and payload; a 0 angle/radius restores as the defaults.
 func TestFlangeRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
 		EdgeKey: []byte("edge-key"),
@@ -185,6 +190,7 @@ func TestFlangeRoundTrip(t *testing.T) {
 
 // TestFlangeMissingPayload restoring a flange record with no payload errors.
 func TestFlangeMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreSheetMetalFlange(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreSheetMetalFlange(nil) must error")
 	}

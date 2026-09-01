@@ -6,6 +6,7 @@ import "testing"
 
 // Three Point Rectangle: a base edge then a width, producing four lines (non-axis-aligned).
 func TestThreePointRectangleTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewThreePointRectangleTool())
 	s.Click(60, 100)  // first corner
@@ -22,6 +23,7 @@ func TestThreePointRectangleTool(t *testing.T) {
 // Two Point Center Rectangle: a center then a corner, producing four edges plus the two
 // construction diagonals that pin the centre (#2014).
 func TestCenterRectangleTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewCenterRectangleTool())
 	s.Click(100, 100) // center
@@ -47,6 +49,7 @@ func TestCenterRectangleTool(t *testing.T) {
 
 // Three Point Circle: the circle through three clicked points.
 func TestThreePointCircleTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewThreePointCircleTool())
 	s.Click(60, 100)
@@ -62,6 +65,7 @@ func TestThreePointCircleTool(t *testing.T) {
 
 // Three Point Circle rejects three collinear points (no circumcircle).
 func TestThreePointCircleToolRejectsCollinear(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewThreePointCircleTool())
 	s.Click(40, 100)
@@ -77,6 +81,7 @@ func TestThreePointCircleToolRejectsCollinear(t *testing.T) {
 
 // Center Point Arc: center, start, end produces one arc.
 func TestCenterPointArcTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewCenterPointArcTool())
 	s.Click(100, 100) // center
@@ -89,6 +94,7 @@ func TestCenterPointArcTool(t *testing.T) {
 
 // Center Point Arc Slot: center, start, end produces the slot's lines and arc caps.
 func TestCenterPointArcSlotTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewCenterPointArcSlotTool(1))
 	s.Click(100, 100)
@@ -104,6 +110,7 @@ func TestCenterPointArcSlotTool(t *testing.T) {
 
 // Three Point Arc Slot: start, a point on the arc, end produces the slot.
 func TestThreePointArcSlotTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewThreePointArcSlotTool(1))
 	s.Click(60, 100)
@@ -116,6 +123,7 @@ func TestThreePointArcSlotTool(t *testing.T) {
 
 // Three Point Arc Slot rejects three collinear centre points.
 func TestThreePointArcSlotToolRejectsCollinear(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewThreePointArcSlotTool(1))
 	s.Click(40, 100)
@@ -131,6 +139,7 @@ func TestThreePointArcSlotToolRejectsCollinear(t *testing.T) {
 
 // Control Vertex Spline: the clicked points are control vertices; OK finishes the curve.
 func TestControlVertexSplineTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewControlVertexSplineTool())
 	s.Click(60, 100)

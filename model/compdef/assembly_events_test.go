@@ -20,6 +20,7 @@ func placeUnit(asm *AssemblyComponentDefinition, name string) *occurrence.Occurr
 // TestEventsRaiseOnPlaceMoveReplace covers the After-phase occurrence events reaching a
 // bus subscriber for the three programmatic mutations that have no veto (M11-F07).
 func TestEventsRaiseOnPlaceMoveReplace(t *testing.T) {
+	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	var adds, transforms, replaces int
 	var lastPrev math.Matrix4
@@ -53,6 +54,7 @@ func TestEventsRaiseOnPlaceMoveReplace(t *testing.T) {
 // definition op returns an AssemblyVetoError, the occurrence stays active, and no After
 // event fires.
 func TestSuppressVetoKeepsOccurrenceActive(t *testing.T) {
+	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	o := placeUnit(asm, "a:1")
 
@@ -80,6 +82,7 @@ func TestSuppressVetoKeepsOccurrenceActive(t *testing.T) {
 // TestSuppressCommitsWhenNotVetoed: with no veto the suppress applies and raises the
 // After event carrying the new state.
 func TestSuppressCommitsWhenNotVetoed(t *testing.T) {
+	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	o := placeUnit(asm, "a:1")
 	var got *OccurrenceSuppress
@@ -102,6 +105,7 @@ func TestSuppressCommitsWhenNotVetoed(t *testing.T) {
 // TestDeleteVetoKeepsOccurrence: a Before handler vetoes the delete, so the occurrence
 // stays in the assembly.
 func TestDeleteVetoKeepsOccurrence(t *testing.T) {
+	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	o := placeUnit(asm, "a:1")
 	event.Subscribe(asm.Events().Bus(), event.Before, func(_ event.Context, e OccurrenceDelete) event.Outcome {
@@ -119,6 +123,7 @@ func TestDeleteVetoKeepsOccurrence(t *testing.T) {
 // TestDeleteCommitsAndRaisesAfter: an unvetoed delete removes the occurrence and raises
 // the After event.
 func TestDeleteCommitsAndRaisesAfter(t *testing.T) {
+	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	o := placeUnit(asm, "a:1")
 	deleted := false
@@ -141,6 +146,7 @@ func TestDeleteCommitsAndRaisesAfter(t *testing.T) {
 // TestDragBatchRaisesOneTransformEvent ties the occurrence-layer batch to the event
 // source: a suspended multi-step drag raises exactly one OccurrenceTransform on the bus.
 func TestDragBatchRaisesOneTransformEvent(t *testing.T) {
+	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	o := placeUnit(asm, "a:1")
 	var transforms int

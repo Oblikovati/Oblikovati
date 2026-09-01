@@ -13,6 +13,7 @@ import (
 // name commit into a part-level definition with the replacing instance
 // (M06-F07, #622).
 func TestCreateBlockToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -51,6 +52,7 @@ func TestCreateBlockToolEndToEnd(t *testing.T) {
 // TestPlaceBlockToolEndToEnd: the placement tool stamps an instance at each
 // clicked insertion point with the dialog's rotation/scale.
 func TestPlaceBlockToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XYPlane())
 	s.EnterSketch(sk)

@@ -12,6 +12,7 @@ import (
 // TestMatrixFromRecipe pins the three branches of the occurrence-transform decoder, including the
 // corrupt-recipe guard whose error must name the offending cell count and the expected 16 (#785).
 func TestMatrixFromRecipe(t *testing.T) {
+	t.Parallel()
 	if m, err := matrixFromRecipe(occurrenceRecipe{Name: "box:1"}); err != nil || m != math.Identity4() {
 		t.Errorf("empty transform should decode to identity, got %v err=%v", m, err)
 	}

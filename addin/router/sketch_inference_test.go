@@ -11,6 +11,7 @@ import (
 // TestInferenceOptionsOverWire: get/set round-trips the preferences; unknown
 // priorities are rejected (M06-F10, #625).
 func TestInferenceOptionsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var got wire.InferenceOptionsView
 	call(t, r, s, "sketch.getInferenceOptions", ``, &got)
@@ -33,6 +34,7 @@ func TestInferenceOptionsOverWire(t *testing.T) {
 // TestAddEntityReportsAppliedInference: adding a nearly horizontal line over
 // the wire applies the inferred constraint and reports it on the result.
 func TestAddEntityReportsAppliedInference(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var added wire.AddSketchEntityResult
 	call(t, r, s, "sketch.addEntity",

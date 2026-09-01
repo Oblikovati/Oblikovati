@@ -113,6 +113,7 @@ func waitFor(t *testing.T, cond func() bool) {
 }
 
 func TestRefreshAddInCataloguePopulatesStatuses(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	src := &fakeCatalogueSource{entries: []addincat.Entry{camEntry()}}
 	s.SetAddInCatalogue(src, &fakeCatalogueInstaller{})
@@ -129,6 +130,7 @@ func TestRefreshAddInCataloguePopulatesStatuses(t *testing.T) {
 }
 
 func TestRefreshRecordsError(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.SetAddInCatalogue(&fakeCatalogueSource{err: errors.New("offline")}, &fakeCatalogueInstaller{})
 	s.RefreshAddInCatalogue("")
@@ -139,6 +141,7 @@ func TestRefreshRecordsError(t *testing.T) {
 }
 
 func TestInstallAddInRunsAndNotices(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	src := &fakeCatalogueSource{entries: []addincat.Entry{camEntry()}}
 	inst := &fakeCatalogueInstaller{}
@@ -159,6 +162,7 @@ func TestInstallAddInRunsAndNotices(t *testing.T) {
 }
 
 func TestInstallErrorRecorded(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	src := &fakeCatalogueSource{entries: []addincat.Entry{camEntry()}}
 	inst := &fakeCatalogueInstaller{installErr: errors.New("checksum mismatch")}
@@ -175,6 +179,7 @@ func TestInstallErrorRecorded(t *testing.T) {
 }
 
 func TestUninstallAddInRuns(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	inst := &fakeCatalogueInstaller{}
 	s.SetAddInCatalogue(&fakeCatalogueSource{}, inst)
@@ -183,6 +188,7 @@ func TestUninstallAddInRuns(t *testing.T) {
 }
 
 func TestCatalogueNoOpWhenDisabled(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.AddInCatalogueEnabled() {
 		t.Fatal("catalogue should be disabled before injection")
@@ -194,6 +200,7 @@ func TestCatalogueNoOpWhenDisabled(t *testing.T) {
 }
 
 func TestInstallUnknownAddInIsNoOp(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	inst := &fakeCatalogueInstaller{}
 	s.SetAddInCatalogue(&fakeCatalogueSource{}, inst)

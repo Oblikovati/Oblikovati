@@ -33,6 +33,7 @@ func addSquareFace(d *PartComponentDefinition, side float64) {
 // TestEnableSheetMetalSeedsRule a fresh part enters the environment with a default rule and
 // the backing Thickness/BendRadius parameters.
 func TestEnableSheetMetalSeedsRule(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if d.IsSheetMetal() {
 		t.Fatal("a fresh part must not be sheet metal")
@@ -58,6 +59,7 @@ func TestEnableSheetMetalSeedsRule(t *testing.T) {
 // TestEnableSheetMetalIdempotent re-enabling keeps the same rule (and does not duplicate
 // the parameters).
 func TestEnableSheetMetalIdempotent(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	first, _ := d.EnableSheetMetal()
 	second, err := d.EnableSheetMetal()
@@ -72,6 +74,7 @@ func TestEnableSheetMetalIdempotent(t *testing.T) {
 // TestRuleIsParameterBacked editing the Thickness parameter changes the rule's thickness —
 // the core invariant that makes a thickness/K-factor edit repropagate to every wall.
 func TestRuleIsParameterBacked(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	rule, _ := d.EnableSheetMetal()
 	if err := d.SetSheetMetalLengthParam("Thickness", "3 mm"); err != nil {
@@ -86,6 +89,7 @@ func TestRuleIsParameterBacked(t *testing.T) {
 // equation unfold) survives a marshal/restore: the part is still sheet metal and the rule
 // matches.
 func TestSheetMetalRecipeRoundTrips(t *testing.T) {
+	t.Parallel()
 	src := NewPartComponentDefinition()
 	rule, _ := src.EnableSheetMetal()
 	_ = src.SetSheetMetalLengthParam("Thickness", "2 mm")
@@ -129,6 +133,7 @@ func TestSheetMetalRecipeRoundTrips(t *testing.T) {
 // through the recipe: the restored part is still sheet metal and rebuilds the same single
 // solid wall (the Face reads the restored Thickness parameter live).
 func TestSheetMetalFaceSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	src := NewPartComponentDefinition()
 	if _, err := src.EnableSheetMetal(); err != nil {
 		t.Fatalf("enable: %v", err)
@@ -157,6 +162,7 @@ func TestSheetMetalFaceSurvivesRoundTrip(t *testing.T) {
 // TestSheetMetalBendTableRecipeRoundTrips a bend-table unfold method (its measured rows)
 // survives marshal/restore and develops the same length.
 func TestSheetMetalBendTableRecipeRoundTrips(t *testing.T) {
+	t.Parallel()
 	src := NewPartComponentDefinition()
 	rule, _ := src.EnableSheetMetal()
 	table := sheetmetal.NewBendTable([]sheetmetal.BendTableRow{
@@ -185,6 +191,7 @@ func TestSheetMetalBendTableRecipeRoundTrips(t *testing.T) {
 // the bend relief, so a document that carries an edited one must reopen with the same corner cut
 // — falling back to the default would restyle the part silently.
 func TestCornerReliefRecipeRoundTrips(t *testing.T) {
+	t.Parallel()
 	src := NewPartComponentDefinition()
 	rule, _ := src.EnableSheetMetal()
 	rule.SetCornerRelief(sheetmetal.CornerRelief{
@@ -221,6 +228,7 @@ func TestCornerReliefRecipeRoundTrips(t *testing.T) {
 // relief before it was reconciled with Inventor's (#1960). A document written with it must reopen
 // with the same relief rather than failing to parse.
 func TestLegacySquareReliefStillReads(t *testing.T) {
+	t.Parallel()
 	shape, ok := types.ParseReliefShape("square")
 	if !ok || shape != types.ReliefStraight {
 		t.Fatalf(`ParseReliefShape("square") = (%v, %v), want ReliefStraight`, shape, ok)
@@ -231,6 +239,7 @@ func TestLegacySquareReliefStillReads(t *testing.T) {
 // parameters, each carrying the EXPRESSION Inventor's Default style states rather than a frozen
 // number — which is what makes the whole style track the gauge.
 func TestStandardParameterRoster(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if _, err := d.EnableSheetMetal(); err != nil {
 		t.Fatalf("EnableSheetMetal: %v", err)
@@ -258,6 +267,7 @@ func TestStandardParameterRoster(t *testing.T) {
 // one by expression has to move the rule — a rule holding a value captured when the part was
 // created would keep cutting the old notch.
 func TestEditingReliefParameterRepropagates(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	rule, err := d.EnableSheetMetal()
 	if err != nil {
@@ -276,6 +286,7 @@ func TestEditingReliefParameterRepropagates(t *testing.T) {
 // TestReliefSizesFollowTheGauge (#1962): every roster size is stated against Thickness, so a gauge
 // change moves the reliefs with the walls instead of leaving them at the old part's dimensions.
 func TestReliefSizesFollowTheGauge(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	rule, err := d.EnableSheetMetal()
 	if err != nil {

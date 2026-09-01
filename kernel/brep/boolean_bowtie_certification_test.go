@@ -99,6 +99,7 @@ func assertVertsOnOperandCorners(t *testing.T, res *topo.Body, operands ...*topo
 // shells (χ = 4), with exactly additive volume V(A)+V(B) = 2 and every coordinate bit-identical to
 // an operand corner. The old sew welded the bowtie into a χ-odd pinch and nudged.
 func TestBowtiePureLineKissShipsTwoShellsExact(t *testing.T) {
+	t.Parallel()
 	a := box(0, 0, 0, 1, 1, 1)
 	b := box(1, 1, 0, 1, 1, 1) // touches `a` only along the edge x=1,y=1,z∈[0,1]
 	rec := &diag.Recorder{}
@@ -125,6 +126,7 @@ func TestBowtiePureLineKissShipsTwoShellsExact(t *testing.T) {
 // kitty-corner blocks both fused to a base plate touch along a vertical line, but the base bridges
 // them, so the exact result is ONE valid shell (χ = 2) — shipped without a nudge.
 func TestBowtieBridgedCornerStaysManifoldExact(t *testing.T) {
+	t.Parallel()
 	base := box(-1, -1, 0, 2, 2, 0.2)
 	a := box(-1, -1, 0, 1, 1, 1)
 	b := box(0, 0, 0, 1, 1, 1)
@@ -146,6 +148,7 @@ func TestBowtieBridgedCornerStaysManifoldExact(t *testing.T) {
 // V(A∪B) = V(A) + V(B) − V(A∩B) computed by the kernel's own booleans — proving the resolution
 // neither creates nor loses material.
 func TestBowtieBossLugShipsExact(t *testing.T) {
+	t.Parallel()
 	can := cylinderZAt(0, -0.8, 0, 1.9, 1.4, "can")
 	boss := cylinderZAt(0, 0, -0.15, 0, 0.45, "boss")
 	body, err := brep.Boolean(brep.Union, can, boss)

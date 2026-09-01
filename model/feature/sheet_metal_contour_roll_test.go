@@ -50,6 +50,7 @@ func fullTubeVolume(r, th, h float64) float64 { return stdmath.Pi * ((r+th)*(r+t
 // TestContourRollRollsTube a full revolution rolls the profile into a watertight tube whose
 // volume is the annular shell π((R+t)²−R²)·H.
 func TestContourRollRollsTube(t *testing.T) {
+	t.Parallel()
 	const r, th, h = 2.0, 0.2, 3.0
 	body := rolledBody(t, r, h, 0)
 	assertWatertightSolid(t, body)
@@ -62,6 +63,7 @@ func TestContourRollRollsTube(t *testing.T) {
 // TestContourRollPartialAngle a partial roll (90°) makes a valid shell with less volume than
 // the full tube.
 func TestContourRollPartialAngle(t *testing.T) {
+	t.Parallel()
 	body := rolledBody(t, 2, 3, stdmath.Pi/2)
 	if r := ops.Validate(body); !r.Valid {
 		t.Fatalf("partial roll invalid: %v", r.Issues)
@@ -74,6 +76,7 @@ func TestContourRollPartialAngle(t *testing.T) {
 // TestContourRollTubeKeepsCylinderWalls: a full roll of a straight profile is an ANALYTIC shell —
 // bore + outer walls are true cylinders (2 cylinder faces), not a faceted prism (#2019).
 func TestContourRollTubeKeepsCylinderWalls(t *testing.T) {
+	t.Parallel()
 	body := rolledBody(t, 2, 3, 0)
 	if got := cylinderFaceCount(body); got != 2 {
 		t.Fatalf("rolled tube has %d cylinder faces, want 2 (bore + outer wall) — faceted", got)
@@ -83,6 +86,7 @@ func TestContourRollTubeKeepsCylinderWalls(t *testing.T) {
 // TestContourRollPartialKeepsCylinderWalls: a 90° roll keeps analytic partial-cylinder walls plus
 // planar caps, not a faceted shell.
 func TestContourRollPartialKeepsCylinderWalls(t *testing.T) {
+	t.Parallel()
 	body := rolledBody(t, 2, 3, stdmath.Pi/2)
 	if got := cylinderFaceCount(body); got != 2 {
 		t.Fatalf("partial rolled shell has %d cylinder faces, want 2 — faceted", got)
@@ -95,6 +99,7 @@ func TestContourRollPartialKeepsCylinderWalls(t *testing.T) {
 // TestContourRollRejectsBadInput an out-of-range axis line, zero angle, and missing thickness
 // each go sick.
 func TestContourRollRejectsBadInput(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(thicknessParams(t))
 	badAxis := NewSheetMetalContourRollFeatures(fs).Add(&SheetMetalContourRollDefinition{
 		Profile: rollProfile(2, 3), AxisLine: 9, Operation: ops.NewBody,
@@ -114,6 +119,7 @@ func TestContourRollRejectsBadInput(t *testing.T) {
 
 // TestContourRollDefinitionAndKind the accessors return the recipe.
 func TestContourRollDefinitionAndKind(t *testing.T) {
+	t.Parallel()
 	def := &SheetMetalContourRollDefinition{AxisLine: 1}
 	f := &SheetMetalContourRollFeature{def: def}
 	if f.Definition() != def || f.Kind() != "sheet-metal-contour-roll" {
@@ -124,6 +130,7 @@ func TestContourRollDefinitionAndKind(t *testing.T) {
 // TestContourRollRoundTrip the recipe (profile + axis line + angle + operation) marshals and
 // restores, preserving the kind and payload.
 func TestContourRollRoundTrip(t *testing.T) {
+	t.Parallel()
 	profile := rollProfile(2, 3)
 	fs := NewPartFeatures(nil)
 	NewSheetMetalContourRollFeatures(fs).Add(&SheetMetalContourRollDefinition{
@@ -151,6 +158,7 @@ func TestContourRollRoundTrip(t *testing.T) {
 
 // TestContourRollMissingPayload / unknown sketch restore errors.
 func TestContourRollMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreSheetMetalContourRoll(NewPartFeatures(nil), nil, oneSketch{}); err == nil {
 		t.Error("restoreSheetMetalContourRoll(nil) must error")
 	}

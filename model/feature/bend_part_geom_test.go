@@ -15,6 +15,7 @@ import (
 // result is a single valid solid whose moving flange folded up (the +Z extent grew well
 // beyond the original thickness) while volume is conserved within the bend allowance.
 func TestBendSolidBoxFoldsUpValid(t *testing.T) {
+	t.Parallel()
 	bar := subd.ToBody(subd.Box(10, 2, 1), "bar") // L=10 (X), W=2 (Y), T=1 (Z), corner at origin
 	before := ops.BodyGeometryProperties(bar, ops.DefaultQuality()).Volume
 

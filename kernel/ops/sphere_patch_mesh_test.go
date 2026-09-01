@@ -56,6 +56,7 @@ func octantBody(t *testing.T, radius float64) *topo.Body {
 // the +z pole) must mesh to its true curvature so the octant volume is πR³/6, not the ~38%-over the old
 // (u,v) path produced.
 func TestSpherePatchOctantVolume(t *testing.T) {
+	t.Parallel()
 	const R = 5.0
 	body := octantBody(t, R)
 	if r := Validate(body); !r.Valid || !r.Closed || !r.Manifold || !body.IsSolid() {
@@ -72,6 +73,7 @@ func TestSpherePatchOctantVolume(t *testing.T) {
 // (corners off the pole): it must claim the patch, add interior Steiner points (else the patch is flat),
 // and keep EVERY vertex exactly on the sphere (the gnomonic lift is exact).
 func TestSpherePatchDirectMeshIsCurved(t *testing.T) {
+	t.Parallel()
 	const R = 4.0
 	sphere, _ := geom.NewSphere(math.P3(0, 0, 0), R)
 	// A spherical patch sampled ON the sphere along its four bounding iso-curves (so the boundary

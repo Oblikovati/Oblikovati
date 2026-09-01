@@ -55,6 +55,7 @@ func patchSurface(w, h float64) *topo.Body {
 // TestThickenToolEndToEnd drives the Thicken UI: with a 2×3 surface patch active, start the
 // tool, set thickness 0.5, OK — and asserts a valid slab solid of volume 3.
 func TestThickenToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s := newPartWithSurface(t)
 	th := NewThickenTool()
 	s.StartTool(th)
@@ -79,6 +80,7 @@ func TestThickenToolEndToEnd(t *testing.T) {
 
 // TestThickenViaRibbonCommand starts the tool from its ribbon command.
 func TestThickenViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s := newPartWithSurface(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

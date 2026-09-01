@@ -73,6 +73,7 @@ func diskProfileIndex(t *testing.T, sk *sketch.Sketch) int {
 // TestLoftCircleInsideRectangleToCircle is the #1526 regression: the disk of a circle drawn inside a
 // rectangle lofts to a plain circle on a parallel plane, with a live preview and a valid solid.
 func TestLoftCircleInsideRectangleToCircle(t *testing.T) {
+	t.Parallel()
 	s, def := loftPartSession(t)
 	sk1 := rectWithInnerCircle(def, yzPlaneAtX(0), 2.539)
 	sk2 := circleSketchOn(def, yzPlaneAtX(10), 3.549)

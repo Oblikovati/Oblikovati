@@ -18,6 +18,7 @@ import (
 // top-plane hole recedes from the raw 40×40 boss footprint to a 50×50 square [35,85]² (each side ±r).
 // A dropped setback leaves the reflected-seam [45,75]² hole; a wrong distance moves the corners off ±r.
 func TestConcaveDihedralSetbackExtendsRailByR(t *testing.T) {
+	t.Parallel()
 	body := boxWithBoss(t)
 	keys := concaveBaseEdgeKeys(body)
 	if len(keys) != 4 {
@@ -46,6 +47,7 @@ func TestConcaveDihedralSetbackExtendsRailByR(t *testing.T) {
 // A8, a later slice), a curved-contact miter (families B/C), and a non-planar shared face. Each keeps
 // the baseline body untouched.
 func TestCornerSetbackGateFiresOnlyForConcaveOrthogonalPlanarDihedral(t *testing.T) {
+	t.Parallel()
 	shared := aPlanarFace(t)
 	xAxis, yAxis, skew := math.V3(1, 0, 0), math.V3(0, 1, 0), math.V3(stdmath.Cos(stdmath.Pi/3), stdmath.Sin(stdmath.Pi/3), 0)
 	for _, tc := range []struct {
@@ -73,6 +75,7 @@ func TestCornerSetbackGateFiresOnlyForConcaveOrthogonalPlanarDihedral(t *testing
 // caller's baseline body byte-identical) when the only miter is convex — the shared-path do-no-harm
 // guarantee. classifyMiterCorner tags a convex miter decline, so accumulate contributes no railWrite.
 func TestCornerSetbackDeclinesConvexMiter(t *testing.T) {
+	t.Parallel()
 	fils := []edgeFillet{convexArm(t, math.V3(1, 0, 0)), convexArm(t, math.V3(0, 1, 0))}
 	fils[0].c1.miter, fils[1].c1.miter = true, true
 	v := fils[0].c1.vertex
@@ -92,6 +95,7 @@ func TestCornerSetbackDeclinesConvexMiter(t *testing.T) {
 // from the raw z=60 up to z=65 (=60+r). A dropped setback leaves the material-side sphere and the un-
 // retracted band (bottom at z=60).
 func TestConcaveTrihedralSetbackRetractsBandsToVoidSphere(t *testing.T) {
+	t.Parallel()
 	body := boxWithPocket(t)
 	keys := pocketCornerEdgeKeys(t, body, math.P3(20, 20, 60))
 	if len(keys) != 3 {
@@ -119,6 +123,7 @@ func TestConcaveTrihedralSetbackRetractsBandsToVoidSphere(t *testing.T) {
 // other config — a mixed-sense corner (2 concave + 1 convex, the K9/M2 torus, P3), a non-orthogonal
 // triple, a curved-host face, and a wrong valence — so each keeps its material-side sphere byte-identical.
 func TestTrihedralSetbackGateFiresOnlyForConcaveOrthogonalPlanar(t *testing.T) {
+	t.Parallel()
 	fx, fy, fz := threeOrthogonalPlanarFaces(t)
 	cyl := aCylindricalFace(t)
 	for _, tc := range []struct {

@@ -39,6 +39,7 @@ func rotZ45(t *testing.T) math.Matrix4 {
 // TestShrinkwrapMergesAllPartsByDefault: the zero-value recipe (keep all, no envelope)
 // merges every placed body into one base, volume = sum (two disjoint 2³ blocks → 16).
 func TestShrinkwrapMergesAllPartsByDefault(t *testing.T) {
+	t.Parallel()
 	block := solidBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2))
 	src := &fakeAssemblySource{placed: []PlacedBody{
 		{Body: block, Transform: math.Identity4(), Source: occFor("a:1")},
@@ -56,6 +57,7 @@ func TestShrinkwrapMergesAllPartsByDefault(t *testing.T) {
 // TestShrinkwrapRemovesSmallParts drops a tiny part below the size threshold, keeping
 // only the large one (volume-gated against the kept block's analytic volume).
 func TestShrinkwrapRemovesSmallParts(t *testing.T) {
+	t.Parallel()
 	big := solidBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2))              // volume 8
 	tiny := solidBlock(t, math.P3(10, 10, 10), math.P3(10.5, 10.5, 10.5)) // volume 0.125
 	src := &fakeAssemblySource{placed: []PlacedBody{
@@ -75,6 +77,7 @@ func TestShrinkwrapRemovesSmallParts(t *testing.T) {
 // block sits entirely inside the big one; without removal a multi-lump merge would
 // double-count it (65), so the analytic 64 proves it was dropped.
 func TestShrinkwrapRemovesInternalParts(t *testing.T) {
+	t.Parallel()
 	big := solidBlock(t, math.P3(0, 0, 0), math.P3(4, 4, 4))   // volume 64
 	inner := solidBlock(t, math.P3(1, 1, 1), math.P3(2, 2, 2)) // volume 1, inside big
 	src := &fakeAssemblySource{placed: []PlacedBody{
@@ -94,6 +97,7 @@ func TestShrinkwrapRemovesInternalParts(t *testing.T) {
 // rotated 45° about Z has an axis-aligned envelope of (2√2)²·2 = 16 — twice the block's
 // volume — so the envelope clearly changed the geometry.
 func TestShrinkwrapPerPartEnvelope(t *testing.T) {
+	t.Parallel()
 	block := solidBlock(t, math.P3(-1, -1, -1), math.P3(1, 1, 1)) // volume 8
 	src := &fakeAssemblySource{placed: []PlacedBody{
 		{Body: block, Transform: rotZ45(t), Source: occFor("a:1")},
@@ -110,6 +114,7 @@ func TestShrinkwrapPerPartEnvelope(t *testing.T) {
 // TestShrinkwrapWholeEnvelope replaces the entire assembly with one bounding box: two
 // unit blocks 3 apart give an envelope of [0,4]×[0,1]×[0,1] = 4.
 func TestShrinkwrapWholeEnvelope(t *testing.T) {
+	t.Parallel()
 	near := solidBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
 	far := solidBlock(t, math.P3(3, 0, 0), math.P3(4, 1, 1))
 	src := &fakeAssemblySource{placed: []PlacedBody{
@@ -129,6 +134,7 @@ func TestShrinkwrapWholeEnvelope(t *testing.T) {
 // hollow 56-volume part is solidified to its 64-volume outer block when PatchHoles is
 // set (the internal void is dropped before merge).
 func TestShrinkwrapPatchHolesFillsCavity(t *testing.T) {
+	t.Parallel()
 	cav := cavityBlock(t)
 	if v := volumeOf(cav); v < 55.9 || v > 56.1 {
 		t.Fatalf("cavity fixture volume = %g, want ~56", v)
@@ -162,6 +168,7 @@ func holedPlate(t *testing.T) *topo.Body {
 // holed plate (vol 24) closes to its 32-volume solid block when MaxHoleDiameter covers the
 // opening, and is left intact when it does not.
 func TestShrinkwrapCapsThroughHole(t *testing.T) {
+	t.Parallel()
 	plate := holedPlate(t)
 	if v := volumeOf(plate); v < 23.9 || v > 24.1 {
 		t.Fatalf("holed-plate fixture volume = %g, want ~24", v)
@@ -191,6 +198,7 @@ func TestShrinkwrapCapsThroughHole(t *testing.T) {
 // TestShrinkwrapBreakLinkFreezesAndVersionTracks covers the associative pull (a source
 // edit re-simplifies) and break-link (the result freezes).
 func TestShrinkwrapBreakLinkFreezesAndVersionTracks(t *testing.T) {
+	t.Parallel()
 	block := solidBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2))
 	src := &fakeAssemblySource{placed: []PlacedBody{
 		{Body: block, Transform: math.Identity4(), Source: occFor("a:1")},

@@ -18,6 +18,7 @@ import (
 // split obstacle wall, two wings and a corner-blend patch — the result must be a single, watertight,
 // hole-contained solid. This drives the REAL fillet feature end to end, not the provider directly.
 func TestFilletSlabColumnWatertight(t *testing.T) {
+	t.Parallel()
 	body := slabWithColumn(t)
 	res, ok, reason := filletFrontTopEdge(body, 6)
 	if !ok {
@@ -49,6 +50,7 @@ func TestFilletSlabColumnWatertight(t *testing.T) {
 // All three legs are asserted, premise first, so the test cannot quietly stop testing the fallback: the
 // dip must be non-monotone, the payload must be nil, and the patch that gets built must be the Coons tier.
 func TestFilletSlabObliqueColumnFallsBackToCoons(t *testing.T) {
+	t.Parallel()
 	body := slabWithObliqueColumn(t)
 	ef, of, _, res := obstacleFeatureFor(t, body, "oblique column", math.P3(0, -13, 0), 6)
 	assertDipReEntersTheBand(t, ef, of)

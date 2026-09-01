@@ -7,6 +7,7 @@ import "testing"
 // TestRelationshipsPanelExposesEveryConstraint: the Assemble tab's Relationships panel exposes
 // one command per M12-F01 constraint kind (#770), each a compact icon button.
 func TestRelationshipsPanelExposesEveryConstraint(t *testing.T) {
+	t.Parallel()
 	tab, ok := BuildRibbon(assemblySession(t)).Tab("Assemble")
 	if !ok {
 		t.Fatal("an active assembly should show the Assemble tab")
@@ -33,6 +34,7 @@ func TestRelationshipsPanelExposesEveryConstraint(t *testing.T) {
 // the Assemble ribbon carries an icon (so the bar never renders a blank button) — Place was
 // the lone exception until M12.
 func TestEveryAssembleRibbonCommandHasIcon(t *testing.T) {
+	t.Parallel()
 	tab, ok := BuildRibbon(assemblySession(t)).Tab("Assemble")
 	if !ok {
 		t.Fatal("an active assembly should show the Assemble tab")

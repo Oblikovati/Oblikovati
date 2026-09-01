@@ -12,6 +12,7 @@ import (
 // TestReterminateBothEnds covers the n==3 corner-host flank grow/recede: a single straight flank whose
 // BOTH ends move to new feet on its own supporting line, and the off-line decline (do-no-harm floor).
 func TestReterminateBothEnds(t *testing.T) {
+	t.Parallel()
 	flank := endSeg{from: math.P3(0, 0, 0), to: math.P3(10, 0, 0)} // along +x
 	got, ok := reterminateBothEnds(flank, math.P3(2, 0, 0), math.P3(8, 0, 0), 1e-9)
 	if !ok {
@@ -29,6 +30,7 @@ func TestReterminateBothEnds(t *testing.T) {
 // cross-section chord and the two flanking edges are re-terminated onto its feet, growing the ring by one
 // segment into a closed loop. An off-flank arc foot declines (do-no-harm).
 func TestGrowCapArc(t *testing.T) {
+	t.Parallel()
 	// square (0,0)-(10,0)-(10,10)-(0,10); the corner at (0,0) is the "far vertex" the cap grows around.
 	segs := []endSeg{
 		{from: math.P3(0, 0, 0), to: math.P3(10, 0, 0)},

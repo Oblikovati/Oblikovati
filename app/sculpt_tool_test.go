@@ -53,6 +53,7 @@ func partWithCubeShell(t *testing.T) (*Session, *compdef.PartComponentDefinition
 // TestSculptToolEndToEnd drives the Sculpt UI: with the six cube faces present, OK fills the
 // bounded volume into a single unit-volume solid.
 func TestSculptToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def := partWithCubeShell(t)
 
 	s.StartTool(NewSculptTool())
@@ -72,6 +73,7 @@ func TestSculptToolEndToEnd(t *testing.T) {
 }
 
 func TestSculptViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithCubeShell(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

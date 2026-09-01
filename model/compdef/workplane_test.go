@@ -5,6 +5,7 @@ package compdef
 import "testing"
 
 func TestPartHasThreeOriginPlanes(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	planes := d.OriginPlanes()
 	if len(planes) != 3 {
@@ -25,6 +26,7 @@ func TestPartHasThreeOriginPlanes(t *testing.T) {
 }
 
 func TestPartOriginAxesStartInvisible(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	for i := 0; i < d.WorkAxes().Count(); i++ {
 		axis := d.WorkAxes().Item(i)
@@ -35,6 +37,7 @@ func TestPartOriginAxesStartInvisible(t *testing.T) {
 }
 
 func TestWorkPlaneByName(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if wp, ok := d.WorkPlaneByName("XZ Plane"); !ok || wp.Name() != "XZ Plane" {
 		t.Errorf("WorkPlaneByName(XZ) = %v/%v, want the XZ plane", wp, ok)
@@ -45,6 +48,7 @@ func TestWorkPlaneByName(t *testing.T) {
 }
 
 func TestOriginPlanesAreDistinctOrientations(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	p := d.OriginPlanes()
 	// The three planes' normals must be mutually distinct (independent axes).

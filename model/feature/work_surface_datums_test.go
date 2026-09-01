@@ -12,6 +12,7 @@ import (
 
 // TestRevolvedFaceAxisFromCylinder: the axis of a cylindrical face is its axis of revolution (#1840).
 func TestRevolvedFaceAxisFromCylinder(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, key := faceBody(t, mustCylinder(t)) // axis +Z at origin, radius 2
 	wa := g.WorkAxes().AddByRevolvedFace(FaceRef(key))
@@ -32,6 +33,7 @@ func TestRevolvedFaceAxisFromCylinder(t *testing.T) {
 
 // TestRevolvedFaceAxisConeAndTorus: cone and torus faces also yield their axis of revolution (#1840).
 func TestRevolvedFaceAxisConeAndTorus(t *testing.T) {
+	t.Parallel()
 	cone, err := geom.NewCone(math.P3(0, 0, 1), math.V3(0, 0, 1), 0.5)
 	if err != nil {
 		t.Fatal(err)
@@ -52,6 +54,7 @@ func TestRevolvedFaceAxisConeAndTorus(t *testing.T) {
 
 // TestRevolvedFaceAxisRejectsSphere: a sphere face has no axis of revolution (#1840).
 func TestRevolvedFaceAxisRejectsSphere(t *testing.T) {
+	t.Parallel()
 	sph, _ := geom.NewSphere(math.P3(0, 0, 0), 2)
 	if _, _, err := revolvedFaceAxis(sph); err == nil {
 		t.Error("a sphere face should have no axis of revolution")
@@ -60,6 +63,7 @@ func TestRevolvedFaceAxisRejectsSphere(t *testing.T) {
 
 // TestFaceCenterFromSphere: the centre of a spherical face is the sphere centre (#1842).
 func TestFaceCenterFromSphere(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	sph, _ := geom.NewSphere(math.P3(1, 2, 3), 2)
 	body, key := faceBody(t, sph)
@@ -78,6 +82,7 @@ func TestFaceCenterFromSphere(t *testing.T) {
 
 // TestFaceCenterTorusAndRejectsCylinder: a torus face yields its centre; a cylinder has none (#1842).
 func TestFaceCenterTorusAndRejectsCylinder(t *testing.T) {
+	t.Parallel()
 	tor, _ := geom.NewTorus(math.P3(4, 5, 6), math.V3(0, 0, 1), 5, 1)
 	c, err := faceCenter(tor)
 	if err != nil || !c.IsEqualTo(math.P3(4, 5, 6), wtol) {
@@ -91,6 +96,7 @@ func TestFaceCenterTorusAndRejectsCylinder(t *testing.T) {
 // TestRevolvedFaceAxisRoundTrips: the revolved-face axis restores from the recipe and re-resolves
 // against the body (#1840).
 func TestRevolvedFaceAxisRoundTrips(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, key := faceBody(t, mustCylinder(t))
 	g.WorkAxes().AddByRevolvedFace(FaceRef(key))
@@ -116,6 +122,7 @@ func TestRevolvedFaceAxisRoundTrips(t *testing.T) {
 
 // TestFaceCenterRoundTrips: the face-center point restores from the recipe and re-resolves (#1842).
 func TestFaceCenterRoundTrips(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	sph, _ := geom.NewSphere(math.P3(1, 2, 3), 2)
 	body, key := faceBody(t, sph)

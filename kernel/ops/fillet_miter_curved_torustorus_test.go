@@ -39,6 +39,7 @@ func syntheticTorusPair(t *testing.T, majA, majB, r, height float64) curvedMiter
 // h=√(50²−15²)=√2275. These are exact closed-form values (do Carmo circle-chord geometry), not
 // tolerance-fit constants — a mismatch beyond float64 epsilon is a bug, not a tolerance issue.
 func TestTorusTorusStation_HandVerifiedSymmetricNumbers(t *testing.T) {
+	t.Parallel()
 	pair := syntheticTorusPair(t, 45, 45, 5, 65)
 	res := ResolutionForPoints([]math.Point3{pair.torA.Center, pair.torB.Center})
 	near := math.P3(65, 0, 65) // biases nearerTorusTorusRoot toward the −y root, both hand-derived below
@@ -74,6 +75,7 @@ func assertTorusTorusStation(t *testing.T, name string, p math.Point3, ok bool, 
 // TestTorusTorusCoaxial_RejectsAntiParallelAxes is the falsification proof for the axis-direction gate
 // (package doc §"anti-parallel breaks the z² cancellation"): flipping torus B's axis must decline.
 func TestTorusTorusCoaxial_RejectsAntiParallelAxes(t *testing.T) {
+	t.Parallel()
 	pair := syntheticTorusPair(t, 45, 45, 5, 65)
 	res := ResolutionForPoints([]math.Point3{pair.torA.Center, pair.torB.Center})
 	if torusTorusCoaxial(pair.torA, pair.torB, res) != true {
@@ -91,6 +93,7 @@ func TestTorusTorusCoaxial_RejectsAntiParallelAxes(t *testing.T) {
 // TestTorusTorusCoaxial_RejectsNonCoplanarMajorCircles is the falsification proof for the coplanarity
 // gate: shifting torus B's centre off torus A's major-circle-plane height must decline.
 func TestTorusTorusCoaxial_RejectsNonCoplanarMajorCircles(t *testing.T) {
+	t.Parallel()
 	pair := syntheticTorusPair(t, 45, 45, 5, 65)
 	res := ResolutionForPoints([]math.Point3{pair.torA.Center, pair.torB.Center})
 	shifted, err := geom.NewTorus(pair.torB.Center.TranslateBy(math.V3(0, 0, 1)), pair.torB.AxisDir.AsVector(), pair.torB.MajorRadius, pair.torB.MinorRadius)
@@ -107,6 +110,7 @@ func TestTorusTorusCoaxial_RejectsNonCoplanarMajorCircles(t *testing.T) {
 // recognition — torusTorusPhysicalSign certifies the per-arm sign later instead. An earlier version of
 // this recognizer wrongly gated on equal major radii and rejected O9's own real fixture.
 func TestTorusTorusCoaxial_AcceptsUnequalMajorRadii(t *testing.T) {
+	t.Parallel()
 	pair := syntheticTorusPair(t, 45, 55, 5, 65)
 	res := ResolutionForPoints([]math.Point3{pair.torA.Center, pair.torB.Center})
 	if !torusTorusCoaxial(pair.torA, pair.torB, res) {
@@ -118,6 +122,7 @@ func TestTorusTorusCoaxial_AcceptsUnequalMajorRadii(t *testing.T) {
 // arm against a REAL cylinder∧plane edge (via a synthetic topo body) and asserts each sign
 // independently — and that a torus whose major radius matches NEITHER sign declines.
 func TestTorusTorusHostSign_CertifiesBossAndBore(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForPoints([]math.Point3{math.P3(0, 0, 0), math.P3(50, 0, 0)})
 	e, cyl := syntheticCylinderPlaneEdge(t, 50)
 	boss, err := geom.NewTorus(cyl.Origin, cyl.AxisDir.AsVector(), 45, 5) // R′=R−r=45
@@ -167,6 +172,7 @@ func syntheticCylinderPlaneEdge(t *testing.T, radius float64) (*topo.Edge, geom.
 // (torus-torus-miter-derivation.md §4): a correctly-derived sBot certifies, and the SAME point nudged
 // by a distance well above weld tolerance does not.
 func TestTorusTorusSeamBottomCertified_RejectsMismatch(t *testing.T) {
+	t.Parallel()
 	pair := o9RealTorusPair(t)
 	res := ResolutionForPoints([]math.Point3{pair.torA.Center, pair.torB.Center})
 	vp := math.P3(65, 2.3, 65)
@@ -246,6 +252,7 @@ func importO9(t *testing.T) *topo.Body {
 // asserts buildCurvedMiterTorusPair recognizes them with the EXACT major radii the corner-patch layer
 // (fillet_twocyl_corner.go) independently derives (45 boss, 55 bore — cut s1 s2, not fuse).
 func TestBuildCurvedMiterTorusPair_O9RealFixture(t *testing.T) {
+	t.Parallel()
 	body := importO9(t)
 	e8 := locateEdgeForTest(t, body, math.P3(24.57553393, 50, 70), 187.5220562)
 	e16 := locateEdgeForTest(t, body, math.P3(42.33267569, 50, 70), 126.602109)
@@ -267,6 +274,7 @@ func TestBuildCurvedMiterTorusPair_O9RealFixture(t *testing.T) {
 // also match a torus∧torus pick set — the do-no-harm disjointness buildCurvedMiterTorusPair's own doc
 // asserts (its torIdx/cylIdx bookkeeping structurally cannot both be set from two geom.Torus arms).
 func TestBuildCurvedMiterArms_DeclinesOnTorusTorusPair(t *testing.T) {
+	t.Parallel()
 	body := importO9(t)
 	e8 := locateEdgeForTest(t, body, math.P3(24.57553393, 50, 70), 187.5220562)
 	e16 := locateEdgeForTest(t, body, math.P3(42.33267569, 50, 70), 126.602109)
@@ -285,6 +293,7 @@ func TestBuildCurvedMiterArms_DeclinesOnTorusTorusPair(t *testing.T) {
 // via intersectCoplanarCircles directly as an independent cross-check, not by calling
 // torusTorusStation on itself.
 func TestSolveCurvedMiterTorusPair_O9RealFixture(t *testing.T) {
+	t.Parallel()
 	body := importO9(t)
 	e8 := locateEdgeForTest(t, body, math.P3(24.57553393, 50, 70), 187.5220562)
 	e16 := locateEdgeForTest(t, body, math.P3(42.33267569, 50, 70), 126.602109)

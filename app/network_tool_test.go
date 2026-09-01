@@ -41,6 +41,7 @@ func addSquareProfile(def interface {
 }
 
 func TestNetworkToolPickAssignsDirections(t *testing.T) {
+	t.Parallel()
 	s, def := partWithSketches(t)
 	u1 := addSquareProfile(def, 1, 0)
 	u2 := addSquareProfile(def, 1, 2)
@@ -69,6 +70,7 @@ func TestNetworkToolPickAssignsDirections(t *testing.T) {
 }
 
 func TestNetworkToolPromptStages(t *testing.T) {
+	t.Parallel()
 	tool := NewNetworkTool()
 	if got := tool.Prompt(nil); got == "" {
 		t.Error("U-stage prompt empty")
@@ -80,6 +82,7 @@ func TestNetworkToolPromptStages(t *testing.T) {
 }
 
 func TestNetworkToolBakesProfilesToModel(t *testing.T) {
+	t.Parallel()
 	_, def := partWithSketches(t)
 	h := addSquareProfile(def, 2, 0)
 	lines := bakeProfiles([]ProfileHandle{h})
@@ -89,6 +92,7 @@ func TestNetworkToolBakesProfilesToModel(t *testing.T) {
 }
 
 func TestNetworkToolCommitReportsBadGrid(t *testing.T) {
+	t.Parallel()
 	s, def := partWithSketches(t)
 	tool := NewNetworkTool()
 	tool.uProfiles = []ProfileHandle{addSquareProfile(def, 1, 0), addSquareProfile(def, 1, 4)}
@@ -111,6 +115,7 @@ func TestNetworkToolCommitReportsBadGrid(t *testing.T) {
 }
 
 func TestNetworkToolAcceptsProfiles(t *testing.T) {
+	t.Parallel()
 	if k := NewNetworkTool().AcceptedKinds(); len(k) != 1 || k[0] != SelectProfile {
 		t.Errorf("AcceptedKinds = %v, want [SelectProfile]", k)
 	}
@@ -119,6 +124,7 @@ func TestNetworkToolAcceptsProfiles(t *testing.T) {
 // TestNetworkToolDraftFeature pins the #1626 commit-gate seam: no draft below two curves each
 // way, a non-nil draft once the grid picks are complete.
 func TestNetworkToolDraftFeature(t *testing.T) {
+	t.Parallel()
 	_, def := partWithSketches(t)
 	tool := NewNetworkTool()
 	if _, ok := tool.DraftFeature(nil); ok {

@@ -14,6 +14,7 @@ import (
 // TestFrustumClipDropsOffScreen: a point at the view centre survives the clip; a far off-screen one
 // is dropped (#645 perf).
 func TestFrustumClipDropsOffScreen(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t) // camera at (0,0,10) looking down at the XY plane, 200×200
 	cam := s.Camera()
 	if got := frustumClip(samplesAt(math.P3(0, 0, 0)), cam); len(got) != 1 {
@@ -35,6 +36,7 @@ func samplesAt(pts ...math.Point3) []pointcloud.PointSample {
 
 // TestLODThinByScreenArea: a small on-screen footprint thins the set; a large one keeps it all.
 func TestLODThinByScreenArea(t *testing.T) {
+	t.Parallel()
 	pts := make([]pointcloud.PointSample, 1000)
 	thin := lodThin(pts, screenBox{minX: 0, minY: 0, maxX: 10, maxY: 10}) // 100 px² × 0.5 → ~50
 	if len(thin) < 40 || len(thin) > 60 {
@@ -49,6 +51,7 @@ func TestLODThinByScreenArea(t *testing.T) {
 // TestVisibleDisplayPointsClips: a cloud moved off-screen yields no draw points; on-screen yields
 // its full small set (no LOD thinning at that size) (#645 perf).
 func TestVisibleDisplayPointsClips(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	cam := s.Camera()
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})

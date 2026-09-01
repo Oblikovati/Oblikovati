@@ -29,6 +29,7 @@ func m7FixtureBody(t *testing.T) *topo.Body {
 // asserts a certified watertight 11-face solid — the flush-cut-cap inner-loop retrim's crux. A declined or
 // mis-classified retrim leaves reason non-empty or the body uncertified.
 func TestM7SingleArmRunoutWeldsWatertight(t *testing.T) {
+	t.Parallel()
 	body := m7FixtureBody(t)
 	ef := m7SingleArmFillet(t, body)
 	b, reason := singleArmRunoutBody(body, ef, ResolutionForBody(body))
@@ -47,6 +48,7 @@ func TestM7SingleArmRunoutWeldsWatertight(t *testing.T) {
 // inner loop (not the outer box square) — while a vertex ON the outer box square routes to the outer loop.
 // This is the do-no-harm crux: outer-boundary bites (every prior single-arm green) keep their outer retrim.
 func TestHostBittenLoopRoutesToInnerFootprint(t *testing.T) {
+	t.Parallel()
 	cap0 := m7FlushCutCap(t, m7FixtureBody(t))
 	outer, inner := m7CapLoops(t, cap0)
 	tol := 1e-6 * boundingDiagOf(cap0)

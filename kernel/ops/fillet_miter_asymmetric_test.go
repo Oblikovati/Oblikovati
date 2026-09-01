@@ -32,6 +32,7 @@ func p9Cylinders() (math.Vector3, miterCyl, miterCyl) {
 // fillets meet the shared plane, sBot=(4.866…,0,4.5) where the tighter r0.5 fillet runs out on its own
 // outer face y=0.
 func TestAsymmetricMiterSeamLiesOnBothCylinders(t *testing.T) {
+	t.Parallel()
 	nS, c0, c1 := p9Cylinders()
 	seam, err := sampleAsymmetricMiterSeam(nS, c0, c1)
 	if err != nil {
@@ -62,6 +63,7 @@ func TestAsymmetricMiterSeamLiesOnBothCylinders(t *testing.T) {
 // fillet (r0.5) first reaches its outer face, not where the larger one (r1) does — the candidate that
 // keeps the other arm's contact direction inside its rolling-ball wedge.
 func TestAsymmetricMiterTerminusPicksTighterArm(t *testing.T) {
+	t.Parallel()
 	nS, c0, c1 := p9Cylinders()
 	sBot, ok := asymMiterTerminus(nS, c0, c1)
 	if !ok {
@@ -79,6 +81,7 @@ func TestAsymmetricMiterTerminusPicksTighterArm(t *testing.T) {
 // TestAsymmetricMiterSeamIsOrderInvariant confirms swapping the two arms yields the SAME seam point set
 // (reversed) — the seam is a property of the cylinder pair, not of which pick is arm0.
 func TestAsymmetricMiterSeamIsOrderInvariant(t *testing.T) {
+	t.Parallel()
 	nS, c0, c1 := p9Cylinders()
 	s01, err := sampleAsymmetricMiterSeam(nS, c0, c1)
 	if err != nil {

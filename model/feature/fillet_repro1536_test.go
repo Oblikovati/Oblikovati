@@ -82,6 +82,7 @@ func firstFilletedPrism1536(t *testing.T) (*PartFeatures, *topo.Body) {
 // (whose key is now a PROVENANCE name, not fillet:e#N). The second fillet must produce real
 // geometry — a second cylinder on a valid solid — without disturbing the first.
 func TestSecondFilletWorksWithProvenanceNaming1536(t *testing.T) {
+	t.Parallel()
 	fs, res1 := firstFilletedPrism1536(t)
 	if n := cylinderFaces1494(res1); n != 1 {
 		t.Fatalf("after first fillet: %d cylinder faces, want 1", n)
@@ -109,6 +110,7 @@ func TestSecondFilletWorksWithProvenanceNaming1536(t *testing.T) {
 // No edge carries the old fillet:e#N ordinal, the tangent edges name the filleted edge's blend, and
 // every key on the body is distinct (no naming collision).
 func TestFilletEdgesAreProvenanceNamed1536(t *testing.T) {
+	t.Parallel()
 	_, res1 := firstFilletedPrism1536(t)
 	keys := map[string]int{}
 	tangents := 0
@@ -139,6 +141,7 @@ func TestFilletEdgesAreProvenanceNamed1536(t *testing.T) {
 // is guaranteed by NameByParents' canonical ordering, pinned in topo.TestNameByParentsIsOrderIndependent
 // and applied to the blend by TestFilletEdgesAreProvenanceNamed1536.)
 func TestFilletNamingIsDeterministic(t *testing.T) {
+	t.Parallel()
 	const tx, ty = 4.6, 3.3 // a tangent edge of corner 2's fillet (cylinder ∩ side face #1)
 	_, a := firstFilletedPrism1536(t)
 	_, b := firstFilletedPrism1536(t)

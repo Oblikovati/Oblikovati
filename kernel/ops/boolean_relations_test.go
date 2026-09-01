@@ -12,6 +12,7 @@ import (
 
 // TestBooleanDisjointRelations exercises the disjoint classify path through every op.
 func TestBooleanDisjointRelations(t *testing.T) {
+	t.Parallel()
 	a := csgBox(math.P3(0, 0, 0), 1, 1, 1)
 	b := csgBox(math.P3(10, 10, 10), 1, 1, 1)
 
@@ -31,6 +32,7 @@ func TestBooleanDisjointRelations(t *testing.T) {
 
 // TestBooleanContainmentRelations exercises the one-contains-the-other classify paths.
 func TestBooleanContainmentRelations(t *testing.T) {
+	t.Parallel()
 	big := csgBox(math.P3(0, 0, 0), 4, 4, 4)
 	small := csgBox(math.P3(1, 1, 1), 1, 1, 1) // strictly inside big
 
@@ -54,6 +56,7 @@ func TestBooleanContainmentRelations(t *testing.T) {
 
 // TestBooleanNewBodyReturnsTool covers the NewBody short-circuit.
 func TestBooleanNewBodyReturnsTool(t *testing.T) {
+	t.Parallel()
 	a := csgBox(math.P3(0, 0, 0), 1, 1, 1)
 	b := csgBox(math.P3(5, 5, 5), 2, 2, 2)
 	res, err := ops.Boolean(ops.NewBody, a, b)

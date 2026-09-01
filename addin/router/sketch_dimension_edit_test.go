@@ -30,6 +30,7 @@ func dimensionedWireSketch(t *testing.T, r *Router, s *app.Session) int {
 // TestDeleteDimensionFreesTheDOFItHeld: removing a dimension gives back the degree of freedom it
 // was holding, which is the observable proof it really left the constraint system.
 func TestDeleteDimensionFreesTheDOFItHeld(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	freeDOF := dimensionedWireSketch(t, r, s)
 
@@ -49,6 +50,7 @@ func TestDeleteDimensionFreesTheDOFItHeld(t *testing.T) {
 // TestDeleteDimensionRejectsABadIndex: an out-of-range index errors rather than panicking or
 // silently deleting the wrong dimension.
 func TestDeleteDimensionRejectsABadIndex(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dimensionedWireSketch(t, r, s)
 	wantErr(t, r, s, "sketch.deleteDimension", `{"sketchIndex":0,"dimensionIndex":7}`)
@@ -57,6 +59,7 @@ func TestDeleteDimensionRejectsABadIndex(t *testing.T) {
 // TestMoveDimensionStoresTheTextPoint: the placement round-trips out through enumeration, so a
 // client can read back where it put the annotation.
 func TestMoveDimensionStoresTheTextPoint(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dimensionedWireSketch(t, r, s)
 
@@ -76,6 +79,7 @@ func TestMoveDimensionStoresTheTextPoint(t *testing.T) {
 // TestMoveDimensionLeavesTheGeometryAlone: moving an annotation must not move what it measures,
 // so the sketch's DOF and the dimension's measured value are unchanged.
 func TestMoveDimensionLeavesTheGeometryAlone(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dimensionedWireSketch(t, r, s)
 
@@ -96,6 +100,7 @@ func TestMoveDimensionLeavesTheGeometryAlone(t *testing.T) {
 // TestMoveDimensionRejectsAMalformedTextPoint: a one-value point is a caller error, not a
 // silently-ignored no-op.
 func TestMoveDimensionRejectsAMalformedTextPoint(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dimensionedWireSketch(t, r, s)
 	wantErr(t, r, s, "sketch.moveDimension", `{"sketchIndex":0,"dimensionIndex":0,"textPoint":[2]}`)

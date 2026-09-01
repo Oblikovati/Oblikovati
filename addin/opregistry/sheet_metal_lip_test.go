@@ -11,6 +11,7 @@ import (
 // TestSheetMetalLipApply seeds a sheet-metal wall and folds a stiffening lip onto a top edge,
 // confirming one healthy solid; then checks the error paths.
 func TestSheetMetalLipApply(t *testing.T) {
+	t.Parallel()
 	s, _ := seedSheetMetalSheet(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	edge := topEdgeKey(t, def)

@@ -9,6 +9,7 @@ import (
 )
 
 func TestDocumentSubTypesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "documents.registerSubType",
 		`{"id":"com.x.sim.study","baseType":"part","displayName":"Simulation Study"}`, nil)

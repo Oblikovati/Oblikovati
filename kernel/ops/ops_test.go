@@ -40,6 +40,7 @@ func tetra(s float64, off math.Vector3) *topo.Body {
 }
 
 func TestPlanarFaceTessellationIsWatertight(t *testing.T) {
+	t.Parallel()
 	body := tetra(1, math.V3(0, 0, 0))
 	mesh := TessellateFace(body.Faces()[0], DefaultQuality())
 	// A triangle face → exactly one triangle over its 3 boundary vertices.
@@ -49,6 +50,7 @@ func TestPlanarFaceTessellationIsWatertight(t *testing.T) {
 }
 
 func TestEdgeTessellationHonorsChordTolerance(t *testing.T) {
+	t.Parallel()
 	circle, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
 	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok("f", "body", 0)))
 	v := bld.AddVertex(math.P3(5, 0, 0), topo.NewLineage(topo.Tok("f", "vertex", 0)))
@@ -69,6 +71,7 @@ func TestEdgeTessellationHonorsChordTolerance(t *testing.T) {
 }
 
 func TestCurvedFaceTessellationOnSphere(t *testing.T) {
+	t.Parallel()
 	sphere, _ := geom.NewSphere(math.P3(0, 0, 0), 2)
 	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok("f", "body", 0)))
 	v := bld.AddVertex(math.P3(2, 0, 0), topo.NewLineage(topo.Tok("f", "vertex", 0)))
@@ -87,6 +90,7 @@ func TestCurvedFaceTessellationOnSphere(t *testing.T) {
 }
 
 func TestValidateManifoldSolid(t *testing.T) {
+	t.Parallel()
 	r := Validate(tetra(1, math.V3(0, 0, 0)))
 	if !r.Valid || !r.Manifold || !r.Closed || !r.OrientationOK {
 		t.Errorf("tetra validation = %+v, want fully valid", r)
@@ -97,6 +101,7 @@ func TestValidateManifoldSolid(t *testing.T) {
 }
 
 func TestValidateOpenSurfaceReportsBoundary(t *testing.T) {
+	t.Parallel()
 	// A single triangular face is a surface body with three boundary edges.
 	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok("f", "body", 0)))
 	a := bld.AddVertex(math.P3(0, 0, 0), topo.NewLineage(topo.Tok("f", "vertex", 0)))
@@ -120,6 +125,7 @@ func TestValidateOpenSurfaceReportsBoundary(t *testing.T) {
 }
 
 func TestPointInsideBody(t *testing.T) {
+	t.Parallel()
 	body := tetra(10, math.V3(0, 0, 0)) // big tetra: simplex x,y,z>=0, x+y+z<=10
 	if !PointInsideBody(body, math.P3(2, 2, 2)) {
 		t.Error("interior point reported outside")
@@ -133,6 +139,7 @@ func TestPointInsideBody(t *testing.T) {
 }
 
 func TestBooleanDisjoint(t *testing.T) {
+	t.Parallel()
 	a := tetra(1, math.V3(0, 0, 0))
 	b := tetra(1, math.V3(10, 0, 0)) // far away → disjoint bounding boxes
 
@@ -156,6 +163,7 @@ func TestBooleanDisjoint(t *testing.T) {
 }
 
 func TestBooleanContainment(t *testing.T) {
+	t.Parallel()
 	big := tetra(10, math.V3(0, 0, 0))
 	small := tetra(1, math.V3(2, 2, 2)) // strictly inside big
 
@@ -178,6 +186,7 @@ func TestBooleanContainment(t *testing.T) {
 }
 
 func TestBooleanNewBodyAndStrings(t *testing.T) {
+	t.Parallel()
 	tool := tetra(1, math.V3(0, 0, 0))
 	got, _ := Boolean(NewBody, tetra(1, math.V3(5, 0, 0)), tool)
 	if got != tool {
@@ -191,6 +200,7 @@ func TestBooleanNewBodyAndStrings(t *testing.T) {
 // Sew is implemented as of M07 PBI-084 (#300) — gap behavior is covered by
 // sew_test.go; an already-closed body simply promotes to a solid.
 func TestSewClosedTetraSucceeds(t *testing.T) {
+	t.Parallel()
 	solid, err := Sew(tetra(1, math.V3(0, 0, 0)), 1e-6)
 	if err != nil {
 		t.Fatalf("Sew on a closed body: %v", err)
@@ -216,6 +226,7 @@ func quadFace() *topo.Face {
 }
 
 func TestQuadFaceEarClipping(t *testing.T) {
+	t.Parallel()
 	mesh := TessellateFace(quadFace(), DefaultQuality())
 	if mesh.TriangleCount() != 2 || mesh.VertexCount() != 4 {
 		t.Errorf("quad → %d tris / %d verts, want 2/4", mesh.TriangleCount(), mesh.VertexCount())
@@ -223,6 +234,7 @@ func TestQuadFaceEarClipping(t *testing.T) {
 }
 
 func TestBooleanIntersectingProducesValidSolids(t *testing.T) {
+	t.Parallel()
 	// Two tetra that overlap with neither containing the other → the intersecting case,
 	// now handled by the BSP CSG (PBI-171): each operation yields a valid solid.
 	a := tetra(3, math.V3(0, 0, 0))
@@ -243,6 +255,7 @@ func TestBooleanIntersectingProducesValidSolids(t *testing.T) {
 }
 
 func TestValidateNonManifold(t *testing.T) {
+	t.Parallel()
 	// Three faces sharing one edge → that edge is used 3 times (non-manifold).
 	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("f", "body", 0)))
 	mk := func(x, y, z float64, i int) *topo.Vertex {

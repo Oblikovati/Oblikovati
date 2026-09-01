@@ -51,6 +51,7 @@ func meshArea(m *Mesh) float64 {
 // the diameter of the semicircle (which would halve the area). Regression for the
 // tessellator that used loop vertices only (every edge treated as a chord).
 func TestPlanarFaceFollowsCurvedEdge(t *testing.T) {
+	t.Parallel()
 	const r = 2.0
 	f := halfDiskFace(t, r)
 	mesh := TessellateFace(f, Quality{ChordTolerance: 1e-3})
@@ -66,6 +67,7 @@ func TestPlanarFaceFollowsCurvedEdge(t *testing.T) {
 // TestDiscretizeEdgeIsShared checks both directions of the same arc edge produce the
 // identical point set (reversed) — the property that keeps shared edges crack-free.
 func TestDiscretizeEdgeIsShared(t *testing.T) {
+	t.Parallel()
 	f := halfDiskFace(t, 2)
 	var arc *topo.Edge
 	for _, e := range f.Edges() {

@@ -46,6 +46,7 @@ func chamferFaceKey(t *testing.T, b *topo.Body) []byte {
 // extend to meet at the original sharp edge, healing the box back to vol 8 — a valid solid.
 // The headline delete-face-then-heal acceptance.
 func TestDeleteFaceHealsChamfer(t *testing.T) {
+	t.Parallel()
 	chamfered := chamferedBox(t)
 	healed, err := ops.DeleteFaces(chamfered, [][]byte{chamferFaceKey(t, chamfered)})
 	if err != nil {
@@ -64,6 +65,7 @@ func TestDeleteFaceHealsChamfer(t *testing.T) {
 // than be renumbered to the rebuild's delface:* ordinals — so a selection on an untouched face or
 // edge survives the operation. Before P3 every result key was a fresh delface ordinal.
 func TestDeleteFaceKeepsSurvivingIdentity(t *testing.T) {
+	t.Parallel()
 	chamfered := chamferedBox(t)
 	inFaces, inEdges := map[string]bool{}, map[string]bool{}
 	for _, f := range chamfered.Faces() {
@@ -98,6 +100,7 @@ func TestDeleteFaceKeepsSurvivingIdentity(t *testing.T) {
 
 // TestDeleteFaceLostKeyErrors reports a vanished face key so the feature can go Sick.
 func TestDeleteFaceLostKeyErrors(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	if _, err := ops.DeleteFaces(box, [][]byte{[]byte("ghost")}); err == nil {
 		t.Error("delete-face with a lost key should error")

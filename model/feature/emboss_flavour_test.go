@@ -35,6 +35,7 @@ func rectSketchOn(plane sketch.Plane, x0, y0, x1, y1 float64) *sketch.Sketch {
 // both halves are visible at once: past the block the raise is new material, and inside it the
 // relief cut leaves a pocket.
 func TestEmbossFromPlaneRaisesOneSideAndCutsTheOther(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddExtrude(squareSketch(4), []int{0}, ops.NewBody,
 		Extent{Type: DistanceExtent, Direction: SymmetricDir, Distance: func() float64 { return 4 }}, 0)
@@ -67,6 +68,7 @@ func TestEmbossFromPlaneRaisesOneSideAndCutsTheOther(t *testing.T) {
 // TestEmbossFromPlaneRefusesOptionsItCannotHonour: the from-plane flavour works off the sketch
 // plane, so there is no face to wrap onto, and it needs a part to raise and cut about.
 func TestEmbossFromPlaneRefusesOptionsItCannotHonour(t *testing.T) {
+	t.Parallel()
 	t.Run("with wrapToFace", func(t *testing.T) {
 		fs := NewPartFeatures(nil)
 		NewExtrudeFeatures(fs).AddExtrude(squareSketch(4), []int{0}, ops.NewBody,
@@ -145,6 +147,7 @@ func radialSpanOf(b *topo.Body) (lo, hi float64) {
 // √(2² + 1.5²) = 2.5 from the axis and its base dives to 1.8 — which is what pins the assertion
 // (#1893).
 func TestWrappedEmbossHugsTheShaft(t *testing.T) {
+	t.Parallel()
 	pf, emb := wrappedShaftEmboss(t, 0.2, EmbossFromFace)
 	if !pf.Health().OK() {
 		t.Fatalf("wrapped emboss went sick: %+v", pf.Health())
@@ -171,6 +174,7 @@ func TestWrappedEmbossHugsTheShaft(t *testing.T) {
 // TestWrappedEmbossJoinsTheShaft: the wrapped pad has to end up part of the solid, standing the
 // depth proud of the shaft all the way round the wrap.
 func TestWrappedEmbossJoinsTheShaft(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(circleOn(sketch.XYPlane(), 2), 0, ops.NewBody,
 		func() float64 { return 4 })
@@ -203,6 +207,7 @@ func TestWrappedEmbossJoinsTheShaft(t *testing.T) {
 // out loud instead of being mapped as if it were a tangent cylinder, which would distort the
 // profile silently (#1893).
 func TestWrapRefusesAFaceOrPlaneItCannotMap(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
@@ -235,6 +240,7 @@ func TestWrapRefusesAFaceOrPlaneItCannotMap(t *testing.T) {
 // TestWrappedEngraveRefusesCuttingPastTheAxis: an engrave deeper than the shaft's radius has no
 // pad to build, so it is a precise error rather than a degenerate inside-out tool.
 func TestWrappedEngraveRefusesCuttingPastTheAxis(t *testing.T) {
+	t.Parallel()
 	pf, _ := wrappedShaftEmboss(t, 2.5, EngraveFromFace)
 	if pf.Health().OK() {
 		t.Error("a wrapped engrave deeper than the radius should go sick")
@@ -245,6 +251,7 @@ func TestWrappedEngraveRefusesCuttingPastTheAxis(t *testing.T) {
 // and a document written before the flavours existed still reads as the raise or cut its `engrave`
 // flag described.
 func TestEmbossFlavourAndWrapRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := squareSketch(4)
 	index := sketchList{sks: []*sketch.Sketch{sk}}
 	def := &EmbossDefinition{
@@ -303,6 +310,7 @@ func TestEmbossFlavourAndWrapRoundTrip(t *testing.T) {
 // genuine cylinder surfaces (not flat caps over a curved loop, which is an invalid non-planar-on-plane
 // B-rep). The tool must be a valid solid carrying at least two cylindrical faces at the pad's radii.
 func TestWrappedEmbossHasCurvedCapFaces(t *testing.T) {
+	t.Parallel()
 	_, emb := wrappedShaftEmboss(t, 0.2, EmbossFromFace)
 	if r := ops.Validate(emb.tool); !r.Valid || !emb.tool.IsSolid() {
 		t.Fatalf("wrapped emboss tool must be a valid solid: %+v", r.Issues)

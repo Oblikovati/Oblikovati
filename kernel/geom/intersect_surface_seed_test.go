@@ -28,6 +28,7 @@ func onSurfacePair(t *testing.T, loops [][]math.Point3, a, b Surface, tol float6
 // in a circle of 3D radius ~0.015 — a parameter loop ~0.03 across, well below the old du≈2π/160≈0.039.
 // The centre is placed off any coarse grid line so the result cannot depend on grid alignment.
 func TestSSIFindsThinSubGridLoop(t *testing.T) {
+	t.Parallel()
 	big, _ := NewSphere(math.P3(0, 0, 0), 1)
 	centre := big.PointAt(0.31, 0.21) // a point on the unit sphere, off the coarse seed lattice
 	small, _ := NewSphere(centre, 0.015)
@@ -44,6 +45,7 @@ func TestSSIFindsThinSubGridLoop(t *testing.T) {
 // sphere lies entirely on one side), so the old sign-change seeding could not see it. The adaptive
 // seeder's sub-cell minimum still seeds it and the tracer reports the contact.
 func TestSSIDetectsTangentialContact(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 1)
 	pl, _ := NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1)) // tangent at the north pole (0,0,1)
 
@@ -64,6 +66,7 @@ func TestSSIDetectsTangentialContact(t *testing.T) {
 // times than the retired 161×161 = 25921-node grid, because cells nowhere near the other surface are
 // pruned by the Lipschitz bound. Target: at least a 10× reduction.
 func TestSSISeederPrunesEmptySpace(t *testing.T) {
+	t.Parallel()
 	const fixedGridNodes = 161 * 161
 	big, _ := NewSphere(math.P3(0, 0, 0), 1)
 	small, _ := NewSphere(big.PointAt(0.31, 0.21), 0.015)
@@ -88,6 +91,7 @@ func TestSSISeederPrunesEmptySpace(t *testing.T) {
 // containing a crossing, so the tracer must find EVERY crossing curve, not a grid-dependent
 // subset.
 func TestSSIRippleFindsEveryCrossing(t *testing.T) {
+	t.Parallel()
 	ripple := rippledSheet(t, 24, 1, 1.0, false)
 	plane, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 
@@ -114,6 +118,7 @@ func TestSSIRippleFindsEveryCrossing(t *testing.T) {
 // bound must be a true upper bound on the surface's tangent magnitude — otherwise a crossing could be
 // pruned. It samples |S_u|,|S_v| densely and asserts the hodograph bound dominates every sample.
 func TestRippleSSIUsesCertifiedHodographBound(t *testing.T) {
+	t.Parallel()
 	ripple := rippledSheet(t, 24, 3, 1.0, true)
 	plane, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	g := resolveGrid(ripple, SurfaceGrid{})
@@ -158,6 +163,7 @@ func rippleZeroCrossings(s BSplineSurface, samples int) int {
 // the cell size must be at least the actual corner-to-corner field change. A direct guard on the
 // Lipschitz bound that the whole approach rests on — now on the rigorous bound, not the retired guess.
 func TestSSISeederBoundIsConservative(t *testing.T) {
+	t.Parallel()
 	big, _ := NewSphere(math.P3(0, 0, 0), 1)
 	other, _ := NewSphere(math.P3(1.2, 0, 0), 1)
 	g := resolveGrid(big, SurfaceGrid{})

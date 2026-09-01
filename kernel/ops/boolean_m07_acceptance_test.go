@@ -44,6 +44,7 @@ func requireSolid(t *testing.T, label string, b *topo.Body, wantVol float64) {
 // Two boxes sharing a full coincident face: the join must dissolve the flush
 // pair into one solid (volume 2), not leave an internal double wall.
 func TestJoinCoincidentFullFace(t *testing.T) {
+	t.Parallel()
 	a := opsBoxNamed("a", math.P3(0, 0, 0), 1, 1, 1)
 	b := opsBoxNamed("b", math.P3(1, 0, 0), 1, 1, 1)
 	res, err := ops.Boolean(ops.Join, a, b)
@@ -56,6 +57,7 @@ func TestJoinCoincidentFullFace(t *testing.T) {
 // A smaller box flush against a larger face (partial coincidence): join must
 // imprint the contact region and stay manifold.
 func TestJoinCoincidentPartialFace(t *testing.T) {
+	t.Parallel()
 	a := opsBoxNamed("a", math.P3(0, 0, 0), 2, 2, 2)
 	b := opsBoxNamed("b", math.P3(2, 0.5, 0.5), 1, 1, 1)
 	res, err := ops.Boolean(ops.Join, a, b)
@@ -67,6 +69,7 @@ func TestJoinCoincidentPartialFace(t *testing.T) {
 
 // Identical operands: union and intersection are the operand; difference is empty.
 func TestBooleanIdenticalOperands(t *testing.T) {
+	t.Parallel()
 	a := opsBoxNamed("a", math.P3(0, 0, 0), 1, 1, 1)
 	b := opsBoxNamed("b", math.P3(0, 0, 0), 1, 1, 1)
 	if res, err := ops.Boolean(ops.Join, a, b); err != nil {
@@ -89,6 +92,7 @@ func TestBooleanIdenticalOperands(t *testing.T) {
 // A cut whose tool stops a sliver short of the far wall: the remaining
 // sliver-thin wall must survive as valid material, not corrupt the topology.
 func TestCutLeavesSliverWall(t *testing.T) {
+	t.Parallel()
 	const sliver = 1e-4 // thin but above merge tolerance — must survive
 	a := opsBoxNamed("a", math.P3(0, 0, 0), 1, 1, 1)
 	b := opsBoxNamed("b", math.P3(-0.5, 0.25, 0.25), 0.5+(1-sliver), 0.5, 0.5)
@@ -102,6 +106,7 @@ func TestCutLeavesSliverWall(t *testing.T) {
 // A sliver-wide overlap between the operands: the intersection is a slab of
 // near-zero width and must still come out valid (or exactly empty).
 func TestIntersectSliverOverlap(t *testing.T) {
+	t.Parallel()
 	const overlap = 1e-4
 	a := opsBoxNamed("a", math.P3(0, 0, 0), 1, 1, 1)
 	b := opsBoxNamed("b", math.P3(1-overlap, 0, 0), 1, 1, 1)
@@ -119,6 +124,7 @@ func TestIntersectSliverOverlap(t *testing.T) {
 // result still resolves it after a SECOND edit (a follow-up cut elsewhere) —
 // the "rebindable after edits" clause of the acceptance criteria.
 func TestBooleanKeyContinuityThroughEdits(t *testing.T) {
+	t.Parallel()
 	a := opsBoxNamed("base", math.P3(0, 0, 0), 4, 4, 4)
 	bottom := faceByNormal(t, a, math.V3(0, 0, -1))
 	key := bottom.ReferenceKey()

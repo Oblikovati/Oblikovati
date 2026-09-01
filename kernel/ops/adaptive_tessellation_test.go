@@ -57,6 +57,7 @@ func tightDomeSurface(t *testing.T) geom.BSplineSurface {
 // the curvature is (the off-centre bump), not uniformly — the bump quadrant ends up denser than the far
 // flat quadrant, and the refinement adds nodes the base grid alone did not.
 func TestLocalRefinementConcentratesAtBump(t *testing.T) {
+	t.Parallel()
 	s := offsetBumpSurface(t)
 	outer := uvSquare(0.02, 0.98, 12)
 	base, _ := adaptiveInteriorNodes(s, outer, nil, DefaultQuality(), 1, false)
@@ -83,6 +84,7 @@ func TestLocalRefinementConcentratesAtBump(t *testing.T) {
 // a flat face has zero curvature everywhere, so local refinement adds exactly nothing on top of the
 // base grid — the broader no-regression guarantee is the unchanged golden suite.
 func TestLocalRefinementLeavesFlatFaceUnchanged(t *testing.T) {
+	t.Parallel()
 	flat := unitPatch(t)
 	outer := uvSquare(0.05, 0.95, 8)
 	base, _ := adaptiveInteriorNodes(flat, outer, nil, DefaultQuality(), 1, false)
@@ -99,6 +101,7 @@ func TestLocalRefinementLeavesFlatFaceUnchanged(t *testing.T) {
 // the cell-size floor to meet the chord tolerance reports saturated, and recordCapSaturation surfaces it
 // as a searchable diagnostic on the mesh — instead of silently exceeding tolerance.
 func TestInteriorRefinementReportsSaturation(t *testing.T) {
+	t.Parallel()
 	s := tightDomeSurface(t)
 	outer := uvSquare(0.02, 0.98, 12)
 	_, saturated := adaptiveInteriorNodes(s, outer, nil, DefaultQuality(), 1, true)

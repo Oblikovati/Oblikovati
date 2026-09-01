@@ -149,6 +149,7 @@ func spoolVolume(r float64) float64 {
 // solid is only r = 27. With it the seat is the one the edge's convexity and the true outward normal
 // agree on, and the built solid matches the closed form.
 func TestReversedCapClosedRimSeatsOnTheMaterialSide(t *testing.T) {
+	t.Parallel()
 	plain := spoolWithOverhangingHead(t)
 	b := withStoredNormalFlipped(plain, headUnderside(t, plain))
 	if !headUnderside(t, b).Reversed() {
@@ -210,6 +211,7 @@ func assertSpoolBuilds(t *testing.T, b *topo.Body, rim *topo.Edge) {
 // whose stored normal was already the outward one. The SAME spool, unflipped, must solve to the SAME band
 // — centre, radii, and both tangent rails — as the Reversed one.
 func TestUnreversedCapClosedRimIsUnchangedByTheGuard(t *testing.T) {
+	t.Parallel()
 	plain := spoolWithOverhangingHead(t)
 	if headUnderside(t, plain).Reversed() {
 		t.Fatalf("the unflipped fixture's cap is already Reversed — the control is not a control")

@@ -19,6 +19,7 @@ import (
 // TestBooleanIntersectSphereBoxExact intersects a sphere with a box that trims its +x and lower-z sides.
 // The box's other four planes clear the sphere (kept whole); only x=2 and z=0 cut.
 func TestBooleanIntersectSphereBoxExact(t *testing.T) {
+	t.Parallel()
 	const R = 5.0
 	sphere, _ := brep.SolidSphere(math.P3(0, 0, 0), R, "s")
 	box, _ := brep.SolidBlock(math.P3(-10, -10, -10), math.P3(2, 10, 0), "box") // keeps x ≤ 2, z ≤ 0
@@ -57,6 +58,7 @@ func TestBooleanIntersectSphereBoxExact(t *testing.T) {
 // at the corners (a "squircle" prism). The box top/bottom clear the cylinder height. The exact path must
 // preserve the cylinder surfaces and match the analytic cross-section (disk minus four segments) × height.
 func TestBooleanIntersectCylinderBoxExact(t *testing.T) {
+	t.Parallel()
 	const r, h, a = 3.0, 10.0, 2.5
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
 	box, _ := brep.SolidBlock(math.P3(-a, -a, -5), math.P3(a, a, 15), "box")
@@ -92,6 +94,7 @@ func TestBooleanIntersectCylinderBoxExact(t *testing.T) {
 // TestBooleanIntersectSphereContainedBoxUnaffected: a box fully inside the sphere intersects to the box
 // (handled by classify before the curved path) — a sanity check that the wiring did not disturb it.
 func TestBooleanIntersectSphereContainedBoxUnaffected(t *testing.T) {
+	t.Parallel()
 	sphere, _ := brep.SolidSphere(math.P3(0, 0, 0), 5, "s")
 	box, _ := brep.SolidBlock(math.P3(-1, -1, -1), math.P3(1, 1, 1), "box") // corner dist √3 < 5: inside
 	res, err := ops.Boolean(ops.Intersect, sphere, box)

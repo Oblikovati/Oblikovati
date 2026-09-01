@@ -66,6 +66,7 @@ func assertCCWLive(t *testing.T, m *cdt) {
 // left 2 empty-circumcircle violations behind (measured). insertConstraint must legalize the
 // corridor (recursive Lawson flips honoring constraints, Anglada/Sloan) after every recovery.
 func TestCDTLegalizedAfterRecovery(t *testing.T) {
+	t.Parallel()
 	for _, n := range []int{12, 40} {
 		m := alternatingStripCDT(n)
 		m.insertConstraint(0, 1)
@@ -87,6 +88,7 @@ func TestCDTLegalizedAfterRecovery(t *testing.T) {
 // restored to Delaunay, so the walk finds the containing triangle and the cavity is star-shaped —
 // the result stays manifold, CCW, and fully Delaunay away from constraints.
 func TestCDTInsertionIntoRecoveredCorridor(t *testing.T) {
+	t.Parallel()
 	const n = 24
 	pts := [][2]float64{{0, 0.5}, {float64(n + 1), 0.5}}
 	for i := 1; i <= n; i++ {
@@ -154,6 +156,7 @@ func combFixture() ([][2]float64, []int, int) {
 // the flood poured through the gap and the extracted domain lost a third of its area while the old
 // folded scan-seeded mesh double-covered enough of it to pass the 3D area band.
 func TestCDTConstraintSplitsAtOnSegmentVertex(t *testing.T) {
+	t.Parallel()
 	// Unit-ish square whose bottom edge (0)-(1) passes exactly through point 4 at (2,0); 4 is not
 	// part of the loop, so the constraint (0,1) is structurally unrecoverable as a single edge.
 	pts := [][2]float64{{0, 0}, {4, 0}, {4, 4}, {0, 4}, {2, 0}}
@@ -185,6 +188,7 @@ func TestCDTConstraintSplitsAtOnSegmentVertex(t *testing.T) {
 // triangle beyond the pinch was mislabeled — the extracted domain was ~10% off while Validate
 // stayed green.
 func TestCDTPinchedHoleWallParity(t *testing.T) {
+	t.Parallel()
 	// 10×10 square with a 4×4 notch-hole whose right edge lies ON the outer right edge x=10:
 	// outer CCW, hole (6,3)-(10,3)-(10,7)-(6,7). Domain area = 100 − 16 = 84.
 	pts := [][2]float64{
@@ -216,6 +220,7 @@ func TestCDTPinchedHoleWallParity(t *testing.T) {
 // because legalization keeps the mesh a true CDT), not the O(T)-per-point firstBad scan — and the
 // refined domain must stay exact: CCW everywhere, area equal two-sided, Delaunay off-constraints.
 func TestCDTSteinerInsertionAfterConstraintsWalks(t *testing.T) {
+	t.Parallel()
 	pts, loop, nFrontier := combFixture()
 	m := newCDT(pts)
 	for i := range nFrontier {

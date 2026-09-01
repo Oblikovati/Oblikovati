@@ -98,6 +98,7 @@ func filletedCorpusEdges(t *testing.T, rel string, r float64) (*topo.Body, error
 // a solid. What it must NOT do — and did before the gate — is nil-deref in applyRunoutSetback because
 // the curved-arm edgeFillet carries a zero cyl/c0/c1. This test fails (panics) without the gate.
 func TestFilletEdges_B3NoPanic(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if p := recover(); p != nil {
 			t.Fatalf("B3 curved-arm fillet PANICKED (do-no-harm floor breached): %v", p)

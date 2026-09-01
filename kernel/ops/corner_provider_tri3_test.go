@@ -37,6 +37,7 @@ func sphereTriLoopAdj(t *testing.T, r float64) RailLoop {
 // TestSphereTriLoopAdjIsClosed catches an endpoint-chaining mistake early: the three arcs must chain
 // A->B->C->A within a tight absolute tol.
 func TestSphereTriLoopAdjIsClosed(t *testing.T) {
+	t.Parallel()
 	if !sphereTriLoopAdj(t, 6).Closed(1e-9) {
 		t.Fatal("sphereTriLoopAdj is not a closed cycle A->B->C->A")
 	}
@@ -46,6 +47,7 @@ func TestSphereTriLoopAdjIsClosed(t *testing.T) {
 // tangent-to-sphere degenerate-4 patch that interpolates its three boundary rails. The MaxAngleDev
 // gate proves the pole anti-fold did NOT mask a real crease (the fill stays tangent along the arcs).
 func TestTri3FitsAndBuilds(t *testing.T) {
+	t.Parallel()
 	loop := sphereTriLoopAdj(t, 6)
 	p := tri3Provider{}
 	if !p.Fits(loop) {
@@ -106,6 +108,7 @@ func assertTri3InterpolatesRails(t *testing.T, loop RailLoop, fill geom.BSplineS
 
 // TestTri3RejectsValence4 proves the provider declines a 4-side loop (its Fit gate is the valence).
 func TestTri3RejectsValence4(t *testing.T) {
+	t.Parallel()
 	loop := quarterCylLoop(t, 8)
 	if (tri3Provider{}).Fits(loop) {
 		t.Fatal("tri3Provider must NOT Fit a 4-valence loop")
@@ -117,6 +120,7 @@ func TestTri3RejectsValence4(t *testing.T) {
 // might) on a Valence-2 loop must honest-reject rather than panic inside choosePole/cornerNormalAgreement,
 // which indexes loop.Sides[0..2] and would go out of range on fewer than 3 sides.
 func TestTri3BuildGuardsValence(t *testing.T) {
+	t.Parallel()
 	loop := RailLoop{Sides: []Side{{}, {}}}
 	_, _, ok := (tri3Provider{}).Build(loop, blendScale())
 	if ok {
@@ -128,6 +132,7 @@ func TestTri3BuildGuardsValence(t *testing.T) {
 // panic and must honest-reject (ok==false OR an invalid certificate) at the pole rather than ship a
 // self-intersecting patch.
 func TestTri3TwistedRejects(t *testing.T) {
+	t.Parallel()
 	loop := sphereTriLoopAdj(t, 6)
 	o := math.P3(0, 0, 0)
 	rev, err := geom.NewArc3d(o, math.V3(-1, 0, 0), math.V3(0, 0, 1), 6, 0, stdmath.Pi/2) // (0,0,R)->(0,R,0)

@@ -25,6 +25,7 @@ func walkLoop(netU, netV, uPeriod, vPeriod float64) faceLoop {
 }
 
 func TestLoopsCloseTheirWalkAcceptsAReturnAndRefusesAnOpenContour(t *testing.T) {
+	t.Parallel()
 	const tau = 2 * stdmath.Pi
 	cases := []struct {
 		name string
@@ -57,6 +58,7 @@ func TestLoopsCloseTheirWalkAcceptsAReturnAndRefusesAnOpenContour(t *testing.T) 
 }
 
 func TestLoopsCloseTheirWalkRefusesWhenAnyLoopIsOpen(t *testing.T) {
+	t.Parallel()
 	loops := []faceLoop{walkLoop(0, 0, 0, 0), walkLoop(0, -1, 0, 0)}
 	if loopsCloseTheirWalk(loops) {
 		t.Error("one open loop makes the whole boundary open; the face must be refused")
@@ -70,6 +72,7 @@ func TestLoopsCloseTheirWalkRefusesWhenAnyLoopIsOpen(t *testing.T) {
 // putting the body's volume 1.7% out — and their vector-area residuals were mirror images, so they
 // cancelled and the closure post-condition passed the wrong answer through.
 func TestLoopRegionSignReadsTheMeasureNotTheShoelace(t *testing.T) {
+	t.Parallel()
 	degenerate := []faceLoop{{edges: []loopEdge{{samples: []arcSample{
 		{u: 0, v: 0}, {u: 1, v: 0}, {u: 2, v: 0}, {u: 1, v: 0}, // collapsed onto one line: no enclosed area
 	}}}}}
@@ -97,6 +100,7 @@ func TestLoopRegionSignReadsTheMeasureNotTheShoelace(t *testing.T) {
 // orders larger relative to the contour, so judging the residue against the contour's own extent
 // separates them with room to spare.
 func TestAClosureResidueIsJudgedAgainstTheContourNotAnEpsilon(t *testing.T) {
+	t.Parallel()
 	const spiricResidue = 2.98e-8 // measured on the torus∩plane oval
 	wide := []arcSample{{u: 0, v: 0}, {u: 6, v: 0}, {u: 6, v: 3}, {u: 0, v: 3}}
 	loopOf := func(netU float64, samples []arcSample) []faceLoop {

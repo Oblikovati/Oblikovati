@@ -36,6 +36,7 @@ func partWithCylinder(t *testing.T, baseZ, radius, height float64) *PartComponen
 // cylindrical wall the boolean left as a seam-wrapping loop, and falls back to the mesh. Closing
 // that coverage gap (#3453) makes this assertion exact with no change here.
 func TestAnalyzeInterferenceMeasuresACurvedOverlap(t *testing.T) {
+	t.Parallel()
 	lower := partWithCylinder(t, 0, 1, 2) // z ∈ [0, 2]
 	upper := partWithCylinder(t, 0, 1, 2)
 	asm := NewAssemblyComponentDefinition()
@@ -56,6 +57,7 @@ func TestAnalyzeInterferenceMeasuresACurvedOverlap(t *testing.T) {
 // bounding-box centre of the intersection lump the retired code reported only coincides here
 // because the lump is symmetric, so the assertion is on the value, not on the method.
 func TestAnalyzeInterferenceCenterIsOverlapCentroid(t *testing.T) {
+	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	asm.Place("lower:1", partWithCylinder(t, 0, 1, 2), math.Identity4())
 	asm.Place("upper:1", partWithCylinder(t, 0, 1, 2), math.Translation4(math.V3(0, 0, 1)))
@@ -72,6 +74,7 @@ func TestAnalyzeInterferenceCenterIsOverlapCentroid(t *testing.T) {
 // TestOverlapSumWeightsLumpsByVolume covers overlapSum directly: a negligible lump is dropped, and
 // two real lumps average into a VOLUME-weighted centre, not an unweighted midpoint.
 func TestOverlapSumWeightsLumpsByVolume(t *testing.T) {
+	t.Parallel()
 	var s overlapSum
 	s.fold(ops.GeometryProperties{Volume: interferenceVolumeEps / 2, Centroid: math.P3(100, 0, 0)})
 	s.fold(ops.GeometryProperties{Volume: 3, Centroid: math.P3(0, 0, 0)})
@@ -88,6 +91,7 @@ func TestOverlapSumWeightsLumpsByVolume(t *testing.T) {
 // TestOverlapSumCentroidWithoutLumps covers the empty accumulator: no lump folded ⇒ the origin,
 // never a division by zero.
 func TestOverlapSumCentroidWithoutLumps(t *testing.T) {
+	t.Parallel()
 	var s overlapSum
 	if got := s.centroid(); !got.IsEqualTo(math.P3(0, 0, 0), 0) {
 		t.Errorf("empty overlap centre = %v, want the origin", got)
@@ -109,6 +113,7 @@ func twoBoxAssembly(t *testing.T, dx float64) (*AssemblyComponentDefinition, uin
 // TestAnalyzeInterferenceDetectsOverlap covers AnalyzeInterference and its helpers: overlapping
 // occurrences are reported with positive volume; separated ones are not.
 func TestAnalyzeInterferenceDetectsOverlap(t *testing.T) {
+	t.Parallel()
 	overlap, _, _ := twoBoxAssembly(t, 1) // B spans x∈[1,3], overlaps A's x∈[0,2]
 	res := overlap.AnalyzeInterference(nil)
 	if res.Count() != 1 {
@@ -127,6 +132,7 @@ func TestAnalyzeInterferenceDetectsOverlap(t *testing.T) {
 // TestAnalyzeInterferenceSubsetFilter covers pairInSubset/idInSet: an empty-but-non-nil subset
 // (a pair not naming both ids) excludes the pair.
 func TestAnalyzeInterferenceSubsetFilter(t *testing.T) {
+	t.Parallel()
 	asm, a, b := twoBoxAssembly(t, 1)
 	if got := asm.AnalyzeInterference([]uint64{a, b}).Count(); got != 1 {
 		t.Errorf("subset naming both ids: count = %d, want 1", got)
@@ -139,6 +145,7 @@ func TestAnalyzeInterferenceSubsetFilter(t *testing.T) {
 // TestWouldContactBlockWithoutContactSet covers the early no-block path: an occurrence in no
 // contact set never blocks a move.
 func TestWouldContactBlockWithoutContactSet(t *testing.T) {
+	t.Parallel()
 	asm, a, _ := twoBoxAssembly(t, 1)
 	if asm.WouldContactBlock(a, math.Translation4(math.V3(0.5, 0, 0))) {
 		t.Error("WouldContactBlock should be false when the occurrence shares no contact set")

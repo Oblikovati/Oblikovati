@@ -54,6 +54,7 @@ func trimPlaneFace(t *testing.T, f curvedFace, imprint []geom.Curve3, keep func(
 // bounded by an EXACT major sub-arc of the rim circle and the chord segment, meeting exactly at the
 // closed-form crossing points (0.5, ±√(r²−0.25)).
 func TestPlaneFaceUVChordSplitsDisc(t *testing.T) {
+	t.Parallel()
 	f, circ := uvDiscFace(t, 2)
 	faces := trimPlaneFace(t, f, []geom.Curve3{chordSegment(0.5, 2.5)}, func(p math.Point3) bool { return float64(p.X) < 0.5 })
 	if len(faces) != 1 || len(faces[0].loops) != 1 {
@@ -91,6 +92,7 @@ func assertOnCircle(t *testing.T, e loopEdge, circ geom.Circle) {
 // TestPlaneFaceUVKeepAllIsWholeDisc: with a keep-everything predicate the imprint dissolves (both cell
 // sides kept) and the whole disc comes back as its single exact full-circle loop.
 func TestPlaneFaceUVKeepAllIsWholeDisc(t *testing.T) {
+	t.Parallel()
 	f, _ := uvDiscFace(t, 2)
 	faces := trimPlaneFace(t, f, []geom.Curve3{chordSegment(0.5, 2.5)}, func(math.Point3) bool { return true })
 	if len(faces) != 1 || len(faces[0].loops) != 1 || len(faces[0].loops[0].edges) != 1 {
@@ -106,6 +108,7 @@ func TestPlaneFaceUVKeepAllIsWholeDisc(t *testing.T) {
 // hole — the kept fragment containing the hole carries it as the EXACT full circle (reversed), while
 // the fragment boundary carries the chord.
 func TestPlaneFaceUVHoleSurvivesSplit(t *testing.T) {
+	t.Parallel()
 	pl, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	hole, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.5)
 	square := [][2]float64{{-2, -2}, {2, -2}, {2, 2}, {-2, 2}}
@@ -136,6 +139,7 @@ func TestPlaneFaceUVHoleSurvivesSplit(t *testing.T) {
 
 // TestCurvedFaceLineIntervals: exact even-odd line-in-face intervals on a disc and a holed square.
 func TestCurvedFaceLineIntervals(t *testing.T) {
+	t.Parallel()
 	f, _ := uvDiscFace(t, 2)
 	// A diameter line through the centre: one interval spanning [−2, 2] exactly.
 	iv, ok := curvedFaceLineIntervals(f, math.P3(0, 0, 0), math.V3(1, 0, 0))

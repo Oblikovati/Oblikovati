@@ -10,6 +10,7 @@ import (
 )
 
 func TestCommandRegistrationAndLookup(t *testing.T) {
+	t.Parallel()
 	m := NewCommandManager()
 	line := NewCommand("Sketch.Line", "Line", "Sketch", func(*Session) error { return nil }).WithAlias("L")
 	circ := NewCommand("Sketch.Circle", "Circle", "Sketch", func(*Session) error { return nil }).WithAlias("C")
@@ -36,6 +37,7 @@ func TestCommandRegistrationAndLookup(t *testing.T) {
 // TestCommandInlineIconSVG checks an add-in's own glyph is carried on the command: WithInlineIconSVG
 // stores the markup and InlineIconSVG reads it back, distinct from the bundled-key Icon.
 func TestCommandInlineIconSVG(t *testing.T) {
+	t.Parallel()
 	svg := `<svg viewBox="0 0 24 24"><rect width="24" height="24"/></svg>`
 	c := NewCommand("AddIn.Glyph", "Glyph", "Demo", func(*Session) error { return nil }).
 		WithIcon("fallback-key").WithInlineIconSVG(svg)
@@ -51,6 +53,7 @@ func TestCommandInlineIconSVG(t *testing.T) {
 }
 
 func TestCommandManagerRejectsDuplicates(t *testing.T) {
+	t.Parallel()
 	m := NewCommandManager()
 	_ = m.Add(NewCommand("x", "X", "C", func(*Session) error { return nil }).WithAlias("A"))
 	if err := m.Add(NewCommand("x", "X2", "C", func(*Session) error { return nil })); err == nil {
@@ -62,6 +65,7 @@ func TestCommandManagerRejectsDuplicates(t *testing.T) {
 }
 
 func TestSessionExecuteAndAliasAndEvents(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := 0
 	_ = s.Commands().Add(NewCommand("greet", "Greet", "Test", func(*Session) error { ran++; return nil }).WithAlias("G"))
@@ -92,6 +96,7 @@ func TestSessionExecuteAndAliasAndEvents(t *testing.T) {
 }
 
 func TestDisabledCommandRefuses(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	on := false
 	ran := false
@@ -107,6 +112,7 @@ func TestDisabledCommandRefuses(t *testing.T) {
 }
 
 func TestCommandEndedReportsFailure(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	var failed bool
 	event.Subscribe(s.Events(), event.After, func(_ event.Context, e CommandEnded) event.Outcome { failed = e.Failed; return event.Continue() })

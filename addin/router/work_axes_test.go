@@ -9,6 +9,7 @@ import (
 )
 
 func TestWorkAxesListIncludesOriginFrame(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var list wire.ListWorkAxesResult
 	call(t, r, s, "workAxes.list", "{}", &list)
@@ -23,6 +24,7 @@ func TestWorkAxesListIncludesOriginFrame(t *testing.T) {
 }
 
 func TestWorkAxesCreateLineThenList(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkAxisResult
 	call(t, r, s, "workAxes.create", `{"kind":"line","origin":[1,2,3],"direction":[0,0,1]}`, &res)
@@ -50,6 +52,7 @@ func TestWorkAxesCreateLineThenList(t *testing.T) {
 }
 
 func TestWorkAxesCreateTwoPoints(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var p0, p1 wire.CreateWorkPointResult
 	call(t, r, s, "workPoints.create", `{"at":[0,0,0]}`, &p0)
@@ -69,6 +72,7 @@ func TestWorkAxesCreateTwoPoints(t *testing.T) {
 }
 
 func TestWorkAxesCreatePlaneIntersection(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	// XY ∩ XZ = the X axis.
 	var res wire.CreateWorkAxisResult
@@ -90,6 +94,7 @@ func TestWorkAxesCreatePlaneIntersection(t *testing.T) {
 }
 
 func TestWorkAxesCreateUnknownKind(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "workAxes.create", []byte(`{"kind":"no-such-kind"}`)); err == nil {
 		t.Error("expected error for unknown work-axis kind")
@@ -97,6 +102,7 @@ func TestWorkAxesCreateUnknownKind(t *testing.T) {
 }
 
 func TestWorkAxesCreateWrongReferenceCount(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	// two-points needs 2 references; supplying 1 is a bad request.
 	if _, err := r.Handle(s, "workAxes.create",
@@ -106,6 +112,7 @@ func TestWorkAxesCreateWrongReferenceCount(t *testing.T) {
 }
 
 func TestWorkAxesCreateLineBadDirection(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	// A zero direction vector cannot be normalized to a unit axis direction.
 	if _, err := r.Handle(s, "workAxes.create",

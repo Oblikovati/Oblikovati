@@ -23,6 +23,7 @@ func (f *FakeOptionsStore) Save(all options.All) error {
 }
 
 func TestUseOptionsStoreAppliesLiveGroups(t *testing.T) {
+	t.Parallel()
 	stored := options.Defaults()
 	stored.Sketch.GridSpacingCm = 2.5
 	stored.Sketch.SnapToGrid = false
@@ -43,6 +44,7 @@ func TestUseOptionsStoreAppliesLiveGroups(t *testing.T) {
 }
 
 func TestSetSketchOptionsAppliesAndPersists(t *testing.T) {
+	t.Parallel()
 	store := &FakeOptionsStore{stored: options.Defaults()}
 	s := NewSession()
 	if err := s.UseOptionsStore(store); err != nil {
@@ -69,6 +71,7 @@ func TestSetSketchOptionsAppliesAndPersists(t *testing.T) {
 }
 
 func TestPersistLiveOptionsSnapshotsUIEdits(t *testing.T) {
+	t.Parallel()
 	store := &FakeOptionsStore{stored: options.Defaults()}
 	s := NewSession()
 	if err := s.UseOptionsStore(store); err != nil {
@@ -87,6 +90,7 @@ func TestPersistLiveOptionsSnapshotsUIEdits(t *testing.T) {
 }
 
 func TestSetGeneralOptionsStoresStartupAction(t *testing.T) {
+	t.Parallel()
 	store := &FakeOptionsStore{stored: options.Defaults()}
 	s := NewSession()
 	if err := s.UseOptionsStore(store); err != nil {

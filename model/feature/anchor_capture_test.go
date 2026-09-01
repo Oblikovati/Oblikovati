@@ -16,6 +16,7 @@ import (
 // back to the geometric recovery tier. Before P6b only the GUI tool captured anchors, so an
 // API-authored dress-up silently degraded to ancestral-only recovery.
 func TestAddChamferCapturesMintTimeAnchors(t *testing.T) {
+	t.Parallel()
 	box, edge := box2(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -38,6 +39,7 @@ func TestAddChamferCapturesMintTimeAnchors(t *testing.T) {
 // edge-key fillet builder must capture each picked edge's mint-time midpoint, so an API-authored
 // fillet has the geometric-recovery witness just like a GUI-authored one (ADR-0043 P6b).
 func TestAddFilletCapturesMintTimeAnchors(t *testing.T) {
+	t.Parallel()
 	box, edge := box2(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -60,6 +62,7 @@ func TestAddFilletCapturesMintTimeAnchors(t *testing.T) {
 // when a live body is present — reopening a document carries the persisted anchors verbatim and
 // never rewrites them. Only the public authoring builders capture.
 func TestRestoreEntryDoesNotCaptureAnchors(t *testing.T) {
+	t.Parallel()
 	box, edge := box2(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -79,6 +82,7 @@ func TestRestoreEntryDoesNotCaptureAnchors(t *testing.T) {
 // recomputed (no tip body — a batch build), capture is skipped without error and recovery falls
 // back to the ancestral tier, rather than panicking on a missing body.
 func TestAuthorWithoutRunningBodySkipsCapture(t *testing.T) {
+	t.Parallel()
 	_, edge := box2(t)
 	fs := NewPartFeatures(nil) // never recomputed ⇒ Result() empty ⇒ no tip body
 

@@ -14,6 +14,7 @@ import (
 // full dimensions (lx,ly,lz) and uniform unit density, I_xx = V(ly²+lz²)/12 about the centroid, and
 // the products of inertia vanish (the box is axis-aligned and centroid-symmetric).
 func TestBodyInertiaBox(t *testing.T) {
+	t.Parallel()
 	const lx, ly, lz = 4.0, 6.0, 10.0
 	block, err := brep.SolidBlock(gmath.P3(0, 0, 0), gmath.P3(lx, ly, lz), "block")
 	if err != nil {

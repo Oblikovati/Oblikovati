@@ -30,6 +30,7 @@ func rimCrossBodies(t *testing.T, baseX float64) (target, tool *topo.Body) {
 // TestRimCrossingAcceptsRimCrossing: the base -5.6 tool's exit ellipse crosses the top rim, so the slice-2
 // recognizer builds a four-face result (notched wall + mixed-arc cap + bottom cap + tunnel).
 func TestRimCrossingAcceptsRimCrossing(t *testing.T) {
+	t.Parallel()
 	target, tool := rimCrossBodies(t, -5.6)
 	res, ok := RimCrossingCutGeneral(target, tool, &diag.Recorder{})
 	if !ok {
@@ -43,6 +44,7 @@ func TestRimCrossingAcceptsRimCrossing(t *testing.T) {
 // TestRimCrossingDeclinesInteriorExit: the base -6.5 tool exits STRICTLY inside the rim — slice 1's job — so
 // the rim-crossing recognizer must decline (its two-corner cap gate finds zero corners).
 func TestRimCrossingDeclinesInteriorExit(t *testing.T) {
+	t.Parallel()
 	target, tool := rimCrossBodies(t, -6.5)
 	if _, ok := RimCrossingCutGeneral(target, tool, &diag.Recorder{}); ok {
 		t.Error("rim-crossing cut accepted an interior-exit tool; want decline (slice 1 handles it)")
@@ -52,6 +54,7 @@ func TestRimCrossingDeclinesInteriorExit(t *testing.T) {
 // TestRimCrossingDeclinesNoContact: a tool whose axis clears the target entirely never reaches a cap, so the
 // recognizer declines with no diagnostic-worthy trace.
 func TestRimCrossingDeclinesNoContact(t *testing.T) {
+	t.Parallel()
 	target, tool := rimCrossBodies(t, -20)
 	if _, ok := RimCrossingCutGeneral(target, tool, &diag.Recorder{}); ok {
 		t.Error("rim-crossing cut accepted a tool that misses the target; want decline")

@@ -12,6 +12,7 @@ import (
 
 // finerRowVs returns whichever row's tube stations are denser (the interior loft reuses them).
 func TestFinerRowVs(t *testing.T) {
+	t.Parallel()
 	a := bandRow{ang: []float64{0, 1, 2}}
 	b := bandRow{ang: []float64{0, 1}}
 	if got := finerRowVs(a, b); len(got) != 3 {
@@ -24,6 +25,7 @@ func TestFinerRowVs(t *testing.T) {
 
 // spiricBandColumns scales the loft column count with the band's widest u-span and the angle tolerance.
 func TestSpiricBandColumns(t *testing.T) {
+	t.Parallel()
 	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
 	pl, _ := geom.NewPlane(math.P3(0, 2, 0), math.V3(0, 1, 0))
 	phi, m, k, c := geom.TorusSectionCoeffs(tor, pl)
@@ -43,6 +45,7 @@ func TestSpiricBandColumns(t *testing.T) {
 // oppositeRootsOfOneSection must accept the two arccos roots of one plane's section and reject two
 // sections of DIFFERENT planes — the arc band's two run-out terminations, which are not an oval pair.
 func TestOppositeRootsOfOneSection(t *testing.T) {
+	t.Parallel()
 	tor, _ := geom.NewTorusWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 5, 2)
 	plus := geom.SpiricArc{Torus: tor, Phi: 1, M: 1, K: -3, C: 0, Branch: +1, V0: 0, V1: 2 * stdmath.Pi}
 	minus := plus

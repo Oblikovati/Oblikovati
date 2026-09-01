@@ -30,6 +30,7 @@ func rectSegments(x0, y0, x1, y1 float64) [][2]math.Point2 {
 // around the pair; emitting the two rectangles as two separate holes would write their shared edge
 // twice, which downstream becomes an edge whose two uses lie on the same face.
 func TestArrangeAdjacentRegionsFormOneHole(t *testing.T) {
+	t.Parallel()
 	var segs [][2]math.Point2
 	segs = append(segs, rectSegments(0, 0, 10, 10)...) // outer frame
 	segs = append(segs, rectSegments(2, 2, 5, 6)...)   // left cell
@@ -55,6 +56,7 @@ func TestArrangeAdjacentRegionsFormOneHole(t *testing.T) {
 // TestArrangeDisjointRegionsStayTwoHoles pins the other side: two regions that do NOT touch are
 // two separate openings, and must stay two holes.
 func TestArrangeDisjointRegionsStayTwoHoles(t *testing.T) {
+	t.Parallel()
 	var segs [][2]math.Point2
 	segs = append(segs, rectSegments(0, 0, 10, 10)...)
 	segs = append(segs, rectSegments(2, 2, 4, 6)...)
@@ -69,6 +71,7 @@ func TestArrangeDisjointRegionsStayTwoHoles(t *testing.T) {
 // frame whose hole is the middle square, and a middle frame whose hole is the inner square — each
 // hole assigned to its DIRECT parent, not to the outermost face.
 func TestArrangeNestedFramesKeepTheirOwnHole(t *testing.T) {
+	t.Parallel()
 	var segs [][2]math.Point2
 	segs = append(segs, rectSegments(0, 0, 10, 10)...)
 	segs = append(segs, rectSegments(2, 2, 8, 8)...)

@@ -18,6 +18,7 @@ import (
 // TestFontsListIncludesEmbedded checks fonts.list always offers the application's bundled face
 // (the deterministic part; host fonts vary, so we don't assert on them).
 func TestFontsListIncludesEmbedded(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	resp, err := r.Handle(s, wire.MethodFontsList, rawJSON(t, struct{}{}))
 	if err != nil {
@@ -35,6 +36,7 @@ func TestFontsListIncludesEmbedded(t *testing.T) {
 // TestSetTextFontEmbedsSystemFont sets a text entity's font from a (temp) system font file and
 // checks the document gains a base64 TrueTypeFont resource the entity now cites.
 func TestSetTextFontEmbedsSystemFont(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {
@@ -74,6 +76,7 @@ func TestSetTextFontEmbedsSystemFont(t *testing.T) {
 
 // TestSetTextFontUsesEmbeddedFace records a bundled face as a bytes-less embedded resource.
 func TestSetTextFontUsesEmbeddedFace(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	part, _ := modelaccess.ActivePart(s)
 	sk := part.Sketches().Add(sketch.XYPlane())

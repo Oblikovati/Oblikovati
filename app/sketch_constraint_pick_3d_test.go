@@ -22,6 +22,7 @@ func topDown800(s *Session) {
 // constraint marker selects it (and it highlights), and Delete removes the relation from the 3D
 // sketch. A coincidence of two points at the origin puts its marker on the centre-pixel ray.
 func TestSelectAndDeleteSketch3DConstraint(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	topDown800(s)
 	l1 := sk.AddLine3D(math.P3(-1, 0, 0), math.P3(0, 0, 0))
@@ -57,6 +58,7 @@ func TestSelectAndDeleteSketch3DConstraint(t *testing.T) {
 // TestPickSketchConstraint3DMissesEmptySpace: a click far from any marker selects nothing, so the
 // constraint pick does not swallow a click meant for the geometry or empty space.
 func TestPickSketchConstraint3DMissesEmptySpace(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	topDown800(s)
 	l1 := sk.AddLine3D(math.P3(4, 4, 0), math.P3(5, 4, 0))
@@ -72,6 +74,7 @@ func TestPickSketchConstraint3DMissesEmptySpace(t *testing.T) {
 // TestPickSketchConstraint3DEmptyWhenHidden: with Show Constraints off there are no markers to pick,
 // even directly over where one would sit.
 func TestPickSketchConstraint3DEmptyWhenHidden(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	topDown800(s)
 	l1 := sk.AddLine3D(math.P3(-1, 0, 0), math.P3(0, 0, 0))

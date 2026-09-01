@@ -9,6 +9,7 @@ import (
 )
 
 func TestRenameFeatureSetsNameAndKeepsID(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	f := def.Features().Item(0)
 	id := f.ID()
@@ -24,6 +25,7 @@ func TestRenameFeatureSetsNameAndKeepsID(t *testing.T) {
 }
 
 func TestRenameFeatureRejectsEmptyAndDuplicate(t *testing.T) {
+	t.Parallel()
 	s, _, first, second := twoExtrudePart(t)
 	if err := s.RenameFeature(first, ""); err == nil {
 		t.Error("expected an error for an empty name")
@@ -38,6 +40,7 @@ func TestRenameFeatureRejectsEmptyAndDuplicate(t *testing.T) {
 }
 
 func TestSetFeatureSuppressedRebuildsAndIsIdempotent(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	f := def.Features().Item(0)
 	if err := s.SetFeatureSuppressed(f, true); err != nil {
@@ -58,6 +61,7 @@ func TestSetFeatureSuppressedRebuildsAndIsIdempotent(t *testing.T) {
 }
 
 func TestReorderFeatureMovesHistoryPosition(t *testing.T) {
+	t.Parallel()
 	s, part, _, second := twoExtrudePart(t)
 	if err := s.ReorderFeature(second, 0); err != nil {
 		t.Fatalf("ReorderFeature: %v", err)
@@ -71,6 +75,7 @@ func TestReorderFeatureMovesHistoryPosition(t *testing.T) {
 }
 
 func TestCommitFeatureEditAppliesScalarChange(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	f := def.Features().Item(0)
 	ed, ok := f.Definition().(feature.Editable)
@@ -90,6 +95,7 @@ func TestCommitFeatureEditAppliesScalarChange(t *testing.T) {
 }
 
 func TestFeatureLifecycleRejectsForeignFeature(t *testing.T) {
+	t.Parallel()
 	s, _ := extrudedBoxPart(t)
 	_, otherDef := extrudedBoxPart(t) // a second, unrelated session's part
 	foreign := otherDef.Features().Item(0)

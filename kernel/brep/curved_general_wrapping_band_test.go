@@ -12,6 +12,7 @@ import (
 // TestKeptComponentsSplitsDisjointBands: two cells sharing an edge are one band; a disjoint cell is its own
 // band — the split that separates a rod's two stubs (Oblikovati#1476).
 func TestKeptComponentsSplitsDisjointBands(t *testing.T) {
+	t.Parallel()
 	cellAt := func(x float64) Face2D {
 		return Face2D{Outer: []math.Point2{math.P2(x, 0), math.P2(x+1, 0), math.P2(x+1, 1), math.P2(x, 1)}}
 	}
@@ -33,6 +34,7 @@ func TestKeptComponentsSplitsDisjointBands(t *testing.T) {
 // full-wrap IMPRINT circle between them is no rim at all — it keeps its arrangement winding (#3460; the
 // retired isTopRim halved the band and swallowed that circle).
 func TestSourceRimSense(t *testing.T) {
+	t.Parallel()
 	rim := func(mv float64) emittedLoop {
 		return emittedLoop{mv: mv, face: []loopEdge{{curve: geom.Circle{}, t0: 0, t1: 1}}}
 	}
@@ -56,6 +58,7 @@ func TestSourceRimSense(t *testing.T) {
 
 // TestChainReversed: an emitted loop is reversed exactly when its first edge runs t1<t0.
 func TestChainReversed(t *testing.T) {
+	t.Parallel()
 	if chainReversed(nil) {
 		t.Error("an empty chain is not reversed")
 	}
@@ -70,6 +73,7 @@ func TestChainReversed(t *testing.T) {
 // TestReverseCurvedLoop: reversing a loop flips each edge's direction and the edge order, so it walks the
 // opposite way around the same boundary (Oblikovati#1476).
 func TestReverseCurvedLoop(t *testing.T) {
+	t.Parallel()
 	in := curvedLoop{edges: []loopEdge{{t0: 0, t1: 1}, {t0: 2, t1: 3}}}
 	out := reverseCurvedLoop(in)
 	if len(out.edges) != 2 || out.edges[0].t0 != 3 || out.edges[0].t1 != 2 || out.edges[1].t0 != 1 || out.edges[1].t1 != 0 {

@@ -16,6 +16,7 @@ import (
 // dropped (the gap this closes). Uses a parametric hole and a fillet (no geometry needed to record
 // them) plus a real placed component, so the reopen runs the full ResolveReferences path.
 func TestAssemblyFeatureProgramRoundTrips(t *testing.T) {
+	t.Parallel()
 	store, ws, asm, widget, asmDef := placedAssembly(t)
 	placeFromFile(t, asm, widget, asmDef, "widget:1", math.Identity4())
 
@@ -56,6 +57,7 @@ func TestAssemblyFeatureProgramRoundTrips(t *testing.T) {
 // restored feature points at the live "tool:1" occurrence again, resolved by name after the
 // occurrences bind (the #785 follow-up for the reference-bearing kinds).
 func TestAssemblyProxyCutRoundTrips(t *testing.T) {
+	t.Parallel()
 	store, ws, asm, widget, asmDef := placedAssembly(t)
 	placeFromFile(t, asm, widget, asmDef, "target:1", math.Identity4())
 	src := placeFromFile(t, asm, widget, asmDef, "tool:1", math.Translation4(math.V3(0.5, 0, 0)))

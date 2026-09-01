@@ -15,6 +15,7 @@ import (
 // TestFlatPatternMapEntityOverWire a folded face maps to a flat face (and back) by reference
 // key over the wire — the correspondence a flat drawing dimension survives recompute by.
 func TestFlatPatternMapEntityOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := flangedSheet(t)
 
 	var keys wire.ReferenceKeysResult
@@ -51,6 +52,7 @@ func TestFlatPatternMapEntityOverWire(t *testing.T) {
 // reports the default orientation with a positive length/width; adding a vertical orientation
 // swaps them; activate/delete behave; the default is undeletable.
 func TestFlatPatternOrientationsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := flangedSheet(t)
 
 	var list wire.OrientationsResult
@@ -96,6 +98,7 @@ func TestFlatPatternOrientationsOverWire(t *testing.T) {
 // TestFlatPatternEdgesAndFaces a flanged sheet reports its fold line as a bend-up edge (a
 // plain flange folds up), filterable by type, and its front/back faces with equal areas.
 func TestFlatPatternEdgesAndFaces(t *testing.T) {
+	t.Parallel()
 	r, s := flangedSheet(t)
 
 	var all wire.EdgesResult
@@ -131,6 +134,7 @@ func TestFlatPatternEdgesAndFaces(t *testing.T) {
 // TestFlatPatternPlatesAndSettings a flanged sheet reports one plate and round-trips the
 // deferred-update setting over the wire.
 func TestFlatPatternPlatesAndSettings(t *testing.T) {
+	t.Parallel()
 	r, s := flangedSheet(t)
 
 	var plates wire.PlatesResult
@@ -157,6 +161,7 @@ func TestFlatPatternPlatesAndSettings(t *testing.T) {
 // TestFlatPatternBendOrderOverWire a flanged sheet lists its bend order; setting the order by
 // feature name round-trips; an unknown name errors.
 func TestFlatPatternBendOrderOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := flangedSheet(t)
 
 	var list wire.BendOrderResult
@@ -181,6 +186,7 @@ func TestFlatPatternBendOrderOverWire(t *testing.T) {
 
 // TestFlatPatternCenterlinesOverWire add/list/delete cosmetic centerlines over the wire.
 func TestFlatPatternCenterlinesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := flangedSheet(t)
 
 	var res wire.CenterlinesResult
@@ -205,6 +211,7 @@ func TestFlatPatternCenterlinesOverWire(t *testing.T) {
 
 // TestFlatPatternRejectsPlainPart every flat-pattern method errors on an ordinary part.
 func TestFlatPatternRejectsPlainPart(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	for _, m := range []string{
 		wire.MethodFlatPatternListOrientations,
@@ -253,6 +260,7 @@ func punchedSheet(t *testing.T) (*Router, *app.Session) {
 // had no way out of the host. Each instance must come back with its own PLACEMENT — a list that
 // reported outlines alone would not tell a nest or a punch note where the tool goes.
 func TestFlatPatternListPunches(t *testing.T) {
+	t.Parallel()
 	r, s := punchedSheet(t)
 	var res wire.PunchesResult
 	call(t, r, s, wire.MethodFlatPatternListPunches, "{}", &res)
@@ -290,6 +298,7 @@ func centreKey(x, y float64) string {
 // depth, and one that goes clean through does not. Reporting a through punch as depth 0 would read
 // as a zero-deep punch — the opposite of what it is — so the two are told apart by the flag.
 func TestPunchDepthIsReportedOnlyWhenItHasOne(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[0,0],[8,6]]}`, &struct{}{})
@@ -315,6 +324,7 @@ func TestPunchDepthIsReportedOnlyWhenItHasOne(t *testing.T) {
 // TestFlatInfoCarriesPunches: unfold's own reply carries the same list, so a caller that already
 // asked for the flat does not need a second round trip to find its punches.
 func TestFlatInfoCarriesPunches(t *testing.T) {
+	t.Parallel()
 	r, s := punchedSheet(t)
 	var res wire.UnfoldResult
 	call(t, r, s, wire.MethodSheetMetalUnfold, "{}", &res)

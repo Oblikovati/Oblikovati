@@ -16,6 +16,7 @@ import (
 // of material in two shells with reversed cavity walls.
 
 func TestTransformBodyCavityPreservesShellsAndVolume(t *testing.T) {
+	t.Parallel()
 	body := cavityBody(t)
 	moved, err := TransformBody(body, math.Translation4(math.V3(10, 0, 0)), func(l topo.Lineage) topo.Lineage { return l })
 	if err != nil {
@@ -34,6 +35,7 @@ func TestTransformBodyCavityPreservesShellsAndVolume(t *testing.T) {
 
 // TestTransformBodyCarriesWires: a wire-only body transforms with its wire.
 func TestTransformBodyCarriesWires(t *testing.T) {
+	t.Parallel()
 	_, w := squareWireBody(1)
 	src := w.Body()
 	moved, err := TransformBody(src, math.Translation4(math.V3(0, 0, 5)), func(l topo.Lineage) topo.Lineage { return l })

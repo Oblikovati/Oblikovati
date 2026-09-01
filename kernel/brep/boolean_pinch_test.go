@@ -15,6 +15,7 @@ import (
 // vertex with two face fans, which every per-edge check passes while χ = 3 marks the solid
 // topologically impossible. This is the minimized fan-blade-tip-on-rim failure.
 func TestUnionPointContactSplitsPinch(t *testing.T) {
+	t.Parallel()
 	a := box(0, 0, 0, 2, 2, 2)
 	b := box(2, 2, 2, 2, 2, 2) // shares only the corner (2,2,2) with a
 	res, err := brep.Boolean(brep.Union, a, b)
@@ -35,6 +36,7 @@ func TestUnionPointContactSplitsPinch(t *testing.T) {
 // (resolveEdgeUses) into a valid solid — and with the endpoints of the resolved coincident edges
 // now split per fan, the result must still validate.
 func TestUnionEdgeContactStaysManifold(t *testing.T) {
+	t.Parallel()
 	a := box(0, 0, 0, 2, 2, 2)
 	b := box(2, 2, 0, 2, 2, 2) // shares the vertical edge x=2,y=2, z∈[0,2]
 	res, err := brep.Boolean(brep.Union, a, b)

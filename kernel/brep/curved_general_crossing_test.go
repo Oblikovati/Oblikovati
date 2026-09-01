@@ -15,6 +15,7 @@ import (
 // TestCurvedSideFaceDeclinesPlanarBody: a body with no cone or cylinder side yields ok=false, so the
 // unified driver declines rather than trim a non-existent curved side.
 func TestCurvedSideFaceDeclinesPlanarBody(t *testing.T) {
+	t.Parallel()
 	block, _ := SolidBlock(math.P3(0, 0, 0), math.P3(1, 1, 1), "block")
 	if _, s, _, ok := curvedSideFace(block); ok {
 		t.Errorf("a planar block has no curved side; want ok=false, got surface %T", s)
@@ -24,6 +25,7 @@ func TestCurvedSideFaceDeclinesPlanarBody(t *testing.T) {
 // TestCurvedSideSolidSplitRejectsUnsupportedSurface: an unsupported side surface (a plane) is a named
 // error, not a silent decline — the message carries the offending type.
 func TestCurvedSideSolidSplitRejectsUnsupportedSurface(t *testing.T) {
+	t.Parallel()
 	pl, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	inside := func(math.Point3) bool { return true }
 	_, _, err := curvedSideSolidSplit(curvedFace{}, pl, coneSideBand_{}, nil, Intersection, false, inside)

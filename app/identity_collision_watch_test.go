@@ -14,6 +14,7 @@ import (
 // reassignment to the user: when the workspace fires DocumentIdentityReassigned, the watcher
 // wired in newSession sets a notice naming the affected document.
 func TestIdentityCollisionSetsNotice(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	d, err := s.Workspace().Add(doc.Drawing, "box.odd", true)
 	if err != nil {

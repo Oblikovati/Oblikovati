@@ -29,6 +29,7 @@ func topFaceOfBody(b *topo.Body) *topo.Face {
 // PlacementFaceGeom path; an exporter reading Inventor's kToExtent target (a planar face it has no
 // Oblikovati key for) must reach the to-face extent this way.
 func TestExtrudeToFaceGeom(t *testing.T) {
+	t.Parallel()
 	byGeom := seedToFaceVolume(t)
 
 	def := byGeom.ActiveDocument().Content().(*compdef.PartComponentDefinition)
@@ -60,6 +61,7 @@ func TestExtrudeToFaceGeom(t *testing.T) {
 // sign convention (Inventor vs Oblikovati disagree, as observed on hole placement faces) must still
 // bind the same planar face — face identity does not depend on the normal sign.
 func TestExtrudeToFaceGeomFlippedNormalBinds(t *testing.T) {
+	t.Parallel()
 	byGeom := seedToFaceVolume(t)
 	def := byGeom.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	g := topo.DescribeFace(topFaceOfBody(def.SurfaceBodies().Item(0)))
@@ -81,6 +83,7 @@ func TestExtrudeToFaceGeomFlippedNormalBinds(t *testing.T) {
 // reading an under-built base whose target face never formed) can then flag the feature and keep
 // emitting the rest of the part instead of failing the whole document.
 func TestExtrudeToFaceGeomNoMatchDegradesGracefully(t *testing.T) {
+	t.Parallel()
 	byGeom := seedToFaceVolume(t)
 	args, _ := json.Marshal(map[string]any{
 		"sketchIndex": 1, "profileIndex": 0, "extent": "to-face", "operation": "new",
@@ -107,6 +110,7 @@ func TestExtrudeToFaceGeomNoMatchDegradesGracefully(t *testing.T) {
 // point-on-face, not the running-body centroid) misses the exact centroid match and binds via
 // FindPlanarFaceThrough instead, still terminating the extrude at that plane.
 func TestExtrudeToFaceGeomBindsByPlaneThrough(t *testing.T) {
+	t.Parallel()
 	byGeom := seedToFaceVolume(t)
 	def := byGeom.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	g := topo.DescribeFace(topFaceOfBody(def.SurfaceBodies().Item(0)))

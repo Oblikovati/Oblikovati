@@ -14,6 +14,7 @@ import (
 // 4-sided RailLoop whose sides chain end-to-start (RailLoop.Closed) — the precondition coons4Provider
 // requires before it will even attempt a fill.
 func TestExtractObstacleIsClosedValence4(t *testing.T) {
+	t.Parallel()
 	of := newT6Obstacle(t)
 	loop, ok := extractObstacle(of)
 	if !ok {
@@ -30,6 +31,7 @@ func TestExtractObstacleIsClosedValence4(t *testing.T) {
 // TestExtractObstacleResolvesToCoons4 proves the extracted loop fills via the general coons4 tier and
 // passes the F2 probe (the corrected, non-folding sign).
 func TestExtractObstacleResolvesToCoons4(t *testing.T) {
+	t.Parallel()
 	of := newT6Obstacle(t)
 	loop, _ := extractObstacle(of)
 	fill, rails, sides, ok := coons4Fill(loop)
@@ -68,6 +70,7 @@ func TestExtractObstacleResolvesToCoons4(t *testing.T) {
 //     reconstruction bug: PointAt(ParamAt(q)) only reproduces q when the surface's radius (cylinder) or
 //     in-plane basis (plane) truly matches, so a 10% radius inflation opens a ~0.1×Radius gap here.
 func TestExtractObstacleAdjacentsPositionallyExact(t *testing.T) {
+	t.Parallel()
 	of := newT6Obstacle(t)
 	wall, wingL, wingR, _, ok := obstacleAdjacents(of)
 	if !ok {

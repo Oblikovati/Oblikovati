@@ -14,6 +14,7 @@ import (
 // a document's cameras/layout on save and restores them — so view state lives outside the
 // .obk yet survives reopen.
 func TestViewStateSavedAndRestoredViaStore(t *testing.T) {
+	t.Parallel()
 	store := viewstate.NewMemStore()
 
 	// Save: a document with two views, a quad layout, and a moved camera.
@@ -51,6 +52,7 @@ func TestViewStateSavedAndRestoredViaStore(t *testing.T) {
 
 // TestViewStateNoStoreIsNoOp ensures save/load are safe when no store is installed.
 func TestViewStateNoStoreIsNoOp(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := addPart(t, s, "x.obk")
 	activate(t, s, a)

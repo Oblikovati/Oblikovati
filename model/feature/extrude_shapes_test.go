@@ -77,6 +77,7 @@ func assertAnalyticPrismVolume(t *testing.T, b *topo.Body, trueArea, height floa
 }
 
 func TestExtrudeHalfDiscFromArcAndLine(t *testing.T) {
+	t.Parallel()
 	const r, h = 5.0, 4.0
 	sk := halfDiscSketch(r)
 	b := extrudeProfile(t, sk, 0, h)
@@ -89,6 +90,7 @@ func TestExtrudeHalfDiscFromArcAndLine(t *testing.T) {
 }
 
 func TestExtrudeStadiumFromTwoArcsTwoLines(t *testing.T) {
+	t.Parallel()
 	const l, r, h = 10.0, 3.0, 4.0
 	sk := stadiumSketch(l, r)
 	b := extrudeProfile(t, sk, 0, h)
@@ -104,6 +106,7 @@ func TestExtrudeStadiumFromTwoArcsTwoLines(t *testing.T) {
 }
 
 func TestExtrudeRoundedRectangleFilletedCorners(t *testing.T) {
+	t.Parallel()
 	const w, ht, r, h = 12.0, 8.0, 2.0, 5.0
 	sk := roundedRectSketch(w, ht, r)
 	b := extrudeProfile(t, sk, 0, h)
@@ -121,6 +124,7 @@ func TestExtrudeRoundedRectangleFilletedCorners(t *testing.T) {
 }
 
 func TestExtrudeEllipse(t *testing.T) {
+	t.Parallel()
 	const a, bb, h = 6.0, 3.0, 4.0
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Ellipses().Add(math.P2(0, 0), math.V2(1, 0), a, bb)
@@ -137,6 +141,7 @@ func TestExtrudeEllipse(t *testing.T) {
 }
 
 func TestExtrudeClosedSplineBlob(t *testing.T) {
+	t.Parallel()
 	const h = 4.0
 	// A closed fit-spline through points roughly on a circle of radius 5 → a smooth
 	// blob enclosing a positive area near πr².
@@ -151,6 +156,7 @@ func TestExtrudeClosedSplineBlob(t *testing.T) {
 }
 
 func TestExtrudeMixedLinesArcSpline(t *testing.T) {
+	t.Parallel()
 	const h = 3.0
 	sk := mixedLineArcSplineSketch()
 	b := extrudeProfile(t, sk, 0, h)
@@ -159,6 +165,7 @@ func TestExtrudeMixedLinesArcSpline(t *testing.T) {
 }
 
 func TestExtrudeTwoComplexClosedPathsAsSeparateBodies(t *testing.T) {
+	t.Parallel()
 	// "One or more closed paths": a sketch holding two disjoint complex loops yields
 	// two profiles; each extrudes independently into its own valid solid.
 	const h = 4.0
@@ -178,6 +185,7 @@ func TestExtrudeTwoComplexClosedPathsAsSeparateBodies(t *testing.T) {
 }
 
 func TestExtrudeMultipleRegionsMergeIntoOneBody(t *testing.T) {
+	t.Parallel()
 	// Two disjoint square regions in one sketch, extruded together as one feature →
 	// a single body whose volume is the sum of the two prisms.
 	const side, gap, h = 2.0, 10.0, 4.0
@@ -204,6 +212,7 @@ func TestExtrudeMultipleRegionsMergeIntoOneBody(t *testing.T) {
 }
 
 func TestExtrudeSplitRegionsRebuildWholeShape(t *testing.T) {
+	t.Parallel()
 	// A rectangle split by a line into two regions; extruding both regions together
 	// reconstitutes the full rectangle's prism (regression for the reported bug).
 	const w, ht, h = 10.0, 6.0, 3.0

@@ -39,6 +39,7 @@ func concaveBoreFixture(t *testing.T) (*topo.Edge, geom.Cylinder, geom.Plane, ma
 // plane distance +r, not the convex −r). The two rulings are the ±√disc·b mirror pair, so they share
 // ρ and the +r plane offset — the void+foot gate, not this builder, later picks the physical one.
 func TestConcaveCylinderArmCandidates_VoidSide(t *testing.T) {
+	t.Parallel()
 	e, cyl, pl, planeN := concaveBoreFixture(t)
 	plus, minus, err := concaveCylinderArmCandidates(e, cyl, pl, planeN, 10, testArmResolution())
 	if err != nil {
@@ -61,6 +62,7 @@ func TestConcaveCylinderArmCandidates_VoidSide(t *testing.T) {
 // inside the wall, +r̂ outward) offsets both ball rulings to ρ = R+r = 40 — the derivation's data-driven
 // radial sign, verified distinct from the bore's R−r.
 func TestConcaveCylinderArmCandidates_Boss(t *testing.T) {
+	t.Parallel()
 	e, cyl, pl, planeN := concaveBossFixture(t)
 	plus, minus, err := concaveCylinderArmCandidates(e, cyl, pl, planeN, 10, testArmResolution())
 	if err != nil {
@@ -94,6 +96,7 @@ func concaveBossFixture(t *testing.T) (*topo.Edge, geom.Cylinder, geom.Plane, ma
 // radius ρ = R−r collapses onto (or through) the axis, so the constructor honest-rejects with a message
 // carrying the offending r and R (derivation §4 / the MINOR review finding).
 func TestConcaveCylinderArmCandidates_Spindle(t *testing.T) {
+	t.Parallel()
 	e, cyl, pl, planeN := concaveBoreFixture(t)
 	_, _, err := concaveCylinderArmCandidates(e, cyl, pl, planeN, 30, testArmResolution())
 	if err == nil {
@@ -109,6 +112,7 @@ func TestConcaveCylinderArmCandidates_Spindle(t *testing.T) {
 // TestConcaveArmRulingBases_Clears is the P_r∩C_ρ existence guard: when the offset plane clears the offset
 // cylinder (|m| > ρ, disc ≤ 0) there is no real ruling and the base solve declines (derivation §4).
 func TestConcaveArmRulingBases_Clears(t *testing.T) {
+	t.Parallel()
 	_, cyl, _, planeN := concaveBoreFixture(t)
 	far := planeAtY(200) // 200 ≫ ρ = 20 ⇒ m = 200, disc = ρ²−m² < 0
 	if _, _, ok := concaveArmRulingBases(cyl, far, planeN, 20, 10); ok {
@@ -161,6 +165,7 @@ func concaveCorpusScene(t *testing.T, name string, mid math.Point3, r float64) c
 // the void-side arm without consulting nearest-to-midpoint. (Against the pre-fix code, concaveArmRootValid
 // on the mirror ruling returned true, so this test's mirror-is-invalid assertion is the guard that fails.)
 func TestConcaveArmRoot_PlaneFootGateDiscriminates(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name string
 		mid  math.Point3
@@ -230,6 +235,7 @@ func assertMirrorFailsOnlyPlaneFoot(t *testing.T, s concaveArmScene, mirror geom
 // The gate-passing arm is FARTHER from the midpoint than the decoy, yet must still be selected. A
 // nearest-midpoint heuristic would have wrongly chosen the decoy.
 func TestSelectConcaveArmRoot_PicksFartherGatePasser(t *testing.T) {
+	t.Parallel()
 	s := concaveCorpusScene(t, "N3", math.P3(112.3726295, 61.41980247, 25), 5)
 	res := ResolutionForBody(s.body)
 	plus, minus, err := concaveCylinderArmCandidates(s.edge, s.cyl, s.pl, s.planeN, s.r, res)
@@ -260,6 +266,7 @@ func TestSelectConcaveArmRoot_PicksFartherGatePasser(t *testing.T) {
 // plus/minus root selection, derivation §3), major = R+r = 60, centre = cap projection + r·outwardN =
 // (0,0,−40), matching DRAWEXE exactly (derivation §5, H7 row: OCCT arm torus (0,0,−40); ẑ; 60,10).
 func TestConcaveCurvedArmFillet_TorusArmH7(t *testing.T) {
+	t.Parallel()
 	body := corpusFixture(t, "simple/H7.step")
 	mid := math.P3(-35.35533906, 35.35533906, -50)
 	e := edgeNearestMidpoint(t, body, mid)
@@ -301,6 +308,7 @@ func TestConcaveCurvedArmFillet_TorusArmH7(t *testing.T) {
 // value the original inline sequence — planeHostNormal → concaveCylinderArmCandidates →
 // selectConcaveArmRoot — produces on N3's concave LINE arm edge (Group A).
 func TestConcaveCurvedArmFillet_LineArmByteIdentical(t *testing.T) {
+	t.Parallel()
 	s := concaveCorpusScene(t, "N3", math.P3(112.3726295, 61.41980247, 25), 5)
 	res := ResolutionForBody(s.body)
 	if kind := classifyCurvedArm(s.cyl, s.pl, res); kind != armCylinder {

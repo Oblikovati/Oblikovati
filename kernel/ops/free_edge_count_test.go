@@ -11,6 +11,7 @@ import (
 // TestFreeEdgeCountCountsARealCrack is the detection direction: two triangles that do NOT share their
 // common edge (one vertex displaced far beyond any weld tolerance) leave every edge 1-incident.
 func TestFreeEdgeCountCountsARealCrack(t *testing.T) {
+	t.Parallel()
 	m := &Mesh{
 		Positions: []math.Point3{
 			math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0),
@@ -38,6 +39,7 @@ func TestFreeEdgeCountCountsARealCrack(t *testing.T) {
 // produced eight 4-incident edges. At the model's own weld resolution (1.039e-8) it merged 0 of 5428 and
 // every one of those edges is 2-incident.
 func TestFreeEdgeCountDoesNotOverMergeSubMicronFeatures(t *testing.T) {
+	t.Parallel()
 	const gap = 3e-7
 	base := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(0, 0, 1)}
 	m := &Mesh{}

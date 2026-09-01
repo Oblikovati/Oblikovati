@@ -25,6 +25,7 @@ func flatGrid() (u, v [][]math.Point3) {
 }
 
 func TestNetworkSurfaceBodyBuildsOneFace(t *testing.T) {
+	t.Parallel()
 	u, v := flatGrid()
 	body, err := NetworkSurfaceBody(u, v)
 	if err != nil {
@@ -36,6 +37,7 @@ func TestNetworkSurfaceBodyBuildsOneFace(t *testing.T) {
 }
 
 func TestNetworkSurfaceBodyRejectsShortPolyline(t *testing.T) {
+	t.Parallel()
 	u, v := flatGrid()
 	u[0] = u[0][:1] // a single point cannot be fitted
 	if _, err := NetworkSurfaceBody(u, v); err == nil {
@@ -44,6 +46,7 @@ func TestNetworkSurfaceBodyRejectsShortPolyline(t *testing.T) {
 }
 
 func TestNetworkSurfaceBodyRejectsNonIntersecting(t *testing.T) {
+	t.Parallel()
 	u, _ := flatGrid()
 	lifted := func(x, y float64) math.Point3 { return math.P3(math.Scalar(x), math.Scalar(y), 5) }
 	v := [][]math.Point3{ // every V-curve lifted +5 in z: never meets the U-plane

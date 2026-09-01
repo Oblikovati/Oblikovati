@@ -35,6 +35,7 @@ func assertOffsetPlaneOnXY(t *testing.T, r *Router, s *app.Session) {
 }
 
 func TestWorkPlanesListIncludesOriginFrame(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var list wire.ListWorkPlanesResult
 	call(t, r, s, "workPlanes.list", "{}", &list)
@@ -49,6 +50,7 @@ func TestWorkPlanesListIncludesOriginFrame(t *testing.T) {
 }
 
 func TestWorkPlanesCreateOffsetThenList(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	assertOffsetPlaneOnXY(t, r, s)
 }
@@ -57,6 +59,7 @@ func TestWorkPlanesCreateOffsetThenList(t *testing.T) {
 // datum (list reports Visible=false) while an otherwise-identical default create stays visible —
 // the seam an add-in uses to keep construction datums out of a placed part.
 func TestWorkPlanesCreateHiddenPlane(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var hidden, shown wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create",
@@ -75,6 +78,7 @@ func TestWorkPlanesCreateHiddenPlane(t *testing.T) {
 }
 
 func TestWorkPlanesCreateMidplane(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create",
@@ -85,6 +89,7 @@ func TestWorkPlanesCreateMidplane(t *testing.T) {
 }
 
 func TestWorkPlanesCreateUnknownKind(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "workPlanes.create", []byte(`{"kind":"no-such-kind"}`)); err == nil {
 		t.Error("expected error for unknown work-plane kind")
@@ -92,6 +97,7 @@ func TestWorkPlanesCreateUnknownKind(t *testing.T) {
 }
 
 func TestWorkPlanesCreateWrongReferenceCount(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	// three-points needs 3 references; supplying 2 is a bad request.
 	if _, err := r.Handle(s, "workPlanes.create",
@@ -101,6 +107,7 @@ func TestWorkPlanesCreateWrongReferenceCount(t *testing.T) {
 }
 
 func TestWorkPlanesCreateBadOffsetExpression(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "workPlanes.create",
 		[]byte(`{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"ten"}`)); err == nil {
@@ -109,6 +116,7 @@ func TestWorkPlanesCreateBadOffsetExpression(t *testing.T) {
 }
 
 func TestWorkPlanesListReportsScalarsAndSlots(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"20 mm"}`, &res)
@@ -128,6 +136,7 @@ func TestWorkPlanesListReportsScalarsAndSlots(t *testing.T) {
 }
 
 func TestWorkPlanesRedefineScalarMovesPlane(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &res)
@@ -144,6 +153,7 @@ func TestWorkPlanesRedefineScalarMovesPlane(t *testing.T) {
 }
 
 func TestWorkPlanesRedefineRepickReorientsPlane(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &res)
@@ -161,6 +171,7 @@ func TestWorkPlanesRedefineRepickReorientsPlane(t *testing.T) {
 }
 
 func TestWorkPlanesRedefineRejectsOriginAndBadIndex(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "workPlanes.redefine", []byte(`{"index":0}`)); err == nil {
 		t.Error("redefining an origin plane (index 0) should error")
@@ -171,6 +182,7 @@ func TestWorkPlanesRedefineRejectsOriginAndBadIndex(t *testing.T) {
 }
 
 func TestWorkPointsCreateAndThreePointPlane(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	// Three created points define a plane tilted off the principal planes.
 	var p0, p1, p2 wire.CreateWorkPointResult
@@ -199,6 +211,7 @@ func TestWorkPointsCreateAndThreePointPlane(t *testing.T) {
 }
 
 func TestWorkPlanesRedefineThreePointRepick(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var a, b, c wire.CreateWorkPointResult
 	call(t, r, s, "workPoints.create", `{"at":[0,0,0]}`, &a)
@@ -234,6 +247,7 @@ func TestWorkPlanesRedefineThreePointRepick(t *testing.T) {
 // returns for a user plane ("plane/3") binds to that plane — it was once misread as a B-rep
 // face key, silently sickening the plane.
 func TestWorkPlanesRedefineRepickAcceptsListRef(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var first, second wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &first)
@@ -253,6 +267,7 @@ func TestWorkPlanesRedefineRepickAcceptsListRef(t *testing.T) {
 // TestWorkPlanesRedefineRejectsSelfReference: re-picking a plane's base to its own ref must
 // fail the call — it once stayed healthy while the plane drifted on every recompute.
 func TestWorkPlanesRedefineRejectsSelfReference(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &res)
@@ -266,6 +281,7 @@ func TestWorkPlanesRedefineRejectsSelfReference(t *testing.T) {
 // repicks are applied together; the angle edit must survive the line re-pick (value-typed
 // definitions once dropped it).
 func TestWorkPlanesRedefineAppliesScalarsAndRepickTogether(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create",
@@ -285,6 +301,7 @@ func TestWorkPlanesRedefineAppliesScalarsAndRepickTogether(t *testing.T) {
 // TestWorkPlanesRedefineRejectsBadEdits: every malformed edit fails the call (it does not
 // silently skip or partially apply).
 func TestWorkPlanesRedefineRejectsBadEdits(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &res)
@@ -305,6 +322,7 @@ func TestWorkPlanesRedefineRejectsBadEdits(t *testing.T) {
 // types.WorkPlaneKind a plane is created as must be the Kind workPlanes.list reports (the
 // model's kindName strings and the api/types constants are coupled by convention only).
 func TestWorkPlanesCreateKindRoundTripsToList(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	for i, req := range []struct{ kind, body string }{
 		{"plane-offset", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`},
@@ -328,6 +346,7 @@ func TestWorkPlanesCreateKindRoundTripsToList(t *testing.T) {
 // TestWorkPlanesRedefineReportsSickReason: an unsatisfiable (but well-formed) redefine reports
 // healthy=false with the reason, so a remote client can diagnose what went wrong.
 func TestWorkPlanesRedefineReportsSickReason(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &res)
@@ -345,6 +364,7 @@ func TestWorkPlanesRedefineReportsSickReason(t *testing.T) {
 // TestWorkPlanesRedefineRollsBackOnError: when one edit of a batch fails, earlier edits of
 // the same call must not stick (the definition is snapshotted and restored).
 func TestWorkPlanesRedefineRollsBackOnError(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &res)

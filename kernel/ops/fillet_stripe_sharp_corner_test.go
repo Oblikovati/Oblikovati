@@ -54,6 +54,7 @@ func sharpCornerRunOut(t *testing.T) *topo.Body {
 // face and double-covering 0.0134 cm2. Both faces are PLANAR, so the #2077 faceting allowance is
 // zero and this cannot be a meshing artifact.
 func TestSharpCornerRunOutHasNoCoincidentCap(t *testing.T) {
+	t.Parallel()
 	res := sharpCornerRunOut(t)
 	if hits := ops.SelfIntersections(res, ops.DefaultQuality()); len(hits) > 0 {
 		t.Errorf("the run-out result has %d interpenetrating face pairs, first at %v",
@@ -65,6 +66,7 @@ func TestSharpCornerRunOutHasNoCoincidentCap(t *testing.T) {
 // caps must not be built at all. Their absence is what removes the coincidence — trimming the side
 // face while KEEPING the cap would leave the region uncovered instead of double-covered.
 func TestSharpCornerRunOutBuildsNoCapFace(t *testing.T) {
+	t.Parallel()
 	res := sharpCornerRunOut(t)
 	// A cap would be a small planar face wholly inside the r=0.25 corner box at a terminal.
 	for _, f := range res.Faces() {
@@ -82,6 +84,7 @@ func TestSharpCornerRunOutBuildsNoCapFace(t *testing.T) {
 // took away, so it must not remain a vertex of the body. Leaving it is what forced the connectors,
 // and the connectors are what produced the collinear zero-area spikes in the top face and the wall.
 func TestSharpCornerRunOutConsumesTheCornerVertex(t *testing.T) {
+	t.Parallel()
 	res := sharpCornerRunOut(t)
 	for _, v := range res.Vertices() {
 		if float64(v.Point().DistanceTo(gmath.P3(4, 4, 4))) < 1e-9 {
@@ -93,6 +96,7 @@ func TestSharpCornerRunOutConsumesTheCornerVertex(t *testing.T) {
 // TestSharpCornerRunOutTrimsTheSideFace: the side face's boundary must now turn along the section
 // arc, running foot → arc → foot instead of out to the corner and back.
 func TestSharpCornerRunOutTrimsTheSideFace(t *testing.T) {
+	t.Parallel()
 	res := sharpCornerRunOut(t)
 	side := sideFaceAtY4(t, res)
 	feet := []gmath.Point3{gmath.P3(3.75, 4, 4), gmath.P3(4, 4, 3.75)}
@@ -110,6 +114,7 @@ func TestSharpCornerRunOutTrimsTheSideFace(t *testing.T) {
 // old flaps cancelled exactly, so a correct rebuild has the same volume — and it must still match the
 // OCCT oracle. A trim that removed the wrong side of the arc would show up here at once.
 func TestSharpCornerRunOutKeepsTheRemovedVolume(t *testing.T) {
+	t.Parallel()
 	res := sharpCornerRunOut(t)
 	// Points either side of the rolling ball's last position, at the run-out and deep in the run.
 	for _, c := range []struct {
@@ -139,6 +144,7 @@ func TestSharpCornerRunOutKeepsTheRemovedVolume(t *testing.T) {
 // therefore measured where it is meaningful, and the exact surface is gated separately below
 // (Oblikovati/Oblikovati#3453).
 func TestSharpCornerRunOutDropsTheDoubleCountedArea(t *testing.T) {
+	t.Parallel()
 	const r = 0.25
 	res := sharpCornerRunOut(t)
 	notch := r * r * (1 - stdmath.Pi/4)
@@ -157,6 +163,7 @@ func TestSharpCornerRunOutDropsTheDoubleCountedArea(t *testing.T) {
 // past it — an inscribed mesh runs under a curved face, never over. A build whose exact surface had
 // gained or lost a sliver would break the ordering here while sitting well inside the 0.01 window.
 func TestSharpCornerRunOutAreaConvergesOnTheExactSurface(t *testing.T) {
+	t.Parallel()
 	res := sharpCornerRunOut(t)
 	exact, ok := ops.AnalyticGeometryProperties(res)
 	if !ok {

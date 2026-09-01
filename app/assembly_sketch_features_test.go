@@ -14,6 +14,7 @@ import (
 // TestCreateSketchOnAssembly: the sketch environment now opens on an assembly — CreateSketch adds
 // the sketch to the assembly and enters the editing environment (#766).
 func TestCreateSketchOnAssembly(t *testing.T) {
+	t.Parallel()
 	s := assemblySession(t)
 	asm := s.ActiveDocument().Content().(*compdef.AssemblyComponentDefinition)
 
@@ -32,6 +33,7 @@ func TestCreateSketchOnAssembly(t *testing.T) {
 // TestAssemblySketchCommandsOnAssemblyRibbon: the Assemble tab offers Create 2D Sketch, and the
 // contextual Sketch tab's tools appear on the assembly ribbon while editing an assembly sketch.
 func TestAssemblySketchCommandsOnAssemblyRibbon(t *testing.T) {
+	t.Parallel()
 	s := assemblySession(t)
 	if cmd, ok := s.Commands().ByID("Assembly.CreateSketch"); !ok || !cmd.IsEnabled(s) {
 		t.Fatal("the Assemble tab should offer an enabled Create 2D Sketch")
@@ -52,6 +54,7 @@ func TestAssemblySketchCommandsOnAssemblyRibbon(t *testing.T) {
 // assembly, extrude-cut its profile across a placed component, and confirm an assemblyExtrude
 // feature machined the participant (its volume dropped).
 func TestAssemblyExtrudeMachinesFromSketch(t *testing.T) {
+	t.Parallel()
 	s, asm, occ := assemblyWithBoxComponent(t, 0) // box [0,2]×[0,2]×[0,4], assembly active
 
 	sk, err := s.CreateSketch(sketch.XYPlane())

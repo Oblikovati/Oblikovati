@@ -17,6 +17,7 @@ import (
 // is the load-bearing one: a builder that reports ok=true but returns geometry that is not a closed
 // manifold solid must still be rejected.
 func TestGatedCurvedCentralisesTheValidityGate(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 5)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -49,6 +50,7 @@ func TestGatedCurvedCentralisesTheValidityGate(t *testing.T) {
 // TestWithoutRecorderDropsTheRecorder confirms the adapter that lets a bespoke constructor (no SSI
 // imprint) satisfy ruledBuild ignores the recorder and forwards the operands unchanged.
 func TestWithoutRecorderDropsTheRecorder(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 5)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)

@@ -34,6 +34,7 @@ func ppLineage(l topo.Lineage) topo.Lineage { return l }
 // that validates. The result is heavier but a valid solid. (The root-cause coplanar-seam
 // arrangement fix is the cleaner future work.)
 func TestObliquePartialPenetrationFlushBottomStaysManifold(t *testing.T) {
+	t.Parallel()
 	box := subd.ToBody(subd.Box(6, 6, 3), "box")
 	corner := subd.ToBody(subd.Box(3, 3, 4), "cut")
 	cornerT, err := ops.TransformBody(corner, math.Translation4(math.V3(1.5, 1.5, 0)), ppLineage)

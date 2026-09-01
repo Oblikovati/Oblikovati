@@ -31,6 +31,7 @@ func wideAssembly(t *testing.T) *AssemblyComponentDefinition {
 // worker-chunked result must be byte-for-byte identical to the single-threaded walk — same order,
 // transforms, sources and paths — or picking/derivation built on PlacedBodies would shift.
 func TestFlattenParallelMatchesSerial(t *testing.T) {
+	t.Parallel()
 	top := wideAssembly(t)
 	serial := flattenSerial(top.occurrences, 1)
 	parallel := flattenParallel(top.occurrences, 1)
@@ -63,6 +64,7 @@ func pathsEqual(a, b []string) bool {
 // TestChunkRangeCoversAllItems checks the worker partition is a clean cover: contiguous, gap-free,
 // overlap-free, and summing to n — the property the parallel concat depends on for a faithful order.
 func TestChunkRangeCoversAllItems(t *testing.T) {
+	t.Parallel()
 	cases := []struct{ n, workers int }{{30, 8}, {5, 5}, {7, 3}, {1, 4}, {100, 7}, {0, 4}}
 	for _, c := range cases {
 		next := 0
@@ -88,6 +90,7 @@ func TestChunkRangeCoversAllItems(t *testing.T) {
 // path by root count) agrees with the serial reference on the same tree, so the threshold switch is
 // transparent to callers.
 func TestPlacedBodiesParallelAndSerialPathsAgree(t *testing.T) {
+	t.Parallel()
 	top := wideAssembly(t) // 8 roots ≥ parallelFlattenMinRoots → public call takes the parallel path
 	if top.occurrences.Count() < parallelFlattenMinRoots {
 		t.Fatalf("fixture has %d roots, need ≥ %d to exercise the parallel path", top.occurrences.Count(), parallelFlattenMinRoots)

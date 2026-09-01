@@ -8,6 +8,7 @@ import (
 )
 
 func TestNopRibbonGrommetHoleCSG(t *testing.T) {
+	t.Parallel()
 	body := prismBody(ribbonGrommetProfile(2.72, 0.405, 0.15, 16), 0, 5.0, "ribbon-grommet-hole")
 	requireValidNopSolid(t, "ribbon_grommet_hole", body)
 	if got, want := vol(body), nopPolygonArea(ribbonGrommetProfile(2.72, 0.405, 0.15, 16))*5.0; stdmath.Abs(got-want)/want > 1e-3 {

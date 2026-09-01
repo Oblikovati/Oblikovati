@@ -15,6 +15,7 @@ import (
 // the reflex edge (2,2) with a 90° dihedral (k=1), so r_max ≈ 2: a small radius fits, an over-large
 // one is rejected with an honest max-radius message (not silently accepted).
 func TestConcaveFilletOverRadiusRejected(t *testing.T) {
+	t.Parallel()
 	b := zPrism([]m.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 2}, {X: 2, Y: 2}, {X: 2, Y: 4}, {X: 0, Y: 4}}, 0, 4, "L")
 	var key []byte
 	for _, e := range b.Edges() {

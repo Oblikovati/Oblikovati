@@ -23,6 +23,7 @@ func cubeCorners(s float64) []m.Point3 {
 // TestConvexHullCubeExactFaceCountAndVolume asserts the cube hull is exactly 6 quads = 12 triangles
 // with the right volume and no sliver faces.
 func TestConvexHullCubeExactFaceCountAndVolume(t *testing.T) {
+	t.Parallel()
 	const s = 2.0
 	body, err := ConvexHull(cubeCorners(s), "cube")
 	if err != nil {
@@ -40,6 +41,7 @@ func TestConvexHullCubeExactFaceCountAndVolume(t *testing.T) {
 // hair; the hull volume and triangle count must be invariant (the exact predicate removes the
 // reordering/coplanar fragility).
 func TestConvexHullStableUnderReordering(t *testing.T) {
+	t.Parallel()
 	const s = 2.0
 	base := cubeCorners(s)
 	orders := [][]int{
@@ -70,6 +72,7 @@ func TestConvexHullStableUnderReordering(t *testing.T) {
 // hair above a face plane. The hull must be a valid closed solid (no inverted/extra sliver faces),
 // the failure mode the float tolerance produced on near-coplanar inputs.
 func TestConvexHullNearCoplanarValid(t *testing.T) {
+	t.Parallel()
 	pts := cubeCorners(2)
 	// A point just above the centre of the top face (z = 2 + tiny): the hull gains a shallow apex.
 	pts = append(pts, m.P3(1, 1, 2+1e-9))

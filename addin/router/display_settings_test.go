@@ -12,6 +12,7 @@ import (
 // TestDisplayOptionsRoundTrip reads the app display options, edits a few fields, writes them
 // back, and checks the reply reflects the change.
 func TestDisplayOptionsRoundTrip(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var got wire.DisplayModeOptionsView
@@ -39,6 +40,7 @@ func TestDisplayOptionsRoundTrip(t *testing.T) {
 // TestDisplaySettingsRoundTrip reads the active document's display settings, flips background
 // and ground state, writes them back, and checks they persist.
 func TestDisplaySettingsRoundTrip(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var got wire.DisplaySettingsView

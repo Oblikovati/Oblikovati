@@ -16,6 +16,7 @@ import (
 // frustum (Oblikovati/Oblikovati#1372). The result must be a watertight solid whose curved face is
 // still a geom.Cone (not faceted), with the hyperbola arms welded into the lid.
 func TestConeSideHalfSpaceArcBand(t *testing.T) {
+	t.Parallel()
 	frustum := mustFrustum(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6) // tanα = 0.3, bottom r=3, top r=6
 	plane, err := geom.NewPlane(math.P3(2, 0, 0), math.V3(1, 0, 0))      // x=2 ∥ z axis, |D|=2 < bottom r=3
 	if err != nil {
@@ -39,6 +40,7 @@ func TestConeSideHalfSpaceArcBand(t *testing.T) {
 // A plane parallel to the axis but clear of the whole frustum (|D| ≥ top radius) keeps the solid
 // whole on the axis side and empty on the far side.
 func TestConeSideHalfSpaceClears(t *testing.T) {
+	t.Parallel()
 	frustum := mustFrustum(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6)
 	keep, _ := geom.NewPlane(math.P3(7, 0, 0), math.V3(1, 0, 0)) // axis at -7 (negative side): whole kept
 	res, err := HalfSpaceCut(frustum, keep)
@@ -62,6 +64,7 @@ func TestConeSideHalfSpaceClears(t *testing.T) {
 // keeping the axis side, leaves an ANNULUS cone face: the intact small rim plus a notched top loop
 // whose tongue is bitten out down to the hyperbola vertex (Oblikovati/Oblikovati#1374).
 func TestConeSideHalfSpaceVertexInsideAnnulus(t *testing.T) {
+	t.Parallel()
 	frustum := mustFrustum(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6)
 	plane, _ := geom.NewPlane(math.P3(4, 0, 0), math.V3(1, 0, 0)) // |D|=4: cuts the top (r=6) but not the bottom (r=3)
 	res, err := HalfSpaceCut(frustum, plane)                      // keeps x<4, the axis side: apex kept → annulus
@@ -81,6 +84,7 @@ func TestConeSideHalfSpaceVertexInsideAnnulus(t *testing.T) {
 // The same arrangement keeping the FAR side drops the small rim entirely and leaves a single TONGUE
 // cone face narrowing to the hyperbola vertex (Oblikovati/Oblikovati#1374).
 func TestConeSideHalfSpaceVertexInsideTongue(t *testing.T) {
+	t.Parallel()
 	frustum := mustFrustum(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6)
 	plane, _ := geom.NewPlane(math.P3(4, 0, 0), math.V3(-1, 0, 0)) // keeps x>4, the far side: apex dropped → tongue
 	res, err := HalfSpaceCut(frustum, plane)

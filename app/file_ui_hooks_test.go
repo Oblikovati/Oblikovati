@@ -39,6 +39,7 @@ func (f *fakeDocStore) Exists(name string) bool { _, ok := f.saved[name]; return
 // TestFileNewVetoBlocksNewPart: a Before FileNew handler vetoing (a vault's
 // checkout-first policy) stops the document from being created.
 func TestFileNewVetoBlocksNewPart(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	var after []FileNew
 	event.Subscribe(s.Events(), event.After, func(_ event.Context, e FileNew) event.Outcome {
@@ -71,6 +72,7 @@ func TestFileNewVetoBlocksNewPart(t *testing.T) {
 // the head's explorer — the seam returns the supplied path; unanswered hooks
 // report false so the head shows the dialog.
 func TestFileDialogHooksSupplyPaths(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, ok := s.HookFileOpenDialog(); ok {
 		t.Error("an unanswered open hook must report false")
@@ -108,6 +110,7 @@ func TestFileDialogHooksSupplyPaths(t *testing.T) {
 // TestOpenDocumentFromMRUHonorsVetoAndRecords: recent-files entries open behind
 // the vetoable hook, and open/save-as activity maintains the bounded MRU list.
 func TestOpenDocumentFromMRUHonorsVetoAndRecords(t *testing.T) {
+	t.Parallel()
 	store := newFakeDocStore()
 	s := NewSessionWithStore(store)
 	if _, err := s.NewPart(); err != nil {
@@ -142,6 +145,7 @@ func TestOpenDocumentFromMRUHonorsVetoAndRecords(t *testing.T) {
 // TestPopulateFileMetadataCollectsAroundSave: handlers contribute entries when
 // a document saves, queryable afterwards per document.
 func TestPopulateFileMetadataCollectsAroundSave(t *testing.T) {
+	t.Parallel()
 	s := NewSessionWithStore(newFakeDocStore())
 	if _, err := s.NewPart(); err != nil {
 		t.Fatalf("NewPart: %v", err)

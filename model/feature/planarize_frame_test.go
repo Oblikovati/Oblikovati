@@ -44,6 +44,7 @@ func sortedVertexPoints(pts []math.Point3) []math.Point3 {
 // order, and positions as a direct faceted extrude of that circle — otherwise downstream
 // dress-up (chamfer/fillet/shell) selects a different physical edge (analytic-cylinder re-faceting).
 func TestPlanarizedDiscMatchesFacetedExtrude(t *testing.T) {
+	t.Parallel()
 	plane := sketch.XYPlane()
 	sp := span{near: 0, far: 10}
 

@@ -5,6 +5,7 @@ package meshbool
 import "testing"
 
 func TestMergeFacesBox(t *testing.T) {
+	t.Parallel()
 	// A box's soup is 12 triangles (2 per planar face); merging must recover the 6
 	// square faces, each a 4-vertex outer loop with no holes.
 	faces := MergeFaces(boxMesh([3]float64{0, 0, 0}, [3]float64{2, 2, 2}))
@@ -22,6 +23,7 @@ func TestMergeFacesBox(t *testing.T) {
 }
 
 func TestMergeFacesBooleanResultAllPlanar(t *testing.T) {
+	t.Parallel()
 	// Every face of a box-union result merges to a planar quad (the offset boxes
 	// produce only rectangular sub-faces): 0 holes and >=4 vertices each.
 	a := boxMesh([3]float64{0, 0, 0}, [3]float64{2, 2, 2})
@@ -38,6 +40,7 @@ func TestMergeFacesBooleanResultAllPlanar(t *testing.T) {
 }
 
 func TestMergeFacesWithHole(t *testing.T) {
+	t.Parallel()
 	// An annular region in z=0 (outer square with a square hole) must merge to one
 	// face with one hole loop.
 	faces := MergeFaces(annulusSoup())

@@ -11,6 +11,7 @@ import (
 // TestShowCompassPersistsAndLoads checks the compass preference is global: toggling it
 // writes through the store, and a fresh session with the same store loads it back.
 func TestShowCompassPersistsAndLoads(t *testing.T) {
+	t.Parallel()
 	store := userprefs.NewMemStore()
 
 	s1 := NewSession()
@@ -30,6 +31,7 @@ func TestShowCompassPersistsAndLoads(t *testing.T) {
 // TestShowCompassNoStoreIsInSession ensures the toggle works without a store (no panic),
 // just not persisted.
 func TestShowCompassNoStoreIsInSession(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if !s.ShowCompass() {
 		t.Fatal("default shown")
@@ -43,6 +45,7 @@ func TestShowCompassNoStoreIsInSession(t *testing.T) {
 // TestNavBarTogglePersists confirms the Navigation Bar show/hide toggle is a global preference
 // that survives across sessions (#913 N25).
 func TestNavBarTogglePersists(t *testing.T) {
+	t.Parallel()
 	store := userprefs.NewMemStore()
 	s1 := NewSession()
 	s1.SetUserPrefsStore(store)
@@ -61,6 +64,7 @@ func TestNavBarTogglePersists(t *testing.T) {
 // TestViewCubeTogglesPersist confirms the ViewCube show/hide and Lock-to-Selection toggles
 // are now global preferences that survive across sessions.
 func TestViewCubeTogglesPersist(t *testing.T) {
+	t.Parallel()
 	store := userprefs.NewMemStore()
 
 	s1 := NewSession()

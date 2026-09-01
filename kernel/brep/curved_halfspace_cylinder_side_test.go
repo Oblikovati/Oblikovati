@@ -42,6 +42,7 @@ func assertClosedManifold(t *testing.T, body *topo.Body, wantFaces int) {
 // TestHalfSpaceCutCylinderSegmentTopology: an off-centre axis-parallel cut leaves an arc-band side, two
 // half-disk caps and the wall lid — four faces, watertight.
 func TestHalfSpaceCutCylinderSegmentTopology(t *testing.T) {
+	t.Parallel()
 	cyl, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	plane, _ := geom.NewPlane(math.P3(1.5, 0, 0), math.V3(1, 0, 0)) // keep x ≤ 1.5
 	res, err := HalfSpaceCut(cyl, plane)
@@ -55,6 +56,7 @@ func TestHalfSpaceCutCylinderSegmentTopology(t *testing.T) {
 // cut keeps the circle's seam vertex (here the symmetric x ≤ 0 plane), the kept arc wraps the seam and
 // must stay ONE edge that welds with the side band, not fragment into two open edges.
 func TestHalfSpaceCutCylinderSeamOnCutTopology(t *testing.T) {
+	t.Parallel()
 	cyl, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	plane, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(1, 0, 0)) // keep x ≤ 0
 	res, err := HalfSpaceCut(cyl, plane)
@@ -68,6 +70,7 @@ func TestHalfSpaceCutCylinderSeamOnCutTopology(t *testing.T) {
 // cylinder surface is two disconnected strips, so the looped split must emit TWO arc-band faces (six
 // faces total), each watertight.
 func TestHalfSpaceCutCylinderSlabTopology(t *testing.T) {
+	t.Parallel()
 	cyl, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	pHi, _ := geom.NewPlane(math.P3(1.5, 0, 0), math.V3(1, 0, 0))
 	pLo, _ := geom.NewPlane(math.P3(-1.5, 0, 0), math.V3(-1, 0, 0))
@@ -93,6 +96,7 @@ func TestHalfSpaceCutCylinderSlabTopology(t *testing.T) {
 
 // TestHalfSpaceCutCylinderClearsKeepsWhole: an axis-parallel plane clear of the cylinder keeps it whole.
 func TestHalfSpaceCutCylinderClearsKeepsWhole(t *testing.T) {
+	t.Parallel()
 	cyl, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	plane, _ := geom.NewPlane(math.P3(5, 0, 0), math.V3(1, 0, 0)) // x ≤ 5: the whole cylinder
 	res, err := HalfSpaceCut(cyl, plane)

@@ -19,6 +19,7 @@ import (
 // the signed solid angle summed over a closed outward mesh is 4π at an interior point and 0 at an
 // exterior point (winding 1 vs 0).
 func TestSignedSolidAngleClosedMeshIsQuantized(t *testing.T) {
+	t.Parallel()
 	cube, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(2, 2, 2), "cube")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
@@ -36,6 +37,7 @@ func TestSignedSolidAngleClosedMeshIsQuantized(t *testing.T) {
 // OLD skewed ray (0.5773,0.5774,0.5775) from the interior point passes essentially through the cube's
 // far CORNER (a vertex shared by three faces), the exact case that made the single ray miscount.
 func TestPointInsideRayThroughCornerIsRobust(t *testing.T) {
+	t.Parallel()
 	// Cube [0,2]^3: centre (1,1,1); (1,1,1)+t·(0.5773,0.5774,0.5775) reaches the corner (2,2,2).
 	cube, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(2, 2, 2), "cube")
 	if err != nil {
@@ -52,6 +54,7 @@ func TestPointInsideRayThroughCornerIsRobust(t *testing.T) {
 // TestPointInsideCubeFacePlanes checks classification just inside and just outside the plane of each
 // cube face — points the surface-grazing ray handled poorly.
 func TestPointInsideCubeFacePlanes(t *testing.T) {
+	t.Parallel()
 	cube, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(2, 2, 2), "cube")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
@@ -76,6 +79,7 @@ func TestPointInsideCubeFacePlanes(t *testing.T) {
 // TestSphereContainmentMatchesAnalytic stress-tests the winding number against the analytic sphere
 // membership |p-c| < r over many random points, requiring 100% agreement outside a thin surface shell.
 func TestSphereContainmentMatchesAnalytic(t *testing.T) {
+	t.Parallel()
 	const r = 3.0
 	center := m.P3(0, 0, 0)
 	sphere, err := brep.SolidSphere(center, r, "sphere")
@@ -116,6 +120,7 @@ func insideTorus(p m.Point3, major, minor float64) bool {
 // (a torus — its hole means many exterior points sit "between" surface patches, defeating any
 // vertex-only or single-ray test). Compared against the analytic torus membership over random points.
 func TestTorusContainmentMatchesAnalytic(t *testing.T) {
+	t.Parallel()
 	const major, minor = 5.0, 1.5
 	torus, err := brep.SolidTorus(m.P3(0, 0, 0), m.V3(0, 0, 1), major, minor, "torus")
 	if err != nil {
@@ -155,6 +160,7 @@ func TestTorusContainmentMatchesAnalytic(t *testing.T) {
 // TestSignedSolidAngleDegenerate locks the degenerate guards: a query point coincident with a
 // triangle corner, and a zero-area triangle, both contribute 0 (no NaN/Inf from a 0-length vector).
 func TestSignedSolidAngleDegenerate(t *testing.T) {
+	t.Parallel()
 	a, b, c := m.P3(0, 0, 0), m.P3(1, 0, 0), m.P3(0, 1, 0)
 	if w := signedSolidAngle(a, a, b, c); w != 0 {
 		t.Errorf("solid angle at coincident corner = %g, want 0", w)
@@ -168,6 +174,7 @@ func TestSignedSolidAngleDegenerate(t *testing.T) {
 // correct for nested and non-nested convex bodies — and, with the tessellation hoisted, returns the
 // same verdicts as before for the cases the boolean relies on.
 func TestAllVerticesInsideCubeInCube(t *testing.T) {
+	t.Parallel()
 	outer, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(10, 10, 10), "outer")
 	if err != nil {
 		t.Fatalf("outer: %v", err)

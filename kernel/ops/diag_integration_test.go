@@ -15,6 +15,7 @@ import (
 // triangle-soup CSG, and that fallback is now RECORDED as a searchable Defect instead of silently
 // shipping a faceted mesh (the #1407 guardrail this infrastructure enables).
 func TestBooleanRecordsCSGFallbackDiagnostic(t *testing.T) {
+	t.Parallel()
 	a, err := brep.SolidSphere(math.P3(0, 0, 0), 2, "a")
 	if err != nil {
 		t.Fatalf("sphere a: %v", err)
@@ -44,6 +45,7 @@ func TestBooleanRecordsCSGFallbackDiagnostic(t *testing.T) {
 // crossing-cylinder boolean (unequal radii — handled by the curved exact path) records no defect, so a
 // recorded defect always means a real degradation, never noise.
 func TestBooleanExactPathRecordsNoDiagnostic(t *testing.T) {
+	t.Parallel()
 	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	thin, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 
@@ -59,6 +61,7 @@ func TestBooleanExactPathRecordsNoDiagnostic(t *testing.T) {
 // TestBooleanNilRecorderStillWorks confirms the legacy Boolean entry point (which passes a nil recorder)
 // is unaffected: the same fallback runs, just unobserved.
 func TestBooleanNilRecorderStillWorks(t *testing.T) {
+	t.Parallel()
 	a, _ := brep.SolidSphere(math.P3(0, 0, 0), 2, "a")
 	b, _ := brep.SolidSphere(math.P3(2, 0, 0), 2, "b")
 	if res, err := Boolean(Intersect, a, b); err != nil || res == nil {
@@ -70,6 +73,7 @@ func TestBooleanNilRecorderStillWorks(t *testing.T) {
 // surfaces on the composed mesh through mergeMesh — the path a deep tessellation degradation takes to
 // the final face/body mesh (#1412).
 func TestMeshCarriesDiagnostics(t *testing.T) {
+	t.Parallel()
 	child := &Mesh{}
 	child.Diagnose(diag.Diagnostic{Code: "tessellate.cap-saturated", Severity: diag.Defect, Detail: "face X below tol"})
 	parent := &Mesh{}

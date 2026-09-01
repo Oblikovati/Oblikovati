@@ -36,6 +36,7 @@ func reverseDedgeLoop(loop []dedge) []dedge {
 // the half-space/wrapping cases as a single face. This exercises groupLoopFaces, smallestContainingFace,
 // dedgeLoopContains and loopPointInside, which the connected cone∩cone case (two outers, no hole) does not.
 func TestGroupLoopFacesContainment(t *testing.T) {
+	t.Parallel()
 	outerA := box4(0, 0, 10)                // contains the hole
 	hole := reverseDedgeLoop(box4(3, 3, 4)) // CW hole inside outerA
 	outerB := box4(20, 0, 10)               // disjoint second face
@@ -66,6 +67,7 @@ func TestGroupLoopFacesContainment(t *testing.T) {
 
 // TestDedgeLoopContains pins the (u,v) point-in-polygon used to nest holes.
 func TestDedgeLoopContains(t *testing.T) {
+	t.Parallel()
 	sq := box4(0, 0, 10)
 	if !dedgeLoopContains(sq, math.P2(5, 5)) {
 		t.Error("center point reported outside the square")
@@ -78,6 +80,7 @@ func TestDedgeLoopContains(t *testing.T) {
 // TestCurvedSolidMembershipDeclinesNonCone: the membership oracle handles a cone solid and declines a shape
 // it has no analytic test for, so the general path defers rather than misclassify.
 func TestCurvedSolidMembershipDeclinesNonCone(t *testing.T) {
+	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "cone")
 	if _, ok := curvedSolidMembership(cone); !ok {
 		t.Error("cone solid membership should be available")
@@ -90,6 +93,7 @@ func TestCurvedSolidMembershipDeclinesNonCone(t *testing.T) {
 
 // TestPointInsideConeSolid pins the analytic frustum membership at the band edges and the rim.
 func TestPointInsideConeSolid(t *testing.T) {
+	t.Parallel()
 	cone, _ := geom.NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.5) // tan~0.546
 	if pointInsideConeSolid(cone, 2, 6, math.P3(0, 0, 1.5), false) {
 		t.Error("point below vMin reported inside")
@@ -113,6 +117,7 @@ func TestPointInsideConeSolid(t *testing.T) {
 // TestRuledCrossingIntersectConeCone crosses a narrow frustum through a fatter one: a watertight solid of 3
 // analytic cones (the rod band between the two imprint loops + the two fat-cone lens caps).
 func TestRuledCrossingIntersectConeCone(t *testing.T) {
+	t.Parallel()
 	thin, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
 	fat, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 
@@ -134,6 +139,7 @@ func TestRuledCrossingIntersectConeCone(t *testing.T) {
 // TestRuledCrossingIntersectConeCylinder crosses a cone through a cylinder: 1 cone band inside the cylinder +
 // the two cylinder-wall lens caps, watertight, and order-independent through the exported entry.
 func TestRuledCrossingIntersectConeCylinder(t *testing.T) {
+	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	res, ok := ruledCrossingIntersect(cone, cyl, nil)
@@ -153,6 +159,7 @@ func TestRuledCrossingIntersectConeCylinder(t *testing.T) {
 // TestRuledCrossingIntersectCylinderCylinder crosses two cylinders: a watertight 3-cylinder solid (rod band +
 // two fat lens caps). Cylinder∩cylinder now runs through the SAME unified driver, not a separate one.
 func TestRuledCrossingIntersectCylinderCylinder(t *testing.T) {
+	t.Parallel()
 	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	res, ok := ruledCrossingIntersect(rod, fat, nil)
@@ -172,6 +179,7 @@ func TestRuledCrossingIntersectCylinderCylinder(t *testing.T) {
 // TestRuledCrossingIntersectDeclinesPlanarPair: two planar blocks have no curved side, so the unified driver
 // declines (ok=false) rather than trim a non-existent ruled crossing.
 func TestRuledCrossingIntersectDeclinesPlanarPair(t *testing.T) {
+	t.Parallel()
 	x, _ := SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "x")
 	y, _ := SolidBlock(math.P3(1, 1, 1), math.P3(3, 3, 3), "y")
 	if _, ok := RuledCrossingIntersectGeneral(x, y, nil); ok {
@@ -186,6 +194,7 @@ func TestRuledCrossingIntersectDeclinesPlanarPair(t *testing.T) {
 // IsAdopted covers the intersect path; cut/join join that guard once #1476 lands). Edge-count watertightness
 // alone is exactly what masked the silent fallback, so this is intentionally scoped to structure (#1403).
 func TestCrossingCylinderCutGeneral(t *testing.T) {
+	t.Parallel()
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 	res, ok := RuledCrossingCutGeneral(fat, rod, nil)
@@ -205,6 +214,7 @@ func TestCrossingCylinderCutGeneral(t *testing.T) {
 // (Oblikovati#1476) is what makes this mesh the right region; its volume is checked against OCC in ops
 // (TestCurvedBooleanVolumesMatchOCC, crossing ∪). Here we assert the watertight face structure (#1403/#1476).
 func TestCrossingCylinderJoinGeneral(t *testing.T) {
+	t.Parallel()
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 	res, ok := RuledCrossingJoinGeneral(fat, rod, nil)
@@ -223,6 +233,7 @@ func TestCrossingCylinderJoinGeneral(t *testing.T) {
 // TestCrossingCylinderJoinGeneralDeclines: a non-crossing pair (far apart, no imprint) declines so kernel/ops
 // keeps its fallback.
 func TestCrossingCylinderJoinGeneralDeclines(t *testing.T) {
+	t.Parallel()
 	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 12)
 	b, _ := SolidCylinder(math.P3(20, 0, 0), math.V3(0, 0, 1), 1.5, 12) // far apart, no intersection
 	if _, ok := RuledCrossingJoinGeneral(a, b, nil); ok {
@@ -233,6 +244,7 @@ func TestCrossingCylinderJoinGeneralDeclines(t *testing.T) {
 // TestJoinFacesAssembly: the union assembly keeps both walls outward (no reversal) and contributes each body's
 // caps that lie OUTSIDE the other solid — for a clean full crossing that is all four caps.
 func TestJoinFacesAssembly(t *testing.T) {
+	t.Parallel()
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 	fatOp, _ := cylinderOperand(fat)
@@ -253,6 +265,7 @@ func TestJoinFacesAssembly(t *testing.T) {
 
 // TestReverseCurvedFaces: reversing flips the face sense (the cut wall faces into the cavity).
 func TestReverseCurvedFaces(t *testing.T) {
+	t.Parallel()
 	in := []curvedFace{{reversed: false}, {reversed: true}}
 	out := reverseCurvedFaces(in)
 	if !out[0].reversed || out[1].reversed {
@@ -263,6 +276,7 @@ func TestReverseCurvedFaces(t *testing.T) {
 // TestCrossingCylinderCutGeneralDeclines: a non-crossing pair (parallel, no imprint) declines so kernel/ops
 // keeps its fallback.
 func TestCrossingCylinderCutGeneralDeclines(t *testing.T) {
+	t.Parallel()
 	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 12)
 	b, _ := SolidCylinder(math.P3(20, 0, 0), math.V3(0, 0, 1), 1.5, 12) // far apart, no intersection
 	if _, ok := RuledCrossingCutGeneral(a, b, nil); ok {

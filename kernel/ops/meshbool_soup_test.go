@@ -17,6 +17,7 @@ import (
 // mesh whose divergence-theorem volume equals the box volume (2·3·4 = 24). A
 // non-closed or inward soup would not give the exact positive volume.
 func TestBodyToSoupClosedBox(t *testing.T) {
+	t.Parallel()
 	body := subd.ToBody(subd.Box(2, 3, 4), "box")
 	soup := bodyToSoup(body, PropertyQuality())
 
@@ -41,6 +42,7 @@ func TestBodyToSoupClosedBox(t *testing.T) {
 // soup → body. The reconstructed body must be a valid solid with the 6 merged
 // square faces, and re-tessellating it must give back the box volume 24.
 func TestSoupToBodyRoundTripBox(t *testing.T) {
+	t.Parallel()
 	orig := subd.ToBody(subd.Box(2, 3, 4), "box")
 	body := soupToBody(bodyToSoup(orig, PropertyQuality()), "bool")
 
@@ -62,6 +64,7 @@ func TestSoupToBodyRoundTripBox(t *testing.T) {
 // (A=[0,2]^3, B=[1,3]^3) through the mesh-arrangement engine, each result a valid
 // solid with the exact expected volume.
 func TestBooleanViaMeshboolBoxes(t *testing.T) {
+	t.Parallel()
 	a := subd.ToBody(subd.Box(2, 2, 2), "a")
 	b := boxBodyAt(2, 2, 2, math.V3(1, 1, 1), "b")
 	cases := []struct {
@@ -91,6 +94,7 @@ func TestBooleanViaMeshboolBoxes(t *testing.T) {
 // the full brep adapter: two boxes overlapping only in x share coincident
 // top/bottom/front/back faces. The union must be a valid solid of volume 12.
 func TestBooleanViaMeshboolCoplanar(t *testing.T) {
+	t.Parallel()
 	a := subd.ToBody(subd.Box(2, 2, 2), "a")
 	b := boxBodyAt(2, 2, 2, math.V3(1, 0, 0), "b")
 	res := booleanViaMeshbool(a, b, meshbool.Union, PropertyQuality(), "op")

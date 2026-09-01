@@ -53,6 +53,7 @@ func coneFor(t *testing.T, c coneArmCase) geom.Cone {
 // exact closed forms of {r, cone, cap plane}, and minor = r always. A wrong material-side sign (A′ on the
 // apex side) or a wrong cap-offset direction moves the major by tens of units — caught here to ≤1e-9.
 func TestConeArmSurface_Oracle(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(300)
 	for _, c := range coneArmOracleCases() {
 		t.Run(c.name, func(t *testing.T) {
@@ -86,6 +87,7 @@ func assertConeArm(t *testing.T, c coneArmCase, tor geom.Torus) {
 // every cone-host Arm A case to its DRAWEXE-verified z and radius (cone-host-corner-derivation.md §2:
 // s* = h·cosα + R_s·sinα; radius s*·sinα centred at A + s*·cosα·â) to ≤1e-9, built from the real arm.
 func TestConeContactCircle_Oracle(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(300)
 	for _, c := range coneArmOracleCases() {
 		t.Run(c.name, func(t *testing.T) {
@@ -136,6 +138,7 @@ func coneArmOracleCases() []coneArmCase {
 // TestConePlaneEdge recognizes an edge flanked by a cone face and a plane face, returning both surfaces
 // and both faces; a plane∧plane edge (the third, straight corner edge) is not recognized.
 func TestConePlaneEdge(t *testing.T) {
+	t.Parallel()
 	e, _, _ := conePlaneFixtureEdge(t, false)
 	co, pl, cf, pf, ok := conePlaneEdge(e)
 	if !ok {
@@ -157,6 +160,7 @@ func TestConePlaneEdge(t *testing.T) {
 // cone∧plane cap edge (handled=true, arm built) so it returns before curvedAdjacentError; a plane∧plane
 // edge is NOT handled here (handled=false), keeping the existing planar path byte-identical.
 func TestConeArmEdge_Dispatches(t *testing.T) {
+	t.Parallel()
 	e, _, _ := conePlaneFixtureEdge(t, false)
 	ef, handled, err := coneArmEdge(nil, e, filletPick{edge: e, r0: 10, r1: 10})
 	if !handled || err != nil || ef.armSurface == nil {
@@ -182,6 +186,7 @@ func TestConeArmEdge_Dispatches(t *testing.T) {
 // BOTH-flipped (concaveConeArmSurface) construction gives centre(-200,0,-10), major 204.142 instead,
 // 20 (=2r) short — the mutation witness below.
 func TestConeArm_ConcaveBoreBuilds(t *testing.T) {
+	t.Parallel()
 	e, co, pl := conePlaneFixtureEdge(t, true) // reversed cone face → concave bore
 	coneFace, planeFace := boreFaces(e)
 	res := ResolutionForSize(300)
@@ -219,6 +224,7 @@ func TestConeArm_ConcaveBoreBuilds(t *testing.T) {
 // near-cylinder reason; deleting it lets the huge apex shift fall through to a coneArmClears reject
 // (h′ < 0) — the reason-flip mutation proof that this guard is load-bearing.
 func TestConeArmSurface_NearCylinderRejects(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(300)
 	apex, capZ := math.P3(0, 0, 270), 0.0
 	aband := coneAlphaBandCoef * res.Weld() / float64(apex.DistanceTo(math.P3(0, 0, capZ)))
@@ -238,6 +244,7 @@ func TestConeArmSurface_NearCylinderRejects(t *testing.T) {
 // is rejected with the SPECIFIC near-plane reason; deleting it lets tanα·h′ build a giant-major torus —
 // the reason-flip mutation proof.
 func TestConeArmSurface_NearPlaneRejects(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(300)
 	apex, capZ := math.P3(0, 0, 270), 0.0
 	aband := coneAlphaBandCoef * res.Weld() / float64(apex.DistanceTo(math.P3(0, 0, capZ)))
@@ -254,6 +261,7 @@ func TestConeArmSurface_NearPlaneRejects(t *testing.T) {
 // guard rejects with the SPECIFIC grazing reason (h′ still > 0, so it passes coneArmClears); a control
 // cap a hair further out builds — a straddle proof the band is real, not vacuous.
 func TestConeArmSurface_GrazingRejects(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(300)
 	co, _ := geom.NewCone(math.P3(0, 0, 270), coneAxisDown(), stdmath.Atan(1.0/3.0))
 	sinA := stdmath.Sin(co.HalfAngle)
@@ -281,6 +289,7 @@ func grazeCapPlane(t *testing.T, apexPrimeZ, hPrime float64) geom.Plane {
 // arm (CN2), which classifyConeArm reports as coneClassRuling and coneArmFillet honest-rejects — it must
 // NOT half-build a torus. An oblique plane reports coneClassOblique.
 func TestClassifyConeArm_RulingRejects(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(300)
 	co, _ := geom.NewCone(math.P3(0, 0, 270), coneAxisDown(), stdmath.Atan(1.0/3.0))
 	cap := planeOn(t, math.P3(0, 0, 0), math.V3(0, 0, -1))    // ⊥ axis

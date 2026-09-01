@@ -37,6 +37,7 @@ func naiveOrient3D(a, b, c, d [3]float64) int {
 }
 
 func TestOrient2DBasicSigns(t *testing.T) {
+	t.Parallel()
 	if got := Orient2D(0, 0, 1, 0, 0, 1); got != 1 {
 		t.Fatalf("CCW triangle: got %d, want +1", got)
 	}
@@ -49,6 +50,7 @@ func TestOrient2DBasicSigns(t *testing.T) {
 }
 
 func TestOrient3DBasicSigns(t *testing.T) {
+	t.Parallel()
 	// d=(0,0,1) is above the xy-plane through (0,0,0),(1,0,0),(0,1,0) → -1.
 	if got := Orient3D(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1); got != -1 {
 		t.Fatalf("point above plane: got %d, want -1", got)
@@ -68,6 +70,7 @@ func TestOrient3DBasicSigns(t *testing.T) {
 // predicate disagrees on a non-trivial number of them, so the suite proves it is
 // actually exercising the hard regime rather than easy inputs.
 func TestOrient3DExactMatchesOracleUnderStress(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewSource(0x2084))
 	teeth := 0
 	const n = 20000
@@ -109,6 +112,7 @@ func oracleOrient2D(a, b, c [2]float64) int {
 // configurations (c placed on the float-rounded line a→b) and asserts it equals
 // the exact sign every time, with the naive predicate proven to fail on some.
 func TestOrient2DExactMatchesOracleUnderStress(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewSource(0x2081))
 	teeth := 0
 	const n = 20000
@@ -136,6 +140,7 @@ func TestOrient2DExactMatchesOracleUnderStress(t *testing.T) {
 // the exact sign. A filter that ever certifies a wrong sign silently defeats the
 // whole design, so this asserts it directly across the stress corpus.
 func TestFilterNeverCertifiesWrongSign(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewSource(0x1822))
 	for i := range 20000 {
 		a, b, c := randPt(r), randPt(r), randPt(r)
@@ -158,6 +163,7 @@ func TestFilterNeverCertifiesWrongSign(t *testing.T) {
 // exactly and a naive float one violates near degeneracy: swapping two of the
 // first three points negates the orientation.
 func TestOrient3DAntisymmetry(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewSource(7))
 	for i := range 5000 {
 		a, b, c, d := randPt(r), randPt(r), randPt(r), randPt(r)

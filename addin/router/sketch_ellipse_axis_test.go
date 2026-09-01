@@ -39,6 +39,7 @@ func pinEllipseHorizontal(t *testing.T, r *Router, s *app.Session, ellID uint64)
 // TestEllipseParallelOverWire: parallel with an ellipse operand aligns the line to the ellipse's
 // major axis and enumerates as "parallel" (#1879).
 func TestEllipseParallelOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.setInferenceOptions", `{"inferEnabled":false}`, &wire.InferenceOptionsView{})
@@ -62,6 +63,7 @@ func TestEllipseParallelOverWire(t *testing.T) {
 // TestEllipseParallelMinorAxisOverWire: UseEllipseTwoMajorAxis=false selects the minor axis, so
 // the line becomes vertical (#1879).
 func TestEllipseParallelMinorAxisOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.setInferenceOptions", `{"inferEnabled":false}`, &wire.InferenceOptionsView{})
@@ -84,6 +86,7 @@ func TestEllipseParallelMinorAxisOverWire(t *testing.T) {
 // TestEllipsePerpendicularOverWire: perpendicular with an ellipse major-axis operand makes the
 // line vertical, enumerating as "perpendicular" (#1879).
 func TestEllipsePerpendicularOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.setInferenceOptions", `{"inferEnabled":false}`, &wire.InferenceOptionsView{})
@@ -132,6 +135,7 @@ func assertHVRelatesEllipse(t *testing.T, r *Router, s *app.Session, kind string
 // major axis to horizontal, reports and enumerates as "horizontal", and relates the ellipse
 // (#1879 AC2).
 func TestEllipseHorizontalOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, ell := ellipseHVSession(t)
 	var res wire.AddConstraintResult
 	call(t, r, s, "sketch.addConstraint", mustJSON(t, wire.AddConstraintArgs{
@@ -151,6 +155,7 @@ func TestEllipseHorizontalOverWire(t *testing.T) {
 // TestEllipseVerticalOverWire: kind=vertical with a single ellipse ref makes the ellipse's axis
 // vertical, enumerating as "vertical" (#1879 AC2).
 func TestEllipseVerticalOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, ell := ellipseHVSession(t)
 	var res wire.AddConstraintResult
 	call(t, r, s, "sketch.addConstraint", mustJSON(t, wire.AddConstraintArgs{
@@ -167,6 +172,7 @@ func TestEllipseVerticalOverWire(t *testing.T) {
 // AC2). The major/minor distinction is geometric (not wire-observable), so the geometry is covered
 // by the model-level tests.
 func TestEllipseHorizontalMinorAxisOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, ell := ellipseHVSession(t)
 	no := false
 	var res wire.AddConstraintResult
@@ -182,6 +188,7 @@ func TestEllipseHorizontalMinorAxisOverWire(t *testing.T) {
 // TestTwoLineParallelStillWorks: with no ellipse operand, parallel is the plain two-line
 // relation, unchanged by the ellipse-axis path (#1879).
 func TestTwoLineParallelStillWorks(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	l1 := addEnt(t, r, s, `{"sketchIndex":0,"kind":"line","points":[[0,0],[2,0]]}`)
 	l2 := addEnt(t, r, s, `{"sketchIndex":0,"kind":"line","points":[[0,1],[3,2]]}`)

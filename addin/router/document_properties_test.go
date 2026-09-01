@@ -13,6 +13,7 @@ import (
 // TestDocumentPropertiesOverWire sets a typed iProperty over the wire, reads it back, and finds it
 // in the document's property list — the #156 round trip a BOM/title-block client relies on.
 func TestDocumentPropertiesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	id := uint64(s.ActiveDocument().ID())
 	const set = "Design Tracking Properties"
@@ -39,6 +40,7 @@ func TestDocumentPropertiesOverWire(t *testing.T) {
 
 // TestGetUnknownDocumentPropertyFails: reading an absent property is a rejection, not an empty hit.
 func TestGetUnknownDocumentPropertyFails(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	id := uint64(s.ActiveDocument().ID())
 	if _, err := r.Handle(s, "documents.getProperty", []byte(fmt.Sprintf(`{"document":%d,"set":"Design Tracking Properties","name":"Nope"}`, id))); err == nil {

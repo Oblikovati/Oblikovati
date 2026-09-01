@@ -7,6 +7,7 @@ import (
 )
 
 func TestNopQuadrantCSG(t *testing.T) {
+	t.Parallel()
 	body := prismBody(roundedCornerRectPoints(2.0, 1.4, 0.5, 20), 0, 0.2, "quadrant")
 	requireValidNopSolid(t, "quadrant", body)
 	if got := vol(body); got <= 0 || got >= 2.0*1.4*0.2 {

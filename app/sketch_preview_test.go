@@ -9,6 +9,7 @@ import (
 )
 
 func TestLinePreviewFollowsCursor(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	tool := NewLineTool()
 	s.StartTool(tool)
@@ -27,6 +28,7 @@ func TestLinePreviewFollowsCursor(t *testing.T) {
 }
 
 func TestRectangleAndCirclePreview(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	r := NewRectangleTool()
 	s.StartTool(r)
@@ -46,6 +48,7 @@ func TestRectangleAndCirclePreview(t *testing.T) {
 }
 
 func TestNoPreviewWithoutTool(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	if pts, _ := s.ActiveToolPreview(math.P2(0, 0)); pts != nil {
 		t.Error("no active tool should yield no preview")
@@ -53,6 +56,7 @@ func TestNoPreviewWithoutTool(t *testing.T) {
 }
 
 func TestCursorSketchPointSnaps(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	sk.Points().Add(math.P2(2, 0))
 	// The centre pixel maps to ~origin, which snaps to the sketch origin.

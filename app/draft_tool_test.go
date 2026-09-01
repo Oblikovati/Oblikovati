@@ -39,6 +39,7 @@ func plusXFaceOf(t *testing.T, b *topo.Body) *topo.Face {
 // block, set an inward angle, OK — and asserts the side tapered (volume dropped, still a
 // valid solid). atan(0.25) ≈ 14.04°, inward ⇒ removes a 4·tan = 1 wedge ⇒ vol 7.
 func TestDraftToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2) // 2×2×2, vol 8
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: plusXFaceOf(t, block), Body: block}})
 
@@ -68,6 +69,7 @@ func TestDraftToolEndToEnd(t *testing.T) {
 
 // TestDraftViaRibbonCommand drives the Draft from its ribbon command.
 func TestDraftViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: plusXFaceOf(t, block), Body: block}})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -94,6 +96,7 @@ func TestDraftViaRibbonCommand(t *testing.T) {
 // tool routes clicks by pick mode, and the committed draft carries the picked +X face normal as
 // its pull direction and the +Z (top) face as its neutral parting plane (#1801).
 func TestDraftToolPullAndNeutralPicks(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	sideX := FaceHandle{Face: plusXFaceOf(t, block), Body: block}
 	topZ := FaceHandle{Face: plusZFaceOf(t, block), Body: block}
@@ -137,6 +140,7 @@ func TestDraftToolPullAndNeutralPicks(t *testing.T) {
 // TestDraftToolClearPullNeutral checks the clear handlers drop the pull/neutral inputs and
 // return the tool to picking faces.
 func TestDraftToolClearPullNeutral(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	side := FaceHandle{Face: plusXFaceOf(t, block), Body: block}
 	top := FaceHandle{Face: plusZFaceOf(t, block), Body: block}
@@ -160,6 +164,7 @@ func TestDraftToolClearPullNeutral(t *testing.T) {
 
 // TestDraftToolNeedsFace checks the tool is not committable until a face is picked.
 func TestDraftToolNeedsFace(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: plusXFaceOf(t, block), Body: block}})
 	d := NewDraftTool()

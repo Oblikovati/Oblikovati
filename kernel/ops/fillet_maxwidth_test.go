@@ -21,6 +21,7 @@ import (
 // coordinates turns a shared-corner crossing from exactly 0 into ~1e-14, slipping past the x≤0
 // guard and collapsing the in-face width to ~0 (geometry-math-advisor derivation).
 func TestWidthSamplesEndpointsAreExactVertices(t *testing.T) {
+	t.Parallel()
 	e := straightTestEdge(t, math.P3(34.2, 94, 50), math.P3(-0.612, 86, 59.7))
 	samples := widthSamples(e)
 	if len(samples) != 5 {
@@ -46,6 +47,7 @@ func TestWidthSamplesEndpointsAreExactVertices(t *testing.T) {
 // boundary edges meeting the fillet edge at that corner — by vertex identity, so coordinate
 // roundoff cannot hide the shared corner.
 func TestSharesVertex(t *testing.T) {
+	t.Parallel()
 	e := straightTestEdge(t, math.P3(0, 0, 0), math.P3(10, 0, 0))
 	if !sharesVertex(e, e.StartVertex()) || !sharesVertex(e, e.EndVertex()) {
 		t.Errorf("edge must share both its own endpoint vertices")
@@ -62,6 +64,7 @@ func TestSharesVertex(t *testing.T) {
 // pure local geometry (independent of the pick radius), and V3's tightest planar edge admits
 // r_max ≈ 7.2, so a floor of 1.0 cleanly separates "fixed" from "phantom".
 func TestMaxRadiusNoEndpointPhantom(t *testing.T) {
+	t.Parallel()
 	body := importMaxWidthFixture(t, "v3_maxwidth.step")
 	minRMax := stdmath.Inf(1)
 	for _, e := range body.Edges() {
@@ -91,6 +94,7 @@ func TestMaxRadiusNoEndpointPhantom(t *testing.T) {
 // width and r_max to ~4.9e-11, rejecting the r=5 pick with "exceeds geometric maximum". OCCT rounds
 // these edges, so the gate must not reject them.
 func TestGrazingIncidentArcNoCollapse(t *testing.T) {
+	t.Parallel()
 	body := importMaxWidthFixture(t, "n5_graze.step")
 	e14 := edgeByEndpoints(t, body, math.P3(115.845593, 81.115958, 50), math.P3(112.372630, 61.419800, 50))
 	e24 := edgeByEndpoints(t, body, math.P3(96.149438, 84.588921, 50), math.P3(115.845593, 81.115958, 50))

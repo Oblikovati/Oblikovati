@@ -11,6 +11,7 @@ import (
 
 // TestFilletToolCrossSectionIndex round-trips the cross-section dropdown selection.
 func TestFilletToolCrossSectionIndex(t *testing.T) {
+	t.Parallel()
 	f := NewFilletTool()
 	if f.CrossSectionIndex() != 0 {
 		t.Errorf("default cross-section index = %d, want 0 (arc)", f.CrossSectionIndex())
@@ -34,6 +35,7 @@ func TestFilletToolCrossSectionIndex(t *testing.T) {
 // TestFilletToolG2CommitsValidSolid: selecting the G2 cross-section and committing rounds the edge
 // into a valid solid, and the committed feature carries the G2 cross-section.
 func TestFilletToolG2CommitsValidSolid(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 

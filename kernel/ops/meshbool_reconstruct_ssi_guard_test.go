@@ -25,6 +25,7 @@ import (
 // corner (the tool axis leaves through the top AND a side) assembles an Euler-inadmissible B-rep.
 // Reconstruction must decline (leaving the caller on the exact faceted path) rather than emit it.
 func TestReconstructDeclinesCornerCrossingObliqueCut(t *testing.T) {
+	t.Parallel()
 	box, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(1, 1, 1), "box")
 	if err != nil {
 		t.Fatalf("box: %v", err)
@@ -57,6 +58,7 @@ func TestReconstructDeclinesCornerCrossingObliqueCut(t *testing.T) {
 // is an exact CIRCLE, so reconstruction rebuilds a valid analytic solid keeping BOTH bore walls
 // — disjointness alone is not the blocker; the oblique conic is.
 func TestReconstructPerpendicularDisjointCutRebuilds(t *testing.T) {
+	t.Parallel()
 	block, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(1, 1, 1), "block")
 	if err != nil {
 		t.Fatalf("block: %v", err)

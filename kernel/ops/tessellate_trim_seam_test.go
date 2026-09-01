@@ -37,6 +37,7 @@ func seamStartFullWrapSamples(n int) []float64 {
 // axis has no simple polygon in this chart, and unwrap must say so however it is phased. Restoring the
 // open-chain-only span guard turns this test red at every n.
 func TestUnwrapRejectsSeamStartFullWrap(t *testing.T) {
+	t.Parallel()
 	for _, n := range []int{4, 24, 192, 320} {
 		if _, ok := unwrap(seamStartFullWrapSamples(n)); ok {
 			t.Errorf("n=%d: a loop starting on the seam and winding a full period developed as a polygon "+
@@ -49,6 +50,7 @@ func TestUnwrapRejectsSeamStartFullWrap(t *testing.T) {
 // rotated to start anywhere must be rejected identically. (The old guard rejected it only when the
 // rotation happened to put its span over 2π.)
 func TestUnwrapRejectsFullWrapWhereverItStarts(t *testing.T) {
+	t.Parallel()
 	const n = 24
 	base := seamStartFullWrapSamples(n)
 	for shift := range n {
@@ -67,6 +69,7 @@ func TestUnwrapRejectsFullWrapWhereverItStarts(t *testing.T) {
 // the shape of a wide cylinder-wall trim, and rejecting it would drop that face onto the seam-crossing
 // fallback for no reason.
 func TestUnwrapAcceptsWideOutAndBack(t *testing.T) {
+	t.Parallel()
 	var a []float64
 	const top = 6.0 // rad: 95.5% of the period, out and back
 	for u := 0.0; u < top; u += 0.05 {
@@ -90,6 +93,7 @@ func TestUnwrapAcceptsWideOutAndBack(t *testing.T) {
 // develop continuously — the whole point of unwrapping — and the development must stay contiguous
 // across the seam rather than tearing.
 func TestUnwrapAcceptsSeamStraddlingLoop(t *testing.T) {
+	t.Parallel()
 	twoPi := 2 * stdmath.Pi
 	a := []float64{twoPi - 0.2, twoPi - 0.1, 0.1, 0.2, 0.2, 0.1, twoPi - 0.1, twoPi - 0.2}
 	out, ok := unwrap(a)
@@ -106,6 +110,7 @@ func TestUnwrapAcceptsSeamStraddlingLoop(t *testing.T) {
 // breaks: a loop that RUNS ALONG the seam inverts to u samples that flip between ~0 and ~2π on sign
 // noise alone. Those flips are ±ε steps, not period leaps, and must not accumulate into a winding.
 func TestUnwrapAcceptsSeamTangentialLoop(t *testing.T) {
+	t.Parallel()
 	twoPi := 2 * stdmath.Pi
 	const eps = 1e-13
 	a := []float64{0, twoPi - eps, 0, eps, twoPi - eps, 0, eps, twoPi - eps}
@@ -122,6 +127,7 @@ func TestUnwrapAcceptsSeamTangentialLoop(t *testing.T) {
 // TestUnwrapAcceptsDegenerateAndTinyLoops guards the boundary cases the closing step is undefined or
 // trivial on: a single sample, a two-sample loop, and an all-identical ring.
 func TestUnwrapAcceptsDegenerateAndTinyLoops(t *testing.T) {
+	t.Parallel()
 	for _, a := range [][]float64{{1.0}, {1.0, 1.1}, {0.3, 0.3, 0.3, 0.3}} {
 		if _, ok := unwrap(a); !ok {
 			t.Errorf("%v: a degenerate periodic sample set was refused a development", a)
@@ -133,6 +139,7 @@ func TestUnwrapAcceptsDegenerateAndTinyLoops(t *testing.T) {
 // residual it thresholds is the loop's total winding about the axis, which is 0 or ±2πk and nothing
 // in between. A loop wound TWICE must be rejected just as a loop wound once is.
 func TestSeamWindingLeapMeasuresTheWinding(t *testing.T) {
+	t.Parallel()
 	var twice []float64
 	const n = 48
 	for i := range n {

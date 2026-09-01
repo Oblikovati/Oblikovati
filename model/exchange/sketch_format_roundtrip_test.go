@@ -17,6 +17,7 @@ import (
 // exporter wrote no formatting and the importer read none, so a round trip came back monochrome
 // and continuous — which is what the issue means by DWG interoperability.
 func TestSketchFormatSurvivesDXFRoundTrip(t *testing.T) {
+	t.Parallel()
 	src := sketch.NewSketches().Add(sketch.XYPlane())
 	red := src.Lines().AddByTwoPoints(gmath.P2(0, 0), gmath.P2(10, 0))
 	src.SetEntityFormat(red.EntityID(), sketch.EntityFormat{
@@ -64,6 +65,7 @@ func TestSketchFormatSurvivesDXFRoundTrip(t *testing.T) {
 // An unstyled sketch must export and import with no formatting at all, so the common case adds
 // nothing to the file and nothing to the sketch.
 func TestUnstyledSketchRoundTripsClean(t *testing.T) {
+	t.Parallel()
 	src := sketch.NewSketches().Add(sketch.XYPlane())
 	src.Lines().AddByTwoPoints(gmath.P2(0, 0), gmath.P2(10, 0))
 
@@ -84,6 +86,7 @@ func TestUnstyledSketchRoundTripsClean(t *testing.T) {
 // colour and weight each entity states for itself. Those must reach the sketch the same way a
 // DXF's do, since the resolution is shared (#2015).
 func TestDWGStyleShapeReachesTheSketch(t *testing.T) {
+	t.Parallel()
 	part := compdef.NewPartComponentDefinition()
 	dr := &dwgdrawing.Drawing{
 		Entities: []dwgdrawing.Entity{

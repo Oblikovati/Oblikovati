@@ -22,6 +22,7 @@ func unitTetraMesh() ([]math.Point3, [][]int) {
 // TestMeshToBRepTetraSolid is the #492 acceptance: a tetra mesh converts to a validated
 // 4-face solid with the analytic volume 1/6.
 func TestMeshToBRepTetraSolid(t *testing.T) {
+	t.Parallel()
 	verts, facets := unitTetraMesh()
 	body := MeshToBRep(verts, facets, "mesh")
 	if body == nil {
@@ -41,6 +42,7 @@ func TestMeshToBRepTetraSolid(t *testing.T) {
 // TestMeshToBRepReorientsInwardMesh: an inward-wound (negative-volume) but consistent mesh
 // is re-oriented to a positive-volume outward solid rather than rejected.
 func TestMeshToBRepReorientsInwardMesh(t *testing.T) {
+	t.Parallel()
 	verts, facets := unitTetraMesh()
 	for _, f := range facets { // flip every facet ⇒ inward winding
 		f[1], f[2] = f[2], f[1]
@@ -56,6 +58,7 @@ func TestMeshToBRepReorientsInwardMesh(t *testing.T) {
 
 // TestMeshToBRepEmpty: no facets ⇒ nil (nothing to build).
 func TestMeshToBRepEmpty(t *testing.T) {
+	t.Parallel()
 	if b := MeshToBRep(nil, nil, "mesh"); b != nil {
 		t.Errorf("MeshToBRep(empty) = %v, want nil", b)
 	}
@@ -64,6 +67,7 @@ func TestMeshToBRepEmpty(t *testing.T) {
 // TestMeshToBRepQuadFacet: a quad facet fan-triangulates; a unit cube (6 quad facets)
 // becomes a valid solid of volume 1.
 func TestMeshToBRepQuadFacet(t *testing.T) {
+	t.Parallel()
 	verts := []math.Point3{
 		math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0),
 		math.P3(0, 0, 1), math.P3(1, 0, 1), math.P3(1, 1, 1), math.P3(0, 1, 1),

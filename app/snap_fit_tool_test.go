@@ -11,6 +11,7 @@ import (
 // TestSnapFitToolEndToEnd drives the Snap Fit UI: keep the default beam/catch dimensions, OK —
 // and asserts a valid solid hook was added to the empty part.
 func TestSnapFitToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s := newPartSession(t)
 	def := activePartDef(t, s)
 
@@ -37,6 +38,7 @@ func TestSnapFitToolEndToEnd(t *testing.T) {
 // TestSnapFitToolParams exercises the property-dialog surface: name, the five dimension
 // accessors (each rejects a non-positive value), and the Params model the head renders.
 func TestSnapFitToolParams(t *testing.T) {
+	t.Parallel()
 	tl := NewSnapFitTool()
 	if tl.Name() != "Snap Fit" {
 		t.Errorf("name = %q, want Snap Fit", tl.Name())
@@ -68,6 +70,7 @@ func TestSnapFitToolParams(t *testing.T) {
 
 // TestSnapFitToolPreview covers the draft preview before and after the dimensions are valid.
 func TestSnapFitToolPreview(t *testing.T) {
+	t.Parallel()
 	s := newPartSession(t)
 	tl := NewSnapFitTool()
 	s.StartTool(tl)
@@ -82,6 +85,7 @@ func TestSnapFitToolPreview(t *testing.T) {
 
 // TestSnapFitToolCommitNoPart covers the no-active-part error path.
 func TestSnapFitToolCommitNoPart(t *testing.T) {
+	t.Parallel()
 	if err := NewSnapFitTool().Commit(NewSession()); err == nil {
 		t.Error("commit with no active part should error")
 	}
@@ -89,6 +93,7 @@ func TestSnapFitToolCommitNoPart(t *testing.T) {
 
 // TestSnapFitViaRibbonCommand confirms the Create-panel ribbon command starts the tool.
 func TestSnapFitViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s := newPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

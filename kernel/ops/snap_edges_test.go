@@ -59,6 +59,7 @@ func offSurfaceCylinder(t *testing.T, circleR, cylR, height float64) *topo.Body 
 // already has its edges ON their surfaces, so snapping must leave every edge native (no stored snap,
 // zero residual) and keep the mesh watertight. Only imported (off-surface) edges should move.
 func TestSnapEdgesLeavesCleanSolidUnchanged(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 10)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -82,6 +83,7 @@ func TestSnapEdgesLeavesCleanSolidUnchanged(t *testing.T) {
 // sits off its cylinder side is snapped ONTO the cylinder (the grid-meshed neighbour, preferred over
 // the verbatim cap plane), with the gap recorded as the edge tolerance.
 func TestSnapEdgesLandsOffSurfaceRimOnCylinder(t *testing.T) {
+	t.Parallel()
 	const circleR, cylR, height = 5.0, 4.8, 10.0
 	body := offSurfaceCylinder(t, circleR, cylR, height)
 	SnapEdgesToSurfaces(body, DefaultQuality())
@@ -114,6 +116,7 @@ func TestSnapEdgesLandsOffSurfaceRimOnCylinder(t *testing.T) {
 // cylinder side tessellates with free edges (each grid-meshed wall diverges from its neighbour), and
 // snapping the edges onto the surfaces closes them into a watertight shell.
 func TestSnapEdgesMakesOffSurfaceWatertight(t *testing.T) {
+	t.Parallel()
 	body := offSurfaceCylinder(t, 5.0, 4.8, 10.0)
 	before, _ := TessellateBody(body, DefaultQuality())
 	if freeEdgeCount(before) == 0 {
@@ -131,6 +134,7 @@ func TestSnapEdgesMakesOffSurfaceWatertight(t *testing.T) {
 // TestSnapEdgesSharesIdenticalBoundary pins that after snapping, both faces of an edge mesh the SAME
 // boundary — discretizeEdge returns the one stored polyline, which loopBoundary feeds to every face.
 func TestSnapEdgesSharesIdenticalBoundary(t *testing.T) {
+	t.Parallel()
 	body := offSurfaceCylinder(t, 5.0, 4.8, 10.0)
 	SnapEdgesToSurfaces(body, DefaultQuality())
 	manifoldCurved := 0
@@ -160,6 +164,7 @@ func TestSnapEdgesSharesIdenticalBoundary(t *testing.T) {
 // TestOnSurfacePolylineLandsOnCylinder pins that an off-surface polyline projects back exactly onto a
 // cylinder (radius restored) — the core of closing the ~mm import gap.
 func TestOnSurfacePolylineLandsOnCylinder(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
@@ -175,6 +180,7 @@ func TestOnSurfacePolylineLandsOnCylinder(t *testing.T) {
 // TestReconcileTwoGridSurfacesLandsOnBoth pins that an edge off BOTH grid-meshed surfaces (a cylinder
 // and a sphere) reconciles onto their intersection — on both within tolerance — and records the gap.
 func TestReconcileTwoGridSurfacesLandsOnBoth(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
@@ -202,6 +208,7 @@ func TestReconcileTwoGridSurfacesLandsOnBoth(t *testing.T) {
 // neighbour (a plane meshes its 3D boundary directly) the boundary is taken ON the grid-meshed
 // cylinder, because the cylinder's grid mesher only reproduces an on-surface boundary.
 func TestMergeProjectionsPrefersGridMeshed(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
@@ -223,6 +230,7 @@ func TestMergeProjectionsPrefersGridMeshed(t *testing.T) {
 // TestHealImportedBodySnapsAndAttachesPcurves pins the heal-pass composition: snapping runs (the
 // off-surface rims land on the cylinder) AND every edge-use comes out with a pcurve, in one call.
 func TestHealImportedBodySnapsAndAttachesPcurves(t *testing.T) {
+	t.Parallel()
 	body := offSurfaceCylinder(t, 5.0, 4.8, 10.0)
 	HealImportedBody(body, DefaultQuality())
 	snappedRims := 0
@@ -248,6 +256,7 @@ func TestHealImportedBodySnapsAndAttachesPcurves(t *testing.T) {
 // TestSnapEdgesIdempotent pins that re-healing reproduces the same result — snapEdge re-samples the
 // raw curve, not the prior snap, so it never drifts.
 func TestSnapEdgesIdempotent(t *testing.T) {
+	t.Parallel()
 	body := offSurfaceCylinder(t, 5.0, 4.8, 10.0)
 	SnapEdgesToSurfaces(body, DefaultQuality())
 	first := map[uint64][]math.Point3{}

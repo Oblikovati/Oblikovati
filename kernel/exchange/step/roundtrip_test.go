@@ -34,14 +34,17 @@ func roundTrip(t *testing.T, fixture string) (orig, again *topo.Body) {
 }
 
 func TestRoundTripCube(t *testing.T) {
+	t.Parallel()
 	assertRoundTripPreservesSolid(t, "cube.step")
 }
 
 func TestRoundTripCylinder(t *testing.T) {
+	t.Parallel()
 	assertRoundTripPreservesSolid(t, "cylinder.step")
 }
 
 func TestRoundTripBoxWithHole(t *testing.T) {
+	t.Parallel()
 	assertRoundTripPreservesSolid(t, "box_hole.step")
 }
 

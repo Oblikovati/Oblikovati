@@ -14,6 +14,7 @@ import (
 // sketches), so the import had no browser node. A 3D sketch must now appear as a "sketch3d"
 // node carrying its name and a Sketch3DHandle.
 func TestBrowserShowsSketch3D(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, err := compdef.AddPart(s.Workspace(), "sketch3d-browser.opd", true); err != nil {
 		t.Fatalf("AddPart: %v", err)

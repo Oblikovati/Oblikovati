@@ -52,6 +52,7 @@ func n4TestCornerPts(t *testing.T, arms n4MixedArms) cornerCanalPts {
 // TestSolveN4CornerMatchesOracle is the core validation: from OUR arm surfaces the corner-point solver
 // reproduces the four DRAWEXE corner points A/B/C/D, and the canal patch builds + certifies (NoFold).
 func TestSolveN4CornerMatchesOracle(t *testing.T) {
+	t.Parallel()
 	arms, ok := classifyN4MixedArms(n4TestArms(t))
 	if !ok {
 		t.Fatal("classifyN4MixedArms rejected the N4 corner")
@@ -83,6 +84,7 @@ func TestSolveN4CornerMatchesOracle(t *testing.T) {
 // r away from the oracle. OCCT's own rail bows 3.00 units off its 14.39 chord; the true contact locus is a
 // rigid −r·n̂ offset of the ball-centre curve, so it must bow by the same amount.
 func TestN4RailsAreBallContactLoci(t *testing.T) {
+	t.Parallel()
 	arms, _ := classifyN4MixedArms(n4TestArms(t))
 	res := ResolutionForPoints([]math.Point3{math.P3(0, 0, 0), math.P3(200, 200, 60)})
 	corner, ok := solveN4Corner(arms, 5, res)
@@ -139,6 +141,7 @@ func assertOnSurface(t *testing.T, tag string, surf geom.Surface, c geom.Curve3,
 // so those two — the only stations whose cross-sections become the patch's welded v=0 / v=1 boundaries —
 // would otherwise be the two this test never reaches.
 func TestN4BallPathRollsOnPlaneAndTorusArm(t *testing.T) {
+	t.Parallel()
 	arms, _ := classifyN4MixedArms(n4TestArms(t))
 	torus := arms.torus.armSurface.(geom.Torus)
 	vplane := arms.band.a.Geometry().(geom.Plane)
@@ -209,6 +212,7 @@ func n4TestCanalCert(t *testing.T, mutate func(*RailLoop)) (Certificate, Resolut
 // pts.arcAB and still certify, shipping a cracked weld. It now measures the RECEIVED arm arcs against the
 // surface and the foot-loci against the two HOSTS, so lifting an arm arc off the surface must REJECT.
 func TestN4CertificateMeasuresGeometryItDoesNotOwn(t *testing.T) {
+	t.Parallel()
 	base, res := n4TestCanalCert(t, func(*RailLoop) {})
 	if !base.Valid(res) {
 		t.Fatalf("the unperturbed N4 canal patch does not certify: %+v (weld %.3e)", base, res.Weld())
@@ -267,6 +271,7 @@ func bulgeArcOffSurface(t *testing.T, c geom.Curve3, d float64) geom.Curve3 {
 // TestClassifyN4DeclinesM8Roles is do-no-harm: the N4 classifier must REJECT M8's roles (convex-cyl +
 // concave-cove-torus + planar) so the two mixed-corner paths never both fire.
 func TestClassifyN4DeclinesM8Roles(t *testing.T) {
+	t.Parallel()
 	pl := mustPlane(t, math.P3(0, 0, 0), math.V3(0, 0, 1))
 	m8 := []edgeFillet{
 		{armSurface: mustCylinder(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5)},                    // convex cyl (M8 pivot)

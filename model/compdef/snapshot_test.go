@@ -77,6 +77,7 @@ func metricsOf(def *compdef.PartComponentDefinition) partMetrics {
 // bytes. The undo stream's no-op delta check (bytes.Equal) depends on this — a non-deterministic
 // codec would record phantom undo steps on recomputes that change nothing.
 func TestPartSnapshotDeterministic(t *testing.T) {
+	t.Parallel()
 	_, def := richPart(t)
 	a, err := def.MarshalSnapshot()
 	if err != nil {
@@ -94,6 +95,7 @@ func TestPartSnapshotDeterministic(t *testing.T) {
 // TestPartSnapshotRoundTripPreservesState: a snapshot restored onto the SAME part reproduces its
 // structure exactly (the redo direction), and the geometry regenerates (a body is rebuilt).
 func TestPartSnapshotRoundTripPreservesState(t *testing.T) {
+	t.Parallel()
 	_, def := richPart(t)
 	want := metricsOf(def)
 	snap, err := def.MarshalSnapshot()
@@ -112,6 +114,7 @@ func TestPartSnapshotRoundTripPreservesState(t *testing.T) {
 // yields exactly the snapshot's state — proving RestoreSnapshot is a full replace (reset+apply),
 // the property undo relies on to navigate between arbitrary states.
 func TestPartSnapshotRestoreReplacesOtherPart(t *testing.T) {
+	t.Parallel()
 	_, src := richPart(t)
 	want := metricsOf(src)
 	snap, err := src.MarshalSnapshot()
@@ -143,6 +146,7 @@ func TestPartSnapshotRestoreReplacesOtherPart(t *testing.T) {
 // TestEmptyPartSnapshotRoundTrips: an empty part snapshots and restores without error, staying
 // empty — the baseline a document's undo stream captures the moment it opens.
 func TestEmptyPartSnapshotRoundTrips(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Empty", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -162,6 +166,7 @@ func TestEmptyPartSnapshotRoundTrips(t *testing.T) {
 // byte-stable across a full round-trip — there is no float drift to mask, so restoring then
 // re-marshalling must reproduce the exact snapshot. Pins that the codec itself loses nothing.
 func TestParamsOnlySnapshotByteStable(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Params", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -185,6 +190,7 @@ func TestParamsOnlySnapshotByteStable(t *testing.T) {
 // the part is untouched) and structurally-valid JSON carrying bad content (an unparseable
 // parameter expression or an unknown unit). Covers the restore-error paths for part + assembly.
 func TestRestoreSnapshotRejectsBadSnapshots(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)

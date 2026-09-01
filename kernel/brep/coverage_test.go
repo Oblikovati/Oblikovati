@@ -12,6 +12,7 @@ import (
 )
 
 func TestBooleanDeclinesUnmodelledCurvedContact(t *testing.T) {
+	t.Parallel()
 	// The boolean no longer refuses curved operands wholesale (#2247, ADR-0058): it dispatches per
 	// face and declines only a curved CONTACT configuration outside its exact scope — with the NAMED
 	// sentinel, so the caller falls to the curved recognizers. These overlapping one-face open bodies
@@ -53,12 +54,14 @@ func oneFaceBody(t *testing.T, curved bool) *topo.Body {
 }
 
 func TestUnitOfZeroVectorIsZero(t *testing.T) {
+	t.Parallel()
 	if u := unit(math.V3(0, 0, 0)); u.Length() != 0 {
 		t.Fatalf("unit(0) = %v, want zero", u)
 	}
 }
 
 func TestInHoles2D(t *testing.T) {
+	t.Parallel()
 	hole := []math.Point2{math.P2(0, 0), math.P2(2, 0), math.P2(2, 2), math.P2(0, 2)}
 	if !inHoles2D(math.P2(1, 1), [][]math.Point2{hole}) {
 		t.Error("point inside the hole reported outside")
@@ -72,6 +75,7 @@ func TestInHoles2D(t *testing.T) {
 }
 
 func TestAllEdgesPaired(t *testing.T) {
+	t.Parallel()
 	if !allEdgesPaired(map[[2]int]int{{0, 1}: 2, {1, 2}: 2}) {
 		t.Error("all-paired edges should report paired")
 	}
@@ -81,6 +85,7 @@ func TestAllEdgesPaired(t *testing.T) {
 }
 
 func TestOrientRingBothWindings(t *testing.T) {
+	t.Parallel()
 	// A CCW square on z=0 has a +Z Newell normal.
 	ccw := []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(0, 2, 0)}
 	z := math.V3(0, 0, 1)
@@ -94,6 +99,7 @@ func TestOrientRingBothWindings(t *testing.T) {
 }
 
 func TestReverseSubFaceFlipsNormalAndRings(t *testing.T) {
+	t.Parallel()
 	sf := subFace{
 		outer:  []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)},
 		holes:  [][]math.Point3{{math.P3(0.2, 0.2, 0), math.P3(0.4, 0.2, 0), math.P3(0.2, 0.4, 0)}},
@@ -114,12 +120,14 @@ func TestReverseSubFaceFlipsNormalAndRings(t *testing.T) {
 }
 
 func TestInsideSolidRejectsNonPlanar(t *testing.T) {
+	t.Parallel()
 	if insideSolid(oneFaceBody(t, true), math.P3(0, 0, 0)) {
 		t.Error("insideSolid of a non-planar body should be false")
 	}
 }
 
 func TestFaceLineIntervalsPerpendicularLine(t *testing.T) {
+	t.Parallel()
 	faces, _ := facesOf(oneFaceBody(t, false)) // z=0 triangle
 	f := faces[0]
 	// A line along +Z is perpendicular to the z=0 plane ⇒ no in-plane extent.
@@ -133,6 +141,7 @@ func TestFaceLineIntervalsPerpendicularLine(t *testing.T) {
 }
 
 func TestWelder3RingDedupesAndCloses(t *testing.T) {
+	t.Parallel()
 	w := newWelder3(1e-6)
 	// A loop with a repeated consecutive vertex and a closing duplicate.
 	loop := []math.Point3{math.P3(0, 0, 0), math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(0, 0, 0)}
@@ -143,6 +152,7 @@ func TestWelder3RingDedupesAndCloses(t *testing.T) {
 }
 
 func TestInteriorPoint2D(t *testing.T) {
+	t.Parallel()
 	square := Face2D{Outer: []math.Point2{math.P2(0, 0), math.P2(4, 0), math.P2(4, 4), math.P2(0, 4)}}
 	p, ok := interiorPoint2D(square)
 	if !ok || !pointInPolygon2D(p, square.Outer) {
@@ -155,6 +165,7 @@ func TestInteriorPoint2D(t *testing.T) {
 }
 
 func TestVerticesOnSegment(t *testing.T) {
+	t.Parallel()
 	w := newWelder3(1e-6)
 	for _, p := range []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(1, 0, 0)} {
 		w.add(p)
@@ -172,6 +183,7 @@ func TestVerticesOnSegment(t *testing.T) {
 }
 
 func TestArrangeEmptyAndDegenerate(t *testing.T) {
+	t.Parallel()
 	if Arrange(nil) != nil {
 		t.Error("Arrange of no segments should be nil")
 	}

@@ -18,6 +18,7 @@ const grayParityTolerance = 1e-4
 // linear-sRGB value, channel for channel — the whole reason the two pipelines can agree
 // on a neutral reference material.
 func TestACEScgToLinearSRGBPreservesAchromaticValues(t *testing.T) {
+	t.Parallel()
 	for _, v := range []float64{0, 0.04, 0.18, 0.5, 1.0, 2.5} {
 		got := ACEScgToLinearSRGB(Gray(v))
 		for name, ch := range map[string]float64{"R": got.R, "G": got.G, "B": got.B} {
@@ -32,6 +33,7 @@ func TestACEScgToLinearSRGBPreservesAchromaticValues(t *testing.T) {
 // general — a saturated color must actually change primaries, or the "conversion"
 // would be a no-op that defeats the point of ACEScg working space.
 func TestACEScgToLinearSRGBIsChromatic(t *testing.T) {
+	t.Parallel()
 	red := NewColor3(1, 0, 0)
 	got := ACEScgToLinearSRGB(red)
 	if got.G == 0 && got.B == 0 {
@@ -43,6 +45,7 @@ func TestACEScgToLinearSRGBIsChromatic(t *testing.T) {
 // the same properties mesh.frag's aces() has: 0 stays 0, output never exceeds 1, and it
 // is monotonically increasing over the working HDR range (no highlight banding/reversal).
 func TestACESFilmicTonemapMatchesMeshFragBehavior(t *testing.T) {
+	t.Parallel()
 	if got := ACESFilmicTonemap(Gray(0)); got != (Color3{}) {
 		t.Errorf("ACESFilmicTonemap(0) = %+v, want zero", got)
 	}
@@ -60,6 +63,7 @@ func TestACESFilmicTonemapMatchesMeshFragBehavior(t *testing.T) {
 }
 
 func TestEncodeSRGBBoundaryValues(t *testing.T) {
+	t.Parallel()
 	if got := EncodeSRGB(Gray(0)); got != (Color3{}) {
 		t.Errorf("EncodeSRGB(0) = %+v, want zero", got)
 	}
@@ -82,6 +86,7 @@ func TestEncodeSRGBBoundaryValues(t *testing.T) {
 // OpenPBR path tracer (which authors in ACEScg, converts to linear sRGB, then reuses
 // that same tone-map+encode chain) — within grayParityTolerance, documented above.
 func TestToDisplayGrayWhiteMatchesRasterPipeline(t *testing.T) {
+	t.Parallel()
 	rasterPipeline := func(v, exposure float64) Color3 {
 		return EncodeSRGB(ACESFilmicTonemap(Gray(v).Scale(exposure)))
 	}

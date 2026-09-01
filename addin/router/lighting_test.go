@@ -24,6 +24,7 @@ func argJSON(t *testing.T, v any) string {
 // gallery style and asserts the name survives — the dogfood proof the lighting-style contract
 // reaches the session and back.
 func TestLightingStyleRoundTrips(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var list wire.LightingStyleListResult
 	call(t, r, s, "lighting.listStyles", "{}", &list)
@@ -47,6 +48,7 @@ func TestLightingStyleRoundTrips(t *testing.T) {
 // TestLightingSetStyleRejectsUnknown checks an unknown style name is an error, not a silent
 // fallback.
 func TestLightingSetStyleRejectsUnknown(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, "lighting.setStyle", []byte(`{"name":"Nope"}`)); err == nil {
 		t.Fatal("expected error for unknown lighting style")
@@ -56,6 +58,7 @@ func TestLightingSetStyleRejectsUnknown(t *testing.T) {
 // TestLightRoundTrips adds a point light, edits it, and reads it back — proving the light
 // list/add/set path preserves the full light state through the wire DTO.
 func TestLightRoundTrips(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "lighting.setStyle", `{"name":"Default"}`, nil)
 	var before wire.LightListResult
@@ -86,6 +89,7 @@ func TestLightRoundTrips(t *testing.T) {
 // TestShadowSettingsRoundTrip pins the GroundShadowEnum ⇄ renderer-flag mapping through the
 // view.setShadows / view.getShadows path, including the X-ray distinction.
 func TestShadowSettingsRoundTrip(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	for _, g := range types.AllGroundShadows() {
 		in := wire.ShadowSettings{
@@ -108,6 +112,7 @@ func TestShadowSettingsRoundTrip(t *testing.T) {
 // TestEnvironmentRoundTrips switches to a preset, loads a file, and reads back — proving the
 // preset/file environment contract reaches the session.
 func TestEnvironmentRoundTrips(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var set wire.EnvironmentView
 	call(t, r, s, "environment.set",
@@ -136,6 +141,7 @@ func TestEnvironmentRoundTrips(t *testing.T) {
 
 // TestEnvironmentSetRejectsUnknownPreset checks an unknown preset name is an error.
 func TestEnvironmentSetRejectsUnknownPreset(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, "environment.set", []byte(`{"preset":"Mars"}`)); err == nil {
 		t.Fatal("expected error for unknown environment preset")

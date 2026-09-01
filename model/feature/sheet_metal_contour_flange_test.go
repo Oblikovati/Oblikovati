@@ -26,6 +26,7 @@ func lProfile() *sketch.Sketch {
 // TestContourFlangeSweepsProfile a contour flange sweeps the L-profile along the sheet edge
 // into one watertight valid solid that adds material and rises out of plane.
 func TestContourFlangeSweepsProfile(t *testing.T) {
+	t.Parallel()
 	fs, edge := seedSheetMetalSheet(t, 4, nil)
 	flat := ops.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-4}).Volume
 
@@ -58,6 +59,7 @@ func TestContourFlangeSweepsProfile(t *testing.T) {
 
 // TestContourFlangeRejectsBadProfile a nil/empty profile and a non-chain profile go sick.
 func TestContourFlangeRejectsBadProfile(t *testing.T) {
+	t.Parallel()
 	fs, edge := seedSheetMetalSheet(t, 4, nil)
 	pf := NewSheetMetalContourFlangeFeatures(fs).Add(&SheetMetalContourFlangeDefinition{
 		EdgeKey: edge.ReferenceKey(), Profile: sketch.NewSketches().Add(sketch.XYPlane()), // no lines
@@ -70,6 +72,7 @@ func TestContourFlangeRejectsBadProfile(t *testing.T) {
 
 // TestOpenProfilePoints the chain walker orders the L-profile's vertices start→end.
 func TestOpenProfilePoints(t *testing.T) {
+	t.Parallel()
 	pts, err := openProfilePoints(lProfile())
 	if err != nil {
 		t.Fatalf("openProfilePoints: %v", err)
@@ -81,6 +84,7 @@ func TestOpenProfilePoints(t *testing.T) {
 
 // TestOpenProfileRejectsClosedLoop a closed loop has no degree-1 end, so it is not a contour.
 func TestOpenProfileRejectsClosedLoop(t *testing.T) {
+	t.Parallel()
 	if _, err := openProfilePoints(squareSketch(2)); err == nil {
 		t.Error("a closed loop is not an open contour and must error")
 	}
@@ -91,6 +95,7 @@ func TestOpenProfileRejectsClosedLoop(t *testing.T) {
 
 // TestContourFlangeDefinitionAndKind the accessors return the recipe.
 func TestContourFlangeDefinitionAndKind(t *testing.T) {
+	t.Parallel()
 	def := &SheetMetalContourFlangeDefinition{}
 	f := &SheetMetalContourFlangeFeature{def: def}
 	if f.Definition() != def || f.Kind() != "sheet-metal-contour-flange" {
@@ -101,6 +106,7 @@ func TestContourFlangeDefinitionAndKind(t *testing.T) {
 // TestContourFlangeRoundTrip the recipe (edge key + profile sketch + flip) marshals and
 // restores, preserving the kind and payload.
 func TestContourFlangeRoundTrip(t *testing.T) {
+	t.Parallel()
 	profile := lProfile()
 	fs := NewPartFeatures(nil)
 	NewSheetMetalContourFlangeFeatures(fs).Add(&SheetMetalContourFlangeDefinition{
@@ -128,6 +134,7 @@ func TestContourFlangeRoundTrip(t *testing.T) {
 
 // TestContourFlangeMissingPayload / unknown sketch restore errors.
 func TestContourFlangeMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreSheetMetalContourFlange(NewPartFeatures(nil), nil, oneSketch{}); err == nil {
 		t.Error("restoreSheetMetalContourFlange(nil) must error")
 	}

@@ -22,6 +22,7 @@ func sq(z float64, pts ...[2]float64) []math.Point3 {
 // order is realigned so corresponding points track the previous section (minimum twist), rather
 // than connecting mismatched corners (which would self-intersect the loft).
 func TestAlignSectionsUntwists(t *testing.T) {
+	t.Parallel()
 	ref := sq(0, [2]float64{0, 0}, [2]float64{1, 0}, [2]float64{1, 1}, [2]float64{0, 1})
 	// Same square at z=1 but listed starting two corners later (a "twist" if matched by index).
 	cur := sq(1, [2]float64{1, 1}, [2]float64{0, 1}, [2]float64{0, 0}, [2]float64{1, 0})
@@ -38,6 +39,7 @@ func TestAlignSectionsUntwists(t *testing.T) {
 // every interpolated point keeps the endpoints' x,y (Inventor's 2-section Free loft is ruled),
 // only sampled densely.
 func TestSplineTwoSectionsIsRuled(t *testing.T) {
+	t.Parallel()
 	tri0 := sq(0, [2]float64{0, 0}, [2]float64{2, 0}, [2]float64{1, 2})
 	tri1 := sq(3, [2]float64{0, 0}, [2]float64{2, 0}, [2]float64{1, 2})
 	out := splineSections([][]math.Point3{tri0, tri1}, false, loftEnds{}, 0)
@@ -57,6 +59,7 @@ func TestSplineTwoSectionsIsRuled(t *testing.T) {
 // offset sideways must CURVE through it — the blend passes through the middle (reaches its
 // offset) and bulges off the straight line between the end sections.
 func TestSplineThreeSectionsBulges(t *testing.T) {
+	t.Parallel()
 	tri := func(z, dx float64) []math.Point3 {
 		return sq(z, [2]float64{dx, 0}, [2]float64{dx + 2, 0}, [2]float64{dx + 1, 2})
 	}
@@ -94,6 +97,7 @@ func mengerCurv(a, b, c math.Point3) float64 {
 // (position, 1st and 2nd derivatives at both ends), so it reproduces any degree-5 polynomial curve
 // from that curve's endpoint data.
 func TestHermite5MatchesQuinticPolynomial(t *testing.T) {
+	t.Parallel()
 	// Q(t) = c0 + c1 t + c2 t² + c3 t³ + c4 t⁴ + c5 t⁵ (a distinct cubic-ish per axis).
 	q := func(t float64) math.Point3 {
 		return math.P3(
@@ -124,6 +128,7 @@ func TestHermite5MatchesQuinticPolynomial(t *testing.T) {
 // 1/R and points toward the centre (the sphere's normal curvature), and the takeoff tangent is unit
 // and perpendicular to the boundary (hoop) edge.
 func TestFaceEndDerivSphereCurvature(t *testing.T) {
+	t.Parallel()
 	const R = 2.0
 	sph, _ := geom.NewSphere(math.P3(0, 0, 0), R)
 	u0, v0 := 0.7, 0.3
@@ -153,6 +158,7 @@ func TestFaceEndDerivSphereCurvature(t *testing.T) {
 // whereas a Tangent (G1) end leaves with a different seam curvature. This is the numeric F13-style
 // gate (the body is a faceted skin, so continuity is measured on the longitudinal track).
 func TestLoftG2MatchesFaceCurvature(t *testing.T) {
+	t.Parallel()
 	const R = 2.0
 	sph, _ := geom.NewSphere(math.P3(0, 0, 0), R)
 	v0 := 0.3
@@ -210,6 +216,7 @@ func TestLoftG2MatchesFaceCurvature(t *testing.T) {
 // TestHermite7MatchesSepticPolynomial: hermite7 is the exact septic interpolant of its Hermite data
 // (position + 1st/2nd/3rd derivatives at both ends), so it reproduces any degree-7 polynomial curve.
 func TestHermite7MatchesSepticPolynomial(t *testing.T) {
+	t.Parallel()
 	// Distinct degree-7 polynomial per axis (coefficients c0..c7).
 	cof := [3][8]float64{
 		{1, 2, -1, 0.5, 1, -0.3, 0.2, -0.1},
@@ -254,6 +261,7 @@ func TestHermite7MatchesSepticPolynomial(t *testing.T) {
 // curvature (1/R, like G2) AND continues with its curvature-rate, so its track's third derivative at
 // the seam equals the face's — the G3 (curvature-rate) continuity the condition promises.
 func TestLoftG3MatchesFaceCurvatureRate(t *testing.T) {
+	t.Parallel()
 	const R = 2.0
 	sph, _ := geom.NewSphere(math.P3(0, 0, 0), R)
 	v0 := 0.3
@@ -299,6 +307,7 @@ func TestLoftG3MatchesFaceCurvatureRate(t *testing.T) {
 // segment stays at the floor, while a 90° cross-section twist gets enough sub-sections to keep
 // each facet below loftMaxStepDeg — so a twisted loft reads smooth instead of faceted.
 func TestSegmentSamplesDensifiesTwist(t *testing.T) {
+	t.Parallel()
 	rot90 := func(p []math.Point3, z float64) []math.Point3 {
 		out := make([]math.Point3, len(p))
 		for i, q := range p {

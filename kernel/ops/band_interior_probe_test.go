@@ -46,6 +46,7 @@ func bandProbeRim(v float64, n int) faceLoop {
 // deepest point of the band at its station — not a fraction of a sampling chord off one rim, where the
 // depth shrinks with every extra sample the discretizer takes.
 func TestWrappingBandProbeSitsMidBand(t *testing.T) {
+	t.Parallel()
 	loops := bandProbeLoops(bandProbeTestVLo, bandProbeTestVHi, 64)
 	_, v, ok := bandInteriorUV(loops)
 	if !ok {
@@ -62,6 +63,7 @@ func TestWrappingBandProbeSitsMidBand(t *testing.T) {
 // not have: refining the boundary discretization must not push the probe towards the boundary. The step
 // was a fraction of a CHORD, so doubling the samples halved the depth; the mid-band midpoint does not move.
 func TestWrappingBandProbeDepthIsIndependentOfSampling(t *testing.T) {
+	t.Parallel()
 	var first float64
 	for i, n := range []int{16, 64, 256} {
 		_, v, ok := bandInteriorUV(bandProbeLoops(bandProbeTestVLo, bandProbeTestVHi, n))
@@ -83,6 +85,7 @@ func TestWrappingBandProbeDepthIsIndependentOfSampling(t *testing.T) {
 // TestWrappingBandProbeDeclinesAThicknesslessStation: a band with both rims at the same v has no interior,
 // and the probe must say so rather than return a point on the boundary itself.
 func TestWrappingBandProbeDeclinesAThicknesslessStation(t *testing.T) {
+	t.Parallel()
 	if _, _, ok := bandInteriorUV(bandProbeLoops(bandProbeTestVLo, bandProbeTestVLo, 64)); ok {
 		t.Error("bandInteriorUV claimed an interior point on a band of zero thickness")
 	}

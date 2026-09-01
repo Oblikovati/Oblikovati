@@ -31,6 +31,7 @@ func dockEventLog(s *Session) *[]DockableWindowChanged {
 }
 
 func TestSetDockableWindowEmitsOnVisibilityTransitions(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	got := dockEventLog(s)
 
@@ -50,6 +51,7 @@ func TestSetDockableWindowEmitsOnVisibilityTransitions(t *testing.T) {
 }
 
 func TestSetDockableWindowVisibleRoundTrip(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.SetDockableWindow(simWindow(false)); err != nil {
 		t.Fatalf("SetDockableWindow: %v", err)
@@ -75,6 +77,7 @@ func TestSetDockableWindowVisibleRoundTrip(t *testing.T) {
 }
 
 func TestDeleteDockableWindowEmitsHideFirst(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.SetDockableWindow(simWindow(true)); err != nil {
 		t.Fatalf("SetDockableWindow: %v", err)
@@ -96,6 +99,7 @@ func TestDeleteDockableWindowEmitsHideFirst(t *testing.T) {
 }
 
 func TestSetDockableWindowRejectsMissingIdentity(t *testing.T) {
+	t.Parallel()
 	if err := NewSession().SetDockableWindow(wire.DockableWindowSpec{Title: "x"}); err == nil {
 		t.Error("Set without id should fail")
 	}
@@ -104,6 +108,7 @@ func TestSetDockableWindowRejectsMissingIdentity(t *testing.T) {
 // TestPanelValueChangedUpdatesControlAndEmits covers the editable-panel edit path: the stored
 // control's value is updated and a PanelValueChanged event is emitted for the add-in.
 func TestPanelValueChangedUpdatesControlAndEmits(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	w := simWindow(true)
 	w.Controls = append(w.Controls, wire.PanelControlSpec{Kind: types.PanelTextBox, ID: "poles", Value: "10"})
@@ -135,6 +140,7 @@ func TestPanelValueChangedUpdatesControlAndEmits(t *testing.T) {
 
 // TestGraphicsLabelsEmptyWithoutGraphics exercises GraphicsLabels (no add-in graphics → none).
 func TestGraphicsLabelsEmptyWithoutGraphics(t *testing.T) {
+	t.Parallel()
 	if got := NewSession().GraphicsLabels(); len(got) != 0 {
 		t.Errorf("labels without graphics = %d, want 0", len(got))
 	}

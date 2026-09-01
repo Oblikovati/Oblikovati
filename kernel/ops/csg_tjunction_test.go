@@ -15,6 +15,7 @@ import (
 // the single-pass centroid fan eliminates every T-junction regardless of size. A vertex sitting on a
 // triangle's edge is split out; a vertex off the edges leaves the triangle alone.
 func TestRemoveTJunctionsClosesCage(t *testing.T) {
+	t.Parallel()
 	// Vertex 3 sits on edge 0→1 of triangle (0,1,2): a T-junction. The split must use vertex 3, so the
 	// triangle becomes a fan (>1 face) and every undirected edge ends up shared an even number of times.
 	verts := []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(0, 2, 0), math.P3(1, 0, 0)}
@@ -31,6 +32,7 @@ func TestRemoveTJunctionsClosesCage(t *testing.T) {
 
 // TestRemoveTJunctionsNoFalseSplit: a vertex clear of every edge leaves the triangle whole.
 func TestRemoveTJunctionsNoFalseSplit(t *testing.T) {
+	t.Parallel()
 	verts := []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(0, 2, 0), math.P3(3, 3, 0)}
 	lineTol := ResolutionForPoints(verts).Plane()
 
@@ -46,6 +48,7 @@ func TestRemoveTJunctionsNoFalseSplit(t *testing.T) {
 // on-edge vertex 3; thousands of small, disjoint pad triangles push the count over the old cap without
 // touching it.
 func TestRemoveTJunctionsScalesPastOldBudget(t *testing.T) {
+	t.Parallel()
 	tj := []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(0, 2, 0), math.P3(1, 0, 0)}
 	lineTol := ResolutionForPoints(tj).Plane() // small-scale tolerance, before the far pad blows up the bbox
 
@@ -73,6 +76,7 @@ const tjunctionPadCount = 4001
 // cell by mean edge length made the long edge's segment walk take ~length/tiny ≈ millions of steps; sizing
 // by the bbox diagonal over ∛N bounds it. The pass must finish quickly, not hang.
 func TestRemoveTJunctionsMixedScaleFast(t *testing.T) {
+	t.Parallel()
 	var verts []math.Point3
 	var faces [][3]int
 	for i := range 6000 { // many tiny triangles → a tiny mean edge length

@@ -11,6 +11,7 @@ import (
 // TestVisualStyleDefault checks a new session draws Shaded with Edges (so model edges are
 // visible by default).
 func TestVisualStyleDefault(t *testing.T) {
+	t.Parallel()
 	if s := NewSession(); s.VisualStyle() != renderer.ShadedWithEdges {
 		t.Errorf("default visual style = %v, want Shaded with Edges", s.VisualStyle())
 	}
@@ -18,6 +19,7 @@ func TestVisualStyleDefault(t *testing.T) {
 
 // TestVisualStyleCommands checks the View-tab Visual Style commands set the session style.
 func TestVisualStyleCommands(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
@@ -58,6 +60,7 @@ func visualStylePanel(t *testing.T, s *Session) RibbonPanel {
 // RibbonSelector) listing every display mode — not a button grid — and that its current
 // selection tracks the session's visual style.
 func TestVisualStyleIsSelectionBox(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t) // a part session, so the Part ribbon's View tab is built
 	p := visualStylePanel(t, s)
 	if p.Selector == nil {

@@ -56,6 +56,7 @@ func snapRes() geom.Resolution {
 // TestSnapProjectionLandsExactlyOnPlane: the rational projection puts a jittered point BIT-exactly
 // on the plane — n·(q-o) is exactly zero, not merely small — for an oblique plane too.
 func TestSnapProjectionLandsExactlyOnPlane(t *testing.T) {
+	t.Parallel()
 	pl := ratPlaneOf(planeSurface(t, math.P3(0.3, -0.2, 0.7), math.V3(0.4, 0.5, -0.6)))
 	q := pl.project(meshbool.FromCoords(0.11, 0.22+jitterY, 0.33))
 	// residual = n·(q-o), which must be the exact rational zero.
@@ -72,6 +73,7 @@ func TestSnapProjectionLandsExactlyOnPlane(t *testing.T) {
 // TestSnapMakesCoincidentOppositeFacesExactlyCoplanar: before the snap the exact predicate reads the
 // jittered face as OFF the other operand's plane; after, it reads it exactly ON — the whole point.
 func TestSnapMakesCoincidentOppositeFacesExactlyCoplanar(t *testing.T) {
+	t.Parallel()
 	a := quadSoup(0, []float64{+jitterY, -jitterY, +2 * jitterY, -jitterY}, 0) // operand A, jittered off y=0
 	b := quadSoup(0, nil, 1)                                                   // operand B, exact on y=0, OPPOSITE normal
 	refs := []faceSurfaceRef{
@@ -91,6 +93,7 @@ func TestSnapMakesCoincidentOppositeFacesExactlyCoplanar(t *testing.T) {
 // TestSnapLeavesNonCoincidentPlanesUntouched: two parallel planes a real distance apart are not a
 // coincident pair, so nothing is grouped and no vertex moves.
 func TestSnapLeavesNonCoincidentPlanesUntouched(t *testing.T) {
+	t.Parallel()
 	a := quadSoup(0, []float64{+jitterY, 0, 0, 0}, 0)
 	b := quadSoup(0.5, nil, 1) // half a unit away — a different plane
 	refs := []faceSurfaceRef{
@@ -108,6 +111,7 @@ func TestSnapLeavesNonCoincidentPlanesUntouched(t *testing.T) {
 // a corner of two interfaces; snapping it onto one plane would move it off the other, so both groups
 // are left untouched (a named decline — the case stays faceted, never distorted).
 func TestSnapDeclinesMultiInterfaceCorner(t *testing.T) {
+	t.Parallel()
 	// Operand A: one face on y=0, one face on z=0, sharing the edge y=z=0 (vertices at x=0 and x=1).
 	yFace := quadSoup(0, []float64{+jitterY, +jitterY, 0, 0}, 0)
 	zFaceA := zQuadSoup(0, jitterY, 1)

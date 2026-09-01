@@ -36,6 +36,7 @@ func makeCircularPattern(t *testing.T) (*Router, *app.Session, wire.PatternInfo)
 // TestAssemblyPatternPersistsAndLists patternCreate records the pattern (id, kind, 4 elements), and
 // patternList re-reads exactly it — the array is no longer thrown away.
 func TestAssemblyPatternPersistsAndLists(t *testing.T) {
+	t.Parallel()
 	r, s, pat := makeCircularPattern(t)
 	if pat.Kind != "circular" || len(pat.Elements) != 4 || pat.Suppression != "none" {
 		t.Errorf("pattern = %+v, want circular / 4 elements / none suppressed", pat)
@@ -50,6 +51,7 @@ func TestAssemblyPatternPersistsAndLists(t *testing.T) {
 // TestAssemblyPatternSuppressHidesAll suppressing the whole pattern reports "all" and hides every
 // generated occurrence; unsuppressing restores "none" and reveals them.
 func TestAssemblyPatternSuppressHidesAll(t *testing.T) {
+	t.Parallel()
 	r, s, pat := makeCircularPattern(t)
 	var info wire.PatternInfo
 	call(t, r, s, "assembly.patternSetSuppressed", fmt.Sprintf(`{"pattern":%d,"suppressed":true}`, pat.ID), &info)
@@ -71,6 +73,7 @@ func TestAssemblyPatternSuppressHidesAll(t *testing.T) {
 // TestAssemblyPatternElementSuppressReportsSome suppressing one element reports "some" at the
 // pattern level and flags that element.
 func TestAssemblyPatternElementSuppressReportsSome(t *testing.T) {
+	t.Parallel()
 	r, s, pat := makeCircularPattern(t)
 	var info wire.PatternInfo
 	call(t, r, s, "assembly.patternElementSetSuppressed",
@@ -94,6 +97,7 @@ func TestAssemblyPatternElementSuppressReportsSome(t *testing.T) {
 // TestAssemblyPatternElementReposition repositioning one element flags it and moves its occurrence
 // off the regular grid.
 func TestAssemblyPatternElementReposition(t *testing.T) {
+	t.Parallel()
 	r, s, pat := makeCircularPattern(t)
 	var info wire.PatternInfo
 	call(t, r, s, "assembly.patternElementReposition",
@@ -109,6 +113,7 @@ func TestAssemblyPatternElementReposition(t *testing.T) {
 // TestAssemblyPatternDelete deleting a pattern removes the occurrences it generated (the seed stays)
 // and drops it from the list.
 func TestAssemblyPatternDelete(t *testing.T) {
+	t.Parallel()
 	r, s, pat := makeCircularPattern(t)
 	var del wire.DeletePatternResult
 	call(t, r, s, "assembly.patternDelete", fmt.Sprintf(`{"pattern":%d}`, pat.ID), &del)

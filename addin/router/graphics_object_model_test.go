@@ -11,6 +11,7 @@ import (
 // TestGraphicsNodeMutations submits a group with a named node, then moves / hides / flags it
 // through the targeted retained-mode methods (no geometry resubmit).
 func TestGraphicsNodeMutations(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	tri := wire.GraphicsPrimitive{Kind: "triangles", Coordinates: []float64{0, 0, 0, 1, 0, 0, 0, 1, 0}, Indices: []int{0, 1, 2}, Color: []float32{1, 0, 0, 1}}
 	call(t, r, s, "clientGraphics.set", mustJSON(t, wire.SetClientGraphicsArgs{
@@ -29,6 +30,7 @@ func TestGraphicsNodeMutations(t *testing.T) {
 
 // TestColorMapperRegistryHandlers registers a named mapper and lists it back.
 func TestColorMapperRegistryHandlers(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	mapper := wire.GraphicsColorMapper{Values: []float64{0, 1}, Colors: []float32{0, 0, 1, 1, 1, 0, 0, 1}}
 	call(t, r, s, "clientGraphics.registerColorMapper", mustJSON(t, wire.RegisterColorMapperArgs{Name: "stress", Mapper: mapper}), &wire.OKResult{})

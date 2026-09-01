@@ -10,6 +10,7 @@ import (
 )
 
 func TestNopPiCutoutCSG(t *testing.T) {
+	t.Parallel()
 	left := prismBody(regularPolygonPoints(math.P3(-0.35, 0, 0), 0.18, 32, 0), 0, 0.35, "pi-cutout-left")
 	right := prismBody(regularPolygonPoints(math.P3(0.35, 0, 0), 0.18, 32, 0), 0, 0.35, "pi-cutout-right")
 	hull, err := ops.ConvexHullOf("pi-cutout-base-hull", left, right)

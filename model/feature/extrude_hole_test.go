@@ -14,6 +14,7 @@ import (
 // inner loops: an annular profile (square with a square hole) extruded into a solid
 // block instead of a frame. The extruded volume must be (outer-inner)·height.
 func TestExtrudeHonorsHole(t *testing.T) {
+	t.Parallel()
 	ps := param.NewParameters()
 	fs := NewPartFeatures(ps)
 	const side, hole, height = 4.0, 2.0, 3.0
@@ -49,6 +50,7 @@ func TestExtrudeHonorsHole(t *testing.T) {
 // half its true area — so the volume came out far too low. The fix is the earcut planar
 // triangulator (kernel/ops/earcut.go); the volume must now be (plate − 4·hole)·height.
 func TestExtrudeHonorsMultipleHoles(t *testing.T) {
+	t.Parallel()
 	ps := param.NewParameters()
 	fs := NewPartFeatures(ps)
 	const w, h, hole, height = 8.0, 6.0, 1.0, 2.0

@@ -61,6 +61,7 @@ func u4EdgeFillet(t *testing.T) (edgeFillet, Resolution) {
 // the do-no-harm precondition every later U4 slice builds on: if this ever returns only 1 or 0, the
 // dual-host rebuild has nothing to work with.
 func TestDetectObstaclesU4ReturnsBothHosts(t *testing.T) {
+	t.Parallel()
 	ef, res := u4EdgeFillet(t)
 	dets, ok := detectObstacles(ef, res)
 	if !ok || len(dets) != 2 {
@@ -84,6 +85,7 @@ func TestDetectObstaclesU4ReturnsBothHosts(t *testing.T) {
 // station spacing (~0.39 between an A-node and its neighbouring B-node) yet loose enough for the
 // sampled-rim crossing solve's own tolerance.
 func TestPartitionUnionStationsU4(t *testing.T) {
+	t.Parallel()
 	ef, res := u4EdgeFillet(t)
 	dets, ok := detectObstacles(ef, res)
 	if !ok || len(dets) != 2 {
@@ -134,6 +136,7 @@ var u4SliverOracle, u4CoreOracle = 3.039, 30.334
 // 1% of the oracle 6583.29. This is the outcome the U4-0..U4-4b slices built toward, replacing the old
 // HolesContained=false do-no-harm baseline (the dual-host defect held in quarantine until this slice).
 func TestFilletU4DualHostWatertight(t *testing.T) {
+	t.Parallel()
 	res := filletU4Body(t)
 	rep := Validate(res)
 	watertight := rep.Valid && rep.Closed && rep.Manifold && rep.HolesContained && res.IsSolid()
@@ -164,6 +167,7 @@ func TestFilletU4DualHostWatertight(t *testing.T) {
 // This is the real-U4 validation the #2009 aspect-aware starved-rail fix deferred: if a panel folds or
 // misses its oracle in production, the fix did NOT cover the real faces and the slice is BLOCKED.
 func TestFilletU4PerFaceProductionTessellation(t *testing.T) {
+	t.Parallel()
 	res := filletU4Body(t)
 	var slivers, cores int
 	for _, f := range res.Faces() {
@@ -283,6 +287,7 @@ func otherNotch(dets []obstacleDetection, closure dualClosure, outer obstacleDet
 // ORIGINAL face carries a separate hole loop before the rebuild (>=2 loops, outer+hole) — mergeHoleInto-
 // Notch's whole job is collapsing that down to exactly 1.
 func TestBuildDualClosureU4BothNotchesAbsorbFootprint(t *testing.T) {
+	t.Parallel()
 	ef, dets, spans, maps := u4ClosureFixture(t)
 	if len(dets[0].host.Loops()) < 2 || len(dets[1].host.Loops()) < 2 {
 		t.Fatalf("fixture precondition: U4 hosts must carry a separate hole loop pre-rebuild, got %d/%d loops",
@@ -311,6 +316,7 @@ func TestBuildDualClosureU4BothNotchesAbsorbFootprint(t *testing.T) {
 // keeping the whole wall intact — its true surface area unchanged from the DRAWEXE oracle (A=502.655=
 // 2π·8·10, B=799.1, derivation §0 "Survivors intact (WIRE:1)").
 func TestBuildDualClosureU4BothWallsSplitIntact(t *testing.T) {
+	t.Parallel()
 	ef, dets, spans, maps := u4ClosureFixture(t)
 	closure, ok := buildDualClosure(ef, dets, spans, maps)
 	if !ok {
@@ -350,6 +356,7 @@ func TestBuildDualClosureU4BothWallsSplitIntact(t *testing.T) {
 // wing's outer stations sit OUTSIDE the other host's own dip interval (B ⊃ A, derivation §1.1) — so a
 // future edge-insert has a real straight edge there to split, not a mid-air point.
 func TestBuildDualClosureU4WingsWeldNoOrphanSeam(t *testing.T) {
+	t.Parallel()
 	ef, dets, spans, maps := u4ClosureFixture(t)
 	closure, ok := buildDualClosure(ef, dets, spans, maps)
 	if !ok {

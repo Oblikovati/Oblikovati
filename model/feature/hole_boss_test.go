@@ -14,6 +14,7 @@ import (
 )
 
 func TestHoleAndBossGenerateRealGeometry(t *testing.T) {
+	t.Parallel()
 	// A drilled hole and a boss both generate real geometry (healthy). Each feature is
 	// tested on its own body: a boolean rebuilds the topology with new lineage, so a
 	// reference to a pre-cut face does not survive (chaining across a boolean is a follow-up).
@@ -44,6 +45,7 @@ func TestHoleAndBossGenerateRealGeometry(t *testing.T) {
 // TestBossRaisesStudOfExactVolume: a boss on a block's top adds exactly the stud's prism
 // volume (the entry overhang overlaps the block, so it adds nothing) — #327.
 func TestBossRaisesStudOfExactVolume(t *testing.T) {
+	t.Parallel()
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // z=2 cap, normal +Z
 
@@ -71,6 +73,7 @@ func TestBossRaisesStudOfExactVolume(t *testing.T) {
 
 // TestBossLostFaceSick: a boss whose placement face vanished goes Sick.
 func TestBossLostFaceSick(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
 	boss := NewBossFeatures(fs).Add([]byte("gone"), func() float64 { return 1 }, func() float64 { return 1 })
@@ -83,6 +86,7 @@ func TestBossLostFaceSick(t *testing.T) {
 // TestPatternOfBossReplicatesStuds: a rectangular pattern of a boss re-joins the clean stud
 // (ToolBody) at each occurrence — one body whose volume grows by N−1 extra studs.
 func TestPatternOfBossReplicatesStuds(t *testing.T) {
+	t.Parallel()
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey()
 
@@ -106,6 +110,7 @@ func TestPatternOfBossReplicatesStuds(t *testing.T) {
 }
 
 func TestHoleDrillsThroughForReal(t *testing.T) {
+	t.Parallel()
 	// A 4×4×2 block (vol 32). Drill a Ø2 hole through the top face → removes a TRUE cylinder of
 	// radius 1 over the full thickness 2. The result carries geom.Cylinder:1 + geom.Plane:6, and
 	// mass properties integrate that analytic B-rep (M48/C3 #3453), so the exact answer is πr²h —
@@ -135,6 +140,7 @@ func TestHoleDrillsThroughForReal(t *testing.T) {
 }
 
 func TestHoleDrillsAtExplicitCenter(t *testing.T) {
+	t.Parallel()
 	// An 8×8×2 block. Drill a Ø2 through hole with an EXPLICIT off-centre drill point at
 	// (2,3) instead of the face centroid (4,4): the bore must land there, not at the middle.
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 8, Y: 0}, {X: 8, Y: 8}, {X: 0, Y: 8}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
@@ -177,6 +183,7 @@ func TestHoleDrillsAtExplicitCenter(t *testing.T) {
 }
 
 func TestHoleThroughAllProducesCylinderWall(t *testing.T) {
+	t.Parallel()
 	// A 4×4×2 block, Ø2 hole through the top face. ThroughAll routes through the curved
 	// boolean → a TRUE cylinder wall (one curved face), not a 32-gon prism.
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
@@ -213,6 +220,7 @@ func TestHoleThroughAllProducesCylinderWall(t *testing.T) {
 }
 
 func TestBlindHoleProducesCylinderWallAndFlatBottom(t *testing.T) {
+	t.Parallel()
 	// 4×4×2 block, Ø2 hole only 1 deep (blind) → exact cylinder wall + flat bottom disk.
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // z=2 cap, normal +Z
@@ -247,6 +255,7 @@ func TestBlindHoleProducesCylinderWallAndFlatBottom(t *testing.T) {
 }
 
 func TestCounterboreHoleProducesTwoWallsAndShoulder(t *testing.T) {
+	t.Parallel()
 	// 8×8×4 block. Counterbore: Ø4 recess 1 deep + Ø2 bore through (total depth 4).
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 8, Y: 0}, {X: 8, Y: 8}, {X: 0, Y: 8}}, sketch.XYPlane(), span{near: 0, far: 4}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // z=4 cap, normal +Z
@@ -286,6 +295,7 @@ func TestCounterboreHoleProducesTwoWallsAndShoulder(t *testing.T) {
 }
 
 func TestCountersinkHoleProducesConeWall(t *testing.T) {
+	t.Parallel()
 	// 10×10×6 block. Countersink: Ø4 sink at 90° included narrowing to a Ø2 bore through.
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 10, Y: 0}, {X: 10, Y: 10}, {X: 0, Y: 10}}, sketch.XYPlane(), span{near: 0, far: 6}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // z=6 cap, normal +Z
@@ -319,6 +329,7 @@ func TestCountersinkHoleProducesConeWall(t *testing.T) {
 }
 
 func TestDrilledHoleWithConicalPoint(t *testing.T) {
+	t.Parallel()
 	// 8×8×6 block, Ø2 blind hole 3 deep with a 118° drill point → cylinder bore + cone tip.
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 8, Y: 0}, {X: 8, Y: 8}, {X: 0, Y: 8}}, sketch.XYPlane(), span{near: 0, far: 6}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // z=6 cap, normal +Z
@@ -350,6 +361,7 @@ func TestDrilledHoleWithConicalPoint(t *testing.T) {
 }
 
 func TestHoleGoesSickOnLostFace(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
 	hole := NewHoleFeatures(fs).AddDrilled([]byte("ghost-face"), func() float64 { return 0.3 }, func() float64 { return 0.5 })
@@ -360,6 +372,7 @@ func TestHoleGoesSickOnLostFace(t *testing.T) {
 }
 
 func TestHoleBossDefinitionAccessors(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	h := NewHoleFeatures(fs).AddDrilled([]byte("f"), func() float64 { return 1 }, func() float64 { return 2 })
 	if h.Definition().(*HoleFeature).Definition().Type != DrilledHole {
@@ -379,6 +392,7 @@ func TestHoleBossDefinitionAccessors(t *testing.T) {
 // cutter while the replicated occurrences use the faceted drill tool, so the bores differ by a
 // few percent — the band proves "two more holes" without over-fitting that gap.)
 func TestPatternOfHoleCutsEachOccurrence(t *testing.T) {
+	t.Parallel()
 	// A 16×4×2 block centred on X (spans −8..8): a Ø2 hole at the top-face centroid (x=0),
 	// patterned 3× by +3 in X → bores at x=0,3,6, all clear of the x=±8 edges.
 	corners := []math.Point2{{X: -8, Y: -2}, {X: 8, Y: -2}, {X: 8, Y: 2}, {X: -8, Y: 2}}
@@ -424,6 +438,7 @@ func TestPatternOfHoleCutsEachOccurrence(t *testing.T) {
 // cylinder wall (the tapped-hole thread had nothing to attach to). The cut must route through
 // the through-hole drill and keep the TRUE cylinder wall.
 func TestHoleFlushBlindDepthBreaksThrough(t *testing.T) {
+	t.Parallel()
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // z=2 cap, normal +Z
 

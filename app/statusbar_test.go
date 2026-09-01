@@ -5,6 +5,7 @@ package app
 import "testing"
 
 func TestBuildStatusIdle(t *testing.T) {
+	t.Parallel()
 	sb := BuildStatus(NewSession())
 	if sb.ToolActive || sb.Prompt != "Ready" || sb.SelectionCount != 0 {
 		t.Fatalf("idle status = %+v, want Ready / inactive / 0 selected", sb)
@@ -17,6 +18,7 @@ func TestBuildStatusIdle(t *testing.T) {
 // TestBuildStatusReportsSketchAndRelax checks the status model surfaces the sketch + Relax
 // Mode state the command-window control row needs to draw its toggle (#791).
 func TestBuildStatusReportsSketchAndRelax(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	_ = sk
 	s.SetRelaxMode(true)
@@ -30,6 +32,7 @@ func TestBuildStatusReportsSketchAndRelax(t *testing.T) {
 }
 
 func TestBuildStatusGuidesExtrude(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	s.SetPicker(stubPicker{sel: profile})
 	ext := NewExtrudeTool()
@@ -62,6 +65,7 @@ func (promptlessTool) Commit(*Session) error     { return nil }
 func (promptlessTool) Cancel(*Session)           {}
 
 func TestBuildStatusGenericPromptFallback(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.StartTool(promptlessTool{})
 	if got := BuildStatus(s).Prompt; got != "Select or specify input for Fake" {

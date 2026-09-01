@@ -20,6 +20,7 @@ func nearXY(t *testing.T, got, want float64) {
 // TestSketchTrimToolRemovesPickedSegment drives the Trim tool end-to-end: pick the middle
 // of a line between two crossings → the picked segment is removed.
 func TestSketchTrimToolRemovesPickedSegment(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(6, 0))
 	sk.Lines().AddByTwoPoints(math.P2(2, -1), math.P2(2, 1)) // crossing at x=2
@@ -39,6 +40,7 @@ func TestSketchTrimToolRemovesPickedSegment(t *testing.T) {
 // TestSketchTrimToolCutsAtCircleCrossing proves the tool benefits from the curve-aware
 // crossing engine: a line trimmed where a circle crosses it.
 func TestSketchTrimToolCutsAtCircleCrossing(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(-3, 0), math.P2(3, 0))
 	sk.Circles().AddByCenterRadius(math.P2(0, 0), 1) // crosses at (±1,0)
@@ -57,6 +59,7 @@ func TestSketchTrimToolCutsAtCircleCrossing(t *testing.T) {
 // TestSketchExtendToolLengthensNearerEnd: picking near the B end extends it to the next
 // crossing of the line's support.
 func TestSketchExtendToolLengthensNearerEnd(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(2, 0))
 	sk.Lines().AddByTwoPoints(math.P2(5, -1), math.P2(5, 1)) // support crossing at x=5
@@ -74,6 +77,7 @@ func TestSketchExtendToolLengthensNearerEnd(t *testing.T) {
 
 // TestSketchSplitToolSplitsAtPoint: the picked point splits the line into two.
 func TestSketchSplitToolSplitsAtPoint(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 	before := sk.Lines().Count()
@@ -95,6 +99,7 @@ func TestSketchSplitToolSplitsAtPoint(t *testing.T) {
 // TestSketchTrimToolTrimsCircleTarget: trimming a circle that two lines cross replaces it
 // with the complementary arc.
 func TestSketchTrimToolTrimsCircleTarget(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	c := sk.Circles().AddByCenterRadius(math.P2(0, 0), 2)
 	sk.Lines().AddByTwoPoints(math.P2(0, -3), math.P2(0, 3)) // crosses at (0,±2)
@@ -114,6 +119,7 @@ func TestSketchTrimToolTrimsCircleTarget(t *testing.T) {
 
 // TestSketchTrimToolRejectsNonCurve: a point pick keeps the tool open with an error.
 func TestSketchTrimToolRejectsNonCurve(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	p := sk.Points().Add(math.P2(0, 0))
 
@@ -126,6 +132,7 @@ func TestSketchTrimToolRejectsNonCurve(t *testing.T) {
 }
 
 func TestSketchTrimExtendSplitCommandsRegistered(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)

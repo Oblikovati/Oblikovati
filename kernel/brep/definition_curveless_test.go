@@ -11,6 +11,7 @@ import (
 // TestValidateDefinitionFlagsCurvelessEdge covers the "edge has no curve" issue: an edge with
 // in-range vertices but a nil curve is reported as a definition problem.
 func TestValidateDefinitionFlagsCurvelessEdge(t *testing.T) {
+	t.Parallel()
 	def := SurfaceBodyDefinition{
 		Vertices: []VertexDefinition{{Position: math.P3(0, 0, 0)}, {Position: math.P3(1, 0, 0)}},
 		Edges:    []EdgeDefinition{{StartVertex: 0, EndVertex: 1, Curve: nil}},

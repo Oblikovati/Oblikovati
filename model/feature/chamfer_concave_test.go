@@ -58,6 +58,7 @@ func chamferedConcave(t *testing.T, d float64, strategy types.ChamferConcaveStra
 // (concave) edge chamfered outward must FILL the inside corner with a 45° gusset, adding ½·d²·L of
 // material — not cut a malformed sliver as the convex-only path did.
 func TestChamferConcaveOutwardFills(t *testing.T) {
+	t.Parallel()
 	const d = 0.4
 	res := chamferedConcave(t, d, types.ChamferConcaveOutward)
 	want := 3 + 0.5*d*d // L volume 3 + triangular fill ½·d·d·length(1)
@@ -69,6 +70,7 @@ func TestChamferConcaveOutwardFills(t *testing.T) {
 // TestChamferConcaveInwardRelieves checks the inward strategy cuts a recessed relief groove out of
 // the corner instead, removing ½·d²·L of material.
 func TestChamferConcaveInwardRelieves(t *testing.T) {
+	t.Parallel()
 	const d = 0.4
 	res := chamferedConcave(t, d, types.ChamferConcaveInward)
 	want := 3 - 0.5*d*d // L volume 3 − triangular relief ½·d·d·length(1)
@@ -80,6 +82,7 @@ func TestChamferConcaveInwardRelieves(t *testing.T) {
 // TestChamferConcaveOutwardIsDefault confirms the zero-value strategy (AddChamferCorners) fills
 // outward — so an existing/default chamfer of a concave edge adds material, the chosen default.
 func TestChamferConcaveOutwardIsDefault(t *testing.T) {
+	t.Parallel()
 	const d = 0.4
 	body, edge := lExtrude(t)
 	fs := NewPartFeatures(nil)

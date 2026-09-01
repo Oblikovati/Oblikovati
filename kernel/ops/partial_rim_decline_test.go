@@ -19,6 +19,7 @@ import (
 // OBSERVABLY: it must fall to the recorded CSG fallback, never panic or error. This pins that bar (and guards
 // the orphan-vertex CSG panic fix at the integration level — the chain used to crash here).
 func TestPartialRimChainedCutDeclinesObservably(t *testing.T) {
+	t.Parallel()
 	s := 1 / stdmath.Sqrt2
 	target, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	if err != nil {

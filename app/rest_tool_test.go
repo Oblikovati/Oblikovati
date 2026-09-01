@@ -11,6 +11,7 @@ import (
 // TestRestToolEndToEnd drives the Rest UI: pick a region, set a depth, OK — and asserts the
 // raised pad added material (block 72 + 2×2×1 = 76).
 func TestRestToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def, region := partWithTopRegion(t)
 	s.SetPicker(stubPicker{sel: region})
 
@@ -38,6 +39,7 @@ func TestRestToolEndToEnd(t *testing.T) {
 
 // TestRestToolRecesses confirms the recessed mode cuts a pocket (block 72 − 2×2×1 = 68).
 func TestRestToolRecesses(t *testing.T) {
+	t.Parallel()
 	s, def, region := partWithTopRegion(t)
 	s.SetPicker(stubPicker{sel: region})
 
@@ -57,6 +59,7 @@ func TestRestToolRecesses(t *testing.T) {
 // TestRestToolParams exercises the property-dialog surface: name, depth/recessed accessors,
 // and the Params model the head renders.
 func TestRestToolParams(t *testing.T) {
+	t.Parallel()
 	tl := NewRestTool()
 	if tl.Name() != "Rest" {
 		t.Errorf("name = %q, want Rest", tl.Name())
@@ -82,6 +85,7 @@ func TestRestToolParams(t *testing.T) {
 
 // TestRestToolPreviewAndPick covers the draft preview, Ctrl-toggle multi-pick, and Cancel.
 func TestRestToolPreviewAndPick(t *testing.T) {
+	t.Parallel()
 	s, _, region := partWithTopRegion(t)
 	tl := NewRestTool()
 	s.StartTool(tl)
@@ -106,6 +110,7 @@ func TestRestToolPreviewAndPick(t *testing.T) {
 
 // TestRestToolCommitNoPart covers the no-active-part error path.
 func TestRestToolCommitNoPart(t *testing.T) {
+	t.Parallel()
 	if err := NewRestTool().Commit(NewSession()); err == nil {
 		t.Error("commit with no active part should error")
 	}
@@ -113,6 +118,7 @@ func TestRestToolCommitNoPart(t *testing.T) {
 
 // TestRestViaRibbonCommand confirms the Create-panel ribbon command starts the tool.
 func TestRestViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _, _ := partWithTopRegion(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

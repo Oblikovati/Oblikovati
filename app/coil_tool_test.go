@@ -14,6 +14,7 @@ import (
 // and revolutions in the property window, OK — and asserts a valid helical solid that
 // climbs pitch·revs + the profile height lands in the part.
 func TestCoilToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 4, 1) // square offset from the Y axis
 	s.SetPicker(stubPicker{sel: profile})
 
@@ -47,6 +48,7 @@ func TestCoilToolEndToEnd(t *testing.T) {
 }
 
 func TestCoilViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 4, 1)
 	s.SetPicker(stubPicker{sel: profile})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -73,6 +75,7 @@ func TestCoilViaRibbonCommand(t *testing.T) {
 }
 
 func TestCoilToolNeedsProfileAndRevolutions(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 4, 1)
 	s.SetPicker(stubPicker{sel: profile})
 	c := NewCoilTool()

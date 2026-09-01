@@ -11,6 +11,7 @@ import (
 // TestBrepCylinderConeTorus covers the cylinder/cone and torus primitive builders the
 // existing test does not (block + sphere are already covered).
 func TestBrepCylinderConeTorus(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var cone wire.BrepHandleResult
 	call(t, r, s, "brep.createPrimitive", `{"kind":"cylinderCone","bottom":[0,0,0],"top":[0,0,5],"bottomRadius":2,"topRadius":1}`, &cone)
@@ -30,6 +31,7 @@ func TestBrepCylinderConeTorus(t *testing.T) {
 
 // TestBrepTransformSectionSilhouette drives the transient ops the existing test skips.
 func TestBrepTransformSectionSilhouette(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var b wire.BrepHandleResult
 	call(t, r, s, "brep.createPrimitive", `{"kind":"block","min":[0,0,0],"max":[4,4,4]}`, &b)

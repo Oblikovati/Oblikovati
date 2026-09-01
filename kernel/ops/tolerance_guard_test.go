@@ -31,6 +31,7 @@ import (
 // A length tolerance with none of these and no res.-derived value is a FAILURE: relativise it
 // (geom.ResolutionForBox/ForSize(...).Weld()/.Plane()) or justify it with the right annotation.
 func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
+	t.Parallel()
 	// In-scope hot-path files (relative to this package dir, kernel/ops). Kept explicit rather than
 	// globbed so widening the guard's reach is a deliberate, reviewable act.
 	scope := []string{
@@ -185,6 +186,7 @@ func toleranceLiteral(code string) bool {
 // matcher must catch each known evasion spelling, and must not fire on ordinary
 // arithmetic — otherwise the whitelist gives false confidence.
 func TestToleranceGuardCatchesEvasionForms(t *testing.T) {
+	t.Parallel()
 	caught := []string{
 		"k := int64(x * 1e6)",     // the old quantCoord reciprocal grid
 		"const q = x * 1e5",       // the old weldKey reciprocal grid

@@ -12,6 +12,7 @@ import (
 // TestSketch3DSplineToolDrawsFitSpline drives the ribbon command: place three
 // points, commit, and the active 3D sketch holds an interpolating spline.
 func TestSketch3DSplineToolDrawsFitSpline(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	if err := s.Execute("Sketch3D.Spline"); err != nil {
 		t.Fatalf("Sketch3D.Spline: %v", err)
@@ -38,6 +39,7 @@ func TestSketch3DSplineToolDrawsFitSpline(t *testing.T) {
 // TestSketch3DControlPointSplineToolDrawsControlSpline covers the control-polygon
 // variant, including the Closed dialog flag.
 func TestSketch3DControlPointSplineToolDrawsControlSpline(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	if err := s.Execute("Sketch3D.ControlPointSpline"); err != nil {
 		t.Fatalf("Sketch3D.ControlPointSpline: %v", err)
@@ -59,6 +61,7 @@ func TestSketch3DControlPointSplineToolDrawsControlSpline(t *testing.T) {
 // TestSketch3DEquationCurveToolDrawsCurve fills the dialog expressions and range
 // and commits a parametric curve.
 func TestSketch3DEquationCurveToolDrawsCurve(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	if err := s.Execute("Sketch3D.EquationCurve"); err != nil {
 		t.Fatalf("Sketch3D.EquationCurve: %v", err)
@@ -84,6 +87,7 @@ func TestSketch3DEquationCurveToolDrawsCurve(t *testing.T) {
 // TestSketch3DEquationCurveToolRejectsBadExpression keeps the tool open when the
 // kernel rejects an expression, instead of silently dropping the input.
 func TestSketch3DEquationCurveToolRejectsBadExpression(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	if err := s.Execute("Sketch3D.EquationCurve"); err != nil {
 		t.Fatalf("Sketch3D.EquationCurve: %v", err)

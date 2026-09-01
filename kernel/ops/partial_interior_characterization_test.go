@@ -21,6 +21,7 @@ import (
 // TestInteriorDrillStaysThroughHole: a centered drill (circle strictly inside both caps) declines the scallop
 // path and stays DrillThroughHole — the interior/partial gate boundary is clean on the subtractive side.
 func TestInteriorDrillStaysThroughHole(t *testing.T) {
+	t.Parallel()
 	plate, _ := brep.SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
 	drill, _ := brep.SolidCylinder(math.P3(0, 0, -1), math.V3(0, 0, 1), 2, 4) // centered → strictly interior
 	if _, ok := brep.CutEdgeScallop(plate, drill); ok {
@@ -36,6 +37,7 @@ func TestInteriorDrillStaysThroughHole(t *testing.T) {
 // TestInteriorBossStaysCylindricalBoss: a boss whose base circle is strictly inside the seat face declines the
 // straddling path and stays JoinCylindricalBoss — the gate boundary is clean on the additive side.
 func TestInteriorBossStaysCylindricalBoss(t *testing.T) {
+	t.Parallel()
 	plate, _ := brep.SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
 	boss, _ := brep.SolidCylinder(math.P3(0, 0, 2), math.V3(0, 0, 1), 2, 3) // centered on the top face → interior
 	if _, ok := brep.JoinPartialBoss(plate, boss); ok {

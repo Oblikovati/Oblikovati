@@ -13,6 +13,7 @@ import (
 // workspace so a test session can start fresh, and that documents.create then
 // works again with a previously-used name (the collision that motivated this).
 func TestCloseAllDocuments(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t) // one open part document
 	call(t, r, s, wire.MethodDocumentsCreate, `{"type":"part","name":"part-a"}`, nil)
 	if n := s.Workspace().Count(); n < 2 {
@@ -37,6 +38,7 @@ func TestCloseAllDocuments(t *testing.T) {
 
 // TestCloseDocumentByID closes a single document by id and leaves the rest.
 func TestCloseDocumentByID(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var created wire.DocumentInfo
 	call(t, r, s, wire.MethodDocumentsCreate, `{"type":"part","name":"to-close"}`, &created)

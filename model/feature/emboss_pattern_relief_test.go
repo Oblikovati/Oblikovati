@@ -20,6 +20,7 @@ import (
 // the relief therefore has no pocket — solid where the seed is hollow — which is exactly what this
 // test measures. Before the fix the copy's pocket point is solid; after it, both pockets are empty.
 func TestEmbossFromPlanePatternReplicatesTheReliefCut(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddExtrude(squareSketch(10), []int{0}, ops.NewBody,
 		Extent{Type: DistanceExtent, Direction: SymmetricDir, Distance: func() float64 { return 4 }}, 0)
@@ -54,6 +55,7 @@ func TestEmbossFromPlanePatternReplicatesTheReliefCut(t *testing.T) {
 // pattern AND mirror; both replicate through the same resolveGroup). A mirror of an interior
 // from-plane emboss must reflect its relief cut, not only its raise.
 func TestEmbossFromPlaneMirrorReplicatesTheReliefCut(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddExtrude(squareSketch(10), []int{0}, ops.NewBody,
 		Extent{Type: DistanceExtent, Direction: SymmetricDir, Distance: func() float64 { return 4 }}, 0)

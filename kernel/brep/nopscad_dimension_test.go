@@ -9,6 +9,7 @@ import (
 )
 
 func TestNopDimensionCSG(t *testing.T) {
+	t.Parallel()
 	body := prismBody([]math.Point3{
 		math.P3(-0.95, 0, 0),
 		math.P3(-0.7, -0.08, 0),

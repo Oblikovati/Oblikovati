@@ -15,6 +15,7 @@ import (
 // used exactly twice and the body must be a solid. The pick edge is located coordinate-robustly by
 // its two end vertices (the real v5 sits at y=93.969, so a rounded literal would miss it).
 func TestV3FilletClosesToSolid(t *testing.T) {
+	t.Parallel()
 	b := importCorpusSolid(t, "simple/V3")
 	v5 := vertexNear(t, b, math.P3(34.2, 94, 50))
 	v3 := vertexNear(t, b, math.P3(-0.612, 86, 59.7))

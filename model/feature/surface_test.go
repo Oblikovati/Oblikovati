@@ -59,6 +59,7 @@ func plateWithHolesSketch(w, h, hole float64, centres [][2]float64) *sketch.Sket
 }
 
 func TestBoundaryPatchFillsClosedBoundary(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewBoundaryPatchFeatures(fs).Add(squareSketch(4), 0, PatchTangent)
 	fs.Recompute()
@@ -86,6 +87,7 @@ func TestBoundaryPatchFillsClosedBoundary(t *testing.T) {
 }
 
 func TestBoundaryPatchHonorsConditionPerLoop(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewBoundaryPatchFeatures(fs).Add(squareSketch(2), 0, PatchCurvature)
 	def := pf.Definition().(*BoundaryPatchFeature).Definition()
@@ -98,6 +100,7 @@ func TestBoundaryPatchHonorsConditionPerLoop(t *testing.T) {
 }
 
 func TestBoundaryPatchWithHoleCutsInnerLoop(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewBoundaryPatchFeatures(fs).Add(squareWithHoleSketch(6, 2), 0, PatchFree)
 	fs.Recompute()
@@ -115,6 +118,7 @@ func TestBoundaryPatchWithHoleCutsInnerLoop(t *testing.T) {
 }
 
 func TestBoundaryPatchGoesSickOnOpenProfile(t *testing.T) {
+	t.Parallel()
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	a := s.Points().Add(math.P2(0, 0))
 	b := s.Points().Add(math.P2(1, 0))
@@ -132,6 +136,7 @@ func TestBoundaryPatchGoesSickOnOpenProfile(t *testing.T) {
 // TestBoundaryPatchEdgeLoopRoundTrip: the #1867 3D edge-loop patch (edge keys, curvature continuity,
 // guide-rail keys, tangent weight) survives marshal→restore.
 func TestBoundaryPatchEdgeLoopRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBoundaryPatchFeatures(fs).AddEdgeLoop([][]byte{{1, 2}, {3, 4}, {5, 6}}, PatchCurvature, [][]byte{{9, 9}}, 0.75)
 	data, err := fs.MarshalRecipe(oneSketch{})
@@ -153,6 +158,7 @@ func TestBoundaryPatchEdgeLoopRoundTrip(t *testing.T) {
 
 // TestPatchContinuityOrder maps free/tangent/curvature to the G0/G1/G2 fill order.
 func TestPatchContinuityOrder(t *testing.T) {
+	t.Parallel()
 	for c, want := range map[PatchCondition]int{PatchFree: 0, PatchTangent: 1, PatchCurvature: 2} {
 		if got := patchContinuityOrder(c); got != want {
 			t.Errorf("patchContinuityOrder(%v) = %d, want %d", c, got, want)
@@ -161,6 +167,7 @@ func TestPatchContinuityOrder(t *testing.T) {
 }
 
 func TestRuledSurfaceBuildsBand(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewRuledSurfaceFeatures(fs).AddByDistance(squareSketch(2), 0, RuledNormal, func() float64 { return 3 })
 	fs.Recompute()
@@ -193,6 +200,7 @@ func nearly(a, b float64) bool { d := a - b; return d < 1e-6 && d > -1e-6 }
 // TestRuledSurfaceSweepDirection rules a square along an explicit oblique vector (3,0,4)·5: the top
 // loop shifts +3 in X and +4 in Z, so the band spans X∈[0,5] Z∈[0,4] (#1868).
 func TestRuledSurfaceSweepDirection(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	def := &RuledSurfaceDefinition{Sketch: squareSketch(2), ProfileIndex: 0, Type: RuledSweep, Distance: func() float64 { return 5 }, Direction: math.V3(3, 0, 4)}
 	pf := NewRuledSurfaceFeatures(fs).AddRuled(def)
@@ -212,6 +220,7 @@ func TestRuledSurfaceSweepDirection(t *testing.T) {
 
 // TestRuledSurfaceSweepNeedsDirection: the sweep type with a zero direction goes sick.
 func TestRuledSurfaceSweepNeedsDirection(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	def := &RuledSurfaceDefinition{Sketch: squareSketch(2), ProfileIndex: 0, Type: RuledSweep, Distance: func() float64 { return 3 }}
 	pf := NewRuledSurfaceFeatures(fs).AddRuled(def)
@@ -224,6 +233,7 @@ func TestRuledSurfaceSweepNeedsDirection(t *testing.T) {
 // TestRuledSurfaceDraftFlare: a 30° draft flares each ruling radially outward by dist·tan(30°), so the
 // top square grows and the band's X-span becomes 2 + dist·tan(30°)·√2 (#1868).
 func TestRuledSurfaceDraftFlare(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	def := &RuledSurfaceDefinition{Sketch: squareSketch(2), ProfileIndex: 0, Type: RuledNormal, Distance: func() float64 { return 3 }, DraftAngle: func() float64 { return 0.5235987755982988 }} // 30°
 	pf := NewRuledSurfaceFeatures(fs).AddRuled(def)
@@ -243,6 +253,7 @@ func TestRuledSurfaceDraftFlare(t *testing.T) {
 // TestRuledSurfaceFlipReversesRulings: Flip negates the ruling direction, so a +Z normal band instead
 // grows down to Z=-3 (#1868).
 func TestRuledSurfaceFlipReversesRulings(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	def := &RuledSurfaceDefinition{Sketch: squareSketch(2), ProfileIndex: 0, Type: RuledNormal, Distance: func() float64 { return 3 }, Flip: true}
 	pf := NewRuledSurfaceFeatures(fs).AddRuled(def)
@@ -258,6 +269,7 @@ func TestRuledSurfaceFlipReversesRulings(t *testing.T) {
 
 // TestRuledSweepRoundTrip: a sweep with direction/draft/flip survives marshal→restore (#1868).
 func TestRuledSweepRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := squareSketch(2)
 	fs := NewPartFeatures(nil)
 	NewRuledSurfaceFeatures(fs).AddRuled(&RuledSurfaceDefinition{
@@ -283,6 +295,7 @@ func TestRuledSweepRoundTrip(t *testing.T) {
 
 // TestRuledPerpendicularBackCompat: the legacy "perpendicular" type name restores as the sweep type.
 func TestRuledPerpendicularBackCompat(t *testing.T) {
+	t.Parallel()
 	got, err := parseRuledType("perpendicular")
 	if err != nil || got != RuledSweep {
 		t.Errorf("parseRuledType(perpendicular) = %v,%v, want RuledSweep,nil", got, err)
@@ -290,6 +303,7 @@ func TestRuledPerpendicularBackCompat(t *testing.T) {
 }
 
 func TestRuledSurfaceTangentDefers(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewRuledSurfaceFeatures(fs).AddByDistance(squareSketch(2), 0, RuledTangent, func() float64 { return 3 })
 	fs.Recompute()
@@ -303,6 +317,7 @@ func TestRuledSurfaceTangentDefers(t *testing.T) {
 }
 
 func TestRuledSurfaceGoesSickOnOpenProfile(t *testing.T) {
+	t.Parallel()
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	a := s.Points().Add(math.P2(0, 0))
 	b := s.Points().Add(math.P2(1, 0))
@@ -316,6 +331,7 @@ func TestRuledSurfaceGoesSickOnOpenProfile(t *testing.T) {
 }
 
 func TestRuledSurfaceZeroDistanceErrors(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewRuledSurfaceFeatures(fs).AddByDistance(squareSketch(2), 0, RuledNormal, nil)
 	fs.Recompute()

@@ -63,6 +63,7 @@ func edgeKeys(edges []*topo.Edge) [][]byte {
 // butts them into a watertight solid — material the open corner did not have — and no longer reports
 // the deferral, because the corner is now modelled.
 func TestCornerSeamNoOverlapButtsTheWalls(t *testing.T) {
+	t.Parallel()
 	fs, edges := twoFlangeCorner(t, 0.3, 0.3)
 	openVol := smSolidVolume(fs.Result()[0])
 	pf := addCornerSeam(t, fs, edges, NoOverlapSeam, 0)
@@ -80,6 +81,7 @@ func TestCornerSeamNoOverlapButtsTheWalls(t *testing.T) {
 // butt, so its volume is strictly greater, and the tab grows with the overlap percent. The added
 // material is measured against the analytic tab thickness × lapLength × height.
 func TestCornerSeamOverlapAddsProudTab(t *testing.T) {
+	t.Parallel()
 	butt := seamVolume(t, NoOverlapSeam, 0, 0.3, 0.3)
 	lap40 := seamVolume(t, OverlapSeam, 40, 0.3, 0.3)
 	lap80 := seamVolume(t, OverlapSeam, 80, 0.3, 0.3)
@@ -106,6 +108,7 @@ func TestCornerSeamOverlapAddsProudTab(t *testing.T) {
 // off differs, so the two styles add different tabs — proof the choice of lapping wall is honoured,
 // not just recorded.
 func TestCornerSeamOverlapVsReverseLapDifferentWalls(t *testing.T) {
+	t.Parallel()
 	// Wall a (radius 0.3, stand-off 0.5) is placed first, wall b (radius 0.6, stand-off 0.8) second.
 	// Overlap laps a over b — the tab sits on b's wider face; reverse laps b over a — the smaller
 	// tab sits on a. So overlap must add strictly MORE than reverse, by the stand-off difference.
@@ -120,6 +123,7 @@ func TestCornerSeamOverlapVsReverseLapDifferentWalls(t *testing.T) {
 // TestCornerSeamRootReliefIsCut: a sized seam-root relief opens the corner where the two bends meet,
 // so a relieved overlap seam has less material than the same seam with no relief.
 func TestCornerSeamRootReliefIsCut(t *testing.T) {
+	t.Parallel()
 	noRelief := seamVolume(t, OverlapSeam, 80, 0.3, 0.3)
 	fs, edges := twoFlangeCorner(t, 0.3, 0.3)
 	pf := NewSheetMetalCornerSeamFeatures(fs).Add(&SheetMetalCornerSeamDefinition{

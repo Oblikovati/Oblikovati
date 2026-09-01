@@ -36,6 +36,7 @@ func unitTool(x float64, feat string) *topo.Body {
 // the tools. A fold that stopped at the first would still produce a plausible, valid solid — so
 // the test measures the volume both slabs remove, not merely that the feature is healthy.
 func TestCombineCutsByEveryTool(t *testing.T) {
+	t.Parallel()
 	fs := threeBoxPart(t)
 	cut := NewModifyFeatures(fs).AddCombineTools(0, []int{1, 2}, ops.Cut, false)
 	fs.Recompute()
@@ -60,6 +61,7 @@ func TestCombineCutsByEveryTool(t *testing.T) {
 // lets a later feature reuse them. Their geometry must be untouched — a tool that came back
 // already cut would silently change every later use of it.
 func TestCombineKeepsToolBodies(t *testing.T) {
+	t.Parallel()
 	fs := threeBoxPart(t)
 	cut := NewModifyFeatures(fs).AddCombineTools(0, []int{1, 2}, ops.Cut, true)
 	fs.Recompute()
@@ -85,6 +87,7 @@ func TestCombineKeepsToolBodies(t *testing.T) {
 // cut, wrong for a join of overlapping solids) and a self-tool would intersect a body with
 // itself. Both are recipe mistakes worth naming rather than absorbing.
 func TestCombineRejectsRepeatedAndSelfTools(t *testing.T) {
+	t.Parallel()
 	for name, tools := range map[string][]int{
 		"repeated": {1, 1},
 		"self":     {0},
@@ -123,6 +126,7 @@ func extrudedThreeBoxPart(t *testing.T) (*PartFeatures, sketchList) {
 // feature — and a single-tool one must keep writing the original scalar so an existing document
 // is unchanged by this option existing.
 func TestCombineToolsRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs, idx := extrudedThreeBoxPart(t)
 	NewModifyFeatures(fs).AddCombineTools(0, []int{1, 2}, ops.Cut, true)
 	data, err := fs.MarshalRecipe(idx)
@@ -146,6 +150,7 @@ func TestCombineToolsRoundTrip(t *testing.T) {
 // TestSingleToolCombineKeepsTheScalarSpelling: the recipe for the ordinary combine must not
 // change shape because the multi-tool form now exists.
 func TestSingleToolCombineKeepsTheScalarSpelling(t *testing.T) {
+	t.Parallel()
 	fs, idx := extrudedThreeBoxPart(t)
 	NewModifyFeatures(fs).AddCombine(0, 1, ops.Cut)
 	data, err := fs.MarshalRecipe(idx)
@@ -160,6 +165,7 @@ func TestSingleToolCombineKeepsTheScalarSpelling(t *testing.T) {
 // TestLegacyCombineRecipeRestores: a document written before #1894 carries only the scalar and
 // must restore as the one-tool, tool-consuming combine it was.
 func TestLegacyCombineRecipeRestores(t *testing.T) {
+	t.Parallel()
 	legacy := []FeatureData{{Kind: "combine", Combine: &CombineData{Target: 0, Tool: 1, Operation: "cut"}}}
 	fs := NewPartFeatures(nil)
 	if err := fs.ApplyRecipe(legacy, oneSketch{}, nil); err != nil {

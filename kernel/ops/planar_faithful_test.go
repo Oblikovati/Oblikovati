@@ -33,6 +33,7 @@ func planarTrisArea(tris [][3]int, outer []math.Point2, holes [][]math.Point2) f
 // TestPlanarTrisHoledCoversArea: a holed planar face triangulates to exactly its area (outer − holes),
 // whichever path planarTris takes — the watertightness precondition (full, non-overlapping coverage).
 func TestPlanarTrisHoledCoversArea(t *testing.T) {
+	t.Parallel()
 	outer := ngon2D(0, 0, 25, 24)
 	holes := [][]math.Point2{ngon2D(8, 5, 1.75, 32), ngon2D(-9, -6, 1.75, 32)}
 	want := stdmath.Abs(signedArea(outer))
@@ -48,6 +49,7 @@ func TestPlanarTrisHoledCoversArea(t *testing.T) {
 // TestPlanarAreaMatches: accepts a correct triangulation (incl. a zero-area collinear-merge variant)
 // and rejects one with an overlap (the earcut-defect signature that triggers the CDT fallback).
 func TestPlanarAreaMatches(t *testing.T) {
+	t.Parallel()
 	// a unit square split with a redundant collinear midpoint on one edge: edge 0-1-2 collinear,
 	// triangulating as the two triangles {0,2,3} (the merge) covers the exact area.
 	sq := []math.Point2{math.P2(0, 0), math.P2(1, 0), math.P2(2, 0), math.P2(2, 1), math.P2(0, 1)}
@@ -71,6 +73,7 @@ func TestPlanarAreaMatches(t *testing.T) {
 // per-segment check would flag this trivially-clean face as defective and route it to the CDT. The
 // collinear subsumption is watertight (the surface is flat along the shared line).
 func TestPlanarTrisCollinearSlotBottomsCoverExactly(t *testing.T) {
+	t.Parallel()
 	outer := rectHole(0, 0, 10, 10)
 	holes := [][]math.Point2{rectHole(1, 1, 3, 9), rectHole(4, 1, 6, 9), rectHole(7, 1, 9, 9)}
 	want := stdmath.Abs(signedArea(outer))
@@ -93,6 +96,7 @@ func TestPlanarTrisCollinearSlotBottomsCoverExactly(t *testing.T) {
 // 600-boundary-vertex annulus area-exact well inside the per-recompute tessellation
 // budget — so an area-wrong earcut on a big face routes to it instead of shipping.
 func TestPlanarCDTLargeFaceAreaExact(t *testing.T) {
+	t.Parallel()
 	outer := ngon2D(0, 0, 50, 400)
 	hole := ngon2D(0, 0, 20, 200)
 	tris := planarCDT(outer, [][]math.Point2{hole})
@@ -105,6 +109,7 @@ func TestPlanarCDTLargeFaceAreaExact(t *testing.T) {
 // TestPlanarTrisLargeCleanFaceKeepsEarcut: a large but CLEAN face must still take the
 // cheap path — the CDT stays reserved for the genuine area defect.
 func TestPlanarTrisLargeCleanFaceKeepsEarcut(t *testing.T) {
+	t.Parallel()
 	outer := ngon2D(0, 0, 50, 400)
 	got := planarTris(outer, nil)
 	want := bestSingleLoopTriangulation(outer)

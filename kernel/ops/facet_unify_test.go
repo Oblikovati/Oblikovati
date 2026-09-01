@@ -65,6 +65,7 @@ func topRimEdges(b *topo.Body) [][]byte {
 // TestFacetUnifiesCoplanarFrame faceting a shelled tray must NOT shatter its flat top frame: the
 // annulus stays one face, the body stays a valid solid with χ and volume preserved.
 func TestFacetUnifiesCoplanarFrame(t *testing.T) {
+	t.Parallel()
 	tray := shelledTray(t)
 	wantVol := ops.BodyGeometryProperties(tray, ops.DefaultQuality()).Volume
 
@@ -95,6 +96,7 @@ func TestFacetUnifiesCoplanarFrame(t *testing.T) {
 // tray (the state the #1693 pattern cascade leaves) must yield a valid manifold solid, not the
 // "non-manifold edge used by 4 faces" the shattered rim produced.
 func TestFilletOnFacetedRimStaysManifold(t *testing.T) {
+	t.Parallel()
 	faceted := ops.Facet(shelledTray(t), "facet")
 	before := ops.BodyGeometryProperties(faceted, ops.DefaultQuality()).Volume
 

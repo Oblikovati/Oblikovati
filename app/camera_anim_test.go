@@ -19,6 +19,7 @@ func runCameraAnimation(s *Session) {
 }
 
 func TestEnterSketchSwingsCameraToFacePlane(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XZPlane())
 	s.EnterSketch(sk)
@@ -37,6 +38,7 @@ func TestEnterSketchSwingsCameraToFacePlane(t *testing.T) {
 }
 
 func TestExitSketchRestoresCamera(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	// A distinctive starting view to detect a faithful restore.
 	cam := s.Camera()
@@ -59,6 +61,7 @@ func TestExitSketchRestoresCamera(t *testing.T) {
 }
 
 func TestAnimateCameraZeroDurationSnaps(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	target := s.Camera()
 	target.Eye = math.P3(3, 4, 5)
@@ -72,6 +75,7 @@ func TestAnimateCameraZeroDurationSnaps(t *testing.T) {
 }
 
 func TestTickCameraAnimationNoopWhenIdle(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	before := s.Camera()
 	s.TickCameraAnimation(0.1) // nothing animating
@@ -81,6 +85,7 @@ func TestTickCameraAnimationNoopWhenIdle(t *testing.T) {
 }
 
 func TestEnterSketchOnXYKeepsTopDownView(t *testing.T) {
+	t.Parallel()
 	// The emptyPartSession camera already looks down −Z at the XY origin, so entering a
 	// sketch on XY leaves the view essentially unchanged after the (no-op) swing.
 	s, def := emptyPartSession(t)

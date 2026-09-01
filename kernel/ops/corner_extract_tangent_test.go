@@ -105,6 +105,7 @@ func mustArcRef(t *testing.T, center math.Point3, axis, ref math.Vector3, r, sta
 // the C2-justified 0.05% (the canal is the RIGHT surface for this tangent-degenerate corner; coons4
 // was the do-no-harm fallback that held it to 1% before the canal solve landed).
 func TestExtractTangentCorner_IsValence4Canal(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	loop, ok := extractCurvedCorner(w, arms, res)
 	if !ok || loop.Valence() != 4 {
@@ -127,6 +128,7 @@ func TestExtractTangentCorner_IsValence4Canal(t *testing.T) {
 // result_5 vertices V0..V3 exactly (to res.Weld·r), the proof that the reflected-family rails are the
 // right rails (not the octant great arcs, which would miss two of the four).
 func TestExtractTangentCorner_ReproducesOracleVertices(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	loop, ok := extractCurvedCorner(w, arms, res)
 	if !ok {
@@ -149,6 +151,7 @@ func TestExtractTangentCorner_ReproducesOracleVertices(t *testing.T) {
 // host (T-N7.3) depends on E2 being genuinely on the wall. Every sample of E2 (the one BSpline rail)
 // must sit within res.Weld·R of radius 50 about the wall axis.
 func TestExtractTangentCorner_BridgeIsOnWall(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	loop, ok := extractCurvedCorner(w, arms, res)
 	if !ok {

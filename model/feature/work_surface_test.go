@@ -11,6 +11,7 @@ import (
 // TestWorkSurfacesSyncGathersSheetBodies keeps only the open (non-solid) bodies of a
 // result and auto-names them in order (M20-F16).
 func TestWorkSurfacesSyncGathersSheetBodies(t *testing.T) {
+	t.Parallel()
 	c := NewWorkSurfaces()
 	c.Sync([]*topo.Body{prismBody(), patchSurfaceBody(2, 3), prismBody(), patchSurfaceBody(1, 1)})
 
@@ -28,6 +29,7 @@ func TestWorkSurfacesSyncGathersSheetBodies(t *testing.T) {
 // TestWorkSurfacesSyncPreservesDisplayState keeps a renamed/hidden surface's state across
 // a resync that rebuilds the underlying body objects, and drops a surface that disappears.
 func TestWorkSurfacesSyncPreservesDisplayState(t *testing.T) {
+	t.Parallel()
 	c := NewWorkSurfaces()
 	c.Sync([]*topo.Body{patchSurfaceBody(2, 3), patchSurfaceBody(1, 1)})
 	if err := c.Item(0).SetName("Parting"); err != nil {
@@ -55,6 +57,7 @@ func TestWorkSurfacesSyncPreservesDisplayState(t *testing.T) {
 
 // TestWorkSurfacesRenameGuards rejects an empty name and reports a duplicate (excluding self).
 func TestWorkSurfacesRenameGuards(t *testing.T) {
+	t.Parallel()
 	c := NewWorkSurfaces()
 	c.Sync([]*topo.Body{patchSurfaceBody(2, 3), patchSurfaceBody(1, 1)})
 	if err := c.Item(0).SetName(""); err == nil {
@@ -70,6 +73,7 @@ func TestWorkSurfacesRenameGuards(t *testing.T) {
 
 // TestWorkSurfacesItemOutOfRange returns nil rather than panicking.
 func TestWorkSurfacesItemOutOfRange(t *testing.T) {
+	t.Parallel()
 	c := NewWorkSurfaces()
 	if c.Item(0) != nil || c.Item(-1) != nil {
 		t.Error("Item out of range must be nil")

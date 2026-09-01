@@ -113,6 +113,7 @@ func mapVerts(m math.Matrix4, verts [4]math.Point3) [4]math.Point3 {
 // interchangeable (#3449). A flat tetra tessellates to exact triangles, so the two agree to
 // round-off; a cylinder's curved wall agrees as the tessellation refines.
 func TestAnalyticSurfaceMomentsMatchMesh(t *testing.T) {
+	t.Parallel()
 	tetra := tetraSolid("moments", scaleneVerts)
 	assertSurfaceMomentsAgree(t, tetra, 1e-7)
 	cyl, err := brep.SolidCylinder(math.P3(1, -2, 0.5), math.V3(0, 0, 1), 2, 5)
@@ -149,6 +150,7 @@ func assertSurfaceMomentsAgree(t *testing.T, b *topo.Body, tol float64) {
 // one via Stitch (mesh fallback) — must get equal signatures and group together. Before the surface-
 // moment fix the analytic path used solid inertia and this failed (the regression the fix closes).
 func TestSignatureInterchangeableAcrossPaths(t *testing.T) {
+	t.Parallel()
 	analytic := tetraSolid("clean", scaleneVerts)
 	meshed := stitchedTetra(t, "stitch", scaleneVerts)
 	if _, ok := analyticSignature(analytic); !ok {
@@ -167,6 +169,7 @@ func TestSignatureInterchangeableAcrossPaths(t *testing.T) {
 // A rigid-motion copy (rotate + translate) built on the OTHER path must still group with the
 // original — the invariants are shared across paths and across the motion.
 func TestCongruentAcrossPathsRotated(t *testing.T) {
+	t.Parallel()
 	analytic := tetraSolid("clean", scaleneVerts)
 	axis, _ := math.UnitVector3FromVector(math.V3(1, 2, 3))
 	m := math.Rotation4(0.9, axis, math.P3(1, 1, 1)).Mul(math.Translation4(math.V3(7, -4, 2)))
@@ -181,6 +184,7 @@ func TestCongruentAcrossPathsRotated(t *testing.T) {
 // A mirror keeps volume, area and the principal moments but flips the skew sign — the reflection
 // discriminator. Grouping must fuse the mirror when MatchReflection is on and split it when off.
 func TestMirroredTetraFlipsSkewViaAnalytic(t *testing.T) {
+	t.Parallel()
 	orig := tetraSolid("orig", scaleneVerts)
 	xNormal, _ := math.UnitVector3FromVector(math.V3(1, 0, 0))
 	mirror := transformed(t, orig, math.Reflection4(math.P3(0, 0, 0), xNormal))

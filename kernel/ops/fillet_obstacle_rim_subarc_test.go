@@ -59,6 +59,7 @@ const rimSubArcAgreeTol = 1e-12
 // X3 2.96e-02 off the corner-blend patch AND 1.20e-02 / 1.60e-02 off the untouched obstacle wall, the
 // same chord against two different faces). Restoring the nil makes this test RED on all five.
 func TestObstacleRimNodeSegmentsAreTrimmedSubArcs(t *testing.T) {
+	t.Parallel()
 	for _, c := range singleHostObstacleCorpus {
 		t.Run(c.name, func(t *testing.T) {
 			d := runSingleHostCase(t, c).d
@@ -91,6 +92,7 @@ func TestObstacleRimNodeSegmentsAreTrimmedSubArcs(t *testing.T) {
 // ★ It drives the notch through buildNotchedHost — the REAL shipping path — not through hostSideSubArc:
 // see shippedNotchLoop.
 func TestObstacleRimConsumersAgreeByValue(t *testing.T) {
+	t.Parallel()
 	for _, c := range singleHostObstacleCorpus {
 		t.Run(c.name, func(t *testing.T) {
 			r := runSingleHostCase(t, c)

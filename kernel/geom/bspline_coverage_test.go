@@ -9,6 +9,7 @@ import (
 )
 
 func TestBSplineCurve2dValidationAndCopies(t *testing.T) {
+	t.Parallel()
 	ctrl := []math.Point2{math.P2(0, 0), math.P2(1, 0)}
 	weights := []float64{1, 2}
 	knots := []float64{0, 0, 1, 1}
@@ -31,6 +32,7 @@ func TestBSplineCurve2dValidationAndCopies(t *testing.T) {
 }
 
 func TestFittedBSplineValidationAndAveragedKnots(t *testing.T) {
+	t.Parallel()
 	if _, err := NewFittedBSplineCurve(nil); err == nil {
 		t.Fatal("NewFittedBSplineCurve accepted no points")
 	}
@@ -44,6 +46,7 @@ func TestFittedBSplineValidationAndAveragedKnots(t *testing.T) {
 }
 
 func TestBSplineSurfaceNetValidationBranches(t *testing.T) {
+	t.Parallel()
 	ctrl := [][]math.Point3{{math.P3(0, 0, 0), math.P3(1, 0, 0)}, {math.P3(0, 1, 0), math.P3(1, 1, 0)}}
 	weights := [][]float64{{1, 1}, {1, 1}}
 	s, err := NewBSplineSurface(1, 1, ctrl, weights, []float64{0, 0, 1, 1}, []float64{0, 0, 1, 1})

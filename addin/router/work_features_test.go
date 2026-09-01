@@ -12,6 +12,7 @@ import (
 // TestWorkPlaneLineAndPoint creates the line-and-point plane over the wire: the origin X axis and a
 // point at (0,5,0) define the XY plane — a healthy datum (#1843).
 func TestWorkPlaneLineAndPoint(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var p wire.CreateWorkPointResult
 	call(t, r, s, "workPoints.create", `{"at":[0,5,0]}`, &p)
@@ -25,6 +26,7 @@ func TestWorkPlaneLineAndPoint(t *testing.T) {
 
 // TestWorkPlaneLineAndPointWrongRefCount: line-point needs exactly two references.
 func TestWorkPlaneLineAndPointWrongRefCount(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "workPlanes.create", []byte(`{"kind":"line-point","refs":["origin/axis/x"]}`)); err == nil {
 		t.Error("line-point with one reference should error")
@@ -34,6 +36,7 @@ func TestWorkPlaneLineAndPointWrongRefCount(t *testing.T) {
 // TestSetWorkFeatureVisible hides a datum plane, axis, and point by ref and confirms each — the
 // plane via its list Visible flag, the axis and point via the model (#1856).
 func TestSetWorkFeatureVisible(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var pl wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &pl)
@@ -69,6 +72,7 @@ func TestSetWorkFeatureVisible(t *testing.T) {
 
 // TestSetWorkFeatureVisibleUnknownRef: a ref naming no datum is a clean error.
 func TestSetWorkFeatureVisibleUnknownRef(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "workFeatures.setVisible", []byte(`{"ref":"plane/99","visible":false}`)); err == nil {
 		t.Error("an unknown ref should error")
@@ -78,6 +82,7 @@ func TestSetWorkFeatureVisibleUnknownRef(t *testing.T) {
 // TestDeleteWorkFeature removes a user plane over the wire: the delete reports it removed, and
 // workPlanes.list no longer includes it (#1855).
 func TestDeleteWorkFeature(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var pl wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &pl)
@@ -99,6 +104,7 @@ func TestDeleteWorkFeature(t *testing.T) {
 // TestDeleteWorkFeatureCascades: deleting a point (retainDependents=false) also removes the axis
 // built through it, and both drop out of their lists (#1855).
 func TestDeleteWorkFeatureCascades(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var pt wire.CreateWorkPointResult
 	call(t, r, s, "workPoints.create", `{"at":[0,0,5]}`, &pt)
@@ -121,6 +127,7 @@ func TestDeleteWorkFeatureCascades(t *testing.T) {
 
 // TestDeleteWorkFeatureErrors: an origin ref and an unknown ref both fail cleanly (#1855).
 func TestDeleteWorkFeatureErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "workFeatures.delete", []byte(`{"ref":"origin/plane/xy"}`)); err == nil {
 		t.Error("deleting an origin datum should error")
@@ -134,6 +141,7 @@ func TestDeleteWorkFeatureErrors(t *testing.T) {
 // (with construction=true) only when the request opts in with includeConstruction, and the flag is
 // independent of visibility (#1849).
 func TestCreateConstructionDatum(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var pl wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"5 mm","construction":true,"visible":false}`, &pl)

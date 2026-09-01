@@ -21,6 +21,7 @@ import (
 // sphere carries ~1e-12 FP noise, so returning it would NOT be byte-identical). This is the surface-swap,
 // loop-preserved contract; it FAILS if curvedCornerFace ever emits the engine patch on the octant.
 func TestCurvedCornerFace_B3ByteIdentical(t *testing.T) {
+	t.Parallel()
 	sphere, arms := b3CornerArms(t)
 	res := geom.ResolutionForSize(150)
 	w, ok := solveCurvedCorner(sphere, arms, res)

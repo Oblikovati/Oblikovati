@@ -49,6 +49,7 @@ func ruledLoftVolume(twist, area, height float64) float64 {
 // passing through each other. ops.Validate cannot see this — it is topology only — which is why the
 // original guard test passed on a body that was both self-intersecting and 55% under volume.
 func TestTwistedSweepDoesNotSelfIntersect(t *testing.T) {
+	t.Parallel()
 	for _, twist := range []float64{0, 0.001, 0.05, 0.3} {
 		blade, err := sweptSolid(twistedBladeSections(twist), false, "blade")
 		if err != nil {
@@ -66,6 +67,7 @@ func TestTwistedSweepDoesNotSelfIntersect(t *testing.T) {
 // faceting budget maxFacetWarpRatio buys, not the exact answer: a faceted loft is an approximation
 // by design, and closing the rest of the gap costs mesh everywhere (#2081).
 func TestTwistedSweepVolumeIsNotWildlyWrong(t *testing.T) {
+	t.Parallel()
 	const twist = 0.3
 	blade, err := sweptSolid(twistedBladeSections(twist), false, "blade")
 	if err != nil {
@@ -85,6 +87,7 @@ func TestTwistedSweepVolumeIsNotWildlyWrong(t *testing.T) {
 // TestUntwistedSweepIsUntouched: a span whose sides are planar is already exact, so refinement must
 // not add a single section. Otherwise every ordinary extrude/revolve pays for this.
 func TestUntwistedSweepIsUntouched(t *testing.T) {
+	t.Parallel()
 	secs := twistedBladeSections(0)
 	if got := refineWarpedSpans(secs, false); len(got) != len(secs) {
 		t.Errorf("an unwarped span was subdivided into %d sections, want %d", len(got), len(secs))
@@ -95,6 +98,7 @@ func TestUntwistedSweepIsUntouched(t *testing.T) {
 // a thousand times bigger must be refined the same way (ADR-0042). A bare deviation would refine
 // large models to death and leave small ones unrefined.
 func TestSpanWarpRatioIsScaleFree(t *testing.T) {
+	t.Parallel()
 	base := twistedBladeSections(0.3)
 	ref := spanWarpRatio(base[0], base[1])
 	for _, k := range []float64{1e-3, 1, 1e3} {
@@ -116,6 +120,7 @@ func TestSpanWarpRatioIsScaleFree(t *testing.T) {
 // difference, so |W| <= 2*quadScale and the ratio |W|/4/quadScale <= 1/2. A cap would be
 // unreachable code. The fixture is a span folded back on itself — as violent as a span gets.
 func TestSpanWarpRatioCannotExceedAHalf(t *testing.T) {
+	t.Parallel()
 	folded := [][2][]math.Point3{
 		{{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0)},
 			{math.P3(0, 0, 1), math.P3(-1e4, 0, 1), math.P3(-1e4, 1, 1), math.P3(0, 1, 1)}},
@@ -138,6 +143,7 @@ func TestSpanWarpRatioCannotExceedAHalf(t *testing.T) {
 // resolved, and a section part-way through that offset is not defined. Refining it would pair the
 // seam by the monodromy again — the very thing wrapShift exists to prevent.
 func TestClosedLoopsAreNotRefined(t *testing.T) {
+	t.Parallel()
 	secs := [][]math.Point3{twistedBladeSections(0.3)[0], twistedBladeSections(0.3)[1], twistedBladeSections(0.6)[1]}
 	if got := refineWarpedSpans(secs, true); len(got) != len(secs) {
 		t.Errorf("a closed loop was refined to %d sections, want %d untouched", len(got), len(secs))
@@ -147,6 +153,7 @@ func TestClosedLoopsAreNotRefined(t *testing.T) {
 // TestLerpSectionStaysOnTheRuledSurface: the inserted sections must lie on the surface the span
 // already spanned, so refinement sharpens the approximation without moving the shape.
 func TestLerpSectionStaysOnTheRuledSurface(t *testing.T) {
+	t.Parallel()
 	// Every coordinate must move, and by t — not by a half, and not only on some axes.
 	a := []math.Point3{math.P3(1, 0, 0), math.P3(2, 0, 0)}
 	b := []math.Point3{math.P3(9, 4, 8), math.P3(2, 4, 8)}
@@ -162,6 +169,7 @@ func TestLerpSectionStaysOnTheRuledSurface(t *testing.T) {
 // coil-join shredded into thousands of unpaired open edges because coincident vertices landed on
 // opposite sides of the weld grid's cells. So the constant is bounded below, not just above.
 func TestGeneratorDensitySpansAreNotRefined(t *testing.T) {
+	t.Parallel()
 	// A ring of 24 points rotated about a distant axis by one coil step — the shape a coil emits.
 	const meanR, wireR, step = 0.35, 0.1, 2 * stdmath.Pi / 32
 	ring := func(rot float64) []math.Point3 {
@@ -188,6 +196,7 @@ func TestGeneratorDensitySpansAreNotRefined(t *testing.T) {
 // every other fixture here has its worst quad first — so this one deliberately leaves the first
 // edge unwarped and bends the third.
 func TestSpanWarpRatioScansEveryQuad(t *testing.T) {
+	t.Parallel()
 	a := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0)}
 	// Points 0 and 1 translate straight up, so the first quad is planar; 2 and 3 splay apart.
 	b := []math.Point3{math.P3(0, 0, 1), math.P3(1, 0, 1), math.P3(1, 1, 1), math.P3(0, 3, 1)}

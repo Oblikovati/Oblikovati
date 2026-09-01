@@ -15,6 +15,7 @@ import (
 // — so a sketch on the plane is positioned relative to the part frame, not an arbitrary corner.
 // (Regression: the work-plane-on-face origin landed on a rim vertex, placing geometry off the body.)
 func TestProjectOntoPlaneUsesPartOrigin(t *testing.T) {
+	t.Parallel()
 	pl, err := geom.NewPlane(math.P3(3, 0, 1), math.V3(0, 0, 1))
 	if err != nil {
 		t.Fatalf("NewPlane: %v", err)

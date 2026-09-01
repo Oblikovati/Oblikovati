@@ -26,6 +26,7 @@ func topFaceKey(b *topo.Body) string {
 // existing body's top face (given by key), proving the op resolves the termination plane and
 // produces a healthy body. This is the coverage twin of the router/wire test (#1226 → API).
 func TestExtrudeToFaceApply(t *testing.T) {
+	t.Parallel()
 	s := profiledPart(t)
 	if _, err := apply(t, s, "extrude", `{"sketchIndex":0,"distance":"10 mm"}`); err != nil {
 		t.Fatalf("seed extrude: %v", err)
@@ -55,6 +56,7 @@ func TestExtrudeToFaceApply(t *testing.T) {
 // TestExtrudeToFaceApplyErrors covers the to-face guard rails: a missing target and an
 // unresolvable target reference are both clear errors, not silent successes.
 func TestExtrudeToFaceApplyErrors(t *testing.T) {
+	t.Parallel()
 	if _, err := apply(t, profiledPart(t), "extrude", `{"sketchIndex":0,"extent":"to-face"}`); err == nil {
 		t.Error("to-face without a toFace target should error")
 	}

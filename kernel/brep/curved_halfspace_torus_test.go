@@ -12,6 +12,7 @@ import (
 // A plane perpendicular to a torus axis trims it to a tube arc: a single analytic torus band capped by a
 // planar annulus, watertight, no CSG (the only torus cut with an analytic section, Oblikovati/Oblikovati#1375).
 func TestHalfSpaceCutTorusPerpendicularBand(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name   string
 		origin math.Point3
@@ -47,6 +48,7 @@ func TestHalfSpaceCutTorusPerpendicularBand(t *testing.T) {
 
 // A plane clear of the tube keeps the whole torus or empties it, by which side faces the kept half-space.
 func TestHalfSpaceCutTorusClears(t *testing.T) {
+	t.Parallel()
 	tor, _ := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2, "torus")
 	whole, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1)) // z<3 holds the whole torus (tube to z=2)
 	res, err := HalfSpaceCut(tor, whole)

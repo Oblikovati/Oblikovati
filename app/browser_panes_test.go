@@ -20,6 +20,7 @@ func simPane() wire.BrowserPaneSpec {
 }
 
 func TestBrowserPanesSetReplaceDeleteList(t *testing.T) {
+	t.Parallel()
 	panes := NewAddInBrowserPanes()
 	if err := panes.Set(simPane()); err != nil {
 		t.Fatalf("Set: %v", err)
@@ -45,6 +46,7 @@ func TestBrowserPanesSetReplaceDeleteList(t *testing.T) {
 }
 
 func TestBrowserPaneRejectsMissingIdentity(t *testing.T) {
+	t.Parallel()
 	if err := NewAddInBrowserPanes().Set(wire.BrowserPaneSpec{ID: "x"}); err == nil {
 		t.Error("Set without title should fail")
 	}
@@ -53,6 +55,7 @@ func TestBrowserPaneRejectsMissingIdentity(t *testing.T) {
 // TestActivateBrowserPaneNodeMenuEmitsItem checks a context-menu choice reaches the add-in as a
 // "menu" gesture carrying the chosen item id.
 func TestActivateBrowserPaneNodeMenuEmitsItem(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.BrowserPanes().Set(simPane()); err != nil {
 		t.Fatalf("Set: %v", err)
@@ -75,6 +78,7 @@ func TestActivateBrowserPaneNodeMenuEmitsItem(t *testing.T) {
 }
 
 func TestActivateBrowserPaneNodeEmitsEvent(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.BrowserPanes().Set(simPane()); err != nil {
 		t.Fatalf("Set: %v", err)

@@ -76,6 +76,7 @@ func seamMeridian(t *testing.T, radius float64) geom.Arc3d {
 // clamped stereo-CDT path this face used to take reads ~0.06% under — 6× outside contract — at EVERY
 // chord tolerance, so this fails RED the moment the routing is lost (mutation-proven).
 func TestSeamedHemisphereMeshesToItsClosedFormArea(t *testing.T) {
+	t.Parallel()
 	const radius = 13.0
 	face := seamedHemisphereFace(t, radius, 6)
 	m := TessellateFace(face, PropertyQuality())
@@ -101,6 +102,7 @@ func meshMaxZ(m *Mesh) float64 {
 // TestSeamedCapFanDeclinesForeignShapes drives the recognizer's decline arms directly: a shape it
 // does not understand must fall through to the existing paths, never mesh a wrong fan.
 func TestSeamedCapFanDeclinesForeignShapes(t *testing.T) {
+	t.Parallel()
 	const radius = 13.0
 	t.Run("plain multi-arc rim without a seam declines (sphereCapFan's shape)", func(t *testing.T) {
 		face := coplanarRimFace(t, radius)
@@ -167,6 +169,7 @@ func slitRimFace(t *testing.T, radius float64) *topo.Face {
 // 13.7× over the 2^18 budget; the old R=13/60° fixture (78k cells) is honoured now and moved to the
 // coarse (cry-wolf) arm's family of honoured grids.
 func TestSpherePatchGridClampIsDiagnosed(t *testing.T) {
+	t.Parallel()
 	const radius = 150.0
 	sph, err := geom.NewSphere(math.P3(0, 0, 0), radius)
 	if err != nil {

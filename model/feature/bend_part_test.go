@@ -32,6 +32,7 @@ func bendBarFixture(t *testing.T) (*PartFeatures, *sketch.Sketch, *PartFeature) 
 // TestBendPartFeatureFoldsValidSolid recomputes a bend feature and checks it yields one
 // valid solid that folded up (M20-F17, #651).
 func TestBendPartFeatureFoldsValidSolid(t *testing.T) {
+	t.Parallel()
 	fs, _, pf := bendBarFixture(t)
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -51,6 +52,7 @@ func TestBendPartFeatureFoldsValidSolid(t *testing.T) {
 // TestBendPartDerivesAngleFromArcLength checks the arc-length+angle / radius+arc-length types
 // derive the missing input.
 func TestBendPartDerivesAngleFromArcLength(t *testing.T) {
+	t.Parallel()
 	def := &BendPartDefinition{BendType: types.RadiusAndArcLengthBend, Radius: constFloat(2), ArcLength: constFloat(stdmath.Pi)}
 	r, a, err := bendRadiusAngle(def)
 	if err != nil || r != 2 || stdmath.Abs(a-stdmath.Pi/2) > 1e-12 {
@@ -66,6 +68,7 @@ func TestBendPartDerivesAngleFromArcLength(t *testing.T) {
 // TestBendPartRoundTrip preserves the bend line, type, and scalars across an .obk round-trip
 // (extrude source + bend line in a second sketch, so the program serializes).
 func TestBendPartRoundTrip(t *testing.T) {
+	t.Parallel()
 	profile := sketch.NewSketches().Add(sketch.XYPlane())
 	bendSk := sketch.NewSketches().Add(sketch.XYPlane())
 	bendSk.Lines().AddByTwoPoints(math.P2(5, 0), math.P2(5, 2))

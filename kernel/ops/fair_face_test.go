@@ -14,6 +14,7 @@ import (
 // returns a valid single-face NURBS body with the same control dimensions (fairing moves interior
 // points, it does not change degree/knots).
 func TestFairFaceSurfaceFairsBody(t *testing.T) {
+	t.Parallel()
 	body := surfaceFaceBody(t, multiSpanPatch(t))
 	out, err := ops.FairFaceSurface(body, 1, 0.5, 10)
 	if err != nil {
@@ -29,6 +30,7 @@ func TestFairFaceSurfaceFairsBody(t *testing.T) {
 }
 
 func TestFairFaceSurfaceRejectsNonNurbs(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 1, 1, 1)
 	if _, err := ops.FairFaceSurface(box, 1, 0.5, 10); err == nil {
 		t.Error("fairing a body with no NURBS face should error")

@@ -9,6 +9,7 @@ import (
 )
 
 func TestBuildRibbonFromCommands(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t) // a part is active, so default-Part commands appear (not ZeroDoc)
 	_ = s.Commands().Add(NewCommand("Sketch.Line", "Line", "Sketch", noop))
 	_ = s.Commands().Add(NewCommand("Sketch.Circle", "Circle", "Sketch", noop))
@@ -33,6 +34,7 @@ func TestBuildRibbonFromCommands(t *testing.T) {
 }
 
 func TestBuildRibbonGroupsByTabThenPanel(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t) // a part is active, so default-Part commands appear (not ZeroDoc)
 	_ = s.Commands().Add(NewCommand("Sketch.Line", "Line", "Create", noop).WithTab("Sketch"))
 	_ = s.Commands().Add(NewCommand("Sketch.Rectangle", "Rectangle", "Create", noop).WithTab("Sketch"))
@@ -63,6 +65,7 @@ func tabNames(r Ribbon) []string {
 }
 
 func TestBrowserReflectsPartStructure(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	_, _ = def.Parameters().AddUserParameter("width", "10 mm")
 	def.Sketches().Add(sketch.XYPlane())
@@ -91,6 +94,7 @@ func TestBrowserReflectsPartStructure(t *testing.T) {
 }
 
 func TestBrowserEmptySession(t *testing.T) {
+	t.Parallel()
 	if BuildBrowser(NewSession()).Kind != "document" {
 		t.Error("empty session browser should still have a document root")
 	}
@@ -110,6 +114,7 @@ func (a sampleAddIn) Activate(s *Session) error {
 func (a sampleAddIn) Deactivate(*Session) error { return nil }
 
 func TestAddInAddsRibbonButtonThatRunsTool(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t) // an add-in's command defaults to the Part ribbon, so a part must be active
 	if err := s.AddIns().Register(sampleAddIn{id: "acme.extrude"}); err != nil {
 		t.Fatalf("Register: %v", err)
@@ -139,6 +144,7 @@ func TestAddInAddsRibbonButtonThatRunsTool(t *testing.T) {
 }
 
 func TestAddInManagerLifecycle(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := sampleAddIn{id: "x"}
 	_ = s.AddIns().Register(a)
@@ -163,6 +169,7 @@ func TestAddInManagerLifecycle(t *testing.T) {
 // cannot be unregistered, but once deactivated it can be removed and a replacement
 // re-registered under the same id.
 func TestAddInUnregisterEnablesReload(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := sampleAddIn{id: "acme.extrude"}
 	_ = s.AddIns().Register(a)
@@ -204,6 +211,7 @@ func (a *failAddIn) Activate(*Session) error {
 func (a *failAddIn) Deactivate(*Session) error { return errBoom }
 
 func TestAddInActivateAndDeactivateErrorsPropagate(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := &failAddIn{}
 	_ = s.AddIns().Register(a)
@@ -227,6 +235,7 @@ func TestAddInActivateAndDeactivateErrorsPropagate(t *testing.T) {
 }
 
 func TestBrowserShowsFeatureNodes(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	s.SetPicker(stubPicker{sel: profile})
 	ext := NewExtrudeTool()

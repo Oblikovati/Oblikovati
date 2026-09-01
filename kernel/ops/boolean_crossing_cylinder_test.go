@@ -38,6 +38,7 @@ func crossingIntersectVolume(rRod, rFat float64) float64 {
 // TestBooleanIntersectCrossingCylinders intersects a rod (r=1.5, axis x) with a fat cylinder (R=3, axis z)
 // and checks the result is the exact three-face analytic solid with the analytic intersection volume.
 func TestBooleanIntersectCrossingCylinders(t *testing.T) {
+	t.Parallel()
 	const rRod, rFat = 1.5, 3.0
 	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, 12)
 	thin, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, 12)
@@ -73,6 +74,7 @@ func TestBooleanIntersectCrossingCylinders(t *testing.T) {
 // x): Cut must give the exact four-face analytic solid (two caps, the holed side wall, the tunnel) whose
 // volume is the fat cylinder minus the crossing intersection (the tunnel), not triangle-soup CSG.
 func TestBooleanCutDrillCrossingCylinder(t *testing.T) {
+	t.Parallel()
 	const rRod, rFat, hFat = 1.5, 3.0, 12.0
 	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, hFat)
 	thin, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, 12)
@@ -107,6 +109,7 @@ func TestBooleanCutDrillCrossingCylinder(t *testing.T) {
 // Join must give the connected analytic solid (fat caps, holed fat wall, a rod stub each side capped by the
 // rod's end disc) whose volume is fat + rod − the crossing intersection, not triangle-soup CSG.
 func TestBooleanJoinCrossingCylinders(t *testing.T) {
+	t.Parallel()
 	const rRod, hRod, rFat, hFat = 1.5, 12.0, 3.0, 12.0
 	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, hFat)
 	thin, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, hRod)
@@ -139,6 +142,7 @@ func TestBooleanJoinCrossingCylinders(t *testing.T) {
 // Cut must give the two disconnected rod stubs (a two-shell solid) whose total volume is the rod minus the
 // crossing intersection, not triangle-soup CSG.
 func TestBooleanCutRodMinusFatStubs(t *testing.T) {
+	t.Parallel()
 	const rRod, hRod, rFat = 1.5, 12.0, 3.0
 	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, 12)
 	thin, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, hRod)
@@ -165,6 +169,7 @@ func TestBooleanCutRodMinusFatStubs(t *testing.T) {
 // stub band, blind end cap). Because the rod stops at the centre, the plug is exactly half the full-crossing
 // intersection, so its volume is crossingIntersectVolume(r,R)/2, not triangle-soup CSG.
 func TestBooleanIntersectPartialPenetration(t *testing.T) {
+	t.Parallel()
 	const rRod, rFat = 1.5, 3.0
 	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, 12)
 	stub, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, 6) // ends at x=0, inside the fat
@@ -197,6 +202,7 @@ func TestBooleanIntersectPartialPenetration(t *testing.T) {
 // of a fat cylinder (R=3, axis z): Cut must give the exact blind pocket (two caps, the holed wall, the rod
 // tunnel, the blind bottom) whose volume is the fat minus the plug (half the full crossing intersection).
 func TestBooleanCutPartialPenetrationBlindHole(t *testing.T) {
+	t.Parallel()
 	const rRod, rFat, hFat = 1.5, 3.0, 12.0
 	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, hFat)
 	stub, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, 6) // ends at x=0, inside the fat
@@ -232,6 +238,7 @@ func TestBooleanCutPartialPenetrationBlindHole(t *testing.T) {
 // (r=1.5, axis x) that ends at the fat centre: Cut must give the single rod stub outside the fat (a
 // one-shell solid) whose volume is the rod minus the plug (half the full crossing intersection).
 func TestBooleanCutPartialPenetrationRodMinusFat(t *testing.T) {
+	t.Parallel()
 	const rRod, hRod, rFat = 1.5, 6.0, 3.0
 	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, 12)
 	stub, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, hRod) // ends at x=0, inside the fat
@@ -257,6 +264,7 @@ func TestBooleanCutPartialPenetrationRodMinusFat(t *testing.T) {
 // cylinder (R=3, axis z): Join must give the fat with one rod stub out the entry side, its volume the fat
 // plus the rod minus the plug (the doubly-counted overlap).
 func TestBooleanJoinPartialPenetration(t *testing.T) {
+	t.Parallel()
 	const rRod, hRod, rFat, hFat = 1.5, 6.0, 3.0, 12.0
 	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, hFat)
 	stub, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, hRod) // ends at x=0, inside the fat
@@ -292,6 +300,7 @@ func TestBooleanJoinPartialPenetration(t *testing.T) {
 // is the closed form 16/3·R³, not triangle-soup CSG (the SSI tracer pinches on this case, so it is fitted
 // analytically as two crossing ellipses).
 func TestBooleanIntersectEqualRadiusSteinmetz(t *testing.T) {
+	t.Parallel()
 	const r = 3.0
 	cx, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, 12)
 	cz, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r, 12)
@@ -325,6 +334,7 @@ func TestBooleanIntersectEqualRadiusSteinmetz(t *testing.T) {
 // the exact bitten solid (the target with the tool's saddle bite) whose volume is the cylinder minus the
 // Steinmetz bicylinder (π·R²·h − 16/3·R³), not triangle-soup CSG.
 func TestBooleanCutEqualRadiusSteinmetz(t *testing.T) {
+	t.Parallel()
 	const r, h = 3.0, 12.0
 	cx, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, h)
 	cz, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r, h)
@@ -357,6 +367,7 @@ func TestBooleanCutEqualRadiusSteinmetz(t *testing.T) {
 // the exact union (each cylinder's outside, meeting along the intersection ellipses) whose volume is two
 // cylinders minus the doubly-counted bicylinder (2·π·R²·h − 16/3·R³), not triangle-soup CSG.
 func TestBooleanJoinEqualRadiusSteinmetz(t *testing.T) {
+	t.Parallel()
 	const r, h = 3.0, 12.0
 	cx, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, h)
 	cz, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r, h)
@@ -396,6 +407,7 @@ func TestBooleanJoinEqualRadiusSteinmetz(t *testing.T) {
 // non-manifold route — folding it onto the analytic path is #1780 Direction 2 — so watertightness is asserted
 // only where the snap owns the result.
 func TestBooleanIntersectNearPinchContinuity(t *testing.T) {
+	t.Parallel()
 	const r = 3.0
 	baseX, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, 12)
 	baseZ, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r, 12)
@@ -446,6 +458,7 @@ func TestBooleanIntersectNearPinchContinuity(t *testing.T) {
 // emit as a clean watertight solid. The path must therefore NOT be adopted (validBooleanSolid rejects it),
 // so the boolean falls to the dedicated analytic Steinmetz handler instead of emitting a wrong solid.
 func TestBooleanIntersectEqualRadiusDefersFromExactPath(t *testing.T) {
+	t.Parallel()
 	a, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	b, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12) // equal radius
 

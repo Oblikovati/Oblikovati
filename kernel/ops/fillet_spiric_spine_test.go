@@ -31,6 +31,7 @@ func weJ3Spine(t *testing.T) spiricRimSpine {
 // both feet sit exactly r from the centre, the tube foot is ON the host tube (distance a from the
 // tube-centre circle), and the cap foot is ON the cap plane (n̂-coordinate = capD).
 func TestSpiricStationExactness(t *testing.T) {
+	t.Parallel()
 	sp := weJ3Spine(t)
 	for k := range 64 {
 		psi := 2 * stdmath.Pi * float64(k) / 64
@@ -68,6 +69,7 @@ func weTubeCentreDist(sp spiricRimSpine, p math.Point3) float64 {
 // TestSpiricStationClearsInnerTurn guards the ξ² ≤ 0 decline: a spine whose offset plane exits the
 // offset torus at the inner turn (|w| ≥ R − b) must decline at ψ=π rather than emit a NaN station.
 func TestSpiricStationClearsInnerTurn(t *testing.T) {
+	t.Parallel()
 	sp := weJ3Spine(t)
 	sp.w = -(sp.host.MajorRadius - sp.b + 1) // one unit past the inner-turn clearance
 	if _, _, _, ok := sp.station(stdmath.Pi); ok {
@@ -78,6 +80,7 @@ func TestSpiricStationClearsInnerTurn(t *testing.T) {
 // TestSpiricMeridianCut pins the meridian gate: a cap plane containing the axis (ẑ·n̂ = 0) is spiric;
 // a latitude cap (ẑ·n̂ = 1) is not; the band is model-relative to the rim radius.
 func TestSpiricMeridianCut(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(500)
 	if !spiricMeridianCut(0, 250, res) {
 		t.Fatal("ẑ·n̂=0 must classify as a meridian cut")

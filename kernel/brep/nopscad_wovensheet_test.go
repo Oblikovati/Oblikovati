@@ -8,6 +8,7 @@ import (
 )
 
 func TestNopWovenSheetCSG(t *testing.T) {
+	t.Parallel()
 	body := chequerboardBody(t, 2.4, 1.6, 0.3, 0.2, 0.08, 0)
 	body = joinOrFatal(t, body, chequerboardBody(t, 2.4, 1.6, 0.3, 0.2, 0.08, 1), "woven inverse sheet")
 	requireValidNopSolid(t, "woven_sheet", body)

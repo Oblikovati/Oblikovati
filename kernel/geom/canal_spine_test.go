@@ -36,6 +36,7 @@ func n7Resolution(ends [2]math.Point3) Resolution {
 }
 
 func TestCanalSpineN7EndpointsMatchFamilyCenters(t *testing.T) {
+	t.Parallel()
 	wall, s10 := n7Hosts()
 	ends := n7Ends()
 	res := n7Resolution(ends)
@@ -86,6 +87,7 @@ func TestCanalSpineN7EndpointsMatchFamilyCenters(t *testing.T) {
 // ("trimTracedToEnds accepted a trace that stops ~1 unit short..."), confirming it fires; restoring
 // the guard turns it back to PASS.
 func TestTrimTracedToEndsRejectsShortfall(t *testing.T) {
+	t.Parallel()
 	ends := n7Ends()
 	res := n7Resolution(ends)
 	weld := res.Weld()
@@ -142,6 +144,7 @@ func spineSamples(t *testing.T, spine Curve3, count int) []math.Point3 {
 }
 
 func TestCanalSpineN7PointsAtRadiusFromBothHosts(t *testing.T) {
+	t.Parallel()
 	wall, s10 := n7Hosts()
 	ends := n7Ends()
 	res := n7Resolution(ends)
@@ -170,6 +173,7 @@ func TestCanalSpineN7PointsAtRadiusFromBothHosts(t *testing.T) {
 // The spine must satisfy the spike's exact closed form m(z) (it IS cyl45 ∩ cyl10), and sit in
 // the y≈5.27864 slab. This is the parametrization-free cross-check against the spike ground truth.
 func TestCanalSpineN7MatchesSpikeClosedForm(t *testing.T) {
+	t.Parallel()
 	wall, s10 := n7Hosts()
 	ends := n7Ends()
 	res := n7Resolution(ends)
@@ -204,6 +208,7 @@ func clampNonNeg(v float64) float64 {
 
 // Point-spine: coincident ball centers (the three offsets concur) → honest reject carrying the gap.
 func TestCanalSpineRejectsPointSpine(t *testing.T) {
+	t.Parallel()
 	wall, s10 := n7Hosts()
 	ends := n7Ends()
 	res := n7Resolution(ends)
@@ -219,6 +224,7 @@ func TestCanalSpineRejectsPointSpine(t *testing.T) {
 
 // Offset self-intersection: r=10 inner offset of a radius-5 cylinder folds → honest reject.
 func TestCanalSpineRejectsOffsetSelfIntersection(t *testing.T) {
+	t.Parallel()
 	wall, _ := n7Hosts()
 	tight, _ := NewCylinder(math.P3(55, 0, 15), math.V3(0, 1, 0), 5)
 	// Ends INSIDE the tight cylinder → its cavity side is the inner (-r) offset; r=10 > R=5 folds.
@@ -237,6 +243,7 @@ func TestCanalSpineRejectsOffsetSelfIntersection(t *testing.T) {
 // the offset-SSI operands are OffsetSurface-typed, so IntersectSurfacesAnalytic returns
 // handled=false and the marched path carries N7). Exercise it directly on an analytic arc.
 func TestTrimAnalyticToEndsSnapsToEnds(t *testing.T) {
+	t.Parallel()
 	circle, err := NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatalf("NewCircle: %v", err)
@@ -259,6 +266,7 @@ func TestTrimAnalyticToEndsSnapsToEnds(t *testing.T) {
 }
 
 func TestCanalSpineRejectsWrongHostCount(t *testing.T) {
+	t.Parallel()
 	wall, _ := n7Hosts()
 	ends := n7Ends()
 	_, err := canalSpine([]Surface{wall}, 5, ends, n7Resolution(ends))

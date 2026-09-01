@@ -24,6 +24,7 @@ func apexPoint(plane sketch.Plane, z float64) LoftSection {
 
 // TestLoftPointSharpCone: a circle base lofted to a Sharp apex is a straight cone — V = πr²h/3.
 func TestLoftPointSharpCone(t *testing.T) {
+	t.Parallel()
 	secs := []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(4), 4)}
 	b := conditionedLoft(t, secs, false, LoftEnd{}, LoftEnd{Condition: LoftSharpPoint})
 	want := stdmath.Pi * 4 / 3 * 4 // πr²h/3, r=2 h=4
@@ -35,6 +36,7 @@ func TestLoftPointSharpCone(t *testing.T) {
 // TestLoftPointTangentDomes: a TangentToPlane apex domes OUTWARD, so the solid holds more volume
 // than the straight cone between the same base and tip.
 func TestLoftPointTangentDomes(t *testing.T) {
+	t.Parallel()
 	base := func() []LoftSection {
 		return []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(4), 4)}
 	}
@@ -47,6 +49,7 @@ func TestLoftPointTangentDomes(t *testing.T) {
 
 // TestLoftPointImpactScalesDome: a larger impact bulges the dome more.
 func TestLoftPointImpactScalesDome(t *testing.T) {
+	t.Parallel()
 	mk := func() []LoftSection {
 		return []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(4), 4)}
 	}
@@ -60,6 +63,7 @@ func TestLoftPointImpactScalesDome(t *testing.T) {
 // TestLoftPointReversedDishes: reversing the tangent-to-plane apex pulls it inward, dishing the
 // tip concave — less volume than the straight cone.
 func TestLoftPointReversedDishes(t *testing.T) {
+	t.Parallel()
 	mk := func() []LoftSection {
 		return []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(4), 4)}
 	}
@@ -72,6 +76,7 @@ func TestLoftPointReversedDishes(t *testing.T) {
 
 // TestLoftPointSquarePyramid: a square base lofted to a Sharp apex is a pyramid — V = base·h/3.
 func TestLoftPointSquarePyramid(t *testing.T) {
+	t.Parallel()
 	secs := []LoftSection{sec(centeredSquareOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(6), 6)}
 	b := conditionedLoft(t, secs, false, LoftEnd{}, LoftEnd{Condition: LoftSharpPoint})
 	want := 16.0 * 6 / 3 // base area (4×4) × h / 3
@@ -83,6 +88,7 @@ func TestLoftPointSquarePyramid(t *testing.T) {
 // TestLoftPointAtStart: an apex as the FIRST section (an inverted cone, tip at the bottom) is a
 // valid solid — point sections work at either end.
 func TestLoftPointAtStart(t *testing.T) {
+	t.Parallel()
 	secs := []LoftSection{apexPoint(sketch.XYPlane(), 0), sec(circleOn(planeAtZ(4), 2))}
 	b := conditionedLoft(t, secs, false, LoftEnd{Condition: LoftSharpPoint}, LoftEnd{})
 	want := stdmath.Pi * 4 / 3 * 4
@@ -93,6 +99,7 @@ func TestLoftPointAtStart(t *testing.T) {
 
 // TestLoftPointValidation: a point in the middle, or an all-point loft, is rejected.
 func TestLoftPointValidation(t *testing.T) {
+	t.Parallel()
 	mid := []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), apexPoint(planeAtZ(2), 2), sec(circleOn(planeAtZ(4), 2))}
 	if err := loftError(t, mid); err == nil {
 		t.Error("a point section in the middle should be rejected")

@@ -13,6 +13,7 @@ import (
 // TestMoveFaceGrowsBox moves the top face of a 2×2×2 box up by 1: the solid grows to a
 // 2×2×3 box (vol 12) and stays a valid manifold.
 func TestMoveFaceGrowsBox(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	res, err := ops.MoveFaces(box, [][]byte{topFaceKey(t, box)}, math.V3(0, 0, 1))
 	if err != nil {
@@ -29,6 +30,7 @@ func TestMoveFaceGrowsBox(t *testing.T) {
 // TestOffsetFaceShavesBox offsets the top face of a 2×2×2 box inward (−0.5 along its +Z
 // normal): the box shrinks to 2×2×1.5 (vol 6).
 func TestOffsetFaceShavesBox(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	res, err := ops.OffsetFaces(box, [][]byte{topFaceKey(t, box)}, -0.5)
 	if err != nil {
@@ -44,6 +46,7 @@ func TestOffsetFaceShavesBox(t *testing.T) {
 
 // TestMoveFaceLostKeyErrors reports a vanished face key so the feature can go Sick.
 func TestMoveFaceLostKeyErrors(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	if _, err := ops.MoveFaces(box, [][]byte{[]byte("ghost")}, math.V3(0, 0, 1)); err == nil {
 		t.Error("move-face with a lost key should error")

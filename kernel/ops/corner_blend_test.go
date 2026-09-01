@@ -42,6 +42,7 @@ func provider(kind CornerBlendKind, cert Certificate) fakeCornerProvider {
 // TestResolveCornerBlendDeclines pins the honest-reject floor: with no tier, a tier that doesn't fit,
 // or a tier that fits but fails to build, resolveCornerBlend returns ok=false (ADR-3).
 func TestResolveCornerBlendDeclines(t *testing.T) {
+	t.Parallel()
 	req := CornerBlendRequest{Setback: blendScale()}
 	cases := map[string][]CornerBlendProvider{
 		"no tiers":    nil,
@@ -57,6 +58,7 @@ func TestResolveCornerBlendDeclines(t *testing.T) {
 
 // TestResolveCornerBlendReturnsValid pins that a fitting provider with a valid certificate wins.
 func TestResolveCornerBlendReturnsValid(t *testing.T) {
+	t.Parallel()
 	scale := blendScale()
 	req := CornerBlendRequest{Setback: scale}
 	patch, ok := resolveCornerBlend(req, []CornerBlendProvider{provider(BlendKindBSpline, validCert(scale.Weld()))})
@@ -68,6 +70,7 @@ func TestResolveCornerBlendReturnsValid(t *testing.T) {
 // TestResolveCornerBlendSkipsInvalidCertificate pins that a G1-kinked patch (MaxAngleDev over
 // seamAngularTol) is passed over and the next valid tier is taken — the anti-crease guarantee.
 func TestResolveCornerBlendSkipsInvalidCertificate(t *testing.T) {
+	t.Parallel()
 	scale := blendScale()
 	req := CornerBlendRequest{Setback: scale}
 	kinked := validCert(scale.Weld())
@@ -82,6 +85,7 @@ func TestResolveCornerBlendSkipsInvalidCertificate(t *testing.T) {
 // TestResolveCornerBlendTierOrderWins pins ADR-2: an analytic provider ranked ahead of the fallback
 // wins for its family purely by tier order — the classifier IS the ordering, no switch.
 func TestResolveCornerBlendTierOrderWins(t *testing.T) {
+	t.Parallel()
 	scale := blendScale()
 	req := CornerBlendRequest{Setback: scale}
 	tiers := []CornerBlendProvider{provider("analytic-torus", validCert(scale.Weld())), provider(BlendKindBSpline, validCert(scale.Weld()))}
@@ -94,6 +98,7 @@ func TestResolveCornerBlendTierOrderWins(t *testing.T) {
 // TestCertificateValid pins each admissibility gate: the full certificate passes, and violating any
 // single field (structural or numeric) fails it.
 func TestCertificateValid(t *testing.T) {
+	t.Parallel()
 	scale := blendScale()
 	w := scale.Weld()
 	if !validCert(w).Valid(scale) {

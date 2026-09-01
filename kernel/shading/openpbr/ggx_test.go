@@ -11,6 +11,7 @@ import (
 // normal m=(0,0,1): the spec's unnormalized form D ∝ (1+tan²θm/α²)⁻² is 1 at θm=0, and
 // the normalization constant 1/(π α²) is hand-derivable from the isotropic NDF integral.
 func TestDistributionGGXNormalIncidencePeak(t *testing.T) {
+	t.Parallel()
 	const alpha = 0.5
 	got := DistributionGGX(Vec3{Z: 1}, alpha)
 	want := 1 / (math.Pi * alpha * alpha)
@@ -23,6 +24,7 @@ func TestDistributionGGXNormalIncidencePeak(t *testing.T) {
 // = 1 over the hemisphere, the defining property of a valid microfacet distribution):
 // checked numerically since there is no simpler closed form for the full integral.
 func TestDistributionGGXIntegratesToOne(t *testing.T) {
+	t.Parallel()
 	// alpha=0.1's peak is narrower than the shared 32x32 test quadrature's grid spacing
 	// (the same resolution limit documented on multiscatter.go's minAlphaForMultiScatter),
 	// so it needs more slack than the wider, well-resolved peaks at higher alpha.
@@ -38,6 +40,7 @@ func TestDistributionGGXIntegratesToOne(t *testing.T) {
 // TestSmithG1NormalIncidenceIsOne checks no self-shadowing straight up: vzSq=1 gives
 // G1 = 2/(1+1) = 1 for any alpha.
 func TestSmithG1NormalIncidenceIsOne(t *testing.T) {
+	t.Parallel()
 	for _, alpha := range []float64{0.1, 0.5, 1.0} {
 		if got := SmithG1(Vec3{Z: 1}, alpha); math.Abs(got-1) > 1e-12 {
 			t.Errorf("alpha=%v: SmithG1(normal) = %v, want 1", alpha, got)
@@ -47,6 +50,7 @@ func TestSmithG1NormalIncidenceIsOne(t *testing.T) {
 
 // TestSmithG1ApproachesZeroAtGrazing checks heavy masking near the tangent plane.
 func TestSmithG1ApproachesZeroAtGrazing(t *testing.T) {
+	t.Parallel()
 	v := Vec3{X: 0.9999, Z: 0.01}.Normalize()
 	if got := SmithG1(v, 0.5); got > 0.1 {
 		t.Errorf("SmithG1(near-grazing, alpha=0.5) = %v, want close to 0", got)
@@ -55,6 +59,7 @@ func TestSmithG1ApproachesZeroAtGrazing(t *testing.T) {
 
 // TestSmithG1ZeroAtTangentPlane checks the vzSq==0 guard.
 func TestSmithG1ZeroAtTangentPlane(t *testing.T) {
+	t.Parallel()
 	if got := SmithG1(Vec3{X: 1}, 0.5); got != 0 {
 		t.Errorf("SmithG1(tangent, alpha=0.5) = %v, want exactly 0", got)
 	}

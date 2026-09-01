@@ -17,6 +17,7 @@ import (
 // notched-face fillet loop, projected) self-intersects and must be rejected; a plain convex quad
 // and a concave-but-simple polygon must be accepted.
 func TestSimpleLoop2D(t *testing.T) {
+	t.Parallel()
 	// The real self-intersecting loop from the notched-box fillet (edge z=90,x∈[80,90] crosses
 	// edge x=85,z∈[0,100] at (85,90)).
 	selfInt := []math.Point2{math.P2(80, 100), math.P2(80, 90), math.P2(90, 90), math.P2(90, 100), math.P2(85, 100), math.P2(85, 0), math.P2(0, 0), math.P2(0, 100)}
@@ -44,6 +45,7 @@ func TestSimpleLoop2D(t *testing.T) {
 // must equal the sum of the per-face tessellations (no face collapsed). Must never regress; when
 // Bug B lands the loop becomes simple, the guard no longer fires, and this assertion still holds.
 func TestConformancePreservesNotchedFaceArea(t *testing.T) {
+	t.Parallel()
 	body := importNotchedPrism(t)
 	edge := notchTopEdge(t, body) // the filleted top edge (0,0,100)-(100,0,100)
 	res, err := FilletEdges(body, [][]byte{edge.ReferenceKey()}, 15)

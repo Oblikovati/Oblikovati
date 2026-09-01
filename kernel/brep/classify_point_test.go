@@ -28,6 +28,7 @@ func runClassify(t *testing.T, b *topo.Body, cases []classifyCase) {
 
 // A box classifies interior, exterior and on-face points exactly, with no tessellation.
 func TestClassifyPointBox(t *testing.T) {
+	t.Parallel()
 	box, err := SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "box")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
@@ -48,6 +49,7 @@ func TestClassifyPointBox(t *testing.T) {
 
 // A cylinder classifies against its wall and both caps analytically.
 func TestClassifyPointCylinder(t *testing.T) {
+	t.Parallel()
 	cyl, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -70,6 +72,7 @@ func TestClassifyPointCylinder(t *testing.T) {
 // ray-parity cast would, at every point off the surface — a fast path is a shortcut, not a second
 // algorithm. It grids a cone and a cylinder frustum and compares the two, skipping the on-surface band.
 func TestPrimitiveSolidInsideMatchesRayParity(t *testing.T) {
+	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 6), 3, 1, "cone")
 	cyl, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 5)
 	for _, b := range []*topo.Body{cone, cyl} {
@@ -99,6 +102,7 @@ func TestPrimitiveSolidInsideMatchesRayParity(t *testing.T) {
 // the frustum fast path, which classifies against the bare primitive and would miss the bore. Two coaxial
 // cylinders' faces stand in for a tube's flattened faces (two cylindrical walls + caps).
 func TestPrimitiveSolidInsideDeclinesTube(t *testing.T) {
+	t.Parallel()
 	outer, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
 	inner, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1, 4)
 	compound := append(facesOfAny(outer), facesOfAny(inner)...) // 2 cylindrical sides → not a simple frustum
@@ -108,6 +112,7 @@ func TestPrimitiveSolidInsideDeclinesTube(t *testing.T) {
 }
 
 func TestClassifyPointSphere(t *testing.T) {
+	t.Parallel()
 	sph, err := SolidSphere(math.P3(0, 0, 0), 3, "sphere")
 	if err != nil {
 		t.Fatalf("SolidSphere: %v", err)
@@ -123,6 +128,7 @@ func TestClassifyPointSphere(t *testing.T) {
 
 // A torus classifies the tube interior, the central hole (outside), and both tube walls (on).
 func TestClassifyPointTorus(t *testing.T) {
+	t.Parallel()
 	tor, err := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2, "torus")
 	if err != nil {
 		t.Fatalf("SolidTorus: %v", err)
@@ -139,6 +145,7 @@ func TestClassifyPointTorus(t *testing.T) {
 
 // An empty body contains nothing.
 func TestClassifyPointEmptyBody(t *testing.T) {
+	t.Parallel()
 	if got := ClassifyPoint(topo.BodyFromShells(topo.Lineage{}, true), math.P3(0, 0, 0)); got != Outside {
 		t.Errorf("empty body classify = %v, want Outside", got)
 	}
@@ -146,6 +153,7 @@ func TestClassifyPointEmptyBody(t *testing.T) {
 
 // pointSegmentDistance handles a normal segment and a degenerate zero-length one.
 func TestPointSegmentDistance(t *testing.T) {
+	t.Parallel()
 	a, b := math.P3(0, 0, 0), math.P3(4, 0, 0)
 	if d := pointSegmentDistance(math.P3(2, 3, 0), a, b); d != 3 {
 		t.Errorf("distance to mid-segment = %g, want 3", d)
@@ -173,6 +181,7 @@ func cylFaceForTest(t *testing.T, b *topo.Body) curvedFace {
 // rayGrazes flags a tangent ray and a pierce landing on a trim edge, but not a clean transversal
 // crossing — the reselection trigger that keeps the parity count unambiguous.
 func TestRayGrazesTangentAndBoundary(t *testing.T) {
+	t.Parallel()
 	cyl, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -201,6 +210,7 @@ func TestRayGrazesTangentAndBoundary(t *testing.T) {
 // ClassifyShellPoint classifies against a single shell's faces, matching the whole-body verdict for a
 // one-shell solid.
 func TestClassifyShellPoint(t *testing.T) {
+	t.Parallel()
 	box, err := SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "box")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
@@ -221,6 +231,7 @@ func TestClassifyShellPoint(t *testing.T) {
 // ClassifyPointTol honors the caller's on-surface band: a point a small distance inside a face reads
 // as OnSurface under a loose tolerance but Inside under a tight one.
 func TestClassifyPointTol(t *testing.T) {
+	t.Parallel()
 	box, err := SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "box")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
@@ -236,6 +247,7 @@ func TestClassifyPointTol(t *testing.T) {
 
 // InsideQuery flattens a body once and answers repeated strict-inside tests, matching PointInside.
 func TestInsideQueryBatch(t *testing.T) {
+	t.Parallel()
 	cyl, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)

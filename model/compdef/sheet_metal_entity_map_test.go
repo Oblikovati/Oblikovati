@@ -13,6 +13,7 @@ import (
 // face back returns the same folded top face — the correspondence a flat drawing dimension
 // relies on across recompute.
 func TestEntityMapRoundTrip(t *testing.T) {
+	t.Parallel()
 	d, _ := sheetWithFlange(t)
 	folded := d.Features().Result()[0]
 	top := dominantFace(folded, gmath.V3(0, 0, 1)) // the base top face (+Z)
@@ -45,6 +46,7 @@ func TestEntityMapRoundTrip(t *testing.T) {
 
 // TestEntityMapFrontBackDistinct the top and bottom folded faces map to distinct flat faces.
 func TestEntityMapFrontBackDistinct(t *testing.T) {
+	t.Parallel()
 	d, _ := sheetWithFlange(t)
 	folded := d.Features().Result()[0]
 	topKey := dominantFace(folded, gmath.V3(0, 0, 1)).ReferenceKey()
@@ -59,6 +61,7 @@ func TestEntityMapFrontBackDistinct(t *testing.T) {
 
 // TestEntityMapUnknownKey an unresolvable key reports not-found rather than erroring.
 func TestEntityMapUnknownKey(t *testing.T) {
+	t.Parallel()
 	d, _ := sheetWithFlange(t)
 	if _, found, err := d.MapFoldedToFlat([]byte("not-a-real-key")); err != nil || found {
 		t.Errorf("unknown key: found=%v err=%v, want found=false err=nil", found, err)
@@ -68,6 +71,7 @@ func TestEntityMapUnknownKey(t *testing.T) {
 // TestEntityMapNoFlat mapping on a sheet-metal part with no developable flat errors (there is
 // no base Face to develop).
 func TestEntityMapNoFlat(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if _, err := d.EnableSheetMetal(); err != nil {
 		t.Fatalf("EnableSheetMetal: %v", err)

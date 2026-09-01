@@ -15,6 +15,7 @@ import (
 // radial branches × the ±t symmetry) — a genuine multi-root corner, not merely the single admitted
 // candidate the corner solve ultimately picks.
 func TestTorusTangencyRoots_SyntheticFourRoots(t *testing.T) {
+	t.Parallel()
 	const rm, rt, r = 50.0, 20.0, 5.0
 	rho := rt - r
 	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), rm, rt)
@@ -52,6 +53,7 @@ func closeToAny(xs []float64, want, tol float64) bool {
 // gate (torusQuarticGraceBand·res.Weld()): two distinct points closer than the band must reject;
 // two points at or beyond it must accept.
 func TestTorusCandidatesWellSeparated_GrazingBand(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(1000) // Weld() ≈ 1e-6
 	band := torusQuarticGraceBand * res.Weld()
 	close2 := []math.Point3{math.P3(0, 0, 0), math.P3(band*0.5, 0, 0)}
@@ -85,6 +87,7 @@ func twoCandArms(t *testing.T, onSpine math.Point3) ([]cornerArm, math.Point3) {
 // one of which lies on the injected arm's spine, the in-domain one must be chosen — even when it is
 // FARTHER from vp than the off-spine one (so this is provably not a disguised nearest-vertex pick).
 func TestTorusCornerTiebreak_ResolvesViaArms(t *testing.T) {
+	t.Parallel()
 	onSpine := math.P3(10, 0, 0)
 	offSpine := math.P3(1, 5, 0) // NEARER to vp=(0,0,0) but off the spine (not collinear with it) — must NOT be chosen
 	arms, _ := twoCandArms(t, onSpine)
@@ -102,6 +105,7 @@ func TestTorusCornerTiebreak_ResolvesViaArms(t *testing.T) {
 // TestTorusCornerTiebreak_BothInDomainRejects: two candidates BOTH on a colinear spine (station
 // toward far on both) is ambiguous — honest-reject rather than guess (the N7 lesson).
 func TestTorusCornerTiebreak_BothInDomainRejects(t *testing.T) {
+	t.Parallel()
 	onSpine1 := math.P3(10, 0, 0)
 	onSpine2 := math.P3(20, 0, 0)
 	arms, _ := twoCandArms(t, math.P3(0, 0, 0)) // far = (5,0,0); both stations are toward +x
@@ -115,6 +119,7 @@ func TestTorusCornerTiebreak_BothInDomainRejects(t *testing.T) {
 // TestTorusCornerTiebreak_NeitherInDomainRejects: neither candidate lies on the arm's spine —
 // honest-reject rather than fall back to nearest-vertex (an arm IS present, so its witness governs).
 func TestTorusCornerTiebreak_NeitherInDomainRejects(t *testing.T) {
+	t.Parallel()
 	arms, _ := twoCandArms(t, math.P3(10, 0, 0))
 	cands := []math.Point3{math.P3(0, 50, 0), math.P3(0, -50, 0)}
 	vp := math.P3(0, 0, 0)
@@ -129,6 +134,7 @@ func TestTorusCornerTiebreak_NeitherInDomainRejects(t *testing.T) {
 // their edges are Plane∧Cylinder lines), the legacy nearer-vertex pick applies, mirroring
 // sphereCornerRoot/coneCornerRoot's own "no witness" fallback.
 func TestTorusCornerTiebreak_NoArmsFallsBackToNearest(t *testing.T) {
+	t.Parallel()
 	near := math.P3(1, 0, 0)
 	far := math.P3(100, 0, 0)
 	vp := math.P3(0, 0, 0)

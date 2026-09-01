@@ -38,6 +38,7 @@ var modelWireTwins = []twinPair{
 // TestModelWireTwinsHaveMatchingFields fails when the exported field-name sets of a twin pair
 // diverge — the drift signal, caught before someone forgets to update the converter.
 func TestModelWireTwinsHaveMatchingFields(t *testing.T) {
+	t.Parallel()
 	for _, tw := range modelWireTwins {
 		got, want := exportedFieldNames(tw.model), exportedFieldNames(tw.wire)
 		if !reflect.DeepEqual(got, want) {
@@ -63,6 +64,7 @@ func exportedFieldNames(t reflect.Type) []string {
 // asserts every wire field carried over — so a converter that drops a newly added field fails
 // here rather than shipping a half-empty DTO.
 func TestDriveResultToWirePopulatesEveryField(t *testing.T) {
+	t.Parallel()
 	cells := [16]math.Scalar{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 	res := assembly.DriveResult{
 		StoppedByCollision: true,
@@ -95,6 +97,7 @@ func assertDriveResultCarried(t *testing.T, src assembly.DriveResult, got wire.D
 // TestFlatPatternSettingsRoundTrip proves the sheet-metal twin's 1:1 mapping is identity in
 // both directions; paired with the field-parity guard, a dropped/renamed field is caught.
 func TestFlatPatternSettingsRoundTrip(t *testing.T) {
+	t.Parallel()
 	m := sheetmetal.FlatPatternSettings{DeferUpdate: true}
 	w := wire.FlatPatternSettings{DeferUpdate: m.DeferUpdate}
 	if back := (sheetmetal.FlatPatternSettings{DeferUpdate: w.DeferUpdate}); back != m {

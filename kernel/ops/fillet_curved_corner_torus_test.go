@@ -15,6 +15,7 @@ import (
 // 10, minor 5, and the two derived spine feet F_A=(52.5,20.955,105) / F_B=(65,30.635,105). Inputs are
 // the exact DRAWEXE arm surfaces (fillet_curved_corner_torus.go's derivation, slice1a-report.md).
 func TestSolveCurvedMixedCornerM8(t *testing.T) {
+	t.Parallel()
 	const r = 5
 	arms := curvedMixedArms{
 		convex: mustCylinder(t, math.P3(55, 30.6350832689629, 100), math.V3(0, 0, 1), r),
@@ -48,6 +49,7 @@ func TestSolveCurvedMixedCornerM8(t *testing.T) {
 // TestSolveCurvedMixedCornerDeclinesNon2r checks the R=2r gate: a cove circle whose foot is NOT at 2r
 // from C (a BSpline mixed corner, N4/O1/H7 class) is declined, never mis-modelled as an analytic torus.
 func TestSolveCurvedMixedCornerDeclinesNon2r(t *testing.T) {
+	t.Parallel()
 	const r = 5
 	arms := curvedMixedArms{
 		convex: mustCylinder(t, math.P3(55, 30.6350832689629, 100), math.V3(0, 0, 1), r),

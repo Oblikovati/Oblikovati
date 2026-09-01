@@ -58,6 +58,7 @@ func shoelaceArea(poly []math.Point2) float64 {
 // seat face must be one connected region of area 36−2π, its boundary the 3 square sides + the exact conic arc
 // — proving the planeUV operand arranges a boundary-clipping conic through the shared (u,v) trimmer (#1591).
 func TestPlaneUVTrimsSquareBittenByCircle(t *testing.T) {
+	t.Parallel()
 	pl, seat, ring3 := squareSeat(t, 3)
 	circ, _ := geom.NewCircle(math.P3(3, 0, 0), math.V3(0, 0, 1), 2) // centred on the x=3 edge
 	seatUV := seatLoopsUV(pl, ring3)
@@ -90,6 +91,7 @@ func TestPlaneUVTrimsSquareBittenByCircle(t *testing.T) {
 // ~1e-4 sagitta a sampled crossing leaves. Without the exact-crossing injection the arc misses the edge and
 // the tool wall's split base cannot weld.
 func TestPlaneUVInjectsExactCrossings(t *testing.T) {
+	t.Parallel()
 	pl, seat, ring3 := squareSeat(t, 3)
 	circ, _ := geom.NewCircle(math.P3(2, 0, 0), math.V3(0, 0, 1), 2) // crosses x=3 at y=±√3, between samples
 	seatUV := seatLoopsUV(pl, ring3)

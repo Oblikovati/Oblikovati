@@ -12,6 +12,7 @@ import (
 // TestSketchSettingsRoundTrip reads the active document's sketch settings (defaults), writes a
 // changed value back, and checks the reply reflects it (#147).
 func TestSketchSettingsRoundTrip(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var got wire.SketchSettingsResult

@@ -27,6 +27,7 @@ func attachTestCloud(t *testing.T) *Session {
 // TestPointCloudGPUVerticesInterleave: n points yield n*7 floats, positions first. RGB is the
 // default mode, but a cloud without RGB data still falls back to the host marker color.
 func TestPointCloudGPUVerticesInterleave(t *testing.T) {
+	t.Parallel()
 	s := attachTestCloud(t)
 	verts, n := s.PointCloudGPUVertices()
 	if n != 3 {
@@ -47,6 +48,7 @@ func TestPointCloudGPUVerticesInterleave(t *testing.T) {
 // TestPointCloudGPUVerticesColorsByDisplayMode checks the retained GL-points upload path carries
 // the same RGB and intensity colors as the old CPU marker path, not the marker fallback.
 func TestPointCloudGPUVerticesColorsByDisplayMode(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("scan")})
 	pc, err := def.PointClouds().AddWithSamples("Scan", "s.xyz", rid, []pointcloud.PointSample{
@@ -92,6 +94,7 @@ func colorAtGPUVertex(verts []float32, i int) [4]float32 {
 // TestStrideForCapThinsAndPreserves: over-cap slices thin to ~max at an even stride; within-cap and
 // non-positive-cap slices pass through untouched.
 func TestStrideForCapThinsAndPreserves(t *testing.T) {
+	t.Parallel()
 	s := make([]pointcloud.PointSample, 1000)
 	if got := strideForCap(s, 100); len(got) < 90 || len(got) > 100 {
 		t.Errorf("cap 100 gave %d, want ~100", len(got))
@@ -107,6 +110,7 @@ func TestStrideForCapThinsAndPreserves(t *testing.T) {
 // TestCapForRenderRespectsExplicitBudget: a cloud the user budgeted is returned unchanged (the model
 // already applied that budget); only an unbudgeted cloud is subject to the render cap.
 func TestCapForRenderRespectsExplicitBudget(t *testing.T) {
+	t.Parallel()
 	pc := pointcloud.New("Scan", "s.xyz", "rid", []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0)})
 	pc.SetMaximumPointCount(1)
 	s := make([]pointcloud.PointSample, 10)
@@ -117,6 +121,7 @@ func TestCapForRenderRespectsExplicitBudget(t *testing.T) {
 
 // TestPointCloudDisplayKeyStable: identical state hashes identically (so the head skips re-upload).
 func TestPointCloudDisplayKeyStable(t *testing.T) {
+	t.Parallel()
 	s := attachTestCloud(t)
 	if a, b := s.PointCloudDisplayKey(), s.PointCloudDisplayKey(); a != b {
 		t.Errorf("key not stable across identical calls: %d then %d", a, b)
@@ -126,6 +131,7 @@ func TestPointCloudDisplayKeyStable(t *testing.T) {
 // TestPointCloudDisplayKeyChangesOnBudget: changing the display budget changes the key (forces a
 // re-upload of the newly-thinned set), while the empty scene stays non-zero (0 = "always upload").
 func TestPointCloudDisplayKeyChangesOnBudget(t *testing.T) {
+	t.Parallel()
 	empty, _ := emptyPartSession(t)
 	if empty.PointCloudDisplayKey() == 0 {
 		t.Error("empty-scene key is 0, which the renderer reserves for always-upload")
@@ -141,6 +147,7 @@ func TestPointCloudDisplayKeyChangesOnBudget(t *testing.T) {
 // TestPointCloudDisplayKeyChangesOnDisplayMode pins the retained-upload invalidation path: display
 // mode changes bake new colors into the GPU vertices, so they must force one re-upload.
 func TestPointCloudDisplayKeyChangesOnDisplayMode(t *testing.T) {
+	t.Parallel()
 	s := attachTestCloud(t)
 	pc := s.PickablePointClouds()[0]
 	before := s.PointCloudDisplayKey()
@@ -159,6 +166,7 @@ func TestPointCloudDisplayKeyChangesOnDisplayMode(t *testing.T) {
 // active crop limits the displayed set, so the retained GPU buffer must be re-uploaded; deactivating
 // it must change the key back (#645).
 func TestPointCloudDisplayKeyChangesOnActiveCrop(t *testing.T) {
+	t.Parallel()
 	s := attachTestCloud(t)
 	pc := s.PickablePointClouds()[0]
 	before := s.PointCloudDisplayKey()
@@ -176,6 +184,7 @@ func TestPointCloudDisplayKeyChangesOnActiveCrop(t *testing.T) {
 // TestPointCloudRenderDensityDefaultAndClamp pins the session-level viewport density knob: it
 // starts at full density and clamps UI/API input to the valid percentage range.
 func TestPointCloudRenderDensityDefaultAndClamp(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if got := s.PointCloudRenderDensity(); got != 100 {
 		t.Fatalf("default render density = %g, want 100", got)
@@ -197,6 +206,7 @@ func TestPointCloudRenderDensityDefaultAndClamp(t *testing.T) {
 // TestPointCloudPointSizeDefaultAndClamp pins the session-level native point-size knob: it starts
 // at one pixel and clamps UI/API input to the supported point-size range.
 func TestPointCloudPointSizeDefaultAndClamp(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if got := s.PointCloudPointSize(); got != 1 {
 		t.Fatalf("default point size = %g, want 1", got)
@@ -218,6 +228,7 @@ func TestPointCloudPointSizeDefaultAndClamp(t *testing.T) {
 // TestPointCloudIntensityRampDefaultAndSet pins the global intensity colors: low defaults red,
 // high defaults yellow, and alpha remains opaque even if a caller passes a transparent value.
 func TestPointCloudIntensityRampDefaultAndSet(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	low, high := s.PointCloudIntensityRamp()
 	if low != [4]float32{1, 0, 0, 1} || high != [4]float32{1, 1, 0, 1} {
@@ -233,6 +244,7 @@ func TestPointCloudIntensityRampDefaultAndSet(t *testing.T) {
 // TestPointCloudDisplayKeyChangesOnIntensityRamp proves ramp edits invalidate the retained point
 // buffer because intensity colors are baked into uploaded vertices.
 func TestPointCloudDisplayKeyChangesOnIntensityRamp(t *testing.T) {
+	t.Parallel()
 	s := attachTestCloud(t)
 	s.PickablePointClouds()[0].SetDisplayMode(types.PointCloudDisplayModeIntensity)
 	before := s.PointCloudDisplayKey()
@@ -245,6 +257,7 @@ func TestPointCloudDisplayKeyChangesOnIntensityRamp(t *testing.T) {
 // TestDensityFilteredSamplesStableAndApproximate checks that render density keeps a deterministic
 // random-looking subset rather than a prefix or a per-frame random draw.
 func TestDensityFilteredSamplesStableAndApproximate(t *testing.T) {
+	t.Parallel()
 	pc := pointcloud.New("Scan", "s.xyz", "rid", denseTestPoints(10000))
 	samples := pc.DisplayedSamples()
 	a := densityFilteredSamples(pc, samples, 25)
@@ -275,6 +288,7 @@ func TestDensityFilteredSamplesStableAndApproximate(t *testing.T) {
 // renaming a cloud must not change which samples it keeps, because the display key (and thus the
 // retained GPU buffer) never sees the name (#645).
 func TestDensityFilteredSamplesIgnoresName(t *testing.T) {
+	t.Parallel()
 	pc := pointcloud.New("Scan", "s.xyz", "rid", denseTestPoints(10000))
 	samples := pc.DisplayedSamples()
 	before := densityFilteredSamples(pc, samples, 25)
@@ -293,6 +307,7 @@ func TestDensityFilteredSamplesIgnoresName(t *testing.T) {
 // TestPointCloudGPUVerticesApplyRenderDensity verifies the native point-upload path receives the
 // density-filtered point count, not the full cloud.
 func TestPointCloudGPUVerticesApplyRenderDensity(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("scan")})
 	// A FIXED ResourceID pins the density filter's per-cloud hash seed
@@ -320,6 +335,7 @@ func TestPointCloudGPUVerticesApplyRenderDensity(t *testing.T) {
 // TestPointCloudDisplayKeyChangesOnRenderDensity proves slider edits invalidate the retained
 // point buffer exactly like budget/display-mode edits do.
 func TestPointCloudDisplayKeyChangesOnRenderDensity(t *testing.T) {
+	t.Parallel()
 	s := attachTestCloud(t)
 	before := s.PointCloudDisplayKey()
 	s.SetPointCloudRenderDensity(50)

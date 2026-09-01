@@ -53,6 +53,7 @@ func n4RoleArms(t *testing.T) []edgeFillet {
 // whose BOTH hosts are planes qualifies. The concave cyl arm, the flipped (concave) band and a Plane∧Cylinder
 // convex pivot — M8's arm, whose second host is a cylinder — all decline.
 func TestIsConvexBandArmDeclines(t *testing.T) {
+	t.Parallel()
 	pl := rolePlane(t)
 	if isConvexBandArm(edgeFillet{armSurface: roleCyl(t), armConcave: true, a: minimalRoleFace(pl, 40), b: minimalRoleFace(pl, 41)}) {
 		t.Error("isConvexBandArm accepted a CONCAVE cylinder arm — the O1 band is convex")
@@ -72,6 +73,7 @@ func TestIsConvexBandArmDeclines(t *testing.T) {
 // trihedral classifiers must accept ONLY its own role signature. Order in cornerPlanBuilders() then cannot
 // change any verdict, and adding a class cannot silently steal another's cases.
 func TestMixedCornerClassesAreDisjoint(t *testing.T) {
+	t.Parallel()
 	signatures := map[string][]edgeFillet{"M8": m8RoleArms(t), "N4": n4RoleArms(t), "O1": o1RoleArms(t)}
 	accepts := map[string]func([]edgeFillet) bool{
 		"M8": func(a []edgeFillet) bool { _, ok := classifyMixedRoleArms(a); return ok },
@@ -92,6 +94,7 @@ func TestMixedCornerClassesAreDisjoint(t *testing.T) {
 // TestClassifyO1DeclinesDupRoles pins the dup-role guard: two arms of the same role is never the O1 1+1+1
 // config, and a two-arm or four-arm corner is a different class entirely.
 func TestClassifyO1DeclinesDupRoles(t *testing.T) {
+	t.Parallel()
 	arms := o1RoleArms(t)
 	if _, ok := classifyO1MixedArms([]edgeFillet{arms[0], arms[0], arms[2]}); ok {
 		t.Error("classifyO1MixedArms accepted TWO concave cylinder arms")
@@ -111,6 +114,7 @@ func TestClassifyO1DeclinesDupRoles(t *testing.T) {
 // produced a loop whose segments were shifted by one: Valid ∧ Manifold, with four 1-incident edges and an
 // unclosed shell. Both orientations must now resolve, and a chain reaching NEITHER foot must decline.
 func TestOrientMidToChainIsGeometricNotPositional(t *testing.T) {
+	t.Parallel()
 	d, a := math.P3(1, 0, 0), math.P3(0, 1, 0)
 	mid := []endSeg{{from: d, to: a, curve: geom.NewLineSegment(d, a), mid: d.Midpoint(a)}}
 	forward, ok := orientMidToChain(mid, d, 1e-9)

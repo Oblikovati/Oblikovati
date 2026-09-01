@@ -17,6 +17,7 @@ import (
 // on that line stays fixed, whereas the implicit (no-neutral) hinge would pin the bottom edge (z=0).
 // The result is a valid tapered solid.
 func TestDraftFacesNeutralPivotsOnNeutralPlane(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
 	side := plusXFaceKey(t, box)
 	neutral, _ := geom.NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1)) // z=1, the mid-height parting plane
@@ -49,6 +50,7 @@ func TestDraftFacesNeutralPivotsOnNeutralPlane(t *testing.T) {
 // 0.352662. Our sign convention may lean the face the other way, so we compare |Δvol|.
 // Analytic: ∫₀²2·(z−0.5)·tan10° dz = tan10° = 0.1763269, ×2 = 0.3526538 (OCCT 0.3526540).
 func TestDraftFacesNeutralVolumeMatchesOCCT(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
 	side := plusXFaceKey(t, box)
 	neutral, _ := geom.NewPlane(math.P3(0, 0, 0.5), math.V3(0, 0, 1))

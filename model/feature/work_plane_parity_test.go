@@ -17,6 +17,7 @@ import (
 // face), plus the recipe round-trip for every new kind.
 
 func TestAddFixedWorkPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	wp := g.WorkPlanes().AddFixed(func() math.Point3 { return math.P3(1, 2, 3) }, mustX(), mustY())
 	if !wp.Health().OK() {
@@ -29,6 +30,7 @@ func TestAddFixedWorkPlane(t *testing.T) {
 }
 
 func TestPlaneAndPointWorkPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pt := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(5, 6, 7) })
 	wp := g.WorkPlanes().AddByPlaneAndPoint(OriginXYPlane, pt.Key())
@@ -39,6 +41,7 @@ func TestPlaneAndPointWorkPlane(t *testing.T) {
 }
 
 func TestTwoPlanesBisector(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	// XY (+Z) bisected with XZ (−Y) → normal halfway between, on the X-axis intersection.
 	wp := g.WorkPlanes().AddByTwoPlanes(OriginXYPlane, OriginXZPlane)
@@ -57,6 +60,7 @@ func TestTwoPlanesBisector(t *testing.T) {
 }
 
 func TestLinePlaneAndAngle(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	// XY plane swung 90° about the X axis: normal +Z → ±Y, still holding the X axis.
 	wp := g.WorkPlanes().AddByLinePlaneAndAngle(OriginXAxis, OriginXYPlane, func() float64 { return stdmath.Pi / 2 })
@@ -72,6 +76,7 @@ func TestLinePlaneAndAngle(t *testing.T) {
 }
 
 func TestTwoLinesWorkPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	wp := g.WorkPlanes().AddByTwoLines(OriginXAxis, OriginYAxis)
 	if !wp.Plane().Normal().AsVector().IsEqualTo(math.V3(0, 0, 1), wtol) {
@@ -88,6 +93,7 @@ func TestTwoLinesWorkPlane(t *testing.T) {
 }
 
 func TestNormalToCurveWorkPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pt := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 4) })
 	wp := g.WorkPlanes().AddByNormalToCurve(OriginZAxis, pt.Key())
@@ -98,6 +104,7 @@ func TestNormalToCurveWorkPlane(t *testing.T) {
 }
 
 func TestPointAndTangentWorkPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, key := faceBody(t, mustCylinder(t)) // axis +Z, radius 2 at origin
 	g.Recompute([]*topo.Body{body})
@@ -114,6 +121,7 @@ func TestPointAndTangentWorkPlane(t *testing.T) {
 }
 
 func TestPlaneAndTangentWorkPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, key := faceBody(t, mustCylinder(t))
 	g.Recompute([]*topo.Body{body})
@@ -135,6 +143,7 @@ func TestPlaneAndTangentWorkPlane(t *testing.T) {
 }
 
 func TestLineAndTangentWorkPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, key := faceBody(t, mustCylinder(t)) // axis +Z, radius 2
 	g.Recompute([]*topo.Body{body})
@@ -158,6 +167,7 @@ func TestLineAndTangentWorkPlane(t *testing.T) {
 }
 
 func TestTorusMidPlaneWorkPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	tor, err := geom.NewTorus(math.P3(0, 0, 5), math.V3(0, 0, 1), 4, 1)
 	if err != nil {
@@ -174,6 +184,7 @@ func TestTorusMidPlaneWorkPlane(t *testing.T) {
 }
 
 func TestThreePointPlaneFromModelVertices(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, keys := triangleBody(t) // three vertices in the z=0 plane
 	g.Recompute([]*topo.Body{body})
@@ -193,6 +204,7 @@ func TestThreePointPlaneFromModelVertices(t *testing.T) {
 }
 
 func TestTangentWorkPlaneSickWhenFaceLost(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	// A face reference that never binds (no body) must go sick, not panic or guess.
 	wp := g.WorkPlanes().AddByTorusMidPlane(FaceRef([]byte("ghost")))
@@ -203,6 +215,7 @@ func TestTangentWorkPlaneSickWhenFaceLost(t *testing.T) {
 }
 
 func TestWorkPlaneRecipeRoundTrip(t *testing.T) {
+	t.Parallel()
 	g := seedAllWorkPlanes()
 	data, err := MarshalWork(g)
 	if err != nil {
@@ -288,6 +301,7 @@ func triangleBody(t *testing.T) (*topo.Body, [3][]byte) {
 // base of AddByPlaneAndOffset): a face at z=3 (+Z) offset by 2 lands at z=5. Regression for
 // plane references not resolving a planar face (the offset-from-face work-plane bug).
 func TestOffsetPlaneFromFace(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pl, err := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
 	if err != nil {

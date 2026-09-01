@@ -13,6 +13,7 @@ import (
 // TestSetDockableWindowReferencesUpdatesAndEmits covers the referenceList control path:
 // stored Rows are replaced and a PanelReferencesChanged event is emitted.
 func TestSetDockableWindowReferencesUpdatesAndEmits(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.SetDockableWindow(wire.DockableWindowSpec{
 		ID: "w", Title: "W", Visible: true,

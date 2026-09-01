@@ -15,6 +15,7 @@ import (
 // from a client not present this session surfaces a status-bar warning on
 // open — never an error (M03-F10, #611).
 func TestOpenWarnsOnInterestsFromAbsentClients(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	d, err := s.Workspace().Add(doc.Part, "augmented.obk", true)
 	if err != nil {

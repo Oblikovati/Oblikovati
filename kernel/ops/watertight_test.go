@@ -27,6 +27,7 @@ func freeEdgeCount(m *Mesh) int {
 // surfaces, breaking this — the watertightness M25 PBI-324 (edge snapping) / PBI-330 targets. This is
 // the regression guard for the clean case.
 func TestCleanCurvedSolidIsWatertight(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 10)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -62,6 +63,7 @@ func nurbsDuctSubject(t *testing.T) (bodies []*topo.Body, wantVolume float64, fo
 // 4/0/0/0/0/0 → planar-faithful CDT (planarTris) + exact CDT predicates → 0/0/0/0/0/0. Assert FULLY
 // watertight (total 0) — it regresses hard if any of those fixes is lost.
 func TestImportedNurbsDuctWatertight(t *testing.T) {
+	t.Parallel()
 	bodies, _, _ := nurbsDuctSubject(t)
 	for _, gq := range gateQualities() {
 		total := 0
@@ -103,6 +105,7 @@ const (
 // (the definitive #585 over-enclosure guard, whose emergent failure does not fit a small fixture) and
 // its reference volume.
 func TestImportedNurbsDuctVolumeAndFolds(t *testing.T) {
+	t.Parallel()
 	bodies, wantVolume, foldCeiling := nurbsDuctSubject(t)
 	for _, gq := range gateQualities() {
 		var volume float64

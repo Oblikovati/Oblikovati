@@ -14,6 +14,7 @@ import (
 // TestLipRaisesBeadAlongTopEdge runs a lip along a box top edge and checks it adds material
 // into a valid solid; the groove variant cuts (M20-F10 #485).
 func TestLipRaisesBeadAlongTopEdge(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var top []byte
 	for _, e := range box.Edges() {
@@ -46,6 +47,7 @@ func TestLipRaisesBeadAlongTopEdge(t *testing.T) {
 
 // TestLipGrooveCutsAlongTopEdge checks the groove variant removes material.
 func TestLipGrooveCutsAlongTopEdge(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var top []byte
 	for _, e := range box.Edges() {
@@ -73,6 +75,7 @@ func TestLipGrooveCutsAlongTopEdge(t *testing.T) {
 
 // TestLipRoundTrip checks the lip's size + groove flag survive an .obk round trip.
 func TestLipRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 1 })

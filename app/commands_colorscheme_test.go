@@ -7,6 +7,7 @@ import "testing"
 // TestColorSchemeRibbonPanel checks the View tab carries a "Color Scheme" selection box with
 // the built-in gallery as its options, and that the active scheme drives the selected index.
 func TestColorSchemeRibbonPanel(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	tab, ok := BuildRibbon(s).Tab("View")
 	if !ok {
@@ -28,6 +29,7 @@ func TestColorSchemeRibbonPanel(t *testing.T) {
 // TestColorSchemeCommandActivates checks executing a color-scheme command activates the scheme
 // and moves the selector's selected index.
 func TestColorSchemeCommandActivates(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if err := s.Execute("View.ColorScheme.High Contrast"); err != nil {
 		t.Fatalf("execute color-scheme command: %v", err)

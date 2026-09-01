@@ -22,6 +22,7 @@ import (
 // (0,−1,2.828)/3 against the sphere's (0,−1,0)), so declaring G1 asserted a tangency OCCT's own blend
 // does not have. See .superpowers/sdd/runout-envelope-report.md.
 func TestExtractSetbackPatches_S1IntactFootprintRibbon(t *testing.T) {
+	t.Parallel()
 	ef, res := runoutFixtureCrossingBoss(t)
 	b, ok := detectSetbackBands(ef, res)
 	if !ok {
@@ -47,6 +48,7 @@ func TestExtractSetbackPatches_S1IntactFootprintRibbon(t *testing.T) {
 // blend engine accepts — resolveBlend returns a certificate-Valid patch (coons4 over the intact-boss
 // rails), proving the rails are well-formed, not just closed.
 func TestExtractSetbackPatches_LoopsResolveToValidPatches(t *testing.T) {
+	t.Parallel()
 	ef, res := runoutFixtureCrossingBoss(t)
 	b, _ := detectSetbackBands(ef, res)
 	loops, ok := extractSetbackPatches(b, ef, res)
@@ -64,6 +66,7 @@ func TestExtractSetbackPatches_LoopsResolveToValidPatches(t *testing.T) {
 // input (here the behind-band fixture, which detects no bands at all) must yield ok=false, never a
 // partial or wrong tiling.
 func TestExtractSetbackPatches_NonS1Rejected(t *testing.T) {
+	t.Parallel()
 	ef, res := runoutFixtureBehindBand(t)
 	b, _ := detectSetbackBands(ef, res)
 	if _, ok := extractSetbackPatches(b, ef, res); ok {

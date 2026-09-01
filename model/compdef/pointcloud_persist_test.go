@@ -13,6 +13,7 @@ import (
 // TestPointCloudRecordRoundTrip: a cloud's metadata + placement survive PointCloudRecords →
 // SetPointCloudRecords, with its points re-decoded from the embedded resource (#645).
 func TestPointCloudRecordRoundTrip(t *testing.T) {
+	t.Parallel()
 	def := NewPartComponentDefinition()
 	rid := def.AddResource(doc.Resource{Type: "PointCloudScan", Encoding: doc.EncodingUTF8, Value: []byte("0 0 0\n1 1 1\n"), Origin: "s.xyz"})
 	pc, err := def.PointClouds().Add("Scan", "s.xyz", rid, nil)
@@ -51,6 +52,7 @@ func TestPointCloudRecordRoundTrip(t *testing.T) {
 // TestPointCloudRecordMissingResource: a record whose resource is absent still rebuilds the cloud,
 // with no points, so its metadata is not lost (#645).
 func TestPointCloudRecordMissingResource(t *testing.T) {
+	t.Parallel()
 	def := NewPartComponentDefinition()
 	def.SetPointCloudRecords([]doc.PointCloudRecord{{
 		Name: "Gone", Source: "s.xyz", ResourceID: "absent", Visible: true, Scale: 1,

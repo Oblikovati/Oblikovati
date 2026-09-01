@@ -34,6 +34,7 @@ func curvedFaceRef(t *testing.T, r *Router, s *app.Session) string {
 // TestProjectCutEdgesOverWire extrudes a block, then projects the section curves where an XZ sketch
 // cuts it — one associative projected curve per section loop (#1873).
 func TestProjectCutEdgesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	// A profile centred on the origin, so the canonical XZ plane (y=0) cuts the block's interior.
@@ -60,6 +61,7 @@ func TestProjectCutEdgesOverWire(t *testing.T) {
 // TestProjectCutEdgesNoSolidErrors: with no solid to cut, the op errors rather than creating a
 // dead, geometry-less reference.
 func TestProjectCutEdgesNoSolidErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	if err := tryCall(t, r, s, "sketch.projectCutEdges", `{"sketchIndex":0}`); err == nil {
@@ -70,6 +72,7 @@ func TestProjectCutEdgesNoSolidErrors(t *testing.T) {
 // TestProjectSilhouetteOverWire projects a cylinder side face's silhouette onto a YZ sketch,
 // selecting the +Y ruling by proximity (#1873).
 func TestProjectSilhouetteOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	faceRef := curvedFaceRef(t, r, s)
 	call(t, r, s, "sketch.create", `{"plane":"YZ"}`, &wire.CreateSketchResult{}) // sketch 1, normal +X
@@ -94,6 +97,7 @@ func TestProjectSilhouetteOverWire(t *testing.T) {
 
 // TestProjectSilhouetteUnknownFaceErrors: an unresolved face reference is a clean error.
 func TestProjectSilhouetteUnknownFaceErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	args, _ := json.Marshal(wire.ProjectSilhouetteArgs{

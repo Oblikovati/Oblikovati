@@ -30,6 +30,7 @@ func cubeSTLBytes(t *testing.T) []byte {
 // (#1248): a smaller working-unit millimetre size yields proportionally larger working
 // coordinates, so the same file imports into the document's working scale.
 func TestImportBodiesFromDataScalesByTargetUnit(t *testing.T) {
+	t.Parallel()
 	data := cubeSTLBytes(t)
 
 	coarse, _, err := ImportBodiesFromData(types.FormatSTL, data, 10) // 10 mm per working unit (cm)
@@ -77,6 +78,7 @@ func TestImportBodiesFromDataScalesByTargetUnit(t *testing.T) {
 
 // TestImportBodiesReadsFile covers the path-reading wrapper.
 func TestImportBodiesReadsFile(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), "cube.stl")
 	if err := os.WriteFile(path, cubeSTLBytes(t), 0o644); err != nil {
 		t.Fatal(err)
@@ -94,6 +96,7 @@ func TestImportBodiesReadsFile(t *testing.T) {
 // working scale (cm per working unit) and converts it to the millimetre target, falling back to
 // the centimetre default when no resolver is wired.
 func TestWorkingScaleResolverFeedsReimport(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(param.NewParameters())
 	if got := fs.workingTargetMM(); got != 0 {
 		t.Errorf("unwired resolver workingTargetMM = %v, want 0 (default applied downstream)", got)

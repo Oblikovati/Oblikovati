@@ -168,6 +168,7 @@ func bunchedPanel(t *testing.T) (geom.BSplineSurface, float64) {
 // better, as interior density rose: recon §1, +210%→+216% as tol tightened 1e-2→1e-5, a genuine
 // non-convergence) this fix's boundary resolution does not degrade as the interior grid refines.
 func TestNurbsPcurveMeshConvergesHighAspectPanel(t *testing.T) {
+	t.Parallel()
 	s, truth := bunchedPanel(t)
 	face, _ := cylindricalStripFace(t, s, bunchedR, bunchedSweep, bunchedH)
 
@@ -225,6 +226,7 @@ func TestNurbsPcurveMeshConvergesHighAspectPanel(t *testing.T) {
 // by an order of magnitude. This is the recon's "the dihedral fold test provably misses this"
 // invariant made concrete.
 func TestStarvedRailFixShrinksOverEnclosureTriangle(t *testing.T) {
+	t.Parallel()
 	s, truth := bunchedPanel(t)
 	face, rails := cylindricalStripFace(t, s, bunchedR, bunchedSweep, bunchedH)
 	q := DefaultQuality()
@@ -279,6 +281,7 @@ func unfixedRailLoop(t *testing.T, f *topo.Face, rails [2]*topo.Edge, q Quality)
 // FoldEdgeCount stay bounded throughout. Proof of the underlying MECHANISM (recon's own metric),
 // not just the one production density TestNurbsPcurveMeshConvergesHighAspectPanel checks.
 func TestStarvedRailHSweepMonotoneConvergence(t *testing.T) {
+	t.Parallel()
 	s, truth := bunchedPanel(t)
 	face, rails := cylindricalStripFace(t, s, bunchedR, bunchedSweep, bunchedH)
 	q := DefaultQuality()

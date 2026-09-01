@@ -65,6 +65,7 @@ func assertReconstructedSolid(t *testing.T, res *topo.Body, wantCyl int, wantVol
 // TestCurvedBarJoinReconstructs: curved bar ∪ straddling tool adds the tool's outside half
 // (tool − overlap = 2 − 1 = 1) and keeps the fillet analytic.
 func TestCurvedBarJoinReconstructs(t *testing.T) {
+	t.Parallel()
 	bar, tool := curvedBarWithStraddlingTool(t)
 	res, err := ops.Boolean(ops.Join, bar, tool)
 	if err != nil {
@@ -76,6 +77,7 @@ func TestCurvedBarJoinReconstructs(t *testing.T) {
 // TestCurvedBarCutReconstructs: curved bar − straddling tool removes the overlap slab (1.0) and
 // keeps the fillet analytic.
 func TestCurvedBarCutReconstructs(t *testing.T) {
+	t.Parallel()
 	bar, tool := curvedBarWithStraddlingTool(t)
 	res, err := ops.Boolean(ops.Cut, bar, tool)
 	if err != nil {
@@ -87,6 +89,7 @@ func TestCurvedBarCutReconstructs(t *testing.T) {
 // TestCurvedBarIntersectReconstructs: curved bar ∩ straddling tool keeps only the overlap slab,
 // which lies away from the filleted corner — so the result is a plain planar box (no cylinder).
 func TestCurvedBarIntersectReconstructs(t *testing.T) {
+	t.Parallel()
 	bar, tool := curvedBarWithStraddlingTool(t)
 	res, err := ops.Boolean(ops.Intersect, bar, tool)
 	if err != nil {

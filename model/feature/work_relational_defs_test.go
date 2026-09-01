@@ -13,6 +13,7 @@ import (
 // and restores it, asserting the recipe is stable — exercising each definition's kindName/refs and
 // the .obk encode/decode codecs (#1840, #1842).
 func TestRelationalWorkFeaturesRoundTrip(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pt := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 5) })
 	g.WorkAxes().AddByPointAndPlane(pt.Key(), OriginXYPlane)
@@ -52,6 +53,7 @@ func TestRelationalWorkFeaturesRoundTrip(t *testing.T) {
 // TestRelationalUnresolvedRefsAreUnhealthy: every relational constructor goes unhealthy when a
 // reference cannot resolve, exercising each definition's ref-resolution error path.
 func TestRelationalUnresolvedRefsAreUnhealthy(t *testing.T) {
+	t.Parallel()
 	const bad = WorkRef("plane/999") // resolves as no axis / no plane / no point
 	build := []struct {
 		name    string
@@ -92,6 +94,7 @@ func TestRelationalUnresolvedRefsAreUnhealthy(t *testing.T) {
 }
 
 func TestAxisPointAndPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pt := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 5) })
 	wa := g.WorkAxes().AddByPointAndPlane(pt.Key(), OriginXYPlane)
@@ -107,6 +110,7 @@ func TestAxisPointAndPlane(t *testing.T) {
 }
 
 func TestAxisLineAndPoint(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pt := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 5, 0) })
 	wa := g.WorkAxes().AddByLineAndPoint(OriginXAxis, pt.Key())
@@ -119,6 +123,7 @@ func TestAxisLineAndPoint(t *testing.T) {
 }
 
 func TestAxisLineAndPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	// A grounded line at 45° in the XZ plane, projected onto XY, becomes the X axis.
 	diag, _ := math.NewUnitVector3(1, 0, 1)
@@ -136,6 +141,7 @@ func TestAxisLineAndPlane(t *testing.T) {
 }
 
 func TestAxisLineAndPlanePerpendicularIsDegenerate(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	line := g.WorkAxes().AddByLine(math.P3(0, 0, 3), mustUnit(0, 0, 1)) // ⟂ to XY
 	wa := g.WorkAxes().AddByLineAndPlane(line.Key(), OriginXYPlane)
@@ -145,6 +151,7 @@ func TestAxisLineAndPlanePerpendicularIsDegenerate(t *testing.T) {
 }
 
 func TestPointByPoint(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	src := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 2, 3) })
 	wp := g.WorkPoints().AddByPoint(src.Key())
@@ -154,6 +161,7 @@ func TestPointByPoint(t *testing.T) {
 }
 
 func TestPointTwoLinesIntersectAtOrigin(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	wp := g.WorkPoints().AddByTwoLines(OriginXAxis, OriginYAxis)
 	if !wp.Health().OK() {
@@ -165,6 +173,7 @@ func TestPointTwoLinesIntersectAtOrigin(t *testing.T) {
 }
 
 func TestPointTwoLinesSkewIsDegenerate(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	// The X axis and a Y-parallel line lifted to z=5 never meet.
 	skew := g.WorkAxes().AddByLine(math.P3(0, 0, 5), mustUnit(0, 1, 0))
@@ -175,6 +184,7 @@ func TestPointTwoLinesSkewIsDegenerate(t *testing.T) {
 }
 
 func TestPointThreePlanesAtOrigin(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	wp := g.WorkPoints().AddByThreePlanes(OriginXYPlane, OriginXZPlane, OriginYZPlane)
 	if !wp.Health().OK() {
@@ -186,6 +196,7 @@ func TestPointThreePlanesAtOrigin(t *testing.T) {
 }
 
 func TestPointThreePlanesParallelIsDegenerate(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	off := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 5 }) // parallel to XY
 	wp := g.WorkPoints().AddByThreePlanes(OriginXYPlane, off.Key(), OriginXZPlane)

@@ -46,6 +46,7 @@ func domeSurface(t *testing.T) geom.BSplineSurface {
 }
 
 func TestAdaptiveInteriorNoSpill(t *testing.T) {
+	t.Parallel()
 	s := domeSurface(t)
 	outer := uvSquare(0.1, 0.9, 8)
 	holes := [][]math.Point2{uvSquare(0.4, 0.6, 6)}
@@ -64,6 +65,7 @@ func TestAdaptiveInteriorNoSpill(t *testing.T) {
 }
 
 func TestAdaptiveInteriorDensityFollowsCurvature(t *testing.T) {
+	t.Parallel()
 	flat := unitPatch(t) // z=0 bilinear (from refined_patch_test.go)
 	dome := domeSurface(t)
 	outer := uvSquare(0.05, 0.95, 8)
@@ -75,6 +77,7 @@ func TestAdaptiveInteriorDensityFollowsCurvature(t *testing.T) {
 }
 
 func TestAdaptiveInteriorDeterministic(t *testing.T) {
+	t.Parallel()
 	s := domeSurface(t)
 	outer := uvSquare(0.1, 0.9, 8)
 	a := interiorNodesOnly(s, outer, nil, DefaultQuality(), 1)

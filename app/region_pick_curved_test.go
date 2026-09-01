@@ -47,6 +47,7 @@ func curvedEdgeOf(t *testing.T, b *topo.Body) *topo.Edge {
 // a crossing drag. The old endpoint-only outline classified the whole rim by its seam vertex and
 // would have missed this; the sampled outline catches it.
 func TestPickRegionCurvedEdgeSampledNotEndpoints(t *testing.T) {
+	t.Parallel()
 	s := cylinderPart(t, 2, 4)
 	body := partBodies(s)()[0]
 	edge := curvedEdgeOf(t, body)
@@ -87,6 +88,7 @@ func TestPickRegionCurvedEdgeSampledNotEndpoints(t *testing.T) {
 // but a window rect over that same part does NOT (the rest of the rim is outside) — window-select
 // requires every sampled point inside, proving the classification uses the full span.
 func TestPickRegionCurvedEdgeWindowNeedsWholeSpan(t *testing.T) {
+	t.Parallel()
 	s := cylinderPart(t, 2, 4)
 	body := partBodies(s)()[0]
 	edge := curvedEdgeOf(t, body)

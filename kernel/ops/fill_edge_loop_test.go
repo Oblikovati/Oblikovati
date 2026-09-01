@@ -49,6 +49,7 @@ func innerLoopEdges(t *testing.T, bodies []*topo.Body) []*topo.Edge {
 // TestFillEdgeLoopClosesFourSided fills the square opening from an explicit loop of four surface-body
 // edges (the #1867 3D-edge-loop input) and checks it interpolates the loop corners (G0 closure).
 func TestFillEdgeLoopClosesFourSided(t *testing.T) {
+	t.Parallel()
 	bodies, verts := polygonNeighbours(t, 4, 1, flat)
 	out, err := ops.FillEdgeLoop(innerLoopEdges(t, bodies), 1)
 	if err != nil {
@@ -64,6 +65,7 @@ func TestFillEdgeLoopClosesFourSided(t *testing.T) {
 // TestFillEdgeLoopNonPlanar fills a NON-planar five-edge loop (alternating corner heights) — the
 // headline #1867 case: a boundary patch over a 3D edge loop, not just a planar sketch profile.
 func TestFillEdgeLoopNonPlanar(t *testing.T) {
+	t.Parallel()
 	z := func(i int) float64 {
 		if i%2 == 0 {
 			return 0.3
@@ -94,6 +96,7 @@ func TestFillEdgeLoopNonPlanar(t *testing.T) {
 
 // TestFillEdgeLoopTooFew: fewer than three edges cannot bound an opening.
 func TestFillEdgeLoopTooFew(t *testing.T) {
+	t.Parallel()
 	bodies, _ := polygonNeighbours(t, 4, 1, flat)
 	edges := innerLoopEdges(t, bodies)
 	if _, err := ops.FillEdgeLoop(edges[:2], 1); err == nil {

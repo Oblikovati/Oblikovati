@@ -21,6 +21,7 @@ func cubeTagged(x0, y0, z0 float64, base int) TaggedSoup {
 // result triangles are identical (same set, same order) to the untagged Boolean for
 // every operation, so delegating Boolean through BooleanTagged changed nothing.
 func TestBooleanTaggedMatchesUntagged(t *testing.T) {
+	t.Parallel()
 	a := boxMesh([3]float64{0, 0, 0}, [3]float64{2, 2, 2})
 	b := boxMesh([3]float64{1, 1, 1}, [3]float64{3, 3, 3})
 	for _, op := range []Op{Union, Difference, Intersection} {
@@ -45,6 +46,7 @@ func TestBooleanTaggedMatchesUntagged(t *testing.T) {
 // (b's ids are offset past a's), so reconstruction can attribute each output triangle
 // to a known surface. The union of two offset cubes keeps faces from both operands.
 func TestBooleanTaggedProvenance(t *testing.T) {
+	t.Parallel()
 	const naFaces = 6
 	a := cubeTagged(0, 0, 0, 0)
 	b := cubeTagged(1, 1, 1, naFaces)
@@ -72,6 +74,7 @@ func TestBooleanTaggedProvenance(t *testing.T) {
 // for Difference) keeps b's tag — the reversed face still belongs to b's surface, the
 // invariant reconstruction relies on to give the cavity wall b's analytic surface.
 func TestBooleanTaggedDifferenceKeepsBTag(t *testing.T) {
+	t.Parallel()
 	const naFaces = 6
 	a := cubeTagged(0, 0, 0, 0)
 	b := cubeTagged(1, 1, 1, naFaces)

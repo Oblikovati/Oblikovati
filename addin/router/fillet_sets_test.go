@@ -44,6 +44,7 @@ type filletSetsAddResult struct {
 // TestFilletEdgeSetsOverWire adds a constant + variable edge-set fillet via
 // features.add (keys carry raw bytes, so the args are marshalled, not quoted).
 func TestFilletEdgeSetsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, vertical := filletBoxFixture(t)
 	args, _ := json.Marshal(map[string]any{
 		"kind": "fillet",
@@ -69,6 +70,7 @@ func TestFilletEdgeSetsOverWire(t *testing.T) {
 // TestFilletEdgeSetRejectsMixedSpelling: a set giving both a constant radius
 // and a variable pair is a precise error.
 func TestFilletEdgeSetRejectsMixedSpelling(t *testing.T) {
+	t.Parallel()
 	r, s, vertical := filletBoxFixture(t)
 	args, _ := json.Marshal(map[string]any{
 		"kind": "fillet",

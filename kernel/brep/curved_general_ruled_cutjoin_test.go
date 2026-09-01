@@ -21,6 +21,7 @@ func coneCutJoinPair() (fat, rod *topo.Body) {
 // TestRuledConeCrossingJoinGeneral: fat ∪ rod (two crossing frustums) through the general pipeline is a watertight
 // solid — the fat's keyhole-bridged holed wall, the two tapered rod stubs, and all four caps (#1403).
 func TestRuledConeCrossingJoinGeneral(t *testing.T) {
+	t.Parallel()
 	fat, rod := coneCutJoinPair()
 	res, ok := RuledCrossingJoinGeneral(fat, rod, nil)
 	if !ok {
@@ -37,6 +38,7 @@ func TestRuledConeCrossingJoinGeneral(t *testing.T) {
 // TestRuledConeCrossingCutGeneral: fat − rod (drilling the fat frustum) through the general pipeline is a watertight
 // solid — the breached fat wall, its whole caps, and the reversed rod tunnel (#1403).
 func TestRuledConeCrossingCutGeneral(t *testing.T) {
+	t.Parallel()
 	fat, rod := coneCutJoinPair()
 	res, ok := RuledCrossingCutGeneral(fat, rod, nil)
 	if !ok {
@@ -53,6 +55,7 @@ func TestRuledConeCrossingCutGeneral(t *testing.T) {
 // TestConeCylinderCutJoinGeneralResolveOrder: the mixed cone/cylinder pair resolves each operand by type
 // (ruledOperandOf) regardless of which argument is the cone, so both argument orders are accepted (#1403).
 func TestConeCylinderCutJoinGeneralResolveOrder(t *testing.T) {
+	t.Parallel()
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	if _, ok := RuledCrossingJoinGeneral(cyl, cone, nil); !ok {
@@ -65,6 +68,7 @@ func TestConeCylinderCutJoinGeneralResolveOrder(t *testing.T) {
 
 // TestConePairDecline: a non-crossing pair (far apart, no imprint) declines so kernel/ops keeps its fallback.
 func TestConePairDecline(t *testing.T) {
+	t.Parallel()
 	a, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "a")
 	b, _ := SolidCylinderCone(math.P3(40, 0, 0), math.P3(52, 0, 0), 0.8, 1.5, "b") // far apart, no intersection
 	if _, ok := RuledCrossingJoinGeneral(a, b, nil); ok {
@@ -78,6 +82,7 @@ func TestConePairDecline(t *testing.T) {
 // TestRuledOperandOfResolvesType: ruledOperandOf builds a cone operand from a frustum body and a cylinder
 // operand from a cylinder body, carrying that surface forward for the split (#1403).
 func TestRuledOperandOfResolvesType(t *testing.T) {
+	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	oc, okc := ruledOperandOf(cone)
@@ -104,6 +109,7 @@ func partialPair() (fat, stub *topo.Body) {
 // TestPartialImprintOneLoop: the partial imprint is exactly ONE loop (the single entry breach), traced
 // rod-first whichever argument order is given (#1403).
 func TestPartialImprintOneLoop(t *testing.T) {
+	t.Parallel()
 	fat, stub := partialPair()
 	for _, order := range []struct {
 		name string
@@ -120,6 +126,7 @@ func TestPartialImprintOneLoop(t *testing.T) {
 // wall, its two whole caps, the single rod stub, and the rod's entry cap; the rod's blind cap (inside the fat)
 // is dropped (#1403).
 func TestPartialJoinGeneralStructure(t *testing.T) {
+	t.Parallel()
 	fat, stub := partialPair()
 	res, ok := PartialPenetrationJoinGeneral(fat, stub, nil)
 	if !ok {
@@ -136,6 +143,7 @@ func TestPartialJoinGeneralStructure(t *testing.T) {
 // TestPartialCutGeneralBlindHole: fat − rod is a watertight blind-hole solid — the holed fat wall, its two
 // caps, the reversed rod tunnel, and the rod's blind cap as the pocket bottom (#1403).
 func TestPartialCutGeneralBlindHole(t *testing.T) {
+	t.Parallel()
 	fat, stub := partialPair()
 	res, ok := PartialPenetrationCutGeneral(fat, stub, nil)
 	if !ok {
@@ -152,6 +160,7 @@ func TestPartialCutGeneralBlindHole(t *testing.T) {
 // TestCapsInsideOutsidePartition: for the partial rod, its blind cap (centre inside the fat) is capsInside and
 // its entry cap (centre outside) is capsOutside; the partition is complete (#1403).
 func TestCapsInsideOutsidePartition(t *testing.T) {
+	t.Parallel()
 	fat, stub := partialPair()
 	fatInside, _ := curvedSolidMembership(fat)
 	in := capsInside(stub, fatInside)
@@ -164,6 +173,7 @@ func TestCapsInsideOutsidePartition(t *testing.T) {
 // TestPartialIntersectGeneralPlug: rod ∩ fat (a partial penetration) is a watertight plug — the fat-wall lens
 // cap, the rod-wall band, and the rod's blind end cap (the interior-ending planar disc) (#1403).
 func TestPartialIntersectGeneralPlug(t *testing.T) {
+	t.Parallel()
 	fat, stub := partialPair()
 	res, ok := PartialPenetrationIntersectGeneral(fat, stub, nil)
 	if !ok {
@@ -180,6 +190,7 @@ func TestPartialIntersectGeneralPlug(t *testing.T) {
 // TestPartialPairDecline: a FULL crossing (the rod passes right through) is not a partial penetration — the
 // imprint is two loops either way — so the partial drivers decline and kernel/ops uses the crossing path.
 func TestPartialPairDecline(t *testing.T) {
+	t.Parallel()
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	through, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12) // passes fully through
 	if _, ok := PartialPenetrationJoinGeneral(fat, through, nil); ok {
@@ -192,6 +203,7 @@ func TestPartialPairDecline(t *testing.T) {
 // proportional to the extent, so a weld grid that does not scale with the model (the retired
 // absolute 1e-6) lets seams tear as parts grow.
 func TestCurvedBooleanWatertightAcrossScales(t *testing.T) {
+	t.Parallel()
 	for _, s := range []float64{1, 10, 50, 200} {
 		fat, _ := SolidCylinder(math.P3(0, 0, -1.2*s), math.V3(0, 0, 1), 0.6*s, 2.4*s)
 		rod, _ := SolidCylinder(math.P3(-1.2*s, 0, 0), math.V3(1, 0, 0), 0.3*s, 2.4*s)

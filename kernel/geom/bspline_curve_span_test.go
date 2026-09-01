@@ -31,6 +31,7 @@ func testCubicBSpline(t *testing.T) BSplineCurve {
 // sub-curve's own domain must reproduce the PARENT's points at the same parameter, densely
 // sampled across an interior span that straddles both interior knots.
 func TestSubSpanBSplineCurveMatchesParentPointwise(t *testing.T) {
+	t.Parallel()
 	parent := testCubicBSpline(t)
 	t0, t1 := 0.2, 0.8
 	sub, err := SubSpanBSplineCurve(parent, t0, t1)
@@ -54,6 +55,7 @@ func TestSubSpanBSplineCurveMatchesParentPointwise(t *testing.T) {
 // TestSubSpanBSplineCurveEndpointsExact checks the sub-curve's endpoints land exactly on the
 // parent's own points at t0/t1 — the invariant the rail/rim splicers rely on to weld crack-free.
 func TestSubSpanBSplineCurveEndpointsExact(t *testing.T) {
+	t.Parallel()
 	parent := testCubicBSpline(t)
 	t0, t1 := 0.35, 0.9
 	sub, err := SubSpanBSplineCurve(parent, t0, t1)
@@ -71,6 +73,7 @@ func TestSubSpanBSplineCurveEndpointsExact(t *testing.T) {
 // TestSubSpanBSplineCurveRejectsBadSpan covers the guard: a non-increasing or out-of-domain span
 // must error, never silently clamp to something else.
 func TestSubSpanBSplineCurveRejectsBadSpan(t *testing.T) {
+	t.Parallel()
 	parent := testCubicBSpline(t)
 	cases := []struct {
 		name   string
@@ -94,6 +97,7 @@ func TestSubSpanBSplineCurveRejectsBadSpan(t *testing.T) {
 // re-traversal: PointAt(lo+hi-t) on the parent must equal PointAt(t) on the reversal, densely
 // sampled — not merely at the endpoints.
 func TestReverseBSplineCurveMatchesParentMirrored(t *testing.T) {
+	t.Parallel()
 	parent := testCubicBSpline(t)
 	rev, err := ReverseBSplineCurve(parent)
 	if err != nil {
@@ -113,6 +117,7 @@ func TestReverseBSplineCurveMatchesParentMirrored(t *testing.T) {
 // TestReverseBSplineCurveIsInvolution checks reversing twice returns (up to the same domain and
 // pointwise sampling) the original curve — the property bsplineSubSeg's from/to swap relies on.
 func TestReverseBSplineCurveIsInvolution(t *testing.T) {
+	t.Parallel()
 	parent := testCubicBSpline(t)
 	once, err := ReverseBSplineCurve(parent)
 	if err != nil {

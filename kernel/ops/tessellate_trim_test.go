@@ -52,6 +52,7 @@ func quarterCylinderFace(t *testing.T, r, h float64) *topo.Face {
 // tessellator meshes the TRIM region, not the surface's full UV domain. Regression for
 // tessellateCurvedFace, which gridded the whole cylinder ignoring the face's loops.
 func TestTrimmedCurvedFaceArea(t *testing.T) {
+	t.Parallel()
 	const r, h = 2.0, 3.0
 	f := quarterCylinderFace(t, r, h)
 	mesh := TessellateFace(f, Quality{ChordTolerance: 1e-3})
@@ -94,6 +95,7 @@ func fullCylinderFace(t *testing.T, r, h float64) *topo.Face {
 // periodicBandGrid: before it, a full-seam-wrap loop fell back to the surface's whole UV
 // domain (unbounded height) and got the area/volume badly wrong.
 func TestFullPeriodicCylinderFaceArea(t *testing.T) {
+	t.Parallel()
 	const r, h = 2.0, 5.0
 	mesh := TessellateFace(fullCylinderFace(t, r, h), DefaultQuality())
 	want := 2 * stdmath.Pi * r * h // ≈ 62.83
@@ -134,6 +136,7 @@ func fullConeFrustumFace(t *testing.T, halfAngle, v1, v2 float64) *topo.Face {
 // the analytic lateral area π(r1+r2)·slant (a hair under, inscribed). Proves the periodic-band
 // tessellator handles a cone (varying radius), the foundation countersink holes build on.
 func TestConeFrustumFaceArea(t *testing.T) {
+	t.Parallel()
 	const ha = stdmath.Pi / 4 // 45°, tan = 1
 	const v1, v2 = 2.0, 4.0   // r1=2, r2=4
 	mesh := TessellateFace(fullConeFrustumFace(t, ha, v1, v2), DefaultQuality())
@@ -169,6 +172,7 @@ func coneApexFace(t *testing.T, halfAngle, vRim float64) *topo.Face {
 // the analytic lateral area π·r²/sin(halfAngle) (a hair under, inscribed). Proves the apex-fan
 // path, the foundation a conical drill point builds on.
 func TestConeApexFaceArea(t *testing.T) {
+	t.Parallel()
 	const ha, vRim = stdmath.Pi / 4, 2.0 // 45°, rim radius 2
 	mesh := TessellateFace(coneApexFace(t, ha, vRim), DefaultQuality())
 	r := vRim * stdmath.Tan(ha)
@@ -182,6 +186,7 @@ func TestConeApexFaceArea(t *testing.T) {
 // geometric normal agrees with the cylinder's outward radial), needed for correct
 // divergence-theorem volume of curved-faced solids.
 func TestTrimmedCurvedFaceOutwardWinding(t *testing.T) {
+	t.Parallel()
 	f := quarterCylinderFace(t, 2, 3)
 	cyl := f.Geometry()
 	mesh := TessellateFace(f, Quality{ChordTolerance: 1e-2})

@@ -12,6 +12,7 @@ import (
 // representation, edit its suppression override, switch a model state that selects it, and
 // confirm the occurrence's suppression follows — over the router (#361/#367).
 func TestRepresentationsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	a, b := occs[0], occs[1]
 
@@ -53,6 +54,7 @@ func TestRepresentationsOverWire(t *testing.T) {
 // TestPositionalRepOverWire captures a positional rep, overrides a constraint value, activates
 // it, and confirms the re-solve moves the component.
 func TestPositionalRepOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	occs[0].SetGrounded(true)
 	topKey := topBoxFaceKey(t, occs[0])

@@ -44,6 +44,7 @@ type profileFeatureCount func() int
 // bodies — a silent stale-geometry bug the router path did not have. The feature's recompute count must
 // advance across the edit.
 func TestParameterEditViaAppPathRebuildsFeature(t *testing.T) {
+	t.Parallel()
 	s, recomputeCount := extrudedPartSession(t)
 	if err := s.AddNumericUserParameter("len", "10 mm"); err != nil {
 		t.Fatalf("add parameter: %v", err)
@@ -64,6 +65,7 @@ func TestParameterEditViaAppPathRebuildsFeature(t *testing.T) {
 // so each forces a rebuild. Editing the same part the same way through either must re-evaluate the
 // feature — the single shared seam, no divergence.
 func TestParameterEditPathsInvalidateIdentically(t *testing.T) {
+	t.Parallel()
 	for _, edit := range []struct {
 		name string
 		run  func(t *testing.T, s *Session)

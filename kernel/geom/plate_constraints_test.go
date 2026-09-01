@@ -133,6 +133,7 @@ func genericCornerSides() [4]PlateSide {
 }
 
 func TestDiscretizeSidesCounts(t *testing.T) {
+	t.Parallel()
 	cs, vals, err := DiscretizeSides(squareSides(), unitSquareDomain(), 5)
 	if err != nil {
 		t.Fatalf("DiscretizeSides: unexpected error: %v", err)
@@ -165,6 +166,7 @@ func countOrders(cs []PlateConstraint) (g0, g1 int) {
 }
 
 func TestDiscretizeSidesG0Values(t *testing.T) {
+	t.Parallel()
 	cs, vals, err := DiscretizeSides(squareSides(), unitSquareDomain(), 5)
 	if err != nil {
 		t.Fatalf("DiscretizeSides: %v", err)
@@ -199,6 +201,7 @@ func assertXYZ(t *testing.T, vals [3][]float64, i int, x, y, z float64) {
 // S_u×S_v ∥ n̂. A wrong transverse DIRECTION passes an area gate but breaks the weld — this
 // checks the property directly (kit §3 runtime witness).
 func TestDiscretizeSidesG1Watertight(t *testing.T) {
+	t.Parallel()
 	sides := squareSides()
 	d := unitSquareDomain()
 	cs, vals, err := DiscretizeSides(sides, d, 5)
@@ -261,6 +264,7 @@ func rowVector(cs []PlateConstraint, vals [3][]float64, u, v float64, order [2]i
 // against the hand-computed values in the P3 report, so a sign/rotation regression is caught
 // numerically, not just by the parallelism witness.
 func TestDiscretizeSidesG1ClosedForm(t *testing.T) {
+	t.Parallel()
 	cs, vals, err := DiscretizeSides(squareSides(), unitSquareDomain(), 5)
 	if err != nil {
 		t.Fatalf("DiscretizeSides: %v", err)
@@ -315,6 +319,7 @@ func genericCornerRes() Resolution { return ResolutionForSize(13.0) }
 // — a fixture with NO axis/component symmetry — so each of the 4 reviewer mutations produces its
 // own independent failure here, not just in the single hand-pinned TestDiscretizeSidesG1ClosedForm.
 func TestDiscretizeSidesG1WatertightGenericNormal(t *testing.T) {
+	t.Parallel()
 	sides := genericCornerSides()
 	d := unitSquareDomain()
 	cs, vals, err := DiscretizeSides(sides, d, 5)
@@ -333,6 +338,7 @@ func TestDiscretizeSidesG1WatertightGenericNormal(t *testing.T) {
 // G0 value has Z=0) — so a Y↔Z (or any) coordinate transposition in the value columns changes
 // the asserted numbers instead of leaving a degenerate 0 column unchanged.
 func TestDiscretizeSidesG0ValuesGeneric(t *testing.T) {
+	t.Parallel()
 	sides := genericCornerSides()
 	d := unitSquareDomain()
 	cs, vals, err := DiscretizeSides(sides, d, 5)
@@ -352,6 +358,7 @@ func TestDiscretizeSidesG0ValuesGeneric(t *testing.T) {
 // (a rail perpendicular to Ω collapses to a point in the domain), carrying the measured
 // arc-length in the error.
 func TestDiscretizeSidesDegenerateStrip(t *testing.T) {
+	t.Parallel()
 	sides := squareSides()
 	sides[1] = PlateSide{Curve: fakeSegment{math.P3(1, 0, 0), math.P3(1, 0, 1)}, Order: 0} // rises along +Z ⊥ Ω
 	_, _, err := DiscretizeSides(sides, unitSquareDomain(), 5)
@@ -366,6 +373,7 @@ func TestDiscretizeSidesDegenerateStrip(t *testing.T) {
 // TestDiscretizeSidesIllDefinedNormal rejects a G1 rail whose Adjacent surface has no
 // well-defined normal at the foot (a zero normal → no tangent plane → G1 undefined).
 func TestDiscretizeSidesIllDefinedNormal(t *testing.T) {
+	t.Parallel()
 	sides := squareSides()
 	sides[0].Adjacent = fakeDegenerateSurface{}
 	_, _, err := DiscretizeSides(sides, unitSquareDomain(), 5)

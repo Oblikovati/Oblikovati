@@ -74,6 +74,7 @@ type coaxialCase struct {
 // is measured against its closed form in BOTH volume and area — volume alone would pass on a body whose
 // spherical face meshed as a flat lid, and area alone on one assembled inside out.
 func TestBallStudBooleansStayAnalytic(t *testing.T) {
+	t.Parallel()
 	ball, rod := ballStudOperands(t)
 	R, rc, L, d := ballStudR, ballStudRod, ballStudLen, ballStudSeam
 	vBall, vRod := ballVolume(R), stdmath.Pi*rc*rc*L
@@ -96,6 +97,7 @@ func TestBallStudBooleansStayAnalytic(t *testing.T) {
 // analytic mesh, and the reason this extent was declined when #2036 shipped. The bead (ball − rod) is
 // the interesting one: a genus-1 solid of just two faces, whose area is the belt plus the bore.
 func TestThroughRodBooleansStayAnalytic(t *testing.T) {
+	t.Parallel()
 	ball, rod := throughRodOperands(t)
 	R, rc, d := ballStudR, ballStudRod, ballStudSeam
 	hi, lo := ballStudLen-d, ballStudBack-d // the rod's free length beyond each seam
@@ -125,6 +127,7 @@ func TestThroughRodBooleansStayAnalytic(t *testing.T) {
 // circle enters alongside it, and the ball's surviving surface comes in two pieces (a big cap below the
 // seam and a small cap beyond the rod's end) instead of one.
 func TestShoulderRodBooleansStayAnalytic(t *testing.T) {
+	t.Parallel()
 	const stop = 0.45 // between the seam plane at 0.4 and the pole at 0.5
 	ball, rod := ballOf(t), rodOf(t, 0, stop)
 	R, rc, d := ballStudR, ballStudRod, ballStudSeam
@@ -168,6 +171,7 @@ func shoulderSharedVolume(ballR, rodR, stop float64) float64 {
 // integration of the same region, so a slip in it cannot quietly move what the boolean is measured
 // against.
 func TestShoulderRodVolumeMatchesNumericIntegration(t *testing.T) {
+	t.Parallel()
 	const R, rc, stop, n = ballStudR, ballStudRod, 0.45, 400000
 	numeric := 0.0
 	for i := range n {
@@ -183,6 +187,7 @@ func TestShoulderRodVolumeMatchesNumericIntegration(t *testing.T) {
 // ball's surface, so cutting it away leaves a sealed cavity — one body of two shells whose volume is the
 // ball less the rod. The union is the untouched ball.
 func TestBuriedRodLeavesAnInteriorVoid(t *testing.T) {
+	t.Parallel()
 	ball, rod := ballOf(t), rodOf(t, -0.2, 0.4)
 	vBall := ballVolume(ballStudR)
 	vRod := stdmath.Pi * ballStudRod * ballStudRod * 0.4
@@ -207,6 +212,7 @@ func TestBuriedRodLeavesAnInteriorVoid(t *testing.T) {
 // bore right through it is a solid of genus 1, so its Euler characteristic is 2−2·1 = 0. A result that
 // closed the bore off, or kept an extra shell, would still measure a plausible volume.
 func TestBeadIsGenusOne(t *testing.T) {
+	t.Parallel()
 	ball, rod := throughRodOperands(t)
 	bead, err := Boolean(Cut, ball, rod)
 	if err != nil {
@@ -221,6 +227,7 @@ func TestBeadIsGenusOne(t *testing.T) {
 // TestTwoStubsAreTwoShells: cutting the ball out of a rod that passes through it severs the rod, so the
 // result is two disjoint lumps — one body, two shells (χ = 2 per shell).
 func TestTwoStubsAreTwoShells(t *testing.T) {
+	t.Parallel()
 	ball, rod := throughRodOperands(t)
 	stubs, err := Boolean(Cut, rod, ball)
 	if err != nil {
@@ -310,6 +317,7 @@ func assertAnalyticSolid(t *testing.T, name string, b *topo.Body, want map[strin
 // exact result integrates over its analytic B-rep, which means it keeps its curved faces and reports
 // the SAME volume at every quality. A faceted fallback has no analytic surfaces to integrate.
 func TestBallStudVolumeIsQualityIndependent(t *testing.T) {
+	t.Parallel()
 	ball, rod := ballStudOperands(t)
 	stud, err := Boolean(Join, ball, rod)
 	if err != nil {
@@ -334,6 +342,7 @@ func TestBallStudVolumeIsQualityIndependent(t *testing.T) {
 // reports as IntAna_NoGeometricSolution. The handler must decline rather than build a circle that is
 // not there, leaving the (faceted, but honest) fallback to produce a valid solid.
 func TestOffAxisRodDoesNotTakeTheCoaxialPath(t *testing.T) {
+	t.Parallel()
 	ball := ballOf(t)
 	rod, err := brep.SolidCylinder(math.P3(0.2, 0, 0), math.V3(0, 1, 0), ballStudRod, ballStudLen)
 	if err != nil {

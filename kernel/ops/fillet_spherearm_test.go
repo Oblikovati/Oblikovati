@@ -58,6 +58,7 @@ func sqrt(x float64) float64 { return stdmath.Sqrt(x) }
 // closed forms of {r, R, plane}, and minor = r always. A wrong material-side sign (ρ = R+r, or the
 // centre foot on the wrong side) is caught here — the meridian/rim centres straddle the origin.
 func TestSphereArmSurface_Oracle(t *testing.T) {
+	t.Parallel()
 	cases := []sphereArmTest{
 		// D5: longitude plane y=0 (outward −ŷ), cap plane z=75√3 (outward +ẑ).
 		{"D5-meridian", math.P3(0, 0, 0), math.V3(0, -1, 0), math.P3(0, 10, 0), math.V3(0, 1, 0), sqrt(19500)},
@@ -102,6 +103,7 @@ func assertSphereArm(t *testing.T, sp geom.Sphere, c sphereArmTest, res Resoluti
 // TestSphereArmSurface_Spindle is the existence guard: r ≥ R engulfs the host (ρ = R−r ≤ 0), a
 // self-intersecting spindle torus, which must honest-reject rather than emit degenerate geometry.
 func TestSphereArmSurface_Spindle(t *testing.T) {
+	t.Parallel()
 	sp, err := geom.NewSphere(math.P3(0, 0, 0), 8)
 	if err != nil {
 		t.Fatalf("sphere: %v", err)
@@ -116,6 +118,7 @@ func TestSphereArmSurface_Spindle(t *testing.T) {
 // TestSphereArmSurface_Clears is the existence guard: a plane whose offset clears the offset sphere
 // (|h| ≥ ρ) leaves no spine circle — the ball cannot touch both surfaces — so the arm rejects.
 func TestSphereArmSurface_Clears(t *testing.T) {
+	t.Parallel()
 	sp := d5r150(t)
 	n, _ := math.UnitVector3FromVector(math.V3(0, 0, 1))
 	far := planeOn(t, math.P3(0, 0, 200), math.V3(0, 0, 1)) // offset plane at z=190 > ρ=140: |h| ≥ ρ
@@ -127,6 +130,7 @@ func TestSphereArmSurface_Clears(t *testing.T) {
 // TestSpherePlaneEdge recognizes an edge flanked by a sphere face and a plane face, returning both
 // surfaces and the plane's face; a plane∧plane edge (the third, straight edge) is not recognized.
 func TestSpherePlaneEdge(t *testing.T) {
+	t.Parallel()
 	spEdge, planeGeom := spherePlaneFixtureEdge(t)
 	sp, pl, sf, pf, ok := spherePlaneEdge(spEdge)
 	if !ok {
@@ -149,6 +153,7 @@ func TestSpherePlaneEdge(t *testing.T) {
 // "cannot round an edge bordering a curved (sphere) face" reject is gone for these edges. A plane∧plane
 // edge is NOT handled here (handled=false), so it still flows to the existing planar path.
 func TestSphereArmEdge_Dispatches(t *testing.T) {
+	t.Parallel()
 	spEdge, _ := spherePlaneFixtureEdge(t)
 	if _, handled, _ := sphereArmEdge(nil, spEdge, filletPick{edge: spEdge, r0: 10, r1: 10}); !handled {
 		t.Fatalf("sphereArmEdge left a sphere∧plane edge to curvedAdjacentError (want handled=true)")
@@ -166,6 +171,7 @@ func TestSphereArmEdge_Dispatches(t *testing.T) {
 // whereas the true concave host needs ρ = R+r → major 116.1895, Δ 29.59). The host material-side gate
 // (sphereHostMaterialSign) must HONEST-REJECT it (s ≤ 0), naming the concave host — no torus built.
 func TestSphereArm_ConcaveDimpleHostRejects(t *testing.T) {
+	t.Parallel()
 	e := dimpleRimFixtureEdge(t)
 	if ClassifyEdgeConvexity(e) != EdgeConvex {
 		t.Fatalf("dimple rim must classify CONVEX (the whole point of the regression), got %v", ClassifyEdgeConvexity(e))

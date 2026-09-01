@@ -30,6 +30,7 @@ func developedTabLength(rule *sheetmetal.Rule, height float64) float64 {
 // footprint is the base square plus the developed flange tab, and whose extents grow with the
 // bend allowance — the flat-pattern acceptance criterion.
 func TestUnfoldDevelopsWatertightFlat(t *testing.T) {
+	t.Parallel()
 	const side, height = 4.0, 1.0
 	d, _ := sheetWithFlange(t) // square side=4, 90° flange height=1, default rule
 
@@ -72,6 +73,7 @@ func TestUnfoldDevelopsWatertightFlat(t *testing.T) {
 // TestUnfoldDevelopsPunchRepresentation a coplanar (base-plane) punch develops into a flat punch
 // representation: its outline projected into the base plane, tagged with the feature name (#378).
 func TestUnfoldDevelopsPunchRepresentation(t *testing.T) {
+	t.Parallel()
 	d, _ := sheetWithFlange(t)
 	sk := d.Sketches().Add(sketch.XYPlane())
 	sk.AddRectangleByCorners(gmath.P2(1, 1), gmath.P2(2, 2))
@@ -96,6 +98,7 @@ func TestUnfoldDevelopsPunchRepresentation(t *testing.T) {
 // TestUnfoldEchoesPunchRepresentationAndAngle a punch's representation type reaches the flat punch
 // result, and the die's rotation is added to the flat outline's own angle (#1968).
 func TestUnfoldEchoesPunchRepresentationAndAngle(t *testing.T) {
+	t.Parallel()
 	flatPunch := func(angle float64) feature.FlatPunch {
 		d, _ := sheetWithFlange(t)
 		sk := d.Sketches().Add(sketch.XYPlane())
@@ -128,6 +131,7 @@ func TestUnfoldEchoesPunchRepresentationAndAngle(t *testing.T) {
 // for the bridge-found bug where such a tab collapsed (projected −Z → zero) and the flat was
 // just the base.
 func TestUnfoldDevelopsTabForOutOfPlaneFold(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if _, err := d.EnableSheetMetal(); err != nil {
 		t.Fatalf("EnableSheetMetal: %v", err)
@@ -172,6 +176,7 @@ func addRectFace(t *testing.T, d *PartComponentDefinition, w, h float64) {
 // TestFlatBendDownForFlippedFlange a flipped flange (folds toward the back) marks its fold
 // line bend-down in the flat; a plain flange marks it bend-up.
 func TestFlatBendDownForFlippedFlange(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name     string
 		flip     bool
@@ -205,6 +210,7 @@ func TestFlatBendDownForFlippedFlange(t *testing.T) {
 // TestUnfoldTracksKFactor the flat is associative on the rule: raising the K-factor lengthens
 // the bend allowance and so the developed extent, without recomputing the folded model.
 func TestUnfoldTracksKFactor(t *testing.T) {
+	t.Parallel()
 	d, _ := sheetWithFlange(t)
 	tight, err := d.Unfold()
 	if err != nil {
@@ -222,6 +228,7 @@ func TestUnfoldTracksKFactor(t *testing.T) {
 
 // TestUnfoldRejectsNonSheetMetal and a sheet-metal part with no base Face both error clearly.
 func TestUnfoldRejectsNonSheetMetal(t *testing.T) {
+	t.Parallel()
 	plain := NewPartComponentDefinition()
 	if _, err := plain.Unfold(); err == nil {
 		t.Error("Unfold on a plain part must error")

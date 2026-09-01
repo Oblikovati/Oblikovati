@@ -60,6 +60,7 @@ func zoneBodyMeshArea(t *testing.T, b *topo.Body, q Quality) float64 {
 // (what revolution.go builds) — and BOTH must mesh to the same true area. The mesher reads the rims off
 // the face's edges rather than off the loop structure precisely so the two agree.
 func TestSphereZoneMeshesFromEitherLoopShape(t *testing.T) {
+	t.Parallel()
 	sph, hi, lo := zoneTestRims(t)
 	for _, c := range []struct {
 		name string
@@ -80,6 +81,7 @@ func TestSphereZoneMeshesFromEitherLoopShape(t *testing.T) {
 // TestSphereZoneAreaConvergesWithQuality: the old failure was FLAT in quality — the gnomonic chart lost
 // the same three quarters of the belt however fine the facets got. An exact mesh must converge.
 func TestSphereZoneAreaConvergesWithQuality(t *testing.T) {
+	t.Parallel()
 	sph, hi, lo := zoneTestRims(t)
 	body := twoLoopZone(t, sph, lo, hi)
 	coarse := zoneBodyMeshArea(t, body, DefaultQuality())
@@ -99,6 +101,7 @@ func TestSphereZoneAreaConvergesWithQuality(t *testing.T) {
 // other way round name the sphere's complement of it, the two disjoint caps. The mesher is winding-blind
 // — it reads the rims off the face's edges — so only the analytic region integral can hold this line.
 func TestSphereZoneRegionIntegralNamesTheBelt(t *testing.T) {
+	t.Parallel()
 	sph, hi, lo := zoneTestRims(t)
 	for _, c := range []struct {
 		name string
@@ -122,6 +125,7 @@ func TestSphereZoneRegionIntegralNamesTheBelt(t *testing.T) {
 // cap fan sweeps its rim straight to the enclosed pole, so it would pave right over any hole; before
 // this it claimed a two-loop belt and returned the outer cap, silently 12% over the true area.
 func TestSphereCapFanDeclinesAHoledFace(t *testing.T) {
+	t.Parallel()
 	sph, hi, lo := zoneTestRims(t)
 	outer := circleRing(hi, 64)
 	if _, ok := sphereCapFan(sph, outer, nil, DefaultQuality()); !ok {
@@ -135,6 +139,7 @@ func TestSphereCapFanDeclinesAHoledFace(t *testing.T) {
 // TestSphereZoneBandFanDeclinesNonCoaxialRims: two rims that are not coaxial bound a lune, not a belt,
 // and the latitude sweep would be meaningless there — it must decline so the gnomonic CDT takes over.
 func TestSphereZoneBandFanDeclinesNonCoaxialRims(t *testing.T) {
+	t.Parallel()
 	sph, hi, _ := zoneTestRims(t)
 	tilted, err := geom.NewCircle(math.P3(0, 0, 0), math.V3(1, 0, 0), zoneTestR)
 	if err != nil {

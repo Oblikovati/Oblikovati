@@ -51,6 +51,7 @@ func coneCapFixture(t *testing.T) (target, tool *topo.Body) {
 }
 
 func TestConeCapCrossingCutIsWatertightAndValid(t *testing.T) {
+	t.Parallel()
 	target, tool := coneCapFixture(t)
 	res, err := Boolean(Cut, target, tool)
 	if err != nil {
@@ -72,6 +73,7 @@ func TestConeCapCrossingCutIsWatertightAndValid(t *testing.T) {
 }
 
 func TestConeCapCrossingCutMomentsMatchOCC(t *testing.T) {
+	t.Parallel()
 	target, tool := coneCapFixture(t)
 	res, err := Boolean(Cut, target, tool)
 	if err != nil {
@@ -100,6 +102,7 @@ func TestConeCapCrossingCutMomentsMatchOCC(t *testing.T) {
 // still fails. The tool is a FRUSTUM: its radius tapers linearly along the axis, so the membership predicate
 // interpolates rBase→rTop by the point's fractional axial position.
 func TestConeCapCrossingCutMembershipMatchesCSG(t *testing.T) {
+	t.Parallel()
 	target, tool := coneCapFixture(t)
 	res, err := Boolean(Cut, target, tool)
 	if err != nil {

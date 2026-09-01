@@ -34,6 +34,7 @@ func (crossedTrimFeature) Recompute(feature.Input) (feature.Output, error) {
 // assertion #2038 would have failed — there the rim wall meshed to half its area, the body's volume
 // came back 77% low, and `diagnostics` was an empty array.
 func TestFeatureReplyCarriesTessellationDiagnostics(t *testing.T) {
+	t.Parallel()
 	def := emptyPart(t)
 	pf := def.Features().Add(crossedTrimFeature{})
 	out, err := recomputeResult(def, pf)

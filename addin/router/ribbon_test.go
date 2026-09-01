@@ -24,6 +24,7 @@ func hasTab(r wire.ListRibbonResult, name string) bool {
 // TestRibbonListPartRibbon: with a part active, ribbon.list returns the Part ribbon and its
 // modeling tabs, and not the contextual Sketch tab (no sketch open).
 func TestRibbonListPartRibbon(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var res wire.ListRibbonResult
 	call(t, r, s, "ribbon.list", "{}", &res)
@@ -41,6 +42,7 @@ func TestRibbonListPartRibbon(t *testing.T) {
 // TestRibbonListZeroDoc: with no document open, ribbon.list returns the ZeroDoc ribbon with its
 // Get Started tab — the discovery surface an add-in reads before any document exists.
 func TestRibbonListZeroDoc(t *testing.T) {
+	t.Parallel()
 	s := app.NewSession()
 	if err := app.RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
@@ -60,6 +62,7 @@ func TestRibbonListZeroDoc(t *testing.T) {
 // ribbon.list (with no document open) then reports it — the end-to-end "add my button to a
 // named ribbon" path.
 func TestCreateCommandTargetsRibbon(t *testing.T) {
+	t.Parallel()
 	s := app.NewSession()
 	r := New(opregistry.Default())
 	call(t, r, s, "commands.create",
@@ -81,6 +84,7 @@ func TestCreateCommandTargetsRibbon(t *testing.T) {
 // TestCreateCommandRejectsUnknownRibbon: a typo'd ribbon name is refused rather than silently
 // dropping the button onto the default ribbon.
 func TestCreateCommandRejectsUnknownRibbon(t *testing.T) {
+	t.Parallel()
 	s := app.NewSession()
 	r := New(opregistry.Default())
 	if _, err := r.Handle(s, "commands.create",
@@ -93,6 +97,7 @@ func TestCreateCommandRejectsUnknownRibbon(t *testing.T) {
 // environment so an add-in can see where existing commands live — a base Part command and a
 // contextual Sketch command.
 func TestCommandsListReportsRibbonAndEnvironment(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var res wire.ListCommandsResult
 	call(t, r, s, "commands.list", "{}", &res)
@@ -113,6 +118,7 @@ func TestCommandsListReportsRibbonAndEnvironment(t *testing.T) {
 // TestSetCommandState checks an add-in can toggle its command's active flag and relabel it
 // (the meeting add-in's Presenter/Follow toggles) via commands.setState.
 func TestSetCommandState(t *testing.T) {
+	t.Parallel()
 	s := app.NewSession()
 	r := New(opregistry.Default())
 	call(t, r, s, "commands.create",

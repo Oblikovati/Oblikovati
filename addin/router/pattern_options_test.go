@@ -12,6 +12,7 @@ import (
 // with a spacing type and a clipping boundary: three new-body occurrences 5 cm apart along
 // X, clipped to a box that excludes the third, leave the seed plus one copy (#652).
 func TestPatternRectangularAcceptsOptions(t *testing.T) {
+	t.Parallel()
 	r, s, _ := extrudedPartViaAPI(t) // one 40×30 mm extrude (Extrusion1) → one solid body
 	if before := bodyCount(t, r, s); before != 1 {
 		t.Fatalf("fixture body count = %d, want 1", before)
@@ -28,6 +29,7 @@ func TestPatternRectangularAcceptsOptions(t *testing.T) {
 
 // TestPatternRectangularRejectsUnknownSpacing surfaces a precise error for an unknown enum.
 func TestPatternRectangularRejectsUnknownSpacing(t *testing.T) {
+	t.Parallel()
 	r, s, _ := extrudedPartViaAPI(t)
 	_, err := r.Handle(s, "features.add", []byte(`{"kind":"patternRectangular","args":{
 		"sourceFeatures":["Extrusion1"],"countX":2,"stepX":[5,0,0],"spacingType":"zigzag"}}`))

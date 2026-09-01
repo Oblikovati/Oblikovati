@@ -24,6 +24,7 @@ func addKeymapCommand(t *testing.T, s *app.Session, id, chord string) {
 }
 
 func TestKeymapListServesCatalog(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	addKeymapCommand(t, s, "Test.Probe", "Ctrl+G")
 
@@ -49,6 +50,7 @@ func TestKeymapListServesCatalog(t *testing.T) {
 }
 
 func TestKeymapSetChordOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	addKeymapCommand(t, s, "Test.Probe", "Ctrl+G")
 
@@ -59,6 +61,7 @@ func TestKeymapSetChordOverWire(t *testing.T) {
 }
 
 func TestKeymapSetChordConflictErrorsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	addKeymapCommand(t, s, "Test.Probe", "Ctrl+G")
 
@@ -68,6 +71,7 @@ func TestKeymapSetChordConflictErrorsOverWire(t *testing.T) {
 }
 
 func TestKeymapResetOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	addKeymapCommand(t, s, "Test.Probe", "Ctrl+G")
 	call(t, r, s, "keymap.setChord", `{"actionId":"Test.Probe","chord":"Ctrl+Shift+G"}`, nil)
@@ -79,6 +83,7 @@ func TestKeymapResetOverWire(t *testing.T) {
 }
 
 func TestKeymapExportImportRoundTripOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	addKeymapCommand(t, s, "Test.Probe", "Ctrl+G")
 	call(t, r, s, "keymap.setAlias", `{"actionId":"Test.Probe","alias":"EXT"}`, nil)

@@ -32,6 +32,7 @@ func spherePatchLoop(sph geom.Sphere, polar float64, n int) []math.Point3 {
 // flips it to −Z — the property that lets orientForSphereHost read the zone interior off the original
 // face's OUTWARD loop for both a sub- and a >hemisphere host.
 func TestSphereLoopVectorArea(t *testing.T) {
+	t.Parallel()
 	sph := geom.Sphere{Center: math.P3(0, 0, 0), Radius: 10}
 	loop := spherePatchLoop(sph, 30*stdmath.Pi/180, 12) // CCW in φ = CCW-seen-from-outside about +Z
 	a, err := math.UnitVector3FromVector(sphereLoopVectorArea(sph, loop))
@@ -45,6 +46,7 @@ func TestSphereLoopVectorArea(t *testing.T) {
 }
 
 func TestLoopTurnsNegativeFlipsWithOrder(t *testing.T) {
+	t.Parallel()
 	sph := geom.Sphere{Center: math.P3(0, 0, 0), Radius: 10}
 	pole := math.V3(0, 0, 1)
 	loop := spherePatchLoop(sph, 30*stdmath.Pi/180, 6)
@@ -58,6 +60,7 @@ func TestLoopTurnsNegativeFlipsWithOrder(t *testing.T) {
 // 90° of the mean) is admitted with a pole ≈ the cap axis, while a wide crescent bite with a vertex >90°
 // from the mean (the E4-like case base left to the mesher) is rejected — this is why E4 stays byte-identical.
 func TestCompactSpherePoleGate(t *testing.T) {
+	t.Parallel()
 	sph := geom.Sphere{Center: math.P3(0, 0, 0), Radius: 10}
 	cap := spherePatchLoop(sph, 30*stdmath.Pi/180, 6) // all dirs within 30° of +Z
 	pole, ok := compactSpherePole(sph, cap)
@@ -75,6 +78,7 @@ func TestCompactSpherePoleGate(t *testing.T) {
 }
 
 func TestReverseFilletFacePreservesMetadata(t *testing.T) {
+	t.Parallel()
 	sph := geom.Sphere{Center: math.P3(0, 0, 0), Radius: 10}
 	pts := spherePatchLoop(sph, 30*stdmath.Pi/180, 4)
 	f := filletFace{surface: sph, loops: []filletLoop{{pts: pts}}}
@@ -92,6 +96,7 @@ func TestReverseFilletFacePreservesMetadata(t *testing.T) {
 // R=150 host sphere the material pole is read from): a host sphere in `all` is moved to index 0 (so
 // orientFilletShell keeps its sense). A weld with NO sphere host, and a nil body, are returned untouched.
 func TestOrientForSphereHostSeedsHost(t *testing.T) {
+	t.Parallel()
 	body := corpusFixture(t, "simple/D9.step")
 	sph, ok := firstSphereSurface(body)
 	if !ok {

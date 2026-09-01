@@ -16,6 +16,7 @@ import (
 // TestMirrorOfBodyReflectsTheWholeSolid checks body mode does not consult the recipe: it reflects
 // the running solid, which is how a symmetric part is normally built.
 func TestMirrorOfBodyReflectsTheWholeSolid(t *testing.T) {
+	t.Parallel()
 	fs, mirror := mirrorFixture(t)
 	mirror.Definition().OfBody = true
 	fs.Recompute()
@@ -35,6 +36,7 @@ func TestMirrorOfBodyReflectsTheWholeSolid(t *testing.T) {
 // reflection has a negative determinant and turns a solid inside out; if the face senses are not
 // flipped, the copy tessellates inward and its volume comes out negative.
 func TestMirroredBodyKeepsPositiveVolume(t *testing.T) {
+	t.Parallel()
 	fs, mirror := mirrorFixture(t)
 	mirror.Definition().OfBody = true
 	fs.Recompute()
@@ -51,6 +53,7 @@ func TestMirroredBodyKeepsPositiveVolume(t *testing.T) {
 
 // TestMirrorRemoveOriginalKeepsOnlyTheReflection covers the handed-part case.
 func TestMirrorRemoveOriginalKeepsOnlyTheReflection(t *testing.T) {
+	t.Parallel()
 	fs, mirror := mirrorFixture(t)
 	mirror.Definition().OfBody = true
 	mirror.Definition().RemoveOriginal = true
@@ -66,6 +69,7 @@ func TestMirrorRemoveOriginalKeepsOnlyTheReflection(t *testing.T) {
 // TestMirrorJoinUnionsTheHalves checks the join operation makes ONE solid of the two halves rather
 // than two that touch — the volume must be the sum, in a single body.
 func TestMirrorJoinUnionsTheHalves(t *testing.T) {
+	t.Parallel()
 	fs, mirror := mirrorFixture(t)
 	mirror.Definition().OfBody = true
 	mirror.Definition().JoinToOriginal = true
@@ -87,6 +91,7 @@ func TestMirrorJoinUnionsTheHalves(t *testing.T) {
 // removeOriginal in feature mode and ignoring it would hand back a symmetric part where a handed
 // one was asked for — the failure the caller would notice last.
 func TestMirrorRefusesBodyOnlyOptionsInFeatureMode(t *testing.T) {
+	t.Parallel()
 	if err := ValidateMirrorMode(false, true, false); err == nil {
 		t.Error("removeOriginal in feature mode should be refused")
 	}
@@ -104,6 +109,7 @@ func TestMirrorRefusesBodyOnlyOptionsInFeatureMode(t *testing.T) {
 // TestMirrorFeatureModeStillReplicatesFeatures guards the pre-#1890 behaviour: the default mode
 // must keep re-applying the source features, not silently become a body mirror.
 func TestMirrorFeatureModeStillReplicatesFeatures(t *testing.T) {
+	t.Parallel()
 	fs, mirror := mirrorFixture(t)
 	if mirror.Definition().OfBody {
 		t.Fatal("feature mode must be the default")
@@ -126,6 +132,7 @@ func mirrorFixture(t *testing.T) (*PartFeatures, *MirrorFeature) {
 // TestMirrorBodyModeRoundTrip keeps the mode and both body-only options across an .obk
 // save/load, so a handed part reopens handed (#1890).
 func TestMirrorBodyModeRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	src := NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })

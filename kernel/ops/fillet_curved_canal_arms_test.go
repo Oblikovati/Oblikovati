@@ -61,6 +61,7 @@ func n7MidArmIndex(t *testing.T, arms []edgeFillet) int {
 // the canal patch's shared boundary (watertightness), whose two host rails lie on their hosts, and whose
 // far arc is a radius-r terminal cross-section on the arm surface.
 func TestCanalArmFaces_BuildThreeWatertightArms(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	patch, boundaries, centres, scale := n7CanalWeldInputs(t, w, arms, res)
 	faces, reason := canalArmFaces(arms, w, boundaries, centres, scale, res)
@@ -88,6 +89,7 @@ func TestCanalArmFaces_BuildThreeWatertightArms(t *testing.T) {
 // single ball because the shared corner demands its wall-tangent at z=15 where it physically touches at
 // z=5 (a fixed 2r=10 gap) — BUILDS as a valid arm face when solved at its OWN reflected centre C″ (z=5).
 func TestCanalArmFace_TorusArmBuildsAtOwnCentre(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	_, boundaries, centres, scale := n7CanalWeldInputs(t, w, arms, res)
 	i := torusArmIndex(t, arms)
@@ -112,6 +114,7 @@ func TestCanalArmFace_TorusArmBuildsAtOwnCentre(t *testing.T) {
 // arm's host-tangent points, so the loop cannot close and canalArmFace honest-rejects — proof the
 // by-proximity mapping is load-bearing, not incidental.
 func TestCanalArmFaces_WrongEndArcMappingRejects(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	_, boundaries, centres, scale := n7CanalWeldInputs(t, w, arms, res)
 	mid := n7MidArmIndex(t, arms)
@@ -141,6 +144,7 @@ func TestCanalArmFaces_WrongEndArcMappingRejects(t *testing.T) {
 // geometry is declined AT canalArmLoop with ~75 in the reason; (3) restoring the real geometry closes
 // again (the break, not the tolerance, caused the decline).
 func TestCanalArmLoop_EarlierJunctionGapRejected(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	_, boundaries, centres, scale := n7CanalWeldInputs(t, w, arms, res)
 	mid := n7MidArmIndex(t, arms)
@@ -197,6 +201,7 @@ func TestCanalArmLoop_EarlierJunctionGapRejected(t *testing.T) {
 // picks for a wall arm's reflected centre is the cross-section arc ABOUT that centre (its fitted circle
 // centre coincides with the arm centre), NOT the other wall arm's — the discriminator against index order.
 func TestEndArcForCentre_MatchesByProximity(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	_, boundaries, centres, _ := n7CanalWeldInputs(t, w, arms, res)
 	mid := n7MidArmIndex(t, arms)

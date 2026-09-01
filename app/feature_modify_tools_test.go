@@ -11,6 +11,7 @@ import (
 
 // Moving the top face of a block outward grows its volume.
 func TestMoveFaceTool(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	def := activePartDef(t, s)
@@ -38,6 +39,7 @@ func TestMoveFaceTool(t *testing.T) {
 
 // Combining two bodies (Join) yields a single body.
 func TestCombineTool(t *testing.T) {
+	t.Parallel()
 	s, def, src := extrudedPart(t)
 	pat := NewFeatureRectPatternTool() // default 2×1 → a second body
 	s.StartTool(pat)
@@ -65,6 +67,7 @@ func TestCombineTool(t *testing.T) {
 // against EVERY picked tool body in one feature, not just the first — before this it consumed only
 // the second pick and ignored the rest.
 func TestCombineToolCombinesMultipleTools(t *testing.T) {
+	t.Parallel()
 	s, def, src := extrudedPart(t)
 	pat := NewFeatureRectPatternTool()
 	pat.countX = 3 // target + two tool copies → 3 bodies in a row
@@ -94,6 +97,7 @@ func TestCombineToolCombinesMultipleTools(t *testing.T) {
 // the tool body must survive the boolean instead of being consumed. It also asserts the checkbox is
 // exposed as a BoolParam so the dialog can drive it.
 func TestCombineToolKeepsToolBodies(t *testing.T) {
+	t.Parallel()
 	s, def, src := extrudedPart(t)
 	pat := NewFeatureRectPatternTool() // 2×1 → target + one tool
 	s.StartTool(pat)
@@ -140,6 +144,7 @@ func boolParam(p ToolParams, label string) (BoolParam, bool) {
 // asserts a short "Operation" label, the three named options in enum order, and that Set
 // routes into the tool's operation.
 func TestCombineToolOperationIsChoice(t *testing.T) {
+	t.Parallel()
 	tool := NewCombineTool()
 	p := tool.Params()
 	if len(p.Ints) != 0 {
@@ -163,6 +168,7 @@ func TestCombineToolOperationIsChoice(t *testing.T) {
 
 // Moving a body translates it.
 func TestMoveBodyTool(t *testing.T) {
+	t.Parallel()
 	s, def, _ := extrudedPart(t)
 	minX0 := float64(def.SurfaceBodies().Item(0).RangeBox().Min.X)
 
@@ -184,6 +190,7 @@ func TestMoveBodyTool(t *testing.T) {
 // draft once it is. Combine and Move resolve their body operands from the session at
 // draft time, exactly as Commit does.
 func TestModifyToolsDraftFeature(t *testing.T) {
+	t.Parallel()
 	s, def, src := extrudedPart(t)
 	pat := NewFeatureRectPatternTool() // default 2×1 → a second body for Combine
 	s.StartTool(pat)
@@ -224,6 +231,7 @@ func TestModifyToolsDraftFeature(t *testing.T) {
 }
 
 func TestDirectEditCommandsRegistered(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)

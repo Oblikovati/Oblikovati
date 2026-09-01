@@ -28,6 +28,7 @@ func vertEntity(v *topo.Vertex) measurePick { return measurePick{analysis.Measur
 
 // TestMeasureReadout checks the readout for each selection on a 40×40×20 mm block.
 func TestMeasureReadout(t *testing.T) {
+	t.Parallel()
 	_, block := newPartWithBlock(t, 4) // 4×4×2 cm = 40×40×20 mm
 	top := topFaceOf(t, block)
 	side := sideFaceOf(t, block)
@@ -58,6 +59,7 @@ func TestMeasureReadout(t *testing.T) {
 // TestMeasureToolPick drives the tool through the picker: clicking a face yields its area readout
 // and arms commit; a second non-vertex pick after capacity starts a fresh selection.
 func TestMeasureToolPick(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -78,6 +80,7 @@ func TestMeasureToolPick(t *testing.T) {
 
 // TestMeasureToolMisc covers the tool's name/prompt/cancel and the readout edge cases.
 func TestMeasureToolMisc(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	top, side := topFaceOf(t, block), sideFaceOf(t, block)
 	v := block.Vertices()[0]
@@ -136,6 +139,7 @@ func TestMeasureToolMisc(t *testing.T) {
 // TestStartMeasureCommand checks the Inspect.Measure command activates the tool on a part and
 // errors without one, and that ActiveMeasure reflects the running tool.
 func TestStartMeasureCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 2)
 	if err := startMeasure(s); err != nil {
 		t.Fatalf("startMeasure: %v", err)
@@ -155,6 +159,7 @@ func TestStartMeasureCommand(t *testing.T) {
 
 // TestMeasureToolAcceptsResets checks that a third non-vertex pick restarts the selection.
 func TestMeasureToolAcceptsResets(t *testing.T) {
+	t.Parallel()
 	_, block := newPartWithBlock(t, 4)
 	top, side := topFaceOf(t, block), sideFaceOf(t, block)
 	m := &MeasureTool{picks: []measurePick{faceEntity(top), faceEntity(side)}}

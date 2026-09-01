@@ -18,6 +18,7 @@ import (
 // TestVucovDrawingViewsAddSection covers drawingViewsAddSection (wire drawingViews.addSection),
 // the last untested drawing-view constructor: a section cut off a base view.
 func TestVucovDrawingViewsAddSection(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, nil)
 	var sec wire.ViewResult
@@ -31,6 +32,7 @@ func TestVucovDrawingViewsAddSection(t *testing.T) {
 // TestVucovDrawingViewsAddSectionNoParent covers the error path when the referenced parent view
 // does not exist on the sheet.
 func TestVucovDrawingViewsAddSectionNoParent(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	args := `{"name":"SEC","parentView":"MISSING","x1":0,"y1":0,"x2":10,"y2":0}`
 	if _, err := r.Handle(s, "drawingViews.addSection", []byte(args)); err == nil {
@@ -42,6 +44,7 @@ func TestVucovDrawingViewsAddSectionNoParent(t *testing.T) {
 // force Visible, so the caller-supplied spec (position + visibility) must round-trip through
 // triad.get verbatim.
 func TestVucovUpdateTriad(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "triad.update", `{"triad":{"position":[4,5,6],"visible":true,"allowed":[1]}}`, nil)
 	var spec wire.TriadSpec
@@ -53,6 +56,7 @@ func TestVucovUpdateTriad(t *testing.T) {
 
 // TestVucovUpdateTriadInvalid covers the update error path: an out-of-range segment is rejected.
 func TestVucovUpdateTriadInvalid(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, "triad.update", []byte(`{"triad":{"allowed":[42]}}`)); err == nil {
 		t.Fatal("expected error for an out-of-range triad segment")
@@ -63,6 +67,7 @@ func TestVucovUpdateTriadInvalid(t *testing.T) {
 // styles.listLibraries): a fresh document loads no library cascade, so the result decodes to an
 // empty list.
 func TestVucovListStyleLibraries(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var res wire.StyleLibrariesResult
 	call(t, r, s, "styles.listLibraries", "{}", &res)
@@ -75,6 +80,7 @@ func TestVucovListStyleLibraries(t *testing.T) {
 // activating a built-in preset it echoes that preset with its display parameters and an empty
 // file path.
 func TestVucovGetEnvironment(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "environment.set", `{"preset":"Studio","rotation":0.25,"intensity":0.5,"showImage":true}`, nil)
 	var env wire.EnvironmentView
@@ -88,6 +94,7 @@ func TestVucovGetEnvironment(t *testing.T) {
 // clientGraphics.setVisible): toggling a submitted group off flips only its Visible flag,
 // leaving its geometry (node/primitive counts) intact.
 func TestVucovSetClientGraphicsVisible(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "clientGraphics.set", mustJSON(t, heatmapArgs()), nil)
 	call(t, r, s, "clientGraphics.setVisible", `{"clientId":"fea","visible":false}`, nil)
@@ -104,6 +111,7 @@ func TestVucovSetClientGraphicsVisible(t *testing.T) {
 // TestVucovSetClientGraphicsVisibleUnknown covers the error path: toggling a group that was
 // never submitted fails.
 func TestVucovSetClientGraphicsVisibleUnknown(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, "clientGraphics.setVisible", []byte(`{"clientId":"ghost","visible":true}`)); err == nil {
 		t.Fatal("expected error toggling visibility on an unknown group")

@@ -15,6 +15,7 @@ import (
 // state were registered read-only before #1426, so these document edits were silently not replicated;
 // a read-only rep query still emits nothing.
 func TestRepresentationEditsReplicate(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t, 0, 5)
 
 	var got []app.EditCommitted

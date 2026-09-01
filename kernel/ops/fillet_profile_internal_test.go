@@ -31,6 +31,7 @@ func curv3(a, b, cc math.Point3) float64 {
 // TestShoulderIsSharpCorner: the shoulder of a 90° unit corner is the sharp corner (1,1,0) where the
 // two wall tangent lines meet.
 func TestShoulderIsSharpCorner(t *testing.T) {
+	t.Parallel()
 	c, in := corner90()
 	if s := shoulder(c, in); !s.IsEqualTo(math.P3(1, 1, 0), 1e-12) {
 		t.Errorf("shoulder = %v, want (1,1,0)", s)
@@ -45,6 +46,7 @@ func endCurv(ch []math.Point3) float64 { return curv3(ch[0], ch[1], ch[2]) }
 // below the circular arc's 1/r there (the jump G2 removes) and shrinking toward 0 under refinement
 // (the boundary curvature is exactly 0 at t=0; the discrete estimate is at the first station).
 func TestG2ChordsZeroEndCurvature(t *testing.T) {
+	t.Parallel()
 	c, in := corner90()
 	g2coarse := endCurv(g2Chords(c, in, 24))
 	g2fine := endCurv(g2Chords(c, in, 240))
@@ -63,6 +65,7 @@ func TestG2ChordsZeroEndCurvature(t *testing.T) {
 // TestG2ChordsTangentToWalls: the G2 profile leaves ta along wall A (perpendicular to nA) — G1
 // tangency, like the arc (checked on the near-start chord, so a small finite-difference tolerance).
 func TestG2ChordsTangentToWalls(t *testing.T) {
+	t.Parallel()
 	c, in := corner90()
 	g2 := g2Chords(c, in, 240)
 	start := g2[0].VectorTo(g2[1])
@@ -74,6 +77,7 @@ func TestG2ChordsTangentToWalls(t *testing.T) {
 // TestConicRhoControlsFullness: a larger rho pulls the conic toward the shoulder (fuller), so the
 // profile midpoint sits farther from the ta–tb chord.
 func TestConicRhoControlsFullness(t *testing.T) {
+	t.Parallel()
 	c, in := corner90()
 	bulge := func(rho float64) float64 {
 		ch := conicChords(c, in, 24, rho)
@@ -98,6 +102,7 @@ func TestConicRhoControlsFullness(t *testing.T) {
 // TestConicArcEndpointsMatch: every cross-section starts at ta and ends at tb, so the band retrims to
 // the same tangent lines and the topology is unchanged.
 func TestConicArcEndpointsMatch(t *testing.T) {
+	t.Parallel()
 	c, in := corner90()
 	for _, ch := range [][]math.Point3{arcChords(c, in, 8), g2Chords(c, in, 8), conicChords(c, in, 8, 0.5)} {
 		if !ch[0].IsEqualTo(c.ta, 1e-12) || !ch[len(ch)-1].IsEqualTo(c.tb, 1e-12) {

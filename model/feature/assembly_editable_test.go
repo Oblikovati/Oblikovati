@@ -14,6 +14,7 @@ import (
 // TestAssemblyExtrudeEditableDistance checks the extrude exposes its depth as a single
 // editable length scalar whose Set reflows the closure the next recompute reads (#725).
 func TestAssemblyExtrudeEditableDistance(t *testing.T) {
+	t.Parallel()
 	f := NewAssemblyExtrudeFeature(nil, 0, ops.Cut, func() float64 { return 3 })
 	ps := f.EditableParams()
 	if len(ps) != 1 || ps[0].Label != "Distance" || ps[0].Unit != param.Length {
@@ -31,6 +32,7 @@ func TestAssemblyExtrudeEditableDistance(t *testing.T) {
 // TestAssemblyRevolveEditableAngle checks the revolve exposes its sweep as a single
 // editable angle scalar whose Set reflows the closure the next recompute reads (#725).
 func TestAssemblyRevolveEditableAngle(t *testing.T) {
+	t.Parallel()
 	f := NewAssemblyRevolveFeature(nil, 0, nil, ops.Cut, func() float64 { return stdmath.Pi })
 	ps := f.EditableParams()
 	if len(ps) != 1 || ps[0].Label != "Angle" || ps[0].Unit != param.Angle {
@@ -49,6 +51,7 @@ func TestAssemblyRevolveEditableAngle(t *testing.T) {
 // angle scalar whose Set reflows the closure the next recompute reads — the #1648 parity with the
 // extrude/revolve siblings, so a placed assembly sweep edits in place.
 func TestAssemblySweepEditableTwist(t *testing.T) {
+	t.Parallel()
 	f := NewAssemblySweepFeature(nil, 0, ops.Cut, nil, func() float64 { return 0.4 })
 	ps := f.EditableParams()
 	if len(ps) != 1 || ps[0].Label != "Twist" || ps[0].Unit != param.Angle {
@@ -67,6 +70,7 @@ func TestAssemblySweepEditableTwist(t *testing.T) {
 // differ only in twist build different tools, so editing the twist actually reshapes the swept
 // geometry (#1648 guarding test — an edit that recompiles to the same body would be a silent no-op).
 func TestAssemblySweepTwistChangesGeometry(t *testing.T) {
+	t.Parallel()
 	path := []math.Point3{math.P3(0, 0, 0), math.P3(0, 0, 5)}
 	straight, err := NewAssemblySweepFeature(squareSketch(2), 0, ops.Join, path, nil).buildTool()
 	if err != nil {

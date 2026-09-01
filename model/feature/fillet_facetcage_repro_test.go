@@ -39,6 +39,7 @@ func faceMix(b *topo.Body) (planes, cyls, tori, other int) {
 // cause — NOT the misleading "result is not a valid solid" (which shipped a facet-cage octagon on the
 // nightly rampam tested), and it must leave the good top-rim fillet intact (no mutation).
 func TestFilletIntoExistingRoundIsHonest_Rampam1(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}},
 		sketch.XYPlane(), span{near: 0, far: 4}, 0, "box")
 	fs := NewPartFeatures(nil)

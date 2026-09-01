@@ -13,6 +13,7 @@ import (
 // TestBoundedTransactionCoalescesEdits checks transaction.begin/end fold several recording
 // edits into a single, named undo step — the team-shared-undo primitive of ADR-0005.
 func TestBoundedTransactionCoalescesEdits(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	if _, err := s.NewPart(); err != nil {
@@ -49,6 +50,7 @@ func TestBoundedTransactionCoalescesEdits(t *testing.T) {
 
 // TestEndTransactionWithoutBeginErrors guards the unbalanced case.
 func TestEndTransactionWithoutBeginErrors(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	if _, err := s.NewPart(); err != nil {
@@ -62,6 +64,7 @@ func TestEndTransactionWithoutBeginErrors(t *testing.T) {
 // TestAbortTransactionDiscardsBatchOverWire: transaction.abort reverts the open
 // batch instead of committing it — the failed-batch escape hatch (M04-F05).
 func TestAbortTransactionDiscardsBatchOverWire(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	if _, err := s.NewPart(); err != nil {

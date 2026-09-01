@@ -10,6 +10,7 @@ import (
 )
 
 func TestFairFeatureReplacesSurface(t *testing.T) {
+	t.Parallel()
 	body := surfaceBodyFrom(t, matchPatch(t, 0, func(i, j int) float64 { return 0.3 * float64((i*3+j)%2) }))
 	f := &FairFeature{def: &FairDefinition{HoldOrder: 1, Strength: 0.5, Iterations: 10}, featName: "Fair"}
 	out, err := f.Recompute(Input{Bodies: []*topo.Body{body}})
@@ -25,6 +26,7 @@ func TestFairFeatureReplacesSurface(t *testing.T) {
 }
 
 func TestFairFeatureErrorsWithoutBody(t *testing.T) {
+	t.Parallel()
 	f := &FairFeature{def: &FairDefinition{HoldOrder: 1, Strength: 0.5, Iterations: 5}}
 	if _, err := f.Recompute(Input{}); err == nil {
 		t.Error("fair with no body should error")
@@ -32,12 +34,14 @@ func TestFairFeatureErrorsWithoutBody(t *testing.T) {
 }
 
 func TestFairKind(t *testing.T) {
+	t.Parallel()
 	if (&FairFeature{def: &FairDefinition{}}).Kind() != "fair-surface" {
 		t.Error("fair kind")
 	}
 }
 
 func TestFairSurfaceRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewFairFeatures(fs).Add(2, 0.4, 25)
 	data, err := fs.MarshalRecipe(oneSketch{})
@@ -55,6 +59,7 @@ func TestFairSurfaceRoundTrip(t *testing.T) {
 }
 
 func TestRestoreFairRejectsMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreFairSurface(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreFairSurface(nil) should error")
 	}

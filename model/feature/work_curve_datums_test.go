@@ -35,6 +35,7 @@ func twoEdgeBody(t *testing.T, p0, p1, p2 math.Point3) (*topo.Body, *topo.Edge, 
 // TestCurveEntityPointLineHitsPlane: a straight edge along +X at y=2 pierces the YZ origin plane
 // (x=0) at (0,2,0) — the elementary line∩plane case (proximity irrelevant, one solution).
 func TestCurveEntityPointLineHitsPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, e := lineEdgeBody(t, math.P3(-2, 2, 0), math.P3(2, 2, 0))
 	wp := g.WorkPoints().AddByCurveAndEntity(EdgeRef(e.ReferenceKey()), OriginYZPlane, nil)
@@ -50,6 +51,7 @@ func TestCurveEntityPointLineHitsPlane(t *testing.T) {
 // TestCentroidLengthWeighted: the centroid of a length-4 edge (midpoint (2,0,0)) and a length-2 edge
 // (midpoint (4,1,0)) is (4·(2,0,0)+2·(4,1,0))/6 = (16/6, 2/6, 0) — length-weighted, not a plain mean.
 func TestCentroidLengthWeighted(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, e0, e1 := twoEdgeBody(t, math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 2, 0))
 	wp := g.WorkPoints().AddAtCentroid(EdgeRef(e0.ReferenceKey()), EdgeRef(e1.ReferenceKey()))
@@ -66,6 +68,7 @@ func TestCentroidLengthWeighted(t *testing.T) {
 // IntAna_IntConicQuad) solution: a unit circle in the z=0 plane meets the plane x=0.5 at
 // (0.5, ±√0.75, 0), √0.75 = 0.86602540378…
 func TestCirclePlaneIntersectionGolden(t *testing.T) {
+	t.Parallel()
 	circle, err := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 1)
 	if err != nil {
 		t.Fatal(err)
@@ -98,6 +101,7 @@ func TestCirclePlaneIntersectionGolden(t *testing.T) {
 // TestCurveEntityPointRoundTrips: a curve-and-entity point serializes its refs and its proximity
 // solution point, and restores to an equivalent definition (#1842).
 func TestCurveEntityPointRoundTrips(t *testing.T) {
+	t.Parallel()
 	def := curveEntityPointDef{curve: WorkRef("edge/x"), entity: OriginYZPlane, proximity: new(math.P3(1, 2, 3))}
 	d, err := serializePointDef(def)
 	if err != nil {
@@ -121,6 +125,7 @@ func TestCurveEntityPointRoundTrips(t *testing.T) {
 
 // TestCentroidPointRoundTrips: a centroid point persists its edge references (any count) and restores.
 func TestCentroidPointRoundTrips(t *testing.T) {
+	t.Parallel()
 	def := centroidPointDef{edges: []WorkRef{WorkRef("edge/a"), WorkRef("edge/b"), WorkRef("edge/c")}}
 	d, err := serializePointDef(def)
 	if err != nil {
@@ -141,6 +146,7 @@ func TestCentroidPointRoundTrips(t *testing.T) {
 // TestCirclePlaneNonIntersections covers the empty cases of circlePlanePoints: a plane parallel to
 // the circle's plane (no crossing) and a plane that clears the circle entirely (line misses).
 func TestCirclePlaneNonIntersections(t *testing.T) {
+	t.Parallel()
 	circle, err := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 1) // unit circle in z=0
 	if err != nil {
 		t.Fatal(err)
@@ -162,6 +168,7 @@ func TestCirclePlaneNonIntersections(t *testing.T) {
 // TestCurveEntityAndCentroidUnhealthy: a curve parallel to its entity (a line lying in the plane)
 // and a centroid whose only edge is unresolved both go unhealthy rather than producing garbage.
 func TestCurveEntityAndCentroidUnhealthy(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	// A +X edge in the z=0 plane is parallel to the XY entity plane → no pierce.
 	body, e := lineEdgeBody(t, math.P3(-2, 1, 0), math.P3(2, 1, 0))

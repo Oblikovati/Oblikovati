@@ -16,6 +16,7 @@ const torusCornerExactTol = 1e-7
 
 // TestTorusHostCorner_Recognizes checks torusHostCorner accepts exactly {1 torus, 2 planes}.
 func TestTorusHostCorner_Recognizes(t *testing.T) {
+	t.Parallel()
 	lin := topo.NewLineage(topo.Tok("test", "torus-corner-recognize", 0))
 	bld := topo.NewBuilder(true, lin)
 	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 50, 20)
@@ -62,6 +63,7 @@ func torusSyntheticFixture(t *testing.T) (*topo.Vertex, []*topo.Face, float64, m
 // centre against the independently-derived expected point (torusSyntheticFixture's `want`, computed
 // via the direct radial/axial algebra, not the quartic machinery under test).
 func TestTorusHostCorner_ExactSyntheticCentre(t *testing.T) {
+	t.Parallel()
 	v, faces, r, want := torusSyntheticFixture(t)
 	cb, err := solveBlend(nil, v, faces, r)
 	if err != nil {
@@ -125,28 +127,33 @@ func torusImportedCorner(t *testing.T, rel string, near math.Point3, r float64) 
 // (ρ=90) stays non-degenerate even though the host itself self-intersects at the axis, per the
 // geometry-math-advisor derivation's horn-torus note.
 func TestTorusHostCorner_E6Imported(t *testing.T) {
+	t.Parallel()
 	torusImportedCorner(t, "simple/E6.step", math.P3(200, 0, 0), 10)
 }
 
 // TestTorusHostCorner_E8Imported is E6's horn-torus sibling certification (same base solid,
 // different corner).
 func TestTorusHostCorner_E8Imported(t *testing.T) {
+	t.Parallel()
 	torusImportedCorner(t, "simple/E8.step", math.P3(170.71067811865, 0, 70.710678118655), 10)
 }
 
 // TestTorusHostCorner_F1Imported certifies simple/F1 — a RING torus (Rm=200, Rt=50, Rm>Rt).
 func TestTorusHostCorner_F1Imported(t *testing.T) {
+	t.Parallel()
 	torusImportedCorner(t, "simple/F1.step", math.P3(153.0153689607, 0, 17.101007166283), 10)
 }
 
 // TestTorusHostCorner_F3Imported is F1's ring-torus sibling certification.
 func TestTorusHostCorner_F3Imported(t *testing.T) {
+	t.Parallel()
 	torusImportedCorner(t, "simple/F3.step", math.P3(250, 0, 0), 10)
 }
 
 // TestTorusCornerConsistent_RejectsPerturbedCentre is the certificate regression fence, sibling of
 // TestConeCornerConsistent_RejectsPerturbedCentre.
 func TestTorusCornerConsistent_RejectsPerturbedCentre(t *testing.T) {
+	t.Parallel()
 	v, faces, r, want := torusSyntheticFixture(t)
 	tor, _, planes, ok := torusHostCorner(faces)
 	if !ok {

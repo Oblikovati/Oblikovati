@@ -16,6 +16,7 @@ func (p stubPlanePicker) Pick(_, _ float64, filter *SelectionFilter) (Selectable
 }
 
 func TestCreateSketchToolFlow(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register: %v", err)
@@ -45,6 +46,7 @@ func TestCreateSketchToolFlow(t *testing.T) {
 }
 
 func TestCreateSketchToolPicksViaBrowser(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register: %v", err)
@@ -61,6 +63,7 @@ func TestCreateSketchToolPicksViaBrowser(t *testing.T) {
 }
 
 func TestCreate2DSketchUsesPreselectedPlane(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register: %v", err)
@@ -80,6 +83,7 @@ func TestCreate2DSketchUsesPreselectedPlane(t *testing.T) {
 }
 
 func TestCreateSketchToolMetadataAndEmptyCommit(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	tool := NewCreateSketchTool()
 	tool.Start(s)
@@ -93,6 +97,7 @@ func TestCreateSketchToolMetadataAndEmptyCommit(t *testing.T) {
 }
 
 func TestPickAtUsesInstalledPicker(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if _, ok := s.PickAt(1, 1, NewSelectionFilter()); ok {
 		t.Error("PickAt with no picker should miss")
@@ -106,6 +111,7 @@ func TestPickAtUsesInstalledPicker(t *testing.T) {
 }
 
 func TestSelectBrowserNodeIgnoresNonSelectable(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	s.SelectBrowserNode(BrowserNode{Label: "Parameters", Kind: "parameters"}) // no Select
 	if s.Selection().Count() != 0 {
@@ -114,6 +120,7 @@ func TestSelectBrowserNodeIgnoresNonSelectable(t *testing.T) {
 }
 
 func TestCreateSketchToolCancelRestoresFilter(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	tool := NewCreateSketchTool()
 	s.StartTool(tool)

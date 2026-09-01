@@ -11,6 +11,7 @@ import (
 
 // TestFlatOrientationsRoundTrip orientations (and which is active) persist through the recipe.
 func TestFlatOrientationsRoundTrip(t *testing.T) {
+	t.Parallel()
 	src := NewPartComponentDefinition()
 	if _, err := src.EnableSheetMetal(); err != nil {
 		t.Fatalf("EnableSheetMetal: %v", err)
@@ -48,6 +49,7 @@ func TestFlatOrientationsRoundTrip(t *testing.T) {
 
 // TestFlatSettingsRoundTrip the deferred-update flag persists through the recipe.
 func TestFlatSettingsRoundTrip(t *testing.T) {
+	t.Parallel()
 	src := NewPartComponentDefinition()
 	if _, err := src.EnableSheetMetal(); err != nil {
 		t.Fatalf("EnableSheetMetal: %v", err)
@@ -72,6 +74,7 @@ func TestFlatSettingsRoundTrip(t *testing.T) {
 
 // TestFlatPlates a single-base sheet-metal part develops one plate with positive extents/area.
 func TestFlatPlates(t *testing.T) {
+	t.Parallel()
 	d, _ := sheetWithFlange(t)
 	plates, err := d.FlatPlates()
 	if err != nil {
@@ -89,6 +92,7 @@ func TestFlatPlates(t *testing.T) {
 // TestFlatLengthWidthSwapsWithAlignment a vertical orientation swaps the flat's length and
 // width relative to the horizontal default.
 func TestFlatLengthWidthSwapsWithAlignment(t *testing.T) {
+	t.Parallel()
 	d, _ := sheetWithFlange(t)
 	lh, wh, err := d.FlatLengthWidth(d.FlatOrientations().Active()) // default horizontal
 	if err != nil {

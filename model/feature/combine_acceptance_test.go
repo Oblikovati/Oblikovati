@@ -26,6 +26,7 @@ func box2x2x2(dx float64, feat string) *topo.Body {
 // TestCombineJoinIntersectingUnionVolume: A∪B of two overlapping 2³ blocks is one valid,
 // manifold solid of the union volume 8 + 8 − 4 = 12.
 func TestCombineJoinIntersectingUnionVolume(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box2x2x2(0, "a"))
 	NewBaseFeatures(fs).AddBase(box2x2x2(1, "b"))
@@ -50,6 +51,7 @@ func TestCombineJoinIntersectingUnionVolume(t *testing.T) {
 // TestCombineIntersectOverlapVolume: A∩B of the two overlapping blocks is exactly the 1×2×2
 // overlap, volume 4.
 func TestCombineIntersectOverlapVolume(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box2x2x2(0, "a"))
 	NewBaseFeatures(fs).AddBase(box2x2x2(1, "b"))
@@ -72,6 +74,7 @@ func TestCombineIntersectOverlapVolume(t *testing.T) {
 // and rebuilds the same A−B = 4 solid. Tool bodies come from two extrudes so the whole program
 // serializes (raw base bodies have no codec).
 func TestCombineCutRoundTrip(t *testing.T) {
+	t.Parallel()
 	skA := sketch.NewSketches().Add(sketch.XYPlane())
 	addRect(skA, 0, 0, 2, 2)
 	skB := sketch.NewSketches().Add(sketch.XYPlane())
@@ -104,6 +107,7 @@ func TestCombineCutRoundTrip(t *testing.T) {
 // TestCombineRecomputesOnParameterChange: a Cut whose tool body is driven by an extrude
 // distance re-evaluates when that parameter changes (A−B grows as the tool shrinks).
 func TestCombineRecomputesOnParameterChange(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	// Target A: a fixed 2×2×2 block (vol 8).
 	NewBaseFeatures(fs).AddBase(box2x2x2(0, "a"))

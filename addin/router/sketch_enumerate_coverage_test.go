@@ -11,6 +11,7 @@ import (
 // TestSketchEnumerateShapes builds a sketch with varied entity, constraint, and dimension
 // kinds, then enumerates each — exercising the point/line/circular shape classifiers.
 func TestSketchEnumerateShapes(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	add := func(args string) wire.AddSketchEntityResult {
 		var res wire.AddSketchEntityResult

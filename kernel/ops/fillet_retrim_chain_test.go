@@ -63,6 +63,7 @@ func chainLineRing(p []math.Point3) []endSeg {
 // at the notch wall and consumes the three whole rim edges the notch contributed, leaving the closed
 // form 100·85 − 10·5 = 8450. transformLoop ships 8475 for exactly this face.
 func TestChainRetrimLoopRebuildsY2HostPlaneThroughItsNotch(t *testing.T) {
+	t.Parallel()
 	chain := []endSeg{{from: math.P3(100, 0, 85), to: math.P3(0, 0, 85)}}
 	got, ok := chainRetrimLoop(chainPlaneThrough(math.P3(0, 0, 0), math.V3(0, 1, 0)), yHostRing(), chain, retrimChainTol)
 	if !ok {
@@ -78,6 +79,7 @@ func TestChainRetrimLoopRebuildsY2HostPlaneThroughItsNotch(t *testing.T) {
 // 100·75 = 7500; transformLoop ships 7600 and its loop back-tracks along a COLLINEAR sibling edge, which
 // is why the self-crossing ratchet cannot see this one at all.
 func TestChainRetrimLoopRebuildsY4HostPlaneConsumingTheWholeNotch(t *testing.T) {
+	t.Parallel()
 	chain := []endSeg{{from: math.P3(100, 0, 75), to: math.P3(0, 0, 75)}}
 	got, ok := chainRetrimLoop(chainPlaneThrough(math.P3(0, 0, 0), math.V3(0, 1, 0)), yHostRing(), chain, retrimChainTol)
 	if !ok {
@@ -96,6 +98,7 @@ func y2NotchWallArc() endSeg {
 // TestChainRetrimLoopBitesTheY2NotchWall: the notch's inner wall must lose the circular segment the
 // band sweeps out of it, ∫₀⁵ (15 − √(225 − t²)) dt = 1.4130085, off a 10×100 rectangle.
 func TestChainRetrimLoopBitesTheY2NotchWall(t *testing.T) {
+	t.Parallel()
 	ring := chainLineRing([]math.Point3{
 		math.P3(90, 100, 80), math.P3(90, 100, 90), math.P3(90, 0, 90), math.P3(90, 0, 80),
 	})
@@ -116,6 +119,7 @@ func y2WallBite() float64 {
 // TestChainRetrimLoopBitesTheY2NotchTop: the notch's top face z = 90 loses the strip the band's own
 // ruling there cuts, 10·(15 − √200) = 8.578644, off a 10×100 rectangle.
 func TestChainRetrimLoopBitesTheY2NotchTop(t *testing.T) {
+	t.Parallel()
 	ring := chainLineRing([]math.Point3{
 		math.P3(100, 100, 90), math.P3(100, 0, 90), math.P3(90, 0, 90), math.P3(90, 100, 90),
 	})
@@ -134,6 +138,7 @@ func TestChainRetrimLoopBitesTheY2NotchTop(t *testing.T) {
 // — 5 past the face's own bottom edge. Clipped at z = 90 the face keeps
 // 1000 − (150 − ∫₅¹⁵ √(225 − t²) dt) = 953.1276; transformLoop ships 964.0267 and the loop self-crosses.
 func TestClipChainToRingTrimsTheY2WallAboveTheNotch(t *testing.T) {
+	t.Parallel()
 	ring := chainLineRing([]math.Point3{
 		math.P3(100, 0, 90), math.P3(100, 100, 90), math.P3(100, 100, 100), math.P3(100, 0, 100),
 	})
@@ -155,6 +160,7 @@ func y2UpperIntegral() float64 {
 // cylinder over x ∈ [90,100] for the sweep below z = 90, so the band keeps
 // (π/2)·15·100 − 15·asin(1/3)·10 = 2305.2190. transformLoop ships the uninterrupted 2356.18.
 func TestChainRetrimLoopInterruptsTheY2Band(t *testing.T) {
+	t.Parallel()
 	y := 15 - stdmath.Sqrt(200)
 	ring := []endSeg{
 		{from: math.P3(0, 0, 85), to: math.P3(100, 0, 85)},
@@ -240,6 +246,7 @@ func d8RoundRing() []endSeg {
 // 24·∫_{−π/2}^{0} (70 + √(900 − (6 − 24 sin u)²)) du = 3307.1168 — the number the shipped loop's
 // shoelace (3305.9057) misses by the 1.2111 lobe it pinches off.
 func TestChainRetrimLoopStopsD8sFarEndTrimOnItsOwnFace(t *testing.T) {
+	t.Parallel()
 	chain := []endSeg{d8TrimSeg()}
 	got, ok := chainRetrimLoop(d8RoundCylinder(), d8RoundRing(), chain, 1e-6)
 	if !ok {
@@ -253,6 +260,7 @@ func TestChainRetrimLoopStopsD8sFarEndTrimOnItsOwnFace(t *testing.T) {
 // splice: the analytic crossing is (6)² + (v+70)² = 900 ⇒ v = −99.393877, i.e. z = 9.393877 on the
 // round's u = 0 ruling.
 func TestClipChainToRingCutsD8sOvershootAtTheRuling(t *testing.T) {
+	t.Parallel()
 	got, ok := clipChainToRing(d8RoundRing(), []endSeg{d8TrimSeg()}, 1e-6)
 	if !ok {
 		t.Fatal("clipChainToRing declined D8's overshoot")
@@ -309,6 +317,7 @@ func chainSimpson(f func(float64) float64, a, b float64, n int) float64 {
 // rebuild returns spliceCornerBiteChain's result POINT FOR POINT. Routing an existing caller through the
 // primitive therefore cannot move a corpus green; only a genuinely overrunning chain takes the new path.
 func TestChainRetrimLoopIsTheExistingSpliceWhenNothingOverruns(t *testing.T) {
+	t.Parallel()
 	chain := []endSeg{{from: math.P3(100, 0, 75), to: math.P3(0, 0, 75)}}
 	host := chainPlaneThrough(math.P3(0, 0, 0), math.V3(0, 1, 0))
 	want, ok := spliceCornerBiteChain(host, yHostRing(), chain, retrimChainTol)
@@ -327,6 +336,7 @@ func TestChainRetrimLoopIsTheExistingSpliceWhenNothingOverruns(t *testing.T) {
 // snap it to the nearest boundary point. A guessed landing is a silently wrong solid; a decline is the
 // do-no-harm floor the rest of the retrim layer already falls to.
 func TestClipChainToRingDeclinesAChainThatNeverReachesTheRing(t *testing.T) {
+	t.Parallel()
 	away := []endSeg{{from: math.P3(500, 0, 500), to: math.P3(600, 0, 500)}}
 	if got, ok := clipChainToRing(yHostRing(), away, retrimChainTol); ok {
 		t.Errorf("clipChainToRing accepted a chain that never reaches the ring: %+v", got)

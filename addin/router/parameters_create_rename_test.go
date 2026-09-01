@@ -22,6 +22,7 @@ func wantErr(t *testing.T, r *Router, s *app.Session, method, args string) {
 
 // TestAddTextParameter creates a text user parameter: the literal string is the value, no units.
 func TestAddTextParameter(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.add", `{"name":"finish","valueType":"text","expression":"anodized"}`, nil)
 	d := getDetail(t, r, s, "finish")
@@ -35,6 +36,7 @@ func TestAddTextParameter(t *testing.T) {
 
 // TestAddBooleanParameter creates a true/false user parameter from "true"/"false".
 func TestAddBooleanParameter(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.add", `{"name":"vented","valueType":"boolean","expression":"true"}`, nil)
 	if d := getDetail(t, r, s, "vented"); d.Value != "true" && d.Value != "True" {
@@ -44,12 +46,14 @@ func TestAddBooleanParameter(t *testing.T) {
 
 // TestAddBooleanParameterRejectsNonBool: a non-boolean expression is a clean error.
 func TestAddBooleanParameterRejectsNonBool(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	wantErr(t, r, s, "parameters.add", `{"name":"bad","valueType":"boolean","expression":"3 cm"}`)
 }
 
 // TestAddModelParameter creates a numeric parameter in the MODEL table (Kind=model).
 func TestAddModelParameter(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.add", `{"name":"depth","kind":"model","expression":"5 mm"}`, nil)
 	if d := getDetail(t, r, s, "depth"); d.Kind == "" {
@@ -59,6 +63,7 @@ func TestAddModelParameter(t *testing.T) {
 
 // TestAddParameterUnknownValueType: an unknown valueType is a clean error.
 func TestAddParameterUnknownValueType(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	wantErr(t, r, s, "parameters.add", `{"name":"x","valueType":"vector","expression":"1"}`)
 }
@@ -66,6 +71,7 @@ func TestAddParameterUnknownValueType(t *testing.T) {
 // TestRenameParameterRewritesDependents renames a driving parameter and confirms its identity is
 // kept and a dependent expression is rewritten to the new name (#1847).
 func TestRenameParameterRewritesDependents(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.add", `{"name":"half","expression":"width / 2"}`, nil)
 	call(t, r, s, "parameters.rename", `{"name":"width","newName":"span"}`, nil)
@@ -80,6 +86,7 @@ func TestRenameParameterRewritesDependents(t *testing.T) {
 
 // TestRenameParameterClashRejected: renaming onto an existing name is refused.
 func TestRenameParameterClashRejected(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.add", `{"name":"height","expression":"2 cm"}`, nil)
 	wantErr(t, r, s, "parameters.rename", `{"name":"height","newName":"width"}`)

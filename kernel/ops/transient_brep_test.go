@@ -15,6 +15,7 @@ import (
 // TestSectionWithPlaneBoxRectangle: a mid-height plane sections the box into
 // one closed rectangular chain of perimeter 2(sx+sy).
 func TestSectionWithPlaneBoxRectangle(t *testing.T) {
+	t.Parallel()
 	b := boxBody(math.P3(0, 0, 0), 3, 2, 4)
 	sec, err := SectionWithPlane(b, math.P3(0, 0, 2), math.V3(0, 0, 1), DefaultQuality())
 	if err != nil {
@@ -56,6 +57,7 @@ func boxBody(p math.Point3, sx, sy, sz float64) *topo.Body {
 // TestFaceSilhouetteCylinderRulings: a cylinder side face viewed from +X has
 // two vertical silhouette rulings (at y = ±r).
 func TestFaceSilhouetteCylinderRulings(t *testing.T) {
+	t.Parallel()
 	cyl := cylinderBody(t, 2, 5)
 	var side *topo.Face
 	for _, f := range cyl.Faces() {
@@ -97,6 +99,7 @@ func isPlanarFace(f *topo.Face) bool {
 // TestRuledSurfaceBetweenSquares: ruling two parallel unit squares 2 apart
 // gives a surface body of area ~8 (four 1×2 walls).
 func TestRuledSurfaceBetweenSquares(t *testing.T) {
+	t.Parallel()
 	_, w1 := squareWireBody(1)
 	_, w2raw := squareWireBody(1)
 	lifted, err := TransformBody(w2raw.Body(), math.Translation4(math.V3(0, 0, 2)), func(l topo.Lineage) topo.Lineage { return l })
@@ -120,6 +123,7 @@ func TestRuledSurfaceBetweenSquares(t *testing.T) {
 // TestGroupIdenticalBodies: a box equals its translate and rotate, not a
 // different box; reflection matching is controllable.
 func TestGroupIdenticalBodies(t *testing.T) {
+	t.Parallel()
 	a := boxBody(math.P3(0, 0, 0), 1, 2, 3)
 	moved, _ := TransformBody(a, math.Translation4(math.V3(10, 0, 0)), func(l topo.Lineage) topo.Lineage { return l })
 	axis, _ := math.UnitVector3FromVector(math.V3(0, 0, 1))
@@ -138,6 +142,7 @@ func TestGroupIdenticalBodies(t *testing.T) {
 // TestDropFacesKeepsSelectionSemantics: deleting one face opens the body;
 // keep-instead retains only the selection.
 func TestDropFacesKeepsSelectionSemantics(t *testing.T) {
+	t.Parallel()
 	b := boxBody(math.P3(0, 0, 0), 1, 1, 1)
 	key := b.Faces()[0].ReferenceKey()
 	open, err := DropFaces(b, [][]byte{key}, false)

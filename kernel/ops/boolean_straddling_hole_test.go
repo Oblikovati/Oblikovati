@@ -68,6 +68,7 @@ func sameFaceSeamEdges(b *topo.Body) int {
 }
 
 func TestJoinOverAStraddlingHoleKeepsOneOpening(t *testing.T) {
+	t.Parallel()
 	joined := plateWithStraddledHole(t, math.P2(0.2, 0.96))
 	if got := sameFaceSeamEdges(joined); got != 0 {
 		t.Errorf("%d edge(s) have both uses on one face — the shared boundary was written twice", got)
@@ -89,6 +90,7 @@ func TestJoinOverAStraddlingHoleKeepsOneOpening(t *testing.T) {
 // a low face count is what makes this a real guard — the χ and validity checks alone pass either
 // way, because the fallback rescues them.
 func TestTwoStraddlingHolesStayOnTheExactPath(t *testing.T) {
+	t.Parallel()
 	joined := plateWithStraddledHole(t, math.P2(0.2, 0.96), math.P2(-0.2, 0.96))
 	if got := len(joined.Faces()); got > 200 {
 		t.Errorf("join produced %d faces — the exact planar path was abandoned for triangle CSG", got)

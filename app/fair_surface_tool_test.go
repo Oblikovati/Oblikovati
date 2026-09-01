@@ -25,6 +25,7 @@ func partWithOneSurface(t *testing.T) (*Session, *compdef.PartComponentDefinitio
 }
 
 func TestFairSurfaceToolParams(t *testing.T) {
+	t.Parallel()
 	tool := NewFairSurfaceTool()
 	if tool.Name() != "Fair Surface" || !tool.CanCommit() {
 		t.Error("fair tool should name and be committable by default")
@@ -43,6 +44,7 @@ func TestFairSurfaceToolParams(t *testing.T) {
 }
 
 func TestFairSurfaceToolCommits(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithOneSurface(t)
 	tool := NewFairSurfaceTool()
 	tool.hold = 1
@@ -56,6 +58,7 @@ func TestFairSurfaceToolCommits(t *testing.T) {
 }
 
 func TestFairViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithOneSurface(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
@@ -71,6 +74,7 @@ func TestFairViaRibbonCommand(t *testing.T) {
 // TestFairSurfaceToolDraftFeature pins the #1626 commit-gate seam: no draft at zero strength,
 // a non-nil draft once commit-ready.
 func TestFairSurfaceToolDraftFeature(t *testing.T) {
+	t.Parallel()
 	tool := NewFairSurfaceTool()
 	tool.strength = 0
 	if _, ok := tool.DraftFeature(nil); ok {

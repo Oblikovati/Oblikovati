@@ -11,6 +11,7 @@ import (
 // TestDecalToolEndToEnd drives the Decal UI: pick a face, set an image, OK — and asserts the
 // decal feature is recorded (cosmetic: the body is unchanged).
 func TestDecalToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -39,6 +40,7 @@ func TestDecalToolEndToEnd(t *testing.T) {
 // inspects (#1626): no draft until both the face and the image are set, a non-nil draft
 // once commit-ready (a decal is cosmetic, so the draft previews trivially healthy).
 func TestDecalToolDraftFeature(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	tool := NewDecalTool()
 	tool.Pick(s, FaceHandle{Face: topFaceOf(t, block), Body: block})
@@ -52,6 +54,7 @@ func TestDecalToolDraftFeature(t *testing.T) {
 }
 
 func TestDecalViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	if err := RegisterStandardCommands(s); err != nil {

@@ -14,6 +14,7 @@ import (
 // editable_m10_test.go / editable_refs_test.go.
 
 func TestS4FeaturesExposeEditableParams(t *testing.T) {
+	t.Parallel()
 	assertParamsRoundTrip(t, "loft", &LoftFeature{def: &LoftDefinition{}}, 4)
 	assertParamsRoundTrip(t, "grill", &GrillFeature{def: &GrillDefinition{}}, 1)
 	assertParamsRoundTrip(t, "faceFillet", &FaceFilletFeature{def: &FaceFilletDefinition{Radius: constFloat(1)}}, 1)
@@ -23,6 +24,7 @@ func TestS4FeaturesExposeEditableParams(t *testing.T) {
 // re-pickable slots (point/face sections have no profile to re-select) and that re-picking a
 // section rebinds its (sketch, index) pair, with Snapshot restoring the prior binding.
 func TestLoftEditableRefsSkipNonSketchSections(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	apex := math.P3(0, 0, 5)
 	loft := &LoftFeature{def: &LoftDefinition{Sections: []LoftSection{
@@ -50,6 +52,7 @@ func TestLoftEditableRefsSkipNonSketchSections(t *testing.T) {
 
 // TestFaceFilletEditableRefs checks the two face-set slots re-pick independently.
 func TestFaceFilletEditableRefs(t *testing.T) {
+	t.Parallel()
 	ff := &FaceFilletFeature{def: &FaceFilletDefinition{
 		FaceKeysA: [][]byte{[]byte("a1")}, FaceKeysB: [][]byte{[]byte("b1")}, Radius: constFloat(1)}}
 	slots := ff.EditableRefs()
@@ -65,6 +68,7 @@ func TestFaceFilletEditableRefs(t *testing.T) {
 // TestFullRoundFilletEditableRefs checks the three face slots (no scalar param — the radius is
 // derived from face spacing, so it is ReferenceEditable only).
 func TestFullRoundFilletEditableRefs(t *testing.T) {
+	t.Parallel()
 	fr := &FullRoundFilletFeature{def: &FullRoundFilletDefinition{
 		Side1Keys: [][]byte{[]byte("s1")}, CenterKeys: [][]byte{[]byte("c")}, Side2Keys: [][]byte{[]byte("s2")}}}
 	slots := fr.EditableRefs()
@@ -79,6 +83,7 @@ func TestFullRoundFilletEditableRefs(t *testing.T) {
 
 // TestBossEditableRefs checks the boss gained its single placement-face slot (parity with hole).
 func TestBossEditableRefs(t *testing.T) {
+	t.Parallel()
 	boss := &BossFeature{def: &BossDefinition{PlacementFaceKey: []byte("face-1"), Diameter: constFloat(2), Height: constFloat(4)}}
 	slot := boss.EditableRefs()[0]
 	if slot.Label != "Placement face" || slot.Kind != RefFace || slot.Count() != 1 {
@@ -92,6 +97,7 @@ func TestBossEditableRefs(t *testing.T) {
 
 // TestGrillEditableRefs checks grill exposes its boundary profile slot.
 func TestGrillEditableRefs(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	grill := &GrillFeature{def: &GrillDefinition{Sketch: sk, Boundaries: []int{0}}}
 	slot := grill.EditableRefs()[0]
@@ -103,6 +109,7 @@ func TestGrillEditableRefs(t *testing.T) {
 // TestLoftSectionSlotCountReflectsClearedSketch covers the slot's Count closure reporting 0 once its
 // section's sketch is cleared out from under it (a bound → unbound profile), and 1 while bound.
 func TestLoftSectionSlotCountReflectsClearedSketch(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sec := LoftSection{Sketch: sk, ProfileIndex: 0}
 	slot := loftSectionSlot(1, &sec)

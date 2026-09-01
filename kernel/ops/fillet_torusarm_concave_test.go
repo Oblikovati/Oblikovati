@@ -25,6 +25,7 @@ func weTestTorus(t *testing.T, major, minor float64) geom.Torus {
 // (s=+1) → spine centre (0,0,35), major 200−√((a+r)²−35²) = 200−√2375 = 151.266028 (the value DRAWEXE's
 // blend band poles decode to), minor 10.
 func TestConcaveTorusHostArmSurfaceExternal(t *testing.T) {
+	t.Parallel()
 	host := weTestTorus(t, 200, 50)
 	arm, reject := concaveTorusHostArmSurface(host, 25, 156.7, 10, +1, +1, ResolutionForSize(500))
 	if reject != torusArmBuilt {
@@ -44,6 +45,7 @@ func TestConcaveTorusHostArmSurfaceExternal(t *testing.T) {
 // a−r=70, major 200−√(70²−30²) = 200−√4000 = 136.754447 — DRAWEXE grows A6's plate hole to exactly
 // this radius.
 func TestConcaveTorusHostArmSurfaceInternal(t *testing.T) {
+	t.Parallel()
 	host := weTestTorus(t, 200, 100)
 	arm, reject := concaveTorusHostArmSurface(host, 0, 100, 30, +1, -1, ResolutionForSize(800))
 	if reject != torusArmBuilt {
@@ -61,6 +63,7 @@ func TestConcaveTorusHostArmSurfaceInternal(t *testing.T) {
 // TestConcaveTorusHostArmSurfaceRejects exercises the guards: an internal ball consuming the tube
 // (s=−1, r ≥ a) and a cap so far off-axis the offset plane clears the offset tube.
 func TestConcaveTorusHostArmSurfaceRejects(t *testing.T) {
+	t.Parallel()
 	host := weTestTorus(t, 200, 50)
 	if _, reject := concaveTorusHostArmSurface(host, 0, 250, 60, +1, -1, ResolutionForSize(500)); reject != torusArmSpindle {
 		t.Fatalf("r=60 ≥ a=50 internal ball: got %d, want torusArmSpindle", reject)
@@ -73,6 +76,7 @@ func TestConcaveTorusHostArmSurfaceRejects(t *testing.T) {
 // TestTubeContactScale pins the contact-projection factor on both tangency branches and the reject:
 // external (hyp = a+r → k = a/(a+r)), internal (hyp = a−r → k = a/(a−r)), neither → false.
 func TestTubeContactScale(t *testing.T) {
+	t.Parallel()
 	if k, ok := tubeContactScale(60, 50, 10, 1e-6); !ok || stdmath.Abs(k-50.0/60) > 1e-12 {
 		t.Fatalf("external: k=%.12f ok=%v, want 50/60", k, ok)
 	}
@@ -88,6 +92,7 @@ func TestTubeContactScale(t *testing.T) {
 // arm centre (0,0,35), major 151.266028 → contact centre z = 35·(50/60) = 29.1666667, radius
 // 200 + (5/6)(151.266028−200) = 159.388357 (DRAWEXE row-1 pole radius 159.388356896629).
 func TestConcaveTorusHostTubeContact(t *testing.T) {
+	t.Parallel()
 	host := weTestTorus(t, 200, 50)
 	arm, err := geom.NewTorusWithRef(math.P3(0, 0, 35), math.V3(0, 0, 1), math.V3(1, 0, 0), 200-stdmath.Sqrt(2375), 10)
 	if err != nil {

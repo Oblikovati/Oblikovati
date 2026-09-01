@@ -9,6 +9,7 @@ import "testing"
 // triangle diagonal, a degeneracy, so this also exercises the retry-in-another-
 // direction path.
 func TestInsideExactCube(t *testing.T) {
+	t.Parallel()
 	cube := boxMesh([3]float64{0, 0, 0}, [3]float64{1, 1, 1})
 	grid := newFaceGrid(cube)
 	inside := []Point{
@@ -34,6 +35,7 @@ func TestInsideExactCube(t *testing.T) {
 }
 
 func TestSegmentPiercesTriExact(t *testing.T) {
+	t.Parallel()
 	a := pt([3]float64{0, 0, 0})
 	b := pt([3]float64{4, 0, 0})
 	c := pt([3]float64{0, 4, 0})

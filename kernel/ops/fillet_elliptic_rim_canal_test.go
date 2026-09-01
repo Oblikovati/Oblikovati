@@ -86,6 +86,7 @@ func ellipticFixtureExtent(b *topo.Body) float64 {
 // point-inversion distance, not just from the algebraic foot), and both feet exactly r from the centre.
 // This is what makes the lofted band an envelope rather than a plausible-looking tube.
 func TestEllipticRimSpineStationsAreExactlyTangent(t *testing.T) {
+	t.Parallel()
 	body := importEllipticFixture(t, "J6")
 	rim := closedEllipticRimNear(t, body, math.P3(20, 0, 100))
 	ec, pl, wallF, _, ok := ellipticalCylinderPlaneEdge(rim)
@@ -118,6 +119,7 @@ func TestEllipticRimSpineStationsAreExactlyTangent(t *testing.T) {
 // come out CONVEX (side −1, ball inside the material) and T5 CONCAVE (side +1, ball in the void). Without
 // this, a concave elliptic rim would silently build a wrong-sided convex band.
 func TestEllipticRimConvexityIsReadFromTheSolidNotTheReversedFlag(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name       string
 		rimAt      math.Point3
@@ -160,6 +162,7 @@ func TestEllipticRimConvexityIsReadFromTheSolidNotTheReversedFlag(t *testing.T) 
 // through the plate (void) while the inward-and-up one stays in the boss (material). At r=16 the step
 // still fits inside the plate and the rim resolves CONCAVE; at r=32 it does not and the probe declines.
 func TestEllipticRimConvexityDeclinesWhenTheMixedQuadrantsDisagree(t *testing.T) {
+	t.Parallel()
 	body := importEllipticFixture(t, "T5")
 	rim := closedEllipticRimNear(t, body, math.P3(0, 0, 0))
 	ec, pl, wallF, _, ok := ellipticalCylinderPlaneEdge(rim)
@@ -195,6 +198,7 @@ func TestEllipticRimConvexityDeclinesWhenTheMixedQuadrantsDisagree(t *testing.T)
 // construction), so the arm must return handled=false and let the edge fall through to the unchanged
 // flat refusal rather than ship a band poking through the plate's side walls.
 func TestEllipticClosedRimDeclinesSpillingBand(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name   string
 		rimAt  math.Point3
@@ -217,6 +221,7 @@ func TestEllipticClosedRimDeclinesSpillingBand(t *testing.T) {
 // elliptic edge is ellipticalCylinderArmEdge's (an exact right circular cylinder), and the closed-rim
 // canal must never steal it.
 func TestEllipticClosedRimLeavesTheRulingEdgeAlone(t *testing.T) {
+	t.Parallel()
 	body := importEllipticFixture(t, "F4")
 	var ruling *topo.Edge
 	for _, e := range body.Edges() {
@@ -241,6 +246,7 @@ func TestEllipticClosedRimLeavesTheRulingEdgeAlone(t *testing.T) {
 // and it is independent of OCCT, whose recorded whole-body number for these two cases is inflated by its
 // own sprops mis-integration of the extrusion wall.
 func TestEllipticRimCanalBandMatchesTheExactEnvelopeArea(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name      string
 		rimAt     math.Point3
@@ -281,6 +287,7 @@ const ellipticRimMeshAreaRelTol = 3e-4
 // integral stayed within +0.0001% of exact. So this asserts the tessellated area against the SAME exact
 // envelope numbers, at PropertyQuality (the tolerance every property readout uses).
 func TestEllipticRimCanalBandMeshMatchesTheExactEnvelopeArea(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name      string
 		rimAt     math.Point3
@@ -353,6 +360,7 @@ func parametricSurfaceArea(s geom.BSplineSurface) float64 {
 // isocurves; an imported tube patch closes the OTHER way and must be left to the general NURBS meshers
 // (lofting it rail-to-rail would crack it — TestImportedNurbsDuctWatertight).
 func TestCanalBandMeshRecognisesOnlyTheVClosedBand(t *testing.T) {
+	t.Parallel()
 	body := importEllipticFixture(t, "J6")
 	rim := closedEllipticRimNear(t, body, math.P3(20, 0, 100))
 	ec, pl, wallF, capF, _ := ellipticalCylinderPlaneEdge(rim)

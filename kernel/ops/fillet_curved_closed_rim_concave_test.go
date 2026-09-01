@@ -35,6 +35,7 @@ func s2Cone() geom.Cone {
 func s2CapPlane() geom.Plane { return s5CapPlane() }
 
 func TestConcaveSphereArmSurfaceS5(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(30)
 	up := math.V3(0, 0, 1).AsUnit()
 	tor, reject := concaveSphereArmSurface(s5Sphere(), s5CapPlane(), up, 3, res)
@@ -45,6 +46,7 @@ func TestConcaveSphereArmSurfaceS5(t *testing.T) {
 }
 
 func TestConcaveConeArmSurfaceS2(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(30)
 	up := math.V3(0, 0, 1).AsUnit()
 	tor, reject := concaveConeArmSurface(s2Cone(), s2CapPlane(), up, 8, res)
@@ -55,6 +57,7 @@ func TestConcaveConeArmSurfaceS2(t *testing.T) {
 }
 
 func TestConcaveSphereContactCircleS5(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(30)
 	tor, _ := concaveSphereArmSurface(s5Sphere(), s5CapPlane(), math.V3(0, 0, 1).AsUnit(), 3, res)
 	c, r, ok := concaveSphereContactCircle(s5Sphere(), tor, res)
@@ -72,6 +75,7 @@ func TestConcaveSphereContactCircleS5(t *testing.T) {
 }
 
 func TestConcaveConeContactCircleS2(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(30)
 	tor, _ := concaveConeArmSurface(s2Cone(), s2CapPlane(), math.V3(0, 0, 1).AsUnit(), 8, res)
 	c, r, ok := concaveConeContactCircle(s2Cone(), tor, res)
@@ -87,6 +91,7 @@ func TestConcaveConeContactCircleS2(t *testing.T) {
 // convex closed-rim band (J1) can never mis-consume a concave arm — the concave path owns its own
 // external-tangency branch (concaveTorusContactCircle).
 func TestConvexContactCircleRejectsConcaveTorus(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(30)
 	sphTor, _ := concaveSphereArmSurface(s5Sphere(), s5CapPlane(), math.V3(0, 0, 1).AsUnit(), 3, res)
 	if _, _, ok := torusContactCircle(s5Sphere(), sphTor, res); ok {
@@ -126,6 +131,7 @@ func squarePlateFace(t *testing.T, half float64) *topo.Face {
 // 15) but REJECTS the spilling corpus radii (S5 r=3: 15.716 > 15; S2 r=8: 16.246 > 15), and the reported
 // half-extent is exactly the plate half-width 15 — the offending value the spill reject carries.
 func TestConcaveBandSpillGate(t *testing.T) {
+	t.Parallel()
 	plate := squarePlateFace(t, 15)
 	center := math.P3(0, 0, 0)
 	for _, tc := range []struct {

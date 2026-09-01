@@ -58,6 +58,7 @@ func wantDraftReady(t *testing.T, s *Session, tool DraftPreviewable) {
 // TestSheetMetalEdgeTools the edge-driven tools (Hem, Corner, Corner Seam) pick an edge, set
 // their dimension, and commit on a base sheet.
 func TestSheetMetalEdgeTools(t *testing.T) {
+	t.Parallel()
 	t.Run("hem", func(t *testing.T) {
 		s, part := faceSheet(t, 4)
 		hem := NewSheetMetalHemTool()
@@ -117,6 +118,7 @@ func TestSheetMetalEdgeTools(t *testing.T) {
 // TestSheetMetalSketchTools the sketch-line tools (Bend, Fold) and the profile cut tool pick
 // their input and commit on a base sheet.
 func TestSheetMetalSketchTools(t *testing.T) {
+	t.Parallel()
 	t.Run("bend", func(t *testing.T) {
 		s, part := faceSheet(t, 4)
 		bend := NewSheetMetalBendTool()
@@ -175,6 +177,7 @@ func TestSheetMetalSketchTools(t *testing.T) {
 // TestSheetMetalF03Tools the F03 modify tools (Lip, Rip, Punch, Cosmetic Bend) pick their input
 // and commit on a base sheet.
 func TestSheetMetalF03Tools(t *testing.T) {
+	t.Parallel()
 	t.Run("lip", func(t *testing.T) {
 		s, part := faceSheet(t, 4)
 		lip := NewSheetMetalLipTool()
@@ -255,6 +258,7 @@ func TestSheetMetalF03Tools(t *testing.T) {
 // Flange, Contour Roll) gather their picks and exercise the commit path; their developed
 // geometry is deep-tested in the source model suites.
 func TestSheetMetalProfileFlangeTools(t *testing.T) {
+	t.Parallel()
 	s, part := faceSheet(t, 4)
 	edge := EdgeHandle{Edge: topXEdge(t, part.Features().Result()[0])}
 	profile := squareProfile(part, 4)

@@ -28,6 +28,7 @@ func sessionWithPart(t *testing.T) *Session {
 // calls: import a STEP solid (format inferred from the extension) into the active part, then
 // export the part back to a STEP file and re-import it — the body stays a valid solid throughout.
 func TestSessionImportExportFile(t *testing.T) {
+	t.Parallel()
 	cube := filepath.Join("..", "kernel", "exchange", "step", "testdata", "cube.step")
 	s := sessionWithPart(t)
 	res, err := s.ImportFile(cube)
@@ -54,6 +55,7 @@ func TestSessionImportExportFile(t *testing.T) {
 
 // TestSessionImportUnknownExtension reports a clear error for an unrecognized file type.
 func TestSessionImportUnknownExtension(t *testing.T) {
+	t.Parallel()
 	if _, err := sessionWithPart(t).ImportFile("model.iges"); err == nil {
 		t.Error("ImportFile accepted an unknown extension")
 	}

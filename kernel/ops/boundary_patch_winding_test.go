@@ -16,6 +16,7 @@ import (
 // imported freeform b-spline faces). The earlier centroid-sampled flip mis-oriented triangles on
 // a curved patch because the flat triangle's centroid lies off the surface.
 func TestBoundaryPatchConsistentWinding(t *testing.T) {
+	t.Parallel()
 	sphere, err := geom.NewSphere(math.P3(0, 0, 0), 10)
 	if err != nil {
 		t.Fatalf("NewSphere: %v", err)

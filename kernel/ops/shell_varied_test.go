@@ -44,6 +44,7 @@ func shellVolume(t *testing.T, box *topo.Body, removed [][]byte, thick float64,
 // TestShellThickensOneWallInward: an open-top 4³ box walled 0.5, with the +X wall thickened to
 // 1.5. The cavity loses exactly the extra 1.0 off its X span, and nothing else moves.
 func TestShellThickensOneWallInward(t *testing.T) {
+	t.Parallel()
 	box := shellBox(4, 4, 4)
 	over := []ops.ShellFaceThickness{{FaceKey: faceKeyByNormal(t, box, 1, 0, 0), Thickness: 1.5}}
 	got := shellVolume(t, box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellInside, over)
@@ -57,6 +58,7 @@ func TestShellThickensOneWallInward(t *testing.T) {
 // TestShellThinsOneWallInward: the override cuts both ways — a thin window in an otherwise
 // uniform shell, which is the case where getting it wrong makes a part that cannot be moulded.
 func TestShellThinsOneWallInward(t *testing.T) {
+	t.Parallel()
 	box := shellBox(4, 4, 4)
 	over := []ops.ShellFaceThickness{{FaceKey: faceKeyByNormal(t, box, 1, 0, 0), Thickness: 0.25}}
 	got := shellVolume(t, box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellInside, over)
@@ -69,6 +71,7 @@ func TestShellThinsOneWallInward(t *testing.T) {
 // TestShellVariedOutsideGrowsOnlyThatFace: outward, a per-face thickness moves that face's OUTER
 // surface, so the part's overall size changes by the override and not by the default.
 func TestShellVariedOutsideGrowsOnlyThatFace(t *testing.T) {
+	t.Parallel()
 	box := shellBox(4, 4, 4)
 	over := []ops.ShellFaceThickness{{FaceKey: faceKeyByNormal(t, box, 1, 0, 0), Thickness: 1.5}}
 	got := shellVolume(t, box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellOutside, over)
@@ -81,6 +84,7 @@ func TestShellVariedOutsideGrowsOnlyThatFace(t *testing.T) {
 // TestShellVariedRejectsARemovedFace: a removed face is an opening — it has no wall, so a
 // thickness for it is a selection mistake and honouring it silently would move the opening.
 func TestShellVariedRejectsARemovedFace(t *testing.T) {
+	t.Parallel()
 	box := shellBox(4, 4, 4)
 	top := topFaceKey(t, box)
 	_, err := ops.ShellVaried(box, [][]byte{top}, 0.5, ops.ShellInside,
@@ -93,6 +97,7 @@ func TestShellVariedRejectsARemovedFace(t *testing.T) {
 // TestShellVariedRejectsBadThickness: a non-positive override would invert the offset and eat the
 // part from the outside; a lost key must go sick rather than fall back to the default wall.
 func TestShellVariedRejectsBadThickness(t *testing.T) {
+	t.Parallel()
 	box := shellBox(4, 4, 4)
 	side := faceKeyByNormal(t, box, 1, 0, 0)
 	if _, err := ops.ShellVaried(box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellInside,
@@ -108,6 +113,7 @@ func TestShellVariedRejectsBadThickness(t *testing.T) {
 // TestShellVariedWithNoOverridesIsTheUniformShell: the default path must be untouched, or every
 // existing shell in every existing document changes.
 func TestShellVariedWithNoOverridesIsTheUniformShell(t *testing.T) {
+	t.Parallel()
 	box := shellBox(4, 4, 4)
 	got := shellVolume(t, box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellInside, nil)
 	if want := 64.0 - 3*3*3.5; stdmath.Abs(got-want) > 1e-6 {

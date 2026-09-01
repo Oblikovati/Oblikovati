@@ -10,6 +10,7 @@ import (
 
 // TestHighlightSetLifecycle (#157): create, add items, recolour, list, delete.
 func TestHighlightSetLifecycle(t *testing.T) {
+	t.Parallel()
 	r, s, ref0, ref1 := boxFaceRefs(t)
 
 	var info wire.HighlightSetInfo
@@ -45,6 +46,7 @@ func TestHighlightSetLifecycle(t *testing.T) {
 // TestHighlightSetCreateDuplicateAndBadColor (#157): a duplicate name and a malformed colour
 // are rejections.
 func TestHighlightSetCreateDuplicateAndBadColor(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "model.highlightSets.create", `{"name":"a","color":"#123456"}`, &wire.HighlightSetInfo{})
 	if _, err := r.Handle(s, "model.highlightSets.create", []byte(`{"name":"a","color":"#123456"}`)); err == nil {
@@ -60,6 +62,7 @@ func TestHighlightSetCreateDuplicateAndBadColor(t *testing.T) {
 // an add-in encounters must work: the "face/…" form model.selection reports AND the raw key
 // form model.referenceKeys reports (the documented highlight-set input), including edges.
 func TestHighlightSetItemsResolveToGeometry(t *testing.T) {
+	t.Parallel()
 	r, s, ref0, _ := boxFaceRefs(t)
 	if sel, ok := s.ResolveReference(ref0); !ok || sel == nil {
 		t.Errorf("the selection-form face reference did not resolve (ok=%v)", ok)

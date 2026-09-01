@@ -39,6 +39,7 @@ func patchArea(m *Mesh) float64 {
 }
 
 func TestSpherePatchStereographicSevenEighths(t *testing.T) {
+	t.Parallel()
 	const R = 5.0
 	O := math.P3(0, 0, 0)
 	A, B, C := math.P3(R, 0, 0), math.P3(0, R, 0), math.P3(0, 0, R)

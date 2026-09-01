@@ -50,6 +50,7 @@ func capBody(t *testing.T, center math.Point3, radius float64, planePoint math.P
 }
 
 func TestSphereCapTessellatesToAnalyticVolume(t *testing.T) {
+	t.Parallel()
 	const R = 5.0
 	cases := []struct {
 		name        string

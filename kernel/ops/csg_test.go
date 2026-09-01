@@ -33,6 +33,7 @@ func csgOverlap(t *testing.T) (a, b *topo.Body) {
 }
 
 func TestBooleanJoinIntersecting(t *testing.T) {
+	t.Parallel()
 	a, b := csgOverlap(t)
 	res, err := ops.Boolean(ops.Join, a, b)
 	if err != nil {
@@ -47,6 +48,7 @@ func TestBooleanJoinIntersecting(t *testing.T) {
 }
 
 func TestBooleanCutIntersecting(t *testing.T) {
+	t.Parallel()
 	a, b := csgOverlap(t)
 	res, err := ops.Boolean(ops.Cut, a, b)
 	if err != nil {
@@ -61,6 +63,7 @@ func TestBooleanCutIntersecting(t *testing.T) {
 }
 
 func TestBooleanIntersectIntersecting(t *testing.T) {
+	t.Parallel()
 	a, b := csgOverlap(t)
 	res, err := ops.Boolean(ops.Intersect, a, b)
 	if err != nil {
@@ -75,6 +78,7 @@ func TestBooleanIntersectIntersecting(t *testing.T) {
 }
 
 func TestBooleanCutThroughHole(t *testing.T) {
+	t.Parallel()
 	// A bar [0,6]×[0,2]² (24) minus a tool [2,4]×[−1,3]×[0.5,1.5] passing all the way
 	// through it: removed = tool ∩ bar = [2,4]×[0,2]×[0.5,1.5] = 2·2·1 = 4 ⇒ 20 left.
 	bar := csgBox(math.P3(0, 0, 0), 6, 2, 2)

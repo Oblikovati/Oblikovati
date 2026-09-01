@@ -49,6 +49,7 @@ func boxVertexRef(t *testing.T, s *app.Session) string {
 
 // TestModelSelectVertexByReference covers the vertex resolution path.
 func TestModelSelectVertexByReference(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := boxFaceRefs(t)
 	var sel wire.SelectionResult
 	call(t, r, s, "model.select", mustJSON(t, wire.SelectArgs{Refs: []string{boxVertexRef(t, s)}}), &sel)
@@ -71,6 +72,7 @@ func boxBodyRef(t *testing.T, s *app.Session) string {
 // by its body/<key> reference resolves, and model.selection reports that SAME non-empty ref back
 // (was "" before #1492) so an add-in can read which body was picked.
 func TestModelSelectBodyByReference(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := boxFaceRefs(t)
 	bodyRef := boxBodyRef(t, s)
 
@@ -89,6 +91,7 @@ func TestModelSelectBodyByReference(t *testing.T) {
 
 // TestModelSelectNoActivePartFails: the mutation methods reject when there is no active part.
 func TestModelSelectNoActivePartFails(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	for _, m := range []string{"model.select", "model.deselect"} {
@@ -101,6 +104,7 @@ func TestModelSelectNoActivePartFails(t *testing.T) {
 // TestModelSelectMutationOverWire drives the #157 selection round trip: select two faces by
 // reference, deselect one, add it back, then clear — asserting the new selection each step.
 func TestModelSelectMutationOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, ref0, ref1 := boxFaceRefs(t)
 
 	var sel wire.SelectionResult
@@ -127,6 +131,7 @@ func TestModelSelectMutationOverWire(t *testing.T) {
 
 // TestModelSelectUnknownReferenceFails: an unresolvable reference is a rejection, not a silent no-op.
 func TestModelSelectUnknownReferenceFails(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := boxFaceRefs(t)
 	if _, err := r.Handle(s, "model.select", []byte(`{"refs":["face/ZZZZ"]}`)); err == nil {
 		t.Error("selecting an unknown face reference should fail")

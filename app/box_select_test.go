@@ -23,6 +23,7 @@ func (f *fakeRegionPicker) PickRegion(_, _, _, _ float64, crossing bool, _ *Sele
 }
 
 func TestBeginBoxSelectNoopWithoutRegionPicker(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.BeginBoxSelect(10, 10)
 	if s.BoxSelectActive() {
@@ -31,6 +32,7 @@ func TestBeginBoxSelectNoopWithoutRegionPicker(t *testing.T) {
 }
 
 func TestBoxSelectWindowVsCrossingDirection(t *testing.T) {
+	t.Parallel()
 	a, b := FaceHandle{Face: aFace()}, FaceHandle{Face: aFace()}
 	rp := &fakeRegionPicker{windowHits: []Selectable{a}, crossingHits: []Selectable{a, b}}
 	s := NewSession()
@@ -64,6 +66,7 @@ func TestBoxSelectWindowVsCrossingDirection(t *testing.T) {
 }
 
 func TestBoxSelectModifiers(t *testing.T) {
+	t.Parallel()
 	a, b, c := FaceHandle{Face: aFace()}, FaceHandle{Face: aFace()}, FaceHandle{Face: aFace()}
 	rp := &fakeRegionPicker{windowHits: []Selectable{a, b}}
 	s := NewSession()
@@ -99,6 +102,7 @@ func TestBoxSelectModifiers(t *testing.T) {
 }
 
 func TestBoxSelectGuardsWhenInactive(t *testing.T) {
+	t.Parallel()
 	rp := &fakeRegionPicker{windowHits: []Selectable{FaceHandle{Face: aFace()}}}
 	s := NewSession()
 	s.SetRegionPicker(rp)
@@ -121,6 +125,7 @@ func TestBoxSelectGuardsWhenInactive(t *testing.T) {
 }
 
 func TestCancelBoxSelectLeavesSelectionUntouched(t *testing.T) {
+	t.Parallel()
 	a := FaceHandle{Face: aFace()}
 	rp := &fakeRegionPicker{windowHits: []Selectable{a}}
 	s := NewSession()

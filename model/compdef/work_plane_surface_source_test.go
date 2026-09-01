@@ -16,6 +16,7 @@ import (
 // TestWorkPlaneSurfaceSourceResolvesOriginPlane: the origin XY plane resolves to the z=0 surface
 // (#1854).
 func TestWorkPlaneSurfaceSourceResolvesOriginPlane(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	surf := compdef.NewWorkPlaneSurfaceSource(def, feature.OriginXYPlane).Surface()
 	if surf == nil {
@@ -31,6 +32,7 @@ func TestWorkPlaneSurfaceSourceResolvesOriginPlane(t *testing.T) {
 
 // TestWorkPlaneSurfaceSourceLostReferenceIsNil: an unknown work-plane ref yields no surface (#1854).
 func TestWorkPlaneSurfaceSourceLostReferenceIsNil(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	if surf := compdef.NewWorkPlaneSurfaceSource(def, feature.WorkRef("no-such-plane")).Surface(); surf != nil {
 		t.Error("an unresolved work plane should yield a nil surface")
@@ -40,6 +42,7 @@ func TestWorkPlaneSurfaceSourceLostReferenceIsNil(t *testing.T) {
 // TestIntersectionCurveWithWorkPlaneOperand: a radius-5 sphere ∩ the origin XY plane is the z=0
 // great circle, proving a work plane works as an intersection operand (#1854 AC1).
 func TestIntersectionCurveWithWorkPlaneOperand(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	sphere, err := geom.NewSphere(math.P3(0, 0, 0), 5)
 	if err != nil {

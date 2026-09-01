@@ -13,6 +13,7 @@ import (
 // TestRenameSketchUniqueAndNonEmpty: a 2D sketch renames, but an empty or duplicate name is
 // rejected and the original kept.
 func TestRenameSketchUniqueAndNonEmpty(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	a := def.Sketches().Add(sketch.XYPlane())
 	b := def.Sketches().Add(sketch.XYPlane())
@@ -32,6 +33,7 @@ func TestRenameSketchUniqueAndNonEmpty(t *testing.T) {
 
 // TestRenameSketch3D: a 3D sketch renames through its own method.
 func TestRenameSketch3D(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches3D().Add()
 	other := def.Sketches3D().Add()
@@ -52,6 +54,7 @@ func TestRenameSketch3D(t *testing.T) {
 // TestRenameWorkPlaneUserAndOrigin: a user work plane renames (unique), but the grounded origin
 // planes cannot be renamed.
 func TestRenameWorkPlaneUserAndOrigin(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	p1 := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 	p2 := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 4 })
@@ -75,6 +78,7 @@ func TestRenameWorkPlaneUserAndOrigin(t *testing.T) {
 // TestRenameWorkAxisAndPoint: a user work axis and work point rename, and their origin
 // counterparts are rejected.
 func TestRenameWorkAxisAndPoint(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	axis := def.WorkAxes().AddByPlaneIntersection(feature.OriginXYPlane, feature.OriginXZPlane)
 	axis2 := def.WorkAxes().AddByPlaneIntersection(feature.OriginXYPlane, feature.OriginYZPlane)

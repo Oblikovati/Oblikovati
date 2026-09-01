@@ -14,6 +14,7 @@ import (
 // — clicking a nearly horizontal line applies the inferred horizontal on
 // commit, and the solve squares it up.
 func TestLineToolInfersHorizontalOnCommit(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XYPlane())
 	s.EnterSketch(sk)
@@ -41,6 +42,7 @@ func TestLineToolInfersHorizontalOnCommit(t *testing.T) {
 // TestSessionInferenceOptionsToggle: the session preference is honored by the
 // tool and survives a set/get round-trip.
 func TestSessionInferenceOptionsToggle(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XYPlane())
 	s.EnterSketch(sk)

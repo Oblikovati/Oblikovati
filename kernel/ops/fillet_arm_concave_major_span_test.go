@@ -45,6 +45,7 @@ func m8RimContactAngle() float64 { return 2*stdmath.Pi - stdmath.Acos(-0.25) }
 // major-span arm is removed. M8 then handed the edge catalog a curve 22.01 from the one its top
 // plane offered for the same welded edge, and which shipped was decided by build order alone.
 func TestReterminatedRimSegKeepsAMajorSpanMajor(t *testing.T) {
+	t.Parallel()
 	parent := m8BossRimParent()
 	start := parent.PointAt(0)                                // (85,50,150), the rim's own start
 	contact := pointOnRimAtAngle(parent, m8RimContactAngle()) // (53.75, 25.793854086, 150)
@@ -114,6 +115,7 @@ func pointOnRimAtAngle(parent geom.Arc3d, angle float64) m.Point3 {
 // could carry exactly. subArcMajor therefore takes >= π, not > π. The three spans below bracket the
 // edge: a hair under (the minor re-fit), exactly π, and a hair over (the major parent-parameter trim).
 func TestReterminatedRimSegCarriesAnExactSemicircle(t *testing.T) {
+	t.Parallel()
 	parent := m8BossRimParent() // r=25 at (60,50,150), sweeping 1.5π from angle 0
 	tol := 1e-9 * parent.Radius
 	seg := endSeg{from: parent.PointAt(0), to: parent.PointAt(1), curve: parent, arc: true}

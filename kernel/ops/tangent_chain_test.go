@@ -15,6 +15,7 @@ import (
 // TestTangentChainBoxHasNoPropagation: every edge of a plain box is an isolated 90° crease, so
 // seeding any one yields just that edge and no loop closure.
 func TestTangentChainBoxHasNoPropagation(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
 	keys, closed, err := ops.TangentEdgeChain(box, verticalEdgeKey(t, box), ops.DefaultTangentChainAngle)
 	if err != nil {
@@ -30,6 +31,7 @@ func TestTangentChainBoxHasNoPropagation(t *testing.T) {
 // corner arcs). Seeding ONE straight side must propagate the whole rim and report closure — the
 // "pick one edge → select tangent chain" the chamfer/fillet tools were missing.
 func TestTangentChainRoundedRimIsClosedLoop(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
 	rounded, err := ops.FilletEdges(box, verticalEdgeKeys(t, box), 0.5)
 	if err != nil {
@@ -51,6 +53,7 @@ func TestTangentChainRoundedRimIsClosedLoop(t *testing.T) {
 // TestTangentChainCylinderRimClosesOnOneEdge: a cylinder's rim is a single closed circular edge,
 // so it is its own loop — the chain is one edge, closed.
 func TestTangentChainCylinderRimClosesOnOneEdge(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1, 2)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)

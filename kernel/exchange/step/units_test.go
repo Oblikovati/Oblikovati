@@ -28,6 +28,7 @@ func parseUnits(t *testing.T, stmts string) (float64, bool) {
 }
 
 func TestMillimeterUnitScale(t *testing.T) {
+	t.Parallel()
 	stmts := "#1=(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.));\n" +
 		"#2=GLOBAL_UNIT_ASSIGNED_CONTEXT((#1));"
 	scale, found := parseUnits(t, stmts)
@@ -37,6 +38,7 @@ func TestMillimeterUnitScale(t *testing.T) {
 }
 
 func TestMetreUnitScale(t *testing.T) {
+	t.Parallel()
 	stmts := "#1=(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT($,.METRE.));\n" +
 		"#2=GLOBAL_UNIT_ASSIGNED_CONTEXT((#1));"
 	scale, found := parseUnits(t, stmts)
@@ -46,6 +48,7 @@ func TestMetreUnitScale(t *testing.T) {
 }
 
 func TestSIPrefixUnitScales(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		prefix string
 		want   float64
@@ -65,6 +68,7 @@ func TestSIPrefixUnitScales(t *testing.T) {
 }
 
 func TestInchConversionUnitScale(t *testing.T) {
+	t.Parallel()
 	stmts := "#1=(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT($,.METRE.));\n" +
 		"#2=LENGTH_MEASURE_WITH_UNIT(LENGTH_MEASURE(0.0254),#1);\n" +
 		"#3=(CONVERSION_BASED_UNIT('INCH',#2)LENGTH_UNIT()NAMED_UNIT(*));\n" +
@@ -77,6 +81,7 @@ func TestInchConversionUnitScale(t *testing.T) {
 }
 
 func TestNoUnitDefaultsToMillimeters(t *testing.T) {
+	t.Parallel()
 	scale, found := parseUnits(t, "#1=CARTESIAN_POINT('',(0.,0.,0.));")
 	if found {
 		t.Error("a file with no unit context should report found=false")
@@ -87,6 +92,7 @@ func TestNoUnitDefaultsToMillimeters(t *testing.T) {
 }
 
 func TestUnitResolutionFailureWarnsAndAssumesMillimeters(t *testing.T) {
+	t.Parallel()
 	g := parseUnitGraph(t, "#1=CONVERSION_BASED_UNIT('BAD','not-a-ref');\n"+
 		"#2=GLOBAL_UNIT_ASSIGNED_CONTEXT((#1));")
 	scale, warns := unitScale(g)
@@ -99,6 +105,7 @@ func TestUnitResolutionFailureWarnsAndAssumesMillimeters(t *testing.T) {
 }
 
 func TestUnitHelperBranches(t *testing.T) {
+	t.Parallel()
 	g := parseUnitGraph(t, "#1=GLOBAL_UNIT_ASSIGNED_CONTEXT(('not-a-ref',#999));\n"+
 		"#2=SI_UNIT(.MILLI.,.METRE.);\n"+
 		"#3=(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.));")

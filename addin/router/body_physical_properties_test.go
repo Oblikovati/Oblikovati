@@ -12,6 +12,7 @@ import (
 // TestBodyPhysicalPropertiesMatchesBox: body.physicalProperties returns one body's geometry
 // properties — for the 40×30×20 mm box that is a 24 000 mm³ volume (#1078).
 func TestBodyPhysicalPropertiesMatchesBox(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 	var mp wire.MassPropertiesResult
 	call(t, r, s, "body.physicalProperties", `{"bodyIndex":0}`, &mp)
@@ -31,6 +32,7 @@ func TestBodyPhysicalPropertiesMatchesBox(t *testing.T) {
 
 // TestBodyPhysicalPropertiesHonorsDensity: a supplied density scales the mass linearly.
 func TestBodyPhysicalPropertiesHonorsDensity(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 	var mp wire.MassPropertiesResult
 	call(t, r, s, "body.physicalProperties", `{"bodyIndex":0,"densityGCm3":2.5}`, &mp)
@@ -42,6 +44,7 @@ func TestBodyPhysicalPropertiesHonorsDensity(t *testing.T) {
 
 // TestBodyPhysicalPropertiesBadIndexFails: an out-of-range body index is a rejection.
 func TestBodyPhysicalPropertiesBadIndexFails(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 	if _, err := r.Handle(s, "body.physicalProperties", []byte(`{"bodyIndex":7}`)); err == nil {
 		t.Error("body.physicalProperties with an out-of-range index should fail")
@@ -50,6 +53,7 @@ func TestBodyPhysicalPropertiesBadIndexFails(t *testing.T) {
 
 // TestBodyPhysicalPropertiesBadAccuracyFails: an unknown accuracy spelling is a rejection.
 func TestBodyPhysicalPropertiesBadAccuracyFails(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 	if _, err := r.Handle(s, "body.physicalProperties", []byte(`{"bodyIndex":0,"accuracy":"ultra"}`)); err == nil {
 		t.Error("body.physicalProperties with an unknown accuracy should fail")
@@ -59,6 +63,7 @@ func TestBodyPhysicalPropertiesBadAccuracyFails(t *testing.T) {
 // TestBodyListReportsKeyAndStyle: body.list now surfaces each body's persistent reference key
 // and assigned color-style name (empty until one is assigned) (#1078).
 func TestBodyListReportsKeyAndStyle(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 	var list wire.BodyListResult
 	call(t, r, s, "body.list", `{}`, &list)

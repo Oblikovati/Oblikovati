@@ -8,6 +8,7 @@ import "testing"
 // then consumes exactly once — the one-shot seam the head's frame loop drains to write the
 // whole-window PNG after the swapchain composites.
 func TestWindowCaptureRequestRoundTrip(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, ok := s.TakeWindowCapture(); ok {
 		t.Fatal("a fresh session should have no pending window capture")
@@ -25,6 +26,7 @@ func TestWindowCaptureRequestRoundTrip(t *testing.T) {
 // TestWindowAndViewportCapturesAreIndependent checks the whole-window and viewport-only capture
 // requests use separate slots, so requesting one never consumes or clobbers the other.
 func TestWindowAndViewportCapturesAreIndependent(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.RequestViewportCapture("/tmp/vp.png")
 	s.RequestWindowCapture("/tmp/win.png")

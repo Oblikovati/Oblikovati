@@ -45,6 +45,7 @@ func routerCubeSoup(s float64) meshio.RawMesh {
 }
 
 func TestRouterImportThenExportRoundTrip(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	stl := cubeSTLFixture(t, 4)
 

@@ -37,6 +37,7 @@ var singleHostObstacleCorpus = []singleHostObstacleCase{
 // detectObstacle → buildObstacleFeature) on the real imported corpus bodies, so it also pins that
 // buildObstacleCanal still calls the pin at all.
 func TestObstacleCanalEndStationsWeldToTheWingsBitForBit(t *testing.T) {
+	t.Parallel()
 	for _, c := range singleHostObstacleCorpus {
 		t.Run(c.name, func(t *testing.T) {
 			body := importCorpusBody(t, c.step)

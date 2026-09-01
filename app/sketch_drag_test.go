@@ -21,6 +21,7 @@ func centerOnSketchPoint(s *Session, x float64) {
 }
 
 func TestEntityDragMovesFreePoint(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.Grid().SnapToGrid = false
 	p := sk.Points().Add(math.P2(1, 0)) // an unconstrained (free) point
@@ -47,6 +48,7 @@ func TestEntityDragMovesFreePoint(t *testing.T) {
 }
 
 func TestEntityDragResolvesConstraint(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.Grid().SnapToGrid = false
 	a := sk.Points().Add(math.P2(1, 0))
@@ -69,6 +71,7 @@ func TestEntityDragResolvesConstraint(t *testing.T) {
 }
 
 func TestEntityDragGuardsAndCancel(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.Grid().SnapToGrid = false
 
@@ -98,6 +101,7 @@ func TestEntityDragGuardsAndCancel(t *testing.T) {
 // TestDragAnchorsDedupesSharedPoints checks that dragging a selection of two lines that share an
 // endpoint pins that shared point once (the de-dup branch of dragAnchors).
 func TestDragAnchorsDedupesSharedPoints(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	shared := sk.Points().Add(math.P2(0, 0))
 	l1 := sk.Lines().Add(shared, sk.Points().Add(math.P2(2, 0)))
@@ -113,6 +117,7 @@ func TestDragAnchorsDedupesSharedPoints(t *testing.T) {
 }
 
 func TestBeginEntityDragRejectsWhenNotDraggable(t *testing.T) {
+	t.Parallel()
 	// No active sketch → no drag.
 	plain := NewSession()
 	if plain.BeginEntityDrag(10, 10) {
@@ -130,6 +135,7 @@ func TestBeginEntityDragRejectsWhenNotDraggable(t *testing.T) {
 }
 
 func TestDragSetUsesSelectionOrClickedEntity(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	a := sk.Points().Add(math.P2(1, 0))
 	b := sk.Points().Add(math.P2(2, 0))

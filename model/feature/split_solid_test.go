@@ -24,6 +24,7 @@ func boxBody() *topo.Body { return subd.ToBody(subd.Box(4, 4, 4), "box") }
 
 // A solid split by a mid work plane divides the part into two valid solids (each half-volume).
 func TestSplitSolidFeatureDividesBox(t *testing.T) {
+	t.Parallel()
 	_, wp := midPlaneAt(2)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(boxBody())
@@ -46,6 +47,7 @@ func TestSplitSolidFeatureDividesBox(t *testing.T) {
 
 // Trim Solid (keep one side) leaves a single body — the kept half.
 func TestSplitSolidFeatureTrimsOneSide(t *testing.T) {
+	t.Parallel()
 	_, wp := midPlaneAt(2)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(boxBody())
@@ -63,6 +65,7 @@ func TestSplitSolidFeatureTrimsOneSide(t *testing.T) {
 
 // The split's plane reference and kept side round-trip through the recipe.
 func TestSplitSolidRoundTrip(t *testing.T) {
+	t.Parallel()
 	g, wp := midPlaneAt(2)
 	fs := NewPartFeatures(nil)
 	NewModifyFeatures(fs).AddSplitSolid(wp, SplitPositive)
@@ -85,6 +88,7 @@ func TestSplitSolidRoundTrip(t *testing.T) {
 // volume, same single body, four more faces (each crossing side wall splits in
 // two), and the discriminator reports splitFaces.
 func TestSplitFacesImprintsWithoutRemovingMaterial(t *testing.T) {
+	t.Parallel()
 	_, wp := midPlaneAt(2)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(boxBody())
@@ -114,6 +118,7 @@ func TestSplitFacesImprintsWithoutRemovingMaterial(t *testing.T) {
 
 // The faces-only flag round-trips through the recipe.
 func TestSplitFacesRoundTrip(t *testing.T) {
+	t.Parallel()
 	g, wp := midPlaneAt(2)
 	fs := NewPartFeatures(nil)
 	NewModifyFeatures(fs).AddSplitFaces(wp)

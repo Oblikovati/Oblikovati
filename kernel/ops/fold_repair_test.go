@@ -20,6 +20,7 @@ func countFolds(m *Mesh) int {
 }
 
 func TestRepairFoldsFixesAFold(t *testing.T) {
+	t.Parallel()
 	// A non-planar quad triangulated on the diagonal that folds (normals oppose); flipping to the
 	// other diagonal removes the fold.
 	m := &Mesh{
@@ -55,6 +56,7 @@ func totalTriArea(m *Mesh) float64 {
 }
 
 func TestRepairFoldsPreservesCleanMesh(t *testing.T) {
+	t.Parallel()
 	// A flat, fold-free quad: repairFolds must do nothing.
 	m := &Mesh{
 		Positions: []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0)},

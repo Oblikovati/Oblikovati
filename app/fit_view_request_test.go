@@ -15,6 +15,7 @@ import (
 // pending fit, RequestFitView arms it, and TakeFitViewRequest both reads AND clears it so the head
 // fits exactly once per import (a second Take returns false).
 func TestFitViewRequestOneShot(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.TakeFitViewRequest() {
 		t.Fatal("a fresh session must not have a pending fit-view request")
@@ -43,6 +44,7 @@ func writeScan(t *testing.T, lines string) string {
 // subsequent FitView (which now unions point-cloud bounds) frames the cloud — every corner ends up
 // in front of a camera that started pointed the other way.
 func TestAttachPointCloudFarFromOriginFitsCamera(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithSquare(t, 2)
 	path := writeScan(t, "100000 100000 100000\n100010 100000 100000\n100000 100010 100000\n")
 
@@ -74,6 +76,7 @@ func TestAttachPointCloudFarFromOriginFitsCamera(t *testing.T) {
 // TestAttachEmptyScanDoesNotFit is the negative case: a scan that yields no points adds no visible
 // geometry, so it must NOT arm the fit request (the camera is left untouched, #1645).
 func TestAttachEmptyScanDoesNotFit(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithSquare(t, 2)
 	path := writeScan(t, "# only a comment, no points\n")
 

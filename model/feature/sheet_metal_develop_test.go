@@ -27,6 +27,7 @@ func devForTest(t *testing.T) bendDevelop {
 // TestDevelopRoundTrip flatToFolded inverts foldedToFlat across the base, the bend arc, and the
 // flange — the bijection that lets a cut placed while flat ride back through the bend.
 func TestDevelopRoundTrip(t *testing.T) {
+	t.Parallel()
 	dev := devForTest(t)
 	// Sample points spanning the three regions: base (y<0 side of the line), the arc (a point on
 	// the inner surface part-way round), and the flange (well up the wall). Use folded positions.
@@ -49,6 +50,7 @@ func TestDevelopRoundTrip(t *testing.T) {
 // 90° lands at across = (π/2)·neutral and z = t (coplanar with the base top), proving the bend
 // is unrolled, not rigidly rotated.
 func TestDevelopFlattensArc(t *testing.T) {
+	t.Parallel()
 	dev := devForTest(t)
 	centre := math.P3(0, 0, 0.3)
 	innerAt90 := centre.TranslateBy(math.V3(0, 1, 0).Scale(0.2)) // φ=90°, ρ=r ⇒ inner end of the arc

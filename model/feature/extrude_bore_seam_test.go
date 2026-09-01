@@ -43,6 +43,7 @@ func boredDisk(t *testing.T, borePlane sketch.Plane, dir ExtentDirection) *PartF
 // runs along Y (clear of the disk's +X seam) or along X (straight through it). #2038 read the second
 // 77% low.
 func TestBoredDiskVolumeIsIndependentOfTheBoreAxis(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name  string
 		plane sketch.Plane
@@ -69,6 +70,7 @@ func TestBoredDiskVolumeIsIndependentOfTheBoreAxis(t *testing.T) {
 // than trusting a volume band: a volume check alone passes a solid that is missing an end of the
 // tunnel by less than its tolerance (#2038's acceptance).
 func TestSymmetricThroughAllBoreIsOpenAlongItsWholeLength(t *testing.T) {
+	t.Parallel()
 	body := boredDisk(t, sketch.XZPlane(), SymmetricDir).Result()[0]
 	for _, y := range []float64{-4.5, -3, -1.5, -0.5, 0.5, 1.5, 3, 4.5} {
 		p := math.P3(0, math.Scalar(y), 0)
@@ -83,6 +85,7 @@ func TestSymmetricThroughAllBoreIsOpenAlongItsWholeLength(t *testing.T) {
 // kPositiveExtentDirection cuts only the side of the sketch plane the normal points to. The XZ plane's
 // normal is −Y, so the material at +Y must survive and the −Y half must go.
 func TestPositiveThroughAllBoreCutsOneSideOnly(t *testing.T) {
+	t.Parallel()
 	body := boredDisk(t, sketch.XZPlane(), PositiveDir).Result()[0]
 	for _, tc := range []struct {
 		y    float64

@@ -30,6 +30,7 @@ import (
 // merged cylinder wall, the exposed minor-segment top, the D chord wall, the D top cap) at
 // the exact stacked volume.
 func TestReconstructCocylindricalCapOnWall(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 6)
 	if err != nil {
 		t.Fatalf("cylinder: %v", err)

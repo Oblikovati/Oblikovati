@@ -75,6 +75,7 @@ func vertexNearest(t *testing.T, b *topo.Body, p math.Point3) *topo.Vertex {
 // (sphere host → solvePlanarBlend → "corner face must be planar"); GREEN after the sphere corner
 // solve lands. It also asserts the host set at the vertex is exactly {1 sphere, 2 planes}.
 func TestSphereHostCornerCentre(t *testing.T) {
+	t.Parallel()
 	for _, o := range sphereCornerOracles {
 		t.Run(o.name, func(t *testing.T) {
 			body := corpusFixture(t, o.step)
@@ -101,6 +102,7 @@ func TestSphereHostCornerCentre(t *testing.T) {
 // corner (ρ = R−r ≤ 0, the ball engulfs the host) honest-rejects with the EXACT historical string, so an
 // unsolvable sphere corner still errors exactly as an all-planar/cylinder decline would.
 func TestSphereHostCornerSpindleRejects(t *testing.T) {
+	t.Parallel()
 	body := corpusFixture(t, sphereCornerOracles[0].step) // D5, host sphere R = 150
 	v := vertexNearest(t, body, sphereCornerOracles[0].vertex)
 	faces := facesAtVertex(v)
@@ -134,6 +136,7 @@ func concaveSphereCornerFixture(t *testing.T) (*topo.Vertex, []*topo.Face) {
 // witness: flipping the gate's sign (s<=0 → s>=0) would let this fixture's s=−150 through and go on to
 // build a wrong-side (ρ=R−r instead of R+r) ball instead of rejecting; this test pins the reject.
 func TestSphereHostCornerConcaveRejects(t *testing.T) {
+	t.Parallel()
 	v, faces := concaveSphereCornerFixture(t)
 	if _, err := solveBlend(nil, v, faces, 10); err == nil || err.Error() != "fillet: corner face must be planar" {
 		t.Fatalf("concave sphere-host corner: got err %v, want %q", err, "fillet: corner face must be planar")
@@ -159,6 +162,7 @@ func TestSphereHostCornerConcaveRejects(t *testing.T) {
 // sep = √disc/|d| ≈ 2.83e−6 — a genuine disc>0 pair, but far inside the band=4e−4 a 1e5-unit-model
 // Resolution gives (curvedCornerBandK·1e−9·1e5), so it must still reject as collapsed.
 func TestSphereRootsSeparated_CollapsedRootsReject(t *testing.T) {
+	t.Parallel()
 	x0 := 1 - 1e-12
 	qa, qb, qc := 1.0, 0.0, x0*x0-1
 	d := math.V3(0, 0, 1)

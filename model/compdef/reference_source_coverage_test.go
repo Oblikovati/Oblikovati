@@ -31,6 +31,7 @@ var refSourceKindCoverage = map[reflect.Type]bool{
 // matches the table — a source the table calls kinded that forgot SourceKind (so it would freeze
 // on reload), or a newly kinded source the table denies, fails CI (#1633, #1268).
 func TestReferenceSourceKindCoverage(t *testing.T) {
+	t.Parallel()
 	samples := []any{
 		EdgeRefSource{}, VertexRefSource{}, FaceRefSource{},
 		WorkPointRefSource{}, WorkAxisRefSource{}, WorkPlaneRefSource{},

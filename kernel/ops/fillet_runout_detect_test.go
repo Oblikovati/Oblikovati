@@ -57,6 +57,7 @@ func runoutFixtureBehindBand(t *testing.T) (edgeFillet, Resolution) {
 // one) rather than the brief's original single-boss working title, since the highest-fidelity
 // fixture available (real S1) genuinely has two independent crossing bosses.
 func TestDetectRunouts_S1BossesCrossBothHostsIndependently(t *testing.T) {
+	t.Parallel()
 	ef, res := runoutFixtureCrossingBoss(t)
 	got := detectRunouts(ef, res)
 	if len(got) != 2 {
@@ -88,6 +89,7 @@ func assertDistinctNodesAndHosts(t *testing.T, got []runoutImprint) {
 // return no imprints at all — leaving the fillet whole, the benign non-crossing case (S3/S6/S7/T3
 // siblings, per fillet_obstacle_detect_face.go's dual-host doc comment).
 func TestDetectRunouts_NonCrossingBoss(t *testing.T) {
+	t.Parallel()
 	ef, res := runoutFixtureBehindBand(t)
 	if got := detectRunouts(ef, res); len(got) != 0 {
 		t.Fatalf("non-crossing bosses must produce no imprint, got %d: %+v", len(got), got)
@@ -98,6 +100,7 @@ func TestDetectRunouts_NonCrossingBoss(t *testing.T) {
 // (variable-radius) fillet sweeps a torus/canal band, not the constant-radius cylinder this
 // detector's cross-section math assumes, so it must bail before touching any host.
 func TestDetectRunouts_VaryingEdgeRejected(t *testing.T) {
+	t.Parallel()
 	ef, res := runoutFixtureCrossingBoss(t)
 	ef.varying = true
 	if got := detectRunouts(ef, res); len(got) != 0 {

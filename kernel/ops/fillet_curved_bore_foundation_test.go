@@ -48,6 +48,7 @@ func n1NotchWall(t *testing.T) geom.Cylinder {
 // major−minor = 20 = R), minor r = 5, centre r below the z=100 cap. ε=+1 on the SAME wall must give
 // the boss major R−r = 15 (the do-no-harm flip guard).
 func TestTorusArmSurface_N1Bore(t *testing.T) {
+	t.Parallel()
 	res := testArmResolution()
 	wall := n1NotchWall(t)
 	tor, ok := torusArmSurface(wall, planeAtZ(100), armOutward(0, 0, 1), 5, -1, res)
@@ -70,6 +71,7 @@ func TestTorusArmSurface_N1Bore(t *testing.T) {
 // cylinder whose axis is ∥ ẑ and sits 25 from the wall axis. ε=+1 must place it at R−r = 15 (the void
 // side the pre-foundation code wrongly built).
 func TestCylinderArmSurface_N1Bore(t *testing.T) {
+	t.Parallel()
 	wall := n1NotchWall(t)
 	edge := n1VerticalWallEdge(t)
 	y0 := planeWithNormal(0, -1, 0) // y=0 plane, material-outward normal −ŷ (material at y>0)
@@ -94,6 +96,7 @@ func TestCylinderArmSurface_N1Bore(t *testing.T) {
 // on the material side at (75.505,5,95) — R+r = 25 from the wall axis (100,0) — matching OCCT's
 // corner KPart, NOT the pre-foundation void-side mirror (85.857,5,95) at R−r = 15.
 func TestCurvedCornerCenter_N1Bore(t *testing.T) {
+	t.Parallel()
 	cyl, planes, v, r := cornerHostInputs(t, "simple/N1", math.P3(80, 0, 100), 5)
 	if eps := cornerWallRadialSign(facesAtVertex(v), cyl, v.Point()); eps != -1 {
 		t.Fatalf("cornerWallRadialSign on N1's notch = %v, want −1 (a bore/notch wall)", eps)

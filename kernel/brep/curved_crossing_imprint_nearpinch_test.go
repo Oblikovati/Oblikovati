@@ -22,6 +22,7 @@ func squareLoop(dx float64) geom.Polyline {
 }
 
 func TestTypicalLoopChord(t *testing.T) {
+	t.Parallel()
 	got := typicalLoopChord([]geom.Curve3{squareLoop(0), squareLoop(5)})
 	if stdmath.Abs(got-1) > 1e-9 { // every edge is a unit segment
 		t.Errorf("typicalLoopChord = %g, want 1", got)
@@ -32,6 +33,7 @@ func TestTypicalLoopChord(t *testing.T) {
 }
 
 func TestInterLoopMinDistance(t *testing.T) {
+	t.Parallel()
 	// loop at x∈[0,1] and loop at x∈[5,6]: nearest vertices are x=1 and x=5, gap 4.
 	if got := interLoopMinDistance(squareLoop(0), squareLoop(5)); stdmath.Abs(got-4) > 1e-9 {
 		t.Errorf("interLoopMinDistance = %g, want 4", got)
@@ -39,6 +41,7 @@ func TestInterLoopMinDistance(t *testing.T) {
 }
 
 func TestLoopGapChordRatio(t *testing.T) {
+	t.Parallel()
 	// gap 4, chord 1 → ratio 4.
 	if got := loopGapChordRatio([]geom.Curve3{squareLoop(0), squareLoop(5)}); stdmath.Abs(got-4) > 1e-9 {
 		t.Errorf("loopGapChordRatio(separated) = %g, want 4", got)
@@ -50,6 +53,7 @@ func TestLoopGapChordRatio(t *testing.T) {
 }
 
 func TestNearPinchLoops(t *testing.T) {
+	t.Parallel()
 	// gap 4, chord 1 → ratio 4 ≥ κ: well separated, not near-pinch.
 	if nearPinchLoops([]geom.Curve3{squareLoop(0), squareLoop(5)}) {
 		t.Error("well-separated loops (ratio 4) classified as near-pinch")
@@ -69,6 +73,7 @@ func TestNearPinchLoops(t *testing.T) {
 // exact three-face intersect, whereas one below the gate declines. Complements the ops-level watertight
 // sweep by exercising the brep entry (and the vertex-sampling arrangement branch) directly.
 func TestCrossingCylinderImprintRecoveredBand(t *testing.T) {
+	t.Parallel()
 	const r = 3.0
 	recovered, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, 12)
 	recoveredZ, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r+2e-4, 12) // above the gate
@@ -85,6 +90,7 @@ func TestCrossingCylinderImprintRecoveredBand(t *testing.T) {
 // DEEP in the near-pinch band (below the #1781 gate) — which the cut/join path would decline — still builds the
 // exact three-face intersect, because the fat wall is trimmed one lens loop at a time (cylinderLensSplit).
 func TestCrossingCylinderIntersectNearPinchPerLoop(t *testing.T) {
+	t.Parallel()
 	const r = 3.0
 	thin, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, 12)
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r+5e-5, 12) // deep near-pinch (gap/chord < gate)
@@ -98,6 +104,7 @@ func TestCrossingCylinderIntersectNearPinchPerLoop(t *testing.T) {
 }
 
 func TestUnequalRadiusCrossing(t *testing.T) {
+	t.Parallel()
 	eqA, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
 	eqB, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	if unequalRadiusCrossing(eqA, eqB) {

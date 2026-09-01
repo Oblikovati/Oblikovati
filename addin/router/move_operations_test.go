@@ -15,6 +15,7 @@ import (
 // range box shifts by the requested offsets, proving the opregistry args resolve into a
 // composed, recomputed move (#654).
 func TestMoveBodyOperationListShiftsBody(t *testing.T) {
+	t.Parallel()
 	r, s, _ := extrudedPartViaAPI(t)
 
 	before := rangeBoxOf(t, r, s)
@@ -37,6 +38,7 @@ func TestMoveBodyOperationListShiftsBody(t *testing.T) {
 // TestMoveBodyOperationUnknownTypeFails rejects an unknown operation type with a precise
 // error rather than silently producing a no-op move.
 func TestMoveBodyOperationUnknownTypeFails(t *testing.T) {
+	t.Parallel()
 	r, s, _ := extrudedPartViaAPI(t)
 	if _, err := r.Handle(s, "features.add",
 		[]byte(`{"kind":"moveBody","args":{"bodyIndex":0,"operations":[{"type":"warp"}]}}`)); err == nil {
@@ -47,6 +49,7 @@ func TestMoveBodyOperationUnknownTypeFails(t *testing.T) {
 // TestMoveBodyOperationScalarIsEditable proves a composed move exposes each operation's
 // scalar through features.edit: editing the along-ray distance re-shifts the body (#654).
 func TestMoveBodyOperationScalarIsEditable(t *testing.T) {
+	t.Parallel()
 	r, s, _ := extrudedPartViaAPI(t)
 	call(t, r, s, "features.add",
 		`{"kind":"moveBody","args":{"bodyIndex":0,"operations":[{"type":"alongRay","dir":[1,0,0],"dist":"10 mm"}]}}`,

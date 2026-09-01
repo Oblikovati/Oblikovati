@@ -46,6 +46,7 @@ func patchCoverageDefects(m *Mesh) int {
 // must detect the area mismatch and retriangulate through the CDT, whose split-at-vertex recovery
 // (#1604) handles exactly this: correct area, watertight free-edge budget, no defect flag.
 func TestBoundaryPatchSelfTouchRecoveredByCDT(t *testing.T) {
+	t.Parallel()
 	poly := []math.Point2{math.P2(0, 0), math.P2(4, 0), math.P2(4, 4), math.P2(2, 0), math.P2(0, 4)}
 	m := planarBoundaryPatch(t, poly)
 	const want = 8.0 // |shoelace| of the self-touching pentagon
@@ -67,6 +68,7 @@ func TestBoundaryPatchSelfTouchRecoveredByCDT(t *testing.T) {
 // CodePatchCoverage Defect — visible in feature diagnostics and over the wire — never a silent
 // return.
 func TestBoundaryPatchSelfCrossingShipsLoudly(t *testing.T) {
+	t.Parallel()
 	poly := []math.Point2{math.P2(0, 0), math.P2(4, 0), math.P2(0, 4), math.P2(4, 4)}
 	m := planarBoundaryPatch(t, poly)
 	if n := patchCoverageDefects(m); n == 0 {
@@ -77,6 +79,7 @@ func TestBoundaryPatchSelfCrossingShipsLoudly(t *testing.T) {
 // TestBoundaryPatchCleanTrimUnflagged guards against false positives: an ordinary concave simple
 // polygon ear-clips exactly and must ship with the exact area and no coverage defect.
 func TestBoundaryPatchCleanTrimUnflagged(t *testing.T) {
+	t.Parallel()
 	poly := []math.Point2{math.P2(0, 0), math.P2(6, 0), math.P2(6, 2), math.P2(2, 2), math.P2(2, 4), math.P2(0, 4)}
 	m := planarBoundaryPatch(t, poly)
 	const want = 16.0 // L-shape: 6×2 + 2×2

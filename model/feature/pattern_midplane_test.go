@@ -14,6 +14,7 @@ import (
 // TestPatternIndexShiftSplitsAboutSeed pins the split rule: the other occurrences divide as evenly
 // as the count allows, and an even count gives the extra to the step's own side.
 func TestPatternIndexShiftSplitsAboutSeed(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name     string
 		count    int
@@ -40,6 +41,7 @@ func TestPatternIndexShiftSplitsAboutSeed(t *testing.T) {
 // move. Element 0 must stay the identity in every direction combination, because the seed's
 // material was placed by the source features before the pattern ran and cannot be re-placed.
 func TestRectMidPlaneKeepsSeedAtIdentity(t *testing.T) {
+	t.Parallel()
 	step := omath.Vector3{X: 2}
 	for _, mid := range []bool{false, true} {
 		for _, n := range []int{1, 2, 3, 4, 5} {
@@ -54,6 +56,7 @@ func TestRectMidPlaneKeepsSeedAtIdentity(t *testing.T) {
 // TestRectMidPlaneStraddlesTheSeed checks the placements themselves, not just the shift: a
 // three-wide mid-plane run must sit at −2, 0, +2 rather than 0, +2, +4.
 func TestRectMidPlaneStraddlesTheSeed(t *testing.T) {
+	t.Parallel()
 	step := omath.Vector3{X: 2}
 	oneWay := offsetsX(t, rectTransforms(3, 1, step, omath.Vector3{}, patternIndexShift(3, false), 0))
 	if want := []float64{0, 2, 4}; !floatsNear(oneWay, want) {
@@ -70,6 +73,7 @@ func TestRectMidPlaneStraddlesTheSeed(t *testing.T) {
 // TestRectMidPlaneEvenCountFavoursTheStep pins Inventor's even-count tie-break: four occurrences
 // cannot split evenly, and the extra goes on the side the step points at.
 func TestRectMidPlaneEvenCountFavoursTheStep(t *testing.T) {
+	t.Parallel()
 	forward := offsetsX(t, rectTransforms(4, 1, omath.Vector3{X: 2}, omath.Vector3{}, patternIndexShift(4, true), 0))
 	if want := []float64{0, -2, 2, 4}; !floatsNear(forward, want) {
 		t.Fatalf("forward-step offsets = %v, want %v (two ahead, one behind)", forward, want)
@@ -85,6 +89,7 @@ func TestRectMidPlaneEvenCountFavoursTheStep(t *testing.T) {
 // TestRectMidPlaneGridStraddlesBothDirections checks the two directions are independent: a
 // mid-plane X with a one-way Y must straddle in X only.
 func TestRectMidPlaneGridStraddlesBothDirections(t *testing.T) {
+	t.Parallel()
 	xf := rectTransforms(3, 2, omath.Vector3{X: 2}, omath.Vector3{Y: 5},
 		patternIndexShift(3, true), patternIndexShift(2, false))
 	if len(xf) != 6 {
@@ -109,6 +114,7 @@ func TestRectMidPlaneGridStraddlesBothDirections(t *testing.T) {
 // TestCircMidPlaneStraddlesTheSeed is the circular equivalent: a 90° three-up mid-plane array sits
 // at −45°, 0, +45° about the seed.
 func TestCircMidPlaneStraddlesTheSeed(t *testing.T) {
+	t.Parallel()
 	axis := omath.Vector3{Z: 1}
 	xf, err := circTransforms(3, math.Pi/4, omath.Point3{}, axis, patternIndexShift(3, true))
 	if err != nil {
@@ -130,6 +136,7 @@ func TestCircMidPlaneStraddlesTheSeed(t *testing.T) {
 // TestSuppressElementsRefusesTheSeed is the honest-boundary test. Element 0 is the source features'
 // own material; accepting the request and silently doing nothing would be the worse failure.
 func TestSuppressElementsRefusesTheSeed(t *testing.T) {
+	t.Parallel()
 	var p patternBase
 	p.rebuild(4)
 	if err := p.SuppressElements([]int{0}); err == nil {
@@ -146,6 +153,7 @@ func TestSuppressElementsRefusesTheSeed(t *testing.T) {
 // TestSuppressElementsDropsOccurrences checks suppression reaches both the element list and the
 // active count, and that a later call REPLACES the set rather than accumulating.
 func TestSuppressElementsDropsOccurrences(t *testing.T) {
+	t.Parallel()
 	var p patternBase
 	p.rebuild(5)
 	if err := p.SuppressElements([]int{2, 4}); err != nil {
@@ -171,6 +179,7 @@ func TestSuppressElementsDropsOccurrences(t *testing.T) {
 // TestSuppressionSurvivesResize checks a dropped occurrence stays dropped when the count changes,
 // which is why the set is keyed on index rather than rebuilt per recompute.
 func TestSuppressionSurvivesResize(t *testing.T) {
+	t.Parallel()
 	var p patternBase
 	p.rebuild(3)
 	if err := p.SuppressElements([]int{2}); err != nil {

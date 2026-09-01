@@ -14,6 +14,7 @@ import (
 // derivation first, so a case that was already right is reproduced bit for bit before anything else is
 // tried — and it must offer both sides of the cap.
 func TestArcBallSeatsLadderOrder(t *testing.T) {
+	t.Parallel()
 	nOut := math.V3(0, 0, 1)
 	got := arcBallSeats(nOut, 50, 10)
 	if len(got) != 4 {
@@ -36,6 +37,7 @@ func TestArcBallSeatsLadderOrder(t *testing.T) {
 // non-positive majorR is not a seat". A groove or a concave corner takes r ≥ cylR perfectly well at
 // cylR+r, and must still be offered those two seats.
 func TestArcBallSeatsDropOnlyTheNonPositiveMajorRadius(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ r, wantSeats float64 }{{5, 4}, {9.999, 4}, {10, 2}, {25, 2}} {
 		got := arcBallSeats(math.V3(0, 0, 1), 10, tc.r)
 		if float64(len(got)) != tc.wantSeats {
@@ -52,6 +54,7 @@ func TestArcBallSeatsDropOnlyTheNonPositiveMajorRadius(t *testing.T) {
 // checkArcFilletInputs rejects a non-positive radius and a cap plane not perpendicular to the axis — and
 // no longer rejects r ≥ cylR, which is the concave tier's business.
 func TestCheckArcFilletInputs(t *testing.T) {
+	t.Parallel()
 	cyl, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1)
 	perp, _ := geom.NewPlane(math.P3(0, 0, 5), math.V3(0, 0, 1))
 	oblique, _ := geom.NewPlane(math.P3(0, 0, 5), math.V3(1, 0, 1))
@@ -69,6 +72,7 @@ func TestCheckArcFilletInputs(t *testing.T) {
 
 // materialSideName names the side an unseatable ball was looked for on, for the decline message.
 func TestMaterialSideName(t *testing.T) {
+	t.Parallel()
 	if got := materialSideName(true); got != "material" {
 		t.Errorf("materialSideName(true) = %q, want \"material\"", got)
 	}
@@ -80,6 +84,7 @@ func TestMaterialSideName(t *testing.T) {
 // unwrapNear shifts an angle by whole turns into (ref−π, ref+π] — what lets a band wider than a half turn
 // read its far end on the span the arc actually covers rather than the short way round.
 func TestUnwrapNear(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ a, ref, want float64 }{
 		{-1.5708, 3.9270, 4.7124}, // simple/H6's far end: atan2 says −π/2, the 270° span says 3π/2
 		{0.1, 0.2, 0.1},
@@ -93,6 +98,7 @@ func TestUnwrapNear(t *testing.T) {
 
 // angleGap folds an azimuth difference into [0, π] so the section's branch pick is periodic-safe.
 func TestAngleGap(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ a, b, want float64 }{
 		{0, 0.5, 0.5}, {0, 2*stdmath.Pi - 0.5, 0.5}, {3, -3, 2*stdmath.Pi - 6}, {1, 1 + 4*stdmath.Pi, 0},
 	} {
@@ -107,6 +113,7 @@ func TestAngleGap(t *testing.T) {
 // diametral wall and a stand-off wall are the same construction, and why adding the run-out could not move
 // simple/B2 (whose two walls contain the axis) by a single bit.
 func TestArcSideSectionThroughTheAxisIsAConstantAzimuth(t *testing.T) {
+	t.Parallel()
 	tor, err := geom.NewTorusWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 60, 10)
 	if err != nil {
 		t.Fatal(err)
@@ -127,6 +134,7 @@ func TestArcSideSectionThroughTheAxisIsAConstantAzimuth(t *testing.T) {
 // A side plane that STANDS OFF the axis cuts a genuine run-out: u sweeps between the cyl-tangent and
 // cap-tangent contacts, and every point of the section lies on BOTH the torus and that plane.
 func TestArcSideSectionStandingOffTheAxisSweepsAndStaysOnBothSurfaces(t *testing.T) {
+	t.Parallel()
 	tor, err := geom.NewTorusWithRef(math.P3(3, 0.2, 0.9999), math.V3(0, -1, 0), math.V3(-1, 0, 0), 1.2, 0.2)
 	if err != nil {
 		t.Fatal(err)
@@ -161,6 +169,7 @@ func assertPointX(t *testing.T, p math.Point3, want float64) {
 // arcSectionOnTorus declines a plane that misses the torus over part of the band's tube range — a band
 // cannot be terminated on a curve that does not exist along it, and SpiricArc clamps rather than erroring.
 func TestArcSectionOnTorusDeclinesAPlaneThatMissesTheTube(t *testing.T) {
+	t.Parallel()
 	tor, _ := geom.NewTorusWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 60, 10)
 	far, _ := geom.NewPlane(math.P3(0, 500, 0), math.V3(0, 1, 0))
 	if _, ok := arcSideSection(tor, far, stdmath.Pi, 0); ok {

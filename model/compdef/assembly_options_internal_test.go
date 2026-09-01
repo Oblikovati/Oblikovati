@@ -12,6 +12,7 @@ import (
 // TestOptionsDefaults: a new assembly opens with first-component grounding and redundancy analysis on
 // (#1981).
 func TestOptionsDefaults(t *testing.T) {
+	t.Parallel()
 	opts := NewAssemblyComponentDefinition().Options()
 	if !opts.PlaceAndGroundFirstComponentAtOrigin || !opts.EnableConstraintRedundancyAnalysis {
 		t.Errorf("defaults = %+v, want first-component grounding + redundancy analysis on", opts)
@@ -25,6 +26,7 @@ func TestOptionsDefaults(t *testing.T) {
 // option is on (default) and only the first; with the option off it grounds nothing. The low-level
 // Place itself never grounds (internal placement is not surprised) (#1981).
 func TestGroundFirstComponentOption(t *testing.T) {
+	t.Parallel()
 	on := NewAssemblyComponentDefinition()
 	first := on.Place("paint:1", NewVirtualComponent("paint", "P-1", bom.Normal), math.Identity4())
 	if first.Grounded() {
@@ -52,6 +54,7 @@ func TestGroundFirstComponentOption(t *testing.T) {
 // TestDeferUpdateBatchesRecompute: with DeferUpdate on a recompute is deferred, and clearing the flag
 // flushes it (#1981).
 func TestDeferUpdateBatchesRecompute(t *testing.T) {
+	t.Parallel()
 	a := NewAssemblyComponentDefinition()
 	a.SetOptions(AssemblyOptions{DeferUpdate: true})
 	a.RecomputeFeatures()

@@ -42,6 +42,7 @@ func drawingWithCylinderSession(t *testing.T) *Session {
 // TestRadialDimensionToolDimensionsHoles: the radial tool dimensions a base view's circular edges
 // as diameter callouts (the auto "dimension all holes" action).
 func TestRadialDimensionToolDimensionsHoles(t *testing.T) {
+	t.Parallel()
 	s := drawingWithCylinderSession(t)
 	base := NewBaseViewTool()
 	base.Start(s)
@@ -71,6 +72,7 @@ func TestRadialDimensionToolDimensionsHoles(t *testing.T) {
 // TestArcLengthDimensionToolDimensionsRim: the arc-length tool dimensions a base view's circular
 // edge with its circumference (2 cm cylinder rim → 2π·20 ≈ 125.66 mm).
 func TestArcLengthDimensionToolDimensionsRim(t *testing.T) {
+	t.Parallel()
 	s := drawingWithCylinderSession(t)
 	base := NewBaseViewTool()
 	base.Start(s)
@@ -97,6 +99,7 @@ func TestArcLengthDimensionToolDimensionsRim(t *testing.T) {
 // TestDimensionSetToolDimensionsCorners: the set tool places a baseline set of three linear
 // dimensions on a base view's corners.
 func TestDimensionSetToolDimensionsCorners(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	base := NewBaseViewTool()
 	base.Start(s)
@@ -119,6 +122,7 @@ func TestDimensionSetToolDimensionsCorners(t *testing.T) {
 // TestOrdinateDimensionToolDimensionsCorners: the ordinate tool places a leaderless ordinate per
 // corner of a base view, measured from the bottom-left datum.
 func TestOrdinateDimensionToolDimensionsCorners(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	base := NewBaseViewTool()
 	base.Start(s)
@@ -145,6 +149,7 @@ func TestOrdinateDimensionToolDimensionsCorners(t *testing.T) {
 // TestAngularDimensionToolDimensionsCorner: the angular tool dimensions a base view's corner angle
 // (a box's perpendicular edges → 90°).
 func TestAngularDimensionToolDimensionsCorner(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	base := NewBaseViewTool()
 	base.Start(s)
@@ -171,6 +176,7 @@ func TestAngularDimensionToolDimensionsCorner(t *testing.T) {
 // TestLinearDimensionToolPlacesOverallDimension: the tool dimensions a base view's overall size in
 // the chosen direction, producing an associative dimension with a positive measured value.
 func TestLinearDimensionToolPlacesOverallDimension(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	base := NewBaseViewTool()
 	base.Start(s)
@@ -200,6 +206,7 @@ func TestLinearDimensionToolPlacesOverallDimension(t *testing.T) {
 
 // TestLinearDimensionToolNeedsBaseView: committing with no base view errors rather than panicking.
 func TestLinearDimensionToolNeedsBaseView(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	tool := NewLinearDimensionTool()
 	tool.Start(s)
@@ -215,6 +222,7 @@ func TestLinearDimensionToolNeedsBaseView(t *testing.T) {
 // dimension-line offset: horizontal across the width below, vertical down the height to the right,
 // aligned along the diagonal.
 func TestDimensionPlacement(t *testing.T) {
+	t.Parallel()
 	const minX, minY, maxX, maxY = 100.0, 80.0, 140.0, 120.0
 	cases := []struct {
 		idx      int

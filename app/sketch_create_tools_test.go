@@ -11,6 +11,7 @@ import (
 
 // Chamfer bevels the corner of two picked lines, adding the bevel line.
 func TestSketchChamferTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	corner := sk.Points().Add(gmath.P2(0, 0))
 	l1 := sk.Lines().Add(corner, sk.Points().Add(gmath.P2(4, 0)))
@@ -34,6 +35,7 @@ func TestSketchChamferTool(t *testing.T) {
 // the REAL in-sketch pick route (Session.Click → sketchEntityPointer). Before the fix the
 // tool did not satisfy SketchEntityTool, so in-sketch clicks were silently dropped.
 func TestSketchChamferToolInSketchClickRoutes(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	corner := sk.Points().Add(gmath.P2(0, 0)) // origin ↔ pixel (100,100)
 	farA, _ := screenToSketch(s, 170, 100)
@@ -57,6 +59,7 @@ func TestSketchChamferToolInSketchClickRoutes(t *testing.T) {
 
 // Slot draws a straight slot from two centre clicks (two lines + two arc caps).
 func TestSketchSlotTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	tool := NewSketchSlotTool(1)
 	s.StartTool(tool)
@@ -73,6 +76,7 @@ func TestSketchSlotTool(t *testing.T) {
 
 // Text places a text box at the clicked anchor once a string is set.
 func TestSketchTextTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	tool := NewSketchTextTool()
 	s.StartTool(tool)
@@ -88,6 +92,7 @@ func TestSketchTextTool(t *testing.T) {
 
 // The text window's font + alignment choices wire through to the committed entity.
 func TestSketchTextToolStyleWiresThrough(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	tool := NewSketchTextTool()
 	s.StartTool(tool)
@@ -116,6 +121,7 @@ func TestSketchTextToolStyleWiresThrough(t *testing.T) {
 // The committed text embeds its chosen font as a document resource (ADR-0031): the default is
 // a bundled face, recorded as a bytes-less "embedded" resource the text resolves by.
 func TestSketchTextToolEmbedsFontResource(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	tool := NewSketchTextTool()
 	s.StartTool(tool)
@@ -143,6 +149,7 @@ func TestSketchTextToolEmbedsFontResource(t *testing.T) {
 
 // Text with no string is not ready to commit.
 func TestSketchTextToolNeedsString(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	tool := NewSketchTextTool()
 	s.StartTool(tool)
@@ -153,6 +160,7 @@ func TestSketchTextToolNeedsString(t *testing.T) {
 }
 
 func TestSketchCreateToolsRegistered(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)

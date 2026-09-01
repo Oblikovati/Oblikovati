@@ -29,6 +29,7 @@ import (
 // is a B-rep topology blemish, not a measurement/render error. Un-skip and assert simple loops when
 // the coordinated trim lands.
 func TestNotchFilletFaceLoopsSimple(t *testing.T) {
+	t.Parallel()
 	t.Skip("Bug B: fillet builds a self-intersecting neighbour-face loop when a feature protrudes " +
 		"into the removed strip; correct fix needs a coordinated 3D trim (tracked). Area is correct " +
 		"(earclip-robust; Bug A guards conformance), so simple/Y2 still passes the gate.")

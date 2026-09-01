@@ -24,6 +24,7 @@ func scrollSession(t *testing.T) *Session {
 
 // TestScrollViewportZoomsIn: a positive dy notch dollies the camera closer (zoom in).
 func TestScrollViewportZoomsIn(t *testing.T) {
+	t.Parallel()
 	s := scrollSession(t)
 	before := eyeTargetDist(s.Camera())
 	s.ScrollViewport(0, 1, 100, 100)
@@ -35,6 +36,7 @@ func TestScrollViewportZoomsIn(t *testing.T) {
 // TestScrollViewportZeroDeltaNoOp: dy=0 leaves the camera untouched, even with a non-zero dx —
 // dx carries no default binding.
 func TestScrollViewportZeroDeltaNoOp(t *testing.T) {
+	t.Parallel()
 	s := scrollSession(t)
 	before := s.Camera()
 	s.ScrollViewport(3, 0, 100, 100)
@@ -45,6 +47,7 @@ func TestScrollViewportZeroDeltaNoOp(t *testing.T) {
 
 // TestScrollViewportWheelInvertFlipsDirection: with Wheel Invert set, a positive dy zooms OUT.
 func TestScrollViewportWheelInvertFlipsDirection(t *testing.T) {
+	t.Parallel()
 	s := scrollSession(t)
 	if err := s.SetWheelInvert(true); err != nil {
 		t.Fatalf("SetWheelInvert: %v", err)
@@ -59,6 +62,7 @@ func TestScrollViewportWheelInvertFlipsDirection(t *testing.T) {
 // TestScrollViewportZoomToCursorStillZooms: the zoom-toward-cursor branch also dollies in on a
 // positive dy (it aims the zoom at the pixel rather than the view centre).
 func TestScrollViewportZoomToCursorStillZooms(t *testing.T) {
+	t.Parallel()
 	s := scrollSession(t)
 	if err := s.SetZoomToCursor(true); err != nil {
 		t.Fatalf("SetZoomToCursor: %v", err)

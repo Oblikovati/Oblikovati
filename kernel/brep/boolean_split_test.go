@@ -14,6 +14,7 @@ import (
 // pure and small.
 
 func TestTurn2DSign(t *testing.T) {
+	t.Parallel()
 	// CCW left turn: heading east (0,0)→(1,0) then north (1,0)→(1,1).
 	if turn2D(math.P2(0, 0), math.P2(1, 0), math.P2(1, 1)) <= 0 {
 		t.Error("a left (CCW) turn should be positive")
@@ -29,6 +30,7 @@ func TestTurn2DSign(t *testing.T) {
 }
 
 func TestPointInTriangle2D(t *testing.T) {
+	t.Parallel()
 	a, b, c := math.P2(0, 0), math.P2(4, 0), math.P2(0, 4)
 	if !pointInTriangle2D(math.P2(1, 1), a, b, c) {
 		t.Error("interior point reported outside")
@@ -42,6 +44,7 @@ func TestPointInTriangle2D(t *testing.T) {
 }
 
 func TestEarEmpty(t *testing.T) {
+	t.Parallel()
 	// Convex quad: the ear at any vertex contains no other vertex.
 	square := []math.Point2{math.P2(0, 0), math.P2(2, 0), math.P2(2, 2), math.P2(0, 2)}
 	if !earEmpty(square, 1) {
@@ -55,6 +58,7 @@ func TestEarEmpty(t *testing.T) {
 }
 
 func TestCentroid2D(t *testing.T) {
+	t.Parallel()
 	c := centroid2D([]math.Point2{math.P2(0, 0), math.P2(3, 0), math.P2(0, 3)})
 	if c.X != 1 || c.Y != 1 {
 		t.Errorf("centroid = %v, want (1,1)", c)

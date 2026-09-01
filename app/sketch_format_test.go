@@ -30,6 +30,7 @@ func squareWithMidline(t *testing.T) (*Session, *sketch.Sketch, *sketch.Line) {
 // Toggling Centerline on the selected midline removes it from profiles (it no longer closes a
 // region) and marks it as an axis.
 func TestSketchCenterlineToggle(t *testing.T) {
+	t.Parallel()
 	s, sk, mid := squareWithMidline(t)
 	s.Selection().Add(SketchEntityHandle{Entity: mid})
 	if n := s.ToggleCenterline(); n != 1 {
@@ -48,6 +49,7 @@ func TestSketchCenterlineToggle(t *testing.T) {
 
 // Toggling Construction on the selected midline likewise drops it from profiles.
 func TestSketchConstructionToggle(t *testing.T) {
+	t.Parallel()
 	s, sk, mid := squareWithMidline(t)
 	s.Selection().Add(SketchEntityHandle{Entity: mid})
 	if n := s.ToggleConstruction(); n != 1 {
@@ -62,6 +64,7 @@ func TestSketchConstructionToggle(t *testing.T) {
 }
 
 func TestSketchFormatCommandsRegistered(t *testing.T) {
+	t.Parallel()
 	s, _, mid := squareWithMidline(t)
 	s.Selection().Add(SketchEntityHandle{Entity: mid})
 	if err := RegisterStandardCommands(s); err != nil {

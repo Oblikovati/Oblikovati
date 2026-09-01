@@ -21,6 +21,7 @@ func unitCircleConic(cx, cy, r float64) planeConic {
 // TestConicEdgeHitsCircleTwoCrossings: a horizontal chord y=1 through a radius-2 circle at the origin meets
 // it at x=±√3, i.e. edge parameters (3∓√3)/6 for the edge (−3,1)→(3,1).
 func TestConicEdgeHitsCircleTwoCrossings(t *testing.T) {
+	t.Parallel()
 	res := geom.ResolutionForSize(1)
 	hits, tangent := conicEdgeHits(unitCircleConic(0, 0, 2), math.P2(-3, 1), math.P2(3, 1), res)
 	if tangent {
@@ -43,6 +44,7 @@ func TestConicEdgeHitsCircleTwoCrossings(t *testing.T) {
 // TestConicEdgeHitsTangentDeclines: the line y=2 grazes the radius-2 circle at (0,2) — a double root, which
 // must be reported tangent (a zero-width sliver the stitch cannot weld) so the gate can decline it.
 func TestConicEdgeHitsTangentDeclines(t *testing.T) {
+	t.Parallel()
 	res := geom.ResolutionForSize(1)
 	_, tangent := conicEdgeHits(unitCircleConic(0, 0, 2), math.P2(-3, 2), math.P2(3, 2), res)
 	if !tangent {
@@ -52,6 +54,7 @@ func TestConicEdgeHitsTangentDeclines(t *testing.T) {
 
 // TestConicEdgeHitsMiss: a chord clear of the circle has no crossings and is not tangent.
 func TestConicEdgeHitsMiss(t *testing.T) {
+	t.Parallel()
 	res := geom.ResolutionForSize(1)
 	hits, tangent := conicEdgeHits(unitCircleConic(0, 0, 2), math.P2(-3, 3), math.P2(3, 3), res)
 	if len(hits) != 0 || tangent {
@@ -62,6 +65,7 @@ func TestConicEdgeHitsMiss(t *testing.T) {
 // TestConicEdgeHitsEllipseNormalizes: a radius via the unit-circle normalisation — a 2:1 ellipse (A=2,B=1)
 // axis-aligned, chord x=0 (the minor axis) crosses at y=±1; chord y=0 (major axis) at x=±2.
 func TestConicEdgeHitsEllipseNormalizes(t *testing.T) {
+	t.Parallel()
 	res := geom.ResolutionForSize(1)
 	ell := planeConic{center: math.P2(0, 0), maj: math.V2(1, 0), A: 2, B: 1}
 	minor, _ := conicEdgeHits(ell, math.P2(0, -3), math.P2(0, 3), res)
@@ -89,6 +93,7 @@ func squareUV(half float64) [][]math.Point2 {
 // TestPlaneUVContactOK: a circle clipping one square edge is a valid partial contact (2 crossings); one
 // wholly inside is not partial (0 crossings); an over-eccentric ellipse declines.
 func TestPlaneUVContactOK(t *testing.T) {
+	t.Parallel()
 	res := geom.ResolutionForSize(1)
 	if !planeUVContactOK(unitCircleConic(3, 0, 2), squareUV(3), res) {
 		t.Error("a circle clipping the right edge (2 crossings) is a valid partial contact")
@@ -104,6 +109,7 @@ func TestPlaneUVContactOK(t *testing.T) {
 // TestToPlaneConicCircle: a circle lying in the XY plane projects to a chart circle of the same radius,
 // centred at the plane-projected centre (the chart is an isometry).
 func TestToPlaneConicCircle(t *testing.T) {
+	t.Parallel()
 	pl, err := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	if err != nil {
 		t.Fatal(err)
@@ -123,6 +129,7 @@ func TestToPlaneConicCircle(t *testing.T) {
 // the arrangement then resolves the contact against a sampled chord instead. The frame window keeps it,
 // while conicEdgeHits still rejects it (its endpoints belong to the vertex-snap path).
 func TestConicFrameHitsAcceptsEndpointRoot(t *testing.T) {
+	t.Parallel()
 	res := geom.ResolutionForSize(1)
 	c, xr := unitCircleConic(0, 0, 2), stdmath.Sqrt(4-0.36)
 	a, b := math.P2(1.5, 0.6), math.P2(math.Scalar(xr), 0.6)
@@ -142,6 +149,7 @@ func TestConicFrameHitsAcceptsEndpointRoot(t *testing.T) {
 // the conic's own point (the weld currency both sides terminate on), never insert a near-duplicate
 // ahead of it — the split that left the cap loop 1.5e-4 open (#3488).
 func TestImprintVerticesReplacesEndpointCrossing(t *testing.T) {
+	t.Parallel()
 	imp := geom.NewLineSegment(math.P3(1.5, 0.6, 0), math.P3(1.9, 0.6, 0))
 	on := []faceFrameCrossing{{imp: 0, sImp: 1, at: math.P3(1.90787840283389, 0.6, 0)}}
 	verts := imprintVertices(imp, on)
@@ -155,6 +163,7 @@ func TestImprintVerticesReplacesEndpointCrossing(t *testing.T) {
 
 // TestImprintVerticesInsertsInteriorCrossing: an interior crossing still splits the segment in place.
 func TestImprintVerticesInsertsInteriorCrossing(t *testing.T) {
+	t.Parallel()
 	imp := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(4, 0, 0))
 	on := []faceFrameCrossing{{imp: 0, sImp: 0.5, at: math.P3(2, 0, 0)}}
 	verts := imprintVertices(imp, on)

@@ -18,6 +18,7 @@ import (
 // fix (emitImprintRun, #1403) is what makes the INTERSECT adopt; the OUTSIDE-keep wrapping-band emission
 // (Oblikovati#1476) makes the crossing-cylinder CUT/JOIN adopt. This test fails if any silently falls back.
 func TestGeneralIntersectIsAdopted(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name    string
 		general func(a, b *topo.Body) (*topo.Body, bool)
@@ -62,6 +63,7 @@ func TestGeneralIntersectIsAdopted(t *testing.T) {
 // OUTSIDE-keep wrapping-band emission, Oblikovati#1476): each must produce a validBooleanSolid result so
 // ops.Boolean adopts it rather than falling back to the bespoke handler.
 func TestGeneralCrossingCutJoinIsAdopted(t *testing.T) {
+	t.Parallel()
 	fat := func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12); return b }
 	rod := func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12); return b }
 	cases := []struct {
@@ -88,6 +90,7 @@ func TestGeneralCrossingCutJoinIsAdopted(t *testing.T) {
 // wrapping-band emission): each must produce a validBooleanSolid result so ops.Boolean adopts it instead of
 // falling back to the bespoke handler.
 func TestGeneralConeCutJoinIsAdopted(t *testing.T) {
+	t.Parallel()
 	fatCone := func() *topo.Body {
 		b, _ := brep.SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 		return b
@@ -127,6 +130,7 @@ func TestGeneralConeCutJoinIsAdopted(t *testing.T) {
 // fatter cylinder, #1403 on the #1476 wrapping-band + cap generalisation): each must produce a
 // validBooleanSolid result so ops.Boolean adopts it instead of falling back to the bespoke handler.
 func TestGeneralPartialIsAdopted(t *testing.T) {
+	t.Parallel()
 	fat := func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12); return b }
 	stub := func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 6); return b }
 	cases := []struct {

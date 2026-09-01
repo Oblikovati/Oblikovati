@@ -105,6 +105,7 @@ func coneFarCapPlane(ef edgeFillet, far *topo.Vertex) (geom.Plane, bool) {
 // lands the plane foot on the radial plane and the cone foot on the cone, BOTH on the cap plane, each at
 // ball distance r from its exact spine centre — all to ≤1e-9 (closed form, matching CN2's spine tests).
 func TestConeCanalSprings_ExactFeet(t *testing.T) {
+	t.Parallel()
 	for _, fx := range coneFarFixtures() {
 		t.Run(fx.name, func(t *testing.T) {
 			s := setupConeFar(t, fx)
@@ -168,6 +169,7 @@ func assertFootOnConeIncident(t *testing.T, sp coneCanalSpine, cT math.Point3) {
 // TestConeCanalCapTrim_OnPlane pins the ⊥-axis cap trim (C2/C6): every sampled point lies on the cap plane
 // (≤ res.Weld·r) and the trim's endpoints ARE the two feet (the shared-edge identity).
 func TestConeCanalCapTrim_OnPlane(t *testing.T) {
+	t.Parallel()
 	for _, fx := range coneFarFixtures() {
 		if fx.snout {
 			continue
@@ -219,6 +221,7 @@ func assertEndsAtFeet(t *testing.T, trim geom.Curve3, feet [2]math.Point3) {
 // T*=(0,−250/13,120−600/13). The ⊥ guard is mutation-proven: perturbing the far-plane normal off the
 // vertex spine tangent makes the snout honest-reject.
 func TestConeCanalSnout_Exact(t *testing.T) {
+	t.Parallel()
 	s := setupConeFar(t, coneFarFixtures()[2]) // D1
 	feet := canalFeet(t, s)
 	trim, ok := intersectArmCapping(s.ef, s.cap, feet, coneArmR, s.res)
@@ -296,6 +299,7 @@ func assertSnoutGuardRejectsOffset(t *testing.T, s coneFarSetup, feet [2]math.Po
 // "exception messages must include the offending value"): a cap BELOW the hyperbola vertex names ρ and r,
 // and an obliquely-posed cap names |n̂·â|.
 func TestConeCanalReject_CarriesValues(t *testing.T) {
+	t.Parallel()
 	s := setupConeFar(t, coneFarFixtures()[2]) // D1
 	spring := coneCanalSpring{spine: s.sp, lo: 0, hi: 40, onCone: false}
 	below, err := geom.NewPlane(s.sp.apex.TranslateBy(s.sp.axis.Scale(40)), s.sp.axis)
@@ -323,6 +327,7 @@ func TestConeCanalReject_CarriesValues(t *testing.T) {
 // capping-face finder cannot classify a tangent-parallel cap — a CN4b-2 routing concern), so it is driven
 // through obliqueRunout directly with the far radial cap. Both must return regime=runoutOblique.
 func TestConeCanalFarRunout_Identities(t *testing.T) {
+	t.Parallel()
 	for _, fx := range coneFarFixtures() {
 		t.Run(fx.name, func(t *testing.T) {
 			s := setupConeFar(t, fx)
@@ -364,6 +369,7 @@ func straightRail(foot, inner math.Point3) endSeg {
 // for D1); the near boundary is a near iso-cut. A folded trim (the x_f-sweep defect the ψ-sweep fixes)
 // would crease the mesh here.
 func TestConeCanalFarCap_FoldFree(t *testing.T) {
+	t.Parallel()
 	for _, fx := range coneFarFixtures() {
 		t.Run(fx.name, func(t *testing.T) {
 			s := setupConeFar(t, fx)

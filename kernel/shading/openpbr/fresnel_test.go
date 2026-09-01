@@ -10,6 +10,7 @@ import (
 // TestDielectricFresnelNormalIncidenceMatchesF0 checks the hand-derivable identity: at
 // normal incidence the exact Fresnel equations reduce to F0 = ((eta-1)/(eta+1))².
 func TestDielectricFresnelNormalIncidenceMatchesF0(t *testing.T) {
+	t.Parallel()
 	const ior = 1.5
 	got := DielectricFresnel(ior, 1)
 	want := F0FromIOR(ior)
@@ -20,6 +21,7 @@ func TestDielectricFresnelNormalIncidenceMatchesF0(t *testing.T) {
 
 // TestDielectricFresnelGrazingIsOne checks total reflection at exactly grazing incidence.
 func TestDielectricFresnelGrazingIsOne(t *testing.T) {
+	t.Parallel()
 	if got := DielectricFresnel(1.5, 0); math.Abs(got-1) > 1e-9 {
 		t.Errorf("DielectricFresnel(1.5, cos=0) = %v, want 1", got)
 	}
@@ -27,6 +29,7 @@ func TestDielectricFresnelGrazingIsOne(t *testing.T) {
 
 // TestDielectricFresnelIndexMatchedIsZero checks the eta=1 short-circuit.
 func TestDielectricFresnelIndexMatchedIsZero(t *testing.T) {
+	t.Parallel()
 	if got := DielectricFresnel(1, 0.5); got != 0 {
 		t.Errorf("DielectricFresnel(1, cos=0.5) = %v, want 0 (index-matched)", got)
 	}
@@ -36,6 +39,7 @@ func TestDielectricFresnelIndexMatchedIsZero(t *testing.T) {
 // (1-cosTheta)^5 correction vanishes, so F82TintFresnel must equal f0 exactly regardless
 // of tint.
 func TestF82TintFresnelNormalIncidenceIsF0(t *testing.T) {
+	t.Parallel()
 	f0 := NewColor3(0.9, 0.6, 0.2)
 	tint := NewColor3(0.3, 0.8, 0.95)
 	got := F82TintFresnel(f0, tint, 1)
@@ -48,6 +52,7 @@ func TestF82TintFresnelNormalIncidenceIsF0(t *testing.T) {
 // (index.html eq. F_82, "ensuring F82(μ̄) = F(μ̄)"): at the 82° reference angle, the
 // F82-tint curve must equal tint * Schlick(82°) exactly.
 func TestF82TintFresnelMatchesTintAtReferenceAngle(t *testing.T) {
+	t.Parallel()
 	f0 := NewColor3(0.9, 0.6, 0.2)
 	tint := NewColor3(0.3, 0.8, 0.95)
 	got := F82TintFresnel(f0, tint, f82CosThetaMax)
@@ -65,6 +70,7 @@ func TestF82TintFresnelMatchesTintAtReferenceAngle(t *testing.T) {
 // (index.html line 558): a white (default) tint reduces the model exactly to the plain
 // Schlick curve at every angle.
 func TestF82TintFresnelDefaultTintReducesToSchlick(t *testing.T) {
+	t.Parallel()
 	f0 := NewColor3(0.9, 0.6, 0.2)
 	white := Gray(1)
 	for _, cos := range []float64{1, 0.7, f82CosThetaMax, 0.05} {

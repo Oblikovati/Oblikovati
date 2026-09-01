@@ -17,6 +17,7 @@ import (
 // face, leaving an open body (fixed in kernel/meshbool raycast: a coplanar-but-outside ray endpoint is
 // a clean miss, not a degeneracy).
 func TestChainedReconstructionCutStaysValid(t *testing.T) {
+	t.Parallel()
 	box, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(4, 2, 2), "box")
 	if err != nil {
 		t.Fatal(err)

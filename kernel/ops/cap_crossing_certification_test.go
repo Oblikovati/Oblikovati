@@ -56,6 +56,7 @@ func capCertQuality() Quality {
 }
 
 func TestCapCrossingCutIsWatertightAndFoldFree(t *testing.T) {
+	t.Parallel()
 	target, tool := capCrossFixture(t)
 	res, err := Boolean(Cut, target, tool)
 	if err != nil {
@@ -74,6 +75,7 @@ func TestCapCrossingCutIsWatertightAndFoldFree(t *testing.T) {
 }
 
 func TestCapCrossingCutMomentsMatchOCC(t *testing.T) {
+	t.Parallel()
 	target, tool := capCrossFixture(t)
 	res, err := Boolean(Cut, target, tool)
 	if err != nil {
@@ -103,6 +105,7 @@ func TestCapCrossingCutMomentsMatchOCC(t *testing.T) {
 // Points within a shell of the boundary are skipped: the inscribed facets there disagree by design, and that
 // noise is what the moment tolerances already bound.
 func TestCapCrossingCutMembershipMatchesCSG(t *testing.T) {
+	t.Parallel()
 	target, tool := capCrossFixture(t)
 	res, err := Boolean(Cut, target, tool)
 	if err != nil {

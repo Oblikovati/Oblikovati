@@ -18,6 +18,7 @@ func squareLoop() []math.Point3 {
 // of side 10 measures 40, not 30) — the slack is a perimeter, and dropping the closing segment would
 // understate it on a triangle by a third.
 func TestFaceBoundaryLengthWalksTheWholeRing(t *testing.T) {
+	t.Parallel()
 	f := planarFaceFromLoop(t, squareLoop())
 	if got := faceBoundaryLength(f, DefaultQuality()); stdmath.Abs(got-40) > 1e-9 {
 		t.Errorf("faceBoundaryLength = %.9g, want 40 (the closed 10×10 ring)", got)
@@ -28,6 +29,7 @@ func TestFaceBoundaryLengthWalksTheWholeRing(t *testing.T) {
 // tolerance times the boundary length, so it is an AREA that tracks both the mesh's accuracy contract
 // and the model's size. A fixed epsilon would be wrong at either end (ADR-0042).
 func TestConformAreaSlackScalesWithToleranceAndSize(t *testing.T) {
+	t.Parallel()
 	f := planarFaceFromLoop(t, squareLoop())
 	fine := conformAreaSlack(f, Quality{ChordTolerance: 1e-3, AngleTolerance: 1})
 	coarse := conformAreaSlack(f, Quality{ChordTolerance: 1e-1, AngleTolerance: 1})
@@ -43,6 +45,7 @@ func TestConformAreaSlackScalesWithToleranceAndSize(t *testing.T) {
 // one arm per branch. The rejected case is complex/D8's shape of defect in miniature: a fold-free
 // re-mesh that tiles far less of the face than the mesh it would replace.
 func TestConformingMeshIsFaithfulRejectsAreaLoss(t *testing.T) {
+	t.Parallel()
 	f := planarFaceFromLoop(t, squareLoop())
 	q := Quality{ChordTolerance: 1e-3, AngleTolerance: 1} // slack = 1e-3 × 40 = 0.04
 	full := quadMesh(10, 10)
@@ -68,6 +71,7 @@ func TestConformingMeshIsFaithfulRejectsAreaLoss(t *testing.T) {
 // TestConformingMeshIsFaithfulStillRejectsAddedFolds keeps the ORIGINAL fold arm live: an area-GROWING
 // re-mesh that grows by FOLDING must still be refused (I3's host cones grew 30659 → 59056 on 4 folds).
 func TestConformingMeshIsFaithfulStillRejectsAddedFolds(t *testing.T) {
+	t.Parallel()
 	f := planarFaceFromLoop(t, squareLoop())
 	q := Quality{ChordTolerance: 1e-3, AngleTolerance: 1}
 	folded := foldedQuadMesh()

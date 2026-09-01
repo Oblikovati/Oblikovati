@@ -22,6 +22,7 @@ import (
 // Falsify by relaxing segmentsCross to a non-strict test, or by dropping the crossing point from
 // pinchedOffArea: the area then stops matching the closed form and this goes RED.
 func TestSelfCrossingFaceLoopsMeasuresThePinchedOffArea(t *testing.T) {
+	t.Parallel()
 	const r, w, l, h, d = 24.0, 30.0, 100.0, 8.0, 6.0
 	body := lobedBandBody(t, r, w, l, h, d)
 	bad := SelfCrossingFaceLoops(body, PropertyQuality())
@@ -38,6 +39,7 @@ func TestSelfCrossingFaceLoopsMeasuresThePinchedOffArea(t *testing.T) {
 // a simple polygon and must not be reported. Without this the detector could pass the test above by
 // reporting every face.
 func TestSelfCrossingFaceLoopsPassesASimpleTrim(t *testing.T) {
+	t.Parallel()
 	const r, w, l, h = 24.0, 30.0, 100.0, 8.0
 	body := lobedBandBody(t, r, w, l, h, 0)
 	if bad := SelfCrossingFaceLoops(body, PropertyQuality()); len(bad) != 0 {
@@ -95,6 +97,7 @@ func lobedBandEdge(t *testing.T, cyl geom.Cylinder, a, b [2]float64) geom.Curve3
 // Falsify by measuring the ratio against the loop's chart diagonal, or against a segment index other
 // than the crossing pair's: the value stops matching this closed form.
 func TestSelfCrossingFaceLoopsMeasuresTheCrossingPairsOwnFidelity(t *testing.T) {
+	t.Parallel()
 	const r, w, l, h, d = 24.0, 30.0, 100.0, 8.0, 6.0
 	bad := SelfCrossingFaceLoops(lobedBandBody(t, r, w, l, h, d), PropertyQuality())
 	if len(bad) != 1 {
@@ -117,6 +120,7 @@ func TestSelfCrossingFaceLoopsMeasuresTheCrossingPairsOwnFidelity(t *testing.T) 
 // starts shrinking while the chart keeps growing. Falsify by re-tuning the constant to fit the corpus
 // and this goes RED, which is the point — it is a closed form, not a calibration.
 func TestChartFaithfulCutIsTheHalfTurn(t *testing.T) {
+	t.Parallel()
 	atHalfTurn := stdmath.Pi / (2 * stdmath.Sin(stdmath.Pi/2))
 	if stdmath.Abs(selfCrossChartFaithfulRatio-atHalfTurn) > 1e-15 { // tol:numeric (ratio)
 		t.Errorf("selfCrossChartFaithfulRatio is %.17g, the half-turn ratio θ/(2 sin(θ/2)) at θ=π is %.17g",

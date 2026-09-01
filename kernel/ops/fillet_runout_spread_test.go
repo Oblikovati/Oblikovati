@@ -38,6 +38,7 @@ func threeFaceFan() endCornerFan {
 // A synthetic fan: axis along +x through the origin, radius 2. A far edge from the apex (0,0,0)
 // straight along +y crosses the cylinder (distance-2 tube about the x-axis) at y=2.
 func TestSplitOnFarEdgeAnalytic(t *testing.T) {
+	t.Parallel()
 	fan := endCornerFan{
 		radius: 2,
 		center: math.P3(0, 0, 0),
@@ -58,6 +59,7 @@ func TestSplitOnFarEdgeAnalytic(t *testing.T) {
 // point in (0,1); the expected crossing (-1.8,2,0) was hand-derived from the quadratic
 // (A=100, B=0, C=-4 -> t=0.2) and independently checked against distance-to-axis-line == r.
 func TestSplitOnFarEdgeAnalyticOblique(t *testing.T) {
+	t.Parallel()
 	fan := endCornerFan{
 		radius: 2,
 		center: math.P3(0, 0, 0),
@@ -76,6 +78,7 @@ func TestSplitOnFarEdgeAnalyticOblique(t *testing.T) {
 // A far edge that never comes within the fillet radius of the axis (at least distance 5 from the
 // axis, always outside the r=2 tube) must report no crossing.
 func TestSplitOnFarEdgeAnalyticMiss(t *testing.T) {
+	t.Parallel()
 	fan := endCornerFan{
 		radius: 2,
 		center: math.P3(0, 0, 0),
@@ -91,6 +94,7 @@ func TestSplitOnFarEdgeAnalyticMiss(t *testing.T) {
 // is never reached, and the quadratic degenerates (a=0,b=0) -> the axis-parallel fallback
 // in smallestRootIn01 must return ok=false rather than divide by zero.
 func TestSplitOnFarEdgeParallelMiss(t *testing.T) {
+	t.Parallel()
 	fan := endCornerFan{radius: 2, center: math.P3(0, 0, 0), axis: math.V3(1, 0, 0), apex: math.P3(0, 0, 0)}
 	fe := fanEdge{from: math.P3(0, 3, 0), to: math.P3(10, 3, 0)}
 	if _, ok := splitOnFarEdge(fan, fe); ok {
@@ -109,6 +113,7 @@ func TestSplitOnFarEdgeParallelMiss(t *testing.T) {
 // 50.46), matching the advisor's independent (41.870,89.793,50.462)) and that its apex distance is
 // ~1.03, NOT ~11.9. Every far edge on this fan must land its split within one radius of the apex.
 func TestSplitOnFarEdgeSelectsNearApexV5(t *testing.T) {
+	t.Parallel()
 	b := importCorpusSolid(t, "simple/V5")
 	fils := solvedFilsForCase(t, b, "simple/V5")
 	fans, _ := classifyEndCorners(fils)
@@ -164,6 +169,7 @@ func farEdgeFromOuter(fan endCornerFan, p math.Point3) (fanEdge, bool) {
 // (axis +x, r=2, apex origin) must assemble into a closed tA -> split(201) -> split(202) -> tB
 // chain, with every interior far edge split at exactly the point its two bordering faces share.
 func TestSolveRunoutSpreadChainCloses(t *testing.T) {
+	t.Parallel()
 	fan := endCornerFan{
 		radius: 2, center: math.P3(0, 0, 0), axis: math.V3(1, 0, 0), apex: math.P3(0, 0, 0),
 		ta: math.P3(0, 2, 0), tb: math.P3(0, -2, 0),
@@ -220,6 +226,7 @@ func TestSolveRunoutSpreadChainCloses(t *testing.T) {
 // old radial=ff.normal×axis derivation put face 101's mid at 90° (tIn=0°, tOut=45°), OUTSIDE the
 // span, while passing the on-cylinder check.
 func TestRunoutPieceIsArcOnCylinder(t *testing.T) {
+	t.Parallel()
 	fan := threeFaceFan()
 	sp, err := solveRunoutSpread(fan)
 	if err != nil {
@@ -275,6 +282,7 @@ func assertMidBisectsSpan(t *testing.T, fan endCornerFan, uhat, ref math.Vector3
 // the two far edges' geometry folds the angular sequence back on itself and must be rejected — not
 // silently welded into a self-intersecting cap.
 func TestMonotoneRejectsScrambled(t *testing.T) {
+	t.Parallel()
 	if _, err := solveRunoutSpread(threeFaceFan()); err != nil {
 		t.Fatalf("valid 3-face fan must solve, got: %v", err)
 	}

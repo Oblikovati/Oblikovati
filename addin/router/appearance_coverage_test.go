@@ -14,6 +14,7 @@ import (
 // built-in, create duplicates it into a project-scoped copy, update writes a lobe
 // group (Coat) and the display name, and both survive the round trip.
 func TestAppearancesFullLobeRoundTrip(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var apprs wire.ListAppearancesResult
 	call(t, r, s, "appearances.list", "{}", &apprs)
@@ -52,6 +53,7 @@ func TestAppearancesFullLobeRoundTrip(t *testing.T) {
 // TestMaterialGetUpdateAssign (material_coverage_test.go) already covers the success
 // path via a real appearance id.
 func TestModelAssignAppearanceUnknownID(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var res wire.OKResult

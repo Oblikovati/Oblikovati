@@ -64,6 +64,7 @@ func memoTestBodies(t *testing.T) []*topo.Body {
 // with it populated, and requires equality — so a stale or mis-keyed development is caught as a
 // DIFFERENT ANSWER rather than as a performance change nobody notices.
 func TestTrimUVMemoChangesNoVerdict(t *testing.T) {
+	t.Parallel()
 	checked := 0
 	for _, b := range memoTestBodies(t) {
 		for _, f := range b.Faces() {
@@ -87,6 +88,7 @@ func TestTrimUVMemoChangesNoVerdict(t *testing.T) {
 // (memoized) against pointInTrimUV on a freshly flattened face (not memoized, the path the curved
 // boolean's synthesized faces still take). They must agree on every probe, or the two have drifted.
 func TestMemoizedTrimMatchesTheUnmemoizedPath(t *testing.T) {
+	t.Parallel()
 	for _, b := range memoTestBodies(t) {
 		for _, f := range b.Faces() {
 			for _, p := range memoProbePoints(t, f) {
@@ -102,6 +104,7 @@ func TestMemoizedTrimMatchesTheUnmemoizedPath(t *testing.T) {
 // on the first query and REUSED, not rebuilt. Falsify by dropping the SetTrimUVMemo store — the second
 // query then hands back a different development and this goes red.
 func TestTrimUVMemoIsBuiltOncePerFace(t *testing.T) {
+	t.Parallel()
 	body, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 5)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -122,6 +125,7 @@ func TestTrimUVMemoIsBuiltOncePerFace(t *testing.T) {
 // TestTrimUVMemoDevelopsEveryLoop covers the development itself: a face with a hole must develop BOTH
 // rings, since the even-odd count needs the hole to cancel the outer loop.
 func TestTrimUVMemoDevelopsEveryLoop(t *testing.T) {
+	t.Parallel()
 	slab, err := SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 2), "slab")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)

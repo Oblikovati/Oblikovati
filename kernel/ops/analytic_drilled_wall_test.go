@@ -48,6 +48,7 @@ func crossingCylinderWindowArea(bigR, r float64) float64 {
 // outer loops and the wall measured 240.81 where 211.57 is right, carrying the body's volume 9.8%
 // over OpenCASCADE.
 func TestDrilledWallAreaSubtractsItsWindows(t *testing.T) {
+	t.Parallel()
 	// The same operands the OCC corpus drills: r=3 h=12 through-cut by a perpendicular r=1.5.
 	const bigR, drillR, height = 3.0, 1.5, 12.0
 	fat, drill := crossingCylinders(t)

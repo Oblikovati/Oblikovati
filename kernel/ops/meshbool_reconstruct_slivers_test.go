@@ -59,6 +59,7 @@ func sliverBoundaryFingerprint(soup meshbool.TaggedSoup) []string {
 // cap and re-stitches its long-edge neighbour, so no sub-resolution sliver survives AND the
 // patch boundary (its watertightness fingerprint) is exactly preserved.
 func TestCollapseSliversRemovesCapWatertight(t *testing.T) {
+	t.Parallel()
 	in := capPatch()
 	before := sliverBoundaryFingerprint(in)
 
@@ -81,6 +82,7 @@ func TestCollapseSliversRemovesCapWatertight(t *testing.T) {
 
 // TestCollapseSliversLeavesCleanMeshUnchanged: a mesh with no cap passes through untouched.
 func TestCollapseSliversLeavesCleanMeshUnchanged(t *testing.T) {
+	t.Parallel()
 	p := slivPt(0, 0, 0)
 	q := slivPt(4, 0, 0)
 	x := slivPt(2, 3, 0)

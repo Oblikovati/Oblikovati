@@ -28,6 +28,7 @@ func cdtPolyArea(pts [][2]float64, loop []int) float64 {
 }
 
 func TestOrientAndInCircle(t *testing.T) {
+	t.Parallel()
 	if orient2d([2]float64{0, 0}, [2]float64{1, 0}, [2]float64{0, 1}) <= 0 {
 		t.Error("CCW triangle should be positively oriented")
 	}
@@ -42,6 +43,7 @@ func TestOrientAndInCircle(t *testing.T) {
 }
 
 func TestCDTSquare(t *testing.T) {
+	t.Parallel()
 	pts := [][2]float64{{0, 0}, {2, 0}, {2, 2}, {0, 2}}
 	tris := constrainedDelaunay(pts, [][]int{{0, 1, 2, 3}})
 	if len(tris) != 2 {
@@ -59,6 +61,7 @@ func TestCDTSquare(t *testing.T) {
 // no crossing — the O(T²) freeze on large faces. constrainedDelaunay now constrains between the
 // inserted representatives, and the degenerate (coincident-endpoint) edge is skipped.
 func TestCDTDuplicateBoundaryPoint(t *testing.T) {
+	t.Parallel()
 	// A unit square whose loop repeats the (0,0) corner as a separate index (4) — a duplicate sample.
 	pts := [][2]float64{{0, 0}, {2, 0}, {2, 2}, {0, 2}, {0, 0}}
 	tris := constrainedDelaunay(pts, [][]int{{0, 1, 2, 3, 4}})
@@ -71,6 +74,7 @@ func TestCDTDuplicateBoundaryPoint(t *testing.T) {
 }
 
 func TestCDTConcaveLShape(t *testing.T) {
+	t.Parallel()
 	// An L: the triangulation must NOT bridge the notch (that was the plain-Delaunay over-count).
 	pts := [][2]float64{{0, 0}, {2, 0}, {2, 1}, {1, 1}, {1, 2}, {0, 2}}
 	loop := []int{0, 1, 2, 3, 4, 5}
@@ -82,6 +86,7 @@ func TestCDTConcaveLShape(t *testing.T) {
 }
 
 func TestCDTSquareWithHole(t *testing.T) {
+	t.Parallel()
 	pts := [][2]float64{
 		{0, 0}, {6, 0}, {6, 6}, {0, 6}, // outer
 		{2, 2}, {4, 2}, {4, 4}, {2, 4}, // hole
@@ -102,6 +107,7 @@ func TestCDTSquareWithHole(t *testing.T) {
 }
 
 func TestCDTInteriorSteinerPoints(t *testing.T) {
+	t.Parallel()
 	// A square boundary plus interior grid points: area is preserved and every point is used.
 	pts := [][2]float64{{0, 0}, {3, 0}, {3, 3}, {0, 3}}
 	for u := 0.5; u < 3; u += 0.5 {
@@ -125,6 +131,7 @@ func TestCDTInteriorSteinerPoints(t *testing.T) {
 // adaptive-exact predicate the triangulation is exactly N-2 triangles whose areas sum to the polygon
 // area, with none inverted. This is the degeneracy a planar face's circular bore hole hits.
 func TestCDTCocircularNgon(t *testing.T) {
+	t.Parallel()
 	for _, n := range []int{6, 8, 12, 20, 32, 64} {
 		var pts [][2]float64
 		var loop []int
@@ -157,6 +164,7 @@ func TestCDTCocircularNgon(t *testing.T) {
 // outer ring plus two cocircular bore holes. The holes must be excluded (domain area = outer − holes)
 // and no triangle may fall inside a hole.
 func TestCDTCocircularNgonWithHoles(t *testing.T) {
+	t.Parallel()
 	circle := func(cx, cy, r float64, n int, start int) ([][2]float64, []int) {
 		var pts [][2]float64
 		var idx []int

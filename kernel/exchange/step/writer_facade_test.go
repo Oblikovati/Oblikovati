@@ -12,6 +12,7 @@ import (
 )
 
 func TestExportedFileDeclaresAP203(t *testing.T) {
+	t.Parallel()
 	body := importOneSolid(t, "cube.step")
 	data, _, err := Writer{}.ExportSolids([]*topo.Body{body}, exchange.TranslationOptions{})
 	if err != nil {
@@ -30,6 +31,7 @@ func TestExportedFileDeclaresAP203(t *testing.T) {
 }
 
 func TestExportIsByteStable(t *testing.T) {
+	t.Parallel()
 	body := importOneSolid(t, "cube.step")
 	a, _, _ := Writer{}.ExportSolids([]*topo.Body{body}, exchange.TranslationOptions{})
 	b, _, _ := Writer{}.ExportSolids([]*topo.Body{body}, exchange.TranslationOptions{})

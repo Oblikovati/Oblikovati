@@ -19,6 +19,7 @@ func plane(t *testing.T, o math.Point3, n math.Vector3) geom.Plane {
 }
 
 func TestMeetOfPlanes(t *testing.T) {
+	t.Parallel()
 	// The three coordinate planes meet at the origin.
 	x := plane(t, math.P3(0, 0, 0), math.V3(1, 0, 0))
 	y := plane(t, math.P3(0, 0, 0), math.V3(0, 1, 0))
@@ -34,6 +35,7 @@ func TestMeetOfPlanes(t *testing.T) {
 }
 
 func TestTwoPlaneLine(t *testing.T) {
+	t.Parallel()
 	x := plane(t, math.P3(0, 0, 0), math.V3(1, 0, 0))
 	y := plane(t, math.P3(0, 0, 0), math.V3(0, 1, 0))
 	if _, dir, ok := twoPlaneLine(x, y); !ok || dir.LengthSquared() == 0 {
@@ -45,6 +47,7 @@ func TestTwoPlaneLine(t *testing.T) {
 }
 
 func TestCurveAtBounds(t *testing.T) {
+	t.Parallel()
 	if curveAt(nil, 0) != nil {
 		t.Error("curveAt past the end should be nil")
 	}
@@ -55,6 +58,7 @@ func TestCurveAtBounds(t *testing.T) {
 }
 
 func TestOnSegment(t *testing.T) {
+	t.Parallel()
 	a, b := math.P3(0, 0, 0), math.P3(2, 0, 0)
 	tol := ResolutionForPoints([]math.Point3{a, b}).Plane()
 	if !onSegment(math.P3(1, 0, 0), a, b, tol) {
@@ -69,6 +73,7 @@ func TestOnSegment(t *testing.T) {
 }
 
 func TestIsClosedCage(t *testing.T) {
+	t.Parallel()
 	if !isClosedCage(map[[2]int]int{{0, 1}: 2, {1, 2}: 2}) {
 		t.Error("a fully-paired cage should be closed")
 	}
@@ -81,6 +86,7 @@ func TestIsClosedCage(t *testing.T) {
 }
 
 func TestDropRepeats(t *testing.T) {
+	t.Parallel()
 	got := dropRepeats([]int{1, 1, 2, 3, 1})
 	if len(got) != 3 { // consecutive dup removed + closing 1 dropped
 		t.Fatalf("dropRepeats = %v, want 3 unique", got)
@@ -88,6 +94,7 @@ func TestDropRepeats(t *testing.T) {
 }
 
 func TestNewTriRejectsDegenerate(t *testing.T) {
+	t.Parallel()
 	if _, ok := newTri(math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0)); ok {
 		t.Error("a collinear (zero-area) triangle should be dropped")
 	}
@@ -97,6 +104,7 @@ func TestNewTriRejectsDegenerate(t *testing.T) {
 }
 
 func TestEarClipConcavePolygon(t *testing.T) {
+	t.Parallel()
 	// An L-shape (one reflex vertex) forces findEar to skip non-ear vertices.
 	l := []math.Point2{
 		math.P2(0, 0), math.P2(2, 0), math.P2(2, 1),
@@ -116,6 +124,7 @@ func TestEarClipConcavePolygon(t *testing.T) {
 // must SIGNAL that shortfall (complete=false) rather than presenting a partial stump as a full
 // triangulation the caller ships as a clean face.
 func TestEarClipRefusesDegeneratePolygon(t *testing.T) {
+	t.Parallel()
 	// Four collinear points bound no area: findEar finds no convex ear, so the clip cannot complete.
 	collinear := []math.Point2{math.P2(0, 0), math.P2(1, 0), math.P2(2, 0), math.P2(3, 0)}
 	tris, complete := earClip(collinear)
@@ -125,6 +134,7 @@ func TestEarClipRefusesDegeneratePolygon(t *testing.T) {
 }
 
 func TestSignedAreaSign(t *testing.T) {
+	t.Parallel()
 	ccw := []math.Point2{math.P2(0, 0), math.P2(2, 0), math.P2(0, 2)}
 	if signedArea(ccw) <= 0 {
 		t.Error("CCW loop should have positive signed area")
@@ -136,6 +146,7 @@ func TestSignedAreaSign(t *testing.T) {
 }
 
 func TestTrianglePlaneDegenerateFallback(t *testing.T) {
+	t.Parallel()
 	// Collinear triangle vertices ⇒ zero normal ⇒ fallback to +Z.
 	verts := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0)}
 	n := trianglePlane(verts, [3]int{0, 1, 2}).NormalAt(0, 0)

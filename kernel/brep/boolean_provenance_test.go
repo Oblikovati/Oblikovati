@@ -29,6 +29,7 @@ func provFaces(name string, px, py, pz, sx, sy, sz float64) []curvedFace {
 // crosses the base's top (z=4) is an intersection edge; edgeParents must return BOTH generating
 // faces — the base top (base:face#1) and the tool left wall (tool:face#4) — canonically ordered.
 func TestProvenanceTagsIntersectionEdgeWithBothParents(t *testing.T) {
+	t.Parallel()
 	base := provFaces("base", 0, 0, 0, 16, 10, 4)
 	tool := provFaces("tool", 3, -1, 2, 4, 12, 4) // x∈[3,7], pokes through the top
 	prov := provenanceOf(base, tool)
@@ -48,6 +49,7 @@ func TestProvenanceTagsIntersectionEdgeWithBothParents(t *testing.T) {
 // TestProvenanceParentPairIsOperandOrderIndependent: tagging the same crossing from either face
 // yields the same canonical pair, so an edge surviving on the A side or the B side gets one name.
 func TestProvenanceParentPairIsOperandOrderIndependent(t *testing.T) {
+	t.Parallel()
 	base := provFaces("base", 0, 0, 0, 16, 10, 4)
 	tool := provFaces("tool", 3, -1, 2, 4, 12, 4)
 
@@ -66,6 +68,7 @@ func TestProvenanceParentPairIsOperandOrderIndependent(t *testing.T) {
 // an original face boundary, lying on no imprint segment — resolves to no parent pair, so F03 can
 // fall back to carrying its source lineage rather than mislabelling it.
 func TestProvenanceLeavesOriginalBoundaryEdgesUnparented(t *testing.T) {
+	t.Parallel()
 	base := provFaces("base", 0, 0, 0, 16, 10, 4)
 	tool := provFaces("tool", 3, -1, 2, 4, 12, 4)
 	prov := provenanceOf(base, tool)
@@ -80,6 +83,7 @@ func TestProvenanceLeavesOriginalBoundaryEdgesUnparented(t *testing.T) {
 // the segments provenanceOf tags (same shared pairImprints), so geometry and provenance cannot
 // drift: every segment imprintAll records on a face appears, tagged, in the provenance.
 func TestImprintAllMatchesProvenanceSegments(t *testing.T) {
+	t.Parallel()
 	base := provFaces("base", 0, 0, 0, 16, 10, 4)
 	tool := provFaces("tool", 3, -1, 2, 4, 12, 4)
 

@@ -11,6 +11,7 @@ import (
 // regression guard: thin_film_weight=0 must reproduce the plain (PBI-341) Fresnel term
 // exactly.
 func TestFresnelWithThinFilmZeroWeightReproducesPlainFresnel(t *testing.T) {
+	t.Parallel()
 	want := Gray(DielectricFresnel(1.5, 0.7))
 	got := FresnelWithThinFilm(0.7, 1.5, 1.4, 0.5, 0)
 	if got != want {
@@ -19,6 +20,7 @@ func TestFresnelWithThinFilmZeroWeightReproducesPlainFresnel(t *testing.T) {
 }
 
 func TestThinFilmReflectanceZeroThicknessIsZero(t *testing.T) {
+	t.Parallel()
 	got := ThinFilmReflectanceDielectric(0.8, 1, 1.4, 1.5, 0)
 	if got != (Color3{}) {
 		t.Errorf("ThinFilmReflectanceDielectric(thickness=0) = %+v, want zero", got)
@@ -28,6 +30,7 @@ func TestThinFilmReflectanceZeroThicknessIsZero(t *testing.T) {
 // TestThinFilmReflectanceBounded checks the physical bound (a power reflectance can't
 // exceed 1) across a sweep of thickness and incidence angle.
 func TestThinFilmReflectanceBounded(t *testing.T) {
+	t.Parallel()
 	for _, thickness := range []float64{0.1, 0.3, 0.5, 0.8, 1.2} {
 		for _, cosTheta := range []float64{0.05, 0.3, 0.6, 1.0} {
 			got := ThinFilmReflectanceDielectric(cosTheta, 1, 1.4, 1.5, thickness)
@@ -46,6 +49,7 @@ func TestThinFilmReflectanceBounded(t *testing.T) {
 // which would indicate the Airy summation degenerated into a plain, wavelength-independent
 // Fresnel value.
 func TestThinFilmReflectanceShowsColorShift(t *testing.T) {
+	t.Parallel()
 	// Sample across several thicknesses rather than pinning one: the R/G/B spread itself
 	// oscillates (TestThinFilmReflectanceOscillatesWithThickness), so at least one of a
 	// representative spread of thicknesses must land near a fringe with strong color
@@ -66,6 +70,7 @@ func TestThinFilmReflectanceShowsColorShift(t *testing.T) {
 // at a FIXED angle must vary non-monotonically as thickness sweeps through several
 // interference fringes.
 func TestThinFilmReflectanceOscillatesWithThickness(t *testing.T) {
+	t.Parallel()
 	const cosTheta = 1.0
 	var g []float64
 	for thicknessNM := 50.0; thicknessNM <= 2000; thicknessNM += 25 {
@@ -94,6 +99,7 @@ func TestThinFilmReflectanceOscillatesWithThickness(t *testing.T) {
 // internally reflects, and the whole result must saturate toward white (all channels 1,
 // scaled by the thin-film presence multiplier).
 func TestThinFilmReflectanceTotalInternalReflectionIsWhite(t *testing.T) {
+	t.Parallel()
 	// eta_exterior > eta_film forces sin(theta_t) >= 1 at a shallow enough incidence.
 	got := ThinFilmReflectanceDielectric(0.05, 2.0, 1.0, 1.5, 0.5)
 	if got.R < 0.95 || got.G < 0.95 || got.B < 0.95 {

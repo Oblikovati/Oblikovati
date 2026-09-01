@@ -5,6 +5,7 @@ package app
 import "testing"
 
 func TestUIScaleDefaultsToFullSize(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if got := s.UIFontScale(); got != 1 {
 		t.Errorf("UIFontScale default = %v, want 1", got)
@@ -15,6 +16,7 @@ func TestUIScaleDefaultsToFullSize(t *testing.T) {
 }
 
 func TestSetUIScaleStoresAndReadsBack(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.SetUIFontScale(1.25); err != nil {
 		t.Fatalf("SetUIFontScale: %v", err)
@@ -31,6 +33,7 @@ func TestSetUIScaleStoresAndReadsBack(t *testing.T) {
 }
 
 func TestSetUIScaleClampsToBounds(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name      string
 		set       func(*Session, float64) error
@@ -58,6 +61,7 @@ func TestSetUIScaleClampsToBounds(t *testing.T) {
 // A non-positive stored scale (corrupt/edited options file) must read back as full size so the
 // interface can never be hidden — distinct from clampScale, which the explicit setters use.
 func TestUIScaleReadGuardsCorruptZero(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.appOptions.UI.FontScale = 0
 	s.appOptions.UI.IconScale = -1

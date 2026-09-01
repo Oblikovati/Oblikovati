@@ -24,6 +24,7 @@ import (
 // mm^3 across identical runs. The vertex set matched throughout, which is why this asserts
 // CONNECTIVITY.
 func TestFacetIsDeterministic(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)

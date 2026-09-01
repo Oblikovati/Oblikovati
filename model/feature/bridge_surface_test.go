@@ -10,6 +10,7 @@ import (
 )
 
 func TestBridgeFeatureConnectsPanels(t *testing.T) {
+	t.Parallel()
 	a := surfaceBodyFrom(t, matchPatch(t, 0, func(i, j int) float64 { return 0.4 * float64(i*i) }))
 	b := surfaceBodyFrom(t, matchPatch(t, 2, func(i, j int) float64 { return 0.3 * float64((4-i)*(4-i)) }))
 	f := &BridgeFeature{def: &BridgeDefinition{OrderA: 2, OrderB: 2}, featName: "Bridge"}
@@ -30,6 +31,7 @@ func TestBridgeFeatureConnectsPanels(t *testing.T) {
 }
 
 func TestBridgeFeatureErrorsWithoutTwoBodies(t *testing.T) {
+	t.Parallel()
 	f := &BridgeFeature{def: &BridgeDefinition{}}
 	a := surfaceBodyFrom(t, matchPatch(t, 0, func(i, j int) float64 { return 0 }))
 	if _, err := f.Recompute(Input{Bodies: []*topo.Body{a}}); err == nil {
@@ -38,12 +40,14 @@ func TestBridgeFeatureErrorsWithoutTwoBodies(t *testing.T) {
 }
 
 func TestBridgeKind(t *testing.T) {
+	t.Parallel()
 	if (&BridgeFeature{def: &BridgeDefinition{}}).Kind() != "bridge-surface" {
 		t.Error("bridge kind")
 	}
 }
 
 func TestBridgeSurfaceRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBridgeFeatures(fs).Add(1, 2)
 	data, err := fs.MarshalRecipe(oneSketch{})
@@ -61,6 +65,7 @@ func TestBridgeSurfaceRoundTrip(t *testing.T) {
 }
 
 func TestRestoreBridgeRejectsMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreBridgeSurface(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreBridgeSurface(nil) should error")
 	}

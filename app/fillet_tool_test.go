@@ -15,6 +15,7 @@ import (
 // TestFilletToolConcaveStrategy checks the tool defaults to outward fill and carries the chosen
 // concave strategy (via the combo index) into the committed fillet's definition.
 func TestFilletToolConcaveStrategy(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	f := NewFilletTool()
@@ -44,6 +45,7 @@ func TestFilletToolConcaveStrategy(t *testing.T) {
 // 2×2×2 block, set the radius, OK — and asserts a valid solid with a cylinder face and the
 // rolling-ball volume. r=0.5, edge length 2: 8 − (r²−πr²/4)·2.
 func TestFilletToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2) // 2×2×2, vol 8
 	edge := verticalEdgeOf(t, block)
 	s.SetPicker(stubPicker{sel: edge})
@@ -83,6 +85,7 @@ func TestFilletToolEndToEnd(t *testing.T) {
 
 // TestFilletViaRibbonCommand drives the Fillet from its ribbon command/alias.
 func TestFilletViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -108,6 +111,7 @@ func TestFilletViaRibbonCommand(t *testing.T) {
 // outside the solid) fails loudly: the tool stays open and the session carries a notice the
 // status bar shows — not a silent "nothing happened".
 func TestFilletUnbuildableSurfacesNotice(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	f := NewFilletTool()
 	s.StartTool(f)
@@ -132,6 +136,7 @@ func TestFilletUnbuildableSurfacesNotice(t *testing.T) {
 // s.OK() refuses, and — crucially — NO feature is appended to the design (the sick node must not
 // persist in the tree). Fixing the radius then commits cleanly, adding exactly one feature.
 func TestSickConfigIsNotCommitted(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	f := NewFilletTool()
 	s.StartTool(f)
@@ -166,6 +171,7 @@ func TestSickConfigIsNotCommitted(t *testing.T) {
 
 // TestFilletToolNeedsEdge checks the tool is not committable until an edge is picked.
 func TestFilletToolNeedsEdge(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	f := NewFilletTool()

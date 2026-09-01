@@ -33,6 +33,7 @@ func (f *fakeAddinFiles) ReadFile(name string) ([]byte, error) {
 // TestAttachmentsOverWire drives documents.addAttachment / listAttachments /
 // removeAttachment end to end (M03-F08, #609).
 func TestAttachmentsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	s.Workspace().SetExternalFileProbe(&fakeAddinFiles{
 		files: map[string][]byte{"/data/loads.csv": []byte("f1,f2\n")},

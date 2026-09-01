@@ -63,6 +63,7 @@ func lowestFaceOf(t *testing.T, b *topo.Body) *topo.Face {
 // inferred (a mate between the two opposed planar faces) and recorded, the HUD reports it, and the
 // tool is reachable via ActiveGripSnap. Also exercises the prompt/cancel paths.
 func TestGripSnapToolCommitInfersAndSnaps(t *testing.T) {
+	t.Parallel()
 	s, asm, grounded, free := twoBoxAssembly(t)
 	s.StartTool(NewGripSnapTool())
 	tool := s.ActiveGripSnap()
@@ -103,6 +104,7 @@ func TestGripSnapToolCommitInfersAndSnaps(t *testing.T) {
 // TestGripSnapToolCommitRejectsBadSecondFace: a valid first pick but an unresolved second face is a
 // clean error, leaving the tool open.
 func TestGripSnapToolCommitRejectsBadSecondFace(t *testing.T) {
+	t.Parallel()
 	s, _, grounded, _ := twoBoxAssembly(t)
 	tool := NewGripSnapTool()
 	tool.Pick(s, FaceHandle{Face: topFaceOf(t, grounded), Body: grounded})
@@ -114,6 +116,7 @@ func TestGripSnapToolCommitRejectsBadSecondFace(t *testing.T) {
 
 // TestGripSnapToolCancelClears: cancelling drops the picks and the tool stays usable.
 func TestGripSnapToolCancelClears(t *testing.T) {
+	t.Parallel()
 	s := assemblySession(t)
 	tool := NewGripSnapTool()
 	tool.Start(s)
@@ -130,6 +133,7 @@ func TestGripSnapToolCancelClears(t *testing.T) {
 // TestGripSnapCommandStartsTool: the Assemble-tab Grip Snap command starts the tool on an active
 // assembly (covering the command closure).
 func TestGripSnapCommandStartsTool(t *testing.T) {
+	t.Parallel()
 	s := assemblySession(t) // already registers the standard commands, Grip Snap among them
 	if err := s.Execute("Assembly.GripSnap"); err != nil {
 		t.Fatalf("Grip Snap command: %v", err)

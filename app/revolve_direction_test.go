@@ -45,6 +45,7 @@ const quarterWasherApp = stdmath.Pi * (4*4 - 2*2) * 2 / 4
 // other side of the profile, not merely relabel it. Volume alone cannot tell the two apart, so the
 // assertion is on the centroid's side of the profile plane.
 func TestFlippedDirectionSweepsTheOtherWay(t *testing.T) {
+	t.Parallel()
 	fwd := revolveWith(t, func(*RevolveTool) {})
 	back := revolveWith(t, func(rv *RevolveTool) { rv.SetDirection(feature.NegativeDir) })
 
@@ -62,6 +63,7 @@ func TestFlippedDirectionSweepsTheOtherWay(t *testing.T) {
 // TestSymmetricDirectionSplitsTheAngle: Symmetric sweeps half of Angle A each way, so the solid
 // balances on the profile plane while covering the same total angle.
 func TestSymmetricDirectionSplitsTheAngle(t *testing.T) {
+	t.Parallel()
 	sym := revolveWith(t, func(rv *RevolveTool) { rv.SetDirection(feature.SymmetricDir) })
 
 	if relErr := stdmath.Abs(sym.Volume-quarterWasherApp) / quarterWasherApp; relErr > 0.01 {
@@ -75,6 +77,7 @@ func TestSymmetricDirectionSplitsTheAngle(t *testing.T) {
 // TestAsymmetricDirectionAddsTheSecondAngle: the Asymmetric toggle plus Angle B sweeps both ways
 // with separate angles.
 func TestAsymmetricDirectionAddsTheSecondAngle(t *testing.T) {
+	t.Parallel()
 	asym := revolveWith(t, func(rv *RevolveTool) {
 		rv.SetAsymmetric(true)
 		rv.SetSecondAngle(stdmath.Pi / 2)
@@ -94,6 +97,7 @@ func TestAsymmetricDirectionAddsTheSecondAngle(t *testing.T) {
 // harmless; an edit reuses the committed definition, and leaving its Angle2 in place would keep
 // sweeping the extra material after the user chose Default again.
 func TestLeavingAsymmetricDropsTheSecondAngle(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	part := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	axis, ok := part.WorkGeometry().AxisByRef(feature.OriginYAxis)
@@ -124,6 +128,7 @@ func TestLeavingAsymmetricDropsTheSecondAngle(t *testing.T) {
 // TestEditingARevolveKeepsItsDirection: re-opening a flipped revolve must show it flipped, or the
 // next OK would silently sweep it forward again.
 func TestEditingARevolveKeepsItsDirection(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	part := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	axis, ok := part.WorkGeometry().AxisByRef(feature.OriginYAxis)

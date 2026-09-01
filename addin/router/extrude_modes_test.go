@@ -10,6 +10,7 @@ type extrudeBodies struct {
 }
 
 func TestExtrudeSymmetricDirectionViaAPI(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var sk struct {
 		SketchIndex int `json:"sketchIndex"`
@@ -29,6 +30,7 @@ func TestExtrudeSymmetricDirectionViaAPI(t *testing.T) {
 }
 
 func TestExtrudeUnknownExtentRejectedByAPI(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &struct{}{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"10 mm","height":"10 mm"}`, &struct{}{})

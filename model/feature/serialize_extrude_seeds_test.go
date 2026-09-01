@@ -25,6 +25,7 @@ func splitRectSketch() *sketch.Sketch {
 }
 
 func TestResolveSeedsSelectsRegionByContainment(t *testing.T) {
+	t.Parallel()
 	sk := splitRectSketch()
 
 	// A seed in the large right region resolves to whichever index holds area 6.
@@ -60,6 +61,7 @@ func regionIndexOfArea(sk *sketch.Sketch, want float64) int {
 // does NOT strand the extrude on the wrong cell. Here the index deliberately points at the
 // large region while the seed points at the small one — the seed must win.
 func TestExtrudeSeedResolvesAtRecomputeNotStaleIndex(t *testing.T) {
+	t.Parallel()
 	sk := splitRectSketch()
 	large := regionIndexOfArea(sk, 6) // the WRONG cell the stale index points at
 	if large < 0 {
@@ -86,6 +88,7 @@ func TestExtrudeSeedResolvesAtRecomputeNotStaleIndex(t *testing.T) {
 // TestResolveSeedsDropsMissingWhenSomeHit confirms a seed that hits no region is dropped as
 // long as another seed resolves — a stray stale seed must not add a wrong (fallback) region.
 func TestResolveSeedsDropsMissingWhenSomeHit(t *testing.T) {
+	t.Parallel()
 	sk := splitRectSketch()
 	// First seed hits the area-2 region; second seed is off the sheet (misses).
 	got := resolveSeeds(sk, [][]float64{{0.5, 1}, {99, 99}}, []int{7, 7})
@@ -100,6 +103,7 @@ func TestResolveSeedsDropsMissingWhenSomeHit(t *testing.T) {
 // TestSeedFallbackAlignsToSeeds confirms seedFallback yields one load-time cell per seed, using
 // the recipe's first index when a seed hits nothing, and the recipe list unchanged with no seeds.
 func TestSeedFallbackAlignsToSeeds(t *testing.T) {
+	t.Parallel()
 	sk := splitRectSketch()
 	small, large := regionIndexOfArea(sk, 2), regionIndexOfArea(sk, 6)
 
@@ -121,6 +125,7 @@ func TestSeedFallbackAlignsToSeeds(t *testing.T) {
 }
 
 func TestResolveSeedsFallsBack(t *testing.T) {
+	t.Parallel()
 	sk := splitRectSketch()
 
 	// No seeds -> the explicit index list is used unchanged.
@@ -134,6 +139,7 @@ func TestResolveSeedsFallsBack(t *testing.T) {
 }
 
 func TestResolveSeedSingleRegion(t *testing.T) {
+	t.Parallel()
 	sk := splitRectSketch()
 	// a seed in the large region resolves to whichever index holds area 6
 	got := resolveSeed(sk, []float64{2.5, 1}, 0)

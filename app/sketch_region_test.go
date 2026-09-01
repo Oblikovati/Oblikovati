@@ -29,6 +29,7 @@ func sketchRegionFixture(t *testing.T) (*Session, *sketch.Sketch, func(math.Poin
 }
 
 func TestPickSketchRegionWindowEnclosesEntities(t *testing.T) {
+	t.Parallel()
 	s, sk, proj := sketchRegionFixture(t)
 	ln := sk.Lines().AddByTwoPoints(math.P2(-1, 0), math.P2(1, 0))
 	sk.Points().Add(math.P2(40, 40)) // far off to the side
@@ -49,6 +50,7 @@ func TestPickSketchRegionWindowEnclosesEntities(t *testing.T) {
 }
 
 func TestPickSketchRegionCrossingCatchesPartialLine(t *testing.T) {
+	t.Parallel()
 	s, sk, proj := sketchRegionFixture(t)
 	ln := sk.Lines().AddByTwoPoints(math.P2(-2, 0), math.P2(2, 0))
 
@@ -70,6 +72,7 @@ func TestPickSketchRegionCrossingCatchesPartialLine(t *testing.T) {
 }
 
 func TestPickSketchRegionNoActiveSketch(t *testing.T) {
+	t.Parallel()
 	if got := NewSession().pickSketchRegion(0, 0, 10, 10, false); got != nil {
 		t.Errorf("pickSketchRegion with no active sketch should return nil, got %d", len(got))
 	}
@@ -79,6 +82,7 @@ func TestPickSketchRegionNoActiveSketch(t *testing.T) {
 // RegionPicker installed) and checks BeginBoxSelect is allowed and CommitBoxSelect routes to the
 // sketch region pick, selecting the enclosed entity.
 func TestBoxSelectStateMachineInSketch(t *testing.T) {
+	t.Parallel()
 	s, sk, proj := sketchRegionFixture(t)
 	ln := sk.Lines().AddByTwoPoints(math.P2(-1, 0), math.P2(1, 0))
 	ax, ay := proj(math.P2(-1, 0))

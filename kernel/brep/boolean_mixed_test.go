@@ -50,6 +50,7 @@ func cylinderFaceCount(b *topo.Body) int {
 // runs the exact planar pipeline on the block faces while the boss (wall, seat hole, cap) passes
 // through analytically — valid solid, exact volume, cylinder wall intact.
 func TestMixedBooleanNotchAwayFromBoss(t *testing.T) {
+	t.Parallel()
 	bossed := bossedBlock(t)
 	notch, _ := brep.SolidBlock(math.P3(-1, 4, 1), math.P3(2, 6, 3), "notch")
 	res, err := brep.BooleanDiag(brep.Difference, bossed, notch, nil)
@@ -70,6 +71,7 @@ func TestMixedBooleanNotchAwayFromBoss(t *testing.T) {
 
 // TestMixedBooleanUnionAwayFromBoss: welding an add-on block onto a side face away from the boss.
 func TestMixedBooleanUnionAwayFromBoss(t *testing.T) {
+	t.Parallel()
 	bossed := bossedBlock(t)
 	addon, _ := brep.SolidBlock(math.P3(10, 4, 1), math.P3(12, 6, 3), "addon")
 	res, err := brep.BooleanDiag(brep.Union, bossed, addon, nil)
@@ -93,6 +95,7 @@ func TestMixedBooleanUnionAwayFromBoss(t *testing.T) {
 // path's job. The tool reaches x=8, well past the wall (radius 2 about (5,5)), and the exact
 // interaction gate proves the contact (a ruling-line pair inside the tool face's trim and the band).
 func TestMixedBooleanDeclinesCurvedInteraction(t *testing.T) {
+	t.Parallel()
 	bossed := bossedBlock(t)
 	through, _ := brep.SolidBlock(math.P3(4, 4, 9), math.P3(8, 6, 12), "through")
 	if _, err := brep.BooleanDiag(brep.Difference, bossed, through, nil); err == nil {
@@ -106,6 +109,7 @@ func TestMixedBooleanDeclinesCurvedInteraction(t *testing.T) {
 // oracle sees the TRUE hole boundary). The cut removes EXACTLY the tool volume as an embedded cavity.
 // Asserted as a volume DELTA against the uncut fixture, isolating the boolean from any fixture bias.
 func TestMixedBooleanCavityThroughSeatHole(t *testing.T) {
+	t.Parallel()
 	bossed := bossedBlock(t)
 	before := vol(bossed)
 	tool, _ := brep.SolidBlock(math.P3(4, 4, 9), math.P3(6, 6, 12), "tool")
@@ -124,6 +128,7 @@ func TestMixedBooleanCavityThroughSeatHole(t *testing.T) {
 // TestMixedBooleanDisjointDifference: an all-pass-through operand (a lone cylinder — curved wall +
 // circular-rim caps) minus a disjoint box keeps every face whole through the unified stitch.
 func TestMixedBooleanDisjointDifference(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	far, _ := brep.SolidBlock(math.P3(20, 20, 20), math.P3(22, 22, 22), "far")
 	res, err := brep.BooleanDiag(brep.Difference, cyl, far, nil)
@@ -142,6 +147,7 @@ func TestMixedBooleanDisjointDifference(t *testing.T) {
 // cylindrical cavity — the tool's pass-through faces (curved wall + circular-edged caps) are kept
 // REVERSED into the void, welded by the unified stitch as an inner shell.
 func TestMixedBooleanEmbeddedCavityCut(t *testing.T) {
+	t.Parallel()
 	block, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")
 	tool, _ := brep.SolidCylinder(math.P3(5, 5, 3), math.V3(0, 0, 1), 1, 4)
 	res, err := brep.BooleanDiag(brep.Difference, block, tool, nil)
@@ -166,6 +172,7 @@ func TestMixedBooleanEmbeddedCavityCut(t *testing.T) {
 // so it still welds with the pass-through boss wall (previously this declined: the seat face was
 // pass-through-only and its box spans the whole top).
 func TestMixedBooleanPocketOnSeatFace(t *testing.T) {
+	t.Parallel()
 	bossed := bossedBlock(t)
 	pocket, _ := brep.SolidBlock(math.P3(1, 1, 9), math.P3(2.8, 2.8, 11), "pocket")
 	res, err := brep.BooleanDiag(brep.Difference, bossed, pocket, nil)
@@ -189,6 +196,7 @@ func TestMixedBooleanPocketOnSeatFace(t *testing.T) {
 // (plane∩cylinder ruling/circle curves against both trims, OCCT IntTools style) proves the wall clear
 // and the cut becomes an exact embedded cavity in a CURVED body.
 func TestMixedBooleanCavityInsideCylinder(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 5)
 	before := vol(cyl)
 	tool, _ := brep.SolidBlock(math.P3(-0.5, -0.5, 2), math.P3(0.5, 0.5, 3), "tool")
@@ -212,6 +220,7 @@ func TestMixedBooleanCavityInsideCylinder(t *testing.T) {
 // the untouched wall proves clear through the exact interaction gate. The pre-B3 dispatch declined
 // this whole class.
 func TestMixedBooleanPocketInCylinderCap(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 5)
 	before := vol(cyl)
 	tool, _ := brep.SolidBlock(math.P3(-0.8, -0.8, 4), math.P3(0.8, 0.8, 6), "tool")
@@ -234,6 +243,7 @@ func TestMixedBooleanPocketInCylinderCap(t *testing.T) {
 // tool's faces split on the mirrored segments. Removal matches the closed-form circular-segment
 // prism: 5·(∫√(4−y²)dy − 1.5·Δy) over y∈[−0.6, 0.6].
 func TestMixedBooleanSlotThroughCylinderWall(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 5)
 	before := vol(cyl)
 	tool, _ := brep.SolidBlock(math.P3(1.5, -0.6, -1), math.P3(2.5, 0.6, 6), "tool")

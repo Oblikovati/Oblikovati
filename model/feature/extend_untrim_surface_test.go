@@ -10,6 +10,7 @@ import (
 )
 
 func TestExtendSurfaceFeatureGrowsSurface(t *testing.T) {
+	t.Parallel()
 	body := surfaceBodyFrom(t, matchPatch(t, 0, func(i, j int) float64 { return 0.5 * float64(i*i) }))
 	f := &ExtendSurfaceFeature{def: &ExtendSurfaceDefinition{Edge: geom.UMaxEdge, Distance: 0.5, Order: 2}, featName: "ExtendSurface"}
 	out, err := f.Recompute(Input{Bodies: []*topo.Body{body}})
@@ -26,6 +27,7 @@ func TestExtendSurfaceFeatureGrowsSurface(t *testing.T) {
 }
 
 func TestExtendSurfaceFeatureErrorsWithoutBody(t *testing.T) {
+	t.Parallel()
 	f := &ExtendSurfaceFeature{def: &ExtendSurfaceDefinition{Edge: geom.UMaxEdge, Distance: 1, Order: 2}}
 	if _, err := f.Recompute(Input{}); err == nil {
 		t.Error("extend with no body should error")
@@ -33,6 +35,7 @@ func TestExtendSurfaceFeatureErrorsWithoutBody(t *testing.T) {
 }
 
 func TestUntrimFeatureRecoversFace(t *testing.T) {
+	t.Parallel()
 	body := surfaceBodyFrom(t, matchPatch(t, 0, func(i, j int) float64 { return 0.3 * float64(i*j) }))
 	f := &UntrimFeature{featName: "Untrim"}
 	out, err := f.Recompute(Input{Bodies: []*topo.Body{body}})
@@ -45,6 +48,7 @@ func TestUntrimFeatureRecoversFace(t *testing.T) {
 }
 
 func TestUntrimFeatureErrorsWithoutBody(t *testing.T) {
+	t.Parallel()
 	f := &UntrimFeature{}
 	if _, err := f.Recompute(Input{}); err == nil {
 		t.Error("untrim with no body should error")
@@ -52,6 +56,7 @@ func TestUntrimFeatureErrorsWithoutBody(t *testing.T) {
 }
 
 func TestExtendUntrimKinds(t *testing.T) {
+	t.Parallel()
 	if (&ExtendSurfaceFeature{def: &ExtendSurfaceDefinition{}}).Kind() != "extend-surface" {
 		t.Error("extend kind")
 	}
@@ -61,6 +66,7 @@ func TestExtendUntrimKinds(t *testing.T) {
 }
 
 func TestExtendSurfaceRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewExtendSurfaceFeatures(fs).Add(geom.VMaxEdge, 2.5, 2)
 	NewUntrimFeatures(fs).Add()
@@ -82,6 +88,7 @@ func TestExtendSurfaceRoundTrip(t *testing.T) {
 }
 
 func TestRestoreExtendUntrimRejectMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreExtendSurface(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreExtendSurface(nil) should error")
 	}

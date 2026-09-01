@@ -28,6 +28,7 @@ import (
 // solveBlend sphere solve had the identical latent defect. Real user-facing bug: corner fillets on
 // every imported STEP solid were wrong. Must stay green; never made green by loosening the tolerance.
 func TestBoxSharedCornerArea(t *testing.T) {
+	t.Parallel()
 	const occtArea = 145.137 // OCCT checkprops -s for simple/P8 and simple/V8
 
 	t.Run("native/miter", func(t *testing.T) {

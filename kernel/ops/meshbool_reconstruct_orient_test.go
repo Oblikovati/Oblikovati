@@ -16,6 +16,7 @@ import (
 // upholds and downstream consumers rely on (#2247). The Difference cut faces come from the tool and
 // would otherwise arrive reversed=true.
 func TestReconstructBooleanPlanarFacesAreOutward(t *testing.T) {
+	t.Parallel()
 	box, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "box")
 	if err != nil {
 		t.Fatal(err)

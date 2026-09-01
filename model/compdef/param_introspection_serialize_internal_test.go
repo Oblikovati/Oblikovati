@@ -13,6 +13,7 @@ import (
 // reopened model parameter would lose Renamed (re-added under its stored name) and its
 // DisabledActionTypes would reset to none.
 func TestParameterIntrospectionRoundTrip(t *testing.T) {
+	t.Parallel()
 	src := param.NewParameters()
 	m, err := src.AddModelParameter("d0", "5 mm")
 	if err != nil {

@@ -32,6 +32,7 @@ func partWithTopRegion(t *testing.T) (*Session, *compdef.PartComponentDefinition
 // TestEmbossToolEndToEnd drives the Emboss UI: pick a region, set a depth, OK — and asserts the
 // raised emboss added material (block 72 + 2×2×1 = 76).
 func TestEmbossToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def, region := partWithTopRegion(t)
 	s.SetPicker(stubPicker{sel: region})
 
@@ -56,6 +57,7 @@ func TestEmbossToolEndToEnd(t *testing.T) {
 
 // Engrave mode cuts material (block 72 − 2×2×1 = 68).
 func TestEmbossToolEngraves(t *testing.T) {
+	t.Parallel()
 	s, def, region := partWithTopRegion(t)
 	s.SetPicker(stubPicker{sel: region})
 
@@ -73,6 +75,7 @@ func TestEmbossToolEngraves(t *testing.T) {
 }
 
 func TestEmbossViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _, _ := partWithTopRegion(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

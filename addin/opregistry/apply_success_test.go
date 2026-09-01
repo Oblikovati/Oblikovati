@@ -28,6 +28,7 @@ func twoBodyPart(t *testing.T) *app.Session {
 // TestAdditiveOperations drives the additive profile features to their feature-building
 // success path (recomputeResult never errors for a well-formed request).
 func TestAdditiveOperations(t *testing.T) {
+	t.Parallel()
 	cases := []struct{ name, op, args string }{
 		{"revolve default axis", "revolve", `{"sketchIndex":0,"angle":"360 deg"}`},
 		{"revolve partial", "revolve", `{"sketchIndex":0,"angle":"90 deg","angle2":"30 deg"}`},
@@ -48,6 +49,7 @@ func TestAdditiveOperations(t *testing.T) {
 // TestThickenOptionErrors covers the #1876 router parse branches: an unknown direction or
 // operation is rejected with a descriptive error rather than silently defaulting.
 func TestThickenOptionErrors(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	if _, err := apply(t, s, "thicken", `{"thickness":"1 mm","direction":"sideways"}`); err == nil {
 		t.Error("unknown thicken direction should error")
@@ -61,6 +63,7 @@ func TestThickenOptionErrors(t *testing.T) {
 // (here the face's own key) resolves through the plane target and rebuilds without error, and an
 // empty new-face/target set is rejected.
 func TestReplaceFaceNewFaceRefs(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	ok, _ := json.Marshal(map[string]any{"faceRefs": []string{face}, "newFaceRefs": []string{face}})
 	if _, err := apply(t, s, "replaceFace", string(ok)); err != nil {
@@ -76,6 +79,7 @@ func TestReplaceFaceNewFaceRefs(t *testing.T) {
 // operations against a solid. They must return a result or a descriptive error (some need
 // geometry the seeded box lacks), never panic — exercising decode/resolve/build.
 func TestModifyAndPatternOperations(t *testing.T) {
+	t.Parallel()
 	type setup func(t *testing.T) (*app.Session, map[string]any)
 
 	withSolid := func(extra func(edge, face string) map[string]any) setup {
@@ -147,6 +151,7 @@ func TestModifyAndPatternOperations(t *testing.T) {
 // direction (and optional draft/flip) and builds; a sweep with no direction, and an unknown type,
 // error clearly. The legacy "perpendicular" spelling still resolves to the sweep type.
 func TestRuledSurfaceSweepOptions(t *testing.T) {
+	t.Parallel()
 	ok, _ := json.Marshal(map[string]any{"sketchIndex": 0, "distance": "3 mm", "type": "sweep", "direction": []float64{0, 0, 1}, "draftAngle": "5 deg", "flip": true})
 	if _, err := apply(t, profiledPart(t), "ruledSurface", string(ok)); err != nil {
 		t.Fatalf("ruledSurface sweep: %v", err)
@@ -164,6 +169,7 @@ func TestRuledSurfaceSweepOptions(t *testing.T) {
 // continuous map to G0/G1/G2, and an edge-loop request dispatches to the 3D fill (a solid's lone edge
 // cannot close a loop, so a descriptive error — never a panic — is acceptable).
 func TestBoundaryPatchConditionMapping(t *testing.T) {
+	t.Parallel()
 	cases := map[string]feature.PatchCondition{
 		"free": feature.PatchFree, "tangent": feature.PatchTangent,
 		"curvature": feature.PatchCurvature, "continuous": feature.PatchCurvature, "": feature.PatchFree,
@@ -184,6 +190,7 @@ func TestBoundaryPatchConditionMapping(t *testing.T) {
 // requirement and are dispatched to the model, while an empty request (no pairs, no maxThickness)
 // errors.
 func TestMidSurfaceFacePairs(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	pairs, _ := json.Marshal(map[string]any{"facePairs": []map[string]string{{"a": face, "b": face}}})
 	if _, err := apply(t, s, "midSurface", string(pairs)); err != nil && err.Error() == "" {
@@ -197,6 +204,7 @@ func TestMidSurfaceFacePairs(t *testing.T) {
 // TestSculptSurfaces covers the #1881 router path: bounding surfaces with per-surface directions
 // and an affected-body index parse and dispatch (result or a descriptive error, never a panic).
 func TestSculptSurfaces(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	args, _ := json.Marshal(map[string]any{
 		"operation":         "new",
@@ -212,6 +220,7 @@ func TestSculptSurfaces(t *testing.T) {
 // tool resolve to a cutting plane (result or a descriptive error, never a resolution panic); a
 // multi-plane surface-body tool and an empty request error clearly.
 func TestTrimCuttingTools(t *testing.T) {
+	t.Parallel()
 	// Fresh session per assertion — each trim mutates the running body.
 	s1, _, _ := extrudedSolid(t)
 	if _, err := apply(t, s1, "trim", `{"toolRef":"origin/plane/xy"}`); err != nil && err.Error() == "" {
@@ -234,6 +243,7 @@ func TestTrimCuttingTools(t *testing.T) {
 // TestExtendRouterOptions covers the #1878 extend parse/resolve branches: no edges errors, and
 // extentType toPlane without a targetRef errors (the plane target cannot resolve).
 func TestExtendRouterOptions(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	if _, err := apply(t, s, "extend", `{"distance":"1 mm"}`); err == nil {
 		t.Error("extend with no edges should error")
@@ -245,6 +255,7 @@ func TestExtendRouterOptions(t *testing.T) {
 
 // TestCombineTwoBodies covers the boolean-combine path that needs a tool body.
 func TestCombineTwoBodies(t *testing.T) {
+	t.Parallel()
 	for _, op := range []string{"join", "cut", "intersect"} {
 		s := twoBodyPart(t)
 		assertNoPanic(t, "combine", s, map[string]any{"targetIndex": 0, "toolIndex": 1, "operation": op})
@@ -253,6 +264,7 @@ func TestCombineTwoBodies(t *testing.T) {
 
 // TestFreeformPrimitives: the freeform ops build a subdivision cage from scratch (no solid).
 func TestFreeformPrimitives(t *testing.T) {
+	t.Parallel()
 	cases := []struct{ op, args string }{
 		{"freeformBox", `{"sizeX":"10 mm","sizeY":"10 mm","sizeZ":"10 mm"}`},
 		{"freeformPlane", `{"sizeX":"10 mm","sizeY":"10 mm"}`},
@@ -285,6 +297,7 @@ func assertNoPanic(t *testing.T, op string, s *app.Session, args map[string]any)
 // the request lands on the definition on EVERY axis path, including the centerline one that
 // restores and builds through its own constructor.
 func TestRevolveDirectionReachesTheDefinition(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		name, args string
 		want       feature.ExtentDirection

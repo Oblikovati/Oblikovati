@@ -13,6 +13,7 @@ import (
 // vertex. The cell-exact lookup used before left such pairs unmerged, which shredded dense
 // self-proximate geometry (a fine-pitch coil-join) into coincident, unpaired open edges.
 func TestWelder3MergesAcrossGridBoundary(t *testing.T) {
+	t.Parallel()
 	w := newWelder3(1e-6)
 	// 0.00050049 and 0.00050051 are 2e-8 cm apart (well within weldGrid) but round to cells
 	// 500 and 501 — opposite sides of a 1e-6 grid boundary.
@@ -32,6 +33,7 @@ func TestWelder3MergesAcrossGridBoundary(t *testing.T) {
 // mergeFilledHoles still dissolves the filled hole. The retired exact-cell string keys rounded the
 // two copies into different cells (#1602).
 func TestRingSignatureImmuneToCellStraddle(t *testing.T) {
+	t.Parallel()
 	pw := newWelder3(planarStitchGrid)
 	ring := []math.Point3{math.P3(0.00050049, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0)}
 	copyRing := []math.Point3{math.P3(0.00050051, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0)}

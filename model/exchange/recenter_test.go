@@ -29,6 +29,7 @@ func farCluster(cx, cy float64, n int) []drawing.Entity {
 // TestRecenterMovesFarDrawingToOrigin: a drawing centred far from the origin is shifted so
 // its bulk lands near the origin, and the reported offset is the (robust) original centre.
 func TestRecenterMovesFarDrawingToOrigin(t *testing.T) {
+	t.Parallel()
 	const cx, cy = 5.4e7, 1.78e7
 	es := farCluster(cx, cy, 200)
 	out, offset, did := recenterFarFromOrigin(es)
@@ -48,6 +49,7 @@ func TestRecenterMovesFarDrawingToOrigin(t *testing.T) {
 // TestRecenterLeavesNearOriginUnchanged: a normal near-origin drawing is not shifted, so
 // ordinary imports and the export round-trip are unaffected.
 func TestRecenterLeavesNearOriginUnchanged(t *testing.T) {
+	t.Parallel()
 	es := []drawing.Entity{
 		&drawing.Line{Start: [3]float64{0, 0, 0}, End: [3]float64{100, 50, 0}},
 		&drawing.Circle{Center: [3]float64{2000, 1500, 0}, Radius: 30}, // 20 m out, still well under 1 km
@@ -65,6 +67,7 @@ func TestRecenterLeavesNearOriginUnchanged(t *testing.T) {
 // the dense cluster even though the outliers sit symmetrically opposite, where a bounding-box
 // centre would average to ~0 and leave the cluster far from the origin.
 func TestRecenterIgnoresOppositeOutliers(t *testing.T) {
+	t.Parallel()
 	es := farCluster(5.4e7, 1.78e7, 100)
 	c, ok := robustCenter(es)
 	if !ok || c[0] < 5.3e7 {
@@ -74,6 +77,7 @@ func TestRecenterIgnoresOppositeOutliers(t *testing.T) {
 
 // TestRobustCenterEmpty: no anchored entities yields ok=false.
 func TestRobustCenterEmpty(t *testing.T) {
+	t.Parallel()
 	if _, ok := robustCenter([]drawing.Entity{&drawing.LwPolyline{}}); ok {
 		t.Error("a drawing with no anchored entities should report no centre")
 	}
@@ -82,6 +86,7 @@ func TestRobustCenterEmpty(t *testing.T) {
 // TestImportDrawingRecentersAndWarns wires the recenter into the shared import: a far-from-origin
 // drawing lands near the origin and the import surfaces the recenter warning.
 func TestImportDrawingRecentersAndWarns(t *testing.T) {
+	t.Parallel()
 	part := compdef.NewPartComponentDefinition()
 	dr := &drawing.Drawing{Entities: farCluster(6e8, 2e8, 60)} // unitless ⇒ no unit scaling
 	imp := importDrawing(part, dr, sketch.XYPlane())

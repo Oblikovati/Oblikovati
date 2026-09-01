@@ -12,6 +12,7 @@ import (
 // TestCoreCavityToolEndToEnd parts a 6×6×2 block at z=1: two valid solids (core below,
 // cavity above) replace the block.
 func TestCoreCavityToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 
@@ -36,6 +37,7 @@ func TestCoreCavityToolEndToEnd(t *testing.T) {
 
 // A parting outside the block must surface the model error through the tool.
 func TestCoreCavityToolRejectsPartingOutsideBlock(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6) // block z 0..2
 
 	tool := NewCoreCavityTool()
@@ -48,6 +50,7 @@ func TestCoreCavityToolRejectsPartingOutsideBlock(t *testing.T) {
 
 // TestCoreCavityViaRibbonCommand asserts the Mold panel command starts the tool.
 func TestCoreCavityViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

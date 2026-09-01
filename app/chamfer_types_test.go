@@ -41,6 +41,7 @@ func chamferBlockEdge(t *testing.T, setup func(*ChamferTool)) (*feature.ChamferD
 }
 
 func TestChamferToolBuildsTwoDistanceChamfer(t *testing.T) {
+	t.Parallel()
 	def, vol := chamferBlockEdge(t, func(ch *ChamferTool) {
 		ch.SetChamferTypeIndex(1) // Two distances
 		ch.SetDistance(0.3)
@@ -59,6 +60,7 @@ func TestChamferToolBuildsTwoDistanceChamfer(t *testing.T) {
 }
 
 func TestChamferToolBuildsDistanceAndAngleChamfer(t *testing.T) {
+	t.Parallel()
 	def, vol := chamferBlockEdge(t, func(ch *ChamferTool) {
 		ch.SetChamferTypeIndex(2) // Distance and angle
 		ch.SetDistance(0.4)
@@ -77,6 +79,7 @@ func TestChamferToolBuildsDistanceAndAngleChamfer(t *testing.T) {
 }
 
 func TestChamferToolDefaultsToEqualDistance(t *testing.T) {
+	t.Parallel()
 	def, vol := chamferBlockEdge(t, func(ch *ChamferTool) { ch.SetDistance(0.5) })
 	if def.Type != types.ChamferDistance {
 		t.Errorf("chamfer type = %v, want ChamferDistance", def.Type)
@@ -89,6 +92,7 @@ func TestChamferToolDefaultsToEqualDistance(t *testing.T) {
 // A mode whose second input is unusable must not commit — a zero second distance or a
 // degenerate angle builds a chamfer with no face.
 func TestChamferToolBlocksCommitOnUnusableModeInput(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	ch := NewChamferTool()
@@ -115,6 +119,7 @@ func TestChamferToolBlocksCommitOnUnusableModeInput(t *testing.T) {
 // Re-editing a committed chamfer seeds the panel with its mode and that mode's input, and
 // writing back keeps them.
 func TestChamferEditRoundTripsTheMode(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	ch := NewChamferTool()

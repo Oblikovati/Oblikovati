@@ -35,6 +35,7 @@ func topEdgesAlongX(t *testing.T, body *topo.Body) []*topo.Edge {
 // sets folds a wall on every edge and records one bend per edge, so on two opposite edges it adds
 // twice a single flange's band and reports two placements.
 func TestFlangeEdgeSetsFlangesEveryEdge(t *testing.T) {
+	t.Parallel()
 	const side, r, h, th = 4.0, 0.2, 1.0, 0.2
 	fs, _ := seedSheetMetalSheet(t, side, nil)
 	edges := topEdgesAlongX(t, fs.Result()[0])
@@ -77,6 +78,7 @@ func TestFlangeEdgeSetsFlangesEveryEdge(t *testing.T) {
 // TestFlangeEdgeSetsRoundTrip persists and restores a multi-edge flange's edge-set collection,
 // including a per-set width; a legacy single-edge recipe (no edgeSets) reads back unchanged.
 func TestFlangeEdgeSetsRoundTrip(t *testing.T) {
+	t.Parallel()
 	def := &SheetMetalFlangeDefinition{
 		Height: func() float64 { return 1 },
 		EdgeSets: []FlangeEdgeSet{

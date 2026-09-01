@@ -46,6 +46,7 @@ func gridArea(m *cdt) float64 {
 // count essentially flat; an O(N²) location would roughly quadruple it. The mesh must also still cover
 // each grid's convex hull exactly (a valid triangulation).
 func TestCDTPointLocationIsNearLinear(t *testing.T) {
+	t.Parallel()
 	small, large := denseGridCDT(40), denseGridCDT(80)
 	for _, m := range []*cdt{small, large} {
 		n := 40
@@ -69,6 +70,7 @@ func TestCDTPointLocationIsNearLinear(t *testing.T) {
 // has been deleted by an earlier insertion, liveSeed must skip it and restart from a live triangle, and
 // locate must still land on the triangle containing the query point.
 func TestCDTLocateRecoversFromDeadHint(t *testing.T) {
+	t.Parallel()
 	m := denseGridCDT(8)
 	for d := range m.dead {
 		if m.dead[d] {

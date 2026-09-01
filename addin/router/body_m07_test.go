@@ -29,6 +29,7 @@ func boxPartSession(t *testing.T) (*Router, *app.Session) {
 // TestBodyListAndShells: enumeration reports the box and its single closed,
 // non-void shell with keys.
 func TestBodyListAndShells(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	var list wire.BodyListResult
 	call(t, r, s, "body.list", `{}`, &list)
@@ -53,6 +54,7 @@ func TestBodyListAndShells(t *testing.T) {
 // part default, then a body-level override winning over it — the read-back of the write-only
 // assignMaterial that an analysis add-in uses for per-body material models.
 func TestBodyListReportsMaterial(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 
 	var before wire.BodyListResult
@@ -85,6 +87,7 @@ func TestBodyListReportsMaterial(t *testing.T) {
 // the top face, tool-radius widening, and a piercing move clamped to 0; plus the malformed-input
 // guard. Distances are database units (cm); the box top is at z=5.
 func TestBodyMinimumDistance(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	var md wire.MinimumDistanceResult
 
@@ -110,6 +113,7 @@ func TestBodyMinimumDistance(t *testing.T) {
 
 // TestBodyPointAndRayQueries: locate, ray, containment.
 func TestBodyPointAndRayQueries(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	var loc wire.LocateUsingPointResult
 	call(t, r, s, "body.locateUsingPoint", `{"bodyIndex":0,"point":[2,1.5,5.05],"entityKind":"face","proximityTolerance":0.1}`, &loc)
@@ -134,6 +138,7 @@ func TestBodyPointAndRayQueries(t *testing.T) {
 
 // TestBodyConvexityValidateRangeBoxBind: the remaining query handlers.
 func TestBodyConvexityValidateRangeBoxBind(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	var conv wire.ConvexityEdgesResult
 	call(t, r, s, "body.convexityEdges", `{"bodyIndex":0,"collection":"allConvex"}`, &conv)
@@ -173,6 +178,7 @@ func vecLen(v []float64) float64 {
 // TestFacetAndStrokeCacheFlow: calculate caches, existing retrieves, the
 // tolerance lists track, and the face-level calls work by key.
 func TestFacetAndStrokeCacheFlow(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	var fs wire.FacetSetResult
 	call(t, r, s, "body.calculateFacets", `{"bodyIndex":0,"tolerance":0.01,"includeTextureMap":true}`, &fs)
@@ -219,6 +225,7 @@ func TestFacetAndStrokeCacheFlow(t *testing.T) {
 
 // TestBodyValidateFlagsBadIndex: errors carry the offending value.
 func TestBodyValidateFlagsBadIndex(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	_, err := r.Handle(s, "body.shells", []byte(`{"bodyIndex":5}`))
 	if err == nil || !strings.Contains(err.Error(), "5") {

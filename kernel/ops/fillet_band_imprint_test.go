@@ -60,6 +60,7 @@ func bandSlotFillet(t *testing.T, c bandCase) (*topo.Body, edgeFillet, filletReb
 // the four box corners answered by the fillet's own tangent points bit for bit (bandBoxCorner) — which
 // is what lets a face the walk does not rebuild keep the vertices it has today.
 func TestBandImprintChartIsTheBlendsOwnRectangle(t *testing.T) {
+	t.Parallel()
 	for _, c := range []bandCase{{"Y2", 15}, {"Y3", 20}, {"Y4", 25}} {
 		_, ef, _, _ := bandSlotFillet(t, c)
 		chart, ok := newBandChart(ef)
@@ -83,6 +84,7 @@ func TestBandImprintChartIsTheBlendsOwnRectangle(t *testing.T) {
 // the band crosses z = 80 / z = 90 — asin((80 − (100−r))/r) and asin((90 − (100−r))/r), kept only when
 // they fall strictly inside the box.
 func TestBandImprintCutsAreTheSlotsOwnFaces(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		bandCase
 		wantV []float64
@@ -126,6 +128,7 @@ func assertBandCuts(t *testing.T, what string, got, want []float64, span float64
 // corpus cases cannot move: Y1's contact line lands exactly ON the slot's roof, so no cut falls
 // strictly inside the box and solveBandImprint declines before it classifies anything.
 func TestBandImprintDeclinesAnUnobstructedBand(t *testing.T) {
+	t.Parallel()
 	body, ef, maps, caps := bandSlotFillet(t, bandCase{"Y1", 10})
 	if imp, ok := solveBandImprint(body, ef, ResolutionForBody(body).Weld()); ok {
 		t.Fatalf("Y1: the walk claimed an obstacle it does not have: %+v", imp.runs)
@@ -139,6 +142,7 @@ func TestBandImprintDeclinesAnUnobstructedBand(t *testing.T) {
 // DEVELOPED AREA — the band area the blend must keep — measured off the traced runs themselves rather
 // than off any mesh: r·(π/2)·100 minus the slot's own bite r·Δv·10.
 func TestBandImprintTracesTheSurvivingRegion(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		bandCase
 		runs int
@@ -180,6 +184,7 @@ func bandRunsDevelopedArea(imp bandImprint) float64 {
 // walk hands over must already land on the ring of the face it lies on, so the splice has two landings
 // to cut at. A run that does not is the "guessed landing" the primitive refuses.
 func TestBandImprintChainLandsOnEveryFacesOwnRing(t *testing.T) {
+	t.Parallel()
 	for _, c := range []bandCase{{"Y2", 15}, {"Y3", 20}, {"Y4", 25}} {
 		body, ef, _, _ := bandSlotFillet(t, c)
 		imp, ok := solveBandImprint(body, ef, ResolutionForBody(body).Weld())
@@ -209,6 +214,7 @@ func TestBandImprintChainLandsOnEveryFacesOwnRing(t *testing.T) {
 // astride the slot, and the classifier must refuse it rather than pick whichever side its first probe
 // landed on. Without this the walk would ship a band trimmed on a straight guess.
 func TestBandImprintArrangementIsFalsifiedByAMissingCut(t *testing.T) {
+	t.Parallel()
 	body, ef, _, _ := bandSlotFillet(t, bandCase{"Y2", 15})
 	chart, _ := newBandChart(ef)
 	us, vs, _ := bandImprintCuts(body, ef, chart, ResolutionForBody(body).Weld())
@@ -226,6 +232,7 @@ func TestBandImprintArrangementIsFalsifiedByAMissingCut(t *testing.T) {
 // z = 85). So the router must account for EVERY run — either rebuilding that face or proving the
 // existing transform already agrees with the walk — and never for only some of them.
 func TestBandImprintRebuildsEveryFaceItsRunsCross(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		bandCase
 		rebuilt int // faces whose loop the walk DISAGREES with, and therefore replaces

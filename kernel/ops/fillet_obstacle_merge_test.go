@@ -109,6 +109,7 @@ func loopHasPointNear(loop filletLoop, target m.Point3, tol float64) bool {
 // that was the wrong arc; the notched face's front edge stays at the receded boundary y=-7 and
 // the removed area is the ellipse-above-y=-7 segment (760 rect - 426.914 ellipse-part = 333.086).
 func TestMergeHoleIntoNotchT6(t *testing.T) {
+	t.Parallel()
 	outer := recededTopOuterT6()
 	hole := ellipseHoleT6()
 	nodes := nodesForT6(t)
@@ -148,6 +149,7 @@ func assertT6Notch(t *testing.T, notch filletLoop, flat func(m.Point3) m.Point2)
 // y-min≈-7, area≈333.086, upper arc absorbed) — proving the orientation branch, not just the case
 // T6 happens to take, is correct.
 func TestMergeHoleIntoNotchNativeOrientation(t *testing.T) {
+	t.Parallel()
 	outer := recededTopOuterT6CW()
 	hole := ellipseHoleT6()
 	nodes := nodesForT6(t)
@@ -175,6 +177,7 @@ func TestMergeHoleIntoNotchNativeOrientation(t *testing.T) {
 //     stale full-span curve cannot do (its endpoints are the PRE-truncation samples), and which the
 //     straight chord it replaced cannot do either (1.6e-04 over the same sub-span, 3500x worse).
 func TestMergeHoleIntoNotchBoundarySegmentFidelity(t *testing.T) {
+	t.Parallel()
 	hole := ellipseHoleT6()
 	nodes := nodesForT6(t)
 	_, back := zPlaneProjector()
@@ -266,6 +269,7 @@ func t6EllipseDistance(p m.Point3) float64 {
 // outer loop with TWO edges each spanning both Nodes on the receded boundary is ambiguous (the
 // splice cannot pick a cut edge), so the merge must reject rather than mis-splice.
 func TestMergeHoleIntoNotchAmbiguousEdgeRejected(t *testing.T) {
+	t.Parallel()
 	var outer filletLoop
 	outer.add(m.P3(-20, -7, 0), nil) // edge 0: (-20,-7)->(20,-7) spans both Nodes
 	outer.add(m.P3(20, -7, 0), nil)  // edge 1: (20,-7)->(-20,-7) ALSO spans both Nodes (back-and-forth)
@@ -326,6 +330,7 @@ func pointToSegmentDist3(p, a, b m.Point3) float64 {
 // TestMergeHoleIntoNotchEmptyLoopsRejected covers mergeHoleIntoNotch's honest-reject path: an
 // empty outer or hole loop is malformed input, not a zero-size notch.
 func TestMergeHoleIntoNotchEmptyLoopsRejected(t *testing.T) {
+	t.Parallel()
 	outer, hole := recededTopOuterT6(), ellipseHoleT6()
 	nodes := nodesForT6(t)
 	flat, back := zPlaneProjector()
@@ -341,6 +346,7 @@ func TestMergeHoleIntoNotchEmptyLoopsRejected(t *testing.T) {
 // edge spanning both Nodes (e.g. a rectangle whose front edge is not the receded boundary) —
 // frontEdgeSegment must find zero candidates and honest-reject rather than mis-splice.
 func TestMergeHoleIntoNotchNoFrontEdgeRejected(t *testing.T) {
+	t.Parallel()
 	var outer filletLoop
 	outer.add(m.P3(-20, -1, 0), nil) // shifted off y=-7: the Nodes no longer lie on this edge
 	outer.add(m.P3(20, -1, 0), nil)

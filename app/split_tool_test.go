@@ -23,6 +23,7 @@ func partWithMidPlane(t *testing.T, side float64) (*Session, *compdef.PartCompon
 // TestSplitToolEndToEnd drives the Split UI: pick a cutting work plane, OK — and asserts the
 // part divided into two valid solids.
 func TestSplitToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def, wp := partWithMidPlane(t, 6)
 
 	split := NewSplitTool()
@@ -47,6 +48,7 @@ func TestSplitToolEndToEnd(t *testing.T) {
 
 // Trim mode (keep one side) leaves a single body.
 func TestSplitToolTrimsOneSide(t *testing.T) {
+	t.Parallel()
 	s, def, wp := partWithMidPlane(t, 6)
 
 	split := NewSplitTool()
@@ -62,6 +64,7 @@ func TestSplitToolTrimsOneSide(t *testing.T) {
 }
 
 func TestSplitNeedsPlane(t *testing.T) {
+	t.Parallel()
 	s, _, _ := partWithMidPlane(t, 4)
 	split := NewSplitTool()
 	s.StartTool(split)
@@ -71,6 +74,7 @@ func TestSplitNeedsPlane(t *testing.T) {
 }
 
 func TestSplitViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _, _ := partWithMidPlane(t, 4)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

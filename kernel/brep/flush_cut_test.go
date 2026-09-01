@@ -46,6 +46,7 @@ func flushCut(t *testing.T, name string, target, tool *topo.Body) {
 // TestFlushBottomCutInterior: tool bottom coplanar with target bottom, tool strictly inside
 // the silhouette, tool taller than the target (pierces the top normally).
 func TestFlushBottomCutInterior(t *testing.T) {
+	t.Parallel()
 	target := prismBody(rectPts(0, 0, 1, 1), 0, 0.5, "box")
 	tool := prismBody(rectPts(0.3, 0.3, 0.7, 0.7), 0, 2, "punch")
 	flushCut(t, "interior", target, tool)
@@ -54,6 +55,7 @@ func TestFlushBottomCutInterior(t *testing.T) {
 // TestFlushBottomCutCrossingSilhouette: same flush bottom, but the tool sticks out through
 // one side wall of the target — the #137 trigger configuration.
 func TestFlushBottomCutCrossingSilhouette(t *testing.T) {
+	t.Parallel()
 	target := prismBody(rectPts(0, 0, 1, 1), 0, 0.5, "box")
 	tool := prismBody(rectPts(0.3, 0.6, 1.4, 0.9), 0, 2, "punch") // exits through x=1
 	flushCut(t, "crossing", target, tool)
@@ -62,6 +64,7 @@ func TestFlushBottomCutCrossingSilhouette(t *testing.T) {
 // TestNonFlushCutCrossingSilhouette: control — same silhouette crossing but the tool spans
 // past the target on both ends. This already works (the kernel clip test relies on it).
 func TestNonFlushCutCrossingSilhouette(t *testing.T) {
+	t.Parallel()
 	target := prismBody(rectPts(0, 0, 1, 1), 0, 0.5, "box")
 	tool := prismBody(rectPts(0.3, 0.6, 1.4, 0.9), -0.5, 2, "punch")
 	flushCut(t, "control", target, tool)
@@ -87,6 +90,7 @@ func stadiumPts(a, b [2]float64, radius float64, steps int) []math.Point3 {
 // TestFlushSlotCutOnClipHull is the exact #137 brep call: the clip hull minus the live
 // recipe's flush-bottomed stadium slot.
 func TestFlushSlotCutOnClipHull(t *testing.T) {
+	t.Parallel()
 	base := prismBody(rectPts(-0.8, -0.09, 0.8, 0.09), 0, 0.5, "foot")
 	post := prismBody(rectPts(-0.2, -0.45, 0.2, 0.45), 0, 0.5, "post")
 	top := prismBody(regularPolygonPoints(math.P3(-0.55, 0.62, 0), 0.22, 24, 0), 0, 0.5, "loop")
@@ -101,6 +105,7 @@ func TestFlushSlotCutOnClipHull(t *testing.T) {
 // TestNonFlushSlotCutOnClipHull: identical cut, tool extended past the bottom — isolates
 // whether the flush z=0 caps are essential to the failure.
 func TestNonFlushSlotCutOnClipHull(t *testing.T) {
+	t.Parallel()
 	base := prismBody(rectPts(-0.8, -0.09, 0.8, 0.09), 0, 0.5, "foot")
 	post := prismBody(rectPts(-0.2, -0.45, 0.2, 0.45), 0, 0.5, "post")
 	top := prismBody(regularPolygonPoints(math.P3(-0.55, 0.62, 0), 0.22, 24, 0), 0, 0.5, "loop")
@@ -117,6 +122,7 @@ func TestNonFlushSlotCutOnClipHull(t *testing.T) {
 // y=1 wall: a corner EXACTLY on a target face pinches the solid along a line — a genuine
 // non-manifold configuration outside this test's scope.)
 func TestFlushObliqueCutOnBox(t *testing.T) {
+	t.Parallel()
 	target := prismBody(rectPts(0, 0, 1, 1), 0, 0.5, "box")
 	tool := prismBody([]math.Point3{
 		math.P3(0.7, 0.43, 0), math.P3(1.1, 0.73, 0), math.P3(0.9, 0.98, 0), math.P3(0.5, 0.68, 0),
@@ -126,6 +132,7 @@ func TestFlushObliqueCutOnBox(t *testing.T) {
 
 // TestFlushInteriorSlotOnClipHull: flush stadium slot fully INSIDE the hull silhouette.
 func TestFlushInteriorSlotOnClipHull(t *testing.T) {
+	t.Parallel()
 	base := prismBody(rectPts(-0.8, -0.09, 0.8, 0.09), 0, 0.5, "foot")
 	post := prismBody(rectPts(-0.2, -0.45, 0.2, 0.45), 0, 0.5, "post")
 	top := prismBody(regularPolygonPoints(math.P3(-0.55, 0.62, 0), 0.22, 24, 0), 0, 0.5, "loop")

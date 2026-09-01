@@ -22,6 +22,7 @@ import (
 // endpoints onto a ring that started elsewhere — a self-touching ring that earcut filled with a
 // stray "wedge" across the hole (visible as red/green stray triangles in the drilled box).
 func TestImportedHoleNotTriangulatedOver(t *testing.T) {
+	t.Parallel()
 	data, err := os.ReadFile(filepath.Join("testdata", "occ", "drilled_box.step"))
 	if err != nil {
 		t.Fatalf("read drilled_box.step: %v", err)

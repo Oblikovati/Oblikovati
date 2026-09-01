@@ -16,6 +16,7 @@ import (
 // section planes at (or past) the same station, which geom.MarchCanalEdgeStationsSeeded's
 // warm-start continuation cannot recover from.
 func TestOpenAnchorArcsIsSortedWithinCutAndDeduped(t *testing.T) {
+	t.Parallel()
 	length := 100.0
 	cut := [2]float64{-10, 110} // both-ends prolong past the edge
 	arcs := openAnchorArcs(length, cut, 8)
@@ -46,6 +47,7 @@ func TestOpenAnchorArcsIsSortedWithinCutAndDeduped(t *testing.T) {
 // span, no prolong either side): the ladder must stay within [0, length] exactly — no prolong
 // runs leak in when there is nothing to prolong into.
 func TestOpenAnchorArcsNoCutClampsToEdgeSpan(t *testing.T) {
+	t.Parallel()
 	length := 20.0
 	cut := [2]float64{0, length}
 	arcs := openAnchorArcs(length, cut, 4)
@@ -61,6 +63,7 @@ func TestOpenAnchorArcsNoCutClampsToEdgeSpan(t *testing.T) {
 // within tol collapse to one, and the survivor is the FIRST of the pair (deterministic, so the
 // station march never depends on map/slice iteration order).
 func TestDedupArcsDropsNearDuplicates(t *testing.T) {
+	t.Parallel()
 	in := []float64{0, 1, 1.0000001, 2, 2.5, 2.5000002, 5}
 	out := dedupArcs(in, 1e-4)
 	want := []float64{0, 1, 2, 2.5, 5}
@@ -77,6 +80,7 @@ func TestDedupArcsDropsNearDuplicates(t *testing.T) {
 // TestClampArcsToCutDropsOutOfRange is the direct unit proof for clampArcsToCut: values
 // strictly outside [cut[0], cut[1]] are dropped, endpoints are kept.
 func TestClampArcsToCutDropsOutOfRange(t *testing.T) {
+	t.Parallel()
 	cut := [2]float64{0, 10}
 	in := []float64{-1, 0, 3, 10, 11}
 	out := clampArcsToCut(in, cut)
@@ -96,6 +100,7 @@ func TestClampArcsToCutDropsOutOfRange(t *testing.T) {
 // decision (bsplineHostWalkDirection, decided once from a coarse trial) implicitly relies on:
 // reversing must not lose or corrupt information.
 func TestReverseAnchorPlanIsInvolution(t *testing.T) {
+	t.Parallel()
 	c := lineCurve3{p0: math.P3(0, 0, 0), p1: math.P3(9, 0, 0)}
 	tab, _ := newEdgeArcTable(c)
 	spec := bsplineHostMarchSpec{arcTable: tab}
@@ -127,6 +132,7 @@ func TestReverseAnchorPlanIsInvolution(t *testing.T) {
 // last anchor swap positions and every tangent flips sign — a single-reverse walk must retrace
 // the SAME polyline backward, not a different curve.
 func TestReverseAnchorPlanSwapsEndsAndNegatesTangent(t *testing.T) {
+	t.Parallel()
 	c := lineCurve3{p0: math.P3(0, 0, 0), p1: math.P3(6, 0, 0)}
 	tab, _ := newEdgeArcTable(c)
 	spec := bsplineHostMarchSpec{arcTable: tab}

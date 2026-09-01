@@ -26,6 +26,7 @@ func springTol(pts ...math.Point3) float64 {
 // sphere is offset A⊥=30 perpendicular to the torus axis yet |rhs|=amp exactly, so WITHOUT the A⊥ guard the
 // old code would fabricate a wrong spring. MUTATION PROOF: delete the `aPerp > tol` guard and this fails.
 func TestTorusSphereSpring_NonCoaxialDeclines(t *testing.T) {
+	t.Parallel()
 	tor, err := geom.NewTorusWithRef(math.P3(0, 0, 0), math.V3(0, 1, 0), math.V3(1, 0, 0), 50, 10)
 	if err != nil {
 		t.Fatalf("torus: %v", err)
@@ -53,6 +54,7 @@ func TestTorusSphereSpring_NonCoaxialDeclines(t *testing.T) {
 // equator (v=π, rhs=−amp → circle radius 40). Without the `rhs<0 ⇒ v+=π` fix the inner case would return
 // radius 60 (π-wrong), so the radius assertion pins that fix too.
 func TestTorusSphereSpring_CoaxialTangent(t *testing.T) {
+	t.Parallel()
 	tor, err := geom.NewTorusWithRef(math.P3(0, 0, 0), math.V3(0, 1, 0), math.V3(1, 0, 0), 50, 10)
 	if err != nil {
 		t.Fatalf("torus: %v", err)
@@ -83,6 +85,7 @@ func TestTorusSphereSpring_CoaxialTangent(t *testing.T) {
 // model-relative `|n̂·d̂| ≤ sinFloor`). A ruling almost in the plane (|n̂·d̂|=1e-7 < sinFloor) declines; a
 // transverse ruling crosses.
 func TestLinePlaneFoot_NearParallelDeclines(t *testing.T) {
+	t.Parallel()
 	pl := planeOn(t, math.P3(0, 0, 5), math.V3(0, 0, 1))
 	grazing, err := geom.NewLine(math.P3(0, 0, 0), math.V3(1, 0, 1e-7)) // |n̂·d̂|≈1e-7 < sinFloor
 	if err != nil {

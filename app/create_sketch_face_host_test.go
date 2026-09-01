@@ -31,6 +31,7 @@ func downLookingBoxWithPlanes(t *testing.T) *Session {
 // hosts highlight/pick: a work plane and a planar face. Before the fix the filter admitted only
 // work planes, so a face never highlighted and a click over it picked the origin plane behind it.
 func TestCreateSketchToolAcceptsFaceAndPlaneHosts(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	s.StartTool(NewCreateSketchTool()) // the engine installs the filter from AcceptedKinds
 	f := s.Selection().Filter()
@@ -47,6 +48,7 @@ func TestCreateSketchToolAcceptsFaceAndPlaneHosts(t *testing.T) {
 // active and a solid present, a pick over the top face must resolve to the FACE — not the XY origin
 // plane hidden behind the box — and clicking it enters a sketch on that face's plane.
 func TestCreateSketchPicksFaceNotPlaneBehind(t *testing.T) {
+	t.Parallel()
 	s := downLookingBoxWithPlanes(t)
 	s.StartTool(NewCreateSketchTool())
 
@@ -74,6 +76,7 @@ func TestCreateSketchPicksFaceNotPlaneBehind(t *testing.T) {
 // TestCreateSketchToolIgnoresNonPlanarFace: a cylindrical face cannot host a sketch, so feeding it
 // to the tool must not arm a commit (and committing then errors rather than sketching on garbage).
 func TestCreateSketchToolIgnoresNonPlanarFace(t *testing.T) {
+	t.Parallel()
 	s, body := newPartWithCylinder(t)
 	tool := NewCreateSketchTool()
 	tool.Start(s)
@@ -88,6 +91,7 @@ func TestCreateSketchToolIgnoresNonPlanarFace(t *testing.T) {
 
 // TestSketchPlaneFromFace: a planar face yields its plane (matching normal); a curved one does not.
 func TestSketchPlaneFromFace(t *testing.T) {
+	t.Parallel()
 	s := downLookingBoxWithPlanes(t)
 	sel, _ := s.PickAt(200, 200, NewSelectionFilter(SelectFace))
 	pl, ok := sketchPlaneFromFace(sel.(FaceHandle))
@@ -109,6 +113,7 @@ func TestSketchPlaneFromFace(t *testing.T) {
 // Create 2D Sketch with a face selected sketches on it immediately (no tool) — Inventor's
 // "select a face, then Create Sketch" flow.
 func TestSelectedSketchHostPlaneFromFace(t *testing.T) {
+	t.Parallel()
 	s := downLookingBoxWithPlanes(t)
 	sel, _ := s.PickAt(200, 200, NewSelectionFilter(SelectFace))
 	s.Selection().Add(sel)
@@ -147,6 +152,7 @@ func emptyPartLookingDown(t *testing.T) *Session {
 // host is being chosen, so the click is intentional (see TestPickableWorkPlanesRevealScoping for the
 // scoping that keeps #1520's guard outside Create-Sketch).
 func TestCreateSketchRevealsHiddenOriginPlaneForPicking(t *testing.T) {
+	t.Parallel()
 	s := emptyPartLookingDown(t)
 	s.StartTool(NewCreateSketchTool())
 	s.Click(200, 200) // center ray crosses the XY origin plane, revealed for the host pick (#1752)
@@ -160,6 +166,7 @@ func TestCreateSketchRevealsHiddenOriginPlaneForPicking(t *testing.T) {
 // origin planes — a user plane the user hid stays hidden. Outside Create-Sketch the origins are back
 // to unpickable, which is exactly the #1520 guard.
 func TestPickableWorkPlanesRevealScoping(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	hideUserPlane(t, s, def) // add a user plane and hide it — it must never be revealed by Create Sketch
 

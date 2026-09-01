@@ -14,6 +14,7 @@ import (
 // rather than the capped prism. The open sheet is the solid rib's side walls, so a solid rib of the
 // same band has strictly more area (its two band end caps).
 func TestRibSurfaceMakesOpenSheet(t *testing.T) {
+	t.Parallel()
 	mk := func(op ops.PartFeatureOperation) *topo.Body {
 		fs := NewPartFeatures(nil)
 		pf := NewRibFeatures(fs).AddDefinition(&RibDefinition{

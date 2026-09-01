@@ -79,6 +79,7 @@ func arcSpikeLoopUses(bld *topo.Builder, out, back geom.Arc3d) []topo.Use {
 // quarter, so the closed form is 10 × π/4. Falsify by routing the detector back through a discretized
 // boundary — the two qualities then disagree, and neither matches the closed form.
 func TestRetraceLengthIsTheExactArcLengthAtEveryQuality(t *testing.T) {
+	t.Parallel()
 	body := arcSpikeFaceBody(t)
 	want := arcSpikeRadius * stdmath.Pi / 4
 	for _, q := range []Quality{DefaultQuality(), PropertyQuality()} {
@@ -99,6 +100,7 @@ func TestRetraceLengthIsTheExactArcLengthAtEveryQuality(t *testing.T) {
 // itself — 34 loops across 20 corpus cases, all between 1.4e-16 and 1.9e-10 long. Here the spike is a
 // REAL back-track, but 1e-11 of one on a 117-long face.
 func TestVertexNeighbourhoodIsNotARetrace(t *testing.T) {
+	t.Parallel()
 	loop := []math.Point3{
 		math.P3(0, 0, 0), math.P3(100, 0, 0), math.P3(100, 0, 40), math.P3(100, 0, 40-1e-11),
 		math.P3(100, 0, 60), math.P3(0, 0, 60),
@@ -113,6 +115,7 @@ func TestVertexNeighbourhoodIsNotARetrace(t *testing.T) {
 // bounds itself with ONE seam edge used twice, forward and back. Those two uses genuinely cover the
 // same ground in opposite senses, and reporting them would condemn every seamed face in the kernel.
 func TestPeriodicSeamIsNotARetrace(t *testing.T) {
+	t.Parallel()
 	body, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -126,6 +129,7 @@ func TestPeriodicSeamIsNotARetrace(t *testing.T) {
 // coincident stretch can begin or end at are the two trims' ends, so they are the only cuts considered.
 // Here the other curve's far end falls at the middle of this one.
 func TestSpanCandidatesAreTheTwoTrimsOwnEnds(t *testing.T) {
+	t.Parallel()
 	a := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(10, 0, 0))
 	b := geom.NewLineSegment(math.P3(5, 0, 0), math.P3(20, 0, 0))
 	cuts := spanCandidates(a, b)
@@ -140,6 +144,7 @@ func TestSpanCandidatesAreTheTwoTrimsOwnEnds(t *testing.T) {
 // TestPointOfCurveLiesOnRespectsTheOtherTrim: a point on the other curve's INFINITE support but past
 // its trim is not on it, which is what stops a segment from "covering" its own extension.
 func TestPointOfCurveLiesOnRespectsTheOtherTrim(t *testing.T) {
+	t.Parallel()
 	a := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(10, 0, 0))
 	b := geom.NewLineSegment(math.P3(6, 0, 0), math.P3(10, 0, 0))
 	if !pointOfCurveLiesOn(a, b, 0.8, 1e-9) {
@@ -153,6 +158,7 @@ func TestPointOfCurveLiesOnRespectsTheOtherTrim(t *testing.T) {
 // TestLongestCoveredRunMergesConsecutiveCoveredIntervals: two adjacent covered sub-intervals are ONE
 // stretch, and the longest run wins over an earlier shorter one.
 func TestLongestCoveredRunMergesConsecutiveCoveredIntervals(t *testing.T) {
+	t.Parallel()
 	c := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(10, 0, 0))
 	lo, hi, ok := longestCoveredRun(c, []float64{0, 0.1, 0.4, 0.5, 0.9}, []bool{true, false, true, true})
 	if !ok {
@@ -169,6 +175,7 @@ func TestLongestCoveredRunMergesConsecutiveCoveredIntervals(t *testing.T) {
 // TestStartOfRunKeepsTheFirstIndex covers the run bookkeeping directly: the start is claimed once and
 // then held, so a run that continues does not restart at each covered sub-interval.
 func TestStartOfRunKeepsTheFirstIndex(t *testing.T) {
+	t.Parallel()
 	if got := startOfRun(-1, 3); got != 3 {
 		t.Errorf("an unclaimed run must start at the current index, got %d", got)
 	}
@@ -181,6 +188,7 @@ func TestStartOfRunKeepsTheFirstIndex(t *testing.T) {
 // cannot certify: two curves that meet only where the sub-interval midpoint happened to probe. A
 // segment crossing another at its centre is on it there and nowhere else.
 func TestSpanHoldsThroughoutRejectsAMidpointCoincidence(t *testing.T) {
+	t.Parallel()
 	a := geom.NewLineSegment(math.P3(0, -5, 0), math.P3(0, 5, 0))
 	b := geom.NewLineSegment(math.P3(-5, 0, 0), math.P3(5, 0, 0))
 	if spanHoldsThroughout(a, b, 0, 1, 1e-9) {
@@ -191,6 +199,7 @@ func TestSpanHoldsThroughoutRejectsAMidpointCoincidence(t *testing.T) {
 // TestOppositeTraversalReadsTheLoopsOwnDirection: the same two coincident edges are a back-track only
 // when the loop runs them in opposite senses, and reversing one use flips the verdict.
 func TestOppositeTraversalReadsTheLoopsOwnDirection(t *testing.T) {
+	t.Parallel()
 	body := arcSpikeFaceBody(t)
 	uses := body.Faces()[0].Loops()[0].EdgeUses()
 	out, back := uses[1], uses[2] // the arc out and the arc back

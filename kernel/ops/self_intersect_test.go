@@ -12,6 +12,7 @@ import (
 // TestSelfIntersectionsCleanSolid: a valid solid has none — adjacent faces
 // touching along shared edges must not count.
 func TestSelfIntersectionsCleanSolid(t *testing.T) {
+	t.Parallel()
 	body, err := Stitch(cubeFaces(), 0, false, "clean")
 	if err != nil {
 		t.Fatalf("Stitch: %v", err)
@@ -25,6 +26,7 @@ func TestSelfIntersectionsCleanSolid(t *testing.T) {
 // merged into one body — the import failure mode PBI-084 targets — must be
 // caught with a witness inside the overlap region.
 func TestSelfIntersectionsOverlappingShells(t *testing.T) {
+	t.Parallel()
 	a := tetra(1, math.V3(0, 0, 0))
 	b := tetra(1, math.V3(0.2, 0.2, 0.2)) // shifted: shells pass through each other
 	merged := topo.MergeBodies(topo.NewLineage(topo.Tok("imp", "body", 0)), true, a, b)
@@ -41,6 +43,7 @@ func TestSelfIntersectionsOverlappingShells(t *testing.T) {
 // TestSelfIntersectionsDisjointShells: a two-shell body whose shells do not
 // touch (a legitimate multi-shell solid) is clean.
 func TestSelfIntersectionsDisjointShells(t *testing.T) {
+	t.Parallel()
 	a := tetra(1, math.V3(0, 0, 0))
 	b := tetra(1, math.V3(5, 0, 0))
 	merged := topo.MergeBodies(topo.NewLineage(topo.Tok("imp", "body", 0)), true, a, b)
@@ -52,6 +55,7 @@ func TestSelfIntersectionsDisjointShells(t *testing.T) {
 // TestSelfIntersectionsCoplanarOverlap: two coplanar overlapping faces (a
 // doubled wall from a bad import) are caught by the coplanar branch.
 func TestSelfIntersectionsCoplanarOverlap(t *testing.T) {
+	t.Parallel()
 	p := math.P3
 	q1 := quadBody("w1", p(0, 0, 0), p(2, 0, 0), p(2, 0, 2), p(0, 0, 2))
 	q2 := quadBody("w2", p(1, 0, 1), p(3, 0, 1), p(3, 0, 3), p(1, 0, 3)) // overlaps q1's corner

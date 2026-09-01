@@ -40,6 +40,7 @@ func d5ObliqueBundle(t *testing.T) (armRails, armRunout, geom.Sphere, geom.Torus
 // retrim) lands the outer end at the full-arc P0, OFF the rim by the oblique gap — a DIFFERENT curve that
 // fails the identity. This is the regression witness that the two weld sides stay one object.
 func TestArmContactRail_ConsumesObliqueBundleRail(t *testing.T) {
+	t.Parallel()
 	bundle, run, sphere, tor := d5ObliqueBundle(t)
 	res := ResolutionForSize(300)
 	tol := res.Weld() * 10

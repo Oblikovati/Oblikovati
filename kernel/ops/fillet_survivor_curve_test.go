@@ -27,6 +27,7 @@ import (
 // Asserts the fix two ways: the arc survives on the cap face, and the body area matches OCCT within
 // 1%. Must never regress; a straight survivor edge is unaffected (a LineSegment curve equals nil).
 func TestFilletPreservesCurvedSurvivorEdge(t *testing.T) {
+	t.Parallel()
 	body := importPrismCylBorder(t)
 	edge := edgeBetween(t, body, math.P3(0, 0, 1), math.P3(0, 1, 1))
 	res, err := ops.FilletEdges(body, [][]byte{edge.ReferenceKey()}, 0.2)

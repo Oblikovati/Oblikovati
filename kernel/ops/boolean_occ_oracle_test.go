@@ -71,6 +71,7 @@ const occAnalyticTolerance = 1e-4
 // still falls back to the tessellation keeps the old faceting budget — so the log below reads as a
 // scoreboard of which booleans are analytic yet, and tightens on its own as more of them become so.
 func TestCurvedBooleanVolumesMatchOCC(t *testing.T) {
+	t.Parallel()
 	oracle := loadOCCBooleanOracle(t)
 	for _, c := range curvedExactCases() {
 		t.Run(c.name, func(t *testing.T) {

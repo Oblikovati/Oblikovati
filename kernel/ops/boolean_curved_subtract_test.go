@@ -19,6 +19,7 @@ import (
 // TestBooleanCutCylinderAxialSquareHole drills a 2×2 square hole down the axis of a radius-3 cylinder.
 // Volume = cylinder − the square prism; the cylinder side survives as one exact face.
 func TestBooleanCutCylinderAxialSquareHole(t *testing.T) {
+	t.Parallel()
 	const r, h, a = 3.0, 10.0, 1.0
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
 	box, _ := brep.SolidBlock(math.P3(-a, -a, -5), math.P3(a, a, 15), "box") // spans beyond both caps
@@ -53,6 +54,7 @@ func TestBooleanCutCylinderAxialSquareHole(t *testing.T) {
 // TestBooleanCutCylinderBlindPocketDefers: a box that does NOT pass through both caps is a blind pocket,
 // not an axial tunnel; the exact path declines it so the CSG fallback still runs (no wrong result).
 func TestBooleanCutCylinderBlindPocketDefers(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	box, _ := brep.SolidBlock(math.P3(-1, -1, 4), math.P3(1, 1, 6), "box") // wholly inside, spans nothing
 	res, err := ops.Boolean(ops.Cut, cyl, box)

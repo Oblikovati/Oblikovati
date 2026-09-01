@@ -28,6 +28,7 @@ func ccwSquare(cx, cy, r float64) []math.Point2 {
 // where a hole grid lost ~half its area because every hole bridged to one shared corner and
 // the ear-clipper stalled (see earcut.go).
 func TestEarcutMultiHoleArea(t *testing.T) {
+	t.Parallel()
 	outer := []math.Point2{math.P2(0, 0), math.P2(4, 0), math.P2(4, 3), math.P2(0, 3)}
 
 	// Axis-aligned holes that share exact X/Y lines — the degenerate case that defeated the
@@ -65,6 +66,7 @@ func TestEarcutMultiHoleArea(t *testing.T) {
 
 // TestEarcutSingleHole covers the common annular case (one hole).
 func TestEarcutSingleHole(t *testing.T) {
+	t.Parallel()
 	outer := []math.Point2{math.P2(0, 0), math.P2(10, 0), math.P2(10, 10), math.P2(0, 10)}
 	hole := ccwSquare(5, 5, 2) // 4×4 hole, area 16
 	combined := append(append([]math.Point2(nil), outer...), hole...)

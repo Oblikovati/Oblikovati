@@ -35,6 +35,7 @@ func notchedTargetBody(t *testing.T) *topo.Body {
 // gives cos u=0.95 → (2.85, ±0.9367, 6.65).
 
 func TestCornerJunctionsAreExactTriplePoints(t *testing.T) {
+	t.Parallel()
 	target := notchedTargetBody(t)
 	_, _, _, prior, ok := cutCylinderSideFace(target)
 	if !ok {
@@ -78,6 +79,7 @@ func TestCornerJunctionsAreExactTriplePoints(t *testing.T) {
 // re-emits one shared 3D vertex and the weld closes. Without this the two arms re-anchor to a chord point vs
 // an on-cylinder point (~2.6e-4 apart) and the junction splits (the χ=1/free=5 bug).
 func TestCornerPreSplitSharesExactVertices(t *testing.T) {
+	t.Parallel()
 	target := notchedTargetBody(t)
 	rod, err := SolidCylinder(math.P3(-6, 0, 7), math.V3(1, 0, 0), 1, 12)
 	if err != nil {
@@ -121,6 +123,7 @@ func TestCornerPreSplitSharesExactVertices(t *testing.T) {
 // TestRodNotchSectionPassesThroughTriplePoints: the shared rod∩notch-plane ellipse (which trims the tunnel
 // and bites the notch cap) must pass through BOTH triple points, so all three coupled faces meet there.
 func TestRodNotchSectionPassesThroughTriplePoints(t *testing.T) {
+	t.Parallel()
 	target := notchedTargetBody(t)
 	_, _, _, prior, _ := cutCylinderSideFace(target)
 	notch, ok := recoverNotchPlane(prior)
@@ -164,6 +167,7 @@ func TestRodNotchSectionPassesThroughTriplePoints(t *testing.T) {
 // a rod that only GRAZES the notch floor (z=5.5, its top tangent to the section) declines — the bias-toward-
 // decline that keeps a shallow crossing off the analytic path.
 func TestCornerJunctionGateAcceptsTransversalDeclinesGrazing(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		z    float64
 		want bool
@@ -186,6 +190,7 @@ func TestCornerJunctionGateAcceptsTransversalDeclinesGrazing(t *testing.T) {
 // on cylinders of vastly different radii — the first-fundamental-form quotient (ADR-0048). The same relative
 // crossing geometry, scaled ×1000 in radius, yields the same curve-curve sine (no R shear).
 func TestCornerJunctionScaleInvariantAngle(t *testing.T) {
+	t.Parallel()
 	sines := make([]float64, 0, 2)
 	for _, s := range []float64{1, 1000} {
 		bare, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), math.Scalar(3*s), math.Scalar(10*s))

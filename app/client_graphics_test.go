@@ -36,6 +36,7 @@ func previewLine(s *Session) {
 }
 
 func TestCancelToolClearsInteractionGraphics(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.StartTool(&noopTool{})
 	previewLine(s)
@@ -46,6 +47,7 @@ func TestCancelToolClearsInteractionGraphics(t *testing.T) {
 }
 
 func TestCommitClearsInteractionGraphics(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.StartTool(&noopTool{ready: true})
 	previewLine(s)
@@ -58,6 +60,7 @@ func TestCommitClearsInteractionGraphics(t *testing.T) {
 }
 
 func TestStartingNewToolClearsPriorInteractionGraphics(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.StartTool(&noopTool{})
 	previewLine(s)
@@ -70,6 +73,7 @@ func TestStartingNewToolClearsPriorInteractionGraphics(t *testing.T) {
 // TestPersistentGraphicsSurviveToolTeardown guards that only the interaction lanes are
 // cleared — document-owned client graphics outlive commands.
 func TestPersistentGraphicsSurviveToolTeardown(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	g, err := clientgraphics.DecodeGroup(wire.SetClientGraphicsArgs{
 		ClientId: "keep", Nodes: []wire.GraphicsNode{{Primitives: []wire.GraphicsPrimitive{{

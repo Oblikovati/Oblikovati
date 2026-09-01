@@ -5,6 +5,7 @@ package meshbool
 import "testing"
 
 func TestFaceGridEmptyAndDegenerate(t *testing.T) {
+	t.Parallel()
 	// Empty mesh: any query returns nothing, no panic.
 	if got := newFaceGrid(nil).candidates(faceAABB(tri([3]float64{0, 0, 0}, [3]float64{1, 0, 0}, [3]float64{0, 1, 0}))); len(got) != 0 {
 		t.Fatalf("empty grid returned %d candidates, want 0", len(got))
@@ -22,6 +23,7 @@ func TestFaceGridEmptyAndDegenerate(t *testing.T) {
 // overlaps the query box must be among the candidates (the grid may over-report but
 // must never miss a real overlap, or the exact test would skip a real pair).
 func TestFaceGridNoFalseNegatives(t *testing.T) {
+	t.Parallel()
 	mesh := boxMesh([3]float64{0, 0, 0}, [3]float64{4, 4, 4})
 	grid := newFaceGrid(mesh)
 

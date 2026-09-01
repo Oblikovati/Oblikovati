@@ -14,6 +14,7 @@ import (
 // (sketch.offset with profileIndex → offsetProfileRegion): a positive distance grows the region
 // with rounded corners, so it yields a new closed loop of many line segments.
 func TestSkcovOffsetProfileRegion(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	pi := 0
 	args := wire.OffsetSketchArgs{SketchIndex: 0, ProfileIndex: &pi, Distance: "1 cm", ArcSegments: 4}
@@ -30,6 +31,7 @@ func TestSkcovOffsetProfileRegion(t *testing.T) {
 // TestSkcovOffsetProfileRegionRejectsBadIndex: an out-of-range profile index is rejected with
 // the offending value (offsetProfileRegion bounds check).
 func TestSkcovOffsetProfileRegionRejectsBadIndex(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	pi := 9
 	args := wire.OffsetSketchArgs{SketchIndex: 0, ProfileIndex: &pi, Distance: "1 cm"}
@@ -41,6 +43,7 @@ func TestSkcovOffsetProfileRegionRejectsBadIndex(t *testing.T) {
 // TestSkcovTransformMirror reflects the seeded rectangle's top edge across its bottom edge
 // (sketch.transform op=mirror → mirrorOp): one mirrored copy is created.
 func TestSkcovTransformMirror(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	ids := skcovLineIDs(t, r, s)
 	args := wire.TransformSketchArgs{SketchIndex: 0, Op: "mirror", Entities: []uint64{ids[2]}, MirrorLine: ids[0]}
@@ -54,6 +57,7 @@ func TestSkcovTransformMirror(t *testing.T) {
 // TestSkcovTransformRotate rotates one seeded line 90° about the origin (sketch.transform
 // op=rotate → rotateOp): the in-place edit maps every endpoint (x,y) → (−y,x).
 func TestSkcovTransformRotate(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	id := skcovLineIDs(t, r, s)[0]
 	before := skcovEntityPoints(t, r, s, id)
@@ -71,6 +75,7 @@ func TestSkcovTransformRotate(t *testing.T) {
 // crossing (sketch.transform op=extend → curveEditOp + pickNearerEnd): the pick nearest B extends
 // the horizontal line at y=−2 out to the vertical support at x=3.
 func TestSkcovTransformExtendReachesCrossing(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var ln wire.AddSketchEntityResult
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,-2],[1,-2]]}`, &ln)
@@ -86,6 +91,7 @@ func TestSkcovTransformExtendReachesCrossing(t *testing.T) {
 // TestSkcovSketch3DRegionProperties builds a planar closed square in a 3D sketch and reads its
 // section properties (sketch3d.regionProperties → sketch3DRegionProperties): a 4×3 rectangle.
 func TestSkcovSketch3DRegionProperties(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	for _, seg := range skcovSquare3DSegments() {
@@ -100,6 +106,7 @@ func TestSkcovSketch3DRegionProperties(t *testing.T) {
 
 // TestSkcovSketch3DRegionPropertiesRejectsBadIndex: an out-of-range profile index errors.
 func TestSkcovSketch3DRegionPropertiesRejectsBadIndex(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	if _, err := r.Handle(s, "sketch3d.regionProperties", []byte(`{"sketchIndex":0,"profileIndex":0}`)); err == nil {

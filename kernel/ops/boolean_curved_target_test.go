@@ -22,6 +22,7 @@ import (
 // cyl(r=3.5, h=4) volume = pi*r^2*h = 153.94 (faceted slightly less); a 2x2 box
 // tunnel through it removes 2*2*4 = 16.
 func TestBooleanCutCurvedTargetRemovesTunnel(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3.5, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -53,6 +54,7 @@ func TestBooleanCutCurvedTargetRemovesTunnel(t *testing.T) {
 // DECLINE to the recorded faceted fallback — never a silently wrong analytic assembly. Folding
 // that residual band onto the analytic path is #1817.
 func TestBooleanNearTangentCylindersStayManifold(t *testing.T) {
+	t.Parallel()
 	const r = 2.0
 	vCyl := stdmath.Pi * r * r * 6
 	steinmetz := 16.0 * r * r * r / 3

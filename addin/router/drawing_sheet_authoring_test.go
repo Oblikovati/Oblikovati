@@ -12,6 +12,7 @@ import (
 // wire: a zoned border, a moved title block, a revision stamp, then a reusable format and a sheet
 // stamped from it. It asserts the handlers' effects surface on SheetInfo.
 func TestDrawingZonedBorderOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingSession(t)
 
 	var bordered wire.SheetResult
@@ -38,6 +39,7 @@ func TestDrawingZonedBorderOverWire(t *testing.T) {
 // TestDrawingSheetFormatOverWire registers a reusable sheet format and stamps a new sheet from it,
 // proving the format's size/orientation/zones travel onto the created sheet (#1989).
 func TestDrawingSheetFormatOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingSession(t)
 
 	call(t, r, s, wire.MethodDrawingDefineSheetFormat, mustJSON(t, wire.DefineSheetFormatArgs{
@@ -58,6 +60,7 @@ func TestDrawingSheetFormatOverWire(t *testing.T) {
 // TestDrawingSheetAuthoringRejectsBadSpellings covers the handlers' parse-error branches: unknown
 // label modes, title-block corner, sheet size/orientation, and a nameless format (#1989).
 func TestDrawingSheetAuthoringRejectsBadSpellings(t *testing.T) {
+	t.Parallel()
 	r, s := drawingSession(t)
 	cases := []struct {
 		name, method, args string

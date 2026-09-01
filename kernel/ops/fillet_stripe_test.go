@@ -28,6 +28,7 @@ func countTorus(b *topo.Body) int {
 // meeting at shared section circles), a valid closed manifold solid. Before P4b this failed in the
 // miter corner solver ("outer face must be planar"); the tangent junctions are G1, not miters.
 func TestFilletTangentStripeTopPerimeter(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 4, 4, 4)
 	var verts [][]byte
 	for _, e := range box.Edges() {

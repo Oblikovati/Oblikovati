@@ -33,6 +33,7 @@ func storedSession(t *testing.T) (*Router, *app.Session, string) {
 // TestSaveLifecycleOverWire drives documents.save / saveAs / open end to end
 // against real packages (#138, M03-F09).
 func TestSaveLifecycleOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, dir := storedSession(t)
 	id := uint64(s.ActiveDocument().ID())
 
@@ -62,6 +63,7 @@ func TestSaveLifecycleOverWire(t *testing.T) {
 // TestSaveCopyAsAndBatchOverWire: a copy lands at the target without
 // retargeting; the batch reports per-file outcomes (M03-F09).
 func TestSaveCopyAsAndBatchOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, dir := storedSession(t)
 	id := uint64(s.ActiveDocument().ID())
 	source := s.ActiveDocument().FullFileName()
@@ -100,6 +102,7 @@ func TestSaveCopyAsAndBatchOverWire(t *testing.T) {
 // TestSaveOptionGroupOverWire: the save group reads and writes through
 // options.getGroup/setGroup, rejecting unimplemented thumbnail modes.
 func TestSaveOptionGroupOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var groups wire.ListOptionGroupsResult

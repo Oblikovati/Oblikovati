@@ -10,6 +10,7 @@ import (
 // TestMixTransmissionZeroWeightReproducesOpaqueExactly is PBI-344's explicit regression
 // guard: transmission_weight=0 must reproduce PBI-343's output exactly.
 func TestMixTransmissionZeroWeightReproducesOpaqueExactly(t *testing.T) {
+	t.Parallel()
 	opaque := NewColor3(0.31, 0.22, 0.05)
 	got := MixTransmission(opaque, Gray(0.9), 0)
 	if got != opaque {
@@ -20,6 +21,7 @@ func TestMixTransmissionZeroWeightReproducesOpaqueExactly(t *testing.T) {
 // --- IORStack: nested-dielectric unit test (glass submerged in water) ---
 
 func TestIORStackGlassInWaterScenario(t *testing.T) {
+	t.Parallel()
 	const airIOR, waterIOR, glassIOR = 1.0, 1.33, 1.5
 	s := NewIORStack()
 	if got := s.Top(); got != airIOR {
@@ -58,6 +60,7 @@ func TestIORStackGlassInWaterScenario(t *testing.T) {
 }
 
 func TestIORStackPopBelowAmbientIsNoOp(t *testing.T) {
+	t.Parallel()
 	s := NewIORStack()
 	s.Pop() // popping the ambient medium itself must not underflow
 	if s.Depth() != 1 || s.Top() != 1 {
@@ -70,6 +73,7 @@ func TestIORStackPopBelowAmbientIsNoOp(t *testing.T) {
 // TestDispersiveIORZeroScaleIsWavelengthIndependent is a regression guard: scale=0 must
 // reproduce the plain (undispersed) IOR at every wavelength.
 func TestDispersiveIORZeroScaleIsWavelengthIndependent(t *testing.T) {
+	t.Parallel()
 	const nd = 1.5
 	for _, lambda := range []float64{fraunhoferLambdaCNM, fraunhoferLambdaDNM, fraunhoferLambdaFNM} {
 		if got := DispersiveIOR(nd, 20, 0, lambda); got != nd {
@@ -82,6 +86,7 @@ func TestDispersiveIORZeroScaleIsWavelengthIndependent(t *testing.T) {
 // Cauchy coefficients are defined so n(λd) = nd exactly, by construction of the spec's
 // own formula.
 func TestDispersiveIORMatchesReferenceAtLambdaD(t *testing.T) {
+	t.Parallel()
 	const nd = 1.52
 	got := DispersiveIOR(nd, 20, 1, fraunhoferLambdaDNM)
 	if math.Abs(got-nd) > 1e-9 {
@@ -93,6 +98,7 @@ func TestDispersiveIORMatchesReferenceAtLambdaD(t *testing.T) {
 // property: shorter wavelengths (blue, λF) refract more than longer ones (red, λC), i.e.
 // n(λF) > n(λd) > n(λC), for a typical positive-dispersion dielectric.
 func TestDispersiveIORBluerIsHigher(t *testing.T) {
+	t.Parallel()
 	const nd = 1.52
 	nRed := DispersiveIOR(nd, 20, 1, fraunhoferLambdaCNM)
 	nYellow := DispersiveIOR(nd, 20, 1, fraunhoferLambdaDNM)
@@ -106,6 +112,7 @@ func TestDispersiveIORBluerIsHigher(t *testing.T) {
 // relationship (index.html line 823): a lower Abbe number must produce a LARGER spread
 // between the red and blue IORs (more dispersion).
 func TestDispersiveIORLowerAbbeIsMoreDispersive(t *testing.T) {
+	t.Parallel()
 	spread := func(abbe float64) float64 {
 		return DispersiveIOR(1.52, abbe, 1, fraunhoferLambdaFNM) - DispersiveIOR(1.52, abbe, 1, fraunhoferLambdaCNM)
 	}
@@ -117,6 +124,7 @@ func TestDispersiveIORLowerAbbeIsMoreDispersive(t *testing.T) {
 // --- Vector Snell refraction ---
 
 func TestRefractNormalIncidenceGoesStraightThrough(t *testing.T) {
+	t.Parallel()
 	wt, ok := Refract(Vec3{Z: 1}, 1.5)
 	if !ok {
 		t.Fatal("Refract(normal incidence) reported no refraction")
@@ -130,6 +138,7 @@ func TestRefractNormalIncidenceGoesStraightThrough(t *testing.T) {
 // TestRefractSatisfiesSnellsLaw checks the defining relationship sinθt = sinθi/iorRatio
 // at an oblique angle.
 func TestRefractSatisfiesSnellsLaw(t *testing.T) {
+	t.Parallel()
 	const iorRatio = 1.5
 	thetaI := 30.0 * math.Pi / 180
 	wi := Vec3{X: math.Sin(thetaI), Z: math.Cos(thetaI)}
@@ -147,6 +156,7 @@ func TestRefractSatisfiesSnellsLaw(t *testing.T) {
 // TestRefractTotalInternalReflection checks the TIR case (a ray in a denser medium
 // beyond the critical angle, refracting toward a rarer one) reports no refraction.
 func TestRefractTotalInternalReflection(t *testing.T) {
+	t.Parallel()
 	// Critical angle for ior 1/1.5 is asin(1.5) which doesn't exist in [0,90°] — TIR at
 	// any angle steep enough. asin(1/1.5) ≈ 41.8° is the actual critical angle going the
 	// OTHER way (dense→rare with iorRatio=1/1.5); pick 60° > that.
@@ -160,6 +170,7 @@ func TestRefractTotalInternalReflection(t *testing.T) {
 // --- Beer's-law transmission extinction ---
 
 func TestTransmissionExtinctionBeersLaw(t *testing.T) {
+	t.Parallel()
 	got := TransmissionExtinction(Color3{R: math.Exp(-1), G: 1, B: 1}, 1)
 	want := Color3{R: 1, G: 0, B: 0}
 	if math.Abs(got.R-want.R) > 1e-9 || math.Abs(got.G-want.G) > 1e-9 || math.Abs(got.B-want.B) > 1e-9 {
@@ -168,6 +179,7 @@ func TestTransmissionExtinctionBeersLaw(t *testing.T) {
 }
 
 func TestTransmissionExtinctionZeroDepthIsAbsent(t *testing.T) {
+	t.Parallel()
 	if got := TransmissionExtinction(Gray(0.5), 0); got != (Color3{}) {
 		t.Errorf("TransmissionExtinction(depth=0) = %+v, want zero (medium absent)", got)
 	}
@@ -179,6 +191,7 @@ func TestTransmissionExtinctionZeroDepthIsAbsent(t *testing.T) {
 // 2R/(1+R) + (1-R)/(1+R) = 1 — the geometric series' reflectance and transmittance must
 // exactly conserve energy for any Fresnel R.
 func TestThinWallReflectanceAndTransmittanceSumToOne(t *testing.T) {
+	t.Parallel()
 	for _, cosTheta := range []float64{0.05, 0.3, 0.6, 1.0} {
 		refl := ThinWallFresnel(1.5, cosTheta)
 		trans := ThinWallTransmittance(1.5, cosTheta)
@@ -189,6 +202,7 @@ func TestThinWallReflectanceAndTransmittanceSumToOne(t *testing.T) {
 }
 
 func TestThinWallFresnelExceedsSingleFaceFresnel(t *testing.T) {
+	t.Parallel()
 	single := DielectricFresnel(1.5, 0.7)
 	thin := ThinWallFresnel(1.5, 0.7)
 	if thin <= single {

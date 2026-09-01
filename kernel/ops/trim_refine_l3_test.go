@@ -73,6 +73,7 @@ func denseBoundary(s geom.Surface, m int) (p3 []math.Point3, uv []math.Point2) {
 // interior-refined mesh (metricPatchMesh, the new B-spline path) is closer to the true area than the
 // boundary-only mesh (trimmedPatchMesh, the old path), and within the chord tolerance.
 func TestBSplineTrimInteriorRefinementArea(t *testing.T) {
+	t.Parallel()
 	s := curvedBumpPatch(t)
 	ref := referencePatchArea(s)
 	p3, uv := denseBoundary(s, 24)
@@ -101,6 +102,7 @@ func TestBSplineTrimInteriorRefinementArea(t *testing.T) {
 // TestBSplineTrimAreaConvergesWithQuality asserts the refined B-spline trim area converges toward the
 // true area as the chord tolerance tightens (monotone, no spike).
 func TestBSplineTrimAreaConvergesWithQuality(t *testing.T) {
+	t.Parallel()
 	s := curvedBumpPatch(t)
 	ref := referencePatchArea(s)
 	p3, uv := denseBoundary(s, 24)

@@ -63,6 +63,7 @@ func meridianArc(t *testing.T, radius, zc float64, p, q math.Point3) geom.Arc3d 
 }
 
 func TestSphereZoneReachingPoleMeshesWholeZone(t *testing.T) {
+	t.Parallel()
 	const R, zc = 50.0, 35.355339059327 // J2: rim at 45° latitude, kept zone reaches the south pole
 	face := seamedZoneFace(t, R, zc)
 	m := TessellateFace(face, PropertyQuality())

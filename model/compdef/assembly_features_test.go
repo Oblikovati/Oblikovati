@@ -55,6 +55,7 @@ func assemblyOfUnitBoxes(t *testing.T, xs ...float64) (*AssemblyComponentDefinit
 // on every component present at add time, and not on components added later (the
 // reference API's default-participation rule).
 func TestAddFeatureDefaultsParticipationToPresentComponents(t *testing.T) {
+	t.Parallel()
 	asm, occs := assemblyOfUnitBoxes(t, 0, 5)
 	af := asm.AddFeature(feature.NewAssemblyCutFeature(topHalfCutter(t), ops.Cut))
 
@@ -76,6 +77,7 @@ func TestAddFeatureDefaultsParticipationToPresentComponents(t *testing.T) {
 // volume: a top-half cut machines each participant to 0.5 and leaves a removed
 // participant (and the shared part definition) untouched at 1.0.
 func TestAssemblyFeatureMachinesParticipantsGated(t *testing.T) {
+	t.Parallel()
 	asm, occs := assemblyOfUnitBoxes(t, 0, 5, 20)
 	af := asm.AddFeature(feature.NewAssemblyCutFeature(topHalfCutter(t), ops.Cut))
 	af.RemoveParticipant(occs[2]) // box 3 opts out
@@ -102,6 +104,7 @@ func TestAssemblyFeatureMachinesParticipantsGated(t *testing.T) {
 // nothing (participants keep full volume) and reports Suppressed health; unsuppressing
 // re-applies it.
 func TestSuppressedFeaturePassesGeometryThrough(t *testing.T) {
+	t.Parallel()
 	asm, occs := assemblyOfUnitBoxes(t, 0)
 	af := asm.AddFeature(feature.NewAssemblyCutFeature(topHalfCutter(t), ops.Cut))
 
@@ -127,6 +130,7 @@ func TestSuppressedFeaturePassesGeometryThrough(t *testing.T) {
 // TestEndOfFeaturesRollsBackTrailingFeatures: the EOF marker bounds how far the program
 // evaluates, so rolling back drops trailing features' machining.
 func TestEndOfFeaturesRollsBackTrailingFeatures(t *testing.T) {
+	t.Parallel()
 	asm, occs := assemblyOfUnitBoxes(t, 0)
 	// F1 removes the top half (→0.5); F2 removes everything above z=0.25 of F1's result (→0.25).
 	asm.AddFeature(feature.NewAssemblyCutFeature(topHalfCutter(t), ops.Cut))
@@ -167,6 +171,7 @@ func pathVolume(fs *AssemblyFeatures, path occurrence.OccurrencePath) float64 {
 // occurrence, so the two placements are distinguished only by path. By default a
 // feature machines both; restricting it to one path machines that placement alone.
 func TestNestedParticipationPathRestriction(t *testing.T) {
+	t.Parallel()
 	part := partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
 	sub := NewAssemblyComponentDefinition()
 	leaf := sub.Place("part:1", part, math.Identity4())
@@ -200,6 +205,7 @@ func TestNestedParticipationPathRestriction(t *testing.T) {
 // TestRecomputeRaisesFeaturesEvent checks that recomputing the feature program raises
 // AssemblyFeaturesRecomputed on the assembly bus, carrying each feature's health.
 func TestRecomputeRaisesFeaturesEvent(t *testing.T) {
+	t.Parallel()
 	asm, _ := assemblyOfUnitBoxes(t, 0)
 	var got *AssemblyFeaturesRecomputed
 	event.Subscribe(asm.Events().Bus(), event.After, func(_ event.Context, e AssemblyFeaturesRecomputed) event.Outcome {
@@ -221,6 +227,7 @@ func TestRecomputeRaisesFeaturesEvent(t *testing.T) {
 // TestAssemblyFeaturesLookupsAndRemove covers the collection bookkeeping: unique
 // naming, id/name lookup, removal, and count.
 func TestAssemblyFeaturesLookupsAndRemove(t *testing.T) {
+	t.Parallel()
 	asm, _ := assemblyOfUnitBoxes(t, 0)
 	fs := asm.Features()
 	a := asm.AddFeature(feature.NewAssemblyCutFeature(topHalfCutter(t), ops.Cut))
@@ -249,6 +256,7 @@ func TestAssemblyFeaturesLookupsAndRemove(t *testing.T) {
 // kind and excludes a proxy cut's source from participation — policy that used
 // to be duplicated across the router, the UI tools, and the load path (#1612).
 func TestAddFeatureOwnsAttachPolicy(t *testing.T) {
+	t.Parallel()
 	asm, occs := assemblyOfUnitBoxes(t, 0, 5)
 	first := asm.AddFeature(feature.NewAssemblyCutFeature(topHalfCutter(t), ops.Cut))
 	second := asm.AddFeature(feature.NewAssemblyCutFeature(topHalfCutter(t), ops.Cut))

@@ -16,6 +16,7 @@ import (
 // depends on u alone, so their stationary sets are rulings whose extremes sit on the face boundary —
 // nothing for a box to add.
 func TestRuledSurfacesHaveNoInteriorExtrema(t *testing.T) {
+	t.Parallel()
 	pl, err := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	if err != nil {
 		t.Fatalf("NewPlane: %v", err)
@@ -39,6 +40,7 @@ func TestRuledSurfacesHaveNoInteriorExtrema(t *testing.T) {
 // TestSphereCriticalPointsAreTheAxisPoles: the six points where the radial normal lines up with a
 // world axis, which is exactly where a spherical face bulges past its boundary circle.
 func TestSphereCriticalPointsAreTheAxisPoles(t *testing.T) {
+	t.Parallel()
 	sph, err := NewSphere(math.P3(1, 2, 3), 5)
 	if err != nil {
 		t.Fatalf("NewSphere: %v", err)
@@ -56,6 +58,7 @@ func TestSphereCriticalPointsAreTheAxisPoles(t *testing.T) {
 // TestTorusCriticalPointsSitOnTheSurface: every returned point must be ON the torus and have a
 // normal parallel to some world axis — the defining property, checked rather than assumed.
 func TestTorusCriticalPointsSitOnTheSurface(t *testing.T) {
+	t.Parallel()
 	tor, err := NewTorus(math.P3(0, 0, 0), math.V3(1, 2, 3), 6, 2)
 	if err != nil {
 		t.Fatalf("NewTorus: %v", err)
@@ -78,6 +81,7 @@ func TestTorusCriticalPointsSitOnTheSurface(t *testing.T) {
 // TestAxisAlignedTorusDeclines: with the tube axis along a world axis the stationary set for that
 // axis is a whole latitude circle, not isolated points, so enumerating it would mean sampling.
 func TestAxisAlignedTorusDeclines(t *testing.T) {
+	t.Parallel()
 	tor, err := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 6, 2)
 	if err != nil {
 		t.Fatalf("NewTorus: %v", err)

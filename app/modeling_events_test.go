@@ -43,6 +43,7 @@ func (fakePlainTool) Commit(*Session) error { return nil }
 // TestToolCommitEmitsFeatureAdded: committing a producer tool through Session.OK fires a single
 // FeatureAdded carrying the created feature's identity (#1085, the UI-driven creation path).
 func TestToolCommitEmitsFeatureAdded(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	f := feature.NewHullFeatures(def.Features()).Add()
 	got := collectFeatureEvents(s)
@@ -59,6 +60,7 @@ func TestToolCommitEmitsFeatureAdded(t *testing.T) {
 // TestNonProducerToolCommitEmitsNothing: a tool without AddedFeature emits no feature-lifecycle
 // event when committed, and neither does a producer that built nothing (nil feature) (#1085).
 func TestNonProducerToolCommitEmitsNothing(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	got := collectFeatureEvents(s)
 
@@ -78,6 +80,7 @@ func TestNonProducerToolCommitEmitsNothing(t *testing.T) {
 // TestDeleteFeatureEmitsFeatureDeleted: Session.DeleteFeature (UI browser + router) fires a single
 // FeatureDeleted carrying the removed feature's identity (#1085).
 func TestDeleteFeatureEmitsFeatureDeleted(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	f := feature.NewHullFeatures(def.Features()).Add()
 	got := collectFeatureEvents(s)
@@ -93,6 +96,7 @@ func TestDeleteFeatureEmitsFeatureDeleted(t *testing.T) {
 // TestCommitFeatureEditEmitsFeatureEdited: Session.CommitFeatureEdit (router/freeform edit seam)
 // fires a single FeatureEdited carrying the edited feature's identity (#1085).
 func TestCommitFeatureEditEmitsFeatureEdited(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	f := feature.NewHullFeatures(def.Features()).Add()
 	got := collectFeatureEvents(s)
@@ -108,6 +112,7 @@ func TestCommitFeatureEditEmitsFeatureEdited(t *testing.T) {
 // TestEnterExitSketchEmitsSketchEdit: entering and leaving a 2D sketch each emit a
 // SketchEditChanged carrying the sketch identity, with Entered distinguishing them (#148).
 func TestEnterExitSketchEmitsSketchEdit(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XYPlane())
 

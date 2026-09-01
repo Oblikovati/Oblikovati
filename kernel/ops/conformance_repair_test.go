@@ -13,6 +13,7 @@ import (
 // TestConformableSurfaces pins which surfaces have a boundary-faithful conforming re-mesher: planes,
 // cylinders and cones, but not torus/sphere/B-spline (no conformingMesh for those yet, #1073).
 func TestConformableSurfaces(t *testing.T) {
+	t.Parallel()
 	pl, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	sph, _ := geom.NewSphere(math.P3(0, 0, 0), 1)
 	cases := []struct {
@@ -38,6 +39,7 @@ func TestConformableSurfaces(t *testing.T) {
 // must reproduce BOTH segments through that point, so it conforms to a curved neighbour that keeps
 // it — instead of the area-gated planarTris dropping it and cracking the shared edge.
 func TestConformingPlaneMeshKeepsNearCollinearPoint(t *testing.T) {
+	t.Parallel()
 	// A pentagon on z=0 whose top edge carries a near-collinear apex (1, 2.0001) between (2,2) and (0,2).
 	mid := math.P3(1, 2.0001, 0)
 	loop := []math.Point3{
@@ -58,6 +60,7 @@ func TestConformingPlaneMeshKeepsNearCollinearPoint(t *testing.T) {
 // 5-point boundary (an absorber's shape, whose near-collinear point must be re-meshed) is NOT — so the
 // conformance-repair skip can never fire on a face that could crack a neighbour.
 func TestIsBareTriangleFace(t *testing.T) {
+	t.Parallel()
 	tri := planarFaceFromLoop(t, []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)})
 	if !isBareTriangleFace(tri) {
 		t.Error("a straight-edged planar triangle should be a bare triangle")
@@ -81,6 +84,7 @@ func TestIsBareTriangleFace(t *testing.T) {
 // TestConformingMeshIsNoOpOnBareTriangle: re-meshing a triangle reproduces the same triangle, so
 // conformingPlaneMesh returns nil (keep existing) — the skip that drops the per-face CDT (#1766).
 func TestConformingMeshIsNoOpOnBareTriangle(t *testing.T) {
+	t.Parallel()
 	tri := planarFaceFromLoop(t, []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)})
 	if m := conformingPlaneMesh(tri, DefaultQuality()); m != nil {
 		t.Errorf("conformingPlaneMesh should skip a bare triangle (return nil), got %d tris", m.TriangleCount())
@@ -91,6 +95,7 @@ func TestConformingMeshIsNoOpOnBareTriangle(t *testing.T) {
 // on a closed triangle soup: the tetra still tessellates watertight (zero free edges), one triangle per
 // face — i.e. skipping the repair pass did not reintroduce a crack (#1766).
 func TestBareTriangleSoupTessellatesWatertight(t *testing.T) {
+	t.Parallel()
 	body := tetra(1, math.V3(0, 0, 0))
 	if !allBareTriangleFaces(body.Faces()) {
 		t.Fatal("tetra should be a bare-triangle soup (the skip path)")

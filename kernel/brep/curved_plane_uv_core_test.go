@@ -18,6 +18,7 @@ import (
 // ruling); a NON-periodic plane must NOT — u is a real world distance, so a genuine face vertex near u=2π
 // stays distinct from the origin.
 func TestSeamWelderUFoldGatedOnUPeriodic(t *testing.T) {
+	t.Parallel()
 	twoPi := math.Scalar(2 * stdmath.Pi)
 	origin, seam := math.P2(0, 1), math.P2(twoPi, 1)
 
@@ -36,6 +37,7 @@ func TestSeamWelderUFoldGatedOnUPeriodic(t *testing.T) {
 // same analytic curve — unlike a constant-v rim, where equal v alone means same run. This is why polygon
 // edges need their own segKind (#1591).
 func TestSameRunSegPolygonByCurveIdentity(t *testing.T) {
+	t.Parallel()
 	edgeA := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(1, 0, 0))
 	edgeB := geom.NewLineSegment(math.P3(1, 0, 0), math.P3(1, 1, 0))
 	at := func(kind segKind, c geom.Curve3) recoveredEdge {

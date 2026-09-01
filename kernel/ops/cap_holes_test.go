@@ -46,6 +46,7 @@ func addSketchRect(sk *sketch.Sketch, x0, y0, x1, y1 float64) {
 // TestCapHolesByDiameterFillsThroughHole detects and caps the through-hole, restoring the solid
 // 4×4×2 block (vol 32) — the #721 acceptance.
 func TestCapHolesByDiameterFillsThroughHole(t *testing.T) {
+	t.Parallel()
 	capped, err := ops.CapHolesByDiameter(boxWithThroughHole(t), 3)
 	if err != nil {
 		t.Fatalf("CapHolesByDiameter: %v", err)
@@ -60,6 +61,7 @@ func TestCapHolesByDiameterFillsThroughHole(t *testing.T) {
 
 // TestCapHolesExplicitSelection caps the same hole by selecting its four wall faces directly.
 func TestCapHolesExplicitSelection(t *testing.T) {
+	t.Parallel()
 	holey := boxWithThroughHole(t)
 	var walls [][]byte
 	for _, f := range holey.Faces() {
@@ -83,6 +85,7 @@ func TestCapHolesExplicitSelection(t *testing.T) {
 // and edges it carries through unchanged keep their ORIGINAL identity rather than fresh ordinals,
 // so a selection on an untouched outer face/edge survives the operation.
 func TestCapHolesKeepsSurvivingIdentity(t *testing.T) {
+	t.Parallel()
 	holey := boxWithThroughHole(t)
 	var walls [][]byte
 	var outerSide []byte
@@ -118,6 +121,7 @@ func TestCapHolesKeepsSurvivingIdentity(t *testing.T) {
 // TestCapHolesByDiameterIgnoresWideOpening leaves the hole when its opening exceeds the max
 // diameter (returns the body unchanged).
 func TestCapHolesByDiameterIgnoresWideOpening(t *testing.T) {
+	t.Parallel()
 	holey := boxWithThroughHole(t)
 	out, err := ops.CapHolesByDiameter(holey, 1) // the 2×2 opening is wider than 1
 	if err != nil {
@@ -130,6 +134,7 @@ func TestCapHolesByDiameterIgnoresWideOpening(t *testing.T) {
 
 // TestCapHolesEmptySelection rejects an empty wall set.
 func TestCapHolesEmptySelection(t *testing.T) {
+	t.Parallel()
 	if _, err := ops.CapHoles(csgBox(math.P3(0, 0, 0), 1, 1, 1), nil); err == nil {
 		t.Error("expected an error for an empty wall selection")
 	}

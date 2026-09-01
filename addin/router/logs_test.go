@@ -15,6 +15,7 @@ import (
 // TestHandleRecoversPanicIntoError: a panicking handler does not crash the host — Handle
 // returns a detailed, method-named error and records it (with a stack) in the trace.
 func TestHandleRecoversPanicIntoError(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	r.readOnly("test.boom", func(*app.Session, json.RawMessage) (json.RawMessage, error) {
 		panic("kaboom")
@@ -43,6 +44,7 @@ func TestHandleRecoversPanicIntoError(t *testing.T) {
 // TestHandleTracesEachCall: a successful and a failing call each append one trace entry, with
 // the failure carrying a method-prefixed error.
 func TestHandleTracesEachCall(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 
@@ -68,6 +70,7 @@ func TestHandleTracesEachCall(t *testing.T) {
 
 // TestLogsTailNotSelfTraced: polling logs.tail must not append to the trace it reads.
 func TestLogsTailNotSelfTraced(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 

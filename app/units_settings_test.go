@@ -15,6 +15,7 @@ import (
 // dialog: an edited units object lands on the active part (units, precision and
 // format), and there is no active-part no-op crash.
 func TestSetDocumentUnitsAppliesToActivePart(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	// No active part: SetDocumentUnits is a safe no-op.
 	s.SetDocumentUnits(param.DefaultUnitsOfMeasure())
@@ -45,6 +46,7 @@ func TestSetDocumentUnitsAppliesToActivePart(t *testing.T) {
 // with (#1519): LengthPrecision/AnglePrecision report the active part's display decimals, falling
 // back to the metric defaults when there is no part.
 func TestSessionUnitPrecisionFollowsDocument(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	def := param.DefaultUnitsOfMeasure()
 	if got := s.LengthPrecision(); got != def.LengthPrecision() {
@@ -74,6 +76,7 @@ func TestSessionUnitPrecisionFollowsDocument(t *testing.T) {
 
 // TestUnitsSettingsOpenClose drives the dialog's open/close flag.
 func TestUnitsSettingsOpenClose(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.UnitsSettingsOpen() {
 		t.Error("units settings should start closed")
@@ -90,6 +93,7 @@ func TestUnitsSettingsOpenClose(t *testing.T) {
 
 // TestUnitOptionLists checks each category offers its expected units.
 func TestUnitOptionLists(t *testing.T) {
+	t.Parallel()
 	if !slices.Contains(LengthUnitOptions(), "mm") || !slices.Contains(LengthUnitOptions(), "in") {
 		t.Error("length options missing mm/in")
 	}
@@ -107,6 +111,7 @@ func TestUnitOptionLists(t *testing.T) {
 
 // TestApplyUnitsHelpers covers the pure apply helpers behind the dialog controls.
 func TestApplyUnitsHelpers(t *testing.T) {
+	t.Parallel()
 	u := param.DefaultUnitsOfMeasure().Clone()
 
 	if !ApplyUnit(&u, param.Length, "in") || u.PreferredName(param.Length) != "in" {

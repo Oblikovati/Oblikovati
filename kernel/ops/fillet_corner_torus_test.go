@@ -20,6 +20,7 @@ import (
 // (patch area (25π/2)(π−1)=84.10 for r=5), retract the three bands to its four contact arcs, and leave
 // a watertight solid with ZERO corner spheres. A dropped torus leaves the oversized sphere (274.35).
 func TestMixedTrihedralSetbackBuildsCornerTorus(t *testing.T) {
+	t.Parallel()
 	body := boxWithBoss(t)
 	keys := edgeKeysAtVertex(body, math.P3(80, 40, 100))
 	if len(keys) != 3 {
@@ -69,6 +70,7 @@ func assertCornerTorusNotSphere(t *testing.T, b *topo.Body) {
 // trihedral (box − pocket, three CONCAVE fillets) must NOT be recognised as a mixed corner — it keeps
 // its sphere octant, never a torus. Proves the P3 gate declines a same-sense corner end-to-end.
 func TestMixedSameSenseCornerStaysSphereNotTorus(t *testing.T) {
+	t.Parallel()
 	body := boxWithPocket(t)
 	keys := pocketCornerEdgeKeys(t, body, math.P3(20, 20, 60))
 	res, err := FilletEdgesCorner(body, filletPicksFor(keys, 5), CornerMiter, FillConcaveOutward)
@@ -89,6 +91,7 @@ func TestMixedSameSenseCornerStaysSphereNotTorus(t *testing.T) {
 // each keeps its baseline sphere. Both mixed signatures are accepted and the pivot is asserted to be the
 // odd one out: 2cc+1cvx pivots on the convex band (K9/M2/L6), 1cc+2cvx on the concave one (B5/C4/D7).
 func TestMixedTorusGateBoundary(t *testing.T) {
+	t.Parallel()
 	fx, fy, fz := threeOrthogonalPlanarFaces(t)
 	for _, tc := range []struct {
 		name        string

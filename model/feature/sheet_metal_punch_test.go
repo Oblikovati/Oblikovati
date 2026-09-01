@@ -28,6 +28,7 @@ func p3Near(a, b math.Point3, tol float64) bool {
 // TestRotatedPlaneAboutCentroid the rotated frame turns a point about the centroid: the centroid is
 // a fixed point, and a point one unit +X of it lands one unit +Y after a 90° turn.
 func TestRotatedPlaneAboutCentroid(t *testing.T) {
+	t.Parallel()
 	rp := rotatedPlaneAboutCentroid(sketch.XYPlane(), math.P2(2, 0), stdmath.Pi/2)
 	if got := rp.ToModel(math.P2(2, 0)); !p3Near(got, math.P3(2, 0, 0), 1e-9) {
 		t.Errorf("centroid moved to %v, want (2,0,0)", got)
@@ -41,6 +42,7 @@ func TestRotatedPlaneAboutCentroid(t *testing.T) {
 // the SAME volume as the un-rotated punch (a rotation preserves the die's area) — proof the turn
 // did not break or resize the cut.
 func TestPunchRotationTurnsButPreservesArea(t *testing.T) {
+	t.Parallel()
 	removed := func(angle float64) float64 {
 		ps := param.NewParameters()
 		mustParam(t, ps, "Thickness", "2 mm")
@@ -87,6 +89,7 @@ func twoHolePunchSketch() *sketch.Sketch {
 // TestPunchStampsEveryProfile a punch removes all of the sketch's closed profiles in one shot,
 // leaving one watertight solid with material removed.
 func TestPunchStampsEveryProfile(t *testing.T) {
+	t.Parallel()
 	ps := param.NewParameters()
 	mustParam(t, ps, "Thickness", "2 mm")
 	fs := NewPartFeatures(ps)
@@ -109,6 +112,7 @@ func TestPunchStampsEveryProfile(t *testing.T) {
 
 // TestPunchRejectsEmptySketch a punch with no closed profile is sick.
 func TestPunchRejectsEmptySketch(t *testing.T) {
+	t.Parallel()
 	ps := param.NewParameters()
 	mustParam(t, ps, "Thickness", "2 mm")
 	fs := NewPartFeatures(ps)
@@ -123,6 +127,7 @@ func TestPunchRejectsEmptySketch(t *testing.T) {
 
 // TestPunchRoundTrip a punch persists its sketch + depth and the die metadata (#1968) and restores.
 func TestPunchRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := twoHolePunchSketch()
 	NewSheetMetalPunchFeatures(fs).Add(&SheetMetalPunchDefinition{

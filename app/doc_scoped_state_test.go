@@ -44,6 +44,7 @@ func addBoxPart(t *testing.T, s *Session, name string) (*doc.Document, *topo.Bod
 // TestHiddenBodiesAreDocumentScoped: hiding a body in one document must not hide (or leak into)
 // another document's bodies, and switching back restores the first document's hidden state (#1105).
 func TestHiddenBodiesAreDocumentScoped(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	docA, bodyA := addBoxPart(t, s, "A.obk")
 	docB, bodyB := addBoxPart(t, s, "B.obk") // B is now active
@@ -77,6 +78,7 @@ func TestHiddenBodiesAreDocumentScoped(t *testing.T) {
 // TestClosingDocumentReleasesHiddenBodies: a closed document's hidden-body set is dropped, so it
 // cannot leak into a later document and does not accumulate (#1105).
 func TestClosingDocumentReleasesHiddenBodies(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	docA, bodyA := addBoxPart(t, s, "A.obk")
 	if err := s.Workspace().SetActiveDocument(docA); err != nil {
@@ -96,6 +98,7 @@ func TestClosingDocumentReleasesHiddenBodies(t *testing.T) {
 // activating a different document must clear it rather than leak stale picks into the new view
 // (#1105). Re-activating the same document leaves the selection intact.
 func TestSelectionClearsOnDocumentSwitch(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	docA, bodyA := addBoxPart(t, s, "A.obk")
 	docB, _ := addBoxPart(t, s, "B.obk")

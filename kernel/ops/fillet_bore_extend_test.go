@@ -25,6 +25,7 @@ func boreSeg(a, b math.Point3) endSeg { return endSeg{from: a, to: b} }
 // TestGrownStraightSeg_ExtendsBeyondEndpoints pins grownStraightSeg: a point collinear and beyond an
 // endpoint grows that side; an interior point, an off-line point, and an arc are rejected (ok=false).
 func TestGrownStraightSeg_ExtendsBeyondEndpoints(t *testing.T) {
+	t.Parallel()
 	s := boreSeg(math.P3(50, 0, 100), math.P3(50, 20, 100))
 	if g, ok := grownStraightSeg(s, math.P3(50, 25, 100), boreTol); !ok || !ptNear(g.to, math.P3(50, 25, 100), boreTol) {
 		t.Fatalf("beyond-to: ok=%v to=%v, want (50,25,100)", ok, g.to)
@@ -48,6 +49,7 @@ func TestGrownStraightSeg_ExtendsBeyondEndpoints(t *testing.T) {
 // the loop leaves the segs UNCHANGED (the convex-green byte-identity path); only an off-loop collinear
 // point grows an edge.
 func TestExtendStraightSegToLanding_NoOpWhenOnLoop(t *testing.T) {
+	t.Parallel()
 	segs := []endSeg{
 		boreSeg(math.P3(0, 0, 100), math.P3(50, 0, 100)),
 		boreSeg(math.P3(50, 0, 100), math.P3(50, 20, 100)),
@@ -68,6 +70,7 @@ func TestExtendStraightSegToLanding_NoOpWhenOnLoop(t *testing.T) {
 // (50,20,95) on the rim edge, dropping the (50,20,100) corner — a watertight loop that is longer than
 // the input (an OUTWARD growth, not an inward bite).
 func TestBoreExtendBite_GrowsLoopOutward(t *testing.T) {
+	t.Parallel()
 	segs := []endSeg{
 		boreSeg(math.P3(50, 0, 0), math.P3(50, 0, 100)),
 		boreSeg(math.P3(50, 0, 100), math.P3(50, 20, 100)), // top edge, grows to (50,25,100)

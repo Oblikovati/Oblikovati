@@ -9,6 +9,7 @@ import (
 )
 
 func TestAddPartInstallsRealizedContentAndActivates(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, testContentFactories())
 	d, err := AddPart(ws, "bracket.obk", true)
 	if err != nil {
@@ -26,6 +27,7 @@ func TestAddPartInstallsRealizedContentAndActivates(t *testing.T) {
 }
 
 func TestAddPartDuplicateNameErrors(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, testContentFactories())
 	if _, err := AddPart(ws, "dup.obk", true); err != nil {
 		t.Fatalf("first AddPart: %v", err)

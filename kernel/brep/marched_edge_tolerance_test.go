@@ -32,6 +32,7 @@ func crossingCylinderPair(t *testing.T) (fat, rod *topo.Body) {
 // the opposite on the same fixture, back when the imprint was marched; the fixture is kept precisely
 // so the contract flip is recorded where it happened.
 func TestExactCrossingIntersectReportsZeroTolerance(t *testing.T) {
+	t.Parallel()
 	fat, rod := crossingCylinderPair(t)
 	res, ok := RuledCrossingIntersectGeneral(fat, rod, nil)
 	if !ok {
@@ -53,6 +54,7 @@ func TestExactCrossingIntersectReportsZeroTolerance(t *testing.T) {
 // below by round-off and above by the rod-circle sagitta of a coarse march, and it must be the same
 // number every edge stitched from that imprint carries.
 func TestMarchedCutBodyReportsAchievedTolerance(t *testing.T) {
+	t.Parallel()
 	target, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	if err != nil {
 		t.Fatalf("target: %v", err)
@@ -111,6 +113,7 @@ func assertMarchedEdgesShareTolerance(t *testing.T, body *topo.Body, want float6
 // and line segments, so its boundary IS exact and it must report 0. This is the control that keeps a
 // non-zero reading meaningful.
 func TestAnalyticBodyReportsZeroAchievedTolerance(t *testing.T) {
+	t.Parallel()
 	fat, _ := crossingCylinderPair(t)
 	if tol := fat.AchievedBoundaryTolerance(); tol != 0 {
 		t.Errorf("an analytic cylinder reports AchievedBoundaryTolerance %g, want 0", tol)

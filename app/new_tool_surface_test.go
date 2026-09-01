@@ -17,6 +17,7 @@ import (
 // TestNewToolsNameAndPromptTheirSteps checks each tool names itself and prompts differently
 // before and after its inputs are gathered, so the status bar guides rather than repeats.
 func TestNewToolsNameAndPromptTheirSteps(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	face, body := boxTopFace(t, def)
 
@@ -68,6 +69,7 @@ func TestNewToolsNameAndPromptTheirSteps(t *testing.T) {
 // The session bridges resolve the running tool and answer nil for anything else, which is what
 // keeps each dialog drawing only while its own tool is active.
 func TestNewSessionBridgesResolveOnlyTheirTool(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	check := func(name string, got any, want bool) {
 		t.Helper()
@@ -113,6 +115,7 @@ func isNilPointer(v any) bool {
 // The cage tool's accessors clamp and round-trip, and its session bridge refuses when there is
 // no free-form body to edit.
 func TestFreeformCageToolAccessors(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if s.CanEditFreeformCage() {
 		t.Error("a part with no freeform body should not offer cage editing")
@@ -145,6 +148,7 @@ func TestFreeformCageToolAccessors(t *testing.T) {
 
 // The angle-plane tool's picks and clear behave, and it refuses to commit half-gathered.
 func TestAngleWorkPlaneToolAccessors(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	tool := NewAngleWorkPlaneTool()
 	s.StartTool(tool)
@@ -172,6 +176,7 @@ func TestAngleWorkPlaneToolAccessors(t *testing.T) {
 
 // The model-tolerance tool's accessors round-trip and its geometry clear works.
 func TestModelToleranceToolAccessors(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	tool := NewModelFrameTool()
 	s.StartTool(tool)
@@ -212,6 +217,7 @@ func TestModelToleranceToolAccessors(t *testing.T) {
 
 // The unwrap and simplify tools clear their picks and refuse an empty commit.
 func TestUnwrapAndSimplifyAccessors(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	face, body := boxTopFace(t, def)
 
@@ -250,6 +256,7 @@ func TestUnwrapAndSimplifyAccessors(t *testing.T) {
 // The datum guided-pick tool narrows the selection filter to the kinds its constructor needs,
 // and stops accepting everything else while it runs.
 func TestDatumPickToolNarrowsTheSelectionFilter(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	tool := newMidplaneWorkPlaneTool()
 	s.StartTool(tool)
@@ -271,6 +278,7 @@ func TestDatumPickToolNarrowsTheSelectionFilter(t *testing.T) {
 
 // The cage overlay is empty for a part with no free-form body rather than panicking.
 func TestCagePreviewIsEmptyWithoutABody(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if items := NewFreeformCageEditTool().Preview(s); len(items) != 0 {
 		t.Errorf("cage preview drew %d items with no freeform body", len(items))

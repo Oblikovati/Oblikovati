@@ -11,6 +11,7 @@ import (
 // TestDeleteBodyDropsTheReferencedBody: with two separate bodies, a delete-body feature keyed by
 // one body's reference key leaves exactly the other (#1078).
 func TestDeleteBodyDropsTheReferencedBody(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(4), 0, ops.NewBody, func() float64 { return 5 })
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketchAt(4, 10), 0, ops.NewBody, func() float64 { return 5 })
@@ -39,6 +40,7 @@ func TestDeleteBodyDropsTheReferencedBody(t *testing.T) {
 // TestDeleteBodyMissingTargetGoesSick: a delete-body feature whose target key matches no running
 // body goes Sick rather than silently deleting nothing.
 func TestDeleteBodyMissingTargetGoesSick(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(4), 0, ops.NewBody, func() float64 { return 5 })
 	fs.AddDeleteBody([]byte("no-such-body-key"))
@@ -56,6 +58,7 @@ func TestDeleteBodyMissingTargetGoesSick(t *testing.T) {
 // TestDeleteBodySerializeRoundTrip pins the recipe round-trip: a delete-body feature survives
 // MarshalRecipe → ApplyRecipe with its body key intact.
 func TestDeleteBodySerializeRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	key := []byte{0x01, 0x02, 0x03, 0x04}
 	fs.AddDeleteBody(key)

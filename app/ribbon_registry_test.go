@@ -20,6 +20,7 @@ func zeroDocSession(t *testing.T) *Session {
 }
 
 func TestRibbonKeyForDocument(t *testing.T) {
+	t.Parallel()
 	if got := ribbonKeyForDocument(nil); got != ZeroDocRibbon {
 		t.Errorf("no document → %q, want ZeroDoc", got)
 	}
@@ -40,6 +41,7 @@ func TestRibbonKeyForDocument(t *testing.T) {
 // TestZeroDocRibbonWhenNoDocumentOpen: with nothing open the ribbon is ZeroDoc — its Get
 // Started tab offers New Part, and the part-only modeling tabs are absent (not greyed).
 func TestZeroDocRibbonWhenNoDocumentOpen(t *testing.T) {
+	t.Parallel()
 	r := BuildRibbon(zeroDocSession(t))
 	if r.Key != ZeroDocRibbon {
 		t.Fatalf("ribbon key = %q, want ZeroDoc", r.Key)
@@ -58,6 +60,7 @@ func TestZeroDocRibbonWhenNoDocumentOpen(t *testing.T) {
 // TestPartRibbonWhenPartActive: opening a part switches the ribbon to the Part ribbon, which
 // carries the modeling tabs but not the ZeroDoc Get Started tab.
 func TestPartRibbonWhenPartActive(t *testing.T) {
+	t.Parallel()
 	r := BuildRibbon(registeredSession(t))
 	if r.Key != PartRibbon {
 		t.Fatalf("ribbon key = %q, want Part", r.Key)
@@ -73,6 +76,7 @@ func TestPartRibbonWhenPartActive(t *testing.T) {
 // TestSketchTabIsContextual: the Sketch tab is absent in the part environment and appears only
 // once a sketch is open (Inventor's contextual tab).
 func TestSketchTabIsContextual(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if _, ok := BuildRibbon(s).Tab("Sketch"); ok {
 		t.Error("Sketch tab should be absent outside the sketch environment")
@@ -86,6 +90,7 @@ func TestSketchTabIsContextual(t *testing.T) {
 // TestNewPartCommandSwitchesRibbon: running New Part from the ZeroDoc ribbon creates a part
 // and flips the active ribbon to Part — the document-driven ribbon switch.
 func TestNewPartCommandSwitchesRibbon(t *testing.T) {
+	t.Parallel()
 	s := zeroDocSession(t)
 	if err := s.Execute("GetStarted.NewPart"); err != nil {
 		t.Fatalf("New Part: %v", err)
@@ -99,6 +104,7 @@ func TestNewPartCommandSwitchesRibbon(t *testing.T) {
 }
 
 func TestEnvironmentShows(t *testing.T) {
+	t.Parallel()
 	if !environmentShows(BaseEnvironment, SketchEnvironment) {
 		t.Error("base-environment commands must show in any environment")
 	}

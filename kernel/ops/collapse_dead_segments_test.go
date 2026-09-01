@@ -16,6 +16,7 @@ import (
 // stub (ring[k]==ring[k+1] with a nil straight curve) drops exactly that segment from the ring and all
 // four loop arrays, keeping them aligned — so no zero-length edge is minted to open the shell.
 func TestCollapseDeadLoopDropsZeroLengthSegment(t *testing.T) {
+	t.Parallel()
 	l := &filletLoop{
 		pts:    []m.Point3{m.P3(0, 0, 0), m.P3(1, 0, 0), m.P3(1, 0, 0), m.P3(1, 1, 0)},
 		curves: []geom.Curve3{nil, nil, nil, nil}, // segment 1 (B→B) is a nil straight zero-length stub
@@ -40,6 +41,7 @@ func TestCollapseDeadLoopDropsZeroLengthSegment(t *testing.T) {
 // TestCollapseDeadLoopKeepsFullCircleSeam guards the B1 boundary: a full-circle rim IS ring[k]==ring[k+1]
 // (both ends weld to one vertex) but is a real edge — it must NOT be collapsed.
 func TestCollapseDeadLoopKeepsFullCircleSeam(t *testing.T) {
+	t.Parallel()
 	circle, err := geom.NewArc3d(m.P3(0, 0, 0), m.V3(0, 0, 1), m.V3(1, 0, 0), 5, 0, 2*math.Pi)
 	if err != nil {
 		t.Fatalf("NewArc3d: %v", err)
@@ -62,6 +64,7 @@ func TestCollapseDeadLoopKeepsFullCircleSeam(t *testing.T) {
 
 // TestCollapseDeadLoopCleanNoOp pins the no-op on a healthy loop (the 40 passing cases stay untouched).
 func TestCollapseDeadLoopCleanNoOp(t *testing.T) {
+	t.Parallel()
 	l := &filletLoop{
 		pts:    []m.Point3{m.P3(0, 0, 0), m.P3(1, 0, 0), m.P3(1, 1, 0)},
 		curves: []geom.Curve3{nil, nil, nil},
@@ -82,6 +85,7 @@ func TestCollapseDeadLoopCleanNoOp(t *testing.T) {
 // must REFUSE it (survived < 3, the surviving count) and keep the original ring, so assembleBody can
 // record a named defect here instead of deferring the malformed body to a later Validate.
 func TestCollapseDeadLoopRefusesDegenerateLoop(t *testing.T) {
+	t.Parallel()
 	// Three coincident points joined by nil zero-length stubs: every segment is dead.
 	l := &filletLoop{
 		pts:    []m.Point3{m.P3(2, 0, 0), m.P3(2, 0, 0), m.P3(2, 0, 0)},
@@ -101,6 +105,7 @@ func TestCollapseDeadLoopRefusesDegenerateLoop(t *testing.T) {
 // TestRecordDeadLoopRefusalsDefects proves the refusal reaches the body as a Defect (#3389): recording
 // one refusal stamps the builder with a CodeAssembleDeadLoopCollapse Defect the built body carries.
 func TestRecordDeadLoopRefusalsDefects(t *testing.T) {
+	t.Parallel()
 	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok("t", "body", 0)))
 	recordDeadLoopRefusals(bld, []deadLoopRefusal{{face: 1, loop: 0, survived: 2, welded: 4}})
 	body := bld.Build()
@@ -117,6 +122,7 @@ func TestRecordDeadLoopRefusalsDefects(t *testing.T) {
 
 // TestDeadCurve pins the discriminator: nil and zero-length curves are dead; a full-circle arc is not.
 func TestDeadCurve(t *testing.T) {
+	t.Parallel()
 	if !deadCurve(nil, 1e-6) {
 		t.Error("nil curve must be dead")
 	}

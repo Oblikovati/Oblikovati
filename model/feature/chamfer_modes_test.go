@@ -50,6 +50,7 @@ func cornerSetbacks(body *topo.Body) []float64 {
 // TestChamferTwoDistancesAsymmetric chamfers a box edge with unequal setbacks and verifies
 // the volume (½·d1·d2·L wedge) and that the two face setbacks are actually d1 and d2 (M20-F03).
 func TestChamferTwoDistancesAsymmetric(t *testing.T) {
+	t.Parallel()
 	box, edge := box2(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -79,6 +80,7 @@ func TestChamferTwoDistancesAsymmetric(t *testing.T) {
 // TestChamferDistanceAngle chamfers with a distance + angle; the second setback is derived as
 // d·tanθ, so the removed wedge volume reflects the angle (M20-F03).
 func TestChamferDistanceAngle(t *testing.T) {
+	t.Parallel()
 	box, edge := box2(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -106,6 +108,7 @@ func TestChamferDistanceAngle(t *testing.T) {
 // TestChamferTwoDistancesRoundTrip checks the mode + second distance survive an .obk round
 // trip (extrude source so the program serializes).
 func TestChamferTwoDistancesRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 1 })
@@ -136,6 +139,7 @@ func TestChamferTwoDistancesRoundTrip(t *testing.T) {
 // answer came from edge.Faces() order — a topology artefact — so naming each of the edge's two
 // faces in turn must SWAP where the big setback lands, and reach the same volume either way.
 func TestChamferReferenceFaceDecidesWhichSetbackGoesWhere(t *testing.T) {
+	t.Parallel()
 	box, edge := box2(t)
 	faces := edgeFacesOf(t, box, edge)
 	first := chamferSetbackOnFace(t, box, edge, faces[0], faces[0])
@@ -205,6 +209,7 @@ func edgeFacesOf(t *testing.T, body *topo.Body, key []byte) []*topo.Face {
 // removes proportionally less. The tool must also NOT overhang its interior ends, or it would bevel
 // a little more edge than was asked for — the same rule a from-to hole's entry follows.
 func TestPartialChamferBevelsOnlyItsSpan(t *testing.T) {
+	t.Parallel()
 	box, edge := box2(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)

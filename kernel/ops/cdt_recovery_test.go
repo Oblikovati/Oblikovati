@@ -29,6 +29,7 @@ func edgeUseCount(tris [][3]int) map[[2]int]int {
 // exist in the mesh. The old code set con unconditionally, registering phantom boundaries with no edge;
 // the invariant con ⟹ hasEdge guarantees floodInside has a real edge to toggle at for each constraint.
 func TestConstrainRecordsOnlyRecoveredEdges(t *testing.T) {
+	t.Parallel()
 	pts := [][2]float64{{0, 0}, {4, 0}, {4, 3}, {0, 3}} // a simple convex quad, every loop edge recoverable
 	m := newCDT(pts)
 	for i := 0; i < m.nsup; i++ {
@@ -50,6 +51,7 @@ func TestConstrainRecordsOnlyRecoveredEdges(t *testing.T) {
 // fold repairFolds later removes) and a cleanly cut loop are not — so a single fold never discards the
 // refined mesh (#1410).
 func TestDomainLeakedFlagsFilledLoopNotFold(t *testing.T) {
+	t.Parallel()
 	// Distinct coordinates → representatives() is the identity, so loop indices address pts directly.
 	pts := [][2]float64{{0, 0}, {10, 0}, {10, 10}, {0, 10}, {3, 3}, {6, 3}, {6, 6}}
 	m := newCDT(pts)
@@ -78,6 +80,7 @@ func TestDomainLeakedFlagsFilledLoopNotFold(t *testing.T) {
 // loops yields a manifold triangulation, indexed back into the original pts, whose area is the outer minus
 // the hole — i.e. the hole is genuinely cut, never filled (#1410).
 func TestEarcutFromLoopsProducesWatertightIndexedMesh(t *testing.T) {
+	t.Parallel()
 	pts := [][2]float64{{0, 0}, {10, 0}, {10, 10}, {0, 10}, {3, 3}, {6, 3}, {6, 6}, {3, 6}}
 	loops := [][]int{{0, 1, 2, 3}, {4, 5, 6, 7}} // a 10×10 square with a 3×3 square hole
 	tris := earcutFromLoops(pts, loops)
@@ -115,6 +118,7 @@ func loopTriArea(pts [][2]float64, tris [][3]int) float64 {
 // counted Defect, a benign non-recovery is an Info, and a fully recovered triangulation records nothing —
 // so non-recovery is never silent yet the common harmless case raises no false alarm (#1410).
 func TestRecordConstraintLeakSeverity(t *testing.T) {
+	t.Parallel()
 	none := &Mesh{}
 	recordConstraintLeak(none, nil, false)
 	if len(none.Diagnostics) != 0 {
@@ -140,6 +144,7 @@ func TestRecordConstraintLeakSeverity(t *testing.T) {
 // cut stays watertight (the seam borders the excluded super region), so the mesher keeps the refined mesh,
 // reports a non-manifold-free result, AND surfaces the non-recovery as an Info diagnostic — never silent.
 func TestHoledCylinderWallNonRecoverySurfacedAndWatertight(t *testing.T) {
+	t.Parallel()
 	const uLo, uHi, vLo, vHi = stdmath.Pi / 4, stdmath.Pi / 2, 4.0, 8.0
 	face := windowedCylinderWall(t, uLo, uHi, vLo, vHi)
 	mesh := tessellateCurvedFace(face, DefaultQuality())

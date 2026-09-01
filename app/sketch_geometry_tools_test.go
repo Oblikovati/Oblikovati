@@ -20,6 +20,7 @@ func sketchSession(t *testing.T) (*Session, *sketch.Sketch) {
 }
 
 func TestCircleToolDrawsCircle(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewCircleTool())
 	s.Click(100, 100) // center
@@ -33,6 +34,7 @@ func TestCircleToolDrawsCircle(t *testing.T) {
 }
 
 func TestArcToolDrawsArc(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewArcTool())
 	s.Click(60, 100)  // start
@@ -44,6 +46,7 @@ func TestArcToolDrawsArc(t *testing.T) {
 }
 
 func TestArcToolRejectsCollinearPoints(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewArcTool())
 	s.Click(40, 100)
@@ -58,6 +61,7 @@ func TestArcToolRejectsCollinearPoints(t *testing.T) {
 }
 
 func TestPolygonToolDrawsClosedProfile(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewPolygonTool(6))
 	s.Click(100, 100) // center
@@ -71,12 +75,14 @@ func TestPolygonToolDrawsClosedProfile(t *testing.T) {
 }
 
 func TestPolygonToolDefaultsSidesWhenInvalid(t *testing.T) {
+	t.Parallel()
 	if NewPolygonTool(2).Sides != 6 {
 		t.Errorf("polygon with <3 sides should default to 6, got %d", NewPolygonTool(2).Sides)
 	}
 }
 
 func TestEllipseToolDrawsEllipse(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewEllipseTool())
 	s.Click(100, 100) // center
@@ -92,6 +98,7 @@ func TestEllipseToolDrawsEllipse(t *testing.T) {
 }
 
 func TestSplineToolDrawsSpline(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewSplineTool())
 	s.Click(40, 40)
@@ -106,6 +113,7 @@ func TestSplineToolDrawsSpline(t *testing.T) {
 }
 
 func TestSplineToolNeedsTwoPoints(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	tool := NewSplineTool()
 	s.StartTool(tool)
@@ -116,6 +124,7 @@ func TestSplineToolNeedsTwoPoints(t *testing.T) {
 }
 
 func TestPointToolPlacesPoint(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	before := sk.Points().Count()
 	s.StartTool(NewPointTool())
@@ -129,6 +138,7 @@ func TestPointToolPlacesPoint(t *testing.T) {
 }
 
 func TestGeometryToolsNeedActiveSketch(t *testing.T) {
+	t.Parallel()
 	// A tool committing with no active sketch errors rather than panicking.
 	s, _ := emptyPartSession(t)
 	tool := NewCircleTool()
@@ -139,6 +149,7 @@ func TestGeometryToolsNeedActiveSketch(t *testing.T) {
 }
 
 func TestSketchToolAutoCommitsAndDeactivates(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	// A circle completes on its second click with no OK, then the tool deactivates.
 	// (The line tool is deliberately NOT the example here: it chains until the user
@@ -163,6 +174,7 @@ func TestSketchToolAutoCommitsAndDeactivates(t *testing.T) {
 }
 
 func TestEscapeCancelsToolMidOperation(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewLineTool())
 	s.Click(40, 40) // first point placed; operation in progress
@@ -178,6 +190,7 @@ func TestEscapeCancelsToolMidOperation(t *testing.T) {
 }
 
 func TestEscapeClearsSelectionWhenNoTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	selectEntities(s, sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 0)))
 	if s.Selection().Count() == 0 {

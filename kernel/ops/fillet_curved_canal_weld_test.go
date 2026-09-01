@@ -22,6 +22,7 @@ import (
 // R=5). The centre/on-host checks are the discriminator: a mis-tag (a foot-locus placed in endArcs, or an
 // end arc placed in feet) has neither a ball-centre nor lies on the host, so it fails here.
 func TestCanalBoundaryRoles(t *testing.T) {
+	t.Parallel()
 	patch := n7CanalPatch(t)
 	roles, err := canalBoundaryRoles(patch)
 	if err != nil {
@@ -50,6 +51,7 @@ func TestCanalBoundaryRoles(t *testing.T) {
 // it returns exactly the corner patch + the three arm faces (the host retrims run only when the body
 // carries the wall/plane faces — the whole-body watertight weld is gated by TestOCCTBlendSimple/N7).
 func TestCanalWeldFacesAssemblesCornerAndArms(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	loop, ok := extractCurvedCorner(w, arms, res)
 	if !ok || loop.Canal == nil {
@@ -74,6 +76,7 @@ func TestCanalWeldFacesAssemblesCornerAndArms(t *testing.T) {
 // TestOCCTBlendSimple/N7; here the fixture is face-less, so the returned body carries only the corner +
 // arm faces (not a closed solid) — the observable under test is that the canal path assembles, not floors.
 func TestCanalArmBodyRoutesN7(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	sphere, err := geom.NewSphere(w.center, w.radius)
 	if err != nil {
@@ -96,6 +99,7 @@ func TestCanalArmBodyRoutesN7(t *testing.T) {
 // B3 octant (Canal==nil) returns took=false, so assembleCurvedArmBody falls through to the untouched
 // single-ball path — the invariant that keeps B3 byte-identical.
 func TestCanalArmBodyPassesOctant(t *testing.T) {
+	t.Parallel()
 	_, arms, sphere, res := b3CornerWeld(t)
 	blends := map[uint64]*cornerBlend{7: {sphere: sphere}}
 	if body, reason, took := canalArmBody(nil, arms, blends, 7, res); took {

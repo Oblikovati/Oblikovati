@@ -67,6 +67,7 @@ func mustPlane(t *testing.T, o math.Point3, normal math.Vector3) geom.Plane {
 // return ok and the three certified setback stations — torus major-angle −75.522°, cyl axial z=90,
 // planar-cyl axial y=−√1500 — each the spine parameter where spine(station)=C.
 func TestSolveCurvedCorner_B3Stations(t *testing.T) {
+	t.Parallel()
 	sphere, arms := b3CornerArms(t)
 	res := geom.ResolutionForSize(150) // B3 body diagonal ≈ √(50²+50²+100²) = 122.5; 150 covers it
 	w, ok := solveCurvedCorner(sphere, arms, res)
@@ -109,6 +110,7 @@ func assertStation(t *testing.T, a armSetback, wantPhi, tol float64) {
 // curvedClosureValid accepts it. The NEGATIVE case proves the guard bites — a rail direction
 // perturbed 5° must be rejected (a closure test that passes on a broken triangle is a bad test).
 func TestCurvedClosure_B3(t *testing.T) {
+	t.Parallel()
 	sphere, arms := b3CornerArms(t)
 	res := geom.ResolutionForSize(150)
 	w, ok := solveCurvedCorner(sphere, arms, res)
@@ -177,6 +179,7 @@ func assertPerturbedRailRejected(t *testing.T, w cornerWeld, dirs [3]math.UnitVe
 // one. dist(C, perturbed axis)=5 is ~6 orders past the res.Weld()*50≈7.5e-6 gate at this model
 // size, so solveCurvedCorner must decline the corner right there, before any closure math runs.
 func TestSolveCurvedCorner_RejectsOffSpine(t *testing.T) {
+	t.Parallel()
 	sphere, arms := b3CornerArms(t)
 	res := geom.ResolutionForSize(150)
 	arms[1].armSurface = mustCylinder(t, math.P3(15, b3CornerCY, 0), math.V3(0, 0, 1), 10) // was x=10
@@ -205,6 +208,7 @@ func torusStationFixture(t *testing.T) (geom.Torus, Resolution, float64) {
 // Before the guard, torusStation wrongly accepted this and deferred the failure downstream to
 // the arm rail bundle; the guard must decline right here, honestly, at the solve.
 func TestTorusStation_RejectsOffPlane(t *testing.T) {
+	t.Parallel()
 	tr, res, scale := torusStationFixture(t)
 	c := math.P3(40, 0, 15) // in-plane radius 40 = MajorRadius; axial offset (z−5) = 10 = 2·minorRadius
 	if _, ok := torusStation(tr, c, scale, res); ok {
@@ -216,6 +220,7 @@ func TestTorusStation_RejectsOffPlane(t *testing.T) {
 // plane (axial offset 0) at the same in-plane radius must still be accepted, at angle 0 (it sits
 // along the torus's Ref direction).
 func TestTorusStation_AcceptsOnPlane(t *testing.T) {
+	t.Parallel()
 	tr, res, scale := torusStationFixture(t)
 	c := math.P3(40, 0, 5) // on the z=5 spine plane, in-plane radius 40 = MajorRadius, along Ref
 	phi, ok := torusStation(tr, c, scale, res)
@@ -231,6 +236,7 @@ func TestTorusStation_AcceptsOnPlane(t *testing.T) {
 // corner needs three arms to close a spherical triangle, so two arms (a dihedral edge, not a
 // corner) must be declined outright, before any station or closure math runs.
 func TestSolveCurvedCorner_RejectsTooFewArms(t *testing.T) {
+	t.Parallel()
 	sphere, arms := b3CornerArms(t)
 	res := geom.ResolutionForSize(150)
 	if _, ok := solveCurvedCorner(sphere, arms[:2], res); ok {
@@ -244,6 +250,7 @@ func TestSolveCurvedCorner_RejectsTooFewArms(t *testing.T) {
 // sphere no longer touches it at the corner radius. Both the torus (W∧K) and vertical-cyl (W∧N)
 // arms share this wall host, so either's railDir call must decline.
 func TestSolveCurvedCorner_RejectsNonTangentHost(t *testing.T) {
+	t.Parallel()
 	sphere, arms := b3CornerArms(t)
 	res := geom.ResolutionForSize(150)
 	bld := topo.NewBuilder(true, topo.Lineage{})

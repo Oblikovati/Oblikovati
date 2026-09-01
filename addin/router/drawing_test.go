@@ -38,6 +38,7 @@ func drawingSession(t *testing.T) (*Router, *app.Session) {
 }
 
 func TestDrawingDefaultSheetOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingSession(t)
 
 	var sheets wire.ListSheetsResult
@@ -55,6 +56,7 @@ func TestDrawingDefaultSheetOverWire(t *testing.T) {
 }
 
 func TestDrawingSheetLifecycleOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingSession(t)
 
 	var added wire.SheetResult
@@ -79,6 +81,7 @@ func TestDrawingSheetLifecycleOverWire(t *testing.T) {
 // TestDrawingTitleBlockResolvesReferencedModel is the PBI-137 acceptance over the wire:
 // a title block's fields resolve from the referenced model's iProperties.
 func TestDrawingTitleBlockResolvesReferencedModel(t *testing.T) {
+	t.Parallel()
 	r, s := drawingSession(t)
 
 	var ref wire.SetModelReferenceResult
@@ -102,6 +105,7 @@ func TestDrawingTitleBlockResolvesReferencedModel(t *testing.T) {
 }
 
 func TestDrawingTitleBlockBlankWithoutReference(t *testing.T) {
+	t.Parallel()
 	r, s := drawingSession(t)
 	var fields wire.TitleBlockFieldsResult
 	call(t, r, s, "drawing.titleBlockFields", "{}", &fields)

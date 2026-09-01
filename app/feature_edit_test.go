@@ -28,6 +28,7 @@ func extrudedFeatureSession(t *testing.T) (*Session, FeatureHandle) {
 // a committed extrude re-opens the Extrude property panel (the creation tool in edit
 // mode) seeded with the feature's full creation state — not the generic param editor.
 func TestBeginEditFeatureReopensExtrudePanel(t *testing.T) {
+	t.Parallel()
 	s, h := extrudedFeatureSession(t)
 	s.BeginEditFeature(h)
 	ext := s.ActiveExtrude()
@@ -50,6 +51,7 @@ func TestBeginEditFeatureReopensExtrudePanel(t *testing.T) {
 }
 
 func TestCommitFeatureEditRecomputesTheBody(t *testing.T) {
+	t.Parallel()
 	s, h := extrudedFeatureSession(t)
 	s.BeginEditFeature(h)
 	s.SetExtrudeDistanceDisplay(80) // 80 mm = 8 cm, via the panel path
@@ -65,6 +67,7 @@ func TestCommitFeatureEditRecomputesTheBody(t *testing.T) {
 }
 
 func TestCancelFeatureEditRestoresTheDistance(t *testing.T) {
+	t.Parallel()
 	s, h := extrudedFeatureSession(t)
 	s.BeginEditFeature(h)
 	s.SetExtrudeDistanceDisplay(80) // change it, then back out
@@ -81,6 +84,7 @@ func TestCancelFeatureEditRestoresTheDistance(t *testing.T) {
 // editable": operation, taper, extent direction and asymmetry survive a commit and land
 // in the definition.
 func TestExtrudeEditRoundTripsFullCreationSurface(t *testing.T) {
+	t.Parallel()
 	s, h := extrudedFeatureSession(t)
 	s.BeginEditFeature(h)
 	ext := s.ActiveExtrude()
@@ -107,6 +111,7 @@ func TestExtrudeEditRoundTripsFullCreationSurface(t *testing.T) {
 }
 
 func TestFeatureEditAPIsAreNoOpsWhenNotEditing(t *testing.T) {
+	t.Parallel()
 	s, _ := extrudedFeatureSession(t)
 	if s.IsEditingFeature() || s.EditingFeatureName() != "" || s.EditFeatureParamCount() != 0 {
 		t.Error("no edit should be open before BeginEditFeature")
@@ -120,6 +125,7 @@ func TestFeatureEditAPIsAreNoOpsWhenNotEditing(t *testing.T) {
 // TestFeatureEditIsEditableReflectsCapability checks the browser uses FeatureIsEditable to
 // enable/grey the Edit entry: an extrude is editable; a feature with no scalar params is not.
 func TestFeatureEditIsEditableReflectsCapability(t *testing.T) {
+	t.Parallel()
 	s, h := extrudedFeatureSession(t)
 	_ = s
 	if !s.FeatureIsEditable(h.Feature) {
@@ -132,6 +138,7 @@ func TestFeatureEditIsEditableReflectsCapability(t *testing.T) {
 // (their topology was consumed, so only keys survive), and a radius change written
 // through the panel lands in the definition on commit.
 func TestFilletEditSeedsKeysAndRoundTrips(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	edge := verticalEdgeOf(t, block)
 	s.SetPicker(stubPicker{sel: edge})
@@ -168,6 +175,7 @@ func TestFilletEditSeedsKeysAndRoundTrips(t *testing.T) {
 // editable: a drilled hole becomes a counterbore on edit-commit, with the seat
 // dimensions written into the definition.
 func TestHoleEditSwitchesSeatType(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})

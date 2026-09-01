@@ -47,6 +47,7 @@ func randomPairFixture(rng *stdrand.Rand) (fa, fb []curvedFace) {
 // appear in the AABB candidate set (both orientations). A miss would silently drop an imprint
 // and change the boolean's output.
 func TestCrossingFaceCandidatesSupersetOfImprintingPairs(t *testing.T) {
+	t.Parallel()
 	rng := stdrand.New(stdrand.NewSource(1607))
 	for trial := range 60 {
 		fa, fb := randomPairFixture(rng)
@@ -74,6 +75,7 @@ func containsIndex(idx []int, want int) bool {
 // single-pass imprint+provenance must emit exactly the brute scan's slices — same segments,
 // same order (the 2D arrangement is order-sensitive at tolerance) — on randomized fixtures.
 func TestImprintCandidatesMatchesBruteScan(t *testing.T) {
+	t.Parallel()
 	rng := stdrand.New(stdrand.NewSource(1411))
 	for trial := range 60 {
 		fa, fb := randomPairFixture(rng)
@@ -91,6 +93,7 @@ func TestImprintCandidatesMatchesBruteScan(t *testing.T) {
 // TestFacesAtPreservesOrder pins the coplanar-cover candidate contract: facesAt keeps the
 // ascending-index order the full scan iterated in, so first-match semantics are unchanged.
 func TestFacesAtPreservesOrder(t *testing.T) {
+	t.Parallel()
 	faces := provFaces("base", 0, 0, 0, 2, 2, 2)
 	got := facesAt(faces, []int{4, 1, 3})
 	if len(got) != 3 {

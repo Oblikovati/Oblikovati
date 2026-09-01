@@ -8,6 +8,7 @@ import (
 )
 
 func TestKnotMultiplicity(t *testing.T) {
+	t.Parallel()
 	knots := []float64{0, 0, 0, 0.5, 0.5, 1, 1, 1}
 	cases := []struct {
 		value float64
@@ -21,6 +22,7 @@ func TestKnotMultiplicity(t *testing.T) {
 }
 
 func TestFindSpanMult(t *testing.T) {
+	t.Parallel()
 	knots := []float64{0, 0, 0, 0.5, 1, 1, 1} // degree 2, n=3
 	span, mult := findSpanMult(3, 2, 0.5, knots)
 	if span != 3 || mult != 1 {
@@ -33,6 +35,7 @@ func TestFindSpanMult(t *testing.T) {
 }
 
 func TestNormalizeKnots(t *testing.T) {
+	t.Parallel()
 	got := normalizeKnots([]float64{2, 2, 2, 4, 6, 6, 6})
 	want := []float64{0, 0, 0, 0.5, 1, 1, 1}
 	for i := range want {
@@ -43,6 +46,7 @@ func TestNormalizeKnots(t *testing.T) {
 }
 
 func TestNormalizeKnotsDegenerate(t *testing.T) {
+	t.Parallel()
 	in := []float64{3, 3, 3, 3}
 	got := normalizeKnots(in)
 	for i := range in {
@@ -53,6 +57,7 @@ func TestNormalizeKnotsDegenerate(t *testing.T) {
 }
 
 func TestMergedInteriorKnots(t *testing.T) {
+	t.Parallel()
 	// a has a single interior knot at 0.5; b has interior knots at 0.5 (double) and
 	// 0.25. To match the maximum multiplicity per value, a must gain one more 0.5 and
 	// one fresh 0.25.

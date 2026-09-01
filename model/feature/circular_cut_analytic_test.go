@@ -39,6 +39,7 @@ func closedCircleEdgeCount(b *topo.Body) int {
 // box). The box−cylinder cut now reaches the exact M2 path (curvedCylindricalHoleCut), which the kernel
 // already supported but the model layer never fed an analytic cylinder.
 func TestCircularCutKeepsCircleEdge(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
 

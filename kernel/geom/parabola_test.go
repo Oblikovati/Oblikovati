@@ -11,6 +11,7 @@ import (
 
 // A parabola point at t=0 is the vertex; the two arms climb symmetrically along the axis.
 func TestParabolaVertexAndArms(t *testing.T) {
+	t.Parallel()
 	p, err := NewParabola(math.P3(1, 0, 0), math.V3(0, 0, 1), math.V3(0, 1, 0), 2)
 	if err != nil {
 		t.Fatalf("NewParabola: %v", err)
@@ -33,6 +34,7 @@ func TestParabolaVertexAndArms(t *testing.T) {
 
 // NewParabola re-orthogonalizes the cross axis against the axis and rejects degenerate input.
 func TestNewParabolaValidation(t *testing.T) {
+	t.Parallel()
 	if _, err := NewParabola(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(0, 0, 1), 1); err == nil {
 		t.Error("parallel axes should error")
 	}
@@ -50,6 +52,7 @@ func TestNewParabolaValidation(t *testing.T) {
 
 // TangentAt matches a central finite difference of PointAt.
 func TestParabolaTangentFiniteDifference(t *testing.T) {
+	t.Parallel()
 	p, _ := NewParabola(math.P3(0, 1, 0), math.V3(1, 0, 0), math.V3(0, 1, 0), 1.5)
 	const eps = 1e-6
 	for _, t0 := range []float64{-1.2, 0, 0.8} {
@@ -63,6 +66,7 @@ func TestParabolaTangentFiniteDifference(t *testing.T) {
 
 // ParabolicArc reparameterizes the same parabola onto s∈[0,1] over [T0,T1].
 func TestParabolicArcReparam(t *testing.T) {
+	t.Parallel()
 	p, _ := NewParabola(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(0, 1, 0), 2)
 	arc := p.Arc(-0.5, 1.5)
 	if ptFar(arc.PointAt(0), p.PointAt(-0.5)) || ptFar(arc.PointAt(1), p.PointAt(1.5)) {
@@ -84,6 +88,7 @@ func TestParabolicArcReparam(t *testing.T) {
 // CurveParamAtPoint3 inverts a parabola in closed form: the cross coordinate of a point on the curve
 // round-trips to the t (or arc s) that produced it.
 func TestParabolaParamRoundTrip(t *testing.T) {
+	t.Parallel()
 	p, _ := NewParabola(math.P3(1, -2, 3), math.V3(0, 0, 1), math.V3(0, 1, 0), 1.5)
 	if lo, hi := p.Domain(); !stdmath.IsInf(lo, -1) || !stdmath.IsInf(hi, 1) {
 		t.Errorf("Parabola.Domain = [%g,%g], want unbounded", lo, hi)

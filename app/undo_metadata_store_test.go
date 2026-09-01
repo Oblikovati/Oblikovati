@@ -30,6 +30,7 @@ func metaDoc(t *testing.T) *doc.Document {
 // TestMetaStoreSnapshotRoundTrip: MarshalSnapshot captures all metadata and RestoreSnapshot reinstalls
 // it into a fresh document (the settings-present restore branches), leaving both docs equal.
 func TestMetaStoreSnapshotRoundTrip(t *testing.T) {
+	t.Parallel()
 	src := documentMetaStore{inner: &fakeRecipeStore{}, doc: metaDoc(t)}
 	blob, err := src.MarshalSnapshot()
 	if err != nil {
@@ -62,6 +63,7 @@ func assertMetaRestored(t *testing.T, d *doc.Document) {
 // TestMetaStoreRestoreRejectsInvalidJSON: a malformed snapshot surfaces the unmarshal error rather
 // than corrupting the document.
 func TestMetaStoreRestoreRejectsInvalidJSON(t *testing.T) {
+	t.Parallel()
 	m := documentMetaStore{inner: &fakeRecipeStore{}, doc: metaDoc(t)}
 	if err := m.RestoreSnapshot([]byte("not json")); err == nil {
 		t.Error("RestoreSnapshot should surface an unmarshal error for malformed input")
@@ -71,6 +73,7 @@ func TestMetaStoreRestoreRejectsInvalidJSON(t *testing.T) {
 // TestMetaStoreRestoreSurfacesInnerFailure: when the inner recipe restore fails, the metadata store
 // propagates the error and does not touch the document metadata.
 func TestMetaStoreRestoreSurfacesInnerFailure(t *testing.T) {
+	t.Parallel()
 	inner := &fakeRecipeStore{restoreErr: errMarshalBoom}
 	m := documentMetaStore{inner: inner, doc: metaDoc(t)}
 	if err := m.RestoreSnapshot([]byte(`{"recipe":"x"}`)); err == nil {
@@ -81,6 +84,7 @@ func TestMetaStoreRestoreSurfacesInnerFailure(t *testing.T) {
 // TestMetaStoreForRejectsNonRecipeContent: a document whose content has no recipe (no undo stream)
 // yields no metadata store.
 func TestMetaStoreForRejectsNonRecipeContent(t *testing.T) {
+	t.Parallel()
 	d := doc.NewPartDocument("/proj/plain.obk").Document
 	d.SetContent(plainContent{})
 	if _, ok := metaStoreFor(d); ok {
@@ -91,6 +95,7 @@ func TestMetaStoreForRejectsNonRecipeContent(t *testing.T) {
 // TestRecordMetadataEditIgnoresInactiveDocument: recording against a nil/background document is a
 // no-op (the per-document undo stream records only the active document).
 func TestRecordMetadataEditIgnoresInactiveDocument(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.recordMetadataEdit(nil, "ignored") // must not panic and must record nothing
 }

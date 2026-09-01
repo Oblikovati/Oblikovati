@@ -50,6 +50,7 @@ func sewClusterFixture(rng *stdrand.Rand, nuclei int, tol float64) []math.Point3
 // the retired O(m²) oracle on randomized fixtures: same components, same centroids, same
 // cell keys.
 func TestEndpointClusterSnapMatchesBrute(t *testing.T) {
+	t.Parallel()
 	rng := stdrand.New(stdrand.NewSource(84)) // PBI-084, the original sew work item
 	for trial := range 20 {
 		tol := 0.05 + rng.Float64()*0.2
@@ -66,6 +67,7 @@ func TestEndpointClusterSnapMatchesBrute(t *testing.T) {
 // spaced under tol melds into ONE cluster even though its ends are many cells apart, so every
 // chain member snaps to the same centroid.
 func TestEndpointClusterSnapChainMelds(t *testing.T) {
+	t.Parallel()
 	tol := 0.1
 	var pts []math.Point3
 	for s := range 10 {

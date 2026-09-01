@@ -30,6 +30,7 @@ func variableSpring(t *testing.T) VariableHelix3d {
 // TestVariableHelixStationPassThrough: at each station's parameter the curve
 // sits at exactly the station radius and the trapezoid-integrated height.
 func TestVariableHelixStationPassThrough(t *testing.T) {
+	t.Parallel()
 	h := variableSpring(t)
 	// Trapezoid heights: 0→2: (0.1+0.4)/2·2 = 0.5; 2→4: 0.4·2 = 0.8; 4→6: 0.5.
 	wantHeights := []float64{0, 0.5, 1.3, 1.8}
@@ -48,6 +49,7 @@ func TestVariableHelixStationPassThrough(t *testing.T) {
 // TestVariableHelixLengthMonotonic: arc length must strictly accumulate along
 // the parameter (the property-test guard against interpolation glitches).
 func TestVariableHelixLengthMonotonic(t *testing.T) {
+	t.Parallel()
 	h := variableSpring(t)
 	prev := 0.0
 	for i := 1; i <= 64; i++ {
@@ -68,6 +70,7 @@ func TestVariableHelixLengthMonotonic(t *testing.T) {
 // TestVariableHelixMatchesConstantHelix: a two-station table with constant
 // pitch/radius must reproduce the analytic constant helix exactly.
 func TestVariableHelixMatchesConstantHelix(t *testing.T) {
+	t.Parallel()
 	v, err := NewVariableHelix3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), []HelixStation{
 		{Turn: 0, Radius: 0.8, Pitch: 1},
 		{Turn: 5, Radius: 0.8, Pitch: 1},
@@ -93,6 +96,7 @@ func TestVariableHelixMatchesConstantHelix(t *testing.T) {
 // TestVariableHelixRejectsBadStations: too few rows, a nonzero first turn,
 // and non-increasing turns are all rejected with the offending values.
 func TestVariableHelixRejectsBadStations(t *testing.T) {
+	t.Parallel()
 	axis, ref := math.V3(0, 0, 1), math.V3(1, 0, 0)
 	cases := [][]HelixStation{
 		{{Turn: 0, Radius: 1, Pitch: 1}},

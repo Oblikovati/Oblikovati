@@ -53,6 +53,7 @@ func validWall(t *testing.T, pf *PartFeature, wall *topo.Body, what string) *top
 // TestRibThickenSidePlacesWallOffThePath: side1/side2 move the whole wall to one side of the path
 // instead of straddling it, without changing how much material it is (#1882).
 func TestRibThickenSidePlacesWallOffThePath(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		name       string
 		side       RibThickenSide
@@ -86,6 +87,7 @@ var draftTan = stdmath.Atan(0.15)
 // part. The range box cannot see this (it reports the widest end either way), so the test probes
 // the wall's actual half-width near each end (#1882).
 func TestRibDraftOpensTowardTheRoot(t *testing.T) {
+	t.Parallel()
 	for _, depth := range []float64{2, -2} {
 		pf, wall := walledRib(t, depth, func(d *RibDefinition) { d.Draft = draftTan })
 		body := validWall(t, pf, wall, "drafted rib wall")
@@ -106,6 +108,7 @@ func TestRibDraftOpensTowardTheRoot(t *testing.T) {
 // exactly as thick as asked and thins the sketch-plane end, which is the whole observable
 // difference between the two thickness planes (Inventor's RibThicknessPlaneEnum, #1882).
 func TestRibThicknessPlaneChoosesTheNominalEnd(t *testing.T) {
+	t.Parallel()
 	atSketch, wall := walledRib(t, 2, func(d *RibDefinition) { d.Draft = draftTan })
 	sketchHeld := validWall(t, atSketch, wall, "thickness at the sketch plane").RangeBox()
 	atRoot, rootWall := walledRib(t, 2, func(d *RibDefinition) {
@@ -132,6 +135,7 @@ func TestRibThicknessPlaneChoosesTheNominalEnd(t *testing.T) {
 // TestRibDraftRefusesAWallItWouldInvert: a draft deep enough to eat the whole thickness is a
 // precise error, not a self-intersecting band (#1882).
 func TestRibDraftRefusesAWallItWouldInvert(t *testing.T) {
+	t.Parallel()
 	pf, _ := walledRib(t, 2, func(d *RibDefinition) {
 		d.Draft, d.HoldThicknessAtRoot = stdmath.Atan(0.4), true // 2×2×0.4 = 1.6 > the thickness
 	})
@@ -145,6 +149,7 @@ func TestRibDraftRefusesAWallItWouldInvert(t *testing.T) {
 // extruded symmetrically so the sketch plane cuts through it — an in-plane ray must strike a
 // side wall, not graze a cap.
 func TestRibExtendProfileLandsTheWallOnThePart(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		name   string
 		extend bool
@@ -176,6 +181,7 @@ func TestRibExtendProfileLandsTheWallOnThePart(t *testing.T) {
 // TestRibWallOptionsRoundTrip: every wall option survives the recipe round-trip, and a document
 // written before they existed reads back as the symmetric, undrafted wall it described.
 func TestRibWallOptionsRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := straightPathSketch(4)
 	def := &RibDefinition{
 		Sketch: sk, ProfileIndex: 0, Operation: ops.Join,

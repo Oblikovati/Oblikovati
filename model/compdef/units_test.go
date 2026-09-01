@@ -9,6 +9,7 @@ import (
 )
 
 func TestPartDefaultsToMetricUnits(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if name := d.Units().PreferredName(param.Length); name != "mm" {
 		t.Errorf("default part length unit = %q, want mm", name)
@@ -16,6 +17,7 @@ func TestPartDefaultsToMetricUnits(t *testing.T) {
 }
 
 func TestPartSetLengthUnit(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if err := d.SetLengthUnit("in"); err != nil {
 		t.Fatalf("SetLengthUnit: %v", err)
@@ -29,6 +31,7 @@ func TestPartSetLengthUnit(t *testing.T) {
 }
 
 func TestPartSetUnits(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	u := d.Units().Clone()
 	if err := u.SetPreferred(param.Length, "in"); err != nil {
@@ -47,6 +50,7 @@ func TestPartSetUnits(t *testing.T) {
 }
 
 func TestAssemblySetUnits(t *testing.T) {
+	t.Parallel()
 	a := NewAssemblyComponentDefinition()
 	u := a.Units().Clone()
 	if err := u.SetPreferred(param.Length, "ft"); err != nil {
@@ -59,6 +63,7 @@ func TestAssemblySetUnits(t *testing.T) {
 }
 
 func TestApplyUnitsToReservedKeys(t *testing.T) {
+	t.Parallel()
 	u := param.DefaultUnitsOfMeasure().Clone()
 	if err := applyUnitsTo(&u, map[string]string{
 		"lengthPrecision": "4", "anglePrecision": "1",
@@ -83,6 +88,7 @@ func TestApplyUnitsToReservedKeys(t *testing.T) {
 // document centred on a non-cm working unit persists and restores its working scale, so a
 // reloaded µm part keeps its O(1) coordinates instead of being misread as cm.
 func TestWorkingScaleRecipeRoundTrip(t *testing.T) {
+	t.Parallel()
 	src, err := param.DefaultUnitsOfMeasure().CenteredOnLength("µm") // working scale 1e-4
 	if err != nil {
 		t.Fatal(err)
@@ -104,6 +110,7 @@ func TestWorkingScaleRecipeRoundTrip(t *testing.T) {
 // omits the key (so existing .obk stay byte-identical), and a legacy recipe lacking the key
 // restores the cm default (the automatic migration for pre-Phase-2 documents).
 func TestWorkingScaleDefaultOmittedAndMigrates(t *testing.T) {
+	t.Parallel()
 	if _, present := unitsRecipeFor(param.DefaultUnitsOfMeasure())[keyWorkingScale]; present {
 		t.Error("cm document should omit the workingScale key")
 	}

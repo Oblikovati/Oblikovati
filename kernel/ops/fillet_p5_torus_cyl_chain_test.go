@@ -57,6 +57,7 @@ func p5EdgeFillet(t *testing.T, tor geom.Torus, cylHost geom.Cylinder, planeHost
 // TestP5CylinderHostSpring_IsEquatorCircle (Link 1): the cylinder-host spring is the tube-equator latitude
 // circle — centre = torus centre, radius = R_h = 50, axis = torus axis — exactly OCCT's Circle R=50 rail.
 func TestP5CylinderHostSpring_IsEquatorCircle(t *testing.T) {
+	t.Parallel()
 	tor, cylHost, _, _ := p5TorusArm(t)
 	tol := ResolutionForSize(200).Weld()
 	spring, ok := torusCylinderSpring(tor, cylHost, tol)
@@ -76,6 +77,7 @@ func TestP5CylinderHostSpring_IsEquatorCircle(t *testing.T) {
 // capping s2, whose axis misses the torus centre) is not a host either. Only the genuine tangent host is
 // admitted.
 func TestTorusCylinderSpring_HostVsCappingGuard(t *testing.T) {
+	t.Parallel()
 	tor, _, _, capping := p5TorusArm(t)
 	tol := ResolutionForSize(200).Weld()
 	// A coaxial cylinder R=47 cuts the tube (cos v_C=(47−45)/5=0.4): transversal capping, decline.
@@ -95,6 +97,7 @@ func TestTorusCylinderSpring_HostVsCappingGuard(t *testing.T) {
 // TestP5CylinderCappingFeet (Link 2): both host springs cross the capping cylinder s2 at the 13-digit
 // DRAWEXE feet — the parallel-axis linear-trig branch (P5's axes are all ẑ).
 func TestP5CylinderCappingFeet(t *testing.T) {
+	t.Parallel()
 	tor, cylHost, planeHost, capping := p5TorusArm(t)
 	tol := ResolutionForSize(200).Weld()
 	res := ResolutionForSize(200)
@@ -124,6 +127,7 @@ func TestP5CylinderCappingFeet(t *testing.T) {
 // self-cert fixture from the derivation (circle a=20 ⊥ẑ ∩ tilted cylinder O₂=(15,0,0), â₂∝(0.3,0,0.954),
 // R₂=12; g=0.3≠0).
 func TestCircleCylinderFoot_SkewQuarticMachineEps(t *testing.T) {
+	t.Parallel()
 	circle := skewFixtureCircle(t)
 	cyl, err := geom.NewCylinder(math.P3(15, 0, 0), math.V3(0.3, 0, 0.954), 12)
 	if err != nil {
@@ -155,6 +159,7 @@ func TestCircleCylinderFoot_SkewQuarticMachineEps(t *testing.T) {
 // returns the OTHER root; (2) a cylinder the circle entirely clears yields no root → decline. Fixture: the
 // derivation's tilted cylinder (â₂∝(0.3,0,0.954)) against the a=20 circle ⊥ẑ.
 func TestCircleCylinderFootSkew_SelectsAndDeclines(t *testing.T) {
+	t.Parallel()
 	circle := skewFixtureCircle(t)
 	e1, e2 := circle.RefDir.AsVector(), circle.Normal.Cross(circle.RefDir)
 	cyl, err := geom.NewCylinder(math.P3(15, 0, 0), math.V3(0.3, 0, 0.954), 12)
@@ -191,6 +196,7 @@ func TestCircleCylinderFootSkew_SelectsAndDeclines(t *testing.T) {
 // decline at armSprings, now flows armSprings(cyl-spring Circle R=50) → springCapFoot(the two DRAWEXE feet)
 // → torusCylinderTrim(a geom.TorusCylinderArc). The capping gets its first live consumer.
 func TestP5TorusArmFlowsToTorusCylinderArc(t *testing.T) {
+	t.Parallel()
 	tor, cylHost, planeHost, capping := p5TorusArm(t)
 	ef := p5EdgeFillet(t, tor, cylHost, planeHost)
 	res := ResolutionForSize(200)

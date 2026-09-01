@@ -23,6 +23,7 @@ import (
 // invisible at DefaultQuality and only appeared at PropertyQuality — see
 // TestRadialBoreWallIsAManifoldDiscAtPropertyQuality.
 func TestRadialBoreThroughCurvedWallWatertight(t *testing.T) {
+	t.Parallel()
 	const occMass = 5023.5696
 	b := importCandRadial(t)
 	for _, c := range []struct {
@@ -56,6 +57,7 @@ func TestRadialBoreThroughCurvedWallWatertight(t *testing.T) {
 // over-covering rather than merely different: it carried FEWER triangles (8466 vs 8476) while
 // measuring MORE area (1403.712529 vs 1403.409482) over the same trim — the surplus is overlap.
 func TestRadialBoreWallIsAManifoldDiscAtPropertyQuality(t *testing.T) {
+	t.Parallel()
 	b := importCandRadial(t)
 	wall := 0
 	for _, f := range b.Faces() {

@@ -20,6 +20,7 @@ import (
 // mixedTorus: 2 concave + 1 convex) + one more base edge at x=40 (→ corner B=(40,40,100) is a 2-edge
 // concave-orthogonal dihedralMiter, its vertical unfilleted).
 func TestComposeMixedTorusAndDihedral(t *testing.T) {
+	t.Parallel()
 	body := boxWithBoss(t)
 	keys := composeMixedAndDihedralKeys(body)
 	if len(keys) != 4 {
@@ -91,6 +92,7 @@ func holeLoopHasPoint(verts []math.Point3, want math.Point3, eps float64) bool {
 // void-side octant sphere at (25,25,65) is present (re-solve worked) AND the pocket-floor rail at x=50
 // receded to 45 (=50−r: the dihedral railWrite was NOT clobbered by the re-solve) AND watertight.
 func TestComposeConcaveSphereAndDihedral(t *testing.T) {
+	t.Parallel()
 	body := boxWithPocket(t)
 	keys := composeSphereAndDihedralKeys(t, body)
 	if len(keys) != 4 {

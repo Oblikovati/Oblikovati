@@ -41,6 +41,7 @@ func rectOn(sk *sketch.Sketch, x0, y0, x1, y1 float64) {
 // TestGrillToolEndToEnd drives the Grill UI: pick the boundary, OK — and asserts the vent cut
 // through the block left the ribs (block 72 − 13×2 = 46).
 func TestGrillToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def, region := partWithGrillSketch(t)
 	s.SetPicker(stubPicker{sel: region})
 
@@ -64,6 +65,7 @@ func TestGrillToolEndToEnd(t *testing.T) {
 
 // TestGrillViaRibbonCommand confirms the ribbon command starts the grill tool.
 func TestGrillViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _, _ := partWithGrillSketch(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

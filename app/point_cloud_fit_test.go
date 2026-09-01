@@ -30,6 +30,7 @@ func attachPlanarCloud(t *testing.T, def *compdef.PartComponentDefinition) *poin
 // TestCreatePointCloudPlaneFitsZPlane: fitting the planar cloud yields a work plane whose normal is
 // ±Z and whose origin sits on z = 5.
 func TestCreatePointCloudPlaneFitsZPlane(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	attachPlanarCloud(t, def)
 
@@ -50,6 +51,7 @@ func TestCreatePointCloudPlaneFitsZPlane(t *testing.T) {
 }
 
 func TestCreatePointCloudPlaneErrors(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if _, _, err := s.CreatePointCloudPlane("missing"); err == nil {
 		t.Error("want error for an unknown cloud name")
@@ -67,6 +69,7 @@ func TestCreatePointCloudPlaneErrors(t *testing.T) {
 // TestFitSelectedCloudPlaneAndEnable: the command path fits the browser-selected cloud, and the
 // enable predicate tracks whether a cloud is selected.
 func TestFitSelectedCloudPlaneAndEnable(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	pc := attachPlanarCloud(t, def)
 

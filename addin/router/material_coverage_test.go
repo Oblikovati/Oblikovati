@@ -11,6 +11,7 @@ import (
 // TestMaterialGetUpdateAssign covers the material/appearance get, update, and assign
 // handlers (the existing test only lists and creates).
 func TestMaterialGetUpdateAssign(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var mats wire.ListMaterialsResult

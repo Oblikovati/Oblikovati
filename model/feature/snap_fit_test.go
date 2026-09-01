@@ -14,6 +14,7 @@ func cf(v float64) func() float64 { return func() float64 { return v } }
 // TestSnapFitBuildsValidHookSolid: a standalone cantilever snap-fit is one valid solid whose volume
 // is the beam plus the catch lip (#486).
 func TestSnapFitBuildsValidHookSolid(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewPlasticFeatures(fs).AddCantileverSnapFit(cf(20), cf(6), cf(2), cf(3), cf(1.5))
 	fs.Recompute()
@@ -33,6 +34,7 @@ func TestSnapFitBuildsValidHookSolid(t *testing.T) {
 
 // TestSnapFitJoinsRunningBody: a snap fit added after a base box merges into one body.
 func TestSnapFitJoinsRunningBody(t *testing.T) {
+	t.Parallel()
 	fs, _ := boxAndPlanarFace(t) // a 2×2×2 base box at the origin
 	NewPlasticFeatures(fs).AddCantileverSnapFit(cf(6), cf(1), cf(1), cf(1), cf(0.5))
 	fs.Recompute()
@@ -43,6 +45,7 @@ func TestSnapFitJoinsRunningBody(t *testing.T) {
 
 // TestSnapFitRejectsBadDimensions: non-positive dims and an over-long catch are clean errors.
 func TestSnapFitRejectsBadDimensions(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		name             string
 		l, w, th, cl, ch float64

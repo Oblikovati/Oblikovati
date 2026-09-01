@@ -9,6 +9,7 @@ import (
 )
 
 func TestMaterialsLibrarySeeded(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if len(s.Materials().Materials()) == 0 || len(s.Materials().Appearances()) == 0 {
 		t.Fatal("session material library is empty; built-ins should be seeded")
@@ -16,6 +17,7 @@ func TestMaterialsLibrarySeeded(t *testing.T) {
 }
 
 func TestSurfaceLookupNilWithoutActivePart(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.SurfaceLookup() != nil {
 		t.Error("SurfaceLookup should be nil with no active part (renderer uses its default)")
@@ -27,6 +29,7 @@ func TestSurfaceLookupNilWithoutActivePart(t *testing.T) {
 // sRGB per appearanceSurface's own convention) base color/metalness — not the part's
 // unassigned default.
 func TestSurfaceLookupResolvesAssignedAppearance(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	body := def.SurfaceBodies().Item(0)
 
@@ -59,6 +62,7 @@ func TestSurfaceLookupResolvesAssignedAppearance(t *testing.T) {
 // TestAssignAppearancePartScope: assigning at part scope succeeds and is readable back
 // from the assignment store.
 func TestAssignAppearancePartScope(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	if err := s.AssignAppearance(ScopePart, "", material.DefaultAppearanceID); err != nil {
 		t.Fatalf("AssignAppearance: %v", err)
@@ -70,6 +74,7 @@ func TestAssignAppearancePartScope(t *testing.T) {
 
 // TestAssignAppearanceBodyAndFaceScope covers the body/face scopes.
 func TestAssignAppearanceBodyAndFaceScope(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	if err := s.AssignAppearance(ScopeBody, "bodykey", material.DefaultAppearanceID); err != nil {
 		t.Fatalf("AssignAppearance(body): %v", err)
@@ -90,6 +95,7 @@ func TestAssignAppearanceBodyAndFaceScope(t *testing.T) {
 // into the document's own asset set — the .obk stays portable even without the
 // project library.
 func TestAssignAppearanceEmbedsNonBuiltinCopy(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	custom, err := s.DuplicateAppearance(material.DefaultAppearanceID, "My Copper")
 	if err != nil {
@@ -110,6 +116,7 @@ func TestAssignAppearanceEmbedsNonBuiltinCopy(t *testing.T) {
 // TestAssignAppearanceRejectsUnknownIDAndScope: an unknown appearance id or an
 // unrecognized scope must error, not silently no-op or panic.
 func TestAssignAppearanceRejectsUnknownIDAndScope(t *testing.T) {
+	t.Parallel()
 	s, _ := extrudedBoxPart(t)
 	if err := s.AssignAppearance(ScopePart, "", "does-not-exist"); err == nil {
 		t.Error("AssignAppearance with an unknown id did not error")

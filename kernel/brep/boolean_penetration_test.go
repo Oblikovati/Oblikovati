@@ -18,6 +18,7 @@ import (
 // coincident non-manifold membrane along the bore wall. It must come back a clean manifold solid
 // whether the bar stops short of, exactly touches, or pokes through the bore wall.
 func TestBarThroughBoredWallUnion(t *testing.T) {
+	t.Parallel()
 	// Body: 5×5×1.5 box, bored (r=2.35) with a re-entrant hub (r=0.675) joined in the centre —
 	// so the bar's outer end crosses the CONCAVE bored wall, the hard case.
 	body := box(-2.5, -2.5, 0, 5, 5, 1.5)

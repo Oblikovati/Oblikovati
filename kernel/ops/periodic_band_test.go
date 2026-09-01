@@ -15,6 +15,7 @@ import (
 // wanders across latitudes (a cap straddling the pole). Accepting the latter gridded its whole
 // us×vs box and tore at the pole (340-triangle full-sphere fan on the EDF bell-mouth).
 func TestPeriodicBandGridRejectsNonBand(t *testing.T) {
+	t.Parallel()
 	s, err := geom.NewSphere(math.P3(0, 0, 0), 10)
 	if err != nil {
 		t.Fatalf("NewSphere: %v", err)

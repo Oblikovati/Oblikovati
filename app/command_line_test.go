@@ -25,6 +25,7 @@ func sketchCommandSession(t *testing.T) (*Session, *sketch.Sketch, *CommandLine)
 }
 
 func TestCommandLineDrawsLineFromText(t *testing.T) {
+	t.Parallel()
 	s, sk, cl := sketchCommandSession(t)
 	// AutoCAD LINE is a continuous chain: an empty submit (Enter) ends it.
 	for _, in := range []string{"LINE", "0,0", "10,0", ""} {
@@ -45,6 +46,7 @@ func TestCommandLineDrawsLineFromText(t *testing.T) {
 }
 
 func TestCommandLineInlineArguments(t *testing.T) {
+	t.Parallel()
 	s, sk, cl := sketchCommandSession(t)
 	if err := cl.Submit(s, "LINE 2,2 8,8"); err != nil {
 		t.Fatalf("Submit inline: %v", err)
@@ -58,6 +60,7 @@ func TestCommandLineInlineArguments(t *testing.T) {
 }
 
 func TestCommandLineRelativeCoordinate(t *testing.T) {
+	t.Parallel()
 	s, sk, cl := sketchCommandSession(t)
 	for _, in := range []string{"LINE", "5,5", "@10,0", ""} {
 		if err := cl.Submit(s, in); err != nil {
@@ -71,6 +74,7 @@ func TestCommandLineRelativeCoordinate(t *testing.T) {
 }
 
 func TestCommandLinePolylineClose(t *testing.T) {
+	t.Parallel()
 	s, sk, cl := sketchCommandSession(t)
 	// A triangle: three points, then Close connects the last back to the first and finishes.
 	for _, in := range []string{"LINE", "0,0", "10,0", "10,10", "Close"} {
@@ -90,6 +94,7 @@ func TestCommandLinePolylineClose(t *testing.T) {
 }
 
 func TestCommandLinePolylineUndo(t *testing.T) {
+	t.Parallel()
 	s, sk, cl := sketchCommandSession(t)
 	// Undo drops the stray third point before finishing, leaving a single segment.
 	for _, in := range []string{"LINE", "0,0", "10,0", "99,99", "U", ""} {
@@ -106,6 +111,7 @@ func TestCommandLinePolylineUndo(t *testing.T) {
 }
 
 func TestCommandLineUnknownCommand(t *testing.T) {
+	t.Parallel()
 	s, _, cl := sketchCommandSession(t)
 	if err := cl.Submit(s, "FLERP"); err == nil {
 		t.Fatal("unknown command should error")
@@ -118,6 +124,7 @@ func TestCommandLineUnknownCommand(t *testing.T) {
 }
 
 func TestCommandLineRepeatLastOnEmpty(t *testing.T) {
+	t.Parallel()
 	s, _, cl := sketchCommandSession(t)
 	if err := cl.Submit(s, "LINE"); err != nil {
 		t.Fatalf("Submit LINE: %v", err)
@@ -137,6 +144,7 @@ func TestCommandLineRepeatLastOnEmpty(t *testing.T) {
 }
 
 func TestCommandLineDrawsCircleFromText(t *testing.T) {
+	t.Parallel()
 	s, sk, cl := sketchCommandSession(t)
 	for _, in := range []string{"CIRCLE", "0,0", "5,0"} {
 		if err := cl.Submit(s, in); err != nil {
@@ -149,6 +157,7 @@ func TestCommandLineDrawsCircleFromText(t *testing.T) {
 }
 
 func TestCommandLineDrawsRectangleFromText(t *testing.T) {
+	t.Parallel()
 	s, sk, cl := sketchCommandSession(t)
 	for _, in := range []string{"REC", "0,0", "10,5"} {
 		if err := cl.Submit(s, in); err != nil {
@@ -161,6 +170,7 @@ func TestCommandLineDrawsRectangleFromText(t *testing.T) {
 }
 
 func TestCommandLineRevolveFromAngle(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 1)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -191,6 +201,7 @@ func TestCommandLineRevolveFromAngle(t *testing.T) {
 }
 
 func TestCommandLineExtrudeFromValue(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 4)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)

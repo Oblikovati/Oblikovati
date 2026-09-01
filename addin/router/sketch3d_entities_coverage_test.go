@@ -116,6 +116,7 @@ var allDeclared3DEntityKinds = []types.Sketch3DEntityKind{
 // kind, then solves and re-enumerates: the entity must survive the solve and
 // come back under its expected kind.
 func TestEvery3DEntityKindAccepted(t *testing.T) {
+	t.Parallel()
 	for kind, fixture := range declared3DEntityFixtures {
 		t.Run(string(kind), func(t *testing.T) {
 			r, s := emptyPartSession(t)
@@ -149,6 +150,7 @@ func assertEnumerated3DKind(t *testing.T, r *Router, s *app.Session, kind string
 // one of: fixture-covered, derived-by-another-method, or sentinel — the guard
 // that api/types can never advertise 3D entity kinds the host cannot build.
 func TestDeclared3DEntityKindsComplete(t *testing.T) {
+	t.Parallel()
 	for _, kind := range allDeclared3DEntityKinds {
 		entries := 0
 		if _, ok := declared3DEntityFixtures[kind]; ok {

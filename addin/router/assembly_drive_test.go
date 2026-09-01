@@ -14,6 +14,7 @@ import (
 // then drives it through a range over the wire and checks the frames advance the moved
 // component's rotation — the F03 acceptance over the router (#366).
 func TestAssemblyDrivePreviewOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	occs[0].SetGrounded(true)
 	edge := boxEdgeKey(t, occs[0])
@@ -52,6 +53,7 @@ func TestAssemblyDrivePreviewOverWire(t *testing.T) {
 
 // TestAssemblyDriveUndrivableJointRejected checks a rigid joint (0 DOF) is a clean error.
 func TestAssemblyDriveUndrivableJointRejected(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	occs[0].SetGrounded(true)
 	edge := boxEdgeKey(t, occs[0])

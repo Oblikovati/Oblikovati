@@ -13,6 +13,7 @@ import (
 // TestSheetMetalPunchApply seeds a sheet-metal wall, punches two holes from one sketch, and
 // confirms one healthy solid; then checks the error paths.
 func TestSheetMetalPunchApply(t *testing.T) {
+	t.Parallel()
 	s := sheetMetalProfiledPart(t)
 	if _, err := apply(t, s, "sheetMetalFace", `{"sketchIndex":0}`); err != nil {
 		t.Fatalf("seed face: %v", err)

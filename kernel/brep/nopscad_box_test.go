@@ -16,6 +16,7 @@ import (
 //
 // Reference: NopSCADlib/printed/box.scad (box_base — a shelled rectangular tray).
 func TestNopBoxTrayCSG(t *testing.T) {
+	t.Parallel()
 	const w, d, h, wall = 4.0, 3.0, 2.0, 0.2 // outer dims + wall thickness (cm)
 
 	outer := box(0, 0, 0, w, d, h)

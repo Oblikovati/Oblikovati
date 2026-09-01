@@ -43,6 +43,7 @@ func userCircleSketch(def *compdef.PartComponentDefinition, plane sketch.Plane, 
 //
 // Lofting the two circle profiles must yield one validated solid (an oblique circular frustum).
 func TestLoftUserCirclesIssue1495(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	def := compdef.NewPartComponentDefinition()
 	pd, err := s.Workspace().Add(doc.Part, "demo.obk", true)

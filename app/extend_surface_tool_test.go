@@ -26,6 +26,7 @@ func partWithOneCurvedSurface(t *testing.T) (*Session, *compdef.PartComponentDef
 }
 
 func TestExtendSurfaceToolG2ContinuesCurvature(t *testing.T) {
+	t.Parallel()
 	s, def := partWithOneCurvedSurface(t)
 	tool := NewExtendSurfaceTool() // defaults: U-max, curvature (G2), distance 1
 	s.StartTool(tool)
@@ -51,6 +52,7 @@ func TestExtendSurfaceToolG2ContinuesCurvature(t *testing.T) {
 }
 
 func TestExtendSurfaceToolParams(t *testing.T) {
+	t.Parallel()
 	tool := NewExtendSurfaceTool()
 	if tool.Prompt(nil) == "" || !tool.CanCommit() {
 		t.Error("extend tool should prompt and (with default distance) be committable")
@@ -69,6 +71,7 @@ func TestExtendSurfaceToolParams(t *testing.T) {
 }
 
 func TestUntrimCommandRecoversFace(t *testing.T) {
+	t.Parallel()
 	s, def := partWithOneCurvedSurface(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
@@ -86,6 +89,7 @@ func TestUntrimCommandRecoversFace(t *testing.T) {
 }
 
 func TestExtendNurbsViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithOneCurvedSurface(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
@@ -101,6 +105,7 @@ func TestExtendNurbsViaRibbonCommand(t *testing.T) {
 // TestExtendSurfaceToolDraftFeature pins the #1626 commit-gate seam: no draft at a non-positive
 // distance, a non-nil draft once commit-ready.
 func TestExtendSurfaceToolDraftFeature(t *testing.T) {
+	t.Parallel()
 	tool := NewExtendSurfaceTool()
 	tool.distance = 0
 	if _, ok := tool.DraftFeature(nil); ok {

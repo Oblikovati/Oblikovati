@@ -18,6 +18,7 @@ func weXYuv(p math.Point3) math.Point2 { return math.P2(float64(p.X), float64(p.
 // (extent 9.6e-15 — measured on J5 before the fix), spuriously declining a cove that FITS. The exact
 // branch reads |R_e − d| from the circle itself.
 func TestDistToCircularSegExact(t *testing.T) {
+	t.Parallel()
 	n, err := math.UnitVector3FromVector(math.V3(0, 0, 1))
 	if err != nil {
 		t.Fatal(err)
@@ -41,6 +42,7 @@ func TestDistToCircularSegExact(t *testing.T) {
 // TestDistToCircularSegOpenFallsBack requires an OPEN arc to fall back to the sampled polygon: its
 // nearest circle point may lie outside the arc's span, so the exact circle distance would under-read.
 func TestDistToCircularSegOpenFallsBack(t *testing.T) {
+	t.Parallel()
 	arc, err := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 10, 0, stdmath.Pi/2)
 	if err != nil {
 		t.Fatal(err)

@@ -45,6 +45,7 @@ func disjointRod(t *testing.T) *topo.Body {
 }
 
 func TestPartialRimDisjointCutMomentsMatchOCC(t *testing.T) {
+	t.Parallel()
 	res, err := Boolean(Cut, notchedTarget(t), disjointRod(t))
 	if err != nil {
 		t.Fatalf("Boolean(Cut): %v", err)
@@ -72,6 +73,7 @@ func TestPartialRimDisjointCutMomentsMatchOCC(t *testing.T) {
 // material) still fails. notch = the half-space x+z>9.5 removed by the first cut; rod = r1 cylinder about the
 // x-axis through (·,0,3).
 func TestPartialRimDisjointCutMembershipMatchesCSG(t *testing.T) {
+	t.Parallel()
 	res, err := Boolean(Cut, notchedTarget(t), disjointRod(t))
 	if err != nil {
 		t.Fatalf("Boolean(Cut): %v", err)

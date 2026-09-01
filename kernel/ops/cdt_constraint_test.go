@@ -94,6 +94,7 @@ func convexPolygonCDT(n int) *cdt {
 // convex polygon flips EXACTLY the edges the chord crosses — the corridor walk does no wasted work and,
 // critically, no whole-mesh rescan (the flip count is the local crossing count, not a function of T).
 func TestConstraintRecoveryFlipsExactlyCrossings(t *testing.T) {
+	t.Parallel()
 	m := convexPolygonCDT(16)
 	const a, b = 0, 5 // a chord skipping four vertices either side, guaranteed to cross interior diagonals
 	crossings := segmentCrossings(m, a, b)
@@ -147,6 +148,7 @@ func alternatingStripCDT(n int) *cdt {
 // segment through a dense interior completes with flips == crossings and scales LINEARLY with the corridor
 // length (doubling N doubles the flips), never approaching the O(T²) cap the historical #1073 freeze hit.
 func TestConstraintRecoveryIsLinearInCrossings(t *testing.T) {
+	t.Parallel()
 	for _, n := range []int{40, 80} {
 		m := alternatingStripCDT(n)
 		crossings := segmentCrossings(m, 0, 1)
@@ -178,6 +180,7 @@ func TestConstraintRecoveryIsLinearInCrossings(t *testing.T) {
 // is corrupted (pointed at a dead triangle), recovery must still find each vertex's star and recover the
 // chord — incidentTri detects the stale entry and refreshes it by scan.
 func TestConstraintRecoverySurvivesStaleIncidenceHint(t *testing.T) {
+	t.Parallel()
 	m := convexPolygonCDT(12)
 	for i := range m.incident {
 		m.incident[i] = 0 // point every vertex at triangle 0, which an insertion long since killed
@@ -195,6 +198,7 @@ func TestConstraintRecoverySurvivesStaleIncidenceHint(t *testing.T) {
 // (area = outer − notch, not filled) and watertight — the #1073 dense-constraint regression at the API
 // level, which the corridor walk recovers without hitting any cap.
 func TestConstrainedDelaunayDenseConcaveLoop(t *testing.T) {
+	t.Parallel()
 	// A comb: a wide base with K downward slots, so the boundary zig-zags deeply and its segments cross
 	// many interior diagonals when the whole point set is triangulated at once.
 	pts, loop := combPolygon(6, 8.0, 5.0)

@@ -16,6 +16,7 @@ import (
 // TestRevolveTwoDirectionalVolume: 90° forward + 90° back = the same material
 // as a single 180° revolve of the washer profile.
 func TestRevolveTwoDirectionalVolume(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := offsetSquareSketch(2, 2)
 	axis := yWorkAxis()
@@ -38,6 +39,7 @@ func TestRevolveTwoDirectionalVolume(t *testing.T) {
 // TestRevolveTwoDirectionalSpansAcrossPlane: the solid genuinely straddles the
 // sketch plane (material on both angular sides), unlike the one-way revolve.
 func TestRevolveTwoDirectionalSpansAcrossPlane(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := offsetSquareSketch(2, 2)
 	pf := NewRevolveFeatures(fs).AddTwoDirectional(sk, 0, yWorkAxis(),
@@ -60,6 +62,7 @@ func TestRevolveTwoDirectionalSpansAcrossPlane(t *testing.T) {
 // TestRevolveTwoDirectionalFullTurnCollapses: angle+angle2 ≥ 2π is the full
 // revolution (closed, no caps), identical volume to the plain full revolve.
 func TestRevolveTwoDirectionalFullTurnCollapses(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := offsetSquareSketch(2, 2)
 	pf := NewRevolveFeatures(fs).AddTwoDirectional(sk, 0, yWorkAxis(),

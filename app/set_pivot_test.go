@@ -6,6 +6,7 @@ import "testing"
 
 // TestToggleSteeringWheel covers the SteeringWheels menu's on/off/disarm state (#913 N26).
 func TestToggleSteeringWheel(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.SteeringWheelActive() {
 		t.Fatal("SteeringWheels should be off by default")
@@ -22,6 +23,7 @@ func TestToggleSteeringWheel(t *testing.T) {
 
 // TestToggleConstrainedOrbit covers the Constrained Orbit tool's on/off/disarm state (#913 N10).
 func TestToggleConstrainedOrbit(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.ConstrainedOrbitActive() {
 		t.Fatal("Constrained Orbit should be off by default")
@@ -44,6 +46,7 @@ func TestToggleConstrainedOrbit(t *testing.T) {
 // TestSetOrbitPivotRecenters: clicking off-centre to set the Free-Orbit pivot moves the orbit centre
 // (the camera target) to the clicked point while keeping the view direction (#913 N9).
 func TestSetOrbitPivotRecenters(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	cam := s.Camera()
 	cam.Width, cam.Height = 800, 600

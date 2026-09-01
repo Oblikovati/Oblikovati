@@ -33,6 +33,7 @@ func variableCoilWire(t *testing.T, wire float64, rows []CoilPitchRow, start, en
 // TestVariablePitchCoilClimbsByPitchIntegral: a variable-pitch spring's axial
 // span is the trapezoid pitch integral, not pitch × revolutions (M06-F09, #624).
 func TestVariablePitchCoilClimbsByPitchIntegral(t *testing.T) {
+	t.Parallel()
 	// Pitch 1 → 3 over 4 turns: height = (1+3)/2·4 = 8, plus profile height 1.
 	fs, pf := variableCoil(t, []CoilPitchRow{
 		{Pitch: 1, Revolution: 0},
@@ -54,6 +55,7 @@ func TestVariablePitchCoilClimbsByPitchIntegral(t *testing.T) {
 // advance — the span stays the constant-pitch height while the rail gains the
 // extra sweep angle.
 func TestFlatEndCoilAddsSweepWithoutRise(t *testing.T) {
+	t.Parallel()
 	// A 0.5-deep wire: the flat end leaves the last turn only 0.75 above the one below it
 	// (a quarter turn of decaying pitch, then none), so a 1-deep wire would overlap it (#2080).
 	fs, pf := variableCoilWire(t, 0.5, nil, CoilEndCondition{},
@@ -75,6 +77,7 @@ func TestFlatEndCoilAddsSweepWithoutRise(t *testing.T) {
 // TestVariableCoilRoundTrip: pitch rows and end conditions survive the
 // feature recipe round-trip.
 func TestVariableCoilRoundTrip(t *testing.T) {
+	t.Parallel()
 	_, pf := variableCoil(t, []CoilPitchRow{
 		{Pitch: 1, Revolution: 0},
 		{Pitch: 3, Revolution: 4},

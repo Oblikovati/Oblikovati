@@ -51,6 +51,7 @@ func p5SharedLoopSegs(t *testing.T) []endSeg {
 // a mid-wall fresh cut (off-loop → cap-bridge). pointOnLoop must agree with farPathSegs's own
 // insertSplits/indexOfSegFrom mechanism so an on-loop foot is never mis-routed through a spurious bridge.
 func TestPointOnLoopSelectsCapBridgeBranch(t *testing.T) {
+	t.Parallel()
 	segs := p5SharedLoopSegs(t)
 	tol := 1e-6 * 50
 	torusFoot := math.P3(65, 97.696960071, 145) // interior to e2 (z 150→60)
@@ -68,6 +69,7 @@ func TestPointOnLoopSelectsCapBridgeBranch(t *testing.T) {
 // exactly, and is a genuine MINOR Arc3d (≈19.6°) — never a chord — so the shared-cyl↔z=60-cap weld stays
 // watertight.
 func TestCapBridgeArcOnSharedCylinder(t *testing.T) {
+	t.Parallel()
 	cyl := p5SharedCylinder(t)
 	foot := math.P3(48.148148148, 0.034305321, 60)
 	farVtx := math.P3(65, 2.303039929, 60)
@@ -95,6 +97,7 @@ func TestCapBridgeArcOnSharedCylinder(t *testing.T) {
 // on the axis (an oblique/non-planar far cap), and a point off the cylinder radius each floor honestly —
 // so the bridge is spliced ONLY when it exactly closes the shared-cyl↔cap seam.
 func TestCapBridgeArcDeclines(t *testing.T) {
+	t.Parallel()
 	cyl := p5SharedCylinder(t)
 	tol := 1e-6 * 50
 	foot := math.P3(48.148148148, 0.034305321, 60)
@@ -117,6 +120,7 @@ func TestCapBridgeArcDeclines(t *testing.T) {
 // TestCoLatitudeOnCyl pins the latitude guard directly: two points at the same axial height and radius are
 // co-latitude; the same points at different heights are not.
 func TestCoLatitudeOnCyl(t *testing.T) {
+	t.Parallel()
 	cyl := p5SharedCylinder(t)
 	tol := 1e-6 * 50
 	foot := math.P3(48.148148148, 0.034305321, 60)

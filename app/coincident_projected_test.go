@@ -14,6 +14,7 @@ import (
 // must pick the anchor and pull the geometry to it. Before the fix the anchor was absent from the
 // pick set (AllPoints), so the constraint could never be formed and nothing moved.
 func TestCoincidentToProjectedOriginMovesGeometry(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, err := s.CreateSketch(sketch.XYPlane()) // auto-projects the origin centre at (0,0)
 	if err != nil {

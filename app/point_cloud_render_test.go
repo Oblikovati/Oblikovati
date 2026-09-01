@@ -15,6 +15,7 @@ import (
 // TestPointCloudItemsRendersVisibleClouds: a visible attached cloud yields one Lines marker batch
 // (6 vertices per point); hiding it removes the batch (M17-F06, #645).
 func TestPointCloudItemsRendersVisibleClouds(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if got := s.PointCloudItems(s.Camera(), 0.5); len(got) != 0 {
 		t.Fatalf("a part with no clouds yields %d items, want 0", len(got))
@@ -46,6 +47,7 @@ func TestPointCloudItemsRendersVisibleClouds(t *testing.T) {
 // pass it through with a clamp — no per-point bit-depth guessing that divided a dark point by 255 and
 // rendered it ~256× too bright. A dark point stays dark; a saturated point stays white.
 func TestRGBModeDoesNotReamplifyNormalisedColor(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("scan")})
 	dark := [3]float32{200.0 / 65535, 200.0 / 65535, 200.0 / 65535} // a dark 16-bit point, decoded
@@ -73,6 +75,7 @@ func TestRGBModeDoesNotReamplifyNormalisedColor(t *testing.T) {
 // far plane consults to enclose a large or distant scan (#1789). No clouds, or only hidden ones,
 // yield an empty box.
 func TestPointCloudBounds(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if !s.PointCloudBounds().IsEmpty() {
 		t.Fatal("a part with no clouds must report an empty point-cloud box")
@@ -99,6 +102,7 @@ func TestPointCloudBounds(t *testing.T) {
 // TestPointCloudItemsColorsByDisplayMode checks the draw batch carries per-point colors when a
 // cloud is set to RGB or intensity display.
 func TestPointCloudItemsColorsByDisplayMode(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("scan")})
 	// Keep all four points within the emptyPartSession 200×200 viewport at z=5 so none is frustum-
@@ -147,6 +151,7 @@ func TestPointCloudItemsColorsByDisplayMode(t *testing.T) {
 // TestPointCloudItemsApplyRenderDensity keeps the CPU marker path aligned with the retained native
 // point-buffer path: density is render-only, but every point-cloud draw path must honor it.
 func TestPointCloudItemsApplyRenderDensity(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("scan")})
 	if _, err := def.PointClouds().Add("Cloud1", "c.xyz", rid, []math.Point3{

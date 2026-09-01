@@ -13,6 +13,7 @@ import (
 // TestAddVirtualHasNoGeometryButAppearsInBOM: a virtual component contributes no bounds (no range box,
 // so no mass) yet appears as a counted BOM row with its part number and structure (#1979).
 func TestAddVirtualHasNoGeometryButAppearsInBOM(t *testing.T) {
+	t.Parallel()
 	asm := compdef.NewAssemblyComponentDefinition()
 	asm.AddVirtual("Paint", "PAINT-100", bom.Purchased, math.Identity4())
 
@@ -32,6 +33,7 @@ func TestAddVirtualHasNoGeometryButAppearsInBOM(t *testing.T) {
 // TestVirtualComponentSurvivesRoundTrip: a virtual component restores from the recipe without any
 // backing document, keeping its part number and structure (#1979).
 func TestVirtualComponentSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	store, ws, dir := assemblyWorkspace(t)
 	asm, asmDef := newAssembly(t, ws, dir, "asm.obk")
 	asmDef.AddVirtual("Grease", "GREASE-9", bom.Inseparable, math.Identity4())
@@ -49,6 +51,7 @@ func TestVirtualComponentSurvivesRoundTrip(t *testing.T) {
 // TestAssemblyOptionsSurviveRoundTrip: the assembly editing options (LOD/design-view/section) persist
 // through save/reopen (#1981).
 func TestAssemblyOptionsSurviveRoundTrip(t *testing.T) {
+	t.Parallel()
 	store, ws, dir := assemblyWorkspace(t)
 	asm, asmDef := newAssembly(t, ws, dir, "asm.obk")
 	asmDef.SetOptions(compdef.AssemblyOptions{

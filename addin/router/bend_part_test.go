@@ -13,6 +13,7 @@ import (
 // across the extruded block, then features.add(bendPart) — and checks it recomputes healthy
 // into a single body (the fold-up geometry is asserted by the model-level test) (#651).
 func TestBendPartViaWireFoldsBody(t *testing.T) {
+	t.Parallel()
 	r, s, _ := extrudedPartViaAPI(t) // block x∈[0,4] y∈[0,3] z∈[0,5] cm, Extrusion1
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &struct{}{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":1,"kind":"line","points":[[2,0],[2,3]]}`, &struct{}{})
@@ -32,6 +33,7 @@ func TestBendPartViaWireFoldsBody(t *testing.T) {
 
 // TestBendPartScalarsEditable exposes the two driving scalars through features.edit.
 func TestBendPartScalarsEditable(t *testing.T) {
+	t.Parallel()
 	r, s, _ := extrudedPartViaAPI(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &struct{}{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":1,"kind":"line","points":[[2,0],[2,3]]}`, &struct{}{})
@@ -49,6 +51,7 @@ func TestBendPartScalarsEditable(t *testing.T) {
 
 // TestBendPartUnknownTypeFails rejects an unknown bend type with a precise error.
 func TestBendPartUnknownTypeFails(t *testing.T) {
+	t.Parallel()
 	r, s, _ := extrudedPartViaAPI(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &struct{}{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":1,"kind":"line","points":[[2,0],[2,3]]}`, &struct{}{})

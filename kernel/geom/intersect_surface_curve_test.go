@@ -19,6 +19,7 @@ func assertOnSurface(t *testing.T, s Surface, p math.Point3, tol float64) {
 }
 
 func TestSegmentPlaneIntersection(t *testing.T) {
+	t.Parallel()
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	seg := NewLineSegment(math.P3(1, 2, -4), math.P3(1, 2, 4))
 	pts := IntersectCurveSurface(seg, pl)
@@ -31,6 +32,7 @@ func TestSegmentPlaneIntersection(t *testing.T) {
 }
 
 func TestHelixPlaneIntersection(t *testing.T) {
+	t.Parallel()
 	// A 3-turn helix about +Z, pitch 10, crossing the z=15 plane once (mid of height 30).
 	h, _ := NewHelix3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 4, 10, 0, 3, false)
 	pl, _ := NewPlane(math.P3(0, 0, 15), math.V3(0, 0, 1))
@@ -45,6 +47,7 @@ func TestHelixPlaneIntersection(t *testing.T) {
 }
 
 func TestSegmentSphereTwoCrossings(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 5)
 	// A chord through the sphere along X crosses the surface twice (±5).
 	seg := NewLineSegment(math.P3(-9, 0, 0), math.P3(9, 0, 0))
@@ -58,6 +61,7 @@ func TestSegmentSphereTwoCrossings(t *testing.T) {
 }
 
 func TestCurveSurfaceNoIntersection(t *testing.T) {
+	t.Parallel()
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	seg := NewLineSegment(math.P3(0, 0, 1), math.P3(1, 1, 2)) // wholly above the plane
 	if pts := IntersectCurveSurface(seg, pl); len(pts) != 0 {
@@ -66,6 +70,7 @@ func TestCurveSurfaceNoIntersection(t *testing.T) {
 }
 
 func TestCurveSurfaceUnboundedDomainSkipped(t *testing.T) {
+	t.Parallel()
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	line, _ := NewLine(math.P3(0, 0, -1), math.V3(0, 0, 1)) // infinite domain
 	if pts := IntersectCurveSurface(line, pl); pts != nil {
@@ -76,6 +81,7 @@ func TestCurveSurfaceUnboundedDomainSkipped(t *testing.T) {
 // TestCurveSurfaceEndpointOnSurface covers the exact-sample-hit path (the segment starts
 // on the plane).
 func TestCurveSurfaceEndpointOnSurface(t *testing.T) {
+	t.Parallel()
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	seg := NewLineSegment(math.P3(0, 0, 0), math.P3(0, 0, 5)) // starts on the plane
 	pts := IntersectCurveSurface(seg, pl)
@@ -88,6 +94,7 @@ func TestCurveSurfaceEndpointOnSurface(t *testing.T) {
 // the bisected root does not move when the bracketing resolution changes (the segment has
 // a single transversal crossing, so both resolutions find the same point).
 func TestCurveSurfaceMetamorphic(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 5)
 	seg := NewLineSegment(math.P3(-9, 1, 0), math.P3(9, 1, 0))
 	pts := IntersectCurveSurface(seg, sp)

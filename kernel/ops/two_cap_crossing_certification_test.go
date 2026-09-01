@@ -48,6 +48,7 @@ func twoCapFixture(t *testing.T) (target, tool *topo.Body) {
 }
 
 func TestTwoCapCrossingCutIsWatertightAndValid(t *testing.T) {
+	t.Parallel()
 	target, tool := twoCapFixture(t)
 	res, err := Boolean(Cut, target, tool)
 	if err != nil {
@@ -69,6 +70,7 @@ func TestTwoCapCrossingCutIsWatertightAndValid(t *testing.T) {
 }
 
 func TestTwoCapCrossingCutMomentsMatchOCC(t *testing.T) {
+	t.Parallel()
 	target, tool := twoCapFixture(t)
 	res, err := Boolean(Cut, target, tool)
 	if err != nil {
@@ -94,6 +96,7 @@ func TestTwoCapCrossingCutMomentsMatchOCC(t *testing.T) {
 // TestTwoCapCrossingCutMembershipMatchesCSG samples an interior grid and asserts inside/outside agrees with
 // the analytic CSG predicate target\tool — so a right-volume-wrong-shape build still fails.
 func TestTwoCapCrossingCutMembershipMatchesCSG(t *testing.T) {
+	t.Parallel()
 	target, tool := twoCapFixture(t)
 	res, err := Boolean(Cut, target, tool)
 	if err != nil {

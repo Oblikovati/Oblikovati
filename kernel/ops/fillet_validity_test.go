@@ -17,6 +17,7 @@ import (
 // offending radius and the computed geometric maximum — instead of shipping self-intersecting
 // geometry that only passes topological validation. A radius within the bound still succeeds.
 func TestFilletRejectsOverLargeRadius(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
 	edge := verticalEdgeKey(t, box)
 
@@ -37,6 +38,7 @@ func TestFilletRejectsOverLargeRadius(t *testing.T) {
 // sharing a 2-wide side face, each filleted, whose bands recede toward each other. r=1.5 each
 // overshoots (1.5+1.5 > 2) and is rejected; r=0.8 each (1.6 < 2) fits.
 func TestFilletRejectsCollidingNeighbours(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
 	a, b := adjacentVerticalEdges(t, box)
 

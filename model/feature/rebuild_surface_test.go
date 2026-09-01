@@ -58,6 +58,7 @@ func surfaceBodyFrom(t *testing.T, s geom.BSplineSurface) *topo.Body {
 }
 
 func TestRebuildFeatureCleansFaceAndReportsDeviation(t *testing.T) {
+	t.Parallel()
 	r := &RebuildFeature{def: &RebuildDefinition{UDegree: 3, VDegree: 3, UCount: 4, VCount: 4}, featName: "Rebuild"}
 	out, err := r.Recompute(Input{Bodies: []*topo.Body{multiSpanSurfaceBody(t)}})
 	if err != nil {
@@ -79,6 +80,7 @@ func TestRebuildFeatureCleansFaceAndReportsDeviation(t *testing.T) {
 }
 
 func TestRebuildFeatureErrorsWithoutBody(t *testing.T) {
+	t.Parallel()
 	r := &RebuildFeature{def: &RebuildDefinition{UDegree: 3, VDegree: 3, UCount: 4, VCount: 4}}
 	if _, err := r.Recompute(Input{}); err == nil {
 		t.Error("rebuild with no target body should error")
@@ -86,6 +88,7 @@ func TestRebuildFeatureErrorsWithoutBody(t *testing.T) {
 }
 
 func TestRebuildFeatureValidatesRecipe(t *testing.T) {
+	t.Parallel()
 	r := &RebuildFeature{def: &RebuildDefinition{UDegree: 3, VDegree: 3, UCount: 3, VCount: 4}}
 	if _, err := r.Recompute(Input{Bodies: []*topo.Body{multiSpanSurfaceBody(t)}}); err == nil {
 		t.Error("uCount < uDegree+1 should error")
@@ -93,6 +96,7 @@ func TestRebuildFeatureValidatesRecipe(t *testing.T) {
 }
 
 func TestRebuildFeatureKind(t *testing.T) {
+	t.Parallel()
 	r := &RebuildFeature{def: &RebuildDefinition{}}
 	if r.Kind() != "rebuild-surface" {
 		t.Errorf("Kind = %q, want rebuild-surface", r.Kind())
@@ -100,12 +104,14 @@ func TestRebuildFeatureKind(t *testing.T) {
 }
 
 func TestRestoreRebuildRejectsMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreRebuild(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreRebuild(nil) should error on a missing payload")
 	}
 }
 
 func TestRebuildFeatureRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewRebuildFeatures(fs).Add(3, 2, 5, 4)
 

@@ -54,6 +54,7 @@ func shrinkwrapComponentOf(t *testing.T, part *compdef.PartComponentDefinition) 
 // and reopens the part, and checks the shrinkwrap re-resolves its source through the part's
 // reference graph — rebound and not stale (#715/#749 acceptance).
 func TestShrinkwrapPartRebindsOnReopen(t *testing.T) {
+	t.Parallel()
 	store, ws, dir := assemblyWorkspace(t)
 	srcDoc, _ := newAssembly(t, ws, dir, "src.obk")
 	if err := ws.Save(srcDoc); err != nil {

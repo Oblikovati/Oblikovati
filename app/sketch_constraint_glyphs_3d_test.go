@@ -13,6 +13,7 @@ import (
 // constraint markers appear only when Show Constraints is on, mirror the model glyphs, and the
 // Sketch3D.ShowConstraints command flips them.
 func TestSketchConstraintGlyphs3DFollowsTheToggle(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	l1 := sk.AddLine3D(math.P3(0, 0, 0), math.P3(2, 0, 0))
 	l2 := sk.AddLine3D(math.P3(0, 1, 0), math.P3(2, 1, 0))
@@ -48,6 +49,7 @@ func TestSketchConstraintGlyphs3DFollowsTheToggle(t *testing.T) {
 // TestSketchConstraintGlyphs3DEmptyWithout3DSketch: the accessor is safe (and empty) when no 3D
 // sketch is open, even with the toggle on.
 func TestSketchConstraintGlyphs3DEmptyWithout3DSketch(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.SetShowSketchConstraints(true)
 	if got := s.SketchConstraintGlyphs3D(); got != nil {

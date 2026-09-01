@@ -24,6 +24,7 @@ var coincident = math.P3(5, 5, 5)
 // both yield a single shared index. This is the N1 fix (the ided pass-through corner adopts the
 // anonymous rebuilt-neighbour corner, closing the shared edge).
 func TestAddIDAdoptsAnonymousCellOrderIndependent(t *testing.T) {
+	t.Parallel()
 	w1 := newPointWelder(welderGrid)
 	a := w1.add(coincident)        // anonymous first
 	b := w1.addID(coincident, 100) // ided adopts it
@@ -42,6 +43,7 @@ func TestAddIDAdoptsAnonymousCellOrderIndependent(t *testing.T) {
 // anonymous cell, a SECOND distinct id B (B≠A) at the SAME coordinate does NOT merge — it is a pinch and
 // gets its own vertex. Adoption must not turn the cell into a merge magnet for every later id.
 func TestAddIDSecondDistinctIDIsPinchAfterAdoption(t *testing.T) {
+	t.Parallel()
 	w := newPointWelder(welderGrid)
 	w.add(coincident)             // anonymous claim
 	a := w.addID(coincident, 100) // A adopts it
@@ -55,6 +57,7 @@ func TestAddIDSecondDistinctIDIsPinchAfterAdoption(t *testing.T) {
 // at one coordinate are two topological vertices (a boolean's kissing-tangency pinch) and must never
 // weld into a non-manifold pinch, whichever arrives first.
 func TestAddIDTwoDistinctIDsNeverMerge(t *testing.T) {
+	t.Parallel()
 	w := newPointWelder(welderGrid)
 	a := w.addID(coincident, 100)
 	b := w.addID(coincident, 200)

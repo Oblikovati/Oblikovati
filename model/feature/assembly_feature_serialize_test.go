@@ -27,6 +27,7 @@ func (serializeStubDef) RangeBox() math.Box { return math.NewBox(math.P3(0, 0, 0
 // save/undo round-trip (#785). Sketch-bearing kinds resolve sketch index 0; the proxy-cut resolves
 // its source occurrence by name.
 func TestAssemblyFeatureDataRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := []*sketch.Sketch{{}} // index 0; the features only hold the pointer, not its contents
 	down, _ := math.NewUnitVector3(0, 0, -1)
 	yaw, _ := math.NewUnitVector3(0, 1, 0)
@@ -78,6 +79,7 @@ func TestAssemblyFeatureDataRoundTrip(t *testing.T) {
 // general round-trip test only exercises the default (mitred) corner, so it cannot catch the
 // restore dropping the flag — this one sets flatCorners=true explicitly.
 func TestAssemblyChamferRestoresFlatCorners(t *testing.T) {
+	t.Parallel()
 	ch := NewAssemblyChamferFeature([][]byte{[]byte("e0")}, func() float64 { return 0.2 })
 	ch.flatCorners = true
 
@@ -96,6 +98,7 @@ func TestAssemblyChamferRestoresFlatCorners(t *testing.T) {
 
 // TestRestoreAssemblyFeatureRejectsBadData: the corrupt-recipe guards.
 func TestRestoreAssemblyFeatureRejectsBadData(t *testing.T) {
+	t.Parallel()
 	if _, err := RestoreAssemblyFeature(AssemblyFeatureData{Kind: "nope"}, nil, nil); err == nil {
 		t.Error("an unknown kind should be rejected")
 	}

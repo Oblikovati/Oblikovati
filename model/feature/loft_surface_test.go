@@ -15,6 +15,7 @@ import (
 // skinTool → skinShell (not a solid). Cross-checked against the solid loft: the sheet is the solid's
 // lateral surface, so solid_area − sheet_area ≈ the two end-cap areas (4²+2² = 20).
 func TestLoftSurfaceOpenSheet(t *testing.T) {
+	t.Parallel()
 	mk := func(op ops.PartFeatureOperation) *topo.Body {
 		fs := NewPartFeatures(nil)
 		pf := NewLoftFeatures(fs).Add([]LoftSection{
@@ -41,6 +42,7 @@ func TestLoftSurfaceOpenSheet(t *testing.T) {
 // TestLoftSurfaceTubeShell: two annulus sections lofted with the Surface operation build an OPEN pipe
 // surface — outer and inner walls, no annular end caps — via tubeShellLoops → tubeShell (#1858).
 func TestLoftSurfaceTubeShell(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	bottom, bi := annulusOn(sketch.XYPlane(), 4, 2)
 	top, ti := annulusOn(planeAtZ(5), 3, 1)

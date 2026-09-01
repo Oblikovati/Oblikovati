@@ -19,6 +19,7 @@ import (
 //
 // usb_C = [l=7.35, w=8.94, h=3.26, t=0.4, plug=2.51], r = h/2 − 0.5 mm.
 func TestNopUsbCCSG(t *testing.T) {
+	t.Parallel()
 	const (
 		l       = 0.735 // length 7.35 mm (extrusion axis = z)
 		w       = 0.894 // 8.94 mm

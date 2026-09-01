@@ -15,6 +15,7 @@ import (
 // partial arc (the tube seam) is not. Regression for the P2 full-torus-fallback bug, where
 // bandRingsAndSeam saw only geom.Circle as a ring and missed these Arc3d rims.
 func TestIsFullCircleArc(t *testing.T) {
+	t.Parallel()
 	mk := func(sweep float64) geom.Arc3d {
 		a, err := geom.NewArc3d(m.P3(0, 0, 0), m.V3(0, 0, 1), m.V3(1, 0, 0), 5, 0, math.Abs(sweep))
 		if err != nil {

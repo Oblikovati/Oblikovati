@@ -51,6 +51,7 @@ func partialTubeBody(t *testing.T, angle float64, dir ExtentDirection) *topo.Bod
 // sector — bore + outer cylinder walls, two annulus-sector caps at z, two planar side caps: exactly
 // six faces, two of them cylinders — not a faceted prism.
 func TestPartialRevolveTubeKeepsCylinderWalls(t *testing.T) {
+	t.Parallel()
 	body := partialTubeBody(t, stdmath.Pi/2, PositiveDir)
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("partial revolved tube is not a valid solid: %+v", r.Issues)
@@ -73,6 +74,7 @@ func TestPartialRevolveTubeKeepsCylinderWalls(t *testing.T) {
 // TestPartialRevolveSymmetric checks the start-angle offset (SymmetricDir sweeps −A/2…+A/2): the
 // sector must stay a valid analytic solid with the same volume regardless of where it starts.
 func TestPartialRevolveSymmetric(t *testing.T) {
+	t.Parallel()
 	body := partialTubeBody(t, stdmath.Pi/2, SymmetricDir)
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("symmetric partial tube is not a valid solid: %+v", r.Issues)
@@ -105,6 +107,7 @@ func coneTriangleSketch() *sketch.Sketch {
 // revolve of a right triangle touching the axis is a partial cone (one geom.Cone face) plus a disk
 // sector and two caps.
 func TestPartialRevolveConeSector(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewRevolveFeatures(fs).AddAboutCenterline(coneTriangleSketch(), 0, func() float64 { return stdmath.Pi / 2 }, ops.NewBody)
 	fs.Recompute()

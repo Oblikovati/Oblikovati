@@ -27,6 +27,7 @@ func horizontalEdgeKey(t *testing.T, b *topo.Body, topZ float64) []byte {
 // TestFilletHorizontalEdge fillets a top edge (between the +Z face and a side), exercising
 // the fillet's corner/end-face handling for a non-vertical edge.
 func TestFilletHorizontalEdge(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
 	res, err := ops.FilletEdges(box, [][]byte{horizontalEdgeKey(t, box, 2)}, 0.4)
 	if err != nil {
@@ -43,6 +44,7 @@ func TestFilletHorizontalEdge(t *testing.T) {
 // TestDraftPositiveAngle drafts a side face outward (positive angle), the opposite sign of
 // the existing inward-draft test.
 func TestDraftPositiveAngle(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
 	var side []byte
 	for _, f := range box.Faces() {

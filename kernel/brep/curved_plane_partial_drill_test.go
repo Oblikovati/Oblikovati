@@ -14,6 +14,7 @@ import (
 // (4,0), r2, plate x∈[-5,5]) cuts a watertight, ORIENTABLE scallop notch — genus 0 (chi=2), the analytic
 // cylinder wall preserved. Exercises the partial-drill planeUV path end-to-end (#1591 Slice A').
 func TestCutEdgeScallopClipsEdge(t *testing.T) {
+	t.Parallel()
 	plate, _ := SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
 	drill, _ := SolidCylinder(math.P3(4, 0, -1), math.V3(0, 0, 1), 2, 4) // through the slab, circle clips x=5
 	res, ok := CutEdgeScallop(plate, drill)
@@ -47,6 +48,7 @@ func TestCutEdgeScallopClipsEdge(t *testing.T) {
 // TestCutEdgeScallopDeclinesInteriorHole: a clean interior drill (circle strictly inside both caps) is
 // DrillThroughHole's job — the scallop gate must decline it, or it would steal the interior-hole path.
 func TestCutEdgeScallopDeclinesInteriorHole(t *testing.T) {
+	t.Parallel()
 	plate, _ := SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
 	drill, _ := SolidCylinder(math.P3(0, 0, -1), math.V3(0, 0, 1), 2, 4) // centered, circle strictly inside
 	if _, ok := CutEdgeScallop(plate, drill); ok {
@@ -57,6 +59,7 @@ func TestCutEdgeScallopDeclinesInteriorHole(t *testing.T) {
 // TestCutEdgeScallopDeclinesNonThrough: a drill that does not pierce two parallel caps (a blind stub) is out
 // of the through-scallop scope — the gate must decline.
 func TestCutEdgeScallopDeclinesNonThrough(t *testing.T) {
+	t.Parallel()
 	plate, _ := SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
 	blind, _ := SolidCylinder(math.P3(4, 0, 1), math.V3(0, 0, 1), 2, 3) // starts inside the slab, blind
 	if _, ok := CutEdgeScallop(plate, blind); ok {

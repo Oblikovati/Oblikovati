@@ -42,6 +42,7 @@ func ribForFullRound(t *testing.T) (fs *PartFeatures, side1, center, side2 [][]b
 // TestFullRoundRoundsRibTop: a full round between the two parallel side faces replaces the top with a
 // half-round — a valid solid whose volume is the lower box plus the half-cylinder (the corners gone).
 func TestFullRoundRoundsRibTop(t *testing.T) {
+	t.Parallel()
 	fs, s1, ctr, s2 := ribForFullRound(t)
 	pf := NewDressUpFeatures(fs).AddFullRoundFillet(s1, ctr, s2)
 	fs.Recompute()
@@ -66,6 +67,7 @@ func TestFullRoundRoundsRibTop(t *testing.T) {
 // TestFullRoundRejectsDegenerateSide: reusing the center face as a side cannot resolve a round — a
 // clean error (the would-be sides share the center's plane, so there is no enclosed round).
 func TestFullRoundRejectsDegenerateSide(t *testing.T) {
+	t.Parallel()
 	fs, s1, ctr, _ := ribForFullRound(t)
 	pf := NewDressUpFeatures(fs).AddFullRoundFillet(s1, ctr, ctr) // side2 == center
 	fs.Recompute()
@@ -79,6 +81,7 @@ func TestFullRoundRejectsDegenerateSide(t *testing.T) {
 // original top plane — a valid solid whose volume DROPS (corners rounded off) and whose apex stays at
 // the original top height (no upward bulge). The round is faceted (the boolean planarizes it).
 func TestFullRoundConvergingSides(t *testing.T) {
+	t.Parallel()
 	trap := []math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 3, Y: 2}, {X: 1, Y: 2}}
 	rib := buildPrism(trap, sketch.XYPlane(), span{near: 0, far: 6}, 0, "rib")
 	fs := NewPartFeatures(nil)
@@ -135,6 +138,7 @@ func maxVertexY(b *topo.Body) float64 {
 
 // TestFullRoundRejectsMissingFace: an unknown face key is a clean error.
 func TestFullRoundRejectsMissingFace(t *testing.T) {
+	t.Parallel()
 	fs, s1, ctr, _ := ribForFullRound(t)
 	pf := NewDressUpFeatures(fs).AddFullRoundFillet(s1, ctr, [][]byte{[]byte("nope")})
 	fs.Recompute()

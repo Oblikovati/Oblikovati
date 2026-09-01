@@ -12,6 +12,7 @@ import (
 // TestRedefineThreePointPlaneRepicksPoint is the core redefine regression: re-pointing a
 // three-point plane's third point at a new location re-derives the plane from it.
 func TestRedefineThreePointPlaneRepicksPoint(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	a := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 0) })
 	b := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 0, 0) })
@@ -45,6 +46,7 @@ func TestRedefineThreePointPlaneRepicksPoint(t *testing.T) {
 // TestRedefineOffsetPlaneScalar: an offset plane exposes its distance via EditableScalars, and
 // editing it moves the plane.
 func TestRedefineOffsetPlaneScalar(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	wp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 2 })
 
@@ -68,6 +70,7 @@ func TestRedefineOffsetPlaneScalar(t *testing.T) {
 // TestRedefineLineAngleScalar: a line-plane-angle plane exposes its angle, and editing it
 // re-angles the plane.
 func TestRedefineLineAngleScalar(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	wp := g.WorkPlanes().AddByLinePlaneAndAngle(OriginXAxis, OriginXYPlane, func() float64 { return 0 })
 	n0 := wp.Plane().Normal().AsVector()
@@ -86,6 +89,7 @@ func TestRedefineLineAngleScalar(t *testing.T) {
 // TestTangentPlaneRedefineSlots: a plane-tangent plane exposes a parallel-plane slot and a
 // tangent-face slot of the right kinds (the face slot is what makes a tangent plane redefinable).
 func TestTangentPlaneRedefineSlots(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	wp := g.WorkPlanes().AddByPlaneAndTangent(OriginXZPlane, FaceRef([]byte("cyl")))
 	slots := wp.RedefineSlots()
@@ -99,6 +103,7 @@ func TestTangentPlaneRedefineSlots(t *testing.T) {
 
 // TestOriginPlaneNotRedefinable: the origin frame's planes have nothing to edit.
 func TestOriginPlaneNotRedefinable(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	origin := g.OriginPlanes()[0]
 	if origin.IsRedefinable() || len(origin.RedefineSlots()) != 0 || len(origin.EditableScalars()) != 0 {
@@ -110,6 +115,7 @@ func TestOriginPlaneNotRedefinable(t *testing.T) {
 // plane's base to the plane itself once stayed healthy=true while the plane moved by its
 // offset on EVERY recompute. The slot must refuse the reference and leave the plane stable.
 func TestRedefineRejectsSelfReference(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	wp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 2 })
 	g.Recompute(nil)
@@ -128,6 +134,7 @@ func TestRedefineRejectsSelfReference(t *testing.T) {
 // TestRedefineRejectsReferenceCycle: with B offset from A, re-picking A's base to B would make
 // A depend on itself through B — the validation walks the reference graph, not just one edge.
 func TestRedefineRejectsReferenceCycle(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	a := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 1 })
 	b := g.WorkPlanes().AddByPlaneAndOffset(a.Key(), func() float64 { return 1 })
@@ -141,6 +148,7 @@ func TestRedefineRejectsReferenceCycle(t *testing.T) {
 // TestRedefineRejectsDanglingReference: a repick naming a work feature that does not exist
 // fails loudly (the wire path once turned this into a silently sick plane).
 func TestRedefineRejectsDanglingReference(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	wp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 2 })
 	if err := wp.RedefineSlots()[0].Set(WorkRef("plane/99")); err == nil {
@@ -153,6 +161,7 @@ func TestRedefineRejectsDanglingReference(t *testing.T) {
 // applying both keeps both. The definitions were once value types whose slot closures each
 // captured their own copy — the re-pick then silently discarded the angle edit.
 func TestRedefineScalarAndRepickCompose(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	wp := g.WorkPlanes().AddByLinePlaneAndAngle(OriginXAxis, OriginXYPlane, func() float64 { return 0 })
 	g.Recompute(nil)

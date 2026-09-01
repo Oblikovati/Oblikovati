@@ -13,6 +13,7 @@ import (
 // diameters the drawings/hole tables consume.
 
 func TestThreadTablesRoundTripThroughParser(t *testing.T) {
+	t.Parallel()
 	for _, tt := range ThreadTypes() {
 		sizes, err := ThreadNominalSizes(tt)
 		if err != nil || len(sizes) == 0 {
@@ -38,6 +39,7 @@ func TestThreadTablesRoundTripThroughParser(t *testing.T) {
 }
 
 func TestThreadSpecDerivedDiameters(t *testing.T) {
+	t.Parallel()
 	spec, err := ParseThreadDesignation("M8x1.25")
 	if err != nil {
 		t.Fatal(err)
@@ -55,6 +57,7 @@ func TestThreadSpecDerivedDiameters(t *testing.T) {
 }
 
 func TestThreadClassesPerSide(t *testing.T) {
+	t.Parallel()
 	internal, _ := ThreadClasses("ISO", true)
 	external, _ := ThreadClasses("ISO", false)
 	if len(internal) == 0 || len(external) == 0 || internal[0] == external[0] {
@@ -66,6 +69,7 @@ func TestThreadClassesPerSide(t *testing.T) {
 }
 
 func TestThreadDefinitionParityFields(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
 	// A cut tapered thread is rejected with a precise error (conical faces are a follow-up).

@@ -47,6 +47,7 @@ func liftedBlockPart(t *testing.T) (*compdef.PartComponentDefinition, string) {
 // independent base block — while the lifted block still follows the moved plane. This pins both
 // the targeting (feature 0 untouched) and the correctness (geometry follows).
 func TestWorkPlaneOffsetParameterEditTargetsHostedSketch(t *testing.T) {
+	t.Parallel()
 	def, _ := liftedBlockPart(t)
 	def.Recompute()
 	before := recomputeCounts(def)
@@ -81,6 +82,7 @@ func TestWorkPlaneOffsetParameterEditTargetsHostedSketch(t *testing.T) {
 // skipped a dependent feature would diverge here; this is the differential guard that makes
 // narrowing the wholesale fallback safe (ADR-0044, the silent-stale failure class).
 func TestWorkPlaneOffsetTargetedMatchesFullRebuild(t *testing.T) {
+	t.Parallel()
 	def, _ := liftedBlockPart(t)
 	def.Recompute()
 

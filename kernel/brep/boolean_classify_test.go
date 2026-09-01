@@ -36,6 +36,7 @@ func classifyPolygonPrism(t *testing.T, r float64, n int, z0, z1 float64, name s
 // box and on a holed (annular) prism — including a query point down the hole, which only a
 // hole-aware classification gets right (#1599).
 func TestInsideSolidWindingBasics(t *testing.T) {
+	t.Parallel()
 	blk, _ := SolidBlock(math.P3(0, 0, 0), math.P3(1, 1, 1), "b")
 	if !insideSolid(blk, math.P3(0.5, 0.5, 0.5)) || insideSolid(blk, math.P3(2, 2, 2)) {
 		t.Error("box winding classification wrong at the trivial points")
@@ -68,6 +69,7 @@ func classifyRing(t *testing.T) *topo.Body {
 // the atan2 sign-of-zero degeneracy and fabricates a spurious ±2π, which put hole points of the
 // beltb ring "inside" and tore the union open.
 func TestInsideSolidCoplanarQueryPoint(t *testing.T) {
+	t.Parallel()
 	ring := classifyRing(t)
 	if insideSolid(ring, math.P3(0, 0.0587, 0)) {
 		t.Error("point in the hole ON the ring's bottom plane classified inside (coplanar ±2π degeneracy)")
@@ -86,6 +88,7 @@ func TestInsideSolidCoplanarQueryPoint(t *testing.T) {
 // corner (three faces'), where parity counting was ambiguous. The winding number integrates the
 // whole boundary — there is no direction to graze — so these must classify exactly.
 func TestInsideSolidEdgeGrazingDirection(t *testing.T) {
+	t.Parallel()
 	blk, _ := SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "b")
 	dir := math.V3(0.5773, 0.5774, 0.5775)
 	inside := math.P3(1, 2, 2).TranslateBy(dir.Scale(-1)) // the old ray exits exactly through the top edge midpoint
@@ -104,6 +107,7 @@ func TestInsideSolidEdgeGrazingDirection(t *testing.T) {
 // magnitude of the winding sum: a signed threshold writes such a body's entire interior off as
 // outside, which mangles any boolean against it.
 func TestInsideSolidToleratesInsideOutBody(t *testing.T) {
+	t.Parallel()
 	verts := []math.Point3{
 		math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(0, 2, 0),
 		math.P3(0, 0, 2), math.P3(2, 0, 2), math.P3(2, 2, 2), math.P3(0, 2, 2),

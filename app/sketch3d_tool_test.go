@@ -12,6 +12,7 @@ import (
 // "3D Sketch" ribbon command enters the environment, the 3D Line tool builds a polyline,
 // and "Finish 3D Sketch" returns to the model with the geometry committed.
 func TestCreateSketch3DEnterAddLineFinish(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register: %v", err)
@@ -56,6 +57,7 @@ func TestCreateSketch3DEnterAddLineFinish(t *testing.T) {
 
 // TestSketch3DPointToolEndToEnd drives the 3D Point tool to place a standalone point.
 func TestSketch3DPointToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register: %v", err)
@@ -80,6 +82,7 @@ func TestSketch3DPointToolEndToEnd(t *testing.T) {
 // TestCanCreateSketch3DPredicate checks the enable predicate gates on an active part and
 // no open sketch edit.
 func TestCanCreateSketch3DPredicate(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if !s.CanCreateSketch3D() {
 		t.Fatal("with an active part and no edit, 3D Sketch should be enabled")
@@ -98,6 +101,7 @@ func TestCanCreateSketch3DPredicate(t *testing.T) {
 
 // TestSketch3DCircleArcHelixTools drives the circle, arc and helix tools end to end.
 func TestSketch3DCircleArcHelixTools(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register: %v", err)
@@ -150,6 +154,7 @@ func TestSketch3DCircleArcHelixTools(t *testing.T) {
 
 // TestSketch3DToolCommitGuards checks each tool refuses to commit before it has input.
 func TestSketch3DToolCommitGuards(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, err := s.CreateSketch3D(); err != nil {
 		t.Fatalf("CreateSketch3D: %v", err)
@@ -181,6 +186,7 @@ func TestSketch3DToolCommitGuards(t *testing.T) {
 // TestSketch3DToolInterfaceMethods exercises the trivial Tool surface (Name/Start/Pick/
 // Cancel) and the not-ready-to-commit guards.
 func TestSketch3DToolInterfaceMethods(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	line, point := NewLine3DTool(), NewPoint3DTool()
 	for _, tl := range []Tool{line, point} {
@@ -209,6 +215,7 @@ func TestSketch3DToolInterfaceMethods(t *testing.T) {
 
 // TestFinishSketch3DNotEditing checks Finish errors when no 3D sketch is open.
 func TestFinishSketch3DNotEditing(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if err := s.FinishSketch3D(); err == nil {
 		t.Error("Finish 3D Sketch with nothing open should error")
@@ -217,6 +224,7 @@ func TestFinishSketch3DNotEditing(t *testing.T) {
 
 // TestFinishSketch3DCancelsActiveTool checks finishing abandons an in-progress tool.
 func TestFinishSketch3DCancelsActiveTool(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, err := s.CreateSketch3D(); err != nil {
 		t.Fatalf("CreateSketch3D: %v", err)
@@ -232,6 +240,7 @@ func TestFinishSketch3DCancelsActiveTool(t *testing.T) {
 
 // TestLine3DToolNotInSketchErrors checks committing the line tool outside a 3D sketch fails.
 func TestLine3DToolNotInSketchErrors(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	tool := NewLine3DTool()
 	tool.AddPoint(math.P3(0, 0, 0))

@@ -40,6 +40,7 @@ func hullVolume(t *testing.T, pts []math.Point3) float64 {
 
 // TestConvexHullCube hulls a cube's 8 corners — the hull is the cube itself.
 func TestConvexHullCube(t *testing.T) {
+	t.Parallel()
 	if got := hullVolume(t, cubeCorners(2)); stdmath.Abs(got-8) > 1e-9 {
 		t.Errorf("hull(cube) volume = %.6f, want 8", got)
 	}
@@ -48,6 +49,7 @@ func TestConvexHullCube(t *testing.T) {
 // TestConvexHullCubeApex hulls a unit cube plus an apex above the top face — a cube capped by
 // a pyramid. Volume = 1 + ⅓·(1·1)·2.
 func TestConvexHullCubeApex(t *testing.T) {
+	t.Parallel()
 	pts := append(cubeCorners(1), math.P3(0.5, 0.5, 3))
 	if got, want := hullVolume(t, pts), 1.0+(1.0/3.0)*1*2; stdmath.Abs(got-want) > 1e-9 {
 		t.Errorf("hull(cube+apex) volume = %.6f, want %.6f", got, want)
@@ -57,6 +59,7 @@ func TestConvexHullCubeApex(t *testing.T) {
 // TestConvexHullSphere hulls points sampled on a sphere; the inscribed polytope approaches the
 // sphere volume from below as the sampling densifies.
 func TestConvexHullSphere(t *testing.T) {
+	t.Parallel()
 	const r, n = 1.5, 400
 	var pts []math.Point3
 	ga := stdmath.Pi * (3 - stdmath.Sqrt(5)) // golden-angle Fibonacci sphere
@@ -76,6 +79,7 @@ func TestConvexHullSphere(t *testing.T) {
 // TestConvexHullOfTwoBoxes hulls two separated unit boxes via ConvexHullOf — the result spans
 // both and is a valid solid no smaller than either box.
 func TestConvexHullOfTwoBoxes(t *testing.T) {
+	t.Parallel()
 	a := subd.ToBody(subd.Box(1, 1, 1), "a")
 	bm := subd.Box(1, 1, 1)
 	for i := range bm.Verts {
@@ -99,6 +103,7 @@ func TestConvexHullOfTwoBoxes(t *testing.T) {
 
 // TestConvexHullDegenerate rejects a coplanar cloud (no 3D hull).
 func TestConvexHullDegenerate(t *testing.T) {
+	t.Parallel()
 	planar := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(1, 1, 0)}
 	if _, err := ops.ConvexHull(planar, "hull"); err == nil {
 		t.Error("expected an error hulling coplanar points, got nil")

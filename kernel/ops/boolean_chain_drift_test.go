@@ -70,6 +70,7 @@ func assertChainSolid(t *testing.T, b *topo.Body, step string) {
 // sequence. Each stays EXACT (the running body gains exactly one analytic cylinder wall per bore), so the
 // cumulative volume is the plate minus five single-bore removals with no drift, and no body ever opens.
 func TestCurvedBooleanChainDriftBores(t *testing.T) {
+	t.Parallel()
 	v0 := ops.BodyGeometryProperties(chainSlab(t), ops.DefaultQuality()).Volume
 	centers := []float64{-8, -4, 0, 4, 8} // spacing 4 > 2r=3: the bores never touch
 
@@ -103,6 +104,7 @@ func TestCurvedBooleanChainDriftBores(t *testing.T) {
 // TestCurvedBooleanChainDriftOrderIndependent: the same five holes drilled in a shuffled order reach the
 // same exact volume — chaining is path-independent, not just stable for one ordering.
 func TestCurvedBooleanChainDriftOrderIndependent(t *testing.T) {
+	t.Parallel()
 	want := ops.BodyGeometryProperties(chainSlab(t), ops.DefaultQuality()).Volume
 	ref, _ := ops.Boolean(ops.Cut, chainSlab(t), chainRod(t, 0, 0))
 	want -= 5 * (ops.BodyGeometryProperties(chainSlab(t), ops.DefaultQuality()).Volume - ops.BodyGeometryProperties(ref, ops.DefaultQuality()).Volume)

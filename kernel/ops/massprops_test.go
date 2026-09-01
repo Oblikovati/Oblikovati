@@ -13,6 +13,7 @@ import (
 // analytic check that the divergence-theorem volume/centroid are correct (planar faces
 // make tessellation exact).
 func TestTetraVolumeAndCentroid(t *testing.T) {
+	t.Parallel()
 	const s = 2.0
 	gp := BodyGeometryProperties(tetra(s, m.V3(0, 0, 0)), DefaultQuality())
 
@@ -31,6 +32,7 @@ func TestTetraVolumeAndCentroid(t *testing.T) {
 // Volume must be translation-invariant even though the tetra method references the
 // origin — the off-origin parts cancel.
 func TestVolumeIsTranslationInvariant(t *testing.T) {
+	t.Parallel()
 	atOrigin := BodyGeometryProperties(tetra(2, m.V3(0, 0, 0)), DefaultQuality())
 	moved := BodyGeometryProperties(tetra(2, m.V3(100, -50, 25)), DefaultQuality())
 	if math.Abs(atOrigin.Volume-moved.Volume) > 1e-6 {

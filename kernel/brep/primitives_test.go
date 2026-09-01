@@ -12,6 +12,7 @@ import (
 )
 
 func TestPrimitiveVolumes(t *testing.T) {
+	t.Parallel()
 	q := ops.DefaultQuality()
 	block, err := brep.SolidBlock(math.P3(1, 1, 1), math.P3(3, 4, 6), "b")
 	if err != nil {

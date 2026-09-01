@@ -26,6 +26,7 @@ func capVolume(radius, height float64) float64 {
 // TestHalfSpaceCutSphereIsExactCap cuts a sphere by several planes and checks the result is a valid
 // closed solid whose two faces are an exact sphere + plane, with the analytic spherical-cap volume.
 func TestHalfSpaceCutSphereIsExactCap(t *testing.T) {
+	t.Parallel()
 	const R = 5.0
 	cases := []struct {
 		name        string
@@ -92,6 +93,7 @@ func assertSphereAndPlaneFaces(t *testing.T, body *topo.Body) {
 // exactly (comparing to the analytic π·r²·h' would only confirm the cylinder's own ~0.6% chord
 // inscription, not the cut).
 func TestHalfSpaceCutCylinderPerpendicularIsFrustum(t *testing.T) {
+	t.Parallel()
 	const r, h = 3.0, 4.0
 	facetedVol := func(height float64) float64 {
 		c, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, height)
@@ -144,6 +146,7 @@ func TestHalfSpaceCutCylinderPerpendicularIsFrustum(t *testing.T) {
 // z=(4−x)/2 stays above the base over the whole disk, so the kept volume is the exact analytic
 // ∬(4−x)/2 dA = 18π (mean height 2 × π·3²) up to the tessellation chord deficit.
 func TestHalfSpaceCutCylinderObliqueExact(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
 	plane, _ := geom.NewPlane(math.P3(0, 0, 2), math.V3(1, 0, 2)) // tilted off the axis → within-band ellipse
 	res, err := brep.HalfSpaceCut(cyl, plane)
@@ -211,6 +214,7 @@ func assertCylinderAndPlaneFaces(t *testing.T, body *topo.Body) {
 // TestHalfSpaceCutSpherePlaneMissKeepsOrEmpties: a plane clear of the sphere keeps the whole sphere
 // (centre on the negative side) or empties it (centre on the positive side).
 func TestHalfSpaceCutSpherePlaneMissKeepsOrEmpties(t *testing.T) {
+	t.Parallel()
 	sphere, _ := brep.SolidSphere(math.P3(0, 0, 0), 5, "s")
 	full := ops.BodyGeometryProperties(sphere, ops.DefaultQuality()).Volume
 

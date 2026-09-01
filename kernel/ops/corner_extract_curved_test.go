@@ -31,6 +31,7 @@ func b3CornerWeld(t *testing.T) (cornerWeld, []edgeFillet, geom.Sphere, Resoluti
 // analytic-sphere tier wins (over tri3, by tier order), and the recognized sphere must equal the
 // solved corner sphere. This proves the octant surface routes through the engine and stays a sphere.
 func TestExtractCurvedCorner_OctantIsThreeValentSphere(t *testing.T) {
+	t.Parallel()
 	w, arms, sphere, res := b3CornerWeld(t)
 	loop, ok := extractCurvedCorner(w, arms, res)
 	if !ok || loop.Valence() != 3 {
@@ -50,6 +51,7 @@ func TestExtractCurvedCorner_OctantIsThreeValentSphere(t *testing.T) {
 // the sphere): the ACL reads arms[i].armSurface for Adjacent (the choice that makes the G1 ribbons
 // twist-compatible for the later coons4 tier), and every arm surface appears exactly once.
 func TestExtractCurvedCorner_SidesCarryArmAdjacents(t *testing.T) {
+	t.Parallel()
 	w, arms, _, res := b3CornerWeld(t)
 	loop, ok := extractCurvedCorner(w, arms, res)
 	if !ok {

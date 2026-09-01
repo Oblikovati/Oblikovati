@@ -43,6 +43,7 @@ func quarterArcSeg(t *testing.T) endSeg {
 // REVERSED, not merely its endpoints exchanged. The bug returned the two points while the caller re-wrapped
 // the original curve, shipping a segment whose curve ran to→from.
 func TestMatchArcFeetReversesTheSwappedPairing(t *testing.T) {
+	t.Parallel()
 	arc := quarterArcSeg(t)
 	// prev's supporting line carries the arc's TO foot (0,10,0); next's carries its FROM foot (10,0,0).
 	prev := endSeg{from: math.P3(0, 30, 0), to: math.P3(0, 10, 0)}
@@ -65,6 +66,7 @@ func TestMatchArcFeetReversesTheSwappedPairing(t *testing.T) {
 // next-side it is returned UNTOUCHED (identical curve object), so the fix cannot pass by reversing
 // everything and every aligned corpus case stays byte-identical.
 func TestMatchArcFeetKeepsTheAlignedPairing(t *testing.T) {
+	t.Parallel()
 	arc := quarterArcSeg(t)
 	prev := endSeg{from: math.P3(30, 0, 0), to: math.P3(10, 0, 0)}
 	next := endSeg{from: math.P3(0, 10, 0), to: math.P3(0, 30, 0)}
@@ -82,6 +84,7 @@ func TestMatchArcFeetKeepsTheAlignedPairing(t *testing.T) {
 // flipped its sweep; this arm returned the curve as-is, so F2 shipped two b-spline retrim edges whose
 // curve ran end→start (28.52 / 28.18 of endpoint mismatch) and three of its walls self-crossed.
 func TestSurvivorCurveReversesAReversedOpenBSpline(t *testing.T) {
+	t.Parallel()
 	p0, p1 := math.P3(0, 0, 0), math.P3(10, 0, 0)
 	spline, err := geom.NewBSplineCurveUniformWeights(3,
 		[]math.Point3{p0, math.P3(4, 3, 0), math.P3(7, -3, 0), p1}, []float64{0, 0, 0, 0, 1, 1, 1, 1})

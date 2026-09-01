@@ -24,6 +24,7 @@ import (
 // and both feet still sit at exactly radius r from the centre — proving the concave construction is just
 // as exact as the shipped convex one, not merely "declines less often".
 func TestConeCanalSpine_ConcaveBore_ExactFeet(t *testing.T) {
+	t.Parallel()
 	for _, c := range coneCanalCases() {
 		t.Run(c.name, func(t *testing.T) {
 			co, err := geom.NewCone(c.apex, coneAxisDown(), stdmath.Atan(c.tanAlpha))
@@ -70,6 +71,7 @@ func findConcaveConeRulingEdge(t *testing.T, body *topo.Body) *topo.Edge {
 // adaptively-chosen station and meshes fold-free — the concave-bore sibling of
 // TestConeCanalArm_RealImport (C2/C6/D1, convex-external).
 func TestConeCanalArm_I4RealImport(t *testing.T) {
+	t.Parallel()
 	body := importSimpleFixture(t, "I4")
 	e := findConcaveConeRulingEdge(t, body)
 	ef, handled, err := coneArmEdge(body, e, filletPick{edge: e, r0: coneArmR, r1: coneArmR})
@@ -94,6 +96,7 @@ func TestConeCanalArm_I4RealImport(t *testing.T) {
 // concave (−1) ζ(0) must differ by exactly 2·r/sinα — proving the field is load-bearing on the
 // formula, not a dead parameter that happens to cancel out.
 func TestConeCanalSpine_ZetaSignFlips(t *testing.T) {
+	t.Parallel()
 	co, err := geom.NewCone(math.P3(0, 0, 270), coneAxisDown(), stdmath.Atan(1.0/3.0))
 	if err != nil {
 		t.Fatalf("cone: %v", err)
@@ -124,6 +127,7 @@ func TestConeCanalSpine_ZetaSignFlips(t *testing.T) {
 // branch in coneCanalArmFillet. A flipped or dropped condition would send one of the two cases through
 // the wrong offset formula; this test catches either direction, unlike a same-sign-only check.
 func TestConeCanalArm_DispatchesBothSigns(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		fixture      string
 		findEdge     func(*testing.T, *topo.Body) *topo.Edge

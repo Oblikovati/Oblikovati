@@ -43,6 +43,7 @@ func meshSignedVolume(m *ops.Mesh) float64 {
 // coherently-wound mesh). Before the fix, negative-axis-normal faces were wound inward
 // and an off-origin box reported 13.33 instead of 8.
 func TestTessellationWindingIsOutwardAndTranslationInvariant(t *testing.T) {
+	t.Parallel()
 	for _, off := range [][3]float64{{0, 0, 0}, {1, 0.5, 0.5}, {10, 20, 30}, {-5, -7, -9}} {
 		got := meshSignedVolume(offsetBoxBody(off[0], off[1], off[2]))
 		if stdmath.Abs(got-8) > 1e-9 {
@@ -52,6 +53,7 @@ func TestTessellationWindingIsOutwardAndTranslationInvariant(t *testing.T) {
 }
 
 func TestConcaveSingleLoopPlanarFaceVolume(t *testing.T) {
+	t.Parallel()
 	section := []math.Point3{
 		math.P3(-0.55, 2.0, 0), math.P3(-0.8, 2.5, 0), math.P3(-2.0, 2.5, 0),
 		math.P3(-2.0, 2.0, 0), math.P3(-1.025, 2.0, 0), math.P3(-0.4, 0.55, 0),

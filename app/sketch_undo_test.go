@@ -12,6 +12,7 @@ import (
 // TestSketchConstraintIsUndoable reproduces #1270: adding a perpendicular constraint while
 // editing a sketch is its own undo step, and Ctrl+Z reverts it while keeping the sketch open.
 func TestSketchConstraintIsUndoable(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, err := s.CreateSketch(sketch.XYPlane()) // records "Create Sketch"
 	if err != nil {
@@ -50,6 +51,7 @@ func TestSketchConstraintIsUndoable(t *testing.T) {
 // TestSketchCreationIsUndoable: creating a sketch is its own undo step (#1270), so the in-sketch
 // operations that follow undo without removing the sketch.
 func TestSketchCreationIsUndoable(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, err := s.CreateSketch(sketch.XYPlane()); err != nil {
 		t.Fatalf("CreateSketch: %v", err)
@@ -62,6 +64,7 @@ func TestSketchCreationIsUndoable(t *testing.T) {
 // TestSketchUndoReattachesActiveSketch: undo rebuilds the part's sketch objects, so the session
 // must re-bind the active sketch to the live one — proven by editing it after the undo.
 func TestSketchUndoReattachesActiveSketch(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, _ := s.CreateSketch(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
@@ -89,6 +92,7 @@ func TestSketchUndoReattachesActiveSketch(t *testing.T) {
 // TestSketchUndoPastCreationExitsSketch: undoing the sketch's own creation while editing it drops
 // cleanly out of the sketch environment (the sketch no longer exists to re-bind).
 func TestSketchUndoPastCreationExitsSketch(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, err := s.CreateSketch(sketch.XYPlane()); err != nil {
 		t.Fatalf("CreateSketch: %v", err)
@@ -104,6 +108,7 @@ func TestSketchUndoPastCreationExitsSketch(t *testing.T) {
 // TestSketch3DEditIsUndoableAndReattaches: a 3D-sketch edit records an undo step, and undo
 // re-binds the active 3D sketch so editing continues (#1270).
 func TestSketch3DEditIsUndoableAndReattaches(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, err := s.CreateSketch3D() // records "Create 3D Sketch"
 	if err != nil {
@@ -131,6 +136,7 @@ func TestSketch3DEditIsUndoableAndReattaches(t *testing.T) {
 
 // TestSketchDragRecordsUndo: committing a drag records one undo step (the moved geometry).
 func TestSketchDragRecordsUndo(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, _ := s.CreateSketch(sketch.XYPlane())
 	sk.Points().Add(math.P2(1, 1))
@@ -149,6 +155,7 @@ func TestSketchDragRecordsUndo(t *testing.T) {
 
 // TestSketchDimensionEditRecordsUndo: editing a dimension value records an "Edit Dimension" step.
 func TestSketchDimensionEditRecordsUndo(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, _ := s.CreateSketch(sketch.XYPlane())
 	a := sk.Points().Add(math.P2(0, 0))

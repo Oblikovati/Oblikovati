@@ -71,6 +71,7 @@ func bruteForceSurfaceDeviation(t *testing.T, src, rebuilt BSplineSurface) float
 }
 
 func TestRebuildSurfaceMultiSpanToSingleSpanExact(t *testing.T) {
+	t.Parallel()
 	// A genuinely single-span bicubic patch is artificially carried on many spans by inserting
 	// knots (F01) — same geometry, 7x7 control points. Rebuild must collapse it back to a clean
 	// 4x4 single span near-exactly: the canonical "wavy multi-span -> single span" acceptance.
@@ -104,6 +105,7 @@ func TestRebuildSurfaceMultiSpanToSingleSpanExact(t *testing.T) {
 }
 
 func TestRebuildSurfaceReducesCVsWithinTolerance(t *testing.T) {
+	t.Parallel()
 	src := wavyMultiSpanSurface(t) // 13x13 = 169 control points
 	rebuilt, dev, err := RebuildSurface(src, 3, 3, 10, 10, 0)
 	if err != nil {
@@ -121,6 +123,7 @@ func TestRebuildSurfaceReducesCVsWithinTolerance(t *testing.T) {
 }
 
 func TestRebuildSurfaceDeviationMatchesOracle(t *testing.T) {
+	t.Parallel()
 	src := wavyMultiSpanSurface(t)
 	rebuilt, dev, err := RebuildSurface(src, 3, 3, 6, 6, 0)
 	if err != nil {
@@ -153,6 +156,7 @@ func bicubicPatch(t *testing.T) BSplineSurface {
 }
 
 func TestRebuildSurfaceIdempotentOnClean(t *testing.T) {
+	t.Parallel()
 	// A single-span bicubic Bézier patch rebuilt to the same 4x4 target is near-exact.
 	src := bicubicPatch(t)
 	_, dev, err := RebuildSurface(src, 3, 3, 4, 4, 0)
@@ -165,6 +169,7 @@ func TestRebuildSurfaceIdempotentOnClean(t *testing.T) {
 }
 
 func TestRebuildSurfaceValidates(t *testing.T) {
+	t.Parallel()
 	src := wavyMultiSpanSurface(t)
 	if _, _, err := RebuildSurface(src, 3, 3, 2, 5, 0); err == nil {
 		t.Error("nu < uDeg+1 should error")

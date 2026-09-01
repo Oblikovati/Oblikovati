@@ -48,6 +48,7 @@ func assertArmedRendersActive(t *testing.T, s *Session, tab, command, name strin
 }
 
 func TestSketch2DFormatArmedModesRenderActive(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ command, name string }{
 		{"Sketch.Construction", "Construction"},
 		{"Sketch.Centerline", "Centerline"},
@@ -64,6 +65,7 @@ func TestSketch2DFormatArmedModesRenderActive(t *testing.T) {
 }
 
 func TestSketch3DFormatArmedModesRenderActive(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ command, name string }{
 		{"Sketch3D.Construction", "Construction"},
 		{"Sketch3D.DrivenDimension", "Driven Dimension"},

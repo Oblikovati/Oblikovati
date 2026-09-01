@@ -8,6 +8,7 @@ import (
 
 // TestSketchRectangleToolDropsRectangle: the rectangle tool drops a sketch with a rectangle entity.
 func TestSketchRectangleToolDropsRectangle(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewSketchRectangleTool()
@@ -29,6 +30,7 @@ func TestSketchRectangleToolDropsRectangle(t *testing.T) {
 
 // TestSketchCircleToolDropsCircle: the circle tool drops a sketch with a circle entity.
 func TestSketchCircleToolDropsCircle(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewSketchCircleTool()
@@ -50,6 +52,7 @@ func TestSketchCircleToolDropsCircle(t *testing.T) {
 
 // TestHatchRegionToolFillsRegion: the hatch tool drops a sketch whose curves are the fill lines.
 func TestHatchRegionToolFillsRegion(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewHatchRegionTool()

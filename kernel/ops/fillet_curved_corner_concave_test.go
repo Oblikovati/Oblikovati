@@ -29,6 +29,7 @@ var (
 // pocket). Non-tautological: it asserts the OCCT coordinates and the exact per-face tangency senses, so
 // a regression to the single-ε placement (which put the centre at (55,24.64,45), R+r outside) fails.
 func TestM5ConcaveCornerSphere(t *testing.T) {
+	t.Parallel()
 	body := importCorpusSolid(t, "simple/M5")
 	v := vertexNear(t, body, m5Vertex)
 	if !cornerHasConcaveArm(v) {
@@ -77,6 +78,7 @@ func cornerAxisDistance(cyl geom.Cylinder, c math.Point3) float64 {
 // reduces byte-identically — planePairLineSigned(...,−1,−1,...) == planePairLine(...). The concave
 // generalisation must not perturb any convex corner.
 func TestConvexCornerReductionUnchanged(t *testing.T) {
+	t.Parallel()
 	body := importCorpusSolid(t, "simple/B3")
 	v := vertexNear(t, body, math.P3(0, -50, 100))
 	if cornerHasConcaveArm(v) {

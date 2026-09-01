@@ -27,6 +27,7 @@ func addRollProfile(def *compdef.PartComponentDefinition, radius, height float64
 // TestSheetMetalContourRollApply rolls a profile into a tube on a sheet-metal part and
 // confirms one healthy solid; then checks the error paths.
 func TestSheetMetalContourRollApply(t *testing.T) {
+	t.Parallel()
 	s := sheetMetalProfiledPart(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	idx := addRollProfile(def, 2, 3)

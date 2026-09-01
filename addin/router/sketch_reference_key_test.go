@@ -14,6 +14,7 @@ import (
 // TestSketchEntitiesReportReferenceKeys: sketch.entities now reports a persistent reference
 // key per entity (#153), and the keys are non-empty and distinct.
 func TestSketchEntitiesReportReferenceKeys(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
@@ -38,6 +39,7 @@ func TestSketchEntitiesReportReferenceKeys(t *testing.T) {
 // TestResolveSketchEntityReference: a key from sketch.entities resolves back to the same
 // entity (kind=sketchEntity, right sketch index and session id).
 func TestResolveSketchEntityReference(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
@@ -56,6 +58,7 @@ func TestResolveSketchEntityReference(t *testing.T) {
 // TestSketchReferenceKeyResolvesToSketch: a sketch's own key (sketch.referenceKey) resolves
 // back to that sketch (kind=sketch).
 func TestSketchReferenceKeyResolvesToSketch(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 
@@ -76,6 +79,7 @@ func TestSketchReferenceKeyResolvesToSketch(t *testing.T) {
 // TestReferenceKeyMethodsRejectNoActivePart: both methods error without an active part,
 // rather than returning an empty/zero result.
 func TestReferenceKeyMethodsRejectNoActivePart(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	cases := map[string]string{
@@ -91,6 +95,7 @@ func TestReferenceKeyMethodsRejectNoActivePart(t *testing.T) {
 
 // TestSketchReferenceKeyBadIndexFails: an out-of-range sketch index is a rejection.
 func TestSketchReferenceKeyBadIndexFails(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.referenceKey", []byte(`{"sketchIndex":7}`)); err == nil {
 		t.Error("sketch.referenceKey with an out-of-range index should fail")
@@ -102,6 +107,7 @@ func TestSketchReferenceKeyBadIndexFails(t *testing.T) {
 // and is found=false while B is active — even though both documents hold sketches at once.
 // This is the multi-document guarantee behind #153's cross-document collision-impossibility.
 func TestResolveReferenceIsDocumentScoped(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t) // document A is active
 	docA := s.ActiveDocument()
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
@@ -141,6 +147,7 @@ func TestResolveReferenceIsDocumentScoped(t *testing.T) {
 // TestResolveUnknownReferenceNotFound: an unrecognized key resolves to found=false (the
 // referent was deleted), not an error.
 func TestResolveUnknownReferenceNotFound(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 

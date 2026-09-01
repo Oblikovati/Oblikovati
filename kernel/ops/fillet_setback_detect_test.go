@@ -43,6 +43,7 @@ func sharedMidpointFromFixture(t *testing.T, ef edgeFillet, res Resolution) floa
 // about 0). mid is read independently via sharedMidpointFromFixture rather than hard-coded, so a
 // regression in EITHER the station math OR the absolute placement is caught.
 func TestDetectSetbackBands_S1TwoBosses(t *testing.T) {
+	t.Parallel()
 	ef, res := runoutFixtureCrossingBoss(t)
 	b, ok := detectSetbackBands(ef, res)
 	if !ok || len(b.bosses) != 2 {
@@ -79,6 +80,7 @@ func TestDetectSetbackBands_S1TwoBosses(t *testing.T) {
 // kept INTACT (a non-nil geom.Surface, never split) — the whole point of Task 2 over the old
 // split-boss tiler.
 func TestDetectSetbackBands_BossesOrderedByReachDescending(t *testing.T) {
+	t.Parallel()
 	ef, res := runoutFixtureCrossingBoss(t)
 	b, ok := detectSetbackBands(ef, res)
 	if !ok || len(b.bosses) != 2 {
@@ -103,6 +105,7 @@ func TestDetectSetbackBands_BossesOrderedByReachDescending(t *testing.T) {
 // interference to detect at all, so detectSetbackBands must honest-reject (ok=false) rather than
 // return an empty-but-valid setbackBands.
 func TestDetectSetbackBands_NonCrossingBossRejected(t *testing.T) {
+	t.Parallel()
 	ef, res := runoutFixtureBehindBand(t)
 	if _, ok := detectSetbackBands(ef, res); ok {
 		t.Fatalf("detectSetbackBands: want ok=false when no boss crosses the receded band")
@@ -114,6 +117,7 @@ func TestDetectSetbackBands_NonCrossingBossRejected(t *testing.T) {
 // the contact line, never trust a barely-positive root near the tangency singularity): a reach
 // at weld-noise scale must NOT read as a genuine crossing, while an S1-scale reach must.
 func TestNonDegenerateSetback_NearTangencyClamp(t *testing.T) {
+	t.Parallel()
 	res := ResolutionForSize(50)
 	tiny := res.Weld() * (setbackNearZeroCoef - 1)
 	if nonDegenerateSetback(tiny, res) {
@@ -147,6 +151,7 @@ func centeredTestCylinder(t *testing.T) geom.Cylinder {
 // would break this real, correct corpus case; this test is the regression that would catch that
 // mistake reappearing.
 func TestSetbackMidpoint_S1BossesAgree(t *testing.T) {
+	t.Parallel()
 	ef, res := runoutFixtureCrossingBoss(t)
 	var mids []float64
 	for _, im := range detectRunouts(ef, res) {
@@ -174,6 +179,7 @@ func TestSetbackMidpoint_S1BossesAgree(t *testing.T) {
 // plausible-looking symmetric cutLo/cutHi/seams straddling a plane neither boss is actually
 // centered on, with no indication anything was wrong.
 func TestBossesShareTransverseMidplane_DisagreeingBossRejected(t *testing.T) {
+	t.Parallel()
 	cyl := centeredTestCylinder(t)
 	mids := []float64{10, 4} // S1-scale outer midpoint vs one full R (6) off it
 	if bossesShareTransverseMidplane(mids, cyl) {
@@ -185,6 +191,7 @@ func TestBossesShareTransverseMidplane_DisagreeingBossRejected(t *testing.T) {
 // read c≈10, differing only by float noise) as a synthetic, fast unit test independent of the
 // corpus import — the do-no-harm half of the guard.
 func TestBossesShareTransverseMidplane_AgreeingBossesAccepted(t *testing.T) {
+	t.Parallel()
 	cyl := centeredTestCylinder(t)
 	mids := []float64{9.999999999999996, 10}
 	if !bossesShareTransverseMidplane(mids, cyl) {
@@ -196,6 +203,7 @@ func TestBossesShareTransverseMidplane_AgreeingBossesAccepted(t *testing.T) {
 // (setbackBands' doc comment): a lone boss has nothing to disagree with, so this guard cannot
 // detect a single off-center boss — only a multi-boss mismatch.
 func TestBossesShareTransverseMidplane_SingleBossTriviallyAccepted(t *testing.T) {
+	t.Parallel()
 	cyl := centeredTestCylinder(t)
 	if !bossesShareTransverseMidplane([]float64{123.456}, cyl) {
 		t.Fatalf("bossesShareTransverseMidplane(single boss): want true, nothing to disagree with")
@@ -208,6 +216,7 @@ func TestBossesShareTransverseMidplane_SingleBossTriviallyAccepted(t *testing.T)
 // size) but still far below the setbackCenteredCoef*R=0.06 threshold must still read as within
 // tolerance.
 func TestWithinCenteredTolerance_NoiseNeverRejected(t *testing.T) {
+	t.Parallel()
 	cyl := centeredTestCylinder(t)
 	noise := 1e-9
 	if !withinCenteredTolerance(noise, cyl) {

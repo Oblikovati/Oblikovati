@@ -20,6 +20,7 @@ import (
 // TestCylindricalBossUnionIsExact seats a radius-1.5, height-3 boss on a 10×10×2 plate and checks the
 // union keeps a cylinder face and has volume 200 + π·1.5²·3.
 func TestCylindricalBossUnionIsExact(t *testing.T) {
+	t.Parallel()
 	plate, err := brep.SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)

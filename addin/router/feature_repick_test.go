@@ -51,6 +51,7 @@ func addFilletOnEdge(t *testing.T, r *Router, s *app.Session, edge string) uint6
 
 // TestFeatureSlotsReported: features.get reports a feature's re-pickable reference slots (#163).
 func TestFeatureSlotsReported(t *testing.T) {
+	t.Parallel()
 	r, s, vertical := filletBoxFixture(t)
 	id := addFilletOnEdge(t, r, s, vertical[0])
 
@@ -68,6 +69,7 @@ func TestFeatureSlotsReported(t *testing.T) {
 // TestRepickFilletAddAndClearEdges drives the #163 acceptance: add an edge to a placed fillet by
 // reference key (more geometry, slot count up), then clear it (back to the bare box).
 func TestRepickFilletAddAndClearEdges(t *testing.T) {
+	t.Parallel()
 	r, s, vertical := filletBoxFixture(t)
 	id := addFilletOnEdge(t, r, s, vertical[0])
 	faces1 := partBodyFaces(t, s) // box (6) + one rounded edge = 7
@@ -97,6 +99,7 @@ func TestRepickFilletAddAndClearEdges(t *testing.T) {
 // TestRepickExtrudeProfile drives the #163 acceptance: re-point an extrude at a different sketch
 // profile and recompute to different geometry.
 func TestRepickExtrudeProfile(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &struct{}{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","variant":"center","points":[[0,0]],"radius":"2 cm"}`, &struct{}{})
@@ -122,6 +125,7 @@ func TestRepickExtrudeProfile(t *testing.T) {
 // leaves the definition untouched (the #163 atomic-batch acceptance — nothing applies until the
 // whole batch validates).
 func TestRepickInvalidProfileLeavesUntouched(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &struct{}{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","variant":"center","points":[[0,0]],"radius":"2 cm"}`, &struct{}{})
@@ -140,6 +144,7 @@ func TestRepickInvalidProfileLeavesUntouched(t *testing.T) {
 
 // TestRepickSlotOutOfRange: a slot index past the feature's slots is a clear rejection.
 func TestRepickSlotOutOfRange(t *testing.T) {
+	t.Parallel()
 	r, s, vertical := filletBoxFixture(t)
 	id := addFilletOnEdge(t, r, s, vertical[0])
 	bad, _ := json.Marshal(wire.EditFeatureArgs{ID: id, Repick: []wire.FeatureRepick{{Slot: 9, Ref: vertical[1]}}})

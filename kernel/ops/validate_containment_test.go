@@ -52,6 +52,7 @@ func planeFaceContained(build func(bld *topo.Builder) (outer, inner []topo.Use))
 
 // TestHoleContainmentCircleInsideCircle: a small circular hole well inside a circular outer is accepted.
 func TestHoleContainmentCircleInsideCircle(t *testing.T) {
+	t.Parallel()
 	ok := planeFaceContained(func(bld *topo.Builder) ([]topo.Use, []topo.Use) {
 		return []topo.Use{circleEdgeUse(bld, 0, 0, 10)}, []topo.Use{circleEdgeUse(bld, 0, 0, 2)}
 	})
@@ -63,6 +64,7 @@ func TestHoleContainmentCircleInsideCircle(t *testing.T) {
 // TestHoleContainmentCircleCrossesOuter: an off-centre hole whose circle straddles the outer boundary is
 // a genuine protrusion — the exact circle-vs-circle crossing (not a chord) rejects it (#3478).
 func TestHoleContainmentCircleCrossesOuter(t *testing.T) {
+	t.Parallel()
 	ok := planeFaceContained(func(bld *topo.Builder) ([]topo.Use, []topo.Use) {
 		return []topo.Use{circleEdgeUse(bld, 0, 0, 10)}, []topo.Use{circleEdgeUse(bld, 9, 0, 2)}
 	})
@@ -74,6 +76,7 @@ func TestHoleContainmentCircleCrossesOuter(t *testing.T) {
 // TestHoleContainmentConcentricLargerHole: a concentric hole larger than the outer never crosses it, so
 // the point-in-region parity (not a crossing) is what rejects it.
 func TestHoleContainmentConcentricLargerHole(t *testing.T) {
+	t.Parallel()
 	ok := planeFaceContained(func(bld *topo.Builder) ([]topo.Use, []topo.Use) {
 		return []topo.Use{circleEdgeUse(bld, 0, 0, 10)}, []topo.Use{circleEdgeUse(bld, 0, 0, 20)}
 	})
@@ -88,6 +91,7 @@ func TestHoleContainmentConcentricLargerHole(t *testing.T) {
 // 10·(1−cos(π/64)) ≈ 0.0121, so the inscribed radius dips to ≈9.988. A coarse chord test could read the
 // hole as poking out; the exact conic test accepts it, because 9.99 < 10 exactly.
 func TestHoleContainmentCurvedChordDiscrimination(t *testing.T) {
+	t.Parallel()
 	const outerR, holeR = 10.0, 9.99
 	sagitta := outerR * (1 - math.Cos(math.Pi/64))
 	if holeR <= outerR-sagitta || holeR >= outerR {
@@ -105,6 +109,7 @@ func TestHoleContainmentCurvedChordDiscrimination(t *testing.T) {
 // TestHoleContainmentArcHoleInside: a D-shaped hole (a semicircular arc closed by its diameter) inside a
 // circular outer exercises the exact arc-vs-curve path and must be contained.
 func TestHoleContainmentArcHoleInside(t *testing.T) {
+	t.Parallel()
 	ok := planeFaceContained(func(bld *topo.Builder) ([]topo.Use, []topo.Use) {
 		arc, err := geom.NewArc3d(m.P3(0, 0, 0), m.V3(0, 0, 1), m.V3(1, 0, 0), 2, 0, math.Pi)
 		if err != nil {
@@ -124,6 +129,7 @@ func TestHoleContainmentArcHoleInside(t *testing.T) {
 // TestHoleContainmentSquareHoleInSquare: the polygon-only path stays correct — a small square hole is
 // contained, and one straddling the outer wall is rejected.
 func TestHoleContainmentSquareHoleInSquare(t *testing.T) {
+	t.Parallel()
 	outer := func(bld *topo.Builder) []topo.Use {
 		return polygonLoopUses(bld, []m.Point3{m.P3(-10, -10, 0), m.P3(10, -10, 0), m.P3(10, 10, 0), m.P3(-10, 10, 0)})
 	}
@@ -150,6 +156,7 @@ func hitCount(a, b geom.Curve2) int { return len(curveCurve2dHits(a, b, 1e-9)) }
 // TestCurve2dHitsSegmentAgainstCircleBothOrders: a segment through a circle's centre cuts it twice,
 // whichever operand carries the segment.
 func TestCurve2dHitsSegmentAgainstCircleBothOrders(t *testing.T) {
+	t.Parallel()
 	seg := geom.NewLineSegment2d(m.P2(-5, 0), m.P2(5, 0))
 	circ := geom.NewCircle2d(m.P2(0, 0), 2)
 	if got := hitCount(seg, circ); got != 2 {
@@ -163,6 +170,7 @@ func TestCurve2dHitsSegmentAgainstCircleBothOrders(t *testing.T) {
 // TestCurve2dHitsInfiniteLineAgainstCircle: an unbounded line reaches the circle even when a segment of
 // the same support would not.
 func TestCurve2dHitsInfiniteLineAgainstCircle(t *testing.T) {
+	t.Parallel()
 	ln, err := geom.NewLine2d(m.P2(-50, 1), m.V2(1, 0))
 	if err != nil {
 		t.Fatalf("NewLine2d: %v", err)
@@ -179,6 +187,7 @@ func TestCurve2dHitsInfiniteLineAgainstCircle(t *testing.T) {
 // TestCurve2dHitsArcKeepsOnlyItsSweep: an arc is intersected through its SUPPORT circle, so the hit on
 // the half it does not cover is dropped — the discrimination a chorded arc would lose.
 func TestCurve2dHitsArcKeepsOnlyItsSweep(t *testing.T) {
+	t.Parallel()
 	upper := geom.NewArc2d(m.P2(0, 0), 2, 0, math.Pi) // the y ≥ 0 half of the r=2 circle
 	seg := geom.NewLineSegment2d(m.P2(0, -5), m.P2(0, 5))
 	hits := curveCurve2dHits(upper, seg, 1e-9)
@@ -195,6 +204,7 @@ func TestCurve2dHitsArcKeepsOnlyItsSweep(t *testing.T) {
 
 // TestCurve2dHitsCircleAgainstArc: the circle branch is exact for a curved second operand too.
 func TestCurve2dHitsCircleAgainstArc(t *testing.T) {
+	t.Parallel()
 	arc := geom.NewArc2d(m.P2(3, 0), 2, 0, math.Pi)
 	circ := geom.NewCircle2d(m.P2(0, 0), 2)
 	if got := hitCount(circ, arc); got != 1 {
@@ -208,6 +218,7 @@ func TestCurve2dHitsCircleAgainstArc(t *testing.T) {
 // TestCurve2dHitsEllipsePairFallback: two ellipses have no closed form here, so one is sampled. A
 // planar line/arc/circle boundary never reaches this path; the crossing count still has to be right.
 func TestCurve2dHitsEllipsePairFallback(t *testing.T) {
+	t.Parallel()
 	wide, err := geom.NewEllipseFull2d(m.P2(0, 0), m.V2(1, 0), 4, 1)
 	if err != nil {
 		t.Fatalf("NewEllipseFull2d: %v", err)
@@ -224,6 +235,7 @@ func TestCurve2dHitsEllipsePairFallback(t *testing.T) {
 // TestCoincidentPoints2dFindsTheTouchVertices: the shared vertices of two loops are the points at
 // which they may kiss; a vertex only one loop has is not one.
 func TestCoincidentPoints2dFindsTheTouchVertices(t *testing.T) {
+	t.Parallel()
 	hole := []m.Point2{m.P2(10, 0), m.P2(3, 4)}
 	outer := []m.Point2{m.P2(10, 1e-12), m.P2(-7, 2)}
 	got := coincidentPoints2d(hole, outer, 1e-9)
@@ -238,6 +250,7 @@ func TestCoincidentPoints2dFindsTheTouchVertices(t *testing.T) {
 // TestCurveMidParamOfUnboundedDomain: an unbounded domain has no finite midpoint, so the probe falls
 // back to 0.5 instead of an infinity.
 func TestCurveMidParamOfUnboundedDomain(t *testing.T) {
+	t.Parallel()
 	ln, err := geom.NewLine2d(m.P2(0, 0), m.V2(1, 0))
 	if err != nil {
 		t.Fatalf("NewLine2d: %v", err)
@@ -253,6 +266,7 @@ func TestCurveMidParamOfUnboundedDomain(t *testing.T) {
 // TestRegionResolution2dHandlesUnboundedEdge: the tolerance scale sizes itself from an unbounded edge's
 // [0,1] substitute domain, never from an infinite point.
 func TestRegionResolution2dHandlesUnboundedEdge(t *testing.T) {
+	t.Parallel()
 	ln, err := geom.NewLine2d(m.P2(0, 0), m.V2(1, 0))
 	if err != nil {
 		t.Fatalf("NewLine2d: %v", err)
@@ -299,6 +313,7 @@ func circleEdgeUseAimed(bld *topo.Builder, cx, cy, r, refX, refY float64) topo.U
 // chords really do cross near the touch; and a full circle, whose projected seam sits wherever the
 // chart's u-axis points, so containment may not be decided from the parameterization.
 func TestHoleContainmentInternallyTangentHole(t *testing.T) {
+	t.Parallel()
 	arcs := planeFaceContained(func(bld *topo.Builder) ([]topo.Use, []topo.Use) {
 		return []topo.Use{arcEdgeUse(bld, 0, 0, 10)}, []topo.Use{arcEdgeUse(bld, 5, 0, 5)}
 	})
@@ -318,6 +333,7 @@ func TestHoleContainmentInternallyTangentHole(t *testing.T) {
 // at a point its topology does not carry IS malformed, and the check must say so — the exemption is for
 // a shared VERTEX, never for a bare coincidence of geometry.
 func TestHoleContainmentUnrecordedTangencyIsMalformed(t *testing.T) {
+	t.Parallel()
 	ok := planeFaceContained(func(bld *topo.Builder) ([]topo.Use, []topo.Use) {
 		return []topo.Use{circleEdgeUseAimed(bld, 0, 0, 10, 1, 0)}, []topo.Use{circleEdgeUseAimed(bld, 5, 0, 5, 0, 1)}
 	})
@@ -329,6 +345,7 @@ func TestHoleContainmentUnrecordedTangencyIsMalformed(t *testing.T) {
 // TestHoleContainmentEscapingTangentHole: the same touching configuration pushed OUT — the hole circle
 // now straddles the outer boundary, so the shared vertex must not excuse the real crossings.
 func TestHoleContainmentEscapingTangentHole(t *testing.T) {
+	t.Parallel()
 	ok := planeFaceContained(func(bld *topo.Builder) ([]topo.Use, []topo.Use) {
 		return []topo.Use{circleEdgeUse(bld, 0, 0, 10)}, []topo.Use{circleEdgeUse(bld, 8, 0, 5)}
 	})

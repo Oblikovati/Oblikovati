@@ -51,6 +51,7 @@ func sheetVolume(body *topo.Body) float64 {
 // TestCornerChamferRemovesCorner a corner chamfer cuts a triangular notch off the sheet
 // corner: the result is a valid watertight solid whose volume drops by setback²/2 · thickness.
 func TestCornerChamferRemovesCorner(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	edge := verticalCornerEdge(t, fs.Result()[0])
 	pf := NewSheetMetalCornerFeatures(fs).Add(&SheetMetalCornerDefinition{
@@ -76,6 +77,7 @@ func TestCornerChamferRemovesCorner(t *testing.T) {
 // TestCornerRoundRemovesCorner a corner round rolls a fillet off the corner: a valid solid
 // whose volume drops by the corner sliver (r² − πr²/4) · thickness.
 func TestCornerRoundRemovesCorner(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	edge := verticalCornerEdge(t, fs.Result()[0])
 	const r = 1.0
@@ -99,6 +101,7 @@ func TestCornerRoundRemovesCorner(t *testing.T) {
 // TestCornerChamferTwoDistances a two-distance chamfer cuts an ASYMMETRIC triangle (d1 on one
 // face, d2 on the other): the volume drops by d1·d2/2·thickness.
 func TestCornerChamferTwoDistances(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	edge := verticalCornerEdge(t, fs.Result()[0])
 	const d1, d2 = 1.0, 0.5
@@ -123,6 +126,7 @@ func TestCornerChamferTwoDistances(t *testing.T) {
 // TestCornerChamferDistanceAndAngle a distance-and-angle chamfer sets the second setback from the
 // angle (d2 = d1·tan θ), so the volume drops by d1·(d1·tanθ)/2·thickness.
 func TestCornerChamferDistanceAndAngle(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	edge := verticalCornerEdge(t, fs.Result()[0])
 	const d1 = 1.0
@@ -148,6 +152,7 @@ func TestCornerChamferDistanceAndAngle(t *testing.T) {
 // TestCornerRoundMultipleRadii a corner round with two edge sets rolls a DIFFERENT radius on each
 // corner in one feature: the volume drops by both corner slivers.
 func TestCornerRoundMultipleRadii(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	edges := verticalCornerEdges(t, fs.Result()[0])
 	const r1, r2 = 1.0, 0.5
@@ -175,6 +180,7 @@ func TestCornerRoundMultipleRadii(t *testing.T) {
 
 // TestCornerRejectsBadInput a corner with no edges or a non-positive size goes sick.
 func TestCornerRejectsBadInput(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	edge := verticalCornerEdge(t, fs.Result()[0])
 	noSize := NewSheetMetalCornerFeatures(fs).Add(&SheetMetalCornerDefinition{
@@ -188,6 +194,7 @@ func TestCornerRejectsBadInput(t *testing.T) {
 
 // TestParseCornerTreatment the wire spellings resolve, with an unknown one rejected.
 func TestParseCornerTreatment(t *testing.T) {
+	t.Parallel()
 	for s, want := range map[string]CornerTreatment{"chamfer": CornerChamfer, "round": CornerRound} {
 		if got, ok := ParseCornerTreatment(s); !ok || got != want {
 			t.Errorf("ParseCornerTreatment(%q) = (%d,%v), want (%d,true)", s, got, ok, want)
@@ -200,6 +207,7 @@ func TestParseCornerTreatment(t *testing.T) {
 
 // TestCornerDefinitionAndKind the accessors return the recipe.
 func TestCornerDefinitionAndKind(t *testing.T) {
+	t.Parallel()
 	def := &SheetMetalCornerDefinition{Treatment: CornerRound}
 	f := &SheetMetalCornerFeature{def: def}
 	if f.Definition() != def || f.Kind() != "sheet-metal-corner" {
@@ -209,6 +217,7 @@ func TestCornerDefinitionAndKind(t *testing.T) {
 
 // TestCornerRoundTrip the corner recipe (edges + treatment + size) marshals and restores.
 func TestCornerRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewSheetMetalCornerFeatures(fs).Add(&SheetMetalCornerDefinition{
 		EdgeKeys: [][]byte{[]byte("k1"), []byte("k2")}, Treatment: CornerRound, Size: func() float64 { return 0.4 },
@@ -236,6 +245,7 @@ func TestCornerRoundTrip(t *testing.T) {
 // TestCornerVariantRoundTrip a two-distance chamfer and a multi-set round both persist their
 // variant fields and restore them.
 func TestCornerVariantRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewSheetMetalCornerFeatures(fs).Add(&SheetMetalCornerDefinition{
 		EdgeKeys: [][]byte{[]byte("k1")}, Treatment: CornerChamfer, ChamferType: types.ChamferTwoDistances,
@@ -275,6 +285,7 @@ func TestCornerVariantRoundTrip(t *testing.T) {
 
 // TestCornerMissingPayload restoring a corner record with no payload errors.
 func TestCornerMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreSheetMetalCorner(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreSheetMetalCorner(nil) must error")
 	}
@@ -282,6 +293,7 @@ func TestCornerMissingPayload(t *testing.T) {
 
 // TestCornerNoEdges a corner with no edge keys goes sick.
 func TestCornerNoEdges(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	pf := NewSheetMetalCornerFeatures(fs).Add(&SheetMetalCornerDefinition{Treatment: CornerChamfer, Size: func() float64 { return 1 }})
 	fs.Recompute()

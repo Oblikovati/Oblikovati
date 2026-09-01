@@ -22,6 +22,7 @@ func probeToolbar(command string) wire.MiniToolbarSpec {
 }
 
 func TestMiniToolbarSetUpdateRemove(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.SetMiniToolbar(probeToolbar("")); err != nil {
 		t.Fatalf("SetMiniToolbar: %v", err)
@@ -47,6 +48,7 @@ func TestMiniToolbarSetUpdateRemove(t *testing.T) {
 }
 
 func TestMiniToolbarChangeAndCommitEvents(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	var changes []MiniToolbarControlChanged
 	var commits []MiniToolbarCommitted
@@ -102,6 +104,7 @@ func (FakeMiniToolbarTool) Commit(*Session) error     { return nil }
 func (FakeMiniToolbarTool) Cancel(*Session)           {}
 
 func TestCommandBoundMiniToolbarDiesWithTool(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.StartTool(FakeMiniToolbarTool{})
 	if err := s.SetMiniToolbar(probeToolbar("Sim.Probe")); err != nil {

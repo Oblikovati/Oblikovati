@@ -9,6 +9,7 @@ import (
 )
 
 func TestElevateThenReduceRoundTrip(t *testing.T) {
+	t.Parallel()
 	c := sampleCubicCurve(t)
 	elevated, err := c.ElevateDegree(1)
 	if err != nil {
@@ -31,6 +32,7 @@ func TestElevateThenReduceRoundTrip(t *testing.T) {
 }
 
 func TestReduceDegreeBezierRoundTrip(t *testing.T) {
+	t.Parallel()
 	c := quarterCircleNURBS(t) // degree 2 Bézier
 	elevated, err := c.ElevateDegree(1)
 	if err != nil {
@@ -52,6 +54,7 @@ func TestReduceDegreeBezierRoundTrip(t *testing.T) {
 }
 
 func TestReduceDegreeRejectsIrreducible(t *testing.T) {
+	t.Parallel()
 	// A genuine cubic (its degree-3 term is essential) cannot drop to a quadratic at a
 	// tight tolerance.
 	c := sampleCubicCurve(t)
@@ -63,6 +66,7 @@ func TestReduceDegreeRejectsIrreducible(t *testing.T) {
 }
 
 func TestReduceDegreeRejectsDegreeOne(t *testing.T) {
+	t.Parallel()
 	c, err := NewBSplineCurveUniformWeights(
 		1,
 		[]math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0)},
@@ -77,6 +81,7 @@ func TestReduceDegreeRejectsDegreeOne(t *testing.T) {
 }
 
 func TestReduceDegree2dRoundTrip(t *testing.T) {
+	t.Parallel()
 	c, err := NewBSplineCurve2dUniformWeights(
 		2,
 		[]math.Point2{math.P2(0, 0), math.P2(1, 2), math.P2(3, 0), math.P2(4, 1)},
@@ -106,6 +111,7 @@ func TestReduceDegree2dRoundTrip(t *testing.T) {
 }
 
 func TestElevateThenReduceSurfaceRoundTrip(t *testing.T) {
+	t.Parallel()
 	s := sampleQuadraticSurface(t)
 	elevated, err := s.ElevateDegreeU(1)
 	if err != nil {

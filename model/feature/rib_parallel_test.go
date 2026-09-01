@@ -46,6 +46,7 @@ func buildRib(t *testing.T, dir RibDirection) *topo.Body {
 // the same path the two walls SWAP their thickness and depth between the plane normal (Z) and the
 // in-plane perpendicular (Y). A parallel rib mistranslated as a normal one comes out rotated 90°.
 func TestRibParallelRotatesTheWall90(t *testing.T) {
+	t.Parallel()
 	normal, parallel := buildRib(t, RibNormalToSketch), buildRib(t, RibParallelToSketch)
 	for name, b := range map[string]*topo.Body{"normal": normal, "parallel": parallel} {
 		if r := ops.Validate(b); !r.Valid || !b.IsSolid() {
@@ -69,6 +70,7 @@ func TestRibParallelRotatesTheWall90(t *testing.T) {
 // is normal to the sketch plane, so a parallel rib with a draft is refused rather than silently
 // dropping it.
 func TestRibParallelRefusesTaper(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
@@ -86,6 +88,7 @@ func TestRibParallelRefusesTaper(t *testing.T) {
 // TestRibDraftProfileEndsToggle: DraftProfileEnds defaults to drafted ends (nil), the square-ends
 // case under a draft is refused honestly (not yet modelled), and without a draft the flag is moot.
 func TestRibDraftProfileEndsToggle(t *testing.T) {
+	t.Parallel()
 	square := false
 	drafted := true
 	build := func(draftEnds *bool, draft float64) *PartFeature {
@@ -118,6 +121,7 @@ func TestRibDraftProfileEndsToggle(t *testing.T) {
 // plane, perpendicular to the path, toward the side the material is on, until it lands. A profile
 // above a box grows DOWN onto the box top.
 func TestRibParallelToNextGrowsOntoThePart(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(6), 0, ops.NewBody, func() float64 { return 4 })
 	fs.Recompute()
@@ -156,6 +160,7 @@ func TestRibParallelToNextGrowsOntoThePart(t *testing.T) {
 // and restores, a legacy recipe (no direction) reads back as the normal/web default, and an unknown
 // direction is a precise error rather than a silent 90° rotation.
 func TestRibDirectionRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := straightPathSketch(4)
 	square := false
 	def := &RibDefinition{

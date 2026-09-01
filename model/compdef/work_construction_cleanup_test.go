@@ -12,6 +12,7 @@ import (
 // construction plane with no consumer is never in the snapshot; once a sketch hosts it, it is; and
 // removing that sketch then pruning the snapshot tombstones the plane — its last consumer went (#1849).
 func TestConstructionConsumerSnapshotAndPrune(t *testing.T) {
+	t.Parallel()
 	def := NewPartComponentDefinition()
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 5 })
 	wp.SetConstruction(true)
@@ -41,6 +42,7 @@ func TestConstructionConsumerSnapshotAndPrune(t *testing.T) {
 // TestPruneRetainsWithSketchConsumer: a construction plane still hosting a sketch is retained by
 // PruneConstructionOrphans — datumHasConsumer sees the live sketch (#1849).
 func TestPruneRetainsWithSketchConsumer(t *testing.T) {
+	t.Parallel()
 	def := NewPartComponentDefinition()
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 5 })
 	wp.SetConstruction(true)
@@ -60,6 +62,7 @@ func TestPruneRetainsWithSketchConsumer(t *testing.T) {
 // datum reference: a ref matches only as a whole token, never as the prefix of a longer ref
 // ("plane/5" must not match inside "plane/50") nor inside a larger identifier (#1849).
 func TestRefTokenAppears(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		hay  string
 		ref  string

@@ -29,6 +29,7 @@ func consumerPatchLoops(sks ...*sketch.Sketch) *BoundaryPatchLoops {
 // on, in definition order, with no nil entries and no duplicates (issue #132 — the browser
 // nests each consumed sketch under its feature exactly once).
 func TestConsumedSketchesPerFeatureKind(t *testing.T) {
+	t.Parallel()
 	skA, skB := consumerSketch(), consumerSketch()
 	apex := math.P3(0, 0, 5)
 	cases := []struct {
@@ -104,6 +105,7 @@ func TestConsumedSketchesPerFeatureKind(t *testing.T) {
 // feature when it is a SketchConsumer and reports nil for a kind that consumes no sketch
 // (a dress-up), so the browser can call it uniformly on every tree node.
 func TestPartFeatureConsumedSketchesForwards(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := consumerSketch()
 	pf := fs.Add(&ExtrudeFeature{def: &ExtrudeDefinition{Sketch: sk}})

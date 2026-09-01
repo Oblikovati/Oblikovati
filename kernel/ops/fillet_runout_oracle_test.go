@@ -203,6 +203,7 @@ const runoutStationTol = 1e-9
 // locus on the inner host reaches the inner boss's footprint, NOT where that footprint crosses the plain
 // fillet's contact line, and the tiling used to place it 32% out on S1 and 56% out on S4.
 func TestRunoutBandStationsMatchOCCT(t *testing.T) {
+	t.Parallel()
 	for _, c := range runoutOracleCases() {
 		t.Run(c.name, func(t *testing.T) {
 			tl, _ := runoutOracleTiling(t, c)
@@ -234,6 +235,7 @@ const runoutAreaRelTol = 1e-3
 // 26.59, i.e. +44.7% / −25.1%. It also pins the provider KIND — a run-out band that silently fell back
 // to a Coons fill would still weld, and that is exactly the regression this whole slice exists to stop.
 func TestRunoutPatchSurfaceMatchesOCCTPerFace(t *testing.T) {
+	t.Parallel()
 	for _, c := range runoutOracleCases() {
 		t.Run(c.name, func(t *testing.T) {
 			tl, res := runoutOracleTiling(t, c)
@@ -273,6 +275,7 @@ const runoutInteriorTolFrac = 1e-4
 // that happens to integrate right — which is precisely how S7 certified clean while its flank was 18.5%
 // of r away from this surface (coons4-audit.md §B: −0.03% in area, 0.555 absolute in shape).
 func TestRunoutPatchInteriorMatchesOCCTSurface(t *testing.T) {
+	t.Parallel()
 	for _, c := range runoutOracleCases() {
 		t.Run(c.name, func(t *testing.T) {
 			tl, res := runoutOracleTiling(t, c)

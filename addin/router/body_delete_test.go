@@ -39,6 +39,7 @@ func twoBodyPartSession(t *testing.T) (*Router, *app.Session, *compdef.PartCompo
 // TestBodyDeleteRemovesOneBody drives the #1078 delete acceptance: two bodies, delete the first,
 // one remains and the call returns the refreshed list.
 func TestBodyDeleteRemovesOneBody(t *testing.T) {
+	t.Parallel()
 	r, s, def := twoBodyPartSession(t)
 	if n := len(def.SurfaceBodies().All()); n != 2 {
 		t.Fatalf("setup: %d bodies, want 2", n)
@@ -57,6 +58,7 @@ func TestBodyDeleteRemovesOneBody(t *testing.T) {
 // TestBodyDeleteIsRecordedInHistory: delete is a history feature, so it appends a recipe step
 // (making it undoable / re-computable).
 func TestBodyDeleteIsRecordedInHistory(t *testing.T) {
+	t.Parallel()
 	r, s, def := twoBodyPartSession(t)
 	before := def.Features().Count()
 	call(t, r, s, "body.delete", `{"bodyIndex":1}`, &wire.BodyListResult{})
@@ -67,6 +69,7 @@ func TestBodyDeleteIsRecordedInHistory(t *testing.T) {
 
 // TestBodyDeleteBadIndexFails: an out-of-range body index is a rejection.
 func TestBodyDeleteBadIndexFails(t *testing.T) {
+	t.Parallel()
 	r, s, _ := twoBodyPartSession(t)
 	if _, err := r.Handle(s, "body.delete", []byte(`{"bodyIndex":5}`)); err == nil {
 		t.Error("body.delete with an out-of-range index should fail")

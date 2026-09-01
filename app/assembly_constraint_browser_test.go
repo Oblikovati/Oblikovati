@@ -16,6 +16,7 @@ import (
 // AssemblyConstraintHandle (M12-F01) — the order-of-creation list the user reads beside the
 // parts.
 func TestAssemblyBrowserListsConstraintsInOrder(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	placedWidget(t, s, asm, "widget:2")
@@ -53,6 +54,7 @@ func TestAssemblyBrowserListsConstraintsInOrder(t *testing.T) {
 // TestConstraintBrowserLabelSuppressed: a suppressed constraint's row is annotated, like an
 // occurrence's.
 func TestConstraintBrowserLabelSuppressed(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	placedWidget(t, s, asm, "widget:2")

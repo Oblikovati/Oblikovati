@@ -10,6 +10,7 @@ import (
 )
 
 func TestNopMainsSocketHolesCSG(t *testing.T) {
+	t.Parallel()
 	body := box(-1.8, -1.2, 0, 3.6, 2.4, 0.12)
 	for _, x := range []float64{-1.25, 1.25} {
 		body = cutOrFatal(t, body, cylinderZAt(x, 0, -0.05, 0.2, 0.16, "mains-socket-screw"), "mains socket screw")

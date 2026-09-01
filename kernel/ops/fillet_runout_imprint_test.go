@@ -79,6 +79,7 @@ func runoutImprintCircle(center math.Point2, r float64, nodes [2]crossing, side 
 func unitRes() Resolution { return ResolutionForSize(1) }
 
 func TestSolveImprint_CircleCrossing(t *testing.T) {
+	t.Parallel()
 	im := runoutImprintCircle(math.P2(0, 0), 8, bandNodes(-4), 1)
 	cut, ok := solveImprint(im, unitRes())
 	if !ok {
@@ -97,6 +98,7 @@ func TestSolveImprint_CircleCrossing(t *testing.T) {
 }
 
 func TestSolveImprint_TangentRejected(t *testing.T) {
+	t.Parallel()
 	im := runoutImprintCircle(math.P2(0, 0), 8, bandNodes(-8), 1)
 	if _, ok := solveImprint(im, unitRes()); ok {
 		t.Fatal("tangential line must not imprint")
@@ -108,6 +110,7 @@ func TestSolveImprint_TangentRejected(t *testing.T) {
 // outboard (away-from-band) arc is the major arc and must stay entirely at y > -4 (except at
 // its endpoints, which sit exactly on the band).
 func TestSolveImprint_ArcIsOutboardMajorArc(t *testing.T) {
+	t.Parallel()
 	im := runoutImprintCircle(math.P2(0, 0), 8, bandNodes(-4), 1)
 	cut, ok := solveImprint(im, unitRes())
 	if !ok {
@@ -135,6 +138,7 @@ func TestSolveImprint_ArcIsOutboardMajorArc(t *testing.T) {
 // arc" heuristic would have wrongly returned the huge fillet-side arc here. r=8, center-to-band
 // distance=2 ⇒ half-angle=arccos(2/8)≈75.52°, so the host-side cap's sweep is ≈151.04° < π.
 func TestSolveImprint_DeepDipSelectsMinorOutboardArc(t *testing.T) {
+	t.Parallel()
 	im := runoutImprintCircle(math.P2(0, -6), 8, bandNodes(-4), 1)
 	cut, ok := solveImprint(im, unitRes())
 	if !ok {
@@ -161,6 +165,7 @@ func TestSolveImprint_DeepDipSelectsMinorOutboardArc(t *testing.T) {
 // the REAL S1 substrate (runoutFixtureCrossingBoss + detectRunouts, not a hand-built fixture) so
 // the footprint geometry is genuinely Arc3d, not a synthetic geom.Circle standing in for it.
 func TestSolveImprintArc3d(t *testing.T) {
+	t.Parallel()
 	ef, res := runoutFixtureCrossingBoss(t)
 	imprints := detectRunouts(ef, res)
 	if len(imprints) != 2 {
@@ -194,6 +199,7 @@ func TestSolveImprintArc3d(t *testing.T) {
 }
 
 func TestLineCircleRoots_ExactChord(t *testing.T) {
+	t.Parallel()
 	b := boundaryLine2{origin: math.P2(-100, -4), dir: math.V2(1, 0)}
 	t0, t1, ok := lineCircleRoots(b, math.P2(0, 0), 8, 100)
 	if !ok {
@@ -210,6 +216,7 @@ func TestLineCircleRoots_ExactChord(t *testing.T) {
 }
 
 func TestLineCircleRoots_TangentRejected(t *testing.T) {
+	t.Parallel()
 	b := boundaryLine2{origin: math.P2(-100, -8), dir: math.V2(1, 0)}
 	if _, _, ok := lineCircleRoots(b, math.P2(0, 0), 8, 100); ok {
 		t.Fatal("tangent chord must be rejected")

@@ -19,6 +19,7 @@ import (
 // contact at the seam sits ON the inner boss's footprint conic (φ=0), which is why the flank and the
 // central band share that corner and why bSeam still doubles as the inner footprint endpoint.
 func TestSeamCornerLiesOnInnerFootprint(t *testing.T) {
+	t.Parallel()
 	tl := s1Tiling(t)
 	for name, p := range map[string]math.Point3{"bSeamLo": tl.bSeamLo, "bSeamHi": tl.bSeamHi} {
 		phi, ok := footprintMembership(tl.inner, p)
@@ -35,6 +36,7 @@ func TestSeamCornerLiesOnInnerFootprint(t *testing.T) {
 // provide: every station of every band has BOTH feet exactly at the ball radius from its centre — the
 // algebraic statement that the lofted surface is the envelope, checked on the real S1 tiling.
 func TestRunoutBandsAreTheRollingBallEnvelope(t *testing.T) {
+	t.Parallel()
 	tl := s1Tiling(t)
 	for name, band := range map[string]*runoutBand{"left": tl.left, "central": tl.mid, "right": tl.right} {
 		if band == nil {
@@ -74,6 +76,7 @@ func s1Tiling(t *testing.T) setbackTiling {
 // near-parallel the branch sign σ = sign(n_A·(n_B×e)) is undefined, and the solver must DECLINE rather
 // than pick one — a clamped or guessed branch would place the ball on the wrong side entirely.
 func TestSurfRstCentreDeclinesNearParallelHosts(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, -12, -3), math.V3(1, 0, 0), 3)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
@@ -97,6 +100,7 @@ func TestSurfRstCentreDeclinesNearParallelHosts(t *testing.T) {
 // than r from the offset line L_B admits NO radius-r ball, and the discriminant must not be clamped to
 // zero (which would fabricate a tangency and silently ship a wrong surface).
 func TestSurfRstCentreDeclinesUnreachableRestriction(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, -12, -3), math.V3(1, 0, 0), 3)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
@@ -113,6 +117,7 @@ func TestSurfRstCentreDeclinesUnreachableRestriction(t *testing.T) {
 // TestRstRstCentreDeclinesTooFarApart is the pitfall-2 guard: two restriction points more than 2r apart
 // have no common radius-r ball.
 func TestRstRstCentreDeclinesTooFarApart(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, -12, -3), math.V3(1, 0, 0), 3)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)

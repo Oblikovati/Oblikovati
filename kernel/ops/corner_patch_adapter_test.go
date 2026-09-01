@@ -11,6 +11,7 @@ import (
 )
 
 func TestPatchToFilletFaceCarriesSurfaceLoopsParent(t *testing.T) {
+	t.Parallel()
 	sph, _ := geom.NewSphere(math.Point3{X: 1, Y: 2, Z: 3}, 5)
 	loops := []filletLoop{{pts: []math.Point3{{X: 0}, {X: 1}, {X: 1, Y: 1}}}}
 	patch := CornerBlendPatch{Surface: sph, Loops: loops, Kind: BlendKindSphere}

@@ -16,6 +16,7 @@ import (
 // SAME input took the non-manifold ~6300-face faceted fallback before #1780. This is the mesh-level companion
 // to the B-rep-level Validate checks in boolean_crossing_cylinder_test.go.
 func TestNearPinchSnapMeshWatertight(t *testing.T) {
+	t.Parallel()
 	const r = 3.0
 	bx, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, 12)
 	bz, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r, 12)

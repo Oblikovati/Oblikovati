@@ -11,6 +11,7 @@ import (
 )
 
 func TestNopJackCSG(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "darwin" {
 		t.Skip("macOS CI currently leaves this boolean acceptance body open")
 	}

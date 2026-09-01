@@ -27,6 +27,7 @@ func cutUVFromNotched(t *testing.T) cutCylinderUV {
 // half-space x+z≤9.5 — a point below the notched top boundary survived, one above it was removed. Points are
 // mapped through the SAME paramOf the prior polyline uses, so the seam shift cancels.
 func TestBelowPriorClassifiesSurvivalAgainstFirstCut(t *testing.T) {
+	t.Parallel()
 	c := cutUVFromNotched(t)
 	poly := c.priorUVSegments()
 	// (surface point, want-survived). x+z ≤ 9.5 survived the first cut; > 9.5 was removed.
@@ -58,6 +59,7 @@ func TestBelowPriorClassifiesSurvivalAgainstFirstCut(t *testing.T) {
 // TestCutFrameHasNoTopRim: an already-cut side has no full top circle, so the frame carries the bottom rim and
 // the two seam verticals but NO second rim — the prior loop is the top boundary the arrangement uses instead.
 func TestCutFrameHasNoTopRim(t *testing.T) {
+	t.Parallel()
 	c := cutUVFromNotched(t)
 	frame := c.cutFrameSegments()
 	rims, seams := 0, 0
@@ -81,6 +83,7 @@ func TestCutFrameHasNoTopRim(t *testing.T) {
 // constraint segments so the arrangement subdivides at the surviving boundary; without them a cell straddling
 // the old notch would classify as one material and re-include removed geometry.
 func TestAssembleSegmentsIngestsPriorLoop(t *testing.T) {
+	t.Parallel()
 	c := cutUVFromNotched(t)
 	if got, want := len(c.priorUVSegments()), 1; got < want {
 		t.Fatalf("prior loop produced %d (u,v) segments; want at least the notched boundary", got)

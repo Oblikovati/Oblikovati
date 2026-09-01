@@ -27,6 +27,7 @@ func squareProfileSketch(sk *sketch.Sketch, w, h float64) {
 // TestAssemblySketchHostsClosedProfile checks the assembly hosts a sketch on a work
 // plane, shares its parameter DAG, and yields a closed profile after solving.
 func TestAssemblySketchHostsClosedProfile(t *testing.T) {
+	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	sk := asm.AddSketch(sketch.XYPlane(), nil)
 	if asm.Sketches().Count() != 1 {
@@ -51,6 +52,7 @@ func TestAssemblySketchHostsClosedProfile(t *testing.T) {
 // sketched in assembly space is extruded into a prism and cut from a participant,
 // gated against the analytic value (unit box minus a 0.5×1×0.6 pocket = 0.7).
 func TestAssemblySketchExtrudeCutsParticipant(t *testing.T) {
+	t.Parallel()
 	part := partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
 	asm := NewAssemblyComponentDefinition()
 	occ := asm.Place("box:1", part, math.Identity4())
@@ -69,6 +71,7 @@ func TestAssemblySketchExtrudeCutsParticipant(t *testing.T) {
 // TestAssemblyExtrudeJoinsBoss checks the join variant adds a profiled boss to each
 // participant (unit box plus a 0.25×0.25×0.5 stud standing on its top face).
 func TestAssemblyExtrudeJoinsBoss(t *testing.T) {
+	t.Parallel()
 	part := partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
 	asm := NewAssemblyComponentDefinition()
 	occ := asm.Place("box:1", part, math.Identity4())
@@ -92,6 +95,7 @@ func TestAssemblyExtrudeJoinsBoss(t *testing.T) {
 // drilled cylinder and cut from a participant, gated against the analytic value — a unit box
 // minus a faceted r=0.25 through-bore ≈ 1 − π·0.25² (within facet tolerance).
 func TestAssemblyRevolveBoresParticipant(t *testing.T) {
+	t.Parallel()
 	part := partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
 	asm := NewAssemblyComponentDefinition()
 	occ := asm.Place("box:1", part, math.Identity4())

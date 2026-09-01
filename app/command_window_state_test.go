@@ -5,12 +5,14 @@ package app
 import "testing"
 
 func TestCommandWindowOpenByDefault(t *testing.T) {
+	t.Parallel()
 	if !NewSession().CommandWindowOpen() {
 		t.Error("Command Window should be open by default (always-on panel)")
 	}
 }
 
 func TestCommandWindowSetAndToggle(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.SetCommandWindowOpen(false)
 	if s.CommandWindowOpen() {

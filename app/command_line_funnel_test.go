@@ -21,6 +21,7 @@ func scrollbackHas(s *Session, text string, sev cmdline.Severity) bool {
 }
 
 func TestNoticeFunnelsToCommandLine(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.SetNotice("commit failed: open profile")
 	if !scrollbackHas(s, "commit failed: open profile", cmdline.Info) {
@@ -29,6 +30,7 @@ func TestNoticeFunnelsToCommandLine(t *testing.T) {
 }
 
 func TestMessageCenterFunnelsToCommandLine(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.Messages().AddMessage("boolean failed", types.SeverityError)
 	s.Messages().AddMessage("degenerate face", types.SeverityWarning)
@@ -41,6 +43,7 @@ func TestMessageCenterFunnelsToCommandLine(t *testing.T) {
 }
 
 func TestBalloonTipFunnelsToCommandLine(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.BalloonTips().Register(BalloonTipSpec{ID: "tip1", Title: "Saved", Text: "to disk"}); err != nil {
 		t.Fatalf("Register: %v", err)
@@ -54,6 +57,7 @@ func TestBalloonTipFunnelsToCommandLine(t *testing.T) {
 }
 
 func TestPromptAskedAndAnsweredViaCommandLine(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	spec := PromptSpec{ID: "overwrite", Message: "Overwrite the file?", Buttons: []string{"Yes", "No"}}
 	if _, _, err := s.ShowPrompt(spec); err != nil {
@@ -77,6 +81,7 @@ func TestPromptAskedAndAnsweredViaCommandLine(t *testing.T) {
 }
 
 func TestPromptEmptyAcceptsDefault(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	spec := PromptSpec{ID: "q", Message: "Proceed?", Buttons: []string{"Cancel", "OK"}, Default: 1}
 	if _, _, err := s.ShowPrompt(spec); err != nil {
@@ -94,6 +99,7 @@ func TestPromptEmptyAcceptsDefault(t *testing.T) {
 }
 
 func TestPromptUnrecognizedAnswerReasks(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	spec := PromptSpec{ID: "q", Message: "Proceed?", Buttons: []string{"Yes", "No"}}
 	if _, _, err := s.ShowPrompt(spec); err != nil {

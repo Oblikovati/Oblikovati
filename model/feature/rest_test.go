@@ -11,6 +11,7 @@ import (
 
 // A raised rest pad adds a 4×4×1 landing on the top face → block volume + 16 (#486).
 func TestRestRaisesPad(t *testing.T) {
+	t.Parallel()
 	fs := embossedBlock(t) // a 10×10×2 block (vol 200)
 	rs := squareOn(planeAtZ(2), 4, 3)
 	pad := NewPlasticFeatures(fs).AddRest(rs, []int{0}, func() float64 { return 1 }, false, 0)
@@ -29,6 +30,7 @@ func TestRestRaisesPad(t *testing.T) {
 
 // A recessed rest cuts a 4×4×1 pocket into the top face → block volume − 16.
 func TestRestRecesses(t *testing.T) {
+	t.Parallel()
 	fs := embossedBlock(t)
 	rs := squareOn(planeAtZ(2), 4, 3)
 	pad := NewPlasticFeatures(fs).AddRest(rs, []int{0}, func() float64 { return 1 }, true, 0) // recessed
@@ -43,6 +45,7 @@ func TestRestRecesses(t *testing.T) {
 
 // TestRestRejectsBadDepth: a non-positive depth is a clean error.
 func TestRestRejectsBadDepth(t *testing.T) {
+	t.Parallel()
 	fs := embossedBlock(t)
 	rs := squareOn(planeAtZ(2), 4, 3)
 	pad := NewPlasticFeatures(fs).AddRest(rs, []int{0}, func() float64 { return 0 }, false, 0)

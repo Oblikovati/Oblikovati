@@ -16,6 +16,7 @@ import (
 // TestSurfaceEditCodecsRoundTrip builds one part holding every surface-edit kind, marshals and
 // restores it, and asserts each recipe's parameters survived.
 func TestSurfaceEditCodecsRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewTrimFeatures(fs).AddByPlane(math.P3(1, 2, 3), math.V3(0, 0, 1), true)
 	NewExtendFeatures(fs).Add([]byte("edge-key-\x00\xff"), func() float64 { return 2.5 })
@@ -52,6 +53,7 @@ func TestSurfaceEditCodecsRoundTrip(t *testing.T) {
 // freeform, alias-freeform, hull, core-cavity) and asserts the geometry payload survived — for the
 // sub-D cages, that the crease and subdivision level are not lost.
 func TestDirectModelCodecsRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	g := &MeshGeometry{Vertices: []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)}, Facets: [][]int{{0, 1, 2}}}
 	NewMeshFeatures(fs).Add(g)

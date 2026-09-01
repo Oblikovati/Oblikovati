@@ -16,6 +16,7 @@ import (
 // TestAnalysisMassPropertiesOverWire drives the mass-properties surface: the box-part fixture
 // (a 40×30×50 mm block) reports its volume/area/mass through the live router→model→kernel stack.
 func TestAnalysisMassPropertiesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 
 	var mp wire.MassPropertiesResult
@@ -49,6 +50,7 @@ func TestAnalysisMassPropertiesOverWire(t *testing.T) {
 // TestAnalysisMeasureOverWire drives the measurement surface: an edge of the box-part fixture
 // reports a length in {40, 30, 50} mm, and a face an area in {1200, 1500, 2000} mm².
 func TestAnalysisMeasureOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {
@@ -155,6 +157,7 @@ func measureArgs(t *testing.T, measureType, keyA, keyB string) string {
 // TestAnalysisModelHealthOverWire drives the model-health aggregation: a clean box reports ok with
 // nothing to repair, and a suppressed feature is enumerated as suppressed.
 func TestAnalysisModelHealthOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 
 	var clean wire.ModelHealthResult

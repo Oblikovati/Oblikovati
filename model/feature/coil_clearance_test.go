@@ -31,6 +31,7 @@ func pitchedCoil(t *testing.T, pitch, wire float64) (*PartFeatures, *PartFeature
 // TestCoilRefusesTurnsThatRunIntoEachOther: below the profile's own depth the coil must refuse,
 // not deliver a solid whose turns occupy the same space.
 func TestCoilRefusesTurnsThatRunIntoEachOther(t *testing.T) {
+	t.Parallel()
 	for _, pitch := range []float64{0.8, 0.5} {
 		_, pf := pitchedCoil(t, pitch, 1)
 		if pf.Health().OK() {
@@ -42,6 +43,7 @@ func TestCoilRefusesTurnsThatRunIntoEachOther(t *testing.T) {
 // TestCoilAcceptsTurnsThatClear is the other half: the gate must not blunt ordinary coils. Pitch
 // equal to the profile depth is the boundary — the turns touch but do not overlap — and must build.
 func TestCoilAcceptsTurnsThatClear(t *testing.T) {
+	t.Parallel()
 	for _, pitch := range []float64{1.0, 1.5, 2.0} {
 		fs, pf := pitchedCoil(t, pitch, 1)
 		if !pf.Health().OK() {
@@ -56,6 +58,7 @@ func TestCoilAcceptsTurnsThatClear(t *testing.T) {
 // TestCoilRefusalNamesTheProfileDepth: the message has to say what to change. A bare "coil is
 // invalid" leaves the author guessing which of pitch, revolutions or profile is at fault.
 func TestCoilRefusalNamesTheProfileDepth(t *testing.T) {
+	t.Parallel()
 	_, pf := pitchedCoil(t, 0.5, 1)
 	msg := pf.Health().Reason
 	for _, want := range []string{"passes through itself", "deep along the axis"} {
@@ -69,6 +72,7 @@ func TestCoilRefusalNamesTheProfileDepth(t *testing.T) {
 // the sketch's own extents, so a profile that is wider than it is deep is measured the way the
 // clearance actually works.
 func TestCoilProfileAxialDepthMeasuresAlongTheAxis(t *testing.T) {
+	t.Parallel()
 	// A section 6 wide across the axis and 2 deep along it (the axis here is Y).
 	section := []math.Point3{math.P3(4, 0, 0), math.P3(10, 0, 0), math.P3(10, 2, 0), math.P3(4, 2, 0)}
 	if got := coilProfileAxialDepth([][]math.Point3{section}, yAxis()); stdmath.Abs(got-2) > 1e-12 {
@@ -81,6 +85,7 @@ func TestCoilProfileAxialDepthMeasuresAlongTheAxis(t *testing.T) {
 // than the profile is deep and still never touch itself. A "rise must beat the profile depth" rule
 // would refuse real conical springs.
 func TestTaperedCoilMayRiseLessThanItIsDeep(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	// Taper 0.9 rad moves each turn tan(0.9)*0.8 = 1.007 outward — just past the profile's own
 	// 1.0 radial width — while the rise stays 0.8, below the profile's 1.0 depth. Measured: 0.6 rad
@@ -99,6 +104,7 @@ func TestTaperedCoilMayRiseLessThanItIsDeep(t *testing.T) {
 // TestSurfaceCoilIsGatedToo: an open coiled sheet that passes through itself is just as wrong as a
 // solid one, and takes the same path through coilTool.
 func TestSurfaceCoilIsGatedToo(t *testing.T) {
+	t.Parallel()
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	s.Circles().AddByCenterRadius(math.P2(4, 0), 0.5)
 	fs := NewPartFeatures(nil)

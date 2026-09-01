@@ -20,6 +20,7 @@ import (
 // rail sketch re-solved to its new length while the swept body silently kept the old one (the
 // resized NopSCADlib tubing measured its pre-edit volume).
 func TestSweepPathParameterEditResweeps(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	if _, err := def.Parameters().AddUserParameter("rail", "20 mm"); err != nil {
 		t.Fatalf("AddUserParameter: %v", err)

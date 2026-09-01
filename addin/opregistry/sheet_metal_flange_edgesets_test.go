@@ -39,6 +39,7 @@ func topXEdgeKeys(t *testing.T, def *compdef.PartComponentDefinition) []string {
 // edgeSets collection, each with its own edges and width, must reach the definition and build a
 // merged solid.
 func TestFlangeEdgeSetsReachTheDefinition(t *testing.T) {
+	t.Parallel()
 	s, _ := seedSheetMetalSheet(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	keys := topXEdgeKeys(t, def)

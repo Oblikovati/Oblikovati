@@ -34,6 +34,7 @@ func makeConstructionPlaneWithSketch(t *testing.T, r *Router, s *app.Session, co
 // TestConstructionPlaneAutoDeletesWithLastConsumer: a construction work plane hosting a single
 // sketch is auto-deleted when that sketch (its last consumer) is deleted (#1849).
 func TestConstructionPlaneAutoDeletesWithLastConsumer(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	pl, sketchIndex := makeConstructionPlaneWithSketch(t, r, s, true)
 	if !planeListed(t, r, s, pl.Ref) {
@@ -49,6 +50,7 @@ func TestConstructionPlaneAutoDeletesWithLastConsumer(t *testing.T) {
 // TestNonConstructionPlaneSurvivesConsumerDelete: a plain (non-construction) work plane is never
 // auto-deleted — deleting its sketch leaves the datum in place (#1849).
 func TestNonConstructionPlaneSurvivesConsumerDelete(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	pl, sketchIndex := makeConstructionPlaneWithSketch(t, r, s, false)
 	var ok wire.OKResult
@@ -62,6 +64,7 @@ func TestNonConstructionPlaneSurvivesConsumerDelete(t *testing.T) {
 // (a work axis normal to it) is retained even when a sketch on it is deleted — the datum consumer
 // still references it (#1849).
 func TestConstructionPlaneRetainedByDatumConsumer(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	pl, sketchIndex := makeConstructionPlaneWithSketch(t, r, s, true)
 	// A work point + axis normal to the construction plane keeps consuming it after the sketch goes.
@@ -82,6 +85,7 @@ func TestConstructionPlaneRetainedByDatumConsumer(t *testing.T) {
 // scan sees the feature still holds "plane/N" — and is auto-deleted only once the split too is gone.
 // This is the critical safety property: a feature-consumed datum is never wrongly pruned (#1849).
 func TestConstructionPlaneRetainedByFeatureConsumer(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t) // a box (sketch0 + extrude); all features marshalable
 	var pl wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"20 mm","construction":true}`, &pl)

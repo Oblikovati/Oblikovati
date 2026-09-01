@@ -16,6 +16,7 @@ import (
 // 4³ interior (cavity included) as inside, and the void shell treats only its own
 // small 2³ region as inside. That distinction is the point of this test.
 func TestShellContainmentClassifiesSingleShell(t *testing.T) {
+	t.Parallel()
 	body := cavityBody(t)
 	q := DefaultQuality()
 

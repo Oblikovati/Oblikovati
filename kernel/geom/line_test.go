@@ -10,6 +10,7 @@ import (
 )
 
 func TestLinePointAndDomain(t *testing.T) {
+	t.Parallel()
 	l, err := NewLine(math.P3(1, 0, 0), math.V3(0, 0, 2)) // dir normalized to +Z
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -27,12 +28,14 @@ func TestLinePointAndDomain(t *testing.T) {
 }
 
 func TestNewLineZeroDirFails(t *testing.T) {
+	t.Parallel()
 	if _, err := NewLine(math.P3(0, 0, 0), math.V3(0, 0, 0)); err == nil {
 		t.Fatal("expected error for zero direction")
 	}
 }
 
 func TestLineSegmentEvaluation(t *testing.T) {
+	t.Parallel()
 	s := NewLineSegment(math.P3(0, 0, 0), math.P3(3, 4, 0))
 	if got := s.PointAt(0); got != (math.Point3{}) {
 		t.Errorf("PointAt(0) = %v, want origin", got)
@@ -47,6 +50,7 @@ func TestLineSegmentEvaluation(t *testing.T) {
 }
 
 func TestLine2dThroughAndSegment(t *testing.T) {
+	t.Parallel()
 	l, err := Line2dThrough(math.P2(0, 0), math.P2(0, 5))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

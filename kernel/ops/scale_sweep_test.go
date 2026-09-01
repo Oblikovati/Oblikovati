@@ -26,6 +26,7 @@ import (
 //
 // Scales are the cm value of one unit: 1 µm = 1e-4 cm … 1 km = 1e5 cm.
 func TestScaleSweepInvariance(t *testing.T) {
+	t.Parallel()
 	scales := []struct {
 		name string
 		s    float64
@@ -123,6 +124,7 @@ func longestVerticalEdge(t *testing.T, b *topo.Body, s float64) []byte {
 // the coordinate ULP itself exceeds a usable feature tolerance and corrupts the geometry — a
 // working-scale-storage concern (ADR-0042 §Phase 2), orthogonal to #1399's relative tolerances.
 func TestFarFromOriginDrilledPlateWatertight(t *testing.T) {
+	t.Parallel()
 	const r = 1.5
 	const wantVol = 20*20*6 - stdmath.Pi*r*r*6 // analytic slab − πr²·thickness
 	for _, off := range []float64{0, 1e4, 1e6} {
@@ -158,6 +160,7 @@ func TestFarFromOriginDrilledPlateWatertight(t *testing.T) {
 // at each scale is already a solid; re-sewing it must keep it a watertight solid rather than
 // rejecting or over-merging it because an absolute 1e-4 cm gap no longer suits the size.
 func TestScaleSweepSewDefaultGap(t *testing.T) {
+	t.Parallel()
 	for _, sc := range []struct {
 		name string
 		s    float64

@@ -40,6 +40,7 @@ func holeDefAfter(t *testing.T, s *app.Session, args map[string]any) *feature.Ho
 // TestTappedCounterboreIsExpressible is the point of splitting the seat from the tap: before, the
 // seat enum carried "tapped", so asking for a counterbore that is ALSO tapped was impossible.
 func TestTappedCounterboreIsExpressible(t *testing.T) {
+	t.Parallel()
 	s, top := boxWithTopFace(t)
 	def := holeDefAfter(t, s, map[string]any{
 		"faceRef": top, "type": "counterbore", "diameter": "5 mm", "depth": "8 mm",
@@ -57,6 +58,7 @@ func TestTappedCounterboreIsExpressible(t *testing.T) {
 // TestLegacyTappedTypeStillMeansATappedHole: the older spelling must keep working, now as a drilled
 // hole that is also tapped rather than as a seat of its own.
 func TestLegacyTappedTypeStillMeansATappedHole(t *testing.T) {
+	t.Parallel()
 	s, top := boxWithTopFace(t)
 	def := holeDefAfter(t, s, map[string]any{
 		"faceRef": top, "type": "tapped", "diameter": "5 mm", "depth": "8 mm", "designation": "M6",
@@ -68,6 +70,7 @@ func TestLegacyTappedTypeStillMeansATappedHole(t *testing.T) {
 
 // TestSpotFaceSeatReachesTheDefinition: the seat that used to drop entirely on import.
 func TestSpotFaceSeatReachesTheDefinition(t *testing.T) {
+	t.Parallel()
 	s, top := boxWithTopFace(t)
 	def := holeDefAfter(t, s, map[string]any{
 		"faceRef": top, "type": "spotface", "diameter": "5 mm", "depth": "8 mm",
@@ -81,6 +84,7 @@ func TestSpotFaceSeatReachesTheDefinition(t *testing.T) {
 // TestClearanceHoleCarriesItsFastener: the definition must keep the FASTENER, since that is what
 // keeps the bore sized to it after an edit.
 func TestClearanceHoleCarriesItsFastener(t *testing.T) {
+	t.Parallel()
 	s, top := boxWithTopFace(t)
 	def := holeDefAfter(t, s, map[string]any{
 		"faceRef": top, "depth": "8 mm",
@@ -94,6 +98,7 @@ func TestClearanceHoleCarriesItsFastener(t *testing.T) {
 // TestHoleNeedsASize: a hole with neither a diameter nor a fastener has no size at all, and saying
 // so here beats surfacing it later as "diameter 0 must be > 0".
 func TestHoleNeedsASize(t *testing.T) {
+	t.Parallel()
 	s, top := boxWithTopFace(t)
 	raw, _ := json.Marshal(map[string]any{"faceRef": top, "depth": "8 mm"})
 	_, err := apply(t, s, "hole", string(raw))
@@ -104,6 +109,7 @@ func TestHoleNeedsASize(t *testing.T) {
 
 // TestSketchPlacementReachesTheDefinition: the placement that turns one feature into many bores.
 func TestSketchPlacementReachesTheDefinition(t *testing.T) {
+	t.Parallel()
 	s, top := boxWithTopFace(t)
 	def := holeDefAfter(t, s, map[string]any{
 		"faceRef": top, "diameter": "5 mm", "depth": "8 mm",
@@ -118,6 +124,7 @@ func TestSketchPlacementReachesTheDefinition(t *testing.T) {
 // TestUnknownPlacementIsRejected keeps a typo from degrading to the face placement, which would
 // drill one hole at a centroid and look like the feature "worked".
 func TestUnknownPlacementIsRejected(t *testing.T) {
+	t.Parallel()
 	s, top := boxWithTopFace(t)
 	raw, _ := json.Marshal(map[string]any{
 		"faceRef": top, "diameter": "5 mm", "depth": "8 mm", "placement": "onEdge",
@@ -129,6 +136,7 @@ func TestUnknownPlacementIsRejected(t *testing.T) {
 
 // TestHoleTerminationReachesTheDefinition wires the to-face stop through to the model.
 func TestHoleTerminationReachesTheDefinition(t *testing.T) {
+	t.Parallel()
 	s, top := boxWithTopFace(t)
 	def := holeDefAfter(t, s, map[string]any{
 		"faceRef": top, "diameter": "5 mm",
@@ -141,6 +149,7 @@ func TestHoleTerminationReachesTheDefinition(t *testing.T) {
 
 // TestHoleToFaceNeedsATarget: an extent that stops on a face and is given none is a caller error.
 func TestHoleToFaceNeedsATarget(t *testing.T) {
+	t.Parallel()
 	s, top := boxWithTopFace(t)
 	raw, _ := json.Marshal(map[string]any{
 		"faceRef": top, "diameter": "5 mm", "termination": "to-face",

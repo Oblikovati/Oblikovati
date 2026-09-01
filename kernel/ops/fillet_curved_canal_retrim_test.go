@@ -57,6 +57,7 @@ func n7CanalBiteInputs(t *testing.T, w cornerWeld, arms []edgeFillet, res Resolu
 // bundle (shared-edge identity), and the wall's two rails' inner ends are point-identical to the wall
 // foot-locus feet[0]'s endpoints (the W0/W1 chain junctions, residual 0).
 func TestArmRailsOnHost_CollectsPerHost(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	bundles, boundaries, _ := n7CanalBiteInputs(t, w, arms, res)
 	wall, fx50, fz10 := arms[0].a, arms[0].b, arms[1].b
@@ -84,6 +85,7 @@ func TestArmRailsOnHost_CollectsPerHost(t *testing.T) {
 // not geometry-guessing (risk #3): the wall gets feet[0], the s_10 boss gets feet[1], and the two planes
 // (on neither roll surface) get NO bridge.
 func TestFootLocusForHost_TagsByRolls(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	bundles, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
 	_ = bundles
@@ -106,6 +108,7 @@ func TestFootLocusForHost_TagsByRolls(t *testing.T) {
 // retrimmed wall welds point-for-point to the corner patch. This asserts the foot sub-chords are exactly
 // the patch's sampling (residual 0, equal count) — the watertightness crux.
 func TestCanalInnerBite_WallChainsRailsFootRails(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	bundles, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
 	tol := res.Weld() * w.radius
@@ -147,6 +150,7 @@ func assertFootChordsMatchPatch(t *testing.T, inner []endSeg, foot geom.Curve3, 
 // rails MEETING AT A POINT (P0 on plane B, P1 on plane A) — the (2,-) composition the same assembler
 // handles with no special case.
 func TestCanalInnerBite_PlanesMeetAtPoint(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	bundles, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
 	tol := res.Weld() * w.radius
@@ -170,6 +174,7 @@ func TestCanalInnerBite_PlanesMeetAtPoint(t *testing.T) {
 // a valid retrimmed face on the fixture: both arm rails' outer ends anchor on the plane rectangle, so the
 // far span closes and canalHostBite returns a face whose first loop is the retrimmed bite (inner + far).
 func TestCanalHostBite_PlaneBClosesToValidFace(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	bundles, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
 	ff, reason := canalHostBite(arms[0].b, bundles, boundaries, rolls, w, res)
@@ -192,6 +197,7 @@ func TestCanalHostBite_PlaneBClosesToValidFace(t *testing.T) {
 // close. If a future fix lands the torus runout on the wall loop (a wider host / a rail terminator), this
 // flips and must be revisited — the exact tripwire the flag calls for.
 func TestCanalHostBite_WallAnchorEvidence(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	bundles, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
 	tol := res.Weld() * w.radius
@@ -226,6 +232,7 @@ func TestCanalHostBite_WallAnchorEvidence(t *testing.T) {
 // inner ends W0/W1 — so the chain gate DECLINES at the non-meeting junction instead of welding a corrupt
 // loop. A passing bite must survive this; the real tag survives, the mutated one does not.
 func TestChainBiteSegs_MistaggedFootLocusDeclines(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	bundles, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
 	tol := res.Weld() * w.radius
@@ -254,6 +261,7 @@ func TestChainBiteSegs_MistaggedFootLocusDeclines(t *testing.T) {
 // endpoints ARE the mid-arm corner-rail endpoints, and the mid-arm face's corner-rail samples are
 // byte-identical (residual 0.0) to sampling feet[1] the same way.
 func TestFootLocusBite_S10SharedEdgeIdentity(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	patch, boundaries, centres, scale := n7CanalWeldInputs(t, w, arms, res)
 	_ = patch
@@ -288,6 +296,7 @@ func TestFootLocusBite_S10SharedEdgeIdentity(t *testing.T) {
 // farRunoutFace, producing a face byte-identical to calling farRunoutFace directly, and passes an
 // untouched face through transformFace unchanged.
 func TestCanalHostFaces_FarRunoutVerbatim(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	_, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
 	tol := res.Weld() * w.radius

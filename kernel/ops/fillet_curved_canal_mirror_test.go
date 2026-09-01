@@ -56,6 +56,7 @@ func s10RealArm(t *testing.T) geom.Cylinder {
 // SPINE (any axis point has x=55, z=15, and the axis is ±ŷ) rather than the origin's y, since the origin's
 // station along the axis is free.
 func TestS10ArmSpineUnmirrored(t *testing.T) {
+	t.Parallel()
 	cyl := s10RealArm(t)
 	if got := cyl.Origin.X; stdmath.Abs(float64(got)-55) > 1e-6 {
 		t.Fatalf("s_10 arm spine x = %.6f, want 55 (mirrored to 45 is the F3a defect)", got)
@@ -84,6 +85,7 @@ func TestS10ArmSpineUnmirrored(t *testing.T) {
 // weld not yet assembled" floor F3 removed) and the result must be a valid closed manifold solid. This is
 // the kernel-level analogue of the corpus area gate TestOCCTBlendSimple/N7.
 func TestN7CanalWeldsToValidSolid(t *testing.T) {
+	t.Parallel()
 	body := importCorpusSolid(t, "simple/N7")
 	corner := vertexNear(t, body, math.P3(50, 0, 10))
 	keys := make([][]byte, 0, 3)
@@ -107,6 +109,7 @@ func TestN7CanalWeldsToValidSolid(t *testing.T) {
 // on the wrong side): the reflected candidate C′=(55,·,15) is then off that mirrored spine, so no honest
 // centre exists and the resolver must decline rather than fall back to w.center.
 func TestResolveArmCentreDeclinesOnMirror(t *testing.T) {
+	t.Parallel()
 	w, arms, res := n7CornerFill(t)
 	arms[1].armSurface = mustCylinder(t, math.P3(45, 0, 15), math.V3(0, 1, 0), 5) // MIRRORED s_10 (true x=55)
 	scale := tangentCornerScale(w, arms)

@@ -25,6 +25,7 @@ func (s *stepProgressSink) fn(stage string, done, _ int) bool {
 // TestImportSolidsReportsProgress checks the STEP reader threads the shared progress seam (#1647):
 // it fires a per-solid tick with a monotonically non-decreasing done.
 func TestImportSolidsReportsProgress(t *testing.T) {
+	t.Parallel()
 	var sink stepProgressSink
 	_, _, err := Reader{}.ImportSolids(readFixture(t, "cube.step"), exchange.TranslationOptions{Progress: sink.fn})
 	if err != nil {
@@ -43,6 +44,7 @@ func TestImportSolidsReportsProgress(t *testing.T) {
 // TestImportSolidsCancels checks a cancelling ProgressFunc aborts the STEP import with an
 // ErrCancelled-wrapping error.
 func TestImportSolidsCancels(t *testing.T) {
+	t.Parallel()
 	cancel := func(string, int, int) bool { return true }
 	_, _, err := Reader{}.ImportSolids(readFixture(t, "cube.step"), exchange.TranslationOptions{Progress: cancel})
 	if !errors.Is(err, exchange.ErrCancelled) {

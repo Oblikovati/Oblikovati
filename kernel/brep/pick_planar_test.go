@@ -17,6 +17,7 @@ import (
 // path still reports the correct nearest face: a ray down the axis hits the top cap, an off-axis
 // ray misses the solid entirely.
 func TestRayCastPlanarCapHitMiss(t *testing.T) {
+	t.Parallel()
 	const r, h = 5.0, 8.0
 	mer := []math.Point2{math.P2(0, 0), math.P2(r, 0), math.P2(r, h), math.P2(0, h)}
 	body, err := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 0, 1), mer, "cyl")

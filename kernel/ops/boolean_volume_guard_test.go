@@ -26,6 +26,7 @@ func guardBlock(t *testing.T, min, max math.Point3, name string) *topo.Body {
 // one-sided — a cut that removed too much material, or a join that fabricated material, passed
 // silently and shipped a materially wrong body.
 func TestBooleanVolumeGuardTwoSided(t *testing.T) {
+	t.Parallel()
 	target := guardBlock(t, math.P3(0, 0, 0), math.P3(2, 1, 1), "target") // V(A) = 2
 	tool := guardBlock(t, math.P3(1.5, 0, 0), math.P3(2.5, 1, 1), "tool") // V(B) = 1, overlap 0.5
 
@@ -58,6 +59,7 @@ func TestBooleanVolumeGuardTwoSided(t *testing.T) {
 // diagnostic is the informational tangent-contact note (never the nudged-geometry Defect), and the
 // result is an Euler-valid solid. Regression against the old geometry-moving retry.
 func TestTangentUnionShipsExactCoordinates(t *testing.T) {
+	t.Parallel()
 	a := guardBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2), "a")
 	b := guardBlock(t, math.P3(2, 2, 0), math.P3(4, 4, 2), "b") // shares only the vertical edge x=2,y=2
 	rec := &diag.Recorder{}

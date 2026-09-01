@@ -37,6 +37,7 @@ func drawingWithBaseView(t *testing.T) *dmodel.Content {
 // TestExportDrawingDXF checks a sheet exports to DXF with its view edges on the Visible/Hidden
 // layers, the border rectangle, and the title-block text — the manufacturing/handoff artifact.
 func TestExportDrawingDXF(t *testing.T) {
+	t.Parallel()
 	c := drawingWithBaseView(t)
 	data, n, err := ExportDrawingDXF(c.Sheets().Active(), DefaultDrawingExportLayers(), types.DXFR2018)
 	if err != nil {
@@ -55,6 +56,7 @@ func TestExportDrawingDXF(t *testing.T) {
 
 // TestExportDrawingDXFFile checks the file path writes a non-empty DXF.
 func TestExportDrawingDXFFile(t *testing.T) {
+	t.Parallel()
 	c := drawingWithBaseView(t)
 	path := t.TempDir() + "/sheet.dxf"
 	n, err := ExportDrawingDXFFile(c.Sheets().Active(), path, DrawingExportLayers{}, types.DXFR2000)
@@ -66,6 +68,7 @@ func TestExportDrawingDXFFile(t *testing.T) {
 // TestSheetToDrawingClassifiesLayers checks visible vs hidden view curves land on distinct
 // layers (the core value of the export for a drafter).
 func TestSheetToDrawingClassifiesLayers(t *testing.T) {
+	t.Parallel()
 	c := drawingWithBaseView(t)
 	ents := SheetToDrawing(c.Sheets().Active(), DefaultDrawingExportLayers())
 	var visible, hidden int
@@ -89,6 +92,7 @@ func TestSheetToDrawingClassifiesLayers(t *testing.T) {
 // TestZonedBorderAddsDivisionEntities: a zoned border exports its interior grid lines, so a 4×3-zone
 // sheet has exactly five more entities (3 vertical + 2 horizontal divisions) than a plain one (#1989).
 func TestZonedBorderAddsDivisionEntities(t *testing.T) {
+	t.Parallel()
 	c := drawingWithBaseView(t)
 	_, plain, err := ExportDrawingDXF(c.Sheets().Active(), DefaultDrawingExportLayers(), types.DXFR2018)
 	if err != nil {
@@ -108,6 +112,7 @@ func TestZonedBorderAddsDivisionEntities(t *testing.T) {
 
 // TestTitleBlockCorner: the title-block origin lands in each requested corner within the margins (#1989).
 func TestTitleBlockCorner(t *testing.T) {
+	t.Parallel()
 	const w, h, margin, tbW, blockH = 400.0, 300.0, 10.0, 80.0, 48.0
 	cases := map[types.TitleBlockLocation][2]float64{
 		types.BottomRightTitleBlock: {w - margin - tbW, margin},

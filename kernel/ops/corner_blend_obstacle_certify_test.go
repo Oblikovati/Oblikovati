@@ -11,6 +11,7 @@ import (
 // TestNoFoldOverColumnsMatchesObstacle proves the extracted sweep reproduces obstacleNoFold's
 // verdict on the folding + non-folding fixtures (behavior-preserving refactor).
 func TestNoFoldOverColumnsMatchesObstacle(t *testing.T) {
+	t.Parallel()
 	of := newT6Obstacle(t)
 	g, ok := obstaclePatchNeighbours(of)
 	if !ok {
@@ -33,6 +34,7 @@ func TestNoFoldOverColumnsMatchesObstacle(t *testing.T) {
 
 // TestLoopRibLenMatchesValence proves the unified rib length equals the old per-valence helpers.
 func TestLoopRibLenMatchesValence(t *testing.T) {
+	t.Parallel()
 	q := quarterCylLoop(t, 4)
 	if loopRibLen(q) != coons4RibLenLegacyForTest(q) {
 		t.Fatalf("loopRibLen(valence4) = %g, want legacy value", loopRibLen(q))

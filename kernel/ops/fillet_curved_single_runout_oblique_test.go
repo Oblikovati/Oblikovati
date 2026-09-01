@@ -42,6 +42,7 @@ func newObliqueRailBench(t *testing.T) obliqueRailBench {
 // TestReterminateRailEndsStraight moves each end of a straight ruling onto an on-line foot and checks the
 // gated end moved while the ungated end stayed put (byte-identical) — the perpendicular do-no-harm property.
 func TestReterminateRailEndsStraight(t *testing.T) {
+	t.Parallel()
 	b := newObliqueRailBench(t)
 	startFoot, endFoot := math.P3(2, 0, 0), math.P3(8, 0, 0)
 	got, ok := reterminateRailEnds(b.straight, startFoot, endFoot, true, true, b.tol)
@@ -57,6 +58,7 @@ func TestReterminateRailEndsStraight(t *testing.T) {
 // TestReterminateRailEndsPerpendicularNoop asserts an end with NO re-termination requested is returned
 // verbatim — the byte-identity guarantee that keeps E3's pole and every prior perpendicular runout intact.
 func TestReterminateRailEndsPerpendicularNoop(t *testing.T) {
+	t.Parallel()
 	b := newObliqueRailBench(t)
 	got, ok := reterminateRailEnds(b.straight, math.P3(2, 0, 0), math.P3(8, 0, 0), false, false, b.tol)
 	if !ok || got.from != b.straight.from || got.to != b.straight.to {
@@ -67,6 +69,7 @@ func TestReterminateRailEndsPerpendicularNoop(t *testing.T) {
 // TestReterminateRailEndsOffLineDeclines asserts a foot off the ruling line DECLINES (do-no-harm) — the
 // shared-edge identity (foot == rail terminus) must hold, never be snapped onto the line.
 func TestReterminateRailEndsOffLineDeclines(t *testing.T) {
+	t.Parallel()
 	b := newObliqueRailBench(t)
 	if _, ok := reterminateRailEnds(b.straight, math.P3(2, 5, 0), b.straight.to, true, false, b.tol); ok {
 		t.Fatalf("off-line foot (2,5,0) was accepted, want a decline")
@@ -76,6 +79,7 @@ func TestReterminateRailEndsOffLineDeclines(t *testing.T) {
 // TestReterminateRailEndsArc re-terminates the arc rail's start onto an on-circle foot and checks the moved
 // end lands on it while staying on the SAME circle (radius preserved) — the torus-arm contact-circle case.
 func TestReterminateRailEndsArc(t *testing.T) {
+	t.Parallel()
 	b := newObliqueRailBench(t)
 	foot := math.P3(stdmath.Cos(stdmath.Pi/6), stdmath.Sin(stdmath.Pi/6), 0) // 30° on the unit circle
 	got, ok := reterminateRailEnds(b.arc, foot, b.arc.to, true, false, b.tol)
@@ -90,6 +94,7 @@ func TestReterminateRailEndsArc(t *testing.T) {
 // TestObliqueRetermRailsGatesOnRegime asserts obliqueRetermRails re-terminates ONLY the oblique end's rail
 // terminus and leaves a perpendicular end untouched — the E3 MIXED-arm contract (pole perp, cap oblique).
 func TestObliqueRetermRailsGatesOnRegime(t *testing.T) {
+	t.Parallel()
 	b := newObliqueRailBench(t)
 	perpStart := math.P3(0, 0, 0) // run0 perpendicular: foot already IS railA.from → no move
 	oblEnd := math.P3(8, 0, 0)    // run1 oblique: railA.to must move from 10 to 8

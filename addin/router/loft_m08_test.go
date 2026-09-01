@@ -15,6 +15,7 @@ import (
 // same definition through the public surface.
 
 func TestLoftWithRailsAndConditionsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	// Section 0: 40 mm square at z=0; section 1: 20 mm square at z=50 (via an
 	// offset work plane).

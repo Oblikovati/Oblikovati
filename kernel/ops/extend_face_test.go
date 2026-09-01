@@ -11,6 +11,7 @@ import (
 )
 
 func TestExtendFaceSurfaceGrowsDomain(t *testing.T) {
+	t.Parallel()
 	body := surfaceFaceBody(t, multiSpanPatch(t)) // helpers in rebuild_faces_test.go
 	out, err := ops.ExtendFaceSurface(body, geom.UMaxEdge, 0.5, 2)
 	if err != nil {
@@ -29,6 +30,7 @@ func TestExtendFaceSurfaceGrowsDomain(t *testing.T) {
 }
 
 func TestExtendFaceSurfaceErrorsOnNonNurbs(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 1, 1, 1)
 	if _, err := ops.ExtendFaceSurface(box, geom.UMaxEdge, 0.5, 2); err == nil {
 		t.Error("extending a planar body should error (no NURBS face)")

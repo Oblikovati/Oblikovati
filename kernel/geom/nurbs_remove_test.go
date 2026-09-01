@@ -13,6 +13,7 @@ import (
 var sqrtHalf = stdmath.Sqrt2 / 2
 
 func TestInsertThenRemoveRoundTrip(t *testing.T) {
+	t.Parallel()
 	c := sampleCubicCurve(t)
 	refined, err := c.InsertKnot(0.25, 1)
 	if err != nil {
@@ -32,6 +33,7 @@ func TestInsertThenRemoveRoundTrip(t *testing.T) {
 }
 
 func TestRemoveKnotRepeatedRoundTrip(t *testing.T) {
+	t.Parallel()
 	c := sampleCubicCurve(t)
 	refined, err := c.InsertKnot(0.25, 3) // multiplicity 3 of a fresh knot
 	if err != nil {
@@ -48,6 +50,7 @@ func TestRemoveKnotRepeatedRoundTrip(t *testing.T) {
 }
 
 func TestRemoveKnotKeepsNeededKnot(t *testing.T) {
+	t.Parallel()
 	// 0.5 is an intrinsic knot of the sample curve; removing it at a tight tolerance
 	// must fail (the shape genuinely needs it) and leave the curve untouched.
 	c := sampleCubicCurve(t)
@@ -64,6 +67,7 @@ func TestRemoveKnotKeepsNeededKnot(t *testing.T) {
 }
 
 func TestRemoveKnotRejectsNonInterior(t *testing.T) {
+	t.Parallel()
 	c := sampleCubicCurve(t)
 	if _, _, err := c.RemoveKnot(0.0, 1, 1e-6); err == nil {
 		t.Error("removing a boundary knot should error")
@@ -77,6 +81,7 @@ func TestRemoveKnotRejectsNonInterior(t *testing.T) {
 }
 
 func TestRemoveKnot2dRoundTrip(t *testing.T) {
+	t.Parallel()
 	c := quarterCircleCurve2d(t)
 	refined, err := c.InsertKnot(0.5, 1)
 	if err != nil {
@@ -99,6 +104,7 @@ func TestRemoveKnot2dRoundTrip(t *testing.T) {
 }
 
 func TestInsertThenRemoveSurfaceRoundTrip(t *testing.T) {
+	t.Parallel()
 	s := sampleQuadraticSurface(t)
 	refined, err := s.InsertKnotU(0.5, 1)
 	if err != nil {

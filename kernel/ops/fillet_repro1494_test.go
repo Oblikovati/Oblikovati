@@ -38,6 +38,7 @@ func farVerticalEdgeFrom(t *testing.T, b *topo.Body, skipX, skipY float64) *topo
 // edge's key was unstable and the second fillet either lost the key or hit a wrong (curved) edge,
 // going Sick → no geometry change.
 func TestSecondFilletOnUntouchedEdge(t *testing.T) {
+	t.Parallel()
 	box := shellBox(4, 3, 5)
 	corner := verticalEdgeKey(t, box)
 	f1, err := ops.FilletEdges(box, [][]byte{corner}, 0.5)

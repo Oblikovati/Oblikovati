@@ -12,6 +12,7 @@ import (
 // TestNopLightStripClipCSG pins the raw CSG footprint behind light_strip_clip: a
 // concave linear-extruded polygon equivalent to OpenSCAD's difference of squares.
 func TestNopLightStripClipCSG(t *testing.T) {
+	t.Parallel()
 	const wall = 0.18
 	const slot = 1.02
 	const aperture = 0.60

@@ -34,6 +34,7 @@ func grazingSphereOnCylinder(t *testing.T) (*topo.Body, *topo.Body) {
 // diagnostic fires ONLY when the primary path left an invalid result, so its presence
 // proves both that the primary tore and that the mesh engine recovered a valid solid.
 func TestBooleanMeshArrangementFallbackRescue(t *testing.T) {
+	t.Parallel()
 	a, b := grazingSphereOnCylinder(t)
 	rec := &diag.Recorder{}
 	res, err := BooleanWithDiagnostics(Join, a, b, rec)
@@ -52,6 +53,7 @@ func TestBooleanMeshArrangementFallbackRescue(t *testing.T) {
 // not apply: a non-set operation, an empty result (a small sphere wholly inside a
 // larger one cut to nothing), and operands too large to justify the expensive engine.
 func TestMeshArrangementFallbackDeclines(t *testing.T) {
+	t.Parallel()
 	a, b := grazingSphereOnCylinder(t)
 	if got := meshArrangementFallback(NewBody, a, b, nil); got != nil {
 		t.Error("NewBody is not a set operation; fallback must decline")

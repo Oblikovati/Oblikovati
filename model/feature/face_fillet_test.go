@@ -53,6 +53,7 @@ func boxAxisSpan(rb math.Box, axis byte) (float64, float64) {
 // TestFaceFilletRoundsSharedEdge rounds the single edge shared by the top face and a side face,
 // selected by face: the result is a valid solid whose volume is the box minus one quarter-round.
 func TestFaceFilletRoundsSharedEdge(t *testing.T) {
+	t.Parallel()
 	fs, face := boxAndPlanarFace(t)
 	top := face('z', 2)
 	side := face('x', 2)
@@ -80,6 +81,7 @@ func TestFaceFilletRoundsSharedEdge(t *testing.T) {
 // chamfer to the virtual edge and rounds it: a valid solid whose volume is the FULL box minus one
 // quarter-round (the chamfer absorbed), r=1 over a length-4 edge (#694).
 func TestFaceFilletNonAdjacentHealsAndRounds(t *testing.T) {
+	t.Parallel()
 	pent := []math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 3}, {X: 3, Y: 4}, {X: 0, Y: 4}}
 	box := buildPrism(pent, sketch.XYPlane(), span{near: 0, far: 4}, 0, "box")
 	fs := NewPartFeatures(nil)
@@ -121,6 +123,7 @@ func faceKeyByNormal(t *testing.T, b *topo.Body, n math.Vector3) []byte {
 // healed to a virtual edge (their planes never meet) — the feature goes Sick rather than silently
 // doing nothing.
 func TestFaceFilletNonAdjacentSick(t *testing.T) {
+	t.Parallel()
 	fs, face := boxAndPlanarFace(t)
 	pf := NewDressUpFeatures(fs).AddFaceFillet([][]byte{face('z', 2)}, [][]byte{face('z', 0)}, func() float64 { return 0.3 })
 	fs.Recompute()
@@ -143,6 +146,7 @@ func hasCylinderFace(b *topo.Body) bool {
 // quarter round of radius r is r·√2, so asking for that width must reproduce EXACTLY the radius-
 // driven blend — same volume, to the last figure.
 func TestFaceFilletWidthResolvesToTheChordRadius(t *testing.T) {
+	t.Parallel()
 	const r = 0.3
 	byRadius := faceFilletVolume(t, func(d *FaceFilletDefinition) { d.Radius = func() float64 { return r } })
 	byWidth := faceFilletVolume(t, func(d *FaceFilletDefinition) {
@@ -157,6 +161,7 @@ func TestFaceFilletWidthResolvesToTheChordRadius(t *testing.T) {
 // TestFaceFilletWidthWinsOverRadius: giving both must not silently keep the radius, or an author
 // who switched to a width would get a blend of the wrong size with no complaint.
 func TestFaceFilletWidthWinsOverRadius(t *testing.T) {
+	t.Parallel()
 	both := faceFilletVolume(t, func(d *FaceFilletDefinition) {
 		d.Radius = func() float64 { return 0.9 }
 		d.Width = func() float64 { return 0.3 * stdmath.Sqrt2 }
@@ -171,6 +176,7 @@ func TestFaceFilletWidthWinsOverRadius(t *testing.T) {
 // two face sets that share no edge give it nothing to be measured against. Falling back to some
 // default angle would produce a blend of the wrong size that looks right.
 func TestFaceFilletWidthNeedsASharedAngle(t *testing.T) {
+	t.Parallel()
 	fs, face := boxAndPlanarFace(t)
 	top, bottom := face('z', 2), face('z', 0)
 	pf := NewDressUpFeatures(fs).AddFaceFillet([][]byte{top}, [][]byte{bottom}, nil)

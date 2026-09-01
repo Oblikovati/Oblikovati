@@ -16,6 +16,7 @@ import (
 // surface kind. This is the provenance reconstruction (ADR-0056) depends on — the tag
 // is not a fit, it is which face the tessellator meshed.
 func TestBodyToTaggedSoupProvenance(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)

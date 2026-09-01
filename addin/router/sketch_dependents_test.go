@@ -25,6 +25,7 @@ func extrudedSketchFixture(t *testing.T) (*Router, *app.Session, uint64) {
 // TestSketchConsumedStateReported: sketch.get reports consumed/ownedBy for a sketch a feature
 // uses, and clears them for an unconsumed sketch (#154).
 func TestSketchConsumedStateReported(t *testing.T) {
+	t.Parallel()
 	r, s, _ := extrudedSketchFixture(t)
 
 	var consumed wire.SketchInfo
@@ -43,6 +44,7 @@ func TestSketchConsumedStateReported(t *testing.T) {
 // TestSketchDependents: sketch.dependents lists the consuming feature for a used sketch and is
 // empty for an unused one.
 func TestSketchDependents(t *testing.T) {
+	t.Parallel()
 	r, s, extrudeID := extrudedSketchFixture(t)
 
 	var deps wire.SketchDependentsResult
@@ -60,6 +62,7 @@ func TestSketchDependents(t *testing.T) {
 // TestSketchDeleteRejectsConsumed: sketch.delete refuses a sketch a feature still uses and
 // reports the dependent, but deletes an unused sketch (#154).
 func TestSketchDeleteRejectsConsumed(t *testing.T) {
+	t.Parallel()
 	r, s, _ := extrudedSketchFixture(t)
 
 	if _, err := r.Handle(s, "sketch.delete", []byte(`{"sketchIndex":0}`)); err == nil {
@@ -75,6 +78,7 @@ func TestSketchDeleteRejectsConsumed(t *testing.T) {
 
 // TestSketchDependentsNoActivePart: the method errors without an active part.
 func TestSketchDependentsNoActivePart(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	if _, err := r.Handle(s, "sketch.dependents", []byte(`{"sketchIndex":0}`)); err == nil {

@@ -43,6 +43,7 @@ func edgeSrcMap(loop filletLoop, idOf func(m.Point3) int) map[[2]int]uint64 {
 // that kept srcE aligned to the point index (instead of shifting to the segment leaving the point)
 // would move edge 101 onto the wrong pair and reintroduce the #1600 tangent-seam collapse.
 func TestReverseFilletLoopPreservesEdgeIdentity(t *testing.T) {
+	t.Parallel()
 	loop, _ := sampleFilletLoop()
 	idOf := func(p m.Point3) int {
 		switch {
@@ -69,6 +70,7 @@ func TestReverseFilletLoopPreservesEdgeIdentity(t *testing.T) {
 // TestReverseFilletLoopSrcVFollowsPoints checks each reversed point still carries its own source
 // vertex id (srcV rides the point index, unlike srcE which rides the leaving segment).
 func TestReverseFilletLoopSrcVFollowsPoints(t *testing.T) {
+	t.Parallel()
 	loop, _ := sampleFilletLoop()
 	rev := reverseFilletLoop(loop)
 	want := map[[3]float64]uint64{
@@ -87,6 +89,7 @@ func TestReverseFilletLoopSrcVFollowsPoints(t *testing.T) {
 // TestReverseFilletLoopInvolution pins that reversing twice restores the loop exactly (pts, srcV,
 // srcE), so the flip is a clean orientation toggle with no cumulative drift.
 func TestReverseFilletLoopInvolution(t *testing.T) {
+	t.Parallel()
 	loop, _ := sampleFilletLoop()
 	back := reverseFilletLoop(reverseFilletLoop(loop))
 	for i := range loop.pts {
@@ -102,6 +105,7 @@ func TestReverseFilletLoopInvolution(t *testing.T) {
 // TestReverseIntRingMatchesLoopAnchor pins that reverseIntRing uses the same anchor convention as
 // reverseFilletLoop, so the welded ring stays index-aligned with the reversed loop's points.
 func TestReverseIntRingMatchesLoopAnchor(t *testing.T) {
+	t.Parallel()
 	ring := []int{5, 6, 7, 8}
 	got := reverseIntRing(ring)
 	want := []int{5, 8, 7, 6} // index 0 fixed, rest reversed — mirrors pts[(n-i)%n]
@@ -163,6 +167,7 @@ func onSurfaceReversalCases() []onSurfaceReversal {
 // 0.0562 (1.1% of r) on N4's corner patch — and turned a nearly straight sub-rail into a degenerate zero
 // arc at the origin (up to 25 off the face). A circular locus keeps the re-fit, which is exact for it.
 func TestReverseSegmentCurveStaysOnItsSurface(t *testing.T) {
+	t.Parallel()
 	for _, tc := range onSurfaceReversalCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			lo, hi := tc.curve.Domain()

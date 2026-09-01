@@ -14,6 +14,7 @@ import (
 // TestAddByLineAndPointBuildsPlane: a plane through the origin X axis and the point (0,5,0) is the
 // XY plane — normal ±Z, containing both the axis origin and the point.
 func TestAddByLineAndPointBuildsPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pt := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 5, 0) })
 	wp := g.WorkPlanes().AddByLineAndPoint(OriginXAxis, pt.Key())
@@ -32,6 +33,7 @@ func TestAddByLineAndPointBuildsPlane(t *testing.T) {
 
 // TestAddByLineAndPointDegenerate: a point on the line gives no unique plane (unhealthy).
 func TestAddByLineAndPointDegenerate(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pt := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(3, 0, 0) }) // on the X axis
 	wp := g.WorkPlanes().AddByLineAndPoint(OriginXAxis, pt.Key())
@@ -42,6 +44,7 @@ func TestAddByLineAndPointDegenerate(t *testing.T) {
 
 // TestWorkPointVisibility: a new work point defaults visible and SetVisible toggles it (#1856).
 func TestWorkPointVisibility(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pt := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 2, 3) })
 	if !pt.Visible() {

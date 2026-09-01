@@ -56,6 +56,7 @@ func hasCylinderFace(b *topo.Body) bool {
 // cylinder wall face survives, the volume is the analytic slab minus πr²·thickness (a faceted CSG hole
 // would be a few percent off), and it is watertight and manifold.
 func TestDrilledPlateIsExact(t *testing.T) {
+	t.Parallel()
 	slab := slabBody(t)
 	v0 := ops.BodyGeometryProperties(slab, ops.DefaultQuality()).Volume
 	const r = 1.5
@@ -85,6 +86,7 @@ func TestDrilledPlateIsExact(t *testing.T) {
 // the drill never reached stays bound to its slab:* key rather than a fresh curvedbool:e#N ordinal,
 // so a selection on it survives the operation.
 func TestCurvedBooleanKeepsTargetEdgeIdentity(t *testing.T) {
+	t.Parallel()
 	slab := slabBody(t)
 	in := map[string]bool{}
 	for _, e := range slab.Edges() {
@@ -114,6 +116,7 @@ func TestCurvedBooleanKeepsTargetEdgeIdentity(t *testing.T) {
 // named by their generating face pair — the new cylinder wall crossing a slab cap — a name that does
 // not depend on the weld order. No edge of the finished part may keep a curvedbool:e#N ordinal.
 func TestSecondBoreRimIsProvenanceNamed(t *testing.T) {
+	t.Parallel()
 	slab := slabBody(t)
 	s1, err := ops.Boolean(ops.Cut, slab, throughRod(t, -4, 0, 1.5))
 	if err != nil {
@@ -146,6 +149,7 @@ func TestSecondBoreRimIsProvenanceNamed(t *testing.T) {
 // TestDrilledPlateClippedDefers: a hole whose circle clips the slab edge is NOT a clean through-hole, so
 // the exact path declines and the general boolean still produces a valid solid (the fallback is intact).
 func TestDrilledPlateClippedDefers(t *testing.T) {
+	t.Parallel()
 	slab := slabBody(t)
 	res, err := ops.Boolean(ops.Cut, slab, throughRod(t, 9.5, 0, 1.5)) // circle spills past x=10
 	if err != nil {

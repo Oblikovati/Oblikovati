@@ -10,6 +10,7 @@ import (
 )
 
 func TestNopDoorLatchStlCSG(t *testing.T) {
+	t.Parallel()
 	body := prismBody(roundedRectPoints(3.5, 1.2, 0.3, 8), 0, 0.5, "door-latch-rounded-base")
 	body = joinOrFatal(t, body, box(-1.75, -0.2, 0.25, 3.5, 0.4, 0.35), "door-latch-ridge")
 	body = joinOrFatal(t, body, prismBody(regularPolygonPoints(math.P3(0, 0, 0), 0.6, 48, 0), 0, 1.425, "door-latch-boss"), "door-latch-boss")

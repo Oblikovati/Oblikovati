@@ -31,6 +31,7 @@ func offsetXYPlaneRef(t *testing.T, s *app.Session, z float64) string {
 // z=0.5 and z=1.5 fills exactly that 1 cm-thick slab (12 cm³) — proving both FromPlane and ToPlane
 // drive the span, not the sketch plane.
 func TestExtrudeFromToBoundsBothPlanes(t *testing.T) {
+	t.Parallel()
 	s := profiledPart(t)
 	lo := offsetXYPlaneRef(t, s, 0.5)
 	hi := offsetXYPlaneRef(t, s, 1.5)
@@ -49,6 +50,7 @@ func TestExtrudeFromToBoundsBothPlanes(t *testing.T) {
 // TestExtrudeDistanceFromFace: a distance-from-face extrude measures its 1 cm depth from a plane at
 // z=0.5, so the solid spans z=0..1.5 (18 cm³) rather than z=0..1.0 (a plain distance would give 12).
 func TestExtrudeDistanceFromFace(t *testing.T) {
+	t.Parallel()
 	s := profiledPart(t)
 	base := offsetXYPlaneRef(t, s, 0.5)
 	args, _ := json.Marshal(map[string]any{
@@ -67,6 +69,7 @@ func TestExtrudeDistanceFromFace(t *testing.T) {
 // bottom and top faces of a seeded 2 cm box — builds the same 24 cm³ prism, exercising the
 // geometric start/end resolvers (resolveStartPlane / resolveEndPlane via fromFaceGeom/toFaceGeom).
 func TestExtrudeFromToGeom(t *testing.T) {
+	t.Parallel()
 	s := profiledPart(t)
 	if _, err := apply(t, s, "extrude", `{"sketchIndex":0,"distance":"20 mm"}`); err != nil {
 		t.Fatalf("seed extrude: %v", err)
@@ -91,6 +94,7 @@ func TestExtrudeFromToGeom(t *testing.T) {
 // TestExtrudeFromToErrors: from-to without a fromFace, and distance-from-face without a toFace,
 // are both clean argument errors.
 func TestExtrudeFromToErrors(t *testing.T) {
+	t.Parallel()
 	if _, err := apply(t, profiledPart(t), "extrude", `{"sketchIndex":0,"extent":"from-to","toFace":"origin/plane/xy"}`); err == nil {
 		t.Error("from-to without a fromFace should error")
 	}

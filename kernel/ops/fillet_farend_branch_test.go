@@ -45,6 +45,7 @@ func d8SectionCap(t *testing.T) geom.Arc3d {
 // whose axis lies in the section plane the two crossings are equidistant to the last bit, so the pre-fix
 // rule had no information at all and its answer came from the intersector's output order.
 func TestSlideOntoWallTieIsExactOnASymmetricWall(t *testing.T) {
+	t.Parallel()
 	wall := d8CornerWall(t)
 	p := math.P3(240, 59.093784332275, -5) // a mid-cap station, 16.6 from the wall axis
 	axis := math.V3(0, 1, 0)
@@ -75,6 +76,7 @@ func sideSignOf(h, p math.Point3, axis math.Vector3) int {
 // analytic branch y = vy − √(R²−(x−cx)²) to machine precision. With side 0 — the pre-fix rule — the list is
 // allowed to jump, and this test records that it does.
 func TestSlideSectionOntoWallStaysOnTheStopFaceBranch(t *testing.T) {
+	t.Parallel()
 	const vy, wallX, R = 59.093784332275, 223.39418029785, 24.0
 	wall, arc := d8CornerWall(t), d8SectionCap(t)
 	slide := axialSlide{axis: math.V3(0, 1, 0), reach: 462.8433495, side: -1, tol: 1e-6}
@@ -107,6 +109,7 @@ func TestSlideSectionOntoWallStaysOnTheStopFaceBranch(t *testing.T) {
 // (It records the defect; it does not endorse it — side 0 remains the honest fallback for a stop face that
 // reaches both sides, where "nearest" is the only information available.)
 func TestSlideSectionOntoWallZigzagsWithoutTheSideRule(t *testing.T) {
+	t.Parallel()
 	const vy = 59.093784332275
 	wall, arc := d8CornerWall(t), d8SectionCap(t)
 	pts, ok := slideSectionOntoWall(arc, wall, axialSlide{axis: math.V3(0, 1, 0), reach: 462.8433495, tol: 1e-6})
@@ -130,6 +133,7 @@ func TestSlideSectionOntoWallZigzagsWithoutTheSideRule(t *testing.T) {
 // whole corpus byte-identical), reaches +X from the origin (side +1), and reaches −X from the far corner
 // (side −1).
 func TestStopFaceAxialSideReadsTheFacesOwnExtent(t *testing.T) {
+	t.Parallel()
 	box, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "box")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)

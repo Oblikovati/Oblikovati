@@ -23,6 +23,7 @@ func allPoints(t *testing.T, loops [][]math.Point3) []math.Point3 {
 }
 
 func TestSpherePlaneIntersectionIsEquator(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 5)
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	for _, p := range allPoints(t, IntersectSurfaceSurface(sp, pl, SurfaceGrid{})) {
@@ -36,6 +37,7 @@ func TestSpherePlaneIntersectionIsEquator(t *testing.T) {
 }
 
 func TestCylinderPlaneIntersectionIsCircle(t *testing.T) {
+	t.Parallel()
 	cy, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	loops := IntersectSurfaceSurface(cy, pl, SurfaceGrid{VMin: -5, VMax: 5})
@@ -50,6 +52,7 @@ func TestCylinderPlaneIntersectionIsCircle(t *testing.T) {
 }
 
 func TestSurfaceIntersectionNone(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 100), 5) // far above the plane
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	if loops := IntersectSurfaceSurface(sp, pl, SurfaceGrid{}); loops != nil {
@@ -58,6 +61,7 @@ func TestSurfaceIntersectionNone(t *testing.T) {
 }
 
 func TestSurfaceIntersectionUnboundedBaseNeedsWindow(t *testing.T) {
+	t.Parallel()
 	// A plane base has an unbounded domain; with no explicit window the grid is degenerate
 	// and yields nothing (the caller must window an unbounded base).
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
@@ -70,6 +74,7 @@ func TestSurfaceIntersectionUnboundedBaseNeedsWindow(t *testing.T) {
 // TestSurfaceIntersectionMetamorphic checks the traced circle is stable under grid
 // refinement: a denser grid keeps every point on both surfaces.
 func TestSurfaceIntersectionMetamorphic(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(1, 0, 0), 4)
 	pl, _ := NewPlane(math.P3(0, 0, 2), math.V3(0, 0, 1)) // z=2 cuts the sphere
 	for _, steps := range []int{48, 192} {
@@ -86,6 +91,7 @@ func TestSurfaceIntersectionMetamorphic(t *testing.T) {
 }
 
 func TestSphereSilhouetteIsGreatCircle(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 5)
 	// Viewing along +Z, the silhouette is the z=0 equator (normal ⟂ Z there).
 	for _, p := range allPoints(t, Silhouette(sp, math.V3(0, 0, 1), SurfaceGrid{})) {
@@ -99,6 +105,7 @@ func TestSphereSilhouetteIsGreatCircle(t *testing.T) {
 }
 
 func TestCylinderSilhouetteIsTwoLines(t *testing.T) {
+	t.Parallel()
 	cy, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
 	// Viewing along +X (⟂ the axis), the silhouette is the two contour lines at x=0, y=±3.
 	pts := allPoints(t, Silhouette(cy, math.V3(1, 0, 0), SurfaceGrid{VMin: -4, VMax: 4}))
@@ -112,6 +119,7 @@ func TestCylinderSilhouetteIsTwoLines(t *testing.T) {
 // TestAppendCellSegmentsSaddle covers the four-crossing (saddle) cell branch with a
 // checkerboard field whose corners alternate sign, so all four edges cross zero.
 func TestAppendCellSegmentsSaddle(t *testing.T) {
+	t.Parallel()
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	saddle := func(u, v float64) float64 { return stdmath.Cos(stdmath.Pi * (u + v)) }
 	segs := appendCellSegments(nil, pl, saddle, 0, 0, 1, 1)
@@ -122,6 +130,7 @@ func TestAppendCellSegmentsSaddle(t *testing.T) {
 
 // TestBisectEdgeExactZero covers the exact-zero-at-midpoint early return of bisectEdge.
 func TestBisectEdgeExactZero(t *testing.T) {
+	t.Parallel()
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	// f(u) = u − 0.5 is exactly zero at the edge midpoint (u = 0.5).
 	f := func(u, _ float64) float64 { return u - 0.5 }
@@ -134,6 +143,7 @@ func TestBisectEdgeExactZero(t *testing.T) {
 
 // TestTraceHelpersDirect covers the small numeric helpers directly.
 func TestTraceHelpersDirect(t *testing.T) {
+	t.Parallel()
 	if finiteOr(stdmath.Inf(1), 7) != 7 || finiteOr(3, 7) != 3 {
 		t.Error("finiteOr should fall back only for infinities")
 	}
@@ -149,6 +159,7 @@ func TestTraceHelpersDirect(t *testing.T) {
 // ViaFallback flags only curves the marching-squares contour supplied (#1597), so a caller recording
 // the degradation does not raise a defect for every disjoint candidate face pair.
 func TestTraceSurfaceIntersectionDisjointIsQuiet(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 1)
 	pl, _ := NewPlane(math.P3(0, 0, 10), math.V3(0, 0, 1))
 	tr := TraceSurfaceIntersection(sp, pl, SurfaceGrid{})

@@ -14,6 +14,7 @@ import (
 // or the SSI prune could discard a cell that holds a crossing. It samples DerivativesAt on a lattice
 // and fails if any sample exceeds the claimed bound.
 func TestTangentBoundIsUpperBound(t *testing.T) {
+	t.Parallel()
 	plane, _ := NewPlane(math.P3(1, 2, 3), math.V3(0, 0, 1))
 	cyl, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 4)
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.6)
@@ -59,6 +60,7 @@ func assertTangentBound(t *testing.T, name string, b boxTangentBounder, u0, u1, 
 // control-net hodograph, so it must DECLINE (ok=false) — the SSI seeder then records the fallback
 // rather than pruning on a bound it cannot certify.
 func TestRationalSurfaceDeclinesHodograph(t *testing.T) {
+	t.Parallel()
 	ctrl := [][]math.Point3{
 		{math.P3(0, 0, 0), math.P3(0, 1, 0)},
 		{math.P3(1, 0, 0), math.P3(1, 1, 1)},

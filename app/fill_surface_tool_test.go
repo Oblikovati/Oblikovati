@@ -66,6 +66,7 @@ func partWithFourSidedOpening(t *testing.T) (*Session, *compdef.PartComponentDef
 }
 
 func TestFillSurfaceToolClosesOpening(t *testing.T) {
+	t.Parallel()
 	s, def := partWithFourSidedOpening(t)
 	tool := NewFillSurfaceTool() // defaults to G2
 	s.StartTool(tool)
@@ -85,6 +86,7 @@ func TestFillSurfaceToolClosesOpening(t *testing.T) {
 }
 
 func TestFillSurfaceToolParams(t *testing.T) {
+	t.Parallel()
 	tool := NewFillSurfaceTool()
 	if tool.Prompt(nil) == "" || !tool.CanCommit() {
 		t.Error("fill tool should prompt and be committable by default")
@@ -112,6 +114,7 @@ func TestFillSurfaceToolParams(t *testing.T) {
 }
 
 func TestFillSurfaceViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithFourSidedOpening(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
@@ -130,6 +133,7 @@ func TestFillSurfaceViaRibbonCommand(t *testing.T) {
 // TestFillSurfaceToolDraftFeature pins the #1626 commit-gate seam: no draft below three sides,
 // a non-nil draft once commit-ready.
 func TestFillSurfaceToolDraftFeature(t *testing.T) {
+	t.Parallel()
 	tool := NewFillSurfaceTool()
 	tool.sides = 2
 	if _, ok := tool.DraftFeature(nil); ok {

@@ -22,6 +22,7 @@ import (
 // clearance on every wall. Its two rim vertices are inside the box (premise), yet no cylinder face reaches
 // a box wall, so the analytic guard reports NO crossing and classify takes the contains fast-path.
 func TestBoundariesCrossCurvedContainedIsFalse(t *testing.T) {
+	t.Parallel()
 	outer, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(10, 10, 10), "outer")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
@@ -47,6 +48,7 @@ func TestBoundariesCrossCurvedContainedIsFalse(t *testing.T) {
 // analytic guard must detect the crossing; the far rim vertex is outside the box, so classify is
 // intersecting. This confirms the curved face-face crossing is caught, not stepped over.
 func TestBoundariesCrossCurvedStraddleIsTrue(t *testing.T) {
+	t.Parallel()
 	outer, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(10, 10, 10), "outer")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)

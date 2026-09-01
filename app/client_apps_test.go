@@ -5,6 +5,7 @@ package app
 import "testing"
 
 func TestClientAppsRegisterListUnregister(t *testing.T) {
+	t.Parallel()
 	reg := NewSession().ClientApps()
 	idA, err := reg.Register("acme-pipeline")
 	if err != nil {
@@ -32,6 +33,7 @@ func TestClientAppsRegisterListUnregister(t *testing.T) {
 }
 
 func TestClientAppsRejectEmptyNameAndUnknownID(t *testing.T) {
+	t.Parallel()
 	reg := NewClientApplicationRegistry()
 	if _, err := reg.Register(""); err == nil {
 		t.Error("Register(\"\") should fail")

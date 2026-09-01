@@ -35,6 +35,7 @@ func microArc(t *testing.T) geom.Curve3 {
 // TestIsClosedSeam pins the closure gate: only a==b AND a curve that returns to its start
 // within the weld tolerance is a seam. A micro-arc, a nil curve, or an open pair is not.
 func TestIsClosedSeam(t *testing.T) {
+	t.Parallel()
 	const weld = 1e-3
 	cases := []struct {
 		name  string
@@ -70,6 +71,7 @@ func newSeamCatalog(pts []m.Point3) *edgeCatalog {
 // them. Covers both "used twice by one periodic face" and "shared by two faces": both present
 // to use() as the same key requested twice. Regression for the B1 inconsistent-orientation bug.
 func TestUseClosedSeamFlipsSecondUse(t *testing.T) {
+	t.Parallel()
 	ec := newSeamCatalog([]m.Point3{m.P3(5, 0, 0)})
 	arc := fullCircle(t)
 	u0 := ec.use(0, 0, arc, 1)
@@ -88,6 +90,7 @@ func TestUseClosedSeamFlipsSecondUse(t *testing.T) {
 // TestUseOpenEdgeUnchanged guards the baseline: an ordinary open edge still derives its second
 // use's sense from the welded vertex order (rec.from!=a), untouched by the closed-edge branch.
 func TestUseOpenEdgeUnchanged(t *testing.T) {
+	t.Parallel()
 	ec := newSeamCatalog([]m.Point3{m.P3(0, 0, 0), m.P3(10, 0, 0)})
 	line := geom.NewLineSegment(m.P3(0, 0, 0), m.P3(10, 0, 0))
 	u0 := ec.use(0, 1, line, 0) // first face traverses 0→1
@@ -106,6 +109,7 @@ func TestUseOpenEdgeUnchanged(t *testing.T) {
 // body LOUD — surfacing the upstream weld defect instead of laundering it into a valid-looking
 // topological ghost.
 func TestUseSpuriousSelfEdgeNotFlipped(t *testing.T) {
+	t.Parallel()
 	ec := newSeamCatalog([]m.Point3{m.P3(5, 0, 0)})
 	arc := microArc(t) // endpoints ~0.5 apart, >> weld
 	u0 := ec.use(0, 0, arc, 0)

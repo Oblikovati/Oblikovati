@@ -10,6 +10,7 @@ import (
 )
 
 func TestUpdateCheckRequestIsOneShot(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.TakeUpdateCheckRequest() {
 		t.Fatal("no request pending initially")
@@ -24,6 +25,7 @@ func TestUpdateCheckRequestIsOneShot(t *testing.T) {
 }
 
 func TestShowUpdateResultSetsNoticeWhenAvailable(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.ShowUpdateResult(update.Result{
 		UpdateAvailable: true,
@@ -42,6 +44,7 @@ func TestShowUpdateResultSetsNoticeWhenAvailable(t *testing.T) {
 }
 
 func TestShowUpdateResultNoNoticeWhenUpToDate(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.ShowUpdateResult(update.Result{UpdateAvailable: false})
 	if s.Notice() != "" {
@@ -50,6 +53,7 @@ func TestShowUpdateResultNoNoticeWhenUpToDate(t *testing.T) {
 }
 
 func TestOpenLatestReleasePageUsesOpener(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	opener := &FakeURLOpener{}
 	s.SetURLOpener(opener)
@@ -69,6 +73,7 @@ func TestOpenLatestReleasePageUsesOpener(t *testing.T) {
 }
 
 func TestSetUpdateChecksEnabledPersists(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	store := &FakeOptionsStore{stored: options.Defaults()}
 	if err := s.UseOptionsStore(store); err != nil {

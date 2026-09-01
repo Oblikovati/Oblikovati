@@ -37,6 +37,7 @@ type apexCase struct {
 // D2/D6 all match OCCT. (This also explains why M1 stayed correct: its shared arcs were oriented
 // such that straightening barely moved the area.) Must never be made green by loosening it.
 func TestApexFilletMatchesOCCT(t *testing.T) {
+	t.Parallel()
 	for _, c := range []apexCase{{"A9", 21308.8}, {"B4", 44956.6}} {
 		body := importPartCyl(t, c.name)
 		apex := edgeNearestMid(t, body, math.P3(0, 0, 50))

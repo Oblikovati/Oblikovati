@@ -17,6 +17,7 @@ import (
 // TestLoopCornerRingIsOnePointPerEdgeUse: a four-edge loop yields exactly its four corners, in
 // traversal order — not the chord polyline the tessellator would have produced.
 func TestLoopCornerRingIsOnePointPerEdgeUse(t *testing.T) {
+	t.Parallel()
 	corners := []math.Point3{math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 0, 3), math.P3(0, 0, 3)}
 	f := planarLoopBody(t, math.P3(0, 0, 0), math.V3(0, 1, 0), corners).Faces()[0]
 	ring := faceOuterCornerRing(f).pts
@@ -34,6 +35,7 @@ func TestLoopCornerRingIsOnePointPerEdgeUse(t *testing.T) {
 // Quality at all, so a curved boundary that the tessellator would sample differently at display and
 // property quality still yields the same ring. Falsify by routing the ring back through loopBoundary.
 func TestCornerRingIsTheSameAtEveryQuality(t *testing.T) {
+	t.Parallel()
 	f := lobedBandBody(t, 24, 30, 100, 8, 6).Faces()[0]
 	ring := faceOuterCornerRing(f).pts
 	if len(ring) != 5 {
@@ -50,6 +52,7 @@ func TestCornerRingIsTheSameAtEveryQuality(t *testing.T) {
 // TestFaceCornerRingsPutTheOuterLoopFirst pins the ORDER the developed loops are paired against: outer
 // first, then the holes, the same order developedFaceLoops develops them in.
 func TestFaceCornerRingsPutTheOuterLoopFirst(t *testing.T) {
+	t.Parallel()
 	f := planarLoopBody(t, math.P3(0, 0, 0), math.V3(0, 1, 0),
 		[]math.Point3{math.P3(0, 0, 0), math.P3(9, 0, 0), math.P3(9, 0, 9), math.P3(0, 0, 9)}).Faces()[0]
 	rings := faceCornerRings(f)
@@ -68,6 +71,7 @@ func TestFaceCornerRingsPutTheOuterLoopFirst(t *testing.T) {
 // vertex, so the ring must read that one. Getting this wrong reverses one segment of the polygon and
 // invents a crossing that is not there.
 func TestEdgeUseStartPointFollowsTheUseOrientation(t *testing.T) {
+	t.Parallel()
 	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok("use", "body", 0)))
 	lin := topo.NewLineage(topo.Tok("use", "x", 0))
 	v0 := bld.AddVertex(math.P3(0, 0, 0), lin)
@@ -132,6 +136,7 @@ func wideCylBandUses(t *testing.T, bld *topo.Builder, cyl geom.Cylinder, corners
 // as −90° — so the development would render a 270° band as a 90° one. Falsify by returning 1 from
 // chartStepsFor: the measured width collapses to r × π/2.
 func TestPeriodicRefinementDevelopsAWideBandAtItsTrueWidth(t *testing.T) {
+	t.Parallel()
 	const r, height = 24.0, 10.0
 	sweep := 3 * stdmath.Pi / 2
 	band := wideCylBandBody(t, r, sweep, height).Faces()[0]
@@ -153,6 +158,7 @@ func TestPeriodicRefinementDevelopsAWideBandAtItsTrueWidth(t *testing.T) {
 // unwrapped as −π/2 while its halves each unwrap as +3π/4, so the two disagree and the step splits. A
 // step of 3π/4 agrees with its halves and does not.
 func TestHalvesAgreeCatchesAWrongWayUnwrap(t *testing.T) {
+	t.Parallel()
 	if halvesAgree(0, 3*stdmath.Pi/4, 3*stdmath.Pi/2) {
 		t.Error("a 3π/2 step unwraps the wrong way and must disagree with its halves")
 	}
@@ -206,6 +212,7 @@ func archedNotchUses(bld *topo.Builder, arc geom.Arc3d, corners []math.Point3) [
 // cuts across ground the arc keeps clear of. Falsify by letting loopSelfCrossing accept every candidate:
 // this fixture then reports a crossing of an arch whose arch is simply not there.
 func TestArcChordDoesNotInventASelfCrossing(t *testing.T) {
+	t.Parallel()
 	if bad := SelfCrossingFaceLoops(archedNotchFaceBody(t), PropertyQuality()); len(bad) != 0 {
 		t.Errorf("an arc's chord invented %d self-crossing(s) on a simple boundary: %+v", len(bad), bad)
 	}
@@ -215,6 +222,7 @@ func TestArcChordDoesNotInventASelfCrossing(t *testing.T) {
 // fixture: the arch's arc segment does NOT develop straight (its mid sits a radius off its chord) while
 // every straight side does.
 func TestSegmentDevelopsItsEdgeSeparatesAChordFromALine(t *testing.T) {
+	t.Parallel()
 	f := archedNotchFaceBody(t).Faces()[0]
 	rings := faceCornerRings(f)
 	loops, ok := developedFaceLoops(f, rings)
@@ -234,6 +242,7 @@ func TestSegmentDevelopsItsEdgeSeparatesAChordFromALine(t *testing.T) {
 // TestSelfCrossingVerdictIsIndependentOfQuality is the #3476 acceptance criterion at the API: the same
 // body must report the same loops and the same pinched-off area whatever Quality it is asked with.
 func TestSelfCrossingVerdictIsIndependentOfQuality(t *testing.T) {
+	t.Parallel()
 	const r, w, l, h, d = 24.0, 30.0, 100.0, 8.0, 6.0
 	body := lobedBandBody(t, r, w, l, h, d)
 	base := SelfCrossingFaceLoops(body, DefaultQuality())

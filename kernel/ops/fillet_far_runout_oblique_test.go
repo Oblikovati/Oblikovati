@@ -40,6 +40,7 @@ func stubFace(bld *topo.Builder, lin topo.Lineage, surf geom.Surface) *topo.Face
 // TestArmRunoutFeet_D5MatchesOracle: the engine's feet (armSprings ∩ cap, ordered to ef.a/ef.b) equal the
 // DRAWEXE-pinned D5 feet — sphere foot on ef.a, plane foot on ef.b.
 func TestArmRunoutFeet_D5MatchesOracle(t *testing.T) {
+	t.Parallel()
 	tor, sphere, lonPlane, cap := d5MeridianArm(t)
 	ef := d5EdgeFillet(t, tor, sphere, lonPlane)
 	near := math.P3(-(tor.MajorRadius + tor.MinorRadius), 10, d5CapZ)
@@ -61,6 +62,7 @@ func TestArmRunoutFeet_D5MatchesOracle(t *testing.T) {
 // outer ends. The host rails are the true contact-circle arcs (sphere / plane), so the re-termination lands
 // each rail's outer end on its foot.
 func TestObliqueRunout_D5SpiricAndReterminatedRails(t *testing.T) {
+	t.Parallel()
 	tor, sphere, lonPlane, cap := d5MeridianArm(t)
 	ef := d5EdgeFillet(t, tor, sphere, lonPlane)
 	capFace := stubCapFace(t, cap)
@@ -129,6 +131,7 @@ func contactArcRail(t *testing.T, circle geom.Circle, tor geom.Torus) endSeg {
 // true curvature (interior points ON the curve), keeps the Arc3d path verbatim (arcInteriorPoints), and a
 // straight bite contributes no bulge — the generalization that lets an oblique bite share the arm's far edge.
 func TestBiteArcBulge_SamplesObliqueTrim(t *testing.T) {
+	t.Parallel()
 	tor, sphere, lonPlane, cap := d5MeridianArm(t)
 	feet := d5Feet(t, tor, sphere, lonPlane, cap)
 	trim, ok := intersectArmCapping(edgeFillet{armSurface: tor}, cap, feet, 10, ResolutionForSize(300))
@@ -159,6 +162,7 @@ func TestBiteArcBulge_SamplesObliqueTrim(t *testing.T) {
 // D9's cylinder arm floors earlier at its host contact rail): a straight ruling re-clips to foot→tHost when
 // the foot lies on the ruling line, and declines when it does not (never snapping an off-line foot).
 func TestReterminateRail_StraightRuling(t *testing.T) {
+	t.Parallel()
 	rail := endSeg{from: math.P3(0, 0, 0), to: math.P3(0, 0, 10)} // ruling along ẑ
 	onLine := math.P3(0, 0, -3)                                   // beyond the segment but ON the line
 	got, ok := reterminateRail(rail, onLine, 1e-6)
@@ -174,6 +178,7 @@ func TestReterminateRail_StraightRuling(t *testing.T) {
 // tolerance-free), never a face its far endpoints merely lie on; a perpendicular/unclassified runout still
 // routes by surface membership (verbatim).
 func TestFarBiteOnHost_RoutesObliqueByCapping(t *testing.T) {
+	t.Parallel()
 	lin := topo.NewLineage(topo.Tok("test", "farbite", 0))
 	bld := topo.NewBuilder(true, lin)
 	capFace := stubFace(bld, lin, planeOn(t, math.P3(0, 0, 100), math.V3(0, 0, 1)))

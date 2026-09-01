@@ -59,6 +59,7 @@ func meanCurvVariance(s BSplineSurface) float64 {
 // TestFairSurfaceReducesCurvatureVariance: fairing smooths the wrinkle, cutting the mean-curvature
 // variance, while the held boundary band (G2: 3 rows each edge) is preserved exactly.
 func TestFairSurfaceReducesCurvatureVariance(t *testing.T) {
+	t.Parallel()
 	s := noisyPatch(t)
 	before := meanCurvVariance(s)
 	faired := FairSurface(s, 2, 0.5, 40)
@@ -80,6 +81,7 @@ func TestFairSurfaceReducesCurvatureVariance(t *testing.T) {
 // TestFairSurfaceHoldsBoundaryDerivatives: a G1 fairing leaves the surface's boundary position and
 // tangent (cross-derivative) unchanged at the edges.
 func TestFairSurfaceHoldsBoundaryDerivatives(t *testing.T) {
+	t.Parallel()
 	s := noisyPatch(t)
 	faired := FairSurface(s, 1, 0.5, 20)
 	for _, v := range []float64{0, 0.5, 1} {
@@ -93,6 +95,7 @@ func TestFairSurfaceHoldsBoundaryDerivatives(t *testing.T) {
 
 // TestFairSurfaceNoInteriorIsNoop: a patch too small for the held band is returned unchanged.
 func TestFairSurfaceNoInteriorIsNoop(t *testing.T) {
+	t.Parallel()
 	s := uPatch(t, 0, func(i, j int) float64 { return 0.1 * float64(i) }) // 5×5
 	if faired := FairSurface(s, 2, 0.5, 10); !faired.Ctrl[2][2].IsEqualTo(s.Ctrl[2][2], 1e-12) {
 		t.Error("a 5×5 patch has no interior past a G2 band; fairing should be a no-op")

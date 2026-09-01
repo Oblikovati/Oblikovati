@@ -12,6 +12,7 @@ import (
 // TestOccurrenceFlexibleMenu checks the M12-F06 Flexible toggle: only a sub-assembly
 // occurrence's menu offers it, invoking it sets the flag, and the label then reads Rigid (#822).
 func TestOccurrenceFlexibleMenu(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	leaf := asm.Occurrences().Item(0)

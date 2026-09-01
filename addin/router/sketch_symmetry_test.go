@@ -13,6 +13,7 @@ import (
 // handler had no case, so every attempt was silently dropped. It must now create, reduce
 // DOF, and round-trip through the enumerate path with its (A, B, About) entities intact.
 func TestSketchSymmetryConstraintCreatable(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	add := func(args string) wire.AddSketchEntityResult {
 		var res wire.AddSketchEntityResult
@@ -56,6 +57,7 @@ func TestSketchSymmetryConstraintCreatable(t *testing.T) {
 // TestSketchSymmetryRejectsBadRefCount pins the arity guard: symmetry needs exactly 3 refs
 // (2 points + a mirror line); any other count is an error, not a silent drop.
 func TestSketchSymmetryRejectsBadRefCount(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	add := func(args string) wire.AddSketchEntityResult {
 		var res wire.AddSketchEntityResult
@@ -76,6 +78,7 @@ func TestSketchSymmetryRejectsBadRefCount(t *testing.T) {
 // TestSketchSymmetryRejectsBadEntityRefs pins the per-operand resolution guards: a missing
 // point id and a non-line mirror ref must each surface an error rather than panic or drop.
 func TestSketchSymmetryRejectsBadEntityRefs(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	add := func(args string) wire.AddSketchEntityResult {
 		var res wire.AddSketchEntityResult

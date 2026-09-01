@@ -37,6 +37,7 @@ func quarterCylLoop(t *testing.T, height float64) RailLoop {
 // TestQuarterCylLoopIsClosed catches any endpoint-chaining mistake early: all four corners must
 // chain A→B→C→D→A within a tight absolute tol.
 func TestQuarterCylLoopIsClosed(t *testing.T) {
+	t.Parallel()
 	if !quarterCylLoop(t, 8).Closed(1e-9) {
 		t.Fatal("quarterCylLoop is not a closed cycle A->B->C->D->A")
 	}
@@ -45,6 +46,7 @@ func TestQuarterCylLoopIsClosed(t *testing.T) {
 // TestCoons4FitsAndBuilds proves the provider fills the quarter-cylinder loop with a certified,
 // tangent-to-cylinder patch that interpolates its four boundary rails.
 func TestCoons4FitsAndBuilds(t *testing.T) {
+	t.Parallel()
 	loop := quarterCylLoop(t, 8)
 	p := coons4Provider{}
 	if !p.Fits(loop) {
@@ -115,6 +117,7 @@ func sidePointAt(c geom.Curve3, f float64, rev bool) math.Point3 {
 // TestCoons4RejectsSliver proves Build does not panic and honest-rejects a degenerate near-zero-height
 // loop (two generator rails collapse to near-zero length → a folded/zero-Jacobian sliver).
 func TestCoons4RejectsSliver(t *testing.T) {
+	t.Parallel()
 	loop := quarterCylLoop(t, 1e-9)
 	p := coons4Provider{}
 	_, cert, ok := p.Build(loop, blendScale())

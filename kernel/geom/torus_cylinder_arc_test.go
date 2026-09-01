@@ -63,6 +63,7 @@ func torusRadialResidual(tr Torus, p math.Point3) float64 {
 // TestTorusCylinderArc_SectionResidual: the continuation section is exact on the torus and on the capping
 // cylinder across the whole arc, from feet at v=0 (ρ=60) to v=π/2 (ρ=50).
 func TestTorusCylinderArc_SectionResidual(t *testing.T) {
+	t.Parallel()
 	s := newParallelAxisSection(t)
 	v0, v1 := 0.0, stdmath.Pi/2
 	u0, u1 := s.footAzimuth(v0), s.footAzimuth(v1)
@@ -93,6 +94,7 @@ func TestTorusCylinderArc_SectionResidual(t *testing.T) {
 // (∂P/∂u ⟂ E for an on-axis capping), so the section is latitude circles, not a u(v)-graph — the fold guard
 // must honest-reject rather than fabricate a branch.
 func TestTorusCylinderArc_FoldRejectsCoaxialCapping(t *testing.T) {
+	t.Parallel()
 	tor, err := NewTorusWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 50, 10)
 	if err != nil {
 		t.Fatalf("torus: %v", err)

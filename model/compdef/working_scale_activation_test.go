@@ -15,6 +15,7 @@ import (
 // extreme length unit on a fresh part centres the working scale on it (so coordinates stay O(1)),
 // while a band unit (mm…ft) keeps the centimetre default — existing documents are unchanged.
 func TestSetLengthUnitCentresEmptyDocument(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		unit string
 		want float64
@@ -32,6 +33,7 @@ func TestSetLengthUnitCentresEmptyDocument(t *testing.T) {
 // TestSetLengthUnitLeavesModeledDocumentAlone is the guard: once geometry exists, changing the
 // length unit must NOT re-scale the working scale (that would reinterpret stored coordinates).
 func TestSetLengthUnitLeavesModeledDocumentAlone(t *testing.T) {
+	t.Parallel()
 	d := partWithBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2)) // centimetre block, has a feature
 	if err := d.SetLengthUnit("µm"); err != nil {
 		t.Fatal(err)
@@ -45,6 +47,7 @@ func TestSetLengthUnitLeavesModeledDocumentAlone(t *testing.T) {
 // units object on a fresh part centres on its length unit, while an explicitly-centred one
 // (CenteredOnLength) is respected.
 func TestSetUnitsCentresEmptyDocument(t *testing.T) {
+	t.Parallel()
 	// Dialog-style: default working scale, µm preferred ⇒ auto-centres.
 	u := param.DefaultUnitsOfMeasure().Clone()
 	if err := u.SetPreferred(param.Length, "µm"); err != nil {
@@ -74,6 +77,7 @@ func TestSetUnitsCentresEmptyDocument(t *testing.T) {
 // primitive collapses (the underflow ADR-0042 Phase 1 could not reach). This is why Phase 2 makes
 // the nm/pm semiconductor scales usable.
 func TestActivationLetsPicometreDocumentBuild(t *testing.T) {
+	t.Parallel()
 	pm := NewPartComponentDefinition()
 	if err := pm.SetLengthUnit("pm"); err != nil {
 		t.Fatal(err)

@@ -40,6 +40,7 @@ func cylinderFaceCount(b *topo.Body) int {
 // profile yields TRUE cylindrical faces — the bore + outer wall that thread/chamfer/fillet attach to
 // — instead of a faceted prism.
 func TestAnalyticRevolveHasCylinderWalls(t *testing.T) {
+	t.Parallel()
 	body := revolveTubeBody(t)
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("analytic revolved tube is not a valid solid: %+v", r.Issues)
@@ -60,6 +61,7 @@ func TestAnalyticRevolveHasCylinderWalls(t *testing.T) {
 // hover-pick. A PARTIAL dome (rim to a single pole) is a cap (TestDomedRevolveMakesAnalyticSphereCap); a
 // latitude band is a zone (TestSphereZoneRevolveMakesAnalyticSphere).
 func TestArcProfileRevolveMakesAnalyticSphere(t *testing.T) {
+	t.Parallel()
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	top := s.Points().Add(math.P2(0, 2))
 	bot := s.Points().Add(math.P2(0, -2))
@@ -92,6 +94,7 @@ func TestArcProfileRevolveMakesAnalyticSphere(t *testing.T) {
 // depth and barely cut. normalExtent now measures the range box, so the slab spans the body
 // (Oblikovati/Oblikovati#129).
 func TestAnalyticRevolveTubeBooleanCutsHalf(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := offsetSquareSketch(2, 2)
 	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
@@ -158,6 +161,7 @@ func sphereFaceCount(b *topo.Body) int {
 // per-arc swept solid that shattered the tapered roller into ~1700 sliver faces and starved the
 // frame-loop hover-pick. This is the fix behind the tapered-roller domed big end (#54).
 func TestDomedRevolveMakesAnalyticSphereCap(t *testing.T) {
+	t.Parallel()
 	r, h := 2.0, 5.0
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	s.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(r, 0))                            // bottom disk
@@ -193,6 +197,7 @@ func TestDomedRevolveMakesAnalyticSphereCap(t *testing.T) {
 // zone face — not the ~1600-facet swept band that starves the frame-loop hover-pick. This is the fix
 // behind the self-aligning thrust seat (#54): its housing/seat washers carry exactly such a zone back.
 func TestSphereZoneRevolveMakesAnalyticSphere(t *testing.T) {
+	t.Parallel()
 	const rIn, rOut, radius, zc = 2.0, 4.0, 10.0, 10.0
 	zOut := zc - stdmath.Sqrt(radius*radius-rOut*rOut) // 0.8348
 	zIn := zc - stdmath.Sqrt(radius*radius-rIn*rIn)    // 0.2020
@@ -240,6 +245,7 @@ func sphereZoneShellVolume(rIn, rOut, radius, zc float64) float64 {
 // CIRCLE clear of the axis revolves to ONE analytic geom.Torus face — not hundreds of cone slivers — so a
 // later boolean (the M2 torus half-space cuts) takes the exact analytic path on a natively-revolved torus.
 func TestCircleRevolveMakesAnalyticTorus(t *testing.T) {
+	t.Parallel()
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	s.Circles().AddByCenterRadius(math.P2(5, 0), 2) // major 5, minor 2 about the Y axis
 	fs := NewPartFeatures(nil)
@@ -264,6 +270,7 @@ func TestCircleRevolveMakesAnalyticTorus(t *testing.T) {
 // (cap + complement), two-oval and figure-eight topologies. The result must take the EXACT analytic path —
 // a handful of faces and watertight, never the faceted CSG fallback (which shatters into hundreds).
 func TestNativeRevolveTorusHalfSpaceCutsAreExact(t *testing.T) {
+	t.Parallel()
 	torus := func() *topo.Body {
 		s := sketch.NewSketches().Add(sketch.XYPlane())
 		s.Circles().AddByCenterRadius(math.P2(5, 0), 2)
@@ -313,6 +320,7 @@ func TestNativeRevolveTorusHalfSpaceCutsAreExact(t *testing.T) {
 // oblique oval (cap + complement), two oblique ovals, and the oblique figure-eight each take the exact
 // analytic path (a handful of faces, watertight), never faceted CSG.
 func TestNativeObliqueRevolveTorusCutsAreExact(t *testing.T) {
+	t.Parallel()
 	tiltedTorus := func() *topo.Body {
 		pl, err := sketch.NewPlane(math.P3(0, 0, 0), math.V3(1, 0, 0).AsUnit(), math.V3(0, 0.6, 0.8).AsUnit())
 		if err != nil {
@@ -361,6 +369,7 @@ func TestNativeObliqueRevolveTorusCutsAreExact(t *testing.T) {
 // faceting the torus first. Complements TestAnalyticRevolveTubeBooleanCutsHalf, where a COMPOSITE washer
 // (two cylinder walls) correctly stays on the faceted planar path.
 func TestRevolvedTorusExtrudeCutStaysAnalytic(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Circles().AddByCenterRadius(math.P2(5, 0), 2)

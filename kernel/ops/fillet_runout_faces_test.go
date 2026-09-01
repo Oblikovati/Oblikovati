@@ -63,6 +63,7 @@ func openEdges(body *topo.Body) []boundaryEdgeReport {
 // watertight solid whose area is within OCCT's 1% (3662.79). It logs every remaining open edge as
 // evidence while the closure is built up step by step (systematic-debugging: evidence before fixes).
 func TestRunoutClosure_S1Watertight(t *testing.T) {
+	t.Parallel()
 	body := s1RebuiltShell(t)
 	open := openEdges(body)
 	for _, o := range open {
@@ -142,6 +143,7 @@ func t4FragileRunoutFils(t *testing.T) (*topo.Body, []edgeFillet, filletRebuildM
 // the obstacle re-weld), so collectObstacles keeps deferring it — this asserts both that the narrowing is
 // scoped to the runout path and that the obstacle path is byte-identical.
 func TestCollectRunouts_TorusFiresOnRunoutPath(t *testing.T) {
+	t.Parallel()
 	body, fils, maps := t4FragileRunoutFils(t)
 	if runoutDefersBody(body) {
 		t.Fatal("runoutDefersBody(T4 torus) = true — the runout narrowing (M4 Task 3) regressed; a torus survivor must NOT defer here")
@@ -160,6 +162,7 @@ func TestCollectRunouts_TorusFiresOnRunoutPath(t *testing.T) {
 // band mesher recovers a doubly-periodic b-spline on re-weld), while a torus body (T4) does NOT — the
 // exact split from the shared bodyHasFragileBand (which defers BOTH). Guards against a future re-widening.
 func TestRunoutDefersBody_BSplineOnly(t *testing.T) {
+	t.Parallel()
 	bspline := importCorpusSolid(t, "simple/T9")
 	if !runoutDefersBody(bspline) {
 		t.Fatal("runoutDefersBody(T9 b-spline) = false — a free-form survivor band must still defer on the runout path")

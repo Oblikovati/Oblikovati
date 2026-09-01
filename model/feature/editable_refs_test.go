@@ -9,6 +9,7 @@ import "testing"
 // feature lists at least one labelled slot, and exercising the slot's accessors (Count/Keys/
 // Snapshot) covers the keyRef/profileRef/planeRef closures.
 func TestFeatureEditableRefs(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name string
 		feat ReferenceEditable

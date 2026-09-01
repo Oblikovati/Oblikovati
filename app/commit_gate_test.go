@@ -14,6 +14,7 @@ import (
 // bypass-by-omission shape). Combine with the same body picked twice is a real sick
 // configuration: the boolean rejects equal target/tool indices.
 func TestCommitGateBlocksSickPartFeatureDraft(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	tool := NewCombineTool()
 	s.StartFeatureTool(tool)

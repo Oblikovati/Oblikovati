@@ -22,6 +22,7 @@ func offsetBlockSource(t *testing.T) *fakeBodySource {
 // transform mirrors the source body — the volume is preserved (the winding flip keeps it
 // a valid outward solid, not an inside-out negative one) and the centroid crosses to -x.
 func TestDerivedPartAppliesReflection(t *testing.T) {
+	t.Parallel()
 	src := offsetBlockSource(t)
 	reflect := math.Reflection4(math.P3(0, 0, 0), mustX()) // mirror across the x=0 plane
 
@@ -44,6 +45,7 @@ func TestDerivedPartAppliesReflection(t *testing.T) {
 // codec (link + transform + linked), restores it UNBOUND, rebinds a newer-revision source,
 // and checks it flags out of date and re-derives the mirrored body.
 func TestDerivedPartRoundTripAndRebind(t *testing.T) {
+	t.Parallel()
 	src := offsetBlockSource(t)
 	reflect := math.Reflection4(math.P3(0, 0, 0), mustX())
 	link := DeriveSourceLink{Document: "src.obk", InternalName: "GUID-1", DatabaseRevisionID: "rev-1"}

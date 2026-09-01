@@ -30,6 +30,7 @@ func splitFixture() (fromFace []subFace, parent topo.Lineage, prov []imprintSeg)
 // one cutting face C as their border, so both are named parent/brep:cut#0/brep:by#0/<C> and the
 // dup index disambiguates the otherwise-identical pair (front=0, back=1).
 func TestNameFragmentsNamesBothHalvesByCuttingFace(t *testing.T) {
+	t.Parallel()
 	fromFace, parent, prov := splitFixture()
 	nameFragments(fromFace, parent, false, prov)
 
@@ -46,6 +47,7 @@ func TestNameFragmentsNamesBothHalvesByCuttingFace(t *testing.T) {
 // TestNameFragmentsSingleSurvivorKeepsParentKey pins the K1a path: a face that survives whole keeps
 // its parent lineage (the refactor must leave this branch untouched).
 func TestNameFragmentsSingleSurvivorKeepsParentKey(t *testing.T) {
+	t.Parallel()
 	parent := topo.NewLineage(topo.Tok("base", "face", 1))
 	whole := []subFace{{outer: []math.Point3{math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 2, 0), math.P3(0, 2, 0)}}}
 	nameFragments(whole, parent, false, nil)

@@ -33,6 +33,7 @@ func notchedTarget(t *testing.T) *topo.Body {
 // from the notch, must be routed to the exact analytic partial-rim path — NOT the faceted CSG fallback — and
 // yield a valid genus-1 solid. This is the user-facing proof that curvedPartialRimCut is wired into the cascade.
 func TestPartialRimSecondCutTakesAnalyticPath(t *testing.T) {
+	t.Parallel()
 	rod, err := brep.SolidCylinder(math.P3(-6, 0, 3), math.V3(1, 0, 0), 1, 12)
 	if err != nil {
 		t.Fatalf("rod: %v", err)
@@ -60,6 +61,7 @@ func TestPartialRimSecondCutTakesAnalyticPath(t *testing.T) {
 // (NO CSG fallback) and be a valid genus-1 solid. The OCC moment + membership certification lives in
 // partial_rim_corner_certification_test.go.
 func TestPartialRimCornerJunctionTakesAnalyticPath(t *testing.T) {
+	t.Parallel()
 	rod, err := brep.SolidCylinder(math.P3(-6, 0, 7), math.V3(1, 0, 0), 1, 12) // z=7: front loop crosses the notch
 	if err != nil {
 		t.Fatalf("rod: %v", err)
@@ -84,6 +86,7 @@ func TestPartialRimCornerJunctionTakesAnalyticPath(t *testing.T) {
 // to the section conic) is a non-transversal contact the tangency gate declines (ADR-0048 §tangency, out of
 // scope). It must fall to the observable CSG fallback — never a manifold-but-wrong forced analytic solid.
 func TestPartialRimGrazingCutDeclinesObservably(t *testing.T) {
+	t.Parallel()
 	rod, err := brep.SolidCylinder(math.P3(-6, 0, 5.5), math.V3(1, 0, 0), 1, 12) // z=5.5: top grazes the notch floor
 	if err != nil {
 		t.Fatalf("rod: %v", err)

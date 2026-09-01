@@ -12,6 +12,7 @@ import (
 // TestConstructionRefsListsOnlyConstruction: ConstructionRefs returns live user construction datums
 // (plane/axis/point) and excludes plain and origin datums (#1849).
 func TestConstructionRefsListsOnlyConstruction(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	cp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 5 })
 	cp.SetConstruction(true)
@@ -37,6 +38,7 @@ func TestConstructionRefsListsOnlyConstruction(t *testing.T) {
 // TestRefConsumedByDatum: a datum referenced by another datum is reported consumed; an unreferenced
 // one is not (#1849).
 func TestRefConsumedByDatum(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	cp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 5 })
 	cp.SetConstruction(true)
@@ -55,6 +57,7 @@ func TestRefConsumedByDatum(t *testing.T) {
 // TestPruneConstructionOrphan: pruning tombstones a live construction datum and is a no-op on an
 // origin datum or an unknown ref (#1849).
 func TestPruneConstructionOrphan(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	cp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 5 })
 	cp.SetConstruction(true)

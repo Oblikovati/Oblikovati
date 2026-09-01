@@ -12,6 +12,7 @@ import (
 // loop of four runs, bordering exactly the four adjacent faces (never itself or the
 // opposite face). boxMesh emits faces +x,-x,+y,-y,+z,-z as tags 0..5.
 func TestArrangementTopologyCube(t *testing.T) {
+	t.Parallel()
 	topo := ArrangementTopologyOf(cubeTagged(0, 0, 0, 0))
 	if len(topo.Faces) != 6 {
 		t.Fatalf("cube = %d faces, want 6", len(topo.Faces))
@@ -46,6 +47,7 @@ func TestArrangementTopologyCube(t *testing.T) {
 // first, and the loop's last equals its first), and which cover faces from BOTH
 // operands.
 func TestArrangementTopologyUnion(t *testing.T) {
+	t.Parallel()
 	const naFaces = 6
 	a := cubeTagged(0, 0, 0, 0)
 	b := cubeTagged(1, 1, 1, naFaces)
@@ -94,6 +96,7 @@ func assertLoopCloses(t *testing.T, tag int, loop ArrangementLoop) {
 // the infinite pivot into a named decline: nextBoundaryEdge returns ok=false. This test COMPLETING
 // is the assertion — remove the bound and it loops until the test-timeout, failing loudly.
 func TestNextBoundaryEdgeTerminatesOnClosedFan(t *testing.T) {
+	t.Parallel()
 	// A closed umbrella around vertex 0: three triangles sharing the apex, every spoke 0→wi
 	// backed by an interior neighbour, so the pivot never reaches a boundary.
 	tris := [][3]int{{0, 1, 2}, {0, 2, 3}, {0, 3, 1}}

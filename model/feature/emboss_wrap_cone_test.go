@@ -41,6 +41,7 @@ func coneWrapFixture(t *testing.T, halfAngle, s0 float64) (coneWrapFrame, sketch
 // offset subtends the RIGHT angle about the axis (φ/sinα — the angle a unit arc subtends shrinks
 // with slant). Each check is a distinct failure mode a wrong map would trip.
 func TestConeWrapFrameHugsAndIsIsometric(t *testing.T) {
+	t.Parallel()
 	const halfAngle, s0 = 0.5, 4.0
 	fr, plane := coneWrapFixture(t, halfAngle, s0)
 	sinA := stdmath.Sin(halfAngle)
@@ -79,6 +80,7 @@ func TestConeWrapFrameHugsAndIsIsometric(t *testing.T) {
 // NORMAL (cosα·radial − sinα·axis), which tilts back toward the apex — not radially as on a
 // cylinder. A radial offset would leave the axial component at zero.
 func TestConeWrapFrameOffsetsAlongNormal(t *testing.T) {
+	t.Parallel()
 	const halfAngle, s0 = 0.5, 4.0
 	fr, plane := coneWrapFixture(t, halfAngle, s0)
 	p2 := math.P2(1, math.Scalar(0.5))
@@ -131,6 +133,7 @@ func tangentPlaneToCone(t *testing.T, cone geom.Cone, s0 float64) sketch.Plane {
 // frame, tool build and boolean compose over the real kernel. The map's geometric correctness (hug,
 // isometry) is pinned by the frame unit tests above.
 func TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial(t *testing.T) {
+	t.Parallel()
 	fs, rim := extrudedCylinderTopRim(t, 20, 40)
 	NewDressUpFeatures(fs).AddChamfer([][]byte{rim}, func() float64 { return 10 })
 	fs.Recompute()
@@ -172,6 +175,7 @@ func TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial(t *testing.T) {
 // cylinder-style plane whose normal is ⟂ the axis is NOT tangent to a cone (a cone's tangent plane
 // tilts by the half angle and passes through the apex).
 func TestConeWrapRejectsNonTangentPlane(t *testing.T) {
+	t.Parallel()
 	cone, err := geom.NewConeWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 0.5)
 	if err != nil {
 		t.Fatal(err)

@@ -46,6 +46,7 @@ func sketchWithPerpConstraint(t *testing.T) *Session {
 // tool is not, by itself, a transaction. TestKeyboardUndoBlockedWhileLineChainOpen below covers
 // the tool that now is one.
 func TestKeyboardUndoWorksWhileToolArmed(t *testing.T) {
+	t.Parallel()
 	s := sketchWithPerpConstraint(t)
 	s.StartTool(NewRectangleTool()) // arm a tool: this is precisely the old guard's kill condition
 	if s.InTransaction() {
@@ -72,6 +73,7 @@ func TestKeyboardUndoWorksWhileToolArmed(t *testing.T) {
 // mid-record would corrupt the unit being written. This is the narrow condition the #1750 fix
 // keeps blocking (the old guard's over-broad `s.tool != nil` conflated this with "any tool armed").
 func TestKeyboardUndoBlockedDuringOpenTransaction(t *testing.T) {
+	t.Parallel()
 	s := sketchWithPerpConstraint(t)
 	if err := s.BeginTransaction("group edit"); err != nil {
 		t.Fatalf("BeginTransaction: %v", err)

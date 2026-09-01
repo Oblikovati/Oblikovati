@@ -11,6 +11,7 @@ import (
 )
 
 func TestUntrimFaceRecoversFullSurface(t *testing.T) {
+	t.Parallel()
 	src := multiSpanPatch(t) // helper in rebuild_faces_test.go
 	body := surfaceFaceBody(t, src)
 	out, err := ops.UntrimFace(body, body.Faces()[0].ReferenceKey())
@@ -56,6 +57,7 @@ func onSurfaceBoundary(s geom.BSplineSurface, p math.Point3) bool {
 }
 
 func TestUntrimFaceErrorsOnNonNurbs(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 1, 1, 1) // planar faces
 	if _, err := ops.UntrimFace(box, box.Faces()[0].ReferenceKey()); err == nil {
 		t.Error("untrimming a planar face should error (not a NURBS surface)")

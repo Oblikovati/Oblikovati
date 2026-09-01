@@ -12,6 +12,7 @@ import (
 // TestPlaneIntersectionLineExported: the exported helper returns the meeting line of two planes
 // and errors when they are parallel (#1262).
 func TestPlaneIntersectionLineExported(t *testing.T) {
+	t.Parallel()
 	at, dir, err := PlaneIntersectionLine(sketch.XZPlane(), sketch.XYPlane())
 	if err != nil {
 		t.Fatalf("XZ∩XY: %v", err)
@@ -31,6 +32,7 @@ func TestPlaneIntersectionLineExported(t *testing.T) {
 // TestWorkPointByRef: the exported lookup resolves the origin centre and user work points, and
 // reports false for an unknown reference.
 func TestWorkPointByRef(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	if w, ok := g.WorkPointByRef(OriginCenter); !ok || w.Name() != "Center Point" {
 		t.Fatalf("WorkPointByRef(OriginCenter) = %v, ok=%v; want the Center Point", w, ok)

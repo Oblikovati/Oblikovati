@@ -15,6 +15,7 @@ import (
 // point off a face projects to its foot when the foot is in the trim, else to the nearest boundary
 // edge; a point on the solid touches (0).
 func TestEntityDistancePointCases(t *testing.T) {
+	t.Parallel()
 	block, err := SolidBlock(gmath.P3(0, 0, 0), gmath.P3(4, 3, 5), "block")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
@@ -39,6 +40,7 @@ func TestEntityDistancePointCases(t *testing.T) {
 // TestEntityDistanceCurveFace locks the curve→face path: a segment held parallel above a face clears
 // it by the gap, and a segment piercing the face touches.
 func TestEntityDistanceCurveFace(t *testing.T) {
+	t.Parallel()
 	block, err := SolidBlock(gmath.P3(0, 0, 0), gmath.P3(4, 3, 5), "block")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
@@ -59,6 +61,7 @@ func TestEntityDistanceCurveFace(t *testing.T) {
 // convex-curved clearance: a sphere below a block's underside face. The nearest sphere point is
 // off every tessellation vertex, so only the analytic reading hits the exact gap.
 func TestEntityDistanceInteriorSpherePlane(t *testing.T) {
+	t.Parallel()
 	block, err := SolidBlock(gmath.P3(-5, -5, 3), gmath.P3(5, 5, 8), "block")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)

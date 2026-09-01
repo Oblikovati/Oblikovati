@@ -43,6 +43,7 @@ func filletNotch(r float64) float64 { return r*r - stdmath.Pi*r*r/4 }
 // TestFilletOneEdge rounds one vertical edge of a 2×2×2 box (r=0.5): a valid solid with one
 // cylinder face, volume 8 − (r²−πr²/4)·L (L=2). The headline rolling-ball-fillet acceptance.
 func TestFilletOneEdge(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	res, err := ops.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0.5)
 	if err != nil {
@@ -66,6 +67,7 @@ func TestFilletOneEdge(t *testing.T) {
 // a validated manifold solid with four quarter-cylinder faces of radius 0.5 (the F03
 // acceptance). Volume 8 − 4·(r²−πr²/4)·L.
 func TestFilletFourVerticalEdges(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	var keys [][]byte
 	for _, e := range box.Edges() {
@@ -95,6 +97,7 @@ func TestFilletFourVerticalEdges(t *testing.T) {
 // TestFilletLostKeyErrors checks a non-convex (concave) edge is rejected rather than
 // producing garbage. A box has no concave edges, so a lost key stands in for the error path.
 func TestFilletLostKeyErrors(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	if _, err := ops.FilletEdges(box, [][]byte{[]byte("ghost")}, 0.5); err == nil {
 		t.Error("fillet with a lost key should error")
@@ -129,6 +132,7 @@ func hasSphereFaces(b *topo.Body) int {
 // fillets are joined by a spherical corner patch into a valid solid (3 cylinders + 1 sphere),
 // with material removed (volume < 8). The corner-blend acceptance.
 func TestFilletCornerBlend(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	keys := cornerEdgeKeys(t, box)
 	if len(keys) != 3 {
@@ -187,6 +191,7 @@ func meshOpenEdges(m *ops.Mesh) int {
 // a fine quality — the spherical patch's lat/long UV is degenerate where a box corner lands on
 // the pole, so it must be flattened onto a tangent plane (else the ear-clip stalls and cracks).
 func TestFilletCornerBlendMeshWatertight(t *testing.T) {
+	t.Parallel()
 	box := shellBox(4, 3, 5)
 	keys := cornerEdgeKeys(t, box)
 	res, err := ops.FilletEdges(box, keys, 0.5)
@@ -206,6 +211,7 @@ func TestFilletCornerBlendMeshWatertight(t *testing.T) {
 // from the sphere centre. This guards the corner-arc midpoints (a wrong mid leaves a watertight but
 // dented/bulged patch — invisible to the volume and open-edge checks, only to the eye).
 func TestFilletCornerBlendPatchOnSphere(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	res, err := ops.FilletEdges(box, cornerEdgeKeys(t, box), 0.3)
 	if err != nil {
@@ -231,6 +237,7 @@ func TestFilletCornerBlendPatchOnSphere(t *testing.T) {
 // TestFilletAllBoxEdges rounds every edge of a 2×2×2 box: 12 cylinder fillets joined by 8
 // spherical corner patches into a valid solid (a fully-rounded box), with material removed.
 func TestFilletAllBoxEdges(t *testing.T) {
+	t.Parallel()
 	// The "< 8" premise is geometrically correct: rounding every convex edge of a 2×2×2
 	// cube REMOVES material (analytic rounded-box volume at r=0.3 is ≈7.573). The mesh-
 	// derived volume here is ≈7.6 on Linux (passes) but ≈8.035 on the macOS runner: the
@@ -267,6 +274,7 @@ func TestFilletAllBoxEdges(t *testing.T) {
 // into a valid solid (2 cylinders, no sphere), with material removed. The third edge of the
 // corner is sharp, so no sphere patch is built.
 func TestFilletTwoEdgeCornerMiters(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	keys := cornerEdgeKeys(t, box)[:2] // two of the three edges meeting at the corner
 	res, err := ops.FilletEdges(box, keys, 0.3)
@@ -288,6 +296,7 @@ func TestFilletTwoEdgeCornerMiters(t *testing.T) {
 // edges at a corner rounds the corner FULLY by auto-filleting the sharp third edge, so the corner
 // becomes a watertight 3-edge sphere blend (3 cylinders + 1 sphere), not a 2-cylinder miter crease.
 func TestFilletCornerRoundAddsThirdEdge(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	keys := cornerEdgeKeys(t, box)[:2] // two of the three edges meeting at the corner
 	picks := []ops.EdgeFilletRadii{{Key: keys[0], R0: 0.3, R1: 0.3}, {Key: keys[1], R0: 0.3, R1: 0.3}}
@@ -326,6 +335,7 @@ func TestFilletCornerRoundAddsThirdEdge(t *testing.T) {
 // Silicon), which is where a re-divergence would surface; keeping it un-gated is the acceptance
 // criterion of #2020. See also 8f8668f6 (a boundary-missing NURBS patch is no longer a candidate).
 func TestFilletRunOutToZero(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{{Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0}})
 	if err != nil {
@@ -341,6 +351,7 @@ func TestFilletRunOutToZero(t *testing.T) {
 // across qualities — the two cylinders share the seam chord polyline exactly, so the welded mesh
 // must have no cracks where they meet.
 func TestFilletTwoEdgeCornerMiterMeshWatertight(t *testing.T) {
+	t.Parallel()
 	box := shellBox(4, 3, 5)
 	keys := cornerEdgeKeys(t, box)[:2]
 	res, err := ops.FilletEdges(box, keys, 0.5)
@@ -379,6 +390,7 @@ func filletBoxVertical(t *testing.T, hx, hy, r float64) *topo.Body {
 // G1-smooth (no corner to round) and is rejected as smooth, while its sharp ARC cap edge is a real
 // target that now rounds into a torus + setback end-caps. Guards the curved-adjacent dispatch.
 func TestFilletCurvedAdjacentReported(t *testing.T) {
+	t.Parallel()
 	f1 := filletBoxVertical(t, 4, 3, 0.3)
 	near := func(a, b float64) bool { return stdmath.Abs(a-b) < 1e-6 }
 	checked := 0
@@ -412,6 +424,7 @@ func TestFilletCurvedAdjacentReported(t *testing.T) {
 // message that names the curved neighbour — not the generic "both faces must be planar", which
 // reads like a caller bug rather than an unsupported operation (the live scenario-07 defect).
 func TestFilletOnCurvedSeamRejectsClearly(t *testing.T) {
+	t.Parallel()
 	box := shellBox(4, 3, 2)
 	// The two top edges meeting at corner (4,3,2): along X at y=3, and along Y at x=4.
 	var top [][]byte
@@ -463,6 +476,7 @@ func cylinderCylinderEdge(t *testing.T, b *topo.Body) *topo.Edge {
 // fillet leaves: it routes to the torus + setback end-cap arc fillet, producing a valid watertight
 // solid with one torus face and two planar setback end-caps, with the arc material removed.
 func TestFilletEdgesRoutesArc(t *testing.T) {
+	t.Parallel()
 	f1 := filletBoxVertical(t, 4, 3, 0.3)
 	near := func(a, b float64) bool { return stdmath.Abs(a-b) < 1e-6 }
 	var arc []byte
@@ -508,6 +522,7 @@ func TestFilletEdgesRoutesArc(t *testing.T) {
 
 // TestFilletRadiusMustBePositive guards the radius.
 func TestFilletRadiusMustBePositive(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	if _, err := ops.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0); err == nil {
 		t.Error("zero radius should error")

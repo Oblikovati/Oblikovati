@@ -57,6 +57,7 @@ func offCirclePoint(center math.Point3, rad, ang float64) math.Point3 {
 // on the tOut segment and reports true, while a STRAIGHT (nil) survivor stays nil and reports false — the
 // byte-identity guarantee for the whole planar corpus + the 24 fingerprint pins.
 func TestAddCornerRoundCarriesCurvedSurvivor(t *testing.T) {
+	t.Parallel()
 	fix := newRimCircleFixture(t, 270, 10)
 	c := corner{ta: fix.tIn, tb: fix.tOut, mid: fix.tIn.Midpoint(fix.tOut)} // no chords ⇒ the constant-fillet arc branch
 
@@ -81,6 +82,7 @@ func TestAddCornerRoundCarriesCurvedSurvivor(t *testing.T) {
 // sub-arc (|sweep| > π) whose endpoints land back ON the rim circle (radius 50) — never snapping to the
 // minor complement, which is the collapse the projection + subArcMajor reuse prevents.
 func TestTrimCarriedRimArcMajor(t *testing.T) {
+	t.Parallel()
 	fix := newRimCircleFixture(t, 270, 10)
 	fl := loopWithCarriedRim(fix)
 	trimCarriedRimArcs(&fl, []int{0})
@@ -99,6 +101,7 @@ func TestTrimCarriedRimArcMajor(t *testing.T) {
 // meridian rim) carries a MINOR sub-arc (|sweep| < π) re-fit through its shorter-arc midpoint: the in-sector
 // side, and NOT dropped by the quadrant gate (which a major-only gate would wrongly do, un-greening E1/E2).
 func TestTrimCarriedRimArcLargeMinor(t *testing.T) {
+	t.Parallel()
 	fix := newRimCircleFixture(t, 170, 10) // retained ~155° — comfortably above the π/2 gate, below π
 	fl := loopWithCarriedRim(fix)
 	trimCarriedRimArcs(&fl, []int{0})
@@ -117,6 +120,7 @@ func TestTrimCarriedRimArcLargeMinor(t *testing.T) {
 // rim, retained ~75°) is RESTORED to a straight chord (nil), byte-identical to the pre-fix planar path, so
 // the whole planar corpus + the fingerprint pins are untouched (the reviewer's Critical: B1/B9 must not drift).
 func TestTrimCarriedRimSmallMinorStaysChord(t *testing.T) {
+	t.Parallel()
 	fix := newRimCircleFixture(t, 90, 10) // retained ~75° — below the π/2 quadrant gate
 	fl := loopWithCarriedRim(fix)
 	trimCarriedRimArcs(&fl, []int{0})
@@ -150,6 +154,7 @@ func assertArcEndpointsOnCircle(t *testing.T, label string, arc geom.Arc3d) {
 // TestProjectOntoArcCircle proves an off-circle point (the fillet's cap-contact tangent point at radius
 // √(50²+10²)=50.99, the root-cause receipt) is dropped exactly onto the radius-50 rim circle.
 func TestProjectOntoArcCircle(t *testing.T) {
+	t.Parallel()
 	fix := newRimCircleFixture(t, 270, 10)
 	got := projectOntoArcCircle(fix.parent, fix.tOut)
 	if d := stdmath.Abs(float64(got.DistanceTo(fix.parent.Center)) - fix.parent.Radius); d > 1e-9 {
@@ -190,6 +195,7 @@ func leavingEdgeUse(t *testing.T, curve geom.Curve3, start, end math.Point3) *to
 // nil and reports −1 — the byte-identity guarantee for every straight-survivor subs case (the whole planar
 // corpus + the fingerprint pins).
 func TestAddSubstVertexCarriesCurvedSurvivor(t *testing.T) {
+	t.Parallel()
 	arc, err := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 300, 0, stdmath.Pi/2)
 	if err != nil {
 		t.Fatalf("build survivor arc: %v", err)
@@ -255,6 +261,7 @@ func loopWithCarriedSubRim(fix subsRimFixture) filletLoop {
 // 427 — chording it erases ~24000, ~13% of scale²) is carried as a trimmed sub-arc whose endpoints land
 // back ON the parent circle (never the crude un-trimmed full parent that blows the body up).
 func TestTrimCarriedSubArcCarriesLargeHostRim(t *testing.T) {
+	t.Parallel()
 	fix := newSubsRimFixture(t, 300, 90, 10, 427)
 	fl := loopWithCarriedSubRim(fix)
 	trimCarriedSubArcs(&fl, []int{0}, fix.scale)
@@ -270,6 +277,7 @@ func TestTrimCarriedSubArcCarriesLargeHostRim(t *testing.T) {
 // chording it erases only ~64, ~0.17% of scale²) is RESTORED to a straight chord (nil), byte-identical to
 // the pre-carry planar path, so an already-green minor-face body (N5/B1/B9) is not perturbed.
 func TestTrimCarriedSubArcMinorStaysChord(t *testing.T) {
+	t.Parallel()
 	fix := newSubsRimFixture(t, 20, 76, 10, 206)
 	fl := loopWithCarriedSubRim(fix)
 	trimCarriedSubArcs(&fl, []int{0}, fix.scale)
@@ -283,6 +291,7 @@ func TestTrimCarriedSubArcMinorStaysChord(t *testing.T) {
 // runout/canal rebuild callers pass — restores the chord (nil), keeping those paths byte-identical to the
 // pre-carry planar retrim regardless of the arc's size.
 func TestTrimCarriedSubArcDisabledByZeroScale(t *testing.T) {
+	t.Parallel()
 	fix := newSubsRimFixture(t, 300, 90, 10, 0)
 	fl := loopWithCarriedSubRim(fix)
 	trimCarriedSubArcs(&fl, []int{0}, fix.scale)

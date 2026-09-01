@@ -13,6 +13,7 @@ import (
 // chamfer is one undo step — undo removes it (the recipe restores without it, then re-binds), redo
 // restores it. This exercises the full RestoreRecipe → ApplyRecipe → ResolveReferences path.
 func TestAssemblyChamferIsUndoable(t *testing.T) {
+	t.Parallel()
 	s, asm, _ := assemblyWithBoxComponent(t, 0)
 	trackFromHere(s) // baseline: the box placed, no features
 
@@ -42,6 +43,7 @@ func TestAssemblyChamferIsUndoable(t *testing.T) {
 // TestAssemblyExtrudeIsUndoable: a sketch-based extrude undoes too — both the sketch and the
 // extrude round-trip through the recipe.
 func TestAssemblyExtrudeIsUndoable(t *testing.T) {
+	t.Parallel()
 	s, asm, occ := assemblyWithBoxComponent(t, 0)
 	trackFromHere(s) // baseline: the box, no sketch, no features
 

@@ -19,6 +19,7 @@ func splitBox(sx, sy, sz float64) *topo.Body {
 
 // Splitting a 4×4×4 box by the mid-plane z=2 yields two valid 4×4×2 solids (vol 32 each).
 func TestSplitSolidByMidPlane(t *testing.T) {
+	t.Parallel()
 	plane, _ := geom.NewPlane(math.P3(0, 0, 2), math.V3(0, 0, 1))
 	pieces, err := ops.SplitSolidByPlane(splitBox(4, 4, 4), plane)
 	if err != nil {
@@ -39,6 +40,7 @@ func TestSplitSolidByMidPlane(t *testing.T) {
 
 // A plane clear of the body leaves it whole (one piece).
 func TestSplitPlaneMissesBody(t *testing.T) {
+	t.Parallel()
 	plane, _ := geom.NewPlane(math.P3(0, 0, 100), math.V3(0, 0, 1))
 	pieces, err := ops.SplitSolidByPlane(splitBox(2, 2, 2), plane)
 	if err != nil {
@@ -51,6 +53,7 @@ func TestSplitPlaneMissesBody(t *testing.T) {
 
 // Splitting by an oblique plane still gives two valid solids whose volumes sum to the original.
 func TestSplitSolidByObliquePlane(t *testing.T) {
+	t.Parallel()
 	plane, _ := geom.NewPlane(math.P3(2, 2, 2), math.V3(1, 0, 1))
 	pieces, err := ops.SplitSolidByPlane(splitBox(4, 4, 4), plane)
 	if err != nil {

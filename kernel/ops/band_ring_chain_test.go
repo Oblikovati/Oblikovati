@@ -76,6 +76,7 @@ func torusRingPoints(tor geom.Torus, v float64, n int) []math.Point3 {
 // TestChainBoundaryRings_ChordedTorusMeshesAsBand proves the chained-ring fallback engages: a chorded
 // full-360° footprint rim must mesh to the quarter-band area (not the full donut 4π²·R·r), watertight.
 func TestChainBoundaryRings_ChordedTorusMeshesAsBand(t *testing.T) {
+	t.Parallel()
 	f, wantArea := choredTorusBandFace(t, 20, 5, 30)
 	if _, isTorus := f.Geometry().(geom.Torus); !isTorus {
 		t.Fatalf("synthesized face is not a torus — it will not route through bandRingsAndSeam")
@@ -94,6 +95,7 @@ func TestChainBoundaryRings_ChordedTorusMeshesAsBand(t *testing.T) {
 // TestChainBoundaryRings_AcceptsChordedRim asserts the fallback directly: chainBoundaryRings recovers
 // exactly two congruent rings plus a ≥2-point seam from the chorded band face.
 func TestChainBoundaryRings_AcceptsChordedRim(t *testing.T) {
+	t.Parallel()
 	f, _ := choredTorusBandFace(t, 20, 5, 30)
 	rings, seamN, _, ok := chainBoundaryRings(f, DefaultQuality())
 	if !ok || len(rings) != 2 || seamN < 2 {
@@ -107,6 +109,7 @@ func TestChainBoundaryRings_AcceptsChordedRim(t *testing.T) {
 // out-and-back slit face cannot be chained into a clean ring (it collides in the head-to-tail trace),
 // so the face-level path rejects before reaching the gate — the gate math is proven here instead.
 func TestChainBoundaryRings_RejectsNonCongruentRings(t *testing.T) {
+	t.Parallel()
 	tor, err := geom.NewTorusWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 20, 5)
 	if err != nil {
 		t.Fatal(err)

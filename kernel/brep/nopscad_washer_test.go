@@ -28,6 +28,7 @@ import (
 // Reference: NopSCADlib/vitamins/washer.scad + vitamins/washers.scad
 // (M3_washer = ["M3",3,7,0.5,...]).
 func TestNopWasherCSG(t *testing.T) {
+	t.Parallel()
 	const rOut, rIn, h = 3.5, 1.55, 0.45 // OD/2, (ID=size+0.1)/2, thickness-0.05
 
 	outer, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), rOut, h)

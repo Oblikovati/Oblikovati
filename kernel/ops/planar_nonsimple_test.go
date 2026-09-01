@@ -31,6 +31,7 @@ func selfCrossingBand(n int) []math.Point2 {
 // recovery to O(n·T²) (~5.2 s), starving the frame-loop dispatcher and deadlocking placement. Asserted
 // on the deterministic fast-path predicate rather than wall-clock time (repeatable on any CI host).
 func TestPlanarTrisNonSimpleFastPath(t *testing.T) {
+	t.Parallel()
 	poly := selfCrossingBand(132) // 264 vertices
 	if !loopsSelfCross(poly, nil) {
 		t.Fatal("selfCrossingBand is not detected as non-simple; the fast-path would not engage")
@@ -45,6 +46,7 @@ func TestPlanarTrisNonSimpleFastPath(t *testing.T) {
 // must travel with the mesh as a Defect — not ship silently as a clean face. A covering triangulation
 // records nothing.
 func TestUncoveredPlanarFaceRecordsDefect(t *testing.T) {
+	t.Parallel()
 	band := selfCrossingBand(16)
 	tris := planarTris(band, nil)
 	m := &Mesh{}
@@ -70,6 +72,7 @@ func TestUncoveredPlanarFaceRecordsDefect(t *testing.T) {
 // budget must engage (m.overBudget), which is what caps the O(n·T²) spin and routes to the earcut
 // fallback. This is deterministic (same input → same flip sequence), unlike a wall-clock bound.
 func TestConstrainedDelaunayNonSimpleBudget(t *testing.T) {
+	t.Parallel()
 	poly := selfCrossingBand(132) // 264 vertices
 	pts := make([][2]float64, len(poly))
 	for i, p := range poly {
@@ -113,6 +116,7 @@ func cvtPts(loop []math.Point2) [][2]float64 {
 // on a genuine transversal crossing and stays silent on valid simple boundaries (a clean n-gon and a
 // holed face), so valid complex faces still reach the constrained Delaunay unchanged.
 func TestLoopsSelfCross(t *testing.T) {
+	t.Parallel()
 	if !loopsSelfCross(selfCrossingBand(20), nil) {
 		t.Error("loopsSelfCross missed a self-intersecting boundary")
 	}

@@ -29,6 +29,7 @@ func wingTestArc(t *testing.T) geom.Arc3d {
 // must now carry the arm arc RESTRICTED to its own sub-span — the same value the patch offers — so
 // the weld becomes a two-sided value agreement and the wing's own loop model bounds the true arc.
 func TestSampledArcSegsCarryExactSubSpans(t *testing.T) {
+	t.Parallel()
 	arc := wingTestArc(t)
 	lo, hi := arc.Domain()
 	for _, tc := range []struct {
@@ -82,6 +83,7 @@ func assertWingCurveEnd(t *testing.T, seg int, which string, p, want math.Point3
 // (byte-identical to sampleCurveN's, the points the flank patch welds to). A moved point would open
 // the wing↔patch weld as a T-junction.
 func TestSampledArcSegsPointsUnchanged(t *testing.T) {
+	t.Parallel()
 	arc := wingTestArc(t)
 	lo, hi := arc.Domain()
 	start, end := arc.PointAt(lo), arc.PointAt(hi)

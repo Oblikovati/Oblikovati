@@ -7,6 +7,7 @@ import (
 )
 
 func TestReconstructFacePcurvesRoundTrips(t *testing.T) {
+	t.Parallel()
 	f := halfDiskFace(t, 2)
 	q := Quality{ChordTolerance: 1e-3}
 	ReconstructFacePcurves(f, q)
@@ -33,6 +34,7 @@ func TestReconstructFacePcurvesRoundTrips(t *testing.T) {
 
 // The arc edge must yield a multi-point pcurve (the curved boundary captured in (u,v)), not a chord.
 func TestReconstructFacePcurvesCapturesCurvedEdge(t *testing.T) {
+	t.Parallel()
 	f := halfDiskFace(t, 2)
 	ReconstructFacePcurves(f, Quality{ChordTolerance: 1e-3})
 	maxPts := 0
@@ -49,6 +51,7 @@ func TestReconstructFacePcurvesCapturesCurvedEdge(t *testing.T) {
 }
 
 func TestReconstructFacePcurvesIdempotent(t *testing.T) {
+	t.Parallel()
 	f := halfDiskFace(t, 2)
 	q := Quality{ChordTolerance: 1e-3}
 	ReconstructFacePcurves(f, q)

@@ -39,6 +39,7 @@ func sameStrings(a, b []string) bool {
 // Every parameterized sketch tool exposes the expected labelled fields for the generic
 // property dialog.
 func TestToolParamsLabels(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		tool   ParameterizedTool
 		floats []string
@@ -75,6 +76,7 @@ func TestToolParamsLabels(t *testing.T) {
 // Setting a float param (what the dialog does) drives the committed geometry — proving the
 // closures are bound to the tool's real fields.
 func TestToolParamFloatWiresThrough(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(gmath.P2(0, 0), gmath.P2(1, 0))
 	tool := NewSketchMoveTool()
@@ -89,6 +91,7 @@ func TestToolParamFloatWiresThrough(t *testing.T) {
 
 // An angle param is surfaced in degrees and converted to radians on the tool.
 func TestToolParamAngleInDegrees(t *testing.T) {
+	t.Parallel()
 	tool := NewSketchRotateTool()
 	for _, f := range tool.Params().Floats {
 		if f.Label == "Angle (deg)" {
@@ -109,6 +112,7 @@ func TestToolParamAngleInDegrees(t *testing.T) {
 
 // A text param sets the tool's string.
 func TestToolParamTextWiresThrough(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	tool := NewSketchTextTool()
 	s.StartTool(tool)
@@ -132,6 +136,7 @@ func boolLabels(p ToolParams) []string {
 
 // The parameterized 3D-sketch tools expose their scalar/bool inputs to the generic dialog.
 func TestSketch3DToolParams(t *testing.T) {
+	t.Parallel()
 	if got := floatLabels(NewCircle3DTool().Params()); !sameStrings(got, []string{"Radius"}) {
 		t.Errorf("Circle3D floats = %v, want [Radius]", got)
 	}
@@ -146,6 +151,7 @@ func TestSketch3DToolParams(t *testing.T) {
 
 // Setting a 3D tool's float and bool params via the dialog bindings mutates the tool.
 func TestSketch3DToolParamWiring(t *testing.T) {
+	t.Parallel()
 	h := NewHelix3DTool()
 	for _, f := range h.Params().Floats {
 		if f.Label == "Pitch" {
@@ -176,6 +182,7 @@ func TestSketch3DToolParamWiring(t *testing.T) {
 
 // A tool with no parameters reports Empty so the head shows no dialog.
 func TestToolParamsEmpty(t *testing.T) {
+	t.Parallel()
 	if !(ToolParams{}).Empty() {
 		t.Error("zero ToolParams should be Empty")
 	}

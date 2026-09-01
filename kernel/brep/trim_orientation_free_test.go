@@ -38,6 +38,7 @@ func yRimCapFace(t *testing.T, forward bool) curvedFace {
 // classifier. Before the fix they were complements of each other, so a body whose closed-surface loops
 // were coherently inverted had every such face read inside-out.
 func TestTrimVerdictIgnoresRingHandedness(t *testing.T) {
+	t.Parallel()
 	for _, forward := range []bool{true, false} {
 		f := yRimCapFace(t, forward)
 		for _, c := range []struct {
@@ -55,6 +56,7 @@ func TestTrimVerdictIgnoresRingHandedness(t *testing.T) {
 // TestOuterlessFaceOwnsTheRingComplement: the complement reading is what [curvedFace.outerless] names,
 // and it too is independent of how the rim is walked.
 func TestOuterlessFaceOwnsTheRingComplement(t *testing.T) {
+	t.Parallel()
 	for _, forward := range []bool{true, false} {
 		f := yRimCapFace(t, forward)
 		f.outerless = true
@@ -75,6 +77,7 @@ func TestOuterlessFaceOwnsTheRingComplement(t *testing.T) {
 // zone is exactly that face, and ops' region integral gates the convention on it
 // (TestSphereZoneRegionIntegralNamesTheBelt).
 func TestDisjointRingsKeepTheFootClassifier(t *testing.T) {
+	t.Parallel()
 	belt := capRegionFixture(t, 5, 4, true)
 	belt.loops = append(belt.loops, capRegionFixture(t, 5, -1, false).loops...)
 	if m := developFaceTrim(belt); m.ringsBound {
@@ -96,6 +99,7 @@ func TestDisjointRingsKeepTheFootClassifier(t *testing.T) {
 // cannot be entered by an even-odd ray and the nearest-foot classifier still decides. Handedness names
 // the region there, and must keep doing so.
 func TestWrappingRingKeepsTheFootClassifier(t *testing.T) {
+	t.Parallel()
 	sphere, err := geom.NewSphere(math.P3(0, 0, 0), 5)
 	if err != nil {
 		t.Fatalf("sphere: %v", err)

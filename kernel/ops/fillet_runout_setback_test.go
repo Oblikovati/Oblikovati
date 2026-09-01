@@ -26,6 +26,7 @@ func setbackFilsForCase(t *testing.T, rel string) (*topo.Body, []edgeFillet) {
 // RV_12 — the line∩far-plane pierce — not the apex-vertex axial projection the raw ta/tb overshoots
 // to. Fails RED against today's ta/tb (station 110.38, ~3.2 / ~5.4 beyond the pierce).
 func TestRunoutSetbackPiercesFarPlaneV5(t *testing.T) {
+	t.Parallel()
 	_, fils := setbackFilsForCase(t, "simple/V5")
 	fans, _ := classifyEndCorners(fils)
 	if len(fans) != 1 {
@@ -46,6 +47,7 @@ func TestRunoutSetbackPiercesFarPlaneV5(t *testing.T) {
 // start end both set back — the fan rails to (47.9657,67.1519,47.9657)/(52.0343,67.1519,52.0343), the
 // trihedral start rails to (0,0,95.9313)/(4.0687,0,100) — all four OCCT runout vertices.
 func TestRunoutSetbackPiercesFarPlaneV1(t *testing.T) {
+	t.Parallel()
 	_, fils := setbackFilsForCase(t, "simple/V1")
 	ef := fils[0]
 	fanEnd, triEnd := ef.c1, ef.c0 // probe confirmed: c1 = valence-4 fan, c0 = valence-3 trihedral
@@ -72,6 +74,7 @@ func assertNear(t *testing.T, name string, got, want math.Point3) {
 // would disagree and the cylinder loop would open (a non-solid). This proves both consumers derive
 // from the one corrected corner.
 func TestRunoutSetbackRailWeldsCapV5(t *testing.T) {
+	t.Parallel()
 	b, fils := setbackFilsForCase(t, "simple/V5")
 	fans, _ := classifyEndCorners(fils)
 	_, caps := buildSpreadMaps(fans, b)
@@ -101,6 +104,7 @@ func TestRunoutSetbackRailWeldsCapV5(t *testing.T) {
 // flank rail ends. Every far-edge split (RV_9/10/11), a function of center/axis/radius/farEdges alone,
 // must be byte-identical before and after the setback — and still equal to OCCT's runout vertices.
 func TestRunoutSetbackKeepsInteriorV5(t *testing.T) {
+	t.Parallel()
 	b := importCorpusSolid(t, "simple/V5")
 	fils := solvedFilsForCase(t, b, "simple/V5")
 	rawFans, _ := classifyEndCorners(fils)
@@ -150,10 +154,12 @@ func splitNear(sp runoutSpread, p math.Point3) bool {
 // twice and from which the >3-valent apex vertex has been dropped (the runout replaces it) — proving
 // the moved rail ends did not open the shell.
 func TestRunoutSetbackSolidV5(t *testing.T) {
+	t.Parallel()
 	assertRunoutSolid(t, "simple/V5", math.P3(42.2618, 90.6308, 50.0))
 }
 
 func TestRunoutSetbackSolidV1(t *testing.T) {
+	t.Parallel()
 	assertRunoutSolid(t, "simple/V1", math.P3(50, 70, 50))
 }
 

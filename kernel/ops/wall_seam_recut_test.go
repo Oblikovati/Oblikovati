@@ -36,6 +36,7 @@ func bridgedWallLoop(s geom.Surface, vBot, vTop float64, n int) []math.Point3 {
 // curved area whether the lens sits ON the seam or clear of it. Before the re-cut the straddling case
 // declined here and the caller's flat-CDT fallback covered ~half the wrap.
 func TestHoledWallMeshesLensStraddlingTheSeam(t *testing.T) {
+	t.Parallel()
 	s := bandCylinder(10)
 	q := Quality{ChordTolerance: 0.005, AngleTolerance: 2 * stdmath.Pi / 180}
 	full := 2 * stdmath.Pi * 3 * 10 // 2πRh = 188.50, minus one small lens
@@ -65,6 +66,7 @@ func TestHoledWallMeshesLensStraddlingTheSeam(t *testing.T) {
 // sampled vertex, each exactly once (the seam vertex is walked twice and must not come back doubled),
 // and separated by their v level.
 func TestSplitSeamBridgedRimsRecoversBothRims(t *testing.T) {
+	t.Parallel()
 	s := bandCylinder(10)
 	top, bot, ok := splitSeamBridgedRims(s, bridgedWallLoop(s, 0, 10, 96))
 	if !ok {
@@ -84,6 +86,7 @@ func TestSplitSeamBridgedRimsRecoversBothRims(t *testing.T) {
 // TestSplitSeamBridgedRimsDeclinesNonWrappingLoop: a loop that does not wrap the period is not a
 // bridged wall, so the split must defer rather than invent rims.
 func TestSplitSeamBridgedRimsDeclinesNonWrappingLoop(t *testing.T) {
+	t.Parallel()
 	s := bandCylinder(10)
 	quarter := []math.Point3{s.PointAt(0, 0), s.PointAt(1, 0), s.PointAt(1, 10), s.PointAt(0, 10)}
 	if _, _, ok := splitSeamBridgedRims(s, quarter); ok {
@@ -97,6 +100,7 @@ func TestSplitSeamBridgedRimsDeclinesNonWrappingLoop(t *testing.T) {
 // Before the re-cut those two read ~10.07 cm³ against an analytic 30.71 — a −67% error on a valid,
 // Validate-clean solid with no diagnostics.
 func TestCrossingCylinderCutIsSeamIndependent(t *testing.T) {
+	t.Parallel()
 	want := stdmath.Pi*25*0.4 - stdmath.Pi*0.15*0.15*10 // disk − tunnel = 30.709068
 	for _, deg := range []float64{0, 45, 90, 135, 180, 270} {
 		body := boredDiskAtAzimuth(t, deg)
@@ -138,6 +142,7 @@ func boredDiskAtAzimuth(t *testing.T, deg float64) *topo.Body {
 // CSG: 408 all-planar faces at k=1 and a NON-MANIFOLD body from k=5 up. With the wall meshed correctly
 // the analytic result is accepted, so the cut stays exact — and valid — at every scale.
 func TestCrossingCylinderBooleanStaysExactAtScale(t *testing.T) {
+	t.Parallel()
 	for _, k := range []float64{1, 5, 20} {
 		disk, err := brep.SolidCylinder(math.P3(0, 0, math.Scalar(-0.2*k)), math.V3(0, 0, 1), 5*k, 0.4*k)
 		if err != nil {

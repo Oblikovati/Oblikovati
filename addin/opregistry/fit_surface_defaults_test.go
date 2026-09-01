@@ -11,6 +11,7 @@ import (
 // TestFitSurfaceDefaults: omitted (zero) degree/spans fall back to the bicubic 6×6 defaults, while
 // explicit values pass through unchanged.
 func TestFitSurfaceDefaults(t *testing.T) {
+	t.Parallel()
 	d, nu, nv := fitSurfaceDefaults(featureargs.FitSurface{})
 	if d != 3 || nu != 6 || nv != 6 {
 		t.Errorf("zero args = (%d,%d,%d), want the (3,6,6) defaults", d, nu, nv)

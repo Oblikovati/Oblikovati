@@ -17,6 +17,7 @@ import (
 // flush union resolves through the coplanar ON/ON path (not the tangency nudge), so exact coordinates
 // are already the contract; this pins it, and would catch any 1e-5 nudge leaking into a mating face.
 func TestFlushFaceUnionShipsExactCoordinates(t *testing.T) {
+	t.Parallel()
 	a := box(0, 0, 0, 2, 2, 2) // [0,2]³, V=8
 	b := box(0, 0, 2, 2, 2, 2) // [0,2]²×[2,4], V=8; shares the whole z=2 face with a
 	res, err := brep.Boolean(brep.Union, a, b)
@@ -32,6 +33,7 @@ func TestFlushFaceUnionShipsExactCoordinates(t *testing.T) {
 // wall's top face; every result vertex — the wall corners, the boss corners, and the imprinted rim
 // points (which ARE the boss's bottom corners) — must stay at its exact operand coordinate.
 func TestBossFlushUnionShipsExactCoordinates(t *testing.T) {
+	t.Parallel()
 	wall := box(0, 0, 0, 4, 4, 2) // top face at z=2, V=32
 	boss := box(1, 1, 2, 2, 2, 2) // bottom face flush on the wall's top, V=8
 	res, err := brep.Boolean(brep.Union, wall, boss)

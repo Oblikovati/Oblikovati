@@ -12,6 +12,7 @@ import (
 // TestBodyRenameSetsAndReverts drives the #1078 rename acceptance: rename a body, see it
 // reflected in body.list, then clear it (empty name) to revert to the "Solid{N}" default.
 func TestBodyRenameSetsAndReverts(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 
 	var res wire.BodyInfoResult
@@ -35,6 +36,7 @@ func TestBodyRenameSetsAndReverts(t *testing.T) {
 // TestBodyRenameUndoable pins the S6 acceptance (#1641): a body rename over the wire is a real undo
 // step — the metadata rides the recipe snapshot — so Undo clears it and Redo restores it.
 func TestBodyRenameUndoable(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 	call(t, r, s, "body.rename", `{"bodyIndex":0,"name":"Housing"}`, &wire.BodyInfoResult{})
 
@@ -59,6 +61,7 @@ func TestBodyRenameUndoable(t *testing.T) {
 // TestBodyRenameSurvivesRecompute: a stored body name is keyed by the persistent reference key,
 // so it survives a part recompute (the key is stable across rebuilds).
 func TestBodyRenameSurvivesRecompute(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 	call(t, r, s, "body.rename", `{"bodyIndex":0,"name":"Bracket"}`, &wire.BodyInfoResult{})
 
@@ -77,6 +80,7 @@ func TestBodyRenameSurvivesRecompute(t *testing.T) {
 
 // TestBodyRenameBadIndexFails: an out-of-range body index is a rejection.
 func TestBodyRenameBadIndexFails(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 	if _, err := r.Handle(s, "body.rename", []byte(`{"bodyIndex":9,"name":"X"}`)); err == nil {
 		t.Error("body.rename with an out-of-range index should fail")

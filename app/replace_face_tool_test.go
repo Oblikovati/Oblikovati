@@ -13,6 +13,7 @@ import (
 // asserts a valid solid results (vol 8). Geometric correctness for non-identity targets is
 // covered by the kernel ReplaceFaces tests.
 func TestReplaceFaceToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2) // 2×2×2
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -46,6 +47,7 @@ func TestReplaceFaceToolEndToEnd(t *testing.T) {
 
 // TestReplaceFaceViaRibbonCommand starts the tool from its ribbon command.
 func TestReplaceFaceViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -61,6 +63,7 @@ func TestReplaceFaceViaRibbonCommand(t *testing.T) {
 
 // TestReplaceFaceNeedsTarget checks the tool needs both a face and a target.
 func TestReplaceFaceNeedsTarget(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	r := NewReplaceFaceTool()

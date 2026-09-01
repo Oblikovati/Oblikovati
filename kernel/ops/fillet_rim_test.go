@@ -18,6 +18,7 @@ import (
 // (closedBandLoftMesh), which lofts the tube between each circle edge's OWN tessellation so the
 // differing-radius cap and cyl circles both seam to their neighbours watertight at any resolution.
 func TestRimFilletTorusBand(t *testing.T) {
+	t.Parallel()
 	b, err := brep.SolidCylinderFilletedTop(math.P3(0, 0, 0), math.V3(0, 0, 1), 1.0, 2.0, 0.3)
 	if err != nil {
 		t.Fatal(err)
@@ -56,6 +57,7 @@ func TestRimFilletTorusBand(t *testing.T) {
 // a range of radius/height/fillet ratios (the cap and cyl circles tessellate at different counts, so
 // the loft's differing-ring stitch is exercised differently each time).
 func TestRimFilletWatertightAcrossSizes(t *testing.T) {
+	t.Parallel()
 	cases := []struct{ R, h, r float64 }{{1, 2, 0.3}, {2, 3, 0.5}, {0.5, 1, 0.1}, {1.5, 4, 0.7}, {3, 2, 0.9}}
 	for _, c := range cases {
 		b, err := brep.SolidCylinderFilletedTop(math.P3(0, 0, 0), math.V3(0, 0, 1), c.R, c.h, c.r)

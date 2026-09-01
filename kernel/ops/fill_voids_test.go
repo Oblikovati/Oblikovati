@@ -13,6 +13,7 @@ import (
 // TestFillInternalVoidsRemovesCavity gates the hole-patch: the 4³−2³=56 cavity body
 // becomes the solid 4³=64 block once its void shell is dropped, and stays manifold.
 func TestFillInternalVoidsRemovesCavity(t *testing.T) {
+	t.Parallel()
 	body := cavityBody(t)
 	if v := BodyGeometryProperties(body, DefaultQuality()).Volume; stdmath.Abs(v-56) > 0.1 {
 		t.Fatalf("fixture volume = %g, want 56 (4³ minus 2³ cavity)", v)
@@ -31,6 +32,7 @@ func TestFillInternalVoidsRemovesCavity(t *testing.T) {
 
 // TestFillInternalVoidsLeavesSolidUnchanged: a void-free body is returned as-is.
 func TestFillInternalVoidsLeavesSolidUnchanged(t *testing.T) {
+	t.Parallel()
 	block, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "b")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)

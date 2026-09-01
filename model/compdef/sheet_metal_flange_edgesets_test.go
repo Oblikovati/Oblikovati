@@ -35,6 +35,7 @@ func topXEdges(t *testing.T, body *topo.Body) []*topo.Edge {
 // spanning several edge sets must develop a bend for EACH edge, not just one. Before this the flat
 // read exactly one placement per feature, so the extra walls' bend allowances were missing.
 func TestBendsMultiEdgeFlangeDevelopsEveryEdge(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if _, err := d.EnableSheetMetal(); err != nil {
 		t.Fatalf("EnableSheetMetal: %v", err)

@@ -44,6 +44,7 @@ const corpusAreaTol = 0.01
 // §1.5) for BOTH core constructions this slice builds: the whole-span (unsplit) panel and each
 // z=0-split half — every one is a Valence-4, Closed RailLoop coons4Provider.Fits accepts.
 func TestExtractPanelLoopU4CoreIsValence4AndClosed(t *testing.T) {
+	t.Parallel()
 	ef, dets, core, res := u4CoreFixture(t)
 	assertLoopFits(t, "unsplit", ef, dets, core, res)
 	halves, ok := splitCoreSpan(core)
@@ -77,6 +78,7 @@ func assertLoopFits(t *testing.T, label string, ef edgeFillet, dets []obstacleDe
 // §2.3): both halves stay CORE spans (hostA=hostB=true), meet exactly at z=0, and together reconstruct
 // the original span's [zLo,zHi] extent with no gap or overlap.
 func TestSplitCoreSpanProducesTwoStraddlingHalves(t *testing.T) {
+	t.Parallel()
 	_, _, core, _ := u4CoreFixture(t)
 	halves, ok := splitCoreSpan(core)
 	if !ok {
@@ -98,6 +100,7 @@ func TestSplitCoreSpanProducesTwoStraddlingHalves(t *testing.T) {
 // WithSetbackSection already pins for the sliver side of this same seam, so the two neighbours weld
 // with no drift (ADR-0042, the sliver-core weld invariant U4-2's docstring calls out by name).
 func TestExtractPanelLoopU4CoreWeldsToSliverSeam(t *testing.T) {
+	t.Parallel()
 	ef, dets, core, res := u4CoreFixture(t)
 	direct, ok := setbackSection(core.zHi, dets, ef, res)
 	if !ok {
@@ -132,6 +135,7 @@ func TestExtractPanelLoopU4CoreWeldsToSliverSeam(t *testing.T) {
 // setbackSection(0) call's endpoints, reused verbatim by each half (never re-derived), so the internal
 // seam this slice's own split introduces is itself weld-exact.
 func TestExtractPanelLoopU4CoreSplitHalvesShareMidSeam(t *testing.T) {
+	t.Parallel()
 	ef, dets, core, res := u4CoreFixture(t)
 	halves, ok := splitCoreSpan(core)
 	if !ok {
@@ -162,6 +166,7 @@ func TestExtractPanelLoopU4CoreSplitHalvesShareMidSeam(t *testing.T) {
 // z=0 SPLIT (below) — chosen for the core-core seam weld, not because unsplit misses — but this proves
 // the split is no longer a numerical necessity, only a seam-architecture choice.
 func TestExtractPanelLoopU4CoreUnsplitCanalAreaFaithful(t *testing.T) {
+	t.Parallel()
 	ef, dets, core, res := u4CoreFixture(t)
 	loop, ok := extractPanelLoop(core, dets, ef, res)
 	if !ok {
@@ -186,6 +191,7 @@ func TestExtractPanelLoopU4CoreUnsplitCanalAreaFaithful(t *testing.T) {
 // measured residual is ~0.006% (K=9 stations, past the convergence knee), ~700x inside the gate and a
 // decisive improvement over coons4's 4.5% all-G0 miss (the whole reason U4-4b replaced the fill).
 func TestExtractPanelLoopU4CoreSplitAreaFaithful(t *testing.T) {
+	t.Parallel()
 	ef, dets, core, res := u4CoreFixture(t)
 	halves, ok := splitCoreSpan(core)
 	if !ok {
@@ -214,6 +220,7 @@ func TestExtractPanelLoopU4CoreSplitAreaFaithful(t *testing.T) {
 // coons4 in blendTiers), so the emitted patch carries BlendKindCanalStation. The sliver loops (no
 // Stations payload) still route to coons4 — the do-no-harm invariant that keeps the corpus untouched.
 func TestExtractPanelLoopU4CoreResolvesToCanalStation(t *testing.T) {
+	t.Parallel()
 	ef, dets, core, res := u4CoreFixture(t)
 	halves, ok := splitCoreSpan(core)
 	if !ok {
@@ -256,6 +263,7 @@ func TestExtractPanelLoopU4CoreResolvesToCanalStation(t *testing.T) {
 // so surf.PointAt at each domain corner reproduces the setbackSection endpoint to the last bit. This is
 // what makes the canal core panel weld to its sliver/core neighbours with zero drift (ADR-0042).
 func TestExtractPanelLoopU4CoreCanalSeamBitIdentical(t *testing.T) {
+	t.Parallel()
 	ef, dets, core, res := u4CoreFixture(t)
 	halves, ok := splitCoreSpan(core)
 	if !ok {
@@ -307,6 +315,7 @@ func assertSeamCorner(t *testing.T, label string, got, want math.Point3) {
 // it — this test re-measures the payload directly to make the rolling-ball invariant an explicit,
 // diagnosable receipt (the ball touches both boss rims at every station).
 func TestExtractPanelLoopU4CoreCanalFootAtRadius(t *testing.T) {
+	t.Parallel()
 	ef, dets, core, res := u4CoreFixture(t)
 	loop, ok := extractPanelLoop(core, dets, ef, res)
 	if !ok {
@@ -350,6 +359,7 @@ func measureIntegratorArea(t *testing.T, loop RailLoop, res Resolution) float64 
 // regression to a real corner-blend panel shape, even though this whole dual-host body is still
 // gated off (never tessellated live until U4-5).
 func TestExtractPanelLoopU4CoreSplitProductionTessConverges(t *testing.T) {
+	t.Parallel()
 	ef, dets, core, res := u4CoreFixture(t)
 	halves, ok := splitCoreSpan(core)
 	if !ok {

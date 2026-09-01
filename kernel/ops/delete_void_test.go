@@ -59,6 +59,7 @@ func outerFaceKey(t *testing.T, b *topo.Body) []byte {
 // TestRemoveVoidShellRestoresMass is the FaceShell arm of Delete Face (#1884): selecting a face on
 // the 4³−2³ cavity's void shell removes the void, restoring the 64 solid volume.
 func TestRemoveVoidShellRestoresMass(t *testing.T) {
+	t.Parallel()
 	body := distinctCavityBody(t, "outer", "inner")
 	if v := BodyGeometryProperties(body, DefaultQuality()).Volume; stdmath.Abs(v-56) > 0.1 {
 		t.Fatalf("fixture volume = %g, want 56 (4³ minus 2³ cavity)", v)
@@ -85,6 +86,7 @@ func TestRemoveVoidShellRestoresMass(t *testing.T) {
 // TestFacesOnVoidShellRejectsOuterFace: an outer-shell face is not a void selection, so the feature
 // routes to an ordinary face delete instead.
 func TestFacesOnVoidShellRejectsOuterFace(t *testing.T) {
+	t.Parallel()
 	body := distinctCavityBody(t, "outer", "inner")
 	if FacesOnVoidShell(body, [][]byte{outerFaceKey(t, body)}, DefaultQuality()) {
 		t.Error("an outer-shell face should report FacesOnVoidShell false")
@@ -97,6 +99,7 @@ func TestFacesOnVoidShellRejectsOuterFace(t *testing.T) {
 // TestRemoveVoidShellErrorsOnNonVoid: RemoveVoidShellByFaces refuses an outer/lost face so the
 // feature goes Sick rather than mangle the body.
 func TestRemoveVoidShellErrorsOnNonVoid(t *testing.T) {
+	t.Parallel()
 	body := distinctCavityBody(t, "outer", "inner")
 	if _, err := RemoveVoidShellByFaces(body, [][]byte{outerFaceKey(t, body)}, DefaultQuality()); err == nil {
 		t.Error("removing a void by an outer-shell face should error")
@@ -109,6 +112,7 @@ func TestRemoveVoidShellErrorsOnNonVoid(t *testing.T) {
 // TestDropFacesLeavesOpenSurface pins the heal=false arm at the kernel level: dropping a box face
 // leaves an open (non-solid) surface body with one fewer face.
 func TestDropFacesLeavesOpenSurface(t *testing.T) {
+	t.Parallel()
 	block, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "b")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)

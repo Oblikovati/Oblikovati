@@ -7,6 +7,7 @@ import "testing"
 // TestLightingStyleCommandsSetRig checks the View-tab Lighting Style options activate the rig
 // on the session, end to end through the ribbon command.
 func TestLightingStyleCommandsSetRig(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if err := s.Execute("View.Lighting.Outdoors"); err != nil {
 		t.Fatalf("execute Lighting.Outdoors: %v", err)
@@ -26,6 +27,7 @@ func TestLightingStyleCommandsSetRig(t *testing.T) {
 // TestEnvironmentCommandsSetEnvironment checks the Environment options drive the session's IBL
 // environment (and that None clears it).
 func TestEnvironmentCommandsSetEnvironment(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if err := s.Execute("View.Environment.Studio"); err != nil {
 		t.Fatalf("execute Environment.Studio: %v", err)
@@ -45,6 +47,7 @@ func TestEnvironmentCommandsSetEnvironment(t *testing.T) {
 // state, and that enabling object shadows seeds a visible density. A fresh session starts with
 // object shadows ON — the Three Point default rig casts soft studio shadows (ADR-0026 §8).
 func TestShadowToggleCommands(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if !s.ShadowSettings().ObjectShadows {
 		t.Fatal("object shadows should start on (the Three Point default rig casts them)")
@@ -71,6 +74,7 @@ func TestShadowToggleCommands(t *testing.T) {
 // TestLightingSettingsCommandToggles checks the "Lighting…" command opens and closes the
 // settings panel and reports its open state.
 func TestLightingSettingsCommandToggles(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if s.LightingPanelOpen() {
 		t.Fatal("panel should start closed")
@@ -92,6 +96,7 @@ func TestLightingSettingsCommandToggles(t *testing.T) {
 
 // TestLightingToneSetters checks the exposure/brightness/ambience setters edit the live rig.
 func TestLightingToneSetters(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.SetExposure(1.7)
 	s.SetBrightness(2.2)
@@ -104,6 +109,7 @@ func TestLightingToneSetters(t *testing.T) {
 // TestLoadHDRCommandRequestsDialog checks the "Load HDR…" command raises a one-shot request the
 // head consumes to open its file dialog, and that LoadEnvironmentFile sets a file environment.
 func TestLoadHDRCommandRequestsDialog(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if err := s.Execute("View.LoadHDR"); err != nil {
 		t.Fatalf("execute LoadHDR: %v", err)
@@ -123,6 +129,7 @@ func TestLoadHDRCommandRequestsDialog(t *testing.T) {
 // TestLightingPanelsOnViewTab checks the Lighting Style, Environment and Shadows panels are all
 // present on the View tab (the ribbon exposes the controls).
 func TestLightingPanelsOnViewTab(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	tab, ok := BuildRibbon(s).Tab("View")
 	if !ok {

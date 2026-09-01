@@ -27,6 +27,7 @@ func squareSketch(side float64) *sketch.Sketch {
 }
 
 func TestExtrudeCreatesValidSolid(t *testing.T) {
+	t.Parallel()
 	ps := param.NewParameters()
 	h, _ := ps.AddUserParameter("height", "5 cm")
 	fs := NewPartFeatures(ps)
@@ -63,6 +64,7 @@ func TestExtrudeCreatesValidSolid(t *testing.T) {
 }
 
 func TestExtrudeRecomputesOnParameterChange(t *testing.T) {
+	t.Parallel()
 	ps := param.NewParameters()
 	h, _ := ps.AddUserParameter("height", "5 cm")
 	fs := NewPartFeatures(ps)
@@ -84,6 +86,7 @@ func TestExtrudeRecomputesOnParameterChange(t *testing.T) {
 }
 
 func TestExtrudeGoesSickOnOpenProfile(t *testing.T) {
+	t.Parallel()
 	// A sketch with an open chain has no closed profile to extrude into a solid.
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	a := s.Points().Add(math.P2(0, 0))
@@ -101,6 +104,7 @@ func TestExtrudeGoesSickOnOpenProfile(t *testing.T) {
 }
 
 func TestUngeneratedFeaturesGoSick(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := squareSketch(1)
 	feats := []*PartFeature{
@@ -125,6 +129,7 @@ func TestUngeneratedFeaturesGoSick(t *testing.T) {
 }
 
 func TestExtrudesGetUniqueInventorNames(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
 	a := ex.AddByDistanceExtent(squareSketch(2), 0, ops.NewBody, func() float64 { return 3 })
@@ -136,6 +141,7 @@ func TestExtrudesGetUniqueInventorNames(t *testing.T) {
 }
 
 func TestExtrudeSetDistanceAndOperationDriveRecompute(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(2), 0, ops.NewBody, func() float64 { return 5 })
 	ext := pf.Definition().(*ExtrudeFeature)
@@ -176,6 +182,7 @@ func squareSketchAt(side, dx float64) *sketch.Sketch {
 }
 
 func TestExtrudeJoinDisjointMergesBodies(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
 	ex.AddByDistanceExtent(squareSketch(2), 0, ops.NewBody, func() float64 { return 3 })
@@ -190,6 +197,7 @@ func TestExtrudeJoinDisjointMergesBodies(t *testing.T) {
 }
 
 func TestFeatureDefinitionsAccessible(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := squareSketch(1)
 	ex := NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 1 })

@@ -14,6 +14,7 @@ import (
 // is symmetric, and the triangulation is Delaunay (no in-circle-illegal edge). An
 // adjacency or flip bug breaks at least one of these.
 func TestDelaunayInsertInvariants(t *testing.T) {
+	t.Parallel()
 	faces := [][3]Point{
 		tri([3]float64{0, 0, 0}, [3]float64{12, 0, 0}, [3]float64{0, 12, 0}),
 		tri([3]float64{0, 0, 0}, [3]float64{0, 6, 0}, [3]float64{0, 0, 6}),
@@ -41,6 +42,7 @@ func TestDelaunayInsertInvariants(t *testing.T) {
 // TestDelaunaySharedEdgeSplit exercises the four-triangle shared-edge split: insert
 // the face centre (creating internal edges), then the midpoint of an internal edge.
 func TestDelaunaySharedEdgeSplit(t *testing.T) {
+	t.Parallel()
 	face := tri([3]float64{0, 0, 0}, [3]float64{6, 0, 0}, [3]float64{0, 6, 0})
 	d := newDelaunayInTriangle(face)
 	d.Insert(pt([3]float64{2, 2, 0})) // centre → internal edges to the corners
@@ -53,6 +55,7 @@ func TestDelaunaySharedEdgeSplit(t *testing.T) {
 }
 
 func TestDelaunayEdgeCases(t *testing.T) {
+	t.Parallel()
 	face := tri([3]float64{0, 0, 0}, [3]float64{6, 0, 0}, [3]float64{0, 6, 0})
 	d := newDelaunayInTriangle(face)
 	d.Insert(pt([3]float64{1, 1, 0}))
@@ -71,6 +74,7 @@ func TestDelaunayEdgeCases(t *testing.T) {
 }
 
 func TestNewDelaunayNormalizesCW(t *testing.T) {
+	t.Parallel()
 	cw := tri([3]float64{0, 0, 0}, [3]float64{0, 6, 0}, [3]float64{6, 0, 0}) // CW in xy
 	d := newDelaunayInTriangle(cw)
 	tr := d.tris[0]

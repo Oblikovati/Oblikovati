@@ -36,6 +36,7 @@ func partBodies(s *Session) func() []*topo.Body {
 }
 
 func TestRayPickerSelectsTopFaceOfBox(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4) // box [0,2]×[0,2]×[0,4]
 
 	// Camera above the box looking straight down → the center pixel ray hits the top
@@ -65,6 +66,7 @@ func TestRayPickerSelectsTopFaceOfBox(t *testing.T) {
 }
 
 func TestRayPickerHonorsBodyFilter(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 3, 4) // a larger box still centered under (1,1)
 	cam := scene.NewCamera(400, 400)
 	cam.Eye = math.P3(1, 1, 20)
@@ -80,6 +82,7 @@ func TestRayPickerHonorsBodyFilter(t *testing.T) {
 }
 
 func TestRayPickerMissSelectsNothing(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4)
 	cam := scene.NewCamera(400, 400)
 	cam.Eye = math.P3(1, 1, 20)
@@ -93,6 +96,7 @@ func TestRayPickerMissSelectsNothing(t *testing.T) {
 }
 
 func TestRayPickerSetCameraAndDirectQuery(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 6) // a taller box
 	p := NewRayPicker(scene.NewCamera(10, 10), partBodies(s))
 	cam := scene.NewCamera(400, 400)

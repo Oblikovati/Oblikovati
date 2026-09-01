@@ -42,6 +42,7 @@ func revolveReadyPart(t *testing.T) *app.Session {
 // booleaned. Its area matches the analytic surface-of-revolution area θ·h·(r1+r2)+θ(r2²−r1²)
 // (verified against the OCCT oracle), within the tessellation tolerance.
 func TestRevolveSurfaceOperation(t *testing.T) {
+	t.Parallel()
 	s := revolveReadyPart(t)
 	raw, err := applyMap(t, s, "revolve", map[string]any{
 		"sketchIndex": 0, "angle": "180 deg", "axisRef": "origin/axis/y", "operation": "surface",
@@ -75,6 +76,7 @@ func TestRevolveSurfaceOperation(t *testing.T) {
 // TestRevolveSurfaceUnknownOperationErrors: an unknown operation is still a clean error after
 // adding "surface" to the revolve enum.
 func TestRevolveSurfaceUnknownOperationErrors(t *testing.T) {
+	t.Parallel()
 	s := revolveReadyPart(t)
 	if _, err := applyMap(t, s, "revolve", map[string]any{"sketchIndex": 0, "angle": "90 deg", "operation": "bogus"}); err == nil {
 		t.Error("unknown operation should error")

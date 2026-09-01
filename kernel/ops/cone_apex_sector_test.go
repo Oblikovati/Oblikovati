@@ -46,6 +46,7 @@ func coneApexSectorFace(t *testing.T, apex math.Point3, axis math.Vector3, half,
 // which read one orientation's loop as seam-crossing and over-covered it as a full 2π cone (×1.26,
 // 167927) while the sibling meshed correctly — an orientation-dependent tessellation defect.
 func TestConeApexSectorAreaOrientationIndependent(t *testing.T) {
+	t.Parallel()
 	const half, baseV, sweep = stdmath.Pi / 4, 200.0, 3 * stdmath.Pi / 2
 	radius := baseV * stdmath.Tan(half)
 	slant := stdmath.Sqrt(baseV*baseV + radius*radius)

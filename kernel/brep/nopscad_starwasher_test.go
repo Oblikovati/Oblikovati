@@ -8,6 +8,7 @@ import (
 )
 
 func TestNopStarWasherCSG(t *testing.T) {
+	t.Parallel()
 	outerR, innerR, thickness := 0.9, 0.31, 0.12
 	body := annularPrism(t, outerR, innerR, thickness, "star-washer")
 	inner := (innerR + outerR) / 2

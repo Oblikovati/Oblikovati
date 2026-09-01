@@ -36,6 +36,7 @@ func stepShaftSketch() *sketch.Sketch {
 // the geometric collapse AND the silent gate (a real collapse now records a volume-reject Defect and
 // falls through the guarded path rather than passing as OK).
 func TestChamferOfTaperShaftRimDoesNotCollapse(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewRevolveFeatures(fs).Add(stepShaftSketch(), 0, yAxis(), nil, ops.NewBody)
 	fs.Recompute()

@@ -61,6 +61,7 @@ func (m markedBodyFeature) Recompute(Input) (Output, error) {
 // does not mesh must say so. Before this, kernel/ops knew and the feature reply was clean — which is
 // how #2038's 77%-low body reached the user without a word.
 func TestFeatureReportsTheTessellatorsDefect(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := fs.Add(crossedTrimFeature{})
 	fs.Recompute()
@@ -74,6 +75,7 @@ func TestFeatureReportsTheTessellatorsDefect(t *testing.T) {
 // feature that hands its input straight back returns the same *topo.Body, and blaming it would point
 // the user at the wrong row of the browser.
 func TestDegradationIsFiledOnTheProducingFeature(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	bad := fs.Add(crossedTrimFeature{})
 	quiet := fs.Add(passThroughFeature{})
@@ -91,6 +93,7 @@ func TestDegradationIsFiledOnTheProducingFeature(t *testing.T) {
 // arrive; its Info markers (e.g. "assembled through the fillet edge catalog", which a kernel corpus
 // gate reads) must not, or every fillet would ship noise on the wire.
 func TestBuildReportReachesTheFeatureWithoutItsInfoMarkers(t *testing.T) {
+	t.Parallel()
 	const marker, degradation diag.Code = "test.path-marker", "test.degradation"
 	fs := NewPartFeatures(nil)
 	pf := fs.Add(markedBodyFeature{marks: []diag.Diagnostic{
@@ -110,6 +113,7 @@ func TestBuildReportReachesTheFeatureWithoutItsInfoMarkers(t *testing.T) {
 // a report that grew a copy each time would turn one defect into a hundred over a session. It also
 // pins the memo — the second pass must reuse the verdict of a body it already judged, not re-mesh it.
 func TestRepeatedRecomputesDoNotAccumulateDiagnostics(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := fs.Add(crossedTrimFeature{})
 	fs.Recompute()
@@ -129,6 +133,7 @@ func TestRepeatedRecomputesDoNotAccumulateDiagnostics(t *testing.T) {
 // TestThreadCutModelsRealThreadFast's no-boolean budget fail by 2x on CI. The price belongs to the
 // caller who wants the answer. The memo must also survive a recompute that changed nothing.
 func TestRecomputeDoesNotReadTheBodiesUntilAsked(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := fs.Add(crossedTrimFeature{})
 	fs.Recompute()
@@ -149,6 +154,7 @@ func TestRecomputeDoesNotReadTheBodiesUntilAsked(t *testing.T) {
 // away must disappear from the report — the model no longer has it, and a stale alarm is as bad as a
 // missing one.
 func TestDeletedGeometryStopsBeingReported(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	bad := fs.Add(crossedTrimFeature{})
 	fs.Add(discardBodiesFeature{})

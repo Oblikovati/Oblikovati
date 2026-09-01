@@ -12,6 +12,7 @@ import (
 // TestSketchRegionPropertiesOverWire: the seeded 4×3 rectangle reports its
 // exact section property set (M06-F08, #623).
 func TestSketchRegionPropertiesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var got wire.RegionPropertiesResult
 	call(t, r, s, "sketch.regionProperties", `{"sketchIndex":0,"profileIndex":0}`, &got)
@@ -41,6 +42,7 @@ func TestSketchRegionPropertiesOverWire(t *testing.T) {
 // TestSketchRegionPropertiesRejectsBadInput: unknown accuracy spellings and
 // out-of-range profile indices error with the offending value.
 func TestSketchRegionPropertiesRejectsBadInput(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, "sketch.regionProperties",
 		[]byte(`{"sketchIndex":0,"profileIndex":0,"accuracy":"extreme"}`)); err == nil {

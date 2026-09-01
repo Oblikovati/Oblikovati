@@ -57,6 +57,7 @@ func multiRimFils(t *testing.T, body *topo.Body) []edgeFillet {
 // TestIndependentClosedRimsWeldB3 drives the two-rim op end to end and certifies the weld: took=true,
 // a valid closed manifold 12-face solid (the DRAWEXE face-count join), both cove bands present.
 func TestIndependentClosedRimsWeldB3(t *testing.T) {
+	t.Parallel()
 	body := importMultiRimFixture(t)
 	fils := multiRimFils(t, body)
 	if len(fils) != 2 {
@@ -79,6 +80,7 @@ func TestIndependentClosedRimsWeldB3(t *testing.T) {
 // rim is not this branch's business (loneRimPick owns it), and two fils sharing a host face (the same
 // rim twice — a stand-in for two coves biting one face) must be rejected, never welded twice.
 func TestIndependentClosedRimsGateDeclines(t *testing.T) {
+	t.Parallel()
 	body := importMultiRimFixture(t)
 	fils := multiRimFils(t, body)
 	if allDisjointClosedRims(fils[:1]) {

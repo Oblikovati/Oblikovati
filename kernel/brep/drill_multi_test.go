@@ -20,6 +20,7 @@ import (
 // path (the target is no longer all-planar). The result is watertight with two cylinder walls and the
 // slab's six planar faces.
 func TestDrillThroughCurvedSecondHole(t *testing.T) {
+	t.Parallel()
 	slab, _ := SolidBlock(math.P3(-16, -10, 0), math.P3(16, 10, 6), "slab")
 	first, err := CutCylindricalHole(slab, math.P3(-6, 0, -1), math.V3(0, 0, 1), 1.5)
 	if err != nil {
@@ -42,6 +43,7 @@ func TestDrillThroughCurvedSecondHole(t *testing.T) {
 // TestDrillThroughCurvedFiveHoles drills five holes in sequence and checks each adds exactly one cylinder
 // wall while the body stays a single watertight shell — the topology behind the chained-drift guard.
 func TestDrillThroughCurvedFiveHoles(t *testing.T) {
+	t.Parallel()
 	res, _ := SolidBlock(math.P3(-16, -10, 0), math.P3(16, 10, 6), "slab")
 	for i, cx := range []float64{-8, -4, 0, 4, 8} {
 		out, err := drillThroughCurved(res, math.P3(cx, 0, -1), math.V3(0, 0, 1), 1.5, stdmath.Inf(-1), stdmath.Inf(1))
@@ -59,6 +61,7 @@ func TestDrillThroughCurvedFiveHoles(t *testing.T) {
 // TestDrillThroughCurvedRejectsClipped: a hole whose circle spills past the slab edge is partial, so the
 // curved drill returns an error and the caller keeps its fallback.
 func TestDrillThroughCurvedRejectsClipped(t *testing.T) {
+	t.Parallel()
 	slab, _ := SolidBlock(math.P3(-16, -10, 0), math.P3(16, 10, 6), "slab")
 	if _, err := drillThroughCurved(slab, math.P3(15.5, 0, -1), math.V3(0, 0, 1), 1.5, stdmath.Inf(-1), stdmath.Inf(1)); err == nil {
 		t.Error("a hole clipping the slab edge should error (partial hole), got nil")
@@ -68,6 +71,7 @@ func TestDrillThroughCurvedRejectsClipped(t *testing.T) {
 // TestDrillThroughCurvedRejectsOverlap: a second hole overlapping the first is not a clean through-hole,
 // so the curved drill rejects it.
 func TestDrillThroughCurvedRejectsOverlap(t *testing.T) {
+	t.Parallel()
 	slab, _ := SolidBlock(math.P3(-16, -10, 0), math.P3(16, 10, 6), "slab")
 	first, _ := CutCylindricalHole(slab, math.P3(0, 0, -1), math.V3(0, 0, 1), 1.5)
 	if _, err := drillThroughCurved(first, math.P3(1.5, 0, -1), math.V3(0, 0, 1), 1.5, stdmath.Inf(-1), stdmath.Inf(1)); err == nil {
@@ -90,6 +94,7 @@ func TestDrillThroughCurvedRejectsOverlap(t *testing.T) {
 // a plain stack of two blocks does NOT reproduce it: there the axis also crosses the outer z-faces, so
 // the drill declines on the "exactly 2 caps" count and never reaches this check.
 func TestDrillRejectsCapsAcrossAVoid(t *testing.T) {
+	t.Parallel()
 	slotted := slottedHead(t)
 	// The drill crosses the slot: material above it, the void, material below.
 	_, err := drillThroughCurved(slotted, math.P3(0.35, 0, -1), math.V3(0, 0, 1), 0.1, stdmath.Inf(-1), stdmath.Inf(1))
@@ -124,6 +129,7 @@ func slottedHead(t *testing.T) *topo.Body {
 // genuine drill. On a real slab the entry normal opposes the travel and the exit normal runs with it —
 // exactly what tells it apart from the facing-walls pair above, which has those signs inverted.
 func TestDrillStillTakesATrueThroughHole(t *testing.T) {
+	t.Parallel()
 	slab, _ := SolidBlock(math.P3(-16, -10, 0), math.P3(16, 10, 6), "slab")
 	res, err := drillThroughCurved(slab, math.P3(0, 0, -1), math.V3(0, 0, 1), 1.5, stdmath.Inf(-1), stdmath.Inf(1))
 	if err != nil {

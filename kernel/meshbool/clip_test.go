@@ -5,6 +5,7 @@ package meshbool
 import "testing"
 
 func TestTrianglePolygonOverlapPartial(t *testing.T) {
+	t.Parallel()
 	a := tri([3]float64{0, 0, 0}, [3]float64{4, 0, 0}, [3]float64{0, 4, 0})
 	clip := tri([3]float64{1, 1, 0}, [3]float64{5, 1, 0}, [3]float64{1, 5, 0})
 	got := trianglePolygonOverlap(a, clip, 2)
@@ -13,6 +14,7 @@ func TestTrianglePolygonOverlapPartial(t *testing.T) {
 }
 
 func TestTrianglePolygonOverlapCWClipSameResult(t *testing.T) {
+	t.Parallel()
 	a := tri([3]float64{0, 0, 0}, [3]float64{4, 0, 0}, [3]float64{0, 4, 0})
 	// Same clip triangle wound clockwise: the CCW-normalization branch must yield
 	// the identical overlap.
@@ -23,6 +25,7 @@ func TestTrianglePolygonOverlapCWClipSameResult(t *testing.T) {
 }
 
 func TestTrianglePolygonOverlapDisjoint(t *testing.T) {
+	t.Parallel()
 	a := tri([3]float64{0, 0, 0}, [3]float64{4, 0, 0}, [3]float64{0, 4, 0})
 	far := tri([3]float64{10, 10, 0}, [3]float64{14, 10, 0}, [3]float64{10, 14, 0})
 	if got := trianglePolygonOverlap(a, far, 2); len(got) != 0 {
@@ -31,6 +34,7 @@ func TestTrianglePolygonOverlapDisjoint(t *testing.T) {
 }
 
 func TestCoplanarConstraintsEdgeAndDisjoint(t *testing.T) {
+	t.Parallel()
 	a := tri([3]float64{0, 0, 0}, [3]float64{4, 0, 0}, [3]float64{0, 4, 0})
 	// Shares only the hypotenuse (4,0)-(0,4): overlap is that segment → one edge.
 	acrossHyp := tri([3]float64{4, 0, 0}, [3]float64{0, 4, 0}, [3]float64{4, 4, 0})

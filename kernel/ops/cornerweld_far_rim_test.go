@@ -83,6 +83,7 @@ func n4RimLink(t *testing.T) (cornerArmLink, geom.Torus, cornerWeldPlan) {
 // This is the property that makes the rim-continuation branch unreachable for every existing green: they all
 // terminate at a vertex with exactly ONE transverse capping face.
 func TestRimVertexIsSeamOnlyWhenNoCapExists(t *testing.T) {
+	t.Parallel()
 	link, _, plan := n4RimLink(t)
 	seam, reason := rimVertexIsSeam(link)
 	if reason != "" || !seam {
@@ -101,6 +102,7 @@ func TestRimVertexIsSeamOnlyWhenNoCapExists(t *testing.T) {
 // plus the 180° continuation across the boss wall's second face), ending at a vertex the far-runout engine
 // can cap. A regression that stops at the seam would emit a different solid.
 func TestRimContinuationWalksToTheCappedEnd(t *testing.T) {
+	t.Parallel()
 	link, torus, plan := n4RimLink(t)
 	res := ResolutionForPoints([]math.Point3{math.P3(0, 0, 0), math.P3(200, 200, 100)})
 	links, reason := rimContinuationLinks(link, torus, plan, res)
@@ -125,6 +127,7 @@ func TestRimContinuationWalksToTheCappedEnd(t *testing.T) {
 // itself a picked edge is the fillet-fillet regime, not a plain rim, so the walk must DECLINE with the
 // offending vertex rather than run the arm through it.
 func TestRimContinuationDeclinesWhenTheRimIsAlreadyFilleted(t *testing.T) {
+	t.Parallel()
 	link, torus, plan := n4RimLink(t)
 	for _, e := range link.farVtx.Edges() {
 		plan.filleted[e.ID()] = true // every candidate is now a picked edge
@@ -140,6 +143,7 @@ func TestRimContinuationDeclinesWhenTheRimIsAlreadyFilleted(t *testing.T) {
 // SAME rolling ball. Walking with a ball radius the hosts cannot host at all must decline, never accept a
 // continuation that is a different fillet.
 func TestRimContinuationDeclinesWhenTheBallLeavesAHost(t *testing.T) {
+	t.Parallel()
 	link, torus, plan := n4RimLink(t)
 	plan.radius = 7 // no longer the r=5 tube the two hosts are tangent to at this vertex
 	res := ResolutionForPoints([]math.Point3{math.P3(0, 0, 0), math.P3(200, 200, 100)})
@@ -165,6 +169,7 @@ func fixtureFacesOfKind(b *topo.Body, kind geom.SurfaceKind) []*topo.Face {
 // swap. A swapped hostA/hostB can weld to a watertight, in-tolerance, geometrically WRONG body (the N4
 // wrong-half mechanism), so the pairing must DECLINE rather than return the first ordering it tried.
 func TestRimRoleHostsDeclinesOnSameKindAmbiguity(t *testing.T) {
+	t.Parallel()
 	b := importCornerWeldFixture(t, "N4")
 	planes := fixtureFacesOfKind(b, geom.SurfacePlane)
 	if len(planes) < 4 {
@@ -181,6 +186,7 @@ func TestRimRoleHostsDeclinesOnSameKindAmbiguity(t *testing.T) {
 // exactly one ordering matches, so the pairing is discriminated and must be taken — including when the
 // continuation edge lists its faces in the opposite order.
 func TestRimRoleHostsPairsDiscriminatedKinds(t *testing.T) {
+	t.Parallel()
 	b := importCornerWeldFixture(t, "N4")
 	planes := fixtureFacesOfKind(b, geom.SurfacePlane)
 	cyls := fixtureFacesOfKind(b, geom.SurfaceCylinder)
@@ -198,6 +204,7 @@ func TestRimRoleHostsPairsDiscriminatedKinds(t *testing.T) {
 // TestRimRoleHostsRejectsASelfPairedEdge guards the degenerate input: a seam edge that lists ONE face twice
 // cannot fill two distinct host roles, and pairing it would put the same face on both sides of the arm.
 func TestRimRoleHostsRejectsASelfPairedEdge(t *testing.T) {
+	t.Parallel()
 	b := importCornerWeldFixture(t, "N4")
 	planes := fixtureFacesOfKind(b, geom.SurfacePlane)
 	if len(planes) < 2 {

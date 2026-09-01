@@ -28,6 +28,7 @@ func enumerated(t *testing.T, r *Router, s *app.Session) []wire.ConstraintInfo {
 // TestSketchLineSymmetryCreatable: kind=symmetry with two line refs + an axis makes the lines
 // symmetric and enumerates (coarsely) as "symmetry" with the two lines + axis (#1870).
 func TestSketchLineSymmetryCreatable(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	l1 := addEnt(t, r, s, `{"sketchIndex":0,"kind":"line","points":[[1,0],[2,1]]}`)
 	l2 := addEnt(t, r, s, `{"sketchIndex":0,"kind":"line","points":[[-1,0],[-2,1]]}`)
@@ -51,6 +52,7 @@ func TestSketchLineSymmetryCreatable(t *testing.T) {
 
 // TestSketchCircularSymmetryCreatable: kind=symmetry with two circle refs + an axis (#1870).
 func TestSketchCircularSymmetryCreatable(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	c1 := addEnt(t, r, s, `{"sketchIndex":0,"kind":"circle","points":[[3,1]],"radius":"2"}`)
 	c2 := addEnt(t, r, s, `{"sketchIndex":0,"kind":"circle","points":[[-3,1]],"radius":"2"}`)
@@ -68,6 +70,7 @@ func TestSketchCircularSymmetryCreatable(t *testing.T) {
 // TestSketchSymmetryMixedOperandsError: two operands of different kinds (a line and a circle)
 // are not a matching pair and must error clearly, not silently drop (#1870 AC4).
 func TestSketchSymmetryMixedOperandsError(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	l := addEnt(t, r, s, `{"sketchIndex":0,"kind":"line","points":[[1,0],[2,1]]}`)
 	c := addEnt(t, r, s, `{"sketchIndex":0,"kind":"circle","points":[[-3,1]],"radius":"2"}`)
@@ -82,6 +85,7 @@ func TestSketchSymmetryMixedOperandsError(t *testing.T) {
 // TestSketchArcMidpointCreatable: kind=midpoint with [point, arc] constrains the point to the
 // arc midpoint and enumerates (coarsely) as "midpoint" with [point, arc] (#1872).
 func TestSketchArcMidpointCreatable(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	arc := addEnt(t, r, s, `{"sketchIndex":0,"kind":"arc","variant":"centerStartEnd","points":[[0,0],[2,0],[0,2]],"ccw":true}`)
 	p := addEnt(t, r, s, `{"sketchIndex":0,"kind":"point","points":[[5,5]]}`)
@@ -104,6 +108,7 @@ func TestSketchArcMidpointCreatable(t *testing.T) {
 
 // TestSketchMidpointLineStillWorks: the line form of midpoint is unchanged (#1872).
 func TestSketchMidpointLineStillWorks(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	l := addEnt(t, r, s, `{"sketchIndex":0,"kind":"line","points":[[0,0],[4,0]]}`)
 	p := addEnt(t, r, s, `{"sketchIndex":0,"kind":"point","points":[[2,3]]}`)
@@ -119,6 +124,7 @@ func TestSketchMidpointLineStillWorks(t *testing.T) {
 // TestSketchMidpointCircleErrors: a circle has no defined midpoint, so [point, circle] errors
 // clearly rather than being accepted (#1872 AC2).
 func TestSketchMidpointCircleErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	c := addEnt(t, r, s, `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"2"}`)
 	p := addEnt(t, r, s, `{"sketchIndex":0,"kind":"point","points":[[2,3]]}`)

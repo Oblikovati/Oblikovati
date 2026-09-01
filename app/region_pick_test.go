@@ -26,6 +26,7 @@ func regionPickerForBox(t *testing.T) (*RayPicker, screenRect) {
 }
 
 func TestPickRegionWindowEnclosesBody(t *testing.T) {
+	t.Parallel()
 	p, box := regionPickerForBox(t)
 	filter := NewSelectionFilter()
 
@@ -46,6 +47,7 @@ func TestPickRegionWindowEnclosesBody(t *testing.T) {
 }
 
 func TestPickRegionCrossingTouchesBody(t *testing.T) {
+	t.Parallel()
 	p, box := regionPickerForBox(t)
 	filter := NewSelectionFilter()
 
@@ -61,6 +63,7 @@ func TestPickRegionCrossingTouchesBody(t *testing.T) {
 }
 
 func TestPickRegionNilBodiesAndBehindCamera(t *testing.T) {
+	t.Parallel()
 	// No bodies provider → no region hits (the head installs one, but guard the nil case).
 	pNil := NewRayPicker(scene.NewCamera(400, 400), nil)
 	if got := pNil.PickRegion(0, 0, 100, 100, false, NewSelectionFilter()); got != nil {
@@ -83,6 +86,7 @@ func TestPickRegionNilBodiesAndBehindCamera(t *testing.T) {
 // filter: a body-permissive filter selects the whole body, a face-only filter selects its faces,
 // an edge-only filter selects its edges (#909). The box [0,2]×[0,2]×[0,4] has 6 faces and 12 edges.
 func TestPickRegionGranularityByFilter(t *testing.T) {
+	t.Parallel()
 	p, box := regionPickerForBox(t)
 	pad := 5.0
 	enclose := func(f *SelectionFilter) []Selectable {
@@ -115,6 +119,7 @@ func TestPickRegionGranularityByFilter(t *testing.T) {
 // TestPickRegionFilterAcceptsNothingRelevant checks a filter that admits none of body/face/edge
 // (e.g. vertices only) yields no region hits.
 func TestPickRegionFilterAcceptsNothingRelevant(t *testing.T) {
+	t.Parallel()
 	p, box := regionPickerForBox(t)
 	vtx := NewSelectionFilter(SelectVertex)
 	if got := p.PickRegion(box.minX-5, box.minY-5, box.maxX+5, box.maxY+5, false, vtx); got != nil {
@@ -125,6 +130,7 @@ func TestPickRegionFilterAcceptsNothingRelevant(t *testing.T) {
 // TestPickRegionGranularityCrossing checks the crossing mode for faces and edges: a rectangle
 // over part of the box still catches the faces/edges it overlaps (which a window would miss).
 func TestPickRegionGranularityCrossing(t *testing.T) {
+	t.Parallel()
 	p, box := regionPickerForBox(t)
 	midX := (box.minX + box.maxX) / 2
 	x0, y0, x1, y1 := box.minX-5, box.minY-5, midX, box.maxY+5

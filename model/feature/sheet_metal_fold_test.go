@@ -32,6 +32,7 @@ func foldedSheet(t *testing.T, side, mid float64, loc BendLocation) *topo.Body {
 // TestFoldFoldsValidSolid a fold along a line over the rule radius yields one valid watertight
 // solid that rises out of the plane.
 func TestFoldFoldsValidSolid(t *testing.T) {
+	t.Parallel()
 	body := foldedSheet(t, 4, 2, CenterlineOfBend)
 	if r := ops.Validate(body); !r.Valid {
 		t.Fatalf("folded sheet invalid: %v", r.Issues)
@@ -48,6 +49,7 @@ func TestFoldFoldsValidSolid(t *testing.T) {
 // positions along the sheet (the folded half's extent in +X differs), proving the location
 // actually moves the bend.
 func TestFoldBendLocationShiftsTheFold(t *testing.T) {
+	t.Parallel()
 	// Measure where the folded (raised) material begins in X for each location: the min X of
 	// any vertex above the flat sheet.
 	raisedMinX := func(loc BendLocation) float64 {
@@ -72,6 +74,7 @@ func TestFoldBendLocationShiftsTheFold(t *testing.T) {
 
 // TestParseBendLocation the wire spellings resolve, with an unknown one rejected.
 func TestParseBendLocation(t *testing.T) {
+	t.Parallel()
 	for s, want := range map[string]BendLocation{"": CenterlineOfBend, "centerline": CenterlineOfBend, "start": StartOfBend, "end": EndOfBend} {
 		if got, ok := ParseBendLocation(s); !ok || got != want {
 			t.Errorf("ParseBendLocation(%q) = (%d,%v), want (%d,true)", s, got, ok, want)
@@ -84,6 +87,7 @@ func TestParseBendLocation(t *testing.T) {
 
 // TestFoldNeedsRadius a fold with no radius override and no BendRadius parameter goes sick.
 func TestFoldNeedsRadius(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil) // Thickness only, no BendRadius
 	line := sketch.NewSketches().Add(sketch.XYPlane())
 	line.Lines().AddByTwoPoints(math.P2(2, 0), math.P2(2, 4))
@@ -96,6 +100,7 @@ func TestFoldNeedsRadius(t *testing.T) {
 
 // TestFoldDefinitionAndKind the accessors return the recipe.
 func TestFoldDefinitionAndKind(t *testing.T) {
+	t.Parallel()
 	def := &SheetMetalFoldDefinition{LineIndex: 2, Location: EndOfBend}
 	f := &SheetMetalFoldFeature{def: def}
 	if f.Definition() != def || f.Kind() != "sheet-metal-fold" {
@@ -106,6 +111,7 @@ func TestFoldDefinitionAndKind(t *testing.T) {
 // TestFoldRoundTrip the fold recipe (sketch + line + angle + radius + location + flip)
 // marshals and restores, preserving the kind and payload.
 func TestFoldRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 0))
 	fs := NewPartFeatures(nil)
@@ -136,6 +142,7 @@ func TestFoldRoundTrip(t *testing.T) {
 
 // TestFoldMissingPayload restoring a fold record with no payload errors.
 func TestFoldMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreSheetMetalFold(NewPartFeatures(nil), nil, oneSketch{}); err == nil {
 		t.Error("restoreSheetMetalFold(nil) must error")
 	}
@@ -143,6 +150,7 @@ func TestFoldMissingPayload(t *testing.T) {
 
 // TestFoldSerializeUnknownSketch serializing a fold whose sketch is not in the part errors.
 func TestFoldSerializeUnknownSketch(t *testing.T) {
+	t.Parallel()
 	def := &SheetMetalFoldDefinition{Sketch: sketch.NewSketches().Add(sketch.XYPlane())}
 	if _, err := serializeSheetMetalFold(def, oneSketch{s: sketch.NewSketches().Add(sketch.XYPlane())}); err == nil {
 		t.Error("serializeSheetMetalFold with an unknown sketch must error")

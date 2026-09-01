@@ -13,6 +13,7 @@ import (
 // (the seam the edit tool, router, and serializer all drive) and re-derives when set, so the
 // plane (and anything built on it) follows the edited value after recompute.
 func TestWorkPlaneOffsetIsEditable(t *testing.T) {
+	t.Parallel()
 	_, def := emptyPartSession(t)
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 	def.Recompute()
@@ -30,6 +31,7 @@ func TestWorkPlaneOffsetIsEditable(t *testing.T) {
 
 // TestOriginPlaneIsNotOffsetEditable: an origin coordinate-system plane has no offset to edit.
 func TestOriginPlaneIsNotOffsetEditable(t *testing.T) {
+	t.Parallel()
 	_, def := emptyPartSession(t)
 	if sc := def.OriginPlanes()[0].EditableScalars(); len(sc) != 0 {
 		t.Error("an origin plane must not report an editable offset")
@@ -40,6 +42,7 @@ func TestOriginPlaneIsNotOffsetEditable(t *testing.T) {
 // tool seeded with its current offset (in the document's mm), and OK writes the new distance;
 // origin planes are a no-op.
 func TestBeginEditWorkPlaneOpensOffsetEditor(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 	def.Recompute()
@@ -79,6 +82,7 @@ func TestBeginEditWorkPlaneOpensOffsetEditor(t *testing.T) {
 
 // TestBeginEditWorkPlaneCancelRestoresOffset: cancelling restores the pre-edit distance.
 func TestBeginEditWorkPlaneCancelRestoresOffset(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 	def.Recompute()
@@ -94,6 +98,7 @@ func TestBeginEditWorkPlaneCancelRestoresOffset(t *testing.T) {
 // TestRedefineThreePointPlaneViaPick: double-clicking a three-point plane opens a redefine with
 // three point slots; arming one and feeding a point pick re-points the plane and recomputes.
 func TestRedefineThreePointPlaneViaPick(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	a := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 0) })
 	b := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 0, 0) })
@@ -127,6 +132,7 @@ func TestRedefineThreePointPlaneViaPick(t *testing.T) {
 
 // TestRedefineCancelRestoresReference: cancelling a redefine restores the original references.
 func TestRedefineCancelRestoresReference(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	a := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 0) })
 	b := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 0, 0) })
@@ -150,6 +156,7 @@ func TestRedefineCancelRestoresReference(t *testing.T) {
 // renders from: the dialog title, slot labels, and per-unit scalar names for both the
 // length (offset) and angle (line-plane-angle) cases.
 func TestEditPlaneDialogAccessors(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	angle := def.WorkPlanes().AddByLinePlaneAndAngle(
 		feature.OriginXAxis, feature.OriginXYPlane, func() float64 { return 0 })
@@ -175,6 +182,7 @@ func TestEditPlaneDialogAccessors(t *testing.T) {
 // (it would self-reference and drift), surfaces a notice, and leaves the slot armed so the
 // user can pick something else.
 func TestRedefineSelfPickRefused(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 	def.Recompute()
@@ -197,6 +205,7 @@ func TestRedefineSelfPickRefused(t *testing.T) {
 
 // TestBeginEditSketchEntersEnvironment: double-clicking a sketch enters the sketch environment.
 func TestBeginEditSketchEntersEnvironment(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	sk := def.Sketches().Item(0)
 	s.BeginEditSketch(SketchHandle{Sketch: sk})

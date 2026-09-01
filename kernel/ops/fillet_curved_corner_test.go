@@ -32,6 +32,7 @@ func nearlyPt(got, want math.Point3) bool {
 // (38.73, 10, 90), which is THIS point rotated −90° about z (a trotate-frame difference). Both are the
 // same OCCT corner KPart (BREP surface code 4) — radius r, centre 40 from the axis, z=90.
 func TestSolveBlend_B3CurvedCorner(t *testing.T) {
+	t.Parallel()
 	body := importCorpusSolid(t, "simple/B3")
 	picks := cornerEdgePicks(t, body, math.P3(0, -50, 100), 10)
 	blends, _, err := computeCorners(body, picks)
@@ -81,6 +82,7 @@ func cornerHostInputs(t *testing.T, rel string, p math.Point3, r float64) (geom.
 // z=15 reflected root (wall-tangent z=15), NOT the nearer-vertex z=5 root the legacy tiebreak returns
 // (which yields corner area 42 vs the oracle 90.19). See n7-runout-rederivation.md §tangent-dihedron.
 func TestCurvedCornerCenter_PicksInDomainRootAtTangentDihedron(t *testing.T) {
+	t.Parallel()
 	cyl, planes, v, r := n7CornerInputs(t)
 	res := curvedCornerResolution(v, cyl, planes)
 	c, ok := curvedCornerCenter(cyl, planes, r, 1, v, res)
@@ -96,6 +98,7 @@ func TestCurvedCornerCenter_PicksInDomainRootAtTangentDihedron(t *testing.T) {
 // in-domain root IS the legacy nearer-vertex root, so the returned centre is UNCHANGED — (10,−√1500,90),
 // wall-tangent z=90. This guards byte-faithfulness: the new root selection must not perturb B3.
 func TestCurvedCornerCenter_CleanOctantUnchanged(t *testing.T) {
+	t.Parallel()
 	cyl, planes, v, r := cleanOctantInputs(t)
 	res := curvedCornerResolution(v, cyl, planes)
 	c, ok := curvedCornerCenter(cyl, planes, r, 1, v, res)

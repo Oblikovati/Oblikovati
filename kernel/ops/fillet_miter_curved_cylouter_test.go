@@ -48,6 +48,7 @@ func newM3MiterCorner(t *testing.T) m3MiterCorner {
 // miterSeamBottom builds sBot on the torus↔host-cylinder contact circle (radius 30 about (50,15,105)),
 // landing on OCCT's (20,15,105) and lying on BOTH arm tubes to ~1e-9 (the equal-r seam endpoint).
 func TestMiterSeamBottomCylinderOuterHost(t *testing.T) {
+	t.Parallel()
 	fx := newM3MiterCorner(t)
 	res := ResolutionForPoints([]math.Point3{fx.vertex, fx.arms.tor.Center})
 	sBot, ok := miterSeamBottom(fx.arms, fx.torWall, fx.vertex, res)
@@ -68,6 +69,7 @@ func TestMiterSeamBottomCylinderOuterHost(t *testing.T) {
 // (radius hostCyl.Radius=30 about the torus centre, in the plane z=105) — the mirror of the plane
 // branch's major-circle contact — not on some other torus∩cylinder crossing.
 func TestMiterSeamBottomOnContactCircleRadius(t *testing.T) {
+	t.Parallel()
 	fx := newM3MiterCorner(t)
 	res := ResolutionForPoints([]math.Point3{fx.vertex, fx.arms.tor.Center})
 	sBot, ok := miterSeamBottom(fx.arms, fx.torWall, fx.vertex, res)
@@ -88,6 +90,7 @@ func TestMiterSeamBottomOnContactCircleRadius(t *testing.T) {
 // DRAWEXE sBot=(53.332,5.124,150) TestCurvedMiterSeamBottomOnTorusOuterHost pins — the additive
 // cylinder branch does not perturb the convex seam.
 func TestMiterSeamBottomPlaneOuterUnchanged(t *testing.T) {
+	t.Parallel()
 	fx := p5MiterCorner(t)
 	plane, err := geom.NewPlane(math.P3(50, 50, 150), math.V3(0, 0, 1))
 	if err != nil {

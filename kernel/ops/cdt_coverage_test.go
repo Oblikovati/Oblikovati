@@ -16,6 +16,7 @@ import (
 // carrying an extra one (a LEAK past a missing wall) is not. Tolerance-free by construction: the
 // shoelace area of a polygon is reproduced exactly by any triangulation that covers it.
 func TestCdtCoversLoopsCertifiesACleanTriangulation(t *testing.T) {
+	t.Parallel()
 	// Unit square, split into two triangles.
 	pts := [][2]float64{{0, 0}, {1, 0}, {1, 1}, {0, 1}}
 	loops := [][]int{{0, 1, 2, 3}}
@@ -38,6 +39,7 @@ func TestCdtCoversLoopsCertifiesACleanTriangulation(t *testing.T) {
 // triangulation that correctly leaves the hole empty is certified while one that FILLS it (the
 // classic leak past an unrecovered hole wall) is not.
 func TestCdtCoversLoopsSubtractsHoles(t *testing.T) {
+	t.Parallel()
 	// A 4x4 square with a 2x2 hole, tiled by the 8 triangles of the surrounding ring.
 	pts := [][2]float64{{0, 0}, {4, 0}, {4, 4}, {0, 4}, {1, 1}, {3, 1}, {3, 3}, {1, 3}}
 	loops := [][]int{{0, 1, 2, 3}, {4, 5, 6, 7}}
@@ -57,6 +59,7 @@ func TestCdtCoversLoopsSubtractsHoles(t *testing.T) {
 // relative defect is caught on a µm-scale domain and on a 1000x one. An absolute epsilon floor would
 // swamp the small case (#1610's regression) and this pins that it does not.
 func TestCoverageFloorScalesWithTheModel(t *testing.T) {
+	t.Parallel()
 	for _, scale := range []float64{1e-3, 1, 1e3} {
 		pts := [][2]float64{{0, 0}, {scale, 0}, {scale, scale}, {0, scale}}
 		loops := [][]int{{0, 1, 2, 3}}
@@ -129,6 +132,7 @@ func bandEdgeCurve(t *testing.T, cyl geom.Cylinder, a, b [2]float64) geom.Curve3
 // The re-mesh must therefore tile the band's CLOSED FORM to the chordal tolerance it was asked for.
 // Falsify by restoring the boundary-only triangulation in bestConformingPatch: this goes RED at ~−10%.
 func TestConformingRemeshFollowsTheCylinderInsteadOfChordingIt(t *testing.T) {
+	t.Parallel()
 	f, exact := stepBandFace(t, 30, 460, 5)
 	q := PropertyQuality()
 	m := conformingCylConeMesh(f, q)
@@ -149,6 +153,7 @@ func TestConformingRemeshFollowsTheCylinderInsteadOfChordingIt(t *testing.T) {
 // property it exists for — every boundary segment stays a triangle edge, so the face still conforms to
 // its neighbour. Guards against "fixed the area, re-opened the crack".
 func TestConformingRemeshKeepsEveryBoundarySegment(t *testing.T) {
+	t.Parallel()
 	f, _ := stepBandFace(t, 30, 460, 5)
 	q := PropertyQuality()
 	m := conformingCylConeMesh(f, q)

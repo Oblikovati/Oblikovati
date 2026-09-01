@@ -49,6 +49,7 @@ func hemHealth(t *testing.T, def *SheetMetalHemDefinition) *PartFeature {
 // two layers instead of three. The stack height is what tells them apart: a single hem at this
 // gauge tops out near 2r+t, a double adds another leg and its own tight fold above that.
 func TestDoubleHemStacksThreeLayers(t *testing.T) {
+	t.Parallel()
 	single := topZOf(hemBody(t, &SheetMetalHemDefinition{Type: SingleHem, Length: constClosure(0.8)}))
 	double := topZOf(hemBody(t, &SheetMetalHemDefinition{Type: DoubleHem, Length: constClosure(0.8)}))
 	// The sheet's top face is at z=0.2 (2 mm gauge). A tight fold adds 2·(t/2)+t = 0.4, so a single
@@ -65,6 +66,7 @@ func TestDoubleHemStacksThreeLayers(t *testing.T) {
 // TestDoubleHemAddsMaterial: three layers hold more material than two. Volume is the check the
 // height cannot make on its own — a second fold that collapsed onto the first would still be tall.
 func TestDoubleHemAddsMaterial(t *testing.T) {
+	t.Parallel()
 	single := smSolidVolume(hemBody(t, &SheetMetalHemDefinition{Type: SingleHem, Length: constClosure(0.8)}))
 	double := smSolidVolume(hemBody(t, &SheetMetalHemDefinition{Type: DoubleHem, Length: constClosure(0.8)}))
 	// The extra leg is 0.8 long, 0.2 thick, across the 4 cm edge, plus its fold: ≳ 0.64 cm³.
@@ -76,6 +78,7 @@ func TestDoubleHemAddsMaterial(t *testing.T) {
 // TestRolledHemCurlsToItsRadius: a rolled hem is all curl and no leg, so its height is set by the
 // radius alone — 2r+t for a half-turn, and more as the sweep passes it.
 func TestRolledHemCurlsToItsRadius(t *testing.T) {
+	t.Parallel()
 	half := hemBody(t, &SheetMetalHemDefinition{
 		Type: RolledHem, Radius: constClosure(0.3), Angle: constClosure(stdmath.Pi),
 	})
@@ -100,6 +103,7 @@ func TestRolledHemCurlsToItsRadius(t *testing.T) {
 // that the curl comes back and touches the parent. If the tail were merely omitted (or given some
 // invented length) the loop would hang open, which is a different part.
 func TestTeardropClosesBackOntoTheSheet(t *testing.T) {
+	t.Parallel()
 	curl := &SheetMetalHemDefinition{Radius: constClosure(0.3), Angle: constClosure(1.5 * stdmath.Pi)}
 	rolled := hemBody(t, &SheetMetalHemDefinition{Type: RolledHem, Radius: curl.Radius, Angle: curl.Angle})
 	teardrop := hemBody(t, &SheetMetalHemDefinition{Type: TeardropHem, Radius: curl.Radius, Angle: curl.Angle})
@@ -131,6 +135,7 @@ func onFace(body *topo.Body, z float64) int {
 // sheet, and at a full turn the loop has already closed — the derived tail would be infinite or
 // negative, so both are refused rather than built into a wall that runs off the part.
 func TestTeardropSweepMustCloseTheLoop(t *testing.T) {
+	t.Parallel()
 	for name, angle := range map[string]float64{
 		"half turn":    stdmath.Pi,
 		"quarter turn": stdmath.Pi / 2,
@@ -150,6 +155,7 @@ func TestTeardropSweepMustCloseTheLoop(t *testing.T) {
 // TestCurledHemsNeedTheirCurl: a rolled or teardrop hem with no radius/angle has nothing to build.
 // Falling back to the folded hem's gauge-derived radius would silently produce a single hem.
 func TestCurledHemsNeedTheirCurl(t *testing.T) {
+	t.Parallel()
 	for _, typ := range []HemType{RolledHem, TeardropHem} {
 		pf := hemHealth(t, &SheetMetalHemDefinition{Type: typ, Length: constClosure(0.8)})
 		if pf.Health().OK() {
@@ -161,6 +167,7 @@ func TestCurledHemsNeedTheirCurl(t *testing.T) {
 // TestHemBendSpecsCoverEveryFold: the flat pattern develops each fold, so a double hem must report
 // both — one reported fold would under-develop the blank and cut the part short.
 func TestHemBendSpecsCoverEveryFold(t *testing.T) {
+	t.Parallel()
 	double := &SheetMetalHemFeature{def: &SheetMetalHemDefinition{Type: DoubleHem, Length: constClosure(0.8)}}
 	specs := double.BendSpecs(0.2)
 	if len(specs) != 2 {
@@ -183,6 +190,7 @@ func TestHemBendSpecsCoverEveryFold(t *testing.T) {
 // extended — ordinal 1 used to be the open hem and is now the double. A document written before
 // the names must still read as the single hem both old ordinals meant.
 func TestHemTypeRoundTripsByName(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewSheetMetalHemFeatures(fs).Add(&SheetMetalHemDefinition{
 		EdgeKey: []byte("edge"), Type: TeardropHem,
@@ -209,6 +217,7 @@ func TestHemTypeRoundTripsByName(t *testing.T) {
 // hems, and the gap is still what tells them apart. Ordinal 1 must NOT decode as the double hem
 // that now holds that number.
 func TestLegacyHemOrdinalRestoresAsSingle(t *testing.T) {
+	t.Parallel()
 	for name, d := range map[string]*SheetMetalHemData{
 		"legacy closed": {Edge: "ZWRnZQ==", Length: 0.6, LegacyType: 0},
 		"legacy open":   {Edge: "ZWRnZQ==", Length: 0.6, LegacyType: 1, Gap: 0.4},

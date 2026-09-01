@@ -15,6 +15,7 @@ import (
 // open-sheet classification, cross-checked against the coil SOLID: the sheet is the solid's lateral
 // surface, so solid area = sheet area + the two profile end caps (≈2 for the unit profile).
 func TestCoilSurfaceMakesOpenSheet(t *testing.T) {
+	t.Parallel()
 	mk := func(op ops.PartFeatureOperation) *topo.Body {
 		fs := NewPartFeatures(nil)
 		pf := NewCoilFeatures(fs).AddDefinition(&CoilDefinition{

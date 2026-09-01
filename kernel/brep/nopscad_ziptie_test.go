@@ -7,6 +7,7 @@ import (
 )
 
 func TestNopZiptieCSG(t *testing.T) {
+	t.Parallel()
 	outer := stadiumBandPoints(0, 0, 1.0, 0.45, 24)
 	inner := stadiumBandPoints(0, 0, 0.82, 0.27, 24)
 	body := prismBody(outer, -0.18, 0.18, "ziptie-outer")

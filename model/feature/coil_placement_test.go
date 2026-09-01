@@ -48,6 +48,7 @@ func solidCoilBody(t *testing.T, fs *PartFeatures, pf *PartFeature, what string)
 // while climbing the same amount. A full revolution would hide this — both cover the whole
 // circle — which is why the sweep is a quarter turn (#1883).
 func TestLeftHandedCoilWindsOppositeToRight(t *testing.T) {
+	t.Parallel()
 	rightFS, rightPF := placedCoil(t, 0.25, func(*CoilDefinition) {})
 	leftFS, leftPF := placedCoil(t, 0.25, func(d *CoilDefinition) { d.Handedness = LeftHandedCoil })
 	right := solidCoilBody(t, rightFS, rightPF, "right-handed coil")
@@ -78,6 +79,7 @@ func TestLeftHandedCoilWindsOppositeToRight(t *testing.T) {
 // not height (#1883). Profile x∈[4,5], pitch 2, 3 turns → the outer edge reaches 5 + 2·3 = 11,
 // and the coil stays as thin axially as the profile itself (1).
 func TestSpiralCoilGrowsRadiallyWithoutRise(t *testing.T) {
+	t.Parallel()
 	fs, pf := placedCoil(t, 3, func(d *CoilDefinition) { d.Spiral = true })
 	body := solidCoilBody(t, fs, pf, "spiral coil")
 
@@ -93,6 +95,7 @@ func TestSpiralCoilGrowsRadiallyWithoutRise(t *testing.T) {
 // TestSpiralCoilRefusesHeightAndTaper: both options describe an axial rise a spiral does not
 // have, so they are refused rather than silently discarded — the failure a caller notices last.
 func TestSpiralCoilRefusesHeightAndTaper(t *testing.T) {
+	t.Parallel()
 	_, withHeight := placedCoil(t, 3, func(d *CoilDefinition) {
 		d.Spiral = true
 		d.Height = func() float64 { return 30 }
@@ -112,6 +115,7 @@ func TestSpiralCoilRefusesHeightAndTaper(t *testing.T) {
 // TestCoilHandednessAndSpiralRoundTrip: both flavour options survive the recipe round-trip, and
 // a document written before they existed (no keys) reads back as a right-handed helix.
 func TestCoilHandednessAndSpiralRoundTrip(t *testing.T) {
+	t.Parallel()
 	work := NewWorkGeometry()
 	axis, ok := work.AxisByRef(OriginYAxis)
 	if !ok {

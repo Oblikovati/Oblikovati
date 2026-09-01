@@ -19,6 +19,7 @@ import (
 // with `return nil` and this test would still pass. TestValidateRunoutFansRejectsRealFan and
 // TestFilletEdgesRejectsNValentRunout below close that gap on real topology.
 func TestSolveRunoutSpreadRejectsSelfIntersecting(t *testing.T) {
+	t.Parallel()
 	fan := endCornerFan{
 		radius: 100, center: math.P3(0, 0, 0), axis: math.V3(1, 0, 0), apex: math.P3(0, 0, 0),
 		ta: math.P3(0, 2, 0), tb: math.P3(0, -2, 0),
@@ -34,6 +35,7 @@ func TestSolveRunoutSpreadRejectsSelfIntersecting(t *testing.T) {
 // genuinely valid (it closes to a solid, TestV3FilletClosesToSolid), so validateRunoutFans must let
 // it through — proving the pre-pass rejects only genuinely invalid fans, not every fan.
 func TestValidateRunoutFansAcceptsV3(t *testing.T) {
+	t.Parallel()
 	b := importCorpusSolid(t, "simple/V3")
 	fils := solvedFilsForCase(t, b, "simple/V3")
 	if err := validateRunoutFans(fils); err != nil {
@@ -63,6 +65,7 @@ func tolblendC4Edge(t *testing.T, b *topo.Body) *topo.Edge {
 // misnamed test, this calls validateRunoutFans on a fils slice built by the real computeEdgeFillet
 // off real topology, so `return nil` in validateRunoutFans would now fail this test.
 func TestValidateRunoutFansRejectsRealFan(t *testing.T) {
+	t.Parallel()
 	b := importCorpusSolid(t, "tolblend_simple/C4")
 	e := tolblendC4Edge(t, b)
 	fil, err := computeEdgeFillet(b, filletPick{edge: e, r0: 10, r1: 10},
@@ -80,6 +83,7 @@ func TestValidateRunoutFansRejectsRealFan(t *testing.T) {
 // with the runout-certificate wording, not silently ship an open shell — showing the reject
 // surfaces all the way through filletResolvedEdges, not just through the pre-pass in isolation.
 func TestFilletEdgesRejectsNValentRunout(t *testing.T) {
+	t.Parallel()
 	b := importCorpusSolid(t, "tolblend_simple/C4")
 	e := tolblendC4Edge(t, b)
 	_, err := FilletEdges(b, [][]byte{e.ReferenceKey()}, 10)

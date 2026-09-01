@@ -86,6 +86,7 @@ func signedDistTorus(tr geom.Torus, p math.Point3) float64 {
 // torus AND the exact plane to machine eps) and matches DRAWEXE's meridian far edge to OCCT's own
 // approximation floor.
 func TestIntersectArmCapping_D5MeridianSpiric(t *testing.T) {
+	t.Parallel()
 	tor, sphere, lonPlane, cap := d5MeridianArm(t)
 	feet := d5Feet(t, tor, sphere, lonPlane, cap)
 	assertFeetMatchOracle(t, feet)
@@ -173,6 +174,7 @@ func closestOnCurve(curve geom.Curve3, p math.Point3) float64 {
 // selected spiric branch hits BOTH feet; the OPPOSITE branch (the mirror oval) misses them by ~1e2 — 8+
 // orders larger — so the endpoint certificate can never return it. Forcing the mirror is caught here.
 func TestIntersectArmCapping_D5BranchMutation(t *testing.T) {
+	t.Parallel()
 	tor, sphere, lonPlane, cap := d5MeridianArm(t)
 	feet := d5Feet(t, tor, sphere, lonPlane, cap)
 	curve, ok := intersectArmCapping(edgeFillet{armSurface: tor}, cap, feet, 10, ResolutionForSize(300))
@@ -203,6 +205,7 @@ func TestIntersectArmCapping_D5BranchMutation(t *testing.T) {
 // 18.0818451768618 / 15, major dir (−0.77023,−0.30809,0.55842)), then trims between two on-ellipse feet
 // and certifies the trim is analytic-on-the-arm (on the exact cylinder AND the exact plane).
 func TestCylinderPlaneTrim_Ellipse(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 15)
 	if err != nil {
 		t.Fatalf("cylinder: %v", err)
@@ -262,6 +265,7 @@ func assertOnCylinderAndPlane(t *testing.T, cyl geom.Cylinder, pl geom.Plane, tr
 // off the arm (§0 inversion certificate) and a cap plane ⊥ the torus axis (the M→0 latitude-circle
 // follow-on) both decline.
 func TestIntersectArmCapping_HonestReject(t *testing.T) {
+	t.Parallel()
 	tor, _, _, cap := d5MeridianArm(t)
 	res := ResolutionForSize(300)
 	offArm := [2]math.Point3{math.P3(1000, 0, 0), math.P3(0, 0, d5CapZ)}
@@ -302,6 +306,7 @@ func placeSpiricFoot(tor geom.Torus, pl geom.Plane, branch, v float64) math.Poin
 // torusPlaneTrim and this test fails — the port returns a garbage SpiricArc whose v=π/2 endpoint is off the
 // plane.
 func TestSpiricBandOK_GrazingRejects(t *testing.T) {
+	t.Parallel()
 	tor := canonSpiricTorus(t)
 	grazeCap := planeOn(t, math.P3(52.5, 0, 0), math.V3(1, 0, 0)) // K=52.5 ⇒ w(π/2)=1.05 > 1 at v=π/2
 	feet := [2]math.Point3{
@@ -327,6 +332,7 @@ func TestSpiricBandOK_GrazingRejects(t *testing.T) {
 // TestSpiricBandOK_HealthyAccepts is the positive: on D5's real (spanning) band spiricBandOK returns true —
 // the guard rejects grazing without over-rejecting the healthy arm the sphere slice actually ships.
 func TestSpiricBandOK_HealthyAccepts(t *testing.T) {
+	t.Parallel()
 	tor, sphere, lonPlane, cap := d5MeridianArm(t)
 	feet := d5Feet(t, tor, sphere, lonPlane, cap)
 	phi, m, k, c := geom.TorusSectionCoeffs(tor, cap)
@@ -347,6 +353,7 @@ func TestSpiricBandOK_HealthyAccepts(t *testing.T) {
 // return −1 (delete the enumerate-both-signs certificate) and this test fails — the −1 arc's endpoints miss
 // the +1 feet by ~1e2.
 func TestIntersectArmCapping_PlusOneBranch(t *testing.T) {
+	t.Parallel()
 	tor := canonSpiricTorus(t)
 	cap := planeOn(t, math.P3(40, 0, 0), math.V3(1, 0, 0)) // K=40 ⇒ |w|≈0.7 across [−0.6,0.6]: healthy
 	feet := [2]math.Point3{
@@ -377,6 +384,7 @@ func TestIntersectArmCapping_PlusOneBranch(t *testing.T) {
 // both — an ambiguous/degenerate pairing. The band is healthy (so the decline is the branch certificate's),
 // and the port must return (nil,false) rather than pick a sign.
 func TestIntersectArmCapping_ZeroSurvivorDeclines(t *testing.T) {
+	t.Parallel()
 	tor := canonSpiricTorus(t)
 	cap := planeOn(t, math.P3(40, 0, 0), math.V3(1, 0, 0))
 	feet := [2]math.Point3{

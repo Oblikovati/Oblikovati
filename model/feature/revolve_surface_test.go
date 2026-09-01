@@ -14,6 +14,7 @@ import (
 // sweptShell. Its area is the analytic θ·h·(r1+r2)+θ·(r2²−r1²) = 12π (the OCCT-grounded
 // surface-of-revolution formula), within the tessellation tolerance (#1858).
 func TestRevolveSurfacePartialOpenSheet(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewRevolveFeatures(fs).Add(offsetSquareSketch(2, 2), 0, yAxis(),
 		func() float64 { return stdmath.Pi / 2 }, ops.Surface)
@@ -35,6 +36,7 @@ func TestRevolveSurfacePartialOpenSheet(t *testing.T) {
 // closed surface of revolution (a watertight sheet), exercising sweptShell's closed-shell outward
 // orientation flip. Area = 2π·h·(r1+r2)+2π·(r2²−r1²) = 48π (#1858).
 func TestRevolveSurfaceFullClosedSheet(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewRevolveFeatures(fs).Add(offsetSquareSketch(2, 2), 0, yAxis(), nil, ops.Surface)
 	fs.Recompute()

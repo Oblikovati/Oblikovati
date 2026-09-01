@@ -16,6 +16,7 @@ import (
 // honestly rather than silently shelling an unintended face. A clean key still resolves; a lost
 // one reports honestly.
 func TestResolveFaceSetRejectsAmbiguousKey(t *testing.T) {
+	t.Parallel()
 	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok("f", "body", 0)))
 	mk := func(x, y float64, i int) *topo.Vertex {
 		return bld.AddVertex(math.P3(x, y, 0), topo.NewLineage(topo.Tok("f", "vertex", i)))

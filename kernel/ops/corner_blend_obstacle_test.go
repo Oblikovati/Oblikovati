@@ -11,6 +11,7 @@ import (
 )
 
 func TestObstacleProviderName(t *testing.T) {
+	t.Parallel()
 	var p bsplineObstacleProvider
 	if got := p.Name(); got != BlendKindBSpline {
 		t.Errorf("obstacle provider Name() = %q, want %q", got, BlendKindBSpline)
@@ -18,6 +19,7 @@ func TestObstacleProviderName(t *testing.T) {
 }
 
 func TestObstacleRequestNilByDefault(t *testing.T) {
+	t.Parallel()
 	req := CornerBlendRequest{}
 	if req.ObstacleFeature != nil {
 		t.Errorf("a default CornerBlendRequest must carry no ObstacleFeature (junction request unchanged)")
@@ -25,6 +27,7 @@ func TestObstacleRequestNilByDefault(t *testing.T) {
 }
 
 func TestObstacleRailsRejectNilWing(t *testing.T) {
+	t.Parallel()
 	of := &ObstacleFeature{ /* WingStart/WingEnd left nil */ }
 	if _, _, _, _, ok := obstacleRails(of); ok {
 		t.Errorf("obstacleRails must reject a nil wing pointer (regression-crack defense)")
@@ -32,6 +35,7 @@ func TestObstacleRailsRejectNilWing(t *testing.T) {
 }
 
 func TestObstacleSidesContinuityOrders(t *testing.T) {
+	t.Parallel()
 	sides := obstacleSides(&ObstacleFeature{}, geom.BSplineSurface{}, geom.BSplineSurface{}, geom.BSplineSurface{})
 	// side order: c0(v=0)=wall, c1(v=1)=rim, d0(u=0)=wingL, d1(u=1)=wingR
 	want := [4]int{1, 0, 1, 1}
@@ -121,6 +125,7 @@ func newFoldingObstacle(t *testing.T) *ObstacleFeature {
 // over. This is the safety net for a malformed detector output (a wrong WallInto direction), the whole
 // reason the certificate exists rather than trusting "the code ran".
 func TestObstacleCertificateDeclinesPathological(t *testing.T) {
+	t.Parallel()
 	of := newFoldingObstacle(t)
 	req := CornerBlendRequest{ObstacleFeature: of, Setback: ResolutionForSize(50)}
 	var p bsplineObstacleProvider
@@ -141,6 +146,7 @@ func TestObstacleCertificateDeclinesPathological(t *testing.T) {
 // the corner-exactness contract is only proven by handing the four rails to the real CoonsFill
 // precondition (1e-9 corner match), the exact check FillSurface itself performs.
 func TestObstacleRailsBuildT6(t *testing.T) {
+	t.Parallel()
 	of := newT6Obstacle(t)
 	c0, c1, d0, d1, ok := obstacleRails(of)
 	if !ok {
@@ -162,6 +168,7 @@ func TestObstacleRailsBuildT6(t *testing.T) {
 // patch area is asserted only within a GENEROUS band of the OCCT oracle 156.364 (the binding 1% gate
 // is body-level in Task 7; G1 ribbons shift the area off the advisor's bilinear ~178 estimate).
 func TestObstacleBuildT6AreaAndCert(t *testing.T) {
+	t.Parallel()
 	of := newT6Obstacle(t)
 	req := CornerBlendRequest{ObstacleFeature: of, Setback: ResolutionForSize(50)}
 	var p bsplineObstacleProvider
@@ -213,6 +220,7 @@ func surfaceArea(s geom.BSplineSurface) float64 {
 // Before the fix this FAILS on the wall seam — that failure is the regression witness the report
 // predicts (f2-reconciliation-report.md §C, "before the flip this assertion is expected to FAIL").
 func TestObstacleT6RibbonNonFolding(t *testing.T) {
+	t.Parallel()
 	of := newT6Obstacle(t)
 	g, ok := obstaclePatchNeighbours(of)
 	if !ok {
@@ -241,6 +249,7 @@ func TestObstacleT6RibbonNonFolding(t *testing.T) {
 // weights would leave a "forgot to reverse Weights" bug undetected (the rational blend is unchanged
 // by reversing a symmetric weight vector).
 func TestReverseBSplineCurve(t *testing.T) {
+	t.Parallel()
 	orig, err := geom.NewBSplineCurve(2,
 		[]math.Point3{math.P3(0, 0, 0), math.P3(1, 2, 0), math.P3(3, 1, 0)},
 		[]float64{1, 2, 3},

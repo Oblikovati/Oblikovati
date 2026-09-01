@@ -63,6 +63,7 @@ func reopenThroughStore(t *testing.T, d *doc.Document) *compdef.PartComponentDef
 // constraint is enforced — the two points, authored apart, coincide after reopen. That proves
 // the constraint survives BOTH as data (count) and functionally (it moves geometry on solve).
 func TestSketch3DSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, err := compdef.AddPart(ws, "Part1", true)
 	if err != nil {
@@ -99,6 +100,7 @@ func TestSketch3DSurvivesRoundTrip(t *testing.T) {
 }
 
 func TestParametersSurviveRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, err := compdef.AddPart(ws, "Part1", true)
 	if err != nil {
@@ -134,6 +136,7 @@ func TestParametersSurviveRoundTrip(t *testing.T) {
 // is for loading onto a fresh part — so undo would otherwise duplicate sketches and
 // re-add parameters.)
 func TestRestoreSnapshotReplacesRatherThanMerges(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, err := compdef.AddPart(ws, "Part1", true)
 	if err != nil {
@@ -181,6 +184,7 @@ func TestRestoreSnapshotReplacesRatherThanMerges(t *testing.T) {
 // TestParameterFieldsSurviveRoundTrip exercises the extended parameter recipe: text and
 // boolean parameters, comment/key/export/tolerance/multi-value state, and group membership.
 func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	ps := d.Content().(*compdef.PartComponentDefinition).Parameters()
@@ -255,6 +259,7 @@ func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
 // TestDerivedTableSurvivesRoundTrip checks a derived parameter table restores
 // with its id, source link, and produced parameters reconnected by name.
 func TestDerivedTableSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	ps := d.Content().(*compdef.PartComponentDefinition).Parameters()
@@ -284,6 +289,7 @@ func TestDerivedTableSurvivesRoundTrip(t *testing.T) {
 }
 
 func TestSketchGeometrySurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -307,6 +313,7 @@ func TestSketchGeometrySurvivesRoundTrip(t *testing.T) {
 }
 
 func TestExtrudedSolidSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -350,6 +357,7 @@ func rectangle(s *sketch.Sketch, w, h float64) {
 // global creation stamps that interleave sketches/work planes/features, and a sketch's
 // Shared flag, must round-trip so a reopened browser shows the same chronological tree.
 func TestCreationOrderAndSharedSurviveRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -399,6 +407,7 @@ func strictlyAscending(seqs ...uint64) bool {
 }
 
 func TestFilletEdgeKeyRebindsAfterReopen(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -441,6 +450,7 @@ func featureByKind(fs *feature.PartFeatures, kind string) (*feature.PartFeature,
 }
 
 func TestWorkFeaturesSurviveRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -469,6 +479,7 @@ func TestWorkFeaturesSurviveRoundTrip(t *testing.T) {
 // value; the serializer must persist the EFFECTIVE distance, and the reopened plane must sit
 // at the edited offset.
 func TestEditedWorkPlaneScalarSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -492,6 +503,7 @@ func TestEditedWorkPlaneScalarSurvivesRoundTrip(t *testing.T) {
 // added to a reopened document must sort after every restored node, or the browser timeline
 // would interleave new work into the middle of the restored history.
 func TestNodesCreatedAfterReopenSortLast(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -518,6 +530,7 @@ func TestNodesCreatedAfterReopenSortLast(t *testing.T) {
 }
 
 func TestRevolveAxisRebindsAfterReopen(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -539,6 +552,7 @@ func TestRevolveAxisRebindsAfterReopen(t *testing.T) {
 }
 
 func TestLengthUnitSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -555,6 +569,7 @@ func TestLengthUnitSurvivesRoundTrip(t *testing.T) {
 // TestUnitsPrecisionAndFormatSurviveRoundTrip persists the display precision and
 // the length/angle formats (the #146 additions) and restores them.
 func TestUnitsPrecisionAndFormatSurviveRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -585,6 +600,7 @@ func TestUnitsPrecisionAndFormatSurviveRoundTrip(t *testing.T) {
 // TestRevolveTwoDirectionalSurvivesReopen: the second-direction sweep (#313)
 // persists and the restored revolve rebuilds the same straddling solid.
 func TestRevolveTwoDirectionalSurvivesReopen(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -627,6 +643,7 @@ func offsetRect(sk *sketch.Sketch, x0, side float64) {
 // twist stations, rail, scaling, orientation) persist and the restored sweep
 // rebuilds the same solid.
 func TestSweepUnionSurvivesReopen(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -684,6 +701,7 @@ func centeredRect(sk *sketch.Sketch, half float64) {
 // TestFilletEdgeSetsSurviveReopen: a mixed constant + variable edge-set fillet
 // (#323) reopens with its sets intact — same health, same volume.
 func TestFilletEdgeSetsSurviveReopen(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)

@@ -37,6 +37,7 @@ import (
 // mis-oriented adopted edge fires it — which is what makes unconditional-reversal corpus-green
 // impossible, not merely unlikely.
 func TestAdoptedCurveRunsTheStoredEdgeSense(t *testing.T) {
+	t.Parallel()
 	_, major := complementaryArcPair()
 	p0, p1 := major.PointAt(0), major.PointAt(1)
 	for _, tc := range []struct {
@@ -100,6 +101,7 @@ func reversedArc3d(a geom.Arc3d) geom.Arc3d {
 // silent and must leave the edge alone; an offer a hair ABOVE it must still be recorded AND
 // adopted, so the fix cannot be mistaken for (or mutated into) blanket suppression.
 func TestOfferWithinTheWeldIsNeitherAdoptedNorRecorded(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name       string
 		sagitta    float64
@@ -137,6 +139,7 @@ func TestOfferWithinTheWeldIsNeitherAdoptedNorRecorded(t *testing.T) {
 // shape and stay recorded. Both arms are driven so the completed detector can be neither reverted
 // (below arm) nor mutated into blanket suppression (above arm).
 func TestCurveFirstKeepUsesTheSameWeldThreshold(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name       string
 		sagitta    float64
@@ -191,6 +194,7 @@ func bowedArcOverUnitChord(t *testing.T, s float64) geom.Curve3 {
 // A deliberate decline is therefore distinguishable from an absent offer by SHAPE, and needs no new
 // flag: adoption refuses at a==b, and says so in the record rather than silently doing nothing.
 func TestClosedSeamOfferIsDeclinedNotAdopted(t *testing.T) {
+	t.Parallel()
 	c := geom.Arc3d{Center: m.P3(0, 0, 0), Normal: seamAxis(t, m.V3(0, 0, 1)),
 		RefDir: seamAxis(t, m.V3(1, 0, 0)), Radius: 5, StartAngle: 0, SweepAngle: 2 * stdmath.Pi}
 	ec := newSeamCatalog([]m.Point3{c.PointAt(0)})

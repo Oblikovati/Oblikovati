@@ -39,6 +39,7 @@ func keyedPatch(t *testing.T, w, h float64) (*topo.Body, [][]byte) {
 // TestExtendEdgesByDistanceGrows extends the right edge of a 2×3 patch (area 6) outward by 1: the
 // patch grows to 3×3 (area 9) (#1878).
 func TestExtendEdgesByDistanceGrows(t *testing.T) {
+	t.Parallel()
 	patch, keys := keyedPatch(t, 2, 3)
 	out, err := ops.ExtendEdgesByDistance(patch, [][]byte{keys[1]}, 1, "ext")
 	if err != nil {
@@ -52,6 +53,7 @@ func TestExtendEdgesByDistanceGrows(t *testing.T) {
 // TestExtendEdgesMultiGrows extends both the left and right edges of a 2×3 patch by 1 each: width
 // grows to 4, area to 12 (#1878).
 func TestExtendEdgesMultiGrows(t *testing.T) {
+	t.Parallel()
 	patch, keys := keyedPatch(t, 2, 3)
 	out, err := ops.ExtendEdgesByDistance(patch, [][]byte{keys[1], keys[3]}, 1, "ext")
 	if err != nil {
@@ -65,6 +67,7 @@ func TestExtendEdgesMultiGrows(t *testing.T) {
 // TestExtendEdgesToPlane extends the right edge of a 2×3 patch until it reaches the plane x=5: the
 // patch grows to 5×3 (area 15) (#1878).
 func TestExtendEdgesToPlane(t *testing.T) {
+	t.Parallel()
 	patch, keys := keyedPatch(t, 2, 3)
 	target, _ := geom.NewPlane(math.P3(5, 0, 0), math.V3(1, 0, 0))
 	out, err := ops.ExtendEdgesToPlane(patch, [][]byte{keys[1]}, target, "ext")
@@ -78,6 +81,7 @@ func TestExtendEdgesToPlane(t *testing.T) {
 
 // TestExtendEdgesLostKeyErrors reports a vanished edge so the feature can go Sick.
 func TestExtendEdgesLostKeyErrors(t *testing.T) {
+	t.Parallel()
 	patch, _ := keyedPatch(t, 2, 3)
 	if _, err := ops.ExtendEdgesByDistance(patch, [][]byte{[]byte("ghost")}, 1, "ext"); err == nil {
 		t.Error("extend with a lost edge key should error")

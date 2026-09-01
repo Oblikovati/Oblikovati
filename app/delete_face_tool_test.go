@@ -41,6 +41,7 @@ func chamferOneEdge(t *testing.T, s *Session, block *topo.Body) *topo.Body {
 // 7.75), then start the tool, click the chamfer face, OK — and asserts the body healed back
 // to the sharp box (vol 8), a valid solid.
 func TestDeleteFaceToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	chamfered := chamferOneEdge(t, s, block)
 
@@ -69,6 +70,7 @@ func TestDeleteFaceToolEndToEnd(t *testing.T) {
 
 // TestDeleteFaceViaRibbonCommand drives Delete Face from its ribbon command.
 func TestDeleteFaceViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	chamfered := chamferOneEdge(t, s, block)
 	if err := RegisterStandardCommands(s); err != nil {
@@ -92,6 +94,7 @@ func TestDeleteFaceViaRibbonCommand(t *testing.T) {
 
 // TestDeleteFaceToolNeedsFace checks the tool is not committable until a face is picked.
 func TestDeleteFaceToolNeedsFace(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	chamfered := chamferOneEdge(t, s, block)
 	s.SetPicker(stubPicker{sel: chamferFaceHandleOf(t, chamfered)})

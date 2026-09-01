@@ -12,6 +12,7 @@ import (
 // shell is a curved (sphere) surface, the case a per-face orientation cannot sign. The orientation-free
 // ray-parity classification must still mark exactly the sphere shell as the void.
 func TestShellIsVoidInBodyCurvedCavity(t *testing.T) {
+	t.Parallel()
 	block, err := brep.SolidBlock(m.P3(0, 0, 0), m.P3(10, 10, 10), "block")
 	if err != nil {
 		t.Fatal(err)
@@ -41,6 +42,7 @@ func TestShellIsVoidInBodyCurvedCavity(t *testing.T) {
 // TestShellIsVoidRejectsOpenShell: an open shell bounds no region, so it is never a void — the guard
 // that keeps the ray-parity seed from being asked for an interior that does not exist.
 func TestShellIsVoidRejectsOpenShell(t *testing.T) {
+	t.Parallel()
 	patch := quadBody("patch", m.P3(0, 0, 0), m.P3(4, 0, 0), m.P3(4, 4, 0), m.P3(0, 4, 0))
 	for _, sh := range patch.Shells() {
 		if ShellIsVoidInBody(patch, sh) {
@@ -52,6 +54,7 @@ func TestShellIsVoidRejectsOpenShell(t *testing.T) {
 // TestShellInteriorPointRejectsNonPositiveEpsilon: the probe offset must exceed the classifier's
 // on-surface band, so a non-positive offset is refused instead of seeding a point ON the surface.
 func TestShellInteriorPointRejectsNonPositiveEpsilon(t *testing.T) {
+	t.Parallel()
 	ball, err := brep.SolidSphere(m.P3(0, 0, 0), 2, "ball")
 	if err != nil {
 		t.Fatal(err)
@@ -64,6 +67,7 @@ func TestShellInteriorPointRejectsNonPositiveEpsilon(t *testing.T) {
 // TestShellIsVoidSkipsFaceWithHole: on a face whose edge-midpoint average falls in a HOLE, the seed is
 // rejected and another face is tried — the outer shell of a drilled plate is still not a void.
 func TestShellIsVoidSkipsFaceWithHole(t *testing.T) {
+	t.Parallel()
 	plate, err := brep.SolidBlock(m.P3(-5, -5, 0), m.P3(5, 5, 2), "plate")
 	if err != nil {
 		t.Fatal(err)

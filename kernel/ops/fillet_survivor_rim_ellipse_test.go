@@ -31,6 +31,7 @@ func f6CapRim(t *testing.T) geom.EllipticalArc {
 // to machine precision, and a point pushed OFF the rim (radially in the D⁻¹-scaled frame) lands back on it
 // at the SAME eccentric angle — the property the sub-span algebra depends on.
 func TestProjectOntoEllipseLandsOnTheEllipse(t *testing.T) {
+	t.Parallel()
 	ea := f6CapRim(t)
 	for _, theta := range []float64{0, 0.4, 1.2, stdmath.Pi / 2, 2.5, stdmath.Pi} {
 		on := ea.PointAt(theta / stdmath.Pi)
@@ -51,6 +52,7 @@ func TestProjectOntoEllipseLandsOnTheEllipse(t *testing.T) {
 // TestProjectOntoEllipseReturnsCentreUnchanged pins the documented degeneracy: the ellipse's own centre has
 // no eccentric angle, so it is returned unchanged rather than snapped to an arbitrary rim point.
 func TestProjectOntoEllipseReturnsCentreUnchanged(t *testing.T) {
+	t.Parallel()
 	ea := f6CapRim(t)
 	if got := projectOntoEllipse(ea, ea.Center); got != ea.Center {
 		t.Errorf("projecting the centre gave (%.6g,%.6g,%.6g), want it unchanged", got.X, got.Y, got.Z)
@@ -60,6 +62,7 @@ func TestProjectOntoEllipseReturnsCentreUnchanged(t *testing.T) {
 // TestEllipseSpanIsExactSeparatesOnAndOffRim pins the carry's gate: a span whose endpoints are ON the rim
 // is exact (so the parent's sub-span IS the wall's boundary), one pulled off it is not.
 func TestEllipseSpanIsExactSeparatesOnAndOffRim(t *testing.T) {
+	t.Parallel()
 	ea := f6CapRim(t)
 	on0, on1 := ea.PointAt(0.1), ea.PointAt(0.8)
 	if !ellipseSpanIsExact(ea, on0, on1) {
@@ -75,6 +78,7 @@ func TestEllipseSpanIsExactSeparatesOnAndOffRim(t *testing.T) {
 // segment's own endpoints and stays ON the parent ellipse in between — the invariant that makes the wall's
 // boundary faithful. The 89.44-off chord it replaces is the whole point of the fix.
 func TestRetainedEllipticRimCurveKeepsTheParentSpan(t *testing.T) {
+	t.Parallel()
 	ea := f6CapRim(t)
 	p0, p1 := ea.PointAt(0.06), ea.PointAt(0.94) // an 88%-of-the-rim retained span, as F7's is
 	sub := retainedEllipticRimCurve(ea, p0, p1)
@@ -103,6 +107,7 @@ func TestRetainedEllipticRimCurveKeepsTheParentSpan(t *testing.T) {
 // TestRetainedEllipticRimCurveDeclinesOffRimSpan pins the decline: an endpoint that is NOT on the parent
 // keeps the base straight chord (nil), the pre-fix behaviour, rather than inventing a span.
 func TestRetainedEllipticRimCurveDeclinesOffRimSpan(t *testing.T) {
+	t.Parallel()
 	ea := f6CapRim(t)
 	off := math.P3(ea.PointAt(0.8).X, ea.PointAt(0.8).Y+math.Scalar(5), 100)
 	if got := retainedEllipticRimCurve(ea, ea.PointAt(0.1), off); got != nil {
@@ -113,6 +118,7 @@ func TestRetainedEllipticRimCurveDeclinesOffRimSpan(t *testing.T) {
 // TestEllipseSpansItsSegmentDetectsAnOvershoot pins the consistency test alignCarriedEllipse gates on: a
 // parent carried WHOLE past a pulled-back loop vertex must be reported as not spanning its segment.
 func TestEllipseSpansItsSegmentDetectsAnOvershoot(t *testing.T) {
+	t.Parallel()
 	ea := f6CapRim(t)
 	lo, hi := ea.Domain()
 	if !ellipseSpansItsSegment(ea, ea.PointAt(lo), ea.PointAt(hi)) {
@@ -126,6 +132,7 @@ func TestEllipseSpansItsSegmentDetectsAnOvershoot(t *testing.T) {
 // TestCarriableRimNamesTheTrimmableKinds pins the single place the carry's admissible parent set is
 // declared: circular and elliptic arcs are carried, every other kind keeps the base straight chord.
 func TestCarriableRimNamesTheTrimmableKinds(t *testing.T) {
+	t.Parallel()
 	arc, err := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 50, 0, 1)
 	if err != nil {
 		t.Fatalf("build arc: %v", err)

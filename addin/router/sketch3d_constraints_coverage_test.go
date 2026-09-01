@@ -160,6 +160,7 @@ var allDeclared3DConstraintKinds = []types.Geometric3DConstraintKind{
 // kind with a fixture and asserts the constraint lands with the same kind reported
 // back by sketch3d.constraints.
 func TestEvery3DConstraintKindAccepted(t *testing.T) {
+	t.Parallel()
 	for kind, fixture := range declared3DConstraintFixtures {
 		t.Run(string(kind), func(t *testing.T) {
 			r, s := emptyPartSession(t)
@@ -184,6 +185,7 @@ func TestEvery3DConstraintKindAccepted(t *testing.T) {
 // by a fixture (incl. the equal special case) nor in the tracked-unimplemented list —
 // the guard that api/types can never ship ahead of the solver again (issue #142).
 func TestDeclared3DConstraintKindsComplete(t *testing.T) {
+	t.Parallel()
 	for _, kind := range allDeclared3DConstraintKinds {
 		_, covered := declared3DConstraintFixtures[kind]
 		_, dedicated := dedicated3DConstraintKinds[kind]

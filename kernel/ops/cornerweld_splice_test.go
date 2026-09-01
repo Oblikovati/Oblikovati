@@ -16,6 +16,7 @@ import (
 // TestContiguousSegRunAcceptsOnlyAContiguousRing pins the run recogniser: one index, an adjacent pair, and a
 // wrapping pair are runs; a scattered pair, a duplicate and an out-of-range index are not.
 func TestContiguousSegRunAcceptsOnlyAContiguousRing(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name   string
 		idx    []int
@@ -48,6 +49,7 @@ func TestContiguousSegRunAcceptsOnlyAContiguousRing(t *testing.T) {
 
 // TestSegRunMembershipWraps pins the wrap-aware membership the ring rebuild uses to drop a consumed run.
 func TestSegRunMembershipWraps(t *testing.T) {
+	t.Parallel()
 	wrap := segRun{lo: 3, hi: 1}
 	for _, k := range []int{3, 4, 0, 1} {
 		if !wrap.has(k) {
@@ -76,6 +78,7 @@ func zzSquareRing() []endSeg {
 // rail whose foot is not on the flanking edge's supporting line cannot be welded, so it declines rather than
 // snapping the flank to it.
 func TestSpliceSingleRunDeclinesOnAFootOffTheFlank(t *testing.T) {
+	t.Parallel()
 	segs := zzSquareRing()
 	rails := []endSeg{{from: math.P3(3, 1, 0), to: math.P3(1, 1, 0)}} // both feet off the ring's edges
 	if _, ok := spliceSingleRun(segs, segRun{lo: 1, hi: 1}, rails, 1e-9); ok {
@@ -87,6 +90,7 @@ func TestSpliceSingleRunDeclinesOnAFootOffTheFlank(t *testing.T) {
 // shared flank there is no independent edge to re-terminate on each side, so the single-arm splice declines
 // (the two-arm corner splice has its own reterminateBothEnds path for that shape).
 func TestSpliceSingleRunDeclinesWithOnlyOneFlank(t *testing.T) {
+	t.Parallel()
 	segs := zzSquareRing()
 	rails := []endSeg{{from: math.P3(3, 0, 0), to: math.P3(3, 4, 0)}}
 	if _, ok := spliceSingleRun(segs, segRun{lo: 1, hi: 3}, rails, 1e-9); ok {
@@ -98,6 +102,7 @@ func TestSpliceSingleRunDeclinesWithOnlyOneFlank(t *testing.T) {
 // foot sits on the PRECEDING flank and its last on the FOLLOWING one, whichever way the builder registered it.
 // Getting this backwards would emit a self-crossing loop that meshes inside out.
 func TestSpliceSingleRunOrientsTheChainToTheLoop(t *testing.T) {
+	t.Parallel()
 	segs := zzSquareRing()
 	forward := []endSeg{{from: math.P3(3, 0, 0), to: math.P3(3, 4, 0)}}
 	loop, ok := spliceSingleRun(segs, segRun{lo: 1, hi: 1}, forward, 1e-9)

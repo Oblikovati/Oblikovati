@@ -24,6 +24,7 @@ func projectSourceOverBlock(t *testing.T, r *Router, s *app.Session) (faceRef st
 // TestSketch3DProjectAlongVectorOverWire projects a source curve onto a face along a direction
 // (#1841).
 func TestSketch3DProjectAlongVectorOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	faceRef, source := projectSourceOverBlock(t, r, s)
 
@@ -41,6 +42,7 @@ func TestSketch3DProjectAlongVectorOverWire(t *testing.T) {
 // TestSketch3DProjectWrapOverWire wraps a source curve onto a face through an origin work plane as
 // the flattening frame (#1841 part 2).
 func TestSketch3DProjectWrapOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	faceRef, source := projectSourceOverBlock(t, r, s)
 
@@ -57,6 +59,7 @@ func TestSketch3DProjectWrapOverWire(t *testing.T) {
 
 // TestSketch3DProjectWrapNeedsPlaneRef: wrap without a wrapPlaneRef errors (no flattening frame).
 func TestSketch3DProjectWrapNeedsPlaneRef(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	faceRef, source := projectSourceOverBlock(t, r, s)
 
@@ -71,6 +74,7 @@ func TestSketch3DProjectWrapNeedsPlaneRef(t *testing.T) {
 
 // TestSketch3DProjectUnknownTypeErrors rejects an unknown projection type (#1841).
 func TestSketch3DProjectUnknownTypeErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	faceRef, source := projectSourceOverBlock(t, r, s)
 

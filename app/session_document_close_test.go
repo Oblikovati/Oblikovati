@@ -28,6 +28,7 @@ func addBackgroundPart(t *testing.T, s *Session) *doc.Document {
 // #2040: the close paths used to call Workspace().Close directly, leaving the tool armed and
 // s.activeSketch pointing into the destroyed document.
 func TestCloseDocumentLeavesSketchEnvironmentAndDisarmsTool(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, err := s.CreateSketchOnOrigin(OriginXY); err != nil {
 		t.Fatalf("CreateSketch: %v", err)
@@ -50,6 +51,7 @@ func TestCloseDocumentLeavesSketchEnvironmentAndDisarmsTool(t *testing.T) {
 }
 
 func TestCloseDocumentLeavesSketch3DEnvironment(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, err := s.CreateSketch3D(); err != nil {
 		t.Fatalf("CreateSketch3D: %v", err)
@@ -68,6 +70,7 @@ func TestCloseDocumentLeavesSketch3DEnvironment(t *testing.T) {
 // A fresh document after a close-all must be usable: nothing may still resolve to the closed
 // document's sketch, which is what made Sketch.AutoDimension answer ok while changing nothing.
 func TestNewDocumentAfterCloseStartsInBaseEnvironment(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, err := s.CreateSketchOnOrigin(OriginXY); err != nil {
 		t.Fatalf("CreateSketch: %v", err)
@@ -89,6 +92,7 @@ func TestNewDocumentAfterCloseStartsInBaseEnvironment(t *testing.T) {
 }
 
 func TestCloseBackgroundDocumentKeepsActiveEditState(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, err := s.CreateSketchOnOrigin(OriginXY); err != nil {
 		t.Fatalf("CreateSketch: %v", err)
@@ -108,6 +112,7 @@ func TestCloseBackgroundDocumentKeepsActiveEditState(t *testing.T) {
 }
 
 func TestCloseDocumentClearsSelectionIntoTheClosedDocument(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, err := s.CreateSketchOnOrigin(OriginXY)
 	if err != nil {
@@ -126,6 +131,7 @@ func TestCloseDocumentClearsSelectionIntoTheClosedDocument(t *testing.T) {
 }
 
 func TestCloseDocumentRejectsNilDocument(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if err := s.CloseDocument(nil, true); err == nil {
 		t.Error("CloseDocument(nil) should error rather than close nothing silently")

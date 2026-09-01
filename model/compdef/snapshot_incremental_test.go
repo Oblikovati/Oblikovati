@@ -27,6 +27,7 @@ func addExtrudeOn(def *compdef.PartComponentDefinition, sketchIndex int) {
 }
 
 func TestIncrementalUndoReusesFeaturePrefix(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	const n = 6
 	buildExtrudeStack(t, def, n, -1, "") // n independent blocks, no driven dimension
@@ -65,6 +66,7 @@ func TestIncrementalUndoReusesFeaturePrefix(t *testing.T) {
 }
 
 func TestIncrementalRedoRebuildsOnlyTailFeature(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	const n = 5
 	buildExtrudeStack(t, def, n, -1, "")
@@ -102,6 +104,7 @@ func TestIncrementalRedoRebuildsOnlyTailFeature(t *testing.T) {
 }
 
 func TestIncrementalRestoreGeometryMatchesFreshBuild(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	const n = 6
 	buildExtrudeStack(t, def, n, -1, "")
@@ -134,6 +137,7 @@ func TestIncrementalRestoreGeometryMatchesFreshBuild(t *testing.T) {
 // resets the engine — observable as the prefix features being rebuilt (new objects) — and still
 // lands the snapshot's geometry.
 func TestParameterSnapshotRestoreFallsBackToFullRebuild(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	if _, err := def.Parameters().AddUserParameter("drive", "40 mm"); err != nil {
 		t.Fatalf("AddUserParameter: %v", err)
@@ -169,6 +173,7 @@ func TestParameterSnapshotRestoreFallsBackToFullRebuild(t *testing.T) {
 // incremental feature-tail restore, editing it must still rebuild the whole program and move the
 // geometry — never silently skip it.
 func TestIncrementalRestoreThenWholesaleParamEditStillFullRebuilds(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	lift, err := def.Parameters().AddUserParameter("lift", "20 mm")
 	if err != nil {

@@ -50,6 +50,7 @@ func marchTestAnchors(n int, a0, a1 float64) []CanalEdgeAnchor {
 // TestMarchCanalEdgeStationsBossRim checks every marched station against the closed form,
 // including a march across the cylinder's u-seam (anchors span 1.5π→2.5π on the cover).
 func TestMarchCanalEdgeStationsBossRim(t *testing.T) {
+	t.Parallel()
 	wall, cap := marchTestHosts(t)
 	anchors := marchTestAnchors(marchTestNStats, 1.5*stdmath.Pi, 2.5*stdmath.Pi)
 	c0 := math.P3(0, -(marchTestR - marchTestBall), marchTestH-marchTestBall) // closed form at a=1.5π
@@ -82,6 +83,7 @@ func assertBossStation(t *testing.T, k int, st CanalEdgeStation) {
 // anchors cross the seam keeps consecutive wall-foot u values within the station spacing —
 // no wrap-induced branch jump.
 func TestMarchCanalEdgeStationsSeamUnwrap(t *testing.T) {
+	t.Parallel()
 	wall, cap := marchTestHosts(t)
 	anchors := marchTestAnchors(marchTestNStats, 1.5*stdmath.Pi, 2.5*stdmath.Pi)
 	c0 := math.P3(0, -(marchTestR - marchTestBall), marchTestH-marchTestBall)
@@ -100,6 +102,7 @@ func TestMarchCanalEdgeStationsSeamUnwrap(t *testing.T) {
 // TestMarchCanalBallClearanceRefusal proves the evolute guard RED the falsifiable way: a
 // ball larger than the bore it rolls in (concave side, r > R) must refuse, never march.
 func TestMarchCanalBallClearanceRefusal(t *testing.T) {
+	t.Parallel()
 	wall, cap := marchTestHosts(t)
 	r := marchTestR * 1.5 // ball cannot fit tangent inside the R-bore
 	anchors := marchTestAnchors(5, 0, 0.25*stdmath.Pi)
@@ -112,6 +115,7 @@ func TestMarchCanalBallClearanceRefusal(t *testing.T) {
 // TestSubSpanBSplineCurveExact proves the span extraction is the parent's own geometry:
 // sampled positions agree to float noise across the span, including the exact endpoints.
 func TestSubSpanBSplineCurveExact(t *testing.T) {
+	t.Parallel()
 	pts := []math.Point3{
 		math.P3(0, 0, 0), math.P3(3, 4, 1), math.P3(7, 2, 5), math.P3(10, 8, 2), math.P3(14, 6, 9),
 	}
@@ -145,6 +149,7 @@ func assertSpanMatchesParent(t *testing.T, parent, sub BSplineCurve, t0, t1 floa
 // TestSubSpanBSplineCurveAtKnot splits exactly AT an interior knot (the multiplicity-
 // bookkeeping edge case) and at a domain end.
 func TestSubSpanBSplineCurveAtKnot(t *testing.T) {
+	t.Parallel()
 	pts := []math.Point3{
 		math.P3(0, 0, 0), math.P3(2, 5, 0), math.P3(5, 1, 3), math.P3(9, 4, 1), math.P3(12, 0, 6), math.P3(15, 3, 2),
 	}

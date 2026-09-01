@@ -53,6 +53,7 @@ func crossingCyls(t *testing.T, r, dr float64) (cx, cz *topo.Body) {
 // (R=3 and R=30) with |Δr| scaled by R, so the dimensionless gate is exercised identically at both — the
 // scale-invariance the near-pinch ratio gate promises.
 func TestNearPinchRecoveredBandWatertight(t *testing.T) {
+	t.Parallel()
 	// The whole band down to just above the snap ceiling (|Δr|≈2e-5 at R=3): #1781 recovered the upper part
 	// (gap/chord ≥ the gate) and #1818 the residual near-pinch part (per-loop fat-wall trim). All must ship
 	// the exact three-face watertight solid; none may decline.
@@ -108,6 +109,7 @@ func assertWatertightCrossing(t *testing.T, got *topo.Body, r, dr float64) {
 // winding. Swept at two model scales with |Δr| scaled by R, so the dimensionless near-pinch gate is exercised
 // identically at both.
 func TestNearPinchCutJoinWatertight(t *testing.T) {
+	t.Parallel()
 	for _, r := range []float64{3.0, 30.0} {
 		for _, op := range []PartFeatureOperation{Cut, Join} {
 			for _, k := range []float64{4e-5, 6e-5, 1.6e-4, 3.2e-4} {

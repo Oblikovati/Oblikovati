@@ -129,6 +129,7 @@ func fillInterpolatesVertices(t *testing.T, fill geom.BSplineSurface, verts []ma
 }
 
 func TestFillNSidedThreeSided(t *testing.T) {
+	t.Parallel()
 	bodies, verts := polygonNeighbours(t, 3, 1, flat)
 	out, err := ops.FillNSided(bodies, 1)
 	if err != nil {
@@ -142,6 +143,7 @@ func TestFillNSidedThreeSided(t *testing.T) {
 }
 
 func TestFillNSidedFiveSided(t *testing.T) {
+	t.Parallel()
 	bodies, verts := polygonNeighbours(t, 5, 1, flat)
 	out, err := ops.FillNSided(bodies, 2)
 	if err != nil {
@@ -155,6 +157,7 @@ func TestFillNSidedFiveSided(t *testing.T) {
 }
 
 func TestFillNSidedFourDelegates(t *testing.T) {
+	t.Parallel()
 	bodies, verts := polygonNeighbours(t, 4, 1, flat)
 	out, err := ops.FillNSided(bodies, 1)
 	if err != nil {
@@ -165,6 +168,7 @@ func TestFillNSidedFourDelegates(t *testing.T) {
 }
 
 func TestFillNSidedNonPlanarFiveSided(t *testing.T) {
+	t.Parallel()
 	// A saddle-shaped pentagon opening (alternating raised/lowered vertices): the fill must still
 	// close it through every curved boundary edge.
 	z := func(i int) float64 {
@@ -183,6 +187,7 @@ func TestFillNSidedNonPlanarFiveSided(t *testing.T) {
 }
 
 func TestFillNSidedTooFew(t *testing.T) {
+	t.Parallel()
 	bodies, _ := polygonNeighbours(t, 3, 1, flat)
 	if _, err := ops.FillNSided(bodies[:2], 1); err == nil {
 		t.Error("fewer than 3 neighbours should error")

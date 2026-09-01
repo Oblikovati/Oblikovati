@@ -31,6 +31,7 @@ func stdPi() float64 { return 3.141592653589793 }
 // and the leaving curve is the REVERSE of the forward curve that ARRIVED at the visited point. A
 // mutation that drops the reversal, or the (n-1-k) shift, moves an endpoint a whole chord away.
 func TestRingLeavingCurveMatchesTraversal(t *testing.T) {
+	t.Parallel()
 	const n = 7
 	ring, chain := rimChainTestRing(t, n)
 	for _, rev := range []bool{false, true} {
@@ -65,6 +66,7 @@ func ringVisitOrder(ring []math.Point3, rev bool) []math.Point3 {
 // rule TestRingLeavingCurveMatchesTraversal proves at consume time; a mutation that reverses the
 // points without re-indexing the chain leaves every segment hanging between the WRONG pair.
 func TestReverseLeavingChainKeepsSegmentsOnTheirPoints(t *testing.T) {
+	t.Parallel()
 	const n = 6
 	ring, chain := rimChainTestRing(t, n)
 	newRing := append([]math.Point3{ring[0]}, reversePts(ring[1:])...)

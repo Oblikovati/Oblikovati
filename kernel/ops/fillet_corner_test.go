@@ -78,6 +78,7 @@ func cornerStrategyPicks(t *testing.T, box *topo.Body, scenario string) []ops.Ed
 // (two of a vertex's three edges) and a whole top-loop selection (four corners), asserting a valid
 // watertight solid, the expected sphere count, and that material was removed.
 func TestFilletCornerStrategiesValidWatertight(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		strategy   string
 		scenario   string
@@ -112,6 +113,7 @@ func TestFilletCornerStrategiesValidWatertight(t *testing.T) {
 // rounds the third edge full length too); a setback sits strictly between (it rounds the third edge
 // only near the corner, tapering to a run-out). So vol(miter) > vol(setback) > vol(round).
 func TestFilletCornerVolumeOrdering(t *testing.T) {
+	t.Parallel()
 	vol := func(strategy string) float64 {
 		box := shellBox(2, 2, 2)
 		res, err := ops.FilletEdgesCorner(box, cornerStrategyPicks(t, box, "oneCorner"), cornerStrategyOf(strategy), ops.FillConcaveOutward)
@@ -129,6 +131,7 @@ func TestFilletCornerVolumeOrdering(t *testing.T) {
 // TestFilletRunOutBothEndsZeroRejected: a fillet of radius 0 at BOTH ends is no fillet — a precise
 // error, not a degenerate body (a single end at 0 is the valid run-out, TestFilletRunOutToZero).
 func TestFilletRunOutBothEndsZeroRejected(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	_, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{{Key: verticalEdgeKey(t, box), R0: 0, R1: 0}})
 	if err == nil || !strings.Contains(err.Error(), "at least one") {
@@ -143,6 +146,7 @@ func TestFilletRunOutBothEndsZeroRejected(t *testing.T) {
 // target. (r0.3/0.3/0.5 — this test's fixture before the torus corner shipped — now legitimately
 // BUILDS instead of declining; see TestFilletCornerRadiusTorusBuilds for that positive case.)
 func TestFilletCornerRadiusMismatchRejected(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	keys := cornerEdgeKeys(t, box)
 	_, err := ops.FilletEdgesCorner(box, []ops.EdgeFilletRadii{
@@ -165,6 +169,7 @@ func TestFilletCornerRadiusMismatchRejected(t *testing.T) {
 // rS=0.3), independent of the OCCT corpus fixtures — a minimal, kernel-only proof this generalizes
 // beyond simple/A4's specific dimensions.
 func TestFilletCornerRadiusTorusBuilds(t *testing.T) {
+	t.Parallel()
 	box := shellBox(2, 2, 2)
 	keys := cornerEdgeKeys(t, box)
 	res, err := ops.FilletEdgesCorner(box, []ops.EdgeFilletRadii{

@@ -10,6 +10,7 @@ import (
 )
 
 func TestBrowserPanesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "browser.setPane",
 		`{"pane":{"id":"sim","title":"Simulation","nodes":[{"id":"loads","label":"Loads","children":[{"id":"f1","label":"Force 10N"}]}]}}`, nil)
@@ -31,6 +32,7 @@ func TestBrowserPanesOverWire(t *testing.T) {
 }
 
 func TestDockableWindowsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "dockableWindows.set",
 		`{"window":{"id":"sim.panel","title":"Simulation","dock":2,"visible":true,"controls":[{"kind":1,"text":"Run","commandId":"Sim.Run"}]}}`, nil)
@@ -60,6 +62,7 @@ func TestDockableWindowsOverWire(t *testing.T) {
 // TestDockableWindowSetValueOverWire checks setValue drives an editable control to a new value (as a
 // user edit would), updating the stored window so a re-read reflects it.
 func TestDockableWindowSetValueOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "dockableWindows.set",
 		`{"window":{"id":"sim.panel","title":"Sim","dock":2,"visible":true,"controls":[{"kind":6,"id":"sim_view","value":"Material","options":["Material","Path"]}]}}`, nil)
@@ -74,6 +77,7 @@ func TestDockableWindowSetValueOverWire(t *testing.T) {
 }
 
 func TestListEnvironmentsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var res wire.ListEnvironmentsResult
 	call(t, r, s, "ui.listEnvironments", "{}", &res)
@@ -88,6 +92,7 @@ func TestListEnvironmentsOverWire(t *testing.T) {
 // TestRibbonListCarriesTypedControlModel checks ribbon.list serves the M05-F03 typed
 // model: control kind/style/state, popup items, and the selector of a combo panel.
 func TestRibbonListCarriesTypedControlModel(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "commands.create",
 		`{"id":"x.a","displayName":"Alpha","category":"Demo"}`, nil)
@@ -141,6 +146,7 @@ func hasSelectorPanel(res wire.ListRibbonResult) bool {
 // TestDockableWindowSetReferencesOverWire checks setReferences drives a referenceList control to a
 // new row set and the stored window reflects it on a subsequent list.
 func TestDockableWindowSetReferencesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	// kind 12 = types.PanelReferenceList
 	call(t, r, s, "dockableWindows.set",
@@ -162,6 +168,7 @@ func TestDockableWindowSetReferencesOverWire(t *testing.T) {
 // TestTaskPanelShowCloseOverWire checks taskPanel.show stores a modal panel in the session,
 // and taskPanel.close removes it.
 func TestTaskPanelShowCloseOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	call(t, r, s, "taskPanel.show",

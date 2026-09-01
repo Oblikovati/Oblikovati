@@ -37,6 +37,7 @@ func freshSlotRef(g *WorkGeometry, kind WorkRefKind) WorkRef {
 // order), and Set on slot i rebinds exactly refs()[i] — slots and the definition's reference
 // list share one order, which the wire repick path (SlotRepick.Slot) depends on.
 func TestWorkPlaneRedefineSlotsPerKind(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		kind  string // the definition's kindName, doubling as the case name
 		build func(g *WorkGeometry) *WorkPlane

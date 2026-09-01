@@ -29,6 +29,7 @@ func onBothCylinders(loop geom.Curve3, a, b geom.Cylinder) float64 {
 // TestCrossingCylinderImprintThinThroughFat traces a thin cylinder crossing a fat one perpendicularly:
 // the rod's entry and exit through the fat wall give two clean closed loops, each on both surfaces.
 func TestCrossingCylinderImprintThinThroughFat(t *testing.T) {
+	t.Parallel()
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)    // axis z, R=3
 	thin, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12) // axis x, r=1.5, through the centre
 
@@ -52,6 +53,7 @@ func TestCrossingCylinderImprintThinThroughFat(t *testing.T) {
 // tangency marker, endpoints apart) must be DROPPED from the watertight imprint but NOT silently — it
 // raises a CodeImprintUnclosedChain diagnostic so the degradation is visible (Oblikovati#1404).
 func TestClosedTraceLoopsRecordsUnclosedChain(t *testing.T) {
+	t.Parallel()
 	res := geom.ResolutionForSize(10)
 	open := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0), math.P3(5, 0, 0)} // ends 5 apart
 	rec := &diag.Recorder{}
@@ -70,6 +72,7 @@ func TestClosedTraceLoopsRecordsUnclosedChain(t *testing.T) {
 // TestClosedTraceLoopsQuietOnCleanTrace: a closed loop is kept and a single-point tangency marker is
 // skipped, neither raising a diagnostic — only a genuine unclosed chain is a tracked defect (#1404).
 func TestClosedTraceLoopsQuietOnCleanTrace(t *testing.T) {
+	t.Parallel()
 	res := geom.ResolutionForSize(10)
 	square := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0), math.P3(0, 0, 0)}
 	marker := []math.Point3{math.P3(9, 9, 9)} // an isolated tangential contact, not a chain
@@ -90,6 +93,7 @@ func TestClosedTraceLoopsQuietOnCleanTrace(t *testing.T) {
 // fold curved_steinmetz.go onto the traced path. Each loop must be a planar ellipse of minor radius R and
 // major radius R√2 (the Steinmetz ellipse), lying on both cylinders.
 func TestCrossingCylinderImprintEqualRadiusPinch(t *testing.T) {
+	t.Parallel()
 	const r = 3.0
 	a, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, 12) // axis x
 	b, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r, 12) // axis z
@@ -126,6 +130,7 @@ func loopRadialExtent(lp geom.Curve3) (near, far float64) {
 
 // TestCrossingCylinderImprintNonCylinderDefers: the imprint only handles bare cylinders.
 func TestCrossingCylinderImprintNonCylinderDefers(t *testing.T) {
+	t.Parallel()
 	block, _ := SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "b")
 	cyl, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1, 4)
 	if _, ok := crossingCylinderImprint(block, cyl, nil); ok {
@@ -135,6 +140,7 @@ func TestCrossingCylinderImprintNonCylinderDefers(t *testing.T) {
 
 // TestCrossingCylinderImprintDisjointHasNoLoops: cylinders that do not meet trace no loop.
 func TestCrossingCylinderImprintDisjointHasNoLoops(t *testing.T) {
+	t.Parallel()
 	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1, 4)
 	b, _ := SolidCylinder(math.P3(20, 0, 0), math.V3(1, 0, 0), 1, 4) // far away
 	if _, ok := crossingCylinderImprint(a, b, nil); ok {
@@ -147,6 +153,7 @@ func TestCrossingCylinderImprintDisjointHasNoLoops(t *testing.T) {
 // same generator line (#1597) — starving the trace of step and tolerance. The rod's entry and exit
 // through the squat fat wall must still give two clean closed loops, with no recorded degradation.
 func TestCrossingCylinderImprintSquatFat(t *testing.T) {
+	t.Parallel()
 	fat, _ := SolidCylinder(math.P3(0, 0, -2), math.V3(0, 0, 1), 50, 4)     // squat: R=50, h=4
 	rod, _ := SolidCylinder(math.P3(-60, 0, 0), math.V3(1, 0, 0), 1.5, 120) // axis x, through both walls
 	rec := &diag.Recorder{}
@@ -173,6 +180,7 @@ func TestCrossingCylinderImprintSquatFat(t *testing.T) {
 // (so dispatch falls through to the exact Steinmetz constructor, which snaps them — #1780) WITHOUT recording a
 // degradation. The snap is honest, not a fallback, so it must raise no near-pinch defect.
 func TestCrossingCylinderImprintSnapBandSilent(t *testing.T) {
+	t.Parallel()
 	a, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
 	base, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	ceil := geom.ResolutionForBox(a.RangeBox().Union(base.RangeBox())).Stitch()
@@ -190,6 +198,7 @@ func TestCrossingCylinderImprintSnapBandSilent(t *testing.T) {
 // decline AND record exactly one CodeImprintNearPinchDeclined defect — the genuine, non-silent fallback the
 // residual band still takes until #1780 Direction 2 folds it onto the analytic path.
 func TestCrossingCylinderImprintResidualBandRecords(t *testing.T) {
+	t.Parallel()
 	a, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
 	base, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	ceil := geom.ResolutionForBox(a.RangeBox().Union(base.RangeBox())).Stitch()
@@ -207,6 +216,7 @@ func TestCrossingCylinderImprintResidualBandRecords(t *testing.T) {
 // must raise CodeImprintFallbackContour — the imprint proceeds on contour-quality loops, but the
 // degradation is recorded instead of silent (#1597).
 func TestKeepImprintLoopsRecordsFallbackContour(t *testing.T) {
+	t.Parallel()
 	res := geom.ResolutionForSize(10)
 	square := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0), math.P3(0, 0, 0)}
 	rec := &diag.Recorder{}

@@ -23,6 +23,7 @@ func unitBoxQuery(t *testing.T) (*brep.InsideQuery, float64) {
 // point ON a bounded face (material behind, void in front) is material-backed, so a genuinely
 // realizable inward recess still builds.
 func TestTangentBackedByMaterialPassesRealFace(t *testing.T) {
+	t.Parallel()
 	inside, eps := unitBoxQuery(t)
 	nZ := m.V3(0, 0, 1) // the box's +Z face outward normal
 	if !tangentBackedByMaterial(inside, m.P3(0.5, 0.5, 1), nZ, eps) {
@@ -34,6 +35,7 @@ func TestTangentBackedByMaterialPassesRealFace(t *testing.T) {
 // a BURIED tangent (material on both sides — the reflex-corner L case) and a FLOATING one (void on
 // both sides). Both must be rejected so the recess wall is never trimmed to a phantom line.
 func TestTangentBackedByMaterialRejectsBuriedAndFloating(t *testing.T) {
+	t.Parallel()
 	inside, eps := unitBoxQuery(t)
 	nZ := m.V3(0, 0, 1)
 	if tangentBackedByMaterial(inside, m.P3(0.5, 0.5, 0.5), nZ, eps) {
@@ -48,6 +50,7 @@ func TestTangentBackedByMaterialRejectsBuriedAndFloating(t *testing.T) {
 // TestFilletConcaveInwardDegenerate: on the reflex-corner L both tangent points fall into the bulk,
 // so the recess is unrealizable and the gate returns a concrete offending point.
 func TestConcaveInwardRealizableRejectsReflexL(t *testing.T) {
+	t.Parallel()
 	b := zPrism([]m.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 2}, {X: 2, Y: 2}, {X: 2, Y: 4}, {X: 0, Y: 4}}, 0, 4, "L")
 	var e *topo.Edge
 	for _, ed := range b.Edges() {
@@ -98,6 +101,7 @@ func recessUnderExposedFace(t *testing.T) (*topo.Body, *topo.Edge, m.Vector3, m.
 // material beneath an exposed planar face is realizable, so the gate must return true and the zero
 // sentinel point. A reject-always mutation (return false) fails this test.
 func TestConcaveInwardRealizableAcceptsRecessUnderFace(t *testing.T) {
+	t.Parallel()
 	body, e, nA, nB, offDir := recessUnderExposedFace(t)
 	p, ok := concaveInwardRealizable(body, e, nA, nB, offDir, 1.5)
 	if !ok {
@@ -113,6 +117,7 @@ func TestConcaveInwardRealizableAcceptsRecessUnderFace(t *testing.T) {
 // void) makes that station's tangent float outside the solid, so the same frame that accepts in
 // TestConcaveInwardRealizableAcceptsRecessUnderFace now rejects — the tangent geometry is load-bearing.
 func TestConcaveInwardRealizableRejectsFloatingStation(t *testing.T) {
+	t.Parallel()
 	slab := zPrism([]m.Point2{{X: 0, Y: 0}, {X: 10, Y: 0}, {X: 10, Y: 10}, {X: 0, Y: 10}}, 0, 4, "slab")
 	lin := topo.NewLineage(topo.Tok("test", "float", 0))
 	bld := topo.NewBuilder(true, lin)

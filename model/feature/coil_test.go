@@ -9,6 +9,7 @@ import (
 )
 
 func TestCoilSweepsValidHelix(t *testing.T) {
+	t.Parallel()
 	// A small square offset from the Y axis, swept 3 turns with pitch 2 → a helical
 	// solid that climbs 3·2 = 6 plus the profile's own height (1).
 	fs := NewPartFeatures(nil)
@@ -33,6 +34,7 @@ func TestCoilSweepsValidHelix(t *testing.T) {
 }
 
 func TestCoilRejectsZeroRevolutions(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewCoilFeatures(fs).Add(offsetSquareSketch(4, 1), 0, yAxis(),
 		func() float64 { return 2 }, func() float64 { return 0 }, 0, ops.NewBody)
@@ -43,6 +45,7 @@ func TestCoilRejectsZeroRevolutions(t *testing.T) {
 }
 
 func TestCoilRoundTrip(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	g.Recompute(nil)
 	axis, err := g.axis(OriginYAxis)

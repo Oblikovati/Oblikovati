@@ -16,6 +16,7 @@ import (
 // TestFeatureControlFrameAnnotatesModelGeometry drives the UI: start the tool, click a model
 // face, set the characteristic, tolerance and datums, OK — and asserts the recorded frame.
 func TestFeatureControlFrameAnnotatesModelGeometry(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	face, body := boxTopFace(t, def)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: face, Body: body}})
@@ -60,6 +61,7 @@ func TestFeatureControlFrameAnnotatesModelGeometry(t *testing.T) {
 
 // A datum feature records the label instead, against the same kind of reference.
 func TestDatumFeatureAnnotatesModelGeometry(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	face, body := boxTopFace(t, def)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: face, Body: body}})
@@ -83,6 +85,7 @@ func TestDatumFeatureAnnotatesModelGeometry(t *testing.T) {
 
 // An empty datum letter is not a datum: the OK button refuses rather than recording a blank.
 func TestDatumFeatureNeedsALabel(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	face, body := boxTopFace(t, def)
 	tool := NewModelDatumTool()
@@ -96,6 +99,7 @@ func TestDatumFeatureNeedsALabel(t *testing.T) {
 
 // The annotation is a history feature that changes no geometry — the body passes through.
 func TestModelToleranceLeavesTheBodyUnchanged(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	face, body := boxTopFace(t, def)
 	before := def.SurfaceBodies().Count()
@@ -117,6 +121,7 @@ func TestModelToleranceLeavesTheBodyUnchanged(t *testing.T) {
 
 // Both annotations are reachable from the Inspect tab's Annotate panel.
 func TestModelToleranceCommandsAreOnTheInspectTab(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	tab, ok := BuildRibbon(s).Tab("Inspect")
 	if !ok {
@@ -136,6 +141,7 @@ func TestModelToleranceCommandsAreOnTheInspectTab(t *testing.T) {
 // Every characteristic in the combo is a real enum member with a wire spelling, so the panel
 // cannot offer one the API could not round-trip.
 func TestGeometricCharacteristicOptionsAreParseable(t *testing.T) {
+	t.Parallel()
 	opts := GeometricCharacteristicOptions()
 	if len(opts) != len(geometricCharacteristics) {
 		t.Fatalf("%d labels for %d characteristics", len(opts), len(geometricCharacteristics))

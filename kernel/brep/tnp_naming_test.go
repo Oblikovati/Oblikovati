@@ -115,6 +115,7 @@ func topFragmentAt(b *topo.Body, p math.Point3) (*topo.Face, bool) {
 // boolean. Adding a lower-X prong to the comb tool — which touches neither that edge nor its
 // faces — must not change the edge's reference key.
 func TestGeneratedEdgeKeySurvivesUpstreamEdit(t *testing.T) {
+	t.Parallel()
 	const tol = 1e-9
 
 	before := combSlottedTop(t, false)
@@ -142,6 +143,7 @@ func TestGeneratedEdgeKeySurvivesUpstreamEdit(t *testing.T) {
 // into three fragments; the middle one (x∈[7,10]) is untouched by the added lower prong, so its
 // reference key must not change.
 func TestSplitFaceFragmentKeySurvivesUpstreamEdit(t *testing.T) {
+	t.Parallel()
 	before := combSlottedTop(t, false)
 	f1, ok := topFragmentAt(before, middleFragmentPoint)
 	if !ok {
@@ -168,6 +170,7 @@ func TestSplitFaceFragmentKeySurvivesUpstreamEdit(t *testing.T) {
 // (K1a) its key already survives the very same edit today. If this regressed, the cross-edit
 // comparisons above would be meaningless.
 func TestSurvivingFaceKeyIsTheWorkingBaseline(t *testing.T) {
+	t.Parallel()
 	leftSide := math.V3(-1, 0, 0)
 
 	before := combSlottedTop(t, false)
@@ -217,6 +220,7 @@ func wallEdgeKeysAtX8(b *topo.Body, ox, oy float64) (lower, upper []byte) {
 // intersection line — must be invariant under a rigid translation of the whole part (the property
 // occurrence placement needs, #735), unlike a build-order counter.
 func TestSamePairEdgesGetDistinctTransformInvariantKeys(t *testing.T) {
+	t.Parallel()
 	lo0, hi0 := wallEdgeKeysAtX8(holedSlotWall(t, 0, 0), 0, 0)
 	if lo0 == nil || hi0 == nil {
 		t.Fatal("expected two same-pair wall edges below and above the hole (harness invalid)")
@@ -247,6 +251,7 @@ func vertexKeyAt(b *topo.Body, p math.Point3) ([]byte, bool) {
 // the SET of faces meeting at it, so its key is meaningful and invariant under a rigid placement —
 // unlike the raw ordinal it carried before. A plain original corner keeps its ordinal.
 func TestIntersectionVertexNamedByMeetingFaces(t *testing.T) {
+	t.Parallel()
 	// (8,0,4): the slot's −X wall, the top, and the front face meet — an intersection vertex.
 	k0, ok0 := vertexKeyAt(holedSlotWall(t, 0, 0), math.P3(8, 0, 4))
 	if !ok0 {

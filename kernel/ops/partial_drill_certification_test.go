@@ -45,6 +45,7 @@ func scallopAnalyticVolume() float64 {
 }
 
 func TestScallopIsWatertightManifold(t *testing.T) {
+	t.Parallel()
 	res := scallopPlate(t)
 	if !res.IsSolid() {
 		t.Fatal("scallop is not a solid")
@@ -64,6 +65,7 @@ func TestScallopIsWatertightManifold(t *testing.T) {
 }
 
 func TestScallopVolumeMatchesAnalytic(t *testing.T) {
+	t.Parallel()
 	res := scallopPlate(t)
 	want := scallopAnalyticVolume()
 	got := BodyGeometryProperties(res, DefaultQuality()).Volume
@@ -75,6 +77,7 @@ func TestScallopVolumeMatchesAnalytic(t *testing.T) {
 // TestScallopTessellationIsWatertight is the top-priority mesh gate (CLAUDE.md): the trimmed caps, split side
 // faces and partial wall must weld crack-free so the rendered notch shows no tear at the clipped edge.
 func TestScallopTessellationIsWatertight(t *testing.T) {
+	t.Parallel()
 	res := scallopPlate(t)
 	for _, gq := range gateQualities() {
 		mesh, _ := TessellateBody(res, gq.q)
@@ -90,6 +93,7 @@ func TestScallopTessellationIsWatertight(t *testing.T) {
 // fall through to CSG triangle-soup (which is watertight and the right volume too, so only the analytic
 // cylinder face distinguishes them).
 func TestScallopCutViaAnalyticDispatch(t *testing.T) {
+	t.Parallel()
 	plate, _ := brep.SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
 	drill, _ := brep.SolidCylinder(math.P3(4, 0, -1), math.V3(0, 0, 1), 2, 4)
 	res, err := Boolean(Cut, plate, drill)

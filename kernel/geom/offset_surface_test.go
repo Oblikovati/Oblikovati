@@ -13,6 +13,7 @@ import (
 // the offset surface is the base point displaced by Distance along the base normal, and the offset
 // normal equals the base normal. Exercised over several (u,v) and both offset directions.
 func TestOffsetSurfaceDefiningProperty(t *testing.T) {
+	t.Parallel()
 	cyl, err := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatal(err)
@@ -42,6 +43,7 @@ func TestOffsetSurfaceDefiningProperty(t *testing.T) {
 // derivatives cross to the (parallel) normal, the parameter domains are the base's, and ParamAt
 // inverts PointAt for a point of the offset surface.
 func TestOffsetSurfaceInterface(t *testing.T) {
+	t.Parallel()
 	cyl, err := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatal(err)

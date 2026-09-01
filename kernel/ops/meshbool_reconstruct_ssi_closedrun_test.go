@@ -40,6 +40,7 @@ func closedSliverRun() (meshbool.ArrangementRun, []meshbool.Point, geom.Surface,
 // TestIntersectionRunEdgeDeclinesClosedRunOnLine: the degenerate closed sliver run, whose SSI is an
 // unbounded line, must decline — the guard's whole purpose.
 func TestIntersectionRunEdgeDeclinesClosedRunOnLine(t *testing.T) {
+	t.Parallel()
 	run, verts, wall, side, res := closedSliverRun()
 
 	// Preconditions: the run IS closed and the SSI IS an unbounded line (else the test proves nothing).
@@ -67,6 +68,7 @@ func TestIntersectionRunEdgeDeclinesClosedRunOnLine(t *testing.T) {
 // TestBoundedDomainDistinguishesLineFromCircle locks the predicate the decline rests on: a periodic
 // circle (a plane∩cylinder ⊥ axis) has a bounded domain and must NOT be declined; only the line is.
 func TestBoundedDomainDistinguishesLineFromCircle(t *testing.T) {
+	t.Parallel()
 	line, _ := geom.NewLine(m.P3(0, 0, 0), m.V3(0, 0, 1))
 	if boundedDomain(line) {
 		t.Error("a line has an unbounded (±Inf) domain; boundedDomain must report false")

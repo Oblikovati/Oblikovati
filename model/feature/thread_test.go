@@ -28,6 +28,7 @@ func cylinderFaceKey(t *testing.T, b *topo.Body) []byte {
 
 // TestParseThreadDesignation pins the ISO metric parser.
 func TestParseThreadDesignation(t *testing.T) {
+	t.Parallel()
 	spec, err := ParseThreadDesignation("M8x1.25")
 	if err != nil {
 		t.Fatalf("M8x1.25: %v", err)
@@ -54,6 +55,7 @@ func TestParseThreadDesignation(t *testing.T) {
 // TestThreadCosmeticOnCylinder applies a thread to a cylinder's side face: the feature is
 // healthy, the solid is unchanged, and the resolved spec is recorded.
 func TestThreadCosmeticOnCylinder(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4, 3)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -78,6 +80,7 @@ func TestThreadCosmeticOnCylinder(t *testing.T) {
 
 // TestThreadSickOnPlanarFace rejects a thread on a non-cylindrical face.
 func TestThreadSickOnPlanarFace(t *testing.T) {
+	t.Parallel()
 	box := prismBody() // a unit prism: every face is planar
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -90,6 +93,7 @@ func TestThreadSickOnPlanarFace(t *testing.T) {
 
 // TestThreadSickOnBadDesignation rejects an unparseable designation.
 func TestThreadSickOnBadDesignation(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4, 3)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
@@ -103,6 +107,7 @@ func TestThreadSickOnBadDesignation(t *testing.T) {
 // TestThreadDisplayHelixOnSurface checks the cosmetic thread produces a helix display curve on
 // its cylindrical face (the data the head renders).
 func TestThreadDisplayHelixOnSurface(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4, 1.0)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
@@ -131,6 +136,7 @@ func TestThreadDisplayHelixOnSurface(t *testing.T) {
 // only over that axial window (Inventor's ThreadOffset/ThreadDepth) — the double-ended-stud case,
 // where the two end threads must not spill into the plain middle.
 func TestThreadDisplayPartialSpan(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4, 3.0)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
@@ -157,6 +163,7 @@ func TestThreadDisplayPartialSpan(t *testing.T) {
 // threaded surface in O(1) — microseconds, no boolean — giving a valid solid whose volume
 // drops (the grooves are real geometry).
 func TestThreadCutModelsRealThreadFast(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.5, 2.0)
 	before := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
 	fs := NewPartFeatures(nil)

@@ -19,6 +19,7 @@ import (
 // s ≈ 14.770 the root-cause named ("A8 sets back differently"). This pins the identity so a future
 // non-orthogonal corner slice cannot silently regress the s=r orthogonal case.
 func TestConvexWedgeSetbackDistanceIsRCotHalfTheta(t *testing.T) {
+	t.Parallel()
 	const r = 10.0
 	for _, tc := range []struct {
 		name  string
@@ -42,6 +43,7 @@ func cotHalfFromCos(c float64) float64 { return stdmath.Sqrt((1 + c) / (1 - c)) 
 // polyhedral wedges (A8/A6) and OFF curved-host bodies (F7's elliptical prism, whose oblique band runs
 // off against a curved neighbour so the flat-plane pierce would move it AWAY from OCCT).
 func TestAllBodyFacesPlanarSeparatesWedgeFromCurved(t *testing.T) {
+	t.Parallel()
 	box, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(100, 100, 100), "box")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)
@@ -62,6 +64,7 @@ func TestAllBodyFacesPlanarSeparatesWedgeFromCurved(t *testing.T) {
 // a planar triple and rejects a curved face; anyConcaveBand fires the moment ANY band is concave (so a
 // mixed-sense corner — the P3 torus — never reaches this convex-only pass).
 func TestConvexWedgeSenseAndPlanarPredicates(t *testing.T) {
+	t.Parallel()
 	box, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(100, 100, 100), "box")
 	planes := wedgePlanarTriple(box)
 	if !allFacesPlanar(planes) {
@@ -83,6 +86,7 @@ func TestConvexWedgeSenseAndPlanarPredicates(t *testing.T) {
 // A8/A6 (an OBLIQUE band overshoots its run-off plane by a tab OUTSIDE the body → clip) and a case whose
 // rail already sits inside the plane (no clip, byte-identical). A blend end has no run-off plane at all.
 func TestEndOvershootsRunoffDetectsTab(t *testing.T) {
+	t.Parallel()
 	box, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(100, 100, 100), "box")
 	xf := planeFaceWithOutwardNormal(t, box, math.V3(-1, 0, 0)) // x=0 face, material x>0 ⇒ outward (−1,0,0)
 	v := aVertexOn(xf)
@@ -111,6 +115,7 @@ func TestEndOvershootsRunoffDetectsTab(t *testing.T) {
 // does not move (t=0, the s=r orthogonal termination). railPierce is the shared runout primitive the
 // convex-wedge pass reuses.
 func TestObliqueRunoffRailClipsPerpendicularNoop(t *testing.T) {
+	t.Parallel()
 	n := math.V3(-1, 0, 0) // outward normal of the x=0 run-off plane
 	q := math.P3(0, 0, 0)  // a point on it
 

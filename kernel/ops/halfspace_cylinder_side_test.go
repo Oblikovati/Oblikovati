@@ -30,6 +30,7 @@ func segmentArea(r, m float64) float64 {
 // TestHalfSpaceCutCylinderHalvesBySymmetry cuts an axis-aligned cylinder by a plane of symmetry through
 // the axis (x ≤ 0): the kept band must be a valid analytic solid of exactly half the cylinder's volume.
 func TestHalfSpaceCutCylinderHalvesBySymmetry(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), cylR, cylH)
 	full := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
 
@@ -52,6 +53,7 @@ func TestHalfSpaceCutCylinderHalvesBySymmetry(t *testing.T) {
 // (keep x ≤ 1.5): the kept cross-section is the disk minus the minor segment beyond the chord, so the
 // volume is that area times the height — an analytic oracle the exact arc-band face must match.
 func TestHalfSpaceCutCylinderSegmentVsAnalytic(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), cylR, cylH)
 	plane, _ := geom.NewPlane(math.P3(1.5, 0, 0), math.V3(1, 0, 0)) // keep x ≤ 1.5
 	clipped, err := brep.HalfSpaceCut(cyl, plane)
@@ -73,6 +75,7 @@ func TestHalfSpaceCutCylinderSegmentVsAnalytic(t *testing.T) {
 // The second wall re-cuts the seam-free arc band the first produced, exercising the general looped split
 // bridging across an axis-parallel line pair. The kept area is the disk minus two minor segments.
 func TestHalfSpaceCutCylinderSlab(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), cylR, cylH)
 	pHi, _ := geom.NewPlane(math.P3(1.5, 0, 0), math.V3(1, 0, 0))   // keep x ≤ 1.5
 	pLo, _ := geom.NewPlane(math.P3(-1.5, 0, 0), math.V3(-1, 0, 0)) // keep x ≥ −1.5

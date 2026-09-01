@@ -26,6 +26,7 @@ import (
 // The bound is 3%: the honest 32-gon inscribed bias is ~0.64%, while the square regression is 36% — so
 // this discriminates by more than 10x and cannot be met by tightening tessellation noise.
 func TestFacetKeepsASmallCylindersVolume(t *testing.T) {
+	t.Parallel()
 	const r, h = 0.15, 1.5 // the real screw shaft: Ø3mm x 15mm
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
 	if err != nil {
@@ -48,6 +49,7 @@ func TestFacetKeepsASmallCylindersVolume(t *testing.T) {
 // integration: the faceted wall must have far more than a square's four sides. A cylinder facets to its
 // wall segments plus two caps, so the old chord-only collapse read 6 faces total (4 walls + 2 caps).
 func TestFacetKeepsASmallCylinderRound(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.15, 1.5)
 	if err != nil {
 		t.Fatalf("cylinder: %v", err)

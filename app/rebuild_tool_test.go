@@ -81,6 +81,7 @@ func partWithNurbsSurface(t *testing.T) (*Session, *compdef.PartComponentDefinit
 }
 
 func TestSurfaceRebuildToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def := partWithNurbsSurface(t)
 	tool := NewSurfaceRebuildTool()
 	s.StartTool(tool)
@@ -116,6 +117,7 @@ func scrollbackMentions(s *Session, substr string) bool {
 }
 
 func TestSurfaceRebuildToolReportsNoFreeformFace(t *testing.T) {
+	t.Parallel()
 	// A planar boundary patch has only an unbounded-domain analytic face: nothing to rebuild.
 	s, def, region := partWithSquareRegion(t)
 	feature.NewBoundaryPatchFeatures(def.Features()).Add(region.Sketch, region.ProfileIndex, feature.PatchFree)
@@ -129,6 +131,7 @@ func TestSurfaceRebuildToolReportsNoFreeformFace(t *testing.T) {
 }
 
 func TestSurfaceRebuildToolCanCommit(t *testing.T) {
+	t.Parallel()
 	tool := NewSurfaceRebuildTool()
 	if !tool.CanCommit() {
 		t.Error("defaults (3,3,4,4) should be committable")
@@ -140,6 +143,7 @@ func TestSurfaceRebuildToolCanCommit(t *testing.T) {
 }
 
 func TestSurfaceRebuildToolParamsRoundTrip(t *testing.T) {
+	t.Parallel()
 	tool := NewSurfaceRebuildTool()
 	if tool.Prompt(nil) == "" {
 		t.Error("rebuild tool should have a non-empty prompt")
@@ -157,6 +161,7 @@ func TestSurfaceRebuildToolParamsRoundTrip(t *testing.T) {
 }
 
 func TestSurfaceRebuildViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithNurbsSurface(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
@@ -172,6 +177,7 @@ func TestSurfaceRebuildViaRibbonCommand(t *testing.T) {
 // TestSurfaceRebuildToolDraftFeature pins the #1626 commit-gate seam: no draft while a control
 // count cannot carry its degree, a non-nil draft once the targets are valid.
 func TestSurfaceRebuildToolDraftFeature(t *testing.T) {
+	t.Parallel()
 	tool := NewSurfaceRebuildTool()
 	tool.uCount = 2 // below uDegree+1: not commit-ready
 	if _, ok := tool.DraftFeature(nil); ok {

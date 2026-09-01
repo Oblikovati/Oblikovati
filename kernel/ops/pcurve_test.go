@@ -52,6 +52,7 @@ func selfIntersections(raw []math.Point2) int {
 }
 
 func TestMarchUVNonSelfIntersecting(t *testing.T) {
+	t.Parallel()
 	s := foldSurface(t)
 	// A loop entirely on one side of the fold (v < 0.5). Every point also exists at 1−v, so
 	// independent ParamAt jitters between the two sides; marchUV keeps it on the v<0.5 side.
@@ -94,6 +95,7 @@ func TestMarchUVNonSelfIntersecting(t *testing.T) {
 }
 
 func TestMarchUVRoundTrip(t *testing.T) {
+	t.Parallel()
 	s := foldSurface(t)
 	var loop []math.Point3
 	for u := 0.2; u <= 0.8; u += 0.15 {

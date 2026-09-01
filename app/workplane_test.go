@@ -20,6 +20,7 @@ func planePicker(s *Session, def *compdef.PartComponentDefinition) *RayPicker {
 }
 
 func TestPickerSelectsOriginPlane(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t) // camera looks down -Z at the origin
 	p := planePicker(s, def)
 	sel, ok := p.Pick(100, 100, NewSelectionFilter())
@@ -33,6 +34,7 @@ func TestPickerSelectsOriginPlane(t *testing.T) {
 }
 
 func TestPickerPrefersFaceOverPlane(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	// Build a box on the XY plane; its top face is in front of the plane behind it.
 	sk := def.Sketches().Add(sketch.XYPlane())
@@ -58,6 +60,7 @@ func TestPickerPrefersFaceOverPlane(t *testing.T) {
 }
 
 func TestPickerReturnsBodyWhenFilterWantsBodies(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XYPlane())
 	c0 := sk.Points().Add(math.P2(-2, -2))
@@ -85,6 +88,7 @@ func TestPickerReturnsBodyWhenFilterWantsBodies(t *testing.T) {
 }
 
 func TestSetCameraSyncsPicker(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	s.SetPicker(planePicker(s, def))
 	cam := s.Camera()
@@ -101,6 +105,7 @@ func TestSetCameraSyncsPicker(t *testing.T) {
 }
 
 func TestPickerPlaneOutsideDisplaySquareMisses(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	p := planePicker(s, def)
 	// A pixel far off-center maps far out on the plane, beyond its display square.
@@ -110,6 +115,7 @@ func TestPickerPlaneOutsideDisplaySquareMisses(t *testing.T) {
 }
 
 func TestBrowserHasOriginFolderWithSelectablePlanes(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	root := BuildBrowser(s)
 	var origin *BrowserNode
@@ -138,6 +144,7 @@ func TestBrowserHasOriginFolderWithSelectablePlanes(t *testing.T) {
 }
 
 func TestSelectBrowserNodeSelectsPlane(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	origin := originFolder(BuildBrowser(s))
 	xz := origin.Children[1] // XZ Plane
@@ -148,6 +155,7 @@ func TestSelectBrowserNodeSelectsPlane(t *testing.T) {
 }
 
 func TestCreateSketchOnSelectedPlaneUsesSelection(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	origin := originFolder(BuildBrowser(s))
 	s.SelectBrowserNode(origin.Children[1]) // XZ Plane
@@ -162,6 +170,7 @@ func TestCreateSketchOnSelectedPlaneUsesSelection(t *testing.T) {
 }
 
 func TestCreateSketchOnSelectedPlaneFallsBackToXY(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, err := s.CreateSketchOnSelectedPlane() // nothing selected
 	if err != nil {

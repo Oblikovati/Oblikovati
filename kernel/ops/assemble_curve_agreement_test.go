@@ -21,6 +21,7 @@ import (
 // centres, or radii, would pass it. Only a comparison of where the two curves GO between those
 // endpoints fires, which is what curveOfferDeviation measures.
 func TestEdgeCatalogRecordsCurveDisagreementsInsteadOfArbitrating(t *testing.T) {
+	t.Parallel()
 	minor, major := complementaryArcPair()
 	for _, tc := range []struct {
 		name       string
@@ -78,6 +79,7 @@ func complementaryArcPair() (minor, major geom.Arc3d) {
 // 104.4775°, must read ≈2R apart — and an arc against ITSELF must read zero, whichever direction
 // the second consumer traverses it in (the catalog sees both).
 func TestComplementaryArcsAreNotTakenForEachOther(t *testing.T) {
+	t.Parallel()
 	minor, major := complementaryArcPair()
 	if got := curveOfferDeviation(major, minor); got < 40 {
 		t.Errorf("an arc and its complement read %.6g apart, want > 40 (their circle's diameter is 50) — "+

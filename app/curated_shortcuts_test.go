@@ -14,6 +14,7 @@ import (
 // so Shift+L is Line, Shift+E is Extrude, etc. Collision-freedom across the whole registry is
 // guarded separately by TestStandardCommandsPassCheckDefaults (CheckDefaults).
 func TestCuratedDefaultShortcutsResolve(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)

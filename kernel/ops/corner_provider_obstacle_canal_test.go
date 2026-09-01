@@ -78,6 +78,7 @@ func t6ObstacleCanal(t *testing.T, of *ObstacleFeature, stations int) *obstacleC
 //	                        the centre sits on L_B, r from the wall, by construction. Kept because it is
 //	                        what geom.LoftCanalStations itself re-checks, not because it can fail here.
 func TestObstacleCanalStationsAreOnTheEnvelope(t *testing.T) {
+	t.Parallel()
 	of := newT6Obstacle(t)
 	feet := ellipseLowerArcSamples(of.Nodes[0], of.Nodes[1], 15, 10, 41)
 	c := t6ObstacleCanal(t, of, 41)
@@ -150,6 +151,7 @@ func axisPointNearest(cyl geom.Cylinder, p math.Point3) math.Point3 {
 // positive and reaches its maximum at mid-span. A future refactor that quietly reinstates the straight
 // seam fails here.
 func TestObstacleCanalWallFootLeavesThePlainSeam(t *testing.T) {
+	t.Parallel()
 	of := newT6Obstacle(t)
 	c := t6ObstacleCanal(t, of, 41)
 	last := len(c.FeetWall) - 1
@@ -172,6 +174,7 @@ func TestObstacleCanalWallFootLeavesThePlainSeam(t *testing.T) {
 // orders of magnitude over the model weld, while the canal loft reads inside it. The Coons number is
 // asserted to be LARGE first, so the premise cannot silently evaporate under the test.
 func TestObstacleCanalCertifiesWhereTheCoonsFillCannot(t *testing.T) {
+	t.Parallel()
 	of := newT6Obstacle(t)
 	res := ResolutionForSize(50)
 	c := t6ObstacleCanal(t, of, 145)
@@ -212,6 +215,7 @@ func TestObstacleCanalCertifiesWhereTheCoonsFillCannot(t *testing.T) {
 // ObstacleFeature.Canal payload alone, so a junction request and a payload-free obstacle both fall
 // through untouched to the Coons tier.
 func TestObstacleCanalProviderDeclinesWithoutPayload(t *testing.T) {
+	t.Parallel()
 	var p obstacleCanalProvider
 	if p.Fits(CornerBlendRequest{}) {
 		t.Error("the obstacle canal tier must not claim a junction request")
@@ -230,6 +234,7 @@ func TestObstacleCanalProviderDeclinesWithoutPayload(t *testing.T) {
 // in here carry no rim curve at all, so a single dipRimPointAtStation call would panic rather than return.
 // Both must decline with a NIL row, like every other decline path in this file.
 func TestObstacleCanalRimFeetChecksItsPreconditionsBeforeSolving(t *testing.T) {
+	t.Parallel()
 	cyl, _, _, _ := t6ObstacleEnvelopeGeom(t)
 	env := newRunoutEnvelope(cyl)
 	for _, tc := range []struct {
@@ -268,6 +273,7 @@ func TestObstacleCanalRimFeetChecksItsPreconditionsBeforeSolving(t *testing.T) {
 // shipped cases, and 16 spends solves the weld does not ask for. If a future weld genuinely demands 16,
 // this test is the place that must be re-measured, loudly, rather than drifting.
 func TestObstacleCanalInteriorConvergesLikeTheCubicItIs(t *testing.T) {
+	t.Parallel()
 	of := newT6Obstacle(t)
 	res := ResolutionForSize(50)
 	devs := make([]float64, 0, 3)

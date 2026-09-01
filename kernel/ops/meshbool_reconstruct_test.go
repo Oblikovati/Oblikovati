@@ -20,6 +20,7 @@ import (
 // surface each. Asserts: valid closed solid, exactly two analytic cylinder walls, and
 // the exact stepped volume.
 func TestReconstructSteppedShaftKeepsAnalyticWalls(t *testing.T) {
+	t.Parallel()
 	lower, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 5)
 	if err != nil {
 		t.Fatalf("lower cylinder: %v", err)
@@ -50,6 +51,7 @@ func TestReconstructSteppedShaftKeepsAnalyticWalls(t *testing.T) {
 // case end to end: two overlapping boxes union to a valid solid of the exact volume,
 // through the same tag-grouped reconstruction path.
 func TestReconstructBoxUnionExactVolume(t *testing.T) {
+	t.Parallel()
 	a := boxBodyAt(2, 2, 2, math.V3(0, 0, 0), "a")
 	b := boxBodyAt(2, 2, 2, math.V3(1, 0, 0), "b") // overlaps a in x: union volume = 12
 	body, ok := reconstructBoolean(a, b, meshbool.Union, DefaultQuality())

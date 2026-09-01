@@ -16,6 +16,7 @@ import (
 // as inert for that reason. The planar setSketchEdit always went through the session; this is
 // the same seam for 3D.
 func TestEditSketch3DEntersTheSessionEnvironment(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	s.ActiveDocument().Content().(*compdef.PartComponentDefinition).Sketches3D().Add()
 

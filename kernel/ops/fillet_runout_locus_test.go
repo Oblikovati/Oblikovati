@@ -16,6 +16,7 @@ import (
 // (geom.CanalFootLocusRail) instead of the degree-1 polyline through the 7 node feet whose chords
 // sagged off the patch (S1 4.157e-05·diag, S9 7.927e-04·diag — railb-locus-report.md).
 func TestContactLocusRailLiesOnItsOwnBandLoft(t *testing.T) {
+	t.Parallel()
 	tl := s1Tiling(t)
 	for name, band := range map[string]*runoutBand{"left": tl.left, "right": tl.right} {
 		rc := band.payload()
@@ -42,6 +43,7 @@ func TestContactLocusRailLiesOnItsOwnBandLoft(t *testing.T) {
 // station contact (no smoothing): each station's exact footB sits on the rail at that station's
 // chord-length parameter over the centres — the parameterisation the loft shares.
 func TestContactLocusRailInterpolatesStationContacts(t *testing.T) {
+	t.Parallel()
 	tl := s1Tiling(t)
 	for name, band := range map[string]*runoutBand{"left": tl.left, "right": tl.right} {
 		params := centreChordParams(band.stations)
@@ -80,6 +82,7 @@ func centreChordParams(sts []runoutStation) []float64 {
 // the edge catalog record a nil-vs-curve adoption on every locus edge (the ratchet's floor is 2)
 // and ship the patch's offer under an orientation the notch never checked.
 func TestPlainContactDetourCarriesLocusSubSpans(t *testing.T) {
+	t.Parallel()
 	band, from, to := syntheticLocusBand(t)
 	tl := setbackTiling{mid: band, weld: 1e-9,
 		bCutLo: curveStart(band.railB), bCutHi: curveEnd(band.railB)}
@@ -147,6 +150,7 @@ func syntheticLocusBand(t *testing.T) (*runoutBand, math.Point3, math.Point3) {
 // reversed(t) == forward(lo+hi−t) — so a host notch entering from the far corner reads the same
 // locus the patch does. (The degree-1 branch keeps its exact control-point reversal.)
 func TestReverseCurve3MirrorsTheInterpolatedLocus(t *testing.T) {
+	t.Parallel()
 	band, _, _ := syntheticLocusBand(t)
 	rev := reverseCurve3(band.railB)
 	lo, hi := band.railB.Domain()

@@ -12,6 +12,7 @@ import (
 // TestOccurrenceRefRoundTrip: an occurrence-qualified ref encodes an occurrence path (even with
 // names containing slashes or spaces) and its native datum ref, and decodes back exactly (#1857).
 func TestOccurrenceRefRoundTrip(t *testing.T) {
+	t.Parallel()
 	path := []string{"gear:1", "sub/assembly:2", "shaft x:3"}
 	ref := EncodeOccurrenceRef(path, "axis/0")
 	gotPath, native, ok := ParseOccurrenceRef(ref)
@@ -47,6 +48,7 @@ func (f fakeExternalResolver) OccurrencePoint(WorkRef) (math.Point3, bool) { ret
 // TestExternalResolverInterceptsOccurrenceRefs: with an external resolver installed, the plane/axis/
 // point resolvers delegate occurrence-qualified refs to it; without one, an occ ref errors (#1857).
 func TestExternalResolverInterceptsOccurrenceRefs(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	occ := EncodeOccurrenceRef([]string{"sub:1"}, "plane/3")
 	if _, err := g.plane(occ); err == nil {

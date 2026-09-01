@@ -14,6 +14,7 @@ import (
 // polyline onto a plate scores its faces (adding edges/faces) while leaving the volume untouched —
 // the split-FACE contract, along a path rather than a straight plane section.
 func TestSplitFacesByPathScoresFaceWithoutRemovingMaterial(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 4, 4, 2) // plate [0,4]×[0,4]×[0,2]
 	before := csgVolume(box)
 	beforeFaces := len(box.Faces())
@@ -39,6 +40,7 @@ func TestSplitFacesByPathScoresFaceWithoutRemovingMaterial(t *testing.T) {
 // TestSplitFacesByPathRejectsBadInput: fewer than two points, or a projection direction with no
 // length, are refused rather than producing a degenerate tool.
 func TestSplitFacesByPathRejectsBadInput(t *testing.T) {
+	t.Parallel()
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
 	if _, err := ops.SplitFacesByPath(box, []math.Point3{math.P3(0, 0, 2)}, math.V3(0, 0, 1)); err == nil {
 		t.Error("a one-point path should be refused")

@@ -15,6 +15,7 @@ import (
 // (carrying the wire method + args) for a document-mutating call and nothing for a
 // read-only call — the capture seam for operational replication (ADR-0004).
 func TestEditCommittedEmittedForMutationsOnly(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var got []app.EditCommitted
