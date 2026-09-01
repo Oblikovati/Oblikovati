@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -47,7 +48,7 @@ func ruleStripBetween(a, b corner, cmid math.Point3) []filletFace {
 // so the sign is robust).
 func planarFaceFromRing(ring []math.Point3, cmid math.Point3) filletFace {
 	n := ring[0].VectorTo(ring[1]).Cross(ring[0].VectorTo(ring[len(ring)-1]))
-	if n.Dot(cmid.VectorTo(centroidPts(ring))) < 0 {
+	if n.Dot(cmid.VectorTo(probe.CentroidPts(ring))) < 0 {
 		ring = reversedRing(ring)
 		n = n.Scale(-1)
 	}
@@ -212,7 +213,7 @@ func loopFromSegs(segs []endSeg) filletLoop {
 func cylinderSegsFlipped(ef edgeFillet, segs []endSeg) bool {
 	a, b, c := ef.c0.ta, ef.c1.ta, ef.c1.tb
 	n := a.VectorTo(b).Cross(a.VectorTo(c))
-	u, v := ef.cyl.ParamAt(centroidPts(loopFromSegs(segs).pts))
+	u, v := ef.cyl.ParamAt(probe.CentroidPts(loopFromSegs(segs).pts))
 	return n.Dot(ef.cyl.NormalAt(u, v)) < 0
 }
 

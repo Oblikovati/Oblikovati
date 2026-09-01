@@ -233,8 +233,8 @@ func TestRunoutPieceIsArcOnCylinder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("solve: %v", err)
 	}
-	uhat := unit(fan.axis)
-	ref := unit(fan.center.VectorTo(fan.ta))
+	uhat := probe.Unit(fan.axis)
+	ref := probe.Unit(fan.center.VectorTo(fan.ta))
 	for id, pc := range sp.pieces {
 		if pc.curve == nil {
 			t.Fatalf("face %d piece has no arc curve", id)

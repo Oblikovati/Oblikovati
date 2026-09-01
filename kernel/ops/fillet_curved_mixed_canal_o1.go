@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
@@ -71,8 +72,8 @@ func (f o1BallFrame) centerAt(alpha float64) (math.Point3, bool) {
 // rests on, because only then is the ρ constraint expressible in the (ĵ, û) plane at all. It is a SINE and
 // is therefore thresholded by the layer's angular tolerance, never by a model-scaled length (ADR-0042).
 func newO1BallFrame(midAxisOrigin math.Point3, midAxis math.Vector3, lat geom.Cylinder, rho, tube float64) (o1BallFrame, bool) {
-	k := unit(midAxis)
-	j := unit(lat.AxisDir.AsVector())
+	k := probe.Unit(midAxis)
+	j := probe.Unit(lat.AxisDir.AsVector())
 	if stdmath.Abs(float64(j.Dot(k))) > tessellate.SeamAngularTol {
 		return o1BallFrame{}, false
 	}
@@ -136,7 +137,7 @@ func (f o1BallFrame) holdsStations(spine geom.Cylinder, cove geom.Torus, midAxis
 	}
 	onLine := float64(m0.DistanceTo(footOnLine(m0, spine.Origin, spine.AxisDir.AsVector()))) <= tol
 	onCircle := stdmath.Abs(float64(m1.DistanceTo(cove.Center))-cove.MajorRadius) <= tol &&
-		stdmath.Abs(float64(cove.Center.VectorTo(m1).Dot(unit(cove.AxisDir.AsVector())))) <= tol
+		stdmath.Abs(float64(cove.Center.VectorTo(m1).Dot(probe.Unit(cove.AxisDir.AsVector())))) <= tol
 	return onLine && onCircle && f.holdsRadius(m0, midAxisOrigin, tol) && f.holdsRadius(m1, midAxisOrigin, tol)
 }
 

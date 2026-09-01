@@ -44,7 +44,7 @@ type cornerPiece struct {
 // land in (0,1) and the smaller-t root is the WRONG far one — so we select by proximity to the apex
 // instead, which is orientation-independent (geometry-math-advisor derivation, V5 valence-6 gap).
 func splitOnFarEdge(fan endCornerFan, fe fanEdge) (math.Point3, bool) {
-	uhat := unit(fan.axis)
+	uhat := probe.Unit(fan.axis)
 	u0 := fan.center.VectorTo(fe.from)
 	w := fe.from.VectorTo(fe.to)
 	wu, u0u := w.Dot(uhat), u0.Dot(uhat)
@@ -215,7 +215,7 @@ func ellipseMidPoint(fan endCornerFan, tIn, tOut math.Point3) (math.Point3, bool
 // the chord midpoint lies ON the axis (ta,tb ~antipodal): the bisector is undefined (a half-turn
 // section to reject rather than emit as a sliver).
 func axisBisectorPoint(center math.Point3, axis math.Vector3, radius float64, ta, tb math.Point3) (math.Point3, bool) {
-	uhat := unit(axis)
+	uhat := probe.Unit(axis)
 	chordMid := ta.Midpoint(tb)
 	w := center.VectorTo(chordMid)
 	foot := center.TranslateBy(uhat.Scale(w.Dot(uhat)))
@@ -223,7 +223,7 @@ func axisBisectorPoint(center math.Point3, axis math.Vector3, radius float64, ta
 	if radial.Length() < 1e-9*radius {
 		return math.Point3{}, false
 	}
-	return foot.TranslateBy(unit(radial).Scale(radius)), true
+	return foot.TranslateBy(probe.Unit(radial).Scale(radius)), true
 }
 
 // monotoneAroundAxis is the non-self-intersection certificate: the boundary chain
@@ -233,8 +233,8 @@ func axisBisectorPoint(center math.Point3, axis math.Vector3, radius float64, ta
 // wraparound is handled by scoring each STEP as a signed delta in (−π,π], not by comparing absolute
 // [0,2π) angles, so the test is immune to the 0/2π seam.
 func monotoneAroundAxis(fan endCornerFan, sp runoutSpread) bool {
-	uhat := unit(fan.axis)
-	ref := unit(fan.center.VectorTo(fan.ta))
+	uhat := probe.Unit(fan.axis)
+	ref := probe.Unit(fan.center.VectorTo(fan.ta))
 	return windsMonotone(uhat, ref, fan.center, runoutBoundarySeq(fan, sp))
 }
 

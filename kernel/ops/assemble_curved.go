@@ -4,6 +4,8 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -69,17 +71,17 @@ func assembleBody(faces []filletFace) *topo.Body {
 	tag := filletAssemblyTag
 	pts := collectLoopPoints(faces)
 	weld := ResolutionForPoints(pts).Weld()
-	w := newPointWelder(weld)
+	w := mesh.NewPointWelder(weld)
 	rings, deadLoops := weldRings(faces, w, weld)
 	classes := pairEdgeClasses(faces, rings)
 	orientFilletShell(faces, rings, classes) // B2: unify loop windings before the catalog builds co-edges
 	bld := topo.NewBuilder(curvedSolid(faces, rings, classes), topo.NewLineage(topo.Tok(tag, "body", 0)))
 	recordDeadLoopRefusals(bld, deadLoops) // #3389: refuse a collapsing loop here, not at a later Validate
-	tv := make([]*topo.Vertex, len(w.points))
-	for i, p := range w.points {
+	tv := make([]*topo.Vertex, len(w.Points))
+	for i, p := range w.Points {
 		tv[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(tag, "v", i)))
 	}
-	ec := &edgeCatalog{bld: bld, verts: w.points, tv: tv, edges: map[seamEdgeKey]edgeRec{}, classes: classes, tag: tag, weld: weld}
+	ec := &edgeCatalog{bld: bld, verts: w.Points, tv: tv, edges: map[seamEdgeKey]edgeRec{}, classes: classes, tag: tag, weld: weld}
 	provByFace := addCurvedFaces(bld, faces, rings, ec)
 	ec.diagnoseCatalogUse() // positive marker: this body IS the catalog's own output (I2/I4)
 	body := bld.Build()
@@ -126,7 +128,7 @@ func curvedSolid(faces []filletFace, rings [][][]int, classes map[[2]int]int) bo
 			ids := faces[fi].loops[li].srcE
 			for k := range ring {
 				a, b := ring[k], ring[(k+1)%len(ring)]
-				use[seamEdgeKey{canon2(a, b), edgeClassOf(a, b, srcIDAt(ids, k), classes)}]++
+				use[seamEdgeKey{probe.Canon2(a, b), edgeClassOf(a, b, probe.SrcIDAt(ids, k), classes)}]++
 			}
 		}
 	}
@@ -148,11 +150,11 @@ func pairEdgeClasses(faces []filletFace, rings [][][]int) map[[2]int]int {
 		for li, ring := range rings[fi] {
 			ids := faces[fi].loops[li].srcE
 			for k := range ring {
-				id := srcIDAt(ids, k)
+				id := probe.SrcIDAt(ids, k)
 				if id == 0 {
 					continue
 				}
-				pair := canon2(ring[k], ring[(k+1)%len(ring)])
+				pair := probe.Canon2(ring[k], ring[(k+1)%len(ring)])
 				if seen[pair] == nil {
 					seen[pair] = map[uint64]bool{}
 				}
@@ -172,7 +174,7 @@ func pairEdgeClasses(faces []filletFace, rings [][][]int) map[[2]int]int {
 // the pair all weld to one edge. It is the single keying rule shared by the catalog and the solid
 // test (#1600).
 func edgeClassOf(a, b int, srcE uint64, classes map[[2]int]int) uint64 {
-	if srcE == 0 || classes[canon2(a, b)] < 2 {
+	if srcE == 0 || classes[probe.Canon2(a, b)] < 2 {
 		return 0
 	}
 	return srcE
@@ -204,7 +206,7 @@ type edgeCatalog struct {
 // direction. Two coincident seam edges (distinct ids at a >=2-id pair) get distinct edges.
 // A second use offering geometry the edge does not yet carry upgrades it (resolveCurveOffer).
 func (c *edgeCatalog) use(a, b int, curve geom.Curve3, srcE uint64) topo.Use {
-	key := seamEdgeKey{canon2(a, b), edgeClassOf(a, b, srcE, c.classes)}
+	key := seamEdgeKey{probe.Canon2(a, b), edgeClassOf(a, b, srcE, c.classes)}
 	if rec, ok := c.edges[key]; ok {
 		c.resolveCurveOffer(key, a, b, rec, curve)
 		// A closed seam edge welds both endpoints to one vertex, so rec.from!=a is false for
@@ -246,7 +248,7 @@ func isClosedSeam(a, b int, curve geom.Curve3, weld float64) bool {
 func curvedLoopSpec(outer bool, ring []int, curves []geom.Curve3, srcE []uint64, ec *edgeCatalog) topo.LoopSpec {
 	uses := make([]topo.Use, len(ring))
 	for k := range ring {
-		uses[k] = ec.use(ring[k], ring[(k+1)%len(ring)], curveAt(curves, k), srcIDAt(srcE, k))
+		uses[k] = ec.use(ring[k], ring[(k+1)%len(ring)], curveAt(curves, k), probe.SrcIDAt(srcE, k))
 	}
 	if outer {
 		return topo.OuterLoop(uses...)

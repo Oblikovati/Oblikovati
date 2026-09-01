@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -66,7 +67,7 @@ func openingEdgesN(neighbours []*topo.Body) ([]boundaryEdge, error) {
 			return nil, fmt.Errorf("ops.FillNSided: neighbour %d has no surface face", i)
 		}
 		faces[i], surfs[i] = f, s
-		sum = sum.Add(faceCentroid(f).AsVector())
+		sum = sum.Add(probe.FaceCentroid(f).AsVector())
 	}
 	center := sum.Scale(math.Scalar(1 / float64(len(neighbours)))).AsPoint()
 	edges := make([]boundaryEdge, len(neighbours))

@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -119,7 +120,7 @@ func opposFarPlane(c *corner) (math.Vector3, math.Point3, bool) {
 // termination — the runout vertex lies on every far plane incident to it. ok=false when the generator
 // is parallel to the plane (|n·û| < railParallelFloor), i.e. no finite pierce.
 func railPierce(a math.Point3, axis math.Vector3, q math.Point3, n math.Vector3) (math.Point3, bool) {
-	uhat := unit(axis)
+	uhat := probe.Unit(axis)
 	denom := n.Dot(uhat)
 	if stdmath.Abs(denom) < railParallelFloor {
 		return math.Point3{}, false

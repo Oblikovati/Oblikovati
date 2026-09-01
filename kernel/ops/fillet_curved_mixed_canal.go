@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
@@ -169,8 +170,8 @@ func (f n4BallFrame) holdsStation(m math.Point3, psi, tol float64) bool {
 // cylinders). It is a SINE and is therefore thresholded by the layer's angular tolerance, never by a
 // model-scaled length (ADR-0042).
 func vplaneParallelToTorusAxis(torus geom.Torus, vplane geom.Plane) bool {
-	k := unit(torus.AxisDir.AsVector())
-	n := unit(vplane.Normal())
+	k := probe.Unit(torus.AxisDir.AsVector())
+	n := probe.Unit(vplane.Normal())
 	return stdmath.Abs(float64(n.Dot(k))) <= tessellate.SeamAngularTol
 }
 
@@ -185,8 +186,8 @@ func newN4BallFrame(torus geom.Torus, vplane geom.Plane, m0, m1 math.Point3, tol
 	if !vplaneParallelToTorusAxis(torus, vplane) {
 		return n4BallFrame{}, false
 	}
-	k := unit(torus.AxisDir.AsVector())
-	n := unit(vplane.Normal())
+	k := probe.Unit(torus.AxisDir.AsVector())
+	n := probe.Unit(vplane.Normal())
 	f := n4BallFrame{
 		origin: torus.Center, axis: k, normal: n, binormal: k.Cross(n),
 		spine: torus.MajorRadius, tube: 2 * torus.MinorRadius,

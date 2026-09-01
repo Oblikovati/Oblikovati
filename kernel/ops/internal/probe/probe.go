@@ -283,3 +283,56 @@ func TwoPlaneLine(a, b geom.Plane) (math.Point3, math.Vector3, bool) {
 	num := nb.Cross(dir).Scale(da).Add(dir.Cross(na).Scale(db))
 	return math.P3(0, 0, 0).TranslateBy(num.Scale(1 / dir.LengthSquared())), dir, true
 }
+
+// Canon2 orders an undirected vertex-index pair.
+func Canon2(a, b int) [2]int {
+	if a < b {
+		return [2]int{a, b}
+	}
+	return [2]int{b, a}
+}
+
+// CentroidPts averages a point set (a point on the face for its plane origin).
+func CentroidPts(pts []math.Point3) math.Point3 {
+	var sx, sy, sz float64
+	for _, p := range pts {
+		sx, sy, sz = sx+p.X, sy+p.Y, sz+p.Z
+	}
+	n := float64(len(pts))
+	return math.P3(sx/n, sy/n, sz/n)
+}
+
+// SrcIDAt returns ids[i] or 0 when the point has no carried identity.
+func SrcIDAt(ids []uint64, i int) uint64 {
+	if i < len(ids) {
+		return ids[i]
+	}
+	return 0
+}
+
+// FaceCentroid averages a face's outer-loop edge start points — the face's position, valid for any
+// surface type (a planar face's surface.PointAt does not track the trimmed face's location).
+func FaceCentroid(f *topo.Face) math.Point3 {
+	var sum math.Vector3
+	n := 0
+	for _, l := range f.Loops() {
+		for _, u := range l.EdgeUses() {
+			c := u.Edge().Geometry()
+			lo, _ := c.Domain()
+			sum = sum.Add(c.PointAt(lo).AsVector())
+			n++
+		}
+	}
+	if n == 0 {
+		return math.P3(0, 0, 0)
+	}
+	return sum.Scale(1 / float64(n)).AsPoint()
+}
+
+// Unit returns v normalized, or v unchanged if it is degenerate.
+func Unit(v math.Vector3) math.Vector3 {
+	if u, err := math.UnitVector3FromVector(v); err == nil {
+		return u.AsVector()
+	}
+	return v
+}

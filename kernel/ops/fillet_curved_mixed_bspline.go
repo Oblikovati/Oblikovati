@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -213,7 +214,7 @@ func n4PointCAndStation(boss geom.Cylinder, torus geom.Torus, ccylBall geom.Cyli
 // the quadratic for the band spine parameter whose top-plane contact lands on the torus top circle, picking
 // the root nearest `near` (corner point C). ok=false when the ruling misses the circle.
 func n4PointBAndStation(bandBall geom.Cylinder, tplane geom.Plane, torus geom.Torus, near math.Point3) (math.Point3, math.Point3, bool) {
-	n := unit(tplane.Normal())
+	n := probe.Unit(tplane.Normal())
 	d := bandBall.AxisDir.AsVector()
 	_, _, f0 := geom.ClosestPointOnSurface(tplane, bandBall.Origin) // top-plane contact at t=0
 	fd := d.Sub(n.Scale(d.Dot(n)))                                  // contact-line direction

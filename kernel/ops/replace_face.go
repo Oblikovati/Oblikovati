@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -46,7 +47,7 @@ func ReplaceFacesMulti(solid *topo.Body, faceKeys [][]byte, targets []geom.Plane
 	assign := make(map[uint64]geom.Plane, len(sel))
 	for _, f := range solid.Faces() {
 		if sel[f.ID()] {
-			assign[f.ID()] = nearestPlane(centroidPts(facePolygon(f)), targets)
+			assign[f.ID()] = nearestPlane(probe.CentroidPts(facePolygon(f)), targets)
 		}
 	}
 	return retopo.RebuildWithPlanes(solid, "replace-face", true, func(f *topo.Face) geom.Plane {

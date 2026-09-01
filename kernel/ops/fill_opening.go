@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -93,7 +94,7 @@ func openingEdges(neighbours [4]*topo.Body) ([4]boundaryEdge, error) {
 			return [4]boundaryEdge{}, fmt.Errorf("ops.FillFourSided: neighbour %d has no surface face", i)
 		}
 		faces[i], surfs[i] = f, s
-		sum = sum.Add(faceCentroid(f).AsVector()) // face position (robust for planar faces, unlike surface.PointAt)
+		sum = sum.Add(probe.FaceCentroid(f).AsVector()) // face position (robust for planar faces, unlike surface.PointAt)
 	}
 	center := sum.Scale(0.25).AsPoint()
 	var edges [4]boundaryEdge
@@ -101,25 +102,6 @@ func openingEdges(neighbours [4]*topo.Body) ([4]boundaryEdge, error) {
 		edges[i] = innerBoundary(faces[i], surfs[i], center)
 	}
 	return edges, nil
-}
-
-// faceCentroid averages a face's outer-loop edge start points — the face's position, valid for any
-// surface type (a planar face's surface.PointAt does not track the trimmed face's location).
-func faceCentroid(f *topo.Face) math.Point3 {
-	var sum math.Vector3
-	n := 0
-	for _, l := range f.Loops() {
-		for _, u := range l.EdgeUses() {
-			c := u.Edge().Geometry()
-			lo, _ := c.Domain()
-			sum = sum.Add(c.PointAt(lo).AsVector())
-			n++
-		}
-	}
-	if n == 0 {
-		return math.P3(0, 0, 0)
-	}
-	return sum.Scale(1 / float64(n)).AsPoint()
 }
 
 // firstSurfaceFace returns the body's first face carrying a surface (any kind), its surface, and ok.

@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -104,7 +105,7 @@ func arcEndpoints(a blendArc, cur math.Point3) (from, to math.Point3, ok bool) {
 // spherePatchFlipped reports whether the loop winds against the sphere's outward normal at the
 // patch centroid (so it should be reversed to face outward).
 func spherePatchFlipped(cb *cornerBlend, loop filletLoop) bool {
-	c := centroidPts(loop.pts)
+	c := probe.CentroidPts(loop.pts)
 	n := loop.pts[0].VectorTo(loop.pts[1]).Cross(loop.pts[0].VectorTo(loop.pts[2]))
 	return n.Dot(cb.center.VectorTo(c)) < 0
 }

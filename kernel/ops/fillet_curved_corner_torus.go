@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -162,5 +163,5 @@ func curvedMixedArcs(c, cBot, fA, footB, qInnerA, qInnerB, qBotA, qBotB math.Poi
 // sibling of arcMidOnCircle for a tube (minor) arc rather than a major-circle arc.
 func tubeArcMid(f, from, to math.Point3, r float64) math.Point3 {
 	bis := f.VectorTo(from).Add(f.VectorTo(to))
-	return f.TranslateBy(unit(bis).Scale(r))
+	return f.TranslateBy(probe.Unit(bis).Scale(r))
 }

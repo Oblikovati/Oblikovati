@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -60,7 +61,7 @@ func boxAxisAligned(tool *topo.Body, axis math.Vector3) bool {
 		if !planar {
 			return false
 		}
-		along := stdmath.Abs(float64(unit(pl.NormalAt(0, 0)).Dot(axis)))
+		along := stdmath.Abs(float64(probe.Unit(pl.NormalAt(0, 0)).Dot(axis)))
 		if along > axisAlignTol && along < 1-axisAlignTol {
 			return false // an oblique wall: no clean axial tube
 		}

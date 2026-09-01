@@ -17,6 +17,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -136,3 +137,92 @@ func NewTri(a, b, c math.Point3) (Tri, bool) {
 // grid cell collapse to one vertex. The grid is the model-relative resolution the
 // caller derives (ADR-0042), not a fixed constant.
 func Quantize(v, grid float64) int64 { return int64(stdmath.Round(v / grid)) }
+
+// PointWelder merges coincident 3D points onto a shared index list, snapping to a
+// model-relative weld grid (ADR-0042) the caller derives from the points' size.
+// byID carries each point's SOURCE topological vertex identity through the weld: two points
+// with the same non-zero id are the SAME vertex, while two DISTINCT non-zero ids are kept apart
+// even when they quantize to one cell — so a boolean's pinch-split coincident vertices (a
+// kissing tangency) survive a re-weld instead of collapsing back into a non-manifold pinch
+// (#1600). Identity-less points (id 0, e.g. op-generated tangent points) weld by coordinate.
+type PointWelder struct {
+	index  map[[3]int64]int
+	cellID map[[3]int64]uint64 // owning source-vertex id of each claimed cell (0 = claimed only anonymously)
+	byID   map[uint64]int
+	Points []math.Point3
+	grid   float64
+}
+
+func NewPointWelder(grid float64) *PointWelder {
+	return &PointWelder{index: map[[3]int64]int{}, cellID: map[[3]int64]uint64{}, byID: map[uint64]int{}, grid: grid}
+}
+
+// PointCell quantizes p to the weld grid cell used to detect coordinate coincidence.
+func PointCell(p math.Point3, grid float64) [3]int64 {
+	return [3]int64{Quantize(p.X, grid), Quantize(p.Y, grid), Quantize(p.Z, grid)}
+}
+
+func (w *PointWelder) Add(p math.Point3) int {
+	k := PointCell(p, w.grid)
+	if i, ok := w.index[k]; ok {
+		return i
+	}
+	return w.AppendPoint(p, k, 0)
+}
+
+// AppendPoint stores p as a fresh vertex, claiming its cell (with owner id) for coordinate welds
+// only if empty (so a later id-0 point at a pinch coordinate welds to the FIRST fan there, not the
+// newest). owner is the point's source-vertex id (0 = anonymous), recorded so addID can tell an
+// anonymously-claimed cell (adoptable) from one owned by a DISTINCT id (a #1600 pinch — kept apart).
+func (w *PointWelder) AppendPoint(p math.Point3, k [3]int64, owner uint64) int {
+	i := len(w.Points)
+	w.Points = append(w.Points, p)
+	if _, ok := w.index[k]; !ok {
+		w.index[k] = i
+		w.cellID[k] = owner
+	}
+	return i
+}
+
+// AddID welds p under its carried source-vertex identity: a non-zero id resolves to the one
+// vertex that id was first seen at (distinct ids never merge, preserving a pinch split); id 0
+// falls back to coordinate welding. When the id is new but its cell is already claimed ANONYMOUSLY
+// (id 0 — an op-generated point of a rebuilt face at the same real vertex, e.g. a far-runout host's
+// unchanged corner welding to a pass-through neighbour when the fillet spreads onto the base solid's
+// OWN faces, corner-blend-weld Piece 2 / N1), the ided point ADOPTS that vertex rather than forking a
+// coincident duplicate that would leave the shared edge 1-incident. A cell owned by a DIFFERENT
+// non-zero id is a genuine pinch and is never adopted (#1600). See the type comment.
+func (w *PointWelder) AddID(p math.Point3, id uint64) int {
+	if id == 0 {
+		return w.Add(p)
+	}
+	if i, ok := w.byID[id]; ok {
+		return i
+	}
+	k := PointCell(p, w.grid)
+	if i, ok := w.index[k]; ok && w.cellID[k] == 0 {
+		w.byID[id], w.cellID[k] = i, id // adopt the anonymously-claimed vertex at this coordinate
+		return i
+	}
+	i := w.AppendPoint(p, k, id)
+	w.byID[id] = i
+	return i
+}
+
+func (w *PointWelder) WeldRing(r []math.Point3) []int {
+	out := make([]int, len(r))
+	for i, p := range r {
+		out[i] = w.Add(p)
+	}
+	return out
+}
+
+// WeldRingID welds a ring carrying a parallel source-vertex id per point (ids may be shorter than
+// pts, in which case the missing tail is treated as op-generated, id 0).
+func (w *PointWelder) WeldRingID(pts []math.Point3, ids []uint64) []int {
+	out := make([]int, len(pts))
+	for i, p := range pts {
+		out[i] = w.AddID(p, probe.SrcIDAt(ids, i))
+	}
+	return out
+}

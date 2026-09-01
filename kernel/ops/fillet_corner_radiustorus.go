@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -156,7 +157,7 @@ func radiusTorusGeomOf(v *topo.Vertex, vid uint64, big, smA, smB filletPick) (*r
 // to the top plane (degenerate corner).
 func radiusTorusFrame(v math.Point3, nA, nB, nC math.Vector3, top *topo.Face, rB, rS float64) (math.Point3, math.Vector3, bool) {
 	spinePoint := v.TranslateBy(nA.Add(nB).Scale(-rB / (1 + nA.Dot(nB))))
-	axis := unit(nA.Cross(nB))
+	axis := probe.Unit(nA.Cross(nB))
 	ca := nC.Dot(axis)
 	if stdmath.Abs(ca) < 1e-9 {
 		return math.Point3{}, math.Vector3{}, false
@@ -191,7 +192,7 @@ func radiusTorusCertified(rt *radiusTorusCornerGeom, v *topo.Vertex, smA, smB fi
 // line through v + offDir(nWall,nTop)·rS along the arm's edge direction.
 func spineDefect(foot, v math.Point3, sm filletPick, nWall, nTop math.Vector3) float64 {
 	q := v.TranslateBy(nWall.Add(nTop).Scale(-sm.r0 / (1 + nWall.Dot(nTop))))
-	d := unit(sm.edge.StartVertex().Point().VectorTo(sm.edge.EndVertex().Point()))
+	d := probe.Unit(sm.edge.StartVertex().Point().VectorTo(sm.edge.EndVertex().Point()))
 	w := q.VectorTo(foot)
 	return w.Sub(d.Scale(w.Dot(d))).Length()
 }

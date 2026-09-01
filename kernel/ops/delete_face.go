@@ -195,22 +195,22 @@ func buildSolidFromLoops(faces []ploop) *topo.Body {
 			pts = append(pts, r...)
 		}
 	}
-	w := newPointWelder(ResolutionForPoints(pts).Weld())
+	w := mesh.NewPointWelder(ResolutionForPoints(pts).Weld())
 	rings := make([][][]int, len(faces))
 	for i, f := range faces {
 		for _, r := range f.rings {
-			rings[i] = append(rings[i], dropRepeats(w.weldRing(r)))
+			rings[i] = append(rings[i], dropRepeats(w.WeldRing(r)))
 		}
 	}
 	edgeUse := map[[2]int]int{}
 	for _, fr := range rings {
 		for _, r := range fr {
 			for k := range r {
-				edgeUse[canon2(r[k], r[(k+1)%len(r)])]++
+				edgeUse[probe.Canon2(r[k], r[(k+1)%len(r)])]++
 			}
 		}
 	}
-	return assembleLoops(w.points, faces, rings, edgeUse)
+	return assembleLoops(w.Points, faces, rings, edgeUse)
 }
 
 // assembleLoops builds the topo body from welded points, per-face loop index rings, and the
@@ -233,7 +233,7 @@ func assembleLoops(verts []math.Point3, faces []ploop, rings [][][]int, edgeUse 
 		for ri, r := range fr {
 			specs = append(specs, indexLoop(ri == 0, r, edges))
 		}
-		surf, _ := geom.NewPlane(centroidPts(faces[fi].rings[0]), faces[fi].normal)
+		surf, _ := geom.NewPlane(probe.CentroidPts(faces[fi].rings[0]), faces[fi].normal)
 		// Provenance (ADR-0043): a surviving face keeps its original identity; fall back to the
 		// build-order name only if a loop arrived without one.
 		lin := faces[fi].lineage
@@ -270,20 +270,12 @@ func indexLoop(outer bool, ring []int, edges map[[2]int]*topo.Edge) topo.LoopSpe
 	uses := make([]topo.Use, len(ring))
 	for i := range ring {
 		a, b := ring[i], ring[(i+1)%len(ring)]
-		uses[i] = topo.Use{Edge: edges[canon2(a, b)], Reversed: a > b}
+		uses[i] = topo.Use{Edge: edges[probe.Canon2(a, b)], Reversed: a > b}
 	}
 	if outer {
 		return topo.OuterLoop(uses...)
 	}
 	return topo.InnerLoop(uses...)
-}
-
-// canon2 orders an undirected vertex-index pair.
-func canon2(a, b int) [2]int {
-	if a < b {
-		return [2]int{a, b}
-	}
-	return [2]int{b, a}
 }
 
 // dropRepeats removes consecutive (and wrap-around) duplicate indices — the degenerate edges
@@ -299,111 +291,4 @@ func dropRepeats(r []int) []int {
 		out = out[:len(out)-1]
 	}
 	return out
-}
-
-// pointWelder merges coincident 3D points onto a shared index list, snapping to a
-// model-relative weld grid (ADR-0042) the caller derives from the points' size.
-// byID carries each point's SOURCE topological vertex identity through the weld: two points
-// with the same non-zero id are the SAME vertex, while two DISTINCT non-zero ids are kept apart
-// even when they quantize to one cell — so a boolean's pinch-split coincident vertices (a
-// kissing tangency) survive a re-weld instead of collapsing back into a non-manifold pinch
-// (#1600). Identity-less points (id 0, e.g. op-generated tangent points) weld by coordinate.
-type pointWelder struct {
-	index  map[[3]int64]int
-	cellID map[[3]int64]uint64 // owning source-vertex id of each claimed cell (0 = claimed only anonymously)
-	byID   map[uint64]int
-	points []math.Point3
-	grid   float64
-}
-
-func newPointWelder(grid float64) *pointWelder {
-	return &pointWelder{index: map[[3]int64]int{}, cellID: map[[3]int64]uint64{}, byID: map[uint64]int{}, grid: grid}
-}
-
-// pointCell quantizes p to the weld grid cell used to detect coordinate coincidence.
-func pointCell(p math.Point3, grid float64) [3]int64 {
-	return [3]int64{mesh.Quantize(p.X, grid), mesh.Quantize(p.Y, grid), mesh.Quantize(p.Z, grid)}
-}
-
-func (w *pointWelder) add(p math.Point3) int {
-	k := pointCell(p, w.grid)
-	if i, ok := w.index[k]; ok {
-		return i
-	}
-	return w.appendPoint(p, k, 0)
-}
-
-// appendPoint stores p as a fresh vertex, claiming its cell (with owner id) for coordinate welds
-// only if empty (so a later id-0 point at a pinch coordinate welds to the FIRST fan there, not the
-// newest). owner is the point's source-vertex id (0 = anonymous), recorded so addID can tell an
-// anonymously-claimed cell (adoptable) from one owned by a DISTINCT id (a #1600 pinch — kept apart).
-func (w *pointWelder) appendPoint(p math.Point3, k [3]int64, owner uint64) int {
-	i := len(w.points)
-	w.points = append(w.points, p)
-	if _, ok := w.index[k]; !ok {
-		w.index[k] = i
-		w.cellID[k] = owner
-	}
-	return i
-}
-
-// addID welds p under its carried source-vertex identity: a non-zero id resolves to the one
-// vertex that id was first seen at (distinct ids never merge, preserving a pinch split); id 0
-// falls back to coordinate welding. When the id is new but its cell is already claimed ANONYMOUSLY
-// (id 0 — an op-generated point of a rebuilt face at the same real vertex, e.g. a far-runout host's
-// unchanged corner welding to a pass-through neighbour when the fillet spreads onto the base solid's
-// OWN faces, corner-blend-weld Piece 2 / N1), the ided point ADOPTS that vertex rather than forking a
-// coincident duplicate that would leave the shared edge 1-incident. A cell owned by a DIFFERENT
-// non-zero id is a genuine pinch and is never adopted (#1600). See the type comment.
-func (w *pointWelder) addID(p math.Point3, id uint64) int {
-	if id == 0 {
-		return w.add(p)
-	}
-	if i, ok := w.byID[id]; ok {
-		return i
-	}
-	k := pointCell(p, w.grid)
-	if i, ok := w.index[k]; ok && w.cellID[k] == 0 {
-		w.byID[id], w.cellID[k] = i, id // adopt the anonymously-claimed vertex at this coordinate
-		return i
-	}
-	i := w.appendPoint(p, k, id)
-	w.byID[id] = i
-	return i
-}
-
-func (w *pointWelder) weldRing(r []math.Point3) []int {
-	out := make([]int, len(r))
-	for i, p := range r {
-		out[i] = w.add(p)
-	}
-	return out
-}
-
-// weldRingID welds a ring carrying a parallel source-vertex id per point (ids may be shorter than
-// pts, in which case the missing tail is treated as op-generated, id 0).
-func (w *pointWelder) weldRingID(pts []math.Point3, ids []uint64) []int {
-	out := make([]int, len(pts))
-	for i, p := range pts {
-		out[i] = w.addID(p, srcIDAt(ids, i))
-	}
-	return out
-}
-
-// srcIDAt returns ids[i] or 0 when the point has no carried identity.
-func srcIDAt(ids []uint64, i int) uint64 {
-	if i < len(ids) {
-		return ids[i]
-	}
-	return 0
-}
-
-// centroidPts averages a point set (a point on the face for its plane origin).
-func centroidPts(pts []math.Point3) math.Point3 {
-	var sx, sy, sz float64
-	for _, p := range pts {
-		sx, sy, sz = sx+p.X, sy+p.Y, sz+p.Z
-	}
-	n := float64(len(pts))
-	return math.P3(sx/n, sy/n, sz/n)
 }

@@ -3,6 +3,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
@@ -111,13 +112,13 @@ func onSegment2D(a, b, p math.Point2, tol float64) bool {
 func hostSideSubArc(hole filletLoop, nodes [2]crossing, back func(math.Point2) math.Point3, trims rimNodeTrims) filletLoop {
 	n := len(hole.pts)
 	var arc filletLoop
-	arc.addID(back(nodes[1].P), trims.out[1], 0, srcIDAt(hole.srcE, nodes[1].I)) // P+ leg: node -> sample
+	arc.addID(back(nodes[1].P), trims.out[1], 0, probe.SrcIDAt(hole.srcE, nodes[1].I)) // P+ leg: node -> sample
 	for i := (nodes[1].I + 1) % n; ; i = (i + 1) % n {
 		if i == nodes[0].I {
-			arc.addID(hole.pts[i], trims.in[0], srcIDAt(hole.srcV, i), srcIDAt(hole.srcE, i)) // P- leg
+			arc.addID(hole.pts[i], trims.in[0], probe.SrcIDAt(hole.srcV, i), probe.SrcIDAt(hole.srcE, i)) // P- leg
 			break
 		}
-		arc.addID(hole.pts[i], curveAt(hole.curves, i), srcIDAt(hole.srcV, i), srcIDAt(hole.srcE, i))
+		arc.addID(hole.pts[i], curveAt(hole.curves, i), probe.SrcIDAt(hole.srcV, i), probe.SrcIDAt(hole.srcE, i))
 	}
 	arc.addID(back(nodes[0].P), nil, 0, 0)
 	return arc

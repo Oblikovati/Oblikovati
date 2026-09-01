@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -191,7 +192,7 @@ func (g *stripeBuild) assertStraightRemnant(j int, cutPt, bottom math.Point3) er
 	tCut, _ := geom.CurveParamAtPoint3(d, cutPt)
 	tBot, _ := geom.CurveParamAtPoint3(d, bottom)
 	mid := d.PointAt((tCut + tBot) / 2)
-	chordMid := centroidPts([]math.Point3{cutPt, bottom})
+	chordMid := probe.CentroidPts([]math.Point3{cutPt, bottom})
 	if float64(mid.DistanceTo(chordMid)) > 10*g.weld {
 		return fmt.Errorf("fillet: stripe junction %d: descending edge is curved (chord gap %.3g) — "+
 			"its remnant cannot be rebuilt as a line", j, float64(mid.DistanceTo(chordMid)))
@@ -424,7 +425,7 @@ func (g *stripeBuild) exitSecEdge(i int) *topo.Edge {
 // the triangle from three ring corners has a normal opposing surf.NormalAt at the ring centroid.
 func blendRingFlipped(surf geom.Surface, ring []math.Point3) bool {
 	nrm := ring[0].VectorTo(ring[1]).Cross(ring[0].VectorTo(ring[2]))
-	u, v := surf.ParamAt(centroidPts(ring))
+	u, v := surf.ParamAt(probe.CentroidPts(ring))
 	return float64(nrm.Dot(surf.NormalAt(u, v))) < 0
 }
 

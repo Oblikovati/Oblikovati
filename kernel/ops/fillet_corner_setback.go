@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -171,7 +172,7 @@ func concaveOrthogonalDihedralMiter(efA, efB *edgeFillet, cm *cornerMiter) bool 
 	if _, ok := cm.shared.Geometry().(geom.Plane); !ok {
 		return false
 	}
-	cos := unit(efA.cyl.AxisDir.AsVector()).Dot(unit(efB.cyl.AxisDir.AsVector()))
+	cos := probe.Unit(efA.cyl.AxisDir.AsVector()).Dot(probe.Unit(efB.cyl.AxisDir.AsVector()))
 	return stdmath.Abs(cos) < dihedralOrthoCosTol
 }
 

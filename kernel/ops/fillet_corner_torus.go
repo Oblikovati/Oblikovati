@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -209,5 +210,5 @@ func dropOntoPlane(c math.Point3, top *topo.Face, nTop math.Vector3) math.Point3
 // along the bisector of the two radial directions (the bulge point Arc3dByThreePoints needs).
 func arcMidOnCircle(center, from, to math.Point3, radius float64) math.Point3 {
 	bis := center.VectorTo(from).Add(center.VectorTo(to))
-	return center.TranslateBy(unit(bis).Scale(radius))
+	return center.TranslateBy(probe.Unit(bis).Scale(radius))
 }

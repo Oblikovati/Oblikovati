@@ -7,6 +7,8 @@ import (
 
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -28,13 +30,13 @@ type deadLoopRefusal struct {
 // collapses its zero-length self-loop stubs in lock-step (collapseDeadLoop mutates the loop). Returns
 // the per-face rings the rest of assembleBody keys on, plus the loops whose collapse was REFUSED
 // because it would degenerate the loop (< 3 vertices) — the caller records those as defects (#3389).
-func weldRings(faces []filletFace, w *pointWelder, weld float64) ([][][]int, []deadLoopRefusal) {
+func weldRings(faces []filletFace, w *mesh.PointWelder, weld float64) ([][][]int, []deadLoopRefusal) {
 	rings := make([][][]int, len(faces))
 	var refused []deadLoopRefusal
 	for i := range faces {
 		for li := range faces[i].loops {
 			l := &faces[i].loops[li]
-			ring := w.weldRingID(l.pts, l.srcV)
+			ring := w.WeldRingID(l.pts, l.srcV)
 			collapsed, survived := collapseDeadLoop(l, ring, weld)
 			if survived >= 0 {
 				refused = append(refused, deadLoopRefusal{face: i, loop: li, survived: survived, welded: len(ring)})
@@ -87,9 +89,9 @@ func collapseDeadLoop(l *filletLoop, ring []int, weld float64) (result []int, su
 		}
 		outR = append(outR, ring[k])
 		pts = append(pts, l.pts[k])
-		srcV = append(srcV, srcIDAt(l.srcV, k))
+		srcV = append(srcV, probe.SrcIDAt(l.srcV, k))
 		curves = append(curves, curveAt(l.curves, k))
-		srcE = append(srcE, srcIDAt(l.srcE, k))
+		srcE = append(srcE, probe.SrcIDAt(l.srcE, k))
 	}
 	if len(outR) < 3 {
 		// Collapsing would degenerate the loop. Keep the original ring so the builder still assembles

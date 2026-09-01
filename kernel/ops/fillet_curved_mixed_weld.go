@@ -133,7 +133,7 @@ func buildCurvedMixedArms(roles mixedRoleArms) (curvedMixedArms, bool) {
 		return curvedMixedArms{}, false // the two concave bands share no host plane
 	}
 	topPl := topFace.Geometry().(geom.Plane)
-	topOut, err := math.UnitVector3FromVector(probe.OutwardFaceNormalAt(topFace, faceCentroid(topFace)))
+	topOut, err := math.UnitVector3FromVector(probe.OutwardFaceNormalAt(topFace, probe.FaceCentroid(topFace)))
 	if err != nil {
 		return curvedMixedArms{}, false
 	}

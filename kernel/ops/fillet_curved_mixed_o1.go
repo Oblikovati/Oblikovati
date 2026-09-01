@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -158,7 +159,7 @@ func o1Surfaces(arms o1MixedArms, r, tol float64) (o1ArmSurfaces, bool) {
 // exactly r off the host radius (the ball is tangent to that host) and that the cove arm's spine circle lies
 // on the same ρ-cylinder — the second is what ties the two terminating arms to ONE ball.
 func o1BallRideRadius(hosts o1CornerHosts, surf o1ArmSurfaces, r, tol float64) (float64, bool) {
-	axis := unit(hosts.midCyl.AxisDir.AsVector())
+	axis := probe.Unit(hosts.midCyl.AxisDir.AsVector())
 	rel := hosts.midCyl.Origin.VectorTo(surf.spine.Origin)
 	rho := float64(rel.Sub(axis.Scale(rel.Dot(axis))).Length())
 	if stdmath.Abs(stdmath.Abs(rho-hosts.midCyl.Radius)-r) > tol {

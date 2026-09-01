@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -100,5 +101,5 @@ func capFaceFlipped(ring []math.Point3, out math.Vector3) bool {
 
 // midpointOf is the midpoint of two points.
 func midpointOf(a, b math.Point3) math.Point3 {
-	return centroidPts([]math.Point3{a, b})
+	return probe.CentroidPts([]math.Point3{a, b})
 }

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	m "oblikovati.org/math"
 )
 
@@ -33,7 +34,7 @@ func edgeSrcMap(loop filletLoop, idOf func(m.Point3) int) map[[2]int]uint64 {
 	n := len(loop.pts)
 	for i := range n {
 		a, b := idOf(loop.pts[i]), idOf(loop.pts[(i+1)%n])
-		out[canon2(a, b)] = loop.srcE[i]
+		out[probe.Canon2(a, b)] = loop.srcE[i]
 	}
 	return out
 }

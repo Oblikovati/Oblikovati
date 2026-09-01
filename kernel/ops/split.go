@@ -151,7 +151,7 @@ func splitExtent(b *topo.Body, origin math.Point3) float64 {
 // outward only for a right-handed frame.
 func halfSpaceBox(plane geom.Plane, ext float64, positive bool) *topo.Body {
 	u, v := plane.UAxis.AsVector(), plane.VAxis.AsVector()
-	n := unit(plane.Normal())
+	n := probe.Unit(plane.Normal())
 	if !positive {
 		u, v, n = v, u, n.Scale(-1)
 	}
@@ -224,12 +224,4 @@ func quadCentroid(pts []math.Point3) math.Point3 {
 	}
 	n := math.Scalar(len(pts))
 	return math.Point3{X: sx / n, Y: sy / n, Z: sz / n}
-}
-
-// unit returns v normalized, or v unchanged if it is degenerate.
-func unit(v math.Vector3) math.Vector3 {
-	if u, err := math.UnitVector3FromVector(v); err == nil {
-		return u.AsVector()
-	}
-	return v
 }

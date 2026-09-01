@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
@@ -92,8 +93,8 @@ func TestN4BallFrameDeclinesVPlaneNotParallelToTorusAxis(t *testing.T) {
 // through the same origin. Only the normal's axial component matters to the guard under test.
 func tiltPlaneNormalTowardAxis(t *testing.T, pl geom.Plane, axis math.Vector3, tilt float64) geom.Plane {
 	t.Helper()
-	n := unit(pl.Normal())
-	k := unit(axis)
+	n := probe.Unit(pl.Normal())
+	k := probe.Unit(axis)
 	return mustPlane(t, pl.Origin,
 		n.Scale(math.Scalar(stdmath.Cos(tilt))).Add(k.Scale(math.Scalar(stdmath.Sin(tilt)))))
 }
@@ -141,7 +142,7 @@ func TestN4BallFrameDeclinesStationOffTheDerivedCurve(t *testing.T) {
 // directions of the same size have opposite expected verdicts.
 func displaceStation(t *testing.T, torus geom.Torus, p math.Point3, d float64, axial bool) math.Point3 {
 	t.Helper()
-	k := unit(torus.AxisDir.AsVector())
+	k := probe.Unit(torus.AxisDir.AsVector())
 	if axial {
 		return p.TranslateBy(k.Scale(math.Scalar(d)))
 	}
