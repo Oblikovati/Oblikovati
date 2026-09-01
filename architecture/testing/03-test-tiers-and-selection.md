@@ -149,7 +149,23 @@ The packages are still too large to be a selection unit: `kernel/ops` (120 000
 lines), `app` (85 000), `model/feature` (64 000), `addin/router` (40 000). Splitting
 them by operation is what the kernel ground rules already require ("Package by
 operation, not by case: split `kernel/ops` into boolean, blend, tessellate, validate,
-heal, query") and is tracked under **#2183** with its children — #2207 (query), #2209
-(tessellate), #2210 (transform), #2211 (validate), #2194 (archguard one level deeper).
-Until those land, selection is package-shaped and a kernel edit still runs the whole
-kernel.
+heal, query") and is tracked under **#2183**.
+
+`kernel/ops` now has five neighbours where it had none — `transform` (#2210),
+`validate` (#2211) and the `internal/mesh`, `internal/probe`, `internal/retopo`
+leaves — so those tests are their own binaries. The remaining six extractions are
+blocked on entanglement that a move cannot fix, measured rather than guessed:
+
+| Group | Files | Blocked on |
+|---|---:|---|
+| blend | 230 | the tessellation core it meshes through |
+| tessellate | 48 | 43 symbols across 18 files, mutual with blend and validate |
+| query | 18 | reads TESSELLATED data for mass properties (#3420) — a ground-rule violation, not a move |
+| boolean, surface, heal | — | follow the three above |
+
+The rule that decides all of them: a subpackage can only be carved where the symbol
+edge is ONE-WAY, because Go rejects the cycle otherwise. What made `transform` and
+`validate` possible was moving shared substrate DOWN into `internal/` leaves first —
+`validate`'s outgoing edge set fell from seven symbols to two that way. The same
+method applies to the rest, but `query` needs #3420 resolved before it can move at
+all: it is phase-2 algorithmic work, outside #2183's refactor-only phase 1.
