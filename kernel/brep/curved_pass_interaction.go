@@ -23,7 +23,7 @@ import (
 func passClearOf(p, other facePartition) bool {
 	otherFaces, otherBoxes := other.gateFaces()
 	for i, pf := range p.pass {
-		pb := inflateBox(p.passBox[i], facePairCullPad)
+		pb := inflateBox(p.passBox[i])
 		for j := range otherFaces {
 			if !pb.Intersects(otherBoxes[j]) {
 				continue
@@ -50,9 +50,10 @@ func (p facePartition) gateFaces() ([]curvedFace, []math.Box) {
 	return faces, boxes
 }
 
-// inflateBox grows a box by pad on every axis.
-func inflateBox(b math.Box, pad float64) math.Box {
-	g := math.Scalar(pad)
+// inflateBox grows a box by the face-pair cull pad on every axis, so a broad-phase reject is only
+// taken when the pair is clear by more than the tolerance the narrow phase would decide on.
+func inflateBox(b math.Box) math.Box {
+	g := math.Scalar(facePairCullPad)
 	return math.NewBox(b.Min.TranslateBy(math.V3(-g, -g, -g)), b.Max.TranslateBy(math.V3(g, g, g)))
 }
 
@@ -125,7 +126,7 @@ func cylinderPassClear(pf, of curvedFace) bool {
 		return false
 	}
 	for _, cv := range curves {
-		if curveTouchesWallAndTool(cv, of, cyl, band) {
+		if curveTouchesWallAndTool(cv, of, cyl.AxisDir.AsVector(), band) {
 			return false
 		}
 	}
@@ -134,15 +135,15 @@ func cylinderPassClear(pf, of curvedFace) bool {
 
 // curveTouchesWallAndTool reports whether one plane∩cylinder curve enters BOTH trims: the polygonal
 // tool face and the wall's axial band. Unknown curve kinds report touching (conservative).
-func curveTouchesWallAndTool(cv geom.Curve3, of curvedFace, cyl geom.Cylinder, band coneSideBand_) bool {
+func curveTouchesWallAndTool(cv geom.Curve3, of curvedFace, axis math.Vector3, band coneSideBand_) bool {
 	switch c := cv.(type) {
 	case geom.Line:
-		return lineTouchesWallAndTool(c, of, cyl, band)
+		return lineTouchesWallAndTool(c, of, axis, band)
 	case geom.Circle:
-		return conicTouchesTool(cv, of, cyl, band, 0)
+		return conicTouchesTool(cv, of, axis, band, 0)
 	case geom.EllipseFull:
-		amp := ellipseAxialAmplitude(c, cyl)
-		return conicTouchesTool(cv, of, cyl, band, amp)
+		amp := ellipseAxialAmplitude(c, axis)
+		return conicTouchesTool(cv, of, axis, band, amp)
 	default:
 		return true
 	}
@@ -150,10 +151,10 @@ func curveTouchesWallAndTool(cv geom.Curve3, of curvedFace, cyl geom.Cylinder, b
 
 // lineTouchesWallAndTool tests one ruling line: its intervals inside the tool polygon, with the axial
 // span of each interval against the band.
-func lineTouchesWallAndTool(l geom.Line, of curvedFace, cyl geom.Cylinder, band coneSideBand_) bool {
+func lineTouchesWallAndTool(l geom.Line, of curvedFace, axis math.Vector3, band coneSideBand_) bool {
 	for _, iv := range faceLineIntervals(of, l.Origin, l.Dir.AsVector()) {
-		vA := bandV(l.PointAt(iv[0]), cyl, band)
-		vB := bandV(l.PointAt(iv[1]), cyl, band)
+		vA := bandV(l.PointAt(iv[0]), axis, band)
+		vB := bandV(l.PointAt(iv[1]), axis, band)
 		if spansOverlap(stdmath.Min(vA, vB), stdmath.Max(vA, vB), band.vMin, band.vMax, facePairCullPad) {
 			return true
 		}
@@ -165,26 +166,26 @@ func lineTouchesWallAndTool(l geom.Line, of curvedFace, cyl geom.Cylinder, band 
 // inside the band, else — when one curve point lies inside the polygon (the conic is enclosed) — the
 // curve's axial span against the band. amp is the conic's axial half-amplitude (0 for a circle, which
 // lies in a plane perpendicular to the axis).
-func conicTouchesTool(cv geom.Curve3, of curvedFace, cyl geom.Cylinder, band coneSideBand_, amp float64) bool {
+func conicTouchesTool(cv geom.Curve3, of curvedFace, axis math.Vector3, band coneSideBand_, amp float64) bool {
 	pl := facePlane(of)
 	pc, ok := toPlaneConic(cv, pl)
 	if !ok {
 		return true
 	}
-	if hit, touched := conicPolygonCrossingInBand(pc, of, cyl, band); touched {
+	if hit, touched := conicPolygonCrossingInBand(pc, of, axis, band); touched {
 		return hit
 	}
 	if !pointInFace2D(to2D(pl, cv.PointAt(0)), of) {
 		return false // the conic lies wholly outside the polygon trim
 	}
-	vc := bandV(to3D(pl, pc.center), cyl, band) // the conic centre, back through the tool chart
+	vc := bandV(to3D(pl, pc.center), axis, band) // the conic centre, back through the tool chart
 	return spansOverlap(vc-amp, vc+amp, band.vMin, band.vMax, facePairCullPad)
 }
 
 // conicPolygonCrossingInBand scans the polygon's edges for exact conic crossings; touched=true when a
 // crossing (or a tangency, conservatively) decides the answer, hit reporting whether any crossing lies
 // within the wall band.
-func conicPolygonCrossingInBand(pc planeConic, of curvedFace, cyl geom.Cylinder, band coneSideBand_) (hit, touched bool) {
+func conicPolygonCrossingInBand(pc planeConic, of curvedFace, axis math.Vector3, band coneSideBand_) (hit, touched bool) {
 	pl := facePlane(of)
 	any := false
 	for _, ring := range planarRings(of) {
@@ -195,7 +196,7 @@ func conicPolygonCrossingInBand(pc planeConic, of curvedFace, cyl geom.Cylinder,
 			}
 			for _, h := range hits {
 				any = true
-				if v := bandV(to3D(pl, h.p), cyl, band); v >= band.vMin-facePairCullPad && v <= band.vMax+facePairCullPad {
+				if v := bandV(to3D(pl, h.p), axis, band); v >= band.vMin-facePairCullPad && v <= band.vMax+facePairCullPad {
 					return true, true
 				}
 			}
@@ -205,13 +206,12 @@ func conicPolygonCrossingInBand(pc planeConic, of curvedFace, cyl geom.Cylinder,
 }
 
 // bandV is a point's axial coordinate in the wall band's frame (distance from the bottom rim centre).
-func bandV(p math.Point3, cyl geom.Cylinder, band coneSideBand_) float64 {
-	return float64(band.bottom.VectorTo(p).Dot(cyl.AxisDir.AsVector()))
+func bandV(p math.Point3, axis math.Vector3, band coneSideBand_) float64 {
+	return float64(band.bottom.VectorTo(p).Dot(axis))
 }
 
-// ellipseAxialAmplitude is the axial half-extent of a plane∩cylinder ellipse about its centre.
-func ellipseAxialAmplitude(el geom.EllipseFull, cyl geom.Cylinder) float64 {
-	axis := cyl.AxisDir.AsVector()
+// ellipseAxialAmplitude is the axial half-extent of a plane∩ruled-surface ellipse about its centre.
+func ellipseAxialAmplitude(el geom.EllipseFull, axis math.Vector3) float64 {
 	a := el.MajorRadius * float64(el.MajorAxis.AsVector().Dot(axis))
 	minor := el.Normal.AsVector().Cross(el.MajorAxis.AsVector())
 	b := el.MinorRadius * float64(minor.Dot(axis))

@@ -65,7 +65,10 @@ func TestClearanceHoleDrivesTheBore(t *testing.T) {
 	if !hole.Health().OK() {
 		t.Fatalf("clearance hole sick: %+v", hole.Health())
 	}
-	want := 32 - holeCylinderArea(0.7/2)*1 // ISO 273 free fit for M6 is Ø7 mm
+	// ISO 273 free fit for M6 is Ø7 mm. The bore is a TRUE cylinder (geom.Cylinder:1 +
+	// geom.Plane:7) and mass properties integrate it analytically (M48/C3 #3453), so the exact
+	// answer is πr²·depth — the 32-gon area this used to expect was the old mesh's approximation.
+	want := 32 - stdmath.Pi*(0.7/2)*(0.7/2)*1
 	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("clearance-bored volume = %g, want %g (Ø7 mm free fit, not the zero Diameter)", got, want)
 	}
@@ -142,7 +145,9 @@ func TestHoleTerminatesOnAFace(t *testing.T) {
 	got := terminatedHoleVolume(t, func(d *HoleDefinition) {
 		d.Termination, d.ToPlane = ToFaceExtent, holeStopPlane(1.25)
 	})
-	want := 32 - holeCylinderArea(1)*0.75 // from the z=2 face down to z=1.25
+	// From the z=2 face down to z=1.25. The blind drill takes the exact path (geom.Cylinder:1 +
+	// geom.Plane:7), so the removed material is πr²·0.75 exactly (M48/C3 #3453).
+	want := 32 - stdmath.Pi*1*1*0.75
 	if stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("to-face bore left %g, want %g (0.75 deep, measured to the plane)", got, want)
 	}
@@ -155,7 +160,10 @@ func TestHoleTerminatesBetweenTwoFaces(t *testing.T) {
 		d.Termination = FromToExtent
 		d.FromPlane, d.ToPlane = holeStopPlane(1.5), holeStopPlane(0.5)
 	})
-	want := 32 - holeCylinderArea(1)*1.0 // an internal slot from z=1.5 down to z=0.5
+	// An internal slot from z=1.5 down to z=0.5. Unlike the to-face bore above, this one starts
+	// INSIDE material, which the exact blind drill declines — the result is all geom.Plane (the
+	// faceted drillTool prism), so the 32-gon area is what it genuinely removes.
+	want := 32 - drillToolPrismArea(1)*1.0
 	if stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("from-to bore left %g, want %g (1.0 deep, starting below the placement face)", got, want)
 	}

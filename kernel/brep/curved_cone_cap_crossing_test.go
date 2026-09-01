@@ -92,14 +92,14 @@ func zLoop(zs ...float64) geom.Polyline {
 func TestWallEntryLoopsKeepsInBandDropsPhantom(t *testing.T) {
 	inBand := zLoop(4.3, 5.5, 6.6)     // strictly between the caps: real wall entry
 	phantom := zLoop(10.6, 11.5, 12.4) // entirely above z=10: past the finite wall
-	kept, ok := wallEntryLoops(wallBand(), []geom.Polyline{phantom, inBand})
+	kept, ok := wallEntryLoops(wallBand(), []geom.Curve3{phantom, inBand})
 	if !ok {
 		t.Fatal("wallEntryLoops declined a clean in-band + phantom pair")
 	}
 	if len(kept) != 1 {
 		t.Fatalf("kept %d loops; want 1 (the in-band wall entry, phantom dropped)", len(kept))
 	}
-	if z := float64(kept[0].Vertices[0].Z); z > 10 {
+	if z := float64(imprintLoopPoints(kept[0])[0].Z); z > 10 {
 		t.Errorf("kept the phantom loop (z=%.2f > 10) instead of the in-band one", z)
 	}
 }
@@ -108,7 +108,7 @@ func TestWallEntryLoopsKeepsInBandDropsPhantom(t *testing.T) {
 // rim-crossing/cap-reaching breach this interior-exit slice does not build — the filter declines.
 func TestWallEntryLoopsDeclinesStraddle(t *testing.T) {
 	straddle := zLoop(9.0, 9.8, 10.4, 11.0) // crosses z=10
-	if _, ok := wallEntryLoops(wallBand(), []geom.Polyline{straddle}); ok {
+	if _, ok := wallEntryLoops(wallBand(), []geom.Curve3{straddle}); ok {
 		t.Error("wallEntryLoops accepted a cap-straddling loop; want decline (rim-crossing case)")
 	}
 }

@@ -117,3 +117,48 @@ func TestToPlaneConicCircle(t *testing.T) {
 		t.Errorf("chart conic radii (%.3f,%.3f), want 2.5,2.5", C.A, C.B)
 	}
 }
+
+// TestConicFrameHitsAcceptsEndpointRoot pins the #3488 fix: an imprint segment clipped to the frame
+// conic ENDS on it, so its crossing sits at edge parameter s=1 — strictly interior windows drop it and
+// the arrangement then resolves the contact against a sampled chord instead. The frame window keeps it,
+// while conicEdgeHits still rejects it (its endpoints belong to the vertex-snap path).
+func TestConicFrameHitsAcceptsEndpointRoot(t *testing.T) {
+	res := geom.ResolutionForSize(1)
+	c, xr := unitCircleConic(0, 0, 2), stdmath.Sqrt(4-0.36)
+	a, b := math.P2(1.5, 0.6), math.P2(math.Scalar(xr), 0.6)
+	if hits, _ := conicEdgeHits(c, a, b, res); len(hits) != 0 {
+		t.Errorf("conicEdgeHits kept %d endpoint crossings, want 0 (strict interior)", len(hits))
+	}
+	hits, tangent := conicFrameHits(c, a, b, res)
+	if tangent || len(hits) != 1 {
+		t.Fatalf("conicFrameHits got %d hits tangent=%v, want 1 hit not-tangent", len(hits), tangent)
+	}
+	if stdmath.Abs(hits[0].sEdge-1) > 1e-12 || stdmath.Abs(float64(hits[0].p.X)-xr) > 1e-12 {
+		t.Errorf("endpoint crossing s=%.17g x=%.17g, want s=1 x=%.17g", hits[0].sEdge, float64(hits[0].p.X), xr)
+	}
+}
+
+// TestImprintVerticesReplacesEndpointCrossing: a crossing AT an imprint endpoint must REPLACE it with
+// the conic's own point (the weld currency both sides terminate on), never insert a near-duplicate
+// ahead of it — the split that left the cap loop 1.5e-4 open (#3488).
+func TestImprintVerticesReplacesEndpointCrossing(t *testing.T) {
+	imp := geom.NewLineSegment(math.P3(1.5, 0.6, 0), math.P3(1.9, 0.6, 0))
+	on := []faceFrameCrossing{{imp: 0, sImp: 1, at: math.P3(1.90787840283389, 0.6, 0)}}
+	verts := imprintVertices(imp, on)
+	if len(verts) != 2 {
+		t.Fatalf("got %d vertices, want 2 (the endpoint replaced, not duplicated)", len(verts))
+	}
+	if verts[1] != on[0].at || verts[0] != imp.PointAt(0) {
+		t.Errorf("chain is %v, want (%v, %v)", verts, imp.PointAt(0), on[0].at)
+	}
+}
+
+// TestImprintVerticesInsertsInteriorCrossing: an interior crossing still splits the segment in place.
+func TestImprintVerticesInsertsInteriorCrossing(t *testing.T) {
+	imp := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(4, 0, 0))
+	on := []faceFrameCrossing{{imp: 0, sImp: 0.5, at: math.P3(2, 0, 0)}}
+	verts := imprintVertices(imp, on)
+	if len(verts) != 3 || verts[1] != on[0].at {
+		t.Fatalf("got %v, want the crossing inserted between the two endpoints", verts)
+	}
+}

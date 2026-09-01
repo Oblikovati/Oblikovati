@@ -53,7 +53,7 @@ func specialCurvedMeshers(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 		// straddles its own equator (#2061)
 		func() (*Mesh, bool) { return sphereZoneBandFan(f, s, q) },
 		// a sphere bounded by several arcs (a box cut): gnomonic CDT, pole/seam-safe
-		func() (*Mesh, bool) { return spherePatchMesh(s, outer3D, holes3D, q) },
+		func() (*Mesh, bool) { return spherePatchMesh(f, s, outer3D, holes3D, q) },
 		// a periodic side with one full-circle rim and one notched rim (a frustum flat that fades): loft
 		func() (*Mesh, bool) { return notchedRimBandMesh(f, s, q) },
 		// a developable side with two CLOSED full-wrap rims (e.g. a circle + an oblique-cut ellipse): loft

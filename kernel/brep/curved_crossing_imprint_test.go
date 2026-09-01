@@ -16,9 +16,9 @@ import (
 // boundary the split/stitch slices will build the watertight result on.
 
 // onBothCylinders returns the largest distance any loop vertex sits off either cylinder surface.
-func onBothCylinders(loop geom.Polyline, a, b geom.Cylinder) float64 {
+func onBothCylinders(loop geom.Curve3, a, b geom.Cylinder) float64 {
 	worst := 0.0
-	for _, p := range loop.Vertices {
+	for _, p := range imprintLoopPoints(loop) {
 		ea := stdmath.Abs(float64(geom.SignedDistanceToSurface(a, p)))
 		eb := stdmath.Abs(float64(geom.SignedDistanceToSurface(b, p)))
 		worst = stdmath.Max(worst, stdmath.Max(ea, eb))
@@ -55,7 +55,7 @@ func TestClosedTraceLoopsRecordsUnclosedChain(t *testing.T) {
 	res := geom.ResolutionForSize(10)
 	open := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0), math.P3(5, 0, 0)} // ends 5 apart
 	rec := &diag.Recorder{}
-	loops := closedTraceLoops([][]math.Point3{open}, res, rec)
+	loops := closedTraceLoops(geom.SurfaceIntersection{Curves: [][]math.Point3{open}}, res, rec)
 	if len(loops) != 0 {
 		t.Fatalf("an unclosed chain yielded %d loops, want 0 (it must be dropped)", len(loops))
 	}
@@ -74,7 +74,7 @@ func TestClosedTraceLoopsQuietOnCleanTrace(t *testing.T) {
 	square := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0), math.P3(0, 0, 0)}
 	marker := []math.Point3{math.P3(9, 9, 9)} // an isolated tangential contact, not a chain
 	rec := &diag.Recorder{}
-	loops := closedTraceLoops([][]math.Point3{square, marker}, res, rec)
+	loops := closedTraceLoops(geom.SurfaceIntersection{Curves: [][]math.Point3{square, marker}}, res, rec)
 	if len(loops) != 1 {
 		t.Fatalf("got %d loops, want 1 (the closed square; the marker is not a loop)", len(loops))
 	}
@@ -115,9 +115,9 @@ func TestCrossingCylinderImprintEqualRadiusPinch(t *testing.T) {
 
 // loopRadialExtent returns the min and max distance of a loop's vertices from the origin — for a Steinmetz
 // ellipse (centred at the axis crossing) this is its minor (R) and major (R√2) semi-axis length.
-func loopRadialExtent(lp geom.Polyline) (near, far float64) {
+func loopRadialExtent(lp geom.Curve3) (near, far float64) {
 	near, far = stdmath.Inf(1), 0
-	for _, p := range lp.Vertices {
+	for _, p := range imprintLoopPoints(lp) {
 		d := float64(p.AsVector().Length())
 		near, far = stdmath.Min(near, d), stdmath.Max(far, d)
 	}

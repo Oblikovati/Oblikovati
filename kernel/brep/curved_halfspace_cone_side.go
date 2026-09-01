@@ -23,16 +23,19 @@ import (
 
 // coneSideBand carries a frustum side's two cross-section circles (centres on the axis, ordered
 // low→high in apex distance), the source rim circles themselves (so a kept face can reuse a rim edge
-// and weld with its cap), and their radii. topRimReversed records how the SOURCE side face traverses the
-// top (vMax) rim — opposite to the cap that shares it; the kept band reuses that sense so its rim stays
-// opposite that cap. A frustum/cylinder side (apex below, axis "up") traverses the top rim REVERSED; an
-// apex-at-top full cone (axis "down") traverses its sole rim FORWARD, so this is not a fixed convention.
+// and weld with its cap), and their radii. topRimReversed/botRimReversed record how the SOURCE side face
+// traverses each rim — opposite to the cap that shares it; a kept band reuses those senses so its rims stay
+// opposite those caps. Neither is a fixed convention: a frustum/cylinder side (apex below, axis "up")
+// traverses the top rim REVERSED and the bottom rim forward, while an apex-at-top cone — whose v runs from
+// the APEX, so the model's top circle is the vMin rim — has them the other way round (#3460). A band with a
+// SYNTHETIC end (the recovered vMax of an already-cut side) leaves that end's flag false; nothing emits it.
 type coneSideBand_ struct {
 	bottom, top         math.Point3
 	bottomCirc, topCirc geom.Circle
 	vMin, vMax          float64
 	rBot, rTop          float64
 	topRimReversed      bool
+	botRimReversed      bool
 }
 
 // coneSideBand recovers the frustum side's two full-circle rims, ordered by apex distance. ok=false
@@ -61,7 +64,7 @@ func coneSideBand(f curvedFace, cone geom.Cone) (coneSideBand_, bool) {
 		bottom: circles[0].Center, top: circles[1].Center,
 		bottomCirc: circles[0], topCirc: circles[1],
 		vMin: vMin, vMax: vMax, rBot: vMin * tanA, rTop: vMax * tanA,
-		topRimReversed: revs[1],
+		topRimReversed: revs[1], botRimReversed: revs[0],
 	}, true
 }
 

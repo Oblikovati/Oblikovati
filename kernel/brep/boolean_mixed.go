@@ -69,7 +69,7 @@ func partitionFaces(b *topo.Body) facePartition {
 			p.uvBox = append(p.uvBox, topoFaces[i].RangeBox())
 			continue
 		}
-		if _, _, ok := fullCylinderSideBand(cf); ok {
+		if _, ok := ruledSideBandOf(cf); ok {
 			p.wall = append(p.wall, cf)
 			p.wallBox = append(p.wallBox, topoFaces[i].RangeBox())
 			continue
@@ -194,6 +194,12 @@ func booleanMixed(op Op, a, b *topo.Body) (*topo.Body, bool, error) {
 	if !passClearOf(pa, pb) || !passClearOf(pb, pa) {
 		return nil, false, ErrUnsupportedMixedBoolean
 	}
+	// A planar face a wall sections with a CONIC cannot receive that imprint in the polygonal bucket (whose
+	// currency is [][2]math.Point3); move it to the exact-frame bucket, which carries geom.Curve3 imprints
+	// (#3460). This runs BEFORE crossingFaceCandidates so every index derived from the partitions — the
+	// candidate pairs, the imprint lists, the fragment selection — is computed from the promoted buckets.
+	promoteConicReceivers(&pa, &pb)
+	promoteConicReceivers(&pb, &pa)
 	pra, prb := newInsideOracle(a, pa.allFaces()), newInsideOracle(b, pb.allFaces())
 	pairs := crossingFaceCandidates(pa.planar, pb.planar)
 	if coplanarCurvedContact(pa, pb, pairs) {
@@ -224,12 +230,19 @@ func mixedKeptFragments(pa, pb facePartition, impA, impB [][][2]math.Point3, pra
 	return append(append([]subFace{}, keptA...), keptB...), okA && okB
 }
 
-// mixedCurvedImprints plans both operands' exact-frame and wall imprints in one pass.
+// mixedCurvedImprints plans both operands' exact-frame and wall imprints in one pass, then pairs the
+// exact-frame faces against the OTHER operand's ruled walls: that pairing writes the same section curve
+// into both the uv face's and the wall's list, so the two sides split on identical coordinates (#3460).
 func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3) (uvA, uvB, wallA, wallB [][]geom.Curve3, ok bool) {
 	uvA, uvB, okU := bothUVImprints(pa, pb, impA, impB)
 	wallA, okWA := wallImprints(pa, pb, impB)
 	wallB, okWB := wallImprints(pb, pa, impA)
-	return uvA, uvB, wallA, wallB, okU && okWA && okWB
+	if !okU || !okWA || !okWB {
+		return nil, nil, nil, nil, false
+	}
+	okXA := pairUVWallImprints(pa, pb, uvA, wallB)
+	okXB := pairUVWallImprints(pb, pa, uvB, wallA)
+	return uvA, uvB, wallA, wallB, okXA && okXB
 }
 
 // mixedWallFaces trims both operands' walls into the stitch's pass list.
@@ -356,14 +369,15 @@ func onCirclePad(p math.Point3, c geom.Circle) bool {
 // planUVImprints computes, for every exact-frame (uv) face of p, its imprint segments against the
 // other operand's planar faces — the plane∩plane line clipped exactly against BOTH trims — and
 // APPENDS the same segments to the other face's polygonal imprint list (otherImp, index-aligned with
-// other.planar), so both sides split on identical coordinates. ok=false declines: a coplanar contact
-// on a uv face, or a trim clip without a closed form.
+// other.planar), so both sides split on identical coordinates. The uv×WALL pairs are imprinted
+// separately (pairUVWallImprints, #3460); only uv×uv still declines here. ok=false declines: a uv face
+// overlapping another uv face, a coplanar contact on a uv face, or a trim clip without a closed form.
 func planUVImprints(p, other *facePartition, otherImp [][][2]math.Point3, _ bool) ([][]geom.Curve3, bool) {
 	out := make([][]geom.Curve3, len(p.uv))
 	for i, uf := range p.uv {
-		box := inflateBox(p.uvBox[i], facePairCullPad)
-		if boxesOverlapAny(box, other.uvBox) || boxesOverlapAny(box, other.wallBox) {
-			return nil, false // uv×uv and uv×wall pairs have no imprint pairing yet: decline
+		box := inflateBox(p.uvBox[i])
+		if boxesOverlapAny(box, other.uvBox) {
+			return nil, false // uv×uv pairs have no imprint pairing yet: decline
 		}
 		for j := range other.planarFull {
 			if !box.Intersects(paddedFaceBox(other.planar[j])) {

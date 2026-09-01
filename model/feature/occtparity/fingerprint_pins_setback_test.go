@@ -258,7 +258,22 @@ func setbackObstaclePins() []fingerprintPin {
 		// lip) is not yet supported" before this fix. Captured on THIS HEAD; they lock the concave-rim
 		// weld + the cap-orientation retry so any later rim slice fails loud if it perturbs a K1/Z1 body.
 		// Same cross-platform-risk caveat as above applies.
-		{"K1", 716214.454630634282, 67600, 0xcb1edbf4a4562d86, ""},
+		// ★ K1's VOLUME pin was RE-CAPTURED for the analytic mass-properties oracle (M48/C3): the mesh
+		// and its hash are BIT-IDENTICAL (67600 tris, same hash), so the body did not move — only the
+		// integrator did, from a triangle sum to the analytic B-rep surface integral, and K1 is one of
+		// the bodies that integrate analytically end to end. The new value is PROVEN by closed form,
+		// not merely re-captured. K1 is a 100³ block bored through at radius 30 with a rolling-ball
+		// fillet of radius 5 on the top rim, so
+		//     V = 100³ − π·30²·95 − π∫₀⁵ (35 − √(25−h²))² dh
+		//       = 1 000 000 − π·91708⅓ + 437.5π² = 716207.725652513,
+		// which the analytic integrator reproduces to 1.2e-10 absolute (1.6e-16 relative — machine
+		// epsilon), while the old mesh pin 716214.454630634282 sat 6.729 HIGH (9.4e-6 relative). The
+		// sign is the expected one: a faceted bore is an inscribed prism, so it removes LESS than the
+		// true cylinder and the triangle sum over-reports the solid. Every face agrees with its own
+		// closed form too — top 10000−π·35² = 6151.548999353, bottom 10000−π·30² = 7172.566611769,
+		// bore wall 2π·30·95 = 17907.078125462, fillet torus 2π·5·(35π/2 − 5) = 1570.101137511 — so
+		// this is the oracle getting more exact, not the geometry drifting.
+		{"K1", 716207.725652512512, 67600, 0xcb1edbf4a4562d86, ""},
 		{"Z1", 7840.004567698298, 34808, 0x84c49b798620dc55, ""},
 		// N1 (simple): the FIRST R+r bore/notch-wall trihedral corner green (corner-blend-weld Pieces
 		// 1+2). N1 is box − r20 cylinder notch at a corner, r=5 fillet on 3 edges. The engine used to

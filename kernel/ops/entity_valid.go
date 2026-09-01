@@ -19,7 +19,7 @@ type EntityCheckLevel int
 const (
 	// CheckTopology runs the manifold/orientation/closure checks (cheap).
 	CheckTopology EntityCheckLevel = 1
-	// CheckGeometry adds the face self-intersection scan (tessellates).
+	// CheckGeometry adds the face self-intersection scan, taken on the exact B-rep (#3477).
 	CheckGeometry EntityCheckLevel = 2
 )
 

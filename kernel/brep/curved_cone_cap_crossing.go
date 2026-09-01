@@ -6,6 +6,7 @@ import (
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Curved-boolean CAP-CROSSING with a CONE tool (EPIC Oblikovati/Oblikovati#1724, ADR-0046). The cylinder-tool
@@ -66,31 +67,37 @@ func classifyConeCapCross(target, tool *topo.Body, rec *diag.Recorder) (capCross
 // beyond a cap (phantom crossings of the target's infinite ruled surface past its finite wall — a long tool
 // that reaches past the exit cap). ok=false if any loop STRADDLES a cap level, because a loop reaching a cap
 // is a rim-crossing/cap-reaching breach this interior-exit slice does not build (it keeps its CSG fallback).
-func wallEntryLoops(side ruledUV, loops []geom.Polyline) ([]geom.Polyline, bool) {
+func wallEntryLoops(side ruledUV, loops []geom.Curve3) ([]geom.Curve3, bool) {
 	margin := geom.ResolutionForSize(side.band.vMax - side.band.vMin).Plane()
 	lo, hi := side.band.vMin+margin, side.band.vMax-margin
-	var kept []geom.Polyline
+	var kept []geom.Curve3
 	for _, lp := range loops {
-		below, above := 0, 0
-		for _, p := range lp.Vertices {
-			v := float64(side.base.VectorTo(p).Dot(side.axis))
-			switch {
-			case v < lo:
-				below++
-			case v > hi:
-				above++
-			}
-		}
+		pts := imprintLoopPoints(lp)
+		below, above := loopBandTally(side, pts, lo, hi)
 		switch {
 		case below == 0 && above == 0:
 			kept = append(kept, lp) // strictly in-band: a real wall-entry hole
-		case below == len(lp.Vertices) || above == len(lp.Vertices):
+		case below == len(pts) || above == len(pts):
 			continue // entirely beyond one cap: a phantom past the finite wall — drop it
 		default:
 			return nil, false // straddles a cap level: a rim-crossing this slice does not build
 		}
 	}
 	return kept, true
+}
+
+// loopBandTally counts how many of a loop's points sit below and above the band's interior [lo, hi].
+func loopBandTally(side ruledUV, pts []math.Point3, lo, hi float64) (below, above int) {
+	for _, p := range pts {
+		v := float64(side.base.VectorTo(p).Dot(side.axis))
+		switch {
+		case v < lo:
+			below++
+		case v > hi:
+			above++
+		}
+	}
+	return below, above
 }
 
 // coneInteriorExitCap returns the single target cap the cone exits through an ellipse strictly inside that

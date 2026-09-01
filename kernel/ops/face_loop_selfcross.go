@@ -59,10 +59,11 @@ type SelfCrossingLoop struct {
 // simple/Q5's two cylinder segments are axial rulings), and the two unfaithful ones measure 2.771 and
 // 77.06 — θ ≈ 4.42 and 6.20 rad.
 //
-// ★ IT IS A LABEL, NOT A FILTER, AND THAT IS THE WHOLE POINT. The obvious next move — mirror the
-// retrace detector's corroboratedIn3D and DISCARD an unfaithful pair — is wrong here, and the corpus
-// says so outright. corroboratedIn3D is sound because a retrace's two strands are SUPPOSED to resolve
-// to the same 3D points, so a disagreement can only be the chart's fault. A self-crossing carries no
+// ★ IT IS A LABEL, NOT A FILTER, AND THAT IS THE WHOLE POINT. The obvious next move — mirror what the
+// retrace detector does and DISCARD an unfaithful pair on a 3D check — is wrong here, and the corpus
+// says so outright. A retrace is a claim that two strands resolve to the SAME 3D points (which is why
+// that detector now asks the curves directly, #3475), so a 3D disagreement there can only be the
+// chart's fault, and it is sound to reject on it. A self-crossing carries no
 // such expectation: complex/F2's two unfaithful crossings are unfaithful because the boundary points
 // themselves lie 9.125 and 9.818 OFF the radius-10 cylinder they bound — 9.87026 at worst, 0.05596 of
 // that model's 176.4 diagonal, which is knownOffSurfaceDebt's complex/F2 entry read by a second ruler,
@@ -77,26 +78,92 @@ const selfCrossChartFaithfulRatio = stdmath.Pi / 2
 // not a polygon at all), are skipped rather than guessed at, so a report here is always a real defect.
 // Each report carries ChartChordRatio so its Area can be read for what it is (see the field).
 //
+// The boundary it develops is the EXACT edge-corner ring (face_loop_corners.go), not a tessellation:
+// a topology verdict must not move with facet density (M48/C3, Oblikovati/Oblikovati#3476). The
+// Quality argument is therefore unused, and kept only so the call sites that thread one through do not
+// churn — the same reason [FillInternalVoids] ignores its own.
+//
 // Example: SelfCrossingFaceLoops(d8Body, PropertyQuality()) returns the two corner-round walls whose
 // far-end trim curve runs 0.2527 rad past their own u=0 ruling, each pinching off Area ≈ 1.2111.
-func SelfCrossingFaceLoops(b *topo.Body, q Quality) []SelfCrossingLoop {
+func SelfCrossingFaceLoops(b *topo.Body, _ Quality) []SelfCrossingLoop {
 	var out []SelfCrossingLoop
 	for _, f := range b.Faces() {
-		loops, ok := developedFaceLoops(f, q)
-		rings := faceLoopRings(f, q)
+		rings := faceCornerRings(f)
+		loops, ok := developedFaceLoops(f, rings)
 		if !ok {
 			continue
 		}
-		for i, l := range loops {
-			area, i0, j0, crosses := loopSelfCrossing(l)
-			if !crosses {
-				continue
-			}
-			out = append(out, SelfCrossingLoop{Face: f, Loop: i, Area: area,
-				ChartChordRatio: crossingPairChartChordRatio(l, ringAt(rings, i, len(l.pts)), i0, j0)})
-		}
+		out = append(out, crossingsOfFace(f, loops, rings)...)
 	}
 	return out
+}
+
+// crossingsOfFace reports each developed loop of f that crosses itself. Every candidate the chart
+// produces is certified against the edges it is drawn from before it is reported, so a chart segment
+// that cuts where its own edge does not is never a defect (crossingIsCertified).
+func crossingsOfFace(f *topo.Face, loops []developedLoop, rings []cornerRing) []SelfCrossingLoop {
+	var out []SelfCrossingLoop
+	for i, l := range loops {
+		r := ringAt(rings, i, len(l.pts))
+		area, i0, j0, crosses := loopSelfCrossing(l, func(a, b int) bool {
+			return crossingIsCertified(l, r, a, b)
+		})
+		if !crosses {
+			continue
+		}
+		out = append(out, SelfCrossingLoop{Face: f, Loop: i, Area: area,
+			ChartChordRatio: crossingPairChartChordRatio(l, r.pts, i0, j0)})
+	}
+	return out
+}
+
+// crossingIsCertified corroborates a chart crossing against the boundary the chart came from: the two
+// segments must lie on DIFFERENT edges, and each must be a FAITHFUL development of its edge — the
+// edge's own mid-parameter point, developed, must sit on the straight chart segment its ends span.
+//
+// One chart segment per edge renders a curved edge as a straight line, and a straight line can cut
+// across ground the edge keeps clear of. Measured on the OCCT blend-parity corpus that invents
+// crossings on six planar faces (whose chart is an exact isometry, so the only unfaithfulness there is
+// the segment itself). The test is scale-free and reads no tessellation: it asks the edge for one more
+// of its own points and checks the chart still agrees with it.
+func crossingIsCertified(l developedLoop, r cornerRing, i, j int) bool {
+	if i >= len(r.owners) || j >= len(r.owners) || r.owners[i] == r.owners[j] {
+		return false // an unpairable ring, or one edge crossing itself, certifies nothing
+	}
+	return segmentDevelopsItsEdge(l, i) && segmentDevelopsItsEdge(l, j)
+}
+
+// segmentDevelopsItsEdge reports whether chart segment i renders its edge straight: the developed
+// mid-parameter point must lie on the segment, within chartFaithfulFraction of the segment's own
+// length. A zero-length chart segment develops nothing and certifies nothing.
+func segmentDevelopsItsEdge(l developedLoop, i int) bool {
+	if i >= len(l.mids) {
+		return false
+	}
+	seg := chartSegAt(l.pts, i)
+	span := seg.length()
+	if span == 0 {
+		return false
+	}
+	return pointToSegment2D(xy(l.mids[i]), seg.a, seg.b) <= chartFaithfulFraction*span
+}
+
+// chartFaithfulFraction is how far a segment's own mid may sit off it and still count as a straight
+// development — a FRACTION of the segment's chart length, so it carries no model scale (ADR-0042). It
+// is many decades above double-precision noise on a developed coordinate and many below the sagitta of
+// any edge that actually bows: a 1° arc already bows by 1e-3 of its chord, and the population this
+// separates on the corpus bows by 0.02 to 0.2 of theirs.
+const chartFaithfulFraction = 1e-6 // tol:relative — dimensionless fraction of the chart segment's length
+
+// pointToSegment2D is the distance from p to the segment ab, in chart coordinates.
+func pointToSegment2D(p, a, b [2]float64) float64 {
+	dx, dy := b[0]-a[0], b[1]-a[1]
+	den := dx*dx + dy*dy
+	if den == 0 {
+		return stdmath.Hypot(p[0]-a[0], p[1]-a[1])
+	}
+	t := stdmath.Max(0, stdmath.Min(1, ((p[0]-a[0])*dx+(p[1]-a[1])*dy)/den))
+	return stdmath.Hypot(p[0]-(a[0]+t*dx), p[1]-(a[1]+t*dy))
 }
 
 // ChartFaithful reports whether the development rendered the crossing pair faithfully, so Area is an
@@ -105,11 +172,11 @@ func (s SelfCrossingLoop) ChartFaithful() bool {
 	return s.ChartChordRatio <= selfCrossChartFaithfulRatio
 }
 
-// ringAt returns the 3D ring matching developed loop i, or nil when the rings could not be paired with
-// the developed loops point-for-point (in which case no ratio can be measured).
-func ringAt(rings [][]math.Point3, i, n int) []math.Point3 {
-	if i >= len(rings) || len(rings[i]) != n {
-		return nil
+// ringAt returns the corner ring matching developed loop i, or an EMPTY ring when the rings could not
+// be paired with the developed loops point-for-point (in which case nothing can be measured on it).
+func ringAt(rings []cornerRing, i, n int) cornerRing {
+	if i >= len(rings) || len(rings[i].pts) != n {
+		return cornerRing{}
 	}
 	return rings[i]
 }
@@ -118,7 +185,7 @@ func ringAt(rings [][]math.Point3, i, n int) []math.Point3 {
 // It returns 1 (nominally faithful) when the 3D ring is unavailable, so an unmeasurable pair is never
 // silently promoted into the unfaithful population.
 func crossingPairChartChordRatio(l developedLoop, ring []math.Point3, i, j int) float64 {
-	if ring == nil {
+	if len(ring) == 0 {
 		return 1
 	}
 	return stdmath.Max(segChartChordRatio(l, ring, i), segChartChordRatio(l, ring, j))
@@ -139,23 +206,48 @@ func segChartChordRatio(l developedLoop, ring []math.Point3, i int) float64 {
 	return chart / chord
 }
 
+// chartSeg is one directed segment of a developed loop, in the surface's metric chart.
+type chartSeg struct{ a, b [2]float64 }
+
+// chartSegAt is the segment leaving vertex i of a closed developed loop.
+func chartSegAt(pts []math.Point2, i int) chartSeg {
+	return chartSeg{a: xy(pts[i]), b: xy(pts[(i+1)%len(pts)])}
+}
+
+// length is the segment's extent in the metric chart.
+func (s chartSeg) length() float64 { return stdmath.Hypot(s.b[0]-s.a[0], s.b[1]-s.a[1]) }
+
 // developedLoop is one boundary loop in its surface's METRIC chart — u and v scaled to arc length, so
-// an area in it is an area on the surface.
-type developedLoop struct{ pts []math.Point2 }
+// an area in it is an area on the surface. mids carries each segment's own mid-parameter point through
+// the SAME development, which is what certifies that a chart segment renders its edge at all.
+type developedLoop struct {
+	pts  []math.Point2
+	mids []math.Point2
+}
 
 // developedFaceLoops develops every loop of f into the metric chart of f's own surface: the plane's
 // own frame for a plane, the arc-length-scaled (u,v) for an analytic curved surface. ok=false for a
-// surface with no such chart, or when any loop wraps the seam.
-func developedFaceLoops(f *topo.Face, q Quality) ([]developedLoop, bool) {
+// surface with no such chart, or when any loop wraps the seam. The loops it develops are the exact
+// edge-corner rings, so the development carries no facet density (#3476).
+func developedFaceLoops(f *topo.Face, rings []cornerRing) ([]developedLoop, bool) {
 	s := f.Geometry()
-	outer3D := faceOuterBoundary(f, q)
-	if s == nil || len(outer3D) < 3 {
+	if s == nil || len(rings) == 0 || len(rings[0].pts) < 3 {
 		return nil, false
 	}
-	holes3D := faceHoleBoundaries(f, q)
+	woven := wovenRings(rings)
+	charts, ok := developRings(s, woven[0], woven[1:])
+	if !ok {
+		return nil, false
+	}
+	return unweaveLoops(charts), true
+}
+
+// developRings maps the boundary rings into the surface's metric chart: the plane's own frame for a
+// plane, the arc-length-scaled (u,v) for an analytic curved surface.
+func developRings(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) ([][]math.Point2, bool) {
 	if pl, planar := s.(geom.Plane); planar {
 		flat := planeProjector(pl.NormalAt(0, 0))
-		return unitScaledLoops(append([][]math.Point2{project2D(outer3D, flat)}, project2DLoops(holes3D, flat)...)), true
+		return scaledLoops(append([][]math.Point2{project2D(outer3D, flat)}, project2DLoops(holes3D, flat)...), 1, 1), true
 	}
 	if !developableSurface(s) {
 		return nil, false
@@ -166,6 +258,38 @@ func developedFaceLoops(f *topo.Face, q Quality) ([]developedLoop, bool) {
 	}
 	su, sv := metricScale(s)
 	return scaledLoops(append([][]math.Point2{outerUV}, holesUV...), su, sv), true
+}
+
+// wovenRings interleaves each ring as corner, segment-mid, corner, segment-mid … so the certifying
+// points pass through the SAME development and the SAME periodic unwrap as the corners they certify —
+// developing them separately would re-open the wrap ambiguity the weave closes.
+func wovenRings(rings []cornerRing) [][]math.Point3 {
+	out := make([][]math.Point3, len(rings))
+	for i, r := range rings {
+		woven := make([]math.Point3, 0, 2*len(r.pts))
+		for k, p := range r.pts {
+			woven = append(woven, p, r.mids[k])
+		}
+		out[i] = woven
+	}
+	return out
+}
+
+// unweaveLoops splits each developed woven ring back into its corners and its per-segment mids.
+func unweaveLoops(charts [][]math.Point2) []developedLoop {
+	out := make([]developedLoop, len(charts))
+	for i, c := range charts {
+		loop := developedLoop{pts: make([]math.Point2, 0, len(c)/2), mids: make([]math.Point2, 0, len(c)/2)}
+		for k, p := range c {
+			if k%2 == 0 {
+				loop.pts = append(loop.pts, p)
+				continue
+			}
+			loop.mids = append(loop.mids, p)
+		}
+		out[i] = loop
+	}
+	return out
 }
 
 // developableSurface reports whether a curved surface has an analytic inversion whose (u,v) chart is a
@@ -179,31 +303,27 @@ func developableSurface(s geom.Surface) bool {
 	return false
 }
 
-// unitScaledLoops wraps already-metric (planar) loops.
-func unitScaledLoops(loops [][]math.Point2) []developedLoop {
-	return scaledLoops(loops, 1, 1)
-}
-
 // scaledLoops scales each loop into the surface's metric chart.
-func scaledLoops(loops [][]math.Point2, su, sv float64) []developedLoop {
-	out := make([]developedLoop, len(loops))
+func scaledLoops(loops [][]math.Point2, su, sv float64) [][]math.Point2 {
+	out := make([][]math.Point2, len(loops))
 	for i, l := range loops {
 		pts := make([]math.Point2, len(l))
 		for j, p := range l {
 			pts[j] = math.P2(float64(p.X)*su, float64(p.Y)*sv)
 		}
-		out[i] = developedLoop{pts: pts}
+		out[i] = pts
 	}
 	return out
 }
 
-// loopSelfCrossing returns the area pinched off by the loop's FIRST proper self-crossing (non-adjacent
-// edges crossing with strict signs, the same predicate simpleLoop2D uses) — the honest magnitude of the
-// defect, and exactly the quantity a shoelace of the whole loop is wrong by — plus the INDICES of the
-// two segments that cross, so the caller can ask the 3D boundary how faithfully the chart rendered that
-// pair (SelfCrossingLoop.ChartChordRatio). The predicate itself is unchanged: the indices are reported,
-// never acted on.
-func loopSelfCrossing(l developedLoop) (area float64, i, j int, crosses bool) {
+// loopSelfCrossing returns the area pinched off by the loop's first ACCEPTED proper self-crossing
+// (non-adjacent edges crossing with strict signs, the same predicate simpleLoop2D uses) — the honest
+// magnitude of the defect, and exactly the quantity a shoelace of the whole loop is wrong by — plus the
+// INDICES of the two segments that cross, so the caller can ask the 3D boundary how faithfully the
+// chart rendered that pair (SelfCrossingLoop.ChartChordRatio). The chart predicate itself is unchanged;
+// accept is the caller's corroboration on the exact curves, and a candidate it rejects is skipped
+// rather than ending the scan, so a chord artefact never hides a real crossing behind it.
+func loopSelfCrossing(l developedLoop, accept func(i, j int) bool) (area float64, i, j int, crosses bool) {
 	n := len(l.pts)
 	if n < 4 {
 		return 0, -1, -1, false
@@ -215,7 +335,7 @@ func loopSelfCrossing(l developedLoop) (area float64, i, j int, crosses bool) {
 				continue // edges n-1→0 and 0→1 are adjacent (share vertex 0)
 			}
 			c, d := xy(l.pts[j]), xy(l.pts[(j+1)%n])
-			if !segmentsCross(a, b, c, d) {
+			if !segmentsCross(a, b, c, d) || !accept(i, j) {
 				continue
 			}
 			return pinchedOffArea(l.pts, i, j), i, j, true

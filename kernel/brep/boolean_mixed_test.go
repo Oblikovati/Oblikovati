@@ -244,17 +244,19 @@ func TestMixedBooleanSlotThroughCylinderWall(t *testing.T) {
 	if !res.IsSolid() || cylinderFaceCount(res) != 1 {
 		t.Fatalf("wall slot invalid (solid=%v cyls=%d)", res.IsSolid(), cylinderFaceCount(res))
 	}
-	// The volume oracle integrates cylinder walls as an inscribed 32-gon (pre-existing quadrature
-	// bias: vol(r2 h5 cylinder) = 320·sin(π/16) exactly), so arc-boundary deltas cannot be asserted
-	// to closed form here; a loose bound catches gross errors and the geometry is asserted exactly.
+	// The oracle integrates the analytic B-rep (#3453), so the removal is asserted against the closed
+	// form itself. The loose 0.15 bound this replaces existed only while the oracle was a 32-gon
+	// quadrature — and it hid #3488: the split caps' loops did not close, so the body silently fell
+	// back to that tessellated quadrature and the delta came out 0.30 too large.
 	want := 5 * (0.6*stdmath.Sqrt(4-0.36) + 4*stdmath.Asin(0.3) - 1.8)
-	if removed := before - vol(res); stdmath.Abs(removed-want) > 0.15 {
-		t.Errorf("wall slot removed %g, want ≈%g", removed, want)
+	if removed := before - vol(res); stdmath.Abs(removed-want) > 1e-9 {
+		t.Errorf("wall slot removed %.17g, want the closed form %.17g", removed, want)
 	}
 	if len(res.Faces()) != 6 {
 		t.Fatalf("wall slot has %d faces, want 6 (3 cavity walls + 2 split caps + breached wall)", len(res.Faces()))
 	}
 	assertSlotGeometry(t, res)
+	assertSlotLoopsClose(t, res)
 }
 
 // assertSlotGeometry pins the slot result's EXACT geometry: the breach's ruling x sits at √(4−0.36)
@@ -289,4 +291,62 @@ func assertSlotGeometry(t *testing.T, res *topo.Body) {
 	if arcsSeen != 2 {
 		t.Errorf("split caps carry %d rim arcs, want 2 (one per cap, exact)", arcsSeen)
 	}
+}
+
+// assertSlotLoopsClose walks every face loop in traversal order and asserts each edge ends where the
+// next begins, and that every breach vertex it passes is the closed form. The split caps used to leave
+// a 1.5e-4 gap where a straight imprint met the rim arc — one vertex represented twice, neither copy
+// satisfying both constraints it lies on (#3488) — invisible to every mesh check but fatal to the
+// analytic reader, which cannot integrate an open loop.
+func assertSlotLoopsClose(t *testing.T, res *topo.Body) {
+	t.Helper()
+	xr := stdmath.Sqrt(4 - 0.36)
+	for i, f := range res.Faces() {
+		for _, l := range f.Loops() {
+			ends := loopEndpointsInOrder(l)
+			assertChainCloses(t, ends, i)
+			for _, e := range ends {
+				assertBreachVertexExact(t, e[0], xr)
+			}
+		}
+	}
+}
+
+// assertChainCloses asserts the loop's edges form a closed chain: edge j ends where edge j+1 begins.
+func assertChainCloses(t *testing.T, ends [][2]math.Point3, face int) {
+	t.Helper()
+	for j := range ends {
+		if d := float64(ends[j][1].DistanceTo(ends[(j+1)%len(ends)][0])); d > 1e-12 {
+			t.Errorf("face %d loop does not close: gap %g after edge %d", face, d, j)
+		}
+	}
+}
+
+// assertBreachVertexExact pins a vertex sitting where the tool plane |y|=0.6 meets the rim circle r=2
+// (screened loosely, so a vertex that MISSES either constraint is still caught): it must satisfy BOTH
+// at once, x=√(4−0.36) with |y|=0.6 and r=2. #3488 produced one copy 1.45e-4 off the cylinder and
+// another 4.4e-5 off the plane.
+func assertBreachVertexExact(t *testing.T, p math.Point3, xr float64) {
+	t.Helper()
+	y, r := stdmath.Abs(float64(p.Y)), stdmath.Hypot(float64(p.X), float64(p.Y))
+	if stdmath.Abs(y-0.6) > 1e-3 || stdmath.Abs(r-2) > 1e-3 {
+		return // not a breach vertex
+	}
+	if stdmath.Abs(float64(p.X)-xr) > 1e-12 || stdmath.Abs(y-0.6) > 1e-12 || stdmath.Abs(r-2) > 1e-12 {
+		t.Errorf("breach vertex (%.17g, %.17g) is not the closed form (%.17g, ±0.6): r=%.17g", float64(p.X), float64(p.Y), xr, r)
+	}
+}
+
+// loopEndpointsInOrder lists a loop's (start, end) points in traversal order, honouring edge-use sense.
+func loopEndpointsInOrder(l *topo.Loop) [][2]math.Point3 {
+	uses := l.EdgeUses()
+	out := make([][2]math.Point3, 0, len(uses))
+	for _, u := range uses {
+		s, e := u.Edge().StartVertex().Point(), u.Edge().EndVertex().Point()
+		if u.Reversed() {
+			s, e = e, s
+		}
+		out = append(out, [2]math.Point3{s, e})
+	}
+	return out
 }

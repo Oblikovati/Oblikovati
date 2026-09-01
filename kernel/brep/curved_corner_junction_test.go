@@ -104,18 +104,17 @@ func TestCornerPreSplitSharesExactVertices(t *testing.T) {
 			t.Errorf("triple point (%.5f,%.5f,%.5f) is not an exact imprint sub-arc endpoint", j.point.X, j.point.Y, j.point.Z)
 		}
 	}
-	// The disjoint back entry ellipse must survive as ONE closed polyline (complete loop ingest, no split).
+	// The disjoint back entry loop must survive as ONE closed curve (complete loop ingest, no split).
+	// Closedness is asked of the curve, not of its type: the loop is an exact ruled∩quadric section now,
+	// and only splits into open sub-arcs when a junction actually lies on it (#3489).
 	closed := 0
 	for _, cv := range si {
-		if pl, isPl := cv.(*geom.Polyline); isPl {
-			n := len(pl.Vertices)
-			if n >= 2 && float64(pl.Vertices[0].DistanceTo(pl.Vertices[n-1])) < 1e-6 {
-				closed++
-			}
+		if geom.CurveIsClosed(cv) {
+			closed++
 		}
 	}
 	if closed != 1 {
-		t.Errorf("split imprint has %d closed loops; want 1 (the untouched back entry ellipse)", closed)
+		t.Errorf("split imprint has %d closed loops; want 1 (the untouched back entry loop)", closed)
 	}
 }
 

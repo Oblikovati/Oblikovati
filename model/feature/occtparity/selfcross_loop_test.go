@@ -105,7 +105,7 @@ const selfCrossOffSurfaceFloor = loopSegOnFaceTol
 // radius-10 cylinder they bound, and the body's worst boundary-off-its-own-face residual is 9.87026 —
 // 0.05596 of its 176.4 diagonal, under knownOffSurfaceDebt's complex/F2 ceiling of 0.0616 — on FACE 243
 // itself, the very face carrying the 1098.03 crossing. The same defect, two rulers. Filtering the
-// detector on the ratio, the mirror of the retrace detector's corroboratedIn3D, would have retired both
+// detector on the ratio, the mirror of the 3D corroboration the retrace detector applies, would have retired both
 // as artefacts: measured, it drops complex/F2 from 2 reported loops to 0 while every gate in this
 // harness stays green.
 func TestEverySelfCrossDebtEntryIsARealDefect(t *testing.T) {

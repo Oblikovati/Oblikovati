@@ -3,8 +3,6 @@
 package ops
 
 import (
-	stdmath "math"
-
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -76,55 +74,6 @@ func filletLoopWindRing(l filletLoop) []math.Point3 {
 		segs[i] = s
 	}
 	return segPolyline(segs)
-}
-
-// cornerBlendMeshesComplement reports whether the assembled body's CORNER BLEND sphere patch would mesh
-// the COMPLEMENT rather than the sub-hemisphere cap it should. The sphere-patch mesher reads the patch
-// loop's ABSOLUTE winding to pick which of the two regions it bounds, but orientFilletShell pins the
-// shell's absolute sense to an arbitrary arm seed — so the corner cap can land inverted (D1: 1016.7 vs the
-// exact 238.5 spherical triangle). The corner blend is always the COMPACT sub-hemisphere triangle around
-// its tangent-points' mean direction, so it meshes the complement exactly when its (sampled) loop turns
-// NEGATIVE about that mean pole. Fires ONLY when the ORIGINAL body carries no host sphere (the cylinder-
-// host B3 and cone-host C2/C6/D1 corners): a sphere-host corner (D5/E4/D9) has TWO sphere faces and its
-// winding is owned by orientForSphereHost, so a whole-shell flip there could invert the host too — leave it.
-func cornerBlendMeshesComplement(originalBody, built *topo.Body) bool {
-	if hasSphereFace(originalBody) {
-		return false // sphere-host corner: orientForSphereHost owns the sphere winding — never uniform-flip
-	}
-	f, sph, ok := cornerBlendSphereFace(built)
-	if !ok {
-		return false // no sphere corner blend (a canal/coons4 patch) — its mesher is winding-independent
-	}
-	// The corner blend is ALWAYS the sub-hemisphere spherical triangle (Girard area ≤ ~448 for these
-	// corners, well under a hemisphere 2πr²). Reading the sphere-patch mesher's region directly — tessellate
-	// and compare to the hemisphere area — is robust where a loop-winding heuristic is not: a THIN wide
-	// triangle (C2's ~90° arcs, 206.9 area) confuses a single-pole winding test but its MESHED area cleanly
-	// separates the cap (< 2πr²) from the complement (> 2πr², D1's 1016.7). No false positive on a correct
-	// corner ⇒ the uniform flip never fires on B3 or the 60 greens (byte-identity holds).
-	area := meshGeometryProperties(TessellateFace(f, PropertyQuality())).Area
-	return area > 2*stdmath.Pi*sph.Radius*sph.Radius
-}
-
-// cornerBlendSphereFace returns the assembled body's single sphere face — the corner blend patch of a
-// cone/cylinder-host corner (its only sphere). ok=false when no sphere face is present.
-func cornerBlendSphereFace(b *topo.Body) (*topo.Face, geom.Sphere, bool) {
-	for _, f := range b.Faces() {
-		if s, ok := f.Geometry().(geom.Sphere); ok {
-			return f, s, true
-		}
-	}
-	return nil, geom.Sphere{}, false
-}
-
-// hasSphereFace reports whether the body carries any spherical face — the marker of a sphere-HOST corner
-// (whose corner-blend winding is owned by orientForSphereHost, not the uniform-flip fixup).
-func hasSphereFace(b *topo.Body) bool {
-	for _, f := range b.Faces() {
-		if _, ok := f.Geometry().(geom.Sphere); ok {
-			return true
-		}
-	}
-	return false
 }
 
 // hostSphereIndex returns the index in `all` of a host sphere face (one carrying a boundary loop), or

@@ -19,11 +19,12 @@ import (
 //
 // The one thing spans do not settle is WINDING. Every rim is shared by exactly two faces and
 // ops.Validate requires them to walk it opposite ways, but which way a given face walks is not a local
-// property — flipping one face forces its neighbour, and so on down the chain. Only the spherical CAPS
-// are pinned: on a sphere the loop direction is what NAMES which of the two caps survives, and the
-// tessellator reads exactly that (capAxis). So the caps are fixed and settleWindings propagates the
-// rest, declining if a chain cannot be satisfied rather than emitting a body that measures right and
-// fails orientation.
+// property — flipping one face forces its neighbour, and so on down the chain. The SPHERICAL faces are
+// pinned, caps and belts alike: on a closed surface the loop direction is what NAMES the region, and
+// every reader of the trim (the tessellator's capAxis, brep's geodesic winding, ops' analytic region
+// integral) reads exactly that. So the sphere faces are fixed and settleWindings propagates the rest,
+// declining if a chain cannot be satisfied rather than emitting a body that measures right and fails
+// orientation.
 
 // coaxialSelection says, for one operand, which of its runs survive and whether they are inverted (the
 // result's material lies on the far side of that operand's own surface — a cut's tool).
@@ -144,19 +145,20 @@ func (r coaxialRod) ballCapPiece(station float64, keep math.Vector3, invert bool
 	}
 }
 
-// ballBeltPiece is the ball's surface between two rims. Unlike a cap it needs no winding to name it —
-// two distinct coaxial circles bound exactly one connected region — so it takes whatever its neighbours
-// leave it.
+// ballBeltPiece is the ball's surface between two rims. Like a cap — and unlike a band, a disc or an
+// annulus — its winding NAMES its region: walked the other way the same two circles name the sphere's
+// COMPLEMENT of the belt, which is the two disjoint caps. So it is fixed, walking its LO rim forward
+// (the belt lies on the +out side of it) and its HI rim backward, as a hole. Leaving it free was
+// Oblikovati/Oblikovati#3447: an intersection's ball faces are ALL belts, so its chain had no fixed
+// piece to seed from, settleWindings started it at the arbitrary seed direction, and the belt came out
+// naming the complement — a body of the right shape whose every trim reader measured the wrong region.
 func (r coaxialRod) ballBeltPiece(lo, hi float64, invert bool) coaxialPiece {
 	loRim, hiRim := r.circleAt(lo, r.ballRadiusAt(lo)), r.circleAt(hi, r.ballRadiusAt(hi))
 	return coaxialPiece{
-		rims: []coaxialRim{{hi, hiRim.Radius, true}, {lo, loRim.Radius, false}},
-		build: func(flip bool) (curvedFace, bool) {
-			outer, inner := hiRim, loRim
-			if flip {
-				outer, inner = loRim, hiRim
-			}
-			return sphereBeltFace(r.sph, outer, inner, invert, r.ballLin), true
+		fixed: true,
+		rims:  []coaxialRim{{lo, loRim.Radius, true}, {hi, hiRim.Radius, false}},
+		build: func(bool) (curvedFace, bool) {
+			return sphereBeltFace(r.sph, loRim, hiRim, invert, r.ballLin), true
 		},
 	}
 }

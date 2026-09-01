@@ -303,21 +303,29 @@ func assertAnalyticSolid(t *testing.T, name string, b *topo.Body, want map[strin
 	}
 }
 
-// TestBallStudVolumeConvergesWithQuality is the symptom test from #2036. The CSG fallback's deficit was
-// FLAT across tessellation quality — that is what proved the error lived in the B-rep — so an exact
-// result must instead CONVERGE as the facets get finer. A refinement that does not move the volume is
-// the fallback coming back.
-func TestBallStudVolumeConvergesWithQuality(t *testing.T) {
+// TestBallStudVolumeIsQualityIndependent is the symptom test from #2036, restated for the analytic
+// oracle. It used to prove the result was exact by refining the tessellation and requiring the volume
+// to CONVERGE upward, because the CSG fallback's deficit was flat across quality. The measurement is
+// no longer tessellated (M48/C3 #3453), so the same fact now shows directly and more strongly: an
+// exact result integrates over its analytic B-rep, which means it keeps its curved faces and reports
+// the SAME volume at every quality. A faceted fallback has no analytic surfaces to integrate.
+func TestBallStudVolumeIsQualityIndependent(t *testing.T) {
 	ball, rod := ballStudOperands(t)
 	stud, err := Boolean(Join, ball, rod)
 	if err != nil {
 		t.Fatalf("join: %v", err)
 	}
+	if _, ok := AnalyticGeometryProperties(stud); !ok {
+		t.Fatal("the ball stud declined analytic integration; the faceted fallback is back")
+	}
 	coarse := BodyGeometryProperties(stud, DefaultQuality()).Volume
 	fine := BodyGeometryProperties(stud, PropertyQuality()).Volume
-	if fine <= coarse {
-		t.Errorf("refining the mesh did not raise the volume (%.6f → %.6f); an inscribed polyhedron's "+
-			"deficit is in the B-rep and does not converge", coarse, fine)
+	if coarse != fine {
+		t.Errorf("volume moved with tessellation quality (%.9f → %.9f); an analytic integral cannot", coarse, fine)
+	}
+	sum := 4.0/3*stdmath.Pi*ballStudR*ballStudR*ballStudR + stdmath.Pi*ballStudRod*ballStudRod*ballStudLen
+	if coarse >= sum {
+		t.Errorf("union volume %.6f is not below the sum of the operands %.6f", coarse, sum)
 	}
 }
 

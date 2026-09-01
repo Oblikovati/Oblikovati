@@ -30,17 +30,34 @@ func IntersectSurfaceSurface(base, other Surface, grid SurfaceGrid) [][]math.Poi
 type SurfaceIntersection struct {
 	Curves      [][]math.Point3
 	ViaFallback bool
+	// Deviation is the ACHIEVED tolerance of Curves in model units: the worst chord's distance off the
+	// true intersection curve ([MarchedDeviation]). A marched curve is a chord approximation BY
+	// CONSTRUCTION, so a consumer reads this instead of assuming the boundary it builds is exact
+	// (#3489). It is 0 when there are no curves; the exact closed form (IntersectSurfacesAnalytic)
+	// never reaches this tracer, so a closed-form pair keeps a zero achieved tolerance.
+	Deviation float64
+	// Declined reports that the continuation tracer spent its corrector budget (ssiMaxCorrections)
+	// before resolving the pair, so the result is not "no intersection" but "not determined". It is a
+	// NAMED decline rather than a hang: a kernel operation may not run without bound, and the budget is
+	// a deterministic COUNT so the same pair declines on every machine (#3477).
+	Declined bool
 }
 
 // TraceSurfaceIntersection is IntersectSurfaceSurface with provenance, for callers that need to see —
 // not just receive — a degraded fallback result.
 func TraceSurfaceIntersection(base, other Surface, grid SurfaceGrid) SurfaceIntersection {
-	if curves := traceIntersectionCurves(base, other, grid); len(curves) > 0 {
-		return SurfaceIntersection{Curves: curves}
+	curves, resolved := traceIntersectionCurves(base, other, grid)
+	if len(curves) > 0 {
+		return SurfaceIntersection{Curves: curves, Declined: !resolved,
+			Deviation: marchedCurvesDeviation(base, other, curves)}
+	}
+	if !resolved {
+		return SurfaceIntersection{Declined: true} // budget spent: do not pass a vacuous "no curves" on
 	}
 	field := func(u, v float64) float64 {
 		return SignedDistanceToSurface(other, base.PointAt(u, v))
 	}
-	curves := traceZeroOnSurface(base, field, grid)
-	return SurfaceIntersection{Curves: curves, ViaFallback: len(curves) > 0}
+	fallback := traceZeroOnSurface(base, field, grid)
+	return SurfaceIntersection{Curves: fallback, ViaFallback: len(fallback) > 0,
+		Deviation: marchedCurvesDeviation(base, other, fallback)}
 }

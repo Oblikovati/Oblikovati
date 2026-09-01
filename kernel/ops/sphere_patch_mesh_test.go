@@ -77,7 +77,7 @@ func TestSpherePatchDirectMeshIsCurved(t *testing.T) {
 	// A spherical patch sampled ON the sphere along its four bounding iso-curves (so the boundary
 	// points are exact sphere points, as a real arc tessellation would supply).
 	outer := sphereQuadBoundary(sphere, 0.2, 1.0, 0.6, 1.1, 6)
-	m, ok := spherePatchMesh(sphere, outer, nil, DefaultQuality())
+	m, ok := spherePatchMesh(nil, sphere, outer, nil, DefaultQuality())
 	if !ok {
 		t.Fatal("spherePatchMesh declined a hemisphere patch it should handle")
 	}

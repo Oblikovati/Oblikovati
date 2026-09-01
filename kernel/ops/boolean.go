@@ -270,29 +270,43 @@ func mixedPassThroughBoolean(op PartFeatureOperation, target, tool *topo.Body, r
 // defect — before this, the analytic short-circuit bypassed the volume guard the planar path gets.
 const CodeBooleanAnalyticVolumeReject diag.Code = "boolean.analytic-volume-reject"
 
-// curvedVolumeGuardFraction is the curved analytic volume bracket's tolerance as a fraction of the
-// larger operand's volume. DefaultQuality curved-body tessellation UNDER-measures volume by ~0.6%
-// (a cylinder) up to a bounded few percent (higher-curvature cones/spheres); 10% dominates the sum
-// of the operand and result deficits by >10×, so a CORRECT analytic result is never false-rejected
-// (which would silently degrade a good analytic boolean to CSG), while a gross mis-recognition
-// (wrong lobe ≈ ±30–100% of volume) is caught. Scale-relative (∝ size³), so ADR-0042-compliant.
-// A var, not a const, only so a test can tighten it to drive the reject-and-fallback path on a
-// known-good operand pair; production never rewrites it.
-var curvedVolumeGuardFraction = 0.10 // tol:calibrated — curved analytic volume bracket margin
+// curvedVolumeGuardFraction is the volume bracket's tolerance as a fraction of the larger operand's
+// volume, for the case where a body's volume the analytic integrator DECLINES and the tessellation
+// therefore measures: that number under-measures a curved body by ~0.6% (a cylinder) up to a bounded
+// few percent, and the bracket has to absorb the deficit. It no longer applies when the volumes are
+// exact (M48/C3 #3445: a 10% window demoted correct analytic results to facets because the MESHER,
+// not the boolean, was wrong).
+const curvedVolumeGuardFraction = 0.10 // tol:calibrated — bracket margin for a tessellated fallback volume
 
-// curvedExactGuarded returns an exact analytic curved boolean only when a path applies AND its
-// result lands inside the Requicha two-sided volume bracket (#1601). The analytic short-circuit
-// otherwise BYPASSES the volume guard the planar path gets, so a recognizer that mis-classifies to
-// a valid body of materially wrong volume would ship silently. When the bracket rejects, this
-// records a Defect and declines (ok=false) so booleanGeneral falls through to the guarded
-// planar/CSG path. On acceptance it restores original-edge identity (ADR-0043) like the planar path.
+// curvedGuardBracketOverride, when non-nil, REPLACES the computed volume-bracket tolerance.
+// Production leaves it nil; a test sets it to a large negative value so even a correct result reads
+// as out of bracket, which drives the reject-and-diagnose path end to end without needing a
+// recognizer bug to reproduce. It replaces rather than scales because the analytic bracket's own
+// tolerance is a resolution cube — scaling that by −1 leaves a number far too small to force a
+// violation, so the hook silently stopped working when the bracket became exact.
+var curvedGuardBracketOverride *float64
+
+// curvedExactGuarded returns an exact analytic curved boolean only when a path applies AND the
+// result is CERTIFIED: every face passes Requicha's membership rule against the operands
+// (certifyBooleanFaces), and the volume lands inside the Requicha two-sided bracket. The analytic
+// short-circuit otherwise bypasses the guard the planar path gets, so a recognizer that
+// mis-classifies to a valid body of materially wrong shape would ship silently. The per-face gate is
+// the proof and the volume bracket the smoke test — a body can hold the right amount of material in
+// the wrong place. When either rejects, this records a Defect and declines (ok=false) so
+// booleanGeneral falls through to the guarded planar/CSG path. On acceptance it restores
+// original-edge identity (ADR-0043) like the planar path.
 func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	body, ok := curvedExactBoolean(op, target, tool, rec)
 	if !ok {
 		return nil, false
 	}
+	if !certifyBooleanFaces(op, target, tool, body) {
+		rec.Recordf(CodeBooleanAnalyticFaceReject, diag.Defect,
+			"curved %s analytic result has a face the operands do not account for: falling back to the guarded path", op)
+		return nil, false
+	}
 	tv, wv, bv := boolVolumes(target, tool, body)
-	if volumeOutOfBracket(op, tv, wv, bv, curvedVolumeGuardFraction*max(tv, wv)) {
+	if volumeOutOfBracket(op, tv, wv, bv, curvedGuardTolerance(target, tool, tv, wv)) {
 		rec.Recordf(CodeBooleanAnalyticVolumeReject, diag.Defect,
 			"curved %s analytic result volume %g outside the Requicha bracket (V(A)=%g V(B)=%g): falling back to the guarded path",
 			op, bv, tv, wv)
@@ -300,6 +314,36 @@ func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, rec *d
 	}
 	body.InheritOriginalEdges(append(append([]*topo.Edge(nil), target.Edges()...), tool.Edges()...))
 	return body, true
+}
+
+// CodeBooleanAnalyticFaceReject marks a curved analytic boolean whose result carried a face the
+// operands cannot account for under the operation's membership rule — a face on neither operand's
+// boundary, or on the side the operation removes. Unlike a volume miss this localizes the fault to
+// a face, and it catches a wrong lobe that happens to have the right volume.
+const CodeBooleanAnalyticFaceReject diag.Code = "boolean.analytic-face-reject"
+
+// curvedGuardTolerance is the volume bracket's slack: the model-relative resolution cube when both
+// operands integrate analytically (the volumes are exact, so nothing wider is justified), widened to
+// curvedVolumeGuardFraction of the larger operand when either fell back to the tessellation, whose
+// chord deficit the bracket must then absorb.
+func curvedGuardTolerance(target, tool *topo.Body, tv, wv float64) float64 {
+	if curvedGuardBracketOverride != nil {
+		return *curvedGuardBracketOverride
+	}
+	if analyticVolumesExact(target, tool) {
+		return ResolutionForBodies(target, tool).Volume()
+	}
+	return curvedVolumeGuardFraction * max(tv, wv)
+}
+
+// analyticVolumesExact reports whether both operands integrate over their analytic B-rep, so their
+// volumes carry no tessellation deficit for the bracket to absorb.
+func analyticVolumesExact(target, tool *topo.Body) bool {
+	if _, ok := AnalyticGeometryProperties(target); !ok {
+		return false
+	}
+	_, ok := AnalyticGeometryProperties(tool)
+	return ok
 }
 
 // CurvedBoolean attempts the exact analytic curved boolean and reports whether it applied. It is SAFE to
@@ -335,8 +379,15 @@ var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body, *dia
 	curvedCoaxialJoin, curvedCylinderBossJoin, curvedPartialBossJoin, curvedPartialJoin, curvedRuledCrossingJoin, curvedSteinmetzJoin, curvedBallRodJoin,
 }
 
+// shouldFallbackBoolean decides whether a result must be abandoned for the next path. Validity comes
+// first (an invalid body is never a result), then the per-face membership certificate — the proof
+// that the faces are the ones this operation keeps — and only then the whole-body volume bracket,
+// which is a cheap smoke test for what the per-face gate could not probe (M48/C3 #3446/#3447).
 func shouldFallbackBoolean(op PartFeatureOperation, target, tool, body *topo.Body) bool {
 	if !Validate(body).ValidSolid() {
+		return true
+	}
+	if !certifyBooleanFaces(op, target, tool, body) {
 		return true
 	}
 	return invalidBooleanVolume(op, target, tool, body)
@@ -350,8 +401,11 @@ func invalidBooleanVolume(op PartFeatureOperation, target, tool, body *topo.Body
 	return volumeOutOfBracket(op, tv, wv, bv, ResolutionForBodies(target, tool).Volume())
 }
 
-// boolVolumes measures the target, tool and result volumes at one shared quality — the same
-// quality for all three so their tessellation deficits partly cancel in the bracket comparison.
+// boolVolumes measures the target, tool and result volumes for the acceptance bracket. All three go
+// through BodyGeometryProperties, which integrates the ANALYTIC B-rep (M48/C3 #3448), so the bracket
+// no longer compares three tessellations whose chord deficits it had to be widened to absorb. The
+// quality is shared and only reaches a body the analytic path declines, where having all three
+// measured the same way still lets their deficits partly cancel.
 func boolVolumes(target, tool, body *topo.Body) (targetVol, toolVol, bodyVol float64) {
 	q := DefaultQuality()
 	return BodyGeometryProperties(target, q).Volume,

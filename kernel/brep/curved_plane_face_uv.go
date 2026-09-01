@@ -93,11 +93,14 @@ type faceFrameCrossing struct {
 }
 
 // assembleSegments emits the exact frame loops (straight edges whole, circle edges sampled with the
-// imprint crossings injected) plus the imprint segments split at those crossings (uvSide).
+// imprint crossings injected) plus the imprint segments split at those crossings (uvSide). A CLOSED conic
+// island (a ruled wall's section — curved_plane_face_uv_island.go) crosses no frame edge by construction,
+// so it is sampled on its own and takes no part in the crossing injection.
 func (c *planeFaceUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
-	crossings := c.frameCrossings(imprint)
-	segs := c.frameSegs(crossings)
-	return append(segs, c.imprintSegs(imprint, crossings)...)
+	straight, islands := splitImprintByKind(imprint)
+	crossings := c.frameCrossings(straight)
+	segs := append(c.frameSegs(crossings), c.imprintSegs(straight, crossings)...)
+	return append(segs, c.islandSegs(islands)...)
 }
 
 // frameCrossings solves every conic-frame-edge ∩ imprint-segment crossing in closed form.
@@ -122,7 +125,7 @@ func (c *planeFaceUV) circleEdgeCrossings(li, ei int, circle geom.Curve3, imprin
 	var out []faceFrameCrossing
 	for ii, imp := range imprint {
 		a2, b2 := to2D(c.plane, imp.PointAt(0)), to2D(c.plane, imp.PointAt(1))
-		hits, _ := conicEdgeHits(pc, a2, b2, c.res)
+		hits, _ := conicFrameHits(pc, a2, b2, c.res)
 		for _, h := range hits {
 			if tc, ok := conicParamAt(circle, to3D(c.plane, h.p)); ok {
 				out = append(out, faceFrameCrossing{loop: li, edge: ei, imp: ii, sImp: h.sEdge, tConic: tc, at: circle.PointAt(tc)})
@@ -194,17 +197,33 @@ func circleSampleParams(e loopEdge, crossings []faceFrameCrossing, li, ei int) [
 func (c *planeFaceUV) imprintSegs(imprint []geom.Curve3, crossings []faceFrameCrossing) []uvSeg {
 	var out []uvSeg
 	for ii, imp := range imprint {
-		verts := []math.Point3{imp.PointAt(0)}
-		for _, cr := range sortedImprintCrossings(crossings, ii) {
-			verts = append(verts, cr.at)
-		}
-		verts = append(verts, imp.PointAt(1))
+		verts := imprintVertices(imp, sortedImprintCrossings(crossings, ii))
 		for i := 1; i < len(verts); i++ {
 			seg := geom.NewLineSegment(verts[i-1], verts[i])
 			out = append(out, uvSeg{a: to2D(c.plane, verts[i-1]), b: to2D(c.plane, verts[i]), curve: seg, tA: 0, tB: 1, kind: segImprint})
 		}
 	}
 	return out
+}
+
+// imprintVertices is one imprint segment's vertex chain: its two endpoints, with every conic-frame
+// crossing ordered along it. A crossing AT an endpoint REPLACES that endpoint with conic.PointAt(t) —
+// the very point the neighbouring sub-arc terminates on — instead of inserting a near-duplicate ahead
+// of it. An imprint clipped to the frame conic ends ON it by construction, so without this the split
+// face's loop closes only to the sampling error of the frame ring (#3488).
+func imprintVertices(imp geom.Curve3, on []faceFrameCrossing) []math.Point3 {
+	head, tail, mid := imp.PointAt(0), imp.PointAt(1), make([]math.Point3, 0, len(on))
+	for _, cr := range on {
+		switch {
+		case cr.sImp <= tjTol:
+			head = cr.at
+		case cr.sImp >= 1-tjTol:
+			tail = cr.at
+		default:
+			mid = append(mid, cr.at)
+		}
+	}
+	return append(append([]math.Point3{head}, mid...), tail)
 }
 
 // sortedImprintCrossings returns the crossings on one imprint segment ordered along it.
@@ -233,16 +252,20 @@ func planeFaceMaterial(c *planeFaceUV, keep func(math.Point3) bool) func() mater
 
 // planeFaceContactOK declines grazing contact before the trim runs: an imprint segment tangent to a
 // frame circle (a double root within the weld) risks a sliver cell the arrangement cannot resolve —
-// the same gate planeUV applies to its conic imprints (#1591).
+// the same gate planeUV applies to its conic imprints (#1591). The frame test reads only the STRAIGHT
+// imprints (a closed conic island reaches the trim already proven clear of every frame edge —
+// wallSectionIsland — and a conic-framed face never receives one); the islands are gated separately, on
+// meeting nothing they would have to meet on a sampled chord (islandContactOK).
 func planeFaceContactOK(c *planeFaceUV, imprint []geom.Curve3) bool {
+	straight, islands := splitImprintByKind(imprint)
 	for _, l := range c.loops {
 		for _, e := range l.edges {
-			if _, isCircle := e.curve.(geom.Circle); isCircle && !circleContactOK(c, e.curve, imprint) {
+			if _, isCircle := e.curve.(geom.Circle); isCircle && !circleContactOK(c, e.curve, straight) {
 				return false
 			}
 		}
 	}
-	return true
+	return islandContactOK(c, islands, straight)
 }
 
 // circleContactOK reports whether no imprint segment grazes one frame circle tangentially.

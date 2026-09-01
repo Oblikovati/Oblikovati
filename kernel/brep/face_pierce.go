@@ -24,7 +24,7 @@ import (
 //
 //	if brep.PointInFaceTrim(f, hit.Point) { /* the ray truly pierced face f */ }
 func PointInFaceTrim(f *topo.Face, p math.Point3) bool {
-	return pointInTrimUV(curvedFaceOf(f), p)
+	return faceTrimUVOf(f).contains(p)
 }
 
 // PointOnFace reports whether p lies on face f's trimmed surface within tol: within tol of
@@ -37,10 +37,10 @@ func PointInFaceTrim(f *topo.Face, p math.Point3) bool {
 //
 //	if brep.PointOnFace(f, mid, onTol) { /* the silhouette segment midpoint lands on face f */ }
 func PointOnFace(f *topo.Face, p math.Point3, tol float64) bool {
-	cf := curvedFaceOf(f)
-	_, _, foot := geom.ClosestPointOnSurface(cf.surface, p)
-	if float64(foot.DistanceTo(p)) < tol && pointInTrimUV(cf, p) {
+	m := faceTrimUVOf(f)
+	_, _, foot := geom.ClosestPointOnSurface(m.face.surface, p)
+	if float64(foot.DistanceTo(p)) < tol && m.contains(p) {
 		return true
 	}
-	return nearFaceBoundary(cf, p, tol)
+	return nearFaceBoundary(m.face, p, tol)
 }

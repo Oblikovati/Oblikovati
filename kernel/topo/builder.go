@@ -34,8 +34,13 @@ func (bld *Builder) AddVertex(p math.Point3, lineage Lineage) *Vertex {
 
 // AddEdge adds an edge with the given curve and bounding vertices, recording the
 // edge on each vertex's incidence list.
+//
+// The edge inherits its curve's ACHIEVED tolerance ([geom.CurveDeviation]): 0 for an analytic curve,
+// which is exact, and the measured chord deviation for a marched intersection polyline. Doing it here —
+// the ONE place an edge is born — is why no boolean has to remember to record it (#3489).
 func (bld *Builder) AddEdge(curve geom.Curve3, start, end *Vertex, lineage Lineage) *Edge {
-	e := &Edge{id: nextID(), curve: curve, start: start, end: end, lineage: lineage}
+	e := &Edge{id: nextID(), curve: curve, start: start, end: end, lineage: lineage,
+		tolerance: geom.CurveDeviation(curve)}
 	start.edges = append(start.edges, e)
 	if end != start {
 		end.edges = append(end.edges, e)
@@ -65,10 +70,11 @@ func (bld *Builder) ReplaceEdgeCurve(e *Edge, curve geom.Curve3) {
 	e.curve = curve
 	// A healed polyline (SetSnappedCurve, import healing M25) is a discretization of the OLD curve
 	// and OUTRANKS e.curve in tessellation, so a stale one would silently ship the replaced
-	// geometry. Unreachable today (nothing snaps an edge before Build), cleared defensively with
-	// its residual so the invariant "snapped describes curve" survives any future caller
-	// (adversarial-review finding m-8).
-	e.snapped, e.tolerance = nil, 0
+	// geometry. Unreachable today (nothing snaps an edge before Build), cleared defensively
+	// (adversarial-review finding m-8). The tolerance is RE-DERIVED rather than zeroed: it describes
+	// the curve, and the curve just changed, so claiming exactness would be a lie for a marched
+	// replacement (#3489).
+	e.snapped, e.tolerance = nil, geom.CurveDeviation(curve)
 }
 
 // Diagnose records d on the body under construction, so what the assembler could not do ideally

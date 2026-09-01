@@ -116,21 +116,6 @@ func edgeUseTangent(u *topo.EdgeUse) math.Vector3 {
 	return t
 }
 
-// PreciseRangeBox is the tight axis-aligned box over the body's tessellation
-// at quality q — face interiors included, unlike the topology RangeBox, which
-// only samples vertices and edge curves (a sphere's equator bulge needs this).
-func PreciseRangeBox(b *topo.Body, q Quality) math.Box {
-	mesh, _ := TessellateBody(b, q)
-	box := math.EmptyBox()
-	for _, p := range mesh.Positions {
-		box = box.ExtendPoint(p)
-	}
-	for _, w := range b.Wires() {
-		box = wireExtend(box, w)
-	}
-	return box
-}
-
 func wireExtend(box math.Box, w *topo.Wire) math.Box {
 	for _, u := range w.Uses() {
 		c := u.Edge.Geometry()

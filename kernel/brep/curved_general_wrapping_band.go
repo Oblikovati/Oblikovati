@@ -106,17 +106,17 @@ func (c ruledUV) keyholeOuter() []loopEdge {
 	return []loopEdge{{curve: ruling, t0: 0, t1: 1}, top, {curve: ruling, t0: 1, t1: 0}, bot}
 }
 
-// orientWrappingBand applies the ruled band's rim convention to a wrapping band's loops: the rim at the TOP
-// (vMax) end is reversed when the source side traverses its top rim reversed, so it keeps the sense opposite
-// the cap that shares it; the bottom (vMin) rim and the imprint loops keep their arrangement winding (the
-// imprint sense is already set by emitImprintRun, #1477). Unlike orientLoops this keys the reversal on each
-// rim's v-LEVEL, not its position in the loop list — a stub's single cap rim can be the vMin OR vMax end (the
-// rod's two ends), and a tube carries both — so the position-0 rule of the half-space path does not fit (#1476).
+// orientWrappingBand applies the ruled band's rim convention to a wrapping band's loops: a loop that IS one
+// of the SOURCE side's own rims is forced to the sense that source gave it, so it stays opposite the cap it
+// shares; every other loop — a full-wrap imprint circle, a section chain — keeps its arrangement winding
+// (that sense is already set by emitImprintRun, #1477). Unlike orientLoops this keys on each rim's v-LEVEL,
+// not its position in the loop list: a stub's single cap rim can be the vMin OR the vMax end (the rod's two
+// ends), and a tube carries both, so the position-0 rule of the half-space path does not fit (#1476).
 func (c ruledUV) orientWrappingBand(emitted []emittedLoop) []curvedLoop {
 	out := make([]curvedLoop, 0, len(emitted))
 	for _, e := range emitted {
 		edges := e.face
-		if allRimEdges(e.face) && c.isTopRim(e.mv) && c.band.topRimReversed {
+		if want, isRim := c.sourceRimSense(e); isRim && want != chainReversed(e.face) {
 			edges = reverseEdgeChain(e.face)
 		}
 		out = append(out, curvedLoop{edges: edges})
@@ -124,10 +124,40 @@ func (c ruledUV) orientWrappingBand(emitted []emittedLoop) []curvedLoop {
 	return out
 }
 
-// isTopRim reports whether a loop's mean axial level is nearer the band's vMax (top) rim than its vMin
-// (bottom) rim — the rim the topRimReversed convention flips (#1476).
-func (c ruledUV) isTopRim(mv float64) bool {
-	return stdmath.Abs(mv-c.band.vMax) < stdmath.Abs(mv-c.band.vMin)
+// sourceRimSense returns the sense the SOURCE side face gave the band rim a loop sits ON — the flag the band
+// recorded for that rim when it was recovered (coneSideBand_). isRim=false for every other loop.
+//
+// The retired rule keyed only the vMax rim and assumed the vMin rim always wants the arrangement's forward
+// winding. That holds for a cylinder band, whose v is measured from its own bottom rim; a CONE band's v is
+// measured from the APEX, so with the apex above the frustum the vMin rim is the model's TOP circle and is
+// the rim the source reverses — it came out with the SAME sense as the cap it welds to (#3460). Each rim's
+// sense is read from the source rather than derived from the other's, because a band END can be SYNTHETIC:
+// an already-cut side recovers its vMax from the prior trim loop and there is no source rim there at all.
+// It also keyed "nearer vMax than vMin", which swallowed a full-wrap imprint circle in the band's upper
+// half and flipped that too.
+func (c ruledUV) sourceRimSense(e emittedLoop) (reversed, isRim bool) {
+	if !allRimEdges(e.face) {
+		return false, false
+	}
+	if c.atBandLevel(e.mv, c.band.vMax) {
+		return c.band.topRimReversed, true
+	}
+	if c.atBandLevel(e.mv, c.band.vMin) {
+		return c.band.botRimReversed, true
+	}
+	return false, false
+}
+
+// atBandLevel reports a loop's mean axial level sitting ON one of the band's rim levels, to the weld of the
+// band's own axial span (model-relative, no absolute epsilon).
+func (c ruledUV) atBandLevel(mv, level float64) bool {
+	return stdmath.Abs(mv-level) <= geom.ResolutionForSize(c.band.vMax-c.band.vMin).Weld()
+}
+
+// chainReversed reports whether an emitted loop runs opposite its curve's parameterisation — the same t1<t0
+// test curvedStitch orients a closed edge by (useReversedFor).
+func chainReversed(edges []loopEdge) bool {
+	return len(edges) > 0 && edges[0].t1 < edges[0].t0
 }
 
 // loopWrapsU reports whether an emitted boundary loop spans the WHOLE azimuth — a band end (a rim or a

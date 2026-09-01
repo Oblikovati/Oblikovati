@@ -46,7 +46,7 @@ func fullCylinderSideBand(f curvedFace) (geom.Cylinder, coneSideBand_, bool) {
 		bottom: circles[0].Center, top: circles[1].Center,
 		bottomCirc: circles[0], topCirc: circles[1],
 		vMin: 0, vMax: height, rBot: cyl.Radius, rTop: cyl.Radius,
-		topRimReversed: revs[1],
+		topRimReversed: revs[1], botRimReversed: revs[0],
 	}
 	return cyl, band, true
 }

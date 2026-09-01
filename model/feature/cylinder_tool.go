@@ -48,10 +48,17 @@ func regularPolygon(radius float64, n int) []math.Point2 {
 	return out
 }
 
-// holeCylinderArea is the cross-section area a drilled bore of the given radius actually removes:
-// the holeFacets-gon the cutter is built from, not the true circle. Volume assertions compare
-// against it so they measure the geometry the kernel built rather than the one it approximates.
-func holeCylinderArea(radius float64) float64 {
+// drillToolPrismArea is the cross-section area of the [drillTool] PRISM: the holeFacets-gon it is
+// built from, not a circle. It is NOT what a drilled hole removes any more — HoleFeature.cutCylinder
+// prefers the exact brep drills, so an ordinary bore takes out a true geom.Cylinder of area πr², and
+// mass properties now integrate that analytic B-rep (M48/C3 #3453). This area is what the paths that
+// still cut with the faceted prism remove or add: the boss ([BossFeature]), the assembly hole, the
+// faceted counterbore fallback, and any bore the exact drill declines (one starting inside material,
+// or tangent to a face it would clip). Volume assertions use it ONLY for those, so they measure the
+// geometry the kernel built rather than the one it approximates.
+//
+// Example: want := blockVolume + drillToolPrismArea(bossR)*bossHeight // a boss's faceted stud
+func drillToolPrismArea(radius float64) float64 {
 	n := float64(holeFacets)
 	return 0.5 * n * radius * radius * stdmath.Sin(2*stdmath.Pi/n)
 }

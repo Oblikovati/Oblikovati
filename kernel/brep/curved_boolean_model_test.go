@@ -166,13 +166,30 @@ func TestCurvedImprintPlanePlaneIsLine(t *testing.T) {
 	}
 }
 
-// TestCurvedImprintCurvedCurvedDefers: a cylinder∩cylinder pair has no closed-form analytic
-// solver in Phase 1, so curvedImprint reports handled=false (the caller routes it to the Phase 2
-// SSI tracer), NOT an empty "they don't cross" result.
-func TestCurvedImprintCurvedCurvedDefers(t *testing.T) {
+// TestCurvedImprintRuledPairIsExactSection: a cylinder∩cylinder pair is the ruled∩quadric closed form
+// (#3489) — the two exact section loops, not the marched chains it used to defer to. The imprint must
+// hand those on, since every edge stitched from them inherits their exactness.
+func TestCurvedImprintRuledPairIsExactSection(t *testing.T) {
 	a, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
 	b, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 2)
+	curves, ok := curvedImprint(curvedFace{surface: a}, curvedFace{surface: b}, geom.ResolutionForSize(1))
+	if !ok || len(curves) != 2 {
+		t.Fatalf("cylinder∩cylinder: handled=%v, %d curves; want the 2 exact section loops", ok, len(curves))
+	}
+	for i, c := range curves {
+		if _, isArc := c.(geom.RuledQuadricArc); !isArc {
+			t.Errorf("imprint curve %d is %T, want the exact geom.RuledQuadricArc", i, c)
+		}
+	}
+}
+
+// TestCurvedImprintTorusPairDefers: a torus is neither a straight-ruled parametrisation nor an implicit
+// quadric, so no closed form applies and curvedImprint must report handled=false (the caller routes the
+// pair to the SSI tracer), NOT an empty "they don't cross" result.
+func TestCurvedImprintTorusPairDefers(t *testing.T) {
+	a, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
+	b, _ := geom.NewCylinder(math.P3(4, 0, 0), math.V3(0, 0, 1), 0.5)
 	if _, ok := curvedImprint(curvedFace{surface: a}, curvedFace{surface: b}, geom.ResolutionForSize(1)); ok {
-		t.Error("cylinder∩cylinder should defer (handled=false) to Phase 2, not be handled analytically")
+		t.Error("torus∩cylinder should defer (handled=false) to the tracer, not be handled analytically")
 	}
 }

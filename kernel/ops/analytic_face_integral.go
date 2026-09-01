@@ -40,19 +40,58 @@ type quadTerms[T any] interface {
 	add(T) T
 	scale(float64) T
 	converged(T) bool
+	// measure is the component integrated from an UNSIGNED integrand (the surface area element).
+	// Its sign therefore reports the traversal's orientation, which is the only orientation signal
+	// available on a loop that wraps a seam and so has no meaningful shoelace.
+	measure() float64
 }
 
 // pointEval maps one surface parameter point to its integrand contribution — integrandsAt for the
 // flux mass terms, areaIntegrandsAt for the surface moments.
 type pointEval[T any] func(u, v float64) T
 
-// faceRegion integrates a face's region terms: a boundary-less face over its full parameter
-// rectangle, a bounded face by Green's theorem over its uv loops. Both use `at` as the integrand.
+// faceRegion integrates a face's region terms under a work budget, so a face whose integral does not
+// settle DECLINES instead of subdividing until it stalls the caller.
 func faceRegion[T quadTerms[T]](f *topo.Face, at pointEval[T]) (T, bool) {
+	left := quadBudget
+	budgeted := withBudget(at, &left)
+	terms, ok := faceRegionWithin(f, budgeted)
+	if left <= 0 {
+		var zero T
+		return zero, false // the budget ran out: this face's integral never settled
+	}
+	return terms, ok
+}
+
+// faceRegionWithin integrates a face's region terms: a boundary-less face over its full parameter
+// rectangle, a bounded face by Green's theorem over its uv loops. Both use `at` as the integrand.
+func faceRegionWithin[T quadTerms[T]](f *topo.Face, at pointEval[T]) (T, bool) {
 	if len(f.Loops()) == 0 {
 		return fullDomainTerms(f.Geometry(), at)
 	}
 	return greenTerms(f, at)
+}
+
+// quadBudget is how many integrand evaluations one face's integration may spend. An analytic
+// surface's integrands are smooth and settle in a tiny fraction of it; a face that does NOT settle
+// would otherwise subdivide toward 2^quadDepth cells per one-dimensional integral, nested inside the
+// boundary walk — a torus rim face was observed stalling a whole recompute that way. Exhausting the
+// budget declines the face, and the tessellated fallback measures the body: slow is a defect, and a
+// kernel operation may not hang.
+const quadBudget = 2_000_000
+
+// withBudget wraps an integrand so it stops evaluating once the budget is spent. It returns the ZERO
+// term after that, which makes the adaptive rule's coarse and refined estimates agree and unwind
+// immediately, rather than keeping the recursion alive to the depth cap.
+func withBudget[T quadTerms[T]](at pointEval[T], left *int) pointEval[T] {
+	var zero T
+	return func(u, v float64) T {
+		if *left <= 0 {
+			return zero
+		}
+		*left--
+		return at(u, v)
+	}
 }
 
 // fullDomainTerms integrates g over a boundary-less face's entire finite parameter rectangle by
@@ -74,6 +113,12 @@ func fullDomainTerms[T quadTerms[T]](s geom.Surface, at pointEval[T]) (T, bool) 
 // integrateU adaptively integrates every surface integrand along the line at fixed v, u∈[a,b].
 func integrateU[T quadTerms[T]](at pointEval[T], a, b, v float64) T {
 	eval := func(u float64) T { return at(u, v) }
+	return integrateAdaptive(eval, a, b, quadDepth)
+}
+
+// integrateV adaptively integrates every surface integrand along the line at fixed u, v∈[a,b].
+func integrateV[T quadTerms[T]](at pointEval[T], a, b, u float64) T {
+	eval := func(v float64) T { return at(u, v) }
 	return integrateAdaptive(eval, a, b, quadDepth)
 }
 
@@ -118,12 +163,9 @@ func gaussCellTerms[T quadTerms[T]](eval func(float64) T, a, b float64) T {
 // integrated ALONG ITS TRUE CURVE (Gauss in the edge parameter, not chord-wise), so a circular
 // edge on a planar cap contributes exactly rather than as an inscribed polygon.
 //
-// Each loop is oriented for the positive-measure region by its OWN role and shoelace — an outer
-// loop CCW (adds), a hole loop CW (subtracts) — using the IsOuter flag rather than the winding,
-// because a boolean can leave a hole wound the SAME way as its outer (then a single outer-derived
-// sign would ADD the hole instead of subtracting it, over-counting a drilled/annular body). The
-// result is ∫∫_D g over the true region on the +normal side; the caller then applies (or, for the
-// unsigned surface moments, omits) the outward sense so a hole/inner wall contributes correctly.
+// Each loop is oriented for the positive-measure region by loopRegionSigns, so the result is
+// ∫∫_D g over the true region on the +normal side; the caller then applies (or, for the unsigned
+// surface moments, omits) the outward sense so a hole/inner wall contributes correctly.
 func greenTerms[T quadTerms[T]](f *topo.Face, at pointEval[T]) (T, bool) {
 	var zero T
 	s := f.Geometry()
@@ -131,53 +173,126 @@ func greenTerms[T quadTerms[T]](f *topo.Face, at pointEval[T]) (T, bool) {
 	if !ok {
 		return zero, false
 	}
-	u0 := minLoopU(loops)
+	if !loopsCloseTheirWalk(loops) {
+		return zero, false // an open contour: Green's theorem does not apply (see loopsCloseTheirWalk)
+	}
+	form, ok := greenFormFor(loops)
+	if !ok {
+		return zero, false
+	}
+	enclosed := enclosedTerms(s, loops, form, at)
+	return faceSideOfRegion(f, loops, enclosed, at)
+}
+
+// enclosedTerms sums the loops into the measure of the region they enclose, positively oriented.
+//
+// A loop that WRAPS a seam has no shoelace to read a role from — it is not a closed polygon in the
+// plane — so those faces take the loops with their stored orientation and normalise the total, which
+// is sound because a band's boundary loops are wound oppositely by construction. Everything else
+// takes the nesting rule, which is what a hole needs: a producer may wind a hole the same way as the
+// loop enclosing it, and a stored-orientation sum would then ADD it.
+//
+// Each loop's boundary integral is taken FIRST and its own measure is what the sign rule reads (see
+// loopRegionSign). That ordering is the point: the alternative signal — the shoelace of the loop's
+// SAMPLED uv polyline — is degenerate on a face whose surface has a pole, where a whole
+// isoparametric edge collapses to one 3-D point and ParamAt cannot recover the parameter along it.
+// Two such loops on one body measured a shoelace of ±1e-17 — pure rounding — and the sign rule read
+// its sign, so two congruent B-spline flanks came out with OPPOSITE signs and both NEGATIVE areas.
+// The boundary integral itself has no such degeneracy: it is the same ∮ the region is built from, so
+// signing a loop by it cannot disagree with the quantity it signs (Oblikovati/Oblikovati#3453).
+func enclosedTerms[T quadTerms[T]](s geom.Surface, loops []faceLoop, form greenAxis, at pointEval[T]) T {
+	raw := make([]T, len(loops))
+	measures := make([]float64, len(loops))
+	for i, fl := range loops {
+		raw[i] = loopGreen(s, fl, form, at)
+		measures[i] = raw[i].measure()
+	}
+	signs := enclosedLoopSigns(loops, measures, form)
 	var total T
-	for _, fl := range loops {
-		var lt T
-		for _, le := range fl.edges {
-			lt = lt.add(edgeGreen(s, le, u0, at))
-		}
-		total = total.add(lt.scale(loopSign(fl)))
+	for i := range loops {
+		total = total.add(raw[i].scale(signs[i]))
 	}
-	return total, true
+	if singleCycleBand(loops) && total.measure() < 0 {
+		// One cycle carrying both rims may be stored either way round — the producer is free to walk
+		// it against the region, and unlike a rim PAIR there is no second loop to read a role from.
+		// Its measure is a magnitude, so the traversal's direction is normalised here.
+		return total.scale(-1)
+	}
+	return total
 }
 
-// loopSign orients one loop's boundary integral for the positive-measure region: an outer loop is
-// made CCW (its enclosed area adds), a hole loop CW (its enclosed area subtracts). ∮_stored equals
-// +∫∫_enclosed for a CCW (positive-shoelace) loop and −∫∫_enclosed for a CW one, so the multiplier
-// is +1/−1 accordingly per role.
-func loopSign(fl faceLoop) float64 {
-	ccw := loopSignedArea(fl) >= 0
-	if fl.outer {
-		if ccw {
-			return 1
-		}
-		return -1
+// enclosedLoopSigns gives every loop the multiplier that makes the sum the region's measure. One
+// place decides it, because the two families need different reasoning and mixing them silently is
+// what produced a band larger than the surface it lies on.
+func enclosedLoopSigns(loops []faceLoop, measures []float64, form greenAxis) []float64 {
+	if !loopsWrapASeam(loops) {
+		return loopRegionSigns(loops, measures)
 	}
-	if ccw {
-		return -1
-	}
-	return 1
+	return bandLoopSigns(loops, measures, form)
 }
 
-// arcSample is one point on an edge: its curve parameter t and the face-surface (u, v) it maps
-// to, globally unwrapped so the sample sequence is continuous across a periodic seam.
-type arcSample struct{ t, u, v float64 }
+// loopGreen is one loop's boundary integral in the chosen form.
+func loopGreen[T quadTerms[T]](s geom.Surface, fl faceLoop, form greenAxis, at pointEval[T]) T {
+	var acc T
+	for _, le := range fl.edges {
+		acc = acc.add(edgeGreen(s, le, form, at))
+	}
+	return acc
+}
 
-// loopEdge is one edge of a face loop with its 3-D curve and a reference sample sequence used to
-// seed periodic unwrapping during the true-curve integration.
+// faceSideOfRegion returns the face's own terms given the terms of the region its loops ENCLOSE.
+// The two differ only on a CLOSED surface, where the face may be the complement of that region (see
+// analytic_face_region.go); the complement's terms are the whole surface's minus the enclosed
+// region's, never the enclosed region's negation.
+//
+// Closedness is asked of the surface (geom.SurfaceIsClosed), never inferred from its parameter
+// rectangle being finite. A ThreadedCylinder bounds v to its threaded run, so the rectangle test
+// called a bore wall closed, the side test then named the trim the complement OF ITSELF, and the
+// wall contributed exactly zero to both area and flux — silently, because a full band's vector area
+// is zero either way, so the closure post-condition had nothing to catch (#3453).
+func faceSideOfRegion[T quadTerms[T]](f *topo.Face, loops []faceLoop, enclosed T, at pointEval[T]) (T, bool) {
+	if !geom.SurfaceIsClosed(f.Geometry()) {
+		return enclosed, true // an OPEN surface's complement is unbounded: the bounded side is the face
+	}
+	full, integrable := fullDomainTerms(f.Geometry(), at)
+	if !integrable {
+		var zero T
+		return zero, false // a closed surface whose own domain will not integrate settles nothing
+	}
+	holds, certain := faceHoldsEnclosedRegion(f, loops)
+	if !certain {
+		var zero T
+		return zero, false // the side cannot be certified: decline rather than integrate a guess
+	}
+	if holds {
+		return enclosed, true
+	}
+	return full.add(enclosed.scale(-1)), true
+}
+
+// arcSample is one point on an edge: the walk parameter s that placed it, its curve parameter t and
+// the face-surface (u, v) it maps to, globally unwrapped so the sample sequence is continuous across
+// a periodic seam.
+type arcSample struct{ s, t, u, v float64 }
+
+// loopEdge is one edge of a face loop with its 3-D curve, the curve-parameter interval the traversal
+// covers (t0 → t1, reversed for a reversed use), and a reference sample sequence used to seed
+// periodic unwrapping during the true-curve integration.
 type loopEdge struct {
 	curve   geom.Curve3
+	t0, t1  float64
 	samples []arcSample
 	uPeriod float64
 	vPeriod float64
 }
 
-// faceLoop is a face boundary loop reconstructed in parameter space.
+// faceLoop is a face boundary loop reconstructed in parameter space. It carries no outer/hole
+// flag: loopRegionSigns derives the role from the loops' own nesting, because topo.Loop.IsOuter is
+// not well defined on a closed surface. netU/netV are how far the unwrapped walk travelled overall —
+// zero on a loop that closes in the plane, a whole number of periods on one that wraps a seam.
 type faceLoop struct {
-	edges []loopEdge
-	outer bool
+	edges      []loopEdge
+	netU, netV float64
 }
 
 // buildFaceLoops reconstructs every loop of a bounded face as continuous-in-uv edge sequences.
@@ -200,12 +315,10 @@ func buildFaceLoops(s geom.Surface, f *topo.Face) ([]faceLoop, bool) {
 
 // buildLoopEdges walks a loop's edge uses in order and samples each edge's curve, inverting every
 // sample onto the surface (ParamAt is exact on-surface for the analytic surfaces) and unwrapping
-// periodic coordinates continuously across edges. It declines (ok=false) when the loop does not
-// close in unwrapped uv — a net seam winding that the planar Green reconstruction cannot integrate
-// (a trimmed periodic face whose loop wraps the seam an unequal number of times); the caller then
-// falls back to the mesh path for the whole body rather than return a wrong region.
+// periodic coordinates continuously across edges. It records the walk's NET travel so greenTerms can
+// pick the Green form the loop admits; a loop that closes in neither parameter is refused there.
 func buildLoopEdges(s geom.Surface, l *topo.Loop, uPeriod, vPeriod float64) (faceLoop, bool) {
-	fl := faceLoop{outer: l.IsOuter()}
+	var fl faceLoop
 	pu, pv, have := 0.0, 0.0, false
 	for _, use := range l.EdgeUses() {
 		le, ok := sampleLoopEdge(s, use, uPeriod, vPeriod, &pu, &pv, &have)
@@ -214,23 +327,12 @@ func buildLoopEdges(s geom.Surface, l *topo.Loop, uPeriod, vPeriod float64) (fac
 		}
 		fl.edges = append(fl.edges, le)
 	}
-	if !loopClosesInUV(fl) {
+	if len(fl.edges) == 0 || len(fl.edges[0].samples) == 0 {
 		return faceLoop{}, false
 	}
-	return fl, true
-}
-
-// loopClosesInUV reports whether the loop's last unwrapped sample coincides with its first — the
-// condition for the reconstructed uv polyline to be a valid closed polygon. A seam-wrapping loop
-// with non-zero net winding ends a period away and fails this, so the face is declined.
-func loopClosesInUV(fl faceLoop) bool {
-	if len(fl.edges) == 0 || len(fl.edges[0].samples) == 0 {
-		return false
-	}
 	first := fl.edges[0].samples[0]
-	lastEdge := fl.edges[len(fl.edges)-1].samples
-	last := lastEdge[len(lastEdge)-1]
-	return closeUV(first.u, first.v, last.u, last.v)
+	fl.netU, fl.netV = pu-first.u, pv-first.v
+	return fl, true
 }
 
 // sampleLoopEdge samples one edge use in traversal order, inverting each point onto the surface
@@ -245,53 +347,144 @@ func sampleLoopEdge(s geom.Surface, use *topo.EdgeUse, uPeriod, vPeriod float64,
 	if use.Reversed() {
 		t0, t1 = hi, lo
 	}
-	le := loopEdge{curve: c, uPeriod: uPeriod, vPeriod: vPeriod}
+	le := loopEdge{curve: c, t0: t0, t1: t1, uPeriod: uPeriod, vPeriod: vPeriod}
 	for k := 0; k <= edgeUVSamples; k++ {
-		t := t0 + (t1-t0)*float64(k)/float64(edgeUVSamples)
+		sk := float64(k) / float64(edgeUVSamples)
+		t, _ := edgeGradedT(t0, t1, sk)
 		u, v := s.ParamAt(c.PointAt(t))
 		if *have {
 			u = unwrapPeriodic(u, *pu, uPeriod)
 			v = unwrapPeriodic(v, *pv, vPeriod)
 		}
-		le.samples = append(le.samples, arcSample{t: t, u: u, v: v})
+		le.samples = append(le.samples, arcSample{s: sk, t: t, u: u, v: v})
 		*pu, *pv, *have = u, v, true
 	}
 	return le, true
 }
 
-// edgeGreen returns ∮ Q dv along one edge, summed over its reference segments; each segment is
-// integrated on the true curve with a fixed Gauss rule (the reference is dense enough that a
-// segment is a smooth, seam-free arc).
-func edgeGreen[T quadTerms[T]](s geom.Surface, le loopEdge, u0 float64, at pointEval[T]) T {
+// edgeGradedT maps the boundary walk's parameter s ∈ [0,1] to the edge's curve parameter, and returns
+// dt/ds with it. The walk is uniform in s, so the samples and the Gauss nodes both cluster
+// quadratically toward the edge's two ends.
+//
+// An edge's parametrization is not guaranteed REGULAR at its ends, and the boundary integrand carries
+// its speed. A spiric arc TURNS at each end — the oval's v-extremes are where its two branches meet,
+// du/dv is infinite there, and |dP/dt| diverges like 1/√(t−t0) — so a fixed-order rule in t resolves
+// none of that: the torus ∩ box oval cap integrated 23.4960 against a true patch area of 24.0889 (2.5%
+// under), its planar lid 19.7881 against 20.2302, and because the two misses differ the face's vector
+// area disagreed with its own lid by 0.26%, which is exactly what the closure post-condition then
+// declined (M48/C3, Oblikovati/Oblikovati#3453 follow-up).
+//
+// t − t0 ∝ s² at each end, so an integrand whose endpoint expansion runs in HALF powers of (t − t0) —
+// which is what a turning parametrization produces — is analytic in s, and Gauss converges on it
+// spectrally again. A regular edge (a line, a circle) is unharmed: a smooth substitution leaves a
+// smooth integrand smooth. This belongs to the walk, not to any one curve kind: it is applied to every
+// edge, and nothing here asks what the curve is.
+func edgeGradedT(t0, t1, s float64) (t, dtds float64) {
+	span := t1 - t0
+	return t0 + span*(1-stdmath.Cos(stdmath.Pi*s))/2, span * stdmath.Pi * stdmath.Sin(stdmath.Pi*s) / 2
+}
+
+// edgeGreen returns the boundary integral along one edge, summed over its reference segments; each
+// segment is integrated on the true curve with a fixed Gauss rule (the reference is dense enough
+// that a segment is a smooth, seam-free arc).
+func edgeGreen[T quadTerms[T]](s geom.Surface, le loopEdge, form greenAxis, at pointEval[T]) T {
 	var acc T
 	for k := 0; k+1 < len(le.samples); k++ {
 		a, b := le.samples[k], le.samples[k+1]
 		if a.t == b.t {
 			continue
 		}
-		acc = acc.add(segmentGreen(s, le, a, b, u0, at))
+		acc = acc.add(segmentGreen(s, le, a, b, form, at))
 	}
 	return acc
 }
 
-// segmentGreen integrates ∫ Q(u(t),v(t))·v′(t) dt over one edge segment [a.t, b.t] on the true
-// curve. u, v come from ParamAt (unwrapped to the linearly-interpolated reference so the branch
-// is right), and v′ is a central difference of the surface v-parameter along the curve.
-func segmentGreen[T quadTerms[T]](s geom.Surface, le loopEdge, a, b arcSample, u0 float64, at pointEval[T]) T {
+// segmentGreen integrates the chosen boundary form over one edge segment on the true curve. The
+// quadrature variable is the WALK parameter s (see edgeGradedT), so the substitution's Jacobian dt/ds
+// multiplies each node; every rate greenIntegrand reads is per unit t, and dt/ds converts it. Each
+// node's u, v come from ParamAt, unwrapped to the linearly-interpolated reference so the periodic
+// branch is right.
+func segmentGreen[T quadTerms[T]](s geom.Surface, le loopEdge, a, b arcSample, form greenAxis, at pointEval[T]) T {
 	nodes, weights := geom.GaussLegendre(6)
-	half, mid := (b.t-a.t)/2, (a.t+b.t)/2
+	half, mid := (b.s-a.s)/2, (a.s+b.s)/2
 	var acc T
 	for i, x := range nodes {
-		t := mid + half*x
-		frac := (t - a.t) / (b.t - a.t)
-		seedU := a.u + (b.u-a.u)*frac
-		seedV := a.v + (b.v-a.v)*frac
-		u, v := uvOnCurve(s, le, t, seedU, seedV)
-		vp := dvdt(s, le, t, b.t-a.t, seedV)
-		q := integrateU(at, u0, u, v)
-		acc = acc.add(q.scale(weights[i] * vp))
+		t, dtds := edgeGradedT(le.t0, le.t1, mid+half*x)
+		frac := (x + 1) / 2
+		n := greenNode{t: t}
+		n.u, n.v = uvOnCurve(s, le, t, a.u+(b.u-a.u)*frac, a.v+(b.v-a.v)*frac)
+		acc = acc.add(greenIntegrand(s, le, form, at, n).scale(weights[i] * dtds))
 	}
 	return acc.scale(half)
+}
+
+// greenNode is one Gauss node on an edge: its curve parameter and the unwrapped surface parameters
+// there.
+type greenNode struct{ t, u, v float64 }
+
+// greenIntegrand is one node's contribution: Q(u,v)·v′ for the u-antiderivative form, or −P(u,v)·u′
+// for the v-antiderivative one. The two are the conjugate halves of the same identity — ∫∫ g du dv
+// equals ∮ Q dv and equals −∮ P du — so a face uses whichever its loops can close.
+func greenIntegrand[T quadTerms[T]](s geom.Surface, le loopEdge, form greenAxis, at pointEval[T], n greenNode) T {
+	du, dv := duvdtAt(s, le, n)
+	if form.dv {
+		return integrateU(at, form.base, n.u, n.v).scale(dv)
+	}
+	return integrateV(at, form.base, n.v, n.u).scale(-du)
+}
+
+// duvdtAt returns how fast the surface parameters move along the curve at the node: it solves
+// dP/dt = P_u·(du/dt) + P_v·(dv/dt) for the two rates, from the curve's OWN tangent and the surface's
+// OWN derivatives.
+//
+// This used to be a central difference of the inverted parameters. Differencing over a step a
+// fraction of the parameter span loses about four digits to cancellation, which put a floor of ~1e-11
+// under every analytic volume — enough that an exactly-additive line-kiss union read 1.99999999998
+// instead of 2. Reading both sides analytically has no such floor and needs no step size.
+func duvdtAt(s geom.Surface, le loopEdge, n greenNode) (du, dv float64) {
+	tangent := le.curve.TangentAt(n.t)
+	pu, pv := s.DerivativesAt(n.u, n.v)
+	a, b, c := float64(pu.Dot(pu)), float64(pu.Dot(pv)), float64(pv.Dot(pv))
+	d, e := float64(pu.Dot(tangent)), float64(pv.Dot(tangent))
+	det := a*c - b*b
+	if det == 0 {
+		return 0, 0 // a degenerate parametrization (a pole): the chart reads no direction here
+	}
+	return (d*c - e*b) / det, (a*e - b*d) / det
+}
+
+// greenAxis names which conjugate reduction a face's loops carry, with the antiderivative's lower
+// limit: u0 for the ∮ Q dv form, v0 for the ∮ −P du one.
+type greenAxis struct {
+	dv   bool
+	base float64
+}
+
+// greenFormFor picks the reduction the loops admit. ∮ Q dv needs every loop to come back to its
+// starting u, ∮ −P du needs every loop to come back to its starting v. A BAND on a periodic surface
+// — the wall of a drilled bore, a zone on a torus — closes in only one of them: its walk crosses the
+// seam a whole number of times, so the other coordinate ends a period or more away and that
+// reduction cannot close (Oblikovati/Oblikovati#3453 — the analytic integral used to decline the
+// most ordinary body in CAD, a plate with a hole in it). The u-form is preferred, so every face that
+// closes both ways integrates exactly as it did before this split.
+func greenFormFor(loops []faceLoop) (greenAxis, bool) {
+	if loopsReturnTo(loops, func(fl faceLoop) float64 { return fl.netU }) {
+		return greenAxis{dv: true, base: minLoopU(loops)}, true
+	}
+	if loopsReturnTo(loops, func(fl faceLoop) float64 { return fl.netV }) {
+		return greenAxis{dv: false, base: minLoopV(loops)}, true
+	}
+	return greenAxis{}, false
+}
+
+// loopsReturnTo reports whether every loop's net travel in the coordinate `net` selects is zero.
+func loopsReturnTo(loops []faceLoop, net func(faceLoop) float64) bool {
+	for _, fl := range loops {
+		if !closeUV(net(fl), 0, 0, 0) {
+			return false
+		}
+	}
+	return true
 }
 
 // uvOnCurve inverts the curve point at t onto the surface, choosing the periodic branch nearest
@@ -299,20 +492,6 @@ func segmentGreen[T quadTerms[T]](s geom.Surface, le loopEdge, a, b arcSample, u
 func uvOnCurve(s geom.Surface, le loopEdge, t, seedU, seedV float64) (u, v float64) {
 	ru, rv := s.ParamAt(le.curve.PointAt(t))
 	return unwrapPeriodic(ru, seedU, le.uPeriod), unwrapPeriodic(rv, seedV, le.vPeriod)
-}
-
-// dvdt is the rate of the surface v-parameter along the curve at t, by central difference (δ a
-// small fraction of the segment span), each sample unwrapped to the seed so no seam jump leaks in.
-func dvdt(s geom.Surface, le loopEdge, t, span, seedV float64) float64 {
-	d := stdmath.Abs(span) * 1e-4 // tol:numeric — central-difference step as a fraction of the param span
-	if d == 0 {
-		return 0
-	}
-	_, vpRaw := s.ParamAt(le.curve.PointAt(t + d))
-	_, vmRaw := s.ParamAt(le.curve.PointAt(t - d))
-	vp := unwrapPeriodic(vpRaw, seedV, le.vPeriod)
-	vm := unwrapPeriodic(vmRaw, seedV, le.vPeriod)
-	return (vp - vm) / (2 * d)
 }
 
 // loopSignedArea is the shoelace signed area of a loop's reference polyline (positive when CCW).
@@ -349,6 +528,21 @@ func minLoopU(loops []faceLoop) float64 {
 			for _, sp := range le.samples {
 				if sp.u < min {
 					min = sp.u
+				}
+			}
+		}
+	}
+	return min
+}
+
+// minLoopV is minLoopU for the v-coordinate — the shared lower limit v0 of the ∮ −P du form.
+func minLoopV(loops []faceLoop) float64 {
+	min := stdmath.Inf(1)
+	for _, fl := range loops {
+		for _, le := range fl.edges {
+			for _, sp := range le.samples {
+				if sp.v < min {
+					min = sp.v
 				}
 			}
 		}

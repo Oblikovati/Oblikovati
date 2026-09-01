@@ -117,6 +117,7 @@ const (
 	CurveVariableHelix
 	CurveSpiric
 	CurveTorusCyl
+	CurveRuledQuadric
 	// curveKindCount is the sentinel one past the last real kind.
 	curveKindCount
 )
@@ -144,6 +145,7 @@ var curveKindNames = [...]string{
 	CurveVariableHelix: "VariableHelix3d",
 	CurveSpiric:        "SpiricArc",
 	CurveTorusCyl:      "TorusCylinderArc",
+	CurveRuledQuadric:  "RuledQuadricArc",
 }
 
 // CurveKinds returns every CurveKind in declaration order (see SurfaceKinds).
@@ -175,6 +177,7 @@ func (h Helix3d) Kind() CurveKind          { return CurveHelix }
 func (h VariableHelix3d) Kind() CurveKind  { return CurveVariableHelix }
 func (s SpiricArc) Kind() CurveKind        { return CurveSpiric }
 func (a TorusCylinderArc) Kind() CurveKind { return CurveTorusCyl }
+func (a RuledQuadricArc) Kind() CurveKind  { return CurveRuledQuadric }
 
 var (
 	_ KindedCurve = Line{}
@@ -191,4 +194,5 @@ var (
 	_ KindedCurve = VariableHelix3d{}
 	_ KindedCurve = SpiricArc{}
 	_ KindedCurve = TorusCylinderArc{}
+	_ KindedCurve = RuledQuadricArc{}
 )

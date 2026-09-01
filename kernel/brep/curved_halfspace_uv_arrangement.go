@@ -100,11 +100,41 @@ func (c ruledUV) sampleRange(curve geom.Curve3, t0, t1 float64) []uvSeg {
 	if pl, ok := curve.(*geom.Polyline); ok && len(pl.Vertices) >= imprintSampleCount {
 		return c.sampleVertices(pl, t0, t1)
 	}
-	segs := make([]uvSeg, 0, imprintSampleCount)
-	prevT := t0
-	prevP := c.paramOf(curve.PointAt(t0))
-	for i := 1; i <= imprintSampleCount; i++ {
-		t := t0 + (t1-t0)*float64(i)/imprintSampleCount
+	return c.emitSegments(curve, curveOwnParams(curve, t0, t1))
+}
+
+// curveOwnParams is an analytic curve's OWN sampling grid, restricted to (t0, t1) and closed with that
+// range's endpoints — the same shape sampleVertices gives a polyline, and for the same reason.
+//
+// The two sides of an imprint clip the SAME curve to DIFFERENT parameter ranges (each to its own band),
+// so spreading a fixed count of samples across each range independently places the shared edge's points
+// somewhere different on each side, and curvedStitch cannot fuse two boundaries that do not share
+// vertices: a crossing-cylinder intersect came back as three faces in THREE shells rather than one
+// (Oblikovati/Oblikovati#3489). Anchoring the grid to the curve's whole domain makes the sample set a
+// function of the CURVE, so wherever the two ranges overlap the points coincide exactly.
+func curveOwnParams(curve geom.Curve3, t0, t1 float64) []float64 {
+	lo, hi := curve.Domain()
+	ts := []float64{t0}
+	if !stdmath.IsInf(lo, 0) && !stdmath.IsInf(hi, 0) {
+		for i := 0; i <= imprintSampleCount; i++ {
+			if t := lo + (hi-lo)*float64(i)/imprintSampleCount; t > t0 && t < t1 {
+				ts = append(ts, t)
+			}
+		}
+	}
+	if len(ts) == 1 { // an unbounded curve has no domain grid to anchor to: space the range itself
+		for i := 1; i < imprintSampleCount; i++ {
+			ts = append(ts, t0+(t1-t0)*float64(i)/imprintSampleCount)
+		}
+	}
+	return append(ts, t1)
+}
+
+// emitSegments turns an ordered parameter list into the tagged (u, v) segments the arrangement reads.
+func (c ruledUV) emitSegments(curve geom.Curve3, ts []float64) []uvSeg {
+	segs := make([]uvSeg, 0, len(ts))
+	prevT, prevP := ts[0], c.paramOf(curve.PointAt(ts[0]))
+	for _, t := range ts[1:] {
 		p := c.paramOf(curve.PointAt(t))
 		segs = append(segs, uvSeg{a: prevP, b: p, curve: curve, tA: prevT, tB: t, kind: segImprint})
 		prevT, prevP = t, p
@@ -1091,26 +1121,12 @@ func (c ruledUV) emitSeamRun(run []recoveredEdge) (loopEdge, bool) {
 }
 
 // isClosedCurve reports whether a curve closes on itself, so its parameter wraps and a boundary run along it
-// must be unwrapped to a monotone span before re-emission. An ellipse/circle always closes; a SpiricArc
-// closes only when it spans the WHOLE tube period (V0,V1 a full 2π, the two-oval band's branches) — a
-// single-oval branch over a partial v-range is an open arc that meets its twin at the oval pinches (#1406).
-func isClosedCurve(curve geom.Curve3) bool {
-	switch c := curve.(type) {
-	case geom.EllipseFull, geom.Circle:
-		return true
-	case geom.SpiricArc:
-		return stdmath.Abs(stdmath.Abs(c.V1-c.V0)-2*stdmath.Pi) < 1e-9
-	case *geom.Polyline:
-		// An SSI imprint loop is a closed polyline (first point ≈ last). Recognising it as closed makes
-		// emitImprintRun re-emit the WHOLE loop [lo,hi] from PointAt(0), so both operand sides emit the same
-		// shared edge and the welder fuses them (#1403). The gap gauge is the loop's own stitch
-		// resolution — a distance test, not grid-cell equality, so a genuinely closed loop cannot be
-		// misread as open by cell straddling (#1602).
-		gap := float64(c.PointAt(0).DistanceTo(c.PointAt(1)))
-		return gap <= geom.ResolutionForPoints(c.Vertices).Stitch()
-	}
-	return false
-}
+// must be unwrapped to a monotone span before re-emission. The answer comes from geom.CurveIsClosed — a
+// measurement of whether the curve's ends meet, against its own scale — because the type switch that used to
+// live here classed every curve kind it did not list as open, and the exact ruled∩quadric section then
+// skipped the closed-loop re-emission both walls rely on to weld (#3489). A full spiric band closes and a
+// single-oval branch does not, exactly as before, but now because their ends do or do not meet (#1406).
+func isClosedCurve(curve geom.Curve3) bool { return geom.CurveIsClosed(curve) }
 
 // sameRun reports whether two recovered edges belong to one re-emittable run: the same kind, and for an
 // imprint the same source curve, for a rim the same rim level (a rim sits at constant v, so equal v).

@@ -121,8 +121,12 @@ func (e *Edge) SetSnappedCurve(polyline []math.Point3, residual float64) {
 	e.snapped, e.tolerance = polyline, residual
 }
 
-// Tolerance returns the edge's recorded healing residual in model units (0 for a native/clean edge
-// whose curve already lies on its surfaces).
+// Tolerance returns the edge's ACHIEVED tolerance in model units: how far its stored geometry sits off
+// the exact curve it describes. It is 0 for an edge whose curve is exact — an analytic curve, or a
+// native chain that IS its own geometry — and >0 for an approximation: an import-healing residual
+// ([Edge.SetSnappedCurve]) or the chord deviation of a marched intersection polyline, which
+// [Builder.AddEdge] records from the curve itself (#3489). See [Body.AchievedBoundaryTolerance] for the
+// body-wide worst case.
 func (e *Edge) Tolerance() float64 { return e.tolerance }
 
 // StartVertex and EndVertex return the bounding vertices.
@@ -234,6 +238,18 @@ type Face struct {
 	// face on recompute, so no leak and no stale geometry), and written only by the single-threaded
 	// pick/tessellation path per body.
 	metricScaleMemo any
+	// trimUVMemo memoizes the brep-owned development of this face's boundary loops into the surface's
+	// (u,v) domain — the ring brep.PointInFaceTrim classifies against. Building it samples every loop
+	// edge and inverts each sample through geom.Surface.ParamAt, which for a B-spline surface is a
+	// multistart nearest-seed search; without the memo every containment query re-inverted the WHOLE
+	// boundary ring, so a point-to-face distance minimisation (brep.EntityDistance) paid that per
+	// evaluation and a self-intersection scan over a blended body did not finish (M48/C3, #3477).
+	// Same contract as pickTess and metricScaleMemo: opaque to topo (brep owns the payload type) and
+	// face-lifetime. It is SAFE because a Face is immutable once its body is built — loops are written
+	// only by the builder, and every operation that changes geometry builds new faces rather than
+	// mutating them (ops.ReplaceFaceSurface rebuilds through topo.NewBuilder), so the memo cannot go
+	// stale under its own face.
+	trimUVMemo any
 }
 
 func (f *Face) ID() uint64           { return f.id }
@@ -283,11 +299,29 @@ func (f *Face) MetricScaleMemo() any { return f.metricScaleMemo }
 // topology layer while giving the memo the face's lifetime.
 func (f *Face) SetMetricScaleMemo(v any) { f.metricScaleMemo = v }
 
+// TrimUVMemo returns the opaque, brep-owned memo of this face's boundary loops developed into the
+// surface's (u,v) domain (nil until the first containment query builds it). See the trimUVMemo field
+// for why it exists and why a face's immutability makes it safe.
+func (f *Face) TrimUVMemo() any { return f.trimUVMemo }
+
+// SetTrimUVMemo stores the brep-owned developed-boundary memo for this face. The payload is opaque to
+// topo (the brep package defines and type-asserts it), keeping parameter-space classification out of
+// the topology layer while giving the memo the face's lifetime.
+func (f *Face) SetTrimUVMemo(v any) { f.trimUVMemo = v }
+
 // Reversed reports whether the face's outward (material) side is OPPOSITE its surface
 // normal — true for the cut wall a Difference carves, where the surface (e.g. a cylinder's
 // outward-radial normal) points into the removed material. Tessellation and mass-properties
 // negate the surface normal for such faces. Most faces (sense agrees with surface) are false.
 func (f *Face) Reversed() bool { return f.reversed }
+
+// Shell returns the shell this face belongs to, or nil before the body is assembled. It lets a
+// face-local computation reach the solid it bounds — the mass-properties integrator needs the body
+// to certify which side of a closed surface its trim covers, because a loop's winding alone cannot
+// say (M48/C3, Oblikovati/Oblikovati#3453).
+//
+// Example: if sh := f.Shell(); sh != nil { inside := brep.PointInside(sh.Body(), p) }
+func (f *Face) Shell() *Shell { return f.shell }
 
 // Loops returns the face's boundary loops (outer first by construction).
 func (f *Face) Loops() []*Loop { return append([]*Loop(nil), f.loops...) }

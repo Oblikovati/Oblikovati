@@ -3,11 +3,13 @@
 package brep
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
-// Cylinder-wall splits for the mixed per-face boolean (ADR-0058). A full-band cylinder wall crossed
+// Ruled-wall splits for the mixed per-face boolean (ADR-0058). A full-band cylinder OR cone wall crossed
 // by the other operand's planar faces splits through the ruled (u,v) chart the curved boolean already
 // uses (cylinderSideSolidSplit): the imprint is the plane∩cylinder intersection clipped EXACTLY to the
 // tool face's polygonal trim, and the same clipped curves are MIRRORED onto the tool faces so both
@@ -23,7 +25,7 @@ import (
 func wallImprints(p, other *facePartition, otherImp [][][2]math.Point3) ([][]geom.Curve3, bool) {
 	out := make([][]geom.Curve3, len(p.wall))
 	for i, wf := range p.wall {
-		box := inflateBox(p.wallBox[i], facePairCullPad)
+		box := inflateBox(p.wallBox[i])
 		if wallOverlapsUncovered(box, other) {
 			return nil, false
 		}
@@ -42,27 +44,54 @@ func wallImprints(p, other *facePartition, otherImp [][][2]math.Point3) ([][]geo
 }
 
 // wallOverlapsUncovered reports a wall box overlapping an other-operand face the ruling imprint cannot
-// cover (a uv or pass face — curved-vs-curved contact stays with the bespoke handlers).
+// cover (a wall or pass face — curved-vs-curved contact stays with the bespoke handlers). A uv face is
+// NOT uncovered any more: pairUVWallImprints imprints every uv×wall pair in closed form (#3460).
 func wallOverlapsUncovered(box math.Box, other *facePartition) bool {
-	return boxesOverlapAny(box, other.uvBox) || boxesOverlapAny(box, other.wallBox) || boxesOverlapAny(box, other.passBox)
+	return boxesOverlapAny(box, other.wallBox) || boxesOverlapAny(box, other.passBox)
 }
 
-// wallPairImprint is the exact shared imprint of one (wall, planar face) pair: every plane∩cylinder
+// ruledSide is a wall face resolved to the ruled surface it lies on, its rim band, and its axis —
+// everything the imprint and the split need without knowing whether it is a cylinder or a cone.
+type ruledSide struct {
+	surface geom.Surface
+	band    coneSideBand_
+	axis    math.Vector3
+}
+
+// ruledSideBandOf resolves a wall face to its ruled side. A cylinder is the degenerate cone, and the
+// band model already carries a separate bottom and top radius, so both go through one description
+// (ADR-0058: the dispatch buckets faces by REPRESENTATION — here "ruled band" — not by surface type).
+// ok=false for anything that is not a full periodic side band.
+func ruledSideBandOf(f curvedFace) (ruledSide, bool) {
+	if cyl, band, ok := fullCylinderSideBand(f); ok {
+		return ruledSide{surface: cyl, band: band, axis: cyl.AxisDir.AsVector()}, true
+	}
+	if cone, band, ok := fullConeSideBand(f); ok {
+		return ruledSide{surface: cone, band: band, axis: cone.AxisDir.AsVector()}, true
+	}
+	return ruledSide{}, false
+}
+
+// size is the band's characteristic length, for the resolution its intersections are taken at.
+func (r ruledSide) size() float64 {
+	return 2*stdmath.Max(r.band.rBot, r.band.rTop) + (r.band.vMax - r.band.vMin)
+}
+
+// wallPairImprint is the exact shared imprint of one (wall, planar face) pair: every plane∩wall
 // ruling line clipped to the tool face's trim, emitted as segments for the wall AND mirrored onto the
 // tool's polygonal imprint list. A circle/ellipse curve entering the tool trim declines (v1).
 func wallPairImprint(wf, of curvedFace, otherImp [][][2]math.Point3, j int) ([]geom.Curve3, bool) {
-	cyl, band, ok := fullCylinderSideBand(wf)
+	rs, ok := ruledSideBandOf(wf)
 	if !ok {
 		return nil, false
 	}
-	res := geom.ResolutionForSize(2*cyl.Radius + (band.vMax - band.vMin))
-	curves, handled := geom.IntersectSurfacesAnalytic(facePlane(of), cyl, res)
+	curves, handled := geom.IntersectSurfacesAnalytic(facePlane(of), rs.surface, geom.ResolutionForSize(rs.size()))
 	if !handled {
 		return nil, false
 	}
 	var out []geom.Curve3
 	for _, cv := range curves {
-		segs, ok := wallCurveSegments(cv, of, cyl, band)
+		segs, ok := wallCurveSegments(cv, of, rs.axis, rs.band)
 		if !ok {
 			return nil, false
 		}
@@ -74,10 +103,12 @@ func wallPairImprint(wf, of curvedFace, otherImp [][][2]math.Point3, j int) ([]g
 	return out, true
 }
 
-// wallCurveSegments clips one plane∩cylinder curve to the tool face's exact trim. A ruling line
-// yields its polygon intervals as segments; a circle/ellipse that stays wholly clear of the trim
-// yields nothing; one that enters it declines (the v1 conic-mirror gap).
-func wallCurveSegments(cv geom.Curve3, of curvedFace, cyl geom.Cylinder, band coneSideBand_) ([][2]math.Point3, bool) {
+// wallCurveSegments clips one plane∩wall curve to the tool face's exact trim. A ruling line yields
+// its polygon intervals as segments; a circle/ellipse that stays wholly clear of the trim yields
+// nothing; one that enters it declines (the v1 conic-mirror gap). It takes the wall's AXIS rather
+// than a cylinder, so a cone side band goes through the same clip (ADR-0058: the wall route is the
+// ruled route, not the cylinder route).
+func wallCurveSegments(cv geom.Curve3, of curvedFace, axis math.Vector3, band coneSideBand_) ([][2]math.Point3, bool) {
 	switch c := cv.(type) {
 	case geom.Line:
 		var segs [][2]math.Point3
@@ -88,9 +119,9 @@ func wallCurveSegments(cv geom.Curve3, of curvedFace, cyl geom.Cylinder, band co
 		}
 		return segs, true
 	case geom.Circle:
-		return nil, !conicTouchesTool(cv, of, cyl, band, 0)
+		return nil, !conicTouchesTool(cv, of, axis, band, 0)
 	case geom.EllipseFull:
-		return nil, !conicTouchesTool(cv, of, cyl, band, ellipseAxialAmplitude(c, cyl))
+		return nil, !conicTouchesTool(cv, of, axis, band, ellipseAxialAmplitude(c, axis))
 	default:
 		return nil, false
 	}
@@ -116,11 +147,11 @@ func wallSplitOne(wf curvedFace, imprint []geom.Curve3, other insideOracle, op O
 	if len(imprint) == 0 {
 		return passThroughKept([]curvedFace{wf}, other, op, isB)
 	}
-	cyl, band, ok := fullCylinderSideBand(wf)
+	rs, ok := ruledSideBandOf(wf)
 	if !ok {
 		return nil, false
 	}
-	faces, _, err := cylinderSideSolidSplit(wf, cyl, band, imprint, op, isB, other.inside)
+	faces, _, err := curvedSideSolidSplit(wf, rs.surface, rs.band, imprint, op, isB, other.inside)
 	if err != nil {
 		return nil, false
 	}

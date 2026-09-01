@@ -326,12 +326,18 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 132 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 132 (114 base + 17 wave greens + W3)", simpleGreen)
+	// 132 → 127 on 2026-09-01: J5/K7/L1/L7/N5 left the green count because their results genuinely
+	// SELF-INTERSECT (#3491) — found when isWatertightSolid began reading the exact face-pair scan
+	// (#3477) instead of a tessellation too coarse to see a 0.03 overlap. The bodies are bit-identical
+	// at the branch point, so the green they held was the detector's blindness, not parity. Their
+	// pendingCapability entries fail loudly the moment each is fixed, pulling this number back up.
+	if simpleGreen != 127 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 127 (114 base + 17 wave greens + W3, "+
+			"minus the 5 self-intersecting results of #3491)", simpleGreen)
 	}
-	if allGridGreen != 148 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 148 (132 simple + 11 bfuseblend-only "+
-			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→148)", allGridGreen)
+	if allGridGreen != 143 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 143 (127 simple + 11 bfuseblend-only "+
+			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→148→143 by #3491)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+

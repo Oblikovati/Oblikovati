@@ -61,7 +61,9 @@ func TestBossRaisesStudOfExactVolume(t *testing.T) {
 	if r := ops.Validate(res[0]); !r.Valid || !res[0].IsSolid() {
 		t.Fatalf("bossed body not a valid solid: %+v", r)
 	}
-	want := 32 + holeCylinderArea(0.5)*1.5
+	// The boss still raises the FACETED drillTool prism (the result body is all geom.Plane), so the
+	// exact stud is the 32-gon's, not π/4·1.5 — unlike a drilled hole, which takes the exact path.
+	want := 32 + drillToolPrismArea(0.5)*1.5
 	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("bossed volume = %g, want %g (block + Ø1×1.5 stud)", got, want)
 	}
@@ -96,7 +98,7 @@ func TestPatternOfBossReplicatesStuds(t *testing.T) {
 	if len(res) != 1 {
 		t.Fatalf("pattern of a boss → %d bodies, want 1", len(res))
 	}
-	stud := holeCylinderArea(0.5) * 1.5
+	stud := drillToolPrismArea(0.5) * 1.5 // a boss is the faceted prism at every occurrence
 	want := 32 + 2*stud
 	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("patterned-boss volume = %g, want %g (block + 2 studs)", got, want)
@@ -104,8 +106,10 @@ func TestPatternOfBossReplicatesStuds(t *testing.T) {
 }
 
 func TestHoleDrillsThroughForReal(t *testing.T) {
-	// A 4×4×2 block (vol 32). Drill a Ø2 hole through the top face → removes the
-	// 32-gon cylinder of radius 1 over the full thickness 2.
+	// A 4×4×2 block (vol 32). Drill a Ø2 hole through the top face → removes a TRUE cylinder of
+	// radius 1 over the full thickness 2. The result carries geom.Cylinder:1 + geom.Plane:6, and
+	// mass properties integrate that analytic B-rep (M48/C3 #3453), so the exact answer is πr²h —
+	// the 32-gon area this used to expect was only what the old tessellated measurement returned.
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // end cap (z=2), normal +Z
 
@@ -124,7 +128,7 @@ func TestHoleDrillsThroughForReal(t *testing.T) {
 	if r := ops.Validate(res[0]); !r.Valid || !res[0].IsSolid() {
 		t.Fatalf("drilled body not a valid solid: %+v", r)
 	}
-	want := 32 - holeCylinderArea(1)*2 // block − through cylinder
+	want := 32 - stdmath.Pi*1*1*2 // block − the through cylinder, πr²h
 	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("drilled volume = %g, want %g (32 − Ø2 through hole)", got, want)
 	}
@@ -162,9 +166,13 @@ func TestHoleDrillsAtExplicitCenter(t *testing.T) {
 	if stdmath.Abs(bore.Origin.X-2) > 1e-6 || stdmath.Abs(bore.Origin.Y-3) > 1e-6 {
 		t.Errorf("bore axis at (%g,%g), want the explicit centre (2,3)", bore.Origin.X, bore.Origin.Y)
 	}
-	want := 64 - stdmath.Pi*1*1*2 // block − Ø2 through cylinder
-	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; (want-got)/want > 0.03 {
-		t.Errorf("drilled volume = %g, want a hair under %g (64 − Ø2 through hole)", got, want)
+	// The bore is a real geom.Cylinder, so the volume is the closed form exactly — not the "hair
+	// under" an inscribed 32-gon mesh used to report (M48/C3 #3453).
+	// The block is 8×8×2 = 128; the old one-sided "no more than 3% under" band could not fail for
+	// a want that was too SMALL, so it never noticed the 64 written here.
+	want := 8.0*8.0*2.0 - stdmath.Pi*1*1*2 // block − Ø2 through cylinder
+	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+		t.Errorf("drilled volume = %g, want %g (64 − Ø2 through hole)", got, want)
 	}
 }
 
@@ -194,11 +202,13 @@ func TestHoleThroughAllProducesCylinderWall(t *testing.T) {
 	if cylFaces != 1 {
 		t.Errorf("through-all hole has %d cylinder faces, want 1 (a true wall, not faceted)", cylFaces)
 	}
-	// Removed = an inscribed Ø2 cylinder over thickness 2: a hair under π·1²·2.
+	// Removed = a Ø2 cylinder over thickness 2, EXACTLY π·1²·2. It used to be "a hair under",
+	// because the measurement inscribed a 32-gon in the wall; it now integrates the analytic
+	// cylinder face itself (M48/C3 #3453), so the closed form is the answer, not a bound.
 	bore := stdmath.Pi * 1 * 1 * 2
 	removed := 32 - ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume
-	if removed > bore+1e-9 || (bore-removed)/bore > 0.03 {
-		t.Errorf("removed = %g, want a hair under %g (π·r²·h)", removed, bore)
+	if stdmath.Abs(removed-bore) > 1e-6 {
+		t.Errorf("removed = %g, want %g (π·r²·h)", removed, bore)
 	}
 }
 
@@ -227,11 +237,12 @@ func TestBlindHoleProducesCylinderWallAndFlatBottom(t *testing.T) {
 	if cyl != 1 {
 		t.Errorf("blind hole has %d cylinder faces, want 1 (true wall, not faceted)", cyl)
 	}
-	// Removed = an inscribed Ø2 cylinder 1 deep: a hair under π·1²·1.
+	// Removed = a Ø2 cylinder 1 deep, EXACTLY π·1²·1 — the wall is analytic and so is the
+	// integral over it (M48/C3 #3453); the old inscribed-mesh deficit is gone.
 	bore := stdmath.Pi * 1 * 1 * 1
 	removed := 32 - ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume
-	if removed > bore+1e-9 || (bore-removed)/bore > 0.03 {
-		t.Errorf("removed = %g, want a hair under %g (π·r²·depth)", removed, bore)
+	if stdmath.Abs(removed-bore) > 1e-6 {
+		t.Errorf("removed = %g, want %g (π·r²·depth)", removed, bore)
 	}
 }
 
@@ -263,12 +274,14 @@ func TestCounterboreHoleProducesTwoWallsAndShoulder(t *testing.T) {
 	if cyl != 2 {
 		t.Errorf("counterbore has %d cylinder faces, want 2 (recess wall + bore wall)", cyl)
 	}
-	// Removed = recess (Ø4 over the top 1) + bore (Ø2 over the remaining 3): inscribed, a hair
-	// under the analytic sum (the bore only removes material below the shoulder).
+	// Removed = recess (Ø4 over the top 1) + bore (Ø2 over the remaining 3) — the analytic sum
+	// EXACTLY. Both walls are real geom.Cylinders and the integral runs over them (M48/C3 #3453),
+	// so "inscribed, a hair under" no longer describes the measurement: it now overshoots the
+	// closed form by ~1e-9 of double round-off, which the old one-sided bound rejected.
 	removed := 8.0*8.0*4.0 - ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 	want := stdmath.Pi*2*2*1 + stdmath.Pi*1*1*3
-	if removed > want+1e-9 || (want-removed)/want > 0.03 {
-		t.Errorf("removed = %g, want a hair under %g (recess + bore)", removed, want)
+	if stdmath.Abs(removed-want) > 1e-6 {
+		t.Errorf("removed = %g, want %g (recess + bore)", removed, want)
 	}
 }
 

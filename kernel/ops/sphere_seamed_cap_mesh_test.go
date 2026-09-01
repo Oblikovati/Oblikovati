@@ -179,14 +179,14 @@ func TestSpherePatchGridClampIsDiagnosed(t *testing.T) {
 		ring[i] = math.P3(math.Scalar(radius*stdmath.Sin(2*stdmath.Pi/3)*c),
 			math.Scalar(radius*stdmath.Sin(2*stdmath.Pi/3)*s), math.Scalar(radius*stdmath.Cos(2*stdmath.Pi/3)))
 	}
-	fine, ok := spherePatchMesh(sph, ring, nil, Quality{ChordTolerance: 1e-3, AngleTolerance: stdmath.Pi / 180})
+	fine, ok := spherePatchMesh(nil, sph, ring, nil, Quality{ChordTolerance: 1e-3, AngleTolerance: stdmath.Pi / 180})
 	if !ok {
 		t.Fatal("spherePatchMesh declined the 120° cap rim")
 	}
 	if !hasDiag(fine.Diagnostics, CodeTessellateCapSaturated) {
 		t.Fatalf("grid budget-scaled below chord tol 1e-3 but no %s diagnostic on the mesh", CodeTessellateCapSaturated)
 	}
-	coarse, ok := spherePatchMesh(sph, ring, nil, Quality{ChordTolerance: 0.5, AngleTolerance: stdmath.Pi / 180})
+	coarse, ok := spherePatchMesh(nil, sph, ring, nil, Quality{ChordTolerance: 0.5, AngleTolerance: stdmath.Pi / 180})
 	if !ok {
 		t.Fatal("spherePatchMesh declined the 120° cap rim at the coarse tolerance")
 	}

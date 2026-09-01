@@ -22,7 +22,7 @@ func squareLoop(dx float64) geom.Polyline {
 }
 
 func TestTypicalLoopChord(t *testing.T) {
-	got := typicalLoopChord([]geom.Polyline{squareLoop(0), squareLoop(5)})
+	got := typicalLoopChord([]geom.Curve3{squareLoop(0), squareLoop(5)})
 	if stdmath.Abs(got-1) > 1e-9 { // every edge is a unit segment
 		t.Errorf("typicalLoopChord = %g, want 1", got)
 	}
@@ -40,26 +40,26 @@ func TestInterLoopMinDistance(t *testing.T) {
 
 func TestLoopGapChordRatio(t *testing.T) {
 	// gap 4, chord 1 → ratio 4.
-	if got := loopGapChordRatio([]geom.Polyline{squareLoop(0), squareLoop(5)}); stdmath.Abs(got-4) > 1e-9 {
+	if got := loopGapChordRatio([]geom.Curve3{squareLoop(0), squareLoop(5)}); stdmath.Abs(got-4) > 1e-9 {
 		t.Errorf("loopGapChordRatio(separated) = %g, want 4", got)
 	}
 	// Not exactly two loops → +Inf (never gated as near-pinch).
-	if got := loopGapChordRatio([]geom.Polyline{squareLoop(0)}); !stdmath.IsInf(got, 1) {
+	if got := loopGapChordRatio([]geom.Curve3{squareLoop(0)}); !stdmath.IsInf(got, 1) {
 		t.Errorf("loopGapChordRatio(one loop) = %g, want +Inf", got)
 	}
 }
 
 func TestNearPinchLoops(t *testing.T) {
 	// gap 4, chord 1 → ratio 4 ≥ κ: well separated, not near-pinch.
-	if nearPinchLoops([]geom.Polyline{squareLoop(0), squareLoop(5)}) {
+	if nearPinchLoops([]geom.Curve3{squareLoop(0), squareLoop(5)}) {
 		t.Error("well-separated loops (ratio 4) classified as near-pinch")
 	}
 	// gap 0.3 (loop at x∈[1.3,2.3] vs [0,1] → nearest x=1 and x=1.3), chord 1 → ratio 0.3 < κ: near-pinch.
-	if !nearPinchLoops([]geom.Polyline{squareLoop(0), squareLoop(1.3)}) {
+	if !nearPinchLoops([]geom.Curve3{squareLoop(0), squareLoop(1.3)}) {
 		t.Error("narrow-neck loops (ratio 0.3) not classified as near-pinch")
 	}
 	// A single loop is never a near-pinch pair (partial-penetration imprints stay on the analytic path).
-	if nearPinchLoops([]geom.Polyline{squareLoop(0)}) {
+	if nearPinchLoops([]geom.Curve3{squareLoop(0)}) {
 		t.Error("a single loop classified as near-pinch")
 	}
 }

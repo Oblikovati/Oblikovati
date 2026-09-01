@@ -9,12 +9,12 @@ import (
 	"oblikovati.org/math"
 )
 
-// fluxFace is one face prepared for repeated winding queries: its surface, its trim loops projected into
-// (u, v) ONCE (loopToUV inverts ParamAt per sample — costly for a NURBS patch — so it must not run per
-// query), the quadrature rectangle, and the orientation sign.
+// fluxFace is one face prepared for repeated winding queries: its surface, its (u, v) region resolved
+// ONCE (see [trimRegion] — loopToUV inverts ParamAt per sample, costly for a NURBS patch, so it must not
+// run per query), the quadrature rectangle, and the orientation sign.
 type fluxFace struct {
 	cf     curvedFace // surface + trim loops, for the pointInTrimUV/rayGrazes helpers and NormalAt
-	polys  [][]math.Point2
+	region trimRegion
 	u0, u1 float64
 	v0, v1 float64
 	sign   float64 // orientation-normalized outward sign (orientFaceSigns): +1 when S_u×S_v points out
@@ -37,20 +37,20 @@ type fluxQuery struct {
 	faces []fluxFace
 }
 
-// newFluxQuery projects every face's trim into (u, v), captures its quadrature rectangle, and derives a
-// consistent outward orientation sign per face — see orientFaceSigns. The sign is derived from the loop
-// geometry, NOT the stored Face.Reversed flag, so an imported B-rep with inconsistent normal-side flags
-// still yields Σ Ω = 4π inside.
+// newFluxQuery resolves every face's (u, v) region ([faceTrimRegion] — the trim rings AND which side of
+// them the face is), captures its quadrature rectangle, and derives a consistent outward orientation sign
+// per face — see orientFaceSigns. The sign is derived from the loop geometry, NOT the stored
+// Face.Reversed flag, so an imported B-rep with inconsistent normal-side flags still yields Σ Ω = 4π
+// inside.
 func newFluxQuery(faces []curvedFace) *fluxQuery {
 	q := &fluxQuery{faces: make([]fluxFace, 0, len(faces))}
 	for _, f := range faces {
-		uPer, vPer := surfacePeriodic(f.surface)
-		polys := trimPolys(f, uPer, vPer)
-		u0, u1, v0, v1, ok := fluxDomain(f, polys)
+		region := faceTrimRegion(f)
+		u0, u1, v0, v1, ok := fluxDomain(f, region)
 		if !ok {
 			continue
 		}
-		q.faces = append(q.faces, fluxFace{f, polys, u0, u1, v0, v1, 1})
+		q.faces = append(q.faces, fluxFace{f, region, u0, u1, v0, v1, 1})
 	}
 	for i, s := range orientFaceSigns(q.faces) {
 		q.faces[i].sign = s
@@ -79,39 +79,9 @@ func (q *fluxQuery) windingInside(p math.Point3) bool {
 		f := &q.faces[i]
 		// Halfway between the two attractors (0 outside, 4π inside): robust to the O(tolerance) residual the
 		// quadrature leaves on a non-watertight import, where the field lands near but not exactly on 4π/0.
-		total += f.sign * integrateFluxCell(f.cf.surface, p, f.polys, f.u0, f.u1, f.v0, f.v1, 0)
+		total += f.sign * integrateFluxCell(f.cf.surface, p, f.region, f.u0, f.u1, f.v0, f.v1, 0)
 	}
 	return stdmath.Abs(total) > 2*stdmath.Pi
-}
-
-// trimPolys projects every loop of the face into one continuous (u, v) polyline (reusing loopToUV's seam
-// unwrapping). A boundaryless face returns nil — its whole finite domain is integrated.
-func trimPolys(f curvedFace, uPer, vPer bool) [][]math.Point2 {
-	if len(f.loops) == 0 {
-		return nil
-	}
-	polys := make([][]math.Point2, 0, len(f.loops))
-	for _, loop := range f.loops {
-		if poly := loopToUV(f.surface, loop, uPer, vPer); len(poly) >= 3 {
-			polys = append(polys, poly)
-		}
-	}
-	return polys
-}
-
-// fluxDomain is the (u, v) rectangle the quadrature covers: the loops' unwrapped bounding box when the
-// face is trimmed, else the surface's finite domain. It fails (ok=false) only for a face whose domain is
-// unbounded AND untrimmed, which a closed body never has.
-func fluxDomain(f curvedFace, polys [][]math.Point2) (u0, u1, v0, v1 float64, ok bool) {
-	if len(polys) > 0 {
-		return polyBounds(polys)
-	}
-	ul, uh := f.surface.UDomain()
-	vl, vh := f.surface.VDomain()
-	if stdmath.IsInf(ul, 0) || stdmath.IsInf(uh, 0) || stdmath.IsInf(vl, 0) || stdmath.IsInf(vh, 0) {
-		return 0, 0, 0, 0, false
-	}
-	return ul, uh, vl, vh, true
 }
 
 // polyBounds is the axis-aligned (u, v) bounding box of every polyline vertex.
@@ -149,17 +119,17 @@ const fluxRefineRatio = 0.35 // tol:numeric — cell 3D span : distance-to-p rat
 // wholly outside the trim contributes nothing; a cell is split while it is below the base grid or its
 // near-p integrand peak is unresolved; a resolved leaf contributes its midpoint estimate weighted by the
 // fraction of the cell inside the trim (1 for an interior leaf, a sampled fraction for a boundary leaf).
-func integrateFluxCell(s geom.Surface, p math.Point3, polys [][]math.Point2, u0, u1, v0, v1 float64, depth int) float64 {
+func integrateFluxCell(s geom.Surface, p math.Point3, r trimRegion, u0, u1, v0, v1 float64, depth int) float64 {
 	um, vm := 0.5*(u0+u1), 0.5*(v0+v1)
-	frac := cellTrimFraction(polys, u0, u1, v0, v1)
+	frac := cellTrimFraction(r, u0, u1, v0, v1)
 	if frac == 0 {
 		return 0
 	}
 	if depth < baseFluxDepth || (depth < maxFluxDepth && cellNeedsSplit(s, p, u0, u1, v0, v1)) {
-		return integrateFluxCell(s, p, polys, u0, um, v0, vm, depth+1) +
-			integrateFluxCell(s, p, polys, um, u1, v0, vm, depth+1) +
-			integrateFluxCell(s, p, polys, u0, um, vm, v1, depth+1) +
-			integrateFluxCell(s, p, polys, um, u1, vm, v1, depth+1)
+		return integrateFluxCell(s, p, r, u0, um, v0, vm, depth+1) +
+			integrateFluxCell(s, p, r, um, u1, v0, vm, depth+1) +
+			integrateFluxCell(s, p, r, u0, um, vm, v1, depth+1) +
+			integrateFluxCell(s, p, r, um, u1, vm, v1, depth+1)
 	}
 	return fluxIntegrand(s, p, um, vm) * (u1 - u0) * (v1 - v0) * frac
 }
@@ -202,20 +172,18 @@ func minDist(p math.Point3, pts ...math.Point3) float64 {
 	return best
 }
 
-// cellTrimFraction estimates the fraction of a (u, v) cell inside the trim loops from a 5-point sample
+// cellTrimFraction estimates the fraction of a (u, v) cell inside the face's REGION from a 5-point sample
 // (centre + four corners): 1 for a fully-interior cell, 0 for a fully-exterior one, and the sampled ratio
-// for a boundary cell. An untrimmed face (no polys) is entirely inside. A boundary cell near p is split
-// further (its fraction is then re-sampled on the smaller children, converging on the true boundary); a
-// boundary cell far from p is left as a leaf, where its small flux tolerates the coarse fraction.
-func cellTrimFraction(polys [][]math.Point2, u0, u1, v0, v1 float64) float64 {
-	if len(polys) == 0 {
-		return 1
-	}
+// for a boundary cell. The region — not the rings — is sampled, so a face that is its rings' complement
+// is integrated over the side it actually occupies. A boundary cell near p is split further (its fraction
+// is then re-sampled on the smaller children, converging on the true boundary); a boundary cell far from
+// p is left as a leaf, where its small flux tolerates the coarse fraction.
+func cellTrimFraction(r trimRegion, u0, u1, v0, v1 float64) float64 {
 	um, vm := 0.5*(u0+u1), 0.5*(v0+v1)
 	pts := [5]math.Point2{math.P2(um, vm), math.P2(u0, v0), math.P2(u1, v0), math.P2(u0, v1), math.P2(u1, v1)}
 	inCount := 0
 	for _, q := range pts {
-		if pointInLoops2D(polys, q) {
+		if r.contains(q) {
 			inCount++
 		}
 	}

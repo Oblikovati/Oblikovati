@@ -110,9 +110,11 @@ func retraceDebtIndex() map[string]retraceDebtEntry {
 // qualities — so their knownMeshLeaks rows went with them, which is the correspondence that table
 // predicted ("closing the retracing root should retire these four").
 //
-// MEASURING FUNCTION: ops.RetracingFaceLoops on faceOuterBoundary+faceHoleBoundaries developed by
-// toUVLoops into the surface's metric chart, QUALITY ops.PropertyQuality() (the parity path). The
-// quantity is a LENGTH in that chart — a retrace encloses zero area, so there is no area to quote.
+// MEASURING FUNCTION: ops.RetracingFaceLoops on the EDGES' OWN CURVES — pairwise coincident spans of
+// one loop's edge uses, traversed in opposite senses (M48/C3, Oblikovati/Oblikovati#3475). The quantity
+// is an ARC LENGTH on those curves — a retrace encloses zero area, so there is no area to quote. It
+// reads no tessellation, so the Quality this test still passes is ignored; the numbers below were
+// measured through the earlier chart predicate at ops.PropertyQuality() and are unchanged by the move.
 //
 // ★ AND EVERY ONE OF THEM HAS A CLOSED-FORM TARGET: the retraced length is the SETBACK the blend
 // applies to that face, i.e. the fillet radius. simple/N6 r=5 → 5, simple/W2 r=0.2 → 0.2. Measured

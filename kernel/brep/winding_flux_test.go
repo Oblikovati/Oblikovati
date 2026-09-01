@@ -15,7 +15,7 @@ func fluxTotal(q *fluxQuery, p math.Point3) float64 {
 	total := 0.0
 	for i := range q.faces {
 		f := &q.faces[i]
-		total += f.sign * integrateFluxCell(f.cf.surface, p, f.polys, f.u0, f.u1, f.v0, f.v1, 0)
+		total += f.sign * integrateFluxCell(f.cf.surface, p, f.region, f.u0, f.u1, f.v0, f.v1, 0)
 	}
 	return total
 }

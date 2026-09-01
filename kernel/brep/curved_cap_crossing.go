@@ -93,7 +93,7 @@ type capCrossPlan struct {
 	tgt, tool ruledOperand
 	exitCap   curvedFace
 	ellipse   geom.EllipseFull
-	entry     []geom.Polyline
+	entry     []geom.Curve3
 }
 
 // classifyCapCross recognises the slice-1 interior-exit cap-crossing, or ok=false for anything outside it
@@ -177,7 +177,7 @@ func CapCrossingCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.B
 // inner-loop hole), the target's other caps whole, and the tool wall kept INSIDE the target — a tube
 // between the entry hole and the exit ellipse — reversed into the cavity. One genus-1 tunnel solid (χ=0).
 func buildCapCrossCut(p capCrossPlan) (*topo.Body, bool) {
-	wallImprint := polylineCurves(p.entry)
+	wallImprint := p.entry
 	wall, okW := p.tgt.split(wallImprint, Difference, false, p.tool.inside)
 	// The tool tunnel's two boundary loops are the wall-entry hole and the cap-exit ellipse. Feed the ellipse
 	// by VALUE, not &p.ellipse: curvedStitch's edgeCurveFor switches on the CONCRETE curve type (case

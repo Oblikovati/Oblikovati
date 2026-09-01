@@ -23,7 +23,7 @@ import (
 // or ok=false when the two bodies are not one bare cone and one bare cylinder, or no closed loop is traced.
 // The cone is the trace base, windowed to its apex-distance band [vMin, vMax]; the periodic angular
 // direction is left to the tracer.
-func coneCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
+func coneCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Curve3, bool) {
 	if _, _, _, _, ok := coneAndCylinder(a, b); !ok {
 		return nil, false
 	}

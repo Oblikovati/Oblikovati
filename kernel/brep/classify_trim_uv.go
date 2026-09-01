@@ -28,25 +28,13 @@ const domainPeriodTol = 1e-9 // tol:parametric — angular domain span ≈ 2π
 // surface has no non-periodic, UNBOUNDED axis to cast the even-odd ray toward (a sphere's latitude ends
 // at a pole; a torus wraps both ways), it defers to the geodesic winding, which needs no exterior
 // endpoint.
+// It develops the loops on every call. A caller holding a topo.Face should reach it through
+// [faceTrimUVOf] instead, which memoizes that development on the face — the projection does not depend
+// on the query point, and on a B-spline surface it costs a NURBS inversion per loop sample (#3477).
+// This entry stays for the synthesized curvedFaces the curved boolean classifies before any topo.Face
+// exists for them.
 func pointInTrimUV(f curvedFace, p math.Point3) bool {
-	if len(f.loops) == 0 {
-		return true
-	}
-	uPer, vPer := surfacePeriodic(f.surface)
-	alongV, ok := castAxis(f.surface, uPer, vPer)
-	if !ok {
-		return pointInCurvedFace(f, p) // sphere / torus: no unbounded axis; use the pole-free geodesic winding
-	}
-	up, vp := f.surface.ParamAt(p)
-	total := 0
-	for _, loop := range f.loops {
-		poly := loopToUV(f.surface, loop, uPer, vPer)
-		if len(poly) < 2 {
-			continue
-		}
-		total += loopRayCrossings(math.P2(up, vp), poly, uPer, vPer, alongV)
-	}
-	return total%2 == 1
+	return developFaceTrim(f).contains(p)
 }
 
 // castAxis picks the parameter axis the even-odd containment ray travels along toward "outside": a
@@ -180,8 +168,22 @@ func raySegmentCrosses(q, a, b math.Point2, alongV bool) bool {
 
 // loopToUV walks a loop's edges into a continuous (u, v) polyline: each sample's periodic parameter is
 // shifted to the branch of the previous sample, so an edge crossing the u=0≡2π seam stays monotone
-// rather than jumping a full turn.
+// rather than jumping a full turn. The walk is then repaired across a parametric POLE, where
+// continuity alone picks the wrong branch (see bridgePoleBranch).
 func loopToUV(s geom.Surface, loop curvedLoop, uPer, vPer bool) []math.Point2 {
+	ring := unwrapLoopRing(s, loop, uPer, vPer)
+	if uPer {
+		ring = bridgePoleBranch(s, ring, false)
+	}
+	if vPer {
+		ring = bridgePoleBranch(s, ring, true)
+	}
+	return ring
+}
+
+// unwrapLoopRing samples every edge of the loop in traversal order and shifts each sample's periodic
+// parameters to the branch of the previous sample, so the polyline stays continuous across the seam.
+func unwrapLoopRing(s geom.Surface, loop curvedLoop, uPer, vPer bool) []math.Point2 {
 	var ring []math.Point2
 	for _, e := range loop.edges {
 		for k := 0; k < trimUVSamples; k++ {
@@ -192,6 +194,83 @@ func loopToUV(s geom.Surface, loop curvedLoop, uPer, vPer bool) []math.Point2 {
 		}
 	}
 	return ring
+}
+
+// bridgePoleBranch repairs a ring that fails to close along its periodic axis because the loop runs
+// THROUGH a parametric pole — a cone apex, a sphere pole — where the surface collapses to a point and
+// every periodic value names it. The loop's two sides of the slit are the SAME 3-D curve there, so
+// continuity pins both to one branch and the ring degenerates to a zero-area sliver. That sliver made
+// a full cone's side face integrate to no volume, which flipped the whole body's derived outward
+// orientation and reported every INTERIOR point of the cone as outside
+// (Oblikovati/Oblikovati#3447). A ring that closes, and a genuine full-turn circuit with no pole on
+// it (a rim circle bounding a band), are both returned untouched.
+func bridgePoleBranch(s geom.Surface, ring []math.Point2, periodicIsV bool) []math.Point2 {
+	turns := ringMissingTurns(ring, periodicIsV)
+	if turns == 0 {
+		return ring
+	}
+	pole, found := poleSampleIndex(s, ring, periodicIsV)
+	if !found {
+		return ring
+	}
+	return rebranchRingTail(ring, pole, turns*2*stdmath.Pi, periodicIsV)
+}
+
+// ringMissingTurns is the whole number of turns the ring's periodic coordinate is short of returning
+// to its start. It is 0 for a ring that closes in the plane and ±1 for a loop that circles the seam
+// once — the pole probe, not this count, is what tells those two apart.
+func ringMissingTurns(ring []math.Point2, periodicIsV bool) float64 {
+	if len(ring) < 2 {
+		return 0
+	}
+	gap := ring[0].X - ring[len(ring)-1].X
+	if periodicIsV {
+		gap = ring[0].Y - ring[len(ring)-1].Y
+	}
+	return stdmath.Round(gap / (2 * stdmath.Pi))
+}
+
+// poleSampleIndex returns the first ring sample sitting on a parametric pole. Only the first is
+// sought: a loop that crosses two poles (a full lune) closes in the plane and never reaches here.
+func poleSampleIndex(s geom.Surface, ring []math.Point2, periodicIsV bool) (int, bool) {
+	for i, q := range ring {
+		if sampleOnPole(s, q, periodicIsV) {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
+// poleTangentRatio accepts a sample as a pole when its tangent along the PERIODIC axis has collapsed
+// against the transverse one — the same scale-free degeneracy signal edgeIsPole reads off a domain
+// edge, taken here at an interior parameter (a cone's apex is not a domain edge: its v is unbounded).
+const poleTangentRatio = 1e-9 // tol:numeric — periodic:transverse tangent ratio at a pole (dimensionless)
+
+// sampleOnPole reports whether the surface degenerates at (u, v) along its periodic axis, so that
+// axis names no direction there and the loop's branch across the point is free.
+func sampleOnPole(s geom.Surface, q math.Point2, periodicIsV bool) bool {
+	du, dv := s.DerivativesAt(q.X, q.Y)
+	along, across := du, dv
+	if periodicIsV {
+		along, across = dv, du
+	}
+	return float64(along.Length()) < poleTangentRatio*float64(across.Length())
+}
+
+// rebranchRingTail shifts the ring from the pole sample onward by delta, and keeps the pole sample on
+// BOTH branches so the traverse along the pole isoline becomes an explicit polygon edge instead of a
+// chord cutting across the region.
+func rebranchRingTail(ring []math.Point2, pole int, delta float64, periodicIsV bool) []math.Point2 {
+	out := make([]math.Point2, 0, len(ring)+1)
+	out = append(out, ring[:pole+1]...)
+	for _, q := range ring[pole:] {
+		if periodicIsV {
+			out = append(out, math.P2(q.X, q.Y+delta))
+			continue
+		}
+		out = append(out, math.P2(q.X+delta, q.Y))
+	}
+	return out
 }
 
 // continueUV shifts (u, v) by whole turns so each periodic coordinate stays within half a turn of the

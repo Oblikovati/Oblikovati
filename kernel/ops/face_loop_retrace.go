@@ -3,18 +3,20 @@
 package ops
 
 import (
-	stdmath "math"
+	"sort"
 
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// A face's developed boundary must not run BACK OVER ground it has already covered.
+// A face's boundary must not run BACK OVER ground it has already covered.
 //
 // THE GAP THIS CLOSES. SelfCrossingFaceLoops develops each face's boundary into its own metric chart
 // and asks simpleLoop2D's predicate — segmentsCross — whether two non-adjacent edges TRANSVERSALLY
 // intersect (both straddle tests strictly signed). A boundary that instead back-tracks along a
-// COLLINEAR sibling, running back over the top of a segment it already traversed, scores exactly ZERO
+// COLLINEAR sibling, running back over the top of a stretch it already traversed, scores exactly ZERO
 // under that predicate: two overlapping collinear segments never straddle each other's line, so every
 // orient2d in segmentsCross is 0 and `d1*d2 < 0` is false. The loop is just as malformed — it is not a
 // simple polygon and it has no well-defined interior — but nothing in the kernel saw it. Worse, the
@@ -29,91 +31,76 @@ import (
 // where (100,0,90)→(100,0,75) runs back along the closing (100,0,0)→(100,0,80) for z ∈ [75,80]. The
 // self-crossing ratchet's Y4 entry (23.9109) was a DIFFERENT face; this one was invisible.
 //
-// THE PREDICATE, AND WHY IT IS THIS AND NOT "ANY COLLINEAR PAIR". A legitimate loop routinely carries
-// collinear segments: a straight edge subdivided by discretization, or two consecutive edges that
-// happen to be parallel and meet end to end. Those cover DISJOINT ground and run the SAME way. The
+// ★ IT IS ASKED OF THE B-REP CURVES, NOT OF A DEVELOPMENT OF THEM (M48/C3, #3475). The predicate used
+// to run in the surface's metric chart on a boundary DISCRETIZED to the caller's Quality, and it needed
+// two guards to survive that: a collinearity budget, because a chart is not an isometry, and a 3D
+// corroboration step, because a chart is not always even a faithful ORDERING (a loop that starts on a
+// periodic seam leaps the whole period on its closing step; a sphere patch holding the chart's pole has
+// no single-valued u there). Both guards are gone, with the chart and the discretization: a retrace is
+// now measured where it lives, on the EDGES' OWN CURVES.
+//
+// THE PREDICATE, AND WHY IT IS THIS AND NOT "ANY COINCIDENT PAIR". A legitimate loop routinely carries
+// coincident-looking neighbours: a straight edge subdivided into collinear pieces, or two consecutive
+// edges that are parallel and meet end to end. Those cover DISJOINT ground and run the SAME way. The
 // violation is the boundary covering the same ground TWICE IN OPPOSITE SENSES, which is what makes the
 // covered stretch enclose zero area. So a retrace is, precisely:
 //
-//	two segments of one face loop that (1) develop collinear to within retraceCollinearTol of the
-//	loop's own chart diagonal, (2) share an interval of that common line of length at least
-//	retraceMinOverlap of the same diagonal, (3) traverse it in OPPOSITE directions, and (4) are
-//	CORROBORATED IN 3D — the shared stretch resolves to the same point on both segments' own 3D chords.
+//	two edge uses of one face loop whose curves (1) coincide — to within the face's own
+//	geom.Resolution weld — over a stretch of positive arc length, and (2) traverse that stretch in
+//	OPPOSITE directions in the loop's own traversal order.
 //
-// Condition (3) is what makes the false-positive direction structurally safe rather than
-// tolerance-dependent: a subdivided straight edge fails it outright, no matter how the discretizer
-// rounds, because its pieces run the same way. Condition (2) is what keeps a genuinely thin — but
-// two-dimensional — sliver face out: two antiparallel edges of a sliver of width w are only
-// "collinear" if w ≤ tol, and with tol three decades below the overlap floor the flagged stretch bounds
-// an area of at most tol × overlap ≈ 1e-15 of the chart, i.e. it is degenerate, not merely thin. Both
-// budgets are RELATIVE to the loop's own bounding diagonal, so the predicate is scale-invariant
-// (ADR-0042).
+// Condition (2) is what makes the false-positive direction structurally safe rather than
+// tolerance-dependent: a subdivided straight edge fails it outright, no matter how its pieces were
+// built, because they run the same way. Condition (1) keeps one floor, and only one — every pair of
+// edges meeting at a shared vertex coincides over a ball of the weld radius about that vertex, so a
+// stretch no longer than the model's own coincidence neighbourhood is that vertex and not a stretch
+// (lengthAboveVertexNeighbourhood, with the corpus measurement that separates the two populations). A
+// thin but two-dimensional sliver never reaches even that: its two antiparallel edges are a real
+// distance apart, and that distance is measured on the exact curves (brep.EntityDistance), not on
+// chords of them.
 //
-// Condition (4) is what a chart-only predicate CANNOT do, and it is not optional: the (u,v) inversion
-// is not always a faithful development. `unwrap` measures a periodic loop's span across the OPEN chain
-// only, so a loop that starts exactly on the seam passes its "< 2π" guard by ε and then leaps the whole
-// period on its CLOSING step; and a fillet corner sphere whose patch has the chart's own POLE as a
-// vertex has no single-valued u there at all. Measured on the corpus, both produce a chart segment
-// whose length is 100+ times the 3D chord it develops — and a chart-only predicate reads that leap as a
-// long collinear back-track along v = 0. Asking the 3D boundary whether it really does pass through
-// those points twice rejects every one of them, because a retrace is ultimately a claim ABOUT THE
-// BOUNDARY, not about its chart.
+// ★ ONE NAMED EXCLUSION: THE PERIODIC SEAM. A closed face — a whole cylinder, a sphere — bounds itself
+// with ONE seam edge used TWICE by its own loop, forward and back. Those two uses do cover the same
+// ground in opposite senses, and they are the one configuration where that is correct rather than a
+// defect, so a pair of uses of the SAME edge is excluded by identity (not by tolerance). It is also
+// what the old chart predicate was really buying with its unwrap/seam guard, at the cost of skipping
+// every seamed face entirely; here only the seam's own pair is skipped, and the rest of the loop is
+// still checked.
 //
-// Like SelfCrossingFaceLoops this is a diagnostic query, NOT wired into the mesher: it is O(n²) on up
-// to ~2500 boundary points and nothing on the pick or tessellation path calls it.
+// Like SelfCrossingFaceLoops this is a diagnostic query, NOT wired into the mesher: it is O(n²) in a
+// loop's EDGE count (not in its sample count, as it was) and nothing on the pick or tessellation path
+// calls it.
 
-// The three budgets of the predicate above. retraceCollinearTol and retraceMinOverlap are taken
-// against the developed loop's own bounding diagonal; retraceWeldFraction against the shared stretch.
-//
-// retraceCollinearTol is set three decades ABOVE double-precision noise on a chart coordinate
-// (~1e-16 relative) so a retrace whose two strands were computed by different arithmetic paths is
-// still recognised, and many decades BELOW any width a real face has, so a thin face is never mistaken
-// for a degenerate one. retraceMinOverlap is three decades above it again: the flagged stretch must be
-// a genuine shared interval, not the endpoint two collinear neighbours legitimately share.
-//
-// retraceWeldFraction is the same aspect-ratio idea applied in 3D, where the chart cannot be trusted:
-// two strands separated by more than a twentieth of the length they are claimed to share are not the
-// same ground. It is deliberately loose because a coarsely sampled curved boundary is a POLYLINE — the
-// chart's linear parameter and the 3D chord's differ by the chord's own sagitta, ~3e-3 of the chord at
-// the corpus's sampling density. It needs no tuning, because the two populations are THIRTEEN DECADES
-// apart: swept over the corpus, all 7 real retraces corroborate to ≤ 9.4e-12 of the length they claim
-// and all 4 chart artefacts to ≥ 113 — the artefact's two strands are a hundred times further apart
-// than the stretch they supposedly share is long.
-const (
-	retraceCollinearTol = 1e-9
-	retraceMinOverlap   = 1e-6
-	retraceWeldFraction = 0.05
-	retraceWeldStations = 3
-)
+// retraceInteriorStations is how many interior points of a candidate stretch are re-checked before it
+// is reported. It is a COUNT, not a tolerance: the stretch's endpoints are exact, and this only
+// confirms that the two curves really do coincide THROUGHOUT it rather than at the sub-interval
+// midpoint that proposed it — which two splines that osculate without coinciding could fake.
+const retraceInteriorStations = 5
 
-// RetracingLoop names one face loop whose developed boundary back-tracks along itself.
+// RetracingLoop names one face loop whose boundary back-tracks along itself.
 type RetracingLoop struct {
 	Face    *topo.Face
-	Loop    int
-	Overlap float64 // the developed LENGTH the boundary covers twice, in the surface's own metric chart
+	Loop    int     // index into Face.Loops()
+	Overlap float64 // the ARC LENGTH the boundary covers twice, on the edge curves themselves
 }
 
-// RetracingFaceLoops returns every loop of b whose boundary, developed onto its own face's surface,
-// runs back over ground it already covered — the collinear-backtracking half of "is this polygon
-// simple", which the transversal predicate in SelfCrossingFaceLoops cannot see. Faces with no usable
-// development, and loops that wrap a periodic seam, are skipped exactly as they are there; a candidate
-// that the 3D boundary does not corroborate is discarded, so a report here is always a real defect.
+// RetracingFaceLoops returns every loop of b whose boundary runs back over ground it already covered —
+// the collinear-backtracking half of "is this polygon simple", which the transversal predicate in
+// SelfCrossingFaceLoops cannot see. The verdict is taken on the edges' exact curves, so it carries no
+// tessellation and no facet density; the Quality argument is unused and kept only so the call sites
+// that thread one through do not churn (the same reason [FillInternalVoids] ignores its own).
 //
 // Overlap is a LENGTH, not an area: a retrace encloses zero area by construction, so there is no
 // pinched-off area to quote and quoting one would be a category error.
 //
 // Example: RetracingFaceLoops(y1Body, PropertyQuality()) reports the host plane whose boundary runs out
 // along z = 90 to x = 100 and straight back, Overlap = 10.
-func RetracingFaceLoops(b *topo.Body, q Quality) []RetracingLoop {
+func RetracingFaceLoops(b *topo.Body, _ Quality) []RetracingLoop {
 	var out []RetracingLoop
 	for _, f := range b.Faces() {
-		loops, ok := developedFaceLoops(f, q)
-		rings := faceLoopRings(f, q)
-		if !ok || len(rings) != len(loops) {
-			continue
-		}
-		for i, l := range loops {
-			if ov, retraces := loopRetrace(l, rings[i]); retraces {
+		res := geom.ResolutionForBox(f.RangeBox())
+		for i, l := range f.Loops() {
+			if ov, retraces := loopRetrace(l, res); retraces {
 				out = append(out, RetracingLoop{Face: f, Loop: i, Overlap: ov})
 			}
 		}
@@ -121,33 +108,15 @@ func RetracingFaceLoops(b *topo.Body, q Quality) []RetracingLoop {
 	return out
 }
 
-// faceLoopRings returns f's discretized boundary rings in the SAME order developedFaceLoops develops
-// them — outer first, then the holes — so a developed loop can be checked against its own 3D points.
-func faceLoopRings(f *topo.Face, q Quality) [][]math.Point3 {
-	outer := faceOuterBoundary(f, q)
-	if len(outer) == 0 {
-		return nil
-	}
-	return append([][]math.Point3{outer}, faceHoleBoundaries(f, q)...)
-}
-
 // loopRetrace returns the LONGEST stretch the loop covers twice in opposite directions, and whether
 // there is one. The longest (rather than the first) is reported because that is the quantity a ratchet
 // ceiling must be monotone in: it cannot be reduced by re-indexing the loop.
-func loopRetrace(l developedLoop, ring []math.Point3) (float64, bool) {
-	n := len(l.pts)
-	if n < 3 || n != len(ring) {
-		return 0, false
-	}
-	diag := chartDiagonal(l.pts)
-	if diag <= 0 {
-		return 0, false
-	}
-	tol, floor := retraceCollinearTol*diag, retraceMinOverlap*diag
+func loopRetrace(l *topo.Loop, res geom.Resolution) (float64, bool) {
+	uses := l.EdgeUses()
 	worst := 0.0
-	for i := range n {
-		for j := i + 1; j < n; j++ {
-			if ov := retraceOfPair(l.pts, ring, i, j, tol, floor); ov > worst {
+	for i, ua := range uses {
+		for _, ub := range uses[i+1:] {
+			if ov := useRetraceLength(ua, ub, res); ov > worst {
 				worst = ov
 			}
 		}
@@ -155,115 +124,152 @@ func loopRetrace(l developedLoop, ring []math.Point3) (float64, bool) {
 	return worst, worst > 0
 }
 
-// retraceOfPair is the length segments i and j of the loop retrace, or 0 when they do not — the chart
-// test first, then the 3D corroboration that rejects an unfaithful development.
-func retraceOfPair(pts []math.Point2, ring []math.Point3, i, j int, tol, floor float64) float64 {
-	shared, ok := collinearBacktrack(chartSegAt(pts, i), chartSegAt(pts, j), tol, floor)
-	if !ok || !corroboratedIn3D(ring, i, j, shared) {
+// useRetraceLength is the arc length over which two edge uses of one loop cover the same ground in
+// opposite traversal senses, or 0 when they do not.
+func useRetraceLength(ua, ub *topo.EdgeUse, res geom.Resolution) float64 {
+	ea, eb := ua.Edge(), ub.Edge()
+	if ea == eb {
+		return 0 // the PERIODIC SEAM: one edge used twice by its own face, forward and back
+	}
+	if !ea.RangeBox().Intersects(eb.RangeBox()) {
 		return 0
 	}
-	return shared.length
+	ca, cb := ea.Geometry(), eb.Geometry()
+	if brep.EntityDistance(brep.CurveSupport(ca), brep.CurveSupport(cb)) > res.Weld() {
+		return 0
+	}
+	lo, hi, ok := coincidentSpanOn(ca, cb, res.Weld())
+	if !ok || !oppositeTraversal(ua, ub, ca, cb, lo, hi) {
+		return 0
+	}
+	return lengthAboveVertexNeighbourhood(ca, lo, hi, res)
 }
 
-// chartOverlap is a stretch two chart segments share, expressed as a parameter sub-interval of EACH of
-// them, so the claim can be re-asked of the 3D polyline they develop.
-type chartOverlap struct {
-	length             float64
-	sLo, sHi, tLo, tHi float64 // the same two chart locations, as fractions along each segment
+// lengthAboveVertexNeighbourhood is the stretch's arc length, or 0 when the stretch is no longer than
+// the model's own coincidence neighbourhood.
+//
+// EVERY pair of edges meeting at a shared vertex coincides over a ball of the weld radius about it, so
+// without this floor the detector reports the vertex itself. Measured on the OCCT blend-parity corpus
+// the two populations are NINE DECADES apart: the vertex-neighbourhood reports run 1.4e-16 to 1.9e-10,
+// and the smallest real retrace is simple/W2's 0.2 (its fillet radius). res.Stitch() — 1e-6 of the
+// model size, the floor the chart predicate carried as retraceMinOverlap — sits in the middle of that
+// gap and is model-relative, so a µm or km copy of the same part classifies the same way (ADR-0042).
+func lengthAboveVertexNeighbourhood(ca geom.Curve3, lo, hi float64, res geom.Resolution) float64 {
+	span := geom.CurveLength3(ca, lo, hi)
+	if span <= res.Stitch() {
+		return 0
+	}
+	return span
 }
 
-// collinearBacktrack reports the stretch over which s and t cover the SAME chart ground in OPPOSITE
-// directions. It declines when they are not collinear, share less than floor, or run the same way
-// along it (which is a subdivided straight edge, not a back-track). The LONGER segment is the
-// reference frame so a short one never sets the direction over a long lever arm.
-func collinearBacktrack(s, t chartSeg, tol, floor float64) (chartOverlap, bool) {
-	ref, other, swapped := s, t, false
-	if s.length() < t.length() {
-		ref, other, swapped = t, s, true
+// coincidentSpanOn returns the longest parameter interval of ca every point of which lies on cb,
+// within cb's own trim. The interval's ENDS are exact rather than sampled: two curve pieces stop
+// covering the same ground exactly where one of the two trims stops, so every candidate end is either
+// an end of ca or an end of cb projected onto ca (spanCandidates).
+func coincidentSpanOn(ca, cb geom.Curve3, weld float64) (float64, float64, bool) {
+	cuts := spanCandidates(ca, cb)
+	covered := make([]bool, max(len(cuts)-1, 0))
+	for k := range covered {
+		covered[k] = pointOfCurveLiesOn(ca, cb, (cuts[k]+cuts[k+1])/2, weld)
 	}
-	ux, uy, l := ref.unit()
-	if l < floor {
-		return chartOverlap{}, false // even total agreement could not reach the floor
+	lo, hi, ok := longestCoveredRun(ca, cuts, covered)
+	if !ok || !spanHoldsThroughout(ca, cb, lo, hi, weld) {
+		return 0, 0, false
 	}
-	ta, offA := ref.frameOf(other.a, ux, uy)
-	tb, offB := ref.frameOf(other.b, ux, uy)
-	if stdmath.Abs(offA) > tol || stdmath.Abs(offB) > tol || tb >= ta {
-		return chartOverlap{}, false
-	}
-	lo, hi := stdmath.Max(0, tb), stdmath.Min(l, ta)
-	if hi-lo < floor {
-		return chartOverlap{}, false
-	}
-	return sharedFractions(lo, hi, l, ta, tb, swapped), true
+	return lo, hi, true
 }
 
-// sharedFractions expresses the shared chart interval [lo,hi] — measured in the reference segment's
-// own frame, where the other segment runs from ta down to tb — as a parameter sub-interval of each
-// segment, restoring the caller's original ordering.
-func sharedFractions(lo, hi, l, ta, tb float64, swapped bool) chartOverlap {
-	o := chartOverlap{
-		length: hi - lo,
-		sLo:    lo / l, sHi: hi / l,
-		tLo: (lo - ta) / (tb - ta), tHi: (hi - ta) / (tb - ta),
+// spanCandidates are the parameters of ca at which a coincident stretch can begin or end — ca's own
+// ends plus cb's two ends projected onto ca — in increasing order.
+func spanCandidates(ca, cb geom.Curve3) []float64 {
+	lo, hi := ca.Domain()
+	cuts := []float64{lo, hi}
+	blo, bhi := cb.Domain()
+	for _, t := range [2]float64{blo, bhi} {
+		if s, _ := geom.CurveParamAtPoint3(ca, cb.PointAt(t)); s > lo && s < hi {
+			cuts = append(cuts, s)
+		}
 	}
-	if swapped {
-		o.sLo, o.sHi, o.tLo, o.tHi = o.tLo, o.tHi, o.sLo, o.sHi
-	}
-	return o
+	sort.Float64s(cuts)
+	return cuts
 }
 
-// corroboratedIn3D asks the BOUNDARY, not its chart, whether it really passes through the shared
-// stretch twice: each of retraceWeldStations interior stations must resolve to the same point on
-// segment i's own 3D chord as on segment j's. A chart that is not a faithful development — a periodic
-// loop leaping the seam on its closing step, a sphere patch holding the chart's pole — puts the two
-// resolutions far apart and is rejected here instead of being reported as a defect.
-func corroboratedIn3D(ring []math.Point3, i, j int, o chartOverlap) bool {
-	n := len(ring)
-	weld := retraceWeldFraction * o.length
-	for k := 1; k <= retraceWeldStations; k++ {
-		f := float64(k) / float64(retraceWeldStations+1)
-		p := ring[i].Lerp(ring[(i+1)%n], o.sLo+f*(o.sHi-o.sLo))
-		q := ring[j].Lerp(ring[(j+1)%n], o.tLo+f*(o.tHi-o.tLo))
-		if p.DistanceTo(q) > weld {
+// longestCoveredRun returns the parameter interval spanned by the longest run of consecutive covered
+// sub-intervals, measured as arc length on ca so the winner is a real length and not a parameter span.
+func longestCoveredRun(ca geom.Curve3, cuts []float64, covered []bool) (float64, float64, bool) {
+	lo, hi, best, runStart := 0.0, 0.0, 0.0, -1
+	for k := 0; k <= len(covered); k++ {
+		if k < len(covered) && covered[k] {
+			runStart = startOfRun(runStart, k)
+			continue
+		}
+		if runStart >= 0 {
+			best, lo, hi = keepLonger(ca, cuts[runStart], cuts[k], best, lo, hi)
+		}
+		runStart = -1
+	}
+	return lo, hi, best > 0
+}
+
+// startOfRun keeps the FIRST index of a covered run: once set it survives the rest of the run.
+func startOfRun(runStart, k int) int {
+	if runStart < 0 {
+		return k
+	}
+	return runStart
+}
+
+// keepLonger returns the longer of the running best interval and the candidate [from, to].
+func keepLonger(ca geom.Curve3, from, to, best, lo, hi float64) (float64, float64, float64) {
+	if l := geom.CurveLength3(ca, from, to); l > best {
+		return l, from, to
+	}
+	return best, lo, hi
+}
+
+// spanHoldsThroughout re-checks interior stations of a candidate stretch, so a pair of curves that
+// touch at the one midpoint that proposed the stretch (two splines osculating without coinciding) is
+// declined rather than reported.
+func spanHoldsThroughout(ca, cb geom.Curve3, lo, hi, weld float64) bool {
+	for k := 1; k <= retraceInteriorStations; k++ {
+		t := lo + (hi-lo)*float64(k)/float64(retraceInteriorStations+1)
+		if !pointOfCurveLiesOn(ca, cb, t, weld) {
 			return false
 		}
 	}
 	return true
 }
 
-// chartSeg is one directed segment of a developed loop, in the surface's metric chart.
-type chartSeg struct{ a, b [2]float64 }
-
-// chartSegAt is the segment leaving vertex i of a closed developed loop.
-func chartSegAt(pts []math.Point2, i int) chartSeg {
-	return chartSeg{a: xy(pts[i]), b: xy(pts[(i+1)%len(pts)])}
-}
-
-// length is the segment's extent in the metric chart.
-func (s chartSeg) length() float64 { return stdmath.Hypot(s.b[0]-s.a[0], s.b[1]-s.a[1]) }
-
-// unit returns the segment's direction and length; a zero-length segment gets a zero direction.
-func (s chartSeg) unit() (ux, uy, l float64) {
-	if l = s.length(); l == 0 {
-		return 0, 0, 0
+// pointOfCurveLiesOn reports whether ca's point at parameter t lies on cb WITHIN cb's own trim — the
+// exact "is this piece of boundary also that piece of boundary" question, answered by inverting the
+// point onto cb and measuring the residual there.
+func pointOfCurveLiesOn(ca, cb geom.Curve3, t, weld float64) bool {
+	p := ca.PointAt(t)
+	s, _ := geom.CurveParamAtPoint3(cb, p)
+	lo, hi := cb.Domain()
+	if s < lo || s > hi {
+		return false
 	}
-	return (s.b[0] - s.a[0]) / l, (s.b[1] - s.a[1]) / l, l
+	return float64(cb.PointAt(s).DistanceTo(p)) <= weld
 }
 
-// frameOf returns p's coordinate along the segment's own direction (ux,uy) and its signed
-// perpendicular offset from the segment's supporting line.
-func (s chartSeg) frameOf(p [2]float64, ux, uy float64) (along, off float64) {
-	dx, dy := p[0]-s.a[0], p[1]-s.a[1]
-	return dx*ux + dy*uy, dy*ux - dx*uy
-}
-
-// chartDiagonal is the bounding-box diagonal of a developed loop — the scale the collinearity and
-// overlap budgets are taken relative to.
-func chartDiagonal(pts []math.Point2) float64 {
-	lo, hi := xy(pts[0]), xy(pts[0])
-	for _, p := range pts[1:] {
-		lo = [2]float64{stdmath.Min(lo[0], p.X), stdmath.Min(lo[1], p.Y)}
-		hi = [2]float64{stdmath.Max(hi[0], p.X), stdmath.Max(hi[1], p.Y)}
+// oppositeTraversal reports whether the two uses run the shared stretch in OPPOSITE directions. That
+// is the whole difference between a back-track and a straight edge merely subdivided into collinear
+// pieces, and it is a SIGN, so no tolerance enters it.
+func oppositeTraversal(ua, ub *topo.EdgeUse, ca, cb geom.Curve3, lo, hi float64) bool {
+	first, second := lo, hi
+	if ua.Reversed() {
+		first, second = hi, lo
 	}
-	return stdmath.Hypot(hi[0]-lo[0], hi[1]-lo[1])
+	return traversalParam(ub, cb, ca.PointAt(second)) < traversalParam(ub, cb, ca.PointAt(first))
+}
+
+// traversalParam is p's parameter on the use's edge curve, negated for a reversed use so it always
+// increases along the LOOP's traversal of that use.
+func traversalParam(u *topo.EdgeUse, c geom.Curve3, p math.Point3) float64 {
+	s, _ := geom.CurveParamAtPoint3(c, p)
+	if u.Reversed() {
+		return -s
+	}
+	return s
 }

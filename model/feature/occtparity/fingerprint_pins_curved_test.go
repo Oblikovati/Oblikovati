@@ -8,7 +8,38 @@ package occtparity
 // torus-host arm, the concave cylinder arms, the sphere zone, and the Arc3d-rim widen.
 func curvedWeldPins() []fingerprintPin {
 	return []fingerprintPin{
-		{"B3", 190756.470897506602, 31274, 0x2dff54b187389df4, ""},
+		// ★ RE-CAPTURED (B3 and C2 below) for the closed-surface trim classification settled by ec99aa1c: a
+		// sphere/torus face has no parameter axis reaching an exterior, so the classifier used to pick
+		// between the rings' interior and its complement from the loop's traversal HANDEDNESS — a datum this
+		// kernel does not maintain (kernel/brep/face_trim_memo.go, Oblikovati/Oblikovati#3477). It now reads
+		// the rings themselves (even-odd where they close and nest, curvedFace.outerless naming the
+		// complement case). The mesh below first appeared at 097a8036, was reverted by 5fe17d41 and settled
+		// again at ec99aa1c; those three are the only commits in this wave that move it.
+		// B3 and C2 each carry ONE corner-blend sphere patch and it is the ONLY face that moved: every other
+		// face of both bodies is bit-identical (same triangles, same hash) and the two bodies' quantized
+		// vertex SETS differ nowhere else.
+		//
+		// The B-REP DID NOT MOVE — the proof that this is a mesh fix and not a geometry change:
+		// ops.AnalyticFaceArea on that same patch reads 182.347658192838 (B3) / 206.878812298723 (C2) at the
+		// base f6ec96c2 and 182.347658193698 / 206.878812302329 here, agreeing to the quadrature's own 1e-9.
+		// B3's value is DRAWEXE 8.0.0's own: `sprops result_9 1.e-12 -full` on OCCT's blend of the same
+		// quarter cylinder says 182.34765819369741 — parity to 6e-15 relative. (All eight of B3's other
+		// analytically-integrable faces match their DRAWEXE row to the same 1e-12 too: 1641.128923743277,
+		// 608.36680139604175, 5931.5223224376823, 860.84369001188372, 1932.4680859732425, 3485.685011586676,
+		// 4957.0796326794889.)
+		//
+		// AGAINST THAT ORACLE THE NEW MESH IS STRICTLY CLOSER, and the old one was not merely coarser, it was
+		// UNSTABLE IN QUALITY. B3's patch mesh 182.324739495 → 182.342198069 (−1.257e-4 → −2.994e-5 relative,
+		// 4.2× closer); C2's 206.867459230 → 206.873002572 (−5.488e-5 → −2.808e-5, 1.95× closer); the whole
+		// body follows, B3 190756.470898 → 190756.588837 against DRAWEXE `vprops … -full` 190760.57996317052
+		// (−2.154e-5 → −2.092e-5). Refine past PropertyQuality and the base flips outright: at chord 1e-4 its
+		// B3 patch meshes 1074.245333504 and its C2 patch 1049.719621380 — the COMPLEMENT of each patch
+		// (4πr² − 182.3477 = 1074.2894, 4πr² − 206.8788 = 1049.7583) — dragging the body to 186571.78 (−2.2%)
+		// and 506005.49 (−0.8%). This HEAD converges instead: B3 182.346832 / 190760.571048 (−4.7e-8 vs
+		// DRAWEXE) and C2 206.877821 at chord 1e-4…1e-6. So the pinned 31274/121529-triangle meshes recorded
+		// a coarse grid that happened to land on the right region; the new ones hold it at every density.
+		// Captured twice, bit-stable. Same cross-platform-risk caveat as above applies.
+		{"B3", 190756.588836917974, 53332, 0xf0b39511787f39b9, ""},
 		// ★ RE-CAPTURED by the reverseSegmentCurve locus fix (fillet_orient.go): the shell-orientation pass
 		// used to reverse a flipped face's loop segment by RE-FITTING it through three points, which is exact
 		// only for a circle and replaced every other rail with a CIRCLE THROUGH ITS ENDPOINTS. Eight pinned
@@ -22,7 +53,13 @@ func curvedWeldPins() []fingerprintPin {
 		// 47.89) even where the whole-body NET moved, which is cancellation unwinding, not a regression.
 		// See reverse-segment-fix-report.md. Same cross-platform-risk caveat as above applies.
 		{"N7", 963883.308666080586, 28626, 0x7bee702cffdf1d17, ""},
-		{"C2", 510191.885601512506, 121529, 0x1b3bc10e4d60136e, ""},
+		// ★ RE-CAPTURED with B3 — same corner-sphere patch, same oracle; the numbers are in the block above.
+		// C2's own converged volume is 510194.09 (chord 1e-4…1e-6), so the raw pin moves toward it too,
+		// 510191.885602 → 510191.929717. OCCT's `vprops` on ITS C2 result reads 510153.33 because on a CONE
+		// host OCCT approximates the corner with a BSpline (its `sprops result2_7 -full` = 195.88640150062577
+		// against our exact sphere's 206.878812302329) — the documented C6-class deviation, present
+		// identically at the base and here, and not what this re-capture is about.
+		{"C2", 510191.929717409075, 141025, 0xfb118f812f209951, ""},
 		{"C6", 1559718.567225983134, 139844, 0x613415837489e018, ""},
 		{"D5", 3434184.031168804504, 481302, 0x3996c779fd9029cf, ""},
 		{"D9", 10320424.304559277371, 458676, 0xe77fec118a9d9098, ""},
@@ -196,8 +233,26 @@ func curvedWeldPins() []fingerprintPin {
 		// raw volume K6 959144.890948543 → 958623.105106086 vs `vprops` 958623, L4 945198.518972720 →
 		// 944676.776286043 vs 944677 (the +521.7 ≈ 4π·5³/3 = 523.6 ball-cover excess, less inscription,
 		// gone). Triangle drop is the 7/8→octant fan alone. Captured twice, bit-stable.
-		{"K6", 958623.095907601411, 13500, 0x9f571a346bbcbe79, ""},
-		{"L4", 944676.766143134912, 13460, 0xbe4dc64eb7a2440c, ""},
+		// ★ HASHES RE-CAPTURED (volumes deliberately UNCHANGED) for the same closed-surface trim pass as
+		// B3/C2 above — `git bisect run` over the wave names ec99aa1c for both of these, one commit, no
+		// earlier drift. On K6 and L4 the pass carries NO geometry: every face's quantized vertex SET is
+		// identical to the base f6ec96c2's, every face's mesh area is identical to 1e-9 (K6's 10000, 1625,
+		// 975, 375 … to the digit), every face's raw signed mesh volume is identical to 1e-6 INCLUDING its
+		// sign, the triangle counts are unchanged, and the four CURVED faces — three cylinders and the void
+		// corner octant — are BIT-IDENTICAL (same per-face hash). The octant still meshes 39.267264318612
+		// against ops.AnalyticFaceArea's 39.269908169872 = 25π/2, so the region gate above is untouched.
+		//
+		// What moved is the DIAGONAL of each planar quad: the pass flipped these two bodies' loop traversal
+		// direction, so the triangulator starts the same cycle the other way round. K6's y=100 face used to
+		// walk (100,100,0)→(100,100,100)→(0,100,100)→(0,100,0) and now walks
+		// (100,100,0)→(0,100,0)→(0,100,100)→(100,100,100) — the same four corners, the other split. Loop
+		// handedness is precisely the datum this pass STOPPED reading (face_trim_memo.go: "a producer may
+		// wind a closed-surface face's loops either way"), the mesh's own orientation is recovered
+		// topologically (consistentOutwardFlips), and the fingerprint's triangle hash is winding-blind but
+		// not diagonal-blind — hence a new hash over an unmoved body. The volumes below are kept as captured:
+		// the re-measured values are 958623.095907601528 and 944676.766143134562, one ulp away.
+		{"K6", 958623.095907601411, 13500, 0x0c6edd2013e4b928, ""},
+		{"L4", 944676.766143134912, 13460, 0x2ceba908803775fd, ""},
 		// K9/M2 (simple): the P3 mixed-sense trihedral corner-setback greens (fillet_corner_torus.go). Each
 		// is a box+boss (K9) / box+cyl (M2) whose single trihedral corner joins 2 CONCAVE + 1 CONVEX fillets
 		// at three mutually-orthogonal planar faces; both were RED (K9 +1.17%, M2 +1.02%) because solveBlend

@@ -70,23 +70,44 @@ func addTriWithRidge(bld *topo.Builder, feat string, ridge *topo.Edge, va, vb, a
 		topo.OuterLoop(ridgeUse, topo.Fwd(e1), topo.Fwd(e2)))
 }
 
-// TestOnSharedBoundaryMatchesAnySegment covers onSharedBoundary directly: a point on the SECOND
-// shared segment must match (the loop continues past a non-matching first), and a point off all
-// segments must not — plus the empty-boundary case.
-func TestOnSharedBoundaryMatchesAnySegment(t *testing.T) {
+// TestSharedContactHoldsACurvePointAndAVertex covers sharedContact.holds directly: a point on the
+// SECOND shared curve must match (the scan continues past a non-matching first), a point at a shared
+// vertex must match, and a point off all of it must not — plus the empty-contact case.
+func TestSharedContactHoldsACurvePointAndAVertex(t *testing.T) {
 	p := gmath.P3
-	shared := [][2]gmath.Point3{
-		{p(0, 0, 0), p(1, 0, 0)},  // first segment (far from the probe)
-		{p(0, 5, 0), p(0, 5, 10)}, // second segment (the probe lies on this one)
+	shared := sharedContact{
+		curves: []geom.Curve3{
+			geom.NewLineSegment(p(0, 0, 0), p(1, 0, 0)),  // first curve (far from the probe)
+			geom.NewLineSegment(p(0, 5, 0), p(0, 5, 10)), // second curve (the probe lies on this one)
+		},
+		points: []gmath.Point3{p(7, 7, 7)},
 	}
-	if !onSharedBoundary(p(0, 5, 4), shared, 1e-6) {
-		t.Error("a point on the second shared segment should be reported on the boundary")
+	if !shared.holds(p(0, 5, 4), 1e-6) {
+		t.Error("a point on the second shared curve should be reported as shared contact")
 	}
-	if onSharedBoundary(p(9, 9, 9), shared, 1e-6) {
-		t.Error("a point far from every shared segment should not be on the boundary")
+	if !shared.holds(p(7, 7, 7), 1e-6) {
+		t.Error("a point at a shared vertex should be reported as shared contact")
 	}
-	if onSharedBoundary(p(0, 0, 0), nil, 1e-6) {
-		t.Error("with no shared boundary nothing is on it")
+	if shared.holds(p(9, 9, 9), 1e-6) {
+		t.Error("a point far from every shared entity should not be reported as shared contact")
+	}
+	if (sharedContact{}).holds(p(0, 0, 0), 1e-6) {
+		t.Error("with no shared topology nothing is shared contact")
+	}
+}
+
+// TestSharedContactUsesTheEdgeCurveNotItsChord is the regression for the filter's own trap: a shared
+// ARC bows away from the chord between its vertices by the sagitta, so a chord-based filter reads the
+// legitimate contact along a tangent blend's edge as an interpenetration. Here the arc's midpoint sits
+// 1 − cos(π/4) ≈ 0.293 off its own chord, three decades above the tolerance asked for.
+func TestSharedContactUsesTheEdgeCurveNotItsChord(t *testing.T) {
+	arc, err := geom.NewArc3d(gmath.P3(0, 0, 0), gmath.V3(0, 0, 1), gmath.V3(1, 0, 0), 1, 0, math.Pi/2)
+	if err != nil {
+		t.Fatalf("NewArc3d: %v", err)
+	}
+	shared := sharedContact{curves: []geom.Curve3{arc}}
+	if mid := arc.PointAt(0.5); !shared.holds(mid, 1e-9) {
+		t.Errorf("the shared arc's own midpoint %v must read as shared contact", mid)
 	}
 }
 
@@ -112,28 +133,20 @@ func TestSelfIntersectionSharedEdgeClean(t *testing.T) {
 	}
 }
 
-// TestSharedFaceBoundaryFindsEdgeAndVertex checks the helper directly: the tent's two faces share an
-// edge (a non-degenerate segment); the bowtie's share a point (a degenerate segment).
-func TestSharedFaceBoundaryFindsEdgeAndVertex(t *testing.T) {
+// TestSharedFaceContactFindsEdgeAndVertex checks the collector directly: the tent's two faces share an
+// edge (so the contact carries its curve); the bowtie's share only the apex vertex (points, no curve).
+func TestSharedFaceContactFindsEdgeAndVertex(t *testing.T) {
 	tent := tentBody()
-	shared := sharedFaceBoundary(tent.Faces()[0], tent.Faces()[1])
-	hasSegment := false
-	for _, s := range shared {
-		if s[0].DistanceTo(s[1]) > 1e-9 {
-			hasSegment = true
-		}
+	shared := sharedFaceContact(tent.Faces()[0], tent.Faces()[1])
+	if len(shared.curves) != 1 {
+		t.Errorf("tent faces should share exactly one edge curve, got %d", len(shared.curves))
 	}
-	if !hasSegment {
-		t.Errorf("tent faces should share a non-degenerate edge segment, got %+v", shared)
+	bowtie := bowtieBody()
+	bow := sharedFaceContact(bowtie.Faces()[0], bowtie.Faces()[1])
+	if len(bow.curves) != 0 {
+		t.Errorf("bowtie faces share no edge, got %d curve(s)", len(bow.curves))
 	}
-	bow := bowtieBody()
-	bshared := sharedFaceBoundary(bow.Faces()[0], bow.Faces()[1])
-	if len(bshared) == 0 {
-		t.Error("bowtie faces should share the apex vertex point")
-	}
-	for _, s := range bshared {
-		if math.Abs(float64(s[0].DistanceTo(s[1]))) > 1e-9 {
-			t.Errorf("bowtie shared boundary should be a point, got segment %+v", s)
-		}
+	if len(bow.points) != 1 || bow.points[0].DistanceTo(gmath.P3(0, 0, 0)) > 1e-9 {
+		t.Errorf("bowtie faces should share exactly the apex vertex, got %+v", bow.points)
 	}
 }

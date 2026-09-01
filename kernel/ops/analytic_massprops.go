@@ -30,6 +30,7 @@ type massTerms struct {
 	mx, my, mz    float64 // ∫∫∫ x, y, z dV
 	cxx, cyy, czz float64 // ∫∫∫ x², y², z² dV
 	cxy, cyz, czx float64 // ∫∫∫ xy, yz, zx dV
+	ax, ay, az    float64 // ∮∮ N dA — the outward VECTOR area, zero over a closed surface
 	area          float64 // ∮∮ dA
 }
 
@@ -39,6 +40,7 @@ func (a massTerms) add(b massTerms) massTerms {
 		vol: a.vol + b.vol, mx: a.mx + b.mx, my: a.my + b.my, mz: a.mz + b.mz,
 		cxx: a.cxx + b.cxx, cyy: a.cyy + b.cyy, czz: a.czz + b.czz,
 		cxy: a.cxy + b.cxy, cyz: a.cyz + b.cyz, czx: a.czx + b.czx,
+		ax: a.ax + b.ax, ay: a.ay + b.ay, az: a.az + b.az,
 		area: a.area + b.area,
 	}
 }
@@ -49,6 +51,7 @@ func (a massTerms) scale(s float64) massTerms {
 		vol: a.vol * s, mx: a.mx * s, my: a.my * s, mz: a.mz * s,
 		cxx: a.cxx * s, cyy: a.cyy * s, czz: a.czz * s,
 		cxy: a.cxy * s, cyz: a.cyz * s, czx: a.czx * s,
+		ax: a.ax * s, ay: a.ay * s, az: a.az * s,
 		area: a.area * s,
 	}
 }
@@ -61,11 +64,15 @@ func (a massTerms) scaleFlux(s float64) massTerms {
 	return out
 }
 
+// measure is the area component — the term integrated from an unsigned integrand, so its sign
+// reports the boundary traversal's orientation.
+func (a massTerms) measure() float64 { return a.area }
+
 // converged reports whether a coarse and a refined estimate agree to tolerance on every component
 // (mixed absolute/relative, so a component that is legitimately ~0 does not stall the refinement).
 func (a massTerms) converged(r massTerms) bool {
-	c := [11]float64{a.vol, a.mx, a.my, a.mz, a.cxx, a.cyy, a.czz, a.cxy, a.cyz, a.czx, a.area}
-	d := [11]float64{r.vol, r.mx, r.my, r.mz, r.cxx, r.cyy, r.czz, r.cxy, r.cyz, r.czx, r.area}
+	c := [14]float64{a.vol, a.mx, a.my, a.mz, a.cxx, a.cyy, a.czz, a.cxy, a.cyz, a.czx, a.ax, a.ay, a.az, a.area}
+	d := [14]float64{r.vol, r.mx, r.my, r.mz, r.cxx, r.cyy, r.czz, r.cxy, r.cyz, r.czx, r.ax, r.ay, r.az, r.area}
 	return componentsConverged(c[:], d[:])
 }
 
@@ -85,6 +92,7 @@ func integrandsAt(s geom.Surface, u, v float64) massTerms {
 		mx:  px * px * nx / 2, my: py * py * ny / 2, mz: pz * pz * nz / 2,
 		cxx: px * px * px * nx / 3, cyy: py * py * py * ny / 3, czz: pz * pz * pz * nz / 3,
 		cxy: px * px * py * nx / 2, cyz: py * py * pz * ny / 2, czx: pz * pz * px * nz / 2,
+		ax: nx, ay: ny, az: nz,
 		area: float64(n.Length()),
 	}
 }
@@ -121,6 +129,9 @@ func (a areaTerms) scale(s float64) areaTerms {
 		sxyz: a.sxyz * s,
 	}
 }
+
+// measure is the area component, whose sign reports the boundary traversal's orientation.
+func (a areaTerms) measure() float64 { return a.area }
 
 // converged mirrors massTerms.converged over the surface-moment components.
 func (a areaTerms) converged(r areaTerms) bool {
@@ -191,6 +202,28 @@ func AnalyticFaceArea(f *topo.Face) (float64, bool) {
 	return t.area, true
 }
 
+// AnalyticShellVolume integrates the SIGNED volume the shell bounds over its analytic faces
+// (M48/C3 #3482). The sign is the shell's material orientation and comes out of the divergence
+// theorem for free: an outer shell's material-outward normals point away from the region it
+// encloses (positive flux), a void shell's point into the cavity (negative). ok is false when a
+// face is not analytically integrable, so the caller falls back to the mesh sum as one unit.
+//
+// Example: v, ok := ops.AnalyticShellVolume(cavitySkin) // ok ⇒ v < 0
+func AnalyticShellVolume(s *topo.Shell) (float64, bool) {
+	if s == nil {
+		return 0, false
+	}
+	var total massTerms
+	for _, f := range s.Faces() {
+		ft, ok := faceTerms(f)
+		if !ok {
+			return 0, false
+		}
+		total = total.add(ft)
+	}
+	return total.vol, true
+}
+
 // analyticBodyTerms sums every face's divergence-theorem contribution. A non-solid body has no
 // enclosed volume to integrate; any face the analytic path cannot cover forces a whole-body
 // fallback so the result never mixes analytic and mesh contributions.
@@ -206,8 +239,59 @@ func analyticBodyTerms(b *topo.Body) (massTerms, bool) {
 		}
 		total = total.add(ft)
 	}
+	if !vectorAreaCloses(b, total) {
+		return massTerms{}, false
+	}
 	return total, true
 }
+
+// vectorAreaCloses checks the divergence theorem's own precondition on the assembled body: the
+// outward vector area ∮∮ N dA of a CLOSED surface is exactly zero, whatever the shape. A face
+// integrated over the wrong region, with a flipped orientation, or omitted, leaves a residual — so
+// this is a post-condition that turns a wrong analytic answer into a DECLINE, and the tessellated
+// fallback then measures the body instead. It costs three more integrands and catches the whole
+// class (M48/C3, Oblikovati/Oblikovati#3453).
+//
+// It is deliberately NOT widened by the body's achieved boundary tolerance, though that number now
+// exists (AchievedBoundarySlack). Widening it was tried and reverted: the residual a marched
+// boundary produces and the residual a genuinely mis-taken face region produces are the SAME size on
+// the same bodies, so the widened gate admitted a crossing-cylinder cut whose volume was 9.8% wrong
+// while its boundary noise accounted for the residual. The tolerance is not the axis to move; the
+// approximate boundary is (#3489).
+func vectorAreaCloses(_ *topo.Body, t massTerms) bool {
+	if t.area <= 0 {
+		return false
+	}
+	residual := stdmath.Sqrt(t.ax*t.ax + t.ay*t.ay + t.az*t.az)
+	return residual <= vectorAreaClosureTol*t.area
+}
+
+// AchievedBoundarySlack is the largest error the body's own boundary approximation can produce in a
+// quantity integrated over its faces — the vector-area residual and the volume alike. It is the sum
+// over edges of twice the edge's achieved tolerance times its length: both faces meeting on an edge
+// invert its points onto THEIR OWN surface, so a point d off the true curve lands up to d away on
+// each, and the two faces disagree about that boundary by up to 2d along its length.
+//
+// It is zero for an all-analytic body, which is what keeps the exact case held to the exact standard.
+//
+// Example: if rel := math.Abs(got-want) / want; rel > ops.AchievedBoundarySlack(b)/want { /* real */ }
+func AchievedBoundarySlack(b *topo.Body) float64 {
+	slack := 0.0
+	for _, e := range b.Edges() {
+		tol := e.Tolerance()
+		if tol <= 0 {
+			continue
+		}
+		lo, hi := e.Geometry().Domain()
+		slack += 2 * tol * geom.CurveLength3(e.Geometry(), lo, hi)
+	}
+	return slack
+}
+
+// vectorAreaClosureTol is how much of the total area the vector-area residual may be. The adaptive
+// quadrature converges to ~1e-11 relative, so this leaves five orders of margin for accumulation
+// while still catching a single mis-oriented face, whose residual is twice that face's own area.
+const vectorAreaClosureTol = 1e-6 // tol:numeric — relative closure of the outward vector area
 
 // analyticAreaTerms sums every face's surface (shell) moments over the body's boundary. It declines
 // exactly when analyticBodyTerms would (a face the analytic path cannot reconstruct), so the
