@@ -93,7 +93,27 @@ jobs:
       - uses: actions/checkout@v5
       - run: python3 scripts/add-spdx-headers.py --check
 
-  # Tier 1 — fast, cgo-free unit tests on every OS (architecture/testing/README).
+  # Tier 1 — the fast unit tier (-short), Linux only, for a red inside a minute.
+  # `make test-budget` also fails the job when a tier-1 package exceeds its time
+  # budget, which is how a new corpus test that forgot its testing.Short() guard is
+  # caught before it lands (architecture/testing/03-test-tiers-and-selection.md).
+  # The `test` matrix below still runs the WHOLE suite on all three OSes, so nothing
+  # is traded away here: this job only moves the first signal earlier.
+  test-fast:
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: ./.github/actions/api-contract
+      - run: make test-budget
+
+  # Tier 2 — the whole suite, corpus and oracle tests included, on every OS
+  # (architecture/testing/README).
   test:
     strategy:
       fail-fast: false

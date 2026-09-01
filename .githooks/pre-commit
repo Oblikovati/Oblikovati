@@ -1,10 +1,16 @@
 #!/usr/bin/env sh
 # Pre-commit gate mirroring CI's cheap checks. Enable with `make hooks`
 # (sets git config core.hooksPath .githooks).
+#
+# It runs TIER 1 (-short) on only the packages the staged change can reach
+# (architecture/testing/03-test-tiers-and-selection.md). The corpus tier belongs to
+# `make test-corpus` before a push, not to every commit.
+#
+# Was broken until 2026-09: it did `cd "$root/source"`, a directory the repo-split
+# removed, so the hook exited 1 on every commit and nobody could have been running it.
 set -e
 
-root=$(git rev-parse --show-toplevel)
-cd "$root/source"
+cd "$(git rev-parse --show-toplevel)"
 
 echo "› gofmt"
 out=$(gofmt -l .)
@@ -18,5 +24,7 @@ fi
 echo "› go vet"
 CGO_ENABLED=0 go vet ./...
 
-echo "› go test (short)"
-CGO_ENABLED=0 go test -short ./...
+echo "› go test -short (impacted packages)"
+# IMPACT_BASE=HEAD limits the change set to the working tree, i.e. what is being
+# committed, rather than the whole branch.
+make test-impacted IMPACT_BASE=HEAD

@@ -35,6 +35,9 @@ PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 # Minimum total coverage gate for `make cover` (raise as the suite grows).
 COVER_MIN ?= 0
 
+# Revision `make test-impacted` compares against to find the change set.
+IMPACT_BASE ?= origin/develop
+
 .DEFAULT_GOAL := help
 
 .PHONY: help
@@ -67,17 +70,67 @@ lint: ## Run golangci-lint (install with `make tools`)
 docs-lint: ## Lint the docs (markdownlint via npx; needs node). Link check runs in CI (lychee).
 	npx --yes markdownlint-cli2
 
+# The suite runs in two tiers (architecture/testing/03-test-tiers-and-selection.md).
+# TIER 1 (`make test`, -short) skips the corpus and oracle tests. TIER 2 (`make
+# test-corpus`) runs everything. 152 tests hold 94% of the suite's cost, so the split
+# is what keeps the inner loop in seconds instead of ten minutes.
+#
+# CORPUS_TIMEOUT overrides `go test`'s 10m PER-PACKAGE default, which model/feature/
+# occtparity exceeds on its own. A timed-out package reports as a FAILURE that reads
+# exactly like a real one, so tier 2 must stay generous.
+CORPUS_TIMEOUT ?= 60m
+
+# Seconds a TIER 1 package may take. The gate exists to catch a new corpus test that
+# forgot its testing.Short() guard: such a test costs 100s+ on its own, while the
+# slowest honest tier-1 package sits near 15s on 32 cores and near 40s on a 4-core CI
+# runner. Package WALL time is the only budget that survives t.Parallel() — per-test
+# elapsed stretches with core contention (see cmd/testslowest).
+TIER1_PACKAGE_BUDGET ?= 90
+
 .PHONY: test
-test: ## Tier 1: fast cgo-free unit tests
-	CGO_ENABLED=0 $(GO) test $(PKG)
+test: ## Tier 1: fast cgo-free unit tests (skips the corpus tier)
+	CGO_ENABLED=0 $(GO) test -short $(PKG)
+
+.PHONY: test-corpus
+test-corpus: ## Tier 2: the whole suite, corpus and oracle tests included
+	CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) $(PKG)
+
+.PHONY: test-impacted
+test-impacted: ## Tier 1 on only the packages the current change set can affect
+	@pkgs=$$($(GO) run ./cmd/testimpact -base $(IMPACT_BASE)); \
+	  if [ -z "$$pkgs" ]; then echo "no package owns the change — nothing to test"; exit 0; fi; \
+	  echo "$$pkgs" | sed 's/^/  → /'; \
+	  CGO_ENABLED=0 $(GO) test -short $$pkgs
+
+.PHONY: test-impacted-corpus
+test-impacted-corpus: ## Tier 2 on only the packages the current change set can affect
+	@pkgs=$$($(GO) run ./cmd/testimpact -base $(IMPACT_BASE)); \
+	  if [ -z "$$pkgs" ]; then echo "no package owns the change — nothing to test"; exit 0; fi; \
+	  echo "$$pkgs" | sed 's/^/  → /'; \
+	  CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) $$pkgs
+
+.PHONY: test-budget
+test-budget: ## Tier 1 with the per-package time budget enforced (the CI gate)
+	@CGO_ENABLED=0 $(GO) test -short -json $(PKG) \
+	  | $(GO) run ./cmd/testslowest -top 15 -package-budget $(TIER1_PACKAGE_BUDGET)
+
+.PHONY: test-slowest
+test-slowest: ## Rank the whole suite by test time (what to guard next)
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(PKG) \
+	  | $(GO) run ./cmd/testslowest -top 40
+
+.PHONY: test-slowest-serial
+test-slowest-serial: ## Rank tier 2 with NO parallelism — the measurement the 2s guard rule uses
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -p 1 -parallel 1 -json $(PKG) \
+	  | $(GO) run ./cmd/testslowest -top 40
 
 .PHONY: test-race
 test-race: ## Run the suite under the race detector (needs cgo)
-	CGO_ENABLED=1 $(GO) test -race $(PKG)
+	CGO_ENABLED=1 $(GO) test -race -timeout $(CORPUS_TIMEOUT) $(PKG)
 
 .PHONY: cover
 cover: ## Run tests with coverage and enforce COVER_MIN
-	CGO_ENABLED=0 $(GO) test -covermode=count -coverprofile=coverage.out $(PKG)
+	CGO_ENABLED=0 $(GO) test -covermode=count -coverprofile=coverage.out -timeout $(CORPUS_TIMEOUT) $(PKG)
 	@total=$$($(GO) tool cover -func=coverage.out | awk '/total:/ {print $$3}' | tr -d '%'); \
 	  echo "total coverage: $$total% (min $(COVER_MIN)%)"; \
 	  awk "BEGIN{exit !($$total >= $(COVER_MIN))}" \
@@ -101,8 +154,14 @@ build-all: ## Cross-compile oblikovati-cli for every target in PLATFORMS
 run-cli: ## Run the headless CLI
 	CGO_ENABLED=0 $(GO) run -ldflags "$(LDFLAGS)" ./cmd/oblikovati-cli
 
+# `cover` already runs the whole suite, so `ci` must not also run `test`/`test-corpus`.
+# `test-race` is the release gate (ci.yml runs it only on push to `release`), not a
+# per-change one; use `make ci-race` before cutting a release.
 .PHONY: ci
-ci: fmt-check vet lint test-race cover ## Everything CI runs, locally
+ci: fmt-check vet lint cover ## Everything a PR must pass, locally
+
+.PHONY: ci-race
+ci-race: ci test-race ## `make ci` plus the race detector (the pre-release gate)
 
 .PHONY: tools
 tools: ## Install pinned dev tools into $GOBIN
@@ -111,7 +170,7 @@ tools: ## Install pinned dev tools into $GOBIN
 
 .PHONY: hooks
 hooks: ## Point git at the repo's pre-commit hook
-	git -C .. config core.hooksPath .githooks
+	git config core.hooksPath .githooks
 	@echo "git hooksPath set to .githooks"
 
 .PHONY: clean
