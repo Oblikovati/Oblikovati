@@ -24,6 +24,7 @@ func capRegion(n int, r, half float64) []math.Point3 {
 }
 
 func TestFitFeatureBuildsNurbsBody(t *testing.T) {
+	t.Parallel()
 	f := &FitFeature{def: &FitDefinition{Points: capRegion(12, 10, 3), Degree: 3, NU: 5, NV: 5}}
 	out, err := f.Recompute(Input{})
 	if err != nil {
@@ -38,6 +39,7 @@ func TestFitFeatureBuildsNurbsBody(t *testing.T) {
 }
 
 func TestFitFeatureErrorsWithoutEnoughPoints(t *testing.T) {
+	t.Parallel()
 	f := &FitFeature{def: &FitDefinition{Points: capRegion(4, 10, 3), Degree: 3, NU: 5, NV: 5}}
 	if _, err := f.Recompute(Input{}); err == nil {
 		t.Error("fewer points than the control net should error")
@@ -45,12 +47,14 @@ func TestFitFeatureErrorsWithoutEnoughPoints(t *testing.T) {
 }
 
 func TestFitKind(t *testing.T) {
+	t.Parallel()
 	if (&FitFeature{def: &FitDefinition{}}).Kind() != "fit-surface" {
 		t.Error("fit kind")
 	}
 }
 
 func TestFitSurfaceRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewFitFeatures(fs).Add(capRegion(8, 10, 3), 3, 5, 5)
 	data, err := fs.MarshalRecipe(oneSketch{})
@@ -68,6 +72,7 @@ func TestFitSurfaceRoundTrip(t *testing.T) {
 }
 
 func TestRestoreFitRejectsMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreFitSurface(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreFitSurface(nil) should error")
 	}

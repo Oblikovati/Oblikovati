@@ -52,6 +52,7 @@ func hostFromBlock(t *testing.T, side float64) (*fakeToolHost, *compdef.PartComp
 // pick an edge, set a radius, CanCommit, CommitFeature — and asserts the feature landed on
 // the fake's part and the undo label was recorded through the host, never a *Session.
 func TestFilletCommitFeatureUsesHost(t *testing.T) {
+	t.Parallel()
 	host, part := hostFromBlock(t, 2)
 	before := part.Features().Count()
 	tool := NewFilletTool()
@@ -74,6 +75,7 @@ func TestFilletCommitFeatureUsesHost(t *testing.T) {
 // TestChamferCommitFeatureUsesHost is the fillet test's sibling for chamfer — the third
 // converted tool — proving the host seam generalizes across the dress-up family.
 func TestChamferCommitFeatureUsesHost(t *testing.T) {
+	t.Parallel()
 	host, part := hostFromBlock(t, 2)
 	tool := NewChamferTool()
 	tool.Pick(nil, verticalEdgeOf(t, part.SurfaceBodies().Item(0)))
@@ -93,6 +95,7 @@ func TestChamferCommitFeatureUsesHost(t *testing.T) {
 // part: for every converted tool, a host that errors makes the commit error without touching
 // a session (the return-err branch each CommitFeature shares, #1635).
 func TestCommitFeaturePropagatesHostError(t *testing.T) {
+	t.Parallel()
 	sentinel := errors.New("fake host: no active part")
 	host := &fakeToolHost{partErr: sentinel}
 	tools := []hostedTool{NewFilletTool(), NewChamferTool(), NewExtrudeTool()}
@@ -110,6 +113,7 @@ func TestCommitFeaturePropagatesHostError(t *testing.T) {
 // the preview sick-config gate) with a radius that overruns the block builds a sick feature, so
 // the commit returns the health reason to keep the tool open (#1635).
 func TestFilletCommitFeatureSickReturnsError(t *testing.T) {
+	t.Parallel()
 	host, part := hostFromBlock(t, 2)
 	tool := NewFilletTool()
 	tool.Pick(nil, verticalEdgeOf(t, part.SurfaceBodies().Item(0)))
@@ -138,6 +142,7 @@ var hostConvertedTools = []Tool{
 const hostConvertedCount = 3
 
 func TestHostedToolRatchet(t *testing.T) {
+	t.Parallel()
 	if len(hostConvertedTools) != hostConvertedCount {
 		t.Fatalf("converted-tool ratchet: %d tools, pinned %d — update hostConvertedCount only upward (#1635)",
 			len(hostConvertedTools), hostConvertedCount)
@@ -152,6 +157,7 @@ func TestHostedToolRatchet(t *testing.T) {
 // TestToolHostStaysSlim pins ToolHost's method ceiling so it cannot silently re-fatten
 // into a second Session (#1635). Grow the ceiling only with deliberate evidence.
 func TestToolHostStaysSlim(t *testing.T) {
+	t.Parallel()
 	const ceiling = 8
 	got := reflect.TypeFor[ToolHost]().NumMethod()
 	if got > ceiling {

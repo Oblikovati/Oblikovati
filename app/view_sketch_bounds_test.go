@@ -14,6 +14,7 @@ import (
 // bodies, so a sketch-only part (a DWG/DXF import) had empty model bounds and Fit did nothing.
 // modelBounds must now enclose visible 2D and 3D sketch geometry.
 func TestModelBoundsIncludesSketches(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, err := compdef.AddPart(s.Workspace(), "bounds.opd", true); err != nil {
 		t.Fatalf("AddPart: %v", err)

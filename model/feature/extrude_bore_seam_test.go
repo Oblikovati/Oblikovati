@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -43,6 +44,7 @@ func boredDisk(t *testing.T, borePlane sketch.Plane, dir ExtentDirection) *PartF
 // runs along Y (clear of the disk's +X seam) or along X (straight through it). #2038 read the second
 // 77% low.
 func TestBoredDiskVolumeIsIndependentOfTheBoreAxis(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name  string
 		plane sketch.Plane
@@ -56,7 +58,7 @@ func TestBoredDiskVolumeIsIndependentOfTheBoreAxis(t *testing.T) {
 				t.Fatalf("not a valid solid: %+v", r.Issues)
 			}
 			want := boredDiskVolume()
-			got := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume
+			got := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume
 			if rel := stdmath.Abs(got-want) / want; rel > 1e-3 {
 				t.Errorf("volume %.6f, want %.6f (rel %+.4f) — half-covered wall mesh? (#2038)",
 					got, want, (got-want)/want)
@@ -69,10 +71,11 @@ func TestBoredDiskVolumeIsIndependentOfTheBoreAxis(t *testing.T) {
 // than trusting a volume band: a volume check alone passes a solid that is missing an end of the
 // tunnel by less than its tolerance (#2038's acceptance).
 func TestSymmetricThroughAllBoreIsOpenAlongItsWholeLength(t *testing.T) {
+	t.Parallel()
 	body := boredDisk(t, sketch.XZPlane(), SymmetricDir).Result()[0]
 	for _, y := range []float64{-4.5, -3, -1.5, -0.5, 0.5, 1.5, 3, 4.5} {
 		p := math.P3(0, math.Scalar(y), 0)
-		if c := ops.BodyContainment(body, p, ops.PropertyQuality(), 1e-7); c != ops.ContainOutside {
+		if c := query.BodyContainment(body, p, ops.PropertyQuality(), 1e-7); c != query.ContainOutside {
 			t.Errorf("y=%+.1f inside the bore reads %v, want outside — the tunnel is filled there", y, c)
 		}
 	}
@@ -83,20 +86,21 @@ func TestSymmetricThroughAllBoreIsOpenAlongItsWholeLength(t *testing.T) {
 // kPositiveExtentDirection cuts only the side of the sketch plane the normal points to. The XZ plane's
 // normal is −Y, so the material at +Y must survive and the −Y half must go.
 func TestPositiveThroughAllBoreCutsOneSideOnly(t *testing.T) {
+	t.Parallel()
 	body := boredDisk(t, sketch.XZPlane(), PositiveDir).Result()[0]
 	for _, tc := range []struct {
 		y    float64
-		want ops.PointContainment
-	}{{-4, ops.ContainOutside}, {-2, ops.ContainOutside}, {2, ops.ContainInside}, {4, ops.ContainInside}} {
+		want query.PointContainment
+	}{{-4, query.ContainOutside}, {-2, query.ContainOutside}, {2, query.ContainInside}, {4, query.ContainInside}} {
 		p := math.P3(0, math.Scalar(tc.y), 0)
-		if c := ops.BodyContainment(body, p, ops.PropertyQuality(), 1e-7); c != tc.want {
+		if c := query.BodyContainment(body, p, ops.PropertyQuality(), 1e-7); c != tc.want {
 			t.Errorf("y=%+.1f reads %v, want %v — a one-direction through-all must not cut both ways",
 				tc.y, c, tc.want)
 		}
 	}
 	// Exactly half the tunnel, so a caller measuring against the full tunnel is measuring the wrong thing.
 	want := stdmath.Pi*25*0.4 - stdmath.Pi*0.15*0.15*5
-	got := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume
+	got := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume
 	if rel := stdmath.Abs(got-want) / want; rel > 2e-3 {
 		t.Errorf("volume %.6f, want %.6f (disk minus HALF the tunnel)", got, want)
 	}

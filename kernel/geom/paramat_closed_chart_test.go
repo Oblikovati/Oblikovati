@@ -53,6 +53,7 @@ func roundTripInversionError(s BSplineSurface, u, v float64) float64 {
 //
 // It sweeps the WHOLE domain, not just the tail, so the fix is pinned to leave the interior alone.
 func TestParamAtInvertsAcrossTheClosingSeam(t *testing.T) {
+	t.Parallel()
 	s := closedBarrelSurface(t, 5.9, 18, 30)
 	const steps = 257
 	worstU, worst := 0.0, 0.0
@@ -74,6 +75,7 @@ func TestParamAtInvertsAcrossTheClosingSeam(t *testing.T) {
 // samples that are distinct in 3D must stay distinct in the chart. The defect collapsed a run of four
 // onto one node, and a zero-length constraint segment is what folds the covering CDT.
 func TestParamAtKeepsDistinctSeamSamplesDistinct(t *testing.T) {
+	t.Parallel()
 	s := closedBarrelSurface(t, 5.9, 18, 30)
 	const n = 256
 	prevU, prevV := s.ParamAt(s.PointAt(0, 0))
@@ -95,6 +97,7 @@ func TestParamAtKeepsDistinctSeamSamplesDistinct(t *testing.T) {
 // open sheet belongs at u=1, and answering u=0 would be exactly the error the retry exists to remove,
 // mirrored. It also pins that an interior foot is untouched.
 func TestParamAtLeavesAnOpenChartPinnedAtItsBound(t *testing.T) {
+	t.Parallel()
 	s := rippledSheet(t, 6, 6, 0.2, false)
 	uLo, uHi := s.UDomain()
 	vLo, vHi := s.VDomain()
@@ -115,6 +118,7 @@ func TestParamAtLeavesAnOpenChartPinnedAtItsBound(t *testing.T) {
 // jitter between branches from run to run. The retry compares by distance and keeps the incumbent on
 // a tie, so the seam keeps reporting ulo.
 func TestParamAtAtTheSeamItselfStaysCanonical(t *testing.T) {
+	t.Parallel()
 	s := closedBarrelSurface(t, 5.9, 18, 30)
 	uLo, _ := s.UDomain()
 	for _, v := range []float64{0, 0.25, 0.5, 1} {
@@ -127,6 +131,7 @@ func TestParamAtAtTheSeamItselfStaysCanonical(t *testing.T) {
 // TestMirroredBoundOnlyFiresOnAFiniteBound pins the trigger itself: interior parameters and infinite
 // bounds must not spawn a retry (the cost is one extra inversion, so it must stay rare).
 func TestMirroredBoundOnlyFiresOnAFiniteBound(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		x, lo, hi float64
 		want      float64

@@ -13,6 +13,7 @@ import (
 // TestNopSmdResistorCSG pins smd_resistor as the union of its ceramic body and
 // two metal end caps; printed text is intentionally not material geometry.
 func TestNopSmdResistorCSG(t *testing.T) {
+	t.Parallel()
 	body := box(-0.28, -0.125, 0, 0.56, 0.25, 0.12)
 	for _, cap := range []*topo.Body{box(-0.50, -0.125, 0, 0.22, 0.25, 0.12), box(0.28, -0.125, 0, 0.22, 0.25, 0.12)} {
 		var err error

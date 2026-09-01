@@ -47,6 +47,7 @@ func freeEdgeCount(b *topo.Body) int {
 // notched target as from a bare cylinder — cross-checked against the certified RuledCrossingCutGeneral, so a
 // right-volume-wrong-shape build (which the manifold/Euler checks miss) is caught.
 func TestPartialRimCutDisjointRodConservesRemoval(t *testing.T) {
+	t.Parallel()
 	target := notchedCylinderBody(t)
 	rod, _ := brep.SolidCylinder(math.P3(-6, 0, 3), math.V3(1, 0, 0), 1, 12) // through the lower band, clear of the notch
 	res, ok := brep.PartialRimCutGeneral(target, rod, &diag.Recorder{})
@@ -127,6 +128,7 @@ func analyticPartialRimVolume(n int) float64 {
 // the upper band where the front wall is gone) is OUTSIDE the disjoint sub-family, so PartialRimCutGeneral
 // declines and kernel/ops keeps its observable CSG fallback — never a manifold-but-wrong analytic solid.
 func TestPartialRimCutInteractingCutDeclines(t *testing.T) {
+	t.Parallel()
 	target := notchedCylinderBody(t)
 	rod, _ := brep.SolidCylinder(math.P3(-6, 0, 7), math.V3(1, 0, 0), 1, 12) // z=7: front exit lands in the notch
 	if _, ok := brep.PartialRimCutGeneral(target, rod, &diag.Recorder{}); ok {

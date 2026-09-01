@@ -14,6 +14,7 @@ import (
 // still resolves (the app supplies them); identical embeds dedup; and an unknown ref falls back
 // to the family-named default so plain text still renders.
 func TestEmbedAndResolveFonts(t *testing.T) {
+	t.Parallel()
 	data, ok := text.EmbeddedFontBytes(text.DefaultFontFamily)
 	if !ok {
 		t.Fatal("no embedded font bytes for the fixture")

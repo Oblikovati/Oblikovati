@@ -7,6 +7,7 @@ import "testing"
 // TestConvertActiveToSheetMetal converting an ordinary part enters the sheet-metal environment
 // (the part reports sheet metal and the tab's tools enable); converting again is a no-op.
 func TestConvertActiveToSheetMetal(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	if hasActiveSheetMetalPart(s) {
 		t.Fatal("a fresh part should not start as sheet metal")
@@ -25,6 +26,7 @@ func TestConvertActiveToSheetMetal(t *testing.T) {
 // TestConvertRejectsNoPart convert errors when there is no active document and when the active
 // document is not a part (an assembly).
 func TestConvertRejectsNoPart(t *testing.T) {
+	t.Parallel()
 	if err := NewSession().ConvertActiveToSheetMetal(); err == nil {
 		t.Error("convert with no active document should error")
 	}
@@ -39,6 +41,7 @@ func TestConvertRejectsNoPart(t *testing.T) {
 
 // TestNewSheetMetalPart a new sheet-metal part starts already in the environment.
 func TestNewSheetMetalPart(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, err := s.NewSheetMetalPart(); err != nil {
 		t.Fatalf("NewSheetMetalPart: %v", err)
@@ -51,6 +54,7 @@ func TestNewSheetMetalPart(t *testing.T) {
 // TestSheetMetalEnvironmentCommands the two ribbon commands run their actions: New Sheet Metal
 // Part starts in the environment, and Convert enters it on the active ordinary part.
 func TestSheetMetalEnvironmentCommands(t *testing.T) {
+	t.Parallel()
 	fresh := NewSession()
 	if err := RegisterStandardCommands(fresh); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -76,6 +80,7 @@ func TestSheetMetalEnvironmentCommands(t *testing.T) {
 
 // TestCanConvertPredicate the Convert enable predicate is true only for an ordinary part.
 func TestCanConvertPredicate(t *testing.T) {
+	t.Parallel()
 	if canConvertToSheetMetal(NewSession()) {
 		t.Error("canConvertToSheetMetal should be false with no part")
 	}

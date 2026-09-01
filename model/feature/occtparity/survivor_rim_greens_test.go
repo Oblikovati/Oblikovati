@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -51,7 +52,7 @@ func assertFoldFreeFaces(t *testing.T, name string, body *topo.Body) {
 		if sph, ok := f.Geometry().(geom.Sphere); ok && sph.Radius >= 100 {
 			continue // pre-existing host-sphere-zone fold, orthogonal to the survivor-rim carry (failarea-triage.md)
 		}
-		m := ops.TessellateFace(f, ops.PropertyQuality())
+		m := tessellate.TessellateFace(f, ops.PropertyQuality())
 		area := ops.MeshArea(m)
 		if area <= 0 || stdmath.IsInf(area, 0) || stdmath.IsNaN(area) {
 			t.Fatalf("%s %T face meshed to %.4f, want a finite positive area", name, f.Geometry(), area)
@@ -66,7 +67,7 @@ func assertWholeBodyArea(t *testing.T, name string, body *topo.Body, want float6
 	t.Helper()
 	total := 0.0
 	for _, f := range body.Faces() {
-		total += ops.MeshArea(ops.TessellateFace(f, ops.PropertyQuality()))
+		total += ops.MeshArea(tessellate.TessellateFace(f, ops.PropertyQuality()))
 	}
 	if rel := stdmath.Abs(total-want) / want; rel > 0.01 {
 		t.Fatalf("%s whole-body mesh area %.2f, want OCCT %.0f within deps 0.01 (rel %.5f) — a collapsed survivor rim reads far low",

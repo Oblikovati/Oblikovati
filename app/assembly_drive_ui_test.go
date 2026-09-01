@@ -14,6 +14,7 @@ import (
 // TestJointsPanelExposesDrive: the Joints panel carries the Drive command as a compact icon
 // button (M12-F03).
 func TestJointsPanelExposesDrive(t *testing.T) {
+	t.Parallel()
 	tab, ok := BuildRibbon(assemblySession(t)).Tab("Assemble")
 	if !ok {
 		t.Fatal("an active assembly should show the Assemble tab")
@@ -33,6 +34,7 @@ func TestJointsPanelExposesDrive(t *testing.T) {
 // TestDefaultDriveSettingsByKind: a rotational joint sweeps its angular range (a full turn
 // when unbounded), a slider its linear range.
 func TestDefaultDriveSettingsByKind(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	placedWidget(t, s, asm, "widget:2")
@@ -59,6 +61,7 @@ func TestDefaultDriveSettingsByKind(t *testing.T) {
 
 // TestSelectedDrivableJointGate: Drive enables only when a drivable joint is selected.
 func TestSelectedDrivableJointGate(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	placedWidget(t, s, asm, "widget:2")
@@ -80,6 +83,7 @@ func TestSelectedDrivableJointGate(t *testing.T) {
 // TestDrivePlaybackMovesThenRestores: starting playback and ticking moves the driven
 // component; stopping restores its pre-drive pose.
 func TestDrivePlaybackMovesThenRestores(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	placedWidget(t, s, asm, "widget:2")

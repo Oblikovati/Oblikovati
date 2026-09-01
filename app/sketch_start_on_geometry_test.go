@@ -43,6 +43,7 @@ func coincidenceCount(sk *sketch.Sketch) int {
 // TestRectangleStartedOnAPointJoinsIt is the reported case: the rectangle's first corner is
 // clicked onto the line's endpoint.
 func TestRectangleStartedOnAPointJoinsIt(t *testing.T) {
+	t.Parallel()
 	s, sk, px, py := existingCornerSession(t)
 	before := coincidenceCount(sk)
 
@@ -58,6 +59,7 @@ func TestRectangleStartedOnAPointJoinsIt(t *testing.T) {
 // TestArcStartedOnAPointJoinsIt is the other reported case. The arc tool did not even use the
 // shared recipe commit, so it could never have inferred anything.
 func TestArcStartedOnAPointJoinsIt(t *testing.T) {
+	t.Parallel()
 	s, sk, px, py := existingCornerSession(t)
 	before := coincidenceCount(sk)
 
@@ -77,6 +79,7 @@ func TestArcStartedOnAPointJoinsIt(t *testing.T) {
 // TestCircleCentredOnAPointJoinsIt: the same gap ran through every tool that bypassed the recipe
 // commit, not only the two that were reported.
 func TestCircleCentredOnAPointJoinsIt(t *testing.T) {
+	t.Parallel()
 	s, sk, px, py := existingCornerSession(t)
 	before := coincidenceCount(sk)
 
@@ -96,6 +99,7 @@ func TestCircleCentredOnAPointJoinsIt(t *testing.T) {
 // placed a point on something. A shape drawn in open space picking up a coincidence would be far
 // worse than the bug — it would silently tie unrelated geometry together.
 func TestShapeAwayFromGeometryGainsNoConstraint(t *testing.T) {
+	t.Parallel()
 	s, sk, _, _ := existingCornerSession(t)
 	before := coincidenceCount(sk)
 
@@ -111,6 +115,7 @@ func TestShapeAwayFromGeometryGainsNoConstraint(t *testing.T) {
 // TestInferenceOffLeavesShapesUnconstrained: the point-inference preference has to reach the new
 // path too, or a user who turned it off would still get constraints they did not ask for.
 func TestInferenceOffLeavesShapesUnconstrained(t *testing.T) {
+	t.Parallel()
 	s, sk, px, py := existingCornerSession(t)
 	opts := s.SketchInferenceOptions()
 	opts.InferEnabled = false
@@ -130,6 +135,7 @@ func TestInferenceOffLeavesShapesUnconstrained(t *testing.T) {
 // the recipe layer exists to prevent — the arc tool previewed one shape and committed another
 // code path's. They must agree.
 func TestCommittedShapeMatchesItsPreview(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	tool := NewArcTool()
 	s.StartTool(tool)
@@ -162,6 +168,7 @@ func TestCommittedShapeMatchesItsPreview(t *testing.T) {
 // TestPointToolStillPlacesEveryPoint guards the tool whose commit creates SEVERAL entities: it
 // now applies one recipe per point, and dropping the loop would silently place only one.
 func TestPointToolStillPlacesEveryPoint(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	before := sk.Points().Count()
 	tool := NewPointTool()

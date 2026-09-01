@@ -15,6 +15,7 @@ import (
 // host's own api.Version/Major — the same source the load-time handshake gates on, so
 // an add-in can never see a version that disagrees with the compatibility check.
 func TestApplicationApiVersionReportsHostContract(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 

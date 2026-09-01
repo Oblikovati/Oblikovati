@@ -14,6 +14,7 @@ import (
 // a variable definition; editHelix swaps shapes and end conditions in place
 // (M06-F09, #624).
 func TestVariableHelixOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "sketch3d.create", `{"name":"Coil"}`, &wire.CreateSketch3DResult{})
 

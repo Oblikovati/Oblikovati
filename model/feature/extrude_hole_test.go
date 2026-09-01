@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/param"
 )
 
@@ -14,6 +15,7 @@ import (
 // inner loops: an annular profile (square with a square hole) extruded into a solid
 // block instead of a frame. The extruded volume must be (outer-inner)·height.
 func TestExtrudeHonorsHole(t *testing.T) {
+	t.Parallel()
 	ps := param.NewParameters()
 	fs := NewPartFeatures(ps)
 	const side, hole, height = 4.0, 2.0, 3.0
@@ -37,7 +39,7 @@ func TestExtrudeHonorsHole(t *testing.T) {
 		t.Fatalf("extrude produced %d bodies (want 1 solid)", len(bodies))
 	}
 	want := (side*side - hole*hole) * height // 16-4 = 12 * 3 = 36
-	got := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 	if stdmath.Abs(got-want)/want > 1e-3 {
 		t.Errorf("hollow extrude volume = %.4f, want %.4f (hole not honored?)", got, want)
 	}
@@ -49,6 +51,7 @@ func TestExtrudeHonorsHole(t *testing.T) {
 // half its true area — so the volume came out far too low. The fix is the earcut planar
 // triangulator (kernel/ops/earcut.go); the volume must now be (plate − 4·hole)·height.
 func TestExtrudeHonorsMultipleHoles(t *testing.T) {
+	t.Parallel()
 	ps := param.NewParameters()
 	fs := NewPartFeatures(ps)
 	const w, h, hole, height = 8.0, 6.0, 1.0, 2.0
@@ -74,7 +77,7 @@ func TestExtrudeHonorsMultipleHoles(t *testing.T) {
 		t.Fatalf("4-hole extrude is not a valid solid: %+v", rep)
 	}
 	want := (w*h - 4*hole*hole) * height
-	got := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 	if stdmath.Abs(got-want)/want > 1e-3 {
 		t.Errorf("4-hole extrude volume = %.4f, want %.4f (multi-hole cap mis-tessellated?)", got, want)
 	}

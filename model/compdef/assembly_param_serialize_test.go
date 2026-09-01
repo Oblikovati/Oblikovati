@@ -16,6 +16,7 @@ import (
 // .obk save/reopen through the store (M39-F01, #1557). Before the fix assemblyRecipe carried
 // no parameters field, so every assembly user parameter was silently lost on save.
 func TestAssemblyUserParametersRoundTrip(t *testing.T) {
+	t.Parallel()
 	store, ws, dir := assemblyWorkspace(t)
 	asm, asmDef := newAssembly(t, ws, dir, "params.obk")
 	if _, err := asmDef.Parameters().AddUserParameter("plateWidth", "40 mm"); err != nil { // 4 cm
@@ -54,6 +55,7 @@ func TestAssemblyUserParametersRoundTrip(t *testing.T) {
 // and the dimension measures its 40 mm target; the pre-fix regression (table lost on save)
 // left "width" unknown so the dimension collapsed toward 0 (M39-F01, #1557).
 func TestAssemblyParameterDrivenDimensionResolvesAfterReload(t *testing.T) {
+	t.Parallel()
 	store, ws, dir := assemblyWorkspace(t)
 	asm, asmDef := newAssembly(t, ws, dir, "driven.obk")
 	if _, err := asmDef.Parameters().AddUserParameter("width", "40 mm"); err != nil {
@@ -81,6 +83,7 @@ func TestAssemblyParameterDrivenDimensionResolvesAfterReload(t *testing.T) {
 // re-applying, or undoing back to a state with fewer parameters would leave stale ones behind
 // (or duplicate-name errors on re-add). M39-F01, #1557.
 func TestAssemblyParametersResetOnSnapshotRestore(t *testing.T) {
+	t.Parallel()
 	asmDef := compdef.NewAssemblyComponentDefinition()
 	baseline, err := asmDef.MarshalSnapshot() // zero parameters
 	if err != nil {

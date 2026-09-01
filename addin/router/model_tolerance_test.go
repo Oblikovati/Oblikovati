@@ -12,6 +12,7 @@ import (
 // + datum through features.add without changing the body, and rejects an empty request.
 
 func TestModelToleranceOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
@@ -39,6 +40,7 @@ func TestModelToleranceOverWire(t *testing.T) {
 }
 
 func TestModelToleranceOverWireRejectsEmpty(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "features.add", []byte(`{"kind":"modelTolerance","args":{}}`)); err == nil {
 		t.Fatal("an empty modelTolerance (no frames, no datums) must error")

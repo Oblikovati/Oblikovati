@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -34,6 +35,7 @@ func verticalEdgeOf(t *testing.T, b *topo.Body) EdgeHandle {
 // TestChamferToolEndToEnd drives the Chamfer UI: start the tool, click a vertical edge of
 // a 2×2×2 block, set the distance, OK — and asserts the bevel removed the wedge volume.
 func TestChamferToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2) // 2×2×2, vol 8
 	edge := verticalEdgeOf(t, block)
 	s.SetPicker(stubPicker{sel: edge})
@@ -55,7 +57,7 @@ func TestChamferToolEndToEnd(t *testing.T) {
 		t.Fatalf("chamfered body not a valid solid: %+v", r)
 	}
 	want := 8 - 0.5*0.5*0.5*2 // 8 − wedge (½·d²·length) = 7.75
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 1e-6 {
 		t.Errorf("chamfer volume = %g, want %g", got, want)
 	}
 	if s.ActiveTool() != nil {
@@ -64,6 +66,7 @@ func TestChamferToolEndToEnd(t *testing.T) {
 }
 
 func TestChamferViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -80,7 +83,7 @@ func TestChamferViaRibbonCommand(t *testing.T) {
 		t.Fatalf("OK: %v", err)
 	}
 	def := activePartDef(t, s)
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 8 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 8 {
 		t.Errorf("chamfer did not remove material: volume %g, want < 8", v)
 	}
 }
@@ -88,6 +91,7 @@ func TestChamferViaRibbonCommand(t *testing.T) {
 // TestChamferToolSeedsCornerPreference checks the tool adopts the session's default
 // corner treatment on Start, and that the chosen treatment reaches the committed feature.
 func TestChamferToolSeedsCornerPreference(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	s.SetChamferFlatCorners(false)
@@ -109,6 +113,7 @@ func TestChamferToolSeedsCornerPreference(t *testing.T) {
 // TestChamferToolSeedsConcaveStrategy checks the tool adopts the session's default concave-edge
 // strategy on Start and carries it (via the combo index) to the committed feature's definition.
 func TestChamferToolSeedsConcaveStrategy(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	s.SetChamferConcaveStrategy(types.ChamferConcaveInward)
@@ -129,6 +134,7 @@ func TestChamferToolSeedsConcaveStrategy(t *testing.T) {
 }
 
 func TestChamferToolNeedsEdge(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	ch := NewChamferTool()

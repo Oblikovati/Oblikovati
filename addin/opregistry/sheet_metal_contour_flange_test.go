@@ -13,6 +13,7 @@ import (
 // TestSheetMetalContourFlangeApply seeds a sheet-metal wall, adds an open L-profile sketch,
 // and sweeps it along a top edge into one merged solid; then checks the error paths.
 func TestSheetMetalContourFlangeApply(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	profile := def.Sketches().Add(sketch.XYPlane())

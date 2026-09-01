@@ -9,6 +9,7 @@ import (
 )
 
 func TestElevateDegreePreservesCurve(t *testing.T) {
+	t.Parallel()
 	c := sampleCubicCurve(t)
 	got, err := c.ElevateDegree(1)
 	if err != nil {
@@ -24,6 +25,7 @@ func TestElevateDegreePreservesCurve(t *testing.T) {
 }
 
 func TestElevateDegreeByTwo(t *testing.T) {
+	t.Parallel()
 	c := sampleCubicCurve(t)
 	got, err := c.ElevateDegree(2)
 	if err != nil {
@@ -36,6 +38,7 @@ func TestElevateDegreeByTwo(t *testing.T) {
 }
 
 func TestElevateDegreeBezier(t *testing.T) {
+	t.Parallel()
 	// A single-span (Bézier) quadratic: elevating to cubic must keep it on the curve.
 	c := quarterCircleNURBS(t)
 	got, err := c.ElevateDegree(1)
@@ -54,6 +57,7 @@ func TestElevateDegreeBezier(t *testing.T) {
 }
 
 func TestElevateDegreeRejectsZero(t *testing.T) {
+	t.Parallel()
 	c := sampleCubicCurve(t)
 	if _, err := c.ElevateDegree(0); err == nil {
 		t.Error("elevating by 0 should error")
@@ -61,6 +65,7 @@ func TestElevateDegreeRejectsZero(t *testing.T) {
 }
 
 func TestElevateDegree2d(t *testing.T) {
+	t.Parallel()
 	c, err := NewBSplineCurve2dUniformWeights(
 		2,
 		[]math.Point2{math.P2(0, 0), math.P2(1, 2), math.P2(3, 0), math.P2(4, 1)},
@@ -83,6 +88,7 @@ func TestElevateDegree2d(t *testing.T) {
 }
 
 func TestElevateDegreeSurface(t *testing.T) {
+	t.Parallel()
 	s := sampleQuadraticSurface(t)
 	gu, err := s.ElevateDegreeU(1)
 	if err != nil {
@@ -106,6 +112,7 @@ func TestElevateDegreeSurface(t *testing.T) {
 }
 
 func TestBinomial(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		n, k int
 		want float64

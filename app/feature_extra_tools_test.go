@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -16,12 +17,13 @@ import (
 // blockVolume returns the part's first body volume (analytic comparisons need it).
 func blockVolume(def *compdef.PartComponentDefinition) float64 {
 	b := def.SurfaceBodies().Item(0)
-	return float64(ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume)
+	return float64(query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume)
 }
 
 // TestBossToolEndToEnd raises a Ø2 × 1.5 stud on the block top: the volume grows by the
 // faceted stud's prism (the boss tool drives the same drillTool facets as the hole).
 func TestBossToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 6) // 6×6×2 block, volume 72
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
@@ -44,6 +46,7 @@ func TestBossToolEndToEnd(t *testing.T) {
 // TestHullToolEndToEnd hulls an L-shaped part (block + stud) into its convex hull: the
 // hull volume strictly exceeds the input volume (concavity filled).
 func TestHullToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 6)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	feature.NewBossFeatures(def.Features()).Add(topFaceOf(t, block).ReferenceKey(),
@@ -66,6 +69,7 @@ func TestHullToolEndToEnd(t *testing.T) {
 // TestDirectEditToolSizeOverFaces pushes the block top up by 1 via the Size operation:
 // 6×6×2 grows to 6×6×3 (volume 72 → 108).
 func TestDirectEditToolSizeOverFaces(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 6)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
@@ -86,6 +90,7 @@ func TestDirectEditToolSizeOverFaces(t *testing.T) {
 // TestDirectEditToolScaleNeedsNoFaces scales the whole block ×1.5 about the origin:
 // volume 72 → 72·1.5³ = 243.
 func TestDirectEditToolScaleNeedsNoFaces(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 
@@ -107,6 +112,10 @@ func TestDirectEditToolScaleNeedsNoFaces(t *testing.T) {
 // TestSketchDrivenPatternToolEndToEnd patterns a boss at three sketch points: each extra
 // point adds one stud's volume.
 func TestSketchDrivenPatternToolEndToEnd(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
+	t.Parallel()
 	s, block := newPartWithBlock(t, 6)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	boss := feature.NewBossFeatures(def.Features()).Add(topFaceOf(t, block).ReferenceKey(),
@@ -137,6 +146,7 @@ func TestSketchDrivenPatternToolEndToEnd(t *testing.T) {
 // Pattern build the draft the commit gate inspects (#1626): no draft before the tool is
 // commit-ready, a non-nil draft once it is.
 func TestExtraToolsDraftFeature(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 6)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	top := FaceHandle{Face: topFaceOf(t, block), Body: block}
@@ -178,6 +188,7 @@ func TestExtraToolsDraftFeature(t *testing.T) {
 
 // TestFeatureExtraToolsViaRibbonCommands asserts each new command starts its tool.
 func TestFeatureExtraToolsViaRibbonCommands(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

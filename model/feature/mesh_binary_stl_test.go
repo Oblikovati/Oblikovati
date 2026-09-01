@@ -43,6 +43,7 @@ func buildBinarySTL(tris [][3][3]float32) []byte {
 // reference-mesh geometry (it used to be unsupported — "not yet wired"). The tetra's 12
 // vertex references weld to 4 distinct corners, exactly like the ASCII path.
 func TestParseSTLDecodesBinary(t *testing.T) {
+	t.Parallel()
 	data := buildBinarySTL(tetraTris[:])
 	g, err := ParseSTL(bytes.NewReader(data))
 	if err != nil {
@@ -60,6 +61,7 @@ func TestParseSTLDecodesBinary(t *testing.T) {
 // same welded geometry — same vertex/facet counts and coincident vertex positions — so the
 // representation a MeshFeature sees does not depend on the file encoding.
 func TestParseSTLBinaryAsciiParity(t *testing.T) {
+	t.Parallel()
 	ascii, err := ParseSTL(bytes.NewReader([]byte(tetraSTL)))
 	if err != nil {
 		t.Fatalf("ParseSTL(ascii): %v", err)
@@ -81,6 +83,7 @@ func TestParseSTLBinaryAsciiParity(t *testing.T) {
 // TestDecodeSTLMeshRejectsEmpty keeps the "no facets" guard the ASCII path had: an STL with
 // no triangles is an error, not an empty mesh, whichever encoding it claims.
 func TestDecodeSTLMeshRejectsEmpty(t *testing.T) {
+	t.Parallel()
 	if _, err := DecodeSTLMesh([]byte("solid empty\nendsolid empty\n")); err == nil {
 		t.Error("an STL with no facets should error")
 	}

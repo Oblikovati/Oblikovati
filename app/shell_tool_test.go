@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestShellToolEndToEnd drives the Shell UI: start the tool, click the block's top face
@@ -13,6 +14,7 @@ import (
 // open solid of the right volume. Block 4×4×2 (vol 32); cavity [0.5,3.5]²×[0.5,2] =
 // 3·3·1.5 = 13.5 ⇒ 18.5.
 func TestShellToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -34,7 +36,7 @@ func TestShellToolEndToEnd(t *testing.T) {
 		t.Fatalf("shelled body not a valid solid: %+v", r)
 	}
 	want := 32.0 - 3*3*1.5
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 1e-6 {
 		t.Errorf("shell volume = %g, want %g", got, want)
 	}
 	if s.ActiveTool() != nil {
@@ -44,6 +46,7 @@ func TestShellToolEndToEnd(t *testing.T) {
 
 // TestShellViaRibbonCommand drives the Shell from its ribbon command.
 func TestShellViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -60,13 +63,14 @@ func TestShellViaRibbonCommand(t *testing.T) {
 		t.Fatalf("OK: %v", err)
 	}
 	def := activePartDef(t, s)
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 32 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 32 {
 		t.Errorf("shell did not hollow the body: volume %g, want < 32", v)
 	}
 }
 
 // TestShellToolNeedsFace checks the tool is not committable until a face is picked.
 func TestShellToolNeedsFace(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	sh := NewShellTool()

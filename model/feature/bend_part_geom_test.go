@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/math"
 )
@@ -15,8 +16,9 @@ import (
 // result is a single valid solid whose moving flange folded up (the +Z extent grew well
 // beyond the original thickness) while volume is conserved within the bend allowance.
 func TestBendSolidBoxFoldsUpValid(t *testing.T) {
+	t.Parallel()
 	bar := subd.ToBody(subd.Box(10, 2, 1), "bar") // L=10 (X), W=2 (Y), T=1 (Z), corner at origin
-	before := ops.BodyGeometryProperties(bar, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(bar, ops.DefaultQuality()).Volume
 
 	// Bend line across the bar at x=5 on the top face, along +Y; fold the +X half up.
 	bent, err := bendSolid(bar, math.P3(5, 0, 1), math.V3(0, 1, 0), math.V3(0, 0, 1), 1.0, stdmath.Pi/2, "bend")
@@ -26,7 +28,7 @@ func TestBendSolidBoxFoldsUpValid(t *testing.T) {
 	if r := ops.Validate(bent); !r.Valid {
 		t.Fatalf("bent body invalid: %v", r.Issues)
 	}
-	props := ops.BodyGeometryProperties(bent, ops.DefaultQuality())
+	props := query.BodyGeometryProperties(bent, ops.DefaultQuality())
 	if props.Volume <= 0 {
 		t.Fatalf("bent volume = %g, want positive", props.Volume)
 	}

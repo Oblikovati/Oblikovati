@@ -17,6 +17,7 @@ import (
 // TestConeCylinderImprintTwoCleanLoops crosses a frustum (axis x, radius 1→2.5 over x∈[-6,6]) through a
 // radius-3 cylinder (axis z) and checks the trace is two closed loops, each on both surfaces.
 func TestConeCylinderImprintTwoCleanLoops(t *testing.T) {
+	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 
@@ -36,6 +37,7 @@ func TestConeCylinderImprintTwoCleanLoops(t *testing.T) {
 
 // TestConeCylinderImprintOrderIndependent: resolving works whichever body is passed first.
 func TestConeCylinderImprintOrderIndependent(t *testing.T) {
+	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	if _, ok := coneCylinderImprint(cyl, cone, nil); !ok {
@@ -45,6 +47,7 @@ func TestConeCylinderImprintOrderIndependent(t *testing.T) {
 
 // TestConeCylinderImprintTwoCylindersDefer: two cylinders are not the cone–cylinder case.
 func TestConeCylinderImprintTwoCylindersDefer(t *testing.T) {
+	t.Parallel()
 	a, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 	b, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	if _, ok := coneCylinderImprint(a, b, nil); ok {

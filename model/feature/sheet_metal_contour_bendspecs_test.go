@@ -43,6 +43,7 @@ func straightProfile() *sketch.Sketch {
 // contributed zero bends. The swept angle is the corner's own turn; the reported radius follows the
 // flange convention (the override, else 0 to defer to the rule's default).
 func TestContourFlangeBendSpecsDevelopEveryCorner(t *testing.T) {
+	t.Parallel()
 	right := stdmath.Pi / 2
 	for name, tc := range map[string]struct {
 		profile   *sketch.Sketch

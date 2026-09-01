@@ -44,6 +44,7 @@ func topZ(b *topo.Body) float64 {
 // TestUnfoldFeatureFlattens the unfold feature flattens the flange to a watertight solid lying
 // in the base plane (the wall no longer rises above the gauge).
 func TestUnfoldFeatureFlattens(t *testing.T) {
+	t.Parallel()
 	fs, bt := flangedSheetForUnfold(t)
 	if folded := topZ(fs.Result()[0]); folded < 1.5 {
 		t.Fatalf("folded flange should rise; maxZ=%.3f", folded)
@@ -60,6 +61,7 @@ func TestUnfoldFeatureFlattens(t *testing.T) {
 // TestRefoldFeatureRestores refold after unfold restores the fold (the wall rises again) as a
 // watertight solid.
 func TestRefoldFeatureRestores(t *testing.T) {
+	t.Parallel()
 	fs, bt := flangedSheetForUnfold(t)
 	z0 := topZ(fs.Result()[0])
 	NewSheetMetalUnfoldFeatures(fs).Add(&SheetMetalUnfoldDefinition{Bends: []BendTransform{bt}})
@@ -76,6 +78,7 @@ func TestRefoldFeatureRestores(t *testing.T) {
 // TestUnfoldRefoldRoundTrip an unfold and a refold feature persist their bend transforms and
 // restore (they reference no sketch, so the recipe is self-contained).
 func TestUnfoldRefoldRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	bend := BendTransform{LinePoint: math.P3(0, 0, 0.2), LineDir: math.V3(4, 0, 0), Up: math.V3(0, 0, 1), Out: math.V3(0, 1, 0), Angle: stdmath.Pi / 2, Radius: 0.2, Thickness: 0.1, Neutral: 0.244}
 	NewSheetMetalUnfoldFeatures(fs).Add(&SheetMetalUnfoldDefinition{Bends: []BendTransform{bend}})
@@ -107,6 +110,7 @@ func TestUnfoldRefoldRoundTrip(t *testing.T) {
 
 // TestUnfoldRefoldMissingPayload restoring a nil payload errors.
 func TestUnfoldRefoldMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreSheetMetalUnfold(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreSheetMetalUnfold(nil) must error")
 	}
@@ -118,6 +122,7 @@ func TestUnfoldRefoldMissingPayload(t *testing.T) {
 // TestUnfoldBendRejectsDegenerateFrame a bend transform with a degenerate fold normal or a
 // non-positive developed length cannot define a development and errors with the offending input.
 func TestUnfoldBendRejectsDegenerateFrame(t *testing.T) {
+	t.Parallel()
 	fs, bt := flangedSheetForUnfold(t)
 	zeroUp := bt
 	zeroUp.Up = math.V3(0, 0, 0)

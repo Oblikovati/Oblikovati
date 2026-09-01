@@ -55,6 +55,7 @@ func overhang(body *topo.Body) float64 {
 // face overhangs the part by radius+thickness. The flush positions set the section back by exactly
 // that much (or by the radius alone), which is the whole point — the wall stops overhanging.
 func TestBendPositionSetsTheWallBack(t *testing.T) {
+	t.Parallel()
 	const radius, thickness = 0.3, 0.2
 	base := func(p BendPosition) *SheetMetalFlangeDefinition {
 		return &SheetMetalFlangeDefinition{
@@ -79,6 +80,7 @@ func TestBendPositionSetsTheWallBack(t *testing.T) {
 // TestBendPositionOffsetMovesItFurther: the two offset positions are the flush ones plus an
 // explicit distance, so the wall moves INTO the part by that much.
 func TestBendPositionOffsetMovesItFurther(t *testing.T) {
+	t.Parallel()
 	flush := flangeBody(t, &SheetMetalFlangeDefinition{
 		Height: constClosure(1.0), Radius: constClosure(0.3), Position: BendOutsideBaseFace,
 	})
@@ -115,6 +117,7 @@ func wallOuterFaceY(body *topo.Body) float64 {
 // is where it starts. The outer datum spends the most inside the bend, so it builds the shortest
 // wall — a flange that ignored the datum would come out the tangent length every time.
 func TestHeightDatumChangesTheWallLength(t *testing.T) {
+	t.Parallel()
 	const radius, thickness, height = 0.3, 0.2, 1.0
 	top := func(d HeightDatum) float64 {
 		return topZOf(flangeBody(t, &SheetMetalFlangeDefinition{
@@ -141,6 +144,7 @@ func TestHeightDatumChangesTheWallLength(t *testing.T) {
 // their along-wall twins, and on any other angle they do not — which is the only reason Inventor
 // carries both. A 45° bend is where an implementation that ignored the distinction shows up.
 func TestOrthoHeightDatumMeasuresPerpendicular(t *testing.T) {
+	t.Parallel()
 	const radius, thickness, height = 0.3, 0.2, 1.0
 	at := func(d HeightDatum, angle float64) float64 {
 		return topZOf(flangeBody(t, &SheetMetalFlangeDefinition{
@@ -170,6 +174,7 @@ func TestOrthoHeightDatumMeasuresPerpendicular(t *testing.T) {
 // bend's own setback leaves no wall at all. Clamping it to zero would build a bare bend and call it
 // a flange of that height.
 func TestHeightSwallowedByTheBendIsRefused(t *testing.T) {
+	t.Parallel()
 	pf, _ := flangeFeature(t, &SheetMetalFlangeDefinition{
 		Height: constClosure(0.2), Radius: constClosure(0.5), HeightDatum: HeightFromOuterFace,
 	})
@@ -181,6 +186,7 @@ func TestHeightSwallowedByTheBendIsRefused(t *testing.T) {
 // TestOrthoHeightOnAFlatFoldIsRefused: a 180° fold's wall runs back along the base face, so it
 // never rises — an orthogonal height has nothing to measure and the division would blow up.
 func TestOrthoHeightOnAFlatFoldIsRefused(t *testing.T) {
+	t.Parallel()
 	pf, _ := flangeFeature(t, &SheetMetalFlangeDefinition{
 		Height: constClosure(1.0), Radius: constClosure(0.3),
 		Angle: constClosure(stdmath.Pi), HeightDatum: HeightFromInnerFaceOrtho,
@@ -193,6 +199,7 @@ func TestOrthoHeightOnAFlatFoldIsRefused(t *testing.T) {
 // TestFlangePlacementRoundTrips: the position and datum decide the part's dimensions, so losing
 // them on reopen would rebuild a different part at the same stated height.
 func TestFlangePlacementRoundTrips(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
 		EdgeKey: []byte("edge"), Height: constClosure(1.0),
@@ -224,6 +231,7 @@ func TestFlangePlacementRoundTrips(t *testing.T) {
 // TestUnknownPlacementNamesAreRefused: a misspelled position or datum must not fall back to the
 // default and quietly build the part at different dimensions.
 func TestUnknownPlacementNamesAreRefused(t *testing.T) {
+	t.Parallel()
 	if _, ok := ParseBendPosition("tangentToSideFace"); ok {
 		t.Error("a position this build does not implement should not resolve")
 	}

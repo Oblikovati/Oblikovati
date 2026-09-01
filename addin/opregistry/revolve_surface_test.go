@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	omath "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -42,6 +43,7 @@ func revolveReadyPart(t *testing.T) *app.Session {
 // booleaned. Its area matches the analytic surface-of-revolution area θ·h·(r1+r2)+θ(r2²−r1²)
 // (verified against the OCCT oracle), within the tessellation tolerance.
 func TestRevolveSurfaceOperation(t *testing.T) {
+	t.Parallel()
 	s := revolveReadyPart(t)
 	raw, err := applyMap(t, s, "revolve", map[string]any{
 		"sketchIndex": 0, "angle": "180 deg", "axisRef": "origin/axis/y", "operation": "surface",
@@ -66,7 +68,7 @@ func TestRevolveSurfaceOperation(t *testing.T) {
 
 	const r1, r2, h, theta = 2.0, 4.0, 3.0, math.Pi // 180°
 	want := theta*h*(r1+r2) + theta*(r2*r2-r1*r1)   // 30π ≈ 94.25 (OCCT-confirmed formula)
-	got := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Area
+	got := query.BodyGeometryProperties(b, ops.DefaultQuality()).Area
 	if got < 0.90*want || got > 1.02*want {
 		t.Errorf("surface-of-revolution area = %.4f, want ≈ %.4f (analytic; faceted within tolerance)", got, want)
 	}
@@ -75,6 +77,7 @@ func TestRevolveSurfaceOperation(t *testing.T) {
 // TestRevolveSurfaceUnknownOperationErrors: an unknown operation is still a clean error after
 // adding "surface" to the revolve enum.
 func TestRevolveSurfaceUnknownOperationErrors(t *testing.T) {
+	t.Parallel()
 	s := revolveReadyPart(t)
 	if _, err := applyMap(t, s, "revolve", map[string]any{"sketchIndex": 0, "angle": "90 deg", "operation": "bogus"}); err == nil {
 		t.Error("unknown operation should error")

@@ -32,6 +32,7 @@ func flatWithTab(t *testing.T, side, thickness, tab float64) *feature.FlatPatter
 // Outline layer and the fold line on the Bend-Up layer, with both layers in the LAYER table —
 // the #378 acceptance (flat exports to DXF with bend lines on configured layers).
 func TestExportFlatPatternDXF(t *testing.T) {
+	t.Parallel()
 	fp := flatWithTab(t, 4, 0.2, 1.5)
 	data, n, err := ExportFlatPatternDXF(fp, FlatExportLayers{}, types.DXFR2018)
 	if err != nil {
@@ -71,6 +72,7 @@ func TestExportFlatPatternDXF(t *testing.T) {
 // TestExportFlatPatternPunches a punch representation exports as a closed outline plus its token
 // (a TEXT entity) on the Punches layer — the manufacturing tag from #378's acceptance.
 func TestExportFlatPatternPunches(t *testing.T) {
+	t.Parallel()
 	fp := flatWithTab(t, 4, 0.2, 1.5)
 	fp.Punches = []feature.FlatPunch{{
 		Outline: []math.Point2{math.P2(1, 1), math.P2(2, 1), math.P2(2, 2), math.P2(1, 2)},
@@ -94,6 +96,7 @@ func TestExportFlatPatternPunches(t *testing.T) {
 
 // TestFlatExportLayersDefaults the zero layer value resolves to the default scheme.
 func TestFlatExportLayersDefaults(t *testing.T) {
+	t.Parallel()
 	got := FlatExportLayers{}.withDefaults()
 	if got != DefaultFlatExportLayers() {
 		t.Errorf("withDefaults() = %+v, want the default scheme %+v", got, DefaultFlatExportLayers())

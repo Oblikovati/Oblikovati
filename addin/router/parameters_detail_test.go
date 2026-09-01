@@ -26,6 +26,7 @@ func getDetail(t *testing.T, r *Router, s *app.Session, name string) wire.Parame
 }
 
 func TestParameterGetDetailDefaults(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	d := getDetail(t, r, s, "width")
 	if d.Name != "width" || d.Expression != "4 cm" {
@@ -50,6 +51,7 @@ func TestParameterGetDetailDefaults(t *testing.T) {
 }
 
 func TestParameterDetailDependencyNeighborhood(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.add", `{"name":"half","expression":"width / 2"}`, nil)
 
@@ -72,6 +74,7 @@ func TestParameterDetailDependencyNeighborhood(t *testing.T) {
 }
 
 func TestParameterUpdatePresentation(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var d wire.ParameterDetail
 	call(t, r, s, "parameters.update", `{
@@ -98,6 +101,7 @@ func TestParameterUpdatePresentation(t *testing.T) {
 }
 
 func TestParameterUpdateRejectsUnknownSpellings(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	for args, want := range map[string]string{
 		`{"name":"width","displayFormat":"roman"}`:                                                       "display format",
@@ -115,6 +119,7 @@ func TestParameterUpdateRejectsUnknownSpellings(t *testing.T) {
 // round-trips disabledActionTypes, and a rename of a model parameter flips
 // renamed to true (#1853).
 func TestParameterIntrospectionOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	// A user parameter is neither built-in nor renamed, with no disabled actions.
 	if d := getDetail(t, r, s, "width"); d.BuiltIn || d.Renamed || len(d.DisabledActionTypes) != 0 {
@@ -143,6 +148,7 @@ func TestParameterIntrospectionOverWire(t *testing.T) {
 // TestParameterUpdateRejectsUnknownAction: an unrecognised disabled-action
 // spelling is refused, naming the offender (#1853).
 func TestParameterUpdateRejectsUnknownAction(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	_, err := r.Handle(s, "parameters.update", []byte(`{"name":"width","disabledActionTypes":["suppress"]}`))
 	if err == nil || !strings.Contains(err.Error(), "disabled action type") {
@@ -151,6 +157,7 @@ func TestParameterUpdateRejectsUnknownAction(t *testing.T) {
 }
 
 func TestParameterToleranceModesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	// Each mutation's response is checked through a fresh getDetail: omitempty
 	// fields would otherwise merge stale values when reusing one struct.
@@ -185,6 +192,7 @@ func TestParameterToleranceModesOverWire(t *testing.T) {
 // TestParameterFitsToleranceOverWire: the fits/basic/reference modes resolve and round-trip
 // through the wire (#1848). width is 4 cm (40 mm); H7 at 40 mm is +25/0 µm = +0.0025/0 cm.
 func TestParameterFitsToleranceOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.setTolerance", `{"name":"width","mode":"fits","hole":"H7","shaft":"g6"}`, nil)
 	d := getDetail(t, r, s, "width")
@@ -206,6 +214,7 @@ func TestParameterFitsToleranceOverWire(t *testing.T) {
 }
 
 func TestParameterToleranceRejectsBadInput(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	for args, want := range map[string]string{
 		`{"name":"width","mode":"wobbly"}`:                                       "unknown mode",
@@ -223,6 +232,7 @@ func TestParameterToleranceRejectsBadInput(t *testing.T) {
 }
 
 func TestParameterExpressionListOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	call(t, r, s, "parameters.setExpressionList",
@@ -246,6 +256,7 @@ func TestParameterExpressionListOverWire(t *testing.T) {
 }
 
 func TestParameterDeleteRejectsInUse(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.add", `{"name":"half","expression":"width / 2"}`, nil)
 
@@ -264,6 +275,7 @@ func TestParameterDeleteRejectsInUse(t *testing.T) {
 // TestParameterDetailMutationsAreUndoable drives a wire mutation against a
 // recording session and checks RecordAddInEdit lands it as one undo step.
 func TestParameterDetailMutationsAreUndoable(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	if _, err := s.NewPart(); err != nil {
@@ -290,6 +302,7 @@ func TestParameterDetailMutationsAreUndoable(t *testing.T) {
 // TestParameterDetailMutationsBroadcast checks the new mutation methods emit
 // edit.committed (the replication seam) and the detail read does not.
 func TestParameterDetailMutationsBroadcast(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var methods []string
 	sub := event.Subscribe(s.Events(), event.After, func(_ event.Context, e app.EditCommitted) event.Outcome {

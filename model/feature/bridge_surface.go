@@ -5,13 +5,13 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/heal"
 )
 
 // The Bridge feature (M36-F09) connects the last two surface bodies with a clean NURBS transition
 // meeting each at a chosen continuity (G0/G1/G2) — the everyday Class-A "connect these two panels"
 // move. Like Fill it appends a new surface body (the two neighbours stay). The bridge math is
-// kernel/geom.BridgeSurface via ops.BridgeBodies; F13 is the numeric continuity gate.
+// kernel/geom.BridgeSurface via heal.BridgeBodies; F13 is the numeric continuity gate.
 
 // BridgeDefinition is the recipe for a bridge: the continuity order to hold to each neighbour
 // (0=G0/position, 1=G1/tangent, 2=G2/curvature).
@@ -38,7 +38,7 @@ func (f *BridgeFeature) Recompute(in Input) (Output, error) {
 		return Output{}, fmt.Errorf("bridge surface: needs two surface bodies, have %d", len(in.Bodies))
 	}
 	n := len(in.Bodies)
-	bridge, err := ops.BridgeBodies(in.Bodies[n-2], in.Bodies[n-1], f.def.OrderA, f.def.OrderB)
+	bridge, err := heal.BridgeBodies(in.Bodies[n-2], in.Bodies[n-1], f.def.OrderA, f.def.OrderB)
 	if err != nil {
 		return Output{}, err
 	}

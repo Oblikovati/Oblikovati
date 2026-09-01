@@ -61,6 +61,7 @@ func materialAt(body *topo.Body, x, y float64) bool {
 // material just outside the tab's span has to go; the material just inside it must not, or the cut
 // has eaten the wall it exists to protect.
 func TestBendReliefNotchesTheBendEnds(t *testing.T) {
+	t.Parallel()
 	body := relievedFlange(t, straightRelief, centredTab)
 	// The tab spans x ∈ [1,3] of the edge at y=0, and the sheet runs to y=4.
 	for _, c := range []struct {
@@ -84,6 +85,7 @@ func TestBendReliefNotchesTheBendEnds(t *testing.T) {
 // TestBendReliefRemovesItsOwnVolume: two notches of width×depth×thickness, and no more. A cut that
 // ran the wrong way or the wrong distance would still leave a valid solid.
 func TestBendReliefRemovesItsOwnVolume(t *testing.T) {
+	t.Parallel()
 	relieved := smSolidVolume(relievedFlange(t, straightRelief, centredTab))
 	bare := smSolidVolume(relievedFlange(t, ReliefSpec{}, centredTab))
 	want := 2 * straightRelief.Width * straightRelief.Depth * 0.2 // two notches, 2 mm gauge
@@ -97,6 +99,7 @@ func TestBendReliefRemovesItsOwnVolume(t *testing.T) {
 // material, so there is nothing to tear and nothing to cut. Relieving it anyway would notch the
 // part's outside corners.
 func TestFullWidthFlangeIsNotRelieved(t *testing.T) {
+	t.Parallel()
 	relieved := smSolidVolume(relievedFlange(t, straightRelief, FlangeWidth{}))
 	bare := smSolidVolume(relievedFlange(t, ReliefSpec{}, FlangeWidth{}))
 	if stdmath.Abs(relieved-bare) > 1e-9 {
@@ -107,6 +110,7 @@ func TestFullWidthFlangeIsNotRelieved(t *testing.T) {
 // TestOneSidedTabIsRelievedOnlyWhereItStops: a tab that starts at the edge's own end has one bend
 // end on the boundary and one inside. Only the inside one takes a notch.
 func TestOneSidedTabIsRelievedOnlyWhereItStops(t *testing.T) {
+	t.Parallel()
 	width := FlangeWidth{Type: WidthOffsetAndWidth, Offset: constClosure(0), Width: constClosure(2.0)}
 	relieved := smSolidVolume(relievedFlange(t, straightRelief, width))
 	bare := smSolidVolume(relievedFlange(t, ReliefSpec{}, width))
@@ -120,6 +124,7 @@ func TestOneSidedTabIsRelievedOnlyWhereItStops(t *testing.T) {
 // left to tear along the bend. Treating it as a missing value and cutting a default notch would
 // change the part.
 func TestTearReliefCutsNothing(t *testing.T) {
+	t.Parallel()
 	tear := ReliefSpec{Shape: types.ReliefTear, Width: 0.2, Depth: 0.1}
 	relieved := smSolidVolume(relievedFlange(t, tear, centredTab))
 	bare := smSolidVolume(relievedFlange(t, ReliefSpec{}, centredTab))
@@ -132,6 +137,7 @@ func TestTearReliefCutsNothing(t *testing.T) {
 // with a half-round, which takes away less material than the square corner it replaces — and
 // leaves no inside corner for a crack to start in.
 func TestRoundReliefRemovesLessThanTheStraightOne(t *testing.T) {
+	t.Parallel()
 	round := ReliefSpec{Shape: types.ReliefRound, Width: 0.2, Depth: 0.1}
 	bare := smSolidVolume(relievedFlange(t, ReliefSpec{}, centredTab))
 	straightCut := bare - smSolidVolume(relievedFlange(t, straightRelief, centredTab))
@@ -150,6 +156,7 @@ func TestRoundReliefRemovesLessThanTheStraightOne(t *testing.T) {
 // mirrors the plane the notch is drawn in. Cutting on the wrong side removes nothing at all (the
 // tool would sit off the part), so both orientations are measured.
 func TestBendReliefCutsInwardWhicheverWayTheFlangeFolds(t *testing.T) {
+	t.Parallel()
 	for name, flip := range map[string]bool{"folded up": false, "folded down": true} {
 		t.Run(name, func(t *testing.T) {
 			cut := reliefCutVolume(t, flip)
@@ -184,6 +191,7 @@ func reliefCutVolume(t *testing.T, flip bool) float64 {
 // TestReliefEndsSkipTheBoundary: the decision of which ends need relieving is what keeps a notch
 // from hanging off the part, so it is pinned directly.
 func TestReliefEndsSkipTheBoundary(t *testing.T) {
+	t.Parallel()
 	for name, c := range map[string]struct {
 		from, to     float64
 		wantF, wantT bool
@@ -209,6 +217,7 @@ func TestReliefEndsSkipTheBoundary(t *testing.T) {
 // TestBendOptionsOverrideTheStyleRelief: a flange with its own relief cuts ITS notch, not the
 // style's, and the difference is measurable.
 func TestBendOptionsOverrideTheStyleRelief(t *testing.T) {
+	t.Parallel()
 	deep := ReliefSpec{Shape: types.ReliefStraight, Width: 0.4, Depth: 0.3}
 	styled := smSolidVolume(relievedFlange(t, straightRelief, centredTab))
 	overridden := smSolidVolume(relievedFlangeWithOptions(t, straightRelief, &BendOptions{
@@ -226,6 +235,7 @@ func TestBendOptionsOverrideTheStyleRelief(t *testing.T) {
 // TestBendOptionsLeaveUnsetFieldsToTheStyle: an override is not a restatement — a flange that sets
 // only a depth keeps the style's shape and width.
 func TestBendOptionsLeaveUnsetFieldsToTheStyle(t *testing.T) {
+	t.Parallel()
 	got := straightRelief
 	got = (&BendOptions{ReliefDepth: constClosure(0.3)}).resolve(got)
 	if got.Shape != straightRelief.Shape || got.Width != straightRelief.Width {
@@ -242,6 +252,7 @@ func TestBendOptionsLeaveUnsetFieldsToTheStyle(t *testing.T) {
 // TestBendOptionsCanTearOneBend: a per-bend tear turns the cut off for that bend while the style
 // keeps relieving every other one.
 func TestBendOptionsCanTearOneBend(t *testing.T) {
+	t.Parallel()
 	tear := types.ReliefTear
 	relieved := smSolidVolume(relievedFlangeWithOptions(t, straightRelief, &BendOptions{ReliefShape: &tear}))
 	bare := smSolidVolume(relievedFlange(t, ReliefSpec{}, centredTab))
@@ -254,6 +265,7 @@ func TestBendOptionsCanTearOneBend(t *testing.T) {
 // thinner than the remnant takes the strip with it. Leaving it is worse than removing it — a sliver
 // that thin tears off in handling, so the part that arrives is not the part that was drawn.
 func TestMinimumRemnantSwallowsTheSliver(t *testing.T) {
+	t.Parallel()
 	// A tab from 0.3 to 3.7 leaves 0.3 of material outside each bend end; a 0.2-wide notch would
 	// leave a 0.1 sliver beyond it.
 	tab := FlangeWidth{Type: WidthOffsets, Offset: constClosure(0.3), Offset2: constClosure(0.3)}
@@ -271,6 +283,7 @@ func TestMinimumRemnantSwallowsTheSliver(t *testing.T) {
 // TestMinimumRemnantLeavesHealthyMaterialAlone: a strip thicker than the remnant survives, or the
 // rule would eat the part's edge on every relieved bend.
 func TestMinimumRemnantLeavesHealthyMaterialAlone(t *testing.T) {
+	t.Parallel()
 	generous := smSolidVolume(relievedFlangeWith(t, straightRelief, centredTab, &BendOptions{
 		MinimumRemnant: constClosure(0.25),
 	}))

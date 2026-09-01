@@ -14,6 +14,7 @@ import (
 // itself renameable, and renames through the capability — the behavior head/ui's old
 // per-handle-type switch performed, now driven by NodeRenameable (#1630).
 func TestFeatureHandleRenameCapability(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	f := activePartDef(t, s).Features().Item(0)
 	h := FeatureHandle{Feature: f}
@@ -35,6 +36,7 @@ func TestFeatureHandleRenameCapability(t *testing.T) {
 // TestWorkPlaneRenameParity checks the renameable/fixed split the old isRenameableNode switch
 // encoded: a user work plane is renameable, but a grounded origin datum is not (#1264, #1630).
 func TestWorkPlaneRenameParity(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	user := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 	def.Recompute()
@@ -59,6 +61,7 @@ func TestWorkPlaneRenameParity(t *testing.T) {
 // TestSketchNameCapabilities covers 2D and 3D sketch handles' NodeName so the browser label
 // path has parity with the old nodeName switch.
 func TestSketchNameCapabilities(t *testing.T) {
+	t.Parallel()
 	_, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XYPlane())
 	if got := (SketchHandle{Sketch: sk}).NodeName(); got != sk.Name() {
@@ -74,6 +77,7 @@ func TestSketchNameCapabilities(t *testing.T) {
 // double-click action (opening its edit tool) — the behavior head/ui's old switch dispatched
 // through openEditOnDoubleClick (#1630).
 func TestFeatureActivateOpensEditor(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 2)
 	f := activePartDef(t, s).Features().Item(0) // the block's extrude
 	FeatureHandle{Feature: f}.Activate(s)
@@ -86,6 +90,7 @@ func TestFeatureActivateOpensEditor(t *testing.T) {
 // TestSketchHandleRenameCapability: a 2D sketch handle reports itself renameable and renames
 // through the NodeRenameable capability (#1630), covering the SketchHandle Renameable/Rename seam.
 func TestSketchHandleRenameCapability(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XYPlane())
 	h := SketchHandle{Sketch: sk}
@@ -103,6 +108,7 @@ func TestSketchHandleRenameCapability(t *testing.T) {
 // TestSketch3DHandleRenameCapability: a 3D sketch handle reports itself renameable and renames
 // through the NodeRenameable capability (#1630), covering the Sketch3DHandle Renameable/Rename seam.
 func TestSketch3DHandleRenameCapability(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	s3 := def.Sketches3D().Add()
 	h := Sketch3DHandle{Sketch3D: s3}
@@ -120,6 +126,7 @@ func TestSketch3DHandleRenameCapability(t *testing.T) {
 // TestWorkPlaneNodeName: the WorkPlaneHandle reports its plane's current name via NodeName,
 // covering the NodeName seam the browser label path uses (#1630).
 func TestWorkPlaneNodeName(t *testing.T) {
+	t.Parallel()
 	_, def := emptyPartSession(t)
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 	def.Recompute()
@@ -141,6 +148,7 @@ func userWorkAxis(t *testing.T) (*Session, *feature.WorkAxis) {
 // TestWorkAxisRenameCapability: a user work axis self-describes its name, reports itself
 // renameable, and renames through the capability (#1630).
 func TestWorkAxisRenameCapability(t *testing.T) {
+	t.Parallel()
 	s, axis := userWorkAxis(t)
 	h := WorkAxisHandle{Axis: axis}
 	if h.NodeName() != axis.Name() {
@@ -160,6 +168,7 @@ func TestWorkAxisRenameCapability(t *testing.T) {
 // TestOriginWorkAxisNotRenameable: a grounded origin coordinate-system axis reports itself not
 // renameable through the capability (its name is fixed, #1264/#1630).
 func TestOriginWorkAxisNotRenameable(t *testing.T) {
+	t.Parallel()
 	_, def := emptyPartSession(t)
 	xAxis, ok := def.WorkGeometry().AxisByRef(feature.OriginXAxis)
 	if !ok {
@@ -183,6 +192,7 @@ func userWorkPoint(t *testing.T) (*Session, *feature.WorkPoint) {
 // TestWorkPointRenameCapability: a user work point self-describes its name, reports itself
 // renameable, and renames through the capability (#1630).
 func TestWorkPointRenameCapability(t *testing.T) {
+	t.Parallel()
 	s, point := userWorkPoint(t)
 	h := WorkPointHandle{Point: point}
 	if h.NodeName() != point.Name() {
@@ -202,6 +212,7 @@ func TestWorkPointRenameCapability(t *testing.T) {
 // TestOriginWorkPointNotRenameable: the grounded origin centre point reports itself not
 // renameable through the capability (its name is fixed, #1264/#1630).
 func TestOriginWorkPointNotRenameable(t *testing.T) {
+	t.Parallel()
 	_, def := emptyPartSession(t)
 	center, ok := def.WorkGeometry().WorkPointByRef(feature.OriginCenter)
 	if !ok {

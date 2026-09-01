@@ -15,6 +15,7 @@ func registeredSession(t *testing.T) *Session {
 }
 
 func TestStandardRibbonHasSketchCreatePanel(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	enterSketchEnv(t, s) // the Sketch tab is contextual — present only in the sketch environment
 	r := BuildRibbon(s)
@@ -43,6 +44,7 @@ func TestStandardRibbonHasSketchCreatePanel(t *testing.T) {
 // style also names an icon asset (so the ribbon never asks the head for an empty key)
 // and that a known large/small command keeps its expected style.
 func TestIconCommandsCarryIconAndStyle(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	for _, c := range s.Commands().All() {
 		if c.ButtonStyle().ShowsIcon() && c.Icon() == "" {
@@ -72,6 +74,7 @@ func TestIconCommandsCarryIconAndStyle(t *testing.T) {
 }
 
 func TestModelTabHasCreate2DSketch(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	r := BuildRibbon(s)
 	tab, ok := r.Tab("Create & Modify")
@@ -84,6 +87,7 @@ func TestModelTabHasCreate2DSketch(t *testing.T) {
 }
 
 func TestSketchToolsDisabledOutsideSketchEnvironment(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	line, _ := s.Commands().ByID("Sketch.Line")
 	if line.IsEnabled(s) {
@@ -114,6 +118,7 @@ func enterSketchEnv(t *testing.T, s *Session) {
 }
 
 func TestSketchToolsEnableInsideSketchEnvironment(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	enterSketchEnv(t, s)
 	for _, id := range []string{"Sketch.Line", "Sketch.Circle", "Sketch.Arc", "Sketch.Polygon", "Sketch.Finish"} {
@@ -130,6 +135,7 @@ func TestSketchToolsEnableInsideSketchEnvironment(t *testing.T) {
 }
 
 func TestExecuteSketchToolStartsTool(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	enterSketchEnv(t, s)
 	if err := s.Execute("Sketch.Circle"); err != nil {
@@ -141,6 +147,7 @@ func TestExecuteSketchToolStartsTool(t *testing.T) {
 }
 
 func TestExecuteFinishSketchExits(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	enterSketchEnv(t, s)
 	if err := s.Execute("Sketch.Finish"); err != nil {
@@ -152,6 +159,7 @@ func TestExecuteFinishSketchExits(t *testing.T) {
 }
 
 func TestExtrudeDisabledInsideSketch(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	ext, _ := s.Commands().ByID("Create.Extrude")
 	if !ext.IsEnabled(s) {
@@ -164,6 +172,7 @@ func TestExtrudeDisabledInsideSketch(t *testing.T) {
 }
 
 func TestStandardCommandsRegisterOnce(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if err := RegisterStandardCommands(s); err == nil {
 		t.Error("registering the standard commands twice should error on duplicate ids")

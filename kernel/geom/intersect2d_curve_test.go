@@ -23,6 +23,7 @@ func ellipse42(t *testing.T) EllipseFull2d {
 // TestLineCurve2dIntersectionEllipse: a horizontal line through the center of
 // a 4×2 ellipse must cross at exactly (±4, 0).
 func TestLineCurve2dIntersectionEllipse(t *testing.T) {
+	t.Parallel()
 	l, err := NewLine2d(math.P2(-10, 0), math.V2(1, 0))
 	if err != nil {
 		t.Fatalf("NewLine2d: %v", err)
@@ -41,6 +42,7 @@ func TestLineCurve2dIntersectionEllipse(t *testing.T) {
 // TestSegmentCurve2dIntersectionBoundsToSegment: the same support line cut to
 // a segment that ends inside the ellipse must keep only the crossing it spans.
 func TestSegmentCurve2dIntersectionBoundsToSegment(t *testing.T) {
+	t.Parallel()
 	seg := NewLineSegment2d(math.P2(-10, 0), math.P2(0, 0))
 	hits := SegmentCurve2dIntersection(seg, ellipse42(t))
 	if len(hits) != 1 {
@@ -55,6 +57,7 @@ func TestSegmentCurve2dIntersectionBoundsToSegment(t *testing.T) {
 // must touch the 4×2 ellipse exactly at (0, ±2) — the minor vertices, where
 // |p| − 2 crosses zero.
 func TestCircleCurve2dIntersectionEllipse(t *testing.T) {
+	t.Parallel()
 	hits := CircleCurve2dIntersection(NewCircle2d(math.P2(0, 0), 3), ellipse42(t))
 	if len(hits) != 4 {
 		t.Fatalf("crossings = %d (%v), want 4 (one per quadrant)", len(hits), hits)
@@ -75,6 +78,7 @@ func TestCircleCurve2dIntersectionEllipse(t *testing.T) {
 // a dyadic sample, so no sample lands on the zero by luck). The certified root isolation
 // must report exactly the one contact, at (11/9, 0).
 func TestLineCurve2dTangentialContact(t *testing.T) {
+	t.Parallel()
 	curve, err := NewBSplineCurve2dUniformWeights(2,
 		[]math.Point2{math.P2(-1, 4), math.P2(1, -2), math.P2(2, 1)},
 		[]float64{0, 0, 0, 1, 1, 1})
@@ -98,6 +102,7 @@ func TestLineCurve2dTangentialContact(t *testing.T) {
 // TestLineCurve2dIntersectionBSpline: a fitted spline through a known zigzag
 // crosses the x-axis once per sign change of its fit points, on the curve.
 func TestLineCurve2dIntersectionBSpline(t *testing.T) {
+	t.Parallel()
 	curve, _, err := NewFittedBSplineCurve2dParam([]math.Point2{
 		math.P2(0, -1), math.P2(1, 1), math.P2(2, -1), math.P2(3, 1),
 	}, FitCentripetal)

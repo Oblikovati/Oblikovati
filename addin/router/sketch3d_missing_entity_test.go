@@ -12,6 +12,7 @@ import (
 // reference resolvers and the constraint builders that lean on them: an unknown entity id (999
 // in an empty sketch) is rejected by every typed ref lookup.
 func TestSketch3DRefHelpersRejectMissingEntity(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches3D().Add()
 	const bad = uint64(999)
 

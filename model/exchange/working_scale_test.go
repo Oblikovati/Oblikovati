@@ -15,6 +15,7 @@ import (
 // document centred on a non-cm working unit exports/imports at the correct scale. A cm document
 // (working scale 1) yields the historical 10 mm — unchanged.
 func TestWorkingUnitMMTracksDocumentScale(t *testing.T) {
+	t.Parallel()
 	part := compdef.NewPartComponentDefinition()
 
 	if got := workingUnitMM(part); got != exchange.DBUnitMM {

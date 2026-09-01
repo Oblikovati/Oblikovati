@@ -47,6 +47,7 @@ func seamDersMatch(t *testing.T, s, target BSplineSurface, order int, tol float6
 }
 
 func TestMatchSurfaceG0CoincidesEdge(t *testing.T) {
+	t.Parallel()
 	target := uPatch(t, 0, func(i, j int) float64 { return 0.4 * float64(i*i) })
 	s := uPatch(t, 1, func(i, j int) float64 { return 0 }) // flat slab to the right
 	got, err := MatchSurface(s, target, UMinEdge, UMaxEdge, 0)
@@ -57,6 +58,7 @@ func TestMatchSurfaceG0CoincidesEdge(t *testing.T) {
 }
 
 func TestMatchSurfaceG1IsTangent(t *testing.T) {
+	t.Parallel()
 	target := uPatch(t, 0, func(i, j int) float64 { return 0.3 * float64(i) })
 	s := uPatch(t, 1, func(i, j int) float64 { return 0 })
 	got, err := MatchSurface(s, target, UMinEdge, UMaxEdge, 1)
@@ -73,6 +75,7 @@ func TestMatchSurfaceG1IsTangent(t *testing.T) {
 }
 
 func TestMatchSurfaceG2IsCurvatureContinuous(t *testing.T) {
+	t.Parallel()
 	target := uPatch(t, 0, func(i, j int) float64 { return 0.5 * float64(i*i) }) // genuinely curved in u
 	s := uPatch(t, 1, func(i, j int) float64 { return 0 })
 	got, err := MatchSurface(s, target, UMinEdge, UMaxEdge, 2)
@@ -83,6 +86,7 @@ func TestMatchSurfaceG2IsCurvatureContinuous(t *testing.T) {
 }
 
 func TestMatchSurfaceG3(t *testing.T) {
+	t.Parallel()
 	target := uPatch(t, 0, func(i, j int) float64 { return 0.2 * float64(i*i*i) })
 	s := uPatch(t, 1, func(i, j int) float64 { return 0 })
 	got, err := MatchSurface(s, target, UMinEdge, UMaxEdge, 3)
@@ -115,6 +119,7 @@ func vPatch(t *testing.T, yoff float64, z func(i, j int) float64) BSplineSurface
 }
 
 func TestMatchSurfaceVEdgeG2(t *testing.T) {
+	t.Parallel()
 	target := vPatch(t, 0, func(i, j int) float64 { return 0.5 * float64(j*j) }) // curved in v
 	s := vPatch(t, 1, func(i, j int) float64 { return 0 })                       // flat slab above
 	got, err := MatchSurface(s, target, VMinEdge, VMaxEdge, 2)
@@ -133,6 +138,7 @@ func TestMatchSurfaceVEdgeG2(t *testing.T) {
 }
 
 func TestMatchSurfaceReversedEdgesG2(t *testing.T) {
+	t.Parallel()
 	// The matched surface is on the LEFT, joining its U-max edge to the target's U-min edge — the
 	// reversed configuration that exercises the opposite into-seam direction signs.
 	target := uPatch(t, 1, func(i, j int) float64 { return 0.5 * float64(i*i) })
@@ -153,6 +159,7 @@ func TestMatchSurfaceReversedEdgesG2(t *testing.T) {
 }
 
 func TestMatchSurfaceValidates(t *testing.T) {
+	t.Parallel()
 	target := uPatch(t, 0, func(i, j int) float64 { return 0 })
 	s := uPatch(t, 1, func(i, j int) float64 { return 0 })
 	if _, err := MatchSurface(s, target, UMinEdge, UMaxEdge, 4); err == nil {

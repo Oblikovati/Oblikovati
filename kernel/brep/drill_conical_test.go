@@ -14,6 +14,7 @@ import (
 // A blind hole with a conical drill point: a Ø2 bore 2 deep closed by a 118° cone tip in a
 // 10×10×6 slab. Valid watertight solid; removed = cylinder + cone-tip volume.
 func TestCutBlindConicalHole(t *testing.T) {
+	t.Parallel()
 	const half = 59.0 * stdmath.Pi / 180 // 118° included drill point
 	d, err := brep.CutBlindConicalHole(box(0, 0, 0, 10, 10, 6), math.P3(5, 5, 6), math.V3(0, 0, -1), 1, 2, half)
 	if err != nil {
@@ -42,6 +43,7 @@ func TestCutBlindConicalHole(t *testing.T) {
 
 // A conical point deep enough to exit the part is rejected.
 func TestCutBlindConicalRejectsDeepTip(t *testing.T) {
+	t.Parallel()
 	const half = 59.0 * stdmath.Pi / 180
 	_, err := brep.CutBlindConicalHole(box(0, 0, 0, 10, 10, 3), math.P3(5, 5, 3), math.V3(0, 0, -1), 1, 3, half)
 	if err == nil {
@@ -50,6 +52,7 @@ func TestCutBlindConicalRejectsDeepTip(t *testing.T) {
 }
 
 func TestCutBlindConicalRejectsInvalidInputs(t *testing.T) {
+	t.Parallel()
 	slab := box(0, 0, 0, 10, 10, 6)
 	for _, tc := range []struct {
 		name  string

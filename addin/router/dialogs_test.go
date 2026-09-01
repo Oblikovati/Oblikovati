@@ -10,6 +10,7 @@ import (
 )
 
 func TestShowFileDialogQueuesRequest(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "dialogs.showFileDialog",
 		`{"id":"sim.report","title":"Save report","save":true,"filter":"HTML (*.html)|*.html"}`, nil)
@@ -23,6 +24,7 @@ func TestShowFileDialogQueuesRequest(t *testing.T) {
 }
 
 func TestWebDialogsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "dialogs.showWebDialog",
 		`{"dialog":{"id":"docs","title":"Help","url":"https://example.org","dock":2,"visible":true}}`, nil)

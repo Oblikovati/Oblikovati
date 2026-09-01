@@ -15,6 +15,7 @@ import (
 // predicates.Orient2D on the same projected coordinates, across all three drop
 // axes, in both the general and near-collinear regimes.
 func TestOrient2MatchesPredicates(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewSource(0x1c05))
 	for i := range 20000 {
 		a, b := rc(r), rc(r)
@@ -43,6 +44,7 @@ func TestOrient2MatchesPredicates(t *testing.T) {
 // against predicates.InCircle on the same projected coordinates, across all three
 // drop axes, including the near-cocircular regime.
 func TestInCircleSignMatchesPredicates(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewSource(0x1c08))
 	for i := range 20000 {
 		a, b, c := rc(r), rc(r), rc(r)
@@ -85,6 +87,7 @@ func circumcentreXY(a, b, c [3]float64) (float64, float64, bool) {
 }
 
 func TestOrient2KnownCCW(t *testing.T) {
+	t.Parallel()
 	a := pt([3]float64{0, 0, 0})
 	b := pt([3]float64{1, 0, 0})
 	c := pt([3]float64{0, 1, 0})
@@ -101,6 +104,7 @@ func TestOrient2KnownCCW(t *testing.T) {
 // exactly on both segments and, for the tilted plane, exactly on the plane; the
 // two argument orders yield the identical point.
 func TestSegSegCrossExact(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewSource(0x1c06))
 	crossed := 0
 	for i := range 40000 {
@@ -170,6 +174,7 @@ func sumXYZ(p Point) *big.Rat {
 // projection axes, inCircleSign (interval then exact) must equal the pure exact
 // determinant. A wrong certification would show as a mismatch.
 func TestInCircleFilterMatchesExact(t *testing.T) {
+	t.Parallel()
 	rng := rand.New(rand.NewSource(0x1c1c))
 	for i := range 20000 {
 		a := randPoint(rng, i%3 == 0)
@@ -189,6 +194,7 @@ func TestInCircleFilterMatchesExact(t *testing.T) {
 // epsilon inCircleSign must equal the exact sign — the interval certifies the correct
 // side or defers to exact; the cocircular case (epsilon 0) must yield 0.
 func TestInCircleNearCocircular(t *testing.T) {
+	t.Parallel()
 	a := Point{big.NewRat(5, 1), big.NewRat(0, 1), big.NewRat(0, 1)}
 	b := Point{big.NewRat(0, 1), big.NewRat(5, 1), big.NewRat(0, 1)}
 	c := Point{big.NewRat(-5, 1), big.NewRat(0, 1), big.NewRat(0, 1)}
@@ -213,6 +219,7 @@ func TestInCircleNearCocircular(t *testing.T) {
 // filter: over a random sweep of exact and constructed triples across all three
 // projection axes, orient2 must equal the sign of the exact determinant.
 func TestOrient2FilterMatchesExact(t *testing.T) {
+	t.Parallel()
 	rng := rand.New(rand.NewSource(0x02c2))
 	for i := range 20000 {
 		a := randPoint(rng, i%3 == 0)
@@ -229,6 +236,7 @@ func TestOrient2FilterMatchesExact(t *testing.T) {
 // u-axis and c is lifted off it by a rational epsilon from 1 to 1e-40 in both signs,
 // plus 0 exactly (collinear -> 0). orient2 must match the exact sign throughout.
 func TestOrient2NearCollinear(t *testing.T) {
+	t.Parallel()
 	a := Point{big.NewRat(1, 3), big.NewRat(0, 1), big.NewRat(0, 1)}
 	b := Point{big.NewRat(7, 3), big.NewRat(0, 1), big.NewRat(0, 1)}
 	den := big.NewInt(1)

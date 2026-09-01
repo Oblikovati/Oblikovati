@@ -30,6 +30,7 @@ func lastShellDef(t *testing.T, s *app.Session) *feature.ShellDefinition {
 // TestShellFaceThicknessesReachTheDefinition: the override list arrives whole, with each
 // expression resolved in model units (cm) — 3 mm is 0.3, not 3.
 func TestShellFaceThicknessesReachTheDefinition(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	if _, err := applyMap(t, s, "shell", map[string]any{
 		"faceRefs": []string{face}, "thickness": "1 mm",
@@ -49,6 +50,7 @@ func TestShellFaceThicknessesReachTheDefinition(t *testing.T) {
 // TestShellFaceThicknessRequiresAFace: an entry with no face names nothing, and defaulting it to
 // the whole shell would quietly rewrite every wall.
 func TestShellFaceThicknessRequiresAFace(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	if _, err := applyMap(t, s, "shell", map[string]any{
 		"faceRefs": []string{face}, "thickness": "1 mm",
@@ -61,6 +63,7 @@ func TestShellFaceThicknessRequiresAFace(t *testing.T) {
 // TestShellWithoutFaceThicknessesIsUniform: omitting the option must leave the shell exactly as
 // it was before the option existed.
 func TestShellWithoutFaceThicknessesIsUniform(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	if _, err := applyMap(t, s, "shell", map[string]any{
 		"faceRefs": []string{face}, "thickness": "1 mm",

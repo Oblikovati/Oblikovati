@@ -25,6 +25,7 @@ func unitBlock(t *testing.T) *topo.Body {
 // TestAssemblyCutRemovesToolVolume gates the cut against the analytic value: a tool
 // covering the top half of a unit box removes exactly 0.5 of its volume.
 func TestAssemblyCutRemovesToolVolume(t *testing.T) {
+	t.Parallel()
 	tool, err := brep.SolidBlock(gmath.P3(-1, -1, 0.5), gmath.P3(2, 2, 2), "tool")
 	if err != nil {
 		t.Fatalf("SolidBlock tool: %v", err)
@@ -47,6 +48,7 @@ func TestAssemblyCutRemovesToolVolume(t *testing.T) {
 // applying it across N targets cuts all N (the assembly host relies on this to machine
 // a participant's several bodies in one Recompute).
 func TestAssemblyCutAppliesToEveryBody(t *testing.T) {
+	t.Parallel()
 	tool, _ := brep.SolidBlock(gmath.P3(-1, -1, 0.5), gmath.P3(2, 2, 2), "tool")
 	f := NewAssemblyCutFeature(tool, ops.Cut)
 
@@ -67,6 +69,7 @@ func TestAssemblyCutAppliesToEveryBody(t *testing.T) {
 // TestAssemblyCutDropsFullyConsumedBody: a tool that fully encloses the target removes
 // the whole body, so the result drops it rather than carrying an empty body.
 func TestAssemblyCutDropsFullyConsumedBody(t *testing.T) {
+	t.Parallel()
 	tool, _ := brep.SolidBlock(gmath.P3(-1, -1, -1), gmath.P3(2, 2, 2), "tool")
 	f := NewAssemblyCutFeature(tool, ops.Cut)
 
@@ -83,6 +86,7 @@ func TestAssemblyCutDropsFullyConsumedBody(t *testing.T) {
 // analytic value: a through-hole of radius 0.25 drilled along +z removes a faceted
 // cylinder (its 32-gon cross-section × the unit box's height) from the box.
 func TestAssemblyHoleRemovesCylinder(t *testing.T) {
+	t.Parallel()
 	axis, _ := gmath.NewUnitVector3(0, 0, 1)
 	f, err := NewAssemblyHoleFeature(gmath.P3(0.5, 0.5, 0), axis, 0.5, 1.5)
 	if err != nil {
@@ -109,6 +113,7 @@ func TestAssemblyHoleRemovesCylinder(t *testing.T) {
 
 // TestAssemblyHoleRejectsBadDimensions: non-positive diameter or depth is an error.
 func TestAssemblyHoleRejectsBadDimensions(t *testing.T) {
+	t.Parallel()
 	axis, _ := gmath.NewUnitVector3(0, 0, 1)
 	if _, err := NewAssemblyHoleFeature(gmath.P3(0, 0, 0), axis, 0, 1); err == nil {
 		t.Error("zero diameter should be rejected")
@@ -118,6 +123,7 @@ func TestAssemblyHoleRejectsBadDimensions(t *testing.T) {
 // TestAssemblyCutNilToolFails: a missing tool is a lost input the engine can turn into
 // feature health, reported as an error rather than a panic.
 func TestAssemblyCutNilToolFails(t *testing.T) {
+	t.Parallel()
 	f := NewAssemblyCutFeature(nil, ops.Cut)
 	if _, err := f.Recompute(Input{Bodies: []*topo.Body{unitBlock(t)}}); err == nil {
 		t.Fatal("Recompute with nil tool returned nil error, want a failure")

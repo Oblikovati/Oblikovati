@@ -25,6 +25,7 @@ func topDownPickerOverSquare(t *testing.T) *Session {
 }
 
 func TestRayPickerSelectsSketchProfile(t *testing.T) {
+	t.Parallel()
 	s := topDownPickerOverSquare(t)
 	s.Selection().SetFilter(NewSelectionFilter(SelectProfile))
 	s.Click(200, 200) // center pixel → inside the square
@@ -38,6 +39,7 @@ func TestRayPickerSelectsSketchProfile(t *testing.T) {
 }
 
 func TestRayPickerMissesOutsideProfile(t *testing.T) {
+	t.Parallel()
 	s := topDownPickerOverSquare(t)
 	s.Selection().SetFilter(NewSelectionFilter(SelectProfile))
 	s.Click(10, 10) // a corner pixel, well outside the 2×2 square
@@ -47,6 +49,7 @@ func TestRayPickerMissesOutsideProfile(t *testing.T) {
 }
 
 func TestExtrudeFromPickedProfile(t *testing.T) {
+	t.Parallel()
 	s := topDownPickerOverSquare(t)
 	ext := NewExtrudeTool()
 	s.StartTool(ext) // sets the filter to SelectProfile

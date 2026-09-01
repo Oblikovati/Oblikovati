@@ -9,6 +9,7 @@ import (
 )
 
 func TestIsSelectedEntity(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 1))
 	other := sk.Lines().AddByTwoPoints(math.P2(2, 2), math.P2(3, 3))
@@ -22,6 +23,7 @@ func TestIsSelectedEntity(t *testing.T) {
 }
 
 func TestSketchClickClearsAndShiftAdds(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	sk.Circles().AddByCenterRadius(math.P2(0, 0), 2)               // crosses the centre click
 	l := sk.Lines().AddByTwoPoints(math.P2(-2, -2), math.P2(2, 2)) // through origin
@@ -41,6 +43,7 @@ func TestSketchClickClearsAndShiftAdds(t *testing.T) {
 }
 
 func TestPickSketchEntityFindsCircleOutline(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	// Circle centred at (5,0), radius 5 → its ring passes through the origin, while its
 	// centre point is far from the origin click, so the curve (not a point) is picked.

@@ -97,6 +97,7 @@ func saddleAnalyticArea(k, ax, ay float64) float64 {
 }
 
 func TestPlateFillSaddlePatch(t *testing.T) {
+	t.Parallel()
 	const k, ax, ay = 0.08, 5.0, 4.0
 	sides := saddleSides(k, ax, ay)
 	surf, err := PlateFill(sides, 0.1)
@@ -344,6 +345,7 @@ func n7Sides(t *testing.T) [4]PlateSide {
 const n7OracleArea = 90.194
 
 func TestPlateFillN7CornerArea(t *testing.T) {
+	t.Parallel()
 	sides := n7Sides(t)
 	// Rail-construction correctness (executed, hard-asserted): the four rails hit the DRAWEXE
 	// vertices and E2 is genuinely on the wall — so the fixture is trustworthy independent of the

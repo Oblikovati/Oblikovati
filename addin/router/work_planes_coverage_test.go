@@ -11,6 +11,7 @@ import (
 // TestWorkPlaneFixedFrame covers the fixed-frame work-plane constructor (origin + two
 // axis vectors), which the other work-plane tests do not exercise.
 func TestWorkPlaneFixedFrame(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var res wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create",

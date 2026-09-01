@@ -12,6 +12,7 @@ import (
 
 // TestPointerButtonNamed covers every accepted spelling and the rejection.
 func TestPointerButtonNamed(t *testing.T) {
+	t.Parallel()
 	for name, want := range map[string]PointerButton{
 		"":       LeftButton, // omitted ⇒ the only button that reaches a tool
 		"left":   LeftButton,
@@ -32,6 +33,7 @@ func TestPointerButtonNamed(t *testing.T) {
 // TestPointerButtonNamedRejectsATypo: the error must name the offending value and the accepted
 // ones, or a caller cannot tell a typo from an unsupported button.
 func TestPointerButtonNamedRejectsATypo(t *testing.T) {
+	t.Parallel()
 	_, err := PointerButtonNamed("centre")
 	if err == nil {
 		t.Fatal("an unknown button should be rejected")
@@ -44,6 +46,7 @@ func TestPointerButtonNamedRejectsATypo(t *testing.T) {
 // TestModifierForPacksEveryHeldKey: the selection and snapping paths read this mask, so a dropped
 // bit silently changes what a click does (extend vs replace the selection).
 func TestModifierForPacksEveryHeldKey(t *testing.T) {
+	t.Parallel()
 	if got := ModifierFor(false, false, false); got != 0 {
 		t.Errorf("no modifiers held = %v, want 0", got)
 	}
@@ -61,6 +64,7 @@ func TestModifierForPacksEveryHeldKey(t *testing.T) {
 // TestPlacementEditKeyDrivesTheBoxes: the wire's equivalent of the head's per-frame editing-key
 // read. Without it a client could type a value into an in-place box but never LOCK it.
 func TestPlacementEditKeyDrivesTheBoxes(t *testing.T) {
+	t.Parallel()
 	s := placingRectangle(t)
 	for _, r := range "25" {
 		s.PlacementFieldInput(r)
@@ -82,6 +86,7 @@ func TestPlacementEditKeyDrivesTheBoxes(t *testing.T) {
 // TestPlacementEditKeyBackspaceEdits: a mistyped value must be correctable without cancelling the
 // shape, which is Backspace's whole job here.
 func TestPlacementEditKeyBackspaceEdits(t *testing.T) {
+	t.Parallel()
 	s := placingRectangle(t)
 	for _, r := range "25" {
 		s.PlacementFieldInput(r)
@@ -98,6 +103,7 @@ func TestPlacementEditKeyBackspaceEdits(t *testing.T) {
 // TestPlacementEditKeyIgnoresOtherKeys: only the editing keys are claimed. Escape must fall
 // through to the tool's own cancel rather than being swallowed here.
 func TestPlacementEditKeyIgnoresOtherKeys(t *testing.T) {
+	t.Parallel()
 	s := placingRectangle(t)
 
 	if s.placementEditKey("Escape") {
@@ -111,6 +117,7 @@ func TestPlacementEditKeyIgnoresOtherKeys(t *testing.T) {
 // TestPlacementEditKeyOnlyWhilePlacing: with no placement under way the keys belong to whatever
 // else is running, so nothing may be consumed.
 func TestPlacementEditKeyOnlyWhilePlacing(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 
 	if s.placementEditKey("Tab") {

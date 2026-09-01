@@ -15,6 +15,7 @@ import (
 // overlapping by 0.5 cm in X report one interfering pair with the right overlap volume; boxes
 // that do not overlap report none (#362/#368).
 func TestInterferenceAnalysisOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 0.5) // unit boxes, overlap x in [0.5,1]
 
 	var res wire.InterferenceResultsResult
@@ -44,6 +45,7 @@ func TestInterferenceAnalysisOverWire(t *testing.T) {
 
 // TestContactSetsOverWire drives the contact-set management + solver toggle over the wire.
 func TestContactSetsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 2)
 
 	var cs wire.ContactSetResult
@@ -72,6 +74,7 @@ func TestContactSetsOverWire(t *testing.T) {
 // solver on, moving a contact-set member into a partner is rejected (the part stops at
 // contact); with it off, the move applies.
 func TestContactStopBlocksInterpenetratingMove(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 1) // adjacent unit boxes, touching at x=1
 
 	var cs wire.ContactSetResult

@@ -17,6 +17,7 @@ import (
 // TestJoinCylindricalBossOnPlate seats a boss on a plate's top face and checks the result is one watertight
 // solid with the boss's single analytic cylinder wall and the plate's faces (the seat face kept, holed).
 func TestJoinCylindricalBossOnPlate(t *testing.T) {
+	t.Parallel()
 	plate, _ := SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
 	boss, _ := SolidCylinder(math.P3(0, 0, 2), math.V3(0, 0, 1), 1.5, 3)
 	res, ok := JoinCylindricalBoss(plate, boss)
@@ -36,6 +37,7 @@ func TestJoinCylindricalBossOnPlate(t *testing.T) {
 // TestJoinCylindricalBossOnBottomFace seats a boss on the plate's BOTTOM face (outward normal −Z), so the
 // boss protrudes downward — the seat detection must handle either face orientation.
 func TestJoinCylindricalBossOnBottomFace(t *testing.T) {
+	t.Parallel()
 	plate, _ := SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
 	boss, _ := SolidCylinder(math.P3(0, 0, -3), math.V3(0, 0, 1), 1.5, 3) // z −3..0, seated on z=0
 	res, ok := JoinCylindricalBoss(plate, boss)
@@ -51,6 +53,7 @@ func TestJoinCylindricalBossOnBottomFace(t *testing.T) {
 // TestJoinCylindricalBossRejectsOffCase: a boss that would protrude INTO the solid, one clipping the seat
 // face edge, and a tool not touching any face each defer (ok=false).
 func TestJoinCylindricalBossRejectsOffCase(t *testing.T) {
+	t.Parallel()
 	plate, _ := SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
 	cases := map[string]*topo.Body{
 		"into the solid":  mustCyl(math.P3(0, 0, -1), 1.5, 3),  // z −1..2: far cap inside the plate, not a boss

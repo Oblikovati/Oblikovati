@@ -8,6 +8,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -32,7 +33,7 @@ func (e *decodeError) Error() string {
 //
 //	data := meshio.EncodeBinarySTL(body, meshio.QualityFor(types.ResolutionHigh))
 func EncodeBinarySTL(body *topo.Body, q ops.Quality) []byte {
-	mesh, _ := ops.TessellateBody(body, q)
+	mesh, _ := tessellate.TessellateBody(body, q)
 	return encodeBinarySTLMesh(mesh)
 }
 

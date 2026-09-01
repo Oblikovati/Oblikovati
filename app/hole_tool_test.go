@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -60,6 +61,7 @@ func topFaceOf(t *testing.T, b *topo.Body) *topo.Face {
 // TestHoleToolEndToEnd drives the Hole UI: start the tool, click the block's top face,
 // set diameter and depth, OK — and asserts a through hole removed the right volume.
 func TestHoleToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4) // 4×4×2 block, vol 32
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -87,7 +89,7 @@ func TestHoleToolEndToEnd(t *testing.T) {
 	// Removed = a Ø2 cylinder (32-gon faceted) over the full thickness 2 ⇒ block − that.
 	ngonArea := 0.5 * 32 * stdmath.Sin(2*stdmath.Pi/32) // r=1
 	want := 32 - ngonArea*2
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.01 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.01 {
 		t.Errorf("drilled volume = %g, want ≈%g", got, want)
 	}
 	if s.ActiveTool() != nil {
@@ -99,6 +101,7 @@ func TestHoleToolEndToEnd(t *testing.T) {
 // set the diameter, tick Through All (no depth needed), OK — and asserts the result has a
 // TRUE cylinder wall (one curved face) rather than a faceted prism.
 func TestHoleToolThroughAll(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4) // 4×4×2 block, vol 32
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -134,6 +137,7 @@ func TestHoleToolThroughAll(t *testing.T) {
 // TestHoleToolCounterbore drives the Hole UI in counterbore mode: pick the face, set bore +
 // recess, tick Through All, OK — and asserts two true cylinder walls (recess + bore).
 func TestHoleToolCounterbore(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 8) // 8×8×2 block
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -171,6 +175,7 @@ func TestHoleToolCounterbore(t *testing.T) {
 // TestHoleToolCountersink drives the Hole UI in countersink mode: pick the face, set bore +
 // sink Ø + angle, Through All, OK — and asserts a true cone wall plus a cylinder bore wall.
 func TestHoleToolCountersink(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 10) // 10×10×2 block
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -212,6 +217,7 @@ func TestHoleToolCountersink(t *testing.T) {
 // drill point: pick the face, set a depth shallower than the block, OK — and asserts a true
 // cone tip plus a cylinder bore.
 func TestHoleToolConicalPoint(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 8) // 8×8×2 block
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -244,6 +250,7 @@ func TestHoleToolConicalPoint(t *testing.T) {
 }
 
 func TestHoleViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -261,12 +268,13 @@ func TestHoleViaRibbonCommand(t *testing.T) {
 		t.Fatalf("OK: %v", err)
 	}
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 32 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 32 {
 		t.Errorf("hole did not remove material: volume %g, want < 32", v)
 	}
 }
 
 func TestHoleToolNeedsFace(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})

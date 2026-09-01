@@ -15,6 +15,7 @@ import (
 // (Oblikovati/Oblikovati#3489). These pin the measurement over every family the boolean feeds it.
 
 func TestCurveIsClosedByMeasurementNotByKind(t *testing.T) {
+	t.Parallel()
 	circle, err := NewCircle(math.P3(1, 2, 3), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatalf("NewCircle: %v", err)
@@ -70,6 +71,7 @@ type closedFirst struct{ Curve3 }
 // TestCurveIsClosedRefusesAnUnboundedCurve: an infinite line cannot close, and the predicate must not
 // evaluate a point at an infinite parameter to find that out.
 func TestCurveIsClosedRefusesAnUnboundedCurve(t *testing.T) {
+	t.Parallel()
 	line, err := NewLine(math.P3(0, 0, 0), math.V3(1, 0, 0))
 	if err != nil {
 		t.Fatalf("NewLine: %v", err)

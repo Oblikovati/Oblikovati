@@ -22,6 +22,7 @@ import (
 // TestSketch3DSpine exercises the M22-F01 API spine end-to-end through the router:
 // create a 3D sketch, list/get it, toggle edit, solve, set properties, and delete.
 func TestSketch3DSpine(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 
 	var created wire.CreateSketch3DResult
@@ -86,6 +87,7 @@ func TestSketch3DSpine(t *testing.T) {
 // TestSketch3DEnumerationAndStatus checks entity enumeration and the non-mutating
 // constraint-status analysis over a 3D sketch of free points built in-model.
 func TestSketch3DEnumerationAndStatus(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {
@@ -121,6 +123,7 @@ func TestSketch3DEnumerationAndStatus(t *testing.T) {
 // TestSketch3DAddEntities exercises the discriminated 3D entity constructor over the
 // router: add a point, line, circle and arc, then enumerate them.
 func TestSketch3DAddEntities(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 
@@ -169,6 +172,7 @@ func kindAt(ents []wire.Sketch3DEntityInfo, i int) string {
 // TestSketch3DAddHelix exercises the helix constructor's four definition modes over the
 // router and checks the resulting curve geometry.
 func TestSketch3DAddHelix(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {
@@ -217,6 +221,7 @@ func lastHelix(t *testing.T, part *compdef.PartComponentDefinition) *sketch.Heli
 
 // TestSketch3DAddHelixErrors covers the helix mode/validation error paths.
 func TestSketch3DAddHelixErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	bad := []string{
@@ -234,6 +239,7 @@ func TestSketch3DAddHelixErrors(t *testing.T) {
 // TestSketch3DAddConics exercises the ellipse and elliptical-arc constructors over the
 // router and checks their enumerated radius.
 func TestSketch3DAddConics(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 
@@ -252,6 +258,7 @@ func TestSketch3DAddConics(t *testing.T) {
 
 // TestSketch3DAddConicErrors covers the conic validation error paths.
 func TestSketch3DAddConicErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	bad := []string{
@@ -268,6 +275,7 @@ func TestSketch3DAddConicErrors(t *testing.T) {
 
 // TestSketch3DAddEntityErrors covers the malformed-input paths of the constructor.
 func TestSketch3DAddEntityErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 
@@ -285,6 +293,7 @@ func TestSketch3DAddEntityErrors(t *testing.T) {
 // TestSketch3DAddConstraints exercises the geometric-constraint constructor over the
 // router: build two lines, constrain them perpendicular + one parallel-to-Z, and delete.
 func TestSketch3DAddConstraints(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 
@@ -322,6 +331,7 @@ func TestSketch3DAddConstraints(t *testing.T) {
 
 // TestSketch3DAddConstraintErrors covers the constraint operand-validation error paths.
 func TestSketch3DAddConstraintErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"point","points":[[0,0,0]]}`, &wire.AddSketch3DEntityResult{})
@@ -342,6 +352,7 @@ func TestSketch3DAddConstraintErrors(t *testing.T) {
 
 // TestSketch3DDimensions exercises the dimension constructors + drive over the router.
 func TestSketch3DDimensions(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 
@@ -379,6 +390,7 @@ func TestSketch3DDimensions(t *testing.T) {
 
 // TestSketch3DDimensionErrors covers the dimension validation error paths.
 func TestSketch3DDimensionErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	bad := []string{
@@ -399,6 +411,7 @@ func TestSketch3DDimensionErrors(t *testing.T) {
 // TestSketch3DProfilesAndPaths exercises path + profile enumeration over the router: a
 // planar square loop is both one closed path and one profile.
 func TestSketch3DProfilesAndPaths(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	for _, seg := range [][2][3]float64{
@@ -433,6 +446,7 @@ func TestSketch3DProfilesAndPaths(t *testing.T) {
 
 // TestSketch3DAddSplines exercises the spline family constructors over the router.
 func TestSketch3DAddSplines(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 
@@ -459,6 +473,7 @@ func TestSketch3DAddSplines(t *testing.T) {
 
 // TestSketch3DAddSplineErrors covers the spline validation error paths.
 func TestSketch3DAddSplineErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	bad := []string{
@@ -474,6 +489,7 @@ func TestSketch3DAddSplineErrors(t *testing.T) {
 
 // TestSketch3DTransform exercises move/copy/rotate/delete over the router.
 func TestSketch3DTransform(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {
@@ -511,6 +527,7 @@ func TestSketch3DTransform(t *testing.T) {
 
 // TestSketch3DTransformErrors covers the transform validation error paths.
 func TestSketch3DTransformErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"point","points":[[0,0,0]]}`, &wire.AddSketch3DEntityResult{})
@@ -529,6 +546,7 @@ func TestSketch3DTransformErrors(t *testing.T) {
 // TestSketch3DInclude builds a box, then includes one of its edges into a 3D sketch as
 // associative reference geometry (matching the 2D project-geometry flow).
 func TestSketch3DInclude(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
@@ -571,6 +589,7 @@ func TestSketch3DInclude(t *testing.T) {
 // the extrude height changes and the part recomputes, the included point re-resolves to
 // the moved (top) vertex by reference key — it does not hold a stale topology pointer.
 func TestSketch3DIncludeIsAssociative(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
@@ -616,6 +635,7 @@ func TestSketch3DIncludeIsAssociative(t *testing.T) {
 
 // TestSketch3DIncludeUnknownRefIsUnhealthy checks a lost reference is reported, not fatal.
 func TestSketch3DIncludeUnknownRefIsUnhealthy(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	var inc wire.IncludeSketch3DResult
@@ -629,6 +649,7 @@ func TestSketch3DIncludeUnknownRefIsUnhealthy(t *testing.T) {
 // points and one of its lines into a 3D sketch through sketch3d.includeSketch — the
 // geometry is lifted through the 2D sketch's host plane and tracks edits to the source.
 func TestSketch3DIncludeSketch2D(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XZ"}`, &wire.CreateSketchResult{})
 	part, err := modelaccess.ActivePart(s)
@@ -674,6 +695,7 @@ func TestSketch3DIncludeSketch2D(t *testing.T) {
 // TestSketch3DIncludeSketch2DUnknownIsUnhealthy checks a missing source entity id is
 // reported, not fatal.
 func TestSketch3DIncludeSketch2DUnknownIsUnhealthy(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
@@ -687,6 +709,7 @@ func TestSketch3DIncludeSketch2DUnknownIsUnhealthy(t *testing.T) {
 // TestSketch3DSurfaceCurves builds a box and adds an intersection curve between two of
 // its faces and a silhouette of one face, by reference key.
 func TestSketch3DSurfaceCurves(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
@@ -735,6 +758,7 @@ func TestSketch3DSurfaceCurves(t *testing.T) {
 
 // TestSketch3DSurfaceCurveErrors covers the surface-curve validation + lost-ref paths.
 func TestSketch3DSurfaceCurveErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	// A lost face reference reports unhealthy (not an error).
@@ -758,6 +782,7 @@ func TestSketch3DSurfaceCurveErrors(t *testing.T) {
 // TestSketch3DOnFaceCurveOverAPI adds an on-face parameter-space curve via /api, resolving
 // the face ref to its surface (M22-F11).
 func TestSketch3DOnFaceCurveOverAPI(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
@@ -789,6 +814,7 @@ func TestSketch3DOnFaceCurveOverAPI(t *testing.T) {
 
 // TestSketch3DOnFaceCurveErrors: a lost ref is unhealthy; a malformed UV is an error.
 func TestSketch3DOnFaceCurveErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 
@@ -806,6 +832,7 @@ func TestSketch3DOnFaceCurveErrors(t *testing.T) {
 // TestSketch3DProjectAndOffsetOverAPI adds project-to-surface and offset curves whose
 // source is an in-sketch line resolved by entity id (M22-F11).
 func TestSketch3DProjectAndOffsetOverAPI(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
@@ -856,6 +883,7 @@ func TestSketch3DProjectAndOffsetOverAPI(t *testing.T) {
 // SurfaceSource re-resolves the moved surface). An onFace curve on the top face tracks the
 // extrude height as a driving parameter changes.
 func TestSketch3DSurfaceCurveRebindsOnRecompute(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
@@ -950,6 +978,7 @@ func onFaceMaxZ(t *testing.T, part *compdef.PartComponentDefinition, id uint64) 
 // topology with keys, and a surfaced face key is consumable by a key consumer (the F08
 // round-trip that makes the whole reference-key workflow usable over the wire).
 func TestModelReferenceKeysSurfacesAndRoundTrips(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
@@ -987,6 +1016,7 @@ func TestModelReferenceKeysSurfacesAndRoundTrips(t *testing.T) {
 // TestConstraint3DKindMapping covers the constraint/entity wire mappings directly (the
 // wire path to add 3D constraints lands in M22-F05).
 func TestConstraint3DKindMapping(t *testing.T) {
+	t.Parallel()
 	a := sketch.NewPoint3D(math.P3(0, 0, 0))
 	b := sketch.NewPoint3D(math.P3(1, 0, 0))
 	c := sketch.NewPoint3D(math.P3(2, 0, 0))

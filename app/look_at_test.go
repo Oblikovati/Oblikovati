@@ -20,6 +20,7 @@ func facesNormal(t *testing.T, s *Session, n [3]float64) {
 
 // TestLookAtSelectionFacesWorkPlane: with a work plane selected, Look At swings the view normal to it.
 func TestLookAtSelectionFacesWorkPlane(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	wp := def.OriginPlanes()[0]
 	s.Selection().Add(WorkPlaneHandle{Plane: wp})
@@ -35,6 +36,7 @@ func TestLookAtSelectionFacesWorkPlane(t *testing.T) {
 
 // TestLookAtSelectionFacesPlanarFace: with a planar face selected, Look At faces its normal (+Z here).
 func TestLookAtSelectionFacesPlanarFace(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	s.Selection().Add(FaceHandle{Face: aFace()}) // a +Z planar face
 	if !s.CanLookAt() {
@@ -48,6 +50,7 @@ func TestLookAtSelectionFacesPlanarFace(t *testing.T) {
 
 // TestLookAtSelectionNoPlanarSelection: nothing planar selected ⇒ Look At is a reported no-op.
 func TestLookAtSelectionNoPlanarSelection(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if s.CanLookAt() {
 		t.Error("CanLookAt with nothing selected should be false")

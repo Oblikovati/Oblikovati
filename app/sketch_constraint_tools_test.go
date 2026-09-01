@@ -12,6 +12,7 @@ import (
 )
 
 func TestConstraintToolPicksThenApplies(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l1 := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 	l2 := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 4))
@@ -37,6 +38,7 @@ func TestConstraintToolPicksThenApplies(t *testing.T) {
 }
 
 func TestConstraintToolRejectsWrongType(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	p := sk.Points().Add(math.P2(1, 1))
 	tool := constraintToolDefs[2].new() // Parallel: lines only
@@ -54,6 +56,7 @@ func TestConstraintToolRejectsWrongType(t *testing.T) {
 }
 
 func TestConstraintToolHighlightsPickedAndCandidate(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(-2, 0), math.P2(2, 0)) // through origin
 	tool := constraintToolDefs[3].new()                           // Perpendicular
@@ -70,6 +73,7 @@ func TestConstraintToolHighlightsPickedAndCandidate(t *testing.T) {
 }
 
 func TestEveryConstraintToolAppliesViaPicks(t *testing.T) {
+	t.Parallel()
 	p := func(sk *sketch.Sketch, x, y float64) sketch.Entity { return sk.Points().Add(math.P2(x, y)) }
 	line := func(sk *sketch.Sketch, x0, y0, x1, y1 float64) sketch.Entity {
 		return sk.Lines().AddByTwoPoints(math.P2(x0, y0), math.P2(x1, y1))
@@ -113,6 +117,7 @@ func TestEveryConstraintToolAppliesViaPicks(t *testing.T) {
 }
 
 func TestDimensionToolApplies(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewDimensionTool())
 	s.feedPick(SketchEntityHandle{Entity: sk.Points().Add(math.P2(0, 0))})
@@ -127,6 +132,7 @@ func TestDimensionToolApplies(t *testing.T) {
 }
 
 func TestHoverCandidateRejectsWrongType(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	sk.Lines().AddByTwoPoints(math.P2(-2, -2), math.P2(2, 2)) // a line through origin
 	s.StartTool(constraintToolDefs[7].new())                  // Concentric: circles only
@@ -136,6 +142,7 @@ func TestHoverCandidateRejectsWrongType(t *testing.T) {
 }
 
 func TestCoincidentPointToPoint(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	p1 := sk.Points().Add(math.P2(0, 0))
 	p2 := sk.Points().Add(math.P2(2, 1))
@@ -154,6 +161,7 @@ func TestCoincidentPointToPoint(t *testing.T) {
 }
 
 func TestCoincidentPointOnLine(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	p := sk.Points().Add(math.P2(1, 3))
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
@@ -172,6 +180,7 @@ func TestCoincidentPointOnLine(t *testing.T) {
 }
 
 func TestCoincidentToMidpoint(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	p := sk.Points().Add(math.P2(0, 5))
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))

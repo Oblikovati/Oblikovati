@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -41,6 +42,7 @@ func angleTakeoffTangents(end LoftEnd) (first, last []math.Vector3) {
 // into the body) and OPPOSE across it (both flare outward as the surface leaves its own section).
 // Before the fix both radial components pointed the same way, which is what tilted the body.
 func TestAngleTakeoffMirrorsTheRadialComponentAtTheLastSection(t *testing.T) {
+	t.Parallel()
 	first, last := angleTakeoffTangents(LoftEnd{Condition: LoftAngle, Angle: rad(45)})
 	for j := range first {
 		radial := math.V3(float64(first[j].X), float64(first[j].Y), 0)
@@ -60,6 +62,7 @@ func TestAngleTakeoffMirrorsTheRadialComponentAtTheLastSection(t *testing.T) {
 // an equal takeoff at both ends are symmetric about the mid plane, so the shape must be too.
 // Measured before the fix: 2.27 at the bottom against 1.75 at the top — a pear, not a barrel.
 func TestAngleTakeoffBuildsASymmetricBarrel(t *testing.T) {
+	t.Parallel()
 	const span = 4.0
 	end := LoftEnd{Condition: LoftAngle, Angle: rad(45)}
 	b := conditionedLoft(t, twoCircles(2), false, end, end)
@@ -94,6 +97,7 @@ func TestAngleTakeoffBuildsASymmetricBarrel(t *testing.T) {
 // OUTSIDE the cap's own radius. Before the fix the wall re-crossed z=4 at radius 1.74, inside the
 // radius-2 disc, for 24 interpenetrating face pairs on a body that passed ops.Validate.
 func TestReversedTakeoffOverhangsOutsideTheCap(t *testing.T) {
+	t.Parallel()
 	rev := LoftEnd{Condition: LoftAngle, Angle: rad(45), Reversed: true}
 	b := conditionedLoft(t, twoCircles(2), false, rev, rev)
 	overhang := false
@@ -135,6 +139,7 @@ func sphereFaceContinuity(isStart bool) (tan []math.Vector3, second, third []mat
 // P(u)=γ(±c·u) — so the odd orders flip at a last section and the even ones do not. Getting the
 // second derivative to flip too would break the curvature match the G2 end exists for.
 func TestFaceContinuityMirrorsTheOddDerivativesAtTheLastSection(t *testing.T) {
+	t.Parallel()
 	startTan, startA, startJ := sphereFaceContinuity(true)
 	lastTan, lastA, lastJ := sphereFaceContinuity(false)
 	opposed := func(name string, a, b []math.Vector3) {
@@ -164,6 +169,7 @@ func TestFaceContinuityMirrorsTheOddDerivativesAtTheLastSection(t *testing.T) {
 // everything: geometric curvature |m×a|/|m|³ at the seam must still equal the sphere's 1/R at a
 // LAST section, exactly as it does at a first one.
 func TestFaceContinuityKeepsTheSeamCurvature(t *testing.T) {
+	t.Parallel()
 	const R = 2.0
 	tan, second, _ := sphereFaceContinuity(false)
 	for j := range tan {
@@ -177,6 +183,7 @@ func TestFaceContinuityKeepsTheSeamCurvature(t *testing.T) {
 // TestTakeoffSignIsTheOnlyDifferenceBetweenTheEnds pins the helper itself: a start section keeps
 // its leaving direction, a last one mirrors it. Everything above rides on these two values.
 func TestTakeoffSignIsTheOnlyDifferenceBetweenTheEnds(t *testing.T) {
+	t.Parallel()
 	if got := takeoffSign(true); got != 1 {
 		t.Errorf("takeoffSign(start) = %g, want 1 — +u leaves the first section", got)
 	}
@@ -189,6 +196,7 @@ func TestTakeoffSignIsTheOnlyDifferenceBetweenTheEnds(t *testing.T) {
 // shares the defect and the fix, so it gets the same assertion — the two ends' in-plane tangents
 // must oppose.
 func TestFaceTangentTakeoffMirrorsToo(t *testing.T) {
+	t.Parallel()
 	secs := [][]math.Point3{ringOfRadius(2, 0, 8), ringOfRadius(2, 4, 8)}
 	up := math.V3(0, 0, 1).AsUnit()
 	end := LoftEnd{Condition: LoftTangent, Impact: 1}
@@ -204,12 +212,16 @@ func TestFaceTangentTakeoffMirrorsToo(t *testing.T) {
 // TestReversedTakeoffStillUndercuts keeps the behaviour the mirror must not cost: the reversed
 // takeoff exists to dip the surface below the start plane, and it still does.
 func TestReversedTakeoffStillUndercuts(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
+	t.Parallel()
 	rev := LoftEnd{Condition: LoftAngle, Angle: rad(45), Reversed: true}
 	b := conditionedLoft(t, twoCircles(2), false, rev, rev)
 	if z := float64(b.RangeBox().Min.Z); z > -0.02 {
 		t.Errorf("min z = %.4f, want < -0.02 — the undercut was lost to the mirror", z)
 	}
-	if v := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; v <= 0 {
 		t.Errorf("the undercut body has volume %g", v)
 	}
 }

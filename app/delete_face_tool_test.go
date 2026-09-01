@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -41,6 +42,7 @@ func chamferOneEdge(t *testing.T, s *Session, block *topo.Body) *topo.Body {
 // 7.75), then start the tool, click the chamfer face, OK — and asserts the body healed back
 // to the sharp box (vol 8), a valid solid.
 func TestDeleteFaceToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	chamfered := chamferOneEdge(t, s, block)
 
@@ -59,7 +61,7 @@ func TestDeleteFaceToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("healed body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 8) > 1e-6 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 8) > 1e-6 {
 		t.Errorf("healed volume = %g, want 8", got)
 	}
 	if s.ActiveTool() != nil {
@@ -69,6 +71,7 @@ func TestDeleteFaceToolEndToEnd(t *testing.T) {
 
 // TestDeleteFaceViaRibbonCommand drives Delete Face from its ribbon command.
 func TestDeleteFaceViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	chamfered := chamferOneEdge(t, s, block)
 	if err := RegisterStandardCommands(s); err != nil {
@@ -85,13 +88,14 @@ func TestDeleteFaceViaRibbonCommand(t *testing.T) {
 	if err := s.OK(); err != nil {
 		t.Fatalf("OK: %v", err)
 	}
-	if v := ops.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 8) > 1e-6 {
+	if v := query.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 8) > 1e-6 {
 		t.Errorf("delete-face did not heal to 8: volume %g", v)
 	}
 }
 
 // TestDeleteFaceToolNeedsFace checks the tool is not committable until a face is picked.
 func TestDeleteFaceToolNeedsFace(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	chamfered := chamferOneEdge(t, s, block)
 	s.SetPicker(stubPicker{sel: chamferFaceHandleOf(t, chamfered)})

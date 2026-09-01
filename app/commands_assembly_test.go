@@ -29,6 +29,7 @@ func assemblySession(t *testing.T) *Session {
 // TestAssembleRibbonTabAndPanels checks an active assembly shows the Assemble tab with its
 // Component/Pattern/BOM panels (the M11 scaffolding, #761).
 func TestAssembleRibbonTabAndPanels(t *testing.T) {
+	t.Parallel()
 	tab, ok := BuildRibbon(assemblySession(t)).Tab("Assemble")
 	if !ok {
 		t.Fatal("an active assembly should show the Assemble ribbon tab")
@@ -43,6 +44,7 @@ func TestAssembleRibbonTabAndPanels(t *testing.T) {
 // TestAssembleTabAbsentForPart checks the Assemble tab is contextual to an assembly: a part
 // document must not show it.
 func TestAssembleTabAbsentForPart(t *testing.T) {
+	t.Parallel()
 	if _, ok := BuildRibbon(registeredSession(t)).Tab("Assemble"); ok {
 		t.Error("a part ribbon should not show the Assemble tab")
 	}
@@ -50,6 +52,7 @@ func TestAssembleTabAbsentForPart(t *testing.T) {
 
 // TestActiveAssemblyGate checks the active-assembly enable predicate and accessor.
 func TestActiveAssemblyGate(t *testing.T) {
+	t.Parallel()
 	if !hasActiveAssembly(assemblySession(t)) {
 		t.Error("hasActiveAssembly should be true with an assembly active")
 	}

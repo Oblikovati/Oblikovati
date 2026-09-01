@@ -12,6 +12,7 @@ import (
 )
 
 func TestSetViewLayoutCreatesAndKeepsViews(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := addPart(t, s, "a.obk")
 	activate(t, s, a)
@@ -54,6 +55,7 @@ func activate(t *testing.T, s *Session, d *doc.Document) {
 // TestCameraIsPerDocumentAcrossSwitch is the regression for the reported bug: switching
 // the active document must restore that document's camera, not reset it.
 func TestCameraIsPerDocumentAcrossSwitch(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := addPart(t, s, "a.obk")
 	b := addPart(t, s, "b.obk")
@@ -79,6 +81,7 @@ func TestCameraIsPerDocumentAcrossSwitch(t *testing.T) {
 }
 
 func TestAddViewAndDocumentByID(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := addPart(t, s, "a.obk")
 	activate(t, s, a)

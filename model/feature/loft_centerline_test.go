@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -44,8 +45,9 @@ func centerlinedCircles(t *testing.T, cl func() []math.Point3) *topo.Body {
 // TestLoftCenterlineBendsSpine: a centerline bowing to x=2 shifts the loft's mass to +X (its
 // centroid moves well off the axis) — the spine bends — whereas a straight loft is centred.
 func TestLoftCenterlineBendsSpine(t *testing.T) {
-	straight := ops.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(0)), ops.DefaultQuality())
-	bent := ops.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(2)), ops.DefaultQuality())
+	t.Parallel()
+	straight := query.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(0)), ops.DefaultQuality())
+	bent := query.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(2)), ops.DefaultQuality())
 	if float64(straight.Centroid.X) < -0.05 || float64(straight.Centroid.X) > 0.05 {
 		t.Errorf("straight-centerline loft is off-axis: centroid x = %.3f, want ≈0", float64(straight.Centroid.X))
 	}
@@ -57,8 +59,9 @@ func TestLoftCenterlineBendsSpine(t *testing.T) {
 // TestLoftCenterlinePreservesVolume: bending the spine keeps the cross-sections, so the bent loft
 // holds about the same volume as the straight one (a rail, by contrast, changes the volume).
 func TestLoftCenterlinePreservesVolume(t *testing.T) {
-	straight := ops.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(0)), ops.DefaultQuality()).Volume
-	bent := ops.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(2)), ops.DefaultQuality()).Volume
+	t.Parallel()
+	straight := query.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(0)), ops.DefaultQuality()).Volume
+	bent := query.BodyGeometryProperties(centerlinedCircles(t, centerlineThroughX(2)), ops.DefaultQuality()).Volume
 	if relErr(bent, straight) > 0.15 {
 		t.Errorf("spine bend changed the volume too much: bent %.3f vs straight %.3f", bent, straight)
 	}
@@ -67,6 +70,7 @@ func TestLoftCenterlinePreservesVolume(t *testing.T) {
 // TestLoftCenterlineKeepsEnds: the centerline doesn't move the end sections — the body still spans
 // the section heights (z 0→4).
 func TestLoftCenterlineKeepsEnds(t *testing.T) {
+	t.Parallel()
 	bb := centerlinedCircles(t, centerlineThroughX(2)).RangeBox()
 	if z0, z1 := float64(bb.Min.Z), float64(bb.Max.Z); z0 < -1e-6 || z0 > 1e-6 || z1 < 4-1e-6 || z1 > 4+1e-6 {
 		t.Errorf("centerline moved the loft ends in z: span [%.4f,%.4f], want [0,4]", z0, z1)
@@ -76,6 +80,7 @@ func TestLoftCenterlineKeepsEnds(t *testing.T) {
 // TestLoftCenterlineRoundTrip: a centerlined loft's spine polyline survives a recipe save/restore,
 // and the restored loft reports the kLoftWithCenterline type.
 func TestLoftCenterlineRoundTrip(t *testing.T) {
+	t.Parallel()
 	bottom := circleOn(sketch.XYPlane(), 2)
 	top := circleOn(planeAtZ(4), 2)
 	idx := sketchList{sks: []*sketch.Sketch{bottom, top}}

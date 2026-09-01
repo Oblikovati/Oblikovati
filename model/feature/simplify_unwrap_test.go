@@ -20,6 +20,7 @@ func axisAligned(n math.Vector3) bool {
 // TestSimplifyRemovesChamferLighter chamfers a box edge then simplifies away the chamfer face,
 // healing back to a sharp box with fewer faces — a validated lighter body (M20-F13 #490).
 func TestSimplifyRemovesChamferLighter(t *testing.T) {
+	t.Parallel()
 	box, edge := box2(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -55,6 +56,7 @@ func TestSimplifyRemovesChamferLighter(t *testing.T) {
 // TestUnwrapFlattensCylinder unwraps a cylinder's side face into a flat sheet of circumference
 // × height (M20-F13 #490).
 func TestUnwrapFlattensCylinder(t *testing.T) {
+	t.Parallel()
 	const r, h = 5.0, 10.0
 	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
@@ -96,6 +98,7 @@ func TestUnwrapFlattensCylinder(t *testing.T) {
 
 // TestSimplifyUnwrapRoundTrip checks both features survive an .obk round trip.
 func TestSimplifyUnwrapRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 1 })

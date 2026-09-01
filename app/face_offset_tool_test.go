@@ -6,12 +6,14 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestFaceOffsetToolEndToEnd drives the Offset Face UI: start the tool, click the block's
 // top face, set a +1 offset, OK — and asserts the solid grew along the normal. Block 4×4×2
 // (vol 32); offsetting the top +1 → 4×4×3 = 48.
 func TestFaceOffsetToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -32,7 +34,7 @@ func TestFaceOffsetToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("offset body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 48) > 1e-6 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 48) > 1e-6 {
 		t.Errorf("offset volume = %g, want 48", got)
 	}
 	if s.ActiveTool() != nil {
@@ -42,6 +44,7 @@ func TestFaceOffsetToolEndToEnd(t *testing.T) {
 
 // TestFaceOffsetViaRibbonCommand drives the Offset Face from its ribbon command.
 func TestFaceOffsetViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -58,13 +61,14 @@ func TestFaceOffsetViaRibbonCommand(t *testing.T) {
 		t.Fatalf("OK: %v", err)
 	}
 	def := activePartDef(t, s)
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v <= 32 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v <= 32 {
 		t.Errorf("offset did not grow the body: volume %g, want > 32", v)
 	}
 }
 
 // TestFaceOffsetToolNeedsFace checks the tool is not committable until a face is picked.
 func TestFaceOffsetToolNeedsFace(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	off := NewFaceOffsetTool()

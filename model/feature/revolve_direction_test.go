@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -31,7 +32,7 @@ func revolveCentroid(t *testing.T, angle float64, dir ExtentDirection, angle2 fu
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("revolve not a valid solid: %+v", r)
 	}
-	return ops.BodyGeometryProperties(body, ops.DefaultQuality())
+	return query.BodyGeometryProperties(body, ops.DefaultQuality())
 }
 
 // quarterWasher is a 90° sweep of the 2×2 square at x∈[2,4]: a quarter of the 24π washer.
@@ -42,6 +43,7 @@ const quarterWasher = stdmath.Pi * (4*4 - 2*2) * 2 / 4
 // #2019 the second direction could only be ADDED to the first, never used on its own, so [-90°,0]
 // was unreachable — and on a Cut or Join that is a different feature, not a different view.
 func TestFlippedRevolveMirrorsTheDefaultSweep(t *testing.T) {
+	t.Parallel()
 	fwd := revolveCentroid(t, stdmath.Pi/2, PositiveDir, nil)
 	back := revolveCentroid(t, stdmath.Pi/2, NegativeDir, nil)
 
@@ -62,6 +64,7 @@ func TestFlippedRevolveMirrorsTheDefaultSweep(t *testing.T) {
 // TestSymmetricRevolveStraddlesTheProfilePlane: Symmetric sweeps half the angle each way, so the
 // solid is balanced about the profile plane while covering the same total angle.
 func TestSymmetricRevolveStraddlesTheProfilePlane(t *testing.T) {
+	t.Parallel()
 	sym := revolveCentroid(t, stdmath.Pi/2, SymmetricDir, nil)
 
 	if relErr(sym.Volume, quarterWasher) > 0.01 {
@@ -75,6 +78,7 @@ func TestSymmetricRevolveStraddlesTheProfilePlane(t *testing.T) {
 // TestAsymmetricRevolveOutranksTheDirection: with a second angle set the revolve names both sides
 // itself, so a stale Direction must not shift the span.
 func TestAsymmetricRevolveOutranksTheDirection(t *testing.T) {
+	t.Parallel()
 	asym := revolveCentroid(t, stdmath.Pi/2, NegativeDir, angleConst(stdmath.Pi/2))
 
 	if relErr(asym.Volume, 2*quarterWasher) > 0.01 {
@@ -88,6 +92,7 @@ func TestAsymmetricRevolveOutranksTheDirection(t *testing.T) {
 // TestDirectionVanishesOnAFullRevolution: a complete turn is rotationally closed, so no direction
 // is observable and none may disturb the solid.
 func TestDirectionVanishesOnAFullRevolution(t *testing.T) {
+	t.Parallel()
 	full := stdmath.Pi * (4*4 - 2*2) * 2
 	for _, dir := range []ExtentDirection{PositiveDir, NegativeDir, SymmetricDir} {
 		got := revolveCentroid(t, 2*stdmath.Pi, dir, nil)
@@ -100,6 +105,7 @@ func TestDirectionVanishesOnAFullRevolution(t *testing.T) {
 // TestRevolveSpanResolvesEachDirection pins the span arithmetic itself, which the geometry tests
 // can only observe indirectly.
 func TestRevolveSpanResolvesEachDirection(t *testing.T) {
+	t.Parallel()
 	quarter := stdmath.Pi / 2
 	cases := []struct {
 		name         string
@@ -124,6 +130,7 @@ func TestRevolveSpanResolvesEachDirection(t *testing.T) {
 // so a flipped revolve must reload flipped. It is applied on every axis path, so the centerline
 // case — which restores through its own branch — is the one worth pinning.
 func TestRevolveDirectionSurvivesTheRecipe(t *testing.T) {
+	t.Parallel()
 	sk := offsetSquareSketch(2, 2)
 	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
 	cl.SetCenterline(true)

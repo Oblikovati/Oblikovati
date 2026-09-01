@@ -15,6 +15,7 @@ import (
 // TestExportActiveDrawingDXF checks the session writes the active sheet (with a view) to a DXF
 // file — the engine the GUI Export DXF command and the drawing.exportDXF wire method share.
 func TestExportActiveDrawingDXF(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	if _, err := c.Sheets().Active().Views().AddBase(drawing.BaseViewSpec{
@@ -37,6 +38,7 @@ func TestExportActiveDrawingDXF(t *testing.T) {
 // TestExportActiveDrawingDXFRejectsBadInput covers the guard paths: an empty path and a
 // non-drawing active document both error rather than writing a file.
 func TestExportActiveDrawingDXFRejectsBadInput(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	if _, err := s.ExportActiveDrawingDXF("", types.DXFR2018); err == nil {
 		t.Error("empty path = ok, want error")
@@ -51,6 +53,7 @@ func TestExportActiveDrawingDXFRejectsBadInput(t *testing.T) {
 // TestDrawingExportDXFCommandFlow drives the GUI path end to end: the Export DXF command arms
 // the host file dialog, and answering it with a path writes the file and reports the outcome.
 func TestDrawingExportDXFCommandFlow(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	if _, err := c.Sheets().Active().Views().AddBase(drawing.BaseViewSpec{
@@ -82,6 +85,7 @@ func TestDrawingExportDXFCommandFlow(t *testing.T) {
 // TestDrawingExportDXFCancelWritesNothing checks a cancelled dialog leaves no file and the
 // handler ignores it.
 func TestDrawingExportDXFCancelWritesNothing(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	if err := requestDrawingDXFExport(s); err != nil {
 		t.Fatalf("requestDrawingDXFExport: %v", err)
@@ -95,6 +99,7 @@ func TestDrawingExportDXFCancelWritesNothing(t *testing.T) {
 }
 
 func TestEnsureDXFExtension(t *testing.T) {
+	t.Parallel()
 	if got := ensureDXFExtension("/tmp/sheet"); got != "/tmp/sheet.dxf" {
 		t.Errorf("ensureDXFExtension(bare) = %q, want /tmp/sheet.dxf", got)
 	}

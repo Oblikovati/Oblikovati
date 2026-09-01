@@ -16,6 +16,7 @@ import (
 // sign, or — when it straddles zero — defers to the exact predicate. A wrong
 // certification (a false sign near the plane) would be caught here.
 func TestOrient3DIntervalNearCoplanar(t *testing.T) {
+	t.Parallel()
 	a := Point{big.NewRat(1, 3), big.NewRat(0, 1), big.NewRat(0, 1)}
 	b := Point{big.NewRat(4, 3), big.NewRat(0, 1), big.NewRat(0, 1)}
 	c := Point{big.NewRat(1, 3), big.NewRat(1, 1), big.NewRat(0, 1)}
@@ -41,6 +42,7 @@ func TestOrient3DIntervalNearCoplanar(t *testing.T) {
 // coplanar constructed quad returns 0 — the interval defers and the exact path yields
 // the true 0, never a filtered near-zero guess.
 func TestOrient3DIntervalCertifies(t *testing.T) {
+	t.Parallel()
 	a := Point{big.NewRat(1, 3), big.NewRat(0, 1), big.NewRat(0, 1)}
 	b := Point{big.NewRat(7, 3), big.NewRat(0, 1), big.NewRat(0, 1)}
 	c := Point{big.NewRat(1, 3), big.NewRat(2, 1), big.NewRat(0, 1)}
@@ -59,6 +61,7 @@ func TestOrient3DIntervalCertifies(t *testing.T) {
 // negative interval, and one straddling zero (whose lower bound must be 0, not a
 // spurious negative) — each enclosing the true square range.
 func TestISquareContains(t *testing.T) {
+	t.Parallel()
 	if s := iSquare(interval{2, 3}); s.lo > 4 || s.hi < 9 {
 		t.Fatalf("positive interval: [%v,%v] does not enclose [4,9]", s.lo, s.hi)
 	}
@@ -73,6 +76,7 @@ func TestISquareContains(t *testing.T) {
 // TestCoordInterval checks the coordinate bracket: an exact binary64 collapses to a
 // point, and a non-dyadic rational is strictly enclosed.
 func TestCoordInterval(t *testing.T) {
+	t.Parallel()
 	if iv := coordInterval(big.NewRat(3, 4)); iv.lo != 0.75 || iv.hi != 0.75 {
 		t.Fatalf("dyadic 3/4: interval [%v,%v], want the point 0.75", iv.lo, iv.hi)
 	}
@@ -89,6 +93,7 @@ func TestCoordInterval(t *testing.T) {
 // for representative operands, including sign-mixed multiplication (all four corner
 // products relevant).
 func TestIntervalOpsContain(t *testing.T) {
+	t.Parallel()
 	encloses := func(iv interval, exact *big.Rat) bool {
 		lo := new(big.Rat).SetFloat64(iv.lo)
 		hi := new(big.Rat).SetFloat64(iv.hi)

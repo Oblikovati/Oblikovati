@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -40,10 +41,11 @@ func concaveFilletNotch(r float64) float64 { return r*r - stdmath.Pi*r*r/4 }
 // face, adding the notch cross-section over the edge length — not scoop material out as the
 // convex-only path (which left the centre in the material) did. The L is volume 3, edge length 1.
 func TestFilletConcaveOutwardFills(t *testing.T) {
+	t.Parallel()
 	const r = 0.6
 	res := filletConcaved(t, r, types.FilletConcaveOutward)
 	want := 3 + concaveFilletNotch(r) // L volume 3 + fillet fill over edge length 1
-	got := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume
+	got := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume
 	if stdmath.Abs(got-want) > 2e-3 {
 		t.Errorf("outward concave fillet volume = %g, want %g±2e-3 (notch should be filled)", got, want)
 	}
@@ -54,6 +56,7 @@ func TestFilletConcaveOutwardFills(t *testing.T) {
 // extend only toward the void, so its tangent points fall off them. The feature goes sick honestly
 // rather than emitting a malformed solid. (A concave edge's valid fillet is the outward fill.)
 func TestFilletConcaveInwardDegenerate(t *testing.T) {
+	t.Parallel()
 	body, edge := lExtrude(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(body)
@@ -69,6 +72,7 @@ func TestFilletConcaveInwardDegenerate(t *testing.T) {
 // faceted-but-open mesh is a defect). ValidateBodyEntities at CheckGeometry tessellates and runs
 // the manifold/orientation/closure + self-intersection checks.
 func TestFilletConcaveOutwardWatertight(t *testing.T) {
+	t.Parallel()
 	res := filletConcaved(t, 0.6, types.FilletConcaveOutward)
 	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
 		if ok, problems := ops.ValidateBodyEntities(res, ops.CheckGeometry, ops.Quality{ChordTolerance: tol}); !ok {

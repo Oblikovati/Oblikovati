@@ -18,6 +18,7 @@ func fullTurn() float64 { return 2 * stdmath.Pi }
 // TestAssemblyRevolveToolVolume gates the revolved tool against the analytic value: the
 // square x∈[2,4], y∈[0,2] spun a full turn about the Y axis is a washer of volume 24π.
 func TestAssemblyRevolveToolVolume(t *testing.T) {
+	t.Parallel()
 	f := NewAssemblyRevolveFeature(offsetSquareSketch(2, 2), 0, yAxis(), ops.Cut, fullTurn)
 	if f.Kind() != "assemblyRevolve" {
 		t.Errorf("kind = %q, want assemblyRevolve", f.Kind())
@@ -49,6 +50,7 @@ func enclosingBlock(t *testing.T) *topo.Body {
 // y∈[0,1], volume ≈π by the analytic gate), strictly inside each enclosing block — so the
 // boolean removes exactly the tool volume from every participant (16 − toolVol).
 func TestAssemblyRevolveCutsEveryBody(t *testing.T) {
+	t.Parallel()
 	f := NewAssemblyRevolveFeature(offsetSquareSketch(0, 1), 0, yAxis(), ops.Cut, fullTurn)
 	tool, err := f.buildTool()
 	if err != nil {
@@ -76,6 +78,7 @@ func TestAssemblyRevolveCutsEveryBody(t *testing.T) {
 // TestAssemblyRevolveResolvesSketchCenterline: with no explicit axis the feature spins about
 // the sketch's single centerline (Inventor's common flow), producing the same washer.
 func TestAssemblyRevolveResolvesSketchCenterline(t *testing.T) {
+	t.Parallel()
 	sk := offsetSquareSketch(2, 2)
 	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2)) // vertical centerline = Y axis
 	cl.SetCenterline(true)
@@ -93,6 +96,7 @@ func TestAssemblyRevolveResolvesSketchCenterline(t *testing.T) {
 // TestAssemblyRevolveRejectsBadAngle: a non-positive angle is a lost input reported as an
 // error rather than a degenerate solid.
 func TestAssemblyRevolveRejectsBadAngle(t *testing.T) {
+	t.Parallel()
 	f := NewAssemblyRevolveFeature(offsetSquareSketch(2, 2), 0, yAxis(), ops.Cut, func() float64 { return 0 })
 	if _, err := f.Recompute(Input{Bodies: []*topo.Body{unitBlock(t)}}); err == nil {
 		t.Error("zero angle should be rejected")
@@ -102,6 +106,7 @@ func TestAssemblyRevolveRejectsBadAngle(t *testing.T) {
 // TestAssemblyRevolveNoAxisNoCenterlineFails: no explicit axis and no sketch centerline is an
 // ambiguous input, reported as an error.
 func TestAssemblyRevolveNoAxisNoCenterlineFails(t *testing.T) {
+	t.Parallel()
 	f := NewAssemblyRevolveFeature(offsetSquareSketch(2, 2), 0, nil, ops.Cut, fullTurn)
 	if _, err := f.Recompute(Input{Bodies: []*topo.Body{unitBlock(t)}}); err == nil {
 		t.Error("revolve with no axis and no centerline should fail")

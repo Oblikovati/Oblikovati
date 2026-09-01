@@ -8,6 +8,7 @@ import "testing"
 // occurrence context menu offers an enabled Edit that opens the component document in a
 // visible, active tab.
 func TestOccurrenceEditOpensComponentTab(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	occ := asm.Occurrences().Item(0)

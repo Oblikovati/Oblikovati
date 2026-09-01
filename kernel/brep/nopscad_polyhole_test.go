@@ -12,6 +12,7 @@ import (
 // TestNopPolyholeCSG pins NopSCADlib's polyhole helper as an eight-sided through
 // cylinder. It is the low-level faceted drill shape used by printable holes.
 func TestNopPolyholeCSG(t *testing.T) {
+	t.Parallel()
 	const radius, height = 0.25, 1.2
 	body := prismBody(regularPolygonPoints(math.P3(0, 0, 0), radius, 8, stdmath.Pi/8), 0, height, "polyhole")
 	requireValidNopSolid(t, "polyhole", body)

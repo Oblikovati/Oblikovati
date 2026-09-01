@@ -18,6 +18,7 @@ func patchSurface(fs *PartFeatures) {
 }
 
 func TestTrimFeatureKeepsOneSide(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	patchSurface(fs)
 	pf := NewTrimFeatures(fs).AddByPlane(math.P3(2, 0, 0), math.V3(1, 0, 0), true)
@@ -32,6 +33,7 @@ func TestTrimFeatureKeepsOneSide(t *testing.T) {
 }
 
 func TestTrimFeatureGoesSickWhenNothingKept(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	patchSurface(fs)
 	pf := NewTrimFeatures(fs).AddByPlane(math.P3(10, 0, 0), math.V3(1, 0, 0), true)
@@ -42,6 +44,7 @@ func TestTrimFeatureGoesSickWhenNothingKept(t *testing.T) {
 }
 
 func TestExtendFeatureGrowsSurface(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	patchSurface(fs) // 4×4 patch on z=0
 	fs.Recompute()
@@ -68,6 +71,7 @@ func TestExtendFeatureGrowsSurface(t *testing.T) {
 // TestExtendFeatureMultiEdge extends the bottom (y=0) and top (y=4) edges of the 4×4 patch by 2
 // each in one feature: the y-span grows to [-2,6] (#1878).
 func TestExtendFeatureMultiEdge(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	patchSurface(fs)
 	fs.Recompute()
@@ -95,6 +99,7 @@ func TestExtendFeatureMultiEdge(t *testing.T) {
 // TestExtendFeatureToPlane extends the bottom edge of the 4×4 patch until it reaches the plane
 // y=-3: the y-span grows to [-3,4] (#1878).
 func TestExtendFeatureToPlane(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	patchSurface(fs)
 	fs.Recompute()
@@ -118,6 +123,7 @@ func TestExtendFeatureToPlane(t *testing.T) {
 // TestExtendOptionsRoundTrip pins #1878 serialization: multi-edge, extend-to-plane target, and the
 // natural flag survive the recipe codec; a legacy single-edge recipe still restores.
 func TestExtendOptionsRoundTrip(t *testing.T) {
+	t.Parallel()
 	target, _ := geom.NewPlane(math.P3(0, -3, 0), math.V3(0, 1, 0))
 	fs := NewPartFeatures(nil)
 	NewExtendFeatures(fs).AddExtend(&ExtendDefinition{
@@ -141,6 +147,7 @@ func TestExtendOptionsRoundTrip(t *testing.T) {
 }
 
 func TestExtendFeatureSickOnLostEdge(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	patchSurface(fs)
 	NewExtendFeatures(fs).Add([]byte("ghost"), func() float64 { return 2 })
@@ -151,6 +158,7 @@ func TestExtendFeatureSickOnLostEdge(t *testing.T) {
 }
 
 func TestSurfaceOffsetFeatureMovesAlongNormal(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	patchSurface(fs)
 	pf := NewSurfaceOffsetFeatures(fs).AddByDistance(func() float64 { return 3 })
@@ -165,6 +173,7 @@ func TestSurfaceOffsetFeatureMovesAlongNormal(t *testing.T) {
 }
 
 func TestMidSurfaceFeatureExtractsThinWall(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	// A 4×4×1 thin plate.
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(4), 0, ops.NewBody, func() float64 { return 1 })
@@ -191,6 +200,7 @@ func TestMidSurfaceFeatureExtractsThinWall(t *testing.T) {
 // TestMidSurfaceManualPairsAndRange is #1885: manual face pairs extract the mid-surface without
 // auto-pairing, and each pair reports an equal min/max range (1) for the parallel plate walls.
 func TestMidSurfaceManualPairsAndRange(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(4), 0, ops.NewBody, func() float64 { return 1 })
 	fs.Recompute()
@@ -222,6 +232,7 @@ func TestMidSurfaceManualPairsAndRange(t *testing.T) {
 // TestMidSurfaceBodySelectionKeepsUnselected is #1885: mid-surfacing only body 0 of a two-body
 // part leaves body 1 (a solid) untouched alongside the new mid-surface.
 func TestMidSurfaceBodySelectionKeepsUnselected(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(4), 0, ops.NewBody, func() float64 { return 1 })     // body 0: thin plate
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(1), 0, ops.NewBody, func() float64 { return 1 })     // body 1: cube (no thin pair)
@@ -247,6 +258,7 @@ func TestMidSurfaceBodySelectionKeepsUnselected(t *testing.T) {
 // TestMidSurfaceOptionsRoundTrip pins #1885 serialization: min/max, body indices, and manual pairs
 // survive the recipe codec.
 func TestMidSurfaceOptionsRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewMidSurfaceFeatures(fs).AddMidSurface(&MidSurfaceDefinition{
 		MaxThickness: 3, MinThickness: 1, BodyIndices: []int{0, 2}, Pairs: [][2][]byte{{[]byte("fa"), []byte("fb")}},
@@ -269,6 +281,7 @@ func TestMidSurfaceOptionsRoundTrip(t *testing.T) {
 }
 
 func TestMidSurfaceFeatureGoesSickOnNoThinPair(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	// A 1×1×1 cube: all separations are 1, none within a 0.5 threshold.
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(1), 0, ops.NewBody, func() float64 { return 1 })
@@ -280,6 +293,7 @@ func TestMidSurfaceFeatureGoesSickOnNoThinPair(t *testing.T) {
 }
 
 func TestSurfaceEditGoesSickWithNoTarget(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewTrimFeatures(fs).AddByPlane(math.P3(0, 0, 0), math.V3(1, 0, 0), true)
 	fs.Recompute()

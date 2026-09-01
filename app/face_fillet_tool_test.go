@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/feature"
 )
 
@@ -26,6 +27,7 @@ func pickFaceFilletSets(t *testing.T) (*Session, *FaceFilletTool) {
 // TestFaceFilletToolEndToEnd drives the Face Fillet UI: pick a face into each set, set the radius,
 // OK — and asserts a valid solid that rounds the shared edge (a cylinder face, volume below the box).
 func TestFaceFilletToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, tool := pickFaceFilletSets(t)
 	tool.SetRadius(0.3)
 	if !tool.CanCommit() {
@@ -50,13 +52,14 @@ func TestFaceFilletToolEndToEnd(t *testing.T) {
 	if cyls != 1 {
 		t.Errorf("face-filleted body has %d cylinder faces, want 1 (the rounded shared edge)", cyls)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v >= 8 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v >= 8 {
 		t.Errorf("face fillet did not round material: volume %g, want < 8", v)
 	}
 }
 
 // TestFaceFilletToolActiveSet checks picks land in the armed set and a face is never double-counted.
 func TestFaceFilletToolActiveSet(t *testing.T) {
+	t.Parallel()
 	_, tool := pickFaceFilletSets(t)
 	if tool.ActiveSet() != 1 {
 		t.Errorf("active set = %d after ArmSetB, want 1", tool.ActiveSet())
@@ -77,6 +80,7 @@ func TestFaceFilletToolActiveSet(t *testing.T) {
 
 // TestFaceFilletToolNeedsBothSets gates commit on two non-empty sets and a positive radius.
 func TestFaceFilletToolNeedsBothSets(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	tool := NewFaceFilletTool()
 	s.StartTool(tool)
@@ -101,6 +105,7 @@ func TestFaceFilletToolNeedsBothSets(t *testing.T) {
 
 // TestFaceFilletToolClearSets checks each set's clear empties only that set.
 func TestFaceFilletToolClearSets(t *testing.T) {
+	t.Parallel()
 	_, tool := pickFaceFilletSets(t)
 	tool.ClearSetA()
 	if tool.CountA() != 0 || tool.CountB() != 1 {
@@ -115,6 +120,7 @@ func TestFaceFilletToolClearSets(t *testing.T) {
 // TestFaceFilletEditSeed checks re-editing a committed face fillet seeds both sets' counts and the
 // radius back into the panel.
 func TestFaceFilletEditSeed(t *testing.T) {
+	t.Parallel()
 	s, tool := pickFaceFilletSets(t)
 	tool.SetRadius(0.3)
 	if err := s.OK(); err != nil {
@@ -134,6 +140,7 @@ func TestFaceFilletEditSeed(t *testing.T) {
 // TestFaceFilletToolPromptAndName covers the tool's name and the step-by-step prompt, and the
 // non-edit Cancel path (restores the default selection filter).
 func TestFaceFilletToolPromptAndName(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	tool := NewFaceFilletTool()
 	s.StartTool(tool)
@@ -161,6 +168,7 @@ func TestFaceFilletToolPromptAndName(t *testing.T) {
 // TestFaceFilletDraftPreview checks the viewport draft is offered only once both sets and a
 // positive radius are set.
 func TestFaceFilletDraftPreview(t *testing.T) {
+	t.Parallel()
 	s, tool := pickFaceFilletSets(t)
 	tool.SetRadius(0)
 	if _, ok := tool.DraftFeature(s); ok {
@@ -175,6 +183,7 @@ func TestFaceFilletDraftPreview(t *testing.T) {
 // TestFaceFilletCommitEdit re-edits a committed face fillet with a new radius and re-commits,
 // covering the edit-write path.
 func TestFaceFilletCommitEdit(t *testing.T) {
+	t.Parallel()
 	s, tool := pickFaceFilletSets(t)
 	tool.SetRadius(0.3)
 	if err := s.OK(); err != nil {
@@ -194,6 +203,7 @@ func TestFaceFilletCommitEdit(t *testing.T) {
 
 // TestFaceFilletCancelEdit cancels an in-progress edit, covering the edit-abort branch of Cancel.
 func TestFaceFilletCancelEdit(t *testing.T) {
+	t.Parallel()
 	s, tool := pickFaceFilletSets(t)
 	tool.SetRadius(0.3)
 	if err := s.OK(); err != nil {
@@ -211,6 +221,7 @@ func TestFaceFilletCancelEdit(t *testing.T) {
 // TestFaceFilletNonAdjacentErrors keeps the tool open with a notice when the two sets share no
 // edge (parallel top/bottom faces) — the non-adjacent case is not yet supported.
 func TestFaceFilletNonAdjacentErrors(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	tool := NewFaceFilletTool()
 	s.StartTool(tool)
@@ -229,6 +240,7 @@ func TestFaceFilletNonAdjacentErrors(t *testing.T) {
 // TestFaceFilletViaRibbonCommand checks the Face Fillet command (a Fillet split-button variant)
 // starts the tool.
 func TestFaceFilletViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 2)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

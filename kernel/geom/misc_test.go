@@ -10,6 +10,7 @@ import (
 )
 
 func TestLineThrough(t *testing.T) {
+	t.Parallel()
 	l, err := LineThrough(math.P3(0, 0, 0), math.P3(0, 10, 0))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -20,6 +21,7 @@ func TestLineThrough(t *testing.T) {
 }
 
 func TestCircumferenceAndDomains(t *testing.T) {
+	t.Parallel()
 	c, _ := NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	approxScalar(t, c.Circumference(), twoPi*2, "Circumference3d")
 	approxScalar(t, NewCircle2d(math.P2(0, 0), 3).Circumference(), twoPi*3, "Circumference2d")
@@ -31,11 +33,13 @@ func TestCircumferenceAndDomains(t *testing.T) {
 }
 
 func TestArc3dLength(t *testing.T) {
+	t.Parallel()
 	a, _ := NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 2, 0, twoPi/4)
 	approxScalar(t, a.Length(), twoPi/4*2, "Arc3d.Length")
 }
 
 func TestCollinearErrorMessages(t *testing.T) {
+	t.Parallel()
 	e2 := &CollinearPointsError{A: math.P2(0, 0), B: math.P2(1, 0), C: math.P2(2, 0)}
 	if !strings.Contains(e2.Error(), "collinear") {
 		t.Errorf("2D error message lacks 'collinear': %q", e2.Error())

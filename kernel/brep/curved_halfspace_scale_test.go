@@ -19,6 +19,10 @@ import (
 // a unit, a km and a Mm copy — the issue's "boolean and mesh a unit / 1e6× copy, assert identical
 // volume within relative tolerance" case, run end-to-end through brep.HalfSpaceCut.
 func TestHalfSpaceCutSphereScaleSweep(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
+	t.Parallel()
 	const hemisphereCoef = 2.0 / 3.0 * stdmath.Pi // (2/3)π
 	const relTol = 0.02                           // tessellated cap vs analytic, scale-independent
 	for _, radius := range []float64{1, 1e3, 1e6} {

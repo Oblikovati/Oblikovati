@@ -15,6 +15,7 @@ import (
 // that SolveConstraints positions a jointed component through the combined constraint+joint
 // solve (M12-F02).
 func TestJointEventsAndCombinedSolve(t *testing.T) {
+	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	base := asm.Place("base:1", NewPartComponentDefinition(), math.Identity4())
 	base.SetGrounded(true)

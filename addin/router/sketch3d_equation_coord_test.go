@@ -11,6 +11,7 @@ import (
 // TestSketch3DEquationCurveCylindricalOverWire creates a cylindrical equation curve and checks
 // enumeration reports its coordinate system (#1846).
 func TestSketch3DEquationCurveCylindricalOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	call(t, r, s, "sketch3d.addEntity",
@@ -27,6 +28,7 @@ func TestSketch3DEquationCurveCylindricalOverWire(t *testing.T) {
 // TestSketch3DEquationCurveDefaultOmitsCoordinateSystem: a Cartesian curve reports no coordinate
 // system (#1846 AC2).
 func TestSketch3DEquationCurveDefaultOmitsCoordinateSystem(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	call(t, r, s, "sketch3d.addEntity",
@@ -42,6 +44,7 @@ func TestSketch3DEquationCurveDefaultOmitsCoordinateSystem(t *testing.T) {
 
 // TestSketch3DEquationCurveUnknownCoordinateSystemErrors rejects a bad selector cleanly (#1846).
 func TestSketch3DEquationCurveUnknownCoordinateSystemErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	if err := tryCall(t, r, s, "sketch3d.addEntity",

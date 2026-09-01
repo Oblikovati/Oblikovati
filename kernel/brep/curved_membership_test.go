@@ -25,6 +25,7 @@ func lowerHemisphereCap(t *testing.T, r float64) curvedFace {
 }
 
 func TestPointInCurvedFaceSphereCap(t *testing.T) {
+	t.Parallel()
 	const r = 5
 	cap := lowerHemisphereCap(t, r)
 	sphere := cap.surface.(geom.Sphere)
@@ -40,6 +41,7 @@ func TestPointInCurvedFaceSphereCap(t *testing.T) {
 
 // TestPointInCurvedFaceBoundaryless: a boundary-less face contains every surface point.
 func TestPointInCurvedFaceBoundaryless(t *testing.T) {
+	t.Parallel()
 	sphere, _ := geom.NewSphere(math.P3(0, 0, 0), 3)
 	f := curvedFace{surface: sphere}
 	if !pointInCurvedFace(f, sphere.PointAt(0.7, 0.3)) {
@@ -52,6 +54,7 @@ func TestPointInCurvedFaceBoundaryless(t *testing.T) {
 // classified correctly, because the winding sum refines adaptively there instead of trusting a fixed
 // number of samples that a thin feature could slip between.
 func TestPointInCurvedFaceHuggingBoundary(t *testing.T) {
+	t.Parallel()
 	const r = 5
 	cap := lowerHemisphereCap(t, r)
 	sphere := cap.surface.(geom.Sphere)
@@ -75,6 +78,7 @@ func TestPointInCurvedFaceHuggingBoundary(t *testing.T) {
 // walked CLOCKWISE about +Z (as [lowerHemisphereCap] walks it) keeps the SOUTHERN cap, so its inward
 // direction at every station has a negative Z component.
 func TestInwardAtPointsIntoTheKeptRegion(t *testing.T) {
+	t.Parallel()
 	cap := lowerHemisphereCap(t, 5)
 	le := cap.loops[0].edges[0]
 	for _, u := range []float64{0, 0.17, 0.5, 0.83} {
@@ -92,6 +96,7 @@ func TestInwardAtPointsIntoTheKeptRegion(t *testing.T) {
 // closest point of a full circle, not on whichever coarse scan station happened to be nearest. A point
 // out along +X sees the circle's +X station as its closest, whatever parameter that station carries.
 func TestClosestParamOnEdgeFindsTheGlobalMinimum(t *testing.T) {
+	t.Parallel()
 	circle, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 4)
 	le := loopEdge{curve: circle, t0: 0, t1: 1}
 	p := math.P3(9, 0, 0)
@@ -105,6 +110,7 @@ func TestClosestParamOnEdgeFindsTheGlobalMinimum(t *testing.T) {
 // share is classified from the blended (pseudonormal) inward direction of both. Splitting the equator in
 // two must not change what the lower cap claims, above all right at the split.
 func TestPointInCurvedFaceAcrossALoopCorner(t *testing.T) {
+	t.Parallel()
 	cap := lowerHemisphereCap(t, 5)
 	circle := cap.loops[0].edges[0].curve
 	cap.loops = []curvedLoop{{edges: []loopEdge{{curve: circle, t0: 1, t1: 0.5}, {curve: circle, t0: 0.5, t1: 0}}}}

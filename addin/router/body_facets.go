@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -40,7 +41,7 @@ func bodyExistingFacets(s *app.Session, part *compdef.PartComponentDefinition, i
 	return facetSetReply(fs, in.IncludeTextureMap), nil
 }
 
-func facetSetReply(fs *ops.BodyFacets, withUV bool) wire.FacetSetResult {
+func facetSetReply(fs *tessellate.BodyFacets, withUV bool) wire.FacetSetResult {
 	out := wire.FacetSetResult{
 		VertexCount: len(fs.Mesh.Positions), FacetCount: len(fs.Mesh.Indices) / 3,
 		VertexIndices: fs.Mesh.Indices, IndexCountPerFace: fs.IndexCountPerFace,

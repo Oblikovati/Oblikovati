@@ -45,6 +45,7 @@ func collinearAnchors() []math.Point3 {
 }
 
 func TestAveragePlaneMatchesKnownNormal(t *testing.T) {
+	t.Parallel()
 	dom, err := AveragePlane(tiltedPlaneAnchors())
 	if err != nil {
 		t.Fatalf("AveragePlane: %v", err)
@@ -71,6 +72,7 @@ func wallScaleTiltedPlaneAnchors() []math.Point3 {
 }
 
 func TestAveragePlaneMatchesKnownNormalAtWallScale(t *testing.T) {
+	t.Parallel()
 	dom, err := AveragePlane(wallScaleTiltedPlaneAnchors())
 	if err != nil {
 		t.Fatalf("AveragePlane: %v", err)
@@ -82,6 +84,7 @@ func TestAveragePlaneMatchesKnownNormalAtWallScale(t *testing.T) {
 }
 
 func TestAveragePlaneFrameIsOrthonormalRightHanded(t *testing.T) {
+	t.Parallel()
 	dom, err := AveragePlane(tiltedPlaneAnchors())
 	if err != nil {
 		t.Fatalf("AveragePlane: %v", err)
@@ -102,6 +105,7 @@ func TestAveragePlaneFrameIsOrthonormalRightHanded(t *testing.T) {
 }
 
 func TestAveragePlaneRoundTripsInPlanePoints(t *testing.T) {
+	t.Parallel()
 	dom, err := AveragePlane(tiltedPlaneAnchors())
 	if err != nil {
 		t.Fatalf("AveragePlane: %v", err)
@@ -115,6 +119,7 @@ func TestAveragePlaneRoundTripsInPlanePoints(t *testing.T) {
 }
 
 func TestAveragePlaneRoundTripsOffPlanePoint(t *testing.T) {
+	t.Parallel()
 	dom, err := AveragePlane(tiltedPlaneAnchors())
 	if err != nil {
 		t.Fatalf("AveragePlane: %v", err)
@@ -129,6 +134,7 @@ func TestAveragePlaneRoundTripsOffPlanePoint(t *testing.T) {
 }
 
 func TestAveragePlaneRejectsCollinearAnchors(t *testing.T) {
+	t.Parallel()
 	_, err := AveragePlane(collinearAnchors())
 	if err == nil {
 		t.Fatal("AveragePlane: expected error for collinear anchors, got nil")
@@ -153,6 +159,7 @@ func TestAveragePlaneRejectsCollinearAnchors(t *testing.T) {
 // invariant) and a valid planar fit's lo is always ~0 — the guard direction that discriminates
 // is "buggy over-rejects", not "buggy under-rejects".
 func TestPlaneFrameFromEigenAcceptsHealthySecondSpread(t *testing.T) {
+	t.Parallel()
 	values := [3]float64{1e-20, 5, 10} // lo, mid, hi: two healthy in-plane spreads (mid, hi)
 	_, _, _, err := planeFrameFromEigen(values, identity3(), ResolutionForSize(1))
 	if err != nil {
@@ -161,6 +168,7 @@ func TestPlaneFrameFromEigenAcceptsHealthySecondSpread(t *testing.T) {
 }
 
 func TestPlaneFrameFromEigenRejectsWhenSecondSpreadCollapses(t *testing.T) {
+	t.Parallel()
 	values := [3]float64{1e-20, 1e-20, 10} // lo, mid both ~0: only one in-plane spread (hi)
 	_, _, _, err := planeFrameFromEigen(values, identity3(), ResolutionForSize(1))
 	if err == nil {
@@ -172,6 +180,7 @@ func TestPlaneFrameFromEigenRejectsWhenSecondSpreadCollapses(t *testing.T) {
 }
 
 func TestAveragePlaneRejectsTooFewAnchors(t *testing.T) {
+	t.Parallel()
 	_, err := AveragePlane([]math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0)})
 	if err == nil {
 		t.Fatal("AveragePlane: expected error for <3 anchors, got nil")

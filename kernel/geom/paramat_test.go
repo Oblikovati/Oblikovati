@@ -13,6 +13,7 @@ import (
 // parameters) sidesteps periodic-wrap/branch ambiguity. Reuses the shared
 // sampleSurfaces fixture (one interior (u,v) per surface type).
 func TestParamAtInvertsPointAt(t *testing.T) {
+	t.Parallel()
 	for _, c := range sampleSurfaces(t) {
 		want := c.s.PointAt(c.u, c.v)
 		ru, rv := c.s.ParamAt(want)
@@ -28,6 +29,7 @@ func TestParamAtInvertsPointAt(t *testing.T) {
 // and torus give a frame projection that is not the exact metric foot off-surface;
 // see the interface doc — irrelevant to tessellation, which inverts on-surface points.)
 func TestParamAtFootOfOffSurfacePoint(t *testing.T) {
+	t.Parallel()
 	metricFoot := map[string]bool{"plane": true, "cylinder": true, "sphere": true}
 	for _, c := range sampleSurfaces(t) {
 		if !metricFoot[c.name] {
@@ -46,6 +48,7 @@ func TestParamAtFootOfOffSurfacePoint(t *testing.T) {
 // TestParamAtAnalyticAngles checks the closed-form angular inversion is exact (not
 // just point-consistent) for the analytic surfaces away from the seam.
 func TestParamAtAnalyticAngles(t *testing.T) {
+	t.Parallel()
 	cyl, err := NewCylinder(math.P3(1, 2, 3), math.V3(0, 0, 1), 2)
 	must(t, err)
 	u, v := cyl.ParamAt(cyl.PointAt(1.0, 4.0))

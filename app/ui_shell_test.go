@@ -13,6 +13,7 @@ import (
 )
 
 func TestMarkingMenuDefaultsAndCustomization(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	base := s.MarkingMenu(BaseEnvironment)
 	if len(base.Quadrants) == 0 {
@@ -46,6 +47,7 @@ func TestMarkingMenuDefaultsAndCustomization(t *testing.T) {
 }
 
 func TestContextMenuInjectionMergesIntoBrowserMenu(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.Commands().Add(NewCommand("Sim.Analyze", "Analyze stress", "Sim",
 		func(*Session) error { return nil })); err != nil {
@@ -86,6 +88,7 @@ func TestContextMenuInjectionMergesIntoBrowserMenu(t *testing.T) {
 }
 
 func TestSearchCommandsMatchesIdNameAlias(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	noop := func(*Session) error { return nil }
 	_ = s.Commands().Add(NewCommand("Model.Extrude", "Extrude", "Create", noop).WithAlias("E"))
@@ -103,6 +106,7 @@ func TestSearchCommandsMatchesIdNameAlias(t *testing.T) {
 }
 
 func TestObjectVisibilityGatesPickablePlanes(t *testing.T) {
+	t.Parallel()
 	s := sessionWithPart(t)
 	if !s.ObjectVisibility().WorkPlanes {
 		t.Fatal("planes should default visible")
@@ -123,6 +127,7 @@ func TestObjectVisibilityGatesPickablePlanes(t *testing.T) {
 }
 
 func TestEnterExitSketchEmitsEnvironmentChanged(t *testing.T) {
+	t.Parallel()
 	s := sessionWithPart(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	var got []EnvironmentChanged
@@ -140,6 +145,7 @@ func TestEnterExitSketchEmitsEnvironmentChanged(t *testing.T) {
 }
 
 func TestAddInEnvironmentLifecycle(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	var changes []EnvironmentChanged
 	event.Subscribe(s.Events(), event.After, func(_ event.Context, e EnvironmentChanged) event.Outcome {

@@ -17,7 +17,7 @@ import "testing"
 // 15-to-15 against ours. There is no topology divergence and no oracle-internal disagreement.
 //
 // Evidence (fix wave, live DRAWEXE 8.0.0, per-face `sprops result_i 1.e-12`; ours =
-// ops.MeshArea ∘ ops.TessellateFace at PropertyQuality, shipped == solo on this body): summed
+// ops.MeshArea ∘ tessellate.TessellateFace at PropertyQuality, shipped == solo on this body): summed
 // per-face |Δ| falls 7.0374 (base, adoption reverted) → 4.7997 (HEAD), 1.47×, NO face regressing.
 // The faces that move are exactly the adopted-boundary ones: the mid runout BSpline 65.588873 →
 // 64.186993 against 64.1795 (188×), the r=8 boss wall 602.613513 → 603.044883 against 603.186, the

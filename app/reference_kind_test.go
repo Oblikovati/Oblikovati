@@ -8,6 +8,7 @@ import (
 )
 
 func TestSelectionRefKind(t *testing.T) {
+	t.Parallel()
 	cases := map[string]string{
 		"face/abc": "face", "edge/xy": "edge", "vertex/z": "vertex", "garbage": "",
 	}
@@ -19,6 +20,7 @@ func TestSelectionRefKind(t *testing.T) {
 }
 
 func TestFilterRefsByAccepts(t *testing.T) {
+	t.Parallel()
 	refs := []string{"face/a", "edge/b", "vertex/c", "face/d"}
 	got := filterRefsByAccepts(refs, []string{"face"})
 	if !reflect.DeepEqual(got, []string{"face/a", "face/d"}) {

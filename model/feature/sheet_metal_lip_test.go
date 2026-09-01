@@ -22,6 +22,7 @@ func lipDef(edge []byte, height, returnLen float64) *SheetMetalLipDefinition {
 // TestLipBuildsWatertightStiffener a lip folds a flange + 180° return onto an edge, yielding one
 // watertight solid that rises above the sheet and adds material (the lip band).
 func TestLipBuildsWatertightStiffener(t *testing.T) {
+	t.Parallel()
 	fs, edge := seedSheetMetalSheet(t, 4, map[string]string{"BendRadius": "2 mm"})
 	base := sheetVolume(fs.Result()[0])
 
@@ -45,6 +46,7 @@ func TestLipBuildsWatertightStiffener(t *testing.T) {
 
 // TestLipRejectsBadDims a lip with a non-positive height/return errors.
 func TestLipRejectsBadDims(t *testing.T) {
+	t.Parallel()
 	fs, edge := seedSheetMetalSheet(t, 4, map[string]string{"BendRadius": "2 mm"})
 	pf := NewSheetMetalLipFeatures(fs).Add(lipDef(edge.ReferenceKey(), 1.0, 0)) // zero return length
 	fs.Recompute()

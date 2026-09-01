@@ -31,6 +31,7 @@ func lastThreadDef(t *testing.T, s *app.Session) *feature.ThreadDefinition {
 // what was missing was purely the way in. The test reads the flag back off the definition rather
 // than trusting a request that merely succeeded.
 func TestThreadLeftHandedReachesTheDefinition(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	if _, err := applyMap(t, s, "thread", map[string]any{
 		"faceRef": face, "designation": "M8x1.25", "leftHanded": true,
@@ -45,6 +46,7 @@ func TestThreadLeftHandedReachesTheDefinition(t *testing.T) {
 // TestThreadDefaultsToRightHanded: the ordinary thread is right-handed, and the flag's absence
 // must mean that rather than the zero value of a handedness name.
 func TestThreadDefaultsToRightHanded(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	if _, err := applyMap(t, s, "thread", map[string]any{
 		"faceRef": face, "designation": "M8x1.25",

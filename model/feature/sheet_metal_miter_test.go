@@ -52,6 +52,10 @@ func miteredCorner(t *testing.T, miter bool, gap float64) (*topo.Body, *PartFeat
 // miter carries each wall past the corner until it meets the other, which is material the part did
 // not have — so the volume rises, and it rises by the corner the two walls now share.
 func TestAutoMiterFillsTheOpenCorner(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
+	t.Parallel()
 	open, _ := miteredCorner(t, false, 0)
 	mitered, _ := miteredCorner(t, true, 0)
 	openVol := smSolidVolume(open)
@@ -72,6 +76,10 @@ func TestAutoMiterFillsTheOpenCorner(t *testing.T) {
 // TestAutoMiterGapSeparatesTheWalls: the two extensions meet on the bisector, and without a cut
 // there they occupy the same corner. The gap is what lets the part fold.
 func TestAutoMiterGapSeparatesTheWalls(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
+	t.Parallel()
 	solid, _ := miteredCorner(t, true, 0)
 	slotted, _ := miteredCorner(t, true, 0.1)
 	if !(smSolidVolume(slotted) < smSolidVolume(solid)) {
@@ -83,6 +91,7 @@ func TestAutoMiterGapSeparatesTheWalls(t *testing.T) {
 // TestNoMiterLeavesTheCornerAlone: mitering is opt-in, so an existing part's corners are built
 // exactly as they were before the option existed.
 func TestNoMiterLeavesTheCornerAlone(t *testing.T) {
+	t.Parallel()
 	plain, _ := miteredCorner(t, false, 0)
 	// The same part built with the miter switched off must match a part that never knew about it.
 	fs, edgeX := seedSheetMetalSheet(t, 4, nil)
@@ -106,6 +115,7 @@ func TestNoMiterLeavesTheCornerAlone(t *testing.T) {
 // TestMiterNeedsACorner: a lone flange has nothing to miter to, so asking for one is a no-op
 // rather than an error or a stray extension hanging off the part.
 func TestMiterNeedsACorner(t *testing.T) {
+	t.Parallel()
 	build := func(miter bool) float64 {
 		fs, edge := seedSheetMetalSheet(t, 4, nil)
 		fs.SetReliefSpec(func() ReliefSpec { return ReliefSpec{} })
@@ -128,6 +138,7 @@ func TestMiterNeedsACorner(t *testing.T) {
 // line, read off the band it was built from. A 90° bend at radius r in gauge t stands r+t away, so
 // a change to the section has to move the miter with it.
 func TestWallStandOffReadsTheSection(t *testing.T) {
+	t.Parallel()
 	x, _ := math.UnitVector3FromVector(math.V3(1, 0, 0))
 	z, _ := math.UnitVector3FromVector(math.V3(0, 0, 1))
 	bend := BendPlacement{

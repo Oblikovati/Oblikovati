@@ -10,6 +10,7 @@ import (
 // TestZoomWindowDragZoomsAndDisarms: arm → drag a centred half-size box → release zooms the view in
 // (eye–target distance halves) and disarms the tool.
 func TestZoomWindowDragZoomsAndDisarms(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	cam := s.Camera()
 	cam.Width, cam.Height = 800, 600
@@ -38,6 +39,7 @@ func TestZoomWindowDragZoomsAndDisarms(t *testing.T) {
 
 // TestZoomWindowDegenerateIsNoOp: a click (no real rectangle) disarms without moving the camera.
 func TestZoomWindowDegenerateIsNoOp(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	before := s.Camera()
 	s.ArmZoomWindow()
@@ -54,6 +56,7 @@ func TestZoomWindowDegenerateIsNoOp(t *testing.T) {
 
 // TestDisarmZoomWindowCancels: Esc/disarm drops an armed tool and any in-progress rubber band.
 func TestDisarmZoomWindowCancels(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	s.ArmZoomWindow()
 	s.BeginZoomWindow(100, 100)
@@ -65,6 +68,7 @@ func TestDisarmZoomWindowCancels(t *testing.T) {
 
 // TestBeginZoomWindowRequiresArm: Begin is a no-op unless the tool is armed.
 func TestBeginZoomWindowRequiresArm(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	s.BeginZoomWindow(10, 10)
 	if s.ZoomWindowDragging() {

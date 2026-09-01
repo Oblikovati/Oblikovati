@@ -34,6 +34,7 @@ func lineEdgeBody(t *testing.T, start, end math.Point3) (*topo.Body, *topo.Edge)
 // TestAnalyticEdgeAxisFromLineageKey: an axis built on a lineage-key edge reference lies along the
 // edge (#1840).
 func TestAnalyticEdgeAxisFromLineageKey(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, e := lineEdgeBody(t, math.P3(0, 0, 0), math.P3(4, 0, 0)) // edge along +X
 	wa := g.WorkAxes().AddByAnalyticEdge(EdgeRef(e.ReferenceKey()))
@@ -52,6 +53,7 @@ func TestAnalyticEdgeAxisFromLineageKey(t *testing.T) {
 // TestLineByEntityAxisKind: the line-by-entity constructor shares the geometry but keeps its own
 // kind name (#1840).
 func TestLineByEntityAxisKind(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, e := lineEdgeBody(t, math.P3(0, 0, 0), math.P3(0, 4, 0)) // edge along +Y
 	wa := g.WorkAxes().AddByLineByEntity(EdgeRef(e.ReferenceKey()))
@@ -67,6 +69,7 @@ func TestLineByEntityAxisKind(t *testing.T) {
 // TestAnalyticEdgeAxisFromGeometricRef: the ADR-0040 geometric edge reference (midpoint+direction)
 // binds the matching edge on the running body — the external-author path (#1840).
 func TestAnalyticEdgeAxisFromGeometricRef(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, _ := lineEdgeBody(t, math.P3(0, 0, 0), math.P3(4, 0, 0)) // edge along +X, midpoint (2,0,0)
 	ref := types.GeometricEdgeRef{Midpoint: [3]float64{2, 0, 0}, Direction: [3]float64{1, 0, 0}}.Ref()
@@ -83,6 +86,7 @@ func TestAnalyticEdgeAxisFromGeometricRef(t *testing.T) {
 // TestGeometricEdgeRefMissesHonestly: a descriptor far from any edge binds nothing, so the datum
 // goes sick rather than binding the wrong edge (#1840).
 func TestGeometricEdgeRefMissesHonestly(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, _ := lineEdgeBody(t, math.P3(0, 0, 0), math.P3(4, 0, 0))
 	ref := types.GeometricEdgeRef{Midpoint: [3]float64{100, 100, 100}, Direction: [3]float64{1, 0, 0}}.Ref()
@@ -95,6 +99,7 @@ func TestGeometricEdgeRefMissesHonestly(t *testing.T) {
 
 // TestMidpointOfEdge: the edge-midpoint point sits at the edge midpoint (#1842).
 func TestMidpointOfEdge(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, e := lineEdgeBody(t, math.P3(0, 0, 0), math.P3(4, 0, 0)) // midpoint (2,0,0)
 	wp := g.WorkPoints().AddByMidpointOfEdge(EdgeRef(e.ReferenceKey()))
@@ -113,6 +118,7 @@ func TestMidpointOfEdge(t *testing.T) {
 // TestEdgeDatumsRoundTrip: an analytic-edge axis and an edge-midpoint point restore from the recipe
 // and re-bind against the body (#1840, #1842).
 func TestEdgeDatumsRoundTrip(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	body, e := lineEdgeBody(t, math.P3(0, 0, 0), math.P3(4, 0, 0))
 	g.WorkAxes().AddByAnalyticEdge(EdgeRef(e.ReferenceKey()))
@@ -140,6 +146,7 @@ func TestEdgeDatumsRoundTrip(t *testing.T) {
 
 // TestEdgeRefErrors: a non-edge ref and an edge ref with no body both fail to resolve (#1840).
 func TestEdgeRefErrors(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	if _, err := g.edge(WorkRef("plane/3")); err == nil {
 		t.Error("a non-edge ref should not resolve as an edge")

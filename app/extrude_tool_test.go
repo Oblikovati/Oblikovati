@@ -41,6 +41,7 @@ func newPartWithSquare(t *testing.T, side float64) (*Session, ProfileHandle) {
 // synthetic input — start the Extrude tool, click the profile, set a distance, hit
 // OK — and asserts a real solid was produced in the active part. No GPU involved.
 func TestExtrudeToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	s.SetPicker(stubPicker{sel: profile})
 
@@ -73,6 +74,7 @@ func TestExtrudeToolEndToEnd(t *testing.T) {
 }
 
 func TestExtrudeToolNeedsProfileAndDistance(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	s.SetPicker(stubPicker{sel: profile})
 	ext := NewExtrudeTool()
@@ -90,6 +92,7 @@ func TestExtrudeToolNeedsProfileAndDistance(t *testing.T) {
 
 // TestExtrudeViaCommand shows the ribbon command launching the tool.
 func TestExtrudeViaCommand(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 4)
 	s.SetPicker(stubPicker{sel: profile})
 	var started *ExtrudeTool

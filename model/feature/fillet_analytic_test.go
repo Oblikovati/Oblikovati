@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -25,6 +26,7 @@ func bodyTorusCount(b *topo.Body) int {
 // extruded circle (an analytic cylinder) yields a TRUE toroidal fillet —
 // one geom.Torus face on a valid watertight solid — rather than a faceted rolling-ball blend.
 func TestAnalyticFilletOfCylinderRimIsATorus(t *testing.T) {
+	t.Parallel()
 	const r, h, f = 5.0, 10.0, 2.0
 	fs, rim := extrudedCylinderTopRim(t, r, h)
 	pf := NewDressUpFeatures(fs).AddFillet([][]byte{rim}, func() float64 { return f })
@@ -45,7 +47,7 @@ func TestAnalyticFilletOfCylinderRimIsATorus(t *testing.T) {
 	sqMoment := (r - f/2) * (f * f)
 	qdMoment := ((r - f) + 4*f/(3*stdmath.Pi)) * (stdmath.Pi * f * f / 4)
 	want := stdmath.Pi*r*r*h - 2*stdmath.Pi*(sqMoment-qdMoment)
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
 		t.Errorf("filleted cylinder volume = %g, want ≈%g", got, want)
 	}
 }

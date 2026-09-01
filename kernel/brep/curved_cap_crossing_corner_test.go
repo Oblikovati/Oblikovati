@@ -25,6 +25,7 @@ func obliqueTool(baseX, r float64) geom.Cylinder {
 // TestCapRimCornersTwoOnCrossing: the base=-5.6 tool's exit ellipse crosses the rim, so there are exactly
 // two corner points, each on the rim (r=3) AND on the tool wall (dist=0.9), symmetric about y=0.
 func TestCapRimCornersTwoOnCrossing(t *testing.T) {
+	t.Parallel()
 	tool := obliqueTool(-5.6, 0.9)
 	rim := rimCircleZ(3, 10)
 	corners := capRimCorners(tool, rim)
@@ -52,6 +53,7 @@ func TestCapRimCornersTwoOnCrossing(t *testing.T) {
 // TestCapRimCornersNoneWhenInside: the base=-6.5 tool (slice 1) exits with the ellipse strictly inside the
 // rim, so the tool wall never reaches the rim — zero corners.
 func TestCapRimCornersNoneWhenInside(t *testing.T) {
+	t.Parallel()
 	if n := len(capRimCorners(obliqueTool(-6.5, 0.9), rimCircleZ(3, 10))); n != 0 {
 		t.Errorf("interior-exit tool: got %d corners, want 0", n)
 	}

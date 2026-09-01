@@ -33,6 +33,7 @@ func emptyPartSession(t *testing.T) (*Session, *compdef.PartComponentDefinition)
 }
 
 func TestRectangleToolDrawsClosedProfileFromClicks(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XYPlane())
 	s.EnterSketch(sk)
@@ -61,6 +62,7 @@ func TestRectangleToolDrawsClosedProfileFromClicks(t *testing.T) {
 // clicking, finish the sketch, then extrude the profile — and the result is a real
 // solid. No GPU, no hand-built geometry.
 func TestFullModelingFlowViaUI(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 
 	// 1. Create + enter a sketch on the XY plane.
@@ -103,6 +105,7 @@ func TestFullModelingFlowViaUI(t *testing.T) {
 }
 
 func TestLineToolAndCancel(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XYPlane())
 	s.EnterSketch(sk)
@@ -130,6 +133,7 @@ func TestLineToolAndCancel(t *testing.T) {
 }
 
 func TestSketchClickRequiresSketchTool(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	// With no active tool, a sketch click is not consumed as a sketch-plane click.
 	if s.sketchClick(10, 10) {

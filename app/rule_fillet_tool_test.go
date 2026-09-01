@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -14,9 +15,10 @@ import (
 // and asserts a valid solid feature was added and the convex edges were rounded (volume dropped from
 // the block's). The tool needs no picking, so it commits straight from its parameters (#1076).
 func TestRuleFilletToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6) // 6×6×2 block, vol 72
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
-	before := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 
 	rf := NewRuleFilletTool()
 	rf.SetRule(int(feature.RuleFilletAllRounds))
@@ -36,7 +38,7 @@ func TestRuleFilletToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("rule-filleted body not a valid solid: %+v", r)
 	}
-	if after := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; after >= before {
+	if after := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; after >= before {
 		t.Errorf("volume %g did not drop from %g — All Rounds should round the convex edges", after, before)
 	}
 }
@@ -44,6 +46,7 @@ func TestRuleFilletToolEndToEnd(t *testing.T) {
 // TestRuleFilletToolParams exercises the property-dialog surface: the name, the rule/radius
 // accessors (radius rejects a non-positive value), and the Params model the head renders.
 func TestRuleFilletToolParams(t *testing.T) {
+	t.Parallel()
 	tl := NewRuleFilletTool()
 	if tl.Name() != "Rule Fillet" {
 		t.Errorf("name = %q, want Rule Fillet", tl.Name())
@@ -71,6 +74,7 @@ func TestRuleFilletToolParams(t *testing.T) {
 
 // TestRuleFilletToolCommitNoPart covers the no-active-part error path.
 func TestRuleFilletToolCommitNoPart(t *testing.T) {
+	t.Parallel()
 	if err := NewRuleFilletTool().Commit(NewSession()); err == nil {
 		t.Error("commit with no active part should error")
 	}
@@ -78,6 +82,7 @@ func TestRuleFilletToolCommitNoPart(t *testing.T) {
 
 // TestRuleFilletViaRibbonCommand confirms the Surface-panel ribbon command starts the tool.
 func TestRuleFilletViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
@@ -93,6 +98,7 @@ func TestRuleFilletViaRibbonCommand(t *testing.T) {
 // TestRuleFilletToolDraftFeature pins the #1626 commit-gate seam: no draft while the radius is
 // invalid, and a non-nil draft — the same rule fillet Commit builds — once commit-ready.
 func TestRuleFilletToolDraftFeature(t *testing.T) {
+	t.Parallel()
 	tl := NewRuleFilletTool()
 	tl.radiusMM = 0 // force below the gate (SetRadiusMM rejects non-positive values)
 	if _, ok := tl.DraftFeature(nil); ok {

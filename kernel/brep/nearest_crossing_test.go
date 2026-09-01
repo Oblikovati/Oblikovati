@@ -13,6 +13,7 @@ import (
 // the property the winding number lacks — its field reads ≈½ that close to the boundary — and the reason a
 // fillet gate's small-offset material probe needs the first-hit ray cast, not the winding.
 func TestNearestCrossingCrispNearSurface(t *testing.T) {
+	t.Parallel()
 	cyl, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -43,6 +44,7 @@ func TestNearestCrossingCrispNearSurface(t *testing.T) {
 // TestNearestCrossingOrientationIndependent checks the first-hit side reads the orientation-normalized
 // outward normal, not the stored Reversed flag: flipping every face's flag must not change the verdict.
 func TestNearestCrossingOrientationIndependent(t *testing.T) {
+	t.Parallel()
 	sph, err := SolidSphere(math.P3(0, 0, 0), 3, "sphere")
 	if err != nil {
 		t.Fatalf("SolidSphere: %v", err)

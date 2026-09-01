@@ -31,6 +31,7 @@ func newCloudFitPlanes(t *testing.T) *WorkPlanes {
 // TestCloudFitPlaneRefitsOnRecompute: the plane follows the source as it moves, and freezes the
 // last good fit when the source can no longer fit (#645).
 func TestCloudFitPlaneRefitsOnRecompute(t *testing.T) {
+	t.Parallel()
 	src := &fakePlaneFitSource{id: "Scan", height: 5, ok: true}
 	planes := newCloudFitPlanes(t)
 	wp := planes.AddByPointCloudFit(src)
@@ -54,6 +55,7 @@ func TestCloudFitPlaneRefitsOnRecompute(t *testing.T) {
 // TestCloudFitPlaneSerializeRoundTrip: the provenance id and frozen frame round-trip, and the
 // restored plane is unlinked until relinked (#645).
 func TestCloudFitPlaneSerializeRoundTrip(t *testing.T) {
+	t.Parallel()
 	src := &fakePlaneFitSource{id: "CapstanScan", height: 3, ok: true}
 	g := NewWorkGeometry()
 	g.WorkPlanes().AddByPointCloudFit(src)
@@ -116,6 +118,7 @@ func TestCloudFitPlaneSerializeRoundTrip(t *testing.T) {
 // TestCloudFitPlaneEvalAndRelinkEdges covers the error/edge branches: eval with neither a source
 // nor a prior fit, the CloudID accessor, and a relink whose id does not match (#645).
 func TestCloudFitPlaneEvalAndRelinkEdges(t *testing.T) {
+	t.Parallel()
 	d := &pointCloudFitPlaneDef{cloudID: "X"} // no source, no frozen fit
 	if _, err := d.eval(nil); err == nil {
 		t.Error("eval with no source and no prior fit should error")

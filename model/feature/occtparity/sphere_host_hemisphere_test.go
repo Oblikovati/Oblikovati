@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -136,7 +137,7 @@ func equatorDeparture(e *topo.Edge, sp geom.Sphere) float64 {
 func assertSphereMeshCoversAndMeasures(t *testing.T, name string, f *topo.Face) {
 	t.Helper()
 	sp := f.Geometry().(geom.Sphere)
-	mesh := ops.TessellateFace(f, ops.PropertyQuality())
+	mesh := tessellate.TessellateFace(f, ops.PropertyQuality())
 	closed := 2 * stdmath.Pi * sp.Radius * sp.Radius
 	if got := ops.MeshArea(mesh); stdmath.Abs(got-closed) > sphereHostAreaCeil {
 		t.Errorf("%s: sphere face meshes %.6f vs closed 2πR²=%.6f (|Δ|=%.4f > %.2f) — the density-capped path is back",

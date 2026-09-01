@@ -8,6 +8,7 @@ import (
 )
 
 func TestNopAdjustCSG(t *testing.T) {
+	t.Parallel()
 	body := cylinderZAt(0, 0, -0.089, 0.089, 0.1385, "adjust-dial")
 	body = cutOrFatal(t, body, box(-0.16, -0.032, 0, 0.32, 0.064, 0.11), "adjust slot x")
 	body = cutOrFatal(t, body, box(-0.032, -0.16, 0, 0.064, 0.32, 0.11), "adjust slot y")

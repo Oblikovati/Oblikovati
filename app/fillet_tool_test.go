@@ -9,12 +9,14 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/feature"
 )
 
 // TestFilletToolConcaveStrategy checks the tool defaults to outward fill and carries the chosen
 // concave strategy (via the combo index) into the committed fillet's definition.
 func TestFilletToolConcaveStrategy(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	f := NewFilletTool()
@@ -44,6 +46,7 @@ func TestFilletToolConcaveStrategy(t *testing.T) {
 // 2×2×2 block, set the radius, OK — and asserts a valid solid with a cylinder face and the
 // rolling-ball volume. r=0.5, edge length 2: 8 − (r²−πr²/4)·2.
 func TestFilletToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2) // 2×2×2, vol 8
 	edge := verticalEdgeOf(t, block)
 	s.SetPicker(stubPicker{sel: edge})
@@ -73,7 +76,7 @@ func TestFilletToolEndToEnd(t *testing.T) {
 		t.Errorf("filleted body has %d cylinder faces, want 1", cyls)
 	}
 	want := 8 - (0.5*0.5-stdmath.Pi*0.25*0.25)*2
-	if got := ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-4}).Volume; relErrApp(got, want) > 1e-3 {
+	if got := query.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-4}).Volume; relErrApp(got, want) > 1e-3 {
 		t.Errorf("fillet volume = %g, want ≈ %g", got, want)
 	}
 	if s.ActiveTool() != nil {
@@ -83,6 +86,7 @@ func TestFilletToolEndToEnd(t *testing.T) {
 
 // TestFilletViaRibbonCommand drives the Fillet from its ribbon command/alias.
 func TestFilletViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -98,7 +102,7 @@ func TestFilletViaRibbonCommand(t *testing.T) {
 	if err := s.OK(); err != nil {
 		t.Fatalf("OK: %v", err)
 	}
-	if v := ops.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 8 {
+	if v := query.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 8 {
 		t.Errorf("fillet did not round material: volume %g, want < 8", v)
 	}
 }
@@ -108,6 +112,7 @@ func TestFilletViaRibbonCommand(t *testing.T) {
 // outside the solid) fails loudly: the tool stays open and the session carries a notice the
 // status bar shows — not a silent "nothing happened".
 func TestFilletUnbuildableSurfacesNotice(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	f := NewFilletTool()
 	s.StartTool(f)
@@ -122,7 +127,7 @@ func TestFilletUnbuildableSurfacesNotice(t *testing.T) {
 	if s.Notice() == "" {
 		t.Error("a failed commit should set a status-bar notice, not fail silently")
 	}
-	if v := ops.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 8) > 1e-6 {
+	if v := query.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 8) > 1e-6 {
 		t.Errorf("body should be unchanged (vol 8) after a failed fillet, got %g", v)
 	}
 }
@@ -132,6 +137,7 @@ func TestFilletUnbuildableSurfacesNotice(t *testing.T) {
 // s.OK() refuses, and — crucially — NO feature is appended to the design (the sick node must not
 // persist in the tree). Fixing the radius then commits cleanly, adding exactly one feature.
 func TestSickConfigIsNotCommitted(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	f := NewFilletTool()
 	s.StartTool(f)
@@ -166,6 +172,7 @@ func TestSickConfigIsNotCommitted(t *testing.T) {
 
 // TestFilletToolNeedsEdge checks the tool is not committable until an edge is picked.
 func TestFilletToolNeedsEdge(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	f := NewFilletTool()

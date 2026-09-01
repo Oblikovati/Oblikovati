@@ -35,6 +35,7 @@ func constrainedSketchSession(t *testing.T) (*Session, *sketch.Sketch, sketch.Co
 // TestConstraintMarkersOnlyDrawWhenShown: the toggle is the whole feature — hidden means nothing
 // is drawn and, just as importantly, nothing is clickable.
 func TestConstraintMarkersOnlyDrawWhenShown(t *testing.T) {
+	t.Parallel()
 	s, _, _ := constrainedSketchSession(t)
 
 	if len(s.SketchConstraintGlyphs()) == 0 {
@@ -49,6 +50,7 @@ func TestConstraintMarkersOnlyDrawWhenShown(t *testing.T) {
 // TestClickingAMarkerSelectsItsConstraint is the pick regression: a marker sits on the geometry it
 // relates, so it has to be tested before the curve underneath or it can never be grabbed.
 func TestClickingAMarkerSelectsItsConstraint(t *testing.T) {
+	t.Parallel()
 	s, _, perp := constrainedSketchSession(t)
 	glyphs := s.SketchConstraintGlyphs()
 	if len(glyphs) != 1 {
@@ -70,6 +72,7 @@ func TestClickingAMarkerSelectsItsConstraint(t *testing.T) {
 // TestDeleteRemovesTheSelectedConstraint is the point of selecting one: Delete frees the degrees
 // of freedom the relation held.
 func TestDeleteRemovesTheSelectedConstraint(t *testing.T) {
+	t.Parallel()
 	s, sk, perp := constrainedSketchSession(t)
 	before := sk.GeometricConstraints().Count()
 	s.applyPickToSelection(SketchConstraintHandle{Constraint: perp}, 0)
@@ -89,6 +92,7 @@ func TestDeleteRemovesTheSelectedConstraint(t *testing.T) {
 // TestHidingMarkersDropsTheSelection: a constraint must not stay selected while invisible, or a
 // later Delete would remove a relation the user can no longer see.
 func TestHidingMarkersDropsTheSelection(t *testing.T) {
+	t.Parallel()
 	s, _, perp := constrainedSketchSession(t)
 	s.applyPickToSelection(SketchConstraintHandle{Constraint: perp}, 0)
 
@@ -102,6 +106,7 @@ func TestHidingMarkersDropsTheSelection(t *testing.T) {
 // TestCoLocatedMarkersFanOut: several relations on the same point — the four coincidences at a
 // rectangle corner — must each stay separately clickable rather than stacking into one target.
 func TestCoLocatedMarkersFanOut(t *testing.T) {
+	t.Parallel()
 	s, sk, _ := constrainedSketchSession(t)
 	a := sk.Points().Add(math.P2(2, 2))
 	b := sk.Points().Add(math.P2(2, 2))
@@ -125,6 +130,7 @@ func TestCoLocatedMarkersFanOut(t *testing.T) {
 // TestSelectedMarkerReportsSelected: the overlay colours a selected marker, so the view has to say
 // which one it is.
 func TestSelectedMarkerReportsSelected(t *testing.T) {
+	t.Parallel()
 	s, _, perp := constrainedSketchSession(t)
 	s.applyPickToSelection(SketchConstraintHandle{Constraint: perp}, 0)
 

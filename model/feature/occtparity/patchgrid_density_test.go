@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -42,7 +43,7 @@ func TestCornerOctantDeficitConverges(t *testing.T) {
 	closed := 50 * stdmath.Pi // the r=10 corner-ball octant: 4πr²/8
 	prev := stdmath.Inf(1)
 	for _, ct := range []float64{1e-2, 1e-3, 2.5e-4} {
-		m := ops.TessellateFace(f, ops.Quality{ChordTolerance: ct, AngleTolerance: stdmath.Pi / 180})
+		m := tessellate.TessellateFace(f, ops.Quality{ChordTolerance: ct, AngleTolerance: stdmath.Pi / 180})
 		if hasCapSaturated(m) {
 			t.Fatalf("A2 octant saturated the cell budget at ct=%g — the convergence fixture must stay honoured", ct)
 		}
@@ -66,7 +67,7 @@ func TestHostSphereD2MeshesWithinBudgetCeil(t *testing.T) {
 		if !isSph || sph.Radius < 100 {
 			continue
 		}
-		got := ops.MeshArea(ops.TessellateFace(f, ops.PropertyQuality()))
+		got := ops.MeshArea(tessellate.TessellateFace(f, ops.PropertyQuality()))
 		if d := stdmath.Abs(got - hostSphereD2Drawexe); d > hostSphereD2AreaCeil {
 			t.Errorf("D2 host sphere meshes %.6f vs DRAWEXE %.1f (|Δ|=%.4f > %.2f) — the density floor is back",
 				got, hostSphereD2Drawexe, d, hostSphereD2AreaCeil)
@@ -98,7 +99,7 @@ func singleSmallSphereFace(t *testing.T, name string, body *topo.Body) *topo.Fac
 // hasCapSaturated reports whether the mesh carries the tessellate.cap-saturated diagnostic.
 func hasCapSaturated(m *ops.Mesh) bool {
 	for _, d := range m.Diagnostics {
-		if d.Code == ops.CodeTessellateCapSaturated {
+		if d.Code == tessellate.CodeTessellateCapSaturated {
 			return true
 		}
 	}

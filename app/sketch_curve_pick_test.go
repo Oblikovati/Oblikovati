@@ -26,6 +26,7 @@ func pickAtSketchPoint(t *testing.T, s *Session, p math.Point2) (sketch.Entity, 
 // TestSplineIsPickableOnItsCurve is the headline regression. The click is placed on the curve
 // AWAY from any defining point, so only true curve hit-testing can find it.
 func TestSplineIsPickableOnItsCurve(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	sp := sk.Splines().AddByPoints([]math.Point2{
 		math.P2(0, 0), math.P2(1, 2), math.P2(2, -2), math.P2(3, 0),
@@ -46,6 +47,7 @@ func TestSplineIsPickableOnItsCurve(t *testing.T) {
 // straight chord between defining points must hit, and a point on the chord but off the curve
 // must not. This is what distinguishes real curve picking from polygon picking.
 func TestSplinePickFollowsTheCurveNotTheControlPolygon(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	defining := []math.Point2{math.P2(0, 0), math.P2(1, 2), math.P2(2, -2), math.P2(3, 0)}
 	sp := sk.Splines().AddByPoints(defining, false)
@@ -88,6 +90,7 @@ func distanceToNearestOf(p math.Point2, pts []math.Point2) float64 {
 // TestEllipseIsPickable / TestEllipticalArcIsPickable cover the other kinds the hand-rolled
 // enumeration missed — the reporter only noticed splines.
 func TestEllipseIsPickable(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	e := sk.Ellipses().Add(math.P2(0, 0), math.V2(1, 0), 4, 2)
 
@@ -100,6 +103,7 @@ func TestEllipseIsPickable(t *testing.T) {
 
 // TestLinePickStillWorks guards the kinds that already worked against the rewrite.
 func TestLinePickStillWorks(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(-3, -3), math.P2(3, 3))
 	c := sk.Circles().AddByCenterRadius(math.P2(10, 0), 2)
@@ -116,6 +120,7 @@ func TestLinePickStillWorks(t *testing.T) {
 // (circleOutlineDistance), so clicking the empty part of the sweep — where nothing is drawn —
 // selected the arc. Faceting the actual sweep fixes that as a side effect of #2026.
 func TestArcIsNotPickedOffItsSweep(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	// A quarter arc from (5,0) to (0,5) about the origin: the opposite side of its circle,
 	// (-5,0), is on the circle but NOT on the arc.
@@ -132,6 +137,7 @@ func TestArcIsNotPickedOffItsSweep(t *testing.T) {
 
 // TestClickInEmptySpacePicksNothing: the polyline walk must not make everything hittable.
 func TestClickInEmptySpacePicksNothing(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	sk.Splines().AddByPoints([]math.Point2{math.P2(0, 0), math.P2(1, 2), math.P2(2, -2)}, false)
 

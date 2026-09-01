@@ -6,6 +6,8 @@ import (
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -25,17 +27,17 @@ func NewBodyQueries(b *topo.Body, q ops.Quality) *BodyQueriesAdapter {
 
 // IsPointInside classifies a point against the body's material.
 func (a *BodyQueriesAdapter) IsPointInside(x, y, z float64) types.Containment {
-	c := ops.BodyContainment(a.body, math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(z)), a.q, onTolDefault)
+	c := query.BodyContainment(a.body, math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(z)), a.q, onTolDefault)
 	return containmentOf(c)
 }
 
 // ConvexEdgeCount and ConcaveEdgeCount report the dihedral classification.
 func (a *BodyQueriesAdapter) ConvexEdgeCount() int {
-	return len(ops.BodyEdgeConvexity(a.body)[ops.EdgeConvex])
+	return len(blend.BodyEdgeConvexity(a.body)[blend.EdgeConvex])
 }
 
 func (a *BodyQueriesAdapter) ConcaveEdgeCount() int {
-	return len(ops.BodyEdgeConvexity(a.body)[ops.EdgeConcave])
+	return len(blend.BodyEdgeConvexity(a.body)[blend.EdgeConcave])
 }
 
 // IsEntityValid checks the body at the given level (1 topology, 2 + the

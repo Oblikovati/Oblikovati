@@ -39,6 +39,7 @@ func widthFlange(t *testing.T, w FlangeWidth) *topo.Body {
 // TestFullEdgeWidthIsTheDefault: the zero value spans the whole edge, so a flange authored before
 // widths existed is unchanged.
 func TestFullEdgeWidthIsTheDefault(t *testing.T) {
+	t.Parallel()
 	from, to := wallSpanX(widthFlange(t, FlangeWidth{}))
 	if stdmath.Abs(from) > 1e-6 || stdmath.Abs(to-4) > 1e-6 {
 		t.Errorf("default flange wall spans [%.4f, %.4f], want the whole [0, 4] edge", from, to)
@@ -48,6 +49,7 @@ func TestFullEdgeWidthIsTheDefault(t *testing.T) {
 // TestCenteredWidthCentresTheTab: a 2 cm tab on a 4 cm edge stands over [1, 3] — the case a
 // bracket needs, and the one a full-width wall would silently satisfy.
 func TestCenteredWidthCentresTheTab(t *testing.T) {
+	t.Parallel()
 	from, to := wallSpanX(widthFlange(t, FlangeWidth{Type: WidthCentered, Width: constClosure(2.0)}))
 	if stdmath.Abs(from-1) > 1e-6 || stdmath.Abs(to-3) > 1e-6 {
 		t.Errorf("centred 2 cm tab spans [%.4f, %.4f], want [1, 3]", from, to)
@@ -57,6 +59,7 @@ func TestCenteredWidthCentresTheTab(t *testing.T) {
 // TestOffsetWidthsTrimBothEnds: offsets take material off each end independently, which is how a
 // chassis wall leaves room for the flanges on the edges beside it.
 func TestOffsetWidthsTrimBothEnds(t *testing.T) {
+	t.Parallel()
 	from, to := wallSpanX(widthFlange(t, FlangeWidth{
 		Type: WidthOffsets, Offset: constClosure(0.5), Offset2: constClosure(1.5),
 	}))
@@ -68,6 +71,7 @@ func TestOffsetWidthsTrimBothEnds(t *testing.T) {
 // TestOffsetAndWidthPlacesTheTab: an offset from the start plus a width puts the tab exactly where
 // a hole pattern or a mating part needs it.
 func TestOffsetAndWidthPlacesTheTab(t *testing.T) {
+	t.Parallel()
 	from, to := wallSpanX(widthFlange(t, FlangeWidth{
 		Type: WidthOffsetAndWidth, Offset: constClosure(1.0), Width: constClosure(1.5),
 	}))
@@ -80,6 +84,7 @@ func TestOffsetAndWidthPlacesTheTab(t *testing.T) {
 // bend LINE, so a partial wall has to report the sub-span — reporting the whole edge would unfold
 // a full-width tab and cut a blank that is wrong in the one dimension the operator relies on.
 func TestPartialWidthDevelopsAsAPartialTab(t *testing.T) {
+	t.Parallel()
 	fs, edge := seedSheetMetalSheet(t, 4, nil)
 	pf := NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
 		EdgeKey: edge.ReferenceKey(), Height: constClosure(1.0), Radius: constClosure(0.3),
@@ -105,6 +110,7 @@ func TestPartialWidthDevelopsAsAPartialTab(t *testing.T) {
 // TestWidthOutsideTheEdgeIsRefused: a span that runs off the edge, or inverts, would otherwise
 // build a wall of a different width than the one asked for and say nothing.
 func TestWidthOutsideTheEdgeIsRefused(t *testing.T) {
+	t.Parallel()
 	for name, w := range map[string]FlangeWidth{
 		"wider than the edge":  {Type: WidthCentered, Width: constClosure(6)},
 		"zero width":           {Type: WidthCentered, Width: constClosure(0)},
@@ -125,6 +131,7 @@ func TestWidthOutsideTheEdgeIsRefused(t *testing.T) {
 // TestContourFlangeTakesAWidthToo: the swept flange spans its edge the same way, and #1958 covers
 // both — a contour flange that ignored the width would be the one full-width wall left.
 func TestContourFlangeTakesAWidthToo(t *testing.T) {
+	t.Parallel()
 	fs, edge := seedSheetMetalSheet(t, 4, nil)
 	pf := NewSheetMetalContourFlangeFeatures(fs).Add(&SheetMetalContourFlangeDefinition{
 		EdgeKey: edge.ReferenceKey(), Profile: lProfile(),
@@ -143,6 +150,7 @@ func TestContourFlangeTakesAWidthToo(t *testing.T) {
 // TestFlangeWidthRoundTrips: the width decides a dimension of the part, so losing it on reopen
 // would rebuild a full-width wall from the same recipe.
 func TestFlangeWidthRoundTrips(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
 		EdgeKey: []byte("edge"), Height: constClosure(1.0),
@@ -169,6 +177,7 @@ func TestFlangeWidthRoundTrips(t *testing.T) {
 // TestFullEdgeWidthSerializesNothing: the default must leave the recipe exactly as it was before
 // widths existed.
 func TestFullEdgeWidthSerializesNothing(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
 		EdgeKey: []byte("edge"), Height: constClosure(1.0),
@@ -185,6 +194,7 @@ func TestFullEdgeWidthSerializesNothing(t *testing.T) {
 // TestUnknownWidthExtentIsRefused: "fromTo" is Inventor's fifth extent and is not offered, so it
 // must be refused rather than resolving to the full edge.
 func TestUnknownWidthExtentIsRefused(t *testing.T) {
+	t.Parallel()
 	if _, ok := ParseWidthExtent("fromTo"); ok {
 		t.Error(`ParseWidthExtent("fromTo") should not resolve — it needs entity references`)
 	}

@@ -36,6 +36,7 @@ func extrudeWith(t *testing.T, ext Extent, taper float64) *topo.Body {
 }
 
 func TestExtrudeSymmetricSpansBothSides(t *testing.T) {
+	t.Parallel()
 	body := extrudeWith(t, Extent{Type: DistanceExtent, Direction: SymmetricDir, Distance: func() float64 { return 6 }}, 0)
 	lo, hi := bodyZRange(body)
 	if !approxEq(lo, -3) || !approxEq(hi, 3) {
@@ -44,6 +45,7 @@ func TestExtrudeSymmetricSpansBothSides(t *testing.T) {
 }
 
 func TestExtrudeNegativeDirection(t *testing.T) {
+	t.Parallel()
 	body := extrudeWith(t, Extent{Type: DistanceExtent, Direction: NegativeDir, Distance: func() float64 { return 4 }}, 0)
 	lo, hi := bodyZRange(body)
 	if !approxEq(lo, -4) || !approxEq(hi, 0) {
@@ -52,6 +54,7 @@ func TestExtrudeNegativeDirection(t *testing.T) {
 }
 
 func TestExtrudeAsymmetricTwoDirection(t *testing.T) {
+	t.Parallel()
 	body := extrudeWith(t, Extent{
 		Type:     DistanceExtent,
 		Distance: func() float64 { return 4 }, Distance2: func() float64 { return 2 },
@@ -63,6 +66,7 @@ func TestExtrudeAsymmetricTwoDirection(t *testing.T) {
 }
 
 func TestExtrudeTaperWidensTopAndStaysValid(t *testing.T) {
+	t.Parallel()
 	// A positive taper drafts the walls outward: the far cap is larger than the 2×2 base.
 	body := extrudeWith(t, Extent{Type: DistanceExtent, Distance: func() float64 { return 5 }}, 0.2)
 	if r := ops.Validate(body); !r.Valid {
@@ -75,6 +79,7 @@ func TestExtrudeTaperWidensTopAndStaysValid(t *testing.T) {
 }
 
 func TestExtrudeToWorkPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	g.Recompute(nil)
 	target := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 7 }) // z=7
@@ -91,6 +96,7 @@ func TestExtrudeToWorkPlane(t *testing.T) {
 // a clear reason, rather than panicking or erroring the apply. This is the graceful degradation the
 // exporter relies on so one unresolved feature does not abort the whole document.
 func TestExtrudeToFaceNilTargetIsUnhealthy(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(param.NewParameters())
 	pf := NewExtrudeFeatures(fs).AddExtrude(squareSketch(2), []int{0}, ops.NewBody, Extent{Type: ToFaceExtent}, 0)
 	fs.Recompute()
@@ -103,6 +109,7 @@ func TestExtrudeToFaceNilTargetIsUnhealthy(t *testing.T) {
 }
 
 func TestExtrudeModeRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddExtrude(sk, []int{0}, ops.Cut,
@@ -126,6 +133,7 @@ func TestExtrudeModeRoundTrip(t *testing.T) {
 }
 
 func TestExtrudeThroughAllSpansExistingMaterial(t *testing.T) {
+	t.Parallel()
 	// Through-all measures the existing material's reach along the normal and spans it
 	// (plus a margin). Tested with a new-body operation so it exercises the span without
 	// the kernel's intersecting boolean (overlapping cut/join is phase B).

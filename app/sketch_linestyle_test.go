@@ -25,6 +25,7 @@ func lineStyleSketch(t *testing.T) (*sketch.Sketch, *sketch.Line, *sketch.Line, 
 // TestSketchEntityPatternStyles pins the #161 rendering rules: centerline → center
 // pattern, construction → dashed, normal → solid by default.
 func TestSketchEntityPatternStyles(t *testing.T) {
+	t.Parallel()
 	sk, normal, cons, axis := lineStyleSketch(t)
 	if p := SketchEntityPattern(sk, normal); p != nil {
 		t.Errorf("normal line pattern = %v, want nil (solid)", p)
@@ -40,6 +41,7 @@ func TestSketchEntityPatternStyles(t *testing.T) {
 // TestSketchEntityPatternOverrides: a sketch-level line type styles normal geometry,
 // and a loaded custom definition wins over the built-ins.
 func TestSketchEntityPatternOverrides(t *testing.T) {
+	t.Parallel()
 	sk, normal, cons, _ := lineStyleSketch(t)
 	sk.SetLineType("hidden")
 	if p := SketchEntityPattern(sk, normal); len(p) != 2 {

@@ -25,6 +25,7 @@ func ribbedPart(t *testing.T) (*Session, *compdef.PartComponentDefinition) {
 // TestRibToolEndToEnd drives the Rib UI: with an open profile sketched, start the tool, set
 // thickness and depth, OK — and asserts a valid solid that joined the rib to the block.
 func TestRibToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def := ribbedPart(t)
 
 	rib := NewRibTool()
@@ -50,6 +51,7 @@ func TestRibToolEndToEnd(t *testing.T) {
 }
 
 func TestRibViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := ribbedPart(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

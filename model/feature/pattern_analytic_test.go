@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -44,6 +45,10 @@ func discThenCutPatterned(t *testing.T) *topo.Body {
 // from feeding a raw periodic cylinder to the planar boolean. (Disc-level reference-key stability vs a
 // direct faceted extrude is pinned separately by TestPlanarizedDiscMatchesFacetedExtrude.)
 func TestAnalyticPatternedCutDoesNotExplode(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
+	t.Parallel()
 	body := discThenCutPatterned(t)
 	if vr := ops.Validate(body); !vr.Valid || !body.IsSolid() {
 		t.Fatalf("patterned cut is not a valid solid: %+v", vr.Issues)
@@ -53,7 +58,7 @@ func TestAnalyticPatternedCutDoesNotExplode(t *testing.T) {
 	}
 	disc := stdmath.Pi * 30 * 30 * 10
 	holes := 5 * stdmath.Pi * 3 * 3 * 10 // five Ø6 through-holes
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, disc-holes) > 0.03 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, disc-holes) > 0.03 {
 		t.Fatalf("patterned-cut volume = %g, want ≈%g (disc − 5 holes)", got, disc-holes)
 	}
 }

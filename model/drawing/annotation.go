@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/hlr"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/collview"
@@ -266,7 +267,7 @@ func (as *DrawingAnnotations) recomputeCoG(a *DrawingAnnotation) {
 	if !ok {
 		return
 	}
-	centre := view.SheetPointOfModelMM(ops.BodyGeometryProperties(body, ops.DefaultQuality()).Centroid, bodyCenter(body))
+	centre := view.SheetPointOfModelMM(query.BodyGeometryProperties(body, ops.DefaultQuality()).Centroid, bodyCenter(body))
 	a.curves = cogMarkerCurves(float64(centre.X), float64(centre.Y))
 }
 

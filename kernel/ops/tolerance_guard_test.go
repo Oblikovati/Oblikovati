@@ -3,6 +3,7 @@
 package ops_test
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -31,8 +32,12 @@ import (
 // A length tolerance with none of these and no res.-derived value is a FAILURE: relativise it
 // (geom.ResolutionForBox/ForSize(...).Weld()/.Plane()) or justify it with the right annotation.
 func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
-	// In-scope hot-path files (relative to this package dir, kernel/ops). Kept explicit rather than
-	// globbed so widening the guard's reach is a deliberate, reviewable act.
+	t.Parallel()
+	// In-scope hot-path files, named by their path under kernel/. Kept explicit rather than
+	// globbed so widening the guard's reach is a deliberate, reviewable act. The paths are
+	// RESOLVED BY BASENAME under kernel/ (resolveScope), because splitting a package moves a
+	// file without changing what it does: a stale path here must report as a moved file, not
+	// as a tolerance regression.
 	scope := []string{
 		// geom: the analytic + numeric surface-intersection classifiers and the SSI tracer.
 		"../geom/intersect_analytic.go",
@@ -92,47 +97,47 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../brep/distance.go",
 		"../brep/distance_min.go",
 		// ops: the mesher vertex-weld path.
-		"../ops/edge_discretize.go",
-		"../ops/closed_surface_mesh.go",
-		"../ops/closed_band_loft.go",
-		"../ops/saddle_band_loft.go",
-		"../ops/nurbs_pcurve_mesh.go",
+		"../ops/tessellate/edge_discretize.go",
+		"../ops/tessellate/closed_surface_mesh.go",
+		"../ops/tessellate/closed_band_loft.go",
+		"../ops/tessellate/saddle_band_loft.go",
+		"../ops/tessellate/nurbs_pcurve_mesh.go",
 		// ops: the mid-span obstacle fillet-blend slice — rail-corner weld, obstacle feature,
 		// and the rim/boundary crossing detector (ADR-0042; the rail-corner weld must stay
 		// model-relative, not a bare cm-anchored epsilon).
-		"../ops/corner_blend_obstacle_rails.go",
-		"../ops/corner_blend_obstacle.go",
-		"../ops/corner_blend_obstacle_certify.go",
-		"../ops/fillet_obstacle_detect.go",
-		"../ops/fillet_obstacle_merge.go",
+		"../ops/blend/corner_blend_obstacle_rails.go",
+		"../ops/blend/corner_blend_obstacle.go",
+		"../ops/blend/corner_blend_obstacle_certify.go",
+		"../ops/blend/fillet_obstacle_detect.go",
+		"../ops/blend/fillet_obstacle_merge.go",
 		// ops: self-intersection, section, stitch, and the degeneracy/weld helpers.
-		"../ops/self_intersect.go",
+		"../ops/validate/self_intersect.go",
 		"../ops/section_plane.go",
-		"../ops/stitch.go",
-		"../ops/oriented_box.go",
+		"../ops/heal/stitch.go",
+		"../ops/query/oriented_box.go",
 		"../ops/ruled_surface.go",
-		"../ops/deform.go",
-		"../ops/smooth_normals.go",
-		"../ops/csg_body.go",
-		"../ops/assemble_curved.go",
+		"../ops/transform/deform.go",
+		"../ops/tessellate/smooth_normals.go",
+		"../ops/boolean/csg_body.go",
+		"../ops/blend/assemble_curved.go",
 		// solve + sketch: the constraint solver and 2D arrangement.
 		"../../solve/solve.go",
 		"../../model/sketch/arrangement.go",
 		"../../model/sketch/profile.go",
 		"../../model/sketch/path_3d.go",
 		// ops: the CDT / conformance / orientation weld grids and trim-grid gates (#1610).
-		"../ops/conformance_repair.go",
-		"../ops/tessellate_trim.go",
-		"../ops/patch_acceptance.go",
-		"../ops/planar_faithful.go",
-		"../ops/refined_patch.go",
-		"../ops/mesh_orient.go",
-		"../ops/orient_heal.go",
-		"../ops/holed_cylinder_wall.go",
+		"../ops/tessellate/conformance_repair.go",
+		"../ops/tessellate/tessellate_trim.go",
+		"../ops/tessellate/patch_acceptance.go",
+		"../ops/tessellate/planar_faithful.go",
+		"../ops/tessellate/refined_patch.go",
+		"../ops/tessellate/mesh_orient.go",
+		"../ops/tessellate/orient_heal.go",
+		"../ops/tessellate/holed_cylinder_wall.go",
 		"../ops/wire_offset.go",
 		"../ops/wire_offset_corners.go",
-		"../ops/fill_nsided.go",
-		"../ops/fill_opening.go",
+		"../ops/heal/fill_nsided.go",
+		"../ops/heal/fill_opening.go",
 		// topo: evaluator / wire / provenance coincidence gates (#1610).
 		"../topo/evaluators.go",
 		"../topo/face_evaluator.go",
@@ -143,7 +148,7 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../brep/revolution.go",
 	}
 	var offenders []string
-	for _, rel := range scope {
+	for _, rel := range resolveScope(t, scope) {
 		src, err := os.ReadFile(rel)
 		if err != nil {
 			t.Fatalf("reading %s: %v", rel, err)
@@ -185,6 +190,7 @@ func toleranceLiteral(code string) bool {
 // matcher must catch each known evasion spelling, and must not fire on ordinary
 // arithmetic — otherwise the whitelist gives false confidence.
 func TestToleranceGuardCatchesEvasionForms(t *testing.T) {
+	t.Parallel()
 	caught := []string{
 		"k := int64(x * 1e6)",     // the old quantCoord reciprocal grid
 		"const q = x * 1e5",       // the old weldKey reciprocal grid
@@ -226,4 +232,43 @@ func itoa(n int) string {
 		n /= 10
 	}
 	return string(b[i:])
+}
+
+// resolveScope maps each listed path to the file that is there now. A path that still exists is
+// returned unchanged; one that does not is looked up by basename under kernel/, so a file that
+// moved with a package split is still guarded. An unresolvable or ambiguous name is a hard
+// failure: silently dropping a hot-path file would make the guard pass by not looking.
+func resolveScope(t *testing.T, scope []string) []string {
+	t.Helper()
+	out := make([]string, 0, len(scope))
+	for _, rel := range scope {
+		if _, err := os.Stat(rel); err == nil {
+			out = append(out, rel)
+			continue
+		}
+		matches := findByBase(t, filepath.Base(rel))
+		if len(matches) != 1 {
+			t.Fatalf("hot-path file %q is gone and %d files under kernel/ are named %q: %v — "+
+				"update the scope list", rel, len(matches), filepath.Base(rel), matches)
+		}
+		out = append(out, matches[0])
+	}
+	return out
+}
+
+// findByBase returns every non-test .go file under kernel/ with the given base name.
+func findByBase(t *testing.T, base string) []string {
+	t.Helper()
+	var hits []string
+	err := filepath.WalkDir("..", func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || d.Name() != base {
+			return err
+		}
+		hits = append(hits, p)
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walking kernel/ for %q: %v", base, err)
+	}
+	return hits
 }

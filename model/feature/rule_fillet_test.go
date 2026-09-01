@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -17,6 +19,7 @@ import (
 // TestRuleFilletAllRoundsRoundsWholeBox rounds every convex edge of a 4×4×4 box in one feature: the
 // result is a valid solid with cylindrical fillet faces and less material than the box.
 func TestRuleFilletAllRoundsRoundsWholeBox(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 4}, 0, "box")
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -32,7 +35,7 @@ func TestRuleFilletAllRoundsRoundsWholeBox(t *testing.T) {
 	if !hasCylinderFace(res) {
 		t.Error("rule fillet (all rounds) produced no cylindrical face")
 	}
-	if v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 0 || v >= 64 {
+	if v := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 0 || v >= 64 {
 		t.Errorf("rounded box volume = %g, want 0 < v < 64 (material removed at every edge)", v)
 	}
 }
@@ -40,6 +43,7 @@ func TestRuleFilletAllRoundsRoundsWholeBox(t *testing.T) {
 // TestRuleFilletAllFilletsFillsConcaveEdge fills the one concave edge of an L-prism, leaving the
 // convex edges sharp: a valid solid with a cylindrical fillet face.
 func TestRuleFilletAllFilletsFillsConcaveEdge(t *testing.T) {
+	t.Parallel()
 	l := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 2}, {X: 2, Y: 2}, {X: 2, Y: 4}, {X: 0, Y: 4}},
 		sketch.XYPlane(), span{near: 0, far: 3}, 0, "L")
 	if n := concaveEdgeCount(l); n != 1 {
@@ -63,6 +67,7 @@ func TestRuleFilletAllFilletsFillsConcaveEdge(t *testing.T) {
 
 // TestRuleFilletNoMatchNoOp: all-fillets on a plain box (no concave edge) changes nothing.
 func TestRuleFilletNoMatchNoOp(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -71,7 +76,7 @@ func TestRuleFilletNoMatchNoOp(t *testing.T) {
 	if !pf.Health().OK() {
 		t.Fatalf("no-match rule fillet sick: %+v", pf.Health())
 	}
-	if v := ops.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-3}).Volume; relErr(v, 8) > 1e-6 {
+	if v := query.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-3}).Volume; relErr(v, 8) > 1e-6 {
 		t.Errorf("box volume after no-match all-fillets = %g, want 8 (unchanged)", v)
 	}
 }
@@ -79,7 +84,7 @@ func TestRuleFilletNoMatchNoOp(t *testing.T) {
 func concaveEdgeCount(b *topo.Body) int {
 	n := 0
 	for _, e := range b.Edges() {
-		if ops.ClassifyEdgeConvexity(e) == ops.EdgeConcave {
+		if blend.ClassifyEdgeConvexity(e) == blend.EdgeConcave {
 			n++
 		}
 	}

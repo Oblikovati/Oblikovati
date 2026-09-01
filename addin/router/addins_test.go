@@ -50,6 +50,7 @@ func addInSession(t *testing.T) (*Router, *app.Session, *FakeWireAddIn) {
 }
 
 func TestAddInsListAndGet(t *testing.T) {
+	t.Parallel()
 	r, s, _ := addInSession(t)
 	var lst wire.ListAddInsResult
 	call(t, r, s, "addins.list", "{}", &lst)
@@ -71,6 +72,7 @@ func TestAddInsListAndGet(t *testing.T) {
 }
 
 func TestAddInsLifecycleOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _ := addInSession(t)
 	call(t, r, s, "addins.activate", `{"id":"com.wire.idle"}`, nil)
 	if !s.AddIns().IsActive("com.wire.idle") {
@@ -83,6 +85,7 @@ func TestAddInsLifecycleOverWire(t *testing.T) {
 }
 
 func TestAddInsSetLoadBehaviorOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _ := addInSession(t)
 	call(t, r, s, "addins.setLoadBehavior", `{"id":"com.wire.idle","loadBehavior":2}`, nil)
 	if got := s.AddIns().LoadBehavior("com.wire.idle"); got != types.LoadDisabled {
@@ -96,6 +99,7 @@ func TestAddInsSetLoadBehaviorOverWire(t *testing.T) {
 // TestAddInsCallAutomationOverWire is the #252 acceptance at the wire level: the
 // caller reaches another add-in's automation surface via addins.callAutomation.
 func TestAddInsCallAutomationOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _ := addInSession(t)
 	var res wire.CallAddInAutomationResult
 	call(t, r, s, "addins.callAutomation",
@@ -111,6 +115,7 @@ func TestAddInsCallAutomationOverWire(t *testing.T) {
 }
 
 func TestClientAppsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _ := addInSession(t)
 	var reg wire.RegisterClientApplicationResult
 	call(t, r, s, "clientApps.register", `{"name":"acme-pipeline"}`, &reg)

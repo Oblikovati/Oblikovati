@@ -9,6 +9,8 @@ import (
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/heal"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -39,12 +41,12 @@ func NewFaceShell(s *topo.Shell, b *topo.Body, q ops.Quality) *FaceShellAdapter 
 }
 
 func (a *FaceShellAdapter) IsClosed() bool { return a.shell.IsClosed() }
-func (a *FaceShellAdapter) IsVoid() bool   { return ops.ShellIsVoidInBody(a.body, a.shell) }
+func (a *FaceShellAdapter) IsVoid() bool   { return heal.ShellIsVoidInBody(a.body, a.shell) }
 
 // Volume is the magnitude of the shell region's volume (the API reports
 // sizes; the sign — void vs material — is IsVoid's job).
 func (a *FaceShellAdapter) Volume() float64 {
-	v := ops.ShellSignedVolume(a.shell, a.q)
+	v := query.ShellSignedVolume(a.shell, a.q)
 	if v < 0 {
 		return -v
 	}
@@ -56,7 +58,7 @@ func (a *FaceShellAdapter) EdgeCount() int { return len(a.shell.Edges()) }
 
 // IsPointInside classifies a point against the shell's bounded region.
 func (a *FaceShellAdapter) IsPointInside(x, y, z float64) types.Containment {
-	c := ops.ShellContainment(a.shell, math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(z)), a.q, onTolDefault)
+	c := query.ShellContainment(a.shell, math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(z)), a.q, onTolDefault)
 	return containmentOf(c)
 }
 
@@ -64,11 +66,11 @@ func (a *FaceShellAdapter) ReferenceKey() []byte { return a.shell.ReferenceKey()
 func (a *FaceShellAdapter) TransientKey() uint64 { return a.shell.ID() }
 
 // containmentOf maps the kernel verdict onto the frozen wire enum.
-func containmentOf(c ops.PointContainment) types.Containment {
+func containmentOf(c query.PointContainment) types.Containment {
 	switch c {
-	case ops.ContainInside:
+	case query.ContainInside:
 		return types.InsideContainment
-	case ops.ContainOn:
+	case query.ContainOn:
 		return types.OnContainment
 	default:
 		return types.OutsideContainment

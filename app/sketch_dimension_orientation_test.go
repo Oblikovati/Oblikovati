@@ -32,6 +32,7 @@ func placeDimension(t *testing.T, s *Session, sk *sketch.Sketch, l *sketch.Line,
 // TestDraggingUpwardGivesAHorizontalDimension: pulling the label straight up off a diagonal
 // asks for its ΔX — the dimension line is horizontal, so the drag is perpendicular to it.
 func TestDraggingUpwardGivesAHorizontalDimension(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(diagStart, diagEnd)
 	d := placeDimension(t, s, sk, l, math.P2(1.5, 9)) // straight up from the midpoint
@@ -46,6 +47,7 @@ func TestDraggingUpwardGivesAHorizontalDimension(t *testing.T) {
 
 // TestDraggingSidewaysGivesAVerticalDimension: pulling the label sideways asks for ΔY.
 func TestDraggingSidewaysGivesAVerticalDimension(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(diagStart, diagEnd)
 	d := placeDimension(t, s, sk, l, math.P2(9, 2))
@@ -61,6 +63,7 @@ func TestDraggingSidewaysGivesAVerticalDimension(t *testing.T) {
 // TestDraggingPerpendicularKeepsTheAlignedDimension: the historical behaviour must still be
 // reachable, and it is what a perpendicular drag means.
 func TestDraggingPerpendicularKeepsTheAlignedDimension(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(diagStart, diagEnd)
 	// Perpendicular to (3,4) is (-4,3)/5; step off the midpoint (1.5,2) along it.
@@ -79,6 +82,7 @@ func TestDraggingPerpendicularKeepsTheAlignedDimension(t *testing.T) {
 // different CONSTRAINTS, not different renderings. Driving a horizontal dimension must move the
 // points in X and leave their Y separation alone.
 func TestHorizontalDimensionLeavesTheYSeparationFree(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(diagStart, diagEnd)
 	placeDimension(t, s, sk, l, math.P2(1.5, 9)) // horizontal
@@ -98,6 +102,7 @@ func TestHorizontalDimensionLeavesTheYSeparationFree(t *testing.T) {
 // TestHorizontalDimensionLineIsDrawnHorizontal: the glyph must show the value it measures. A
 // horizontal dimension drawn along the diagonal would claim a length of 5 while constraining 3.
 func TestHorizontalDimensionLineIsDrawnHorizontal(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(diagStart, diagEnd)
 	placeDimension(t, s, sk, l, math.P2(1.5, 9))
@@ -118,6 +123,7 @@ func TestHorizontalDimensionLineIsDrawnHorizontal(t *testing.T) {
 // TestOrientationRuleIsStableForAxisAlignedLines: on a horizontal line the aligned and
 // horizontal candidates coincide, and the tie must resolve to aligned rather than flapping.
 func TestOrientationRuleIsStableForAxisAlignedLines(t *testing.T) {
+	t.Parallel()
 	a, b := math.P2(0, 0), math.P2(4, 0)
 	if got := orientationForPlacement(a, b, math.P2(2, 3)); got != sketch.AlignedDistance {
 		t.Errorf("placing above a horizontal line gave %v, want AlignedDistance", got)
@@ -127,6 +133,7 @@ func TestOrientationRuleIsStableForAxisAlignedLines(t *testing.T) {
 // TestPlacementOnTheSegmentFallsBackToAligned: a label dropped on the midpoint has no drag
 // direction to read, and must not produce an arbitrary orientation.
 func TestPlacementOnTheSegmentFallsBackToAligned(t *testing.T) {
+	t.Parallel()
 	a, b := diagStart, diagEnd
 	if got := orientationForPlacement(a, b, a.Midpoint(b)); got != sketch.AlignedDistance {
 		t.Errorf("placing on the midpoint gave %v, want AlignedDistance", got)

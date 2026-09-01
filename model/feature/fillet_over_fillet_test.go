@@ -59,6 +59,7 @@ func cylinderSeamKey(t *testing.T, b *topo.Body) []byte {
 // not the misleading "result is not a valid solid" the whole-body facet path produced (the second
 // fillet was faceting the first fillet's cylinder into a triangle cage that could not close).
 func TestFilletOverFilletSeamGivesHonestReason(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 3}, {X: 0, Y: 3}},
 		sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 
@@ -96,6 +97,7 @@ func TestFilletOverFilletSeamGivesHonestReason(t *testing.T) {
 // the prism's faceted segments (the #127/#129 path). Any other curved body is left analytic (the
 // pass-through path is exercised by TestFilletOverFilletSeamGivesHonestReason).
 func TestPlanarizeCylinderForEdgesPrismifiesSimpleCylinder(t *testing.T) {
+	t.Parallel()
 	fs, rim := extrudedCylinderTopRim(t, 2, 5)
 	body := fs.Result()[0]
 	edges, _, err := resolveEdges(body, [][]byte{rim}, nil)

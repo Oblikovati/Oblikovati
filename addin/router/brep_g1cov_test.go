@@ -14,6 +14,7 @@ import (
 // instead of 3), so every primitive builder's xyz-decode error path is exercised, plus the
 // unknown-kind default.
 func TestBpcovPrimitiveValidationRejectsBadVectors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	for _, args := range bpcovBadPrimitives() {
 		if _, err := r.Handle(s, "brep.createPrimitive", []byte(args)); err == nil {
@@ -39,6 +40,7 @@ func bpcovBadPrimitives() []string {
 // TestBpcovPrimitiveRoundTrip drives the happy path: a valid block becomes a transient solid
 // with 6 faces and the expected volume, and its handle round-trips into brep.stats.
 func TestBpcovPrimitiveRoundTrip(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var res bpcovHandleReply
 	call(t, r, s, "brep.createPrimitive", `{"kind":"block","min":[0,0,0],"max":[2,3,4]}`, &res)
@@ -63,6 +65,7 @@ type bpcovHandleReply struct {
 // TestBpcovBooleanRejectsMissingBlank drives brep.boolean's blank-lookup error branch: a handle
 // with no registered transient body is rejected before any tool is resolved.
 func TestBpcovBooleanRejectsMissingBlank(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	bad := `{"blankHandle":9999,"operation":"union","tool":{"handle":9998}}`
 	if _, err := r.Handle(s, "brep.boolean", []byte(bad)); err == nil {
@@ -73,6 +76,7 @@ func TestBpcovBooleanRejectsMissingBlank(t *testing.T) {
 // TestBpcovBrepSourceRejectsAmbiguousRef drives brepSource's mutual-exclusion branch: a body
 // ref that sets both handle and bodyIndex is rejected (via a boolean whose tool is ambiguous).
 func TestBpcovBrepSourceRejectsAmbiguousRef(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	blank := bpcovBlockHandle(t, r, s)
 	amb := `{"blankHandle":` + strconv.Itoa(blank) + `,"operation":"union","tool":{"handle":1,"bodyIndex":0}}`

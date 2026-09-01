@@ -11,6 +11,7 @@ import (
 // TestSketchTextHandlers drives sketch.addText -> getText -> editText, exercising the
 // justification/height metric helpers.
 func TestSketchTextHandlers(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var added wire.AddEntityIDResult
 	call(t, r, s, "sketch.addText", mustJSON(t, wire.AddTextArgs{
@@ -29,6 +30,7 @@ func TestSketchTextHandlers(t *testing.T) {
 
 // TestSketchOffsetFillAutoDim drives sketch.offset, addFillRegion, and autoDimension.
 func TestSketchOffsetFillAutoDim(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var circ wire.AddSketchEntityResult
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","variant":"center","points":[[0,0]],"radius":"3 cm"}`, &circ)
@@ -44,6 +46,7 @@ func TestSketchOffsetFillAutoDim(t *testing.T) {
 
 // TestSketchTextErrors covers the bad-sketch / bad-id error branches.
 func TestSketchTextErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if err := tryCall(t, r, s, "sketch.getText", `{"sketchIndex":0,"entityId":99999}`); err == nil {
 		t.Error("getText on an unknown entity should error")

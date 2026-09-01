@@ -21,6 +21,7 @@ import (
 // part whose preferred length unit is the database unit (cm); the unit scale is then 1 and
 // coordinates compare directly.
 func TestExportImportRoundTrip(t *testing.T) {
+	t.Parallel()
 	src := newCentimetrePart(t)
 	sk := src.Sketches().Add(xyPlane(t))
 	line := sk.Lines().AddByTwoPoints(gmath.P2(0, 0), gmath.P2(10, 5))
@@ -123,6 +124,7 @@ func wantEndpoints(t *testing.T, what string, got, want *sketch.Arc) {
 // TestExportDWGHonorsDocumentUnit checks a DWG exported from an inch document
 // re-imports at the same physical size (1 inch ↔ 2.54 cm).
 func TestExportDWGHonorsDocumentUnit(t *testing.T) {
+	t.Parallel()
 	src := newCentimetrePart(t)
 	if err := src.SetLengthUnit("in"); err != nil {
 		t.Fatalf("SetLengthUnit in: %v", err)

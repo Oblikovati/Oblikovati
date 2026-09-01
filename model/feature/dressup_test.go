@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
@@ -17,6 +18,7 @@ import (
 // TestChamferBevelsEdgeForReal drills a real 45° chamfer on a box edge and checks the
 // removed volume (a right-triangle prism of legs d along the full edge).
 func TestChamferBevelsEdgeForReal(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var edge []byte
 	for _, e := range box.Edges() {
@@ -42,7 +44,7 @@ func TestChamferBevelsEdgeForReal(t *testing.T) {
 		t.Fatalf("chamfered body not a valid solid: %+v", r)
 	}
 	want := 8 - 0.5*0.5*0.5*2 // box 8 − wedge (½·d²·length, d=0.5, length=2) = 7.75
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("chamfer volume = %g, want %g", got, want)
 	}
 }
@@ -52,6 +54,7 @@ func TestChamferBevelsEdgeForReal(t *testing.T) {
 // triangle-soup CSG got wrong; the B-rep boolean must keep it exact. Volume =
 // (4 − 4·½·0.5²)·2 = 7.
 func TestChamferAllFourVerticalEdges(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var verticals [][]byte
 	for _, e := range box.Edges() {
@@ -73,7 +76,7 @@ func TestChamferAllFourVerticalEdges(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("octagonal prism not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 7) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 7) > 1e-6 {
 		t.Errorf("four-edge chamfer volume = %g, want 7", got)
 	}
 }
@@ -201,6 +204,7 @@ func hasFlatCornerFace(b *topo.Body) bool {
 // box corner trims the pointy three-plane tip into a triangular face, removing the extra
 // sliver of material the pointy treatment keeps.
 func TestChamferFlatCornerBlendsThreeEdges(t *testing.T) {
+	t.Parallel()
 	flat := chamferedCorner(t, true)
 	pointy := chamferedCorner(t, false)
 
@@ -210,8 +214,8 @@ func TestChamferFlatCornerBlendsThreeEdges(t *testing.T) {
 	if hasFlatCornerFace(pointy) {
 		t.Error("pointy chamfer unexpectedly produced a flat triangular corner face")
 	}
-	volFlat := ops.BodyGeometryProperties(flat, ops.DefaultQuality()).Volume
-	volPointy := ops.BodyGeometryProperties(pointy, ops.DefaultQuality()).Volume
+	volFlat := query.BodyGeometryProperties(flat, ops.DefaultQuality()).Volume
+	volPointy := query.BodyGeometryProperties(pointy, ops.DefaultQuality()).Volume
 	if volFlat >= volPointy {
 		t.Errorf("flat corner volume %g should be less than pointy %g (it trims the tip)", volFlat, volPointy)
 	}
@@ -222,6 +226,7 @@ func TestChamferFlatCornerBlendsThreeEdges(t *testing.T) {
 // faces — adding exactly one bevel face — not leave the lip remnants (extra sliver faces) the
 // per-edge wedge used to leave where a chamfered edge runs into a face.
 func TestChamferCornerEdgeIsFlush(t *testing.T) {
+	t.Parallel()
 	// First chamfer: the vertical edge at (2,2) (midpoint (2,2,1)), setback 0.3 → a chamfer strip.
 	// Its top corner edge then sits at midpoint (2-0.15, 2-0.15, 2).
 	first := func(b *topo.Body) [][]byte { return [][]byte{edgeKeyByMid(t, b, math.P3(2, 2, 1))} }
@@ -238,6 +243,7 @@ func TestChamferCornerEdgeIsFlush(t *testing.T) {
 // dies into a complex vertex. The second chamfer must add exactly one flush bevel face, not the
 // slivered spike the per-edge wedge used to leave at that vertex.
 func TestChamferMiterEdgeIsFlush(t *testing.T) {
+	t.Parallel()
 	first := func(b *topo.Body) [][]byte { return topEdgeKeys(b, 2) }
 	second := func(b *topo.Body) []byte { return nearestEdgeKey(t, b, math.P3(2, 2, 2)) }
 	after1, after2 := rechamferBody(t, first, 0.3, 0.15, second)
@@ -294,6 +300,7 @@ func cornerBlendFaces(b *topo.Body) int {
 // blend was gated to symmetric setbacks (dressup.go) and reconstructed from a single distance
 // (chamfer.go). The flat blend trims the pointy tip, so it removes material vs. the pointy one.
 func TestChamferFlatCornerBlendsAsymmetric(t *testing.T) {
+	t.Parallel()
 	flat := chamferedCornerAsym(t, 0.5, 0.8, true)
 	pointy := chamferedCornerAsym(t, 0.5, 0.8, false)
 
@@ -303,8 +310,8 @@ func TestChamferFlatCornerBlendsAsymmetric(t *testing.T) {
 	if got := cornerBlendFaces(pointy); got != 0 {
 		t.Errorf("asymmetric pointy corner produced %d triangular blend faces, want 0", got)
 	}
-	volFlat := ops.BodyGeometryProperties(flat, ops.DefaultQuality()).Volume
-	volPointy := ops.BodyGeometryProperties(pointy, ops.DefaultQuality()).Volume
+	volFlat := query.BodyGeometryProperties(flat, ops.DefaultQuality()).Volume
+	volPointy := query.BodyGeometryProperties(pointy, ops.DefaultQuality()).Volume
 	if volFlat >= volPointy {
 		t.Errorf("flat asymmetric corner volume %g should be less than pointy %g (it trims the tip)", volFlat, volPointy)
 	}
@@ -318,6 +325,7 @@ func prismBody() *topo.Body {
 // TestFilletRoundsEdgeForReal rounds a vertical edge of a 2×2×2 box (r=0.5) through the
 // feature engine: a healthy feature whose result is a valid solid with a cylinder face.
 func TestFilletRoundsEdgeForReal(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var edge []byte
 	for _, e := range box.Edges() {
@@ -338,12 +346,13 @@ func TestFilletRoundsEdgeForReal(t *testing.T) {
 		t.Fatalf("filleted body not a valid solid: %+v", r)
 	}
 	want := 8 - (0.5*0.5-stdmath.Pi*0.25*0.25)*2
-	if got := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, want) > 1e-3 {
+	if got := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, want) > 1e-3 {
 		t.Errorf("fillet volume = %g, want ≈ %g", got, want)
 	}
 }
 
 func TestFilletGoesSickOnLostEdge(t *testing.T) {
+	t.Parallel()
 	body := prismBody()
 	bogus := []byte("not-an-edge-key")
 
@@ -357,6 +366,7 @@ func TestFilletGoesSickOnLostEdge(t *testing.T) {
 }
 
 func TestDressUpWithNoBodyIsSick(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	fillet := NewDressUpFeatures(fs).AddFillet([][]byte{[]byte("x")}, func() float64 { return 1 })
 	fs.Recompute() // no preceding body
@@ -369,6 +379,7 @@ func TestDressUpWithNoBodyIsSick(t *testing.T) {
 // face (a planar one is Sick — the healthy cylinder case is in thread_test.go) and that a
 // lost-face shell goes Sick.
 func TestThreadRejectsPlanarFaceAndShellLostFace(t *testing.T) {
+	t.Parallel()
 	body := prismBody()
 	face := body.Faces()[0].ReferenceKey()
 
@@ -395,6 +406,7 @@ func TestThreadRejectsPlanarFaceAndShellLostFace(t *testing.T) {
 // TestDraftTapersFaceForReal drafts one side face of a 2×2×2 box inward by atan(0.25)
 // about +Z: the side tilts, removing a 4·tan = 1 wedge ⇒ vol 7, a valid solid.
 func TestDraftTapersFaceForReal(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var side []byte
 	for _, f := range box.Faces() {
@@ -413,7 +425,7 @@ func TestDraftTapersFaceForReal(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("drafted body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 7) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 7) > 1e-6 {
 		t.Errorf("draft volume = %g, want 7", got)
 	}
 }
@@ -421,6 +433,7 @@ func TestDraftTapersFaceForReal(t *testing.T) {
 // TestShellHollowsRunningBodyForReal shells the running body (a unit prism) with its top
 // face removed and checks the feature is healthy and the result a valid hollow solid.
 func TestShellHollowsRunningBodyForReal(t *testing.T) {
+	t.Parallel()
 	body := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 4}, 0, "box")
 	var top []byte
 	for _, f := range body.Faces() {
@@ -439,12 +452,13 @@ func TestShellHollowsRunningBodyForReal(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("shelled body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 64-3*3*3.5) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 64-3*3*3.5) > 1e-6 {
 		t.Errorf("shell volume = %g, want %g", got, 64-3*3*3.5)
 	}
 }
 
 func TestDressUpDefinitionsAccessible(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	du := NewDressUpFeatures(fs)
 	f := du.AddFillet([][]byte{[]byte("e")}, func() float64 { return 0.2 })

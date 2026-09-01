@@ -11,6 +11,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/exchange"
@@ -25,6 +26,7 @@ func stepFixture(name string) string {
 // TestImportStepRoutesToBrep checks the unified dispatch routes a .step file through the STEP
 // reader (not the mesh reader) and lands a valid solid in the part.
 func TestImportStepRoutesToBrep(t *testing.T) {
+	t.Parallel()
 	part := compdef.NewPartComponentDefinition()
 	res, err := exchange.Import(part, stepFixture("cube.step"), types.FormatSTEP)
 	if err != nil {
@@ -42,11 +44,12 @@ func TestImportStepRoutesToBrep(t *testing.T) {
 // TestStepRoundTripThroughDispatch imports a STEP solid, exports the part back to STEP, and
 // re-imports — the body stays a valid solid with the same volume (the dispatch wires both ways).
 func TestStepRoundTripThroughDispatch(t *testing.T) {
+	t.Parallel()
 	src := compdef.NewPartComponentDefinition()
 	if _, err := exchange.Import(src, stepFixture("cube.step"), types.FormatSTEP); err != nil {
 		t.Fatalf("import: %v", err)
 	}
-	v0 := ops.BodyGeometryProperties(src.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	v0 := query.BodyGeometryProperties(src.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 
 	out := filepath.Join(t.TempDir(), "roundtrip.step")
 	if _, err := exchange.Export(src, out, types.FormatSTEP, ""); err != nil {
@@ -60,13 +63,14 @@ func TestStepRoundTripThroughDispatch(t *testing.T) {
 	if r := ops.Validate(b); !r.Valid || !b.IsSolid() {
 		t.Fatalf("round-tripped step body not a valid solid: %+v", r)
 	}
-	if v1 := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; relErr(v0, v1) > 0.02 {
+	if v1 := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; relErr(v0, v1) > 0.02 {
 		t.Errorf("step round-trip volume changed: %.4f → %.4f", v0, v1)
 	}
 }
 
 // TestFormatFromPath maps extensions to formats (case-insensitive), including STEP's two spellings.
 func TestFormatFromPath(t *testing.T) {
+	t.Parallel()
 	cases := map[string]types.ExchangeFormat{
 		"a.stl": types.FormatSTL, "b.OBJ": types.FormatOBJ, "c.3mf": types.Format3MF,
 		"d.step": types.FormatSTEP, "e.STP": types.FormatSTEP, "f.DWG": types.FormatDWG,
@@ -96,6 +100,7 @@ func relErr(a, b float64) float64 {
 // preferred length unit into the STEP export's declared unit (#146): the same
 // part exports as inch or centimetre depending on its units.
 func TestStepExportDeclaresDocumentUnit(t *testing.T) {
+	t.Parallel()
 	part := compdef.NewPartComponentDefinition()
 	if _, err := exchange.Import(part, stepFixture("cube.step"), types.FormatSTEP); err != nil {
 		t.Fatalf("import: %v", err)
@@ -125,11 +130,12 @@ func TestStepExportDeclaresDocumentUnit(t *testing.T) {
 // TestMeshExportImportThroughDispatch exercises the unified Import/Export for a mesh
 // format (the dispatch's mesh branch) and confirms the size round-trips in centimetres.
 func TestMeshExportImportThroughDispatch(t *testing.T) {
+	t.Parallel()
 	src := compdef.NewPartComponentDefinition()
 	if _, err := exchange.Import(src, stepFixture("cube.step"), types.FormatSTEP); err != nil {
 		t.Fatalf("seed import: %v", err)
 	}
-	v0 := ops.BodyGeometryProperties(src.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	v0 := query.BodyGeometryProperties(src.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	out := filepath.Join(t.TempDir(), "m.stl")
 	if _, err := exchange.Export(src, out, types.FormatSTL, types.ResolutionHigh); err != nil {
 		t.Fatalf("export stl: %v", err)
@@ -138,7 +144,7 @@ func TestMeshExportImportThroughDispatch(t *testing.T) {
 	if _, err := exchange.Import(back, out, types.FormatSTL); err != nil {
 		t.Fatalf("re-import stl: %v", err)
 	}
-	v1 := ops.BodyGeometryProperties(back.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	v1 := query.BodyGeometryProperties(back.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	if relErr(v0, v1) > 0.05 {
 		t.Errorf("mesh dispatch round-trip volume %.4f → %.4f", v0, v1)
 	}
@@ -158,6 +164,7 @@ func partWithCube(t *testing.T) *compdef.PartComponentDefinition {
 // FormatGLTF export to a non-.glb destination with a typed error naming the
 // supported extension (CHG-2) — the CLI guard alone was not enough.
 func TestExportGLTFRequiresGLBDestination(t *testing.T) {
+	t.Parallel()
 	part := partWithCube(t)
 	dir := t.TempDir()
 	for _, name := range []string{"box.gltf", "box.GLTF", "box.json"} {
@@ -178,6 +185,7 @@ func TestExportGLTFRequiresGLBDestination(t *testing.T) {
 // TestExportGLTFPassesThroughGLB: a .glb destination exports successfully
 // through the direct model API (CHG-2 pass-through).
 func TestExportGLTFPassesThroughGLB(t *testing.T) {
+	t.Parallel()
 	part := partWithCube(t)
 	dst := filepath.Join(t.TempDir(), "box.glb")
 	res, err := exchange.Export(part, dst, types.FormatGLTF, types.ResolutionHigh)
@@ -203,6 +211,7 @@ func TestExportGLTFPassesThroughGLB(t *testing.T) {
 // strict 0644 assertion runs on non-Windows; on Windows the test asserts the
 // write bits are set (the export must not leave the destination read-only).
 func TestExportPreservesDestinationMode(t *testing.T) {
+	t.Parallel()
 	part := partWithCube(t)
 	dir := t.TempDir()
 	dst := filepath.Join(dir, "box.glb")
@@ -235,6 +244,7 @@ func TestExportPreservesDestinationMode(t *testing.T) {
 // injection is Windows-only; the no-truncate-on-encode-error test covers the
 // cross-platform guarantee.
 func TestExportWriteFailureLeavesDestinationUntouched(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS != "windows" {
 		t.Skip("rename over a read-only destination succeeds on POSIX; failure injection is Windows-only (CHG-6 limitation)")
 	}
@@ -281,6 +291,7 @@ func TestExportWriteFailureLeavesDestinationUntouched(t *testing.T) {
 // destination untouched — the atomic write never opens the destination
 // (CHG-6 no-truncate guarantee, cross-platform).
 func TestExportEncodeErrorDoesNotTruncateDestination(t *testing.T) {
+	t.Parallel()
 	part := compdef.NewPartComponentDefinition()
 	empty := topo.BodyFromShells(topo.NewLineage(topo.Tok("x", "y", 0)), false)
 	feature.NewImportedBodies(part.Features()).Add(empty, "dummy-resource", "stl")
@@ -313,6 +324,7 @@ func TestExportEncodeErrorDoesNotTruncateDestination(t *testing.T) {
 // pre-existing destination via temp+rename and leaves no temp files (CHG-6
 // success path).
 func TestExportSuccessPathRenamesOverDestination(t *testing.T) {
+	t.Parallel()
 	part := partWithCube(t)
 	dir := t.TempDir()
 	dst := filepath.Join(dir, "box.glb")

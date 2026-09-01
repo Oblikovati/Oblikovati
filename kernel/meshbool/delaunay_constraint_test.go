@@ -13,6 +13,7 @@ import (
 // tiling. It requires that at least one force actually flips (the constraint was
 // initially absent), so the recovery path is genuinely exercised.
 func TestForceEdgeRecoversConstraint(t *testing.T) {
+	t.Parallel()
 	face := tri([3]float64{0, 0, 0}, [3]float64{20, 0, 0}, [3]float64{0, 20, 0})
 	d := newDelaunayInTriangle(face)
 	interior := [][3]float64{
@@ -50,6 +51,7 @@ func TestForceEdgeRecoversConstraint(t *testing.T) {
 // crosses no edge properly, so convexCrossing finds nothing and forceEdge bails
 // without altering the mesh, rather than spinning.
 func TestForceEdgeThroughVertexBails(t *testing.T) {
+	t.Parallel()
 	face := tri([3]float64{0, 0, 0}, [3]float64{10, 0, 0}, [3]float64{0, 10, 0})
 	d := newDelaunayInTriangle(face)
 	d.Insert(pt([3]float64{5, 0, 0})) // on the bottom edge, strictly between corners 0 and 1
@@ -66,6 +68,7 @@ func TestForceEdgeThroughVertexBails(t *testing.T) {
 // TestForceEdgeNoOps guards the trivial cases: forcing a vertex to itself, and
 // forcing an edge that already exists, both leave the mesh unchanged.
 func TestForceEdgeNoOpsDelaunay(t *testing.T) {
+	t.Parallel()
 	face := tri([3]float64{0, 0, 0}, [3]float64{8, 0, 0}, [3]float64{0, 8, 0})
 	d := newDelaunayInTriangle(face)
 	d.Insert(pt([3]float64{2, 2, 0}))

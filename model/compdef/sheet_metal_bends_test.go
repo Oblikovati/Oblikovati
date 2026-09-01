@@ -60,6 +60,7 @@ func sheetWithFlange(t *testing.T) (*PartComponentDefinition, *feature.PartFeatu
 // TestBendsReportsFlangeLineage a flanged sheet reports its single 90° bend with the
 // developed allowance the rule's unfold method computes.
 func TestBendsReportsFlangeLineage(t *testing.T) {
+	t.Parallel()
 	d, flange := sheetWithFlange(t)
 
 	bends := d.Bends()
@@ -87,6 +88,7 @@ func TestBendsReportsFlangeLineage(t *testing.T) {
 
 // TestBendsNilWhenNotSheetMetal an ordinary part has no bend lineage.
 func TestBendsNilWhenNotSheetMetal(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if bends := d.Bends(); bends != nil {
 		t.Errorf("plain part Bends = %v, want nil", bends)
@@ -95,6 +97,7 @@ func TestBendsNilWhenNotSheetMetal(t *testing.T) {
 
 // TestBendsExcludesSuppressed a suppressed flange contributes no bend (it added no geometry).
 func TestBendsExcludesSuppressed(t *testing.T) {
+	t.Parallel()
 	d, flange := sheetWithFlange(t)
 	flange.SetSuppressed(true)
 	d.Recompute()

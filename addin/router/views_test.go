@@ -13,6 +13,7 @@ import (
 // document has one active view; add/activate/rename/close and layout all round-trip, and
 // closing the last view is refused.
 func TestViewsLifecycleOverTheAPI(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var list wire.ListViewsResult
@@ -65,6 +66,7 @@ func TestViewsLifecycleOverTheAPI(t *testing.T) {
 // TestCameraReflectedInActiveViewListing checks set_camera updates the active view's camera
 // as reported by views.list — proving camera is per-view.
 func TestCameraReflectedInActiveViewListing(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "view.setCamera", `{"eye":[9,8,7],"target":[1,2,3],"up":[0,1,0],"fov":0.7}`, nil)
 

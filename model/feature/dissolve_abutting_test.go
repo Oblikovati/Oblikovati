@@ -49,6 +49,7 @@ func roundedRect(s *sketch.Sketch, x0, x1, y0, y1, r float64) {
 // outer loop, conserving area, so the region extrudes as a single clean prism (#38). Disjoint cells
 // must NOT be fused — see TestDissolveKeepsDisjointCellsSeparate.
 func TestDissolveFusesSlotAndCornerDiscs(t *testing.T) {
+	t.Parallel()
 	sk := slotWithCornerReliefSketch(t)
 	profs := sk.Profiles().All()
 	if len(profs) < 5 {
@@ -83,6 +84,7 @@ func TestDissolveFusesSlotAndCornerDiscs(t *testing.T) {
 // hole-carrying dog-bone fuses instead of falling back to the coincident-wall path. This is the
 // blind-pocket-bottom crack that kept BigChunkyPlate open at z=1.8 (#38 follow-up).
 func TestDissolveCarriesInnerLoops(t *testing.T) {
+	t.Parallel()
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	roundedRect(s, -4, 4, -2, 2, 0.5)
 	for _, c := range [][2]float64{{-3.5, 1.5}, {3.5, 1.5}, {-3.5, -1.5}, {3.5, -1.5}} {
@@ -114,6 +116,7 @@ func TestDissolveCarriesInnerLoops(t *testing.T) {
 // groups and are NOT fused — a lone bore must keep its own prism (and its analytic cylinder), the
 // #33 per-region behaviour the dissolve must not disturb.
 func TestDissolveKeepsDisjointCellsSeparate(t *testing.T) {
+	t.Parallel()
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	for _, cx := range []float64{-5, 0, 5} {
 		s.Circles().AddByCenterRadius(math.P2(math.Scalar(cx), 0), 1)

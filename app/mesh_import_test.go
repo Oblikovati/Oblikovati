@@ -58,6 +58,7 @@ func tempSTL(t *testing.T) string {
 // TestImportMeshFilePlacesReferenceGeometry places the STL as a mesh feature: the running
 // solid passes through unchanged and the mesh exposes its welded facet topology.
 func TestImportMeshFilePlacesReferenceGeometry(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 
@@ -77,6 +78,7 @@ func TestImportMeshFilePlacesReferenceGeometry(t *testing.T) {
 
 // A malformed STL surfaces a precise parse error, not a placed feature.
 func TestImportMeshFileRejectsMalformedSTL(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6)
 	path := filepath.Join(t.TempDir(), "bad.stl")
 	if err := os.WriteFile(path, []byte("solid nope\nfacet normal x y z\n"), 0o644); err != nil {
@@ -90,6 +92,7 @@ func TestImportMeshFileRejectsMalformedSTL(t *testing.T) {
 // TestPlaceMeshCommandArmsFileDialog asserts the ribbon command raises the one-shot
 // file-dialog request the head consumes.
 func TestPlaceMeshCommandArmsFileDialog(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

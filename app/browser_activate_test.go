@@ -18,6 +18,7 @@ import (
 
 // TestSketchHandleActivate: double-clicking a 2D sketch re-enters the sketch environment.
 func TestSketchHandleActivate(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XYPlane())
 	SketchHandle{Sketch: sk}.Activate(s)
@@ -28,6 +29,7 @@ func TestSketchHandleActivate(t *testing.T) {
 
 // TestWorkPlaneHandleActivate: double-clicking a user offset plane opens its redefine tool.
 func TestWorkPlaneHandleActivate(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 	def.Recompute()
@@ -40,6 +42,7 @@ func TestWorkPlaneHandleActivate(t *testing.T) {
 // TestAssemblyFeatureHandleActivate: double-clicking a committed machining feature opens its
 // parameter-edit tool (#766).
 func TestAssemblyFeatureHandleActivate(t *testing.T) {
+	t.Parallel()
 	s, asm, _ := chamferedAssembly(t)
 	AssemblyFeatureHandle{Feature: asm.Features().Item(0)}.Activate(s)
 	if s.ActiveTool() == nil {
@@ -50,6 +53,7 @@ func TestAssemblyFeatureHandleActivate(t *testing.T) {
 // TestOccurrenceHandleActivate: double-clicking a placed occurrence opens the placed component's
 // document as the active tab (#764).
 func TestOccurrenceHandleActivate(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	OccurrenceHandle{Occurrence: asm.Occurrences().Item(0)}.Activate(s)
@@ -79,6 +83,7 @@ func capturedLODAssembly(t *testing.T) (*Session, *compdef.AssemblyComponentDefi
 // TestRepresentationHandleActivate: activating a captured LOD representation re-applies its
 // suppression (M12-F04).
 func TestRepresentationHandleActivate(t *testing.T) {
+	t.Parallel()
 	s, asm := capturedLODAssembly(t)
 	folder := findBrowserNode(BuildBrowser(s), "representations", "Representations")
 	if folder == nil || len(folder.Children) != 1 {
@@ -94,6 +99,7 @@ func TestRepresentationHandleActivate(t *testing.T) {
 // TestModelStateHandleActivate: activating a captured model state re-applies its representation
 // families (M12-F04).
 func TestModelStateHandleActivate(t *testing.T) {
+	t.Parallel()
 	s, asm := capturedLODAssembly(t)
 	if _, err := asm.Representations().ActivateLOD(asm.Representations().AllLODs()[0].ID()); err != nil {
 		t.Fatalf("ActivateLOD: %v", err)
@@ -122,6 +128,7 @@ func activateFirstModelState(t *testing.T, s *Session) {
 // TestDrawingViewHandleActivate: double-clicking a drawing view opens its settings-edit tool
 // (M14-F02).
 func TestDrawingViewHandleActivate(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	spec := drawing.BaseViewSpec{Orientation: types.BaseViewIso, Scale: 1, CenterX: 150, CenterY: 100}

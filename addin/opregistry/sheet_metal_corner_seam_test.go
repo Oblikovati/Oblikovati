@@ -11,6 +11,7 @@ import (
 // TestSheetMetalCornerSeamApply seeds a sheet-metal wall and cuts a gap seam at a corner edge,
 // confirming one healthy solid; then checks the error paths.
 func TestSheetMetalCornerSeamApply(t *testing.T) {
+	t.Parallel()
 	s := sheetMetalProfiledPart(t)
 	if _, err := apply(t, s, "sheetMetalFace", `{"sketchIndex":0}`); err != nil {
 		t.Fatalf("seed face: %v", err)

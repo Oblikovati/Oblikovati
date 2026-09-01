@@ -28,6 +28,7 @@ func onSurface(s Surface, p math.Point3) float64 {
 // TestNetworkSurfacePassesThroughFlatCurves: a 3×3 grid of lines in z=0 yields the flat plane — every
 // curve sample lies on the network.
 func TestNetworkSurfacePassesThroughFlatCurves(t *testing.T) {
+	t.Parallel()
 	pt := func(x, y float64) math.Point3 { return math.P3(math.Scalar(x), math.Scalar(y), 0) }
 	uCurves := []BSplineCurve{ // along x at y=0,1,2
 		line3(t, pt(0, 0), pt(1, 0), pt(2, 0)),
@@ -55,6 +56,7 @@ func TestNetworkSurfacePassesThroughFlatCurves(t *testing.T) {
 // TestNetworkSurfaceInterpolatesNodes: a curved (saddle) grid yields a surface passing through every
 // grid node exactly — the interpolation guarantee.
 func TestNetworkSurfaceInterpolatesNodes(t *testing.T) {
+	t.Parallel()
 	z := func(a, b int) float64 { return 0.3 * float64((a-1)*(b-1)) } // saddle
 	pt := func(a, b int) math.Point3 {
 		return math.P3(math.Scalar(a), math.Scalar(b), math.Scalar(z(a, b)))
@@ -83,6 +85,7 @@ func TestNetworkSurfaceInterpolatesNodes(t *testing.T) {
 // TestNetworkSurfaceRejectsNonIntersecting: v-curves lifted off the u-curves' plane do not form a
 // grid — a clear error (not a silent bad surface).
 func TestNetworkSurfaceRejectsNonIntersecting(t *testing.T) {
+	t.Parallel()
 	flat := func(x, y, zoff float64) math.Point3 {
 		return math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(zoff))
 	}
@@ -100,6 +103,7 @@ func TestNetworkSurfaceRejectsNonIntersecting(t *testing.T) {
 }
 
 func TestNetworkSurfaceNeedsTwoEachWay(t *testing.T) {
+	t.Parallel()
 	c := line3(t, math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0))
 	if _, err := NetworkSurface([]BSplineCurve{c}, []BSplineCurve{c, c}); err == nil {
 		t.Error("a single u-curve should error")

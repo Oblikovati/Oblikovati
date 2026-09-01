@@ -12,6 +12,7 @@ import (
 // TestCornerSeamCutsGap a gap corner seam removes a square notch (gap²·thickness) at the
 // corner edge: the result is a valid watertight solid with that much material removed.
 func TestCornerSeamCutsGap(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	edge := verticalCornerEdge(t, fs.Result()[0])
 	pf := NewSheetMetalCornerSeamFeatures(fs).Add(&SheetMetalCornerSeamDefinition{
@@ -31,6 +32,7 @@ func TestCornerSeamCutsGap(t *testing.T) {
 
 // TestCornerSeamRejectsBadInput a seam with no edges or a non-positive gap goes sick.
 func TestCornerSeamRejectsBadInput(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	edge := verticalCornerEdge(t, fs.Result()[0])
 	noGap := NewSheetMetalCornerSeamFeatures(fs).Add(&SheetMetalCornerSeamDefinition{
@@ -51,6 +53,7 @@ func TestCornerSeamRejectsBadInput(t *testing.T) {
 
 // TestParseSeamType every seam spelling resolves (gap by default), with an unknown one rejected.
 func TestParseSeamType(t *testing.T) {
+	t.Parallel()
 	for _, s := range []string{"", "gap"} {
 		if got, ok := ParseSeamType(s); !ok || got != GapSeam {
 			t.Errorf("ParseSeamType(%q) = (%d,%v), want (gap,true)", s, got, ok)
@@ -73,6 +76,7 @@ func TestParseSeamType(t *testing.T) {
 // leaves the volume untouched, and reports the "unmodelled" diagnostic honestly. (The modelled lap
 // on a real two-flange corner is exercised in sheet_metal_corner_seam_lap_test.go.)
 func TestCornerSeamOverlapOnFlatSheetIsUnmodelled(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	edge := verticalCornerEdge(t, fs.Result()[0])
 	pf := NewSheetMetalCornerSeamFeatures(fs).Add(&SheetMetalCornerSeamDefinition{
@@ -96,6 +100,7 @@ func TestCornerSeamOverlapOnFlatSheetIsUnmodelled(t *testing.T) {
 // TestCornerSeamGapStillReports the gap style keeps cutting its notch and raises no unmodelled
 // diagnostic — the deferral is only for the lap/butt styles.
 func TestCornerSeamGapStillReports(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	edge := verticalCornerEdge(t, fs.Result()[0])
 	pf := NewSheetMetalCornerSeamFeatures(fs).Add(&SheetMetalCornerSeamDefinition{
@@ -112,6 +117,7 @@ func TestCornerSeamGapStillReports(t *testing.T) {
 
 // TestCornerSeamDefinitionAndKind the accessors return the recipe.
 func TestCornerSeamDefinitionAndKind(t *testing.T) {
+	t.Parallel()
 	def := &SheetMetalCornerSeamDefinition{Type: GapSeam}
 	f := &SheetMetalCornerSeamFeature{def: def}
 	if f.Definition() != def || f.Kind() != "sheet-metal-corner-seam" {
@@ -121,6 +127,7 @@ func TestCornerSeamDefinitionAndKind(t *testing.T) {
 
 // TestCornerSeamRoundTrip the recipe (edges + gap + type + the lap fields) marshals and restores.
 func TestCornerSeamRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewSheetMetalCornerSeamFeatures(fs).Add(&SheetMetalCornerSeamDefinition{
 		EdgeKeys: [][]byte{[]byte("k1"), []byte("k2")}, Gap: func() float64 { return 0.3 },
@@ -156,6 +163,7 @@ func TestCornerSeamRoundTrip(t *testing.T) {
 
 // TestCornerSeamMissingPayload restoring a corner-seam record with no payload errors.
 func TestCornerSeamMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreSheetMetalCornerSeam(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreSheetMetalCornerSeam(nil) must error")
 	}

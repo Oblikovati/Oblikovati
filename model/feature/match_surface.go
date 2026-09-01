@@ -5,8 +5,9 @@ package feature
 import (
 	"errors"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
 )
 
 // The Match feature (M36-F05) rebuilds the running surface body against the previous surface body to
@@ -43,7 +44,7 @@ func (m *MatchFeature) Recompute(in Input) (Output, error) {
 	}
 	target := in.Bodies[len(in.Bodies)-2]
 	src := in.Bodies[len(in.Bodies)-1]
-	matched, err := ops.MatchFaceTo(src, target, m.def.SourceEdge, m.def.TargetEdge, m.def.Order)
+	matched, err := surface.MatchFaceTo(src, target, m.def.SourceEdge, m.def.TargetEdge, m.def.Order)
 	if err != nil {
 		return Output{}, err
 	}

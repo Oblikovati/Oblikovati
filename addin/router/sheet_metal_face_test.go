@@ -18,6 +18,7 @@ type featureResult struct {
 // confirms a single healthy solid results; then a thickness edit through setStyle rebuilds
 // the wall (proving the rule's gauge propagates to the geometry).
 func TestSheetMetalFaceOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[0,0],[4,3]]}`, &struct{}{})
@@ -40,6 +41,7 @@ func TestSheetMetalFaceOverWire(t *testing.T) {
 // TestSheetMetalFaceRejectsPlainPart features.add sheetMetalFace on an ordinary part errors
 // (the operation requires the sheet-metal environment).
 func TestSheetMetalFaceRejectsPlainPart(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t) // ordinary part with a profile
 	if _, err := r.Handle(s, "features.add", []byte(`{"kind":"sheetMetalFace","args":{"sketchIndex":0}}`)); err == nil {
 		t.Fatal("sheetMetalFace on a plain part must error")
@@ -49,6 +51,7 @@ func TestSheetMetalFaceRejectsPlainPart(t *testing.T) {
 // TestSheetMetalFaceRejectsBadArgs sheetMetalFace reports a clear error for an out-of-range
 // sketch index and a malformed args payload.
 func TestSheetMetalFaceRejectsBadArgs(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	for _, bad := range []string{
 		`{"kind":"sheetMetalFace","args":{"sketchIndex":99}}`,  // no such sketch

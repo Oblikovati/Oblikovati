@@ -15,6 +15,7 @@ import (
 // TestRectStepSpacing checks the fitted spacing divides the step across the gaps while the
 // default keeps it as the per-occurrence offset (M20-F18).
 func TestRectStepSpacing(t *testing.T) {
+	t.Parallel()
 	step := math.V3(6, 0, 0)
 	if got := (PatternOptions{}).rectStep(step, 3); got.X != 6 {
 		t.Errorf("default rectStep.X = %g, want 6 (step is the gap)", got.X)
@@ -26,6 +27,7 @@ func TestRectStepSpacing(t *testing.T) {
 
 // TestCircIncrementSpacing checks the three circular spacing interpretations.
 func TestCircIncrementSpacing(t *testing.T) {
+	t.Parallel()
 	full := 2 * stdmath.Pi
 	if got := (PatternOptions{}).circIncrement(full, 4); stdmath.Abs(got-full/4) > 1e-12 {
 		t.Errorf("default circ inc = %g, want angle/count", got)
@@ -41,6 +43,7 @@ func TestCircIncrementSpacing(t *testing.T) {
 // TestPatternBoundaryClipsOutsideOccurrences drops the occurrences whose centre falls
 // outside the boundary loop (M20-F18).
 func TestPatternBoundaryClipsOutsideOccurrences(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	src := NewBaseFeatures(fs).AddBase(prismBody()) // unit cube [0,1]^3, centre (0.5,0.5,0.5)
 	rect := NewPatternFeatures(fs).AddRectangular([]ID{src.ID()},
@@ -68,6 +71,7 @@ func TestPatternBoundaryClipsOutsideOccurrences(t *testing.T) {
 // TestPatternOptionsRoundTrip preserves the spacing type and boundary across an .obk
 // round-trip (M20-F18).
 func TestPatternOptionsRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	src := NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })

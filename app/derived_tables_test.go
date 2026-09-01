@@ -43,6 +43,7 @@ func docPartOf(t *testing.T, d *doc.Document) *compdef.PartComponentDefinition {
 }
 
 func TestDeriveParametersAcrossDocuments(t *testing.T) {
+	t.Parallel()
 	s, gears, hub := derivedSession(t)
 
 	table, err := s.AddDerivedParameterTable(gears.FullDocumentName(), []string{"module"})
@@ -85,6 +86,7 @@ func TestDeriveParametersAcrossDocuments(t *testing.T) {
 }
 
 func TestDeriveRejectsSelfAndUnknownSource(t *testing.T) {
+	t.Parallel()
 	s, _, hub := derivedSession(t)
 	if _, err := s.AddDerivedParameterTable(hub.FullDocumentName(), nil); err == nil || !strings.Contains(err.Error(), "itself") {
 		t.Errorf("self-derive err = %v, want a self-link rejection", err)
@@ -95,6 +97,7 @@ func TestDeriveRejectsSelfAndUnknownSource(t *testing.T) {
 }
 
 func TestDerivedTableLifecycleOnSession(t *testing.T) {
+	t.Parallel()
 	s, gears, hub := derivedSession(t)
 	table, err := s.AddDerivedParameterTable(gears.FullDocumentName(), nil)
 	if err != nil {
@@ -132,6 +135,7 @@ func docAssemblyOf(t *testing.T, d *doc.Document) *compdef.AssemblyComponentDefi
 // target and the resync target were both cast to *PartComponentDefinition, so an assembly
 // could neither derive nor receive a resync.
 func TestAssemblyDerivesParametersFromPart(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	gears, err := s.NewPart()
 	if err != nil {
@@ -173,6 +177,7 @@ func TestAssemblyDerivesParametersFromPart(t *testing.T) {
 // an ASSEMBLY's numeric user parameter. The source-document resolution (LinkableSourceParameters)
 // must treat an assembly as a valid parameter source (#1558).
 func TestPartDerivesParametersFromAssembly(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	asm, err := s.NewAssembly()
 	if err != nil {
@@ -210,6 +215,7 @@ func approx3(got, want float64) bool {
 // #1561): linking a source parameter that was not exported marks it exported on the source
 // document, so the source advertises it.
 func TestLinkAutoExportsSourceParameter(t *testing.T) {
+	t.Parallel()
 	s, gears, _ := derivedSession(t)
 	src, ok := docPartOf(t, gears).Parameters().ByName("module")
 	if !ok || src.ExposedAsProperty {

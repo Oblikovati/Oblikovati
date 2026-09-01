@@ -13,6 +13,7 @@ import (
 // negative and NaN sizes all floor to minModelSize so a degenerate operand still has a
 // strictly positive resolution (ADR-0042 §Phase 1).
 func TestResolutionForSizeFloorsDegenerate(t *testing.T) {
+	t.Parallel()
 	for _, size := range []float64{0, -5, 0.001, math.NaN()} {
 		if got := ResolutionForSize(size).Size(); got != minModelSize {
 			t.Errorf("ResolutionForSize(%v).Size() = %v, want floor %v", size, got, minModelSize)
@@ -28,6 +29,7 @@ func TestResolutionForSizeFloorsDegenerate(t *testing.T) {
 // model gets 1000× looser length tolerances — this is what makes the kernel
 // scale-faithful instead of cm-anchored.
 func TestResolutionScalesWithSize(t *testing.T) {
+	t.Parallel()
 	small, big := ResolutionForSize(1), ResolutionForSize(1000)
 	const k = 1000.0
 	for _, l := range []struct {
@@ -48,6 +50,7 @@ func TestResolutionScalesWithSize(t *testing.T) {
 // than the old loose 1e-6 weldGrid — which only worked at ~cm scale and over-merged larger
 // finely-detailed parts. The rest reproduce their historical constants.
 func TestResolutionCalibration(t *testing.T) {
+	t.Parallel()
 	r := ResolutionForSize(1)
 	for _, c := range []struct {
 		name string
@@ -68,6 +71,7 @@ func TestResolutionCalibration(t *testing.T) {
 // TestResolutionForBoxAndPoints covers the box / 3D / 2D constructors, including the
 // empty/degenerate floors.
 func TestResolutionForBoxAndPoints(t *testing.T) {
+	t.Parallel()
 	if got := ResolutionForBox(gmath.EmptyBox()).Size(); got != minModelSize {
 		t.Errorf("ResolutionForBox(empty).Size() = %v, want floor %v", got, minModelSize)
 	}
@@ -99,6 +103,7 @@ func approxRel(got, want float64) bool {
 // TestSpanCeilingDiagnostic covers the single-model span-ceiling check (ADR-0042 Phase 2,
 // #1249): a feature below the model's resolution is flagged; a resolvable one is not.
 func TestSpanCeilingDiagnostic(t *testing.T) {
+	t.Parallel()
 	// A 1000-unit model resolves to 1e-9×1000 = 1e-6.
 	box := gmath.NewBox(gmath.P3(0, 0, 0), gmath.P3(1000, 0, 0))
 	res := ResolutionForBox(box).Weld()
@@ -127,6 +132,7 @@ func TestSpanCeilingDiagnostic(t *testing.T) {
 // model scale — otherwise two independently computed copies of one seam point fail to merge and
 // the curved boolean's seam tears open.
 func TestStitchCoversSSIProducerNoise(t *testing.T) {
+	t.Parallel()
 	for _, size := range []float64{1, 10, 50, 200, 1000, 1e6} {
 		stitch := ResolutionForSize(size).Stitch()
 		noise := 2 * ssiToleranceFraction * size

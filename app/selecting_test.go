@@ -31,6 +31,7 @@ func (t *fakeSelectingTool) AcceptedKinds() []SelectionKind {
 }
 
 func TestStartToolInstallsDeclaredFilter(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.StartTool(&fakeSelectingTool{})
 	f := s.Selection().Filter()
@@ -40,6 +41,7 @@ func TestStartToolInstallsDeclaredFilter(t *testing.T) {
 }
 
 func TestFeedPickReinstallsFilterForNextStep(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	tool := &fakeSelectingTool{}
 	s.StartTool(tool)
@@ -57,6 +59,7 @@ type emptyKindsTool struct{ fakeSelectingTool }
 func (emptyKindsTool) AcceptedKinds() []SelectionKind { return nil }
 
 func TestEmptyAcceptedKindsLeavesFilterUnrestricted(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.StartTool(&emptyKindsTool{})
 	if s.Selection().Filter().IsRestricted() {
@@ -65,6 +68,7 @@ func TestEmptyAcceptedKindsLeavesFilterUnrestricted(t *testing.T) {
 }
 
 func TestCommitRestoresUnrestrictedFilter(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	tool := &fakeSelectingTool{}
 	s.StartTool(tool)
@@ -83,6 +87,7 @@ func TestCommitRestoresUnrestrictedFilter(t *testing.T) {
 }
 
 func TestCancelRestoresUnrestrictedFilter(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.StartTool(&fakeSelectingTool{})
 	s.CancelTool()
@@ -97,6 +102,7 @@ type committableSelectingTool struct{ fakeSelectingTool }
 func (committableSelectingTool) CanCommit() bool { return true }
 
 func TestToolPicksReportsViaPickingContract(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	tool := &fakeSelectingTool{}
 	s.StartTool(tool)
@@ -114,6 +120,7 @@ func TestToolPicksReportsViaPickingContract(t *testing.T) {
 // element identity preserved, and an empty typed slice widens to an empty non-nil slice
 // (matching the make-based behavior of the four per-type helpers it replaced).
 func TestSelectablesWidensTypedPicks(t *testing.T) {
+	t.Parallel()
 	edges := []EdgeHandle{{}, {}}
 	got := selectables(edges)
 	if len(got) != 2 {

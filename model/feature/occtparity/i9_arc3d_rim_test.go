@@ -8,6 +8,8 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -40,7 +42,7 @@ func TestI9Arc3dRimTessellationFoldGate(t *testing.T) {
 	body := caseResultBody(t, "I9")
 	meshTotal, torusBands := 0.0, 0
 	for _, f := range body.Faces() {
-		m := ops.TessellateFace(f, ops.PropertyQuality())
+		m := tessellate.TessellateFace(f, ops.PropertyQuality())
 		area := ops.MeshArea(m)
 		meshTotal += area
 		assertI9FaceSane(t, f, m, area)
@@ -54,7 +56,7 @@ func TestI9Arc3dRimTessellationFoldGate(t *testing.T) {
 	if rel := stdmath.Abs(meshTotal-i9WholeArea) / i9WholeArea; rel > i9CorpusDeps {
 		t.Fatalf("I9 total mesh area %.4f, want OCCT %.1f within deps %.2f (rel %.6f)", meshTotal, i9WholeArea, i9CorpusDeps, rel)
 	}
-	if vol := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; vol <= 0 {
+	if vol := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; vol <= 0 {
 		t.Fatalf("I9 result volume %.4f, want positive", vol)
 	}
 }

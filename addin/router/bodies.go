@@ -7,12 +7,15 @@ import (
 	stdmath "math"
 	"slices"
 
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/analysis"
@@ -165,7 +168,7 @@ func bodyShells(_ *app.Session, part *compdef.PartComponentDefinition, in wire.B
 }
 
 func shellInfo(i int, sh *topo.Shell, q ops.Quality) wire.FaceShellInfo {
-	vol := ops.ShellSignedVolume(sh, q)
+	vol := query.ShellSignedVolume(sh, q)
 	box := sh.RangeBox()
 	return wire.FaceShellInfo{
 		Index: i, Closed: sh.IsClosed(), Void: sh.IsClosed() && vol < 0,
@@ -215,7 +218,7 @@ func wireOffsetPlanar(s *app.Session, in wire.OffsetPlanarWireArgs) (wire.Offset
 	if err != nil {
 		return wire.OffsetPlanarWireResult{}, err
 	}
-	res, err := ops.OffsetPlanarWire(w, normal, in.Distance, corner)
+	res, err := surface.OffsetPlanarWire(w, normal, in.Distance, corner)
 	if err != nil {
 		return wire.OffsetPlanarWireResult{}, err
 	}
@@ -249,9 +252,9 @@ func offsetSourceBody(s *app.Session, in wire.OffsetPlanarWireArgs) (*topo.Body,
 }
 
 // offsetCorner maps the wire spelling (empty ⇒ circular, the reference default).
-func offsetCorner(spelling string) (ops.WireOffsetCorner, error) {
+func offsetCorner(spelling string) (surface.WireOffsetCorner, error) {
 	if spelling == "" {
-		return ops.WireCornerCircular, nil
+		return surface.WireCornerCircular, nil
 	}
 	kind, ok := types.ParseOffsetCornerClosureType(spelling)
 	if !ok {
@@ -259,11 +262,11 @@ func offsetCorner(spelling string) (ops.WireOffsetCorner, error) {
 	}
 	switch kind {
 	case types.LinearCornerClosure:
-		return ops.WireCornerLinear, nil
+		return surface.WireCornerLinear, nil
 	case types.ExtendCornerClosure:
-		return ops.WireCornerExtend, nil
+		return surface.WireCornerExtend, nil
 	default:
-		return ops.WireCornerCircular, nil
+		return surface.WireCornerCircular, nil
 	}
 }
 

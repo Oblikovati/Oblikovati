@@ -22,6 +22,7 @@ import (
 // fails. It is what stops a new wire method from shipping in the API while the router
 // silently never handles it.
 func TestEveryWireMethodHasAHandler(t *testing.T) {
+	t.Parallel()
 	methods := wireConstants(t, "Method")
 	if len(methods) == 0 {
 		t.Fatal("parsed zero wire Method constants — the wire source lookup is broken")
@@ -71,6 +72,7 @@ var notYetRelayed = map[string]bool{}
 // must be referenced by the add-in's event relay (addin/events) or the router, so a
 // declared host→add-in event cannot be left unrelayed (except the tracked debt above).
 func TestEveryWireEventIsRelayed(t *testing.T) {
+	t.Parallel()
 	events := wireConstants(t, "Event")
 	if len(events) == 0 {
 		t.Fatal("parsed zero wire Event constants — the wire source lookup is broken")

@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -163,7 +164,7 @@ func edgeIsClosedLoop(e *topo.Edge) bool {
 // (the exact rolling-ball corner is larger than OCCT's sag) — C8 is NOT greened here; CN6 overrides it.
 func assertC8AreaStaysRed(t *testing.T, body *topo.Body) {
 	t.Helper()
-	area := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Area
+	area := query.BodyGeometryProperties(body, ops.PropertyQuality()).Area
 	if stdmath.Abs(area-c8ExactArea) > 0.005*c8ExactArea {
 		t.Fatalf("C8 whole-body area %.3f drifted from the pinned exact %.3f (>0.5%%)", area, c8ExactArea)
 	}

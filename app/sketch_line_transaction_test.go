@@ -42,6 +42,7 @@ func lineChainSession(t *testing.T) *Session {
 // armed and NOT yet edited, and the guard must already hold. Opening the group only once a
 // point exists would leave this case failing exactly as it did before the fix.
 func TestLineToolOpensTransactionOnActivation(t *testing.T) {
+	t.Parallel()
 	s := lineChainSession(t)
 	s.StartTool(NewLineTool())
 
@@ -57,6 +58,7 @@ func TestLineToolOpensTransactionOnActivation(t *testing.T) {
 // behind the cursor, Undo must do nothing. It drives the real keyboard path AND the pure QAT
 // decision function's inputs, since both read InTransaction().
 func TestUndoBlockedWhileLineChainOpen(t *testing.T) {
+	t.Parallel()
 	s := lineChainSession(t)
 	s.StartTool(NewLineTool())
 	s.Click(40, 40)
@@ -79,6 +81,7 @@ func TestUndoBlockedWhileLineChainOpen(t *testing.T) {
 // is populated, arm the line tool WITHOUT editing, and Redo must not fire. Arming must not
 // truncate the forward branch either — a recorded edit would (undo.go TruncateTo).
 func TestRedoBlockedWhileLineChainOpen(t *testing.T) {
+	t.Parallel()
 	s := lineChainSession(t)
 	if err := s.Undo(); err != nil {
 		t.Fatalf("Undo: %v", err)
@@ -104,6 +107,7 @@ func TestRedoBlockedWhileLineChainOpen(t *testing.T) {
 // group, records the chain as ONE step still labelled "Line" (the granularity and label the
 // tool produced before the wrap), and hands Undo/Redo back.
 func TestFinishedLineChainCommitsAndReleases(t *testing.T) {
+	t.Parallel()
 	s := lineChainSession(t)
 	s.StartTool(NewLineTool())
 	s.Click(40, 40)
@@ -140,6 +144,7 @@ func TestFinishedLineChainCommitsAndReleases(t *testing.T) {
 // segments placed, Escape FINISHES the chain and keeps them (#2024) — so it takes the commit
 // path, and the group must close there too.
 func TestEscapeMidChainCommitsAndReleases(t *testing.T) {
+	t.Parallel()
 	s := lineChainSession(t)
 	s.StartTool(NewLineTool())
 	s.Click(40, 40)
@@ -161,6 +166,7 @@ func TestEscapeMidChainCommitsAndReleases(t *testing.T) {
 // before it can commit anything must close its group AND add no undo entry. One click places no
 // segment, so Escape abandons rather than finishing (LineTool.FinishesOnCancel needs two points).
 func TestCancelledLineChainReleasesWithoutRecording(t *testing.T) {
+	t.Parallel()
 	s := lineChainSession(t)
 	labelBefore := s.UndoLabel()
 	s.StartTool(NewLineTool())
@@ -194,6 +200,7 @@ func TestCancelledLineChainReleasesWithoutRecording(t *testing.T) {
 // user picks a different command while the chain is open. StartTool cancels the outgoing tool,
 // and its group must die with it rather than be inherited by the incoming one.
 func TestSwitchingToolMidChainReleases(t *testing.T) {
+	t.Parallel()
 	s := lineChainSession(t)
 	s.StartTool(NewLineTool())
 	s.Click(40, 40)
@@ -215,6 +222,7 @@ func TestSwitchingToolMidChainReleases(t *testing.T) {
 // would cause: groups nest by depth (undo.go groupDepth), so re-arming the line tool five times
 // without closing would need five Ends. One close must always be enough.
 func TestRestartingLineToolDoesNotNestTransactions(t *testing.T) {
+	t.Parallel()
 	s := lineChainSession(t)
 	for range 5 {
 		s.StartTool(NewLineTool())
@@ -234,6 +242,7 @@ func TestRestartingLineToolDoesNotNestTransactions(t *testing.T) {
 // group is tracked by document id, so closing must not leave the flag set (which would make the
 // NEXT document's first teardown close a group it never opened).
 func TestClosingDocumentMidChainReleases(t *testing.T) {
+	t.Parallel()
 	s := lineChainSession(t)
 	d := s.ActiveDocument()
 	s.StartTool(NewLineTool())
@@ -260,6 +269,7 @@ func TestClosingDocumentMidChainReleases(t *testing.T) {
 // TestNonTransactionalSketchToolIsUnchanged is the blast-radius check: the wrap is opt-in, so a
 // sketch tool that did not opt in must behave exactly as before — no group, undo live throughout.
 func TestNonTransactionalSketchToolIsUnchanged(t *testing.T) {
+	t.Parallel()
 	s := lineChainSession(t)
 	s.StartTool(NewRectangleTool())
 

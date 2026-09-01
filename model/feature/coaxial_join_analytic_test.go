@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -29,6 +30,7 @@ func circleSketchOnPlaneZ(z, cx, cy, r float64) *sketch.Sketch {
 // both-operands-cylinder case, so it faceted BOTH cylinders into 24-gon prisms before the union —
 // losing analyticity (74 planar faces, 0 cylinders) and under-reporting the volume.
 func TestCoaxialCylinderJoinKeepsAnalyticFace(t *testing.T) {
+	t.Parallel()
 	const r, h1, h2 = 2.0, 4.0, 3.0
 	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
@@ -49,7 +51,7 @@ func TestCoaxialCylinderJoinKeepsAnalyticFace(t *testing.T) {
 	// 5e-4 discriminates the analytic union (~−0.01% at PropertyQuality) from a shattered 24-gon
 	// prism (~−1.1%): only the analytic cylinder passes.
 	analytic := stdmath.Pi * r * r * (h1 + h2)
-	if v := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; relErr(v, analytic) > 5e-4 {
+	if v := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; relErr(v, analytic) > 5e-4 {
 		t.Errorf("coaxial-join volume = %g, want %g (πr²·%g) — faceted, not the analytic union", v, analytic, h1+h2)
 	}
 }
@@ -58,6 +60,7 @@ func TestCoaxialCylinderJoinKeepsAnalyticFace(t *testing.T) {
 // radii (a shoulder — Ø4 over Ø6) is NOT the single-cylinder case, so it must NOT take the analytic
 // coaxial path; it stays a valid solid of the correct volume (whether or not it keeps analytic faces).
 func TestUnequalCoaxialCylinderJoinStillFacets(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
 	ex.AddByDistanceExtent(circleSketchAt(0, 0, 3), 0, ops.NewBody, func() float64 { return 4 })       // Ø6 z[0,4]
@@ -72,7 +75,7 @@ func TestUnequalCoaxialCylinderJoinStillFacets(t *testing.T) {
 	// ~−1.1% under the analytic value) — a wide bound just confirms it is a sane solid, not the
 	// analytic union.
 	analytic := stdmath.Pi*3*3*4 + stdmath.Pi*2*2*3
-	if v := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; relErr(v, analytic) > 2e-2 {
+	if v := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; relErr(v, analytic) > 2e-2 {
 		t.Errorf("shoulder volume = %g, want ~%g", v, analytic)
 	}
 }

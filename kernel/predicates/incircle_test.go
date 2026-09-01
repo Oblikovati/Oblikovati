@@ -10,6 +10,7 @@ import (
 )
 
 func TestInCircleBasic(t *testing.T) {
+	t.Parallel()
 	// Unit-ish circle through (0,0),(1,0),(1,1) (CCW). Centre (0.5,0.5) is inside;
 	// (2,2) is outside; (0,1) is on it (cocircular).
 	if got := InCircle(0, 0, 1, 0, 1, 1, 0.5, 0.5); got != 1 {
@@ -28,6 +29,10 @@ func TestInCircleBasic(t *testing.T) {
 // (rational circumcentre + squared-distance compare, orientation-corrected), with
 // the naive float determinant proven to disagree on a non-trivial share.
 func TestInCircleVsOracleUnderStress(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
+	t.Parallel()
 	r := rand.New(rand.NewSource(0x1c1c))
 	teeth := 0
 	const n = 20000

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -68,6 +69,7 @@ func newPartWithStackedSquares(t *testing.T) (*Session, ProfileHandle, ProfileHa
 // TestLoftToolEndToEnd drives the Loft UI: start the tool, click two sections in order,
 // OK — and asserts a validated frustum solid (V = 140/3) lands in the part.
 func TestLoftToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, bottom, top := newPartWithStackedSquares(t)
 	s.SetPicker(&seqPicker{sels: []Selectable{bottom, top}})
 
@@ -90,7 +92,7 @@ func TestLoftToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("lofted body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 140.0/3) > 0.02 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 140.0/3) > 0.02 {
 		t.Errorf("frustum volume = %g, want ≈46.667", got)
 	}
 	if s.ActiveTool() != nil {
@@ -99,6 +101,7 @@ func TestLoftToolEndToEnd(t *testing.T) {
 }
 
 func TestLoftViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, bottom, top := newPartWithStackedSquares(t)
 	s.SetPicker(&seqPicker{sels: []Selectable{bottom, top}})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -125,6 +128,7 @@ func TestLoftViaRibbonCommand(t *testing.T) {
 // sections (two EQUAL squares) and asserts the body curves OUT past the ruled prism — the
 // end-to-end S2 behavior the dialog exposes (a Free loft of equal squares is a straight prism).
 func TestLoftToolAngleConditionCurves(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	def := compdef.NewPartComponentDefinition()
 	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
@@ -161,6 +165,7 @@ func TestLoftToolAngleConditionCurves(t *testing.T) {
 // an apex (Sharp condition) — the tool must build a cone (V = πr²h/3), exercising point-section
 // picking end to end.
 func TestLoftToolPointSectionCone(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	def := compdef.NewPartComponentDefinition()
 	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
@@ -190,7 +195,7 @@ func TestLoftToolPointSectionCone(t *testing.T) {
 		t.Fatalf("cone body not a valid solid: %+v", r)
 	}
 	want := stdmath.Pi * 4 / 3 * 4 // πr²h/3, r=2 h=4
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.03 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.03 {
 		t.Errorf("cone volume = %g, want ≈%g", got, want)
 	}
 }
@@ -199,6 +204,10 @@ func TestLoftToolPointSectionCone(t *testing.T) {
 // circle above, with a Tangent condition on the face — the loft must flare out tangent to the
 // planar top (exact G1), beyond the ruled radius. Exercises face-section picking end to end.
 func TestLoftToolFaceSectionTangent(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~6s): `make test-corpus`")
+	}
+	t.Parallel()
 	s := NewSession()
 	def := compdef.NewPartComponentDefinition()
 	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
@@ -257,6 +266,7 @@ func TestLoftToolFaceSectionTangent(t *testing.T) {
 // TestLoftToolRailGuides drives the Loft UI picking two circle sections plus an open PATH (a rail
 // that bulges to x=3.5) — the loft must follow the rail and bulge past the ruled radius.
 func TestLoftToolRailGuides(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	def := compdef.NewPartComponentDefinition()
 	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
@@ -304,6 +314,7 @@ func TestLoftToolRailGuides(t *testing.T) {
 // TestLoftToolCenterlineBends drives the Loft UI in centerline mode: two circle sections plus a
 // spine PATH that bows to x=2 — the loft must bend along it (its centroid moves off-axis).
 func TestLoftToolCenterlineBends(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	def := compdef.NewPartComponentDefinition()
 	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
@@ -344,12 +355,13 @@ func TestLoftToolCenterlineBends(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("centerlined loft not a valid solid: %+v", r)
 	}
-	if cx := float64(ops.BodyGeometryProperties(body, ops.DefaultQuality()).Centroid.X); cx < 0.5 {
+	if cx := float64(query.BodyGeometryProperties(body, ops.DefaultQuality()).Centroid.X); cx < 0.5 {
 		t.Errorf("loft did not bend along the centerline: centroid x = %.3f, want > 0.5", cx)
 	}
 }
 
 func TestLoftToolNeedsTwoSections(t *testing.T) {
+	t.Parallel()
 	s, bottom, top := newPartWithStackedSquares(t)
 	s.SetPicker(&seqPicker{sels: []Selectable{bottom, top}})
 	l := NewLoftTool()

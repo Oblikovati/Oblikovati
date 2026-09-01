@@ -15,6 +15,7 @@ type dimensionCommitter interface {
 // guard and its Params() base-view choice: started against a drawing with no base view, Commit
 // must fail, and Params must still expose at least one choice row.
 func TestDimensionToolsRejectNoBaseView(t *testing.T) {
+	t.Parallel()
 	tools := map[string]dimensionCommitter{
 		"Linear":    NewLinearDimensionTool(),
 		"Radial":    NewRadialDimensionTool(),

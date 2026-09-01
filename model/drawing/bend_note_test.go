@@ -8,7 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 )
@@ -20,7 +20,7 @@ func filletedBoxBend(t *testing.T, r float64) (*topo.Body, []byte) {
 	t.Helper()
 	box := subd.ToBody(subd.Box(4, 4, 4), "box")
 	edgeKey := topmostConvexEdge(t, box)
-	filleted, err := ops.FilletEdges(box, [][]byte{edgeKey}, r)
+	filleted, err := blend.FilletEdges(box, [][]byte{edgeKey}, r)
 	if err != nil {
 		t.Fatalf("FilletEdges: %v", err)
 	}

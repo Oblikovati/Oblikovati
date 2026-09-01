@@ -38,6 +38,7 @@ func dimKinds(sk *sketch.Sketch) []sketch.DimKind {
 // angle dimension. Before #2022 the first click committed a length dimension and deactivated
 // the tool, so this ended with a DistanceDim and the second line was never seen.
 func TestAngleDimensionBetweenTwoLines(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l1 := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 	l2 := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 3))
@@ -59,6 +60,7 @@ func TestAngleDimensionBetweenTwoLines(t *testing.T) {
 // length dimension, but only once the user places it. If it committed on the pick, the angle
 // case above could never work.
 func TestSingleLineLengthNeedsAPlacementClick(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 
@@ -80,6 +82,7 @@ func TestSingleLineLengthNeedsAPlacementClick(t *testing.T) {
 // TestDimensionLandsWhereItWasPlaced: the placement click is the text position, so a dimension
 // appears where the user put it rather than at a derived default offset.
 func TestDimensionLandsWhereItWasPlaced(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 	want := math.P2(2, 3)
@@ -100,6 +103,7 @@ func TestDimensionLandsWhereItWasPlaced(t *testing.T) {
 
 // TestPointToPointDimension: two points give a distance, and neither point alone commits.
 func TestPointToPointDimension(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	a := sk.Points().Add(math.P2(0, 0))
 	b := sk.Points().Add(math.P2(4, 0))
@@ -120,6 +124,7 @@ func TestPointToPointDimension(t *testing.T) {
 // TestStrayClickWithNothingPickedCommitsNothing: a click in empty space with an incomplete
 // pick set must not create anything, or a mis-click would litter the sketch.
 func TestStrayClickWithNothingPickedCommitsNothing(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	sk.Points().Add(math.P2(0, 0))
 
@@ -137,6 +142,7 @@ func TestStrayClickWithNothingPickedCommitsNothing(t *testing.T) {
 
 // TestCircleRadiusDimension keeps the radius path working through the new placement flow.
 func TestCircleRadiusDimension(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	c := sk.Circles().AddByCenterRadius(math.P2(0, 0), 2)
 
@@ -155,6 +161,7 @@ func TestCircleRadiusDimension(t *testing.T) {
 // "radius dim not respected on arcs". An arc is a CircularCurve like a circle, so it dimensions the
 // same way.
 func TestArcRadiusDimension(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	// CCW arc of radius 2 centred at the origin, from (2,0) to (0,2) — its midpoint is (√2,√2).
 	sk.Arcs().AddByCenterStartEnd(math.P2(0, 0), math.P2(2, 0), math.P2(0, 2), true)
@@ -172,6 +179,7 @@ func TestArcRadiusDimension(t *testing.T) {
 // extended, clicking near other geometry places the label instead of silently adding that
 // entity — otherwise placing a label over a busy sketch would build the wrong dimension.
 func TestPlacementClickNearGeometryDoesNotAbsorbIt(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	a := sk.Points().Add(math.P2(0, 0))
 	b := sk.Points().Add(math.P2(4, 0))

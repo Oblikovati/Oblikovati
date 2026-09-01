@@ -45,6 +45,7 @@ type opaqueSurface struct{ Surface }
 // degeneracy verdict on the first fundamental form depends only on the tangent
 // ANGLE, not the model scale — where the retired absolute determinant cutoff flips.
 func TestFirstFormDegeneracyIsScaleInvariant(t *testing.T) {
+	t.Parallel()
 	for _, k := range []float64{1e-8, 1e-4, 1, 1e4, 1e8} {
 		a := k * k // tangents scale by k, so a = c = |Su|² scale by k²
 		if degenerateFirstForm(a, 0, a) {
@@ -75,6 +76,7 @@ func TestFirstFormDegeneracyIsScaleInvariant(t *testing.T) {
 // scale-invariant test) recovers a perpendicular foot on a patch shrunk to µm and
 // grown to km, where the old absolute determinant cutoff aborts the small-scale step.
 func TestParamAtConvergesAtExtremeScale(t *testing.T) {
+	t.Parallel()
 	for _, scale := range []float64{1e-5, 1, 1e5} {
 		s := scaledSkewedPatch(t, scale)
 		foot := s.PointAt(0.35, 0.65)
@@ -93,6 +95,7 @@ func TestParamAtConvergesAtExtremeScale(t *testing.T) {
 // The genuine Sphere uses the closed-form second partials; the opaque wrapper forces
 // the numeric path, so the two results must agree.
 func TestNumericSecondPartialsCurvature(t *testing.T) {
+	t.Parallel()
 	for _, r := range []float64{0.5, 2, 50} {
 		sphere, err := NewSphere(math.P3(0, 0, 0), r)
 		if err != nil {
@@ -121,6 +124,7 @@ type opaqueCurve2 struct{ Curve2 }
 // numeric fallback must recover it within a tight tolerance where a single fixed step
 // would not. A circle is the simplest fixture with a nonzero, constant analytic curvature.
 func TestNumericDers2Curvature(t *testing.T) {
+	t.Parallel()
 	for _, r := range []float64{0.25, 3, 40} {
 		circle := NewCircle2d(math.P2(0, 0), r)
 		got := CurveCurvature2(opaqueCurve2{circle}, 0.3) // numeric path
@@ -135,6 +139,7 @@ func TestNumericDers2Curvature(t *testing.T) {
 // collapsed rational denominator (out-of-span / malformed evaluation) yields a finite
 // zero from point and deriv instead of leaking NaN/Inf into downstream consumers.
 func TestRationalWeightCollapseReturnsFiniteZero(t *testing.T) {
+	t.Parallel()
 	collapsed := homog{a: math.V3(1, 2, 3), w: 0}
 	p := collapsed.point()
 	if stdmath.IsNaN(float64(p.X)) || stdmath.IsInf(float64(p.X), 0) || p != (math.Point3{}) {

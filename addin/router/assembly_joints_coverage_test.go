@@ -11,6 +11,7 @@ import (
 // TestAssemblyJointKinds drives the joint-add handlers the existing test does not
 // (rigid, slider, cylindrical, planar, ball — only rotational was covered).
 func TestAssemblyJointKinds(t *testing.T) {
+	t.Parallel()
 	for _, kind := range []string{"addRigid", "addSlider", "addCylindrical", "addPlanar", "addBall"} {
 		t.Run(kind, func(t *testing.T) {
 			r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
@@ -28,6 +29,7 @@ func TestAssemblyJointKinds(t *testing.T) {
 // TestDSJointDeleteAndMotions covers dsJoints.delete and the imposed-motion modes the
 // existing test does not.
 func TestDSJointDeleteAndMotions(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	occs[0].SetGrounded(true)
 	edge := boxEdgeKey(t, occs[0])

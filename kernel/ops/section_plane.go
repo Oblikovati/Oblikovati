@@ -8,6 +8,9 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -65,7 +68,7 @@ func faceSectionSegments(f *topo.Face, plane geom.Plane, res geom.Resolution) (s
 		return nil, false
 	}
 	for _, c := range curves {
-		lo, hi, bounded := sampleRange(c, box)
+		lo, hi, bounded := probe.SampleRange(c, box)
 		if !bounded {
 			return nil, false
 		}
@@ -122,7 +125,7 @@ func decimateCollinear(run []math.Point3, chordTol float64) []math.Point3 {
 	}
 	out := []math.Point3{run[0]}
 	for i := 1; i+1 < len(run); i++ {
-		if d := run[i].DistanceTo(closestPointOnSegment(run[i], out[len(out)-1], run[i+1])); float64(d) > chordTol {
+		if d := run[i].DistanceTo(query.ClosestPointOnSegment(run[i], out[len(out)-1], run[i+1])); float64(d) > chordTol {
 			out = append(out, run[i])
 		}
 	}
@@ -147,7 +150,7 @@ func bisectTrimBoundary(c geom.Curve3, f *topo.Face, tOut, tIn float64) math.Poi
 // analytic intersector declines (a rare exotic surface), keeping the section robust without tessellating the
 // resolved faces.
 func faceMeshSection(f *topo.Face, n math.Vector3, d float64, q Quality) [][2]math.Point3 {
-	mesh := TessellateFace(f, q)
+	mesh := tessellate.TessellateFace(f, q)
 	var segs [][2]math.Point3
 	for t := 0; t+2 < len(mesh.Indices); t += 3 {
 		tri := [3]math.Point3{
@@ -276,7 +279,7 @@ func FaceSilhouetteWires(f *topo.Face, viewDir math.Vector3, includeBoundary boo
 	if len(loops) == 0 {
 		return nil, fmt.Errorf("ops: face %d has no silhouette from %v", f.ID(), viewDir)
 	}
-	onTol := stdmath.Max(q.tol(), 1e-6) // tol:calibrated — floors the (already model-relative) quality chord tolerance
+	onTol := stdmath.Max(q.Tol(), 1e-6) // tol:calibrated — floors the (already model-relative) quality chord tolerance
 	var segs [][2]math.Point3
 	for _, pl := range loops {
 		segs = append(segs, clipPolylineToFace(pl, f, onTol, includeBoundary)...)

@@ -10,6 +10,10 @@ import (
 )
 
 func TestNopMotorFaceplateCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~5s): `make test-corpus`")
+	}
+	t.Parallel()
 	body := prismBody(roundedRectPoints(2.8, 2.8, 0.5, 8), -0.25, 0, "motor-faceplate")
 	for _, x := range []float64{-0.95, 0.95} {
 		for _, y := range []float64{-0.95, 0.95} {

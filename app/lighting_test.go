@@ -13,6 +13,7 @@ import (
 // studio rig — the out-of-the-box lighting for every visual style now that the whole rig
 // lights every shaded mode (ADR-0026 §8).
 func TestNewSessionStartsOnThreePointLighting(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.LightingStyleName() != "Three Point" {
 		t.Errorf("new session style = %q, want Three Point", s.LightingStyleName())
@@ -25,6 +26,7 @@ func TestNewSessionStartsOnThreePointLighting(t *testing.T) {
 // TestSetLightingStyleResolvesRig checks switching the style replaces the live rig with that
 // preset's lights, and that an unknown name errors.
 func TestSetLightingStyleResolvesRig(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.SetLightingStyle("Outdoors"); err != nil {
 		t.Fatalf("SetLightingStyle(Outdoors): %v", err)
@@ -42,6 +44,7 @@ func TestSetLightingStyleResolvesRig(t *testing.T) {
 
 // TestAddLightClampsToMax checks AddLight refuses to exceed the UBO light array bound.
 func TestAddLightClampsToMax(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	// Default starts with one light; fill to the max, then expect an error.
 	for len(s.Lights()) < renderer.MaxSceneLights {
@@ -56,6 +59,7 @@ func TestAddLightClampsToMax(t *testing.T) {
 
 // TestSetLightRejectsOutOfRange checks SetLight validates the index instead of panicking.
 func TestSetLightRejectsOutOfRange(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.SetLight(99, Light{}); err == nil {
 		t.Error("SetLight(99) should error on an out-of-range index")
@@ -65,6 +69,7 @@ func TestSetLightRejectsOutOfRange(t *testing.T) {
 // TestGroundShadowMappingRoundTrips pins the public GroundShadowEnum ⇄ renderer-flag bijection
 // (including the X-ray distinction) at the app layer.
 func TestGroundShadowMappingRoundTrips(t *testing.T) {
+	t.Parallel()
 	for _, g := range types.AllGroundShadows() {
 		var sh ShadowRig
 		ApplyGroundShadow(&sh, g)
@@ -83,6 +88,7 @@ func TestGroundShadowMappingRoundTrips(t *testing.T) {
 // TestLightKindDefinitionBijection checks the renderer LightKind ⇄ public definition mapping is
 // total and stable over the public enum.
 func TestLightKindDefinitionBijection(t *testing.T) {
+	t.Parallel()
 	for _, d := range types.AllLightDefinitionTypes() {
 		if got := DefinitionForLightKind(LightKindForDefinition(d)); got != d {
 			t.Errorf("definition %v round-tripped to %v", d, got)
@@ -93,6 +99,7 @@ func TestLightKindDefinitionBijection(t *testing.T) {
 // TestNewSessionDefaultsToSkyEnvironment asserts a fresh session shows the embedded Sky
 // environment (IBL + sky background) — the default skymap (ADR-0026 §8).
 func TestNewSessionDefaultsToSkyEnvironment(t *testing.T) {
+	t.Parallel()
 	env := NewSession().Environment()
 	if env.Preset != "Sky" || !env.ShowImage || env.Intensity != 1 {
 		t.Errorf("default environment = %+v, want EnvSky shown at intensity 1", env)
@@ -103,6 +110,7 @@ func TestNewSessionDefaultsToSkyEnvironment(t *testing.T) {
 // active environment unless the style brings its own (Outdoors) — the skymap must not be
 // silently dropped by a lighting change.
 func TestSetLightingStyleKeepsEnvironment(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.SetLightingStyle("Sun"); err != nil {
 		t.Fatalf("SetLightingStyle(Sun): %v", err)

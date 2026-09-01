@@ -36,6 +36,7 @@ func sideFaceKey(t *testing.T, s *app.Session) string {
 // TestDraftNeutralPlane: a fixed-plane draft about origin/plane/xy is accepted and healthy — the
 // faces pivot on their intersection with the neutral plane (#1866).
 func TestDraftNeutralPlane(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	if _, err := applyMap(t, s, "draft", map[string]any{
 		"faceRefs": []string{sideFaceKey(t, s)}, "angle": "3 deg", "neutralPlane": "origin/plane/xy",
@@ -46,6 +47,7 @@ func TestDraftNeutralPlane(t *testing.T) {
 
 // TestDraftNeutralPlaneBadRef: an unresolvable neutralPlane is a clean error.
 func TestDraftNeutralPlaneBadRef(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	if _, err := applyMap(t, s, "draft", map[string]any{
 		"faceRefs": []string{face}, "angle": "3 deg", "neutralPlane": "origin/plane/nope",
@@ -57,6 +59,7 @@ func TestDraftNeutralPlaneBadRef(t *testing.T) {
 // TestDraftNeutralPlanePullDirection: a neutral-plane draft accepts an explicit pull direction
 // (the override branch), overriding the plane-normal default. #1866.
 func TestDraftNeutralPlanePullDirection(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	if _, err := applyMap(t, s, "draft", map[string]any{
 		"faceRefs": []string{sideFaceKey(t, s)}, "angle": "3 deg",
@@ -69,6 +72,7 @@ func TestDraftNeutralPlanePullDirection(t *testing.T) {
 // TestDraftNeutralPlaneBadPullDirection: a malformed pull direction on a neutral-plane draft is a
 // clean error (a 2-component vector cannot be a [dx,dy,dz]).
 func TestDraftNeutralPlaneBadPullDirection(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	if _, err := applyMap(t, s, "draft", map[string]any{
 		"faceRefs": []string{face}, "angle": "3 deg",
@@ -81,6 +85,7 @@ func TestDraftNeutralPlaneBadPullDirection(t *testing.T) {
 // TestHoleDrillPointErrors: an unknown drillPoint value and an angled point with an unparseable
 // tipAngle are both clean errors, not silent successes. #1863.
 func TestHoleDrillPointErrors(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name  string
 		extra map[string]any
@@ -102,6 +107,7 @@ func TestHoleDrillPointErrors(t *testing.T) {
 // TestCoilEndConditionErrors: an unparseable transition or flat angle on either spring end is a
 // clean error. #1883.
 func TestCoilEndConditionErrors(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name  string
 		extra map[string]any
@@ -169,6 +175,10 @@ func springCoilVolume(t *testing.T, extra map[string]any) float64 {
 // TestCoilEndConditions: start/end transition + flat sweeps are accepted and build a healthy coil
 // with more geometry (the flat/transition turns) than the plain helix (#1883).
 func TestCoilEndConditions(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~12s): `make test-corpus`")
+	}
+	t.Parallel()
 	plain := springCoilVolume(t, nil)
 	ground := springCoilVolume(t, map[string]any{
 		"startTransitionAngle": "90 deg", "startFlatAngle": "180 deg",
@@ -182,6 +192,7 @@ func TestCoilEndConditions(t *testing.T) {
 // TestHoleAngledDrillPointChangesVolume: an angled drill point produces a different blind-hole
 // volume than a flat bottom — proving drillPoint/tipAngle reach the model's PointAngle (#1863).
 func TestHoleAngledDrillPointChangesVolume(t *testing.T) {
+	t.Parallel()
 	vFlat := blindHoleVolume(t, nil)
 	vAngled := blindHoleVolume(t, map[string]any{"drillPoint": "angled"})
 	if math.Abs(vAngled-vFlat) < 1e-6*vFlat {

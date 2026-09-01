@@ -41,6 +41,7 @@ func memoTestSurface(t *testing.T) BSplineSurface {
 // must agree exactly — not approximately — because the memo stores the identical lattice the cold
 // path computes.
 func TestSeedMemoChangesNoInversion(t *testing.T) {
+	t.Parallel()
 	warm := memoTestSurface(t)
 	cold := BSplineSurface{UDegree: warm.UDegree, VDegree: warm.VDegree,
 		Ctrl: warm.Ctrl, Weights: warm.Weights, UKnots: warm.UKnots, VKnots: warm.VKnots}
@@ -62,6 +63,7 @@ func TestSeedMemoChangesNoInversion(t *testing.T) {
 // TestSeedMemoFillsOnceUnderConcurrency: parallel inversions may race only on who fills the memo,
 // never on its content.
 func TestSeedMemoFillsOnceUnderConcurrency(t *testing.T) {
+	t.Parallel()
 	s := memoTestSurface(t)
 	var wg sync.WaitGroup
 	results := make([][2]float64, 32)

@@ -9,6 +9,7 @@ import "testing"
 // (#1492). The encoding uses RawURLEncoding, so a key containing the WorkRef path separator or
 // padding-sensitive bytes survives intact.
 func TestBodyRefRoundTrips(t *testing.T) {
+	t.Parallel()
 	key := []byte{0x00, 0x2f, 0x2b, 0xff, 'b', 'o', 'd', 'y'} // includes '/' (0x2f) and '+' (0x2b)
 	ref := BodyRef(key)
 	if got := string(ref); got[:len("body/")] != "body/" {
@@ -27,6 +28,7 @@ func TestBodyRefRoundTrips(t *testing.T) {
 // payload, so ResolveRefOnBodies dispatches each form to the right finder and never binds a
 // face key as a body.
 func TestBodyRefKeyRejectsOtherForms(t *testing.T) {
+	t.Parallel()
 	if _, ok := BodyRefKey(FaceRef([]byte("f"))); ok {
 		t.Error("BodyRefKey accepted a face ref")
 	}

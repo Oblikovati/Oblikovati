@@ -4,6 +4,8 @@ package renderer
 
 import (
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/scene"
@@ -173,15 +175,15 @@ func BuildDrawListStyled(bodies []*topo.Body, cam scene.Camera, q ops.Quality, l
 		if !visible(cam, b.RangeBox()) {
 			continue
 		}
-		mesh, _ := ops.TessellateBody(b, q)
+		mesh, _ := tessellate.TessellateBody(b, q)
 		// Crease-angle smooth shading + tangent-edge suppression (display only): a loft/sweep skin
 		// is built as many planar facets, which flat-shade into stripes with a web of facet lines.
 		// Average normals across facets meeting below the crease angle, and drop the tangent edges
 		// between them, so the skin reads as one smooth surface while genuine sharp edges stay
 		// crisp. Mass properties keep the raw per-face mesh (BodyGeometryProperties calls
 		// TessellateBody directly), so volume/orientation are unaffected.
-		mesh.Normals = ops.SmoothShadeNormals(mesh, ops.DefaultCreaseAngle())
-		edges := ops.VisibleEdges(b, q, ops.DefaultCreaseAngle())
+		mesh.Normals = tessellate.SmoothShadeNormals(mesh, tessellate.DefaultCreaseAngle())
+		edges := query.VisibleEdges(b, q, tessellate.DefaultCreaseAngle())
 		items = appendBodyItems(items, b.ID(), mesh, edges, surfaceFor(b, lookup), pass, dashWorld)
 	}
 	return DrawList{Items: items}

@@ -13,6 +13,7 @@ import (
 // outer-tube oval cap: one analytic torus face (the surface inside the spiric oval) plus one planar oval
 // lid, watertight, no CSG — the first exact OBLIQUE torus cut (Oblikovati/Oblikovati#1375).
 func TestHalfSpaceCutTorusAxisParallelOvalCap(t *testing.T) {
+	t.Parallel()
 	tor, err := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2, "torus")
 	if err != nil {
 		t.Fatalf("SolidTorus: %v", err)
@@ -49,6 +50,7 @@ func TestHalfSpaceCutTorusAxisParallelOvalCap(t *testing.T) {
 // kept as one torus face carrying the oval as a HOLE (no outer loop, it wraps the whole surface) plus the
 // oval lid, watertight, no CSG (Oblikovati/Oblikovati#1375).
 func TestHalfSpaceCutTorusAxisParallelComplement(t *testing.T) {
+	t.Parallel()
 	tor, _ := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2, "torus")
 	// Keep y≤6 (the big complement): the cut normal points +y, leaving the rest of the torus on its negative side.
 	plane, _ := geom.NewPlane(math.P3(0, 6, 0), math.V3(0, 1, 0))

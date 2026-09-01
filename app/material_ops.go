@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/material"
 )
@@ -148,7 +149,7 @@ func (s *Session) sumBodyProperties(part *compdef.PartComponentDefinition) types
 	for _, b := range part.SurfaceBodies().All() {
 		// Property readouts integrate over the mesh, so they use the fine PropertyQuality — the
 		// display DefaultQuality under-reports a curved solid's volume by ~0.64% (see PropertyQuality).
-		gp := ops.BodyGeometryProperties(b, ops.PropertyQuality())
+		gp := query.BodyGeometryProperties(b, ops.PropertyQuality())
 		density := 0.0
 		if m, ok := assign.EffectiveMaterial(look, material.RefKey(b.ReferenceKey())); ok {
 			density = m.Density()

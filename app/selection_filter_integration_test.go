@@ -27,6 +27,7 @@ func downLookingBox(t *testing.T) *Session {
 // default filter selects the face, disabling Faces stops it, Deselect All blocks everything, and
 // Select All restores it.
 func TestAmbientFilterGovernsFacePreselection(t *testing.T) {
+	t.Parallel()
 	s := downLookingBox(t)
 
 	s.Click(200, 200)
@@ -60,6 +61,7 @@ func TestAmbientFilterGovernsFacePreselection(t *testing.T) {
 // even when the user has ambiently disabled everything in the Selection Filter window — so the
 // offset-work-plane-from-face workflow keeps working regardless of the ambient setting (#1222).
 func TestToolFilterWinsOverDisabledAmbient(t *testing.T) {
+	t.Parallel()
 	s := downLookingBox(t)
 	s.SelectionFilterState().DisableAll() // user blocked every kind ambiently
 

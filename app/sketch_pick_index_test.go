@@ -17,6 +17,7 @@ import (
 // confirms the spatial index still picks the one the ray passes through — i.e. the
 // culling is correct, not just fast.
 func TestSketchPickIndexFindsLineAmongMany(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2) // 2×2 square on XY
 	sk := profile.Sketch
 	for i := range 3000 { // a wall of lines off to the side, far from the cursor
@@ -39,6 +40,7 @@ func TestSketchPickIndexFindsLineAmongMany(t *testing.T) {
 // TestSketchPickIndexMatchesBruteForce checks the indexed pick agrees with a direct
 // scan of every segment for the same ray.
 func TestSketchPickIndexMatchesBruteForce(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	sk := profile.Sketch
 	for i := range 500 {
@@ -63,6 +65,7 @@ func TestSketchPickIndexMatchesBruteForce(t *testing.T) {
 // TestPickIndexCacheReuseAndInvalidate checks the per-sketch index is reused while
 // unchanged and rebuilt when the line count changes.
 func TestPickIndexCacheReuseAndInvalidate(t *testing.T) {
+	t.Parallel()
 	_, profile := newPartWithSquare(t, 2)
 	sk := profile.Sketch
 	a := pickIndexFor(sk)
@@ -81,6 +84,7 @@ func TestPickIndexCacheReuseAndInvalidate(t *testing.T) {
 // the entity along its real sweep — the property that lets an imported DWG drawing's
 // arcs/circles/ellipses/elliptical arcs be selected, not just its straight lines.
 func TestSketchPickIndexHitsEveryCurveType(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name   string
 		build  func(sk *sketch.Sketch) sketch.Entity
@@ -129,6 +133,7 @@ func TestSketchPickIndexHitsEveryCurveType(t *testing.T) {
 // a ray through the empty interior of an open arc (inside its chord, off the curve)
 // selects nothing. Guards against the curve being treated as a filled region.
 func TestSketchPickIndexCurveMissesOffCurve(t *testing.T) {
+	t.Parallel()
 	s, sk := newPartWithEmptySketch(t)
 	sk.Arcs().AddByCenterStartEnd(math.P2(20, 0), math.P2(21, 0), math.P2(19, 0), true) // apex (20,1)
 
@@ -147,6 +152,7 @@ func TestSketchPickIndexCurveMissesOffCurve(t *testing.T) {
 // so adding a non-line entity (an arc) invalidates the index — otherwise a freshly
 // imported curve would be unpickable until a line happened to change.
 func TestPickIndexRebuildsOnCurveTypeChange(t *testing.T) {
+	t.Parallel()
 	_, sk := newPartWithEmptySketch(t)
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 0))
 	a := pickIndexFor(sk)

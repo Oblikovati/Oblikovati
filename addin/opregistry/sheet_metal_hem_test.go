@@ -13,6 +13,7 @@ import (
 // TestSheetMetalHemApply seeds a sheet-metal wall, hems a top edge, and confirms one merged
 // solid results; then checks the error paths.
 func TestSheetMetalHemApply(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	out, err := applyMap(t, s, "sheetMetalHem", map[string]any{"edge": edge, "length": "6 mm", "type": "open", "gap": "4 mm"})
 	if err != nil {
@@ -57,6 +58,7 @@ func lastHemDef(t *testing.T, s *app.Session) *feature.SheetMetalHemDefinition {
 // sweep — the case where the parser's unit kind is the only thing that says what the number
 // means, and reading it as a length yields nothing usable.
 func TestHemCurlDimensionsReachTheDefinition(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	if _, err := applyMap(t, s, "sheetMetalHem", map[string]any{
 		"edge": edge, "type": "rolled", "radius": "3 mm", "angle": "270 deg",
@@ -88,6 +90,7 @@ func TestHemCurlDimensionsReachTheDefinition(t *testing.T) {
 // TestHemTypeSpellingsReachTheDefinition: every Inventor spelling, plus the two this feature
 // shipped with, which both mean a single hem.
 func TestHemTypeSpellingsReachTheDefinition(t *testing.T) {
+	t.Parallel()
 	for spelling, want := range map[string]feature.HemType{
 		"single": feature.SingleHem, "double": feature.DoubleHem,
 		"closed": feature.SingleHem, "open": feature.SingleHem,
@@ -110,6 +113,7 @@ func TestHemTypeSpellingsReachTheDefinition(t *testing.T) {
 // type's own default applies — a zero gap is not the same as no gap, and a zero radius is not a
 // hem at all.
 func TestHemLeavesUnusedDimensionsUnset(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	if _, err := applyMap(t, s, "sheetMetalHem", map[string]any{
 		"edge": edge, "type": "single", "length": "6 mm",

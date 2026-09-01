@@ -17,6 +17,7 @@ import (
 // and once "to face" is chosen it switches to accepting a termination face/plane, gates commit on
 // it, and folds it into the extent (#1222 selection engine, the To-Face proof case).
 func TestExtrudeToFaceStepsAndTarget(t *testing.T) {
+	t.Parallel()
 	tool := NewExtrudeTool()
 	if k := tool.AcceptedKinds(); len(k) != 1 || k[0] != SelectProfile {
 		t.Fatalf("initial AcceptedKinds = %v, want [SelectProfile]", k)
@@ -43,6 +44,7 @@ func TestExtrudeToFaceStepsAndTarget(t *testing.T) {
 // TestExtrudeToFaceTerminatesAtPlane drives the whole flow and asserts the solid actually
 // terminates at the picked plane (height = the plane's z), not at a typed distance.
 func TestExtrudeToFaceTerminatesAtPlane(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	tool := NewExtrudeTool()
 	s.StartTool(tool)
@@ -62,6 +64,7 @@ func TestExtrudeToFaceTerminatesAtPlane(t *testing.T) {
 // TestExtrudeToFacePicksIncludeTermination: the termination face shows in the tool's Picks so the
 // engine highlights it like any other selection.
 func TestExtrudeToFacePicksIncludeTermination(t *testing.T) {
+	t.Parallel()
 	s := downLookingBoxWithPlanes(t)
 	tool := NewExtrudeTool()
 	s.StartTool(tool)

@@ -12,6 +12,7 @@ import (
 // bodies) must leave the assignment store intact — otherwise a material would vanish every
 // time the model recomputes.
 func TestAssignmentsSurviveRecompute(t *testing.T) {
+	t.Parallel()
 	def := NewPartComponentDefinition()
 	def.Assignments().SetPartMaterial("steel")
 	def.Assignments().SetBodyMaterial("abcd", "aluminum-6061")
@@ -29,6 +30,7 @@ func TestAssignmentsSurviveRecompute(t *testing.T) {
 // The materials section must survive a full recipe round-trip (Marshal → Apply through
 // YAML), restoring the document's embedded appearance and its assignment.
 func TestMaterialsRecipeRoundTrip(t *testing.T) {
+	t.Parallel()
 	def := NewPartComponentDefinition()
 	wantColor := material.Color3{R: 0.1, G: 0.25, B: 1}
 	def.Assets().PutAppearance(material.NewAppearance("doc-blue", material.SourceDocument,

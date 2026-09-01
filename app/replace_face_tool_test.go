@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestReplaceFaceToolEndToEnd drives the Replace Face UI: click the top face to replace,
@@ -13,6 +14,7 @@ import (
 // asserts a valid solid results (vol 8). Geometric correctness for non-identity targets is
 // covered by the kernel ReplaceFaces tests.
 func TestReplaceFaceToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2) // 2×2×2
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
@@ -36,7 +38,7 @@ func TestReplaceFaceToolEndToEnd(t *testing.T) {
 	if rr := ops.Validate(body); !rr.Valid || !body.IsSolid() {
 		t.Fatalf("replaced body not a valid solid: %+v", rr)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 8) > 1e-6 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 8) > 1e-6 {
 		t.Errorf("identity replace volume = %g, want 8", got)
 	}
 	if s.ActiveTool() != nil {
@@ -46,6 +48,7 @@ func TestReplaceFaceToolEndToEnd(t *testing.T) {
 
 // TestReplaceFaceViaRibbonCommand starts the tool from its ribbon command.
 func TestReplaceFaceViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -61,6 +64,7 @@ func TestReplaceFaceViaRibbonCommand(t *testing.T) {
 
 // TestReplaceFaceNeedsTarget checks the tool needs both a face and a target.
 func TestReplaceFaceNeedsTarget(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 	r := NewReplaceFaceTool()

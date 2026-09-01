@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -51,7 +53,7 @@ func revolveWithExtent(t *testing.T, set func(*RevolveDefinition)) *ops.Geometry
 	// its volume is EXACT and only the display-grade mesh under-reports it. Measure at PropertyQuality
 	// — the codebase's grade for reported property values (tessellate.go) — not the display default,
 	// which biases an analytic curved volume ~1.5% low and would fail the 1% wedge gate below.
-	props := ops.BodyGeometryProperties(fs.Result()[0], ops.PropertyQuality())
+	props := query.BodyGeometryProperties(fs.Result()[0], ops.PropertyQuality())
 	return &props
 }
 
@@ -60,6 +62,7 @@ func revolveWithExtent(t *testing.T, set func(*RevolveDefinition)) *ops.Geometry
 // args. A plane has TWO half-planes and the sweep stops at whichever it reaches first — the 200°
 // case is the one that proves it, since its other face stands at 20° and is what the sweep meets.
 func TestRevolveToFaceStopsAtTheNearerHalfPlane(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ drawnAt, stopsAt float64 }{
 		{90, 90}, {135, 135}, {200, 20},
 	} {
@@ -80,6 +83,7 @@ func TestRevolveToFaceStopsAtTheNearerHalfPlane(t *testing.T) {
 // reached at zero, which would build nothing. A full revolution is the only reading that produces a
 // solid, so the extent takes it rather than emitting an empty body.
 func TestRevolveToFaceOnTheProfilesOwnPlaneIsAFullTurn(t *testing.T) {
+	t.Parallel()
 	got := revolveWithExtent(t, func(d *RevolveDefinition) {
 		d.Extent, d.ToPlane = ToFaceExtent, radialPlane(t, 0)
 	})
@@ -96,6 +100,7 @@ func TestRevolveToFaceOnTheProfilesOwnPlaneIsAFullTurn(t *testing.T) {
 // there is no one stop angle. Approximating it would silently build the wrong wedge, so the feature
 // declines — both for a target square to the axis and for one parallel to it but offset.
 func TestRevolveToFaceRefusesATargetThatMissesTheAxis(t *testing.T) {
+	t.Parallel()
 	for name, target := range map[string]*WorkPlane{
 		"square to the axis": NewFixedWorkPlane(sketch.XZPlane()),
 		"offset off it":      offsetRadialPlane(t, 1),
@@ -125,6 +130,7 @@ func offsetRadialPlane(t *testing.T, x float64) *WorkPlane {
 // forwards to the "to" one, so the wedge spans both and always contains the profile that generated
 // it. From 90° back to 45° forward is a 135° wedge straddling the profile plane.
 func TestRevolveFromToBoundsTheWedgeBothWays(t *testing.T) {
+	t.Parallel()
 	got := revolveWithExtent(t, func(d *RevolveDefinition) {
 		d.Extent = FromToExtent
 		d.FromPlane, d.ToPlane = radialPlane(t, 90), radialPlane(t, 45)
@@ -142,6 +148,7 @@ func TestRevolveFromToBoundsTheWedgeBothWays(t *testing.T) {
 // enough that BOTH the outer (r=4) and inner (r=2) corners eventually reach it, at 22° and 49°
 // respectively — so the case pins that the FIRST arrival stops the feature, not the last.
 func TestRevolveToNextStopsAtTheFirstMaterial(t *testing.T) {
+	t.Parallel()
 	wall := wallAcrossTheSweep(1.5)
 	base := modelPolygon(mustProfile(t, offsetSquareSketch(2, 2)), sketch.XYPlane())
 	got, err := revolveToNextTurn(base, yWorkAxis(), []*topo.Body{wall}, senseOf(PositiveDir))
@@ -158,6 +165,7 @@ func TestRevolveToNextStopsAtTheFirstMaterial(t *testing.T) {
 // TestRevolveToNextNeedsMaterialAhead: nothing to stop on is a lost input the feature reports, not
 // a silent full revolution.
 func TestRevolveToNextNeedsMaterialAhead(t *testing.T) {
+	t.Parallel()
 	base := modelPolygon(mustProfile(t, offsetSquareSketch(2, 2)), sketch.XYPlane())
 	if _, err := revolveToNextTurn(base, yWorkAxis(), nil, senseOf(PositiveDir)); err == nil {
 		t.Error("to-next with no bodies returned a span; it must report that nothing lies ahead")
@@ -168,6 +176,7 @@ func TestRevolveToNextNeedsMaterialAhead(t *testing.T) {
 // recipe carrying it, a to-face revolve would reload as a plain angle revolve — the sweep frozen at
 // whatever the model happened to resolve last, exactly the parametric loss the extent removes.
 func TestRevolveExtentRoundTrips(t *testing.T) {
+	t.Parallel()
 	sk, work := offsetSquareSketch(2, 2), NewWorkGeometry()
 	yz, err := work.WorkPlaneByRef(WorkRef("origin/plane/yz"))
 	if err != nil {
@@ -199,6 +208,7 @@ func TestRevolveExtentRoundTrips(t *testing.T) {
 // TestAngleRevolveRecipeIsUnchanged: the angle extent is the default, so it must write nothing —
 // an ordinary revolve's saved recipe is byte-identical to what it was before #1860.
 func TestAngleRevolveRecipeIsUnchanged(t *testing.T) {
+	t.Parallel()
 	sk := offsetSquareSketch(2, 2)
 	fs := NewPartFeatures(nil)
 	NewRevolveFeatures(fs).Add(sk, 0, yWorkAxis(), angleConst(stdmath.Pi/2), ops.NewBody)
@@ -218,7 +228,7 @@ func TestAngleRevolveRecipeIsUnchanged(t *testing.T) {
 func wallAcrossTheSweep(depth float64) *topo.Body {
 	b := subd.ToBody(subd.Box(10, 4, 0.5), "wall")
 	keep := func(l topo.Lineage) topo.Lineage { return l }
-	moved, err := ops.TransformBody(b, math.Translation4(math.V3(-5, -1, -depth-0.5)), keep)
+	moved, err := transform.TransformBody(b, math.Translation4(math.V3(-5, -1, -depth-0.5)), keep)
 	if err != nil {
 		panic(err) // a translation of a box cannot fail; a panic here is a broken fixture, not a case
 	}

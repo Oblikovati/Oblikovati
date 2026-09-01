@@ -4,6 +4,7 @@ package app
 
 import (
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/renderer"
@@ -72,7 +73,7 @@ func (p *RayPicker) regionFaces(sel screenRect, crossing bool) []Selectable {
 }
 
 // regionEdges selects edges whose projected outline satisfies the rectangle. The outline is the
-// edge's full adaptive sampling (ops.TessellateEdge — the same discretization the renderer draws),
+// edge's full adaptive sampling (tessellate.TessellateEdge — the same discretization the renderer draws),
 // not just the two endpoints, so a curved edge whose mid-span enters the box but whose endpoints
 // sit outside is caught by a crossing select and correctly excluded by a window select (#936).
 // A straight edge samples to its two endpoints, preserving the prior behaviour.
@@ -81,7 +82,7 @@ func (p *RayPicker) regionEdges(sel screenRect, crossing bool) []Selectable {
 	var hits []Selectable
 	for _, b := range p.bodies() {
 		for _, e := range b.Edges() {
-			pts := p.projectModelPoints(ops.TessellateEdge(e, q))
+			pts := p.projectModelPoints(tessellate.TessellateEdge(e, q))
 			if len(pts) >= 2 && regionCoversOutline(pts, sel, crossing) {
 				hits = append(hits, EdgeHandle{Edge: e})
 			}

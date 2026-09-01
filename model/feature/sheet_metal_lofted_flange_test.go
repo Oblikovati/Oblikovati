@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/param"
@@ -34,6 +35,7 @@ func thicknessParams(t *testing.T) *param.Parameters {
 // TestLoftedFlangeLoftsTransition a lofted flange between two L-profiles on parallel planes
 // builds one valid watertight transition wall.
 func TestLoftedFlangeLoftsTransition(t *testing.T) {
+	t.Parallel()
 	planeB, _ := sketch.NewPlane(math.P3(0, 0, 3), math.V3(1, 0, 0).AsUnit(), math.V3(0, 1, 0).AsUnit())
 	fs := NewPartFeatures(thicknessParams(t))
 	pf := NewSheetMetalLoftedFlangeFeatures(fs).Add(&SheetMetalLoftedFlangeDefinition{
@@ -55,7 +57,7 @@ func TestLoftedFlangeLoftsTransition(t *testing.T) {
 	if open := ops.BoundaryEdges(body); len(open) != 0 {
 		t.Errorf("lofted flange not watertight: %d boundary edges", len(open))
 	}
-	if v := ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 0 {
 		t.Errorf("lofted flange volume = %g, want positive", v)
 	}
 }
@@ -72,6 +74,7 @@ func bulgingLoftBundle() []hermiteCurve {
 // TestLoftSectionCountTightensWithTolerance the die-formed wall is fixed and fine; a press-brake
 // chord-tolerance output uses FEWER facets as the tolerance loosens, and never more than die-formed.
 func TestLoftSectionCountTightensWithTolerance(t *testing.T) {
+	t.Parallel()
 	bundle := bulgingLoftBundle()
 	if got := loftSectionCount(bundle, DieFormedLoftedFlange, 0); got != dieFormedSections {
 		t.Errorf("die-formed section count = %d, want %d", got, dieFormedSections)
@@ -93,6 +96,7 @@ func TestLoftSectionCountTightensWithTolerance(t *testing.T) {
 // TestLoftSectionCountStraightBundle a bundle with no in-plane offset is already straight, so a
 // press-brake output needs a single facet (no curvature to approximate).
 func TestLoftSectionCountStraightBundle(t *testing.T) {
+	t.Parallel()
 	up := math.V3(0, 0, 1).AsUnit()
 	bandA := []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(0, 2, 0)}
 	bandB := []math.Point3{math.P3(0, 0, 3), math.P3(2, 0, 3), math.P3(0, 2, 3)} // pure +Z translation
@@ -105,6 +109,7 @@ func TestLoftSectionCountStraightBundle(t *testing.T) {
 // TestLoftedFlangePressBrakeCoarserThanDieFormed both output forms build a valid watertight wall,
 // and a loose press-brake facets the transition into fewer faces than the smooth die-formed wall.
 func TestLoftedFlangePressBrakeCoarserThanDieFormed(t *testing.T) {
+	t.Parallel()
 	build := func(out LoftedFlangeOutputType, tol float64) *topo.Body {
 		planeB, _ := sketch.NewPlane(math.P3(1, 1, 3), math.V3(1, 0, 0).AsUnit(), math.V3(0, 1, 0).AsUnit())
 		fs := NewPartFeatures(thicknessParams(t))
@@ -134,6 +139,7 @@ func TestLoftedFlangePressBrakeCoarserThanDieFormed(t *testing.T) {
 
 // TestLoftedFlangeMismatchedProfiles profiles with different vertex counts cannot loft.
 func TestLoftedFlangeMismatchedProfiles(t *testing.T) {
+	t.Parallel()
 	planeB, _ := sketch.NewPlane(math.P3(0, 0, 3), math.V3(1, 0, 0).AsUnit(), math.V3(0, 1, 0).AsUnit())
 	threePt := lProfileOnPlane(planeB, 2, 2) // 3 vertices
 	// A two-vertex profile (single segment) on XY.
@@ -154,6 +160,7 @@ func TestLoftedFlangeMismatchedProfiles(t *testing.T) {
 
 // TestLoftedFlangeNeedsThickness without a Thickness parameter the feature goes sick.
 func TestLoftedFlangeNeedsThickness(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(param.NewParameters()) // no Thickness
 	pf := NewSheetMetalLoftedFlangeFeatures(fs).Add(&SheetMetalLoftedFlangeDefinition{
 		ProfileA: lProfileOnPlane(sketch.XYPlane(), 1, 1), ProfileB: lProfileOnPlane(sketch.XYPlane(), 1, 1),
@@ -166,6 +173,7 @@ func TestLoftedFlangeNeedsThickness(t *testing.T) {
 
 // TestLoftedFlangeDefinitionAndKind the accessors return the recipe.
 func TestLoftedFlangeDefinitionAndKind(t *testing.T) {
+	t.Parallel()
 	def := &SheetMetalLoftedFlangeDefinition{}
 	f := &SheetMetalLoftedFlangeFeature{def: def}
 	if f.Definition() != def || f.Kind() != "sheet-metal-lofted-flange" {
@@ -198,6 +206,7 @@ func (x twoSketchIndexer) At(i int) (*sketch.Sketch, bool) {
 
 // TestLoftedFlangeRoundTrip the recipe (two profile indices + operation) marshals and restores.
 func TestLoftedFlangeRoundTrip(t *testing.T) {
+	t.Parallel()
 	pa := lProfileOnPlane(sketch.XYPlane(), 1, 1)
 	pb := lProfileOnPlane(sketch.XYPlane(), 2, 2)
 	idx := twoSketchIndexer{a: pa, b: pb}
@@ -231,6 +240,7 @@ func TestLoftedFlangeRoundTrip(t *testing.T) {
 
 // TestLoftedFlangeMissingPayload / unknown sketch restore errors.
 func TestLoftedFlangeMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreSheetMetalLoftedFlange(NewPartFeatures(nil), nil, twoSketchIndexer{}); err == nil {
 		t.Error("restoreSheetMetalLoftedFlange(nil) must error")
 	}

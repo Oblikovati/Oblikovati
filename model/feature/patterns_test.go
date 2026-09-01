@@ -28,6 +28,7 @@ func minXs(bodies []*topo.Body) []float64 {
 }
 
 func TestRectangularPatternElementCountFromParameters(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	src := fs.Add(body()) // a source feature to pattern
 	nx, ny := 3, 2
@@ -52,6 +53,7 @@ func TestRectangularPatternElementCountFromParameters(t *testing.T) {
 }
 
 func TestRectangularPatternPlacesRealCopies(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	src := NewBaseFeatures(fs).AddBase(prismBody()) // unit cube [0,1]^3
 	NewPatternFeatures(fs).AddRectangular([]ID{src.ID()},
@@ -73,6 +75,7 @@ func TestRectangularPatternPlacesRealCopies(t *testing.T) {
 }
 
 func TestMirrorReflectsRealCopy(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	src := NewBaseFeatures(fs).AddBase(prismBody()) // [0,1]^3
 	// Mirror across the plane x=0 (normal +X): the copy lands in x∈[-1,0].
@@ -93,6 +96,7 @@ func TestMirrorReflectsRealCopy(t *testing.T) {
 }
 
 func TestPerElementSuppressionRemovesOnlyThatCopy(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	src := NewBaseFeatures(fs).AddBase(prismBody())
 	pat := NewPatternFeatures(fs).AddRectangular([]ID{src.ID()},
@@ -114,6 +118,7 @@ func TestPerElementSuppressionRemovesOnlyThatCopy(t *testing.T) {
 }
 
 func TestCircularAndSketchDrivenPlaceCopies(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	src := NewBaseFeatures(fs).AddBase(prismBody())
 	pats := NewPatternFeatures(fs)
@@ -143,6 +148,7 @@ func TestCircularAndSketchDrivenPlaceCopies(t *testing.T) {
 // with N holes), not duplicate the whole body into N solids. (Regression for the wheel: a
 // circular pattern of a bolt-hole cut was producing N separate bodies.)
 func TestPatternOfCutKeepsOneBody(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	// A 10x10x5 base box.
 	NewExtrudeFeatures(fs).AddExtrude(squareSketch(10), []int{0}, ops.NewBody,
@@ -167,6 +173,7 @@ func TestPatternOfCutKeepsOneBody(t *testing.T) {
 // TestPatternOfJoinMergesIntoOneBody: patterning a JOIN feature must union the copies into the
 // running body, not leave them as separate solids.
 func TestPatternOfJoinMergesIntoOneBody(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddExtrude(squareSketch(10), []int{0}, ops.NewBody,
 		Extent{Type: DistanceExtent, Direction: PositiveDir, Distance: func() float64 { return 5 }}, 0)
@@ -186,6 +193,7 @@ func TestPatternOfJoinMergesIntoOneBody(t *testing.T) {
 // each occurrence — one body with N bosses, each holed — not fall back to copying the whole part
 // and scattering disconnected solids.
 func TestPatternOfFeatureGroupStaysConnected(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	// A 10x10x5 base box.
 	NewExtrudeFeatures(fs).AddExtrude(squareSketch(10), []int{0}, ops.NewBody,
@@ -221,6 +229,7 @@ func patIDOf(fs *PartFeatures, f Feature) ID {
 }
 
 func TestPatternDefinitionAccessors(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	src := fs.Add(body())
 	rect := NewPatternFeatures(fs).AddRectangular([]ID{src.ID()}, func() int { return 2 }, func() int { return 3 }, noStep, noStep)

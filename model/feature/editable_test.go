@@ -18,6 +18,7 @@ func constVal(v float64) func() float64 { return func() float64 { return v } }
 // replaces the closure (so a later Get sees the new value) — the contract app.BeginEditFeature
 // and the head dialog rely on.
 func TestEditableParamsExposeAndWriteScalars(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name      string
 		feat      Editable
@@ -56,6 +57,7 @@ func TestEditableParamsExposeAndWriteScalars(t *testing.T) {
 // flag: a through drill exposes only the diameter; a blind drill adds depth; a counterbore adds
 // its two recess inputs.
 func TestHoleEditableParamsVaryByType(t *testing.T) {
+	t.Parallel()
 	through := &HoleFeature{def: &HoleDefinition{Diameter: constVal(0.4), ThroughAll: true, Type: DrilledHole}}
 	if ps := through.EditableParams(); len(ps) != 1 || ps[0].Label != "Diameter" {
 		t.Fatalf("through hole params = %v, want [Diameter]", labelsOf(through.EditableParams()))
@@ -76,6 +78,7 @@ func TestHoleEditableParamsVaryByType(t *testing.T) {
 // (they were not editable — "cannot edit regular-pattern"): integer counts, per-direction
 // spacing (the step vector's magnitude, direction preserved), and the circular total angle.
 func TestPatternFeaturesAreEditable(t *testing.T) {
+	t.Parallel()
 	rect := &RectangularPatternFeature{def: &RectangularPatternDefinition{
 		CountX: func() int { return 3 }, CountY: func() int { return 2 },
 		StepX: math.V3(2, 0, 0), StepY: math.V3(0, 1.5, 0),
@@ -117,6 +120,7 @@ func labelsOf(ps []EditableParam) []string {
 // TestEditableRefsKeyBased checks the edge/face slot mechanism: a fillet exposes a multi edge
 // slot, a hole a single face slot; Add appends/replaces keys, Snapshot restores, Clear empties.
 func TestEditableRefsKeyBased(t *testing.T) {
+	t.Parallel()
 	e1, e2, f1 := []byte("edge-1"), []byte("edge-2"), []byte("face-1")
 
 	fil := &FilletFeature{def: &FilletDefinition{EdgeKeys: [][]byte{e1}}}
@@ -153,6 +157,7 @@ func TestEditableRefsKeyBased(t *testing.T) {
 // re-picked profile (sketch + index); a mirror re-binds to a re-picked plane (origin/normal),
 // and a plane slot is not clearable (a mirror always needs a plane).
 func TestEditableRefsProfileAndPlane(t *testing.T) {
+	t.Parallel()
 	rev := &RevolveFeature{def: &RevolveDefinition{ProfileIndex: 0}}
 	rslot := rev.EditableRefs()[0]
 	if rslot.Kind != RefProfile || rslot.Count() != 0 { // no sketch yet ⇒ 0

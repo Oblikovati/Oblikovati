@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
@@ -46,6 +47,7 @@ func unitCubeFaces() []*topo.Body {
 }
 
 func TestStitchFeatureClosesSurfacesIntoSolid(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(unitCubeFaces()...)
 	pf := NewStitchFeatures(fs).Add(0, false)
@@ -69,6 +71,7 @@ func TestStitchFeatureClosesSurfacesIntoSolid(t *testing.T) {
 }
 
 func TestStitchFeatureMaintainAsSurface(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(unitCubeFaces()...)
 	pf := NewStitchFeatures(fs).Add(0, true)
@@ -82,6 +85,7 @@ func TestStitchFeatureMaintainAsSurface(t *testing.T) {
 }
 
 func TestKnitIsStitchAlias(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(unitCubeFaces()...)
 	pf := NewKnitFeatures(fs).Add(0, false)
@@ -95,6 +99,7 @@ func TestKnitIsStitchAlias(t *testing.T) {
 }
 
 func TestSculptFillsBoundedVolume(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(unitCubeFaces()...)
 	pf := NewSculptFeatures(fs).Add(ops.NewBody, 0)
@@ -115,6 +120,7 @@ func TestSculptFillsBoundedVolume(t *testing.T) {
 // TestSculptDirectedFillsVolume is #1881: with an explicit direction per bounding surface (keep the
 // inside of each outward cube face), sculpt intersects the directed halfspaces into the unit solid.
 func TestSculptDirectedFillsVolume(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(unitCubeFaces()...)
 	pf := NewSculptFeatures(fs).AddSculpt(&SculptDefinition{Operation: ops.NewBody, Directions: make([]bool, 6)})
@@ -126,7 +132,7 @@ func TestSculptDirectedFillsVolume(t *testing.T) {
 	if !body.IsSolid() {
 		t.Fatal("directed sculpt should fill a solid")
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; !approxEq(v, 1) {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; !approxEq(v, 1) {
 		t.Errorf("directed sculpt volume = %g, want 1 (unit cube)", v)
 	}
 }
@@ -134,6 +140,7 @@ func TestSculptDirectedFillsVolume(t *testing.T) {
 // TestSculptBodySelectionKeepsOthers is #1881: sculpting only the selected bounding surfaces leaves
 // an unselected body untouched alongside the new sculpted solid.
 func TestSculptBodySelectionKeepsOthers(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(unitCubeFaces()...)                                                          // bodies 0..5: cube faces
 	NewBaseFeatures(fs).AddBase(buildPrism(squarePoly(10), sketch.XYPlane(), span{near: 0, far: 1}, 0, "b")) // body 6: a far solid
@@ -150,6 +157,7 @@ func TestSculptBodySelectionKeepsOthers(t *testing.T) {
 // TestSculptOptionsRoundTrip pins #1881 serialization: directions, body selection, and the affected
 // index survive the recipe codec.
 func TestSculptOptionsRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	affected := 2
 	NewSculptFeatures(fs).AddSculpt(&SculptDefinition{
@@ -173,6 +181,7 @@ func TestSculptOptionsRoundTrip(t *testing.T) {
 }
 
 func TestSculptGoesSickOnOpenSurfaces(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(unitCubeFaces()[1:]...) // drop one face → open
 	pf := NewSculptFeatures(fs).Add(ops.NewBody, 0)

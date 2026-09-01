@@ -6,6 +6,7 @@ import "testing"
 
 // TestMiniToolbarLookupMissErrors covers the "no mini-toolbar" branches.
 func TestMiniToolbarLookupMissErrors(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.UpdateMiniToolbarControls("ghost", nil); err == nil {
 		t.Error("UpdateMiniToolbarControls(ghost) should error")
@@ -20,6 +21,7 @@ func TestMiniToolbarLookupMissErrors(t *testing.T) {
 
 // TestProgressLedgerLookupMissErrors covers the "no progress bar" branches.
 func TestProgressLedgerLookupMissErrors(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, err := s.Progress().Update(404, 1, "x"); err == nil {
 		t.Error("Update(404) should error")
@@ -35,6 +37,7 @@ func TestProgressLedgerLookupMissErrors(t *testing.T) {
 // TestSketchConstraintNeedTwoLinesErrors covers the "need two lines" guards for the
 // perpendicular and collinear appliers when given no entities.
 func TestSketchConstraintNeedTwoLinesErrors(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := applyPerpendicular(s, nil); err == nil {
 		t.Error("applyPerpendicular(nil) should need two lines")
@@ -47,6 +50,7 @@ func TestSketchConstraintNeedTwoLinesErrors(t *testing.T) {
 // TestDrawingViewToolNameAndParams covers the view tools' Name/Params accessors (the
 // base-view choice rows the property dialog reads).
 func TestDrawingViewToolNameAndParams(t *testing.T) {
+	t.Parallel()
 	if NewBaseViewTool().Name() == "" {
 		t.Error("BaseViewTool.Name() empty")
 	}

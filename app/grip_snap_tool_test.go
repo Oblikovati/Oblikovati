@@ -6,6 +6,7 @@ import "testing"
 
 // TestActiveGripSnapNil: ActiveGripSnap is nil with no tool and with a different tool running.
 func TestActiveGripSnapNil(t *testing.T) {
+	t.Parallel()
 	s := assemblySession(t)
 	if s.ActiveGripSnap() != nil {
 		t.Error("ActiveGripSnap should be nil when no tool is running")
@@ -23,6 +24,7 @@ func TestActiveGripSnapNil(t *testing.T) {
 // TestGripSnapToolPickProgression: the tool takes exactly two face picks (move + target) and only
 // then enables commit; extra picks are ignored.
 func TestGripSnapToolPickProgression(t *testing.T) {
+	t.Parallel()
 	tool := NewGripSnapTool()
 	if tool.Name() != "Grip Snap" {
 		t.Errorf("Name() = %q, want Grip Snap", tool.Name())
@@ -47,6 +49,7 @@ func TestGripSnapToolPickProgression(t *testing.T) {
 // TestGripSnapToolRejectsUnresolvedPick: committing with faces that do not resolve to placed
 // components is a clean error, not a crash.
 func TestGripSnapToolRejectsUnresolvedPick(t *testing.T) {
+	t.Parallel()
 	s := assemblySession(t)
 	tool := NewGripSnapTool()
 	tool.Pick(s, FaceHandle{})
@@ -59,6 +62,7 @@ func TestGripSnapToolRejectsUnresolvedPick(t *testing.T) {
 // TestGripSnapToolPreferOverride: the Constraint option round-trips through the index accessors, and
 // the default is Auto (index 0).
 func TestGripSnapToolPreferOverride(t *testing.T) {
+	t.Parallel()
 	tool := NewGripSnapTool()
 	if got := tool.PreferIndex(); got != 0 {
 		t.Errorf("default PreferIndex = %d, want 0 (Auto)", got)

@@ -10,6 +10,7 @@ import (
 	"io"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -149,7 +150,7 @@ func addTriangleByIndex(m *RawMesh, verts []math.Point3, t threeMFTriangle, obj 
 //
 //	data, err := meshio.Encode3MF(body, meshio.QualityFor(types.ResolutionHigh))
 func Encode3MF(body *topo.Body, q ops.Quality) ([]byte, error) {
-	mesh, _ := ops.TessellateBody(body, q)
+	mesh, _ := tessellate.TessellateBody(body, q)
 	return encode3MFMesh(mesh, "millimeter")
 }
 

@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
@@ -16,6 +17,7 @@ import (
 )
 
 func TestCombineJoinsTwoBodiesForReal(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	// Two disjoint prisms in the running state, then Combine them.
 	NewBaseFeatures(fs).AddBase(buildPrism(squarePoly(0), sketch.XYPlane(), span{near: 0, far: 1}, 0, "a"))
@@ -36,6 +38,7 @@ func TestCombineJoinsTwoBodiesForReal(t *testing.T) {
 }
 
 func TestCombineCutOverlappingForReal(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	// Block A: 2×2×2 at the origin (vol 8). Tool B: 2×2×2 shifted to x∈[1,3]
 	// (overlap 1×2×2 = 4). A − B should leave 4.
@@ -54,12 +57,13 @@ func TestCombineCutOverlappingForReal(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("cut body not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
 		t.Errorf("A−B volume = %g, want 4 (8 − 4 overlap)", v)
 	}
 }
 
 func TestCombineRejectsBadIndices(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
 	bad := NewModifyFeatures(fs).AddCombine(0, 5, ops.Join) // tool index out of range
@@ -70,6 +74,7 @@ func TestCombineRejectsBadIndices(t *testing.T) {
 }
 
 func TestDirectEditsResolveThenDefer(t *testing.T) {
+	t.Parallel()
 	body := prismBody()
 	face := body.Faces()[0].ReferenceKey()
 	fs := NewPartFeatures(nil)
@@ -93,6 +98,7 @@ func TestDirectEditsResolveThenDefer(t *testing.T) {
 // TestMoveAndOffsetFaceRealGeometry moves the top face of a box up and offsets it in,
 // checking each is healthy and changes the volume the expected way.
 func TestMoveAndOffsetFaceRealGeometry(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var top []byte
 	for _, f := range box.Faces() {
@@ -107,7 +113,7 @@ func TestMoveAndOffsetFaceRealGeometry(t *testing.T) {
 	if !mv.Health().OK() {
 		t.Fatalf("move-face sick: %+v", mv.Health())
 	}
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 12) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 12) > 1e-6 {
 		t.Errorf("move-face volume = %g, want 12", got)
 	}
 }
@@ -115,6 +121,7 @@ func TestMoveAndOffsetFaceRealGeometry(t *testing.T) {
 // TestDeleteFaceHealsInModel chamfers a box edge then deletes the chamfer face through the
 // feature engine: the body heals back to the sharp box (vol 8), a valid solid.
 func TestDeleteFaceHealsInModel(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var edge []byte
 	for _, e := range box.Edges() {
@@ -138,7 +145,7 @@ func TestDeleteFaceHealsInModel(t *testing.T) {
 	if !del.Health().OK() {
 		t.Fatalf("delete-face sick: %+v", del.Health())
 	}
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
 		t.Errorf("healed volume = %g, want 8", got)
 	}
 }
@@ -146,6 +153,7 @@ func TestDeleteFaceHealsInModel(t *testing.T) {
 // TestDeleteFaceOpenLeavesSurface is the heal=false arm (#1884): deleting the top face without
 // healing leaves an open, non-solid surface body of five faces.
 func TestDeleteFaceOpenLeavesSurface(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var top []byte
 	for _, f := range box.Faces() {
@@ -174,6 +182,7 @@ func TestDeleteFaceOpenLeavesSurface(t *testing.T) {
 // Geometric correctness for non-identity targets is covered by the kernel ReplaceFaces tests
 // (a same-body parallel/stepped target needs a stepped solid to set up).
 func TestReplaceFaceIdentityIsValid(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var top []byte
 	for _, f := range box.Faces() {
@@ -188,7 +197,7 @@ func TestReplaceFaceIdentityIsValid(t *testing.T) {
 	if !rf.Health().OK() {
 		t.Fatalf("replace-face sick: %+v", rf.Health())
 	}
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
 		t.Errorf("identity replace-face volume = %g, want 8", got)
 	}
 }
@@ -196,6 +205,7 @@ func TestReplaceFaceIdentityIsValid(t *testing.T) {
 // TestThickenSurfaceToSlab thickens a planar surface patch (added as the base body) into a
 // slab solid through the feature engine: 2×3 patch × 0.5 = vol 3, a valid solid.
 func TestThickenSurfaceToSlab(t *testing.T) {
+	t.Parallel()
 	patch := patchSurfaceBody(2, 3)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(patch)
@@ -208,7 +218,7 @@ func TestThickenSurfaceToSlab(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("thickened patch not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 3) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 3) > 1e-6 {
 		t.Errorf("slab volume = %g, want 3", got)
 	}
 }
@@ -216,6 +226,7 @@ func TestThickenSurfaceToSlab(t *testing.T) {
 // TestThickenAsSurfaceOffset is the operation=surface arm (#1876): a 2×3 patch offset +1 stays an
 // open surface of the same area (6) at z=1; a zero distance is a copy (area 6 at z=0).
 func TestThickenAsSurfaceOffset(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name  string
 		dist  float64
@@ -237,7 +248,7 @@ func TestThickenAsSurfaceOffset(t *testing.T) {
 			if res.IsSolid() {
 				t.Error("operation surface should leave a non-solid surface body")
 			}
-			if a := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Area; relErr(a, 6) > 1e-6 {
+			if a := query.BodyGeometryProperties(res, ops.DefaultQuality()).Area; relErr(a, 6) > 1e-6 {
 				t.Errorf("surface area = %g, want 6", a)
 			}
 			// Centroid is ill-defined for a zero-volume sheet, so check the offset via vertex z.
@@ -253,6 +264,7 @@ func TestThickenAsSurfaceOffset(t *testing.T) {
 // TestThickenCutIntoSolid is the operation=cut arm (#1876): thickening the box's bottom face 0.5
 // into the +z side and cutting removes that slab (2·2·0.5 = 2) from the vol-8 box, leaving 6.
 func TestThickenCutIntoSolid(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -267,7 +279,7 @@ func TestThickenCutIntoSolid(t *testing.T) {
 	if len(res) != 1 {
 		t.Fatalf("after cut there are %d bodies, want 1 (surface consumed)", len(res))
 	}
-	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; relErr(got, 6) > 1e-3 {
+	if got := query.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; relErr(got, 6) > 1e-3 {
 		t.Errorf("cut volume = %g, want 6 (8 minus a 2×2×0.5 slab)", got)
 	}
 }
@@ -276,6 +288,7 @@ func TestThickenCutIntoSolid(t *testing.T) {
 // and the carried chain/blend flags survive the recipe codec, and a legacy thicken restores
 // symmetric/join/walls-on.
 func TestThickenOptionsRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewModifyFeatures(fs).AddThicken(0.2)
 	pf.Definition().(*ThickenFeature).SetThickenOptions(ops.ThickenNegative, ops.Cut, false, [][]byte{[]byte("f-a")}, false, true, true)
@@ -310,6 +323,7 @@ func TestThickenOptionsRoundTrip(t *testing.T) {
 // with a work-plane-style target at z=3 grows the box to vol 12, and the target planes survive the
 // recipe codec.
 func TestReplaceFacePlanesFlattens(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
 	var top []byte
 	for _, f := range box.Faces() {
@@ -325,7 +339,7 @@ func TestReplaceFacePlanesFlattens(t *testing.T) {
 	if !rf.Health().OK() {
 		t.Fatalf("replace-face (planes) sick: %+v", rf.Health())
 	}
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 12) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 12) > 1e-6 {
 		t.Errorf("replaced volume = %g, want 12 (top raised to z=3)", got)
 	}
 }
@@ -333,6 +347,7 @@ func TestReplaceFacePlanesFlattens(t *testing.T) {
 // TestReplaceFacePlanesRoundTrip pins #1886's frozen-plane serialization: a replace-face carrying
 // target planes survives the recipe codec.
 func TestReplaceFacePlanesRoundTrip(t *testing.T) {
+	t.Parallel()
 	target, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
 	fs := NewPartFeatures(nil)
 	NewModifyFeatures(fs).AddReplaceFacePlanes([][]byte{[]byte("f-top")}, []geom.Plane{target})
@@ -382,6 +397,7 @@ func squarePoly(dx float64) []math.Point2 {
 }
 
 func TestCombineDefinitionAccessible(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	c := NewModifyFeatures(fs).AddCombine(0, 1, ops.Cut)
 	if c.Definition().(*CombineFeature).Definition().Operation != ops.Cut {
@@ -392,6 +408,7 @@ func TestCombineDefinitionAccessible(t *testing.T) {
 // The #331 face-edit extensions: move-face rotate mode and the approximation
 // request, both surviving the recipe codec.
 func TestMoveFaceRotateAndApproximationRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewModifyFeatures(fs).AddMoveFaceRotate([][]byte{[]byte("f1")},
 		math.P3(0, 0, 2), math.V3(0, 1, 0), constFloat(0.15))
@@ -422,6 +439,7 @@ func TestMoveFaceRotateAndApproximationRoundTrip(t *testing.T) {
 
 // TestThickenApproximationRoundTrip: thicken carries its approximation too.
 func TestThickenApproximationRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewModifyFeatures(fs).AddThicken(0.2)
 	pf.Definition().(*ThickenFeature).SetApproximation(types.MeanApproximation)

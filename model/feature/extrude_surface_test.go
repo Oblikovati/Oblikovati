@@ -17,6 +17,7 @@ import (
 // is the pre-existing closed solid prism (6 faces), proving the refactor left the solid path
 // intact.
 func TestBuildExtrusionShellSheetIsOpen(t *testing.T) {
+	t.Parallel()
 	poly := []math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}
 
 	sheet := buildExtrusionShell(poly, sketch.XYPlane(), span{near: 0, far: 3}, 0, "s", false)
@@ -38,6 +39,7 @@ func TestBuildExtrusionShellSheetIsOpen(t *testing.T) {
 // 4 outer walls plus its 4 inner-loop walls — 8 side faces, no caps, non-solid. Exercises the
 // inner-loop tube of the sheet builder (#1858).
 func TestSurfaceExtrudeRingHasInnerAndOuterWalls(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(param.NewParameters())
 	const side, hole, height = 4.0, 2.0, 3.0
 	sk := squareWithHoleSketch(side, hole)
@@ -67,6 +69,7 @@ func TestSurfaceExtrudeRingHasInnerAndOuterWalls(t *testing.T) {
 // square regions in one sketch: the open sheet merges both tubes (4 + 4 = 8 walls, no caps,
 // non-solid). Exercises the multi-profile merge of buildProfileSheets (#1858).
 func TestSurfaceExtrudeMergesMultipleProfiles(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(param.NewParameters())
 	sk := twoSquaresSketch(2, 3) // two 2×2 squares, gap 3
 	if sk.Profiles().Count() != 2 {

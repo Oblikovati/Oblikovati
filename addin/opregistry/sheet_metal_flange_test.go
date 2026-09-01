@@ -14,6 +14,7 @@ import (
 // TestSheetMetalFlangeApply seeds a sheet-metal wall, flanges a top edge, and confirms one
 // merged solid results; then checks the error paths (non-sheet-metal part, missing edge).
 func TestSheetMetalFlangeApply(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	out, err := applyMap(t, s, "sheetMetalFlange", map[string]any{"edge": edge, "height": "10 mm", "angle": "90 deg", "radius": "2 mm"})
 	if err != nil {
@@ -51,6 +52,7 @@ func lastFlangeDef(t *testing.T, s *app.Session) *feature.SheetMetalFlangeDefini
 
 // TestFlangePlacementReachesTheDefinition: the position, its offset and the datum all arrive.
 func TestFlangePlacementReachesTheDefinition(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{
 		"edge": edge, "height": "10 mm",
@@ -71,6 +73,7 @@ func TestFlangePlacementReachesTheDefinition(t *testing.T) {
 // TestFlangePlacementDefaults: omitting both keeps what this feature has always built, so an
 // existing caller's flange does not move.
 func TestFlangePlacementDefaults(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{"edge": edge, "height": "10 mm"}); err != nil {
 		t.Fatalf("plain flange: %v", err)
@@ -85,6 +88,7 @@ func TestFlangePlacementDefaults(t *testing.T) {
 // TestUnknownFlangePlacementIsRefused: a misspelled position or datum must not fall back to the
 // default and quietly build the part at different dimensions.
 func TestUnknownFlangePlacementIsRefused(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	for _, args := range []map[string]any{
 		{"edge": edge, "height": "10 mm", "bendPosition": "tangentToSideFace"},
@@ -99,6 +103,7 @@ func TestUnknownFlangePlacementIsRefused(t *testing.T) {
 // TestFlangeWidthExtentReachesTheDefinition (#1958): the extent and its distances arrive, and the
 // distances are expressions like every other flange dimension.
 func TestFlangeWidthExtentReachesTheDefinition(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{
 		"edge": edge, "height": "10 mm",
@@ -121,6 +126,7 @@ func TestFlangeWidthExtentReachesTheDefinition(t *testing.T) {
 // TestFlangeWithoutAWidthSpansTheEdge: omitting the block must leave the flange exactly as it was
 // before widths existed.
 func TestFlangeWithoutAWidthSpansTheEdge(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{"edge": edge, "height": "10 mm"}); err != nil {
 		t.Fatalf("plain flange: %v", err)
@@ -133,6 +139,7 @@ func TestFlangeWithoutAWidthSpansTheEdge(t *testing.T) {
 // TestUnknownWidthExtentOverTheWireIsRefused: "fromTo" is Inventor's fifth extent and is not
 // offered, so asking for it must fail rather than quietly spanning the whole edge.
 func TestUnknownWidthExtentOverTheWireIsRefused(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{
 		"edge": edge, "height": "10 mm", "width": map[string]any{"type": "fromTo"},
@@ -144,6 +151,7 @@ func TestUnknownWidthExtentOverTheWireIsRefused(t *testing.T) {
 // TestBendOptionsReachTheDefinition (#1959): a per-bend override arrives whole, and an omitted
 // field stays nil so the style still decides it.
 func TestBendOptionsReachTheDefinition(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{
 		"edge": edge, "height": "10 mm",
@@ -168,6 +176,7 @@ func TestBendOptionsReachTheDefinition(t *testing.T) {
 
 // TestFlangeWithoutOptionsDefersEntirely: no options block means the style decides everything.
 func TestFlangeWithoutOptionsDefersEntirely(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{"edge": edge, "height": "10 mm"}); err != nil {
 		t.Fatalf("plain flange: %v", err)
@@ -180,6 +189,7 @@ func TestFlangeWithoutOptionsDefersEntirely(t *testing.T) {
 // TestUnknownBendOptionNamesAreRefused: a misspelled shape or transition must not fall back to the
 // style and quietly cut something else.
 func TestUnknownBendOptionNamesAreRefused(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	for _, opts := range []map[string]any{
 		{"reliefShape": "notched"},
@@ -196,6 +206,7 @@ func TestUnknownBendOptionNamesAreRefused(t *testing.T) {
 // TestAutoMiterReachesTheDefinition (#1961): the miter flag and its gap arrive, and the gap is an
 // expression like every other flange dimension.
 func TestAutoMiterReachesTheDefinition(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{
 		"edge": edge, "height": "10 mm", "applyAutoMiter": true, "miterGap": "1 mm",
@@ -217,6 +228,7 @@ func TestAutoMiterReachesTheDefinition(t *testing.T) {
 // TestFlangeWithoutMiterDefersToTheStyleGap: no gap given means the style's GapSize decides, so
 // the definition carries no override.
 func TestFlangeWithoutMiterDefersToTheStyleGap(t *testing.T) {
+	t.Parallel()
 	s, edge := seedSheetMetalSheet(t)
 	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{
 		"edge": edge, "height": "10 mm", "applyAutoMiter": true,

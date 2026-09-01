@@ -10,6 +10,7 @@ import (
 // TestNopEllipticalCableStripCSG pins the elliptical cable strip as a semi-elliptic
 // frame extruded to the ribbon width.
 func TestNopEllipticalCableStripCSG(t *testing.T) {
+	t.Parallel()
 	outer := semiEllipseFramePoints(1.5, 2.4, 0.08, 32)
 	body := prismBody(outer, 0, 1.0, "elliptical-cable-strip")
 	requireValidNopSolid(t, "elliptical_cable_strip", body)

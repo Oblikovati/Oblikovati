@@ -27,6 +27,7 @@ func cProfileSurface(t *testing.T) BSplineSurface {
 }
 
 func TestParamNearRoundTrip(t *testing.T) {
+	t.Parallel()
 	s := cProfileSurface(t)
 	// A point exactly on the surface, seeded from a nearby (u,v): ParamNear must converge back so
 	// PointAt round-trips to it.
@@ -63,6 +64,7 @@ func taperToApexSurface(t *testing.T) BSplineSurface {
 // ParamNear handed that stuck seed back as if it were a computed foot; now it falls back to the
 // fresh inversion whenever the march never reached a perpendicular foot.
 func TestParamNearRecoversFromDegenerateApexSeed(t *testing.T) {
+	t.Parallel()
 	s := taperToApexSurface(t)
 	if du, _ := s.DerivativesAt(0.5, 1); float64(du.Length()) != 0 {
 		t.Fatalf("test premise broken: apex row must have |∂P/∂u| == 0, got %g", du.Length())
@@ -81,6 +83,7 @@ func TestParamNearRecoversFromDegenerateApexSeed(t *testing.T) {
 // perpendicularity is unreachable there (the surface ends), so the march stops at a degenerate frame
 // with the right answer. The fresh inversion must not be allowed to displace it.
 func TestParamNearKeepsMarchWhenFreshIsNoCloser(t *testing.T) {
+	t.Parallel()
 	s := taperToApexSurface(t)
 	apex := s.PointAt(0.5, 1)
 	q := math.P3(1, 4, 5) // out beyond the apex, off the surface entirely
@@ -101,6 +104,7 @@ func TestParamNearKeepsMarchWhenFreshIsNoCloser(t *testing.T) {
 // the previous one. On the run-out cap this pinned 176 consecutive boundary samples to a single
 // (u,v), collapsing the CDT boundary and cracking the face (177 open mesh edges on macOS/arm64).
 func TestProjectCurveSurvivesDegenerateApex(t *testing.T) {
+	t.Parallel()
 	s := taperToApexSurface(t)
 	// A polyline that walks up to the apex and back down the far side — it must cross the singular row.
 	var pts []math.Point3
@@ -129,6 +133,7 @@ func TestProjectCurveSurvivesDegenerateApex(t *testing.T) {
 }
 
 func TestParamNearSelectsBranchBySeed(t *testing.T) {
+	t.Parallel()
 	s := cProfileSurface(t)
 	// A point left of the C's opening, near both arm ends (v≈0 at z=0, v≈1 at z=2). The seed picks
 	// the branch — independent grid-seeded ParamAt cannot.

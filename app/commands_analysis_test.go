@@ -11,6 +11,7 @@ import (
 // properties and reports them in the status bar. (The numeric accuracy is covered by the
 // model/analysis and router tests; this checks the command wiring.)
 func TestPhysicalPropertiesNotice(t *testing.T) {
+	t.Parallel()
 	s := newPartSession(t)
 	if err := physicalProperties(s); err != nil {
 		t.Fatalf("physicalProperties: %v", err)
@@ -23,6 +24,7 @@ func TestPhysicalPropertiesNotice(t *testing.T) {
 
 // TestPhysicalPropertiesWithoutPart: the command errors when no part is active.
 func TestPhysicalPropertiesWithoutPart(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := physicalProperties(s); err == nil {
 		t.Error("physicalProperties with no active part = ok, want error")
@@ -32,6 +34,7 @@ func TestPhysicalPropertiesWithoutPart(t *testing.T) {
 // TestModelHealthCommand: the Model Health command reports a clean part as all-OK, lists a
 // suppressed feature, and errors without an active part.
 func TestModelHealthCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 2)
 	if err := modelHealth(s); err != nil {
 		t.Fatalf("modelHealth: %v", err)

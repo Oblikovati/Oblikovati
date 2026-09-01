@@ -7,6 +7,7 @@ import (
 )
 
 func TestCosmeticFeaturesPassBodiesThrough(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
 	c := NewCosmeticFeatures(fs)
@@ -32,6 +33,7 @@ func TestCosmeticFeaturesPassBodiesThrough(t *testing.T) {
 }
 
 func TestCosmeticFeaturesRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	c := NewCosmeticFeatures(fs)
 	c.AddDecal([]byte("face-1"), "logo.png")

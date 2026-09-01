@@ -13,6 +13,7 @@ import (
 // (FeatureAdded) carrying the new feature's identity, so the add-in relay forwards feature.added
 // (#148).
 func TestFeaturesAddEmitsFeatureAdded(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t) // active part with one rectangle profile on sketch 0
 
 	var got []app.FeatureLifecycleChanged

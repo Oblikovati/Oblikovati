@@ -10,6 +10,7 @@ import (
 
 // TestCosmeticCenterlines add, list, delete, and persist cosmetic centerlines.
 func TestCosmeticCenterlines(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if _, err := d.EnableSheetMetal(); err != nil {
 		t.Fatalf("EnableSheetMetal: %v", err)

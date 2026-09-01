@@ -13,6 +13,7 @@ import (
 // faceOffset approximation input.
 
 func TestMoveFaceRotateOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _ := filletBoxFixture(t)
 	var keys wire.ReferenceKeysResult
 	call(t, r, s, "model.referenceKeys", `{}`, &keys)
@@ -49,6 +50,7 @@ func TestMoveFaceRotateOverWire(t *testing.T) {
 }
 
 func TestFaceOffsetApproximationOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _ := filletBoxFixture(t)
 	var keys wire.ReferenceKeysResult
 	call(t, r, s, "model.referenceKeys", `{}`, &keys)

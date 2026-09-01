@@ -7,6 +7,7 @@ import "testing"
 // TestColorStylesCommandOpensPanel checks the View-tab Color Styles button is present and its
 // command opens the panel.
 func TestColorStylesCommandOpensPanel(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	tab, _ := BuildRibbon(s).Tab("View")
 	panel, ok := tab.Panel("Appearance")
@@ -26,6 +27,7 @@ func TestColorStylesCommandOpensPanel(t *testing.T) {
 
 // TestSelectedBodyKeyEmptyWithoutSelection checks no body key when nothing is selected.
 func TestSelectedBodyKeyEmptyWithoutSelection(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, ok := s.SelectedBodyKey(); ok {
 		t.Error("no body should be selected on a fresh session")

@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/occurrence"
@@ -43,7 +44,7 @@ func solidBlock(t *testing.T, min, max math.Point3) *topo.Body {
 }
 
 func volumeOf(b *topo.Body) float64 {
-	return ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 }
 
 func approx(got, want float64) bool { d := got - want; return d < 1e-6 && d > -1e-6 }
@@ -51,6 +52,7 @@ func approx(got, want float64) bool { d := got - want; return d < 1e-6 && d > -1
 // TestDerivedAssemblyMergesIncludedBodies is the F06 core: two placed source bodies are
 // transformed into the part and merged into one base body (volume = sum).
 func TestDerivedAssemblyMergesIncludedBodies(t *testing.T) {
+	t.Parallel()
 	block := solidBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2)) // volume 8
 	src := &fakeAssemblySource{placed: []PlacedBody{
 		{Body: block, Transform: math.Identity4(), Source: occFor("a:1")},
@@ -70,6 +72,7 @@ func TestDerivedAssemblyMergesIncludedBodies(t *testing.T) {
 // TestDerivedAssemblySubtractsStyledOccurrence cuts a subtracted occurrence's body from
 // the merged base — volume-gated against the analytic value.
 func TestDerivedAssemblySubtractsStyledOccurrence(t *testing.T) {
+	t.Parallel()
 	big := solidBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2))   // volume 8
 	small := solidBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1)) // a 1³ corner of big
 	cut := occFor("cut:1")
@@ -90,6 +93,7 @@ func TestDerivedAssemblySubtractsStyledOccurrence(t *testing.T) {
 }
 
 func TestDerivedAssemblyExcludesStyledOccurrence(t *testing.T) {
+	t.Parallel()
 	kept := solidBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2))
 	dropped := solidBlock(t, math.P3(10, 10, 10), math.P3(12, 12, 12))
 	drop := occFor("drop:1")
@@ -109,6 +113,7 @@ func TestDerivedAssemblyExcludesStyledOccurrence(t *testing.T) {
 // TestDerivedAssemblyBreakLinkFreezesAndVersionTracks covers the associative pull (a
 // source edit re-derives) and the break-link (the result freezes).
 func TestDerivedAssemblyBreakLinkFreezesAndVersionTracks(t *testing.T) {
+	t.Parallel()
 	block := solidBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2))
 	src := &fakeAssemblySource{placed: []PlacedBody{
 		{Body: block, Transform: math.Identity4(), Source: occFor("a:1")},

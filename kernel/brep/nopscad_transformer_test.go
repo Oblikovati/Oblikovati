@@ -9,6 +9,10 @@ import (
 )
 
 func TestNopTransformerCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~5s): `make test-corpus`")
+	}
+	t.Parallel()
 	body := prismBody(roundedRectPoints(4.0, 3.0, 0.2, 8), 0, 0.2, "transformer-foot")
 	for _, x := range []float64{-1.5, 1.5} {
 		for _, y := range []float64{-1.0, 1.0} {

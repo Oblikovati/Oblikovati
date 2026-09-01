@@ -12,6 +12,7 @@ import (
 // idle session reports false (so the head may block at ~0% CPU), but a running camera tween
 // reports true (so the head keeps ticking and the animation does not freeze mid-transition).
 func TestWantsContinuousRedraw(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.WantsContinuousRedraw() {
 		t.Fatal("a fresh idle session wants continuous redraw; the loop would never block (#1493)")

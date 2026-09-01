@@ -147,6 +147,7 @@ func arrangementGoldenCases() []arrangementGoldenCase {
 }
 
 func TestCurvedArrangementGolden(t *testing.T) {
+	t.Parallel()
 	for _, c := range arrangementGoldenCases() {
 		t.Run(c.name, func(t *testing.T) {
 			b, ok := c.make()

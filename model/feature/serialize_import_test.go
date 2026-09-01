@@ -59,6 +59,7 @@ func unitCubeSoup(s float64) meshio.RawMesh {
 }
 
 func TestImportedBodyFeatureRoundTripsViaReImport(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	path := writeCubeSTL(t, dir)
 	raw := mustRead(t, path)

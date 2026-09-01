@@ -13,6 +13,7 @@ import (
 // the edge reference does not resolve, so each is created but reports healthy=false — exercising the
 // edge dispatch (#1840).
 func TestCreateEdgeAxes(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	for _, kind := range []string{"analytic-edge", "line-by-entity"} {
 		var res wire.CreateWorkAxisResult
@@ -29,6 +30,7 @@ func TestCreateEdgeAxes(t *testing.T) {
 // TestCreateEdgeAxisGeometricRef dispatches an analytic-edge axis whose reference is an ADR-0040
 // geometric descriptor string — the external-author form routes through the same create (#1840).
 func TestCreateEdgeAxisGeometricRef(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	ref := types.GeometricEdgeRef{Midpoint: [3]float64{1, 2, 3}, Direction: [3]float64{1, 0, 0}}.Ref()
 	var res wire.CreateWorkAxisResult
@@ -40,6 +42,7 @@ func TestCreateEdgeAxisGeometricRef(t *testing.T) {
 
 // TestCreateEdgeMidpointPoint dispatches an edge-midpoint point over the wire (#1842).
 func TestCreateEdgeMidpointPoint(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkPointResult
 	call(t, r, s, "workPoints.create", `{"kind":"edge-midpoint","refs":["edge/AAAA"]}`, &res)
@@ -50,6 +53,7 @@ func TestCreateEdgeMidpointPoint(t *testing.T) {
 
 // TestCreateEdgeAxisWrongRefCount: an edge axis needs exactly one edge reference (#1840).
 func TestCreateEdgeAxisWrongRefCount(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "workAxes.create", []byte(`{"kind":"analytic-edge","refs":["a","b"]}`)); err == nil {
 		t.Error("analytic-edge with two references should error")

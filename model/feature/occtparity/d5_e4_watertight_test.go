@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -158,7 +159,7 @@ func assertTorusArmFaces(t *testing.T, name string, body *topo.Body, want int) {
 
 // faceMeshArea2 sums the triangle areas of a face's Property-quality tessellation.
 func faceMeshArea2(f *topo.Face) float64 {
-	m := ops.TessellateFace(f, ops.PropertyQuality())
+	m := tessellate.TessellateFace(f, ops.PropertyQuality())
 	if m == nil {
 		return 0
 	}

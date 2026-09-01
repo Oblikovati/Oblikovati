@@ -25,6 +25,7 @@ func argsJSON(t *testing.T, v any) string {
 // re-entrant router and reads it back; the printed value proves the real model changed
 // (not just the script's VM), end to end via scripts.run.
 func TestScriptsRunDrivesModelAndCapturesOutput(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	src := `oblikovati.parameters.add{ name = "depth", expression = "5 cm" }
 	        local p = oblikovati.parameters.get{ name = "depth" }
@@ -42,6 +43,7 @@ func TestScriptsRunDrivesModelAndCapturesOutput(t *testing.T) {
 // TestScriptsRunReportsScriptErrorInResult: a runtime error rides in the result's Error
 // field (with the offending value), and the call itself succeeds at the transport level.
 func TestScriptsRunReportsScriptErrorInResult(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var res wire.ScriptRunResult
 	call(t, r, s, wire.MethodScriptRun, argsJSON(t, wire.ScriptRunArgs{Source: `error("boom-value")`}), &res)
@@ -53,6 +55,7 @@ func TestScriptsRunReportsScriptErrorInResult(t *testing.T) {
 // TestScriptsRunRejectsEmptySource: an empty program is a request error (not a silent
 // no-op), naming the problem.
 func TestScriptsRunRejectsEmptySource(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, wire.MethodScriptRun, []byte(`{"source":"   "}`)); err == nil {
 		t.Fatal("empty source should be rejected")

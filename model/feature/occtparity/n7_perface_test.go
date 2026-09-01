@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -42,7 +43,7 @@ func TestN7PerFaceAreas(t *testing.T) {
 	faces := n7ResultBody(t).Faces()
 	for _, g := range n7PerFaceGates {
 		f := findN7Face(t, faces, g)
-		mesh := ops.TessellateFace(f, ops.PropertyQuality())
+		mesh := tessellate.TessellateFace(f, ops.PropertyQuality())
 		area := ops.MeshArea(mesh)
 		if rel := relErr(area, g.expected); rel > 0.01 {
 			t.Errorf("%s: Property area %.4f != OCCT %.4f (rel %.3f%% > 1%%)", g.name, area, g.expected, rel*100)
@@ -61,7 +62,7 @@ func assertPatchConverges(t *testing.T, f *topo.Face, prop *ops.Mesh) {
 	if folds := ops.FoldEdgeCount(prop); folds != 0 {
 		t.Errorf("canal patch: %d fold edges at Property quality, want 0", folds)
 	}
-	def := ops.MeshArea(ops.TessellateFace(f, ops.DefaultQuality()))
+	def := ops.MeshArea(tessellate.TessellateFace(f, ops.DefaultQuality()))
 	if rel := relErr(ops.MeshArea(prop), def); rel > 0.005 {
 		t.Errorf("canal patch diverges: Default %.4f vs Property %.4f (rel %.3f%% > 0.5%%)", def, ops.MeshArea(prop), rel*100)
 	}
@@ -100,7 +101,7 @@ func faceKindMatches(f *topo.Face, g perFaceGate) bool {
 		if _, ok := f.Geometry().(geom.Cylinder); !ok {
 			return false
 		}
-		a := ops.MeshArea(ops.TessellateFace(f, ops.PropertyQuality()))
+		a := ops.MeshArea(tessellate.TessellateFace(f, ops.PropertyQuality()))
 		return a >= g.loArea && a <= g.hiArea
 	default:
 		return false

@@ -15,6 +15,7 @@ import (
 // SolidCylinder builds a valid analytic solid: one true cylinder face + two planar caps,
 // with a volume of π·r²·h (the first curved-face B-rep in the kernel, K1b slice 2).
 func TestSolidCylinderIsValidAnalyticSolid(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 5)
 	if err != nil {
 		t.Fatal(err)
@@ -49,6 +50,7 @@ func TestSolidCylinderIsValidAnalyticSolid(t *testing.T) {
 
 // The side is a periodic face: its seam edge carries two opposite uses (watertight).
 func TestSolidCylinderWatertight(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(1, 2, 0), math.V3(0, 0, 1), 1.5, 3)
 	if open := ops.BoundaryEdges(cyl); len(open) != 0 {
 		t.Fatalf("solid cylinder has %d boundary edges, want 0 (watertight)", len(open))

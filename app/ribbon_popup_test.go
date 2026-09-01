@@ -8,6 +8,7 @@ import "testing"
 // its item commands (resolved live from the registry), skipping ids that don't exist
 // — the CommandBarPopUp behavior of M05-F03.
 func TestPopupControlResolvesRegistryItems(t *testing.T) {
+	t.Parallel()
 	s := NewSession() // no document open ⇒ the ZeroDoc ribbon, so commands target it
 	noop := func(*Session) error { return nil }
 	if err := s.Commands().Add(NewCommand("x.a", "Alpha", "Demo", noop).WithTooltip("first").WithRibbons(ZeroDocRibbon)); err != nil {

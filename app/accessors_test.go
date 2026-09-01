@@ -9,6 +9,7 @@ import (
 )
 
 func TestCommandMetadataAccessors(t *testing.T) {
+	t.Parallel()
 	c := NewCommand("id", "Disp", "Cat", func(*Session) error { return nil }).
 		WithAlias("X").WithKind(ToggleControl).WithTooltip("tip")
 	if c.ID() != "id" || c.DisplayName() != "Disp" || c.Category() != "Cat" ||
@@ -23,6 +24,7 @@ func TestCommandMetadataAccessors(t *testing.T) {
 }
 
 func TestSelectionHandleKindsAndItems(t *testing.T) {
+	t.Parallel()
 	handles := []Selectable{
 		FaceHandle{},
 		EdgeHandle{},
@@ -49,6 +51,7 @@ func TestSelectionHandleKindsAndItems(t *testing.T) {
 }
 
 func TestEventIDsStable(t *testing.T) {
+	t.Parallel()
 	ids := map[event.Event]event.TypeID{
 		CommandStarted{}:   0x0501,
 		CommandEnded{}:     0x0502,
@@ -63,6 +66,7 @@ func TestEventIDsStable(t *testing.T) {
 }
 
 func TestExtrudeToolAccessors(t *testing.T) {
+	t.Parallel()
 	ext := NewExtrudeTool()
 	if ext.Name() != "Extrude" || ext.AddedFeature() != nil {
 		t.Error("extrude tool accessors wrong before commit")

@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -52,6 +53,10 @@ func exactBlindBoreVolume() float64   { return stdmath.Pi * 1 * 1 * 1 }
 // feature: ONE hole feature, four bores. Before this a four-hole pattern had to be four features
 // with four frozen coordinates.
 func TestSketchPlacementDrillsOneHolePerCentrePoint(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
+	t.Parallel()
 	sk := sketch.NewSketches().Add(topOfBlockPlane())
 	for _, at := range [][2]float64{{1, 1}, {3, 1}, {3, 3}, {1, 3}} {
 		sk.Points().Add(math.P2(math.Scalar(at[0]), math.Scalar(at[1]))).SetCenterPoint(true)
@@ -61,7 +66,7 @@ func TestSketchPlacementDrillsOneHolePerCentrePoint(t *testing.T) {
 		t.Fatalf("sketch-placed hole sick: %+v", hole.Health())
 	}
 	want := 32 - 4*facetedBlindBoreVolume()
-	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("volume = %g, want %g (block − FOUR Ø2×1 bores)", got, want)
 	}
 }
@@ -70,6 +75,7 @@ func TestSketchPlacementDrillsOneHolePerCentrePoint(t *testing.T) {
 // live in the same collection, so drilling every point would bore a hole at each corner of any
 // rectangle drawn in the sketch.
 func TestSketchPlacementIgnoresPlainPoints(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(topOfBlockPlane())
 	a, b := sk.Points().Add(math.P2(0.5, 0.5)), sk.Points().Add(math.P2(3.5, 0.5))
 	sk.Lines().Add(a, b) // a and b are now a line's endpoints, not drill positions
@@ -80,7 +86,7 @@ func TestSketchPlacementIgnoresPlainPoints(t *testing.T) {
 		t.Fatalf("sketch-placed hole sick: %+v", hole.Health())
 	}
 	want := 32 - exactBlindBoreVolume() // the single centre bore is clear of the sides: a true cylinder
-	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("volume = %g, want %g (ONE bore — the line's endpoints are not drill positions)", got, want)
 	}
 }
@@ -88,6 +94,7 @@ func TestSketchPlacementIgnoresPlainPoints(t *testing.T) {
 // TestSketchPlacementWithNoCentrePointsReportsWhy: a sketch with nothing marked would drill nothing
 // at all, which reads as "the hole silently did not happen". It says what to fix instead.
 func TestSketchPlacementWithNoCentrePointsReportsWhy(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(topOfBlockPlane())
 	sk.Points().Add(math.P2(2, 2))
 	hole, _ := drillWithPlacement(t, SketchHolePlacement{Sketch: sk})
@@ -103,6 +110,7 @@ func TestSketchPlacementWithNoCentrePointsReportsWhy(t *testing.T) {
 // referenced to, so it stays concentric when that circle moves — the parametric anchor a frozen
 // coordinate loses.
 func TestConcentricPlacementCentresOnACircularEdge(t *testing.T) {
+	t.Parallel()
 	boss, capKey, rim, at := analyticBoss(t)
 	sites, err := ConcentricHolePlacement{Face: HoleFaceRef{Key: capKey}, RefEdge: rim}.Sites(boss)
 	if err != nil {
@@ -120,6 +128,7 @@ func TestConcentricPlacementCentresOnACircularEdge(t *testing.T) {
 // "concentric" with it is meaningless. Falling back to, say, its midpoint would drill a hole that
 // looks placed but tracks nothing.
 func TestConcentricPlacementRefusesANonCircularEdge(t *testing.T) {
+	t.Parallel()
 	block, top := holeBlock()
 	face, _ := block.FindFaceByKey(top)
 	straight := edgeNearest(t, face, math.P3(2, 0, 2))
@@ -168,6 +177,7 @@ func planarCapAt(t *testing.T, body *topo.Body, z float64) (*topo.Face, math.Poi
 // way, and only one way lands on the part. Both corners of the block's top face are measured from
 // to prove the offsets follow the face rather than a fixed axis sense.
 func TestLinearPlacementLocatesByTwoOffsets(t *testing.T) {
+	t.Parallel()
 	block, top := holeBlock()
 	face, ok := block.FindFaceByKey(top)
 	if !ok {
@@ -202,6 +212,7 @@ func TestLinearPlacementLocatesByTwoOffsets(t *testing.T) {
 // TestLinearPlacementRefusesParallelEdges: two parallel references name no point at all. Solving
 // them anyway would divide by ~0 and drill somewhere far away.
 func TestLinearPlacementRefusesParallelEdges(t *testing.T) {
+	t.Parallel()
 	block, top := holeBlock()
 	face, _ := block.FindFaceByKey(top)
 	along := edgeNearest(t, face, math.P3(2, 0, 2))
@@ -217,6 +228,7 @@ func TestLinearPlacementRefusesParallelEdges(t *testing.T) {
 // TestOnPointPlacementDrillsAlongItsAxis: the placement that needs no face, for a bore nothing on
 // the body names. The direction comes from the work axis, and Flipped reverses it.
 func TestOnPointPlacementDrillsAlongItsAxis(t *testing.T) {
+	t.Parallel()
 	wp := &WorkPoint{point: math.P3(2, 2, 2)}
 	p := PointHolePlacement{Point: wp, Axis: yWorkAxis()}
 	sites, err := p.Sites(nil)
@@ -241,6 +253,7 @@ func TestOnPointPlacementDrillsAlongItsAxis(t *testing.T) {
 // TestOnPointPlacementNeedsBoth: with no face to fall back on, a missing point or axis leaves the
 // bore undefined rather than defaulted.
 func TestOnPointPlacementNeedsBoth(t *testing.T) {
+	t.Parallel()
 	if _, err := (PointHolePlacement{Axis: yWorkAxis()}).Sites(nil); err == nil {
 		t.Error("on-point placement with no work point resolved; it must report the missing point")
 	}
@@ -284,6 +297,7 @@ func nearPoint(a, b math.Point3, tol float64) bool {
 // its driving geometry. A recipe that saved the resolved coordinates instead would reopen with the
 // holes frozen wherever they last landed — exactly the loss the placements exist to stop.
 func TestHolePlacementRoundTrips(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(topOfBlockPlane())
 	sk.Points().Add(math.P2(1, 1)).SetCenterPoint(true)
 	sk.Points().Add(math.P2(3, 3)).SetCenterPoint(true)

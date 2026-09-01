@@ -7,6 +7,7 @@ import "testing"
 // TestCopyComponentsAddsIndependentCopy: with one component selected, Copy adds a second
 // occurrence (same component, "-copy" suffix) and the add is one undo step (#765).
 func TestCopyComponentsAddsIndependentCopy(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	s.selection.Add(OccurrenceHandle{Occurrence: asm.Occurrences().Item(0)})
@@ -31,6 +32,7 @@ func TestCopyComponentsAddsIndependentCopy(t *testing.T) {
 
 // TestCopyComponentsRequiresSelection: Copy with nothing selected errors rather than no-op.
 func TestCopyComponentsRequiresSelection(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	if err := s.CopyComponents(); err == nil {
@@ -41,6 +43,7 @@ func TestCopyComponentsRequiresSelection(t *testing.T) {
 // TestRectPatternPlacesGrid: a 2×2 rectangular pattern of the seed adds 3 occurrences (the seed
 // is element 0,0), for 4 total, in one undo step.
 func TestRectPatternPlacesGrid(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	trackFromHere(s)
@@ -69,6 +72,7 @@ func TestRectPatternPlacesGrid(t *testing.T) {
 // TestCircPatternPlacesRing: a count-4 circular pattern adds 3 occurrences (the seed is element
 // 0), for 4 total.
 func TestCircPatternPlacesRing(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 
@@ -88,6 +92,7 @@ func TestCircPatternPlacesRing(t *testing.T) {
 // TestMirrorComponentsAddsMirror: Mirror adds one mirrored occurrence (the "-mirror" suffix) per
 // source.
 func TestMirrorComponentsAddsMirror(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 
@@ -110,6 +115,7 @@ func TestMirrorComponentsAddsMirror(t *testing.T) {
 // TestMirrorRejectsZeroNormal: a degenerate (zero) mirror-plane normal is not committable and
 // errors on commit rather than placing a bogus reflection.
 func TestMirrorRejectsZeroNormal(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	tool := NewAssemblyMirrorTool()
@@ -126,6 +132,7 @@ func TestMirrorRejectsZeroNormal(t *testing.T) {
 // TestReplicationToolSeedsFromSelection: starting a tool with a component pre-selected adopts it
 // as the source, so "select then Pattern" needs no re-pick.
 func TestReplicationToolSeedsFromSelection(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	s.selection.Add(OccurrenceHandle{Occurrence: asm.Occurrences().Item(0)})
@@ -140,6 +147,7 @@ func TestReplicationToolSeedsFromSelection(t *testing.T) {
 // TestReplicationToolsRequireSeed: a pattern with no source errors on commit (the active-assembly
 // + non-empty-source gate).
 func TestReplicationToolsRequireSeed(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	tool := NewAssemblyCircPatternTool() // no Pick, no selection

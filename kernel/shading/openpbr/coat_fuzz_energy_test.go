@@ -9,6 +9,7 @@ import "testing"
 // criterion: the integrated hemispherical reflectance of a diffuse base layered under a
 // coat, and again under both coat and fuzz, must not exceed 1.
 func TestEnergyConservationSweepCoatAndFuzz(t *testing.T) {
+	t.Parallel()
 	const cosThetaO = 0.6
 	const tolerance = 1.05 // quadrature slack across three stacked numerical integrals
 

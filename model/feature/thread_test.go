@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
@@ -28,6 +29,7 @@ func cylinderFaceKey(t *testing.T, b *topo.Body) []byte {
 
 // TestParseThreadDesignation pins the ISO metric parser.
 func TestParseThreadDesignation(t *testing.T) {
+	t.Parallel()
 	spec, err := ParseThreadDesignation("M8x1.25")
 	if err != nil {
 		t.Fatalf("M8x1.25: %v", err)
@@ -54,11 +56,12 @@ func TestParseThreadDesignation(t *testing.T) {
 // TestThreadCosmeticOnCylinder applies a thread to a cylinder's side face: the feature is
 // healthy, the solid is unchanged, and the resolved spec is recorded.
 func TestThreadCosmeticOnCylinder(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4, 3)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
-	before := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
 	th := NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{FaceKey: cylinderFaceKey(t, cyl), Designation: "M8x1.25", Cut: false})
@@ -67,7 +70,7 @@ func TestThreadCosmeticOnCylinder(t *testing.T) {
 	if !th.Health().OK() {
 		t.Fatalf("cosmetic thread went sick: %+v", th.Health())
 	}
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-before) > 1e-9 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-before) > 1e-9 {
 		t.Errorf("cosmetic thread changed the volume: %.6f → %.6f", before, got)
 	}
 	spec := th.Definition().(*ThreadFeature).Spec()
@@ -78,6 +81,7 @@ func TestThreadCosmeticOnCylinder(t *testing.T) {
 
 // TestThreadSickOnPlanarFace rejects a thread on a non-cylindrical face.
 func TestThreadSickOnPlanarFace(t *testing.T) {
+	t.Parallel()
 	box := prismBody() // a unit prism: every face is planar
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -90,6 +94,7 @@ func TestThreadSickOnPlanarFace(t *testing.T) {
 
 // TestThreadSickOnBadDesignation rejects an unparseable designation.
 func TestThreadSickOnBadDesignation(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4, 3)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
@@ -103,6 +108,7 @@ func TestThreadSickOnBadDesignation(t *testing.T) {
 // TestThreadDisplayHelixOnSurface checks the cosmetic thread produces a helix display curve on
 // its cylindrical face (the data the head renders).
 func TestThreadDisplayHelixOnSurface(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4, 1.0)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
@@ -131,6 +137,7 @@ func TestThreadDisplayHelixOnSurface(t *testing.T) {
 // only over that axial window (Inventor's ThreadOffset/ThreadDepth) — the double-ended-stud case,
 // where the two end threads must not spill into the plain middle.
 func TestThreadDisplayPartialSpan(t *testing.T) {
+	t.Parallel()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4, 3.0)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
@@ -158,7 +165,7 @@ func TestThreadDisplayPartialSpan(t *testing.T) {
 // drops (the grooves are real geometry).
 func TestThreadCutModelsRealThreadFast(t *testing.T) {
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.5, 2.0)
-	before := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
 	th := NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{FaceKey: cylinderFaceKey(t, cyl), Designation: "M8x1.25", Cut: true})
@@ -175,7 +182,7 @@ func TestThreadCutModelsRealThreadFast(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("modeled thread not a valid solid: %+v", r)
 	}
-	after := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 	if after >= before || after <= 0 {
 		t.Errorf("modeled thread volume %.4f not in (0, %.4f) — grooves should remove material", after, before)
 	}

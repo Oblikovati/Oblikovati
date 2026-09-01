@@ -13,6 +13,7 @@ func constClosure(v float64) func() float64 { return func() float64 { return v }
 // TestFlangeBendSpecsDefaultsTo90 a flange with no overrides reports one 90° bend deferring
 // its radius to the rule (signalled by a non-positive radius).
 func TestFlangeBendSpecsDefaultsTo90(t *testing.T) {
+	t.Parallel()
 	f := &SheetMetalFlangeFeature{def: &SheetMetalFlangeDefinition{Height: constClosure(1)}}
 	specs := f.BendSpecs(0.1)
 	if len(specs) != 1 {
@@ -28,6 +29,7 @@ func TestFlangeBendSpecsDefaultsTo90(t *testing.T) {
 
 // TestFlangeBendSpecsHonorsOverrides a flange with explicit angle/radius reports them.
 func TestFlangeBendSpecsHonorsOverrides(t *testing.T) {
+	t.Parallel()
 	f := &SheetMetalFlangeFeature{def: &SheetMetalFlangeDefinition{
 		Height: constClosure(1), Angle: constClosure(math.Pi / 3), Radius: constClosure(0.5),
 	}}
@@ -39,6 +41,7 @@ func TestFlangeBendSpecsHonorsOverrides(t *testing.T) {
 
 // TestBendAndFoldBendSpecs the bend and fold features each report one 90° bend by default.
 func TestBendAndFoldBendSpecs(t *testing.T) {
+	t.Parallel()
 	bend := &SheetMetalBendFeature{def: &SheetMetalBendDefinition{}}
 	fold := &SheetMetalFoldFeature{def: &SheetMetalFoldDefinition{}}
 	for name, specs := range map[string][]BendSpec{"bend": bend.BendSpecs(0.1), "fold": fold.BendSpecs(0.1)} {
@@ -51,6 +54,7 @@ func TestBendAndFoldBendSpecs(t *testing.T) {
 // TestHemBendSpecsGaugeDerivedRadius a hem reports a 180° fold whose radius is derived from
 // the gauge — a closed hem at half the thickness, an open hem at half its gap.
 func TestHemBendSpecsGaugeDerivedRadius(t *testing.T) {
+	t.Parallel()
 	closed := &SheetMetalHemFeature{def: &SheetMetalHemDefinition{Type: SingleHem}}
 	specs := closed.BendSpecs(0.2)
 	if len(specs) != 1 || math.Abs(specs[0].Angle-math.Pi) > 1e-12 {

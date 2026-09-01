@@ -18,6 +18,7 @@ import (
 // counter is shared through a pointer because the tracer is copied by value into every sweep — a
 // per-copy counter would silently never reach the cap, which is the bug this pins.
 func TestSSICorrectorGuardCountsAndStops(t *testing.T) {
+	t.Parallel()
 	spent := ssiMaxCorrections - 2
 	tr := ssiTracer{spent: &spent}
 	if !tr.charge() || tr.exhausted() {
@@ -41,6 +42,7 @@ func TestSSICorrectorGuardCountsAndStops(t *testing.T) {
 // TestSSICorrectorGuardIgnoresATracerWithNoBudget: the zero tracer some unit tests build carries no
 // counter, and must trace rather than divide by a nil budget.
 func TestSSICorrectorGuardIgnoresATracerWithNoBudget(t *testing.T) {
+	t.Parallel()
 	var tr ssiTracer
 	if !tr.charge() || tr.exhausted() {
 		t.Error("a tracer with no budget installed must never be charged or exhausted")
@@ -53,6 +55,7 @@ func TestSSICorrectorGuardIgnoresATracerWithNoBudget(t *testing.T) {
 // kernel/ops corpus ceiling of 921 — so it must trace to completion with the guard silent. Falsify by
 // dropping ssiMaxCorrections near the measured ceiling: this reports a declined trace and goes red.
 func TestSSICorrectorGuardLeavesTheHardestLegitimateTraceUntouched(t *testing.T) {
+	t.Parallel()
 	torus, err := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 10, 3)
 	if err != nil {
 		t.Fatalf("NewTorus: %v", err)
@@ -74,6 +77,7 @@ func TestSSICorrectorGuardLeavesTheHardestLegitimateTraceUntouched(t *testing.T)
 // separate flag precisely so a caller never has to infer one from an empty curve set, and the common
 // case must leave it clear. A sphere's equator traces in a handful of corrections.
 func TestAnOrdinaryPairIsNotReportedAsDeclined(t *testing.T) {
+	t.Parallel()
 	sp, err := NewSphere(math.P3(0, 0, 0), 5)
 	if err != nil {
 		t.Fatalf("NewSphere: %v", err)

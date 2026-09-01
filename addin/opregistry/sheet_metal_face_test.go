@@ -35,6 +35,7 @@ func sheetMetalProfiledPart(t *testing.T) *app.Session {
 // TestSheetMetalFaceApply the operation thickens the profile into one wall on a sheet-metal
 // part, and reports a clear error on a part without the sheet-metal environment.
 func TestSheetMetalFaceApply(t *testing.T) {
+	t.Parallel()
 	s := sheetMetalProfiledPart(t)
 	out, err := apply(t, s, "sheetMetalFace", `{"sketchIndex":0,"operation":"new","direction":"positive"}`)
 	if err != nil {
@@ -60,6 +61,7 @@ func TestSheetMetalFaceApply(t *testing.T) {
 // TestSheetMetalFaceApplyBadArgs each malformed-args path on a sheet-metal part returns a
 // clean error (no panic): an out-of-range sketch, an unknown operation, and bad JSON.
 func TestSheetMetalFaceApplyBadArgs(t *testing.T) {
+	t.Parallel()
 	for _, bad := range []string{
 		`{"sketchIndex":99}`,                   // no such sketch
 		`{"sketchIndex":0,"operation":"weld"}`, // unknown operation

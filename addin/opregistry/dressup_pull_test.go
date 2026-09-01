@@ -25,6 +25,7 @@ func draftPullDir(t *testing.T, in featureargs.Draft) math.Vector3 {
 
 // TestDraftDefaultPullDirection: without pullDirection, the draft uses the host's default +Z pull.
 func TestDraftDefaultPullDirection(t *testing.T) {
+	t.Parallel()
 	got := draftPullDir(t, featureargs.Draft{FaceRefs: []string{"f"}})
 	if got != math.V3(0, 0, 1) {
 		t.Errorf("default pull = %v, want +Z", got)
@@ -34,6 +35,7 @@ func TestDraftDefaultPullDirection(t *testing.T) {
 // TestDraftExplicitPullDirection: an explicit pullDirection maps straight onto the model's
 // AddDraftPull, so the feature's pull direction is exactly the vector supplied over the wire.
 func TestDraftExplicitPullDirection(t *testing.T) {
+	t.Parallel()
 	got := draftPullDir(t, featureargs.Draft{FaceRefs: []string{"f"}, PullDirection: []float64{1, 0, 0}})
 	if got != math.V3(1, 0, 0) {
 		t.Errorf("explicit pull = %v, want +X", got)
@@ -43,6 +45,7 @@ func TestDraftExplicitPullDirection(t *testing.T) {
 // TestDraftPullDirectionThroughRegistry: the full applyDraft path accepts a pullDirection on a
 // real face and builds a feature (recomputeResult never errors for a well-formed request).
 func TestDraftPullDirectionThroughRegistry(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	args := map[string]any{"faceRefs": []string{face}, "angle": "3 deg", "pullDirection": []float64{0, 0, 1}}
 	if _, err := applyMap(t, s, "draft", args); err != nil {
@@ -52,6 +55,7 @@ func TestDraftPullDirectionThroughRegistry(t *testing.T) {
 
 // TestDraftRejectsBadPullDirection: a pullDirection that is not a 3-vector is a clean error.
 func TestDraftRejectsBadPullDirection(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	args := map[string]any{"faceRefs": []string{face}, "angle": "3 deg", "pullDirection": []float64{1, 0}}
 	if _, err := applyMap(t, s, "draft", args); err == nil {

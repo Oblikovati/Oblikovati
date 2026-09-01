@@ -6,14 +6,16 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestLipToolEndToEnd drives the Lip UI: start the tool, click a vertical edge of a 2×2×2
 // block, set the bead width/height, OK — and asserts the raised lip added material to a
 // still-valid solid.
 func TestLipToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2) // 2×2×2, vol 8
-	before := ops.BodyGeometryProperties(block, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(block, ops.DefaultQuality()).Volume
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 
 	lt := NewLipTool()
@@ -34,15 +36,16 @@ func TestLipToolEndToEnd(t *testing.T) {
 	if v := ops.Validate(body); !v.Valid || !body.IsSolid() {
 		t.Fatalf("lip body not a valid solid: %+v", v)
 	}
-	if after := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; after <= before {
+	if after := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; after <= before {
 		t.Errorf("lip volume %g did not rise from %g — a raised lip adds material", after, before)
 	}
 }
 
 // TestLipToolGrooves confirms the groove mode cuts material (volume drops).
 func TestLipToolGrooves(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
-	before := ops.BodyGeometryProperties(block, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(block, ops.DefaultQuality()).Volume
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 
 	lt := NewLipTool()
@@ -58,7 +61,7 @@ func TestLipToolGrooves(t *testing.T) {
 	if v := ops.Validate(body); !v.Valid || !body.IsSolid() {
 		t.Fatalf("grooved body not a valid solid: %+v", v)
 	}
-	if after := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; after >= before {
+	if after := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; after >= before {
 		t.Errorf("groove volume %g did not drop from %g — a groove cuts material", after, before)
 	}
 }
@@ -66,6 +69,7 @@ func TestLipToolGrooves(t *testing.T) {
 // TestLipToolParams exercises the property-dialog surface: name, width/height/groove accessors
 // (the dimensions reject a non-positive value), and the Params model the head renders.
 func TestLipToolParams(t *testing.T) {
+	t.Parallel()
 	tl := NewLipTool()
 	if tl.Name() != "Lip" {
 		t.Errorf("name = %q, want Lip", tl.Name())
@@ -96,6 +100,7 @@ func TestLipToolParams(t *testing.T) {
 
 // TestLipToolPreviewAndCancel covers the draft preview (before/after a pick) and Cancel.
 func TestLipToolPreviewAndCancel(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	edge := verticalEdgeOf(t, block)
 	tl := NewLipTool()
@@ -117,6 +122,7 @@ func TestLipToolPreviewAndCancel(t *testing.T) {
 
 // TestLipToolCommitNoPart covers the no-active-part error path.
 func TestLipToolCommitNoPart(t *testing.T) {
+	t.Parallel()
 	if err := NewLipTool().Commit(NewSession()); err == nil {
 		t.Error("commit with no active part should error")
 	}
@@ -124,6 +130,7 @@ func TestLipToolCommitNoPart(t *testing.T) {
 
 // TestLipViaRibbonCommand confirms the Modify-panel ribbon command starts the tool.
 func TestLipViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	if err := RegisterStandardCommands(s); err != nil {

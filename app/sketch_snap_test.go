@@ -9,6 +9,7 @@ import (
 )
 
 func TestSnapToExistingPoint(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	sk.Points().Add(math.P2(2, 0))
 	// A click just off the existing point snaps onto it, reported as an endpoint snap.
@@ -19,6 +20,7 @@ func TestSnapToExistingPoint(t *testing.T) {
 }
 
 func TestSnapToOriginAlways(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	if got := s.snapAt(math.P2(0.1, -0.08)); got.Kind != SnapPoint || !got.Point.IsEqualTo(math.P2(0, 0), 1e-9) {
 		t.Errorf("snap near origin = %+v, want SnapPoint at (0,0)", got)
@@ -26,6 +28,7 @@ func TestSnapToOriginAlways(t *testing.T) {
 }
 
 func TestSnapToLineMidpoint(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.Grid().SnapToGrid = false
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0)) // midpoint (2,0)
@@ -36,6 +39,7 @@ func TestSnapToLineMidpoint(t *testing.T) {
 }
 
 func TestSnapToLineEdge(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.Grid().SnapToGrid = false
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
@@ -47,6 +51,7 @@ func TestSnapToLineEdge(t *testing.T) {
 }
 
 func TestSnapToCircleEdge(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.Grid().SnapToGrid = false
 	sk.Circles().AddByCenterRadius(math.P2(0, 0), 5)
@@ -58,6 +63,7 @@ func TestSnapToCircleEdge(t *testing.T) {
 }
 
 func TestSnapToArcEdge(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.Grid().SnapToGrid = false
 	// A radius-5 arc centred at (5,0); the ring's top point is (5,5), far from any
@@ -70,6 +76,7 @@ func TestSnapToArcEdge(t *testing.T) {
 }
 
 func TestSnapToGridIntersection(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	s.Grid().SnapToPoints = false // isolate grid snapping
 	got := s.snapAt(math.P2(3.1, 1.95))
@@ -79,6 +86,7 @@ func TestSnapToGridIntersection(t *testing.T) {
 }
 
 func TestSnapDisabledReturnsRaw(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	s.Grid().SnapToPoints = false
 	s.Grid().SnapToGrid = false
@@ -89,6 +97,7 @@ func TestSnapDisabledReturnsRaw(t *testing.T) {
 }
 
 func TestSnapFarFromAnythingReturnsRaw(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	s.Grid().SnapToGrid = false // only point snapping; nothing near (0.4,0.4)
 	raw := math.P2(0.4, 0.4)
@@ -98,6 +107,7 @@ func TestSnapFarFromAnythingReturnsRaw(t *testing.T) {
 }
 
 func TestSnapAtMapsPixel(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	sk.Points().Add(math.P2(0, 0))
 	// The centre pixel maps to the origin → a reported endpoint snap.

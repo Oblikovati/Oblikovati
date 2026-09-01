@@ -41,6 +41,7 @@ func twoAdjacentPatches(t *testing.T) (*Session, *compdef.PartComponentDefinitio
 // TestStitchToolEndToEnd drives the Stitch UI: with two adjacent patches present, OK welds them
 // into one surface quilt (two faces, shared edge no longer a boundary).
 func TestStitchToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def := twoAdjacentPatches(t)
 
 	s.StartTool(NewStitchTool())
@@ -56,6 +57,7 @@ func TestStitchToolEndToEnd(t *testing.T) {
 }
 
 func TestStitchViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := twoAdjacentPatches(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

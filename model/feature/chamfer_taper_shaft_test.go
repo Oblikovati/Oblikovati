@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -36,11 +37,15 @@ func stepShaftSketch() *sketch.Sketch {
 // the geometric collapse AND the silent gate (a real collapse now records a volume-reject Defect and
 // falls through the guarded path rather than passing as OK).
 func TestChamferOfTaperShaftRimDoesNotCollapse(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~20s): `make test-corpus`")
+	}
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewRevolveFeatures(fs).Add(stepShaftSketch(), 0, yAxis(), nil, ops.NewBody)
 	fs.Recompute()
 	body := fs.Result()[0]
-	volBefore := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	volBefore := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 
 	var rim []byte
 	for _, e := range body.Edges() {
@@ -65,7 +70,7 @@ func TestChamferOfTaperShaftRimDoesNotCollapse(t *testing.T) {
 	if v := ops.Validate(out); !v.Valid || !out.IsSolid() {
 		t.Fatalf("#1689: chamfered shaft is not a valid solid: %+v", v.Issues)
 	}
-	volAfter := ops.BodyGeometryProperties(out, ops.DefaultQuality()).Volume
+	volAfter := query.BodyGeometryProperties(out, ops.DefaultQuality()).Volume
 	// The general path re-facets the analytic body, so exact volume shifts; a chamfer must still
 	// leave the bulk of the shaft (well over half) — a collapse drops it toward zero.
 	if volAfter < volBefore*0.9 {

@@ -13,6 +13,7 @@ import (
 )
 
 func TestPointRoundTripAndEqual(t *testing.T) {
+	t.Parallel()
 	p := FromCoords(1.5, -2.25, 3.0) // exactly representable
 	got := p.Round()
 	if got != (math.P3(1.5, -2.25, 3.0)) {
@@ -27,6 +28,7 @@ func TestPointRoundTripAndEqual(t *testing.T) {
 }
 
 func TestFromCoordsRejectsNonFinite(t *testing.T) {
+	t.Parallel()
 	for _, bad := range []float64{stdmath.Inf(1), stdmath.Inf(-1), stdmath.NaN()} {
 		func() {
 			defer func() {
@@ -45,6 +47,7 @@ func TestFromCoordsRejectsNonFinite(t *testing.T) {
 // vertices with no sign-convention seam. It runs both the general regime and the
 // near-coplanar noise floor (where predicates takes its exact path).
 func TestOrient3DMatchesPredicates(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewSource(0x1c01))
 	for i := range 20000 {
 		a, b, c := rc(r), rc(r), rc(r)
@@ -71,6 +74,10 @@ func TestOrient3DMatchesPredicates(t *testing.T) {
 // the edge direction; each coordinate between the endpoints), over random
 // straddling edges. This is the conforming-vertex guarantee at the atom level.
 func TestEdgePlaneCrossExact(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
+	t.Parallel()
 	r := rand.New(rand.NewSource(0x1c02))
 	built := 0
 	for i := range 20000 {

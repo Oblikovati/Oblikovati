@@ -14,6 +14,7 @@ import (
 // side in a hyperbola whose vertex is below the band; the kept side is an exact arc-band cone face
 // bounded by the two hyperbola arms and the kept rim arcs, watertight (Oblikovati/Oblikovati#1375).
 func TestConeSideHalfSpaceObliqueHyperbola(t *testing.T) {
+	t.Parallel()
 	frustum := mustFrustum(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6)                    // α≈16.7°
 	plane, err := geom.NewPlane(math.P3(2, 0, 0), math.V3(stdmath.Sqrt(1-0.2*0.2), 0, 0.2)) // φ≈11.5° < α
 	if err != nil {
@@ -36,6 +37,7 @@ func TestConeSideHalfSpaceObliqueHyperbola(t *testing.T) {
 // the oblique analogue of #1374) splits exactly: keeping the apex side leaves a notched ANNULUS (the
 // intact small rim plus a top notched down to the vertex), keeping the far side a lone TONGUE.
 func TestConeSideHalfSpaceObliqueHyperbolaVertexInside(t *testing.T) {
+	t.Parallel()
 	frustum := mustFrustum(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6)
 	for _, c := range []struct {
 		name string
@@ -66,6 +68,7 @@ func signOf(x float64) float64 {
 // A plane shallower than the generators but clear of the frustum band (its section lies on the infinite
 // cone beyond the rims) keeps the side whole / empties it rather than deferring.
 func TestConeSideHalfSpaceObliqueHyperbolaClears(t *testing.T) {
+	t.Parallel()
 	frustum := mustFrustum(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6)
 	keep, _ := geom.NewPlane(math.P3(40, 0, 0), math.V3(stdmath.Sqrt(1-0.2*0.2), 0, 0.2)) // far +x: whole kept
 	res, err := HalfSpaceCut(frustum, keep)

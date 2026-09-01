@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 )
@@ -17,6 +18,7 @@ import (
 // axis: the pattern adds three new occurrences (elements 1–3 beyond the seed), so the
 // tree grows from one to four.
 func TestAssemblyPatternCircularOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0)
 
 	var created wire.NewOccurrencesResult
@@ -40,6 +42,7 @@ func TestAssemblyPatternCircularOverWire(t *testing.T) {
 // TestAssemblyMirrorOverWire mirrors a component (placed at x=2) across the YZ plane
 // through the origin: the new occurrence sits at x=-2.
 func TestAssemblyMirrorOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 2)
 
 	var mirrored wire.NewOccurrencesResult
@@ -60,6 +63,7 @@ func TestAssemblyMirrorOverWire(t *testing.T) {
 // TestAssemblyCopyOverWire copies a component, producing an independent occurrence at the
 // same placement.
 func TestAssemblyCopyOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 3)
 
 	var copied wire.NewOccurrencesResult
@@ -75,6 +79,7 @@ func TestAssemblyCopyOverWire(t *testing.T) {
 // TestAssemblySubstituteOverWire substitutes two components with one simplified part: the
 // substitute occurrence is flagged, and the sources are suppressed.
 func TestAssemblySubstituteOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	lod := openPartDoc(t, s, "lod.obk")
 
@@ -100,6 +105,7 @@ func TestAssemblySubstituteOverWire(t *testing.T) {
 // part holds the source geometry reflected across the local plane (volume preserved,
 // centroid crossed to -x).
 func TestAssemblyMirrorIntoPartOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t)
 	widget := partDocWithBox(t, s, "widget.obk") // a unit box [0,1]³ at the part origin
 
@@ -124,7 +130,7 @@ func TestAssemblyMirrorIntoPartOverWire(t *testing.T) {
 	if len(bodies) != 1 {
 		t.Fatalf("mirror part has %d bodies, want 1 (the reflected source)", len(bodies))
 	}
-	props := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality())
+	props := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality())
 	if stdmath.Abs(props.Volume-1) > 1e-6 {
 		t.Errorf("mirror part volume = %g, want 1 (reflection preserves the unit box)", props.Volume)
 	}

@@ -12,6 +12,7 @@ import (
 // TestBuildFlatPatternWatertightWithTab a base square plus one developed tab unions into one
 // watertight flat solid whose footprint is the square plus the tab, with one fold line.
 func TestBuildFlatPatternWatertightWithTab(t *testing.T) {
+	t.Parallel()
 	const side, thickness, tab = 4.0, 0.2, 1.5
 	// Tab on the y=0 edge; BuildFlatPattern orients it outward (−Y, away from the base).
 	tabs := []FlatTab{{
@@ -39,6 +40,7 @@ func TestBuildFlatPatternWatertightWithTab(t *testing.T) {
 
 // TestBuildFlatPatternRejectsBadGauge a non-positive thickness is rejected with the value.
 func TestBuildFlatPatternRejectsBadGauge(t *testing.T) {
+	t.Parallel()
 	if _, err := BuildFlatPattern(squareSketch(4), 0, 0, nil); err == nil {
 		t.Error("BuildFlatPattern with zero thickness must error")
 	}
@@ -46,6 +48,7 @@ func TestBuildFlatPatternRejectsBadGauge(t *testing.T) {
 
 // TestBuildFlatPatternBaseOnly with no tabs the flat is just the thickened base plate.
 func TestBuildFlatPatternBaseOnly(t *testing.T) {
+	t.Parallel()
 	const side, thickness = 3.0, 0.1
 	fp, err := BuildFlatPattern(squareSketch(side), 0, thickness, nil)
 	if err != nil {
@@ -64,6 +67,7 @@ func TestBuildFlatPatternBaseOnly(t *testing.T) {
 // the picked edge and the outward direction is in the sheet plane (perpendicular to the
 // edge), so the flat pattern can lay the tab out.
 func TestFlangePlacementCaptured(t *testing.T) {
+	t.Parallel()
 	fs, edge := seedSheetMetalSheet(t, 4, map[string]string{"BendRadius": "1 mm"})
 	pf := NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
 		EdgeKey: edge.ReferenceKey(),

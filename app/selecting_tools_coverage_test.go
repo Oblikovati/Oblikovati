@@ -35,6 +35,7 @@ func migratedSelectingTools() []Tool {
 // the uniform contract the host relies on (ADR-0041) — and the regression guard that a tool's
 // declared kinds actually take effect, the bug class the engine removes.
 func TestEverySelectingToolDeclaresAndReportsPicks(t *testing.T) {
+	t.Parallel()
 	for _, tool := range migratedSelectingTools() {
 		s := NewSession()
 		s.StartTool(tool)

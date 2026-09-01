@@ -25,6 +25,7 @@ const revolveWasher = math.Pi * (4*4 - 2*2) * 3
 // so the 90° origin YZ plane leaves a quarter of the washer — the angle comes from the model, not
 // from a number the caller had to work out.
 func TestRevolveToFaceStopsOnARadialPlane(t *testing.T) {
+	t.Parallel()
 	s := revolveReadyPart(t)
 	args, _ := json.Marshal(map[string]any{
 		"sketchIndex": 0, "axisRef": "origin/axis/y",
@@ -43,6 +44,7 @@ func TestRevolveToFaceStopsOnARadialPlane(t *testing.T) {
 // YZ plane stands 90° from the profile on BOTH sides, so naming it at each end gives a half washer
 // straddling the profile — proof that the "from" terminator is honoured, not ignored.
 func TestRevolveFromToBoundsBothWays(t *testing.T) {
+	t.Parallel()
 	s := revolveReadyPart(t)
 	args, _ := json.Marshal(map[string]any{
 		"sketchIndex": 0, "axisRef": "origin/axis/y", "extent": "from-to",
@@ -61,6 +63,7 @@ func TestRevolveFromToBoundsBothWays(t *testing.T) {
 // geometric extent need not carry a meaningless number) must not let the ANGLE extent through
 // without one — that would silently build a full revolution.
 func TestRevolveAngleExtentStillNeedsAnAngle(t *testing.T) {
+	t.Parallel()
 	s := revolveReadyPart(t)
 	args, _ := json.Marshal(map[string]any{"sketchIndex": 0, "axisRef": "origin/axis/y"})
 	_, err := apply(t, s, "revolve", string(args))
@@ -73,6 +76,7 @@ func TestRevolveAngleExtentStillNeedsAnAngle(t *testing.T) {
 // both sides itself. Combined with an extent that measures its own sweep, one of the two inputs
 // would have to be dropped — so the op refuses instead of picking a winner silently.
 func TestRevolveGeometricExtentRejectsAngle2(t *testing.T) {
+	t.Parallel()
 	s := revolveReadyPart(t)
 	args, _ := json.Marshal(map[string]any{
 		"sketchIndex": 0, "axisRef": "origin/axis/y", "extent": "to-face",
@@ -86,6 +90,7 @@ func TestRevolveGeometricExtentRejectsAngle2(t *testing.T) {
 // TestRevolveToFaceNeedsATarget: an extent that terminates on a face and is given none is a caller
 // error naming the missing field, not a silent fallback to some angle.
 func TestRevolveToFaceNeedsATarget(t *testing.T) {
+	t.Parallel()
 	s := revolveReadyPart(t)
 	args, _ := json.Marshal(map[string]any{"sketchIndex": 0, "axisRef": "origin/axis/y", "extent": "to-face"})
 	_, err := apply(t, s, "revolve", string(args))
@@ -96,6 +101,7 @@ func TestRevolveToFaceNeedsATarget(t *testing.T) {
 
 // TestRevolveUnknownExtentIsRejected keeps a typo from degrading to the angle extent.
 func TestRevolveUnknownExtentIsRejected(t *testing.T) {
+	t.Parallel()
 	s := revolveReadyPart(t)
 	args, _ := json.Marshal(map[string]any{
 		"sketchIndex": 0, "axisRef": "origin/axis/y", "angle": "90 deg", "extent": "through-all",

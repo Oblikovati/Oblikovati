@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -33,6 +34,7 @@ func straddleSketch() *sketch.Sketch {
 // sketch profile onto the running solid and scores its faces, adding faces while removing no
 // material and keeping one body.
 func TestSplitFacesByPathScoresTheBox(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(boxBody()) // [0,4]³
 	split := NewModifyFeatures(fs).AddSplitFacesByPath(straddleSketch(), 0)
@@ -49,7 +51,7 @@ func TestSplitFacesByPathScoresTheBox(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("imprinted body is not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-64) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-64) > 1e-6 {
 		t.Errorf("volume = %g, want 64 (a face split removes no material)", v)
 	}
 	if n := len(body.Faces()); n <= 6 {
@@ -60,6 +62,7 @@ func TestSplitFacesByPathScoresTheBox(t *testing.T) {
 // TestSplitFacesByPathRoundTrip persists the path split and reads it back, resolving the sketch by
 // index, so a document carrying a split-by-path re-resolves its profile.
 func TestSplitFacesByPathRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := straddleSketch()
 	idx := oneSketch{s: sk}
 	fs := NewPartFeatures(nil)

@@ -27,6 +27,7 @@ func newDocSession(t *testing.T) *Session {
 // TestNewDocumentOpensOrthographic is the regression: a brand-new part must open in a parallel
 // projection, which is what the shipped display option has always said.
 func TestNewDocumentOpensOrthographic(t *testing.T) {
+	t.Parallel()
 	s := newDocSession(t)
 
 	if got := s.ActiveViewProjection(); got != doc.ProjOrthographic {
@@ -40,6 +41,7 @@ func TestNewDocumentOpensOrthographic(t *testing.T) {
 // TestNewWindowProjectionOptionDrivesNewDocuments: the setting is the source of the default, not a
 // second opinion — choosing perspective must actually give perspective.
 func TestNewWindowProjectionOptionDrivesNewDocuments(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.displayOptions.NewWindowProjection = types.PerspectiveProjection
 	if _, err := s.Workspace().Add(doc.Part, "persp.obk", true); err != nil {
@@ -57,6 +59,7 @@ func TestNewWindowProjectionOptionDrivesNewDocuments(t *testing.T) {
 // TestNewViewFollowsTheProjectionOption: View ▸ New View starts in the configured projection when
 // it does not inherit a camera.
 func TestNewViewFollowsTheProjectionOption(t *testing.T) {
+	t.Parallel()
 	s := newDocSession(t)
 	s.displayOptions.NewWindowProjection = types.PerspectiveWithOrthoFacesProjection
 
@@ -72,6 +75,7 @@ func TestNewViewFollowsTheProjectionOption(t *testing.T) {
 // TestNewViewCopyingACameraCopiesItsProjection: "copy the active camera" has to include how that
 // camera projects, or splitting a view would silently change what the copy shows.
 func TestNewViewCopyingACameraCopiesItsProjection(t *testing.T) {
+	t.Parallel()
 	s := newDocSession(t)
 	s.SetActiveViewProjection(doc.ProjPerspective)
 
@@ -88,6 +92,7 @@ func TestNewViewCopyingACameraCopiesItsProjection(t *testing.T) {
 // document restored with a saved projection carries the user's per-document choice, which must
 // outrank it.
 func TestOpenedDocumentKeepsItsSavedProjection(t *testing.T) {
+	t.Parallel()
 	s := newDocSession(t)
 	s.SetActiveViewProjection(doc.ProjPerspective)
 
@@ -101,6 +106,7 @@ func TestOpenedDocumentKeepsItsSavedProjection(t *testing.T) {
 // tell whether what it sees is foreshortened, and to change it. Before this the projection was
 // reachable only as the global new-window default.
 func TestViewProjectionRoundTripsOverTheWireEnum(t *testing.T) {
+	t.Parallel()
 	s := newDocSession(t)
 
 	got, err := s.ViewProjection(0)
@@ -124,6 +130,7 @@ func TestViewProjectionRoundTripsOverTheWireEnum(t *testing.T) {
 // TestSetViewProjectionRejectsAnUnknownEnum: an out-of-vocabulary value must be reported with the
 // offending value and the values it could have been, not silently coerced to a default.
 func TestSetViewProjectionRejectsAnUnknownEnum(t *testing.T) {
+	t.Parallel()
 	s := newDocSession(t)
 
 	err := s.SetViewProjection(0, types.ProjectionTypeEnum(42))

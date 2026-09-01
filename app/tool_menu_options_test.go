@@ -8,6 +8,7 @@ import "testing"
 // Offset as checkable right-click options, both on by default, and toggling one through the session
 // flips exactly that option.
 func TestActiveToolMenuOptionsReflectOffsetToggles(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	tool := NewSketchOffsetTool(0.5)
 	s.StartTool(tool)
@@ -40,6 +41,7 @@ func TestActiveToolMenuOptionsReflectOffsetToggles(t *testing.T) {
 // TestActiveToolMenuOptionsNoneWhenIdle: with no tool active, and for a tool that offers none, the
 // session reports no options (so the right-click menu shows nothing extra).
 func TestActiveToolMenuOptionsNoneWhenIdle(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if opts := s.ActiveToolMenuOptions(); opts != nil {
 		t.Errorf("idle session exposed %d tool menu options, want none", len(opts))

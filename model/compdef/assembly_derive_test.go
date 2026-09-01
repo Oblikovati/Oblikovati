@@ -28,6 +28,7 @@ func partWithBlock(t *testing.T, min, max math.Point3) *PartComponentDefinition 
 // sub-assembly is emitted once with the composed world transform, and a directly-placed
 // part once at its own transform.
 func TestAssemblyPlacedBodiesFlattensTree(t *testing.T) {
+	t.Parallel()
 	part := partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
 
 	sub := NewAssemblyComponentDefinition()
@@ -61,6 +62,7 @@ func TestAssemblyPlacedBodiesFlattensTree(t *testing.T) {
 // TestAssemblyPlacedBodiesSkipsSuppressed checks suppressed occurrences contribute no
 // bodies.
 func TestAssemblyPlacedBodiesSkipsSuppressed(t *testing.T) {
+	t.Parallel()
 	part := partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
 	top := NewAssemblyComponentDefinition()
 	top.Place("keep:1", part, math.Identity4())
@@ -76,6 +78,7 @@ func TestAssemblyPlacedBodiesSkipsSuppressed(t *testing.T) {
 // sub-assembly occurrence positions its child independently of another placement of the same
 // (shared) sub-assembly definition.
 func TestFlexibleIndependentChildPositions(t *testing.T) {
+	t.Parallel()
 	part := partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
 	sub := NewAssemblyComponentDefinition()
 	sub.Place("p:1", part, math.Identity4()) // shared default: child at the origin

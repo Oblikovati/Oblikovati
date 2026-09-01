@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -36,6 +37,7 @@ func newPartWithProfileAndPath(t *testing.T) (*Session, ProfileHandle, PathHandl
 // TestSweepToolEndToEnd drives the Sweep UI: start the tool, click the profile and the
 // path, OK — and asserts a valid swept solid (2×2 profile along a length-5 path ⇒ V=20).
 func TestSweepToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, profile, path := newPartWithProfileAndPath(t)
 	s.SetPicker(&seqPicker{sels: []Selectable{profile, path}})
 
@@ -58,7 +60,7 @@ func TestSweepToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("swept body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 20) > 0.02 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 20) > 0.02 {
 		t.Errorf("swept volume = %g, want ≈20 (area 4 × length 5)", got)
 	}
 	if s.ActiveTool() != nil {
@@ -67,6 +69,7 @@ func TestSweepToolEndToEnd(t *testing.T) {
 }
 
 func TestSweepViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, profile, path := newPartWithProfileAndPath(t)
 	s.SetPicker(&seqPicker{sels: []Selectable{profile, path}})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -110,13 +113,14 @@ func sweepVolume(t *testing.T, s *Session) float64 {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("swept body is not a valid solid: %+v", r)
 	}
-	return ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 }
 
 // TestSweepParallelOrientation checks the Parallel ("Fixed") orientation is wired into the
 // definition and still sweeps a valid solid (a straight path makes it geometrically identical to
 // Follow Path, so the wiring — not the shape — is what this guards).
 func TestSweepParallelOrientation(t *testing.T) {
+	t.Parallel()
 	s, profile, path := newPartWithProfileAndPath(t)
 	sw := NewSweepTool()
 	sw.Pick(s, profile)
@@ -139,6 +143,7 @@ func TestSweepParallelOrientation(t *testing.T) {
 // TestSweepTaperExpandsSection checks a positive taper scales the profile up along the path, so the
 // swept frustum encloses MORE volume than the prismatic sweep (2×2 along length 5 = 20).
 func TestSweepTaperExpandsSection(t *testing.T) {
+	t.Parallel()
 	s, profile, path := newPartWithProfileAndPath(t)
 	sw := NewSweepTool()
 	sw.Pick(s, profile)
@@ -168,6 +173,7 @@ func railSketchParallelToPath(def *compdef.PartComponentDefinition) PathHandle {
 // TestSweepGuideRailRoutingAndType checks the armed guide-rail selector routes the next path pick to
 // the rail (not the path), flips the sweep type, and wires the rail + scaling into the definition.
 func TestSweepGuideRailRoutingAndType(t *testing.T) {
+	t.Parallel()
 	s, profile, path := newPartWithProfileAndPath(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	rail := railSketchParallelToPath(def)
@@ -211,6 +217,7 @@ func TestSweepGuideRailRoutingAndType(t *testing.T) {
 
 // TestSweepClearGuideRailDisarms checks clearing the rail empties the slot and disarms picking.
 func TestSweepClearGuideRail(t *testing.T) {
+	t.Parallel()
 	s, profile, path := newPartWithProfileAndPath(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	sw := NewSweepTool()
@@ -228,6 +235,7 @@ func TestSweepClearGuideRail(t *testing.T) {
 }
 
 func TestSweepToolNeedsProfileAndPath(t *testing.T) {
+	t.Parallel()
 	s, profile, path := newPartWithProfileAndPath(t)
 	s.SetPicker(&seqPicker{sels: []Selectable{profile, path}})
 	sw := NewSweepTool()

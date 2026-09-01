@@ -13,6 +13,7 @@ import (
 // hole and cuts BOTH tube walls: the section is two ovals, and the kept solid is one tube-wrapping torus
 // band closed by two planar oval-disk lids, watertight, no CSG (Oblikovati/Oblikovati#1375).
 func TestHalfSpaceCutTorusTwoOvalBand(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name   string
 		normal math.Vector3
@@ -53,6 +54,7 @@ func TestHalfSpaceCutTorusTwoOvalBand(t *testing.T) {
 // At offset EXACTLY R−r the plane is tangent to the inner equator: the two ovals merge into a figure-eight
 // pinched at the tangent point. The two-oval band path meshes it (the band's zero-width limit), watertight.
 func TestHalfSpaceCutTorusFigureEight(t *testing.T) {
+	t.Parallel()
 	for _, n := range []math.Vector3{math.V3(0, -1, 0), math.V3(0, 1, 0)} {
 		tor, _ := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2, "torus")
 		plane, _ := geom.NewPlane(math.P3(0, 3, 0), n) // |offset| = R−r = 3
@@ -80,6 +82,7 @@ func TestHalfSpaceCutTorusFigureEight(t *testing.T) {
 // spiric case kept analytic; a clean two-oval offset, a single-oval offset, and a perpendicular cut all route
 // through the unified trimmer and so must NOT be claimed here (Oblikovati#1406).
 func TestTorusAxisParallelFigureEightGuards(t *testing.T) {
+	t.Parallel()
 	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
 	for _, tc := range []struct {
 		name   string

@@ -31,6 +31,7 @@ func drawingSession(t *testing.T) *Session {
 }
 
 func TestNewDrawingActivatesDrawingWithDefaultSheet(t *testing.T) {
+	t.Parallel()
 	s := drawingSession(t)
 	c, err := ActiveDrawing(s)
 	if err != nil {
@@ -45,6 +46,7 @@ func TestNewDrawingActivatesDrawingWithDefaultSheet(t *testing.T) {
 }
 
 func TestDrawingRibbonTabAndPanels(t *testing.T) {
+	t.Parallel()
 	tab, ok := BuildRibbon(drawingSession(t)).Tab("Drawing")
 	if !ok {
 		t.Fatal("an active drawing should show the Drawing ribbon tab")
@@ -57,6 +59,7 @@ func TestDrawingRibbonTabAndPanels(t *testing.T) {
 }
 
 func TestDrawingTabAbsentForPart(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, err := s.NewPart(); err != nil {
 		t.Fatalf("NewPart: %v", err)
@@ -67,6 +70,7 @@ func TestDrawingTabAbsentForPart(t *testing.T) {
 }
 
 func TestAddSheetToolAddsConfiguredSheet(t *testing.T) {
+	t.Parallel()
 	s := drawingSession(t)
 	tool := NewAddSheetTool()
 	tool.Start(s)
@@ -93,6 +97,7 @@ func TestAddSheetToolAddsConfiguredSheet(t *testing.T) {
 // TestModelReferenceToolDrivesTitleBlock is the PBI-137 acceptance through the UI tool:
 // referencing the part fills the title block from its iProperties.
 func TestModelReferenceToolDrivesTitleBlock(t *testing.T) {
+	t.Parallel()
 	s := drawingSession(t)
 	tool := NewModelReferenceTool()
 	tool.Start(s)
@@ -114,6 +119,7 @@ func TestModelReferenceToolDrivesTitleBlock(t *testing.T) {
 }
 
 func TestDraftingStandardToolSwitchesStandard(t *testing.T) {
+	t.Parallel()
 	s := drawingSession(t)
 	c, _ := ActiveDrawing(s)
 	if c.Styles().ActiveStandard() != types.DraftingISO {
@@ -142,6 +148,7 @@ func TestDraftingStandardToolSwitchesStandard(t *testing.T) {
 }
 
 func TestDeleteSheetKeepsAtLeastOne(t *testing.T) {
+	t.Parallel()
 	s := drawingSession(t)
 	if canDeleteSheet(s) {
 		t.Error("a single-sheet drawing should not allow delete")

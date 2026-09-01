@@ -15,6 +15,7 @@ import (
 // never drags. All three land in the same MoveableByDimensionChange/Fixed classes, so the gate
 // distinguishes them by whether a driving dimension acts on the entity.
 func TestDraggableForModeByGeometryNotDimension(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 
 	// A Fix-pinned point click-selects, never drags.

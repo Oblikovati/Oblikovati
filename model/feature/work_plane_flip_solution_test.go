@@ -13,6 +13,7 @@ import (
 // TestFlipNormalReversesAndPersists: FlipNormal reverses the plane normal, the plane does not move,
 // the flip survives a recompute, and a second flip restores the original (#1851).
 func TestFlipNormalReversesAndPersists(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pl := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 3 })
 	g.Recompute(nil)
@@ -36,6 +37,7 @@ func TestFlipNormalReversesAndPersists(t *testing.T) {
 // TestFlipNormalRoundTrips: a flipped plane keeps its reversed normal across Marshal/Apply/recompute
 // — the flip lives on the recipe, not just the live object (the fix for the earlier revert) (#1851).
 func TestFlipNormalRoundTrips(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pl := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 2 })
 	pl.FlipNormal()
@@ -63,6 +65,7 @@ func TestFlipNormalRoundTrips(t *testing.T) {
 // TestWorkPlaneDisplayStateRoundTrips: grounded / auto-resize / explicit size are gettable, settable,
 // and survive a round-trip; SetSize turns off auto-resize (#1851).
 func TestWorkPlaneDisplayStateRoundTrips(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pl := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 1 })
 	g.Recompute(nil)
@@ -108,6 +111,7 @@ func TestWorkPlaneDisplayStateRoundTrips(t *testing.T) {
 
 // TestWorkPlaneAutoResizeRoundTrips: an auto-resize flag with no explicit size survives (#1851).
 func TestWorkPlaneAutoResizeRoundTrips(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pl := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 1 })
 	pl.SetAutoResize(true)
@@ -124,6 +128,7 @@ func TestWorkPlaneAutoResizeRoundTrips(t *testing.T) {
 // TestPlaneParallelTangentProximitySelectsSide: for a plane-parallel tangent on a cylinder, a
 // proximity point on either side of the axis selects the tangent on that side (#1844).
 func TestPlaneParallelTangentProximitySelectsSide(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2) // axis +Z, radius 2
 	if err != nil {
 		t.Fatal(err)
@@ -163,6 +168,7 @@ func TestPlaneParallelTangentProximitySelectsSide(t *testing.T) {
 // are (0.8, ±1.833030277982336). The oracle-gated TestOracleCylinderTangentNormals (build tag
 // "oracle", _oracles/oracle_service.py) re-derives these live; this frozen copy guards them in CI.
 func TestCylinderTangentNormalsGolden(t *testing.T) {
+	t.Parallel()
 	const R = 2.0
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), R)
 	if err != nil {
@@ -194,6 +200,7 @@ func TestCylinderTangentNormalsGolden(t *testing.T) {
 // TestLineTangentProximitySelectsSide: for a through-line tangent on a cylinder, a proximity point
 // selects which of the two tangent solutions is built (#1844).
 func TestLineTangentProximitySelectsSide(t *testing.T) {
+	t.Parallel()
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	if err != nil {
 		t.Fatal(err)
@@ -219,6 +226,7 @@ func TestLineTangentProximitySelectsSide(t *testing.T) {
 // TestBisectorQuadrantSelectsSolution: for two intersecting planes, the quadrant point picks between
 // the two perpendicular bisector solutions (#1844).
 func TestBisectorQuadrantSelectsSolution(t *testing.T) {
+	t.Parallel()
 	xy, xz := sketch.XYPlane(), sketch.XZPlane() // intersect on the X axis
 	qSum, qDiff := math.P3(0, -1, 1), math.P3(0, 1, 1)
 	pSum, err := bisectingPlane(xy, xz, &qSum)
@@ -237,6 +245,7 @@ func TestBisectorQuadrantSelectsSolution(t *testing.T) {
 // TestTwoPlanesTowardRoundTrips: the chosen bisector quadrant is recorded on the definition and
 // survives a Marshal/Apply cycle (#1844).
 func TestTwoPlanesTowardRoundTrips(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pl := g.WorkPlanes().AddByTwoPlanesToward(OriginXYPlane, OriginXZPlane, math.P3(0, 1, 1))
 	g.Recompute(nil)

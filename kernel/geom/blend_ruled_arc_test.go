@@ -13,6 +13,7 @@ import (
 // blend's v=0 / v=1 isolines ARE the two circular arcs — sampled position error at machine
 // precision, not chord error.
 func TestRuledArcBlendReproducesArcsExactly(t *testing.T) {
+	t.Parallel()
 	c0, c1 := math.P3(0, 2, 2), math.P3(5, 3, 3) // centres walking a bisector as r grows
 	const r0, r1, sweep = 2.0, 3.0, stdmath.Pi / 2
 	x, y := math.V3(0, -1, 0), math.V3(0, 0, -1)
@@ -46,6 +47,7 @@ func TestRuledArcBlendReproducesArcsExactly(t *testing.T) {
 // TestRuledArcBlendRunoutCollapsesToApex: r1=0 collapses the v=1 column to the apex — the exact
 // oblique cone of a fillet run-out, still a valid surface.
 func TestRuledArcBlendRunoutCollapsesToApex(t *testing.T) {
+	t.Parallel()
 	apex := math.P3(4, 0, 0)
 	s, err := NewRuledArcBlend(math.P3(0, 1, 1), 1.5, apex, 0, math.V3(0, -1, 0), math.V3(0, 0, -1), stdmath.Pi/2)
 	if err != nil {
@@ -62,6 +64,7 @@ func TestRuledArcBlendRunoutCollapsesToApex(t *testing.T) {
 // surface normal must be continuous across the segment joins (the C0 strip creases this
 // replaces were ~11° — assert machine-precision continuity).
 func TestRuledArcBlendIsG1AcrossSegments(t *testing.T) {
+	t.Parallel()
 	const sweep = 3 * stdmath.Pi / 2
 	s, err := NewRuledArcBlend(math.P3(0, 0, 0), 2, math.P3(6, 0.5, 0.5), 3, math.V3(0, 1, 0), math.V3(0, 0, 1), sweep)
 	if err != nil {
@@ -82,6 +85,7 @@ func TestRuledArcBlendIsG1AcrossSegments(t *testing.T) {
 // curve point-for-point (same parameterization) — so a face boundary built from
 // NewConicSectionCurve lies exactly on the surface.
 func TestRuledSectionBlendMatchesConicBoundary(t *testing.T) {
+	t.Parallel()
 	sec0 := [3]math.Point3{math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0)}
 	sec1 := [3]math.Point3{math.P3(2, 0, 3), math.P3(2, 2, 3), math.P3(0, 2, 3)}
 	const w = 0.75

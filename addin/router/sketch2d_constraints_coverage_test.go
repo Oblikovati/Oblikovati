@@ -168,6 +168,7 @@ var allDeclared2DConstraintKinds = []types.GeometricConstraintKind{
 // with a fixture and asserts the constraint lands with the same kind enumerated back by
 // sketch.constraints.
 func TestEvery2DConstraintKindAccepted(t *testing.T) {
+	t.Parallel()
 	for kind, fixture := range declared2DConstraintFixtures {
 		t.Run(string(kind), func(t *testing.T) {
 			r, s := seededSession(t)
@@ -202,6 +203,7 @@ func assertEnumerated2DKind(t *testing.T, r *Router, s *app.Session, kind types.
 // TestNotWireCreatable2DKindsRefused pins the policy list: the kinds justified above
 // must actually be refused, so a future implementation removes the entry deliberately.
 func TestNotWireCreatable2DKindsRefused(t *testing.T) {
+	t.Parallel()
 	for kind, why := range intentionallyNotWireCreatable2D {
 		t.Run(string(kind), func(t *testing.T) {
 			r, s := seededSession(t)
@@ -221,6 +223,7 @@ func TestNotWireCreatable2DKindsRefused(t *testing.T) {
 // a fixture nor justified as not-wire-creatable — the guard that api/types can never
 // again advertise 2D kinds the vertical does not deliver (#1574's bug class).
 func TestDeclared2DConstraintKindsComplete(t *testing.T) {
+	t.Parallel()
 	for _, kind := range allDeclared2DConstraintKinds {
 		_, covered := declared2DConstraintFixtures[kind]
 		why, excluded := intentionallyNotWireCreatable2D[kind]

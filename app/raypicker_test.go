@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -36,6 +37,7 @@ func partBodies(s *Session) func() []*topo.Body {
 }
 
 func TestRayPickerSelectsTopFaceOfBox(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4) // box [0,2]×[0,2]×[0,4]
 
 	// Camera above the box looking straight down → the center pixel ray hits the top
@@ -65,6 +67,7 @@ func TestRayPickerSelectsTopFaceOfBox(t *testing.T) {
 }
 
 func TestRayPickerHonorsBodyFilter(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 3, 4) // a larger box still centered under (1,1)
 	cam := scene.NewCamera(400, 400)
 	cam.Eye = math.P3(1, 1, 20)
@@ -80,6 +83,7 @@ func TestRayPickerHonorsBodyFilter(t *testing.T) {
 }
 
 func TestRayPickerMissSelectsNothing(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4)
 	cam := scene.NewCamera(400, 400)
 	cam.Eye = math.P3(1, 1, 20)
@@ -93,6 +97,7 @@ func TestRayPickerMissSelectsNothing(t *testing.T) {
 }
 
 func TestRayPickerSetCameraAndDirectQuery(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 6) // a taller box
 	p := NewRayPicker(scene.NewCamera(10, 10), partBodies(s))
 	cam := scene.NewCamera(400, 400)
@@ -104,7 +109,7 @@ func TestRayPickerSetCameraAndDirectQuery(t *testing.T) {
 	}
 	// Sanity: the kernel query agrees the box is hit from above.
 	o, d := cam.RayThrough(200, 200)
-	if _, _, ok := ops.RayCastFaces(partBodies(s)()[0], o, d, ops.DefaultQuality()); !ok {
+	if _, _, ok := query.RayCastFaces(partBodies(s)()[0], o, d, ops.DefaultQuality()); !ok {
 		t.Error("kernel RayCastFaces missed the box from above")
 	}
 }

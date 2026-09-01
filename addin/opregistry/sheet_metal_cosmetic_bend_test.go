@@ -13,6 +13,7 @@ import (
 // TestSheetMetalCosmeticBendApply seeds a sheet-metal wall, adds a bend line crossing it, and
 // marks it cosmetic — the result is the unchanged base solid; then checks the error paths.
 func TestSheetMetalCosmeticBendApply(t *testing.T) {
+	t.Parallel()
 	s := sheetMetalProfiledPart(t)
 	if _, err := apply(t, s, "sheetMetalFace", `{"sketchIndex":0}`); err != nil {
 		t.Fatalf("seed face: %v", err)

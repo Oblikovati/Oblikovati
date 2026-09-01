@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -28,6 +29,7 @@ func cmBox(t *testing.T) *topo.Body {
 // "60" in a millimetre file and "6" in a centimetre file, and inch uses a
 // conversion-based unit. The centimetre kernel is anchored by DBUnitMM.
 func TestExportHonorsFileUnit(t *testing.T) {
+	t.Parallel()
 	box := cmBox(t)
 
 	mm, _, err := Writer{}.ExportSolids([]*topo.Body{box},
@@ -70,6 +72,7 @@ func TestExportHonorsFileUnit(t *testing.T) {
 // each file unit: export the 6 cm cube, re-import into the centimetre kernel, and
 // the volume is 216 cm³ regardless of the file unit used.
 func TestExportImportUnitRoundTrip(t *testing.T) {
+	t.Parallel()
 	box := cmBox(t)
 	for _, unit := range []string{"mm", "cm", "m", "in", "ft"} {
 		data, _, err := Writer{}.ExportSolids([]*topo.Body{box},
@@ -82,7 +85,7 @@ func TestExportImportUnitRoundTrip(t *testing.T) {
 		if err != nil || len(bodies) != 1 {
 			t.Fatalf("re-import %s: %v (%d bodies)", unit, err, len(bodies))
 		}
-		got := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+		got := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 		if rel := (got - 216) / 216; rel < -0.01 || rel > 0.01 {
 			t.Errorf("%s round-trip volume = %.3f cm³, want 216", unit, got)
 		}
@@ -92,6 +95,7 @@ func TestExportImportUnitRoundTrip(t *testing.T) {
 // TestImportScalesFileUnitToCentimetres pins the import-side fix: a millimetre STEP
 // (declared mm) of a 60 mm cube imports as a 6 cm (216 cm³) body, not 60 cm.
 func TestImportScalesFileUnitToCentimetres(t *testing.T) {
+	t.Parallel()
 	// A 60 mm cube authored by exporting the 6 cm kernel box in millimetres.
 	mmFile, _, err := Writer{}.ExportSolids([]*topo.Body{cmBox(t)},
 		exchange.TranslationOptions{TargetUnitMM: exchange.DBUnitMM, FileUnit: "mm"})
@@ -103,7 +107,7 @@ func TestImportScalesFileUnitToCentimetres(t *testing.T) {
 	if err != nil || len(bodies) != 1 {
 		t.Fatalf("import: %v (%d bodies)", err, len(bodies))
 	}
-	got := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 	if rel := (got - 216) / 216; rel < -0.01 || rel > 0.01 {
 		t.Errorf("imported volume = %.3f cm³, want 216 (a 60 mm cube is 6 cm)", got)
 	}

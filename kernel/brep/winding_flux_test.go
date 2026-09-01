@@ -24,6 +24,7 @@ func fluxTotal(q *fluxQuery, p math.Point3) float64 {
 // point, ≈0 for an exterior one, ≈2π on the surface. The coarse-quadrature tolerance is wide because the
 // classifier only needs the sign of (total − 2π), which has a full-π margin either side.
 func TestFluxWindingNumberOnSphere(t *testing.T) {
+	t.Parallel()
 	sph, err := SolidSphere(math.P3(0, 0, 0), 3, "sphere")
 	if err != nil {
 		t.Fatalf("SolidSphere: %v", err)
@@ -50,6 +51,7 @@ func TestFluxWindingNumberOnSphere(t *testing.T) {
 // fluxQuery must give the same verdict as building a fresh query per point (the trim polylines are cached,
 // nothing else may differ).
 func TestFluxQueryMatchesFreshBuild(t *testing.T) {
+	t.Parallel()
 	cyl, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -67,6 +69,7 @@ func TestFluxQueryMatchesFreshBuild(t *testing.T) {
 // TestPointInLoops2DWithHole checks the even-odd (u, v) trim test on a square with a square hole: a point
 // in the hole is OUTSIDE the trimmed region (two crossings), a point between hole and outer edge is inside.
 func TestPointInLoops2DWithHole(t *testing.T) {
+	t.Parallel()
 	outer := []math.Point2{math.P2(0, 0), math.P2(10, 0), math.P2(10, 10), math.P2(0, 10)}
 	hole := []math.Point2{math.P2(4, 4), math.P2(6, 4), math.P2(6, 6), math.P2(4, 6)}
 	polys := [][]math.Point2{outer, hole}

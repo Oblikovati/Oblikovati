@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/param"
 )
@@ -77,7 +77,7 @@ func (f *AssemblyFilletFeature) Kind() string { return kindAssemblyFillet }
 func (f *AssemblyFilletFeature) Recompute(in Input) (Output, error) {
 	r := f.radius()
 	bodies, err := dressParticipants(in.Bodies, edgeSuffixKeys(f.edgeSuffixes), func(body *topo.Body, keys [][]byte) (*topo.Body, error) {
-		return ops.FilletEdges(body, keys, r)
+		return blend.FilletEdges(body, keys, r)
 	})
 	if err != nil {
 		return Output{}, err

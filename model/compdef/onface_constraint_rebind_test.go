@@ -14,6 +14,7 @@ import (
 // and re-binds its face source after a save/reload, so the point-on-face pin stays active and
 // associative — the constraint analogue of projected-geometry rebind (#1839 AC2).
 func TestOnFace3DConstraintRebindsOnReload(t *testing.T) {
+	t.Parallel()
 	def := extrudeBlock(t) // feature-backed block; its face keys survive recompute + reload
 	faceKey := string(def.SurfaceBodies().All()[0].Faces()[0].ReferenceKey())
 

@@ -9,6 +9,7 @@ import (
 )
 
 func TestMiniToolbarOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "miniToolbar.set",
 		`{"toolbar":{"id":"sim.probe","visible":true,"headsUpText":"Probe","anchor":[1,2,3],"showOK":true,"controls":[{"kind":5,"id":"depth","label":"Depth","value":"10 mm"}]}}`, nil)

@@ -30,6 +30,7 @@ func lastCombineDef(t *testing.T, s *app.Session) *feature.CombineDefinition {
 // TestCombineToolIndicesReachTheDefinition: the list must arrive whole. A combine that silently
 // kept only the first tool would still build a valid solid, just not the authored one.
 func TestCombineToolIndicesReachTheDefinition(t *testing.T) {
+	t.Parallel()
 	s := twoBodyPart(t)
 	if _, err := applyMap(t, s, "combine", map[string]any{
 		"targetIndex": 0, "toolIndices": []int{1}, "operation": "cut", "keepToolBodies": true,
@@ -48,6 +49,7 @@ func TestCombineToolIndicesReachTheDefinition(t *testing.T) {
 // TestCombineToolIndexStillWorks: the shipped single-index spelling keeps working on its own, and
 // consumes its tool as it always did.
 func TestCombineToolIndexStillWorks(t *testing.T) {
+	t.Parallel()
 	s := twoBodyPart(t)
 	if _, err := applyMap(t, s, "combine", map[string]any{
 		"targetIndex": 0, "toolIndex": 1, "operation": "join",

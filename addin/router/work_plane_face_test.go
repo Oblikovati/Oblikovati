@@ -15,6 +15,7 @@ import (
 // on that work plane (sketch.create workPlaneIndex). Both were impossible before — the work
 // plane could only offset an origin plane, and a sketch could only sit on an origin plane.
 func TestWorkPlaneOnFaceThenSketch(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t) // a part with one closed rectangle profile
 
 	// Extrude the profile into a body so it has B-rep faces.

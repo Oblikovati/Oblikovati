@@ -9,6 +9,7 @@ import (
 )
 
 func TestInTriangleCoplanarBasic(t *testing.T) {
+	t.Parallel()
 	a := [3]float64{0, 0, 0}
 	b := [3]float64{4, 0, 0}
 	c := [3]float64{0, 4, 0}
@@ -35,6 +36,7 @@ func TestInTriangleCoplanarBasic(t *testing.T) {
 // checks the classification against a rational barycentric oracle over a dense
 // affine grid that spans interior, edges, vertices, and exterior.
 func TestInTriangleCoplanarVsOracle(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewSource(0x1539))
 	for trial := range 400 {
 		a := randIntPt(r)
@@ -71,6 +73,10 @@ func TestInTriangleCoplanarVsOracle(t *testing.T) {
 // rational and tests strict containment, over random segments plus segments aimed
 // through the centroid so genuine pierces are exercised.
 func TestSegmentPiercesTriangleVsOracle(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
+	t.Parallel()
 	r := rand.New(rand.NewSource(0x2072))
 	pierces := 0
 	const n = 20000
@@ -109,6 +115,7 @@ func TestSegmentPiercesTriangleVsOracle(t *testing.T) {
 // a strict straddle through the strict interior counts. Endpoint-on-plane,
 // edge-grazing, and clean misses all return false; a clean interior pierce is true.
 func TestSegmentPiercesTriangleBoundaryContract(t *testing.T) {
+	t.Parallel()
 	a := [3]float64{0, 0, 0}
 	b := [3]float64{4, 0, 0}
 	c := [3]float64{0, 4, 0}

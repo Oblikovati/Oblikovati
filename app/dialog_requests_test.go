@@ -18,6 +18,7 @@ func (f *FakeURLOpener) OpenURL(url string) error {
 }
 
 func TestFileDialogRequestResolveRoundTrip(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	var chosen []FileDialogChosen
 	event.Subscribe(s.Events(), event.After, func(_ event.Context, e FileDialogChosen) event.Outcome {
@@ -52,6 +53,7 @@ func TestFileDialogRequestResolveRoundTrip(t *testing.T) {
 }
 
 func TestWebDialogLifecycleEmitsVisibility(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	var changes []WebDialogChanged
 	event.Subscribe(s.Events(), event.After, func(_ event.Context, e WebDialogChanged) event.Outcome {
@@ -82,6 +84,7 @@ func TestWebDialogLifecycleEmitsVisibility(t *testing.T) {
 }
 
 func TestOpenURLUsesInjectedOpener(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.OpenURL("https://example.org"); err == nil {
 		t.Fatal("OpenURL without an opener should fail")

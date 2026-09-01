@@ -13,6 +13,7 @@ import (
 // (M02-F07, Oblikovati#606).
 
 func TestParameterSettingsRoundTripOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var got wire.ParameterSettingsInfo
@@ -48,6 +49,7 @@ func TestParameterSettingsRoundTripOverWire(t *testing.T) {
 }
 
 func TestParameterSweepOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.add", `{"name":"od","expression":"4 cm"}`, nil)
 	call(t, r, s, "parameters.setTolerance", `{"name":"od","mode":"deviation","upper":"0.2 cm","lower":"-0.1 cm"}`, nil)
@@ -73,6 +75,7 @@ func TestParameterSweepOverWire(t *testing.T) {
 }
 
 func TestParameterXMLExchangeOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.update", `{"name":"width","comment":"outer width"}`, nil)
 
@@ -102,6 +105,7 @@ func TestParameterXMLExchangeOverWire(t *testing.T) {
 // TestParameterImportRollsBackOnBadSet checks atomicity: a set whose late
 // entry fails must leave no trace of its earlier entries.
 func TestParameterImportRollsBackOnBadSet(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	bad := `<parameters>
 		<parameter name="ok" expression="1 cm"/>

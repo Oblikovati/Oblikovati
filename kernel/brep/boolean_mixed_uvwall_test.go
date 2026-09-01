@@ -44,6 +44,7 @@ func planeFaceAtZ(t *testing.T, p facePartition, z float64) curvedFace {
 
 // TestFaceLoopBoxIsUnpadded: the uv bucket's box convention is the exact loop-point extent.
 func TestFaceLoopBoxIsUnpadded(t *testing.T) {
+	t.Parallel()
 	_, plate := uvWallFixture(t)
 	box := faceLoopBox(planeFaceAtZ(t, plate, 3))
 	if float64(box.Min.X) != -8 || float64(box.Max.X) != 8 || float64(box.Min.Z) != 3 || float64(box.Max.Z) != 3 {
@@ -54,6 +55,7 @@ func TestFaceLoopBoxIsUnpadded(t *testing.T) {
 // TestPromoteConicReceiversMovesPlateFaces: the two plate faces the cylinder wall sections with a circle
 // move to the uv bucket; the four side faces (which the wall misses) stay polygonal, index-aligned.
 func TestPromoteConicReceiversMovesPlateFaces(t *testing.T) {
+	t.Parallel()
 	cyl, plate := uvWallFixture(t)
 	promoteConicReceivers(&plate, &cyl)
 	if len(plate.uv) != 2 || len(plate.planar) != 4 {
@@ -72,6 +74,7 @@ func TestPromoteConicReceiversMovesPlateFaces(t *testing.T) {
 
 // TestPromoteConicReceiversLeavesWalllessOperandAlone: with no wall on the other side nothing moves.
 func TestPromoteConicReceiversLeavesWalllessOperandAlone(t *testing.T) {
+	t.Parallel()
 	_, plate := uvWallFixture(t)
 	other := facePartition{}
 	promoteConicReceivers(&plate, &other)
@@ -83,6 +86,7 @@ func TestPromoteConicReceiversLeavesWalllessOperandAlone(t *testing.T) {
 // TestWallConicEntersFace: the wall's section with a plate face inside the band is a circle in its trim;
 // with the plate's vertical side face (which the wall's box misses) there is none.
 func TestWallConicEntersFace(t *testing.T) {
+	t.Parallel()
 	cyl, plate := uvWallFixture(t)
 	if !wallConicEntersFace(planeFaceAtZ(t, plate, 3), &cyl) {
 		t.Error("the cylinder wall sections the plate's top face with a circle inside its trim")
@@ -96,6 +100,7 @@ func TestWallConicEntersFace(t *testing.T) {
 
 // TestConicAxialSpan: a circle has no axial amplitude; a non-conic section is refused.
 func TestConicAxialSpan(t *testing.T) {
+	t.Parallel()
 	c, err := geom.NewCircle(math.P3(0, 0, 3), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatal(err)
@@ -111,6 +116,7 @@ func TestConicAxialSpan(t *testing.T) {
 
 // TestConicBandPlacement: strictly inside, strictly clear, and straddling a rim (neither — declined).
 func TestConicBandPlacement(t *testing.T) {
+	t.Parallel()
 	rs := ruledSide{axis: math.V3(0, 0, 1), band: coneSideBand_{bottom: math.P3(0, 0, 0), vMin: 0, vMax: 4}}
 	for _, c := range []struct {
 		name                  string
@@ -132,6 +138,7 @@ func TestConicBandPlacement(t *testing.T) {
 // TestConicIslandInFace: a circle inside the plate polygon is an island; one clear of it is not (but the
 // query is exact); one CROSSING the polygon boundary declines.
 func TestConicIslandInFace(t *testing.T) {
+	t.Parallel()
 	_, plate := uvWallFixture(t)
 	top := planeFaceAtZ(t, plate, 3)
 	for _, c := range []struct {
@@ -158,6 +165,7 @@ func TestConicIslandInFace(t *testing.T) {
 
 // TestConicCrossesFaceBoundary: exactly the crossing case reports true.
 func TestConicCrossesFaceBoundary(t *testing.T) {
+	t.Parallel()
 	_, plate := uvWallFixture(t)
 	top := planeFaceAtZ(t, plate, 3)
 	pl := facePlane(top)
@@ -182,6 +190,7 @@ func TestConicCrossesFaceBoundary(t *testing.T) {
 // TestUvWallSharedImprintYieldsOneCircle: the promoted plate face and the wall share exactly the section
 // circle of the wall at that height — the same curve value, which is what welds the two splits.
 func TestUvWallSharedImprintYieldsOneCircle(t *testing.T) {
+	t.Parallel()
 	cyl, plate := uvWallFixture(t)
 	promoteConicReceivers(&plate, &cyl)
 	curves, ok := uvWallSharedImprint(plate.uv[0], cyl.wall[0])
@@ -197,6 +206,7 @@ func TestUvWallSharedImprintYieldsOneCircle(t *testing.T) {
 // TestUvWallSharedImprintDeclinesConicFrame: a receiver whose own boundary is curved (a cylinder cap)
 // would need conic×conic frame crossings, so the pairing declines by name rather than approximating.
 func TestUvWallSharedImprintDeclinesConicFrame(t *testing.T) {
+	t.Parallel()
 	cyl, _ := uvWallFixture(t)
 	if _, ok := uvWallSharedImprint(cyl.uv[0], cyl.wall[0]); ok {
 		t.Error("a circle-framed cap must decline the uv×wall pairing")
@@ -206,6 +216,7 @@ func TestUvWallSharedImprintDeclinesConicFrame(t *testing.T) {
 // TestWallSectionIslandStraddlingRimDeclines: a section at the band's own rim is neither an island nor
 // clear, so it declines instead of emitting an imprint that runs off the band.
 func TestWallSectionIslandStraddlingRimDeclines(t *testing.T) {
+	t.Parallel()
 	cyl, plate := uvWallFixture(t)
 	rs, ok := ruledSideBandOf(cyl.wall[0])
 	if !ok {
@@ -222,6 +233,7 @@ func TestWallSectionIslandStraddlingRimDeclines(t *testing.T) {
 
 // TestCollectWallIslandsDropsClearSections: a section clear of both trims is no imprint, not a decline.
 func TestCollectWallIslandsDropsClearSections(t *testing.T) {
+	t.Parallel()
 	cyl, plate := uvWallFixture(t)
 	rs, _ := ruledSideBandOf(cyl.wall[0])
 	far, err := geom.NewCircle(math.P3(60, 0, 3), math.V3(0, 0, 1), 5)
@@ -237,6 +249,7 @@ func TestCollectWallIslandsDropsClearSections(t *testing.T) {
 // TestPairUVWallImprintsWritesBothSides: the SAME curve lands on the uv face's list and on the wall's, so
 // the two arrangements split on identical coordinates.
 func TestPairUVWallImprintsWritesBothSides(t *testing.T) {
+	t.Parallel()
 	cyl, plate := uvWallFixture(t)
 	promoteConicReceivers(&plate, &cyl)
 	uvImp := make([][]geom.Curve3, len(plate.uv))

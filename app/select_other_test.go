@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/scene"
@@ -14,10 +14,11 @@ import (
 // TestPickAllReturnsOccludedBodiesFrontToBack aims a ray through two stacked boxes and checks
 // PickAll returns both, the nearer one first — the occluded-geometry list Select Other walks.
 func TestPickAllReturnsOccludedBodiesFrontToBack(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4) // box [0,2]×[0,2]×[0,4], centre (1,1,2)
 	front := partBodies(s)()[0]
 	back := front
-	near, err := ops.TransformBody(front, math.Translation4(math.V3(10, 0, 0)), func(l topo.Lineage) topo.Lineage { return l })
+	near, err := transform.TransformBody(front, math.Translation4(math.V3(10, 0, 0)), func(l topo.Lineage) topo.Lineage { return l })
 	if err != nil {
 		t.Fatalf("TransformBody: %v", err)
 	}
@@ -51,6 +52,7 @@ func (f fakeMultiPicker) Pick(_, _ float64, _ *SelectionFilter) (Selectable, boo
 func (f fakeMultiPicker) PickAll(_, _ float64, _ *SelectionFilter) []Selectable { return f.all }
 
 func TestSelectOtherCyclesAndCommits(t *testing.T) {
+	t.Parallel()
 	a, b, c := FaceHandle{Face: aFace()}, EdgeHandle{}, FaceHandle{Face: aFace()}
 	s := NewSession()
 	s.SetPicker(fakeMultiPicker{all: []Selectable{a, b, c}})
@@ -81,6 +83,7 @@ func TestSelectOtherCyclesAndCommits(t *testing.T) {
 }
 
 func TestBeginSelectOtherNoopWhenNothingOccluded(t *testing.T) {
+	t.Parallel()
 	a := FaceHandle{Face: aFace()}
 	// Fewer than two candidates → not worth cycling.
 	one := NewSession()

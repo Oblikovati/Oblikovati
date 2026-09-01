@@ -15,6 +15,7 @@ import (
 // its default (on, Inventor's tangent propagation) a PLAIN click expands; toggling it off makes a
 // plain click select just the clicked edge; and Shift+click always expands regardless.
 func TestChamferShiftClickSelectsTangentLoop(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	roundVerticalEdges(t, s, block, 0.5)
 	rounded := activePartDef(t, s).SurfaceBodies().Item(0)

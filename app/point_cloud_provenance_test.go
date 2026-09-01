@@ -48,6 +48,7 @@ func liftZ(dz float64) math.Matrix4 {
 // TestPointCloudPlaneFollowsCloud: a plane fit to a cloud re-fits when the cloud moves, because it
 // keeps a live link to the cloud (provenance), not a frozen frame (#645).
 func TestPointCloudPlaneFollowsCloud(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	attachPlanarCloud(t, def) // points on z = 5
 	wp, _, err := s.CreatePointCloudPlane("Scan")
@@ -70,6 +71,7 @@ func TestPointCloudPlaneFollowsCloud(t *testing.T) {
 // TestPointCloudPlaneProvenanceRoundTrip: the plane's cloud link survives a marshal/restore +
 // relink, so a reopened document re-fits the plane to its cloud (#645).
 func TestPointCloudPlaneProvenanceRoundTrip(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	attachPlanarCloud(t, def)
 	if _, _, err := s.CreatePointCloudPlane("Scan"); err != nil {
@@ -124,6 +126,7 @@ func approxEq(a, b float64) bool { d := a - b; return d < 1e-9 && d > -1e-9 }
 // TestCloudPlaneFitSourceEdges covers the source's no-fit branch (too few points) and a relink
 // that finds no matching cloud in the part (#645).
 func TestCloudPlaneFitSourceEdges(t *testing.T) {
+	t.Parallel()
 	_, def := emptyPartSession(t)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
 	pc, err := def.PointClouds().Add("Tiny", "t.xyz", rid, []math.Point3{math.P3(0, 0, 0), math.P3(1, 1, 1)})
@@ -143,6 +146,7 @@ func TestCloudPlaneFitSourceEdges(t *testing.T) {
 // TestWorkPointFollowsCloud: a work point anchored on a scan point follows the cloud when it moves,
 // because it keeps a live link (provenance) rather than a frozen position (#645).
 func TestWorkPointFollowsCloud(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	pc, wp := anchorWorkPointOnScan(t, s, def, math.P3(3, 4, 5))
 	if wp.Point() != math.P3(3, 4, 5) {
@@ -159,6 +163,7 @@ func TestWorkPointFollowsCloud(t *testing.T) {
 // TestWorkPointProvenanceRoundTrip: the work point's cloud link survives marshal/restore + relink,
 // so a reopened document re-anchors it and it follows the restored cloud (#645).
 func TestWorkPointProvenanceRoundTrip(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
 	pc, _ := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(1, 2, 3)})
@@ -207,6 +212,7 @@ func restoredCloudPoint(t *testing.T, def *compdef.PartComponentDefinition) *fea
 // TestWorkPointProvenanceEdges covers the degenerate-placement anchor fallback and a work-point
 // relink that finds no matching cloud (#645).
 func TestWorkPointProvenanceEdges(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
 	pc, err := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(1, 1, 1)})
@@ -229,6 +235,7 @@ func TestWorkPointProvenanceEdges(t *testing.T) {
 // TestRecomputeAfterPointCloudMoveFollowsDatum: the auto-recompute hook makes a cloud-derived datum
 // follow the cloud without a manual part recompute (#645).
 func TestRecomputeAfterPointCloudMoveFollowsDatum(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	pc, wp := anchorWorkPointOnScan(t, s, def, math.P3(3, 4, 5))
 

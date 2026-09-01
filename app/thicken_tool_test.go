@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -55,6 +56,7 @@ func patchSurface(w, h float64) *topo.Body {
 // TestThickenToolEndToEnd drives the Thicken UI: with a 2×3 surface patch active, start the
 // tool, set thickness 0.5, OK — and asserts a valid slab solid of volume 3.
 func TestThickenToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s := newPartWithSurface(t)
 	th := NewThickenTool()
 	s.StartTool(th)
@@ -69,7 +71,7 @@ func TestThickenToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("thickened body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 3) > 1e-6 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, 3) > 1e-6 {
 		t.Errorf("slab volume = %g, want 3", got)
 	}
 	if s.ActiveTool() != nil {
@@ -79,6 +81,7 @@ func TestThickenToolEndToEnd(t *testing.T) {
 
 // TestThickenViaRibbonCommand starts the tool from its ribbon command.
 func TestThickenViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s := newPartWithSurface(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

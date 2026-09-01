@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -35,7 +36,7 @@ func revolveWith(t *testing.T, apply func(rv *RevolveTool)) ops.GeometryProperti
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("revolved body not a valid solid: %+v", r)
 	}
-	return ops.BodyGeometryProperties(body, ops.DefaultQuality())
+	return query.BodyGeometryProperties(body, ops.DefaultQuality())
 }
 
 // quarterWasherApp is the volume of a 90° sweep of the 2×2 square at x∈[2,4].
@@ -45,6 +46,7 @@ const quarterWasherApp = stdmath.Pi * (4*4 - 2*2) * 2 / 4
 // other side of the profile, not merely relabel it. Volume alone cannot tell the two apart, so the
 // assertion is on the centroid's side of the profile plane.
 func TestFlippedDirectionSweepsTheOtherWay(t *testing.T) {
+	t.Parallel()
 	fwd := revolveWith(t, func(*RevolveTool) {})
 	back := revolveWith(t, func(rv *RevolveTool) { rv.SetDirection(feature.NegativeDir) })
 
@@ -62,6 +64,7 @@ func TestFlippedDirectionSweepsTheOtherWay(t *testing.T) {
 // TestSymmetricDirectionSplitsTheAngle: Symmetric sweeps half of Angle A each way, so the solid
 // balances on the profile plane while covering the same total angle.
 func TestSymmetricDirectionSplitsTheAngle(t *testing.T) {
+	t.Parallel()
 	sym := revolveWith(t, func(rv *RevolveTool) { rv.SetDirection(feature.SymmetricDir) })
 
 	if relErr := stdmath.Abs(sym.Volume-quarterWasherApp) / quarterWasherApp; relErr > 0.01 {
@@ -75,6 +78,7 @@ func TestSymmetricDirectionSplitsTheAngle(t *testing.T) {
 // TestAsymmetricDirectionAddsTheSecondAngle: the Asymmetric toggle plus Angle B sweeps both ways
 // with separate angles.
 func TestAsymmetricDirectionAddsTheSecondAngle(t *testing.T) {
+	t.Parallel()
 	asym := revolveWith(t, func(rv *RevolveTool) {
 		rv.SetAsymmetric(true)
 		rv.SetSecondAngle(stdmath.Pi / 2)
@@ -94,6 +98,7 @@ func TestAsymmetricDirectionAddsTheSecondAngle(t *testing.T) {
 // harmless; an edit reuses the committed definition, and leaving its Angle2 in place would keep
 // sweeping the extra material after the user chose Default again.
 func TestLeavingAsymmetricDropsTheSecondAngle(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	part := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	axis, ok := part.WorkGeometry().AxisByRef(feature.OriginYAxis)
@@ -115,7 +120,7 @@ func TestLeavingAsymmetricDropsTheSecondAngle(t *testing.T) {
 	}
 
 	body := part.SurfaceBodies().Item(0)
-	got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 	if stdmath.Abs(got-quarterWasherApp)/quarterWasherApp > 0.01 {
 		t.Errorf("volume %g, want ≈%g — the abandoned Angle B kept widening the sweep", got, quarterWasherApp)
 	}
@@ -124,6 +129,7 @@ func TestLeavingAsymmetricDropsTheSecondAngle(t *testing.T) {
 // TestEditingARevolveKeepsItsDirection: re-opening a flipped revolve must show it flipped, or the
 // next OK would silently sweep it forward again.
 func TestEditingARevolveKeepsItsDirection(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	part := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	axis, ok := part.WorkGeometry().AxisByRef(feature.OriginYAxis)

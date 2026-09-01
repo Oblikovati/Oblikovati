@@ -17,6 +17,7 @@ func aliasCommand(t *testing.T, s *Session, id, alias string, ran *bool) {
 // TestBareLetterBeginsCommandTyping pins #1751 S2: a bare letter with the viewport focused hands
 // focus to the Command Window seeded with that (lower-cased) letter, rather than firing a shortcut.
 func TestBareLetterBeginsCommandTyping(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := false
 	aliasCommand(t, s, "Test.Line", "L", &ran)
@@ -37,6 +38,7 @@ func TestBareLetterBeginsCommandTyping(t *testing.T) {
 
 // TestBareDigitBeginsCommandTyping confirms digits 0–9 are reserved for typing too.
 func TestBareDigitBeginsCommandTyping(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.PressKey(KeyEvent{Key: "5"}); err != nil {
 		t.Fatalf("PressKey(5): %v", err)
@@ -52,6 +54,7 @@ func TestBareDigitBeginsCommandTyping(t *testing.T) {
 // TestSpecialKeyDoesNotBeginTyping confirms a bare special key (F8) is NOT reserved: it dispatches
 // its bound command directly and begins no command-window typing (#1751 S1 policy, exercised via S2).
 func TestSpecialKeyDoesNotBeginTyping(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := false
 	cmd := NewCommand("Test.Refresh", "Refresh", "Test",
@@ -76,6 +79,7 @@ func TestSpecialKeyDoesNotBeginTyping(t *testing.T) {
 // TestModifiedLetterDoesNotBeginTyping confirms a modified alphanumeric (Ctrl+L) resolves as a
 // shortcut and does not begin typing — modifiers are exactly what turn a letter into a shortcut.
 func TestModifiedLetterDoesNotBeginTyping(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := false
 	cmd := NewCommand("Test.Line", "Line", "Test",

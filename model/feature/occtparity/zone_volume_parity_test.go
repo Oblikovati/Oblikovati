@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/kernel/exchange/meshio"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -53,7 +54,7 @@ func stepImportVolume(t *testing.T, rel string) float64 {
 	if err != nil {
 		t.Fatalf("import %s: %v", rel, err)
 	}
-	return ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume
+	return query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume
 }
 
 // stlMeshVolume decodes an STL through kernel/exchange/meshio and returns the enclosed volume of the

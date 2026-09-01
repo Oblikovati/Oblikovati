@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
@@ -215,7 +217,7 @@ func (p *RayPicker) Pick(x, y float64, filter *SelectionFilter) (Selectable, boo
 // meshRayEntry caches a placed mesh's ray BVH and its triangle→facet map. A mesh geometry is
 // immutable, so the index is built once per geometry and reused across picks.
 type meshRayEntry struct {
-	index   *ops.MeshRayIndex
+	index   *tessellate.MeshRayIndex
 	facetOf []int
 }
 
@@ -248,7 +250,7 @@ func (p *RayPicker) meshRayEntry(g *feature.MeshGeometry) *meshRayEntry {
 		return e
 	}
 	tris, facetOf := meshTriangles(g)
-	e := &meshRayEntry{index: ops.NewMeshRayIndex(g.Vertices, tris), facetOf: facetOf}
+	e := &meshRayEntry{index: tessellate.NewMeshRayIndex(g.Vertices, tris), facetOf: facetOf}
 	p.meshIndex[g] = e
 	return e
 }
@@ -450,7 +452,7 @@ func (p *RayPicker) nearestFace(origin math.Point3, dir math.Vector3) (*topo.Fac
 	var hitBody *topo.Body
 	best := stdmath.Inf(1)
 	for _, b := range p.candidateBodies(origin, dir) {
-		if f, t, ok := ops.RayCastFaces(b, origin, dir, ops.DefaultQuality()); ok && t < best {
+		if f, t, ok := query.RayCastFaces(b, origin, dir, ops.DefaultQuality()); ok && t < best {
 			best, hitFace, hitBody = t, f, b
 		}
 	}
@@ -487,7 +489,7 @@ func (p *RayPicker) nearestEdge(origin math.Point3, dir math.Vector3) *topo.Edge
 	best := stdmath.Inf(1)
 	for _, b := range p.candidateBodies(origin, dir) {
 		for _, e := range b.Edges() {
-			pts := ops.TessellateEdge(e, ops.DefaultQuality())
+			pts := tessellate.TessellateEdge(e, ops.DefaultQuality())
 			for i := 0; i+1 < len(pts); i++ {
 				if d, t, ok := raySegmentDistance(origin, dir, pts[i], pts[i+1]); ok && d <= tol && t < best {
 					best, hit = t, e

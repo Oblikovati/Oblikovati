@@ -14,6 +14,7 @@ import (
 const wtol = 1e-9
 
 func TestOriginCoordinateFrame(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	if g.WorkPoints().Count() != 1 || g.WorkAxes().Count() != 3 || g.WorkPlanes().Count() != 3 {
 		t.Fatalf("origin frame counts pts=%d axes=%d planes=%d, want 1/3/3",
@@ -46,6 +47,7 @@ func TestOriginCoordinateFrame(t *testing.T) {
 // edit to its features instead of forcing a wholesale rebuild (ADR-0044). A plane with no
 // tracker (or a grounded origin plane) records nothing.
 func TestOffsetWorkPlaneRecordsParameterFootprint(t *testing.T) {
+	t.Parallel()
 	ps := param.NewParameters()
 	off, _ := ps.AddUserParameter("gap", "5 cm")
 	g := NewWorkGeometry()
@@ -68,6 +70,7 @@ func TestOffsetWorkPlaneRecordsParameterFootprint(t *testing.T) {
 }
 
 func TestOffsetWorkPlaneMovesWithParameter(t *testing.T) {
+	t.Parallel()
 	ps := param.NewParameters()
 	off, _ := ps.AddUserParameter("gap", "5 cm")
 	g := NewWorkGeometry()
@@ -94,6 +97,7 @@ func TestOffsetWorkPlaneMovesWithParameter(t *testing.T) {
 }
 
 func TestThreePointWorkPlaneAndDegenerate(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	a := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 0) })
 	b := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 0, 0) })
@@ -111,6 +115,7 @@ func TestThreePointWorkPlaneAndDegenerate(t *testing.T) {
 }
 
 func TestWorkAxisByTwoPointsAndPlaneIntersection(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	top := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 4) })
 	ax := g.WorkAxes().AddByTwoPoints(OriginCenter, top.Key())
@@ -136,6 +141,7 @@ func TestWorkAxisByTwoPointsAndPlaneIntersection(t *testing.T) {
 // TestWorkAxisByLine covers the grounded "line" axis: a fixed origin + direction, tracked as a
 // user axis that lists as the "line" kind (not an origin coordinate-system element).
 func TestWorkAxisByLine(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	before := g.WorkAxes().Count()
 	ax := g.WorkAxes().AddByLine(math.P3(1, 2, 3), mustUnit(0, 0, 1))
@@ -159,6 +165,7 @@ func TestWorkAxisByLine(t *testing.T) {
 // TestWorkAxisLineSerializeRoundTrip pins that a grounded line axis persists by its origin +
 // direction and restores to the same geometry (serializeAxisDef / restoreLineAxis).
 func TestWorkAxisLineSerializeRoundTrip(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	g.WorkAxes().AddByLine(math.P3(1, 2, 3), mustUnit(0, 1, 0))
 	d, err := serializeAxisDef(fixedAxisDef{origin: math.P3(1, 2, 3), dir: mustUnit(0, 1, 0)})
@@ -179,6 +186,7 @@ func TestWorkAxisLineSerializeRoundTrip(t *testing.T) {
 }
 
 func TestWorkPointPiercesPlane(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	wp := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(2, 3, 4) })
 	if !wp.Point().IsEqualTo(math.P3(2, 3, 4), wtol) || !wp.Health().OK() {
@@ -198,6 +206,7 @@ func TestWorkPointPiercesPlane(t *testing.T) {
 }
 
 func TestWorkFeatureNamesAndKeys(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	wp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 1 })
 	wp.SetName("Datum1")
@@ -212,6 +221,7 @@ func TestWorkFeatureNamesAndKeys(t *testing.T) {
 }
 
 func TestWorkPlaneVisibilityDefaultsAndToggles(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	if g.WorkPlanes().Item(0).Visible() {
 		t.Error("origin plane should be hidden by default")
@@ -231,6 +241,7 @@ func TestWorkPlaneVisibilityDefaultsAndToggles(t *testing.T) {
 // picked, a visible plane is always shown, and a hidden USER plane is never revealed — the reveal is
 // scoped to the origin frame so Create Sketch does not un-hide planes the user chose to hide.
 func TestShownForHostPickRevealsOnlyGroundedOrigins(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	origin := g.WorkPlanes().Item(0) // grounded, hidden by default
 	if origin.ShownForHostPick(false) {
@@ -252,6 +263,7 @@ func TestShownForHostPickRevealsOnlyGroundedOrigins(t *testing.T) {
 }
 
 func TestUserCoordinateSystem(t *testing.T) {
+	t.Parallel()
 	ucs := NewUserCoordinateSystems().AddByPlane(offsetXY(5))
 	ucs.SetName("Frame")
 	if ucs.Name() != "Frame" || !ucs.Origin().IsEqualTo(math.P3(0, 0, 5), wtol) ||

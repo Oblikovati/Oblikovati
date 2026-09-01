@@ -34,6 +34,7 @@ func mustLine2d(t *testing.T, ox, oy, dx, dy float64) Line2d {
 // --- LineCircle2dIntersection ---------------------------------------------
 
 func TestLineCircleTwoPoints(t *testing.T) {
+	t.Parallel()
 	c := NewCircle2d(math.P2(0, 0), 2)
 	pts := LineCircle2dIntersection(mustLine2d(t, 0, 0, 1, 0), c, 0)
 	if len(pts) != 2 {
@@ -43,6 +44,7 @@ func TestLineCircleTwoPoints(t *testing.T) {
 }
 
 func TestLineCircleTangentIsOnePoint(t *testing.T) {
+	t.Parallel()
 	c := NewCircle2d(math.P2(0, 0), 2)
 	pts := LineCircle2dIntersection(mustLine2d(t, 0, 2, 1, 0), c, 0) // y = 2, tangent at top
 	if len(pts) != 1 {
@@ -54,6 +56,7 @@ func TestLineCircleTangentIsOnePoint(t *testing.T) {
 }
 
 func TestLineCircleMissesIsNone(t *testing.T) {
+	t.Parallel()
 	c := NewCircle2d(math.P2(0, 0), 2)
 	if pts := LineCircle2dIntersection(mustLine2d(t, 0, 3, 1, 0), c, 0); len(pts) != 0 {
 		t.Errorf("got %d points, want 0 (miss)", len(pts))
@@ -63,6 +66,7 @@ func TestLineCircleMissesIsNone(t *testing.T) {
 // --- SegmentCircle2dIntersection ------------------------------------------
 
 func TestSegmentCircleFiltersToExtent(t *testing.T) {
+	t.Parallel()
 	c := NewCircle2d(math.P2(0, 0), 2)
 	// Segment from (0,0) to (3,0) crosses the circle only at (2,0); (-2,0) is off-segment.
 	seg := NewLineSegment2d(math.P2(0, 0), math.P2(3, 0))
@@ -73,6 +77,7 @@ func TestSegmentCircleFiltersToExtent(t *testing.T) {
 }
 
 func TestSegmentCircleDegenerateIsNone(t *testing.T) {
+	t.Parallel()
 	c := NewCircle2d(math.P2(0, 0), 2)
 	seg := NewLineSegment2d(math.P2(1, 1), math.P2(1, 1))
 	if pts := SegmentCircle2dIntersection(seg, c, 0); len(pts) != 0 {
@@ -83,6 +88,7 @@ func TestSegmentCircleDegenerateIsNone(t *testing.T) {
 // --- Circle2dCircle2dIntersection -----------------------------------------
 
 func TestCircleCircleTwoPoints(t *testing.T) {
+	t.Parallel()
 	c1 := NewCircle2d(math.P2(0, 0), 2)
 	c2 := NewCircle2d(math.P2(3, 0), 2)
 	pts := Circle2dCircle2dIntersection(c1, c2, 0)
@@ -100,6 +106,7 @@ func TestCircleCircleTwoPoints(t *testing.T) {
 }
 
 func TestCircleCircleTangentExternal(t *testing.T) {
+	t.Parallel()
 	c1 := NewCircle2d(math.P2(0, 0), 2)
 	c2 := NewCircle2d(math.P2(4, 0), 2) // d = r1+r2
 	pts := Circle2dCircle2dIntersection(c1, c2, 1e-6)
@@ -109,6 +116,7 @@ func TestCircleCircleTangentExternal(t *testing.T) {
 }
 
 func TestCircleCircleDisjointConcentricNested(t *testing.T) {
+	t.Parallel()
 	c1 := NewCircle2d(math.P2(0, 0), 2)
 	cases := map[string]Circle2d{
 		"disjoint":   NewCircle2d(math.P2(5, 0), 2),
@@ -125,6 +133,7 @@ func TestCircleCircleDisjointConcentricNested(t *testing.T) {
 // --- Arc2d.ContainsAngle / ContainsPoint ----------------------------------
 
 func TestArcContainsAnglePositiveSweep(t *testing.T) {
+	t.Parallel()
 	a := NewArc2d(math.P2(0, 0), 1, 0, stdmath.Pi) // upper half, CCW
 	if !a.ContainsAngle(stdmath.Pi/2, 0) {
 		t.Error("π/2 should be on the upper-half arc")
@@ -135,6 +144,7 @@ func TestArcContainsAnglePositiveSweep(t *testing.T) {
 }
 
 func TestArcContainsAngleNegativeSweep(t *testing.T) {
+	t.Parallel()
 	a := NewArc2d(math.P2(0, 0), 1, 0, -stdmath.Pi) // lower half, CW
 	if !a.ContainsAngle(-stdmath.Pi/2, 0) {
 		t.Error("−π/2 should be on the lower-half arc")
@@ -145,6 +155,7 @@ func TestArcContainsAngleNegativeSweep(t *testing.T) {
 }
 
 func TestArcContainsPointFiltersCircleCrossings(t *testing.T) {
+	t.Parallel()
 	a := NewArc2d(math.P2(0, 0), 1, 0, stdmath.Pi) // upper half
 	if !a.ContainsPoint(math.P2(0, 1), 0) {
 		t.Error("(0,1) should be on the upper-half arc")
@@ -155,6 +166,7 @@ func TestArcContainsPointFiltersCircleCrossings(t *testing.T) {
 }
 
 func TestArcContainsGuardsNegativeTolAndZeroRadius(t *testing.T) {
+	t.Parallel()
 	a := NewArc2d(math.P2(0, 0), 1, 0, stdmath.Pi)
 	// Negative tol is clamped to 0 (no slack), so an in-sweep angle still passes.
 	if !a.ContainsAngle(stdmath.Pi/2, -1) {
@@ -168,6 +180,7 @@ func TestArcContainsGuardsNegativeTolAndZeroRadius(t *testing.T) {
 }
 
 func TestArcContainsAngleFullCircle(t *testing.T) {
+	t.Parallel()
 	a := NewArc2d(math.P2(0, 0), 1, 0, twoPi)
 	for _, th := range []float64{0, stdmath.Pi / 2, stdmath.Pi, -stdmath.Pi / 2, 3} {
 		if !a.ContainsAngle(th, 0) {

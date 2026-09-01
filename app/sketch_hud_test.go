@@ -23,6 +23,7 @@ func hudLineSession(t *testing.T) (*Session, *LineTool) {
 }
 
 func TestHUDEnableTogglePersists(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if !s.HUDEnabled() {
 		t.Fatal("the dynamic-input HUD should be on by default")
@@ -36,6 +37,7 @@ func TestHUDEnableTogglePersists(t *testing.T) {
 // TestHUDHiddenWhenNotApplicable checks the HUD is invisible when disabled, when no sketch is
 // being edited, and when the active tool takes no coordinate input.
 func TestHUDHiddenWhenNotApplicable(t *testing.T) {
+	t.Parallel()
 	s, _ := hudLineSession(t)
 	s.SetHUDEnabled(false)
 	if s.SketchHUDView(100, 100).Visible {
@@ -51,6 +53,7 @@ func TestHUDHiddenWhenNotApplicable(t *testing.T) {
 
 // TestHUDCartesianTracksCursor checks the first point shows X/Y fields tracking the cursor.
 func TestHUDCartesianTracksCursor(t *testing.T) {
+	t.Parallel()
 	s, _ := hudLineSession(t)
 	v := s.SketchHUDView(130, 80)
 	if !v.Visible || v.Mode != HUDCartesian {
@@ -71,6 +74,7 @@ func TestHUDCartesianTracksCursor(t *testing.T) {
 // TestHUDPolarAfterFirstPoint checks that once the tool has a point, the HUD switches to
 // Length/Angle relative to it.
 func TestHUDPolarAfterFirstPoint(t *testing.T) {
+	t.Parallel()
 	s, line := hudLineSession(t)
 	line.points = []math.Point2{math.P2(0, 0)} // a placed reference point
 	v := s.SketchHUDView(130, 100)
@@ -82,6 +86,7 @@ func TestHUDPolarAfterFirstPoint(t *testing.T) {
 // TestHUDTypingEngagesAndCycles checks typing fills the active field and engages the HUD, and
 // Tab moves entry to the other field.
 func TestHUDTypingEngagesAndCycles(t *testing.T) {
+	t.Parallel()
 	s, _ := hudLineSession(t)
 	if s.HUDEngaged() {
 		t.Fatal("HUD should not be engaged before typing")
@@ -107,6 +112,7 @@ func TestHUDTypingEngagesAndCycles(t *testing.T) {
 // TestHUDCommitPlacesTypedCartesianPoint checks committing typed X/Y feeds the tool a point at
 // the resolved sketch coordinate (document units → model units).
 func TestHUDCommitPlacesTypedCartesianPoint(t *testing.T) {
+	t.Parallel()
 	s, line := hudLineSession(t)
 	for _, r := range "50" { // X = 50 mm
 		s.HUDInputRune(r)
@@ -131,6 +137,7 @@ func TestHUDCommitPlacesTypedCartesianPoint(t *testing.T) {
 // TestHUDCommitRejectsBadNumber checks a non-numeric field surfaces an error and keeps the HUD
 // open for correction.
 func TestHUDCommitRejectsBadNumber(t *testing.T) {
+	t.Parallel()
 	s, _ := hudLineSession(t)
 	s.HUDInputRune('-')
 	s.HUDInputRune('-') // "--" is not a number
@@ -145,6 +152,7 @@ func TestHUDCommitRejectsBadNumber(t *testing.T) {
 // TestHUDBackspaceAndCancel checks Backspace edits the active field and Cancel/non-number
 // runes clear or are ignored.
 func TestHUDBackspaceAndCancel(t *testing.T) {
+	t.Parallel()
 	s, _ := hudLineSession(t)
 	s.HUDBackspace() // no-op on an empty field (must not panic)
 	for _, r := range "12" {
@@ -164,6 +172,7 @@ func TestHUDBackspaceAndCancel(t *testing.T) {
 // TestHUDCommitPolarPoint checks committing a typed Length/Angle resolves to the reference
 // point offset by length∠angle (the polar branch + degree→radian conversion).
 func TestHUDCommitPolarPoint(t *testing.T) {
+	t.Parallel()
 	s, line := hudLineSession(t)
 	line.points = []math.Point2{math.P2(1, 0)} // a placed reference point → polar mode
 	for _, r := range "100" {                  // Length = 100 mm = 10 cm model
@@ -186,6 +195,7 @@ func TestHUDCommitPolarPoint(t *testing.T) {
 // TestHUDCommitWithoutToolErrors checks committing with no coordinate tool active errors (the
 // hudTool nil guard) and a non-numeric polar angle is rejected (hudResolveCoord polar branch).
 func TestHUDCommitWithoutToolErrors(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t) // in a sketch, but no tool started
 	s.HUDInputRune('5')
 	if err := s.HUDCommit(100, 100); err == nil {
@@ -205,6 +215,7 @@ func TestHUDCommitWithoutToolErrors(t *testing.T) {
 // TestSubmitResolvedCoordGuards checks the shared command-engine entry the HUD uses rejects a
 // missing or non-coordinate tool.
 func TestSubmitResolvedCoordGuards(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.CommandLine().SubmitResolvedCoord(s, cmdline.Coord{X: 1, Y: 2}); err == nil {
 		t.Error("SubmitResolvedCoord with no active tool should error")

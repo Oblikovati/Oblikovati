@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -50,6 +51,7 @@ func cornerSetbacks(body *topo.Body) []float64 {
 // TestChamferTwoDistancesAsymmetric chamfers a box edge with unequal setbacks and verifies
 // the volume (½·d1·d2·L wedge) and that the two face setbacks are actually d1 and d2 (M20-F03).
 func TestChamferTwoDistancesAsymmetric(t *testing.T) {
+	t.Parallel()
 	box, edge := box2(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -67,7 +69,7 @@ func TestChamferTwoDistancesAsymmetric(t *testing.T) {
 		t.Fatalf("two-distance chamfer not a valid solid: %+v", r)
 	}
 	want := 8 - 0.5*0.3*0.6*2 // box 8 − asymmetric wedge ½·d1·d2·length
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("two-distance chamfer volume = %g, want %g", got, want)
 	}
 	ds := cornerSetbacks(res)
@@ -79,6 +81,7 @@ func TestChamferTwoDistancesAsymmetric(t *testing.T) {
 // TestChamferDistanceAngle chamfers with a distance + angle; the second setback is derived as
 // d·tanθ, so the removed wedge volume reflects the angle (M20-F03).
 func TestChamferDistanceAngle(t *testing.T) {
+	t.Parallel()
 	box, edge := box2(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -98,7 +101,7 @@ func TestChamferDistanceAngle(t *testing.T) {
 	}
 	d2 := d * stdmath.Tan(angle)
 	want := 8 - 0.5*d*d2*2
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("distance-angle chamfer volume = %g, want %g (d2=%g)", got, want, d2)
 	}
 }
@@ -106,6 +109,7 @@ func TestChamferDistanceAngle(t *testing.T) {
 // TestChamferTwoDistancesRoundTrip checks the mode + second distance survive an .obk round
 // trip (extrude source so the program serializes).
 func TestChamferTwoDistancesRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 1 })
@@ -136,6 +140,7 @@ func TestChamferTwoDistancesRoundTrip(t *testing.T) {
 // answer came from edge.Faces() order — a topology artefact — so naming each of the edge's two
 // faces in turn must SWAP where the big setback lands, and reach the same volume either way.
 func TestChamferReferenceFaceDecidesWhichSetbackGoesWhere(t *testing.T) {
+	t.Parallel()
 	box, edge := box2(t)
 	faces := edgeFacesOf(t, box, edge)
 	first := chamferSetbackOnFace(t, box, edge, faces[0], faces[0])
@@ -205,6 +210,7 @@ func edgeFacesOf(t *testing.T, body *topo.Body, key []byte) []*topo.Face {
 // removes proportionally less. The tool must also NOT overhang its interior ends, or it would bevel
 // a little more edge than was asked for — the same rule a from-to hole's entry follows.
 func TestPartialChamferBevelsOnlyItsSpan(t *testing.T) {
+	t.Parallel()
 	box, edge := box2(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
@@ -221,7 +227,7 @@ func TestPartialChamferBevelsOnlyItsSpan(t *testing.T) {
 		t.Fatalf("partial chamfer not a valid solid: %+v", r)
 	}
 	want := 8 - 0.5*0.4*0.4*1.0 // the wedge over ONE cm of the 2 cm edge, not the whole of it
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("partial chamfer volume = %g, want %g (the span, exactly — no overhang past it)", got, want)
 	}
 }

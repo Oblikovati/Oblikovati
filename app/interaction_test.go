@@ -32,6 +32,7 @@ func aFace() *topo.Face {
 }
 
 func TestClickSelectsHonoringFilterAndFiresEvent(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: aFace()}})
 
@@ -56,6 +57,7 @@ func TestClickSelectsHonoringFilterAndFiresEvent(t *testing.T) {
 }
 
 func TestPlainClickReplacesShiftClickTogglesPerObject(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	faceA := FaceHandle{Face: aFace()}
 	faceB := FaceHandle{Face: aFace()}
@@ -86,6 +88,7 @@ func TestPlainClickReplacesShiftClickTogglesPerObject(t *testing.T) {
 }
 
 func TestEmptyClickClearsSelection(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: aFace()}})
 	s.Click(10, 10)
@@ -113,6 +116,7 @@ func TestEmptyClickClearsSelection(t *testing.T) {
 }
 
 func TestSelectionAddDedupesAndToggle(t *testing.T) {
+	t.Parallel()
 	sel := NewSelection()
 	a := FaceHandle{Face: aFace()}
 	b := EdgeHandle{Edge: nil}
@@ -135,6 +139,7 @@ func TestSelectionAddDedupesAndToggle(t *testing.T) {
 }
 
 func TestKeyChordInvokesCommand(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := false
 	_ = s.Commands().Add(NewCommand("line", "Line", "Sketch", func(*Session) error { ran = true; return nil }).WithDefaultChord("Ctrl+L"))
@@ -159,6 +164,7 @@ func (s *stubTool) Commit(*Session) error     { s.committed = true; return nil }
 func (s *stubTool) Cancel(*Session)           { s.cancelled = true }
 
 func TestToolLifecycleRouting(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: aFace()}})
 	tool := &stubTool{}

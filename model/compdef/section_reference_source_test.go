@@ -89,6 +89,7 @@ func projectedBounds(curves []*sketch.Projection) (lo, hi math.Point2) {
 // TestCutEdgeSourcesSectionBoxIntoUnitSquare: the z=0 section of a [-1,1]³ box is the unit square,
 // projected onto the XY sketch as associative reference geometry (#1873 AC1).
 func TestCutEdgeSourcesSectionBoxIntoUnitSquare(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	box, err := brep.SolidBlock(math.P3(-1, -1, -1), math.P3(1, 1, 1), "box")
 	if err != nil {
@@ -118,6 +119,7 @@ func TestCutEdgeSourcesSectionBoxIntoUnitSquare(t *testing.T) {
 
 // TestCutEdgeSourcesEmptyWhenPlaneMissesBody: a sketch plane clear of the solid yields no cut edges.
 func TestCutEdgeSourcesEmptyWhenPlaneMissesBody(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	box, _ := brep.SolidBlock(math.P3(-1, -1, -1), math.P3(1, 1, 1), "box")
 	def.SurfaceBodies().Add(box)
@@ -133,6 +135,7 @@ func TestCutEdgeSourcesEmptyWhenPlaneMissesBody(t *testing.T) {
 // sketch normal), has silhouette rulings; the one nearest the proximity point projects as an
 // associative reference curve (#1873 AC2).
 func TestSilhouetteSourceProjectsCylinderRuling(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 5)
 	if err != nil {
@@ -153,6 +156,7 @@ func TestSilhouetteSourceProjectsCylinderRuling(t *testing.T) {
 
 // TestSilhouetteSourceLostFaceReportsNoGeometry: an unknown face key yields no source geometry.
 func TestSilhouetteSourceLostFaceReportsNoGeometry(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 5)
 	def.SurfaceBodies().Add(cyl)
@@ -167,6 +171,7 @@ func TestSilhouetteSourceLostFaceReportsNoGeometry(t *testing.T) {
 // re-link (associative) after a save/reload — the extrude rebuilds on recompute and the "cutEdge"
 // resolver case re-sections it, so the projections stay live (#1873 AC3).
 func TestProjectedCutEdgesRebindOnReload(t *testing.T) {
+	t.Parallel()
 	def := extrudeBlock(t)
 	sk := midHeightSketch(t, def)
 	before := sk.ProjectCutEdges(def.CutEdgeSources(sk.Plane()))
@@ -197,6 +202,7 @@ func TestProjectedCutEdgesRebindOnReload(t *testing.T) {
 // TestSilhouetteSourceIDRoundTripsThroughResolver: the silhouette descriptor survives encode →
 // resolver rebuild, even when the face key contains the '|' field delimiter (#1873).
 func TestSilhouetteSourceIDRoundTripsThroughResolver(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	plane := sketch.YZPlane()
 	orig := compdef.NewSilhouetteRefSource(def, "face|with|pipes", plane, math.P3(1.5, -2, 3.25), true)

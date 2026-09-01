@@ -70,6 +70,7 @@ func call(t *testing.T, r *Router, s *app.Session, method, args string, v any) {
 }
 
 func TestUnknownMethod(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, "bogus.method", nil); err == nil {
 		t.Fatal("expected error for unknown method")
@@ -77,6 +78,7 @@ func TestUnknownMethod(t *testing.T) {
 }
 
 func TestCommandsListAndExecute(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if err := s.Commands().Add(app.NewCommand("test.noop", "Noop", "Test", func(*app.Session) error { return nil })); err != nil {
 		t.Fatalf("add test command: %v", err)
@@ -112,6 +114,7 @@ func TestCommandsListAndExecute(t *testing.T) {
 // and executing it (a click) fires a command.ended event — the signal forwarded to an
 // add-in so it can run the button's action. A duplicate id is rejected.
 func TestCommandsCreateAddsRibbonButtonAndNotifiesOnExecute(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "commands.create",
 		`{"id":"AddIn.Ping","displayName":"Ping","tab":"AddInTab","category":"Demo","icon":"extrude","buttonStyle":2}`, nil)
@@ -149,6 +152,7 @@ func TestCommandsCreateAddsRibbonButtonAndNotifiesOnExecute(t *testing.T) {
 // is stored on the command (so the head renders it instead of a bundled key), and an oversized
 // payload is rejected.
 func TestCommandsCreateInlineIconSVG(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	svg := `<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#00ff00"/></svg>`
 	call(t, r, s, "commands.create",
@@ -169,6 +173,7 @@ func TestCommandsCreateInlineIconSVG(t *testing.T) {
 }
 
 func TestDocumentsCreateListActivate(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var created wire.DocumentInfo
 	call(t, r, s, "documents.create", `{"type":"part","name":"second.obk"}`, &created)
@@ -198,6 +203,7 @@ func TestDocumentsCreateListActivate(t *testing.T) {
 }
 
 func TestParametersAddGetSet(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var list wire.ListParametersResult
 	call(t, r, s, "parameters.list", "{}", &list)
@@ -222,6 +228,7 @@ func TestParametersAddGetSet(t *testing.T) {
 }
 
 func TestFeaturesListAndAddExtrude(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var kinds wire.ListFeatureKindsResult
 	call(t, r, s, "features.list", "{}", &kinds)
@@ -253,6 +260,7 @@ func TestFeaturesListAndAddExtrude(t *testing.T) {
 }
 
 func TestFeaturesAddUnknownKind(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, "features.add", []byte(`{"kind":"nope","args":{}}`)); err == nil {
 		t.Fatal("expected error for unknown feature kind")
@@ -260,6 +268,7 @@ func TestFeaturesAddUnknownKind(t *testing.T) {
 }
 
 func TestModelSelectionEmpty(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var sel wire.SelectionResult
 	call(t, r, s, "model.selection", "{}", &sel)
@@ -269,6 +278,7 @@ func TestModelSelectionEmpty(t *testing.T) {
 }
 
 func TestThemeActiveServesEveryColor(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var view wire.ThemeView
 	call(t, r, s, "theme.active", "{}", &view)
@@ -286,6 +296,7 @@ func TestThemeActiveServesEveryColor(t *testing.T) {
 }
 
 func TestThemeListFlagsActive(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if err := s.DuplicateTheme("Dark", "My Dark"); err != nil { // becomes active
 		t.Fatalf("DuplicateTheme: %v", err)
@@ -307,6 +318,7 @@ func TestThemeListFlagsActive(t *testing.T) {
 }
 
 func TestAppearancesAndMaterialsListAndCreate(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var apprs wire.ListAppearancesResult
 	call(t, r, s, "appearances.list", "{}", &apprs)
@@ -336,6 +348,7 @@ func TestAppearancesAndMaterialsListAndCreate(t *testing.T) {
 }
 
 func TestAssignMaterialAndPhysicalProperties(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	// Build a solid so there is volume to weigh.
 	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"profileIndex":0,"distance":"5 cm"}}`, nil)
@@ -366,6 +379,7 @@ func mustJSON(t *testing.T, v any) string {
 }
 
 func TestParametersNoActiveDocument(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession() // empty workspace
 	if _, err := r.Handle(s, "parameters.list", nil); err == nil || !strings.Contains(err.Error(), "no active document") {

@@ -11,6 +11,7 @@ import (
 // TestFlipWorkPlaneNormal flips a user plane's normal over the wire and confirms it reverses (and a
 // second flip restores it); an origin plane and a bad index are clean errors (#1851).
 func TestFlipWorkPlaneNormal(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var pl wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &pl)
@@ -33,6 +34,7 @@ func TestFlipWorkPlaneNormal(t *testing.T) {
 // TestRedefineWorkPlaneDisplay sets grounded / auto-resize / explicit size via redefine and confirms
 // the list reports them back (#1851).
 func TestRedefineWorkPlaneDisplay(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var pl wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &pl)
@@ -54,6 +56,7 @@ func TestRedefineWorkPlaneDisplay(t *testing.T) {
 
 // TestRedefineWorkPlaneSizeBadArity: a size that is not two corners is a clean error (#1851).
 func TestRedefineWorkPlaneSizeBadArity(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var pl wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &pl)
@@ -65,6 +68,7 @@ func TestRedefineWorkPlaneSizeBadArity(t *testing.T) {
 // TestCreateTwoPlanesWithQuadrant: the quadrant point routes to the ...Toward constructor, and
 // opposite quadrant points give different (perpendicular) bisector normals (#1844).
 func TestCreateTwoPlanesWithQuadrant(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var a, b wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create", `{"kind":"two-planes","refs":["origin/plane/xy","origin/plane/xz"],"quadrant":[0,-1,1]}`, &a)
@@ -83,6 +87,7 @@ func TestCreateTwoPlanesWithQuadrant(t *testing.T) {
 // TestCreateSolutionPlaneWrongRefCount: a quadrant point with the wrong reference count errors from
 // the solution dispatcher (#1844).
 func TestCreateSolutionPlaneWrongRefCount(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "workPlanes.create", []byte(`{"kind":"two-planes","refs":["origin/plane/xy"],"quadrant":[0,1,1]}`)); err == nil {
 		t.Error("two-planes with one reference should error")

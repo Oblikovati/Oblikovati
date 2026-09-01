@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -35,6 +36,10 @@ func tubeRings(ccw bool) (outer, inner [][]math.Point3) {
 // TestTubeSolidIsWatertightWithCorrectVolume checks the direct tube mesh: an outer/inner
 // cylindrical pair skins a watertight pipe whose volume is the annulus area × height.
 func TestTubeSolidIsWatertightWithCorrectVolume(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
+	t.Parallel()
 	outer, inner := tubeRings(true)
 	body, err := tubeSolid(skinnedSections(outer, 48, false, loftEnds{}, loftGuides{}), skinnedSections(inner, 48, false, loftEnds{}, loftGuides{}), false, "tube")
 	if err != nil {
@@ -44,7 +49,7 @@ func TestTubeSolidIsWatertightWithCorrectVolume(t *testing.T) {
 		t.Fatalf("tube is not a valid solid: valid=%v solid=%v closed=%v", r.Valid, body.IsSolid(), r.Closed)
 	}
 	want := stdmath.Pi * (4 - 1) * 4 // (R²−r²)·h
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, want) > 0.02 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, want) > 0.02 {
 		t.Errorf("tube volume = %g, want ≈%g", v, want)
 	}
 }
@@ -53,13 +58,17 @@ func TestTubeSolidIsWatertightWithCorrectVolume(t *testing.T) {
 // valid outward solid with positive volume — the coherent mesh lets the signed-volume flip pick
 // the global orientation, so callers need not pre-normalize ring winding.
 func TestTubeSolidWindingInvariant(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~6s): `make test-corpus`")
+	}
+	t.Parallel()
 	for _, ccw := range []bool{true, false} {
 		outer, inner := tubeRings(ccw)
 		body, err := tubeSolid(skinnedSections(outer, 48, false, loftEnds{}, loftGuides{}), skinnedSections(inner, 48, false, loftEnds{}, loftGuides{}), false, "tube")
 		if err != nil {
 			t.Fatalf("ccw=%v tubeSolid: %v", ccw, err)
 		}
-		gp := ops.BodyGeometryProperties(body, ops.DefaultQuality())
+		gp := query.BodyGeometryProperties(body, ops.DefaultQuality())
 		if r := ops.Validate(body); !r.Valid || !body.IsSolid() || gp.Volume <= 0 {
 			t.Fatalf("ccw=%v tube invalid: valid=%v solid=%v vol=%g", ccw, r.Valid, body.IsSolid(), gp.Volume)
 		}
@@ -69,6 +78,10 @@ func TestTubeSolidWindingInvariant(t *testing.T) {
 // TestTubeSolidClosedIsToroidal checks a closed-loop tube (no caps): the section sequence wraps,
 // giving a hollow torus-like shell that is still a valid watertight solid.
 func TestTubeSolidClosedIsToroidal(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
+	t.Parallel()
 	const n, segs = 32, 24
 	outer := make([][]math.Point3, segs)
 	inner := make([][]math.Point3, segs)

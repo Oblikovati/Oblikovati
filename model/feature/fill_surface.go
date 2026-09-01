@@ -5,14 +5,14 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/heal"
 )
 
 // The Fill feature (M36-F07) closes a four-sided opening bounded by the last four surface bodies with
 // a single clean NURBS that interpolates their inner edges (Coons) and meets each neighbour at the
 // chosen continuity (G0/G1/G2 — the Class-A boundary-fill move). Unlike Match/Extend it appends a new
 // surface body rather than replacing the running one, so the four neighbours stay in the model. The
-// fill math is kernel/geom.FillSurface via ops.FillFourSided; the F13 cross-edge checker is the
+// fill math is kernel/geom.FillSurface via heal.FillFourSided; the F13 cross-edge checker is the
 // numeric acceptance gate.
 
 // DefaultFillSides is the classic four-sided boundary fill — the side count assumed when none is
@@ -50,7 +50,7 @@ func (f *FillFeature) Recompute(in Input) (Output, error) {
 		return Output{}, fmt.Errorf("fill surface: needs %d bounding surface bodies, have %d", sides, len(in.Bodies))
 	}
 	neighbours := in.Bodies[len(in.Bodies)-sides:]
-	fill, err := ops.FillNSided(neighbours, f.def.Order)
+	fill, err := heal.FillNSided(neighbours, f.def.Order)
 	if err != nil {
 		return Output{}, err
 	}

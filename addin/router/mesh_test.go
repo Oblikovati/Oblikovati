@@ -46,6 +46,7 @@ endsolid tetra
 `
 
 func TestMeshFeatureOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	path := filepath.Join(t.TempDir(), "tetra.stl")
 	if err := os.WriteFile(path, []byte(routerTetraSTL), 0o644); err != nil {
@@ -63,6 +64,7 @@ func TestMeshFeatureOverWire(t *testing.T) {
 // TestMeshSolidOverWire imports the same STL with solid:true and confirms the mesh is
 // converted to a validated solid body (M20-F15 #492).
 func TestMeshSolidOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	path := filepath.Join(t.TempDir(), "tetra.stl")
 	if err := os.WriteFile(path, []byte(routerTetraSTL), 0o644); err != nil {
@@ -85,6 +87,7 @@ func TestMeshSolidOverWire(t *testing.T) {
 }
 
 func TestMeshFeatureOverWireRejectsMissingFile(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "features.add", []byte(`{"kind":"mesh","args":{"path":"/nonexistent/x.stl"}}`)); err == nil {
 		t.Fatal("a missing STL path must error")

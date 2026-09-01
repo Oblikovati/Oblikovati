@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
@@ -89,7 +90,7 @@ func TestGenerateBodiesTessellate(t *testing.T) {
 	}
 	checked := 0
 	for _, pb := range placed[:min(12, len(placed))] {
-		mesh, _ := ops.TessellateBody(pb.Body, ops.DefaultQuality())
+		mesh, _ := tessellate.TessellateBody(pb.Body, ops.DefaultQuality())
 		if mesh == nil || mesh.TriangleCount() == 0 {
 			t.Fatalf("placed body %v tessellated to no triangles", pb.Path)
 		}

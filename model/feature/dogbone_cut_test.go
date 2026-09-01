@@ -67,6 +67,7 @@ func roundedRect(s *sketch.Sketch, x0, x1, y0, y1, r float64) {
 // solid of the right volume — the dissolve fuses the five abutting cells so no coincident wall is left
 // behind (#38). NoDissolve is the pre-fix path, kept as the whole-part fallback.
 func TestDogboneCutClosesWithDissolve(t *testing.T) {
+	t.Parallel()
 	fs := feature.NewPartFeatures(param.NewParameters())
 	feature.NewExtrudeFeatures(fs).AddExtrude(plateSketch20x10(), []int{0}, ops.NewBody,
 		feature.Extent{Type: feature.DistanceExtent, Direction: feature.PositiveDir, Distance: func() float64 { return 3 }}, 0)

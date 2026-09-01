@@ -8,6 +8,10 @@ import (
 )
 
 func TestNopStarWasherCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~8s): `make test-corpus`")
+	}
+	t.Parallel()
 	outerR, innerR, thickness := 0.9, 0.31, 0.12
 	body := annularPrism(t, outerR, innerR, thickness, "star-washer")
 	inner := (innerR + outerR) / 2

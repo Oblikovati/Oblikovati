@@ -8,6 +8,8 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -84,7 +86,7 @@ func TestQ5FarEndSplitIsAtomicAndHitsItsClosedForms(t *testing.T) {
 				tc.lineage, got, tc.want, (got-tc.want)/tc.want*100, q5PerFaceTol)
 		}
 	}
-	if bad := ops.SelfCrossingFaceLoops(body, ops.PropertyQuality()); len(bad) != 0 {
+	if bad := blend.SelfCrossingFaceLoops(body, ops.PropertyQuality()); len(bad) != 0 {
 		t.Errorf("simple/Q5 self-crosses on %d face loop(s): %s", len(bad), describeSelfCrossing(bad))
 	}
 	assertQ5MeshIsWatertightAtEveryQuality(t, body)
@@ -101,7 +103,7 @@ func assertQ5MeshIsWatertightAtEveryQuality(t *testing.T, body *topo.Body) {
 	t.Helper()
 	for _, gq := range gateQualities() {
 		folds := 0
-		for _, m := range ops.CalculateBodyFacets(body, gq.q).FaceMeshes {
+		for _, m := range tessellate.CalculateBodyFacets(body, gq.q).FaceMeshes {
 			folds += ops.FoldEdgeCount(m)
 		}
 		if free := shippedMeshFreeEdges(body, gq.q); folds != 0 || free != 0 {

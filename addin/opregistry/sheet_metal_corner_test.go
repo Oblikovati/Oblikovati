@@ -27,6 +27,7 @@ func verticalCornerEdgeKey(t *testing.T, def *compdef.PartComponentDefinition) s
 // TestSheetMetalCornerApply seeds a sheet-metal wall and rounds a corner, confirming one
 // healthy solid; then checks the error paths.
 func TestSheetMetalCornerApply(t *testing.T) {
+	t.Parallel()
 	s := sheetMetalProfiledPart(t)
 	if _, err := apply(t, s, "sheetMetalFace", `{"sketchIndex":0}`); err != nil {
 		t.Fatalf("seed face: %v", err)

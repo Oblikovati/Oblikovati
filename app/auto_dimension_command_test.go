@@ -13,6 +13,7 @@ import (
 // TestAutoDimensionCommandConstrainsSketch drives the Auto Dimension ribbon command
 // end-to-end: an under-constrained rectangle becomes fully (well-)constrained.
 func TestAutoDimensionCommandConstrainsSketch(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -35,6 +36,7 @@ func TestAutoDimensionCommandConstrainsSketch(t *testing.T) {
 }
 
 func TestAutoDimensionCommandRegistered(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)

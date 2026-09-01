@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -40,6 +41,7 @@ func triBox(sx, sy, sz float64) *topo.Body {
 // TestUnifyCoplanarMergesTriBox merges a triangulated box's 12 triangle faces back into its 6
 // planar faces, staying a valid solid with χ=2 and volume preserved.
 func TestUnifyCoplanarMergesTriBox(t *testing.T) {
+	t.Parallel()
 	tri := triBox(2, 3, 4)
 	if len(tri.Faces()) != 12 {
 		t.Fatalf("triBox has %d faces, want 12", len(tri.Faces()))
@@ -55,7 +57,7 @@ func TestUnifyCoplanarMergesTriBox(t *testing.T) {
 	if !r.Valid || !u.IsSolid() || r.EulerCharacteristic != 2 {
 		t.Fatalf("unified box invalid: valid=%v solid=%v χ=%d issues=%v", r.Valid, u.IsSolid(), r.EulerCharacteristic, r.Issues)
 	}
-	if got := ops.BodyGeometryProperties(u, ops.DefaultQuality()).Volume; stdmath.Abs(got-24) > 1e-6 {
+	if got := query.BodyGeometryProperties(u, ops.DefaultQuality()).Volume; stdmath.Abs(got-24) > 1e-6 {
 		t.Errorf("unified box volume = %g, want 24", got)
 	}
 }
@@ -64,6 +66,7 @@ func TestUnifyCoplanarMergesTriBox(t *testing.T) {
 // around a square opening) must unify into ONE face carrying an outer loop AND the hole loop, not
 // bridge the hole shut. Built by faceting a genuine holed prism, then unifying.
 func TestUnifyCoplanarKeepsHoleLoop(t *testing.T) {
+	t.Parallel()
 	outer, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(4, 4, 1), "outer")
 	inner, _ := brep.SolidBlock(math.P3(1.5, 1.5, -1), math.P3(2.5, 2.5, 2), "inner")
 	holed, err := brep.Boolean(brep.Difference, outer, inner)

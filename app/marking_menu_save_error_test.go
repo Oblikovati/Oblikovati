@@ -33,6 +33,7 @@ func newFailingMarkingMenuSession(t *testing.T) *Session {
 }
 
 func TestSetMarkingMenuReportsSaveError(t *testing.T) {
+	t.Parallel()
 	s := newFailingMarkingMenuSession(t)
 	err := s.SetMarkingMenu(wire.MarkingMenuView{
 		Environment: BaseEnvironment,
@@ -44,6 +45,7 @@ func TestSetMarkingMenuReportsSaveError(t *testing.T) {
 }
 
 func TestMarkingMenuStyleSaveErrorReachesNotice(t *testing.T) {
+	t.Parallel()
 	s := newFailingMarkingMenuSession(t)
 	s.ToggleContextMenuStyle()
 	if want := "marking menu: " + errMarkingMenuSave.Error(); s.Notice() != want {

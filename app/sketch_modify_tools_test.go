@@ -15,6 +15,7 @@ import (
 // the fillet tool did not satisfy SketchEntityTool, so the type assertion in
 // sketchEntityPointer failed and the clicks were silently dropped — no arc, no error.
 func TestSketchFilletToolInSketchClickRoutes(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	corner := sk.Points().Add(math.P2(0, 0)) // origin ↔ pixel (100,100)
 	farA, _ := screenToSketch(s, 170, 100)   // a point out along +X
@@ -39,6 +40,7 @@ func TestSketchFilletToolInSketchClickRoutes(t *testing.T) {
 // (#1799): fillet/chamfer accept only lines, offset accepts line/circle/arc, mirror accepts
 // any geometry but not nil.
 func TestSketchModifyToolsAcceptedKinds(t *testing.T) {
+	t.Parallel()
 	_, sk := sketchSession(t)
 	line := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 0))
 	circle := sk.Circles().AddByCenterRadius(math.P2(0, 0), 1)
@@ -78,6 +80,7 @@ func TestSketchModifyToolsAcceptedKinds(t *testing.T) {
 // TestPickCollectorIgnoresRepeatPick covers the dedup guard: clicking the same line twice
 // leaves the tool waiting for a distinct second line, so it does not auto-commit.
 func TestPickCollectorIgnoresRepeatPick(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	corner := sk.Points().Add(math.P2(0, 0))
 	farA, _ := screenToSketch(s, 170, 100)
@@ -97,6 +100,7 @@ func TestPickCollectorIgnoresRepeatPick(t *testing.T) {
 }
 
 func TestSketchFilletToolRoundsCorner(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	corner := sk.Points().Add(math.P2(0, 0))
 	l1 := sk.Lines().Add(corner, sk.Points().Add(math.P2(4, 0)))
@@ -119,6 +123,7 @@ func TestSketchFilletToolRoundsCorner(t *testing.T) {
 }
 
 func TestSketchOffsetToolOffsetsCurve(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 	tool := NewSketchOffsetTool(2)
@@ -138,6 +143,7 @@ func TestSketchOffsetToolOffsetsCurve(t *testing.T) {
 }
 
 func TestSketchMirrorToolReflects(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	dot := sk.Points().Add(math.P2(3, 2))
 	axis := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 1)) // Y axis
@@ -152,6 +158,7 @@ func TestSketchMirrorToolReflects(t *testing.T) {
 }
 
 func TestSketchModifyCommandsRegistered(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)

@@ -7,7 +7,7 @@ import stdmath "math"
 // OrientedBox is a box with an arbitrary orientation in 3D (contract:
 // OrientedBox): the region within HalfExtents of Center along three orthonormal
 // Axes. Unlike a [Box] it can be tight around rotated geometry. This is the ONE
-// in-module oriented-box value type — kernel/ops.OrientedMinimumRangeBox returns
+// in-module oriented-box value type — kernel/query.OrientedMinimumRangeBox returns
 // it, and the router serializes it via [OrientedBox.MinCorner]/[OrientedBox.EdgeVectors]
 // (audit B9, #1620: the former kernel/ops.OrientedBox corner+edge-vectors twin was
 // collapsed into this center+axes form).

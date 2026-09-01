@@ -62,6 +62,7 @@ var allDeclared3DDimensionKinds = []types.Dimension3DConstraintKind{
 // TestEvery3DDimensionKindAccepted drives sketch3d.addDimension for every declared
 // kind and asserts it lands and enumerates with the same kind.
 func TestEvery3DDimensionKindAccepted(t *testing.T) {
+	t.Parallel()
 	for kind, fixture := range declared3DDimensionFixtures {
 		t.Run(string(kind), func(t *testing.T) {
 			r, s := emptyPartSession(t)
@@ -84,6 +85,7 @@ func TestEvery3DDimensionKindAccepted(t *testing.T) {
 // fixture nor a tracking issue — api/types cannot ship dimensions ahead of the
 // solver (issue #144's lasting guard).
 func TestDeclared3DDimensionKindsComplete(t *testing.T) {
+	t.Parallel()
 	for _, kind := range allDeclared3DDimensionKinds {
 		_, covered := declared3DDimensionFixtures[kind]
 		issue, tracked := trackedUnimplemented3DDimensionKinds[kind]

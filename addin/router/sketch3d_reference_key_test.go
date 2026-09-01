@@ -22,6 +22,7 @@ func keyed3DSketch(t *testing.T) (*Router, *app.Session) {
 // TestSketch3DEntitiesReportReferenceKeys: sketch3d.entities reports a persistent reference
 // key per entity (#153), non-empty and distinct.
 func TestSketch3DEntitiesReportReferenceKeys(t *testing.T) {
+	t.Parallel()
 	r, s := keyed3DSketch(t)
 	var ents wire.EnumerateEntities3DResult
 	call(t, r, s, "sketch3d.entities", `{"sketchIndex":0}`, &ents)
@@ -43,6 +44,7 @@ func TestSketch3DEntitiesReportReferenceKeys(t *testing.T) {
 // TestResolveSketch3DEntityReference: a key from sketch3d.entities resolves back to the same
 // entity with Kind "sketch3dEntity".
 func TestResolveSketch3DEntityReference(t *testing.T) {
+	t.Parallel()
 	r, s := keyed3DSketch(t)
 	var ents wire.EnumerateEntities3DResult
 	call(t, r, s, "sketch3d.entities", `{"sketchIndex":0}`, &ents)
@@ -58,6 +60,7 @@ func TestResolveSketch3DEntityReference(t *testing.T) {
 // TestSketch3DReferenceKeyResolvesToSketch: a 3D sketch's own key (sketch3d.referenceKey)
 // resolves back to it with Kind "sketch3d".
 func TestSketch3DReferenceKeyResolvesToSketch(t *testing.T) {
+	t.Parallel()
 	r, s := keyed3DSketch(t)
 	var key wire.SketchReferenceKeyResult
 	call(t, r, s, "sketch3d.referenceKey", `{"sketchIndex":0}`, &key)
@@ -75,6 +78,7 @@ func TestSketch3DReferenceKeyResolvesToSketch(t *testing.T) {
 
 // TestSketch3DReferenceKeyBadIndexFails: an out-of-range 3D sketch index is rejected.
 func TestSketch3DReferenceKeyBadIndexFails(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch3d.referenceKey", []byte(`{"sketchIndex":5}`)); err == nil {
 		t.Error("sketch3d.referenceKey with an out-of-range index should fail")

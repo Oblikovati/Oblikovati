@@ -13,6 +13,7 @@ import (
 // TestNopNutTrapCSG pins the vertical nut_trap construction shape: a tall screw
 // clearance cylinder joined with a shorter hexagonal nut pocket.
 func TestNopNutTrapCSG(t *testing.T) {
+	t.Parallel()
 	screw := prismBody(regularPolygonPoints(math.P3(0, 0, 0), 0.17, 32, 0), -1, 1, "screw-clearance")
 	hex := hexPrismBody(0.32, -0.25, 0.25)
 	body, err := ops.Boolean(ops.Join, screw, hex)

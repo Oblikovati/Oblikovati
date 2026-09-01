@@ -25,7 +25,7 @@ import (
 //
 // WHY IT IS SAFE. A topo.Face is immutable once its body is built: the loops are written only by
 // topo's builder, and every operation that changes geometry BUILDS NEW FACES rather than mutating them
-// (ops.ReplaceFaceSurface, despite its name, rebuilds the whole body through topo.NewBuilder). So the
+// (transform.ReplaceFaceSurface, despite its name, rebuilds the whole body through topo.NewBuilder). So the
 // development is a pure function of the face and cannot go stale under it. That is the same property
 // topo.Face's pickTess and metricScaleMemo rest on, and this follows their contract: the payload is
 // opaque to topo, it lives exactly as long as the face, and it is written on the same single-threaded

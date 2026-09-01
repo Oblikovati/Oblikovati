@@ -24,6 +24,7 @@ func partWithParams(t *testing.T, params map[string]string) *compdef.PartCompone
 // parameter engine (so the occurrence count tracks the parameter), a blank expression yields the
 // numeric fallback, and a non-positive result clamps to 1 (Oblikovati.API#189).
 func TestCountClosureEvaluatesExpression(t *testing.T) {
+	t.Parallel()
 	part := partWithParams(t, map[string]string{"slots": "6", "poles": "10"})
 
 	cases := []struct {
@@ -52,6 +53,7 @@ func TestCountClosureEvaluatesExpression(t *testing.T) {
 // TestCountClosureTracksParameterChange: the closure re-reads the parameter on each call, so a
 // later parameter edit changes the occurrence count without rebuilding the pattern (#189).
 func TestCountClosureTracksParameterChange(t *testing.T) {
+	t.Parallel()
 	part := partWithParams(t, map[string]string{"slots": "6"})
 	fn, err := countClosure(part, "slots", "test: count", 4)
 	if err != nil {

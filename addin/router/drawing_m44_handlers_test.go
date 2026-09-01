@@ -13,6 +13,7 @@ import (
 // alignment locks (#1988), tangent-edge display (#1984), crop add/remove (#1987) and view label
 // (#1983) — on a base + projected view of the boxed fixture.
 func TestDrawingViewM44HandlersOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	call(t, r, s, "drawingViews.addBase",
 		`{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, nil)
@@ -46,6 +47,7 @@ func TestDrawingViewM44HandlersOverWire(t *testing.T) {
 // (#1990, #1992, #1993, #1996) and the model-dimension retrieve handlers (#1991) — the latter on a
 // box with no driven dimensions, so it returns an empty (but valid) set.
 func TestDrawingDimensionDecorationOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	call(t, r, s, "drawingViews.addBase",
 		`{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, nil)
@@ -74,6 +76,7 @@ func TestDrawingDimensionDecorationOverWire(t *testing.T) {
 // plain box's edges (no straight chamfer, no bend cylinder), exercising the handlers' parse path
 // and error return without panicking.
 func TestDrawingNotesRejectPlainBoxEdges(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	call(t, r, s, "drawingViews.addBase",
 		`{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, nil)

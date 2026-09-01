@@ -16,6 +16,7 @@ import (
 // absolute position non-destructively, and an explicit document id targets that document
 // without activating it (the multi-document side-by-side case).
 func TestTransactionHistoryAndJumpOverTheAPI(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"distance":"5 mm"}}`, nil)
 
@@ -45,6 +46,7 @@ func TestTransactionHistoryAndJumpOverTheAPI(t *testing.T) {
 
 // TestTransactionJumpToRejectsOutOfRange: an out-of-range position is a clean error.
 func TestTransactionJumpToRejectsOutOfRange(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, "transaction.jumpTo", []byte(`{"position":99}`)); err == nil {
 		t.Fatal("jumpTo past the end should error")
@@ -54,6 +56,7 @@ func TestTransactionJumpToRejectsOutOfRange(t *testing.T) {
 // TestTransactionHistoryNoActiveDocument: history/jumpTo with no active document (and no explicit
 // id) error cleanly rather than panicking — the historyTargetDoc guard.
 func TestTransactionHistoryNoActiveDocument(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	if _, err := r.Handle(s, "transaction.history", []byte(`{}`)); err == nil {

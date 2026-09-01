@@ -20,7 +20,7 @@ func curvedWeldPins() []fingerprintPin {
 		// vertex SETS differ nowhere else.
 		//
 		// The B-REP DID NOT MOVE — the proof that this is a mesh fix and not a geometry change:
-		// ops.AnalyticFaceArea on that same patch reads 182.347658192838 (B3) / 206.878812298723 (C2) at the
+		// query.AnalyticFaceArea on that same patch reads 182.347658192838 (B3) / 206.878812298723 (C2) at the
 		// base f6ec96c2 and 182.347658193698 / 206.878812302329 here, agreeing to the quadrature's own 1e-9.
 		// B3's value is DRAWEXE 8.0.0's own: `sprops result_9 1.e-12 -full` on OCCT's blend of the same
 		// quarter cylinder says 182.34765819369741 — parity to 6e-15 relative. (All eight of B3's other
@@ -86,7 +86,7 @@ func curvedWeldPins() []fingerprintPin {
 		// RE-CAPTURED (rim-station-report.md), and PROVEN improved, not merely different: its cone face
 		// spans rims of r=99.999929 (1024 stations) and r=51.893513 (512), and the seam-bridged band GRID
 		// tiled BOTH at 1024 — so the 512-station rim it shares with the torus band cracked the whole way
-		// round. Its welded mesh leaked 1536 free edges at PropertyQuality (ops.FreeEdgeCount over
+		// round. Its welded mesh leaked 1536 free edges at PropertyQuality (tessellate.FreeEdgeCount over
 		// CalculateBodyFacets(body,q).Mesh) and now leaks ZERO at BOTH gate qualities. The cone is lofted
 		// rim-to-rim instead, so tris drop by exactly 512 (2048 → 1536 on that face, 69116 → 68604 on the
 		// body — the arithmetic of one grid row lost, and nothing else moved). Its cone mesh area moves
@@ -240,7 +240,7 @@ func curvedWeldPins() []fingerprintPin {
 		// 975, 375 … to the digit), every face's raw signed mesh volume is identical to 1e-6 INCLUDING its
 		// sign, the triangle counts are unchanged, and the four CURVED faces — three cylinders and the void
 		// corner octant — are BIT-IDENTICAL (same per-face hash). The octant still meshes 39.267264318612
-		// against ops.AnalyticFaceArea's 39.269908169872 = 25π/2, so the region gate above is untouched.
+		// against query.AnalyticFaceArea's 39.269908169872 = 25π/2, so the region gate above is untouched.
 		//
 		// What moved is the DIAGONAL of each planar quad: the pass flipped these two bodies' loop traversal
 		// direction, so the triangulator starts the same cycle the other way round. K6's y=100 face used to

@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -102,7 +103,7 @@ func pathSheetTool(body *topo.Body, path []math.Point3, dir math.Vector3) (*topo
 // normal so the loop and the face plane agree.
 func addPathSheetQuad(bld *topo.Builder, i int, bot, top []*topo.Vertex, rail []*topo.Edge) error {
 	corners := []math.Point3{bot[i].Point(), bot[i+1].Point(), top[i+1].Point(), top[i].Point()}
-	n := newellUnit(corners)
+	n := probe.NewellUnit(corners)
 	pl, err := geom.NewPlane(quadCentroid(corners), n)
 	if err != nil {
 		return fmt.Errorf("split faces by path: segment %d is degenerate (a zero-length step or a "+
@@ -150,7 +151,7 @@ func splitExtent(b *topo.Body, origin math.Point3) float64 {
 // outward only for a right-handed frame.
 func halfSpaceBox(plane geom.Plane, ext float64, positive bool) *topo.Body {
 	u, v := plane.UAxis.AsVector(), plane.VAxis.AsVector()
-	n := unit(plane.Normal())
+	n := probe.Unit(plane.Normal())
 	if !positive {
 		u, v, n = v, u, n.Scale(-1)
 	}
@@ -204,7 +205,7 @@ func boxFromCorners(c [8]math.Point3) *topo.Body {
 	}
 	for fi, ring := range rings {
 		pts := []math.Point3{c[ring[0]], c[ring[1]], c[ring[2]], c[ring[3]]}
-		pl, _ := geom.NewPlane(quadCentroid(pts), newellUnit(pts))
+		pl, _ := geom.NewPlane(quadCentroid(pts), probe.NewellUnit(pts))
 		uses := make([]topo.Use, 4)
 		for i := range 4 {
 			a, b := ring[i], ring[(i+1)%4]
@@ -223,12 +224,4 @@ func quadCentroid(pts []math.Point3) math.Point3 {
 	}
 	n := math.Scalar(len(pts))
 	return math.Point3{X: sx / n, Y: sy / n, Z: sz / n}
-}
-
-// unit returns v normalized, or v unchanged if it is degenerate.
-func unit(v math.Vector3) math.Vector3 {
-	if u, err := math.UnitVector3FromVector(v); err == nil {
-		return u.AsVector()
-	}
-	return v
 }

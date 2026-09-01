@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -51,7 +53,7 @@ func TestGroupAConcaveFoldFreeArea(t *testing.T) {
 			body := caseResultBody(t, tc.name)
 			total := 0.0
 			for _, f := range body.Faces() {
-				m := ops.TessellateFace(f, ops.PropertyQuality())
+				m := tessellate.TessellateFace(f, ops.PropertyQuality())
 				total += assertConcaveFaceSane(t, tc.name, f, m)
 			}
 			if rel := stdmath.Abs(total-tc.area) / tc.area; rel > 0.01 {
@@ -82,7 +84,7 @@ func assertConcaveSolid(t *testing.T, name string, body *topo.Body) {
 // the derivation's mandatory winding assertion for the material-outward-negated concave arm.
 func assertConcaveVolumePositive(t *testing.T, name string, body *topo.Body) {
 	t.Helper()
-	if v := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; v <= 0 {
 		t.Fatalf("%s signed volume %.4f ≤ 0 — the concave arm band is wound inside-out", name, v)
 	}
 }

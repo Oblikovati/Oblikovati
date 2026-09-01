@@ -9,6 +9,7 @@ import "testing"
 // carries the assigned appearance's albedo rather than the neutral default. This isolates
 // model-side resolution from the head's render/cache for the part-document grey-appearance bug.
 func TestPartAppearanceResolvesThroughLiveAssignPath(t *testing.T) {
+	t.Parallel()
 	s, _ := extrudedBoxPart(t)
 	want, ok := s.Materials().Appearance("steel")
 	if !ok {

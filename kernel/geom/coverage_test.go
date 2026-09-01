@@ -10,6 +10,7 @@ import (
 )
 
 func TestScalarHelpers(t *testing.T) {
+	t.Parallel()
 	if math.Clamp01(-1) != 0 || math.Clamp01(2) != 1 || math.Clamp01(0.5) != 0.5 {
 		t.Error("clamp01")
 	}
@@ -22,6 +23,7 @@ func TestScalarHelpers(t *testing.T) {
 }
 
 func TestAngleWrapHelpers(t *testing.T) {
+	t.Parallel()
 	if got := wrapPositive(0); stdmath.Abs(got-twoPi) > 1e-12 {
 		t.Errorf("wrapPositive(0) = %v, want 2π", got)
 	}
@@ -37,6 +39,7 @@ func TestAngleWrapHelpers(t *testing.T) {
 }
 
 func TestUnitOrZeroAndPerpendicular(t *testing.T) {
+	t.Parallel()
 	if v := unitOrZero(math.V3(0, 0, 0)); v.Length() != 0 {
 		t.Errorf("unitOrZero(0) = %v, want zero", v)
 	}
@@ -53,6 +56,7 @@ func TestUnitOrZeroAndPerpendicular(t *testing.T) {
 }
 
 func TestConstructorsRejectZeroDirection(t *testing.T) {
+	t.Parallel()
 	zero := math.V3(0, 0, 0)
 	o := math.P3(0, 0, 0)
 	if _, err := NewCircle(o, zero, 1); err == nil {
@@ -82,6 +86,7 @@ func TestConstructorsRejectZeroDirection(t *testing.T) {
 }
 
 func TestConstructorRangeErrors(t *testing.T) {
+	t.Parallel()
 	axis := math.V3(0, 0, 1)
 	o := math.P3(0, 0, 0)
 	if _, err := NewCone(o, axis, -1); err == nil {
@@ -100,6 +105,7 @@ func TestConstructorRangeErrors(t *testing.T) {
 }
 
 func TestMoreConstructorErrors(t *testing.T) {
+	t.Parallel()
 	o := math.P3(0, 0, 0)
 	if _, err := NewEllipticalArc(o, math.V3(0, 0, 0), math.V3(1, 0, 0), 2, 1, 0, 1); err == nil {
 		t.Error("NewEllipticalArc with zero normal should error")
@@ -116,6 +122,7 @@ func TestMoreConstructorErrors(t *testing.T) {
 }
 
 func TestClosestPointOnDegenerateSegment(t *testing.T) {
+	t.Parallel()
 	s := LineSegment{StartPoint: math.P3(2, 2, 2), EndPoint: math.P3(2, 2, 2)}
 	if got := ClosestPointOnSegment(s, math.P3(5, 5, 5)); got != s.StartPoint {
 		t.Errorf("closest on a zero-length segment = %v, want the point itself", got)
@@ -123,6 +130,7 @@ func TestClosestPointOnDegenerateSegment(t *testing.T) {
 }
 
 func TestIntersectParamHelpers(t *testing.T) {
+	t.Parallel()
 	if paramTol(0) != 1e-9 || paramTol(0.1) != 0.1 {
 		t.Error("paramTol")
 	}
@@ -132,6 +140,7 @@ func TestIntersectParamHelpers(t *testing.T) {
 }
 
 func TestArcSweepWindings(t *testing.T) {
+	t.Parallel()
 	c := math.P2(0, 0)
 	// CCW: start (1,0) → on (0,1) → end (-1,0) gives a positive (≈π) sweep.
 	if s := arcSweep(math.P2(1, 0), math.P2(0, 1), math.P2(-1, 0), c); s <= 0 {
@@ -144,6 +153,7 @@ func TestArcSweepWindings(t *testing.T) {
 }
 
 func TestValidateBSplineErrors(t *testing.T) {
+	t.Parallel()
 	// degree < 1
 	if validateBSpline(0, 4, 4, 6) == nil {
 		t.Error("degree 0 should be invalid")
@@ -163,6 +173,7 @@ func TestValidateBSplineErrors(t *testing.T) {
 }
 
 func TestPlanarRefFallsBackWhenParallel(t *testing.T) {
+	t.Parallel()
 	// A major axis parallel to the normal projects to zero ⇒ planarRef falls back to a
 	// perpendicular reference, so the ellipse still constructs.
 	e, err := NewEllipseFull(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(0, 0, 2), 2, 1)
@@ -175,6 +186,7 @@ func TestPlanarRefFallsBackWhenParallel(t *testing.T) {
 }
 
 func TestBSplineSurfaceNetValidation(t *testing.T) {
+	t.Parallel()
 	w22 := [][]float64{{1, 1}, {1, 1}}
 	k := []float64{0, 0, 1, 1}
 	// Empty net.
@@ -209,6 +221,7 @@ func TestBSplineSurfaceNetValidation(t *testing.T) {
 }
 
 func TestBSplineCurveMultiSpanEvaluation(t *testing.T) {
+	t.Parallel()
 	// A degree-1 curve with 4 control points and interior knots (multiple spans) so
 	// findSpan's binary search descends on both sides.
 	ctrl := []math.Point3{math.P3(0, 0, 0), math.P3(1, 1, 0), math.P3(2, 0, 0), math.P3(3, 1, 0)}

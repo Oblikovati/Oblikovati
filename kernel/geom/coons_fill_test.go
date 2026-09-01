@@ -19,6 +19,7 @@ func bezierCurve3(t *testing.T, p0, p1, p2, p3 math.Point3) BSplineCurve {
 }
 
 func TestCoonsFillInterpolatesBoundaries(t *testing.T) {
+	t.Parallel()
 	// A square opening with two curved (z-lifted) opposite edges.
 	c0 := bezierCurve3(t, math.P3(0, 0, 0), math.P3(0.33, 0, 0.5), math.P3(0.66, 0, 0.5), math.P3(1, 0, 0)) // v=0, arched up
 	c1 := bezierCurve3(t, math.P3(0, 1, 0), math.P3(0.33, 1, -0.3), math.P3(0.66, 1, -0.3), math.P3(1, 1, 0))
@@ -48,6 +49,7 @@ func TestCoonsFillInterpolatesBoundaries(t *testing.T) {
 }
 
 func TestCoonsFillRejectsIncompatible(t *testing.T) {
+	t.Parallel()
 	c0 := bezierCurve3(t, math.P3(0, 0, 0), math.P3(0.33, 0, 0), math.P3(0.66, 0, 0), math.P3(1, 0, 0))
 	c1 := bezierCurve3(t, math.P3(0, 1, 0), math.P3(0.33, 1, 0), math.P3(0.66, 1, 0), math.P3(1, 1, 0))
 	d0 := bezierCurve3(t, math.P3(0, 0, 0), math.P3(0, 0.33, 0), math.P3(0, 0.66, 0), math.P3(0, 1, 0))
@@ -75,6 +77,7 @@ func degree3Curve(t *testing.T, pts ...math.Point3) BSplineCurve {
 }
 
 func TestFillSurfaceAllG0InterpolatesBoundaries(t *testing.T) {
+	t.Parallel()
 	c0 := degree3Curve(t, math.P3(0, 0, 8), math.P3(0.25, 0, 6), math.P3(0.5, 0, 4), math.P3(0.75, 0, 2), math.P3(1, 0, 0))
 	c1 := degree3Curve(t, math.P3(0, 1, 8), math.P3(0.25, 1, 6), math.P3(0.5, 1, 4), math.P3(0.75, 1, 2), math.P3(1, 1, 0))
 	d0 := degree3Curve(t, math.P3(0, 0, 8), math.P3(0, 0.25, 8), math.P3(0, 0.5, 8), math.P3(0, 0.75, 8), math.P3(0, 1, 8))
@@ -92,6 +95,7 @@ func TestFillSurfaceAllG0InterpolatesBoundaries(t *testing.T) {
 }
 
 func TestFillSurfaceG2MatchesNeighbour(t *testing.T) {
+	t.Parallel()
 	// Neighbour patch to the west (x∈[-1,0]); the fill's u=0 boundary is its u-max iso-curve.
 	nb := uPatch(t, -1, func(i, j int) float64 { return 0.5 * float64(i*i) })
 	d0, err := NewBSplineCurveUniformWeights(3, nb.Ctrl[len(nb.Ctrl)-1], clampedUniformKnots(4, 3))
@@ -120,6 +124,7 @@ func TestFillSurfaceG2MatchesNeighbour(t *testing.T) {
 }
 
 func TestGrevilleAbscissaeClampedEnds(t *testing.T) {
+	t.Parallel()
 	g := grevilleAbscissae([]float64{0, 0, 0, 0, 0.5, 1, 1, 1, 1}, 3)
 	if len(g) != 5 || g[0] != 0 || g[len(g)-1] != 1 {
 		t.Fatalf("greville = %v, want 5 values spanning [0,1]", g)

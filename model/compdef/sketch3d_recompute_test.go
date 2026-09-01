@@ -14,6 +14,7 @@ import (
 // re-solved during part recompute (solveSketches was 2D-only), so editing a 3D dimension's
 // parameter left the 3D geometry on its pre-edit shape.
 func TestSketch3DDimensionParameterDrivesGeometryOnRecompute(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	span, err := def.Parameters().AddUserParameter("span", "5 cm")
 	if err != nil {

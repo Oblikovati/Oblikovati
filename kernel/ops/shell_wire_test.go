@@ -7,38 +7,23 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/surface"
+
+	"oblikovati.org/test-utilities/opfixture"
+
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/subd"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// cavityBody is a 4×4×4 cube with a centered 2×2×2 cavity — the canonical
-// two-shell solid (#629): the outer skin plus the void skin.
-func cavityBody(t *testing.T) *topo.Body {
-	t.Helper()
-	big := tetraBox(t, math.P3(0, 0, 0), 4)
-	small := tetraBox(t, math.P3(1, 1, 1), 2)
-	res, err := Boolean(Cut, big, small)
-	if err != nil {
-		t.Fatalf("cavity cut: %v", err)
-	}
-	return res
-}
-
-func tetraBox(t *testing.T, p math.Point3, s float64) *topo.Body {
-	t.Helper()
-	m := subd.Box(s, s, s)
-	for i := range m.Verts {
-		m.Verts[i] = m.Verts[i].TranslateBy(p.AsVector())
-	}
-	return subd.ToBody(m, "box")
-}
-
 // TestCavityBodyHasVoidShell: the cut regroups into two closed shells; the
 // inner one classifies as a void with negative signed volume ≈ −8.
 func TestCavityBodyHasVoidShell(t *testing.T) {
-	body := cavityBody(t)
+	t.Parallel()
+	body := opfixture.Cavity(t)
 	shells := body.Shells()
 	if len(shells) != 2 {
 		t.Fatalf("cavity body has %d shells, want 2 (outer + void)", len(shells))
@@ -48,9 +33,9 @@ func TestCavityBodyHasVoidShell(t *testing.T) {
 		if !sh.IsClosed() {
 			t.Errorf("shell %d not closed", sh.Index())
 		}
-		if ShellIsVoidInBody(body, sh) {
+		if heal.ShellIsVoidInBody(body, sh) {
 			voids++
-			if v := ShellSignedVolume(sh, DefaultQuality()); stdmath.Abs(v+8) > 0.05 {
+			if v := query.ShellSignedVolume(sh, DefaultQuality()); stdmath.Abs(v+8) > 0.05 {
 				t.Errorf("void shell signed volume = %g, want ~-8", v)
 			}
 		}
@@ -63,7 +48,8 @@ func TestCavityBodyHasVoidShell(t *testing.T) {
 // TestShellKeysAndRangeBoxes: shells carry distinct reference keys (kind-
 // prefixed) and connectivity-true range boxes.
 func TestShellKeysAndRangeBoxes(t *testing.T) {
-	body := cavityBody(t)
+	t.Parallel()
+	body := opfixture.Cavity(t)
 	a, b := body.Shells()[0], body.Shells()[1]
 	if bytes.Equal(a.ReferenceKey(), b.ReferenceKey()) {
 		t.Error("the two shells must carry distinct reference keys")
@@ -72,7 +58,7 @@ func TestShellKeysAndRangeBoxes(t *testing.T) {
 		t.Error("shell key must be kind-prefixed")
 	}
 	outer, void := a, b
-	if ShellIsVoidInBody(body, a) {
+	if heal.ShellIsVoidInBody(body, a) {
 		outer, void = b, a
 	}
 	vd := float64(void.RangeBox().Diagonal().Length())
@@ -88,18 +74,19 @@ func TestShellKeysAndRangeBoxes(t *testing.T) {
 // TestShellContainmentVerdicts: a point in the material is inside the outer
 // shell region but the body classifies cavity points as outside material.
 func TestShellContainmentVerdicts(t *testing.T) {
-	body := cavityBody(t)
+	t.Parallel()
+	body := opfixture.Cavity(t)
 	q := DefaultQuality()
-	if c := BodyContainment(body, math.P3(0.5, 0.5, 0.5), q, 1e-6); c != ContainInside {
+	if c := query.BodyContainment(body, math.P3(0.5, 0.5, 0.5), q, 1e-6); c != query.ContainInside {
 		t.Errorf("material point = %v, want inside", c)
 	}
-	if c := BodyContainment(body, math.P3(2, 2, 2), q, 1e-6); c != ContainOutside {
+	if c := query.BodyContainment(body, math.P3(2, 2, 2), q, 1e-6); c != query.ContainOutside {
 		t.Errorf("cavity center = %v, want outside (no material there)", c)
 	}
-	if c := BodyContainment(body, math.P3(0, 2, 2), q, 1e-6); c != ContainOn {
+	if c := query.BodyContainment(body, math.P3(0, 2, 2), q, 1e-6); c != query.ContainOn {
 		t.Errorf("outer wall point = %v, want on", c)
 	}
-	if c := BodyContainment(body, math.P3(10, 0, 0), q, 1e-6); c != ContainOutside {
+	if c := query.BodyContainment(body, math.P3(10, 0, 0), q, 1e-6); c != query.ContainOutside {
 		t.Errorf("far point = %v, want outside", c)
 	}
 }
@@ -128,6 +115,7 @@ func squareWireBody(side float64) (*topo.Body, *topo.Wire) {
 
 // TestWireBasics: closure, planarity, plane frame, keys.
 func TestWireBasics(t *testing.T) {
+	t.Parallel()
 	body, w := squareWireBody(1)
 	if len(body.Wires()) != 1 {
 		t.Fatalf("body has %d wires, want 1", len(body.Wires()))
@@ -149,6 +137,7 @@ func TestWireBasics(t *testing.T) {
 
 // TestWireNonPlanarDetected: lifting one vertex off the plane kills planarity.
 func TestWireNonPlanarDetected(t *testing.T) {
+	t.Parallel()
 	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok("w", "body", 0)))
 	p := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0.5), math.P3(0, 1, 0)}
 	v := make([]*topo.Vertex, 4)
@@ -186,10 +175,11 @@ func wireLength(w *topo.Wire) float64 {
 // TestOffsetSquareInwardTrims: offsetting the CCW unit square LEFT (inward)
 // trims the corners — four lines, perimeter 4(1−2d).
 func TestOffsetSquareInwardTrims(t *testing.T) {
+	t.Parallel()
 	_, w := squareWireBody(1)
-	out, err := OffsetPlanarWire(w, math.V3(0, 0, 1), 0.1, WireCornerLinear)
+	out, err := surface.OffsetPlanarWire(w, math.V3(0, 0, 1), 0.1, surface.WireCornerLinear)
 	if err != nil {
-		t.Fatalf("OffsetPlanarWire: %v", err)
+		t.Fatalf("surface.OffsetPlanarWire: %v", err)
 	}
 	ow := out.Wires()[0]
 	if len(ow.Edges()) != 4 {
@@ -203,10 +193,11 @@ func TestOffsetSquareInwardTrims(t *testing.T) {
 // TestOffsetSquareOutwardCircular: offsetting RIGHT (outward) with circular
 // closure rounds each corner — 8 edges, perimeter 4 + 2π·d.
 func TestOffsetSquareOutwardCircular(t *testing.T) {
+	t.Parallel()
 	_, w := squareWireBody(1)
-	out, err := OffsetPlanarWire(w, math.V3(0, 0, 1), -0.25, WireCornerCircular)
+	out, err := surface.OffsetPlanarWire(w, math.V3(0, 0, 1), -0.25, surface.WireCornerCircular)
 	if err != nil {
-		t.Fatalf("OffsetPlanarWire: %v", err)
+		t.Fatalf("surface.OffsetPlanarWire: %v", err)
 	}
 	ow := out.Wires()[0]
 	if len(ow.Edges()) != 8 {
@@ -222,10 +213,11 @@ func TestOffsetSquareOutwardCircular(t *testing.T) {
 // TestOffsetSquareOutwardLinear: linear closure miters each corner — the
 // perimeter of the (1+2d) square.
 func TestOffsetSquareOutwardLinear(t *testing.T) {
+	t.Parallel()
 	_, w := squareWireBody(1)
-	out, err := OffsetPlanarWire(w, math.V3(0, 0, 1), -0.25, WireCornerLinear)
+	out, err := surface.OffsetPlanarWire(w, math.V3(0, 0, 1), -0.25, surface.WireCornerLinear)
 	if err != nil {
-		t.Fatalf("OffsetPlanarWire: %v", err)
+		t.Fatalf("surface.OffsetPlanarWire: %v", err)
 	}
 	want := 4 * 1.5
 	if l := wireLength(out.Wires()[0]); stdmath.Abs(l-want) > 1e-9 {
@@ -245,17 +237,18 @@ func circleWireBody(r float64) *topo.Wire {
 // TestOffsetCircleRadiusShift: a CCW circle offset left (toward center)
 // shrinks the radius; the collapse case errors with the offending values.
 func TestOffsetCircleRadiusShift(t *testing.T) {
+	t.Parallel()
 	w := circleWireBody(2)
-	out, err := OffsetPlanarWire(w, math.V3(0, 0, 1), 0.5, WireCornerCircular)
+	out, err := surface.OffsetPlanarWire(w, math.V3(0, 0, 1), 0.5, surface.WireCornerCircular)
 	if err != nil {
-		t.Fatalf("OffsetPlanarWire: %v", err)
+		t.Fatalf("surface.OffsetPlanarWire: %v", err)
 	}
 	want := 2 * stdmath.Pi * 1.5
 	// chord sampling reads the circle ~2.4e-4 short at 64 segments.
 	if l := wireLength(out.Wires()[0]); stdmath.Abs(l-want) > 1e-2 {
 		t.Errorf("offset circle length = %g, want %g", l, want)
 	}
-	if _, err := OffsetPlanarWire(w, math.V3(0, 0, 1), 2.5, WireCornerCircular); err == nil {
+	if _, err := surface.OffsetPlanarWire(w, math.V3(0, 0, 1), 2.5, surface.WireCornerCircular); err == nil {
 		t.Error("an offset past the radius must error (arc collapse)")
 	}
 }
@@ -263,8 +256,9 @@ func TestOffsetCircleRadiusShift(t *testing.T) {
 // TestOffsetRejectsOutOfPlane: a wire that leaves the stated plane errors
 // precisely rather than silently projecting.
 func TestOffsetRejectsOutOfPlane(t *testing.T) {
+	t.Parallel()
 	_, w := squareWireBody(1)
-	if _, err := OffsetPlanarWire(w, math.V3(1, 0, 0), 0.1, WireCornerLinear); err == nil {
+	if _, err := surface.OffsetPlanarWire(w, math.V3(1, 0, 0), 0.1, surface.WireCornerLinear); err == nil {
 		t.Error("offsetting an XY wire in a YZ plane must error")
 	}
 }

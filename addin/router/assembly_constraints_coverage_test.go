@@ -13,6 +13,7 @@ import (
 // two box faces. Box geometry cannot satisfy every constraint, so a clean error is fine —
 // the point is exercising each handler's decode and constraint-building path.
 func TestAssemblyConstraintKinds(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		method string
 		args   func(a, b wire.ConstraintGeomRef) any
@@ -43,6 +44,7 @@ func TestAssemblyConstraintKinds(t *testing.T) {
 // TestAssemblyConstraintSetLimits captures a mate, then drives setLimits + solve + health
 // against it.
 func TestAssemblyConstraintSetLimits(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	occs[0].SetGrounded(true)
 	a := wire.ConstraintGeomRef{Occurrence: occs[0].ID(), Entity: topBoxFaceKey(t, occs[0])}

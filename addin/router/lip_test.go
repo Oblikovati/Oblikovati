@@ -18,6 +18,7 @@ func lipArgsJSON(t *testing.T, edge string, groove bool) string {
 
 // TestLipOverWire runs a raised lip along a box edge end to end (M20-F10 #485) → valid solid.
 func TestLipOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, verticals := filletBoxFixture(t)
 	call(t, r, s, "features.add", lipArgsJSON(t, verticals[0], false), &struct {
 		Bodies int `json:"bodies"`
@@ -31,6 +32,7 @@ func TestLipOverWire(t *testing.T) {
 
 // TestLipGrooveOverWire runs the groove variant over the wire.
 func TestLipGrooveOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, verticals := filletBoxFixture(t)
 	call(t, r, s, "features.add", lipArgsJSON(t, verticals[0], true), &struct {
 		Bodies int `json:"bodies"`

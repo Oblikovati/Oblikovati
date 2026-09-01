@@ -31,6 +31,7 @@ func dimensionedDrawingSession(t *testing.T) (*Session, *drawing.DrawingDimensio
 // TestPickAndMoveDrawingDimension: a dimension's text and line can be picked on the canvas and
 // moved, so overlapping dimensions are separated.
 func TestPickAndMoveDrawingDimension(t *testing.T) {
+	t.Parallel()
 	s, d := dimensionedDrawingSession(t)
 
 	// Picking at the text anchor grabs the text.
@@ -57,6 +58,7 @@ func TestPickAndMoveDrawingDimension(t *testing.T) {
 // TestDragDimensionStateMachine: a press over the text starts a drag, subsequent active frames
 // move the text, and releasing ends it.
 func TestDragDimensionStateMachine(t *testing.T) {
+	t.Parallel()
 	s, d := dimensionedDrawingSession(t)
 	tx, ty := d.TextAnchorMM()
 

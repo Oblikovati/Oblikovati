@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -88,7 +89,7 @@ func TestSolidOrSurfaceWeldsWatertightSoupIntoSolid(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid {
 		t.Fatalf("imported cube is not a valid body: %v", r.Issues)
 	}
-	vol := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	vol := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 	if want := 8.0; stdmath.Abs(vol-want) > 1e-6 { // 2³
 		t.Errorf("volume = %v, want %v", vol, want)
 	}

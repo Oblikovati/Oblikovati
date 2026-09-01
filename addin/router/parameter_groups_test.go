@@ -15,6 +15,7 @@ import (
 // Custom parameter groups over the wire (M02-F05, Oblikovati#604).
 
 func TestParameterGroupsLifecycleOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var g wire.ParameterGroupInfo
@@ -61,6 +62,7 @@ func TestParameterGroupsLifecycleOverWire(t *testing.T) {
 }
 
 func TestParameterGroupDeleteCascadeIsOptIn(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.add", `{"name":"tmp","expression":"1 cm"}`, nil)
 	call(t, r, s, "parameters.groups.add", `{"internalName":"G"}`, nil)
@@ -82,6 +84,7 @@ func TestParameterGroupDeleteCascadeIsOptIn(t *testing.T) {
 }
 
 func TestParameterGroupSetDisplayName(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.groups.add", `{"internalName":"ratios","displayName":"Ratios"}`, nil)
 
@@ -99,6 +102,7 @@ func TestParameterGroupSetDisplayName(t *testing.T) {
 }
 
 func TestParameterGroupMemberRejectsUnknownNames(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.groups.add", `{"internalName":"G"}`, nil)
 	for args, want := range map[string]string{
@@ -114,6 +118,7 @@ func TestParameterGroupMemberRejectsUnknownNames(t *testing.T) {
 // TestParameterGroupMutationsBroadcast checks every group mutation emits
 // edit.committed (the replication seam) and the list read does not.
 func TestParameterGroupMutationsBroadcast(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var methods []string
 	sub := event.Subscribe(s.Events(), event.After, func(_ event.Context, e app.EditCommitted) event.Outcome {

@@ -11,6 +11,7 @@ import (
 // TestSetActiveViewHomeCapturesAndGoHomeRestores checks the ViewCube "Set Current View as
 // Home" (Fixed Distance) captures the current camera and Go Home returns to it.
 func TestSetActiveViewHomeCapturesAndGoHomeRestores(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := addPart(t, s, "home.obk")
 	activate(t, s, a)
@@ -39,6 +40,7 @@ func TestSetActiveViewHomeCapturesAndGoHomeRestores(t *testing.T) {
 // TestGoHomeWithoutCustomHomeUsesIso ensures Go Home falls back to the default iso framing
 // (no panic, camera moves to a non-degenerate frame) when no custom Home is set.
 func TestGoHomeWithoutCustomHomeUsesIso(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := addPart(t, s, "iso.obk")
 	activate(t, s, a)

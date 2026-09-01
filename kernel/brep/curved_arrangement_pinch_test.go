@@ -15,6 +15,7 @@ import (
 // lobe edge precedes its upper lobe edge), so only an angular turn rule — pick the outgoing half-edge
 // first in clockwise order from the reversed arrival, keeping material on the left — separates them.
 func TestChainLoopsSeparatesBowtieAtDegree4Vertex(t *testing.T) {
+	t.Parallel()
 	// Vertically opposite triangles sharing the origin (index 0). Top interior y>0, bottom interior y<0,
 	// each wound CCW so material is on the left of every directed edge.
 	o := math.P2(0, 0)

@@ -14,6 +14,7 @@ import (
 // is ∫₀ˣ(1+p)dp = X + X²/2, so reaching arc length T lands at X = √(1+2T) − 1. The midpoint
 // integrator must recover that (constant-speed surfaces would never exercise this).
 func TestArcLengthParamVariableSpeed(t *testing.T) {
+	t.Parallel()
 	speed := func(p float64) float64 { return 1 + p }
 	for _, target := range []float64{0.5, 2, 5, 12} {
 		want := stdmath.Sqrt(1+2*target) - 1
@@ -27,6 +28,7 @@ func TestArcLengthParamVariableSpeed(t *testing.T) {
 // TestArcLengthParamConstantSpeedExact: a constant speed inverts exactly (param0 + target/speed),
 // in both directions — the cylinder/plane case must carry no integration error.
 func TestArcLengthParamConstantSpeedExact(t *testing.T) {
+	t.Parallel()
 	speed := func(float64) float64 { return 2 }
 	if got := arcLengthParam(1, 6, speed); stdmath.Abs(got-4) > 1e-12 {
 		t.Errorf("forward: got %v, want 4 (1 + 6/2)", got)
@@ -41,6 +43,7 @@ func TestArcLengthParamConstantSpeedExact(t *testing.T) {
 // preserving arc length. The source runs along the frame's U axis (circumferential) from the
 // anchor, so each point maps onto the cylinder's equator by exactly its planar arc length.
 func TestWrapCurveOntoCylinderIsArcLengthUnwrap(t *testing.T) {
+	t.Parallel()
 	const r = 2.0
 	cyl, err := NewCylinderWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), r)
 	if err != nil {
@@ -73,6 +76,7 @@ func TestWrapCurveOntoCylinderIsArcLengthUnwrap(t *testing.T) {
 // height v = b, independent of the circumferential wrap — confirms the two parameter directions
 // are decoupled on the cylinder (diagonal metric).
 func TestWrapCurveOntoCylinderAxialOffsetIsIndependent(t *testing.T) {
+	t.Parallel()
 	const r = 3.0
 	cyl, _ := NewCylinderWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), r)
 	frame := WrapFrame{Origin: math.P3(r, 0, 0), U: math.V3(0, 1, 0), V: math.V3(0, 0, 1)}
@@ -90,6 +94,7 @@ func TestWrapCurveOntoCylinderAxialOffsetIsIndependent(t *testing.T) {
 // TestWrapCurveOntoPlaneReconstructsSource: wrapping onto a plane whose frame matches the source
 // frame is the identity — every planar point maps back to itself (the degenerate flat case).
 func TestWrapCurveOntoPlaneReconstructsSource(t *testing.T) {
+	t.Parallel()
 	plane, err := NewPlaneFromAxes(math.P3(0, 0, 0), math.V3(1, 0, 0), math.V3(0, 1, 0))
 	if err != nil {
 		t.Fatalf("NewPlaneFromAxes: %v", err)
@@ -108,6 +113,7 @@ func TestWrapCurveOntoPlaneReconstructsSource(t *testing.T) {
 
 // TestWrapCurveOntoSurfaceNilInputs guards the degenerate inputs (nil surface/curve, no samples).
 func TestWrapCurveOntoSurfaceNilInputs(t *testing.T) {
+	t.Parallel()
 	plane, _ := NewPlaneFromAxes(math.P3(0, 0, 0), math.V3(1, 0, 0), math.V3(0, 1, 0))
 	src := NewLineSegment(math.P3(0, 0, 0), math.P3(1, 0, 0))
 	frame := WrapFrame{Origin: math.P3(0, 0, 0), U: math.V3(1, 0, 0), V: math.V3(0, 1, 0)}

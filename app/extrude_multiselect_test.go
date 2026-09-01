@@ -44,6 +44,7 @@ func addToolSquare(sk *sketch.Sketch, dx, side float64) {
 }
 
 func TestExtrudeToolCtrlAccumulatesRegions(t *testing.T) {
+	t.Parallel()
 	_, r0, r1 := newPartWithTwoSquares(t, 2, 10)
 	ext := NewExtrudeTool()
 	ext.Pick(nil, r0)                  // plain click: one region
@@ -64,6 +65,7 @@ func TestExtrudeToolCtrlAccumulatesRegions(t *testing.T) {
 }
 
 func TestExtrudeToolCtrlMultiSelectMergesIntoOneBody(t *testing.T) {
+	t.Parallel()
 	s, r0, r1 := newPartWithTwoSquares(t, 2, 10)
 	ext := NewExtrudeTool()
 	s.StartTool(ext)
@@ -104,6 +106,7 @@ func (p coordPicker) Pick(x, _ float64, filter *SelectionFilter) (Selectable, bo
 // over an unpicked region and REMOVE over an already-picked one — the +/− the head badges the cursor
 // with — and nothing without a modifier or without an active region tool.
 func TestRegionModifierHintAddRemove(t *testing.T) {
+	t.Parallel()
 	s, r0, r1 := newPartWithTwoSquares(t, 2, 10)
 	s.SetPicker(coordPicker{left: r0, right: r1, split: 100})
 
@@ -129,6 +132,7 @@ func TestRegionModifierHintAddRemove(t *testing.T) {
 }
 
 func TestExtrudeCtrlClickThroughPointerCapturesBothRegions(t *testing.T) {
+	t.Parallel()
 	s, r0, r1 := newPartWithTwoSquares(t, 2, 10)
 	s.SetPicker(coordPicker{left: r0, right: r1, split: 100})
 	ext := NewExtrudeTool()

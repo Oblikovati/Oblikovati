@@ -16,6 +16,7 @@ import (
 // TestCoaxialCylinderUnionOverlap unions z∈[0,4] with z∈[3,7] (overlapping) and checks the result is one
 // watertight cylinder spanning z∈[0,7]: three faces (one cylinder side + two caps).
 func TestCoaxialCylinderUnionOverlap(t *testing.T) {
+	t.Parallel()
 	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	b, _ := SolidCylinder(math.P3(0, 0, 3), math.V3(0, 0, 1), 2, 4)
 	res, ok := CoaxialCylinderUnion(a, b)
@@ -31,6 +32,7 @@ func TestCoaxialCylinderUnionOverlap(t *testing.T) {
 
 // TestCoaxialCylinderUnionAbut unions z∈[0,4] with z∈[4,8] (touching end to end) into one z∈[0,8] cylinder.
 func TestCoaxialCylinderUnionAbut(t *testing.T) {
+	t.Parallel()
 	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	b, _ := SolidCylinder(math.P3(0, 0, 4), math.V3(0, 0, 1), 2, 4)
 	res, ok := CoaxialCylinderUnion(a, b)
@@ -47,6 +49,7 @@ func TestCoaxialCylinderUnionAbut(t *testing.T) {
 // coaxial equal-radius bare-cylinder pair (overlap or abut), false for a different radius, an offset
 // axis, or a non-cylinder body — so a JOIN is routed to the analytic path only when it applies.
 func TestCoaxialEqualCylinders(t *testing.T) {
+	t.Parallel()
 	base, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	abut, _ := SolidCylinder(math.P3(0, 0, 4), math.V3(0, 0, 1), 2, 4)
 	overlap, _ := SolidCylinder(math.P3(0, 0, 3), math.V3(0, 0, 1), 2, 4)
@@ -65,6 +68,7 @@ func TestCoaxialEqualCylinders(t *testing.T) {
 
 // TestCoaxialCylinderUnionOrderIndependent: union resolves whichever cylinder is passed first.
 func TestCoaxialCylinderUnionOrderIndependent(t *testing.T) {
+	t.Parallel()
 	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	b, _ := SolidCylinder(math.P3(0, 0, 3), math.V3(0, 0, 1), 2, 4)
 	if _, ok := CoaxialCylinderUnion(b, a); !ok {
@@ -75,6 +79,7 @@ func TestCoaxialCylinderUnionOrderIndependent(t *testing.T) {
 // TestCoaxialCylinderUnionRejectsOffCase: different radius, parallel-but-offset axis, and an axial gap each
 // defer (ok=false) so the general boolean keeps the case.
 func TestCoaxialCylinderUnionRejectsOffCase(t *testing.T) {
+	t.Parallel()
 	base, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	cases := map[string]*topo.Body{
 		"different radius": mustCyl(math.P3(0, 0, 3), 3, 4),

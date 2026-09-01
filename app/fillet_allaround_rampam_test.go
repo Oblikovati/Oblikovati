@@ -62,6 +62,7 @@ func toriOf(b *topo.Body) int {
 // the TOOL: after rounding the verticals, ONE Shift+click on a top-rim edge must expand to the whole
 // 8-edge tangent loop and fillet all around, yielding a valid solid with 4 torus corners.
 func TestFilletAllAroundShiftClickExpandsTangentLoop(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	rounded := filletVerticalsOf(t, s, block)
 
@@ -90,6 +91,7 @@ func TestFilletAllAroundShiftClickExpandsTangentLoop(t *testing.T) {
 // first click with no hidden gesture. Toggling it off restores single-edge picking; the explicit
 // Pick API is always single (it is the deterministic per-edge entry the toggle does not touch).
 func TestFilletAllAroundIsDiscoverableByDefault(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	rounded := filletVerticalsOf(t, s, block)
 	seed := oneTopRimEdge(t, rounded)

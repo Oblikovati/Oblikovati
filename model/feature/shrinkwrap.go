@@ -5,9 +5,13 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -84,7 +88,7 @@ func patchHoles(world []*topo.Body) []*topo.Body {
 	q := ops.DefaultQuality()
 	out := make([]*topo.Body, 0, len(world))
 	for _, b := range world {
-		out = append(out, ops.FillInternalVoids(b, q))
+		out = append(out, heal.FillInternalVoids(b, q))
 	}
 	return out
 }
@@ -94,7 +98,7 @@ func patchHoles(world []*topo.Body) []*topo.Body {
 func capThroughHoles(world []*topo.Body, maxDiameter float64) []*topo.Body {
 	out := make([]*topo.Body, 0, len(world))
 	for _, b := range world {
-		if capped, err := ops.CapHolesByDiameter(b, maxDiameter); err == nil {
+		if capped, err := heal.CapHolesByDiameter(b, maxDiameter); err == nil {
 			out = append(out, capped)
 			continue
 		}
@@ -109,7 +113,7 @@ func capThroughHoles(world []*topo.Body, maxDiameter float64) []*topo.Body {
 func worldBodies(placed []PlacedBody) ([]*topo.Body, error) {
 	out := make([]*topo.Body, 0, len(placed))
 	for i, pb := range placed {
-		b, err := ops.TransformBody(pb.Body, pb.Transform, deriveLineage(i))
+		b, err := transform.TransformBody(pb.Body, pb.Transform, deriveLineage(i))
 		if err != nil {
 			return nil, fmt.Errorf("feature: shrinkwrap transform of body %d: %w", i, err)
 		}
@@ -135,7 +139,7 @@ func keepLargerThan(world []*topo.Body, minVolume float64) []*topo.Body {
 	q := ops.DefaultQuality()
 	kept := make([]*topo.Body, 0, len(world))
 	for _, b := range world {
-		if ops.BodyGeometryProperties(b, q).Volume >= minVolume {
+		if query.BodyGeometryProperties(b, q).Volume >= minVolume {
 			kept = append(kept, b)
 		}
 	}

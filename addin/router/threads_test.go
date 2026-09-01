@@ -13,6 +13,7 @@ import (
 // TestThreadsTableQueryProgressive: types always; sizes with a type;
 // designations with a size; classes with a designation (side-aware).
 func TestThreadsTableQueryProgressive(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var bare wire.ThreadTableQueryResult
 	call(t, r, s, "threads.tableQuery", `{}`, &bare)
@@ -43,6 +44,7 @@ func TestThreadsTableQueryProgressive(t *testing.T) {
 // TestThreadsResolveCarriesParityFields: the resolved DTO carries class /
 // tapered / handedness alongside the derived diameters.
 func TestThreadsResolveCarriesParityFields(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var info wire.ThreadInfoResult
 	call(t, r, s, "threads.resolve", `{"designation":"M8x1.25","class":"6H","internal":true,"tapered":false}`, &info)

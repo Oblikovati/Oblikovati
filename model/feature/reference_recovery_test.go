@@ -49,6 +49,7 @@ func siblingTriBody(t *testing.T, lastIndex int, extraSibling bool) (*topo.Body,
 // and reported as a heal — instead of going Sick. This is what turns the fillet-stack reference
 // loss into an auto-healed warning.
 func TestResolveEdgesHealsLostReferenceToAncestralSibling(t *testing.T) {
+	t.Parallel()
 	body, kept := siblingTriBody(t, 7, false)
 	lost := edgeKeyFor(2) // same parent grp:e#0, a last step the body no longer has
 
@@ -69,6 +70,7 @@ func TestResolveEdgesHealsLostReferenceToAncestralSibling(t *testing.T) {
 // no mint-time anchor yet (the geometric tier is P6b) — the reference stays lost rather than binding
 // a guess. A wrong heal is worse than an honest Sick.
 func TestResolveEdgesRefusesAmbiguousSiblingsWithoutAnchor(t *testing.T) {
+	t.Parallel()
 	body, _ := siblingTriBody(t, 7, true) // two edges now share parent grp:e#0
 	lost := edgeKeyFor(2)
 
@@ -86,6 +88,7 @@ func TestResolveEdgesRefusesAmbiguousSiblingsWithoutAnchor(t *testing.T) {
 // nearness — recovering the sibling the user originally picked instead of staying lost (the P6a
 // outcome). The anchor sits on edge "ab"'s midpoint, so recovery must bind ab, not its peer.
 func TestResolveEdgesHealsAmbiguousSiblingsByAnchor(t *testing.T) {
+	t.Parallel()
 	body, ab := siblingTriBody(t, 7, true) // ab + bc both under parent grp:e#0
 	lost := edgeKeyFor(2)
 	anchors := map[string]math.Point3{string(lost): math.P3(0.5, 0, 0)} // ab's endpoint midpoint
@@ -105,6 +108,7 @@ func TestResolveEdgesHealsAmbiguousSiblingsByAnchor(t *testing.T) {
 // TestFilletEdgeAnchorsRoundTrip pins that a fillet's mint-time edge anchors survive a recipe
 // round trip (ADR-0043 P6b) — without them, a reopened document could not use the geometric tier.
 func TestFilletEdgeAnchorsRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	key := edgeKeyFor(7)
 	anchors := map[string]math.Point3{string(key): math.P3(1.25, -2.5, 3)}
@@ -143,6 +147,7 @@ func (f healingFeature) Recompute(in Input) (Output, error) {
 // rebuilt on a recovered reference is a Warning (the body is kept, the drift is surfaced), distinct
 // from both a clean recompute and a Sick lost-reference failure.
 func TestHealedReferenceClassifiesAsWarningNotSick(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	fs.Add(body()) // a base body to operate on
 	pf := fs.Add(healingFeature{heals: []ReferenceHeal{{Key: edgeKeyFor(2), Match: identity.MatchAncestral}}})
@@ -163,6 +168,7 @@ func TestHealedReferenceClassifiesAsWarningNotSick(t *testing.T) {
 // parent of a reference key is its lineage with the final token removed, and a single-token (root)
 // key has no parent (nil) — so it has no ancestral fallback.
 func TestParentOfKeyDropsMostSpecificToken(t *testing.T) {
+	t.Parallel()
 	two := edgeKeyFor(5) // grp:e#0/base:side#5
 	if got := string(parentOfKey(two)); got != "grp:e#0" {
 		t.Errorf("parentOfKey(two-token) = %q, want grp:e#0", got)

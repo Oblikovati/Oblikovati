@@ -39,6 +39,7 @@ func loftWithThreeProfiles(t *testing.T) (*LoftTool, []string) {
 // TestLoftSectionLabelsAreSourceNames checks a profile section is labelled with its source sketch name
 // (Inventor lists the contributing sketch), in pick order.
 func TestLoftSectionLabelsAreSourceNames(t *testing.T) {
+	t.Parallel()
 	l, names := loftWithThreeProfiles(t)
 	if l.SectionCount() != 3 {
 		t.Fatalf("section count = %d, want 3", l.SectionCount())
@@ -63,6 +64,7 @@ func TestLoftSectionLabelsAreSourceNames(t *testing.T) {
 // point reports LoftSectionPoint/"Point", a tangent body face reports LoftSectionFace/"Face", and a
 // profile pick with no source sketch falls back to the generic "Profile" label (#1521).
 func TestLoftSectionKindAndLabelForPointAndFace(t *testing.T) {
+	t.Parallel()
 	l := NewLoftTool()
 	apex := math.P3(0, 0, 8)
 	l.sections = []loftPick{
@@ -91,6 +93,7 @@ func TestLoftSectionKindAndLabelForPointAndFace(t *testing.T) {
 
 // TestLoftRemoveSection deletes the middle section and checks the rest keep order.
 func TestLoftRemoveSection(t *testing.T) {
+	t.Parallel()
 	l, names := loftWithThreeProfiles(t)
 	l.RemoveSection(1) // drop the middle
 	if l.SectionCount() != 2 {
@@ -110,6 +113,7 @@ func TestLoftRemoveSection(t *testing.T) {
 
 // TestLoftMoveSection reorders the list (the blend order) and checks the new sequence.
 func TestLoftMoveSection(t *testing.T) {
+	t.Parallel()
 	l, names := loftWithThreeProfiles(t)
 	l.MoveSection(2, 0) // move the last section to the front: [c a b]
 	want := []string{names[2], names[0], names[1]}
@@ -137,6 +141,7 @@ func loftLabels(l *LoftTool) []string {
 // TestLoftTransitionMapping locks the Transition-tab map-curve API: a fresh loft maps automatically
 // (no map curves); arming routes path picks to map curves; clearing returns to automatic (#1521).
 func TestLoftTransitionMapping(t *testing.T) {
+	t.Parallel()
 	l := NewLoftTool()
 	if !l.AutomaticMapping() {
 		t.Fatal("a fresh loft should map automatically (no map curves)")

@@ -15,6 +15,7 @@ import (
 // sweeping the rotational variable and returning motion frames — and leaves the assembly in
 // its pre-drive pose (M12-F03).
 func TestDriveJointThroughAssembly(t *testing.T) {
+	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	base := asm.Place("base:1", NewPartComponentDefinition(), math.Identity4())
 	base.SetGrounded(true)

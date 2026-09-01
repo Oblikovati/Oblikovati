@@ -63,6 +63,7 @@ func unfoldCutRefold(t *testing.T, d *PartComponentDefinition, x1, y1, x2, y2 fl
 // crossing cut reached only one face: the refolded volume must match the flat-cut volume (if
 // the bend region kept its material, the refolded volume would be higher).
 func TestCutCrossingBendSurvivesRefold(t *testing.T) {
+	t.Parallel()
 	d, _ := sheetWithFlange(t) // base y∈[0,4]; flange on the y=0 edge, develops into −Y
 	// A slot crossing y=0: from the base (y>0) through the bend region into the flange (y<0).
 	_, flatCut, refolded := unfoldCutRefold(t, d, 1.6, -0.6, 2.4, 0.6)
@@ -97,6 +98,7 @@ func assertFlatSolid(t *testing.T, b *topo.Body) {
 // lies in the base plane) and refolds back to the folded part — volume preserved throughout
 // (the moving flange is rigidly transformed and rejoined, no material added or lost).
 func TestUnfoldRefoldRoundTrip(t *testing.T) {
+	t.Parallel()
 	d, _ := sheetWithFlange(t)
 	folded := d.Features().Result()[0]
 	v0, z0 := flatVolume(folded), maxZ(folded)
@@ -136,6 +138,7 @@ func TestUnfoldRefoldRoundTrip(t *testing.T) {
 // the developed flange while flat is carried back onto the folded part by refold — because
 // unfold/refold are body transforms, the cut is part of the topology, not lost.
 func TestCutWhileFlatSurvivesRefold(t *testing.T) {
+	t.Parallel()
 	d, _ := sheetWithFlange(t) // flange on the y=0 top edge; unfolded it extends into −Y
 	// A 0.4×0.4 hole wholly on the developed flange (y in [−0.8,−0.4]) — away from the bend.
 	folded, flatCut, refolded := unfoldCutRefold(t, d, 1.8, -0.8, 2.2, -0.4)
@@ -149,6 +152,7 @@ func TestCutWhileFlatSurvivesRefold(t *testing.T) {
 
 // TestUnfoldRejectsNoBends unfold on a flat base sheet (no bends) errors.
 func TestUnfoldRejectsNoBends(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if _, err := d.EnableSheetMetal(); err != nil {
 		t.Fatalf("EnableSheetMetal: %v", err)

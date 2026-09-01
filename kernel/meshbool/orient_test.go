@@ -15,6 +15,7 @@ import (
 // determinant. Both paths are exact, so any disagreement would be a bug in the
 // fast-path gate or a sign-convention seam between the two predicates.
 func TestOrient3DFastPathMatchesExact(t *testing.T) {
+	t.Parallel()
 	rng := rand.New(rand.NewSource(20260824))
 	for i := range 20000 {
 		a := randPoint(rng, i%3 == 0)
@@ -31,6 +32,7 @@ func TestOrient3DFastPathMatchesExact(t *testing.T) {
 // resolve to 0 / nonzero through the fast path — the predicate's exact fallback must
 // return 0 for the truly coplanar quad, not a filtered near-zero guess.
 func TestOrient3DExactCoplanar(t *testing.T) {
+	t.Parallel()
 	a := FromCoords(0, 0, 0)
 	b := FromCoords(2, 0, 0)
 	c := FromCoords(0, 2, 0)
@@ -45,6 +47,7 @@ func TestOrient3DExactCoplanar(t *testing.T) {
 // TestFloat64Exact checks the fast-path gate: a dyadic coordinate is exact, a
 // constructed 1/3 coordinate is not (so it must fall to the rational path).
 func TestFloat64Exact(t *testing.T) {
+	t.Parallel()
 	if _, ok := FromCoords(1.5, -2.25, 3).float64Exact(); !ok {
 		t.Fatal("dyadic coordinates should be float-exact")
 	}
@@ -65,6 +68,7 @@ func TestFloat64Exact(t *testing.T) {
 // numerator is too wide for the mantissa, so the round-trip disqualifies it and the
 // quad resolves through the interval/exact path. The result must match exact.
 func TestOrient3DWidePowerOfTwoDenom(t *testing.T) {
+	t.Parallel()
 	wide := new(big.Rat).SetFrac(new(big.Int).Add(new(big.Int).Lsh(big.NewInt(1), 60), big.NewInt(1)), big.NewInt(2))
 	a, b, c := FromCoords(0, 0, 0), FromCoords(1, 0, 0), FromCoords(0, 1, 0)
 	d := Point{wide, big.NewRat(1, 1), big.NewRat(1, 1)}

@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -43,7 +44,7 @@ import (
 // unconverged quadrature and NOT a defect of ours (ours is 2381.639771, −0.0016 %). The lesson stands
 // either way: a whole-body pin would have been measuring that face instead of this patch.
 //
-// WHAT IT MEASURES. ops.MeshArea over ops.CalculateBodyFacets(body, ops.PropertyQuality()).FaceMeshes on
+// WHAT IT MEASURES. ops.MeshArea over tessellate.CalculateBodyFacets(body, ops.PropertyQuality()).FaceMeshes on
 // the shipped body (ops-driven feature recompute via shippedCaseBody). The patch face is identified as the
 // body's unique geom.BSplineSurface face; the wall face by its SUPPORTING PLANE (each case's closed-form
 // wall plane) — never by DRAWEXE `bounding`, which returns a trimmed face's pole box (see
@@ -95,7 +96,7 @@ func TestObstacleCanalMatchesItsClosedForm(t *testing.T) {
 			if !ok {
 				t.Fatalf("simple/%s: no shipped body", tc.name)
 			}
-			facets := ops.CalculateBodyFacets(body, ops.PropertyQuality())
+			facets := tessellate.CalculateBodyFacets(body, ops.PropertyQuality())
 			assertObstaclePatchArea(t, tc, body, facets)
 			assertObstacleWallBulge(t, tc, body, facets)
 		})
@@ -103,7 +104,7 @@ func TestObstacleCanalMatchesItsClosedForm(t *testing.T) {
 }
 
 // assertObstaclePatchArea measures the unique free-form face — the obstacle patch — against its closed form.
-func assertObstaclePatchArea(t *testing.T, tc obstacleCanalCase, body *topo.Body, facets *ops.BodyFacets) {
+func assertObstaclePatchArea(t *testing.T, tc obstacleCanalCase, body *topo.Body, facets *tessellate.BodyFacets) {
 	t.Helper()
 	area, found := 0.0, 0
 	for i, f := range body.Faces() {
@@ -125,7 +126,7 @@ func assertObstaclePatchArea(t *testing.T, tc obstacleCanalCase, body *topo.Body
 // assertObstacleWallBulge measures the fillet WALL face and asserts the tangency bulge is present at its
 // closed-form size. Losing the bulge is exactly what a straight wall seam does, so this is the gate that
 // keeps the patch's shared front and the wall's own front describing one curve.
-func assertObstacleWallBulge(t *testing.T, tc obstacleCanalCase, body *topo.Body, facets *ops.BodyFacets) {
+func assertObstacleWallBulge(t *testing.T, tc obstacleCanalCase, body *topo.Body, facets *tessellate.BodyFacets) {
 	t.Helper()
 	area, found := 0.0, 0
 	for i, f := range body.Faces() {

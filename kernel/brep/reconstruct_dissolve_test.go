@@ -74,6 +74,7 @@ func splitBox(t *testing.T) *topo.Body {
 }
 
 func TestDissolveMergesCollinearSplit(t *testing.T) {
+	t.Parallel()
 	body := splitBox(t)
 	if got := vertexAt(body, math.P3(0.5, 0, 1)); got == nil {
 		t.Fatal("fixture: split vertex (0.5,0,1) missing")
@@ -105,6 +106,7 @@ func vertexAt(b *topo.Body, p math.Point3) *topo.Vertex {
 // corner, no 2-valent collinear split) are returned unchanged — the dissolve only fires on a spurious
 // split.
 func TestDissolveNoOpOnCleanBodyAndNil(t *testing.T) {
+	t.Parallel()
 	if dissolveCollinearVertices(nil) != nil {
 		t.Error("nil body must pass through")
 	}
@@ -120,6 +122,7 @@ func TestDissolveNoOpOnCleanBodyAndNil(t *testing.T) {
 // TestLessPointTotalOrder covers the point tie-break (X, then Y, then Z) that makes the merged edge's
 // endpoint order — and thus the result — deterministic across runs.
 func TestLessPointTotalOrder(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		p, q math.Point3
 		want bool
@@ -141,6 +144,7 @@ func TestLessPointTotalOrder(t *testing.T) {
 // TestOrderEndsIsPointOrdered covers both branches of orderEnds: it returns the two vertices sorted by
 // point regardless of the argument order.
 func TestOrderEndsIsPointOrdered(t *testing.T) {
+	t.Parallel()
 	bld := topo.NewBuilder(true, lin("t"))
 	lo := bld.AddVertex(math.P3(0, 0, 0), lin("lo"))
 	hi := bld.AddVertex(math.P3(1, 0, 0), lin("hi"))

@@ -17,6 +17,7 @@ import (
 // This pins the fix: a box hub UNION a twisted-loft blade (which pokes part-way into the hub)
 // must be a valid manifold solid at every twist — even a 0.001 rad twist used to break it.
 func TestTwistedLoftUnionStaysManifold(t *testing.T) {
+	t.Parallel()
 	xy := sketch.XYPlane()
 	square := []math.Point2{{X: -0.675, Y: -0.675}, {X: 0.675, Y: -0.675}, {X: 0.675, Y: 0.675}, {X: -0.675, Y: 0.675}}
 	root := []math.Point3{{X: 0.6, Y: -0.08, Z: 0}, {X: 2.35, Y: -0.08, Z: 0}, {X: 2.35, Y: 0.08, Z: 0}, {X: 0.6, Y: 0.08, Z: 0}}

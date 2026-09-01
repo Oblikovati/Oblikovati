@@ -16,6 +16,7 @@ import (
 
 // TestLightValueRoundTrip: renderLight∘lightValue is identity on a fully non-zero light.
 func TestLightValueRoundTrip(t *testing.T) {
+	t.Parallel()
 	in := renderer.SceneLight{
 		Kind: renderer.SpotLight, On: true, Color: [3]float32{0.1, 0.2, 0.3}, Intensity: 2,
 		Direction: [3]float32{0, 0, 1}, Position: [3]float32{4, 5, 6},
@@ -28,6 +29,7 @@ func TestLightValueRoundTrip(t *testing.T) {
 
 // TestShadowRigRoundTrip: renderShadowRig∘shadowRigValue is identity.
 func TestShadowRigRoundTrip(t *testing.T) {
+	t.Parallel()
 	in := renderer.ShadowSettings{
 		GroundShadows: true, GroundXRay: true, ObjectShadows: true,
 		AmbientShadows: true, Density: 0.7, Softness: 0.4,
@@ -39,6 +41,7 @@ func TestShadowRigRoundTrip(t *testing.T) {
 
 // TestEnvironmentValueRoundTrip: a preset and a file environment both survive the wall.
 func TestEnvironmentValueRoundTrip(t *testing.T) {
+	t.Parallel()
 	preset := renderer.Environment{Preset: renderer.EnvStudio, Rotation: 1, Intensity: 2, ShowImage: true}
 	if got := renderEnvironment(environmentValue(preset)); got != preset {
 		t.Errorf("preset env round-trip = %+v, want %+v", got, preset)
@@ -51,6 +54,7 @@ func TestEnvironmentValueRoundTrip(t *testing.T) {
 
 // TestEnvironmentStateIsActive matches renderer.Environment.IsActive across the wall.
 func TestEnvironmentStateIsActive(t *testing.T) {
+	t.Parallel()
 	cases := []EnvironmentState{{Preset: "None"}, {Preset: "Sky"}, {FilePath: "/x.hdr"}, {}}
 	for _, e := range cases {
 		want := renderEnvironment(e).IsActive()
@@ -62,6 +66,7 @@ func TestEnvironmentStateIsActive(t *testing.T) {
 
 // TestCameraFrameRoundTrip: renderCamera∘cameraFrameValue is identity.
 func TestCameraFrameRoundTrip(t *testing.T) {
+	t.Parallel()
 	in := renderCamera(CameraFrame{FOV: 0.8, Width: 1280, Height: 800, Orthographic: true})
 	if got := renderCamera(cameraFrameValue(in)); got != in {
 		t.Errorf("camera round-trip = %+v, want %+v", got, in)
@@ -70,6 +75,7 @@ func TestCameraFrameRoundTrip(t *testing.T) {
 
 // TestSessionLightingValueSeam round-trips the value types through the Session accessors.
 func TestSessionLightingValueSeam(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.SetShadowSettings(ShadowRig{ObjectShadows: true, Density: 0.5})
 	if !s.ShadowSettings().ObjectShadows {
@@ -86,6 +92,7 @@ func TestSessionLightingValueSeam(t *testing.T) {
 
 // TestSceneGalleriesAreNamed: the app-typed galleries expose the renderer gallery names.
 func TestSceneGalleriesAreNamed(t *testing.T) {
+	t.Parallel()
 	if len(LightingStyleGallery()) != len(renderer.LightingStyleGallery()) {
 		t.Error("lighting-style gallery lost entries crossing the wall")
 	}

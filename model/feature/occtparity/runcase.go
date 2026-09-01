@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
@@ -129,7 +130,7 @@ func caseProperties(res []*topo.Body, filletOK bool) (ops.GeometryProperties, bo
 	if !filletOK || len(res) != 1 || res[0] == nil {
 		return ops.GeometryProperties{}, false
 	}
-	return ops.BodyGeometryProperties(res[0], ops.PropertyQuality()), true
+	return query.BodyGeometryProperties(res[0], ops.PropertyQuality()), true
 }
 
 // importTol scales the locator match tolerance to the body so scaled fixtures (tscale

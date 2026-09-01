@@ -36,6 +36,7 @@ func registerAlias(t *testing.T, s *Session, id, chord string) {
 }
 
 func TestDefaultChordFromPredefinedChord(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	registerAlias(t, s, "Test.Extrude", "Ctrl+E")
 	b := s.Bindings()
@@ -53,6 +54,7 @@ func TestDefaultChordFromPredefinedChord(t *testing.T) {
 // NOT become a default keyboard chord — single letters are personalised in the keybinding
 // editor as Shift/Control chords.
 func TestSingleLetterAliasHasNoDefaultChord(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.Commands().Add(NewCommand("Test.Q", "Q", "Test", func(*Session) error { return nil }).WithAlias("Q")); err != nil {
 		t.Fatalf("Add: %v", err)
@@ -66,6 +68,7 @@ func TestSingleLetterAliasHasNoDefaultChord(t *testing.T) {
 }
 
 func TestResolveChordBuiltinDefaults(t *testing.T) {
+	t.Parallel()
 	b := NewSession().Bindings()
 	cases := map[string]string{
 		"Ctrl+Z":       ActionUndo,
@@ -84,6 +87,7 @@ func TestResolveChordBuiltinDefaults(t *testing.T) {
 }
 
 func TestSetChordOverrideRebinds(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	registerAlias(t, s, "Test.Extrude", "Ctrl+E")
 	b := s.Bindings()
@@ -103,6 +107,7 @@ func TestSetChordOverrideRebinds(t *testing.T) {
 }
 
 func TestSetChordConflictIsRejected(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	registerAlias(t, s, "Test.Extrude", "Ctrl+E")
 	err := s.Bindings().SetChord("Test.Extrude", types.KeyChord{Key: "Z", Ctrl: true})
@@ -115,6 +120,7 @@ func TestSetChordConflictIsRejected(t *testing.T) {
 }
 
 func TestSetChordClearThenReset(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	registerAlias(t, s, "Test.Extrude", "Ctrl+E")
 	b := s.Bindings()
@@ -134,6 +140,7 @@ func TestSetChordClearThenReset(t *testing.T) {
 }
 
 func TestAliasSetResolveConflictCaseInsensitive(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	registerAlias(t, s, "Test.Extrude", "")
 	registerAlias(t, s, "Test.Hole", "")
@@ -151,6 +158,7 @@ func TestAliasSetResolveConflictCaseInsensitive(t *testing.T) {
 }
 
 func TestAliasWithoutDefaultResetRemovesIt(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	registerAlias(t, s, "Test.Extrude", "")
 	b := s.Bindings()
@@ -170,6 +178,7 @@ func TestAliasWithoutDefaultResetRemovesIt(t *testing.T) {
 }
 
 func TestResetAllClearsEveryCustomization(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	registerAlias(t, s, "Test.Extrude", "")
 	b := s.Bindings()
@@ -187,6 +196,7 @@ func TestResetAllClearsEveryCustomization(t *testing.T) {
 }
 
 func TestCheckDefaultsReservedIDCollision(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	registerAlias(t, s, ActionUndo, "") // a command id colliding with a built-in id
 	if err := s.Bindings().CheckDefaults(); err == nil {
@@ -195,6 +205,7 @@ func TestCheckDefaultsReservedIDCollision(t *testing.T) {
 }
 
 func TestCheckDefaultsDuplicateChord(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	registerAlias(t, s, "Test.One", "Ctrl+J")
 	registerAlias(t, s, "Test.Two", "Ctrl+J") // two commands claim the same default chord
@@ -208,6 +219,7 @@ func TestCheckDefaultsDuplicateChord(t *testing.T) {
 // alias may collide with a built-in shortcut or another command's default chord. This is
 // the same check the head runs at startup (loadKeymap), here gated headlessly.
 func TestStandardCommandsPassCheckDefaults(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -218,6 +230,7 @@ func TestStandardCommandsPassCheckDefaults(t *testing.T) {
 }
 
 func TestCheckDefaultsCleanRegistry(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	registerAlias(t, s, "Test.Extrude", "Ctrl+E")
 	if err := s.Bindings().CheckDefaults(); err != nil {
@@ -226,6 +239,7 @@ func TestCheckDefaultsCleanRegistry(t *testing.T) {
 }
 
 func TestKeymapStorePersistsAndReloads(t *testing.T) {
+	t.Parallel()
 	store := keymap.NewMemStore()
 	s1 := NewSession()
 	registerAlias(t, s1, "Test.Extrude", "")
@@ -249,6 +263,7 @@ func TestKeymapStorePersistsAndReloads(t *testing.T) {
 }
 
 func TestDispatchRunsCommand(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := false
 	cmd := NewCommand("Test.Run", "Run", "Test", func(*Session) error { ran = true; return nil })
@@ -264,6 +279,7 @@ func TestDispatchRunsCommand(t *testing.T) {
 }
 
 func TestDispatchCancelClearsToolThenSelection(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.StartTool(bindingStubTool{})
 	if err := s.Bindings().Dispatch(ActionCancel, s); err != nil {
@@ -277,6 +293,7 @@ func TestDispatchCancelClearsToolThenSelection(t *testing.T) {
 // TestDispatchCancelDismissesSteeringWheel: Esc dismisses the SteeringWheels menu, the pinned wheel's
 // escape hatch so a user can back out without clicking a wedge (#1754).
 func TestDispatchCancelDismissesSteeringWheel(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.ToggleSteeringWheel()
 	if !s.SteeringWheelActive() {
@@ -295,6 +312,7 @@ func TestDispatchCancelDismissesSteeringWheel(t *testing.T) {
 // shortcut with Ctrl/Alt/Shift — while F-keys, Tab, Delete, Insert and other named/special keys, and
 // any modified chord, are NOT reserved and may be bound bare.
 func TestReservedBareChordPolicy(t *testing.T) {
+	t.Parallel()
 	parse := func(s string) types.KeyChord {
 		c, err := types.ParseChord(s)
 		if err != nil {
@@ -317,6 +335,7 @@ func TestReservedBareChordPolicy(t *testing.T) {
 // TestSetChordEnforcesReservedPolicy pins the editor-facing half: SetChord refuses a bare letter or
 // digit, but accepts a bare special key (F8) and a modified alphanumeric (Alt+L) — #1751.
 func TestSetChordEnforcesReservedPolicy(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.Commands().Add(NewCommand("Test.Thing", "Thing", "Test", func(*Session) error { return nil })); err != nil {
 		t.Fatalf("add command: %v", err)
@@ -337,6 +356,7 @@ func TestSetChordEnforcesReservedPolicy(t *testing.T) {
 }
 
 func TestPressKeyRunsCommandViaDefaultChord(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := false
 	cmd := NewCommand("Test.Line", "Line", "Test", func(*Session) error { ran = true; return nil }).WithDefaultChord("Ctrl+L")
@@ -352,6 +372,7 @@ func TestPressKeyRunsCommandViaDefaultChord(t *testing.T) {
 }
 
 func TestPressKeyRebindTakesEffect(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := 0
 	cmd := NewCommand("Test.Line", "Line", "Test", func(*Session) error { ran++; return nil }).WithDefaultChord("Ctrl+L")
@@ -377,6 +398,7 @@ func TestPressKeyRebindTakesEffect(t *testing.T) {
 // the guard was `s.tool != nil`, so an armed tool silently killed undo and this test asserted that
 // no-op; it now guards against regressing back to the over-broad guard.
 func TestDispatchUndoFiresWhileToolArmed(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	trackFromHere(s)
 	s.SetPicker(stubPicker{sel: profile})

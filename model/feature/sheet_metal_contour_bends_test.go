@@ -17,6 +17,7 @@ import (
 // TestCornerArcIsACircleOfTheRadius: every sampled point has to sit at the radius from the arc's
 // centre. A quadratic Bezier through the same three points passes a glance and fails this.
 func TestCornerArcIsACircleOfTheRadius(t *testing.T) {
+	t.Parallel()
 	for name, c := range map[string]struct{ a, b, corner math.Point2 }{
 		"right angle": {math.P2(0, 0), math.P2(2, 0), math.P2(2, 2)},
 		"sharp turn":  {math.P2(0, 0), math.P2(2, 0), math.P2(1, 1.7)},
@@ -64,6 +65,7 @@ func arcCentreFrom(t *testing.T, arc []math.Point2, radius float64) math.Point2 
 // TestCornerArcIsTangentToBothSegments: the arc has to leave the incoming segment and rejoin the
 // outgoing one, or the wall kinks where the bend was supposed to smooth it.
 func TestCornerArcIsTangentToBothSegments(t *testing.T) {
+	t.Parallel()
 	a, b, c := math.P2(0, 0), math.P2(2, 0), math.P2(2, 2)
 	const radius = 0.5
 	arc, err := cornerArc(a, b, c, radius)
@@ -83,6 +85,7 @@ func TestCornerArcIsTangentToBothSegments(t *testing.T) {
 // side, so a radius the segments cannot give is refused rather than allowed to overrun the corner
 // and fold the profile back on itself.
 func TestRadiusTooBigForTheProfileIsRefused(t *testing.T) {
+	t.Parallel()
 	if _, err := cornerArc(math.P2(0, 0), math.P2(0.3, 0), math.P2(0.3, 2), 1.0); err == nil {
 		t.Error("a radius larger than the segment should be refused")
 	}
@@ -94,6 +97,7 @@ func TestRadiusTooBigForTheProfileIsRefused(t *testing.T) {
 // TestCollinearCornerIsNotRounded: a straight-through vertex is not a bend and must not be given
 // an arc, which would put a kink in a straight run.
 func TestCollinearCornerIsNotRounded(t *testing.T) {
+	t.Parallel()
 	arc, err := cornerArc(math.P2(0, 0), math.P2(1, 0), math.P2(2, 0), 0.3)
 	if err != nil || len(arc) != 0 {
 		t.Errorf("a collinear corner produced %d points (err %v), want none", len(arc), err)
@@ -103,6 +107,7 @@ func TestCollinearCornerIsNotRounded(t *testing.T) {
 // TestNoRadiusLeavesTheProfileAlone: with no bend radius the profile keeps its drawn corners, so a
 // part built before this still comes out as it did.
 func TestNoRadiusLeavesTheProfileAlone(t *testing.T) {
+	t.Parallel()
 	pts := []math.Point2{{X: 0}, {X: 1}, {X: 1, Y: 1}}
 	got, err := roundProfileCorners(pts, 0)
 	if err != nil || len(got) != len(pts) {
@@ -118,6 +123,7 @@ func TestNoRadiusLeavesTheProfileAlone(t *testing.T) {
 // Before the mitre was fixed this came out 16% light, because the corner was pinched to 71% of the
 // gauge and nothing measured it.
 func TestContourFlangeBandIsTheFullGauge(t *testing.T) {
+	t.Parallel()
 	const sheet, wall = 4 * 4 * 0.2, (2*0.2 + 0.2*0.2) * 4
 	if got := contourFlangeVolume(t, 0); stdmath.Abs(got-(sheet+wall)) > 1e-6 {
 		t.Errorf("sharp contour flange = %.6f cm³, want %.6f (%.2f sheet + %.2f wall)",
@@ -129,6 +135,7 @@ func TestContourFlangeBandIsTheFullGauge(t *testing.T) {
 // the sharp mitre had — more of it as the radius grows. A vanishing bend must approach the sharp
 // wall, which is what says the rounding is a corner treatment and not a change to the whole sweep.
 func TestContourFlangeRoundsItsCorner(t *testing.T) {
+	t.Parallel()
 	sharp := contourFlangeVolume(t, 0)
 	small := contourFlangeVolume(t, 0.05)
 	large := contourFlangeVolume(t, 0.3)
@@ -144,6 +151,7 @@ func TestContourFlangeRoundsItsCorner(t *testing.T) {
 // TestContourFlangeStartsANewBody: the operation decides whether the wall joins the sheet or
 // stands alone, which is the difference between one body and two.
 func TestContourFlangeStartsANewBody(t *testing.T) {
+	t.Parallel()
 	if got := contourFlangeBodyCount(t, ops.Join); got != 1 {
 		t.Errorf("a joined contour flange left %d bodies, want 1", got)
 	}

@@ -6,10 +6,11 @@ import (
 	"errors"
 	"fmt"
 
+	"oblikovati.org/kernel/ops/heal"
+
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -111,7 +112,7 @@ func (b *BoundaryPatchFeature) fillEdgeLoop(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	patch, err := ops.FillEdgeLoop(edges, patchContinuityOrder(b.def.Condition))
+	patch, err := heal.FillEdgeLoop(edges, patchContinuityOrder(b.def.Condition))
 	if err != nil {
 		return Output{}, fmt.Errorf("boundary patch: %w", err)
 	}

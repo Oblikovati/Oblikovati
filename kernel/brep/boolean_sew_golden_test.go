@@ -88,6 +88,7 @@ func goldenSewCases() []goldenSewCase {
 }
 
 func TestBooleanSewGolden(t *testing.T) {
+	t.Parallel()
 	for _, c := range goldenSewCases() {
 		t.Run(c.name, func(t *testing.T) {
 			b, err := c.make()

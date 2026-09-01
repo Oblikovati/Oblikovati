@@ -27,6 +27,7 @@ func cropTestCloud(t *testing.T, def interface {
 // TestCloudPointsBoxInRect: a full-viewport rectangle encloses every scan point (the crop box is
 // the cloud's bounds), and an off-screen rectangle encloses none (#645).
 func TestCloudPointsBoxInRect(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t) // 200×200 camera looking down +Z at the XY plane
 	pc := cropTestCloud(t, def)
 
@@ -45,6 +46,7 @@ func TestCloudPointsBoxInRect(t *testing.T) {
 // TestCropBoxToolFlow: two viewport clicks through the active crop tool add a crop to the cloud;
 // the command path requires a selected cloud (#645).
 func TestCropBoxToolFlow(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	pc := cropTestCloud(t, def)
 
@@ -82,6 +84,7 @@ func TestCropBoxToolFlow(t *testing.T) {
 // TestCropBoxToolCommitErrors covers Commit's guards directly: no cloud, too few corners, and a
 // rectangle enclosing no scan points (#645).
 func TestCropBoxToolCommitErrors(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	pc := cropTestCloud(t, def)
 

@@ -17,6 +17,7 @@ import (
 // tools and the wire router add/edit the feature program through.
 
 func TestCommitAssemblyFeatureHostsAndNames(t *testing.T) {
+	t.Parallel()
 	s := activeAssemblySession(t)
 	tool, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(1, 1, 1), "asmTool")
 	if err != nil {
@@ -58,6 +59,7 @@ func TestCommitAssemblyFeatureHostsAndNames(t *testing.T) {
 // TestCommitAssemblyFeatureNeedsAnAssembly covers both verbs' resolution error
 // on a part document.
 func TestCommitAssemblyFeatureNeedsAnAssembly(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	if _, err := s.CommitAssemblyFeature(nil, "x"); err == nil {
 		t.Error("CommitAssemblyFeature on a part must error")

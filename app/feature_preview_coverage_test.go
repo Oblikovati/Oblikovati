@@ -15,6 +15,7 @@ import (
 // tool actually produces a preview through the full featurePreviewItems path (tool body, solid
 // delta, changed faces, or result-body fallback) — not just that it compiles.
 func TestEveryFeatureToolPreviews(t *testing.T) {
+	t.Parallel()
 	t.Run("rib", func(t *testing.T) {
 		s, _ := ribbedPart(t)
 		rib := NewRibTool()
@@ -128,6 +129,10 @@ func TestEveryFeatureToolPreviews(t *testing.T) {
 // own end-to-end setup, and asserts ToolPreview() yields a ghost. This pins the DraftFeature
 // path of every tool that does NOT go through the changed-face/result-body fallbacks.
 func TestSweptAndDressUpToolsPreview(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~57s): `make test-corpus`")
+	}
+	t.Parallel()
 	t.Run("revolve", func(t *testing.T) {
 		s, profile := newPartWithOffsetSquare(t, 2, 2)
 		s.SetPicker(stubPicker{sel: profile})
@@ -227,6 +232,7 @@ func TestSweptAndDressUpToolsPreview(t *testing.T) {
 // TestSheetMetalToolsPreview drives the sheet-metal tools to commit-ready state and asserts a
 // preview ghost, pinning each sheet-metal DraftFeature wiring.
 func TestSheetMetalToolsPreview(t *testing.T) {
+	t.Parallel()
 	t.Run("face", func(t *testing.T) {
 		s, part := sheetMetalSession(t)
 		face := NewSheetMetalFaceTool()

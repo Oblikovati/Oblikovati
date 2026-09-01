@@ -12,6 +12,7 @@ import (
 // part never warns, a part with extent flags a feature far below its resolution and accepts a
 // resolvable one.
 func TestFeatureScaleWarning(t *testing.T) {
+	t.Parallel()
 	empty := NewPartComponentDefinition()
 	if w := empty.FeatureScaleWarning(1e-30); w != "" {
 		t.Errorf("empty part should not warn, got %q", w)

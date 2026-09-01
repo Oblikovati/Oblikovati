@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/sketch"
 )
@@ -35,12 +36,13 @@ func areaGraphCircles(t *testing.T, graph []LoftAreaStop) *topo.Body {
 // TestLoftAreaGraphBulges: a mid stop of scale 2 doubles the mid cross-section's area, so the mid
 // radius grows by √2 (≈2.83) — the body bulges past the section radius, holding more volume.
 func TestLoftAreaGraphBulges(t *testing.T) {
-	plain := ops.BodyGeometryProperties(areaGraphCircles(t, nil), ops.DefaultQuality()).Volume
+	t.Parallel()
+	plain := query.BodyGeometryProperties(areaGraphCircles(t, nil), ops.DefaultQuality()).Volume
 	b := areaGraphCircles(t, []LoftAreaStop{{T: 0.5, Scale: 2}})
 	if maxX := float64(b.RangeBox().Max.X); maxX < 2.5 {
 		t.Errorf("area graph did not bulge: max x = %.3f, want ≈2.83 (√2·2)", maxX)
 	}
-	if v := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; v <= plain*1.1 {
+	if v := query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; v <= plain*1.1 {
 		t.Errorf("area-graph bulge did not add volume: %.3f vs plain %.3f", v, plain)
 	}
 }
@@ -48,8 +50,9 @@ func TestLoftAreaGraphBulges(t *testing.T) {
 // TestLoftAreaGraphWaists: a mid stop of scale 0.25 quarters the mid area (mid radius halves), so
 // the body waists in and holds less than the plain cylinder.
 func TestLoftAreaGraphWaists(t *testing.T) {
-	plain := ops.BodyGeometryProperties(areaGraphCircles(t, nil), ops.DefaultQuality()).Volume
-	waisted := ops.BodyGeometryProperties(areaGraphCircles(t, []LoftAreaStop{{T: 0.5, Scale: 0.25}}), ops.DefaultQuality()).Volume
+	t.Parallel()
+	plain := query.BodyGeometryProperties(areaGraphCircles(t, nil), ops.DefaultQuality()).Volume
+	waisted := query.BodyGeometryProperties(areaGraphCircles(t, []LoftAreaStop{{T: 0.5, Scale: 0.25}}), ops.DefaultQuality()).Volume
 	if waisted >= plain {
 		t.Errorf("area-graph waist did not reduce volume: %.3f vs plain %.3f", waisted, plain)
 	}
@@ -58,6 +61,7 @@ func TestLoftAreaGraphWaists(t *testing.T) {
 // TestLoftAreaGraphKeepsEnds: the end sections are pinned to scale 1, so the body still spans the
 // section heights (z 0→4) and the end radius is unchanged (the graph only resizes the interior).
 func TestLoftAreaGraphKeepsEnds(t *testing.T) {
+	t.Parallel()
 	bb := areaGraphCircles(t, []LoftAreaStop{{T: 0.5, Scale: 2}}).RangeBox()
 	if z0, z1 := float64(bb.Min.Z), float64(bb.Max.Z); z0 < -1e-6 || z0 > 1e-6 || z1 < 4-1e-6 || z1 > 4+1e-6 {
 		t.Errorf("area graph moved the loft ends in z: span [%.4f,%.4f], want [0,4]", z0, z1)
@@ -67,6 +71,7 @@ func TestLoftAreaGraphKeepsEnds(t *testing.T) {
 // TestLoftAreaGraphRoundTrip: the area-graph stops survive a recipe save/restore and the restored
 // loft reports the area-graph type.
 func TestLoftAreaGraphRoundTrip(t *testing.T) {
+	t.Parallel()
 	bottom := circleOn(sketch.XYPlane(), 2)
 	top := circleOn(planeAtZ(4), 2)
 	idx := sketchList{sks: []*sketch.Sketch{bottom, top}}

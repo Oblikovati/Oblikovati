@@ -51,6 +51,7 @@ func partDocWithBox(t *testing.T, s *app.Session, name string) *doc.Document {
 // x=-3. Five disjoint unit boxes, all sharing one part definition ⇒ a parts-only BOM of
 // quantity 5 and a derived part of volume 5.
 func TestAssemblyModelDrivenOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t) // empty assembly, active
 	asmDoc := s.ActiveDocument()
 	widget := partDocWithBox(t, s, "widget.obk")

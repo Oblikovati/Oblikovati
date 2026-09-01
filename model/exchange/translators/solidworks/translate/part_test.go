@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
@@ -187,7 +188,7 @@ func TestExtrudeVolume(t *testing.T) {
 	if len(bodies) != 1 {
 		t.Fatalf("got %d bodies, want 1", len(bodies))
 	}
-	vol := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	vol := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 	if math.Abs(vol-12) > 1e-3 {
 		t.Errorf("extruded volume = %.4f cm3, want 12", vol)
 	}
@@ -203,7 +204,7 @@ func TestRevolveVolume(t *testing.T) {
 	if len(bodies) != 1 {
 		t.Fatalf("got %d bodies, want 1", len(bodies))
 	}
-	vol := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	vol := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 	if analytic := 9 * math.Pi; math.Abs(vol-analytic) > 0.01*analytic {
 		t.Errorf("revolved volume = %.4f cm3, want ~%.4f (9π)", vol, analytic)
 	}

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/math"
 )
@@ -15,6 +16,7 @@ import (
 // Y,Z extent — their convex hull is exactly the enclosing 6×2×2 box (volume 24). The feature
 // must leave one valid solid.
 func TestHullFeatureWrapsTwoBodies(t *testing.T) {
+	t.Parallel()
 	a := subd.ToBody(subd.Box(2, 2, 2), "a") // [0,2]^3
 	bm := subd.Box(2, 2, 2)
 	for i := range bm.Verts {
@@ -37,7 +39,7 @@ func TestHullFeatureWrapsTwoBodies(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("hull body invalid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-24) > 1e-9 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-24) > 1e-9 {
 		t.Errorf("hull volume = %.6f, want 24 (enclosing 6×2×2 box)", v)
 	}
 }

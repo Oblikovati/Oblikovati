@@ -13,6 +13,7 @@ import (
 )
 
 func TestWorkPointsCreateRejectsBadPosition(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "workPoints.create", []byte(`{"at":[1,2]}`)); err == nil {
 		t.Error("a 2-component position must error")
@@ -23,6 +24,7 @@ func TestWorkPointsCreateRejectsBadPosition(t *testing.T) {
 // point is healthy and lands at (0,0,0) — proving the plane-axis-intersection kind reaches the
 // model's AddByPlaneAndAxisIntersection (#1842).
 func TestWorkPointsPlaneAxisIntersection(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkPointResult
 	call(t, r, s, "workPoints.create",
@@ -40,6 +42,7 @@ func TestWorkPointsPlaneAxisIntersection(t *testing.T) {
 // has no intersection — the point is still created, but reported healthy=false with a reason,
 // not a bare error.
 func TestWorkPointsPlaneAxisParallelIsUnhealthy(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkPointResult
 	call(t, r, s, "workPoints.create",
@@ -50,6 +53,7 @@ func TestWorkPointsPlaneAxisParallelIsUnhealthy(t *testing.T) {
 }
 
 func TestWorkPointsPlaneAxisWrongReferenceCount(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "workPoints.create",
 		[]byte(`{"kind":"plane-axis-intersection","refs":["origin/plane/xy"]}`)); err == nil {
@@ -58,6 +62,7 @@ func TestWorkPointsPlaneAxisWrongReferenceCount(t *testing.T) {
 }
 
 func TestWorkPointsCreateUnknownKind(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "workPoints.create", []byte(`{"kind":"no-such-kind"}`)); err == nil {
 		t.Error("expected error for unknown work-point kind")

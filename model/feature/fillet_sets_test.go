@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
 	"oblikovati.org/model/sketch"
@@ -38,6 +39,7 @@ func boxAndVerticalEdges(t *testing.T) (*PartFeatures, [][]byte) {
 // TestFilletSetsMixedConstantRadii rounds two vertical edges at different
 // radii via two constant sets in one feature — the cylinder-exact volume.
 func TestFilletSetsMixedConstantRadii(t *testing.T) {
+	t.Parallel()
 	fs, keys := boxAndVerticalEdges(t)
 	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{
 		{EdgeKeys: [][]byte{keys[0]}, Radius: angleConst(0.3)},
@@ -53,7 +55,7 @@ func TestFilletSetsMixedConstantRadii(t *testing.T) {
 	}
 	notch := func(r float64) float64 { return r*r - stdmath.Pi*r*r/4 }
 	want := 8 - notch(0.3)*2 - notch(0.6)*2
-	if got := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, want) > 1e-3 {
+	if got := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, want) > 1e-3 {
 		t.Errorf("mixed-set fillet volume = %g, want ≈ %g", got, want)
 	}
 }
@@ -62,6 +64,7 @@ func TestFilletSetsMixedConstantRadii(t *testing.T) {
 // engine — the smooth-blend volume, since the variable blend is the exact rational ruled
 // surface (#1606; the pre-A10 planar strips followed the chord integral instead).
 func TestFilletVariableSetThroughEngine(t *testing.T) {
+	t.Parallel()
 	fs, keys := boxAndVerticalEdges(t)
 	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{
 		{EdgeKeys: [][]byte{keys[0]}, StartRadius: angleConst(0.3), EndRadius: angleConst(0.6)},
@@ -73,7 +76,7 @@ func TestFilletVariableSetThroughEngine(t *testing.T) {
 	res := fs.Result()[0]
 	removed := (1 - stdmath.Pi/4) * 2 * (0.3*0.3 + 0.3*0.6 + 0.6*0.6) / 3
 	want := 8 - removed
-	if got := ops.BodyGeometryProperties(res, fineFilletQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
+	if got := query.BodyGeometryProperties(res, fineFilletQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
 		t.Errorf("variable fillet volume = %g, want %g (smooth blend, 3%%-of-notch band)", got, want)
 	}
 	if pf.Definition().(*FilletFeature).Definition().FilletType() != 61697 {
@@ -85,6 +88,7 @@ func TestFilletVariableSetThroughEngine(t *testing.T) {
 // radius stop (0.3 → 0.7 at T=0.5 → 0.4) through the feature engine — the per-segment
 // smooth-blend volume (#695, exact spans since #1606).
 func TestFilletRadiusPointsThroughEngine(t *testing.T) {
+	t.Parallel()
 	fs, keys := boxAndVerticalEdges(t)
 	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{{
 		EdgeKeys:     [][]byte{keys[0]},
@@ -103,7 +107,7 @@ func TestFilletRadiusPointsThroughEngine(t *testing.T) {
 	seg := func(ra, rb float64) float64 { return 1.0 * (ra*ra + ra*rb + rb*rb) / 3 }
 	removed := (1 - stdmath.Pi/4) * (seg(0.3, 0.7) + seg(0.7, 0.4))
 	want := 8 - removed
-	if got := ops.BodyGeometryProperties(res, fineFilletQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
+	if got := query.BodyGeometryProperties(res, fineFilletQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
 		t.Errorf("radius-points fillet volume = %g, want %g (smooth blend, 3%%-of-notch band)", got, want)
 	}
 }
@@ -117,6 +121,7 @@ func fineFilletQuality() ops.Quality {
 // TestFilletVariableSetNeedsOneEdge: a variable set over two edges is a
 // precise Sick, not a broken body.
 func TestFilletVariableSetNeedsOneEdge(t *testing.T) {
+	t.Parallel()
 	fs, keys := boxAndVerticalEdges(t)
 	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{
 		{EdgeKeys: [][]byte{keys[0], keys[1]}, StartRadius: angleConst(0.2), EndRadius: angleConst(0.4)},
@@ -129,6 +134,7 @@ func TestFilletVariableSetNeedsOneEdge(t *testing.T) {
 
 // TestFilletSetsLostEdgeSick: any lost key in any set makes the feature Sick.
 func TestFilletSetsLostEdgeSick(t *testing.T) {
+	t.Parallel()
 	fs, keys := boxAndVerticalEdges(t)
 	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{
 		{EdgeKeys: [][]byte{keys[0]}, Radius: angleConst(0.3)},

@@ -14,6 +14,7 @@ import (
 // TestFileSurfaceOverWire covers files.get / files.listReferences against the
 // seeded session (M03-F07, #608).
 func TestFileSurfaceOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	d := s.ActiveDocument()
 
@@ -44,6 +45,7 @@ func TestFileSurfaceOverWire(t *testing.T) {
 // documents.listFileReferences with the derived status; an unresolvable record
 // reports missing (the broken-reference inspection path, M03-F07).
 func TestDocumentFileReferenceViewCarriesStatus(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	d := s.ActiveDocument()
 	d.SetFileReferenceRecords([]doc.FileReferenceRecord{{

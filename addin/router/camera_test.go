@@ -12,6 +12,7 @@ import (
 // TestCameraRoundTrips drives view.setCamera then view.getCamera and asserts the look-at
 // frame survives — the dogfood proof the camera contract reaches the session and back.
 func TestCameraRoundTrips(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	args := `{"eye":[10,20,30],"target":[1,2,3],"up":[0,1,0],"fov":0.8}`
 
@@ -31,6 +32,7 @@ func TestCameraRoundTrips(t *testing.T) {
 // TestSetCameraRejectsInvalidFrames checks degenerate/out-of-range frames are errors, not
 // a silently corrupted view.
 func TestSetCameraRejectsInvalidFrames(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	cases := map[string]string{
 		"coincident eye/target": `{"eye":[1,1,1],"target":[1,1,1],"up":[0,1,0],"fov":0.8}`,

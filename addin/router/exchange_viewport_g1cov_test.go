@@ -15,6 +15,7 @@ import (
 // rectangle) is entered so the session has an active 2D sketch, then exported to a temp .dxf —
 // the reply must report the four written curves (exercises the converted exportDXF handler).
 func TestEvcovExportDXFWritesActiveSketch(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	evcovEnterFirstSketch(t, s)
 	out := filepath.Join(t.TempDir(), "out.dxf")
@@ -39,6 +40,7 @@ func evcovEnterFirstSketch(t *testing.T, s *app.Session) {
 // TestEvcovImportMissingFileErrors drives the import.dwg/dxf/pdf handlers' error branch: a
 // non-existent path must surface a wrapped error from each converted handler.
 func TestEvcovImportMissingFileErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	missing := filepath.Join(t.TempDir(), "nope")
 	for method, args := range evcovImportCases(missing) {
@@ -60,6 +62,7 @@ func evcovImportCases(path string) map[string]string {
 // TestEvcovViewportDebugToggles drives viewport.setNormalDebug and viewport.setMeshColors: each
 // converted handler must echo the requested state back in its reply.
 func TestEvcovViewportDebugToggles(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var nd wire.NormalDebugResult
 	call(t, r, s, "viewport.setNormalDebug", `{"on":true}`, &nd)

@@ -36,6 +36,7 @@ func deleteInUseOverBothDrivers(t *testing.T, drive func(r *Router, s *app.Sessi
 // TestParameterDeleteInvariantSharedAcrossDrivers is the test that would have
 // caught B1: both drivers refuse the in-use delete and name the blocker.
 func TestParameterDeleteInvariantSharedAcrossDrivers(t *testing.T) {
+	t.Parallel()
 	wireErr := deleteInUseOverBothDrivers(t, func(r *Router, s *app.Session) error {
 		_, err := r.Handle(s, "parameters.delete", []byte(`{"name":"width"}`))
 		return err
@@ -59,6 +60,7 @@ func TestParameterDeleteInvariantSharedAcrossDrivers(t *testing.T) {
 // comes from the aggregate on both drivers (it used to live only in the wire
 // handler while Session.RenameParameterGroup wrote the field unchecked).
 func TestGroupRenameInvariantSharedAcrossDrivers(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.groups.add", `{"internalName":"frame","displayName":"Frame"}`, nil)
 

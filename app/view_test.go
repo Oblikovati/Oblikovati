@@ -26,6 +26,7 @@ func extrudedBoxSession(t *testing.T, side, depth float64) *Session {
 }
 
 func TestFitViewFramesModelFromAnywhere(t *testing.T) {
+	t.Parallel()
 	s := extrudedBoxSession(t, 4, 5)
 
 	// Start from a camera pointed away from the model, then Zoom All.
@@ -51,6 +52,7 @@ func TestFitViewFramesModelFromAnywhere(t *testing.T) {
 }
 
 func TestHomeViewIsIsometricAndFramesModel(t *testing.T) {
+	t.Parallel()
 	s := extrudedBoxSession(t, 4, 5)
 	s.SetCamera(scene.NewCamera(800, 600))
 	s.HomeView()
@@ -70,6 +72,7 @@ func TestHomeViewIsIsometricAndFramesModel(t *testing.T) {
 // TestZoomAllCommandReframesViaExecute exercises the full ribbon path a button uses:
 // a registered "Zoom All" command, run through Session.Execute, reframes the view.
 func TestZoomAllCommandReframesViaExecute(t *testing.T) {
+	t.Parallel()
 	s := extrudedBoxSession(t, 4, 5)
 	if err := s.Commands().Add(NewCommand("View.ZoomAll", "Zoom All", "Navigate",
 		func(sess *Session) error { sess.FitView(); return nil })); err != nil {
@@ -89,6 +92,7 @@ func TestZoomAllCommandReframesViaExecute(t *testing.T) {
 }
 
 func TestFitViewEmptyModelIsNoOp(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	cam := scene.NewCamera(640, 480)
 	s.SetCamera(cam)

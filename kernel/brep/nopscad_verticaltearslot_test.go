@@ -7,6 +7,7 @@ import (
 )
 
 func TestNopVerticalTearslotCSG(t *testing.T) {
+	t.Parallel()
 	body := tearSlotBody(t, 0.35, 0.8, 0.5, true, "vertical-tearslot")
 	requireValidNopSolid(t, "vertical_tearslot", body)
 	if got := vol(body); got <= 0 || got >= 1.0*(0.8+0.7)*0.5 {

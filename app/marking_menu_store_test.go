@@ -14,6 +14,7 @@ import (
 // (#831): customizing a marking menu persists through the store and reloads into a
 // fresh session.
 func TestMarkingMenuStorePersistsAndReloads(t *testing.T) {
+	t.Parallel()
 	store := markingmenu.NewMemStore()
 	s1 := NewSession()
 	if err := s1.UseMarkingMenuStore(store); err != nil {
@@ -46,6 +47,7 @@ func TestMarkingMenuStorePersistsAndReloads(t *testing.T) {
 // TestClassicTogglePersistsAndReloads: toggling the classic/radial style persists
 // across sessions.
 func TestClassicTogglePersistsAndReloads(t *testing.T) {
+	t.Parallel()
 	store := markingmenu.NewMemStore()
 	s1 := NewSession()
 	if err := s1.UseMarkingMenuStore(store); err != nil {
@@ -69,6 +71,7 @@ func TestClassicTogglePersistsAndReloads(t *testing.T) {
 // has the enriched default menus — WorkPlane.Offset in base and Sketch.Finish as
 // a radial slot in sketch.
 func TestFreshInstallUsesEnrichedDefaults(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	base := s.MarkingMenu(BaseEnvironment)
 	foundWP := false

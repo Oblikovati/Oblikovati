@@ -7,12 +7,14 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
 
 // A rib over a straight open path is a wall of length×thickness×depth.
 func TestRibGeneratesWall(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0)) // open path, length 4
@@ -36,7 +38,7 @@ func TestRibGeneratesWall(t *testing.T) {
 	if r := ops.Validate(bodies[0]); !r.Valid {
 		t.Fatalf("rib body invalid: %+v", r)
 	}
-	vol := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	vol := query.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
 	if stdmath.Abs(vol-8) > 1e-6 { // 4 (length) × 1 (thickness) × 2 (depth)
 		t.Errorf("rib volume = %g, want 8", vol)
 	}
@@ -44,6 +46,7 @@ func TestRibGeneratesWall(t *testing.T) {
 
 // The RibFeatures collection adds a named, healthy rib (the path the Rib tool drives).
 func TestRibFeaturesAddNamesAndBuilds(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
@@ -56,13 +59,14 @@ func TestRibFeaturesAddNamesAndBuilds(t *testing.T) {
 	if pf.Name() != "Rib1" {
 		t.Errorf("rib name = %q, want Rib1", pf.Name())
 	}
-	if vol := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(vol-8) > 1e-6 {
+	if vol := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(vol-8) > 1e-6 {
 		t.Errorf("rib volume = %g, want 8", vol)
 	}
 }
 
 // An L-shaped open path ribs into a connected wall (two segments → one solid).
 func TestRibLShapedPath(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	corner := sk.Points().Add(math.P2(4, 0))
@@ -88,6 +92,7 @@ func TestRibLShapedPath(t *testing.T) {
 
 // A degenerate definition (no depth) reports sick, not a crash.
 func TestRibNeedsDepth(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))

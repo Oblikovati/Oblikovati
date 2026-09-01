@@ -16,6 +16,7 @@ import (
 // assembly definition raises the relationship events (ConstraintAdd / AssemblyResolved /
 // ConstraintDelete) and that SolveConstraints repositions a free component (M12-F01).
 func TestConstraintEventsAndSolve(t *testing.T) {
+	t.Parallel()
 	asm := NewAssemblyComponentDefinition()
 	base := asm.Place("base:1", NewPartComponentDefinition(), math.Identity4())
 	base.SetGrounded(true)

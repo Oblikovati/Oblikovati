@@ -15,6 +15,7 @@ import (
 // whose length matches the analytic circumference — a triangle-sliced mesh could only chord it more coarsely
 // and its accuracy would ride the tessellation Quality; the analytic curve does not.
 func TestSectionCylinderPerpendicularIsCircle(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)

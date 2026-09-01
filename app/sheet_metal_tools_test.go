@@ -64,6 +64,7 @@ func topXEdge(t *testing.T, body *topo.Body) *topo.Edge {
 // TestSheetMetalCommandsEnable the Sheet Metal commands all sit on the Sheet Metal tab and
 // enable only on a sheet-metal part.
 func TestSheetMetalCommandsEnable(t *testing.T) {
+	t.Parallel()
 	s, _ := sheetMetalSession(t)
 	if !hasActiveSheetMetalPart(s) {
 		t.Error("hasActiveSheetMetalPart should be true with a sheet-metal part active")
@@ -102,6 +103,7 @@ func TestSheetMetalCommandsEnable(t *testing.T) {
 // TestSheetMetalToolFlow a Face → Flange → Unfold → Refold flow through the tools yields a
 // healthy part at each step — the core authoring path the ribbon drives.
 func TestSheetMetalToolFlow(t *testing.T) {
+	t.Parallel()
 	s, part := sheetMetalSession(t)
 
 	face := NewSheetMetalFaceTool()
@@ -145,6 +147,7 @@ func TestSheetMetalToolFlow(t *testing.T) {
 
 // TestSheetMetalHemTool the Hem tool folds a healthy hem on a base sheet edge.
 func TestSheetMetalHemTool(t *testing.T) {
+	t.Parallel()
 	s, part := sheetMetalSession(t)
 	face := NewSheetMetalFaceTool()
 	face.Start(s)
@@ -167,6 +170,7 @@ func TestSheetMetalHemTool(t *testing.T) {
 // TestSheetMetalToolsRequireInput every tool's Commit errors before its input is gathered (no
 // pick, or no developable flat) — so a half-finished tool never silently commits nothing.
 func TestSheetMetalToolsRequireInput(t *testing.T) {
+	t.Parallel()
 	makers := []func() Tool{
 		func() Tool { return NewSheetMetalFaceTool() },
 		func() Tool { return NewSheetMetalFlangeTool() },
@@ -196,6 +200,7 @@ func TestSheetMetalToolsRequireInput(t *testing.T) {
 // TestSheetMetalFaceAndFlangeTools the Face tool thickens a profile into the base wall and the
 // Flange tool folds a wall on a resulting edge — both committing healthy features.
 func TestSheetMetalFaceAndFlangeTools(t *testing.T) {
+	t.Parallel()
 	s, part := sheetMetalSession(t)
 
 	face := NewSheetMetalFaceTool()

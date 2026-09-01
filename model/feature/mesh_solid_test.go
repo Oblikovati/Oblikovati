@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -22,6 +23,7 @@ func tetraMeshGeometry() *MeshGeometry {
 // TestMeshSolidConvertsTetra is the #492 acceptance: a tetra mesh converts to a validated
 // 4-face solid body.
 func TestMeshSolidConvertsTetra(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	ms := NewMeshFeatures(fs).AddSolid(tetraMeshGeometry())
 	fs.Recompute()
@@ -39,7 +41,7 @@ func TestMeshSolidConvertsTetra(t *testing.T) {
 	if n := len(solid.Faces()); n != 4 {
 		t.Errorf("face count = %d, want 4", n)
 	}
-	if v := ops.BodyGeometryProperties(solid, ops.DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
+	if v := query.BodyGeometryProperties(solid, ops.DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
 		t.Errorf("volume = %v, want %v", v, 1.0/6)
 	}
 }
@@ -47,6 +49,7 @@ func TestMeshSolidConvertsTetra(t *testing.T) {
 // TestPresentationMeshPassesBodyThrough: the presentation MeshFeature carries the mesh without
 // altering the running body (#492 acceptance bullet 2).
 func TestPresentationMeshPassesBodyThrough(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Circles().AddByCenterRadius(math.P2(0, 0), 5)
@@ -71,6 +74,7 @@ func TestPresentationMeshPassesBodyThrough(t *testing.T) {
 // TestMeshSolidRoundTrip checks the mesh-solid feature (with its inline mesh) survives an
 // .obk round trip and rebuilds the same solid (#492 acceptance: round-trip).
 func TestMeshSolidRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewMeshFeatures(fs).AddSolid(tetraMeshGeometry())
 
@@ -91,7 +95,7 @@ func TestMeshSolidRoundTrip(t *testing.T) {
 	if r := ops.Validate(solid); !r.Valid || !solid.IsSolid() {
 		t.Fatalf("restored body not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(solid, ops.DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
+	if v := query.BodyGeometryProperties(solid, ops.DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
 		t.Errorf("restored volume = %v, want %v", v, 1.0/6)
 	}
 }

@@ -14,6 +14,7 @@ import (
 // the command adds a sketch point at the scan point projected onto the sketch plane; outside a
 // sketch or with nothing selected it is disabled and errors (#645).
 func TestCreateSketchPointAtSelectedCloudPoint(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
 	pc, err := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(3, 4, 7)})
@@ -57,6 +58,7 @@ func TestCreateSketchPointAtSelectedCloudPoint(t *testing.T) {
 // TestSketchPointFromScanNoSelectionInSketch directly covers the in-sketch-without-a-selection
 // branch (a scan point must be picked first) (#645).
 func TestSketchPointFromScanNoSelectionInSketch(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, err := s.CreateSketch(sketch.XYPlane()); err != nil {
 		t.Fatalf("CreateSketch: %v", err)
@@ -70,6 +72,7 @@ func TestSketchPointFromScanNoSelectionInSketch(t *testing.T) {
 // end to end, and the in-sketch-without-a-selection path errors (the command's enable would block
 // it, but the action must fail safe) (#645).
 func TestProjectScanPointCommandRuns(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -110,6 +113,7 @@ func translateX(dx float64) math.Matrix4 {
 // TestSketchPointFollowsCloudAndRelink: a scan-anchored sketch point re-projects when the cloud
 // moves (provenance), and relinkSketchCloudAnchors reaches it (#645).
 func TestSketchPointFollowsCloudAndRelink(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
 	pc, err := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(2, 3, 1)})
@@ -142,6 +146,7 @@ func TestSketchPointFollowsCloudAndRelink(t *testing.T) {
 // TestSketchCloudSourceEdges covers the degenerate-placement anchor fallback and a sketch relink
 // that finds no matching cloud (#645).
 func TestSketchCloudSourceEdges(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
 	pc, err := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(1, 1, 1)})

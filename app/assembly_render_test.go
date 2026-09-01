@@ -49,6 +49,7 @@ func emptyBoxAssembly(t *testing.T) (*Session, *compdef.AssemblyComponentDefinit
 // transformed into assembly space — a box placed at +10 on X has its range box shifted there, so
 // the viewport (and picker) see the placed geometry, not the component at its own origin (#769).
 func TestVisibleBodiesTransformsPlacedComponents(t *testing.T) {
+	t.Parallel()
 	s, _, _ := assemblyWithBoxComponent(t, 10)
 
 	bodies := s.VisibleBodies()
@@ -72,6 +73,7 @@ func TestVisibleBodiesTransformsPlacedComponents(t *testing.T) {
 // appearance, not the neutral default. Before the fix SurfaceLookup returned nil for an
 // assembly, so every occurrence rendered flat default grey.
 func TestAssemblySurfaceLookupResolvesOccurrenceAppearance(t *testing.T) {
+	t.Parallel()
 	s, asm, boxDoc, asmDoc := emptyBoxAssembly(t)
 	part := boxDoc.Content().(*compdef.PartComponentDefinition)
 	body := part.SurfaceBodies().All()[0]
@@ -97,6 +99,7 @@ func TestAssemblySurfaceLookupResolvesOccurrenceAppearance(t *testing.T) {
 
 // TestVisibleBodiesEmptyForUnplacedAssembly: an assembly with no components renders nothing.
 func TestVisibleBodiesEmptyForUnplacedAssembly(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	asmDoc, err := compdef.AddAssembly(s.Workspace(), "asm.obk", true)
 	if err != nil {
@@ -111,6 +114,7 @@ func TestVisibleBodiesEmptyForUnplacedAssembly(t *testing.T) {
 // TestOccurrenceOfBodyMapsBackToComponent: each world-space assembly body resolves to the
 // occurrence it was placed from, so a viewport click on a component selects that occurrence.
 func TestOccurrenceOfBodyMapsBackToComponent(t *testing.T) {
+	t.Parallel()
 	s, _, occ := assemblyWithBoxComponent(t, 10)
 	bodies := s.VisibleBodies()
 	got, ok := s.OccurrenceOfBody(bodies[0])
@@ -123,6 +127,7 @@ func TestOccurrenceOfBodyMapsBackToComponent(t *testing.T) {
 // calls (so the head's per-body tessellation cache keeps hitting), and rebuilds when the
 // occurrence structure changes.
 func TestAssemblyBodyCacheIsStableUntilEdited(t *testing.T) {
+	t.Parallel()
 	s, asm, _ := assemblyWithBoxComponent(t, 10)
 	first := s.VisibleBodies()
 	second := s.VisibleBodies()
@@ -143,6 +148,7 @@ func TestAssemblyBodyCacheIsStableUntilEdited(t *testing.T) {
 // by default (component-level selection), and a face-filtered pick yields the face instead — the
 // occurrence vs face precedence the picker resolves (#769).
 func TestViewportClickSelectsOccurrence(t *testing.T) {
+	t.Parallel()
 	s, _, occ := assemblyWithBoxComponent(t, 10)
 
 	cam := scene.NewCamera(400, 400)
@@ -176,6 +182,7 @@ func TestViewportClickSelectsOccurrence(t *testing.T) {
 // several times collapses to ONE instance group (one source mesh) with one transform per placement,
 // instead of N independent world bodies — so the renderer tessellates/uploads it once.
 func TestVisibleInstancesGroupsRepeatedComponents(t *testing.T) {
+	t.Parallel()
 	s, asm, _ := assemblyWithBoxComponent(t, 10)
 	boxDoc := s.Workspace().Documents()[0]
 	for i := 2; i <= 5; i++ { // four more copies of the SAME box part
@@ -199,6 +206,7 @@ func TestVisibleInstancesGroupsRepeatedComponents(t *testing.T) {
 // TestVisibleInstancesPartIsIdentity: a plain part yields one identity-transform group per body, so
 // the part path and the assembly path share one instanced renderer (the K=1 case).
 func TestVisibleInstancesPartIsIdentity(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4)
 	groups := s.VisibleInstances()
 	if len(groups) != 1 || len(groups[0].Transforms) != 1 {

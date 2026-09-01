@@ -28,6 +28,7 @@ func onePagePDF(content string) []byte {
 // TestImportPDFPlanarOneSketch imports a vector PDF and checks it lands as a single 2D
 // sketch on the chosen plane with the expected curve entities.
 func TestImportPDFPlanarOneSketch(t *testing.T) {
+	t.Parallel()
 	part := compdef.NewPartComponentDefinition()
 	content := "0 0 m 72 0 l 72 72 l S\n100 100 100 172 172 172 c S\n"
 	res, err := ImportPDF(part, onePagePDF(content), xyPlane(t))
@@ -52,6 +53,7 @@ func TestImportPDFPlanarOneSketch(t *testing.T) {
 // TestImportPDFRealFile imports a real AutoCAD plot (corpus-gated) and checks the dense
 // drawing lands as one 2D sketch.
 func TestImportPDFRealFile(t *testing.T) {
+	t.Parallel()
 	dir := os.Getenv("PDF_TESTFILES_DIR")
 	if dir == "" {
 		dir = filepath.Join("..", "..", "..")

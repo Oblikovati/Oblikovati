@@ -12,6 +12,7 @@ import (
 )
 
 func TestCoGMarkerToolMarksView(t *testing.T) {
+	t.Parallel()
 	s := drawingWithFrontBase(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewCoGMarkerTool()
@@ -33,6 +34,7 @@ func TestCoGMarkerToolMarksView(t *testing.T) {
 // TestCenterMarkToolMarksHoles: the centre-mark tool places a crosshair at a base view's circular
 // edge (a cylinder rim → one mark after rim dedup).
 func TestCenterMarkToolMarksHoles(t *testing.T) {
+	t.Parallel()
 	s := drawingWithCylinderSession(t)
 	base := NewBaseViewTool()
 	base.Start(s)
@@ -58,6 +60,7 @@ func TestCenterMarkToolMarksHoles(t *testing.T) {
 
 // TestCenterlineToolAddsCenterlines: the centerline tool adds a dash-dot cross on a base view.
 func TestCenterlineToolAddsCenterlines(t *testing.T) {
+	t.Parallel()
 	s := drawingWithFrontBase(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewCenterlineTool()
@@ -77,6 +80,7 @@ func TestCenterlineToolAddsCenterlines(t *testing.T) {
 // TestFeatureControlFrameToolDropsFrame: the FCF tool drops a frame at the placed point with the
 // chosen characteristic, tolerance and datums.
 func TestFeatureControlFrameToolDropsFrame(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewFeatureControlFrameTool()
@@ -102,6 +106,7 @@ func TestFeatureControlFrameToolDropsFrame(t *testing.T) {
 
 // TestDatumFeatureToolDropsSymbol: the datum tool drops a datum feature symbol at the placed point.
 func TestDatumFeatureToolDropsSymbol(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewDatumFeatureTool()
@@ -123,6 +128,7 @@ func TestDatumFeatureToolDropsSymbol(t *testing.T) {
 // TestSurfaceTextureToolDropsSymbol: the surface-texture tool drops a checkmark symbol at the
 // placed point with the chosen roughness and variant.
 func TestSurfaceTextureToolDropsSymbol(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewSurfaceTextureTool()
@@ -148,6 +154,7 @@ func TestSurfaceTextureToolDropsSymbol(t *testing.T) {
 // TestPartsListToolDropsTable: the parts-list tool drops a table on a drawing referencing an
 // assembly, with one row per parts-only BOM item.
 func TestPartsListToolDropsTable(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("commands: %v", err)
@@ -193,6 +200,7 @@ func TestPartsListToolDropsTable(t *testing.T) {
 
 // TestBalloonToolDropsBalloon: the balloon tool drops a circled item number with a leader.
 func TestBalloonToolDropsBalloon(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewBalloonTool()
@@ -215,6 +223,7 @@ func TestBalloonToolDropsBalloon(t *testing.T) {
 
 // TestHoleTableToolDropsTable: the hole-table tool drops a table listing a base view's holes.
 func TestHoleTableToolDropsTable(t *testing.T) {
+	t.Parallel()
 	s := drawingWithCylinderSession(t)
 	base := NewBaseViewTool()
 	base.Start(s)
@@ -241,6 +250,7 @@ func TestHoleTableToolDropsTable(t *testing.T) {
 
 // TestHoleTableToolWithoutView: the tool is inert and errors with no base view to read holes from.
 func TestHoleTableToolWithoutView(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t) // no base view added
 	tool := NewHoleTableTool()
 	tool.Start(s)
@@ -255,6 +265,7 @@ func TestHoleTableToolWithoutView(t *testing.T) {
 // TestRevisionTableToolDropsTable: the revision-table tool drops a one-row table seeded with its
 // revision fields.
 func TestRevisionTableToolDropsTable(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewRevisionTableTool()
@@ -276,6 +287,7 @@ func TestRevisionTableToolDropsTable(t *testing.T) {
 
 // TestRevisionTagToolDropsTag: the revision-tag tool drops a triangle holding the revision letter.
 func TestRevisionTagToolDropsTag(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewRevisionTagTool()
@@ -296,6 +308,7 @@ func TestRevisionTagToolDropsTag(t *testing.T) {
 
 // TestNoteToolDropsNote: the note tool drops a text note with an optional leader.
 func TestNoteToolDropsNote(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewNoteTool()
@@ -318,6 +331,7 @@ func TestNoteToolDropsNote(t *testing.T) {
 
 // TestCustomTableToolDropsTable: the custom-table tool drops a seeded two-column table.
 func TestCustomTableToolDropsTable(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewCustomTableTool()
@@ -340,6 +354,7 @@ func TestCustomTableToolDropsTable(t *testing.T) {
 // TestHoleNotesToolAnnotatesHoles: the hole-notes tool annotates a base view's holes with a
 // diameter callout.
 func TestHoleNotesToolAnnotatesHoles(t *testing.T) {
+	t.Parallel()
 	s := drawingWithCylinderSession(t)
 	base := NewBaseViewTool()
 	base.Start(s)
@@ -365,6 +380,7 @@ func TestHoleNotesToolAnnotatesHoles(t *testing.T) {
 }
 
 func TestCoGMarkerToolWithoutView(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t) // no base view added
 	tool := NewCoGMarkerTool()
 	tool.Start(s)
@@ -377,6 +393,7 @@ func TestCoGMarkerToolWithoutView(t *testing.T) {
 }
 
 func TestRevisionCloudToolDropsCloud(t *testing.T) {
+	t.Parallel()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
 	tool := NewRevisionCloudTool()

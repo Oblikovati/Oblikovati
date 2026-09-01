@@ -14,6 +14,7 @@ import (
 // session and flags Busy/InTransaction once a bounded transaction is open — the signal a
 // collaboration add-in gates remote edits on (ADR-0005).
 func TestInteractionStateIdleVsInTransaction(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	if _, err := s.NewPart(); err != nil {
@@ -36,6 +37,7 @@ func TestInteractionStateIdleVsInTransaction(t *testing.T) {
 // TestInteractionSetNotice checks an add-in can post a transient status-bar message, so a
 // collaboration add-in's connection state is visible to the user (not just in logs).
 func TestInteractionSetNotice(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	call(t, r, s, "interaction.setNotice", `{"message":"Meeting: connected"}`, nil)

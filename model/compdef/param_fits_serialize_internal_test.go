@@ -13,6 +13,7 @@ import (
 // with its band and class strings intact (#1848). Without the recipe carrying HoleTolerance/
 // ShaftTolerance the reopened parameter would keep the band but lose the fit annotation.
 func TestFitsToleranceRoundTrip(t *testing.T) {
+	t.Parallel()
 	src := param.NewParameters()
 	p, err := src.AddUserParameter("bore", "5 cm")
 	if err != nil {

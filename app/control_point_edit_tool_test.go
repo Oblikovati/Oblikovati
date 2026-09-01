@@ -32,6 +32,7 @@ func armCVDrag(s *Session, surf geom.BSplineSurface, i, j int) {
 }
 
 func TestControlPointDragLiftsSurfaceAndIsUndoable(t *testing.T) {
+	t.Parallel()
 	s, def := partWithNurbsGrid(t)
 	s.StartTool(NewControlPointEditTool())
 	surf, _ := activeEditableSurface(s)
@@ -60,6 +61,7 @@ func TestControlPointDragLiftsSurfaceAndIsUndoable(t *testing.T) {
 }
 
 func TestControlPointRowDragWithFalloff(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithNurbsGrid(t)
 	tool := NewControlPointEditTool()
 	tool.mode = cvModeRow
@@ -86,6 +88,7 @@ func TestControlPointRowDragWithFalloff(t *testing.T) {
 }
 
 func TestControlPointSymmetryMirrorsEdit(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithNurbsGrid(t)
 	tool := NewControlPointEditTool()
 	tool.symmetry = true
@@ -106,6 +109,7 @@ func TestControlPointSymmetryMirrorsEdit(t *testing.T) {
 }
 
 func TestControlPointEditViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithNurbsGrid(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
@@ -119,6 +123,7 @@ func TestControlPointEditViaRibbonCommand(t *testing.T) {
 }
 
 func TestNearestControlPointPicksClosest(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithNurbsGrid(t)
 	surf, _ := activeEditableSurface(s)
 	// A ray straight down −Z through CV (2,2) at the patch centre (1,1,0).
@@ -135,6 +140,7 @@ func TestNearestControlPointPicksClosest(t *testing.T) {
 }
 
 func TestControlPointPreviewDrawsNetHandles(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithNurbsGrid(t)
 	tool := NewControlPointEditTool()
 	s.StartTool(tool)
@@ -145,6 +151,7 @@ func TestControlPointPreviewDrawsNetHandles(t *testing.T) {
 }
 
 func TestControlPointColumnDragWithFalloff(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithNurbsGrid(t)
 	tool := NewControlPointEditTool()
 	tool.mode = cvModeColumn
@@ -164,6 +171,7 @@ func TestControlPointColumnDragWithFalloff(t *testing.T) {
 }
 
 func TestControlPointToolGetters(t *testing.T) {
+	t.Parallel()
 	tool := NewControlPointEditTool()
 	if tool.Prompt(nil) == "" {
 		t.Error("prompt should be non-empty")
@@ -185,6 +193,7 @@ func TestControlPointToolGetters(t *testing.T) {
 }
 
 func TestControlPointDragViaPixels(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithNurbsGrid(t)
 	// Top-down camera centred on the patch (centre (1,1,0)), so the centre pixel grabs CV (2,2).
 	cam := scene.NewCamera(200, 200)
@@ -215,6 +224,7 @@ func TestControlPointDragViaPixels(t *testing.T) {
 }
 
 func TestNurbsPlaneToolGetters(t *testing.T) {
+	t.Parallel()
 	tool := NewNurbsPlaneTool()
 	if tool.Prompt(nil) == "" {
 		t.Error("prompt should be non-empty")
@@ -243,6 +253,7 @@ func mustEditableSurface(t *testing.T, s *Session) geom.BSplineSurface {
 // TestNurbsPlaneToolDraftFeature pins the #1626 commit-gate seam: no draft at a non-positive
 // size, a non-nil draft once commit-ready.
 func TestNurbsPlaneToolDraftFeature(t *testing.T) {
+	t.Parallel()
 	tool := NewNurbsPlaneTool()
 	tool.width = 0
 	if _, ok := tool.DraftFeature(nil); ok {

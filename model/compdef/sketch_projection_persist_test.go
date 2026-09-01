@@ -32,6 +32,7 @@ func projectedOf(sk *sketch.Sketch) (*sketch.ProjectedPoint, *sketch.Projection)
 // serializes (it used to fail with "no codec" — the save-breaking #1268 regression) and restores
 // re-linked/associative with its geometry, ids and constraint intact.
 func TestProjectedGeometryRoundTrips(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	sk := def.Sketches().Add(sketch.XYPlane())
 	pp := sk.ProjectPoint(compdef.NewWorkPointRefSource(def, feature.OriginCenter))              // → (0,0)

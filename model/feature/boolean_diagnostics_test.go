@@ -15,6 +15,10 @@ import (
 // the DEFAULT engine recompute (it used to vanish: ops.Boolean was called with rec=nil, and the
 // pre-facet happened before ops.Boolean could even see curved operands).
 func TestCombineRecordsAnalyticFaceting(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	extrudes := NewExtrudeFeatures(fs)
 	base := extrudes.AddByDistanceExtent(circleSketchAt(0, 0, 2), 0, ops.NewBody, func() float64 { return 3 })
@@ -37,6 +41,7 @@ func TestCombineRecordsAnalyticFaceting(t *testing.T) {
 // cylinder, #1472) must NOT carry the faceting defect — the diagnostic flags real degradations
 // only, or it becomes noise nobody reads (#1601).
 func TestExactCurvedPathStaysQuiet(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	extrudes := NewExtrudeFeatures(fs)
 	base := extrudes.AddByDistanceExtent(squareSketch(4), 0, ops.NewBody, func() float64 { return 2 })

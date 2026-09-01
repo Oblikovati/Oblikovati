@@ -26,6 +26,7 @@ func sketchPlaneAt(t *testing.T, s *app.Session, i int) (x, y, n math.UnitVector
 // (radius, axial) meridian drops onto that tilted plane unchanged. Without orientation the
 // host-chosen frame is arbitrary (here X = −Z), which is what the feature fixes.
 func TestSketchOrientationPinsFrameToAxis(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var wp wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create",
@@ -54,6 +55,7 @@ func TestSketchOrientationPinsFrameToAxis(t *testing.T) {
 // TestSketchOrientationReverseFlipsAxis checks Reverse:true pins Y to −Z instead of +Z
 // (Inventor NaturalAxisDirection=false).
 func TestSketchOrientationReverseFlipsAxis(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var wp wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create",
@@ -69,6 +71,7 @@ func TestSketchOrientationReverseFlipsAxis(t *testing.T) {
 
 // TestSketchOrientationAxisIsXPinsX pins the projected axis as X instead of Y.
 func TestSketchOrientationAxisIsXPinsX(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var wp wire.CreateWorkPlaneResult
 	call(t, r, s, "workPlanes.create",
@@ -86,6 +89,7 @@ func TestSketchOrientationAxisIsXPinsX(t *testing.T) {
 // the Z axis is normal to the XY plane, so its in-plane projection is degenerate and the
 // create must fail with a clear message rather than silently pick a frame.
 func TestSketchOrientationPerpendicularAxisErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	_, err := r.Handle(s, "sketch.create",
 		[]byte(`{"plane":"XY","orientation":{"axis":"origin/axis/z","axisIsX":true}}`))

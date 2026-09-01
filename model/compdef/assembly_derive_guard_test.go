@@ -12,6 +12,7 @@ import (
 // and checks PlacedBodies terminates with a bounded result instead of recursing forever (M34-F6).
 // Without the cycle guard this test would hang / overflow the stack.
 func TestFlattenStopsOnCyclicDAG(t *testing.T) {
+	t.Parallel()
 	part := partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
 	a := NewAssemblyComponentDefinition()
 	b := NewAssemblyComponentDefinition()
@@ -32,6 +33,7 @@ func TestFlattenStopsOnCyclicDAG(t *testing.T) {
 // the very bottom, and a part at the top. The shallow part is emitted; the part beyond the depth cap
 // is not — proving the depth backstop engages and the walk stays finite (M34-F6).
 func TestFlattenDepthCapBoundsDeepChain(t *testing.T) {
+	t.Parallel()
 	part := partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
 	top := NewAssemblyComponentDefinition()
 	top.Place("shallow", part, math.Identity4())

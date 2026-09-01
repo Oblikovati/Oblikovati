@@ -5,6 +5,7 @@ package app
 import "testing"
 
 func TestActiveExtrudeNilWhenNoExtrudeTool(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if s.ActiveExtrude() != nil {
 		t.Error("ActiveExtrude should be nil with no tool")
@@ -16,6 +17,7 @@ func TestActiveExtrudeNilWhenNoExtrudeTool(t *testing.T) {
 }
 
 func TestExtrudeDistanceDisplayRoundTripsThroughDocUnit(t *testing.T) {
+	t.Parallel()
 	s := topDownPickerOverSquare(t)
 	s.StartTool(NewExtrudeTool())
 	// The document length unit defaults to mm; the model database unit is cm. Setting
@@ -33,6 +35,7 @@ func TestExtrudeDistanceDisplayRoundTripsThroughDocUnit(t *testing.T) {
 // ⊗ drops every picked region (the tool returns to its select step) and the source
 // sketch name tracks the selection (named while filled, empty after clearing).
 func TestExtrudeClearProfilesEmptiesSelection(t *testing.T) {
+	t.Parallel()
 	s := topDownPickerOverSquare(t)
 	s.StartTool(NewExtrudeTool())
 	s.Click(200, 200)
@@ -56,6 +59,7 @@ func TestExtrudeClearProfilesEmptiesSelection(t *testing.T) {
 }
 
 func TestExtrudeDialogPathBuildsSolid(t *testing.T) {
+	t.Parallel()
 	s := topDownPickerOverSquare(t) // 2×2 square at origin, top-down camera
 	s.StartTool(NewExtrudeTool())
 	s.Click(200, 200) // pick the profile (center pixel)

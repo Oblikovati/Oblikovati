@@ -11,6 +11,7 @@ import (
 // TestSketchCopyToCopiesGeometry (#151): copying a sketch's contents to another sketch
 // re-instantiates its geometry and the profile closes in the target.
 func TestSketchCopyToCopiesGeometry(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
@@ -43,6 +44,7 @@ func TestSketchCopyToCopiesGeometry(t *testing.T) {
 
 // TestSketchCopyToOffsetAndSubset (#151): a placement offset and an entity-id subset.
 func TestSketchCopyToOffsetAndSubset(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var line wire.AddSketchEntityResult
@@ -72,6 +74,7 @@ func TestSketchCopyToOffsetAndSubset(t *testing.T) {
 // every relation whose operands are all in the copied set onto the target, with fresh
 // parameter names, and the target rectangle stays solvable.
 func TestSketchCopyToCarriesConstraintsAndDimensions(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 
@@ -113,6 +116,7 @@ func TestSketchCopyToCarriesConstraintsAndDimensions(t *testing.T) {
 // TestSketchCopyToDropsExternalConstraint (#1083): a parallel constraint relates two lines;
 // copying only one of them leaves its partner behind, so the constraint is silently dropped.
 func TestSketchCopyToDropsExternalConstraint(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var line1, line2 wire.AddSketchEntityResult
@@ -144,6 +148,7 @@ func hasConstraintKind(cons []wire.ConstraintInfo, kind string) bool {
 
 // TestSketchCopyToSameSketchFails (#151): copying a sketch onto itself is rejected.
 func TestSketchCopyToSameSketchFails(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	if _, err := r.Handle(s, "sketch.copyTo", []byte(`{"sourceIndex":0,"targetIndex":0}`)); err == nil {

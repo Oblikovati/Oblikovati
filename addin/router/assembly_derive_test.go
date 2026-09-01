@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -59,7 +60,7 @@ func activePartVolume(t *testing.T, s *app.Session) float64 {
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	v := 0.0
 	for _, b := range def.SurfaceBodies().All() {
-		v += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+		v += query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 	}
 	return v
 }
@@ -67,6 +68,7 @@ func activePartVolume(t *testing.T, s *app.Session) float64 {
 // TestAssemblyDeriveCreateOverWire derives a one-box assembly into the active part and
 // gates the result against the analytic volume (the box, 1.0).
 func TestAssemblyDeriveCreateOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	src := addAssemblyDoc(t, s, "src.obk", 0)
 
@@ -84,6 +86,7 @@ func TestAssemblyDeriveCreateOverWire(t *testing.T) {
 // TestAssemblyShrinkwrapCreateOverWire shrinkwraps a two-box assembly with a whole
 // envelope: the result is one box enclosing both unit boxes (X spanning 0..11 → 11).
 func TestAssemblyShrinkwrapCreateOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	src := addAssemblyDoc(t, s, "src.obk", 0, 10)
 
@@ -103,6 +106,7 @@ func TestAssemblyShrinkwrapCreateOverWire(t *testing.T) {
 // and mapped over the wire (#721): solid boxes have no surface holes, so capping is a no-op and
 // the whole-envelope result is unchanged — the wire field flows through without error.
 func TestAssemblyShrinkwrapMaxHoleDiameterOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	src := addAssemblyDoc(t, s, "src.obk", 0, 10)
 
@@ -121,6 +125,7 @@ func TestAssemblyShrinkwrapMaxHoleDiameterOverWire(t *testing.T) {
 // TestAssemblyDeriveBreakLinkOverWire creates a derive, then breaks its link and checks
 // the feature is no longer linked.
 func TestAssemblyDeriveBreakLinkOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	src := addAssemblyDoc(t, s, "src.obk", 0)
 
@@ -144,6 +149,7 @@ func TestAssemblyDeriveBreakLinkOverWire(t *testing.T) {
 // TestAssemblyDeriveRejectsNonAssemblySource: deriving from a part document (no
 // occurrence tree) is an error naming the offending document.
 func TestAssemblyDeriveRejectsNonAssemblySource(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	partID := uint64(s.ActiveDocument().ID()) // the active part itself
 
@@ -155,6 +161,7 @@ func TestAssemblyDeriveRejectsNonAssemblySource(t *testing.T) {
 
 // TestAssemblyBreakLinkRejectsUnknownFeature: break-link on a missing id is an error.
 func TestAssemblyBreakLinkRejectsUnknownFeature(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "assembly.deriveBreakLink", []byte(`{"id":9999}`)); err == nil {
 		t.Fatal("deriveBreakLink on an unknown feature returned nil error, want a rejection")
@@ -165,6 +172,7 @@ func TestAssemblyBreakLinkRejectsUnknownFeature(t *testing.T) {
 // wire (linked, not out of date, naming its source), exercises update (idempotent for a
 // current derive), and checks break-link flips the reported linked state (#751).
 func TestAssemblyDeriveStatusAndUpdateOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	src := addAssemblyDoc(t, s, "src.obk", 0)
 

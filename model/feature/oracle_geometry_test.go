@@ -66,6 +66,7 @@ func pairs2D(t *testing.T, v any) [][2]float64 {
 // GccAna_Lin2d2Tan (line tangent to a circle): the two contact points of the axis-parallel tangent
 // lines from an external line must match to kernel tolerance.
 func TestOracleCylinderTangentNormals(t *testing.T) {
+	t.Parallel()
 	const R, dist = 2.0, 5.0
 	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), R)
 	if err != nil {
@@ -95,6 +96,7 @@ func TestOracleCylinderTangentNormals(t *testing.T) {
 // axis direction matches and the apex OCCT reports is exactly on that axis (so using Apex as the
 // axis point is sound).
 func TestOracleRevolvedFaceAxisCone(t *testing.T) {
+	t.Parallel()
 	const halfAngle, refRadius = 0.5, 2.0
 	res := oracleResult(t, "revolved_axis", "cone", ftoa(halfAngle), ftoa(refRadius))
 	ap := res["apex"].([]any)

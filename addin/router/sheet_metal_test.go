@@ -27,6 +27,7 @@ func newSheetMetalPart(t *testing.T) (*Router, *app.Session) {
 // seeded default rule (1 mm thickness, straight relief per Inventor's Default style, K-factor
 // unfold).
 func TestSheetMetalGetStyleDefaults(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	var res wire.SheetMetalStyleResult
 	call(t, r, s, wire.MethodSheetMetalGetStyle, "{}", &res)
@@ -43,6 +44,7 @@ func TestSheetMetalGetStyleDefaults(t *testing.T) {
 
 // TestSheetMetalGetStyleRejectsPlainPart getStyle on a non-sheet-metal part errors.
 func TestSheetMetalGetStyleRejectsPlainPart(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t) // the seeded part is an ordinary part
 	if _, err := r.Handle(s, wire.MethodSheetMetalGetStyle, []byte("{}")); err == nil {
 		t.Fatal("getStyle on a plain part must error")
@@ -52,6 +54,7 @@ func TestSheetMetalGetStyleRejectsPlainPart(t *testing.T) {
 // TestSheetMetalSetStyleEditsRuleAndKFactor setStyle changes thickness and K-factor; the
 // developed bend allowance changes accordingly (the F01 acceptance criterion over the wire).
 func TestSheetMetalSetStyleEditsRuleAndKFactor(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 
 	var before wire.BendAllowanceResult
@@ -77,6 +80,7 @@ func TestSheetMetalSetStyleEditsRuleAndKFactor(t *testing.T) {
 
 // TestSheetMetalSetStyleRelief setStyle switches the relief shape.
 func TestSheetMetalSetStyleRelief(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	var res wire.SheetMetalStyleResult
 	// "square" is the older spelling of the rectangular bend relief; it still sets the style and
@@ -90,6 +94,7 @@ func TestSheetMetalSetStyleRelief(t *testing.T) {
 // TestSheetMetalSetStyleRejectsUnsupportedUnfold setStyle rejects a bend-table/equation
 // method (configured by its own surface), naming the value.
 func TestSheetMetalSetStyleRejectsUnsupportedUnfold(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	if _, err := r.Handle(s, wire.MethodSheetMetalSetStyle, []byte(`{"unfoldMethod":"bendTable"}`)); err == nil {
 		t.Fatal("setStyle must reject bendTable (no table payload in the style DTO)")
@@ -99,6 +104,7 @@ func TestSheetMetalSetStyleRejectsUnsupportedUnfold(t *testing.T) {
 // TestSheetMetalSetStyleAllProperties setStyle edits every simple property in one call:
 // bend radius, relief width/depth, minimum gap, and the named K-factor method.
 func TestSheetMetalSetStyleAllProperties(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	var res wire.SheetMetalStyleResult
 	call(t, r, s, wire.MethodSheetMetalSetStyle,
@@ -120,6 +126,7 @@ func TestSheetMetalSetStyleAllProperties(t *testing.T) {
 // TestSheetMetalSetStyleRejectsBadExpressions setStyle reports a clear error for an
 // unparseable length and a bad relief shape.
 func TestSheetMetalSetStyleRejectsBadExpressions(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	// reliefShape/minimumGap/reliefWidth go through a hard unit parse, so a bad value errors.
 	// (thickness/bendRadius re-author a parameter, where an unparseable token becomes a sick
@@ -139,6 +146,7 @@ func TestSheetMetalSetStyleRejectsBadExpressions(t *testing.T) {
 // TestSheetMetalBendAllowanceRejectsBadInput bendAllowance reports a clear error for a bad
 // angle or radius expression.
 func TestSheetMetalBendAllowanceRejectsBadInput(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	for _, bad := range []string{`{"angle":"oops"}`, `{"angle":"90 deg","radius":"oops"}`} {
 		if _, err := r.Handle(s, wire.MethodSheetMetalBendAllowance, []byte(bad)); err == nil {
@@ -151,6 +159,7 @@ func TestSheetMetalBendAllowanceRejectsBadInput(t *testing.T) {
 // bend relief — the cut where two flanges meet — with its own shape, size, placement and a
 // distinct three-bend pair. setStyle must carry all five and getStyle report them back.
 func TestCornerReliefStyleRoundTrips(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	var res wire.SheetMetalStyleResult
 	call(t, r, s, wire.MethodSheetMetalSetStyle, `{"cornerReliefShape":"square","cornerReliefSize":"3 mm",`+
@@ -173,6 +182,7 @@ func TestCornerReliefStyleRoundTrips(t *testing.T) {
 // TestDefaultCornerReliefMatchesInventor (#1960): a fresh sheet-metal part reports Inventor's
 // Default-style corner relief, so a round-trip of an unedited part does not silently restyle it.
 func TestDefaultCornerReliefMatchesInventor(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	var res wire.SheetMetalStyleResult
 	call(t, r, s, wire.MethodSheetMetalGetStyle, `{}`, &res)
@@ -191,6 +201,7 @@ func TestDefaultCornerReliefMatchesInventor(t *testing.T) {
 // TestUnknownCornerReliefIsRefused: an unrecognised shape or placement must not fall through to
 // the default and quietly cut a different corner.
 func TestUnknownCornerReliefIsRefused(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	for _, args := range []string{
 		`{"cornerReliefShape":"laserWeld"}`,
@@ -208,6 +219,7 @@ func TestUnknownCornerReliefIsRefused(t *testing.T) {
 // TestBendTransitionStyleRoundTrips (#1959): the transition and its arc radius are style
 // properties, so setStyle must carry them and getStyle report them back.
 func TestBendTransitionStyleRoundTrips(t *testing.T) {
+	t.Parallel()
 	r, s := newSheetMetalPart(t)
 	var res wire.SheetMetalStyleResult
 	call(t, r, s, wire.MethodSheetMetalGetStyle, "{}", &res)

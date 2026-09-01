@@ -6,8 +6,12 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/test-utilities/brepfixture"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -30,11 +34,12 @@ func faceWithNormal(t *testing.T, b *topo.Body, dir math.Vector3) *topo.Face {
 // the y-axis line along its x=0 top edge: the top plane becomes z = 2 − x·tanθ
 // and the volume the analytic wedge 8 − 4·tanθ.
 func TestRotateFacesTiltsTopIntoWedge(t *testing.T) {
-	box := shellBox(2, 2, 2)
+	t.Parallel()
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	top := faceWithNormal(t, box, math.V3(0, 0, 1))
 	const theta = 0.15
 	axisDir, _ := math.UnitVector3FromVector(math.V3(0, 1, 0))
-	res, err := ops.RotateFaces(box, [][]byte{top.ReferenceKey()}, math.P3(0, 0, 2), axisDir, theta)
+	res, err := transform.RotateFaces(box, [][]byte{top.ReferenceKey()}, math.P3(0, 0, 2), axisDir, theta)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,16 +47,17 @@ func TestRotateFacesTiltsTopIntoWedge(t *testing.T) {
 		t.Fatalf("rotated-face box not a valid solid: %+v", r)
 	}
 	want := 8 - 4*stdmath.Tan(theta)
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-9 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-9 {
 		t.Errorf("wedge volume = %g, want %g", got, want)
 	}
 }
 
 // TestRotateFacesLostKey: a missing face key errors with the key.
 func TestRotateFacesLostKey(t *testing.T) {
-	box := shellBox(2, 2, 2)
+	t.Parallel()
+	box := brepfixture.Box(math.P3(0, 0, 0), 2, 2, 2)
 	axisDir, _ := math.UnitVector3FromVector(math.V3(0, 1, 0))
-	if _, err := ops.RotateFaces(box, [][]byte{[]byte("gone")}, math.P3(0, 0, 2), axisDir, 0.1); err == nil {
+	if _, err := transform.RotateFaces(box, [][]byte{[]byte("gone")}, math.P3(0, 0, 2), axisDir, 0.1); err == nil {
 		t.Fatal("a lost face key must error")
 	}
 }

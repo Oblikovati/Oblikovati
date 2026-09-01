@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -121,7 +122,7 @@ func assertPerFaceAgainstDrawexe(t *testing.T, tc drawexeFaceCase, b *topo.Body)
 func sortedFaceMeshAreas(b *topo.Body) []float64 {
 	out := make([]float64, 0, len(b.Faces()))
 	for _, f := range b.Faces() {
-		out = append(out, ops.MeshArea(ops.TessellateFace(f, ops.PropertyQuality())))
+		out = append(out, ops.MeshArea(tessellate.TessellateFace(f, ops.PropertyQuality())))
 	}
 	sort.Sort(sort.Reverse(sort.Float64Slice(out)))
 	return out
@@ -132,7 +133,7 @@ func sortedFaceMeshAreas(b *topo.Body) []float64 {
 // variant (sortedFaceMeshAreas) is blind to the repair: a face whose solo mesh is fine but whose
 // SHIPPED mesh was swapped for a worse one reads clean there.
 func shippedFaceAreasDesc(b *topo.Body) []float64 {
-	facets := ops.CalculateBodyFacets(b, ops.PropertyQuality())
+	facets := tessellate.CalculateBodyFacets(b, ops.PropertyQuality())
 	out := make([]float64, 0, len(facets.FaceMeshes))
 	for _, m := range facets.FaceMeshes {
 		out = append(out, ops.MeshArea(m))

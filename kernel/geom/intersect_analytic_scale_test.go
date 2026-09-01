@@ -16,6 +16,7 @@ import (
 // graze on a unit part but flipped into a spurious tiny circle on a km-scale copy; with the
 // relative tolerance the result topology is invariant under uniform scaling.
 func TestAnalyticIntersectionScaleEquivariant(t *testing.T) {
+	t.Parallel()
 	scales := []float64{1, 1e3, 1e6}
 	cases := []struct {
 		name       string
@@ -57,6 +58,7 @@ func TestAnalyticIntersectionScaleEquivariant(t *testing.T) {
 // deep (2e-10 relative) sits far below the model weld (~2e-3 cm) and must be a graze, while the
 // same absolute depth on a unit part (well above its 2e-9 weld) is a genuine section circle.
 func TestAnalyticGrazeIsRelativeNotAbsolute(t *testing.T) {
+	t.Parallel()
 	// Unit part, absolute cut depth 2e-4 cm → above the unit weld → a real circle.
 	unit, _ := NewSphere(math.P3(0, 0, 0), 1)
 	curves, ok := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 1-2e-4, 0, 0, 1), unit, ResolutionForSize(2))

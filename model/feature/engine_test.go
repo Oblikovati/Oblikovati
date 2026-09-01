@@ -49,6 +49,7 @@ func makeBody() *topo.Body {
 func body() addBody { return addBody{kind: "box", mk: makeBody} }
 
 func TestRecomputeProducesBodies(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	fs.Add(body())
 	fs.Add(body())
@@ -64,6 +65,7 @@ func TestRecomputeProducesBodies(t *testing.T) {
 }
 
 func TestUniqueNameNumbersFromOneAndSkipsTaken(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	if got := fs.UniqueName("Extrusion"); got != "Extrusion1" {
 		t.Errorf("first unique name = %q, want Extrusion1", got)
@@ -83,6 +85,7 @@ func TestUniqueNameNumbersFromOneAndSkipsTaken(t *testing.T) {
 }
 
 func TestPreviewResultIsNonDestructive(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	fs.Add(body())
 	fs.Add(body())
@@ -111,6 +114,7 @@ func TestPreviewResultIsNonDestructive(t *testing.T) {
 }
 
 func TestPreviewResultPropagatesCandidateError(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	fs.Add(body())
 	fs.Recompute()
@@ -123,6 +127,7 @@ func TestPreviewResultPropagatesCandidateError(t *testing.T) {
 }
 
 func TestEditingEarlyFeatureReusesCleanPrefix(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	a := fs.Add(body())
 	b := fs.Add(body())
@@ -145,6 +150,7 @@ func TestEditingEarlyFeatureReusesCleanPrefix(t *testing.T) {
 }
 
 func TestFailingFeatureGoesSickWithoutAbortingRebuild(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	good := fs.Add(body())
 	bad := fs.Add(failer{})
@@ -163,6 +169,7 @@ func TestFailingFeatureGoesSickWithoutAbortingRebuild(t *testing.T) {
 }
 
 func TestSickFeaturePoisonsDependents(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	bad := fs.Add(failer{})
 	dependent := fs.Add(body(), bad.ID()) // depends on the failing feature
@@ -180,6 +187,7 @@ func TestSickFeaturePoisonsDependents(t *testing.T) {
 // must return normally (no panic escaping to crash the app), and an independent later feature
 // still evaluates healthy.
 func TestPanickingFeatureGoesSickWithoutAbortingRebuild(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	good := fs.Add(body())
 	bad := fs.Add(panicker{})
@@ -201,6 +209,7 @@ func TestPanickingFeatureGoesSickWithoutAbortingRebuild(t *testing.T) {
 // carries the offending feature's identity and the recovered panic value (per the CLAUDE.md
 // exception-message rule), so the user can see WHAT failed and WHY.
 func TestPanicSickMessageNamesFeatureAndValue(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	bad := fs.Add(panicker{})
 	fs.Recompute()
@@ -213,6 +222,7 @@ func TestPanicSickMessageNamesFeatureAndValue(t *testing.T) {
 // TestPanickingFeaturePoisonsDependents confirms a panic is treated like any other failure
 // downstream: a feature depending on the panicking one is poisoned sick, not evaluated.
 func TestPanickingFeaturePoisonsDependents(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	bad := fs.Add(panicker{})
 	dependent := fs.Add(body(), bad.ID())
@@ -226,6 +236,7 @@ func TestPanickingFeaturePoisonsDependents(t *testing.T) {
 }
 
 func TestLookupAndRename(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	f := fs.Add(body())
 	f.SetName("Extrusion1")
@@ -243,6 +254,7 @@ func TestLookupAndRename(t *testing.T) {
 }
 
 func TestRemoveFeatureDropsItAndRebuilds(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	a := fs.Add(body())
 	b := fs.Add(body())
@@ -266,6 +278,7 @@ func TestRemoveFeatureDropsItAndRebuilds(t *testing.T) {
 }
 
 func TestRemoveFeatureMissingIsNoop(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	fs.Add(body())
 	if fs.Remove(99999) {

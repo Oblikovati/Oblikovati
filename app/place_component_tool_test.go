@@ -38,6 +38,7 @@ func translationOf(asm *compdef.AssemblyComponentDefinition, i int) (x, y, z flo
 // viewport drops one occurrence at the ground-plane point under the cursor. A centre click on
 // the top-down camera resolves to the world origin.
 func TestPlaceComponentDropsAtGroundClick(t *testing.T) {
+	t.Parallel()
 	s, asm, _ := placeReady(t)
 
 	s.Click(400, 300) // viewport centre → ground origin
@@ -57,6 +58,7 @@ func TestPlaceComponentDropsAtGroundClick(t *testing.T) {
 // click resolves to a point offset along +Y on the ground plane, not trivially the origin. With
 // the default 45° FOV camera at depth 10, the top edge projects to Y = 10·tan(π/8).
 func TestPlaceComponentProjectsOffCentreClick(t *testing.T) {
+	t.Parallel()
 	s, asm, _ := placeReady(t)
 
 	s.Click(400, 0) // top-centre (screen y-down) → ground +Y
@@ -74,6 +76,7 @@ func TestPlaceComponentProjectsOffCentreClick(t *testing.T) {
 // and that each drop is its own undo step: two clicks place two occurrences, and undo removes
 // them one at a time back to the empty assembly.
 func TestPlaceComponentMultiDropEachUndoable(t *testing.T) {
+	t.Parallel()
 	s, asm, _ := placeReady(t)
 
 	s.Click(400, 300)
@@ -99,6 +102,7 @@ func TestPlaceComponentMultiDropEachUndoable(t *testing.T) {
 // TestPlaceComponentCanCommitAfterFirstDrop checks OK is disabled until at least one instance is
 // placed, then enabled — the tool finishes only once it has done something.
 func TestPlaceComponentCanCommitAfterFirstDrop(t *testing.T) {
+	t.Parallel()
 	s, _, tool := placeReady(t)
 
 	if tool.CanCommit() {
@@ -113,6 +117,7 @@ func TestPlaceComponentCanCommitAfterFirstDrop(t *testing.T) {
 // TestPlaceComponentIgnoresClickWithoutComponent checks a click before a component is chosen
 // places nothing and explains why, rather than panicking on a nil component.
 func TestPlaceComponentIgnoresClickWithoutComponent(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	trackFromHere(s)
 	s.SetCamera(scene.NewCamera(800, 600))
@@ -130,6 +135,7 @@ func TestPlaceComponentIgnoresClickWithoutComponent(t *testing.T) {
 // TestPlaceComponentBridgeFeedsFile checks the head's session bridge: the tool reports it is
 // awaiting a file, and SetPlaceComponentDocument arms it so a subsequent click can place.
 func TestPlaceComponentBridgeFeedsFile(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	trackFromHere(s)
 	s.SetCamera(scene.NewCamera(800, 600))
@@ -153,6 +159,7 @@ func TestPlaceComponentBridgeFeedsFile(t *testing.T) {
 // TestPlaceCommandStartsTool checks the Assemble-tab Place button starts the Place Component
 // tool (replacing the former stub), so the head can then drive its file dialog (#763).
 func TestPlaceCommandStartsTool(t *testing.T) {
+	t.Parallel()
 	s := assemblySession(t)
 	if err := s.Execute("Assembly.Place"); err != nil {
 		t.Fatalf("Execute Assembly.Place: %v", err)

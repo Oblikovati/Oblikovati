@@ -43,6 +43,7 @@ func shoulderRodJoin(t *testing.T) *topo.Body {
 // the sign the geometry implies, read independently: step a hair along each face's normal at a point the
 // face owns and ask the orientation-free ray parity whether that step left the solid.
 func TestBigCapOutwardSignSurvivesItsRingComplement(t *testing.T) {
+	t.Parallel()
 	join := shoulderRodJoin(t)
 	faces := facesOfAny(join)
 	q := newFluxQuery(faces)
@@ -61,6 +62,7 @@ func TestBigCapOutwardSignSurvivesItsRingComplement(t *testing.T) {
 // TestBallJoinRodPointInsideClaimsItsInterior is the end-to-end reading of the same defect through the
 // nearest-crossing/flux route [PointInside] takes, which the ray-parity route does not exercise.
 func TestBallJoinRodPointInsideClaimsItsInterior(t *testing.T) {
+	t.Parallel()
 	join := shoulderRodJoin(t)
 	for _, p := range []math.Point3{math.P3(0, 0, 0), math.P3(0, -3, 0), math.P3(0, 4.2, 0), math.P3(0, 0, 4)} {
 		if !PointInside(join, p) {
@@ -78,6 +80,7 @@ func TestBallJoinRodPointInsideClaimsItsInterior(t *testing.T) {
 // for on a closed parameter domain only, so the rod's cylindrical wall and its planar lid — whose rings
 // do bound their faces — keep the rings' interior, and exactly the one spherical cap flips.
 func TestComplementIsClaimedOnlyOnAClosedDomain(t *testing.T) {
+	t.Parallel()
 	q := newFluxQuery(facesOfAny(shoulderRodJoin(t)))
 	complements := 0
 	for i := range q.faces {

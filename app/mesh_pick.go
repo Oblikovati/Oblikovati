@@ -7,7 +7,7 @@ import (
 )
 
 // Placed-mesh picking (#1776): a placed mesh reference is selectable by ray-casting its facets. The
-// heavy per-triangle work is behind a cached BVH (ops.MeshRayIndex) on the RayPicker, so hover — which
+// heavy per-triangle work is behind a cached BVH (tessellate.MeshRayIndex) on the RayPicker, so hover — which
 // hit-tests every frame — stays cheap even for a 1.88M-triangle scan.
 
 // MeshFaceHandle is a picked facet of a placed mesh reference: the owning mesh feature and the facet

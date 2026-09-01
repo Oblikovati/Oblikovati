@@ -13,6 +13,7 @@ import (
 // sampled at a known parameter must resolve back to a parameter that evaluates to (approximately)
 // the same point — exercising the per-kind param solvers (segment/circle/arc/polyline).
 func TestCurveParamAtPoint2RoundTrips(t *testing.T) {
+	t.Parallel()
 	poly, err := NewPolyline2d([]gmath.Point2{gmath.P2(0, 0), gmath.P2(3, 0), gmath.P2(3, 4)})
 	if err != nil {
 		t.Fatalf("NewPolyline2d: %v", err)
@@ -41,6 +42,7 @@ func TestCurveParamAtPoint2RoundTrips(t *testing.T) {
 // TestCurveRangeBox2BoundsCurve covers CurveRangeBox2: the reported box must contain points
 // sampled along each curve.
 func TestCurveRangeBox2BoundsCurve(t *testing.T) {
+	t.Parallel()
 	for name, c := range map[string]Curve2{
 		"segment": NewLineSegment2d(gmath.P2(-1, -2), gmath.P2(3, 4)),
 		"circle":  NewCircle2d(gmath.P2(1, 1), 2),
@@ -60,6 +62,7 @@ func TestCurveRangeBox2BoundsCurve(t *testing.T) {
 // closed-form inverse: an ellipse query exercises genericParamAtPoint2 → sampleDistances2 →
 // clusterMinima2 → refineClosest2. The recovered parameter must evaluate back to the query point.
 func TestCurveParamAtPoint2GenericPath(t *testing.T) {
+	t.Parallel()
 	el, err := NewEllipseFull2d(gmath.P2(0, 0), gmath.V2(1, 0), 3, 1)
 	if err != nil {
 		t.Fatalf("NewEllipseFull2d: %v", err)

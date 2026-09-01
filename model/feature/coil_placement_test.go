@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/sketch"
 )
@@ -36,7 +37,7 @@ func solidCoilBody(t *testing.T, fs *PartFeatures, pf *PartFeature, what string)
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("%s is not a valid solid: %+v", what, r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
 		t.Fatalf("%s volume = %g, want > 0", what, v)
 	}
 	return body
@@ -48,6 +49,7 @@ func solidCoilBody(t *testing.T, fs *PartFeatures, pf *PartFeature, what string)
 // while climbing the same amount. A full revolution would hide this — both cover the whole
 // circle — which is why the sweep is a quarter turn (#1883).
 func TestLeftHandedCoilWindsOppositeToRight(t *testing.T) {
+	t.Parallel()
 	rightFS, rightPF := placedCoil(t, 0.25, func(*CoilDefinition) {})
 	leftFS, leftPF := placedCoil(t, 0.25, func(d *CoilDefinition) { d.Handedness = LeftHandedCoil })
 	right := solidCoilBody(t, rightFS, rightPF, "right-handed coil")
@@ -63,8 +65,8 @@ func TestLeftHandedCoilWindsOppositeToRight(t *testing.T) {
 			lb.Min.Z, lb.Max.Z)
 	}
 	// Mirroring the winding must not change the amount of material or the climb.
-	rv := ops.BodyGeometryProperties(right, ops.DefaultQuality()).Volume
-	lv := ops.BodyGeometryProperties(left, ops.DefaultQuality()).Volume
+	rv := query.BodyGeometryProperties(right, ops.DefaultQuality()).Volume
+	lv := query.BodyGeometryProperties(left, ops.DefaultQuality()).Volume
 	if relErr(lv, rv) > 0.01 {
 		t.Errorf("left-handed volume %g != right-handed %g — handedness must only mirror", lv, rv)
 	}
@@ -78,6 +80,10 @@ func TestLeftHandedCoilWindsOppositeToRight(t *testing.T) {
 // not height (#1883). Profile x∈[4,5], pitch 2, 3 turns → the outer edge reaches 5 + 2·3 = 11,
 // and the coil stays as thin axially as the profile itself (1).
 func TestSpiralCoilGrowsRadiallyWithoutRise(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
+	t.Parallel()
 	fs, pf := placedCoil(t, 3, func(d *CoilDefinition) { d.Spiral = true })
 	body := solidCoilBody(t, fs, pf, "spiral coil")
 
@@ -93,6 +99,7 @@ func TestSpiralCoilGrowsRadiallyWithoutRise(t *testing.T) {
 // TestSpiralCoilRefusesHeightAndTaper: both options describe an axial rise a spiral does not
 // have, so they are refused rather than silently discarded — the failure a caller notices last.
 func TestSpiralCoilRefusesHeightAndTaper(t *testing.T) {
+	t.Parallel()
 	_, withHeight := placedCoil(t, 3, func(d *CoilDefinition) {
 		d.Spiral = true
 		d.Height = func() float64 { return 30 }
@@ -112,6 +119,7 @@ func TestSpiralCoilRefusesHeightAndTaper(t *testing.T) {
 // TestCoilHandednessAndSpiralRoundTrip: both flavour options survive the recipe round-trip, and
 // a document written before they existed (no keys) reads back as a right-handed helix.
 func TestCoilHandednessAndSpiralRoundTrip(t *testing.T) {
+	t.Parallel()
 	work := NewWorkGeometry()
 	axis, ok := work.AxisByRef(OriginYAxis)
 	if !ok {

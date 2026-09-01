@@ -7,6 +7,10 @@ import (
 	"fmt"
 	"slices"
 
+	"oblikovati.org/kernel/ops/surface"
+
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 )
@@ -42,7 +46,7 @@ func (s *StitchFeature) Recompute(in Input) (Output, error) {
 	if len(in.Bodies) == 0 {
 		return Output{}, errors.New("stitch: no surface bodies in the running state")
 	}
-	quilt, err := ops.Stitch(in.Bodies, s.def.Tolerance, s.def.MaintainAsSurface, s.featName)
+	quilt, err := heal.Stitch(in.Bodies, s.def.Tolerance, s.def.MaintainAsSurface, s.featName)
 	if err != nil {
 		return Output{}, err
 	}
@@ -143,9 +147,9 @@ func (s *SculptFeature) partition(bodies []*topo.Body) (surfaces, others []*topo
 // directed halfspaces of the (possibly open) bounding surfaces.
 func (s *SculptFeature) buildSolid(surfaces []*topo.Body) (*topo.Body, error) {
 	if len(s.def.Directions) > 0 {
-		return ops.SculptDirected(surfaces, s.def.Directions, s.featName)
+		return surface.SculptDirected(surfaces, s.def.Directions, s.featName)
 	}
-	solid, err := ops.Stitch(surfaces, s.def.Tolerance, false, s.featName)
+	solid, err := heal.Stitch(surfaces, s.def.Tolerance, false, s.featName)
 	if err != nil {
 		return nil, err
 	}

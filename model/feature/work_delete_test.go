@@ -11,6 +11,7 @@ import (
 // TestDeleteWorkPlaneTombstones: deleting a user plane flags it deleted and makes its reference
 // stop resolving, while its slot (and every other datum's slot) stays put (#1855).
 func TestDeleteWorkPlaneTombstones(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pl := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 1 })
 	before := g.WorkPlanes().Count()
@@ -39,6 +40,7 @@ func TestDeleteWorkPlaneTombstones(t *testing.T) {
 // TestDeleteCascadesToDependents: with retainDependents=false, deleting a point deletes the axis
 // built through it (#1855).
 func TestDeleteCascadesToDependents(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pt := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 5) })
 	ax := g.WorkAxes().AddByTwoPoints(pt.Key(), OriginCenter)
@@ -59,6 +61,7 @@ func TestDeleteCascadesToDependents(t *testing.T) {
 // deleted; a dependent is left in place and goes unhealthy on recompute (its ref no longer
 // resolves) (#1855).
 func TestDeleteRetainDependentsSickensDependent(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pt := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 5) })
 	ax := g.WorkAxes().AddByTwoPoints(pt.Key(), OriginCenter)
@@ -78,6 +81,7 @@ func TestDeleteRetainDependentsSickensDependent(t *testing.T) {
 // TestDeleteOriginRejected: neither an origin ref nor a positional ref that lands on an origin slot
 // can be deleted (#1855).
 func TestDeleteOriginRejected(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	if _, err := g.DeleteWork(OriginXYPlane, false); err == nil {
 		t.Error("deleting an origin plane by its well-known ref should fail")
@@ -91,6 +95,7 @@ func TestDeleteOriginRejected(t *testing.T) {
 // TestDeleteUnknownAndAlreadyDeleted: an unknown ref and a second delete of the same datum both
 // fail cleanly (#1855).
 func TestDeleteUnknownAndAlreadyDeleted(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	if _, err := g.DeleteWork(WorkRef("plane/999"), false); err == nil {
 		t.Error("an out-of-range ref should fail")
@@ -110,6 +115,7 @@ func TestDeleteUnknownAndAlreadyDeleted(t *testing.T) {
 // TestDeletePreservesPositionalRefs: deleting an earlier user datum does not shift a later datum's
 // positional reference — the later datum still resolves to the same geometry (#1855).
 func TestDeletePreservesPositionalRefs(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	first := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 5) })
 	second := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(9, 0, 0) })
@@ -131,6 +137,7 @@ func TestDeletePreservesPositionalRefs(t *testing.T) {
 // Marshal/Apply cycle — the construction flag and the deleted slot are preserved, and a datum
 // created after the tombstone keeps its positional reference (#1849, #1855).
 func TestWorkFeatureFlagsRoundTrip(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	con := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 2 })
 	con.SetConstruction(true)
@@ -166,6 +173,7 @@ func TestWorkFeatureFlagsRoundTrip(t *testing.T) {
 // TestDeletedAxisRefStopsResolving: a deleted axis no longer resolves as an axis input, and a
 // deleted plane drops out of the viewport host-pick (#1855).
 func TestDeletedAxisRefStopsResolving(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	ax := g.WorkAxes().AddByLine(math.P3(0, 0, 0), mustUnit(0, 0, 1))
 	pl := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 1 })
@@ -188,6 +196,7 @@ func TestDeletedAxisRefStopsResolving(t *testing.T) {
 
 // TestConstructionDefaultsFalse: a freshly created datum is not construction (#1849).
 func TestConstructionDefaultsFalse(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	pl := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 1 })
 	if pl.Construction() {

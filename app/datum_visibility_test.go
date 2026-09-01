@@ -40,6 +40,7 @@ func browserNodeOfKind(n BrowserNode, kind string) (BrowserNode, bool) {
 }
 
 func TestCenterPointBrowserMenuTogglesVisibility(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	node, ok := browserNodeOfKind(BuildBrowser(s), "workpoint")
 	if !ok {
@@ -76,6 +77,7 @@ func TestCenterPointBrowserMenuTogglesVisibility(t *testing.T) {
 // The V shortcut reached work planes only, so pressing it on a selected axis or point did
 // nothing. It now flips whichever datums are selected.
 func TestToggleVisibilityShortcutReachesEveryDatum(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	wg, _ := s.ActiveWorkGeometry()
 	center := originCenterOf(t, s)
@@ -101,6 +103,7 @@ func TestToggleVisibilityShortcutReachesEveryDatum(t *testing.T) {
 
 // A datum nothing draws must not be clickable — the rule planes and axes already follow.
 func TestHiddenCenterPointIsNotPickable(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	center := originCenterOf(t, s)
 
@@ -116,6 +119,7 @@ func TestHiddenCenterPointIsNotPickable(t *testing.T) {
 // ToggleSelectedDatumVisibility reports how many datums it changed, so an empty selection is
 // distinguishable from a real toggle.
 func TestToggleSelectedDatumVisibilityCountsWhatItChanged(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	if got := s.ToggleSelectedDatumVisibility(); got != 0 {
 		t.Errorf("toggled %d datums with nothing selected, want 0", got)

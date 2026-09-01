@@ -35,6 +35,7 @@ func patchedPartWithCutPlane(t *testing.T) (*Session, *compdef.PartComponentDefi
 // TestSurfaceTrimToolEndToEnd drives the Trim UI: pick the x=2 plane, keep the +X side, OK — and
 // asserts the patch is trimmed to x∈[2,4].
 func TestSurfaceTrimToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def, wp := patchedPartWithCutPlane(t)
 
 	trim := NewSurfaceTrimTool()
@@ -53,6 +54,7 @@ func TestSurfaceTrimToolEndToEnd(t *testing.T) {
 }
 
 func TestSurfaceTrimViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _, _ := patchedPartWithCutPlane(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 )
 
 // W6, W8 (simple grid) and A1 (bfuseblend grid) are the re-survey's CONCAVE BOSS-BASE rim family: a
@@ -66,7 +67,7 @@ func TestConcaveBossBaseRimArea(t *testing.T) {
 			body := caseResultBody(t, tc.name)
 			meshTotal := 0.0
 			for _, f := range body.Faces() {
-				m := ops.TessellateFace(f, ops.PropertyQuality())
+				m := tessellate.TessellateFace(f, ops.PropertyQuality())
 				area := ops.MeshArea(m)
 				meshTotal += area
 				if area <= 0 || stdmath.IsInf(area, 0) || stdmath.IsNaN(area) {

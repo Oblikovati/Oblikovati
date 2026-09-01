@@ -33,6 +33,7 @@ func formatTestSketch(t *testing.T, s *app.Session) (*sketch.Sketch, uint64) {
 // everything" from "explicitly default" — two states that look the same but write back
 // differently (#2015).
 func TestSketchEntityFormatRoundTrip(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	_, id := formatTestSketch(t, s)
 
@@ -62,6 +63,7 @@ func TestSketchEntityFormatRoundTrip(t *testing.T) {
 
 // Writing a format that overrides nothing clears the entity's overrides.
 func TestSketchEntityFormatDefaultClears(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	_, id := formatTestSketch(t, s)
 
@@ -79,6 +81,7 @@ func TestSketchEntityFormatDefaultClears(t *testing.T) {
 
 // The armed creation modes round-trip, including the Show Format toggle.
 func TestSketchFormatModesRoundTrip(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 
 	var got wire.SketchFormatModesView

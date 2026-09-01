@@ -30,6 +30,7 @@ func nestedWindow() wire.DockableWindowSpec {
 // TestPanelValueChangedUpdatesNestedControl is the regression for the flat-only walk:
 // editing a deeply nested grid field must update its stored value, not silently miss it.
 func TestPanelValueChangedUpdatesNestedControl(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.SetDockableWindow(nestedWindow()); err != nil {
 		t.Fatalf("SetDockableWindow: %v", err)
@@ -59,6 +60,7 @@ func findControlValue(controls []wire.PanelControlSpec, id string) string {
 // TestSetDockableWindowRejectsTooDeep guards the host renderer against a runaway tree:
 // nesting beyond the depth bound is rejected with a message naming the window.
 func TestSetDockableWindowRejectsTooDeep(t *testing.T) {
+	t.Parallel()
 	deep := wire.PanelControlSpec{Kind: types.PanelLabel, Text: "x"}
 	for range maxControlNestDepth + 2 {
 		deep = wire.PanelControlSpec{Kind: types.PanelGroup, Title: "g", Children: []wire.PanelControlSpec{deep}}
@@ -72,6 +74,7 @@ func TestSetDockableWindowRejectsTooDeep(t *testing.T) {
 // TestSetDockableWindowRejectsReservedRowSpan pins ADR-0020: row span is reserved, so a
 // child requesting RowSpan > 1 is rejected until the feature ships.
 func TestSetDockableWindowRejectsReservedRowSpan(t *testing.T) {
+	t.Parallel()
 	child := wire.PanelControlSpec{Kind: types.PanelLabel, Text: "x", Cell: &types.GridCell{RowSpan: 2}}
 	grid := wire.PanelControlSpec{Kind: types.PanelGrid, ID: "g", Columns: []types.GridTrack{{Kind: types.GridTrackAuto}}, Children: []wire.PanelControlSpec{child}}
 	w := wire.DockableWindowSpec{ID: "rs", Title: "RowSpan", Controls: []wire.PanelControlSpec{grid}}
@@ -82,6 +85,7 @@ func TestSetDockableWindowRejectsReservedRowSpan(t *testing.T) {
 
 // TestSetDockableWindowAcceptsValidNesting ensures the validator passes a normal nested tree.
 func TestSetDockableWindowAcceptsValidNesting(t *testing.T) {
+	t.Parallel()
 	if err := NewSession().SetDockableWindow(nestedWindow()); err != nil {
 		t.Errorf("valid nested window rejected: %v", err)
 	}

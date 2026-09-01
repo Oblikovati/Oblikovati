@@ -18,6 +18,7 @@ func hasButton(p RibbonPanel, name string) bool {
 // ribbon (architecture/mapping/inventor-ribbon-structure.md): Fillet in Create, Mirror in
 // Pattern, Dimension/Auto Dimension in Constrain, and NO standalone "Dimension" panel.
 func TestSketchTabPanelsMatchInventor(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	enterSketchEnv(t, s)
 	tab, ok := BuildRibbon(s).Tab("Sketch")
@@ -84,6 +85,7 @@ func styleOf(p RibbonPanel, name string) (ButtonStyle, bool) {
 // panel's headline tools and Project Geometry render large with a caption, the stacked
 // rows render small with a side label, and the constraint grid is compact icon-only.
 func TestSketchTabButtonStyles(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	enterSketchEnv(t, s)
 	tab, ok := BuildRibbon(s).Tab("Sketch")

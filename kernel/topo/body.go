@@ -73,7 +73,7 @@ type Body struct {
 // fresh Body with an empty report — so one boolean, transform or face deletion between an assembler
 // and a reader silently zeroes everything the assembler said. A gate that asserts "no body reports
 // X" must therefore also assert that the bodies it reads DID come from the assembler it means; the
-// fillet's edge catalog does this with a positive marker (ops.CodeAssembleEdgeCatalog) rather than
+// fillet's edge catalog does this with a positive marker (blend.CodeAssembleEdgeCatalog) rather than
 // trusting an empty slice.
 func (b *Body) BuildDiagnostics() []diag.Diagnostic {
 	return append([]diag.Diagnostic(nil), b.buildDiags...)
@@ -289,7 +289,7 @@ func (b *Body) FindVertexByKey(key []byte) (*Vertex, bool) {
 
 // BodyFromShells builds a body owning exactly the given shells, re-parenting each. It
 // rebuilds a body from a subset of another body's shells — e.g. dropping the inner
-// void shells to fill internal cavities (ops.FillInternalVoids, M11-F06 shrinkwrap).
+// void shells to fill internal cavities (heal.FillInternalVoids, M11-F06 shrinkwrap).
 // The donor shells must not be reused afterward, as their owning body is rewritten.
 //
 // The donors' build reports are NOT carried over — the result's BuildDiagnostics is empty, because

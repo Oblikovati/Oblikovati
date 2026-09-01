@@ -12,6 +12,7 @@ import (
 // TestSetDisplaySettingsUnknownDocumentIsNoOp covers the guard branch: targeting a document id that
 // no open document owns is a safe no-op (documentForDisplay returns nil).
 func TestSetDisplaySettingsUnknownDocumentIsNoOp(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.SetDisplaySettings(doc.ID(999999), display.DefaultSettings()) // no such document → returns early
 	if s.DisplaySettings(doc.ID(999999)).BackgroundType != display.DefaultSettings().BackgroundType {
@@ -22,6 +23,7 @@ func TestSetDisplaySettingsUnknownDocumentIsNoOp(t *testing.T) {
 // TestDisplaySettingsCommandOpensPanel checks the View-tab Display Settings button is present
 // and its command opens the dialog.
 func TestDisplaySettingsCommandOpensPanel(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	tab, _ := BuildRibbon(s).Tab("View")
 	panel, ok := tab.Panel("Appearance")
@@ -46,6 +48,7 @@ func TestDisplaySettingsCommandOpensPanel(t *testing.T) {
 // TestGroundPlaneToggleCommand checks the View-tab Ground Plane command toggles the active
 // document's display-settings ground visibility, end to end through the ribbon command.
 func TestGroundPlaneToggleCommand(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if s.GroundPlaneVisible() {
 		t.Fatal("ground plane should start hidden by default (#2042)")

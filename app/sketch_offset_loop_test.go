@@ -23,6 +23,7 @@ func squareLoop(sk *sketch.Sketch, side float64) []*sketch.Line {
 // Loop Select on (default), picking one curve offsets the entire connected loop, inward for a
 // positive distance.
 func TestOffsetToolLoopSelectOffsetsWholeLoop(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, err := s.CreateSketch(sketch.XYPlane())
 	if err != nil {
@@ -60,6 +61,7 @@ func TestOffsetToolLoopSelectOffsetsWholeLoop(t *testing.T) {
 // WHOLE connected loop (Picked returns every loop entity), so the user sees the whole profile
 // selected — not just the one segment. With it off, only the picked curve highlights.
 func TestOffsetToolLoopSelectHighlightsWholeLoop(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, _ := s.CreateSketch(sketch.XYPlane())
 	lines := squareLoop(sk, 4)
@@ -83,6 +85,7 @@ func TestOffsetToolLoopSelectHighlightsWholeLoop(t *testing.T) {
 
 // TestOffsetToolSingleWhenLoopSelectOff: with Loop Select off, only the picked curve offsets.
 func TestOffsetToolSingleWhenLoopSelectOff(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, _ := s.CreateSketch(sketch.XYPlane())
 	lines := squareLoop(sk, 4)
@@ -104,6 +107,7 @@ func TestOffsetToolSingleWhenLoopSelectOff(t *testing.T) {
 // curve, the click that places the offset sets both its side and its distance from the picked
 // geometry. A placement one unit inside a square loop offsets the whole loop inward by exactly one.
 func TestOffsetToolPlacementSetsSideAndDistance(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, _ := s.CreateSketch(sketch.XYPlane())
 	lines := squareLoop(sk, 4) // CCW [0,4]^2; lines[0] is the bottom edge (0,0)->(4,0)
@@ -134,6 +138,7 @@ func TestOffsetToolPlacementSetsSideAndDistance(t *testing.T) {
 // TestPlacementSignedOffset checks the side/distance the cursor placement encodes: the magnitude is
 // the perpendicular distance to the curve, the sign the side (left of A->B is positive).
 func TestPlacementSignedOffset(t *testing.T) {
+	t.Parallel()
 	line := []math.Point2{math.P2(0, 0), math.P2(4, 0)} // natural direction +X, left normal +Y
 	if d := placementSignedOffset(line, math.P2(2, 3)); absOffset(d-3) > 1e-9 {
 		t.Errorf("left placement signed offset = %v, want +3", d)
@@ -146,6 +151,7 @@ func TestPlacementSignedOffset(t *testing.T) {
 // TestOffsetToolConstrainOffsetDefaultOn: with Constrain Offset on (Inventor default) a loop offset
 // adds associativity constraints; turning it off adds none.
 func TestOffsetToolConstrainOffsetDefaultOn(t *testing.T) {
+	t.Parallel()
 	run := func(constrain bool) int {
 		s, _ := emptyPartSession(t)
 		sk, _ := s.CreateSketch(sketch.XYPlane())
@@ -174,6 +180,7 @@ func TestOffsetToolConstrainOffsetDefaultOn(t *testing.T) {
 // TestOffsetToolCreatesOffsetDimension: committing a constrained offset creates an offset dimension
 // driving the distance (Inventor), so the user can edit the offset value straight away.
 func TestOffsetToolCreatesOffsetDimension(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, _ := s.CreateSketch(sketch.XYPlane())
 	lines := squareLoop(sk, 4)
@@ -193,6 +200,7 @@ func TestOffsetToolCreatesOffsetDimension(t *testing.T) {
 // TestOffsetToolPreviewFollowsCursor: after selecting a loop, PendingRecipe returns the offset ghost
 // at the cursor — the whole loop offset toward the cursor's side (Inventor shows the offset preview).
 func TestOffsetToolPreviewFollowsCursor(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, _ := s.CreateSketch(sketch.XYPlane())
 	lines := squareLoop(sk, 4) // CCW square [0,4]^2, lines[0] = bottom edge

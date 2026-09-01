@@ -10,7 +10,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/exchange"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -256,8 +256,8 @@ func TestGLTFMergeTessellationsHandComputed(t *testing.T) {
 		t.Fatalf("SolidBlock: %v", err)
 	}
 	q := QualityFor(types.ResolutionLow)
-	meshA, _ := ops.TessellateBody(boxA, q)
-	meshB, _ := ops.TessellateBody(boxB, q)
+	meshA, _ := tessellate.TessellateBody(boxA, q)
+	meshB, _ := tessellate.TessellateBody(boxB, q)
 
 	// Hand-computed concatenation: A's vertices, then B's vertices; B's
 	// indices offset by A's vertex count.

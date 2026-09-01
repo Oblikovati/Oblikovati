@@ -11,6 +11,7 @@ import (
 // TestDrawingAnnotationsOverWire drives the CoG-marker and revision-cloud surface: add both off a
 // base view, list them, and delete one.
 func TestDrawingAnnotationsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, nil)
 
@@ -39,6 +40,7 @@ func TestDrawingAnnotationsOverWire(t *testing.T) {
 // TestDrawingCenterMarksOverWire drives the centre-mark surface: auto-marking a cylinder's TOP view
 // places one crosshair (its two coincident rims dedup) through the live stack.
 func TestDrawingCenterMarksOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingCylinderSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"TOP","orientation":"top","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
 
@@ -63,6 +65,7 @@ func TestDrawingCenterMarksOverWire(t *testing.T) {
 // TestDrawingCenterlinesOverWire drives the centerline surface: adding centerlines to a base view
 // produces one dash-dot annotation through the live stack.
 func TestDrawingCenterlinesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, nil)
 
@@ -79,6 +82,7 @@ func TestDrawingCenterlinesOverWire(t *testing.T) {
 // TestDrawingFeatureControlFrameOverWire drives the GD&T surface: a position FCF with two datums
 // produces a frame annotation (with frame + symbol curves) through the live stack.
 func TestDrawingFeatureControlFrameOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	var fcf wire.AnnotationResult
 	call(t, r, s, "drawingAnnotations.addFeatureControlFrame",
@@ -94,6 +98,7 @@ func TestDrawingFeatureControlFrameOverWire(t *testing.T) {
 // TestDrawingDatumFeatureOverWire drives the GD&T datum surface: a datum feature symbol produces a
 // framed annotation (box + triangle) through the live stack.
 func TestDrawingDatumFeatureOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	var dat wire.AnnotationResult
 	call(t, r, s, "drawingAnnotations.addDatumFeature", `{"name":"DAT","xmm":70,"ymm":70,"letter":"A"}`, &dat)
@@ -108,6 +113,7 @@ func TestDrawingDatumFeatureOverWire(t *testing.T) {
 // TestDrawingSurfaceTextureOverWire drives the surface-texture surface: a machined surface texture
 // symbol with a roughness value produces a checkmark annotation through the live stack.
 func TestDrawingSurfaceTextureOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	var st wire.AnnotationResult
 	call(t, r, s, "drawingAnnotations.addSurfaceTexture",
@@ -124,6 +130,7 @@ func TestDrawingSurfaceTextureOverWire(t *testing.T) {
 // two distinct parts gets a parts list whose row count reflects the parts-only BOM, through the
 // live stack.
 func TestDrawingPartsListOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t, 0, 2) // assembly "asm.obk" with two distinct parts
 	call(t, r, s, "documents.create", `{"type":"drawing","name":"asm.odd"}`, nil)
 	call(t, r, s, "drawing.setModelReference", `{"fullDocumentName":"asm.obk"}`, nil)
@@ -141,6 +148,7 @@ func TestDrawingPartsListOverWire(t *testing.T) {
 // TestDrawingPartsListNeedsAssembly: a parts list on a drawing referencing a part (not an assembly)
 // errors.
 func TestDrawingPartsListNeedsAssembly(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t) // references a box PART, not an assembly
 	if _, err := r.Handle(s, "drawingAnnotations.addPartsList", []byte(`{"xmm":40,"ymm":260}`)); err == nil {
 		t.Error("addPartsList on a part-referencing drawing = ok, want error")
@@ -150,6 +158,7 @@ func TestDrawingPartsListNeedsAssembly(t *testing.T) {
 // TestDrawingBalloonOverWire drives the balloon surface: a balloon with a leader produces a circle
 // + leader annotation carrying its item number through the live stack.
 func TestDrawingBalloonOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	var b wire.AnnotationResult
 	call(t, r, s, "drawingAnnotations.addBalloon", `{"name":"B","xmm":100,"ymm":200,"item":3,"leaderXmm":120,"leaderYmm":180}`, &b)
@@ -164,6 +173,7 @@ func TestDrawingBalloonOverWire(t *testing.T) {
 // TestDrawingHoleTableOverWire drives the hole-table surface: a cylinder's TOP view yields a
 // one-row table (its two coincident rims dedup) carrying its grid geometry through the live stack.
 func TestDrawingHoleTableOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingCylinderSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"TOP","orientation":"top","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
 
@@ -183,6 +193,7 @@ func TestDrawingHoleTableOverWire(t *testing.T) {
 // TestDrawingRevisionTableOverWire drives the revision-table surface: a table with two rows
 // produces a grid annotation reporting the row count through the live stack.
 func TestDrawingRevisionTableOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	var rt wire.AnnotationResult
 	call(t, r, s, "drawingAnnotations.addRevisionTable",
@@ -198,6 +209,7 @@ func TestDrawingRevisionTableOverWire(t *testing.T) {
 // TestDrawingRevisionTagOverWire drives the revision-tag surface: a tag produces a triangle
 // annotation carrying its revision letter through the live stack.
 func TestDrawingRevisionTagOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	var tag wire.AnnotationResult
 	call(t, r, s, "drawingAnnotations.addRevisionTag", `{"name":"RT1","xmm":120,"ymm":90,"revision":"B"}`, &tag)
@@ -212,6 +224,7 @@ func TestDrawingRevisionTagOverWire(t *testing.T) {
 // TestDrawingNoteOverWire drives the note surface: a leader note produces a text annotation with a
 // leader through the live stack.
 func TestDrawingNoteOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	var n wire.AnnotationResult
 	call(t, r, s, "drawingAnnotations.addNote", `{"name":"N","xmm":100,"ymm":100,"text":"DEBURR","leaderXmm":140,"leaderYmm":130}`, &n)
@@ -226,6 +239,7 @@ func TestDrawingNoteOverWire(t *testing.T) {
 // TestDrawingCustomTableOverWire drives the custom-table surface: a table with headers + rows
 // produces a grid annotation reporting the row count through the live stack.
 func TestDrawingCustomTableOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	var ct wire.AnnotationResult
 	call(t, r, s, "drawingAnnotations.addCustomTable",
@@ -241,6 +255,7 @@ func TestDrawingCustomTableOverWire(t *testing.T) {
 // TestDrawingHoleNotesOverWire drives the hole-note surface: a cylinder's TOP view yields a
 // one-callout hole note (its two coincident rims dedup) through the live stack.
 func TestDrawingHoleNotesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingCylinderSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"TOP","orientation":"top","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
 
@@ -263,6 +278,7 @@ func TestDrawingHoleNotesOverWire(t *testing.T) {
 }
 
 func TestDrawingAnnotationsRejectBadArgs(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	for method, args := range map[string]string{
 		"drawingAnnotations.addCoG":           `{"viewName":"NOPE"}`,

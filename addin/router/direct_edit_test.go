@@ -12,6 +12,7 @@ import (
 // The consolidated direct edit over the wire (M09-F04 PBI-108, #332).
 
 func TestDirectEditScaleOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _ := filletBoxFixture(t)
 	var res struct {
 		Bodies int `json:"bodies"`
@@ -29,6 +30,7 @@ func TestDirectEditScaleOverWire(t *testing.T) {
 }
 
 func TestDirectEditSizeOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _ := filletBoxFixture(t)
 	var keys wire.ReferenceKeysResult
 	call(t, r, s, "model.referenceKeys", `{}`, &keys)

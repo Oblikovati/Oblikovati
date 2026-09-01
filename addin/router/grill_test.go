@@ -11,6 +11,7 @@ import (
 // The #863 acceptance over the wire: the grill op cuts a vent through a wall, leaving the
 // boundary profile's rib structure bridging it — one validated solid.
 func TestGrillOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	// Wall: a 10×10×1 panel (sketch 0).
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
@@ -41,6 +42,7 @@ func TestGrillOverWire(t *testing.T) {
 
 // TestGrillOverWireRejectsEmptyBoundaries: a grill with no boundaries must error.
 func TestGrillOverWireRejectsEmptyBoundaries(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[0,0],[10,10]]}`, &struct{}{})

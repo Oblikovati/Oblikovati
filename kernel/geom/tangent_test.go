@@ -41,6 +41,7 @@ func curve2Samples(t *testing.T) []Curve2 {
 }
 
 func TestAllDomainsAreOrdered(t *testing.T) {
+	t.Parallel()
 	for i, c := range curve3Samples(t) {
 		if lo, hi := c.Domain(); lo >= hi {
 			t.Errorf("curve3[%d] Domain = [%v,%v], want lo < hi", i, lo, hi)
@@ -54,6 +55,7 @@ func TestAllDomainsAreOrdered(t *testing.T) {
 }
 
 func TestCurve3TangentMatchesFiniteDifference(t *testing.T) {
+	t.Parallel()
 	for i, c := range curve3Samples(t) {
 		for _, tp := range []float64{0.2, 0.45, 0.8} {
 			fd := c.PointAt(tp - fdStep).VectorTo(c.PointAt(tp + fdStep)).Scale(1 / (2 * fdStep))
@@ -65,6 +67,7 @@ func TestCurve3TangentMatchesFiniteDifference(t *testing.T) {
 }
 
 func TestCurve2TangentMatchesFiniteDifference(t *testing.T) {
+	t.Parallel()
 	for i, c := range curve2Samples(t) {
 		for _, tp := range []float64{0.2, 0.45, 0.8} {
 			fd := c.PointAt(tp - fdStep).VectorTo(c.PointAt(tp + fdStep)).Scale(1 / (2 * fdStep))

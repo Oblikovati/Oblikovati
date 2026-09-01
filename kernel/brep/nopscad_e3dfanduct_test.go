@@ -7,6 +7,7 @@ import (
 )
 
 func TestNopE3dFanDuctCSG(t *testing.T) {
+	t.Parallel()
 	body := e3dFanDuctBody(t)
 	requireValidNopSolid(t, "e3d_fan_duct", body)
 	if got := vol(body); got <= 0 {

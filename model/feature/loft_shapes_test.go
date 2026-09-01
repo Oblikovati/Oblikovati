@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -79,29 +80,33 @@ func capIssues3(s []string) []string {
 func sec(s *sketch.Sketch) LoftSection { return LoftSection{Sketch: s, ProfileIndex: 0} }
 
 func TestLoftShapeCylindrical(t *testing.T) {
+	t.Parallel()
 	// circle→circle = a cone frustum. V = πh/3·(R²+Rr+r²).
 	body := loftSolid(t, []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), sec(circleOn(planeAtZ(4), 1))}, false)
 	want := stdmath.Pi * 4 / 3 * (4 + 2 + 1)
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, want) > 0.03 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, want) > 0.03 {
 		t.Errorf("cone-frustum volume = %g, want ≈%g", v, want)
 	}
 }
 
 func TestLoftShapeMismatchedCount(t *testing.T) {
+	t.Parallel()
 	// square (4 pts) → circle (faceted) — different vertex counts; correspondence must cope.
 	loftSolid(t, []LoftSection{sec(centeredSquareOn(sketch.XYPlane(), 2)), sec(circleOn(planeAtZ(4), 1.5))}, false)
 }
 
 func TestLoftShapeTwistedSquares(t *testing.T) {
+	t.Parallel()
 	// square → square rotated 45°: the correspondence must untwist (no self-intersection),
 	// giving a valid solid. Volume ≈ a prism of the square area × height (twist preserves it).
 	body := loftSolid(t, []LoftSection{sec(centeredSquareOn(sketch.XYPlane(), 2)), sec(rotatedSquareOn(planeAtZ(4), 2, stdmath.Pi/4))}, false)
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
 		t.Fatalf("twisted loft volume %g <= 0", v)
 	}
 }
 
 func TestLoftShapeMultiSectionBulges(t *testing.T) {
+	t.Parallel()
 	// 3 circles whose MIDDLE is shifted +X: the spline blend must curve through it, so the
 	// body's +X extent exceeds the straight-loft bound (the end circles reach only x=+2).
 	// shift the middle section sketch's plane origin +X by 3 (a banana).
@@ -129,6 +134,7 @@ func annulusOn(plane sketch.Plane, outerR, innerR float64) (*sketch.Sketch, int)
 }
 
 func TestLoftShapePipe(t *testing.T) {
+	t.Parallel()
 	// annulus → annulus = a tapered hollow pipe (tube). The outer loops skin the body, the
 	// inner loops skin a bore that is cut out. Volume = outer cone frustum − inner cone frustum.
 	sb, ib := annulusOn(sketch.XYPlane(), 2.0, 1.5)
@@ -136,12 +142,13 @@ func TestLoftShapePipe(t *testing.T) {
 	body := loftSolid(t, []LoftSection{{Sketch: sb, ProfileIndex: ib}, {Sketch: st, ProfileIndex: it}}, false)
 	cone := func(rr, r, h float64) float64 { return stdmath.Pi * h / 3 * (rr*rr + rr*r + r*r) }
 	want := cone(2.0, 1.4, 4) - cone(1.5, 1.0, 4)
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, want) > 0.05 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, want) > 0.05 {
 		t.Errorf("lofted pipe volume = %g, want ≈%g (hollow tube)", v, want)
 	}
 }
 
 func TestLoftShapeOrganicSpline(t *testing.T) {
+	t.Parallel()
 	// Organic closed-spline sections (a rounded blob → a different blob) lofted.
 	blob := [][2]float64{{2, 0}, {1.2, 1.6}, {-1, 1.8}, {-2, 0}, {-1, -1.6}, {1.2, -1.6}}
 	blob2 := [][2]float64{{1.4, 0}, {0.8, 1.0}, {-0.7, 1.2}, {-1.4, 0}, {-0.7, -1.0}, {0.8, -1.0}}

@@ -28,6 +28,7 @@ func unit(x, y, z float64) math.UnitVector3 {
 // grows as the tolerance tightens — and, above all, is a pure function of radius+quality
 // (never of RefDir), so two coincident circles get the same count.
 func TestCircleSegmentsCanonical(t *testing.T) {
+	t.Parallel()
 	if n := CircleSegments(3, 0.05, 10*stdmath.Pi/180); n%4 != 0 || n < 8 {
 		t.Fatalf("CircleSegments = %d, want a multiple of 4 ≥ 8", n)
 	}
@@ -42,6 +43,7 @@ func TestCircleSegmentsCanonical(t *testing.T) {
 // normal, radius, and SEAM but DIFFERENT RefDir sample to identical points — RefDir must
 // not perturb the discretization.
 func TestCircleConformsAcrossRefDir(t *testing.T) {
+	t.Parallel()
 	seam := math.P3(3.5, 2, 3)
 	a := Circle{Center: math.P3(1, 2, 3), Normal: unit(0, 0, 1), RefDir: unit(1, 0, 0), Radius: 2.5}
 	b := Circle{Center: math.P3(1, 2, 3), Normal: unit(0, 0, 1), RefDir: unit(0, 1, 0), Radius: 2.5}
@@ -54,6 +56,7 @@ func TestCircleConformsAcrossRefDir(t *testing.T) {
 // stacked-solids case: a lower solid's +z rim and an upper solid's −z rim are one circle)
 // sample to the identical point set when anchored on the same seam.
 func TestCircleConformsAcrossNormalSign(t *testing.T) {
+	t.Parallel()
 	seam := math.P3(3, 0, 6)
 	a := Circle{Center: math.P3(0, 0, 6), Normal: unit(0, 0, 1), RefDir: unit(1, 0, 0), Radius: 3}
 	b := Circle{Center: math.P3(0, 0, 6), Normal: unit(0, 0, -1), RefDir: unit(0, 1, 0), Radius: 3}
@@ -66,6 +69,7 @@ func TestCircleConformsAcrossNormalSign(t *testing.T) {
 // circles anchored on DIFFERENT seams still share every interior (non-seam) sample, so the
 // two boolean operands conform on the shared rim regardless of where each seam falls.
 func TestCircleInteriorConformsAcrossSeam(t *testing.T) {
+	t.Parallel()
 	c := Circle{Center: math.P3(0, 0, 6), Normal: unit(0, 0, 1), RefDir: unit(1, 0, 0), Radius: 3}
 	pa, _ := CircleConformalSamples(c, math.P3(3, 0, 6), 0.05, 10*stdmath.Pi/180)  // seam at angle 0
 	pb, _ := CircleConformalSamples(c, math.P3(-3, 0, 6), 0.05, 10*stdmath.Pi/180) // seam at angle π
@@ -81,6 +85,7 @@ func TestCircleInteriorConformsAcrossSeam(t *testing.T) {
 // coincident with a full-circle sample, so the two conform along the shared arc. The arc's
 // own endpoints are extra (a chord meets it), which the boolean's co-refinement imprints.
 func TestArcInteriorSubsetOfCircle(t *testing.T) {
+	t.Parallel()
 	const r, theta = 3.0, 0.6
 	circle := Circle{Center: math.P3(0, 0, 6), Normal: unit(0, 0, 1), RefDir: unit(1, 0, 0), Radius: r}
 	arc, err := NewArc3d(math.P3(0, 0, 6), math.V3(0, 0, 1), math.V3(1, 0, 0), r, theta, 2*stdmath.Pi-2*theta)

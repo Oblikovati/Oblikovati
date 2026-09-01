@@ -14,6 +14,7 @@ import (
 // Document units of measure + unit/expression service over the wire (#146).
 
 func TestDocumentUnitsRoundTripOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var got wire.DocumentUnitsInfo
@@ -53,6 +54,7 @@ func TestDocumentUnitsRoundTripOverWire(t *testing.T) {
 }
 
 func TestUnitsServiceOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var conv wire.ConvertUnitsResult
@@ -120,6 +122,7 @@ func TestUnitsServiceOverWire(t *testing.T) {
 // precise string formatter, compatibility check, and the locale-corrected
 // expression passthrough.
 func TestUnitsExtraMethodsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var str wire.StringResult
@@ -148,6 +151,7 @@ func TestUnitsExtraMethodsOverWire(t *testing.T) {
 // TestUnitsHandlersNeedActiveDocument covers the no-active-document early-return
 // branch of every document-scoped units handler.
 func TestUnitsHandlersNeedActiveDocument(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession() // no document added
 	args := `{"unitsType":"length","expression":"1","value":1}`
@@ -166,6 +170,7 @@ func TestUnitsHandlersNeedActiveDocument(t *testing.T) {
 // TestUnitsHandlerErrors covers the decode / bad-category / bad-expression error
 // branches across the units handlers.
 func TestUnitsHandlerErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	// Malformed JSON → decode error.

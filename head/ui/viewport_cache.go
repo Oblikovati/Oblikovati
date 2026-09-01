@@ -15,7 +15,7 @@ import (
 )
 
 // bodyGeometryCache memoises the tessellated, styled body draw list. Without it the viewport reran
-// ops.TessellateBody (plus smooth-shading + visible-edge extraction) for every body EVERY frame —
+// tessellate.TessellateBody (plus smooth-shading + visible-edge extraction) for every body EVERY frame —
 // even while merely orbiting — which pegged a CPU core on a model with many curved faces. The
 // tessellation is camera-independent, so the cache is keyed on the model geometry version, the
 // visual style, and the visible body set; all of those bump the part's version via MarkChanged on

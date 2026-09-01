@@ -27,6 +27,7 @@ func planeZ(t *testing.T) geom.Plane {
 // plane (normal negated over the same point-set) with reversed cleared — the outward normal is
 // preserved (was -Z), now the stored surface normal.
 func TestCanonicalPlanarOutwardFlipsReversedPlane(t *testing.T) {
+	t.Parallel()
 	cf := canonicalPlanarOutward(curvedFace{surface: planeZ(t), reversed: true})
 	if cf.reversed {
 		t.Fatal("a planar face must be canonicalized to reversed=false")
@@ -38,6 +39,7 @@ func TestCanonicalPlanarOutwardFlipsReversedPlane(t *testing.T) {
 
 // TestCanonicalPlanarOutwardKeepsUnreversedPlane: an already-outward plane is untouched.
 func TestCanonicalPlanarOutwardKeepsUnreversedPlane(t *testing.T) {
+	t.Parallel()
 	pl := planeZ(t)
 	cf := canonicalPlanarOutward(curvedFace{surface: pl, reversed: false})
 	if cf.reversed {
@@ -51,6 +53,7 @@ func TestCanonicalPlanarOutwardKeepsUnreversedPlane(t *testing.T) {
 // TestCanonicalPlanarOutwardKeepsReversedCurved: a reversed CURVED face keeps reversed — an
 // inward-facing cylinder (a bore wall) has no negated-normal surface, so reversed IS its form.
 func TestCanonicalPlanarOutwardKeepsReversedCurved(t *testing.T) {
+	t.Parallel()
 	cyl := geom.Cylinder{Origin: math.P3(0, 0, 0), AxisDir: math.V3(0, 0, 1).AsUnit(), Radius: 1}
 	cf := canonicalPlanarOutward(curvedFace{surface: cyl, reversed: true})
 	if !cf.reversed {

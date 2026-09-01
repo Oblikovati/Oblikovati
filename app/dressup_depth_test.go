@@ -3,10 +3,13 @@
 package app
 
 import (
+	stdmath "math"
+
 	"testing"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/feature"
 )
 
@@ -17,6 +20,7 @@ import (
 // TestFilletToolVariableRadius blends a vertical block edge from 0.3 to 0.8: the commit
 // goes through AddFilletSets (one variable set) and the solid stays valid.
 func TestFilletToolVariableRadius(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2) // 2×2×2, vol 8
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 
@@ -41,13 +45,14 @@ func TestFilletToolVariableRadius(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("variable-filleted body not a valid solid: %+v", r)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; got >= 8 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; got >= 8 {
 		t.Errorf("volume after variable fillet = %g, want < 8 (material removed)", got)
 	}
 }
 
 // Re-editing a committed variable fillet must seed the panel's variable state.
 func TestFilletEditSeedsVariableState(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	f := NewFilletTool()
@@ -74,7 +79,14 @@ func TestFilletEditSeedsVariableState(t *testing.T) {
 // TestSplitToolFacesOnly imprints the mid-plane: the body count and volume stay, the
 // crossed faces split (4 sides × 2 + top + bottom = 10 faces).
 func TestSplitToolFacesOnly(t *testing.T) {
+	t.Parallel()
 	s, def, wp := partWithMidPlane(t, 6) // 6×6×2 block, vol 72
+	// Measured BEFORE the split, with the same integrator: "no material removed" is a
+	// statement about this operation, not about the absolute value. Asserting `== 72`
+	// instead made the test a check on the integrator's last bit — and since mass
+	// properties went analytic (M48/C3) a 6×6×2 box integrates to 72.000000000000014,
+	// one ulp off, BEFORE the split runs. The split's own delta is exactly zero (#3495).
+	before := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 
 	split := NewSplitTool()
 	s.StartTool(split)
@@ -93,14 +105,19 @@ func TestSplitToolFacesOnly(t *testing.T) {
 	if n := len(body.Faces()); n != 10 {
 		t.Errorf("after split faces: %d faces, want 10", n)
 	}
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; got != 72 {
-		t.Errorf("volume after split faces = %g, want exactly 72 (no material removed)", got)
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; got != before {
+		t.Errorf("volume after split faces = %.17g, before = %.17g — an imprint removes no material",
+			got, before)
+	}
+	if stdmath.Abs(before-72) > 1e-12 {
+		t.Errorf("block volume %.17g is not the analytic 72 within 1e-12 — the fixture changed", before)
 	}
 }
 
 // TestThreadToolParityOptions commits class/tapered/model-diameter into the definition,
 // and blocks the cut+tapered combination.
 func TestThreadToolParityOptions(t *testing.T) {
+	t.Parallel()
 	s, cyl := newPartWithCylinder(t)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: cylinderFaceOf(t, cyl), Body: cyl}})
 
@@ -127,6 +144,7 @@ func TestThreadToolParityOptions(t *testing.T) {
 
 // TestFaceOffsetToolApproximation records the #331 request on the committed feature.
 func TestFaceOffsetToolApproximation(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 6)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
 
@@ -145,6 +163,7 @@ func TestFaceOffsetToolApproximation(t *testing.T) {
 
 // TestThickenToolApproximation records the #331 request on the committed thicken.
 func TestThickenToolApproximation(t *testing.T) {
+	t.Parallel()
 	s, def, region := partWithSquareRegion(t)
 	feature.NewBoundaryPatchFeatures(def.Features()).Add(region.Sketch, region.ProfileIndex, feature.PatchFree)
 	def.Recompute()

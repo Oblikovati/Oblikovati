@@ -13,6 +13,7 @@ import (
 // deviation (P&T eq. 5.30 weight correction) — the raw 4-space distance under-weighted heavy
 // control points and silently deformed the curve beyond tolerance.
 func TestWeightedKnotRemovalBoundsGeometricDeviation(t *testing.T) {
+	t.Parallel()
 	knots := []float64{0, 0, 0, 0.5, 1, 1, 1}
 	ctrl := []math.Point3{math.P3(0, 0, 0), math.P3(1, 2, 0), math.P3(3, 2.2, 0), math.P3(4, 0, 0)}
 	weights := []float64{1, 20, 0.05, 1} // 400× spread: the raw 4-space distance under-bounds the low-weight point's 3D motion
@@ -43,6 +44,7 @@ func TestWeightedKnotRemovalBoundsGeometricDeviation(t *testing.T) {
 // TestBenignKnotRemovalStillHappens: the weight correction must not be so conservative that a
 // plainly redundant knot (inserted then removed on a benign non-rational curve) is refused.
 func TestBenignKnotRemovalStillHappens(t *testing.T) {
+	t.Parallel()
 	knots := []float64{0, 0, 0, 1, 1, 1}
 	ctrl := []math.Point3{math.P3(0, 0, 0), math.P3(1, 1, 0), math.P3(2, 0, 0)}
 	c, err := NewBSplineCurve(2, ctrl, []float64{1, 1, 1}, knots)

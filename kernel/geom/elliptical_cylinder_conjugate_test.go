@@ -13,6 +13,7 @@ import (
 // semi-diameters (a swept profile whose extrusion is perpendicular to its plane) must return the
 // same principal axes and radii — major along u1 when |u1|>|u2|, unchanged radii a,b.
 func TestConjugatePerpendicularRecoversAxes(t *testing.T) {
+	t.Parallel()
 	m := math.V3(1, 0, 0)
 	w := math.V3(0, 1, 0)
 	u1 := m.Scale(150) // a=150 along m
@@ -33,6 +34,7 @@ func TestConjugatePerpendicularRecoversAxes(t *testing.T) {
 // conjugate semi-diameters, the principal radii satisfy majorR·minorR = |u1 × u2| (Apollonius'
 // invariant). This holds even when u1,u2 are non-orthogonal (the general oblique-ellipse case).
 func TestConjugateAreaOracle(t *testing.T) {
+	t.Parallel()
 	// A deliberately skew (non-orthogonal) conjugate pair — the oblique-ellipse extrusion case.
 	u1 := math.V3(150, 40, 0)
 	u2 := math.V3(30, 100, 0)
@@ -51,6 +53,7 @@ func TestConjugateAreaOracle(t *testing.T) {
 // r (unchanged, along d×n) and r·|d·n| (FORESHORTENED — an orthogonal projection cannot enlarge).
 // This mirrors STEP case U3: CIRCLE(12) swept along an oblique direction.
 func TestConjugateObliqueCircleForeshortens(t *testing.T) {
+	t.Parallel()
 	r := 12.0
 	n := math.V3(0, 0, 1) // circle plane normal
 	m := math.V3(1, 0, 0) // any in-plane axis
@@ -77,6 +80,7 @@ func TestConjugateObliqueCircleForeshortens(t *testing.T) {
 // extrusion direction collapses the cross-section to a line — the two conjugate diameters become
 // (near-)parallel, and the constructor must reject rather than mint a zero-width cylinder.
 func TestConjugateDegenerateErrors(t *testing.T) {
+	t.Parallel()
 	u1 := math.V3(150, 0, 0)
 	u2 := math.V3(150.0000001, 1e-12, 0) // essentially parallel to u1
 	if _, _, _, err := principalAxesFromConjugate(u1, u2); err == nil {
@@ -88,6 +92,7 @@ func TestConjugateDegenerateErrors(t *testing.T) {
 // of the base ellipse lands on it (ParamAt→PointAt round-trips on-surface). d ⊥ plane so the section
 // is the base ellipse itself.
 func TestNewEllipticalCylinderFromConjugate(t *testing.T) {
+	t.Parallel()
 	o := math.P3(5, 0, 0)
 	d := math.V3(0, 0, 1) // perpendicular sweep
 	u1 := math.V3(150, 0, 0)

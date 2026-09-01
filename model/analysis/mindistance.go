@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -64,7 +65,7 @@ func MinDistanceProbeToBody(probe []math.Point3, body *topo.Body, q ops.Quality)
 	// when no segment crosses a boundary face — a fully interior travel move would otherwise report the
 	// gap to the nearest wall. A segment that merely passes through is caught below (it grazes a face).
 	for _, p := range probe {
-		if ops.BodyContainment(body, p, q, probeOnTol) == ops.ContainInside {
+		if query.BodyContainment(body, p, q, probeOnTol) == query.ContainInside {
 			return 0
 		}
 	}

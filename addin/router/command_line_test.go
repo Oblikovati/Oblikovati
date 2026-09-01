@@ -33,6 +33,7 @@ func sketchEditSession(t *testing.T) (*Router, *app.Session, *sketch.Sketch) {
 }
 
 func TestSubmitCommandLineDrawsLineOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, sk := sketchEditSession(t)
 
 	var res wire.CommandLineResult
@@ -57,6 +58,7 @@ func TestSubmitCommandLineDrawsLineOverWire(t *testing.T) {
 }
 
 func TestSubmitCommandLineUnknownReturnsErrorField(t *testing.T) {
+	t.Parallel()
 	r, s, _ := sketchEditSession(t)
 	var res wire.CommandLineResult
 	// An unknown command is a normal result with Error set, not a transport failure.

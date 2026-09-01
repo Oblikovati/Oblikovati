@@ -13,6 +13,7 @@ import (
 // surfacePeriodic classifies each analytic surface's wrap: plane neither, cylinder/cone u only,
 // sphere u only (latitude is bounded), torus both.
 func TestSurfacePeriodic(t *testing.T) {
+	t.Parallel()
 	pl, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	cyl, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1)
 	sph, _ := geom.NewSphere(math.P3(0, 0, 0), 1)
@@ -35,6 +36,7 @@ func TestSurfacePeriodic(t *testing.T) {
 
 // continueUV keeps a wrapped parameter sequence monotone across the seam in both directions.
 func TestContinueUVUnwrap(t *testing.T) {
+	t.Parallel()
 	// u wraps from ~2π back to ~0: the seam jump is unwrapped forward past 2π.
 	ring := []math.Point2{math.P2(2*stdmath.Pi-0.1, 3)}
 	u, _ := continueUV(ring, 0.1, 3, true, false)
@@ -54,6 +56,7 @@ func TestContinueUVUnwrap(t *testing.T) {
 // castAxis routes the even-odd uv ray to a non-periodic UNBOUNDED axis (plane, cylinder, cone) and
 // declines for a sphere/torus (no exterior endpoint), where the classifier uses the geodesic winding.
 func TestCastAxisRouting(t *testing.T) {
+	t.Parallel()
 	pl, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	cyl, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1)
 	cone, _ := geom.NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/4)
@@ -80,6 +83,7 @@ func TestCastAxisRouting(t *testing.T) {
 // a whole turn and closes (Oblikovati/Oblikovati#3447). A frustum's band loop already closes and must
 // come back byte-identical.
 func TestLoopToUVBridgesTheConeApex(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		name      string
 		topRadius float64
@@ -123,6 +127,7 @@ func coneSideCurvedFace(t *testing.T, topRadius float64) curvedFace {
 // TestSampleOnPoleReadsTheTangentCollapse: the pole probe must fire only where the periodic tangent
 // vanishes — the cone's apex station — and nowhere along its regular rulings.
 func TestSampleOnPoleReadsTheTangentCollapse(t *testing.T) {
+	t.Parallel()
 	cone, err := geom.NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6)
 	if err != nil {
 		t.Fatalf("NewCone: %v", err)
@@ -145,6 +150,7 @@ func TestSampleOnPoleReadsTheTangentCollapse(t *testing.T) {
 // TestRebranchRingTailKeepsThePoleOnBothBranches: the traverse along the pole isoline must become an
 // explicit edge, so the shifted ring is one sample longer and holds the pole twice.
 func TestRebranchRingTailKeepsThePoleOnBothBranches(t *testing.T) {
+	t.Parallel()
 	ring := []math.Point2{math.P2(0, 3), math.P2(-2, 0), math.P2(-2, 3)}
 	out := rebranchRingTail(ring, 1, 2, false)
 	want := []math.Point2{math.P2(0, 3), math.P2(-2, 0), math.P2(0, 0), math.P2(0, 3)}

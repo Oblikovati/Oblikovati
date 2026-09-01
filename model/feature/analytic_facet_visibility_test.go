@@ -19,6 +19,7 @@ import (
 // observable. planarizedDiag records CodeBooleanAnalyticFaceted for a curved operand, stays quiet for
 // an already-planar one, and in both cases returns a body with no curved face left.
 func TestPlanarizedDiagRecordsAnalyticFaceting(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1, 2)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -49,6 +50,7 @@ func TestPlanarizedDiagRecordsAnalyticFaceting(t *testing.T) {
 // TestPlanarizedDiagNilRecorderSafe confirms the chokepoint is safe on the nil recorder the legacy
 // (diagnostic-less) call paths still pass.
 func TestPlanarizedDiagNilRecorderSafe(t *testing.T) {
+	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1, 2)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -65,6 +67,7 @@ func TestPlanarizedDiagNilRecorderSafe(t *testing.T) {
 // is a polyhedron by definition, so it feeds ConvexHullOf, not a boolean — the facet is inherent, not
 // a hidden degradation.)
 func TestNoSilentFacetBeforeConsumer(t *testing.T) {
+	t.Parallel()
 	consumer := regexp.MustCompile(`ops\.(Boolean|BooleanWithDiagnostics|DeleteFaces)\(`)
 	bareFacet := regexp.MustCompile(`[^D]planarized\(`) // planarized( but not planarizedDiag(
 	entries, err := os.ReadDir(".")

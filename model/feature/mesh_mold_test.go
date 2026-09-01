@@ -44,6 +44,7 @@ endsolid tetra
 `
 
 func TestParseSTLWeldsSharedVertices(t *testing.T) {
+	t.Parallel()
 	g, err := ParseSTL(strings.NewReader(tetraSTL))
 	if err != nil {
 		t.Fatalf("ParseSTL: %v", err)
@@ -58,6 +59,7 @@ func TestParseSTLWeldsSharedVertices(t *testing.T) {
 }
 
 func TestMeshFeatureExposesSelectableFacets(t *testing.T) {
+	t.Parallel()
 	g, _ := ParseSTL(strings.NewReader(tetraSTL))
 	fs := NewPartFeatures(nil)
 	pf := NewMeshFeatures(fs).Add(g)
@@ -82,6 +84,7 @@ func TestMeshFeatureExposesSelectableFacets(t *testing.T) {
 }
 
 func TestMeshFeaturePassesSolidThrough(t *testing.T) {
+	t.Parallel()
 	// A mesh is reference geometry: a prior solid survives the mesh feature.
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(2), 0, ops.NewBody, func() float64 { return 3 })
@@ -94,6 +97,7 @@ func TestMeshFeaturePassesSolidThrough(t *testing.T) {
 }
 
 func TestMeshFeatureSetGroups(t *testing.T) {
+	t.Parallel()
 	g, _ := ParseSTL(strings.NewReader(tetraSTL))
 	set := NewMeshFeatureSet("imported")
 	set.Add(&MeshFeature{geom: g})
@@ -104,6 +108,7 @@ func TestMeshFeatureSetGroups(t *testing.T) {
 }
 
 func TestParseSTLRejectsGarbage(t *testing.T) {
+	t.Parallel()
 	if _, err := ParseSTL(strings.NewReader("solid x\nfacet normal 0 0 1\nouter loop\nvertex 0 0\n")); err == nil {
 		t.Error("a truncated vertex should error")
 	}
@@ -113,6 +118,7 @@ func TestParseSTLRejectsGarbage(t *testing.T) {
 }
 
 func TestCoreCavitySplitsBlock(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	// A 10×10×10 tooling block.
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(10), 0, ops.NewBody, func() float64 { return 10 })
@@ -142,6 +148,7 @@ func TestCoreCavitySplitsBlock(t *testing.T) {
 }
 
 func TestCoreCavityGoesSickWhenPartingOutsideBlock(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(10), 0, ops.NewBody, func() float64 { return 10 })
 	pf := NewCoreCavityFeatures(fs).AddByPartingPlaneFn(PartingZ, constFloat(20), 0)
@@ -152,6 +159,7 @@ func TestCoreCavityGoesSickWhenPartingOutsideBlock(t *testing.T) {
 }
 
 func TestCoreCavityShrinkageRecorded(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewCoreCavityFeatures(fs).AddByPartingPlaneFn(PartingX, constFloat(1), 0.025)
 	if d := pf.Definition().(*CoreCavityFeature).Definition(); d.Shrinkage != 0.025 || d.Axis != PartingX {

@@ -53,6 +53,7 @@ func lineLineIntersect(p, r, q, s math.Point3) math.Point3 {
 //
 // hdmi_full = [l=12, iw1=14, iw2=10, ih1=3, ih2=4.5, h=6.5, t=0.5] (mm).
 func TestNopHdmiCSG(t *testing.T) {
+	t.Parallel()
 	// Keystone hexagon D(), CCW, in cm. From the hull of the wide top rect (±0.7, y∈[0.3,0.6])
 	// and the narrower lower rect (±0.5, y∈[0.15,0.6]).
 	inner := []math.Point3{

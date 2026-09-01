@@ -6,9 +6,14 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 func TestCoilSweepsValidHelix(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
+	t.Parallel()
 	// A small square offset from the Y axis, swept 3 turns with pitch 2 → a helical
 	// solid that climbs 3·2 = 6 plus the profile's own height (1).
 	fs := NewPartFeatures(nil)
@@ -23,7 +28,7 @@ func TestCoilSweepsValidHelix(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("coil is not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
 		t.Errorf("coil volume = %g, want > 0", v)
 	}
 	// The helix climbs along Y by pitch·revolutions plus the profile height.
@@ -33,6 +38,7 @@ func TestCoilSweepsValidHelix(t *testing.T) {
 }
 
 func TestCoilRejectsZeroRevolutions(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewCoilFeatures(fs).Add(offsetSquareSketch(4, 1), 0, yAxis(),
 		func() float64 { return 2 }, func() float64 { return 0 }, 0, ops.NewBody)
@@ -43,6 +49,7 @@ func TestCoilRejectsZeroRevolutions(t *testing.T) {
 }
 
 func TestCoilRoundTrip(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	g.Recompute(nil)
 	axis, err := g.axis(OriginYAxis)

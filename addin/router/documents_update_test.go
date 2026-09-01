@@ -26,6 +26,7 @@ func markPartDirty(t *testing.T, s *app.Session) {
 // TestRequiresUpdateReflectsDirtyAndClears: documents.requiresUpdate is false on a freshly
 // recomputed part, true once a feature is dirtied, and false again after documents.update (#139).
 func TestRequiresUpdateReflectsDirtyAndClears(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t) // extrude already recomputed → clean
 
 	var st wire.RequiresUpdateResult
@@ -54,6 +55,7 @@ func TestRequiresUpdateReflectsDirtyAndClears(t *testing.T) {
 // TestDocumentsRebuildRecomputes: documents.rebuild recomputes the whole program and leaves the
 // part up to date with no errors on a healthy model.
 func TestDocumentsRebuildRecomputes(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 	var up wire.UpdateDocumentResult
 	call(t, r, s, "documents.rebuild", `{}`, &up)
@@ -69,6 +71,7 @@ func TestDocumentsRebuildRecomputes(t *testing.T) {
 // TestDocumentsUpdateReportsSickFeatures: a recompute that leaves a feature sick fails a strict
 // update but succeeds — reporting the sick feature — with acceptErrorsAndContinue (Update2, #139).
 func TestDocumentsUpdateReportsSickFeatures(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 	// A fillet on a non-existent edge recomputes sick (a lost reference).
 	args, _ := json.Marshal(map[string]any{
@@ -92,6 +95,7 @@ func TestDocumentsUpdateReportsSickFeatures(t *testing.T) {
 
 // TestDocumentsUpdateNoActivePart: the methods error without an active part.
 func TestDocumentsUpdateNoActivePart(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	for _, m := range []string{"documents.update", "documents.rebuild", "documents.requiresUpdate"} {

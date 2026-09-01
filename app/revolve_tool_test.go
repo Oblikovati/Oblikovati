@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -50,6 +51,7 @@ func mkCenterlineSketch(n int) *sketch.Sketch {
 
 // TestPreselectCenterlineRules covers Inventor's pre-selection rules.
 func TestPreselectCenterlineRules(t *testing.T) {
+	t.Parallel()
 	one := mkCenterlineSketch(1) // one in the profile's sketch → pre-select it
 	if _, l, ok := preselectCenterline(one, []*sketch.Sketch{one}); !ok || l == nil {
 		t.Error("single in-sketch centerline should pre-select")
@@ -75,6 +77,7 @@ func TestPreselectCenterlineRules(t *testing.T) {
 // TestRevolveToolPreselectsCenterline: clicking the profile auto-advances and pre-selects the
 // sketch's single centerline as the axis (no axis pick, no toggle needed).
 func TestRevolveToolPreselectsCenterline(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	cl := profile.Sketch.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
 	cl.SetCenterline(true)
@@ -91,7 +94,7 @@ func TestRevolveToolPreselectsCenterline(t *testing.T) {
 	}
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	want := stdmath.Pi * (4*4 - 2*2) * 2
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, want) > 0.01 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, want) > 0.01 {
 		t.Errorf("pre-selected centerline washer = %g, want ≈%g", v, want)
 	}
 }
@@ -99,6 +102,7 @@ func TestRevolveToolPreselectsCenterline(t *testing.T) {
 // TestRevolveToolMultipleCenterlinesNeedsPick: two centerlines ⇒ no pre-select; the user clicks
 // the one to use and the revolve follows it.
 func TestRevolveToolMultipleCenterlinesNeedsPick(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	vert := profile.Sketch.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
 	vert.SetCenterline(true)
@@ -121,7 +125,7 @@ func TestRevolveToolMultipleCenterlinesNeedsPick(t *testing.T) {
 	}
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	want := stdmath.Pi * (4*4 - 2*2) * 2
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, want) > 0.01 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, want) > 0.01 {
 		t.Errorf("about the vertical centerline = %g, want ≈%g (24π)", v, want)
 	}
 }
@@ -130,6 +134,7 @@ func TestRevolveToolMultipleCenterlinesNeedsPick(t *testing.T) {
 // profile sketch carries a vertical centerline (the Y axis), so revolving about it (no axis
 // pick) produces the same washer.
 func TestRevolveToolAboutCenterline(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	cl := profile.Sketch.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
 	cl.SetCenterline(true)
@@ -148,7 +153,7 @@ func TestRevolveToolAboutCenterline(t *testing.T) {
 		t.Fatalf("centerline-revolved body not a valid solid: %+v", r)
 	}
 	want := stdmath.Pi * (4*4 - 2*2) * 2
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.01 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.01 {
 		t.Errorf("centerline-revolved washer = %g, want ≈%g (24π)", got, want)
 	}
 }
@@ -157,6 +162,7 @@ func TestRevolveToolAboutCenterline(t *testing.T) {
 // click the profile, accept the default full revolution about Y, OK — and asserts a
 // validated washer solid (inner r=2, outer r=4, height 2 ⇒ 24π) lands in the part.
 func TestRevolveToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	s.SetPicker(stubPicker{sel: profile})
 
@@ -177,7 +183,7 @@ func TestRevolveToolEndToEnd(t *testing.T) {
 		t.Fatalf("revolved body not a valid solid: %+v", r)
 	}
 	want := stdmath.Pi * (4*4 - 2*2) * 2 // 24π
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.01 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.01 {
 		t.Errorf("washer volume = %g, want ≈%g (24π)", got, want)
 	}
 	if def.Features().Count() != 1 || !def.Features().Item(0).Health().OK() {
@@ -191,6 +197,7 @@ func TestRevolveToolEndToEnd(t *testing.T) {
 // TestRevolveViaCommandAlias shows the ribbon command launching the tool by its alias,
 // then a partial-angle revolve through the property-window setters.
 func TestRevolveViaCommandAlias(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	s.SetPicker(stubPicker{sel: profile})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -215,12 +222,13 @@ func TestRevolveViaCommandAlias(t *testing.T) {
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	body := def.SurfaceBodies().Item(0)
 	want := stdmath.Pi * (4*4 - 2*2) * 2 / 4 // quarter washer
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.02 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.02 {
 		t.Errorf("quarter-washer volume = %g, want ≈%g", got, want)
 	}
 }
 
 func TestRevolveToolNeedsProfile(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 2, 2)
 	s.SetPicker(stubPicker{sel: profile})
 	rv := NewRevolveTool()

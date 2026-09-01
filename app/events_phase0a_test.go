@@ -5,6 +5,7 @@ package app
 import "testing"
 
 func TestPhase0aEventIDsDistinct(t *testing.T) {
+	t.Parallel()
 	got := map[string]uint32{
 		"refs":   uint32(PanelReferencesChanged{}.EventID()),
 		"closed": uint32(TaskPanelClosed{}.EventID()),

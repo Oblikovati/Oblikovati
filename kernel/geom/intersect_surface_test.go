@@ -33,6 +33,7 @@ func curvesOnBothSurfaces(t *testing.T, curves []Curve3, a, b Surface, tol float
 // TestSurfaceIntersectClosedFormPlaneSphere: the closed-form path returns the equator as an analytic
 // Circle (not a polyline), on both surfaces.
 func TestSurfaceIntersectClosedFormPlaneSphere(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 5)
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	box := isectBox(-6, 6)
@@ -50,6 +51,7 @@ func TestSurfaceIntersectClosedFormPlaneSphere(t *testing.T) {
 // general marcher runs, windowed to the box from the base cylinder, and returns the two Steinmetz
 // saddle curves — every point on both cylinders.
 func TestSurfaceIntersectMarchesCrossingCylinders(t *testing.T) {
+	t.Parallel()
 	const r = 3.0
 	cx, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), r)
 	cz, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r)
@@ -64,6 +66,7 @@ func TestSurfaceIntersectMarchesCrossingCylinders(t *testing.T) {
 // TestSurfaceIntersectNonCrossingIsHandledEmpty: a plane clear of the sphere is a definite non-crossing —
 // handled=true with no curves (the closed form knows they do not meet), so the caller composes cleanly.
 func TestSurfaceIntersectNonCrossingIsHandledEmpty(t *testing.T) {
+	t.Parallel()
 	sp, _ := NewSphere(math.P3(0, 0, 0), 1)
 	pl, _ := NewPlane(math.P3(0, 0, 5), math.V3(0, 0, 1)) // 5 units above a unit sphere
 	box := isectBox(-6, 6)

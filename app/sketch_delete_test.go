@@ -21,6 +21,7 @@ func selectSketchEntities(s *Session, ents ...sketch.Entity) {
 // TestDeleteSelectedSketchEntitiesRemovesThem is the regression guard for issue #1232:
 // selecting sketch geometry and deleting it actually removes it from the active sketch.
 func TestDeleteSelectedSketchEntitiesRemovesThem(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XYPlane())
 	s.EnterSketch(sk)
@@ -42,6 +43,7 @@ func TestDeleteSelectedSketchEntitiesRemovesThem(t *testing.T) {
 // TestDeleteKeyDeletesSketchEntities proves the binding: the Delete key routed through the
 // engine reaches DeleteSelectedSketchEntities and removes the selection (issue #1232).
 func TestDeleteKeyDeletesSketchEntities(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XYPlane())
 	s.EnterSketch(sk)
@@ -62,6 +64,7 @@ func TestDeleteKeyDeletesSketchEntities(t *testing.T) {
 // TestDeleteSelectedSketchEntitiesNoOps: outside a sketch, mid-tool, or with nothing
 // selected, Delete does nothing and never errors — it must not destroy 3D geometry.
 func TestDeleteSelectedSketchEntitiesNoOps(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 
 	// No active sketch.

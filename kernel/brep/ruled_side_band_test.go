@@ -18,6 +18,7 @@ import (
 
 // TestRuledSideBandTakesACylinder: the band carries equal radii and the full height.
 func TestRuledSideBandTakesACylinder(t *testing.T) {
+	t.Parallel()
 	body, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 7)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -40,6 +41,7 @@ func TestRuledSideBandTakesACylinder(t *testing.T) {
 // TestRuledSideBandTakesACone: the same description with DIFFERENT radii — the case that used to
 // fall through to pass-through.
 func TestRuledSideBandTakesACone(t *testing.T) {
+	t.Parallel()
 	body, err := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 6), 4, 1, "cone")
 	if err != nil {
 		t.Fatalf("SolidCylinderCone: %v", err)
@@ -69,6 +71,7 @@ func TestRuledSideBandTakesACone(t *testing.T) {
 
 // TestRuledSideBandDeclinesAPlane: only a full periodic side band is a wall; a cap is not.
 func TestRuledSideBandDeclinesAPlane(t *testing.T) {
+	t.Parallel()
 	body, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 7)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
@@ -86,6 +89,7 @@ func TestRuledSideBandDeclinesAPlane(t *testing.T) {
 // TestRuledSideSizeSpansTheWiderRim: the characteristic length must use the LARGER radius, or a cone
 // would take its intersections at a resolution scaled to its narrow end.
 func TestRuledSideSizeSpansTheWiderRim(t *testing.T) {
+	t.Parallel()
 	rs := ruledSide{band: coneSideBand_{rBot: 4, rTop: 1, vMin: 0, vMax: 6}}
 	if got := rs.size(); stdmath.Abs(got-14) > 1e-12 {
 		t.Errorf("size = %g, want 2*4 + 6 = 14", got)

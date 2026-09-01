@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -35,6 +36,7 @@ func embossedBlock(t *testing.T) *PartFeatures {
 
 // A raised emboss adds a 4×4×1 boss on the top face → block volume + 16.
 func TestEmbossRaisesMaterial(t *testing.T) {
+	t.Parallel()
 	fs := embossedBlock(t)
 	es := squareOn(planeAtZ(2), 4, 3) // 4×4 square centred-ish on the z=2 top
 	emb := NewEmbossFeatures(fs).Add(es, []int{0}, func() float64 { return 1 }, EmbossFromFace, 0)
@@ -46,13 +48,14 @@ func TestEmbossRaisesMaterial(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("embossed body not valid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-216) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-216) > 1e-6 {
 		t.Errorf("raised emboss volume = %g, want 216 (200 + 4×4×1)", v)
 	}
 }
 
 // An engraved emboss cuts a 4×4×1 pocket into the top face → block volume − 16.
 func TestEmbossEngravesMaterial(t *testing.T) {
+	t.Parallel()
 	fs := embossedBlock(t)
 	es := squareOn(planeAtZ(2), 4, 3)
 	emb := NewEmbossFeatures(fs).Add(es, []int{0}, func() float64 { return 1 }, EngraveFromFace, 0) // engrave
@@ -60,12 +63,13 @@ func TestEmbossEngravesMaterial(t *testing.T) {
 	if !emb.Health().OK() {
 		t.Fatalf("engrave went sick: %+v", emb.Health())
 	}
-	if v := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(v-184) > 1e-6 {
+	if v := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(v-184) > 1e-6 {
 		t.Errorf("engraved volume = %g, want 184 (200 − 4×4×1)", v)
 	}
 }
 
 func TestEmbossNeedsDepthAndProfile(t *testing.T) {
+	t.Parallel()
 	fs := embossedBlock(t)
 	es := squareOn(planeAtZ(2), 4, 3)
 	emb := NewEmbossFeatures(fs).Add(es, nil, func() float64 { return 1 }, EmbossFromFace, 0) // no profile

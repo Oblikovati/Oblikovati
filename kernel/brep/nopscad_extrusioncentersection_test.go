@@ -9,6 +9,7 @@ import (
 )
 
 func TestNopExtrusionCenterSectionCSG(t *testing.T) {
+	t.Parallel()
 	body := box(-0.1, -1.0, 0, 0.2, 2.0, 0.12)
 	body = joinOrFatal(t, body, box(-1.0, -0.1, 0, 2.0, 0.2, 0.12), "extrusion center cross spar")
 	for _, side := range []float64{-1, 1} {

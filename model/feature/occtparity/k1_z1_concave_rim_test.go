@@ -8,6 +8,8 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -80,7 +82,7 @@ func TestK1Z1TessellationFoldGate(t *testing.T) {
 			body := caseResultBody(t, tc.name)
 			meshTotal := 0.0
 			for _, f := range body.Faces() {
-				m := ops.TessellateFace(f, ops.PropertyQuality())
+				m := tessellate.TessellateFace(f, ops.PropertyQuality())
 				area := ops.MeshArea(m)
 				meshTotal += area
 				if area <= 0 || stdmath.IsInf(area, 0) || stdmath.IsNaN(area) {
@@ -91,7 +93,7 @@ func TestK1Z1TessellationFoldGate(t *testing.T) {
 			if rel := stdmath.Abs(meshTotal-tc.want) / tc.want; rel > k1z1Deps {
 				t.Fatalf("%s total mesh area %.4f, want OCCT %.2f within deps %.2f (rel %.6f)", tc.name, meshTotal, tc.want, k1z1Deps, rel)
 			}
-			if vol := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; vol <= 0 {
+			if vol := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; vol <= 0 {
 				t.Fatalf("%s result volume %.4f, want positive", tc.name, vol)
 			}
 		})

@@ -9,6 +9,7 @@ import (
 )
 
 func TestDefaultGridSettings(t *testing.T) {
+	t.Parallel()
 	g := NewGridSettings()
 	if !g.Visible || g.MajorEvery <= 0 {
 		t.Errorf("default grid = %+v, want visible with a positive major interval", g)
@@ -23,6 +24,7 @@ func TestDefaultGridSettings(t *testing.T) {
 }
 
 func TestGridSpacingRespectsDocumentUnits(t *testing.T) {
+	t.Parallel()
 	g := NewGridSettings()
 	mm := param.DefaultUnitsOfMeasure() // length unit "mm"
 	if err := g.SetSpacingIn(5, mm); err != nil {
@@ -46,6 +48,7 @@ func TestGridSpacingRespectsDocumentUnits(t *testing.T) {
 }
 
 func TestGridSpacingRejectsNonPositive(t *testing.T) {
+	t.Parallel()
 	g := NewGridSettings()
 	if err := g.SetSpacingIn(0, param.DefaultUnitsOfMeasure()); err == nil {
 		t.Error("zero spacing should error")
@@ -53,6 +56,7 @@ func TestGridSpacingRejectsNonPositive(t *testing.T) {
 }
 
 func TestSessionGridAndDocumentUnits(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if g := s.Grid(); g == nil || s.Grid() != g {
 		t.Error("Grid() should return a stable settings object")
@@ -63,6 +67,7 @@ func TestSessionGridAndDocumentUnits(t *testing.T) {
 }
 
 func TestDocumentUnitsWithoutPartIsMetric(t *testing.T) {
+	t.Parallel()
 	s := NewSession() // no document
 	if name := s.DocumentUnits().PreferredName(param.Length); name != "mm" {
 		t.Errorf("no-part document units = %q, want the mm default", name)

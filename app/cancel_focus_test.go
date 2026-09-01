@@ -12,6 +12,7 @@ import (
 // command-line question instead of answering it, and asks the head to refocus the command
 // input (M26).
 func TestCancelDismissesPromptAndRequestsFocus(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, _, err := s.ShowPrompt(PromptSpec{ID: "q", Message: "Delete?", Buttons: []string{"Yes", "No"}}); err != nil {
 		t.Fatalf("ShowPrompt: %v", err)
@@ -30,6 +31,7 @@ func TestCancelDismissesPromptAndRequestsFocus(t *testing.T) {
 // TestCancelWithNoToolClearsSelectionAndRefocuses preserves the legacy idle behaviour (clear
 // the selection) while still requesting focus.
 func TestCancelWithNoToolClearsSelectionAndRefocuses(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := dispatchCancel(s); err != nil {
 		t.Fatalf("dispatchCancel: %v", err)
@@ -45,6 +47,7 @@ func TestCancelWithNoToolClearsSelectionAndRefocuses(t *testing.T) {
 
 // TestEscapeChordResolvesToCancel keeps Escape wired to the universal cancel action.
 func TestEscapeChordResolvesToCancel(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)

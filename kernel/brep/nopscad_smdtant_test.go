@@ -7,6 +7,7 @@ import (
 )
 
 func TestNopSmdTantCSG(t *testing.T) {
+	t.Parallel()
 	body := taperedBoxBody(0.72, 0.42, 0.64, 0.34, 0.02, 0.26, "smd-tant-body")
 	for _, x := range []float64{-0.41, 0.41} {
 		body = joinOrFatal(t, body, box(x-0.12, -0.17, 0.02, 0.24, 0.34, 0.05), "smd tant lead")

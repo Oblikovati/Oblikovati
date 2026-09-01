@@ -11,7 +11,7 @@ import (
 
 // occtChainSmoothTol is the normal-angle band (radians) below which an edge is SMOOTH — i.e. its
 // two faces are tangent, so OCCT's ChFi3d::IsTangentFaces accepts it and the blend neither stops on
-// it nor blends it. It is deliberately the same 1e-3 rad ops.ClassifyEdgeConvexity uses, and the
+// it nor blends it. It is deliberately the same 1e-3 rad blend.ClassifyEdgeConvexity uses, and the
 // choice is MEASURED, not assumed: re-running the whole sweep at OCCT's own LocalAnalysis G1 epsilon
 // (0.1 rad, 100x looser) moves exactly one case's chain (bfuseblend/B7, 2 -> 1, by declassifying the
 // SEED) and adds none. The population below is therefore not an artefact of this constant.
@@ -21,7 +21,7 @@ const occtChainSmoothTol = 1e-3
 // tangents must subtend MORE than a right angle (equivalently, their forward tangents less than
 // one), ChFi3d_Builder_1.cxx's `av1v2 < M_PI/2`. It is NOT a tangency test — tangency is carried by
 // FaceTangency's "every other edge at the vertex is smooth", which forces both edges onto the same
-// two sheets. ops.TangentEdgeChain instead gates on a 1 deg ANTIPARALLEL band, and that difference is
+// two sheets. blend.TangentEdgeChain instead gates on a 1 deg ANTIPARALLEL band, and that difference is
 // load-bearing: on complex/C5 it shortens two of the four picks' chains from 5 edges to 2 and 3.
 const occtChainTurnBack = stdmath.Pi / 2
 
@@ -33,7 +33,7 @@ const occtChainTurnBack = stdmath.Pi / 2
 // edges' support faces continue tangentially through the junction) and the run does not turn back.
 //
 // It lives in the harness, not in kernel/ops, because it models the ORACLE's rule, not ours:
-// ops.TangentEdgeChain is our product's "select tangent chain" and carries extra gates (see
+// blend.TangentEdgeChain is our product's "select tangent chain" and carries extra gates (see
 // occtChainTurnBack). A ratchet measured with our own walker could not falsify our own walker.
 //
 // Example:

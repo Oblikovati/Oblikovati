@@ -23,6 +23,7 @@ func tryCall(t *testing.T, r *Router, s *app.Session, method, args string) error
 // TestSketchAddEntityKinds does not (the composite shapes, derived curves, and the
 // construction flag), so every per-kind builder is exercised.
 func TestSketchAddEntityMoreKinds(t *testing.T) {
+	t.Parallel()
 	kinds := []struct{ name, args string }{
 		{"circle center", `{"sketchIndex":0,"kind":"circle","variant":"center","points":[[0,0]],"radius":"2 cm"}`},
 		{"circle threePoint", `{"sketchIndex":0,"kind":"circle","variant":"threePoint","points":[[0,0],[2,0],[1,1]]}`},
@@ -47,6 +48,7 @@ func TestSketchAddEntityMoreKinds(t *testing.T) {
 // TestSketchFilletChamfer drives the two entity-reference composite kinds (corner fillet
 // and chamfer between two connected lines).
 func TestSketchFilletChamfer(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct{ kind, extra string }{
 		{"fillet", `"radius":"1 cm"`},
 		{"chamfer", `"radius":"1 cm","distance2":"2 cm"`},
@@ -66,6 +68,7 @@ func TestSketchFilletChamfer(t *testing.T) {
 
 // TestSketchAddEntityErrors covers the validation/error branches.
 func TestSketchAddEntityErrors(t *testing.T) {
+	t.Parallel()
 	bad := []string{
 		`{"sketchIndex":9,"kind":"line","points":[[0,0],[1,1]]}`,                // sketch out of range
 		`{"sketchIndex":0,"kind":"unicorn","points":[[0,0]]}`,                   // unknown kind
@@ -86,6 +89,7 @@ func TestSketchAddEntityErrors(t *testing.T) {
 // (PartDesigner #54): a line added with centerline:true becomes the sketch's single centerline,
 // so a revolve with no explicit axis resolves it. A plain construction line does NOT.
 func TestSketchAddCenterlineMarksAxisOfRevolution(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	sk := def.Sketches().Item(0)
@@ -114,6 +118,7 @@ func TestSketchAddCenterlineMarksAxisOfRevolution(t *testing.T) {
 // work axis) and yield the 24π-cm³ washer — proving the centerline flag and the revolve flag
 // resolve together, as a procedural add-in revolving a tilted roller about its own axis relies on.
 func TestRevolveAboutCenterlineOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity",

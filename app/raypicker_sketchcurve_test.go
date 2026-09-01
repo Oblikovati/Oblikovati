@@ -13,6 +13,7 @@ import (
 // TestRayPickerSelectsSketchCenterline checks the part-view ray picker can hit a sketch line
 // (a centerline) under the SketchEntity filter — what lets the Revolve tool pick its axis.
 func TestRayPickerSelectsSketchCenterline(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2) // 2×2 square on XY
 	mid := profile.Sketch.Lines().AddByTwoPoints(math.P2(0, 1), math.P2(2, 1))
 	mid.SetCenterline(true)

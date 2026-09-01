@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -25,7 +26,7 @@ func cmBox(t *testing.T) *topo.Body {
 
 func boxVolume(t *testing.T, b *topo.Body) float64 {
 	t.Helper()
-	return ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 }
 
 // TestMeshExportImportUnitRoundTrip checks each mesh format preserves the physical

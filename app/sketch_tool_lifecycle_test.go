@@ -13,6 +13,7 @@ func allSketchTools() []Tool {
 }
 
 func TestSketchToolsLifecycleAndPrompts(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	for _, tool := range allSketchTools() {
 		if tool.Name() == "" {
@@ -32,6 +33,7 @@ func TestSketchToolsLifecycleAndPrompts(t *testing.T) {
 }
 
 func TestSketchToolPromptsAdvanceWithClicks(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	cases := []struct {
 		tool   Tool
@@ -70,6 +72,7 @@ func promptOf(s *Session, t Tool) string {
 }
 
 func TestPointAndSplineFinalPrompts(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	pt := NewPointTool()
 	s.StartTool(pt)
@@ -87,6 +90,7 @@ func TestPointAndSplineFinalPrompts(t *testing.T) {
 }
 
 func TestLineAndRectanglePromptsAndCancel(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	line := NewLineTool()
 	s.StartTool(line)
@@ -114,6 +118,7 @@ func TestLineAndRectanglePromptsAndCancel(t *testing.T) {
 }
 
 func TestViewCommandsExecute(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if err := s.Execute("View.ZoomAll"); err != nil {
 		t.Errorf("Zoom All: %v", err)
@@ -124,6 +129,7 @@ func TestViewCommandsExecute(t *testing.T) {
 }
 
 func TestCreateSketchOnEachOriginPlane(t *testing.T) {
+	t.Parallel()
 	for _, p := range []OriginPlane{OriginXY, OriginXZ, OriginYZ} {
 		s, _ := emptyPartSession(t)
 		if _, err := s.CreateSketchOnOrigin(p); err != nil {

@@ -7,6 +7,7 @@ import "testing"
 // TestSheetMetalSessionAccessors each Active… accessor returns the running tool of its type
 // and nil for the others.
 func TestSheetMetalSessionAccessors(t *testing.T) {
+	t.Parallel()
 	s, _ := sheetMetalSession(t)
 	if s.ActiveSheetMetalFace() != nil {
 		t.Error("no tool active, accessor should be nil")
@@ -53,6 +54,7 @@ func TestSheetMetalSessionAccessors(t *testing.T) {
 // TestSheetMetalPickAccessors PickCount tracks picks and ClearPicks resets them, single- and
 // multi-pick.
 func TestSheetMetalPickAccessors(t *testing.T) {
+	t.Parallel()
 	s, part := faceSheet(t, 4)
 	edge := EdgeHandle{Edge: topXEdge(t, part.Features().Result()[0])}
 

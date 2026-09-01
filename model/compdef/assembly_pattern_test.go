@@ -15,6 +15,7 @@ import (
 // another repositioned off the grid — survives save/reopen: the pattern is re-recorded and re-linked
 // to its (independently persisted) occurrences by name, and the per-element edits come back (#1976).
 func TestAssemblyPatternRoundTrips(t *testing.T) {
+	t.Parallel()
 	store, ws, asm, widget, asmDef := placedAssembly(t)
 	seed := placeFromFile(t, asm, widget, asmDef, "widget:1", math.Identity4())
 

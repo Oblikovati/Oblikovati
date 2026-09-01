@@ -8,6 +8,8 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -39,7 +41,7 @@ func TestJ1ClosedRimTessellationFoldGate(t *testing.T) {
 	body := caseResultBody(t, "J1")
 	meshTotal, torusBands := 0.0, 0
 	for _, f := range body.Faces() {
-		m := ops.TessellateFace(f, ops.PropertyQuality())
+		m := tessellate.TessellateFace(f, ops.PropertyQuality())
 		area := ops.MeshArea(m)
 		meshTotal += area
 		assertJ1FaceSane(t, f, m, area)
@@ -53,7 +55,7 @@ func TestJ1ClosedRimTessellationFoldGate(t *testing.T) {
 	if rel := stdmath.Abs(meshTotal-j1WholeArea) / j1WholeArea; rel > j1CorpusDeps {
 		t.Fatalf("J1 total mesh area %.2f, want OCCT %.1f within deps %.2f (rel %.5f)", meshTotal, j1WholeArea, j1CorpusDeps, rel)
 	}
-	if vol := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; vol <= 0 {
+	if vol := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; vol <= 0 {
 		t.Fatalf("J1 result volume %.4f, want positive (a wound-out band would read ≤0)", vol)
 	}
 }

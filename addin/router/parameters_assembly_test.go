@@ -32,6 +32,7 @@ func seededAssemblySession(t *testing.T) (*Router, *app.Session) {
 // assembly. Before M39-F03 these handlers resolved the active document as a part only, so an
 // assembly returned "not a part"; now they resolve any parameter holder.
 func TestParameterWireSurfaceOnAssembly(t *testing.T) {
+	t.Parallel()
 	r, s := seededAssemblySession(t)
 
 	var added wire.ParameterInfo
@@ -65,6 +66,7 @@ func TestParameterWireSurfaceOnAssembly(t *testing.T) {
 // TestDerivedTableWireListOnAssembly proves the derived-parameter-table list handler resolves
 // an active assembly (empty list, but no "not a part" error) — the F02/F03 seam over the wire.
 func TestDerivedTableWireListOnAssembly(t *testing.T) {
+	t.Parallel()
 	r, s := seededAssemblySession(t)
 	var out wire.ListDerivedParameterTablesResult
 	call(t, r, s, "parameters.derivedTables.list", `{}`, &out)

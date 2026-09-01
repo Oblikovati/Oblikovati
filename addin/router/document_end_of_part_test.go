@@ -11,6 +11,7 @@ import (
 // TestEndOfPartRoundTrip reads the active part's marker (at the end by default), rolls it back to an
 // earlier feature index, and restores it — checking each reply reflects the marker state (#141).
 func TestEndOfPartRoundTrip(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var got wire.EndOfPartResult

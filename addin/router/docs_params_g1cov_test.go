@@ -34,6 +34,7 @@ func dpcovAllReject(t *testing.T, r *Router, s *app.Session, cases []dpcovMethod
 // --- files.go: file-side reference records (fileReferenceInfo was 0%) ---
 
 func TestDpcovFileReferencesFileSide(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	s.ActiveDocument().SetFileReferenceRecords([]doc.FileReferenceRecord{{
 		FullFileName: "/asm/pin.obk", RelativeFileName: "pin.obk",
@@ -50,6 +51,7 @@ func TestDpcovFileReferencesFileSide(t *testing.T) {
 }
 
 func TestDpcovFileReferenceErrorPaths(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"files.listReferences", `{"fullFileName":"ghost.obk"}`},
@@ -60,6 +62,7 @@ func TestDpcovFileReferenceErrorPaths(t *testing.T) {
 // --- save.go ---
 
 func TestDpcovSaveHandlersRejectUnknownDoc(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"documents.save", `{"document":999999}`},
@@ -72,6 +75,7 @@ func TestDpcovSaveHandlersRejectUnknownDoc(t *testing.T) {
 }
 
 func TestDpcovBatchSaveSaveAndSaveAs(t *testing.T) {
+	t.Parallel()
 	r, s, dir := storedSession(t)
 	id := uint64(s.ActiveDocument().ID())
 	var res wire.BatchSaveResult
@@ -90,6 +94,7 @@ func TestDpcovBatchSaveSaveAndSaveAs(t *testing.T) {
 // --- documents.go ---
 
 func TestDpcovDocumentLifecycleErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"documents.create", `{}`},
@@ -101,6 +106,7 @@ func TestDpcovDocumentLifecycleErrors(t *testing.T) {
 // --- material.go ---
 
 func TestDpcovMaterialErrorPaths(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"materials.create", mustJSON(t, wire.DuplicateAssetArgs{BaseID: "nope", Name: "X"})},
@@ -111,6 +117,7 @@ func TestDpcovMaterialErrorPaths(t *testing.T) {
 }
 
 func TestDpcovMaterialUpdateUnknownAndPhysProps(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"materials.update", mustJSON(t, wire.MaterialInfo{ID: "nope"})},
@@ -125,6 +132,7 @@ func TestDpcovMaterialUpdateUnknownAndPhysProps(t *testing.T) {
 // --- keymap.go ---
 
 func TestDpcovKeymapErrorPaths(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"keymap.setChord", `{"actionId":"Test.X","chord":"Nonsense"}`},
@@ -135,6 +143,7 @@ func TestDpcovKeymapErrorPaths(t *testing.T) {
 // --- interests.go ---
 
 func TestDpcovInterestsUnknownDoc(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"documents.listInterests", `{"document":999999}`},
@@ -147,6 +156,7 @@ func TestDpcovInterestsUnknownDoc(t *testing.T) {
 // --- attachments.go ---
 
 func TestDpcovAttachmentsUnknownDoc(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"documents.listAttachments", `{"document":999999}`},
@@ -158,6 +168,7 @@ func TestDpcovAttachmentsUnknownDoc(t *testing.T) {
 // --- help.go + commands.go ---
 
 func TestDpcovHelpAndCommandErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"help.path", `{"source":"unregistered.x"}`},
@@ -170,6 +181,7 @@ func TestDpcovHelpAndCommandErrors(t *testing.T) {
 // --- messaging.go ---
 
 func TestDpcovMessagingErrorPaths(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"progress.end", `{"id":999999}`},
@@ -181,6 +193,7 @@ func TestDpcovMessagingErrorPaths(t *testing.T) {
 // --- document_properties.go: value-type converters + errors ---
 
 func TestDpcovDocumentPropertyValueTypes(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	id := uint64(s.ActiveDocument().ID())
 	for _, v := range []types.Variant{types.IntegerVariant(7), types.DoubleVariant(3.5), types.BoolVariant(true)} {
@@ -194,6 +207,7 @@ func TestDpcovDocumentPropertyValueTypes(t *testing.T) {
 }
 
 func TestDpcovDocumentPropertyErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	id := uint64(s.ActiveDocument().ID())
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
@@ -206,6 +220,7 @@ func TestDpcovDocumentPropertyErrors(t *testing.T) {
 // --- parameter_groups.go ---
 
 func TestDpcovParameterGroupErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"parameters.groups.setDisplayName", `{"internalName":"ghost","displayName":"X"}`},
@@ -215,6 +230,7 @@ func TestDpcovParameterGroupErrors(t *testing.T) {
 }
 
 func TestDpcovParameterGroupAddMember(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.groups.add", `{"internalName":"g1","displayName":"G1"}`, nil)
 	var info wire.ParameterGroupInfo
@@ -227,6 +243,7 @@ func TestDpcovParameterGroupAddMember(t *testing.T) {
 // --- parameters_detail.go ---
 
 func TestDpcovParameterDetailErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"parameters.getDetail", `{"name":"ghost"}`},
@@ -240,6 +257,7 @@ func TestDpcovParameterDetailErrors(t *testing.T) {
 // --- parameter_settings.go ---
 
 func TestDpcovParameterSettingsErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"parameters.setSettings", `{"dimensionDisplayType":"bogus"}`},
@@ -250,6 +268,7 @@ func TestDpcovParameterSettingsErrors(t *testing.T) {
 // --- units.go ---
 
 func TestDpcovUnitsErrorPaths(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"units.getPreciseStringFromValue", `{"value":1,"unitsType":"bogus"}`},
@@ -263,6 +282,7 @@ func TestDpcovUnitsErrorPaths(t *testing.T) {
 }
 
 func TestDpcovSetUnitsAnglePreferences(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var got wire.DocumentUnitsInfo
 	call(t, r, s, "documents.setUnits", `{"angleUnit":"rad","angleDisplayPrecision":5}`, &got)
@@ -277,6 +297,7 @@ func TestDpcovSetUnitsAnglePreferences(t *testing.T) {
 // --- work_surfaces.go ---
 
 func TestDpcovWorkSurfaceOutOfRange(t *testing.T) {
+	t.Parallel()
 	r, s := patchedSurfacePartViaAPI(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"workSurfaces.setVisible", mustJSON(t, wire.SetWorkSurfaceVisibleArgs{Index: 9, Visible: false})},
@@ -287,6 +308,7 @@ func TestDpcovWorkSurfaceOutOfRange(t *testing.T) {
 // --- windows.go ---
 
 func TestDpcovWindowsCloseTabUnknown(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, "windows.closeTab", []byte(`{"document":999999,"force":true}`)); err == nil {
 		t.Error("closing an unknown tab must fail")
@@ -296,6 +318,7 @@ func TestDpcovWindowsCloseTabUnknown(t *testing.T) {
 // --- attributes.go ---
 
 func TestDpcovAttributeSetFilter(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	id := uint64(s.ActiveDocument().ID())
 	call(t, r, s, "attributes.set", mustJSON(t, wire.SetAttributeArgs{Document: id, Set: "A", Name: "x", Value: types.IntegerVariant(1)}), nil)
@@ -308,6 +331,7 @@ func TestDpcovAttributeSetFilter(t *testing.T) {
 }
 
 func TestDpcovAttributeErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"attributes.get", `{"document":999999,"set":"A","name":"x"}`},
@@ -319,6 +343,7 @@ func TestDpcovAttributeErrors(t *testing.T) {
 // --- point_clouds.go ---
 
 func TestDpcovPointCloudUnknownName(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"pointClouds.setTransform", `{"name":"Ghost"}`},
@@ -333,6 +358,7 @@ func TestDpcovPointCloudUnknownName(t *testing.T) {
 // --- feature_lifecycle.go ---
 
 func TestDpcovFeatureLifecycleUnknownID(t *testing.T) {
+	t.Parallel()
 	r, s, _ := extrudedPartViaAPI(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"features.edit", `{"id":999999,"scalars":[{"index":0,"value":"1 mm"}]}`},
@@ -345,6 +371,7 @@ func TestDpcovFeatureLifecycleUnknownID(t *testing.T) {
 // --- representations.go ---
 
 func TestDpcovRepresentationSettersRequireAssembly(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"designReps.setVisibility", `{}`},
@@ -357,6 +384,7 @@ func TestDpcovRepresentationSettersRequireAssembly(t *testing.T) {
 }
 
 func TestDpcovRepresentationActivateUnknown(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t, 0, 5)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"designReps.activate", `{"id":999999}`},
@@ -369,6 +397,7 @@ func TestDpcovRepresentationActivateUnknown(t *testing.T) {
 // --- flat_pattern.go ---
 
 func TestDpcovFlatPatternErrorPaths(t *testing.T) {
+	t.Parallel()
 	r, s := flangedSheet(t)
 	dpcovAllReject(t, r, s, []dpcovMethodArgs{
 		{"flatPattern.edgesOfType", `{"type":"bogus"}`},

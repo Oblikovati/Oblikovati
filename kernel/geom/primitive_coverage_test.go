@@ -10,6 +10,7 @@ import (
 )
 
 func TestEllipticalCylinderSurfaceMethods(t *testing.T) {
+	t.Parallel()
 	c, err := NewEllipticalCylinder(math.P3(1, 2, 3), math.V3(0, 0, 1), math.V3(1, 0, 0), 2, 1)
 	if err != nil {
 		t.Fatalf("NewEllipticalCylinder: %v", err)
@@ -40,6 +41,7 @@ func TestEllipticalCylinderSurfaceMethods(t *testing.T) {
 }
 
 func TestEllipticalConeSurfaceMethods(t *testing.T) {
+	t.Parallel()
 	c, err := NewEllipticalCone(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), stdmath.Atan(0.5), stdmath.Atan(0.25))
 	if err != nil {
 		t.Fatalf("NewEllipticalCone: %v", err)
@@ -76,6 +78,7 @@ func TestEllipticalConeSurfaceMethods(t *testing.T) {
 }
 
 func TestThreadedCylinderSurfaceMethods(t *testing.T) {
+	t.Parallel()
 	base, err := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
@@ -125,6 +128,7 @@ func TestThreadedCylinderSurfaceMethods(t *testing.T) {
 }
 
 func TestPolylineFromCurve2AndBSplineCurve2dDomain(t *testing.T) {
+	t.Parallel()
 	line, err := NewLine2d(math.P2(0, 0), math.V2(2, 0))
 	if err != nil {
 		t.Fatalf("NewLine2d: %v", err)

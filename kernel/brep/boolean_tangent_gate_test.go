@@ -13,6 +13,7 @@ import (
 // result and a non-solid (surface) body are both rejected, so the caller falls back to the recorded
 // nudge rather than shipping a body that cannot be a closed 2-manifold.
 func TestExactTangentIsValidGuards(t *testing.T) {
+	t.Parallel()
 	if exactTangentIsValid(nil) {
 		t.Error("nil result must be rejected by the exact-tangent gate")
 	}
@@ -25,6 +26,7 @@ func TestExactTangentIsValidGuards(t *testing.T) {
 // TestExactTangentIsValidAcceptsSolid confirms the gate ACCEPTS a plain valid solid (every edge
 // used twice, χ admissible) — the common flush/box tangency the boolean now ships exactly.
 func TestExactTangentIsValidAcceptsSolid(t *testing.T) {
+	t.Parallel()
 	blk, err := SolidBlock(math.P3(0, 0, 0), math.P3(1, 1, 1), "blk")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)

@@ -10,6 +10,7 @@ import (
 )
 
 func TestArc2dEvaluation(t *testing.T) {
+	t.Parallel()
 	// Quarter arc on the unit circle, 0 → π/2.
 	a := NewArc2d(math.P2(0, 0), 1, 0, stdmath.Pi/2)
 	if got := a.PointAt(0); !got.IsEqualTo(math.P2(1, 0), eqScalar) {
@@ -22,6 +23,7 @@ func TestArc2dEvaluation(t *testing.T) {
 }
 
 func TestArc2dByThreePointsReproducesCenterRadius(t *testing.T) {
+	t.Parallel()
 	// Three points on the unit circle, counter-clockwise.
 	a, err := Arc2dByThreePoints(math.P2(1, 0), math.P2(0, 1), math.P2(-1, 0))
 	if err != nil {
@@ -44,6 +46,7 @@ func TestArc2dByThreePointsReproducesCenterRadius(t *testing.T) {
 }
 
 func TestArc2dByThreePointsClockwise(t *testing.T) {
+	t.Parallel()
 	// Same endpoints but through (0,-1): the arc must go the other way.
 	a, err := Arc2dByThreePoints(math.P2(1, 0), math.P2(0, -1), math.P2(-1, 0))
 	if err != nil {
@@ -58,6 +61,7 @@ func TestArc2dByThreePointsClockwise(t *testing.T) {
 }
 
 func TestArc3dByThreePointsReproducesCenterRadius(t *testing.T) {
+	t.Parallel()
 	// Unit circle lifted to the z=5 plane.
 	a, err := Arc3dByThreePoints(math.P3(1, 0, 5), math.P3(0, 1, 5), math.P3(-1, 0, 5))
 	if err != nil {
@@ -80,6 +84,7 @@ func TestArc3dByThreePointsReproducesCenterRadius(t *testing.T) {
 }
 
 func TestArc3dByThreePointsCollinearFails(t *testing.T) {
+	t.Parallel()
 	_, err := Arc3dByThreePoints(math.P3(0, 0, 0), math.P3(1, 1, 1), math.P3(2, 2, 2))
 	if err == nil {
 		t.Fatal("expected collinear error")
@@ -90,6 +95,7 @@ func TestArc3dByThreePointsCollinearFails(t *testing.T) {
 }
 
 func TestArc3dTangentPerpendicularToRadius(t *testing.T) {
+	t.Parallel()
 	a, _ := NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 3, 0, stdmath.Pi)
 	for _, tp := range []float64{0, 0.25, 0.5, 1} {
 		radial := a.Center.VectorTo(a.PointAt(tp))

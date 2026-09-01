@@ -10,6 +10,7 @@ import (
 // TestLayerFuzzZeroWeightReproducesCoatedBaseExactly is PBI-341's explicit regression
 // guard: fuzz_weight=0 must reproduce the coat-only output exactly.
 func TestLayerFuzzZeroWeightReproducesCoatedBaseExactly(t *testing.T) {
+	t.Parallel()
 	coatedBase := NewColor3(0.31, 0.22, 0.05)
 	up := Vec3{Z: 1}
 	got := LayerFuzz(up, up, 0.5, Gray(1), 0, coatedBase)
@@ -20,6 +21,7 @@ func TestLayerFuzzZeroWeightReproducesCoatedBaseExactly(t *testing.T) {
 
 // TestSpecularFuzzZeroBelowSurface checks the below-surface guard.
 func TestSpecularFuzzZeroBelowSurface(t *testing.T) {
+	t.Parallel()
 	got := SpecularFuzz(Vec3{Z: -1}, Vec3{Z: 1}, 0.5, Gray(1))
 	if got != (Color3{}) {
 		t.Errorf("SpecularFuzz(wi below surface) = %+v, want zero", got)
@@ -28,6 +30,7 @@ func TestSpecularFuzzZeroBelowSurface(t *testing.T) {
 
 // TestFuzzScalarAlbedoBounds checks the physical bound across a roughness sweep.
 func TestFuzzScalarAlbedoBounds(t *testing.T) {
+	t.Parallel()
 	for _, roughness := range []float64{0.05, 0.3, 0.5, 0.8, 1.0} {
 		for _, cosTheta := range []float64{0.1, 0.5, 1.0} {
 			e := fuzzScalarAlbedo(cosTheta, roughness)
@@ -43,6 +46,7 @@ func TestFuzzScalarAlbedoBounds(t *testing.T) {
 // zero at exact normal incidence (sinθh=0, the grazing-angle effect sheen models), so wi
 // and wo are both tilted off-normal here to land where the lobe actually contributes.
 func TestLayerFuzzTintsWithFuzzColor(t *testing.T) {
+	t.Parallel()
 	// wi and wo tilt the SAME direction by different amounts, so their half-vector isn't
 	// exactly the macronormal (unlike a symmetric tilt, whose x/y components cancel).
 	wi := Vec3{X: 0.9, Z: math.Sqrt(1 - 0.81)}

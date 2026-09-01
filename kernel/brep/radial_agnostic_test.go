@@ -12,6 +12,7 @@ import (
 // only the planar boolean's constant normals (ADR-0058). Four half-edge uses on one edge, two enter and
 // two exit boundaries at distinct azimuths, must pair into two manifold dihedral groups.
 func TestRadialSewSurfaceAgnostic(t *testing.T) {
+	t.Parallel()
 	verts := []math.Point3{math.P3(0, 0, 0), math.P3(0, 0, 1)} // the shared edge along +z
 	uses := map[[2]int][]loopEdgeUse{{0, 1}: {
 		{face: 0, reversed: true},  // enter, normal → +x  (interior +y)

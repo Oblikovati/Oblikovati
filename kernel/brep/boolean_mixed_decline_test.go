@@ -19,6 +19,7 @@ import (
 // The decline reaches Boolean's caller as the named sentinel — ops.Boolean routes on it to the
 // curved/CSG paths — never as a panic or a wrong body.
 func TestBooleanMixedDeclinesBoundarylessPassFace(t *testing.T) {
+	t.Parallel()
 	block, err := SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")
 	if err != nil {
 		t.Fatalf("SolidBlock: %v", err)

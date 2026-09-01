@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -15,6 +16,7 @@ import (
 // swept, no end caps — via sweepTool → sweptShell. For a straight path the four side faces are exact
 // planes, so the area is perimeter × length = 40 exactly.
 func TestSweepSurfaceMakesOpenSheet(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	path := sketch.NewPath3D([]*sketch.Point3D{
 		sketch.NewPoint3D(math.P3(0, 0, 0)),
@@ -31,7 +33,7 @@ func TestSweepSurfaceMakesOpenSheet(t *testing.T) {
 		t.Error("surface-operation sweep should be an OPEN sheet, got a solid")
 	}
 	want := 8.0 * 5.0 // profile perimeter 8 × path length 5
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Area; relErr(got, want) > 0.02 {
+	if got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Area; relErr(got, want) > 0.02 {
 		t.Errorf("swept sheet area = %g, want ≈%g (perimeter × length)", got, want)
 	}
 }

@@ -9,6 +9,7 @@ import (
 )
 
 func TestNopTrimpot3362CSG(t *testing.T) {
+	t.Parallel()
 	body := box(-0.3495, -0.33, 0.019, 0.699, 0.66, 0.45)
 	for _, p := range []math.Point3{math.P3(-0.26, -0.22, -0.019), math.P3(0.26, -0.22, -0.019), math.P3(0, 0.22, -0.019)} {
 		body = joinOrFatal(t, body, box(p.X-0.019, p.Y-0.019, p.Z, 0.038, 0.038, 0.038), "trimpot foot")

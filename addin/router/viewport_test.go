@@ -12,6 +12,7 @@ import (
 // services it after the swapchain composites) and returns the path it will write, so an MCP client
 // can poll for the file.
 func TestCaptureWindowFlagsRequest(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var res wire.CaptureWindowResult
 	call(t, r, s, "viewport.captureWindow", `{"path":"/tmp/w.png"}`, &res)
@@ -26,6 +27,7 @@ func TestCaptureWindowFlagsRequest(t *testing.T) {
 // TestCaptureWindowDefaultPath checks an empty Path falls back to the default whole-window file,
 // distinct from the viewport-capture default so one never clobbers the other.
 func TestCaptureWindowDefaultPath(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var res wire.CaptureWindowResult
 	call(t, r, s, "viewport.captureWindow", `{}`, &res)

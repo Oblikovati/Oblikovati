@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -37,6 +38,7 @@ func dProfileSketchOnPlaneZ(z, r, theta float64) *sketch.Sketch {
 // re-tessellate against one surface (aligned grids, no seam) — asserted here as analytic
 // cylinder faces surviving the join plus the exact stacked volume.
 func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
+	t.Parallel()
 	// #2167 at the feature level: an EXTRUDE-built full cylinder JOINED to a stacked D-prism whose
 	// arc wall is cocylindrical must keep BOTH walls analytic — the ADR-0056 Layer-5 reconstruction
 	// (reconstructionCutover, now the default) rebuilds them on the exact cylinder surface, merged to
@@ -73,7 +75,7 @@ func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
 	minorSeg := 0.5 * r * r * (2*theta - stdmath.Sin(2*theta))
 	dArea := stdmath.Pi*r*r - minorSeg
 	analytic := stdmath.Pi*r*r*h1 + dArea*h2
-	if v := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; relErr(v, analytic) > 5e-3 {
+	if v := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; relErr(v, analytic) > 5e-3 {
 		t.Fatalf("piston-head join volume = %g, want %g — faceted, not the analytic union", v, analytic)
 	}
 }

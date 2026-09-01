@@ -12,6 +12,7 @@ import (
 // workPoints.list enumeration.
 
 func TestWorkAxisRelationalKinds(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var pt wire.CreateWorkPointResult
 	call(t, r, s, "workPoints.create", `{"at":[0,0,5]}`, &pt)
@@ -33,6 +34,7 @@ func TestWorkAxisRelationalKinds(t *testing.T) {
 }
 
 func TestWorkPointRelationalKinds(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var src wire.CreateWorkPointResult
 	call(t, r, s, "workPoints.create", `{"at":[1,2,3]}`, &src)
@@ -54,6 +56,7 @@ func TestWorkPointRelationalKinds(t *testing.T) {
 }
 
 func TestWorkPointRelationalWrongRefCount(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "workPoints.create", []byte(`{"kind":"three-planes","refs":["origin/plane/xy"]}`)); err == nil {
 		t.Error("three-planes with one ref should error")
@@ -62,6 +65,7 @@ func TestWorkPointRelationalWrongRefCount(t *testing.T) {
 
 // TestWorkPointsList enumerates points and confirms position/kind/origin read-back (#1842).
 func TestWorkPointsList(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "workPoints.create", `{"at":[1,2,3]}`, &wire.CreateWorkPointResult{})
 	call(t, r, s, "workPoints.create", `{"kind":"two-lines","refs":["origin/axis/x","origin/axis/y"]}`, &wire.CreateWorkPointResult{})

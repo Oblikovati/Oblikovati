@@ -5,7 +5,8 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/surface"
+
 	"oblikovati.org/math"
 )
 
@@ -13,7 +14,7 @@ import (
 // the reverse-engineering step that turns a point cloud / mesh region into editable styling geometry.
 // The region points are stored baked into the recipe (the tool bakes them from the cloud's cropped,
 // model-space points); the feature least-squares fits a degree×degree B-spline with the requested
-// nu×nv control net via ops.FitSurfaceToPoints and appends it as a surface body.
+// nu×nv control net via surface.FitSurfaceToPoints and appends it as a surface body.
 
 // Class-A fit defaults shared by the Fit Surface tool and the fitSurface MCP op: a bicubic patch
 // (degree 3) with a 6×6 control net — few even spans for clean reflection lines.
@@ -47,7 +48,7 @@ func (f *FitFeature) Recompute(in Input) (Output, error) {
 	if len(f.def.Points) < f.def.NU*f.def.NV {
 		return Output{}, fmt.Errorf("fit surface: %d region points is fewer than the %dx%d control net", len(f.def.Points), f.def.NU, f.def.NV)
 	}
-	body, err := ops.FitSurfaceToPoints(f.def.Points, f.def.Degree, f.def.NU, f.def.NV)
+	body, err := surface.FitSurfaceToPoints(f.def.Points, f.def.Degree, f.def.NU, f.def.NV)
 	if err != nil {
 		return Output{}, err
 	}

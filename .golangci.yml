@@ -87,7 +87,7 @@ linters:
       - linters:
           - funlen
           - gocyclo
-        path: (addin/opregistry/feature_(advanced|solid)|app/loft_tool|cmd/oblikovati-cli/.*|kernel/exchange/step/part21/(parse_value|value|token)|kernel/ops/(convexhull|earcut)|model/feature/(dressup|loft_skin|sweep_loft|swept)[_a-z0-9]*|model/sketch/patterns|model/text/font)\.go
+        path: (addin/opregistry/feature_(advanced|solid)|app/loft_tool|cmd/oblikovati-cli/.*|kernel/exchange/step/part21/(parse_value|value|token)|kernel/ops/(tessellate/|query/)?(convexhull|earcut)|model/feature/(dressup|loft_skin|sweep_loft|swept)[_a-z0-9]*|model/sketch/patterns|model/text/font)\.go
       # Thread designation parsing is a small grammar parser; branching reflects the grammar.
       - linters:
           - gocyclo

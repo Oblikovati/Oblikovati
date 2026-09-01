@@ -16,6 +16,7 @@ import (
 // TestEveryFieldPointsAwayFromTheShape is the regression: whichever edge a rectangle's dimension
 // measures, its offset direction must lead OUT of the rectangle, never into it.
 func TestEveryFieldPointsAwayFromTheShape(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	s.StartTool(NewRectangleTool())
 	s.Click(40, 40)
@@ -49,6 +50,7 @@ func TestEveryFieldPointsAwayFromTheShape(t *testing.T) {
 // has to be a unit normal of the witness segment — a non-unit or skewed vector would put the
 // dimension line at the wrong distance or angle.
 func TestOutwardIsPerpendicularAndUnit(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	s.StartTool(NewRectangleTool())
 	s.Click(40, 40)
@@ -75,6 +77,7 @@ func TestOutwardIsPerpendicularAndUnit(t *testing.T) {
 // has no inside to point away from, but its dimension still has to stand off the geometry rather
 // than land on it.
 func TestOpenShapeStillGetsADirection(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	s.StartTool(NewLineTool())
 	s.Click(40, 40)
@@ -97,6 +100,7 @@ func TestOpenShapeStillGetsADirection(t *testing.T) {
 // stood off the rectangle correctly, then the dimension the commit created appeared INSIDE it —
 // the annotation jumped the moment the shape was made (#2034).
 func TestCommittedDimensionStandsOutsideTheShape(t *testing.T) {
+	t.Parallel()
 	// BOTH drag directions. The default anchor offsets by a fixed perpendicular handedness, so
 	// which side it lands on depends on which way the rectangle was dragged — one direction was
 	// already outside by luck, the other put the dimension inside the shape.

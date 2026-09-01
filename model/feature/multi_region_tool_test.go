@@ -86,6 +86,7 @@ func threeBoresSketch(t *testing.T, r, z float64) *sketch.Sketch {
 // closed here, and even at 40 clean bores / 1226 faces. That needs the real geometry —
 // translate.TestMultipointDiskRebuildsAsAClosedSolid.
 func TestMultiRegionCutKeepsTheAnalyticPath(t *testing.T) {
+	t.Parallel()
 	const r = 0.5
 	fs := feature.NewPartFeatures(param.NewParameters())
 	feature.NewExtrudeFeatures(fs).AddExtrude(plateSketch(), []int{0}, ops.NewBody,
@@ -125,6 +126,7 @@ func TestMultiRegionCutKeepsTheAnalyticPath(t *testing.T) {
 // TestMultiRegionJoinStaysOneClosedSolid pins the same for a Join: three separate bosses raised on a
 // plate must each weld on exactly, leaving one closed solid of the exact summed volume.
 func TestMultiRegionJoinStaysOneClosedSolid(t *testing.T) {
+	t.Parallel()
 	const r = 0.5
 	fs := feature.NewPartFeatures(param.NewParameters())
 	feature.NewExtrudeFeatures(fs).AddExtrude(plateSketch(), []int{0}, ops.NewBody,
@@ -156,6 +158,7 @@ func TestMultiRegionJoinStaysOneClosedSolid(t *testing.T) {
 // path — both walls were faceted into 24-gons (measured 9.3175 cm³ and ZERO analytic faces, against an
 // analytic 9.4248). Nothing multi-region is involved; this is the plain two-cylinder case.
 func TestWasherKeepsBothWallsAnalytic(t *testing.T) {
+	t.Parallel()
 	const rOut, rIn, h = 2.0, 1.0, 1.0
 	fs := feature.NewPartFeatures(param.NewParameters())
 	feature.NewExtrudeFeatures(fs).AddExtrude(boreSketch(t, rOut, 0), []int{0}, ops.NewBody,

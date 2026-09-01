@@ -31,6 +31,7 @@ func footRailStations(n int, r float64) (centers, feetA, feetB []math.Point3) {
 // boundary edge carrying the rail lie ON the patch (the degree-1 node polyline it replaced sagged
 // off it by the chord sagitta — S9 7.927e-04·diag, railb-locus-report.md).
 func TestCanalFootLocusRailIsTheLoftBoundaryIsoparm(t *testing.T) {
+	t.Parallel()
 	const r = 2.0
 	centers, feetA, feetB := footRailStations(73, r)
 	surf, err := LoftCanalStations(centers, feetA, feetB, r, 1e-9)
@@ -59,6 +60,7 @@ func TestCanalFootLocusRailIsTheLoftBoundaryIsoparm(t *testing.T) {
 // fit (a scheme that smooths the solved contacts would silently trade the exact envelope for
 // fairness).
 func TestCanalFootLocusRailInterpolatesEveryContact(t *testing.T) {
+	t.Parallel()
 	const r = 2.0
 	centers, _, feetB := footRailStations(73, r)
 	rail, err := CanalFootLocusRail(centers, feetB)
@@ -85,6 +87,7 @@ func TestCanalFootLocusRailInterpolatesEveryContact(t *testing.T) {
 // in that plane (each control point is an affine combination of the contacts), so the pInner host
 // plane's boundary consumer remains exact when the rail replaces the polyline.
 func TestCanalFootLocusRailStaysInTheContactPlane(t *testing.T) {
+	t.Parallel()
 	const r = 2.0
 	centers, _, feetB := footRailStations(73, r)
 	rail, err := CanalFootLocusRail(centers, feetB)

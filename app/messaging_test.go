@@ -24,6 +24,7 @@ func (f *FakeDialogMemoryStore) Save(m dialogmemory.Memory) error {
 }
 
 func TestMessageCenterSectionsAndFlags(t *testing.T) {
+	t.Parallel()
 	m := NewMessageCenter()
 	outer := m.BeginSection("Meshing")
 	m.AddMessage("starting", types.SeverityInfo)
@@ -57,6 +58,7 @@ func TestMessageCenterSectionsAndFlags(t *testing.T) {
 }
 
 func TestProgressLedgerLifecycleAndCancel(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	var cancelled []ProgressCancelled
 	event.Subscribe(s.Events(), event.After, func(_ event.Context, e ProgressCancelled) event.Outcome {
@@ -102,6 +104,7 @@ func TestProgressLedgerLifecycleAndCancel(t *testing.T) {
 }
 
 func TestBalloonTipsSuppressionPersists(t *testing.T) {
+	t.Parallel()
 	store := &FakeDialogMemoryStore{}
 	s := NewSession()
 	if err := s.UseDialogMemoryStore(store); err != nil {
@@ -137,6 +140,7 @@ func TestBalloonTipsSuppressionPersists(t *testing.T) {
 }
 
 func TestBalloonTipClickEmitsAndDismisses(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	var clicks []BalloonTipClicked
 	event.Subscribe(s.Events(), event.After, func(_ event.Context, e BalloonTipClicked) event.Outcome {
@@ -155,6 +159,7 @@ func TestBalloonTipClickEmitsAndDismisses(t *testing.T) {
 }
 
 func TestPromptCenterRememberedAnswers(t *testing.T) {
+	t.Parallel()
 	store := &FakeDialogMemoryStore{}
 	s := NewSession()
 	if err := s.UseDialogMemoryStore(store); err != nil {
@@ -199,6 +204,7 @@ func TestPromptCenterRememberedAnswers(t *testing.T) {
 }
 
 func TestPromptAlwaysAskNeverRemembers(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	spec := PromptSpec{ID: "p", Message: "m", Buttons: []string{"OK"}}
 	if resolved, _, _ := s.ShowPrompt(spec); resolved {

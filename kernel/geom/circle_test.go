@@ -9,6 +9,7 @@ import (
 )
 
 func TestCircleOnPlaneAndRadius(t *testing.T) {
+	t.Parallel()
 	c, err := NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -26,6 +27,7 @@ func TestCircleOnPlaneAndRadius(t *testing.T) {
 }
 
 func TestCircleTangentPerpendicularToRadius(t *testing.T) {
+	t.Parallel()
 	c, _ := NewCircle(math.P3(1, 2, 3), math.V3(0, 0, 1), 5)
 	for _, tp := range []float64{0, 0.1, 0.37, 0.8} {
 		radial := c.Center.VectorTo(c.PointAt(tp))
@@ -36,6 +38,7 @@ func TestCircleTangentPerpendicularToRadius(t *testing.T) {
 }
 
 func TestCircle2dByThreePoints(t *testing.T) {
+	t.Parallel()
 	// Unit circle sampled at three points → center origin, radius 1.
 	c, err := Circle2dByThreePoints(math.P2(1, 0), math.P2(0, 1), math.P2(-1, 0))
 	if err != nil {
@@ -48,6 +51,7 @@ func TestCircle2dByThreePoints(t *testing.T) {
 }
 
 func TestCircle2dByThreePointsCollinearFails(t *testing.T) {
+	t.Parallel()
 	_, err := Circle2dByThreePoints(math.P2(0, 0), math.P2(1, 0), math.P2(2, 0))
 	if err == nil {
 		t.Fatal("expected collinear error")

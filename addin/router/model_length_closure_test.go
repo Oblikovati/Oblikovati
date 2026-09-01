@@ -16,6 +16,7 @@ import (
 // expressions — which froze work-plane offsets and pattern spacings (the NopSCAD loft + pcb
 // failures). A pure literal has no parameter dependency and is baked.
 func TestModelLengthClosureStaysLiveForParamExpr(t *testing.T) {
+	t.Parallel()
 	_, s := emptyPartSession(t)
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {

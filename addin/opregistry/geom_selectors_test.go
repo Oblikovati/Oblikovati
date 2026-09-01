@@ -40,6 +40,7 @@ func topFaceOf(t *testing.T, s *app.Session) *topo.Face {
 // drilling by faceRef on the same top face — proof the geometric placement binds the right face
 // (the failure this whole path fixes was a lost key leaving the hole cutting nothing).
 func TestHoleGeomFaceMatchesFaceRef(t *testing.T) {
+	t.Parallel()
 	byRef, _, _ := extrudedSolid(t)
 	refKey, _ := boxTopFace(t, byRef)
 	if _, err := applyMap(t, byRef, "hole", map[string]any{"faceRef": refKey, "diameter": "3 mm", "depth": "5 mm"}); err != nil {
@@ -65,6 +66,7 @@ func TestHoleGeomFaceMatchesFaceRef(t *testing.T) {
 // descriptor must still bind the same face and remove the same material. Also uses an explicit
 // center so the drill point lies on the face.
 func TestHoleGeomFaceFlippedNormalStillBinds(t *testing.T) {
+	t.Parallel()
 	byRef, _, _ := extrudedSolid(t)
 	refKey, _ := boxTopFace(t, byRef)
 	if _, err := applyMap(t, byRef, "hole", map[string]any{"faceRef": refKey, "diameter": "3 mm", "depth": "5 mm", "center": []float64{2, 1.5, 1}}); err != nil {
@@ -86,6 +88,7 @@ func TestHoleGeomFaceFlippedNormalStillBinds(t *testing.T) {
 
 // TestHoleNeedsFaceRefOrGeom: a hole with neither faceRef nor placementFaceGeom is a clean error.
 func TestHoleNeedsFaceRefOrGeom(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	if _, err := applyMap(t, s, "hole", map[string]any{"diameter": "3 mm", "depth": "5 mm"}); err == nil {
 		t.Error("hole with neither faceRef nor placementFaceGeom should error")
@@ -95,6 +98,7 @@ func TestHoleNeedsFaceRefOrGeom(t *testing.T) {
 // TestFilletGeomEdgesMatchesEdgeRefs: rounding an edge by edgesGeom removes the same material as
 // rounding it by edgeRefs (same edge, same radius).
 func TestFilletGeomEdgesMatchesEdgeRefs(t *testing.T) {
+	t.Parallel()
 	byRef, edgeKey, _ := extrudedSolid(t)
 	if _, err := applyMap(t, byRef, "fillet", map[string]any{"edgeRefs": []string{edgeKey}, "radius": "1 mm"}); err != nil {
 		t.Fatalf("fillet by edgeRefs: %v", err)
@@ -115,6 +119,7 @@ func TestFilletGeomEdgesMatchesEdgeRefs(t *testing.T) {
 
 // TestChamferGeomEdgesMatchesEdgeRefs: bevelling an edge by edgesGeom matches edgeRefs.
 func TestChamferGeomEdgesMatchesEdgeRefs(t *testing.T) {
+	t.Parallel()
 	byRef, edgeKey, _ := extrudedSolid(t)
 	if _, err := applyMap(t, byRef, "chamfer", map[string]any{"edgeRefs": []string{edgeKey}, "distance": "1 mm"}); err != nil {
 		t.Fatalf("chamfer by edgeRefs: %v", err)
@@ -135,6 +140,7 @@ func TestChamferGeomEdgesMatchesEdgeRefs(t *testing.T) {
 
 // TestShellGeomFacesMatchesFaceRefs: hollowing while removing a face by facesGeom matches faceRefs.
 func TestShellGeomFacesMatchesFaceRefs(t *testing.T) {
+	t.Parallel()
 	byRef, _, faceKey := extrudedSolid(t)
 	if _, err := applyMap(t, byRef, "shell", map[string]any{"faceRefs": []string{faceKey}, "thickness": "1 mm"}); err != nil {
 		t.Fatalf("shell by faceRefs: %v", err)
@@ -155,6 +161,7 @@ func TestShellGeomFacesMatchesFaceRefs(t *testing.T) {
 
 // TestDraftGeomFacesMatchesFaceRefs: drafting a face by facesGeom matches faceRefs.
 func TestDraftGeomFacesMatchesFaceRefs(t *testing.T) {
+	t.Parallel()
 	byRef, _, faceKey := extrudedSolid(t)
 	if _, err := applyMap(t, byRef, "draft", map[string]any{"faceRefs": []string{faceKey}, "angle": "3 deg"}); err != nil {
 		t.Fatalf("draft by faceRefs: %v", err)
@@ -176,6 +183,7 @@ func TestDraftGeomFacesMatchesFaceRefs(t *testing.T) {
 // TestGeomSelectorBadVectorErrors: a geometric selector whose centroid/normal/midpoint is not a
 // 3-vector is a clean error, not a panic (covers the conversion error paths).
 func TestGeomSelectorBadVectorErrors(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	badFace := map[string]any{"diameter": "3 mm", "depth": "5 mm",
 		"placementFaceGeom": map[string]any{"centroid": []float64{1, 2}, "normal": []float64{0, 0, 1}}}

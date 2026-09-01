@@ -212,6 +212,7 @@ func tangentKindCases(f *closureFixture) []redefineClosureCase {
 }
 
 func TestWorkPlaneRedefineClosureOverEveryKind(t *testing.T) {
+	t.Parallel()
 	f := newClosureFixture(t)
 	for _, tc := range redefineClosureCases(f) {
 		t.Run(tc.kind, func(t *testing.T) {
@@ -249,6 +250,7 @@ func assertSamePlane(t *testing.T, got, want *WorkPlane) {
 // second torus and checks the plane re-derives from it (the tangent-family redefine pinned
 // against pre-I11 behavior).
 func TestTorusMidPlaneRedefineClosure(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	torA, err := geom.NewTorus(math.P3(0, 0, 5), math.V3(0, 0, 1), 4, 1)
 	if err != nil {
@@ -287,6 +289,7 @@ func faceBodyAt(t *testing.T, surface geom.Surface, idx int) (*topo.Body, []byte
 // origin plane and the point-cloud-fit plane report no slots/scalars and a no-op snapshot —
 // explicitly (their definitions implement the redefine methods), not via a default case.
 func TestNonRedefinableKindsDeclareEmptyStory(t *testing.T) {
+	t.Parallel()
 	g := NewWorkGeometry()
 	origin := g.WorkPlanes().Item(0)
 	if origin.IsRedefinable() {

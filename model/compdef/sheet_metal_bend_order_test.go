@@ -62,6 +62,7 @@ func addFlangeOnEdge(t *testing.T, d *PartComponentDefinition, edgeKey []byte) s
 // TestBendOrderReorderAndPersist the default bend order is creation order; setting a custom
 // order reorders the bends and persists through the recipe.
 func TestBendOrderReorderAndPersist(t *testing.T) {
+	t.Parallel()
 	d, f1, f2 := twoBendSheet(t)
 
 	nat := d.OrderedBends()

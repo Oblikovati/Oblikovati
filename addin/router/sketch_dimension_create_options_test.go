@@ -23,6 +23,7 @@ func offsetDimSketch(t *testing.T, r *Router, s *app.Session) (point, line uint6
 // TestSketchDimensionDrivenAtCreate creates a driven (reference) offset dimension in one call and
 // verifies it neither constrains (DOF unchanged) nor enumerates as driving (#1875).
 func TestSketchDimensionDrivenAtCreate(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	p, l := offsetDimSketch(t, r, s)
 
@@ -48,6 +49,7 @@ func TestSketchDimensionDrivenAtCreate(t *testing.T) {
 // verifies the reported value is twice the 3-unit perpendicular distance, and that enumeration
 // echoes the flag (#1875).
 func TestSketchDimensionLinearDiameterDoublesValue(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	p, l := offsetDimSketch(t, r, s)
 
@@ -69,6 +71,7 @@ func TestSketchDimensionLinearDiameterDoublesValue(t *testing.T) {
 // TestSketchDimensionTextPointRoundTrips stores a text placement at create and reads it back from
 // enumeration; a malformed textPoint is a clean error (#1875).
 func TestSketchDimensionTextPointRoundTrips(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	p, l := offsetDimSketch(t, r, s)
 

@@ -6,8 +6,16 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops/surface"
+
+	"oblikovati.org/test-utilities/brepfixture"
+
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -15,6 +23,7 @@ import (
 // TestSectionWithPlaneBoxRectangle: a mid-height plane sections the box into
 // one closed rectangular chain of perimeter 2(sx+sy).
 func TestSectionWithPlaneBoxRectangle(t *testing.T) {
+	t.Parallel()
 	b := boxBody(math.P3(0, 0, 0), 3, 2, 4)
 	sec, err := SectionWithPlane(b, math.P3(0, 0, 2), math.V3(0, 0, 1), DefaultQuality())
 	if err != nil {
@@ -42,20 +51,21 @@ func boxBody(p math.Point3, sx, sy, sz float64) *topo.Body {
 		return math.P3(p.X+math.Scalar(x*sx), p.Y+math.Scalar(y*sy), p.Z+math.Scalar(z*sz))
 	}
 	faces := []*topo.Body{
-		quadBody("bottom", s(0, 0, 0), s(0, 1, 0), s(1, 1, 0), s(1, 0, 0)),
-		quadBody("top", s(0, 0, 1), s(1, 0, 1), s(1, 1, 1), s(0, 1, 1)),
-		quadBody("front", s(0, 0, 0), s(1, 0, 0), s(1, 0, 1), s(0, 0, 1)),
-		quadBody("back", s(0, 1, 0), s(0, 1, 1), s(1, 1, 1), s(1, 1, 0)),
-		quadBody("left", s(0, 0, 0), s(0, 0, 1), s(0, 1, 1), s(0, 1, 0)),
-		quadBody("right", s(1, 0, 0), s(1, 1, 0), s(1, 1, 1), s(1, 0, 1)),
+		brepfixture.QuadBody("bottom", s(0, 0, 0), s(0, 1, 0), s(1, 1, 0), s(1, 0, 0)),
+		brepfixture.QuadBody("top", s(0, 0, 1), s(1, 0, 1), s(1, 1, 1), s(0, 1, 1)),
+		brepfixture.QuadBody("front", s(0, 0, 0), s(1, 0, 0), s(1, 0, 1), s(0, 0, 1)),
+		brepfixture.QuadBody("back", s(0, 1, 0), s(0, 1, 1), s(1, 1, 1), s(1, 1, 0)),
+		brepfixture.QuadBody("left", s(0, 0, 0), s(0, 0, 1), s(0, 1, 1), s(0, 1, 0)),
+		brepfixture.QuadBody("right", s(1, 0, 0), s(1, 1, 0), s(1, 1, 1), s(1, 0, 1)),
 	}
-	body, _ := Stitch(faces, 0, false, "box")
+	body, _ := heal.Stitch(faces, 0, false, "box")
 	return body
 }
 
 // TestFaceSilhouetteCylinderRulings: a cylinder side face viewed from +X has
 // two vertical silhouette rulings (at y = ±r).
 func TestFaceSilhouetteCylinderRulings(t *testing.T) {
+	t.Parallel()
 	cyl := cylinderBody(t, 2, 5)
 	var side *topo.Face
 	for _, f := range cyl.Faces() {
@@ -97,21 +107,22 @@ func isPlanarFace(f *topo.Face) bool {
 // TestRuledSurfaceBetweenSquares: ruling two parallel unit squares 2 apart
 // gives a surface body of area ~8 (four 1×2 walls).
 func TestRuledSurfaceBetweenSquares(t *testing.T) {
+	t.Parallel()
 	_, w1 := squareWireBody(1)
 	_, w2raw := squareWireBody(1)
-	lifted, err := TransformBody(w2raw.Body(), math.Translation4(math.V3(0, 0, 2)), func(l topo.Lineage) topo.Lineage { return l })
+	lifted, err := transform.TransformBody(w2raw.Body(), math.Translation4(math.V3(0, 0, 2)), func(l topo.Lineage) topo.Lineage { return l })
 	if err != nil {
 		t.Fatal(err)
 	}
 	w2 := lifted.Wires()[0]
-	surf, err := RuledSurfaceBetweenWires(w1, w2)
+	surf, err := surface.RuledSurfaceBetweenWires(w1, w2)
 	if err != nil {
-		t.Fatalf("RuledSurfaceBetweenWires: %v", err)
+		t.Fatalf("surface.RuledSurfaceBetweenWires: %v", err)
 	}
 	if surf.IsSolid() {
 		t.Error("a ruled surface is a surface body, not a solid")
 	}
-	props := BodyGeometryProperties(surf, DefaultQuality())
+	props := query.BodyGeometryProperties(surf, DefaultQuality())
 	if stdmath.Abs(props.Area-8) > 0.1 {
 		t.Errorf("ruled surface area = %g, want ~8", props.Area)
 	}
@@ -120,13 +131,14 @@ func TestRuledSurfaceBetweenSquares(t *testing.T) {
 // TestGroupIdenticalBodies: a box equals its translate and rotate, not a
 // different box; reflection matching is controllable.
 func TestGroupIdenticalBodies(t *testing.T) {
+	t.Parallel()
 	a := boxBody(math.P3(0, 0, 0), 1, 2, 3)
-	moved, _ := TransformBody(a, math.Translation4(math.V3(10, 0, 0)), func(l topo.Lineage) topo.Lineage { return l })
+	moved, _ := transform.TransformBody(a, math.Translation4(math.V3(10, 0, 0)), func(l topo.Lineage) topo.Lineage { return l })
 	axis, _ := math.UnitVector3FromVector(math.V3(0, 0, 1))
-	rotated, _ := TransformBody(a, math.Rotation4(0.7, axis, math.P3(5, 5, 5)), func(l topo.Lineage) topo.Lineage { return l })
+	rotated, _ := transform.TransformBody(a, math.Rotation4(0.7, axis, math.P3(5, 5, 5)), func(l topo.Lineage) topo.Lineage { return l })
 	other := boxBody(math.P3(0, 0, 0), 1, 2, 4)
-	groups := GroupIdenticalBodies([]*topo.Body{a, moved, rotated, other},
-		IdenticalBodiesOptions{MatchReflection: true}, DefaultQuality())
+	groups := query.GroupIdenticalBodies([]*topo.Body{a, moved, rotated, other},
+		query.IdenticalBodiesOptions{MatchReflection: true}, DefaultQuality())
 	if len(groups) != 2 {
 		t.Fatalf("grouping = %v, want 2 groups", groups)
 	}
@@ -138,9 +150,10 @@ func TestGroupIdenticalBodies(t *testing.T) {
 // TestDropFacesKeepsSelectionSemantics: deleting one face opens the body;
 // keep-instead retains only the selection.
 func TestDropFacesKeepsSelectionSemantics(t *testing.T) {
+	t.Parallel()
 	b := boxBody(math.P3(0, 0, 0), 1, 1, 1)
 	key := b.Faces()[0].ReferenceKey()
-	open, err := DropFaces(b, [][]byte{key}, false)
+	open, err := heal.DropFaces(b, [][]byte{key}, false)
 	if err != nil {
 		t.Fatalf("DropFaces: %v", err)
 	}
@@ -150,14 +163,14 @@ func TestDropFacesKeepsSelectionSemantics(t *testing.T) {
 	if len(BoundaryEdges(open)) != 4 {
 		t.Errorf("opened box has %d boundary edges, want 4", len(BoundaryEdges(open)))
 	}
-	only, err := DropFaces(b, [][]byte{key}, true)
+	only, err := heal.DropFaces(b, [][]byte{key}, true)
 	if err != nil {
 		t.Fatalf("DropFaces keep: %v", err)
 	}
 	if len(only.Faces()) != 1 {
 		t.Errorf("keep-instead result has %d faces, want 1", len(only.Faces()))
 	}
-	if _, err := DropFaces(only, [][]byte{only.Faces()[0].ReferenceKey()}, false); err == nil {
+	if _, err := heal.DropFaces(only, [][]byte{only.Faces()[0].ReferenceKey()}, false); err == nil {
 		t.Error("removing every face must error")
 	}
 }

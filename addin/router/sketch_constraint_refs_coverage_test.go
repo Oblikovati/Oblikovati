@@ -11,6 +11,7 @@ import (
 // TestSketchTangentAndPointCircle covers the circular-reference geometric constraints
 // (tangent line-circle / circle-circle, concentric, point-on-circle).
 func TestSketchTangentAndPointCircle(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	add := func(args string) wire.AddSketchEntityResult {
 		var res wire.AddSketchEntityResult

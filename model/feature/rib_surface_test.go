@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -14,6 +15,7 @@ import (
 // rather than the capped prism. The open sheet is the solid rib's side walls, so a solid rib of the
 // same band has strictly more area (its two band end caps).
 func TestRibSurfaceMakesOpenSheet(t *testing.T) {
+	t.Parallel()
 	mk := func(op ops.PartFeatureOperation) *topo.Body {
 		fs := NewPartFeatures(nil)
 		pf := NewRibFeatures(fs).AddDefinition(&RibDefinition{
@@ -26,7 +28,7 @@ func TestRibSurfaceMakesOpenSheet(t *testing.T) {
 		}
 		return fs.Result()[0]
 	}
-	area := func(b *topo.Body) float64 { return ops.BodyGeometryProperties(b, ops.DefaultQuality()).Area }
+	area := func(b *topo.Body) float64 { return query.BodyGeometryProperties(b, ops.DefaultQuality()).Area }
 
 	sheet, solid := mk(ops.Surface), mk(ops.NewBody)
 	if sheet.IsSolid() {

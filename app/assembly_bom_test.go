@@ -14,6 +14,7 @@ import (
 // TestAssemblyBOMCountsComponents: two instances of one component group into a single BOM row with
 // quantity 2 (the BOM counts identical components), proving the panel reads the live assembly.
 func TestAssemblyBOMCountsComponents(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	placedWidget(t, s, asm, "widget:2")
@@ -32,6 +33,7 @@ func TestAssemblyBOMCountsComponents(t *testing.T) {
 
 // TestBOMViewKindSelectsView: the panel's view toggle drives which view AssemblyBOM builds.
 func TestBOMViewKindSelectsView(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 
@@ -48,6 +50,7 @@ func TestBOMViewKindSelectsView(t *testing.T) {
 // TestExportBOMCSVWritesFile: Export writes a CSV with the standard header and a row per component,
 // at the chosen path.
 func TestExportBOMCSVWritesFile(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	placedWidget(t, s, asm, "widget:2")
@@ -73,6 +76,7 @@ func TestExportBOMCSVWritesFile(t *testing.T) {
 // TestAssemblyBOMRequiresAssembly: building/exporting a BOM on a part errors rather than returning
 // an empty view.
 func TestAssemblyBOMRequiresAssembly(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, err := s.AssemblyBOM(); err == nil {
 		t.Error("AssemblyBOM on a part should error")
@@ -85,6 +89,7 @@ func TestAssemblyBOMRequiresAssembly(t *testing.T) {
 // TestBOMCommandOpensPanel: the Assemble ▸ Bill of Materials command opens the panel and is gated
 // to an active assembly.
 func TestBOMCommandOpensPanel(t *testing.T) {
+	t.Parallel()
 	s := assemblySession(t)
 	if s.BOMPanelOpen() {
 		t.Fatal("the BOM panel should start closed")

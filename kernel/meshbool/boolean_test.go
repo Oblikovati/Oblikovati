@@ -11,6 +11,7 @@ import (
 // (A=[0,2]^3, B=[1,3]^3, overlap [1,2]^3 = volume 1) through each operation, gated
 // by the exact expected volume AND watertightness of the result.
 func TestBooleanTwoBoxes(t *testing.T) {
+	t.Parallel()
 	a := boxMesh([3]float64{0, 0, 0}, [3]float64{2, 2, 2})
 	b := boxMesh([3]float64{1, 1, 1}, [3]float64{3, 3, 3})
 	cases := []struct {
@@ -40,6 +41,7 @@ func TestBooleanTwoBoxes(t *testing.T) {
 // classification gets wrong (it would drop both copies and leave a hole). The
 // coplanar-keep rule must retain exactly one copy. Overlap volume is 4.
 func TestBooleanCoplanarBoxes(t *testing.T) {
+	t.Parallel()
 	a := boxMesh([3]float64{0, 0, 0}, [3]float64{2, 2, 2})
 	b := boxMesh([3]float64{1, 0, 0}, [3]float64{3, 2, 2})
 	cases := []struct {
@@ -63,6 +65,7 @@ func TestBooleanCoplanarBoxes(t *testing.T) {
 // TestBooleanDisjointUnion unions two separated boxes: the result is just both
 // boxes (volume 16) and watertight.
 func TestBooleanDisjointUnion(t *testing.T) {
+	t.Parallel()
 	a := boxMesh([3]float64{0, 0, 0}, [3]float64{2, 2, 2})
 	b := boxMesh([3]float64{5, 5, 5}, [3]float64{7, 7, 7})
 	res := Boolean(a, b, Union)

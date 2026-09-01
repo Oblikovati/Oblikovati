@@ -13,6 +13,7 @@ import (
 // checks the constraint lands and enumerates as onFace (#1839). This is the dedicated end-to-end
 // test the coverage guard points at (onFace needs a face ref + a solid, unlike the fixture kinds).
 func TestSketch3DOnFaceConstraintOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	faceRef := blockFaceRef(t, r, s)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
@@ -38,6 +39,7 @@ func TestSketch3DOnFaceConstraintOverWire(t *testing.T) {
 // TestSketch3DOnFaceUnresolvedFaceErrors: an onFace with a face reference that does not resolve is a
 // clean error (#1839).
 func TestSketch3DOnFaceUnresolvedFaceErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	blockFaceRef(t, r, s) // a solid exists, but the ref below is not one of its faces
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})

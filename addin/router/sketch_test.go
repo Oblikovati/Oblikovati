@@ -26,6 +26,7 @@ func emptyPartSession(t *testing.T) (*Router, *app.Session) {
 }
 
 func TestSketchCreateAndRectangleThenExtrude(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 
 	var sk wire.CreateSketchResult
@@ -58,6 +59,7 @@ func TestSketchCreateAndRectangleThenExtrude(t *testing.T) {
 // TestSketchSpineEnumerateEditSolveDelete exercises the F01 API spine end-to-end through
 // the router: create a rectangle sketch, then list/get/enumerate/edit/solve/delete it.
 func TestSketchSpineEnumerateEditSolveDelete(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
@@ -152,6 +154,7 @@ func countReferenceCurves(ents []wire.SketchEntityInfo) int {
 // TestSketchSetPropertyRoundTripsThroughGet sets each sketch property through the API
 // and reads it back via sketch.get (F01 PBI-201).
 func TestSketchSetPropertyRoundTripsThroughGet(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 
@@ -177,6 +180,7 @@ func TestSketchSetPropertyRoundTripsThroughGet(t *testing.T) {
 }
 
 func TestSketchSetPropertyUnknownProperty(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	if _, err := r.Handle(s, "sketch.setProperty", []byte(`{"sketchIndex":0,"property":"bogus","value":"x"}`)); err == nil {
@@ -187,6 +191,7 @@ func TestSketchSetPropertyUnknownProperty(t *testing.T) {
 // TestSketchAddEntityKinds creates each F02 entity kind/variant through the API and
 // verifies they enumerate with the right kinds and geometry.
 func TestSketchAddEntityKinds(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 
@@ -217,6 +222,7 @@ func TestSketchAddEntityKinds(t *testing.T) {
 
 // TestSketchAddConicsAndSplines creates ellipse/ellipticalArc/spline through the API.
 func TestSketchAddConicsAndSplines(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 
@@ -243,6 +249,7 @@ func TestSketchAddConicsAndSplines(t *testing.T) {
 // TestSketchAddCompositeEntities builds rectangle/polygon/slot via the API and checks
 // each yields its closed profile.
 func TestSketchAddCompositeEntities(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 
@@ -273,6 +280,7 @@ func TestSketchAddCompositeEntities(t *testing.T) {
 // TestSketchFilletViaAPI builds two corner lines then fillets them through the API,
 // asserting a tangent arc appears.
 func TestSketchFilletViaAPI(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 
@@ -305,6 +313,7 @@ func hasArcRadius(ents []wire.SketchEntityInfo, radius float64) bool {
 }
 
 func TestSketchFilletNeedsTwoLineRefs(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	if _, err := r.Handle(s, "sketch.addEntity", []byte(`{"sketchIndex":0,"kind":"fillet","entityRefs":[1],"radius":"1 cm"}`)); err == nil {
@@ -313,6 +322,7 @@ func TestSketchFilletNeedsTwoLineRefs(t *testing.T) {
 }
 
 func TestSketchPolygonNeedsThreeSides(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	if _, err := r.Handle(s, "sketch.addEntity", []byte(`{"sketchIndex":0,"kind":"polygon","points":[[0,0],[1,0]],"sides":2}`)); err == nil {
@@ -321,6 +331,7 @@ func TestSketchPolygonNeedsThreeSides(t *testing.T) {
 }
 
 func TestSketchAddEllipseNeedsAxis(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	if _, err := r.Handle(s, "sketch.addEntity", []byte(`{"sketchIndex":0,"kind":"ellipse","points":[[0,0]],"majorRadius":"2 cm","minorRadius":"1 cm"}`)); err == nil {
@@ -329,6 +340,7 @@ func TestSketchAddEllipseNeedsAxis(t *testing.T) {
 }
 
 func TestSketchAddEntityRejectsCollinearCircle(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	if _, err := r.Handle(s, "sketch.addEntity", []byte(`{"sketchIndex":0,"kind":"circle","variant":"threePoint","points":[[0,0],[1,0],[2,0]]}`)); err == nil {
@@ -349,6 +361,7 @@ func hasCircleRadius(ents []wire.SketchEntityInfo, radius float64) bool {
 // TestSketchAddConstraintReducesDOFAndSolves applies a horizontal constraint to a line's
 // endpoints, then concentric+equalRadius to two circles, checking DOF and enumeration.
 func TestSketchAddConstraintReducesDOFAndSolves(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 
@@ -398,6 +411,7 @@ func lineEndpointYs(ents []wire.SketchEntityInfo) (float64, float64) {
 }
 
 func TestSketchAddConstraintConcentric(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var c1, c2 wire.AddSketchEntityResult
@@ -412,6 +426,7 @@ func TestSketchAddConstraintConcentric(t *testing.T) {
 }
 
 func TestSketchAddConstraintRejectsBadRefCount(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	if _, err := r.Handle(s, "sketch.addConstraint", []byte(`{"sketchIndex":0,"kind":"parallel","entities":[1]}`)); err == nil {
@@ -422,6 +437,7 @@ func TestSketchAddConstraintRejectsBadRefCount(t *testing.T) {
 // TestSketchConstraintKinds exercises the remaining constraint families and the
 // reference-resolution error paths.
 func TestSketchConstraintKinds(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var l1, l2, c1 wire.AddSketchEntityResult
@@ -447,6 +463,7 @@ func TestSketchConstraintKinds(t *testing.T) {
 }
 
 func TestSketchAddConstraintErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0],[4,0]]}`, &wire.AddSketchEntityResult{})
@@ -463,6 +480,7 @@ func TestSketchAddConstraintErrors(t *testing.T) {
 }
 
 func TestSketchDeleteConstraintBadIndex(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	if _, err := r.Handle(s, "sketch.deleteConstraint", []byte(`{"sketchIndex":0,"constraintIndex":3}`)); err == nil {
@@ -473,6 +491,7 @@ func TestSketchDeleteConstraintBadIndex(t *testing.T) {
 // TestSketchRadiusDimensionDrivesCircle adds a radius dimension to a circle, solves it to
 // the target, then re-drives it to a new value.
 func TestSketchRadiusDimensionDrivesCircle(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 
@@ -520,6 +539,7 @@ func circleRadiusOf(t *testing.T, r *Router, s *app.Session) float64 {
 }
 
 func TestSketchAddDimensionErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	for _, bad := range []string{
@@ -538,6 +558,7 @@ func TestSketchAddDimensionErrors(t *testing.T) {
 // TestSketchConstraintStatusReportsDOF takes a circle from under- to fully-constrained and
 // checks the non-mutating status query reflects each state.
 func TestSketchConstraintStatusReportsDOF(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var circ wire.AddSketchEntityResult
@@ -562,6 +583,7 @@ func TestSketchConstraintStatusReportsDOF(t *testing.T) {
 // TestSketchProfilesEnumerated builds a rectangle with a rectangular hole and checks the
 // profiles API reports the annulus region with the right area.
 func TestSketchProfilesEnumerated(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[0,0],[10,10]]}`, &wire.AddSketchEntityResult{})
@@ -585,6 +607,7 @@ func TestSketchProfilesEnumerated(t *testing.T) {
 
 // TestSketchTransformCopyAndMirror exercises the F09 edit operations through the API.
 func TestSketchTransformCopyAndMirror(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var circ wire.AddSketchEntityResult
@@ -613,6 +636,7 @@ func TestSketchTransformCopyAndMirror(t *testing.T) {
 }
 
 func TestSketchTransformErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"1 cm"}`, &wire.AddSketchEntityResult{})
@@ -630,6 +654,7 @@ func TestSketchTransformErrors(t *testing.T) {
 
 // TestSketchPatternsViaAPI builds rectangular and circular patterns of a circle.
 func TestSketchPatternsViaAPI(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var seed wire.AddSketchEntityResult
@@ -660,6 +685,7 @@ func TestSketchPatternsViaAPI(t *testing.T) {
 }
 
 func TestSketchAddPatternErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"5 mm"}`, &wire.AddSketchEntityResult{})
@@ -676,6 +702,7 @@ func TestSketchAddPatternErrors(t *testing.T) {
 
 // TestSketchOffsetAndImage exercises the F05 offset + image-placement operations.
 func TestSketchOffsetAndImage(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var c wire.AddSketchEntityResult
@@ -704,6 +731,7 @@ func TestSketchOffsetAndImage(t *testing.T) {
 }
 
 func TestSketchOffsetErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"10 mm"}`, &wire.AddSketchEntityResult{})
@@ -722,6 +750,7 @@ func hasCircleRadius2(t *testing.T, r *Router, s *app.Session, radius float64) b
 
 // TestSketchAnnotationsAndArcSlot exercises fill-region/text/arc-slot through the API.
 func TestSketchAnnotationsAndArcSlot(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[0,0],[10,10]]}`, &wire.AddSketchEntityResult{})
@@ -749,6 +778,7 @@ func TestSketchAnnotationsAndArcSlot(t *testing.T) {
 
 // TestSketchNewConstraints212 exercises ground/offset/patternLink through the API.
 func TestSketchNewConstraints212(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var l1, l2 wire.AddSketchEntityResult
@@ -777,6 +807,7 @@ func TestSketchNewConstraints212(t *testing.T) {
 }
 
 func TestSketchGroundNeedsOneRef(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	if _, err := r.Handle(s, "sketch.addConstraint", []byte(`{"sketchIndex":0,"kind":"ground","entities":[1,2]}`)); err == nil {
@@ -786,6 +817,7 @@ func TestSketchGroundNeedsOneRef(t *testing.T) {
 
 // TestSketchAdvancedDimensions exercises offset/three-point-angle dims through the API.
 func TestSketchAdvancedDimensions(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var line, pt wire.AddSketchEntityResult
@@ -837,6 +869,7 @@ func TestSketchAdvancedDimensions(t *testing.T) {
 
 // TestSketchDerivedCurves exercises equation/fixed/offset-spline curves through the API.
 func TestSketchDerivedCurves(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 
@@ -861,6 +894,7 @@ func TestSketchDerivedCurves(t *testing.T) {
 }
 
 func TestSketchEquationCurveRejectsBadExpr(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	if _, err := r.Handle(s, "sketch.addEntity", []byte(`{"sketchIndex":0,"kind":"equationCurve","xExpr":"cos(u)","yExpr":"sin(t)","t0":0,"t1":1}`)); err == nil {
@@ -870,6 +904,7 @@ func TestSketchEquationCurveRejectsBadExpr(t *testing.T) {
 
 // TestSketchTrimSplitExtend exercises the F09 curve-edit ops through the API.
 func TestSketchTrimSplitExtend(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var l, v1, v2 wire.AddSketchEntityResult
@@ -894,6 +929,7 @@ func TestSketchTrimSplitExtend(t *testing.T) {
 }
 
 func TestSketchTrimErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"1 cm"}`, &wire.AddSketchEntityResult{})
@@ -905,6 +941,7 @@ func TestSketchTrimErrors(t *testing.T) {
 
 // TestSketchAutoDimensionAndChainOffset exercises auto-constrain + chain offset.
 func TestSketchAutoDimensionAndChainOffset(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[0,0],[4,3]]}`, &wire.AddSketchEntityResult{})
@@ -930,6 +967,7 @@ func TestSketchAutoDimensionAndChainOffset(t *testing.T) {
 // TestSketchProjectGeometry extrudes a box, then projects one of its edges onto a new
 // sketch and checks a projected curve is created and enumerates.
 func TestSketchProjectGeometry(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
@@ -972,6 +1010,7 @@ func TestSketchProjectGeometry(t *testing.T) {
 // sketch. The point becomes a projected point; the axis and the plane↔sketch intersection both
 // become projected curves (#1262).
 func TestSketchProjectDatumGeometry(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 
@@ -995,6 +1034,7 @@ func TestSketchProjectDatumGeometry(t *testing.T) {
 // TestSketchProjectParallelPlaneIsUnhealthy: projecting the XY origin plane onto an XY sketch is
 // parallel — there is no intersection line, so it reports unhealthy and creates nothing.
 func TestSketchProjectParallelPlaneIsUnhealthy(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var proj wire.ProjectGeometryResult
@@ -1005,6 +1045,7 @@ func TestSketchProjectParallelPlaneIsUnhealthy(t *testing.T) {
 }
 
 func TestSketchProjectUnknownRefIsUnhealthy(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	var proj wire.ProjectGeometryResult
@@ -1015,6 +1056,7 @@ func TestSketchProjectUnknownRefIsUnhealthy(t *testing.T) {
 }
 
 func TestSketchCreateUnknownPlane(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {
 		t.Fatal("expected error for unknown plane")
@@ -1022,6 +1064,7 @@ func TestSketchCreateUnknownPlane(t *testing.T) {
 }
 
 func TestSketchRectangleBadIndex(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.rectangle", []byte(`{"sketchIndex":5,"width":"1 cm","height":"1 cm"}`)); err == nil {
 		t.Fatal("expected error for out-of-range sketch index")

@@ -39,6 +39,7 @@ func assertConeManifold(t *testing.T, body *topo.Body, wantFaces int) {
 
 // TestHalfSpaceCutConeBaseFrustumTopology: keeping the base side leaves a frustum (cone + two caps).
 func TestHalfSpaceCutConeBaseFrustumTopology(t *testing.T) {
+	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 0, "cone")
 	plane, _ := geom.NewPlane(math.P3(0, 0, 5), math.V3(0, 0, 1)) // keep z ≤ 5
 	res, err := HalfSpaceCut(cone, plane)
@@ -50,6 +51,7 @@ func TestHalfSpaceCutConeBaseFrustumTopology(t *testing.T) {
 
 // TestHalfSpaceCutConeApexConeTopology: keeping the apex side leaves a smaller cone (cone + one cap).
 func TestHalfSpaceCutConeApexConeTopology(t *testing.T) {
+	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 0, "cone")
 	plane, _ := geom.NewPlane(math.P3(0, 0, 5), math.V3(0, 0, -1)) // keep z ≥ 5 (the tip)
 	res, err := HalfSpaceCut(cone, plane)
@@ -62,6 +64,7 @@ func TestHalfSpaceCutConeApexConeTopology(t *testing.T) {
 // TestHalfSpaceCutFrustumReCut: a frustum (both radii non-zero) is recognized and re-cut to a shorter
 // frustum, so perpendicular cuts compose.
 func TestHalfSpaceCutFrustumReCut(t *testing.T) {
+	t.Parallel()
 	frustum, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 4, 2, "frustum")
 	plane, _ := geom.NewPlane(math.P3(0, 0, 6), math.V3(0, 0, 1)) // keep z ≤ 6
 	res, err := HalfSpaceCut(frustum, plane)
@@ -76,6 +79,7 @@ func TestHalfSpaceCutFrustumReCut(t *testing.T) {
 // plane drops the apex, so the kept part is a frustum-like band (the base cap, the cone band, and the
 // section lid), watertight, no CSG fallback.
 func TestHalfSpaceCutConeObliqueApexExact(t *testing.T) {
+	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 0, "cone")
 	plane, _ := geom.NewPlane(math.P3(0, 0, 4), math.V3(0.5, 0, 0.866)) // steep oblique → ellipse, apex dropped
 	res, err := HalfSpaceCut(cone, plane)
@@ -92,6 +96,7 @@ func TestHalfSpaceCutConeObliqueApexExact(t *testing.T) {
 // the cone TIP closing to its apex pole, a single-loop cone face capped by the elliptical lid — watertight,
 // one analytic cone face, no CSG (the apex-kept branch of the full-cone-to-apex split, Oblikovati#1375).
 func TestHalfSpaceCutConeObliqueApexKept(t *testing.T) {
+	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 0, "cone")
 	plane, _ := geom.NewPlane(math.P3(0, 0, 4), math.V3(-0.5, 0, -0.866)) // keep the apex tip above the ellipse
 	res, err := HalfSpaceCut(cone, plane)

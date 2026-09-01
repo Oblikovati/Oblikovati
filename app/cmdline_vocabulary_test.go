@@ -21,6 +21,7 @@ func builtinActionIDs() map[string]bool {
 // the built-in AutoCAD vocabulary maps to must be a registered command id or a reserved
 // built-in action id, so a typed AutoCAD command always dispatches to something real.
 func TestVocabularyActionsAreRealCommands(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -40,6 +41,7 @@ func TestVocabularyActionsAreRealCommands(t *testing.T) {
 // TestVocabularyWordsResolveThroughBindings checks the end-to-end path the command window
 // uses: a typed AutoCAD word resolves through the binding engine to its action id.
 func TestVocabularyWordsResolveThroughBindings(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -76,6 +78,7 @@ func TestVocabularyWordsResolveThroughBindings(t *testing.T) {
 // so no table entry points at a missing or misspelled command id (CLAUDE.md: never invent
 // ids; F07 expanded the table broadly).
 func TestEveryVocabularyWordResolves(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -91,6 +94,7 @@ func TestEveryVocabularyWordResolves(t *testing.T) {
 // TestUserAliasOverridesVocabulary confirms a user-defined alias wins over the built-in
 // AutoCAD vocabulary for the same word.
 func TestUserAliasOverridesVocabulary(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)

@@ -14,6 +14,7 @@ import (
 // picker returns that edge — the path the chamfer/fillet tools rely on (previously the
 // RayPicker had no edge picking, so edge selection silently did nothing in the head).
 func TestRayPickerSelectsEdge(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4) // box [0,2]×[0,2]×[0,4]
 	cam := scene.NewCamera(400, 400)
 	cam.Eye = math.P3(10, 0, 2)
@@ -35,6 +36,7 @@ func TestRayPickerSelectsEdge(t *testing.T) {
 // returns that vertex — the path the three-point-plane tool relies on (the RayPicker had no
 // vertex picking, so model-vertex selection silently did nothing in the head).
 func TestRayPickerSelectsVertex(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4) // box [0,2]×[0,2]×[0,4]
 	cam := scene.NewCamera(400, 400)
 	cam.Eye = math.P3(10, 0, 0)
@@ -54,6 +56,7 @@ func TestRayPickerSelectsVertex(t *testing.T) {
 // TestRayPickerEdgeFilter checks the edge pick is gated by the filter: a face-only filter
 // near an edge does not return an edge (it falls through to the face).
 func TestRayPickerEdgeFilter(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4)
 	cam := scene.NewCamera(400, 400)
 	cam.Eye = math.P3(10, 0, 2)
@@ -71,6 +74,7 @@ func TestRayPickerEdgeFilter(t *testing.T) {
 
 // TestRaySegmentDistance checks the ray↔segment closest distance and parameter.
 func TestRaySegmentDistance(t *testing.T) {
+	t.Parallel()
 	dir := math.V3(1, 0, 0)
 	// A segment crossing the ray at (5,0,0): distance 0 at t=5.
 	if d, tt, ok := raySegmentDistance(math.P3(0, 0, 0), dir, math.P3(5, 1, 0), math.P3(5, -1, 0)); !ok || d > 1e-9 || stdmath.Abs(tt-5) > 1e-9 {

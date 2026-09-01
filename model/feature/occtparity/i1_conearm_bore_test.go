@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -74,7 +75,7 @@ func TestI1ConcaveBoreFoldGate(t *testing.T) {
 	body := caseResultBody(t, "I1")
 	meshTotal, torusBands := 0.0, 0
 	for _, f := range body.Faces() {
-		m := ops.TessellateFace(f, ops.PropertyQuality())
+		m := tessellate.TessellateFace(f, ops.PropertyQuality())
 		area := ops.MeshArea(m)
 		meshTotal += area
 		assertI1FaceSane(t, f, m, area)

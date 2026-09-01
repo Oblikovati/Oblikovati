@@ -7,6 +7,7 @@ import "testing"
 // TestScriptConsoleCommandToggles checks the Manage ▸ Script Console command opens and
 // closes the console panel and reports its open state (drives the head panel each frame).
 func TestScriptConsoleCommandToggles(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if s.ScriptConsoleOpen() {
 		t.Fatal("console should start closed")
@@ -29,6 +30,7 @@ func TestScriptConsoleCommandToggles(t *testing.T) {
 // TestScriptConsoleOnManageTab checks the Script Console lands on the Manage tab's Scripts
 // panel (the ribbon exposes the control).
 func TestScriptConsoleOnManageTab(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	tab, ok := BuildRibbon(s).Tab("Manage")
 	if !ok {

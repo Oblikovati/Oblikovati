@@ -8,7 +8,7 @@ import "testing"
 // zero that replaces its retired knownMeshLeaks entry (44 free edges at BOTH default and property).
 //
 // WHAT LEAKED, MEASURED. Swept by provenance on the SHIPPED body with
-// ops.FreeEdgeCount(ops.CalculateBodyFacets(body, q).Mesh), instrumented per free edge with its owning
+// tessellate.FreeEdgeCount(tessellate.CalculateBodyFacets(body, q).Mesh), instrumented per free edge with its owning
 // face: 21 edges on face 454 (geom.BSplineSurface, the low-z coons4 sliver panel), 21 on face 462 (the
 // high-z sliver), and 2 on face 441 (geom.EllipticalCylinder, the oblique boss's wall) — 44, identical
 // at both qualities.

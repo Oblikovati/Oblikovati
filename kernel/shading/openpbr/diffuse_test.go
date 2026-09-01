@@ -11,6 +11,7 @@ import (
 // roughness=0: AF=1, BF=0, so f_ss = rho/π and both directional albedos are exactly 1,
 // zeroing the multi-scatter term — DiffuseEON must reduce exactly to Lambert's law.
 func TestDiffuseEONReducesToLambertianAtZeroRoughness(t *testing.T) {
+	t.Parallel()
 	rho := Gray(0.8)
 	up := Vec3{Z: 1}
 	got := DiffuseEON(rho, 0, up, up)
@@ -25,6 +26,7 @@ func TestDiffuseEONReducesToLambertianAtZeroRoughness(t *testing.T) {
 // albedo of the BRDF approaches 1, even at high roughness where the naive Oren-Nayar term
 // alone would under-integrate.
 func TestDiffuseEONWhiteFurnaceApproachesOne(t *testing.T) {
+	t.Parallel()
 	for _, roughness := range []float64{0, 0.3, 0.6, 1.0} {
 		e := hemisphericalReflectanceScalar(func(wi, wo Vec3) float64 {
 			return DiffuseEON(Gray(1), roughness, wi, wo).R
@@ -43,6 +45,7 @@ func TestDiffuseEONWhiteFurnaceApproachesOne(t *testing.T) {
 // FON directional albedo should differ measurably from a smooth one's (both are always in
 // [0,1], and roughness=0 gives exactly 1 per the reference's construction).
 func TestDirectionalAlbedoFONBoundsAndZeroRoughness(t *testing.T) {
+	t.Parallel()
 	if got := directionalAlbedoFON(0.7, 0); math.Abs(got-1) > 1e-9 {
 		t.Errorf("directionalAlbedoFON(mu, roughness=0) = %v, want exactly 1", got)
 	}

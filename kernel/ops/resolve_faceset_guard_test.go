@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/retopo"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -16,6 +17,7 @@ import (
 // honestly rather than silently shelling an unintended face. A clean key still resolves; a lost
 // one reports honestly.
 func TestResolveFaceSetRejectsAmbiguousKey(t *testing.T) {
+	t.Parallel()
 	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok("f", "body", 0)))
 	mk := func(x, y float64, i int) *topo.Vertex {
 		return bld.AddVertex(math.P3(x, y, 0), topo.NewLineage(topo.Tok("f", "vertex", i)))
@@ -33,14 +35,14 @@ func TestResolveFaceSetRejectsAmbiguousKey(t *testing.T) {
 	uniq := tri(mk(6, 0, 6), mk(7, 0, 7), mk(6, 1, 8), 6, topo.NewLineage(topo.Tok("f", "face", 1)))
 	body := bld.Build()
 
-	if _, err := resolveFaceSet(body, [][]byte{uniq.ReferenceKey()}); err != nil {
+	if _, err := retopo.ResolveFaceSet(body, [][]byte{uniq.ReferenceKey()}); err != nil {
 		t.Fatalf("unique face key should resolve, got %v", err)
 	}
-	_, err := resolveFaceSet(body, [][]byte{f1.ReferenceKey()})
+	_, err := retopo.ResolveFaceSet(body, [][]byte{f1.ReferenceKey()})
 	if err == nil || !strings.Contains(err.Error(), "ambiguous") {
 		t.Errorf("ambiguous face key should be rejected, got %v", err)
 	}
-	if _, err := resolveFaceSet(body, [][]byte{{0x01, 'z'}}); err == nil || !strings.Contains(err.Error(), "lost") {
+	if _, err := retopo.ResolveFaceSet(body, [][]byte{{0x01, 'z'}}); err == nil || !strings.Contains(err.Error(), "lost") {
 		t.Errorf("missing face key should report lost, got %v", err)
 	}
 }

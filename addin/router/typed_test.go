@@ -66,6 +66,7 @@ func (c intRows) Item(i int) int { return c.items[i] }
 func indexPlusValue(i, v int) fakeResult { return fakeResult{Doubled: i*100 + v} }
 
 func TestMarshalResult(t *testing.T) {
+	t.Parallel()
 	sentinel := errors.New("boom")
 	if _, err := marshalResult(fakeResult{Doubled: 1}, sentinel); !errors.Is(err, sentinel) {
 		t.Fatalf("marshalResult error passthrough = %v, want boom", err)
@@ -80,6 +81,7 @@ func TestMarshalResult(t *testing.T) {
 }
 
 func TestTypedCtxSuccess(t *testing.T) {
+	t.Parallel()
 	rec := &recordingHandler{}
 	h := typedCtx(stubResolver{ctx: fakeContext{label: "part"}}.resolve, rec.run)
 	raw, err := h(app.NewSession(), json.RawMessage(`{"value":21}`))
@@ -95,6 +97,7 @@ func TestTypedCtxSuccess(t *testing.T) {
 }
 
 func TestTypedCtxResolveErrorWinsOverDecode(t *testing.T) {
+	t.Parallel()
 	// Context is resolved BEFORE decode, so with both a resolve error and invalid JSON the
 	// resolve error is what an add-in observes — the canonical order (#1649). The handler must
 	// never run.
@@ -111,6 +114,7 @@ func TestTypedCtxResolveErrorWinsOverDecode(t *testing.T) {
 }
 
 func TestTypedCtxDecodeError(t *testing.T) {
+	t.Parallel()
 	rec := &recordingHandler{}
 	h := typedCtx(stubResolver{ctx: fakeContext{label: "part"}}.resolve, rec.run)
 	_, err := h(app.NewSession(), json.RawMessage(`{"value":"not-an-int"}`))
@@ -123,6 +127,7 @@ func TestTypedCtxDecodeError(t *testing.T) {
 }
 
 func TestTypedCtxHandlerError(t *testing.T) {
+	t.Parallel()
 	sentinel := errors.New("kernel refused")
 	rec := &recordingHandler{err: sentinel}
 	h := typedCtx(stubResolver{ctx: fakeContext{label: "part"}}.resolve, rec.run)
@@ -132,6 +137,7 @@ func TestTypedCtxHandlerError(t *testing.T) {
 }
 
 func TestTypedNoContext(t *testing.T) {
+	t.Parallel()
 	rec := &recordingHandler{}
 	h := typed(rec.runNoCtx)
 	raw, err := h(app.NewSession(), json.RawMessage(`{"value":9}`))
@@ -144,6 +150,7 @@ func TestTypedNoContext(t *testing.T) {
 }
 
 func TestCtxQuery(t *testing.T) {
+	t.Parallel()
 	rec := &recordingHandler{}
 	h := ctxQuery(stubResolver{ctx: fakeContext{label: "asm"}}.resolve, rec.runNoArgs)
 	raw, err := h(app.NewSession(), nil) // no-arg handler ignores raw entirely
@@ -162,6 +169,7 @@ func TestCtxQuery(t *testing.T) {
 }
 
 func TestProjectAll(t *testing.T) {
+	t.Parallel()
 	got := projectAll(intRows{items: []int{5, 6, 7}}, indexPlusValue)
 	want := []fakeResult{{Doubled: 5}, {Doubled: 106}, {Doubled: 207}}
 	if len(got) != len(want) {

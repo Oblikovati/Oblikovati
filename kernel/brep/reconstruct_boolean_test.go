@@ -14,6 +14,7 @@ import (
 // keeps its analytic cylindrical wall (the periodic seam loop survives because the face
 // is copied, not traced from facets).
 func TestReconstructPassThroughCylinder(t *testing.T) {
+	t.Parallel()
 	cyl, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)

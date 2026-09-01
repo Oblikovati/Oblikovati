@@ -7,7 +7,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -110,7 +110,7 @@ func (t *ThreadFeature) Recompute(in Input) (Output, error) {
 	copy(out, in.Bodies)
 	// Target the RESOLVED face's current key, not the stored one: a healed thread bound to a
 	// recovered sibling whose live key differs from t.def.FaceKey (ADR-0043 P6, mirrors edges).
-	threadedBody, err := ops.ReplaceFaceSurface(body, face.ReferenceKey(), threaded)
+	threadedBody, err := transform.ReplaceFaceSurface(body, face.ReferenceKey(), threaded)
 	if err != nil {
 		return Output{}, err
 	}

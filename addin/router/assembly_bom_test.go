@@ -14,6 +14,7 @@ import (
 // TestAssemblyBOMViewOverWire reads parts-only and structured BOM views of an assembly
 // holding two placements of one component: each view totals to a single row of quantity 2.
 func TestAssemblyBOMViewOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, _ := assemblySessionWithBoxes(t)
 	part := blockPart(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
 	asm.Place("box:1", part, math.Identity4())
@@ -42,6 +43,7 @@ func TestAssemblyBOMViewOverWire(t *testing.T) {
 // TestAssemblyBOMExportOverWire exports a BOM to CSV with a custom property column and
 // checks the header carries the standard columns plus the requested one.
 func TestAssemblyBOMExportOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, _ := assemblySessionWithBoxes(t)
 	asm.Place("box:1", blockPart(t, math.P3(0, 0, 0), math.P3(1, 1, 1)), math.Identity4())
 
@@ -63,6 +65,7 @@ func TestAssemblyBOMExportOverWire(t *testing.T) {
 // of two placements Reference drops it from the parts-only view, and an invalid structure is rejected
 // (#1978).
 func TestAssemblySetBOMStructureOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, _ := assemblySessionWithBoxes(t)
 	part := blockPart(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
 	asm.Place("box:1", part, math.Identity4())
@@ -92,6 +95,7 @@ func TestAssemblySetBOMStructureOverWire(t *testing.T) {
 // TestAssemblyAddVirtualOverWire adds a virtual component over the wire: it returns a virtual
 // occurrence with no geometry and appears as a BOM row with its part number (#1979).
 func TestAssemblyAddVirtualOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t)
 
 	var added wire.OccurrenceResult
@@ -122,6 +126,7 @@ func TestAssemblyAddVirtualOverWire(t *testing.T) {
 // TestAssemblyOptionsOverWire reads the assembly editing options, sets a couple, and reads them back
 // (#1981).
 func TestAssemblyOptionsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t)
 
 	var got wire.AssemblyOptionsResult

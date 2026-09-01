@@ -29,6 +29,7 @@ func islandChart(t *testing.T) *planeFaceUV {
 
 // TestSplitImprintByKind separates the closed conics from the straight imprint segments.
 func TestSplitImprintByKind(t *testing.T) {
+	t.Parallel()
 	circle, err := geom.NewCircle(math.P3(0, 0, 3), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatal(err)
@@ -46,6 +47,7 @@ func TestSplitImprintByKind(t *testing.T) {
 // TestConicIslandSegsCoverTheWholeCircle: the sampled island is a closed chain of imprint-tagged segments
 // that carries the analytic curve and spans its whole domain, so a kept run re-emits the exact circle.
 func TestConicIslandSegsCoverTheWholeCircle(t *testing.T) {
+	t.Parallel()
 	c := islandChart(t)
 	circle, err := geom.NewCircle(math.P3(0, 0, 3), math.V3(0, 0, 1), 5)
 	if err != nil {
@@ -71,6 +73,7 @@ func TestConicIslandSegsCoverTheWholeCircle(t *testing.T) {
 
 // TestIslandSegsConcatenatesEveryConic: two islands sample into two full chains.
 func TestIslandSegsConcatenatesEveryConic(t *testing.T) {
+	t.Parallel()
 	c := islandChart(t)
 	inner, err := geom.NewCircle(math.P3(0, 0, 3), math.V3(0, 0, 1), 2)
 	if err != nil {
@@ -91,6 +94,7 @@ func TestIslandSegsConcatenatesEveryConic(t *testing.T) {
 // TestAssembleSegmentsKeepsFrameAndIsland: the square frame's four edges survive alongside the island, so
 // the arrangement sees the plate minus the circle.
 func TestAssembleSegmentsKeepsFrameAndIsland(t *testing.T) {
+	t.Parallel()
 	c := islandChart(t)
 	circle, err := geom.NewCircle(math.P3(0, 0, 3), math.V3(0, 0, 1), 5)
 	if err != nil {
@@ -125,6 +129,7 @@ func sampledRingArea(segs []uvSeg) float64 {
 // TestIslandContactOKDeclinesACrossedIsland: an island a straight imprint cuts through would be resolved
 // on the island's sampled chord, so the trim declines instead (#3460).
 func TestIslandContactOKDeclinesACrossedIsland(t *testing.T) {
+	t.Parallel()
 	c := islandChart(t)
 	circle, err := geom.NewCircle(math.P3(0, 0, 3), math.V3(0, 0, 1), 5)
 	if err != nil {
@@ -142,6 +147,7 @@ func TestIslandContactOKDeclinesACrossedIsland(t *testing.T) {
 
 // TestConicPairSeparated: apart and nested pass; overlapping (two crossing circles) declines.
 func TestConicPairSeparated(t *testing.T) {
+	t.Parallel()
 	at := func(x, r float64) planeConic {
 		return planeConic{center: math.P2(math.Scalar(x), 0), maj: math.V2(1, 0), A: r, B: r}
 	}
@@ -163,6 +169,7 @@ func TestConicPairSeparated(t *testing.T) {
 
 // TestConicsNestedOrApartScansEveryPair: one bad pair among many declines the whole set.
 func TestConicsNestedOrApartScansEveryPair(t *testing.T) {
+	t.Parallel()
 	at := func(x, r float64) planeConic {
 		return planeConic{center: math.P2(math.Scalar(x), 0), maj: math.V2(1, 0), A: r, B: r}
 	}

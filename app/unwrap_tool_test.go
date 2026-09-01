@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/compdef"
 )
 
@@ -18,6 +19,7 @@ import (
 // curved face, OK — and asserts the appended sheet is the face's development, arc length ×
 // axial height.
 func TestUnwrapToolFlattensTheCylindricalFace(t *testing.T) {
+	t.Parallel()
 	s, cyl := newPartWithCylinder(t) // r = 0.5, h = 2
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	before := def.SurfaceBodies().Count()
@@ -42,7 +44,7 @@ func TestUnwrapToolFlattensTheCylindricalFace(t *testing.T) {
 	patch := def.SurfaceBodies().Item(def.SurfaceBodies().Count() - 1)
 	// The development of a full r=0.5 h=2 cylinder is 2πr × h.
 	want := 2 * stdmath.Pi * 0.5 * 2
-	if got := ops.BodyGeometryProperties(patch, ops.DefaultQuality()).Area; stdmath.Abs(got-want) > 1e-6 {
+	if got := query.BodyGeometryProperties(patch, ops.DefaultQuality()).Area; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("flat patch area = %g, want the development %g (2πr·h)", got, want)
 	}
 }
@@ -50,6 +52,7 @@ func TestUnwrapToolFlattensTheCylindricalFace(t *testing.T) {
 // A face that is not a cylinder cannot be developed: the tool must report why and stay open
 // rather than leaving a sick node in the tree.
 func TestUnwrapToolRefusesANonCylindricalFace(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	face, body := boxTopFace(t, def)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: face, Body: body}})
@@ -67,6 +70,7 @@ func TestUnwrapToolRefusesANonCylindricalFace(t *testing.T) {
 
 // A second pick replaces the first: the feature flattens exactly one face.
 func TestUnwrapToolKeepsOnlyTheLastFace(t *testing.T) {
+	t.Parallel()
 	s, cyl := newPartWithCylinder(t)
 	tool := NewUnwrapTool()
 	s.StartTool(tool)
@@ -81,6 +85,7 @@ func TestUnwrapToolKeepsOnlyTheLastFace(t *testing.T) {
 // Unwrap is reachable from the ribbon, which is the whole point of the issue. It sits on the
 // Surface panel because its output is a sheet body, not a solid modification.
 func TestUnwrapIsOnTheSurfacePanel(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	tab, ok := BuildRibbon(s).Tab(tabSurfacesMesh)
 	if !ok {

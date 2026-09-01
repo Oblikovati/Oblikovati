@@ -28,6 +28,7 @@ func writeScan(t *testing.T, body string) string {
 // TestPointCloudAttachListGetDelete: the full attach → list → get → delete flow over the wire,
 // with the cloud's point count and default state surfaced (M17-F06, #645).
 func TestPointCloudAttachListGetDelete(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	path := writeScan(t, "0 0 0\n10 0 0\n20 0 0\n30 0 0\n")
 
@@ -63,6 +64,7 @@ func TestPointCloudAttachListGetDelete(t *testing.T) {
 // TestPointCloudPlacementAndBudget: setScale/setDensity/setVisible/setTransform mutate the cloud,
 // and the space-conversion methods round-trip a point through the placement (#645).
 func TestPointCloudPlacementAndBudget(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	path := writeScan(t, "0 0 0\n1 1 1\n2 2 2\n3 3 3\n4 4 4\n")
 	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &wire.PointCloudInfo{})
@@ -99,6 +101,7 @@ func TestPointCloudPlacementAndBudget(t *testing.T) {
 // TestPointCloudDisplayModeOverWire checks the host exposes the display mode and lets the wire
 // mutate it on the selected cloud.
 func TestPointCloudDisplayModeOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	path := writeScan(t, "0 0 0\n1 1 1\n")
 	var info wire.PointCloudInfo
@@ -120,6 +123,7 @@ func TestPointCloudDisplayModeOverWire(t *testing.T) {
 // TestPointCloudCropLifecycle: add a crop, see it limit the displayed count, toggle it off and on,
 // list it, and delete it — all over the wire (#645).
 func TestPointCloudCropLifecycle(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	path := writeScan(t, "0 0 0\n10 0 0\n20 0 0\n30 0 0\n40 0 0\n50 0 0\n")
 	var info wire.PointCloudInfo
@@ -163,6 +167,7 @@ func TestPointCloudCropLifecycle(t *testing.T) {
 
 // TestPointCloudCropErrors: crop ops on a missing cloud or crop error (#645).
 func TestPointCloudCropErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "pointClouds.addCrop", []byte(`{"cloud":"nope","min":{"x":0,"y":0,"z":0},"max":{"x":1,"y":1,"z":1}}`)); err == nil {
 		t.Error("addCrop on a missing cloud should fail")
@@ -182,6 +187,7 @@ func TestPointCloudCropErrors(t *testing.T) {
 // TestPointCloudMissingNameErrors: every name-keyed operation errors when no cloud has the name,
 // exercising the not-found branches of each handler (#645).
 func TestPointCloudMissingNameErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	ops := []struct {
 		method string
@@ -210,6 +216,7 @@ func TestPointCloudMissingNameErrors(t *testing.T) {
 
 // TestPointCloudBadJSON: a malformed request body is rejected by the decode guard (#645).
 func TestPointCloudBadJSON(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	for _, m := range []string{"pointClouds.attach", "pointClouds.get", "pointClouds.setScale", "pointClouds.toModelSpace"} {
 		if _, err := r.Handle(s, m, []byte(`{`)); err == nil {
@@ -220,6 +227,7 @@ func TestPointCloudBadJSON(t *testing.T) {
 
 // TestPointCloudUnreadableScan: attaching a file whose extension has no reader fails (#645).
 func TestPointCloudUnreadableScan(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	path := filepath.Join(t.TempDir(), "scan.las")
 	if err := os.WriteFile(path, []byte("binary"), 0o600); err != nil {
@@ -232,6 +240,7 @@ func TestPointCloudUnreadableScan(t *testing.T) {
 
 // TestPointCloudAttachErrors: a missing file and a non-positive scale are rejected (#645).
 func TestPointCloudAttachErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "pointClouds.attach", []byte(`{"fullFileName":"/no/such/scan.xyz"}`)); err == nil {
 		t.Error("attach of a missing file should fail")
@@ -246,6 +255,7 @@ func TestPointCloudAttachErrors(t *testing.T) {
 // TestPointCloudFitPlane: fitPlane over the wire fits a work plane to a planar (z = 5) scan and
 // reports the new plane's name, origin (centroid), and unit normal (#645).
 func TestPointCloudFitPlane(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	path := writeScan(t, "0 0 50\n20 0 50\n0 20 50\n20 20 50\n10 30 50\n-10 10 50\n")
 	var info wire.PointCloudInfo
@@ -270,6 +280,7 @@ func TestPointCloudFitPlane(t *testing.T) {
 // TestPointCloudNearestPoint: nearestPoint snaps a query onto the cloud's closest scan point and
 // reports the distance; an unknown cloud errors (#645).
 func TestPointCloudNearestPoint(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	path := writeScan(t, "0 0 0\n20 0 0\n0 20 0\n")
 	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &wire.PointCloudInfo{})
@@ -290,6 +301,7 @@ func TestPointCloudNearestPoint(t *testing.T) {
 // TestSetTransformAutoRecomputesDatums: moving a cloud over the wire re-derives a plane fit to it,
 // so the datum follows without any separate recompute call (#645).
 func TestSetTransformAutoRecomputesDatums(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	path := writeScan(t, "0 0 50\n20 0 50\n0 20 50\n20 20 50\n")
 	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &wire.PointCloudInfo{})

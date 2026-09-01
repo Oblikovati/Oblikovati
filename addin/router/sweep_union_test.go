@@ -32,6 +32,7 @@ type sweepAddResult struct {
 // TestSweepUnionTaperOverWire: a tapered path sweep grows the section — more
 // volume than the straight prism.
 func TestSweepUnionTaperOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := sweepFixture(t)
 	var res sweepAddResult
 	call(t, r, s, "features.add",
@@ -44,6 +45,7 @@ func TestSweepUnionTaperOverWire(t *testing.T) {
 // TestSweepUnionStationsOverWire: the pathAndSectionTwists variant accepts a
 // station table and rejects a descending one with the offending values.
 func TestSweepUnionStationsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := sweepFixture(t)
 	var res sweepAddResult
 	call(t, r, s, "features.add",
@@ -60,6 +62,7 @@ func TestSweepUnionStationsOverWire(t *testing.T) {
 
 // TestSweepUnionGuideRailOverWire: a rail sketch drives the scaled variant.
 func TestSweepUnionGuideRailOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := sweepFixture(t)
 	// Rail on XZ, diverging from the path in X as it rises.
 	call(t, r, s, "sketch.create", `{"plane":"XZ"}`, &wire.CreateSketchResult{})
@@ -75,6 +78,10 @@ func TestSweepUnionGuideRailOverWire(t *testing.T) {
 // TestSweepUnionSolidOverWire: the solid variant drags an existing body along
 // the path; a missing toolBodyIndex is a precise schema-level error.
 func TestSweepUnionSolidOverWire(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~133s): `make test-corpus`")
+	}
+	t.Parallel()
 	r, s := sweepFixture(t)
 	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"profileIndex":0,"distance":"10 mm"}}`, &sweepAddResult{})
 	var res sweepAddResult

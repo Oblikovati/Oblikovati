@@ -68,6 +68,7 @@ func userParamID(t *testing.T, def *compdef.PartComponentDefinition, name string
 }
 
 func TestParameterEditRebuildsOnlyDependentTail(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	if _, err := def.Parameters().AddUserParameter("drive", "40 mm"); err != nil {
 		t.Fatalf("AddUserParameter: %v", err)
@@ -94,6 +95,7 @@ func TestParameterEditRebuildsOnlyDependentTail(t *testing.T) {
 }
 
 func TestIndependentParameterEditRebuildsNothing(t *testing.T) {
+	t.Parallel()
 	def := compdef.NewPartComponentDefinition()
 	if _, err := def.Parameters().AddUserParameter("drive", "40 mm"); err != nil {
 		t.Fatalf("AddUserParameter(drive): %v", err)
@@ -120,6 +122,7 @@ func TestIndependentParameterEditRebuildsNothing(t *testing.T) {
 }
 
 func TestTargetedParameterEditMatchesFullRebuildGeometry(t *testing.T) {
+	t.Parallel()
 	// A part whose driven block is edited from 40 mm to 60 mm via the targeted seam...
 	edited := compdef.NewPartComponentDefinition()
 	if _, err := edited.Parameters().AddUserParameter("drive", "40 mm"); err != nil {

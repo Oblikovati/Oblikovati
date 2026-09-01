@@ -25,6 +25,7 @@ func firstSharedEdge(t *testing.T, b *topo.Body) *topo.Edge {
 }
 
 func TestContinuityCheckReportsBoxEdgeAsRightAngleCrease(t *testing.T) {
+	t.Parallel()
 	s, body := newPartWithBlock(t, 6)
 	edge := firstSharedEdge(t, body)
 
@@ -52,6 +53,7 @@ func TestContinuityCheckReportsBoxEdgeAsRightAngleCrease(t *testing.T) {
 }
 
 func TestContinuityCheckIgnoresNonEdgePick(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 4)
 	tool := NewContinuityCheckTool()
 	s.StartTool(tool)
@@ -62,6 +64,7 @@ func TestContinuityCheckIgnoresNonEdgePick(t *testing.T) {
 }
 
 func TestContinuityCheckViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 4)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
@@ -75,6 +78,7 @@ func TestContinuityCheckViaRibbonCommand(t *testing.T) {
 }
 
 func TestContinuityCheckToolInterface(t *testing.T) {
+	t.Parallel()
 	tool := NewContinuityCheckTool()
 	tool.Start(nil)
 	tool.Cancel(nil)
@@ -93,6 +97,7 @@ func TestContinuityCheckToolInterface(t *testing.T) {
 }
 
 func TestContinuitySeverityHelpers(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		in, want float64
 	}{{-1, 0}, {0.4, 0.4}, {2, 1}}

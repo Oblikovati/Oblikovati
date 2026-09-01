@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -20,6 +21,10 @@ import (
 // identities a downstream re-weld needs — each case must still be a valid solid after a top-rim
 // fillet. Clearance and overlap (the non-degenerate neighbours) must stay clean too (ADR-0047).
 func TestTangentContactUnionStaysManifold(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
+	t.Parallel()
 	for _, tc := range []struct {
 		name    string
 		lugBack float64 // Y of the lug wall facing the boss; boss rim reaches y = -0.45
@@ -53,7 +58,7 @@ func assertFilletable(t *testing.T, b *topo.Body, label string) {
 			bz, top = z, e
 		}
 	}
-	out, err := ops.FilletEdges(b, [][]byte{top.ReferenceKey()}, 0.1)
+	out, err := blend.FilletEdges(b, [][]byte{top.ReferenceKey()}, 0.1)
 	if err != nil {
 		t.Fatalf("%s: fillet after tangent union failed: %v", label, err)
 	}
@@ -67,6 +72,7 @@ func assertFilletable(t *testing.T, b *topo.Body, label string) {
 // also joined to a base plate so the result is one body. The shared vertical edge is bordered
 // by four planar faces (two from each box) and must split into two manifold dihedrals.
 func TestTangentBoxEdgeUnion(t *testing.T) {
+	t.Parallel()
 	base := box(-1, -1, 0, 2, 2, 0.2) // a plate both blocks sit on (keeps it one body)
 	a := box(-1, -1, 0, 1, 1, 1)      // x[-1,0] y[-1,0]
 	b := box(0, 0, 0, 1, 1, 1)        // x[0,1]  y[0,1]; touches `a` only along the (0,0) vertical line

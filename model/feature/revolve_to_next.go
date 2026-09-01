@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -90,7 +91,7 @@ func chordHit(from, to math.Point3, bodies []*topo.Body) (math.Point3, bool) {
 	}
 	dir := step.AsUnit().AsVector()
 	for _, b := range bodies {
-		_, t, ok := ops.RayCastFaces(b, from, dir, ops.DefaultQuality())
+		_, t, ok := query.RayCastFaces(b, from, dir, ops.DefaultQuality())
 		if ok && t > float64(math.DefaultTolerance) && t <= float64(length) {
 			return from.TranslateBy(dir.Scale(math.Scalar(t))), true
 		}

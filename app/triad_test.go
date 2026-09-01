@@ -23,6 +23,7 @@ func triadEventLog(s *Session) *[]TriadDragged {
 }
 
 func TestTriadAxisDragTranslatesAlongX(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.ShowTriad(wire.TriadSpec{Position: types.NewPoint(0, 0, 0), Visible: true}); err != nil {
 		t.Fatalf("ShowTriad: %v", err)
@@ -60,6 +61,7 @@ func TestTriadAxisDragTranslatesAlongX(t *testing.T) {
 }
 
 func TestTriadRingDragRotatesAboutZ(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.ShowTriad(wire.TriadSpec{Position: types.NewPoint(0, 0, 0), Visible: true}); err != nil {
 		t.Fatalf("ShowTriad: %v", err)
@@ -86,6 +88,7 @@ func TestTriadRingDragRotatesAboutZ(t *testing.T) {
 }
 
 func TestTriadPlanarDragStaysInPlane(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.ShowTriad(wire.TriadSpec{Position: types.NewPoint(0, 0, 0), Visible: true}); err != nil {
 		t.Fatalf("ShowTriad: %v", err)
@@ -105,6 +108,7 @@ func TestTriadPlanarDragStaysInPlane(t *testing.T) {
 }
 
 func TestTriadRespectsAllowedMaskAndVisibility(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.ShowTriad(wire.TriadSpec{
 		Visible: true, Allowed: []types.TriadSegment{types.TriadXAxis},
@@ -125,6 +129,7 @@ func TestTriadRespectsAllowedMaskAndVisibility(t *testing.T) {
 }
 
 func TestTriadSegmentHoverEmitsOnTransition(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	var got []TriadSegmentChanged
 	event.Subscribe(s.Events(), event.After, func(_ event.Context, e TriadSegmentChanged) event.Outcome {
@@ -141,6 +146,7 @@ func TestTriadSegmentHoverEmitsOnTransition(t *testing.T) {
 }
 
 func TestManipulatorDragSlidesInViewPlane(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.SetManipulators("sim", []wire.ManipulatorHandleSpec{
 		{ID: "tip", Position: types.NewPoint(1, 1, 0)},
@@ -174,6 +180,7 @@ func TestManipulatorDragSlidesInViewPlane(t *testing.T) {
 }
 
 func TestCommandBoundGizmosDieWithTool(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.StartTool(FakeMiniToolbarTool{})
 	if err := s.ShowTriad(wire.TriadSpec{Visible: true, Command: "Sim.Move"}); err != nil {

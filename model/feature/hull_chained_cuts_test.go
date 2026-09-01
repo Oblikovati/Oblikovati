@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -61,6 +62,7 @@ func buildClip(t *testing.T, slot, hole bool) *topo.Body {
 // TestHullWithSingleFlushCutStaysValid: a hull cut once by a flush-bottomed tool (the slot
 // prism or the screw cylinder) must come out a valid closed solid.
 func TestHullWithSingleFlushCutStaysValid(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name       string
 		slot, hole bool
@@ -74,7 +76,7 @@ func TestHullWithSingleFlushCutStaysValid(t *testing.T) {
 			if r := ops.Validate(body); !r.Valid {
 				t.Errorf("body invalid: %+v", r.Issues)
 			}
-			if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 || stdmath.IsNaN(v) {
+			if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 || stdmath.IsNaN(v) {
 				t.Errorf("volume = %v, want positive", v)
 			}
 		})
@@ -90,11 +92,12 @@ func TestHullWithSingleFlushCutStaysValid(t *testing.T) {
 // result then fell back to the sliver-laden triangle CSG, which the next cut fractured.
 // Fixed by filtering boundary-coincident imprints (kernel/brep imprintAll).
 func TestHullWithChainedFlushCutsStaysValid(t *testing.T) {
+	t.Parallel()
 	body := buildClip(t, true, true)
 	if r := ops.Validate(body); !r.Valid {
 		t.Errorf("chained flush cuts produced an invalid body: %v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 || stdmath.IsNaN(v) {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 || stdmath.IsNaN(v) {
 		t.Errorf("volume = %v, want positive", v)
 	}
 }

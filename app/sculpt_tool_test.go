@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -53,6 +54,7 @@ func partWithCubeShell(t *testing.T) (*Session, *compdef.PartComponentDefinition
 // TestSculptToolEndToEnd drives the Sculpt UI: with the six cube faces present, OK fills the
 // bounded volume into a single unit-volume solid.
 func TestSculptToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def := partWithCubeShell(t)
 
 	s.StartTool(NewSculptTool())
@@ -66,12 +68,13 @@ func TestSculptToolEndToEnd(t *testing.T) {
 	if !body.IsSolid() {
 		t.Error("sculpt of a closed shell should yield a solid")
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-1) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-1) > 1e-6 {
 		t.Errorf("sculpted volume = %g, want 1 (unit cube)", v)
 	}
 }
 
 func TestSculptViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithCubeShell(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

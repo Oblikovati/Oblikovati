@@ -12,6 +12,7 @@ import (
 // persisted Input group and write back through the options store, so the
 // Preferences window's combos survive a restart (I-doc §4.2).
 func TestInputPrefAccessorsPersist(t *testing.T) {
+	t.Parallel()
 	store := &FakeOptionsStore{stored: options.Defaults()}
 	s := NewSession()
 	if err := s.UseOptionsStore(store); err != nil {

@@ -10,6 +10,7 @@ import (
 // TestSheetMetalCutThroughAll a through-all cut of a 2×2 square removes that column from the
 // 4×4 sheet: the result is a valid watertight solid lighter by 2²·thickness.
 func TestSheetMetalCutThroughAll(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	pf := NewSheetMetalCutFeatures(fs).Add(&SheetMetalCutDefinition{Sketch: squareSketch(2), ProfileIndex: 0})
 	fs.Recompute()
@@ -26,6 +27,7 @@ func TestSheetMetalCutThroughAll(t *testing.T) {
 
 // TestSheetMetalCutDistance a depth-limited cut removes less than through-all (a partial pocket).
 func TestSheetMetalCutDistance(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	pf := NewSheetMetalCutFeatures(fs).Add(&SheetMetalCutDefinition{
 		Sketch: squareSketch(2), ProfileIndex: 0, Distance: func() float64 { return 0.1 }, // 1 mm of the 2 mm sheet
@@ -44,6 +46,7 @@ func TestSheetMetalCutDistance(t *testing.T) {
 // TestSheetMetalCutAcrossBendRejected the across-bend option is reserved until the flat
 // pattern (F04) and must error rather than silently do a normal cut.
 func TestSheetMetalCutAcrossBendRejected(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	pf := NewSheetMetalCutFeatures(fs).Add(&SheetMetalCutDefinition{Sketch: squareSketch(2), ProfileIndex: 0, AcrossBend: true})
 	fs.Recompute()
@@ -54,6 +57,7 @@ func TestSheetMetalCutAcrossBendRejected(t *testing.T) {
 
 // TestSheetMetalCutDefinitionAndKind the accessors return the recipe.
 func TestSheetMetalCutDefinitionAndKind(t *testing.T) {
+	t.Parallel()
 	def := &SheetMetalCutDefinition{ProfileIndex: 1}
 	f := &SheetMetalCutFeature{def: def}
 	if f.Definition() != def || f.Kind() != "sheet-metal-cut" {
@@ -64,6 +68,7 @@ func TestSheetMetalCutDefinitionAndKind(t *testing.T) {
 // TestSheetMetalCutRoundTrip the recipe (sketch + profile + direction + distance + acrossBend)
 // marshals and restores; a 0 distance restores as nil (through all).
 func TestSheetMetalCutRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := squareSketch(2)
 	fs := NewPartFeatures(nil)
 	NewSheetMetalCutFeatures(fs).Add(&SheetMetalCutDefinition{
@@ -91,6 +96,7 @@ func TestSheetMetalCutRoundTrip(t *testing.T) {
 
 // TestSheetMetalCutMissingPayload / unknown sketch restore errors.
 func TestSheetMetalCutMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreSheetMetalCut(NewPartFeatures(nil), nil, oneSketch{}); err == nil {
 		t.Error("restoreSheetMetalCut(nil) must error")
 	}

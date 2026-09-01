@@ -16,6 +16,7 @@ import (
 // two parabola arms, watertight (Oblikovati/Oblikovati#1375). A frustum whose axis is tilted by its own
 // half-angle has one generator vertical, so an axis-aligned x-plane is parallel to it.
 func TestConeSideHalfSpaceParabola(t *testing.T) {
+	t.Parallel()
 	a := stdmath.Atan(0.3)
 	top := math.P3(math.Scalar(stdmath.Sin(a)*10), 0, math.Scalar(stdmath.Cos(a)*10))
 	frustum := mustFrustum(t, math.P3(0, 0, 0), top, 3, 6)

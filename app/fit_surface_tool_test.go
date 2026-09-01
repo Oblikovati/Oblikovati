@@ -34,6 +34,7 @@ func attachCapCloud(t *testing.T, s *Session, def *compdef.PartComponentDefiniti
 }
 
 func TestFitSurfaceToolParams(t *testing.T) {
+	t.Parallel()
 	tool := NewFitSurfaceTool()
 	if tool.Name() != "Fit Surface" {
 		t.Fatal("name")
@@ -51,6 +52,7 @@ func TestFitSurfaceToolParams(t *testing.T) {
 }
 
 func TestFitSurfaceToolCommitsAndReports(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	attachCapCloud(t, s, def)
 	tool := NewFitSurfaceTool()
@@ -75,6 +77,7 @@ func TestFitSurfaceToolCommitsAndReports(t *testing.T) {
 }
 
 func TestFitSurfaceToolNeedsCloud(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	tool := NewFitSurfaceTool()
 	s.StartTool(tool)
@@ -84,6 +87,7 @@ func TestFitSurfaceToolNeedsCloud(t *testing.T) {
 }
 
 func TestFitViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	attachCapCloud(t, s, def)
 	if err := RegisterStandardCommands(s); err != nil {
@@ -100,6 +104,7 @@ func TestFitViaRibbonCommand(t *testing.T) {
 // TestFitSurfaceToolDraftFeature pins the #1626 commit-gate seam: no draft before a cloud is
 // selected, a non-nil draft over the cloud's cropped points once commit-ready.
 func TestFitSurfaceToolDraftFeature(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	tool := NewFitSurfaceTool()
 	if _, ok := tool.DraftFeature(s); ok {

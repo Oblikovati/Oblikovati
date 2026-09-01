@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -46,9 +47,9 @@ func TestConformanceRepairNeverLosesFaceArea(t *testing.T) {
 // assertNoFaceLostAreaInBodyContext compares every face's body-context mesh against its solo mesh.
 func assertNoFaceLostAreaInBodyContext(t *testing.T, r Record, body *topo.Body, q ops.Quality) {
 	t.Helper()
-	facets := ops.CalculateBodyFacets(body, q)
+	facets := tessellate.CalculateBodyFacets(body, q)
 	for i, f := range facets.Faces {
-		solo := ops.MeshArea(ops.TessellateFace(f, q))
+		solo := ops.MeshArea(tessellate.TessellateFace(f, q))
 		got := ops.MeshArea(facets.FaceMeshes[i])
 		slack := q.ChordTolerance * faceBoundaryPerimeter(f, q)
 		if got >= solo-slack {
@@ -69,7 +70,7 @@ func faceBoundaryPerimeter(f *topo.Face, q ops.Quality) float64 {
 	for _, l := range f.Loops() {
 		for _, u := range l.EdgeUses() {
 			if e := u.Edge(); e != nil {
-				total += polylineLength(ops.TessellateEdge(e, q))
+				total += polylineLength(tessellate.TessellateEdge(e, q))
 			}
 		}
 	}

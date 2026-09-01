@@ -16,6 +16,7 @@ import (
 // untouched, so a selection on it stays bound to Extrusion1:side-edge#3 across the operation —
 // where the boolean's brep:edge#N fallback would have lost it.
 func TestChamferKeepsUntouchedEdgeIdentity(t *testing.T) {
+	t.Parallel()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 3}, {X: 0, Y: 3}},
 		sketch.XYPlane(), span{near: 0, far: 5}, 0, "Extrusion1")
 	fs := NewPartFeatures(nil)

@@ -14,6 +14,7 @@ import (
 // name or a formula over parameters resolves against the active part's table, while
 // literals and bare numbers still parse (Oblikovati.API#187, UI side).
 func TestEvalParamTextRoutesThroughParameterEvaluator(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, err := s.NewPart(); err != nil {
 		t.Fatalf("NewPart: %v", err)
@@ -53,6 +54,7 @@ func TestEvalParamTextRoutesThroughParameterEvaluator(t *testing.T) {
 // ("D0 * 10.5 mm"), and returns the value in the document's preferred unit; an incomplete formula
 // does not resolve, so the field keeps its last good value.
 func TestEvalFieldDisplayResolvesFormulas(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, err := s.NewPart(); err != nil {
 		t.Fatalf("NewPart: %v", err)
@@ -103,6 +105,7 @@ func TestEvalFieldDisplayResolvesFormulas(t *testing.T) {
 // the field is not silently accepted — it falls back to the literal parser, which
 // reports the real error.
 func TestEvalParamTextWrongDimensionFallsBack(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, err := s.NewPart(); err != nil {
 		t.Fatalf("NewPart: %v", err)

@@ -116,6 +116,7 @@ func cubeOrShell(t *testing.T, solid bool) *topo.Body {
 // TestExportedSolidIsReachableFromTheProductStructure walks the file the way a conformant reader
 // does — SHAPE_DEFINITION_REPRESENTATION down — and requires the b-rep to be reachable.
 func TestExportedSolidIsReachableFromTheProductStructure(t *testing.T) {
+	t.Parallel()
 	ents := stepEntities(t, exportBox(t, true))
 	sdr := findEntity(t, ents, "SHAPE_DEFINITION_REPRESENTATION")
 
@@ -139,6 +140,7 @@ func TestExportedSolidIsReachableFromTheProductStructure(t *testing.T) {
 // The representation must sit in a geometric context that assigns units and an uncertainty; a
 // bare GLOBAL_UNIT_ASSIGNED_CONTEXT satisfies neither the schema nor a reader.
 func TestExportedRepresentationHasAGeometricContext(t *testing.T) {
+	t.Parallel()
 	data := exportBox(t, true)
 	s := string(data)
 	for _, want := range []string{
@@ -166,6 +168,7 @@ func TestExportedRepresentationHasAGeometricContext(t *testing.T) {
 // A surface body takes MANIFOLD_SURFACE_SHAPE_REPRESENTATION: a reader rejects a representation
 // whose items are of the wrong kind, so an open shell must not claim to be a solid b-rep.
 func TestExportedSurfaceBodyUsesTheSurfaceRepresentation(t *testing.T) {
+	t.Parallel()
 	s := string(exportBox(t, false))
 	if strings.Contains(s, "ADVANCED_BREP_SHAPE_REPRESENTATION") {
 		t.Error("an open shell was exported as a solid b-rep representation")
@@ -181,6 +184,7 @@ func TestExportedSurfaceBodyUsesTheSurfaceRepresentation(t *testing.T) {
 // The product carries the name the caller asked for, so a reader's model tree shows something
 // meaningful rather than a placeholder.
 func TestExportedProductCarriesTheName(t *testing.T) {
+	t.Parallel()
 	data, _, err := Writer{}.ExportSolids([]*topo.Body{cubeOrShell(t, true)},
 		exchange.TranslationOptions{Name: "bracket"})
 	if err != nil {
@@ -198,6 +202,7 @@ func TestExportedProductCarriesTheName(t *testing.T) {
 
 // Mixing solids and shells in one file is reported rather than silently flattened.
 func TestMixedBodiesWarn(t *testing.T) {
+	t.Parallel()
 	_, warns, err := Writer{}.ExportSolids(
 		[]*topo.Body{cubeOrShell(t, true), cubeOrShell(t, false)}, exchange.TranslationOptions{})
 	if err != nil {

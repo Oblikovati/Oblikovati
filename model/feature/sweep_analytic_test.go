@@ -32,6 +32,7 @@ func straightSweep(t *testing.T, sk *sketch.Sketch, path *sketch.Path3D) *topo.B
 // TestSweepCircleStraightMakesCylinder: a circle swept up a straight Z run is ONE analytic cylinder
 // wall (plus the two planar caps), not a faceted tube — so a projected face sees a real circle.
 func TestSweepCircleStraightMakesCylinder(t *testing.T) {
+	t.Parallel()
 	const r, l = 2.0, 10.0
 	body := straightSweep(t, circleSketchAt(0, 0, r), straightZPath(l, 8))
 	if got := cylinderFaceCount(body); got != 1 {
@@ -45,6 +46,7 @@ func TestSweepCircleStraightMakesCylinder(t *testing.T) {
 // TestSweepStadiumStraightKeepsAnalyticArcs: a stadium (two arcs + two lines) swept along a straight
 // run keeps a cap bounded by exactly two arc + two line edges — the extrude analytic prism reused.
 func TestSweepStadiumStraightKeepsAnalyticArcs(t *testing.T) {
+	t.Parallel()
 	const l, r, depth = 10.0, 3.0, 6.0
 	body := straightSweep(t, stadiumSketch(l, r), straightZPath(depth, 8))
 	cap := topCapPlanarFace(t, body, depth)
@@ -60,6 +62,7 @@ func TestSweepStadiumStraightKeepsAnalyticArcs(t *testing.T) {
 // swept along a straight run in direction (1,1,1) still yields one analytic cylinder — the synthetic
 // frame must rotate the profile so its normal follows the tangent, not stay axis-aligned.
 func TestSweepCircleDiagonalStraightMakesCylinder(t *testing.T) {
+	t.Parallel()
 	const r = 1.5
 	l := stdmath.Sqrt(3) * 4 // origin → (4,4,4)
 	path := sketch.NewPath3D([]*sketch.Point3D{
@@ -90,6 +93,7 @@ func circlePath3D(radius float64, n int) *sketch.Path3D {
 // torus face (major = path radius, minor = profile radius), not a faceted ring — so projecting it
 // sees a real circle, not a chord polygon.
 func TestSweepCircleAroundCircleMakesTorus(t *testing.T) {
+	t.Parallel()
 	const major, minor = 10.0, 2.0
 	body := straightSweep(t, circleSketchAt(0, 0, minor), circlePath3D(major, 24))
 	if got := torusFaceCount(body); got != 1 {
@@ -103,6 +107,7 @@ func TestSweepCircleAroundCircleMakesTorus(t *testing.T) {
 // TestSweepBentPathStaysFaceted guards the collinearity gate: a genuinely bent path is NOT a straight
 // run, so it must keep the faceted skin (zero analytic cylinder faces) — never mis-claimed analytic.
 func TestSweepBentPathStaysFaceted(t *testing.T) {
+	t.Parallel()
 	const r = 1.0
 	path := sketch.NewPath3D([]*sketch.Point3D{
 		sketch.NewPoint3D(math.P3(0, 0, 0)),

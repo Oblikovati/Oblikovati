@@ -74,6 +74,7 @@ func savedDerivedPart(t *testing.T) (store *persistence.PackageStore, ws *doc.Wo
 // reopens the part, and checks the derive re-resolves its source through the reference graph
 // (rebound, non-empty source version) and is not flagged out of date (source unchanged).
 func TestDerivedPartRebindsAndIsCurrent(t *testing.T) {
+	t.Parallel()
 	store, _, _, srcDoc, partDoc := savedDerivedPart(t)
 
 	d := derivedComponentOf(t, openPart(t, store, partDoc.FullFileName()))
@@ -92,6 +93,7 @@ func TestDerivedPartRebindsAndIsCurrent(t *testing.T) {
 // the source assembly (re-minting its recipe revision), and checks the part reopened in a
 // fresh session flags the derive out of date by the revision mismatch — #715 acceptance 2.
 func TestDerivedPartFlagsStaleSourceAcrossSessions(t *testing.T) {
+	t.Parallel()
 	store, ws, dir := assemblyWorkspace(t)
 	widget := savePartDoc(t, ws, dir, "widget.obk")
 	srcDoc, srcDef := newAssembly(t, ws, dir, "src.obk")
@@ -118,6 +120,7 @@ func TestDerivedPartFlagsStaleSourceAcrossSessions(t *testing.T) {
 // TestDerivedPartMissingSourceIsNotFatal checks reopening a derived part whose source file
 // is gone still succeeds, leaving the derive unbound (no source) rather than panicking.
 func TestDerivedPartMissingSourceIsNotFatal(t *testing.T) {
+	t.Parallel()
 	store, _, dir, _, partDoc := savedDerivedPart(t)
 	if err := os.Remove(filepath.Join(dir, "src.obk")); err != nil {
 		t.Fatalf("remove source: %v", err)

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
@@ -41,6 +42,7 @@ func rectOn(sk *sketch.Sketch, x0, y0, x1, y1 float64) {
 // TestGrillToolEndToEnd drives the Grill UI: pick the boundary, OK — and asserts the vent cut
 // through the block left the ribs (block 72 − 13×2 = 46).
 func TestGrillToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def, region := partWithGrillSketch(t)
 	s.SetPicker(stubPicker{sel: region})
 
@@ -57,13 +59,14 @@ func TestGrillToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("grill body not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(v, 46) > 0.01 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(v, 46) > 0.01 {
 		t.Errorf("grill volume = %g, want ≈46 (72 − 13×2 vent)", v)
 	}
 }
 
 // TestGrillViaRibbonCommand confirms the ribbon command starts the grill tool.
 func TestGrillViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _, _ := partWithGrillSketch(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

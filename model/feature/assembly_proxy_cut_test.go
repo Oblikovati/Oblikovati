@@ -39,6 +39,7 @@ func unitBoxDef(t *testing.T) fakeBodyDef {
 // moving the source clear of the participant (re-resolved through the proxy context)
 // removes nothing — the cut is associative.
 func TestAssemblyProxyCutResolvesProxiedTool(t *testing.T) {
+	t.Parallel()
 	occs := occurrence.NewOccurrences()
 	src := occs.AddByComponentDefinition("src:1", unitBoxDef(t), math.Translation4(math.V3(0, 0, 0.5)))
 	f := NewAssemblyProxyCutFeature(src, ops.Cut)
@@ -64,6 +65,7 @@ func TestAssemblyProxyCutResolvesProxiedTool(t *testing.T) {
 // TestAssemblyProxyCutMissingBodiesFails: a source definition with no bodies is a lost
 // input reported as an error, not a panic.
 func TestAssemblyProxyCutMissingBodiesFails(t *testing.T) {
+	t.Parallel()
 	occs := occurrence.NewOccurrences()
 	src := occs.AddByComponentDefinition("empty:1", boxOnlyDef{}, math.Identity4())
 	f := NewAssemblyProxyCutFeature(src, ops.Cut)

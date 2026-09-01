@@ -4,6 +4,8 @@ package analysis
 
 import (
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -13,7 +15,7 @@ import (
 // EdgeLengthMm returns an edge's length in millimetres, summing its tessellated polyline (exact for
 // lines/arcs/circles; converges with q for general curves).
 func EdgeLengthMm(e *topo.Edge, q ops.Quality) float64 {
-	pts := ops.TessellateEdge(e, q)
+	pts := tessellate.TessellateEdge(e, q)
 	var lengthCm float64
 	for i := 1; i < len(pts); i++ {
 		lengthCm += float64(pts[i-1].VectorTo(pts[i]).Length())
@@ -26,10 +28,10 @@ func EdgeLengthMm(e *topo.Edge, q ops.Quality) float64 {
 // for curved ones, #3457), falling back to summing the tessellated triangle areas at quality q for
 // a face the analytic path cannot yet cover.
 func FaceAreaMm2(f *topo.Face, q ops.Quality) float64 {
-	if areaCm2, ok := ops.AnalyticFaceArea(f); ok {
+	if areaCm2, ok := query.AnalyticFaceArea(f); ok {
 		return areaCm2 * cmToMM * cmToMM
 	}
-	mesh := ops.TessellateFace(f, q)
+	mesh := tessellate.TessellateFace(f, q)
 	var areaCm2 float64
 	for t := 0; t+2 < len(mesh.Indices); t += 3 {
 		a := mesh.Positions[mesh.Indices[t]]

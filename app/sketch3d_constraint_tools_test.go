@@ -29,6 +29,7 @@ func sketch3DSession(t *testing.T) (*Session, *sketch.Sketch3D) {
 // end: activate Sketch3D.Tangent, pick a line and an arc, and the constraint applies
 // and re-solves the sketch into a tangent join.
 func TestSketch3DTangentToolAppliesViaPicks(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	l := sk.AddLine3D(math.P3(0, 0, 0), math.P3(1, 0, 0))
 	a := sk.AddArc3D(math.P3(1, 1, 0), math.P3(1.3, 0.2, 0), math.P3(2, 1, 0), false)
@@ -55,6 +56,7 @@ func TestSketch3DTangentToolAppliesViaPicks(t *testing.T) {
 // TestSketch3DSmoothToolNeedsSpline keeps gathering picks for two analytic curves
 // (not ready) and applies once a spline is picked.
 func TestSketch3DSmoothToolNeedsSpline(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	l1 := sk.AddLine3D(math.P3(0, 0, 0), math.P3(1, 0, 0))
 	l2 := sk.AddLine3D(math.P3(1.2, 0, 0), math.P3(2, 1, 0))
@@ -82,6 +84,7 @@ func TestSketch3DSmoothToolNeedsSpline(t *testing.T) {
 
 // TestSketch3DHelicalToolApplies picks a helix and a circle (any order) and ties them.
 func TestSketch3DHelicalToolApplies(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	zAxis, err := math.NewUnitVector3(0, 0, 1)
 	if err != nil {
@@ -111,6 +114,7 @@ func TestSketch3DHelicalToolApplies(t *testing.T) {
 
 // TestSketch3DSplineFitToolApplies attaches a point to a fit spline via picks.
 func TestSketch3DSplineFitToolApplies(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	sp := sk.AddSpline3D([]math.Point3{{X: 0, Y: 0, Z: 0}, {X: 1, Y: 1, Z: 0}, {X: 2, Y: 0, Z: 1}}, false, true)
 	p := sk.AddPoint3D(math.P3(1.1, 0.9, 0.1))
@@ -131,6 +135,7 @@ func TestSketch3DSplineFitToolApplies(t *testing.T) {
 // TestSketch3DConstrainToolRejectsWrongType guards the hover/accept filter: the
 // helical tool must not record a line pick.
 func TestSketch3DConstrainToolRejectsWrongType(t *testing.T) {
+	t.Parallel()
 	s, sk := sketch3DSession(t)
 	l := sk.AddLine3D(math.P3(0, 0, 0), math.P3(1, 0, 0))
 	if err := s.Execute("Sketch3D.Helical"); err != nil {
@@ -152,6 +157,7 @@ func TestSketch3DConstrainToolRejectsWrongType(t *testing.T) {
 // TestSketch3DConstrainCommandsDisabledOutsideSketch guards the enable predicate: the
 // Constrain commands are contextual to the 3D-sketch environment.
 func TestSketch3DConstrainCommandsDisabledOutsideSketch(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

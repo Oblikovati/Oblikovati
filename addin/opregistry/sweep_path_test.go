@@ -13,6 +13,7 @@ import (
 // TestPath3DFromPoints covers the polyline→path helper: a valid chain builds an open path; too
 // few points or a malformed point is a clean error.
 func TestPath3DFromPoints(t *testing.T) {
+	t.Parallel()
 	p, err := path3DFromPoints([][]float64{{0, 0, 0}, {0, 0, 2}, {0, 0, 5}})
 	if err != nil {
 		t.Fatalf("valid polyline: %v", err)
@@ -31,6 +32,7 @@ func TestPath3DFromPoints(t *testing.T) {
 // TestSweepAlongPathPoints sweeps the profile along an explicit 3D polyline (no path sketch),
 // mirroring how a loft rail consumes explicit points; it must build a healthy solid body.
 func TestSweepAlongPathPoints(t *testing.T) {
+	t.Parallel()
 	s := profiledPart(t)
 	// The profile sits on XY; a straight polyline up +Z sweeps it into a prism (no pathSketchIndex).
 	args := map[string]any{
@@ -56,6 +58,7 @@ func TestSweepAlongPathPoints(t *testing.T) {
 // TestSweepPathPointsOverrideSketch: pathPoints takes precedence, so a valid polyline sweeps even
 // when the pathSketchIndex would be out of range (the sketch path is not consulted).
 func TestSweepPathPointsOverridesSketch(t *testing.T) {
+	t.Parallel()
 	s := profiledPart(t)
 	args := map[string]any{
 		"sketchIndex": 0, "profileIndex": 0, "pathSketchIndex": 99,
@@ -73,6 +76,7 @@ func TestSweepPathPointsOverridesSketch(t *testing.T) {
 // give complementary volumes that sum to the base — proof both are real, correct booleans, and that
 // intersect is now reachable over the wire.
 func TestSweepIntersectOperation(t *testing.T) {
+	t.Parallel()
 	vBase, vInt := sweepThenVolume(t, "intersect")
 	_, vCut := sweepThenVolume(t, "cut")
 	if vInt <= 0 || vInt >= vBase {
@@ -115,6 +119,7 @@ func sweepThenVolume(t *testing.T, op string) (base, result float64) {
 
 // TestSweepPathPointsTooFew: a polyline with fewer than two points is a clean error.
 func TestSweepPathPointsTooFew(t *testing.T) {
+	t.Parallel()
 	s := profiledPart(t)
 	args := map[string]any{
 		"sketchIndex": 0, "profileIndex": 0,
@@ -129,6 +134,7 @@ func TestSweepPathPointsTooFew(t *testing.T) {
 // the rectangle swept 5 up +Z builds one healthy OPEN sheet body (walls only, no end caps), not
 // booleaned against anything.
 func TestSweepSurfaceOperation(t *testing.T) {
+	t.Parallel()
 	s := profiledPart(t)
 	raw, err := applyMap(t, s, "sweep", map[string]any{
 		"sketchIndex": 0, "profileIndex": 0, "operation": "surface",

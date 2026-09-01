@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -42,10 +43,11 @@ func hemCorneredSheet(t *testing.T, corner CornerReliefSpec) *topo.Body {
 // a corner cuts the styled corner relief, just as a flange-to-flange corner does — before this the
 // hem placed its bend but relieved nothing, so the junction it formed was left full of material.
 func TestHemCornerReliefRemovesTheSharedCorner(t *testing.T) {
-	relieved := ops.BodyGeometryProperties(
+	t.Parallel()
+	relieved := query.BodyGeometryProperties(
 		hemCorneredSheet(t, CornerReliefSpec{Shape: types.CornerSquare, Size: 0.4}), ops.DefaultQuality()).Volume
 	// The same part with the corner left to tear removes nothing there, so it has MORE material.
-	torn := ops.BodyGeometryProperties(
+	torn := query.BodyGeometryProperties(
 		hemCorneredSheet(t, CornerReliefSpec{Shape: types.CornerTear}), ops.DefaultQuality()).Volume
 
 	if relieved >= torn-1e-6 {
@@ -58,6 +60,7 @@ func TestHemCornerReliefRemovesTheSharedCorner(t *testing.T) {
 // is not built yet, and a hem meeting a flange is a junction — so the hem refuses it there rather
 // than silently ignoring it, exercising the corner-relief error path in the hem's recompute.
 func TestHemCornerReliefRefusesShapingTransition(t *testing.T) {
+	t.Parallel()
 	fs, edgeX := seedSheetMetalSheet(t, 4, nil)
 	fs.SetReliefSpec(func() ReliefSpec { return ReliefSpec{} })
 	fs.SetCornerReliefSpec(func() CornerReliefSpec { return CornerReliefSpec{Shape: types.CornerSquare, Size: 0.4} })
@@ -80,6 +83,7 @@ func TestHemCornerReliefRefusesShapingTransition(t *testing.T) {
 // TestHemNeedsABody: a hem with no prior solid to fold goes sick rather than panicking — foldHem
 // surfaces the missing body.
 func TestHemNeedsABody(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	hem := NewSheetMetalHemFeatures(fs).Add(&SheetMetalHemDefinition{
 		EdgeKey: []byte("x"), Type: SingleHem, Length: constClosure(0.5), Gap: constClosure(0.1),
@@ -93,6 +97,7 @@ func TestHemNeedsABody(t *testing.T) {
 // TestHemRejectsUnresolvableEdge: a hem whose edge key resolves to nothing goes sick — foldHem
 // surfaces the resolve failure instead of indexing an empty edge slice.
 func TestHemRejectsUnresolvableEdge(t *testing.T) {
+	t.Parallel()
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
 	hem := NewSheetMetalHemFeatures(fs).Add(&SheetMetalHemDefinition{
 		EdgeKey: []byte("no-such-edge"), Type: SingleHem, Length: constClosure(0.5), Gap: constClosure(0.1),

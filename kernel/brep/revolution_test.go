@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -22,13 +23,14 @@ func revVolume(t *testing.T, b *topo.Body) float64 {
 	if open := ops.BoundaryEdges(b); len(open) != 0 {
 		t.Fatalf("revolution has %d boundary edges, want 0 (watertight)", len(open))
 	}
-	return ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 }
 
 // TestRevolutionTubeIsAnalyticAnnulus revolves a rectangular annular meridian into a tube and
 // asserts it is a valid watertight solid with the analytic annulus volume AND two true cylindrical
 // walls (the bore + outer) — the surfaces thread/chamfer/fillet attach to (#129).
 func TestRevolutionTubeIsAnalyticAnnulus(t *testing.T) {
+	t.Parallel()
 	const rIn, rOut, h = 2.5, 6.0, 20.0
 	mer := []math.Point2{math.P2(rIn, 0), math.P2(rOut, 0), math.P2(rOut, h), math.P2(rIn, h)}
 
@@ -56,6 +58,7 @@ func TestRevolutionTubeIsAnalyticAnnulus(t *testing.T) {
 // TestRevolutionDiscIsSolidCylinder revolves a rectangle touching the axis into a SOLID cylinder
 // (the inner edge is on the axis ⇒ disk caps, one cylindrical wall).
 func TestRevolutionDiscIsSolidCylinder(t *testing.T) {
+	t.Parallel()
 	const r, h = 5.0, 8.0
 	mer := []math.Point2{math.P2(0, 0), math.P2(r, 0), math.P2(r, h), math.P2(0, h)}
 
@@ -76,6 +79,7 @@ func TestRevolutionDiscIsSolidCylinder(t *testing.T) {
 // TestRevolutionFullConeApex revolves a right triangle touching the axis into a SOLID CONE: an
 // apex (r=0), a base disk, and one analytic cone wall.
 func TestRevolutionFullConeApex(t *testing.T) {
+	t.Parallel()
 	const r, h = 4.0, 9.0
 	mer := []math.Point2{math.P2(0, 0), math.P2(r, 0), math.P2(0, h)} // base, rim, apex on axis
 	body, err := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 0, 1), mer, "cone")
@@ -97,6 +101,7 @@ func TestRevolutionFullConeApex(t *testing.T) {
 // with one cone face, one cylinder wall, and the expected (cylinder − corner-wedge-of-revolution)
 // volume.
 func TestRevolutionChamferedCylinder(t *testing.T) {
+	t.Parallel()
 	const r, h, d = 5.0, 10.0, 2.0
 	mer := []math.Point2{math.P2(0, 0), math.P2(r, 0), math.P2(r, h-d), math.P2(r-d, h), math.P2(0, h)}
 	body, err := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 0, 1), mer, "cham")
@@ -120,6 +125,7 @@ func TestRevolutionChamferedCylinder(t *testing.T) {
 // the analytic TORUS a true fillet of a circular edge produces (#127). It must be a valid solid with
 // one torus face, one cylinder wall, and the expected (cylinder − rounded-corner) volume.
 func TestRevolutionFilletedCylinder(t *testing.T) {
+	t.Parallel()
 	const r, h, f = 5.0, 10.0, 2.0
 	// Meridian: base disk, wall up to h-f, ARC (about (r-f, h-f)) to (r-f, h), top disk, axis.
 	center := math.P2(r-f, h-f)
@@ -156,6 +162,7 @@ func TestRevolutionFilletedCylinder(t *testing.T) {
 // downstream (recognizer, fillet eligibility, STEP), so a sub-µm taper the user modeled must
 // survive classification.
 func TestRevolutionSubMicronTaperIsCone(t *testing.T) {
+	t.Parallel()
 	// Wall kept thick (3 cm) so default-quality faceting error on the two walls cancels inside the
 	// 3% band — a 0.5 cm-thin ring measures ~4.5% high at DefaultQuality (bore vs outer inscription
 	// imbalance), a pre-existing tessellation-resolution effect unrelated to classification.
@@ -181,6 +188,7 @@ func TestRevolutionSubMicronTaperIsCone(t *testing.T) {
 // beyond doubt. The old absolute compare promoted it to a cone; classification must read the
 // dimensionless slope instead.
 func TestRevolutionLargeRadiusCylinderStaysCylinder(t *testing.T) {
+	t.Parallel()
 	const rIn, rOut, h, noise = 1e4, 1.05e4, 1e4, 3e-7
 	mer := []math.Point2{math.P2(rIn, 0), math.P2(rOut, 0), math.P2(rOut, h), math.P2(rIn+noise, h)}
 	body, err := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 0, 1), mer, "bigtube")
@@ -202,6 +210,7 @@ func TestRevolutionLargeRadiusCylinderStaysCylinder(t *testing.T) {
 // 1e3× model scale. The old absolute revTol flipped the 1e-3× copy to a cylinder (Δr = 1e-9
 // < 1e-7) while the 1× and 1e3× copies stayed cones.
 func TestRevolutionTaperClassIsScaleInvariant(t *testing.T) {
+	t.Parallel()
 	const slope = 1e-6
 	for _, scale := range []float64{1e-3, 1, 1e3} {
 		rIn, rOut, h := 10*scale, 10.5*scale, 1*scale
@@ -224,6 +233,7 @@ func TestRevolutionTaperClassIsScaleInvariant(t *testing.T) {
 // the on-line classification resolution) is coincident with the axis, so the revolve must produce
 // a SOLID cylinder (3 faces), not an annulus with a sub-resolution sliver bore.
 func TestRevolutionAxisWeldIsScaleRelative(t *testing.T) {
+	t.Parallel()
 	const rBore, r, h = 1e-4, 1e4, 1e4
 	mer := []math.Point2{math.P2(rBore, 0), math.P2(r, 0), math.P2(r, h), math.P2(rBore, h)}
 	body, err := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 0, 1), mer, "weld")

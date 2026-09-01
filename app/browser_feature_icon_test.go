@@ -14,6 +14,7 @@ import (
 // TestFeatureIconMapsKinds: known kinds map to their glyph, fillet variants collapse onto one,
 // and an unknown kind falls back to the default so every feature row still carries an icon.
 func TestFeatureIconMapsKinds(t *testing.T) {
+	t.Parallel()
 	cases := map[string]string{
 		"extrude": "extrude", "revolve": "revolve", "hole": "hole",
 		"face-fillet": "fillet", "rule-fillet": "fillet", "chamfer": "chamfer",
@@ -31,6 +32,7 @@ func TestFeatureIconMapsKinds(t *testing.T) {
 // TestBrowserFeatureNodeCarriesIcon: a feature in the history gets its glyph key on the browser
 // node so the head can draw it (#1264).
 func TestBrowserFeatureNodeCarriesIcon(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := def.Sketches().Add(sketch.XYPlane())
 	c0 := sk.Points().Add(math.P2(0, 0))
@@ -56,6 +58,7 @@ func TestBrowserFeatureNodeCarriesIcon(t *testing.T) {
 // TestBrowserWorkAndSketchNodesCarryIcons: top-level sketches, 3D sketches, and the user/origin
 // work planes, axes and points all carry their glyph keys on the browser node (#1264).
 func TestBrowserWorkAndSketchNodesCarryIcons(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	def.Sketches().Add(sketch.XYPlane()) // top-level 2D sketch
 	def.Sketches3D().Add()               // 3D sketch

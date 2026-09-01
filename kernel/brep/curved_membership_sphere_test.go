@@ -83,12 +83,14 @@ func assertCapSweep(t *testing.T, f curvedFace, r, level float64, low bool) {
 // TestPointInCurvedFaceBigCapSweep: the region below y=4 on a radius-5 sphere is 9/10 of the surface, so
 // its rim sits more than a quarter turn from most of it. Every station below the rim is inside it.
 func TestPointInCurvedFaceBigCapSweep(t *testing.T) {
+	t.Parallel()
 	assertCapSweep(t, capRegionFixture(t, 5, 4, true), 5, 4, true)
 }
 
 // TestPointInCurvedFaceSmallCapSweep is the complement of the big cap on the same rim — the proof that
 // the fix classifies the region, and did not merely invert the verdict.
 func TestPointInCurvedFaceSmallCapSweep(t *testing.T) {
+	t.Parallel()
 	assertCapSweep(t, capRegionFixture(t, 5, 4, false), 5, 4, false)
 }
 
@@ -96,6 +98,7 @@ func TestPointInCurvedFaceSmallCapSweep(t *testing.T) {
 // y=4 to keep what is below) claims the stations between them and none beyond either — the multi-loop
 // case, where the region is the intersection of both rims' kept sides.
 func TestPointInCurvedFaceBeltSweep(t *testing.T) {
+	t.Parallel()
 	const r = 5
 	belt := capRegionFixture(t, r, 4, true)
 	belt.loops = append(belt.loops, capRegionFixture(t, r, -1, false).loops...)
@@ -135,6 +138,7 @@ func slitHemisphereFace(t *testing.T, r float64) curvedFace {
 // the hemisphere down to the wedge on one side of the slit, which cost the sphere corpus its convex
 // edges — S6/S7 fillets refused with "edge is not convex" (#3453 follow-up).
 func TestPointInCurvedFaceIgnoresASlit(t *testing.T) {
+	t.Parallel()
 	const r = 13
 	f := slitHemisphereFace(t, r)
 	sphere := f.surface.(geom.Sphere)
@@ -161,6 +165,7 @@ func TestPointInCurvedFaceIgnoresASlit(t *testing.T) {
 // That one lives in orient_consistent.go/winding_flux.go/trim_region.go and is pinned separately by
 // orient_complement_test.go.
 func TestBallJoinRodContainsBallCentre(t *testing.T) {
+	t.Parallel()
 	ball, err := SolidSphere(math.P3(0, 0, 0), 5, "ball")
 	if err != nil {
 		t.Fatalf("ball: %v", err)

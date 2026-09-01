@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -193,7 +194,7 @@ func flatPatternFaces(_ *app.Session, ctx sheetMetalPart) (wire.FacesResult, err
 	// the developed footprint area (the body volume over the gauge).
 	area := 0.0
 	if flat.Thickness > 0 {
-		area = ops.BodyGeometryProperties(flat.Body, ops.Quality{ChordTolerance: 1e-3}).Volume / flat.Thickness
+		area = query.BodyGeometryProperties(flat.Body, ops.Quality{ChordTolerance: 1e-3}).Volume / flat.Thickness
 	}
 	return wire.FacesResult{Faces: []wire.FlatFaceInfo{
 		{Type: types.FrontFlatPatternFace.String(), Area: area},

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 )
@@ -40,6 +41,7 @@ func boxFaceKey(t *testing.T, b *topo.Body, nx, ny, nz float64) []byte {
 // feature has to re-read it. A value captured once at authoring time would leave the thick wall
 // behind when the parameter that sizes it changes.
 func TestShellFaceThicknessIsParameterDriven(t *testing.T) {
+	t.Parallel()
 	fs, box := shellSeed(t)
 	wall := 1.5
 	sh := NewDressUpFeatures(fs).AddShell([][]byte{boxFaceKey(t, box, 0, 0, 1)}, constFloat(0.5))
@@ -50,13 +52,13 @@ func TestShellFaceThicknessIsParameterDriven(t *testing.T) {
 	if !sh.Health().OK() {
 		t.Fatalf("shell with a face thickness went sick: %+v", sh.Health())
 	}
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-43) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-43) > 1e-6 {
 		t.Fatalf("shell volume = %g, want 43 (a 1.5 wall on +X)", got)
 	}
 	wall = 0.25      // the parameter moves
 	fs.MarkDirty(sh) // as a parameter change does
 	fs.Recompute()
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-29.875) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-29.875) > 1e-6 {
 		t.Errorf("after the parameter changed, volume = %g, want 29.875 — the override was frozen", got)
 	}
 }
@@ -64,6 +66,7 @@ func TestShellFaceThicknessIsParameterDriven(t *testing.T) {
 // TestShellFaceThicknessRoundTrips: a reopened document must shell the same walls. Losing the
 // overrides would silently rebuild the part at the uniform thickness.
 func TestShellFaceThicknessRoundTrips(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).addShell(&ShellDefinition{
 		RemovedFaceKeys: [][]byte{[]byte("top")}, Thickness: constFloat(0.5),

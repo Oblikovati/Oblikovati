@@ -5,7 +5,7 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/surface"
 )
 
 // The Rebuild feature (M36-F02) refits the running surface body's freeform faces to clean
@@ -13,7 +13,7 @@ import (
 // so an imported or boolean-derived quilt gains the cleanliness milling and reflection
 // quality depend on. It records the worst geometric deviation it incurred so the UI can show
 // whether the rebuild stayed within tolerance. Like a surface offset, it acts on the most
-// recent body and replaces it (kernel work in ops.RebuildFaceSurfaces).
+// recent body and replaces it (kernel work in surface.RebuildFaceSurfaces).
 
 // RebuildDefinition is the recipe for a surface rebuild: the target degree and control-point
 // count in each parametric direction the body's freeform faces are refit to.
@@ -50,7 +50,7 @@ func (r *RebuildFeature) Recompute(in Input) (Output, error) {
 	if err := validateRebuild(r.def); err != nil {
 		return Output{}, err
 	}
-	out, dev, err := ops.RebuildFaceSurfaces(target, r.def.UDegree, r.def.VDegree, r.def.UCount, r.def.VCount, 0)
+	out, dev, err := surface.RebuildFaceSurfaces(target, r.def.UDegree, r.def.VDegree, r.def.UCount, r.def.VCount, 0)
 	if err != nil {
 		return Output{}, err
 	}

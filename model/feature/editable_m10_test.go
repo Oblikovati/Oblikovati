@@ -29,6 +29,7 @@ func assertParamsRoundTrip(t *testing.T, name string, ed Editable, want int) {
 }
 
 func TestSurfacingFeaturesExposeEditableParams(t *testing.T) {
+	t.Parallel()
 	assertParamsRoundTrip(t, "ruled", &RuledSurfaceFeature{def: &RuledSurfaceDefinition{}}, 1)
 	assertParamsRoundTrip(t, "surfaceOffset", &SurfaceOffsetFeature{def: &SurfaceOffsetDefinition{}}, 1)
 	assertParamsRoundTrip(t, "midSurface", &MidSurfaceFeature{def: &MidSurfaceDefinition{}}, 1)
@@ -38,6 +39,7 @@ func TestSurfacingFeaturesExposeEditableParams(t *testing.T) {
 }
 
 func TestPartFeaturesExposeEditableParams(t *testing.T) {
+	t.Parallel()
 	assertParamsRoundTrip(t, "boss", &BossFeature{def: &BossDefinition{}}, 2)
 	assertParamsRoundTrip(t, "coreCavity", &CoreCavityFeature{def: &CoreCavityDefinition{}}, 2)
 	assertParamsRoundTrip(t, "thicken", &ThickenFeature{}, 1)
@@ -46,6 +48,7 @@ func TestPartFeaturesExposeEditableParams(t *testing.T) {
 }
 
 func TestFreeformLevelParamClampsAndRoundTrips(t *testing.T) {
+	t.Parallel()
 	ff := &FreeformFeature{body: &FreeformBody{}}
 	params := ff.EditableParams()
 	if len(params) != 1 || !params[0].Integer {
@@ -62,6 +65,7 @@ func TestFreeformLevelParamClampsAndRoundTrips(t *testing.T) {
 }
 
 func TestDirectEditParamsFollowOperation(t *testing.T) {
+	t.Parallel()
 	cases := map[types.DirectEditOperationType]string{
 		types.DirectEditSizeOperation:   "Distance",
 		types.DirectEditRotateOperation: "Angle",

@@ -13,6 +13,7 @@ import (
 // assemblyRevolve feature that machines the participant (its volume drops — a cut removes the
 // swept material) — the revolve half of the assembly sketched features (#766).
 func TestAssemblyRevolveMachinesFromSketch(t *testing.T) {
+	t.Parallel()
 	s, asm, occ := assemblyWithBoxComponent(t, 0) // box [0,2]×[0,2]×[0,4]
 
 	sk, err := s.CreateSketch(sketch.XYPlane())
@@ -43,6 +44,7 @@ func TestAssemblyRevolveMachinesFromSketch(t *testing.T) {
 // TestAssemblyHoleDrillsParticipant: a parametric hole drills a bore through the participant,
 // removing the cylindrical material (volume drops below the box by a small bore).
 func TestAssemblyHoleDrillsParticipant(t *testing.T) {
+	t.Parallel()
 	s, asm, occ := assemblyWithBoxComponent(t, 0) // box [0,2]×[0,2]×[0,4]
 
 	tool := NewAssemblyHoleTool() // drills -Z, d=1, depth=1 by default
@@ -65,6 +67,7 @@ func TestAssemblyHoleDrillsParticipant(t *testing.T) {
 
 // TestAssemblyMachiningToolsNeedInput: the tools refuse to commit without their inputs.
 func TestAssemblyMachiningToolsNeedInput(t *testing.T) {
+	t.Parallel()
 	if NewAssemblyRevolveTool().CanCommit() {
 		t.Error("a revolve with no profile should not be committable")
 	}

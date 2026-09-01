@@ -5,12 +5,14 @@ package app
 import "testing"
 
 func TestTelemetryEnabledDefaultsOn(t *testing.T) {
+	t.Parallel()
 	if !NewSession().TelemetryEnabled() {
 		t.Fatal("telemetry must default to on (opt-out)")
 	}
 }
 
 func TestSetTelemetryEnabledTogglesAndPersists(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.SetTelemetryEnabled(false); err != nil {
 		t.Fatalf("SetTelemetryEnabled(false): %v", err)

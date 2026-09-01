@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
@@ -32,6 +33,7 @@ func partWithTopRegion(t *testing.T) (*Session, *compdef.PartComponentDefinition
 // TestEmbossToolEndToEnd drives the Emboss UI: pick a region, set a depth, OK — and asserts the
 // raised emboss added material (block 72 + 2×2×1 = 76).
 func TestEmbossToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def, region := partWithTopRegion(t)
 	s.SetPicker(stubPicker{sel: region})
 
@@ -49,13 +51,14 @@ func TestEmbossToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("embossed body not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(v, 76) > 0.01 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(v, 76) > 0.01 {
 		t.Errorf("embossed volume = %g, want ≈76 (72 + 2×2×1)", v)
 	}
 }
 
 // Engrave mode cuts material (block 72 − 2×2×1 = 68).
 func TestEmbossToolEngraves(t *testing.T) {
+	t.Parallel()
 	s, def, region := partWithTopRegion(t)
 	s.SetPicker(stubPicker{sel: region})
 
@@ -67,12 +70,13 @@ func TestEmbossToolEngraves(t *testing.T) {
 	if err := s.OK(); err != nil {
 		t.Fatalf("OK: %v", err)
 	}
-	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 68) > 0.01 {
+	if v := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 68) > 0.01 {
 		t.Errorf("engraved volume = %g, want ≈68 (72 − 2×2×1)", v)
 	}
 }
 
 func TestEmbossViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _, _ := partWithTopRegion(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)

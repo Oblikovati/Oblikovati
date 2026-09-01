@@ -7,6 +7,7 @@ import "testing"
 // TestResolveOverlayMeshTessellatesBody checks the body-overlay resolver (M16-F05 #641) finds a
 // body by its reference key among the visible bodies and returns a non-empty tessellated mesh.
 func TestResolveOverlayMeshTessellatesBody(t *testing.T) {
+	t.Parallel()
 	s, _ := extrudedBoxPart(t)
 	bodies := s.VisibleBodies()
 	if len(bodies) == 0 {
@@ -24,6 +25,7 @@ func TestResolveOverlayMeshTessellatesBody(t *testing.T) {
 
 // TestResolveOverlayMeshUnknownKey checks an unknown / empty key resolves to nothing.
 func TestResolveOverlayMeshUnknownKey(t *testing.T) {
+	t.Parallel()
 	s, _ := extrudedBoxPart(t)
 	if _, _, _, ok := s.resolveOverlayMesh("no-such-body", 0); ok {
 		t.Error("an unknown body key should not resolve")
@@ -35,6 +37,7 @@ func TestResolveOverlayMeshUnknownKey(t *testing.T) {
 
 // TestVisualPanelToggles covers the named-views / color-styles panel open+close setters.
 func TestVisualPanelToggles(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.OpenNamedViewsPanel()
 	s.CloseNamedViewsPanel()

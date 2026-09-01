@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -39,7 +40,7 @@ func gateQualities() []gateQuality {
 //
 // Example:
 //
-//	m := ops.TessellateFace(f, ops.PropertyQuality())
+//	m := tessellate.TessellateFace(f, ops.PropertyQuality())
 //	area := ops.MeshArea(m) // areas stay pinned at PropertyQuality
 //	assertFaceFoldFreeAtEveryQuality(t, "D9", f, m)
 func assertFaceFoldFreeAtEveryQuality(t *testing.T, name string, f *topo.Face, propMesh *ops.Mesh) {
@@ -47,7 +48,7 @@ func assertFaceFoldFreeAtEveryQuality(t *testing.T, name string, f *topo.Face, p
 	for _, gq := range gateQualities() {
 		m := propMesh
 		if m == nil || gq.q != ops.PropertyQuality() {
-			m = ops.TessellateFace(f, gq.q)
+			m = tessellate.TessellateFace(f, gq.q)
 		}
 		if m == nil {
 			t.Fatalf("%s %T face did not tessellate at %s quality", name, f.Geometry(), gq.name)

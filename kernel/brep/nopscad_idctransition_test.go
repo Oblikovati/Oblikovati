@@ -10,6 +10,10 @@ import (
 )
 
 func TestNopIDCTransitionCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~20s): `make test-corpus`")
+	}
+	t.Parallel()
 	if runtime.GOOS == "darwin" {
 		t.Skip("macOS CI currently leaves this boolean acceptance body open")
 	}

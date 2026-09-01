@@ -27,6 +27,7 @@ func holedVolume(t *testing.T, f *AssemblyHoleFeature) float64 {
 // Diameter and Depth as editable length scalars, and that widening the bore (the edit
 // path) re-drills a larger hole that removes more material (#752).
 func TestAssemblyHoleExposesEditableDiameterDepth(t *testing.T) {
+	t.Parallel()
 	axis, _ := gmath.NewUnitVector3(0, 0, 1)
 	f, err := NewAssemblyHoleFeature(gmath.P3(0.5, 0.5, 0), axis, 0.3, 1.5)
 	if err != nil {

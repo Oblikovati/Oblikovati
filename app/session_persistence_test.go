@@ -21,6 +21,7 @@ func storeBackedSession() *app.Session {
 }
 
 func TestSaveActiveDocumentAsThenReopen(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	path := filepath.Join(dir, "bracket.opd")
 
@@ -46,6 +47,7 @@ func TestSaveActiveDocumentAsThenReopen(t *testing.T) {
 }
 
 func TestSaveActiveDocumentNeedsPathBeforeFirstSaveAs(t *testing.T) {
+	t.Parallel()
 	s := storeBackedSession()
 	if _, err := compdef.AddPart(s.Workspace(), "Part1", true); err != nil {
 		t.Fatalf("AddPart: %v", err)
@@ -57,6 +59,7 @@ func TestSaveActiveDocumentNeedsPathBeforeFirstSaveAs(t *testing.T) {
 }
 
 func TestSaveActiveDocumentSucceedsAfterSaveAs(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), "plate.opd")
 	s := storeBackedSession()
 	if _, err := compdef.AddPart(s.Workspace(), "Part1", true); err != nil {
@@ -72,6 +75,7 @@ func TestSaveActiveDocumentSucceedsAfterSaveAs(t *testing.T) {
 }
 
 func TestSaveActiveDocumentNoActiveDocument(t *testing.T) {
+	t.Parallel()
 	if err := storeBackedSession().SaveActiveDocument(); !errors.Is(err, app.ErrNoActiveDoc) {
 		t.Fatalf("SaveActiveDocument() with no doc = %v, want ErrNoActiveDoc", err)
 	}

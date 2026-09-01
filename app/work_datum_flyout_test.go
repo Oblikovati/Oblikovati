@@ -81,6 +81,7 @@ func datumEntries() []datumEntry {
 // TestDatumFlyoutEntriesGateOnTheirSelection: each entry is NOT ready with an empty selection,
 // IS ready once its inputs are selected, and names a prompt telling the user what to pick.
 func TestDatumFlyoutEntriesGateOnTheirSelection(t *testing.T) {
+	t.Parallel()
 	for _, e := range datumEntries() {
 		t.Run(e.name, func(t *testing.T) {
 			s, def := emptyPartSession(t)
@@ -105,6 +106,7 @@ func TestDatumFlyoutEntriesGateOnTheirSelection(t *testing.T) {
 // A datum entry with its inputs already selected builds immediately instead of starting the
 // guided tool — the shortcut every Work Features click is supposed to take.
 func TestStartDatumBuildsFromAPreSelection(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	selectPlanes(s, def.OriginPlanes()[0], def.OriginPlanes()[1])
 	before := def.WorkAxes().Count()
@@ -123,6 +125,7 @@ func TestStartDatumBuildsFromAPreSelection(t *testing.T) {
 
 // With nothing selected the same click starts the guided pick instead, so it is never inert.
 func TestStartDatumFallsBackToTheGuidedPick(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if err := startDatum(newPlaneIntersectionWorkAxisTool)(s); err != nil {
 		t.Fatalf("startDatum: %v", err)
@@ -138,6 +141,7 @@ func TestStartDatumFallsBackToTheGuidedPick(t *testing.T) {
 
 // canStartWorkFeature gates the whole panel: live on a part, dead inside a sketch.
 func TestWorkFeaturePanelEnableGate(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if !canStartWorkFeature(s) {
 		t.Error("the Work Features panel should be live on a part")
@@ -156,6 +160,7 @@ func TestWorkFeaturePanelEnableGate(t *testing.T) {
 // The revolved-face and face-centre entries build from a real cylindrical face, which the box
 // fixture cannot supply — this is the analytic half of the axis/point sets.
 func TestRevolvedFaceDatumsBuildFromACylinder(t *testing.T) {
+	t.Parallel()
 	s, cyl := newPartWithCylinder(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	s.Selection().Add(FaceHandle{Face: cylinderFaceOf(t, cyl), Body: cyl})
@@ -181,6 +186,7 @@ func TestRevolvedFaceDatumsBuildFromACylinder(t *testing.T) {
 // supplies. This is their analytic half, and it covers the plane constructors the box-based
 // table can only assert the negative of.
 func TestCurvedFaceWorkPlanesBuildFromACylinder(t *testing.T) {
+	t.Parallel()
 	s, cyl := newPartWithCylinder(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	face := cylinderFaceOf(t, cyl)
@@ -244,6 +250,7 @@ func TestCurvedFaceWorkPlanesBuildFromACylinder(t *testing.T) {
 
 // Two axes: the plane through them, and the point where they meet.
 func TestTwoAxisDatumsBuild(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	selectAxes(s, originAxis(t, def, feature.OriginXAxis), originAxis(t, def, feature.OriginYAxis))
 	if !canTwoLinesWorkPlane(s) || !canTwoAxisWorkPoint(s) {
@@ -264,6 +271,7 @@ func TestTwoAxisDatumsBuild(t *testing.T) {
 
 // Each constructor refuses with the wrong selection rather than building a garbage datum.
 func TestDatumConstructorsRefuseTheWrongSelection(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	for name, build := range map[string]func() error{
 		"revolved face":    func() error { _, err := s.CreateRevolvedFaceWorkAxis(); return err },

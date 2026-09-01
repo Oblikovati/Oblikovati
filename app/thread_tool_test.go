@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -51,9 +52,10 @@ func cylinderFaceOf(t *testing.T, b *topo.Body) *topo.Face {
 // cylindrical face, choose M8 / 1.25 / cut, OK — and asserts a real modeled thread reduced the
 // volume and the tool closed.
 func TestThreadToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, cyl := newPartWithCylinder(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
-	before := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
 	face := cylinderFaceOf(t, cyl)
 
 	// Ribbon: click "Thread" → the tool; pick the cylindrical face; configure; OK.
@@ -83,7 +85,7 @@ func TestThreadToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("threaded body not a valid solid: %+v", r)
 	}
-	after := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 	if after >= before {
 		t.Errorf("modeled cut thread should remove material: %.4f → %.4f", before, after)
 	}
@@ -96,6 +98,7 @@ func TestThreadToolEndToEnd(t *testing.T) {
 // (SetLeftHanded) must reach ThreadDefinition.LeftHanded, so a left-hand thread is authorable from
 // the UI and not only over /api. The default stays right-handed.
 func TestThreadToolAuthorsLeftHandThread(t *testing.T) {
+	t.Parallel()
 	s, cyl := newPartWithCylinder(t)
 	face := cylinderFaceOf(t, cyl)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: face, Body: cyl}})
@@ -122,6 +125,7 @@ func TestThreadToolAuthorsLeftHandThread(t *testing.T) {
 
 // TestThreadToolRejectsPlanarFace checks the tool ignores a non-cylindrical pick.
 func TestThreadToolRejectsPlanarFace(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 4)
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})

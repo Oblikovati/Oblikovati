@@ -13,6 +13,7 @@ import (
 // object.renamed carrying the feature kind, its key, and the old and new names (#1644) — the seam
 // both the UI and the wire router go through, so an add-in observes UI renames too.
 func TestRenameFeatureEmitsObjectRenamed(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	f := def.Features().Item(0)
 	var got ObjectRenamed
@@ -39,6 +40,7 @@ func TestRenameFeatureEmitsObjectRenamed(t *testing.T) {
 // TestSetFeatureSuppressedEmitsPropertyChanged checks toggling suppression fires one property.changed
 // carrying the old and new boolean state, and that an idempotent set fires nothing (#1644).
 func TestSetFeatureSuppressedEmitsPropertyChanged(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	f := def.Features().Item(0)
 	var got PropertyChanged
@@ -67,6 +69,7 @@ func TestSetFeatureSuppressedEmitsPropertyChanged(t *testing.T) {
 // TestMetadataEventIDsAreStable pins the wire-facing event type ids: an add-in relay routes on them,
 // so a silent change would misroute every metadata event. They live in the 0x08xx modeling block.
 func TestMetadataEventIDsAreStable(t *testing.T) {
+	t.Parallel()
 	if got := (ObjectRenamed{}).EventID(); got != tidObjectRenamed {
 		t.Errorf("ObjectRenamed.EventID() = %#x, want %#x", got, tidObjectRenamed)
 	}
@@ -82,6 +85,7 @@ func TestMetadataEventIDsAreStable(t *testing.T) {
 // a session with nothing open still emits (keyed to the zero doc id) rather than panicking, so an
 // early rename before any document is open is observable, not a crash.
 func TestEmitObjectRenamedKeysToZeroWithoutActiveDocument(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if s.ActiveDocument() != nil {
 		t.Fatalf("a fresh session must have no active document")

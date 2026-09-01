@@ -13,6 +13,7 @@ import (
 // TestSheetMetalRipApply seeds a sheet-metal wall, adds a rip line across the middle, and slits
 // it — the result is one healthy solid with material removed; then checks the error paths.
 func TestSheetMetalRipApply(t *testing.T) {
+	t.Parallel()
 	s := sheetMetalProfiledPart(t)
 	if _, err := apply(t, s, "sheetMetalFace", `{"sketchIndex":0}`); err != nil {
 		t.Fatalf("seed face: %v", err)

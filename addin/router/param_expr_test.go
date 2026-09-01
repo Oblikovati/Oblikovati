@@ -29,6 +29,7 @@ func partWith(t *testing.T, params map[string]string) *compdef.PartComponentDefi
 // unit-string field that is a parameter name or a formula over parameters resolves
 // against the part's table, while plain literals (and bare numbers) still parse.
 func TestResolveQuantityParameterExpression(t *testing.T) {
+	t.Parallel()
 	part := partWith(t, map[string]string{"bore_r": "10 mm", "slot_depth": "5 mm"})
 	cases := []struct {
 		src     string
@@ -57,6 +58,7 @@ func TestResolveQuantityParameterExpression(t *testing.T) {
 // different dimension than requested falls back to the literal parser (which then
 // reports the real error) rather than silently returning the wrong-unit value.
 func TestResolveQuantityWrongDimensionFallsBack(t *testing.T) {
+	t.Parallel()
 	part := partWith(t, map[string]string{"sweep": "30 deg"})
 	if _, err := resolveQuantity(part, "sweep", param.Length); err == nil {
 		t.Error("an angle parameter used as a length should error, not resolve")
@@ -69,6 +71,7 @@ func TestResolveQuantityWrongDimensionFallsBack(t *testing.T) {
 // (Oblikovati.API#187). The single sanctioned call is the resolver's own literal
 // fallback in param_expr.go.
 func TestRouterUnitStringsGoThroughResolver(t *testing.T) {
+	t.Parallel()
 	entries, err := os.ReadDir(".")
 	if err != nil {
 		t.Fatalf("read router dir: %v", err)

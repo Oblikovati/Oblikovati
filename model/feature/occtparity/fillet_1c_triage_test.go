@@ -9,6 +9,9 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -19,7 +22,7 @@ import (
 //   - W2, H6 → G6 (curved neighbour): the picked edge is a geom.Arc3d bordering a geom.Cylinder —
 //     a fillet ON a curved-face-adjacent edge, not a planar defect. Still FAIL(area) until G6.
 //   - Y2 → FIXED by the conformance-repair guard (Bug A). The B-rep was always correct (per-face
-//     tess sum ≈ OCCT); ops.BodyGeometryProperties used to under-measure it ~12.6% because the
+//     tess sum ≈ OCCT); query.BodyGeometryProperties used to under-measure it ~12.6% because the
 //     boundary-faithful CDT collapsed a face on a self-intersecting loop. Now body ≈ sum ≈ OCCT.
 //     (The self-intersecting loop itself — Bug B — is a tracked, harmless topology blemish.)
 //   - Q1 → FIXED by survivorCurve. Its PICKED edge is planar (asserted below), which is exactly why
@@ -44,7 +47,7 @@ func TestG1Cluster1cTriage(t *testing.T) {
 		e := locate1c(t, dir, "Y2")
 		res := fillet1c(t, dir, "Y2", e)
 		sum := sumFaceTess(res)
-		body := ops.BodyGeometryProperties(res, ops.PropertyQuality()).Area
+		body := query.BodyGeometryProperties(res, ops.PropertyQuality()).Area
 		occt := caseArea(t, "Y2")
 		if rel := (body - occt) / occt; rel < -0.01 || rel > 0.01 {
 			t.Errorf("Y2: body area %.5g not within 1%% of OCCT %.5g (rel %+.2f%%) — Bug A conformance guard regressed", body, occt, rel*100)
@@ -66,7 +69,7 @@ func TestG1Cluster1cTriage(t *testing.T) {
 				t.Errorf("Q1: picked-edge endpoint %v touches a curved face", v.Point())
 			}
 		}
-		body := ops.BodyGeometryProperties(res, ops.PropertyQuality()).Area
+		body := query.BodyGeometryProperties(res, ops.PropertyQuality()).Area
 		if occt := caseArea(t, "Q1"); (body-occt)/occt < -0.01 || (body-occt)/occt > 0.01 {
 			t.Errorf("Q1: body area %.5g not within 1%% of OCCT %.5g — survivorCurve fix regressed", body, occt)
 		}
@@ -104,7 +107,7 @@ func fillet1c(t *testing.T, dir, c string, e *topo.Edge) *topo.Body {
 	}
 	body, _ := importInput(filepath.Join(dir, rec.InputStep))
 	e2, _ := locateEdge(body, rec.Picks[0].Locator, importTol(body))
-	res, err := ops.FilletEdges(body, [][]byte{e2.ReferenceKey()}, rec.Picks[0].Radius)
+	res, err := blend.FilletEdges(body, [][]byte{e2.ReferenceKey()}, rec.Picks[0].Radius)
 	if err != nil {
 		t.Fatalf("simple/%s fillet: %v", c, err)
 	}
@@ -155,7 +158,7 @@ func vertexTouchesCurved(v *topo.Vertex) bool {
 func sumFaceTess(b *topo.Body) float64 {
 	var sum float64
 	for _, f := range b.Faces() {
-		m := ops.TessellateFace(f, ops.PropertyQuality())
+		m := tessellate.TessellateFace(f, ops.PropertyQuality())
 		for k := 0; k+2 < len(m.Indices); k += 3 {
 			p, q, r := m.Positions[m.Indices[k]], m.Positions[m.Indices[k+1]], m.Positions[m.Indices[k+2]]
 			sum += float64(p.VectorTo(q).Cross(p.VectorTo(r)).Length()) / 2

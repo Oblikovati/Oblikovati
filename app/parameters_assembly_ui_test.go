@@ -31,6 +31,7 @@ func parametersButton(t *testing.T, s *Session) (RibbonButton, bool) {
 // is enabled for an active assembly — the F04 ribbon gate (#1560). Before F04 the Manage tab
 // was part-only, so an assembly showed no Parameters button.
 func TestParametersButtonOnAssemblyRibbon(t *testing.T) {
+	t.Parallel()
 	b, ok := parametersButton(t, assemblySession(t))
 	if !ok {
 		t.Fatal("an active assembly should show the Manage ▸ Parameters button")
@@ -43,6 +44,7 @@ func TestParametersButtonOnAssemblyRibbon(t *testing.T) {
 // TestParametersButtonStillOnPartRibbon guards against regressing the part: the Parameters
 // button must still appear and be enabled for a part.
 func TestParametersButtonStillOnPartRibbon(t *testing.T) {
+	t.Parallel()
 	b, ok := parametersButton(t, registeredSession(t))
 	if !ok || !b.Enabled {
 		t.Errorf("a part should still show an enabled Parameters button (found=%v enabled=%v)", ok, b.Enabled)
@@ -52,6 +54,7 @@ func TestParametersButtonStillOnPartRibbon(t *testing.T) {
 // TestHasActiveParameterHolderGate checks the enable predicate: true for a part or an
 // assembly, false with no parameter-holding document active.
 func TestHasActiveParameterHolderGate(t *testing.T) {
+	t.Parallel()
 	if !hasActiveParameterHolder(assemblySession(t)) {
 		t.Error("hasActiveParameterHolder should be true with an assembly active")
 	}
@@ -67,6 +70,7 @@ func TestHasActiveParameterHolderGate(t *testing.T) {
 // deriving from a part: the part is listed as a linkable source, and after a link the derived
 // table row reports the source and linked subset (M39-F04, #1560).
 func TestDerivedTableViewOnAssembly(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	gears, err := s.NewPart()
 	if err != nil {
@@ -109,6 +113,7 @@ func TestDerivedTableViewOnAssembly(t *testing.T) {
 // TestLinkableSourceExcludesActiveAndNonHolders checks the picker omits the active document
 // (no self-derivation) and documents with no linkable parameters.
 func TestLinkableSourceExcludesActiveAndNonHolders(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, err := s.NewAssembly(); err != nil { // active, empty → not its own source
 		t.Fatalf("NewAssembly: %v", err)

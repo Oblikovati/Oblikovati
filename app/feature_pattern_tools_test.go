@@ -29,6 +29,7 @@ func extrudedPart(t *testing.T) (*Session, *compdef.PartComponentDefinition, Fea
 }
 
 func TestFeatureRectPatternTool(t *testing.T) {
+	t.Parallel()
 	s, def, src := extrudedPart(t)
 	tool := NewFeatureRectPatternTool()
 	tool.countX = 3 // a 3×1 grid → 2 new copies
@@ -46,6 +47,7 @@ func TestFeatureRectPatternTool(t *testing.T) {
 }
 
 func TestFeatureMirrorTool(t *testing.T) {
+	t.Parallel()
 	s, def, src := extrudedPart(t)
 	tool := NewFeatureMirrorTool() // default normal +X → mirror across YZ
 	s.StartTool(tool)
@@ -59,6 +61,7 @@ func TestFeatureMirrorTool(t *testing.T) {
 }
 
 func TestFeatureCircPatternTool(t *testing.T) {
+	t.Parallel()
 	s, def, src := extrudedPart(t)
 	tool := NewFeatureCircPatternTool() // count 4 over 360°
 	s.StartTool(tool)
@@ -73,6 +76,7 @@ func TestFeatureCircPatternTool(t *testing.T) {
 
 // Selecting nothing leaves the tool unable to commit.
 func TestFeaturePatternNeedsSource(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedPart(t)
 	tool := NewFeatureRectPatternTool()
 	s.StartTool(tool)
@@ -85,6 +89,7 @@ func TestFeaturePatternNeedsSource(t *testing.T) {
 // commit gate inspects (#1626): no draft before a source feature is picked, a non-nil
 // draft once the tool is commit-ready.
 func TestPatternToolsDraftFeature(t *testing.T) {
+	t.Parallel()
 	s, _, src := extrudedPart(t)
 	tools := []PartFeatureTool{
 		NewFeatureRectPatternTool(), NewFeatureCircPatternTool(), NewFeatureMirrorTool(),
@@ -101,6 +106,7 @@ func TestPatternToolsDraftFeature(t *testing.T) {
 }
 
 func TestPatternFeatureCommandsRegistered(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)

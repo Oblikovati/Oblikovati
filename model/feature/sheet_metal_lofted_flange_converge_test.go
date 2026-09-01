@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -20,6 +21,7 @@ import (
 // exactly those four far points to their neighbour midpoints and leaves a smooth (many-sided) band
 // untouched.
 func TestConvergeCornersRetargetsOnlyCorners(t *testing.T) {
+	t.Parallel()
 	square := []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(0, 2, 0)}
 	farSquare := []math.Point3{math.P3(-1, -1, 3), math.P3(3, -1, 3), math.P3(3, 3, 3), math.P3(-1, 3, 3)}
 	got, count := convergeCorners(square, farSquare)
@@ -52,6 +54,7 @@ func regularRing(m int, r, z float64) []math.Point3 {
 // points, so it holds less material than the same wall carried through un-converged, stays a valid
 // watertight solid, and no longer reports the deferral.
 func TestLoftedFlangeConvergeRemovesCornerMaterial(t *testing.T) {
+	t.Parallel()
 	build := func(converge bool) (float64, bool, int) {
 		planeB, _ := sketch.NewPlane(math.P3(0, 0, 3), math.V3(1, 0, 0).AsUnit(), math.V3(0, 1, 0).AsUnit())
 		fs := NewPartFeatures(thicknessParams(t))
@@ -69,7 +72,7 @@ func TestLoftedFlangeConvergeRemovesCornerMaterial(t *testing.T) {
 			unmodelled = 1
 		}
 		valid, _ := ops.ValidateBodyEntities(body, ops.CheckGeometry, ops.DefaultQuality())
-		return ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume, valid, unmodelled
+		return query.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume, valid, unmodelled
 	}
 	ref, refValid, _ := build(false)
 	conv, convValid, unmodelled := build(true)

@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/identity"
@@ -72,7 +73,7 @@ func chamferEdges(in Input, keys [][]byte, d1, d2 float64, feat string, flatCorn
 // which assumes material is cut away, is valid for the whole selection).
 func allConvex(edges []*topo.Edge) bool {
 	for _, e := range edges {
-		if ops.ClassifyEdgeConvexity(e) == ops.EdgeConcave {
+		if blend.ClassifyEdgeConvexity(e) == blend.EdgeConcave {
 			return false
 		}
 	}
@@ -119,7 +120,7 @@ func chamferWedgeTools(edges []*topo.Edge, d1, d2 float64, strategy types.Chamfe
 	convex := make([]*topo.Edge, 0, len(edges))
 	for i, edge := range edges {
 		name := fmt.Sprintf("%s/w%d", feat, i)
-		if ops.ClassifyEdgeConvexity(edge) == ops.EdgeConcave {
+		if blend.ClassifyEdgeConvexity(edge) == blend.EdgeConcave {
 			tool, err := concaveChamferWedge(edge, d1, d2, strategy, run, name)
 			if err != nil {
 				return nil, nil, err

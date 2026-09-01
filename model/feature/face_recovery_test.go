@@ -51,6 +51,7 @@ func siblingFaceBody(t *testing.T, lastIndex int, extraSibling bool) (*topo.Body
 // headline: a stored face key whose EXACT entity is gone but whose PARENT lineage still names
 // exactly one surviving face is recovered ancestrally — bound and reported as a heal — not Sick.
 func TestResolveFacesHealsLostReferenceToAncestralSibling(t *testing.T) {
+	t.Parallel()
 	body, keep := siblingFaceBody(t, 7, false)
 	lost := faceKeyFor(2) // same parent grp:f#0, a last step the body no longer has
 
@@ -70,6 +71,7 @@ func TestResolveFacesHealsLostReferenceToAncestralSibling(t *testing.T) {
 // surviving same-parent siblings with no mint-time anchor cannot be disambiguated, so the reference
 // stays lost rather than binding a guess.
 func TestResolveFacesRefusesAmbiguousSiblingsWithoutAnchor(t *testing.T) {
+	t.Parallel()
 	body, _ := siblingFaceBody(t, 7, true) // two faces now share parent grp:f#0
 	lost := faceKeyFor(2)
 
@@ -84,6 +86,7 @@ func TestResolveFacesRefusesAmbiguousSiblingsWithoutAnchor(t *testing.T) {
 // siblings are disambiguated by nearness to the mint-time anchor (the face centroid), recovering
 // the face the user originally picked instead of staying lost.
 func TestResolveFacesHealsAmbiguousSiblingsByAnchor(t *testing.T) {
+	t.Parallel()
 	body, keep := siblingFaceBody(t, 7, true)
 	lost := faceKeyFor(2)
 	anchors := map[string]math.Point3{string(lost): topo.DescribeFace(keep).Centroid}
@@ -102,6 +105,7 @@ func TestResolveFacesHealsAmbiguousSiblingsByAnchor(t *testing.T) {
 
 // TestResolveFacesExactMatchNoHeal confirms an exactly-resolving key binds cleanly with no heal.
 func TestResolveFacesExactMatchNoHeal(t *testing.T) {
+	t.Parallel()
 	body, keep := siblingFaceBody(t, 7, false)
 
 	faces, heals, err := resolveFaces(body, [][]byte{keep.ReferenceKey()}, nil)
@@ -141,6 +145,7 @@ func dupFaceBody(t *testing.T) (*topo.Body, []byte) {
 // TestBindFaceCollisionIsHonestError pins that a key matching MORE THAN ONE face, with no surviving
 // sibling to recover to, is an honest error (the ADR-0043 P0 guard) — never a silent first-match.
 func TestBindFaceCollisionIsHonestError(t *testing.T) {
+	t.Parallel()
 	body, colliding := dupFaceBody(t)
 
 	if _, _, err := bindFace(body, colliding, nil); err == nil {
@@ -151,6 +156,7 @@ func TestBindFaceCollisionIsHonestError(t *testing.T) {
 // TestFindOrRecoverFaceAncestralSilent covers the silent (no-heal-channel) helper: it recovers a
 // lone ancestral sibling for a best-effort caller, returning the face and true.
 func TestFindOrRecoverFaceAncestralSilent(t *testing.T) {
+	t.Parallel()
 	body, keep := siblingFaceBody(t, 7, false)
 	lost := faceKeyFor(2)
 

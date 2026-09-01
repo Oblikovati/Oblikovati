@@ -12,6 +12,7 @@ import (
 
 // The in-canvas sketch input configuration round-trips over the wire (#2014).
 func TestHUDOptionsRoundTrip(t *testing.T) {
+	t.Parallel()
 	r, s := New(opregistry.Default()), app.NewSession()
 	var got wire.HeadsUpDisplayOptionsView
 	call(t, r, s, wire.MethodApplicationGetHUDOptions, "{}", &got)

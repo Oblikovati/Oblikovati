@@ -44,6 +44,7 @@ func derivedPartComponentOf(t *testing.T, part *compdef.PartComponentDefinition)
 // the derive re-resolves its source through the part's reference graph — rebound, not
 // stale, transform preserved — so a handed part survives a session (#717 foundation).
 func TestDerivedFromPartRebindsOnReopen(t *testing.T) {
+	t.Parallel()
 	store, ws, dir := assemblyWorkspace(t)
 	srcDoc := savePartDoc(t, ws, dir, "source.obk")
 	x, err := math.NewUnitVector3(1, 0, 0)

@@ -5,18 +5,22 @@ package brep_test
 import (
 	"testing"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
 func TestNopMainsSocketHolesCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
+	t.Parallel()
 	body := box(-1.8, -1.2, 0, 3.6, 2.4, 0.12)
 	for _, x := range []float64{-1.25, 1.25} {
 		body = cutOrFatal(t, body, cylinderZAt(x, 0, -0.05, 0.2, 0.16, "mains-socket-screw"), "mains socket screw")
 	}
 	left := prismBody(regularPolygonPoints(math.P3(-0.45, 0, 0), 0.45, 32, 0), -0.05, 0.2, "mains-socket-left")
 	right := prismBody(regularPolygonPoints(math.P3(0.45, 0, 0), 0.45, 32, 0), -0.05, 0.2, "mains-socket-right")
-	aperture, err := ops.ConvexHullOf("mains-socket-aperture", left, right)
+	aperture, err := query.ConvexHullOf("mains-socket-aperture", left, right)
 	if err != nil {
 		t.Fatalf("ConvexHullOf(mains socket aperture): %v", err)
 	}

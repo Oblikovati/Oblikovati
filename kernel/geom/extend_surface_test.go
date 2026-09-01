@@ -9,6 +9,7 @@ import (
 )
 
 func TestExtendSurfaceGrowsAndKeepsOriginal(t *testing.T) {
+	t.Parallel()
 	s := uPatch(t, 0, func(i, j int) float64 { return 0.5 * float64(i*i) }) // curved in u
 	ext, err := ExtendSurface(s, UMaxEdge, 0.5, 2)
 	if err != nil {
@@ -38,6 +39,7 @@ func jointDerivs(ext BSplineSurface, v float64, order int) (below, above [][]mat
 }
 
 func TestExtendSurfaceG2IsCurvatureContinuous(t *testing.T) {
+	t.Parallel()
 	s := uPatch(t, 0, func(i, j int) float64 { return 0.5 * float64(i*i) })
 	ext, err := ExtendSurface(s, UMaxEdge, 0.5, 2)
 	if err != nil {
@@ -55,6 +57,7 @@ func TestExtendSurfaceG2IsCurvatureContinuous(t *testing.T) {
 }
 
 func TestExtendSurfaceG1LeavesCurvatureBreak(t *testing.T) {
+	t.Parallel()
 	s := uPatch(t, 0, func(i, j int) float64 { return 0.5 * float64(i*i) })
 	ext, err := ExtendSurface(s, UMaxEdge, 0.5, 1) // linear/tangent only
 	if err != nil {
@@ -71,6 +74,7 @@ func TestExtendSurfaceG1LeavesCurvatureBreak(t *testing.T) {
 }
 
 func TestExtendSurfaceAllEdges(t *testing.T) {
+	t.Parallel()
 	s := uPatch(t, 0, func(i, j int) float64 { return 0.3 * float64(i+j) })
 	for _, edge := range []Boundary{UMinEdge, UMaxEdge, VMinEdge, VMaxEdge} {
 		ext, err := ExtendSurface(s, edge, 0.4, 1)
@@ -86,6 +90,7 @@ func TestExtendSurfaceAllEdges(t *testing.T) {
 }
 
 func TestExtendSurfaceValidates(t *testing.T) {
+	t.Parallel()
 	s := uPatch(t, 0, func(i, j int) float64 { return 0 })
 	if _, err := ExtendSurface(s, UMaxEdge, 0.5, 0); err == nil {
 		t.Error("order 0 should error")
@@ -96,6 +101,7 @@ func TestExtendSurfaceValidates(t *testing.T) {
 }
 
 func TestReverseAndTransposePreserveGeometry(t *testing.T) {
+	t.Parallel()
 	s := uPatch(t, 0, func(i, j int) float64 { return 0.2 * float64(i*i-j) })
 	r := reverseU(s)
 	tr := transposeSurface(s)

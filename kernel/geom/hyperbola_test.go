@@ -11,6 +11,7 @@ import (
 
 // A hyperbola point at θ=0 is the vertex Center + A·TransverseAxis; the arms climb symmetrically.
 func TestHyperbolaVertexAndArms(t *testing.T) {
+	t.Parallel()
 	h, err := NewHyperbola(math.P3(1, 0, 0), math.V3(0, 0, 1), math.V3(0, 1, 0), 2, 3)
 	if err != nil {
 		t.Fatalf("NewHyperbola: %v", err)
@@ -30,6 +31,7 @@ func TestHyperbolaVertexAndArms(t *testing.T) {
 
 // NewHyperbola re-orthogonalizes the conjugate axis against the transverse and rejects degenerate input.
 func TestNewHyperbolaValidation(t *testing.T) {
+	t.Parallel()
 	if _, err := NewHyperbola(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(0, 0, 1), 1, 1); err == nil {
 		t.Error("parallel axes should error")
 	}
@@ -47,6 +49,7 @@ func TestNewHyperbolaValidation(t *testing.T) {
 
 // TangentAt matches a central finite difference of PointAt.
 func TestHyperbolaTangentFiniteDifference(t *testing.T) {
+	t.Parallel()
 	h, _ := NewHyperbola(math.P3(0, 1, 0), math.V3(1, 0, 0), math.V3(0, 1, 0), 1.5, 2.5)
 	const eps = 1e-6
 	for _, theta := range []float64{-1.2, 0, 0.8} {
@@ -60,6 +63,7 @@ func TestHyperbolaTangentFiniteDifference(t *testing.T) {
 
 // HyperbolicArc reparameterizes the same branch onto t∈[0,1] over [Theta0,Theta1].
 func TestHyperbolicArcReparam(t *testing.T) {
+	t.Parallel()
 	h, _ := NewHyperbola(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(0, 1, 0), 2, 1)
 	arc := h.Arc(-0.5, 1.5)
 	if ptFar(arc.PointAt(0), h.PointAt(-0.5)) || ptFar(arc.PointAt(1), h.PointAt(1.5)) {
@@ -82,6 +86,7 @@ func TestHyperbolicArcReparam(t *testing.T) {
 // CurveParamAtPoint3 inverts a hyperbola branch in closed form: the parameter of a point on the
 // branch round-trips to the θ (or arc t) that produced it.
 func TestHyperbolaParamRoundTrip(t *testing.T) {
+	t.Parallel()
 	h, _ := NewHyperbola(math.P3(1, -2, 3), math.V3(0, 0, 1), math.V3(0, 1, 0), 2, 1.5)
 	lo, hi := h.Domain()
 	if !stdmath.IsInf(lo, -1) || !stdmath.IsInf(hi, 1) {

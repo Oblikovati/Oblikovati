@@ -29,6 +29,7 @@ func bottomBoxFaceKey(t *testing.T, occ *occurrence.Occurrence) string {
 // over the wire and checks the component is repositioned, listed, and deletable, and that
 // the health report shows the remaining planar DOF (#358/#363).
 func TestAssemblyMateOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	occs[0].SetGrounded(true)
 	topKey := topBoxFaceKey(t, occs[0])
@@ -72,6 +73,7 @@ func TestAssemblyMateOverWire(t *testing.T) {
 // face over the wire WITHOUT naming the constraint: the host infers a mate (two opposed planar faces)
 // and repositions the component, exactly as the explicit mate does (#794).
 func TestAssemblySnapConstrainOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	occs[0].SetGrounded(true)
 	topKey := topBoxFaceKey(t, occs[0])
@@ -97,6 +99,7 @@ func TestAssemblySnapConstrainOverWire(t *testing.T) {
 // a grounded + free pair with no constraints: the free box keeps six DOF, the grounded box
 // none.
 func TestAssemblySolveReportsFreeDOF(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	occs[0].SetGrounded(true)
 
@@ -116,6 +119,7 @@ func TestAssemblySolveReportsFreeDOF(t *testing.T) {
 // TestAssemblyConstraintUnknownKeyRejected checks an unresolvable geometry reference is a
 // clean error, not a panic.
 func TestAssemblyConstraintUnknownKeyRejected(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	args := mustJSON(t, wire.AddMateArgs{
 		A: wire.ConstraintGeomRef{Occurrence: occs[0].ID(), Entity: "bogus"},
@@ -130,6 +134,7 @@ func TestAssemblyConstraintUnknownKeyRejected(t *testing.T) {
 // without a referenceVector entity is rejected with a clear error, while supplying one succeeds
 // (#1972).
 func TestAssemblyReferenceVectorAngleNeedsThirdEntity(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	occs[0].SetGrounded(true)
 	topKey := topBoxFaceKey(t, occs[0])
@@ -172,6 +177,7 @@ func dofOfOccurrence(h wire.AssemblyHealthResult, id uint64) int {
 // TestAssemblyDOFSplitOverWire: the solve report splits a free occurrence's six DOF into three
 // translational and three rotational, with a DOF centre (#1980).
 func TestAssemblyDOFSplitOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 	occs[0].SetGrounded(true)
 

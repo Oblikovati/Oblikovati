@@ -6,7 +6,7 @@ import (
 	"errors"
 	"strings"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/health"
@@ -106,7 +106,7 @@ func groupByPath(placed []feature.PlacedBody) (map[string][]*topo.Body, map[stri
 	groups := map[string][]*topo.Body{}
 	leaves := map[string]*occurrence.Occurrence{}
 	for i, pb := range placed {
-		copyBody, err := ops.TransformBody(pb.Body, pb.Transform, asmFeatureLineage(i))
+		copyBody, err := transform.TransformBody(pb.Body, pb.Transform, asmFeatureLineage(i))
 		if err != nil {
 			continue
 		}

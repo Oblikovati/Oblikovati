@@ -14,6 +14,7 @@ import (
 // value in a named set on the document, read it back, list it, enumerate the sets, find it, then
 // delete it.
 func TestAttributesOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	id := uint64(s.ActiveDocument().ID())
 	const set = "com.acme.bom"
@@ -76,6 +77,7 @@ func TestAttributesOverWire(t *testing.T) {
 
 // TestSetAttributeRequiresSetAndName: a blank set or name is a rejection, not a silent no-op.
 func TestSetAttributeRequiresSetAndName(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	id := uint64(s.ActiveDocument().ID())
 	if _, err := r.Handle(s, "attributes.set", []byte(fmt.Sprintf(`{"document":%d,"set":"","name":"x"}`, id))); err == nil {
@@ -86,6 +88,7 @@ func TestSetAttributeRequiresSetAndName(t *testing.T) {
 // TestAttributeHandlersRejectBadInput: every attribute handler rejects malformed JSON and (for the
 // document-targeted methods) an unknown document id, rather than panicking or silently succeeding.
 func TestAttributeHandlersRejectBadInput(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	docMethods := []string{"attributes.set", "attributes.get", "attributes.list", "attributes.listSets", "attributes.delete"}
 	for _, m := range append([]string{"attributes.find"}, docMethods...) {
@@ -109,6 +112,7 @@ func TestAttributeHandlersRejectBadInput(t *testing.T) {
 // two different reference keys are independent of each other and of the document, each get/list
 // echoes its target, allTargets enumerates them, and the same target re-resolves the same anchor.
 func TestAttributesPerTarget(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	id := uint64(s.ActiveDocument().ID())
 	const set = "com.oblikovati.traceon"

@@ -39,6 +39,7 @@ func drawingCylinderSession(t *testing.T) (*Router, *app.Session) {
 // TestDrawingRadialDimensionsOverWire drives the radial-dimension surface: a diameter dimension on
 // a cylinder's circular edge re-measures the true 40 mm diameter through the live stack.
 func TestDrawingRadialDimensionsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingCylinderSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"TOP","orientation":"top","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
 
@@ -56,6 +57,7 @@ func TestDrawingRadialDimensionsOverWire(t *testing.T) {
 // TestDrawingDimensionSetsOverWire drives the baseline/chain set surface: a 4-corner baseline set
 // produces three associative linear dimensions through the live stack.
 func TestDrawingDimensionSetsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t) // box 4×6×5 cm; FRONT corners x∈{80,120}, y∈{75,125}
 	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
 
@@ -81,6 +83,7 @@ func TestDrawingDimensionSetsOverWire(t *testing.T) {
 // TestDrawingArcLengthDimensionOverWire drives the arc-length surface: an arc-length dimension on a
 // 2 cm cylinder's rim re-measures the true circumference (2π·20 ≈ 125.66 mm) through the live stack.
 func TestDrawingArcLengthDimensionOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingCylinderSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"TOP","orientation":"top","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
 
@@ -100,6 +103,7 @@ func TestDrawingArcLengthDimensionOverWire(t *testing.T) {
 // TestDrawingOrdinateDimensionsOverWire drives the ordinate surface: a horizontal ordinate set from
 // a datum corner measures each corner's view-X offset through the live stack.
 func TestDrawingOrdinateDimensionsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t) // box 4×6×5 cm; FRONT corners x∈{80,120}, y∈{75,125}
 	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
 
@@ -129,6 +133,7 @@ func TestDrawingOrdinateDimensionsOverWire(t *testing.T) {
 // TestDrawingAngularDimensionOverWire drives the angular-dimension surface: the angle between two
 // perpendicular box edges re-derives 90° through the live stack, reported in valueDeg.
 func TestDrawingAngularDimensionOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
 
@@ -145,6 +150,7 @@ func TestDrawingAngularDimensionOverWire(t *testing.T) {
 // TestDrawingDimensionsOverWire drives the linear-dimension surface: add a horizontal dimension
 // across a base view, list it, and delete it — through the live router→model→kernel stack.
 func TestDrawingDimensionsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, nil)
 
@@ -173,6 +179,7 @@ func TestDrawingDimensionsOverWire(t *testing.T) {
 // TestDrawingDimensionsRejectBadArgs: an unknown type, an unknown view and a missing-name delete
 // all error rather than panic.
 func TestDrawingDimensionsRejectBadArgs(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, nil)
 	for method, args := range map[string]string{

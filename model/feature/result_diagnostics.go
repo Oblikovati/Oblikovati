@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -85,7 +86,7 @@ func bodyDegradations(bodies []*topo.Body) []diag.Diagnostic {
 			continue
 		}
 		out = append(out, degradationsIn(b.BuildDiagnostics())...)
-		out = append(out, degradationsIn(ops.BodyMeshDiagnostics(b, displayQuality()))...)
+		out = append(out, degradationsIn(query.BodyMeshDiagnostics(b, displayQuality()))...)
 	}
 	return out
 }

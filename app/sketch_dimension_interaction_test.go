@@ -49,6 +49,7 @@ func labelOf(t *testing.T, s *Session, d *sketch.DimensionConstraint) math.Point
 // settable over the wire, but the view recomputed the anchor every frame and ignored it, so a
 // stored placement never reached the screen.
 func TestStoredTextPointMovesTheLabel(t *testing.T) {
+	t.Parallel()
 	s, _, d := dimensionedSketch(t)
 	before := labelOf(t, s, d)
 	want := math.P2(2, 5)
@@ -66,6 +67,7 @@ func TestStoredTextPointMovesTheLabel(t *testing.T) {
 // with it (perpendicularly), or the label floats away from the glyph it belongs to. The witness
 // lines still start on the measured points, so the dimension stays attached to its geometry.
 func TestMovedDistanceDimensionKeepsItsLineAttached(t *testing.T) {
+	t.Parallel()
 	s, _, d := dimensionedSketch(t)
 	d.SetTextPoint(math.P2(2, 5))
 	segs := viewOf(t, s, d).Segments
@@ -85,6 +87,7 @@ func TestMovedDistanceDimensionKeepsItsLineAttached(t *testing.T) {
 // TestSlidingTextAlongTheLineDoesNotMoveIt: only the perpendicular component displaces the
 // dimension line. Sliding the text along its own line must not rotate or shift it.
 func TestSlidingTextAlongTheLineDoesNotMoveIt(t *testing.T) {
+	t.Parallel()
 	s, _, d := dimensionedSketch(t)
 	d.SetTextPoint(math.P2(2, 3))
 	at2 := viewOf(t, s, d).Segments[2]
@@ -110,6 +113,7 @@ func viewOf(t *testing.T, s *Session, d *sketch.DimensionConstraint) DimensionVi
 // TestPickSketchDimensionAtGrabsTheLabel: a click on the label anchor picks the dimension, and a
 // click well away from it picks nothing.
 func TestPickSketchDimensionAtGrabsTheLabel(t *testing.T) {
+	t.Parallel()
 	s, _, d := dimensionedSketch(t)
 	px, py, ok := sketchToScreen(s, labelOf(t, s, d))
 	if !ok {
@@ -127,6 +131,7 @@ func TestPickSketchDimensionAtGrabsTheLabel(t *testing.T) {
 // TestDeleteSelectedRemovesDimensions is the reported bug: pressing Delete with a dimension
 // selected left it in place.
 func TestDeleteSelectedRemovesDimensions(t *testing.T) {
+	t.Parallel()
 	s, sk, d := dimensionedSketch(t)
 	s.Select(SketchDimensionHandle{Dim: d})
 	if err := s.DeleteSelectedSketchEntities(); err != nil {
@@ -143,6 +148,7 @@ func TestDeleteSelectedRemovesDimensions(t *testing.T) {
 // TestDeleteSelectedStillRemovesEntities guards the pre-existing behaviour (#1232) against the
 // dimension branch: geometry deletion must keep working unchanged.
 func TestDeleteSelectedStillRemovesEntities(t *testing.T) {
+	t.Parallel()
 	s, sk, _ := dimensionedSketch(t)
 	l := sk.Lines().Item(0)
 	s.Select(SketchEntityHandle{Entity: l})
@@ -159,6 +165,7 @@ func TestDeleteSelectedStillRemovesEntities(t *testing.T) {
 // text. The line is drawn through the label (distanceView), so dragging the annotation relocates the
 // whole glyph — witness lines, arrows and all.
 func TestDimensionDragMovesTheDimensionLine(t *testing.T) {
+	t.Parallel()
 	s, _, d := dimensionedSketch(t)
 	dimLineY := func() float64 { return float64(viewOf(t, s, d).Segments[dimLineIndex][0].Y) }
 	before := dimLineY()
@@ -172,6 +179,7 @@ func TestDimensionDragMovesTheDimensionLine(t *testing.T) {
 // TestDimensionDragMovesOnlyTheLabel: the drag stores a new TextPoint and leaves the measured
 // geometry untouched — moving an annotation must never move the model.
 func TestDimensionDragMovesOnlyTheLabel(t *testing.T) {
+	t.Parallel()
 	s, sk, d := dimensionedSketch(t)
 	l := sk.Lines().Item(0)
 	startA, startB := l.A.Position(), l.B.Position()
@@ -193,6 +201,7 @@ func TestDimensionDragMovesOnlyTheLabel(t *testing.T) {
 // TestDimensionDragSelectsWhatItGrabs: pressing on a label selects it, so a press-release with no
 // movement behaves as a plain click.
 func TestDimensionDragSelectsWhatItGrabs(t *testing.T) {
+	t.Parallel()
 	s, _, d := dimensionedSketch(t)
 	px, py, _ := sketchToScreen(s, labelOf(t, s, d))
 	if !s.BeginDimensionDrag(px, py, 0) {
@@ -209,6 +218,7 @@ func TestDimensionDragSelectsWhatItGrabs(t *testing.T) {
 
 // TestCancelDimensionDragRestoresTheLabel: Escape mid-drag puts the label back.
 func TestCancelDimensionDragRestoresTheLabel(t *testing.T) {
+	t.Parallel()
 	s, _, d := dimensionedSketch(t)
 	from := labelOf(t, s, d)
 	px, py, _ := sketchToScreen(s, from)
@@ -241,6 +251,7 @@ func nearlyEqual(a, b float64) bool { return stdmath.Abs(a-b) < 1e-9 }
 // TestPlacedDimensionFollowsAMovedLine is the reported bug: the label stayed at its old sketch
 // position while the line moved out from under it, so the dimension's own offset silently changed.
 func TestPlacedDimensionFollowsAMovedLine(t *testing.T) {
+	t.Parallel()
 	s, sk, d := dimensionedSketch(t)
 	l := sk.Lines().Item(0)
 	d.SetTextPoint(math.P2(2, 3)) // dragged 3 above the line
@@ -260,6 +271,7 @@ func TestPlacedDimensionFollowsAMovedLine(t *testing.T) {
 // TestPlacedDimensionFollowsARotatedLine: the placement lives in the dimension's own frame, so it
 // rotates with the geometry and stays on the same side of it, instead of being left crossing it.
 func TestPlacedDimensionFollowsARotatedLine(t *testing.T) {
+	t.Parallel()
 	s, sk, d := dimensionedSketch(t)
 	l := sk.Lines().Item(0)
 	d.SetTextPoint(math.P2(2, 3))
@@ -275,6 +287,7 @@ func TestPlacedDimensionFollowsARotatedLine(t *testing.T) {
 // TestUnplacedDimensionStillUsesItsDefault: a dimension nobody dragged keeps the derived anchor,
 // so the relative model did not change how an untouched dimension looks.
 func TestUnplacedDimensionStillUsesItsDefault(t *testing.T) {
+	t.Parallel()
 	s, sk, d := dimensionedSketch(t)
 	if _, placed := d.TextPoint(); placed {
 		t.Fatal("a fresh dimension reports a user placement")
@@ -292,6 +305,7 @@ func TestUnplacedDimensionStillUsesItsDefault(t *testing.T) {
 // so a caller reading it back after the geometry moved gets the current position, not the stale one
 // it was set with.
 func TestTextPointReportsWhereTheTextActuallyIs(t *testing.T) {
+	t.Parallel()
 	_, sk, d := dimensionedSketch(t)
 	l := sk.Lines().Item(0)
 	d.SetTextPoint(math.P2(2, 3))

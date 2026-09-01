@@ -25,6 +25,7 @@ func faceEvalArgs(t *testing.T, args wire.FaceEvaluateArgs) string {
 // point projected onto it lands on the plane (z≈5 cm), and re-evaluating the returned (u,v)
 // yields the plane's up normal. Exercises closestPoint → normalAtParam.
 func TestBodyFaceEvaluate(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 
 	var keys wire.ReferenceKeysResult
@@ -73,6 +74,7 @@ func TestBodyFaceEvaluate(t *testing.T) {
 
 // TestBodyFaceEvaluateErrors covers the unknown-mode and unknown-face-key guards.
 func TestBodyFaceEvaluateErrors(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	badKey := faceEvalArgs(t, wire.FaceEvaluateArgs{BodyIndex: 0, FaceKey: "nope", Mode: wire.FaceEvalClosestPoint, Inputs: []float64{0, 0, 0}})
 	if err := tryCall(t, r, s, "body.faceEvaluate", badKey); err == nil {

@@ -10,6 +10,7 @@ import (
 )
 
 func TestTriadOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "triad.show", `{"triad":{"position":[1,2,3],"allowed":[1,9]}}`, nil)
 	var spec wire.TriadSpec
@@ -32,6 +33,7 @@ func TestTriadOverWire(t *testing.T) {
 }
 
 func TestManipulatorsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "manipulators.set",
 		`{"id":"sim","handles":[{"id":"tip","position":[0,0,5],"radiusPx":10}]}`, nil)

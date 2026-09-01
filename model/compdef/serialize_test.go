@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/contentset"
@@ -63,6 +64,7 @@ func reopenThroughStore(t *testing.T, d *doc.Document) *compdef.PartComponentDef
 // constraint is enforced — the two points, authored apart, coincide after reopen. That proves
 // the constraint survives BOTH as data (count) and functionally (it moves geometry on solve).
 func TestSketch3DSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, err := compdef.AddPart(ws, "Part1", true)
 	if err != nil {
@@ -99,6 +101,7 @@ func TestSketch3DSurvivesRoundTrip(t *testing.T) {
 }
 
 func TestParametersSurviveRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, err := compdef.AddPart(ws, "Part1", true)
 	if err != nil {
@@ -134,6 +137,7 @@ func TestParametersSurviveRoundTrip(t *testing.T) {
 // is for loading onto a fresh part — so undo would otherwise duplicate sketches and
 // re-add parameters.)
 func TestRestoreSnapshotReplacesRatherThanMerges(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, err := compdef.AddPart(ws, "Part1", true)
 	if err != nil {
@@ -181,6 +185,7 @@ func TestRestoreSnapshotReplacesRatherThanMerges(t *testing.T) {
 // TestParameterFieldsSurviveRoundTrip exercises the extended parameter recipe: text and
 // boolean parameters, comment/key/export/tolerance/multi-value state, and group membership.
 func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	ps := d.Content().(*compdef.PartComponentDefinition).Parameters()
@@ -255,6 +260,7 @@ func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
 // TestDerivedTableSurvivesRoundTrip checks a derived parameter table restores
 // with its id, source link, and produced parameters reconnected by name.
 func TestDerivedTableSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	ps := d.Content().(*compdef.PartComponentDefinition).Parameters()
@@ -284,6 +290,7 @@ func TestDerivedTableSurvivesRoundTrip(t *testing.T) {
 }
 
 func TestSketchGeometrySurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -307,6 +314,7 @@ func TestSketchGeometrySurvivesRoundTrip(t *testing.T) {
 }
 
 func TestExtrudedSolidSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -350,6 +358,7 @@ func rectangle(s *sketch.Sketch, w, h float64) {
 // global creation stamps that interleave sketches/work planes/features, and a sketch's
 // Shared flag, must round-trip so a reopened browser shows the same chronological tree.
 func TestCreationOrderAndSharedSurviveRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -399,6 +408,7 @@ func strictlyAscending(seqs ...uint64) bool {
 }
 
 func TestFilletEdgeKeyRebindsAfterReopen(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -441,6 +451,7 @@ func featureByKind(fs *feature.PartFeatures, kind string) (*feature.PartFeature,
 }
 
 func TestWorkFeaturesSurviveRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -469,6 +480,7 @@ func TestWorkFeaturesSurviveRoundTrip(t *testing.T) {
 // value; the serializer must persist the EFFECTIVE distance, and the reopened plane must sit
 // at the edited offset.
 func TestEditedWorkPlaneScalarSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -492,6 +504,7 @@ func TestEditedWorkPlaneScalarSurvivesRoundTrip(t *testing.T) {
 // added to a reopened document must sort after every restored node, or the browser timeline
 // would interleave new work into the middle of the restored history.
 func TestNodesCreatedAfterReopenSortLast(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -518,6 +531,7 @@ func TestNodesCreatedAfterReopenSortLast(t *testing.T) {
 }
 
 func TestRevolveAxisRebindsAfterReopen(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -539,6 +553,7 @@ func TestRevolveAxisRebindsAfterReopen(t *testing.T) {
 }
 
 func TestLengthUnitSurvivesRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -555,6 +570,7 @@ func TestLengthUnitSurvivesRoundTrip(t *testing.T) {
 // TestUnitsPrecisionAndFormatSurviveRoundTrip persists the display precision and
 // the length/angle formats (the #146 additions) and restores them.
 func TestUnitsPrecisionAndFormatSurviveRoundTrip(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -585,6 +601,7 @@ func TestUnitsPrecisionAndFormatSurviveRoundTrip(t *testing.T) {
 // TestRevolveTwoDirectionalSurvivesReopen: the second-direction sweep (#313)
 // persists and the restored revolve rebuilds the same straddling solid.
 func TestRevolveTwoDirectionalSurvivesReopen(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -606,7 +623,7 @@ func TestRevolveTwoDirectionalSurvivesReopen(t *testing.T) {
 	}
 	reopened.Recompute()
 	want := stdmath.Pi * (4*4 - 2*2) * 2 / 2 // the 12π half washer
-	got := ops.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
 	if stdmath.Abs(got-want)/want > 0.01 {
 		t.Errorf("reopened two-directional revolve volume = %g, want ≈%g", got, want)
 	}
@@ -627,6 +644,7 @@ func offsetRect(sk *sketch.Sketch, x0, side float64) {
 // twist stations, rail, scaling, orientation) persist and the restored sweep
 // rebuilds the same solid.
 func TestSweepUnionSurvivesReopen(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -650,7 +668,7 @@ func TestSweepUnionSurvivesReopen(t *testing.T) {
 	}
 	feature.NewSweepFeatures(def.Features()).AddDefinition(sdef)
 	def.Recompute()
-	before := ops.BodyGeometryProperties(def.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(def.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
 
 	reopened := reopenThroughStore(t, d)
 	sw, ok := featureByKind(reopened.Features(), "sweep")
@@ -665,7 +683,7 @@ func TestSweepUnionSurvivesReopen(t *testing.T) {
 		t.Errorf("restored union fields = %+v stations / %v scaling", rdef.TwistStations, rdef.Scaling)
 	}
 	reopened.Recompute()
-	after := ops.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
 	if stdmath.Abs(after-before)/before > 0.01 {
 		t.Errorf("reopened sweep volume = %g, want %g", after, before)
 	}
@@ -684,6 +702,7 @@ func centeredRect(sk *sketch.Sketch, half float64) {
 // TestFilletEdgeSetsSurviveReopen: a mixed constant + variable edge-set fillet
 // (#323) reopens with its sets intact — same health, same volume.
 func TestFilletEdgeSetsSurviveReopen(t *testing.T) {
+	t.Parallel()
 	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
@@ -710,7 +729,7 @@ func TestFilletEdgeSetsSurviveReopen(t *testing.T) {
 	if !pf.Health().OK() {
 		t.Fatalf("edge-set fillet before save = %v, want OK", pf.Health())
 	}
-	before := ops.BodyGeometryProperties(def.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(def.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
 
 	reopened := reopenThroughStore(t, d)
 	got, ok := featureByKind(reopened.Features(), "fillet")
@@ -724,7 +743,7 @@ func TestFilletEdgeSetsSurviveReopen(t *testing.T) {
 	if len(rdef.EdgeSets) != 2 || rdef.EdgeSets[1].Radius != nil || rdef.EdgeSets[1].EndRadius() != 0.7 {
 		t.Errorf("restored edge sets = %d sets, want the constant+variable pair back", len(rdef.EdgeSets))
 	}
-	after := ops.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
 	if stdmath.Abs(after-before) > 1e-9 {
 		t.Errorf("reopened fillet volume = %g, want %g", after, before)
 	}

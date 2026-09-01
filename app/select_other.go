@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/event"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // Select Other — Inventor's S10: when several objects stack up under the cursor, cycle through
@@ -32,7 +33,7 @@ func (p *RayPicker) PickAll(x, y float64, filter *SelectionFilter) []Selectable 
 	origin, dir := p.camera.RayThrough(x, y)
 	var cands []pickCandidate
 	for _, b := range p.bodies() {
-		f, t, ok := ops.RayCastFaces(b, origin, dir, ops.DefaultQuality())
+		f, t, ok := query.RayCastFaces(b, origin, dir, ops.DefaultQuality())
 		if !ok {
 			continue
 		}

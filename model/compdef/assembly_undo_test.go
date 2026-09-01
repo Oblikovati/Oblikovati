@@ -16,6 +16,7 @@ import (
 // transaction stream depends on (#763). The reset would silently union (showing both
 // placements) if RestoreSnapshot merged like ApplyRecipe instead of clearing first.
 func TestAssemblyRestoreSnapshotResetsToSnapshot(t *testing.T) {
+	t.Parallel()
 	_, _, asm, widget, asmDef := placedAssembly(t)
 
 	placeFromFile(t, asm, widget, asmDef, "widget:1", math.Identity4())
@@ -51,6 +52,7 @@ func TestAssemblyRestoreSnapshotResetsToSnapshot(t *testing.T) {
 // TestAssemblyRestoreSnapshotToEmptyRemovesOccurrences checks restoring the empty baseline
 // clears every occurrence — undo of the very first placement back to a bare assembly (#763).
 func TestAssemblyRestoreSnapshotToEmptyRemovesOccurrences(t *testing.T) {
+	t.Parallel()
 	_, _, asm, widget, asmDef := placedAssembly(t)
 	empty, err := asmDef.MarshalSnapshot() // baseline: no occurrences yet
 	if err != nil {
@@ -74,6 +76,7 @@ func TestAssemblyRestoreSnapshotToEmptyRemovesOccurrences(t *testing.T) {
 // an OccurrenceAdd event. A dropped listener would pass every count assertion yet silently stop
 // the browser and event surface from updating after an undo (#763).
 func TestRestoreRewiresOccurrenceEvents(t *testing.T) {
+	t.Parallel()
 	_, _, asm, widget, asmDef := placedAssembly(t)
 	empty, err := asmDef.MarshalSnapshot()
 	if err != nil {

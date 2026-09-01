@@ -13,6 +13,7 @@ import (
 // snaps it onto the nearest scan point (on z = 5) and keeps a healthy, cloud-anchored datum — the
 // wire-reachable AddByCloudPoint path (#1842).
 func TestCreatePointCloudPointSnapsToScan(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	attachPlanarCloud(t, def)
 
@@ -33,6 +34,7 @@ func TestCreatePointCloudPointSnapsToScan(t *testing.T) {
 
 // TestCreatePointCloudPointErrors: an unknown cloud name is a clean error, not a panic.
 func TestCreatePointCloudPointErrors(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, err := s.CreatePointCloudPoint("missing", math.P3(0, 0, 0)); err == nil {
 		t.Error("want error for an unknown cloud name")

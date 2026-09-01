@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/test-utilities/nopscad"
 )
@@ -28,6 +29,7 @@ import (
 // Reference: NopSCADlib/vitamins/washer.scad + vitamins/washers.scad
 // (M3_washer = ["M3",3,7,0.5,...]).
 func TestNopWasherCSG(t *testing.T) {
+	t.Parallel()
 	const rOut, rIn, h = 3.5, 1.55, 0.45 // OD/2, (ID=size+0.1)/2, thickness-0.05
 
 	outer, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), rOut, h)
@@ -51,7 +53,7 @@ func TestNopWasherCSG(t *testing.T) {
 		t.Fatalf("washer has %d boundary edges, want 0 (watertight)", len(open))
 	}
 
-	got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
 
 	// Analytic annulus volume — faceted CSG inscribes the circle, so the result
 	// is slightly under; allow a faceting band.

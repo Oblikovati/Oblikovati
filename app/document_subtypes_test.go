@@ -9,6 +9,7 @@ import (
 )
 
 func TestStampDocumentSubTypeValidates(t *testing.T) {
+	t.Parallel()
 	s := sessionWithPart(t)
 	d := s.ActiveDocument()
 	if err := s.StampDocumentSubType(d, "ghost"); err == nil {
@@ -32,6 +33,7 @@ func TestStampDocumentSubTypeValidates(t *testing.T) {
 }
 
 func TestRegisterDocumentSubTypeNeedsID(t *testing.T) {
+	t.Parallel()
 	if err := NewSession().RegisterDocumentSubType(DocumentSubType{BaseType: doc.Part}); err == nil {
 		t.Error("a subtype without an id must fail")
 	}
@@ -42,6 +44,7 @@ func TestRegisterDocumentSubTypeNeedsID(t *testing.T) {
 // discriminator before M20 ships its environment), and clients cannot claim
 // ids under the reserved prefix.
 func TestBuiltInSubTypesSeededAndReserved(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	flavors := s.DocumentSubTypes()
 	if len(flavors) == 0 || flavors[0].ID != "org.oblikovati.part.sheetMetal" {

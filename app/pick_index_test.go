@@ -35,6 +35,7 @@ func rayDownThroughBox(k int) (math.Point3, math.Vector3) {
 }
 
 func TestPickIndexRayCrossesOnlyTheTargetedPlacement(t *testing.T) {
+	t.Parallel()
 	_, asm, _ := boxRowAssembly(t, 6)
 	idx := newAssemblyPickIndex(asm)
 	origin, dir := rayDownThroughBox(3)
@@ -53,6 +54,7 @@ func TestPickIndexRayCrossesOnlyTheTargetedPlacement(t *testing.T) {
 }
 
 func TestPickIndexRayMissReturnsNoCandidates(t *testing.T) {
+	t.Parallel()
 	_, asm, _ := boxRowAssembly(t, 6)
 	idx := newAssemblyPickIndex(asm)
 	// Far to -X of every box, pointing down: crosses nothing.
@@ -63,6 +65,7 @@ func TestPickIndexRayMissReturnsNoCandidates(t *testing.T) {
 }
 
 func TestRayPickBodiesIsSubsetOfFullFlatten(t *testing.T) {
+	t.Parallel()
 	s, asm, _ := boxRowAssembly(t, 8)
 	full := s.worldAssemblyBodies(asm)
 	origin, dir := rayDownThroughBox(2)
@@ -77,6 +80,7 @@ func TestRayPickBodiesIsSubsetOfFullFlatten(t *testing.T) {
 }
 
 func TestRayPickBodiesNilForPart(t *testing.T) {
+	t.Parallel()
 	// A part has no assembly, so there is no index and the picker must fall back to its body list.
 	s := extrudedBox(t, 2, 4)
 	if got := s.RayPickBodies(math.P3(0, 0, 10), math.V3(0, 0, -1)); got != nil {
@@ -85,6 +89,7 @@ func TestRayPickBodiesNilForPart(t *testing.T) {
 }
 
 func TestAssemblyPickIndexCachedByRevision(t *testing.T) {
+	t.Parallel()
 	s, asm, boxDoc := boxRowAssembly(t, 4)
 	first := s.assemblyPickIndexFor(asm)
 	if again := s.assemblyPickIndexFor(asm); again != first {
@@ -103,6 +108,7 @@ func TestAssemblyPickIndexCachedByRevision(t *testing.T) {
 // ray-body provider (as the head wires it) selects the same component a click would, proving the
 // index path resolves a hit body to its occurrence exactly like the full-flatten path did (#769).
 func TestPickThroughIndexResolvesOccurrence(t *testing.T) {
+	t.Parallel()
 	s, asm, _ := boxRowAssembly(t, 6)
 	cam := scene.NewCamera(400, 400)
 	cam.Eye = math.P3(50, 1, 2)    // looking down -X at box 3 ([30,32] on X)
@@ -142,6 +148,7 @@ func countTransforms(groups []InstanceGroup) int {
 }
 
 func TestCulledInstancesKeepsAllWhenFramed(t *testing.T) {
+	t.Parallel()
 	s, _, _ := boxRowAssembly(t, 8) // boxes along X at 0,10,…,70
 	cam := scene.NewCamera(400, 400)
 	cam.Eye = math.P3(35, 1, 300) // far back, centered on the row → whole row on screen
@@ -152,6 +159,7 @@ func TestCulledInstancesKeepsAllWhenFramed(t *testing.T) {
 }
 
 func TestCulledInstancesDropsOffscreenAndKeepsTarget(t *testing.T) {
+	t.Parallel()
 	s, _, _ := boxRowAssembly(t, 8)
 	full := countTransforms(s.VisibleInstances())
 	cam := scene.NewCamera(400, 400)
@@ -179,6 +187,7 @@ func TestCulledInstancesDropsOffscreenAndKeepsTarget(t *testing.T) {
 // dropped (only vertex throughput, no visible contribution); from close they are kept. VisibleInstances
 // is never detail-culled, so bounds/framing still see the whole model.
 func TestDetailCullingDropsSubPixelInstances(t *testing.T) {
+	t.Parallel()
 	s, _, _ := boxRowAssembly(t, 8)
 	full := countTransforms(s.VisibleInstances())
 	if full == 0 {
@@ -199,6 +208,7 @@ func TestDetailCullingDropsSubPixelInstances(t *testing.T) {
 }
 
 func TestCulledInstancesPartUnchanged(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4)
 	cam := scene.NewCamera(400, 400)
 	cam.Eye = math.P3(10, 0, 2)
@@ -209,6 +219,7 @@ func TestCulledInstancesPartUnchanged(t *testing.T) {
 }
 
 func TestWidestCentroidAxisAndCentroid(t *testing.T) {
+	t.Parallel()
 	mk := func(boxes ...math.Box) *assemblyPickIndex {
 		idx := &assemblyPickIndex{}
 		for _, b := range boxes {
@@ -236,6 +247,7 @@ func TestWidestCentroidAxisAndCentroid(t *testing.T) {
 }
 
 func TestCandidateBodiesFallsBackWhenIndexNil(t *testing.T) {
+	t.Parallel()
 	full := []*topo.Body{{}, {}}
 	p := &RayPicker{bodies: func() []*topo.Body { return full }}
 	// No ray provider: use the full list.

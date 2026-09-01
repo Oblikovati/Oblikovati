@@ -10,6 +10,7 @@ import (
 )
 
 func TestNopRibbonGrommetCSG(t *testing.T) {
+	t.Parallel()
 	outer := ribbonGrommetProfile(2.75, 0.42, 0.16, 16)
 	inner := []math.Point3{math.P3(-0.95, 0.08, 0), math.P3(0.95, 0.08, 0), math.P3(0.95, 0.24, 0), math.P3(-0.95, 0.24, 0)}
 	body := prismBody(outer, -0.15, 0.15, "ribbon-grommet-side")

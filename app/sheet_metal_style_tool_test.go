@@ -12,6 +12,7 @@ import (
 // TestSheetMetalStyleSeed Start loads the rule's gauge/radius/K-factor/relief into the buffers,
 // converting lengths to the document's preferred unit.
 func TestSheetMetalStyleSeed(t *testing.T) {
+	t.Parallel()
 	s, part := faceSheet(t, 4)
 	rule := part.SheetMetal()
 	if rule == nil {
@@ -35,6 +36,7 @@ func TestSheetMetalStyleSeed(t *testing.T) {
 // TestSheetMetalStyleCommit a committed edit re-authors the rule (thickness/radius/K-factor/
 // relief) and keeps the part recomputable.
 func TestSheetMetalStyleCommit(t *testing.T) {
+	t.Parallel()
 	s, part := faceSheet(t, 4)
 	rule := part.SheetMetal()
 	before := rule.Thickness()
@@ -64,6 +66,7 @@ func TestSheetMetalStyleCommit(t *testing.T) {
 
 // TestSheetMetalStyleCanCommit rejects a non-physical K-factor and a zero gauge.
 func TestSheetMetalStyleCanCommit(t *testing.T) {
+	t.Parallel()
 	s, _ := faceSheet(t, 4)
 	tool := NewSheetMetalStyleTool()
 	tool.Start(s)
@@ -88,6 +91,7 @@ func TestSheetMetalStyleCanCommit(t *testing.T) {
 // TestSheetMetalStyleStartPlainPart Start on a non-sheet-metal part is a silent no-op (the
 // buffers stay zero), and Commit reports the missing rule.
 func TestSheetMetalStyleStartPlainPart(t *testing.T) {
+	t.Parallel()
 	s := newSessionWithPart(t)
 	tool := NewSheetMetalStyleTool()
 	tool.Start(s) // no panic, no seed

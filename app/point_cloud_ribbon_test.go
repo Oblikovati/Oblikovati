@@ -37,6 +37,7 @@ func pointCloudButton(t *testing.T, s *Session, name string) (RibbonButton, bool
 // icons, run their commands, and enable only in the right context — so clicking them in the ribbon
 // actually drives the feature (#645).
 func TestPointCloudRibbonButtonsWiredAndEnable(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -142,6 +143,7 @@ func TestPointCloudRibbonButtonsWiredAndEnable(t *testing.T) {
 }
 
 func TestPointCloudIntensityHistogramBins(t *testing.T) {
+	t.Parallel()
 	pc := pointcloud.NewWithSamples("Scan", "s.xyz", "rid", []pointcloud.PointSample{
 		{Point: math.P3(0, 0, 0), HasIntensity: true, Intensity: 0},
 		{Point: math.P3(1, 0, 0), HasIntensity: true, Intensity: 0},
@@ -166,6 +168,7 @@ func TestPointCloudIntensityHistogramBins(t *testing.T) {
 // the displayed set changes: an unchanged set returns the cached slice, and a display-budget change
 // that rebuilds the displayed set invalidates the memo (#645 perf).
 func TestCachedIntensityHistogramMemoized(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
 	pc, err := def.PointClouds().AddWithSamples("Scan", "s.xyz", rid, intensityCloudSamples())
@@ -185,6 +188,7 @@ func TestCachedIntensityHistogramMemoized(t *testing.T) {
 }
 
 func TestPointCloudIntensityRampPanelCarriesHistogram(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -217,6 +221,7 @@ func TestPointCloudIntensityRampPanelCarriesHistogram(t *testing.T) {
 // TestSketchProjectScanPointButtonWired verifies the Sketch ▸ Create ▸ Project Scan Point button is
 // wired and enables only in a sketch with a scan point selected (#645).
 func TestSketchProjectScanPointButtonWired(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -283,6 +288,7 @@ func intensityCloudSamples() []pointcloud.PointSample {
 // display controls without any browser selection: the size/density sliders are enabled and the
 // display mode is settable, so the intensity ramp appears once switched to intensity mode (#645).
 func TestPointCloudLoneCloudIsAutoTarget(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -312,6 +318,7 @@ func TestPointCloudLoneCloudIsAutoTarget(t *testing.T) {
 // TestPointCloudMultipleCloudsRequireSelection verifies that with several scans attached the
 // display controls stay disabled until the user selects one, then target the selected scan (#645).
 func TestPointCloudMultipleCloudsRequireSelection(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)

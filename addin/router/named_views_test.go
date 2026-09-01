@@ -12,6 +12,7 @@ import (
 // TestNamedViewCaptureRestore captures the active camera, moves it, then restores the named
 // view and checks the camera returns to the captured frame exactly.
 func TestNamedViewCaptureRestore(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 
 	var captured wire.NamedViewInfo
@@ -44,6 +45,7 @@ func TestNamedViewCaptureRestore(t *testing.T) {
 // TestSetViewOrientationMovesCamera jumps to a standard orientation and checks the camera eye
 // moves onto the expected octant, and that an undefined orientation errors.
 func TestSetViewOrientationMovesCamera(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var cam wire.CameraView
 	call(t, r, s, "view.setOrientation", mustJSON(t, wire.SetOrientationArgs{

@@ -11,6 +11,7 @@ import (
 // TestSketchDimensionKinds drives sketch.addDimension across distance/angle/radius/
 // diameter/arcLength against freshly-added geometry.
 func TestSketchDimensionKinds(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	add := func(args string) wire.AddSketchEntityResult {
 		var res wire.AddSketchEntityResult

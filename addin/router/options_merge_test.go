@@ -14,6 +14,7 @@ import (
 // persist it. These lock the merge (#2016).
 
 func TestSetSketchOptionsKeepsUnexposedFlags(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	before := s.Options().Sketch
 	if !before.HeadsUpDisplay || !before.PointerInput || !before.DimensionInput ||
@@ -35,6 +36,7 @@ func TestSetSketchOptionsKeepsUnexposedFlags(t *testing.T) {
 }
 
 func TestSetPartOptionsKeepsUnexposedFlags(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	if !s.Options().Part.TangentChainSelect {
 		t.Fatal("precondition: tangent-chain select must start on")
@@ -53,6 +55,7 @@ func TestSetPartOptionsKeepsUnexposedFlags(t *testing.T) {
 
 // The sketch view carries autoProjectOrigin, so it round-trips like any exposed field.
 func TestAutoProjectOriginRoundTripsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var view wire.OptionGroupView
 	call(t, r, s, "options.getGroup", `{"group":"sketch"}`, &view)

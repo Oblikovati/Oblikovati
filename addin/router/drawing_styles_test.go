@@ -9,6 +9,7 @@ import (
 )
 
 func TestDrawingStylesListAndDefaultISO(t *testing.T) {
+	t.Parallel()
 	r, s := drawingSession(t)
 	var list wire.ListStandardsResult
 	call(t, r, s, "drawingStyles.listStandards", "{}", &list)
@@ -26,6 +27,7 @@ func TestDrawingStylesListAndDefaultISO(t *testing.T) {
 // TestDrawingStylesSwitchStandardOverWire is the PBI-138 acceptance over the wire:
 // switching to ANSI returns the ANSI preset (inches, 3 decimals).
 func TestDrawingStylesSwitchStandardOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingSession(t)
 	var switched wire.StandardStyleResult
 	call(t, r, s, "drawingStyles.setStandard", `{"standard":"ansi"}`, &switched)
@@ -41,6 +43,7 @@ func TestDrawingStylesSwitchStandardOverWire(t *testing.T) {
 }
 
 func TestDrawingStylesRejectsUnknownStandard(t *testing.T) {
+	t.Parallel()
 	r, s := drawingSession(t)
 	if _, err := r.Handle(s, "drawingStyles.setStandard", []byte(`{"standard":"klingon"}`)); err == nil {
 		t.Error("unknown standard should error")

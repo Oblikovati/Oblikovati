@@ -5,7 +5,7 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -35,7 +35,7 @@ type BendTransform struct {
 }
 
 // unfoldBend develops one bend: it applies the development point map to the whole body via
-// [ops.DeformBody], so any cut placed while flat moves with its vertices through the bend. sign
+// [transform.DeformBody], so any cut placed while flat moves with its vertices through the bend. sign
 // > 0 unrolls the bend flat (unfold); sign < 0 rolls it back (refold). Returns one watertight
 // solid.
 func unfoldBend(body *topo.Body, bt BendTransform, sign float64, what string) (*topo.Body, error) {
@@ -47,7 +47,7 @@ func unfoldBend(body *topo.Body, bt BendTransform, sign float64, what string) (*
 	if sign < 0 {
 		fn = dev.flatToFolded
 	}
-	out, err := ops.DeformBody(body, fn, identityLineage)
+	out, err := transform.DeformBody(body, fn, identityLineage)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", what, err)
 	}

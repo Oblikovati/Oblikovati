@@ -37,6 +37,7 @@ func coneCapTool(t *testing.T) *topo.Body {
 // TestConeCapAcceptsInteriorExit: the oblique frustum enters the wall once and exits ONE cap through an
 // ellipse inside the rim — the recognizer accepts and builds a four-face result.
 func TestConeCapAcceptsInteriorExit(t *testing.T) {
+	t.Parallel()
 	res, ok := ConeCapCrossingCutGeneral(coneCapTarget(t), coneCapTool(t), &diag.Recorder{})
 	if !ok {
 		t.Fatal("cone-cap cut declined a genuine cone interior-exit tool")
@@ -49,6 +50,7 @@ func TestConeCapAcceptsInteriorExit(t *testing.T) {
 // TestConeCapDeclinesCylinderTool: a CYLINDER tool (slice-1's own fixture) is not a cone, so coneOperand
 // fails and the cone recognizer declines — slice 1 (CapCrossingCutGeneral) owns that case.
 func TestConeCapDeclinesCylinderTool(t *testing.T) {
+	t.Parallel()
 	s := 1 / stdmath.Sqrt2
 	tool, err := SolidCylinder(math.P3(-6.5, 0, 2), math.V3(math.Scalar(s), 0, math.Scalar(s)), 0.9, 16)
 	if err != nil {
@@ -62,6 +64,7 @@ func TestConeCapDeclinesCylinderTool(t *testing.T) {
 // TestConeCapDeclinesNoContact: a frustum sitting entirely outside the target never crosses it — no cap
 // exit, no wall entry — so the recognizer declines.
 func TestConeCapDeclinesNoContact(t *testing.T) {
+	t.Parallel()
 	tool, err := SolidCylinderCone(math.P3(-12, 0, 2), math.P3(-9, 0, 5), 0.9, 0.6, "cone")
 	if err != nil {
 		t.Fatalf("tool: %v", err)
@@ -90,6 +93,7 @@ func zLoop(zs ...float64) geom.Polyline {
 // target's INFINITE surface yields a real in-band wall loop AND a phantom loop entirely above the cap. The
 // filter keeps the former and drops the latter, so exactly one wall-entry hole survives.
 func TestWallEntryLoopsKeepsInBandDropsPhantom(t *testing.T) {
+	t.Parallel()
 	inBand := zLoop(4.3, 5.5, 6.6)     // strictly between the caps: real wall entry
 	phantom := zLoop(10.6, 11.5, 12.4) // entirely above z=10: past the finite wall
 	kept, ok := wallEntryLoops(wallBand(), []geom.Curve3{phantom, inBand})
@@ -107,6 +111,7 @@ func TestWallEntryLoopsKeepsInBandDropsPhantom(t *testing.T) {
 // TestWallEntryLoopsDeclinesStraddle: a loop that CROSSES a cap level (some points below, some above) is a
 // rim-crossing/cap-reaching breach this interior-exit slice does not build — the filter declines.
 func TestWallEntryLoopsDeclinesStraddle(t *testing.T) {
+	t.Parallel()
 	straddle := zLoop(9.0, 9.8, 10.4, 11.0) // crosses z=10
 	if _, ok := wallEntryLoops(wallBand(), []geom.Curve3{straddle}); ok {
 		t.Error("wallEntryLoops accepted a cap-straddling loop; want decline (rim-crossing case)")

@@ -14,6 +14,7 @@ import (
 // TestShellDirectionVolumes: inside keeps the outer size (4.512 cm³), outside grows the wall
 // outward (5.952 cm³), both centres it (5.208 cm³) — three distinct, analytically-known solids.
 func TestShellDirectionVolumes(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		dir  string
 		want float64
@@ -34,6 +35,7 @@ func TestShellDirectionVolumes(t *testing.T) {
 
 // TestShellDirectionUnknown: an unknown direction is a clean error.
 func TestShellDirectionUnknown(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	top, _ := boxTopFace(t, s)
 	if _, err := applyMap(t, s, "shell", map[string]any{

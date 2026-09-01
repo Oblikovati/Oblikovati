@@ -99,6 +99,7 @@ func planeAt(t *testing.T, origin math.Point3, x, y math.Vector3) sketch.Plane {
 }
 
 func TestSlottedScrewRebuildsWithoutOffsettingErrors(t *testing.T) {
+	t.Parallel()
 	fs := feature.NewPartFeatures(param.NewParameters())
 	vol := func() float64 {
 		return analysis.MassPropertiesOf(fs.Result(), 1, types.MassPropertiesHigh).VolumeMm3

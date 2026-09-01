@@ -15,6 +15,7 @@ import (
 // the wall foot V0=(55.5556, 0.30960, 5) and the s_10 foot V1=(55, 5.27864, 10). Its shoulder is the
 // poles' row-2 col-1 control (55.5556, 0.30960, 10), weight cos 45° = 0.70711.
 func TestCrossSectionArcN7IsRadius5QuarterCircle(t *testing.T) {
+	t.Parallel()
 	wall, s10 := n7Hosts()
 	cPP := n7Ends()[0] // C″, the v=0 spine station
 	_, _, fa := ClosestPointOnSurface(wall, cPP)
@@ -34,6 +35,7 @@ func TestCrossSectionArcN7IsRadius5QuarterCircle(t *testing.T) {
 // pole exactly — the parametrization-free proof the arc is the SAME conic OCCT built, not merely a
 // radius-5 arc that happens to share the endpoints.
 func TestCrossSectionArcShoulderMatchesOCCTPole(t *testing.T) {
+	t.Parallel()
 	wall, s10 := n7Hosts()
 	cPP := n7Ends()[0]
 	_, _, fa := ClosestPointOnSurface(wall, cPP)
@@ -55,6 +57,7 @@ func TestCrossSectionArcShoulderMatchesOCCTPole(t *testing.T) {
 // Collinear feet+center (here antipodal: fa, fb on opposite sides of m) have no radius arc plane —
 // crossSectionArc must reject, and the error must carry the half-angle it measured.
 func TestCrossSectionArcRejectsCollinearFeet(t *testing.T) {
+	t.Parallel()
 	m := math.P3(0, 0, 0)
 	fa := math.P3(5, 0, 0)
 	fb := math.P3(-5, 0, 0) // antipodal → half-angle π/2, weight → 0

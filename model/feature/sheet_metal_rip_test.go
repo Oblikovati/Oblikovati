@@ -30,6 +30,7 @@ func sheetForRip(t *testing.T, a, b math.Point2) (*PartFeatures, *sketch.Sketch)
 // TestRipSlitsSheet a rip cuts a slit along the line, removing material and leaving one
 // watertight solid (a partial rip line keeps the sheet connected).
 func TestRipSlitsSheet(t *testing.T) {
+	t.Parallel()
 	fs, rip := sheetForRip(t, math.P2(1, 2), math.P2(3, 2)) // a line across the middle, ends inside
 	fs.Recompute()
 	full := sheetVolume(fs.Result()[0])
@@ -104,6 +105,7 @@ func totalRipVolume(bodies []*topo.Body) float64 {
 // the sheet's bottom edge, "positive" takes the whole gap into the sheet, "negative" takes it out
 // (so most of the slit falls in empty space), and "symmetric" straddles — three distinct volumes.
 func TestRipGapSidePositionsSlit(t *testing.T) {
+	t.Parallel()
 	const gap, run, thick = 0.2, 2.0, 0.2 // slit ends x∈[1,3]; line at y=0.05 (gap/4 inside the edge)
 	cases := map[ExtentDirection]float64{
 		PositiveDir:  gap * run * thick,  // slit y∈[0.05,0.25], all inside → full gap deep
@@ -131,6 +133,7 @@ func TestRipGapSidePositionsSlit(t *testing.T) {
 // TestRipFaceExtents a face-extents rip slits a face along its full long axis: on a 6×2 wall it
 // removes gap×6×thickness and separates the plate into two strips.
 func TestRipFaceExtents(t *testing.T) {
+	t.Parallel()
 	fs, body := rectSheetMetal(t, 6, 2)
 	full := totalRipVolume(fs.Result())
 	face := flatBottomFace(t, body)
@@ -151,6 +154,7 @@ func TestRipFaceExtents(t *testing.T) {
 // TestRipSinglePoint a single-point rip runs from a picked corner across the face to the opposite
 // boundary, separating the plate and removing a slit of about gap×diagonal×thickness.
 func TestRipSinglePoint(t *testing.T) {
+	t.Parallel()
 	fs, body := rectSheetMetal(t, 6, 2)
 	full := totalRipVolume(fs.Result())
 	face := flatBottomFace(t, body)
@@ -174,6 +178,7 @@ func TestRipSinglePoint(t *testing.T) {
 // TestRipFaceRoundTrip a face-based rip persists its face/point keys, type and gap side (with no
 // sketch) and restores them.
 func TestRipFaceRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewSheetMetalRipFeatures(fs).Add(&SheetMetalRipDefinition{
 		FaceKey: []byte("f1"), PointKey: []byte("p1"), Type: SinglePointRip,
@@ -199,6 +204,7 @@ func TestRipFaceRoundTrip(t *testing.T) {
 
 // TestRipRejectsBadInput a rip with an out-of-range line index, or a non-positive gap, is sick.
 func TestRipRejectsBadInput(t *testing.T) {
+	t.Parallel()
 	fs, rip := sheetForRip(t, math.P2(1, 2), math.P2(3, 2))
 	bad := NewSheetMetalRipFeatures(fs).Add(&SheetMetalRipDefinition{Sketch: rip, LineIndex: 9, Gap: func() float64 { return 0.05 }})
 	fs.Recompute()
@@ -216,6 +222,7 @@ func TestRipRejectsBadInput(t *testing.T) {
 
 // TestRipRoundTrip a rip persists its line + gap and restores.
 func TestRipRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(1, 2), math.P2(3, 2))

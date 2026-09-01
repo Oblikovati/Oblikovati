@@ -44,6 +44,7 @@ func heatmapArgs() wire.SetClientGraphicsArgs {
 // a label through the router, and they show up in the rendered frame (heatmap with
 // per-vertex colors) and in the label channel.
 func TestGraphicsEndToEndAppearsInFrame(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 
@@ -89,6 +90,7 @@ func TestGraphicsEndToEndAppearsInFrame(t *testing.T) {
 // every viewport before — an FEA flood plot on one part showed on all of them), and must
 // reappear when A is reactivated.
 func TestClientGraphicsAreDocumentScoped(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 
@@ -134,6 +136,7 @@ func findHeatmap(frame renderer.DrawList) *renderer.DrawItem {
 }
 
 func TestGraphicsListAndDelete(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	callGraphics(t, r, s, wire.MethodClientGraphicsSet, heatmapArgs())
@@ -155,6 +158,7 @@ func TestGraphicsListAndDelete(t *testing.T) {
 // TestInteractionGraphicsUpdateThenClear checks a transient preview shows in the frame and
 // the clear method drops it (the command-end path).
 func TestInteractionGraphicsUpdateThenClear(t *testing.T) {
+	t.Parallel()
 	r := New(opregistry.Default())
 	s := app.NewSession()
 	callGraphics(t, r, s, wire.MethodInteractionGraphicsUpdate, wire.UpdateInteractionGraphicsArgs{

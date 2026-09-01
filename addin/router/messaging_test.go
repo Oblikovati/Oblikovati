@@ -14,6 +14,7 @@ import (
 func itoaInt(n int) string { return strconv.Itoa(n) }
 
 func TestStatusTextOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "status.setText", `{"text":"Meshing…"}`, nil)
 	var res wire.StatusTextResult
@@ -24,6 +25,7 @@ func TestStatusTextOverWire(t *testing.T) {
 }
 
 func TestProgressOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var bar wire.BeginProgressResult
 	call(t, r, s, "progress.begin", `{"steps":10,"message":"Meshing"}`, &bar)
@@ -50,6 +52,7 @@ func TestProgressOverWire(t *testing.T) {
 }
 
 func TestBalloonTipsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "balloonTip.register", `{"id":"sim.done","title":"Done","text":"Finished"}`, nil)
 	var shown wire.ShowBalloonTipResult
@@ -68,6 +71,7 @@ func TestBalloonTipsOverWire(t *testing.T) {
 }
 
 func TestPromptsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var res wire.ShowPromptResult
 	call(t, r, s, "prompts.show",
@@ -86,6 +90,7 @@ func TestPromptsOverWire(t *testing.T) {
 }
 
 func TestErrorsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var sec wire.BeginMessageSectionResult
 	call(t, r, s, "errors.beginSection", `{"title":"Meshing"}`, &sec)

@@ -23,7 +23,7 @@ import (
 )
 
 // Metrics is the density-independent geometry summary of a closed mesh, the
-// same quantities ops.BodyGeometryProperties yields for a kernel body, plus the
+// same quantities query.BodyGeometryProperties yields for a kernel body, plus the
 // axis-aligned bounding box. Lengths are in millimetres (OpenSCAD's unit), which
 // the kernel also uses internally (database units = mm via param length scale).
 type Metrics struct {

@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -56,13 +57,13 @@ func boxTopFace(t *testing.T, s *app.Session) (string, math.Point3) {
 // bodyVolume returns the active part body's volume.
 func bodyVolume(t *testing.T, s *app.Session) float64 {
 	t.Helper()
-	return ops.BodyGeometryProperties(activePartBody(t, s), ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(activePartBody(t, s), ops.DefaultQuality()).Volume
 }
 
 // bodyCentroidX returns the active part body's center-of-mass X coordinate.
 func bodyCentroidX(t *testing.T, s *app.Session) float64 {
 	t.Helper()
-	return float64(ops.BodyGeometryProperties(activePartBody(t, s), ops.DefaultQuality()).Centroid.X)
+	return float64(query.BodyGeometryProperties(activePartBody(t, s), ops.DefaultQuality()).Centroid.X)
 }
 
 // drilledBox seeds a fresh 4×3×1 cm box and drills a blind hole on its top face; center is the
@@ -85,6 +86,7 @@ func drilledBox(t *testing.T, center []float64) *app.Session {
 // the same hole as the centroid default — same volume, same center of mass (no regression when
 // Center is supplied redundantly).
 func TestHoleCenterAtCentroidMatchesDefault(t *testing.T) {
+	t.Parallel()
 	def := drilledBox(t, nil)
 	seed := profiledPart(t) // recompute the centroid on an identical fresh box
 	if _, err := apply(t, seed, "extrude", `{"sketchIndex":0,"distance":"10 mm"}`); err != nil {
@@ -104,6 +106,7 @@ func TestHoleCenterAtCentroidMatchesDefault(t *testing.T) {
 // TestHoleOffsetCenterShiftsBore: drilling at an offset center removes the same cylinder volume
 // but at a different location, so the remaining body's center of mass shifts along the offset.
 func TestHoleOffsetCenterShiftsBore(t *testing.T) {
+	t.Parallel()
 	// Centroid of the 4×3 face is (2,1.5); offset +0.8 cm in X keeps the Ø3 mm bore well inside.
 	centered := drilledBox(t, []float64{2, 1.5, 1})
 	offset := drilledBox(t, []float64{2.8, 1.5, 1})
@@ -120,6 +123,7 @@ func TestHoleOffsetCenterShiftsBore(t *testing.T) {
 // TestHoleCenterExprResolves: the centerExpr form resolves per-coordinate expressions to the
 // same drill point as the literal center.
 func TestHoleCenterExprResolves(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	faceKey, _ := boxTopFace(t, s)
 	args := map[string]any{"faceRef": faceKey, "diameter": "3 mm", "depth": "5 mm",
@@ -135,6 +139,7 @@ func TestHoleCenterExprResolves(t *testing.T) {
 
 // TestHoleCenterWrongCount: a literal center that is not a 3-vector is a clean error.
 func TestHoleCenterWrongCount(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	faceKey, _ := boxTopFace(t, s)
 	args := map[string]any{"faceRef": faceKey, "diameter": "3 mm", "depth": "5 mm", "center": []float64{2, 1}}
@@ -145,6 +150,7 @@ func TestHoleCenterWrongCount(t *testing.T) {
 
 // TestHoleCenterExprBadExpression: an unparseable centerExpr coordinate is a clean error.
 func TestHoleCenterExprBadExpression(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	faceKey, _ := boxTopFace(t, s)
 	args := map[string]any{"faceRef": faceKey, "diameter": "3 mm", "depth": "5 mm",
@@ -156,6 +162,7 @@ func TestHoleCenterExprBadExpression(t *testing.T) {
 
 // TestHoleCenterExprWrongCount: centerExpr with the wrong number of coordinates is a clean error.
 func TestHoleCenterExprWrongCount(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	faceKey, _ := boxTopFace(t, s)
 	args := map[string]any{"faceRef": faceKey, "diameter": "3 mm", "depth": "5 mm",

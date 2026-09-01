@@ -12,6 +12,7 @@ import (
 // An n-point Gauss–Legendre rule integrates polynomials up to degree 2n−1 exactly.
 // x⁴ over [−1,1] is 2/5; a 3-point rule (exact to degree 5) must nail it.
 func TestGaussLegendreExactForPolynomial(t *testing.T) {
+	t.Parallel()
 	nodes, weights := GaussLegendre(3)
 	var got float64
 	for i, x := range nodes {
@@ -24,6 +25,7 @@ func TestGaussLegendreExactForPolynomial(t *testing.T) {
 
 // The nodes are symmetric about 0 and the weights sum to the interval length 2.
 func TestGaussLegendreWeightsSumAndSymmetry(t *testing.T) {
+	t.Parallel()
 	for n := 1; n <= 24; n++ {
 		nodes, weights := GaussLegendre(n)
 		if len(nodes) != n || len(weights) != n {
@@ -47,6 +49,7 @@ func TestGaussLegendreWeightsSumAndSymmetry(t *testing.T) {
 // IntegrateRule maps a rule to an arbitrary interval; ∫₀^π sin = 2, reached by a
 // modest-order rule (the integrand is smooth).
 func TestIntegrate1DSine(t *testing.T) {
+	t.Parallel()
 	got := Integrate1D(12, 0, stdmath.Pi, stdmath.Sin)
 	if want := 2.0; stdmath.Abs(got-want) > 1e-9 {
 		t.Fatalf("∫₀^π sin = %v, want %v", got, want)
@@ -56,6 +59,7 @@ func TestIntegrate1DSine(t *testing.T) {
 // TestGaussLegendreRejectsNonPositiveOrder: the order is a hard precondition, and the panic names the
 // offending value (the CLAUDE.md exception-message contract) through the fmt-free itoa path.
 func TestGaussLegendreRejectsNonPositiveOrder(t *testing.T) {
+	t.Parallel()
 	for _, n := range []int{0, -7} {
 		func() {
 			defer func() {
@@ -74,6 +78,7 @@ func TestGaussLegendreRejectsNonPositiveOrder(t *testing.T) {
 
 // TestItoaRoundTrips pins the fmt-free integer formatter the panic path uses.
 func TestItoaRoundTrips(t *testing.T) {
+	t.Parallel()
 	for _, n := range []int{0, 7, -7, 1024, -1024} {
 		if got, want := itoa(n), strconv.Itoa(n); got != want {
 			t.Errorf("itoa(%d) = %q, want %q", n, got, want)
@@ -84,6 +89,7 @@ func TestItoaRoundTrips(t *testing.T) {
 // TestLegendreValueDerivDegreeZero: P₀ ≡ 1 with a zero derivative — the base case the recurrence
 // cannot produce (its loop starts at k=1).
 func TestLegendreValueDerivDegreeZero(t *testing.T) {
+	t.Parallel()
 	p, dp := legendreValueDeriv(0, 0.5)
 	if p != 1 || dp != 0 {
 		t.Errorf("legendreValueDeriv(0, 0.5) = (%g, %g), want (1, 0)", p, dp)

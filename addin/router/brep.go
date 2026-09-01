@@ -6,11 +6,16 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/kernel/ops/surface"
+
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/bodyapi"
 )
@@ -215,7 +220,7 @@ func brepDeleteFaces(s *app.Session, in wire.BrepDeleteFacesArgs) (wire.BrepHand
 	for i, k := range in.FaceKeys {
 		keys[i] = []byte(k)
 	}
-	res, err := ops.DropFaces(tb.Topo(), keys, in.KeepInstead)
+	res, err := heal.DropFaces(tb.Topo(), keys, in.KeepInstead)
 	if err != nil {
 		return wire.BrepHandleResult{}, err
 	}
@@ -258,7 +263,7 @@ func brepOffsetFaces(s *app.Session, in wire.BrepOffsetFacesArgs) (wire.BrepHand
 	for i, k := range in.FaceKeys {
 		keys[i] = []byte(k)
 	}
-	off, err := ops.OffsetFaceSurfaces(src.Topo(), keys, in.Distance, in.Reverse)
+	off, err := surface.OffsetFaceSurfaces(src.Topo(), keys, in.Distance, in.Reverse)
 	if err != nil {
 		return wire.BrepHandleResult{}, err
 	}
@@ -275,7 +280,7 @@ func brepRuledSurface(s *app.Session, in wire.BrepRuledSurfaceArgs) (wire.BrepHa
 	if err != nil {
 		return wire.BrepHandleResult{}, err
 	}
-	surf, err := ops.RuledSurfaceBetweenWires(w1, w2)
+	surf, err := surface.RuledSurfaceBetweenWires(w1, w2)
 	if err != nil {
 		return wire.BrepHandleResult{}, err
 	}
@@ -343,11 +348,11 @@ func brepIdenticalBodies(s *app.Session, in wire.BrepIdenticalBodiesArgs) (wire.
 		}
 		bodies = append(bodies, src.Topo())
 	}
-	opt := ops.IdenticalBodiesOptions{
+	opt := query.IdenticalBodiesOptions{
 		Tolerance: in.Tolerance, MatchTopology: in.MatchTopology,
 		MatchReflection: in.MatchReflection == nil || *in.MatchReflection,
 	}
-	groups := ops.GroupIdenticalBodies(bodies, opt, ops.DefaultQuality())
+	groups := query.GroupIdenticalBodies(bodies, opt, ops.DefaultQuality())
 	return wire.BrepIdenticalBodiesResult{Groups: groups}, nil
 }
 

@@ -25,6 +25,7 @@ func (o oneSketch) At(i int) (*sketch.Sketch, bool) {
 }
 
 func TestExtrudeFeatureRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
@@ -57,6 +58,7 @@ func (fakeFeature) Kind() string                    { return "fake" }
 func (fakeFeature) Recompute(Input) (Output, error) { return Output{}, nil }
 
 func TestDressUpFeaturesRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	du := NewDressUpFeatures(fs)
 	du.AddFillet([][]byte{[]byte("edge-a"), []byte("edge-b")}, func() float64 { return 0.5 })
@@ -94,6 +96,7 @@ func TestDressUpFeaturesRoundTrip(t *testing.T) {
 // TestShellDirectionRoundTrip checks a non-default shell wall direction survives a marshal/restore
 // (the default inside serializes nothing; outside/both must persist). #1864.
 func TestShellDirectionRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewDressUpFeatures(fs).AddShell([][]byte{[]byte("face-a")}, func() float64 { return 2 })
 	pf.Definition().(*ShellFeature).Definition().Direction = ops.ShellOutside
@@ -114,6 +117,7 @@ func TestShellDirectionRoundTrip(t *testing.T) {
 // TestDraftPullNeutralRoundTrip checks a draft's explicit pull direction and neutral (parting) plane
 // survive a recipe round trip (#1801).
 func TestDraftPullNeutralRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	neutral, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
 	NewDressUpFeatures(fs).AddDraftPullNeutral([][]byte{[]byte("face-x")}, math.V3(1, 0, 0), &neutral, func() float64 { return 0.1 })
@@ -144,6 +148,7 @@ func TestDraftPullNeutralRoundTrip(t *testing.T) {
 // TestFilletRadiusPointsRoundTrip checks a variable fillet's intermediate radius stops survive a
 // recipe round trip (#695).
 func TestFilletRadiusPointsRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{{
 		EdgeKeys:     [][]byte{[]byte("edge-v")},
@@ -172,6 +177,7 @@ func TestFilletRadiusPointsRoundTrip(t *testing.T) {
 // TestFaceFilletRoundTrip checks the face-fillet feature's two face sets + radius survive a recipe
 // round trip (#694).
 func TestFaceFilletRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).AddFaceFillet(
 		[][]byte{[]byte("face-a"), []byte("face-b")}, [][]byte{[]byte("face-c")}, func() float64 { return 0.7 })
@@ -197,6 +203,7 @@ func TestFaceFilletRoundTrip(t *testing.T) {
 
 // TestFullRoundRoundTrip checks the full-round fillet's three face sets survive a recipe round trip (#694).
 func TestFullRoundRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).AddFullRoundFillet(
 		[][]byte{[]byte("side-1")}, [][]byte{[]byte("center")}, [][]byte{[]byte("side-2")})
@@ -217,6 +224,7 @@ func TestFullRoundRoundTrip(t *testing.T) {
 
 // TestRuleFilletRoundTrip checks the rule fillet's rule + radius survive a recipe round trip (#486).
 func TestRuleFilletRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).AddRuleFillet(RuleFilletAllFillets, func() float64 { return 1.5 })
 	data, err := fs.MarshalRecipe(oneSketch{})
@@ -238,6 +246,7 @@ func TestRuleFilletRoundTrip(t *testing.T) {
 
 // TestSnapFitRoundTrip checks the cantilever snap-fit's dimensions survive a recipe round trip (#486).
 func TestSnapFitRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewPlasticFeatures(fs).AddCantileverSnapFit(cf(20), cf(6), cf(2), cf(3), cf(1.5))
 	data, err := fs.MarshalRecipe(oneSketch{})
@@ -259,6 +268,7 @@ func TestSnapFitRoundTrip(t *testing.T) {
 // round trip in both states, and that an older recipe with no flag restores as flat (the
 // default, matching a freshly created chamfer).
 func TestChamferFlatCornersRoundTrip(t *testing.T) {
+	t.Parallel()
 	for _, flat := range []bool{true, false} {
 		fs := NewPartFeatures(nil)
 		NewDressUpFeatures(fs).AddChamferCorners([][]byte{[]byte("edge")}, func() float64 { return 0.3 }, flat)
@@ -292,6 +302,7 @@ func TestChamferFlatCornersRoundTrip(t *testing.T) {
 // TestFilletCornerTypeRoundTrip checks the fillet corner treatment survives a recipe round trip,
 // and that an older recipe with no field restores as miter (the zero-value default).
 func TestFilletCornerTypeRoundTrip(t *testing.T) {
+	t.Parallel()
 	for _, corner := range []types.FilletCornerType{types.FilletCornerMiter, types.FilletCornerSetback, types.FilletCornerRound} {
 		fs := NewPartFeatures(nil)
 		NewDressUpFeatures(fs).AddFilletCorner([][]byte{[]byte("edge")}, func() float64 { return 0.3 }, corner)
@@ -322,6 +333,7 @@ func TestFilletCornerTypeRoundTrip(t *testing.T) {
 }
 
 func TestSolidFeaturesRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewHoleFeatures(fs).AddTapped([]byte("face-1"), func() float64 { return 6 }, func() float64 { return 10 }, "M6x1")
 	NewBossFeatures(fs).Add([]byte("face-2"), func() float64 { return 8 }, func() float64 { return 4 })
@@ -357,6 +369,7 @@ func TestSolidFeaturesRoundTrip(t *testing.T) {
 }
 
 func TestThroughAllHoleRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewHoleFeatures(fs).AddDrilledThrough([]byte("face-9"), func() float64 { return 3 })
 
@@ -375,6 +388,7 @@ func TestThroughAllHoleRoundTrip(t *testing.T) {
 }
 
 func TestCounterboreHoleRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	cb := NewHoleFeatures(fs).AddCounterbore([]byte("face-3"),
 		func() float64 { return 2 }, func() float64 { return 6 },
@@ -397,6 +411,7 @@ func TestCounterboreHoleRoundTrip(t *testing.T) {
 }
 
 func TestCountersinkHoleRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewHoleFeatures(fs).AddCountersink([]byte("face-4"),
 		func() float64 { return 2 }, func() float64 { return 5 },
@@ -418,6 +433,7 @@ func TestCountersinkHoleRoundTrip(t *testing.T) {
 }
 
 func TestDrilledHolePointAngleRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewHoleFeatures(fs).AddDrilled([]byte("face-7"), func() float64 { return 2 }, func() float64 { return 4 })
 	pf.Definition().(*HoleFeature).Definition().PointAngle = func() float64 { return 2.0594 } // ~118°
@@ -440,6 +456,7 @@ func TestDrilledHolePointAngleRoundTrip(t *testing.T) {
 }
 
 func TestRibRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 	fs := NewPartFeatures(nil)
@@ -461,6 +478,7 @@ func TestRibRoundTrip(t *testing.T) {
 }
 
 func TestEmbossRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := squareSketch(4)
 	fs := NewPartFeatures(nil)
 	NewEmbossFeatures(fs).Add(sk, []int{0}, func() float64 { return 0.8 }, EngraveFromFace, 0.1)
@@ -483,6 +501,7 @@ func TestEmbossRoundTrip(t *testing.T) {
 // TestRestRoundTrip checks the rest pad's sketch ref, profiles, depth, recessed flag and taper
 // survive a recipe round trip (#486).
 func TestRestRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := squareSketch(4)
 	fs := NewPartFeatures(nil)
 	NewPlasticFeatures(fs).AddRest(sk, []int{0}, func() float64 { return 1.2 }, true, 0.05)
@@ -503,6 +522,7 @@ func TestRestRoundTrip(t *testing.T) {
 }
 
 func TestRevolveAboutCenterlineRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := offsetSquareSketch(2, 2)
 	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
 	cl.SetCenterline(true)
@@ -524,6 +544,7 @@ func TestRevolveAboutCenterlineRoundTrip(t *testing.T) {
 }
 
 func TestPatternFeaturesRebindSourceByIndex(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	src := NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
@@ -564,6 +585,7 @@ func TestPatternFeaturesRebindSourceByIndex(t *testing.T) {
 }
 
 func TestSurfaceFeaturesRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	NewBoundaryPatchFeatures(fs).Add(sk, 0, PatchFree)
@@ -592,6 +614,7 @@ func TestSurfaceFeaturesRoundTrip(t *testing.T) {
 }
 
 func TestFaceEditFeaturesRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	m := NewModifyFeatures(fs)
 	m.AddSplit([][]byte{[]byte("f-split")})
@@ -633,6 +656,7 @@ func TestFaceEditFeaturesRoundTrip(t *testing.T) {
 // TestDeleteFaceHealFlagRoundTrip pins #1884's inverse-heal serialization: a heal=false delete
 // restores as heal=false (the `open` flag), while a recipe with no flag restores healed (legacy).
 func TestDeleteFaceHealFlagRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewModifyFeatures(fs).AddDeleteFace([][]byte{[]byte("f-open")}, false)
 	data, err := fs.MarshalRecipe(oneSketch{})
@@ -652,6 +676,7 @@ func TestDeleteFaceHealFlagRoundTrip(t *testing.T) {
 }
 
 func TestUncodedFeatureErrorsRatherThanDrops(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	fs.Add(fakeFeature{})
 	if _, err := fs.MarshalRecipe(oneSketch{}); err == nil {
@@ -663,6 +688,7 @@ func TestUncodedFeatureErrorsRatherThanDrops(t *testing.T) {
 // modelDiameter) survive the recipe codec, and a legacy thread without them
 // restores with the defaults.
 func TestThreadParityFieldsRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{
 		FaceKey: []byte("face-1"), Designation: "M8x1.25", Cut: false,
@@ -698,6 +724,7 @@ func TestThreadParityFieldsRoundTrip(t *testing.T) {
 // whatever radius it resolved to on the day it was authored — otherwise a reopened part stops
 // re-resolving the chord against the angle its faces meet at.
 func TestFaceFilletWidthRoundTrips(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewDressUpFeatures(fs).AddFaceFillet([][]byte{[]byte("a")}, [][]byte{[]byte("b")}, nil)
 	pf.Definition().(*FaceFilletFeature).Definition().Width = func() float64 { return 0.42 }
@@ -726,6 +753,7 @@ func TestFaceFilletWidthRoundTrips(t *testing.T) {
 // or a reopened part silently reverts to a whole-edge chamfer with the setbacks assigned by
 // topology order — which is exactly the non-determinism the reference face was added to remove.
 func TestChamferRunRoundTrips(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).AddChamferDef(&ChamferDefinition{
 		EdgeKeys: [][]byte{[]byte("e")}, Distance: func() float64 { return 0.3 },

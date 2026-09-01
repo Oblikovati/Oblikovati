@@ -5,6 +5,7 @@ package app
 import "testing"
 
 func TestCreateSketchEntersEnvironment(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if !s.CanCreateSketch() {
 		t.Fatal("a fresh part should allow creating a sketch")
@@ -22,6 +23,7 @@ func TestCreateSketchEntersEnvironment(t *testing.T) {
 }
 
 func TestCreateSketchRejectsNesting(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if _, err := s.CreateSketchOnOrigin(OriginXY); err != nil {
 		t.Fatalf("first CreateSketch: %v", err)
@@ -32,6 +34,7 @@ func TestCreateSketchRejectsNesting(t *testing.T) {
 }
 
 func TestCreateSketchNeedsActivePart(t *testing.T) {
+	t.Parallel()
 	s := NewSession() // no document
 	if s.CanCreateSketch() {
 		t.Error("no active part should disable Create 2D Sketch")
@@ -42,6 +45,7 @@ func TestCreateSketchNeedsActivePart(t *testing.T) {
 }
 
 func TestFinishSketchLeavesEnvironmentAndRecomputes(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk, _ := s.CreateSketchOnOrigin(OriginXY)
 	// Draw a rectangle and extrude after finishing, proving Finish recomputes the part.
@@ -62,6 +66,7 @@ func TestFinishSketchLeavesEnvironmentAndRecomputes(t *testing.T) {
 }
 
 func TestFinishSketchCancelsActiveTool(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	_, _ = s.CreateSketchOnOrigin(OriginXY)
 	s.StartTool(NewLineTool())
@@ -75,6 +80,7 @@ func TestFinishSketchCancelsActiveTool(t *testing.T) {
 }
 
 func TestFinishSketchErrorsWhenNotEditing(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if err := s.FinishSketch(); err == nil {
 		t.Error("FinishSketch with no open sketch should error")
@@ -82,6 +88,7 @@ func TestFinishSketchErrorsWhenNotEditing(t *testing.T) {
 }
 
 func TestOriginPlanesDiffer(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, _ := s.CreateSketchOnOrigin(OriginXZ)
 	// The XZ origin plane's normal is the Y axis (not Z), distinguishing it from XY.

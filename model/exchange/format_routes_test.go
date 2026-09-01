@@ -17,6 +17,7 @@ import (
 // format that reports IsSketch must carry a registered DrawingDecoder, or a file the menu accepts
 // falls through to "no drawing decoder" at import time.
 func TestEverySketchFormatHasADecoder(t *testing.T) {
+	t.Parallel()
 	for _, f := range []types.ExchangeFormat{types.FormatDWG, types.FormatDXF, types.FormatPDF} {
 		if !f.IsSketch() {
 			t.Errorf("%q should report IsSketch (it is a drawing format)", f)
@@ -31,6 +32,7 @@ func TestEverySketchFormatHasADecoder(t *testing.T) {
 // sketch format, and its extensions must resolve back to it — the round-trip that keeps FormatFromPath
 // and dispatch in lockstep.
 func TestDecodersAgreeWithTheirFormat(t *testing.T) {
+	t.Parallel()
 	for _, d := range []DrawingDecoder{dwgDrawingDecoder{}, dxfDrawingDecoder{}, pdfDrawingDecoder{}} {
 		if !d.Format().IsSketch() {
 			t.Errorf("decoder %T serves %q, which is not a sketch format", d, d.Format())
@@ -49,6 +51,7 @@ func TestDecodersAgreeWithTheirFormat(t *testing.T) {
 // TestFormatFromPathRoutesEveryRegisteredExtension: FormatFromPath is now a registry lookup, so every
 // extension the registry knows resolves (case-insensitively) and an unknown extension is rejected.
 func TestFormatFromPathRoutesEveryRegisteredExtension(t *testing.T) {
+	t.Parallel()
 	for ext, want := range formatRoutes.byExtension {
 		if got, ok := FormatFromPath("drawing" + strings.ToUpper(ext)); !ok || got != want {
 			t.Errorf("FormatFromPath(%q) = (%q, %v), want %q", ext, got, ok, want)
@@ -62,6 +65,7 @@ func TestFormatFromPathRoutesEveryRegisteredExtension(t *testing.T) {
 // TestGLTFRouteHasExportCapability: the glTF route registers .glb with an export
 // capability and no decoder — the export-only v1 contract (R1-2).
 func TestGLTFRouteHasExportCapability(t *testing.T) {
+	t.Parallel()
 	r, ok := formatRoutes.byFormat[types.FormatGLTF]
 	if !ok {
 		t.Fatal("FormatGLTF has no registered route")
@@ -87,6 +91,7 @@ func TestGLTFRouteHasExportCapability(t *testing.T) {
 // already-registered format or extension panics at construction, so a copy-paste registration cannot
 // silently shadow another format.
 func TestRegisterRejectsDuplicateFormatAndExtension(t *testing.T) {
+	t.Parallel()
 	assertPanics(t, "duplicate format", func() {
 		s := &formatRouteSet{byFormat: map[types.ExchangeFormat]formatRoute{}, byExtension: map[string]types.ExchangeFormat{}}
 		s.registerDrawing(dwgDrawingDecoder{})

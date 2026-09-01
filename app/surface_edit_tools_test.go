@@ -13,6 +13,7 @@ import (
 // TestRuledSurfaceToolEndToEnd drives the Ruled Surface UI: pick a closed region, set the
 // distance, OK — and asserts the band exists (one planar quad per profile edge).
 func TestRuledSurfaceToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def, region := partWithSquareRegion(t)
 	s.SetPicker(stubPicker{sel: region})
 
@@ -38,6 +39,7 @@ func TestRuledSurfaceToolEndToEnd(t *testing.T) {
 // A tangent ruling resolves its inputs then defers (#339) — the tool must not report that
 // Warning as an error.
 func TestRuledSurfaceToolTangentDefersAsWarning(t *testing.T) {
+	t.Parallel()
 	s, _, region := partWithSquareRegion(t)
 	s.SetPicker(stubPicker{sel: region})
 
@@ -56,6 +58,7 @@ func TestRuledSurfaceToolTangentDefersAsWarning(t *testing.T) {
 // TestSurfaceOffsetToolEndToEnd patches a region, then offsets the running surface: the
 // patch is replaced by its translated copy (still one one-face sheet body).
 func TestSurfaceOffsetToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def, region := partWithSquareRegion(t)
 	feature.NewBoundaryPatchFeatures(def.Features()).Add(region.Sketch, region.ProfileIndex, feature.PatchFree)
 	def.Recompute()
@@ -77,6 +80,7 @@ func TestSurfaceOffsetToolEndToEnd(t *testing.T) {
 // TestMidSurfaceToolEndToEnd extracts the mid-plane of a 6×6×2 plate: only the z face pair
 // (separation 2) is under the 3-unit threshold, so one patch of thickness 2 replaces the solid.
 func TestMidSurfaceToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithBlock(t, 6)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 
@@ -97,6 +101,7 @@ func TestMidSurfaceToolEndToEnd(t *testing.T) {
 
 // TestSurfaceEditToolsViaRibbonCommands asserts each new command starts its tool.
 func TestSurfaceEditToolsViaRibbonCommands(t *testing.T) {
+	t.Parallel()
 	s, _, _ := partWithSquareRegion(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
@@ -119,6 +124,7 @@ func TestSurfaceEditToolsViaRibbonCommands(t *testing.T) {
 // TestSurfaceEditToolsDraftFeature pins the #1626 commit-gate seam for the three M10 surface
 // tools: no draft below each tool's gate, a non-nil draft once commit-ready.
 func TestSurfaceEditToolsDraftFeature(t *testing.T) {
+	t.Parallel()
 	_, _, region := partWithSquareRegion(t)
 	ruled := NewRuledSurfaceTool()
 	if _, ok := ruled.DraftFeature(nil); ok {

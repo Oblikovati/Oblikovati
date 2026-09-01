@@ -41,6 +41,7 @@ func twoExtrudePart(t *testing.T) (*Session, *compdef.PartComponentDefinition, *
 // editing an earlier feature rolls the part back to it (its successor and everything after
 // are excluded), and the scope reports later nodes as hidden. Commit restores full evaluation.
 func TestBeginEditFeatureRollsBackToEditedFeature(t *testing.T) {
+	t.Parallel()
 	s, def, f1, f2 := twoExtrudePart(t)
 	if def.Features().EndOfPartIndex() != -1 {
 		t.Fatalf("part should start fully evaluated, EOP=%d", def.Features().EndOfPartIndex())
@@ -75,6 +76,7 @@ func TestBeginEditFeatureRollsBackToEditedFeature(t *testing.T) {
 
 // TestEditScopeRestoredOnCancel: cancelling a feature edit also restores full evaluation.
 func TestEditScopeRestoredOnCancel(t *testing.T) {
+	t.Parallel()
 	s, def, f1, _ := twoExtrudePart(t)
 	s.BeginEditFeature(FeatureHandle{Feature: f1})
 	s.CancelTool()
@@ -88,6 +90,7 @@ func TestEditScopeRestoredOnCancel(t *testing.T) {
 
 // TestEditScopeHidesTrailingSketch: editing the first feature hides a sketch created later.
 func TestEditScopeHidesTrailingSketch(t *testing.T) {
+	t.Parallel()
 	s, def, f1, _ := twoExtrudePart(t)
 	later := def.Sketches().Add(sketch.XYPlane()) // created after both features
 	def.Recompute()
@@ -103,6 +106,7 @@ func TestEditScopeHidesTrailingSketch(t *testing.T) {
 // "the value to restore" and then had its scope cleared by the first tool's cancel — leaving
 // the part permanently rolled back (later features never evaluated again) after commit.
 func TestSecondEditRestoresFirstScopeMarker(t *testing.T) {
+	t.Parallel()
 	s, def, f1, f2 := twoExtrudePart(t)
 	s.BeginEditFeature(FeatureHandle{Feature: f1}) // rolls back: f2 excluded
 	s.BeginEditFeature(FeatureHandle{Feature: f2}) // switch edits without closing the first
@@ -120,6 +124,7 @@ func TestSecondEditRestoresFirstScopeMarker(t *testing.T) {
 // TestEditScopeRestoresMidHistoryMarker: a user's own end-of-part marker, parked mid-history
 // before the edit opened, is restored by identity when the edit closes — not rolled to the end.
 func TestEditScopeRestoresMidHistoryMarker(t *testing.T) {
+	t.Parallel()
 	s, def, f1, f2 := twoExtrudePart(t)
 	if err := def.Features().SetEndOfPart(f2); err != nil {
 		t.Fatalf("park the marker at f2: %v", err)
@@ -139,6 +144,7 @@ func TestEditScopeRestoresMidHistoryMarker(t *testing.T) {
 // overwrite that edit's scope, so it is refused — and the refusal surfaces as the notice
 // instead of a silent no-op.
 func TestEditSketchRefusedDuringOpenEdit(t *testing.T) {
+	t.Parallel()
 	s, def, f1, _ := twoExtrudePart(t)
 	s.BeginEditFeature(FeatureHandle{Feature: f1})
 

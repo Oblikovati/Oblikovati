@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -15,6 +16,10 @@ import (
 // open-sheet classification, cross-checked against the coil SOLID: the sheet is the solid's lateral
 // surface, so solid area = sheet area + the two profile end caps (≈2 for the unit profile).
 func TestCoilSurfaceMakesOpenSheet(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
+	t.Parallel()
 	mk := func(op ops.PartFeatureOperation) *topo.Body {
 		fs := NewPartFeatures(nil)
 		pf := NewCoilFeatures(fs).AddDefinition(&CoilDefinition{
@@ -27,7 +32,7 @@ func TestCoilSurfaceMakesOpenSheet(t *testing.T) {
 		}
 		return fs.Result()[0]
 	}
-	area := func(b *topo.Body) float64 { return ops.BodyGeometryProperties(b, ops.DefaultQuality()).Area }
+	area := func(b *topo.Body) float64 { return query.BodyGeometryProperties(b, ops.DefaultQuality()).Area }
 
 	sheet, solid := mk(ops.Surface), mk(ops.NewBody)
 	if sheet.IsSolid() {

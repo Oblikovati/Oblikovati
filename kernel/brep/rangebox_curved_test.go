@@ -17,6 +17,7 @@ import (
 // classify() see a clearly-overlapping cylinder as disjoint and skip the cut.
 // RangeBox now samples curved edges, so the box must span the full ±r footprint.
 func TestSolidCylinderRangeBoxSpansRadius(t *testing.T) {
+	t.Parallel()
 	const r, h = 3.5, 4.0
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
 	if err != nil {

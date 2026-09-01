@@ -13,6 +13,7 @@ import (
 // document (assembly content installed, not the bare placeholder), makes it active, and names it
 // "Assembly1" — the assembly counterpart of NewPart (#762).
 func TestNewAssemblyCreatesActiveAssemblyDocument(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	d, err := s.NewAssembly()
 	if err != nil {
@@ -35,6 +36,7 @@ func TestNewAssemblyCreatesActiveAssemblyDocument(t *testing.T) {
 // TestNewAssemblyNamesAreUnique: two New Assembly commands in a row never clash — the second is
 // "Assembly2" — because uniqueDocumentName skips names already open.
 func TestNewAssemblyNamesAreUnique(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	first, err := s.NewAssembly()
 	if err != nil {
@@ -55,6 +57,7 @@ func TestNewAssemblyNamesAreUnique(t *testing.T) {
 // TestNewAssemblyAndNewPartShareCounterSpace: the Part and Assembly counters are independent —
 // a New Part after a New Assembly is "Part1", not "Part2" (each prefix counts its own kind).
 func TestNewAssemblyAndNewPartShareCounterSpace(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, err := s.NewAssembly(); err != nil {
 		t.Fatalf("NewAssembly: %v", err)
@@ -71,6 +74,7 @@ func TestNewAssemblyAndNewPartShareCounterSpace(t *testing.T) {
 // TestGetStartedTabOffersNewAssembly: the ZeroDoc ribbon's Get Started ▸ Launch panel offers
 // New Assembly alongside New Part, so a user can start an assembly from an empty session (#762).
 func TestGetStartedTabOffersNewAssembly(t *testing.T) {
+	t.Parallel()
 	s := zeroDocSession(t)
 	cmd, ok := s.Commands().ByID("GetStarted.NewAssembly")
 	if !ok {
@@ -96,6 +100,7 @@ func TestGetStartedTabOffersNewAssembly(t *testing.T) {
 // TestExecuteNewAssemblyOpensAssemblyRibbon: executing the command by id creates the assembly and
 // switches the active ribbon to the Assemble environment (proves the command is wired end to end).
 func TestExecuteNewAssemblyOpensAssemblyRibbon(t *testing.T) {
+	t.Parallel()
 	s := zeroDocSession(t)
 	if err := s.Execute("GetStarted.NewAssembly"); err != nil {
 		t.Fatalf("execute GetStarted.NewAssembly: %v", err)

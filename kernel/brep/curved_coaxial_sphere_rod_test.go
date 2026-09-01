@@ -35,6 +35,7 @@ func ballAndRod(t *testing.T, ballR, rodR, y0, length float64) (*topo.Body, *top
 // ±√(R_s²−R_c²) along the axis. A Ø10 ball on a Ø6 shank puts them 4 mm from the centre — the 3-4-5
 // triangle the NopSCADlib ball stud in #2036 is built on.
 func TestCoaxialSphereCircleOffsetMatchesTheClosedForm(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct{ ballR, rodR, want float64 }{
 		{5, 3, 4}, {0.5, 0.3, 0.4}, {13, 5, 12},
 	} {
@@ -55,6 +56,7 @@ func TestCoaxialSphereCircleOffsetMatchesTheClosedForm(t *testing.T) {
 // (IntAna_NoGeometricSolution: a quartic space curve), a ball no bigger than the rod (IntAna_Empty),
 // and equal radii, which OCCT reports as ONE circle because the contact is an internal tangency.
 func TestCoaxialSphereCircleOffsetDeclinesWhatOCCTDeclines(t *testing.T) {
+	t.Parallel()
 	sph, _ := geom.NewSphere(math.P3(0, 0, 0), 5)
 	for _, c := range []struct {
 		name   string
@@ -77,6 +79,7 @@ func TestCoaxialSphereCircleOffsetDeclinesWhatOCCTDeclines(t *testing.T) {
 // result would carry a face of zero size: a cap sitting on a seam station (a zero-width band) or on a
 // pole (a zero-radius disc), and a rod that never reaches the ball at all.
 func TestCoaxialRodOfDeclinesDegenerateExtents(t *testing.T) {
+	t.Parallel()
 	const R, rc = 0.5, 0.3
 	d := stdmath.Sqrt(R*R - rc*rc) // 0.4
 	for _, c := range []struct {
@@ -97,6 +100,7 @@ func TestCoaxialRodOfDeclinesDegenerateExtents(t *testing.T) {
 
 // TestCoaxialRodOfAcceptsEitherArgumentOrder: a caller must not have to know which operand is the ball.
 func TestCoaxialRodOfAcceptsEitherArgumentOrder(t *testing.T) {
+	t.Parallel()
 	ball, rod := ballAndRod(t, 0.5, 0.3, 0, 1.5)
 	forward, okF := coaxialRodOf(ball, rod)
 	reverse, okR := coaxialRodOf(rod, ball)
@@ -112,6 +116,7 @@ func TestCoaxialRodOfAcceptsEitherArgumentOrder(t *testing.T) {
 // TestCoaxialRodOfRecordsTheSeamOffset: the seam offset is OCCT's √(R²−r_c²), and the rod's stations are
 // measured from the ball centre along `out`, which always runs lo→hi.
 func TestCoaxialRodOfRecordsTheSeamOffset(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		name           string
 		y0, length     float64
@@ -143,6 +148,7 @@ func TestCoaxialRodOfRecordsTheSeamOffset(t *testing.T) {
 // at a rod cap that lands between the poles — and adjacent runs of the same verdict merge, so a cut that
 // changes nothing leaves no spurious face boundary.
 func TestBallSpansSplitAtEverySeamAndCap(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		name       string
 		y0, length float64
@@ -167,6 +173,7 @@ func TestBallSpansSplitAtEverySeamAndCap(t *testing.T) {
 // TestWallSpansSplitAtTheSeams is the same for the rod's own side: it crosses the ball's surface only at
 // the seam stations, and only where those fall inside its own extent.
 func TestWallSpansSplitAtTheSeams(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		name       string
 		y0, length float64
@@ -189,6 +196,7 @@ func TestWallSpansSplitAtTheSeams(t *testing.T) {
 // TestCapSpansSplitWhereTheBallCrossesTheCap: a rod cap inside the ball is wholly inside, one outside is
 // wholly outside, and one landing in the shoulder is split at the ball's own circle there.
 func TestCapSpansSplitWhereTheBallCrossesTheCap(t *testing.T) {
+	t.Parallel()
 	ball, rod := ballAndRod(t, 0.5, 0.3, 0, 0.45)
 	r, ok := coaxialRodOf(ball, rod)
 	if !ok {
@@ -227,6 +235,7 @@ func assertSpans(t *testing.T, name string, got, want []coaxialSpan) {
 // are asserted where the boolean runs (kernel/ops, against the OCC oracle); what belongs here is the
 // SHAPE, because an assembly that keeps the wrong halves still stitches into a plausible-looking body.
 func TestCoaxialSphereRodBuildersAssembleAnalyticSolids(t *testing.T) {
+	t.Parallel()
 	blindBall, blindRod := ballAndRod(t, 0.5, 0.3, 0, 1.5)
 	thruBall, thruRod := ballAndRod(t, 0.5, 0.3, -1.0, 2.5)
 	for _, c := range []struct {
@@ -285,6 +294,7 @@ func sameCensus(got, want map[string]int) bool {
 // rod's end cap survives as an ANNULUS. All three shoulder configurations are driven — one shoulder cap,
 // two, and one paired with a free cap.
 func TestShoulderExtentsAssembleAnalyticSolids(t *testing.T) {
+	t.Parallel()
 	shoulder := func(y0, length float64) (*topo.Body, *topo.Body) { return ballAndRod(t, 0.5, 0.3, y0, length) }
 	oneBall, oneRod := shoulder(0, 0.45)    // buried cap → shoulder cap
 	biBall, biRod := shoulder(-0.45, 0.9)   // a shoulder cap at each end
@@ -334,6 +344,7 @@ func TestShoulderExtentsAssembleAnalyticSolids(t *testing.T) {
 // and fails ops.Validate's orientation check. The chain here is hand-built with the parity broken,
 // because the geometry never produces one: an orientable surface always admits a consistent walk.
 func TestSettleWindingsDeclinesAnUnsatisfiableChain(t *testing.T) {
+	t.Parallel()
 	cap := func(forward bool) coaxialPiece {
 		return coaxialPiece{fixed: true, rims: []coaxialRim{{0, 1, forward}},
 			build: func(bool) (curvedFace, bool) { return curvedFace{}, true }}
@@ -353,6 +364,7 @@ func TestSettleWindingsDeclinesAnUnsatisfiableChain(t *testing.T) {
 // the ball's surface, so the union is the untouched sphere — one boundary-less face — and the cut is that
 // same sphere with the rod as an interior VOID, a second shell facing into the cavity.
 func TestFullyBuriedRodIsAWholeBallOrAVoid(t *testing.T) {
+	t.Parallel()
 	ball, rod := ballAndRod(t, 0.5, 0.3, -0.2, 0.4) // both caps at |s| = 0.2, well inside the seam at 0.4
 	union, ok := CoaxialSphereRodJoin(ball, rod)
 	if !ok {
@@ -378,6 +390,7 @@ func TestFullyBuriedRodIsAWholeBallOrAVoid(t *testing.T) {
 // ball's own surface, so the face that survives on it carries a HOLE — an annulus, not a disc. Nothing in
 // the other two extents produces one.
 func TestShoulderCapLeavesAnAnnulus(t *testing.T) {
+	t.Parallel()
 	ball, rod := ballAndRod(t, 0.5, 0.3, 0, 0.45)
 	res, ok := CoaxialSphereRodJoin(ball, rod)
 	if !ok {
@@ -399,6 +412,7 @@ func TestShoulderCapLeavesAnAnnulus(t *testing.T) {
 // belt (one sphere face bounded by BOTH seam circles) and the open bore — not a cap that quietly closed
 // one end off. The two loops on that face are what say so.
 func TestBeadKeepsTheBallsBeltAndNothingElse(t *testing.T) {
+	t.Parallel()
 	ball, rod := ballAndRod(t, 0.5, 0.3, -1.0, 2.5)
 	bead, ok := CoaxialSphereRodCut(ball, rod)
 	if !ok {
@@ -420,6 +434,7 @@ func TestBeadKeepsTheBallsBeltAndNothingElse(t *testing.T) {
 // which face is inverted, so the two directions must NOT come out the same body. rod − ball keeps the
 // small cap (as a dimple in the stub's base); ball − rod keeps the large one (the rest of the ball).
 func TestCoaxialSphereRodCutFacesTheRightWay(t *testing.T) {
+	t.Parallel()
 	ball, rod := ballAndRod(t, 0.5, 0.3, 0, 1.5)
 	bored, okB := CoaxialSphereRodCut(ball, rod)
 	stub, okS := CoaxialSphereRodCut(rod, ball)
@@ -449,6 +464,7 @@ func sphereFaceReversed(t *testing.T, b *topo.Body) bool {
 // face, so each must keep that face's key or a reference bound to the shank's end face (a chamfer, a
 // hole) would break on the join (ADR-0043 K1a).
 func TestCoaxialSphereRodJoinKeepsOperandLineage(t *testing.T) {
+	t.Parallel()
 	ball, rod := ballAndRod(t, 0.5, 0.3, 0, 1.5)
 	want := map[string]string{
 		"sphere":   soleFaceKey(t, ball, "sphere"),

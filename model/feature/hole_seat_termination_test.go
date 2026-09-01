@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -18,6 +19,7 @@ import (
 // authored thing and the diameter follows it, so swapping the screw resizes the bore. Recording the
 // resolved diameter — which is what an import used to do — breaks exactly that.
 func TestClearanceHoleIsSizedByItsFastener(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		fastener, fit string
 		wantCM        float64
@@ -40,6 +42,7 @@ func TestClearanceHoleIsSizedByItsFastener(t *testing.T) {
 // TestClearanceHoleRefusesWhatItCannotSize: a clearance hole that quietly fell back to some other
 // diameter would produce a part that does not assemble, so every unknown input is named.
 func TestClearanceHoleRefusesWhatItCannotSize(t *testing.T) {
+	t.Parallel()
 	for name, info := range map[string]HoleClearanceInfo{
 		"unknown standard": {Standard: "ANSI B18.2.8", Fastener: "M6"},
 		"unknown fit":      {Fastener: "M6", Fit: "sliding"},
@@ -55,6 +58,7 @@ func TestClearanceHoleRefusesWhatItCannotSize(t *testing.T) {
 // TestClearanceHoleDrivesTheBore wires the table through the feature: the definition carries the
 // fastener, not a diameter, and the cut comes out at the table size.
 func TestClearanceHoleDrivesTheBore(t *testing.T) {
+	t.Parallel()
 	block, top := holeBlock()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(block)
@@ -69,7 +73,7 @@ func TestClearanceHoleDrivesTheBore(t *testing.T) {
 	// geom.Plane:7) and mass properties integrate it analytically (M48/C3 #3453), so the exact
 	// answer is πr²·depth — the 32-gon area this used to expect was the old mesh's approximation.
 	want := 32 - stdmath.Pi*(0.7/2)*(0.7/2)*1
-	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+	if got := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("clearance-bored volume = %g, want %g (Ø7 mm free fit, not the zero Diameter)", got, want)
 	}
 }
@@ -78,6 +82,7 @@ func TestClearanceHoleDrivesTheBore(t *testing.T) {
 // counterbore cuts, so it must remove the same material — while staying a DISTINCT seat type, since
 // collapsing it into a counterbore on import loses the callout.
 func TestSpotFaceCutsTheSeatWithoutBecomingACounterbore(t *testing.T) {
+	t.Parallel()
 	spot := seatedHoleVolume(t, SpotFaceHole)
 	bore := seatedHoleVolume(t, CounterboreHole)
 	if stdmath.Abs(spot-bore) > 1e-9 {
@@ -103,13 +108,14 @@ func seatedHoleVolume(t *testing.T, seat HoleType) float64 {
 	if !hole.Health().OK() {
 		t.Fatalf("seat %v sick: %+v", seat, hole.Health())
 	}
-	return ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
 }
 
 // TestTapIsOrthogonalToTheSeat: in Inventor the seat (drilled/counterbore/countersink/spotface) and
 // the tap are two independent axes, so a counterbored TAPPED hole is an ordinary thing. Modelling
 // "tapped" as a seat made it impossible to say.
 func TestTapIsOrthogonalToTheSeat(t *testing.T) {
+	t.Parallel()
 	block, top := holeBlock()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(block)
@@ -134,6 +140,7 @@ func TestTapIsOrthogonalToTheSeat(t *testing.T) {
 // TestZeroTapIsRightHanded pins the field's naming decision: a definition built as a literal — which
 // several call sites and every restored recipe do — must come out an ORDINARY right-hand thread.
 func TestZeroTapIsRightHanded(t *testing.T) {
+	t.Parallel()
 	if (HoleTapInfo{Tapped: true, Designation: "M6"}).LeftHanded {
 		t.Error("a zero-valued tap is left-handed; the ordinary thread must be the zero value")
 	}
@@ -142,6 +149,7 @@ func TestZeroTapIsRightHanded(t *testing.T) {
 // TestHoleTerminatesOnAFace: the bore runs from the placement face down to a named plane, so the
 // depth comes from the model instead of being measured by hand into the args.
 func TestHoleTerminatesOnAFace(t *testing.T) {
+	t.Parallel()
 	got := terminatedHoleVolume(t, func(d *HoleDefinition) {
 		d.Termination, d.ToPlane = ToFaceExtent, holeStopPlane(1.25)
 	})
@@ -156,6 +164,7 @@ func TestHoleTerminatesOnAFace(t *testing.T) {
 // TestHoleTerminatesBetweenTwoFaces: from-to moves the bore's START too, which no depth alone can
 // express — the hole begins at the from-plane, not at the face it was placed on.
 func TestHoleTerminatesBetweenTwoFaces(t *testing.T) {
+	t.Parallel()
 	got := terminatedHoleVolume(t, func(d *HoleDefinition) {
 		d.Termination = FromToExtent
 		d.FromPlane, d.ToPlane = holeStopPlane(1.5), holeStopPlane(0.5)
@@ -172,6 +181,7 @@ func TestHoleTerminatesBetweenTwoFaces(t *testing.T) {
 // TestHoleTerminatorMustBeSquareToTheDrill is the honest-limitation guard: a bore bottoms at ONE
 // depth, so a slanted terminator has no single answer and is refused rather than approximated.
 func TestHoleTerminatorMustBeSquareToTheDrill(t *testing.T) {
+	t.Parallel()
 	block, top := holeBlock()
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(block)
@@ -201,7 +211,7 @@ func terminatedHoleVolume(t *testing.T, set func(*HoleDefinition)) float64 {
 	if !hole.Health().OK() {
 		t.Fatalf("terminated hole sick: %+v", hole.Health())
 	}
-	return ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
+	return query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
 }
 
 // holeStopPlane is a plane parallel to the block's top face at height z — square to a bore drilled

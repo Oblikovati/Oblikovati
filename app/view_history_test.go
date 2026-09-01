@@ -16,6 +16,7 @@ func camAt(eyeX float64) scene.Camera {
 }
 
 func TestPreviousViewRestoresRecordedCamera(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := camAt(5)
 	s.SetCamera(a)
@@ -38,6 +39,7 @@ func TestPreviousViewRestoresRecordedCamera(t *testing.T) {
 }
 
 func TestViewHistoryCapsAtMax(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	for i := range maxViewHistory + 10 {
 		s.SetCamera(camAt(float64(i)))
@@ -55,6 +57,7 @@ func TestViewHistoryCapsAtMax(t *testing.T) {
 }
 
 func TestFitViewRecordsHistory(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4)
 	start := s.Camera()
 	s.FitView() // a discrete view change → records the pre-fit view
@@ -68,6 +71,7 @@ func TestFitViewRecordsHistory(t *testing.T) {
 }
 
 func TestF5RestoresPreviousViewViaBinding(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a := camAt(3)
 	s.SetCamera(a)
@@ -83,6 +87,7 @@ func TestF5RestoresPreviousViewViaBinding(t *testing.T) {
 }
 
 func TestF6RunsHomeViaBinding(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4)
 	if err := s.PressKey(KeyEvent{Key: "F6"}); err != nil {
 		t.Fatalf("F6: %v", err)

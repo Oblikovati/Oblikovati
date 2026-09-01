@@ -43,6 +43,7 @@ func patchWithBottomEdge(t *testing.T) (*Session, *compdef.PartComponentDefiniti
 // TestExtendToolEndToEnd drives the Extend UI: pick the bottom edge, set a distance, OK — the
 // patch grows to y∈[-2,4].
 func TestExtendToolEndToEnd(t *testing.T) {
+	t.Parallel()
 	s, def, bottom := patchWithBottomEdge(t)
 	s.SetPicker(stubPicker{sel: EdgeHandle{Edge: bottom}})
 
@@ -63,6 +64,7 @@ func TestExtendToolEndToEnd(t *testing.T) {
 }
 
 func TestExtendViaRibbonCommand(t *testing.T) {
+	t.Parallel()
 	s, _, bottom := patchWithBottomEdge(t)
 	s.SetPicker(stubPicker{sel: EdgeHandle{Edge: bottom}})
 	if err := RegisterStandardCommands(s); err != nil {

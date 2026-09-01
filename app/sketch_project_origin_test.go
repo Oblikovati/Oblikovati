@@ -13,6 +13,7 @@ import (
 // TestCreateSketchAutoProjectsOrigin: a freshly created sketch carries the projected origin
 // centre point at (0,0), the Inventor default the bug report (#1262) asked for.
 func TestCreateSketchAutoProjectsOrigin(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	sk, err := s.CreateSketch(sketch.XYPlane())
 	if err != nil {
@@ -40,6 +41,7 @@ func TestCreateSketchAutoProjectsOrigin(t *testing.T) {
 // reaches from the browser tree) — and confirms each becomes reference geometry (#1262). The
 // XZ origin plane meets the XY sketch along the X axis, so it projects a line.
 func TestProjectGeometryToolProjectsDatums(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if _, err := s.CreateSketch(sketch.XYPlane()); err != nil {
 		t.Fatalf("CreateSketch: %v", err)

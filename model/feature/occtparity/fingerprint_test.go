@@ -6,6 +6,8 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -40,7 +42,7 @@ func bodyMeshFingerprint(b *topo.Body) meshFingerprint {
 	for _, f := range b.Faces() {
 		sum, tris = foldFaceTriangles(f, quant, sum, tris)
 	}
-	vol := ops.BodyGeometryProperties(b, ops.PropertyQuality()).Volume
+	vol := query.BodyGeometryProperties(b, ops.PropertyQuality()).Volume
 	return meshFingerprint{Volume: vol, Triangles: tris, Hash: sum}
 }
 
@@ -53,7 +55,7 @@ type meshFingerprint struct {
 
 // foldFaceTriangles adds each of face f's canonical triangle hashes into sum and counts them.
 func foldFaceTriangles(f *topo.Face, quant float64, sum uint64, tris int) (uint64, int) {
-	m := ops.TessellateFace(f, ops.PropertyQuality())
+	m := tessellate.TessellateFace(f, ops.PropertyQuality())
 	if m == nil {
 		return sum, tris
 	}

@@ -48,6 +48,7 @@ func boxTopFace(t *testing.T, def *compdef.PartComponentDefinition) (*topo.Face,
 }
 
 func TestOffsetWorkPlaneToolWaitsForDistanceThenCreates(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	before := def.WorkPlanes().Count()
 	tool := NewOffsetWorkPlaneTool()
@@ -80,6 +81,7 @@ func TestOffsetWorkPlaneToolWaitsForDistanceThenCreates(t *testing.T) {
 // clicking it in the 3D view. A hidden user plane drops out. Origin planes default hidden
 // (issue #1520), so the visible user plane is the only mouse-pickable plane here.
 func TestPickableWorkPlanesIncludesVisibleUserPlanes(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 
@@ -100,6 +102,7 @@ func TestPickableWorkPlanesIncludesVisibleUserPlanes(t *testing.T) {
 // it, fed to the tool independently of the RayPicker). Showing an origin plane restores its
 // viewport pickability.
 func TestHiddenOriginPlanesNotMousePickable(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	for _, wp := range def.OriginPlanes() {
 		if wp.Visible() {
@@ -120,6 +123,7 @@ func TestHiddenOriginPlanesNotMousePickable(t *testing.T) {
 // hidden by the edit scope, so it must drop out of the picker too — geometry the overlays do
 // not draw must not be clickable.
 func TestPickableWorkPlanesHonorsEditScope(t *testing.T) {
+	t.Parallel()
 	s, def, f1, _ := twoExtrudePart(t)
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 	def.Recompute()
@@ -135,6 +139,7 @@ func TestPickableWorkPlanesHonorsEditScope(t *testing.T) {
 }
 
 func TestOffsetWorkPlaneToolNotCommittableWithoutBase(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	tool := NewOffsetWorkPlaneTool()
 	s.StartTool(tool)
@@ -145,6 +150,7 @@ func TestOffsetWorkPlaneToolNotCommittableWithoutBase(t *testing.T) {
 }
 
 func TestCreateMidplaneWorkPlane(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	selectPlanes(s, def.OriginPlanes()[0], def.OriginPlanes()[1]) // XY + XZ
 	wp, err := s.CreateMidplaneWorkPlane()
@@ -157,6 +163,7 @@ func TestCreateMidplaneWorkPlane(t *testing.T) {
 }
 
 func TestCreateMidplaneNeedsTwoPlanes(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	selectPlanes(s, def.OriginPlanes()[0]) // only one
 	if _, err := s.CreateMidplaneWorkPlane(); err == nil {
@@ -165,6 +172,7 @@ func TestCreateMidplaneNeedsTwoPlanes(t *testing.T) {
 }
 
 func TestCreatedWorkPlanesAppearInBrowserWithUniqueNames(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	for i := range 2 {
 		s.Selection().Clear()
@@ -189,6 +197,7 @@ func TestCreatedWorkPlanesAppearInBrowserWithUniqueNames(t *testing.T) {
 }
 
 func TestCreateThreePointWorkPlaneFromPoints(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	a := addUserPoint(def, math.P3(0, 0, 0))
 	b := addUserPoint(def, math.P3(2, 0, 0))
@@ -206,6 +215,7 @@ func TestCreateThreePointWorkPlaneFromPoints(t *testing.T) {
 }
 
 func TestCreateThreePointNeedsThreePoints(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	s.Selection().Add(WorkPointHandle{Point: addUserPoint(def, math.P3(0, 0, 0))})
 	if _, err := s.CreateThreePointWorkPlane(); err == nil {
@@ -214,6 +224,7 @@ func TestCreateThreePointNeedsThreePoints(t *testing.T) {
 }
 
 func TestCreateNormalToAxisWorkPlane(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	// Origin X axis (axis 0) + origin center point (point 0): a plane through the origin,
 	// normal to X (a YZ-oriented plane).
@@ -229,6 +240,7 @@ func TestCreateNormalToAxisWorkPlane(t *testing.T) {
 }
 
 func TestCreateTangentWorkPlaneWiring(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	face, body := boxTopFace(t, def)
 	before := def.WorkPlanes().Count()
@@ -243,6 +255,7 @@ func TestCreateTangentWorkPlaneWiring(t *testing.T) {
 }
 
 func TestOffsetWorkPlaneButtonOpensDistanceDialogNotInstantCreate(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -274,6 +287,7 @@ func TestOffsetWorkPlaneButtonOpensDistanceDialogNotInstantCreate(t *testing.T) 
 }
 
 func TestOffsetWorkPlaneButtonSeedsPreselectedPlane(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -289,6 +303,7 @@ func TestOffsetWorkPlaneButtonSeedsPreselectedPlane(t *testing.T) {
 }
 
 func TestMidplaneToolCommitsAfterTwoPicks(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -312,6 +327,7 @@ func TestMidplaneToolCommitsAfterTwoPicks(t *testing.T) {
 }
 
 func TestToggleWorkPlaneVisibilitySessionAndKeyboard(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	xy := def.OriginPlanes()[0]
 	selectPlanes(s, xy)
@@ -337,6 +353,7 @@ func TestToggleWorkPlaneVisibilitySessionAndKeyboard(t *testing.T) {
 }
 
 func TestWorkPlaneBrowserVisibilityMenuToggles(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	node := originFolder(BuildBrowser(s)).Children[0] // XY plane node
 	wp := node.Select.(WorkPlaneHandle).Plane
@@ -360,6 +377,7 @@ func TestWorkPlaneBrowserVisibilityMenuToggles(t *testing.T) {
 }
 
 func TestWorkPlaneButtonsDisabledInSketch(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -373,6 +391,7 @@ func TestWorkPlaneButtonsDisabledInSketch(t *testing.T) {
 }
 
 func TestPickerSnapsToWorkPoint(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	p := NewRayPicker(s.Camera(), func() []*topo.Body { return def.SurfaceBodies().All() }).
 		WithPoints(func() []*feature.WorkPoint { return []*feature.WorkPoint{def.WorkPoints().Item(0)} })
@@ -386,6 +405,7 @@ func TestPickerSnapsToWorkPoint(t *testing.T) {
 }
 
 func TestPickerSnapsToWorkAxis(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	p := NewRayPicker(s.Camera(), func() []*topo.Body { return def.SurfaceBodies().All() }).
 		WithAxes(func() []*feature.WorkAxis { return []*feature.WorkAxis{def.WorkAxes().Item(0)} })
@@ -399,6 +419,7 @@ func TestPickerSnapsToWorkAxis(t *testing.T) {
 }
 
 func TestWorkFeatureRibbonCommandsRegistered(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -431,6 +452,7 @@ func TestWorkFeatureRibbonCommandsRegistered(t *testing.T) {
 // face (z=4) offset by 2 lands at z=6. Regression for the offset-plane tool ignoring face
 // picks (it filtered/handled work planes only, despite its "or planar face" prompt).
 func TestOffsetWorkPlaneFromFace(t *testing.T) {
+	t.Parallel()
 	s := extrudedBox(t, 2, 4) // box, top face at z=4
 	body := partBodies(s)()[0]
 	top := topFaceOf(t, body)

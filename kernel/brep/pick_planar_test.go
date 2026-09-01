@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
 
@@ -17,6 +18,7 @@ import (
 // path still reports the correct nearest face: a ray down the axis hits the top cap, an off-axis
 // ray misses the solid entirely.
 func TestRayCastPlanarCapHitMiss(t *testing.T) {
+	t.Parallel()
 	const r, h = 5.0, 8.0
 	mer := []math.Point2{math.P2(0, 0), math.P2(r, 0), math.P2(r, h), math.P2(0, h)}
 	body, err := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 0, 1), mer, "cyl")
@@ -26,7 +28,7 @@ func TestRayCastPlanarCapHitMiss(t *testing.T) {
 	q := ops.DefaultQuality()
 
 	// Straight down the axis from above the top cap (z=h): must hit a face at ~ (100-h).
-	_, dist, ok := ops.RayCastFaces(body, math.P3(0, 0, 100), math.V3(0, 0, -1), q)
+	_, dist, ok := query.RayCastFaces(body, math.P3(0, 0, 100), math.V3(0, 0, -1), q)
 	if !ok {
 		t.Fatal("axis ray missed the cylinder; want a hit on the top cap")
 	}
@@ -35,7 +37,7 @@ func TestRayCastPlanarCapHitMiss(t *testing.T) {
 	}
 
 	// A ray parallel to the axis but well outside the radius must miss every face.
-	if _, _, ok := ops.RayCastFaces(body, math.P3(3*r, 0, 100), math.V3(0, 0, -1), q); ok {
+	if _, _, ok := query.RayCastFaces(body, math.P3(3*r, 0, 100), math.V3(0, 0, -1), q); ok {
 		t.Error("off-axis ray hit the cylinder; want a miss (outside every face's boundary)")
 	}
 }

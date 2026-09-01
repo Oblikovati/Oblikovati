@@ -11,6 +11,7 @@ import (
 // TestRepresentationsPanelExposesCommands: the Assemble tab's Representations panel exposes the
 // capture + model-state commands as compact icon buttons (M12-F04).
 func TestRepresentationsPanelExposesCommands(t *testing.T) {
+	t.Parallel()
 	tab, ok := BuildRibbon(assemblySession(t)).Tab("Assemble")
 	if !ok {
 		t.Fatal("an active assembly should show the Assemble tab")
@@ -32,6 +33,7 @@ func TestRepresentationsPanelExposesCommands(t *testing.T) {
 // TestRepresentationCaptureActivateAndBrowser: capturing an LOD representation lists it under
 // the browser's Representations folder, and activating it re-applies its suppression (M12-F04).
 func TestRepresentationCaptureActivateAndBrowser(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	placedWidget(t, s, asm, "widget:2")
@@ -63,6 +65,7 @@ func TestRepresentationCaptureActivateAndBrowser(t *testing.T) {
 // TestModelStateCaptureAndActivate: a model state from the active representations appears under
 // the Model States folder and re-applies its families when activated (M12-F04).
 func TestModelStateCaptureAndActivate(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	a := asm.Occurrences().Item(0)

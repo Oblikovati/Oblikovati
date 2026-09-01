@@ -50,6 +50,7 @@ func drawingViewSession(t *testing.T) (*Router, *app.Session) {
 // TestDrawingViewsLifecycleOverWire drives the whole drawing-view surface: a base view + a
 // projected view off it, the curve readback (visible + hidden, keyed), and the cascading delete.
 func TestDrawingViewsLifecycleOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 
 	var base wire.ViewResult
@@ -122,6 +123,7 @@ func TestDrawingViewsLifecycleOverWire(t *testing.T) {
 
 // TestDrawingExportDXFOverWire checks the active sheet (with a view) exports to a DXF file.
 func TestDrawingExportDXFOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, nil)
 
@@ -141,6 +143,7 @@ func TestDrawingExportDXFOverWire(t *testing.T) {
 
 // TestDrawingExtraViewsOverWire drives slice, breakout and draft over the wire.
 func TestDrawingExtraViewsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, nil)
 
@@ -160,6 +163,7 @@ func TestDrawingExtraViewsOverWire(t *testing.T) {
 }
 
 func TestDrawingViewsRejectBadArgs(t *testing.T) {
+	t.Parallel()
 	r, s := drawingViewSession(t)
 	for method, args := range map[string]string{
 		"drawingViews.addBase":      `{"orientation":"sideways"}`,

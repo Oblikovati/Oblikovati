@@ -25,6 +25,7 @@ import (
 var dynamicKinds = map[string]string{}
 
 func TestEveryRegisteredKindHasWireArgsOrIsAllowlisted(t *testing.T) {
+	t.Parallel()
 	promoted := map[string]bool{}
 	for _, k := range featureargs.Kinds() {
 		promoted[k] = true

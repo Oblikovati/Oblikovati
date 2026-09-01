@@ -60,6 +60,7 @@ func oracleChordBow(fatR, rodR float64, pts []math.Point3) float64 {
 // to round-off. It also pins the magnitude: the rod-circle sagitta rodR(1−cos(Δφ/2)) is one of the two
 // distances taken in the max, so the reported deviation can never fall below it (#3489).
 func TestMarchedDeviationMatchesClosedFormChordBow(t *testing.T) {
+	t.Parallel()
 	fat, err := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), oracleFatRadius)
 	if err != nil {
 		t.Fatalf("fat cylinder: %v", err)
@@ -86,6 +87,7 @@ func TestMarchedDeviationMatchesClosedFormChordBow(t *testing.T) {
 // quarter the reported deviation. This is what makes the number a usable tolerance rather than a
 // magic constant — it tracks the march density it came from.
 func TestMarchedDeviationQuadratic(t *testing.T) {
+	t.Parallel()
 	fat, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), oracleFatRadius)
 	rod, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), oracleRodRadius)
 	coarse := MarchedDeviation(fat, rod, coarseCrossingCylinderMarch(oracleFatRadius, oracleRodRadius, 32))
@@ -99,6 +101,7 @@ func TestMarchedDeviationQuadratic(t *testing.T) {
 // TestMarchedDeviationOfDegenerateInputIsZero: fewer than two points is no chord, so there is no bow to
 // report. It must be 0 rather than a panic or a garbage magnitude.
 func TestMarchedDeviationOfDegenerateInputIsZero(t *testing.T) {
+	t.Parallel()
 	fat, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), oracleFatRadius)
 	rod, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), oracleRodRadius)
 	for _, pts := range [][]math.Point3{nil, {math.P3(3, 0, 0)}} {
@@ -115,6 +118,7 @@ func TestMarchedDeviationOfDegenerateInputIsZero(t *testing.T) {
 // of the marched loops' own chord spacing, so the test measures the pipeline rather than freezing a
 // constant (#3489).
 func TestSurfaceIntersectMarchedPairReportsAchievedTolerance(t *testing.T) {
+	t.Parallel()
 	tor, err := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
 	if err != nil {
 		t.Fatalf("torus: %v", err)
@@ -146,6 +150,7 @@ func TestSurfaceIntersectMarchedPairReportsAchievedTolerance(t *testing.T) {
 // ZERO achieved tolerance, and must lie on BOTH cylinders to round-off, since an edge built from it claims
 // exactness to the mass-properties integrator.
 func TestSurfaceIntersectRuledPairIsExact(t *testing.T) {
+	t.Parallel()
 	fat, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), oracleFatRadius)
 	rod, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), oracleRodRadius)
 	box := math.NewBox(math.P3(-6, -6, -6), math.P3(6, 6, 6))
@@ -184,6 +189,7 @@ func sagittaBand(r float64, n int) (lo, hi float64) {
 // must report a zero achieved tolerance. This is the invariant that keeps the marched number meaningful —
 // a non-zero reading has to mean "this boundary is an approximation".
 func TestSurfaceIntersectAnalyticPairReportsZeroTolerance(t *testing.T) {
+	t.Parallel()
 	sphere, err := NewSphere(math.P3(0, 0, 0), 5)
 	if err != nil {
 		t.Fatalf("sphere: %v", err)
@@ -206,6 +212,7 @@ func TestSurfaceIntersectAnalyticPairReportsZeroTolerance(t *testing.T) {
 // polyline travels — by value and by POINTER (the curved boolean carries imprint loops by identity so
 // its run-merge can compare them with `==`) — and through a reversal wrapper. An analytic curve reports 0.
 func TestCurveDeviationReadsEveryCarrier(t *testing.T) {
+	t.Parallel()
 	pts := coarseCrossingCylinderMarch(oracleFatRadius, oracleRodRadius, 16)
 	pl, err := NewMarchedPolyline(pts, 0.25)
 	if err != nil {

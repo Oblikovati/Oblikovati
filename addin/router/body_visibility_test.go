@@ -22,6 +22,7 @@ func boxBodySession(t *testing.T) (*Router, *app.Session) {
 // TestBodyListReportsNameAndVisibility: body.list now reports each body's display name, solid
 // flag, and visibility (#158).
 func TestBodyListReportsNameAndVisibility(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 	var list wire.BodyListResult
 	call(t, r, s, "body.list", `{}`, &list)
@@ -37,6 +38,7 @@ func TestBodyListReportsNameAndVisibility(t *testing.T) {
 // TestBodySetVisibleHidesAndShows drives the #158 acceptance: hide a body, see it reflected,
 // then show it again.
 func TestBodySetVisibleHidesAndShows(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 
 	var res wire.BodyInfoResult
@@ -58,6 +60,7 @@ func TestBodySetVisibleHidesAndShows(t *testing.T) {
 
 // TestBodySetVisibleBadIndexFails: an out-of-range body index is a rejection.
 func TestBodySetVisibleBadIndexFails(t *testing.T) {
+	t.Parallel()
 	r, s := boxBodySession(t)
 	if _, err := r.Handle(s, "body.setVisible", []byte(`{"bodyIndex":9,"visible":false}`)); err == nil {
 		t.Error("body.setVisible with an out-of-range index should fail")

@@ -77,6 +77,7 @@ func assertBeltWinding(t *testing.T, name string, b *topo.Body, lo, hi float64) 
 // TestBeadBeltIsWoundToNameTheBelt: a rod driven right through the ball leaves the ball's belt between
 // the two seam circles at y=±0.4, and that face must walk the lower one forward and the upper one back.
 func TestBeadBeltIsWoundToNameTheBelt(t *testing.T) {
+	t.Parallel()
 	ball, rod := ballAndRod(t, 0.5, 0.3, -1.0, 2.5)
 	bead, ok := CoaxialSphereRodCut(ball, rod)
 	if !ok {
@@ -89,6 +90,7 @@ func TestBeadBeltIsWoundToNameTheBelt(t *testing.T) {
 // past the seam at y=0.4, short of the pole — keeps the ball's surface only over that 0.05 band. It is
 // the case that regressed, because it has no spherical CAP anywhere to pin the winding chain from.
 func TestShoulderPlugBeltIsWoundToNameTheBand(t *testing.T) {
+	t.Parallel()
 	ball, rod := ballAndRod(t, 0.5, 0.3, 0, 0.45)
 	plug, ok := CoaxialSphereRodIntersect(ball, rod)
 	if !ok {
@@ -103,6 +105,7 @@ func TestShoulderPlugBeltIsWoundToNameTheBand(t *testing.T) {
 // the loops orthographically onto the tangent plane at the query point, which is 2-to-1 and so cannot
 // classify a spherical region whose rims lie more than a quarter turn away (the bead's belt).
 func TestShoulderPlugBeltTrimClaimsTheBandOnly(t *testing.T) {
+	t.Parallel()
 	ball, rod := ballAndRod(t, 0.5, 0.3, 0, 0.45)
 	plug, ok := CoaxialSphereRodIntersect(ball, rod)
 	if !ok {

@@ -35,6 +35,7 @@ func modelTreeOf(t *testing.T, r *Router, s *app.Session) wire.ModelTreeResult {
 }
 
 func TestFeaturesGetReportsEditableScalars(t *testing.T) {
+	t.Parallel()
 	r, s, id := extrudedPartViaAPI(t)
 	var got wire.FeatureDetailResult
 	call(t, r, s, "features.get", fmt.Sprintf(`{"id":%d}`, id), &got)
@@ -51,6 +52,7 @@ func TestFeaturesGetReportsEditableScalars(t *testing.T) {
 }
 
 func TestFeaturesGetUnknownIDFails(t *testing.T) {
+	t.Parallel()
 	r, s, _ := extrudedPartViaAPI(t)
 	if _, err := r.Handle(s, "features.get", []byte(`{"id":999999}`)); err == nil {
 		t.Error("expected an error for an unknown feature id")
@@ -58,6 +60,7 @@ func TestFeaturesGetUnknownIDFails(t *testing.T) {
 }
 
 func TestFeaturesEditChangesScalarAndRecomputes(t *testing.T) {
+	t.Parallel()
 	r, s, id := extrudedPartViaAPI(t)
 	var got wire.FeatureDetailResult
 	call(t, r, s, "features.edit",
@@ -71,6 +74,7 @@ func TestFeaturesEditChangesScalarAndRecomputes(t *testing.T) {
 }
 
 func TestFeaturesEditValidatesBeforeApplying(t *testing.T) {
+	t.Parallel()
 	r, s, id := extrudedPartViaAPI(t)
 	// Batch with a valid first edit and a broken second one: nothing may be applied.
 	_, err := r.Handle(s, "features.edit",
@@ -94,6 +98,7 @@ func TestFeaturesEditValidatesBeforeApplying(t *testing.T) {
 }
 
 func TestFeaturesRenameViaAPI(t *testing.T) {
+	t.Parallel()
 	r, s, id := extrudedPartViaAPI(t)
 	var got wire.FeatureDetailResult
 	call(t, r, s, "features.rename", fmt.Sprintf(`{"id":%d,"name":"Base Boss"}`, id), &got)
@@ -109,6 +114,7 @@ func TestFeaturesRenameViaAPI(t *testing.T) {
 }
 
 func TestFeaturesSetSuppressedViaAPI(t *testing.T) {
+	t.Parallel()
 	r, s, id := extrudedPartViaAPI(t)
 	var got wire.FeatureDetailResult
 	call(t, r, s, "features.setSuppressed", fmt.Sprintf(`{"id":%d,"suppressed":true}`, id), &got)
@@ -125,6 +131,7 @@ func TestFeaturesSetSuppressedViaAPI(t *testing.T) {
 }
 
 func TestFeaturesDeleteViaAPI(t *testing.T) {
+	t.Parallel()
 	r, s, id := extrudedPartViaAPI(t)
 	var got wire.DeleteFeatureResult
 	call(t, r, s, "features.delete", fmt.Sprintf(`{"id":%d}`, id), &got)
@@ -141,6 +148,7 @@ func TestFeaturesDeleteViaAPI(t *testing.T) {
 }
 
 func TestFeaturesReorderViaAPI(t *testing.T) {
+	t.Parallel()
 	r, s, _ := extrudedPartViaAPI(t)
 	// A second, independent extrude on its own sketch; it lands at history index 1.
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &struct{}{})

@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -34,14 +35,17 @@ func roundTrip(t *testing.T, fixture string) (orig, again *topo.Body) {
 }
 
 func TestRoundTripCube(t *testing.T) {
+	t.Parallel()
 	assertRoundTripPreservesSolid(t, "cube.step")
 }
 
 func TestRoundTripCylinder(t *testing.T) {
+	t.Parallel()
 	assertRoundTripPreservesSolid(t, "cylinder.step")
 }
 
 func TestRoundTripBoxWithHole(t *testing.T) {
+	t.Parallel()
 	assertRoundTripPreservesSolid(t, "box_hole.step")
 }
 
@@ -56,8 +60,8 @@ func assertRoundTripPreservesSolid(t *testing.T, fixture string) {
 	if a, b := len(orig.Faces()), len(again.Faces()); a != b {
 		t.Errorf("%s face count changed: %d → %d", fixture, a, b)
 	}
-	po := ops.BodyGeometryProperties(orig, fineQuality())
-	pa := ops.BodyGeometryProperties(again, fineQuality())
+	po := query.BodyGeometryProperties(orig, fineQuality())
+	pa := query.BodyGeometryProperties(again, fineQuality())
 	if !approx(pa.Volume, po.Volume, 1e-3) {
 		t.Errorf("%s volume changed: %g → %g", fixture, po.Volume, pa.Volume)
 	}

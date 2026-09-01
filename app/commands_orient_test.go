@@ -7,6 +7,7 @@ import "testing"
 // TestOrientRibbonButton checks the View tab's Navigate panel carries the Orient split button
 // with a dropdown of the standard orientations.
 func TestOrientRibbonButton(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	tab, ok := BuildRibbon(s).Tab("View")
 	if !ok {
@@ -28,6 +29,7 @@ func TestOrientRibbonButton(t *testing.T) {
 // TestOrientCommandsMoveCamera checks the front and iso orientation commands move the camera
 // onto the expected side of the model.
 func TestOrientCommandsMoveCamera(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	if err := s.Execute("View.Orient.Front"); err != nil {
 		t.Fatalf("View.Orient.Front: %v", err)
@@ -48,6 +50,7 @@ func TestOrientCommandsMoveCamera(t *testing.T) {
 // TestNamedViewsCommandOpensPanel checks the View-tab Named Views button is present and its
 // command opens the panel.
 func TestNamedViewsCommandOpensPanel(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	tab, _ := BuildRibbon(s).Tab("View")
 	nav, ok := tab.Panel("Navigate")

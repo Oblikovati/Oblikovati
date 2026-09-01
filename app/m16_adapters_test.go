@@ -16,6 +16,7 @@ import (
 // (the getters are otherwise only reached through the router package, where coverage is not
 // attributed to this package).
 func TestColorSchemeAdapters(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	cs := s.ColorSchemes()
 	if cs.Count() < 2 || cs.Item(-1) != nil {
@@ -48,6 +49,7 @@ func TestColorSchemeAdapters(t *testing.T) {
 
 // TestStyleAdapters exercises the style-manager contract adapters and session methods.
 func TestStyleAdapters(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	sm := s.StyleManager()
 	cs := sm.ColorStyles()
@@ -96,6 +98,7 @@ func TestStyleAdapters(t *testing.T) {
 // TestNamedViewSessionMethods exercises the named-view capture/restore/delete and the
 // standard-orientation jump on a part document.
 func TestNamedViewSessionMethods(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, err := s.NewPart(); err != nil {
 		t.Fatalf("NewPart: %v", err)
@@ -130,6 +133,7 @@ func TestNamedViewSessionMethods(t *testing.T) {
 
 // TestDisplayAdapters exercises the display-options and per-document display-settings adapters.
 func TestDisplayAdapters(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if _, err := s.NewPart(); err != nil {
 		t.Fatalf("NewPart: %v", err)

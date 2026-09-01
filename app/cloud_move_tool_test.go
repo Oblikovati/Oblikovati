@@ -13,6 +13,7 @@ import (
 // TestCloudMoveDragTranslatesAndDatumFollows: with the Move tool active, a left-drag translates the
 // cloud and a datum anchored on it follows live (the drag recomputes the part) (#645).
 func TestCloudMoveDragTranslatesAndDatumFollows(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t) // camera looks down +Z at the XY plane, 200×200
 	pc, wp := anchorWorkPointOnScan(t, s, def, math.P3(0, 0, 0))
 
@@ -49,6 +50,7 @@ func TestCloudMoveDragTranslatesAndDatumFollows(t *testing.T) {
 
 // TestCloudMoveGating: the drag only runs while the Move tool is active and a cloud is selected.
 func TestCloudMoveGating(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 
 	if canMoveSelectedCloud(s) {
@@ -78,6 +80,7 @@ func TestCloudMoveGating(t *testing.T) {
 // TestCloudMoveToolTrivialsAndNoCloudBranch covers the tool's no-op accessors and the Begin path
 // when the tool is active but no cloud is selected (#645).
 func TestCloudMoveToolTrivialsAndNoCloudBranch(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	tool := NewCloudMoveTool()
 	if tool.Name() == "" {
@@ -112,6 +115,7 @@ func TestCloudMoveToolTrivialsAndNoCloudBranch(t *testing.T) {
 // TestActiveToolConsumesClicks: the predicate that makes box-select stand down — true for a
 // PlaneClickTool (the Crop Box tool), false otherwise (#645).
 func TestActiveToolConsumesClicks(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if s.ActiveToolConsumesClicks() {
 		t.Error("no active tool should not consume clicks")

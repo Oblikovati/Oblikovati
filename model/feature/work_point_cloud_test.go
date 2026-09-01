@@ -22,6 +22,7 @@ func (f *fakeCloudPointSource) Position() (math.Point3, bool) { return f.pos, f.
 // TestCloudPointFollowsAndFreezes: the work point tracks the source as it moves, and freezes the
 // last good position when the source is gone (#645).
 func TestCloudPointFollowsAndFreezes(t *testing.T) {
+	t.Parallel()
 	src := &fakeCloudPointSource{id: "Scan", pos: math.P3(1, 2, 3), ok: true}
 	points := NewWorkGeometry().WorkPoints()
 	wp := points.AddByCloudPoint(src)
@@ -45,6 +46,7 @@ func TestCloudPointFollowsAndFreezes(t *testing.T) {
 // TestCloudPointSerializeRoundTrip: the cloud id and frozen position round-trip, and a relink
 // (carrying the frozen position) restores associativity (#645).
 func TestCloudPointSerializeRoundTrip(t *testing.T) {
+	t.Parallel()
 	src := &fakeCloudPointSource{id: "Scan", pos: math.P3(7, 8, 9), ok: true}
 	g := NewWorkGeometry()
 	g.WorkPoints().AddByCloudPoint(src)
@@ -94,6 +96,7 @@ func TestCloudPointSerializeRoundTrip(t *testing.T) {
 // TestCloudPointEvalAndRelinkEdges covers the no-source/no-position error, CloudID, FrozenPosition,
 // and a relink id-mismatch (#645).
 func TestCloudPointEvalAndRelinkEdges(t *testing.T) {
+	t.Parallel()
 	d := &pointCloudPointDef{cloudID: "X"}
 	if _, err := d.eval(nil); err == nil {
 		t.Error("eval with no source and no prior position should error")

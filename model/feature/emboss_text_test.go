@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -23,6 +24,7 @@ func textOn(plane sketch.Plane, content string, height, dx, dy float64) (*sketch
 // TestTextEmbossRaisesMaterial proves an emboss that references a text entity recomputes to
 // real raised geometry from the text's derived glyph profiles (not baked lines).
 func TestTextEmbossRaisesMaterial(t *testing.T) {
+	t.Parallel()
 	fs := embossedBlock(t)
 	es, tb := textOn(planeAtZ(2), "I", 1.5, 2, 1) // a counter-less glyph keeps the test simple
 	emb := NewEmbossFeatures(fs).AddText(es, tb, func() float64 { return 1 }, EmbossFromFace, 0)
@@ -35,7 +37,7 @@ func TestTextEmbossRaisesMaterial(t *testing.T) {
 		t.Fatalf("text-embossed body not valid: %+v", r)
 	}
 	// The boss adds material, so the volume must exceed the bare 10×10×2 block (200).
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 200 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 200 {
 		t.Errorf("text emboss volume = %g, want > 200 (raised glyph adds material)", v)
 	}
 }
@@ -44,6 +46,10 @@ func TestTextEmbossRaisesMaterial(t *testing.T) {
 // recipe must store a REFERENCE to the text entity (sketch index + entity id) — never baked
 // outline geometry — and round-trip back to a working text emboss.
 func TestTextEmbossStoresReferenceNotGeometry(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~4s): `make test-corpus`")
+	}
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	block := squareSketch(10)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(block, 0, ops.NewBody, func() float64 { return 2 })

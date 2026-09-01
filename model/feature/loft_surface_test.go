@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/sketch"
 )
@@ -15,6 +16,7 @@ import (
 // skinTool → skinShell (not a solid). Cross-checked against the solid loft: the sheet is the solid's
 // lateral surface, so solid_area − sheet_area ≈ the two end-cap areas (4²+2² = 20).
 func TestLoftSurfaceOpenSheet(t *testing.T) {
+	t.Parallel()
 	mk := func(op ops.PartFeatureOperation) *topo.Body {
 		fs := NewPartFeatures(nil)
 		pf := NewLoftFeatures(fs).Add([]LoftSection{
@@ -27,7 +29,7 @@ func TestLoftSurfaceOpenSheet(t *testing.T) {
 		}
 		return fs.Result()[0]
 	}
-	area := func(b *topo.Body) float64 { return ops.BodyGeometryProperties(b, ops.DefaultQuality()).Area }
+	area := func(b *topo.Body) float64 { return query.BodyGeometryProperties(b, ops.DefaultQuality()).Area }
 
 	sheet, solid := mk(ops.Surface), mk(ops.NewBody)
 	if sheet.IsSolid() {
@@ -41,6 +43,7 @@ func TestLoftSurfaceOpenSheet(t *testing.T) {
 // TestLoftSurfaceTubeShell: two annulus sections lofted with the Surface operation build an OPEN pipe
 // surface — outer and inner walls, no annular end caps — via tubeShellLoops → tubeShell (#1858).
 func TestLoftSurfaceTubeShell(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	bottom, bi := annulusOn(sketch.XYPlane(), 4, 2)
 	top, ti := annulusOn(planeAtZ(5), 3, 1)
@@ -54,7 +57,7 @@ func TestLoftSurfaceTubeShell(t *testing.T) {
 	if body.IsSolid() {
 		t.Error("surface-operation hollow loft should be an OPEN pipe shell, got a solid")
 	}
-	if a := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Area; a <= 0 {
+	if a := query.BodyGeometryProperties(body, ops.DefaultQuality()).Area; a <= 0 {
 		t.Error("expected a non-empty open pipe surface")
 	}
 }

@@ -20,6 +20,7 @@ import (
 // when the original file is gone. It imports a binary STL cube, saves, DELETES the source STL,
 // reopens in a fresh workspace, and checks the body is back with the same volume.
 func TestImportedDocumentReopensWithoutSourceFile(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	stlPath := writeCubeSTL(t, dir, 2) // a binary-STL cube ⇒ a base64 resource
 	obkPath := filepath.Join(dir, "part.obk")

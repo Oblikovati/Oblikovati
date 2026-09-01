@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -42,6 +43,7 @@ func ribForFullRound(t *testing.T) (fs *PartFeatures, side1, center, side2 [][]b
 // TestFullRoundRoundsRibTop: a full round between the two parallel side faces replaces the top with a
 // half-round — a valid solid whose volume is the lower box plus the half-cylinder (the corners gone).
 func TestFullRoundRoundsRibTop(t *testing.T) {
+	t.Parallel()
 	fs, s1, ctr, s2 := ribForFullRound(t)
 	pf := NewDressUpFeatures(fs).AddFullRoundFillet(s1, ctr, s2)
 	fs.Recompute()
@@ -54,7 +56,7 @@ func TestFullRoundRoundsRibTop(t *testing.T) {
 	}
 	// rib 4×10×5 = 200; rounded = lower box 4×10×3 (120) + half-cylinder r2 len10 (≈62.8) ≈ 182.8.
 	// The boolean facets the round, so the value lands a little under; bound it generously.
-	v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume
+	v := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume
 	if v <= 178 || v >= 185 {
 		t.Errorf("full-round volume = %g, want ≈ 182.8 (lower box + half cylinder, faceted)", v)
 	}
@@ -66,6 +68,7 @@ func TestFullRoundRoundsRibTop(t *testing.T) {
 // TestFullRoundRejectsDegenerateSide: reusing the center face as a side cannot resolve a round — a
 // clean error (the would-be sides share the center's plane, so there is no enclosed round).
 func TestFullRoundRejectsDegenerateSide(t *testing.T) {
+	t.Parallel()
 	fs, s1, ctr, _ := ribForFullRound(t)
 	pf := NewDressUpFeatures(fs).AddFullRoundFillet(s1, ctr, ctr) // side2 == center
 	fs.Recompute()
@@ -79,11 +82,12 @@ func TestFullRoundRejectsDegenerateSide(t *testing.T) {
 // original top plane — a valid solid whose volume DROPS (corners rounded off) and whose apex stays at
 // the original top height (no upward bulge). The round is faceted (the boolean planarizes it).
 func TestFullRoundConvergingSides(t *testing.T) {
+	t.Parallel()
 	trap := []math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 3, Y: 2}, {X: 1, Y: 2}}
 	rib := buildPrism(trap, sketch.XYPlane(), span{near: 0, far: 6}, 0, "rib")
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(rib)
-	orig := ops.BodyGeometryProperties(rib, ops.DefaultQuality()).Volume
+	orig := query.BodyGeometryProperties(rib, ops.DefaultQuality()).Volume
 
 	top := faceKeyByNormal(t, rib, math.V3(0, 1, 0)) // narrow +Y top = center
 	pf := NewDressUpFeatures(fs).AddFullRoundFillet(
@@ -96,7 +100,7 @@ func TestFullRoundConvergingSides(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("converging full round not a valid solid: %+v", r)
 	}
-	v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume
+	v := query.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume
 	if v >= orig {
 		t.Errorf("converging full round volume = %g, want < %g (corners rounded off)", v, orig)
 	}
@@ -135,6 +139,7 @@ func maxVertexY(b *topo.Body) float64 {
 
 // TestFullRoundRejectsMissingFace: an unknown face key is a clean error.
 func TestFullRoundRejectsMissingFace(t *testing.T) {
+	t.Parallel()
 	fs, s1, ctr, _ := ribForFullRound(t)
 	pf := NewDressUpFeatures(fs).AddFullRoundFillet(s1, ctr, [][]byte{[]byte("nope")})
 	fs.Recompute()

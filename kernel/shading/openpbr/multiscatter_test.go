@@ -10,6 +10,7 @@ import "testing"
 // (see the constant's doc); below it the fixed hemisphere grid under-resolves the GGX
 // peak and DirectionalAlbedoGGX is not a meaningful reflectance estimate.
 func TestDirectionalAlbedoGGXBounds(t *testing.T) {
+	t.Parallel()
 	for _, roughness := range []float64{0.25, 0.4, 0.6, 0.8, 1.0} {
 		alpha := AlphaFromRoughness(roughness)
 		for _, cosTheta := range []float64{0.05, 0.3, 0.6, 1.0} {
@@ -29,6 +30,7 @@ func TestDirectionalAlbedoGGXBounds(t *testing.T) {
 // average (averageQuadratureN) has enough of its own quadrature noise to occasionally tick
 // up between adjacent roughness values without the overall trend being violated.
 func TestAverageAlbedoGGXDecreasesWithRoughness(t *testing.T) {
+	t.Parallel()
 	smooth := AverageAlbedoGGX(AlphaFromRoughness(0.25))
 	rough := AverageAlbedoGGX(AlphaFromRoughness(1.0))
 	if rough > smooth-0.02 {
@@ -45,6 +47,7 @@ func TestAverageAlbedoGGXDecreasesWithRoughness(t *testing.T) {
 // a very smooth surface (roughness=0.05, alpha=0.0025) gets zero compensation, not a
 // bogus value from the under-resolved quadrature.
 func TestMultiScatterSkippedBelowResolutionFloor(t *testing.T) {
+	t.Parallel()
 	alpha := AlphaFromRoughness(0.05)
 	if got := dielectricMultiScatter(alpha, 1.5, 0.8, 0.8); got != 0 {
 		t.Errorf("dielectricMultiScatter below the resolution floor = %v, want 0", got)
@@ -57,6 +60,7 @@ func TestMultiScatterSkippedBelowResolutionFloor(t *testing.T) {
 // TestKullaContyCompensationNonNegative checks the compensation term never subtracts
 // energy (it exists to add back energy lost to single-scatter, never to remove it).
 func TestKullaContyCompensationNonNegative(t *testing.T) {
+	t.Parallel()
 	for _, fAvg := range []float64{0.04, 0.3, 0.8, 1.0} {
 		for _, eAvg := range []float64{0.2, 0.5, 0.9} {
 			for _, e := range []float64{0.1, 0.5, 0.9} {

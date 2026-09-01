@@ -8,6 +8,10 @@ import (
 )
 
 func TestNopGrubScrewPositionsCSG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~8s): `make test-corpus`")
+	}
+	t.Parallel()
 	body := annularPrism(t, 0.6, 0.25, 2.0, "grub-coupling")
 	for _, z := range []float64{0.5, 1.5} {
 		body = cutOrFatal(t, body, cylinderAlongY(0.08, -0.8, 0.8, z, "grub-screw-y"), "grub screw y")

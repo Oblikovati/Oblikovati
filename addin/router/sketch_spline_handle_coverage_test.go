@@ -11,6 +11,7 @@ import (
 // TestSetSplineHandle2D activates a 2D spline fit-point handle, edits its tangent/weight,
 // then deactivates it — plus the bad-tangent-arity error.
 func TestSetSplineHandle2D(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var sp wire.AddSketchEntityResult
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"spline","points":[[0,0],[2,1],[4,0],[6,1]]}`, &sp)
@@ -36,6 +37,7 @@ func TestSetSplineHandle2D(t *testing.T) {
 
 // TestSetSplineHandle3D does the same for a 3D-sketch spline (3-component tangent).
 func TestSetSplineHandle3D(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var created wire.CreateSketch3DResult
 	call(t, r, s, "sketch3d.create", `{}`, &created)

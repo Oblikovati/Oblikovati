@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -40,6 +41,7 @@ var primarySolidFeatures = []struct {
 // neither a registered full-panel editor nor a generic editable surface is not editable in the browser
 // — the exact loft/sweep defect. A new solid feature added without an edit path fails here.
 func TestPrimarySolidFeaturesAreEditable(t *testing.T) {
+	t.Parallel()
 	editors := defaultFeatureEditors()
 	for _, f := range primarySolidFeatures {
 		if _, hasEditor := editors[f.kind]; hasEditor || implementsEditableContract(f.proto) {
@@ -63,6 +65,7 @@ func implementsEditableContract(f feature.Feature) bool {
 // editor, or a duplicate (a second tool claiming one kind) panics at startup rather than silently
 // overwriting — the same discipline the serialization codec registry enforces (#1416).
 func TestRegisterFeatureEditorRejectsBadRegistration(t *testing.T) {
+	t.Parallel()
 	ok := func(_ *Session, _ *feature.PartFeature) (Tool, bool) { return nil, false }
 	assertPanicsApp(t, "empty kind", func() { featureEditorSet{}.register("", ok) })
 	assertPanicsApp(t, "nil editor", func() { featureEditorSet{}.register("test.nil-editor", nil) })
@@ -99,6 +102,7 @@ func loftedFeatureSession(t *testing.T) (*Session, FeatureHandle) {
 // TestBeginEditFeatureReopensLoftPanel locks loft's full-panel edit (#1521): double-clicking a
 // committed loft re-opens the Loft tool in edit mode, seeded with its sections — not the generic editor.
 func TestBeginEditFeatureReopensLoftPanel(t *testing.T) {
+	t.Parallel()
 	s, h := loftedFeatureSession(t)
 	if !s.FeatureIsEditable(h.Feature) {
 		t.Fatal("a committed loft must report as editable (#1521)")
@@ -123,9 +127,10 @@ func TestBeginEditFeatureReopensLoftPanel(t *testing.T) {
 // OK-ing with no change rebuilds the same solid (sections restored, opaque guides preserved). A
 // commitEdit that dropped sections or wiped guide providers would change the volume.
 func TestLoftEditCommitPreservesGeometry(t *testing.T) {
+	t.Parallel()
 	s, h := loftedFeatureSession(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
-	before := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	s.BeginEditFeature(h)
 	if err := s.OK(); err != nil {
 		t.Fatalf("commit loft edit: %v", err)
@@ -133,7 +138,7 @@ func TestLoftEditCommitPreservesGeometry(t *testing.T) {
 	if def.SurfaceBodies().Count() != 1 {
 		t.Fatalf("part has %d bodies after a no-op loft edit, want 1", def.SurfaceBodies().Count())
 	}
-	after := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	if relErrApp(after, before) > 0.001 {
 		t.Errorf("a no-op loft edit changed the volume: %g → %g", before, after)
 	}
@@ -142,6 +147,7 @@ func TestLoftEditCommitPreservesGeometry(t *testing.T) {
 // TestLoftEditAppliesWaist proves a panel edit reaches the definition: pinching the mid-height area
 // scale writes an area-graph waist back into the committed loft.
 func TestLoftEditAppliesWaist(t *testing.T) {
+	t.Parallel()
 	s, h := loftedFeatureSession(t)
 	s.BeginEditFeature(h)
 	l := s.ActiveLoft()
@@ -174,6 +180,7 @@ func sweptFeatureSession(t *testing.T) (*Session, FeatureHandle) {
 // opens the GENERIC parameter editor (not a full panel) exposing its twist — its opaque path provider
 // has no full-panel re-pick, so the generic scalar/reference editor is the honest fit.
 func TestSweepIsEditableViaGenericEditor(t *testing.T) {
+	t.Parallel()
 	s, h := sweptFeatureSession(t)
 	if !s.FeatureIsEditable(h.Feature) {
 		t.Fatal("a committed sweep must report as editable (#1521)")
@@ -193,9 +200,10 @@ func TestSweepIsEditableViaGenericEditor(t *testing.T) {
 // TestSweepEditPreservesPath proves the opaque path survives a generic edit: editing the twist and
 // committing keeps the swept solid (a commitEdit that touched the path provider would lose the body).
 func TestSweepEditPreservesPath(t *testing.T) {
+	t.Parallel()
 	s, h := sweptFeatureSession(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
-	before := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	s.BeginEditFeature(h)
 	setGenericEditParam(s, "Twist", 0) // a real edit through the generic path; geometry unchanged at twist 0
 	if err := s.OK(); err != nil {
@@ -204,7 +212,7 @@ func TestSweepEditPreservesPath(t *testing.T) {
 	if def.SurfaceBodies().Count() != 1 {
 		t.Fatalf("sweep edit wiped the body (path lost?): %d bodies", def.SurfaceBodies().Count())
 	}
-	after := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	if relErrApp(after, before) > 0.001 {
 		t.Errorf("a twist-0 sweep edit changed the volume: %g → %g", before, after)
 	}
@@ -234,6 +242,7 @@ func setGenericEditParam(s *Session, label string, value float64) {
 // consults the editor set the Session carries — a session given a minimal
 // one-entry set edits through it and nothing falls back to a package global.
 func TestSessionConsultsInjectedEditorSet(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	marker := &FilletTool{}
 	s.featureEditors = featureEditorSet{}

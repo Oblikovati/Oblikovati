@@ -43,6 +43,7 @@ func openingNeighbours(t *testing.T) []*topo.Body {
 }
 
 func TestFillFeatureClosesOpening(t *testing.T) {
+	t.Parallel()
 	f := &FillFeature{def: &FillDefinition{Order: 0}, featName: "Fill"}
 	out, err := f.Recompute(Input{Bodies: openingNeighbours(t)})
 	if err != nil {
@@ -65,6 +66,7 @@ func TestFillFeatureClosesOpening(t *testing.T) {
 }
 
 func TestFillFeatureErrorsWithoutFourBodies(t *testing.T) {
+	t.Parallel()
 	f := &FillFeature{def: &FillDefinition{Order: 0}}
 	if _, err := f.Recompute(Input{Bodies: openingNeighbours(t)[:3]}); err == nil {
 		t.Error("fill with fewer than four bodies should error")
@@ -72,12 +74,14 @@ func TestFillFeatureErrorsWithoutFourBodies(t *testing.T) {
 }
 
 func TestFillKind(t *testing.T) {
+	t.Parallel()
 	if (&FillFeature{def: &FillDefinition{}}).Kind() != "fill-surface" {
 		t.Error("fill kind")
 	}
 }
 
 func TestFillSurfaceRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewFillFeatures(fs).Add(2)
 	data, err := fs.MarshalRecipe(oneSketch{})
@@ -95,12 +99,14 @@ func TestFillSurfaceRoundTrip(t *testing.T) {
 }
 
 func TestRestoreFillRejectMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreFillSurface(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreFillSurface(nil) should error")
 	}
 }
 
 func TestFillNSidedRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewFillFeatures(fs).AddSides(1, 5)
 	data, err := fs.MarshalRecipe(oneSketch{})
@@ -118,6 +124,7 @@ func TestFillNSidedRoundTrip(t *testing.T) {
 }
 
 func TestFillFeatureNeedsNBodies(t *testing.T) {
+	t.Parallel()
 	f := &FillFeature{def: &FillDefinition{Order: 0, Sides: 5}}
 	if _, err := f.Recompute(Input{}); err == nil {
 		t.Error("a 5-sided fill with no bodies should error")

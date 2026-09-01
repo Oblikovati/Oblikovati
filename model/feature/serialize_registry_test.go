@@ -12,6 +12,7 @@ import "testing"
 // carry both a non-nil encode and a non-nil decode (a half-codec cannot serve a round-trip), and the
 // registry must hold the full feature surface (a registration silently dropped would shrink this).
 func TestFeatureCodecRegistryComplete(t *testing.T) {
+	t.Parallel()
 	kinds := registeredFeatureKinds()
 	const wantAtLeast = 88 // the audited feature-kind count (#1416/#1617); grows as kinds are added
 	if len(kinds) < wantAtLeast {
@@ -33,6 +34,7 @@ func TestFeatureCodecRegistryComplete(t *testing.T) {
 // means a kind string is unhandled). A missing payload may surface as an error or a nil-deref panic —
 // both prove the codec was reached; only the unhandled-kind sentinel is a failure.
 func TestEveryRegisteredKindIsDecodeReachable(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	for _, k := range registeredFeatureKinds() {
 		assertKindDecodeReachable(t, fs, k)
@@ -57,6 +59,7 @@ func quote(s string) string { return `"` + s + `"` }
 // with only an encode, only a decode, an empty kind, or a duplicate panics at startup — so a one-sided
 // registration (the exact bug that silently dropped features) cannot exist, caught the moment it is added.
 func TestRegisterFeatureCodecRejectsHalfCodec(t *testing.T) {
+	t.Parallel()
 	good := featureCodec{
 		encode: func(*FeatureData, Feature, SketchIndexer, map[ID]int) error { return nil },
 		decode: func(*restoreContext, FeatureData) (*PartFeature, error) { return nil, nil },
@@ -98,6 +101,7 @@ func assertPanics(t *testing.T, fn func()) {
 // one-codec set serializes its kind and honestly rejects every other, proving
 // nothing falls back to a package global.
 func TestSerializeConsultsInjectedCodecSet(t *testing.T) {
+	t.Parallel()
 	minimal := featureCodecSet{}
 	minimal.register("test.minimal", featureCodec{
 		encode: func(fd *FeatureData, _ Feature, _ SketchIndexer, _ map[ID]int) error {

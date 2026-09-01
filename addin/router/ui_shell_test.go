@@ -9,6 +9,7 @@ import (
 )
 
 func TestUISearchOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var res wire.SearchCommandsResult
 	call(t, r, s, "ui.search", `{"query":"extrude"}`, &res)
@@ -22,6 +23,7 @@ func TestUISearchOverWire(t *testing.T) {
 }
 
 func TestUIMarkingMenuOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var menu wire.MarkingMenuView
 	call(t, r, s, "ui.getMarkingMenu", `{"environment":0}`, &menu)
@@ -42,6 +44,7 @@ func TestUIMarkingMenuOverWire(t *testing.T) {
 }
 
 func TestUIContextMenuAndVisibilityOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "ui.setContextMenu",
 		`{"addin":"com.x.sim","kind":"feature","items":[{"label":"Analyze","commandId":"Sim.Analyze"}]}`, nil)
@@ -63,6 +66,7 @@ func TestUIContextMenuAndVisibilityOverWire(t *testing.T) {
 }
 
 func TestAddInEnvironmentsOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "ui.registerEnvironment", `{"environment":7,"name":"Weldment"}`, nil)
 	call(t, r, s, "ui.activateEnvironment", `{"environment":7}`, nil)

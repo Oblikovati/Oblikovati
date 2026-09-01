@@ -13,6 +13,7 @@ import (
 // TestInterestRegistryOverWire drives documents.addInterest / listInterests /
 // hasInterest / removeInterest end to end (M03-F10, #611).
 func TestInterestRegistryOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	id := uint64(s.ActiveDocument().ID())
 

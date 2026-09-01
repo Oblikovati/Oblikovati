@@ -39,6 +39,7 @@ func bbcovSectionWireHandle(t *testing.T, r *Router, s *app.Session) int {
 // TestBbcovBooleanUnionInPlace drives brep.boolean's happy path: the blank grows to the
 // union volume of two overlapping unit-cornered blocks (8+8-1 = 15 cm³), modified in place.
 func TestBbcovBooleanUnionInPlace(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	blank := bbcovBlock(t, r, s, `[0,0,0]`, `[2,2,2]`)
 	tool := bbcovBlock(t, r, s, `[1,1,1]`, `[3,3,3]`)
@@ -56,6 +57,7 @@ func TestBbcovBooleanUnionInPlace(t *testing.T) {
 // TestBbcovBooleanRejectsBadOperation drives brepBoolean's operation-parse branch: the blank
 // and tool both resolve, but an unknown operation spelling is rejected before any combine.
 func TestBbcovBooleanRejectsBadOperation(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	blank := bbcovBlock(t, r, s, `[0,0,0]`, `[2,2,2]`)
 	tool := bbcovBlock(t, r, s, `[1,1,1]`, `[3,3,3]`)
@@ -68,6 +70,7 @@ func TestBbcovBooleanRejectsBadOperation(t *testing.T) {
 // TestBbcovSectionRejectsBadArgs drives brepSectionWithPlane's three input-validation branches:
 // an unresolvable source ref, a malformed plane origin, and a malformed plane normal.
 func TestBbcovSectionRejectsBadArgs(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	h := bbcovBlock(t, r, s, `[0,0,0]`, `[2,2,2]`)
 	for _, args := range bbcovBadSectionArgs(h) {
@@ -90,6 +93,7 @@ func bbcovBadSectionArgs(handle int) []string {
 // TestBbcovRuledSurfaceRejectsBadWireRef drives brepRuledSurface → brepWireOf: a section-one
 // wire index out of range, and a section-two whose source ref cannot resolve.
 func TestBbcovRuledSurfaceRejectsBadWireRef(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	sec := bbcovSectionWireHandle(t, r, s)
 	oob := fmt.Sprintf(`{"sectionOne":{"body":{"handle":%d},"wireIndex":9},"sectionTwo":{"body":{"handle":%d},"wireIndex":0}}`, sec, sec)
@@ -105,6 +109,7 @@ func TestBbcovRuledSurfaceRejectsBadWireRef(t *testing.T) {
 // TestBbcovPrimitiveBuildErrors drives the primitive builders' geometric-validation branches
 // (surfaced through the router): a degenerate cylinderCone and a self-intersecting torus.
 func TestBbcovPrimitiveBuildErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	for _, args := range bbcovBadPrimitiveGeometry() {
 		if err := tryCall(t, r, s, "brep.createPrimitive", args); err == nil {
@@ -125,6 +130,7 @@ func bbcovBadPrimitiveGeometry() []string {
 // TestBbcovLocateRejectsUnknownEntityKind drives entityKindFilter's default branch: an entity
 // kind that is neither vertex, edge nor face is rejected.
 func TestBbcovLocateRejectsUnknownEntityKind(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	bad := `{"bodyIndex":0,"point":[0,0,0],"entityKind":"solid","proximityTolerance":0.5}`
 	if err := tryCall(t, r, s, "body.locateUsingPoint", bad); err == nil {
@@ -135,6 +141,7 @@ func TestBbcovLocateRejectsUnknownEntityKind(t *testing.T) {
 // TestBbcovConvexityConcaveAndTangent drives convexityClass's allConcave and
 // tangentiallyConnected arms: a convex box reports no edges in either class.
 func TestBbcovConvexityConcaveAndTangent(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	for _, coll := range []string{"allConcave", "tangentiallyConnected"} {
 		var res wire.ConvexityEdgesResult
@@ -149,6 +156,7 @@ func TestBbcovConvexityConcaveAndTangent(t *testing.T) {
 // TestBbcovBindTransientKeyBranches drives bodyBindTransientKey's not-found reply (an unknown
 // transient key resolves to Found=false) and its body-index error branch.
 func TestBbcovBindTransientKeyBranches(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	var miss wire.BindTransientKeyResult
 	call(t, r, s, "body.bindTransientKey", `{"bodyIndex":0,"transientKey":999999999}`, &miss)
@@ -163,6 +171,7 @@ func TestBbcovBindTransientKeyBranches(t *testing.T) {
 // TestBbcovFaceFacetsAndStrokes drives faceCalculateFacets and faceCalculateStrokes happy paths:
 // one box face facets into a triangle mesh and strokes into boundary polylines.
 func TestBbcovFaceFacetsAndStrokes(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	args := mustJSON(t, wire.FaceFacetsArgs{BodyIndex: 0, FaceKey: bodcovFirstFaceKey(t, r, s), Tolerance: 0.02})
 	var facets wire.FacetSetResult
@@ -180,6 +189,7 @@ func TestBbcovFaceFacetsAndStrokes(t *testing.T) {
 // TestBbcovResolveFaceBadKey drives resolveFace's no-such-face branch through both face-addressed
 // handlers, and its body-index error branch.
 func TestBbcovResolveFaceBadKey(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	for _, m := range []string{"face.calculateFacets", "face.calculateStrokes"} {
 		if err := tryCall(t, r, s, m, `{"bodyIndex":0,"faceKey":"nope","tolerance":0.02}`); err == nil {
@@ -194,6 +204,7 @@ func TestBbcovResolveFaceBadKey(t *testing.T) {
 // TestBbcovExistingBeforeCalculate drives the retrieval-only error branches of
 // bodyExistingFacets and bodyExistingStrokes: querying a tolerance never calculated errors.
 func TestBbcovExistingBeforeCalculate(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	if err := tryCall(t, r, s, "body.existingFacets", `{"bodyIndex":0,"tolerance":0.007}`); err == nil {
 		t.Error("body.existingFacets before any calculate should error")
@@ -206,6 +217,7 @@ func TestBbcovExistingBeforeCalculate(t *testing.T) {
 // TestBbcovWireOffsetRejectsBadRefs drives wireOffsetPlanar → offsetSourceBody (missing transient
 // handle) and → resolveWireRef (a document body with no free wires: index out of range).
 func TestBbcovWireOffsetRejectsBadRefs(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	missing := `{"handle":424242,"wireIndex":0,"normal":[0,0,1],"distance":0.5}`
 	if err := tryCall(t, r, s, "wire.offsetPlanar", missing); err == nil {
@@ -220,6 +232,7 @@ func TestBbcovWireOffsetRejectsBadRefs(t *testing.T) {
 // TestBbcovWireOffsetCornerBranches drives wireOffsetPlanar's remaining offsetCorner arms — extend
 // and the default circular — plus the unknown-corner and malformed-normal rejections.
 func TestBbcovWireOffsetCornerBranches(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	sec := bbcovSectionWireHandle(t, r, s)
 	for _, corner := range []string{"extend", ""} {

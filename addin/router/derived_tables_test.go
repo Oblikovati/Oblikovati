@@ -26,6 +26,7 @@ func derivedWireSession(t *testing.T) (*Router, *app.Session) {
 }
 
 func TestDerivedTablesLifecycleOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := derivedWireSession(t)
 
 	var info wire.DerivedParameterTableInfo
@@ -66,6 +67,7 @@ func TestDerivedTablesLifecycleOverWire(t *testing.T) {
 }
 
 func TestDerivedTablesRejectBadArgs(t *testing.T) {
+	t.Parallel()
 	r, s := derivedWireSession(t)
 	for method, args := range map[string]string{
 		"parameters.derivedTables.add":       `{"sourceDocument":"missing.obk"}`,
@@ -81,6 +83,7 @@ func TestDerivedTablesRejectBadArgs(t *testing.T) {
 // TestDerivedTableMutationsBroadcast checks the mutations emit edit.committed
 // and the list read does not.
 func TestDerivedTableMutationsBroadcast(t *testing.T) {
+	t.Parallel()
 	r, s := derivedWireSession(t)
 	var methods []string
 	sub := event.Subscribe(s.Events(), event.After, func(_ event.Context, e app.EditCommitted) event.Outcome {
@@ -108,6 +111,7 @@ func TestDerivedTableMutationsBroadcast(t *testing.T) {
 // update-on-source-change behavior: editing the source parameter over the
 // wire pushes the new value into the deriving document.
 func TestDerivedValueFollowsSourceOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := derivedWireSession(t)
 	call(t, r, s, "parameters.derivedTables.add", `{"sourceDocument":"test.obk","linked":["width"]}`, nil)
 	deriving := s.ActiveDocument()
@@ -135,6 +139,7 @@ func TestDerivedValueFollowsSourceOverWire(t *testing.T) {
 // parameter references and the (false, for a user-created table) reference-component
 // provenance (M39-F05, #1561).
 func TestDerivedTableInfoReferencesAndProvenance(t *testing.T) {
+	t.Parallel()
 	r, s := derivedWireSession(t)
 	var info wire.DerivedParameterTableInfo
 	call(t, r, s, "parameters.derivedTables.add", `{"sourceDocument":"test.obk","linked":["width"]}`, &info)

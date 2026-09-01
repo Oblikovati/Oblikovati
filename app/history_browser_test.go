@@ -32,6 +32,7 @@ func partSessionWithEdits(t *testing.T, n int) (*Session, doc.ID) {
 // TestDocumentHistoryViewListsEverySince open lists every step since the document opened, with
 // the cursor at the latest, regardless of which document is active.
 func TestDocumentHistoryViewListsEverySinceOpen(t *testing.T) {
+	t.Parallel()
 	s, id := partSessionWithEdits(t, 3)
 
 	tl, ok := s.DocumentHistoryView(id)
@@ -51,6 +52,7 @@ func TestDocumentHistoryViewListsEverySinceOpen(t *testing.T) {
 // TestJumpDocumentToNavigatesAbsolutely jumps the cursor to an absolute position in one call
 // (multi-step undo), then forward again — the click-to-jump a long history needs.
 func TestJumpDocumentToNavigatesAbsolutely(t *testing.T) {
+	t.Parallel()
 	s, id := partSessionWithEdits(t, 4)
 
 	if err := s.JumpDocumentTo(id, 1); err != nil {
@@ -74,6 +76,7 @@ func TestJumpDocumentToNavigatesAbsolutely(t *testing.T) {
 
 // TestJumpDocumentToRejectsOutOfRange guards the bounds.
 func TestJumpDocumentToRejectsOutOfRange(t *testing.T) {
+	t.Parallel()
 	s, id := partSessionWithEdits(t, 2)
 	if err := s.JumpDocumentTo(id, 5); err == nil {
 		t.Error("jump past the end should error")
@@ -86,6 +89,7 @@ func TestJumpDocumentToRejectsOutOfRange(t *testing.T) {
 // TestSaveAddsCheckpointWithoutErasingHistory pins the save-checkpoint behaviour: saving flags
 // the current depth as a save point and leaves every prior step navigable.
 func TestSaveAddsCheckpointWithoutErasingHistory(t *testing.T) {
+	t.Parallel()
 	s, id := partSessionWithEdits(t, 2)
 	d := s.ActiveDocument()
 

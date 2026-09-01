@@ -7,6 +7,7 @@ import (
 )
 
 func TestNopCarriageEndCSG(t *testing.T) {
+	t.Parallel()
 	body := carriageEndBody(t, -0.9, "carriage-left")
 	body = joinOrFatal(t, body, carriageEndBody(t, 0.9, "carriage-right"), "carriage second end")
 

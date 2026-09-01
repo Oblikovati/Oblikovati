@@ -12,6 +12,7 @@ import (
 // TestProjectionSourceKindTags: each reference source reports the kind tag persistence uses to
 // rebuild it (#1268).
 func TestProjectionSourceKindTags(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	cases := []struct {
 		kind string
@@ -33,6 +34,7 @@ func TestProjectionSourceKindTags(t *testing.T) {
 // TestProjectionSourceBuilders: the rebind builders construct a source for every known kind and
 // reject an unknown one (the frozen fallback).
 func TestProjectionSourceBuilders(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	if _, ok := d.PointProjectionSource("vertex", "k"); !ok {
 		t.Error("vertex point source should build")

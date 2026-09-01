@@ -52,6 +52,7 @@ func (fakeFailingContent) DocumentType() doc.DocumentType { return doc.Part }
 // TestResyncContentKeepsBaselineOnMarshalFailure: a failed resync must leave the existing snapshot intact
 // (never replace a good baseline with an empty one), and a successful one updates it.
 func TestResyncContentKeepsBaselineOnMarshalFailure(t *testing.T) {
+	t.Parallel()
 	dh := &docHistory{snapshot: []byte("GOOD-BASELINE")}
 
 	if err := dh.resyncContent(&fakeRecipeStore{marshalErr: errMarshalBoom}); err == nil {
@@ -72,6 +73,7 @@ func TestResyncContentKeepsBaselineOnMarshalFailure(t *testing.T) {
 // TestCommitRecipeDeltaSurfacesMarshalFailure: when capturing the after-snapshot fails, no undo step is
 // recorded and the failure is surfaced (structured log + Messages panel), never silently dropped.
 func TestCommitRecipeDeltaSurfacesMarshalFailure(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	d, err := s.NewPart()
 	if err != nil {
@@ -94,6 +96,7 @@ func TestCommitRecipeDeltaSurfacesMarshalFailure(t *testing.T) {
 // against an EMPTY baseline (a prior failure left it empty) would revert to an empty model on undo — so it
 // must be refused and surfaced, never recorded.
 func TestCommitRecipeDeltaRefusesEmptyBaseline(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	d, err := s.NewPart()
 	if err != nil {
@@ -117,6 +120,7 @@ func TestCommitRecipeDeltaRefusesEmptyBaseline(t *testing.T) {
 // whose undo baseline is then poisoned (as a resync marshal failure would), must not record a wipe-risk
 // step on the next edit, must keep its geometry, and must surface the failure.
 func TestPoisonedBaselineDoesNotEmptyModelOnSubsequentEdit(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	trackFromHere(s)
 	def := partOf(t, s)
@@ -156,6 +160,7 @@ func TestPoisonedBaselineDoesNotEmptyModelOnSubsequentEdit(t *testing.T) {
 // capturing the session-log recipe. Both must surface a marshal failure rather than drop it — the baseline
 // stays empty (guarded at commit) and the audit event records with a nil recipe, never silently (#1425).
 func TestBaselineAndSessionLogSurfaceContentMarshalFailure(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	d, err := s.Workspace().Add(doc.Part, "marshal-fail.obk", true)
 	if err != nil {

@@ -29,6 +29,7 @@ func xyPlane(t *testing.T) sketch.Plane {
 // and checks the resulting per-collection counts, including a polyline that splits
 // into a line and a bulge arc.
 func TestAdd2DEntitiesMapsEachType(t *testing.T) {
+	t.Parallel()
 	part := compdef.NewPartComponentDefinition()
 	sk := part.Sketches().Add(xyPlane(t))
 
@@ -64,6 +65,7 @@ func TestAdd2DEntitiesMapsEachType(t *testing.T) {
 // known DWG unit converts by physical size (independent of the document's display unit),
 // while a unitless drawing is taken to be in the document's preferred unit.
 func TestDWGToDocumentScale(t *testing.T) {
+	t.Parallel()
 	mm := param.DefaultUnitsOfMeasure() // preferred length = mm
 	meters := param.DefaultUnitsOfMeasure()
 	if err := meters.SetPreferred(param.Length, "m"); err != nil {
@@ -113,6 +115,10 @@ func corpusFile(t *testing.T, name string) []byte {
 // TestImportDWGPlanarRealFile imports a real planar drawing and checks it lands in
 // a single 2D sketch on the chosen plane.
 func TestImportDWGPlanarRealFile(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~28s): `make test-corpus`")
+	}
+	t.Parallel()
 	part := compdef.NewPartComponentDefinition()
 	res, err := ImportDWG(part, corpusFile(t, "testfile-7.dwg"), xyPlane(t))
 	if err != nil {
@@ -144,6 +150,7 @@ func TestImportDWGPlanarRealFile(t *testing.T) {
 // TestImportDWG3DRealFile imports a drawing with off-plane geometry and checks it
 // lands in a 3D sketch.
 func TestImportDWG3DRealFile(t *testing.T) {
+	t.Parallel()
 	part := compdef.NewPartComponentDefinition()
 	res, err := ImportDWG(part, corpusFile(t, "testfile-2.dwg"), xyPlane(t))
 	if err != nil {

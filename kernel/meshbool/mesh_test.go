@@ -23,6 +23,7 @@ func crossingSquares() (a, b [][3]Point) {
 }
 
 func TestCoRefineCrossingSquares(t *testing.T) {
+	t.Parallel()
 	a, b := crossingSquares()
 	aOut, bOut := CoRefine(a, b)
 
@@ -47,6 +48,7 @@ func TestCoRefineCrossingSquares(t *testing.T) {
 }
 
 func TestCoRefineCoplanarOverlap(t *testing.T) {
+	t.Parallel()
 	// Two triangles in z=0 that overlap; the shared region is triangle
 	// (1,1)-(3,1)-(1,3) and both faces must be imprinted with its boundary.
 	a := [][3]Point{tri([3]float64{0, 0, 0}, [3]float64{4, 0, 0}, [3]float64{0, 4, 0})}
@@ -70,6 +72,7 @@ func TestCoRefineCoplanarOverlap(t *testing.T) {
 }
 
 func TestCoRefineDisjointUnchanged(t *testing.T) {
+	t.Parallel()
 	a := [][3]Point{tri([3]float64{0, 0, 0}, [3]float64{4, 0, 0}, [3]float64{0, 4, 0})}
 	b := [][3]Point{tri([3]float64{0, 0, 9}, [3]float64{4, 0, 9}, [3]float64{0, 4, 9})}
 	aOut, bOut := CoRefine(a, b)

@@ -4,7 +4,7 @@ package feature
 
 import (
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 )
 
 // The control-point edit feature (M36-F03) is one direct manipulation of the running surface
@@ -38,7 +38,7 @@ func (c *ControlPointEditFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	edited, err := ops.EditControlPoints(target, c.def.Deltas)
+	edited, err := transform.EditControlPoints(target, c.def.Deltas)
 	if err != nil {
 		return Output{}, err
 	}

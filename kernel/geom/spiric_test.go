@@ -29,6 +29,7 @@ func spiricSetup(t *testing.T, a float64) (Torus, Plane, float64, float64) {
 // TestSpiricArcLiesOnTorusAndPlane checks the spiric edge is exact: every sampled point sits on the
 // torus surface (distance to the tube centre equals the minor radius) and on the cut plane.
 func TestSpiricArcLiesOnTorusAndPlane(t *testing.T) {
+	t.Parallel()
 	tor, pl, vc, a := spiricSetup(t, 6)
 	phi, m, k, c := TorusSectionCoeffs(tor, pl)
 	arc := SpiricArc{Torus: tor, Phi: phi, M: m, K: k, C: c, Branch: +1, V0: -vc, V1: vc}
@@ -50,6 +51,7 @@ func TestSpiricArcLiesOnTorusAndPlane(t *testing.T) {
 // TestSpiricArcBranchesMeetAtExtremes checks the two branches over the same v-range close the oval:
 // they coincide at v=±vc (where w=±1, both roots collapse to u=Phi).
 func TestSpiricArcBranchesMeetAtExtremes(t *testing.T) {
+	t.Parallel()
 	tor, pl, vc, _ := spiricSetup(t, 6)
 	phi, m, k, c := TorusSectionCoeffs(tor, pl)
 	plus := SpiricArc{Torus: tor, Phi: phi, M: m, K: k, C: c, Branch: +1, V0: -vc, V1: vc}
@@ -68,6 +70,7 @@ func TestSpiricArcBranchesMeetAtExtremes(t *testing.T) {
 // TestSpiricArcTangentMatchesFiniteDifference checks TangentAt agrees with a central finite difference
 // of PointAt in the oval's interior (away from the v-extremes, where du/dv diverges by construction).
 func TestSpiricArcTangentMatchesFiniteDifference(t *testing.T) {
+	t.Parallel()
 	tor, pl, vc, _ := spiricSetup(t, 6)
 	phi, m, k, c := TorusSectionCoeffs(tor, pl)
 	arc := SpiricArc{Torus: tor, Phi: phi, M: m, K: k, C: c, Branch: +1, V0: -vc, V1: vc}

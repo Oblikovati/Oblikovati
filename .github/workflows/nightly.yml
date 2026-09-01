@@ -25,7 +25,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       # Pin to the latest api release so API_VERSION matches what the build links.
       - uses: ./.github/actions/api-contract
       - id: check

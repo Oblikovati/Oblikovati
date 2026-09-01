@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -87,7 +88,7 @@ const (
 // angle π/2 — the complement mesh reads ~274 area / 7π/2 and fails both, loud.
 func assertVoidOctantMeshed(t *testing.T, name string, f *topo.Face, sph geom.Sphere) {
 	t.Helper()
-	mesh := ops.TessellateFace(f, ops.PropertyQuality())
+	mesh := tessellate.TessellateFace(f, ops.PropertyQuality())
 	closed := stdmath.Pi * sph.Radius * sph.Radius / 2 // octant: 4πr²/8
 	if got := ops.MeshArea(mesh); stdmath.Abs(got-closed) > voidOctantAreaCeil {
 		t.Errorf("%s: corner sphere meshes %.6f vs octant closed form πr²/2=%.6f (|Δ|=%.4f > %.4f) — the complement region is back",

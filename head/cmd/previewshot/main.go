@@ -28,6 +28,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -277,7 +278,7 @@ func startPendingChamfer(s *app.Session, def *compdef.PartComponentDefinition) {
 // the outward direction, tilted down), so a thin edge wedge faces the camera rather than
 // presenting edge-on.
 func aimCameraAtEdge(s *app.Session, body *topo.Body, e *topo.Edge) {
-	pts := ops.TessellateEdge(e, ops.DefaultQuality())
+	pts := tessellate.TessellateEdge(e, ops.DefaultQuality())
 	mid := pts[len(pts)/2]
 	rb := body.RangeBox()
 	cx, cy := (rb.Min.X+rb.Max.X)/2, (rb.Min.Y+rb.Max.Y)/2
@@ -659,7 +660,7 @@ func cylindricalFace(b *topo.Body) *topo.Face {
 // verticalEdge returns the first edge running mostly along Z (a box's vertical corner).
 func verticalEdge(edges []*topo.Edge) *topo.Edge {
 	for _, e := range edges {
-		pts := ops.TessellateEdge(e, ops.DefaultQuality())
+		pts := tessellate.TessellateEdge(e, ops.DefaultQuality())
 		if len(pts) < 2 {
 			continue
 		}

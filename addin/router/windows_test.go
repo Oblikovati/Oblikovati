@@ -11,6 +11,7 @@ import (
 )
 
 func TestWindowsFramesReportMirroredState(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	s.SetWindowFrameStatus(app.WindowFrameStatus{
 		Caption: "test.obk — Oblikovati", State: types.WindowMaximized, Width: 2560, Height: 1480,
@@ -23,6 +24,7 @@ func TestWindowsFramesReportMirroredState(t *testing.T) {
 }
 
 func TestWindowsTabsActivateAndClose(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var tabs wire.ListViewTabsResult
 	call(t, r, s, "windows.listTabs", "{}", &tabs)

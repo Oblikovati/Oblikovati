@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/diag"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -72,12 +72,12 @@ func TestNoShippedBuildResolvesACurveDisagreementByBuildOrder(t *testing.T) {
 			continue // skipped / faulty: no shipped body to read a build report from
 		}
 		key := r.Grid + "/" + r.Case
-		if countBuildDiagnostics(body, ops.CodeAssembleEdgeCatalog) == 0 {
+		if countBuildDiagnostics(body, blend.CodeAssembleEdgeCatalog) == 0 {
 			blind = append(blind, key)
 			continue
 		}
 		assertNoCurveConflict(t, key, body)
-		got[key] = countBuildDiagnostics(body, ops.CodeAssembleCurveNilOffer)
+		got[key] = countBuildDiagnostics(body, blend.CodeAssembleCurveNilOffer)
 	}
 	assertNilOfferPopulation(t, nilCurveOfferDebtIndex(), got)
 	assertCatalogBlindSpot(t, blind)
@@ -89,7 +89,7 @@ func TestNoShippedBuildResolvesACurveDisagreementByBuildOrder(t *testing.T) {
 func assertNoCurveConflict(t *testing.T, key string, body *topo.Body) {
 	t.Helper()
 	for _, d := range body.BuildDiagnostics() {
-		if d.Code == ops.CodeAssembleCurveConflict {
+		if d.Code == blend.CodeAssembleCurveConflict {
 			t.Errorf("%s: the shipped body resolved a curve disagreement by build order — %s", key, d.Detail)
 		}
 	}

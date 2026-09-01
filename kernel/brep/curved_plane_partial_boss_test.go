@@ -14,6 +14,7 @@ import (
 // r2, on a plate spanning x∈[-5,5]) unions to a watertight solid of volume 200 + 12π (the whole cantilevered
 // boss added, no volume overlap since the boss sits at z≥2). Exercises planeUV end-to-end (#1591 Slice B).
 func TestJoinPartialBossStraddlesEdge(t *testing.T) {
+	t.Parallel()
 	plate, _ := SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
 	boss, _ := SolidCylinder(math.P3(4, 0, 2), math.V3(0, 0, 1), 2, 3)
 	res, ok := JoinPartialBoss(plate, boss)

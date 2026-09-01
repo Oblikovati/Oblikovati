@@ -13,6 +13,7 @@ import (
 // TestSheetMetalCutApply seeds a sheet-metal wall, adds a smaller profile, and cuts it through
 // all the material — confirming one healthy solid; then checks the error paths.
 func TestSheetMetalCutApply(t *testing.T) {
+	t.Parallel()
 	s := sheetMetalProfiledPart(t)
 	if _, err := apply(t, s, "sheetMetalFace", `{"sketchIndex":0}`); err != nil {
 		t.Fatalf("seed face: %v", err)

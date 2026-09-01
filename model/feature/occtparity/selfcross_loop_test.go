@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -43,13 +44,13 @@ func TestNoFaceLoopSelfCrossesOnItsSurface(t *testing.T) {
 		if !ok {
 			continue // skipped / faulty: no single healthy body to measure
 		}
-		assertSelfCrossingWithinDebt(t, r, ops.SelfCrossingFaceLoops(body, q), debt[r.Grid+"/"+r.Case])
+		assertSelfCrossingWithinDebt(t, r, blend.SelfCrossingFaceLoops(body, q), debt[r.Grid+"/"+r.Case])
 	}
 }
 
 // assertSelfCrossingWithinDebt fails when a case carries more self-crossing loops than its recorded
 // debt, or one that pinches off more area than recorded. A case with no entry may carry none at all.
-func assertSelfCrossingWithinDebt(t *testing.T, r Record, bad []ops.SelfCrossingLoop, debt selfCrossDebtEntry) {
+func assertSelfCrossingWithinDebt(t *testing.T, r Record, bad []blend.SelfCrossingLoop, debt selfCrossDebtEntry) {
 	t.Helper()
 	if len(bad) > debt.loops {
 		t.Errorf("%s/%s: %d face loop(s) self-cross on their own surface, recorded debt %d — %s",
@@ -66,7 +67,7 @@ func assertSelfCrossingWithinDebt(t *testing.T, r Record, bad []ops.SelfCrossing
 // describeSelfCrossing names each offending face, its surface, the area it pinches off and how
 // faithfully its own crossing pair developed — because an unfaithful pair's "area" is a chart quantity,
 // not an area on the surface, and reading one as the other is the category error §8.5 warned about.
-func describeSelfCrossing(bad []ops.SelfCrossingLoop) string {
+func describeSelfCrossing(bad []blend.SelfCrossingLoop) string {
 	out := ""
 	for _, b := range bad {
 		out += fmt.Sprintf(" [%T face %d loop %d pinches %.6g chart/chord %.4g]",
@@ -119,13 +120,13 @@ func TestEverySelfCrossDebtEntryIsARealDefect(t *testing.T) {
 			t.Errorf("%s/%s is in knownSelfCrossingLoops but ships no healthy body to convict it on", d.grid, d.name)
 			continue
 		}
-		assertSelfCrossingsAreConvicted(t, r, body, ops.SelfCrossingFaceLoops(body, q))
+		assertSelfCrossingsAreConvicted(t, r, body, blend.SelfCrossingFaceLoops(body, q))
 	}
 }
 
 // assertSelfCrossingsAreConvicted fails for any reported crossing that is neither faithfully developed
 // nor accompanied by a boundary that has left its own face.
-func assertSelfCrossingsAreConvicted(t *testing.T, r Record, body *topo.Body, bad []ops.SelfCrossingLoop) {
+func assertSelfCrossingsAreConvicted(t *testing.T, r Record, body *topo.Body, bad []blend.SelfCrossingLoop) {
 	t.Helper()
 	worst, where := worstLoopSegmentOffFace(body)
 	offSurface := worst/boundingDiag(body) > selfCrossOffSurfaceFloor

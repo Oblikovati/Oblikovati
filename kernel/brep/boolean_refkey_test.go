@@ -35,6 +35,7 @@ func faceWithNormal(b *topo.Body, dir math.Vector3) *topo.Face {
 // K1a: a face that survives a boolean unchanged keeps its reference key, so a pick made
 // before the boolean rebinds to the result face afterwards.
 func TestBooleanPreservesSurvivingFaceKey(t *testing.T) {
+	t.Parallel()
 	a := boxNamed("partA", 0, 0, 0, 2, 2, 2)
 	b := boxNamed("partB", 5, 0, 0, 2, 2, 2) // disjoint: every A face survives whole
 
@@ -50,6 +51,7 @@ func TestBooleanPreservesSurvivingFaceKey(t *testing.T) {
 
 // A face untouched by a Cut keeps its key (the part-side pick survives a hole/cut edit).
 func TestBooleanCutPreservesUntouchedFaceKey(t *testing.T) {
+	t.Parallel()
 	// A=[0,2]³; B overlaps the top, leaving A's bottom face (z=0, normal −Z) untouched.
 	a := boxNamed("part", 0, 0, 0, 2, 2, 2)
 	b := boxNamed("tool", 1, 0.5, 0.5, 2, 2, 2)
@@ -70,6 +72,7 @@ func TestBooleanCutPreservesUntouchedFaceKey(t *testing.T) {
 
 // Sanity: the disjoint union is still a valid two-shell solid (volume 16).
 func TestBooleanDisjointUnionValid(t *testing.T) {
+	t.Parallel()
 	a := boxNamed("a", 0, 0, 0, 2, 2, 2)
 	b := boxNamed("b", 5, 0, 0, 2, 2, 2)
 	res, err := brep.Boolean(brep.Union, a, b)

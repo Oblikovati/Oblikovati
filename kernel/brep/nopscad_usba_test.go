@@ -17,6 +17,7 @@ import (
 // usb_Ax2 = usb_A(h=15.6, bar=3.4, l=17, flange_t=0.4, w=13.25). socket_h = (h−2·t−bar)/2 = 5.7;
 // each socket = [socket_h, w−2·t] centred at x = ±(bar/2 + socket_h/2).
 func TestNopUsbAx2CSG(t *testing.T) {
+	t.Parallel()
 	const (
 		l        = 1.7                       // 17 mm (extrusion axis = z)
 		w        = 1.325                     // 13.25 mm (y)

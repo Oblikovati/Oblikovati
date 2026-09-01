@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -27,6 +28,7 @@ func cylinderFaces1494(b *topo.Body) int {
 // re-facets the body: straight-edge-between-planar-faces → no (blend on the analytic body, #1494);
 // a curved rim edge or a straight edge bordering a curved face → yes.
 func TestEdgeNeedsPlanarizePredicate1494(t *testing.T) {
+	t.Parallel()
 	// (a) plain box: every vertical edge is straight between two planar faces ⇒ no planarize.
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 3}, {X: 0, Y: 3}},
 		sketch.XYPlane(), span{near: 0, far: 5}, 0, "box")
@@ -87,6 +89,7 @@ func farCornerEdgeKey(t *testing.T, b *topo.Body, skipX, skipY float64) []byte {
 // viewport). The whole feature tree then recomputes. The second fillet must produce real geometry
 // (a second cylinder face + reduced volume), not a sick browser-only no-op.
 func TestSecondFilletSeparateFeature1494(t *testing.T) {
+	t.Parallel()
 	const r = 0.5
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 3}, {X: 0, Y: 3}},
 		sketch.XYPlane(), span{near: 0, far: 5}, 0, "box")
@@ -124,7 +127,7 @@ func TestSecondFilletSeparateFeature1494(t *testing.T) {
 	// Two rounded vertical edges of length 5: V = 60 − 2·(r²−πr²/4)·5. Matching this analytic
 	// frustum-free value also confirms the FIRST fillet's cylinder survived (was not faceted away).
 	want := 4*3*5 - 2*(r*r-stdmath.Pi*r*r/4)*5
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
 		t.Errorf("two-fillet volume = %g, want ≈%g", got, want)
 	}
 }

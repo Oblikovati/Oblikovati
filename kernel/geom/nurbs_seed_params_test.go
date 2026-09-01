@@ -72,6 +72,7 @@ func uniformOpenKnots(spans, degree int) []float64 {
 // an ON-SURFACE query point. Span-aware seeding must recover every sampled point: the
 // surface is a height field (injective in xy), so the zero-distance foot is unique.
 func TestParamAtHighSpanSurfaceInversion(t *testing.T) {
+	t.Parallel()
 	s := rippledSheet(t, 33, 33, 8.0, true)
 	res := surfaceNetResolution(s)
 	uLo, uHi := s.UDomain()

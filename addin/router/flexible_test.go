@@ -13,6 +13,7 @@ import (
 // TestSetFlexibleOverWire checks the M12-F06 flexible flag over the wire: a sub-assembly
 // occurrence becomes flexible (independent per-placement solve), a leaf part stays rigid (#822).
 func TestSetFlexibleOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
 
 	// A leaf part cannot be flexible — the flag stays off.

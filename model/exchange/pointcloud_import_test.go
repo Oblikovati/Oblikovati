@@ -21,6 +21,7 @@ import (
 // TestFormatFromPathRoutesPointCloudFormats: the scanner formats resolve to their api/types
 // constants (case-insensitively), classified as point-cloud imports.
 func TestFormatFromPathRoutesPointCloudFormats(t *testing.T) {
+	t.Parallel()
 	for path, want := range map[string]types.ExchangeFormat{
 		"scan.ply": types.FormatPLY, "survey.E57": types.FormatE57, "lidar.las": types.FormatLAS,
 	} {
@@ -44,6 +45,7 @@ var asciiScanExtensions = map[string]bool{".xyz": true, ".pts": true, ".asc": tr
 // PointReader handles must either resolve through FormatFromPath as a point-cloud format or be
 // on the documented ASCII allow-list above — so a new reader cannot ship unrouted.
 func TestEveryScanExtensionIsRouted(t *testing.T) {
+	t.Parallel()
 	for _, ext := range pointcloud.ScanExtensions() {
 		if asciiScanExtensions[ext] {
 			continue
@@ -62,6 +64,7 @@ func TestEveryScanExtensionIsRouted(t *testing.T) {
 // TestImportRejectsPointCloudFormatWithGuidance: the body-import dispatch names the point-cloud
 // attach path instead of failing obscurely, mirroring the sketch-format guard.
 func TestImportRejectsPointCloudFormatWithGuidance(t *testing.T) {
+	t.Parallel()
 	part := compdef.NewPartComponentDefinition()
 	_, err := Import(part, "survey.las", types.FormatLAS)
 	if err == nil || !strings.Contains(err.Error(), "point cloud") {
@@ -72,6 +75,7 @@ func TestImportRejectsPointCloudFormatWithGuidance(t *testing.T) {
 // TestImportPointCloudWarnsAndContinues: one malformed record produces one warning naming the
 // line and value, the good points still import, and the scan bytes are embedded (#1646).
 func TestImportPointCloudWarnsAndContinues(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), "scan.xyz")
 	if err := os.WriteFile(path, []byte("0 0 0\n10 zero 0\n10 0 0\n"), 0o600); err != nil {
 		t.Fatal(err)
@@ -95,6 +99,7 @@ func TestImportPointCloudWarnsAndContinues(t *testing.T) {
 // TestImportPointCloudFailsWhenNothingDecodes: a scan with zero decodable records is an error
 // naming the offending input, not an empty cloud.
 func TestImportPointCloudFailsWhenNothingDecodes(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), "scan.xyz")
 	if err := os.WriteFile(path, []byte("not a point\nalso bad\n"), 0o600); err != nil {
 		t.Fatal(err)
@@ -109,6 +114,7 @@ func TestImportPointCloudFailsWhenNothingDecodes(t *testing.T) {
 // format by contract (api/types FormatPLY), never a mesh — the same answer from every entry
 // point (FormatFromPath, the scan-file predicate, and the mesh translator's rejection).
 func TestPLYAlwaysRoutesToPointCloud(t *testing.T) {
+	t.Parallel()
 	format, ok := FormatFromPath("scan.ply")
 	if !ok || !format.IsPointCloud() || format.IsMesh() {
 		t.Errorf("FormatFromPath(.ply) = (%q, %v), want the point-cloud PLY format", format, ok)

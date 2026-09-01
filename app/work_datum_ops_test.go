@@ -53,6 +53,7 @@ func selectAxes(s *Session, axes ...*feature.WorkAxis) {
 
 // The datum-axis constructors: each builds from the current selection and lands a healthy axis.
 func TestWorkAxisConstructorsBuildFromTheSelection(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name  string
 		setup func(*testing.T, *Session, *compdef.PartComponentDefinition)
@@ -101,6 +102,7 @@ func TestWorkAxisConstructorsBuildFromTheSelection(t *testing.T) {
 
 // The datum-point constructors, same shape.
 func TestWorkPointConstructorsBuildFromTheSelection(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name  string
 		setup func(*testing.T, *Session, *compdef.PartComponentDefinition)
@@ -143,6 +145,7 @@ func TestWorkPointConstructorsBuildFromTheSelection(t *testing.T) {
 
 // The plane constructors that had no ribbon path.
 func TestNewWorkPlaneConstructorsBuildFromTheSelection(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name  string
 		setup func(*testing.T, *Session, *compdef.PartComponentDefinition)
@@ -180,6 +183,7 @@ func TestNewWorkPlaneConstructorsBuildFromTheSelection(t *testing.T) {
 
 // The angle plane gathers its picks and its angle before committing, and lands at that angle.
 func TestAngleWorkPlaneToolNeedsPicksAndAngle(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	before := def.WorkPlanes().Count()
 	tool := NewAngleWorkPlaneTool()
@@ -217,6 +221,7 @@ func TestAngleWorkPlaneToolNeedsPicksAndAngle(t *testing.T) {
 // Datum names must be unique: Dear ImGui derives a browser node id from the label and asserts on
 // duplicates, and every work point used to be minted as the same "WorkPoint".
 func TestCreatedDatumsGetUniqueNames(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	for i := range 3 {
 		s.Selection().Clear()
@@ -238,6 +243,7 @@ func TestCreatedDatumsGetUniqueNames(t *testing.T) {
 // The Work Features panel carries one split button per datum kind, each with its constructor
 // flavours in the flyout. It used to be five flat buttons, all work planes.
 func TestWorkFeaturesPanelCarriesAllThreeDatumKinds(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	tab, ok := BuildRibbon(s).Tab(tabCreateModify)
 	if !ok {
@@ -268,6 +274,7 @@ func TestWorkFeaturesPanelCarriesAllThreeDatumKinds(t *testing.T) {
 // Every Work Features entry is always live in the part environment — click it and it either
 // builds from the selection or starts a guided pick, never nothing.
 func TestWorkFeatureEntriesAreEnabledWithNoSelection(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	tab, _ := BuildRibbon(s).Tab(tabCreateModify)
 	panel, _ := tab.Panel(panelWorkFeatures)

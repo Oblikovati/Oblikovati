@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -46,6 +47,7 @@ func beginCageDragAt(t *testing.T, s *Session, vertex int) {
 }
 
 func TestFreeformCageDragMovesAVertex(t *testing.T) {
+	t.Parallel()
 	s, _, body := partWithFreeformBox(t)
 	s.StartTool(NewFreeformCageEditTool())
 	if !s.CageEditActive() {
@@ -65,6 +67,7 @@ func TestFreeformCageDragMovesAVertex(t *testing.T) {
 
 // A drag with no movement records no undo step, so a stray click leaves nothing behind.
 func TestFreeformCageDragWithoutMovementRecordsNothing(t *testing.T) {
+	t.Parallel()
 	s, _, _ := partWithFreeformBox(t)
 	s.StartTool(NewFreeformCageEditTool())
 	beginCageDragAt(t, s, 0)
@@ -75,6 +78,7 @@ func TestFreeformCageDragWithoutMovementRecordsNothing(t *testing.T) {
 }
 
 func TestFreeformCageLevelAppliesToTheBody(t *testing.T) {
+	t.Parallel()
 	s, def, body := partWithFreeformBox(t)
 	tool := NewFreeformCageEditTool()
 	s.StartTool(tool)
@@ -97,6 +101,7 @@ func TestFreeformCageLevelAppliesToTheBody(t *testing.T) {
 
 // A negative level is clamped rather than rejected, so a spun-down field cannot break the body.
 func TestFreeformCageLevelClampsAtZero(t *testing.T) {
+	t.Parallel()
 	tool := NewFreeformCageEditTool()
 	tool.SetLevel(-3)
 	if tool.Level() != 0 {
@@ -105,13 +110,14 @@ func TestFreeformCageLevelClampsAtZero(t *testing.T) {
 }
 
 func TestFreeformCageCreaseSharpensTheEdgesAtAHandle(t *testing.T) {
+	t.Parallel()
 	s, def, body := partWithFreeformBox(t)
 	tool := NewFreeformCageEditTool()
 	s.StartTool(tool)
 	// Subdivide first, so creasing has a visible effect on the limit surface.
 	tool.SetLevel(2)
 	s.ApplyActiveCageLevel()
-	before := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	before := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 
 	if s.CreaseActiveCageHandle() {
 		t.Fatal("crease should refuse before a handle has been dragged")
@@ -120,7 +126,7 @@ func TestFreeformCageCreaseSharpensTheEdgesAtAHandle(t *testing.T) {
 	if !s.CreaseActiveCageHandle() {
 		t.Fatal("crease found no edges at the dragged handle")
 	}
-	after := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	after := query.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
 	if after <= before {
 		t.Errorf("creasing left the volume at %g (was %g) — a sharpened corner should push it out", after, before)
 	}
@@ -132,6 +138,7 @@ func TestFreeformCageCreaseSharpensTheEdgesAtAHandle(t *testing.T) {
 // The cage overlay draws a handle cross per vertex plus the wire, so the handles are visible and
 // grabbable — the tool would otherwise arm and show nothing.
 func TestFreeformCageOverlayDrawsHandlesAndWire(t *testing.T) {
+	t.Parallel()
 	_, _, body := partWithFreeformBox(t)
 	items := cageOverlayItems(body, 0.1)
 	if len(items) != 2 {
@@ -148,6 +155,7 @@ func TestFreeformCageOverlayDrawsHandlesAndWire(t *testing.T) {
 
 // Edit Cage is on the Freeform panel and only enabled when there is a cage to edit.
 func TestEditCageIsOnTheFreeformPanel(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	tab, ok := BuildRibbon(s).Tab(tabSurfacesMesh)
 	if !ok {
@@ -193,6 +201,7 @@ func mustPanel(t *testing.T, s *Session, tabName, panelName string) RibbonPanel 
 // The cage hit-test: a ray down the axis at a handle finds that vertex; one pointing away finds
 // none; and a point behind the ray origin never matches.
 func TestNearestCageVertexHitTest(t *testing.T) {
+	t.Parallel()
 	_, _, body := partWithFreeformBox(t)
 	at := body.Vertices().Item(0).Point()
 	// Fire from 10 units back along +X at the vertex.
@@ -217,6 +226,7 @@ func TestNearestCageVertexHitTest(t *testing.T) {
 // A drag through the camera-driven entry point moves the grabbed handle, so the viewport path
 // is exercised end to end and not just its core.
 func TestBeginCageDragGrabsTheHandleUnderTheCursor(t *testing.T) {
+	t.Parallel()
 	s, _, body := partWithFreeformBox(t)
 	s.StartTool(NewFreeformCageEditTool())
 	// Aim the camera at the first cage vertex so its handle sits under the centre pixel.

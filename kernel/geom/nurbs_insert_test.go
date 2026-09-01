@@ -58,6 +58,7 @@ func curvesAgree(t *testing.T, a, b BSplineCurve, tol float64) {
 }
 
 func TestInsertKnotPreservesCurve(t *testing.T) {
+	t.Parallel()
 	c := sampleCubicCurve(t)
 	got, err := c.InsertKnot(0.25, 1)
 	if err != nil {
@@ -73,6 +74,7 @@ func TestInsertKnotPreservesCurve(t *testing.T) {
 }
 
 func TestInsertKnotRepeatedRaisesMultiplicity(t *testing.T) {
+	t.Parallel()
 	c := sampleCubicCurve(t)
 	got, err := c.InsertKnot(0.25, 3) // degree 3, fresh knot → up to 3 allowed
 	if err != nil {
@@ -85,6 +87,7 @@ func TestInsertKnotRepeatedRaisesMultiplicity(t *testing.T) {
 }
 
 func TestInsertKnotRejectsOverflow(t *testing.T) {
+	t.Parallel()
 	c := sampleCubicCurve(t)
 	if _, err := c.InsertKnot(0.5, 3); err == nil {
 		t.Error("inserting an interior knot (already multiplicity 1) 3 times at degree 3 should error")
@@ -98,6 +101,7 @@ func TestInsertKnotRejectsOverflow(t *testing.T) {
 }
 
 func TestRefineKnotsPreservesCurve(t *testing.T) {
+	t.Parallel()
 	c := sampleCubicCurve(t)
 	got, err := c.RefineKnots([]float64{0.25, 0.25, 0.75})
 	if err != nil {
@@ -110,6 +114,7 @@ func TestRefineKnotsPreservesCurve(t *testing.T) {
 }
 
 func TestInsertKnot2dPreservesCurve(t *testing.T) {
+	t.Parallel()
 	c, err := NewBSplineCurve2dUniformWeights(
 		2,
 		[]math.Point2{math.P2(0, 0), math.P2(1, 2), math.P2(3, 0), math.P2(4, 1)},
@@ -132,6 +137,7 @@ func TestInsertKnot2dPreservesCurve(t *testing.T) {
 }
 
 func TestRefineKnots2dPreservesCurve(t *testing.T) {
+	t.Parallel()
 	c, err := NewBSplineCurve2dUniformWeights(
 		2,
 		[]math.Point2{math.P2(0, 0), math.P2(1, 2), math.P2(3, 0), math.P2(4, 1)},
@@ -157,6 +163,7 @@ func TestRefineKnots2dPreservesCurve(t *testing.T) {
 }
 
 func TestRefineKnotsSurfacePreservesGeometry(t *testing.T) {
+	t.Parallel()
 	s := sampleQuadraticSurface(t)
 	gu, err := s.RefineKnotsU([]float64{0.25, 0.5})
 	if err != nil {
@@ -180,6 +187,7 @@ func TestRefineKnotsSurfacePreservesGeometry(t *testing.T) {
 }
 
 func TestRefineKnotsSurfaceRejectsBadKnot(t *testing.T) {
+	t.Parallel()
 	s := sampleQuadraticSurface(t)
 	if _, err := s.RefineKnotsU([]float64{1.5}); err == nil {
 		t.Error("refining with an out-of-domain U knot should error")
@@ -190,6 +198,7 @@ func TestRefineKnotsSurfaceRejectsBadKnot(t *testing.T) {
 }
 
 func TestInsertKnotSurfacePreservesGeometry(t *testing.T) {
+	t.Parallel()
 	s := sampleQuadraticSurface(t)
 	gu, err := s.InsertKnotU(0.5, 1)
 	if err != nil {

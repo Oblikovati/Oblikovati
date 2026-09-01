@@ -55,6 +55,7 @@ func searchNode(n BrowserNode, kind string) (BrowserNode, bool) {
 }
 
 func TestBuildBrowserMakesSketchFeatureBodySelectable(t *testing.T) {
+	t.Parallel()
 	s, _ := extrudedBoxPart(t)
 	root := BuildBrowser(s)
 
@@ -74,6 +75,7 @@ func TestBuildBrowserMakesSketchFeatureBodySelectable(t *testing.T) {
 }
 
 func TestBrowserMenuByKind(t *testing.T) {
+	t.Parallel()
 	s, _ := extrudedBoxPart(t)
 	root := BuildBrowser(s)
 
@@ -98,6 +100,7 @@ func TestBrowserMenuByKind(t *testing.T) {
 }
 
 func TestBrowserMenuWorkAxisVisibilityToggles(t *testing.T) {
+	t.Parallel()
 	s, _ := extrudedBoxPart(t)
 	node := findNode(t, BuildBrowser(s), "workaxis")
 	axis := node.Select.(WorkAxisHandle).Axis
@@ -111,6 +114,7 @@ func TestBrowserMenuWorkAxisVisibilityToggles(t *testing.T) {
 }
 
 func TestBrowserMenuBodyVisibilityToggles(t *testing.T) {
+	t.Parallel()
 	s, _ := extrudedBoxPart(t)
 	node := findNode(t, BuildBrowser(s), "body")
 	body := node.Select.(BodyHandle).Body
@@ -126,6 +130,7 @@ func TestBrowserMenuBodyVisibilityToggles(t *testing.T) {
 }
 
 func TestBrowserMenuDeleteSketchRemovesIt(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	node := findNode(t, BuildBrowser(s), "sketch")
 	del := menuItem(t, BrowserMenu(s, node), "Delete")
@@ -138,6 +143,7 @@ func TestBrowserMenuDeleteSketchRemovesIt(t *testing.T) {
 }
 
 func TestBrowserMenuDeleteFeatureRemovesAndRecomputes(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	node := findNode(t, BuildBrowser(s), "feature")
 	del := menuItem(t, BrowserMenu(s, node), "Delete")
@@ -153,6 +159,7 @@ func TestBrowserMenuDeleteFeatureRemovesAndRecomputes(t *testing.T) {
 }
 
 func TestBrowserMenuSuppressTogglesLabel(t *testing.T) {
+	t.Parallel()
 	s, _ := extrudedBoxPart(t)
 	node := findNode(t, BuildBrowser(s), "feature")
 	if err := menuItem(t, BrowserMenu(s, node), "Suppress").Invoke(s); err != nil {
@@ -166,6 +173,7 @@ func TestBrowserMenuSuppressTogglesLabel(t *testing.T) {
 }
 
 func TestBrowserMenuEditSketchEntersIt(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	node := findNode(t, BuildBrowser(s), "sketch")
 	if err := menuItem(t, BrowserMenu(s, node), "Edit Sketch").Invoke(s); err != nil {

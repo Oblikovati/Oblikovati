@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // p2TorusBandCases are the B1 cases whose surviving torus rim-fillet band formerly fell through
@@ -41,7 +42,7 @@ func TestP2TorusBandNotFullDomain(t *testing.T) {
 		if !filletOK || len(res) != 1 {
 			t.Fatalf("%s: fillet not a valid solid: %s", r.Case, reason)
 		}
-		got := ops.BodyGeometryProperties(res[0], ops.PropertyQuality()).Area
+		got := query.BodyGeometryProperties(res[0], ops.PropertyQuality()).Area
 		rel := (got - r.ExpectedArea) / r.ExpectedArea
 		if rel < 0 {
 			rel = -rel

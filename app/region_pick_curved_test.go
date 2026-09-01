@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -34,7 +35,7 @@ func cylinderPart(t *testing.T, radius, height float64) *Session {
 func curvedEdgeOf(t *testing.T, b *topo.Body) *topo.Edge {
 	t.Helper()
 	for _, e := range b.Edges() {
-		if len(ops.TessellateEdge(e, ops.DefaultQuality())) > 2 {
+		if len(tessellate.TessellateEdge(e, ops.DefaultQuality())) > 2 {
 			return e
 		}
 	}
@@ -47,6 +48,7 @@ func curvedEdgeOf(t *testing.T, b *topo.Body) *topo.Edge {
 // a crossing drag. The old endpoint-only outline classified the whole rim by its seam vertex and
 // would have missed this; the sampled outline catches it.
 func TestPickRegionCurvedEdgeSampledNotEndpoints(t *testing.T) {
+	t.Parallel()
 	s := cylinderPart(t, 2, 4)
 	body := partBodies(s)()[0]
 	edge := curvedEdgeOf(t, body)
@@ -62,7 +64,7 @@ func TestPickRegionCurvedEdgeSampledNotEndpoints(t *testing.T) {
 	}
 
 	// A mid-span sample of the rim (far from the seam vertex), and a tiny rect around it.
-	samples := ops.TessellateEdge(edge, ops.DefaultQuality())
+	samples := tessellate.TessellateEdge(edge, ops.DefaultQuality())
 	mid, ok := proj(samples[len(samples)/2])
 	if !ok {
 		t.Fatal("mid-span rim sample did not project")
@@ -87,6 +89,7 @@ func TestPickRegionCurvedEdgeSampledNotEndpoints(t *testing.T) {
 // but a window rect over that same part does NOT (the rest of the rim is outside) — window-select
 // requires every sampled point inside, proving the classification uses the full span.
 func TestPickRegionCurvedEdgeWindowNeedsWholeSpan(t *testing.T) {
+	t.Parallel()
 	s := cylinderPart(t, 2, 4)
 	body := partBodies(s)()[0]
 	edge := curvedEdgeOf(t, body)
@@ -96,7 +99,7 @@ func TestPickRegionCurvedEdgeWindowNeedsWholeSpan(t *testing.T) {
 	p := NewRayPicker(cam, partBodies(s))
 	edges := NewSelectionFilter(SelectEdge)
 
-	samples := ops.TessellateEdge(edge, ops.DefaultQuality())
+	samples := tessellate.TessellateEdge(edge, ops.DefaultQuality())
 	midX, _, _ := renderer.Project(cam, regionNear, regionFar, samples[len(samples)/2])
 	// A vertical band over part of the rim: tall enough in Y to cover that side, narrow in X so
 	// the far side of the rim falls outside it.

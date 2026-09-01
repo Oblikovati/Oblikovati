@@ -26,6 +26,7 @@ func randomTestBoxes(n int, seed int64) []math.Box {
 // boxes, Query must report EXACTLY the items a brute scan finds overlapping — no false
 // negatives (which would change boolean results) and no spurious extras beyond the box test.
 func TestBoxTreeQueryMatchesBruteOverlap(t *testing.T) {
+	t.Parallel()
 	boxes := randomTestBoxes(200, 1)
 	tree := NewBoxTree(boxes)
 	for qi, q := range randomTestBoxes(50, 2) {
@@ -52,6 +53,7 @@ func TestBoxTreeQueryMatchesBruteOverlap(t *testing.T) {
 // TestBoxTreeQueryEarlyStop pins the early-out contract: a hit callback returning true ends
 // the walk after that item.
 func TestBoxTreeQueryEarlyStop(t *testing.T) {
+	t.Parallel()
 	boxes := randomTestBoxes(64, 3)
 	tree := NewBoxTree(boxes)
 	visited := 0
@@ -66,6 +68,7 @@ func TestBoxTreeQueryEarlyStop(t *testing.T) {
 // reachable: querying each item's own box must report the item itself (a leaf-partitioning
 // bug would silently drop items — a false negative the boolean cannot tolerate).
 func TestBoxTreeEmptyAndSelfQuery(t *testing.T) {
+	t.Parallel()
 	empty := NewBoxTree(nil)
 	empty.Query(math.NewBox(math.P3(0, 0, 0), math.P3(1, 1, 1)), func(int) bool {
 		t.Fatal("empty tree Query must visit nothing")

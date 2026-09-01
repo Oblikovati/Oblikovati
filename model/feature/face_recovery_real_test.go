@@ -52,6 +52,7 @@ func grooveTop(t *testing.T, tool string) *topo.Body {
 // face as the LAST lineage token, so they share a parent (dropping that token) — exactly what makes
 // them recoverable siblings. (Confirmed empirically: parent is base:face#1/brep:cut#0/brep:by#0.)
 func TestRealSplitFaceFragmentsShareParent(t *testing.T) {
+	t.Parallel()
 	split := grooveTop(t, "slab")
 	front := realTopFaceAt(t, split, math.P3(8, 2, 4))
 	back := realTopFaceAt(t, split, math.P3(8, 8, 4))
@@ -71,6 +72,7 @@ func TestRealSplitFaceFragmentsShareParent(t *testing.T) {
 // fragments survive. The geometric tier must rebind the reference to the GEOMETRICALLY correct real
 // fragment using the mint-time anchor, and binding it the other way must pick the other fragment.
 func TestRealFaceReferenceHealsGeometricallyAfterCutEdit(t *testing.T) {
+	t.Parallel()
 	authored := grooveTop(t, "slab")
 	front := realTopFaceAt(t, authored, math.P3(8, 2, 4))
 	back := realTopFaceAt(t, authored, math.P3(8, 8, 4))

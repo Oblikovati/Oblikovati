@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -66,12 +67,13 @@ func revolvedGroovedWasherVolumes(t *testing.T, sk *sketch.Sketch) (mesh, pappus
 	if err != nil {
 		t.Fatalf("resolve profile: %v", err)
 	}
-	return ops.BodyGeometryProperties(res[0], ops.PropertyQuality()).Volume, pappusVolume(prof)
+	return query.BodyGeometryProperties(res[0], ops.PropertyQuality()).Volume, pappusVolume(prof)
 }
 
 // TestGroovedFlatBackWasherVolume is the CONTROL: the 511xx grooved shaft washer (FLAT back) revolves
 // to a mesh whose volume matches Pappus.
 func TestGroovedFlatBackWasherVolume(t *testing.T) {
+	t.Parallel()
 	mesh, pappus := revolvedGroovedWasherVolumes(t, housingMeridian(0.55, 0.55))
 	if relErr(mesh, pappus) > 0.02 {
 		t.Fatalf("flat-back grooved washer mesh volume %.4f vs Pappus %.4f (%.1f%%)", mesh, pappus, relErr(mesh, pappus)*100)
@@ -84,6 +86,7 @@ func TestGroovedFlatBackWasherVolume(t *testing.T) {
 // line/arc loop — so the groove torus was built on the inner-land span (minor radius 0.463 instead of
 // 0.262) and the mesh volume collapsed to ~28% of true. Chaining by shared endpoints holds it exact.
 func TestGroovedConicalBackWasherVolume(t *testing.T) {
+	t.Parallel()
 	mesh, pappus := revolvedGroovedWasherVolumes(t, housingMeridian(0.55, 0.3819))
 	if relErr(mesh, pappus) > 0.02 {
 		t.Fatalf("conical-back grooved washer mesh volume %.4f vs Pappus %.4f (%.1f%%) — the groove torus "+

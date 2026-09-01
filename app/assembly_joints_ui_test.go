@@ -12,6 +12,7 @@ import (
 // TestJointsPanelExposesEveryJoint: the Assemble tab's Joints panel exposes one command per
 // M12-F02 joint kind, each a compact icon button.
 func TestJointsPanelExposesEveryJoint(t *testing.T) {
+	t.Parallel()
 	tab, ok := BuildRibbon(assemblySession(t)).Tab("Assemble")
 	if !ok {
 		t.Fatal("an active assembly should show the Assemble tab")
@@ -33,6 +34,7 @@ func TestJointsPanelExposesEveryJoint(t *testing.T) {
 // TestAssemblyBrowserListsJointsInOrder: an assembly's joints appear under a Joints folder in
 // creation order, each a selectable row carrying an AssemblyJointHandle (M12-F02).
 func TestAssemblyBrowserListsJointsInOrder(t *testing.T) {
+	t.Parallel()
 	s, asm := assemblyWithComponent(t)
 	placedWidget(t, s, asm, "widget:1")
 	placedWidget(t, s, asm, "widget:2")
@@ -62,6 +64,7 @@ func TestAssemblyBrowserListsJointsInOrder(t *testing.T) {
 // TestAssemblyJointToolShell checks the joint tool gathers two face picks and rejects an
 // unresolved commit cleanly.
 func TestAssemblyJointToolShell(t *testing.T) {
+	t.Parallel()
 	tool := NewAssemblyJointTool("Rotational", func(js *assembly.JointSet, r []assembly.Ref) assembly.Joint {
 		return js.AddRotational(r[0], r[1])
 	})

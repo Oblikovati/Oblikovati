@@ -35,6 +35,7 @@ func sampleSurfaces(t *testing.T) []sampleSurface {
 }
 
 func TestSurfaceNormalMatchesPartials(t *testing.T) {
+	t.Parallel()
 	for _, c := range sampleSurfaces(t) {
 		du, dv := c.s.DerivativesAt(c.u, c.v)
 		want := normalFromPartials(du, dv)
@@ -45,6 +46,7 @@ func TestSurfaceNormalMatchesPartials(t *testing.T) {
 }
 
 func TestSurfacePartialsMatchFiniteDifference(t *testing.T) {
+	t.Parallel()
 	const h = 1e-6
 	for _, c := range sampleSurfaces(t) {
 		du, dv := c.s.DerivativesAt(c.u, c.v)
@@ -60,6 +62,7 @@ func TestSurfacePartialsMatchFiniteDifference(t *testing.T) {
 }
 
 func TestPlanePointsLieInPlane(t *testing.T) {
+	t.Parallel()
 	p, _ := NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1))
 	for _, uv := range [][2]float64{{0, 0}, {3, -2}, {10, 7}} {
 		pt := p.PointAt(uv[0], uv[1])
@@ -69,6 +72,7 @@ func TestPlanePointsLieInPlane(t *testing.T) {
 }
 
 func TestSpherePointAndNormalReference(t *testing.T) {
+	t.Parallel()
 	s, _ := NewSphere(math.P3(1, 1, 1), 2)
 	for _, uv := range [][2]float64{{0, 0}, {1.2, 0.4}, {3, -0.5}, {0, stdmath.Pi / 2}} {
 		pt := s.PointAt(uv[0], uv[1])
@@ -81,6 +85,7 @@ func TestSpherePointAndNormalReference(t *testing.T) {
 }
 
 func TestCylinderRadiusAndNormal(t *testing.T) {
+	t.Parallel()
 	c, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
 	for _, uv := range [][2]float64{{0, 0}, {1, 5}, {4, -3}} {
 		pt := c.PointAt(uv[0], uv[1])
@@ -97,6 +102,7 @@ func TestCylinderRadiusAndNormal(t *testing.T) {
 // in-plane projection of refHint (the axial component dropped), so an extruded circle can record
 // its generating sketch +X and be re-faceted in that exact frame (#129).
 func TestCylinderWithRefPinsAngleZero(t *testing.T) {
+	t.Parallel()
 	// refHint tilted out of the axis plane: its axial (+Z) component must be dropped.
 	c, err := NewCylinderWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 5), 3)
 	if err != nil {
@@ -114,12 +120,14 @@ func TestCylinderWithRefPinsAngleZero(t *testing.T) {
 // TestCylinderWithRefParallelHintErrors guards the degenerate case: a refHint parallel to the axis
 // has no in-plane component to use as angle 0.
 func TestCylinderWithRefParallelHintErrors(t *testing.T) {
+	t.Parallel()
 	if _, err := NewCylinderWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(0, 0, 2), 3); err == nil {
 		t.Fatal("expected an error for a refHint parallel to the axis")
 	}
 }
 
 func TestConeRadiusGrowsWithDistance(t *testing.T) {
+	t.Parallel()
 	half := 0.6
 	c, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), half)
 	for _, v := range []float64{1, 3, 7} {
@@ -130,6 +138,7 @@ func TestConeRadiusGrowsWithDistance(t *testing.T) {
 }
 
 func TestTorusLiesOnTube(t *testing.T) {
+	t.Parallel()
 	major, minor := 5.0, 1.5
 	tor, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), major, minor)
 	for _, uv := range [][2]float64{{0, 0}, {1, 2}, {4, 5}} {
@@ -146,6 +155,7 @@ func TestTorusLiesOnTube(t *testing.T) {
 // (u,v) round-trips back to itself (within wrap). The (u,v)-arrangement torus trimmer (Oblikovati#1406)
 // inverts each sampled spiric point through ParamAt, so the inverse must be tight, not just close.
 func TestTorusParamAtInvertsPointAt(t *testing.T) {
+	t.Parallel()
 	tor, _ := NewTorus(math.P3(1, -2, 3), math.V3(0, 0, 1), 5, 2)
 	for i := range 12 {
 		u := 2 * stdmath.Pi * float64(i) / 12
@@ -172,6 +182,7 @@ func angleGap(a, b float64) float64 {
 }
 
 func TestSurfaceDomainsAreOrdered(t *testing.T) {
+	t.Parallel()
 	for _, c := range sampleSurfaces(t) {
 		ulo, uhi := c.s.UDomain()
 		vlo, vhi := c.s.VDomain()
@@ -182,6 +193,7 @@ func TestSurfaceDomainsAreOrdered(t *testing.T) {
 }
 
 func TestNewPlaneFromAxes(t *testing.T) {
+	t.Parallel()
 	// Non-orthogonal V is orthogonalized against U; the plane normal is +Z.
 	p, err := NewPlaneFromAxes(math.P3(0, 0, 0), math.V3(2, 0, 0), math.V3(1, 1, 0))
 	if err != nil {
@@ -199,6 +211,7 @@ func TestNewPlaneFromAxes(t *testing.T) {
 }
 
 func TestNURBSSurfaceWeightNetMismatchErrors(t *testing.T) {
+	t.Parallel()
 	ctrl := [][]math.Point3{
 		{math.P3(0, 0, 0), math.P3(0, 1, 0)},
 		{math.P3(1, 0, 0), math.P3(1, 1, 0)},
@@ -210,6 +223,7 @@ func TestNURBSSurfaceWeightNetMismatchErrors(t *testing.T) {
 }
 
 func TestSurfaceConstructorErrors(t *testing.T) {
+	t.Parallel()
 	if _, err := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 0)); err == nil {
 		t.Error("zero normal plane should error")
 	}

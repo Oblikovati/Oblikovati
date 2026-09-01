@@ -19,6 +19,7 @@ import (
 
 // TestBrepPrimitivesAndLifecycle: create, describe, list, delete.
 func TestBrepPrimitivesAndLifecycle(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var block wire.BrepHandleResult
 	call(t, r, s, "brep.createPrimitive", `{"kind":"block","min":[0,0,0],"max":[3,2,5]}`, &block)
@@ -51,6 +52,7 @@ func TestBrepPrimitivesAndLifecycle(t *testing.T) {
 // TestBrepBooleanTransformCopy: union grows the blank in place; transform
 // translates; copy mints an independent body.
 func TestBrepBooleanTransformCopy(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var a, b wire.BrepHandleResult
 	call(t, r, s, "brep.createPrimitive", `{"kind":"block","min":[0,0,0],"max":[1,1,1]}`, &a)
@@ -77,6 +79,7 @@ func TestBrepBooleanTransformCopy(t *testing.T) {
 // TestBrepCopiesDocumentBody: a document body referenced by index copies into
 // transient space (the document body itself is never mutated).
 func TestBrepCopiesDocumentBody(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	var copied wire.BrepHandleResult
 	call(t, r, s, "brep.copy", `{"source":{"bodyIndex":0}}`, &copied)
@@ -93,6 +96,7 @@ func TestBrepCopiesDocumentBody(t *testing.T) {
 // TestBrepSectionAndOffset: a plane section yields a closed wire; offsetting
 // it outward grows its length.
 func TestBrepSectionAndOffset(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var block wire.BrepHandleResult
 	call(t, r, s, "brep.createPrimitive", `{"kind":"block","min":[0,0,0],"max":[4,3,2]}`, &block)
@@ -112,6 +116,7 @@ func TestBrepSectionAndOffset(t *testing.T) {
 
 // TestBrepDeleteFacesOpensBox: deleting one face leaves a 5-face surface body.
 func TestBrepDeleteFacesOpensBox(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	var copied wire.BrepHandleResult
 	call(t, r, s, "brep.copy", `{"source":{"bodyIndex":0}}`, &copied)
@@ -133,6 +138,7 @@ func TestBrepDeleteFacesOpensBox(t *testing.T) {
 
 // TestBrepImprintAndIdentical: stacked blocks imprint; congruent blocks group.
 func TestBrepImprintAndIdentical(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var big, small wire.BrepHandleResult
 	call(t, r, s, "brep.createPrimitive", `{"kind":"block","min":[0,0,0],"max":[4,4,1]}`, &big)
@@ -158,6 +164,7 @@ func TestBrepImprintAndIdentical(t *testing.T) {
 // TestBrepCreateFromDefinition: a sound tetra graph compiles; a bad index is
 // reported by path with no handle.
 func TestBrepCreateFromDefinition(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	def := tetraWireDefinition()
 	args, err := json.Marshal(wire.BrepCreateFromDefinitionArgs{Definition: def})
@@ -222,6 +229,7 @@ func tetraWireDefinition() types.BrepBodyDefinition {
 // TestBrepRuledSurfaceFromSections: rule between two parallel sections of a
 // block — a tube of area perimeter × gap.
 func TestBrepRuledSurfaceFromSections(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	var block wire.BrepHandleResult
 	call(t, r, s, "brep.createPrimitive", `{"kind":"block","min":[0,0,0],"max":[2,1,4]}`, &block)
@@ -245,6 +253,7 @@ func TestBrepRuledSurfaceFromSections(t *testing.T) {
 // TestBrepSilhouetteOnDocumentCylinder: silhouette of a revolved cylinder's
 // side face from +X — two rulings.
 func TestBrepSilhouetteOnDocumentCylinder(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"20 mm"}`, &struct{}{})
@@ -267,6 +276,7 @@ func TestBrepSilhouetteOnDocumentCylinder(t *testing.T) {
 // TestBrepOffsetFaces offsets the cylindrical side face of an extruded disc and checks the result is
 // a one-face transient surface body (the offset wall to sample).
 func TestBrepOffsetFaces(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"20 mm"}`, &struct{}{})

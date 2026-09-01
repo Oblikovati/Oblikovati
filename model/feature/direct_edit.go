@@ -5,8 +5,10 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/ops/heal"
+
 	"oblikovati.org/api/types"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -49,14 +51,14 @@ func (f *DirectEditFeature) Recompute(in Input) (Output, error) {
 	switch f.def.Operation {
 	case types.DirectEditMoveOperation:
 		return retopoFacesBody(in, f.def.FaceKeys, "directEdit move", func(b *topo.Body, keys [][]byte) (*topo.Body, error) {
-			return ops.MoveFaces(b, keys, f.def.Translation)
+			return transform.MoveFaces(b, keys, f.def.Translation)
 		})
 	case types.DirectEditSizeOperation:
 		return f.recomputeSize(in)
 	case types.DirectEditRotateOperation:
 		return f.recomputeRotate(in)
 	case types.DirectEditDeleteOperation:
-		return retopoFacesBody(in, f.def.FaceKeys, "directEdit delete", ops.DeleteFaces)
+		return retopoFacesBody(in, f.def.FaceKeys, "directEdit delete", heal.DeleteFaces)
 	case types.DirectEditScaleOperation:
 		return f.recomputeScale(in)
 	default:
@@ -73,7 +75,7 @@ func (f *DirectEditFeature) recomputeSize(in Input) (Output, error) {
 	}
 	delta := dir.AsVector().Scale(callOrZero(f.def.Distance))
 	return retopoFacesBody(in, f.def.FaceKeys, "directEdit size", func(b *topo.Body, keys [][]byte) (*topo.Body, error) {
-		return ops.MoveFaces(b, keys, delta)
+		return transform.MoveFaces(b, keys, delta)
 	})
 }
 
@@ -84,7 +86,7 @@ func (f *DirectEditFeature) recomputeRotate(in Input) (Output, error) {
 		return Output{}, fmt.Errorf("directEdit rotate: axis %v is degenerate", f.def.AxisDir)
 	}
 	return retopoFacesBody(in, f.def.FaceKeys, "directEdit rotate", func(b *topo.Body, keys [][]byte) (*topo.Body, error) {
-		return ops.RotateFaces(b, keys, f.def.AxisPoint, dir, callOrZero(f.def.Angle))
+		return transform.RotateFaces(b, keys, f.def.AxisPoint, dir, callOrZero(f.def.Angle))
 	})
 }
 
@@ -100,7 +102,7 @@ func (f *DirectEditFeature) recomputeScale(in Input) (Output, error) {
 		return Output{}, err
 	}
 	m := scaleAbout(f.def.BasePoint, k)
-	scaled, err := ops.TransformBody(body, m, func(l topo.Lineage) topo.Lineage { return l })
+	scaled, err := transform.TransformBody(body, m, func(l topo.Lineage) topo.Lineage { return l })
 	if err != nil {
 		return Output{}, fmt.Errorf("directEdit scale: %w", err)
 	}

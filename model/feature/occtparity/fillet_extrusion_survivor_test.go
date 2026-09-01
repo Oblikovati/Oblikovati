@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // extrusionFilletFixtures are the oblique-elliptical-prism corpus cases (imported via the STEP
@@ -50,7 +51,7 @@ func TestExtrusionFixturesFilletToValidSolid(t *testing.T) {
 		if rep := ops.Validate(res[0]); !rep.Valid || !rep.Closed || !rep.Manifold || !res[0].IsSolid() {
 			t.Errorf("%s: not a valid closed manifold solid: %+v", id, rep)
 		}
-		if v := ops.BodyGeometryProperties(res[0], ops.PropertyQuality()).Volume; v <= 0 {
+		if v := query.BodyGeometryProperties(res[0], ops.PropertyQuality()).Volume; v <= 0 {
 			t.Errorf("%s: enclosed volume %.4f is not positive", id, v)
 		}
 	}

@@ -26,6 +26,7 @@ func drilledSlab(t *testing.T) *topo.Body {
 // K1b slice 3: a cylinder cut through a planar slab is a clean watertight solid — six planar
 // faces (the two pierced ones now holed) plus a single TRUE cylinder wall face.
 func TestCutCylindricalHoleIsValidSolid(t *testing.T) {
+	t.Parallel()
 	d := drilledSlab(t)
 	if r := ops.Validate(d); !r.Valid || !d.IsSolid() {
 		t.Fatalf("drilled slab is not a valid solid: %+v", r)
@@ -50,6 +51,7 @@ func TestCutCylindricalHoleIsValidSolid(t *testing.T) {
 // The drilled volume is the slab minus the (inscribed) cylinder — proving the wall's material
 // side faces the axis (a reversed face), so the removed core is subtracted, not added.
 func TestCutCylindricalHoleVolume(t *testing.T) {
+	t.Parallel()
 	const slab, bore = 10.0 * 10.0 * 4.0, stdmath.Pi * 2 * 2 * 4 // box, π·r²·h
 	removed := slab - vol(drilledSlab(t))
 	if removed <= 0 {
@@ -63,6 +65,7 @@ func TestCutCylindricalHoleVolume(t *testing.T) {
 // A slab face the hole runs alongside is copied unchanged, so its reference key survives the
 // cut and a pick made before drilling rebinds to the result face (K1a/K1b on a curved cut).
 func TestDrillPreservesUntouchedFaceKey(t *testing.T) {
+	t.Parallel()
 	slab := box(0, 0, 0, 10, 10, 4)
 	side := faceWithNormal(slab, math.V3(1, 0, 0)) // the +X wall, parallel to the drill axis
 	if side == nil {
@@ -83,6 +86,7 @@ func TestDrillPreservesUntouchedFaceKey(t *testing.T) {
 // an all-planar slab and errored here. Drill a second, clearing hole along +X through a once-bored slab and
 // assert an exact analytic solid results (two cylinder walls now, no CSG fallback).
 func TestCutCylindricalHoleThroughAlreadyCurvedSlab(t *testing.T) {
+	t.Parallel()
 	bored := drilledSlab(t) // 10×10×4 with a +Z bore at centre → carries a cylinder face
 	got, err := brep.CutCylindricalHole(bored, math.P3(0, 1.5, 2), math.V3(1, 0, 0), 1)
 	if err != nil {
@@ -108,6 +112,7 @@ func TestCutCylindricalHoleThroughAlreadyCurvedSlab(t *testing.T) {
 // A hole whose circle spills past the face boundary needs the general boolean, not this
 // through-hole specialization — it must error rather than build a broken body.
 func TestDrillRejectsOversizeHole(t *testing.T) {
+	t.Parallel()
 	_, err := brep.CutCylindricalHole(box(0, 0, 0, 10, 10, 4), math.P3(5, 5, 0), math.V3(0, 0, 1), 8)
 	if err == nil {
 		t.Error("expected an error for a hole larger than the face, got nil")
@@ -118,6 +123,7 @@ func TestDrillRejectsOversizeHole(t *testing.T) {
 // axially SPAN the slab (an embedded or blind cut) must decline rather than drill the unbounded axis
 // as a full through-hole (the silent wrong-volume misfire the per-face dispatch exposed, ADR-0058).
 func TestDrillThroughHoleDeclinesEmbeddedTool(t *testing.T) {
+	t.Parallel()
 	block, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")
 	embedded, _ := brep.SolidCylinder(math.P3(5, 5, 3), math.V3(0, 0, 1), 1, 4)
 	if _, ok := brep.DrillThroughHole(block, embedded); ok {

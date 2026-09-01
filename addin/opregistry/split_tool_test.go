@@ -30,6 +30,7 @@ func lastSplitDef(t *testing.T, s *app.Session) *feature.SplitSolidDefinition {
 
 // TestSplitToolReachesTheDefinition: each tool spelling maps to its kind and carries its index.
 func TestSplitToolReachesTheDefinition(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		spelling string
 		want     feature.SplitToolKind
@@ -56,6 +57,7 @@ func TestSplitToolReachesTheDefinition(t *testing.T) {
 // wire DTO carries no sketch reference yet, so a splitSolid with tool:"path" is refused with a
 // pointer to the follow-up rather than building a sketch-less split that goes sick (#2068).
 func TestSplitPathToolRefusedOverWire(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	_, err := applyMap(t, s, "splitSolid", map[string]any{"tool": "path"})
 	if err == nil {
@@ -69,6 +71,7 @@ func TestSplitPathToolRefusedOverWire(t *testing.T) {
 // TestSurfaceSplitNeedsNoWorkPlane: a surface tool has no plane to resolve, so demanding one
 // would reject the split on any part that has not been given a work plane it does not use.
 func TestSurfaceSplitNeedsNoWorkPlane(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	if _, err := applyMap(t, s, "splitSolid", map[string]any{
 		"tool": "surfaceBody", "toolIndex": 0, "type": "splitBody",
@@ -83,6 +86,7 @@ func TestSurfaceSplitNeedsNoWorkPlane(t *testing.T) {
 // TestSplitToolIsIndependentOfType: the type says what the split DOES and the tool says what it
 // cuts with; setting one must not overwrite the other.
 func TestSplitToolIsIndependentOfType(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	if _, err := applyMap(t, s, "splitSolid", map[string]any{
 		"tool": "surfaceBody", "toolIndex": 2, "type": "splitFaces",
@@ -98,6 +102,7 @@ func TestSplitToolIsIndependentOfType(t *testing.T) {
 // TestUnknownSplitToolIsRefused: a misspelled tool must not fall through to the work plane and
 // cut along a datum nobody asked for.
 func TestUnknownSplitToolIsRefused(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	if _, err := applyMap(t, s, "splitSolid", map[string]any{"tool": "surface"}); err == nil {
 		t.Error("an unknown split tool should error")

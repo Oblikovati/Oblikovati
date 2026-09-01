@@ -18,6 +18,7 @@ import (
 // land. A one-way run reaches x=4; the mid-plane run of the same count reaches x=−2…+2 with the
 // seed still at the origin, which is the whole point: the seed cannot move.
 func TestMidPlaneRectPatternPlacesBodiesAboutTheSeed(t *testing.T) {
+	t.Parallel()
 	oneWay := patternCentresX(t, false)
 	if want := []float64{0.5, 2.5, 4.5}; !floatsNear(oneWay, want) {
 		t.Fatalf("one-way centres = %v, want %v", oneWay, want)
@@ -35,6 +36,7 @@ func TestMidPlaneRectPatternPlacesBodiesAboutTheSeed(t *testing.T) {
 // TestSuppressedOccurrenceIsNotBuilt checks suppression reaches the recompute, not just the
 // element list — the gap #1889 reports.
 func TestSuppressedOccurrenceIsNotBuilt(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	src := NewBaseFeatures(fs).AddBase(prismBody())
 	rect := NewPatternFeatures(fs).AddRectangular([]ID{src.ID()},
@@ -60,6 +62,7 @@ func TestSuppressedOccurrenceIsNotBuilt(t *testing.T) {
 // TestMidPlaneAndSuppressionRoundTrip keeps both across an .obk save/load, so a pattern reopens
 // where it was drawn.
 func TestMidPlaneAndSuppressionRoundTrip(t *testing.T) {
+	t.Parallel()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	src := NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })

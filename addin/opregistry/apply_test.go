@@ -58,6 +58,7 @@ func apply(t *testing.T, s *app.Session, name, args string) (json.RawMessage, er
 // TestExtrudeApply drives every extent/direction/taper branch of the reference
 // operation, plus its validation errors.
 func TestExtrudeApply(t *testing.T) {
+	t.Parallel()
 	ok := []struct{ name, args string }{
 		{"distance new", `{"sketchIndex":0,"profileIndex":0,"distance":"10 mm","operation":"new"}`},
 		{"symmetric", `{"sketchIndex":0,"distance":"8 mm","direction":"symmetric"}`},
@@ -126,6 +127,7 @@ func applyMap(t *testing.T, s *app.Session, op string, args map[string]any) (jso
 // covering the feature-building success path of each (recomputeResult reports geometry
 // health in the result, so a valid request never errors here).
 func TestDressUpOnSolid(t *testing.T) {
+	t.Parallel()
 	edgeCases := []struct {
 		name, op string
 		args     map[string]any
@@ -185,6 +187,7 @@ func TestDressUpOnSolid(t *testing.T) {
 // TestFaceFilletThroughRegistry rounds the edge two adjacent faces share, selected by face over the
 // fillet op's face-fillet form (#694) — the end-to-end registry path an MCP driver uses.
 func TestFaceFilletThroughRegistry(t *testing.T) {
+	t.Parallel()
 	s := profiledPart(t)
 	if _, err := apply(t, s, "extrude", `{"sketchIndex":0,"distance":"10 mm"}`); err != nil {
 		t.Fatalf("seed extrude: %v", err)
@@ -209,6 +212,7 @@ func TestFaceFilletThroughRegistry(t *testing.T) {
 // TestRuleFilletThroughRegistry rounds every convex edge of an extruded solid in one feature via the
 // ruleFillet op (#486) — the end-to-end registry/MCP path.
 func TestRuleFilletThroughRegistry(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	if _, err := applyMap(t, s, "ruleFillet", map[string]any{"rule": "allRounds", "radius": "0.5 mm"}); err != nil {
 		t.Fatalf("rule fillet through registry: %v", err)
@@ -217,6 +221,7 @@ func TestRuleFilletThroughRegistry(t *testing.T) {
 
 // TestRuleFilletRejectsBadRule: an unknown rule is a clean error.
 func TestRuleFilletRejectsBadRule(t *testing.T) {
+	t.Parallel()
 	s, _, _ := extrudedSolid(t)
 	if _, err := applyMap(t, s, "ruleFillet", map[string]any{"rule": "everything", "radius": "0.5 mm"}); err == nil {
 		t.Error("ruleFillet with an unknown rule should error")
@@ -225,6 +230,7 @@ func TestRuleFilletRejectsBadRule(t *testing.T) {
 
 // TestFaceFilletRequiresBothSets: the face-fillet form rejects only one face set given.
 func TestFaceFilletRequiresBothSets(t *testing.T) {
+	t.Parallel()
 	s, _, face := extrudedSolid(t)
 	if _, err := applyMap(t, s, "fillet", map[string]any{"faceRefsA": []string{face}, "radius": "1 mm"}); err == nil {
 		t.Error("face fillet with only faceRefsA should error")
@@ -233,6 +239,7 @@ func TestFaceFilletRequiresBothSets(t *testing.T) {
 
 // TestDressUpRejectsEmptyRefs: each dress-up op rejects a missing reference list.
 func TestDressUpRejectsEmptyRefs(t *testing.T) {
+	t.Parallel()
 	for _, op := range []string{"fillet", "chamfer", "shell", "draft", "lip"} {
 		s, _, _ := extrudedSolid(t)
 		if _, err := apply(t, s, op, `{"radius":"1 mm","distance":"1 mm","thickness":"1 mm","angle":"3 deg","width":"1 mm","height":"1 mm"}`); err == nil {
@@ -243,6 +250,7 @@ func TestDressUpRejectsEmptyRefs(t *testing.T) {
 
 // TestDressUpRejectsBadConcaveStrategy: fillet and chamfer reject an unknown concaveStrategy.
 func TestDressUpRejectsBadConcaveStrategy(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct{ op, args string }{
 		{"fillet", `{"edgeRefs":["x"],"radius":"1 mm","concaveStrategy":"sideways"}`},
 		{"chamfer", `{"edgeRefs":["x"],"distance":"1 mm","concaveStrategy":"sideways"}`},
@@ -256,6 +264,7 @@ func TestDressUpRejectsBadConcaveStrategy(t *testing.T) {
 
 // TestFilletRejectsBadCrossSection: the fillet op rejects an unknown crossSection (#1284).
 func TestFilletRejectsBadCrossSection(t *testing.T) {
+	t.Parallel()
 	s, edge, _ := extrudedSolid(t)
 	if _, err := applyMap(t, s, "fillet", map[string]any{"edgeRefs": []string{edge}, "radius": "1 mm", "crossSection": "wavy"}); err == nil {
 		t.Error("fillet with an unknown crossSection should error")
@@ -264,6 +273,7 @@ func TestFilletRejectsBadCrossSection(t *testing.T) {
 
 // TestExtrudeNeedsActivePart: the operation surfaces the no-part error.
 func TestExtrudeNeedsActivePart(t *testing.T) {
+	t.Parallel()
 	if _, err := apply(t, app.NewSession(), "extrude", `{"sketchIndex":0,"distance":"1 mm"}`); err == nil {
 		t.Fatal("extrude without an active part should error")
 	}
@@ -271,6 +281,7 @@ func TestExtrudeNeedsActivePart(t *testing.T) {
 
 // TestParseHelpers covers the pure string→enum mappers directly.
 func TestParseHelpers(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		in   string
 		want bool // expect ok (no error)
@@ -300,6 +311,7 @@ func TestParseHelpers(t *testing.T) {
 // seeded part: with representative args it must return a result OR a descriptive error,
 // never panic. This exercises the argument-parsing/resolution path of every operation.
 func TestEveryOperationHandlesArgsCleanly(t *testing.T) {
+	t.Parallel()
 	// Representative args per operation. Many additive ops succeed on the seeded profile;
 	// reference-bearing ops (dress-up, holes) return a clean "needs a reference" error,
 	// which still exercises their decode/resolve code.

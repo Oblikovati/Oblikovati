@@ -10,6 +10,7 @@ import (
 )
 
 func TestShowListResolveTaskPanel(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.ShowTaskPanel(wire.TaskPanelSpec{ID: "fix", Title: "Fixed"}); err != nil {
 		t.Fatalf("ShowTaskPanel: %v", err)
@@ -36,6 +37,7 @@ func TestShowListResolveTaskPanel(t *testing.T) {
 }
 
 func TestShowTaskPanelRejectsEmptyID(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := s.ShowTaskPanel(wire.TaskPanelSpec{Title: "x"}); err == nil {
 		t.Fatal("expected error for empty id")
@@ -47,6 +49,7 @@ func TestShowTaskPanelRejectsEmptyID(t *testing.T) {
 }
 
 func TestCloseTaskPanelIsSilent(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	_ = s.ShowTaskPanel(wire.TaskPanelSpec{ID: "p", Title: "P"})
 

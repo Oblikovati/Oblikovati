@@ -33,7 +33,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       - id: pin
         run: echo "version=$(scripts/sync-api-version.sh)" >> "$GITHUB_OUTPUT"
       - name: Commit the pin if it changed
@@ -59,7 +66,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       # Check out the latest api release and wire the build against it (ADR-0018).
       - uses: ./.github/actions/api-contract
       - uses: golangci/golangci-lint-action@9fae48acfc02a90574d7c304a1758ef9895495fa # v7
@@ -93,7 +107,13 @@ jobs:
       - uses: actions/checkout@v5
       - run: python3 scripts/add-spdx-headers.py --check
 
-  # Tier 1 — fast, cgo-free unit tests on every OS (architecture/testing/README).
+  # Tier 2 — the whole suite, corpus and oracle tests included, on every OS
+  # (architecture/testing/README, testing/03).
+  #
+  # There is deliberately NO separate tier-1 job: tier 2 is a superset of tier 1, so a
+  # `-short` job on this same OS would run ~9400 of these tests a second time for
+  # nothing. The tier-1 budget is enforced instead by the "Tier-1 guard budget" step
+  # below, which reads the JSON THIS run already produces.
   test:
     strategy:
       fail-fast: false
@@ -107,7 +127,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       - uses: ./.github/actions/api-contract
         # Wire the API replace into the translator modules too, not just the root: they are
         # separate modules whose COMMITTED `replace oblikovati.org/api => ../../../../../Oblikovati.API`
@@ -142,7 +169,11 @@ jobs:
       # a same-named _test.go beside it, purely because it was missing from this list. `event/...`
       # (the pub/sub Bus, #2170's generic-methods conversion) hit the identical failure mode the
       # moment its new code grew past a handful of lines: 0% on new code despite `go test
-      # ./event/...` itself reading 100% locally.
+      # ./event/...` itself reading 100% locally. `cmd/...` joined for the same reason when
+      # cmd/testimpact and cmd/testslowest landed with their own tests: -coverpkg gives a
+      # package NO coverage at all when it is absent from the list, even from its own test
+      # binary. test-utilities/ deliberately stays out — it is already in
+      # sonar.coverage.exclusions as dev tooling, so instrumenting it would buy nothing.
       #
       # Ubuntu-only because that is the single leg whose profile feeds the `sonar` job (see the
       # upload step below); the macOS/Windows legs keep the uninstrumented command so the slowest
@@ -151,9 +182,10 @@ jobs:
         run: |
           COVERPKG=""
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            COVERPKG="-coverpkg=./kernel/...,./model/...,./app/...,./addin/...,./renderer/...,./event/..."
+            COVERPKG="-coverpkg=./kernel/...,./model/...,./app/...,./addin/...,./renderer/...,./event/...,./cmd/..."
           fi
-          gotestsum --junitfile test-results-${{ matrix.os }}.xml -- \
+          gotestsum --junitfile test-results-${{ matrix.os }}.xml \
+            --jsonfile test-results-${{ matrix.os }}.json -- \
             -coverprofile=coverage.out -covermode=count $COVERPKG -timeout 60m ./...
       # -coverpkg makes EVERY test binary emit a profile for EVERY instrumented package, so the
       # same block is repeated once per binary: measured 390 MB / 6.6M lines, far too large to
@@ -174,10 +206,23 @@ jobs:
       - name: Translator-module coverage
         if: matrix.os == 'ubuntu-latest'
         run: |
-          for m in model/exchange/translators/solidworks model/exchange/translators/inventor; do
+          for m in model/exchange/translators/solidworks model/exchange/translators/inventor \
+                   model/exchange/translators/olecf; do
             (cd "$m" && go test -covermode=count -coverprofile=cover.out ./...)
             tail -n +2 "$m/cover.out" >> coverage.out
           done
+      # The tier-1 promise ("make test finishes in seconds") is held here, WITHOUT a
+      # second run of the suite: a test that is slow in this tier-2 stream and does not
+      # guard itself with testing.Short() is a corpus test that landed in the fast tier.
+      # The limit is generous because tier-2 elapsed is stretched by core contention —
+      # the slowest honest test measured 22s here against 40-434s for the corpus, so 60s
+      # sits in the gap. `make test-budget` is the tight, per-package gate a developer
+      # can run locally; it costs a `-short` run, which is why CI does not pay for it.
+      - name: Tier-1 guard budget
+        if: always() && matrix.os == 'ubuntu-latest'
+        run: |
+          go run ./cmd/testslowest -top 25 -unguarded-budget 60 -module-root . \
+            < test-results-ubuntu-latest.json
       - uses: actions/upload-artifact@v6
         if: always()
         with:
@@ -204,7 +249,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       - uses: ./.github/actions/api-contract
       # The OCCT blend-parity corpus is excluded here, NOT because it is unverified under the race
       # detector but because instrumenting it on a CI runner buys no signal for hours of compute: it
@@ -235,7 +287,14 @@ jobs:
         with:
           # Match build.yml's head-linux toolchain.
           go-version: "1.27"
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       - uses: ./.github/actions/api-contract
         with:
           modules: head
@@ -278,7 +337,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: "1.27"
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       - uses: ./.github/actions/api-contract
         with:
           modules: head
@@ -357,7 +423,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: false
+          # Cache ON: every job used to recompile the whole module from scratch, which
+          # cost far more than any duplicated test. Both go.sum files feed the key so a
+          # head-module dependency change still invalidates it. Go's build cache is
+          # content-addressed, so a stale entry cannot produce a wrong build.
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            head/go.sum
       - uses: ./.github/actions/api-contract
       - name: Cross-compile
         run: |

@@ -28,6 +28,7 @@ func activeAssemblySession(t *testing.T) *Session {
 // origin frame, not only a part's — both own a feature.WorkGeometry, so datum rendering and picking
 // can source from it model-agnostically.
 func TestActiveWorkGeometryResolvesAssembly(t *testing.T) {
+	t.Parallel()
 	s := activeAssemblySession(t)
 	wg, ok := s.ActiveWorkGeometry()
 	if !ok || wg == nil {
@@ -43,6 +44,7 @@ func TestActiveWorkGeometryResolvesAssembly(t *testing.T) {
 // path is no longer part-gated (PickableWorkPlanes returned nil for an assembly before). A hidden
 // origin plane is reachable solely through its browser node, never a viewport click.
 func TestPickableWorkPlanesFollowsVisibilityInAssembly(t *testing.T) {
+	t.Parallel()
 	s := activeAssemblySession(t)
 	if got := len(s.PickableWorkPlanes()); got != 0 {
 		t.Fatalf("assembly PickableWorkPlanes (default) = %d, want 0 (origin planes hidden until shown)", got)
@@ -59,6 +61,7 @@ func TestPickableWorkPlanesFollowsVisibilityInAssembly(t *testing.T) {
 // visible. Before, an assembly's axes were never offered (the source was part-gated); now toggling
 // them on shows them in the assembly exactly as in a part.
 func TestPickableWorkAxesFollowsVisibilityInAssembly(t *testing.T) {
+	t.Parallel()
 	s := activeAssemblySession(t)
 	if got := len(s.PickableWorkAxes()); got != 0 {
 		t.Fatalf("assembly PickableWorkAxes (default) = %d, want 0 (origin axes hidden until shown, as in a part)", got)
@@ -75,6 +78,7 @@ func TestPickableWorkAxesFollowsVisibilityInAssembly(t *testing.T) {
 
 // TestPickableWorkPointsIncludesAssemblyOrigin: an assembly's origin centre point is a snap target.
 func TestPickableWorkPointsIncludesAssemblyOrigin(t *testing.T) {
+	t.Parallel()
 	s := activeAssemblySession(t)
 	// The origin centre starts hidden, and what the overlays do not draw must not be clickable —
 	// otherwise a click near the origin snaps to a point nothing shows (#2016). Showing it is
@@ -100,6 +104,7 @@ func TestPickableWorkPointsIncludesAssemblyOrigin(t *testing.T) {
 // coordinate-system elements (3 planes + 3 axes + 1 point), like a part's — before, an assembly's
 // tree had Parameters and occurrences but no Origin folder at all.
 func TestAssemblyBrowserHasOriginFolder(t *testing.T) {
+	t.Parallel()
 	s := activeAssemblySession(t)
 	root := BuildBrowser(s)
 	if !hasTopLevelKind(root, "origin") {

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -13,6 +14,7 @@ import (
 // TestGeometricFaceShellBindsAndHollows proves the face path (M8/ADR-0040): a shell whose
 // removed face is given only by a geometric descriptor binds and hollows the body.
 func TestGeometricFaceShellBindsAndHollows(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	box := geomRefBox()
 	NewBaseFeatures(fs).AddBase(box)
@@ -27,8 +29,8 @@ func TestGeometricFaceShellBindsAndHollows(t *testing.T) {
 	if !pf.Health().OK() {
 		t.Fatalf("geometric-face shell is not healthy: %+v", pf.Health())
 	}
-	boxVol := ops.BodyGeometryProperties(geomRefBox(), ops.DefaultQuality()).Volume
-	gotVol := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
+	boxVol := query.BodyGeometryProperties(geomRefBox(), ops.DefaultQuality()).Volume
+	gotVol := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
 	if !(gotVol < boxVol) {
 		t.Errorf("shell did not hollow the body: got %g, box %g", gotVol, boxVol)
 	}
@@ -37,6 +39,7 @@ func TestGeometricFaceShellBindsAndHollows(t *testing.T) {
 // TestGeometricFaceHoleBindsAndDrills proves a hole placed on a geometrically-described
 // face binds and removes material.
 func TestGeometricFaceHoleBindsAndDrills(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	box := geomRefBox()
 	NewBaseFeatures(fs).AddBase(box)
@@ -53,8 +56,8 @@ func TestGeometricFaceHoleBindsAndDrills(t *testing.T) {
 	if !pf.Health().OK() {
 		t.Fatalf("geometric-face hole is not healthy: %+v", pf.Health())
 	}
-	boxVol := ops.BodyGeometryProperties(geomRefBox(), ops.DefaultQuality()).Volume
-	gotVol := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
+	boxVol := query.BodyGeometryProperties(geomRefBox(), ops.DefaultQuality()).Volume
+	gotVol := query.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
 	if !(gotVol < boxVol) {
 		t.Errorf("hole did not remove material: got %g, box %g", gotVol, boxVol)
 	}
@@ -63,6 +66,7 @@ func TestGeometricFaceHoleBindsAndDrills(t *testing.T) {
 // TestGeometricFaceHoleRecipeRoundTrips checks the single-face geomFace encoding (a hole's
 // placement face) round-trips through serialize → restore.
 func TestGeometricFaceHoleRecipeRoundTrips(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	ref := topo.DescribeFace(geomRefBox().Faces()[0])
 	pf := NewHoleFeatures(fs).addHole(&HoleDefinition{
@@ -94,6 +98,7 @@ func TestGeometricFaceHoleRecipeRoundTrips(t *testing.T) {
 // TestHoleExplicitCenterRoundTrips checks an externally-authored hole's explicit drill point
 // survives serialize → restore (nil center stays nil).
 func TestHoleExplicitCenterRoundTrips(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	ref := topo.DescribeFace(geomRefBox().Faces()[0])
 	center := math.P3(0.2, 0.3, 0.5)
@@ -126,6 +131,7 @@ func TestHoleExplicitCenterRoundTrips(t *testing.T) {
 // TestGeometricFaceShellRecipeRoundTrips checks the geomFaces encoding round-trips through
 // serialize → restore.
 func TestGeometricFaceShellRecipeRoundTrips(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	ref := topo.DescribeFace(geomRefBox().Faces()[0])
 	pf := NewDressUpFeatures(fs).addShell(&ShellDefinition{

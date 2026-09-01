@@ -12,6 +12,7 @@ import (
 // TestAssemblyConstraintToolPickProgression: the tool accepts exactly its required number of
 // face picks and only then enables commit.
 func TestAssemblyConstraintToolPickProgression(t *testing.T) {
+	t.Parallel()
 	tool := NewAssemblyConstraintTool("Mate", 2, func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
 		return set.AddMate(r[0], r[1], 0, types.MateSolutionOpposed)
 	})
@@ -38,6 +39,7 @@ func TestAssemblyConstraintToolPickProgression(t *testing.T) {
 // TestAssemblyConstraintToolRejectsUnresolvedPick: committing with a face that does not resolve
 // to a placed component is a clean error, not a crash (the tool stays open).
 func TestAssemblyConstraintToolRejectsUnresolvedPick(t *testing.T) {
+	t.Parallel()
 	s := assemblySession(t)
 	tool := NewAssemblyConstraintTool("Mate", 2, func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
 		return set.AddMate(r[0], r[1], 0, types.MateSolutionOpposed)

@@ -27,6 +27,7 @@ func countCylFaces(b *topo.Body) int {
 // A through counterbore: Ø4 recess 1 deep stepping to a Ø2 bore through an 8×8×4 slab.
 // Valid watertight solid with two cylinder walls (recess + bore) and an annular shoulder.
 func TestCutCounterboreThrough(t *testing.T) {
+	t.Parallel()
 	d, err := brep.CutCounterboreHole(box(0, 0, 0, 8, 8, 4), math.P3(4, 4, 4), math.V3(0, 0, -1), 1, 0, 2, 1, true)
 	if err != nil {
 		t.Fatalf("CutCounterboreHole: %v", err)
@@ -50,6 +51,7 @@ func TestCutCounterboreThrough(t *testing.T) {
 
 // A blind counterbore stops inside the part: it adds a flat bore bottom too.
 func TestCutCounterboreBlind(t *testing.T) {
+	t.Parallel()
 	d, err := brep.CutCounterboreHole(box(0, 0, 0, 8, 8, 6), math.P3(4, 4, 6), math.V3(0, 0, -1), 1, 2, 2, 1, false)
 	if err != nil {
 		t.Fatalf("CutCounterboreHole (blind): %v", err)
@@ -63,6 +65,7 @@ func TestCutCounterboreBlind(t *testing.T) {
 }
 
 func TestCutCounterboreRejectsInvalidInputs(t *testing.T) {
+	t.Parallel()
 	slab := box(0, 0, 0, 8, 8, 4)
 	for _, tc := range []struct {
 		name         string
@@ -87,6 +90,7 @@ func TestCutCounterboreRejectsInvalidInputs(t *testing.T) {
 }
 
 func TestCutCounterboreThroughRejectsNoExitFace(t *testing.T) {
+	t.Parallel()
 	_, err := brep.CutCounterboreHole(box(0, 0, 0, 8, 8, 4), math.P3(4, 4, 4), math.V3(1, 0, 0), 1, 0, 2, 1, true)
 	if err == nil {
 		t.Fatal("expected through counterbore with side axis to miss an exit face")

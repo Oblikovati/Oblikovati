@@ -40,6 +40,7 @@ func n7CanalSurface(t *testing.T) (BSplineSurface, []arcStation, []float64) {
 // 0.023 abs, orders looser than res.Weld·r² ≈ 3e-6). We gate at 0.05% (2.5× the spike's demonstrated
 // 0.025%), which the interpolating loft through 163 marched stations comfortably meets.
 func TestLoftCanalN7AreaEmerges(t *testing.T) {
+	t.Parallel()
 	surf, _, _ := n7CanalSurface(t)
 	const oracle = 90.194
 	area := surfaceArea(surf, 96, 384)
@@ -65,6 +66,7 @@ func TestLoftCanalN7AreaEmerges(t *testing.T) {
 // arcs (radius 5 about the end ball-centers); u=0/u=1 pass through every marched foot exactly (on
 // host to weld). C3 emits Loops on these edges, so this is what makes the B-rep weld watertight.
 func TestLoftCanalN7Watertight(t *testing.T) {
+	t.Parallel()
 	surf, cols, vParams := n7CanalSurface(t)
 	wall, s10 := n7Hosts()
 	weld := n7Resolution(n7Ends()).Weld()
@@ -86,6 +88,7 @@ func TestLoftCanalN7Watertight(t *testing.T) {
 // not same-(u,v); the spike measured 0.005). This proves we reproduced OCCT's geometry, not just its
 // area.
 func TestLoftCanalN7ShapeMatchesOCCT(t *testing.T) {
+	t.Parallel()
 	surf, _, _ := n7CanalSurface(t)
 	occt := occtResult5Surface(t)
 	lo, hi := occt.UDomain()
@@ -238,6 +241,7 @@ func endArc3d(t *testing.T, wall, s10 Surface, m math.Point3, r float64) Arc3d {
 // must emit the same DRAWEXE-oracle area 90.194 (within the C2-justified 0.05%) as the hand-composed
 // pipeline — no tuned constant, the area emerges from the rolling-ball geometry.
 func TestCanalCornerFillN7AreaEmerges(t *testing.T) {
+	t.Parallel()
 	rails, wall, s10, ends := n7CanalRails(t)
 	surf, err := CanalCornerFill([]Surface{wall, s10}, 5, rails, ends, n7Resolution(ends))
 	if err != nil {
@@ -254,6 +258,7 @@ func TestCanalCornerFillN7AreaEmerges(t *testing.T) {
 // CanalCornerFill returns that error instead of lofting a degenerate point-spine — so the provider
 // declines and analyticSphere wins the clean octant.
 func TestCanalCornerFillRejectsPointSpine(t *testing.T) {
+	t.Parallel()
 	rails, wall, s10, ends := n7CanalRails(t)
 	coincident := [2]math.Point3{ends[0], ends[0]} // offsets concur → no rolling-ball corner
 	_, err := CanalCornerFill([]Surface{wall, s10}, 5, rails, coincident, n7Resolution(ends))
@@ -270,6 +275,7 @@ func TestCanalCornerFillRejectsPointSpine(t *testing.T) {
 // CanalCornerFill honest-rejects rather than lofting a patch onto rails it does not weld to. The ends
 // are the real ones (the spine builds fine); only the rails are wrong, isolating the self-check.
 func TestCanalCornerFillRejectsMismatchedRails(t *testing.T) {
+	t.Parallel()
 	_, wall, s10, ends := n7CanalRails(t)
 	bad := badCenteredRails(t, wall, s10, ends, math.V3(0, 0, 3)) // rail arcs centred 3 off the ends
 	_, err := CanalCornerFill([]Surface{wall, s10}, 5, bad, ends, n7Resolution(ends))
@@ -292,6 +298,7 @@ func badCenteredRails(t *testing.T, wall, s10 Surface, ends [2]math.Point3, shif
 
 // TestCanalCornerFillRejectsWrongHostCount guards the arity precondition.
 func TestCanalCornerFillRejectsWrongHostCount(t *testing.T) {
+	t.Parallel()
 	rails, wall, _, ends := n7CanalRails(t)
 	if _, err := CanalCornerFill([]Surface{wall}, 5, rails, ends, n7Resolution(ends)); err == nil {
 		t.Fatal("CanalCornerFill must reject a host count != 2")

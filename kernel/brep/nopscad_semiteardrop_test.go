@@ -13,6 +13,7 @@ import (
 // a positive-Y semicircular profile extruded to height. The bridge integration test
 // later proves the same shape through sketch constraints and parametric recompute.
 func TestNopSemiTeardropCSG(t *testing.T) {
+	t.Parallel()
 	const radius, height = 0.4, 2.0
 	points := []math.Point3{math.P3(radius, 0, 0)}
 	for i := 1; i < 32; i++ {

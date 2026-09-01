@@ -12,6 +12,7 @@ import (
 )
 
 func TestKeepsInside(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		op   Op
 		isB  bool
@@ -32,6 +33,7 @@ func TestKeepsInside(t *testing.T) {
 }
 
 func TestFatterOperand(t *testing.T) {
+	t.Parallel()
 	thin, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
 	fatB, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3.5, 12)
 	oThin, _ := cylinderOperand(thin)
@@ -48,6 +50,7 @@ func TestFatterOperand(t *testing.T) {
 }
 
 func TestCapCircleOfAndAxialSide(t *testing.T) {
+	t.Parallel()
 	body, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12) // axis +x, caps at x=-6 and x=+6
 	_, cyl, _, _ := cylinderSideFace(body)
 	caps := planarCapFaces(body)
@@ -80,6 +83,7 @@ func TestCapCircleOfAndAxialSide(t *testing.T) {
 }
 
 func TestLoopCentroidAxial(t *testing.T) {
+	t.Parallel()
 	// A square loop centred at x=5 on the x-axis: its axial centroid (along +x from the origin) is 5.
 	pl, _ := geom.NewPolyline([]math.Point3{
 		math.P3(4, 0, 0), math.P3(6, 0, 0), math.P3(6, 1, 0), math.P3(4, 1, 0), math.P3(4, 0, 0),
@@ -93,6 +97,7 @@ func TestLoopCentroidAxial(t *testing.T) {
 // TestRawStubBands checks the near-severed rod's OUTSIDE stubs are built as two two-rim bands, one per loop,
 // each pairing the loop with the cap on the far axial side (so the stub extends away from the other loop).
 func TestRawStubBands(t *testing.T) {
+	t.Parallel()
 	thin, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3.00006, 12)
 	loops, ok := crossingCylinderLoops(thin, fat, nil)
@@ -130,6 +135,7 @@ func nearPinchPair(t *testing.T, r, dr float64) (thin, fat *topo.Body) {
 // (fat−thin drill = 4 faces, thin−fat sever = 6 faces), the join (7 faces), and that each builds a valid
 // closed manifold solid.
 func TestNearPinchCrossingCutJoinBuild(t *testing.T) {
+	t.Parallel()
 	thin, fat := nearPinchPair(t, 3.0, 6e-5)
 	cases := []struct {
 		name      string
@@ -157,6 +163,7 @@ func TestNearPinchCrossingCutJoinBuild(t *testing.T) {
 // crossing that is NOT the unequal narrow-neck band, so those pairs fall through to the ordinary pipeline: an
 // EQUAL-radius Steinmetz pair (its own constructor owns it) and a WELL-SEPARATED thin-rod crossing.
 func TestNearPinchGateDeclinesNonNearPinch(t *testing.T) {
+	t.Parallel()
 	eqA, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
 	eqB, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12) // equal radii
 	if _, ok := nearPinchCrossingCut(eqA, eqB, nil); ok {
@@ -175,6 +182,7 @@ func TestNearPinchGateDeclinesNonNearPinch(t *testing.T) {
 // TestCurvedReorientFlipsInconsistent builds two faces that share an edge traversed the SAME way by both
 // (an inconsistent shell) and checks curvedReorient flips exactly one so the shared edge is opposed.
 func TestCurvedReorientFlipsInconsistent(t *testing.T) {
+	t.Parallel()
 	seg := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(1, 0, 0))
 	pl, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	// Both faces traverse the shared segment 0→1 (same direction) — inconsistent.

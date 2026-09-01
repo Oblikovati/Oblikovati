@@ -10,6 +10,7 @@ import (
 )
 
 func TestFreeformPrimitiveConvertsToBRep(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewFreeformFeatures(fs).AddBox(2, 2, 2, 0)
 	fs.Recompute()
@@ -26,6 +27,7 @@ func TestFreeformPrimitiveConvertsToBRep(t *testing.T) {
 }
 
 func TestFreeformCageEditDeformsBody(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewFreeformFeatures(fs).AddBox(2, 2, 2, 1)
 	fs.Recompute()
@@ -42,6 +44,7 @@ func TestFreeformCageEditDeformsBody(t *testing.T) {
 }
 
 func TestFreeformCreaseSharpensCorner(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewFreeformFeatures(fs).AddBox(2, 2, 2, 3)
 	ff := pf.Definition().(*FreeformFeature)
@@ -56,6 +59,7 @@ func TestFreeformCreaseSharpensCorner(t *testing.T) {
 }
 
 func TestFreeformQuadBallIsRounded(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewFreeformFeatures(fs).AddQuadBall(5, 0)
 	fs.Recompute()
@@ -73,6 +77,7 @@ func TestFreeformQuadBallIsRounded(t *testing.T) {
 }
 
 func TestFreeformEdgeAndVertexHandles(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewFreeformFeatures(fs).AddBox(2, 2, 2, 0)
 	ff := pf.Definition().(*FreeformFeature)
@@ -95,6 +100,7 @@ func TestFreeformEdgeAndVertexHandles(t *testing.T) {
 }
 
 func TestAliasFreeformWrapsImportedCage(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	verts := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0)}
 	pf := NewAliasFreeformFeatures(fs).AddFromCage(verts, [][]int{{0, 1, 2, 3}}, 0)

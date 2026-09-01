@@ -35,6 +35,9 @@ PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 # Minimum total coverage gate for `make cover` (raise as the suite grows).
 COVER_MIN ?= 0
 
+# Revision `make test-impacted` compares against to find the change set.
+IMPACT_BASE ?= origin/develop
+
 .DEFAULT_GOAL := help
 
 .PHONY: help
@@ -55,8 +58,17 @@ fmt-check: ## Fail if any file is not gofmt-clean
 	@out=$$(gofmt -l .); if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
 
 .PHONY: vet
-vet: ## Run go vet (cgo-free)
+vet: ## Run go vet on BOTH modules (root cgo-free, then the cgo head)
 	CGO_ENABLED=0 $(GO) vet $(PKG)
+	$(MAKE) vet-head
+
+# head/ is a SEPARATE module: `go vet ./...` from the repo root does not compile a single
+# file of it. A change that renames or moves a kernel symbol therefore passes every
+# root-level check and still breaks the four head CI jobs — which is exactly what the
+# kernel/ops/tessellate extraction did. `vet` and `ci` cover it now.
+.PHONY: vet-head
+vet-head: ## go vet the cgo head module (needs the native deps; see head/Makefile)
+	CGO_ENABLED=1 $(GO) vet -C head ./...
 
 .PHONY: lint
 lint: ## Run golangci-lint (install with `make tools`)
@@ -67,17 +79,91 @@ lint: ## Run golangci-lint (install with `make tools`)
 docs-lint: ## Lint the docs (markdownlint via npx; needs node). Link check runs in CI (lychee).
 	npx --yes markdownlint-cli2
 
+# The suite runs in two tiers (architecture/testing/03-test-tiers-and-selection.md).
+# TIER 1 (`make test`, -short) skips the corpus and oracle tests. TIER 2 (`make
+# test-corpus`) runs everything. 152 tests hold 94% of the suite's cost, so the split
+# is what keeps the inner loop in seconds instead of ten minutes.
+#
+# CORPUS_TIMEOUT overrides `go test`'s 10m PER-PACKAGE default, which model/feature/
+# occtparity exceeds on its own. A timed-out package reports as a FAILURE that reads
+# exactly like a real one, so tier 2 must stay generous.
+CORPUS_TIMEOUT ?= 60m
+
+# Seconds a TIER 1 package may take. The gate exists to catch a new corpus test that
+# forgot its testing.Short() guard: such a test costs 100s+ on its own, while the
+# slowest honest tier-1 package sits near 15s on 32 cores and near 40s on a 4-core CI
+# runner. Package WALL time is the only budget that survives t.Parallel() — per-test
+# elapsed stretches with core contention (see cmd/testslowest).
+TIER1_PACKAGE_BUDGET ?= 90
+
+# Seconds an UNGUARDED test may take in a TIER 2 run. This is the gate CI gets for
+# free: it reads the tier-2 stream that already exists, so nothing is run twice. The
+# limit is loose because tier-2 elapsed is stretched by core contention — the slowest
+# honest test measured 22s against 40-434s for the corpus.
+UNGUARDED_BUDGET ?= 60
+
+# Scratch file the timing targets write `go test -json` into. A file, not a pipe: see
+# the note on test-budget.
+TESTJSON ?= test-results.json
+
 .PHONY: test
-test: ## Tier 1: fast cgo-free unit tests
-	CGO_ENABLED=0 $(GO) test $(PKG)
+test: ## Tier 1: fast cgo-free unit tests (skips the corpus tier)
+	CGO_ENABLED=0 $(GO) test -short $(PKG)
+
+.PHONY: test-corpus
+test-corpus: ## Tier 2: the whole suite, corpus and oracle tests included
+	CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) $(PKG)
+
+.PHONY: test-impacted
+test-impacted: ## Tier 1 on only the packages the current change set can affect
+	@pkgs=$$($(GO) run ./cmd/testimpact -base $(IMPACT_BASE)); \
+	  if [ -z "$$pkgs" ]; then echo "no package owns the change — nothing to test"; exit 0; fi; \
+	  echo "$$pkgs" | sed 's/^/  → /'; \
+	  CGO_ENABLED=0 $(GO) test -short $$pkgs
+
+.PHONY: test-impacted-corpus
+test-impacted-corpus: ## Tier 2 on only the packages the current change set can affect
+	@pkgs=$$($(GO) run ./cmd/testimpact -base $(IMPACT_BASE)); \
+	  if [ -z "$$pkgs" ]; then echo "no package owns the change — nothing to test"; exit 0; fi; \
+	  echo "$$pkgs" | sed 's/^/  → /'; \
+	  CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) $$pkgs
+
+# The report is fed from a FILE, not a pipe: `sh` reports the exit status of the last
+# command in a pipeline, so `go test | testslowest` would go green on a red suite.
+.PHONY: test-budget
+test-budget: ## Tier 1 with the per-package time budget enforced (local, tight gate)
+	@CGO_ENABLED=0 $(GO) test -short -json $(PKG) > $(TESTJSON); status=$$?; \
+	  $(GO) run ./cmd/testslowest -top 15 -package-budget $(TIER1_PACKAGE_BUDGET) < $(TESTJSON) \
+	    || status=1; \
+	  rm -f $(TESTJSON); \
+	  exit $$status
+
+# What CI enforces, and it costs no extra run: one tier-2 pass gates itself.
+.PHONY: test-guards
+test-guards: ## Tier 2 with the tier-1 guard gate enforced (what CI runs)
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(PKG) > $(TESTJSON); status=$$?; \
+	  $(GO) run ./cmd/testslowest -top 25 -unguarded-budget $(UNGUARDED_BUDGET) -module-root . \
+	    < $(TESTJSON) || status=1; \
+	  rm -f $(TESTJSON); \
+	  exit $$status
+
+.PHONY: test-slowest
+test-slowest: ## Rank the whole suite by test time (what to guard next)
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(PKG) > $(TESTJSON); status=$$?; \
+	  $(GO) run ./cmd/testslowest -top 40 < $(TESTJSON); rm -f $(TESTJSON); exit $$status
+
+.PHONY: test-slowest-serial
+test-slowest-serial: ## Rank tier 2 with NO parallelism — the measurement the 2s guard rule uses
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -p 1 -parallel 1 -json $(PKG) > $(TESTJSON); \
+	  status=$$?; $(GO) run ./cmd/testslowest -top 40 < $(TESTJSON); rm -f $(TESTJSON); exit $$status
 
 .PHONY: test-race
 test-race: ## Run the suite under the race detector (needs cgo)
-	CGO_ENABLED=1 $(GO) test -race $(PKG)
+	CGO_ENABLED=1 $(GO) test -race -timeout $(CORPUS_TIMEOUT) $(PKG)
 
 .PHONY: cover
 cover: ## Run tests with coverage and enforce COVER_MIN
-	CGO_ENABLED=0 $(GO) test -covermode=count -coverprofile=coverage.out $(PKG)
+	CGO_ENABLED=0 $(GO) test -covermode=count -coverprofile=coverage.out -timeout $(CORPUS_TIMEOUT) $(PKG)
 	@total=$$($(GO) tool cover -func=coverage.out | awk '/total:/ {print $$3}' | tr -d '%'); \
 	  echo "total coverage: $$total% (min $(COVER_MIN)%)"; \
 	  awk "BEGIN{exit !($$total >= $(COVER_MIN))}" \
@@ -101,8 +187,14 @@ build-all: ## Cross-compile oblikovati-cli for every target in PLATFORMS
 run-cli: ## Run the headless CLI
 	CGO_ENABLED=0 $(GO) run -ldflags "$(LDFLAGS)" ./cmd/oblikovati-cli
 
+# `cover` already runs the whole suite, so `ci` must not also run `test`/`test-corpus`.
+# `test-race` is the release gate (ci.yml runs it only on push to `release`), not a
+# per-change one; use `make ci-race` before cutting a release.
 .PHONY: ci
-ci: fmt-check vet lint test-race cover ## Everything CI runs, locally
+ci: fmt-check vet lint cover ## Everything a PR must pass, locally (both modules)
+
+.PHONY: ci-race
+ci-race: ci test-race ## `make ci` plus the race detector (the pre-release gate)
 
 .PHONY: tools
 tools: ## Install pinned dev tools into $GOBIN
@@ -111,9 +203,9 @@ tools: ## Install pinned dev tools into $GOBIN
 
 .PHONY: hooks
 hooks: ## Point git at the repo's pre-commit hook
-	git -C .. config core.hooksPath .githooks
+	git config core.hooksPath .githooks
 	@echo "git hooksPath set to .githooks"
 
 .PHONY: clean
 clean: ## Remove build artifacts
-	rm -rf $(DIST) coverage.out
+	rm -rf $(DIST) coverage.out $(TESTJSON)

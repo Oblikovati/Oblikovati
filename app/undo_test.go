@@ -29,6 +29,7 @@ func trackFromHere(s *Session) { s.documentHistory(s.ActiveDocument()) }
 // sketch survives; redo restores the identical body. Undo/redo are cursor moves, not a
 // geometry snapshot stack.
 func TestUndoRedoExtrudeNavigatesGeometry(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithSquare(t, 2)
 	trackFromHere(s) // baseline = part + sketch, no body yet
 	def := partOf(t, s)
@@ -75,6 +76,7 @@ func TestUndoRedoExtrudeNavigatesGeometry(t *testing.T) {
 // TestUndoParameterAndRedoTruncation covers the parameter edit path and the rule that a
 // new edit made after undo truncates the forward (redo) branch of the stream.
 func TestUndoParameterAndRedoTruncation(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithSquare(t, 2)
 	trackFromHere(s)
 	def := partOf(t, s)
@@ -118,6 +120,7 @@ func TestUndoParameterAndRedoTruncation(t *testing.T) {
 // internal IDs, so the marshaled form is not byte-stable; the state is what undo must
 // preserve.)
 func TestCursorRoundTripFidelity(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithSquare(t, 2)
 	trackFromHere(s)
 	def := partOf(t, s)
@@ -156,6 +159,7 @@ func TestCursorRoundTripFidelity(t *testing.T) {
 // TestPerDocumentStreamsAreIsolated: each document owns its own stream — an edit in one
 // is invisible to another, and undo acts on the active document only.
 func TestPerDocumentStreamsAreIsolated(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	a, err := s.NewPart()
 	if err != nil {
@@ -185,6 +189,7 @@ func TestPerDocumentStreamsAreIsolated(t *testing.T) {
 // TestUndoRedoKeyboardShortcuts checks the Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z bindings the
 // head forwards through PressKey, and that a bare "z" (no Ctrl) is not an undo.
 func TestUndoRedoKeyboardShortcuts(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithSquare(t, 2)
 	trackFromHere(s)
 	def := partOf(t, s)

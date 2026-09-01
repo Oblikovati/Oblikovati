@@ -10,6 +10,7 @@ import (
 )
 
 func TestSketchDimensionsNilOutsideSketch(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	if got := s.SketchDimensions(); got != nil {
 		t.Errorf("SketchDimensions outside a sketch = %v, want nil", got)
@@ -17,6 +18,7 @@ func TestSketchDimensionsNilOutsideSketch(t *testing.T) {
 }
 
 func TestDistanceDimensionView(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	a := sk.Points().Add(math.P2(0, 0))
 	b := sk.Points().Add(math.P2(3, 0)) // 3 cm = 30 mm
@@ -37,6 +39,7 @@ func TestDistanceDimensionView(t *testing.T) {
 }
 
 func TestRadiusAndDiameterViewsDiffer(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	c := sk.Circles().AddByCenterRadius(math.P2(0, 0), 2)
 	if _, err := sk.DimensionConstraints().AddRadius(c, "20 mm"); err != nil {
@@ -64,6 +67,7 @@ func TestRadiusAndDiameterViewsDiffer(t *testing.T) {
 }
 
 func TestAngleDimensionViewHasArc(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l1 := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 	l2 := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 4))
@@ -83,6 +87,7 @@ func TestAngleDimensionViewHasArc(t *testing.T) {
 }
 
 func TestParallelLinesAngleViewSkipped(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	l1 := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
 	l2 := sk.Lines().AddByTwoPoints(math.P2(0, 1), math.P2(4, 1)) // parallel: no vertex

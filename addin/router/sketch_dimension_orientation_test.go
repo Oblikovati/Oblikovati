@@ -13,6 +13,7 @@ import (
 // over two points at (0,0) and (3,4): the measured value is 3 (|Δx|), not the Euclidean 5, and
 // sketch.dimensions reports the orientation. An unknown orientation is a clean error. #1869.
 func TestSketchDistanceDimensionOrientation(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	var l wire.AddSketchEntityResult
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0],[3,4]]}`, &l)

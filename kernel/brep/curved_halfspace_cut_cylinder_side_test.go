@@ -48,6 +48,7 @@ func notchedCylinder(t *testing.T, topNotch bool) []curvedFace {
 // surviving top-rim height (10) plus the pad — never the removed original height by assumption, but here the
 // top-rim arc survives so vMax rounds to ~10.
 func TestCutCylinderSideBandAcceptsTopNotch(t *testing.T) {
+	t.Parallel()
 	f := firstCylinderFace(t, notchedCylinder(t, true))
 	cyl, band, prior, ok := cutCylinderSideBand(f)
 	if !ok {
@@ -74,6 +75,7 @@ func TestCutCylinderSideBandAcceptsTopNotch(t *testing.T) {
 // TOP with the notch below it, so the v=0 anchor is gone — cutCylinderSideBand must decline (band-extent
 // recovery has no bottom to anchor on).
 func TestCutCylinderSideBandDeclinesBottomNotch(t *testing.T) {
+	t.Parallel()
 	f := firstCylinderFace(t, notchedCylinder(t, false))
 	if _, _, _, ok := cutCylinderSideBand(f); ok {
 		t.Fatal("bottom-notched cylinder side accepted; the v=0 anchor rim was removed and must decline")
@@ -83,6 +85,7 @@ func TestCutCylinderSideBandDeclinesBottomNotch(t *testing.T) {
 // TestCutCylinderSideBandDeclinesBareCylinder: a bare cylinder side has TWO full-circle rims — fullCylinderSideBand's
 // case — so cutCylinderSideBand declines it, keeping the two operands partitioned (no double classification).
 func TestCutCylinderSideBandDeclinesBareCylinder(t *testing.T) {
+	t.Parallel()
 	cyl, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	if err != nil {
 		t.Fatalf("cylinder: %v", err)

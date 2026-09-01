@@ -21,6 +21,7 @@ func (o opaqueCurve3) Domain() (lo, hi float64)         { return o.inner.Domain(
 // three derivatives to the helix's closed form. The old fixed 1e-5 step gave d3 a 5–50% error; the
 // per-order optimal steps bring it under 1e-4 relative.
 func TestNumericDers3MatchesAnalyticHelix(t *testing.T) {
+	t.Parallel()
 	helix, err := NewHelix3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 0.8, 1.0, 0.2, 3, false)
 	if err != nil {
 		t.Fatalf("NewHelix3d: %v", err)
@@ -37,6 +38,7 @@ func TestNumericDers3MatchesAnalyticHelix(t *testing.T) {
 // TestCurveDerivatives3TakesNumericFallback confirms the opaque wrapper actually exercises the
 // fallback (not a closed-form branch) and that CurveDerivatives3 returns the same fallback values.
 func TestCurveDerivatives3TakesNumericFallback(t *testing.T) {
+	t.Parallel()
 	helix, _ := NewHelix3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 1, 1, 0, 2, false)
 	d1, d2, d3 := CurveDerivatives3(opaqueCurve3{helix}, 0.5)
 	wantD1, wantD2, wantD3 := helixDers(helix, 0.5)

@@ -19,6 +19,7 @@ import (
 // body.strokeTolerances (the last was 0% before this): the box's 12 edges stroke into 12
 // polylines, the cache serves them back, and the tolerance list reports the one cached set.
 func TestBodcovStrokeCacheAndTolerances(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	var calc wire.StrokeSetResult
 	call(t, r, s, "body.calculateStrokes", `{"bodyIndex":0,"tolerance":0.02}`, &calc)
@@ -40,6 +41,7 @@ func TestBodcovStrokeCacheAndTolerances(t *testing.T) {
 // TestBodcovBodyWires drives body.wires (0% before this): a solid box has no free wires, and an
 // out-of-range body index is named in the error rather than panicking.
 func TestBodcovBodyWires(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	var res wire.BodyWiresResult
 	call(t, r, s, "body.wires", `{"bodyIndex":0}`, &res)
@@ -55,6 +57,7 @@ func TestBodcovBodyWires(t *testing.T) {
 // each branch of evaluateFaceSurface executes; every mode returns one sampled point and the
 // [uMin,vMin,uMax,vMax] param range.
 func TestBodcovFaceEvaluateModes(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	key := bodcovFirstFaceKey(t, r, s)
 	for _, mode := range []string{
@@ -73,6 +76,7 @@ func TestBodcovFaceEvaluateModes(t *testing.T) {
 // TestBodcovPointContainmentShell covers the shell-scoped branch of pointContainmentOf: a point on
 // the top face reports "on" when tested against shell 0, and an out-of-range shell index errors.
 func TestBodcovPointContainmentShell(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	var on wire.IsPointInsideResult
 	call(t, r, s, "body.isPointInside",
@@ -89,6 +93,7 @@ func TestBodcovPointContainmentShell(t *testing.T) {
 // TestBodcovBindEntityKinds locates a face, an edge and a vertex on the box, then binds each
 // transient key back — exercising the vertex/edge/face arms of transientRefReferenceKey.
 func TestBodcovBindEntityKinds(t *testing.T) {
+	t.Parallel()
 	r, s := boxPartSession(t)
 	for _, tc := range bodcovLocateCases() {
 		var loc wire.LocateUsingPointResult

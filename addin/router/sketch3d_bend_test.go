@@ -12,6 +12,7 @@ import (
 // TestSketch3DAddBendViaAPI drives the addEntity bend path end to end: two chained
 // lines, a 2.5 mm bend, and the auto-added bend constraint reported by enumeration.
 func TestSketch3DAddBendViaAPI(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	var l1, l2 wire.AddSketch3DEntityResult
@@ -48,6 +49,7 @@ func TestSketch3DAddBendViaAPI(t *testing.T) {
 
 // TestSketch3DAddBendErrors covers the addEntity bend validation paths.
 func TestSketch3DAddBendErrors(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
 	var l1, far wire.AddSketch3DEntityResult

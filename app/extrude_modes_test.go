@@ -29,6 +29,7 @@ func squareRegion(def *compdef.PartComponentDefinition) *sketch.Sketch {
 }
 
 func TestExtrudeToolSymmetricExtentFlowsToGeometry(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := squareRegion(def)
 	tool := NewExtrudeTool()
@@ -58,6 +59,7 @@ func TestExtrudeToolSymmetricExtentFlowsToGeometry(t *testing.T) {
 }
 
 func TestExtrudeToolThroughAllNeedsNoDistance(t *testing.T) {
+	t.Parallel()
 	s, def := emptyPartSession(t)
 	sk := squareRegion(def)
 	tool := NewExtrudeTool()

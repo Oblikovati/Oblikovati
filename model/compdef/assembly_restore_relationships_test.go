@@ -15,6 +15,7 @@ import (
 // restored live occurrence collection. A relationship created after rebind must be usable
 // by the solver; a relationship created before the snapshot must not survive the restore.
 func TestRestoreSnapshotRewiresRelationshipSets(t *testing.T) {
+	t.Parallel()
 	_, _, asm, widget, asmDef := placedAssembly(t)
 	base := placeFromFile(t, asm, widget, asmDef, "widget:1", math.Identity4())
 	moving := placeFromFile(t, asm, widget, asmDef, "widget:2", math.Translation4(math.V3(0, 0, 10)))

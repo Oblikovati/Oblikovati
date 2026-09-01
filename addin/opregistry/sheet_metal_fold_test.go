@@ -13,6 +13,7 @@ import (
 // TestSheetMetalFoldApply seeds a sheet-metal wall, adds a fold line crossing it, folds it at
 // the end-of-bend location, and confirms one valid solid; then checks the error paths.
 func TestSheetMetalFoldApply(t *testing.T) {
+	t.Parallel()
 	s := sheetMetalProfiledPart(t)
 	if _, err := apply(t, s, "sheetMetalFace", `{"sketchIndex":0}`); err != nil {
 		t.Fatalf("seed face: %v", err)

@@ -33,6 +33,7 @@ func faceAreas(faces []Face2D) []float64 {
 }
 
 func TestArrangeSingleSquare(t *testing.T) {
+	t.Parallel()
 	faces := Arrange(squareSegs(0, 0, 2, 2))
 	if len(faces) != 1 {
 		t.Fatalf("square → %d faces, want 1", len(faces))
@@ -46,6 +47,7 @@ func TestArrangeSingleSquare(t *testing.T) {
 }
 
 func TestArrangeChordSplitsInTwo(t *testing.T) {
+	t.Parallel()
 	segs := append(squareSegs(0, 0, 2, 2), seg(1, 0, 1, 2)) // vertical mid chord
 	faces := Arrange(segs)
 	if len(faces) != 2 {
@@ -59,6 +61,7 @@ func TestArrangeChordSplitsInTwo(t *testing.T) {
 }
 
 func TestArrangePlusSplitsInFour(t *testing.T) {
+	t.Parallel()
 	segs := squareSegs(0, 0, 2, 2)
 	segs = append(segs, seg(1, 0, 1, 2), seg(0, 1, 2, 1)) // a full cross
 	faces := Arrange(segs)
@@ -73,6 +76,7 @@ func TestArrangePlusSplitsInFour(t *testing.T) {
 }
 
 func TestArrangeNestedSquareIsHoleAndFace(t *testing.T) {
+	t.Parallel()
 	// A big square with a disjoint small square inside → the annulus (big with a hole)
 	// plus the inner square as its own face.
 	segs := append(squareSegs(0, 0, 6, 6), squareSegs(2, 2, 4, 4)...)

@@ -21,6 +21,7 @@ import (
 // rj45 = [l=21, w=16, h=13.5, plug_h=6.8, plug_z=4, tab_z=0.8, plug_w=12] (mm).
 // mouth = plug_z + plug_h - tab_z = 10 mm. Mouth centred at x = h/2 - tab_z - mouth/2.
 func TestNopRj45CSG(t *testing.T) {
+	t.Parallel()
 	const (
 		l     = 2.1  // length 21 mm (extrusion axis = z)
 		w     = 1.6  // width 16 mm  (y)

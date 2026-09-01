@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -283,7 +284,7 @@ func sheetMetalUnfold(_ *app.Session, ctx sheetMetalPart) (wire.UnfoldResult, er
 func flatInfo(flat *feature.FlatPattern) wire.FlatPatternInfo {
 	area := 0.0
 	if flat.Thickness > 0 {
-		area = ops.BodyGeometryProperties(flat.Body, ops.Quality{ChordTolerance: 1e-3}).Volume / flat.Thickness
+		area = query.BodyGeometryProperties(flat.Body, ops.Quality{ChordTolerance: 1e-3}).Volume / flat.Thickness
 	}
 	info := wire.FlatPatternInfo{
 		Extents:   types.Box2d{Min: point2d(flat.Extents.Min), Max: point2d(flat.Extents.Max)},

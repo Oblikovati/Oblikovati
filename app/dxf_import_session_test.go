@@ -46,6 +46,7 @@ EOF
 // TestSessionImportDXF imports a small .dxf onto the default plane and checks it lands as a
 // populated 2D sketch (an undoable edit), exercising the session→model→codec import path.
 func TestSessionImportDXF(t *testing.T) {
+	t.Parallel()
 	s := sessionWithPart(t)
 	path := filepath.Join(t.TempDir(), "in.dxf")
 	if err := os.WriteFile(path, []byte(twoLineDXF), 0o644); err != nil {
@@ -66,6 +67,7 @@ func TestSessionImportDXF(t *testing.T) {
 // TestSessionExportActiveSketchDXF builds an active sketch, exports it to .dxf via the
 // session and re-imports it, checking the geometry round-trips through the surfaced path.
 func TestSessionExportActiveSketchDXF(t *testing.T) {
+	t.Parallel()
 	s := sessionWithPart(t)
 	part, err := activePart(s)
 	if err != nil {
@@ -95,6 +97,7 @@ func TestSessionExportActiveSketchDXF(t *testing.T) {
 
 // TestSessionExportDXFNoActiveSketch errors clearly when there is no active sketch.
 func TestSessionExportDXFNoActiveSketch(t *testing.T) {
+	t.Parallel()
 	s := sessionWithPart(t)
 	if _, err := s.ExportActiveSketchDXF(filepath.Join(t.TempDir(), "x.dxf"), types.DXFR2000); err == nil {
 		t.Error("expected an error with no active sketch")

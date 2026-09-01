@@ -8,6 +8,7 @@ import "testing"
 // distinct, readable name (not the bare kind "importedBody" repeated) — repeated identical
 // names collide as Dear ImGui ids in the model browser and break it.
 func TestImportedBodiesGetUniqueNames(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	imp := NewImportedBodies(fs)
 	a := imp.AddAt(nil, "edf.step", "step", 0)

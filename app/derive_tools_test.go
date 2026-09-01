@@ -8,6 +8,7 @@ import "testing"
 // commit for the commit gate (#1626) once Start has captured a source assembly, and refuse
 // before one is chosen.
 func TestDeriveToolsDraftFeature(t *testing.T) {
+	t.Parallel()
 	s, _ := partAndSourceAssembly(t)
 	for _, tool := range []PartFeatureTool{NewDeriveAssemblyTool(), NewShrinkwrapTool()} {
 		if _, ok := tool.DraftFeature(s); ok {

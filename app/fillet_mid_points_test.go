@@ -12,6 +12,7 @@ import (
 // linearly interpolated between the start and end radii (#695): the first goes to the centre,
 // the second splits the larger half.
 func TestFilletMidPointDefaults(t *testing.T) {
+	t.Parallel()
 	f := NewFilletTool()
 	f.SetStartRadius(0.2)
 	f.SetEndRadius(0.6)
@@ -28,6 +29,7 @@ func TestFilletMidPointDefaults(t *testing.T) {
 // TestFilletMidPointValidation mirrors the kernel's validateRadiusPoints contract: interior,
 // strictly increasing, positive radius (#695).
 func TestFilletMidPointValidation(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name string
 		pts  []FilletMidPoint
@@ -52,6 +54,7 @@ func TestFilletMidPointValidation(t *testing.T) {
 
 // TestFilletMidPointEdit checks Set/Remove edit the addressed stop and ignore out-of-range.
 func TestFilletMidPointEdit(t *testing.T) {
+	t.Parallel()
 	f := NewFilletTool()
 	f.midPoints = []FilletMidPoint{{0.25, 0.3}, {0.5, 0.4}, {0.75, 0.5}}
 	f.SetMidPointT(1, 0.6)
@@ -74,6 +77,7 @@ func TestFilletMidPointEdit(t *testing.T) {
 // confirms the committed definition carries the radius points, sorted by T (#695). Values match
 // the kernel's TestFilletIntermediateRadiiVolume (known buildable on a 2×2×2 block).
 func TestFilletMidPointCommit(t *testing.T) {
+	t.Parallel()
 	s, block := newPartWithBlock(t, 2)
 	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
 	f := NewFilletTool()
@@ -102,6 +106,7 @@ func TestFilletMidPointCommit(t *testing.T) {
 // TestFilletMidPointEditSeed checks re-editing a committed variable fillet seeds the panel's
 // stops from the feature's radius points (#695).
 func TestFilletMidPointEditSeed(t *testing.T) {
+	t.Parallel()
 	set := feature.FilletEdgeSet{
 		EdgeKeys:     [][]byte{{1, 2, 3}},
 		StartRadius:  func() float64 { return 0.3 },

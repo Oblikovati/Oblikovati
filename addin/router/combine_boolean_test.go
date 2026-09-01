@@ -32,6 +32,7 @@ func twoOverlappingBoxes(t *testing.T) (*Router, *app.Session) {
 }
 
 func TestCombineCutOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := twoOverlappingBoxes(t)
 	var res struct {
 		Bodies int `json:"bodies"`
@@ -48,6 +49,7 @@ func TestCombineCutOverWire(t *testing.T) {
 }
 
 func TestCombineIntersectOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := twoOverlappingBoxes(t)
 	var res struct {
 		Bodies int `json:"bodies"`

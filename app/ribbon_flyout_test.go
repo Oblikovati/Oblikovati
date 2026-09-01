@@ -26,6 +26,7 @@ func createButton(t *testing.T, s *Session, name string) RibbonButton {
 
 // The Create-panel heads carry their Inventor variant flyouts as dropdown entries.
 func TestCreatePanelHeadsHaveVariants(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	enterSketchEnv(t, s)
 	wantVariants := map[string][]string{
@@ -55,6 +56,7 @@ func TestCreatePanelHeadsHaveVariants(t *testing.T) {
 
 // A variant is registered for id dispatch but never appears as its own Create-panel button.
 func TestVariantsDispatchButAreNotPanelButtons(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	enterSketchEnv(t, s)
 
@@ -80,6 +82,7 @@ func TestVariantsDispatchButAreNotPanelButtons(t *testing.T) {
 
 // Variant dropdown entries reflect the head's enable state (disabled outside a sketch).
 func TestVariantsEnabledOnlyInSketch(t *testing.T) {
+	t.Parallel()
 	s := registeredSession(t)
 	enterSketchEnv(t, s)
 	for _, v := range createButton(t, s, "Rectangle").Variants {

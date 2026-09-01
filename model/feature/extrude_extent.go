@@ -8,6 +8,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -140,7 +141,7 @@ func toNextSpan(bodies []*topo.Body, plane sketch.Plane, polys [][]math.Point2) 
 		for _, p := range poly {
 			origin := plane.ToModel(p)
 			for _, b := range bodies {
-				if _, t, ok := ops.RayCastFaces(b, origin, dir, ops.DefaultQuality()); ok && t > math.DefaultTolerance && t < best {
+				if _, t, ok := query.RayCastFaces(b, origin, dir, ops.DefaultQuality()); ok && t > math.DefaultTolerance && t < best {
 					best = t
 				}
 			}

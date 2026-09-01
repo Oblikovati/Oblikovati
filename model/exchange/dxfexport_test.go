@@ -18,6 +18,7 @@ import (
 // export/import, mirroring the DWG test. The exported file declares centimetre units, so the
 // import scale is 1 and coordinates compare directly.
 func TestExportImportDXFRoundTrip(t *testing.T) {
+	t.Parallel()
 	for _, version := range []types.DXFVersion{types.DXFR2000, types.DXFR2018} {
 		src := newCentimetrePart(t)
 		sk := src.Sketches().Add(xyPlane(t))
@@ -66,6 +67,7 @@ func TestExportImportDXFRoundTrip(t *testing.T) {
 // declares inch $INSUNITS and scales coordinates from centimetres, and that the
 // import (which scales $INSUNITS → cm) recovers the original size (#146).
 func TestExportDXFHonorsDocumentUnit(t *testing.T) {
+	t.Parallel()
 	src := newCentimetrePart(t)
 	if err := src.SetLengthUnit("in"); err != nil {
 		t.Fatalf("SetLengthUnit in: %v", err)
@@ -96,6 +98,7 @@ func TestExportDXFHonorsDocumentUnit(t *testing.T) {
 // TestDocumentDrawingUnit pins the $INSUNITS + cm→unit scale mapping, including the
 // fallback for a unit with no $INSUNITS code.
 func TestDocumentDrawingUnit(t *testing.T) {
+	t.Parallel()
 	cases := map[string]struct {
 		ins   int
 		scale float64
@@ -125,6 +128,7 @@ func TestDocumentDrawingUnit(t *testing.T) {
 // TestExportDXFFileAndDWGFile cover the file-writing wrappers (and writeDXFFile's
 // happy path): they write a non-empty file for the active sketch.
 func TestExportDXFFileAndDWGFile(t *testing.T) {
+	t.Parallel()
 	src := newCentimetrePart(t)
 	sk := src.Sketches().Add(xyPlane(t))
 	sk.Lines().AddByTwoPoints(gmath.P2(0, 0), gmath.P2(10, 5))

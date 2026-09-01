@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -51,7 +52,7 @@ func entityDirection(e MeasureEntity, q ops.Quality) (math.Vector3, error) {
 // edgeDirection is the chord from an edge's first to last tessellated point (the exact direction of
 // a straight edge). A closed edge (zero chord) has no single direction and is rejected.
 func edgeDirection(e *topo.Edge, q ops.Quality) (math.Vector3, error) {
-	pts := ops.TessellateEdge(e, q)
+	pts := tessellate.TessellateEdge(e, q)
 	if len(pts) < 2 {
 		return math.Vector3{}, fmt.Errorf("angle: edge has %d tessellation points, need ≥2", len(pts))
 	}

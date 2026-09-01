@@ -9,6 +9,7 @@ import (
 )
 
 func TestClosestPointAndDistanceToLine(t *testing.T) {
+	t.Parallel()
 	l, _ := NewLine(math.P3(0, 0, 0), math.V3(1, 0, 0)) // the X axis
 	if got := ClosestPointOnLine(l, math.P3(3, 4, 0)); !got.IsEqualTo(math.P3(3, 0, 0), eqScalar) {
 		t.Errorf("closest = %v, want {3 0 0}", got)
@@ -17,6 +18,7 @@ func TestClosestPointAndDistanceToLine(t *testing.T) {
 }
 
 func TestClosestPointOnSegmentClamps(t *testing.T) {
+	t.Parallel()
 	s := NewLineSegment(math.P3(0, 0, 0), math.P3(10, 0, 0))
 	// Projection beyond the end clamps to the endpoint.
 	if got := ClosestPointOnSegment(s, math.P3(20, 5, 0)); !got.IsEqualTo(math.P3(10, 0, 0), eqScalar) {
@@ -30,6 +32,7 @@ func TestClosestPointOnSegmentClamps(t *testing.T) {
 }
 
 func TestPlaneProjectionAndSignedDistance(t *testing.T) {
+	t.Parallel()
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1)) // z=0 plane
 	approxScalar(t, SignedDistanceToPlane(pl, math.P3(1, 2, 5)), 5, "signed distance above")
 	approxScalar(t, SignedDistanceToPlane(pl, math.P3(1, 2, -3)), -3, "signed distance below")
@@ -39,6 +42,7 @@ func TestPlaneProjectionAndSignedDistance(t *testing.T) {
 }
 
 func TestLinePlaneIntersection(t *testing.T) {
+	t.Parallel()
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	l, _ := NewLine(math.P3(2, 3, -4), math.V3(0, 0, 1)) // straight up through z=0
 	pt, ok := LinePlaneIntersection(l, pl, 0)
@@ -56,6 +60,7 @@ func TestLinePlaneIntersection(t *testing.T) {
 }
 
 func TestLineLineClosestAndIntersection(t *testing.T) {
+	t.Parallel()
 	// Two perpendicular lines offset in Z: closest points are at the crossing
 	// in XY, separated by the Z gap.
 	xAxis, _ := NewLine(math.P3(0, 0, 0), math.V3(1, 0, 0))
@@ -79,6 +84,7 @@ func TestLineLineClosestAndIntersection(t *testing.T) {
 }
 
 func TestParallelLinesHaveNoClosestPair(t *testing.T) {
+	t.Parallel()
 	a, _ := NewLine(math.P3(0, 0, 0), math.V3(1, 0, 0))
 	b, _ := NewLine(math.P3(0, 1, 0), math.V3(1, 0, 0))
 	if _, _, ok := LineLineClosest(a, b, 0); ok {
@@ -87,6 +93,7 @@ func TestParallelLinesHaveNoClosestPair(t *testing.T) {
 }
 
 func TestLine2dIntersection(t *testing.T) {
+	t.Parallel()
 	a, _ := NewLine2d(math.P2(0, 0), math.V2(1, 0))
 	b, _ := NewLine2d(math.P2(3, -2), math.V2(0, 1))
 	pt, ok := Line2dIntersection(a, b, 0)

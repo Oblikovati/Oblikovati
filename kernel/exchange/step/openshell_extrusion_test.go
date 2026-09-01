@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 )
 
 // TestExtrudedBSplineImportsClosed regresses the STEP open-shell import defect (corpus resurvey
@@ -14,6 +15,10 @@ import (
 // reads the SAME file as a valid 4-face closed solid, area 108534 (oracle). The fixture is the corpus
 // G3 base body; we now recover the swept face and match OCCT to ~1e-5. See NewExtrudedBSplineSurface.
 func TestExtrudedBSplineImportsClosed(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2s): `make test-corpus`")
+	}
+	t.Parallel()
 	body := importOneSolid(t, "extruded_bspline_solid.step")
 	rep := ops.Validate(body)
 	if !rep.Valid || !rep.Closed {
@@ -23,7 +28,7 @@ func TestExtrudedBSplineImportsClosed(t *testing.T) {
 		t.Fatalf("imported face count = %d, want 4 (one B-spline extrusion wall + three planes; OCCT SOLID:1 FACE:4)", nf)
 	}
 	const occtArea = 108534.0 // DRAWEXE stepread G3.step -> checkshape valid, sprops area
-	area := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Area
+	area := query.BodyGeometryProperties(body, ops.PropertyQuality()).Area
 	if rel := (area - occtArea) / occtArea; rel < -1e-3 || rel > 1e-3 {
 		t.Errorf("surface area = %.6g, want OCCT %.6g (rel %.4f%% > 0.1%%)", area, occtArea, rel*100)
 	}

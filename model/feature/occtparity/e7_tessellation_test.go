@@ -8,6 +8,8 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -38,7 +40,7 @@ func TestE7WholeBodyWatertightFoldFree(t *testing.T) {
 // weld reads ≤ 0).
 func assertE7VolumePositive(t *testing.T, body *topo.Body) {
 	t.Helper()
-	if v := ops.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; v <= 0 {
 		t.Fatalf("E7 body volume %.4f, want positive (a valid enclosed solid)", v)
 	}
 }
@@ -49,7 +51,7 @@ func assertE7FacesFoldFree(t *testing.T, body *topo.Body) float64 {
 	t.Helper()
 	total := 0.0
 	for _, f := range body.Faces() {
-		m := ops.TessellateFace(f, ops.PropertyQuality())
+		m := tessellate.TessellateFace(f, ops.PropertyQuality())
 		area := ops.MeshArea(m)
 		if area <= 0 || stdmath.IsInf(area, 0) || stdmath.IsNaN(area) {
 			t.Fatalf("E7 %T face meshed to %.4f, want a finite positive area", f.Geometry(), area)

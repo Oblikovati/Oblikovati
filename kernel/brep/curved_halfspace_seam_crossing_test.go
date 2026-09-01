@@ -15,6 +15,7 @@ import (
 // degeneracy that closedEdgeCrossings fixes. The seam of a SolidCylinder cap circle is at angle 0 (the
 // +RefDir point); a plane through that point parallel to the axis makes the seam a crossing.
 func TestHalfSpaceThroughCapSeam(t *testing.T) {
+	t.Parallel()
 	cyl, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 10)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)

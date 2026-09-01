@@ -49,6 +49,7 @@ func bruteForceDeviation(t *testing.T, src, rebuilt BSplineCurve) float64 {
 }
 
 func TestRebuildCurveApproximatesWithinTolerance(t *testing.T) {
+	t.Parallel()
 	src := wavyMultiSpanCurve(t)
 	rebuilt, dev, err := RebuildCurve(src, 3, 8, 0)
 	if err != nil {
@@ -69,6 +70,7 @@ func TestRebuildCurveApproximatesWithinTolerance(t *testing.T) {
 }
 
 func TestRebuildCurveDeviationMatchesOracle(t *testing.T) {
+	t.Parallel()
 	src := wavyMultiSpanCurve(t)
 	rebuilt, dev, err := RebuildCurve(src, 3, 6, 0)
 	if err != nil {
@@ -82,6 +84,7 @@ func TestRebuildCurveDeviationMatchesOracle(t *testing.T) {
 }
 
 func TestRebuildCurveSingleSpanIsBezier(t *testing.T) {
+	t.Parallel()
 	// A genuine cubic Bézier rebuilt to a single span (4 CVs) must reproduce it nearly exactly.
 	src, err := NewBSplineCurveUniformWeights(
 		3,
@@ -104,6 +107,7 @@ func TestRebuildCurveSingleSpanIsBezier(t *testing.T) {
 }
 
 func TestRebuildCurveIdempotentOnClean(t *testing.T) {
+	t.Parallel()
 	// Rebuilding an already-clean single-span cubic to the same target changes nothing material.
 	src, err := NewBSplineCurveUniformWeights(
 		3,
@@ -123,6 +127,7 @@ func TestRebuildCurveIdempotentOnClean(t *testing.T) {
 }
 
 func TestApproximateBSplineCurveValidates(t *testing.T) {
+	t.Parallel()
 	pts := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0)}
 	if _, err := NewApproximatedBSplineCurve(pts, 3, 4, FitChordLength); err == nil {
 		t.Error("nctrl > number of points should error")
@@ -133,6 +138,7 @@ func TestApproximateBSplineCurveValidates(t *testing.T) {
 }
 
 func TestApproximateBSplineCurveRejectsDegenerate(t *testing.T) {
+	t.Parallel()
 	coincident3 := []math.Point3{math.P3(1, 1, 1), math.P3(1, 1, 1), math.P3(1, 1, 1), math.P3(1, 1, 1)}
 	if _, err := NewApproximatedBSplineCurve(coincident3, 3, 4, FitChordLength); err == nil {
 		t.Error("coincident 3D points should error (no chord length to parameterize by)")
@@ -144,6 +150,7 @@ func TestApproximateBSplineCurveRejectsDegenerate(t *testing.T) {
 }
 
 func TestApproximateBSplineCurve2d(t *testing.T) {
+	t.Parallel()
 	var pts []math.Point2
 	for i := 0; i <= 20; i++ {
 		x := float64(i) / 20 * 3

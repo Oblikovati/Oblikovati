@@ -9,6 +9,7 @@ import (
 )
 
 func TestNurbsPlaneFeatureBuildsFlatNurbsBody(t *testing.T) {
+	t.Parallel()
 	f := &NurbsPlaneFeature{def: &NurbsPlaneDefinition{Width: 10, Height: 6, UCount: 5, VCount: 4}, featName: "NurbsPlane"}
 	out, err := f.Recompute(Input{})
 	if err != nil {
@@ -31,6 +32,7 @@ func TestNurbsPlaneFeatureBuildsFlatNurbsBody(t *testing.T) {
 }
 
 func TestNurbsPlaneFeatureValidates(t *testing.T) {
+	t.Parallel()
 	if _, err := (&NurbsPlaneFeature{def: &NurbsPlaneDefinition{Width: 0, Height: 1, UCount: 4, VCount: 4}}).Recompute(Input{}); err == nil {
 		t.Error("non-positive width should error")
 	}
@@ -40,6 +42,7 @@ func TestNurbsPlaneFeatureValidates(t *testing.T) {
 }
 
 func TestNurbsPlaneRoundTrip(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	NewNurbsPlaneFeatures(fs).Add(8, 4, 6, 5)
 	data, err := fs.MarshalRecipe(oneSketch{})
@@ -57,6 +60,7 @@ func TestNurbsPlaneRoundTrip(t *testing.T) {
 }
 
 func TestRestoreNurbsPlaneRejectsMissingPayload(t *testing.T) {
+	t.Parallel()
 	if _, err := restoreNurbsPlane(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreNurbsPlane(nil) should error")
 	}

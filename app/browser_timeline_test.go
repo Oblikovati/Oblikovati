@@ -31,6 +31,7 @@ func hasTopLevelKind(root BrowserNode, kind string) bool {
 // TestBrowserNestsConsumedSketchUnderFeature is the issue-#132 core: there is no top-level
 // Sketches branch; a sketch consumed by one feature is nested under that feature instead.
 func TestBrowserNestsConsumedSketchUnderFeature(t *testing.T) {
+	t.Parallel()
 	s, _ := extrudedBoxPart(t)
 	root := BuildBrowser(s)
 
@@ -55,6 +56,7 @@ func TestBrowserNestsConsumedSketchUnderFeature(t *testing.T) {
 // TestBrowserKeepsSharedSketchAtTopLevel: a Shared sketch stays at the top level even though a
 // feature consumes it (Inventor's Share Sketch), so it can feed several features.
 func TestBrowserKeepsSharedSketchAtTopLevel(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	def.Sketches().Item(0).SetShared(true)
 	root := BuildBrowser(s)
@@ -70,6 +72,7 @@ func TestBrowserKeepsSharedSketchAtTopLevel(t *testing.T) {
 // TestBrowserOrdersTimelineByCreation: a work plane created after the extrude, and a later
 // sketch on it, appear in creation order — proving the chronological interleave.
 func TestBrowserOrdersTimelineByCreation(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t) // sketch1 → extrude
 	def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 	def.Sketches().Add(sketch.XYPlane()) // a later, unconsumed sketch
@@ -103,6 +106,7 @@ func timelineKinds(root BrowserNode) []string {
 // TestToggleSketchSharedRoundTripsThroughMenu drives the Share/Unshare action and checks the
 // menu label and browser placement flip accordingly.
 func TestToggleSketchSharedRoundTripsThroughMenu(t *testing.T) {
+	t.Parallel()
 	s, def := extrudedBoxPart(t)
 	sk := def.Sketches().Item(0)
 

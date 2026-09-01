@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -44,6 +45,7 @@ func railedCircles(t *testing.T, rails []func() []math.Point3) *topo.Body {
 // TestLoftRailBulgesToRail: a rail bulging to x=3.5 pulls the loft's +X side out to follow it —
 // the body's max x reaches the rail (a ruled cylinder would stay at 2).
 func TestLoftRailBulgesToRail(t *testing.T) {
+	t.Parallel()
 	b := railedCircles(t, []func() []math.Point3{railThroughX(3.5)})
 	if maxX := float64(b.RangeBox().Max.X); maxX < 3.4 || maxX > 3.6 {
 		t.Errorf("loft did not follow the bulging rail: max x = %.3f, want ≈3.5", maxX)
@@ -53,6 +55,7 @@ func TestLoftRailBulgesToRail(t *testing.T) {
 // TestLoftRailIsLocalized: a +X rail bulge leaves the −X side of the loft untouched (the falloff
 // is localized around the rail's track).
 func TestLoftRailIsLocalized(t *testing.T) {
+	t.Parallel()
 	b := railedCircles(t, []func() []math.Point3{railThroughX(3.5)})
 	if minX := float64(b.RangeBox().Min.X); minX < -2.05 || minX > -1.95 {
 		t.Errorf("rail bulge disturbed the opposite side: min x = %.3f, want ≈-2.0", minX)
@@ -62,8 +65,9 @@ func TestLoftRailIsLocalized(t *testing.T) {
 // TestLoftRailNecksReducesVolume: a rail necking to x=1.0 pulls that side in, so the railed loft
 // holds less than the un-railed cylinder.
 func TestLoftRailNecksReducesVolume(t *testing.T) {
-	free := ops.BodyGeometryProperties(railedCircles(t, nil), ops.DefaultQuality()).Volume
-	neck := ops.BodyGeometryProperties(railedCircles(t, []func() []math.Point3{railThroughX(1.0)}), ops.DefaultQuality()).Volume
+	t.Parallel()
+	free := query.BodyGeometryProperties(railedCircles(t, nil), ops.DefaultQuality()).Volume
+	neck := query.BodyGeometryProperties(railedCircles(t, []func() []math.Point3{railThroughX(1.0)}), ops.DefaultQuality()).Volume
 	if neck >= free {
 		t.Errorf("necking rail did not reduce volume: necked %.3f, free %.3f", neck, free)
 	}
@@ -72,6 +76,7 @@ func TestLoftRailNecksReducesVolume(t *testing.T) {
 // TestLoftRailKeepsEnds: a rail does not move the end sections — the body still spans exactly the
 // section heights (z 0→4) and the end caps keep radius 2 (max x at the ends is unchanged).
 func TestLoftRailKeepsEnds(t *testing.T) {
+	t.Parallel()
 	b := railedCircles(t, []func() []math.Point3{railThroughX(3.5)})
 	bb := b.RangeBox()
 	if z0, z1 := float64(bb.Min.Z), float64(bb.Max.Z); z0 < -1e-6 || z0 > 1e-6 || z1 < 4-1e-6 || z1 > 4+1e-6 {
@@ -82,6 +87,7 @@ func TestLoftRailKeepsEnds(t *testing.T) {
 // TestLoftRailRoundTrip: a railed loft's guide polyline survives a recipe save/restore (so a
 // reopened .obk rebuilds the bulged loft, not the ruled one).
 func TestLoftRailRoundTrip(t *testing.T) {
+	t.Parallel()
 	bottom := circleOn(sketch.XYPlane(), 2)
 	top := circleOn(planeAtZ(4), 2)
 	idx := sketchList{sks: []*sketch.Sketch{bottom, top}}
@@ -114,6 +120,7 @@ func TestLoftRailRoundTrip(t *testing.T) {
 
 // TestLoftRailTwoOpposite: two rails on opposite sides (+X out, +Y out) both bulge their side.
 func TestLoftRailTwoOpposite(t *testing.T) {
+	t.Parallel()
 	railY := func() []math.Point3 {
 		return []math.Point3{math.P3(0, 2, 0), math.P3(0, 3.5, 2), math.P3(0, 2, 4)}
 	}

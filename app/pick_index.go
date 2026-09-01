@@ -5,7 +5,7 @@ package app
 import (
 	"sort"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/transform"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -39,7 +39,7 @@ type bvhNode struct {
 
 // assemblyPickIndex is a bounding-volume hierarchy over an assembly's placement AABBs so a pick
 // ray visits O(log N + hits) boxes instead of materializing all N world-space bodies — the F5
-// bottleneck, where worldAssemblyBodies ran one ops.TransformBody per occurrence (2 GB / 1.5 s
+// bottleneck, where worldAssemblyBodies ran one transform.TransformBody per occurrence (2 GB / 1.5 s
 // for a single 30k selection). World geometry is built lazily and ONLY for the placements the
 // ray actually crosses, then cached so OccurrenceOfBody still resolves a hit body to its
 // component (#769). See M34-F5.
@@ -197,7 +197,7 @@ func (idx *assemblyPickIndex) appendLeafHits(out []int, n bvhNode, origin math.P
 }
 
 // rayBodies returns the world-space bodies for the placements the ray crosses, materializing
-// each (ops.TransformBody) at most once and caching it so OccurrenceOfBody resolves the hit and
+// each (transform.TransformBody) at most once and caching it so OccurrenceOfBody resolves the hit and
 // a repeat pick on the same revision is free. Only ray-crossed placements are built — the whole
 // point of F5 — so a deep selection costs a handful of transforms, not N.
 func (idx *assemblyPickIndex) rayBodies(origin math.Point3, dir math.Vector3) []*topo.Body {
@@ -219,7 +219,7 @@ func (idx *assemblyPickIndex) materialize(p int) (*topo.Body, bool) {
 		return body, true
 	}
 	pl := idx.placements[p]
-	body, err := ops.TransformBody(pl.source, pl.transform, occurrenceBodyLineage(pl.index))
+	body, err := transform.TransformBody(pl.source, pl.transform, occurrenceBodyLineage(pl.index))
 	if err != nil {
 		return nil, false
 	}

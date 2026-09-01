@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -14,6 +15,10 @@ import (
 // and revolutions in the property window, OK — and asserts a valid helical solid that
 // climbs pitch·revs + the profile height lands in the part.
 func TestCoilToolEndToEnd(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~8s): `make test-corpus`")
+	}
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 4, 1) // square offset from the Y axis
 	s.SetPicker(stubPicker{sel: profile})
 
@@ -34,7 +39,7 @@ func TestCoilToolEndToEnd(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("coil body not a valid solid: %+v", r)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 {
 		t.Errorf("coil volume = %g, want > 0", v)
 	}
 	// Helix climbs along Y by pitch·revs (6) plus the profile height (1).
@@ -47,6 +52,10 @@ func TestCoilToolEndToEnd(t *testing.T) {
 }
 
 func TestCoilViaRibbonCommand(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 4, 1)
 	s.SetPicker(stubPicker{sel: profile})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -73,6 +82,7 @@ func TestCoilViaRibbonCommand(t *testing.T) {
 }
 
 func TestCoilToolNeedsProfileAndRevolutions(t *testing.T) {
+	t.Parallel()
 	s, profile := newPartWithOffsetSquare(t, 4, 1)
 	s.SetPicker(stubPicker{sel: profile})
 	c := NewCoilTool()

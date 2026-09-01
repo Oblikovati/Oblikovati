@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/blend"
-	"oblikovati.org/kernel/ops"
+	opsblend "oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 )
@@ -42,7 +42,7 @@ func TestSpineSingleLineEdge(t *testing.T) {
 // and the start point rejoins the end point.
 func TestSpineRoundedRimLoop(t *testing.T) {
 	box := spineBox(2, 2, 2)
-	rounded, err := ops.FilletEdges(box, boxVerticalEdgeKeys(t, box), 0.5)
+	rounded, err := opsblend.FilletEdges(box, boxVerticalEdgeKeys(t, box), 0.5)
 	if err != nil {
 		t.Fatalf("fillet: %v", err)
 	}
@@ -89,7 +89,7 @@ func rimChainEdges(t *testing.T, b *topo.Body, top float64) ([]*topo.Edge, bool)
 			seed, best = e.ReferenceKey(), l
 		}
 	}
-	keys, closed, err := ops.TangentEdgeChain(b, seed, ops.DefaultTangentChainAngle)
+	keys, closed, err := opsblend.TangentEdgeChain(b, seed, opsblend.DefaultTangentChainAngle)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/sketch"
 )
@@ -64,6 +65,7 @@ func loftFromCylinderTop(t *testing.T, faceEnd LoftEnd) *topo.Body {
 // TestLoftFaceFreeIsRuled: a Free loft from the cylinder top is a straight frustum — its max
 // radius equals the face radius (no flare). The baseline tangent beats.
 func TestLoftFaceFreeIsRuled(t *testing.T) {
+	t.Parallel()
 	b := loftFromCylinderTop(t, LoftEnd{})
 	if maxX := float64(b.RangeBox().Max.X); maxX > 2.03 {
 		t.Errorf("Free face loft flared: max x = %.3f, want ~2.0 (ruled)", maxX)
@@ -73,6 +75,10 @@ func TestLoftFaceFreeIsRuled(t *testing.T) {
 // TestLoftFaceTangentFlares: a Tangent condition leaves the planar top face tangent to its plane,
 // so the loft flares OUT past the face radius (a smooth trumpet continuation) — exact G1.
 func TestLoftFaceTangentFlares(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3s): `make test-corpus`")
+	}
+	t.Parallel()
 	b := loftFromCylinderTop(t, LoftEnd{Condition: LoftTangent})
 	if maxX := float64(b.RangeBox().Max.X); maxX < 2.15 {
 		t.Errorf("Tangent face loft did not flare: max x = %.3f, want > 2.15 (ruled would be 2.0)", maxX)
@@ -85,8 +91,12 @@ func TestLoftFaceTangentFlares(t *testing.T) {
 // takeoff stays in-plane longer than G1's cubic). The numeric curvature-continuity proof against a
 // CURVED face is TestLoftG2MatchesFaceCurvature.
 func TestLoftFaceSmoothIsRealCurvature(t *testing.T) {
-	tan := ops.BodyGeometryProperties(loftFromCylinderTop(t, LoftEnd{Condition: LoftTangent}), ops.DefaultQuality()).Volume
-	smooth := ops.BodyGeometryProperties(loftFromCylinderTop(t, LoftEnd{Condition: LoftSmooth}), ops.DefaultQuality()).Volume
+	if testing.Short() {
+		t.Skip("corpus tier (~12s): `make test-corpus`")
+	}
+	t.Parallel()
+	tan := query.BodyGeometryProperties(loftFromCylinderTop(t, LoftEnd{Condition: LoftTangent}), ops.DefaultQuality()).Volume
+	smooth := query.BodyGeometryProperties(loftFromCylinderTop(t, LoftEnd{Condition: LoftSmooth}), ops.DefaultQuality()).Volume
 	if relErr(tan, smooth) < 1e-3 {
 		t.Errorf("Smooth (%.4f) should differ from Tangent (%.4f) now that G2 imposes real curvature, not an alias", smooth, tan)
 	}
@@ -94,6 +104,10 @@ func TestLoftFaceSmoothIsRealCurvature(t *testing.T) {
 
 // TestLoftFaceImpactScalesFlare: a larger impact flares the tangent continuation more.
 func TestLoftFaceImpactScalesFlare(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~7s): `make test-corpus`")
+	}
+	t.Parallel()
 	soft := float64(loftFromCylinderTop(t, LoftEnd{Condition: LoftTangent, Impact: 1}).RangeBox().Max.X)
 	hard := float64(loftFromCylinderTop(t, LoftEnd{Condition: LoftTangent, Impact: 2}).RangeBox().Max.X)
 	if hard <= soft {
@@ -104,6 +118,7 @@ func TestLoftFaceImpactScalesFlare(t *testing.T) {
 // TestLoftFaceSectionRoundTrip: a face section (FaceKey + a Tangent condition) survives a recipe
 // save/restore — the key and condition come back so a reopened .obk rebuilds the tangent loft.
 func TestLoftFaceSectionRoundTrip(t *testing.T) {
+	t.Parallel()
 	top := centeredSquareOn(planeAtZ(6), 1)
 	idx := sketchList{sks: []*sketch.Sketch{top}}
 	fs := NewPartFeatures(nil)
@@ -131,6 +146,7 @@ func TestLoftFaceSectionRoundTrip(t *testing.T) {
 
 // TestLoftFaceLostReference: a face key that no body carries fails cleanly (not a panic).
 func TestLoftFaceLostReference(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewLoftFeatures(fs).addConditioned(
 		[]LoftSection{{FaceKey: []byte("does-not-exist")}, sec(circleOn(planeAtZ(6), 1))},

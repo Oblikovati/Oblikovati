@@ -11,6 +11,7 @@ import (
 // TestPartPropertiesRoundTrip: a part's authored iProperties survive a recipe round-trip (save →
 // reopen), so a part number set on a document is there when it is read back (#156).
 func TestPartPropertiesRoundTrip(t *testing.T) {
+	t.Parallel()
 	d := NewPartComponentDefinition()
 	d.Properties().Set(attr.DesignTracking).Put("Part Number", attr.StringValue("BRK-001"))
 	d.Properties().Set(attr.UserDefined).Put("Vendor", attr.StringValue("Acme"))
@@ -33,6 +34,7 @@ func TestPartPropertiesRoundTrip(t *testing.T) {
 
 // TestAssemblyPropertiesRoundTrip: an assembly's iProperties round-trip through its recipe too.
 func TestAssemblyPropertiesRoundTrip(t *testing.T) {
+	t.Parallel()
 	a := NewAssemblyComponentDefinition()
 	a.Properties().Set(attr.SummaryInformation).Put("Title", attr.StringValue("Gearbox"))
 
@@ -59,6 +61,7 @@ func TestAssemblyPropertiesRoundTrip(t *testing.T) {
 
 // TestPropertyValueTypesRoundTrip: every value type survives the (type, string) recipe encoding.
 func TestPropertyValueTypesRoundTrip(t *testing.T) {
+	t.Parallel()
 	cases := []attr.Value{
 		attr.StringValue("hello"),
 		attr.IntValue(-42),

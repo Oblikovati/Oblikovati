@@ -14,6 +14,7 @@ import (
 // non-solid, walls only (four side faces of the 4×3 rectangle, no start/end caps), and NOT
 // booleaned against anything. This is the surfacing workflow's entry point (#1858).
 func TestExtrudeSurfaceOperation(t *testing.T) {
+	t.Parallel()
 	s := profiledPart(t)
 	raw, err := applyMap(t, s, "extrude", map[string]any{
 		"sketchIndex": 0, "distance": "5 mm", "operation": "surface",
@@ -44,6 +45,7 @@ func TestExtrudeSurfaceOperation(t *testing.T) {
 // join extrude of the other profile leaves the sheet untouched and adds the solid alongside it —
 // two bodies, one sheet + one solid.
 func TestExtrudeSurfaceThenSolidCoexist(t *testing.T) {
+	t.Parallel()
 	s := profiledPart(t)
 	if _, err := applyMap(t, s, "extrude", map[string]any{"sketchIndex": 0, "distance": "5 mm", "operation": "surface"}); err != nil {
 		t.Fatalf("surface extrude: %v", err)
@@ -71,6 +73,7 @@ func TestExtrudeSurfaceThenSolidCoexist(t *testing.T) {
 // TestExtrudeUnknownOperationErrors: an unknown operation name is still a clean error after
 // adding "surface" (guards the parseOperation switch's default).
 func TestExtrudeUnknownOperationErrors(t *testing.T) {
+	t.Parallel()
 	s := profiledPart(t)
 	if _, err := applyMap(t, s, "extrude", map[string]any{"sketchIndex": 0, "distance": "5 mm", "operation": "bogus"}); err == nil {
 		t.Error("unknown operation should error")

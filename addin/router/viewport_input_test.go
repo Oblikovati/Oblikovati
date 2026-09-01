@@ -29,6 +29,7 @@ func sketchClickSession(t *testing.T) (*Router, *app.Session) {
 // TestClickAtAModelPointDrivesTheActiveTool: the click has to reach the running command, and the
 // caller has to be told the command is still collecting points.
 func TestClickAtAModelPointDrivesTheActiveTool(t *testing.T) {
+	t.Parallel()
 	r, s := sketchClickSession(t)
 	call(t, r, s, "commands.execute", `{"id":"Sketch.Line"}`, &wire.OKResult{})
 
@@ -43,6 +44,7 @@ func TestClickAtAModelPointDrivesTheActiveTool(t *testing.T) {
 // TestClickReportsTheProjectedPixel: a caller giving a model point gets back the pixel it became,
 // which is the only way to tell WHERE the host decided to click.
 func TestClickReportsTheProjectedPixel(t *testing.T) {
+	t.Parallel()
 	r, s := sketchClickSession(t)
 
 	var origin, offset wire.ClickViewportResult
@@ -57,6 +59,7 @@ func TestClickReportsTheProjectedPixel(t *testing.T) {
 // TestClickOffScreenIsAnError: a point behind the camera must be reported, not silently clicked at
 // some meaningless pixel.
 func TestClickOffScreenIsAnError(t *testing.T) {
+	t.Parallel()
 	r, s := sketchClickSession(t)
 	call(t, r, s, "view.setCamera", `{"eye":[0,0,10],"target":[0,0,0],"up":[0,1,0],"fov":0.8}`, &wire.CameraView{})
 
@@ -72,6 +75,7 @@ func TestClickOffScreenIsAnError(t *testing.T) {
 // TestUnknownButtonIsRejected: a typo must name what was given and what was expected, not fall
 // back to the left button and look like it worked.
 func TestUnknownButtonIsRejected(t *testing.T) {
+	t.Parallel()
 	r, s := sketchClickSession(t)
 
 	_, err := r.Handle(s, "viewport.click", []byte(`{"point":[0,0,0],"button":"clicky"}`))
@@ -86,6 +90,7 @@ func TestUnknownButtonIsRejected(t *testing.T) {
 // TestEscapeFinishesAChain is why viewport.key exists: a continuous command has no click that
 // ends it, so without a key a client could start a chain and never finish it.
 func TestEscapeFinishesAChain(t *testing.T) {
+	t.Parallel()
 	r, s := sketchClickSession(t)
 	call(t, r, s, "commands.execute", `{"id":"Sketch.Line"}`, &wire.OKResult{})
 	for _, p := range []string{`{"point":[0,0,0]}`, `{"point":[4,0,0]}`, `{"point":[4,3,0]}`} {
@@ -108,6 +113,7 @@ func TestEscapeFinishesAChain(t *testing.T) {
 // TestEmptyKeyIsRejected: an empty key would otherwise be delivered as a no-op that silently did
 // nothing, which is the hardest kind of automation bug to see.
 func TestEmptyKeyIsRejected(t *testing.T) {
+	t.Parallel()
 	r, s := sketchClickSession(t)
 
 	_, err := r.Handle(s, "viewport.key", []byte(`{"key":""}`))

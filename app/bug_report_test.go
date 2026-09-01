@@ -53,6 +53,7 @@ func (f *fakeBugSubmitter) payload() (report.Payload, int) {
 }
 
 func TestCollectDiagnosticsPopulatesPlatformAndSettings(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	d := s.CollectDiagnostics()
 	if d.OS != runtime.GOOS || d.Arch != runtime.GOARCH {
@@ -67,6 +68,7 @@ func TestCollectDiagnosticsPopulatesPlatformAndSettings(t *testing.T) {
 }
 
 func TestBugReportCaptureThenSubmit(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	fake := &fakeBugSubmitter{}
 	s.SetBugSubmitter(fake)
@@ -103,6 +105,7 @@ func TestBugReportCaptureThenSubmit(t *testing.T) {
 }
 
 func TestBugReportWaitsForBothCaptures(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	fake := &fakeBugSubmitter{}
 	s.SetBugSubmitter(fake)
@@ -119,6 +122,7 @@ func TestBugReportWaitsForBothCaptures(t *testing.T) {
 }
 
 func TestBeginBugReportIgnoredWhileInProgress(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	s.SetBugSubmitter(&fakeBugSubmitter{})
 	s.BeginBugReport("first")
@@ -130,6 +134,7 @@ func TestBeginBugReportIgnoredWhileInProgress(t *testing.T) {
 }
 
 func TestBugReportReturnsToIdleOnError(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name string
 		err  error
@@ -154,6 +159,7 @@ func TestBugReportReturnsToIdleOnError(t *testing.T) {
 }
 
 func TestSubmitterLazilyDefaults(t *testing.T) {
+	t.Parallel()
 	s := NewSession() // no SetBugSubmitter: the real HTTP submitter is created on demand
 	if s.submitter() == nil {
 		t.Fatal("submitter() returned nil")
@@ -161,6 +167,7 @@ func TestSubmitterLazilyDefaults(t *testing.T) {
 }
 
 func TestDiagnosticsIncludesOpenDocumentYAML(t *testing.T) {
+	t.Parallel()
 	s := NewSessionWithStore(fakeMarshalStore{yaml: "schemaVersion: 2\ndocumentType: 1\n"})
 	if _, err := s.NewPart(); err != nil {
 		t.Fatalf("NewPart: %v", err)
@@ -196,6 +203,7 @@ func TestDiagnosticsIncludesOpenDocumentYAML(t *testing.T) {
 }
 
 func TestTransactionLogIsAppendOnlySinceOpen(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	d, err := s.NewPart()
 	if err != nil {

@@ -14,6 +14,7 @@ import (
 // features.edit drives a recompute with correct geometry.
 
 func TestFreeformLevelEditableOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, id := freeformBoxViaAPI(t)
 
 	var got wire.FeatureDetailResult
@@ -29,6 +30,7 @@ func TestFreeformLevelEditableOverWire(t *testing.T) {
 }
 
 func TestBossScalarsEditableOverWire(t *testing.T) {
+	t.Parallel()
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &struct{}{})
 	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &struct{}{})

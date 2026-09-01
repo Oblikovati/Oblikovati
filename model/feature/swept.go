@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -32,7 +33,7 @@ func sweptSolid(sections [][]math.Point3, closedLoop bool, feat string) (*topo.B
 	body := subd.ToBody(mesh, feat)
 	// A consistently-wound cage is either all-outward or all-inward; if the signed
 	// volume came out negative the cage is inside-out, so rebuild it face-reversed.
-	if ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
+	if query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
 		body = subd.ToBody(reverseFaces(mesh), feat)
 	}
 	return body, nil
@@ -54,7 +55,7 @@ func sweptShell(sections [][]math.Point3, closedLoop bool, feat string) (*topo.B
 	body := subd.ToBody(mesh, feat)
 	// A full-revolution shell is closed, so orient it outward like a solid; an open sheet's signed
 	// volume is ~0 and the flip is a harmless no-op.
-	if ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
+	if query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
 		body = subd.ToBody(reverseFaces(mesh), feat)
 	}
 	return body, nil
@@ -149,7 +150,7 @@ func tubeSolid(outerSecs, innerSecs [][]math.Point3, closedLoop bool, feat strin
 	}
 	mesh := tubeMesh(outerSecs, innerSecs, closedLoop, true)
 	body := subd.ToBody(mesh, feat)
-	if ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
+	if query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
 		body = subd.ToBody(reverseFaces(mesh), feat)
 	}
 	return body, nil
@@ -164,7 +165,7 @@ func tubeShell(outerSecs, innerSecs [][]math.Point3, closedLoop bool, feat strin
 	}
 	mesh := tubeMesh(outerSecs, innerSecs, closedLoop, false)
 	body := subd.ToBody(mesh, feat)
-	if ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
+	if query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
 		body = subd.ToBody(reverseFaces(mesh), feat)
 	}
 	return body, nil

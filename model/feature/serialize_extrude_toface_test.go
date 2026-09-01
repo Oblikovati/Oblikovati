@@ -17,6 +17,7 @@ import (
 // feature built nothing (ST3215Bracket's walls vanished on save/reopen). Now the fixed plane's
 // geometry is written and restored, so the target survives.
 func TestFixedToFacePlaneRoundTrips(t *testing.T) {
+	t.Parallel()
 	x, _ := math.NewUnitVector3(1, 0, 0)
 	y, _ := math.NewUnitVector3(0, 1, 0)
 	pl, err := sketch.NewPlane(math.P3(1, 2, 3), x, y)

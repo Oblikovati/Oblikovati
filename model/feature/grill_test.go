@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/model/sketch"
 )
 
@@ -25,6 +26,7 @@ func grillSketch() *sketch.Sketch {
 // the boundary-minus-ribs area (31), leaving the ribs bridging — a validated solid of vol 69,
 // which is more than the 64 a plain 6×6 window would leave (so the ribs stayed).
 func TestGrillCutsVentLeavingRibs(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	wall := sketch.NewSketches().Add(sketch.XYPlane())
 	addRect(wall, 0, 0, 10, 10)
@@ -40,7 +42,7 @@ func TestGrillCutsVentLeavingRibs(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("grill body not a valid solid: %+v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-69) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-69) > 1e-6 {
 		t.Errorf("grill volume = %g, want 69 (100 − 31 vent), so >64 ⇒ ribs remain", v)
 	}
 }
@@ -49,6 +51,7 @@ func TestGrillCutsVentLeavingRibs(t *testing.T) {
 // the correct vent — boundary 49 minus the bars' union 13.92 = 35.08 removed from a 100 wall,
 // leaving 64.92. Built as boundary − union(bars), robust to the crossings (#863).
 func TestGrillCrossingBarsVolume(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	wall := sketch.NewSketches().Add(sketch.XYPlane())
 	addRect(wall, 0, 0, 10, 10)
@@ -72,7 +75,7 @@ func TestGrillCrossingBarsVolume(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("crossing-bar grill body not a valid solid: %+v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-64.92) > 1e-3 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-64.92) > 1e-3 {
 		t.Errorf("crossing-bar grill volume = %g, want 64.92 (100 − vent 35.08)", v)
 	}
 }
@@ -80,6 +83,7 @@ func TestGrillCrossingBarsVolume(t *testing.T) {
 // TestGrillBoundaryOnlyIsAWindow: a boundary with no inner structure cuts a plain window
 // (vol 100 − 36 = 64).
 func TestGrillBoundaryOnlyIsAWindow(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	wall := sketch.NewSketches().Add(sketch.XYPlane())
 	addRect(wall, 0, 0, 10, 10)
@@ -94,13 +98,14 @@ func TestGrillBoundaryOnlyIsAWindow(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("windowed body not a valid solid: %+v", r.Issues)
 	}
-	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-64) > 1e-6 {
+	if v := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-64) > 1e-6 {
 		t.Errorf("window volume = %g, want 64 (100 − 36)", v)
 	}
 }
 
 // TestGrillNoBoundaryRejected: an empty boundary set is an error.
 func TestGrillNoBoundaryRejected(t *testing.T) {
+	t.Parallel()
 	fs := NewPartFeatures(nil)
 	wall := sketch.NewSketches().Add(sketch.XYPlane())
 	addRect(wall, 0, 0, 10, 10)
@@ -114,6 +119,7 @@ func TestGrillNoBoundaryRejected(t *testing.T) {
 
 // TestGrillRoundTrip checks the grill survives the recipe codec (sketch index + boundaries).
 func TestGrillRoundTrip(t *testing.T) {
+	t.Parallel()
 	wallSk := sketch.NewSketches().Add(sketch.XYPlane())
 	addRect(wallSk, 0, 0, 10, 10)
 	gSk := grillSketch()

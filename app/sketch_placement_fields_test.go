@@ -20,6 +20,7 @@ func typeInto(s *Session, text string) {
 // The fields a shape offers come from its recipe, so each tool shows its own quantities rather
 // than a fixed generic pair.
 func TestPlacementFieldsComeFromTheRecipe(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	tool := NewRectangleTool()
 	tool.corners = []math.Point2{math.P2(0, 0)}
@@ -40,6 +41,7 @@ func TestPlacementFieldsComeFromTheRecipe(t *testing.T) {
 // Typing a width and Tabbing locks it: the drag then changes only the height. This is the
 // behaviour the reference image shows, with the locked field carrying a padlock.
 func TestLockedFieldFreezesTheDrag(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	tool := NewRectangleTool()
 	tool.corners = []math.Point2{math.P2(0, 0)}
@@ -63,6 +65,7 @@ func TestLockedFieldFreezesTheDrag(t *testing.T) {
 // A locked field becomes a driving dimension; an untyped one creates nothing. That contract is
 // the whole point of the in-place input.
 func TestLockedFieldCreatesOneDrivingDimension(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	tool := NewRectangleTool()
 	tool.corners = []math.Point2{math.P2(0, 0)}
@@ -85,6 +88,7 @@ func TestLockedFieldCreatesOneDrivingDimension(t *testing.T) {
 
 // Nothing typed means nothing dimensioned.
 func TestUntouchedFieldsCreateNoDimensions(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	tool := NewRectangleTool()
 	tool.corners = []math.Point2{math.P2(0, 0), math.P2(1, 0.8)}
@@ -100,6 +104,7 @@ func TestUntouchedFieldsCreateNoDimensions(t *testing.T) {
 // The parameter engine is unit-strict: a bare "10" would silently mean 10 cm, the kernel's
 // length unit, rather than 10 of the document's unit.
 func TestLockedFieldExpressionCarriesItsUnit(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	got := s.placementFieldExpression("10", sketch.FieldLength)
 	if !strings.Contains(got, " ") || got == "10" {
@@ -112,6 +117,7 @@ func TestLockedFieldExpressionCarriesItsUnit(t *testing.T) {
 
 // Tab cycles the fields, wrapping at the end.
 func TestPlacementFieldTabCycles(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	tool := NewRectangleTool()
 	tool.corners = []math.Point2{math.P2(0, 0)}
@@ -129,6 +135,7 @@ func TestPlacementFieldTabCycles(t *testing.T) {
 
 // Backspace edits the active field and releases its lock, so a mistyped value can be corrected.
 func TestPlacementFieldBackspaceUnlocks(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	tool := NewRectangleTool()
 	tool.corners = []math.Point2{math.P2(0, 0)}
@@ -145,6 +152,7 @@ func TestPlacementFieldBackspaceUnlocks(t *testing.T) {
 
 // Escape clears typed state and returns every box to cursor tracking.
 func TestPlacementFieldCancelClearsTyping(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	tool := NewRectangleTool()
 	tool.corners = []math.Point2{math.P2(0, 0)}
@@ -163,6 +171,7 @@ func TestPlacementFieldCancelClearsTyping(t *testing.T) {
 // Typing alone must not freeze the drag — only locking does. Until the user presses Tab or
 // Enter the value is still being composed, so the shape keeps following the cursor.
 func TestTypingWithoutLockingDoesNotFreezeTheDrag(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	tool := NewRectangleTool()
 	tool.corners = []math.Point2{math.P2(0, 0)}
@@ -181,6 +190,7 @@ func TestTypingWithoutLockingDoesNotFreezeTheDrag(t *testing.T) {
 // An entry that is not a number must not freeze the drag either, even once locked: a lone sign
 // is not a measurement.
 func TestUnparseableEntryKeepsTrackingTheCursor(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	tool := NewRectangleTool()
 	tool.corners = []math.Point2{math.P2(0, 0)}

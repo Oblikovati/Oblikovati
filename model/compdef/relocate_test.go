@@ -38,6 +38,7 @@ func moveFile(t *testing.T, src, dst string) {
 // the assembly there — its occurrence must re-resolve through the owner-relative reference
 // record, rebinding to the relocated component without manual repair (#750).
 func TestAssemblyReopensAfterTreeMove(t *testing.T) {
+	t.Parallel()
 	store := persistence.NewPackageStore()
 	src := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(src, "parts"), 0o755); err != nil {

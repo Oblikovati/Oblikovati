@@ -20,6 +20,7 @@ import (
 // TestSteinmetzIntersectGeneralWatertight pins that the general intersect produces the same watertight
 // four-face bicylinder as the bespoke constructor: cylinder faces, every edge used exactly twice.
 func TestSteinmetzIntersectGeneralWatertight(t *testing.T) {
+	t.Parallel()
 	cx, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
 	cz, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 
@@ -62,6 +63,7 @@ func TestSteinmetzIntersectGeneralWatertight(t *testing.T) {
 // boundary jumps across the solid, the (u,v) loop self-intersects, and the tessellator falls back to a
 // mis-oriented plane patch (volume 37 vs 144). Re-anchoring the sub-arc to [t0,t1] restores the invariant.
 func TestSteinmetzGeneralEdgesAnchoredToVertices(t *testing.T) {
+	t.Parallel()
 	cx, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
 	cz, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 
@@ -84,6 +86,7 @@ func TestSteinmetzGeneralEdgesAnchoredToVertices(t *testing.T) {
 // TestSteinmetzGeneralDeclinesUnequalRadius pins that the general path declines the non-Steinmetz case (so
 // kernel/ops keeps the clean crossing-cylinder pipeline for unequal radii).
 func TestSteinmetzGeneralDeclinesUnequalRadius(t *testing.T) {
+	t.Parallel()
 	cx, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 	cz, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	if _, ok := SteinmetzIntersectGeneral(cx, cz, nil); ok {
@@ -105,6 +108,7 @@ func nearEqualSteinmetz(dr float64) (cx, cz *topo.Body) {
 // If the snap routed only into the imprint arcs and left the walls at their true radii, the two z-cylinder
 // lobes would report 3+dr and this fails: it is the regression guard for the holistic-routing pitfall.
 func TestSteinmetzIntersectGeneralNearEqualSnaps(t *testing.T) {
+	t.Parallel()
 	cx, cz := nearEqualSteinmetz(0)
 	ceil := geom.ResolutionForBox(cx.RangeBox().Union(cz.RangeBox())).Stitch()
 	dr := 0.5 * ceil // strictly within the snap ceiling
@@ -135,6 +139,7 @@ func TestSteinmetzIntersectGeneralNearEqualSnaps(t *testing.T) {
 // near-pinch band, |Δr| < 2.5e-4·r) is NOT snapped: the neck √(2R·Δr) is resolvable two-loop geometry, so the
 // general Steinmetz path declines and the boolean keeps the deterministic faceted route (#1780 Direction 2).
 func TestSteinmetzGeneralDeclinesResidualBand(t *testing.T) {
+	t.Parallel()
 	cx, cz := nearEqualSteinmetz(0)
 	ceil := geom.ResolutionForBox(cx.RangeBox().Union(cz.RangeBox())).Stitch()
 	dr := 4 * ceil // above the ceiling, still ≪ 2.5e-4·3
@@ -147,6 +152,7 @@ func TestSteinmetzGeneralDeclinesResidualBand(t *testing.T) {
 // TestSteinmetzGeneralDeclinesNonCrossing pins that equal-radius cylinders whose axes do NOT intersect
 // (offset/skew) are not the Steinmetz case, so the general path declines (steinmetzFrame fails).
 func TestSteinmetzGeneralDeclinesNonCrossing(t *testing.T) {
+	t.Parallel()
 	cx, _ := SolidCylinder(math.P3(-6, 0, 5), math.V3(1, 0, 0), 3, 12) // offset in z, axes do not meet
 	cz, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	if _, ok := SteinmetzIntersectGeneral(cx, cz, nil); ok {
@@ -198,6 +204,7 @@ func assertWatertightAnalytic(t *testing.T, res *topo.Body, wantCyl, wantPlane i
 // tool lobes (the saddle bite) + two target caps. The two outside bands come from the wrapping-band emission,
 // which for the pinched Steinmetz saddle must recognise each band wraps the full azimuth (op-aware wrapsAllU).
 func TestSteinmetzCutGeneralWatertight(t *testing.T) {
+	t.Parallel()
 	cx, cz := steinmetzCylinders()
 	res, ok := SteinmetzCutGeneral(cx, cz, nil)
 	if !ok {
@@ -210,6 +217,7 @@ func TestSteinmetzCutGeneralWatertight(t *testing.T) {
 // eight-face union solid as the bespoke constructor: two outside bands + two caps per cylinder, the two
 // cylinders meeting along the shared intersection ellipses (no lobes, no reversal).
 func TestSteinmetzJoinGeneralWatertight(t *testing.T) {
+	t.Parallel()
 	cx, cz := steinmetzCylinders()
 	res, ok := SteinmetzJoinGeneral(cx, cz, nil)
 	if !ok {
@@ -221,6 +229,7 @@ func TestSteinmetzJoinGeneralWatertight(t *testing.T) {
 // TestSteinmetzCutJoinGeneralDeclineUnequalRadius pins that both general cut and join decline the
 // non-Steinmetz case, so kernel/ops keeps the clean crossing-cylinder pipeline for unequal radii.
 func TestSteinmetzCutJoinGeneralDeclineUnequalRadius(t *testing.T) {
+	t.Parallel()
 	cx, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 	cz, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	if _, ok := SteinmetzCutGeneral(cx, cz, nil); ok {

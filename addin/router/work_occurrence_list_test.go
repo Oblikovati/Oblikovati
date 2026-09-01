@@ -19,6 +19,7 @@ import (
 // transformed into the assembly, and that ref is then accepted as a plane input to an assembly
 // work-plane create (AC1–AC3).
 func TestOccurrenceDatumListAndInput(t *testing.T) {
+	t.Parallel()
 	r, s := emptyAssemblySession(t)
 	asm := s.ActiveDocument().Content().(*compdef.AssemblyComponentDefinition)
 	part := compdef.NewPartComponentDefinition()
@@ -79,6 +80,7 @@ func TestOccurrenceDatumListAndInput(t *testing.T) {
 // TestOccurrenceListErrors: an occurrence path on a part (no occurrences), and an unknown path on an
 // assembly, both error cleanly (#1857).
 func TestOccurrenceListErrors(t *testing.T) {
+	t.Parallel()
 	rp, sp := emptyPartSession(t)
 	if _, err := rp.Handle(sp, "workPlanes.list", []byte(`{"occurrence":["sub:1"]}`)); err == nil {
 		t.Error("an occurrence path on a part should error (no occurrences)")

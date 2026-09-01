@@ -7,6 +7,7 @@ import "testing"
 // A press and release without movement is a click: it places one point and waits, exactly as
 // the pre-#2014 click-click flow did.
 func TestPlacementClickPlacesOnePoint(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	tool := NewRectangleTool()
 	s.StartTool(tool)
@@ -27,6 +28,7 @@ func TestPlacementClickPlacesOnePoint(t *testing.T) {
 // handler, so a press-drag-release placed one point and the shape appeared on a later,
 // unrelated press.
 func TestPlacementDragPlacesTwoPointsAndCommits(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	s.StartTool(NewRectangleTool())
 	s.BeginPlacement(100, 100)
@@ -43,6 +45,7 @@ func TestPlacementDragPlacesTwoPointsAndCommits(t *testing.T) {
 
 // A drag shorter than the slop is a click, not a drag — a shaky hand must not create geometry.
 func TestPlacementSlopBoundary(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	tool := NewRectangleTool()
 	s.StartTool(tool)
@@ -57,6 +60,7 @@ func TestPlacementSlopBoundary(t *testing.T) {
 // Click-click and drag-release must produce the same geometry; they are the same path, differing
 // only in when the second point arrives.
 func TestPlacementClickClickEqualsDrag(t *testing.T) {
+	t.Parallel()
 	dragged, _ := sketchSession(t)
 	dragged.StartTool(NewRectangleTool())
 	dragged.BeginPlacement(100, 100)
@@ -81,6 +85,7 @@ func TestPlacementClickClickEqualsDrag(t *testing.T) {
 // A three-point tool takes the drag for its first two points and stays click-click for the rest,
 // which falls out of the state machine with no special-casing.
 func TestPlacementDragThenClickForThreePointTool(t *testing.T) {
+	t.Parallel()
 	s, sk := sketchSession(t)
 	tool := NewThreePointRectangleTool()
 	s.StartTool(tool)
@@ -102,6 +107,7 @@ func TestPlacementDragThenClickForThreePointTool(t *testing.T) {
 
 // With no tool active the press is not claimed, so selection and box-select still see it.
 func TestPlacementIgnoredWithoutTool(t *testing.T) {
+	t.Parallel()
 	s, _ := sketchSession(t)
 	if s.BeginPlacement(100, 100) {
 		t.Error("no active tool must leave the press to the selection path")

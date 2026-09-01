@@ -36,6 +36,7 @@ func transformJSON(tx, ty, tz float64) string {
 // TestAssemblyOccurrencesTreeOverWire reads the occurrence tree of an assembly with two
 // placed components and checks ids, names, and placements round-trip.
 func TestAssemblyOccurrencesTreeOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 
 	var tree wire.OccurrencesResult
@@ -55,6 +56,7 @@ func TestAssemblyOccurrencesTreeOverWire(t *testing.T) {
 // TestAssemblyPlaceOverWire places an open part document into the active assembly and
 // checks the new occurrence carries the requested name/transform and joins the tree.
 func TestAssemblyPlaceOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, _ := assemblySessionWithBoxes(t)
 	pin := openPartDoc(t, s, "pin.obk")
 
@@ -79,6 +81,7 @@ func TestAssemblyPlaceOverWire(t *testing.T) {
 // TestAssemblyPlaceByDefinitionOverWire places a second instance reusing an existing
 // occurrence's definition.
 func TestAssemblyPlaceByDefinitionOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0)
 
 	var placed wire.OccurrenceResult
@@ -96,6 +99,7 @@ func TestAssemblyPlaceByDefinitionOverWire(t *testing.T) {
 // TestAssemblyPlaceByDefinitionBatchOverWire places several copies of a component in ONE call (the
 // large-assembly fast path) and gets all the new occurrences back, each distinct from the source.
 func TestAssemblyPlaceByDefinitionBatchOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0)
 
 	args := fmt.Sprintf(`{"source":%d,"placements":[{"name":"box:2","transform":%s},{"name":"box:3","transform":%s},{"name":"box:4","transform":%s}]}`,
@@ -126,6 +130,7 @@ func TestAssemblyPlaceByDefinitionBatchOverWire(t *testing.T) {
 // TestAssemblyTransformGroundSuppressOverWire drives the per-occurrence state mutators and
 // checks each is reflected on the occurrence.
 func TestAssemblyTransformGroundSuppressOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0)
 	id := occs[0].ID()
 
@@ -155,6 +160,7 @@ func TestAssemblyTransformGroundSuppressOverWire(t *testing.T) {
 // TestAssemblyReplaceOverWire swaps an occurrence's component for another document's,
 // keeping the occurrence's id, name, and placement.
 func TestAssemblyReplaceOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 4)
 	id, name := occs[0].ID(), occs[0].Name()
 	pin := openPartDoc(t, s, "pin.obk")
@@ -168,6 +174,7 @@ func TestAssemblyReplaceOverWire(t *testing.T) {
 
 // TestAssemblyRemoveOverWire deletes an occurrence and checks the tree shrinks.
 func TestAssemblyRemoveOverWire(t *testing.T) {
+	t.Parallel()
 	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
 
 	var tree wire.OccurrencesResult

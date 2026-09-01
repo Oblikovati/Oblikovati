@@ -11,6 +11,7 @@ import "testing"
 // TestConvertParameterUserModelRoundTrip converts the seeded "width" user→model and back, and
 // confirms a dependent expression stays bound across the conversion.
 func TestConvertParameterUserModelRoundTrip(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.add", `{"name":"half","expression":"width / 2"}`, nil)
 
@@ -30,6 +31,7 @@ func TestConvertParameterUserModelRoundTrip(t *testing.T) {
 
 // TestConvertParameterToReferenceIsReadOnly: a reference parameter refuses parameters.set.
 func TestConvertParameterToReferenceIsReadOnly(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	call(t, r, s, "parameters.convert", `{"name":"width","targetKind":"reference"}`, nil)
 	if d := getDetail(t, r, s, "width"); d.Kind != "reference" {
@@ -41,6 +43,7 @@ func TestConvertParameterToReferenceIsReadOnly(t *testing.T) {
 // TestConvertParameterErrors covers the guard rails: an unsupported target, an unknown parameter,
 // and an unknown targetKind spelling are all clean errors.
 func TestConvertParameterErrors(t *testing.T) {
+	t.Parallel()
 	r, s := seededSession(t)
 	wantErr(t, r, s, "parameters.convert", `{"name":"width","targetKind":"derived"}`)
 	wantErr(t, r, s, "parameters.convert", `{"name":"missing","targetKind":"model"}`)

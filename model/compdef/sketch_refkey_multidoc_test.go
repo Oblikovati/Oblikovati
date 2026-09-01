@@ -33,6 +33,7 @@ func allEntityKeys(t *testing.T, d *doc.Document, part *compdef.PartComponentDef
 // distinct document GUIDs); and editing one reopened document does not perturb the other's
 // keys.
 func TestMultipleDocumentsKeepDistinctSketchKeys(t *testing.T) {
+	t.Parallel()
 	store, ws, dir := assemblyWorkspace(t)
 	pathA := filepath.Join(dir, "alpha.obk")
 	pathB := filepath.Join(dir, "beta.obk")

@@ -24,6 +24,7 @@ func lastEcho(cl *CommandLine) string {
 // TestCtrlChordEchoesCanonicalWord verifies M26 F05: a Ctrl chord runs through the command
 // line and echoes the action's AutoCAD word, so Ctrl+Z reads as "UNDO" on the command line.
 func TestCtrlChordEchoesCanonicalWord(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -38,6 +39,7 @@ func TestCtrlChordEchoesCanonicalWord(t *testing.T) {
 // fixture document has no file path, so the save reaches SaveActiveDocument and returns its
 // "use Save As" error — which proves the chord routed to the save action (and was echoed).
 func TestCtrlSSavesAndEchoes(t *testing.T) {
+	t.Parallel()
 	s, _ := newPartWithSquare(t, 2)
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
@@ -55,6 +57,7 @@ func TestCtrlSSavesAndEchoes(t *testing.T) {
 // single letter does NOT dispatch a command (no plain default exists), while the same letter
 // chorded with Control does. Single-letter shortcuts are personalised as Shift/Control chords.
 func TestSingleLetterChordNeedsModifier(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	ran := false
 	if err := s.Commands().Add(NewCommand("Test.Greet", "Greet", "Test",
@@ -80,6 +83,7 @@ func TestSingleLetterChordNeedsModifier(t *testing.T) {
 // the user personalises them as Shift/Control chords. So a bare "V" typed and Entered is an
 // unknown command, not a shortcut — the user presses their configured chord instead.
 func TestTypedSingleLetterDoesNotResolve(t *testing.T) {
+	t.Parallel()
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)

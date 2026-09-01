@@ -34,6 +34,7 @@ func findSubstitute(t *testing.T, occs *occurrence.Occurrences) *occurrence.Occu
 // TestShrinkwrapToPartWholeEnvelope builds a single bounding-box LOD from a two-part
 // assembly: parts at [0,1]³ and [3,4]×[0,1]² give an envelope box of [0,4]×[0,1]² = 4.
 func TestShrinkwrapToPartWholeEnvelope(t *testing.T) {
+	t.Parallel()
 	sub := NewAssemblyComponentDefinition()
 	sub.Place("a:1", partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1)), math.Identity4())
 	sub.Place("b:1", partWithBlock(t, math.P3(3, 0, 0), math.P3(4, 1, 1)), math.Identity4())
@@ -51,6 +52,7 @@ func TestShrinkwrapToPartWholeEnvelope(t *testing.T) {
 // source assembly occurrence is suppressed and a single IsSubstitute LOD occurrence
 // takes its place, carrying the shrinkwrap envelope's extent.
 func TestSubstituteWithShrinkwrapRegistersLOD(t *testing.T) {
+	t.Parallel()
 	sub := NewAssemblyComponentDefinition()
 	sub.Place("a:1", partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1)), math.Identity4())
 	sub.Place("b:1", partWithBlock(t, math.P3(3, 0, 0), math.P3(4, 1, 1)), math.Identity4())

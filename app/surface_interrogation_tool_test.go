@@ -27,6 +27,7 @@ func partWithCurvedSurface(t *testing.T) (*Session, *compdef.PartComponentDefini
 }
 
 func TestSurfaceInterrogationOverlayActiveOnlyWithTool(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithCurvedSurface(t)
 	if items := s.SurfaceInterrogationItems(); items != nil {
 		t.Error("no overlay should draw when the Surface Analysis tool is inactive")
@@ -44,6 +45,7 @@ func TestSurfaceInterrogationOverlayActiveOnlyWithTool(t *testing.T) {
 // TestSurfaceInterrogationZebraFillsTriangles: the zebra map is a filled (Triangles) overlay with
 // per-vertex black/white band colours, not contour lines.
 func TestSurfaceInterrogationZebraFillsTriangles(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithCurvedSurface(t)
 	s.StartTool(NewSurfaceInterrogationToolMode(interrogZebra))
 	items := s.SurfaceInterrogationItems()
@@ -56,6 +58,7 @@ func TestSurfaceInterrogationZebraFillsTriangles(t *testing.T) {
 }
 
 func TestSurfaceInterrogationModes(t *testing.T) {
+	t.Parallel()
 	s, _ := partWithCurvedSurface(t)
 	for _, mode := range []int{interrogZebra, interrogIsophote, interrogReflection, interrogHighlight} {
 		s.StartTool(NewSurfaceInterrogationToolMode(mode))
@@ -67,6 +70,7 @@ func TestSurfaceInterrogationModes(t *testing.T) {
 }
 
 func TestSurfaceInterrogationToolParams(t *testing.T) {
+	t.Parallel()
 	tool := NewSurfaceInterrogationTool()
 	if tool.Prompt(nil) == "" {
 		t.Error("prompt should be non-empty")
@@ -92,6 +96,7 @@ func TestSurfaceInterrogationToolParams(t *testing.T) {
 }
 
 func TestSurfaceAnalysisRibbonCommands(t *testing.T) {
+	t.Parallel()
 	cases := map[string]int{
 		"Inspect.Zebra":      interrogZebra,
 		"Inspect.Isophotes":  interrogIsophote,
@@ -117,6 +122,7 @@ func TestSurfaceAnalysisRibbonCommands(t *testing.T) {
 }
 
 func TestTrianglesFromIndices(t *testing.T) {
+	t.Parallel()
 	got := trianglesFromIndices([]int{0, 1, 2, 3, 4, 5})
 	if len(got) != 2 || got[0] != [3]int{0, 1, 2} || got[1] != [3]int{3, 4, 5} {
 		t.Errorf("trianglesFromIndices = %v, want [[0 1 2] [3 4 5]]", got)

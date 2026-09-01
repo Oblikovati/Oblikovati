@@ -8,6 +8,8 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/blend"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -24,7 +26,7 @@ func lExtrude(t *testing.T) (*topo.Body, []byte) {
 	for _, e := range body.Edges() {
 		a, b := e.StartVertex().Point(), e.EndVertex().Point()
 		at11 := func(p math.Point3) bool { return stdmath.Abs(p.X-1) < 1e-9 && stdmath.Abs(p.Y-1) < 1e-9 }
-		if at11(a) && at11(b) && ops.ClassifyEdgeConvexity(e) == ops.EdgeConcave {
+		if at11(a) && at11(b) && blend.ClassifyEdgeConvexity(e) == blend.EdgeConcave {
 			return body, e.ReferenceKey()
 		}
 	}
@@ -58,10 +60,11 @@ func chamferedConcave(t *testing.T, d float64, strategy types.ChamferConcaveStra
 // (concave) edge chamfered outward must FILL the inside corner with a 45° gusset, adding ½·d²·L of
 // material — not cut a malformed sliver as the convex-only path did.
 func TestChamferConcaveOutwardFills(t *testing.T) {
+	t.Parallel()
 	const d = 0.4
 	res := chamferedConcave(t, d, types.ChamferConcaveOutward)
 	want := 3 + 0.5*d*d // L volume 3 + triangular fill ½·d·d·length(1)
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("outward concave chamfer volume = %g, want %g (notch should be filled)", got, want)
 	}
 }
@@ -69,10 +72,11 @@ func TestChamferConcaveOutwardFills(t *testing.T) {
 // TestChamferConcaveInwardRelieves checks the inward strategy cuts a recessed relief groove out of
 // the corner instead, removing ½·d²·L of material.
 func TestChamferConcaveInwardRelieves(t *testing.T) {
+	t.Parallel()
 	const d = 0.4
 	res := chamferedConcave(t, d, types.ChamferConcaveInward)
 	want := 3 - 0.5*d*d // L volume 3 − triangular relief ½·d·d·length(1)
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("inward concave chamfer volume = %g, want %g (corner should be relieved)", got, want)
 	}
 }
@@ -80,6 +84,7 @@ func TestChamferConcaveInwardRelieves(t *testing.T) {
 // TestChamferConcaveOutwardIsDefault confirms the zero-value strategy (AddChamferCorners) fills
 // outward — so an existing/default chamfer of a concave edge adds material, the chosen default.
 func TestChamferConcaveOutwardIsDefault(t *testing.T) {
+	t.Parallel()
 	const d = 0.4
 	body, edge := lExtrude(t)
 	fs := NewPartFeatures(nil)
@@ -91,7 +96,7 @@ func TestChamferConcaveOutwardIsDefault(t *testing.T) {
 	}
 	res := fs.Result()[0]
 	want := 3 + 0.5*d*d
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+	if got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
 		t.Errorf("default concave chamfer volume = %g, want %g (default must fill outward)", got, want)
 	}
 }

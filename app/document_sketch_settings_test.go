@@ -13,6 +13,7 @@ import (
 // tools' inference options come from the active document's settings, and editing them persists on
 // that document (so SetDocumentSketchSettings sees the same value).
 func TestSketchInferenceOptionsReadActiveDocument(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 
 	// A fresh document yields the defaults (inference + auto-apply on).
@@ -39,6 +40,7 @@ func TestSketchInferenceOptionsReadActiveDocument(t *testing.T) {
 // TestDocumentSketchSettingsRoundTripsGridAndConstraintFields checks the #1877 grid/snap,
 // constraint-display and relax fields set through the document API read back unchanged.
 func TestDocumentSketchSettingsRoundTripsGridAndConstraintFields(t *testing.T) {
+	t.Parallel()
 	s, _ := emptyPartSession(t)
 	want := types.SketchSettings{
 		InferConstraints: true, AutoApplyConstraints: true, ConstraintPriority: types.PriorityHorizontalVertical,
@@ -61,6 +63,7 @@ func TestDocumentSketchSettingsRoundTripsGridAndConstraintFields(t *testing.T) {
 
 // TestSetDocumentSketchSettingsNoActiveDocument checks the addressed-document error path.
 func TestSetDocumentSketchSettingsNoActiveDocument(t *testing.T) {
+	t.Parallel()
 	s := NewSession() // no document open
 	if _, err := s.DocumentSketchSettings(0); err == nil {
 		t.Error("DocumentSketchSettings with no active document should error")

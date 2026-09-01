@@ -14,6 +14,7 @@ import (
 // cylinder — reorientFaces must flood-fill a consistent winding (every shared edge traversed in
 // opposite directions by its two faces) and flip the whole shell outward (positive volume).
 func TestReorientFacesMakesConsistentOutward(t *testing.T) {
+	t.Parallel()
 	verts := []math.Point3{
 		math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0),
 		math.P3(0, 0, 1), math.P3(1, 0, 1), math.P3(1, 1, 1), math.P3(0, 1, 1),
