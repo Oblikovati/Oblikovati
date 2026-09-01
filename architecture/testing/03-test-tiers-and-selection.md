@@ -119,7 +119,14 @@ runs.
 The limit is deliberately loose. Elapsed time in tier 2 is stretched by core
 contention, so guarded and unguarded tests are separated by a wide margin, not a
 tight one: the slowest honest test measured **22 s** against **40–434 s** for the
-corpus. 60 s sits in that gap. It catches the class that actually hurt — a 100 s+
+corpus on 32 cores. 60 s sits in that gap.
+
+A CI runner has four cores and adds coverage instrumentation, which stretches
+everything roughly threefold and narrows that gap — the first run on #3496 put the
+corpus at 67–1166 s with the gate still green. So the gate reports the **slowest
+unguarded test and its headroom on every run, pass or fail**: a budget that only
+speaks when it breaks cannot warn you that it is about to. Read that line before
+raising the limit. It catches the class that actually hurt — a 100 s+
 corpus test with no guard — and does not resolve a 2 s-class one.
 
 For the tight gate, `make test-budget` fails when a tier-1 **package** exceeds

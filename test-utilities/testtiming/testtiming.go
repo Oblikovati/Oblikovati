@@ -184,3 +184,20 @@ func packageDir(importPath, modulePath string) string {
 	}
 	return strings.TrimPrefix(importPath, modulePath+"/")
 }
+
+// SlowestUnguarded returns the slowest test that does NOT exclude itself from the fast
+// tier, or false when every test is guarded. It is what makes the guard budget's HEADROOM
+// visible: a gate that only speaks when it fails cannot tell you it is about to.
+func SlowestUnguarded(runs []TestRun, modulePath string, guards GuardLookup) (TestRun, bool) {
+	var worst TestRun
+	found := false
+	for _, r := range runs {
+		if guards.Guards(packageDir(r.Package, modulePath), r.Name) {
+			continue
+		}
+		if !found || r.Elapsed > worst.Elapsed {
+			worst, found = r, true
+		}
+	}
+	return worst, found
+}

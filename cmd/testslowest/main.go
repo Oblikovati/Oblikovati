@@ -79,6 +79,10 @@ func checkUnguarded(w io.Writer, runs []testtiming.TestRun, root string, budget 
 	if err != nil {
 		return err
 	}
+	if worst, ok := testtiming.SlowestUnguarded(runs, modulePath, guards); ok {
+		fmt.Fprintf(w, "\nslowest UNGUARDED test: %s (budget %.0fs, headroom %.0fs)\n",
+			worst, budget, budget-worst.Elapsed)
+	}
 	over := testtiming.UnguardedOverBudget(runs, modulePath, guards, budget)
 	if len(over) == 0 {
 		return nil

@@ -156,3 +156,22 @@ func TestUnguardedOverBudgetMapsTheRootPackageToDot(t *testing.T) {
 		t.Errorf("UnguardedOverBudget() = %+v, want none — the module root maps to \".\"", got)
 	}
 }
+
+func TestSlowestUnguardedReportsTheWorstUnguardedTest(t *testing.T) {
+	runs := []TestRun{
+		{Package: "m/ops", Name: "TestCorpus", Elapsed: 200},
+		{Package: "m/ops", Name: "TestPlain", Elapsed: 12},
+		{Package: "m/ops", Name: "TestQuick", Elapsed: 1},
+	}
+	got, ok := SlowestUnguarded(runs, "m", FakeGuards{"ops::TestCorpus": true})
+	if !ok || got.Name != "TestPlain" {
+		t.Errorf("SlowestUnguarded() = %+v, %v; want TestPlain", got, ok)
+	}
+}
+
+func TestSlowestUnguardedIsFalseWhenEveryTestIsGuarded(t *testing.T) {
+	runs := []TestRun{{Package: "m/ops", Name: "TestCorpus", Elapsed: 200}}
+	if _, ok := SlowestUnguarded(runs, "m", FakeGuards{"ops::TestCorpus": true}); ok {
+		t.Error("SlowestUnguarded() reported a test, want none")
+	}
+}
