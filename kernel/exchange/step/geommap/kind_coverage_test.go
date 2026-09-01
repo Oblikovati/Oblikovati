@@ -64,6 +64,7 @@ var stepCurveUnsupported = map[geom.CurveKind]string{
 	geom.CurveVariableHelix: "variable-pitch helix has no STEP analytic entity; exported via a polyline",
 	geom.CurveSpiric:        "spiric arc (torus-section) has no STEP analytic entity; exported via a polyline",
 	geom.CurveTorusCyl:      "torus∩cylinder section arc has no STEP analytic entity; exported via a polyline",
+	geom.CurveRuledQuadric:  "ruled∩quadric section arc (a quartic space curve) has no STEP analytic entity; exported via a polyline",
 }
 
 func TestStepCurveWriterCoverage(t *testing.T) {

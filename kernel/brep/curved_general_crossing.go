@@ -87,7 +87,7 @@ func ruledCrossingIntersect(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bo
 // cylinder∩cylinder pair (crossingCylinderLoops) — where near-equal radii below the ceiling belong to the
 // exact bicylinder constructor — and the plain general imprint (curvedImprintLoops) for any cone-involving
 // pair, which has no such degenerate.
-func ruledCrossingImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
+func ruledCrossingImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Curve3, bool) {
 	if !hasConeSide(a) && !hasConeSide(b) {
 		return crossingCylinderLoops(a, b, rec)
 	}
@@ -97,11 +97,11 @@ func ruledCrossingImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline,
 // ruledCrossingSideSplit trims one side by the imprint. perLoop routes a near-pinch cylinder's fatter wall
 // through cylinderLensSplit (each lens cap in its own arrangement so the tip-to-tip necks do not fuse, #1818);
 // every other side takes the one-arrangement curvedSideSolidSplit.
-func ruledCrossingSideSplit(f curvedFace, surface geom.Surface, band coneSideBand_, loops []geom.Polyline, isB bool, inside func(math.Point3) bool, perLoop bool) ([]curvedFace, []loopEdge, error) {
+func ruledCrossingSideSplit(f curvedFace, surface geom.Surface, band coneSideBand_, loops []geom.Curve3, isB bool, inside func(math.Point3) bool, perLoop bool) ([]curvedFace, []loopEdge, error) {
 	if perLoop {
 		return cylinderLensSplit(true, f, surface.(geom.Cylinder), band, loops, isB, inside)
 	}
-	return curvedSideSolidSplit(f, surface, band, polylineCurves(loops), Intersection, isB, inside)
+	return curvedSideSolidSplit(f, surface, band, loops, Intersection, isB, inside)
 }
 
 // fatterCylinderSide reports whether side a is a cylinder strictly fatter than cylinder side b — the near-pinch

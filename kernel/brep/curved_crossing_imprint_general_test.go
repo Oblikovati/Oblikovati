@@ -39,10 +39,10 @@ func TestPrimaryCurvedSurfaceRecognisesConeAndCylinder(t *testing.T) {
 }
 
 // worstImprintOffset is the largest distance of any loop vertex from either operand surface.
-func worstImprintOffset(loops []geom.Polyline, a, b geom.Surface) float64 {
+func worstImprintOffset(loops []geom.Curve3, a, b geom.Surface) float64 {
 	worst := 0.0
 	for _, lp := range loops {
-		for _, p := range lp.Vertices {
+		for _, p := range imprintLoopPoints(lp) {
 			da := stdmath.Abs(geom.SignedDistanceToSurface(a, p))
 			db := stdmath.Abs(geom.SignedDistanceToSurface(b, p))
 			worst = stdmath.Max(worst, stdmath.Max(da, db))

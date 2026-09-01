@@ -16,9 +16,9 @@ import (
 // boundary the split/stitch slices will build the watertight result on.
 
 // onBothCylinders returns the largest distance any loop vertex sits off either cylinder surface.
-func onBothCylinders(loop geom.Polyline, a, b geom.Cylinder) float64 {
+func onBothCylinders(loop geom.Curve3, a, b geom.Cylinder) float64 {
 	worst := 0.0
-	for _, p := range loop.Vertices {
+	for _, p := range imprintLoopPoints(loop) {
 		ea := stdmath.Abs(float64(geom.SignedDistanceToSurface(a, p)))
 		eb := stdmath.Abs(float64(geom.SignedDistanceToSurface(b, p)))
 		worst = stdmath.Max(worst, stdmath.Max(ea, eb))
@@ -115,9 +115,9 @@ func TestCrossingCylinderImprintEqualRadiusPinch(t *testing.T) {
 
 // loopRadialExtent returns the min and max distance of a loop's vertices from the origin — for a Steinmetz
 // ellipse (centred at the axis crossing) this is its minor (R) and major (R√2) semi-axis length.
-func loopRadialExtent(lp geom.Polyline) (near, far float64) {
+func loopRadialExtent(lp geom.Curve3) (near, far float64) {
 	near, far = stdmath.Inf(1), 0
-	for _, p := range lp.Vertices {
+	for _, p := range imprintLoopPoints(lp) {
 		d := float64(p.AsVector().Length())
 		near, far = stdmath.Min(near, d), stdmath.Max(far, d)
 	}

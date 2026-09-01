@@ -183,15 +183,16 @@ func splitLoopEdgeAtParams(e loopEdge, ts []float64) []loopEdge {
 // at those points (their endpoints are the exact triple-point vertices), so the (u,v) arrangement carries
 // each junction as a shared node welding to the split prior conic; a loop clear of every junction (the
 // disjoint back entry ellipse) passes through unchanged as a closed polyline (complete loop ingest, #1738).
-func splitImprintAtJunctions(loops []geom.Polyline, js []cornerJunction) []geom.Curve3 {
+func splitImprintAtJunctions(loops []geom.Curve3, js []cornerJunction) []geom.Curve3 {
 	out := make([]geom.Curve3, 0, len(loops)+len(js))
 	for i := range loops {
-		on := junctionsOnPolyline(loops[i], js)
+		pts := imprintLoopPoints(loops[i])
+		on := junctionsOnLoop(pts, js)
 		if len(on) == 0 {
-			out = append(out, &loops[i]) // pointer identity: sameRun merges by curve pointer, as polylineCurves does
+			out = append(out, loops[i]) // unsplit: the loop passes through as it came, exact or marched
 			continue
 		}
-		for _, arc := range splitPolylineRing(loops[i], on) {
+		for _, arc := range splitPolylineRing(pts, on) {
 			a := arc
 			out = append(out, &a)
 		}
@@ -199,12 +200,12 @@ func splitImprintAtJunctions(loops []geom.Polyline, js []cornerJunction) []geom.
 	return out
 }
 
-// junctionsOnPolyline returns the triple points lying on the polyline (within junctionWeldTol of it) — the
+// junctionsOnLoop returns the triple points lying on the sampled loop (within junctionWeldTol of it) — the
 // junctions that split THIS loop, distinguishing the crossing loop from a disjoint one.
-func junctionsOnPolyline(pl geom.Polyline, js []cornerJunction) []math.Point3 {
+func junctionsOnLoop(verts []math.Point3, js []cornerJunction) []math.Point3 {
 	var on []math.Point3
 	for _, j := range js {
-		if _, _, d := nearestRingSeg(pl.Vertices, j.point); d < junctionWeldTol {
+		if _, _, d := nearestRingSeg(verts, j.point); d < junctionWeldTol {
 			on = append(on, j.point)
 		}
 	}
@@ -215,8 +216,8 @@ func junctionsOnPolyline(pl geom.Polyline, js []cornerJunction) []math.Point3 {
 // point is inserted at its nearest segment, then the ring is walked between consecutive inserted points to
 // emit one arc apiece (two junctions → the below-notch arc and the above-notch arc, meeting at the shared
 // triple-point vertices). Each arc's endpoints are the EXACT triple points.
-func splitPolylineRing(pl geom.Polyline, pts []math.Point3) []geom.Polyline {
-	verts := ringVertices(pl.Vertices)
+func splitPolylineRing(loopVerts []math.Point3, pts []math.Point3) []geom.Polyline {
+	verts := ringVertices(loopVerts)
 	ring := make([]ringNode, 0, len(verts)+len(pts))
 	for i, v := range verts {
 		ring = append(ring, ringNode{float64(i), v, false})

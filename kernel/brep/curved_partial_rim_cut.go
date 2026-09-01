@@ -84,7 +84,7 @@ func inwardCapHalfSpaces(b *topo.Body, interior math.Point3) []capHalfSpace {
 
 // partialRimImprint traces the second cut's SSI on the already-cut target's cylinder surface, using the
 // recovered band as the axial window — bypassing cylinderSolidParams, which rejects the three-cap notched body.
-func partialRimImprint(target, tool *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
+func partialRimImprint(target, tool *topo.Body, rec *diag.Recorder) ([]geom.Curve3, bool) {
 	_, tgtCyl, band, _, okT := cutCylinderSideFace(target)
 	toolCyl, _, _, okB := cylinderSolidParams(facesOfAny(tool))
 	if !okT || !okB {

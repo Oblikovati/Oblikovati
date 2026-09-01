@@ -108,18 +108,22 @@ func TestMarchedDeviationOfDegenerateInputIsZero(t *testing.T) {
 	}
 }
 
-// TestSurfaceIntersectMarchedPairReportsAchievedTolerance: two crossing cylinders of unequal radii have
-// NO closed-form intersection, so SurfaceIntersect marches them — and every curve it returns must carry
-// the achieved deviation of that march, not a silent claim of exactness. The magnitude is checked against
-// the sagitta of the marched loops' own chord spacing, so the test measures the pipeline rather than
-// freezing a constant (#3489).
+// TestSurfaceIntersectMarchedPairReportsAchievedTolerance: a torus crossed by a cylinder has NO closed
+// form in either bucket (a torus is quartic, so it is neither a straight-ruled parametrisation nor an
+// implicit quadric), so SurfaceIntersect marches it — and every curve it returns must carry the achieved
+// deviation of that march, not a silent claim of exactness. The magnitude is checked against the sagitta
+// of the marched loops' own chord spacing, so the test measures the pipeline rather than freezing a
+// constant (#3489).
 func TestSurfaceIntersectMarchedPairReportsAchievedTolerance(t *testing.T) {
-	fat, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), oracleFatRadius)
-	rod, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), oracleRodRadius)
+	tor, err := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
+	if err != nil {
+		t.Fatalf("torus: %v", err)
+	}
+	drill, _ := NewCylinder(math.P3(4, 0, 0), math.V3(0, 0, 1), 0.5)
 	box := math.NewBox(math.P3(-6, -6, -6), math.P3(6, 6, 6))
-	curves, handled := SurfaceIntersect(fat, rod, box, ResolutionForBox(box))
+	curves, handled := SurfaceIntersect(tor, drill, box, ResolutionForBox(box))
 	if !handled || len(curves) == 0 {
-		t.Fatalf("crossing cylinders: handled=%v, %d curves; want a marched result", handled, len(curves))
+		t.Fatalf("torus ∩ cylinder: handled=%v, %d curves; want a marched result", handled, len(curves))
 	}
 	for i, c := range curves {
 		pl, ok := c.(Polyline)
@@ -130,9 +134,40 @@ func TestSurfaceIntersectMarchedPairReportsAchievedTolerance(t *testing.T) {
 		if dev <= 0 {
 			t.Fatalf("curve %d (%d pts) reports deviation %g; a marched chord approximation is never exact", i, len(pl.Vertices), dev)
 		}
-		lo, hi := sagittaBand(oracleRodRadius, len(pl.Vertices))
+		lo, hi := sagittaBand(0.5, len(pl.Vertices))
 		if dev < lo || dev > hi {
 			t.Errorf("curve %d (%d pts) deviation %.6g outside the chord-bow band [%.6g, %.6g]", i, len(pl.Vertices), dev, lo, hi)
+		}
+	}
+}
+
+// TestSurfaceIntersectRuledPairIsExact: two crossing cylinders of unequal radii are the ruled∩quadric
+// closed form (#3489) — the pair that used to march. Every curve must be an exact section arc reporting a
+// ZERO achieved tolerance, and must lie on BOTH cylinders to round-off, since an edge built from it claims
+// exactness to the mass-properties integrator.
+func TestSurfaceIntersectRuledPairIsExact(t *testing.T) {
+	fat, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), oracleFatRadius)
+	rod, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), oracleRodRadius)
+	box := math.NewBox(math.P3(-6, -6, -6), math.P3(6, 6, 6))
+	curves, handled := SurfaceIntersect(fat, rod, box, ResolutionForBox(box))
+	if !handled || len(curves) != 2 {
+		t.Fatalf("crossing cylinders: handled=%v, %d curves; want the 2 exact section loops", handled, len(curves))
+	}
+	for i, c := range curves {
+		if _, ok := c.(RuledQuadricArc); !ok {
+			t.Fatalf("curve %d is %T, want the exact geom.RuledQuadricArc", i, c)
+		}
+		if dev := CurveDeviation(c); dev != 0 {
+			t.Errorf("curve %d reports deviation %g, want exactly 0 (the closed form is exact)", i, dev)
+		}
+		for k := range 129 {
+			p := c.PointAt(float64(k) / 128)
+			off := stdmath.Max(
+				radialDistanceToAxisCylinder(p.X, p.Y, oracleFatRadius),
+				radialDistanceToAxisCylinder(p.Y, p.Z, oracleRodRadius))
+			if off > 1e-12 { // tol:absolute — round-off of the ruling quadratic at part scale
+				t.Fatalf("curve %d at t=%g sits %g off the cylinder pair; the section must be exact", i, float64(k)/128, off)
+			}
 		}
 	}
 }

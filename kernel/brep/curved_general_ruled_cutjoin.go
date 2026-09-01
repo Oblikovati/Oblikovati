@@ -92,7 +92,7 @@ func (o ruledOperand) split(imprint []geom.Curve3, op Op, isB bool, other func(m
 // require2Loops gates a cut/join on the imprint being exactly two closed loops — a clean rod-through-fat
 // crossing (entry + exit). Anything else (a tangency, a partial penetration, an open chain) declines so the
 // caller keeps its CSG fallback (#1403).
-func require2Loops(loops []geom.Polyline, ok bool) ([]geom.Polyline, bool) {
+func require2Loops(loops []geom.Curve3, ok bool) ([]geom.Curve3, bool) {
 	return loops, ok && len(loops) == 2
 }
 
@@ -101,11 +101,11 @@ func require2Loops(loops []geom.Polyline, ok bool) ([]geom.Polyline, bool) {
 // into the cavity (the tunnel). One connected solid when the target is drilled (fat − rod); a two-shell solid
 // when the target is the rod (rod − fat: a stub each side). ok=false unless the breach lies strictly between
 // the target's caps (a cap-reaching breach defers to the bespoke handler).
-func ruledCutGeneral(target, tool ruledOperand, loops []geom.Polyline) (*topo.Body, bool) {
+func ruledCutGeneral(target, tool ruledOperand, loops []geom.Curve3) (*topo.Body, bool) {
 	if !loopsClearOfCaps(target.newUV(Difference, false, tool.inside), loops) {
 		return nil, false
 	}
-	imprint := polylineCurves(loops)
+	imprint := loops
 	keptT, okT := target.split(imprint, Difference, false, tool.inside)
 	keptL, okL := tool.split(imprint, Difference, true, target.inside)
 	if !okT || !okL {
@@ -118,12 +118,12 @@ func ruledCutGeneral(target, tool ruledOperand, loops []geom.Polyline) (*topo.Bo
 // fat's holed wall + the two protruding stubs) plus BOTH bodies' whole caps. The cut's mirror — no face
 // reversal (a union keeps every wall facing outward) and the tool's caps survive too. ok=false unless BOTH
 // breaches lie strictly between that body's caps (so every cap stays whole).
-func ruledJoinGeneral(a, b ruledOperand, loops []geom.Polyline) (*topo.Body, bool) {
+func ruledJoinGeneral(a, b ruledOperand, loops []geom.Curve3) (*topo.Body, bool) {
 	if !loopsClearOfCaps(a.newUV(Union, false, b.inside), loops) ||
 		!loopsClearOfCaps(b.newUV(Union, true, a.inside), loops) {
 		return nil, false
 	}
-	imprint := polylineCurves(loops)
+	imprint := loops
 	keptA, okA := a.split(imprint, Union, false, b.inside)
 	keptB, okB := b.split(imprint, Union, true, a.inside)
 	if !okA || !okB {
@@ -188,9 +188,9 @@ func filterCaps(b *topo.Body, keep func(math.Point3) bool) []curvedFace {
 // near-identical wrappers). ok=false when the imprint is not a clean two-loop crossing or an operand is
 // not the expected ruled surface, so kernel/ops keeps its CSG fallback.
 func ruledPairGeneral(a, b *topo.Body, rec *diag.Recorder,
-	imprint func(*topo.Body, *topo.Body, *diag.Recorder) ([]geom.Polyline, bool),
+	imprint func(*topo.Body, *topo.Body, *diag.Recorder) ([]geom.Curve3, bool),
 	operand func(*topo.Body) (ruledOperand, bool),
-	combine func(target, tool ruledOperand, loops []geom.Polyline) (*topo.Body, bool)) (*topo.Body, bool) {
+	combine func(target, tool ruledOperand, loops []geom.Curve3) (*topo.Body, bool)) (*topo.Body, bool) {
 	loops, ok := require2Loops(imprint(a, b, rec))
 	oa, okA := operand(a)
 	ob, okB := operand(b)
@@ -205,7 +205,7 @@ func ruledPairGeneral(a, b *topo.Body, rec *diag.Recorder,
 // run on a near-pinch band — nearPinchCrossingCut/Join already shipped that band), and for any cone-involving
 // pair the plain general imprint. It is the cut/join counterpart of ruledCrossingImprint, which the intersect
 // driver uses without the decline because its near-pinch branch is inline (ADR-0058 phase 3).
-func ruledCrossingCutImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
+func ruledCrossingCutImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Curve3, bool) {
 	if !hasConeSide(a) && !hasConeSide(b) {
 		return crossingCylinderImprint(a, b, rec)
 	}
@@ -245,7 +245,7 @@ func RuledCrossingJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, 
 // It reads the RAW loops (crossingCylinderLoops), not crossingCylinderImprint: a near-pinch FULL crossing is
 // not a partial penetration, so it must fall through here WITHOUT recording a near-pinch decline — that band
 // is now shipped analytically by nearPinchCrossingCut/Join, and a spurious decline would misreport it (#1818).
-func partialImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
+func partialImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Curve3, bool) {
 	if l, ok := crossingCylinderLoops(a, b, rec); ok && len(l) == 1 {
 		return l, true
 	}
@@ -296,7 +296,7 @@ func PartialPenetrationIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*t
 	if !ok || !okA || !okB {
 		return nil, false
 	}
-	imprint := polylineCurves(loops)
+	imprint := loops
 	keptA, okKA := oa.split(imprint, Intersection, false, ob.inside)
 	keptB, okKB := ob.split(imprint, Intersection, true, oa.inside)
 	if !okKA || !okKB {

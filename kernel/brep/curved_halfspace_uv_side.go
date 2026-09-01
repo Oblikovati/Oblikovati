@@ -3,6 +3,8 @@
 package brep
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -93,7 +95,7 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 			return nil, nil, ErrUnsupportedHalfSpace
 		}
 		faceLoops, faceLid, outerless := c.orientLoops(emitted, c.wrapsAllU())
-		faceLoops = c.finalizeLoops(faceLoops)
+		faceLoops = anchorClosedLoops(c.finalizeLoops(faceLoops))
 		faces = append(faces, curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: faceLoops, outerless: outerless})
 		lid = append(lid, faceLid...)
 	}
@@ -127,4 +129,53 @@ func loopAllSeam(loop []dedge, segs []uvSeg) bool {
 		}
 	}
 	return len(loop) > 0
+}
+
+// anchorClosedLoops re-anchors every loop that is ONE CLOSED edge to its curve's own domain start.
+//
+// A closed edge has no distinguished start. Each side of an imprint arranges the SAME section curve in
+// its own chart and begins walking it wherever that side's seam falls, so the two sides hand the
+// welder the same loop opened at different points. The stitch key is the welded (start, mid, end)
+// triple, which then differs, and the two sides are never fused: a crossing-cylinder intersect came
+// back as three faces in THREE shells instead of one closed solid, and the boolean demoted it to the
+// faceted engine (Oblikovati/Oblikovati#3489).
+//
+// A marched imprint escaped this only by accident — both sides consumed the same polyline's vertices
+// and so happened to open it at vertex 0. Anchoring to the curve's own domain makes that agreement
+// deliberate, and it is the SAME loop: rotating a closed traversal's start moves no geometry, only the
+// single vertex the loop is cut at.
+func anchorClosedLoops(loops []curvedLoop) []curvedLoop {
+	for li := range loops {
+		e := onlyClosedEdge(loops[li])
+		if e == nil {
+			continue
+		}
+		lo, hi := e.curve.Domain()
+		if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
+			continue
+		}
+		if e.t0 > e.t1 {
+			lo, hi = hi, lo // keep the traversal's direction
+		}
+		e.t0, e.t1 = lo, hi
+	}
+	return loops
+}
+
+// closedLoopWeld is how far a loop's two ends may sit apart and still be the same point: the reach a
+// stitch weld uses, since that is the question being asked.
+const closedLoopWeld = 1e-7 // tol:weld — two evaluations of one closed curve's shared end
+
+// onlyClosedEdge returns the loop's single edge when it is one closed circuit, else nil.
+func onlyClosedEdge(l curvedLoop) *loopEdge {
+	if len(l.edges) != 1 {
+		return nil
+	}
+	e := &l.edges[0]
+	// Closed to the weld's own reach, not bit-exactly: the two ends are the same point reached by two
+	// different parameter evaluations, so they agree to rounding, not to the last bit.
+	if float64(e.start().DistanceTo(e.end())) > closedLoopWeld {
+		return nil
+	}
+	return e
 }

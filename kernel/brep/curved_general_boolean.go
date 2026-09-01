@@ -172,19 +172,6 @@ func cylinderSideSolidSplit(f curvedFace, cyl geom.Cylinder, band coneSideBand_,
 	return trimByImprint(&c, f, cyl, imprint, ruledSolidMaterial(&c))
 }
 
-// polylineCurves adapts SSI imprint loops (closed polylines) to the []geom.Curve3 trimByImprint consumes.
-// Each curve is a *geom.Polyline (a POINTER): the arrangement's run-merge compares edge curves by `==` to
-// fuse consecutive same-curve edges, and a geom.Polyline value is uncomparable (it holds a slice), so it
-// must be carried by identity. The same pointers are handed to BOTH operand sides, so each loop's edges
-// merge and the two sides emit the SAME curve for the shared imprint (#1403).
-func polylineCurves(loops []geom.Polyline) []geom.Curve3 {
-	out := make([]geom.Curve3, len(loops))
-	for i := range loops {
-		out[i] = &loops[i]
-	}
-	return out
-}
-
 // planarCapFaces returns a body's planar (cap) faces as curvedFaces, kept WHOLE — for a clean side-breach
 // cut the breach never reaches a cap, so the target's caps survive untouched in the result (#1403).
 func planarCapFaces(b *topo.Body) []curvedFace {
@@ -234,10 +221,10 @@ func reverseCurvedLoop(lp curvedLoop) curvedLoop {
 // loopsClearOfCaps reports whether every imprint point sits STRICTLY between the side band's two cap levels
 // (vMin, vMax) — a clean side-breach where the cut leaves both caps whole. A breach reaching a cap needs the
 // planar cap itself trimmed, which this first cut migration defers to the bespoke handler (#1403).
-func loopsClearOfCaps(side ruledUV, loops []geom.Polyline) bool {
+func loopsClearOfCaps(side ruledUV, loops []geom.Curve3) bool {
 	margin := geom.ResolutionForSize(side.band.vMax - side.band.vMin).Plane()
 	for _, lp := range loops {
-		for _, p := range lp.Vertices {
+		for _, p := range imprintLoopPoints(lp) {
 			v := float64(side.base.VectorTo(p).Dot(side.axis))
 			if v < side.band.vMin+margin || v > side.band.vMax-margin {
 				return false
@@ -257,13 +244,13 @@ func loopsClearOfCaps(side ruledUV, loops []geom.Polyline) bool {
 // in a shared arrangement — and concatenates the resulting caps; otherwise it trims by both loops at once (the
 // thin wall's single band bounded by both loops, and every non-near-pinch crossing). Each single-loop
 // arrangement keeps the loop's clear azimuth gap, so its seam auto-places cleanly with no pinched handling.
-func cylinderLensSplit(perLoop bool, f curvedFace, cyl geom.Cylinder, band coneSideBand_, loops []geom.Polyline, isB bool, inside func(math.Point3) bool) ([]curvedFace, []loopEdge, error) {
+func cylinderLensSplit(perLoop bool, f curvedFace, cyl geom.Cylinder, band coneSideBand_, loops []geom.Curve3, isB bool, inside func(math.Point3) bool) ([]curvedFace, []loopEdge, error) {
 	if !perLoop {
-		return cylinderSideSolidSplit(f, cyl, band, polylineCurves(loops), Intersection, isB, inside)
+		return cylinderSideSolidSplit(f, cyl, band, loops, Intersection, isB, inside)
 	}
 	var caps []curvedFace
 	for i := range loops {
-		lens, _, err := cylinderSideSolidSplit(f, cyl, band, polylineCurves(loops[i:i+1]), Intersection, isB, inside)
+		lens, _, err := cylinderSideSolidSplit(f, cyl, band, loops[i:i+1], Intersection, isB, inside)
 		if err != nil {
 			return nil, nil, err
 		}

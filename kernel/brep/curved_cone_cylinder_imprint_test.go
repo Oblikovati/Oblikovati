@@ -53,10 +53,10 @@ func TestConeCylinderImprintTwoCylindersDefer(t *testing.T) {
 }
 
 // worstLoopOffset is the largest distance of any loop vertex from either surface.
-func worstLoopOffset(loops []geom.Polyline, cone geom.Cone, cyl geom.Cylinder) float64 {
+func worstLoopOffset(loops []geom.Curve3, cone geom.Cone, cyl geom.Cylinder) float64 {
 	worst := 0.0
 	for _, lp := range loops {
-		for _, p := range lp.Vertices {
+		for _, p := range imprintLoopPoints(lp) {
 			worst = stdmath.Max(worst, stdmath.Max(distToCylinderSurface(cyl, p), distToConeSurface(cone, p)))
 		}
 	}

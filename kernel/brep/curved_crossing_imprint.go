@@ -45,16 +45,23 @@ const CodeImprintFallbackContour diag.Code = "imprint.fallback-contour"
 // exact Steinmetz constructor (#1780); folding this residual band onto the analytic path is #1818.
 const CodeImprintNearPinchDeclined diag.Code = "imprint.near-pinch-declined"
 
-// imprintTraceLoops traces base∩other over window and keeps the loops that close — the shared trace
-// step of every curved-imprint pair (cylinder∩cylinder, cone∩cylinder, cone∩cone).
-func imprintTraceLoops(base, other geom.Surface, window geom.SurfaceGrid, res geom.Resolution, rec *diag.Recorder) []geom.Polyline {
+// imprintTraceLoops returns the closed loops where base and other cross, over the marching window —
+// the shared imprint step of every curved pair (cylinder∩cylinder, cone∩cylinder, cone∩cone). It
+// prefers the EXACT closed-form section (exactImprintLoops) and marches only the pairs that have none,
+// so a result body's edges are exact wherever the intersector can make them so (#3489). The two paths
+// return the same loops in the same window; they differ only in whether each carries an achieved
+// tolerance.
+func imprintTraceLoops(base, other geom.Surface, window geom.SurfaceGrid, res geom.Resolution, rec *diag.Recorder) []geom.Curve3 {
+	if exact, ok := exactImprintLoops(base, other, window, res); ok {
+		return exact
+	}
 	return keepImprintLoops(geom.TraceSurfaceIntersection(base, other, window), res, rec)
 }
 
 // keepImprintLoops keeps the closed loops of a trace result, recording the fallback-contour
 // diagnostic when the curves came from marching squares rather than the tracer (#1597). Split from
 // imprintTraceLoops so the recording branch is unit-testable without forcing a live fallback.
-func keepImprintLoops(tr geom.SurfaceIntersection, res geom.Resolution, rec *diag.Recorder) []geom.Polyline {
+func keepImprintLoops(tr geom.SurfaceIntersection, res geom.Resolution, rec *diag.Recorder) []geom.Curve3 {
 	if tr.ViaFallback {
 		rec.Recordf(CodeImprintFallbackContour, diag.Defect,
 			"SSI tracer found no curve; %d contour(s) supplied by the marching-squares fallback", len(tr.Curves))
@@ -68,7 +75,7 @@ func keepImprintLoops(tr geom.SurfaceIntersection, res geom.Resolution, rec *dia
 // driver (ruledCrossingIntersect) resolves that band robustly by trimming the fat wall per loop (#1818),
 // so it needs the raw loops. Callers that cannot yet handle the near-pinch band (cut/join, cap-crossing) use
 // crossingCylinderImprint, which adds the near-pinch decline.
-func crossingCylinderLoops(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
+func crossingCylinderLoops(a, b *topo.Body, rec *diag.Recorder) ([]geom.Curve3, bool) {
 	ca, _, _, okA := cylinderSolidParams(facesOfAny(a))
 	cb, _, _, okB := cylinderSolidParams(facesOfAny(b))
 	if !okA || !okB {
@@ -92,7 +99,7 @@ func crossingCylinderLoops(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline
 // lens holes (a conditioning wall, δ~√Δr vs facet error ~h²/√Δr — #1781), so it records the degradation and
 // declines. The INTERSECT driver bypasses this (per-loop fat trim handles the band, #1818); folding cut/join
 // onto the analytic path (the holed-wall neck bridge) is the remaining #1818 work.
-func crossingCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
+func crossingCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Curve3, bool) {
 	loops, ok := crossingCylinderLoops(a, b, rec)
 	if !ok {
 		return nil, false
@@ -121,7 +128,7 @@ func unequalRadiusCrossing(a, b *topo.Body) bool {
 // scale-free ratio), not on the radius gap — a resolved-but-narrow neck is the actual failure driver (#1781,
 // grounded in the conditioning analysis: the two lens loops separate as O(√Δr) while their faceted cusps
 // deviate as O(h²/√Δr), so the arrangement fuses them once the neck falls toward a few chord lengths).
-func nearPinchLoops(loops []geom.Polyline) bool {
+func nearPinchLoops(loops []geom.Curve3) bool {
 	return len(loops) == 2 && loopGapChordRatio(loops) < nearPinchGapChords
 }
 
@@ -132,7 +139,7 @@ const nearPinchGapChords = 0.95
 
 // loopGapChordRatio is the two loops' mutual closest approach (the neck) divided by their typical chord — the
 // dimensionless separation the near-pinch gate reads. +Inf when there are not exactly two loops.
-func loopGapChordRatio(loops []geom.Polyline) float64 {
+func loopGapChordRatio(loops []geom.Curve3) float64 {
 	if len(loops) != 2 {
 		return stdmath.Inf(1)
 	}
@@ -143,12 +150,12 @@ func loopGapChordRatio(loops []geom.Polyline) float64 {
 	return interLoopMinDistance(loops[0], loops[1]) / chord
 }
 
-// interLoopMinDistance is the minimum distance between any vertex of one loop and any vertex of the other —
-// the resolved neck of a two-loop near-pinch imprint.
-func interLoopMinDistance(a, b geom.Polyline) float64 {
+// interLoopMinDistance is the minimum distance between any sampled point of one loop and any of the
+// other — the resolved neck of a two-loop near-pinch imprint.
+func interLoopMinDistance(a, b geom.Curve3) float64 {
 	min := stdmath.Inf(1)
-	for _, pa := range a.Vertices {
-		for _, pb := range b.Vertices {
+	for _, pa := range imprintLoopPoints(a) {
+		for _, pb := range imprintLoopPoints(b) {
 			if d := float64(pa.DistanceTo(pb)); d < min {
 				min = d
 			}
@@ -157,14 +164,15 @@ func interLoopMinDistance(a, b geom.Polyline) float64 {
 	return min
 }
 
-// typicalLoopChord is the mean consecutive-vertex chord length over both loops — the imprint's own length
+// typicalLoopChord is the mean consecutive-sample chord length over both loops — the imprint's own length
 // scale, which the neck is measured against so the gate is spacing- and model-scale independent.
-func typicalLoopChord(loops []geom.Polyline) float64 {
+func typicalLoopChord(loops []geom.Curve3) float64 {
 	var sum float64
 	var n int
 	for _, lp := range loops {
-		for i := 1; i < len(lp.Vertices); i++ {
-			sum += float64(lp.Vertices[i-1].DistanceTo(lp.Vertices[i]))
+		pts := imprintLoopPoints(lp)
+		for i := 1; i < len(pts); i++ {
+			sum += float64(pts[i-1].DistanceTo(pts[i]))
 			n++
 		}
 	}
@@ -190,8 +198,14 @@ func cylinderTraceWindow(c geom.Cylinder, base math.Point3, height float64) geom
 // Each kept loop carries the trace's ACHIEVED deviation (tr.Deviation): the imprint is a chord
 // approximation of the true intersection, and every edge stitched from it inherits that tolerance so the
 // result body can report how exact its boundary is instead of claiming exactness (#3489).
-func closedTraceLoops(tr geom.SurfaceIntersection, res geom.Resolution, rec *diag.Recorder) []geom.Polyline {
-	var out []geom.Polyline
+//
+// Each loop is carried as a *geom.Polyline (a POINTER): the arrangement's run-merge compares edge curves
+// with `==` to fuse consecutive same-curve edges, and a geom.Polyline VALUE is uncomparable (it holds a
+// slice), so a marched loop must travel by identity. The same pointers reach both operand sides, so each
+// loop's edges merge and the two sides emit the SAME curve for the shared imprint (#1403). An exact
+// section arc needs no such wrapper — it is a comparable value.
+func closedTraceLoops(tr geom.SurfaceIntersection, res geom.Resolution, rec *diag.Recorder) []geom.Curve3 {
+	var out []geom.Curve3
 	for _, pts := range tr.Curves {
 		if len(pts) >= 4 && !samePoint(pts[0], pts[len(pts)-1], res) {
 			rec.Recordf(CodeImprintUnclosedChain, diag.Defect,
@@ -203,7 +217,7 @@ func closedTraceLoops(tr geom.SurfaceIntersection, res geom.Resolution, rec *dia
 			continue
 		}
 		if pl, err := geom.NewMarchedPolyline(pts, tr.Deviation); err == nil {
-			out = append(out, pl)
+			out = append(out, &pl)
 		}
 	}
 	return out

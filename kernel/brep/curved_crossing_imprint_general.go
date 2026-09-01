@@ -44,7 +44,7 @@ func primaryCurvedSurface(b *topo.Body) (geom.Surface, bool) {
 // base surface (operand a's) is windowed to a's own body box — full periodic angle plus a's axial band,
 // the exact window the per-pair imprints computed by hand — so the marcher never sweeps beyond the
 // operand. Diagnostics (fallback-contour, unclosed-chain) flow through imprintTraceLoops unchanged.
-func curvedImprintLoops(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
+func curvedImprintLoops(a, b *topo.Body, rec *diag.Recorder) ([]geom.Curve3, bool) {
 	sa, oka := primaryCurvedSurface(a)
 	sb, okb := primaryCurvedSurface(b)
 	if !oka || !okb {

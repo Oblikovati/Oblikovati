@@ -37,7 +37,7 @@ func keepsInside(op Op, isB bool) bool {
 // fatNearPinchWall builds the fat operand's near-pinch wall: its two lens caps (per loop) when it keeps the
 // inside, or the holed tube when it keeps the outside — both from the loops kept separate, so the two ovals
 // never share an arrangement (#1818). ok=false when the fat side or its holed tube cannot be resolved.
-func fatNearPinchWall(fat ruledOperand, loops []geom.Polyline, op Op, isB bool, other func(math.Point3) bool) ([]curvedFace, bool) {
+func fatNearPinchWall(fat ruledOperand, loops []geom.Curve3, op Op, isB bool, other func(math.Point3) bool) ([]curvedFace, bool) {
 	f, cyl, band, ok := cylinderSideFace(fat.body)
 	if !ok {
 		return nil, false
@@ -56,11 +56,11 @@ func fatNearPinchWall(fat ruledOperand, loops []geom.Polyline, op Op, isB bool, 
 // into a keyhole outer loop, with the two imprint loops supplied as SEPARATE holes (#1818). Bypassing the
 // arrangement is what keeps the two near-touching lens holes from fusing; the holes reuse the shared imprint
 // polylines (so they weld to the rod band exactly) with their winding reversed to the outer's sense.
-func crossingHoledTubeFace(f curvedFace, cyl geom.Cylinder, band coneSideBand_, loops []geom.Polyline, op Op, isB bool, other func(math.Point3) bool) (curvedFace, bool) {
+func crossingHoledTubeFace(f curvedFace, cyl geom.Cylinder, band coneSideBand_, loops []geom.Curve3, op Op, isB bool, other func(math.Point3) bool) (curvedFace, bool) {
 	c := newCylinderUVSolid(cyl, band, op, isB, other)
 	holes := make([]curvedLoop, 0, len(loops))
 	for i := range loops {
-		holes = append(holes, curvedLoop{edges: []loopEdge{{curve: &loops[i], t0: 1, t1: 0}}}) // reversed for a hole
+		holes = append(holes, curvedLoop{edges: []loopEdge{{curve: loops[i], t0: 1, t1: 0}}}) // reversed for a hole
 	}
 	all := append([]curvedLoop{{edges: c.keyholeOuter()}}, holes...)
 	return curvedFace{surface: cyl, reversed: f.reversed, lineage: f.lineage, loops: all}, true
@@ -72,7 +72,7 @@ func crossingHoledTubeFace(f curvedFace, cyl geom.Cylinder, band coneSideBand_, 
 // near-severed rod) and the arrangement fuses/degrades there; and its OUTSIDE emission splits the loop into
 // sub-arcs that do NOT weld to the fat wall's whole-loop holes. A whole-loop closed edge welds to the fat
 // wall's matching hole as ONE topo edge, so the discretization is shared and the stub closes watertight.
-func rawStubBands(thin ruledOperand, loops []geom.Polyline) ([]curvedFace, bool) {
+func rawStubBands(thin ruledOperand, loops []geom.Curve3) ([]curvedFace, bool) {
 	if len(loops) != 2 {
 		return nil, false
 	}
@@ -96,7 +96,7 @@ func rawStubBands(thin ruledOperand, loops []geom.Polyline) ([]curvedFace, bool)
 			surface: cyl, lineage: thin.face.lineage,
 			loops: []curvedLoop{
 				{edges: []loopEdge{{curve: capCirc, t0: 0, t1: 1}}},
-				{edges: []loopEdge{{curve: &loops[i], t0: 0, t1: 1}}},
+				{edges: []loopEdge{{curve: loops[i], t0: 0, t1: 1}}},
 			},
 		})
 	}
@@ -132,12 +132,13 @@ func capCircleOf(cap curvedFace) (geom.Circle, bool) {
 }
 
 // loopCentroidAxial is a loop's mean axial coordinate (distance along the cylinder axis from its origin).
-func loopCentroidAxial(loop geom.Polyline, origin math.Point3, axis math.Vector3) float64 {
+func loopCentroidAxial(loop geom.Curve3, origin math.Point3, axis math.Vector3) float64 {
+	pts := imprintLoopPoints(loop)
 	var sum float64
-	for _, p := range loop.Vertices {
+	for _, p := range pts {
 		sum += float64(origin.VectorTo(p).Dot(axis))
 	}
-	return sum / float64(len(loop.Vertices))
+	return sum / float64(len(pts))
 }
 
 // fatterOperand returns the two operands ordered (fat, thin) by side-cylinder radius, or ok=false when a
@@ -159,7 +160,7 @@ func fatterOperand(a, b ruledOperand) (fat, thin ruledOperand, aIsFat, ok bool) 
 // near-pinch band this file handles: two loops, radii unequal (equal is the Steinmetz constructor's), a narrow
 // neck (nearPinchLoops), and the breach clear of BOTH operands' caps (so every cap survives whole, as the
 // ordinary ruled cut/join require). ok=false otherwise, so the caller falls through to the ordinary pipeline.
-func nearPinchGate(a, b *topo.Body, rec *diag.Recorder) (fat, thin ruledOperand, aIsFat bool, loops []geom.Polyline, ok bool) {
+func nearPinchGate(a, b *topo.Body, rec *diag.Recorder) (fat, thin ruledOperand, aIsFat bool, loops []geom.Curve3, ok bool) {
 	loops, okL := crossingCylinderLoops(a, b, rec)
 	if !okL || len(loops) != 2 || !unequalRadiusCrossing(a, b) || !nearPinchLoops(loops) {
 		return ruledOperand{}, ruledOperand{}, false, nil, false
@@ -193,7 +194,7 @@ func nearPinchCrossingCut(target, tool *topo.Body, rec *diag.Recorder) (*topo.Bo
 	if fat.body != target {
 		tgt, tl = thin, fat
 	}
-	imprint := polylineCurves(loops)
+	imprint := loops
 	var keptT, keptL []curvedFace
 	var okT, okL bool
 	if tgt.body == fat.body { // fat − thin: keyhole holed fat wall + reversed thin tunnel band

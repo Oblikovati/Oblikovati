@@ -23,11 +23,14 @@ const (
 	coincidentNormalSinTol = 1e-9 // tol:angular — sine of the angle between unit normals
 )
 
-// IntersectSurfacesAnalytic returns the EXACT intersection curves of two analytic surfaces
-// for the pairs the curved-face boolean (K1b) relies on: plane∩plane → a line; plane∩
-// cylinder (plane ⟂ axis) → a circle; plane∩sphere → a circle. handled is false for the
-// pairs it does not solve in closed form (an oblique plane∩cylinder ellipse, cylinder∩
-// cylinder, anything with a torus) — the caller falls back to the numeric tracer
+// IntersectSurfacesAnalytic returns the EXACT intersection curves of two analytic surfaces. It has two
+// buckets, chosen by REPRESENTATION rather than by an N² table of type pairs: a PLANE against anything
+// gives a conic in closed form (plane∩plane → a line, plane∩cylinder → a circle/ellipse/line pair,
+// plane∩sphere → a circle, plane∩cone → a conic), and every other pair goes to the parametric×implicit
+// substitution — a straight-ruled surface into the other's [Quadric], whose section is a
+// [RuledQuadricArc] (cylinder∩cylinder, cone∩cylinder, cone∩cone, ruled∩sphere). handled is false for
+// the pairs neither bucket solves — anything with a torus, a B-spline or an offset surface, and any
+// ruled/quadric pair the conditioning gate refuses — and the caller falls back to the numeric tracer
 // [IntersectSurfaceSurface]. An empty result with handled==true means the surfaces are
 // known not to cross (parallel planes, a sphere clear of the plane, a tangent touch).
 //
@@ -45,7 +48,11 @@ func IntersectSurfacesAnalytic(a, b Surface, res Resolution) (curves []Curve3, h
 	if pl, ok := b.(Plane); ok {
 		return intersectPlaneSurface(pl, a, res)
 	}
-	return nil, false
+	// No plane: the remaining bucket is PARAMETRIC × IMPLICIT — a straight-ruled surface substituted
+	// into the other's quadric, whose section is the root of one quadratic in the ruling parameter
+	// (intersect_ruled_quadric.go). Everything else — anything with a torus, a B-spline or an offset,
+	// and any ruled/quadric pair the conditioning gate refuses — reports handled=false and marches.
+	return intersectRuledQuadric(a, b, res)
 }
 
 func intersectPlaneSurface(pl Plane, other Surface, res Resolution) ([]Curve3, bool) {
