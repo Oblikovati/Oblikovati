@@ -146,9 +146,11 @@ func TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial(t *testing.T) {
 	// It used to difference two whole-body volumes. That worked only while BOTH sides were faceted,
 	// so the inscribed-polyhedron bias cancelled — the comments this replaces spent a paragraph
 	// explaining that the baseline had to be planarized for exactly that reason. Against an analytic
-	// result the two sides are no longer measured the same way (the host integrates in closed form,
-	// the result falls back to a mesh because the analytic integrator does not yet take a cone face
-	// with a hyperbolic-arc hole), and the difference reports THAT, not the glyph. Even meshed at
+	// result the two sides are no longer measured the same way — the host integrates in closed form,
+	// while the result falls back to a mesh because its outward vector area does not close: every face
+	// integrates fine (the cone face with its hyperbolic-arc hole included), but the boolean hands back
+	// the host's faces with their material side flipped, so the shell integrates to −45005.68 where
+	// +45029.49 went in (#3504). The difference reports THAT, not the glyph. Even meshed at
 	// property quality the readout carries about 1 cm³ of noise on a 45029 cm³ body — 3× the whole
 	// glyph — so no tolerance band on it can see a 0.3 cm³ raise.
 	//

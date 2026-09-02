@@ -102,13 +102,23 @@ func addPadWalls(bld *topo.Builder, innerLoop, outerLoop []math.Point3, iv, ov [
 // quad would, in the same directions — so the cage stays manifold whether a segment is planar or not.
 // Triangle A = (iv[i], ov[i], ov[j]); triangle B = (iv[i], ov[j], iv[j]); the diagonal is used once
 // in each direction.
+//
+// Each triangle's PLANE is named in the reverse of the order its own loop walks, because that is the
+// sense the rest of the cage carries: the planar-quad wall above is named (i0, i1, o0) against a loop
+// running i0→o0→o1→i1, and the two caps are wired to match. Naming a triangle in loop order instead —
+// the reading that looks right in isolation — gave the split faces a material side OPPOSITE every
+// other face of the pad. Nothing downstream saw it: Validate checks loop TRAVERSAL, which stayed
+// manifold, and the mesh reads orientation off the loop. What it broke was the outward vector area,
+// which a closed shell owes the divergence theorem: the pad missed closing by 7.1e-3 relative and
+// integrated to 0.5438 cm³ where 0.3735 is right, so every analytic mass property of a wrapped emboss
+// fell back to the mesh (Oblikovati/Oblikovati#3503; the missing invariant is #3504).
 func addWarpedWall(bld *topo.Builder, innerLoop, outerLoop []math.Point3, iv, ov []*topo.Vertex,
 	ie, oe, re []*topo.Edge, i, j int, lin func(string, int) topo.Lineage) {
 	diag := bld.AddEdge(geom.NewLineSegment(innerLoop[i], outerLoop[j]), iv[i], ov[j], lin("wdiag", i))
-	if tA, err := geom.PlaneByThreePoints(innerLoop[i], outerLoop[i], outerLoop[j]); err == nil {
+	if tA, err := geom.PlaneByThreePoints(innerLoop[i], outerLoop[j], outerLoop[i]); err == nil {
 		bld.AddFace(tA, lin("wallA", i), topo.OuterLoop(topo.Fwd(re[i]), topo.Fwd(oe[i]), topo.Rev(diag)))
 	}
-	if tB, err := geom.PlaneByThreePoints(innerLoop[i], outerLoop[j], innerLoop[j]); err == nil {
+	if tB, err := geom.PlaneByThreePoints(innerLoop[i], innerLoop[j], outerLoop[j]); err == nil {
 		bld.AddFace(tB, lin("wallB", i), topo.OuterLoop(topo.Fwd(diag), topo.Rev(re[j]), topo.Rev(ie[i])))
 	}
 }
