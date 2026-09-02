@@ -65,19 +65,17 @@ func TestWrappedPadCageClosesItsVectorArea(t *testing.T) {
 	}
 	residual, volume, area := padClosure(t, pad)
 
-	// Two error scales meet here and the bounds sit between them. The cage's boundary is still
-	// CHORDED — its loop edges are straight segments between points of a cone, so they leave the
-	// surface by the resampling sagitta — which leaves an irreducible residual around 9e-5 of the area
-	// and puts the analytic volume about 0.6% off the mesh. The orientation defect was three orders
-	// louder: 0.206 of the area, and a volume of 4.930 cm³ against a true 0.352. Closing the remaining
-	// gap needs exact section edges on the caps, which the mixed boolean cannot yet consume (#3503).
-	if rel := residual / area; rel > 1e-3 {
+	// The cage's loop edges are now cut from their own wall planes, so they lie exactly on the caps
+	// they bound and the closure is limited only by arithmetic. The two defects this gates against
+	// were three and five orders louder: the split-triangle orientation left 0.206 of the area, and
+	// the chorded boundary that replaced it 9e-5 (#3503, #3504).
+	if rel := residual / area; rel > 1e-9 {
 		t.Errorf("the pad's outward vector area misses closing by %g of its area (residual %g on %g); "+
 			"a closed shell owes the divergence theorem zero, so some face's material side is flipped",
 			rel, residual, area)
 	}
 	mesh := query.BodyGeometryProperties(pad, ops.DefaultQuality()).Volume
-	if rel := stdmath.Abs(volume-mesh) / mesh; rel > 2e-2 {
+	if rel := stdmath.Abs(volume-mesh) / mesh; rel > 1e-3 {
 		t.Errorf("the pad integrates to %g cm³ analytically but %g meshed (rel %g); the two measure the "+
 			"same cage, so they disagree only when a face is counted with the wrong sign", volume, mesh, rel)
 	}

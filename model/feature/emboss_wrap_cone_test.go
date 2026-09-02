@@ -146,10 +146,10 @@ func TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial(t *testing.T) {
 	// It used to difference two whole-body volumes. That worked only while BOTH sides were faceted,
 	// so the inscribed-polyhedron bias cancelled — the comments this replaces spent a paragraph
 	// explaining that the baseline had to be planarized for exactly that reason. Against an analytic
-	// result BOTH sides integrate in closed form and agree with the mesh to every digit (45029.7945),
-	// so the difference is honest again — but it is still the wrong instrument: a 0.3 cm³ raise is a
-	// 7e-6 relative change on a 45029 cm³ body, which any faceting fallback on either side would swamp,
-	// and meshed at property quality the readout alone carries about 1 cm³ of noise, 3× the whole glyph.
+	// result BOTH sides integrate in closed form and agree with the mesh to every digit (45029.796846,
+	// the body closing to 1.2e-13 of its own area), so the difference is honest again — but it is still
+	// the wrong instrument: a 0.3 cm³ raise is a 7e-6 relative change on a 45029 cm³ body, and meshed at
+	// property quality the readout alone carries about 1 cm³ of noise, 3× the whole glyph.
 	//
 	// The kernel rules say as much: "Result gates are per-face (area, surface type, loop count)
 	// against the oracle. A whole-body volume or area match is a smoke test, never a proof." So the

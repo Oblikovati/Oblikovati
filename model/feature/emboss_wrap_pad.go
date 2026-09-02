@@ -60,7 +60,7 @@ func buildWrappedPad(innerLoop, outerLoop []math.Point3, innerCap, outerCap geom
 		iv[i] = bld.AddVertex(innerLoop[i], lin("iv", i))
 		ov[i] = bld.AddVertex(outerLoop[i], lin("ov", i))
 	}
-	ie, oe, re := padEdges(bld, innerLoop, outerLoop, iv, ov, lin)
+	ie, oe, re := padEdges(bld, innerLoop, outerLoop, iv, ov, innerCap, outerCap, lin)
 	addPadCaps(bld, innerCap, outerCap, ie, oe, innerLoop, outerLoop, lin)
 	addPadWalls(bld, innerLoop, outerLoop, iv, ov, ie, oe, re, lin)
 	return bld.Build(), nil
@@ -68,16 +68,80 @@ func buildWrappedPad(innerLoop, outerLoop []math.Point3, innerCap, outerCap geom
 
 // padEdges creates the inner-loop, outer-loop and radial edges of the pad (n of each).
 func padEdges(bld *topo.Builder, innerLoop, outerLoop []math.Point3, iv, ov []*topo.Vertex,
-	lin func(string, int) topo.Lineage) (ie, oe, re []*topo.Edge) {
+	innerCap, outerCap geom.Surface, lin func(string, int) topo.Lineage) (ie, oe, re []*topo.Edge) {
 	n := len(innerLoop)
+	res := geom.ResolutionForPoints(append(append([]math.Point3{}, innerLoop...), outerLoop...))
 	ie, oe, re = make([]*topo.Edge, n), make([]*topo.Edge, n), make([]*topo.Edge, n)
 	for i := range n {
 		j := (i + 1) % n
-		ie[i] = bld.AddEdge(geom.NewLineSegment(innerLoop[i], innerLoop[j]), iv[i], iv[j], lin("ie", i))
-		oe[i] = bld.AddEdge(geom.NewLineSegment(outerLoop[i], outerLoop[j]), ov[i], ov[j], lin("oe", i))
+		ie[i] = bld.AddEdge(capSectionCurve(innerCap, innerLoop, outerLoop, i, false, res), iv[i], iv[j], lin("ie", i))
+		oe[i] = bld.AddEdge(capSectionCurve(outerCap, innerLoop, outerLoop, i, true, res), ov[i], ov[j], lin("oe", i))
 		re[i] = bld.AddEdge(geom.NewLineSegment(innerLoop[i], outerLoop[i]), iv[i], ov[i], lin("re", i))
 	}
 	return ie, oe, re
+}
+
+// capSectionCurve is the curve one loop edge follows: the section of its own WALL's plane with the cap
+// the edge lies on, restricted to the arc between the two wrapped points. Both points lie on that
+// plane and on that cap by construction, so the section passes through them exactly — and the edge
+// then lies on BOTH faces it bounds.
+//
+// A straight segment between the same two points does not lie on the cap at all; it is a chord
+// through the solid, so the cap face it bounded was not valid geometry however small the sag. On a
+// 1 cm glyph edge at radius 15 the chord left the cone by 8.3e-3 cm (Oblikovati/Oblikovati#3503).
+//
+// It falls back to the chord when the pair carries no analytic section — the intersector defers a
+// cone's parabolic boundary — so the pad still builds, with that face no better than it was.
+func capSectionCurve(capSurf geom.Surface, innerLoop, outerLoop []math.Point3, i int, outer bool,
+	res geom.Resolution) geom.Curve3 {
+	a, b := innerLoop[i], innerLoop[(i+1)%len(innerLoop)]
+	if outer {
+		a, b = outerLoop[i], outerLoop[(i+1)%len(outerLoop)]
+	}
+	chord := geom.NewLineSegment(a, b)
+	wall, ok := padWallPlane(innerLoop, outerLoop, i, outer)
+	if !ok {
+		return chord
+	}
+	sec, handled := geom.IntersectSurfacesAnalytic(wall, capSurf, res)
+	if !handled {
+		return chord
+	}
+	for _, c := range sec {
+		if arc, got := geom.ConicArcBetween(c, a, b, a.Midpoint(b)); got && arcRunsBetween(arc, a, b, res) {
+			return arc
+		}
+	}
+	return chord
+}
+
+// padWallPlane is the plane the segment's wall lies in on one side: the quad's own when its four
+// corners are coplanar, otherwise the triangle carrying that side's loop edge — A = (i0, o0, o1) for
+// the outer, B = (i0, o1, i1) for the inner. It names the same planes addPadWalls builds the faces on,
+// which is what makes a loop edge cut from it lie on both faces it bounds.
+func padWallPlane(innerLoop, outerLoop []math.Point3, i int, outer bool) (geom.Plane, bool) {
+	n := len(innerLoop)
+	j := (i + 1) % n
+	i0, i1, o0, o1 := innerLoop[i], innerLoop[j], outerLoop[i], outerLoop[j]
+	if quadPlanar(i0, i1, o1, o0) {
+		pl, err := geom.PlaneByThreePoints(i0, i1, o0)
+		return pl, err == nil
+	}
+	if outer {
+		pl, err := geom.PlaneByThreePoints(i0, o1, o0)
+		return pl, err == nil
+	}
+	pl, err := geom.PlaneByThreePoints(i0, i1, o1)
+	return pl, err == nil
+}
+
+// arcRunsBetween verifies the section actually passes THROUGH both endpoints. ConicParamAt projects
+// onto the conic, it does not test membership, so a section curve that misses the pair would otherwise
+// be accepted and store an edge whose curve never reaches its own vertices. The section and the
+// wrapped point are independent computations, so the comparison is a Sew().
+func arcRunsBetween(arc geom.Curve3, a, b math.Point3, res geom.Resolution) bool {
+	tol := math.Scalar(res.Sew())
+	return arc.PointAt(0).DistanceTo(a) <= tol && arc.PointAt(1).DistanceTo(b) <= tol
 }
 
 // addPadCaps adds the two curved cap faces. The inner cap walks its loop forward, the outer the

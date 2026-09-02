@@ -181,7 +181,11 @@ func TestConicCrossesFaceBoundary(t *testing.T) {
 		if !ok {
 			t.Fatal("toPlaneConic failed on a circle in the face plane")
 		}
-		if got := conicCrossesFaceBoundary(pc, top); got != c.want {
+		got, decided := conicCrossesFaceBoundary(pc, top)
+		if !decided {
+			t.Fatalf("radius %g: the crossing test could not decide on an all-straight face", c.radius)
+		}
+		if got != c.want {
 			t.Errorf("radius %g: crosses = %v, want %v", c.radius, got, c.want)
 		}
 	}

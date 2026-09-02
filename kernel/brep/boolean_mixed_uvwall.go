@@ -111,13 +111,11 @@ func pairUVWallImprints(p, other *facePartition, uvImp, wallImp [][]geom.Curve3)
 }
 
 // uvWallSharedImprint is the exact shared imprint of one (uv face, ruled wall) pair: the plane∩ruled
-// section curves, kept when they are closed conic islands inside both trims. ok=false declines — a
-// conic-framed receiver (a cap's rim circle would need conic×conic frame crossings), an unhandled surface
-// pair, or a section that clips either trim.
+// section curves, kept when they are closed conic islands inside both trims. ok=false declines — an
+// unhandled surface pair, a section that clips either trim, or a boundary edge whose crossings cannot
+// be decided in closed form. A conic-framed receiver is no longer among them: conicEdgeCrossings
+// meets an arc boundary with the conic×conic substitution (#3503).
 func uvWallSharedImprint(uf, wf curvedFace) ([]geom.Curve3, bool) {
-	if !allStraightFace(uf) {
-		return nil, false
-	}
 	rs, ok := ruledSideBandOf(wf)
 	if !ok {
 		return nil, false
@@ -201,25 +199,38 @@ func conicBandPlacement(center math.Point3, amp float64, rs ruledSide) (inside, 
 func conicIslandInFace(cv geom.Curve3, f curvedFace) (island, exact bool) {
 	pl := facePlane(f)
 	pc, ok := toPlaneConic(cv, pl)
-	if !ok || conicCrossesFaceBoundary(pc, f) {
+	if !ok {
+		return false, false
+	}
+	crosses, decided := conicCrossesFaceBoundary(pc, f)
+	if !decided || crosses {
 		return false, false
 	}
 	return pointInFace2D(to2D(pl, cv.PointAt(0)), f), true
 }
 
 // conicCrossesFaceBoundary reports an exact crossing of, or a grazing tangency to, the conic on any
-// boundary edge of the polygonal face (the closed-form conic quadratic, no sampling).
-func conicCrossesFaceBoundary(pc planeConic, f curvedFace) bool {
+// boundary edge of the face — in closed form, never by sampling. ok=false when an edge carries a
+// curve with no conic form, which the caller must treat as undecided rather than as "clear".
+//
+// It walks the face's EDGES rather than its ring points. Those agree while every edge is straight,
+// and they part company the moment one is an arc: a ring walk would chord it, which is exact for
+// neither the crossing count nor the tangency (#3503).
+func conicCrossesFaceBoundary(pc planeConic, f curvedFace) (crosses, ok bool) {
 	pl := facePlane(f)
-	for _, ring := range planarRings(f) {
-		for i, n := 0, len(ring); i < n; i++ {
-			hits, tangent := conicEdgeHits(pc, to2D(pl, ring[i]), to2D(pl, ring[(i+1)%n]), geom.ResolutionForPoints(ring))
-			if tangent || len(hits) > 0 {
-				return true
+	res := geom.ResolutionForBox(faceLoopBox(f))
+	for _, l := range f.loops {
+		for _, e := range l.edges {
+			hits, tangent, got := conicEdgeCrossings(pc, e, pl, res)
+			if !got {
+				return false, false
+			}
+			if tangent || hits > 0 {
+				return true, true
 			}
 		}
 	}
-	return false
+	return false, true
 }
 
 // faceLoopBox is a planar face's exact loop-point bounding box with NO cull pad — the uv bucket's box

@@ -90,8 +90,9 @@ func containsKnot(vs []float64, value float64) bool {
 	return false
 }
 
-// sortFloats sorts a small knot-value slice ascending (insertion sort: these
-// slices hold at most a handful of distinct interior knots).
+// sortFloats sorts a small float slice ascending — knot values, and the at-most-four roots of a
+// conic equation. Insertion sort because both are tiny and because an explicit total order matters
+// more here than asymptotics: the ordering is part of the kernel's determinism contract.
 func sortFloats(vs []float64) {
 	for i := 1; i < len(vs); i++ {
 		for j := i; j > 0 && vs[j] < vs[j-1]; j-- {

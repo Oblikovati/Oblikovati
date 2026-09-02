@@ -73,7 +73,7 @@ func torusPhysicalCandidates(tor geom.Torus, p0 math.Point3, d math.Vector3, rho
 }
 
 // torusCandidatesWellSeparated reports whether every pair of candidate points is EITHER
-// (near-)coincident (the same physical root, already deduplicated by realQuarticRoots upstream —
+// (near-)coincident (the same physical root, already deduplicated by geom.RealQuarticRoots upstream —
 // unreachable here in practice, kept as a defensive no-op) or separated by at least the grazing
 // band; a pair strictly between those — close but not the same point — is the grazing degeneracy.
 func torusCandidatesWellSeparated(pts []math.Point3, res tol.Resolution) bool {
@@ -95,7 +95,7 @@ func torusTangencyRoots(tor geom.Torus, p0 math.Point3, d math.Vector3, rho floa
 	L := stdmath.Max(stdmath.Max(res.Size(), tor.MinorRadius), 1)
 	u := tor.Center.VectorTo(p0)
 	c0, c1, c2, c3, c4 := torusQuarticCoeffs(u.Scale(1/L), d.Scale(1/L), tor.AxisDir.AsVector(), tor.MajorRadius/L, rho/L)
-	roots := realQuarticRoots(c0, c1, c2, c3, c4)
+	roots := geom.RealQuarticRoots(c0, c1, c2, c3, c4)
 	return torusFilterByG(roots, u, d, tor.MajorRadius, rho)
 }
 

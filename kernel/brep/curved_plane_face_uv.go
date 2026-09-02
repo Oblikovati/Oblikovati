@@ -51,6 +51,8 @@ func planeFaceEdgeOK(e loopEdge) bool {
 		return true
 	case geom.Circle:
 		return isFullDomain(e.t0, e.t1)
+	case geom.Arc3d, geom.EllipticalArc, geom.HyperbolicArc:
+		return true
 	default:
 		return false
 	}
