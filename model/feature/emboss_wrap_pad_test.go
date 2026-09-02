@@ -93,3 +93,36 @@ func TestWrappedPadOnAConeSplitsWarpedWalls(t *testing.T) {
 			"(2 caps + 4 quads), so this fixture no longer exercises addWarpedWall", n)
 	}
 }
+
+// TestPadCapSenseFollowsItsWinding pins the invariant the caps used to break by convention: a face is
+// minted FORWARD exactly when its own loop runs counter-clockwise in its surface's parameter space.
+// That is what OCCT keeps by construction (ShapeAnalysis::TotCross2D over the wire's pcurves), and
+// what makes a shell's traversal consistency imply that its faces agree about which side holds
+// material. The pad minted "inner reversed, outer forward" regardless of the geometry, which is
+// self-consistent as a shell and so invisible until a boolean rebuilt half its faces in the
+// arrangement's own convention (Oblikovati/Oblikovati#3504).
+func TestPadCapSenseFollowsItsWinding(t *testing.T) {
+	t.Parallel()
+	fr, plane := coneWrapFixture(t, 0.5, 21)
+	_, outer, err := fr.offsets(0.3, false)
+	if err != nil {
+		t.Fatalf("offsets: %v", err)
+	}
+	capSurf, ok := fr.capSurface(outer)
+	if !ok {
+		t.Fatal("the cone wrap must offer an analytic cap surface")
+	}
+	loop := wrappedLoop([]math.Point2{
+		math.P2(-0.5, -0.5), math.P2(0.5, -0.5), math.P2(0.5, 0.5), math.P2(-0.5, 0.5),
+	}, plane, fr, outer)
+
+	forward := capWindsClockwise(capSurf, loop)
+	reversed := make([]math.Point3, len(loop))
+	for i, p := range loop {
+		reversed[len(loop)-1-i] = p
+	}
+	if capWindsClockwise(capSurf, reversed) == forward {
+		t.Error("walking the same loop backwards must reverse the sense the cap is minted with; a rule " +
+			"that answers the same either way is reading something other than the winding")
+	}
+}

@@ -3,8 +3,9 @@
 package feature
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -22,12 +23,29 @@ func wrappedPadSolid(innerLoop, outerLoop []math.Point3, innerCap, outerCap geom
 	if err != nil {
 		return nil, err
 	}
-	if query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
+	if padHoldsMaterialOutside(body) {
 		// The cage is consistently wound but inside-out; reversing both loops flips every face's
-		// normal together (the manual analog of sweptSolid's reverseFaces volume flip).
+		// derived sense together (the manual analog of sweptSolid's reverseFaces volume flip).
 		return buildWrappedPad(reversedPts(innerLoop), reversedPts(outerLoop), innerCap, outerCap, feat)
 	}
 	return body, nil
+}
+
+// padHoldsMaterialOutside reports whether the cage's own faces bound a NEGATIVE volume, which says the
+// material is on the outside and the whole thing is inside-out.
+//
+// It integrates the ANALYTIC faces, not a mesh. The senses under test are a modelling attribute, and a
+// tessellation is derived from the B-rep rather than an authority over it — and here the mesh could not
+// answer the question at all, because a mesh takes each face's orientation from its LOOP and the stored
+// senses are exactly what is in doubt. This is OrientClosedSolid's shape: decide from the geometry, and
+// when the geometry cannot say, leave the body alone rather than guess.
+func padHoldsMaterialOutside(b *topo.Body) bool {
+	for _, shell := range b.Shells() {
+		if v, ok := query.AnalyticShellVolume(shell); ok && v < 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // buildWrappedPad wires the cage: inner/outer loop vertices, the circumferential and radial edges, the
@@ -43,7 +61,7 @@ func buildWrappedPad(innerLoop, outerLoop []math.Point3, innerCap, outerCap geom
 		ov[i] = bld.AddVertex(outerLoop[i], lin("ov", i))
 	}
 	ie, oe, re := padEdges(bld, innerLoop, outerLoop, iv, ov, lin)
-	addPadCaps(bld, innerCap, outerCap, ie, oe, lin)
+	addPadCaps(bld, innerCap, outerCap, ie, oe, innerLoop, outerLoop, lin)
 	addPadWalls(bld, innerLoop, outerLoop, iv, ov, ie, oe, re, lin)
 	return bld.Build(), nil
 }
@@ -62,21 +80,86 @@ func padEdges(bld *topo.Builder, innerLoop, outerLoop []math.Point3, iv, ov []*t
 	return ie, oe, re
 }
 
-// addPadCaps adds the two curved cap faces. The inner cap walks its loop forward (and is reversed, so
-// its material-outward normal points away from the outer cap); the outer cap walks the opposite way so
-// each shared loop edge is used once in each direction.
+// addPadCaps adds the two curved cap faces. The inner cap walks its loop forward, the outer the
+// opposite way, so each shared loop edge is used once in each direction; each is then minted with the
+// sense its OWN loop implies, never with a fixed one.
 func addPadCaps(bld *topo.Builder, innerCap, outerCap geom.Surface, ie, oe []*topo.Edge,
-	lin func(string, int) topo.Lineage) {
+	innerLoop, outerLoop []math.Point3, lin func(string, int) topo.Lineage) {
 	n := len(ie)
 	inner := make([]topo.Use, n)
 	outer := make([]topo.Use, n)
+	fwd, rev := make([]math.Point3, n), make([]math.Point3, n)
 	for i := range n {
-		inner[i] = topo.Fwd(ie[i])
-		outer[i] = topo.Rev(oe[n-1-i])
+		inner[i], fwd[i] = topo.Fwd(ie[i]), innerLoop[i]
+		outer[i], rev[i] = topo.Rev(oe[n-1-i]), outerLoop[(n-i)%n]
 	}
-	bld.AddReversedFace(innerCap, lin("icap", 0), topo.OuterLoop(inner...))
-	bld.AddFace(outerCap, lin("ocap", 0), topo.OuterLoop(outer...))
+	addPadFace(bld, innerCap, capWindsClockwise(innerCap, fwd), lin("icap", 0), inner)
+	addPadFace(bld, outerCap, capWindsClockwise(outerCap, rev), lin("ocap", 0), outer)
 }
+
+// addPadFace mints one face forward or reversed, so every caller states the sense as a value rather
+// than by picking a different builder call.
+func addPadFace(bld *topo.Builder, surf geom.Surface, reversed bool, lineage topo.Lineage, loop []topo.Use) {
+	if reversed {
+		bld.AddReversedFace(surf, lineage, topo.OuterLoop(loop...))
+		return
+	}
+	bld.AddFace(surf, lineage, topo.OuterLoop(loop...))
+}
+
+// capWindsClockwise reports whether the loop runs CLOCKWISE in the cap surface's own (u, v) — which is
+// to say the material-outward normal is the opposite of S_u×S_v, so the face must be minted reversed.
+//
+// This is the invariant OCCT keeps by construction: a face is FORWARD exactly when its outer wire runs
+// counter-clockwise in the surface's parameter space (ShapeAnalysis::TotCross2D, and the shoelace this
+// mirrors). Here it was a CONVENTION instead — the inner cap always reversed, the outer always forward
+// — and the convention disagreed with the geometry. Every face of the cage was minted with a sense
+// opposite its own winding, which is self-consistent as a shell and so passed unnoticed: the boolean
+// then rebuilt the pad's WALLS in the arrangement's own (correct) convention while passing the cap
+// through untouched, leaving exactly one face out of step in the result and its outward vector area
+// 3.0e-4 short of closing (Oblikovati/Oblikovati#3504).
+//
+// u is unwrapped as the loop is walked, so a patch straddling the surface's seam still gives one
+// continuous contour rather than a shoelace torn across the branch cut.
+func capWindsClockwise(surf geom.Surface, loop []math.Point3) bool {
+	if len(loop) < 3 {
+		return false
+	}
+	uPeriod := surfaceUPeriod(surf)
+	u0, v0 := surf.ParamAt(loop[0])
+	area, pu, pv := 0.0, u0, v0
+	for _, p := range loop[1:] {
+		u, v := surf.ParamAt(p)
+		u = nearestBranch(u, pu, uPeriod)
+		area += pu*v - u*pv
+		pu, pv = u, v
+	}
+	return area+pu*v0-u0*pv < 0
+}
+
+// nearestBranch moves u by whole periods onto the branch nearest prev, so a loop crossing the seam
+// keeps travelling instead of jumping a period.
+func nearestBranch(u, prev, period float64) float64 {
+	if period <= 0 {
+		return u
+	}
+	return u + period*stdmath.Round((prev-u)/period)
+}
+
+// surfaceUPeriod is the surface's period in u, read from its own domain: an angular parameter reports
+// [0, 2π], and anything else reports 0 for "does not wrap". Only u is asked because a pad's caps are
+// the wrap surfaces — a cylinder or a cone — whose v runs along the axis or the slant and never wraps.
+func surfaceUPeriod(surf geom.Surface) float64 {
+	lo, hi := surf.UDomain()
+	if stdmath.Abs(hi-lo-2*stdmath.Pi) < uPeriodWeld {
+		return 2 * stdmath.Pi
+	}
+	return 0
+}
+
+// uPeriodWeld is how close a domain span must be to a full turn to count as an angular parameter. It
+// compares two ANGLES on a fixed constant, so it carries no model scale.
+const uPeriodWeld = 1e-9 // tol:angular — a parameter domain either is a full turn or is not
 
 // addPadWalls adds one side-wall face per loop segment, planar when its four corners are coplanar or
 // two triangles when the segment warps — sharing ie[i]/oe[i] with the caps (opposite direction) and
@@ -87,7 +170,7 @@ func addPadWalls(bld *topo.Builder, innerLoop, outerLoop []math.Point3, iv, ov [
 	for i := range n {
 		j := (i + 1) % n
 		if quadPlanar(innerLoop[i], innerLoop[j], outerLoop[j], outerLoop[i]) {
-			pl, err := geom.PlaneByThreePoints(innerLoop[i], innerLoop[j], outerLoop[i])
+			pl, err := geom.PlaneByThreePoints(innerLoop[i], outerLoop[i], outerLoop[j])
 			if err == nil {
 				bld.AddFace(pl, lin("wall", i), topo.OuterLoop(topo.Fwd(re[i]), topo.Fwd(oe[i]), topo.Rev(re[j]), topo.Rev(ie[i])))
 				continue
@@ -115,10 +198,10 @@ func addPadWalls(bld *topo.Builder, innerLoop, outerLoop []math.Point3, iv, ov [
 func addWarpedWall(bld *topo.Builder, innerLoop, outerLoop []math.Point3, iv, ov []*topo.Vertex,
 	ie, oe, re []*topo.Edge, i, j int, lin func(string, int) topo.Lineage) {
 	diag := bld.AddEdge(geom.NewLineSegment(innerLoop[i], outerLoop[j]), iv[i], ov[j], lin("wdiag", i))
-	if tA, err := geom.PlaneByThreePoints(innerLoop[i], outerLoop[j], outerLoop[i]); err == nil {
+	if tA, err := geom.PlaneByThreePoints(innerLoop[i], outerLoop[i], outerLoop[j]); err == nil {
 		bld.AddFace(tA, lin("wallA", i), topo.OuterLoop(topo.Fwd(re[i]), topo.Fwd(oe[i]), topo.Rev(diag)))
 	}
-	if tB, err := geom.PlaneByThreePoints(innerLoop[i], innerLoop[j], outerLoop[j]); err == nil {
+	if tB, err := geom.PlaneByThreePoints(innerLoop[i], outerLoop[j], innerLoop[j]); err == nil {
 		bld.AddFace(tB, lin("wallB", i), topo.OuterLoop(topo.Fwd(diag), topo.Rev(re[j]), topo.Rev(ie[i])))
 	}
 }

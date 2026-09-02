@@ -146,14 +146,10 @@ func TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial(t *testing.T) {
 	// It used to difference two whole-body volumes. That worked only while BOTH sides were faceted,
 	// so the inscribed-polyhedron bias cancelled — the comments this replaces spent a paragraph
 	// explaining that the baseline had to be planarized for exactly that reason. Against an analytic
-	// result the two sides are no longer measured the same way: the host integrates in closed form,
-	// while the result still falls back to a mesh because its outward vector area misses closing by
-	// 3.0e-4. Every face integrates — the cone face with its hyperbolic-arc hole included — and the
-	// shell is the right way out since curvedReorient began certifying that (it read −45005.68 before,
-	// against the +45029.49 that went in), but one face's material side is still out of step with its
-	// neighbours, which needs a winding rule that can read a seam-wrapping band (#3504). The difference
-	// reports THAT, not the glyph. Even meshed at property quality the readout carries about 1 cm³ of
-	// noise on a 45029 cm³ body — 3× the whole glyph — so no tolerance band on it can see a 0.3 cm³ raise.
+	// result BOTH sides integrate in closed form and agree with the mesh to every digit (45029.7945),
+	// so the difference is honest again — but it is still the wrong instrument: a 0.3 cm³ raise is a
+	// 7e-6 relative change on a 45029 cm³ body, which any faceting fallback on either side would swamp,
+	// and meshed at property quality the readout alone carries about 1 cm³ of noise, 3× the whole glyph.
 	//
 	// The kernel rules say as much: "Result gates are per-face (area, surface type, loop count)
 	// against the oracle. A whole-body volume or area match is a smoke test, never a proof." So the
