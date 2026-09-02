@@ -132,25 +132,24 @@ func uvWallSharedImprint(uf, wf curvedFace) ([]geom.Curve3, bool) {
 func collectWallIslands(curves []geom.Curve3, uf curvedFace, rs ruledSide) ([]geom.Curve3, bool) {
 	var out []geom.Curve3
 	for _, cv := range curves {
-		island, ok, clipped := wallSectionIsland(cv, uf, rs)
+		pieces, ok := wallSectionIsland(cv, uf, rs)
 		if !ok {
 			return nil, false
 		}
-		if island {
-			out = append(out, clipped)
-		}
+		out = append(out, pieces...)
 	}
 	return out, true
 }
 
-// wallSectionIsland decides one plane∩wall section curve. island=true: a closed conic wholly inside the
-// face polygon AND strictly inside the wall band — a genuine shared imprint. island=false, ok=true: the
-// curve is clear of the face or of the band, so this pair has no imprint. ok=false: it clips a trim (a
-// partial arc the two arrangements would terminate differently), or it is not a conic at all.
-func wallSectionIsland(cv geom.Curve3, uf curvedFace, rs ruledSide) (island, ok bool, clipped geom.Curve3) {
+// wallSectionIsland decides one plane∩wall section curve, returning the imprint pieces it contributes.
+// A closed conic wholly inside the face polygon AND strictly inside the wall band contributes itself; a
+// curve CROSSING the face's trim contributes the runs of it that lie inside (clipSectionToFace); a
+// curve clear of either contributes nothing. ok=false when it is not a conic, when it straddles a rim,
+// or when a crossing run cannot be bounded.
+func wallSectionIsland(cv geom.Curve3, uf curvedFace, rs ruledSide) ([]geom.Curve3, bool) {
 	center, amp, isConic := conicAxialSpan(cv, rs.axis)
 	if !isConic {
-		return false, false, nil
+		return nil, false
 	}
 	inFace, exact := conicIslandInFace(cv, uf)
 	if !exact {
@@ -160,17 +159,16 @@ func wallSectionIsland(cv geom.Curve3, uf curvedFace, rs ruledSide) (island, ok 
 		// unbounded curve in its own chart — the face against its polygon, the wall against its
 		// neighbouring sections — and arrive at the same corner by two routes, leaving a T-junction
 		// the stitch cannot weld (#3459).
-		arc, clipped := clipSectionToFace(cv, uf)
-		if !clipped {
-			return false, false, nil
-		}
-		return true, true, arc
+		return clipSectionToFace(cv, uf)
 	}
 	if !inFace {
-		return false, true, nil
+		return nil, true
 	}
 	inside, clear := conicBandPlacement(center, amp, rs)
-	return inside, inside || clear, cv
+	if inside {
+		return []geom.Curve3{cv}, true
+	}
+	return nil, clear
 }
 
 // conicAxialSpan returns the section conic's centre and its axial half-amplitude about that centre — zero

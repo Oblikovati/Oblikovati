@@ -173,39 +173,75 @@ func openConicKind(cv geom.Curve3) bool {
 	return cf.Hyperbolic || stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0)
 }
 
-// clipSectionToFace bounds an OPEN section curve to the span between its outermost crossings with a
-// planar face's trim, returning that bounded arc.
+// clipSectionToFace bounds a section curve to the pieces of it that lie INSIDE a planar face's trim.
 //
-// It is the co-refinement step. An unbounded section has to be bounded before either arrangement
-// sees it, or each bounds it in its own chart — the face against its polygon, the ruled wall
-// against its neighbouring sections — and the two arrive at the same corner by different routes.
-// Clipping once, here, gives both sides literally the same curve with the same endpoints, so the
-// shared edge welds instead of leaving a T-junction (#3459).
+// It is the co-refinement step. A section has to be bounded before either arrangement sees it, or
+// each bounds it in its own chart — the face against its polygon, the ruled wall against its
+// neighbouring sections — and the two arrive at the same corner by different routes. Clipping once,
+// here, gives both sides literally the same curves with the same endpoints, so the shared edges weld
+// instead of leaving a T-junction (#3459).
 //
-// ok=false when the curve is not a conic in the face's plane, or crosses its trim fewer than twice
-// (it does not pass through the face, so there is nothing to share).
-func clipSectionToFace(cv geom.Curve3, uf curvedFace) (geom.Curve3, bool) {
+// It returns EVERY inside run, not one arc between the outermost crossings. A section crossing a face
+// can enter and leave it several times, and the outermost span then spans the gap as well: a bore's
+// section circle crossing a bar's footprint enters at two opposite ends, so the span between its
+// extreme crossings ran straight through the material the bar does not cover.
+//
+// ok=false when the curve is not a conic in the face's plane, or when a run cannot be bounded.
+func clipSectionToFace(cv geom.Curve3, uf curvedFace) ([]geom.Curve3, bool) {
 	pl := facePlane(uf)
 	pc, ok := toPlaneConic(cv, pl)
 	if !ok {
 		return nil, false
 	}
+	cuts := sectionFaceCuts(cv, pc, uf, pl)
+	if len(cuts) < 2 {
+		return nil, false // it does not pass through the face: nothing to share
+	}
+	var out []geom.Curve3
+	for i := 1; i < len(cuts); i++ {
+		mid := cv.PointAt(cuts[i-1] + (cuts[i]-cuts[i-1])/2)
+		if !pointInFace2D(to2D(pl, mid), uf) {
+			continue
+		}
+		arc, got := geom.ConicArcBetween(cv, cv.PointAt(cuts[i-1]), cv.PointAt(cuts[i]), mid)
+		if !got {
+			return nil, false
+		}
+		out = append(out, arc)
+	}
+	return out, len(out) > 0
+}
+
+// sectionFaceCuts returns the section's own parameters at every crossing with the face's trim,
+// ascending and deduplicated — the boundaries the runs above are taken between.
+func sectionFaceCuts(cv geom.Curve3, pc planeConic, uf curvedFace, pl geom.Plane) []float64 {
 	res := geom.ResolutionForBox(faceLoopBox(uf))
-	lo, hi, found := stdmath.Inf(1), stdmath.Inf(-1), 0
+	var cuts []float64
 	for _, ring := range planarRings(uf) {
 		for i, n := 0, len(ring); i < n; i++ {
 			hits, _ := conicFrameHits(pc, to2D(pl, ring[i]), to2D(pl, ring[(i+1)%n]), res)
 			for _, h := range hits {
-				t, ok := geom.ConicParamAt(cv, to3D(pl, h.p))
-				if !ok {
-					continue
+				if t, ok := geom.ConicParamAt(cv, to3D(pl, h.p)); ok {
+					cuts = append(cuts, t)
 				}
-				lo, hi, found = stdmath.Min(lo, t), stdmath.Max(hi, t), found+1
 			}
 		}
 	}
-	if found < 2 || hi <= lo {
-		return nil, false
+	sort.Float64s(cuts)
+	return dedupedParams(cuts)
+}
+
+// dedupedParams collapses crossings that coincide — a corner touched by two boundary edges is one
+// crossing, and a run of zero width between them would carry no midpoint to classify.
+func dedupedParams(ts []float64) []float64 {
+	if len(ts) < 2 {
+		return ts
 	}
-	return geom.ConicSubArc(cv, lo, hi)
+	out := ts[:1]
+	for _, t := range ts[1:] {
+		if t-out[len(out)-1] > conicSpanSlack {
+			out = append(out, t)
+		}
+	}
+	return out
 }
