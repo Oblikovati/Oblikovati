@@ -158,6 +158,10 @@ func TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial(t *testing.T) {
 	// is an analytic cone, its area is the sketch's 1 cm², and the host's cone carries the matching
 	// footprint hole.
 	cone, key := coneFaceOf(t, fs.Result()[0])
+	bareConeArea, ok := query.AnalyticFaceArea(soleConeFace(t, fs.Result()[0]))
+	if !ok {
+		t.Fatal("the host chamfer cone's area is not analytically measurable before the emboss")
+	}
 
 	// Sketch origin mid-band on the chamfer cone (its slant runs ≈14→28); a 1×1 cm raise sits well
 	// inside it. Depth 0.3 cm along the surface normal.
@@ -194,6 +198,19 @@ func TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial(t *testing.T) {
 	if glyphTop == nil {
 		t.Fatalf("the raised glyph has no analytic cone top; faces are %v", faceKindCounts(body))
 	}
+	// The footprint must be REMOVED from the host cone, not added to it. The hole straddles the
+	// cone's parameter seam, and an even-odd nesting test asked on one branch of the chart read it
+	// as a top-level loop and ADDED its measure — the host came out 1333.86 cm² where its own
+	// undrilled band is 1332.86 (Oblikovati/Oblikovati#3505).
+	hostArea, ok := query.AnalyticFaceArea(hostCone)
+	if !ok {
+		t.Fatal("the host cone's area is not analytically measurable")
+	}
+	if removed := bareConeArea - hostArea; removed < 0.9 || removed > 1.15 {
+		t.Errorf("the emboss removed %g cm² from the host cone (%g → %g), want the sketch's 1 cm²; a "+
+			"NEGATIVE figure means the footprint hole was added to the face instead of subtracted",
+			removed, bareConeArea, hostArea)
+	}
 	area, ok := query.AnalyticFaceArea(glyphTop)
 	if !ok {
 		t.Fatal("the glyph top's area is not analytically measurable")
@@ -207,6 +224,26 @@ func TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial(t *testing.T) {
 		t.Errorf("the emboss produced %d planar faces; the host was faceted instead of joined "+
 			"analytically (a faceted result runs to ~1234)", n)
 	}
+}
+
+// soleConeFace is the body's one and only cone face, so a later measurement of "the host cone" is
+// anchored to the same surface the emboss is about to cut into.
+func soleConeFace(t *testing.T, b *topo.Body) *topo.Face {
+	t.Helper()
+	var out *topo.Face
+	for _, f := range b.Faces() {
+		if _, isCone := f.Geometry().(geom.Cone); !isCone {
+			continue
+		}
+		if out != nil {
+			t.Fatalf("the fixture has more than one cone face; faces are %v", faceKindCounts(b))
+		}
+		out = f
+	}
+	if out == nil {
+		t.Fatalf("the fixture has no cone face; faces are %v", faceKindCounts(b))
+	}
+	return out
 }
 
 // faceKindCounts tallies a body's faces by surface kind — the per-face view these gates read.
