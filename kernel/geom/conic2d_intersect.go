@@ -2,11 +2,7 @@
 
 package geom
 
-import (
-	stdmath "math"
-
-	"oblikovati.org/math"
-)
+import stdmath "math"
 
 // IntersectConic2d returns the parameters on the PARAMETRIC conic at which it meets the IMPLICIT one.
 //
@@ -185,13 +181,3 @@ func sortedDedupedAngles(ts []float64) []float64 {
 // angular comparison in the kernel it carries no model scale; the arc length it stands for is the
 // caller's radius times this.
 const trigRootWeld = 1e-9 // tol:angular — coincident roots of one conic equation
-
-// ConicPointsAt evaluates the parametric conic at each parameter — the crossings themselves, for a
-// caller that wants points rather than parameters.
-func ConicPointsAt(p EllipticalParams2d, ts []float64) []math.Point2 {
-	out := make([]math.Point2, len(ts))
-	for i, t := range ts {
-		out[i] = p.PointAt(t)
-	}
-	return out
-}

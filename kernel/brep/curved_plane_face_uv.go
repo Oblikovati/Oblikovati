@@ -46,16 +46,14 @@ func newPlaneFaceUV(f curvedFace, res geom.Resolution) (*planeFaceUV, bool) {
 // planeFaceEdgeOK reports whether one boundary edge is in the v1 frame scope: straight, or a full
 // circle (spanning its whole closed domain in either direction).
 func planeFaceEdgeOK(e loopEdge) bool {
-	switch e.curve.(type) {
-	case geom.LineSegment, geom.Line:
+	if geom.IsStraightCurve(e.curve) {
 		return true
-	case geom.Circle:
-		return isFullDomain(e.t0, e.t1)
-	case geom.Arc3d, geom.EllipticalArc, geom.HyperbolicArc:
-		return true
-	default:
-		return false
 	}
+	if _, isCircle := e.curve.(geom.Circle); isCircle {
+		// A whole circle frames a face; a partial one is an ARC, which the conic machinery takes.
+		return isFullDomain(e.t0, e.t1)
+	}
+	return geom.IsPlaneConicCurve(e.curve)
 }
 
 // planeFaceUV satisfies uvSide: a non-periodic, exact-loop-framed plane (the planeUV conventions).

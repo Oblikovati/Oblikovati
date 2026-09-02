@@ -97,69 +97,13 @@ func (pc planeConic) implicit() (geom.Conic2dImplicit, bool) {
 func perp2(v math.Vector2) math.Vector2 { return math.V2(-v.Y, v.X) }
 
 // edgeConicParams puts one boundary edge in parametric conic form IN THE FACE'S PLANE, with the
-// parameter interval it actually covers. The edge already lies in that plane, so its centre and axes
-// project directly and the parameter carries over unchanged — no refitting, and no chance of the
-// projection disagreeing with the curve the edge stores.
-//
-// ok=false for a curve with no conic form here (a b-spline edge), which the caller declines on rather
-// than approximating.
+// parameter interval it covers. The switch over curve kinds lives in geom, where the kernel rules put
+// it, so what remains here is only the edgeSpan adaptation.
 func edgeConicParams(e loopEdge, pl geom.Plane) (geom.EllipticalParams2d, edgeSpan, bool) {
-	switch c := e.curve.(type) {
-	case geom.Circle:
-		return circleParams(c.Center, c.RefDir.AsVector(), c.Normal.Cross(c.RefDir), c.Radius, c.Radius, pl,
-			edgeSpan{0, 2 * stdmath.Pi})
-	case geom.Arc3d:
-		return circleParams(c.Center, c.RefDir.AsVector(), c.Normal.Cross(c.RefDir), c.Radius, c.Radius, pl,
-			sweepSpan(c.StartAngle, c.SweepAngle))
-	case geom.EllipseFull:
-		return circleParams(c.Center, c.MajorAxis.AsVector(), c.Normal.Cross(c.MajorAxis), c.MajorRadius, c.MinorRadius, pl,
-			edgeSpan{0, 2 * stdmath.Pi})
-	case geom.EllipticalArc:
-		return circleParams(c.Center, c.MajorAxis.AsVector(), c.Normal.Cross(c.MajorAxis), c.MajorRadius, c.MinorRadius, pl,
-			sweepSpan(c.StartAngle, c.SweepAngle))
-	case geom.HyperbolicArc:
-		p, span, ok := circleParams(c.Center, c.TransverseAxis.AsVector(), c.ConjugateAxis.AsVector(), c.A, c.B, pl,
-			orderedSpan(c.Theta0, c.Theta1))
-		p.Hyperbolic = true
-		return p, span, ok
-	}
-	return geom.EllipticalParams2d{}, edgeSpan{}, false
-}
-
-// circleParams projects a conic's centre and its two axis directions into the plane. The axes stay
-// unit there because the curve lies IN the plane, so the projection is a rotation on them.
-func circleParams(center math.Point3, u, v math.Vector3, a, b float64, pl geom.Plane, span edgeSpan) (geom.EllipticalParams2d, edgeSpan, bool) {
-	if a == 0 || b == 0 {
-		return geom.EllipticalParams2d{}, edgeSpan{}, false
-	}
-	return geom.EllipticalParams2d{
-		Center: to2D(pl, center), U: to2Dvec(pl, u), V: to2Dvec(pl, v), A: a, B: b,
-	}, span, true
-}
-
-// sweepSpan turns a start angle and a signed sweep into an ascending interval, so a clockwise arc and
-// its counter-clockwise twin admit the same roots.
-func sweepSpan(start, sweep float64) edgeSpan {
-	if sweep < 0 {
-		return edgeSpan{start + sweep, start}
-	}
-	return edgeSpan{start, start + sweep}
-}
-
-// orderedSpan is the ascending form of an interval given either way round.
-func orderedSpan(a, b float64) edgeSpan {
-	if b < a {
-		return edgeSpan{b, a}
-	}
-	return edgeSpan{a, b}
+	params, lo, hi, ok := geom.PlaneConicParams(e.curve, pl)
+	return params, edgeSpan{lo, hi}, ok
 }
 
 // isStraightEdge reports an edge whose curve is a line, the case conicEdgeHits already solves in
 // closed form against a segment.
-func isStraightEdge(e loopEdge) bool {
-	switch e.curve.(type) {
-	case geom.LineSegment, geom.Line:
-		return true
-	}
-	return false
-}
+func isStraightEdge(e loopEdge) bool { return geom.IsStraightCurve(e.curve) }

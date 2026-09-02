@@ -44,7 +44,7 @@ var geomSwitchDebt = map[string]int{
 	"addin/router":                 5,
 	"app":                          13,
 	"kernel/blend":                 15,
-	"kernel/brep":                  104,
+	"kernel/brep":                  102,
 	"kernel/exchange/step/geommap": 11,
 	"kernel/geomapi":               9,
 	"kernel/ops":                   1,

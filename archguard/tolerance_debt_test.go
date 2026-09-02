@@ -133,7 +133,7 @@ var toleranceDebt = map[string]int{
 	"ops/blend/fillet_torus_corner_quartic.go":    1,
 	"ops/blend/fillet_twocyl_corner.go":           1,
 	"ops/blend/fillet_validity.go":                3,
-	"ops/blend/quartic_real_roots.go":             1,
+	"geom/quartic_real_roots.go":                  1,
 	"ops/blend/tangent_chain.go":                  1,
 	"ops/boolean/boolean_curved_subtract.go":      1,
 	"ops/boolean/meshbool_reconstruct_merge.go":   1,

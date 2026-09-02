@@ -25,6 +25,16 @@ func circleImplicit2d(t *testing.T, c m.Point2, r float64) geom.Conic2dImplicit 
 	return f
 }
 
+// pointsAt evaluates the parametric conic at each parameter, for a failure message that names the
+// crossings rather than their parameters.
+func pointsAt(p geom.EllipticalParams2d, ts []float64) []m.Point2 {
+	out := make([]m.Point2, len(ts))
+	for i, t := range ts {
+		out[i] = p.PointAt(t)
+	}
+	return out
+}
+
 // residualsOn reports the largest |q(P(t))| over the returned parameters — zero when every root
 // really is a crossing. It is the check that matters: a root that does not lie on BOTH conics is not
 // an intersection however plausible its value.
@@ -58,7 +68,7 @@ func TestTwoCirclesMeetTwice(t *testing.T) {
 			}
 		}
 		if !found {
-			t.Errorf("crossing %v missing from %v", want, geom.ConicPointsAt(p, ts))
+			t.Errorf("crossing %v missing from %v", want, pointsAt(p, ts))
 		}
 	}
 }
@@ -104,30 +114,10 @@ func TestEllipseMeetsRotatedEllipse(t *testing.T) {
 		t.Fatal("two ellipses at 45° are not the same curve")
 	}
 	if len(ts) != 4 {
-		t.Fatalf("got %d crossings %v, want 4", len(ts), geom.ConicPointsAt(p, ts))
+		t.Fatalf("got %d crossings %v, want 4", len(ts), pointsAt(p, ts))
 	}
 	if r := residualsOn(p, q, ts); r > 1e-9 {
 		t.Errorf("worst residual %g: a root must lie on BOTH conics", r)
-	}
-}
-
-// TestLineMeetsEllipse checks the degenerate conic goes through the same substitution, which is what
-// keeps a line from needing its own intersector.
-func TestLineMeetsEllipse(t *testing.T) {
-	t.Parallel()
-	p := geom.EllipticalParams2d{Center: m.P2(0, 0), U: m.V2(1, 0), V: m.V2(0, 1), A: 4, B: 2}
-	q, ok := geom.ImplicitLine2dOf(m.P2(0, 0), m.V2(0, 1)) // the y axis
-	if !ok {
-		t.Fatal("ImplicitLine2dOf declined a unit direction")
-	}
-	ts, _ := geom.IntersectConic2d(p, q)
-	if len(ts) != 2 {
-		t.Fatalf("got %d crossings %v, want 2", len(ts), geom.ConicPointsAt(p, ts))
-	}
-	for _, tt := range ts {
-		if x := math.Abs(float64(p.PointAt(tt).X)); x > 1e-9 {
-			t.Errorf("crossing at x=%g, want 0 (the y axis)", x)
-		}
 	}
 }
 
@@ -152,7 +142,7 @@ func TestHyperbolaBranchMeetsCircle(t *testing.T) {
 	q := circleImplicit2d(t, m.P2(0, 0), 2)
 	ts, _ := geom.IntersectConic2d(p, q)
 	if len(ts) != 2 {
-		t.Fatalf("got %d crossings %v, want 2", len(ts), geom.ConicPointsAt(p, ts))
+		t.Fatalf("got %d crossings %v, want 2", len(ts), pointsAt(p, ts))
 	}
 	if r := residualsOn(p, q, ts); r > 1e-9 {
 		t.Errorf("worst residual %g on the hyperbola branch", r)

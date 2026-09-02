@@ -66,19 +66,6 @@ func ImplicitConic2dOf(center math.Point2, u, v math.Vector2, a, b float64, hype
 	return f, true
 }
 
-// ImplicitLine2dOf returns the quadratic form of a LINE — degenerate as a conic, but the same
-// currency, which is what lets a line and a conic meet through the one substitution below rather
-// than through a special case.
-func ImplicitLine2dOf(p math.Point2, dir math.Vector2) (Conic2dImplicit, bool) {
-	n := math.V2(-dir.Y, dir.X)
-	length := float64(n.Length())
-	if length == 0 {
-		return Conic2dImplicit{}, false
-	}
-	nx, ny := float64(n.X)/length, float64(n.Y)/length
-	return Conic2dImplicit{D: nx / 2, E: ny / 2, F: -(nx*float64(p.X) + ny*float64(p.Y))}, true
-}
-
 // EllipticalParams2d is a plane conic taken PARAMETRICALLY: P(t) = Center + a·cos(t)·U + b·sin(t)·V
 // for an ellipse or circle (a == b), and P(t) = Center + a·cosh(t)·U + b·sinh(t)·V for one branch
 // of a hyperbola.
@@ -97,4 +84,98 @@ func (e EllipticalParams2d) PointAt(t float64) math.Point2 {
 		c, s = stdmath.Cosh(t), stdmath.Sinh(t)
 	}
 	return e.Center.TranslateBy(e.U.Scale(math.Scalar(e.A * c)).Add(e.V.Scale(math.Scalar(e.B * s))))
+}
+
+// PlaneConicParams puts a CURVE that lies in a plane into the parametric conic form of that plane's
+// own (u, v) chart, with the parameter interval the curve covers in its own parameter.
+//
+// The type switch over curve kinds lives here, in geom, and not at the call sites: adding a conic kind
+// then means teaching one function, rather than finding every switch that must learn about it and
+// leaving the ones nobody finds to take their default branch silently (#2188).
+//
+// The curve is assumed to LIE in the plane — it is a face's own boundary edge — so its centre and axes
+// project directly and the parameter carries over with no refitting. ok=false for a curve with no conic
+// form here, such as a b-spline edge, which a caller declines on rather than approximating.
+//
+// Example:
+//
+//	p, lo, hi, ok := geom.PlaneConicParams(edge.Curve(), facePlane)
+func PlaneConicParams(c Curve3, pl Plane) (params EllipticalParams2d, lo, hi float64, ok bool) {
+	switch x := c.(type) {
+	case Circle:
+		return planeConicOf(x.Center, x.RefDir.AsVector(), x.Normal.Cross(x.RefDir), x.Radius, x.Radius, pl, 0, twoPi, false)
+	case Arc3d:
+		l, h := sweepInterval(x.StartAngle, x.SweepAngle)
+		return planeConicOf(x.Center, x.RefDir.AsVector(), x.Normal.Cross(x.RefDir), x.Radius, x.Radius, pl, l, h, false)
+	case EllipseFull:
+		return planeConicOf(x.Center, x.MajorAxis.AsVector(), x.Normal.Cross(x.MajorAxis), x.MajorRadius, x.MinorRadius, pl, 0, twoPi, false)
+	case EllipticalArc:
+		l, h := sweepInterval(x.StartAngle, x.SweepAngle)
+		return planeConicOf(x.Center, x.MajorAxis.AsVector(), x.Normal.Cross(x.MajorAxis), x.MajorRadius, x.MinorRadius, pl, l, h, false)
+	case HyperbolicArc:
+		l, h := ascending(x.Theta0, x.Theta1)
+		return planeConicOf(x.Center, x.TransverseAxis.AsVector(), x.ConjugateAxis.AsVector(), x.A, x.B, pl, l, h, true)
+	}
+	return EllipticalParams2d{}, 0, 0, false
+}
+
+// IsStraightCurve reports a curve that is a line — the representation bucket a conic substitution does
+// not apply to, asked here so no caller has to switch on curve kinds itself.
+func IsStraightCurve(c Curve3) bool {
+	switch c.(type) {
+	case LineSegment, Line:
+		return true
+	}
+	return false
+}
+
+// IsPlaneConicCurve reports a curve that PlaneConicParams can put in parametric conic form — the
+// question "is this edge a conic in its face's plane", asked without needing the plane. It is here
+// beside PlaneConicParams so the two cannot answer differently as kinds are added.
+func IsPlaneConicCurve(c Curve3) bool {
+	switch c.(type) {
+	case Circle, Arc3d, EllipseFull, EllipticalArc, HyperbolicArc:
+		return true
+	}
+	return false
+}
+
+// planeConicOf projects a conic's centre and its two axis directions into the plane. The axes stay unit
+// there because the curve lies IN the plane, so the projection acts on them as a rotation.
+func planeConicOf(center math.Point3, u, v math.Vector3, a, b float64, pl Plane, lo, hi float64, hyperbolic bool) (EllipticalParams2d, float64, float64, bool) {
+	if a == 0 || b == 0 {
+		return EllipticalParams2d{}, 0, 0, false
+	}
+	return EllipticalParams2d{
+		Center: planePoint2(pl, center), U: planeVec2(pl, u), V: planeVec2(pl, v),
+		A: a, B: b, Hyperbolic: hyperbolic,
+	}, lo, hi, true
+}
+
+// planePoint2 is a point in the plane's own (u, v) coordinates.
+func planePoint2(pl Plane, p math.Point3) math.Point2 {
+	d := pl.Origin.VectorTo(p)
+	return math.P2(d.Dot(pl.UAxis.AsVector()), d.Dot(pl.VAxis.AsVector()))
+}
+
+// planeVec2 is a direction in the plane's own (u, v) coordinates.
+func planeVec2(pl Plane, v math.Vector3) math.Vector2 {
+	return math.V2(v.Dot(pl.UAxis.AsVector()), v.Dot(pl.VAxis.AsVector()))
+}
+
+// sweepInterval turns a start angle and a signed sweep into an ascending interval, so an arc and its
+// reversed twin cover the same parameters.
+func sweepInterval(start, sweep float64) (lo, hi float64) {
+	if sweep < 0 {
+		return start + sweep, start
+	}
+	return start, start + sweep
+}
+
+// ascending returns an interval given either way round, low end first.
+func ascending(a, b float64) (lo, hi float64) {
+	if b < a {
+		return b, a
+	}
+	return a, b
 }
