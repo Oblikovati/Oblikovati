@@ -191,36 +191,6 @@ func unitVec2(v math.Vector2) math.Vector2 {
 	return math.V2(v.X/math.Scalar(l), v.Y/math.Scalar(l))
 }
 
-// conicParamAt inverts a point on the imprint conic to its curve parameter t∈[0,1) — the closed-form
-// inversion (no iteration) that is the exact weld currency: the seat arc, the overhang-cap arc and the tool
-// wall's base all terminate at conic.PointAt(t) for the SAME t, so they weld byte-identically (ADR-0049 D-d).
-// It matches geom.Circle/EllipseFull's own PointAt convention (angle 2πt from RefDir/MajorAxis).
-func conicParamAt(cv geom.Curve3, p math.Point3) (float64, bool) {
-	switch c := cv.(type) {
-	case geom.Circle:
-		d := c.Center.VectorTo(p)
-		cos := d.Dot(c.RefDir.AsVector())
-		sin := d.Dot(c.Normal.Cross(c.RefDir))
-		return wrap01(stdmath.Atan2(float64(sin), float64(cos)) / (2 * stdmath.Pi)), true
-	case geom.EllipseFull:
-		d := c.Center.VectorTo(p)
-		cos := float64(d.Dot(c.MajorAxis.AsVector())) / c.MajorRadius
-		sin := float64(d.Dot(c.Normal.Cross(c.MajorAxis))) / c.MinorRadius
-		return wrap01(stdmath.Atan2(sin, cos) / (2 * stdmath.Pi)), true
-	default:
-		return 0, false
-	}
-}
-
-// wrap01 folds a real onto [0,1).
-func wrap01(t float64) float64 {
-	t -= stdmath.Floor(t)
-	if t >= 1 {
-		t -= 1
-	}
-	return t
-}
-
 // eccCap is the minor/major ratio below which the imprint ellipse is too eccentric to trust: the tool axis
 // grazes the seat plane (φ→90°), the normalising map is ill-conditioned (cond = A/B), and the "seat contact"
 // is a graze, not a real partial hole. Below it the gate declines to CSG (ADR-0049 D-d, pitfall 5).

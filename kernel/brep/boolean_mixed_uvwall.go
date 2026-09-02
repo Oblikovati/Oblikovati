@@ -134,12 +134,12 @@ func uvWallSharedImprint(uf, wf curvedFace) ([]geom.Curve3, bool) {
 func collectWallIslands(curves []geom.Curve3, uf curvedFace, rs ruledSide) ([]geom.Curve3, bool) {
 	var out []geom.Curve3
 	for _, cv := range curves {
-		island, ok := wallSectionIsland(cv, uf, rs)
+		island, ok, clipped := wallSectionIsland(cv, uf, rs)
 		if !ok {
 			return nil, false
 		}
 		if island {
-			out = append(out, cv)
+			out = append(out, clipped)
 		}
 	}
 	return out, true
@@ -149,27 +149,30 @@ func collectWallIslands(curves []geom.Curve3, uf curvedFace, rs ruledSide) ([]ge
 // face polygon AND strictly inside the wall band — a genuine shared imprint. island=false, ok=true: the
 // curve is clear of the face or of the band, so this pair has no imprint. ok=false: it clips a trim (a
 // partial arc the two arrangements would terminate differently), or it is not a conic at all.
-func wallSectionIsland(cv geom.Curve3, uf curvedFace, rs ruledSide) (island, ok bool) {
+func wallSectionIsland(cv geom.Curve3, uf curvedFace, rs ruledSide) (island, ok bool, clipped geom.Curve3) {
 	center, amp, isConic := conicAxialSpan(cv, rs.axis)
 	if !isConic {
-		return false, false
+		return false, false, nil
 	}
 	inFace, exact := conicIslandInFace(cv, uf)
 	if !exact {
-		// The section CROSSES this face's trim rather than sitting inside it. Both sides can now
-		// clip a hyperbola exactly (toPlaneConic/conicSegmentHits handle the branch), but emitting
-		// a partial arc still declines: the uv side would terminate it where it meets THIS face's
-		// polygon and the wall side where it meets the ADJACENT sections, two routes to the same
-		// corner that produce one loop each side which do not close into a shared footprint. The
-		// missing piece is co-refining the sections into one loop before either side clips
-		// (ADR-0052); until then this is a named decline, not a wrong answer (#3459).
-		return false, false
+		// The section CROSSES this face's trim rather than sitting inside it. Clip it HERE, once,
+		// to the span between its outermost crossings, and hand that one bounded arc to both
+		// sides. That is what makes the corners shared: each side would otherwise clip the
+		// unbounded curve in its own chart — the face against its polygon, the wall against its
+		// neighbouring sections — and arrive at the same corner by two routes, leaving a T-junction
+		// the stitch cannot weld (#3459).
+		arc, clipped := clipSectionToFace(cv, uf)
+		if !clipped {
+			return false, false, nil
+		}
+		return true, true, arc
 	}
 	if !inFace {
-		return false, true
+		return false, true, nil
 	}
 	inside, clear := conicBandPlacement(center, amp, rs)
-	return inside, inside || clear
+	return inside, inside || clear, cv
 }
 
 // conicAxialSpan returns the section conic's centre and its axial half-amplitude about that centre — zero

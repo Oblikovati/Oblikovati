@@ -52,39 +52,26 @@ func booleanInputQuality() Quality {
 // This is insurance, not a behaviour change: measured over the whole tier-2 corpus
 // (kernel/... + model/feature) on 2026-09-01, Facet produced an invalid cage ZERO times.
 //
-// # What deletes this (#3459)
+// # Nothing takes this behind the caller's back any more (#3459)
 //
-// Facet exists only because the planar boolean could not take a curved operand, and a strangler
-// must name the gate that retires it. The gate is measured, not guessed: disable the facet branch
-// in model/feature/planarize.go and run tier 2. kernel/ is entirely clean — every dependence is in
-// model/feature.
+// Facet existed because the planar boolean could not consume a curved operand, and
+// model/feature.planarized applied it AUTOMATICALLY to every curved body before a boolean — the
+// defect #3459 names, since faceting is permanent and unrecoverable. That automatic path is gone:
+// the boolean takes analytic operands now, and the whole tier-2 corpus passes without it.
 //
-// It was FOUR tests on 2026-09-01. Three are gone, and none of them was the kernel gap it looked
-// like:
+// Getting there was four fixes, none of them in the boolean's own recognizers:
 //
-//	TestAnalyticPatternedCutDoesNotExplode   FIXED (#3463) — the hole feature recorded a 32-gon
-//	TestPatternOfHoleCutsEachOccurrence      FIXED (#3463)   prism as its replay tool while cutting
-//	                                                         with the exact drill, so patterns
-//	                                                         faceted everything to cope
-//	TestChamferOfTaperShaftRimDoesNotCollapse FIXED (#1689) — a chamfer section is swept along its
-//	                                                         edge, and only the LINEAR sweep
-//	                                                         existed; a closed rim needs the
-//	                                                         rotational one
+//	#3463  the hole feature recorded a 32-gon prism as its REPLAY tool while cutting with the exact
+//	       drill, so a pattern replayed a different solid and the pattern faceted everything to cope
+//	#1689  a chamfer section is swept along its edge and only the LINEAR sweep existed, so a closed
+//	       circular rim — whose two endpoints are the same point — reported "degenerate edge"
+//	#3459  the mixed boolean could not carry a HYPERBOLIC imprint: the section a plane cuts from a
+//	       cone when it runs parallel to the axis, which is what an emboss pad's side faces do
 //
-// ONE remains:
-//
-//	TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial — a pad seated on a chamfer cone. Its side
-//	faces cut the host cone in HYPERBOLA branches, which the exact conic clipper now handles, and
-//	the pass/wall gates now clear the pad's own cone patches (geom.SurfacesApart). What is missing
-//	is the last step: those four sections must be CO-REFINED into one footprint loop before either
-//	side clips them, or the uv side terminates its arc where it meets the face polygon while the
-//	wall side terminates where it meets the adjacent sections — two routes to the same corner, one
-//	loop each side, no shared boundary to weld. That is ADR-0052 co-refinement; until it lands,
-//	wallSectionIsland declines by name rather than returning a wrong answer.
-//
-// Delete Facet when that one passes with the facet branch removed. Before assuming a remaining
-// failure is a kernel gap, check whether the feature layer is handing the kernel a faceted operand
-// — that is what three of the four turned out to be.
+// What remains is an explicit operation. A caller that genuinely wants a triangle cage can still
+// ask for one, and one case still needs it: joining a block onto a plate with ANALYTIC bores falls
+// to triangle CSG (TestTwoStraddlingHolesStayOnTheExactPath facets first to stay on the exact
+// path). Deleting the function outright waits on that.
 func Facet(b *topo.Body, feat string) *topo.Body {
 	cage := trianglesToBody(bodyTrianglesAt(b, DefaultQuality()), feat)
 	if cage == nil {

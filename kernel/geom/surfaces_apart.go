@@ -143,6 +143,11 @@ func AsConic(c Curve3) (ConicForm, bool) {
 	case Hyperbola:
 		return ConicForm{Center: x.Center, Major: x.TransverseAxis, Minor: x.ConjugateAxis,
 			A: x.A, B: x.B, Hyperbolic: true}, true
+	case HyperbolicArc:
+		// A bounded arc runs ON a hyperbola, and the conic it runs on is what a clipper needs. Its
+		// own bounds are its parameterisation, not its shape.
+		return ConicForm{Center: x.Center, Major: x.TransverseAxis, Minor: x.ConjugateAxis,
+			A: x.A, B: x.B, Hyperbolic: true}, true
 	}
 	return ConicForm{}, false
 }
@@ -161,4 +166,92 @@ func (c ConicForm) AxialAmplitude(axis math.Vector3) float64 {
 	a := c.A * float64(c.Major.AsVector().Dot(axis))
 	b := c.B * float64(c.Minor.AsVector().Dot(axis))
 	return stdmath.Sqrt(a*a + b*b)
+}
+
+// ConicParamAt inverts a conic's own parameterisation: the parameter t with c.PointAt(t) == p, for
+// a point on the curve. ok=false for a curve kind that is not a conic.
+//
+// Each conic answers in ITS own convention — a circle and an ellipse in the [0,1) their Domain
+// reports, a hyperbola branch in the hyperbolic angle theta its Domain spans — because that is what
+// a caller must hand back to PointAt. The inversion lives here with the curves rather than at the
+// call site, so consumers ask a geometric question instead of switching on a geometry kind.
+//
+// The hyperbola inverts through ASINH, not acosh: eta = sinh(theta) is single-valued over the whole
+// branch, while xi = cosh(theta) loses the sign of theta.
+//
+// Example:
+//
+//	if t, ok := geom.ConicParamAt(section, hit); ok { shared := section.PointAt(t) }
+func ConicParamAt(c Curve3, p math.Point3) (float64, bool) {
+	switch x := c.(type) {
+	case Circle:
+		d := x.Center.VectorTo(p)
+		cos := d.Dot(x.RefDir.AsVector())
+		sin := d.Dot(x.Normal.Cross(x.RefDir))
+		return wrapUnit(stdmath.Atan2(float64(sin), float64(cos)) / (2 * stdmath.Pi)), true
+	case EllipseFull:
+		return ellipseParamAt(x, p), true
+	case Hyperbola:
+		return hyperbolaTheta(x.Center, x.ConjugateAxis, x.B, p), true
+	case HyperbolicArc:
+		if x.Theta1 == x.Theta0 {
+			return 0, false
+		}
+		theta := hyperbolaTheta(x.Center, x.ConjugateAxis, x.B, p)
+		return (theta - x.Theta0) / (x.Theta1 - x.Theta0), true
+	}
+	return 0, false
+}
+
+// ellipseParamAt inverts a full ellipse onto its [0,1) parameter.
+func ellipseParamAt(e EllipseFull, p math.Point3) float64 {
+	d := e.Center.VectorTo(p)
+	cos := float64(d.Dot(e.MajorAxis.AsVector())) / e.MajorRadius
+	sin := float64(d.Dot(e.Normal.Cross(e.MajorAxis))) / e.MinorRadius
+	return wrapUnit(stdmath.Atan2(sin, cos) / (2 * stdmath.Pi))
+}
+
+// hyperbolaTheta inverts a hyperbola branch onto its hyperbolic angle through ASINH, which is
+// single-valued over the whole branch — acosh would lose the sign of theta.
+func hyperbolaTheta(center math.Point3, conjugate math.UnitVector3, b float64, p math.Point3) float64 {
+	d := center.VectorTo(p)
+	return stdmath.Asinh(float64(d.Dot(conjugate.AsVector())) / b)
+}
+
+// wrapUnit folds a real onto [0,1) — the domain a closed conic reports.
+func wrapUnit(t float64) float64 {
+	t -= stdmath.Floor(t)
+	if t >= 1 {
+		return 0
+	}
+	return t
+}
+
+// ConicSubArc restricts a conic to the parameter span [t0, t1] IN THAT CURVE'S OWN PARAMETER, and
+// returns the bounded arc.
+//
+// The two hyperbola forms differ in what their parameter means — a Hyperbola's is the hyperbolic
+// angle theta, a HyperbolicArc's is its own [0,1] — and getting that wrong stores an edge whose
+// curve spans more than its two vertices. Asking here means a caller never has to know which form
+// it holds.
+//
+// ok=false for a curve this does not bound (a closed conic, whose sub-arc has its own
+// representation, or a non-conic).
+//
+// Example:
+//
+//	if arc, ok := geom.ConicSubArc(section, lo, hi); ok { edge.curve = arc }
+func ConicSubArc(c Curve3, t0, t1 float64) (Curve3, bool) {
+	switch x := c.(type) {
+	case Hyperbola:
+		return x.Arc(t0, t1), true
+	case HyperbolicArc:
+		span := x.Theta1 - x.Theta0
+		return HyperbolicArc{
+			Center: x.Center, TransverseAxis: x.TransverseAxis, ConjugateAxis: x.ConjugateAxis,
+			A: x.A, B: x.B,
+			Theta0: x.Theta0 + t0*span, Theta1: x.Theta0 + t1*span,
+		}, true
+	}
+	return nil, false
 }

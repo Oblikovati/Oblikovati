@@ -226,7 +226,7 @@ func TestWallSectionIslandStraddlingRimDeclines(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if island, ok := wallSectionIsland(circle, planeFaceAtZ(t, plate, 3), rs); island || ok {
+	if island, ok, _ := wallSectionIsland(circle, planeFaceAtZ(t, plate, 3), rs); island || ok {
 		t.Errorf("a section on the band rim = (%v,%v), want (false,false) — a named decline", island, ok)
 	}
 }

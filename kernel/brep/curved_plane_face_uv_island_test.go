@@ -35,9 +35,9 @@ func TestSplitImprintByKind(t *testing.T) {
 		t.Fatal(err)
 	}
 	seg := geom.NewLineSegment(math.P3(-8, 0, 3), math.P3(8, 0, 3))
-	straight, islands := splitImprintByKind([]geom.Curve3{seg, circle, seg})
-	if len(straight) != 2 || len(islands) != 1 {
-		t.Fatalf("split = %d straight, %d islands; want 2 and 1", len(straight), len(islands))
+	straight, islands, open := splitImprintByKind([]geom.Curve3{seg, circle, seg})
+	if len(straight) != 2 || len(islands) != 1 || len(open) != 0 {
+		t.Fatalf("split = %d straight, %d islands, %d open; want 2, 1 and 0", len(straight), len(islands), len(open))
 	}
 	if islands[0] != geom.Curve3(circle) {
 		t.Error("the circle must land in the island list, not the straight one")

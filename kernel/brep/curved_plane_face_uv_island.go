@@ -18,16 +18,27 @@ import (
 // against the frame's conic edges) and the CLOSED conic islands (a ruled wall's section, gated by
 // wallSectionIsland to lie wholly inside the frame). Keeping them apart is what lets the straight path
 // keep reading PointAt(0)/PointAt(1) as segment ends — a conic's are two points one radian apart.
-func splitImprintByKind(imprint []geom.Curve3) (straight, islands []geom.Curve3) {
+func splitImprintByKind(imprint []geom.Curve3) (straight, islands, open []geom.Curve3) {
 	for _, cv := range imprint {
-		switch cv.(type) {
-		case geom.Circle, geom.EllipseFull:
+		switch {
+		case isClosedConicImprint(cv):
 			islands = append(islands, cv)
+		case openConicKind(cv):
+			open = append(open, cv)
 		default:
 			straight = append(straight, cv)
 		}
 	}
-	return straight, islands
+	return straight, islands, open
+}
+
+// isClosedConicImprint reports the conics that bound a region on their own — the island kind.
+func isClosedConicImprint(cv geom.Curve3) bool {
+	switch cv.(type) {
+	case geom.Circle, geom.EllipseFull:
+		return true
+	}
+	return false
 }
 
 // conicIslandSegs samples one closed conic imprint over its WHOLE domain into tagged (u,v) segments that

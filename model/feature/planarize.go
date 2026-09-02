@@ -74,24 +74,29 @@ func curvedBooleanWorthTrying(target, tool *topo.Body) bool {
 	return oc == 1 || (tc == 1 && oc == 0)
 }
 
-// DELETING THIS PATH (#3459): the facet branch below is measured, not guessed. Disabling it and
-// running tier 2 leaves kernel/ entirely clean and breaks exactly four tests — see
-// [boolean.Facet]'"'"'s doc for the list and what each one needs. Three are boolean/containment gaps
-// (ADR-0058); the fourth is the blend engine on an analytic taper rim (ADR-0050).
+// planarized converts a body the exact boolean cannot yet consume into one it can. Today that is a
+// SINGLE case: an extrude-circle cylinder becomes a clean, key-stable N-gon prism. Anything else —
+// including every curved body that used to be shredded into a triangle cage by [ops.Facet] — is
+// returned unchanged, because the boolean takes analytic operands now (#3459).
 //
-// planarized converts a body with analytic curved faces into a planar B-rep the exact boolean can
-// consume (it hangs on a full periodic curved face, #129). A SIMPLE extrude-circle cylinder becomes
-// a clean, key-stable N-gon prism (the fast path that keeps downstream edge identity); any OTHER
-// curved body (a revolved tube/shaft, a multi-segment surface of revolution) is faceted into a
-// triangle cage via ops.Facet. An already-planar body is returned unchanged. nil-safe.
+// The automatic cage path is gone, and it was measured out rather than argued away. Disabling it
+// broke four tests, and all four turned out to be defects elsewhere:
+//
+//	TestAnalyticPatternedCutDoesNotExplode   the hole feature recorded a 32-gon prism as its replay
+//	TestPatternOfHoleCutsEachOccurrence      tool while cutting with the exact drill (#3463)
+//	TestChamferOfTaperShaftRimDoesNotCollapse  the chamfer had only a LINEAR sweep, so a closed rim
+//	                                           reported "degenerate edge" (#1689)
+//	TestWrappedEmbossOnConeIsAValidSolid…      the mixed boolean could not carry a HYPERBOLIC
+//	                                           imprint (#3459)
+//
+// With those fixed the whole tier-2 corpus passes without any faceting here. ops.Facet itself
+// survives as an explicit operation — a caller that genuinely wants a triangle cage can still ask
+// for one — but nothing takes it behind the user's back any more, which is the defect #3459 names.
+//
+// nil-safe.
 func planarized(b *topo.Body, feat string) *topo.Body {
 	if prism := planarizeSimpleCylinder(b, feat+"/planar"); prism != nil {
 		return prism
-	}
-	if b != nil && hasCurvedFace(b) {
-		if faceted := ops.Facet(b, originalFeature(b, feat)); faceted != nil {
-			return faceted
-		}
 	}
 	return b
 }

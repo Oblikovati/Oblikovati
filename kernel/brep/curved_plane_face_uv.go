@@ -97,9 +97,13 @@ type faceFrameCrossing struct {
 // island (a ruled wall's section — curved_plane_face_uv_island.go) crosses no frame edge by construction,
 // so it is sampled on its own and takes no part in the crossing injection.
 func (c *planeFaceUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
-	straight, islands := splitImprintByKind(imprint)
+	straight, islands, open := splitImprintByKind(imprint)
 	crossings := c.frameCrossings(straight)
-	segs := append(c.frameSegs(crossings), c.imprintSegs(straight, crossings)...)
+	// An OPEN conic (a hyperbola branch — see curved_plane_face_uv_open.go) crosses the frame's
+	// STRAIGHT edges, so its crossings are solved first and the frame is split on them.
+	openCrossings := c.openFrameCrossings(open)
+	segs := append(c.frameSegs(crossings, openCrossings), c.imprintSegs(straight, crossings)...)
+	segs = append(segs, c.openSegs(open, openCrossings)...)
 	return append(segs, c.islandSegs(islands)...)
 }
 
@@ -127,7 +131,7 @@ func (c *planeFaceUV) circleEdgeCrossings(li, ei int, circle geom.Curve3, imprin
 		a2, b2 := to2D(c.plane, imp.PointAt(0)), to2D(c.plane, imp.PointAt(1))
 		hits, _ := conicFrameHits(pc, a2, b2, c.res)
 		for _, h := range hits {
-			if tc, ok := conicParamAt(circle, to3D(c.plane, h.p)); ok {
+			if tc, ok := geom.ConicParamAt(circle, to3D(c.plane, h.p)); ok {
 				out = append(out, faceFrameCrossing{loop: li, edge: ei, imp: ii, sImp: h.sEdge, tConic: tc, at: circle.PointAt(tc)})
 			}
 		}
@@ -137,13 +141,13 @@ func (c *planeFaceUV) circleEdgeCrossings(li, ei int, circle geom.Curve3, imprin
 
 // frameSegs emits the boundary loops into tagged segments, filling frameUV with the sampled rings the
 // material containment reads.
-func (c *planeFaceUV) frameSegs(crossings []faceFrameCrossing) []uvSeg {
+func (c *planeFaceUV) frameSegs(crossings []faceFrameCrossing, open [][]openCrossing) []uvSeg {
 	c.frameUV = make([][]math.Point2, 0, len(c.loops))
 	var out []uvSeg
 	for li, l := range c.loops {
 		var ring []math.Point2
 		for ei, e := range l.edges {
-			segs := c.frameEdgeSegs(li, ei, e, crossings)
+			segs := c.frameEdgeSegs(li, ei, e, crossings, open)
 			out = append(out, segs...)
 			for _, s := range segs {
 				ring = append(ring, s.a)
@@ -157,9 +161,9 @@ func (c *planeFaceUV) frameSegs(crossings []faceFrameCrossing) []uvSeg {
 // frameEdgeSegs emits one boundary edge: a straight edge as its single exact segment, a circle edge
 // sampled along its traversal with every crossing parameter injected so a vertex lands EXACTLY on the
 // shared crossing point.
-func (c *planeFaceUV) frameEdgeSegs(li, ei int, e loopEdge, crossings []faceFrameCrossing) []uvSeg {
+func (c *planeFaceUV) frameEdgeSegs(li, ei int, e loopEdge, crossings []faceFrameCrossing, open [][]openCrossing) []uvSeg {
 	if _, isCircle := e.curve.(geom.Circle); !isCircle {
-		return []uvSeg{{a: to2D(c.plane, e.start()), b: to2D(c.plane, e.end()), curve: e.curve, tA: e.t0, tB: e.t1, kind: segPolygon}}
+		return c.straightFrameEdgeSegs(li, ei, e, open)
 	}
 	params := circleSampleParams(e, crossings, li, ei)
 	segs := make([]uvSeg, 0, len(params)-1)
@@ -257,7 +261,9 @@ func planeFaceMaterial(c *planeFaceUV, keep func(math.Point3) bool) func() mater
 // wallSectionIsland — and a conic-framed face never receives one); the islands are gated separately, on
 // meeting nothing they would have to meet on a sampled chord (islandContactOK).
 func planeFaceContactOK(c *planeFaceUV, imprint []geom.Curve3) bool {
-	straight, islands := splitImprintByKind(imprint)
+	// The OPEN conics take no part in either gate: they cross the frame's STRAIGHT edges by
+	// construction, and those crossings are solved exactly and shared, not resolved on a chord.
+	straight, islands, _ := splitImprintByKind(imprint)
 	for _, l := range c.loops {
 		for _, e := range l.edges {
 			if _, isCircle := e.curve.(geom.Circle); isCircle && !circleContactOK(c, e.curve, straight) {

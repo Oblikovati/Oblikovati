@@ -3,6 +3,8 @@
 package brep
 
 import (
+	stdmath "math"
+
 	"sort"
 
 	"oblikovati.org/kernel/geom"
@@ -111,7 +113,7 @@ func (c *planeUV) conicCrossings(cv geom.Curve3, pc planeConic) []planeCrossing 
 		for i, n := 0, len(ring); i < n; i++ {
 			hits, _ := conicEdgeHits(pc, ring[i], ring[(i+1)%n], c.res)
 			for _, h := range hits {
-				tc, ok := conicParamAt(cv, to3D(c.plane, h.p))
+				tc, ok := geom.ConicParamAt(cv, to3D(c.plane, h.p))
 				if !ok {
 					continue
 				}
@@ -126,7 +128,10 @@ func (c *planeUV) conicCrossings(cv geom.Curve3, pc planeConic) []planeCrossing 
 // a boundary run re-emits as the exact analytic arc. Each crossing parameter is inserted as a sample boundary
 // so a vertex lands EXACTLY on the crossing (conic.PointAt(tConic)) — the shared weld point.
 func (c *planeUV) sampleConicUV(cv geom.Curve3, crossings []planeCrossing) []uvSeg {
-	lo, hi := cv.Domain()
+	lo, hi, ok := imprintSampleRange(cv, crossings)
+	if !ok {
+		return nil
+	}
 	params := make([]float64, 0, imprintSampleCount+len(crossings)+1)
 	for i := 0; i <= imprintSampleCount; i++ {
 		params = append(params, lo+(hi-lo)*float64(i)/imprintSampleCount)
@@ -142,6 +147,44 @@ func (c *planeUV) sampleConicUV(cv geom.Curve3, crossings []planeCrossing) []uvS
 	}
 	return segs
 }
+
+// imprintSampleRange is the parameter interval an imprint curve is sampled over.
+//
+// A BOUNDED conic — a circle or an ellipse — is sampled across its whole domain, as it always was.
+// An UNBOUNDED one has no such domain: geom.Hyperbola reports (-Inf, +Inf), so sampling it that way
+// produced infinite parameters and left only the two crossing parameters standing. The imprint then
+// collapsed to a single straight CHORD between them, while the wall on the other side of the same
+// contact re-emitted the exact arc — two different boundaries for one shared edge, so the shell
+// could not close (#3459).
+//
+// The part of an unbounded branch that can bound a face is the part inside the seat, which lies
+// between its crossings with the seat polygon. Sampling that span — widened so the arrangement sees
+// the curve continue through each crossing rather than terminate on it — gives the same treatment
+// every other conic gets. Fewer than two crossings means the branch never enters the seat, so it
+// contributes no imprint at all.
+func imprintSampleRange(cv geom.Curve3, crossings []planeCrossing) (lo, hi float64, ok bool) {
+	lo, hi = cv.Domain()
+	if !stdmath.IsInf(lo, 0) && !stdmath.IsInf(hi, 0) {
+		return lo, hi, true
+	}
+	if len(crossings) < 2 {
+		return 0, 0, false
+	}
+	lo, hi = crossings[0].tConic, crossings[0].tConic
+	for _, cr := range crossings[1:] {
+		lo, hi = stdmath.Min(lo, cr.tConic), stdmath.Max(hi, cr.tConic)
+	}
+	if hi-lo <= 0 {
+		return 0, 0, false
+	}
+	pad := unboundedImprintPad * (hi - lo)
+	return lo - pad, hi + pad, true
+}
+
+// unboundedImprintPad widens an unbounded imprint's sampled span past its outermost crossings, as a
+// FRACTION of that span, so the sampled polyline crosses the seat boundary instead of ending on it.
+// It is dimensionless, so it carries no model scale.
+const unboundedImprintPad = 0.05 // tol:numeric — a fraction of the crossing span, not a length
 
 // frameSegments emits the seat polygon as segPolygon edges, each SPLIT at its conic crossings so the sub-edge
 // ends exactly on the shared crossing point (a straight segment to that point, kinked by less than a weld).
