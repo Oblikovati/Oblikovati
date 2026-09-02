@@ -29,6 +29,10 @@ import (
 type trimRegion struct {
 	rings      [][]math.Point2
 	complement bool
+	// uPeriodic/vPeriodic say whether the surface's own parameter wraps, which is what makes a ring
+	// able to be an OPEN polyline in the covering space rather than a closed contour (see
+	// regionSignedArea).
+	uPeriodic, vPeriodic bool
 }
 
 // contains is the region's own point membership in (u, v): the rings' even-odd interior, or everything
@@ -44,7 +48,10 @@ func (r trimRegion) contains(q math.Point2) bool {
 // must not run per query — and decides which side of those rings the face is.
 func faceTrimRegion(f curvedFace) trimRegion {
 	uPer, vPer := surfacePeriodic(f.surface)
-	return trimRegion{rings: trimPolys(f, uPer, vPer), complement: faceIsRingComplement(f, uPer, vPer)}
+	return trimRegion{
+		rings: trimPolys(f, uPer, vPer), complement: faceIsRingComplement(f, uPer, vPer),
+		uPeriodic: uPer, vPeriodic: vPer,
+	}
 }
 
 // trimPolys projects every loop of the face into one continuous (u, v) polyline (reusing loopToUV's seam
