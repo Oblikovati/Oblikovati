@@ -54,7 +54,14 @@ func stitch(faces []subFace, pass []curvedFace, prov []imprintSeg) (*topo.Body, 
 		reorientFacesConsistent(out) // partial subset: classification is the orientation authority
 	}
 	tangent := hasTangentContact(collectEdgeUses(out))
-	all := append(builtFacesToCurved(out, w.points), pass...)
+	// The mixed dispatch assembles one shell from faces built by DIFFERENT machinery — the
+	// polygonal split, the exact-frame (u,v) trims, the ruled-wall trims and the whole pass-through
+	// faces — each wound by its own construction. reorientFacesConsistent above two-colours only
+	// the polygonal half, so a shell that is watertight and manifold could still have shared edges
+	// traversed the same way by both faces, which Validate rejects. curvedReorient is the same
+	// flood fill over the WHOLE set, and is a no-op on already-consistent input by construction,
+	// so the paths that were already consistent are unchanged (#1818, #3459).
+	all := curvedReorient(append(builtFacesToCurved(out, w.points), pass...))
 	body := curvedStitchNamed(all, planarStitchNaming(prov, w, out))
 	return body, tangent, nil
 }

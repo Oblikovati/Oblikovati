@@ -3,7 +3,7 @@
 package meshio
 
 import (
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 )
 
@@ -37,7 +37,7 @@ func threeMFUnitName(fileUnit string) string {
 // scaleMesh multiplies every position of an already-tessellated mesh by f (a
 // no-op when f is 1, the common cm→mm-less case). Normals are unit vectors and
 // are left untouched.
-func scaleMesh(mesh *ops.Mesh, f float64) {
+func scaleMesh(mesh *tessellate.Mesh, f float64) {
 	if f == 1 {
 		return
 	}

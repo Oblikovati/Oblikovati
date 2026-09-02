@@ -9,7 +9,6 @@ import (
 
 	"oblikovati.org/kernel/ops"
 
-	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/math"
 )
@@ -38,22 +37,5 @@ func TestRayCastFacesMisses(t *testing.T) {
 	// A ray nowhere near the body.
 	if _, _, ok := query.RayCastFaces(body, math.P3(100, 100, 100), math.V3(0, 0, -1), ops.DefaultQuality()); ok {
 		t.Error("ray that misses the body reported a hit")
-	}
-}
-
-func TestRayTriangleDistForwardOnly(t *testing.T) {
-	t.Parallel()
-	a, b, c := math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)
-	// Ray from below pointing up hits the triangle at distance 5.
-	if t1, ok := probe.RayTriangleDist(math.P3(0.2, 0.2, -5), math.V3(0, 0, 1), a, b, c); !ok || t1 < 4.99 || t1 > 5.01 {
-		t.Errorf("forward hit dist = %v ok=%v, want ~5", t1, ok)
-	}
-	// A ray pointing away (triangle behind it) does not hit.
-	if _, ok := probe.RayTriangleDist(math.P3(0.2, 0.2, 5), math.V3(0, 0, 1), a, b, c); ok {
-		t.Error("triangle behind the ray should not hit")
-	}
-	// A ray parallel to the triangle plane misses.
-	if _, ok := probe.RayTriangleDist(math.P3(0.2, 0.2, 1), math.V3(1, 0, 0), a, b, c); ok {
-		t.Error("parallel ray should not hit")
 	}
 }

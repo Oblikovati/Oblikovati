@@ -1,6 +1,11 @@
 # ADR-0043 — Generalized provenance naming for all generated topology
 
-**Status:** Accepted — design (2026-06-28). **Builds on / refines:** the M31 topological-naming
+**Status:** Accepted — **shipped with two named gaps** (decided 2026-06-28; phases landed
+through epic #1539; re-verified against the tree 2026-09-01, #2198). Every per-operation
+provenance phase (P0's seam, P1-P5, P6a-P6c) is in the product. The two **cross-cutting**
+items of P0 — §3 per-feature unique tags and §4 the resolution uniqueness guard — are not,
+and are tracked as #2997 and #2979. Do not read this ADR as fully realized; see
+[As-built](#as-built). **Builds on / refines:** the M31 topological-naming
 work — provenance naming for the planar boolean (`kernel/brep/boolean_provenance.go`,
 `boolean_nonmanifold.go`; #1152/#1153/#1155), tiered binding (`model/identity/binding.go`, F06),
 versioned encoding (F07) — and [ADR-0027](ADR-0027-curved-face-boolean.md) (curved boolean),
@@ -151,7 +156,29 @@ residual naming collision becomes an honest failure, never a wrong-rebind.
     index, and `loss.Resolve`. The live `RefKey` value, its versioned encoding (attribute
     persistence), and the `fallbackMatch` recovery tiers stay; their tests were rewritten to exercise
     them directly rather than through the retired manager. The no-parent ordinal fallback and the
-    degraded CSG soup fallback legitimately stay. **This closes the ADR-0043 epic (#1539).**
+    degraded CSG soup fallback legitimately stay. **This closed the per-operation half of epic
+  #1539** — it did not close §3 or §4, which P0 owned and which no phase delivered.
 
 Each phase is one or more PRs; each adds a regression test that mutates an upstream feature and
 asserts the downstream selection still binds to the same physical entity.
+
+## As-built
+
+Verified against the tree on 2026-09-01 (#2198). The phase checkboxes and the P6c note above
+were read as "the ADR is done"; the code says the naming half is done and the *safety* half
+is not.
+
+| Item | State | Evidence |
+| --- | --- | --- |
+| P0 shared seam | shipped | `kernel/topo/provenance.go` |
+| P1 fillet, P2 chamfer | shipped | `kernel/ops/blend/{assemble_curved,fillet_curved_mixed_weld,fillet_curved_retrim_loop}.go` |
+| P3 delete-face / stitch | shipped | `kernel/ops/heal/stitch.go` |
+| P4 curved boolean + SSI edges | shipped | `kernel/brep/{curved_stitch,reconstruct_boolean}.go` |
+| P5 remaining generators | shipped | `kernel/ops/surface/surface_edit.go`, `model/feature/{freeform,work_plane_cloud_fit}.go` |
+| P6a/P6b/P6c | shipped | `model/identity/recover.go`, `model/feature/identity_adapter.go` |
+| **§3 per-feature unique tags** | **not shipped** | `kernel/ops/blend/assemble_curved.go:64` still hardcodes `const filletAssemblyTag = "fillet"`, so two Fillet features share one namespace → **#2997** |
+| **§4 resolution uniqueness guard** | **half shipped** | `EdgesByKey`/`FacesByKey` return every match, but `Find{Edge,Face,Vertex}ByKey` take `m[0]`; only `model/feature.resolveEdges` applies the guard → **#2979** |
+
+The two gaps are one hazard, not two: a shared namespace makes a collision *possible*, and an
+unguarded first-match makes it *silent*. Either one alone is survivable; together they are the
+wrong-rebind this ADR was written to prevent. Close both before calling ADR-0043 realized.

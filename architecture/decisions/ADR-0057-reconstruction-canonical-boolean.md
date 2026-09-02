@@ -1,6 +1,12 @@
 # ADR-0057 — Reconstruction is the one boolean; brep.Boolean is deleted
 
-**Status:** Accepted — building on `m48/kernel-ground-rules`. · **Scopes**
+**Status:** **Superseded by** [ADR-0058](ADR-0058-tolerant-analytic-boolean.md)
+(2026-09-01, #2183). Its central decision — *reconstruction is the one boolean; `brep.Boolean`
+is deleted* — is **reversed** on measured performance grounds: exact `big.Rat` mesh reconstruction for all
+planar input ran ~1.5× slower and did not scale. `brep.Boolean` is **not** deleted; ADR-0058
+promotes it to the planar core of the one general engine. Read this document as the record of a
+direction that was tried and abandoned, not as guidance. (Originally: Accepted — building on
+`m48/kernel-ground-rules`.) · **Scopes**
 [Oblikovati#2247](https://github.com/Oblikovati/Oblikovati/issues/2247) (merge
 `brep.Boolean`/`BooleanDiag`'s planar-only engine into the one general boolean) and unblocks the
 M48/C2 boolean cluster ([#2248](https://github.com/Oblikovati/Oblikovati/issues/2248),

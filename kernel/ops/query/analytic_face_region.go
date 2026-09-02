@@ -44,24 +44,24 @@ const regionProbeGrid = 33
 // measures[i] is loop i's OWN boundary integral (∮), which is the signed enclosed measure the rule
 // needs — see enclosedTerms for why the sampled polyline's shoelace cannot carry that sign.
 func loopRegionSigns(loops []faceLoop, measures []float64) []float64 {
-	polys := loopUVPolygons(loops)
+	polys, per := loopUVPolygons(loops), loopsUVPeriod(loops)
 	signs := make([]float64, len(loops))
 	for i := range loops {
-		signs[i] = loopRegionSign(loopDepthIsEven(polys, i), measures[i])
+		signs[i] = loopRegionSign(loopDepthIsEven(polys, i, per), measures[i])
 	}
 	return signs
 }
 
 // loopDepthIsEven reports whether loop i sits at an even nesting depth, counting how many of the
 // other loops contain one of its points.
-func loopDepthIsEven(polys [][]arcSample, i int) bool {
+func loopDepthIsEven(polys [][]arcSample, i int, per uvPeriod) bool {
 	if i >= len(polys) || len(polys[i]) == 0 {
 		return true
 	}
 	p := polys[i][0]
 	depth := 0
 	for j, poly := range polys {
-		if j != i && len(poly) >= 3 && polygonCrossings(poly, p.u, p.v)%2 == 1 {
+		if j != i && pointInLoopPolygon(poly, p.u, p.v, per) {
 			depth++
 		}
 	}
@@ -236,7 +236,7 @@ func bandInterior(loops []faceLoop, axis bandAxis) (along, across float64, ok bo
 	if len(samples) < 2 {
 		return 0, 0, false
 	}
-	holes := nonWrappingPolygons(loops)
+	holes, per := nonWrappingPolygons(loops), loopsUVPeriod(loops)
 	for _, i := range bandStationOrder(len(samples)) {
 		station := samples[i].u
 		lo, hi, found := vSpanAt(samples, station)
@@ -245,7 +245,7 @@ func bandInterior(loops []faceLoop, axis bandAxis) (along, across float64, ok bo
 		}
 		mid := (lo + hi) / 2
 		hu, hv := axis.pointOf(station, mid)
-		if !uvCrossingsOdd(holes, hu, hv) {
+		if !uvCrossingsOdd(holes, hu, hv, per) {
 			return station, mid, true
 		}
 	}
@@ -384,7 +384,7 @@ func FaceInteriorPoint(f *topo.Face) (math.Point3, bool) {
 // branch, so the point must be unambiguous rather than merely inside. The samples are the loops'
 // unwrapped uv polylines, so a seam-crossing loop stays a simple polygon here.
 func regionInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
-	polys := loopUVPolygons(loops)
+	polys, per := loopUVPolygons(loops), loopsUVPeriod(loops)
 	uLo, uHi, vLo, vHi := uvPolygonBounds(polys)
 	if !(uLo < uHi && vLo < vHi) {
 		return 0, 0, false
@@ -394,7 +394,7 @@ func regionInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
 		for j := 1; j < regionProbeGrid; j++ {
 			pu := uLo + (uHi-uLo)*float64(i)/regionProbeGrid
 			pv := vLo + (vHi-vLo)*float64(j)/regionProbeGrid
-			if d := uvDepthOf(polys, pu, pv); d > best {
+			if d := uvDepthOf(polys, pu, pv, per); d > best {
 				best, u, v = d, pu, pv
 			}
 		}
@@ -411,8 +411,8 @@ const regionProbeDeepEnough = 0.1 // tol:parametric — probe depth that ends th
 
 // uvDepthOf is how far (u, v) sits inside the region: its distance to the nearest boundary sample,
 // or −1 when it is outside the region altogether.
-func uvDepthOf(polys [][]arcSample, u, v float64) float64 {
-	if !uvCrossingsOdd(polys, u, v) {
+func uvDepthOf(polys [][]arcSample, u, v float64, per uvPeriod) float64 {
+	if !uvCrossingsOdd(polys, u, v, per) {
 		return -1
 	}
 	nearest := stdmath.Inf(1)
@@ -557,16 +557,73 @@ func uvPolygonBounds(polys [][]arcSample) (uLo, uHi, vLo, vHi float64) {
 	return uLo, uHi, vLo, vHi
 }
 
-// uvCrossingsOdd is the even-odd point-in-polygons test at (u, v), casting along +u and counting
-// crossings over every loop: odd means inside the outer loop and outside its holes.
-func uvCrossingsOdd(polys [][]arcSample, u, v float64) bool {
-	crossings := 0
+// uvCrossingsOdd is the even-odd point-in-polygons test at (u, v) over every loop: an ODD number of
+// loops contains it, which means inside the outer loop and outside its holes.
+func uvCrossingsOdd(polys [][]arcSample, u, v float64, per uvPeriod) bool {
+	inside := 0
 	for _, poly := range polys {
-		if len(poly) >= 3 {
-			crossings += polygonCrossings(poly, u, v)
+		if pointInLoopPolygon(poly, u, v, per) {
+			inside++
 		}
 	}
-	return crossings%2 == 1
+	return inside%2 == 1
+}
+
+// pointInLoopPolygon is the even-odd point-in-polygon test asked in the SURFACE's space rather than
+// in one branch of its chart: on a periodic parameter u and u±period name the same point, so the
+// probe is tried at every whole-period translate the polygon's own extent can hold, and any hit
+// counts. A parameter that does not wrap has period 0 and only the untranslated probe.
+//
+// Testing a single branch is wrong for a loop that STRADDLES the branch cut. A wrapped emboss
+// footprint on a cone came back on u ∈ [−0.034, 0.034] while the face's outer loop occupied
+// [−2π, 0]. No whole period puts the footprint inside that interval — it hangs off both ends — so
+// alignPolygonBranches rightly declined to move it, the one-branch test then read the footprint as
+// OUTSIDE the loop enclosing it, and the hole was ADDED to the face instead of subtracted: 1333.86
+// cm² on a face whose undrilled band measures 1332.86 (Oblikovati/Oblikovati#3505; #3489 fixed the
+// sibling case where a whole loop sat on the wrong branch — this is the one no shift can repair).
+func pointInLoopPolygon(poly []arcSample, u, v float64, per uvPeriod) bool {
+	if len(poly) < 3 {
+		return false
+	}
+	uRange, _ := polygonRangeAlong(poly, bandAxis{})
+	vRange, _ := polygonRangeAlong(poly, bandAxis{alongV: true})
+	for _, du := range branchOffsets(u, uRange, per.u) {
+		for _, dv := range branchOffsets(v, vRange, per.v) {
+			if polygonCrossings(poly, u+du, v+dv)%2 == 1 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// branchOffsets lists the whole-period offsets that bring x into the polygon's own extent — the only
+// translates that can possibly be inside it. A non-periodic parameter (period 0) has the single
+// offset 0, which makes the test the ordinary planar one.
+func branchOffsets(x float64, r paramRange, period float64) []float64 {
+	if period <= 0 {
+		return []float64{0}
+	}
+	lo := stdmath.Ceil((r.lo - x) / period)
+	hi := stdmath.Floor((r.hi - x) / period)
+	out := make([]float64, 0, 3)
+	for k := lo; k <= hi && len(out) < branchOffsetCap; k++ {
+		out = append(out, k*period)
+	}
+	return out
+}
+
+// branchOffsetCap bounds the translate search. A face's loop spans one fundamental domain, so two or
+// three branches always suffice; the cap keeps a malformed loop with a huge parametric extent from
+// turning an O(1) predicate into an unbounded scan.
+const branchOffsetCap = 4
+
+// uvPeriod is a face's period in each surface parameter, 0 where that parameter does not wrap.
+type uvPeriod struct{ u, v float64 }
+
+// loopsUVPeriod reads both periods off the face's loops.
+func loopsUVPeriod(loops []faceLoop) uvPeriod {
+	return uvPeriod{u: loopsPeriod(loops, bandAxis{}), v: loopsPeriod(loops, bandAxis{alongV: true})}
 }
 
 // polygonCrossings counts how often the +u ray from (u, v) crosses one closed uv polyline.

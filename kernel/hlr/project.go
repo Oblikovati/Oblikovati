@@ -14,8 +14,7 @@
 package hlr
 
 import (
-	"oblikovati.org/kernel/ops"
-	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -67,21 +66,21 @@ type Segment struct {
 // mesh. Segments that project to (near) a point — edges seen end-on — are dropped.
 //
 //	view := hlr.NewView(center, math.V3(0,1,0), math.V3(0,0,1)) // front view
-//	segs := hlr.Project(body, view, ops.DefaultQuality())
-func Project(body *topo.Body, view View, q ops.Quality) []Segment {
-	mesh, _ := tessellate.TessellateBody(body, q)
+//	segs := hlr.Project(body, view, tessellate.DefaultQuality())
+func Project(body *topo.Body, view View, q mesh.Quality) []Segment {
+	tess, _ := tessellate.TessellateBody(body, q)
 	// The occlusion bias must clear two sources of false self-occlusion at an edge: the
 	// faceting error of curved faces (≈ChordTolerance) and a silhouette edge's nearly
 	// edge-on adjacent face, which a midpoint ray can graze. Scaling it to the model size
 	// (0.5% of the bounding diagonal) makes the classification platform-stable — a grazing
 	// face sits within the bias band and is ignored, while a real occluder is far beyond it.
-	bias := max(2*q.ChordTolerance, 0.005*meshDiagonal(mesh)) + 1e-9
+	bias := max(2*q.ChordTolerance, 0.005*meshDiagonal(tess)) + 1e-9
 	var segs []Segment
 	for _, e := range body.Edges() {
 		poly := tessellate.TessellateEdge(e, q)
 		key := e.ReferenceKey()
 		for i := 0; i+1 < len(poly); i++ {
-			if seg, ok := classifySegment(mesh, view, poly[i], poly[i+1], key, bias); ok {
+			if seg, ok := classifySegment(tess, view, poly[i], poly[i+1], key, bias); ok {
 				segs = append(segs, seg)
 			}
 		}
@@ -91,12 +90,12 @@ func Project(body *topo.Body, view View, q ops.Quality) []Segment {
 
 // classifySegment projects one edge sub-segment and classifies it; ok is false for a segment
 // that projects to a point (the edge runs along the view direction).
-func classifySegment(mesh *ops.Mesh, view View, a, b math.Point3, key []byte, bias float64) (Segment, bool) {
+func classifySegment(tess *mesh.Mesh, view View, a, b math.Point3, key []byte, bias float64) (Segment, bool) {
 	a2, b2 := project2D(view, a), project2D(view, b)
 	if degenerate(a2, b2) {
 		return Segment{}, false
 	}
-	return Segment{A: a2, B: b2, Visible: !occluded(mesh, view, midpoint(a, b), bias), EdgeKey: key}, true
+	return Segment{A: a2, B: b2, Visible: !occluded(tess, view, midpoint(a, b), bias), EdgeKey: key}, true
 }
 
 // ProjectPoint orthographically projects a single 3D point onto the view plane — used to place
@@ -113,10 +112,10 @@ func project2D(view View, p math.Point3) math.Point2 {
 // toward the viewer (by bias, to clear p's own face) and casts toward the viewer; only a hit
 // beyond a further bias counts, so a silhouette edge's grazing adjacent face (hit within the
 // bias band) does not falsely hide the edge — the classification is then platform-stable.
-func occluded(mesh *ops.Mesh, view View, p math.Point3, bias float64) bool {
+func occluded(tess *mesh.Mesh, view View, p math.Point3, bias float64) bool {
 	toViewer := view.ViewDir.Negate()
 	origin := p.TranslateBy(toViewer.Scale(math.Scalar(bias)))
-	d, hit := query.RayCastMesh(mesh, origin, toViewer)
+	d, hit := tess.RayCast(origin, toViewer)
 	return hit && d > bias
 }
 
@@ -131,7 +130,7 @@ func degenerate(a, b math.Point2) bool {
 
 // meshDiagonal is the length of the mesh's bounding-box diagonal — the model size the
 // occlusion bias scales to. Zero for an empty mesh.
-func meshDiagonal(m *ops.Mesh) float64 {
+func meshDiagonal(m *mesh.Mesh) float64 {
 	if len(m.Positions) == 0 {
 		return 0
 	}

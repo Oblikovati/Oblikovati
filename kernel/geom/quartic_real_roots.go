@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package blend
+package geom
 
 import (
 	stdmath "math"
@@ -12,8 +12,13 @@ import (
 // Generic real-root extraction for a monic-normalizable quartic and the cubic it depends on
 // (Ferrari's method with the resolvent cubic solved in closed form, per the torus-host corner
 // derivation — geometry-math-advisor consultation, R4 curved-corner-patch campaign). This file is
-// deliberately polynomial-only (no geometry): fillet_torus_corner.go supplies the coefficients
-// from the line-vs-offset-torus tangency and consumes the real roots.
+// deliberately polynomial-only (no geometry).
+//
+// It lives in geom rather than beside its first caller because a quartic is what EVERY conic
+// question reduces to: the blend engine's line-vs-offset-torus tangency supplies one set of
+// coefficients, and a conic sectioned by a conic supplies another through the Weierstrass
+// substitution (RealQuarticRoots' second caller, IntersectConic2d). One solver, at the layer both
+// reach.
 //
 // Ferrari's factoring step is carried out in complex128 throughout (not a hand-rolled case split
 // on the sign of each intermediate radicand): cmplx.Sqrt already handles every sign branch
@@ -33,12 +38,12 @@ const quarticNewtonPolishSteps = 2
 // this is a scale-relative "is this actually real" gate, not a length tolerance.
 const quarticRealImagTol = 1e-9
 
-// realQuarticRoots returns the real roots of c4·t⁴+c3·t³+c2·t²+c1·t+c0=0 (c4≠0), via Ferrari's
+// RealQuarticRoots returns the real roots of c4·t⁴+c3·t³+c2·t²+c1·t+c0=0 (c4≠0), via Ferrari's
 // method (resolvent cubic, largest real root) in complex128 arithmetic, each candidate then
 // Newton-polished against the original real quartic. May return 0–4 roots, deduplicated when two
 // candidates coincide to within a relative floor (a genuinely repeated root, e.g. an exact
 // tangency).
-func realQuarticRoots(c0, c1, c2, c3, c4 float64) []float64 {
+func RealQuarticRoots(c0, c1, c2, c3, c4 float64) []float64 {
 	b3, b2, b1, b0 := c3/c4, c2/c4, c1/c4, c0/c4
 	// Depress: t = y − b3/4 kills the cubic term, giving y⁴+p·y²+q·y+s = 0.
 	p := b2 - 3*b3*b3/8

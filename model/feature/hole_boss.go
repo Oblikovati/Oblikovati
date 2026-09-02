@@ -232,7 +232,7 @@ func (h *HoleFeature) buildTool(body *topo.Body, bore holeBore, into math.UnitVe
 	if h.def.ThroughAll {
 		depth = throughDepth(body, bore.start, into)
 	}
-	return drillToolFrom(bore.start, into, r, depth, bore.entry, featOr(h.featName, "hole"))
+	return cylinderTool(bore.start, into, r, depth, bore.entry, featOr(h.featName, "hole"))
 }
 
 // drill cuts the hole by its type: a counterbore is a shallow recess plus the bore, anything

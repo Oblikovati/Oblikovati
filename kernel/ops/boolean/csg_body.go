@@ -7,7 +7,7 @@ import (
 	"sort"
 
 	"oblikovati.org/kernel/brep"
-	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
@@ -41,6 +41,37 @@ func booleanInputQuality() Quality {
 // before any boolean ran, and the cut that followed was then exactly as wrong as its input. The
 // angle bound is radius-independent (~32 facets/circle at any size, DefaultQuality), which costs
 // the documented ~0.64% inscribed-N-gon bias instead of 36%.
+// # Validity is a post-condition (#3329)
+//
+// The cage this returns becomes an operand the exact planar boolean TRUSTS as valid, so handing
+// back an invalid one launders a defect into a body that looks sound — the boolean then fails, or
+// worse succeeds, somewhere with no connection to the faceting that caused it. An invalid cage is
+// therefore refused (nil) rather than returned, which callers already treat as "keep the analytic
+// body" and route down a path that can report its own failure.
+//
+// This is insurance, not a behaviour change: measured over the whole tier-2 corpus
+// (kernel/... + model/feature) on 2026-09-01, Facet produced an invalid cage ZERO times.
+//
+// # Nothing takes this behind the caller's back any more (#3459)
+//
+// Facet existed because the planar boolean could not consume a curved operand, and
+// model/feature.planarized applied it AUTOMATICALLY to every curved body before a boolean — the
+// defect #3459 names, since faceting is permanent and unrecoverable. That automatic path is gone:
+// the boolean takes analytic operands now, and the whole tier-2 corpus passes without it.
+//
+// Getting there was four fixes, none of them in the boolean's own recognizers:
+//
+//	#3463  the hole feature recorded a 32-gon prism as its REPLAY tool while cutting with the exact
+//	       drill, so a pattern replayed a different solid and the pattern faceted everything to cope
+//	#1689  a chamfer section is swept along its edge and only the LINEAR sweep existed, so a closed
+//	       circular rim — whose two endpoints are the same point — reported "degenerate edge"
+//	#3459  the mixed boolean could not carry a HYPERBOLIC imprint: the section a plane cuts from a
+//	       cone when it runs parallel to the axis, which is what an emboss pad's side faces do
+//
+// What remains is an explicit operation. A caller that genuinely wants a triangle cage can still
+// ask for one, and one case still needs it: joining a block onto a plate with ANALYTIC bores falls
+// to triangle CSG (TestTwoStraddlingHolesStayOnTheExactPath facets first to stay on the exact
+// path). Deleting the function outright waits on that.
 func Facet(b *topo.Body, feat string) *topo.Body {
 	cage := trianglesToBody(bodyTrianglesAt(b, DefaultQuality()), feat)
 	if cage == nil {
@@ -49,7 +80,11 @@ func Facet(b *topo.Body, feat string) *topo.Body {
 	// A one-face-per-triangle cage is combinatorially valid but shreds every flat region into a
 	// diagonal-laced fan; unifying coplanar faces restores each flat region to the single face it
 	// is, so a downstream fillet/boolean does not choke on spurious diagonals (Oblikovati#1693).
-	return brep.UnifyCoplanarFaces(cage, feat)
+	out := brep.UnifyCoplanarFaces(cage, feat)
+	if !Validate(out).ValidSolid() {
+		return nil // refuse rather than launder an invalid cage into a trusted operand (#3329)
+	}
+	return out
 }
 
 // bodyTriangles returns a body's tessellation as CSG triangles, each oriented

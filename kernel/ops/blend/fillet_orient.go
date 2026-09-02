@@ -4,6 +4,7 @@ package blend
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
@@ -48,7 +49,7 @@ func buildEdgeSides(faces []filletFace, rings [][][]int, classes map[[2]int]int)
 			ids := faces[fi].loops[li].srcE
 			for k := range ring {
 				a, b := ring[k], ring[(k+1)%len(ring)]
-				key := seamEdgeKey{probe.Canon2(a, b), edgeClassOf(a, b, probe.SrcIDAt(ids, k), classes)}
+				key := seamEdgeKey{probe.Canon2(a, b), edgeClassOf(a, b, mesh.SrcIDAt(ids, k), classes)}
 				sides[key] = append(sides[key], edgeSide{fi, a, b})
 			}
 		}
@@ -151,8 +152,8 @@ func reverseFilletLoop(loop filletLoop) filletLoop {
 		from, to := loop.pts[(n-i)%n], loop.pts[(n-i-1+n)%n]
 		seg := (n - i - 1 + n) % n
 		out.pts[i] = from
-		out.srcV[i] = probe.SrcIDAt(loop.srcV, (n-i)%n)
-		out.srcE[i] = probe.SrcIDAt(loop.srcE, seg)
+		out.srcV[i] = mesh.SrcIDAt(loop.srcV, (n-i)%n)
+		out.srcE[i] = mesh.SrcIDAt(loop.srcE, seg)
 		if c := curveAt(loop.curves, seg); c != nil {
 			out.curves[i] = reverseSegmentCurve(c, from, mids[seg], to)
 		}

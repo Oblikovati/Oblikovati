@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package blend
+package geom
 
 import (
 	stdmath "math"
@@ -39,7 +39,7 @@ func assertRootsMatch(t *testing.T, name string, got, want []float64) {
 // hand: t⁴−10t³+35t²−50t+24 = 0.
 func TestRealQuarticRoots_FourDistinctRoots(t *testing.T) {
 	t.Parallel()
-	got := realQuarticRoots(24, -50, 35, -10, 1)
+	got := RealQuarticRoots(24, -50, 35, -10, 1)
 	assertRootsMatch(t, "four distinct", got, []float64{1, 2, 3, 4})
 }
 
@@ -47,7 +47,7 @@ func TestRealQuarticRoots_FourDistinctRoots(t *testing.T) {
 // ±1, the other two (±i) must NOT appear.
 func TestRealQuarticRoots_TwoRealTwoComplex(t *testing.T) {
 	t.Parallel()
-	got := realQuarticRoots(-1, 0, 0, 0, 1)
+	got := RealQuarticRoots(-1, 0, 0, 0, 1)
 	assertRootsMatch(t, "two real two complex", got, []float64{-1, 1})
 }
 
@@ -55,7 +55,7 @@ func TestRealQuarticRoots_TwoRealTwoComplex(t *testing.T) {
 // "no real roots" quartic): the physical filter must return nothing.
 func TestRealQuarticRoots_AllComplex(t *testing.T) {
 	t.Parallel()
-	got := realQuarticRoots(1, 0, 0, 0, 1)
+	got := RealQuarticRoots(1, 0, 0, 0, 1)
 	if len(got) != 0 {
 		t.Fatalf("t⁴+1=0: got real roots %v, want none", got)
 	}
@@ -67,7 +67,7 @@ func TestRealQuarticRoots_AllComplex(t *testing.T) {
 // = t⁴-8t³+16t²-t²+4t-20 = t⁴-8t³+15t²+4t-20.
 func TestRealQuarticRoots_RepeatedRoot(t *testing.T) {
 	t.Parallel()
-	got := realQuarticRoots(-20, 4, 15, -8, 1)
+	got := RealQuarticRoots(-20, 4, 15, -8, 1)
 	assertRootsMatch(t, "repeated root", got, []float64{-1, 2, 5}) // 2 appears once (deduplicated)
 }
 
@@ -75,7 +75,7 @@ func TestRealQuarticRoots_RepeatedRoot(t *testing.T) {
 // (t²−1)(t²−4) = 0, roots ±1, ±2.
 func TestRealQuarticRoots_Biquadratic(t *testing.T) {
 	t.Parallel()
-	got := realQuarticRoots(4, 0, -5, 0, 1)
+	got := RealQuarticRoots(4, 0, -5, 0, 1)
 	assertRootsMatch(t, "biquadratic", got, []float64{-2, -1, 1, 2})
 }
 

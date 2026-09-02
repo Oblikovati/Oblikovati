@@ -4,7 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/internal/tol"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"

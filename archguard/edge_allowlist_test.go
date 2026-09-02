@@ -46,54 +46,57 @@ var allowedTreeImports = map[string][]string{
 	// The substrate leaves, lowest first.
 	"kernel/ops/internal/probe":    {"kernel/geom", "kernel/topo", "math"},
 	"kernel/ops/internal/disjoint": {},
-	"kernel/ops/internal/mesh":     {"kernel/diag", "kernel/geom", "kernel/ops/internal/probe", "kernel/topo", "math"},
-	"kernel/ops/internal/tol":      {"kernel/geom", "kernel/ops/internal/mesh", "kernel/topo", "math"},
-	"kernel/ops/internal/retopo": {"kernel/geom", "kernel/ops/internal/mesh", "kernel/ops/internal/probe",
+	"kernel/mesh":                  {"kernel/diag", "kernel/geom", "kernel/topo", "math"},
+	"kernel/ops/internal/tol":      {"kernel/geom", "kernel/mesh", "kernel/topo", "math"},
+	"kernel/ops/internal/retopo": {"kernel/geom", "kernel/mesh", "kernel/ops/internal/probe",
 		"kernel/ops/internal/tol", "kernel/topo", "math"},
 
 	// validate is the post-condition every other family runs, so it sits lowest of the families;
 	// tessellate is a DERIVED view of the B-rep, below everything that models with it.
-	"kernel/ops/validate": {"kernel/brep", "kernel/geom", "kernel/ops/internal/mesh",
+	"kernel/ops/validate": {"kernel/brep", "kernel/geom", "kernel/mesh",
 		"kernel/ops/internal/probe", "kernel/topo", "math"},
 	"kernel/ops/tessellate": {"kernel/brep", "kernel/diag", "kernel/geom", "kernel/meshbool",
-		"kernel/ops/internal/mesh", "kernel/ops/internal/probe", "kernel/ops/validate",
+		"kernel/mesh", "kernel/ops/internal/probe", "kernel/ops/validate",
 		"kernel/predicates", "kernel/topo", "math"},
 	"kernel/ops/transform": {"kernel/geom", "kernel/ops/internal/retopo", "kernel/topo", "math"},
 	// blend is the one fillet/chamfer/draft engine (ADR-0050/0051).
 	"kernel/ops/blend": {"api", "kernel/blend", "kernel/brep", "kernel/diag", "kernel/geom",
-		"kernel/ops/internal/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
+		"kernel/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
 		"kernel/ops/internal/tol", "kernel/ops/tessellate", "kernel/ops/transform",
 		"kernel/ops/validate", "kernel/topo", "math"},
 	// query asks read-only questions of a body, and reads blend's edge convexity.
 	"kernel/ops/query": {"kernel/brep", "kernel/diag", "kernel/geom", "kernel/ops/blend",
-		"kernel/ops/internal/disjoint", "kernel/ops/internal/mesh", "kernel/ops/internal/probe",
+		"kernel/ops/internal/disjoint", "kernel/mesh", "kernel/ops/internal/probe",
 		"kernel/ops/internal/tol", "kernel/ops/tessellate", "kernel/predicates", "kernel/topo", "math"},
 	// boolean is the top of the modelling stack: it certifies each result face against query's
 	// analytic oracle, so nothing below it may import boolean.
 	"kernel/ops/boolean": {"kernel/brep", "kernel/diag", "kernel/geom", "kernel/meshbool",
-		"kernel/ops/internal/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/tol",
+		"kernel/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/tol",
 		"kernel/ops/query", "kernel/ops/tessellate", "kernel/ops/validate", "kernel/topo", "math"},
 	// heal repairs a body on a copy, independent of the modelling stack; surface rebuilds faces
 	// and heals what it rebuilt.
 	"kernel/ops/heal": {"kernel/brep", "kernel/geom", "kernel/ops/internal/disjoint",
-		"kernel/ops/internal/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
+		"kernel/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
 		"kernel/ops/internal/tol", "kernel/ops/tessellate", "kernel/ops/validate", "kernel/topo", "math"},
 	"kernel/ops/surface": {"kernel/brep", "kernel/fit", "kernel/geom", "kernel/ops/heal",
-		"kernel/ops/internal/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
+		"kernel/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
 		"kernel/ops/internal/tol", "kernel/ops/transform", "kernel/ops/validate", "kernel/topo", "math"},
 	// The façade: it forwards the boolean enum and entry points, and keeps the general
 	// operations that belong to no family (section, shell, split, thicken).
 	"kernel/ops": {"kernel/brep", "kernel/diag", "kernel/geom", "kernel/ops/boolean",
-		"kernel/ops/internal/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
+		"kernel/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
 		"kernel/ops/internal/tol", "kernel/ops/query", "kernel/ops/tessellate",
 		"kernel/ops/validate", "kernel/topo", "math"},
 
-	// TODO(#2195, #2196): exchange and hlr sit ABOVE the kernel's operation layer but live
-	// inside kernel/, so these two rows are inversions the ground rules do not allow. They stay
-	// listed — visible where they are enforced — until those issues move the packages out.
-	"kernel/exchange": {"api", "kernel/geom", "kernel/ops", "kernel/ops/query",
-		"kernel/ops/tessellate", "kernel/subd", "kernel/topo", "math"},
-	"kernel/hlr": {"kernel/ops", "kernel/ops/query", "kernel/ops/tessellate", "kernel/topo", "math"},
+	// exchange and hlr are CONSUMERS of geometry, so neither may name the kernel/ops façade —
+	// that would let either reach any operation (#2195, #2196). Each now depends only on the
+	// families it genuinely needs, and both take their VALUE types from kernel/mesh rather than
+	// from an operation package. The kernel/ops/tessellate edge is deliberate and is the rule's
+	// own doing: the ground rules place the tessellator in that family, and a mesh exporter and
+	// an image-space hidden-line engine cannot do their job without it.
+	"kernel/exchange": {"api", "kernel/geom", "kernel/mesh", "kernel/ops/query",
+		"kernel/ops/tessellate", "kernel/ops/validate", "kernel/subd", "kernel/topo", "math"},
+	"kernel/hlr": {"kernel/mesh", "kernel/ops/tessellate", "kernel/topo", "math"},
 	// model -> yamlcodec: the domain serializes recipes/materials through the neutral YAML
 	// leaf (yamlcodec wraps yaml.v3 and imports nothing first-party), NOT the persistence
 	// layer — the B4 (#1615) inversion is gone. Held transitively by TestModelDoesNotImportPersistence.

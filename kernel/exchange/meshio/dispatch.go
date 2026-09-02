@@ -7,7 +7,6 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
@@ -146,14 +145,14 @@ func ExportBodies(format types.ExchangeFormat, bodies []*topo.Body, res types.Me
 
 // encodeMesh encodes an already-tessellated mesh in the given format, returning the bytes
 // and triangle count. fileUnit names the 3MF unit attribute (STL/OBJ are unitless).
-func encodeMesh(format types.ExchangeFormat, mesh *ops.Mesh, fileUnit string) ([]byte, int, error) {
+func encodeMesh(format types.ExchangeFormat, mesh *tessellate.Mesh, fileUnit string) ([]byte, int, error) {
 	switch format {
 	case types.FormatSTL:
-		return encodeBinarySTLMesh(mesh), mesh.TriangleCount(), nil
+		return EncodeBinarySTL(mesh), mesh.TriangleCount(), nil
 	case types.FormatOBJ:
-		return encodeOBJMesh(mesh), mesh.TriangleCount(), nil
+		return EncodeOBJ(mesh), mesh.TriangleCount(), nil
 	case types.Format3MF:
-		data, err := encode3MFMesh(mesh, threeMFUnitName(fileUnit))
+		data, err := Encode3MF(mesh, threeMFUnitName(fileUnit))
 		return data, mesh.TriangleCount(), err
 	default:
 		return nil, 0, fmt.Errorf("meshio: unsupported export format %q (want stl|obj|3mf|gltf)", format)
@@ -173,7 +172,7 @@ func encodeMesh(format types.ExchangeFormat, mesh *ops.Mesh, fileUnit string) ([
 type BodyMesh struct {
 	ID   string
 	Name string
-	Mesh *ops.Mesh
+	Mesh *tessellate.Mesh
 }
 
 // TessellateBodies tessellates each body at q, in input slice order (kernel
@@ -187,7 +186,7 @@ type BodyMesh struct {
 // Example:
 //
 //	meshes, err := meshio.TessellateBodies(bodies, meshio.QualityFor(types.ResolutionHigh))
-func TessellateBodies(bodies []*topo.Body, q ops.Quality) ([]BodyMesh, error) {
+func TessellateBodies(bodies []*topo.Body, q tessellate.Quality) ([]BodyMesh, error) {
 	out := make([]BodyMesh, 0, len(bodies))
 	for i, b := range bodies {
 		if b == nil {
@@ -206,8 +205,8 @@ func TessellateBodies(bodies []*topo.Body, q ops.Quality) ([]BodyMesh, error) {
 // [TessellateBodies] and concatenates the meshes (offsetting indices) so they
 // export as one combined mesh — the legacy STL/OBJ/3MF shape, byte-for-byte
 // unchanged (R4-1).
-func mergeTessellations(bodies []*topo.Body, q ops.Quality) (*ops.Mesh, error) {
-	merged := &ops.Mesh{}
+func mergeTessellations(bodies []*topo.Body, q tessellate.Quality) (*tessellate.Mesh, error) {
+	merged := &tessellate.Mesh{}
 	records, err := TessellateBodies(bodies, q)
 	if err != nil {
 		return nil, err

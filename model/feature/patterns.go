@@ -157,16 +157,20 @@ func (p *patternBase) replicateTools(bodies []*topo.Body, tools []groupTool, tra
 	if len(bodies) == 0 {
 		return Output{Bodies: bodies}, nil
 	}
-	// Re-facet a curved tool (an extruded-circle ANALYTIC cylinder, #129) into a planar B-rep
-	// before the boolean — exactly as combine() does. The planar B-rep boolean hangs/explodes on
-	// a full periodic cylinder face, so a circular pattern of a Ø-hole cut used to blow up into
-	// tens of thousands of edges (#129). A faceted tool is left unchanged.
-	for i := range tools {
-		tools[i].body = planarizedDiag(tools[i].body, feat, rec)
-	}
+	// The operands go to the boolean AS THEY ARE — analytic faces intact. This used to facet both
+	// the tools and the running target first, because the planar B-rep boolean once exploded on a
+	// full periodic cylinder face (#129). That is no longer true: the curved boolean cuts five Ø6
+	// bores from a Ø60 analytic disc in 8 faces / 18 edges, and three bores from a block in 9
+	// faces / 21 edges — both exact, both valid.
+	//
+	// Faceting had become pure loss (#3463). It turned that 8-face wheel core into 194 planar
+	// faces, and every downstream feature — fillet, chamfer, thread, STEP export — then had
+	// facets where the model has cylinders. What made it look necessary was a second defect: the
+	// hole feature RECORDED a 32-gon prism as its replay tool while cutting with the exact drill,
+	// so the pattern replayed a different solid than the one the original hole removed. That is
+	// fixed at the source (cylinderTool), not compensated for here.
 	running := append([]*topo.Body(nil), bodies...)
 	last := len(running) - 1
-	running[last] = planarizedDiag(running[last], feat, rec) // ditto for a curved running target
 	for k := 1; k < len(transforms); k++ {
 		if p.skip(k) {
 			continue

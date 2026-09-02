@@ -3,6 +3,7 @@
 package feature
 
 import (
+	"fmt"
 	stdmath "math"
 	"testing"
 
@@ -138,20 +139,28 @@ func TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial(t *testing.T) {
 	fs, rim := extrudedCylinderTopRim(t, 20, 40)
 	NewDressUpFeatures(fs).AddChamfer([][]byte{rim}, func() float64 { return 10 })
 	fs.Recompute()
-	// The raise is measured against the host the emboss's boolean ACTUALLY consumes, which is the
-	// planarized host, not the analytic one. The glyph tool is a planar wrapped prism, so combine
-	// takes the planar path and facets the cylinder+cone host first — a declared degradation
-	// (planarizedDiag records CodeBooleanAnalyticFaceted), permanent, and 87.09 cm³ of real material,
-	// 280× the glyph. Differencing the two bodies as-measured therefore reports the FACETING, not the
-	// emboss: the analytic host integrates to the exact 45029.494701 (π·20²·40 minus the 45° chamfer)
-	// while the result is a 175-face polyhedron at 44942.403579, so the raise read −87.09 cm³. Both
-	// numbers are right for their own body; the difference is not a raise. Against the host the
-	// operation consumed — planarized to 44942.091693, which is also exactly what the mesh integrator
-	// used to report for the analytic host, so this is the comparison the pre-analytic test was making
-	// all along — the raise is the glyph alone. (Making the emboss keep the analytic host is
-	// Oblikovati/Oblikovati#1601's curved-boolean gap, not this test's subject.)
-	before := query.BodyGeometryProperties(planarized(fs.Result()[0], "combine-target"), ops.DefaultQuality()).Volume
+	// The emboss now joins onto the chamfer cone ANALYTICALLY (#3459): the result keeps the host's
+	// cone, cylinder and caps as analytic faces and adds the pad's own, where it used to hand back a
+	// 1234-face polyhedron. That changed what this test can honestly measure.
+	//
+	// It used to difference two whole-body volumes. That worked only while BOTH sides were faceted,
+	// so the inscribed-polyhedron bias cancelled — the comments this replaces spent a paragraph
+	// explaining that the baseline had to be planarized for exactly that reason. Against an analytic
+	// result BOTH sides integrate in closed form and agree with the mesh to every digit (45029.796846,
+	// the body closing to 1.2e-13 of its own area), so the difference is honest again — but it is still
+	// the wrong instrument: a 0.3 cm³ raise is a 7e-6 relative change on a 45029 cm³ body, and meshed at
+	// property quality the readout alone carries about 1 cm³ of noise, 3× the whole glyph.
+	//
+	// The kernel rules say as much: "Result gates are per-face (area, surface type, loop count)
+	// against the oracle. A whole-body volume or area match is a smoke test, never a proof." So the
+	// gate below is per-face, and it is a stronger statement than the band was: the glyph exists, it
+	// is an analytic cone, its area is the sketch's 1 cm², and the host's cone carries the matching
+	// footprint hole.
 	cone, key := coneFaceOf(t, fs.Result()[0])
+	bareConeArea, ok := query.AnalyticFaceArea(soleConeFace(t, fs.Result()[0]))
+	if !ok {
+		t.Fatal("the host chamfer cone's area is not analytically measurable before the emboss")
+	}
 
 	// Sketch origin mid-band on the chamfer cone (its slant runs ≈14→28); a 1×1 cm raise sits well
 	// inside it. Depth 0.3 cm along the surface normal.
@@ -166,10 +175,83 @@ func TestWrappedEmbossOnConeIsAValidSolidThatAddsMaterial(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("cone-wrapped emboss is not a valid solid: %+v", r.Issues)
 	}
-	raise := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume - before
-	if raise < 0.1 || raise > 0.6 {
-		t.Errorf("cone emboss raised %g cm³, want a ~1cm²×0.3cm glyph-sized raise in [0.1, 0.6]", raise)
+	// The host's chamfer cone must SURVIVE as a cone and carry the glyph's footprint as a second
+	// loop; the glyph's own top must be a cone of the sketch's area. Both areas are checked against
+	// the analytic integrator, which is more exact than the tessellation it would otherwise be
+	// measured by.
+	var hostCone, glyphTop *topo.Face
+	for _, f := range body.Faces() {
+		if _, isCone := f.Geometry().(geom.Cone); !isCone {
+			continue
+		}
+		if len(f.Loops()) > 1 {
+			hostCone = f
+			continue
+		}
+		glyphTop = f
 	}
+	if hostCone == nil {
+		t.Fatalf("the host chamfer cone did not survive the emboss as a cone with a footprint hole; "+
+			"faces are %v", faceKindCounts(body))
+	}
+	if glyphTop == nil {
+		t.Fatalf("the raised glyph has no analytic cone top; faces are %v", faceKindCounts(body))
+	}
+	// The footprint must be REMOVED from the host cone, not added to it. The hole straddles the
+	// cone's parameter seam, and an even-odd nesting test asked on one branch of the chart read it
+	// as a top-level loop and ADDED its measure — the host came out 1333.86 cm² where its own
+	// undrilled band is 1332.86 (Oblikovati/Oblikovati#3505).
+	hostArea, ok := query.AnalyticFaceArea(hostCone)
+	if !ok {
+		t.Fatal("the host cone's area is not analytically measurable")
+	}
+	if removed := bareConeArea - hostArea; removed < 0.9 || removed > 1.15 {
+		t.Errorf("the emboss removed %g cm² from the host cone (%g → %g), want the sketch's 1 cm²; a "+
+			"NEGATIVE figure means the footprint hole was added to the face instead of subtracted",
+			removed, bareConeArea, hostArea)
+	}
+	area, ok := query.AnalyticFaceArea(glyphTop)
+	if !ok {
+		t.Fatal("the glyph top's area is not analytically measurable")
+	}
+	if area < 0.9 || area > 1.15 {
+		t.Errorf("the raised glyph's top is %g cm², want the sketch's 1 cm² (wrapping a 1×1 rectangle "+
+			"onto a cone stretches it slightly)", area)
+	}
+	// No faceting: the only planar faces are the host's two caps and the pad's own walls.
+	if n := faceKindCounts(body)["geom.Plane"]; n > 10 {
+		t.Errorf("the emboss produced %d planar faces; the host was faceted instead of joined "+
+			"analytically (a faceted result runs to ~1234)", n)
+	}
+}
+
+// soleConeFace is the body's one and only cone face, so a later measurement of "the host cone" is
+// anchored to the same surface the emboss is about to cut into.
+func soleConeFace(t *testing.T, b *topo.Body) *topo.Face {
+	t.Helper()
+	var out *topo.Face
+	for _, f := range b.Faces() {
+		if _, isCone := f.Geometry().(geom.Cone); !isCone {
+			continue
+		}
+		if out != nil {
+			t.Fatalf("the fixture has more than one cone face; faces are %v", faceKindCounts(b))
+		}
+		out = f
+	}
+	if out == nil {
+		t.Fatalf("the fixture has no cone face; faces are %v", faceKindCounts(b))
+	}
+	return out
+}
+
+// faceKindCounts tallies a body's faces by surface kind — the per-face view these gates read.
+func faceKindCounts(b *topo.Body) map[string]int {
+	out := map[string]int{}
+	for _, f := range b.Faces() {
+		out[fmt.Sprintf("%T", f.Geometry())]++
+	}
+	return out
 }
 
 // TestConeWrapRejectsNonTangentPlane refuses a plane the cone wrap is not defined on: a

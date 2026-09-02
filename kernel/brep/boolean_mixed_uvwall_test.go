@@ -181,7 +181,11 @@ func TestConicCrossesFaceBoundary(t *testing.T) {
 		if !ok {
 			t.Fatal("toPlaneConic failed on a circle in the face plane")
 		}
-		if got := conicCrossesFaceBoundary(pc, top); got != c.want {
+		got, decided := conicCrossesFaceBoundary(pc, top)
+		if !decided {
+			t.Fatalf("radius %g: the crossing test could not decide on an all-straight face", c.radius)
+		}
+		if got != c.want {
 			t.Errorf("radius %g: crosses = %v, want %v", c.radius, got, c.want)
 		}
 	}
@@ -226,8 +230,9 @@ func TestWallSectionIslandStraddlingRimDeclines(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if island, ok := wallSectionIsland(circle, planeFaceAtZ(t, plate, 3), rs); island || ok {
-		t.Errorf("a section on the band rim = (%v,%v), want (false,false) — a named decline", island, ok)
+	if pieces, ok := wallSectionIsland(circle, planeFaceAtZ(t, plate, 3), rs); len(pieces) > 0 || ok {
+		t.Errorf("a section on the band rim gave %d pieces, ok=%v; want none and a named decline",
+			len(pieces), ok)
 	}
 }
 

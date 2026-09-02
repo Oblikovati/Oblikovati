@@ -63,3 +63,22 @@ func CircleByThreePoints(a, b, c math.Point3) (Circle, error) {
 	ref, _ := math.UnitVector3FromVector(center.VectorTo(a))
 	return Circle{Center: center, Normal: n, RefDir: ref, Radius: center.DistanceTo(a)}, nil
 }
+
+// AsCircle returns the full circle a curve runs on, when it is one.
+//
+// It exists so a consumer does not have to type-assert a geometry kind to ask a geometric
+// question. The kernel ground rules put geometry-kind switches in this package only —
+// "behaviour many operations need is a method on geom.Surface/geom.Curve" — and several
+// operations need exactly this: the chamfer and fillet ask it to decide whether an edge is a
+// rim they can sweep rotationally, and the drill recognizers ask it of an imprint.
+//
+// A circular ARC is not a circle: it carries its own curve type and its own sweep, and an
+// operation that treats a 90° arc as a full rim would revolve a tool all the way round.
+//
+// Example:
+//
+//	if c, ok := geom.AsCircle(edge.Geometry()); ok { axis := c.Normal }
+func AsCircle(c Curve3) (Circle, bool) {
+	circle, ok := c.(Circle)
+	return circle, ok
+}

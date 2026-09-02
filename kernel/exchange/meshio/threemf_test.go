@@ -7,9 +7,11 @@ import (
 	"os"
 	"testing"
 
+	"oblikovati.org/kernel/ops/validate"
+
 	"oblikovati.org/api/types"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 )
 
 func TestDecode3MFHandAuthoredTetrahedronIsWatertightSolid(t *testing.T) {
@@ -28,7 +30,7 @@ func TestDecode3MFHandAuthoredTetrahedronIsWatertightSolid(t *testing.T) {
 	if !body.IsSolid() {
 		t.Fatalf("hand-authored 3MF tetra did not import as a solid; warnings=%v", warns)
 	}
-	if r := ops.Validate(body); !r.Valid {
+	if r := validate.Validate(body); !r.Valid {
 		t.Fatalf("3MF tetra is not valid: %v", r.Issues)
 	}
 }
@@ -38,7 +40,7 @@ func TestThreeMFRoundTripCubePreservesSolidAndVolume(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build source: %v", err)
 	}
-	data, err := Encode3MF(src, ops.DefaultQuality())
+	data, err := Encode3MF(tessellateOne(src), "millimeter")
 	if err != nil {
 		t.Fatalf("Encode3MF: %v", err)
 	}
@@ -53,7 +55,7 @@ func TestThreeMFRoundTripCubePreservesSolidAndVolume(t *testing.T) {
 	if !body.IsSolid() {
 		t.Fatalf("round-tripped 3MF cube is not a solid")
 	}
-	got := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	got := query.BodyGeometryProperties(body, tessellate.DefaultQuality()).Volume
 	if want := 8.0; stdmath.Abs(got-want) > 1e-4 {
 		t.Errorf("3MF round-trip volume = %v, want %v", got, want)
 	}

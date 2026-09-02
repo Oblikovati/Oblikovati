@@ -7,13 +7,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/kernel/exchange/meshio"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange"
-	"oblikovati.org/kernel/exchange/meshio"
 	"oblikovati.org/kernel/exchange/step"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/param"
+	"oblikovati.org/test-utilities/opfixture"
 )
 
 // cubeSTLBytes builds a side-2 cube as binary STL — file bytes for the import readers.
@@ -23,7 +24,7 @@ func cubeSTLBytes(t *testing.T) []byte {
 	if err != nil {
 		t.Fatalf("build cube: %v", err)
 	}
-	return meshio.EncodeBinarySTL(body, ops.DefaultQuality())
+	return opfixture.STLBytes(body)
 }
 
 // TestImportBodiesFromDataScalesByTargetUnit verifies the ADR-0042 Phase 2 import boundary

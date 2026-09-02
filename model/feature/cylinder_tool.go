@@ -5,6 +5,7 @@ package feature
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -35,6 +36,27 @@ func drillTool(center math.Point3, axisInto math.UnitVector3, radius, depth floa
 func drillToolFrom(center math.Point3, axisInto math.UnitVector3, radius, depth, entry float64, feat string) *topo.Body {
 	plane := planePerp(center, axisInto)
 	return buildPrism(regularPolygon(radius, holeFacets), plane, span{near: -entry, far: depth}, 0, feat)
+}
+
+// cylinderTool is [drillToolFrom]'s ANALYTIC twin: the same swept volume as a real
+// geom.Cylinder rather than a holeFacets-gon prism.
+//
+// It exists for the tool a hole RECORDS for replay, not for the tool it cuts with — the cut goes
+// through the exact brep.Cut*Hole builders. A pattern re-applies the recorded tool at each
+// occurrence, so a faceted one made the pattern remove a different volume from the one the
+// original hole removed, and shattered the target's analytic faces on the way: a 3-up pattern of
+// one Ø2 bore turned a 7-face body into 5234 planar faces (#3463). The boolean handles the
+// analytic cylinder directly.
+//
+// Falls back to the prism only if the cylinder cannot be built (a degenerate radius or height),
+// so a caller always gets a tool.
+func cylinderTool(center math.Point3, axisInto math.UnitVector3, radius, depth, entry float64, feat string) *topo.Body {
+	base := center.TranslateBy(axisInto.AsVector().Scale(math.Scalar(-entry)))
+	cyl, err := brep.SolidCylinder(base, axisInto.AsVector(), radius, depth+entry)
+	if err != nil || cyl == nil {
+		return drillToolFrom(center, axisInto, radius, depth, entry, feat)
+	}
+	return cyl
 }
 
 // regularPolygon returns an n-gon of the given radius centered at the origin, wound

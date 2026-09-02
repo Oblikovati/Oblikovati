@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )

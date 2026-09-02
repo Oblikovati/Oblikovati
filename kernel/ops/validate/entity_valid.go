@@ -5,7 +5,7 @@ package validate
 import (
 	"fmt"
 
-	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/topo"
 )
 

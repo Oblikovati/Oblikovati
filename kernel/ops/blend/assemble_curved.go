@@ -4,7 +4,7 @@ package blend
 
 import (
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops/internal/mesh"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/internal/tol"
 	"oblikovati.org/kernel/topo"
@@ -129,7 +129,7 @@ func curvedSolid(faces []filletFace, rings [][][]int, classes map[[2]int]int) bo
 			ids := faces[fi].loops[li].srcE
 			for k := range ring {
 				a, b := ring[k], ring[(k+1)%len(ring)]
-				use[seamEdgeKey{probe.Canon2(a, b), edgeClassOf(a, b, probe.SrcIDAt(ids, k), classes)}]++
+				use[seamEdgeKey{probe.Canon2(a, b), edgeClassOf(a, b, mesh.SrcIDAt(ids, k), classes)}]++
 			}
 		}
 	}
@@ -151,7 +151,7 @@ func pairEdgeClasses(faces []filletFace, rings [][][]int) map[[2]int]int {
 		for li, ring := range rings[fi] {
 			ids := faces[fi].loops[li].srcE
 			for k := range ring {
-				id := probe.SrcIDAt(ids, k)
+				id := mesh.SrcIDAt(ids, k)
 				if id == 0 {
 					continue
 				}
@@ -249,7 +249,7 @@ func isClosedSeam(a, b int, curve geom.Curve3, weld float64) bool {
 func curvedLoopSpec(outer bool, ring []int, curves []geom.Curve3, srcE []uint64, ec *edgeCatalog) topo.LoopSpec {
 	uses := make([]topo.Use, len(ring))
 	for k := range ring {
-		uses[k] = ec.use(ring[k], ring[(k+1)%len(ring)], curveAt(curves, k), probe.SrcIDAt(srcE, k))
+		uses[k] = ec.use(ring[k], ring[(k+1)%len(ring)], curveAt(curves, k), mesh.SrcIDAt(srcE, k))
 	}
 	if outer {
 		return topo.OuterLoop(uses...)

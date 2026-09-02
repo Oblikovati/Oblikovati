@@ -337,7 +337,9 @@ func scaleNote(scale float64) string {
 // plain hidden-line projection for every other kind.
 func (v *DrawingView) project(body *topo.Body, basis hlr.View) []hlr.Segment {
 	if v.viewType == types.DrawingViewSection || v.viewType == types.DrawingViewSlice {
-		return hlr.ProjectSectionOpts(body, basis, ops.DefaultQuality(), v.sectionOpts)
+		o := v.sectionOpts
+		o.Section = ops.SectionWithPlane // hlr does not import the operation layer (#2196)
+		return hlr.ProjectSection(body, basis, ops.DefaultQuality(), o)
 	}
 	return hlr.Project(body, basis, ops.DefaultQuality())
 }

@@ -2,7 +2,7 @@
 
 package validate
 
-import "oblikovati.org/kernel/ops/internal/mesh"
+import "oblikovati.org/kernel/mesh"
 
 // The mesh types the fold and self-intersection checks read, named here so a caller of this
 // package spells them the same way it spells them everywhere else in kernel/ops.

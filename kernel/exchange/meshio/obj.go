@@ -9,9 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/tessellate"
-	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -108,19 +106,14 @@ func resolveOBJIndex(tok string, n int) (int, error) {
 	return v, nil
 }
 
-// EncodeOBJ tessellates body at quality q and writes a Wavefront OBJ (v + f records,
-// 1-based indices). The resolution knob applies through q.
+// EncodeOBJ writes an already-tessellated mesh as a Wavefront OBJ (v + f records, 1-based
+// indices). The resolution knob lives with whoever tessellated: an encoder RECEIVES a mesh,
+// it does not compute one (#2195).
 //
 // Example:
 //
-//	data := meshio.EncodeOBJ(body, meshio.QualityFor(types.ResolutionMedium))
-func EncodeOBJ(body *topo.Body, q ops.Quality) []byte {
-	mesh, _ := tessellate.TessellateBody(body, q)
-	return encodeOBJMesh(mesh)
-}
-
-// encodeOBJMesh writes an already-tessellated mesh as a Wavefront OBJ.
-func encodeOBJMesh(mesh *ops.Mesh) []byte {
+//	data := meshio.EncodeOBJ(m)
+func EncodeOBJ(mesh *tessellate.Mesh) []byte {
 	var buf bytes.Buffer
 	buf.WriteString("# Oblikovati mesh export\n")
 	for _, p := range mesh.Positions {

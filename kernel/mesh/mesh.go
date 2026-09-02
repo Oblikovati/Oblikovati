@@ -3,11 +3,15 @@
 // Package mesh holds the tessellation VALUE TYPES — the triangle mesh a tessellator
 // produces and the tolerance pair that controls its density.
 //
-// They live below kernel/ops because every operation family needs them: the blend
-// engine, the boolean, the validator and the query layer all speak Mesh and Quality,
-// so leaving them in kernel/ops made each of those an ops-internal symbol and any
-// split of the package impossible. kernel/ops re-exports both as type aliases, so no
-// call site outside the kernel changes (ops.Mesh IS mesh.Mesh).
+// They live BELOW the operation layer because a mesh is a value, not an operation, and
+// almost everything speaks it: the blend engine, the boolean, the validator and the query
+// layer inside kernel/ops, and outside it the mesh-format codecs (kernel/exchange/meshio),
+// hidden-line removal (kernel/hlr), the renderer and the head. While these types were
+// ops-internal, any of those consumers had to import an OPERATION package to name a value
+// type, which inverts geom → topo → mesh → brep → ops → model (#2195, #2196).
+//
+// kernel/ops and kernel/ops/tessellate re-export Mesh and Quality as type aliases, so no
+// existing call site changed: ops.Mesh IS mesh.Mesh.
 //
 //	m := &mesh.Mesh{}
 //	i := m.AddVertex(p, n)
@@ -17,7 +21,6 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/diag"
-	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
 )
 
@@ -222,7 +225,7 @@ func (w *PointWelder) WeldRing(r []math.Point3) []int {
 func (w *PointWelder) WeldRingID(pts []math.Point3, ids []uint64) []int {
 	out := make([]int, len(pts))
 	for i, p := range pts {
-		out[i] = w.AddID(p, probe.SrcIDAt(ids, i))
+		out[i] = w.AddID(p, SrcIDAt(ids, i))
 	}
 	return out
 }
@@ -239,4 +242,57 @@ func (m *Mesh) Area() float64 {
 		area += 0.5 * float64(a.VectorTo(b).Cross(a.VectorTo(c)).Length())
 	}
 	return area
+}
+
+// SrcIDAt returns ids[i] or 0 when the point has no carried identity.
+func SrcIDAt(ids []uint64, i int) uint64 {
+	if i < len(ids) {
+		return ids[i]
+	}
+	return 0
+}
+
+// RayTriangleDist returns the positive distance along the ray to triangle abc, via
+// Möller–Trumbore, or ok=false if there is no forward hit.
+func RayTriangleDist(orig math.Point3, dir math.Vector3, a, b, c math.Point3) (float64, bool) {
+	const eps = 1e-9
+	e1 := a.VectorTo(b)
+	e2 := a.VectorTo(c)
+	pv := dir.Cross(e2)
+	det := e1.Dot(pv)
+	if det > -eps && det < eps {
+		return 0, false
+	}
+	inv := 1 / det
+	tv := a.VectorTo(orig)
+	u := tv.Dot(pv) * inv
+	if u < 0 || u > 1 {
+		return 0, false
+	}
+	qv := tv.Cross(e1)
+	v := dir.Dot(qv) * inv
+	if v < 0 || u+v > 1 {
+		return 0, false
+	}
+	t := e2.Dot(qv) * inv
+	return t, t > eps
+}
+
+// RayCast returns the nearest FORWARD hit distance of the ray (origin, dir) against the mesh's
+// triangles, and whether any was hit. It is a method so a caller can ray-test a mesh it already
+// holds — the hidden-line engine occlusion-tests projected edge points against a once-tessellated
+// body — without re-tessellating per ray, and without reaching into an operation package for a
+// pure mesh query (#2196).
+func (m *Mesh) RayCast(origin math.Point3, dir math.Vector3) (float64, bool) {
+	best := stdmath.Inf(1)
+	hit := false
+	for i := 0; i+2 < len(m.Indices); i += 3 {
+		a := m.Positions[m.Indices[i]]
+		b := m.Positions[m.Indices[i+1]]
+		c := m.Positions[m.Indices[i+2]]
+		if t, ok := RayTriangleDist(origin, dir, a, b, c); ok && t < best {
+			best, hit = t, true
+		}
+	}
+	return best, hit
 }

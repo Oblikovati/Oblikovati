@@ -9,7 +9,7 @@
 // and nothing in the modelling layers may read what it produces to make one.
 package tessellate
 
-import "oblikovati.org/kernel/ops/internal/mesh"
+import "oblikovati.org/kernel/mesh"
 
 // Mesh and Quality are aliases of the shared value types, declared here as well as in
 // kernel/ops so this package's 53 files keep naming them unqualified. That is not

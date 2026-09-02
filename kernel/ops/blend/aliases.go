@@ -10,7 +10,7 @@
 // live in kernel/blend, which this package uses; #2200 tracks resolving the two.
 package blend
 
-import "oblikovati.org/kernel/ops/internal/mesh"
+import "oblikovati.org/kernel/mesh"
 
 // Mesh and Quality are aliases of the shared value types, declared here as well as in
 // kernel/ops so this package's files keep naming them unqualified — the same reason

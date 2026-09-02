@@ -111,13 +111,11 @@ func pairUVWallImprints(p, other *facePartition, uvImp, wallImp [][]geom.Curve3)
 }
 
 // uvWallSharedImprint is the exact shared imprint of one (uv face, ruled wall) pair: the plane∩ruled
-// section curves, kept when they are closed conic islands inside both trims. ok=false declines — a
-// conic-framed receiver (a cap's rim circle would need conic×conic frame crossings), an unhandled surface
-// pair, or a section that clips either trim.
+// section curves, kept when they are closed conic islands inside both trims. ok=false declines — an
+// unhandled surface pair, a section that clips either trim, or a boundary edge whose crossings cannot
+// be decided in closed form. A conic-framed receiver is no longer among them: conicEdgeCrossings
+// meets an arc boundary with the conic×conic substitution (#3503).
 func uvWallSharedImprint(uf, wf curvedFace) ([]geom.Curve3, bool) {
-	if !allStraightFace(uf) {
-		return nil, false
-	}
 	rs, ok := ruledSideBandOf(wf)
 	if !ok {
 		return nil, false
@@ -134,48 +132,53 @@ func uvWallSharedImprint(uf, wf curvedFace) ([]geom.Curve3, bool) {
 func collectWallIslands(curves []geom.Curve3, uf curvedFace, rs ruledSide) ([]geom.Curve3, bool) {
 	var out []geom.Curve3
 	for _, cv := range curves {
-		island, ok := wallSectionIsland(cv, uf, rs)
+		pieces, ok := wallSectionIsland(cv, uf, rs)
 		if !ok {
 			return nil, false
 		}
-		if island {
-			out = append(out, cv)
-		}
+		out = append(out, pieces...)
 	}
 	return out, true
 }
 
-// wallSectionIsland decides one plane∩wall section curve. island=true: a closed conic wholly inside the
-// face polygon AND strictly inside the wall band — a genuine shared imprint. island=false, ok=true: the
-// curve is clear of the face or of the band, so this pair has no imprint. ok=false: it clips a trim (a
-// partial arc the two arrangements would terminate differently), or it is not a conic at all.
-func wallSectionIsland(cv geom.Curve3, uf curvedFace, rs ruledSide) (island, ok bool) {
+// wallSectionIsland decides one plane∩wall section curve, returning the imprint pieces it contributes.
+// A closed conic wholly inside the face polygon AND strictly inside the wall band contributes itself; a
+// curve CROSSING the face's trim contributes the runs of it that lie inside (clipSectionToFace); a
+// curve clear of either contributes nothing. ok=false when it is not a conic, when it straddles a rim,
+// or when a crossing run cannot be bounded.
+func wallSectionIsland(cv geom.Curve3, uf curvedFace, rs ruledSide) ([]geom.Curve3, bool) {
 	center, amp, isConic := conicAxialSpan(cv, rs.axis)
 	if !isConic {
-		return false, false
+		return nil, false
 	}
 	inFace, exact := conicIslandInFace(cv, uf)
 	if !exact {
-		return false, false
+		// The section CROSSES this face's trim rather than sitting inside it. Clip it HERE, once,
+		// to the span between its outermost crossings, and hand that one bounded arc to both
+		// sides. That is what makes the corners shared: each side would otherwise clip the
+		// unbounded curve in its own chart — the face against its polygon, the wall against its
+		// neighbouring sections — and arrive at the same corner by two routes, leaving a T-junction
+		// the stitch cannot weld (#3459).
+		return clipSectionToFace(cv, uf)
 	}
 	if !inFace {
-		return false, true
+		return nil, true
 	}
 	inside, clear := conicBandPlacement(center, amp, rs)
-	return inside, inside || clear
+	if inside {
+		return []geom.Curve3{cv}, true
+	}
+	return nil, clear
 }
 
 // conicAxialSpan returns the section conic's centre and its axial half-amplitude about that centre — zero
 // for a circle (its plane is perpendicular to the wall axis). isConic=false for any other curve kind.
 func conicAxialSpan(cv geom.Curve3, axis math.Vector3) (center math.Point3, amp float64, isConic bool) {
-	switch c := cv.(type) {
-	case geom.Circle:
-		return c.Center, 0, true
-	case geom.EllipseFull:
-		return c.Center, ellipseAxialAmplitude(c, axis), true
-	default:
+	cf, ok := geom.AsConic(cv)
+	if !ok {
 		return math.Point3{}, 0, false
 	}
+	return cf.Center, cf.AxialAmplitude(axis), true
 }
 
 // conicBandPlacement classifies a conic's axial span against the wall band: inside it strictly (a clean
@@ -194,25 +197,38 @@ func conicBandPlacement(center math.Point3, amp float64, rs ruledSide) (inside, 
 func conicIslandInFace(cv geom.Curve3, f curvedFace) (island, exact bool) {
 	pl := facePlane(f)
 	pc, ok := toPlaneConic(cv, pl)
-	if !ok || conicCrossesFaceBoundary(pc, f) {
+	if !ok {
+		return false, false
+	}
+	crosses, decided := conicCrossesFaceBoundary(pc, f)
+	if !decided || crosses {
 		return false, false
 	}
 	return pointInFace2D(to2D(pl, cv.PointAt(0)), f), true
 }
 
 // conicCrossesFaceBoundary reports an exact crossing of, or a grazing tangency to, the conic on any
-// boundary edge of the polygonal face (the closed-form conic quadratic, no sampling).
-func conicCrossesFaceBoundary(pc planeConic, f curvedFace) bool {
+// boundary edge of the face — in closed form, never by sampling. ok=false when an edge carries a
+// curve with no conic form, which the caller must treat as undecided rather than as "clear".
+//
+// It walks the face's EDGES rather than its ring points. Those agree while every edge is straight,
+// and they part company the moment one is an arc: a ring walk would chord it, which is exact for
+// neither the crossing count nor the tangency (#3503).
+func conicCrossesFaceBoundary(pc planeConic, f curvedFace) (crosses, ok bool) {
 	pl := facePlane(f)
-	for _, ring := range planarRings(f) {
-		for i, n := 0, len(ring); i < n; i++ {
-			hits, tangent := conicEdgeHits(pc, to2D(pl, ring[i]), to2D(pl, ring[(i+1)%n]), geom.ResolutionForPoints(ring))
-			if tangent || len(hits) > 0 {
-				return true
+	res := geom.ResolutionForBox(faceLoopBox(f))
+	for _, l := range f.loops {
+		for _, e := range l.edges {
+			hits, tangent, got := conicEdgeCrossings(pc, e, pl, res)
+			if !got {
+				return false, false
+			}
+			if tangent || hits > 0 {
+				return true, true
 			}
 		}
 	}
-	return false
+	return false, true
 }
 
 // faceLoopBox is a planar face's exact loop-point bounding box with NO cull pad — the uv bucket's box

@@ -8,9 +8,12 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/kernel/topo"
+
 	"oblikovati.org/api/types"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
 
@@ -86,10 +89,10 @@ func TestSolidOrSurfaceWeldsWatertightSoupIntoSolid(t *testing.T) {
 	if !body.IsSolid() {
 		t.Fatalf("watertight cube did not import as a solid; warnings=%v", warns)
 	}
-	if r := ops.Validate(body); !r.Valid {
+	if r := validate.Validate(body); !r.Valid {
 		t.Fatalf("imported cube is not a valid body: %v", r.Issues)
 	}
-	vol := query.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	vol := query.BodyGeometryProperties(body, tessellate.DefaultQuality()).Volume
 	if want := 8.0; stdmath.Abs(vol-want) > 1e-6 { // 2³
 		t.Errorf("volume = %v, want %v", vol, want)
 	}
@@ -121,4 +124,12 @@ func TestQualityForIsMonotonicAcrossResolutions(t *testing.T) {
 	if QualityFor("").ChordTolerance != med.ChordTolerance {
 		t.Errorf("empty resolution did not normalize to medium")
 	}
+}
+
+// tessellateOne is the one-body tessellation the encoder tests need now that an encoder takes
+// a mesh rather than a body (#2195). It lives in the test file, not the package, because
+// tessellating is the CALLER's job — that is the whole point of the change.
+func tessellateOne(b *topo.Body) *tessellate.Mesh {
+	m, _ := tessellate.TessellateBody(b, tessellate.DefaultQuality())
+	return m
 }

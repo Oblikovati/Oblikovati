@@ -10,7 +10,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange"
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -61,7 +61,7 @@ func ExportBodiesGLTF(bodies []*topo.Body, res types.MeshResolution, opts exchan
 // (R2-8/R3-5), tessellate the rest once (R4-1), sanitize per body, build the
 // JSON document + BIN buffer, and wrap the GLB container. The complete GLB is
 // built in memory before any destination write (R4-9).
-func encodeGLTFBodies(bodies []*topo.Body, q ops.Quality, opts exchange.TranslationOptions) ([]byte, int, []string, error) {
+func encodeGLTFBodies(bodies []*topo.Body, q tessellate.Quality, opts exchange.TranslationOptions) ([]byte, int, []string, error) {
 	warnings, exportable, err := exportableBodies(bodies)
 	if err != nil {
 		return nil, 0, nil, err
@@ -194,7 +194,7 @@ func sanitizeGLTFBody(bm BodyMesh, scale float64) (*gltfBody, error) {
 // (R3-4): positions are VEC3 triples, normals match positions, indices are
 // triangle triples, and every index is in range. Violations are typed
 // body-specific errors naming the offending value.
-func validateGLTFMesh(id string, m *ops.Mesh) error {
+func validateGLTFMesh(id string, m *tessellate.Mesh) error {
 	if len(m.Normals) != len(m.Positions) {
 		return gltfErr("body "+id+" normal count", fmt.Sprintf("%d != position count %d", len(m.Normals), len(m.Positions)))
 	}
@@ -215,7 +215,7 @@ func validateGLTFMesh(id string, m *ops.Mesh) error {
 // swizzled only, both narrowed to float32. A vertex is valid when every packed
 // component is finite — including float64-finite values that overflow to Inf on
 // float32 conversion (R4-3).
-func packGLTFVertices(m *ops.Mesh, scale float64) (pos, norm []float32, valid []bool) {
+func packGLTFVertices(m *tessellate.Mesh, scale float64) (pos, norm []float32, valid []bool) {
 	vertCount := len(m.Positions)
 	pos = make([]float32, 3*vertCount)
 	norm = make([]float32, 3*vertCount)
@@ -242,7 +242,7 @@ func finite32(v float32) bool {
 // indices are distinct, whose normals are non-zero (R4-5), and whose packed
 // positions are non-degenerate (R4-4). The kept indices are returned in
 // original order.
-func filterGLTFTriangles(m *ops.Mesh, pos, norm []float32, valid []bool) []uint32 {
+func filterGLTFTriangles(m *tessellate.Mesh, pos, norm []float32, valid []bool) []uint32 {
 	kept := make([]uint32, 0, len(m.Indices))
 	for t := 0; t+2 < len(m.Indices); t += 3 {
 		i, j, k := m.Indices[t], m.Indices[t+1], m.Indices[t+2]

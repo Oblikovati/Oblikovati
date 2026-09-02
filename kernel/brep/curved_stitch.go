@@ -269,9 +269,13 @@ func edgeCurveFor(le loopEdge) geom.Curve3 {
 // sub-range: a hyperbola/parabola to its bounded arc, an elliptical arc as-is, a full ellipse to the
 // elliptical arc over [t0, t1]. Any other curve is stored whole.
 func conicEdgeCurveFor(le loopEdge) geom.Curve3 {
+	// Both hyperbola forms restrict through geom, which knows what each one's parameter means: a
+	// Hyperbola's is θ, an already-bounded HyperbolicArc's is its own [0,1]. Storing a pre-clipped
+	// arc unsliced would leave the edge's curve spanning more than its two vertices (#3459).
+	if arc, ok := geom.ConicSubArc(le.curve, le.t0, le.t1); ok {
+		return arc
+	}
 	switch c := le.curve.(type) {
-	case geom.Hyperbola:
-		return c.Arc(le.t0, le.t1) // a hyperbola loop edge's params are θ; the bounded arc is what the edge stores
 	case geom.Parabola:
 		return c.Arc(le.t0, le.t1) // a parabola loop edge's params are the cross coordinate t; store the bounded arc
 	case geom.EllipticalArc:

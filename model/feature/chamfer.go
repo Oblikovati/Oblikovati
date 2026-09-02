@@ -282,11 +282,19 @@ func wedgePrism(fr edgeFrame, s1, s2, overhang float64, run chamferRun, feat str
 // adjacent faces' interiors, with an overhang past each end so the boolean meets the neighbours
 // flush. Equal d1==d2 is the symmetric chamfer; d1≠d2 is the asymmetric two-distance / angle one.
 func chamferWedge(edge *topo.Edge, d1, d2 float64, run chamferRun, feat string) (*topo.Body, error) {
+	s1, s2 := orderedSetbacks(edge, d1, d2, run.reference)
+	// A CLOSED circular rim is swept rotationally, not linearly — see chamfer_rim_wedge.go. A
+	// partial chamfer covers only a span of the rim, which a full revolve cannot express, so it
+	// stays on the prism (which its own span logic already handles).
+	if c, ok := closedCircularRim(edge); ok && !run.isPartial() {
+		if tool, ok := revolvedChamferWedge(edge, c, s1, s2, feat); ok {
+			return tool, nil
+		}
+	}
 	fr, err := edgeCornerFrame(edge, "chamfer")
 	if err != nil {
 		return nil, err
 	}
-	s1, s2 := orderedSetbacks(edge, d1, d2, run.reference)
 	return wedgePrism(fr, s1, s2, chamferOverhang(s1, s2), run, feat), nil
 }
 

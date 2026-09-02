@@ -61,6 +61,14 @@ func inflateBox(b math.Box) math.Box {
 // when no closed-form proof applies. The other face must be polygonal-planar (its trim is exact rings);
 // the pass face is proven per surface kind.
 func passPairClear(pf, of curvedFace) bool {
+	// A SURFACE-level separation proof needs no trim at all: when the two surfaces never meet,
+	// no patch of one can touch any patch of the other. It is the general form of the
+	// parallel-planes clause below, and it is what clears an emboss pad seated on a chamfer cone —
+	// the seat is the host cone sunk by the wrap sagitta, i.e. the same cone with a shifted apex,
+	// so the two are everywhere |Δ|·sin(halfAngle) apart (#3459).
+	if geom.SurfacesApart(pf.surface, of.surface, facePairCullPad) {
+		return true
+	}
 	if !allStraightFace(of) {
 		return false
 	}
@@ -136,17 +144,14 @@ func cylinderPassClear(pf, of curvedFace) bool {
 // curveTouchesWallAndTool reports whether one plane∩cylinder curve enters BOTH trims: the polygonal
 // tool face and the wall's axial band. Unknown curve kinds report touching (conservative).
 func curveTouchesWallAndTool(cv geom.Curve3, of curvedFace, axis math.Vector3, band coneSideBand_) bool {
-	switch c := cv.(type) {
-	case geom.Line:
-		return lineTouchesWallAndTool(c, of, axis, band)
-	case geom.Circle:
-		return conicTouchesTool(cv, of, axis, band, 0)
-	case geom.EllipseFull:
-		amp := ellipseAxialAmplitude(c, axis)
-		return conicTouchesTool(cv, of, axis, band, amp)
-	default:
-		return true
+	if line, ok := cv.(geom.Line); ok {
+		return lineTouchesWallAndTool(line, of, axis, band)
 	}
+	cf, ok := geom.AsConic(cv)
+	if !ok {
+		return true // an unrecognised section: report touching, the conservative answer
+	}
+	return conicTouchesTool(cv, of, axis, band, cf.AxialAmplitude(axis))
 }
 
 // lineTouchesWallAndTool tests one ruling line: its intervals inside the tool polygon, with the axial
@@ -205,17 +210,19 @@ func conicPolygonCrossingInBand(pc planeConic, of curvedFace, axis math.Vector3,
 	return false, any // crossings existed but all outside the band → decided, no touch
 }
 
-// bandV is a point's axial coordinate in the wall band's frame (distance from the bottom rim centre).
+// bandV is a point's axial coordinate in the wall band's OWN v frame — the frame its vMin/vMax are
+// expressed in, which is what every caller compares the result against.
+//
+// The two band builders anchor v differently: a cylinder measures from its bottom rim (vMin=0),
+// a cone from its APEX (vMin = apex→bottom), because a cone's radius is a function of apex
+// distance. What they agree on is that band.bottom sits at v = vMin, so adding vMin to the offset
+// from bottom reads both correctly. Omitting it silently mis-read every CONE band by the
+// apex-to-rim distance — a chamfer cone's sections landed at v=4.5 against a band of [10,20] and
+// so read as "outside the band", which is why an emboss pad on a chamfer never imprinted (#3459).
+// It went unnoticed because the wall-conic path had only ever run against cylinders, where vMin
+// is 0 and the two frames coincide.
 func bandV(p math.Point3, axis math.Vector3, band coneSideBand_) float64 {
-	return float64(band.bottom.VectorTo(p).Dot(axis))
-}
-
-// ellipseAxialAmplitude is the axial half-extent of a plane∩ruled-surface ellipse about its centre.
-func ellipseAxialAmplitude(el geom.EllipseFull, axis math.Vector3) float64 {
-	a := el.MajorRadius * float64(el.MajorAxis.AsVector().Dot(axis))
-	minor := el.Normal.AsVector().Cross(el.MajorAxis.AsVector())
-	b := el.MinorRadius * float64(minor.Dot(axis))
-	return stdmath.Sqrt(a*a + b*b)
+	return band.vMin + float64(band.bottom.VectorTo(p).Dot(axis))
 }
 
 // spansOverlap reports whether [a0,a1] and [b0,b1] come within pad of each other.
