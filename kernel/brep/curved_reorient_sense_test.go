@@ -89,3 +89,43 @@ func TestCurvedReorientTurnsTheShellOutward(t *testing.T) {
 			"sense, so the global bit must be certified against the geometry", vol)
 	}
 }
+
+// TestCurvedReorientAgreesAcrossFaces is the per-face half of the invariant: ONE face out of step with
+// the rest is the shape a wrapped emboss join actually produced, and a global volume flip cannot fix
+// it — the flag has to be DERIVED from each face's own loop winding.
+//
+// The oracle is the UNTOUCHED shell, not an absolute bound: faceVectorArea integrates on the same
+// coarse grid faceVolumeTerm uses, so even a perfectly oriented frustum leaves a few percent of
+// quadrature residue. What a disagreeing face costs is an order larger, and a repaired shell has to
+// land back on the baseline exactly (Oblikovati/Oblikovati#3504).
+func TestCurvedReorientAgreesAcrossFaces(t *testing.T) {
+	t.Parallel()
+	cone, err := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 8, 4, "cone")
+	if err != nil {
+		t.Fatalf("SolidCylinderCone: %v", err)
+	}
+	faces := facesOfAny(cone)
+	if len(faces) < 3 {
+		t.Fatalf("the frustum has %d faces; expected a side and two caps", len(faces))
+	}
+	odd := make([]curvedFace, len(faces))
+	copy(odd, faces)
+	odd[0].reversed = !odd[0].reversed // one face against the grain
+
+	baseVol, baseResid, baseArea := shellSense(t, faces)
+	_, oddResid, oddArea := shellSense(t, odd)
+	if oddResid/oddArea < 10*baseResid/baseArea {
+		t.Fatalf("flipping one face moved the residual from %g to %g per unit area; the fixture no "+
+			"longer reproduces a disagreement", baseResid/baseArea, oddResid/oddArea)
+	}
+	vol, residual, area := shellSense(t, curvedReorient(odd))
+	if stdmath.Abs(residual/area-baseResid/baseArea) > 1e-12 {
+		t.Errorf("after reorientation the faces still disagree about their material side (%g per unit "+
+			"area against the untouched shell's %g); every stored sense must follow its own loop winding",
+			residual/area, baseResid/baseArea)
+	}
+	if stdmath.Abs(vol-baseVol) > 1e-9*stdmath.Abs(baseVol) {
+		t.Errorf("the repaired shell bounds %g, the untouched one %g; reorientation must restore the "+
+			"body, not merely make it self-consistent", vol, baseVol)
+	}
+}

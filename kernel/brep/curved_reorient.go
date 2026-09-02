@@ -27,19 +27,50 @@ import "oblikovati.org/kernel/geom"
 //
 // The sense used to be left to the tessellator's orientFacesOutward, which repairs the per-face MESH and
 // never touches the B-rep — which is why the mesh read the emboss body at +45026 while its own faces said
-// −45005. A modelling attribute cannot be decided downstream of tessellation, so the global bit is
-// certified here against the geometry instead: the divergence theorem over the faces' own analytic
-// surfaces, the same rule reorientFaces applies on the polygonal path and orientFaceSigns applies for the
-// flux classifier.
-//
-// What this settles is the GLOBAL bit, and that is all. A single face out of step with its neighbours
-// survives it — the shell comes back the right way out with its vector area still not closing — because
-// catching that needs a per-face winding rule, which curvedShellPointsInward explains is blocked.
+// −45005. A modelling attribute cannot be decided downstream of tessellation, so it is derived here from
+// the geometry instead: senseFromLoopWinding gives every face the sense its own loop winding implies,
+// with the shell's signed volume settling the one global bit a winding cannot see.
 func curvedReorient(faces []curvedFace) []curvedFace {
 	pw := newWelder3(geom.ResolutionForBox(curvedFaceBox(faces)).Stitch())
 	out := applyCurvedFlips(faces, curvedOrientationFlips(faces, pw))
-	if inward, certain := curvedShellPointsInward(out); certain && inward {
-		return applyCurvedFlips(out, everyFace(len(out)))
+	return senseFromLoopWinding(out)
+}
+
+// senseFromLoopWinding DERIVES every face's stored sense from its own loop winding, which is what ties
+// the reversed flag to the geometry instead of letting it travel independently.
+//
+// It sets the flag ALONE and never touches a loop. That is the whole point: reversing both leaves the
+// disagreement exactly where it was, since a face whose flag contradicts its winding still contradicts
+// it afterwards. Setting the flag alone also leaves the two-colouring's work intact, because traversal
+// consistency is a property of the loops. With every flag agreeing with its own winding AND every
+// shared edge traversed oppositely, the faces' material sides necessarily agree — which is the
+// invariant the two-colouring alone does not give (Oblikovati/Oblikovati#3504).
+//
+// The rule is orientFaceSigns, already the authority for the flux point classifier: each face's outer
+// ring signed area in (u, v), with the shell's own signed volume settling the one global bit a winding
+// cannot see. One mechanism decides orientation for the kernel rather than two that can disagree.
+//
+// This was tried once before and reverted, because loopHandedness could not read a seam-wrapping band:
+// a plate's bore wall reported the handedness of its own opposite and the bore integrated as ADDED,
+// 564.36 against a true 354.92. That was #3506, and it is fixed — the band's rims are now read as the
+// one circuit they bound.
+//
+// A face carrying no usable (u, v) domain leaves the shell exactly as the two-colouring left it: a
+// shell the integrator cannot read is not one this can certify, and guessing is worse.
+func senseFromLoopWinding(faces []curvedFace) []curvedFace {
+	ff := make([]fluxFace, 0, len(faces))
+	for _, f := range faces {
+		region := faceTrimRegion(f)
+		u0, u1, v0, v1, ok := fluxDomain(f, region)
+		if !ok {
+			return faces
+		}
+		ff = append(ff, fluxFace{cf: f, region: region, u0: u0, u1: u1, v0: v0, v1: v1, sign: 1})
+	}
+	out := make([]curvedFace, len(faces))
+	copy(out, faces)
+	for i, sign := range orientFaceSigns(ff) {
+		out[i].reversed = sign < 0
 	}
 	return out
 }
@@ -60,51 +91,6 @@ func applyCurvedFlips(faces []curvedFace, flip []bool) []curvedFace {
 		out[i] = f
 	}
 	return out
-}
-
-// everyFace marks the whole shell, for the global flip that turns an inward-facing colouring outward.
-func everyFace(n int) []bool {
-	all := make([]bool, n)
-	for i := range all {
-		all[i] = true
-	}
-	return all
-}
-
-// curvedShellPointsInward reports whether the shell's STORED senses bound a negative volume — its
-// material-outward normals pointing into the region rather than out of it. It is the divergence theorem
-// over the faces' own analytic surfaces, the same rule reorientFaces already applies on the polygonal
-// path, on the coarse grid orientFaceSigns uses (only the sign is wanted).
-//
-// It settles the GLOBAL bit only. Deriving each face's sense from its own loop winding — which is what
-// would also catch a single face out of step with its neighbours — needs loopHandedness, and that reads
-// the signed area of the outer ring in (u, v), which a SEAM-WRAPPING band does not have: its rims are
-// open polylines in the covering space, so their shoelace is meaningless. Tried, and it inverted a
-// plate's bore wall, whose volume then read 564.36 against a true 354.92 — the bore added rather than
-// subtracted. Closing a wrapping ring through the seam first is what that needs (Oblikovati/Oblikovati#3504).
-//
-// certain=false when a face carries no usable (u, v) domain to integrate over, or when the sum lands on
-// zero: the caller then leaves the shell exactly as it found it rather than flip on a partial sum.
-func curvedShellPointsInward(faces []curvedFace) (inward, certain bool) {
-	volume := 0.0
-	for _, f := range faces {
-		region := faceTrimRegion(f)
-		u0, u1, v0, v1, ok := fluxDomain(f, region)
-		if !ok {
-			return false, false
-		}
-		ff := fluxFace{cf: f, region: region, u0: u0, u1: u1, v0: v0, v1: v1, sign: 1}
-		volume += storedFaceSense(f) * faceVolumeTerm(&ff)
-	}
-	return volume < 0, volume != 0
-}
-
-// storedFaceSense is +1 when a face's material-outward normal is S_u×S_v, −1 when it is the opposite.
-func storedFaceSense(f curvedFace) float64 {
-	if f.reversed {
-		return -1
-	}
-	return 1
 }
 
 // curvedOrientationFlips two-colours the face-adjacency graph (BFS over each connected shell) so that, after
