@@ -115,6 +115,13 @@ func (c *planeFaceUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
 	// An OPEN conic (a hyperbola branch — see curved_plane_face_uv_open.go) crosses the frame's
 	// STRAIGHT edges, so its crossings are solved first and the frame is split on them.
 	openCrossings := c.openFrameCrossings(open)
+	// One imprint meeting another is an incidence too, and no frame crossing covers it: a chord across
+	// this face crossing the branch a ruled wall sections it with (ADR-0062).
+	openOnStraight, straightOnOpen := c.openStraightCrossings(open, straight)
+	for oi := range openCrossings {
+		openCrossings[oi] = sortedOpenCrossings(append(openCrossings[oi], openOnStraight[oi]...))
+	}
+	crossings = append(crossings, straightOnOpen...)
 	c.incidence = c.incidencePoints(straight, open, crossings, openCrossings)
 	segs := append(c.frameSegs(crossings, openCrossings), c.imprintSegs(straight, crossings)...)
 	segs = append(segs, c.openSegs(open, openCrossings)...)

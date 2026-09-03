@@ -294,3 +294,56 @@ func dedupedParams(ts []float64) []float64 {
 	}
 	return out
 }
+
+// openStraightCrossings solves every (open conic, STRAIGHT IMPRINT) crossing in closed form, returning
+// the parameters to inject on each side.
+//
+// The chart already splits an open conic where it meets the FRAME, and a straight imprint where it meets
+// a conic frame edge. What neither covers is one imprint meeting another: the chord a planar neighbour
+// cuts across this face, crossing the hyperbola branch a ruled wall sections it with. Both are imprints,
+// so no frame crossing is solved for them, and the arrangement then found their crossing between the
+// SAMPLED polyline of the branch and the chord — cutting the corner, and landing the shared vertex about
+// 3·10⁻⁴ off the exact incidence. A cone cut parallel to its axis stayed open there: the wall's own trim
+// put the vertex exactly on its rim, the lid's put it a hair above, and the two could not weld
+// (ADR-0062).
+//
+// This is the same rule ADR-0060 states for the frame — every incidence a chart solves is a shared
+// vertex — applied to the pair the frame does not mention.
+func (c *planeFaceUV) openStraightCrossings(open, straight []geom.Curve3) ([][]openCrossing, []faceFrameCrossing) {
+	byOpen := make([][]openCrossing, len(open))
+	var onStraight []faceFrameCrossing
+	for oi, cv := range open {
+		pc, ok := toPlaneConic(cv, c.plane)
+		if !ok {
+			continue
+		}
+		for si, sc := range straight {
+			lo, hi := sc.Domain()
+			a3, b3 := sc.PointAt(lo), sc.PointAt(hi)
+			hits, _ := conicFrameHits(pc, to2D(c.plane, a3), to2D(c.plane, b3), c.res)
+			for _, h := range hits {
+				t, ok := geom.ConicParamAt(cv, to3D(c.plane, h.p))
+				if !ok {
+					continue
+				}
+				at := cv.PointAt(t)
+				byOpen[oi] = append(byOpen[oi], openCrossing{loop: imprintIncidence, edge: si, tConic: t, at: at})
+				onStraight = append(onStraight, faceFrameCrossing{
+					loop: imprintIncidence, edge: si, imp: si, sImp: h.sEdge, tConic: t, at: at,
+				})
+			}
+		}
+	}
+	return byOpen, onStraight
+}
+
+// imprintIncidence marks a crossing that is between two IMPRINTS rather than with a frame edge, so a
+// consumer that indexes the frame by loop and edge skips it.
+const imprintIncidence = -1
+
+// sortedOpenCrossings orders one open conic's crossings along the conic, which is the order openSegs
+// samples between them in.
+func sortedOpenCrossings(cs []openCrossing) []openCrossing {
+	sort.Slice(cs, func(i, j int) bool { return cs[i].tConic < cs[j].tConic })
+	return cs
+}

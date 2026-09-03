@@ -87,7 +87,7 @@ func TestHalfSpaceCutEqualsABoundedDifference(t *testing.T) {
 		{"cylinder/perpendicular", cyl, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 6, math.V3(0, 0, 1)) }, true, ""},
 		{"cone/oblique ellipse", cone, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 5, math.V3(0.2, 0, 1)) }, true, ""},
 		{"cone/through the apex", cone, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 9.5, math.V3(0.4, 0, 1)) }, true, ""},
-		{"cone/axis-parallel hyperbola", cone, func(t *testing.T) geom.Plane { return pl(t, 1.2, 0, 0, math.V3(1, 0, 0)) }, false, "the tool's lid face is dropped (ADR-0062)"},
+		{"cone/axis-parallel hyperbola", cone, func(t *testing.T) geom.Plane { return pl(t, 1.2, 0, 0, math.V3(1, 0, 0)) }, true, ""},
 		{"sphere/cap", sph, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 1, math.V3(0, 0, 1)) }, true, ""},
 		{"sphere/oblique cap", sph, func(t *testing.T) geom.Plane { return pl(t, 1, 1, 1, math.V3(1, 1, 1)) }, true, ""},
 		{"torus/perpendicular", tor, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 0.5, math.V3(0, 0, 1)) }, true, ""},
