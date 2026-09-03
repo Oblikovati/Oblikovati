@@ -4,6 +4,7 @@ package geom
 
 import (
 	stdmath "math"
+	"sort"
 
 	"oblikovati.org/math"
 )
@@ -102,3 +103,86 @@ func (s SpiricArc) dUdV(v float64) float64 {
 
 // Domain returns [0, 1].
 func (s SpiricArc) Domain() (lo, hi float64) { return 0, 1 }
+
+// TorusPlaneSection returns the curves a plane cuts from a torus when the section is a SPIRIC — the
+// quartic of Perseus — rather than the two concentric circles a perpendicular plane gives. It is the
+// analytic answer for every other plane, so the section solver need not decline them (ADR-0061 stage 3).
+//
+// The section is single-valued in the tube angle on each branch: u(v) = Φ ± arccos w(v), with
+// w(v) = (K − C·r·sin v) / (M·(R + r·cos v)) (see [TorusSectionCoeffs]). Where |w| < 1 both branches
+// exist; where |w| = 1 they meet, and the curve turns. So the section is read off the v-set on which the
+// plane reaches the tube:
+//
+//   - |w| ≤ 1 for EVERY v — the plane passes through the hole and cuts both walls — gives two curves,
+//     each a branch wrapping the whole tube period;
+//   - otherwise the set is a union of v-intervals, and each interval closes into one oval: the +1 branch
+//     out and the −1 branch back.
+//
+// ok=false when the coefficients are degenerate (a cut normal that is purely axial, where M = 0 and the
+// azimuth is not single-valued in the tube angle).
+func TorusPlaneSection(t Torus, pl Plane) ([]Curve3, bool) {
+	phi, m, k, c := TorusSectionCoeffs(t, pl)
+	if m <= 0 {
+		return nil, false // the cut normal has no radial part: u is not single-valued in v
+	}
+	arc := func(branch, v0, v1 float64) Curve3 {
+		return SpiricArc{Torus: t, Phi: phi, M: m, K: k, C: c, Branch: branch, V0: v0, V1: v1}
+	}
+	spans, whole := spiricTubeSpans(t, m, k, c)
+	if whole {
+		return []Curve3{arc(1, -stdmath.Pi, stdmath.Pi), arc(-1, -stdmath.Pi, stdmath.Pi)}, true
+	}
+	out := make([]Curve3, 0, 2*len(spans))
+	for _, sp := range spans {
+		out = append(out, arc(1, sp[0], sp[1]), arc(-1, sp[1], sp[0]))
+	}
+	return out, len(out) > 0
+}
+
+// spiricTubeSpans is the set of tube angles on which the plane reaches the tube — where |w(v)| ≤ 1 —
+// as intervals, or whole=true when that is every angle. The boundaries solve w(v) = ±1, each of which
+// is A·cos v + B·sin v = D and so closed form.
+func spiricTubeSpans(t Torus, m, k, c float64) (spans [][2]float64, whole bool) {
+	r, rr := t.MinorRadius, t.MajorRadius
+	roots := append(
+		harmonicRoots(m*r, c*r, k-m*rr),
+		harmonicRoots(-m*r, c*r, k+m*rr)...)
+	inside := func(v float64) bool {
+		cv, sv := cosSin(v)
+		return stdmath.Abs((k-c*r*sv)/(m*(rr+r*cv))) <= 1
+	}
+	if len(roots) == 0 {
+		return nil, inside(0) // no boundary: the plane reaches the tube at every angle, or at none
+	}
+	sort.Float64s(roots)
+	roots = append(roots, roots[0]+2*stdmath.Pi) // close the period
+	for i := 0; i+1 < len(roots); i++ {
+		if inside((roots[i] + roots[i+1]) / 2) {
+			spans = append(spans, [2]float64{roots[i], roots[i+1]})
+		}
+	}
+	return spans, false
+}
+
+// harmonicRoots solves A·cos v + B·sin v = D for v in [−π, π), as the two roots of
+// cos(v − atan2(B, A)) = D / √(A²+B²) when that ratio is within reach.
+func harmonicRoots(a, b, d float64) []float64 {
+	amp := stdmath.Hypot(a, b)
+	if amp == 0 || stdmath.Abs(d) > amp {
+		return nil
+	}
+	base := stdmath.Atan2(b, a)
+	off := stdmath.Acos(math.Clamp(d/amp, -1, 1))
+	return []float64{wrapToPi(base + off), wrapToPi(base - off)}
+}
+
+// wrapToPi folds an angle into [−π, π).
+func wrapToPi(v float64) float64 {
+	for v < -stdmath.Pi {
+		v += 2 * stdmath.Pi
+	}
+	for v >= stdmath.Pi {
+		v -= 2 * stdmath.Pi
+	}
+	return v
+}

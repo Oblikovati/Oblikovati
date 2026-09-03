@@ -191,11 +191,33 @@ func TestAnalyticPlaneTorusPerpendicularIsTwoCircles(t *testing.T) {
 	}
 }
 
-func TestAnalyticPlaneTorusObliqueDefers(t *testing.T) {
+// TestAnalyticPlaneTorusObliqueIsASpiric was a DEFER case: the quartic an oblique plane cuts from a
+// torus was treated as beyond the analytic sections. It is not — SpiricArc carries it exactly — so it is
+// now returned like any other section (ADR-0061 stage 3), and this is the positive case the retirement
+// converts each decline into.
+func TestAnalyticPlaneTorusObliqueIsASpiric(t *testing.T) {
 	t.Parallel()
 	tor, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
-	if _, handled := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 0, 1, 0, 1), tor, ResolutionForSize(1)); handled {
-		t.Error("an oblique torus cut (a spiric quartic) must defer, got handled=true")
+	pl := mustPlane(t, 0, 0, 0, 1, 0, 1)
+	curves, handled := IntersectSurfacesAnalytic(pl, tor, ResolutionForSize(1))
+	if !handled {
+		t.Fatal("an oblique torus cut is a spiric, which is analytic; it must not defer")
+	}
+	if len(curves) == 0 {
+		t.Fatal("the plane cuts the tube, so the section is not empty")
+	}
+	n := pl.Normal()
+	for i, c := range curves {
+		if _, ok := c.(SpiricArc); !ok {
+			t.Errorf("curve %d is %T, want SpiricArc", i, c)
+		}
+		for k := 0; k <= 20; k++ {
+			p := c.PointAt(float64(k) / 20)
+			if d := stdmath.Abs(float64(pl.Origin.VectorTo(p).Dot(n))); d > 1e-9 {
+				t.Errorf("curve %d has a point %g off the cutting plane", i, d)
+				break
+			}
+		}
 	}
 }
 

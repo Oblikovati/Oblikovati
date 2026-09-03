@@ -89,7 +89,9 @@ func planeTorusCurve(pl Plane, t Torus, res Resolution) ([]Curve3, bool) {
 		if stdmath.Abs(float64(t.Center.VectorTo(pl.Origin).Dot(n))) >= reach-res.Weld() {
 			return nil, true // the plane clears the torus
 		}
-		return nil, false // a spiric quartic cut, not an analytic conic
+		// The spiric of Perseus IS analytic — SpiricArc carries it — so the section is returned rather
+		// than declined (ADR-0061 stage 3).
+		return TorusPlaneSection(t, pl)
 	}
 	d := float64(t.Center.VectorTo(pl.Origin).Dot(axis)) // section level along the axis
 	r := t.MinorRadius
