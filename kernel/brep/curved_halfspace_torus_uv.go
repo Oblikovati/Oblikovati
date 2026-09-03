@@ -71,8 +71,8 @@ func (c torusUV) multiFace() bool { return false }
 
 // wrappingSolidFaces: a torus is not on the general ruled solid-membership wrapping path, so it always defers
 // to the ordinary (u,v) emission (Oblikovati#1476).
-func (c torusUV) wrappingSolidFaces(_ []Face2D, _ []uvSeg, _ geom.Surface, _ curvedFace) ([]curvedFace, bool) {
-	return nil, false
+func (c torusUV) wrappingSolidFaces(_ []Face2D, _ []uvSeg, _ geom.Surface, _ curvedFace) ([]curvedFace, []loopEdge, bool) {
+	return nil, nil, false
 }
 
 // assembleSegments samples the spiric section, seam-splits it in u, and adds the four artificial seam edges

@@ -18,30 +18,42 @@ import (
 
 // wrappingSolidFaces emits every kept component (uvSide). ok=false only when a boundary cannot be
 // re-emitted, which the caller reports as an unsupported configuration.
-func (c *ruledFaceUV) wrappingSolidFaces(kept []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) ([]curvedFace, bool) {
+func (c *ruledFaceUV) wrappingSolidFaces(kept []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) ([]curvedFace, []loopEdge, bool) {
 	var faces []curvedFace
+	var lid []loopEdge
 	comps := keptComponents(kept, true, false)
 	for _, comp := range comps {
 		emitted, ok := emitKeptLoops(c, chainLoops(keptBoundaryEdges(comp, true, false)), segs)
 		if !ok {
-			return nil, false
+			return nil, nil, false
 		}
-		ends, holes := c.splitEndsAndHoles(emitted)
-		switch {
-		case len(ends) == 0:
-			patches, ok := c.contractibleFaces(comp, segs, surface, f)
-			if !ok {
-				return nil, false
-			}
-			faces = append(faces, patches...)
-		case len(ends) == 2:
-			c.wrapping = true
-			faces = append(faces, c.faceOf(surface, f, append(ends, holes...)))
-		default:
-			return nil, false
+		compFaces, compLid, ok := c.componentFaces(comp, segs, surface, f, emitted)
+		if !ok {
+			return nil, nil, false
 		}
+		faces = append(faces, compFaces...)
+		lid = append(lid, compLid...)
 	}
-	return faces, len(faces) > 0
+	return faces, lid, len(faces) > 0
+}
+
+// componentFaces emits ONE connected component: a set of contractible patches when no boundary loop
+// wraps the azimuth, a single band when exactly two do, and a decline for anything else — a wrapping
+// band has exactly two full-wrap ends.
+func (c *ruledFaceUV) componentFaces(comp []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace, emitted []emittedLoop) ([]curvedFace, []loopEdge, bool) {
+	ends, holes := c.splitEndsAndHoles(emitted)
+	switch len(ends) {
+	case 0:
+		return c.contractibleFaces(comp, segs, surface, f)
+	case 2:
+		c.wrapping = true
+		var lid []loopEdge
+		for _, e := range emitted {
+			lid = append(lid, e.section...)
+		}
+		return []curvedFace{c.faceOf(surface, f, append(ends, holes...))}, lid, true
+	}
+	return nil, nil, false
 }
 
 // splitEndsAndHoles partitions a component's boundary loops into the azimuth-wrapping ends and the rest.
@@ -57,16 +69,20 @@ func (c *ruledFaceUV) splitEndsAndHoles(emitted []emittedLoop) (ends, holes []em
 }
 
 // contractibleFaces emits a non-wrapping component as one face per outer loop, holes attached by containment.
-func (c *ruledFaceUV) contractibleFaces(comp []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) ([]curvedFace, bool) {
+func (c *ruledFaceUV) contractibleFaces(comp []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) ([]curvedFace, []loopEdge, bool) {
 	var faces []curvedFace
+	var lid []loopEdge
 	for _, group := range groupLoopFaces(true, false, chainLoops(keptBoundaryEdges(comp, true, false))) {
 		emitted, ok := emitKeptLoops(c, group, segs)
 		if !ok {
-			return nil, false
+			return nil, nil, false
+		}
+		for _, e := range emitted {
+			lid = append(lid, e.section...)
 		}
 		faces = append(faces, curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: c.splitAtFrameCrossings(outerFirst(emitted))})
 	}
-	return faces, true
+	return faces, lid, true
 }
 
 // faceOf assembles a face on the wall's surface from emitted loops, keeping the source face's identity.

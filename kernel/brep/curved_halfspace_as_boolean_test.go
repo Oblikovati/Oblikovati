@@ -88,8 +88,8 @@ func TestHalfSpaceCutEqualsABoundedDifference(t *testing.T) {
 		{"cone/oblique ellipse", cone, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 5, math.V3(0.2, 0, 1)) }, true, ""},
 		{"cone/through the apex", cone, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 9.5, math.V3(0.4, 0, 1)) }, true, ""},
 		{"cone/axis-parallel hyperbola", cone, func(t *testing.T) geom.Plane { return pl(t, 1.2, 0, 0, math.V3(1, 0, 0)) }, false, "the tool's lid face is dropped (ADR-0062)"},
-		{"sphere/cap", sph, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 1, math.V3(0, 0, 1)) }, false, "no sphere chart (ADR-0061 stage 3)"},
-		{"sphere/oblique cap", sph, func(t *testing.T) geom.Plane { return pl(t, 1, 1, 1, math.V3(1, 1, 1)) }, false, "no sphere chart (ADR-0061 stage 3)"},
+		{"sphere/cap", sph, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 1, math.V3(0, 0, 1)) }, true, ""},
+		{"sphere/oblique cap", sph, func(t *testing.T) geom.Plane { return pl(t, 1, 1, 1, math.V3(1, 1, 1)) }, false, "the two charts split the shared circle at different points: the sphere at its seam, the lid at its own (ADR-0060 shared-edge subdivision)"},
 		{"torus/perpendicular", tor, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 0.5, math.V3(0, 0, 1)) }, false, "no torus chart (ADR-0061 stage 3)"},
 		{"torus/spiric axis-parallel", tor, func(t *testing.T) geom.Plane { return pl(t, 1, 0, 0, math.V3(1, 0, 0)) }, false, "no torus chart (ADR-0061 stage 3)"},
 	} {

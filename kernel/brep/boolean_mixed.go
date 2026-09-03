@@ -43,6 +43,8 @@ type facePartition struct {
 	uvBox       []math.Box
 	wall        []curvedFace // full-band cylinder walls the ruled chart can split (cylinderSideSolidSplit)
 	wallBox     []math.Box
+	sphere      []curvedFace // sphere faces the loop-framed sphere chart can split (ADR-0061 stage 3)
+	sphereBox   []math.Box
 	pass        []curvedFace
 	passBox     []math.Box
 	body        *topo.Body
@@ -60,26 +62,38 @@ func partitionFaces(b *topo.Body) facePartition {
 	p := facePartition{body: b}
 	topoFaces := b.Faces()
 	for i, cf := range facesOfAny(b) {
-		if stripped, holes, ok := detachCurvedHoles(cf); ok {
-			p.planar = append(p.planar, stripped)
-			p.planarFull = append(p.planarFull, cf)
-			p.planarHoles = append(p.planarHoles, holes)
-			continue
-		}
-		if _, ok := newPlaneFaceUV(cf, geom.ResolutionForBox(topoFaces[i].RangeBox())); ok {
-			p.uv = append(p.uv, cf)
-			p.uvBox = append(p.uvBox, topoFaces[i].RangeBox())
-			continue
-		}
-		if _, ok := ruledFaceOf(cf); ok {
-			p.wall = append(p.wall, cf)
-			p.wallBox = append(p.wallBox, topoFaces[i].RangeBox())
-			continue
-		}
-		p.pass = append(p.pass, cf)
-		p.passBox = append(p.passBox, topoFaces[i].RangeBox())
+		p.bucket(cf, topoFaces[i].RangeBox())
 	}
 	return p
+}
+
+// bucket files one face by REPRESENTATION: the polygonal split for a plane with straight edges (its
+// curved holes detached to re-attach exactly), the exact-frame chart for a plane with conic edges, the
+// ruled chart for a wall, the sphere chart for a sphere, and the pass-through set for the rest.
+func (p *facePartition) bucket(cf curvedFace, box math.Box) {
+	if stripped, holes, ok := detachCurvedHoles(cf); ok {
+		p.planar = append(p.planar, stripped)
+		p.planarFull = append(p.planarFull, cf)
+		p.planarHoles = append(p.planarHoles, holes)
+		return
+	}
+	if _, ok := newPlaneFaceUV(cf, geom.ResolutionForBox(box)); ok {
+		p.uv = append(p.uv, cf)
+		p.uvBox = append(p.uvBox, box)
+		return
+	}
+	if _, ok := ruledFaceOf(cf); ok {
+		p.wall = append(p.wall, cf)
+		p.wallBox = append(p.wallBox, box)
+		return
+	}
+	if _, ok := sphereFaceOf(cf); ok {
+		p.sphere = append(p.sphere, cf)
+		p.sphereBox = append(p.sphereBox, box)
+		return
+	}
+	p.pass = append(p.pass, cf)
+	p.passBox = append(p.passBox, box)
 }
 
 // detachCurvedHoles classifies a face for the polygonal split: a plane surface with an all-straight
@@ -155,7 +169,7 @@ func (mp *mixedProbe) inside(p math.Point3) bool {
 // classifier's rays must see, or every ray through the hole region counts a phantom crossing.
 func (p facePartition) allFaces() []curvedFace {
 	all := append(append([]curvedFace{}, p.planarFull...), p.uv...)
-	return append(append(all, p.wall...), p.pass...)
+	return append(append(append(all, p.wall...), p.sphere...), p.pass...)
 }
 
 // passThroughKept classifies each pass-through face as a whole — its membership in the other solid is
@@ -225,12 +239,12 @@ func booleanMixed(op Op, a, b *topo.Body) (*topo.Body, bool, error) {
 	// (uv) faces' imprints run BEFORE the polygonal split, mirroring the same segments onto the other
 	// side's imprint lists so the two faces split on identical coordinates.
 	impA, impB, prov := imprintCandidates(pa.planarFull, pb.planarFull, pairs)
-	uvImpA, uvImpB, wallImpA, wallImpB, okI := mixedCurvedImprints(&pa, &pb, impA, impB)
+	uvImpA, uvImpB, wallImpA, wallImpB, sphImpA, sphImpB, okI := mixedCurvedImprints(&pa, &pb, impA, impB)
 	if !okI {
 		return nil, false, ErrUnsupportedMixedBoolean
 	}
 	kept, demoted, okK := mixedKeptFragments(pa, pb, impA, impB, pra, prb, pairs, op, prov)
-	pass, okP := mixedPassFaces(pa, pb, pra, prb, uvImpA, uvImpB, op)
+	pass, okP := mixedPassFaces(pa, pb, pra, prb, uvImpA, uvImpB, sphImpA, sphImpB, op)
 	pass = append(pass, demoted...)
 	walls, okQ := mixedWallFaces(pa, pb, pra, prb, wallImpA, wallImpB, op)
 	if !okK || !okP || !okQ {
@@ -249,17 +263,19 @@ func mixedKeptFragments(pa, pb facePartition, impA, impB [][][2]math.Point3, pra
 // mixedCurvedImprints plans both operands' exact-frame and wall imprints in one pass, then pairs the
 // exact-frame faces against the OTHER operand's ruled walls: that pairing writes the same section curve
 // into both the uv face's and the wall's list, so the two sides split on identical coordinates (#3460).
-func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3) (uvA, uvB, wallA, wallB [][]geom.Curve3, ok bool) {
+func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3) (uvA, uvB, wallA, wallB, sphA, sphB [][]geom.Curve3, ok bool) {
 	uvA, uvB, okU := bothUVImprints(pa, pb, impA, impB)
 	wallA, okWA := wallImprints(pa, pb, impB)
 	wallB, okWB := wallImprints(pb, pa, impA)
-	if !okU || !okWA || !okWB {
-		return nil, nil, nil, nil, false
+	sphA, okSA := sphereImprints(pa, pb, uvB)
+	sphB, okSB := sphereImprints(pb, pa, uvA)
+	if !okU || !okWA || !okWB || !okSA || !okSB {
+		return nil, nil, nil, nil, nil, nil, false
 	}
 	okXA := pairUVWallImprints(pa, pb, uvA, wallB)
 	okXB := pairUVWallImprints(pb, pa, uvB, wallA)
 	okXX := pairUVUVImprints(pa, pb, uvA, uvB)
-	return uvA, uvB, wallA, wallB, okXA && okXB && okXX
+	return uvA, uvB, wallA, wallB, sphA, sphB, okXA && okXB && okXX
 }
 
 // mixedWallFaces trims both operands' walls into the stitch's pass list.
@@ -271,15 +287,17 @@ func mixedWallFaces(pa, pb facePartition, pra, prb insideOracle, wallImpA, wallI
 
 // mixedPassFaces assembles the stitch's pass list: both sides' whole pass-through faces plus the
 // exact-frame (uv) trims, all classified/reversed by the boolean's keep table.
-func mixedPassFaces(pa, pb facePartition, pra, prb insideOracle, uvImpA, uvImpB [][]geom.Curve3, op Op) ([]curvedFace, bool) {
+func mixedPassFaces(pa, pb facePartition, pra, prb insideOracle, uvImpA, uvImpB, sphImpA, sphImpB [][]geom.Curve3, op Op) ([]curvedFace, bool) {
 	passA, okA := passThroughKept(pa.pass, prb, op, false)
 	passB, okB := passThroughKept(pb.pass, pra, op, true)
 	uvA, okVA := uvSplitFaces(pa, uvImpA, prb, pb.allFaces(), op, false)
 	uvB, okVB := uvSplitFaces(pb, uvImpB, pra, pa.allFaces(), op, true)
-	if !okA || !okB || !okVA || !okVB {
+	sphA, okSA := sphereSplitFaces(pa, sphImpA, prb, op, false)
+	sphB, okSB := sphereSplitFaces(pb, sphImpB, pra, op, true)
+	if !okA || !okB || !okVA || !okVB || !okSA || !okSB {
 		return nil, false
 	}
-	return append(append(append(passA, passB...), uvA...), uvB...), true
+	return append(append(append(append(append(passA, passB...), uvA...), uvB...), sphA...), sphB...), true
 }
 
 // selectFacesDetached is selectFaces plus the exact-hole re-attachment: after a face's fragments are

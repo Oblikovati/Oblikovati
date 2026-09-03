@@ -69,8 +69,8 @@ func (c *planeFaceUV) finalizeLoops(loops []curvedLoop) []curvedLoop {
 	return splitLoopsAtPoints(loops, c.incidence, c.res)
 }
 
-func (c *planeFaceUV) wrappingSolidFaces(_ []Face2D, _ []uvSeg, _ geom.Surface, _ curvedFace) ([]curvedFace, bool) {
-	return nil, false // a bounded plane never wraps
+func (c *planeFaceUV) wrappingSolidFaces(_ []Face2D, _ []uvSeg, _ geom.Surface, _ curvedFace) ([]curvedFace, []loopEdge, bool) {
+	return nil, nil, false // a bounded plane never wraps
 }
 
 // orientLoops applies the plane's winding convention: every kept loop's edges run forward; the imprint

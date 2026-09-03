@@ -60,8 +60,8 @@ func (c *planeUV) multiFace() bool { return true }
 
 // wrappingSolidFaces never applies to a plane (there is no wrapping tube band); it defers to the standard
 // contractible-outer emission (uvSide).
-func (c *planeUV) wrappingSolidFaces(_ []Face2D, _ []uvSeg, _ geom.Surface, _ curvedFace) ([]curvedFace, bool) {
-	return nil, false
+func (c *planeUV) wrappingSolidFaces(_ []Face2D, _ []uvSeg, _ geom.Surface, _ curvedFace) ([]curvedFace, []loopEdge, bool) {
+	return nil, nil, false
 }
 
 // finalizeLoops is identity: a plane has no apex-pole rim or torus hole to re-mark (uvSide).

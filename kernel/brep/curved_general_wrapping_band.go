@@ -29,29 +29,35 @@ import (
 // wrappingSolidFaces emits the kept region of a ruled solid-membership side as one curvedFace per connected
 // band (#1476). ok=false unless this is the solid-membership wrapping case (the cut/join OUTSIDE/tunnel wall),
 // so the half-space and the non-wrapping intersect paths fall through to the ordinary (u,v) emission.
-func (c ruledUV) wrappingSolidFaces(kept []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) ([]curvedFace, bool) {
+func (c ruledUV) wrappingSolidFaces(kept []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) ([]curvedFace, []loopEdge, bool) {
 	if !c.solidMode || !c.wrapsAllU() {
-		return nil, false
+		return nil, nil, false
 	}
 	var faces []curvedFace
+	var lid []loopEdge
 	for _, comp := range keptComponents(kept, c.uPeriodic(), c.vPeriodic()) {
-		face, ok := c.bandFace(comp, segs, surface, f)
+		face, section, ok := c.bandFace(comp, segs, surface, f)
 		if !ok {
-			return nil, false
+			return nil, nil, false
 		}
 		faces = append(faces, face)
+		lid = append(lid, section...)
 	}
-	return faces, len(faces) > 0
+	return faces, lid, len(faces) > 0
 }
 
 // bandFace builds one curvedFace for a single connected wrapping band: the loops are classified into the
 // band's two full-wrap ends and its contractible holes, then assembled as a keyhole (holed tube) or a
 // two-closed-loop band (a clean stub) — the two shapes the curved mesher renders correctly (#1476).
-func (c ruledUV) bandFace(comp []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) (curvedFace, bool) {
+func (c ruledUV) bandFace(comp []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) (curvedFace, []loopEdge, bool) {
 	loops := dropArtificialLoops(&c, chainLoops(keptBoundaryEdges(comp, c.uPeriodic(), c.vPeriodic())), segs)
 	emitted, ok := emitKeptLoops(&c, loops, segs)
 	if !ok {
-		return curvedFace{}, false
+		return curvedFace{}, nil, false
+	}
+	var section []loopEdge
+	for _, e := range emitted {
+		section = append(section, e.section...)
 	}
 	var ends, holes []emittedLoop
 	for _, e := range emitted {
@@ -62,15 +68,15 @@ func (c ruledUV) bandFace(comp []Face2D, segs []uvSeg, surface geom.Surface, f c
 		}
 	}
 	if len(ends) != 2 {
-		return curvedFace{}, false // a wrapping band has exactly two full-wrap ends; anything else defers
+		return curvedFace{}, nil, false // a wrapping band has exactly two full-wrap ends; anything else defers
 	}
 	if len(holes) > 0 && allRimEdges(ends[0].face) && allRimEdges(ends[1].face) {
-		return c.keyholeTubeFace(holes, surface, f), true // a holed tube (the fat wall): bridge the rims
+		return c.keyholeTubeFace(holes, surface, f), section, true // a holed tube (the fat wall): bridge the rims
 	}
 	return curvedFace{
 		surface: surface, reversed: f.reversed, lineage: f.lineage,
 		loops: c.orientWrappingBand(emitted),
-	}, true
+	}, section, true
 }
 
 // keyholeTubeFace assembles a holed tube (the fat wall punched by the rod) as a single contractible face: its

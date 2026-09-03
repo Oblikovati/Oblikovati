@@ -330,3 +330,16 @@ const axialParamEps = 1e-15 // tol:numeric — relative parameter convergence (d
 // axialBisectionCap bounds the loop for a piece the convergence test cannot satisfy (a curve whose
 // axial coordinate is flat over the bracket), so the inversion always terminates.
 const axialBisectionCap = 200
+
+// SphereOf reports the sphere a surface is, when it is one. It is the sphere's counterpart of
+// [RuledFrameOf]: a consumer asks a geometric question instead of switching on a geometry kind, so the
+// switch stays here with the geometry rather than spreading through the modeller (the kernel rule that
+// type switches on geometry kinds live only in kernel/geom).
+//
+// Example — a chart admits the faces it can frame:
+//
+//	if s, ok := geom.SphereOf(f.Surface()); ok { … }
+func SphereOf(s Surface) (Sphere, bool) {
+	sph, ok := s.(Sphere)
+	return sph, ok
+}
