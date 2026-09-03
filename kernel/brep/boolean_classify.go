@@ -49,6 +49,11 @@ func newSolidProbe(b *topo.Body) *solidProbe {
 	return &solidProbe{faces: faces, onPlane: geom.ResolutionForBox(b.RangeBox()).Plane(), planar: true}
 }
 
+// onPlaneStep is the offset clearing this body's on-plane band; see insideOracle.
+func (sp *solidProbe) onPlaneStep() (float64, bool) {
+	return offPlaneProbeSteps * sp.onPlane, sp.planar
+}
+
 // inside thresholds the generalized winding number of the cached faces at p (see insideSolid).
 func (sp *solidProbe) inside(p math.Point3) bool {
 	if !sp.planar {

@@ -39,6 +39,7 @@ func curvedFaceLineIntervals(f curvedFace, p0 math.Point3, dir math.Vector3) ([]
 		ts = append(ts, loopTs...)
 	}
 	sort.Float64s(ts)
+	ts = mergedLineParams(ts, geom.ResolutionForBox(faceLoopBox(f)).Weld()/stdmath.Sqrt(float64(dir.Dot(dir))))
 	if len(ts)%2 != 0 {
 		return nil, false // an unpaired crossing (grazing/degenerate): no sound even-odd pairing
 	}
@@ -49,32 +50,87 @@ func curvedFaceLineIntervals(f curvedFace, p0 math.Point3, dir math.Vector3) ([]
 	return out, true
 }
 
-// loopLineCrossings collects one loop's exact crossing parameters with the line.
+// loopLineCrossings collects one loop's exact crossing parameters with the line: every edge's hits
+// strictly inside it, plus each VERTEX on the line where the boundary passes from one side of it to
+// the other. A vertex the boundary merely touches, or a run of edges collinear with the line, adds no
+// crossing — the even-odd pairing stays sound exactly where the line follows the face's own boundary,
+// as it does for a coplanar neighbour's edge (ADR-0060).
 func loopLineCrossings(l curvedLoop, pl geom.Plane, o2 math.Point2, d2 math.Vector2, p0 math.Point3, dir math.Vector3, window [2]float64) ([]float64, bool) {
 	var ts []float64
-	for _, e := range l.edges {
-		switch e.curve.(type) {
-		case geom.LineSegment, geom.Line:
-			a2, b2 := to2D(pl, e.start()), to2D(pl, e.end())
-			if t, hit := lineSegCross(o2, d2, a2, b2); hit {
-				ts = append(ts, t)
-			}
-		case geom.Circle:
-			ct, ok := circleLineCrossings(e, pl, p0, dir, window)
-			if !ok {
-				return nil, false
-			}
-			ts = append(ts, ct...)
-		default:
-			return nil, false // no closed form for this edge kind yet: decline the query
+	n := len(l.edges)
+	for i, e := range l.edges {
+		hits, ok := edgeInteriorLineCrossings(e, pl, o2, d2, p0, dir, window)
+		if !ok {
+			return nil, false
+		}
+		ts = append(ts, hits...)
+		if t, crosses := vertexLineCrossing(e, l.edges[(i+1)%n], pl, o2, d2); crosses {
+			ts = append(ts, t)
 		}
 	}
 	return ts, true
 }
 
-// circleLineCrossings solves one full-circle edge against the line over the caller's window, in closed
-// form (the stable conic quadratic). ok=false on a tangent grazing (double root — parity unsound).
-func circleLineCrossings(e loopEdge, pl geom.Plane, p0 math.Point3, dir math.Vector3, window [2]float64) ([]float64, bool) {
+// edgeInteriorLineCrossings returns the line parameters where the edge crosses the line strictly
+// inside its span; a straight edge parallel to the line contributes none.
+func edgeInteriorLineCrossings(e loopEdge, pl geom.Plane, o2 math.Point2, d2 math.Vector2, p0 math.Point3, dir math.Vector3, window [2]float64) ([]float64, bool) {
+	switch e.curve.(type) {
+	case geom.LineSegment, geom.Line:
+		a2, b2 := to2D(pl, e.start()), to2D(pl, e.end())
+		t, hit := lineSegCrossStrict(o2, d2, a2, b2)
+		if !hit {
+			return nil, true
+		}
+		return []float64{t}, true
+	default:
+		return conicLineCrossings(e, pl, p0, dir, window)
+	}
+}
+
+// vertexLineCrossing reports whether the boundary crosses the line AT the vertex where edge e ends and
+// next begins: the vertex lies on the line and the boundary just before it and just after it sit on
+// opposite sides. A collinear neighbour reads as "not above", so a collinear run counts once, at the
+// end where the boundary leaves it upward.
+func vertexLineCrossing(e, next loopEdge, pl geom.Plane, o2 math.Point2, d2 math.Vector2) (float64, bool) {
+	v2 := to2D(pl, e.end())
+	res := geom.ResolutionForPoints2D([]math.Point2{o2, v2})
+	ov := o2.VectorTo(v2)
+	if stdmath.Abs(d2.Cross(ov)) > res.Weld()*float64(d2.Length()) {
+		return 0, false
+	}
+	before := to2D(pl, e.curve.PointAt(e.t1-(e.t1-e.t0)*vertexSideStep))
+	after := to2D(pl, next.curve.PointAt(next.t0+(next.t1-next.t0)*vertexSideStep))
+	above := func(q math.Point2) bool { return d2.Cross(o2.VectorTo(q)) > res.Weld()*float64(d2.Length()) }
+	if above(before) == above(after) {
+		return 0, false
+	}
+	return ov.Dot(d2) / d2.Dot(d2), true
+}
+
+// vertexSideStep is how far along an edge, in its own parameter, the side probe steps back from a vertex.
+const vertexSideStep = 1e-3 // tol:parametric — side probe offset along the edge (dimensionless)
+
+// lineSegCrossStrict is lineSegCross with the crossing required strictly inside the segment: a hit at
+// either end is the vertex's, decided by vertexLineCrossing.
+func lineSegCrossStrict(o math.Point2, d math.Vector2, a, b math.Point2) (float64, bool) {
+	e := a.VectorTo(b)
+	den := d.Cross(e)
+	if stdmath.Abs(den) < parallelDenomTol {
+		return 0, false
+	}
+	ao := o.VectorTo(a)
+	s := ao.Cross(d) / den
+	if s <= vertexSideStep || s >= 1-vertexSideStep {
+		return 0, false
+	}
+	return ao.Cross(e) / den, true
+}
+
+// conicLineCrossings solves one conic edge — a whole circle or ellipse, or an ARC of a conic — against
+// the line over the caller's window, in closed form (the stable conic quadratic), keeping only the
+// crossings that lie within the edge's own span. ok=false for a curve kind that is no conic, and on a
+// tangent grazing (double root — parity unsound).
+func conicLineCrossings(e loopEdge, pl geom.Plane, p0 math.Point3, dir math.Vector3, window [2]float64) ([]float64, bool) {
 	pc, ok := toPlaneConic(e.curve, pl)
 	if !ok {
 		return nil, false
@@ -87,9 +143,26 @@ func circleLineCrossings(e loopEdge, pl geom.Plane, p0 math.Point3, dir math.Vec
 	}
 	ts := make([]float64, 0, len(hits))
 	for _, h := range hits {
-		ts = append(ts, window[0]+h.sEdge*(window[1]-window[0]))
+		if edgeParamStrictlyWithin(e, to3D(pl, h.p)) {
+			ts = append(ts, window[0]+h.sEdge*(window[1]-window[0]))
+		}
 	}
 	return ts, true
+}
+
+// edgeParamStrictlyWithin reports a point on the edge's conic lying strictly inside the edge's span,
+// clear of both ends by the vertex probe step (a whole closed curve has no ends).
+func edgeParamStrictlyWithin(e loopEdge, p math.Point3) bool {
+	t, ok := edgeParamWithin(e, p)
+	if !ok {
+		return false
+	}
+	lo, hi := stdmath.Min(e.t0, e.t1), stdmath.Max(e.t0, e.t1)
+	if dlo, dhi := e.curve.Domain(); geom.CurveIsClosed(e.curve) && hi-lo >= (dhi-dlo)-tjTol {
+		return true
+	}
+	span := hi - lo
+	return t > lo+vertexSideStep*span && t < hi-vertexSideStep*span
 }
 
 // exactFaceLineIntervals clips the line p0+t·dir to a face's TRUE trim: the polygon intervals for an
@@ -101,22 +174,37 @@ func exactFaceLineIntervals(f curvedFace, p0 math.Point3, dir math.Vector3) ([][
 	return curvedFaceLineIntervals(f, p0, dir)
 }
 
-// lineWindowOf is a conservative parameter window covering the face's extent along the line: every
-// loop-edge endpoint's projection, widened by each circle edge's radius (a superset by construction).
+// lineWindowOf is a parameter window covering the face's extent along the line: each edge's exact
+// extent along dir (its ends and, for a conic, its interior stationary points — geom.AxialExtent),
+// widened by the pair cull pad. An edge kind without a closed-form extent is projected at its ends.
 func lineWindowOf(f curvedFace, p0 math.Point3, dir math.Vector3) [2]float64 {
 	den := float64(dir.Dot(dir))
-	lo, hi, slack := stdmath.Inf(1), stdmath.Inf(-1), 0.0
+	lo, hi := stdmath.Inf(1), stdmath.Inf(-1)
 	for _, l := range f.loops {
 		for _, e := range l.edges {
-			t := float64(p0.VectorTo(e.start()).Dot(dir)) / den
-			lo, hi = stdmath.Min(lo, t), stdmath.Max(hi, t)
-			if c, isCircle := e.curve.(geom.Circle); isCircle {
-				tc := float64(p0.VectorTo(c.Center).Dot(dir)) / den
-				r := c.Radius / stdmath.Sqrt(den)
-				lo, hi = stdmath.Min(lo, tc-r), stdmath.Max(hi, tc+r)
-				slack = stdmath.Max(slack, r)
+			elo, ehi, ok := geom.AxialExtent(e.curve, e.t0, e.t1, p0, dir)
+			if !ok {
+				elo = float64(p0.VectorTo(e.start()).Dot(dir))
+				ehi = float64(p0.VectorTo(e.end()).Dot(dir))
 			}
+			lo, hi = stdmath.Min(lo, stdmath.Min(elo, ehi)/den), stdmath.Max(hi, stdmath.Max(elo, ehi)/den)
 		}
 	}
-	return [2]float64{lo - slack - facePairCullPad, hi + slack + facePairCullPad}
+	pad := facePairCullPad / stdmath.Sqrt(den)
+	return [2]float64{lo - pad, hi + pad}
+}
+
+// mergedLineParams collapses crossings that coincide within one weld along the line: a crossing AT the
+// vertex two edges share is reported by both edges and is one crossing, not two (ADR-0060).
+func mergedLineParams(ts []float64, slack float64) []float64 {
+	if len(ts) < 2 {
+		return ts
+	}
+	out := ts[:1]
+	for _, t := range ts[1:] {
+		if t-out[len(out)-1] > slack {
+			out = append(out, t)
+		}
+	}
+	return out
 }

@@ -57,9 +57,6 @@ func CurvedBooleanWithDiagnostics(op PartFeatureOperation, target, tool *topo.Bo
 // See [boolean.PointInsideBody].
 func PointInsideBody(b *topo.Body, p math.Point3) bool { return boolean.PointInsideBody(b, p) }
 
-// Facet rebuilds a body as a faceted triangle solid. See [boolean.Facet].
-func Facet(b *topo.Body, feat string) *topo.Body { return boolean.Facet(b, feat) }
-
 // MeshToBRep converts a closed welded mesh into a faceted B-rep solid. See [boolean.MeshToBRep].
 func MeshToBRep(verts []math.Point3, facets [][]int, feat string) *topo.Body {
 	return boolean.MeshToBRep(verts, facets, feat)

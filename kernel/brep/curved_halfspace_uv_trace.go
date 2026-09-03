@@ -203,10 +203,11 @@ type recoveredEdge struct {
 // and source curve, and (for an imprint edge) interpolating the curve parameter at each endpoint from the
 // matched segment's tagged endpoints. The dedge is a sub-piece of exactly one assembled segment, found by
 // its midpoint's perpendicular distance.
-func recoverEdge(d dedge, segs []uvSeg) (recoveredEdge, bool) {
+func recoverEdge(d dedge, ix *uvSegIndex) (recoveredEdge, bool) {
 	mid := math.P2((float64(d.a.X)+float64(d.b.X))/2, (float64(d.a.Y)+float64(d.b.Y))/2)
 	best, bestDist := -1, tjTol
-	for i, s := range segs {
+	for _, i := range ix.near(mid) {
+		s := ix.segs[i]
 		if dist := perpDistToSeg(mid, s.a, s.b); dist < bestDist {
 			best, bestDist = i, dist
 		}
@@ -214,7 +215,7 @@ func recoverEdge(d dedge, segs []uvSeg) (recoveredEdge, bool) {
 	if best < 0 {
 		return recoveredEdge{}, false
 	}
-	s := segs[best]
+	s := ix.segs[best]
 	re := recoveredEdge{kind: s.kind, curve: s.curve, a: d.a, b: d.b}
 	// An imprint arc AND a non-periodic face-polygon edge (planeUV, #1591) both re-emit through emitImprintRun,
 	// which needs the curve parameters at the dedge endpoints; a rim recomputes its own span in emitRimRun, so
@@ -251,10 +252,10 @@ func projFraction(p, a, b math.Point2) float64 {
 // analytic source, merge consecutive edges that share a curve into one run, and emit each run as a single
 // loopEdge (a rim arc, an imprint sub-arc, or a seam ruling). It returns the full boundary chain and,
 // separately, the imprint (section) sub-arcs alone — the cut edges the planar lid re-uses (reversed).
-func emitLoopEdges(c uvSide, loop []dedge, segs []uvSeg) (face, section []loopEdge, ok bool) {
+func emitLoopEdges(c uvSide, loop []dedge, ix *uvSegIndex) (face, section []loopEdge, ok bool) {
 	rec := make([]recoveredEdge, 0, len(loop))
 	for _, d := range loop {
-		re, good := recoverEdge(d, segs)
+		re, good := recoverEdge(d, ix)
 		if !good {
 			return nil, nil, false
 		}

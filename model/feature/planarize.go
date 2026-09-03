@@ -43,7 +43,7 @@ func curvedFaceCount(b *topo.Body) int {
 	return n
 }
 
-// curvedBooleanWorthTrying reports whether the exact M2 curved boolean is worth attempting on these
+// curvedBooleanWorthTrying reports whether the exact curved boolean is worth attempting on these
 // operands, so the result can keep its analytic surfaces instead of being faceted for the planar path.
 // It holds when the TOOL is a bare analytic primitive (a single curved face — an extruded
 // cylinder/cone, a revolved torus, a sphere), whatever the target is, or in the mirror case of a
@@ -61,12 +61,12 @@ func curvedFaceCount(b *topo.Body) int {
 // washer is cylinder − cylinder, so BOTH operands are curved and it never took the curved path
 // (measured 9.3175 cm³ with 0 analytic walls, against 9.4245 and 2 walls now; analytic 9.4248).
 //
-// Trying is safe by construction: every path in curvedExactPaths checks its own operand roles and
-// declines with ok=false when it does not apply, and curvedExactGuarded brackets the result's volume
-// and falls back when a recognizer mis-matched (#1601). The old comment here warned that CurvedBoolean
-// "can over-match" a composite curved body (a washer, a filleted edge) and cut it wrongly; measured on
-// exactly those shapes — washer joined/cut by a coaxial cylinder, washer bored off-axis — every result
-// moved CLOSER to its analytic volume and none over-matched, and the whole model suite stays green.
+// It is still a face COUNT, and the ground rules ask for a classification: the planar path cannot
+// consume a curved face at all, so "either operand carries one" is the honest gate. Measured on the
+// multipoint disk that widening removes twenty CodeBooleanAnalyticFaceted defects and takes the rebuild
+// from 226 s to 39 s. It does NOT land here, because it also drives a fine-pitch coil join into the
+// mesh reconstruction, which does not terminate on that body: the widening waits on the cost gate the
+// analytic paths need (ADR-0061 stages 2 and 4), and #2254 tracks it with the coil as its corpus.
 // A tool with MORE than one curved face is still not attempted: no path recognises such a tool, so it
 // keeps the faceted path.
 func curvedBooleanWorthTrying(target, tool *topo.Body) bool {
@@ -75,50 +75,20 @@ func curvedBooleanWorthTrying(target, tool *topo.Body) bool {
 }
 
 // planarized converts a body the exact boolean cannot consume into one it can: an extrude-circle
-// cylinder becomes a clean, key-stable N-gon prism, and any OTHER curved body is faceted into a
-// triangle cage via [ops.Facet]. An already-planar body is returned unchanged. nil-safe.
+// cylinder becomes a clean, key-stable N-gon prism. Any other body is returned unchanged. nil-safe.
 //
 // It runs only where the EXACT curved boolean has already declined — combine tries that first and
 // returns early on success — so this is the planar path's operand preparation, not a policy about
 // which engine to use.
 //
-// The cage was DELETED once (#3459) on the evidence that "the whole tier-2 corpus passes without any
-// faceting here". That evidence was incomplete: the corpus behind it globs ./kernel/... ./model/...,
-// which silently skips the three exchange TRANSLATOR modules, each carrying its own go.mod. One of
-// them rebuilds a real Inventor part whose 52-region cut depends on this. Without the cage the planar
-// boolean received analytic operands it cannot consume, fell to triangle CSG once per cut, and
-// accumulated 11780 planar faces in 3 shells with 28 open boundary edges where the cage gives 461
-// faces in ONE closed shell.
-//
-// Deleting it again needs the exact boolean to take those operands, not a corpus run that cannot see
-// the part. The faceting stays PERMANENT and stays announced: planarizedDiag records it as a Defect,
-// which is what keeps it from being a silent degradation.
+// This used to fall through to a triangle cage (ops.Facet) for every other curved body, and to a
+// RESCUE that faceted both operands after an invalid analytic result. Both are gone (ADR-0060,
+// #3459): the mixed boolean trims a ruled wall inside the frame its own loops make, so the Inventor
+// part whose 52-region cut once needed the cage cuts its pin analytically. The N-gon prism here is
+// the last re-faceting site, tracked by #2254.
 func planarized(b *topo.Body, feat string) *topo.Body {
 	if prism := planarizeSimpleCylinder(b, feat+"/planar"); prism != nil {
 		return prism
-	}
-	return b
-}
-
-// facetedRescue is planarized plus the triangle cage: any curved body the simple-cylinder prism does
-// not cover is faceted through [ops.Facet].
-//
-// It is a RESCUE, run only after a boolean has already returned an invalid body from the analytic
-// operands — never as a pre-transform. Faceting up front is what the cage used to do, and it cannot be
-// restored that way: the analytic operands are exactly what lets a wrapped emboss come back as 11
-// analytic faces, and faceting them first takes it to 175 planar ones. Waiting until the analytic
-// attempt has actually failed serves both.
-//
-// The faceting is PERMANENT and stays announced — the caller records it as a Defect — so a body that
-// took this route says so rather than degrading silently.
-func facetedRescue(b *topo.Body, feat string) *topo.Body {
-	if prism := planarizeSimpleCylinder(b, feat+"/planar"); prism != nil {
-		return prism
-	}
-	if b != nil && hasCurvedFace(b) {
-		if faceted := ops.Facet(b, originalFeature(b, feat)); faceted != nil {
-			return faceted
-		}
 	}
 	return b
 }
@@ -137,18 +107,6 @@ func planarizedDiag(b *topo.Body, feat string, rec *diag.Recorder) *topo.Body {
 			"%s faceted an analytic operand for the planar path: the result and every downstream feature is polyhedral", feat)
 	}
 	return planarized(b, feat)
-}
-
-// facetedRescueDiag facets an operand for the rescue and records it, since the faceting is permanent
-// and must ride on the feature rather than happen quietly (#1601, audit A5).
-func facetedRescueDiag(b *topo.Body, feat string, rec *diag.Recorder) *topo.Body {
-	out := facetedRescue(b, feat)
-	if out != b {
-		rec.Recordf(ops.CodeBooleanAnalyticFaceted, diag.Defect,
-			"%s faceted an analytic operand to rescue an invalid boolean result: the result and every "+
-				"downstream feature is polyhedral", feat)
-	}
-	return out
 }
 
 // planarizeSimpleCylinder rebuilds a body that is exactly one analytic cylinder (1 geom.Cylinder side

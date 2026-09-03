@@ -96,10 +96,41 @@ func applyCurvedFlips(faces []curvedFace, flip []bool) []curvedFace {
 // curvedOrientationFlips two-colours the face-adjacency graph (BFS over each connected shell) so that, after
 // flipping the marked faces, every shared edge is traversed in opposite directions by its two faces.
 func curvedOrientationFlips(faces []curvedFace, pw *welder3) []bool {
-	adj := curvedFaceAdjacency(faces, pw)
 	flip := make([]bool, len(faces))
-	seen := make([]bool, len(faces))
-	for s := range faces {
+	walkFaceComponents(curvedFaceAdjacency(faces, pw), func(from, to int, sameDir bool) {
+		flip[to] = flip[from] != sameDir // flip[nbr] = flip[f] XOR sameDir
+	})
+	return flip
+}
+
+// connectedFaceComponents groups the faces into connected components over the adjacency (one per shell),
+// each listed in discovery order from its lowest-index face.
+func connectedFaceComponents(adj [][]orientFlipNeighbour) [][]int {
+	var comps [][]int
+	comp := -1
+	seen := make([]bool, len(adj))
+	walkFaceComponents(adj, func(from, to int, _ bool) {
+		if !seen[from] {
+			seen[from] = true
+			comps = append(comps, []int{from})
+			comp = len(comps) - 1
+		}
+		seen[to] = true
+		comps[comp] = append(comps[comp], to)
+	})
+	for f := range adj {
+		if !seen[f] {
+			comps = append(comps, []int{f})
+		}
+	}
+	return comps
+}
+
+// walkFaceComponents breadth-first walks every connected component of the adjacency, calling visit on
+// each tree edge (from an already-reached face to a newly reached neighbour) in discovery order.
+func walkFaceComponents(adj [][]orientFlipNeighbour, visit func(from, to int, sameDir bool)) {
+	seen := make([]bool, len(adj))
+	for s := range adj {
 		if seen[s] {
 			continue
 		}
@@ -112,12 +143,11 @@ func curvedOrientationFlips(faces []curvedFace, pw *welder3) []bool {
 					continue
 				}
 				seen[e.face] = true
-				flip[e.face] = flip[f] != e.sameDir // flip[nbr] = flip[f] XOR sameDir
+				visit(f, e.face, e.sameDir)
 				q = append(q, e.face)
 			}
 		}
 	}
-	return flip
 }
 
 // curvedFaceAdjacency lists, per face, the faces it shares a manifold edge with and whether that edge is

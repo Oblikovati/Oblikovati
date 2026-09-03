@@ -19,10 +19,11 @@ import (
 // imprint segments terminate byte-identically — OCCT's BuilderFace/WireSplitter discipline of exact
 // edges carried through a sampled arrangement (BOPAlgo, the reference survey in ADR-0058).
 type planeFaceUV struct {
-	plane   geom.Plane
-	loops   []curvedLoop
-	res     geom.Resolution
-	frameUV [][]math.Point2 // sampled boundary rings (outer first) for even-odd cell containment
+	plane     geom.Plane
+	loops     []curvedLoop
+	res       geom.Resolution
+	frameUV   [][]math.Point2 // sampled boundary rings (outer first) for even-odd cell containment
+	incidence []math.Point3   // every imprint end and frame crossing: a vertex the neighbours share
 }
 
 // newPlaneFaceUV frames a planar face for the mixed split. ok=false for a frame outside the v1 scope:
@@ -57,14 +58,16 @@ func planeFaceEdgeOK(e loopEdge) bool {
 }
 
 // planeFaceUV satisfies uvSide: a non-periodic, exact-loop-framed plane (the planeUV conventions).
-func (c *planeFaceUV) paramOf(p math.Point3) math.Point2             { return to2D(c.plane, p) }
-func (c *planeFaceUV) placeSeams(_ []geom.Curve3)                    {}
-func (c *planeFaceUV) vPeriodic() bool                               { return false }
-func (c *planeFaceUV) uPeriodic() bool                               { return false }
-func (c *planeFaceUV) wrapsAllU() bool                               { return false }
-func (c *planeFaceUV) multiFace() bool                               { return true }
-func (c *planeFaceUV) emitRun(run []recoveredEdge) (loopEdge, bool)  { return emitImprintRun(run) }
-func (c *planeFaceUV) finalizeLoops(loops []curvedLoop) []curvedLoop { return loops }
+func (c *planeFaceUV) paramOf(p math.Point3) math.Point2            { return to2D(c.plane, p) }
+func (c *planeFaceUV) placeSeams(_ []geom.Curve3)                   {}
+func (c *planeFaceUV) vPeriodic() bool                              { return false }
+func (c *planeFaceUV) uPeriodic() bool                              { return false }
+func (c *planeFaceUV) wrapsAllU() bool                              { return false }
+func (c *planeFaceUV) multiFace() bool                              { return true }
+func (c *planeFaceUV) emitRun(run []recoveredEdge) (loopEdge, bool) { return emitImprintRun(run) }
+func (c *planeFaceUV) finalizeLoops(loops []curvedLoop) []curvedLoop {
+	return splitLoopsAtPoints(loops, c.incidence, c.res)
+}
 
 func (c *planeFaceUV) wrappingSolidFaces(_ []Face2D, _ []uvSeg, _ geom.Surface, _ curvedFace) ([]curvedFace, bool) {
 	return nil, false // a bounded plane never wraps
@@ -74,11 +77,21 @@ func (c *planeFaceUV) wrappingSolidFaces(_ []Face2D, _ []uvSeg, _ geom.Surface, 
 // sub-segments stay in the face loops (the mixed boolean's neighbour fragments weld on them by
 // coordinates, no lid is assembled here). outerless never applies to a bounded plane.
 func (c *planeFaceUV) orientLoops(loops []emittedLoop, _ bool) ([]curvedLoop, []loopEdge, bool) {
-	faceLoops := make([]curvedLoop, 0, len(loops))
-	for _, e := range loops {
+	return outerFirst(loops), nil, false
+}
+
+// outerFirst orders emitted loops by the (u,v) area they enclose, largest first: a face's OUTER loop
+// bounds every hole, so it is the one with the largest magnitude. The emitter orders loops by mean v
+// (the ruled band's "hi rim first" convention), which put a pocket's square hole ahead of a cap's rim
+// and had the cap misfiled as a polygonal face with a detached hole (ADR-0060).
+func outerFirst(loops []emittedLoop) []curvedLoop {
+	ordered := append([]emittedLoop{}, loops...)
+	sort.SliceStable(ordered, func(i, j int) bool { return stdmath.Abs(ordered[i].area) > stdmath.Abs(ordered[j].area) })
+	faceLoops := make([]curvedLoop, 0, len(ordered))
+	for _, e := range ordered {
 		faceLoops = append(faceLoops, curvedLoop{edges: e.face})
 	}
-	return faceLoops, nil, false
+	return faceLoops
 }
 
 // faceFrameCrossing is one exact crossing of a conic FRAME edge with a straight imprint segment: the
@@ -102,27 +115,30 @@ func (c *planeFaceUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
 	// An OPEN conic (a hyperbola branch — see curved_plane_face_uv_open.go) crosses the frame's
 	// STRAIGHT edges, so its crossings are solved first and the frame is split on them.
 	openCrossings := c.openFrameCrossings(open)
+	c.incidence = c.incidencePoints(straight, open, crossings, openCrossings)
 	segs := append(c.frameSegs(crossings, openCrossings), c.imprintSegs(straight, crossings)...)
 	segs = append(segs, c.openSegs(open, openCrossings)...)
 	return append(segs, c.islandSegs(islands)...)
 }
 
-// frameCrossings solves every conic-frame-edge ∩ imprint-segment crossing in closed form.
+// frameCrossings solves every conic-frame-edge ∩ imprint-segment crossing in closed form. Every
+// non-straight frame edge is a conic or an arc of one (planeFaceEdgeOK), so the crossing solved on the
+// whole conic is kept only where it falls within the arc's own span (ADR-0060).
 func (c *planeFaceUV) frameCrossings(imprint []geom.Curve3) []faceFrameCrossing {
 	var out []faceFrameCrossing
 	for li, l := range c.loops {
 		for ei, e := range l.edges {
-			if _, isCircle := e.curve.(geom.Circle); isCircle {
-				out = append(out, c.circleEdgeCrossings(li, ei, e.curve, imprint)...)
+			if !geom.IsStraightCurve(e.curve) {
+				out = append(out, c.conicEdgeFrameCrossings(li, ei, e, imprint)...)
 			}
 		}
 	}
 	return out
 }
 
-// circleEdgeCrossings intersects one full-circle frame edge with every straight imprint segment.
-func (c *planeFaceUV) circleEdgeCrossings(li, ei int, circle geom.Curve3, imprint []geom.Curve3) []faceFrameCrossing {
-	pc, ok := toPlaneConic(circle, c.plane)
+// conicEdgeFrameCrossings intersects one conic frame edge with every straight imprint segment.
+func (c *planeFaceUV) conicEdgeFrameCrossings(li, ei int, e loopEdge, imprint []geom.Curve3) []faceFrameCrossing {
+	pc, ok := toPlaneConic(e.curve, c.plane)
 	if !ok {
 		return nil
 	}
@@ -131,12 +147,30 @@ func (c *planeFaceUV) circleEdgeCrossings(li, ei int, circle geom.Curve3, imprin
 		a2, b2 := to2D(c.plane, imp.PointAt(0)), to2D(c.plane, imp.PointAt(1))
 		hits, _ := conicFrameHits(pc, a2, b2, c.res)
 		for _, h := range hits {
-			if tc, ok := geom.ConicParamAt(circle, to3D(c.plane, h.p)); ok {
-				out = append(out, faceFrameCrossing{loop: li, edge: ei, imp: ii, sImp: h.sEdge, tConic: tc, at: circle.PointAt(tc)})
+			if tc, ok := edgeParamWithin(e, to3D(c.plane, h.p)); ok {
+				out = append(out, faceFrameCrossing{loop: li, edge: ei, imp: ii, sImp: h.sEdge, tConic: tc, at: e.curve.PointAt(tc)})
 			}
 		}
 	}
 	return out
+}
+
+// edgeParamWithin inverts a conic edge at a point on its conic and accepts it only within the edge's
+// span [t0, t1] (either order; a whole closed curve spans everything). The span is judged in the
+// curve's own parameter, so a partial arc keeps only the crossings that lie ON the arc.
+func edgeParamWithin(e loopEdge, p math.Point3) (float64, bool) {
+	t, ok := geom.ConicParamAt(e.curve, p)
+	if !ok {
+		return 0, false
+	}
+	lo, hi := stdmath.Min(e.t0, e.t1), stdmath.Max(e.t0, e.t1)
+	if dlo, dhi := e.curve.Domain(); geom.CurveIsClosed(e.curve) && hi-lo >= (dhi-dlo)-tjTol {
+		return t, true
+	}
+	if t < lo-tjTol || t > hi+tjTol {
+		return 0, false
+	}
+	return stdmath.Max(lo, stdmath.Min(hi, t)), true
 }
 
 // frameSegs emits the boundary loops into tagged segments, filling frameUV with the sampled rings the
@@ -162,10 +196,10 @@ func (c *planeFaceUV) frameSegs(crossings []faceFrameCrossing, open [][]openCros
 // sampled along its traversal with every crossing parameter injected so a vertex lands EXACTLY on the
 // shared crossing point.
 func (c *planeFaceUV) frameEdgeSegs(li, ei int, e loopEdge, crossings []faceFrameCrossing, open [][]openCrossing) []uvSeg {
-	if _, isCircle := e.curve.(geom.Circle); !isCircle {
+	if geom.IsStraightCurve(e.curve) {
 		return c.straightFrameEdgeSegs(li, ei, e, open)
 	}
-	params := circleSampleParams(e, crossings, li, ei)
+	params := conicSampleParams(e, crossings, li, ei)
 	segs := make([]uvSeg, 0, len(params)-1)
 	for i := 1; i < len(params); i++ {
 		a3, b3 := e.curve.PointAt(params[i-1]), e.curve.PointAt(params[i])
@@ -174,9 +208,9 @@ func (c *planeFaceUV) frameEdgeSegs(li, ei int, e loopEdge, crossings []faceFram
 	return segs
 }
 
-// circleSampleParams builds the sample parameters of one full-circle frame edge, in the edge's own
+// conicSampleParams builds the sample parameters of one conic frame edge, in the edge's own
 // traversal order (t0→t1), with each crossing's exact conic parameter injected.
-func circleSampleParams(e loopEdge, crossings []faceFrameCrossing, li, ei int) []float64 {
+func conicSampleParams(e loopEdge, crossings []faceFrameCrossing, li, ei int) []float64 {
 	lo, hi := stdmath.Min(e.t0, e.t1), stdmath.Max(e.t0, e.t1)
 	params := make([]float64, 0, imprintSampleCount+4)
 	for i := 0; i <= imprintSampleCount; i++ {
@@ -266,7 +300,7 @@ func planeFaceContactOK(c *planeFaceUV, imprint []geom.Curve3) bool {
 	straight, islands, _ := splitImprintByKind(imprint)
 	for _, l := range c.loops {
 		for _, e := range l.edges {
-			if _, isCircle := e.curve.(geom.Circle); isCircle && !circleContactOK(c, e.curve, straight) {
+			if !geom.IsStraightCurve(e.curve) && !conicEdgeContactOK(c, e, straight) {
 				return false
 			}
 		}
@@ -274,17 +308,43 @@ func planeFaceContactOK(c *planeFaceUV, imprint []geom.Curve3) bool {
 	return islandContactOK(c, islands, straight)
 }
 
-// circleContactOK reports whether no imprint segment grazes one frame circle tangentially.
-func circleContactOK(c *planeFaceUV, circle geom.Curve3, imprint []geom.Curve3) bool {
-	pc, ok := toPlaneConic(circle, c.plane)
+// conicEdgeContactOK reports whether no imprint segment grazes one conic frame edge tangentially —
+// a double root on the conic that lies within the edge's own span.
+func conicEdgeContactOK(c *planeFaceUV, e loopEdge, imprint []geom.Curve3) bool {
+	pc, ok := toPlaneConic(e.curve, c.plane)
 	if !ok {
 		return false
 	}
 	for _, imp := range imprint {
 		a2, b2 := to2D(c.plane, imp.PointAt(0)), to2D(c.plane, imp.PointAt(1))
-		if _, tangent := conicEdgeHits(pc, a2, b2, c.res); tangent {
-			return false
+		hits, tangent := conicEdgeHits(pc, a2, b2, c.res)
+		if !tangent {
+			continue
+		}
+		for _, h := range hits {
+			if _, on := edgeParamWithin(e, to3D(c.plane, h.p)); on {
+				return false
+			}
 		}
 	}
 	return true
+}
+
+// incidencePoints gathers every point where the imprint meets the frame — each straight imprint's two
+// ends, each open conic's ends, and every solved crossing — the vertices finalizeLoops restores on the
+// re-emitted edges.
+func (c *planeFaceUV) incidencePoints(straight, open []geom.Curve3, crossings []faceFrameCrossing, openCrossings [][]openCrossing) []math.Point3 {
+	var pts []math.Point3
+	for _, imp := range append(append([]geom.Curve3{}, straight...), open...) {
+		pts = append(pts, imp.PointAt(0), imp.PointAt(1))
+	}
+	for _, cr := range crossings {
+		pts = append(pts, cr.at)
+	}
+	for _, ocs := range openCrossings {
+		for _, oc := range ocs {
+			pts = append(pts, oc.at)
+		}
+	}
+	return pts
 }

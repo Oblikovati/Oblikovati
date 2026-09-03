@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package boolean
+package boolean_test
 
 import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/internal/testcage"
+	. "oblikovati.org/kernel/ops/boolean"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -39,9 +41,10 @@ func plateWithStraddledHole(t *testing.T, holeCenters ...math.Point2) *topo.Body
 			t.Fatalf("drill at %v: %v", c, err)
 		}
 	}
-	// A curved operand forces the planar boolean's faceting fallback upstream of the join; do it
-	// explicitly so this test pins the planar path rather than whatever the fallback picks.
-	body = brep.UnifyCoplanarFaces(Facet(body, "facet"), "unify")
+	// A plate with ANALYTIC bores meets the block in a flush contact the mixed boolean does not model
+	// yet (a coplanar face carrying conic loops), so the join would fall to triangle CSG; facet the
+	// plate explicitly so this test pins the planar path — the #2030 hole nesting — and nothing else.
+	body = testcage.Body(body, "facet")
 
 	block, err := brep.SolidBlock(math.P3(-0.4, 0.55, 0), math.P3(0.4, 1.05, 0.1), "block")
 	if err != nil {

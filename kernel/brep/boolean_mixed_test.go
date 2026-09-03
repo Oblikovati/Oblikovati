@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -90,16 +91,30 @@ func TestMixedBooleanUnionAwayFromBoss(t *testing.T) {
 	}
 }
 
-// TestMixedBooleanDeclinesCurvedInteraction: a cut that genuinely CROSSES the boss wall must DECLINE
-// (ErrNonPlanar) — imprinting a cylinder wall is the bespoke curved handlers' and the reconstruction
-// path's job. The tool reaches x=8, well past the wall (radius 2 about (5,5)), and the exact
-// interaction gate proves the contact (a ruling-line pair inside the tool face's trim and the band).
-func TestMixedBooleanDeclinesCurvedInteraction(t *testing.T) {
+// TestMixedBooleanCutCrossingBossWall: a cut that genuinely CROSSES the boss wall used to DECLINE — the
+// seat face's hole is a detached circle the polygonal split cannot see. Now the seat is demoted to the
+// exact-frame chart with the hole as a frame edge, the wall trims inside its own loop frame, and the cut
+// comes back exact (ADR-0060). The tool box x∈[4,8], y∈[4,6], z∈[9,12] takes 4×2×1 of the block and, over
+// z∈[10,12], the part of that rectangle inside the boss disc (radius 2 about (5,5)).
+func TestMixedBooleanCutCrossingBossWall(t *testing.T) {
 	t.Parallel()
 	bossed := bossedBlock(t)
 	through, _ := brep.SolidBlock(math.P3(4, 4, 9), math.P3(8, 6, 12), "through")
-	if _, err := brep.BooleanDiag(brep.Difference, bossed, through, nil); err == nil {
-		t.Fatal("cut crossing the boss wall did not decline; want ErrNonPlanar (conservative scope)")
+	res, err := brep.BooleanDiag(brep.Difference, bossed, through, nil)
+	if err != nil {
+		t.Fatalf("cut crossing the boss wall declined: %v", err)
+	}
+	if rep := ops.Validate(res); !rep.ValidSolid() {
+		t.Fatalf("cut crossing the boss wall invalid: %+v", rep)
+	}
+	if n := cylinderFaceCount(res); n != 1 {
+		t.Errorf("boss wall came back as %d cylinder faces, want the one notched wall", n)
+	}
+	// Rectangle ∩ disc: full width 2 while |x−5| ≤ √3 (x from 4 to 5+√3), then the disc's own width.
+	inDisc := 2*(1+stdmath.Sqrt(3)) + (2*stdmath.Pi/3 - stdmath.Sqrt(3))
+	want := 1000 + stdmath.Pi*4*3 - 8 - 2*inDisc
+	if got := vol(res); stdmath.Abs(got-want) > 1e-9 {
+		t.Errorf("cut crossing the boss wall volume = %.12g, want %.12g", got, want)
 	}
 }
 

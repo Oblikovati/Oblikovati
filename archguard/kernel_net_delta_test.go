@@ -42,7 +42,7 @@ import (
 // moves it, and say in the PR which direction each moved and why.
 var kernelNetDeltaPin = map[string]int{
 	"tolerance-constants": 233,
-	"type-assertions":     774,
+	"type-assertions":     765,
 	"recognizers":         37, // 26 curvedExactPaths + 11 specialCurvedMeshers
 	"fallback-sites":      28,
 }

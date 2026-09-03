@@ -90,17 +90,27 @@ func assertOnCircle(t *testing.T, e loopEdge, circ geom.Circle) {
 }
 
 // TestPlaneFaceUVKeepAllIsWholeDisc: with a keep-everything predicate the imprint dissolves (both cell
-// sides kept) and the whole disc comes back as its single exact full-circle loop.
+// sides kept) and the whole disc comes back as one loop on its exact rim circle. The rim keeps the two
+// vertices where the chord met it: the face that laid that chord meets the rim there too, and a shared
+// edge subdivides identically on both faces (ADR-0060) — so the loop is the rim in exact sub-arcs
+// (the rim's own parameter origin stays a vertex as well).
 func TestPlaneFaceUVKeepAllIsWholeDisc(t *testing.T) {
 	t.Parallel()
-	f, _ := uvDiscFace(t, 2)
+	f, circ := uvDiscFace(t, 2)
 	faces := trimPlaneFace(t, f, []geom.Curve3{chordSegment(0.5, 2.5)}, func(math.Point3) bool { return true })
-	if len(faces) != 1 || len(faces[0].loops) != 1 || len(faces[0].loops[0].edges) != 1 {
-		t.Fatalf("keep-all: got %d faces, want the whole disc as one single-edge loop", len(faces))
+	if len(faces) != 1 || len(faces[0].loops) != 1 || len(faces[0].loops[0].edges) < 2 {
+		t.Fatalf("keep-all: got %d faces, want the whole disc as one loop of rim arcs", len(faces))
 	}
-	e := faces[0].loops[0].edges[0]
-	if _, isCircle := e.curve.(geom.Circle); !isCircle || !isFullDomain(e.t0, e.t1) {
-		t.Fatalf("keep-all loop edge = %T over [%g,%g], want the full rim circle", e.curve, e.t0, e.t1)
+	span := 0.0
+	for _, e := range faces[0].loops[0].edges {
+		if _, isCircle := e.curve.(geom.Circle); !isCircle {
+			t.Fatalf("keep-all loop edge = %T, want the rim circle", e.curve)
+		}
+		assertOnCircle(t, e, circ)
+		span += stdmath.Abs(e.t1 - e.t0)
+	}
+	if stdmath.Abs(span-1) > 1e-12 {
+		t.Fatalf("keep-all rim arcs span %g of the circle, want the whole turn", span)
 	}
 }
 

@@ -23,7 +23,7 @@ func TestRuledSideBandTakesACylinder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
-	rs, ok := ruledSideBandOf(sideFaceOf(t, body))
+	rs, ok := ruledFaceOf(sideFaceOf(t, body))
 	if !ok {
 		t.Fatal("a full cylinder side band was not recognised as a ruled wall")
 	}
@@ -46,7 +46,7 @@ func TestRuledSideBandTakesACone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidCylinderCone: %v", err)
 	}
-	rs, ok := ruledSideBandOf(sideFaceOf(t, body))
+	rs, ok := ruledFaceOf(sideFaceOf(t, body))
 	if !ok {
 		t.Fatal("a full cone side band was not recognised as a ruled wall")
 	}
@@ -80,7 +80,7 @@ func TestRuledSideBandDeclinesAPlane(t *testing.T) {
 		if _, isPlane := cf.surface.(geom.Plane); !isPlane {
 			continue
 		}
-		if _, ok := ruledSideBandOf(cf); ok {
+		if _, ok := ruledFaceOf(cf); ok {
 			t.Error("a planar cap was accepted as a ruled wall")
 		}
 	}

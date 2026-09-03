@@ -32,13 +32,11 @@ func splitImprintByKind(imprint []geom.Curve3) (straight, islands, open []geom.C
 	return straight, islands, open
 }
 
-// isClosedConicImprint reports the conics that bound a region on their own — the island kind.
+// isClosedConicImprint reports the conics that bound a region on their own — the island kind: a
+// conic whose ends meet. A bounded ARC of one is the open kind, whatever conic it runs on (ADR-0060).
 func isClosedConicImprint(cv geom.Curve3) bool {
-	switch cv.(type) {
-	case geom.Circle, geom.EllipseFull:
-		return true
-	}
-	return false
+	_, isConic := geom.AsConic(cv)
+	return isConic && geom.CurveIsClosed(cv)
 }
 
 // conicIslandSegs samples one closed conic imprint over its WHOLE domain into tagged (u,v) segments that

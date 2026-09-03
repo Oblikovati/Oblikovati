@@ -46,8 +46,8 @@ func (c *planeFaceUV) openFrameCrossings(open []geom.Curve3) [][]openCrossing {
 		}
 		for li, l := range c.loops {
 			for ei, e := range l.edges {
-				if _, isCircle := e.curve.(geom.Circle); isCircle {
-					continue // circle frame edges are handled by frameCrossings
+				if !geom.IsStraightCurve(e.curve) {
+					continue // an open conic meets a conic frame edge nowhere this chart admits (conicCrossesFaceBoundary gates it)
 				}
 				out[oi] = append(out[oi], c.openEdgeCrossings(cv, pc, li, ei, e)...)
 			}
@@ -165,12 +165,8 @@ func crossingsOnEdge(open [][]openCrossing, li, ei int) []openCrossing {
 // openConicKind reports whether a curve is an OPEN conic — one this file's treatment applies to.
 // A closed conic is an island; a straight segment is neither.
 func openConicKind(cv geom.Curve3) bool {
-	cf, ok := geom.AsConic(cv)
-	if !ok {
-		return false
-	}
-	lo, hi := cv.Domain()
-	return cf.Hyperbolic || stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0)
+	_, isConic := geom.AsConic(cv)
+	return isConic && !geom.CurveIsClosed(cv)
 }
 
 // clipSectionToFace bounds a section curve to the pieces of it that lie INSIDE a planar face's trim.
@@ -200,7 +196,7 @@ func clipSectionToFace(cv geom.Curve3, uf curvedFace) ([]geom.Curve3, bool) {
 	var out []geom.Curve3
 	for _, run := range sectionRuns(cv, cuts) {
 		mid := cv.PointAt(sectionParamAt(cv, run.lo+(run.hi-run.lo)/2))
-		if !pointInFace2D(to2D(pl, mid), uf) {
+		if !faceContainsExact(uf, mid) {
 			continue
 		}
 		arc, got := geom.ConicArcBetween(cv, cv.PointAt(run.lo), cv.PointAt(sectionParamAt(cv, run.hi)), mid)

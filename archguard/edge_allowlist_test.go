@@ -32,11 +32,13 @@ var allowedTreeImports = map[string][]string{
 	"kernel/topo":       {"kernel/diag", "kernel/geom", "math"},
 	"kernel/brep":       {"kernel/diag", "kernel/geom", "kernel/topo", "math"},
 	"kernel/subd":       {"kernel/geom", "kernel/topo", "math"},
-	"kernel/fit":        {"kernel/geom", "math"},
-	"kernel/blend":      {"kernel/geom", "kernel/topo", "math"},
-	"kernel/meshbool":   {"kernel/predicates", "math"},
-	"kernel/shading":    {"math"},
-	"kernel/geomapi":    {"api", "kernel/geom", "math"},
+	// Test support only: a faceted fixture for tests that pin a planar-only path (ADR-0060, #3459).
+	"kernel/internal": {"kernel/brep", "kernel/geom", "kernel/ops/boolean", "kernel/ops/tessellate", "kernel/topo", "math"},
+	"kernel/fit":      {"kernel/geom", "math"},
+	"kernel/blend":    {"kernel/geom", "kernel/topo", "math"},
+	"kernel/meshbool": {"kernel/predicates", "math"},
+	"kernel/shading":  {"math"},
+	"kernel/geomapi":  {"api", "kernel/geom", "math"},
 
 	// kernel/ops is packaged BY OPERATION (#2183), so each family is its own row. The split
 	// only buys anything — a change to one family that neither rebuilds nor re-tests the

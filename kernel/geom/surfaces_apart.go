@@ -128,18 +128,15 @@ type ConicForm struct {
 func AsConic(c Curve3) (ConicForm, bool) {
 	switch x := c.(type) {
 	case Circle:
-		minor, err := math.UnitVector3FromVector(x.Normal.AsVector().Cross(x.RefDir.AsVector()))
-		if err != nil {
-			return ConicForm{}, false
-		}
-		return ConicForm{Center: x.Center, Major: x.RefDir, Minor: minor, A: x.Radius, B: x.Radius}, true
+		return circularForm(x.Center, x.Normal, x.RefDir, x.Radius)
+	case Arc3d:
+		// A circular ARC runs on a circle, and the conic it runs on is what a crossing solver or a
+		// section plane needs (ADR-0060); its bounds are its parameterisation, as for the hyperbolic arc.
+		return circularForm(x.Center, x.Normal, x.RefDir, x.Radius)
 	case EllipseFull:
-		minor, err := math.UnitVector3FromVector(x.Normal.AsVector().Cross(x.MajorAxis.AsVector()))
-		if err != nil {
-			return ConicForm{}, false
-		}
-		return ConicForm{Center: x.Center, Major: x.MajorAxis, Minor: minor,
-			A: x.MajorRadius, B: x.MinorRadius}, true
+		return ellipticForm(x.Center, x.Normal, x.MajorAxis, x.MajorRadius, x.MinorRadius)
+	case EllipticalArc:
+		return ellipticForm(x.Center, x.Normal, x.MajorAxis, x.MajorRadius, x.MinorRadius)
 	case Hyperbola:
 		return ConicForm{Center: x.Center, Major: x.TransverseAxis, Minor: x.ConjugateAxis,
 			A: x.A, B: x.B, Hyperbolic: true}, true
@@ -150,6 +147,25 @@ func AsConic(c Curve3) (ConicForm, bool) {
 			A: x.A, B: x.B, Hyperbolic: true}, true
 	}
 	return ConicForm{}, false
+}
+
+// circularForm is the conic form of a circle: equal semi-axes along its reference direction and
+// the in-plane direction a quarter turn on.
+func circularForm(center math.Point3, normal, ref math.UnitVector3, r float64) (ConicForm, bool) {
+	minor, err := math.UnitVector3FromVector(normal.AsVector().Cross(ref.AsVector()))
+	if err != nil {
+		return ConicForm{}, false
+	}
+	return ConicForm{Center: center, Major: ref, Minor: minor, A: r, B: r}, true
+}
+
+// ellipticForm is the conic form of an ellipse from its centre, plane normal, major axis and radii.
+func ellipticForm(center math.Point3, normal, major math.UnitVector3, a, b float64) (ConicForm, bool) {
+	minor, err := math.UnitVector3FromVector(normal.AsVector().Cross(major.AsVector()))
+	if err != nil {
+		return ConicForm{}, false
+	}
+	return ConicForm{Center: center, Major: major, Minor: minor, A: a, B: b}, true
 }
 
 // AxialAmplitude is the conic's half-extent along axis about its centre — how far the curve reaches
@@ -185,12 +201,14 @@ func (c ConicForm) AxialAmplitude(axis math.Vector3) float64 {
 func ConicParamAt(c Curve3, p math.Point3) (float64, bool) {
 	switch x := c.(type) {
 	case Circle:
-		d := x.Center.VectorTo(p)
-		cos := d.Dot(x.RefDir.AsVector())
-		sin := d.Dot(x.Normal.Cross(x.RefDir))
-		return wrapUnit(stdmath.Atan2(float64(sin), float64(cos)) / (2 * stdmath.Pi)), true
+		return wrapUnit(circleAngleAt(x.Center, x.RefDir, x.Normal, p) / (2 * stdmath.Pi)), true
+	case Arc3d:
+		return arcParamAt(circleAngleAt(x.Center, x.RefDir, x.Normal, p), x.StartAngle, x.SweepAngle), true
 	case EllipseFull:
 		return ellipseParamAt(x, p), true
+	case EllipticalArc:
+		theta := ellipseAngleAt(x.Center, x.MajorAxis, x.Normal, x.MajorRadius, x.MinorRadius, p)
+		return arcParamAt(theta, x.StartAngle, x.SweepAngle), true
 	case Hyperbola:
 		return hyperbolaTheta(x.Center, x.ConjugateAxis, x.B, p), true
 	case HyperbolicArc:
@@ -203,12 +221,21 @@ func ConicParamAt(c Curve3, p math.Point3) (float64, bool) {
 	return 0, false
 }
 
+// circleAngleAt is the polar angle of p about a circle's centre, from its reference direction.
+func circleAngleAt(center math.Point3, ref, normal math.UnitVector3, p math.Point3) float64 {
+	d := center.VectorTo(p)
+	return stdmath.Atan2(float64(d.Dot(normal.Cross(ref))), float64(d.Dot(ref.AsVector())))
+}
+
+// ellipseAngleAt is the eccentric angle of p on an ellipse: each axis component scaled by its radius.
+func ellipseAngleAt(center math.Point3, major, normal math.UnitVector3, a, b float64, p math.Point3) float64 {
+	d := center.VectorTo(p)
+	return stdmath.Atan2(float64(d.Dot(normal.Cross(major)))/b, float64(d.Dot(major.AsVector()))/a)
+}
+
 // ellipseParamAt inverts a full ellipse onto its [0,1) parameter.
 func ellipseParamAt(e EllipseFull, p math.Point3) float64 {
-	d := e.Center.VectorTo(p)
-	cos := float64(d.Dot(e.MajorAxis.AsVector())) / e.MajorRadius
-	sin := float64(d.Dot(e.Normal.Cross(e.MajorAxis))) / e.MinorRadius
-	return wrapUnit(stdmath.Atan2(sin, cos) / (2 * stdmath.Pi))
+	return wrapUnit(ellipseAngleAt(e.Center, e.MajorAxis, e.Normal, e.MajorRadius, e.MinorRadius, p) / (2 * stdmath.Pi))
 }
 
 // hyperbolaTheta inverts a hyperbola branch onto its hyperbolic angle through ASINH, which is

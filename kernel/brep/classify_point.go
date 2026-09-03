@@ -260,8 +260,21 @@ func rayCrossings(faces []curvedFace, p math.Point3, dir [3]float64, tMax, tol f
 // sampled trim test is trusted only where it is provably accurate. This is the shared per-face pierce
 // traversal of the parity counter and the nearest-crossing side test.
 func forEachInTrimHit(f curvedFace, ray geom.Line, tMax, tol, skipTol float64, visit func(geom.RayHit)) (clean bool) {
-	band := stdmath.Max(tol, faceBoundaryBand(f))
-	for _, hit := range geom.RaySurfaceHits(f.surface, ray, tMax) {
+	return forEachInTrimHitBand(f, ray, tMax, skipTol, faceBoundaryBand(f), tol, visit)
+}
+
+// forEachInTrimHitBand is [forEachInTrimHit] taking the face's boundary band PRECOMPUTED. The band is a
+// pure function of the face — it walks every trim edge measuring chord sagitta — and the per-face
+// traversal is called once per (face, ray), so recomputing it there made it 24% of a shell orientation
+// pass that casts thousands of rays at the same faces (#3459). A caller with a fixed face set measures
+// each band once and passes it here; nothing else changes.
+func forEachInTrimHitBand(f curvedFace, ray geom.Line, tMax, skipTol, faceBand, tol float64, visit func(geom.RayHit)) (clean bool) {
+	hits := geom.RaySurfaceHits(f.surface, ray, tMax)
+	if len(hits) == 0 {
+		return true // the surface is missed outright: no trim to develop, no band to measure
+	}
+	band := stdmath.Max(tol, faceBand)
+	for _, hit := range hits {
 		if hit.T <= skipTol {
 			continue
 		}
@@ -278,8 +291,13 @@ func forEachInTrimHit(f curvedFace, ray geom.Line, tMax, tol, skipTol float64, v
 // faceRayCrossings counts how many of the ray's pierces of one face's surface land inside that
 // face's trim. ok is false on a grazing/tangent pierce (see rayCrossings).
 func faceRayCrossings(f curvedFace, ray geom.Line, tMax, tol float64) (int, bool) {
+	return faceRayCrossingsBand(f, ray, tMax, faceBoundaryBand(f), tol)
+}
+
+// faceRayCrossingsBand is [faceRayCrossings] with the face's boundary band precomputed.
+func faceRayCrossingsBand(f curvedFace, ray geom.Line, tMax, faceBand, tol float64) (int, bool) {
 	count := 0
-	clean := forEachInTrimHit(f, ray, tMax, tol, 0, func(geom.RayHit) { count++ })
+	clean := forEachInTrimHitBand(f, ray, tMax, 0, faceBand, tol, func(geom.RayHit) { count++ })
 	if !clean {
 		return 0, false
 	}

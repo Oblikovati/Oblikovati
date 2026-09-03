@@ -73,7 +73,7 @@ func wallConicEntersFace(f curvedFace, other *facePartition) bool {
 
 // wallSectionConicsTouch reports any circle/ellipse section of (f's plane, the wall) entering f's trim.
 func wallSectionConicsTouch(f, wf curvedFace) bool {
-	rs, ok := ruledSideBandOf(wf)
+	rs, ok := ruledFaceOf(wf)
 	if !ok {
 		return false
 	}
@@ -116,7 +116,7 @@ func pairUVWallImprints(p, other *facePartition, uvImp, wallImp [][]geom.Curve3)
 // be decided in closed form. A conic-framed receiver is no longer among them: conicEdgeCrossings
 // meets an arc boundary with the conic×conic substitution (#3503).
 func uvWallSharedImprint(uf, wf curvedFace) ([]geom.Curve3, bool) {
-	rs, ok := ruledSideBandOf(wf)
+	rs, ok := ruledFaceOf(wf)
 	if !ok {
 		return nil, false
 	}
@@ -124,14 +124,19 @@ func uvWallSharedImprint(uf, wf curvedFace) ([]geom.Curve3, bool) {
 	if !handled {
 		return nil, false
 	}
-	return collectWallIslands(curves, uf, rs)
+	return collectWallIslands(curves, uf, wf, rs)
 }
 
 // collectWallIslands keeps the section curves that are imprints (closed islands in both trims) and drops
-// the ones clear of the pair; ok=false when any curve clips a trim.
-func collectWallIslands(curves []geom.Curve3, uf curvedFace, rs ruledSide) ([]geom.Curve3, bool) {
+// the ones clear of the pair; ok=false when any curve clips a trim. A section lying in the plane of one
+// of the wall's OWN edges — a plate's underside meeting the rim of the boss beneath it — is a boundary
+// contact, not an imprint, and contributes nothing (ADR-0060).
+func collectWallIslands(curves []geom.Curve3, uf, wf curvedFace, rs ruledSide) ([]geom.Curve3, bool) {
 	var out []geom.Curve3
 	for _, cv := range curves {
+		if sectionOnWallEdge(cv, wf) {
+			continue
+		}
 		pieces, ok := wallSectionIsland(cv, uf, rs)
 		if !ok {
 			return nil, false
@@ -204,7 +209,7 @@ func conicIslandInFace(cv geom.Curve3, f curvedFace) (island, exact bool) {
 	if !decided || crosses {
 		return false, false
 	}
-	return pointInFace2D(to2D(pl, cv.PointAt(0)), f), true
+	return faceContainsExact(f, cv.PointAt(0)), true
 }
 
 // conicCrossesFaceBoundary reports an exact crossing of, or a grazing tangency to, the conic on any
@@ -241,4 +246,16 @@ func faceLoopBox(f curvedFace) math.Box {
 		}
 	}
 	return box
+}
+
+// sectionOnWallEdge reports a section curve coincident with one of the wall's edges on its surface.
+func sectionOnWallEdge(cv geom.Curve3, wf curvedFace) bool {
+	for _, l := range wf.loops {
+		for _, e := range l.edges {
+			if _, coincident := geom.SectionCrossingCandidates(wf.surface, e.curve, cv); coincident {
+				return true
+			}
+		}
+	}
+	return false
 }
