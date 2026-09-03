@@ -117,10 +117,22 @@ type ConicForm struct {
 	Major, Minor math.UnitVector3
 	A, B         float64
 	Hyperbolic   bool
+	// Parabolic marks the third conic, whose form is not the (Center, A, B) of the other two: a
+	// parabola has no centre and no semi-axes. Center is then its VERTEX, Major its cross direction
+	// (the parameter's), Minor the direction it opens toward, and Focal its focal length; A and B are
+	// zero and mean nothing. Like a hyperbola branch it is unbounded (ADR-0062).
+	Parabolic bool
+	Focal     float64
 }
 
-// AsConic recognises the conics a plane∩quadric section can be. ok=false for anything else,
-// including a parabola (no centre) and a bounded arc, which is not the whole conic.
+// AsConic recognises the conics a plane∩quadric section can be — all THREE of them. ok=false for
+// anything else.
+//
+// The parabola was missing, and it is not a rare case: it is the section a plane parallel to a cone's
+// own generator makes, which is what an axis-aligned cut of a tilted frustum is. Everything that asked
+// "is this a conic" — the promotion of a planar receiver to the exact-frame bucket, the axial span, the
+// clip — answered no, so the section fell to the polygonal route whose currency is straight segments,
+// and the cut declined (ADR-0062).
 //
 // Example:
 //
@@ -145,8 +157,18 @@ func AsConic(c Curve3) (ConicForm, bool) {
 		// own bounds are its parameterisation, not its shape.
 		return ConicForm{Center: x.Center, Major: x.TransverseAxis, Minor: x.ConjugateAxis,
 			A: x.A, B: x.B, Hyperbolic: true}, true
+	case Parabola:
+		return parabolicForm(x.Vertex, x.CrossDir, x.AxisDir, x.Focal)
+	case ParabolicArc:
+		return parabolicForm(x.Vertex, x.CrossDir, x.AxisDir, x.Focal)
 	}
 	return ConicForm{}, false
+}
+
+// parabolicForm is the conic form of a parabola: its vertex for a centre, its cross direction for a
+// major axis (the parameter runs along it) and its opening direction for a minor.
+func parabolicForm(vertex math.Point3, cross, axis math.UnitVector3, focal float64) (ConicForm, bool) {
+	return ConicForm{Center: vertex, Major: cross, Minor: axis, Parabolic: true, Focal: focal}, true
 }
 
 // circularForm is the conic form of a circle: equal semi-axes along its reference direction and
@@ -182,6 +204,14 @@ func (c ConicForm) AxialAmplitude(axis math.Vector3) float64 {
 	if c.Hyperbolic {
 		return stdmath.Inf(1)
 	}
+	if c.Parabolic {
+		// P(t) = Vertex + t·Major + (t²/4f)·Minor, so the extent along axis runs to infinity unless
+		// axis is normal to the parabola's own plane, where it is zero.
+		if c.Major.AsVector().Dot(axis) == 0 && c.Minor.AsVector().Dot(axis) == 0 {
+			return 0
+		}
+		return stdmath.Inf(1)
+	}
 	a := c.A * float64(c.Major.AsVector().Dot(axis))
 	b := c.B * float64(c.Minor.AsVector().Dot(axis))
 	return stdmath.Sqrt(a*a + b*b)
@@ -212,6 +242,14 @@ func ConicParamAt(c Curve3, p math.Point3) (float64, bool) {
 	case EllipticalArc:
 		theta := ellipseAngleAt(x.Center, x.MajorAxis, x.Normal, x.MajorRadius, x.MinorRadius, p)
 		return arcParamAt(theta, x.StartAngle, x.SweepAngle), true
+	}
+	return unboundedConicParamAt(c, p)
+}
+
+// unboundedConicParamAt inverts the two conics that run to infinity — the hyperbola branch and the
+// parabola — and the bounded arcs of each, which report their own [0,1].
+func unboundedConicParamAt(c Curve3, p math.Point3) (float64, bool) {
+	switch x := c.(type) {
 	case Hyperbola:
 		return hyperbolaTheta(x.Center, x.ConjugateAxis, x.B, p), true
 	case HyperbolicArc:
@@ -220,8 +258,22 @@ func ConicParamAt(c Curve3, p math.Point3) (float64, bool) {
 		}
 		theta := hyperbolaTheta(x.Center, x.ConjugateAxis, x.B, p)
 		return (theta - x.Theta0) / (x.Theta1 - x.Theta0), true
+	case Parabola:
+		// The parabola's own parameter IS the cross coordinate, so the inversion is a projection —
+		// exact, single-valued, and needing no root at all.
+		return parabolaCross(x.Vertex, x.CrossDir, p), true
+	case ParabolicArc:
+		if x.T1 == x.T0 {
+			return 0, false
+		}
+		return (parabolaCross(x.Vertex, x.CrossDir, p) - x.T0) / (x.T1 - x.T0), true
 	}
 	return 0, false
+}
+
+// parabolaCross is the cross coordinate of p on a parabola — its own parameter t.
+func parabolaCross(vertex math.Point3, cross math.UnitVector3, p math.Point3) float64 {
+	return float64(vertex.VectorTo(p).Dot(cross.AsVector()))
 }
 
 // circleAngleAt is the polar angle of p about a circle's centre, from its reference direction.
@@ -281,6 +333,14 @@ func ConicSubArc(c Curve3, t0, t1 float64) (Curve3, bool) {
 			Center: x.Center, TransverseAxis: x.TransverseAxis, ConjugateAxis: x.ConjugateAxis,
 			A: x.A, B: x.B,
 			Theta0: x.Theta0 + t0*span, Theta1: x.Theta0 + t1*span,
+		}, true
+	case Parabola:
+		return x.Arc(t0, t1), true
+	case ParabolicArc:
+		span := x.T1 - x.T0
+		return ParabolicArc{
+			Vertex: x.Vertex, AxisDir: x.AxisDir, CrossDir: x.CrossDir, Focal: x.Focal,
+			T0: x.T0 + t0*span, T1: x.T0 + t1*span,
 		}, true
 	}
 	return nil, false
