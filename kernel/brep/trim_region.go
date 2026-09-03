@@ -228,11 +228,16 @@ func faceIsRingComplement(f curvedFace, uPer, vPer bool) bool {
 // which a closed body never has.
 func fluxDomain(f curvedFace, r trimRegion) (u0, u1, v0, v1 float64, ok bool) {
 	if len(r.rings) > 0 && !r.complement {
-		u0, u1, v0, v1, ok = polyBounds(r.rings)
-		if !ok {
-			return 0, 0, 0, 0, false
+		if u0, u1, v0, v1, ok = polyBounds(r.rings); ok {
+			return periodicWindowHoldingMaterial(r, u0, u1, v0, v1)
 		}
-		return periodicWindowHoldingMaterial(r, u0, u1, v0, v1)
+		// A DEGENERATE ring box is not a window. A ring that runs along one isoline — a sphere's
+		// equator, a band's rim — has no extent across it, and the face it bounds runs from that
+		// isoline to wherever the surface ends: the pole, or the far rim. Reading the box as the window
+		// gave a zero-height rectangle, every quadrature over it measured nothing, and the whole
+		// SHELL was left uncertified — so a hemisphere's outward sense came from its loop winding
+		// rather than from its geometry, and one of the two ways the boolean can wind that loop was
+		// wrong (ADR-0062). The surface's own domain is the honest window; the region filters it.
 	}
 	return surfaceDomainRect(f.surface, r)
 }

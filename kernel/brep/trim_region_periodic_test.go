@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
@@ -74,5 +75,33 @@ func TestFluxDomainTakesTheWindowHoldingTheMaterial(t *testing.T) {
 	_, _, w0, w1, ok := periodicWindowHoldingMaterial(s, 0, 2*stdmath.Pi, 0, stdmath.Pi)
 	if !ok || w0 != 0 || stdmath.Abs(w1-stdmath.Pi) > 1e-9 {
 		t.Errorf("window v ∈ [%g, %g] ok=%v, want [0, π] unchanged", w0, w1, ok)
+	}
+}
+
+// TestFluxDomainDeclinesNoWindowForAnIsolineRing: a ring that runs along ONE isoline — a sphere's
+// equator, a band's rim — has no extent across it, so its bounding box is a zero-height rectangle.
+// Reading that box as the quadrature window measured nothing, and the shell was left uncertified: a
+// hemisphere's outward sense then came from its loop winding rather than from its geometry, and the
+// boolean is free to wind that loop either way (ADR-0062). The surface's own domain is the window.
+func TestFluxDomainTakesTheSurfaceDomainForAnIsolineRing(t *testing.T) {
+	t.Parallel()
+	sph, err := geom.NewSphere(math.P3(0, 0, 0), 5)
+	if err != nil {
+		t.Fatalf("sphere: %v", err)
+	}
+	// The equator: constant latitude, so zero extent in v.
+	const n = 32
+	ring := make([]math.Point2, 0, n+1)
+	for i := 0; i <= n; i++ {
+		ring = append(ring, math.P2(math.Scalar(2*stdmath.Pi*float64(i)/n), 0))
+	}
+	r := trimRegion{rings: [][]math.Point2{ring}, uPeriodic: true}
+	f := curvedFace{surface: sph}
+	_, _, v0, v1, ok := fluxDomain(f, r)
+	if !ok {
+		t.Fatal("an isoline-ringed face got no window at all")
+	}
+	if v1-v0 < stdmath.Pi-1e-9 {
+		t.Errorf("window v ∈ [%g, %g] spans %g, want the sphere's whole latitude range (π)", v0, v1, v1-v0)
 	}
 }
