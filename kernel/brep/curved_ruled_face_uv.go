@@ -23,6 +23,10 @@ type ruledFaceUV struct {
 	wrapping bool // some kept boundary loop wraps the azimuth (set by wrappingSolidFaces)
 }
 
+// seamOverrun: a band is open in v, so the seam runs a full window past each end and bounds nothing
+// there (loopFrameHost).
+func (c *ruledFaceUV) seamOverrun() float64 { return c.band.vMax - c.band.vMin }
+
 // vWindow is the wall's axial window (loopFrameHost).
 func (c *ruledFaceUV) vWindow() (float64, float64) { return c.band.vMin, c.band.vMax }
 

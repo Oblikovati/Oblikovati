@@ -31,6 +31,11 @@ type loopFrameHost interface {
 	vWindow() (vMin, vMax float64)
 	// point3 inverts the parameterisation: the surface point at seam-relative (u, v).
 	point3(u, v float64) math.Point3
+	// seamOverrun is how far past the v window the artificial seam runs. A ruled wall's band is OPEN in
+	// v, so an overrun costs nothing and guarantees the seam closes the arrangement past every frame
+	// vertex. A CLOSED surface's v window is its whole period: running past it maps back onto the
+	// geometry — a sphere's seam beyond a pole lands on the antipodal side — so it must be zero there.
+	seamOverrun() float64
 }
 
 // loopFrame is a face's OWN boundary as the arrangement's frame (ADR-0060), shared by every chart that
@@ -266,7 +271,7 @@ func foldIntoStrip(s uvSeg) uvSeg {
 // artificial and bounds no real geometry.
 func (c *loopFrame) seamSegments(seamHits []frameCrossing) []uvSeg {
 	vMin, vMax := c.host.vWindow()
-	pad := vMax - vMin
+	pad := c.host.seamOverrun()
 	vs := []float64{vMin - pad, vMax + pad}
 	for _, cr := range seamHits {
 		var cv geom.Curve3

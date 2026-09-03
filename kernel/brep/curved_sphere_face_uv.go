@@ -81,6 +81,10 @@ func (c *sphereFaceUV) point3(u, v float64) math.Point3 { return c.sphere.PointA
 // vWindow is the sphere's full latitude range: the poles bound it (loopFrameHost).
 func (c *sphereFaceUV) vWindow() (float64, float64) { return -stdmath.Pi / 2, stdmath.Pi / 2 }
 
+// seamOverrun is ZERO: latitude is closed by the poles, and a seam running past one maps onto the
+// antipodal side of the sphere rather than beyond the geometry (loopFrameHost).
+func (c *sphereFaceUV) seamOverrun() float64 { return 0 }
+
 // seamCurve is the MERIDIAN at the placed longitude — the artificial boundary closing the periodic
 // strip. It is a half great circle from pole to pole, not a straight ruling, which is why the framing
 // takes a Curve3 (loopFrameHost).

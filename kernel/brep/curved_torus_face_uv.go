@@ -72,6 +72,10 @@ func (c *torusFaceUV) point3(u, v float64) math.Point3 {
 // (loopFrameHost).
 func (c *torusFaceUV) vWindow() (float64, float64) { return 0, 2 * stdmath.Pi }
 
+// seamOverrun is ZERO: both directions are closed, so a seam past the period maps back onto the torus
+// (loopFrameHost).
+func (c *torusFaceUV) seamOverrun() float64 { return 0 }
+
 // seamCurve is the TUBE CIRCLE at the placed azimuth — the artificial boundary closing the strip in u.
 // It is a real circle on the torus, which is what makes its crossings with the frame solvable in closed
 // form like any other section (loopFrameHost).
