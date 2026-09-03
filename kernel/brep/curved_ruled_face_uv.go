@@ -18,13 +18,20 @@ import (
 // frame is read.
 type ruledFaceUV struct {
 	ruledUV
-	face      curvedFace
-	frame     geom.RuledFrame
-	res       geom.Resolution
-	imprint   []geom.Curve3   // the imprint being trimmed, for seam-incidence lookups
-	crossings []frameCrossing // frame×imprint incidences, in curve parameters (seam-independent)
-	frameSegs []uvSeg         // the seam-relative sampled frame, filled by assembleSegments
-	wrapping  bool            // some kept boundary loop wraps the azimuth (set by wrappingSolidFaces)
+	loopFrame
+	frame    geom.RuledFrame
+	wrapping bool // some kept boundary loop wraps the azimuth (set by wrappingSolidFaces)
+}
+
+// vWindow is the wall's axial window (loopFrameHost).
+func (c *ruledFaceUV) vWindow() (float64, float64) { return c.band.vMin, c.band.vMax }
+
+// seamCurve is the artificial boundary closing the periodic strip: for a ruled wall the RULING at the
+// placed azimuth, bounded so the incidence solver reads it as a section rather than an infinite line
+// (loopFrameHost).
+func (c *ruledFaceUV) seamCurve() geom.Curve3 {
+	r := c.frame.Ruling(c.seamU)
+	return geom.NewLineSegment(r.PointAt(0), r.PointAt(1))
 }
 
 var _ uvSide = (*ruledFaceUV)(nil)
@@ -33,7 +40,9 @@ var _ uvSide = (*ruledFaceUV)(nil)
 func newRuledFaceUV(f curvedFace, rs ruledSide, op Op, isB bool, inside func(math.Point3) bool) *ruledFaceUV {
 	c := newRuledUVFrame(rs.frame.Base, rs.frame.Axis, rs.frame.Ref, rs.frame.RadSlope, rs.frame.RadConst, rs.band)
 	c.solidMode, c.solidOp, c.solidIsB, c.insideOther = true, op, isB, inside
-	return &ruledFaceUV{ruledUV: c, face: f, frame: rs.frame, res: geom.ResolutionForSize(rs.size())}
+	out := &ruledFaceUV{ruledUV: c, frame: rs.frame}
+	out.loopFrame = loopFrame{host: out, face: f, res: geom.ResolutionForSize(rs.size())}
+	return out
 }
 
 // admits solves every frame×imprint incidence up front and returns the imprint the chart carries: an

@@ -17,6 +17,33 @@ import (
 // frameCrossing is one incidence of a frame edge (loop, edge) with an imprint curve (imp ≥ 0) or with
 // the seam ruling (imp < 0), in each curve's own parameter. The shared arrangement vertex is the frame
 // edge's point at tEdge.
+// loopFrameHost is what the loop-framing needs from a surface's own chart: the seam-relative
+// parameterisation, and the artificial seam curve closing the periodic strip. Everything else about
+// framing a face by its own loops — sampling the boundary, solving every frame×imprint and frame×seam
+// incidence in closed form, injecting them as shared vertices — is surface-agnostic, which is what
+// OCCT's one face-splitting machine says too: it takes the face's edges and the surface's own
+// parameterisation and nothing more (ADR-0062).
+type loopFrameHost interface {
+	paramOf(p math.Point3) math.Point2
+	seamCurve() geom.Curve3
+	// vWindow is the chart's own v span — a ruled wall's axial window, a sphere's polar range — which
+	// the artificial seam runs the length of.
+	vWindow() (vMin, vMax float64)
+	// point3 inverts the parameterisation: the surface point at seam-relative (u, v).
+	point3(u, v float64) math.Point3
+}
+
+// loopFrame is a face's OWN boundary as the arrangement's frame (ADR-0060), shared by every chart that
+// frames a face that way whatever its surface.
+type loopFrame struct {
+	host      loopFrameHost
+	face      curvedFace
+	res       geom.Resolution
+	imprint   []geom.Curve3   // the imprint being trimmed, for seam-incidence lookups
+	crossings []frameCrossing // frame×imprint incidences, in curve parameters (seam-independent)
+	frameSegs []uvSeg         // the seam-relative sampled frame, filled by assembleSegments
+}
+
 type frameCrossing struct {
 	loop, edge int
 	tEdge      float64
@@ -28,7 +55,7 @@ const seamIncidence = -1
 
 // solveFrameCrossings intersects every frame edge with every imprint curve in closed form. ok=false when
 // an imprint coincides with a frame edge (one section plane) — admits has already dropped those.
-func (c *ruledFaceUV) solveFrameCrossings(imprint []geom.Curve3) ([]frameCrossing, bool) {
+func (c *loopFrame) solveFrameCrossings(imprint []geom.Curve3) ([]frameCrossing, bool) {
 	var out []frameCrossing
 	for li, l := range c.face.loops {
 		for ei, e := range l.edges {
@@ -53,8 +80,8 @@ func (c *ruledFaceUV) solveFrameCrossings(imprint []geom.Curve3) ([]frameCrossin
 
 // solveSeamCrossings intersects the placed seam ruling with every frame edge and every imprint curve.
 // Rulings are skipped: the seam was placed clear of every ruling edge and of every imprint azimuth.
-func (c *ruledFaceUV) solveSeamCrossings(imprint []geom.Curve3) []frameCrossing {
-	seam := c.frame.Ruling(c.seamU)
+func (c *loopFrame) solveSeamCrossings(imprint []geom.Curve3) []frameCrossing {
+	seam := c.host.seamCurve()
 	var out []frameCrossing
 	for li, l := range c.face.loops {
 		for ei, e := range l.edges {
@@ -73,11 +100,11 @@ func (c *ruledFaceUV) solveSeamCrossings(imprint []geom.Curve3) []frameCrossing 
 }
 
 // seamHit is the parameter where a section curve meets the seam ruling, when it does within its span.
-func (c *ruledFaceUV) seamHit(seam geom.Line, cv geom.Curve3, t0, t1 float64) (float64, bool) {
+func (c *loopFrame) seamHit(seam geom.Curve3, cv geom.Curve3, t0, t1 float64) (float64, bool) {
 	if geom.IsStraightCurve(cv) {
 		return 0, false
 	}
-	pts, _ := geom.SectionCrossingCandidates(c.face.surface, geom.NewLineSegment(seam.PointAt(0), seam.PointAt(1)), cv)
+	pts, _ := geom.SectionCrossingCandidates(c.face.surface, seam, cv)
 	for _, p := range pts {
 		if t, ok := c.paramWithin(cv, t0, t1, p); ok {
 			return t, true
@@ -90,7 +117,7 @@ func (c *ruledFaceUV) seamHit(seam geom.Line, cv geom.Curve3, t0, t1 float64) (f
 // sew tolerance and its parameter falls in [t0, t1] (either order; a whole closed curve accepts every
 // parameter). A parameter a hair outside the span is clamped to the end it overshoots: the incidence
 // is then a frame vertex, which the sampling emits anyway.
-func (c *ruledFaceUV) paramWithin(cv geom.Curve3, t0, t1 float64, p math.Point3) (float64, bool) {
+func (c *loopFrame) paramWithin(cv geom.Curve3, t0, t1 float64, p math.Point3) (float64, bool) {
 	t, ok := geom.CurveParamAt(cv, p)
 	if !ok {
 		return 0, false
@@ -118,7 +145,7 @@ func paramSlack(cv geom.Curve3, span float64, res geom.Resolution) float64 {
 
 // frameSegments samples every frame edge in its traversal order with the imprint and seam incidences
 // injected, tagged segPolygon so a boundary run re-emits the exact sub-edge.
-func (c *ruledFaceUV) frameSegments(seamHits []frameCrossing) []uvSeg {
+func (c *loopFrame) frameSegments(seamHits []frameCrossing) []uvSeg {
 	var out []uvSeg
 	for li, l := range c.face.loops {
 		for ei, e := range l.edges {
@@ -140,7 +167,7 @@ func (c *ruledFaceUV) frameSegments(seamHits []frameCrossing) []uvSeg {
 }
 
 // imprintSegments samples every imprint curve over its domain with its frame and seam incidences injected.
-func (c *ruledFaceUV) imprintSegments(imprint []geom.Curve3, seamHits []frameCrossing) []uvSeg {
+func (c *loopFrame) imprintSegments(imprint []geom.Curve3, seamHits []frameCrossing) []uvSeg {
 	var out []uvSeg
 	for ii, imp := range imprint {
 		var inject, atSeam []float64
@@ -164,12 +191,12 @@ func (c *ruledFaceUV) imprintSegments(imprint []geom.Curve3, seamHits []frameCro
 // injected, unwrapping the azimuth along the walk so each segment is continuous, snapping every seam
 // incidence to the seam exactly, then folding each segment into the [0, 2π] strip. Any segment that
 // still straddles the seam (an incidence the solver did not see) is split there by interpolation.
-func (c *ruledFaceUV) sampledPolyline(cv geom.Curve3, t0, t1 float64, inject, atSeam []float64, kind segKind) []uvSeg {
+func (c *loopFrame) sampledPolyline(cv geom.Curve3, t0, t1 float64, inject, atSeam []float64, kind segKind) []uvSeg {
 	params := injectedParams(cv, t0, t1, append(append([]float64{}, inject...), atSeam...))
 	pts := make([]math.Point2, len(params))
 	prevU := 0.0
 	for i, t := range params {
-		uv := c.paramOf(cv.PointAt(t))
+		uv := c.host.paramOf(cv.PointAt(t))
 		u := float64(uv.X)
 		if i > 0 {
 			u = unwrapAzimuthNear(prevU, u)
@@ -237,9 +264,10 @@ func foldIntoStrip(s uvSeg) uvSeg {
 // seamSegments emits the two seam verticals (u=0 and u=2π) over the frame's axial window, split at
 // every frame and imprint incidence so the seam shares those vertices. The overrun past the window is
 // artificial and bounds no real geometry.
-func (c *ruledFaceUV) seamSegments(seamHits []frameCrossing) []uvSeg {
-	pad := c.band.vMax - c.band.vMin
-	vs := []float64{c.band.vMin - pad, c.band.vMax + pad}
+func (c *loopFrame) seamSegments(seamHits []frameCrossing) []uvSeg {
+	vMin, vMax := c.host.vWindow()
+	pad := vMax - vMin
+	vs := []float64{vMin - pad, vMax + pad}
 	for _, cr := range seamHits {
 		var cv geom.Curve3
 		if cr.loop == seamIncidence {
@@ -247,10 +275,10 @@ func (c *ruledFaceUV) seamSegments(seamHits []frameCrossing) []uvSeg {
 		} else {
 			cv = c.face.loops[cr.loop].edges[cr.edge].curve
 		}
-		vs = append(vs, float64(c.paramOf(cv.PointAt(cr.tEdge)).Y))
+		vs = append(vs, float64(c.host.paramOf(cv.PointAt(cr.tEdge)).Y))
 	}
 	sort.Float64s(vs)
-	seam := geom.NewLineSegment(c.point3(0, vs[0]), c.point3(0, vs[len(vs)-1]))
+	seam := geom.NewLineSegment(c.host.point3(0, vs[0]), c.host.point3(0, vs[len(vs)-1]))
 	var out []uvSeg
 	for i := 1; i < len(vs); i++ {
 		if vs[i]-vs[i-1] <= arrTol {
@@ -265,4 +293,4 @@ func (c *ruledFaceUV) seamSegments(seamHits []frameCrossing) []uvSeg {
 
 // crossingImprint returns the imprint curve a seam incidence refers to; assembleSegments stores the
 // imprint on the chart for this lookup.
-func (c *ruledFaceUV) crossingImprint(cr frameCrossing) geom.Curve3 { return c.imprint[cr.edge] }
+func (c *loopFrame) crossingImprint(cr frameCrossing) geom.Curve3 { return c.imprint[cr.edge] }
