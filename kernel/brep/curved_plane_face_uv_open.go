@@ -46,8 +46,8 @@ func (c *planeFaceUV) openFrameCrossings(open []geom.Curve3) [][]openCrossing {
 		}
 		for li, l := range c.loops {
 			for ei, e := range l.edges {
-				if _, isCircle := e.curve.(geom.Circle); isCircle {
-					continue // circle frame edges are handled by frameCrossings
+				if !geom.IsStraightCurve(e.curve) {
+					continue // an open conic meets a conic frame edge nowhere this chart admits (conicCrossesFaceBoundary gates it)
 				}
 				out[oi] = append(out[oi], c.openEdgeCrossings(cv, pc, li, ei, e)...)
 			}
@@ -165,12 +165,8 @@ func crossingsOnEdge(open [][]openCrossing, li, ei int) []openCrossing {
 // openConicKind reports whether a curve is an OPEN conic — one this file's treatment applies to.
 // A closed conic is an island; a straight segment is neither.
 func openConicKind(cv geom.Curve3) bool {
-	cf, ok := geom.AsConic(cv)
-	if !ok {
-		return false
-	}
-	lo, hi := cv.Domain()
-	return cf.Hyperbolic || stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0)
+	_, isConic := geom.AsConic(cv)
+	return isConic && !geom.CurveIsClosed(cv)
 }
 
 // clipSectionToFace bounds a section curve to the pieces of it that lie INSIDE a planar face's trim.
@@ -198,18 +194,71 @@ func clipSectionToFace(cv geom.Curve3, uf curvedFace) ([]geom.Curve3, bool) {
 		return nil, false // it does not pass through the face: nothing to share
 	}
 	var out []geom.Curve3
-	for i := 1; i < len(cuts); i++ {
-		mid := cv.PointAt(cuts[i-1] + (cuts[i]-cuts[i-1])/2)
-		if !pointInFace2D(to2D(pl, mid), uf) {
+	for _, run := range sectionRuns(cv, cuts) {
+		mid := cv.PointAt(sectionParamAt(cv, run.lo+(run.hi-run.lo)/2))
+		if !faceContainsExact(uf, mid) {
 			continue
 		}
-		arc, got := geom.ConicArcBetween(cv, cv.PointAt(cuts[i-1]), cv.PointAt(cuts[i]), mid)
+		arc, got := geom.ConicArcBetween(cv, cv.PointAt(run.lo), cv.PointAt(sectionParamAt(cv, run.hi)), mid)
 		if !got {
 			return nil, false
 		}
 		out = append(out, arc)
 	}
 	return out, len(out) > 0
+}
+
+// sectionRuns turns the crossing parameters into the runs of curve they bound.
+//
+// An OPEN section (a hyperbola branch) is bounded by the gaps BETWEEN consecutive cuts. A CLOSED one
+// — a circle or an ellipse — has one run MORE than it has gaps, because its last cut runs back round
+// to its first: two crossings cut a closed conic into TWO arcs, not one.
+//
+// Emitting only the gaps left that wrap-around arc unrepresented, and when it was the arc lying inside
+// the face the clip found no runs at all and declined a section it had correctly crossed. On a real
+// part that single decline started a cascade: the cut fell to triangle CSG, its faceted result became
+// the next cut's operand, and a disk that rebuilds as 461 analytic faces came back as 11780 planar
+// ones in 3 shells with 28 open edges (Oblikovati/Oblikovati#3459).
+func sectionRuns(cv geom.Curve3, cuts []float64) []edgeSpan {
+	var out []edgeSpan
+	for i := 1; i < len(cuts); i++ {
+		out = append(out, edgeSpan{cuts[i-1], cuts[i]})
+	}
+	if !geom.CurveIsClosed(cv) || len(cuts) < 2 {
+		return out
+	}
+	if lo, hi := cuts[len(cuts)-1], cuts[0]+sectionPeriod; hi-lo > conicSpanSlack {
+		out = append(out, edgeSpan{lo, hi})
+	}
+	return out
+}
+
+// sectionPeriod is the parameter span a closed conic covers over its whole curve: Circle and
+// EllipseFull are both written on [0, 1], so one turn is 1.
+const sectionPeriod = 1.0
+
+// sectionParamAt folds a run's parameter back onto the curve's own domain.
+//
+// ONLY a closed conic needs it — its wrap-around run is built past the end of its [0, 1] domain — and
+// only a closed conic HAS that domain to fold onto. A hyperbola branch is parameterised by a
+// hyperbolic angle that runs NEGATIVE either side of its vertex, so folding it onto [0, 1) sends a
+// crossing at −5.4e-4 to 0.99946 and the imprint lands on the wrong part of the curve entirely. That
+// is what an unconditional fold did to a wrapped emboss: its cone sections are hyperbolas, and the
+// join fell back to 1326 faceted planes.
+func sectionParamAt(cv geom.Curve3, t float64) float64 {
+	if !geom.CurveIsClosed(cv) {
+		return t
+	}
+	return wrapUnitParam(t)
+}
+
+// wrapUnitParam folds a closed conic's parameter back onto [0, 1), the domain it reports.
+func wrapUnitParam(t float64) float64 {
+	t -= stdmath.Floor(t)
+	if t >= 1 {
+		return 0
+	}
+	return t
 }
 
 // sectionFaceCuts returns the section's own parameters at every crossing with the face's trim,

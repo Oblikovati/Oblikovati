@@ -426,7 +426,7 @@ func TestEmitLoopEdgesStructurallyValid(t *testing.T) {
 		t.Fatalf("want 2 boundary loops, got %d", len(loops))
 	}
 	for li, lp := range loops {
-		edges, _, ok := emitLoopEdges(&c, lp, segs)
+		edges, _, ok := emitLoopEdges(&c, lp, newUVSegIndex(segs))
 		if !ok || len(edges) == 0 {
 			t.Fatalf("loop %d: emit failed (ok=%v, %d edges)", li, ok, len(edges))
 		}

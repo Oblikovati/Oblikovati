@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/test-utilities/brepfixture"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/internal/testcage"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/blend"
 	"oblikovati.org/kernel/ops/query"
@@ -74,9 +75,9 @@ func TestFacetUnifiesCoplanarFrame(t *testing.T) {
 	tray := shelledTray(t)
 	wantVol := query.BodyGeometryProperties(tray, ops.DefaultQuality()).Volume
 
-	faceted := ops.Facet(tray, "facet")
+	faceted := testcage.Body(tray, "facet")
 	if faceted == nil {
-		t.Fatal("Facet returned nil")
+		t.Fatal("testcage.Body returned nil")
 	}
 	r := ops.Validate(faceted)
 	if !r.Valid || !faceted.IsSolid() {
@@ -102,7 +103,7 @@ func TestFacetUnifiesCoplanarFrame(t *testing.T) {
 // "non-manifold edge used by 4 faces" the shattered rim produced.
 func TestFilletOnFacetedRimStaysManifold(t *testing.T) {
 	t.Parallel()
-	faceted := ops.Facet(shelledTray(t), "facet")
+	faceted := testcage.Body(shelledTray(t), "facet")
 	before := query.BodyGeometryProperties(faceted, ops.DefaultQuality()).Volume
 
 	// r must clear the max-radius bound (#1800): the outer AND inner rim edges are both filleted

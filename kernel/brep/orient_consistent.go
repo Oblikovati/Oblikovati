@@ -4,6 +4,7 @@ package brep
 
 import (
 	stdmath "math"
+	"sort"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
@@ -18,21 +19,209 @@ import (
 // face normal-side flag: on a consistently-oriented shell every shared edge is walked in opposite
 // directions by its two faces, so each face's outer-loop handedness about its geometric normal (S_u×S_v)
 // already defines one global orientation. The sign of the outer loop's signed area in (u, v) is that
-// handedness (+1 CCW about S_u×S_v → normal is outward, −1 → inward). One global flip, chosen so the
-// enclosed signed volume is positive, orients the whole shell outward.
+// handedness (+1 CCW about S_u×S_v → normal is outward, −1 → inward).
+//
+// The one bit a handedness cannot see — which of the two consistent colourings is outward — is decided
+// PER CONNECTED SHELL, not once for the face set: a body can carry several shells, and each seeds its
+// own colouring. A shell no other shell encloses is turned to integrate a positive volume; a shell
+// enclosed by one already oriented is a VOID, whose material lies outside it, and integrates negative.
+// The mixed boolean's two-lump result (a pin cut clean through) made the single global flip visible:
+// the sum of a positive lump and an inverted one stayed positive, so the inverted lump was never turned
+// (ADR-0060). A one-shell body takes exactly the path it always did.
 func orientFaceSigns(faces []fluxFace) []float64 {
 	signs := make([]float64, len(faces))
-	volume := 0.0
 	for i := range faces {
 		signs[i] = loopHandedness(faces[i].region)
-		volume += signs[i] * faceVolumeTerm(&faces[i])
 	}
-	if volume < 0 { // the loop handedness oriented the shell inward — flip the whole body outward
-		for i := range signs {
-			signs[i] = -signs[i]
+	var oriented []fluxFace
+	for _, shell := range fluxShellsLargestFirst(faces, signs) {
+		enclosed := shellEnclosedBy(oriented, faces, shell)
+		probed := probeShellSigns(faces, shell, enclosed)
+		bit := shellBit(faces, signs, shell, probed)
+		for _, i := range shell {
+			if probed[i] != 0 {
+				signs[i] = probed[i]
+			} else {
+				signs[i] *= bit
+			}
+			f := faces[i]
+			f.sign = signs[i]
+			oriented = append(oriented, f)
 		}
 	}
 	return signs
+}
+
+// probeShellSigns reads each face's outward sign from the geometry, ORIENTATION-FREE: a point a
+// stand-off along the face's geometric normal S_u×S_v, and one against it, are classified by ray
+// parity against the shell (an odd crossing count is inside — no sign is read). The material of a
+// lump is inside its shell, that of a void outside, so the sign is +1 when the +normal side is the
+// non-material side. A face whose two probes agree (a wall thinner than the stand-off) or whose rays
+// all graze reads 0, and falls back to its loop handedness under the shell's bit.
+//
+// This replaced reading the sign from the loop handedness alone: on the stubs a near-pinch cut leaves,
+// the handedness read two of a stub's three faces wrong, and the whole-body volume sign that used to
+// settle the last bit hid it because the errors balanced (ADR-0060).
+func probeShellSigns(faces []fluxFace, shell []int, enclosed bool) map[int]float64 {
+	own := newShellProbe(fluxFacesAt(faces, shell))
+	step := float64(own.box.Diagonal().Length()) * probeOffsetRel
+	out := map[int]float64{}
+	for _, i := range shell {
+		q, n, ok := faceProbePoint(&faces[i])
+		if !ok {
+			continue
+		}
+		plus, okP := own.parityInside(q.TranslateBy(n.Scale(math.Scalar(step))))
+		minus, okM := own.parityInside(q.TranslateBy(n.Scale(math.Scalar(-step))))
+		if !okP || !okM || plus == minus {
+			continue
+		}
+		if plus == enclosed {
+			out[i] = 1
+		} else {
+			out[i] = -1
+		}
+	}
+	return out
+}
+
+// shellBit is the global sign the handedness readings of a shell need: the majority verdict of the
+// faces the probe could read, else the sign that makes the shell's own volume positive (a lump) or
+// negative (a void) — the one-shell rule the whole body always used.
+func shellBit(faces []fluxFace, signs []float64, shell []int, probed map[int]float64) float64 {
+	agree := 0.0
+	for _, i := range shell {
+		agree += probed[i] * signs[i]
+	}
+	if agree != 0 {
+		return stdmath.Copysign(1, agree)
+	}
+	if shellSignedVolume(faces, signs, shell) < 0 {
+		return -1
+	}
+	return 1
+}
+
+// probeOffsetRel is how far off a face the traversal probe sits, as a fraction of the shell's diagonal:
+// well clear of the weld tolerance, well inside any feature a valid solid has at that scale.
+const probeOffsetRel = 1e-3 // tol:numeric — probe stand-off as a fraction of the shell diagonal (dimensionless)
+
+// faceProbePoint returns an in-trim point of the face, the one farthest from its trim boundary on a
+// coarse (u,v) grid, and the unit geometric normal S_u×S_v there.
+func faceProbePoint(f *fluxFace) (math.Point3, math.Vector3, bool) {
+	best, bestDist, found := math.Point2{}, -1.0, false
+	for i := range volumeGridSteps {
+		for j := range volumeGridSteps {
+			uv := math.P2(f.u0+(f.u1-f.u0)*(float64(i)+0.5)/volumeGridSteps, f.v0+(f.v1-f.v0)*(float64(j)+0.5)/volumeGridSteps)
+			if !f.region.contains(uv) {
+				continue
+			}
+			if d := f.region.boundaryDistance(uv); d > bestDist {
+				best, bestDist, found = uv, d, true
+			}
+		}
+	}
+	if !found {
+		return math.Point3{}, math.Vector3{}, false
+	}
+	du, dv := f.cf.surface.DerivativesAt(float64(best.X), float64(best.Y))
+	n, err := math.UnitVector3FromVector(du.Cross(dv))
+	if err != nil {
+		return math.Point3{}, math.Vector3{}, false
+	}
+	return f.cf.surface.PointAt(float64(best.X), float64(best.Y)), n.AsVector(), true
+}
+
+// shellEnclosedBy reports whether a shell is a VOID of the shells already oriented outward: its box
+// lies within theirs and one of its points classifies inside them. The box gate is what keeps two
+// lumps that TOUCH — a rod's stubs either side of a near-pinch cut, whose boundaries pass within the
+// tolerance of each other — from being classified at a point the flux cannot read.
+func shellEnclosedBy(oriented, faces []fluxFace, shell []int) bool {
+	if len(oriented) == 0 {
+		return false
+	}
+	box := paddedBox(fluxFacesBox(oriented), probeOffsetRel)
+	if !box.ContainsBox(fluxFacesBox(fluxFacesAt(faces, shell))) {
+		return false
+	}
+	q := &fluxQuery{faces: oriented}
+	return q.inside(shellSamplePoint(faces, shell), box)
+}
+
+// fluxFacesAt selects the prepared faces of one shell.
+func fluxFacesAt(faces []fluxFace, shell []int) []fluxFace {
+	out := make([]fluxFace, 0, len(shell))
+	for _, i := range shell {
+		out = append(out, faces[i])
+	}
+	return out
+}
+
+// fluxFacesBox bounds the prepared faces: their loop vertices and their in-trim surface samples on
+// the coarse (u,v) grid — a vertex box alone misses a rim circle's sweep, which has one vertex.
+func fluxFacesBox(faces []fluxFace) math.Box {
+	box := curvedFaceBox(curvedFacesOf(faces))
+	for i := range faces {
+		f := &faces[i]
+		for a := range volumeGridSteps + 1 {
+			for b := range volumeGridSteps + 1 {
+				uv := math.P2(f.u0+(f.u1-f.u0)*float64(a)/volumeGridSteps, f.v0+(f.v1-f.v0)*float64(b)/volumeGridSteps)
+				if f.region.contains(uv) {
+					box = box.ExtendPoint(f.cf.surface.PointAt(float64(uv.X), float64(uv.Y)))
+				}
+			}
+		}
+	}
+	return box
+}
+
+// paddedBox grows a box by a fraction of its diagonal on every side.
+func paddedBox(box math.Box, rel float64) math.Box {
+	pad := float64(box.Diagonal().Length()) * rel
+	d := math.V3(pad, pad, pad)
+	return math.Box{Min: box.Min.TranslateBy(d.Scale(-1)), Max: box.Max.TranslateBy(d)}
+}
+
+// fluxShellsLargestFirst groups the faces into connected shells over their shared edges, ordered by
+// decreasing enclosed volume so a container is oriented before anything it may enclose.
+func fluxShellsLargestFirst(faces []fluxFace, signs []float64) [][]int {
+	cfs := curvedFacesOf(faces)
+	pw := newWelder3(geom.ResolutionForBox(curvedFaceBox(cfs)).Stitch())
+	shells := connectedFaceComponents(curvedFaceAdjacency(cfs, pw))
+	sort.SliceStable(shells, func(a, b int) bool {
+		return stdmath.Abs(shellSignedVolume(faces, signs, shells[a])) > stdmath.Abs(shellSignedVolume(faces, signs, shells[b]))
+	})
+	return shells
+}
+
+// shellSignedVolume is the shell's enclosed volume under the given per-face signs.
+func shellSignedVolume(faces []fluxFace, signs []float64, shell []int) float64 {
+	volume := 0.0
+	for _, i := range shell {
+		volume += signs[i] * faceVolumeTerm(&faces[i])
+	}
+	return volume
+}
+
+// shellSamplePoint is a point ON the shell (a loop vertex of its first face), for the enclosure test
+// against the shells oriented before it.
+func shellSamplePoint(faces []fluxFace, shell []int) math.Point3 {
+	f := faces[shell[0]].cf
+	if len(f.loops) == 0 || len(f.loops[0].edges) == 0 {
+		return f.surface.PointAt(faces[shell[0]].u0, faces[shell[0]].v0)
+	}
+	return f.loops[0].edges[0].start()
+}
+
+// fluxWindingAt sums each prepared face's signed solid angle at p: a closed outward shell gives ≈4π
+// inside and ≈0 outside.
+func fluxWindingAt(faces []fluxFace, p math.Point3) float64 {
+	total := 0.0
+	for i := range faces {
+		f := &faces[i]
+		total += f.sign * integrateFluxCell(f.cf.surface, p, f.region, f.u0, f.u1, f.v0, f.v1, 0)
+	}
+	return total
 }
 
 // loopHandedness is the sign of the outer ring's signed area in (u, v): +1 when the ring runs CCW about
@@ -156,4 +345,67 @@ func volumeIntegrand(s geom.Surface, u, v float64) float64 {
 	n := du.Cross(dv)
 	p := s.PointAt(u, v)
 	return float64(p.AsVector().Dot(n))
+}
+
+// curvedFacesOf strips the prepared faces back to their curvedFaces.
+func curvedFacesOf(faces []fluxFace) []curvedFace {
+	cfs := make([]curvedFace, len(faces))
+	for i, f := range faces {
+		cfs[i] = f.cf
+	}
+	return cfs
+}
+
+// shellProbe is one shell prepared for repeated parity casts: each face's box, so a ray tests only the
+// faces it can reach, instead of developing every face's trim for every cast — which made the probe
+// quadratic in the face count and stalled a fine-pitch coil join.
+type shellProbe struct {
+	faces []curvedFace
+	boxes []math.Box
+	// bands holds each face's polygon-vs-curve boundary error, measured ONCE. It is a pure function
+	// of the face and the ray traversal needs it per (face, ray); recomputing it there — it walks
+	// every trim edge measuring chord sagitta — made it a quarter of a shell orientation pass, which
+	// casts thousands of rays at the same face set (#3459).
+	bands []float64
+	box   math.Box
+}
+
+// newShellProbe boxes every face of the shell, each padded by a share of its own diagonal so the
+// sampled box can never miss a curved face's true extent between samples (a 45° sample step on a
+// rim leaves a 7.6% sagitta; the pad is 10%).
+func newShellProbe(faces []fluxFace) *shellProbe {
+	p := &shellProbe{faces: curvedFacesOf(faces), boxes: make([]math.Box, len(faces)), bands: make([]float64, len(faces)), box: fluxFacesBox(faces)}
+	for i := range faces {
+		p.boxes[i] = paddedBox(fluxFacesBox(faces[i:i+1]), probeBoxPadRel)
+		p.bands[i] = faceBoundaryBand(p.faces[i])
+	}
+	return p
+}
+
+// probeBoxPadRel pads a face's sampled box for the ray cull: above the sagitta a 9-sample grid leaves
+// on a full rim (7.6% of the diagonal), so the cull is conservative.
+const probeBoxPadRel = 0.1 // tol:numeric — box cull pad as a fraction of the face diagonal (dimensionless)
+
+// parityInside classifies p by crossing parity along a clean ray, testing only the faces whose box
+// the ray enters (rayParityInsideClean's verdict, culled).
+func (s *shellProbe) parityInside(p math.Point3) (inside, ok bool) {
+	return firstCleanDirection(s.box, func(dir [3]float64, tMax, tol float64) (bool, bool) {
+		d := math.V3(dir[0], dir[1], dir[2])
+		ray, err := geom.NewLine(p, d)
+		if err != nil {
+			return false, false
+		}
+		crossings := 0
+		for i, f := range s.faces {
+			if _, hits := s.boxes[i].IntersectsRay(p, d); !hits {
+				continue
+			}
+			n, clean := faceRayCrossingsBand(f, ray, tMax, s.bands[i], tol)
+			if !clean {
+				return false, false
+			}
+			crossings += n
+		}
+		return crossings%2 == 1, true
+	})
 }

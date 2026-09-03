@@ -41,7 +41,65 @@ func (r trimRegion) contains(q math.Point2) bool {
 	if len(r.rings) == 0 {
 		return true
 	}
-	return pointInLoops2D(r.rings, q) != r.complement
+	return r.ringsEnclose(q) != r.complement
+}
+
+// ringsEnclose is the even-odd interior over rings that may WRAP the azimuth. A ring that closes in the
+// parameter plane is a polygon and is tested as one, in whichever branch of the period the point's
+// azimuth falls. A ring that travels a whole turn — a band's rim — is an OPEN polyline in the covering
+// space: it has no closing chord, and the polygon test would close it with a spurious one across the
+// whole turn, enclosing nothing. Such a ring is read by the parity of an upward v-ray instead, the
+// point first shifted into the ring's own branch. A band between two rims then reads inside between
+// them (one rim above), outside beyond either (none or two) — which is what lets a flux domain, a probe
+// point and a box be taken from a two-rim band at all (#3506, ADR-0060).
+func (r trimRegion) ringsEnclose(q math.Point2) bool {
+	inside := false
+	for _, ring := range r.rings {
+		if r.uPeriodic && ringClosesByAWholeTurn(ring, func(p math.Point2) float64 { return float64(p.X) }) {
+			inside = inside != (upwardRayCrossings(ring, shiftIntoRingBranch(ring, q))%2 == 1)
+			continue
+		}
+		inside = inside != pointInLoops2D([][]math.Point2{ring}, q)
+	}
+	return inside
+}
+
+// shiftIntoRingBranch moves the point's azimuth by whole turns into the span the ring's samples cover.
+func shiftIntoRingBranch(ring []math.Point2, q math.Point2) math.Point2 {
+	lo, hi := stdmath.Inf(1), stdmath.Inf(-1)
+	for _, p := range append(append([]math.Point2{}, ring...), closingImage(ring, false, true)) {
+		lo, hi = stdmath.Min(lo, float64(p.X)), stdmath.Max(hi, float64(p.X))
+	}
+	u := float64(q.X)
+	for u < lo {
+		u += twoPi
+	}
+	for u > hi {
+		u -= twoPi
+	}
+	return math.P2(u, float64(q.Y))
+}
+
+// upwardRayCrossings counts the wrapping polyline's segments an upward v-ray from q crosses, the
+// last sample closed onto the first's periodic image (closingImage).
+func upwardRayCrossings(ring []math.Point2, q math.Point2) int {
+	n := 0
+	closedRing := append(append([]math.Point2{}, ring...), closingImage(ring, false, true))
+	for i := 1; i < len(closedRing); i++ {
+		a, b := closedRing[i-1], closedRing[i]
+		lo, hi := float64(a.X), float64(b.X)
+		ylo, yhi := float64(a.Y), float64(b.Y)
+		if lo > hi {
+			lo, hi, ylo, yhi = hi, lo, yhi, ylo
+		}
+		if lo == hi || float64(q.X) < lo || float64(q.X) >= hi {
+			continue
+		}
+		if ylo+(yhi-ylo)*(float64(q.X)-lo)/(hi-lo) > float64(q.Y) {
+			n++
+		}
+	}
+	return n
 }
 
 // faceTrimRegion projects a face's trim into (u, v) once — loopToUV inverts ParamAt per sample, so this
@@ -142,4 +200,27 @@ func isFiniteRect(u0, u1, v0, v1 float64) bool {
 		return false
 	}
 	return u1 > u0 && v1 > v0
+}
+
+// boundaryDistance is the (u,v) distance from q to the nearest ring segment — how far inside its trim
+// a point sits, for choosing a probe point clear of the boundary.
+func (r trimRegion) boundaryDistance(q math.Point2) float64 {
+	best := stdmath.Inf(1)
+	for _, ring := range r.rings {
+		for i := range ring {
+			best = stdmath.Min(best, pointSegmentDistance2D(q, ring[i], ring[(i+1)%len(ring)]))
+		}
+	}
+	return best
+}
+
+// pointSegmentDistance2D is the distance from q to the segment a→b.
+func pointSegmentDistance2D(q, a, b math.Point2) float64 {
+	ab := a.VectorTo(b)
+	l2 := float64(ab.Dot(ab))
+	t := 0.0
+	if l2 > 0 {
+		t = stdmath.Max(0, stdmath.Min(1, float64(a.VectorTo(q).Dot(ab))/l2))
+	}
+	return float64(q.DistanceTo(a.TranslateBy(ab.Scale(math.Scalar(t)))))
 }

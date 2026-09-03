@@ -106,12 +106,13 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 // there), so it is dropped, leaving the cut alone as the face's hole (#1406). For a non-periodic ruled side
 // the seam edges cancel pairwise instead, so no all-seam loop survives and this is a no-op.
 func dropArtificialLoops(c uvSide, loops [][]dedge, segs []uvSeg) [][]dedge {
+	ix := newUVSegIndex(segs)
 	if !c.vPeriodic() {
 		return loops
 	}
 	out := loops[:0]
 	for _, lp := range loops {
-		if !loopAllSeam(lp, segs) {
+		if !loopAllSeam(lp, ix) {
 			out = append(out, lp)
 		}
 	}
@@ -119,9 +120,9 @@ func dropArtificialLoops(c uvSide, loops [][]dedge, segs []uvSeg) [][]dedge {
 }
 
 // loopAllSeam reports whether every dedge of a loop recovers to an artificial seam segment.
-func loopAllSeam(loop []dedge, segs []uvSeg) bool {
+func loopAllSeam(loop []dedge, ix *uvSegIndex) bool {
 	for _, d := range loop {
-		re, ok := recoverEdge(d, segs)
+		re, ok := recoverEdge(d, ix)
 		if !ok || re.kind != segSeam {
 			return false
 		}

@@ -85,6 +85,9 @@ func TestPartialRimCornerJunctionTakesAnalyticPath(t *testing.T) {
 // TestPartialRimGrazingCutDeclinesObservably: a rod that only GRAZES the notch floor (z=5.5, its top tangent
 // to the section conic) is a non-transversal contact the tangency gate declines (ADR-0048 §tangency, out of
 // scope). It must fall to the observable CSG fallback — never a manifold-but-wrong forced analytic solid.
+// It asserts the DECLINE CODE, never the faceted body: when the configuration this declines on
+// lands analytically it becomes a positive corpus case (ADR-0061), so the assertion converts
+// rather than being deleted to move a number.
 func TestPartialRimGrazingCutDeclinesObservably(t *testing.T) {
 	t.Parallel()
 	rod, err := brep.SolidCylinder(math.P3(-6, 0, 5.5), math.V3(1, 0, 0), 1, 12) // z=5.5: top grazes the notch floor

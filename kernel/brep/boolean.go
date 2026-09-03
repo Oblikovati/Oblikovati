@@ -268,10 +268,12 @@ func splitLineage(parent topo.Lineage, k int) topo.Lineage {
 // inside/outside table ([keep]) from a winding-number cast against the other solid's cached
 // probe, with B's difference faces reversed to form the cut walls.
 func classifySubFace(sf subFace, f curvedFace, other insideOracle, others []curvedFace, op Op, isB bool) (subFace, bool) {
-	if covered, sameNormal := coplanarCover(f, sf.point, others); covered {
+	step, hasStep := other.onPlaneStep()
+	covered, sameNormal, degenerate := coplanarCover(f, sf.point, others, step/offPlaneProbeSteps)
+	if covered {
 		return sf, coplanarKeep(op, isB, sameNormal)
 	}
-	if !keep(op, isB, other.inside(sf.point)) {
+	if !keep(op, isB, insidePlaneSafe(other, sf.point, faceNormal(f), step, degenerate && hasStep)) {
 		return sf, false
 	}
 	if op == Difference && isB {

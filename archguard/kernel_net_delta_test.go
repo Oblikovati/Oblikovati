@@ -42,9 +42,12 @@ import (
 // moves it, and say in the PR which direction each moved and why.
 var kernelNetDeltaPin = map[string]int{
 	"tolerance-constants": 233,
-	"type-assertions":     774,
+	"type-assertions":     765,
 	"recognizers":         37, // 26 curvedExactPaths + 11 specialCurvedMeshers
-	"fallback-sites":      28,
+	// 28 → 29 (2026-09-03, ADR-0061): CodeBooleanAnalyticInvalid. A RISE that is an improvement — the
+	// public curved-boolean entry had no Validate post-condition, so a recognizer returning a torn body
+	// shipped it silently; the degradation is now refused AND reported.
+	"fallback-sites": 29,
 }
 
 func TestKernelNetDelta(t *testing.T) {

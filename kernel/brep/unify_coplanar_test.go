@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/internal/testcage"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/subd"
@@ -73,7 +74,7 @@ func TestUnifyCoplanarKeepsHoleLoop(t *testing.T) {
 	if err != nil {
 		t.Fatalf("difference: %v", err)
 	}
-	u := brep.UnifyCoplanarFaces(ops.Facet(holed, "facet"), "unify")
+	u := brep.UnifyCoplanarFaces(testcage.Body(holed, "facet"), "unify")
 	r := ops.Validate(u)
 	if !r.Valid || !u.IsSolid() {
 		t.Fatalf("unified holed plate invalid: %+v", r)

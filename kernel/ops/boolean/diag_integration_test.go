@@ -19,6 +19,9 @@ import (
 // curved configuration with no exact analytic/planar path (two overlapping spheres) falls back to
 // triangle-soup CSG, and that fallback is now RECORDED as a searchable Defect instead of silently
 // shipping a faceted mesh (the #1407 guardrail this infrastructure enables).
+// This asserts the DECLINE CODE, never the faceted body: when the configuration this declines on
+// lands analytically it becomes a positive corpus case (ADR-0061), so the assertion converts
+// rather than being deleted to move a number.
 func TestBooleanRecordsCSGFallbackDiagnostic(t *testing.T) {
 	if testing.Short() {
 		t.Skip("corpus tier (~3s): `make test-corpus`")

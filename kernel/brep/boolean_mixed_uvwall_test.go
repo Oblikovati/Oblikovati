@@ -207,13 +207,16 @@ func TestUvWallSharedImprintYieldsOneCircle(t *testing.T) {
 	}
 }
 
-// TestUvWallSharedImprintDeclinesConicFrame: a receiver whose own boundary is curved (a cylinder cap)
-// would need conic×conic frame crossings, so the pairing declines by name rather than approximating.
-func TestUvWallSharedImprintDeclinesConicFrame(t *testing.T) {
+// TestUvWallSharedImprintOwnCapIsNoImprint: a cylinder's cap paired with its OWN wall sections it along
+// the wall's rim — a curve lying in one of the wall's own edges. That is a boundary contact, not an
+// imprint: the pairing succeeds and contributes nothing (ADR-0060). It used to decline by name, which
+// also declined a plate resting on the boss beneath it.
+func TestUvWallSharedImprintOwnCapIsNoImprint(t *testing.T) {
 	t.Parallel()
 	cyl, _ := uvWallFixture(t)
-	if _, ok := uvWallSharedImprint(cyl.uv[0], cyl.wall[0]); ok {
-		t.Error("a circle-framed cap must decline the uv×wall pairing")
+	curves, ok := uvWallSharedImprint(cyl.uv[0], cyl.wall[0])
+	if !ok || len(curves) != 0 {
+		t.Errorf("own cap × wall = %d curves ok=%v, want no imprint and no decline", len(curves), ok)
 	}
 }
 
@@ -222,7 +225,7 @@ func TestUvWallSharedImprintDeclinesConicFrame(t *testing.T) {
 func TestWallSectionIslandStraddlingRimDeclines(t *testing.T) {
 	t.Parallel()
 	cyl, plate := uvWallFixture(t)
-	rs, ok := ruledSideBandOf(cyl.wall[0])
+	rs, ok := ruledFaceOf(cyl.wall[0])
 	if !ok {
 		t.Fatal("the cylinder side is a ruled band")
 	}
@@ -240,12 +243,12 @@ func TestWallSectionIslandStraddlingRimDeclines(t *testing.T) {
 func TestCollectWallIslandsDropsClearSections(t *testing.T) {
 	t.Parallel()
 	cyl, plate := uvWallFixture(t)
-	rs, _ := ruledSideBandOf(cyl.wall[0])
+	rs, _ := ruledFaceOf(cyl.wall[0])
 	far, err := geom.NewCircle(math.P3(60, 0, 3), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatal(err)
 	}
-	out, ok := collectWallIslands([]geom.Curve3{far}, planeFaceAtZ(t, plate, 3), rs)
+	out, ok := collectWallIslands([]geom.Curve3{far}, planeFaceAtZ(t, plate, 3), cyl.wall[0], rs)
 	if !ok || len(out) != 0 {
 		t.Errorf("collectWallIslands = (%d curves, ok=%v), want (0, true)", len(out), ok)
 	}

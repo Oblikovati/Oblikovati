@@ -74,14 +74,9 @@ func (q *fluxQuery) inside(p math.Point3, box math.Box) bool {
 // inside even when the stored Reversed flags are inconsistent. It is the degeneracy-free fallback for a
 // point every ray direction leaves ambiguous.
 func (q *fluxQuery) windingInside(p math.Point3) bool {
-	total := 0.0
-	for i := range q.faces {
-		f := &q.faces[i]
-		// Halfway between the two attractors (0 outside, 4π inside): robust to the O(tolerance) residual the
-		// quadrature leaves on a non-watertight import, where the field lands near but not exactly on 4π/0.
-		total += f.sign * integrateFluxCell(f.cf.surface, p, f.region, f.u0, f.u1, f.v0, f.v1, 0)
-	}
-	return stdmath.Abs(total) > 2*stdmath.Pi
+	// Halfway between the two attractors (0 outside, 4π inside): robust to the O(tolerance) residual the
+	// quadrature leaves on a non-watertight import, where the field lands near but not exactly on 4π/0.
+	return stdmath.Abs(fluxWindingAt(q.faces, p)) > 2*stdmath.Pi
 }
 
 // polyBounds is the axis-aligned (u, v) bounding box of every polyline vertex.

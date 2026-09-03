@@ -77,20 +77,7 @@ type ruledSide struct {
 	surface geom.Surface
 	band    coneSideBand_
 	axis    math.Vector3
-}
-
-// ruledSideBandOf resolves a wall face to its ruled side. A cylinder is the degenerate cone, and the
-// band model already carries a separate bottom and top radius, so both go through one description
-// (ADR-0058: the dispatch buckets faces by REPRESENTATION — here "ruled band" — not by surface type).
-// ok=false for anything that is not a full periodic side band.
-func ruledSideBandOf(f curvedFace) (ruledSide, bool) {
-	if cyl, band, ok := fullCylinderSideBand(f); ok {
-		return ruledSide{surface: cyl, band: band, axis: cyl.AxisDir.AsVector()}, true
-	}
-	if cone, band, ok := fullConeSideBand(f); ok {
-		return ruledSide{surface: cone, band: band, axis: cone.AxisDir.AsVector()}, true
-	}
-	return ruledSide{}, false
+	frame   geom.RuledFrame
 }
 
 // size is the band's characteristic length, for the resolution its intersections are taken at.
@@ -102,7 +89,7 @@ func (r ruledSide) size() float64 {
 // ruling line clipped to the tool face's trim, emitted as segments for the wall AND mirrored onto the
 // tool's polygonal imprint list. A circle/ellipse curve entering the tool trim declines (v1).
 func wallPairImprint(wf, of curvedFace, otherImp [][][2]math.Point3, j int) ([]geom.Curve3, bool) {
-	rs, ok := ruledSideBandOf(wf)
+	rs, ok := ruledFaceOf(wf)
 	if !ok {
 		return nil, false
 	}
@@ -171,11 +158,16 @@ func wallSplitOne(wf curvedFace, imprint []geom.Curve3, other insideOracle, op O
 	if len(imprint) == 0 {
 		return passThroughKept([]curvedFace{wf}, other, op, isB)
 	}
-	rs, ok := ruledSideBandOf(wf)
+	rs, ok := ruledFaceOf(wf)
 	if !ok {
 		return nil, false
 	}
-	faces, _, err := curvedSideSolidSplit(wf, rs.surface, rs.band, imprint, op, isB, other.inside)
+	c := newRuledFaceUV(wf, rs, op, isB, other.inside)
+	imprint = c.admits(imprint)
+	if len(imprint) == 0 {
+		return passThroughKept([]curvedFace{wf}, other, op, isB) // every imprint lay on the frame: untouched
+	}
+	faces, _, err := trimByImprint(c, wf, rs.surface, imprint, ruledFaceMaterial(c))
 	if err != nil {
 		return nil, false
 	}

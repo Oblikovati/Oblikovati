@@ -61,9 +61,10 @@ type emittedLoop struct {
 // emitKeptLoops re-emits every (u,v) boundary loop to analytic edges, sorted with the higher (hi) boundary
 // first to match the analytic split convention (loops[0] is the hi boundary / outer loop).
 func emitKeptLoops(c uvSide, loops [][]dedge, segs []uvSeg) ([]emittedLoop, bool) {
+	ix := newUVSegIndex(segs)
 	out := make([]emittedLoop, 0, len(loops))
 	for _, lp := range loops {
-		face, section, ok := emitLoopEdges(c, lp, segs)
+		face, section, ok := emitLoopEdges(c, lp, ix)
 		if !ok {
 			return nil, false
 		}
