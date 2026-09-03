@@ -70,14 +70,13 @@ func wholeSideOfPlane(f curvedFace, plane geom.Plane, n math.Vector3) []curvedFa
 	return nil
 }
 
-// boundedSections replaces an UNBOUNDED straight section with the segment spanning the frame's axial
-// window. A plane parallel to a ruled wall's axis sections it in RULINGS, which curvedImprint returns as
-// geom.Line over (−∞, +∞); a chart samples an imprint over its own domain, and an infinite domain
-// samples to nothing, so the cut would read as no imprint at all and the whole wall be kept. Every other
-// section — a circle, an ellipse, a conic arm — is already bounded and passes through untouched.
+// boundedSections clips an UNBOUNDED plane section to the wall's own axial window. A plane cutting a
+// ruled wall parallel to its axis sections it in a curve that runs to infinity — a ruling on a
+// cylinder, a hyperbola arm on a cone — and a chart samples an imprint over its own domain, so an
+// infinite domain samples to nothing and the cut reads as no imprint at all (ADR-0062).
 //
-// ok=false when a section is unbounded and NOT straight, which no ruled plane section is: the chart
-// would have no honest interval to sample, so it declines rather than inventing one.
+// ok=false when a section is unbounded and its axial coordinate cannot be bracketed: the chart would
+// have no honest interval to sample, so it declines rather than inventing one.
 func boundedSections(curves []geom.Curve3, rs ruledSide) ([]geom.Curve3, bool) {
 	out := make([]geom.Curve3, 0, len(curves))
 	for _, c := range curves {
@@ -86,27 +85,13 @@ func boundedSections(curves []geom.Curve3, rs ruledSide) ([]geom.Curve3, bool) {
 			out = append(out, c)
 			continue
 		}
-		seg, ok := rulingAcrossBand(c, rs)
+		spans, ok := geom.AxialWindowParams(c, rs.frame.Base, rs.frame.Axis, rs.band.vMin, rs.band.vMax)
 		if !ok {
 			return nil, false
 		}
-		out = append(out, seg)
+		for _, sp := range spans {
+			out = append(out, geom.TrimmedCurve3{Base: c, Lo: sp[0], Hi: sp[1]})
+		}
 	}
 	return out, true
-}
-
-// rulingAcrossBand cuts an infinite straight section down to the frame's axial window. The axial
-// coordinate runs affinely along a straight curve, so both parameters are solved exactly from two
-// samples — no search, no tolerance.
-func rulingAcrossBand(c geom.Curve3, rs ruledSide) (geom.Curve3, bool) {
-	if !geom.IsStraightCurve(c) {
-		return nil, false
-	}
-	v := func(t float64) float64 { return float64(rs.frame.Base.VectorTo(c.PointAt(t)).Dot(rs.frame.Axis)) }
-	v0, v1 := v(0), v(1)
-	if v0 == v1 {
-		return nil, false // the section runs perpendicular to the axis: not a ruling of this frame
-	}
-	at := func(target float64) float64 { return (target - v0) / (v1 - v0) }
-	return geom.NewLineSegment(c.PointAt(at(rs.band.vMin)), c.PointAt(at(rs.band.vMax))), true
 }

@@ -171,13 +171,16 @@ func ellipticForm(center math.Point3, normal, major math.UnitVector3, a, b float
 // AxialAmplitude is the conic's half-extent along axis about its centre — how far the curve reaches
 // up and down a wall band. A closed conic in a plane perpendicular to the axis gives 0.
 //
-// A hyperbola branch is UNBOUNDED and has no such extent; it returns 0, which callers must read as
-// "no amplitude" rather than "flat". That is sound where it is used: an unbounded curve with any
-// point inside a bounded trim must cross that trim's boundary, so the exact crossing scan decides
-// the verdict before any amplitude is consulted.
+// A hyperbola branch is UNBOUNDED along the axis, so it returns +Inf. It used to return 0 with a
+// caveat that callers must read that as "no amplitude" rather than "flat" — and the caveat's own
+// premise was wrong: a crossing scan decides the verdict FIRST only where the crossings fall inside
+// the band being tested, and an arm can pass through the band well inside a large trim while crossing
+// its boundary far outside. The mixed boolean then read amplitude 0 as a flat conic that clears every
+// wall, so a plane sectioning a cone parallel to its axis dropped the tool's own face and left the cut
+// open (ADR-0062). +Inf is the honest value and needs no reading.
 func (c ConicForm) AxialAmplitude(axis math.Vector3) float64 {
 	if c.Hyperbolic {
-		return 0
+		return stdmath.Inf(1)
 	}
 	a := c.A * float64(c.Major.AsVector().Dot(axis))
 	b := c.B * float64(c.Minor.AsVector().Dot(axis))

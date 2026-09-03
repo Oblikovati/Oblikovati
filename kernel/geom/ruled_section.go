@@ -4,6 +4,7 @@ package geom
 
 import (
 	stdmath "math"
+	"sort"
 
 	"oblikovati.org/math"
 )
@@ -219,3 +220,113 @@ func conicAxialStationaryParams(c Curve3, cf ConicForm, t0, t1 float64, axis mat
 	}
 	return out
 }
+
+// AxialWindowParams returns the parameter intervals of c whose AXIAL coordinate — the distance along
+// axis from origin — lies within [vMin, vMax]. It is the inverse of [AxialExtent]: that reports the
+// axial span a parameter range covers, this reports the parameter ranges an axial span covers.
+//
+// A plane cutting a ruled wall parallel to its axis sections it in a curve that runs to INFINITY: a
+// ruling on a cylinder, a hyperbola arm on a cone. An imprint is sampled over its own domain, and an
+// infinite domain samples to nothing, so such a section has to be clipped to the wall's own axial
+// window before any chart can carry it (ADR-0062).
+//
+// The axial coordinate is not monotone along a conic — a hyperbola's arm turns at its vertex — so the
+// stationary parameters split the curve into monotone pieces and each piece is inverted on its own.
+// ok=false for a curve whose axial coordinate this cannot bracket (a non-conic with an open domain).
+//
+// Example — a hyperbola arm cut from a cone, clipped to the frustum's band:
+//
+//	spans, _ := geom.AxialWindowParams(arm, cone.Apex, axis, vMin, vMax)
+func AxialWindowParams(c Curve3, origin math.Point3, axis math.Vector3, vMin, vMax float64) ([][2]float64, bool) {
+	t0, t1, ok := axialSearchRange(c, origin, axis, vMin, vMax)
+	if !ok {
+		return nil, false
+	}
+	v := func(t float64) float64 { return float64(origin.VectorTo(c.PointAt(t)).Dot(axis)) }
+	var out [][2]float64
+	for _, piece := range monotonePieces(c, t0, t1, axis) {
+		lo, hi := piece[0], piece[1]
+		a, b := axialCross(v, lo, hi, vMin), axialCross(v, lo, hi, vMax)
+		s, e := stdmath.Min(a, b), stdmath.Max(a, b)
+		if e > s {
+			out = append(out, [2]float64{s, e})
+		}
+	}
+	return out, len(out) > 0
+}
+
+// axialSearchRange brackets the curve's own domain, or — where it is open — a parameter range whose
+// axial extent COVERS [vMin, vMax], found by doubling out from the parameterisation's origin. The
+// bracket is kept as tight as the doubling allows: a wider one costs bisection precision, since the
+// inversion below converges relative to the bracket it starts from.
+func axialSearchRange(c Curve3, origin math.Point3, axis math.Vector3, vMin, vMax float64) (float64, float64, bool) {
+	lo, hi := c.Domain()
+	if !stdmath.IsInf(lo, 0) && !stdmath.IsInf(hi, 0) {
+		return lo, hi, true
+	}
+	span := 1.0
+	for range axialSearchDoublings {
+		covLo, covHi, ok := AxialExtent(c, -span, span, origin, axis)
+		if ok && covLo <= vMin && covHi >= vMax {
+			return -span, span, true
+		}
+		span *= 2
+	}
+	return 0, 0, false
+}
+
+// axialSearchDoublings caps the bracket search. Each doubling covers twice the parameter range, so this
+// reaches 2^40 times the curve's own scale — far beyond any modelled body — before giving up.
+const axialSearchDoublings = 40
+
+// monotonePieces splits [t0, t1] at the parameters where the axial coordinate turns, so each piece can
+// be inverted by bisection.
+func monotonePieces(c Curve3, t0, t1 float64, axis math.Vector3) [][2]float64 {
+	cuts := []float64{t0}
+	if cf, isConic := AsConic(c); isConic && !IsStraightCurve(c) {
+		cuts = append(cuts, conicAxialStationaryParams(c, cf, t0, t1, axis)...)
+	}
+	cuts = append(cuts, t1)
+	sort.Float64s(cuts)
+	var out [][2]float64
+	for i := 0; i+1 < len(cuts); i++ {
+		if cuts[i+1] > cuts[i] {
+			out = append(out, [2]float64{cuts[i], cuts[i+1]})
+		}
+	}
+	return out
+}
+
+// axialCross bisects a MONOTONE piece for the parameter whose axial coordinate is target, clamping to
+// the piece's own end when the target lies beyond it. It converges RELATIVE to the bracket it is given,
+// because an unbounded section's bracket is found by doubling and can start very wide: a fixed halving
+// count would then leave the answer short of the window by a fraction of that bracket.
+func axialCross(v func(float64) float64, lo, hi, target float64) float64 {
+	vlo, vhi := v(lo), v(hi)
+	if (vlo-target)*(vhi-target) > 0 { // the target is off this piece: clamp to the nearer end
+		if stdmath.Abs(vlo-target) < stdmath.Abs(vhi-target) {
+			return lo
+		}
+		return hi
+	}
+	for range axialBisectionCap {
+		if hi-lo <= axialParamEps*(1+stdmath.Abs(lo)+stdmath.Abs(hi)) {
+			break
+		}
+		mid := (lo + hi) / 2
+		if (v(lo)-target)*(v(mid)-target) <= 0 {
+			hi = mid
+			continue
+		}
+		lo = mid
+	}
+	return (lo + hi) / 2
+}
+
+// axialParamEps is the bisection's relative convergence: the parameter is carried in double precision,
+// so nothing is gained below a few ulps of its own magnitude.
+const axialParamEps = 1e-15 // tol:numeric — relative parameter convergence (dimensionless)
+
+// axialBisectionCap bounds the loop for a piece the convergence test cannot satisfy (a curve whose
+// axial coordinate is flat over the bracket), so the inversion always terminates.
+const axialBisectionCap = 200
