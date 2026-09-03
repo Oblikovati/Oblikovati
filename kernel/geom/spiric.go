@@ -63,7 +63,29 @@ func (s SpiricArc) uOfV(v float64) float64 {
 	cv, sv := cosSin(v)
 	denom := s.M * (s.Torus.MajorRadius + s.Torus.MinorRadius*cv)
 	w := (s.K - s.C*s.Torus.MinorRadius*sv) / denom
-	return s.Phi + s.Branch*stdmath.Acos(math.Clamp(w, -1, 1))
+	return s.Phi + s.Branch*stdmath.Acos(spiricCosineAtLimit(w))
+}
+
+// spiricCosineAtLimit resolves w for the arccos, snapping it to ±1 where it is within rounding of them.
+//
+// |w| = 1 is the oval's v-EXTREME: the two branches of one oval meet there, and it is the only place
+// they do. Arccos is infinitely steep at its ends, so |w| short of 1 by δ gives an angle √(2δ) away
+// from the limit — half the mantissa is lost, and δ of half an ulp puts the two branches 3·10⁻⁸ apart
+// in azimuth. Each then samples the shared point to a different place, the two arcs of the oval fail to
+// weld into one loop, and the arrangement sees an open chain that divides nothing: a torus cut by a
+// plane between its tube radii kept the WHOLE face on both sides (ADR-0062).
+//
+// A |w| that exceeds 1 by rounding is not a solution at all, and one short of it by rounding IS the
+// limit — the arc's domain is by construction the interval where |w| ≤ 1. So both are answered the same
+// way, and the two branches then evaluate one azimuth, not two.
+func spiricCosineAtLimit(w float64) float64 {
+	// tol:calibrated — a few ulps of 1, the rounding w itself carries; arccos amplifies it by a square
+	// root, so the snap must happen BEFORE the call, not be absorbed after it.
+	const limitUlps = 8 * 2.220446049250313e-16
+	if stdmath.Abs(w) >= 1-limitUlps {
+		return stdmath.Copysign(1, w)
+	}
+	return math.Clamp(w, -1, 1)
 }
 
 // UAt returns the azimuth u on this branch at tube angle v — the spiric section's single-valued u(v).

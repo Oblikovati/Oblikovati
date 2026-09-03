@@ -335,15 +335,25 @@ func (c *loopFrame) loopTurnsTheAzimuth(e emittedLoop) bool { return c.loopTurns
 // loopTurns is loopTurnsTheAzimuth for either chart direction: inU selects u (the azimuth/longitude),
 // otherwise v (the tube angle).
 func (c *loopFrame) loopTurns(e emittedLoop, inU bool) bool {
+	return stdmath.Abs(netTurn(e.face, func(p math.Point3) float64 {
+		uv := c.host.paramOf(p)
+		if inU {
+			return float64(uv.X)
+		}
+		return float64(uv.Y)
+	})) > stdmath.Pi
+}
+
+// netTurn is the NET turn of an angular coordinate along a chain of edges: each edge is walked finely
+// enough that consecutive samples stay within half a turn, so the unwrap cannot mistake the direction,
+// and the increments are summed. It is the NET, so a chain that runs out along a boundary and back
+// covers the same angles twice and turns by nothing.
+func netTurn(chain []loopEdge, coord func(math.Point3) float64) float64 {
 	turn, prev := 0.0, 0.0
 	first := true
-	for _, le := range e.face {
+	for _, le := range chain {
 		for k := 0; k <= azimuthTurnSamples; k++ {
-			uv := c.host.paramOf(le.curve.PointAt(le.t0 + (le.t1-le.t0)*float64(k)/azimuthTurnSamples))
-			x := float64(uv.Y)
-			if inU {
-				x = float64(uv.X)
-			}
+			x := coord(le.curve.PointAt(le.t0 + (le.t1-le.t0)*float64(k)/azimuthTurnSamples))
 			if !first {
 				x = unwrapAzimuthNear(prev, x)
 				turn += x - prev
@@ -351,7 +361,7 @@ func (c *loopFrame) loopTurns(e emittedLoop, inU bool) bool {
 			prev, first = x, false
 		}
 	}
-	return stdmath.Abs(turn) > stdmath.Pi
+	return turn
 }
 
 // loopTurnsAPeriod reports whether a boundary loop turns the whole way round ANY of the chart's own

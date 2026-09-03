@@ -3,6 +3,8 @@
 package brep
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -24,8 +26,47 @@ type ruledFaceUV struct {
 }
 
 // seamOverrun: a band is open in v, so the seam runs a full window past each end and bounds nothing
-// there (loopFrameHost).
-func (c *ruledFaceUV) seamOverrun() float64 { return c.band.vMax - c.band.vMin }
+// there — EXCEPT past an apex, where the surface folds onto its other nappe and the overrun would land
+// on real geometry. A face bounded by its apex gets no overrun at all, exactly as a sphere's chart gets
+// none past a pole (loopFrameHost, ADR-0062).
+func (c *ruledFaceUV) seamOverrun() float64 {
+	if _, atApex := c.boundedByApex(); atApex {
+		return 0
+	}
+	return c.band.vMax - c.band.vMin
+}
+
+// boundedByApex reports whether one end of the wall's window is the cone apex, and which. The apex is
+// where the surface RADIUS vanishes, so that is what is measured — a radius is a length, so the weld
+// tolerance is its class — rather than comparing the axial parameter to zero, which would be an exact
+// float compare on a value the frame's own edges produced.
+func (c *ruledFaceUV) boundedByApex() (float64, bool) {
+	if c.frame.RadSlope == 0 {
+		return 0, false // a cylinder has no apex
+	}
+	for _, v := range []float64{c.band.vMin, c.band.vMax} {
+		if stdmath.Abs(c.frame.Radius(v)) <= c.res.Weld() {
+			return v, true
+		}
+	}
+	return 0, false
+}
+
+// apexSegments closes the parameter rectangle at the APEX. Like a sphere's pole segment it is a
+// DEGENERATE edge — the whole azimuth at the apex is one point in space, so it bounds no geometry and
+// welds to nothing. It exists so the frame's even-odd containment can read a patch that runs to the
+// apex as inside, which the patch's own rim cannot say (ADR-0062).
+func (c *ruledFaceUV) apexSegments() []uvSeg {
+	v, atApex := c.boundedByApex()
+	if !atApex {
+		return nil
+	}
+	apex := c.point3(0, v)
+	return []uvSeg{{
+		a: math.P2(0, math.Scalar(v)), b: math.P2(2*stdmath.Pi, math.Scalar(v)),
+		curve: geom.NewLineSegment(apex, apex), tA: 0, tB: 1, kind: segSeam,
+	}}
+}
 
 // vWindow is the wall's axial window (loopFrameHost).
 func (c *ruledFaceUV) vWindow() (float64, float64) { return c.band.vMin, c.band.vMax }
@@ -104,7 +145,8 @@ func (c *ruledFaceUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
 	c.frameSegs = c.frameSegments(seamHits)
 	segs := append([]uvSeg{}, c.frameSegs...)
 	segs = append(segs, c.imprintSegments(imprint, seamHits)...)
-	return append(segs, c.seamSegments(seamHits)...)
+	segs = append(segs, c.seamSegments(seamHits)...)
+	return append(segs, c.apexSegments()...)
 }
 
 // emitRun re-emits a boundary run: frame and imprint runs as the exact sub-curve they lie on, a seam
@@ -133,8 +175,16 @@ func (c *ruledFaceUV) orientLoops(loops []emittedLoop, _ bool) ([]curvedLoop, []
 	return faceLoops, nil, false
 }
 
-// finalizeLoops: a loop-framed wall has no synthetic apex rim to drop (uvSide).
-func (c *ruledFaceUV) finalizeLoops(loops []curvedLoop) []curvedLoop { return loops }
+// finalizeLoops drops the DEGENERATE apex edges. The apex is one point in space, so the
+// parameter-space boundary that closes the rectangle there bounds nothing and must not survive as an
+// edge: left in, it is a zero-length edge with a single use and the body reads as open. It is the same
+// thing sphereFaceUV does at a pole, and OCCT's degenerate edges do in a face's wire (uvSide).
+func (c *ruledFaceUV) finalizeLoops(loops []curvedLoop) []curvedLoop {
+	if _, atApex := c.boundedByApex(); !atApex {
+		return loops
+	}
+	return dropDegenerateEdges(loops, c.res)
+}
 
 // frameContains reports whether a seam-relative (u,v) point lies inside the face's frame: an upward
 // v-ray crosses the sampled boundary an odd number of times.

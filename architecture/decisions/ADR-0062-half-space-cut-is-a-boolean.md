@@ -89,6 +89,34 @@ loops (ADR-0060), and a cone bounded by its apex has no loop there — the apex 
 is the same thing a sphere's POLE is, which `sphereFaceUV` already frames. The chart needs the ruled
 apex for the same reason and in the same way.
 
+**All sixteen rows are `equal`.** Three defects closed them, each in the general path:
+
+1. **The recogniser refused a cone bounded by its apex.** It need not: such a face carries a RULING out
+   to the apex and back, and that ruling IS a frame edge, so the face's own loops already reach it. What
+   the chart does need is to CLOSE its parameter rectangle there, with a degenerate segment spanning the
+   azimuth at the apex — the same thing `sphereFaceUV.poleSegments` does at a pole, and the same thing
+   OCCT's degenerate edges are in a face's wire. Refusing instead sent every apex cone to the pass
+   bucket, whose gate cannot prove a cone clear of a crossing plane, and declined the whole boolean.
+   Four rows.
+
+2. **An imprint was classified before it was assembled.** A section arrives as however many curves its
+   own construction makes: a plane between a torus's tube radii sections it in ONE oval delivered as TWO
+   spiric branches. Neither branch closes, so neither was an island; neither crossed the receiving
+   face's boundary, so neither was an open crossing; both fell to the STRAIGHT bucket, where a curved
+   arc becomes the chord between its ends. The oval collapsed to a sliver, the face kept everything, and
+   the tool's lid passed through untrimmed. Open arcs are now chained into cycles BEFORE they are
+   classified — `BOPAlgo_BuilderFace` does exactly this, `PerformLoops` before `PerformAreas` — and the
+   open/island test now reads curvature rather than conic-ness, so nothing in it knows a spiric from an
+   ellipse.
+
+3. **The two branches of one oval did not agree on the point they share.** They meet where |w| = 1, the
+   one place `arccos` is infinitely steep: half an ulp of error in `w` becomes 3·10⁻⁸ of azimuth. Each
+   branch then sampled the shared point somewhere else, the arcs never welded into a loop, and the
+   arrangement saw an open chain that divided nothing — so the SAME cut kept the whole face or trimmed
+   it correctly depending only on which branch came first out of the intersector. `w` is now resolved to
+   ±1 where it is within rounding of them, before the `arccos`, so both branches evaluate one azimuth.
+   The corpus for it is a sweep of near-degenerate planes, because a single tidy plane passes.
+
 ## Consequences
 
 **ADR-0061's stage order was wrong, and this corrects it.** Stage 3 — the sphere and torus charts — is

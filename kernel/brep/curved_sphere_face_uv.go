@@ -222,12 +222,19 @@ func (c *sphereFaceUV) orientLoops(loops []emittedLoop, _ bool) ([]curvedLoop, [
 // degenerate edges, which exist in the face's wire and are skipped by everything that builds geometry
 // from it (uvSide).
 func (c *sphereFaceUV) finalizeLoops(loops []curvedLoop) []curvedLoop {
+	return dropDegenerateEdges(loops, c.res)
+}
+
+// dropDegenerateEdges removes the zero-length straight edges a chart's POLE or APEX segment leaves
+// behind: a boundary in parameter space that is one point in space. Shared by every chart whose
+// parameter rectangle is closed by a singular point of its surface (ADR-0062).
+func dropDegenerateEdges(loops []curvedLoop, res geom.Resolution) []curvedLoop {
 	out := make([]curvedLoop, 0, len(loops))
 	for _, l := range loops {
 		edges := make([]loopEdge, 0, len(l.edges))
 		for _, e := range l.edges {
-			if float64(e.start().DistanceTo(e.end())) <= c.res.Weld() && geom.IsStraightCurve(e.curve) {
-				continue // the pole: a boundary in parameter space, a point in space
+			if float64(e.start().DistanceTo(e.end())) <= res.Weld() && geom.IsStraightCurve(e.curve) {
+				continue
 			}
 			edges = append(edges, e)
 		}

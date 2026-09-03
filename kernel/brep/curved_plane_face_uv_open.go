@@ -162,11 +162,16 @@ func crossingsOnEdge(open [][]openCrossing, li, ei int) []openCrossing {
 	return on
 }
 
-// openConicKind reports whether a curve is an OPEN conic — one this file's treatment applies to.
-// A closed conic is an island; a straight segment is neither.
-func openConicKind(cv geom.Curve3) bool {
-	_, isConic := geom.AsConic(cv)
-	return isConic && !geom.CurveIsClosed(cv)
+// openCurvedKind reports whether a curve is an OPEN CURVED arc — one this file's treatment applies to.
+// A closed curve is an island; a straight segment is neither.
+//
+// The property is curvature, not conic-ness. A torus's spiric branch is an open arc exactly as an
+// elliptical one is, and everything downstream drives off Domain and PointAt alone. Asking for a conic
+// sent every spiric branch to the STRAIGHT bucket, where a curved arc becomes the CHORD between its
+// ends: the two branches of a single spiric oval collapsed to a zero-area sliver, the receiving face
+// kept everything, and a half-space cut through a torus left its lid untrimmed (ADR-0062).
+func openCurvedKind(cv geom.Curve3) bool {
+	return !geom.IsStraightCurve(cv) && !geom.CurveIsClosed(cv)
 }
 
 // clipSectionToFace bounds a section curve to the pieces of it that lie INSIDE a planar face's trim.
