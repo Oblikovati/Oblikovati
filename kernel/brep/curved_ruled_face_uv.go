@@ -31,11 +31,12 @@ func (c *ruledFaceUV) seamOverrun() float64 { return c.band.vMax - c.band.vMin }
 func (c *ruledFaceUV) vWindow() (float64, float64) { return c.band.vMin, c.band.vMax }
 
 // seamCurve is the artificial boundary closing the periodic strip: for a ruled wall the RULING at the
-// placed azimuth, bounded so the incidence solver reads it as a section rather than an infinite line
-// (loopFrameHost).
+// placed azimuth, bounded to the band AND its overrun so every crossing the frame can have lies on the
+// seam itself. Bounding it to the ruling's own unit span instead would put real crossings off the end
+// of it, and a crossing is only admitted where it lies on the seam (loopFrameHost).
 func (c *ruledFaceUV) seamCurve() geom.Curve3 {
-	r := c.frame.Ruling(c.seamU)
-	return geom.NewLineSegment(r.PointAt(0), r.PointAt(1))
+	pad := c.seamOverrun()
+	return geom.NewLineSegment(c.point3(0, c.band.vMin-pad), c.point3(0, c.band.vMax+pad))
 }
 
 var _ uvSide = (*ruledFaceUV)(nil)

@@ -104,13 +104,24 @@ func (c *loopFrame) solveSeamCrossings(imprint []geom.Curve3) []frameCrossing {
 	return out
 }
 
-// seamHit is the parameter where a section curve meets the seam ruling, when it does within its span.
+// seamHit is the parameter where a section curve meets the seam, when it does within both spans.
+//
+// The crossing must lie on the SEAM ITSELF, not merely in its plane. The incidence solver works from
+// the two curves' section planes, and a seam that spans only HALF of its plane's curve — a sphere's
+// meridian is a half great circle, its plane a whole one — then reports a crossing on the other half
+// as if it were on the seam. Injected at the seam's own u, that put a boundary vertex half a turn away
+// from where it belongs, and the emitted arc started at the antipode of the real crossing. A ruled
+// wall's seam ruling spans its whole line, so this costs it nothing.
 func (c *loopFrame) seamHit(seam geom.Curve3, cv geom.Curve3, t0, t1 float64) (float64, bool) {
 	if geom.IsStraightCurve(cv) {
 		return 0, false
 	}
+	sLo, sHi := seam.Domain()
 	pts, _ := geom.SectionCrossingCandidates(c.face.surface, seam, cv)
 	for _, p := range pts {
+		if _, onSeam := c.paramWithin(seam, sLo, sHi, p); !onSeam {
+			continue
+		}
 		if t, ok := c.paramWithin(cv, t0, t1, p); ok {
 			return t, true
 		}
