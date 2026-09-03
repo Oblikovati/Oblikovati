@@ -135,6 +135,18 @@ func splitFaceByPlane(f curvedFace, plane geom.Plane, n math.Vector3, res geom.R
 	if cone, band, ok := fullConeApexSideBand(f, res); ok {
 		return coneApexSideSplit(f, cone, curves[0], band, plane, n)
 	}
+	return loopedOrLoopFramedSplit(f, curves, plane, n, res)
+}
+
+// loopedOrLoopFramedSplit takes the two boundary-driven splits: the WALK for a single loop crossed an
+// even number of times, and the wall's own LOOP FRAME for anything richer, which used to decline
+// (ADR-0060, ADR-0061 stage 2). The classification runs before either, so neither is the other's retry.
+func loopedOrLoopFramedSplit(f curvedFace, curves []geom.Curve3, plane geom.Plane, n math.Vector3, res geom.Resolution) ([]curvedFace, []loopEdge, error) {
+	if !boundaryWalkPairs(f, plane, n, res) {
+		if pieces, section, ok := ruledHalfSpaceSplit(f, curves, plane, n); ok {
+			return pieces, section, nil
+		}
+	}
 	return loopedSplit(f, curves, plane, n, res)
 }
 
