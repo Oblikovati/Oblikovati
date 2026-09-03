@@ -41,7 +41,7 @@ import (
 // kernelNetDeltaPin is the checked-in baseline. Update it in the same commit as the change that
 // moves it, and say in the PR which direction each moved and why.
 var kernelNetDeltaPin = map[string]int{
-	"tolerance-constants": 233,
+	"tolerance-constants": 232,
 	"type-assertions":     765,
 	"recognizers":         37, // 26 curvedExactPaths + 11 specialCurvedMeshers
 	// 28 → 29 (2026-09-03, ADR-0061): CodeBooleanAnalyticInvalid. A RISE that is an improvement — the

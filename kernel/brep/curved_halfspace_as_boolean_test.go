@@ -91,7 +91,7 @@ func TestHalfSpaceCutEqualsABoundedDifference(t *testing.T) {
 		{"sphere/cap", sph, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 1, math.V3(0, 0, 1)) }, true, ""},
 		{"sphere/oblique cap", sph, func(t *testing.T) geom.Plane { return pl(t, 1, 1, 1, math.V3(1, 1, 1)) }, true, ""},
 		{"torus/perpendicular", tor, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 0.5, math.V3(0, 0, 1)) }, true, ""},
-		{"torus/spiric axis-parallel", tor, func(t *testing.T) geom.Plane { return pl(t, 1, 0, 0, math.V3(1, 0, 0)) }, false, "all three faces build now; the torus and the lid re-emit the shared oval from different start parameters, so two closed edges do not weld"},
+		{"torus/spiric axis-parallel", tor, func(t *testing.T) geom.Plane { return pl(t, 1, 0, 0, math.V3(1, 0, 0)) }, true, ""},
 	} {
 		plane := tc.plane(t)
 		cutFaces, cutOK := closedSolidFaces(HalfSpaceCut(tc.body(), plane))

@@ -29,7 +29,7 @@ var toleranceDebt = map[string]int{
 	"brep/curved_halfspace_ruled_uv.go":           3,
 	"brep/curved_halfspace_torus_uv.go":           1,
 	"brep/curved_halfspace_uv_cells.go":           1,
-	"brep/curved_halfspace_uv_emit.go":            5,
+	"brep/curved_halfspace_uv_emit.go":            4,
 	"brep/curved_halfspace_uv_sample.go":          1,
 	"brep/curved_halfspace_uv_trace.go":           1,
 	"brep/curved_plane_partial_boss_wall.go":      1,

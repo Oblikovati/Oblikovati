@@ -298,7 +298,7 @@ func emitImprintRun(run []recoveredEdge) (loopEdge, bool) {
 			prev = unwrapParamNear(prev, e.tB)
 		}
 		tEnd = prev
-		if lo, hi := curve.Domain(); stdmath.Abs(tEnd-t0) >= (hi-lo)-1e-6 {
+		if lo, hi := curve.Domain(); closedRunCoversCurve(curve, t0, tEnd, lo, hi) {
 			// The whole closed curve, but KEEP the run's traversal sense: a boundary walked in the curve's
 			// DECREASING-parameter direction re-emits as [hi, lo], not [lo, hi]. Discarding the sign made the
 			// two walls of a general curved∩curved boolean emit a SHARED imprint loop identically, so the weld
@@ -348,4 +348,27 @@ func sameRun(a, b recoveredEdge) bool {
 	default:
 		return true
 	}
+}
+
+// closedRunCoversCurve reports whether a boundary run on a CLOSED curve covers the whole of it, so the
+// run re-emits as the curve itself rather than as a sub-arc.
+//
+// The parameter span alone cannot say. A boundary is walked on the arrangement's SAMPLES, so a run that
+// covers the curve is short of its domain by up to one sample step — and re-emitted as a sub-arc it
+// starts wherever that step fell, while the face on the other side of the same section starts at the
+// curve's own origin. Two closed edges that differ only in where they start do not weld: the torus's
+// spiric oval and the lid's were the same curve and would not join (ADR-0062).
+//
+// So the test is GEOMETRIC: a run whose ends meet, having gone most of the way round, has gone all the
+// way round. A genuine sub-arc ends at real vertices, which do not coincide.
+func closedRunCoversCurve(curve geom.Curve3, t0, tEnd, lo, hi float64) bool {
+	span := stdmath.Abs(tEnd - t0)
+	if span >= (hi-lo)-1e-6 { // tol:calibrated — parameter span of a full traversal
+		return true
+	}
+	if span <= (hi-lo)/2 {
+		return false // less than half way round: a genuine arc, whatever its ends do
+	}
+	a, b := curve.PointAt(t0), curve.PointAt(tEnd)
+	return float64(a.DistanceTo(b)) <= geom.ResolutionForPoints([]math.Point3{a, b, curve.PointAt((t0 + tEnd) / 2)}).Weld()
 }

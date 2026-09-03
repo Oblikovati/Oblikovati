@@ -151,3 +151,6 @@ func ruledFaceMaterial(c *ruledFaceUV) func() materialPredicate {
 		}
 	}
 }
+
+// vClosed: a ruled wall's axial window is bounded, not periodic (loopFrameHost).
+func (c *ruledFaceUV) vClosed() bool { return false }

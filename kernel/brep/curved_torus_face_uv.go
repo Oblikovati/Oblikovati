@@ -225,3 +225,7 @@ func torusFaceMaterial(c *torusFaceUV) func() materialPredicate {
 		}
 	}
 }
+
+// vClosed: the tube angle is a period, so an imprint sampled across it wraps and must split at the
+// v-seam (loopFrameHost).
+func (c *torusFaceUV) vClosed() bool { return true }

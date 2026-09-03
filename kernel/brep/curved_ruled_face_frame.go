@@ -36,6 +36,11 @@ type loopFrameHost interface {
 	// vertex. A CLOSED surface's v window is its whole period: running past it maps back onto the
 	// geometry — a sphere's seam beyond a pole lands on the antipodal side — so it must be zero there.
 	seamOverrun() float64
+	// vClosed reports whether the chart's v is a PERIOD rather than a bounded window — a torus's tube
+	// angle. A curve sampled across a period wraps, and the polyline must be split at that seam exactly
+	// as it is at the u-seam; without it the wrap lands in the arrangement as one segment spanning the
+	// whole rectangle, which slices the region into slivers (ADR-0062).
+	vClosed() bool
 }
 
 // loopFrame is a face's OWN boundary as the arrangement's frame (ADR-0060), shared by every chart that
@@ -226,12 +231,22 @@ func (c *loopFrame) sampledPolyline(cv geom.Curve3, t0, t1 float64, inject, atSe
 	for i := 1; i < len(params); i++ {
 		seg := foldIntoStrip(uvSeg{a: pts[i-1], b: pts[i], curve: cv, tA: params[i-1], tB: params[i], kind: kind})
 		for _, s := range splitSeamCrossing(seg) {
-			if s.a.DistanceTo(s.b) > arrTol {
-				out = append(out, s)
+			for _, s := range c.splitVSeamIfClosed(s) {
+				if s.a.DistanceTo(s.b) > arrTol {
+					out = append(out, s)
+				}
 			}
 		}
 	}
 	return out
+}
+
+// splitVSeamIfClosed splits a segment straddling the v-seam, on a chart whose v is a period.
+func (c *loopFrame) splitVSeamIfClosed(s uvSeg) []uvSeg {
+	if !c.host.vClosed() {
+		return []uvSeg{s}
+	}
+	return splitVSeamCrossing(s)
 }
 
 // injectedParams is the curve's own sampling grid over [t0, t1] with the extra parameters merged, in
@@ -315,20 +330,39 @@ func (c *loopFrame) crossingImprint(cr frameCrossing) geom.Curve3 { return c.imp
 // direction — a band's rim, a sphere's parallel — rather than closing on itself. It is the NET turn,
 // not the raw span: a loop that runs out along a boundary and back covers the same longitudes twice
 // without turning at all, and reading the span would call it a wrapping end (ADR-0060).
-func (c *loopFrame) loopTurnsTheAzimuth(e emittedLoop) bool {
+func (c *loopFrame) loopTurnsTheAzimuth(e emittedLoop) bool { return c.loopTurns(e, true) }
+
+// loopTurns is loopTurnsTheAzimuth for either chart direction: inU selects u (the azimuth/longitude),
+// otherwise v (the tube angle).
+func (c *loopFrame) loopTurns(e emittedLoop, inU bool) bool {
 	turn, prev := 0.0, 0.0
 	first := true
 	for _, le := range e.face {
 		for k := 0; k <= azimuthTurnSamples; k++ {
-			u := float64(c.host.paramOf(le.curve.PointAt(le.t0 + (le.t1-le.t0)*float64(k)/azimuthTurnSamples)).X)
-			if !first {
-				u = unwrapAzimuthNear(prev, u)
-				turn += u - prev
+			uv := c.host.paramOf(le.curve.PointAt(le.t0 + (le.t1-le.t0)*float64(k)/azimuthTurnSamples))
+			x := float64(uv.Y)
+			if inU {
+				x = float64(uv.X)
 			}
-			prev, first = u, false
+			if !first {
+				x = unwrapAzimuthNear(prev, x)
+				turn += x - prev
+			}
+			prev, first = x, false
 		}
 	}
 	return stdmath.Abs(turn) > stdmath.Pi
+}
+
+// loopTurnsAPeriod reports whether a boundary loop turns the whole way round ANY of the chart's own
+// periodic directions. A torus is periodic in both: the band a plane parallel to its axis leaves is
+// bounded by two spiric ovals, and each of those turns the TUBE angle, not the azimuth — reading only
+// the azimuth called them contractible, and the contractible emission then walked each oval out and
+// back as a dangling chain, so a loop that should have re-emitted as the whole closed section came out
+// as a zero-length edge (ADR-0062). The chart names its own periods; nothing here knows a torus from a
+// sphere.
+func loopTurnsAPeriod(c *loopFrame, side uvSide, e emittedLoop) bool {
+	return (side.uPeriodic() && c.loopTurns(e, true)) || (side.vPeriodic() && c.loopTurns(e, false))
 }
 
 // azimuthTurnSamples walks each edge finely enough that consecutive samples stay within half a turn, so
@@ -351,7 +385,7 @@ func (c *loopFrame) wrappingComponents(side uvSide, kept []Face2D, segs []uvSeg,
 		// chart that refuses to re-emit a seam run would decline the whole component over one.
 		loops := dropArtificialLoops(side, chainLoops(keptBoundaryEdges(comp, side.uPeriodic(), side.vPeriodic())), segs)
 		emitted, ok := emitKeptLoops(side, loops, segs)
-		if !ok || !anyLoopWraps(c, emitted) {
+		if !ok || !anyLoopWraps(c, side, emitted) {
 			return nil, nil, false
 		}
 		faceLoops := make([]curvedLoop, 0, len(emitted))
@@ -365,10 +399,10 @@ func (c *loopFrame) wrappingComponents(side uvSide, kept []Face2D, segs []uvSeg,
 	return faces, lid, len(faces) > 0
 }
 
-// anyLoopWraps reports whether some emitted loop turns the periodic direction the whole way round.
-func anyLoopWraps(c *loopFrame, emitted []emittedLoop) bool {
+// anyLoopWraps reports whether some emitted loop turns one of the chart's periodic directions the whole way round.
+func anyLoopWraps(c *loopFrame, side uvSide, emitted []emittedLoop) bool {
 	for _, e := range emitted {
-		if c.loopTurnsTheAzimuth(e) {
+		if loopTurnsAPeriod(c, side, e) {
 			return true
 		}
 	}

@@ -273,3 +273,6 @@ func sphereFaceMaterial(c *sphereFaceUV) func() materialPredicate {
 		}
 	}
 }
+
+// vClosed: latitude is a bounded window between the poles, not a period (loopFrameHost).
+func (c *sphereFaceUV) vClosed() bool { return false }
