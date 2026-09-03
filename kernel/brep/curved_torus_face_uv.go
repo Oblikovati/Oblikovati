@@ -98,8 +98,12 @@ func (c *torusFaceUV) uPeriodic() bool { return true }
 // vPeriodic: the tube angle wraps too (uvSide).
 func (c *torusFaceUV) vPeriodic() bool { return true }
 
-// multiFace: a torus's kept region may be several patches (uvSide).
-func (c *torusFaceUV) multiFace() bool { return true }
+// multiFace is FALSE for a torus: its kept boundary loops belong to ONE face, not to several grouped by
+// containment. On a closed surface two disjoint loops can bound a single region — a plane through the
+// hole cuts both walls, and the part that survives is the ring between the two ovals, neither of which
+// contains the other in (u,v). Grouping by containment split that into two faces, each carrying one oval
+// (uvSide).
+func (c *torusFaceUV) multiFace() bool { return false }
 
 // wrapsAllU: the rim-orientation flip is a band's, not a closed surface's (uvSide).
 func (c *torusFaceUV) wrapsAllU() bool { return false }

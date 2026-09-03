@@ -53,7 +53,7 @@ func TestConicIslandSegsCoverTheWholeCircle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	segs := c.conicIslandSegs(circle)
+	segs := c.islandCurveSegs(circle)
 	if len(segs) != imprintSampleCount {
 		t.Fatalf("island segments = %d, want %d", len(segs), imprintSampleCount)
 	}

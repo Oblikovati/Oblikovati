@@ -4,6 +4,7 @@ package brep
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // Closed-conic ISLAND imprints for the exact-frame planar face (planeFaceUV, ADR-0058 / #3460). The mixed
@@ -21,7 +22,7 @@ import (
 func splitImprintByKind(imprint []geom.Curve3) (straight, islands, open []geom.Curve3) {
 	for _, cv := range imprint {
 		switch {
-		case isClosedConicImprint(cv):
+		case isClosedIslandImprint(cv):
 			islands = append(islands, cv)
 		case openConicKind(cv):
 			open = append(open, cv)
@@ -32,17 +33,19 @@ func splitImprintByKind(imprint []geom.Curve3) (straight, islands, open []geom.C
 	return straight, islands, open
 }
 
-// isClosedConicImprint reports the conics that bound a region on their own — the island kind: a
-// conic whose ends meet. A bounded ARC of one is the open kind, whatever conic it runs on (ADR-0060).
-func isClosedConicImprint(cv geom.Curve3) bool {
-	_, isConic := geom.AsConic(cv)
-	return isConic && geom.CurveIsClosed(cv)
-}
+// isClosedIslandImprint reports the imprints that bound a region on their OWN — the island kind: a
+// curve whose ends meet. A bounded ARC is the open kind instead, whatever it runs on (ADR-0060).
+//
+// The property is closure, not conic-ness. A torus's spiric oval closes on itself exactly as a circle
+// does, and the sampling below drives off Domain and PointAt alone, so it needs nothing a conic has that
+// a spiric has not. Testing for a conic sent every spiric to the STRAIGHT bucket, where a closed curve
+// becomes a zero-length segment between its coincident ends and the face kept nothing (ADR-0061 stage 3).
+func isClosedIslandImprint(cv geom.Curve3) bool { return geom.CurveIsClosed(cv) }
 
-// conicIslandSegs samples one closed conic imprint over its WHOLE domain into tagged (u,v) segments that
-// carry the source curve and its endpoint parameters, so a kept boundary run re-emits the exact analytic
-// conic instead of the sampled chords.
-func (c *planeFaceUV) conicIslandSegs(cv geom.Curve3) []uvSeg {
+// islandCurveSegs samples one closed island imprint over its WHOLE domain into tagged (u,v) segments
+// that carry the source curve and its endpoint parameters, so a kept boundary run re-emits the exact
+// analytic curve instead of the sampled chords.
+func (c *planeFaceUV) islandCurveSegs(cv geom.Curve3) []uvSeg {
 	lo, hi := cv.Domain()
 	segs := make([]uvSeg, 0, imprintSampleCount)
 	prevT, prev := lo, to2D(c.plane, cv.PointAt(lo))
@@ -55,11 +58,11 @@ func (c *planeFaceUV) conicIslandSegs(cv geom.Curve3) []uvSeg {
 	return segs
 }
 
-// islandSegs samples every closed conic imprint of the face.
+// islandSegs samples every closed island imprint of the face.
 func (c *planeFaceUV) islandSegs(islands []geom.Curve3) []uvSeg {
 	var out []uvSeg
 	for _, cv := range islands {
-		out = append(out, c.conicIslandSegs(cv)...)
+		out = append(out, c.islandCurveSegs(cv)...)
 	}
 	return out
 }
@@ -71,17 +74,99 @@ func (c *planeFaceUV) islandSegs(islands []geom.Curve3) []uvSeg {
 // Both are named declines, never approximations (#3460).
 func islandContactOK(c *planeFaceUV, islands, straight []geom.Curve3) bool {
 	conics := make([]planeConic, 0, len(islands))
+	allConic := true
 	for _, cv := range islands {
 		pc, ok := toPlaneConic(cv, c.plane)
 		if !ok {
-			return false
-		}
-		if !conicClearOfSegments(c, pc, straight) {
-			return false
+			allConic = false
+			continue
 		}
 		conics = append(conics, pc)
 	}
-	return conicsNestedOrApart(conics)
+	// A CONIC island is tested in closed form. Any other analytic island — a torus's spiric oval — is
+	// tested by walking itself, which is exact evaluation of an exact curve: the property is geometric,
+	// not a property of being a conic, and requiring one declined every spiric outright
+	// (ADR-0061 stage 3).
+	if allConic {
+		for i, cv := range islands {
+			_ = cv
+			if !conicClearOfSegments(c, conics[i], straight) {
+				return false
+			}
+		}
+		return conicsNestedOrApart(conics)
+	}
+	for _, cv := range islands {
+		if !islandWalkClearOfSegments(c, cv, straight) {
+			return false
+		}
+	}
+	return islandsWalkNestedOrApart(c, islands)
+}
+
+// islandWalkClearOfSegments reports one island staying clear of every straight imprint, by walking the
+// island and measuring to each segment.
+func islandWalkClearOfSegments(c *planeFaceUV, cv geom.Curve3, straight []geom.Curve3) bool {
+	for _, imp := range straight {
+		a2, b2 := to2D(c.plane, imp.PointAt(0)), to2D(c.plane, imp.PointAt(1))
+		for _, p := range islandWalk(c, cv) {
+			if pointSegmentDistance2D(p, a2, b2) <= c.res.Sew() {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// islandsWalkNestedOrApart reports every island pair being wholly apart or wholly nested, by walking one
+// against the other's sampled ring: a pair that CROSSES has samples on both sides.
+func islandsWalkNestedOrApart(c *planeFaceUV, islands []geom.Curve3) bool {
+	for i := range islands {
+		for j := range islands {
+			if i == j {
+				continue
+			}
+			ring := islandWalk(c, islands[j])
+			in, out := 0, 0
+			for _, p := range islandWalk(c, islands[i]) {
+				if pointInRing2D(p, ring) {
+					in++
+				} else {
+					out++
+				}
+			}
+			if in > 0 && out > 0 {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// islandWalk samples one island into its (u,v) ring.
+func islandWalk(c *planeFaceUV, cv geom.Curve3) []math.Point2 {
+	lo, hi := cv.Domain()
+	out := make([]math.Point2, 0, imprintSampleCount)
+	for k := 0; k < imprintSampleCount; k++ {
+		out = append(out, to2D(c.plane, cv.PointAt(lo+(hi-lo)*float64(k)/imprintSampleCount)))
+	}
+	return out
+}
+
+// pointInRing2D is the even-odd test of a point against a sampled closed ring.
+func pointInRing2D(p math.Point2, ring []math.Point2) bool {
+	in := false
+	for i, n := 0, len(ring); i < n; i++ {
+		a, b := ring[i], ring[(i+1)%n]
+		if (a.Y > p.Y) == (b.Y > p.Y) {
+			continue
+		}
+		x := float64(a.X) + float64(p.Y-a.Y)/float64(b.Y-a.Y)*float64(b.X-a.X)
+		if float64(p.X) < x {
+			in = !in
+		}
+	}
+	return in
 }
 
 // conicClearOfSegments reports one island crossing (or grazing) no straight imprint segment.
