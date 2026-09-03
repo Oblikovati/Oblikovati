@@ -310,3 +310,27 @@ func (c *loopFrame) seamSegments(seamHits []frameCrossing) []uvSeg {
 // crossingImprint returns the imprint curve a seam incidence refers to; assembleSegments stores the
 // imprint on the chart for this lookup.
 func (c *loopFrame) crossingImprint(cr frameCrossing) geom.Curve3 { return c.imprint[cr.edge] }
+
+// loopTurnsTheAzimuth reports whether a boundary loop makes a full turn around the chart's periodic
+// direction — a band's rim, a sphere's parallel — rather than closing on itself. It is the NET turn,
+// not the raw span: a loop that runs out along a boundary and back covers the same longitudes twice
+// without turning at all, and reading the span would call it a wrapping end (ADR-0060).
+func (c *loopFrame) loopTurnsTheAzimuth(e emittedLoop) bool {
+	turn, prev := 0.0, 0.0
+	first := true
+	for _, le := range e.face {
+		for k := 0; k <= azimuthTurnSamples; k++ {
+			u := float64(c.host.paramOf(le.curve.PointAt(le.t0 + (le.t1-le.t0)*float64(k)/azimuthTurnSamples)).X)
+			if !first {
+				u = unwrapAzimuthNear(prev, u)
+				turn += u - prev
+			}
+			prev, first = u, false
+		}
+	}
+	return stdmath.Abs(turn) > stdmath.Pi
+}
+
+// azimuthTurnSamples walks each edge finely enough that consecutive samples stay within half a turn, so
+// the unwrap cannot mistake the direction.
+const azimuthTurnSamples = 16

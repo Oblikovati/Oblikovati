@@ -3,8 +3,6 @@
 package brep
 
 import (
-	stdmath "math"
-
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -107,25 +105,4 @@ func (c *ruledFaceUV) splitAtFrameCrossings(loops []curvedLoop) []curvedLoop {
 		pts = append(pts, fe.curve.PointAt(cr.tEdge))
 	}
 	return splitLoopsAtPoints(loops, pts, c.res)
-}
-
-// loopTurnsTheAzimuth reports whether an emitted loop circles the axis a whole turn — an END of a band —
-// by its NET azimuth turn, summed over consecutive samples each unwrapped to its predecessor. The band
-// chart's loopWrapsU reads the raw azimuth SPAN instead, and a contractible hole that straddles the
-// seam spans the whole range without turning at all; it was filed as a third end, the band fell to the
-// generic grouping, and its hole came out wound against its rims (ADR-0060).
-func (c *ruledFaceUV) loopTurnsTheAzimuth(e emittedLoop) bool {
-	turn, prev := 0.0, 0.0
-	first := true
-	for _, le := range e.face {
-		for k := 0; k <= 16; k++ {
-			u := float64(c.paramOf(le.curve.PointAt(le.t0 + (le.t1-le.t0)*float64(k)/16)).X)
-			if !first {
-				u = unwrapAzimuthNear(prev, u)
-				turn += u - prev
-			}
-			prev, first = u, false
-		}
-	}
-	return stdmath.Abs(turn) > stdmath.Pi
 }
