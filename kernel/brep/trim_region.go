@@ -54,14 +54,86 @@ func (r trimRegion) contains(q math.Point2) bool {
 // point and a box be taken from a two-rim band at all (#3506, ADR-0060).
 func (r trimRegion) ringsEnclose(q math.Point2) bool {
 	inside := false
+	var wrapping [][]math.Point2
 	for _, ring := range r.rings {
 		if r.uPeriodic && ringClosesByAWholeTurn(ring, func(p math.Point2) float64 { return float64(p.X) }) {
+			if r.vPeriodic {
+				wrapping = append(wrapping, ring) // decided together by their winding, below
+				continue
+			}
 			inside = inside != (upwardRayCrossings(ring, shiftIntoRingBranch(ring, q))%2 == 1)
 			continue
 		}
 		inside = inside != pointInLoops2D([][]math.Point2{ring}, q)
 	}
-	return inside
+	if len(wrapping) == 0 {
+		return inside
+	}
+	return inside != r.betweenPeriodicRims(wrapping, q)
+}
+
+// betweenPeriodicRims decides whether q lies in the band a set of azimuth-wrapping rims bounds, on a
+// surface whose v is ITSELF a period — a torus.
+//
+// The crossing count an upward v-ray gives is meaningless there. On an open v the ray escapes, so
+// "beyond the last rim" is well defined and parity works; on a CLOSED v it comes back to where it
+// started, and how many rims sit "above" a point depends only on where the period was cut. A torus
+// half bounded by its two equators read as inside on the WRONG half for exactly that reason: its
+// rims sit at v=0 and v=π, and every point has one of them above it (ADR-0062).
+//
+// What is well defined on a circle is the FIRST rim met going up, and which side of that rim the
+// material is on. A rim traversed in +u carries the face's material on its left, which is +v; one
+// traversed in −u carries it below. So q is inside exactly when the nearest rim above it has its
+// material BELOW it — that rim is the band's top, and q is under it.
+func (r trimRegion) betweenPeriodicRims(rims [][]math.Point2, q math.Point2) bool {
+	bestGap, materialBelow, found := stdmath.Inf(1), false, false
+	for _, rim := range rims {
+		v, ok := ringVAtU(rim, float64(q.X))
+		if !ok {
+			continue
+		}
+		gap := wrapToPeriod(v - float64(q.Y))
+		if gap < bestGap {
+			bestGap, materialBelow, found = gap, ringNetU(rim) < 0, true
+		}
+	}
+	return found && materialBelow
+}
+
+// ringVAtU interpolates a wrapping rim's v at azimuth u, taking the point into the rim's own branch.
+func ringVAtU(ring []math.Point2, u float64) (float64, bool) {
+	q := shiftIntoRingBranch(ring, math.P2(math.Scalar(u), 0))
+	closed := append(append([]math.Point2{}, ring...), closingImage(ring, false, true))
+	for i := 1; i < len(closed); i++ {
+		a, b := closed[i-1], closed[i]
+		lo, hi, ylo, yhi := float64(a.X), float64(b.X), float64(a.Y), float64(b.Y)
+		if lo > hi {
+			lo, hi, ylo, yhi = hi, lo, yhi, ylo
+		}
+		if lo == hi || float64(q.X) < lo || float64(q.X) >= hi {
+			continue
+		}
+		return ylo + (yhi-ylo)*(float64(q.X)-lo)/(hi-lo), true
+	}
+	return 0, false
+}
+
+// ringNetU is a wrapping rim's signed azimuth travel: +2π when it runs with increasing u, −2π against.
+func ringNetU(ring []math.Point2) float64 {
+	net := 0.0
+	for i := 1; i < len(ring); i++ {
+		net += float64(ring[i].X - ring[i-1].X)
+	}
+	return net
+}
+
+// wrapToPeriod folds a v difference onto [0, 2π): how far UP one must travel to reach it.
+func wrapToPeriod(d float64) float64 {
+	d = stdmath.Mod(d, twoPi)
+	if d < 0 {
+		d += twoPi
+	}
+	return d
 }
 
 // shiftIntoRingBranch moves the point's azimuth by whole turns into the span the ring's samples cover.
@@ -156,9 +228,49 @@ func faceIsRingComplement(f curvedFace, uPer, vPer bool) bool {
 // which a closed body never has.
 func fluxDomain(f curvedFace, r trimRegion) (u0, u1, v0, v1 float64, ok bool) {
 	if len(r.rings) > 0 && !r.complement {
-		return polyBounds(r.rings)
+		u0, u1, v0, v1, ok = polyBounds(r.rings)
+		if !ok {
+			return 0, 0, 0, 0, false
+		}
+		return periodicWindowHoldingMaterial(r, u0, u1, v0, v1)
 	}
 	return surfaceDomainRect(f.surface, r)
+}
+
+// periodicWindowHoldingMaterial picks which of the two windows two rim levels bound on a PERIODIC
+// axis actually holds the face's material.
+//
+// The rings' own bounding box is one of them, and always the same one. On an open axis that is right:
+// the rims bound the material between them and nothing beyond. On a CLOSED axis they bound two bands —
+// between the rims, and round the other way through the seam — and the box names the first whether or
+// not the face is it. A torus half whose material lay through the seam sampled its whole quadrature
+// over the OTHER half, which contains none of it (ADR-0062).
+//
+// The region itself is the authority on which, so it is asked rather than guessed: if no point of the
+// box is inside the trim, the material is the complementary window.
+func periodicWindowHoldingMaterial(r trimRegion, u0, u1, v0, v1 float64) (float64, float64, float64, float64, bool) {
+	if !r.vPeriodic || windowHoldsMaterial(r, u0, u1, v0, v1) {
+		return u0, u1, v0, v1, true
+	}
+	w0, w1 := v1, v0+twoPi
+	if !windowHoldsMaterial(r, u0, u1, w0, w1) {
+		return 0, 0, 0, 0, false // neither window holds it: nothing here can be certified
+	}
+	return u0, u1, w0, w1, true
+}
+
+// windowHoldsMaterial reports whether any point of a coarse grid over the window lies in the trim.
+func windowHoldsMaterial(r trimRegion, u0, u1, v0, v1 float64) bool {
+	for i := range volumeGridSteps {
+		for j := range volumeGridSteps {
+			uv := math.P2(math.Scalar(u0+(u1-u0)*(float64(i)+0.5)/volumeGridSteps),
+				math.Scalar(v0+(v1-v0)*(float64(j)+0.5)/volumeGridSteps))
+			if r.contains(uv) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // surfaceDomainRect is the surface's whole finite domain, with each PERIODIC axis re-centred on the
