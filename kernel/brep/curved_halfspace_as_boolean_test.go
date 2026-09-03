@@ -91,7 +91,7 @@ func TestHalfSpaceCutEqualsABoundedDifference(t *testing.T) {
 		{"sphere/cap", sph, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 1, math.V3(0, 0, 1)) }, true, ""},
 		{"sphere/oblique cap", sph, func(t *testing.T) geom.Plane { return pl(t, 1, 1, 1, math.V3(1, 1, 1)) }, true, ""},
 		{"torus/perpendicular", tor, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 0.5, math.V3(0, 0, 1)) }, true, ""},
-		{"torus/spiric axis-parallel", tor, func(t *testing.T) geom.Plane { return pl(t, 1, 0, 0, math.V3(1, 0, 0)) }, false, "the spiric quartic is not among the analytic plane sections the imprint takes"},
+		{"torus/spiric axis-parallel", tor, func(t *testing.T) geom.Plane { return pl(t, 1, 0, 0, math.V3(1, 0, 0)) }, false, "the section is carried now, but the two spiric branches leave two edges unwelded (2 faces against the cut's 3)"},
 	} {
 		plane := tc.plane(t)
 		cutFaces, cutOK := closedSolidFaces(HalfSpaceCut(tc.body(), plane))

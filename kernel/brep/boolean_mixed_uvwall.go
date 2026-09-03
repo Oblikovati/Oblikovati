@@ -73,7 +73,7 @@ func closedSurfaceSectionEntersFace(f curvedFace, other *facePartition) bool {
 			continue
 		}
 		for _, cv := range curves {
-			if island, exact := conicIslandInFace(cv, f); exact && island {
+			if sectionInsideFace(cv, f) {
 				return true
 			}
 		}

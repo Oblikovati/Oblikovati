@@ -88,7 +88,7 @@ func sphereSectionEnters(sf, of curvedFace) bool {
 		return true
 	}
 	for _, cv := range curves {
-		if island, exact := conicIslandInFace(cv, of); !exact || island {
+		if sectionInsideFace(cv, of) {
 			return true
 		}
 	}
@@ -105,11 +105,7 @@ func closedSurfaceUVImprint(sf, uf curvedFace) ([]geom.Curve3, bool) {
 	}
 	var out []geom.Curve3
 	for _, cv := range curves {
-		island, exact := conicIslandInFace(cv, uf)
-		if !exact {
-			return nil, false // the section's relation to the trim is not decided in closed form
-		}
-		if island {
+		if sectionInsideFace(cv, uf) {
 			out = append(out, cv)
 		}
 	}
@@ -196,3 +192,29 @@ func closedSurfaceChart(sf curvedFace, op Op, isB bool, inside func(math.Point3)
 func closedSurfaceRes(sf curvedFace) geom.Resolution {
 	return geom.ResolutionForBox(faceLoopBox(sf))
 }
+
+// sectionInsideFace reports whether a CLOSED section curve lies inside the planar face's trim, bucketed
+// by the curve's REPRESENTATION rather than by a closed form that only one of them has: a conic answers
+// exactly through conicIslandInFace, and any other analytic section — a torus's spiric, which is a
+// quartic and no conic at all — answers by walking itself, which is exact evaluation of an exact curve.
+//
+// The conic form used to be the only one, so a spiric section declined the whole boolean and a torus
+// could be cut only by the half-space pipeline (ADR-0062).
+func sectionInsideFace(cv geom.Curve3, uf curvedFace) bool {
+	if island, exact := conicIslandInFace(cv, uf); exact {
+		return island
+	}
+	pl := facePlane(uf)
+	lo, hi := cv.Domain()
+	for k := 0; k <= closedSectionWalkSamples; k++ {
+		p := cv.PointAt(lo + (hi-lo)*float64(k)/closedSectionWalkSamples)
+		if !pointInFace2D(to2D(pl, p), uf) {
+			return false // it leaves the trim: not an island this pairing carries
+		}
+	}
+	return true
+}
+
+// closedSectionWalkSamples walks a non-conic section finely enough to catch an excursion out of any trim
+// a modelled tool face has.
+const closedSectionWalkSamples = 96
