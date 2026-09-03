@@ -298,9 +298,12 @@ func monotonePieces(c Curve3, t0, t1 float64, axis math.Vector3) [][2]float64 {
 }
 
 // axialCross bisects a MONOTONE piece for the parameter whose axial coordinate is target, clamping to
-// the piece's own end when the target lies beyond it. It converges RELATIVE to the bracket it is given,
-// because an unbounded section's bracket is found by doubling and can start very wide: a fixed halving
-// count would then leave the answer short of the window by a fraction of that bracket.
+// the piece's own end when the target lies beyond it.
+//
+// It converges on the VALUE, not the parameter. The answer is a POSITION on the surface, so it is the
+// position that has to land: a hyperbola's axial coordinate is exponential in its parameter, and a
+// bracket tight to a few ulps of the parameter can still leave the point well short of the target. The
+// parameter bracket stays as the backstop that guarantees termination.
 func axialCross(v func(float64) float64, lo, hi, target float64) float64 {
 	vlo, vhi := v(lo), v(hi)
 	if (vlo-target)*(vhi-target) > 0 { // the target is off this piece: clamp to the nearer end
@@ -310,10 +313,13 @@ func axialCross(v func(float64) float64, lo, hi, target float64) float64 {
 		return hi
 	}
 	for range axialBisectionCap {
-		if hi-lo <= axialParamEps*(1+stdmath.Abs(lo)+stdmath.Abs(hi)) {
-			break
-		}
 		mid := (lo + hi) / 2
+		if stdmath.Abs(v(mid)-target) <= axialValueEps*(1+stdmath.Abs(target)) {
+			return mid
+		}
+		if hi-lo <= axialParamEps*(1+stdmath.Abs(lo)+stdmath.Abs(hi)) {
+			break // the parameter cannot be resolved further, whatever the value says
+		}
 		if (v(lo)-target)*(v(mid)-target) <= 0 {
 			hi = mid
 			continue
@@ -323,12 +329,16 @@ func axialCross(v func(float64) float64, lo, hi, target float64) float64 {
 	return (lo + hi) / 2
 }
 
-// axialParamEps is the bisection's relative convergence: the parameter is carried in double precision,
-// so nothing is gained below a few ulps of its own magnitude.
+// axialValueEps is the inversion's accuracy in the AXIAL COORDINATE, relative to the target: the answer
+// is a position on the surface, so it is the position that has to land, not the parameter.
+const axialValueEps = 1e-13 // tol:numeric — relative axial-coordinate convergence (dimensionless)
+
+// axialParamEps is the backstop: below a few ulps of its own magnitude the parameter cannot be resolved
+// further, whatever the value test still wants.
 const axialParamEps = 1e-15 // tol:numeric — relative parameter convergence (dimensionless)
 
-// axialBisectionCap bounds the loop for a piece the convergence test cannot satisfy (a curve whose
-// axial coordinate is flat over the bracket), so the inversion always terminates.
+// axialBisectionCap bounds the loop for a piece neither test can satisfy (a curve whose axial
+// coordinate is flat over the bracket), so the inversion always terminates.
 const axialBisectionCap = 200
 
 // SphereOf reports the sphere a surface is, when it is one. It is the sphere's counterpart of

@@ -177,6 +177,13 @@ func conicTouchesTool(cv geom.Curve3, of curvedFace, axis math.Vector3, band con
 	if !ok {
 		return true
 	}
+	if stdmath.IsInf(amp, 0) {
+		// An UNBOUNDED branch is not settled by its boundary crossings. It can pass THROUGH the band
+		// well inside the trim while crossing that trim's boundary far outside the band, and the scan
+		// then reports crossings but none in range — "clear", when the arm sweeps the whole wall
+		// (ADR-0062). Ask the direct question instead.
+		return conicEntersTrimInBand(cv, of, axis, band)
+	}
 	if hit, touched := conicPolygonCrossingInBand(pc, of, axis, band); touched {
 		return hit
 	}
@@ -228,4 +235,35 @@ func bandV(p math.Point3, axis math.Vector3, band coneSideBand_) float64 {
 // spansOverlap reports whether [a0,a1] and [b0,b1] come within pad of each other.
 func spansOverlap(a0, a1, b0, b1, pad float64) bool {
 	return a0 <= b1+pad && b0 <= a1+pad
+}
+
+// conicEntersTrimInBand reports whether an unbounded conic section has a point inside BOTH the wall's
+// axial band and the tool face's trim. The band window is inverted to the branch's own parameters
+// (geom.AxialWindowParams) and those spans are walked: a branch that reaches the band at all reaches it
+// over an interval, so a sampled walk of that interval finds the contact when there is one.
+func conicEntersTrimInBand(cv geom.Curve3, of curvedFace, axis math.Vector3, band coneSideBand_) bool {
+	base := bandBase(axis, band)
+	spans, ok := geom.AxialWindowParams(cv, base, axis, band.vMin, band.vMax)
+	if !ok {
+		return true // the branch's band window cannot be bracketed: be conservative
+	}
+	pl := facePlane(of)
+	for _, sp := range spans {
+		for k := 0; k <= conicBandWalkSamples; k++ {
+			t := sp[0] + (sp[1]-sp[0])*float64(k)/conicBandWalkSamples
+			if pointInFace2D(to2D(pl, cv.PointAt(t)), of) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// conicBandWalkSamples walks the branch's in-band interval finely enough to find a contact with any
+// trim a modelled tool face has.
+const conicBandWalkSamples = 64
+
+// bandBase is the point the band's axial coordinate is measured from — its own vMin along the axis.
+func bandBase(axis math.Vector3, band coneSideBand_) math.Point3 {
+	return band.bottom.TranslateBy(axis.Scale(math.Scalar(-bandV(band.bottom, axis, band) + band.vMin)))
 }
