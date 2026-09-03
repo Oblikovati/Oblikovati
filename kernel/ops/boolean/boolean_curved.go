@@ -122,6 +122,11 @@ func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, rec *d
 			"curved %s analytic result has a face the operands do not account for: falling back to the guarded path", op)
 		return nil, false
 	}
+	if !Validate(body).ValidSolid() {
+		rec.Recordf(CodeBooleanAnalyticInvalid, diag.Defect,
+			"curved %s analytic result is not a valid closed solid: falling back to the guarded path", op)
+		return nil, false
+	}
 	tv, wv, bv := boolVolumes(target, tool, body)
 	if volumeOutOfBracket(op, tv, wv, bv, curvedGuardTolerance(target, tool, tv, wv)) {
 		rec.Recordf(CodeBooleanAnalyticVolumeReject, diag.Defect,
@@ -132,6 +137,14 @@ func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, rec *d
 	body.InheritOriginalEdges(append(append([]*topo.Edge(nil), target.Edges()...), tool.Edges()...))
 	return body, true
 }
+
+// CodeBooleanAnalyticInvalid marks a curved analytic boolean whose result is not a valid closed solid.
+// Validate is the post-condition of every public kernel operation, and this entry had none: the inner
+// paths that DO validate (mixedPassThroughBoolean) covered most of the surface, so a recognizer that
+// returned a torn body shipped it to whichever caller did not re-check — which, once the public
+// CurvedBoolean entries took this guarded path, is none of them (ADR-0061). A tracked degradation: the
+// analytic result is refused and the operation falls to the guarded planar path.
+const CodeBooleanAnalyticInvalid diag.Code = "boolean.analytic-invalid"
 
 // CodeBooleanAnalyticFaceReject marks a curved analytic boolean whose result carried a face the
 // operands cannot account for under the operation's membership rule — a face on neither operand's
@@ -168,15 +181,23 @@ func analyticVolumesExact(target, tool *topo.Body) bool {
 // hangs (unlike the planar B-rep boolean, which loops on a full periodic curved face). The model layer uses
 // it to combine a still-analytic primitive (a revolved torus, an extruded cylinder) by its curved faces
 // before falling back to faceting the operands for the planar path (#129).
+//
+// It is the GUARDED entry (curvedExactGuarded), the same one booleanGeneralExact takes: a result must pass
+// the per-face membership certificate and the Requicha volume bracket, or this declines. The public entry
+// used to call curvedExactBoolean directly, so a recognizer that over-matched to a valid body of materially
+// wrong shape shipped to the feature layer uncertified while the identical call inside the kernel was
+// certified. Only the feature layer's face-COUNT gate stood between a wrong result and the model — which is
+// why widening that gate to a classification (ADR-0061) had to close this seam first: one operation, one
+// certification, whoever calls it.
 func CurvedBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
-	return curvedExactBoolean(op, target, tool, nil)
+	return curvedExactGuarded(op, target, tool, nil)
 }
 
 // CurvedBooleanWithDiagnostics is [CurvedBoolean] with a diagnostic recorder (nil to discard):
 // the exact paths record imprint-quality diagnostics (#1404) and their internal fallbacks, so a
 // feature-level caller carries the kernel's quality signal instead of dropping it (#1601).
 func CurvedBooleanWithDiagnostics(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	return curvedExactBoolean(op, target, tool, rec)
+	return curvedExactGuarded(op, target, tool, rec)
 }
 
 // curvedExactPaths is the ordered list of exact analytic curved-boolean paths curvedExactBoolean tries; each

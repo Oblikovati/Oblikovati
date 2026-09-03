@@ -20,6 +20,9 @@ import (
 // build, tracked separately). The EPIC's correctness bar is that such a still-declining config declines
 // OBSERVABLY: it must fall to the recorded CSG fallback, never panic or error. This pins that bar (and guards
 // the orphan-vertex CSG panic fix at the integration level — the chain used to crash here).
+// This asserts the DECLINE CODE, never the faceted body: when the configuration this declines on
+// lands analytically it becomes a positive corpus case (ADR-0061), so the assertion converts
+// rather than being deleted to move a number.
 func TestPartialRimChainedCutDeclinesObservably(t *testing.T) {
 	if testing.Short() {
 		t.Skip("corpus tier (~3s): `make test-corpus`")
