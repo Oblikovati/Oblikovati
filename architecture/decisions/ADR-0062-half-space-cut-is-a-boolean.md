@@ -74,6 +74,21 @@ the bounded prism plus `Boolean(Difference, …)`.
 The equivalence already holds for the whole RULED family. Two things stand between it and the
 deletions, and both are already on the retirement's list.
 
+**Correction, measured 2026-09-03.** Every row above is now `equal` — and the deletion is still NOT
+unlocked, because the table was too small. Deleting the pipeline against a green ten-row table turned
+22 tests red in `kernel/brep` alone. The rows did not cover a cone bounded by its own APEX (four
+configurations), a spiric cut that leaves ONE oval (two), or the notched-cylinder fixtures a second cut
+composes on. So "one equivalence unlocks all of them" was wrong as stated: one equivalence unlocks
+nothing on its own, and the GATE is the table only to the extent the table covers what the pipeline
+serves. The table now carries sixteen rows, six of them `differs`, each naming its own gap. The
+deletions land when every row is `equal` — and a row is added for every configuration the deletion
+would otherwise silently drop, BEFORE the deletion, not after.
+
+The apex gap is one defect, not four: the loop-framed chart takes its v-window from the face's own
+loops (ADR-0060), and a cone bounded by its apex has no loop there — the apex is a singular POINT. It
+is the same thing a sphere's POLE is, which `sphereFaceUV` already frames. The chart needs the ruled
+apex for the same reason and in the same way.
+
 ## Consequences
 
 **ADR-0061's stage order was wrong, and this corrects it.** Stage 3 — the sphere and torus charts — is

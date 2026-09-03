@@ -71,6 +71,10 @@ func TestHalfSpaceCutEqualsABoundedDifference(t *testing.T) {
 		c, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 4, 1, "cone")
 		return c
 	}
+	apex := func() *topo.Body {
+		c, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 0, "apexcone")
+		return c
+	}
 	sph := func() *topo.Body { s, _ := SolidSphere(math.P3(0, 0, 0), 5, "s"); return s }
 	tor := func() *topo.Body { s, _ := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2, "t"); return s }
 	for _, tc := range []struct {
@@ -88,9 +92,15 @@ func TestHalfSpaceCutEqualsABoundedDifference(t *testing.T) {
 		{"cone/oblique ellipse", cone, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 5, math.V3(0.2, 0, 1)) }, true, ""},
 		{"cone/through the apex", cone, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 9.5, math.V3(0.4, 0, 1)) }, true, ""},
 		{"cone/axis-parallel hyperbola", cone, func(t *testing.T) geom.Plane { return pl(t, 1.2, 0, 0, math.V3(1, 0, 0)) }, true, ""},
+		{"cone-apex/perpendicular, base kept", apex, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 5, math.V3(0, 0, 1)) }, false, "the loop-framed ruled chart cannot frame a cone whose apex bounds it: the apex is a singular POINT, not a loop, so the chart's v-window collapses and the face falls to the pass bucket, which declines"},
+		{"cone-apex/perpendicular, tip kept", apex, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 5, math.V3(0, 0, -1)) }, false, "same apex frame gap"},
+		{"cone-apex/oblique below the apex", apex, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 6, math.V3(0.3, 0, 1)) }, false, "same apex frame gap"},
+		{"cone-apex/axis-parallel hyperbola", apex, func(t *testing.T) geom.Plane { return pl(t, 1, 0, 0, math.V3(1, 0, 0)) }, false, "same apex frame gap"},
 		{"sphere/cap", sph, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 1, math.V3(0, 0, 1)) }, true, ""},
 		{"sphere/oblique cap", sph, func(t *testing.T) geom.Plane { return pl(t, 1, 1, 1, math.V3(1, 1, 1)) }, true, ""},
 		{"torus/perpendicular", tor, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 0.5, math.V3(0, 0, 1)) }, true, ""},
+		{"torus/spiric single oval cap", tor, func(t *testing.T) geom.Plane { return pl(t, 0, 6, 0, math.V3(0, -1, 0)) }, false, "measured, not yet diagnosed"},
+		{"torus/spiric oval complement", tor, func(t *testing.T) geom.Plane { return pl(t, 0, 6, 0, math.V3(0, 1, 0)) }, false, "measured, not yet diagnosed"},
 		{"torus/spiric axis-parallel", tor, func(t *testing.T) geom.Plane { return pl(t, 1, 0, 0, math.V3(1, 0, 0)) }, true, ""},
 	} {
 		plane := tc.plane(t)
