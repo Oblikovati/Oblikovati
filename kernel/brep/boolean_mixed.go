@@ -45,6 +45,8 @@ type facePartition struct {
 	wallBox     []math.Box
 	sphere      []curvedFace // sphere faces the loop-framed sphere chart can split (ADR-0061 stage 3)
 	sphereBox   []math.Box
+	torus       []curvedFace // torus faces the loop-framed torus chart can split (ADR-0061 stage 3)
+	torusBox    []math.Box
 	pass        []curvedFace
 	passBox     []math.Box
 	body        *topo.Body
@@ -82,6 +84,12 @@ func (p *facePartition) bucket(cf curvedFace, box math.Box) {
 		p.uvBox = append(p.uvBox, box)
 		return
 	}
+	p.bucketCurved(cf, box)
+}
+
+// bucketCurved files a face no PLANAR bucket took: the ruled chart for a wall, and the closed-surface
+// charts for a sphere and a torus. What none of them frames passes through whole.
+func (p *facePartition) bucketCurved(cf curvedFace, box math.Box) {
 	if _, ok := ruledFaceOf(cf); ok {
 		p.wall = append(p.wall, cf)
 		p.wallBox = append(p.wallBox, box)
@@ -90,6 +98,11 @@ func (p *facePartition) bucket(cf curvedFace, box math.Box) {
 	if _, ok := sphereFaceOf(cf); ok {
 		p.sphere = append(p.sphere, cf)
 		p.sphereBox = append(p.sphereBox, box)
+		return
+	}
+	if _, ok := torusFaceOf(cf); ok {
+		p.torus = append(p.torus, cf)
+		p.torusBox = append(p.torusBox, box)
 		return
 	}
 	p.pass = append(p.pass, cf)
@@ -169,7 +182,7 @@ func (mp *mixedProbe) inside(p math.Point3) bool {
 // classifier's rays must see, or every ray through the hole region counts a phantom crossing.
 func (p facePartition) allFaces() []curvedFace {
 	all := append(append([]curvedFace{}, p.planarFull...), p.uv...)
-	return append(append(append(all, p.wall...), p.sphere...), p.pass...)
+	return append(append(append(append(all, p.wall...), p.sphere...), p.torus...), p.pass...)
 }
 
 // passThroughKept classifies each pass-through face as a whole — its membership in the other solid is
@@ -267,8 +280,8 @@ func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3) (
 	uvA, uvB, okU := bothUVImprints(pa, pb, impA, impB)
 	wallA, okWA := wallImprints(pa, pb, impB)
 	wallB, okWB := wallImprints(pb, pa, impA)
-	sphA, okSA := sphereImprints(pa, pb, uvB)
-	sphB, okSB := sphereImprints(pb, pa, uvA)
+	sphA, okSA := closedSurfaceImprints(pa, pb, uvB)
+	sphB, okSB := closedSurfaceImprints(pb, pa, uvA)
 	if !okU || !okWA || !okWB || !okSA || !okSB {
 		return nil, nil, nil, nil, nil, nil, false
 	}
@@ -292,8 +305,8 @@ func mixedPassFaces(pa, pb facePartition, pra, prb insideOracle, uvImpA, uvImpB,
 	passB, okB := passThroughKept(pb.pass, pra, op, true)
 	uvA, okVA := uvSplitFaces(pa, uvImpA, prb, pb.allFaces(), op, false)
 	uvB, okVB := uvSplitFaces(pb, uvImpB, pra, pa.allFaces(), op, true)
-	sphA, okSA := sphereSplitFaces(pa, sphImpA, prb, op, false)
-	sphB, okSB := sphereSplitFaces(pb, sphImpB, pra, op, true)
+	sphA, okSA := closedSurfaceSplitFaces(pa, sphImpA, prb, op, false)
+	sphB, okSB := closedSurfaceSplitFaces(pb, sphImpB, pra, op, true)
 	if !okA || !okB || !okVA || !okVB || !okSA || !okSB {
 		return nil, false
 	}

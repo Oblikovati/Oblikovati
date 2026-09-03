@@ -343,3 +343,10 @@ func SphereOf(s Surface) (Sphere, bool) {
 	sph, ok := s.(Sphere)
 	return sph, ok
 }
+
+// TorusOf reports the torus a surface is, when it is one — the torus's counterpart of [SphereOf] and
+// [RuledFrameOf], so a consumer asks a geometric question instead of switching on a geometry kind.
+func TorusOf(s Surface) (Torus, bool) {
+	t, ok := s.(Torus)
+	return t, ok
+}

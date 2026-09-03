@@ -28,7 +28,7 @@ import (
 // Called after the pass-through clearance gate and BEFORE crossingFaceCandidates, so every index derived
 // from the partitions is computed from the promoted buckets.
 func promoteConicReceivers(p, other *facePartition) {
-	if len(other.wall) == 0 && len(other.sphere) == 0 {
+	if len(other.wall) == 0 && len(other.sphere) == 0 && len(other.torus) == 0 {
 		return
 	}
 	planar, full, holes := p.planar[:0:0], p.planarFull[:0:0], p.planarHoles[:0:0]
@@ -54,24 +54,21 @@ func (p facePartition) planarReceivesConic(i int, other *facePartition) bool {
 	if _, ok := newPlaneFaceUV(f, geom.ResolutionForBox(faceLoopBox(f))); !ok {
 		return false
 	}
-	return wallConicEntersFace(f, other) || sphereSectionEntersFace(f, other)
+	return wallConicEntersFace(f, other) || closedSurfaceSectionEntersFace(f, other)
 }
 
-// sphereSectionEntersFace reports a sphere of other whose plane∩sphere CIRCLE enters f's trim. The
-// receiver must move to the exact-frame bucket for the same reason a wall's conic does: the sphere
-// carries the exact circle, and a sampled polyline on the planar side would not weld to it
-// (ADR-0061 stage 3).
-func sphereSectionEntersFace(f curvedFace, other *facePartition) bool {
+// closedSurfaceSectionEntersFace reports a sphere or torus of other whose plane section enters f's
+// trim. The receiver must move to the exact-frame bucket for the same reason a wall's conic does: the
+// closed surface carries the exact section, and a sampled polyline on the planar side would not weld to
+// it (ADR-0061 stage 3).
+func closedSurfaceSectionEntersFace(f curvedFace, other *facePartition) bool {
 	box := paddedFaceBox(f)
-	for k, sf := range other.sphere {
-		if !box.Intersects(inflateBox(other.sphereBox[k])) {
+	faces, boxes := other.closedSurfaces()
+	for k, sf := range faces {
+		if !box.Intersects(inflateBox(boxes[k])) {
 			continue
 		}
-		s, ok := geom.SphereOf(sf.surface)
-		if !ok {
-			continue
-		}
-		curves, handled := geom.IntersectSurfacesAnalytic(facePlane(f), s, geom.ResolutionForSize(2*s.Radius))
+		curves, handled := geom.IntersectSurfacesAnalytic(facePlane(f), sf.surface, closedSurfaceRes(sf))
 		if !handled {
 			continue
 		}
