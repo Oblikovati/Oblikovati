@@ -233,7 +233,7 @@ func TestWallSectionIslandStraddlingRimDeclines(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pieces, ok := wallSectionIsland(circle, planeFaceAtZ(t, plate, 3), rs); len(pieces) > 0 || ok {
+	if pieces, ok := wallSectionIsland(circle, planeFaceAtZ(t, plate, 3), cyl.wall[0], rs); len(pieces) > 0 || ok {
 		t.Errorf("a section on the band rim gave %d pieces, ok=%v; want none and a named decline",
 			len(pieces), ok)
 	}

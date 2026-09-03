@@ -161,7 +161,7 @@ func collectWallIslands(curves []geom.Curve3, uf, wf curvedFace, rs ruledSide) (
 		if sectionOnWallEdge(cv, wf) {
 			continue
 		}
-		pieces, ok := wallSectionIsland(cv, uf, rs)
+		pieces, ok := wallSectionIsland(cv, uf, wf, rs)
 		if !ok {
 			return nil, false
 		}
@@ -173,9 +173,15 @@ func collectWallIslands(curves []geom.Curve3, uf, wf curvedFace, rs ruledSide) (
 // wallSectionIsland decides one plane∩wall section curve, returning the imprint pieces it contributes.
 // A closed conic wholly inside the face polygon AND strictly inside the wall band contributes itself; a
 // curve CROSSING the face's trim contributes the runs of it that lie inside (clipSectionToFace); a
-// curve clear of either contributes nothing. ok=false when it is not a conic, when it straddles a rim,
-// or when a crossing run cannot be bounded.
-func wallSectionIsland(cv geom.Curve3, uf curvedFace, rs ruledSide) ([]geom.Curve3, bool) {
+// curve clear of either contributes nothing; and a curve that leaves through the WALL's own boundary
+// contributes the runs inside that (clipSectionToWall). ok=false when it is not a conic, or when a run
+// cannot be bounded.
+//
+// The last of those used to be a decline, and it is the commonest cut there is: a plane that wedges a
+// corner off a cylinder sections it in an ellipse that leaves through the top rim. Bounding it here —
+// once, for both sides — is the same rule clipSectionToFace already follows for the planar half
+// (ADR-0062).
+func wallSectionIsland(cv geom.Curve3, uf, wf curvedFace, rs ruledSide) ([]geom.Curve3, bool) {
 	center, amp, isConic := conicAxialSpan(cv, rs.axis)
 	if !isConic {
 		return nil, false
@@ -197,7 +203,10 @@ func wallSectionIsland(cv geom.Curve3, uf curvedFace, rs ruledSide) ([]geom.Curv
 	if inside {
 		return []geom.Curve3{cv}, true
 	}
-	return nil, clear
+	if clear {
+		return nil, true
+	}
+	return clipSectionToWall(cv, wf)
 }
 
 // conicAxialSpan returns the section conic's centre and its axial half-amplitude about that centre — zero

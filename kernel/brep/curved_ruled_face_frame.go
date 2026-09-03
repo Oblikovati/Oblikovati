@@ -139,20 +139,27 @@ func (c *loopFrame) seamHit(seam geom.Curve3, cv geom.Curve3, t0, t1 float64) (f
 // parameter). A parameter a hair outside the span is clamped to the end it overshoots: the incidence
 // is then a frame vertex, which the sampling emits anyway.
 func (c *loopFrame) paramWithin(cv geom.Curve3, t0, t1 float64, p math.Point3) (float64, bool) {
+	return curveParamWithin(cv, t0, t1, p, c.res)
+}
+
+// curveParamWithin is loopFrame.paramWithin without a chart: it is the same question — does p lie on
+// this stretch of this curve, and at what parameter — asked by the co-refinement, which runs before any
+// chart is built (ADR-0062).
+func curveParamWithin(cv geom.Curve3, t0, t1 float64, p math.Point3, res geom.Resolution) (float64, bool) {
 	t, ok := geom.CurveParamAt(cv, p)
 	if !ok {
 		return 0, false
 	}
 	lo, hi := stdmath.Min(t0, t1), stdmath.Max(t0, t1)
-	if dlo, dhi := cv.Domain(); geom.CurveIsClosed(cv) && hi-lo >= (dhi-dlo)-paramSlack(cv, dhi-dlo, c.res) {
-		return t, float64(cv.PointAt(t).DistanceTo(p)) <= c.res.Sew()
+	if dlo, dhi := cv.Domain(); geom.CurveIsClosed(cv) && hi-lo >= (dhi-dlo)-paramSlack(cv, dhi-dlo, res) {
+		return t, float64(cv.PointAt(t).DistanceTo(p)) <= res.Sew()
 	}
-	slack := paramSlack(cv, hi-lo, c.res)
+	slack := paramSlack(cv, hi-lo, res)
 	if t < lo-slack || t > hi+slack {
 		return 0, false
 	}
 	t = stdmath.Max(lo, stdmath.Min(hi, t))
-	return t, float64(cv.PointAt(t).DistanceTo(p)) <= c.res.Sew()
+	return t, float64(cv.PointAt(t).DistanceTo(p)) <= res.Sew()
 }
 
 // paramSlack converts the sew tolerance to a parameter slack through the curve's speed over the span.
