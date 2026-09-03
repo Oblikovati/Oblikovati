@@ -6,7 +6,7 @@ faceting of an analytic operand) and [#3329](https://github.com/Oblikovati/Oblik
 Validate post-condition, moot once it is gone). · **Builds on**
 [ADR-0058](ADR-0058-tolerant-analytic-boolean.md) (the mixed per-face boolean whose wall bucket this
 generalises), [ADR-0059](ADR-0059-plane-conic-intersection.md) (the exact conic crossings the frame
-injects) and [ADR-0043](ADR-0043-topological-naming.md) (a wall keeps its lineage through the trim). ·
+injects) and [ADR-0043](ADR-0043-generalized-provenance-naming.md) (a wall keeps its lineage through the trim). ·
 **Deletes:** `ruledSideBandOf` and the two-full-circle admission it imposed on a wall; the keyhole
 bridge as the representation of a holed tube in the mixed path; the whole-body volume sign as the one
 bit that oriented every shell; `ops.Facet`, `boolean.Facet`, the rescue that faceted a boolean's operands
