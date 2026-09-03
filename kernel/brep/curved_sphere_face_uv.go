@@ -240,37 +240,11 @@ func (c *sphereFaceUV) finalizeLoops(loops []curvedLoop) []curvedLoop {
 
 // wrappingSolidFaces emits a kept region that WRAPS the longitude. A cap is exactly that: bounded above
 // by its section circle, which turns the whole way round, and below by a pole, which is a boundary in
-// parameter space and a single point in space. The contractible emission groups loops by (u,v)
-// containment and cannot file a loop that wraps, so it dropped the circle and kept only the pole.
-//
-// A component with no wrapping loop is an ordinary patch and defers (ok=false).
+// parameter space and a single point in space (uvSide).
 func (c *sphereFaceUV) wrappingSolidFaces(kept []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) ([]curvedFace, []loopEdge, bool) {
-	var faces []curvedFace
-	var lid []loopEdge
-	for _, comp := range keptComponents(kept, true, false) {
-		emitted, ok := emitKeptLoops(c, chainLoops(keptBoundaryEdges(comp, true, false)), segs)
-		if !ok {
-			return nil, nil, false
-		}
-		wraps := false
-		for _, e := range emitted {
-			if c.loopTurnsTheAzimuth(e) {
-				wraps = true
-			}
-		}
-		if !wraps {
-			return nil, nil, false
-		}
-		c.wrapping = true
-		loops := make([]curvedLoop, 0, len(emitted))
-		for _, e := range emitted {
-			loops = append(loops, curvedLoop{edges: e.face})
-			lid = append(lid, reverseEdgeChain(e.section)...)
-		}
-		faces = append(faces, curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage,
-			loops: c.finalizeLoops(loops)})
-	}
-	return faces, lid, len(faces) > 0
+	faces, lid, ok := c.wrappingComponents(c, kept, segs, surface, f)
+	c.wrapping = ok
+	return faces, lid, ok
 }
 
 // frameContains reports whether a seam-relative (u,v) point lies inside the face's frame: an upward

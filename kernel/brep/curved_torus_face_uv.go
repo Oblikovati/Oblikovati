@@ -104,9 +104,11 @@ func (c *torusFaceUV) multiFace() bool { return true }
 // wrapsAllU: the rim-orientation flip is a band's, not a closed surface's (uvSide).
 func (c *torusFaceUV) wrapsAllU() bool { return false }
 
-// wrappingSolidFaces: a torus is emitted by the ordinary contractible path (uvSide).
-func (c *torusFaceUV) wrappingSolidFaces(_ []Face2D, _ []uvSeg, _ geom.Surface, _ curvedFace) ([]curvedFace, []loopEdge, bool) {
-	return nil, nil, false
+// wrappingSolidFaces emits a kept region that WRAPS the azimuth: a perpendicular cut leaves a band
+// bounded by TWO section circles, each turning the whole way round, which the contractible emission
+// cannot file (uvSide).
+func (c *torusFaceUV) wrappingSolidFaces(kept []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) ([]curvedFace, []loopEdge, bool) {
+	return c.wrappingComponents(c, kept, segs, surface, f)
 }
 
 // placeSeams puts BOTH seams in the widest gap of the imprint's and the frame's own crossings, so a

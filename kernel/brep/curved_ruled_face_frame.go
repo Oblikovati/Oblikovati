@@ -334,3 +334,43 @@ func (c *loopFrame) loopTurnsTheAzimuth(e emittedLoop) bool {
 // azimuthTurnSamples walks each edge finely enough that consecutive samples stay within half a turn, so
 // the unwrap cannot mistake the direction.
 const azimuthTurnSamples = 16
+
+// wrappingComponents emits every kept component whose boundary WRAPS the chart's periodic direction, as
+// one face per component carrying all its loops. A band's two rims, a sphere cap's section circle above
+// its pole, a torus band's two section circles: each is a loop that turns the whole way round, which
+// the contractible emission cannot file because it groups loops by (u,v) containment and a wrapping
+// loop contains nothing. It dropped them and kept whatever else the component had — a pole, or one of
+// two rims (ADR-0061 stage 3).
+//
+// ok=false when a component wraps nowhere: that one IS contractible and the caller's own path takes it.
+func (c *loopFrame) wrappingComponents(side uvSide, kept []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) ([]curvedFace, []loopEdge, bool) {
+	var faces []curvedFace
+	var lid []loopEdge
+	for _, comp := range keptComponents(kept, side.uPeriodic(), side.vPeriodic()) {
+		// The artificial loops go first: a boundary that follows only the seams bounds nothing, and a
+		// chart that refuses to re-emit a seam run would decline the whole component over one.
+		loops := dropArtificialLoops(side, chainLoops(keptBoundaryEdges(comp, side.uPeriodic(), side.vPeriodic())), segs)
+		emitted, ok := emitKeptLoops(side, loops, segs)
+		if !ok || !anyLoopWraps(c, emitted) {
+			return nil, nil, false
+		}
+		faceLoops := make([]curvedLoop, 0, len(emitted))
+		for _, e := range emitted {
+			faceLoops = append(faceLoops, curvedLoop{edges: e.face})
+			lid = append(lid, reverseEdgeChain(e.section)...)
+		}
+		faces = append(faces, curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage,
+			loops: side.finalizeLoops(faceLoops)})
+	}
+	return faces, lid, len(faces) > 0
+}
+
+// anyLoopWraps reports whether some emitted loop turns the periodic direction the whole way round.
+func anyLoopWraps(c *loopFrame, emitted []emittedLoop) bool {
+	for _, e := range emitted {
+		if c.loopTurnsTheAzimuth(e) {
+			return true
+		}
+	}
+	return false
+}

@@ -90,7 +90,7 @@ func TestHalfSpaceCutEqualsABoundedDifference(t *testing.T) {
 		{"cone/axis-parallel hyperbola", cone, func(t *testing.T) geom.Plane { return pl(t, 1.2, 0, 0, math.V3(1, 0, 0)) }, false, "the tool's lid face is dropped (ADR-0062)"},
 		{"sphere/cap", sph, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 1, math.V3(0, 0, 1)) }, true, ""},
 		{"sphere/oblique cap", sph, func(t *testing.T) geom.Plane { return pl(t, 1, 1, 1, math.V3(1, 1, 1)) }, true, ""},
-		{"torus/perpendicular", tor, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 0.5, math.V3(0, 0, 1)) }, false, "the chart keeps one of the two section circles as the band's boundary, not both"},
+		{"torus/perpendicular", tor, func(t *testing.T) geom.Plane { return pl(t, 0, 0, 0.5, math.V3(0, 0, 1)) }, true, ""},
 		{"torus/spiric axis-parallel", tor, func(t *testing.T) geom.Plane { return pl(t, 1, 0, 0, math.V3(1, 0, 0)) }, false, "the spiric quartic is not among the analytic plane sections the imprint takes"},
 	} {
 		plane := tc.plane(t)
