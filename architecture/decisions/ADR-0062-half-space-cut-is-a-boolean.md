@@ -199,8 +199,33 @@ along one loop and no single sample of it says anything. A criterion for this ca
 has to be combinatorial — the relative sense of the two wrapping loops — not a
 sampled one.
 
-It is the case this ADR predicted OCC-class kernels special-case, and it is the
-last one.
+**Grounded in OCCT, the last case is not a special case at all — it is the bill
+for a representation choice.** OCCT stores a face's SEAM edge explicitly: twice in
+the wire, with two pcurves. Every wire is therefore a closed contour in (u,v), and
+one uniform pair of rules covers every face it can build —
+`BOPAlgo_WireSplitter::Path` assembles edges into wires by minimum angle at each
+vertex, which resolves a degree-4 pinch on its own, and `PerformAreas` then
+classifies each wire by the signed area of its (u,v) polygon, with
+`IntTools_FClass2d::Init` falling back to a POINT classification exactly where that
+area degenerates. No rule anywhere in it asks whether a loop wraps.
+
+Our charts drop the seam: `dropArtificialLoops` removes it precisely because it
+bounds nothing real. What that buys in simplicity it pays for in every wrapping
+loop being an OPEN polyline in the covering space, with no shoelace and no
+interior — which is why this ADR has collected a run of defects that are all one
+defect: the sampler that unwrapped only the azimuth, the two rims on a periodic
+axis, the cap whose contour was missing its pole, the ring that turns the tube.
+Each was a place where a rule that assumes a closed contour met one that is not.
+
+The figure-eight is the end of that run, and the one the reassembly cannot reach:
+its two lobes touch, so there is no seam-free circuit to reassemble. `nextByAngle`
+is already OCCT's angular rule and already resolves the pinch; what is missing is
+the closed contour to apply the area rule to afterwards.
+
+So the fix is to carry the seam through the emission, as OCCT does, rather than to
+add a fifth rule for loops that wrap. That is an architectural change and it wants
+its own ADR — it would DELETE the wrapping-loop special cases rather than join
+them, which is the shape this repository's rules ask for.
 
 The earlier count of 5 was measured before the last three defects landed. Six defects in the
 general path account for the 28 closed: a shared section clipped to BOTH trims (not
