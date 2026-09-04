@@ -156,10 +156,45 @@ func TorusPlaneSection(t Torus, pl Plane) ([]Curve3, bool) {
 	}
 	out := make([]Curve3, 0, 2*len(spans))
 	for _, sp := range spans {
-		out = append(out, arc(1, sp[0], sp[1]), arc(-1, sp[1], sp[0]))
+		out = appendRealArc(out, arc(1, sp[0], sp[1]), t)
+		out = appendRealArc(out, arc(-1, sp[1], sp[0]), t)
 	}
 	return out, len(out) > 0
 }
+
+// appendRealArc keeps a section arc that spans real length, and drops one that is a POINT.
+//
+// At the offset where the plane is exactly tangent to the tube, the two boundary roots of w(v) = ±1
+// coincide, so one of the spans between them has zero width and BOTH of its branch arcs are the tangency
+// point repeated. They are not lobes and they bound nothing: fed to a boolean as imprints they are
+// closed curves of zero extent, and everything downstream that samples an imprint — the island walk,
+// the arrangement, the meeting solver — sees a ring of identical points. Measured on the axis-parallel
+// figure-eight, the section returned FOUR arcs where there are two lobes, the two extra ones collapsed
+// onto (0, 3, 0), and the cut came out with one lid instead of two (ADR-0061 stage 2).
+//
+// The test is the arc's own extent against the tube's weld, not its parameter width: a span is an
+// angle, and what disqualifies an arc is bounding no length.
+func appendRealArc(out []Curve3, cv Curve3, t Torus) []Curve3 {
+	if arcSpansLength(cv, ResolutionForSize(t.MinorRadius).Weld()) {
+		return append(out, cv)
+	}
+	return out
+}
+
+// arcSpansLength reports an arc reaching farther than tol from where it starts.
+func arcSpansLength(cv Curve3, tol float64) bool {
+	lo, hi := cv.Domain()
+	start := cv.PointAt(lo)
+	for i := 1; i <= arcExtentProbe; i++ {
+		if float64(start.DistanceTo(cv.PointAt(lo+(hi-lo)*float64(i)/arcExtentProbe))) > tol {
+			return true
+		}
+	}
+	return false
+}
+
+// arcExtentProbe samples an arc to see whether it goes anywhere. It bounds the curve, nothing more.
+const arcExtentProbe = 8
 
 // spiricTubeSpans is the set of tube angles on which the plane reaches the tube — where |w(v)| ≤ 1 —
 // as intervals, or whole=true when that is every angle. The boundaries solve w(v) = ±1, each of which

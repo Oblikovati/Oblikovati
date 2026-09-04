@@ -31,7 +31,7 @@ func TestSpiricBranchesMeetExactlyAtTheOvalExtreme(t *testing.T) {
 			origin := math.P3(0, math.Scalar(off), 0)
 			plane, err := geom.NewPlane(origin, math.V3(math.Scalar(tilt), 1, math.Scalar(tilt)))
 			if err != nil {
-				t.Fatalf("NewPlane(off=%g tilt=%g): %v", off, tilt, err)
+				t.Fatalf("geom.NewPlane(off=%g tilt=%g): %v", off, tilt, err)
 			}
 			arcs, ok := geom.TorusPlaneSection(tor, plane)
 			if !ok || len(arcs) != 2 {
@@ -79,5 +79,52 @@ func TestSpiricStaysOnBothSurfaces(t *testing.T) {
 				t.Fatalf("a section point is %g off the torus", d)
 			}
 		}
+	}
+}
+
+// At the offset where the plane is exactly tangent to the tube, the two boundary roots of w(v) = ±1
+// coincide and the span between them is a POINT — so both of its branch arcs are the tangency point
+// repeated. They are not lobes: they bound nothing, and fed to a boolean as imprints they are closed
+// curves of zero extent that every consumer samples into a ring of identical points. Measured before
+// the fix, the section returned FOUR arcs where the figure-eight has two lobes, and the cut that used
+// them took 30.89 s instead of 0.05 s (ADR-0061 stage 2).
+func TestTorusPlaneSectionDropsTheDegenerateTangentArcs(t *testing.T) {
+	t.Parallel()
+	tor, err := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
+	if err != nil {
+		t.Fatalf("torus: %v", err)
+	}
+	// offset = R − r: the plane grazes the inner equator, where the two ovals meet.
+	tangent, err := geom.NewPlane(math.P3(0, 3, 0), math.V3(0, 1, 0))
+	if err != nil {
+		t.Fatalf("plane: %v", err)
+	}
+	secs, ok := geom.TorusPlaneSection(tor, tangent)
+	if !ok {
+		t.Fatal("the tangent section was refused")
+	}
+	if len(secs) != 2 {
+		t.Errorf("the tangent section returned %d curves, want 2 (one per lobe)", len(secs))
+	}
+	for i, cv := range secs {
+		lo, hi := cv.Domain()
+		reach := 0.0
+		for k := 0; k <= 8; k++ {
+			d := float64(cv.PointAt(lo).DistanceTo(cv.PointAt(lo + (hi-lo)*float64(k)/8)))
+			if d > reach {
+				reach = d
+			}
+		}
+		if reach < 1 {
+			t.Errorf("curve %d reaches only %g from its start — it is a point, not a lobe", i, reach)
+		}
+	}
+	// One step off the tangency the section is two lobes and always was; the tangent case must match it.
+	near, err := geom.NewPlane(math.P3(0, 3.01, 0), math.V3(0, 1, 0))
+	if err != nil {
+		t.Fatalf("plane: %v", err)
+	}
+	if s2, _ := geom.TorusPlaneSection(tor, near); len(s2) != len(secs) {
+		t.Errorf("the tangent section has %d curves and the near-tangent one %d; they must agree", len(secs), len(s2))
 	}
 }
