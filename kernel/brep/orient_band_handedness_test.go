@@ -16,7 +16,7 @@ func handednessAgreesWithStored(t *testing.T, b *topo.Body) []string {
 	t.Helper()
 	var bad []string
 	for _, f := range facesOfAny(b) {
-		wantReversed := loopHandedness(faceTrimRegion(f)) < 0
+		wantReversed := loopHandedness(f, faceTrimRegion(f)) < 0
 		if wantReversed != f.reversed {
 			bad = append(bad, string(f.lineage.Key()))
 		}

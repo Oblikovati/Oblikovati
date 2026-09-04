@@ -10,75 +10,107 @@ import (
 	"oblikovati.org/math"
 )
 
-// A torus half is bounded by two rims that wrap the AZIMUTH, on a surface whose v is itself a period.
-// Both of the two bands those rims bound are admissible regions, and the machinery that reads a band
-// picked the same one every time — so one half of a torus read as the other (ADR-0062).
+// What a face's rings do and do NOT determine on a periodic surface (ADR-0063).
+//
+// This file used to assert the four rules trim_region.go carried for reading open, period-turning
+// polylines — an upward ray for an azimuth rim, the nearest rim above for a tube-turning ring, which of
+// two windows holds the material, and the outerless complement. They are gone, with the rules. Both of
+// the bands two rims bound really are admissible regions, and no reading of the rims alone can say
+// which the face is; the producer records it (face_chart.go), and the end-to-end gate is
+// TestFaceChartCoversTheKeptSide, which judges the carried chart against the boolean's own keep rule.
+//
+// What remains here is the boundary of what a derivation may claim: a band on an axis that is not
+// itself periodic has ONE strip between its rims and is derivable; a band on a doubly-periodic surface
+// has two and is refused.
 
-// torusHalfRegion is the trim region of a torus half: two azimuth-wrapping rims at v=0 and v=π, wound
-// so the material is the band from v=π round through the seam to v=2π.
-func torusHalfRegion(t *testing.T, materialAbovePi bool) trimRegion {
-	t.Helper()
-	rim := func(v float64, forward bool) []math.Point2 {
-		const n = 32
-		out := make([]math.Point2, 0, n+1)
-		for i := 0; i <= n; i++ {
-			u := 2 * stdmath.Pi * float64(i) / n
-			if !forward {
-				u = 2*stdmath.Pi - u
-			}
-			out = append(out, math.P2(math.Scalar(u), math.Scalar(v)))
+// wrappingRim is one period-turning rim at constant across-coordinate, sampled one step short of its
+// full turn the way loopToUV samples a rim.
+func wrappingRim(across float64, forward, alongU bool) []math.Point2 {
+	const n = 32
+	out := make([]math.Point2, 0, n)
+	for i := 0; i < n; i++ {
+		t := twoPi * float64(i) / n
+		if !forward {
+			t = twoPi - t
 		}
-		return out
+		if alongU {
+			out = append(out, math.P2(t, across))
+			continue
+		}
+		out = append(out, math.P2(across, t))
 	}
-	// Material on the LEFT of the traversal: a rim run in +u carries it above, one run in −u below.
-	// For the band above π: the rim at π runs +u (material above it), the rim at 0≡2π runs −u.
-	return trimRegion{
-		rings:     [][]math.Point2{rim(stdmath.Pi, materialAbovePi), rim(0, !materialAbovePi)},
-		uPeriodic: true, vPeriodic: true,
-	}
+	return out
 }
 
-// TestPeriodicBandReadsTheHalfItsRimsWind: the crossing count an upward v-ray gives is meaningless when
-// v is itself a period — every point has a rim above it, and how many depends only on where the period
-// was cut. The rims' own winding says which band is the material.
-func TestPeriodicBandReadsTheHalfItsRimsWind(t *testing.T) {
+// TestDerivedBandChartHoldsTheStripBetweenItsRims: a cylinder's v is not a period, so its two rims bound
+// exactly one strip and the seam that closes them is determined. The derivation supplies it.
+func TestDerivedBandChartHoldsTheStripBetweenItsRims(t *testing.T) {
 	t.Parallel()
-	below := math.P2(1, stdmath.Pi/2)   // v between 0 and π
-	above := math.P2(1, 3*stdmath.Pi/2) // v between π and 2π
-	upper := torusHalfRegion(t, true)   // material from π round to 2π
-	lower := torusHalfRegion(t, false)  // material from 0 to π
-	if !upper.contains(above) || upper.contains(below) {
-		t.Errorf("the band wound above π holds v=3π/2 (%v) and not v=π/2 (%v)",
-			upper.contains(above), upper.contains(below))
+	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
+	if err != nil {
+		t.Fatalf("cylinder: %v", err)
 	}
-	if !lower.contains(below) || lower.contains(above) {
-		t.Errorf("the band wound below π holds v=π/2 (%v) and not v=3π/2 (%v)",
-			lower.contains(below), lower.contains(above))
-	}
-}
-
-// TestFluxDomainTakesTheWindowHoldingTheMaterial: the rims' own bounding box is one of the two windows
-// they bound and always the same one. A band whose material lies through the SEAM must get the other,
-// or every quadrature and probe point over it samples a region containing none of it.
-func TestFluxDomainTakesTheWindowHoldingTheMaterial(t *testing.T) {
-	t.Parallel()
-	r := torusHalfRegion(t, true) // material from π round through the seam to 2π
-	_, _, v0, v1, ok := periodicWindowHoldingMaterial(r, 0, 2*stdmath.Pi, 0, stdmath.Pi)
+	rings := [][]math.Point2{wrappingRim(2, true, true), wrappingRim(0, false, true)}
+	contours, ok := closeRingsIntoChart(cyl, rings, false, true, false)
 	if !ok {
-		t.Fatal("no window was found to hold the material")
+		t.Fatal("a two-rim cylinder band was refused, but its strip is determined")
 	}
-	if stdmath.Abs(v0-stdmath.Pi) > 1e-9 || stdmath.Abs(v1-2*stdmath.Pi) > 1e-9 {
-		t.Errorf("window v ∈ [%g, %g], want [π, 2π] — the band through the seam", v0, v1)
-	}
-	// The band that does NOT cross the seam keeps the rims' own box.
-	s := torusHalfRegion(t, false)
-	_, _, w0, w1, ok := periodicWindowHoldingMaterial(s, 0, 2*stdmath.Pi, 0, stdmath.Pi)
-	if !ok || w0 != 0 || stdmath.Abs(w1-stdmath.Pi) > 1e-9 {
-		t.Errorf("window v ∈ [%g, %g] ok=%v, want [0, π] unchanged", w0, w1, ok)
+	r := trimRegion{contours: contours, decided: true, uPeriodic: true}
+	for _, u := range []float64{0, 1, 3, 6.2, 6.28} { // 6.2 lies in the rims' unsampled last step
+		if !r.contains(math.P2(u, 1)) {
+			t.Errorf("(%g, 1) between the rims reads outside", u)
+		}
+		if r.contains(math.P2(u, 2.5)) || r.contains(math.P2(u, -0.5)) {
+			t.Errorf("(%g, ±) beyond a rim reads inside", u)
+		}
 	}
 }
 
-// TestFluxDomainDeclinesNoWindowForAnIsolineRing: a ring that runs along ONE isoline — a sphere's
+// TestDoublyPeriodicBandIsRefusedNotGuessed: a torus half is bounded by two rims that turn the azimuth
+// on a surface whose v is ITSELF a period, so both bands they bound are admissible and the rims say
+// nothing. The derivation refuses instead of picking, which is what the deleted rules did — and picked
+// the same one every time, so one half of a torus read as the other (ADR-0062).
+func TestDoublyPeriodicBandIsRefusedNotGuessed(t *testing.T) {
+	t.Parallel()
+	tor, err := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
+	if err != nil {
+		t.Fatalf("torus: %v", err)
+	}
+	rings := [][]math.Point2{wrappingRim(stdmath.Pi, true, true), wrappingRim(0, false, true)}
+	if _, ok := closeRingsIntoChart(tor, rings, false, true, true); ok {
+		t.Error("two azimuth rims on a torus were read as one band, but they bound two")
+	}
+	// The same is true of the ovals a plane parallel to the axis cuts, which turn the TUBE instead.
+	ovals := [][]math.Point2{wrappingRim(4, true, false), wrappingRim(1, false, false)}
+	if _, ok := closeRingsIntoChart(tor, ovals, false, true, true); ok {
+		t.Error("two tube-turning ovals were read as one band, but they bound two")
+	}
+}
+
+// TestOuterlessFaceIsFramedByItsSurfaceDomain: a face whose loops are ALL holes wraps its closed surface
+// minus them, and its outer contour in the chart is the parameter rectangle — a full turn on a periodic
+// axis, the surface's own domain on a bounded one. A sphere's latitude is the bounded case.
+func TestOuterlessFaceIsFramedByItsSurfaceDomain(t *testing.T) {
+	t.Parallel()
+	sph, err := geom.NewSphere(math.P3(0, 0, 0), 5)
+	if err != nil {
+		t.Fatalf("sphere: %v", err)
+	}
+	hole := [][]math.Point2{{math.P2(2.9, 0.1), math.P2(3.1, 0.1), math.P2(3.1, 0.3), math.P2(2.9, 0.3)}}
+	contours, ok := closeRingsIntoChart(sph, hole, true, true, false)
+	if !ok {
+		t.Fatal("an outerless sphere face got no frame")
+	}
+	r := trimRegion{contours: contours, decided: true, uPeriodic: true}
+	if r.contains(math.P2(3.0, 0.2)) {
+		t.Error("a point inside the hole reads as on the face")
+	}
+	if !r.contains(math.P2(1.0, -0.9)) {
+		t.Error("a point far from the hole reads as off the face, but the face is everything else")
+	}
+}
+
+// TestFluxDomainTakesTheSurfaceDomainForAnIsolineRing: a ring that runs along ONE isoline — a sphere's
 // equator, a band's rim — has no extent across it, so its bounding box is a zero-height rectangle.
 // Reading that box as the quadrature window measured nothing, and the shell was left uncertified: a
 // hemisphere's outward sense then came from its loop winding rather than from its geometry, and the
@@ -89,62 +121,12 @@ func TestFluxDomainTakesTheSurfaceDomainForAnIsolineRing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sphere: %v", err)
 	}
-	// The equator: constant latitude, so zero extent in v.
-	const n = 32
-	ring := make([]math.Point2, 0, n+1)
-	for i := 0; i <= n; i++ {
-		ring = append(ring, math.P2(math.Scalar(2*stdmath.Pi*float64(i)/n), 0))
-	}
-	r := trimRegion{rings: [][]math.Point2{ring}, uPeriodic: true}
-	f := curvedFace{surface: sph}
-	_, _, v0, v1, ok := fluxDomain(f, r)
+	r := trimRegion{contours: [][]math.Point2{wrappingRim(0, true, true)}, decided: true, uPeriodic: true}
+	_, _, v0, v1, ok := fluxDomain(curvedFace{surface: sph}, r)
 	if !ok {
 		t.Fatal("an isoline-ringed face got no window at all")
 	}
 	if v1-v0 < stdmath.Pi-1e-9 {
 		t.Errorf("window v ∈ [%g, %g] spans %g, want the sphere's whole latitude range (π)", v0, v1, v1-v0)
-	}
-}
-
-// TestTubeWrappingRingReadsByItsWindingToo: a torus is periodic in BOTH directions, and a ring may turn
-// either. A rim turns the azimuth; a SPIRIC OVAL — what every plane parallel to the axis cuts — turns
-// the tube. Both are open polylines in the covering space, and both are read by their winding; the two
-// axes differ in sign because the quarter turn to the material side does (ADR-0062).
-func TestTubeWrappingRingReadsByItsWindingToo(t *testing.T) {
-	t.Parallel()
-	// Two ovals at u = 1 and u = 4, each turning the tube. Material on the LEFT: a ring run with +v
-	// carries it at smaller u, so the band between them is bounded by (+v at u=4, −v at u=1).
-	oval := func(u float64, forward bool) []math.Point2 {
-		const n = 32
-		out := make([]math.Point2, 0, n+1)
-		for i := 0; i <= n; i++ {
-			v := 2 * stdmath.Pi * float64(i) / n
-			if !forward {
-				v = 2*stdmath.Pi - v
-			}
-			out = append(out, math.P2(math.Scalar(u), math.Scalar(v)))
-		}
-		return out
-	}
-	between := trimRegion{
-		rings:     [][]math.Point2{oval(4, true), oval(1, false)},
-		uPeriodic: true, vPeriodic: true,
-	}
-	inBand := math.P2(2.5, 1)  // between u=1 and u=4
-	outBand := math.P2(5.5, 1) // beyond u=4, round through the seam to u=1
-	if !between.contains(inBand) {
-		t.Error("the band between the two ovals does not hold a point between them")
-	}
-	if between.contains(outBand) {
-		t.Error("it holds a point outside them, through the seam")
-	}
-	// Wound the other way it is the complementary band.
-	other := trimRegion{
-		rings:     [][]math.Point2{oval(4, false), oval(1, true)},
-		uPeriodic: true, vPeriodic: true,
-	}
-	if other.contains(inBand) || !other.contains(outBand) {
-		t.Errorf("the oppositely wound pair reads (%v, %v), want the complementary band",
-			other.contains(inBand), other.contains(outBand))
 	}
 }

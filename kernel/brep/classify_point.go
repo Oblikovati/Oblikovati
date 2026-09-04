@@ -269,6 +269,16 @@ func forEachInTrimHit(f curvedFace, ray geom.Line, tMax, tol, skipTol float64, v
 // pass that casts thousands of rays at the same faces (#3459). A caller with a fixed face set measures
 // each band once and passes it here; nothing else changes.
 func forEachInTrimHitBand(f curvedFace, ray geom.Line, tMax, skipTol, faceBand, tol float64, visit func(geom.RayHit)) (clean bool) {
+	return forEachInTrimHitDeveloped(f, nil, ray, tMax, skipTol, faceBand, tol, visit)
+}
+
+// forEachInTrimHitDeveloped is forEachInTrimHitBand with the caller's ALREADY-DEVELOPED trim for f.
+//
+// The development is a pure function of the face and does not depend on the ray, but a shell
+// orientation pass casts thousands of rays at the same face set — so developing it per hit was the
+// same defect faceBoundaryBand had before it was hoisted into shellProbe.bands (#3459). Pass nil to
+// develop per call, which is what a one-off classification wants.
+func forEachInTrimHitDeveloped(f curvedFace, trim *faceTrimUV, ray geom.Line, tMax, skipTol, faceBand, tol float64, visit func(geom.RayHit)) (clean bool) {
 	hits := geom.RaySurfaceHits(f.surface, ray, tMax)
 	if len(hits) == 0 {
 		return true // the surface is missed outright: no trim to develop, no band to measure
@@ -281,7 +291,7 @@ func forEachInTrimHitBand(f curvedFace, ray geom.Line, tMax, skipTol, faceBand, 
 		if rayGrazes(f, ray, hit, band) {
 			return false
 		}
-		if pointInTrimUV(f, hit.Point) {
+		if developedContains(f, trim, hit.Point) {
 			visit(hit)
 		}
 	}
@@ -296,12 +306,25 @@ func faceRayCrossings(f curvedFace, ray geom.Line, tMax, tol float64) (int, bool
 
 // faceRayCrossingsBand is [faceRayCrossings] with the face's boundary band precomputed.
 func faceRayCrossingsBand(f curvedFace, ray geom.Line, tMax, faceBand, tol float64) (int, bool) {
+	return faceRayCrossingsDeveloped(f, nil, ray, tMax, faceBand, tol)
+}
+
+// faceRayCrossingsDeveloped is faceRayCrossingsBand with the caller's already-developed trim for f.
+func faceRayCrossingsDeveloped(f curvedFace, trim *faceTrimUV, ray geom.Line, tMax, faceBand, tol float64) (int, bool) {
 	count := 0
-	clean := forEachInTrimHitBand(f, ray, tMax, 0, faceBand, tol, func(geom.RayHit) { count++ })
+	clean := forEachInTrimHitDeveloped(f, trim, ray, tMax, 0, faceBand, tol, func(geom.RayHit) { count++ })
 	if !clean {
 		return 0, false
 	}
 	return count, true
+}
+
+// developedContains is the trim test through the caller's development, or a fresh one when it has none.
+func developedContains(f curvedFace, trim *faceTrimUV, p math.Point3) bool {
+	if trim != nil {
+		return trim.contains(p)
+	}
+	return pointInTrimUV(f, p)
 }
 
 // rayGrazes reports an ambiguous pierce: the ray meets the surface almost tangentially, or the

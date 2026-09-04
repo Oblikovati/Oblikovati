@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"sort"
 
+	"oblikovati.org/kernel/predicates"
 	"oblikovati.org/math"
 )
 
@@ -62,11 +63,35 @@ func chartContours(loops [][]dedge, origin math.Point2) [][]math.Point2 {
 		for _, e := range lp {
 			poly = append(poly, math.P2(float64(e.a.X)+float64(origin.X), float64(e.a.Y)+float64(origin.Y)))
 		}
-		out = append(out, poly)
+		out = append(out, dropCollinearVertices(poly))
 	}
 	sort.SliceStable(out, func(i, j int) bool {
 		return stdmath.Abs(polySignedArea(out[i])) > stdmath.Abs(polySignedArea(out[j]))
 	})
+	return out
+}
+
+// dropCollinearVertices removes vertices that lie exactly on the segment between their neighbours.
+//
+// It is lossless — the predicate is exact, so a vertex is dropped only when the polygon is unchanged by
+// dropping it — and it matters because most of a chart is straight. A band rim is constant v and a seam
+// constant u, so each arrives as dozens of sampled points along one line and leaves as one segment. The
+// contours are read per query by every containment test and per quadrature cell by the flux integrator,
+// so their length is the cost of the chart.
+func dropCollinearVertices(poly []math.Point2) []math.Point2 {
+	if len(poly) < 4 {
+		return poly
+	}
+	out := make([]math.Point2, 0, len(poly))
+	for i, n := 0, len(poly); i < n; i++ {
+		a, b, c := poly[(i-1+n)%n], poly[i], poly[(i+1)%n]
+		if predicates.Orient2D(float64(a.X), float64(a.Y), float64(b.X), float64(b.Y), float64(c.X), float64(c.Y)) != 0 {
+			out = append(out, b)
+		}
+	}
+	if len(out) < 3 {
+		return poly // every vertex collinear: a degenerate contour, kept as it came
+	}
 	return out
 }
 
@@ -131,10 +156,20 @@ func chartEdgeKey(d dedge) [4]int64 {
 // closes through the seam like any other, so the ray that crosses it counts the crossings that are
 // there.
 func chartContains(contours [][]math.Point2, q math.Point2, uPer, vPer bool) bool {
+	return chartContainsIndexed(contours, nil, q, uPer, vPer)
+}
+
+// chartContainsIndexed is chartContains with the caller's prebuilt segment index, which answers the
+// same even-odd count without scanning every contour (face_chart_index.go). ix may be nil.
+func chartContainsIndexed(contours [][]math.Point2, ix *chartIndex, q math.Point2, uPer, vPer bool) bool {
 	if len(contours) == 0 {
 		return false
 	}
-	return pointInLoops2D(contours, chartBranchOf(contours, q, uPer, vPer))
+	inBranch := chartBranchOf(contours, q, uPer, vPer)
+	if ix != nil {
+		return ix.contains(inBranch)
+	}
+	return pointInLoops2D(contours, inBranch)
 }
 
 // chartBranchOf moves the query by whole periods onto the branch the chart was recorded on. A chart

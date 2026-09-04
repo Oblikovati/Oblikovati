@@ -31,7 +31,7 @@ import (
 func orientFaceSigns(faces []fluxFace) []float64 {
 	signs := make([]float64, len(faces))
 	for i := range faces {
-		signs[i] = loopHandedness(faces[i].region)
+		signs[i] = loopHandedness(faces[i].cf, faces[i].region)
 	}
 	var oriented []fluxFace
 	for _, shell := range fluxShellsLargestFirst(faces, signs) {
@@ -224,91 +224,81 @@ func fluxWindingAt(faces []fluxFace, p math.Point3) float64 {
 	return total
 }
 
-// loopHandedness is the sign of the outer ring's signed area in (u, v): +1 when the ring runs CCW about
-// the surface normal S_u×S_v (so that normal is the outward one), −1 when CW — NEGATED when the face is
-// the ring's COMPLEMENT, because a ring that runs CCW around the region it encloses runs CW around
-// everything else on the domain. Without that negation the big spherical cap of a ball joined with a rod
-// took the inward normal as outward, and the ball's own centre read outside its solid
-// (Oblikovati/Oblikovati#3453, #3429). A boundaryless face (a whole sphere/torus, its own closed body)
-// has no ring to read; it returns +1 and leans on the volume sign.
-func loopHandedness(r trimRegion) float64 {
-	if len(r.rings) == 0 {
+// loopHandedness is the sign the face's own loop traversal implies for S_u×S_v: +1 when that normal is
+// the outward one, −1 when the outward normal is its negative.
+//
+// It asks the one question the definition is made of. A boundary is traversed with the material on its
+// LEFT as seen from outside, and in (u, v) the left of a traversal is a quarter turn on — so step a
+// hair to the left of a boundary edge and ask the region whether that step landed IN the face. Every
+// sampled edge votes, so a single mis-stepped sample near a corner cannot decide it.
+//
+// It used to be a shoelace over the projected rings, and that needed a rule of its own: a band's two
+// rims are open polylines in the covering space and each shoelaces to ZERO whichever way the band is
+// oriented, so a plate's bore wall reported the handedness of its own opposite and integrated the bore
+// as ADDED, 564.36 against a true 354.92 (#3506). The rims were reassembled into one circuit to fix it,
+// and the complement flag negated the answer for an outerless face. Neither survives: the region
+// answers "is this in the face" on its own (ADR-0063), and the traversal is read against it directly.
+//
+// A boundaryless face (a whole sphere/torus, its own closed body) has no boundary to walk; it returns
+// +1 and leans on the volume sign.
+func loopHandedness(f curvedFace, r trimRegion) float64 {
+	if len(r.contours) == 0 {
 		return 1
 	}
-	sign := 1.0
-	if regionSignedArea(r) < 0 {
-		sign = -1
+	votes := 0
+	for _, ring := range trimPolys(f, r.uPeriodic, r.vPeriodic) {
+		votes += materialSideVotes(ring, r)
 	}
-	if r.complement {
-		return -sign
+	if votes < 0 {
+		return -1
 	}
-	return sign
+	return 1
 }
 
-// regionSignedArea is the signed area the face's rings enclose in (u, v).
-//
-// A ring that closes in the parameter plane contributes its own shoelace, and they are SUMMED: a hole
-// is wound against its enclosing ring, so it subtracts, and the total keeps the outer ring's sign
-// without having to decide which ring is outer.
-//
-// A ring that does NOT close there is a band rim — a closed circuit in 3-D, but an open polyline in the
-// covering space. Its shoelace says nothing: a rim at constant v shoelaces to ZERO whichever way the
-// band is oriented, which is what made a plate's bore wall report the handedness of its own opposite
-// and integrate the bore as added rather than subtracted, 564.36 against a true 354.92. Those rims are
-// joined into ONE circuit before the area is taken. A band is bounded by its two rims and the two seam
-// segments, and concatenating the rims lets the shoelace supply both seams itself: the junction between
-// the rims is one, the closing chord of the concatenation is the other.
-//
-// This is what OCCT gets for free. It stores a seam edge EXPLICITLY — twice in the wire, with two
-// pcurves — so a band's wire is already a closed contour and ShapeAnalysis::TotCross2D applies to it
-// unchanged. Our bands carry no seam edge, so the circuit is reassembled here
-// (Oblikovati/Oblikovati#3506).
-func regionSignedArea(r trimRegion) float64 {
-	area := 0.0
-	var wrapping []math.Point2
-	for _, ring := range r.rings {
-		if !ringSpansAPeriod(ring, r) {
-			area += signedArea2D(ring)
+// materialSideVotes counts, over one projected loop ring, the edges whose LEFT side holds the face's
+// material less those whose right side does. The probe steps a quarter of the edge's own length, so it
+// scales with the sampling and reads no absolute distance; an edge whose two sides answer alike (both
+// in, both out — a step across a thin neck) abstains.
+func materialSideVotes(ring []math.Point2, r trimRegion) int {
+	votes := 0
+	for _, i := range ringVoteStations(len(ring)) {
+		a, b := ring[i-1], ring[i]
+		d := a.VectorTo(b)
+		if float64(d.Length()) == 0 {
 			continue
 		}
-		wrapping = append(wrapping, ring...)
+		mid := a.TranslateBy(d.Scale(0.5))
+		left := math.V2(-float64(d.Y)/4, float64(d.X)/4)
+		switch inLeft, inRight := r.contains(mid.TranslateBy(left)), r.contains(mid.TranslateBy(left.Scale(-1))); {
+		case inLeft && !inRight:
+			votes++
+		case inRight && !inLeft:
+			votes--
+		}
 	}
-	if len(wrapping) < 3 {
-		return area
-	}
-	return area + signedArea2D(wrapping)
+	return votes
 }
 
-// ringSpansAPeriod reports whether a ring travels a WHOLE TURN in a periodic parameter instead of
-// returning to where it started — what makes it an open polyline in the covering space. A face on a
-// non-periodic surface can never do it, and neither can a ring that walks out along a seam and back
-// (a full cone's side loop), whose net travel is zero.
-func ringSpansAPeriod(ring []math.Point2, r trimRegion) bool {
-	if len(ring) < 3 {
-		return false
+// ringVoteStations picks the edges that vote: every edge of a short ring, and materialSideStations
+// spread evenly over a long one. A majority over a few dozen samples settles a sign as surely as one
+// over thousands, and the ring of a sampled arrangement boundary is thousands.
+func ringVoteStations(n int) []int {
+	if n <= materialSideStations {
+		out := make([]int, 0, n)
+		for i := 1; i < n; i++ {
+			out = append(out, i)
+		}
+		return out
 	}
-	if r.uPeriodic && ringClosesByAWholeTurn(ring, func(p math.Point2) float64 { return float64(p.X) }) {
-		return true
+	out := make([]int, 0, materialSideStations)
+	for k := range materialSideStations {
+		out = append(out, 1+k*(n-1)/materialSideStations)
 	}
-	return r.vPeriodic && ringClosesByAWholeTurn(ring, func(p math.Point2) float64 { return float64(p.Y) })
+	return out
 }
 
-// ringClosesByAWholeTurn reports whether the ring's CLOSING chord — from its last sample back to its
-// first, the one edge the sample list leaves implicit — jumps a whole turn rather than one sampling
-// step.
-//
-// It is judged against the ring's OWN widest interior step, so it assumes nothing about how densely
-// the ring was sampled. A rim's closing chord is the whole turn less one step, which is many times the
-// widest step; a ring that genuinely closes has a closing chord the size of its neighbours. Comparing
-// against a fixed fraction of the period instead would misread a sparsely sampled patch that happens
-// to reach far in u.
-func ringClosesByAWholeTurn(ring []math.Point2, at func(math.Point2) float64) bool {
-	closing, widest := stdmath.Abs(at(ring[len(ring)-1])-at(ring[0])), 0.0
-	for i := 1; i < len(ring); i++ {
-		widest = stdmath.Max(widest, stdmath.Abs(at(ring[i])-at(ring[i-1])))
-	}
-	return closing > twoPi/2 && closing > 2*widest
-}
+// materialSideStations bounds the votes per ring. It is a sampling count, not a tolerance.
+const materialSideStations = 32
 
 // twoPi is one full turn, the period of every angular surface parameter in the kernel.
 const twoPi = 2 * stdmath.Pi
@@ -367,6 +357,10 @@ type shellProbe struct {
 	// every trim edge measuring chord sagitta — made it a quarter of a shell orientation pass, which
 	// casts thousands of rays at the same face set (#3459).
 	bands []float64
+	// trims holds each face's boundary DEVELOPED into (u, v), also measured once, for the same reason
+	// and at the same cost: the ray traversal asks each face "is this pierce inside your trim" per ray,
+	// and developing it there re-projected the whole boundary every time (ADR-0063).
+	trims []*faceTrimUV
 	box   math.Box
 }
 
@@ -374,10 +368,13 @@ type shellProbe struct {
 // sampled box can never miss a curved face's true extent between samples (a 45° sample step on a
 // rim leaves a 7.6% sagitta; the pad is 10%).
 func newShellProbe(faces []fluxFace) *shellProbe {
-	p := &shellProbe{faces: curvedFacesOf(faces), boxes: make([]math.Box, len(faces)), bands: make([]float64, len(faces)), box: fluxFacesBox(faces)}
+	p := &shellProbe{faces: curvedFacesOf(faces), boxes: make([]math.Box, len(faces)),
+		bands: make([]float64, len(faces)), trims: make([]*faceTrimUV, len(faces)), box: fluxFacesBox(faces)}
 	for i := range faces {
 		p.boxes[i] = paddedBox(fluxFacesBox(faces[i:i+1]), probeBoxPadRel)
 		p.bands[i] = faceBoundaryBand(p.faces[i])
+		p.trims[i] = developFaceTrim(p.faces[i])
+		p.trims[i].index = newChartIndex(p.trims[i].chartContours())
 	}
 	return p
 }
@@ -400,7 +397,7 @@ func (s *shellProbe) parityInside(p math.Point3) (inside, ok bool) {
 			if _, hits := s.boxes[i].IntersectsRay(p, d); !hits {
 				continue
 			}
-			n, clean := faceRayCrossingsBand(f, ray, tMax, s.bands[i], tol)
+			n, clean := faceRayCrossingsDeveloped(f, s.trims[i], ray, tMax, s.bands[i], tol)
 			if !clean {
 				return false, false
 			}

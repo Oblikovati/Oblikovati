@@ -3,7 +3,6 @@
 package brep
 
 import (
-	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -37,35 +36,13 @@ func TestSplitEdgeAtPointsKeepsTraversalOrderWhenReversed(t *testing.T) {
 	}
 }
 
-// bandRegion is the developed trim of a cylinder band between two wrapping rims, each sampled one step
-// short of its full turn, the way loopToUV samples a rim.
-func bandRegion(n int) trimRegion {
-	rim := func(v float64) []math.Point2 {
-		ring := make([]math.Point2, 0, n)
-		for k := 0; k < n; k++ {
-			ring = append(ring, math.P2(2*stdmath.Pi*float64(k)/float64(n), v))
-		}
-		return ring
-	}
-	return trimRegion{rings: [][]math.Point2{rim(2), rim(0)}, uPeriodic: true}
-}
-
-func TestTrimRegionContainsReadsATwoRimBand(t *testing.T) {
-	t.Parallel()
-	r := bandRegion(32)
-	for _, u := range []float64{0, 1, 3, 6.2, 6.28} { // 6.2 lies in the rims' unsampled last step
-		if !r.contains(math.P2(u, 1)) {
-			t.Errorf("(%g, 1) between the rims reads outside", u)
-		}
-		if r.contains(math.P2(u, 2.5)) || r.contains(math.P2(u, -0.5)) {
-			t.Errorf("(%g, ±) beyond a rim reads inside", u)
-		}
-	}
-}
+// TestTrimRegionContainsReadsATwoRimBand moved to trim_region_periodic_test.go, where the derivation
+// that closes a two-rim band into one contour is tested with the rest of the chart's boundary cases
+// (ADR-0063).
 
 func TestLoopRayCrossingsCountsAWrappingRingInItsLastStep(t *testing.T) {
 	t.Parallel()
-	ring := bandRegion(32).rings[0] // the v=2 rim, samples at u = 2πk/32, the last step unsampled
+	ring := wrappingRim(2, true, true) // the v=2 rim, samples at u = 2πk/32, the last step unsampled
 	for _, u := range []float64{6.2, 6.25, 0.05, -0.05, 12.5} {
 		if got := loopRayCrossings(math.P2(u, 1), ring, true, false, true); got != 1 {
 			t.Errorf("upward ray at u=%g crosses the rim %d times, want 1", u, got)

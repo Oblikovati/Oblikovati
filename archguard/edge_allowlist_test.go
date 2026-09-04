@@ -30,8 +30,12 @@ var allowedTreeImports = map[string][]string{
 	"kernel/predicates": {},
 	"kernel/geom":       {"api", "build", "math"},
 	"kernel/topo":       {"kernel/diag", "kernel/geom", "math"},
-	"kernel/brep":       {"kernel/diag", "kernel/geom", "kernel/topo", "math"},
-	"kernel/subd":       {"kernel/geom", "kernel/topo", "math"},
+	// kernel/predicates is the ONE predicate package the ground rules name, and brep is where the
+	// topological decisions are made. It arrived with the chart's collinear decimation, which drops a
+	// vertex only when the exact orientation predicate says the polygon is unchanged by dropping it —
+	// an epsilon there would move geometry to save time (ADR-0063). It is a leaf, so no cycle.
+	"kernel/brep": {"kernel/diag", "kernel/geom", "kernel/predicates", "kernel/topo", "math"},
+	"kernel/subd": {"kernel/geom", "kernel/topo", "math"},
 	// Test support only: a faceted fixture for tests that pin a planar-only path (ADR-0060, #3459).
 	"kernel/internal": {"kernel/brep", "kernel/geom", "kernel/ops/boolean", "kernel/ops/tessellate", "kernel/topo", "math"},
 	"kernel/fit":      {"kernel/geom", "math"},
