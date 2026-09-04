@@ -260,3 +260,48 @@ from "differs" to "equal" is a stage landing, and no row may move the other way.
 a cone is a hyperbola arm is dropped, so the cut is not closed. It is the same class as the shared-plane
 classification ADR-0061 stage 1 fixed — a face the pipeline builds but does not keep — and it is fixed
 in the general path, not by a branch for hyperbolae.
+
+## The last case, after ADR-0063: it is the LID, and the section that touches itself
+
+ADR-0063 carried the chart, and that settled what this ADR named as the cause. Measured against an
+oracle that reads no chart — a point on the operand belongs to the result exactly when the boolean's
+keep rule says so against the tool's half-space — the oblique figure-eight's torus face is now right at
+**every one of 218 samples**, where the readers it replaced were wrong at 108. `brep.PointInFaceTrim` on
+that face no longer misplaces anything.
+
+**The volumes did not move**: ∩ 239.84 against OCC's 151.90, − 149.61 against 242.89, byte for byte. So
+the region was never the whole story, and the remaining defect is in a different place. It is localised
+and measured:
+
+| | value |
+| --- | --- |
+| result faces | 2 — one torus, one planar lid |
+| torus face, analytic area | 146.756 |
+| **planar lid, analytic area** | **1.41e-06** |
+| lid chart contour | one circuit, 512 samples |
+| lid lobes, by chart shoelace | +25.2667 and +25.2667 (sum 50.533) |
+
+The lid's CHART is right: its two lobes each wind counter-clockwise and add to 50.53. What integrates to
+zero is the lid's 3D LOOP — a single closed spiric traversed once, which is a figure-eight in its own
+plane, so its two lobes contribute opposite boundary integrals and `∮` cancels. The retired pipeline
+emitted **two lid faces, one per lobe**; the difference emits one self-touching loop. That was recorded
+above as "the sharpest lead" and it is exactly right — it is the lid, not the band.
+
+**Why the wire is never split.** OCCT's `WireSplitter::Path` resolves a self-touch by choosing the
+minimum angle AT THE VERTEX, and `nextByAngle` already does the same — for a TRANSVERSAL crossing,
+where the arrangement has a vertex because the two branches cross. This touch is TANGENTIAL: the two
+lobes meet with equal tangents, nothing crosses, and no vertex is created. The trace's nearest
+non-adjacent approach to itself measures **1.03e-07** against a weld grid of **1e-07**, so the two
+passes do not even weld — the circuit walks straight through its own touch. Splitting the traced loop
+wherever it approaches itself within `tjTol` was tried and does not fire, for that reason (measured;
+the lid stayed one contour at 1.41e-06).
+
+**So the fix is to SOLVE the touch, not to sample it.** An imprint curve meeting itself is an incidence
+of exactly the kind `planeFaceUV` already solves — its own comment says "One imprint meeting another is
+an incidence too, and no frame crossing covers it" — with `i == j`. Solved and injected as a shared
+vertex, the touch becomes a degree-4 vertex, `nextByAngle` splits the circuit into its two lobes with no
+new rule, and `groupLoopFaces` emits the two lid faces the retired pipeline emitted. Widening the weld
+grid instead would be an epsilon standing in for a solve, and 1.03e-07 against 1e-07 shows how little
+margin such a grid has.
+
+That is the whole of what remains for these two rows.
