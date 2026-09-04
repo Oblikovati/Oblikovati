@@ -285,3 +285,7 @@ func pointInUVLoops(q math.Point2, loops [][]math.Point2) bool {
 	}
 	return true
 }
+
+// seamOrigin is the identity: a bounded plane has no artificial seam, so its chart is already in the
+// surface's own parameters (uvSide, ADR-0063).
+func (c *planeUV) seamOrigin() math.Point2 { return math.P2(0, 0) }

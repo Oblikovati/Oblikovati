@@ -238,6 +238,18 @@ type Face struct {
 	// face on recompute, so no leak and no stale geometry), and written only by the single-threaded
 	// pick/tessellation path per body.
 	metricScaleMemo any
+	// chart is this face's trim as CLOSED contours in the covering space of its surface's (u,v)
+	// domain, in the surface's OWN parameters — the outer contour first, holes after, material on the
+	// left of every contour. It is the parametric half of a trimmed face's definition, and on a
+	// PERIODIC surface the 3D loops alone do not determine it: a band's two rim circles bound the
+	// strip between them AND the strip the other way round the seam, and only the contour that carries
+	// the seam says which (ADR-0063). OCCT stores the same fact as the seam edge's two pcurves.
+	//
+	// nil for a face whose producer did not record one — every face on a non-periodic surface (where
+	// the loops close on their own and the chart is derivable), and the primitives, whose trim is the
+	// whole parameter rectangle. brep derives those; it declines a face that needs a chart and has
+	// none rather than guess.
+	chart [][]math.Point2
 	// trimUVMemo memoizes the brep-owned development of this face's boundary loops into the surface's
 	// (u,v) domain — the ring brep.PointInFaceTrim classifies against. Building it samples every loop
 	// edge and inverts each sample through geom.Surface.ParamAt, which for a B-spline surface is a
@@ -298,6 +310,20 @@ func (f *Face) MetricScaleMemo() any { return f.metricScaleMemo }
 // topo (the ops package defines and type-asserts it), keeping the metric computation out of the
 // topology layer while giving the memo the face's lifetime.
 func (f *Face) SetMetricScaleMemo(v any) { f.metricScaleMemo = v }
+
+// Chart returns this face's parametric trim: closed contours in its surface's (u,v) covering space,
+// outer first then holes, material on the left. nil when the producer recorded none — see the chart
+// field for when that is legitimate and what reads it (ADR-0063).
+//
+// Example:
+//
+//	if contours := f.Chart(); contours != nil { inside = evenOdd(contours, uv) }
+func (f *Face) Chart() [][]math.Point2 { return f.chart }
+
+// SetChart records the face's parametric trim. It is written by the builder that WOUND the face, which
+// is the only place the seam-carrying contour exists; a later reader can only re-derive it, which is
+// the guessing ADR-0063 removes.
+func (f *Face) SetChart(contours [][]math.Point2) { f.chart = contours }
 
 // TrimUVMemo returns the opaque, brep-owned memo of this face's boundary loops developed into the
 // surface's (u,v) domain (nil until the first containment query builds it). See the trimUVMemo field

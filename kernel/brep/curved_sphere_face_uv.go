@@ -283,3 +283,7 @@ func sphereFaceMaterial(c *sphereFaceUV) func() materialPredicate {
 
 // vClosed: latitude is a bounded window between the poles, not a period (loopFrameHost).
 func (c *sphereFaceUV) vClosed() bool { return false }
+
+// seamOrigin is the surface parameter of the chart's (0,0): a sphere chart rotates its longitude
+// origin to place the seam; its latitude is the surface's own (uvSide, ADR-0063).
+func (c *sphereFaceUV) seamOrigin() math.Point2 { return math.P2(c.seamU, 0) }

@@ -229,3 +229,7 @@ func torusFaceMaterial(c *torusFaceUV) func() materialPredicate {
 // vClosed: the tube angle is a period, so an imprint sampled across it wraps and must split at the
 // v-seam (loopFrameHost).
 func (c *torusFaceUV) vClosed() bool { return true }
+
+// seamOrigin is the surface parameter of the chart's (0,0): a torus chart places both seams
+// (uvSide, ADR-0063).
+func (c *torusFaceUV) seamOrigin() math.Point2 { return math.P2(c.seamU, c.seamV) }

@@ -227,3 +227,7 @@ func cylinderSideUVSplit(f curvedFace, cyl geom.Cylinder, curves []geom.Curve3, 
 	c := newCylinderUV(cyl, band, plane, n)
 	return trimByImprint(&c, f, cyl, curves, ruledMaterial(&c))
 }
+
+// seamOrigin is the surface parameter of the chart's (0,0): a ruled side rotates only its azimuth
+// origin, and its v IS the surface's own axial parameter (uvSide, ADR-0063).
+func (c ruledUV) seamOrigin() math.Point2 { return math.P2(c.seamU, 0) }

@@ -58,12 +58,17 @@ func planeFaceEdgeOK(e loopEdge) bool {
 }
 
 // planeFaceUV satisfies uvSide: a non-periodic, exact-loop-framed plane (the planeUV conventions).
-func (c *planeFaceUV) paramOf(p math.Point3) math.Point2            { return to2D(c.plane, p) }
-func (c *planeFaceUV) placeSeams(_ []geom.Curve3)                   {}
-func (c *planeFaceUV) vPeriodic() bool                              { return false }
-func (c *planeFaceUV) uPeriodic() bool                              { return false }
-func (c *planeFaceUV) wrapsAllU() bool                              { return false }
-func (c *planeFaceUV) multiFace() bool                              { return true }
+func (c *planeFaceUV) paramOf(p math.Point3) math.Point2 { return to2D(c.plane, p) }
+func (c *planeFaceUV) placeSeams(_ []geom.Curve3)        {}
+func (c *planeFaceUV) vPeriodic() bool                   { return false }
+func (c *planeFaceUV) uPeriodic() bool                   { return false }
+func (c *planeFaceUV) wrapsAllU() bool                   { return false }
+func (c *planeFaceUV) multiFace() bool                   { return true }
+
+// seamOrigin is the identity: a plane has no artificial seam, so a planar chart is already in the
+// surface's own parameters (uvSide, ADR-0063).
+func (c *planeFaceUV) seamOrigin() math.Point2 { return math.P2(0, 0) }
+
 func (c *planeFaceUV) emitRun(run []recoveredEdge) (loopEdge, bool) { return emitImprintRun(run) }
 func (c *planeFaceUV) finalizeLoops(loops []curvedLoop) []curvedLoop {
 	return splitLoopsAtPoints(loops, c.incidence, c.res)

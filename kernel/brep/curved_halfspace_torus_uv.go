@@ -257,3 +257,7 @@ func spiricBranches(t geom.Torus, phi, m, k, c, v0, v1 float64) []geom.Curve3 {
 		geom.SpiricArc{Torus: t, Phi: phi, M: m, K: k, C: c, Branch: -1, V0: v0, V1: v1},
 	}
 }
+
+// seamOrigin is the surface parameter of the chart's (0,0): a torus places BOTH seams, so both
+// parameters are offset (uvSide, ADR-0063).
+func (c torusUV) seamOrigin() math.Point2 { return math.P2(c.seamU, c.seamV) }

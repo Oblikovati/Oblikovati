@@ -70,11 +70,12 @@ func (c ruledUV) bandFace(comp []Face2D, segs []uvSeg, surface geom.Surface, f c
 	if len(ends) != 2 {
 		return curvedFace{}, nil, false // a wrapping band has exactly two full-wrap ends; anything else defers
 	}
+	chart := chartContours(chartOfKept(comp), c.seamOrigin())
 	if len(holes) > 0 && allRimEdges(ends[0].face) && allRimEdges(ends[1].face) {
-		return c.keyholeTubeFace(holes, surface, f), section, true // a holed tube (the fat wall): bridge the rims
+		return c.keyholeTubeFace(holes, surface, f, chart), section, true // a holed tube (the fat wall): bridge the rims
 	}
 	return curvedFace{
-		surface: surface, reversed: f.reversed, lineage: f.lineage,
+		surface: surface, reversed: f.reversed, lineage: f.lineage, chart: chart,
 		loops: c.orientWrappingBand(emitted),
 	}, section, true
 }
@@ -84,13 +85,13 @@ func (c ruledUV) bandFace(comp []Face2D, segs []uvSeg, surface geom.Surface, f c
 // holes inside. This is the seam-cut form holedConicWallMesh unrolls — the natural two-rim tube has no
 // contractible outer, so the unroller (which needs the outer to span the v-extent) cannot chart it. The rims
 // are the ORIGINAL band circles, so the outer's rim edges weld to the planar caps that share them (#1476).
-func (c ruledUV) keyholeTubeFace(holes []emittedLoop, surface geom.Surface, f curvedFace) curvedFace {
+func (c ruledUV) keyholeTubeFace(holes []emittedLoop, surface geom.Surface, f curvedFace, chart [][]math.Point2) curvedFace {
 	loops := make([]curvedLoop, 0, len(holes)+1)
 	loops = append(loops, curvedLoop{edges: c.keyholeOuter()})
 	for _, h := range holes {
 		loops = append(loops, curvedLoop{edges: h.face})
 	}
-	return curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: loops}
+	return curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: loops, chart: chart}
 }
 
 // keyholeOuter bridges the band's two rims into one outer loop at their NATIVE seam (the rim circles' own

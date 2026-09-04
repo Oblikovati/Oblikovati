@@ -61,6 +61,10 @@ type uvSide interface {
 	orientLoops(loops []emittedLoop, wrapping bool) (faceLoops []curvedLoop, lid []loopEdge, outerless bool)
 	// finalizeLoops drops or re-marks degenerate loops (the ruled apex-pole rim; a torus hole vs outer loop).
 	finalizeLoops(loops []curvedLoop) []curvedLoop
+	// seamOrigin is the surface parameter the arrangement's (u,v) origin sits at — where placeSeams put
+	// the artificial seams. The chart records its contours in the SURFACE's own parameters, so it is what
+	// the seam-relative trace is offset by (ADR-0063).
+	seamOrigin() math.Point2
 }
 
 // trimByImprint is the general (u,v)-arrangement side split, surface-agnostic via uvSide: it moves the seam
@@ -85,6 +89,9 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 		return faces, lid, nil
 	}
 	loops := dropArtificialLoops(c, chainLoops(keptBoundaryEdges(kept, c.uPeriodic(), c.vPeriodic())), segs)
+	// The same cells traced with the seams UNFOLDED: closed contours, one set per connected component
+	// (ADR-0063). Traced from the same cells so the chart and the loops cannot disagree.
+	charts := chartsOfComponents(c, kept)
 	var faces []curvedFace
 	var lid []loopEdge
 	// A curved∩curved cut can leave the kept region DISCONNECTED (the two lens caps a rod punches in a fat
@@ -98,7 +105,10 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 		}
 		faceLoops, faceLid, outerless := c.orientLoops(emitted, c.wrapsAllU())
 		faceLoops = c.finalizeLoops(faceLoops)
-		faces = append(faces, curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: faceLoops, outerless: outerless})
+		faces = append(faces, curvedFace{
+			surface: surface, reversed: f.reversed, lineage: f.lineage, loops: faceLoops, outerless: outerless,
+			chart: chartForGroup(charts, group),
+		})
 		lid = append(lid, faceLid...)
 	}
 	return faces, lid, nil

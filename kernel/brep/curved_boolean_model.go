@@ -59,6 +59,12 @@ type curvedFace struct {
 	// torus minus it (Oblikovati#1406). loopSpecs then emits every loop as an InnerLoop. Default false: the
 	// usual convention (loops[0] is the outer loop) holds.
 	outerless bool
+	// chart is the face's PARAMETRIC trim: closed contours in the surface's own (u,v), material on the
+	// left, carried from the arrangement that wound it (ADR-0063, face_chart.go). On a periodic surface
+	// the 3D loops alone do not say which of two complementary regions the face is; the contour that
+	// carries the seam does. nil for a face no arrangement built — the primitives and the planar
+	// constructors, whose loops close on their own.
+	chart [][]math.Point2
 }
 
 // facesOfAny flattens EVERY face of a body into a curvedFace, unlike facesOf which rejects any
@@ -81,7 +87,7 @@ func facesOfAny(b *topo.Body) []curvedFace {
 // outerless flag).
 func curvedFaceOf(f *topo.Face) curvedFace {
 	return curvedFace{surface: f.Geometry(), reversed: f.Reversed(), loops: loopsOf(f),
-		lineage: f.Lineage(), outerless: isOuterlessFace(f)}
+		lineage: f.Lineage(), outerless: isOuterlessFace(f), chart: f.Chart()}
 }
 
 // isOuterlessFace reports whether the face has loops but NONE of them is the outer loop — the

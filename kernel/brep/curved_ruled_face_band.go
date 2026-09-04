@@ -49,7 +49,7 @@ func (c *ruledFaceUV) componentFaces(comp []Face2D, segs []uvSeg, surface geom.S
 		for _, e := range emitted {
 			lid = append(lid, e.section...)
 		}
-		return []curvedFace{c.faceOf(surface, f, append(ends, holes...))}, lid, true
+		return []curvedFace{c.faceOf(surface, f, append(ends, holes...), comp)}, lid, true
 	}
 	return nil, nil, false
 }
@@ -70,6 +70,7 @@ func (c *ruledFaceUV) splitEndsAndHoles(emitted []emittedLoop) (ends, holes []em
 func (c *ruledFaceUV) contractibleFaces(comp []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) ([]curvedFace, []loopEdge, bool) {
 	var faces []curvedFace
 	var lid []loopEdge
+	charts := chartsOfComponents(c, comp)
 	for _, group := range groupLoopFaces(true, false, chainLoops(keptBoundaryEdges(comp, true, false))) {
 		emitted, ok := emitKeptLoops(c, group, segs)
 		if !ok {
@@ -78,14 +79,19 @@ func (c *ruledFaceUV) contractibleFaces(comp []Face2D, segs []uvSeg, surface geo
 		for _, e := range emitted {
 			lid = append(lid, e.section...)
 		}
-		faces = append(faces, curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: c.splitAtFrameCrossings(outerFirst(emitted))})
+		faces = append(faces, curvedFace{
+			surface: surface, reversed: f.reversed, lineage: f.lineage,
+			loops: c.splitAtFrameCrossings(outerFirst(emitted)),
+			chart: chartForGroup(charts, group),
+		})
 	}
 	return faces, lid, true
 }
 
 // faceOf assembles a face on the wall's surface from emitted loops, keeping the source face's identity.
-func (c *ruledFaceUV) faceOf(surface geom.Surface, f curvedFace, loops []emittedLoop) curvedFace {
-	out := curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage}
+func (c *ruledFaceUV) faceOf(surface geom.Surface, f curvedFace, loops []emittedLoop, comp []Face2D) curvedFace {
+	out := curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage,
+		chart: chartContours(chartOfKept(comp), c.seamOrigin())}
 	for _, e := range loops {
 		out.loops = append(out.loops, curvedLoop{edges: e.face})
 	}

@@ -112,6 +112,7 @@ func (m *radialMinter) buildFace(fi int, f curvedFace, provByFace map[*topo.Face
 	} else {
 		built = m.bld.AddFace(f.surface, f.lineage, specs...)
 	}
+	built.SetChart(f.chart) // the parametric trim travels with the face (ADR-0063)
 	if len(f.lineage.Key()) > 0 {
 		provByFace[built] = f.lineage
 	}
