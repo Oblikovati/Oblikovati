@@ -180,9 +180,18 @@ precision), and the prism face's straight imprint does not reach the section cir
 (`geom.CurveTouches` returns no hit), so an island×straight incidence is not it either. The producer of
 the 3.9996767 point is not yet identified; find it before writing any code.
 
-Worth checking while there: `sphereFaceUV` never populates `loopFrame.crossings`, while `ruledFaceUV`
-does through `admits`. Adding the call changed nothing measurable on this case, so it was not kept — but
-the asymmetry is real and may matter elsewhere.
+**A third candidate was checked and is also not sufficient, but it IS a real gap.** `sphereFaceUV` never
+populates `loopFrame.crossings`, while `ruledFaceUV` does through `admits` — so the sphere chart samples
+straight past its own frame×imprint incidences where the ruled chart solves them. Adding
+`c.crossings, _ = c.solveFrameCrossings(imprint)` to `sphereFaceUV.assembleSegments` DOES find them
+(measured: two crossings on this body, where there were none), and the body still does not close, so it
+was not kept for want of a case that turns green. Anyone picking this up should put it back first: the
+asymmetry is a defect whether or not it is the whole of this one.
+
+The sphere face's own emission is where to look next. Its loop still carries an arc ending at
+(0, 3.999882919988047, −3.000156100336764) — a point ON the sphere but 1.56e-04 off the rim — while a
+sibling arc ends at (0, 4, −3) exactly. One of the two section arcs is emitted to a sampled vertex and
+the other to the solved one, which is the asymmetry to chase.
 
 **3. `torus − box (figure-eight pinch)` still declines to CSG under the rewire**, though the same case
 is exact on the shipping path.
