@@ -145,15 +145,32 @@ exactly and declined its half — so every sphere-capped body was gated by a mes
 rather than by the analytic B-rep the ground rules require. They now measure
 exactly: 157.0796, 261.7994, 205.2507.
 
-**What is left is the exact tangency.** Both remaining rows are the oblique
-FIGURE-EIGHT: a plane grazing a tilted torus's inner equator, where the two spiric
-lobes merge into one self-touching loop. The difference builds it as a clean
-two-face analytic body — one torus face, one planar lid, no CSG soup — but assigns
-the intersection the difference's region and the reverse. The cause is named: both
-lobes turn the tube, one each way, and the ring-winding rule that decides which
-band is material assumes the wrapping rings are DISJOINT. Two rings that touch
-violate that, and at the pinch "the nearest ring" has no answer. It is the case
-this ADR predicted OCC-class kernels special-case, and it is the last one.
+**What is left is the exact tangency**, and it is localised. Both remaining rows
+are the oblique FIGURE-EIGHT: a plane grazing a tilted torus's inner equator, where
+the two spiric lobes merge into one self-touching loop. Each lobe turns the TUBE —
+netU = 0, netV = ±2π, one each way — so the two of them cut the torus into two
+bands that touch at the pinch, and the difference emits the WRONG one. It builds a
+clean two-face analytic body, one torus face and one lid, no CSG soup; it simply
+bounds the other band.
+
+Measured, so the search is over:
+
+- the material predicate is RIGHT. The arrangement's four cells classify correctly
+  against the tool — the two at z = 1.106 and 4.537 kept for `z ≥ 1`, the two at
+  z = −1.513 dropped — so nothing is wrong with the keep table or the membership.
+- the emitted FACE is wrong. `brep.PointInFaceTrim` on it puts z = 3.81 and 1.59
+  outside the trim and z = −3.20 inside.
+- it is not the `outerless` shoelace. A self-touching loop's signed area is the
+  DIFFERENCE of its lobes' and names no region — but the figure-eight takes the
+  wrapping path (`wrappingComponents`), where that flag is never read.
+
+So the fault is between correct cells and a wrong boundary: `keptComponents` /
+`keptBoundaryEdges` on a doubly-periodic chart, which orient edges so the kept
+material is on the left and do not, for a component whose boundary is a
+self-touching pair of tube-wrapping rings.
+
+It is the case this ADR predicted OCC-class kernels special-case, and it is the
+last one.
 
 The earlier count of 5 was measured before the last three defects landed. Six defects in the
 general path account for the 28 closed: a shared section clipped to BOTH trims (not
