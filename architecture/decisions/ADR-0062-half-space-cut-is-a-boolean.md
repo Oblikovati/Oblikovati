@@ -126,25 +126,41 @@ deleted. The corrected order is: close the cone's axis-parallel hyperbola, chart
 torus, then land stage 2's deletions in one commit, because one equivalence unlocks all of them.
 
 **Measured progress, 2026-09-04.** Rewiring `HalfSpaceCut` to the bounded
-difference costs **5** failing tests in `kernel/`, down from 33. Six defects in the
+difference costs **2** failing tests in `kernel/`, down from 33 — plus
+`TestLoopedSplitHalvesACapBySymmetry`, which is a unit test of `loopedSplit` and
+goes with the deletion.
+
+Nine defects account for the 30 closed, each fixed in the general path, each with
+its own corpus, and each proved by disabling it: a shared section clipped to BOTH
+trims; a slit, which bounds nothing, no longer cutting one; the parabola admitted
+as the third conic; a cone bounded by its own apex; an imprint assembled into
+cycles before it is classified; two rims on a periodic axis bounding two bands; a
+cap's contour completed by the line at its pole; a closed-surface face anchoring
+the orientation two-colouring; and a ring that turns the TUBE read by the same
+winding rule as one that turns the azimuth.
+
+Three of those nine were defects in MEASUREMENT, not in the boolean. A hemisphere's
+area could not be integrated at all — `AnalyticFaceArea` measured a whole sphere
+exactly and declined its half — so every sphere-capped body was gated by a mesh
+rather than by the analytic B-rep the ground rules require. They now measure
+exactly: 157.0796, 261.7994, 205.2507.
+
+**What is left is the exact tangency.** Both remaining rows are the oblique
+FIGURE-EIGHT: a plane grazing a tilted torus's inner equator, where the two spiric
+lobes merge into one self-touching loop. The difference builds it as a clean
+two-face analytic body — one torus face, one planar lid, no CSG soup — but assigns
+the intersection the difference's region and the reverse. The cause is named: both
+lobes turn the tube, one each way, and the ring-winding rule that decides which
+band is material assumes the wrapping rings are DISJOINT. Two rings that touch
+violate that, and at the pinch "the nearest ring" has no answer. It is the case
+this ADR predicted OCC-class kernels special-case, and it is the last one.
+
+The earlier count of 5 was measured before the last three defects landed. Six defects in the
 general path account for the 28 closed: a shared section clipped to BOTH trims (not
 just the planar one); a slit, which bounds nothing, no longer cutting a section; the
 parabola admitted as the third conic; a cone bounded by its own apex; an imprint
 assembled into cycles before it is classified; and two rims on a periodic axis
 bounding two bands, with the winding saying which.
-
-The five that remain are one defect and one deletion. Four of them —
-sphere∩box twice and the two curved-boolean corpora — reduce to a single fact that
-needs no boolean to see: `query.AnalyticFaceArea` measures a whole sphere exactly
-and DECLINES a hemisphere. `faceHoldsEnclosedRegion` cannot certify which side of
-the boundary the face is, because the probe walks a band's v-span and a cap's single
-azimuth-wrapping rim is a constant-latitude circle with no v-span at all. Those
-bodies are therefore measured by TESSELLATION, and the tessellator reads a face's
-region from its loop winding — which the orientation two-colouring picks freely — so
-the same sphere patch measures 200.67 one way and 174.33 the other. It is the same
-shape as the degenerate ring box fixed in `fluxDomain`, one layer further out.
-`TestLoopedSplitHalvesACapBySymmetry` is a unit test of `loopedSplit` and goes with
-the deletion.
 
 **The gate is the table above, kept as a corpus test.** `TestHalfSpaceCutEqualsABoundedDifference`
 compares the two paths on every row and records which still differ. It is a ratchet: a row that moves
