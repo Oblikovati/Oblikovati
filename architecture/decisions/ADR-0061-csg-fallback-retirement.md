@@ -198,3 +198,50 @@ is exact on the shipping path.
 
 The `fallbackDebt` ratchet is unmoved at 5 / 3 / 38: no door has closed yet. Stage 2 lands when these
 three are green, and not before.
+
+## Stage 2, continued: what the tangent pinch actually is (2026-09-04, later)
+
+Two of the three failures above are gone and the third is characterised down to one decision. Recording
+the measurements, and the approach that did NOT work, so neither is re-derived.
+
+**The looped split is fixed, by solving an incidence instead of refusing it.** `geom.CurveTouches`
+could bracket a meeting but never refine into it: an alternating coordinate descent stalled 3.1 mm
+short of a circle meeting a chord and a box-shrinking grid stalled 1.2 mm short, both reporting no
+meeting at all, because a TRANSVERSAL crossing makes a V-shaped valley and anything stepping both
+parameters together drifts along its wall. Nested golden section — an outer 1-D search whose objective
+is an inner closest-point search — lands on it at 4.6e-15 and is safe for the tangential shape too.
+With that working, `islandStraightHits` places an island's meeting with a straight imprint and splits
+both sides there, and the clearance half of `islandContactOK` is deleted: a decline replaced by a
+solve. The sphere cap now closes, every vertex exact.
+
+**`TorusPlaneSection` was emitting two DEGENERATE arcs at the tangency**, and they were most of what
+made the figure-eight look hard. Where the plane grazes the tube the two roots of w(v)=±1 coincide, so
+one span has zero width and both its branch arcs are the tangency point repeated — four curves where
+there are two lobes. Fed in as imprints they are closed curves of zero extent: the meeting solver
+reported 4225 meetings between them at separation zero, and the caller split on every one. Dropping an
+arc that spans no length took the cut from **30.89 s to 0.05 s** and `kernel/brep` to 31.9 s, under its
+33 s baseline.
+
+**What is left is one pairing decision.** With clean input the two lobes' pinch is evaluated 1.07e-07
+apart by the two branches — `u(v) = Φ ± arccos w` is ill-conditioned there — against a 1e-07 weld grid,
+so they round to adjacent cells and stay two vertices. The two cells then share the sliver edge between
+them, the shared-edge dissolve cancels it, and the boundary trace joins the lobes into one circuit: one
+lid where there are two. There are NO ties in the angular walk; it never gets a choice. The decision is
+at the weld.
+
+Two attempts at it, both measured, neither kept:
+
+- **Give `seamWelder` the 8-neighbour search `welder3` has had since #879.** It is a real defect that it
+  lacks one — a cell-exact lookup leaves coincident points unmerged whenever they straddle a cell
+  boundary, and which side they fall is an accident of where the grid lies. It welds the pinch into one
+  vertex, and then the TORUS chart declines instead (`closedSurfaceSplitFaces`), because a 4-valent
+  tangential vertex is exactly what the angular rule cannot resolve. Necessary, not sufficient.
+- **Split a vertex shared by cells that share no edge**, the chart analogue of ADR-0047's per-disk
+  duplicates. Implemented as a union-find over edge-adjacent cells and a per-region vertex id: **58
+  failures** in `kernel/brep`. Cells touching at a vertex are not always two regions — `nextByAngle`
+  was built for the Steinmetz pinch, where the boundary genuinely passes through — so forcing the split
+  is wrong. If this is revisited it must be conditioned on the contact being TANGENTIAL, which
+  `geom.CurveTouches` can now report and does not yet.
+
+The nesting half of `islandContactOK` was also removed and reverted: it fixes nothing measurable on its
+own, so it is not carried.
