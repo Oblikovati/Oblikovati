@@ -31,7 +31,7 @@ func splitImprintByKind(imprint []geom.Curve3) (straight []geom.Curve3, islands 
 	for _, cv := range imprint {
 		switch {
 		case isClosedIslandImprint(cv):
-			islands = append(islands, imprintCycle{{curve: cv, t0: domLo(cv), t1: domHi(cv)}})
+			islands = append(islands, closedIslandCycle(cv))
 		case openCurvedKind(cv):
 			arcs = append(arcs, cv)
 		default:
@@ -41,6 +41,42 @@ func splitImprintByKind(imprint []geom.Curve3) (straight []geom.Curve3, islands 
 	cycles, rest := chainImprintCycles(arcs)
 	return straight, append(islands, cycles...), rest
 }
+
+// closedIslandCycle is a closed island's boundary as a cycle of arcs, SPLIT where the curve comes back
+// to a point it has already visited.
+//
+// A section that touches itself bounds two lobes, and the arrangement has to carry a vertex at the
+// touch or it walks straight through: the circuit comes out as one self-touching wire whose lobes wind
+// oppositely, so its boundary integral cancels and the face it bounds measures nothing. Measured on the
+// oblique figure-eight, a lid of two 25.267 lobes integrated to 1.41e-06 (ADR-0062).
+//
+// The touch is TANGENTIAL — nothing crosses — so no sampling finds it and geom.CurveSelfTouch solves
+// it. Splitting the domain there makes the touch an ENDPOINT of two arcs, and both evaluate the base
+// curve at the same parameter, so the boundary welder joins them into the degree-4 vertex nextByAngle
+// already knows how to trace.
+func closedIslandCycle(cv geom.Curve3) imprintCycle {
+	lo, hi := domLo(cv), domHi(cv)
+	whole := imprintCycle{{curve: cv, t0: lo, t1: hi}}
+	a, b, ok := geom.CurveSelfTouch(cv, islandTouchWeld(cv))
+	if !ok {
+		return whole
+	}
+	return imprintCycle{{cv, lo, a}, {cv, a, b}, {cv, b, hi}}
+}
+
+// islandTouchWeld is the model-relative distance at which two visits to a point are the SAME point,
+// taken from the island's own extent — a coincidence of one computation with itself, so the weld class.
+func islandTouchWeld(cv geom.Curve3) float64 {
+	lo, hi := cv.Domain()
+	pts := make([]math.Point3, 0, islandTouchProbe+1)
+	for i := 0; i <= islandTouchProbe; i++ {
+		pts = append(pts, cv.PointAt(lo+(hi-lo)*float64(i)/islandTouchProbe))
+	}
+	return geom.ResolutionForPoints(pts).Weld()
+}
+
+// islandTouchProbe samples the island to size it. It bounds the curve, nothing more.
+const islandTouchProbe = 16
 
 // imprintArc is one imprint curve walked over a parameter span; t1 < t0 when the cycle traverses it
 // backwards, which is how a chain built from arcs of either sense stays continuous.
