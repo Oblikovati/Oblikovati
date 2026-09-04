@@ -212,6 +212,12 @@ func enclosedTerms[T quadTerms[T]](s geom.Surface, loops []faceLoop, form greenA
 	for i := range loops {
 		total = total.add(raw[i].scale(signs[i]))
 	}
+	// A single wrapping rim does not close its own contour — the line at the POLE is the rest of it,
+	// and it is added here, inside the sum, so the magnitude below normalises the CLOSED contour
+	// rather than the rim alone (analytic_cap_contour.go).
+	if pole, ok := capPoleContour(s, loops, form, at); ok {
+		total = total.add(pole)
+	}
 	if singleCycleBand(loops) && total.measure() < 0 {
 		// One cycle carrying both rims may be stored either way round — the producer is free to walk
 		// it against the region, and unlike a rim PAIR there is no second loop to read a role from.

@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -101,7 +102,7 @@ func loopRegionSign(depthEven bool, signedMeasure float64) float64 {
 // by a stud, so a 15.708 sphere zone integrated as its 298.451 complement. Dropping it moved four
 // corpus cases into the analytic regime with nothing else changed (Oblikovati/Oblikovati#3489).
 func faceHoldsEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain bool) {
-	u, v, ok := regionProbeUV(loops)
+	u, v, ok := regionProbeUV(f.Geometry(), loops)
 	if !ok {
 		return false, false
 	}
@@ -115,11 +116,17 @@ func faceHoldsEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain boo
 // WRAPS a periodic seam is not a closed polygon in the plane, so the even-odd search cannot be
 // asked about it — every torus band and every bore wall would get a meaningless answer. For those
 // the probe steps inward from the boundary instead, which is well defined for any loop.
-func regionProbeUV(loops []faceLoop) (u, v float64, ok bool) {
-	if loopsWrapASeam(loops) {
-		return bandInteriorUV(loops)
+func regionProbeUV(s geom.Surface, loops []faceLoop) (u, v float64, ok bool) {
+	if !loopsWrapASeam(loops) {
+		return regionInteriorUV(loops)
 	}
-	return regionInteriorUV(loops)
+	// A CAP is not a band: its one rim has no v-span for the band probe to read, so every station
+	// declined and the side could not be certified at all (ADR-0062). Its interior lies between the
+	// rim and the pole its contour closes at, which capPoleContour names.
+	if u, v, ok = capInteriorUV(s, loops); ok {
+		return u, v, true
+	}
+	return bandInteriorUV(loops)
 }
 
 // loopsWrapASeam reports whether any loop travels a WHOLE PERIOD in a parameter instead of returning
