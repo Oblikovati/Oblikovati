@@ -41,6 +41,20 @@ func newSeamWelder(uPeriodic, vPeriodic bool) *seamWelder {
 // NON-periodic side (a bounded plane, planeUV) u is a real world distance, not an azimuth: folding u≈2π
 // would silently weld a genuine face vertex onto u=0, so the u-fold is gated on uPeriodic (#1591).
 func (w *seamWelder) add(p math.Point2) int {
+	folded := w.foldSeam(p)
+	cu := int64(stdmath.Round(float64(folded.X) / seamWeldGrid))
+	cv := int64(stdmath.Round(float64(folded.Y) / seamWeldGrid))
+	if i, ok := w.nearby(cu, cv, folded); ok {
+		return i
+	}
+	w.index[[2]int64{cu, cv}] = len(w.points)
+	w.points = append(w.points, p)
+	return len(w.points) - 1
+}
+
+// foldSeam normalises u=2π to u=0 (and, on a v-periodic surface, v=2π to v=0) so a seam vertex on
+// either side of the parameter rectangle maps to one ruling/tube vertex.
+func (w *seamWelder) foldSeam(p math.Point2) math.Point2 {
 	u, v := float64(p.X), float64(p.Y)
 	if w.uPeriodic && stdmath.Abs(u-2*stdmath.Pi) < seamWeldGrid {
 		u = 0
@@ -48,13 +62,28 @@ func (w *seamWelder) add(p math.Point2) int {
 	if w.vPeriodic && stdmath.Abs(v-2*stdmath.Pi) < seamWeldGrid {
 		v = 0
 	}
-	k := [2]int64{int64(stdmath.Round(u / seamWeldGrid)), int64(stdmath.Round(v / seamWeldGrid))}
-	if i, ok := w.index[k]; ok {
-		return i
+	return math.P2(u, v)
+}
+
+// nearby finds an already-welded vertex within the grid of p, searching the EIGHT neighbouring cells
+// as well as p's own.
+//
+// A cell-exact lookup leaves two coincident points unmerged whenever they fall either side of a cell
+// boundary, and which side they fall on is an accident of where the grid happens to lie — so two points
+// a TENTH of the grid apart could weld to distinct vertices, which
+// TestSeamWelderMergesAcrossACellBoundary pins directly. welder3 has searched its 26 neighbours since
+// #879, where the cell-exact version shredded a fine-pitch coil join into unpaired coincident open
+// edges; this is the same defect in the (u,v) welder, and the same fix.
+func (w *seamWelder) nearby(cu, cv int64, p math.Point2) (int, bool) {
+	for du := int64(-1); du <= 1; du++ {
+		for dv := int64(-1); dv <= 1; dv++ {
+			i, ok := w.index[[2]int64{cu + du, cv + dv}]
+			if ok && float64(w.foldSeam(w.points[i]).DistanceTo(p)) <= seamWeldGrid {
+				return i, true
+			}
+		}
 	}
-	w.index[k] = len(w.points)
-	w.points = append(w.points, p)
-	return len(w.points) - 1
+	return 0, false
 }
 
 // dedge is one directed (u,v) boundary edge of the kept region: the seam-welded endpoint indices for
