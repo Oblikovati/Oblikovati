@@ -3,7 +3,9 @@
 package brep
 
 import (
+	stdmath "math"
 	"slices"
+	"sort"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
@@ -26,12 +28,12 @@ import (
 // apart is what lets the straight path keep reading PointAt(0)/PointAt(1) as segment ends — a curved
 // arc's are two points a chord apart. Open arcs that close on each other are assembled into an island
 // first, so a boundary delivered in pieces is classified as the one boundary it is.
-func splitImprintByKind(imprint []geom.Curve3) (straight []geom.Curve3, islands []imprintCycle, open []geom.Curve3) {
+func splitImprintByKind(imprint []geom.Curve3) (straight []geom.Curve3, islands []imprintCycle, touches []math.Point3, open []geom.Curve3) {
 	var arcs []geom.Curve3
 	for _, cv := range imprint {
 		switch {
 		case isClosedIslandImprint(cv):
-			islands = append(islands, closedIslandCycle(cv))
+			islands = append(islands, imprintCycle{{curve: cv, t0: domLo(cv), t1: domHi(cv)}})
 		case openCurvedKind(cv):
 			arcs = append(arcs, cv)
 		default:
@@ -39,33 +41,181 @@ func splitImprintByKind(imprint []geom.Curve3) (straight []geom.Curve3, islands 
 		}
 	}
 	cycles, rest := chainImprintCycles(arcs)
-	return straight, append(islands, cycles...), rest
+	split, at := splitIslandsAtTouches(append(islands, cycles...))
+	return straight, split, at, rest
 }
 
-// closedIslandCycle is a closed island's boundary as a cycle of arcs, SPLIT where the curve comes back
-// to a point it has already visited.
+// splitIslandsAtTouches makes every meeting between island arcs — with each other, or of an arc with
+// itself — a shared vertex: an interior meeting splits the arc there, and a meeting AT an arc's end
+// replaces that end with the solved point.
 //
-// A section that touches itself bounds two lobes, and the arrangement has to carry a vertex at the
-// touch or it walks straight through: the circuit comes out as one self-touching wire whose lobes wind
-// oppositely, so its boundary integral cancels and the face it bounds measures nothing. Measured on the
-// oblique figure-eight, a lid of two 25.267 lobes integrated to 1.41e-06 (ADR-0062).
+// A section that touches bounds two lobes, and without a vertex at the meeting the arrangement joins
+// them into ONE cell whose boundary is a single self-touching circuit. Its lobes then wind oppositely,
+// its boundary integral cancels, and the face it bounds measures nothing: measured on the oblique
+// figure-eight, a lid of two 25.267 lobes integrating to 1.41e-06 (ADR-0062).
 //
-// The touch is TANGENTIAL — nothing crosses — so no sampling finds it and geom.CurveSelfTouch solves
-// it. Splitting the domain there makes the touch an ENDPOINT of two arcs, and both evaluate the base
-// curve at the same parameter, so the boundary welder joins them into the degree-4 vertex nextByAngle
-// already knows how to trace.
-func closedIslandCycle(cv geom.Curve3) imprintCycle {
-	lo, hi := domLo(cv), domHi(cv)
-	whole := imprintCycle{{curve: cv, t0: lo, t1: hi}}
-	a, b, ok := geom.CurveSelfTouch(cv, islandTouchWeld(cv))
-	if !ok {
-		return whole
+// Both shapes of the defect occur and both are covered. The mixed boolean delivers the figure-eight as
+// ONE self-touching spiric, which splits. The half-space composition delivers it as TWO spiric ovals
+// that already END at the meeting — and those are the ones that need the solved point rather than a
+// split, because the spiric's u(v) = Φ ± arccos w is ill-conditioned there (d(arccos)/dw diverges as
+// w → ±1) and the two arcs evaluate their shared point 1.03e-07 apart, past the arrangement's 1e-09
+// vertex weld. The meeting is TANGENTIAL either way, so nothing crosses and no sampling finds it;
+// geom.CurveTouches solves it.
+func splitIslandsAtTouches(islands []imprintCycle) ([]imprintCycle, []math.Point3) {
+	cuts, meets, at := islandTouchCuts(islands)
+	out := make([]imprintCycle, 0, len(islands))
+	for i, cyc := range islands {
+		out = append(out, splitCycleAt(withArcMeets(cyc, meets[i]), cuts[i]))
 	}
-	return imprintCycle{{cv, lo, a}, {cv, a, b}, {cv, b, hi}}
+	return out, at
+}
+
+// arcEnd names one end of one arc of one island, for recording a solved meeting there.
+type arcEnd struct {
+	island, arc int
+	last        bool
+}
+
+// withArcMeets attaches the solved meeting points to a cycle's arc ends.
+func withArcMeets(cyc imprintCycle, meets map[int][2]*math.Point3) imprintCycle {
+	out := make(imprintCycle, len(cyc))
+	copy(out, cyc)
+	for ai := range out {
+		if m, ok := meets[ai]; ok {
+			out[ai].meet0, out[ai].meet1 = m[0], m[1]
+		}
+	}
+	return out
+}
+
+// islandTouchCuts solves every meeting and sorts it into an interior cut or an end replacement.
+func islandTouchCuts(islands []imprintCycle) ([]map[int][]float64, []map[int][2]*math.Point3, []math.Point3) {
+	cuts := make([]map[int][]float64, len(islands))
+	meets := make([]map[int][2]*math.Point3, len(islands))
+	for i := range islands {
+		cuts[i], meets[i] = map[int][]float64{}, map[int][2]*math.Point3{}
+	}
+	var at []math.Point3
+	for _, hit := range islandTouchHits(islands) {
+		at = append(at, hit.at)
+		recordTouch(cuts, meets, islands, hit.a, hit.ta, hit.at)
+		recordTouch(cuts, meets, islands, hit.b, hit.tb, hit.at)
+	}
+	return cuts, meets, at
+}
+
+// islandTouch is one solved meeting: the two arcs, the parameter on each, and the point.
+type islandTouch struct {
+	a, b   arcEnd
+	ta, tb float64
+	at     math.Point3
+}
+
+// islandTouchHits solves every arc pair, including each arc against itself.
+func islandTouchHits(islands []imprintCycle) []islandTouch {
+	var out []islandTouch
+	for i, ci := range islands {
+		for ai, arcA := range ci {
+			for j := i; j < len(islands); j++ {
+				for bi, arcB := range islands[j] {
+					if j == i && bi < ai {
+						continue // the pair was taken the other way round
+					}
+					out = append(out, arcPairTouches(islands, i, ai, arcA, j, bi, arcB)...)
+				}
+			}
+		}
+	}
+	return out
+}
+
+// arcPairTouches solves one pair. The meeting point is the MIDPOINT of the two evaluations, which is
+// the symmetric choice and the best estimate of a point neither arc can evaluate exactly.
+func arcPairTouches(islands []imprintCycle, i, ai int, arcA imprintArc, j, bi int, arcB imprintArc) []islandTouch {
+	same := i == j && ai == bi
+	tol := stdmath.Min(islandTouchWeld(arcA.curve), islandTouchWeld(arcB.curve))
+	var out []islandTouch
+	for _, hit := range geom.CurveTouches(arcA.curve, arcB.curve, same, tol) {
+		pa, pb := arcA.curve.PointAt(hit[0]), arcB.curve.PointAt(hit[1])
+		out = append(out, islandTouch{
+			a: arcEnd{island: i, arc: ai}, b: arcEnd{island: j, arc: bi},
+			ta: hit[0], tb: hit[1], at: pa.TranslateBy(pa.VectorTo(pb).Scale(0.5)),
+		})
+	}
+	return out
+}
+
+// recordTouch files one side of a meeting: an end replacement when the parameter is an arc's own end,
+// an interior cut otherwise.
+func recordTouch(cuts []map[int][]float64, meets []map[int][2]*math.Point3, islands []imprintCycle, e arcEnd, t float64, at math.Point3) {
+	arc := islands[e.island][e.arc]
+	switch {
+	case stdmath.Abs(t-arc.t0) <= stdmath.Abs(arc.t1-arc.t0)*arcEndFraction:
+		m := meets[e.island][e.arc]
+		meets[e.island][e.arc] = [2]*math.Point3{&at, m[1]}
+	case stdmath.Abs(t-arc.t1) <= stdmath.Abs(arc.t1-arc.t0)*arcEndFraction:
+		m := meets[e.island][e.arc]
+		meets[e.island][e.arc] = [2]*math.Point3{m[0], &at}
+	default:
+		cuts[e.island][e.arc] = append(cuts[e.island][e.arc], t)
+	}
+}
+
+// atArcEnd reports a parameter sitting on one of an arc's own ends.
+func atArcEnd(a imprintArc, t float64) bool {
+	span := stdmath.Abs(a.t1 - a.t0)
+	return stdmath.Min(stdmath.Abs(t-a.t0), stdmath.Abs(t-a.t1)) <= span*arcEndFraction
+}
+
+// arcEndFraction is how near an arc's end a parameter counts as being AT it, as a fraction of the
+// arc's own span. It is a parameter-space proportion, not a model distance.
+const arcEndFraction = 1e-6
+
+// splitCycleAt subdivides a cycle's arcs at the recorded parameters, dropping cuts that fall on an
+// arc's own ends (they are already vertices).
+func splitCycleAt(cyc imprintCycle, cuts map[int][]float64) imprintCycle {
+	out := make(imprintCycle, 0, len(cyc))
+	for ai, arc := range cyc {
+		out = append(out, splitArcAt(arc, cuts[ai])...)
+	}
+	return out
+}
+
+// splitArcAt cuts one arc at the given parameters, in the arc's own direction.
+func splitArcAt(arc imprintArc, at []float64) imprintCycle {
+	inside := make([]float64, 0, len(at))
+	for _, t := range at {
+		if !atArcEnd(arc, t) && betweenParams(t, arc.t0, arc.t1) {
+			inside = append(inside, t)
+		}
+	}
+	if len(inside) == 0 {
+		return imprintCycle{arc}
+	}
+	sort.Float64s(inside)
+	if arc.t1 < arc.t0 {
+		slices.Reverse(inside)
+	}
+	out := make(imprintCycle, 0, len(inside)+1)
+	prev, prevMeet := arc.t0, arc.meet0
+	for _, t := range inside {
+		at := arc.curve.PointAt(t)
+		out = append(out, imprintArc{curve: arc.curve, t0: prev, t1: t, meet0: prevMeet, meet1: &at})
+		prev, prevMeet = t, &at
+	}
+	return append(out, imprintArc{curve: arc.curve, t0: prev, t1: arc.t1, meet0: prevMeet, meet1: arc.meet1})
+}
+
+// betweenParams reports a parameter lying strictly within a span given in either direction.
+func betweenParams(t, a, b float64) bool {
+	if a > b {
+		a, b = b, a
+	}
+	return t > a && t < b
 }
 
 // islandTouchWeld is the model-relative distance at which two visits to a point are the SAME point,
-// taken from the island's own extent — a coincidence of one computation with itself, so the weld class.
+// taken from the curve's own extent — a coincidence of one computation with itself, so the weld class.
 func islandTouchWeld(cv geom.Curve3) float64 {
 	lo, hi := cv.Domain()
 	pts := make([]math.Point3, 0, islandTouchProbe+1)
@@ -83,6 +233,12 @@ const islandTouchProbe = 16
 type imprintArc struct {
 	curve  geom.Curve3
 	t0, t1 float64
+	// meet0/meet1 replace the curve's own evaluation at an end where a SOLVED incidence says two arcs
+	// meet. Near a pinch the spiric's u(v) = Φ ± arccos w is ill-conditioned — d(arccos)/dw diverges as
+	// w → ±1 — so two arcs that meet there evaluate their shared point 1.03e-07 apart, past the
+	// arrangement's 1e-09 vertex weld. The arrangement then saw two vertices with a sliver between them
+	// and made the two lobes ONE cell (ADR-0062). nil at an ordinary end.
+	meet0, meet1 *math.Point3
 }
 
 // imprintCycle is a CLOSED imprint boundary: one closed curve, or several open arcs that meet end to
@@ -199,14 +355,27 @@ func isClosedIslandImprint(cv geom.Curve3) bool { return geom.CurveIsClosed(cv) 
 // analytic curve instead of the sampled chords.
 func (c *planeFaceUV) islandCurveSegs(arc imprintArc) []uvSeg {
 	segs := make([]uvSeg, 0, imprintSampleCount)
-	prevT, prev := arc.t0, to2D(c.plane, arc.curve.PointAt(arc.t0))
+	prevT, prev := arc.t0, c.arcEndPoint(arc, arc.meet0, arc.t0)
 	for i := 1; i <= imprintSampleCount; i++ {
 		t := arc.t0 + (arc.t1-arc.t0)*float64(i)/imprintSampleCount
 		p := to2D(c.plane, arc.curve.PointAt(t))
+		if i == imprintSampleCount {
+			p = c.arcEndPoint(arc, arc.meet1, arc.t1)
+		}
 		segs = append(segs, uvSeg{a: prev, b: p, curve: arc.curve, tA: prevT, tB: t, kind: segImprint})
 		prevT, prev = t, p
 	}
 	return segs
+}
+
+// arcEndPoint is the (u,v) an arc's end sits at: the SOLVED meeting point where one was found, and the
+// curve's own evaluation otherwise. Using the solve is what makes two arcs that meet hand the
+// arrangement one vertex rather than two a hair apart.
+func (c *planeFaceUV) arcEndPoint(arc imprintArc, meet *math.Point3, t float64) math.Point2 {
+	if meet != nil {
+		return to2D(c.plane, *meet)
+	}
+	return to2D(c.plane, arc.curve.PointAt(t))
 }
 
 // islandSegs samples every closed island imprint of the face.

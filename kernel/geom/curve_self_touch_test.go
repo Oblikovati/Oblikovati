@@ -67,3 +67,37 @@ func TestCurveSelfTouchIsFalseForASimpleArc(t *testing.T) {
 		t.Errorf("a quarter arc was reported to touch itself at %g, %g", a, b)
 	}
 }
+
+// Two circles tangent to one another meet at exactly one point, and nothing crosses there.
+func TestCurveTouchesFindsATangentPairOfCircles(t *testing.T) {
+	t.Parallel()
+	a, err := NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
+	if err != nil {
+		t.Fatalf("circle a: %v", err)
+	}
+	b, err := NewCircle(math.P3(5, 0, 0), math.V3(0, 0, 1), 3)
+	if err != nil {
+		t.Fatalf("circle b: %v", err)
+	}
+	hits := CurveTouches(a, b, false, 1e-9)
+	if len(hits) != 1 {
+		t.Fatalf("two externally tangent circles meet %d times, want 1", len(hits))
+	}
+	p, q := a.PointAt(hits[0][0]), b.PointAt(hits[0][1])
+	if d := float64(p.DistanceTo(q)); d > 1e-9 {
+		t.Errorf("the meeting is %g apart, want coincident", d)
+	}
+	if d := float64(p.DistanceTo(math.P3(2, 0, 0))); d > 1e-6 {
+		t.Errorf("the meeting is at %v, want (2,0,0)", p)
+	}
+}
+
+// Circles that come nowhere near each other do not meet.
+func TestCurveTouchesIsEmptyForSeparatedCircles(t *testing.T) {
+	t.Parallel()
+	a, _ := NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
+	b, _ := NewCircle(math.P3(20, 0, 0), math.V3(0, 0, 1), 3)
+	if hits := CurveTouches(a, b, false, 1e-9); len(hits) != 0 {
+		t.Errorf("separated circles reported %d meetings", len(hits))
+	}
+}
