@@ -115,7 +115,7 @@ type faceFrameCrossing struct {
 // island (a ruled wall's section — curved_plane_face_uv_island.go) crosses no frame edge by construction,
 // so it is sampled on its own and takes no part in the crossing injection.
 func (c *planeFaceUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
-	straight, islands, _, open := splitImprintByKind(imprint)
+	straight, islands, open := splitImprintByKind(imprint)
 	crossings := c.frameCrossings(straight)
 	// An OPEN conic (a hyperbola branch — see curved_plane_face_uv_open.go) crosses the frame's
 	// STRAIGHT edges, so its crossings are solved first and the frame is split on them.
@@ -309,7 +309,7 @@ func planeFaceMaterial(c *planeFaceUV, keep func(math.Point3) bool) func() mater
 func planeFaceContactOK(c *planeFaceUV, imprint []geom.Curve3) bool {
 	// The OPEN conics take no part in either gate: they cross the frame's STRAIGHT edges by
 	// construction, and those crossings are solved exactly and shared, not resolved on a chord.
-	straight, islands, _, _ := splitImprintByKind(imprint)
+	straight, islands, _ := splitImprintByKind(imprint)
 	for _, l := range c.loops {
 		for _, e := range l.edges {
 			if !geom.IsStraightCurve(e.curve) && !conicEdgeContactOK(c, e, straight) {

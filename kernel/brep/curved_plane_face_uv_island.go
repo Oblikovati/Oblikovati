@@ -28,7 +28,7 @@ import (
 // apart is what lets the straight path keep reading PointAt(0)/PointAt(1) as segment ends — a curved
 // arc's are two points a chord apart. Open arcs that close on each other are assembled into an island
 // first, so a boundary delivered in pieces is classified as the one boundary it is.
-func splitImprintByKind(imprint []geom.Curve3) (straight []geom.Curve3, islands []imprintCycle, touches []math.Point3, open []geom.Curve3) {
+func splitImprintByKind(imprint []geom.Curve3) (straight []geom.Curve3, islands []imprintCycle, open []geom.Curve3) {
 	var arcs []geom.Curve3
 	for _, cv := range imprint {
 		switch {
@@ -41,8 +41,7 @@ func splitImprintByKind(imprint []geom.Curve3) (straight []geom.Curve3, islands 
 		}
 	}
 	cycles, rest := chainImprintCycles(arcs)
-	split, at := splitIslandsAtTouches(append(islands, cycles...))
-	return straight, split, at, rest
+	return straight, splitIslandsAtTouches(append(islands, cycles...)), rest
 }
 
 // splitIslandsAtTouches makes every meeting between island arcs — with each other, or of an arc with
@@ -61,20 +60,17 @@ func splitImprintByKind(imprint []geom.Curve3) (straight []geom.Curve3, islands 
 // w → ±1) and the two arcs evaluate their shared point 1.03e-07 apart, past the arrangement's 1e-09
 // vertex weld. The meeting is TANGENTIAL either way, so nothing crosses and no sampling finds it;
 // geom.CurveTouches solves it.
-func splitIslandsAtTouches(islands []imprintCycle) ([]imprintCycle, []math.Point3) {
-	cuts, meets, at := islandTouchCuts(islands)
+func splitIslandsAtTouches(islands []imprintCycle) []imprintCycle {
+	cuts, meets := islandTouchCuts(islands)
 	out := make([]imprintCycle, 0, len(islands))
 	for i, cyc := range islands {
 		out = append(out, splitCycleAt(withArcMeets(cyc, meets[i]), cuts[i]))
 	}
-	return out, at
+	return out
 }
 
-// arcEnd names one end of one arc of one island, for recording a solved meeting there.
-type arcEnd struct {
-	island, arc int
-	last        bool
-}
+// arcEnd names one arc of one island, for recording a solved meeting on it.
+type arcEnd struct{ island, arc int }
 
 // withArcMeets attaches the solved meeting points to a cycle's arc ends.
 func withArcMeets(cyc imprintCycle, meets map[int][2]*math.Point3) imprintCycle {
@@ -89,19 +85,17 @@ func withArcMeets(cyc imprintCycle, meets map[int][2]*math.Point3) imprintCycle 
 }
 
 // islandTouchCuts solves every meeting and sorts it into an interior cut or an end replacement.
-func islandTouchCuts(islands []imprintCycle) ([]map[int][]float64, []map[int][2]*math.Point3, []math.Point3) {
+func islandTouchCuts(islands []imprintCycle) ([]map[int][]float64, []map[int][2]*math.Point3) {
 	cuts := make([]map[int][]float64, len(islands))
 	meets := make([]map[int][2]*math.Point3, len(islands))
 	for i := range islands {
 		cuts[i], meets[i] = map[int][]float64{}, map[int][2]*math.Point3{}
 	}
-	var at []math.Point3
 	for _, hit := range islandTouchHits(islands) {
-		at = append(at, hit.at)
 		recordTouch(cuts, meets, islands, hit.a, hit.ta, hit.at)
 		recordTouch(cuts, meets, islands, hit.b, hit.tb, hit.at)
 	}
-	return cuts, meets, at
+	return cuts, meets
 }
 
 // islandTouch is one solved meeting: the two arcs, the parameter on each, and the point.
@@ -121,7 +115,7 @@ func islandTouchHits(islands []imprintCycle) []islandTouch {
 					if j == i && bi < ai {
 						continue // the pair was taken the other way round
 					}
-					out = append(out, arcPairTouches(islands, i, ai, arcA, j, bi, arcB)...)
+					out = append(out, arcPairTouches(i, ai, arcA, j, bi, arcB)...)
 				}
 			}
 		}
@@ -131,7 +125,7 @@ func islandTouchHits(islands []imprintCycle) []islandTouch {
 
 // arcPairTouches solves one pair. The meeting point is the MIDPOINT of the two evaluations, which is
 // the symmetric choice and the best estimate of a point neither arc can evaluate exactly.
-func arcPairTouches(islands []imprintCycle, i, ai int, arcA imprintArc, j, bi int, arcB imprintArc) []islandTouch {
+func arcPairTouches(i, ai int, arcA imprintArc, j, bi int, arcB imprintArc) []islandTouch {
 	same := i == j && ai == bi
 	tol := stdmath.Min(islandTouchWeld(arcA.curve), islandTouchWeld(arcB.curve))
 	var out []islandTouch
@@ -167,9 +161,11 @@ func atArcEnd(a imprintArc, t float64) bool {
 	return stdmath.Min(stdmath.Abs(t-a.t0), stdmath.Abs(t-a.t1)) <= span*arcEndFraction
 }
 
-// arcEndFraction is how near an arc's end a parameter counts as being AT it, as a fraction of the
-// arc's own span. It is a parameter-space proportion, not a model distance.
-const arcEndFraction = 1e-6
+// arcEndFraction is how near an arc's end a solved parameter counts as being AT it, as a fraction of
+// the arc's own span. It compares a parameter against a parameter, never a length against a length: the
+// solve converges the meeting far below this, so the only thing it separates is "the meeting IS this
+// arc's endpoint" from "the meeting is somewhere along it".
+const arcEndFraction = 1e-6 // tol:parametric — fraction of an arc's own span (dimensionless)
 
 // splitCycleAt subdivides a cycle's arcs at the recorded parameters, dropping cuts that fall on an
 // arc's own ends (they are already vertices).

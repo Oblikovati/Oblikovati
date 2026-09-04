@@ -35,7 +35,7 @@ func TestSplitImprintByKind(t *testing.T) {
 		t.Fatal(err)
 	}
 	seg := geom.NewLineSegment(math.P3(-8, 0, 3), math.P3(8, 0, 3))
-	straight, islands, _, open := splitImprintByKind([]geom.Curve3{seg, circle, seg})
+	straight, islands, open := splitImprintByKind([]geom.Curve3{seg, circle, seg})
 	if len(straight) != 2 || len(islands) != 1 || len(open) != 0 {
 		t.Fatalf("split = %d straight, %d islands, %d open; want 2, 1 and 0", len(straight), len(islands), len(open))
 	}
@@ -218,7 +218,7 @@ func TestChainImprintCyclesAssemblesABigon(t *testing.T) {
 	if !ok || len(arcs) != 2 {
 		t.Fatalf("want one oval in two branches, got ok=%v n=%d", ok, len(arcs))
 	}
-	straight, islands, _, open := splitImprintByKind(arcs)
+	straight, islands, open := splitImprintByKind(arcs)
 	if len(straight) != 0 || len(open) != 0 {
 		t.Fatalf("split = %d straight, %d open; both branches belong to the island", len(straight), len(open))
 	}
