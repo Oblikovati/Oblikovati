@@ -175,10 +175,32 @@ inwardness from a nearest foot and the loop's local direction, and by the
 tessellator, which picks a band from the same winding. Both name the other band,
 and both are downstream of the operation.
 
-That is where the remaining work sits, and it is not the boolean's: a face whose
-boundary turns a period has two candidate regions, and the readers pick between
-them by a rule the emitter does not share. It is the case this ADR predicted
-OCC-class kernels special-case, and it is the last one.
+**The sharpest lead, and where to start.** The two paths emit the torus face
+differently, and it is one bit:
+
+| | lid faces | torus loops |
+| --- | --- | --- |
+| retired pipeline | 2, one per lobe | 2, emitted `t=[1,0]` and `t=[0,1]` |
+| the difference | 1, a self-touching loop | 2, both emitted `t=[0,1]` |
+
+Each lobe is a closed spiric wrapping the tube, and the two wrap it OPPOSITE ways
+(netV of +2π and −2π), so "both forward" runs them the same way round the region
+and "one reversed" runs them opposite. The retired pipeline reverses one; the
+difference reverses neither, and `brep.PointInFaceTrim` then misplaces 69 of 144
+sample points on that face, boundary points excluded.
+
+Two things were tried and REVERTED as no-ops, so they need not be tried again: a
+certification of the boundary traversal against the arrangement's kept cells (both
+loops pass — they are correctly wound in the CHART), and a certification against
+the membership predicate by stepping along `inwardAt` (both pass at a single
+sample). The second is not merely unlucky: for a TUBE-wrapping loop the surface
+normal rotates the whole way round, so `inwardAt` sweeps through every direction
+along one loop and no single sample of it says anything. A criterion for this case
+has to be combinatorial — the relative sense of the two wrapping loops — not a
+sampled one.
+
+It is the case this ADR predicted OCC-class kernels special-case, and it is the
+last one.
 
 The earlier count of 5 was measured before the last three defects landed. Six defects in the
 general path account for the 28 closed: a shared section clipped to BOTH trims (not
