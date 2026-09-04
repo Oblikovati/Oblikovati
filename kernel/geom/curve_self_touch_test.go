@@ -101,3 +101,29 @@ func TestCurveTouchesIsEmptyForSeparatedCircles(t *testing.T) {
 		t.Errorf("separated circles reported %d meetings", len(hits))
 	}
 }
+
+// A circle and a chord of it cross TRANSVERSALLY, and at the chord's own endpoints — the shape that
+// defeated two earlier refinements. An alternating coordinate descent stalled 3.1 mm short of the
+// crossing and a box-shrinking grid stalled 1.2 mm short, both reporting no meeting at all; the
+// nested golden section lands on it at machine precision (ADR-0061 stage 2).
+func TestCurveTouchesFindsATransversalCrossingAtAChordEnd(t *testing.T) {
+	t.Parallel()
+	circle, err := NewCircle(math.P3(0, 0, 0), math.V3(1, 0, 0), 5)
+	if err != nil {
+		t.Fatalf("circle: %v", err)
+	}
+	chord := NewLineSegment(math.P3(0, -4, -3), math.P3(0, 4, -3))
+	hits := CurveTouches(circle, chord, false, 1e-9)
+	if len(hits) != 2 {
+		t.Fatalf("a chord meets its circle %d times, want 2", len(hits))
+	}
+	for _, hit := range hits {
+		p, q := circle.PointAt(hit[0]), chord.PointAt(hit[1])
+		if d := float64(p.DistanceTo(q)); d > 1e-12 {
+			t.Errorf("the meeting at %v is %g apart, want coincident", p, d)
+		}
+		if y := stdmath.Abs(float64(p.Y)); stdmath.Abs(y-4) > 1e-9 {
+			t.Errorf("the meeting is at y = %g, want ±4", p.Y)
+		}
+	}
+}

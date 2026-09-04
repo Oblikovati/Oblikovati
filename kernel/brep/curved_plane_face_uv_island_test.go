@@ -126,9 +126,15 @@ func sampledRingArea(segs []uvSeg) float64 {
 	return stdmath.Abs(twice) / 2
 }
 
-// TestIslandContactOKDeclinesACrossedIsland: an island a straight imprint cuts through would be resolved
-// on the island's sampled chord, so the trim declines instead (#3460).
-func TestIslandContactOKDeclinesACrossedIsland(t *testing.T) {
+// TestACrossedIslandIsSolvedNotDeclined: an island a straight imprint cuts through used to be refused,
+// because the meeting would have been resolved on the island's sampled CHORD — off the true curve by
+// the sagitta — leaving a T-junction the stitch could not weld (#3460). It is now SOLVED:
+// islandStraightHits places the meeting exactly and splits both sides there, so the refusal is gone and
+// the configuration is built (ADR-0061 stage 2).
+//
+// The test asserts the solve, not merely the absence of the refusal: a gate that stopped refusing
+// without the incidence being placed would pass a weaker check and fail the body downstream.
+func TestACrossedIslandIsSolvedNotDeclined(t *testing.T) {
 	t.Parallel()
 	c := islandChart(t)
 	circle, err := geom.NewCircle(math.P3(0, 0, 3), math.V3(0, 0, 1), 5)
@@ -136,12 +142,23 @@ func TestIslandContactOKDeclinesACrossedIsland(t *testing.T) {
 		t.Fatal(err)
 	}
 	across := geom.NewLineSegment(math.P3(-8, 0, 3), math.P3(8, 0, 3))
-	clear := geom.NewLineSegment(math.P3(-8, 7, 3), math.P3(8, 7, 3))
-	if islandContactOK(c, []imprintCycle{oneCycle(circle)}, []geom.Curve3{across}) {
-		t.Error("a straight imprint crossing the island must decline")
+	if !islandContactOK(c, []imprintCycle{oneCycle(circle)}) {
+		t.Error("a straight imprint crossing an island is solved now, and must not decline")
 	}
-	if !islandContactOK(c, []imprintCycle{oneCycle(circle)}, []geom.Curve3{clear}) {
-		t.Error("a straight imprint clear of the island is fine")
+	split, onStraight := splitIslandsAtTouches([]imprintCycle{oneCycle(circle)}, []geom.Curve3{across})
+	if len(onStraight) != 2 {
+		t.Fatalf("the chord crosses the circle twice; %d crossings were solved on it", len(onStraight))
+	}
+	for _, cr := range onStraight {
+		if d := stdmath.Abs(float64(cr.at.X)) - 5; stdmath.Abs(d) > 1e-9 {
+			t.Errorf("a crossing landed at %v, want x = ±5 on the circle", cr.at)
+		}
+	}
+	// Three arcs, not two: the circle's own domain start is still an arc boundary, so cutting at two
+	// interior parameters leaves [lo,t1], [t1,t2], [t2,hi]. The two lobes are [t1,t2] and the pair that
+	// meet at the closure, which the welder rejoins.
+	if len(split[0]) != 3 {
+		t.Errorf("the island was split into %d arcs, want 3 (two crossings plus its own closure)", len(split[0]))
 	}
 }
 

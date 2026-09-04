@@ -41,7 +41,7 @@ func splitImprintByKind(imprint []geom.Curve3) (straight []geom.Curve3, islands 
 		}
 	}
 	cycles, rest := chainImprintCycles(arcs)
-	return straight, splitIslandsAtTouches(append(islands, cycles...)), rest
+	return straight, append(islands, cycles...), rest
 }
 
 // splitIslandsAtTouches makes every meeting between island arcs — with each other, or of an arc with
@@ -60,13 +60,13 @@ func splitImprintByKind(imprint []geom.Curve3) (straight []geom.Curve3, islands 
 // w → ±1) and the two arcs evaluate their shared point 1.03e-07 apart, past the arrangement's 1e-09
 // vertex weld. The meeting is TANGENTIAL either way, so nothing crosses and no sampling finds it;
 // geom.CurveTouches solves it.
-func splitIslandsAtTouches(islands []imprintCycle) []imprintCycle {
-	cuts, meets := islandTouchCuts(islands)
+func splitIslandsAtTouches(islands []imprintCycle, straight []geom.Curve3) ([]imprintCycle, []faceFrameCrossing) {
+	cuts, meets, onStraight := islandTouchCuts(islands, straight)
 	out := make([]imprintCycle, 0, len(islands))
 	for i, cyc := range islands {
 		out = append(out, splitCycleAt(withArcMeets(cyc, meets[i]), cuts[i]))
 	}
-	return out
+	return out, onStraight
 }
 
 // arcEnd names one arc of one island, for recording a solved meeting on it.
@@ -85,7 +85,7 @@ func withArcMeets(cyc imprintCycle, meets map[int][2]*math.Point3) imprintCycle 
 }
 
 // islandTouchCuts solves every meeting and sorts it into an interior cut or an end replacement.
-func islandTouchCuts(islands []imprintCycle) ([]map[int][]float64, []map[int][2]*math.Point3) {
+func islandTouchCuts(islands []imprintCycle, straight []geom.Curve3) ([]map[int][]float64, []map[int][2]*math.Point3, []faceFrameCrossing) {
 	cuts := make([]map[int][]float64, len(islands))
 	meets := make([]map[int][2]*math.Point3, len(islands))
 	for i := range islands {
@@ -95,7 +95,33 @@ func islandTouchCuts(islands []imprintCycle) ([]map[int][]float64, []map[int][2]
 		recordTouch(cuts, meets, islands, hit.a, hit.ta, hit.at)
 		recordTouch(cuts, meets, islands, hit.b, hit.tb, hit.at)
 	}
-	return cuts, meets
+	return cuts, meets, islandStraightHits(islands, straight, cuts, meets)
+}
+
+// islandStraightHits solves every meeting of an island arc with a STRAIGHT imprint segment, recording
+// the island side as a cut or an end and returning the straight side as a crossing the segment splits
+// at — the same shared point on both.
+//
+// A section circle and a chord across the same face meet at a point BOTH must place identically.
+// Without the solve each resolved it on its own sampling: on a sphere cap halved by a symmetry plane
+// the chord placed the meeting at y = 3.9996767 and the section arc at y = 3.9998829 where it is
+// exactly 4 — a chord SAGITTA apart — and the stitch was left with six open edges (ADR-0061 stage 2).
+// The plane chart already solves frame×imprint and open×straight; an island is the same incidence.
+func islandStraightHits(islands []imprintCycle, straight []geom.Curve3, cuts []map[int][]float64, meets []map[int][2]*math.Point3) []faceFrameCrossing {
+	var out []faceFrameCrossing
+	for si, seg := range straight {
+		for i, cyc := range islands {
+			for ai, arc := range cyc {
+				tol := islandTouchWeld(arc.curve)
+				for _, hit := range geom.CurveTouches(arc.curve, seg, false, tol) {
+					at := arc.curve.PointAt(hit[0])
+					recordTouch(cuts, meets, islands, arcEnd{island: i, arc: ai}, hit[0], at)
+					out = append(out, faceFrameCrossing{imp: si, sImp: hit[1], at: at})
+				}
+			}
+		}
+	}
+	return out
 }
 
 // islandTouch is one solved meeting: the two arcs, the parameter on each, and the point.
@@ -189,6 +215,7 @@ func splitArcAt(arc imprintArc, at []float64) imprintCycle {
 		return imprintCycle{arc}
 	}
 	sort.Float64s(inside)
+	inside = distinctParams(inside, stdmath.Abs(arc.t1-arc.t0)*arcEndFraction)
 	if arc.t1 < arc.t0 {
 		slices.Reverse(inside)
 	}
@@ -200,6 +227,18 @@ func splitArcAt(arc imprintArc, at []float64) imprintCycle {
 		prev, prevMeet = t, &at
 	}
 	return append(out, imprintArc{curve: arc.curve, t0: prev, t1: arc.t1, meet0: prevMeet, meet1: arc.meet1})
+}
+
+// distinctParams drops cuts that repeat one already taken, so a meeting reported twice does not split
+// an arc into a zero-length piece.
+func distinctParams(sorted []float64, apart float64) []float64 {
+	out := sorted[:0]
+	for i, t := range sorted {
+		if i == 0 || t-out[len(out)-1] > apart {
+			out = append(out, t)
+		}
+	}
+	return out
 }
 
 // betweenParams reports a parameter lying strictly within a span given in either direction.
@@ -390,7 +429,7 @@ func (c *planeFaceUV) islandSegs(islands []imprintCycle) []uvSeg {
 // such a meeting would be resolved on the island's sampled CHORD — off the true conic by the sagitta —
 // while the wall's own arrangement places it on the conic, leaving a T-junction the stitch cannot weld.
 // Both are named declines, never approximations (#3460).
-func islandContactOK(c *planeFaceUV, islands []imprintCycle, straight []geom.Curve3) bool {
+func islandContactOK(c *planeFaceUV, islands []imprintCycle) bool {
 	conics := make([]planeConic, 0, len(islands))
 	allConic := true
 	for _, cyc := range islands {
@@ -405,63 +444,57 @@ func islandContactOK(c *planeFaceUV, islands []imprintCycle, straight []geom.Cur
 		}
 		conics = append(conics, pc)
 	}
+	// An island MEETING a straight imprint is no longer refused: islandStraightHits solves that
+	// incidence and splits both sides at the one shared point, which is what the refusal was standing
+	// in for — the meeting used to be resolved on the island's sampled chord, off the true curve by the
+	// sagitta, leaving a T-junction the stitch could not weld (#3460). What remains is the contact no
+	// split can resolve: two islands that are not nested and not apart.
+	//
 	// A CONIC island is tested in closed form. Any other analytic island — a torus's spiric oval — is
 	// tested by walking itself, which is exact evaluation of an exact curve: the property is geometric,
 	// not a property of being a conic, and requiring one declined every spiric outright
 	// (ADR-0061 stage 3).
 	if allConic {
-		for i := range islands {
-			if !conicClearOfSegments(c, conics[i], straight) {
-				return false
-			}
-		}
 		return conicsNestedOrApart(conics)
 	}
-	for _, cyc := range islands {
-		if !islandWalkClearOfSegments(c, cyc, straight) {
-			return false
-		}
-	}
 	return islandsWalkNestedOrApart(c, islands)
-}
-
-// islandWalkClearOfSegments reports one island staying clear of every straight imprint, by walking the
-// island and measuring to each segment.
-func islandWalkClearOfSegments(c *planeFaceUV, cyc imprintCycle, straight []geom.Curve3) bool {
-	for _, imp := range straight {
-		a2, b2 := to2D(c.plane, imp.PointAt(0)), to2D(c.plane, imp.PointAt(1))
-		for _, p := range islandWalk(c, cyc) {
-			if pointSegmentDistance2D(p, a2, b2) <= c.res.Sew() {
-				return false
-			}
-		}
-	}
-	return true
 }
 
 // islandsWalkNestedOrApart reports every island pair being wholly apart or wholly nested, by walking one
 // against the other's sampled ring: a pair that CROSSES has samples on both sides.
 func islandsWalkNestedOrApart(c *planeFaceUV, islands []imprintCycle) bool {
-	for i := range islands {
-		for j := range islands {
-			if i == j {
-				continue
-			}
-			ring := islandWalk(c, islands[j])
-			in, out := 0, 0
-			for _, p := range islandWalk(c, islands[i]) {
-				if pointInRing2D(p, ring) {
-					in++
-				} else {
-					out++
-				}
-			}
-			if in > 0 && out > 0 {
+	// Each island is walked ONCE. Walking it again inside the pair loop re-sampled and re-allocated
+	// every ring per comparison, which is quadratic in the island count on top of the quadratic point
+	// test — and the arcs a solved crossing splits an island into multiply the samples. Measured, this
+	// gate alone took kernel/brep to 719 s.
+	rings := make([][]math.Point2, len(islands))
+	for i, cyc := range islands {
+		rings[i] = islandWalk(c, cyc)
+	}
+	for i := range rings {
+		for j := range rings {
+			if i != j && ringStraddles(rings[i], rings[j]) {
 				return false
 			}
 		}
 	}
 	return true
+}
+
+// ringStraddles reports a ring with points both inside and outside another — neither nested nor apart.
+func ringStraddles(ring, other []math.Point2) bool {
+	in, out := false, false
+	for _, p := range ring {
+		if pointInRing2D(p, other) {
+			in = true
+		} else {
+			out = true
+		}
+		if in && out {
+			return true
+		}
+	}
+	return false
 }
 
 // islandWalk samples one island cycle into its (u,v) ring, arc by arc in traversal order.
@@ -489,18 +522,6 @@ func pointInRing2D(p math.Point2, ring []math.Point2) bool {
 		}
 	}
 	return in
-}
-
-// conicClearOfSegments reports one island crossing (or grazing) no straight imprint segment.
-func conicClearOfSegments(c *planeFaceUV, pc planeConic, straight []geom.Curve3) bool {
-	for _, imp := range straight {
-		a2, b2 := to2D(c.plane, imp.PointAt(0)), to2D(c.plane, imp.PointAt(1))
-		hits, tangent := conicEdgeHits(pc, a2, b2, c.res)
-		if tangent || len(hits) > 0 {
-			return false
-		}
-	}
-	return true
 }
 
 // conicsNestedOrApart reports every island pair being strictly apart or strictly nested — the two
