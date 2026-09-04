@@ -164,13 +164,21 @@ Measured, so the search is over:
   DIFFERENCE of its lobes' and names no region — but the figure-eight takes the
   wrapping path (`wrappingComponents`), where that flag is never read.
 
-So the fault is between correct cells and a wrong boundary: `keptComponents` /
-`keptBoundaryEdges` on a doubly-periodic chart, which orient edges so the kept
-material is on the left and do not, for a component whose boundary is a
-self-touching pair of tube-wrapping rings.
+- the emitted BOUNDARY is right too. Stepping to the left of the longest boundary
+  edge lands in a kept cell, so `keptBoundaryEdges` did put the material on the
+  left, and reversing the traversal changes nothing downstream.
 
-It is the case this ADR predicted OCC-class kernels special-case, and it is the
-last one.
+So the boolean is not what is wrong here. The face it emits is bounded correctly
+and consistently with the cells; what disagrees is how a face bounded by two
+TOUCHING tube-wrapping rings is READ — by `pointInCurvedFace`, which takes
+inwardness from a nearest foot and the loop's local direction, and by the
+tessellator, which picks a band from the same winding. Both name the other band,
+and both are downstream of the operation.
+
+That is where the remaining work sits, and it is not the boolean's: a face whose
+boundary turns a period has two candidate regions, and the readers pick between
+them by a rule the emitter does not share. It is the case this ADR predicted
+OCC-class kernels special-case, and it is the last one.
 
 The earlier count of 5 was measured before the last three defects landed. Six defects in the
 general path account for the 28 closed: a shared section clipped to BOTH trims (not
