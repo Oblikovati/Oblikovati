@@ -227,6 +227,24 @@ add a fifth rule for loops that wrap. That is an architectural change and it wan
 its own ADR — it would DELETE the wrapping-loop special cases rather than join
 them, which is the shape this repository's rules ask for.
 
+**And the cheap version of it does not work, which is worth knowing before anyone
+tries.** `regionSignedArea` already reassembles the closed contour by concatenating
+the wrapping rings, and the obvious economy is to classify a POINT against that
+same concatenation rather than build the seam. Measured: it takes the figure-eight
+from 84 wrong sample points to 10, and takes the ordinary perpendicular torus band
+from 0 to 115 of 120 — it INVERTS a case that works today.
+
+The reason is exact. `loopToUV` unwraps each loop onto whichever turn it started
+on, so two rims of one band routinely land on different branches, one walking
+0→2π and the next 2π→4π. A SHOELACE survives that — the closing chords still
+supply the seams, which is the whole trick regionSignedArea relies on — but
+even-odd does not: the concatenation of two independently-unwrapped rings is a
+zigzag, not a contour, and a ray cast through it counts nothing meaningful.
+Aligning the branches first does not rescue it either (tried, measured, no change).
+
+A contour cannot be reassembled after the fact; it has to be carried. That is what
+OCCT's explicit seam edge IS, and why it is load-bearing rather than a convenience.
+
 The earlier count of 5 was measured before the last three defects landed. Six defects in the
 general path account for the 28 closed: a shared section clipped to BOTH trims (not
 just the planar one); a slit, which bounds nothing, no longer cutting a section; the
