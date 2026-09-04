@@ -105,3 +105,46 @@ func TestFluxDomainTakesTheSurfaceDomainForAnIsolineRing(t *testing.T) {
 		t.Errorf("window v ∈ [%g, %g] spans %g, want the sphere's whole latitude range (π)", v0, v1, v1-v0)
 	}
 }
+
+// TestTubeWrappingRingReadsByItsWindingToo: a torus is periodic in BOTH directions, and a ring may turn
+// either. A rim turns the azimuth; a SPIRIC OVAL — what every plane parallel to the axis cuts — turns
+// the tube. Both are open polylines in the covering space, and both are read by their winding; the two
+// axes differ in sign because the quarter turn to the material side does (ADR-0062).
+func TestTubeWrappingRingReadsByItsWindingToo(t *testing.T) {
+	t.Parallel()
+	// Two ovals at u = 1 and u = 4, each turning the tube. Material on the LEFT: a ring run with +v
+	// carries it at smaller u, so the band between them is bounded by (+v at u=4, −v at u=1).
+	oval := func(u float64, forward bool) []math.Point2 {
+		const n = 32
+		out := make([]math.Point2, 0, n+1)
+		for i := 0; i <= n; i++ {
+			v := 2 * stdmath.Pi * float64(i) / n
+			if !forward {
+				v = 2*stdmath.Pi - v
+			}
+			out = append(out, math.P2(math.Scalar(u), math.Scalar(v)))
+		}
+		return out
+	}
+	between := trimRegion{
+		rings:     [][]math.Point2{oval(4, true), oval(1, false)},
+		uPeriodic: true, vPeriodic: true,
+	}
+	inBand := math.P2(2.5, 1)  // between u=1 and u=4
+	outBand := math.P2(5.5, 1) // beyond u=4, round through the seam to u=1
+	if !between.contains(inBand) {
+		t.Error("the band between the two ovals does not hold a point between them")
+	}
+	if between.contains(outBand) {
+		t.Error("it holds a point outside them, through the seam")
+	}
+	// Wound the other way it is the complementary band.
+	other := trimRegion{
+		rings:     [][]math.Point2{oval(4, false), oval(1, true)},
+		uPeriodic: true, vPeriodic: true,
+	}
+	if other.contains(inBand) || !other.contains(outBand) {
+		t.Errorf("the oppositely wound pair reads (%v, %v), want the complementary band",
+			other.contains(inBand), other.contains(outBand))
+	}
+}

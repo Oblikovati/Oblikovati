@@ -54,23 +54,35 @@ func (r trimRegion) contains(q math.Point2) bool {
 // point and a box be taken from a two-rim band at all (#3506, ADR-0060).
 func (r trimRegion) ringsEnclose(q math.Point2) bool {
 	inside := false
-	var wrapping [][]math.Point2
+	var wrapU, wrapV [][]math.Point2
 	for _, ring := range r.rings {
-		if r.uPeriodic && ringClosesByAWholeTurn(ring, func(p math.Point2) float64 { return float64(p.X) }) {
+		switch {
+		case r.uPeriodic && ringClosesByAWholeTurn(ring, ringUOf):
 			if r.vPeriodic {
-				wrapping = append(wrapping, ring) // decided together by their winding, below
+				wrapU = append(wrapU, ring) // decided together by their winding, below
 				continue
 			}
 			inside = inside != (upwardRayCrossings(ring, shiftIntoRingBranch(ring, q))%2 == 1)
-			continue
+		case r.uPeriodic && r.vPeriodic && ringClosesByAWholeTurn(ring, ringVOf):
+			// A ring that turns the TUBE rather than the azimuth — a torus's spiric oval. It is as
+			// open a polyline in the covering space as a rim is, in the other coordinate.
+			wrapV = append(wrapV, ring)
+		default:
+			inside = inside != pointInLoops2D([][]math.Point2{ring}, q)
 		}
-		inside = inside != pointInLoops2D([][]math.Point2{ring}, q)
 	}
-	if len(wrapping) == 0 {
-		return inside
+	if len(wrapU) > 0 {
+		inside = inside != r.betweenPeriodicRims(wrapU, q, true)
 	}
-	return inside != r.betweenPeriodicRims(wrapping, q)
+	if len(wrapV) > 0 {
+		inside = inside != r.betweenPeriodicRims(wrapV, q, false)
+	}
+	return inside
 }
+
+// ringUOf and ringVOf read a sample's two coordinates, for the wrap tests.
+func ringUOf(p math.Point2) float64 { return float64(p.X) }
+func ringVOf(p math.Point2) float64 { return float64(p.Y) }
 
 // betweenPeriodicRims decides whether q lies in the band a set of azimuth-wrapping rims bounds, on a
 // surface whose v is ITSELF a period — a torus.
@@ -85,44 +97,89 @@ func (r trimRegion) ringsEnclose(q math.Point2) bool {
 // material is on. A rim traversed in +u carries the face's material on its left, which is +v; one
 // traversed in −u carries it below. So q is inside exactly when the nearest rim above it has its
 // material BELOW it — that rim is the band's top, and q is under it.
-func (r trimRegion) betweenPeriodicRims(rims [][]math.Point2, q math.Point2) bool {
-	bestGap, materialBelow, found := stdmath.Inf(1), false, false
+func (r trimRegion) betweenPeriodicRims(rims [][]math.Point2, q math.Point2, alongU bool) bool {
+	bestGap, materialBehind, found := stdmath.Inf(1), false, false
 	for _, rim := range rims {
-		v, ok := ringVAtU(rim, float64(q.X))
+		level, ok := ringLevelAt(rim, q, alongU)
 		if !ok {
 			continue
 		}
-		gap := wrapToPeriod(v - float64(q.Y))
+		gap := wrapToPeriod(level - acrossOf(q, alongU))
 		if gap < bestGap {
-			bestGap, materialBelow, found = gap, ringNetU(rim) < 0, true
+			bestGap, materialBehind, found = gap, rimMaterialBehind(rim, alongU), true
 		}
 	}
-	return found && materialBelow
+	return found && materialBehind
+}
+
+// rimMaterialBehind reports whether a wrapping rim carries the face's material on the side the search
+// came FROM — the side of smaller across-coordinate.
+//
+// Material lies on the LEFT of the traversal, and left is the direction a quarter turn on. A rim
+// running with +u therefore has it at +v, so one running with −u has it BELOW: material behind. A ring
+// running with +v has it at −u, so material is behind for +v. The two axes differ in sign because the
+// quarter turn does.
+func rimMaterialBehind(rim []math.Point2, alongU bool) bool {
+	if alongU {
+		return ringNet(rim, ringUOf) < 0
+	}
+	return ringNet(rim, ringVOf) > 0
+}
+
+// ringLevelAt interpolates a wrapping ring's ACROSS coordinate where it passes the query's ALONG one.
+func ringLevelAt(ring []math.Point2, q math.Point2, alongU bool) (float64, bool) {
+	if alongU {
+		return ringCrossAt(ring, float64(q.X), ringUOf, ringVOf)
+	}
+	return ringCrossAt(ring, float64(q.Y), ringVOf, ringUOf)
+}
+
+// acrossOf is the query point's coordinate ACROSS the wrap direction.
+func acrossOf(q math.Point2, alongU bool) float64 {
+	if alongU {
+		return float64(q.Y)
+	}
+	return float64(q.X)
 }
 
 // ringVAtU interpolates a wrapping rim's v at azimuth u, taking the point into the rim's own branch.
-func ringVAtU(ring []math.Point2, u float64) (float64, bool) {
-	q := shiftIntoRingBranch(ring, math.P2(math.Scalar(u), 0))
+func ringCrossAt(ring []math.Point2, at float64, along, across func(math.Point2) float64) (float64, bool) {
+	shifted := shiftAlongIntoBranch(ring, at, along)
 	closed := append(append([]math.Point2{}, ring...), closingImage(ring, false, true))
 	for i := 1; i < len(closed); i++ {
 		a, b := closed[i-1], closed[i]
-		lo, hi, ylo, yhi := float64(a.X), float64(b.X), float64(a.Y), float64(b.Y)
+		lo, hi, ylo, yhi := along(a), along(b), across(a), across(b)
 		if lo > hi {
 			lo, hi, ylo, yhi = hi, lo, yhi, ylo
 		}
-		if lo == hi || float64(q.X) < lo || float64(q.X) >= hi {
+		if lo == hi || shifted < lo || shifted >= hi {
 			continue
 		}
-		return ylo + (yhi-ylo)*(float64(q.X)-lo)/(hi-lo), true
+		return ylo + (yhi-ylo)*(shifted-lo)/(hi-lo), true
 	}
 	return 0, false
 }
 
-// ringNetU is a wrapping rim's signed azimuth travel: +2π when it runs with increasing u, −2π against.
-func ringNetU(ring []math.Point2) float64 {
+// shiftAlongIntoBranch moves a coordinate by whole turns into the span the ring's samples cover.
+func shiftAlongIntoBranch(ring []math.Point2, at float64, along func(math.Point2) float64) float64 {
+	lo, hi := stdmath.Inf(1), stdmath.Inf(-1)
+	for _, p := range append(append([]math.Point2{}, ring...), closingImage(ring, false, true)) {
+		lo, hi = stdmath.Min(lo, along(p)), stdmath.Max(hi, along(p))
+	}
+	for at < lo {
+		at += twoPi
+	}
+	for at > hi {
+		at -= twoPi
+	}
+	return at
+}
+
+// ringNet is a wrapping ring's signed travel in the given coordinate: ±2π for a ring that turns it.
+func ringNet(ring []math.Point2, coord func(math.Point2) float64) float64 {
 	net := 0.0
 	for i := 1; i < len(ring); i++ {
-		net += float64(ring[i].X - ring[i-1].X)
+		net += coord(ring[i]) - coord(ring[i-1])
 	}
 	return net
 }
