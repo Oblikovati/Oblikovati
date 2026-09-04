@@ -125,6 +125,27 @@ split pipeline of their own, and until the mixed boolean charts them the old pip
 deleted. The corrected order is: close the cone's axis-parallel hyperbola, chart the sphere and the
 torus, then land stage 2's deletions in one commit, because one equivalence unlocks all of them.
 
+**Measured progress, 2026-09-04.** Rewiring `HalfSpaceCut` to the bounded
+difference costs **5** failing tests in `kernel/`, down from 33. Six defects in the
+general path account for the 28 closed: a shared section clipped to BOTH trims (not
+just the planar one); a slit, which bounds nothing, no longer cutting a section; the
+parabola admitted as the third conic; a cone bounded by its own apex; an imprint
+assembled into cycles before it is classified; and two rims on a periodic axis
+bounding two bands, with the winding saying which.
+
+The five that remain are one defect and one deletion. Four of them —
+sphere∩box twice and the two curved-boolean corpora — reduce to a single fact that
+needs no boolean to see: `query.AnalyticFaceArea` measures a whole sphere exactly
+and DECLINES a hemisphere. `faceHoldsEnclosedRegion` cannot certify which side of
+the boundary the face is, because the probe walks a band's v-span and a cap's single
+azimuth-wrapping rim is a constant-latitude circle with no v-span at all. Those
+bodies are therefore measured by TESSELLATION, and the tessellator reads a face's
+region from its loop winding — which the orientation two-colouring picks freely — so
+the same sphere patch measures 200.67 one way and 174.33 the other. It is the same
+shape as the degenerate ring box fixed in `fluxDomain`, one layer further out.
+`TestLoopedSplitHalvesACapBySymmetry` is a unit test of `loopedSplit` and goes with
+the deletion.
+
 **The gate is the table above, kept as a corpus test.** `TestHalfSpaceCutEqualsABoundedDifference`
 compares the two paths on every row and records which still differ. It is a ratchet: a row that moves
 from "differs" to "equal" is a stage landing, and no row may move the other way.
