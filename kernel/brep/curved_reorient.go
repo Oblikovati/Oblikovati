@@ -97,10 +97,43 @@ func applyCurvedFlips(faces []curvedFace, flip []bool) []curvedFace {
 // flipping the marked faces, every shared edge is traversed in opposite directions by its two faces.
 func curvedOrientationFlips(faces []curvedFace, pw *welder3) []bool {
 	flip := make([]bool, len(faces))
-	walkFaceComponents(curvedFaceAdjacency(faces, pw), func(from, to int, sameDir bool) {
+	comps := walkFaceComponents(curvedFaceAdjacency(faces, pw), func(from, to int, sameDir bool) {
 		flip[to] = flip[from] != sameDir // flip[nbr] = flip[f] XOR sameDir
 	})
+	for _, comp := range comps {
+		anchorOnClosedSurface(faces, comp, flip)
+	}
 	return flip
+}
+
+// anchorOnClosedSurface settles a component's FREE bit: a two-colouring says which faces must differ,
+// never which colour is which, so flipping a whole component is always admissible. That freedom is not
+// harmless. Reversing a face's loops leaves the region it denotes alone on an OPEN surface — the region
+// is the loops' interior either way — but on a CLOSED one a loop and its reverse bound complementary
+// regions, and the readers that measure a face take the region from its traversal.
+//
+// So a closed-surface face anchors the component: it keeps the winding it was built with, and the open
+// faces around it move. Without this the sphere patch of a sphere∩box corner came out wound against the
+// solid it bounds, and brep.PointInFaceTrim then answered EVERY point of it inverted — the south pole
+// outside the face, the north pole inside — while the body stayed manifold and closed, because
+// traversal consistency cannot see the difference (ADR-0062).
+//
+// The lowest index anchors, so the choice is deterministic. A component with no closed-surface face is
+// left exactly as the two-colouring set it.
+func anchorOnClosedSurface(faces []curvedFace, comp []int, flip []bool) {
+	anchor := -1
+	for _, i := range comp {
+		if geom.SurfaceIsClosed(faces[i].surface) {
+			anchor = i
+			break
+		}
+	}
+	if anchor < 0 || !flip[anchor] {
+		return
+	}
+	for _, i := range comp {
+		flip[i] = !flip[i]
+	}
 }
 
 // connectedFaceComponents groups the faces into connected components over the adjacency (one per shell),
@@ -128,13 +161,15 @@ func connectedFaceComponents(adj [][]orientFlipNeighbour) [][]int {
 
 // walkFaceComponents breadth-first walks every connected component of the adjacency, calling visit on
 // each tree edge (from an already-reached face to a newly reached neighbour) in discovery order.
-func walkFaceComponents(adj [][]orientFlipNeighbour, visit func(from, to int, sameDir bool)) {
+func walkFaceComponents(adj [][]orientFlipNeighbour, visit func(from, to int, sameDir bool)) [][]int {
 	seen := make([]bool, len(adj))
+	var comps [][]int
 	for s := range adj {
 		if seen[s] {
 			continue
 		}
 		seen[s] = true
+		members := []int{s}
 		for q := []int{s}; len(q) > 0; {
 			f := q[0]
 			q = q[1:]
@@ -144,10 +179,13 @@ func walkFaceComponents(adj [][]orientFlipNeighbour, visit func(from, to int, sa
 				}
 				seen[e.face] = true
 				visit(f, e.face, e.sameDir)
+				members = append(members, e.face)
 				q = append(q, e.face)
 			}
 		}
+		comps = append(comps, members)
 	}
+	return comps
 }
 
 // curvedFaceAdjacency lists, per face, the faces it shares a manifold edge with and whether that edge is
