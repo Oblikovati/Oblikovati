@@ -24,19 +24,21 @@ func TestClosedSurfaceFaceKeepsItsWindingThroughTheReorient(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidSphere: %v", err)
 	}
-	pZ, err := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1)) // keep z ≤ 0
+	// Both cuts as ordinary differences against a block, which is what a half-space cut IS
+	// (ADR-0062): keep z ≤ 0, then x ≤ 2.
+	overZ, err := SolidBlock(math.P3(-9, -9, 0), math.P3(9, 9, 9), "overz")
 	if err != nil {
-		t.Fatalf("NewPlane: %v", err)
+		t.Fatalf("SolidBlock: %v", err)
 	}
-	hemi, err := Boolean(Difference, sphere, halfSpacePrism(pZ, sphere.RangeBox()))
+	hemi, err := Boolean(Difference, sphere, overZ)
 	if err != nil {
 		t.Fatalf("Difference (hemisphere): %v", err)
 	}
-	pX, err := geom.NewPlane(math.P3(2, 0, 0), math.V3(1, 0, 0)) // and x ≤ 2
+	pastX, err := SolidBlock(math.P3(2, -9, -9), math.P3(9, 9, 9), "pastx")
 	if err != nil {
-		t.Fatalf("NewPlane: %v", err)
+		t.Fatalf("SolidBlock: %v", err)
 	}
-	corner, err := Boolean(Difference, hemi, halfSpacePrism(pX, hemi.RangeBox()))
+	corner, err := Boolean(Difference, hemi, pastX)
 	if err != nil {
 		t.Fatalf("Difference: %v", err)
 	}
