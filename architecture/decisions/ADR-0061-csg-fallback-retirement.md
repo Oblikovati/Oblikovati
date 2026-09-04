@@ -136,3 +136,56 @@ Until a stage lands, the tests that assert a fallback FIRES (`boolean_partial_ri
 `partial_rim_decline_test`, `diag_integration_test`) stay as they are: they assert the decline code,
 never the faceted body, so each converts to a positive corpus case when its configuration lands rather
 than being deleted to make a number move.
+
+## Stage 2: what the rewire still costs, measured 2026-09-04
+
+The half-space rewire (`HalfSpaceCut` → `Boolean(Difference, body, BoundedHalfSpace(plane, box))`) now
+costs **three** failures, down from thirty-three. ADR-0063's carried chart and the solved section touch
+took the rest. What is left is recorded here so the next attempt starts from the measurements rather
+than from the symptoms.
+
+**1. The oblique figure-eight: tangency is coincidence, not proximity.** The two spiric lobes arrive as
+separate closed ovals that meet at the pinch. Their endpoints are evaluated independently and land
+1.03e-07 apart, because the spiric's `u(v) = Φ ± arccos w` is ill-conditioned there — `d(arccos)/dw`
+diverges as `w → ±1`. Carrying the SOLVED meeting on the arc ends (`imprintArc.meet0/meet1`) fixes that
+much: measured, the arrangement goes from **one** kept cell to the **two** lobes it should have, each
+25.266.
+
+It is still one traced loop, and the reason is not a tolerance. Near a tangential contact the two curves
+separate QUADRATICALLY, so over a stretch either side of the pinch they are indistinguishable at the
+arrangement's own `arrTol` of 1e-09 — the two cells share EDGES there, not a point, and
+`keptComponents` reports one component. Grouping on the finer grid was tried and does not help
+(measured, reverted); neither does splitting a traced loop wherever it approaches itself within
+`tjTol` (measured, does not fire). What this needs is to COLLAPSE a tangential coincidence to its solved
+contact — to recognise that a stretch of two curves lying within tolerance of each other is one point,
+not a shared edge. That is a distinct piece of work and it is the whole of this row.
+
+Note the shipping path does NOT take that route: through the mixed boolean the same body is exact
+(0.000000 against OCC on both axis-parallel rows, 0.015 and 0.012 on the oblique pair).
+
+**2. `TestLoopedSplitHalvesACapBySymmetry`: one corner placed three ways.** A sphere cap halved by a
+symmetry plane leaves six open edges. The corner at (0, ±4, −3) — where the cap's rim circle meets the
+cutting plane — is emitted three times over:
+
+| placed by | value |
+| --- | --- |
+| the sphere patch's rim arc | (0, 4, −3) exactly |
+| two `LineSegment`s | y = 3.9996767761694647 |
+| an `Arc3d` | (0, 3.999882919988047, −3.000156100336764) |
+
+The disagreement is 3.2e-04, which is the chord SAGITTA at the sampling density — some path resolves
+that incidence on a sampled polyline instead of solving it. Two candidates were checked and are NOT the
+source: the lid's own frame×imprint crossings ARE solved exactly (measured, at ±4 to the printed
+precision), and the prism face's straight imprint does not reach the section circle at all
+(`geom.CurveTouches` returns no hit), so an island×straight incidence is not it either. The producer of
+the 3.9996767 point is not yet identified; find it before writing any code.
+
+Worth checking while there: `sphereFaceUV` never populates `loopFrame.crossings`, while `ruledFaceUV`
+does through `admits`. Adding the call changed nothing measurable on this case, so it was not kept — but
+the asymmetry is real and may matter elsewhere.
+
+**3. `torus − box (figure-eight pinch)` still declines to CSG under the rewire**, though the same case
+is exact on the shipping path.
+
+The `fallbackDebt` ratchet is unmoved at 5 / 3 / 38: no door has closed yet. Stage 2 lands when these
+three are green, and not before.
