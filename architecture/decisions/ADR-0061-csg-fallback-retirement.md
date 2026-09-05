@@ -182,13 +182,20 @@ precision), and the prism face's straight imprint does not reach the section cir
 (`geom.CurveTouches` returns no hit), so an island×straight incidence is not it either. The producer of
 the 3.9996767 point is not yet identified; find it before writing any code.
 
-**A third candidate was checked and is also not sufficient, but it IS a real gap.** `sphereFaceUV` never
+**A third candidate was checked and REFUTED — it is not a gap at all.** `sphereFaceUV` never
 populates `loopFrame.crossings`, while `ruledFaceUV` does through `admits` — so the sphere chart samples
 straight past its own frame×imprint incidences where the ruled chart solves them. Adding
 `c.crossings, _ = c.solveFrameCrossings(imprint)` to `sphereFaceUV.assembleSegments` DOES find them
 (measured: two crossings on this body, where there were none), and the body still does not close, so it
-was not kept for want of a case that turns green. Anyone picking this up should put it back first: the
-asymmetry is a defect whether or not it is the whole of this one.
+was not kept for want of a case that turns green.
+
+  **Measured 2026-09-05 and dropped for good.** A direct test — a sphere cap whose rim is cut by a
+  section, asserting the assembled boundary carries a vertex at the exact crossing — passes at
+  **9.2e-16 WITHOUT the call** and 6.7e-16 with it. The sphere chart already places that incidence
+  exactly; `solveSeamCrossings` and the frame sampling between them cover it. The call is neutral on
+  the shipping path and on the rewire count, and now neutral on the property it was supposed to fix, so
+  there is nothing to keep. Do not propose it a fourth time: the asymmetry with `ruledFaceUV` is real
+  in the source and empty in effect.
 
 The sphere face's own emission is where to look next. Its loop still carries an arc ending at
 (0, 3.999882919988047, −3.000156100336764) — a point ON the sphere but 1.56e-04 off the rim — while a
