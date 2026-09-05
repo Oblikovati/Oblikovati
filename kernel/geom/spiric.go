@@ -223,13 +223,21 @@ func spiricTubeSpans(t Torus, m, k, c float64) (spans [][2]float64, whole bool) 
 
 // harmonicRoots solves A·cos v + B·sin v = D for v in [−π, π), as the two roots of
 // cos(v − atan2(B, A)) = D / √(A²+B²) when that ratio is within reach.
+//
+// The ratio goes through spiricCosineAtLimit for the same reason w does: |D| = amp is the TANGENCY,
+// where the two roots coincide, and arccos is infinitely steep there. A ratio short of 1 by half an ulp
+// put the double root's two halves 1.5·10⁻⁸ apart in v — 1.03·10⁻⁷ apart on a tube of radius 2 — so the
+// section's two lobes each came back as an arc that does not close on itself, by a hair. Downstream
+// that is not a hair: the stitch stores a near-closed edge as an OPEN one and recovers its direction by
+// inverting the curve at endpoints 10⁻⁷ apart, which does not round-trip, and one lobe's loop came back
+// wound against its own material (ADR-0061).
 func harmonicRoots(a, b, d float64) []float64 {
 	amp := stdmath.Hypot(a, b)
 	if amp == 0 || stdmath.Abs(d) > amp {
 		return nil
 	}
 	base := stdmath.Atan2(b, a)
-	off := stdmath.Acos(math.Clamp(d/amp, -1, 1))
+	off := stdmath.Acos(spiricCosineAtLimit(d / amp))
 	return []float64{wrapToPi(base + off), wrapToPi(base - off)}
 }
 

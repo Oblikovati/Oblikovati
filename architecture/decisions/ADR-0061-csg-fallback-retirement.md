@@ -520,3 +520,43 @@ What is left is the emission itself: one of the two lobe loops is emitted with t
 RIGHT. `materialSideVotes` already answers that question per loop; the producer does not ask it.
 
 Recorded rather than fixed, so the next pass starts from the measurement.
+
+## The oblique figure-eight was one arccos away, and the rewire is now GREEN (2026-09-05, later still)
+
+The previous section's reading — "the two lids wind oppositely as built" — was a symptom, and chasing it
+through the emission was the wrong direction. The cause is one line upstream, and it is the same defect
+as the pinch's, in the other root solver.
+
+`spiricTubeSpans` finds the tube angles the plane reaches by solving `|w(v)| = 1`, which
+`harmonicRoots` turns into `cos(v − atan2(B, A)) = D / amp`. At a TANGENCY `|D| = amp`, the two roots
+coincide, and arccos is infinitely steep there: a ratio short of 1 by half an ulp put the double root's
+two halves **1.5·10⁻⁸ apart in v**, so each lobe of the section came back as an arc that misses closing
+on itself by **1.03·10⁻⁷** — the number that has been turning up all evening.
+
+A hair in the section is not a hair downstream. `stitchKeyFor` welds a loop edge's two ends and calls
+the edge CLOSED when they weld together; 10⁻⁷ apart they do not, so a near-closed lobe was stored as an
+OPEN edge whose direction is recovered on read-back by inverting the curve at two endpoints 10⁻⁷ apart.
+That does not round-trip, and one lobe's loop came back wound against its own material — measured, the
+lids read −31/−31 during construction and −31/**+31** when read straight off the stored body.
+
+The fix is `spiricCosineAtLimit`, which already exists for exactly this and was already applied to `w`:
+where the exact value is in hand, do not feed the ill-conditioned formula a near-value. Routing the
+harmonic root's cosine through it makes the two roots coincide EXACTLY, so each lobe closes to 2·10⁻¹⁶
+and both lobes meet at one point. No new tolerance, no new recognizer, one shared helper.
+
+**Every torus figure-eight row is now exact against OCC:**
+
+| row | ours | OCC |
+| --- | --- | --- |
+| `torus ∩ box (figure-eight pinch)` | 114.886320 | 114.886326 |
+| `torus − box (figure-eight pinch)` | 279.897856 | 279.897854 |
+| `torus ∩ box (oblique figure-eight)` | 151.898715 | 151.898735 |
+| `torus − box (oblique figure-eight)` | 242.885461 | 242.885450 |
+
+and the no-op difference that rebuilt the oblique band as its complement returns it unchanged.
+
+**The rewire is green.** `go test ./kernel/...` with `HalfSpaceCut` rewired to
+`Boolean(Difference, body, BoundedHalfSpace(plane, box))`: 36 packages, **zero failures**. The shipping
+path with the rewire parked, plus `./archguard/` and `./model/...`, is green too. The instrument that
+has measured this stage since 2026-09-03 — 33 failures at the start, 6 after ADR-0063, then 5, 3, 2 —
+now measures nothing, which is the gate stage 2 was waiting on.
