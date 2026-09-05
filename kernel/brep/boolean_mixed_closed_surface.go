@@ -62,11 +62,6 @@ func closedSurfaceUncovered(sf curvedFace, box math.Box, other *facePartition) b
 			return true
 		}
 	}
-	for _, b := range other.wallBox {
-		if box.Intersects(inflateBox(b)) {
-			return true
-		}
-	}
 	for _, b := range append(append([]math.Box(nil), other.sphereBox...), other.torusBox...) {
 		if box.Intersects(inflateBox(b)) {
 			return true

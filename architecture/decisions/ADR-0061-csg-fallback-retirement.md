@@ -740,3 +740,41 @@ was reaching it through the dead wrapper; it now calls `resolveEdgeUses` directl
 that does the work.
 
 `mapOrderDebt["brep/boolean_radial_edge.go"]` falls 2 → 1: `sortedPairKeys` ranged a map.
+
+## Stage 4 begins: the first curved-versus-curved crossing (2026-09-05)
+
+Sized the way the ground rules ask — one representative case driven to a valid solid before anything is
+generalised. The case is the coaxial **plug**: a ball of radius 5 and a rod of radius 3 whose axis
+passes through the centre, intersected.
+
+`closedSurfaceUncovered` declined it on box overlap alone. It now pairs the buckets the way the
+plane×wall pairing already does — solve the crossing ONCE, in closed form, and write the same curves
+into both sides' imprint lists, so the two charts split on identical coordinates and their fragments
+weld. The general intersector already answers the pair: `IntersectSurfacesAnalytic(sphere, cylinder)`
+takes the parametric×implicit bucket and returns two closed curves, each closing to ~10⁻¹⁵.
+
+Measured, through `brep.Boolean` — BELOW the recognizer list, so it measures the general pipeline and
+not the recognizer that still claims this shape first: **3 faces, valid, volume 127.7581 against an
+analytic 127.7581** (a cylinder to the crossing at y = 4 plus the cap above it).
+
+**The scope is narrow and named**, because a slice that quietly did more would be the try-ladder this
+retirement exists to delete:
+
+- the closed surface must be BOUNDARY-LESS, so every crossing is inside its trim by construction;
+- every crossing must come back CLOSED, so it is an island on both charts and each splits by even-odd
+  containment alone;
+- every crossing must lie strictly inside the wall's band or strictly clear of it. **A crossing with the
+  INFINITE ruled surface is not a crossing with the wall** — a rod starting at the ball's centre crosses
+  the sphere in two circles and only one is on the rod — and imprinting the other cuts the ball where
+  nothing touches it.
+
+`bandPlacement` is now one rule with two span sources: a conic's centre and amplitude in closed form,
+or a general crossing walked. `spansOverlap` lost its `pad` parameter, which every caller passed the
+same constant for.
+
+**What this slice does NOT do, measured.** The same pair's CUT and JOIN still decline, and the reason is
+one step further in: the ball minus the rod is the sphere MINUS a cap, a kept region that is the
+complement of its own loop, and `sphereFaceUV.orientLoops` files every kept region as an outer loop —
+it never reports `outerless`, which the torus chart does. So the sphere face comes back unbounded-wrong
+and the stitch drops it, leaving a two-face body the guard refuses. That is the next slice, and it is a
+sphere-chart gap rather than a crossing one.

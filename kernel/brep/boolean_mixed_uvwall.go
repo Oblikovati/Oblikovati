@@ -224,9 +224,7 @@ func conicAxialSpan(cv geom.Curve3, axis math.Vector3) (center math.Point3, amp 
 // rim, which the caller declines.
 func conicBandPlacement(center math.Point3, amp float64, rs ruledSide) (inside, clear bool) {
 	v := bandV(center, rs.axis, rs.band)
-	lo, hi := v-amp, v+amp
-	inside = lo > rs.band.vMin+facePairCullPad && hi < rs.band.vMax-facePairCullPad
-	return inside, !spansOverlap(lo, hi, rs.band.vMin, rs.band.vMax, facePairCullPad)
+	return bandPlacement(v-amp, v+amp, rs.band)
 }
 
 // conicIslandInFace reports whether a closed conic lies WHOLLY inside an all-straight planar face's trim:

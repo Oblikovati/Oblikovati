@@ -160,7 +160,7 @@ func lineTouchesWallAndTool(l geom.Line, of curvedFace, axis math.Vector3, band 
 	for _, iv := range faceLineIntervals(of, l.Origin, l.Dir.AsVector()) {
 		vA := bandV(l.PointAt(iv[0]), axis, band)
 		vB := bandV(l.PointAt(iv[1]), axis, band)
-		if spansOverlap(stdmath.Min(vA, vB), stdmath.Max(vA, vB), band.vMin, band.vMax, facePairCullPad) {
+		if spansOverlap(stdmath.Min(vA, vB), stdmath.Max(vA, vB), band.vMin, band.vMax) {
 			return true
 		}
 	}
@@ -191,7 +191,7 @@ func conicTouchesTool(cv geom.Curve3, of curvedFace, axis math.Vector3, band con
 		return false // the conic lies wholly outside the polygon trim
 	}
 	vc := bandV(to3D(pl, pc.center), axis, band) // the conic centre, back through the tool chart
-	return spansOverlap(vc-amp, vc+amp, band.vMin, band.vMax, facePairCullPad)
+	return spansOverlap(vc-amp, vc+amp, band.vMin, band.vMax)
 }
 
 // conicPolygonCrossingInBand scans the polygon's edges for exact conic crossings; touched=true when a
@@ -232,9 +232,18 @@ func bandV(p math.Point3, axis math.Vector3, band coneSideBand_) float64 {
 	return band.vMin + float64(band.bottom.VectorTo(p).Dot(axis))
 }
 
-// spansOverlap reports whether [a0,a1] and [b0,b1] come within pad of each other.
-func spansOverlap(a0, a1, b0, b1, pad float64) bool {
-	return a0 <= b1+pad && b0 <= a1+pad
+// spansOverlap reports whether [a0,a1] and [b0,b1] come within facePairCullPad of each other. The pad
+// was a parameter and every caller passed the same constant: one cull tolerance, named once.
+func spansOverlap(a0, a1, b0, b1 float64) bool {
+	return a0 <= b1+facePairCullPad && b0 <= a1+facePairCullPad
+}
+
+// bandPlacement classifies an axial span against a wall band: strictly inside it, or strictly clear of
+// it. Neither means the span straddles a rim, which its callers decline. The span's SOURCE differs — a
+// conic's centre and amplitude in closed form, a general crossing walked — the rule does not.
+func bandPlacement(lo, hi float64, band coneSideBand_) (inside, clear bool) {
+	return lo > band.vMin+facePairCullPad && hi < band.vMax-facePairCullPad,
+		!spansOverlap(lo, hi, band.vMin, band.vMax)
 }
 
 // conicEntersTrimInBand reports whether an unbounded conic section has a point inside BOTH the wall's
