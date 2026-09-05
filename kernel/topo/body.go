@@ -223,15 +223,17 @@ func (b *Body) RangeBox() math.Box {
 	return b.rangeBox
 }
 
-// computeRangeBox is the raw axis-aligned bound over the body's vertices, edges and boundaryless
-// faces — the sweep RangeBox memoizes once the body is finalized (#1771).
+// computeRangeBox is the raw axis-aligned bound over the body's vertices, edges, boundaryless faces and
+// the trimmed regions of the faces that carry a chart — the sweep RangeBox memoizes once the body is
+// finalized (#1771).
 func (b *Body) computeRangeBox() math.Box {
 	box := math.EmptyBox()
 	for _, v := range b.Vertices() {
 		box = box.ExtendPoint(v.point)
 	}
 	box = extendBoxByEdges(box, b.Edges())
-	return extendBoxByBoundarylessFaces(box, b.Faces())
+	box = extendBoxByBoundarylessFaces(box, b.Faces())
+	return extendBoxByChartedFaces(box, b.Faces())
 }
 
 // FindFaceByKey re-binds a face reference key to the matching face by lineage,

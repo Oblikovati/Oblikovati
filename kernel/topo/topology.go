@@ -41,14 +41,17 @@ func extendBoxByEdges(box math.Box, edges []*Edge) math.Box {
 // faceSamplesPerAxis grids a boundary-less face's UV domain for its range-box contribution.
 const faceSamplesPerAxis = 8
 
-// extendBoxByBoundarylessFaces extends box by the surface of every face with NO boundary loops — a whole
-// sphere or torus, whose extent comes from neither vertices nor edges (it has none). Without this a bare
-// analytic primitive (SolidSphere) reports an empty range box, so boolean classification wrongly judges
-// it disjoint from any tool. Only bounded closed surfaces reach here; an unbounded domain is skipped.
+// extendBoxByBoundarylessFaces extends box by the surface of every face with NO boundary loops and no
+// chart — a whole sphere or torus, whose extent comes from neither vertices nor edges (it has none).
+// Without this a bare analytic primitive (SolidSphere) reports an empty range box, so boolean
+// classification wrongly judges it disjoint from any tool. A face that carries a chart is swept over
+// that instead (extendBoxByChartedFaces), which is the same answer for a whole surface and a far
+// tighter one for a trimmed patch. Only bounded closed surfaces reach here; an unbounded domain is
+// skipped.
 func extendBoxByBoundarylessFaces(box math.Box, faces []*Face) math.Box {
 	for _, f := range faces {
-		if len(f.loops) > 0 {
-			continue
+		if len(f.loops) > 0 || len(f.chart) > 0 {
+			continue // bounded by its edges, or — more precisely — by its own chart window
 		}
 		uLo, uHi := f.surface.UDomain()
 		vLo, vHi := f.surface.VDomain()
@@ -64,6 +67,63 @@ func extendBoxByBoundarylessFaces(box math.Box, faces []*Face) math.Box {
 		}
 	}
 	return box
+}
+
+// extendBoxByChartedFaces extends box by the surface of every face that carries its parametric trim
+// (ADR-0063), over the (u, v) window that trim occupies.
+//
+// A trimmed curved face can reach PAST its own boundary edges, and then the edge sweep alone does not
+// bound it. A hemisphere is the smallest case: its only edge is the equator, so the body reported a
+// range box of ZERO height — `{-5,-5,0}..{5,5,0}` for a ball of radius 5 — and a tool built to cover
+// that box then missed the body entirely (ADR-0061). A ruled side cannot do this (its rims span its
+// whole azimuth, so the edges already reach every extremum) and a plane cannot either, but no rule
+// about the EDGES tells those apart from a cap: the equator bounds the upper hemisphere and the lower
+// one alike, and only the trim says which.
+//
+// The window, not the trim itself, is what is swept: the surface over the trim's bounding window
+// encloses the surface over the trim, so a non-rectangular patch is bounded generously rather than
+// missed. The grid is the one the boundaryless sweep uses, so this stays a SAMPLED bound of the same
+// kind the edge sweep above already produces — a cheap enclosure for culling and for the
+// model-relative resolution, never a modelling decision. The certified-tight box, which reads each
+// surface's interior extrema in closed form, is query.PreciseRangeBox; use that where exactness is the
+// point.
+func extendBoxByChartedFaces(box math.Box, faces []*Face) math.Box {
+	for _, f := range faces {
+		box = extendBoxByChartWindow(box, f)
+	}
+	return box
+}
+
+// extendBoxByChartWindow sweeps one charted face's (u, v) window onto its surface.
+func extendBoxByChartWindow(box math.Box, f *Face) math.Box {
+	u0, u1, v0, v1, ok := chartWindow(f.chart)
+	if !ok {
+		return box
+	}
+	for i := 0; i <= faceSamplesPerAxis; i++ {
+		for j := 0; j <= faceSamplesPerAxis; j++ {
+			u := u0 + (u1-u0)*float64(i)/faceSamplesPerAxis
+			v := v0 + (v1-v0)*float64(j)/faceSamplesPerAxis
+			box = box.ExtendPoint(f.surface.PointAt(u, v))
+		}
+	}
+	return box
+}
+
+// chartWindow is the (u, v) bounding window of a face's chart contours. ok=false for a face with none.
+func chartWindow(chart [][]math.Point2) (u0, u1, v0, v1 float64, ok bool) {
+	for _, contour := range chart {
+		for _, p := range contour {
+			u, v := float64(p.X), float64(p.Y)
+			if !ok {
+				u0, u1, v0, v1, ok = u, u, v, v, true
+				continue
+			}
+			u0, u1 = stdmath.Min(u0, u), stdmath.Max(u1, u)
+			v0, v1 = stdmath.Min(v0, v), stdmath.Max(v1, v)
+		}
+	}
+	return u0, u1, v0, v1, ok
 }
 
 // Vertex is a 0-dimensional topological entity: a point with identity.

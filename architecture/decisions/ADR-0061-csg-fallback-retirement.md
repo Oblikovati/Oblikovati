@@ -560,3 +560,37 @@ and the no-op difference that rebuilt the oblique band as its complement returns
 path with the rewire parked, plus `./archguard/` and `./model/...`, is green too. The instrument that
 has measured this stage since 2026-09-03 — 33 failures at the start, 6 after ADR-0063, then 5, 3, 2 —
 now measures nothing, which is the gate stage 2 was waiting on.
+
+## The range box did not bound the body (2026-09-05, last of the pair)
+
+`Body.computeRangeBox` swept the vertices, the edges and the BOUNDARYLESS faces. A trimmed curved face
+contributed only through its boundary edges — and a face can reach past those:
+
+```
+sphere      box = {-5 -5 -5}..{5 5 5}
+hemisphere  box = {-5 -5  0}..{5 5  0}     <- the cap reaches z = -5
+cylinder    box = {-3 -3  0}..{3 3 10}     (its rims span its whole azimuth)
+torus       box = {-7 -7 -2}..{7 7  2}     (boundaryless)
+```
+
+A hemisphere's only edge is its equator, so the body reported a box of ZERO height. That is what broke
+the oblique composition before the tangency fix landed: `curvedConvexIntersect` composes a half-space
+cut per box face, and the box's far wall — a plane that touches nothing — built its bounded tool from a
+range box flat in one axis.
+
+No rule about the EDGES can fix this: the equator bounds the upper hemisphere and the lower one alike.
+The face's CHART says which side it is on, which is what ADR-0063 put on the face, so the sweep is over
+the chart's (u, v) window. The window rather than the trim itself, because the surface over the window
+encloses the surface over the trim — a non-rectangular patch is bounded generously rather than missed —
+and a face carrying a chart no longer needs the boundaryless sweep at all, which is the same answer for
+a whole surface and a far tighter one for a patch.
+
+Measured: the hemisphere becomes `{-5,-5,-5}..{5,5,0}`, and a small cap above z = 4 still bounds to
+`{-3,-3,4}..{3,3,5}` rather than ballooning to the whole ball.
+
+**Two honest limits.** This stays a SAMPLED bound, of the same kind the edge sweep already produces — a
+torus band's `y` came out 6.982 against a true 7 on the shared 8×8 grid. The certified-tight box, which
+reads each surface's interior extrema in closed form through `geom.SurfaceAxisCriticalPoints`, is
+`query.PreciseRangeBox`; the doc now points at it. And the fix bites where a face carries a chart, which
+is the general (u, v) path — the analytic half-space pipeline sets none, and that pipeline is what stage
+2 deletes rather than something to retrofit.
