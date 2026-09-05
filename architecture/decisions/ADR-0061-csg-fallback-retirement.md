@@ -845,3 +845,44 @@ Also generalised while here: `closedSurfaceOuterless` — a closed-surface face 
 EVERY one of its rings bounds a dropped island, not only when there is exactly one such ring. And
 `widestCylinderFace` in the corpus now fails cleanly instead of returning nil, which nil-dereferenced
 inside the mass-props query and killed a whole package's run mid-measurement.
+
+### Ruled versus ruled: the crossing-cylinder family, through the general pipeline (2026-09-06)
+
+The same pairing again, one bucket over: two WALLS that cross. `wallOverlapsUncovered` declined every
+overlapping wall pair, which is what sent the whole crossing-cylinder, Steinmetz and cone-crossing family
+to its bespoke recognizers.
+
+`pairWallWallImprints` solves the crossing once and writes it into both walls' imprint lists, under the
+scope the closed-surface pairing already uses: the crossing must come back CLOSED and must lie strictly
+inside BOTH bands or strictly clear of them. Measured through `brep.Boolean`, with every recognizer
+switched off:
+
+| operation | general pipeline | mesh engine |
+| --- | --- | --- |
+| crossing cylinders ∩ | 41.0411 (3 faces, exact) | 40.6465 |
+| crossing cylinders − | 298.2509 (4 faces, exact) | 296.2500 |
+| crossing cylinders ∪ | invalid | 380.7486 |
+
+The mesh figures sit ~1% low, which is the facet deficit on a convex body — the analytic answers are the
+tighter ones. The JOIN is not carried and still declines.
+
+**Two gates had to keep declining, and both taught something.** Opening `wallOverlapsUncovered`
+wholesale broke an emboss pad riding a chamfer cone and a grazing partial-rim cut. The pad is a pair
+`geom.SurfacesApart` already settles — the pairing has to honour that proof exactly as the gate does, or
+it declines a boolean over a crossing that does not exist. The grazing rod is the sharper lesson: an
+analytic solver that finds NOTHING between two walls whose boxes overlap and which no separation proof
+settles has not proved they are clear, so an EMPTY crossing keeps the decline. "Carried" means an
+imprint was actually produced.
+
+`TestPartialRimGrazingCutDeclinesObservably` converts to `...TakesTheGeneralPath`: the pairing carries
+that cut now, and it comes back a valid closed manifold solid of five analytic faces. That is the
+conversion this ADR promised for the decline-asserting tests — the decline was the observation, not the
+goal.
+
+**Where stage 4 stands, measured with all 26 recognizers off** (`kernel/ops/boolean`, ~600 s against 31 s
+healthy): **38 → 33 failing tests, 49 → 46 leaves.** Closed so far: the coaxial ball-and-rod family, the
+crossing-cylinder ∩ and −, the drilled wall, the elliptic-section oracle, the cone-cap crossing. Open:
+Steinmetz (all three ops), cone∩cone, cone∩cylinder, partial penetration, the partial-rim corner
+junction, near-pinch continuity, the cap and rim crossings, the shoulder ball-rod variants, and every
+JOIN of a ruled crossing. Each is a slice of the same shape as these two, and each will surface its own
+defects on the way — the ones this session found were all of that kind.

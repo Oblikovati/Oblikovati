@@ -52,8 +52,32 @@ func wallImprints(p, other *facePartition, otherImp [][][2]math.Point3) ([][]geo
 // uncovered — an emboss pad seated on a chamfer cone overlaps that cone's box completely while
 // riding a constant sagitta clear of it (#3459).
 func wallOverlapsUncovered(wf curvedFace, box math.Box, other *facePartition) bool {
-	return overlapsUnprovenPair(wf, box, other.wall, other.wallBox) ||
+	return overlapsUncarriedWall(wf, box, other) ||
 		overlapsUnprovenPair(wf, box, other.pass, other.passBox)
+}
+
+// overlapsUncarriedWall reports a wall of other whose box overlaps wf and whose crossing with it the
+// wall-versus-wall pairing does NOT carry. A pair it does carry is no longer uncovered — that is the
+// whole of ADR-0061 stage 4's first ruled slice — but a pair outside that pairing's narrow scope
+// (a crossing that is not closed, or that straddles a rim) must keep declining: admitting one it
+// cannot imprint trades a decline for a wrong body, which a grazing partial-rim cut showed at once.
+func overlapsUncarriedWall(wf curvedFace, box math.Box, other *facePartition) bool {
+	for i, b := range other.wallBox {
+		if !box.Intersects(b) || i >= len(other.wall) {
+			continue
+		}
+		if geom.SurfacesApart(wf.surface, other.wall[i].surface, facePairCullPad) {
+			continue
+		}
+		// Carried means an imprint was actually produced. A solver that finds NOTHING between two
+		// walls whose boxes overlap and which no separation proof settles has not proved they are
+		// clear — a grazing partial-rim cut is exactly that — so an empty crossing keeps the decline.
+		if curves, ok := wallWallImprint(wf, other.wall[i]); ok && len(curves) > 0 {
+			continue
+		}
+		return true
+	}
+	return false
 }
 
 // overlapsUnprovenPair reports whether wf's box overlaps any of the given faces WITHOUT a

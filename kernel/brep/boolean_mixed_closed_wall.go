@@ -112,3 +112,49 @@ func crossingAxialSpan(cv geom.Curve3, rs ruledSide) (lo, hi float64) {
 // crossingSpanSamples walks a crossing to bound its axial extent. It places the curve between two rims,
 // nothing finer.
 const crossingSpanSamples = 64
+
+// pairWallWallImprints imprints every (wall of p, wall of other) pair whose boxes overlap, appending the
+// shared crossing to both lists — the ruled-versus-ruled counterpart of the closed-surface pairing above
+// (ADR-0061 stage 4). ok=false declines the boolean.
+func pairWallWallImprints(p, other *facePartition, impP, impOther [][]geom.Curve3) bool {
+	for i, wf := range p.wall {
+		box := inflateBox(p.wallBox[i])
+		for k, of := range other.wall {
+			// A box overlap alone is not contact, and a pair the separation proof settles must not be
+			// asked for a crossing it does not have: an emboss pad riding a constant sagitta clear of a
+			// chamfer cone overlaps its box completely (#3459).
+			if !box.Intersects(inflateBox(other.wallBox[k])) ||
+				geom.SurfacesApart(wf.surface, of.surface, facePairCullPad) {
+				continue
+			}
+			curves, ok := wallWallImprint(wf, of)
+			if !ok {
+				return false
+			}
+			impP[i] = append(impP[i], curves...)
+			impOther[k] = append(impOther[k], curves...)
+		}
+	}
+	return true
+}
+
+// wallWallImprint is the exact shared imprint of one (wall, wall) pair, under the same narrow scope the
+// closed-surface pairing takes: every crossing must come back CLOSED, and must lie strictly inside BOTH
+// bands or strictly clear of them. Anything else declines.
+func wallWallImprint(a, b curvedFace) ([]geom.Curve3, bool) {
+	ra, okA := ruledFaceOf(a)
+	rb, okB := ruledFaceOf(b)
+	if !okA || !okB {
+		return nil, false
+	}
+	res := geom.ResolutionForSize(stdmath.Max(ra.size(), rb.size()))
+	curves, handled := geom.IntersectSurfacesAnalytic(ra.surface, rb.surface, res)
+	if !handled {
+		return nil, false
+	}
+	kept, ok := keepCrossingsOnTheWall(curves, ra, res)
+	if !ok {
+		return nil, false
+	}
+	return keepCrossingsOnTheWall(kept, rb, res)
+}

@@ -87,18 +87,32 @@ func TestPartialRimCornerJunctionTakesAnalyticPath(t *testing.T) {
 // scope). It must fall to the observable CSG fallback — never a manifold-but-wrong forced analytic solid.
 // It asserts the DECLINE CODE, never the faceted body: when the configuration this declines on
 // lands analytically it becomes a positive corpus case (ADR-0061), so the assertion converts
-// rather than being deleted to move a number.
-func TestPartialRimGrazingCutDeclinesObservably(t *testing.T) {
+// rather than being deleted to move a number. This one has landed: the wall-versus-wall pairing
+// (ADR-0061 stage 4) carries the grazing crossing, so the decline it used to assert is gone and the
+// test now pins the capability instead.
+func TestPartialRimGrazingCutTakesTheGeneralPath(t *testing.T) {
 	t.Parallel()
 	rod, err := brep.SolidCylinder(math.P3(-6, 0, 5.5), math.V3(1, 0, 0), 1, 12) // z=5.5: top grazes the notch floor
 	if err != nil {
 		t.Fatalf("rod: %v", err)
 	}
 	rec := &diag.Recorder{}
-	if _, err := BooleanWithDiagnostics(Cut, notchedTarget(t), rod, rec); err != nil {
-		t.Fatalf("grazing cut errored instead of falling back: %v", err)
+	res, err := BooleanWithDiagnostics(Cut, notchedTarget(t), rod, rec)
+	if err != nil {
+		t.Fatalf("grazing cut: %v", err)
 	}
-	if !rec.Has(CodeBooleanCSGFallback) {
-		t.Errorf("grazing partial-rim cut did not record the CSG fallback; got %v", rec.Records())
+	if rec.Has(CodeBooleanCSGFallback) {
+		t.Errorf("the grazing cut fell back to CSG; the wall-versus-wall pairing should carry it: %v", rec.Records())
+	}
+	if v := Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("grazing cut is not a valid closed manifold solid: %+v", v)
+	}
+	for _, f := range res.Faces() {
+		if _, planar := f.Geometry().(geom.Plane); planar {
+			continue
+		}
+		if _, cyl := f.Geometry().(geom.Cylinder); !cyl {
+			t.Errorf("face surface %T is neither plane nor cylinder: the result is not analytic", f.Geometry())
+		}
 	}
 }
