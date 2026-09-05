@@ -204,16 +204,26 @@ func meridianArcBetween(s geom.Sphere, a, b math.Point3) (loopEdge, bool) {
 	return loopEdge{curve: arc, t0: 0, t1: 1, v0: a, v1: b}, true
 }
 
-// orientLoops keeps the arrangement's material-on-the-left winding and hands back the section arcs
-// reversed, as every loop-framed chart does (uvSide).
+// orientLoops keeps the arrangement's material-on-the-left winding, hands back the section arcs
+// reversed as every loop-framed chart does, and reports whether the kept face is OUTERLESS — the same
+// rule the torus chart applies, because it is a property of a CLOSED surface and not of a torus: a
+// single CW loop bounds a DROPPED island, so the face is the complement of its rings and has no outer
+// loop at all.
+//
+// The sphere reached here reporting `false` always, which is right for a cap and wrong for a ball with
+// a bite out of it: a rod cut coaxially into a ball leaves the sphere minus one island, and filing that
+// island as an outer loop made the face bound the bite instead of everything else. The stitch then
+// dropped it and the difference came back a two-face body the guard refuses (ADR-0061 stage 4). A cap
+// does not reach here — its boundary WRAPS the longitude, which wrappingSolidFaces takes (uvSide).
 func (c *sphereFaceUV) orientLoops(loops []emittedLoop, _ bool) ([]curvedLoop, []loopEdge, bool) {
 	faceLoops := make([]curvedLoop, 0, len(loops))
 	var lid []loopEdge
+	outerless := len(loops) == 1 && loops[0].area < 0
 	for _, e := range loops {
 		faceLoops = append(faceLoops, curvedLoop{edges: e.face})
 		lid = append(lid, reverseEdgeChain(e.section)...)
 	}
-	return faceLoops, lid, false
+	return faceLoops, lid, outerless
 }
 
 // finalizeLoops drops the DEGENERATE pole edges. A pole is one point in 3-D, so the parameter-space

@@ -88,7 +88,7 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 	if faces, lid, ok := c.wrappingSolidFaces(kept, segs, surface, f); ok {
 		return faces, lid, nil
 	}
-	loops := dropArtificialLoops(c, chainLoops(keptBoundaryEdges(kept, c.uPeriodic(), c.vPeriodic())), segs)
+	loops := dropArtificialLoops(chainLoops(keptBoundaryEdges(kept, c.uPeriodic(), c.vPeriodic())), segs)
 	// The same cells traced with the seams UNFOLDED: closed contours, one set per connected component
 	// (ADR-0063). Traced from the same cells so the chart and the loops cannot disagree.
 	charts := chartsOfComponents(c, kept)
@@ -114,16 +114,19 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 	return faces, lid, nil
 }
 
-// dropArtificialLoops removes boundary loops made entirely of artificial seam edges. On a v-periodic closed
-// surface (a torus) the genus-1 complement's kept cell has the whole parameter rectangle as its outer loop
-// with the cut as a hole; that rectangle is all seam edges and bounds nothing real (the surface is closed
-// there), so it is dropped, leaving the cut alone as the face's hole (#1406). For a non-periodic ruled side
-// the seam edges cancel pairwise instead, so no all-seam loop survives and this is a no-op.
-func dropArtificialLoops(c uvSide, loops [][]dedge, segs []uvSeg) [][]dedge {
+// dropArtificialLoops removes boundary loops made entirely of artificial seam edges — a loop that bounds
+// nothing real, because the surface is closed (or degenerate) across every edge of it.
+//
+// A torus's genus-1 complement is the case it was written for: the kept cell has the whole parameter
+// rectangle as its outer loop with the cut as a hole, and that rectangle is all seam (#1406). A SPHERE's
+// complement is the same shape with a different artificial boundary — the two POLE segments, which
+// poleSegments already says bound no geometry and weld to nothing — and it was excluded by a
+// v-periodicity gate that named the torus rather than the property. A ball with a coaxial rod cut out of
+// it came back as two boundary-less faces the trim then dropped, so the difference lost its sphere
+// entirely (ADR-0061 stage 4). For a ruled side the seam edges cancel pairwise, so no all-seam loop
+// survives and this stays the no-op it always was.
+func dropArtificialLoops(loops [][]dedge, segs []uvSeg) [][]dedge {
 	ix := newUVSegIndex(segs)
-	if !c.vPeriodic() {
-		return loops
-	}
 	out := loops[:0]
 	for _, lp := range loops {
 		if !loopAllSeam(lp, ix) {

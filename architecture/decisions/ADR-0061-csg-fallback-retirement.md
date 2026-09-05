@@ -777,4 +777,38 @@ one step further in: the ball minus the rod is the sphere MINUS a cap, a kept re
 complement of its own loop, and `sphereFaceUV.orientLoops` files every kept region as an outer loop —
 it never reports `outerless`, which the torus chart does. So the sphere face comes back unbounded-wrong
 and the stitch drops it, leaving a two-face body the guard refuses. That is the next slice, and it is a
-sphere-chart gap rather than a crossing one.
+sphere-chart gap rather than a crossing one. (Done below.)
+
+### The slice completed: the whole coaxial family, through the general pipeline (2026-09-05)
+
+The previous slice left the plug exact and the same pair's CUT and JOIN declining, and named the reason:
+the ball minus the rod is the sphere MINUS a cap, a kept region that is the complement of its own loop.
+Two fixes, both of them a rule stated for one chart being applied to the property it is actually about.
+
+**`sphereFaceUV.orientLoops` never reported `outerless`.** The torus chart has said for a while that on a
+CLOSED surface a single CW loop bounds a dropped island, so the face is the complement of its rings. That
+is a property of a closed surface, not of a torus. A cap does not reach this code — its boundary wraps
+the longitude, which `wrappingSolidFaces` takes — so the rule applies unchanged.
+
+**`dropArtificialLoops` was gated on v-periodicity, which names the torus rather than the property.** A
+loop made entirely of artificial seam edges bounds nothing, because the surface is closed or degenerate
+across every edge of it. A torus's complement has the whole parameter rectangle as such a loop; a
+SPHERE's complement has the two POLE segments, which `poleSegments` already describes as bounding no
+geometry and welding to nothing. Gated out, the ball came back as two boundary-less faces that
+`boundedTrims` then dropped, so the difference lost its sphere entirely. The gate is gone; for a ruled
+side the seam edges still cancel pairwise, so it stays the no-op it always was, and `dropArtificialLoops`
+no longer needs the chart at all.
+
+Measured through `brep.Boolean`, all three ways round, three analytic faces each:
+
+| operation | ours | exact |
+| --- | --- | --- |
+| ball ∩ rod (the plug) | 127.7581 | 127.7581 |
+| ball − rod (a blind bore) | 395.8407 | 395.8407 |
+| ball ∪ rod (the stud) | 819.9557 | 819.9557 |
+
+**A method note, because it nearly cost a false result.** The first version of this corpus test was
+extended from one case to three by a scripted replacement that silently did not match, so the run that
+"passed all three" had run one — and would have reported the two new rows green without executing them.
+Every scripted edit that must match existing text now asserts the match, and a test extended to new rows
+is read back for those rows in the output before it is believed.

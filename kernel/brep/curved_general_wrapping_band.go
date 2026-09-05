@@ -50,7 +50,7 @@ func (c ruledUV) wrappingSolidFaces(kept []Face2D, segs []uvSeg, surface geom.Su
 // band's two full-wrap ends and its contractible holes, then assembled as a keyhole (holed tube) or a
 // two-closed-loop band (a clean stub) — the two shapes the curved mesher renders correctly (#1476).
 func (c ruledUV) bandFace(comp []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) (curvedFace, []loopEdge, bool) {
-	loops := dropArtificialLoops(&c, chainLoops(keptBoundaryEdges(comp, c.uPeriodic(), c.vPeriodic())), segs)
+	loops := dropArtificialLoops(chainLoops(keptBoundaryEdges(comp, c.uPeriodic(), c.vPeriodic())), segs)
 	emitted, ok := emitKeptLoops(&c, loops, segs)
 	if !ok {
 		return curvedFace{}, nil, false

@@ -441,7 +441,7 @@ func (c *loopFrame) wrappingComponents(side uvSide, kept []Face2D, segs []uvSeg,
 	for _, comp := range keptComponents(kept, side.uPeriodic(), side.vPeriodic()) {
 		// The artificial loops go first: a boundary that follows only the seams bounds nothing, and a
 		// chart that refuses to re-emit a seam run would decline the whole component over one.
-		loops := dropArtificialLoops(side, chainLoops(keptBoundaryEdges(comp, side.uPeriodic(), side.vPeriodic())), segs)
+		loops := dropArtificialLoops(chainLoops(keptBoundaryEdges(comp, side.uPeriodic(), side.vPeriodic())), segs)
 		emitted, ok := emitKeptLoops(side, loops, segs)
 		if !ok || !anyLoopWraps(c, side, emitted) {
 			return nil, nil, false
