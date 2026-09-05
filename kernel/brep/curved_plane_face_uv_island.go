@@ -156,10 +156,11 @@ func arcPairTouches(i, ai int, arcA imprintArc, j, bi int, arcB imprintArc) []is
 	tol := stdmath.Min(islandTouchWeld(arcA.curve), islandTouchWeld(arcB.curve))
 	var out []islandTouch
 	for _, hit := range geom.CurveTouches(arcA.curve, arcB.curve, same, tol) {
-		pa, pb := arcA.curve.PointAt(hit[0]), arcB.curve.PointAt(hit[1])
+		ta, tb := bestTouchParams(arcA, arcB, hit[0], hit[1])
+		pa, pb := arcA.curve.PointAt(ta), arcB.curve.PointAt(tb)
 		out = append(out, islandTouch{
 			a: arcEnd{island: i, arc: ai}, b: arcEnd{island: j, arc: bi},
-			ta: hit[0], tb: hit[1], at: pa.TranslateBy(pa.VectorTo(pb).Scale(0.5)),
+			ta: ta, tb: tb, at: pa.TranslateBy(pa.VectorTo(pb).Scale(0.5)),
 		})
 	}
 	return out
@@ -183,8 +184,58 @@ func recordTouch(cuts []map[int][]float64, meets []map[int][2]*math.Point3, isla
 
 // atArcEnd reports a parameter sitting on one of an arc's own ends.
 func atArcEnd(a imprintArc, t float64) bool {
+	_, ok := arcEndAt(a, t)
+	return ok
+}
+
+// bestTouchParams chooses, where a solved meeting lands on an arc's own END, between the solved
+// parameters and the ends themselves — by asking the geometry which pair puts the two arcs closer.
+//
+// Neither answer is always better, which is why this is a certification and not a rule of thumb. Both
+// figure-eight sections of a torus meet at one point and deliver it differently:
+//
+//   - AXIS-PARALLEL (offset exactly R−r): the pinch is at v = ±π, where 5 + 2·cos(π) is 3 to the last
+//     bit, so w = 1 exactly and both arcs END at (0,3,0) EXACTLY. The solve converges to a parameter a
+//     millionth of a span away and evaluates the ill-conditioned u(v) = Φ ± arccos w there, putting the
+//     two ends 1.07e-07 apart — past the arrangement's vertex weld. The two lobes then reached the pinch
+//     at two vertices joined by a step, which cancelled as a shared edge and merged them into one
+//     self-touching loop: a single lid where the cut has two.
+//   - OBLIQUE (the one/two-oval transition): the arcs' own ends come from a numeric root of |w| = 1 and
+//     straddle the true tangency by ±5.2e-08, so they are 1.03e-07 apart on their own. Here the SOLVE is
+//     the better answer and snapping to the ends is what breaks it.
+//
+// So the choice is made against the geometry, not against the case: take the pair whose two evaluations
+// agree more closely. It is the same discipline spiricCosineAtLimit applies to w — where an exact value
+// is in hand, do not feed the ill-conditioned formula a near-value — with the "is it exact?" question
+// answered by measurement (ADR-0061).
+func bestTouchParams(a, b imprintArc, ta, tb float64) (float64, float64) {
+	ea, oka := arcEndAt(a, ta)
+	eb, okb := arcEndAt(b, tb)
+	if !oka && !okb {
+		return ta, tb
+	}
+	if touchGap(a, b, ea, eb) <= touchGap(a, b, ta, tb) {
+		return ea, eb
+	}
+	return ta, tb
+}
+
+// touchGap is how far apart the two arcs are when each is evaluated at the given parameter — the
+// residual of a candidate meeting.
+func touchGap(a, b imprintArc, ta, tb float64) float64 {
+	return float64(a.curve.PointAt(ta).DistanceTo(b.curve.PointAt(tb)))
+}
+
+// arcEndAt returns the arc's own end parameter when the solved one sits on it, and reports that it did.
+func arcEndAt(a imprintArc, t float64) (float64, bool) {
 	span := stdmath.Abs(a.t1 - a.t0)
-	return stdmath.Min(stdmath.Abs(t-a.t0), stdmath.Abs(t-a.t1)) <= span*arcEndFraction
+	if stdmath.Abs(t-a.t0) <= span*arcEndFraction {
+		return a.t0, true
+	}
+	if stdmath.Abs(t-a.t1) <= span*arcEndFraction {
+		return a.t1, true
+	}
+	return t, false
 }
 
 // arcEndFraction is how near an arc's end a solved parameter counts as being AT it, as a fraction of

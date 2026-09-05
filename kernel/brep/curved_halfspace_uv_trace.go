@@ -95,43 +95,70 @@ type dedge struct {
 }
 
 // keptBoundaryEdges returns the directed boundary edges of the kept region. It collects every kept cell's
-// oriented boundary (outer CCW, holes CW), welds endpoints with the seam folded, then keeps only edges
-// whose reverse is absent: an edge interior to the kept region (bordering two kept cells, or a seam edge a
-// wrapping region traverses on both sides) appears as a reverse-twin pair and cancels, leaving exactly the
-// edges between kept material and dropped material (or the band rims). This is the cross-seam merge and the
-// shared-edge dissolve in one pass (#1405).
+// oriented boundary (outer CCW, holes CW) onto seam-folded shared vertices, then cancels every reverse
+// twin — leaving exactly the edges between kept material and dropped material (or the band rims). This
+// is the cross-seam merge and the shared-edge dissolve in one pass (#1405).
 func keptBoundaryEdges(kept []Face2D, uPeriodic, vPeriodic bool) []dedge {
 	w := newSeamWelder(uPeriodic, vPeriodic)
 	var all []dedge
-	add := func(poly []math.Point2) {
-		for i, n := 0, len(poly); i < n; i++ {
-			a, b := poly[i], poly[(i+1)%n]
-			if a.DistanceTo(b) <= arrTol {
-				continue // a degenerate edge
-			}
-			all = append(all, dedge{from: w.add(a), to: w.add(b), a: a, b: b})
-		}
-	}
 	for _, cell := range kept {
-		add(cell.Outer)
+		all = append(all, weldedRing(w, cell.Outer)...)
 		for _, h := range cell.Holes {
-			add(h)
+			all = append(all, weldedRing(w, h)...)
 		}
 	}
+	return cancelReverseTwins(all)
+}
+
+// weldedRing turns one oriented ring into directed edges on the welder's shared vertices, dropping every
+// step whose two ends are the SAME vertex (weldsToOneVertex).
+func weldedRing(w *seamWelder, poly []math.Point2) []dedge {
+	out := make([]dedge, 0, len(poly))
+	for i, n := 0, len(poly); i < n; i++ {
+		a, b := poly[i], poly[(i+1)%n]
+		ia, ib := w.add(a), w.add(b)
+		if weldsToOneVertex(ia, ib, a, b) {
+			continue
+		}
+		out = append(out, dedge{from: ia, to: ib, a: a, b: b})
+	}
+	return out
+}
+
+// cancelReverseTwins keeps only the edges whose reverse is absent. An edge interior to the kept region
+// (bordering two kept cells, or a seam edge a wrapping region traverses on both sides) appears as a
+// reverse-twin pair and cancels; a FULL-WRAP edge (an uncut rim or section circle, whose two ends are
+// the seam vertex) is its own closed loop, has no distinct reverse, and is never cancelled.
+func cancelReverseTwins(all []dedge) []dedge {
 	present := make(map[[2]int]bool, len(all))
 	for _, e := range all {
 		present[[2]int{e.from, e.to}] = true
 	}
 	survivors := make([]dedge, 0, len(all))
 	for _, e := range all {
-		// A full-wrap edge (an uncut rim/section circle: both ends weld to the seam vertex) is its own
-		// closed loop and has no distinct reverse, so it is never canceled. Any other edge survives only if
-		// its reverse is absent — the shared-edge dissolve and the cross-seam merge.
 		if e.from == e.to || !present[[2]int{e.to, e.from}] {
 			survivors = append(survivors, e)
 		}
 	}
 	return survivors
+}
+
+// weldsToOneVertex reports an edge both of whose ends are the SAME arrangement vertex, close enough in
+// (u,v) that it spans nothing: it bounds no material and must not enter the boundary.
+//
+// The two questions "are these one vertex?" and "is this edge degenerate?" have to be asked with ONE
+// tolerance. They were not: the welder merged within seamWeldGrid while the edge filter dropped only
+// within arrTol, a hundred times tighter — so a step between them produced an edge from a vertex to
+// ITSELF. At a section's self-touch that is exactly what happens: the two lobes' arcs evaluate the
+// pinch a fraction of the weld grid apart (u(v) = Φ ± arccos w is ill-conditioned there), and the
+// leftover step survived as an edge. It then either cancelled against its twin and merged the two lobes
+// into one self-touching loop, or chained as a one-edge loop of its own and emitted a phantom face —
+// the axis-parallel figure-eight's two failures, one per kept side (ADR-0061).
+//
+// A full-wrap edge (an uncut rim or section circle, whose two ends are the seam vertex) also welds to
+// one vertex, and it is NOT this: its ends are a whole period apart in (u,v), far beyond the grid.
+func weldsToOneVertex(ia, ib int, a, b math.Point2) bool {
+	return ia == ib && float64(a.DistanceTo(b)) <= seamWeldGrid
 }
 
 // chainLoops links the surviving directed boundary edges into closed loops by following each edge's `to`

@@ -366,3 +366,62 @@ all the torus figure-eight rows (the tangent-pinch pairing of the previous secti
 Corpus: `TestSphereCapCutThroughItsPoleClosesAtEveryOrientation` takes all four axis-aligned removals,
 because the defect took half of all orientations. Without the fix it fails 2 of 4 under the rewire and
 1 of 4 on the shipping path — the coin toss, pinned.
+
+## The figure-eight: the solve was moving a point that was already exact (2026-09-05)
+
+The torus figure-eight was the rewire's last blocker, and the previous section's reading of it — an
+ill-conditioned formula the two lobes evaluate differently — named the right mechanism in the wrong
+place. Three defects, all of them one rule broken three ways: **decide an incidence once, and never with
+a formula where the exact answer is already in hand.**
+
+**1. The solve moved an exact point.** `TorusPlaneSection` at offset `R−r` returns the two lobes as two
+`SpiricArc`s that both begin and end at exactly `(0, 3, 0)`: `5 + 2·cos(π)` is 3 to the last bit, so
+`w = 1` exactly, `spiricCosineAtLimit` fires, `arccos(1) = 0`. The section is exact. `arcPairTouches`
+then solved the meeting numerically, converged to within `arcEndFraction` (1e-6 of a span) of each end —
+which at a pinch is the worst place to evaluate `u(v) = Φ ± arccos w` — and replaced the two exactly
+equal ends with
+
+```
+meet0 = (0, 3.0000000000000009,  5.2768006608014108e-08)
+meet1 = (0, 3.0000000000000009, -5.4156397588656084e-08)
+```
+
+**1.07e-07 apart**, which is the number the previous section attributed to the section itself.
+
+**2. The welder and the boundary-edge filter used two tolerances.** `seamWelder` merged within
+`seamWeldGrid` (1e-7); `keptBoundaryEdges` dropped a degenerate edge only within `arrTol` (1e-9). A step
+between the two is an edge from a vertex to ITSELF. It then either cancelled against its twin and merged
+two regions into one self-touching loop, or chained as a one-edge loop and emitted a phantom face — one
+failure per kept side, which is why the two normals failed differently. `weldsToOneVertex` asks the
+question once, separating the genuine full-wrap edge (an uncut rim circle, ends a whole period apart) by
+its (u,v) span rather than by the welded indices alone.
+
+**3. Neither candidate is always right, so certify against the geometry.** Snapping to the ends alone
+fixed the axis-parallel pinch and broke the OBLIQUE figure-eight, where the arcs' own ends come from a
+numeric root of `|w| = 1` and the two meetings straddle the true tangency by ±5.2e-08. `bestTouchParams`
+takes whichever pair — the solved parameters or the arcs' own ends — puts the two arcs closer together.
+It is a runtime certification, not a case split, which is what the ground rules ask of a branch choice.
+
+**Cost, measured on the four torus figure-eight rows** (OCC as the oracle):
+
+| row | before | now |
+| --- | --- | --- |
+| `torus ∩ box (pinch)` | 275.28 vs 114.89 — exact, WRONG (the complement) | 112.53, 3 faces, exact ✓ |
+| `torus − box (pinch)` | 112.53 vs 279.90 — exact, WRONG | 271.27 ✓ volume, faceted (CSG) |
+| `torus ∩ box (oblique)` | 239.84 vs 151.90 — exact, WRONG | 149.80 ✓ volume, faceted (CSG) |
+| `torus − box (oblique)` | 239.93 ✓ volume, faceted (CSG) | 239.93 ✓ volume, faceted (CSG) |
+
+**Every wrong-shape body is gone**; what is left is the fallback doing its job. Leaf failures under the
+rewire go 5 → 3, and all three are now `TestCurvedBooleansStayExact` — a demotion, not a wrong answer.
+`TestHalfSpaceCutTorusFigureEight` and both figure-eight volume-oracle rows pass.
+
+**What this exposes next, and it is a ground-rule violation of its own.** The three demotions come from
+`CurvedBooleanWithDiagnostics` returning `ok=false` with **no diagnostic recorded** — a silent decline,
+where the rules require a named one. That is the next thing to fix on this row, before any further
+geometry: an unsupported configuration must be refused by name, and the caller must be able to say why
+it fell back.
+
+Corpus: `TestIslandTouchKeepsTheExactPinchOfAFigureEight` (the solved meeting equals the arcs' own shared
+endpoint to a few ulps of the torus radius), `TestBestTouchParamsIsNeverWorseThanEitherCandidate` (the
+certification's whole contract, on both sections), `TestKeptBoundaryDropsAnEdgeFromAVertexToItself` and
+`TestKeptBoundaryKeepsAFullWrapEdge` (the two halves of the tolerance rule). Each fails without its fix.
