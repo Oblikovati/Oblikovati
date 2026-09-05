@@ -115,6 +115,7 @@ var curvedGuardBracketOverride *float64
 func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	body, ok := curvedExactBoolean(op, target, tool, rec)
 	if !ok {
+		declineCurvedExact(op, target, tool, rec)
 		return nil, false
 	}
 	if !certifyBooleanFaces(op, target, tool, body) {
@@ -137,6 +138,31 @@ func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, rec *d
 	body.InheritOriginalEdges(append(append([]*topo.Edge(nil), target.Edges()...), tool.Edges()...))
 	return body, true
 }
+
+// declineCurvedExact records the NAMED decline when no exact analytic path claims a configuration that
+// carries curved geometry. Until now this was the one exit of the guarded entry that said nothing: the
+// three REJECTIONS below each record, while "no path applied" returned silently and the caller quietly
+// produced triangle soup. The ground rule is that a fallback is a diag.Defect that reaches feature
+// health, the API and the UI — a demotion the user cannot see is the failure mode ADR-0061 stage 6 is
+// named for, and the torus figure-eight's three faceted rows reached the corpus through exactly this
+// silence.
+//
+// Silence stays correct for an all-planar pair: the planar B-rep path takes those exactly, so declining
+// the curved paths costs nothing and saying so on every boolean in the system would be noise.
+func declineCurvedExact(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) {
+	if !hasCurvedFace(target) && !hasCurvedFace(tool) {
+		return
+	}
+	rec.Recordf(CodeBooleanNoExactCurvedPath, diag.Defect,
+		"curved %s: no exact analytic path claims this configuration (target %d faces, tool %d faces); the result will be faceted",
+		op, len(target.Faces()), len(tool.Faces()))
+}
+
+// CodeBooleanNoExactCurvedPath marks a boolean with a curved operand that no exact analytic path
+// claimed, so the result comes from the faceted fallback. A tracked degradation, not an error: the
+// operation succeeds and the body is valid, but it is a tessellation of the answer rather than the
+// answer.
+const CodeBooleanNoExactCurvedPath diag.Code = "boolean.no-exact-curved-path"
 
 // CodeBooleanAnalyticInvalid marks a curved analytic boolean whose result is not a valid closed solid.
 // Validate is the post-condition of every public kernel operation, and this entry had none: the inner

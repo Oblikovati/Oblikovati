@@ -415,13 +415,18 @@ It is a runtime certification, not a case split, which is what the ground rules 
 rewire go 5 → 3, and all three are now `TestCurvedBooleansStayExact` — a demotion, not a wrong answer.
 `TestHalfSpaceCutTorusFigureEight` and both figure-eight volume-oracle rows pass.
 
-**What this exposes next, and it is a ground-rule violation of its own.** The three demotions come from
-`CurvedBooleanWithDiagnostics` returning `ok=false` with **no diagnostic recorded** — a silent decline,
-where the rules require a named one. That is the next thing to fix on this row, before any further
-geometry: an unsupported configuration must be refused by name, and the caller must be able to say why
-it fell back.
+**What this exposed next, fixed in the same pass.** The three demotions came out of
+`CurvedBooleanWithDiagnostics` returning `ok=false` with **no diagnostic recorded**. The guarded entry
+has four exits and three of them reported; "no exact path claims this configuration" returned silently,
+so a boolean with a curved operand could fall to triangle soup with nothing downstream able to say why.
+`declineCurvedExact` names it (`CodeBooleanNoExactCurvedPath`), and stays silent for an ALL-PLANAR pair,
+where the planar B-rep path is exact and the decline costs nothing. `fallback-sites` rises 29 → 30, the
+same shape of rise as `CodeBooleanAnalyticInvalid` before it: a degradation that was already happening,
+now reported.
 
 Corpus: `TestIslandTouchKeepsTheExactPinchOfAFigureEight` (the solved meeting equals the arcs' own shared
 endpoint to a few ulps of the torus radius), `TestBestTouchParamsIsNeverWorseThanEitherCandidate` (the
 certification's whole contract, on both sections), `TestKeptBoundaryDropsAnEdgeFromAVertexToItself` and
-`TestKeptBoundaryKeepsAFullWrapEdge` (the two halves of the tolerance rule). Each fails without its fix.
+`TestKeptBoundaryKeepsAFullWrapEdge` (the two halves of the tolerance rule),
+`TestABooleanWithNoExactCurvedPathDeclinesByName` and `TestAnAllPlanarBooleanDeclinesSilently` (the
+decline and its exemption). Each fails without its fix.

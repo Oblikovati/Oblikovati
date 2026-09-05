@@ -47,7 +47,11 @@ var kernelNetDeltaPin = map[string]int{
 	// 28 → 29 (2026-09-03, ADR-0061): CodeBooleanAnalyticInvalid. A RISE that is an improvement — the
 	// public curved-boolean entry had no Validate post-condition, so a recognizer returning a torn body
 	// shipped it silently; the degradation is now refused AND reported.
-	"fallback-sites": 29,
+	// 29 → 30 (2026-09-05, ADR-0061): CodeBooleanNoExactCurvedPath. A RISE that is an improvement — the
+	// guarded curved entry's fourth exit, "no exact path claims this", returned silently while the other
+	// three reported, so a boolean with a curved operand could fall to triangle soup with nothing
+	// downstream able to say why. The degradation is the same; it is now named.
+	"fallback-sites": 30,
 }
 
 func TestKernelNetDelta(t *testing.T) {
