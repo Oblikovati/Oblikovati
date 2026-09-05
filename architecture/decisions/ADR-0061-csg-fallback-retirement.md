@@ -692,3 +692,34 @@ and the group index is what edge lineage ordinals are built from — so this is 
 it wants its own commit and its own reading of what the tests were proving. The same sweep lists
 `provenanceOf`, `allEdgesPaired`, `curvedImprint`, `interiorPointOf`, `planeUVContactOK`,
 `chartContains` and `eccCap`; each needs the same judgement and none of it is stage-2 residue.
+
+## Stage 3 measured: its charts have landed, its DELETION belongs to stage 4 (2026-09-05)
+
+The stage list reads "(3) sphere and torus charts, deleting the ball-and-rod recognizers". Measured, that
+is two things with different readiness, and pairing them was a mistake in the plan.
+
+**The charts are in and load-bearing.** `sphereFaceUV` and `torusFaceUV` are wired into the mixed
+boolean as its `sphere` and `torus` buckets, and stage 2 depends on them: the hemisphere and the torus
+band a half-space cut now returns are built by those charts, carry their own charts through the stitch
+(ADR-0063), and are what `Body.RangeBox` reads. Stage 3's capability shipped as the thing that made
+stage 2's rewire pass.
+
+**The deletion is gated on stage 4, and the code already says so.** Removing
+`curvedBallRod{Intersect,Cut,Join}` from `curvedExactPaths` costs **24 corpus rows** —
+`TestCurvedBooleansStayExact` × 20, `TestCurvedBooleanVolumesMatchOCC` × 2 and four dedicated
+ball-and-rod tests — and takes `kernel/ops/boolean` from ~35 s to **938 s**. Two of those rows do not
+merely go faceted, they come out WRONG: `coaxial shoulder rod − ball` and `coaxial bi-shoulder rod −
+ball` miss the OCC volume.
+
+The decline is one gate, `closedSurfaceUncovered`, and its own comment names the stage:
+
+> A wall, another sphere or a pass face still declines on box overlap: curved-versus-curved contact
+> stays with the bespoke recognisers until the crossings are charted (ADR-0061 stage 4).
+
+A ball and a coaxial rod meet along a circle on a sphere and a cylinder — the simplest curved-versus-
+curved crossing there is. It is not a sphere-chart gap; it is the crossing bucket, which stage 4 opens.
+So the ball-and-rod recognizers move to stage 4's deletion list, beside the 26 of `curvedExactPaths`
+they belong with, and stage 3 is complete as a capability.
+
+Recorded rather than forced: widening `closedSurfaceUncovered` to admit a wall would trade twenty exact
+rows for faceted ones and two for wrong ones, which is the opposite of a gate.
