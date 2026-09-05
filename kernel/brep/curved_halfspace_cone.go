@@ -6,8 +6,6 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/topo"
-	"oblikovati.org/math"
 )
 
 // Cone half-space cut (M2 Phase 1, Oblikovati/Oblikovati#1334). Trims an analytic cone or frustum (one
@@ -51,44 +49,4 @@ func coneCapExtent(cone geom.Cone, caps []geom.Plane) (vMin, vMax float64) {
 	}
 	v1 := float64(cone.Apex.VectorTo(caps[1].Origin).Dot(axis))
 	return stdmath.Min(v0, v1), stdmath.Max(v0, v1)
-}
-
-// coneHalfSpace keeps the axial band of the cone on the plane's negative side, rebuilt as a fresh cone or
-// frustum (exact geom.Cone side + planar caps). The plane must be perpendicular to the axis. A plane clear
-// of the kept band keeps the solid whole or empties it.
-func coneHalfSpace(body *topo.Body, cone geom.Cone, vMin, vMax float64, plane geom.Plane) (*topo.Body, error) {
-	n := unit(plane.Normal())
-	axis := cone.AxisDir.AsVector()
-	along := float64(n.Dot(axis))
-	vCut := float64(cone.Apex.VectorTo(plane.Origin).Dot(axis))
-	vLo, vHi := keptConeBand(vCut, vMin, vMax, along > 0)
-	// Apex-distance band lengths are model-relative (#1399).
-	axialTol := geom.ResolutionForBox(body.RangeBox()).Plane()
-	if vHi-vLo <= axialTol {
-		return topo.MergeBodies(topo.NewLineage(topo.Tok("halfspace", "empty", 0)), true), nil
-	}
-	if vLo <= vMin+axialTol && vHi >= vMax-axialTol {
-		return body, nil // plane clears the cone on the kept side
-	}
-	t := stdmath.Tan(cone.HalfAngle)
-	bottom := cone.Apex.TranslateBy(axis.Scale(math.Scalar(vLo)))
-	top := cone.Apex.TranslateBy(axis.Scale(math.Scalar(vHi)))
-	return SolidCylinderCone(bottom, top, vLo*t, vHi*t, "halfspace")
-}
-
-// keptConeBand returns the [vLo, vHi] apex-distance interval (within [vMin, vMax]) kept on the plane's
-// negative side. With n along +axis the negative side is toward the apex (v ≤ cut); with n along −axis it
-// is toward the base (v ≥ cut).
-func keptConeBand(vCut, vMin, vMax float64, nAlongAxis bool) (vLo, vHi float64) {
-	vCut = stdmath.Max(vMin, stdmath.Min(vMax, vCut))
-	if nAlongAxis {
-		return vMin, vCut
-	}
-	return vCut, vMax
-}
-
-// perpendicularToConeAxis reports whether the cut plane normal is parallel to the cone axis (a
-// constant-apex-distance cut), the only orientation the fast cone path handles.
-func perpendicularToConeAxis(n math.Vector3, cone geom.Cone) bool {
-	return stdmath.Abs(float64(n.Dot(cone.AxisDir.AsVector()))) >= 1-cylinderAxisCosTol
 }

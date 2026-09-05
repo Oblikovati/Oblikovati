@@ -18,9 +18,17 @@ import (
 // the imprint→split→classify→stitch pipeline starts, restricted to a single planar cutter so
 // classification is just "which side of the plane" (no point-in-solid needed yet).
 
-// ErrUnsupportedHalfSpace reports a body the half-space cut does not yet handle (a surface type or
-// trim configuration beyond the analytic primitives wired so far) — the caller keeps the BSP-CSG
-// fallback, so there is no regression.
+// Since ADR-0062 the cut is not an operation of its own: it is a DIFFERENCE against the plane's
+// positive side, bounded to the target's box. OCCT says the same thing in code —
+// BRepPrimAPI_MakeHalfSpace builds exactly that solid and hands it to the ordinary BOP — and
+// solvespace's SShell::MakeFromBoolean trims BOTH shells against the same shared intersection curves.
+// Neither kernel synthesises one side's boundary out of the other side's leftovers, which is what the
+// pipeline below did: it split only the target, asked each wall for the section arcs it had trimmed on,
+// and built a lid from them.
+
+// ErrUnsupportedHalfSpace reports a body the half-space cut does not handle. It is the difference's own
+// decline, surfaced under the name the callers (ops/boolean's convex and flat-subtract compositions,
+// ops/surface's directed sculpt) already switch on.
 var ErrUnsupportedHalfSpace = errors.New("brep: half-space cut handles only the wired analytic curved solids")
 
 // HalfSpaceCut returns the part of body on the NEGATIVE side of plane — the half-space
@@ -34,45 +42,45 @@ var ErrUnsupportedHalfSpace = errors.New("brep: half-space cut handles only the 
 //	plane, _ := geom.NewPlane(math.P3(0,0,0), math.V3(0,0,1))
 //	cap, _ := brep.HalfSpaceCut(sphere, plane) // lower hemisphere
 func HalfSpaceCut(body *topo.Body, plane geom.Plane) (*topo.Body, error) {
-	n := unit(plane.Normal())
-	faces := facesOfAny(body)
-	// One model-relative coincidence scale for this cut, derived from the body's extent
-	// (Oblikovati/Oblikovati#1399); threaded into the general split so the analytic imprint's
-	// clearance/grazing tests scale with the part rather than reading a cm-anchored epsilon.
-	res := geom.ResolutionForBox(body.RangeBox())
-	if cyl, base, height, ok := cylinderSolidParams(faces); ok && perpendicularToAxis(n, cyl) {
-		return cylinderHalfSpace(body, cyl, base, height, plane) // ⟂ cut → shorter cylinder, fast path
+	cut, err := Boolean(Difference, body, BoundedHalfSpace(plane, body.RangeBox()))
+	if err != nil {
+		return nil, errors.Join(ErrUnsupportedHalfSpace, err)
 	}
-	if cone, vMin, vMax, ok := coneSolidParams(faces); ok && perpendicularToConeAxis(n, cone) {
-		return coneHalfSpace(body, cone, vMin, vMax, plane) // ⟂ cut → cone/frustum, fast path
+	if cut == nil {
+		// The plane's positive side covers the body: nothing is left. The contract is an EMPTY body, not
+		// a nil one — callers compose the cut (one piece per face of a convex tool) and read Faces() on
+		// every piece.
+		return topo.NewBuilder(true, topo.NewLineage(topo.Tok("halfspace", "body", 0))).Build(), nil
 	}
-	if torus, ok := torusSolidParams(faces); ok {
-		if cut, handled, err := torusHalfSpaceCut(body, torus, plane, n); handled {
-			return cut, err
-		}
-	}
-	return generalHalfSpace(body, plane, n, faces, res)
+	return cut, nil
 }
 
-// torusHalfSpaceCut dispatches a bare torus's analytic half-space cuts by the section the plane carves:
-// a perpendicular cut (two concentric circles → a band + annular lid), and the axis-parallel spiric cuts
-// (a single oval cap, its genus-1 complement, or a two-oval band through the hole — Oblikovati#1375).
-// handled=false leaves an oblique/spiric topology not yet wired to the general CSG fallback.
-func torusHalfSpaceCut(body *topo.Body, torus geom.Torus, plane geom.Plane, n math.Vector3) (*topo.Body, bool, error) {
-	switch {
-	case perpendicularToTorusAxis(n, torus):
-		res, err := torusHalfSpace(body, torus, plane) // ⟂ cut → trimmed torus band + annular lid
-		return res, true, err
-	// Every SPIRIC torus cut — single-oval cap, its genus-1 complement, the v-wrapping two-oval band, and the
-	// tilted oblique oval / figure-eight — now routes through the unified (u,v)-arrangement trimmer
-	// (torusSideSplit, via generalHalfSpace's handled=false fallthrough below): the kept region's topology and
-	// kept side emerge from the arrangement and the section's sign, no predicate ladder (#1406). The single
-	// remaining special case is the DEGENERATE axis-parallel figure-eight tangent (the exact zero-width band
-	// limit — two ovals merged into a self-touching loop the arrangement composition can't re-cut), which
-	// keeps the analytic band builder, as OCC-class kernels special-case exact tangencies.
-	case torusAxisParallelFigureEight(torus, plane):
-		res, err := torusTwoOvalHalfSpace(torus, plane) // exact inner-equator tangent → analytic band (zero-width limit)
-		return res, true, err
+// BoundedHalfSpace is the plane's POSITIVE side as an ordinary solid: a prism whose base lies in the
+// plane and which extends a box-diagonal past every corner of box, so within box it IS the half-space.
+// It is what a half-space cut subtracts, and what OCCT's BRepPrimAPI_MakeHalfSpace builds.
+//
+// The extent comes from the box's own diagonal, so the tool scales with the target and carries no
+// absolute size. box must be the target's range box.
+//
+// Example — the +z half-space over a body:
+//
+//	rest, _ := brep.Boolean(brep.Difference, body, brep.BoundedHalfSpace(plane, body.RangeBox()))
+func BoundedHalfSpace(plane geom.Plane, box math.Box) *topo.Body {
+	d := math.Scalar(box.Diagonal().Length())
+	n := unit(plane.Normal())
+	// The base is the box centre projected into the plane, so the prism covers the box whichever way
+	// the plane's own origin sits relative to it.
+	base := box.Center().TranslateBy(n.Scale(-math.Scalar(float64(plane.Origin.VectorTo(box.Center()).Dot(n)))))
+	u, v := plane.UAxis.AsVector(), plane.VAxis.AsVector()
+	var corners [8]math.Point3
+	for i := range 8 {
+		p := base.TranslateBy(u.Scale(pick(i&1 != 0, d, -d))).TranslateBy(v.Scale(pick(i&2 != 0, d, -d)))
+		if i&4 != 0 {
+			p = p.TranslateBy(n.Scale(d))
+		}
+		corners[i] = p
 	}
-	return nil, false, nil
+	// (UAxis, VAxis, Normal) is right-handed — Normal IS UAxis×VAxis — so the block corner convention
+	// gives the same outward winding here that it gives an axis-aligned box.
+	return hexahedronBody(corners, "halfspace")
 }

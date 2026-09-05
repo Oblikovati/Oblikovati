@@ -519,12 +519,14 @@ func islandsWalkNestedOrApart(c *planeFaceUV, islands []imprintCycle) bool {
 	// test — and the arcs a solved crossing splits an island into multiply the samples. Measured, this
 	// gate alone took kernel/brep to 719 s.
 	rings := make([][]math.Point2, len(islands))
+	meets := make([][]math.Point2, len(islands))
 	for i, cyc := range islands {
 		rings[i] = islandWalk(c, cyc)
+		meets[i] = islandArcEnds(c, cyc)
 	}
 	for i := range rings {
 		for j := range rings {
-			if i != j && ringStraddles(rings[i], rings[j]) {
+			if i != j && ringStraddles(rings[i], rings[j], meets[j], c.res.Weld()) {
 				return false
 			}
 		}
@@ -533,15 +535,47 @@ func islandsWalkNestedOrApart(c *planeFaceUV, islands []imprintCycle) bool {
 }
 
 // ringStraddles reports a ring with points both inside and outside another — neither nested nor apart.
-func ringStraddles(ring, other []math.Point2) bool {
+//
+// A point coinciding with one of the other ring's arc ENDS is skipped. That is where the two islands
+// were solved to MEET (splitIslandsAtTouches), and an even-odd parity test has no answer ON a boundary:
+// it returns whichever side the ray happened to fall, so a shared vertex reads "inside" or "outside" by
+// accident. Two lobes of a figure-eight touch at exactly such a point, and letting the parity decide
+// there made this gate a coin toss — measured on a torus tangent to its inner equator, the cut was
+// refused for a Y-axis and an X-axis torus and admitted for a Z-axis one, on geometry identical up to a
+// rotation (ADR-0061). A genuine crossing puts MANY points inside the other ring, not one, so the gate
+// keeps its purpose.
+func ringStraddles(ring, other, otherMeets []math.Point2, weld float64) bool {
 	in, out := false, false
 	for _, p := range ring {
+		if nearAnyPoint2(p, otherMeets, weld) {
+			continue
+		}
 		if pointInRing2D(p, other) {
 			in = true
 		} else {
 			out = true
 		}
 		if in && out {
+			return true
+		}
+	}
+	return false
+}
+
+// islandArcEnds is the cycle's arc endpoints in the plane's (u, v) — the points at which a solved
+// meeting joins this island to another.
+func islandArcEnds(c *planeFaceUV, cyc imprintCycle) []math.Point2 {
+	out := make([]math.Point2, 0, 2*len(cyc))
+	for _, arc := range cyc {
+		out = append(out, to2D(c.plane, arc.curve.PointAt(arc.t0)), to2D(c.plane, arc.curve.PointAt(arc.t1)))
+	}
+	return out
+}
+
+// nearAnyPoint2 reports whether p coincides with one of the listed points within tol.
+func nearAnyPoint2(p math.Point2, pts []math.Point2, tol float64) bool {
+	for _, q := range pts {
+		if float64(p.DistanceTo(q)) <= tol {
 			return true
 		}
 	}

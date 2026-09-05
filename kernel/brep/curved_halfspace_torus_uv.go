@@ -184,20 +184,6 @@ func (c torusUV) orientLoops(loops []emittedLoop, _ bool) ([]curvedLoop, []loopE
 // finalizeLoops is a no-op for the torus: it has no apex pole to drop (uvSide).
 func (c torusUV) finalizeLoops(loops []curvedLoop) []curvedLoop { return loops }
 
-// spiricMaterial is the torus plane-cut predicate: a (u,v) point is kept where the section's signed value
-// g(u,v) = (R + r·cos v)·M·cos(u − Phi) + C·r·sin v − K is negative — exactly the plane's negative side
-// (g equals the signed plane distance n·(P − o)), the side HalfSpaceCut keeps. It reads the seams live so it
-// binds the shifted frame placeSeams set; u,v are seam-relative, so the absolute angles add the seams back.
-func (c *torusUV) spiricMaterial(plane geom.Plane) materialPredicate {
-	phi, m, k, cc := geom.TorusSectionCoeffs(c.torus, plane)
-	r, bigR := c.torus.MinorRadius, c.torus.MajorRadius
-	return func(uv math.Point2) bool {
-		uAbs, vAbs := float64(uv.X)+c.seamU, float64(uv.Y)+c.seamV
-		g := (bigR+r*stdmath.Cos(vAbs))*m*stdmath.Cos(uAbs-phi) + cc*r*stdmath.Sin(vAbs) - k
-		return g < 0
-	}
-}
-
 // wrapAngle folds an angle into [0, 2π).
 func wrapAngle(x float64) float64 {
 	twoPi := 2 * stdmath.Pi
@@ -206,19 +192,6 @@ func wrapAngle(x float64) float64 {
 		x += twoPi
 	}
 	return x
-}
-
-// torusSideSplit trims a bare torus face by a plane along its SPIRIC section, through the general
-// (u,v)-arrangement trimmer (#1406). It builds the section itself (the analytic intersection defers the
-// spiric quartic), then trims with the section's sign as the material predicate. The perpendicular cut has
-// no spiric section (torusSpiricSection ok=false) and is handled analytically upstream, not here.
-func torusSideSplit(f curvedFace, tor geom.Torus, plane geom.Plane) ([]curvedFace, []loopEdge, error) {
-	section, ok := torusSpiricSection(tor, plane)
-	if !ok {
-		return nil, nil, ErrUnsupportedHalfSpace
-	}
-	c := torusUV{torus: tor}
-	return trimByImprint(&c, f, tor, section, func() materialPredicate { return c.spiricMaterial(plane) })
 }
 
 // torusSpiricSection returns the torus∩plane spiric section as SpiricArc branches — the "tracer" the unified

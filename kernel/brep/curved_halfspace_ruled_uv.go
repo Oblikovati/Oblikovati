@@ -114,38 +114,6 @@ func ruledMaterial(c *ruledUV) func() materialPredicate {
 	return func() materialPredicate { return c.halfSpaceMaterial() }
 }
 
-// newConeUV builds the (u, v) model of a frustum side cut by a plane (n the unit plane normal).
-func newConeUV(cone geom.Cone, band coneSideBand_, plane geom.Plane, n math.Vector3) ruledUV {
-	tanA := stdmath.Tan(cone.HalfAngle)
-	return newRuledUV(cone.Apex, cone.AxisDir.AsVector(), cone.Ref.AsVector(), tanA, 0, band, plane, n)
-}
-
-// newCylinderUV builds the (u, v) model of a cylinder side cut by a plane. The cylinder is the degenerate
-// cone — constant radius R, so rad(v)=R (radSlope 0); v is the axial distance from the bottom rim centre.
-func newCylinderUV(cyl geom.Cylinder, band coneSideBand_, plane geom.Plane, n math.Vector3) ruledUV {
-	return newRuledUV(band.bottom, cyl.AxisDir.AsVector(), cyl.Ref.AsVector(), 0, cyl.Radius, band, plane, n)
-}
-
-// newRuledUV reduces a ruled side and a cut plane to the (u,v) signed-distance coefficients. base is the
-// surface point at v=0 (cone apex / cylinder bottom centre), rad(v)=radSlope·v+radConst the cross-section
-// radius, so p=n·(base−O), q=radConst·|n_r|, s=n·â, t=radSlope·|n_r|, uN the azimuth of n's radial part.
-func newRuledUV(base math.Point3, axis, ref math.Vector3, radSlope, radConst float64, band coneSideBand_, plane geom.Plane, n math.Vector3) ruledUV {
-	binor := axis.Cross(ref)
-	nAxis := float64(n.Dot(axis))
-	nr := n.Sub(axis.Scale(math.Scalar(nAxis))) // radial part of n
-	nRad := float64(nr.Length())
-	uN := stdmath.Atan2(float64(nr.Dot(binor)), float64(nr.Dot(ref)))
-	return ruledUV{
-		base: base, axis: axis, ref: ref, binor: binor,
-		radSlope: radSlope, radConst: radConst, band: band,
-		p:  float64(plane.Origin.VectorTo(base).Dot(n)),
-		q:  radConst * nRad,
-		s:  nAxis,
-		t:  radSlope * nRad,
-		uN: uN,
-	}
-}
-
 // aU returns a(u) = p + q·cos(u−uN), the v-independent part of the signed distance g(u,v)=a(u)+v·b(u). u is
 // relative to the seam origin (seamU), so the absolute azimuth used against uN is u+seamU.
 func (c ruledUV) aU(u float64) float64 { return c.p + c.q*stdmath.Cos(u+c.seamU-c.uN) }
@@ -196,36 +164,6 @@ func (c ruledUV) point3(u, v float64) math.Point3 {
 	radial := c.ref.Scale(math.Scalar(stdmath.Cos(a))).Add(c.binor.Scale(math.Scalar(stdmath.Sin(a))))
 	rad := c.radSlope*v + c.radConst
 	return c.base.TranslateBy(c.axis.Scale(math.Scalar(v))).TranslateBy(radial.Scale(math.Scalar(rad)))
-}
-
-// coneSideUVSplit splits a full periodic frustum side by the general (u,v)-arrangement trimmer (newConeUV +
-// trimByImprint), the same path the cylinder side uses — the cone's a(u)+v·b(u) signed distance and its
-// conic section (ellipse, hyperbola branch or parabola, windowed to the band by clipParams, the seam moved
-// clear of the section by chooseSeamU) flow through it uniformly (Oblikovati#1405).
-func coneSideUVSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
-	c := newConeUV(cone, band, plane, n)
-	return trimByImprint(&c, f, cone, []geom.Curve3{conic}, ruledMaterial(&c))
-}
-
-// coneApexSideSplit splits a FULL cone side (apex + one rim) by the (u,v) arrangement. The apex is the
-// v=0 pole; because a cone has q=0, the apex's signed distance is the constant p, so it is kept exactly
-// when p<0. Apex DROPPED → the kept region is a frustum-like band (section + rim) the standard splitSide
-// builds (it never references the degenerate apex rim). Apex KEPT → the kept face closes to the apex as a
-// single loop (the cut ellipse, or the notched rim), the apex an interior pole (apexCapSide).
-func coneApexSideSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
-	// Both apex sides go through the general arrangement trim. Apex dropped → a frustum-like band; apex kept
-	// → the kept face closes to the apex as a single loop, the apex an interior pole (the degenerate v=0
-	// rim loop is dropped inside trimByImprint, dropApexLoop).
-	c := newConeUV(cone, band, plane, n)
-	return trimByImprint(&c, f, cone, []geom.Curve3{conic}, ruledMaterial(&c))
-}
-
-// cylinderSideUVSplit splits a full periodic cylinder side by the general (u,v)-arrangement trimmer
-// (newCylinderUV + trimByImprint): the axis-parallel flat (a ruling-pair section), the oblique ellipse
-// (within-band / clips-rim / tongue), all flow through it uniformly (Oblikovati#1405).
-func cylinderSideUVSplit(f curvedFace, cyl geom.Cylinder, curves []geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
-	c := newCylinderUV(cyl, band, plane, n)
-	return trimByImprint(&c, f, cyl, curves, ruledMaterial(&c))
 }
 
 // seamOrigin is the surface parameter of the chart's (0,0): a ruled side rotates only its azimuth

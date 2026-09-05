@@ -30,7 +30,7 @@ import (
 // literalLineageTags is the per-package count of topo.Tok calls whose namespace is a string
 // literal rather than the owning feature's unique name. Baseline 2026-09-01. It may only shrink.
 var literalLineageTags = map[string]int{
-	"kernel/brep":                61,
+	"kernel/brep":                54, // 61 → 54 (ADR-0061 stage 2): the analytic half-space pipeline is deleted
 	"kernel/ops":                 12,
 	"kernel/ops/blend":           17,
 	"kernel/ops/boolean":         1,

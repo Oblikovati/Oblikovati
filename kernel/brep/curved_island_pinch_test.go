@@ -113,3 +113,22 @@ func twoLobeSectionArcs(t *testing.T, axis math.Vector3, origin math.Point3, nor
 	lo1, hi1 := arcs[1].Domain()
 	return imprintArc{curve: arcs[0], t0: lo0, t1: hi0}, imprintArc{curve: arcs[1], t0: lo1, t1: hi1}
 }
+
+// ringStraddles decides whether two islands overlap, and a point where they were solved to MEET is not
+// evidence: an even-odd parity test has no answer ON a boundary, so a shared vertex reads inside or
+// outside by accident. Two lobes of a figure-eight touch at exactly one such point (ADR-0061).
+func TestRingStraddlesIgnoresASolvedMeetingPoint(t *testing.T) {
+	t.Parallel()
+	// Two unit squares meeting at the origin, corner to corner: touching, never overlapping.
+	left := []math.Point2{math.P2(0, 0), math.P2(-1, 0), math.P2(-1, -1), math.P2(0, -1)}
+	right := []math.Point2{math.P2(0, 0), math.P2(1, 0), math.P2(1, 1), math.P2(0, 1)}
+	meets := []math.Point2{math.P2(0, 0)}
+	if ringStraddles(left, right, meets, 1e-9) { // tol:numeric — an exact shared corner
+		t.Error("two rings touching at a solved meeting must not read as straddling")
+	}
+	// A ring genuinely crossing the other still does, meeting point or not.
+	crossing := []math.Point2{math.P2(0, 0), math.P2(0.5, 0.5), math.P2(2, 0.5), math.P2(2, -1)}
+	if !ringStraddles(crossing, right, meets, 1e-9) { // tol:numeric — the same shared corner
+		t.Error("a ring with points inside and outside the other must still read as straddling")
+	}
+}

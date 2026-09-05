@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -18,29 +17,6 @@ import (
 //
 // It is a RATCHET. A row moving from `differs` to `equal` is a stage of the retirement landing and the
 // expectation comes with it; no row may move the other way.
-
-// halfSpacePrism bounds the plane's positive side to a box comfortably larger than the body — the tool
-// a half-space cut is, as an ordinary solid.
-func halfSpacePrism(plane geom.Plane, box math.Box) *topo.Body {
-	d := math.Scalar(box.Diagonal().Length())
-	n := unit(plane.Normal())
-	base := box.Center().TranslateBy(n.Scale(-math.Scalar(float64(plane.Origin.VectorTo(box.Center()).Dot(n)))))
-	u, v := plane.UAxis.AsVector(), plane.VAxis.AsVector()
-	corner := func(su, sv float64) math.Point3 {
-		return base.TranslateBy(u.Scale(d * math.Scalar(su))).TranslateBy(v.Scale(d * math.Scalar(sv)))
-	}
-	poly := []math.Point3{corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)}
-	verts := append([]math.Point3(nil), poly...)
-	for _, p := range poly {
-		verts = append(verts, p.TranslateBy(n.Scale(d)))
-	}
-	faces := [][]int{{3, 2, 1, 0}, {4, 5, 6, 7}}
-	for i := range poly {
-		j := (i + 1) % len(poly)
-		faces = append(faces, []int{i, j, j + 4, i + 4})
-	}
-	return subd.ToBody(subd.Mesh{Verts: verts, Faces: faces}, "halfspace")
-}
 
 // closedSolidFaces reports a body's face count and whether it is a closed solid; (0, false) for a body
 // the path declined to build.
@@ -110,7 +86,7 @@ func TestHalfSpaceCutEqualsABoundedDifference(t *testing.T) {
 			continue
 		}
 		body := tc.body()
-		boolFaces, boolOK := closedSolidFaces(Boolean(Difference, body, halfSpacePrism(plane, body.RangeBox())))
+		boolFaces, boolOK := closedSolidFaces(Boolean(Difference, body, BoundedHalfSpace(plane, body.RangeBox())))
 		equal := boolOK && boolFaces == cutFaces
 		switch {
 		case equal && !tc.equal:

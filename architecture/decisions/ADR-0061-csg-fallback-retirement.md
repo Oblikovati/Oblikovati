@@ -594,3 +594,71 @@ reads each surface's interior extrema in closed form through `geom.SurfaceAxisCr
 `query.PreciseRangeBox`; the doc now points at it. And the fix bites where a face carries a chart, which
 is the general (u, v) path — the analytic half-space pipeline sets none, and that pipeline is what stage
 2 deletes rather than something to retrofit.
+
+## Stage 2 lands: the half-space cut IS a difference (2026-09-05)
+
+`HalfSpaceCut` no longer has a pipeline of its own. It builds the plane's positive side as an ordinary
+solid bounded to the target's box and hands it to the general boolean:
+
+```go
+cut, err := Boolean(Difference, body, BoundedHalfSpace(plane, body.RangeBox()))
+```
+
+which is what OCCT's `BRepPrimAPI_MakeHalfSpace` does and what ADR-0062 said this should become. The
+per-primitive dispatch above it — a cylinder fast path, a cone fast path, a torus fast path with its own
+three-way spiric switch, then `generalHalfSpace`'s `splitFaceByPlane` ladder — is **deleted**, along with
+the looped split, the lid chainer, the two-oval band builder and the axis-parallel figure-eight
+recognizer.
+
+**Measured:** 1 008 lines removed against 117 added, across 19 files; two files deleted outright and a
+third (`curved_halfspace_general.go`) reduced to three shared helpers that now live under a name that
+says what they are (`curved_plane_side.go`). Three ratchets FELL and were lowered in the same commit:
+
+| ratchet | before | after |
+| --- | --- | --- |
+| `geomSwitchDebt["kernel/brep"]` | 93 | 82 |
+| `literalLineageTags["kernel/brep"]` | 61 | 54 |
+| `kernelNetDeltaPin["type-assertions"]` | 765 | 754 |
+
+**What did NOT move, and should not have.** `fallbackDebt` stays at 5/3/38. Its three numbers count the
+CSG and mesh ENGINES and the doors into them, which stages 5, 6 and 7 close; stage 2 deletes an analytic
+pipeline, not a faceted one. Reporting it as progress would be reporting the wrong number.
+
+**Two obsolete tests retired, one rewritten.** `TestTorusAxisParallelFigureEightGuards` guarded a
+recognizer that no longer exists. `TestClipParamsMultiArmHyperbola` tests `ruledUV.clipParams`, which is
+alive through the general boolean's `newConeUVSolid`, and only reached it through the plane-based
+constructor; it now goes through the surviving one, so it no longer holds a dead path up. The looped-split
+acceptance test keeps its geometry and loses a comment naming a deleted function.
+
+**Follow-up, named here so it is not forgotten.** Twenty files still carry the `curved_halfspace_` prefix
+while holding the general (u, v) chart machinery the boolean uses — the arrangement's five phases, the
+ruled and torus (u, v) models, the side interface. The names are now wrong. That is a mechanical rename
+and it belongs in its own commit, not buried in this one.
+
+### One defect the deletion exposed: a parity test answering on a boundary
+
+`./model/...` — which the rewire instrument never ran, because the instrument was
+`go test ./kernel/...` — caught `TestNativeRevolveTorusHalfSpaceCutsAreExact`. The figure-eight tangent
+cut fell to CSG for a torus about the **Y** axis and passed for one about **Z**, on geometry identical up
+to a rotation. Reduced:
+
+| torus axis | tangent on | exact? |
+| --- | --- | --- |
+| z | +y, +x | ✓ ✓ |
+| y | +z | ✓ |
+| y | +x | **✗** |
+| x | +y, +z | **✗ ✗** |
+
+The section is identical in every row — two lobes, each closing on itself to 4.9e-16, meeting at one
+point. What differed was `islandsWalkNestedOrApart`, the gate that refuses two islands "not nested and
+not apart". It asks `pointInRing2D` of every sample of one lobe against the other, and the lobes' shared
+TANGENCY is a sample of both. An even-odd parity test has no answer ON a boundary: it returns whichever
+side the ray happened to fall, so the shared vertex read "inside" for some rotations and "outside" for
+others, and the gate refused the geometry it was rotated from.
+
+`ringStraddles` now skips a point coinciding with one of the other island's arc ENDS — which is exactly
+where `splitIslandsAtTouches` solved the two to meet. One incidence, decided once, not re-decided by a
+parity test that cannot see it. A genuine crossing puts many points inside the other ring, so the gate
+keeps its purpose, and `TestRingStraddlesIgnoresASolvedMeetingPoint` pins both halves.
+
+The corpus takes all six axis/normal pairs, because the defect was a coin toss.

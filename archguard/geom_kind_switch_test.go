@@ -44,7 +44,7 @@ var geomSwitchDebt = map[string]int{
 	"addin/router":                 5,
 	"app":                          13,
 	"kernel/blend":                 15,
-	"kernel/brep":                  93,
+	"kernel/brep":                  82, // 93 → 82 (ADR-0061 stage 2): the analytic half-space pipeline is deleted
 	"kernel/exchange/step/geommap": 11,
 	"kernel/geomapi":               9,
 	"kernel/ops":                   1,

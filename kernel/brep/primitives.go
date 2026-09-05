@@ -24,18 +24,30 @@ func SolidBlock(min, max math.Point3, feat string) (*topo.Body, error) {
 		return nil, fmt.Errorf("brep.SolidBlock: box %v→%v has a non-positive extent (%g, %g, %g)",
 			min, max, sx, sy, sz)
 	}
-	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok(feat, "body", 0)))
-	v := blockVertices(bld, min, max, feat)
-	e := blockEdges(bld, v, feat)
-	blockFaces(bld, v, e, feat)
-	return bld.Build(), nil
+	var corners [8]math.Point3
+	for i := range 8 {
+		corners[i] = math.P3(pick(i&1 != 0, max.X, min.X), pick(i&2 != 0, max.Y, min.Y), pick(i&4 != 0, max.Z, min.Z))
+	}
+	return hexahedronBody(corners, feat), nil
 }
 
-// blockCorner index convention: bit 0 = +X, bit 1 = +Y, bit 2 = +Z.
-func blockVertices(bld *topo.Builder, min, max math.Point3, feat string) [8]*topo.Vertex {
+// hexahedronBody builds a six-faced solid from eight corners on the block index convention — bit 0
+// selects the far corner along the frame's FIRST direction, bit 1 the second, bit 2 the third. The
+// frame need not be the world axes: any right-handed frame whose six faces are planar builds here,
+// because every face's plane is read from its own corners. SolidBlock is the axis-aligned caller,
+// BoundedHalfSpace the plane-aligned one (ADR-0062).
+func hexahedronBody(corners [8]math.Point3, feat string) *topo.Body {
+	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok(feat, "body", 0)))
+	v := blockVertices(bld, corners, feat)
+	e := blockEdges(bld, v, feat)
+	blockFaces(bld, v, e, feat)
+	return bld.Build()
+}
+
+// blockVertices mints the eight corners in index order.
+func blockVertices(bld *topo.Builder, corners [8]math.Point3, feat string) [8]*topo.Vertex {
 	var v [8]*topo.Vertex
-	for i := range 8 {
-		p := math.P3(pick(i&1 != 0, max.X, min.X), pick(i&2 != 0, max.Y, min.Y), pick(i&4 != 0, max.Z, min.Z))
+	for i, p := range corners {
 		v[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(feat, "vertex", i)))
 	}
 	return v

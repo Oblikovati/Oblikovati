@@ -340,8 +340,13 @@ func TestClipParamsMultiArmHyperbola(t *testing.T) {
 	if len(curves) != 1 {
 		t.Fatalf("want one conic section, got %d", len(curves))
 	}
-	_, band, _ := fullConeSideBand(cf)
-	c := newConeUV(sf.Geometry().(geom.Cone), band, plane, math.V3(1, 0, 0))
+	side := sf.Geometry().(geom.Cone)
+	band, ok := coneSideBand(cf, side)
+	if !ok {
+		t.Fatal("the frustum side must yield its two rim circles")
+	}
+	// clipParams and curveV read the band and the conic alone, so the membership predicate is immaterial.
+	c := newConeUVSolid(side, band, Intersection, false, func(math.Point3) bool { return true })
 	ranges := c.clipParams(curves[0])
 	if len(ranges) != 2 {
 		t.Fatalf("hyperbola has two arms in the band, clipParams returned %d ranges", len(ranges))
