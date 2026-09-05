@@ -328,3 +328,41 @@ and welds to nothing"). That reasoning is in the code and the emission does not 
 
 Not attempted here — recorded so the next attempt starts from the table rather than from one subtest
 name.
+
+## The pole seam, solved — and the paragraph above corrected (2026-09-05)
+
+The hypothesis that closes the previous section is **wrong**, and usefully so: the seam run at the pole
+is not something the emission should suppress, it is something the sampling should never have created.
+Instrumenting the sphere chart's segment set for the `(0,1,0)` cut shows the imprint arriving at the
+pole and then doing this:
+
+```
+seg kind=imprint (1.570796, -1.546253) -> (1.570796, -1.570796)   # down the u = π/2 meridian, onto the pole
+seg kind=imprint (7.853982, -1.570796) -> (4.712389, -1.546253)   # a HALF-TURN leap in u, at v = -π/2
+```
+
+The section curve passes exactly through the pole, where longitude names no direction. `sampledPolyline`
+nevertheless carried the pole sample's azimuth forward by continuity (`unwrapAzimuthNear`), so the two
+samples flanking the pole became **one segment spanning π in u along `v = −π/2`**. That segment crosses
+the placed seam. The boundary walk then follows it out to the seam and up it — which is the seam run
+`emitSeamRun` was faithfully turning into a meridian arc. The emission was reporting the defect, not
+causing it; suppressing it there would have hidden a wrong arrangement behind a right-looking loop.
+
+**The rule.** At a parametric pole the surface collapses to a point, so `u` is free and continuity may
+not choose it. A pole sample takes the azimuth of its NEIGHBOUR — separately on each side — so each
+half of the imprint reaches the pole ON ITS OWN MERIDIAN and stops there, and the chart's own pole
+segment bridges the two. That is exactly what `poleSegments` exists for. The 3-D geometry is untouched:
+`point3(u, ±π/2)` is the same point for every `u`, so this is a re-parameterisation, not a nudge.
+
+Implemented in `loopFrame` (`sampleChartPoints` + `anchorPoleEnds`), so it holds for every loop-framed
+chart with a singular point — a sphere's poles and a cone's apex alike, not a sphere special case. The
+degeneracy test is the existing scale-free `sampleOnPole`, so no recognizer and no tolerance constant is
+added.
+
+**Cost.** Shipping path `./kernel/... ./archguard/`: green. Under the rewire the leaf failures go
+**6 → 5**; `TestLoopedSplitHalvesACapBySymmetry` is gone and nothing else moved. The remaining five are
+all the torus figure-eight rows (the tangent-pinch pairing of the previous section).
+
+Corpus: `TestSphereCapCutThroughItsPoleClosesAtEveryOrientation` takes all four axis-aligned removals,
+because the defect took half of all orientations. Without the fix it fails 2 of 4 under the rewire and
+1 of 4 on the shipping path — the coin toss, pinned.

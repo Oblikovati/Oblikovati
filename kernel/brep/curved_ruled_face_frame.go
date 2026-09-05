@@ -221,22 +221,11 @@ func (c *loopFrame) imprintSegments(imprint []geom.Curve3, seamHits []frameCross
 // still straddles the seam (an incidence the solver did not see) is split there by interpolation.
 func (c *loopFrame) sampledPolyline(cv geom.Curve3, t0, t1 float64, inject, atSeam []float64, kind segKind) []uvSeg {
 	params := injectedParams(cv, t0, t1, append(append([]float64{}, inject...), atSeam...))
-	pts := make([]math.Point2, len(params))
-	prevU := 0.0
-	for i, t := range params {
-		uv := c.host.paramOf(cv.PointAt(t))
-		u := float64(uv.X)
-		if i > 0 {
-			u = unwrapAzimuthNear(prevU, u)
-		}
-		if containsParam(atSeam, t) {
-			u = 2 * stdmath.Pi * stdmath.Round(u/(2*stdmath.Pi))
-		}
-		pts[i], prevU = math.P2(u, float64(uv.Y)), u
-	}
+	pts, poles := c.sampleChartPoints(cv, params, atSeam)
 	var out []uvSeg
 	for i := 1; i < len(params); i++ {
-		seg := foldIntoStrip(uvSeg{a: pts[i-1], b: pts[i], curve: cv, tA: params[i-1], tB: params[i], kind: kind})
+		a, b := anchorPoleEnds(pts[i-1], pts[i], poles[i-1], poles[i])
+		seg := foldIntoStrip(uvSeg{a: a, b: b, curve: cv, tA: params[i-1], tB: params[i], kind: kind})
 		for _, s := range splitSeamCrossing(seg) {
 			for _, s := range c.splitVSeamIfClosed(s) {
 				if s.a.DistanceTo(s.b) > arrTol {
@@ -246,6 +235,58 @@ func (c *loopFrame) sampledPolyline(cv geom.Curve3, t0, t1 float64, inject, atSe
 		}
 	}
 	return out
+}
+
+// sampleChartPoints maps a curve's sampled parameters into the chart, unwrapping the azimuth along the
+// walk so each step is continuous, snapping every seam incidence to the seam exactly. A sample that
+// lands on a PARAMETRIC POLE is flagged and left out of the unwrapping: u names no direction there, so
+// it may neither take a branch from its predecessor nor hand one to its successor.
+func (c *loopFrame) sampleChartPoints(cv geom.Curve3, params []float64, atSeam []float64) ([]math.Point2, []bool) {
+	pts, poles := make([]math.Point2, len(params)), make([]bool, len(params))
+	prevU, havePrev := 0.0, false
+	for i, t := range params {
+		p := cv.PointAt(t)
+		uv := c.host.paramOf(p)
+		u := float64(uv.X)
+		if poles[i] = c.atPole(p); poles[i] {
+			pts[i] = uv
+			continue
+		}
+		if havePrev {
+			u = unwrapAzimuthNear(prevU, u)
+		}
+		if containsParam(atSeam, t) {
+			u = 2 * stdmath.Pi * stdmath.Round(u/(2*stdmath.Pi))
+		}
+		pts[i], prevU, havePrev = math.P2(u, float64(uv.Y)), u, true
+	}
+	return pts, poles
+}
+
+// atPole reports whether a point is a SINGULAR point of the chart's surface — a sphere's pole, a cone's
+// apex — where the azimuth names no direction. The surface's own derivatives answer it scale-free, the
+// same test the trim ring's branch repair reads (Oblikovati/Oblikovati#3447).
+func (c *loopFrame) atPole(p math.Point3) bool {
+	u, v := c.face.surface.ParamAt(p)
+	return sampleOnPole(c.face.surface, math.P2(u, v), false)
+}
+
+// anchorPoleEnds gives a segment end that sits on a parametric pole the OTHER end's azimuth. At a pole
+// the surface collapses to a single point, so every azimuth names it and continuity may not pick one:
+// carried across the pole by continuity, the two samples flanking it become ONE segment leaping a
+// half-turn in u at v = ±π/2. That leap crosses the seam, and the boundary walk then follows it out
+// along the seam instead of stopping at the pole — the two open edges of the looped split
+// (Oblikovati/Oblikovati#1334, ADR-0061). Anchored, each side reaches the pole ON ITS OWN meridian and
+// the chart's pole segment bridges the two, which is what the pole segment is for. The 3-D geometry is
+// untouched: point3(u, ±π/2) is the same pole for every u.
+func anchorPoleEnds(a, b math.Point2, aPole, bPole bool) (math.Point2, math.Point2) {
+	if aPole && !bPole {
+		return math.P2(float64(b.X), float64(a.Y)), b
+	}
+	if bPole && !aPole {
+		return a, math.P2(float64(a.X), float64(b.Y))
+	}
+	return a, b
 }
 
 // splitVSeamIfClosed splits a segment straddling the v-seam, on a chart whose v is a period.
