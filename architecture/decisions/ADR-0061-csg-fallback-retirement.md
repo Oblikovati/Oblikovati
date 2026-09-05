@@ -492,13 +492,31 @@ far outside the body:
 | **oblique band** | 151.898715 | **239.841783** (the complement) |
 
 The rebuilt body is topologically identical — same faces, same edges, same loop counts — and one planar
-lid's `Reversed` flag differs. The material-side votes say why: in the original the two lids read
-−31/−31 and the torus's two loops +31/+31; in the rebuild they read −31/**+31** and +31/**−31**. One
-lobe's edge is traversed the other way round in BOTH its uses, which keeps the two-colouring's pairwise
-opposition intact — and pairwise opposition is all `curvedOrientationFlips` checks. A loop that consists
-of ONE CLOSED EDGE has no chain to constrain it, so its direction is free, and nothing ties lobe B's
-choice to lobe A's. `senseFromLoopWinding` then faithfully sets each flag from its own winding and the
-two lids disagree. The invariant the colouring is missing is that a loop's direction is not free: the
-material is on its left, and `materialSideVotes` already answers that per loop.
+lid's `Reversed` flag differs. The material-side votes locate it. Read straight back off the STORED
+body, before any reorientation runs:
+
+```
+lid A   votes -31
+lid B   votes +31      <- the two lids wind oppositely
+torus   votes  +0, +0
+```
+
+Both lids are marked `Reversed`, and their loops wind against each other. The body is internally
+inconsistent as built — `BodyGeometryProperties` integrates from the face flags and the surface normals,
+so it still reported the right 151.898715, but every reader that takes a face's region from its
+TRAVERSAL (`senseFromLoopWinding`, the flux classifier) reads one lid inverted, and the rebuild then
+stores the flag it read.
+
+Two candidate causes were tested and refuted, so the next pass need not repeat them:
+
+- *Not the two-colouring's free bit.* `curvedOrientationFlips` flips whole FACES, which cannot produce a
+  one-loop asymmetry: flipping the torus face would move both of its loops together.
+- *Not the lid filing.* The oblique section's two lobes are side by side, not nested — sampled into the
+  cutting plane they share the whole u range and split v at the tangency, `[-4.66,2.00]×[-6.87,0]` and
+  `[-4.66,2.00]×[0,6.87]` — so two lid faces is the right answer and a containment rule changes nothing.
+  (Implemented as `lidLoopGroups` and reverted: it never fired, and an unexercised rule is not a fix.)
+
+What is left is the emission itself: one of the two lobe loops is emitted with the material on its
+RIGHT. `materialSideVotes` already answers that question per loop; the producer does not ask it.
 
 Recorded rather than fixed, so the next pass starts from the measurement.
