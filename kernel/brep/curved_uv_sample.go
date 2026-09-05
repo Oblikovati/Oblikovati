@@ -10,7 +10,7 @@ import (
 )
 
 // Phase 1 of the ruled-side (u,v) arrangement (#1405, split out of
-// curved_halfspace_uv_arrangement.go for #2212): project the imprint curves into the side's
+// curved_uv_arrangement.go for #2212): project the imprint curves into the side's
 // (u,v) parameter space and sample them into TAGGED segments.
 //
 // Tagging is the point: each segment remembers which curve it came from, so the boundary the

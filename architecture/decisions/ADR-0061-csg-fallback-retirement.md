@@ -612,7 +612,7 @@ recognizer.
 
 **Measured:** 1 008 lines removed against 117 added, across 19 files; two files deleted outright and a
 third (`curved_halfspace_general.go`) reduced to three shared helpers that now live under a name that
-says what they are (`curved_plane_side.go`). Three ratchets FELL and were lowered in the same commit:
+says what they are (`curved_same_point.go`). Three ratchets FELL and were lowered in the same commit:
 
 | ratchet | before | after |
 | --- | --- | --- |
@@ -633,7 +633,7 @@ acceptance test keeps its geometry and loses a comment naming a deleted function
 **Follow-up, named here so it is not forgotten.** Twenty files still carry the `curved_halfspace_` prefix
 while holding the general (u, v) chart machinery the boolean uses — the arrangement's five phases, the
 ruled and torus (u, v) models, the side interface. The names are now wrong. That is a mechanical rename
-and it belongs in its own commit, not buried in this one.
+and it belongs in its own commit, not buried in this one. (Done below.)
 
 ### One defect the deletion exposed: a parity test answering on a boundary
 
@@ -662,3 +662,33 @@ parity test that cannot see it. A genuine crossing puts many points inside the o
 keeps its purpose, and `TestRingStraddlesIgnoresASolvedMeetingPoint` pins both halves.
 
 The corpus takes all six axis/normal pairs, because the defect was a coin toss.
+
+### The residue the deletion left, and the names it left wrong (2026-09-05, same day)
+
+Two things stage 2 left behind, both now done.
+
+**Production code kept alive only by tests of the path that was deleted.** `unused` cannot see it — a
+test counts as a use. Running it with the tests excluded (`golangci-lint run --tests=false
+--enable=unused`) names it exactly, and three whole files fell out: `curved_halfspace_ruled_face.go`
+(the plane-based ruled wall split), `curved_halfspace_looped.go` (the loop-by-plane splitter it was the
+only caller of) and `curved_halfspace_torus_oblique_general.go` (the oblique spiric span helpers),
+together with `torusSpiricSection`/`spiricBranches` and two helpers of the old general stage. Their unit
+tests went with them; the three BEHAVIOUR tests that happened to live in the oblique file — they cut a
+tilted torus and check the result — stayed, because they test `HalfSpaceCut`, not its old innards.
+
+**The names.** Twenty files carried a `curved_halfspace_` prefix while holding the general (u, v) chart
+machinery, so they are renamed to what they are: the arrangement's five phases to `curved_uv_*`, the
+ruled and torus models to `curved_ruled_uv*` / `curved_torus_uv*`, the cut-cylinder chart to
+`curved_cut_cylinder_*`, and the primitive recognizers to `curved_*_solid_params` / `curved_*_side_band`.
+`curved_halfspace.go` keeps its name: it IS the half-space cut. So do the behaviour tests named after
+the cuts they drive. `toleranceDebt`'s keys are file paths and were renamed with them — same budgets,
+no ratchet moved.
+
+**Named follow-up: a second, unused entry to the radial sew.** `radialSew` and its three helpers
+(`extractEdgeGroups`, `indexUsesByGroup`, `sortedPairKeys`) plus `sewPlan.useGroup` are reachable from
+tests alone: `buildCurvedStitchPlan` inlines the sew instead of calling it. They are NOT
+interchangeable — `extractEdgeGroups` walks `sortedPairKeys`, the stitch walks first-encounter order,
+and the group index is what edge lineage ordinals are built from — so this is a delete, not a merge, and
+it wants its own commit and its own reading of what the tests were proving. The same sweep lists
+`provenanceOf`, `allEdgesPaired`, `curvedImprint`, `interiorPointOf`, `planeUVContactOK`,
+`chartContains` and `eccCap`; each needs the same judgement and none of it is stage-2 residue.

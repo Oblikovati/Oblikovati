@@ -8,7 +8,7 @@ import (
 
 // Ruled-side arrangement support (M2 Phase-1, Oblikovati/Oblikovati#1375, generalised #1405). What remains
 // of the original single-valued boundary walk after the general (u,v)-arrangement trimmer
-// (curved_halfspace_uv_arrangement.go) replaced it: the few helpers the arrangement still leans on — the
+// (curved_uv_arrangement.go) replaced it: the few helpers the arrangement still leans on — the
 // wrapping test that picks the band orientation convention, the parameter unwrap that keeps a re-emitted
 // conic arc on one monotone run, and the edge-chain reversal.
 
@@ -59,4 +59,9 @@ func reverseEdgeChain(chain []loopEdge) []loopEdge {
 		out[len(chain)-1-i] = reverseEdge(e)
 	}
 	return out
+}
+
+// reverseEdge walks one loop edge the other way: the same curve over its parameter span reversed.
+func reverseEdge(e loopEdge) loopEdge {
+	return loopEdge{curve: e.curve, t0: e.t1, t1: e.t0}
 }

@@ -13,7 +13,7 @@ import (
 // most often hit by a real revolve, and its plane cut carves a quartic SPIRIC section whose topology (one
 // oval, two ovals, figure-eight, the cap vs its genus-1 complement) used to be a ladder of bespoke
 // closed-form builders. torusUV routes every SPIRIC cut through the SAME (u,v)-arrangement trimmer the ruled
-// sides use (trimByImprint, curved_halfspace_uv_side.go): project the spiric section into the torus's
+// sides use (trimByImprint, curved_uv_side.go): project the spiric section into the torus's
 // (u = azimuth, v = tube angle) chart, subdivide, classify by the section's sign, and re-emit — the topology
 // emerging from the kept cells' boundary, not from a predicate. The PERPENDICULAR cut (two concentric
 // circles, an annular lid the arrangement's lid chainer cannot assemble) stays analytic (torusHalfSpace).
@@ -192,43 +192,6 @@ func wrapAngle(x float64) float64 {
 		x += twoPi
 	}
 	return x
-}
-
-// torusSpiricSection returns the torus∩plane spiric section as SpiricArc branches — the "tracer" the unified
-// path feeds (#1406). The coefficients and v-range come from the existing closed forms; the topology is read
-// from how much of the tube the section covers: a near-full-wrap section (absent arc ≤ figureEightWrapTol) is
-// the two-oval band / figure-eight, two full-tube branches over v∈[0,2π]; otherwise a single oval, two
-// branches over its [v0,v1] pinch range. A perpendicular cut (M≈0, no spiric) or a clearing plane returns
-// ok=false.
-func torusSpiricSection(t geom.Torus, plane geom.Plane) ([]geom.Curve3, bool) {
-	phi, m, k, c := geom.TorusSectionCoeffs(t, plane)
-	if m <= cylinderAxisCosTol {
-		return nil, false // plane perpendicular to the axis: the analytic two-circle cut, not spiric
-	}
-	if torusSectionAbsentArc(t, m, k, c) <= figureEightWrapTol {
-		return spiricBranches(t, phi, m, k, c, 0, 2*stdmath.Pi), true // two ovals / figure-eight (full tube)
-	}
-	v0, v1, _, ok := torusObliqueOvalRange(t, m, k, c)
-	if !ok {
-		return nil, false // a clearing plane, or a topology not yet supported
-	}
-	// Centre the oval's tube-angle range on [−π, π] (torusObliqueOvalRange may report it 2π-shifted, e.g.
-	// [5π/3, 7π/3], when the valid stretch wraps the seam). The branch edges carry V0/V1, and the downstream
-	// spiric mesher charts the oval from them — the analytic builders emit the centred [−vc, vc], so matching
-	// that keeps the mesh on the oval rather than its 2π-shifted twin (#1406).
-	for v0 > stdmath.Pi {
-		v0, v1 = v0-2*stdmath.Pi, v1-2*stdmath.Pi
-	}
-	return spiricBranches(t, phi, m, k, c, v0, v1), true
-}
-
-// spiricBranches builds the +1 and −1 spiric branches over the tube-angle range [v0, v1] — the two arcs that
-// bound one oval (meeting at its v-extremes), or the two full-tube ovals when [v0,v1] is the whole period.
-func spiricBranches(t geom.Torus, phi, m, k, c, v0, v1 float64) []geom.Curve3 {
-	return []geom.Curve3{
-		geom.SpiricArc{Torus: t, Phi: phi, M: m, K: k, C: c, Branch: +1, V0: v0, V1: v1},
-		geom.SpiricArc{Torus: t, Phi: phi, M: m, K: k, C: c, Branch: -1, V0: v0, V1: v1},
-	}
 }
 
 // seamOrigin is the surface parameter of the chart's (0,0): a torus places BOTH seams, so both

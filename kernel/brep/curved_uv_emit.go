@@ -175,7 +175,7 @@ func dedgeLoopContains(loop []dedge, p math.Point2) bool {
 // (band.topRimReversed), the lid then taking that loop's section arcs forward — so the rebuilt rim keeps the
 // sense opposite its cap and the band, lid and caps stay a consistent manifold. The reversal is gated on
 // wrapping because a non-wrapping tongue is one mixed loop the analytic tongueSide leaves un-reversed
-// (#1405, mirroring curved_halfspace_ruled_uv.go's splitSide vs tongueSide).
+// (#1405, mirroring curved_ruled_uv.go's splitSide vs tongueSide).
 func (c ruledUV) orientLoops(loops []emittedLoop, wrapping bool) ([]curvedLoop, []loopEdge, bool) {
 	faceLoops := make([]curvedLoop, 0, len(loops))
 	var lid []loopEdge

@@ -10,7 +10,7 @@ import (
 // on a FULL periodic cylinder side: its seam runs up one constant angle, and when that seam lands in the
 // kept region the two rim circles' kept arcs join across it into runs the imprint cannot bridge. The
 // cylinder is the degenerate cone (constant radius), so its side cut is now built by the SAME (u,v)
-// arrangement split the cone uses (cylinderSideUVSplit, curved_halfspace_ruled_uv.go): the axis-parallel
+// arrangement split the cone uses (cylinderSideUVSplit, curved_ruled_uv.go): the axis-parallel
 // flat is a non-wrapping span whose two ends are the vertical cut lines, and an OBLIQUE cut (a section
 // ellipse — the case the old line-only split deferred to CSG) is the same within-band / clips-rim / tongue
 // family the cone handles. This file keeps only the band extractor the split builds on. After the first

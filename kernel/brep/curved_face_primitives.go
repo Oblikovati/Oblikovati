@@ -63,7 +63,7 @@ func sphereCapFace(sph geom.Sphere, rim geom.Circle, keep math.Vector3, reversed
 // rather than the face itself — the [curvedFace.outerless] case, which curvedStitch then mints as an
 // inner loop and every later reader recovers from topo.Loop.IsOuter.
 //
-// It reads the loops' handedness in (u, v), the same rule curved_halfspace_torus_uv.go applies to the
+// It reads the loops' handedness in (u, v), the same rule curved_torus_uv.go applies to the
 // torus complement. Reading it HERE is sound and reading it at classification time is not: this builder
 // wound these loops itself, one line above, whereas a classifier handed an arbitrary body is reading a
 // datum that orients a shell only up to one global sign (orient_consistent.go fixes that sign from the

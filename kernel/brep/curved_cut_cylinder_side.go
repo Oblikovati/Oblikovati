@@ -10,7 +10,7 @@ import (
 )
 
 // Already-cut cylinder-side recognition for the partial-rim second cut (Oblikovati/Oblikovati#1732).
-// fullCylinderSideBand (curved_halfspace_cylinder_side.go) resolves a BARE side — two full-circle rims — for
+// fullCylinderSideBand (curved_cylinder_side_band.go) resolves a BARE side — two full-circle rims — for
 // cylinderOperand. After a first cut the side carries ONE surviving full-circle rim plus a NOTCHED boundary
 // (rim arcs + the first cut's section conic); it fails the two-circle test there and, until now, fell straight
 // to CSG. cutCylinderSideBand recognises that cut side so a second curved boolean can compose the prior

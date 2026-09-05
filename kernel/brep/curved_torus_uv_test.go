@@ -40,45 +40,6 @@ func angGap(a, b float64) float64 {
 	return d
 }
 
-// TestTorusSpiricSectionCap: an axis-parallel plane between the inner and outer tube radii cuts ONE oval —
-// torusSpiricSection returns its two ±1 branches over a centred [v0,v1] (v0<v1, not 2π-shifted), each lying
-// on both the torus and the plane (Oblikovati#1406).
-func TestTorusSpiricSectionCap(t *testing.T) {
-	t.Parallel()
-	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
-	plane, _ := geom.NewPlane(math.P3(0, 6, 0), math.V3(0, -1, 0)) // |K|/M = 6, between R−r=3 and R+r=7
-	section, ok := torusSpiricSection(tor, plane)
-	if !ok || len(section) != 2 {
-		t.Fatalf("section ok=%v n=%d, want ok + 2 branches", ok, len(section))
-	}
-	for i, cv := range section {
-		sa := cv.(geom.SpiricArc)
-		if sa.V0 >= sa.V1 {
-			t.Errorf("branch %d range [%.3f,%.3f] not native (V0<V1)", i, sa.V0, sa.V1)
-		}
-		if stdmath.Abs(sa.V0) > stdmath.Pi {
-			t.Errorf("branch %d V0=%.3f not centred in [−π,π]", i, sa.V0)
-		}
-		for _, tt := range []float64{0, 0.5, 1} {
-			p := cv.PointAt(tt)
-			if d := stdmath.Abs(float64(plane.Origin.VectorTo(p).Dot(plane.Normal()))); d > 1e-6 {
-				t.Errorf("branch %d t=%.1f off the cut plane by %.2e", i, tt, d)
-			}
-		}
-	}
-}
-
-// TestTorusSpiricSectionPerpendicularDefers: a plane perpendicular to the axis has no spiric section (it cuts
-// two circles, handled analytically), so torusSpiricSection reports ok=false (Oblikovati#1406).
-func TestTorusSpiricSectionPerpendicularDefers(t *testing.T) {
-	t.Parallel()
-	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
-	plane, _ := geom.NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1))
-	if _, ok := torusSpiricSection(tor, plane); ok {
-		t.Error("perpendicular cut should defer (ok=false), it has no spiric section")
-	}
-}
-
 // TestSpiricArcOfNativeOrdering: spiricArcOf stores a branch in native tube-angle order (V0<V1) even for a
 // reversed loop traversal (t0>t1), so the direction-sensitive spiric mesher charts the same patch either way
 // — the fix that made the unified cap match the analytic cap's mesh exactly (Oblikovati#1406).

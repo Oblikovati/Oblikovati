@@ -79,7 +79,7 @@ func imprintChain(b canalArmBundle, tol float64) []endSeg {
 // measured rather than assumed. Reversing here is a one-line change and it goes red immediately:
 // TestCanalImprint_X80SpiricExtension requires the spliced loop to carry a bare geom.SpiricArc, because
 // three consumers dispatch on that CONCRETE type — spiricBandMesh's twoOvalEdges (the tessellator's own
-// two-oval band path), curved_stitch's newEdge and curved_halfspace_torus_uv's sectionUV. A reversedCurve3
+// two-oval band path), curved_stitch's newEdge and curved_torus_uv's sectionUV. A reversedCurve3
 // wrapper hides the type from all three, and the fix for that is to tessellate.Unwrap with geom.InnerCurve at each —
 // a change to the TESSELLATION dispatch, not to this splice, and one that has to be measured on its own.
 //
