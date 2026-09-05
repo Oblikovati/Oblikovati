@@ -812,3 +812,36 @@ extended from one case to three by a scripted replacement that silently did not 
 "passed all three" had run one — and would have reported the two new rows green without executing them.
 Every scripted edit that must match existing text now asserts the match, and a test extended to new rows
 is read back for those rows in the output before it is believed.
+
+### Contact is contact, whether or not the section stays inside (2026-09-05)
+
+Working toward stage 4's next family turned up a defect worth more than the family: **a sphere
+intersected with a box came back WHOLE.**
+
+The closed-surface pairing asked whether a plane section sat wholly inside the receiving face's trim.
+A section that crosses the receiver's own edge — which is what happens whenever a box clips a ball
+across a corner — answered "no", so no imprint was planned, no gate declined, and the sphere passed
+through the boolean untouched. A valid solid of entirely the wrong shape is worse than any decline, and
+this one was reachable from `brep.Boolean`, the kernel's own entry.
+
+Two causes, both now fixed:
+
+- **`Face.RangeBox` was empty for a boundary-less face.** A range box is built from vertices and edge
+  curves, and a bare ball has neither, so every pairing that screens two faces on their boxes found no
+  contact at all. It now bounds such a face by its surface. (The chart-window sweep the BODY's box also
+  takes is deliberately NOT applied per face: a window encloses a non-rectangular trim generously, which
+  costs a body nothing and would pull spurious pairs into a per-face screen — measured, it took a slot's
+  breach off its exact ruling.) The `unboxed` list the boundary index kept for exactly this case is
+  deleted with it.
+- **The contact test asked the wrong question.** `sphereSectionEnters` now asks whether the section
+  MEETS the trim, which is what "does this pair touch" means. The pairing that CARRIES a crossing — clip
+  it to the trim once, for both sides, as `wallSectionIsland` already does for a wall's conic — was
+  implemented and then withdrawn: it made the sphere∩box and box−sphere cases exact but left box∪sphere
+  filing its two kept regions as one face with a hole, integrating to nothing. Trading a decline for a
+  wrong answer is the opposite of the point, so what ships is the decline, and the crossing pairing
+  waits for the union case to be understood.
+
+Also generalised while here: `closedSurfaceOuterless` — a closed-surface face has no outer loop when
+EVERY one of its rings bounds a dropped island, not only when there is exactly one such ring. And
+`widestCylinderFace` in the corpus now fails cleanly instead of returning nil, which nil-dereferenced
+inside the mass-props query and killed a whole package's run mid-measurement.

@@ -459,7 +459,16 @@ func (f *Face) RangeBox() math.Box {
 	for _, v := range f.Vertices() {
 		box = box.ExtendPoint(v.point)
 	}
-	return extendBoxByEdges(box, f.Edges())
+	box = extendBoxByEdges(box, f.Edges())
+	// A BOUNDARY-LESS face is bounded by its surface. A bare ball has no vertex and no edge, so the box
+	// above is EMPTY, and every pairing that screens a face against another on their boxes then finds no
+	// contact at all — a sphere intersected with a box came back WHOLE (ADR-0061 stage 4).
+	//
+	// The chart-window sweep the BODY's box also takes is deliberately not applied here. A window
+	// encloses a non-rectangular trim generously, which costs a body nothing (its box is a union over
+	// everything anyway) but would inflate a single face's box and pull spurious pairs into a per-face
+	// screen — measured, it took a slot's breach off its exact ruling.
+	return extendBoxByBoundarylessFaces(box, []*Face{f})
 }
 
 // Shell is a connected set of faces; a closed shell bounds a solid region.

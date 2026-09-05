@@ -58,7 +58,7 @@ func TestDrilledWallAreaSubtractsItsWindows(t *testing.T) {
 		t.Fatalf("cut: %v", err)
 	}
 
-	wall := widestCylinderFace(res, bigR)
+	wall := widestCylinderFace(t, res, bigR)
 	if wall == nil {
 		t.Fatalf("no face on the drilled cylinder of radius %g in the result", bigR)
 	}
@@ -75,12 +75,17 @@ func TestDrilledWallAreaSubtractsItsWindows(t *testing.T) {
 }
 
 // widestCylinderFace returns the face lying on a cylinder of the given radius, or nil.
-func widestCylinderFace(b *topo.Body, radius float64) *topo.Face {
+func widestCylinderFace(t *testing.T, b *topo.Body, radius float64) *topo.Face {
+	t.Helper()
 	for _, f := range b.Faces() {
 		cyl, isCyl := f.Geometry().(geom.Cylinder)
-		if isCyl && math.Abs(cyl.Radius-radius) < 1e-9 {
+		if isCyl && math.Abs(cyl.Radius-radius) < 1e-9 { // tol:calibrated — an exact radius, to a few ulps
 			return f
 		}
 	}
+	// A faceted result has no cylinder face at all. Say so and stop: returning nil made every caller
+	// nil-deref inside the mass-props query, which kills the whole package's run and truncates whatever
+	// was being measured (ADR-0061 stage 4).
+	t.Fatalf("no cylinder face of radius %v among the result's %d faces: the body is faceted", radius, len(b.Faces()))
 	return nil
 }

@@ -40,7 +40,7 @@ func TestCrossingCylinderCutIsExactToTheEllipticOracle(t *testing.T) {
 	}
 	// The window integrand and its Simpson oracle live with TestDrilledWallAreaSubtractsItsWindows.
 	wantWall := 2*math.Pi*bigR*height - 2*crossingCylinderWindowArea(bigR, drillR)
-	gotWall, ok := query.AnalyticFaceArea(widestCylinderFace(res, bigR))
+	gotWall, ok := query.AnalyticFaceArea(widestCylinderFace(t, res, bigR))
 	if !ok {
 		t.Fatal("the drilled wall declined analytic area")
 	}

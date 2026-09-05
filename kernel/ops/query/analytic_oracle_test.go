@@ -26,10 +26,9 @@ const analyticQuadRelTol = 1e-9
 // cost O(result faces × operand faces) exact projections, which on a body of tens of thousands of
 // faces costs far more than the boolean it is checking.
 type boundaryIndex struct {
-	body    *topo.Body
-	faces   []*topo.Face
-	tree    *geom.BoxTree
-	unboxed []*topo.Face // faces with no range box: a BOUNDARY-LESS face has no vertices to build one
+	body  *topo.Body
+	faces []*topo.Face
+	tree  *geom.BoxTree
 }
 
 // analyticRelDiff is |got-want|/|want|, the scale-free comparison these closed-form checks need.
@@ -156,20 +155,21 @@ func TestGreenFormFollowsTheClosingAxis(t *testing.T) {
 	}
 }
 
-// TestBoundaryIndexFindsABoundarylessFace: the box tree cannot return a face with no range box, and
-// a BOUNDARY-LESS face — the whole sphere a ball is made of — has none, because a range box is built
-// from vertices and edge curves. Those faces must still answer a boundary probe, or every coaxial
-// sphere boolean reads as fabricated.
+// TestBoundaryIndexFindsABoundarylessFace: a BOUNDARY-LESS face — the whole sphere a ball is made of —
+// must answer a boundary probe, or every coaxial sphere boolean reads as fabricated. It used to need a
+// SEPARATE list, because a range box was built from vertices and edge curves alone and a bare ball has
+// neither, so the box tree could not hold it. Face.RangeBox now bounds such a face by its surface
+// (ADR-0061), so the tree holds it like any other and the separate list is gone.
 func TestBoundaryIndexFindsABoundarylessFace(t *testing.T) {
 	t.Parallel()
 	ball, err := brep.SolidSphere(math.P3(0, 0, 0), 5, "ball")
 	if err != nil {
 		t.Fatalf("SolidSphere: %v", err)
 	}
-	bi := newBoundaryIndex(ball)
-	if len(bi.unboxed) != 1 {
-		t.Fatalf("ball indexed %d unboxed faces, want its single boundary-less sphere", len(bi.unboxed))
+	if box := ball.Faces()[0].RangeBox(); box.IsEmpty() {
+		t.Fatal("the ball's boundary-less face reports no range box: the tree cannot hold it")
 	}
+	bi := newBoundaryIndex(ball)
 	tol := geom.ResolutionForBox(ball.RangeBox()).Sew()
 	if !bi.on(math.P3(0, 5, 0), tol) {
 		t.Error("a point on the ball's own surface did not register as on its boundary")
@@ -188,8 +188,8 @@ func TestBoundaryIndexUsesTheTreeForBoundedFaces(t *testing.T) {
 		t.Fatalf("SolidBlock: %v", err)
 	}
 	bi := newBoundaryIndex(block)
-	if len(bi.unboxed) != 0 || len(bi.faces) != 6 {
-		t.Fatalf("block indexed %d bounded / %d unboxed faces, want 6 / 0", len(bi.faces), len(bi.unboxed))
+	if len(bi.faces) != 6 {
+		t.Fatalf("block indexed %d faces, want 6", len(bi.faces))
 	}
 	tol := geom.ResolutionForBox(block.RangeBox()).Sew()
 	if !bi.on(math.P3(1, 1, 2), tol) {
@@ -207,12 +207,8 @@ func newBoundaryIndex(b *topo.Body) *boundaryIndex {
 	bi := &boundaryIndex{body: b}
 	var boxes []math.Box
 	for _, f := range b.Faces() {
-		if box := f.RangeBox(); !box.IsEmpty() {
-			bi.faces = append(bi.faces, f)
-			boxes = append(boxes, box)
-			continue
-		}
-		bi.unboxed = append(bi.unboxed, f)
+		bi.faces = append(bi.faces, f)
+		boxes = append(boxes, f.RangeBox())
 	}
 	bi.tree = geom.NewBoxTree(boxes)
 	return bi
@@ -220,11 +216,6 @@ func newBoundaryIndex(b *topo.Body) *boundaryIndex {
 
 // on reports whether p lies on any of the body's trimmed faces, within tol.
 func (bi *boundaryIndex) on(p math.Point3, tol float64) bool {
-	for _, f := range bi.unboxed {
-		if brep.PointOnFace(f, p, tol) {
-			return true
-		}
-	}
 	found := false
 	bi.tree.Query(pointReach(p, tol), func(i int) bool {
 		found = brep.PointOnFace(bi.faces[i], p, tol)

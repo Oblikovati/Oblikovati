@@ -58,6 +58,22 @@ type emittedLoop struct {
 	area    float64
 }
 
+// closedSurfaceOuterless reports that a kept region on a CLOSED surface has no outer loop: every one of
+// its rings bounds a DROPPED island, so the face is the complement of them all.
+//
+// The rule used to read "exactly one ring, and it winds CW", which is the commonest shape and not the
+// property. A sphere poking out of a box through three of its faces leaves an inside-the-box region
+// bounded by TWO dropped islands; filed with one of them as an outer loop the face integrated to
+// nothing and the union lost the sphere entirely (ADR-0061 stage 4).
+func closedSurfaceOuterless(loops []emittedLoop) bool {
+	for _, e := range loops {
+		if e.area >= 0 {
+			return false
+		}
+	}
+	return len(loops) > 0
+}
+
 // emitKeptLoops re-emits every (u,v) boundary loop to analytic edges, sorted with the higher (hi) boundary
 // first to match the analytic split convention (loops[0] is the hi boundary / outer loop).
 func emitKeptLoops(c uvSide, loops [][]dedge, segs []uvSeg) ([]emittedLoop, bool) {

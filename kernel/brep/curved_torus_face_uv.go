@@ -193,7 +193,7 @@ func (c *torusFaceUV) emitRun(run []recoveredEdge) (loopEdge, bool) {
 func (c *torusFaceUV) orientLoops(loops []emittedLoop, _ bool) ([]curvedLoop, []loopEdge, bool) {
 	faceLoops := make([]curvedLoop, 0, len(loops))
 	var lid []loopEdge
-	outerless := len(loops) == 1 && loops[0].area < 0
+	outerless := closedSurfaceOuterless(loops)
 	for _, e := range loops {
 		faceLoops = append(faceLoops, curvedLoop{edges: e.face})
 		lid = append(lid, reverseEdgeChain(e.section)...)

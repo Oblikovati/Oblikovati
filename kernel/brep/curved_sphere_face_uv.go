@@ -218,7 +218,7 @@ func meridianArcBetween(s geom.Sphere, a, b math.Point3) (loopEdge, bool) {
 func (c *sphereFaceUV) orientLoops(loops []emittedLoop, _ bool) ([]curvedLoop, []loopEdge, bool) {
 	faceLoops := make([]curvedLoop, 0, len(loops))
 	var lid []loopEdge
-	outerless := len(loops) == 1 && loops[0].area < 0
+	outerless := closedSurfaceOuterless(loops)
 	for _, e := range loops {
 		faceLoops = append(faceLoops, curvedLoop{edges: e.face})
 		lid = append(lid, reverseEdgeChain(e.section)...)

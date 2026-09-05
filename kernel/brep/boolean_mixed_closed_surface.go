@@ -75,15 +75,34 @@ func closedSurfaceUncovered(sf curvedFace, box math.Box, other *facePartition) b
 	return false
 }
 
-// sphereSectionEnters reports whether the plane of of cuts the sphere in a circle that enters of's own
+// sphereSectionEnters reports whether the plane of of cuts the sphere in a section that enters of's own
 // trim — the exact contact test, not a box overlap.
+//
+// It asks whether the section MEETS the trim, not whether it sits wholly inside it. Asking the stronger
+// question let a section that crosses the face's boundary read as "no contact": a sphere intersected
+// with a box, whose section circle leaves through the box face's own edge, planned no imprint at all
+// and the sphere passed through WHOLE — a valid solid of entirely the wrong shape, which is worse than
+// any decline (ADR-0061 stage 4).
 func sphereSectionEnters(sf, of curvedFace) bool {
 	curves, handled := geom.IntersectSurfacesAnalytic(facePlane(of), sf.surface, closedSurfaceRes(sf))
 	if !handled {
 		return true
 	}
 	for _, cv := range curves {
-		if sectionInsideFace(cv, of) {
+		if sectionMeetsFace(cv, of) {
+			return true
+		}
+	}
+	return false
+}
+
+// sectionMeetsFace reports whether any point of a section lies inside a planar face's trim — contact,
+// whether or not the section stays inside.
+func sectionMeetsFace(cv geom.Curve3, uf curvedFace) bool {
+	pl := facePlane(uf)
+	lo, hi := cv.Domain()
+	for k := 0; k <= closedSectionWalkSamples; k++ {
+		if pointInFace2D(to2D(pl, cv.PointAt(lo+(hi-lo)*float64(k)/closedSectionWalkSamples)), uf) {
 			return true
 		}
 	}
