@@ -288,3 +288,43 @@ nothing to find.
 what anyone runs. A change can be right and green on the shipping path while the rewire count stays
 put, which is exactly what happened here: the shipping suite is green with the figure-eight rows exact,
 and the rewire still has its six.
+
+## The looped split is not an axis quirk: it is the pole seam, half the time
+
+`TestLoopedSplitHalvesACapBySymmetry/halve_by_y=0` reads like one bad orientation. It is not. A sphere
+cap cut by a plane THROUGH ITS POLE leaves two open edges for about half of all cutting orientations,
+and which half flips with the side kept:
+
+| cut normal | open edges |
+| --- | --- |
+| `(1,0,0)` | 0 |
+| `(-1,0,0)` | **2** |
+| `(0,1,0)` | **2** |
+| `(0,-1,0)` | 0 |
+| `(1,1,0)` | **2** |
+| `(2,1,0)` | 0 |
+
+So `x=0` passing and `y=0` failing is a coin toss, not a property of either axis — and the test
+happens to sample one of each.
+
+**What the two open edges are.** Both faces split their SHARED section one sampling step from the pole,
+but on DIFFERENT meridians. Measured on `(0,1,0)`:
+
+- the cut plane's loop carries a sliver from `(0.0613577, 0, -4.9996235)` to the pole `(0,0,-5)`;
+- the sphere patch's loop carries a sliver from the pole to `(0, 0.0613577, -4.9996235)` — a quarter
+  turn away, on the chart's artificial SEAM.
+
+The sphere chart emits a run along its own seam adjacent to the pole as a real meridian arc
+(`emitSeamRun` builds one whenever the run's ends differ), and at the pole they differ by one sampling
+step. The receiving plane knows nothing of that seam and splits the section on its own sampling
+instead, so the two slivers never pair.
+
+**Why the pole makes it unavoidable as currently placed.** `placeSeams` puts the longitude seam in the
+widest gap of the imprint's longitudes, which works everywhere except at a pole — where every longitude
+meets, so the seam ALWAYS touches an imprint that passes through it. The fix is therefore not a better
+seam placement: it is that a run along the seam ENDING AT A POLE bounds nothing and must not be emitted
+as an edge, exactly as `poleSegments` already says of the pole segment itself ("it bounds no geometry
+and welds to nothing"). That reasoning is in the code and the emission does not follow it.
+
+Not attempted here — recorded so the next attempt starts from the table rather than from one subtest
+name.
