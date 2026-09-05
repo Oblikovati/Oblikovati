@@ -140,7 +140,9 @@ than being deleted to make a number move.
 ## Stage 2: what the rewire still costs, measured 2026-09-04
 
 The half-space rewire (`HalfSpaceCut` → `Boolean(Difference, body, BoundedHalfSpace(plane, box))`) now
-costs **three** failures, down from thirty-three. ADR-0063's carried chart and the solved section touch
+costs a handful of failures, down from thirty-three. (The figure "three" originally written here was
+measured on a pathological state and is corrected in the section below; the clean count is six leaf
+cases.) ADR-0063's carried chart and the solved section touch
 took the rest. What is left is recorded here so the next attempt starts from the measurements rather
 than from the symptoms.
 
@@ -201,8 +203,23 @@ three are green, and not before.
 
 ## Stage 2, continued: what the tangent pinch actually is (2026-09-04, later)
 
-Two of the three failures above are gone and the third is characterised down to one decision. Recording
-the measurements, and the approach that did NOT work, so neither is re-derived.
+Recording the measurements, and the approaches that did NOT work, so neither is re-derived.
+
+**First, a correction to the section above.** "Three failures" was measured on a state that was
+PATHOLOGICAL, not clean: at that point one island was being split into 130 000 arcs (see below), the
+figure-eight rows were reaching CSG, and CSG clears the faceted budget — so they "passed" for the wrong
+reason. It is not a baseline and nothing should be compared against it. The two clean like-for-like
+measurements, both from complete runs of `go test ./kernel/...` under the rewire with 34 packages
+reporting, are:
+
+| | leaf failures | `TorusFigureEight` | `StayExact` | `VolumesMatchOCC` |
+| --- | --- | --- | --- | --- |
+| before the section fix (`05055ffd`) | 6 | 38.84 s | 85.37 s | 107.41 s |
+| after it, with the welder fix (`1bb39022`) | 6 | **0.07 s** | **15.68 s** | **23.26 s** |
+
+The count is UNCHANGED and the runtimes are 5–6× better. Which rows fail shuffled — `StayExact`'s
+axis-parallel pinch now passes and a `VolumesMatchOCC` row now fails — but nothing regressed in
+aggregate, and the shipping path (rewire parked) is green throughout with those same rows EXACT.
 
 **The looped split is fixed, by solving an incidence instead of refusing it.** `geom.CurveTouches`
 could bracket a meeting but never refine into it: an alternating coordinate descent stalled 3.1 mm
@@ -245,3 +262,22 @@ Two attempts at it, both measured, neither kept:
 
 The nesting half of `islandContactOK` was also removed and reverted: it fixes nothing measurable on its
 own, so it is not carried.
+
+## A note on measuring this gate
+
+Three claims about the rewire's cost were made during this work and two were wrong. Both errors are
+easy to repeat, so they are recorded as method rather than as history.
+
+**Count leaf cases, never `--- FAIL` lines.** Go prints a line for the parent test AND for each
+subtest, so a table-driven test with two bad rows reads as three failures. "Nine" was that.
+
+**A measurement of a broken state is not a baseline.** The "three" above was taken while one island was
+being split into 130 000 arcs; the rows that appeared to pass were reaching CSG, which clears the
+faceted budget. Comparing a later, correct state against it manufactured a regression that did not
+exist — and then two bisects were spent hunting a cause, both coming back negative because there was
+nothing to find.
+
+**The gate to compare is the SHIPPING path.** The rewire is an instrument for sizing a deletion, not
+what anyone runs. A change can be right and green on the shipping path while the rewire count stays
+put, which is exactly what happened here: the shipping suite is green with the figure-eight rows exact,
+and the rewire still has its six.
