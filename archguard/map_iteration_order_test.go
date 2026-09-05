@@ -41,7 +41,7 @@ var mapOrderDebt = map[string]int{
 	"brep/arrange2d.go":                          1,
 	"brep/boolean_orient.go":                     1,
 	"brep/boolean_provenance.go":                 1,
-	"brep/boolean_radial_edge.go":                2,
+	"brep/boolean_radial_edge.go":                1, // 2 → 1 (ADR-0061): sortedPairKeys went with the unused second entry to the radial sew
 	"brep/boolean_stitch.go":                     1,
 	"brep/curved_reorient.go":                    1,
 	"brep/reconstruct_dissolve.go":               1,

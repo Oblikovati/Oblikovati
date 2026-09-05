@@ -63,7 +63,7 @@ func Boolean(op Op, a, b *topo.Body) (*topo.Body, error) {
 
 // BooleanDiag is [Boolean] with a diagnostic recorder (nil to discard). A tangent/grazing contact
 // (a >2-edge-use configuration where the two operands touch along a line or point) is resolved
-// EXACTLY by the Weiler radial-edge sew (radialSew): the coincident dihedrals are paired by filled
+// EXACTLY by the Weiler radial-edge sew (resolveEdgeUses + partitionVertexDisks): the coincident dihedrals are paired by filled
 // wedge and the shared contact vertices are cut into per-shell coincident duplicates, so the exact,
 // UNDISPLACED result is a valid closed 2-manifold — a pure line kiss becomes two coincident shells,
 // a bowtie on an otherwise-connected body one valid shell (ADR-0047, #1726). No output coordinate is

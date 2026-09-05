@@ -723,3 +723,20 @@ they belong with, and stage 3 is complete as a capability.
 
 Recorded rather than forced: widening `closedSurfaceUncovered` to admit a wall would trade twenty exact
 rows for faceted ones and two for wrong ones, which is the opposite of a gate.
+
+### The second entry to the radial sew, deleted (2026-09-05)
+
+Named as a follow-up above and now done. `radialSew` was the documented entry to ADR-0047's radial-edge
+core, and nothing called it: `buildCurvedStitchPlan` assembles the sew itself as it walks the geometric
+edges. The two are not interchangeable and merging them would be a defect — `extractEdgeGroups` walks
+`sortedPairKeys`, a SORTED order, while the stitch walks first-encounter order, and the group index is
+what edge lineage ordinals are built from. So the duplicate goes and the walk's order becomes what the
+`sewPlan` doc now says it is: part of the contract.
+
+Deleted with it: `extractEdgeGroups`, `indexUsesByGroup`, `sortedPairKeys` and the `sewPlan.useGroup`
+field that only the dead path filled. `TestRadialSewSurfaceAgnostic` proves a real property — that a
+>2-use tangent edge is paired from injected per-face normals, the OCCT `GetFaceDir` contract — and it
+was reaching it through the dead wrapper; it now calls `resolveEdgeUses` directly, which is the function
+that does the work.
+
+`mapOrderDebt["brep/boolean_radial_edge.go"]` falls 2 → 1: `sortedPairKeys` ranged a map.
