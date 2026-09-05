@@ -126,17 +126,27 @@ func partitionVertexDisks(groups []edgeGroup) map[int][]vertexDisk {
 	return disks
 }
 
-// groupFans partitions a vertex's incident edge-groups into disks connected by shared faces: two
+// groupFans partitions a vertex's incident edge-groups into disks connected by shared LOOPS: two
 // groups join iff some face loop uses both at that vertex. A clean manifold vertex yields one disk.
+//
+// The connector is the loop, not the face. A face whose boundary passes through one vertex on TWO of
+// its loops is pinched there — the two loops are two separate fans on that face, exactly as two faces
+// kissing at a point are two fans on the body — and joining them by face identity alone merged them
+// into one vertex. That is what a torus cut by a plane tangent to its inner equator produces: the two
+// lobes of the figure-eight bound one torus face through two loops, so the pinch welded to a single
+// vertex and the body came out with an odd Euler characteristic (V−E+2F−L = 1), which the validity
+// gate rightly refuses. Two loops of one face are still unioned transitively wherever another face
+// genuinely joins their groups, so this only ever REFINES the partition (ADR-0061).
 func groupFans(groups []edgeGroup, inc []int) [][]int {
 	return topo.ComponentGroups(inc, func(join func(a, b int)) {
-		byFace := map[int]int{} // face → first incident group seen using it
+		byLoop := map[[2]int]int{} // (face, ring) → first incident group seen using it
 		for _, gi := range inc {
 			for _, u := range groups[gi].uses {
-				if first, ok := byFace[u.face]; ok {
+				key := [2]int{u.face, u.ring}
+				if first, ok := byLoop[key]; ok {
 					join(gi, first)
 				} else {
-					byFace[u.face] = gi
+					byLoop[key] = gi
 				}
 			}
 		}

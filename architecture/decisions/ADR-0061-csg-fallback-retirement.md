@@ -430,3 +430,75 @@ certification's whole contract, on both sections), `TestKeptBoundaryDropsAnEdgeF
 `TestKeptBoundaryKeepsAFullWrapEdge` (the two halves of the tolerance rule),
 `TestABooleanWithNoExactCurvedPathDeclinesByName` and `TestAnAllPlanarBooleanDeclinesSilently` (the
 decline and its exemption). Each fails without its fix.
+
+## The pinch vertex, and the two defects behind the oblique rows (2026-09-05, later)
+
+**The radial fan's connector is the loop, not the face.** With the figure-eight solved, both axis-parallel
+rows still declined — and not for want of geometry. The body the general path built was closed, manifold
+and correctly oriented, and `Validate` refused it anyway:
+
+```
+Euler characteristic V−E+2F−L = 1 is inadmissible for a closed solid of 1 shell(s)
+```
+
+It is right to refuse it. A torus cut by a plane tangent to its inner equator is genuinely PINCHED: the
+section is two lobes meeting at one point, so the boundary has a non-manifold vertex there. ADR-0047's
+radial sew exists precisely to resolve that — at a vertex it partitions the incident edge-groups into
+radial disks and mints one vertex per disk. It did not fire, because `groupFans` joined two groups when
+some FACE used both. Here the two lobes bound one torus face through TWO of its loops, so the face
+identity welded the pinch onto a single vertex and the Euler count came out odd.
+
+The connector is the loop: a face whose boundary passes through one vertex on two of its loops is
+pinched there, and the two loops are two separate fans on that face — exactly as two faces kissing at a
+point are two fans on the body. Keyed by `(face, ring)`, the partition only ever REFINES: two loops of
+one face are still unioned transitively wherever another face genuinely joins their groups, which
+`TestGroupFansStillUnionsThroughAnotherFace` pins alongside the manifold corner.
+
+Both axis-parallel rows then land **exact**:
+
+| row | ours | OCC |
+| --- | --- | --- |
+| `torus ∩ box (figure-eight pinch)` | 114.886320 | 114.886326 |
+| `torus − box (figure-eight pinch)` | 279.897856 | 279.897854 |
+
+Leaf failures under the rewire go 3 → 2, both of them the OBLIQUE figure-eight.
+
+**What the oblique rows are waiting on — two defects, both reduced to a one-liner.** Neither is the
+figure-eight; both are general and both are worth their own fix.
+
+*1. `Face.RangeBox` under-reports a trimmed curved face.* `computeRangeBox` bounds a body by its
+vertices, its edges and its BOUNDARYLESS faces — so a trimmed curved face contributes only through its
+boundary edges, and a face that bulges past them is invisible:
+
+```
+sphere      box = {-5 -5 -5}..{5 5 5}
+hemisphere  box = {-5 -5  0}..{5 5  0}     <- the cap reaches z = -5
+cylinder    box = {-3 -3  0}..{3 3 10}     (its rims bound it)
+torus       box = {-7 -7 -2}..{7 7  2}     (boundaryless)
+```
+
+This is what breaks the oblique composition. `curvedConvexIntersect` composes a half-space cut per box
+face; the first cut is correct (151.898715 against OCC's 151.898735), and the NEXT plane — the box's far
+wall at z=20, which touches nothing — builds its bounded half-space from a range box that is flat in z,
+so the tool it subtracts is not the tool it should be. OCCT answers the same question with
+`BRepBndLib::Add`: the surface's bound over the face's UV window, enlarged by the face tolerance.
+
+*2. A no-op difference flips one lid's sense on the oblique band.* Reduced to this, with the tool a block
+far outside the body:
+
+| body | before | after |
+| --- | --- | --- |
+| torus, sphere, hemisphere, pinch band, two-oval band | unchanged | unchanged |
+| **oblique band** | 151.898715 | **239.841783** (the complement) |
+
+The rebuilt body is topologically identical — same faces, same edges, same loop counts — and one planar
+lid's `Reversed` flag differs. The material-side votes say why: in the original the two lids read
+−31/−31 and the torus's two loops +31/+31; in the rebuild they read −31/**+31** and +31/**−31**. One
+lobe's edge is traversed the other way round in BOTH its uses, which keeps the two-colouring's pairwise
+opposition intact — and pairwise opposition is all `curvedOrientationFlips` checks. A loop that consists
+of ONE CLOSED EDGE has no chain to constrain it, so its direction is free, and nothing ties lobe B's
+choice to lobe A's. `senseFromLoopWinding` then faithfully sets each flag from its own winding and the
+two lids disagree. The invariant the colouring is missing is that a loop's direction is not free: the
+material is on its left, and `materialSideVotes` already answers that per loop.
+
+Recorded rather than fixed, so the next pass starts from the measurement.
