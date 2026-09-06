@@ -1085,3 +1085,18 @@ The reason this sat undiscovered is worth keeping: the fallback almost never run
 and no segment straddles it at all. The exit ellipse in the same fixture takes that path and is
 correct; only the entry crossing, whose incidence the solver missed, reached the split — and the split
 had never been exercised by a case that checked its output.
+
+**Stage 4 standing, all 26 recognizers off (2026-09-06): 17 failing tests, down from 22.** The whole
+cap-crossing family is gone from the list — single cap, two caps, cone cap — and
+`TestCurvedBooleansStayExact` is down to ONE failing row (the rim crossing). What remains, by cluster:
+
+| Cluster | Tests | What is still missing |
+| --- | ---: | --- |
+| near-pinch (snap mesh, recovered band, cut/join, intersect continuity) | 4 | the tangential-contact family |
+| partial rim (corner junction ×3, chained decline) | 4 | corner and second-cut chaining |
+| rim crossing (moments, watertight, corpus row) | 3 | the exit crossing straddles the top RIM |
+| torus tangent about every axis | 1 | convex compose |
+| coaxial ball-and-rod with a SHOULDER (analytic + 4 OCC rows) | 2 | shoulder variants |
+| sphere ∩ box | 1 | the curved cap must survive |
+| second-bore rim provenance | 1 | naming, not geometry |
+| face-interior-point oracle | 1 | a cylinder face yields no interior point |
