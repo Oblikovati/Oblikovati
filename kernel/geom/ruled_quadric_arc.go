@@ -51,6 +51,20 @@ func (a RuledQuadricArc) Domain() (lo, hi float64) { return 0, 1 }
 // uAt maps the curve parameter to the base azimuth.
 func (a RuledQuadricArc) uAt(t float64) float64 { return a.U0 + t*(a.U1-a.U0) }
 
+// SubArc restricts the arc to the sub-interval [t0, t1] of its own [0,1] domain, re-presented over
+// [0,1] so the returned arc's WHOLE domain is the piece asked for. Orientation is baked in: t0 > t1
+// gives the reversed sub-arc.
+//
+// A kernel edge's curve must span exactly that edge, or every consumer that reads the curve's domain —
+// the tessellator above all — walks more than the edge covers. A crossing clipped between two triple
+// points and stored whole meshed as the entire closed crossing, and the neighbouring face's mesh then
+// met it nowhere (ADR-0061 stage 4).
+//
+//	sub := arc.SubArc(0.25, 0.75) // the middle half, over its own [0,1]
+func (a RuledQuadricArc) SubArc(t0, t1 float64) RuledQuadricArc {
+	return RuledQuadricArc{Base: a.Base, Quad: a.Quad, Upper: a.Upper, U0: a.uAt(t0), U1: a.uAt(t1)}
+}
+
 // PointAt returns the point at t∈[0,1], evaluated on the base surface at (u, v(u)).
 func (a RuledQuadricArc) PointAt(t float64) math.Point3 {
 	u := a.uAt(t)

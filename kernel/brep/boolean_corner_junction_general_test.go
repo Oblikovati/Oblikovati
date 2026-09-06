@@ -3,9 +3,11 @@
 package brep
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -80,4 +82,81 @@ func TestRuledCrossingNamesBothIncidences(t *testing.T) {
 			}
 		}
 	}
+}
+
+// An edge's curve must span EXACTLY that edge: PointAt over its own domain must run from the edge's
+// start vertex to its end vertex. Every consumer that reads a curve's domain relies on it, the
+// tessellator above all — a crossing clipped between two triple points but stored WHOLE meshed as the
+// entire closed crossing, and the neighbouring face's mesh then met it nowhere: 88 free edges on a body
+// that is otherwise watertight (ADR-0061 stage 4).
+func TestEveryEdgeCurveSpansItsOwnEdge(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name string
+		body func(*testing.T) *topo.Body
+	}{
+		{"corner junction", cornerJunctionCut},
+		{"rim crossing", rimCrossingCut},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			res := tc.body(t)
+			for _, e := range res.Edges() {
+				c := e.Geometry()
+				lo, hi := c.Domain()
+				tol := geom.ResolutionForBox(res.RangeBox()).Weld()
+				if d := float64(c.PointAt(lo).DistanceTo(e.StartVertex().Point())); d > tol {
+					t.Errorf("edge %d (%T): curve at its domain start is %.3e from the start vertex", e.ID(), c, d)
+				}
+				if d := float64(c.PointAt(hi).DistanceTo(e.EndVertex().Point())); d > tol {
+					t.Errorf("edge %d (%T): curve at its domain end is %.3e from the end vertex", e.ID(), c, d)
+				}
+			}
+		})
+	}
+}
+
+// cornerJunctionCut is the notched cylinder minus the crossing rod.
+func cornerJunctionCut(t *testing.T) *topo.Body {
+	t.Helper()
+	bare, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
+	if err != nil {
+		t.Fatalf("SolidCylinder: %v", err)
+	}
+	pl, err := geom.NewPlane(math.P3(1.5, 0, 8), math.V3(1, 0, 1))
+	if err != nil {
+		t.Fatalf("NewPlane: %v", err)
+	}
+	target, err := HalfSpaceCut(bare, pl)
+	if err != nil {
+		t.Fatalf("first cut (the notch): %v", err)
+	}
+	rod, err := SolidCylinder(math.P3(-6, 0, 7), math.V3(1, 0, 0), 1, 12)
+	if err != nil {
+		t.Fatalf("SolidCylinder rod: %v", err)
+	}
+	res, err := Boolean(Difference, target, rod)
+	if err != nil {
+		t.Fatalf("Boolean(Difference): %v", err)
+	}
+	return res
+}
+
+// rimCrossingCut is the cylinder minus the rod that leaves through its top rim.
+func rimCrossingCut(t *testing.T) *topo.Body {
+	t.Helper()
+	s := math.Scalar(1 / stdmath.Sqrt2)
+	target, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
+	if err != nil {
+		t.Fatalf("SolidCylinder target: %v", err)
+	}
+	tool, err := SolidCylinder(math.P3(-5.6, 0, 2), math.V3(s, 0, s), 0.9, 16)
+	if err != nil {
+		t.Fatalf("SolidCylinder tool: %v", err)
+	}
+	res, err := Boolean(Difference, target, tool)
+	if err != nil {
+		t.Fatalf("Boolean(Difference): %v", err)
+	}
+	return res
 }

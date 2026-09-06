@@ -1185,3 +1185,33 @@ and chained-decline gates, and `TestCurvedBooleansStayExact` in its entirety. Wh
 | sphere ∩ box | 1 | the curved cap must survive |
 | second-bore rim provenance | 1 | naming, not geometry |
 | face-interior-point oracle | 1 | a cylinder face yields no interior point |
+
+### An edge's curve spans exactly that edge (2026-09-06)
+
+With the corner junction modelled correctly the certification still failed, and what it measured was
+the MESH: 88 free edges at default quality on a body that is watertight and five-faced, the volume 0.98 %
+low as a consequence.
+
+The wall's crossing edge — the ruled crossing clipped between the two triple points — stored the WHOLE
+closed crossing as its curve. `edgeCurveFor` restricts a circle, an arc, a line, every conic and a
+spiric branch to its loop sub-range, and falls through to "stored whole" for anything else; a ruled
+quadric arc was among the anything else. So the tessellator, which reads the curve's own domain, meshed
+the entire closed crossing for an edge covering a third of it, and the neighbouring face's mesh met it
+nowhere.
+
+`RuledQuadricArc.SubArc` restricts natively (it carries its own azimuth range, so the sub-arc is exact
+and keeps its kind, which the incidence solver and the analytic integrator both read). The default is no
+longer "stored whole" either: a kind with no restriction of its own is wrapped in `TrimmedCurve3`, which
+exists precisely to re-present a sub-range over its own domain.
+
+The invariant is now a test — `TestEveryEdgeCurveSpansItsOwnEdge`, over both the corner junction and the
+rim crossing — and it immediately found a second instance: an OPEN curve whose loop walks its FULL domain
+BACKWARDS was stored forward while `edgeEnds` anchored the start vertex to the loop's first point, so the
+curve began at the END vertex. A closed curve is not that case (its edge carries one vertex and the use's
+reversed flag orients it), which is what `storedWhole` now distinguishes.
+
+Both corner certifications pass with all 26 recognizers off. The hand-written recognizer, for comparison,
+avoids the whole question by storing that crossing as a 9-point `geom.Polyline` — a faceted edge on an
+otherwise analytic solid, which is exactly the kind of silent degradation stage 4 exists to remove.
+
+**Stage 4 standing, all 26 recognizers off: 10 failing tests, down from 22.**

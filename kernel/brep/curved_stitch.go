@@ -285,9 +285,32 @@ func conicEdgeCurveFor(le loopEdge) geom.Curve3 {
 		return ellipseArcOf(c, le.t0, le.t1) // a section sub-arc of a full ellipse (the (u,v) cone split)
 	case geom.SpiricArc:
 		return spiricArcOf(c, le.t0, le.t1) // a torus-cut spiric branch, oriented to the loop's traversal
+	case geom.RuledQuadricArc:
+		if storedWhole(c, le) {
+			return c
+		}
+		return c.SubArc(le.t0, le.t1) // a ruled crossing clipped between triple points keeps its own kind
 	default:
-		return c
+		if storedWhole(c, le) {
+			return c
+		}
+		// A kind with no restriction of its own is still not allowed to span more than its edge: the
+		// generic restriction re-presents the sub-range over its own domain, which is the contract every
+		// consumer reads (TrimmedCurve3, ADR-0061 stage 4).
+		return geom.TrimmedCurve3{Base: c, Lo: le.t0, Hi: le.t1}
 	}
+}
+
+// storedWhole reports that a loop edge may keep its curve unrestricted: it covers the whole domain, and
+// it either walks it FORWARD or the curve is closed.
+//
+// A closed curve's edge carries one vertex and its direction rides on the use's reversed flag, so
+// storing it forward is the convention. An OPEN one walked backwards is not the same case: edgeEnds
+// anchors the start vertex to the loop's first point, so a forward-stored curve then begins at the END
+// vertex — and the tessellator, which pins a sampled polyline's ends to the vertices, folds the edge
+// over itself (ADR-0061 stage 4).
+func storedWhole(c geom.Curve3, le loopEdge) bool {
+	return isFullDomain(le.t0, le.t1) && (le.t0 <= le.t1 || geom.CurveIsClosed(c))
 }
 
 // spiricArcOf restricts a SpiricArc to its loop sub-range [t0, t1], stored in its NATIVE tube-angle direction
