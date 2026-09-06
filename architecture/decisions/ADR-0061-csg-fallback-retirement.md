@@ -1171,3 +1171,17 @@ off, `TestPartialRimCornerJunctionTakesAnalyticPath` and `TestPartialRimChainedC
 pass; the two corner certifications remain, and what they now measure is a TESSELLATION deficit (88 free
 edges at default quality, volume 0.98 % low) on a face whose boundary mixes a clipped ruled crossing with
 an elliptical arc — downstream of the modelling, and the next thing to take up in this family.
+
+**Stage 4 standing, all 26 recognizers off (2026-09-06, after the corner junction): 12 failing tests,
+down from 22.** Gone since the last count: the whole rim-crossing family, the partial-rim analytic-path
+and chained-decline gates, and `TestCurvedBooleansStayExact` in its entirety. What remains:
+
+| Cluster | Tests | What is still missing |
+| --- | ---: | --- |
+| near-pinch (snap mesh, recovered band, cut/join, intersect continuity) | 4 | the tangential-contact family |
+| corner junction (moments, tessellation) | 2 | TESSELLATION only — the solid is watertight and 5-faced |
+| coaxial ball-and-rod with a SHOULDER (analytic + 4 OCC rows) | 2 | shoulder variants |
+| torus tangent about every axis | 1 | convex compose |
+| sphere ∩ box | 1 | the curved cap must survive |
+| second-bore rim provenance | 1 | naming, not geometry |
+| face-interior-point oracle | 1 | a cylinder face yields no interior point |
