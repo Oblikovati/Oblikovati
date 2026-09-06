@@ -1373,3 +1373,25 @@ wrong by 7.4 % on a face whose boundary touches itself, and its vector-area clos
 it. That is a mass-properties defect (M48/C3), not a boolean one, and it is the thing to take up — an
 oracle that gates a result must be more exact than the result it gates, and here it is an order of
 magnitude worse than the tessellation it replaced.
+
+### What the near-pinch family needs, and why it is not more of this sweep (2026-09-06)
+
+The four remaining near-pinch tests are one capability, not four defects. Two cylinders of NEARLY equal
+radius crossing at 90° (|Δr|/R from 3e-3 down to 7e-6) decline at
+`geom.IntersectSurfacesAnalytic` — `ruledQuadricConditioning`'s branch-separation gate, `minGap ≥ 0.05 ·
+maxGap`, which is doing its job: near the pinch the two roots of the ruling quadratic nearly coincide and
+`(−b ± √(b²−4ac))/2a` is solved by cancellation. Measured at R=3, the general path returns the exact
+three-face solid down to |Δr| = 0.01 and declines from 0.003; the corpus asks for 2e-5.
+
+So the gate is right and there is nothing below it. The ground rule says a fast path demotes to the
+general path when it is ill-conditioned, and for this pair the general path does not exist yet: it is a
+near-tangential surface-surface intersector — a marcher, with its own conditioning story and its own
+corpus. The hand-written recognizers cover the band with a snap and a per-loop fat-wall trim
+(#1781 and #1818), which is why they still hold this family.
+
+That is the next ADR, and widening the conditioning gate to reach it would be exactly the threshold
+tuning the ground rules forbid: the gate measures a real loss of precision, not a policy.
+
+**Stage 4 result: 38 → 5 failing tests with all 26 recognizers off.** What is left is two efforts, each
+with its own scope: a near-tangential SSI (4 tests) and the analytic mass-properties defect on a
+self-touching trim (1 test).
