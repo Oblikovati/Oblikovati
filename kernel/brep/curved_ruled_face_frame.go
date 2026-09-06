@@ -532,7 +532,7 @@ func (c *loopFrame) wrappingComponents(side uvSide, kept []Face2D, segs []uvSeg,
 			return nil, nil, false
 		}
 		faceLoops := make([]curvedLoop, 0, len(emitted))
-		for _, e := range emitted {
+		for _, e := range periodTurningFirst(c, side, emitted) {
 			faceLoops = append(faceLoops, curvedLoop{edges: e.face})
 			lid = append(lid, reverseEdgeChain(e.section)...)
 		}
@@ -541,6 +541,31 @@ func (c *loopFrame) wrappingComponents(side uvSide, kept []Face2D, segs []uvSeg,
 			chart: chartContours(chartOfKept(comp), side.seamOrigin())})
 	}
 	return faces, lid, len(faces) > 0
+}
+
+// periodTurningFirst puts the loops that TURN a period ahead of the ones that do not, so loops[0] is an
+// end of the band rather than a hole in it. The order is otherwise stable, so a band with two wrapping
+// ends and no holes is untouched.
+//
+// A component's loops arrive in trace order, and loops[0] is taken as the face's OUTER boundary. On a
+// closed surface that can invert the face: a sphere poking out of a box through three of its faces
+// leaves an ANNULUS on the sphere — an outer three-arc loop that wraps, and an inner three-arc loop
+// around the box's corner that does not — and traced inner-first the face read as "the little corner
+// patch minus everything else", a valid solid whose volume came back as the box exactly (ADR-0061
+// stage 4).
+func periodTurningFirst(c *loopFrame, side uvSide, emitted []emittedLoop) []emittedLoop {
+	out := make([]emittedLoop, 0, len(emitted))
+	for _, e := range emitted {
+		if loopTurnsAPeriod(c, side, e) {
+			out = append(out, e)
+		}
+	}
+	for _, e := range emitted {
+		if !loopTurnsAPeriod(c, side, e) {
+			out = append(out, e)
+		}
+	}
+	return out
 }
 
 // anyLoopWraps reports whether some emitted loop turns one of the chart's periodic directions the whole way round.

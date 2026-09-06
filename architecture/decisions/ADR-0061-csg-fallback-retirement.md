@@ -1261,3 +1261,40 @@ Two real naming gaps surfaced while checking this, and neither belongs to the re
 - **Two bores of one plate give their walls the SAME key** — `brep:drillwall#0` twice on the recognizer
   path, `cylinder:f#2` twice on the general one. Ambiguous key resolution is an error by the ground
   rules. This is pre-existing and identical on both paths.
+
+### A closed-surface section is clipped to its receiver (2026-09-06)
+
+A sphere intersected with a box is the most ordinary curved boolean there is, and it declined. The
+closed-surface pairing kept a section only when it lay WHOLLY inside the receiving planar face's trim,
+and every section circle a box face cuts from a sphere leaves through that face's own edge. The earlier
+entry recorded the honest decline; this is the capability.
+
+Three changes, and the third is the one that mattered.
+
+**The receiver promotes on MEETS, not on inside.** `closedSurfaceSectionEntersFace` asked the island
+question, so a crossing section never moved its receiver to the exact-frame bucket, and the pairing then
+declined because a section entered a face it had left in the polygonal bucket. `wallConicEntersFace`
+already takes the meets verdict; this now does too.
+
+**The section is clipped, once, for both sides.** `closedSurfaceUVImprint` keeps a section whole when it
+is an island, CLIPS it to the trim when it crosses (`clipSectionToFace`, the same rule
+`wallSectionIsland` follows), and drops it when it is clear.
+
+**A component's loops are ordered ends-first.** With the clip in, `brep.Boolean` returned box ∪ sphere
+as a VALID solid whose volume was the box exactly — 64.0000 where 67.02 is right. A sphere poking out of
+a box through three of its faces leaves an ANNULUS on the sphere: an outer three-arc loop that wraps the
+azimuth, and an inner three-arc loop around the box's corner (around the sphere point nearest that
+corner, which is inside the box) that does not. `wrappingComponents` takes `loops[0]` as the face's outer
+boundary and had been handing it whatever the trace produced first — inner-first here, so the face read
+as "the little corner patch minus everything else". `periodTurningFirst` puts the loops that turn a
+period ahead of the ones that do not, which is `splitEndsAndHoles`' rule applied where the component is
+assembled. The order is otherwise stable, so a band with two wrapping ends and no holes is untouched.
+
+Worth recording separately: the per-face certificate did NOT catch that wrong body. `FaceInteriorPoint`
+could not certify a probe on the inverted annulus, and a face whose probe is unavailable is SKIPPED
+rather than failed — by design, so the gate never rejects a correct result over a missing probe. The
+consequence is that the gate is not a backstop for an emission that inverts a face; only a post-condition
+on the emission itself would be. That is a named follow-up, not a change made here.
+
+**Stage 4 standing, all 26 recognizers off: 8 failing tests, down from 22** — the near-pinch family (4),
+the coaxial ball-and-rod with a SHOULDER (2 tests, 4 rows), and the torus tangent about every axis.

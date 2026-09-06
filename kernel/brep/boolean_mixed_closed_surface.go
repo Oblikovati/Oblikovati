@@ -110,8 +110,9 @@ func sectionMeetsFace(cv geom.Curve3, uf curvedFace) bool {
 }
 
 // closedSurfaceUVImprint is the exact shared imprint of one (closed surface, exact-frame planar face)
-// pair: the plane∩surface section — a circle on a sphere, a spiric on a torus — kept when it enters the
-// planar face's trim and dropped when it stays clear.
+// pair: the plane∩surface section — a circle on a sphere, a spiric on a torus — kept whole when it lies
+// inside the planar face's trim, CLIPPED to that trim when it crosses it, and dropped when it stays
+// clear.
 func closedSurfaceUVImprint(sf, uf curvedFace) ([]geom.Curve3, bool) {
 	curves, handled := geom.IntersectSurfacesAnalytic(facePlane(uf), sf.surface, closedSurfaceRes(sf))
 	if !handled {
@@ -119,8 +120,19 @@ func closedSurfaceUVImprint(sf, uf curvedFace) ([]geom.Curve3, bool) {
 	}
 	var out []geom.Curve3
 	for _, cv := range curves {
-		if sectionInsideFace(cv, uf) {
+		switch {
+		case !sectionMeetsFace(cv, uf): // clear of this face: no imprint
+		case sectionInsideFace(cv, uf):
 			out = append(out, cv)
+		default:
+			// It CROSSES the face's trim. Clip it here, once, and hand the bounded arcs to both sides —
+			// the same rule wallSectionIsland follows, and the reason a sphere can be intersected with a
+			// box at all: every section circle leaves through a box face's own edge (ADR-0061 stage 4).
+			pieces, ok := clipSectionToFace(cv, uf)
+			if !ok {
+				return nil, false
+			}
+			out = append(out, pieces...)
 		}
 	}
 	return out, true

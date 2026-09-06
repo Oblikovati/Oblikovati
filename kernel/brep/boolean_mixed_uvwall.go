@@ -61,6 +61,12 @@ func (p facePartition) planarReceivesConic(i int, other *facePartition) bool {
 // trim. The receiver must move to the exact-frame bucket for the same reason a wall's conic does: the
 // closed surface carries the exact section, and a sampled polyline on the planar side would not weld to
 // it (ADR-0061 stage 3).
+//
+// It asks whether the section MEETS the trim, not whether it sits wholly inside. The island question is
+// the wrong one here for the commonest cut there is: a sphere intersected with a box is sectioned by a
+// box face in a circle that leaves through that face's own edge, so the receiver never promoted, and the
+// pairing then declined the whole boolean because a section entered a face it had left in the polygonal
+// bucket (ADR-0061 stage 4). It is the same verdict wallConicEntersFace already takes.
 func closedSurfaceSectionEntersFace(f curvedFace, other *facePartition) bool {
 	box := paddedFaceBox(f)
 	faces, boxes := other.closedSurfaces()
@@ -73,7 +79,7 @@ func closedSurfaceSectionEntersFace(f curvedFace, other *facePartition) bool {
 			continue
 		}
 		for _, cv := range curves {
-			if sectionInsideFace(cv, f) {
+			if sectionMeetsFace(cv, f) {
 				return true
 			}
 		}
