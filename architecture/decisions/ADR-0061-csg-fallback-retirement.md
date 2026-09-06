@@ -1395,3 +1395,194 @@ tuning the ground rules forbid: the gate measures a real loss of precision, not 
 **Stage 4 result: 38 → 5 failing tests with all 26 recognizers off.** What is left is two efforts, each
 with its own scope: a near-tangential SSI (4 tests) and the analytic mass-properties defect on a
 self-touching trim (1 test).
+
+### The torus tangent cut was a modelling defect, and the certificate that finds it (2026-09-06, later)
+
+The entry above called the last non-near-pinch row a measurement defect. It is corrected here, from the
+measurement it did not make: the same six bodies TESSELLATE to 275.28 on the recognizer path and 112.53 on
+the general path, against a truth of 114.886. The tessellator was reading two different bodies, and one
+of them was the torus's complement.
+
+Walked in 3D, the general body's torus face carried one loop through the touch point twice, and walked
+its second lobe the wrong way round the tube; the planar lobe sharing that edge was inverted with it.
+Every edge was used twice in opposite directions, so `Validate` admitted the shell. The cause was in the
+stitch, at a CLOSED loop two faces share while carrying DIFFERENT curve objects for it: the lid takes its
+section from the plane cut and the wall its clipped copy from the torus chart, parametrised the other way
+round. `stitchUseReversed` read each run's direction against its own parameter, `geom.SubCurve`
+re-presented a whole closed spiric run walked backwards as a reversed curve, and the minter's "the stored
+closed curve runs forward" then held for one face and not the other. Three rules replace them: a whole
+closed run is stored unchanged whatever its kind (`storedWhole`, now first in `SubCurve`); a closed run's
+sense is read where it is exact, from the traversal tangent at the loop's one vertex
+(`closedRunsOppose`); and a closed edge's stored-curve flip is simply "the representative walked it
+backwards", the same rule an open edge already used. The general body now integrates to 114.886320.
+
+**What the integrator did with the inverted body is the finding worth keeping.** `enclosedTerms` signs
+every loop from its own boundary integral and normalises a single-cycle band, so a torus face wound
+against its normal measured RIGHT on the recognizer path (its two loops each read as a rim) and WRONG on
+the general one (its single loop read as a band with twice the travel). The tessellator's band loft
+reads no winding at all. So an inverted face shipped as a valid solid, with a correct volume, and only
+its mesh — the derived view — showed it. That is the emission post-condition the previous slice left
+named: `brep.FaceWindingConsistent` reads every closed loop against its nesting, a chartless band
+against its rims' alternation, and a period-turning loop against the face's chart, and the boolean now
+adopts nothing that fails it. A recognizer whose body fails DEMOTES to the general pipeline — the thing
+it is a shortcut for — rather than past it to the faceted engines; a general-pipeline body that fails
+declines with a `boolean.winding-reject` defect.
+
+Measured with the certificate in place, with all recognizers ON:
+
+| recognizer | inverted face | what shipped before |
+| --- | --- | --- |
+| drill through-hole | the top cap's hole loop | a valid plate, measured right, meshed right |
+| two-cap crossing | both caps' holes and the wall's chart | the same |
+| ruled crossing cut/intersect | the stub's crossing loop on the rod | the same, with the band loft hiding it |
+| torus tangent | one lobe and its torus edge | a valid solid meshing as its complement |
+
+Every one of them shipped valid, integrated right, and meshed as something that does not read the
+winding. All of them demote to the general pipeline now, and the corpus holds — after two more things
+that demotion exposed.
+
+**A plate with one bore could not take a second.** `planarReceivesConic` refused to move a planar face
+carrying a detached curved hole to the exact-frame chart, and the polygonal bucket it stayed in then
+declined the second bore's circle entering it. The chart frames a holed face already (the demotion route
+does exactly that when an imprint MEETS a hole); the refusal is gone. This also corrects the stage-4
+count above: the second bore of `TestSecondBoreRimIsProvenanceNamed` had been served by the
+`reconstructedCurvedBoolean` engine, which the recognizers-off measurement never switched off. The honest
+measurement is with the recognizers AND the faceted engines off; it is taken at the end of the next slice.
+
+**The mixed stitch's curved rim is named.** The follow-up recorded two entries up is done at the hook:
+an unparented CURVED edge group is named by the two faces that border it (`curvedRimLineages`), two rims
+of identical parents ranked by the total order on their midpoints, and every planar name the goldens pin
+stays as minted — a straight unparented edge is the planar path's split-original fragment and keeps its
+convention. A double-bored plate's four rims read `cylinder:f#2/brep:x#0/slab:face#0[/brep:seg#1]`.
+
+**The near-pinch entry above is corrected too.** With the branch-separation margin relaxed for the
+measurement, the ruled∩quadric closed form returns the exact section at EVERY radius gap — the two loops
+are never closer than 2√(2R·Δr), 0.022 at the corpus's smallest — and the general pipeline builds the
+three-face solid down to |Δr| = 3.2e-4 and comes back with three open edges below it. The gate was not
+measuring a loss of precision; the roots are exact to 1e-13 there. What fails below is the chart: the
+fat wall's seam is placed by the widest gap between the imprint's SAMPLES, which the lens tips' sparse
+azimuth cover misses once the corridor between the lenses is narrower than a sample step; the seam then
+runs through a lens, and `seamHit` returned ONE crossing per curve, while a seam through a window loop has
+two; and a seam ruling had no incidence form at all, so its crossing with a ruled-quadric arc was never
+solved and the section-plane route it fell to answers only for planar sections. OCCT's
+`IntPatch_ImpImpIntersection` parametrises this section by U1 with no separation margin at all
+(`CyCyNoGeometric`); its only guard is the arccos argument's rounding near ±1, the fold this intersector
+refuses by base role. Those three are the next slice, and the margin goes with them.
+
+Named and not done here: the tessellator's spiric band loft meshes the corrected lens at 138.92 against
+an analytic 111.68 — it lofts a self-touching single loop as a band between two ovals it does not have.
+
+### The near-pinch family through the general pipeline (2026-09-06, later still)
+
+The three defects the previous entry named are gone, and the branch-separation margin with them.
+
+**A seam ruling carries an incidence.** `geom.CurveIncidence` gives a straight curve its two conditions —
+the distances to two perpendicular planes through it — so the chart's artificial seam goes to the same
+incidence solver the frame and the imprint use for one another (`curvePairMeets`). `seamHit`, which took
+the section-plane candidates and stopped at the first inside both spans, is deleted: a window loop the
+seam enters and leaves reports both crossings, and a ruled∩quadric arc, which has no section plane, is
+met through its own incidence. One point is decided once: a curve carrying two conditions has both
+vanish at a crossing, the walk brackets it once per condition, and `meetKnown` keeps the first — two
+vertices a rounding apart on one boundary read as an open edge, which the cone's clipped-rim ellipse
+showed at once.
+
+**The seam is placed exactly.** `curved_seam_place.go` reads every imprint curve's azimuth EXTENT from its
+turning points — the sampled azimuth's extrema, each refined to rounding by `geom.ExtremumOnBracket` —
+and puts the seam in the middle of the widest stretch free of every extent, every turning point, every
+curve end and every frame coordinate. A curve that winds the azimuth leaves nothing free, and the seam
+then goes as far from every turning point and curve end as it can, where its crossing is transversal and
+bracketed. The sampled rule had found the corridor between two near-pinching lenses only while it was
+wider than a sample step; the exact one finds it at every gap the corpus asks for. The sphere's and the
+torus's seams take the same rule, the torus's in both coordinates.
+
+**The tube seam is solved, not folded.** A torus chart's second seam crossed the imprint only where the
+sampling happened to straddle it. It is now a curve on the host (`tubeSeamCurve`), its crossings are
+solved with the azimuth seam's, snapped onto the seam in v as the azimuth seam's are in u, and the
+parameter rectangle's four sides are split at every incidence solved on them. Two exact-boundary cases
+surfaced on the way and are fixed where they belong: a run that ends EXACTLY on the seam is written on
+its own side (`splitPeriodicSeam` re-bases the end to the branch continuous with the start, rather than
+leaving a segment that jumps the period), and a root that falls exactly on a sampling station counts as a
+root (`curveRootsOnOther`; a strict sign change saw none). An injected incidence now also wins over the
+sampling station it coincides with (`preferInjected`): the seam placed at π/2 on a rim sampled at quarter
+turns merged into the station's value and lost its mark.
+
+**The gate reads the minimum, not a margin.** `ruledQuadricConditioning` refines every bracketed local
+minimum of the branch gap and requires the least of them to exceed the stitch resolution — the
+certificate that the two section branches are two curves the stitch can tell apart. The twentieth-of-
+the-largest-gap margin is deleted (`kernelNetDeltaPin` tolerance-constants 232 → 231). Measured with
+the recognizers demoting:
+
+| corpus | before | now |
+| --- | --- | --- |
+| `TestNearPinchRecoveredBandWatertight` (12 rows, R=3 and R=30, Δr/R down to 7e-6) | recognizer | general pipeline, exact, watertight |
+| `TestNearPinchCutJoinWatertight` cut (8 rows) | recognizer | general pipeline, exact, watertight |
+| `TestNearPinchCutJoinWatertight` join (8 rows) | recognizer | general pipeline, valid solid, MESH open |
+| `TestBooleanIntersectNearPinchContinuity` | recognizer, snapped | general pipeline |
+
+The join rows fail on the tessellator, not the boolean: the fat wall keeps its two rims and the two
+lens holes, and `tessellate` records `wall-wrap-unmeshed` for a full-wrap wall carrying three holes and
+meshes only part of it; the rod stubs' band loft discretises the shared rim on its own stations, so
+the caps' rims do not weld to it. Both are named tessellation follow-ups with the spiric band loft
+above, and the three of them are one shape: a tessellator that reads a face by recognising its edge
+pattern instead of by its chart.
+
+Recorded and not done: `TestBooleanIntersectNearPinchContinuity` pins the SNAP the retired recognizer
+performed — four faces for a radius gap under the stitch resolution — which the general pipeline does
+not perform and the ground rules forbid (a nudge to make the operation succeed); that row's premise is
+the recognizer's and moves with its deletion in stage 7.
+
+### What the demotion exposed, and the hole feature joins the boolean (2026-09-06, evening)
+
+With the recognizers demoting, three corpus families changed hands, and each showed a defect that
+had been sitting behind the recognizer.
+
+**The tessellator read two faces by their own rule.** The spiric band loft meshed the band between two
+spiric ovals "the long way round the tube" whatever the face was — right for a cut through the hole,
+wrong for the lens an intersect keeps — and the corrected torus tangent body measured 138.9 against an
+analytic 111.7 for it. It now asks the face's chart (ADR-0063) which side of the ovals the trim is on
+(`spiricBandSpan`). The two-rim holed band bridged its rims at the widest gap between the lens holes'
+SAMPLES, anchored on existing rim vertices: two lenses that nearly pinch leave a corridor narrower than
+a rim step, so a straight slit between the nearest vertices crossed a lens however it was placed, the
+mesher declined, and the wall fell to a flat patch with a `wall-wrap-unmeshed` defect and a hundred open
+mesh edges. The seam now runs at the chart's seam — placed by the boolean in that corridor, exactly — as
+a POLYLINE that keeps to the seam azimuth wherever a lens could be (`bentSeamOnSurface`); its interior
+points are its own, so both copies still weld. Every near-pinch join row meshes watertight.
+
+**A frame crossing on the face's own seam ruling is not a vertex.** `splitAtFrameCrossings` cut a
+re-emitted rim wherever a frame edge crossed it, on the grounds that the crossing is a vertex on the
+neighbour. Where the frame edge is the face's own seam ruling — the edge a primitive's wall carries
+twice — the neighbour across it is this face, the ruling dissolves inside the kept band, and nothing
+keeps the point; an extruded circle's bore came back as two half-circles on the tool's seam azimuth
+while the cap across the rim held one circle, and the stitch split the cap's circle to match. A seam
+ruling's crossings are skipped (`frameEdgeIsSeam`), and `TestCircularCutKeepsCircleEdge` holds through
+the general pipeline.
+
+**Parallel cylinders are provably apart.** `geom.SurfacesApart` proved only COAXIAL cylinders apart, so
+a bore inside a disc's rim "overlapped an uncovered wall" and the mixed pipeline declined every second
+bore of a patterned disc to the reconstruction engine. The least separation of two parallel cylinders
+is closed-form — side by side, or nested — and the predicate reads it (`parallelCylindersApart`).
+
+**The hole feature cuts with the boolean.** `HoleFeature.cutCylinder` called `brep.CutCylindricalHole`
+and `CutBlindCylindricalHole` directly: a drill recognizer invoked from the model layer with no boolean
+around it, whose bodies bypassed every post-condition the boolean applies — the top cap's hole loop
+came out wound against the cap and only the winding certificate ever saw it — and whose wall was minted
+`brep:drillwall#0` whatever the feature, so two holes in one part were two faces with one key and a
+pick of either was ambiguous. A pattern replaying the hole's recorded tool then cut a target the
+certificate had never certified and fell to the faceted engines. The hole now cuts with its analytic
+cylinder tool, named for the feature instance (`brep.SolidCylinderNamed`), through
+`ops.BooleanWithDiagnostics` — the same operation an extruded circle cuts with — and the recorded
+replay tool and the cut are the same solid. `TestTwoHolesAreTwoNamespaces` pins the keys. A from-to
+bore, which the exact blind drill declined and the faceted prism served, is an ordinary cylinder to
+the boolean, and its corpus row now asks for πr²·h rather than the 32-gon's area.
+
+Two builders stop being called from the model layer by this: `CutCylindricalHole` and
+`CutBlindCylindricalHole`, which stage 7 deletes with the recognizers that wrap them. The counterbore and
+countersink builders are still called directly and are the same shape of defect; they follow.
+
+Two gaps the hole feature's move surfaced, named and not done here. **A bore tangent to a face** — a
+Ø2 bore a radius in from a block's side, the corner bores of the sketch-placement corpus row — is a line
+contact between the tool's wall and a target face; no path claims it, the CSG engine tears it, and the
+feature then shipped that torn body as healthy: **the feature engine does not `Validate` a result it
+gets without an error** (`classify`), which is the post-condition every public operation owes and the
+model layer does not yet ask for. The inscribed 32-gon prism the feature used to cut with was never
+tangent, which is why the row passed; it now drills Ø1 bores clear of everything and asks for πr²·h.
