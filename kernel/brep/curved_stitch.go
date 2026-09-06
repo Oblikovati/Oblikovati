@@ -218,8 +218,9 @@ func (m *radialMinter) edgeLineage(gi int) topo.Lineage {
 }
 
 // edgeEnds resolves a group's endpoint vertices (disk-aware, welds cached from pass 1) plus whether
-// the stored curve runs opposite the representative's traversal (repFlip — true only for a spiric
-// branch stored in its native direction, see geom.SubCurve).
+// the stored curve runs opposite the representative's traversal (repFlip): a spiric branch stored in
+// its native direction, and a CLOSED loop, which is always stored whole and forward (geom.SubCurve)
+// and so runs opposite a representative that walked it backwards.
 func (m *radialMinter) edgeEnds(gi int, rep loopEdge, curve geom.Curve3) (vs, ve *topo.Vertex, repFlip bool) {
 	ends := m.plan.repEnds[gi]
 	if sa, ok := curve.(geom.SpiricArc); ok && !m.plan.closed[gi] {
@@ -230,18 +231,16 @@ func (m *radialMinter) edgeEnds(gi int, rep loopEdge, curve geom.Curve3) (vs, ve
 	a := rep.start()
 	if m.plan.closed[gi] {
 		v := m.vertexFor(gi, ends[0], a)
-		return v, v, false
+		return v, v, rep.t1 < rep.t0
 	}
 	return m.vertexFor(gi, ends[0], a), m.vertexFor(gi, ends[1], rep.end()), false
 }
 
 // useReversedFor reports whether a loop's use of its slot's group traverses the stored edge curve
-// backwards: a closed seam edge by its sweep sign (the stored closed curve runs forward), an open
-// edge by its pass-1 rep-relative direction XOR the group's stored-curve flip — no welder re-probe.
-func (m *radialMinter) useReversedFor(slot stitchSlot, le loopEdge) bool {
-	if m.plan.closed[slot.gi] {
-		return le.t1 < le.t0
-	}
+// backwards: its pass-1 rep-relative direction XOR the group's stored-curve flip — one rule for open
+// and closed edges alike, no welder re-probe. A closed use used to be read from its own parameter
+// direction, which assumed the stored curve ran the way its own curve did; see closedRunsOppose.
+func (m *radialMinter) useReversedFor(slot stitchSlot, _ loopEdge) bool {
 	return slot.rev != m.repFlip[slot.gi]
 }
 

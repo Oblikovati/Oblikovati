@@ -24,11 +24,11 @@ import stdmath "math"
 //
 //	edge := geom.SubCurve(run.curve, run.t0, run.t1) // spans exactly this edge, in its traversal sense
 func SubCurve(cv Curve3, t0, t1 float64) Curve3 {
+	if storedWhole(cv, t0, t1) {
+		return cv // kept whole: a closed loop stays the curve it is, whichever way the run walked it
+	}
 	switch c := cv.(type) {
 	case Circle:
-		if fullDomain(t0, t1) {
-			return c
-		}
 		return circleSubArc(c, t0, t1)
 	case Arc3d:
 		return arcSubArc(c, t0, t1)
@@ -59,13 +59,7 @@ func conicSubRange(cv Curve3, t0, t1 float64) Curve3 {
 	case SpiricArc:
 		return spiricSubArc(c, t0, t1) // a torus-cut spiric branch, in its native tube-angle direction
 	case RuledQuadricArc:
-		if storedWhole(c, t0, t1) {
-			return c
-		}
 		return c.SubArc(t0, t1) // a ruled crossing clipped between triple points keeps its own kind
-	}
-	if storedWhole(cv, t0, t1) {
-		return cv
 	}
 	return TrimmedCurve3{Base: cv, Lo: t0, Hi: t1}
 }
@@ -74,23 +68,35 @@ func conicSubRange(cv Curve3, t0, t1 float64) Curve3 {
 // either walks it FORWARD or the curve is closed.
 //
 // A closed curve's edge carries one vertex and its direction rides on the use's reversed flag, so
-// storing it forward is the convention. An OPEN one walked backwards is not the same case: the stitch
-// anchors the start vertex to the run's first point, so a forward-stored curve then begins at the END
-// vertex — and the tessellator, which pins a sampled polyline's ends to the vertices, folds the edge
-// over itself (ADR-0061 stage 4).
+// storing it forward is the convention — for EVERY closed kind. It was the rule for a circle and a
+// ruled crossing only, and a closed spiric or a full ellipse walked backwards was re-presented running
+// the other way; the stitch, which reads a closed run's direction against the curve's own parameter,
+// then flagged the use as if the stored curve ran forward, and both faces on the loop walked it the
+// same way. The torus figure-eight's second lobe came out inverted exactly so (ADR-0061 stage 4).
+//
+// An OPEN curve walked backwards is not the same case: the stitch anchors the start vertex to the
+// run's first point, so a forward-stored curve then begins at the END vertex — and the tessellator,
+// which pins a sampled polyline's ends to the vertices, folds the edge over itself.
 func storedWhole(cv Curve3, t0, t1 float64) bool {
-	return fullDomain(t0, t1) && (t0 <= t1 || CurveIsClosed(cv))
+	return fullDomain(cv, t0, t1) && (t0 <= t1 || CurveIsClosed(cv))
 }
 
-// fullDomain reports whether [t0, t1] spans a curve's whole [0, 1] domain, in either direction.
-func fullDomain(t0, t1 float64) bool {
+// fullDomain reports whether [t0, t1] spans the curve's whole domain, in either direction. It reads
+// the curve's OWN domain: a hyperbola's parameter is an angle, not a fraction, and an unbounded line
+// has no whole to cover.
+func fullDomain(cv Curve3, t0, t1 float64) bool {
+	dlo, dhi := cv.Domain()
+	if stdmath.IsInf(dlo, 0) || stdmath.IsInf(dhi, 0) || !(dhi > dlo) {
+		return false
+	}
+	slack := subRangeSlack * (dhi - dlo)
 	lo, hi := stdmath.Min(t0, t1), stdmath.Max(t0, t1)
-	return lo < subRangeSlack && hi > 1-subRangeSlack
+	return lo < dlo+slack && hi > dhi-slack
 }
 
 // subRangeSlack is how far from an endpoint a run's parameter may sit and still count as covering the
-// whole domain. It is a PARAMETER slack on a canonical [0,1] domain, so it carries no model scale.
-const subRangeSlack = 1e-9 // tol:parametric — a run's parameter at its curve's own endpoint
+// whole domain, as a fraction of the domain's length, so it carries no model scale.
+const subRangeSlack = 1e-9 // tol:parametric — a run's parameter at its curve's own endpoint, relative
 
 // circleSubArc builds the Arc3d covering a circle's parameter sub-range [t0, t1] (Circle.PointAt(t) is
 // the point at angle 2πt), so the edge tessellates over that arc alone.

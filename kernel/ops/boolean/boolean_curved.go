@@ -46,9 +46,19 @@ import (
 //	  - the union of two coaxial equal-radius cylinders that overlap/abut → one taller cylinder (#1336).
 func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	for _, exact := range curvedExactPaths {
-		if body, ok := exact(op, target, tool, rec); ok {
-			return body, true
+		body, ok := exact(op, target, tool, rec)
+		if !ok {
+			continue
 		}
+		// A recognizer's body is certified here, before it is adopted, so one that fails demotes to the
+		// GENERAL pipeline below rather than past it to the faceted engines: the general pipeline is what
+		// the recognizers are a shortcut for (ADR-0061 stage 4).
+		if inverted, found := invertedFace(body); found {
+			rec.Recordf(CodeBooleanWindingReject, diag.Defect,
+				"curved %s recognizer result has a face wound against its outward normal (%q): demoting to the general pipeline", op, inverted.ReferenceKey())
+			continue
+		}
+		return body, true
 	}
 	// General per-face dispatch (ADR-0058): when the curved faces are clear of the other operand,
 	// the exact planar pipeline splits the planar faces and the curved ones pass through whole —
@@ -77,8 +87,32 @@ func mixedPassThroughBoolean(op PartFeatureOperation, target, tool *topo.Body, r
 	if err != nil || body == nil || !Validate(body).ValidSolid() {
 		return nil, false
 	}
+	if inverted, found := invertedFace(body); found {
+		rec.Recordf(CodeBooleanWindingReject, diag.Defect,
+			"curved %s general result has a face wound against its outward normal (%q): declining it", op, inverted.ReferenceKey())
+		return nil, false
+	}
 	return body, true
 }
+
+// invertedFace returns a face of the body whose loops wind against its outward normal — the emission
+// post-condition the per-edge validity test cannot see (brep.FaceWindingConsistent). A face the
+// certificate cannot read is not reported: the gate refuses only what it can prove.
+func invertedFace(b *topo.Body) (*topo.Face, bool) {
+	for _, f := range b.Faces() {
+		if ok, certain := brep.FaceWindingConsistent(f); certain && !ok {
+			return f, true
+		}
+	}
+	return nil, false
+}
+
+// CodeBooleanWindingReject marks a curved boolean result refused because one of its faces is wound
+// against its outward normal. Validate's per-edge test admits such a body — two faces inverted
+// together across the edge they share stay pairwise consistent — and the tessellator then meshes the
+// face's complement while the analytic integrator, which signs a loop from its own boundary integral,
+// still reports the right volume. The torus tangent cut shipped so for every axis (ADR-0061 stage 4).
+const CodeBooleanWindingReject diag.Code = "boolean.winding-reject"
 
 // CodeBooleanAnalyticVolumeReject marks a curved analytic boolean whose result fell OUTSIDE the
 // Requicha two-sided volume bracket (#1601): the recognizer produced a valid body of materially
@@ -126,6 +160,11 @@ func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, rec *d
 	if !Validate(body).ValidSolid() {
 		rec.Recordf(CodeBooleanAnalyticInvalid, diag.Defect,
 			"curved %s analytic result is not a valid closed solid: falling back to the guarded path", op)
+		return nil, false
+	}
+	if inverted, found := invertedFace(body); found {
+		rec.Recordf(CodeBooleanWindingReject, diag.Defect,
+			"curved %s analytic result has a face wound against its outward normal (%q): falling back to the guarded path", op, inverted.ReferenceKey())
 		return nil, false
 	}
 	tv, wv, bv := boolVolumes(target, tool, body)
