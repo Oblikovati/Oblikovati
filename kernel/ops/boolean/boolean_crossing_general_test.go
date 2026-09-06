@@ -72,3 +72,46 @@ func crossedCylinders(t *testing.T, op brep.Op) *topo.Body {
 	}
 	return res
 }
+
+// The Steinmetz degeneracy — two cylinders of EQUAL radius — through the general pipeline. Its section
+// is two planar ellipses crossing at the folds, which the ruled∩quadric form declines; the closed form
+// inside the intersector supplies them, and the bicylinder's volume is the classical 16r³/3 exactly
+// (ADR-0061 stage 4).
+func TestGeneralPipelineBuildsTheSteinmetzBicylinder(t *testing.T) {
+	t.Parallel()
+	const r, h = 3.0, 12.0
+	bicyl := 16 * r * r * r / 3
+	one := stdmath.Pi * r * r * h
+	for _, row := range []struct {
+		name string
+		op   brep.Op
+		want float64
+	}{
+		{"the bicylinder", brep.Intersection, bicyl},
+		{"one cylinder less the other", brep.Difference, one - bicyl},
+		{"the cross", brep.Union, 2*one - bicyl},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			t.Parallel()
+			cx, err := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, h)
+			if err != nil {
+				t.Fatalf("cylinder x: %v", err)
+			}
+			cz, err := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r, h)
+			if err != nil {
+				t.Fatalf("cylinder z: %v", err)
+			}
+			res, err := brep.Boolean(row.op, cx, cz)
+			if err != nil {
+				t.Fatalf("boolean: %v", err)
+			}
+			if v := ops.Validate(res); !v.Valid || !v.Closed || !res.IsSolid() {
+				t.Fatalf("not a valid closed solid: %+v", v.Issues)
+			}
+			got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+			if rel := stdmath.Abs(got-row.want) / row.want; rel > 0.001 {
+				t.Errorf("volume %.6f, want %.6f — rel %.5f", got, row.want, rel)
+			}
+		})
+	}
+}

@@ -82,19 +82,19 @@ var pendingCapability = map[quarantineKey]string{
 	{"simple", "I4"}:           "curved (geom.BSplineSurface-arm) Plane∧Cylinder edge 7230 could not be welded into the solid: corner solve declined (station gap / host non-tangency / closure failure)",
 	{"simple", "I6"}:           "curved (ops.bsplineHostArmSurface-arm) Plane∧Cylinder edge 7326 could not be welded into the solid: curved arms do not meet at one shared trihedral vertex",
 	{"simple", "I8"}:           "curved miter arms unsupported at vertex 7437 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 10)",
-	// J5/K7/L1/L7/N5: the result SOLID SELF-INTERSECTS (Oblikovati/Oblikovati#3491) — found the moment
+	// J5: the result SOLID SELF-INTERSECTS (Oblikovati/Oblikovati#3491) — found the moment
 	// isWatertightSolid began reading the exact face-pair scan instead of a tessellation (#3477). The
-	// bodies are bit-identical at the branch point, so these are pre-existing blend defects made
-	// visible, not detector regressions. Witnesses lie ON both surfaces, strictly INSIDE both trims,
-	// transversally: four are cylinder blend flanks interpenetrating ~0.03 near corners; J5 is a torus
-	// face driven 30 units through a plane at a right angle while the AREA still matches OCCT — the
-	// overlap double-covers, which is exactly why an area match is a smoke test and not a proof.
+	// bodies are bit-identical at the branch point, so this is a pre-existing blend defect made
+	// visible, not a detector regression. A torus face is driven 30 units through a plane at a right
+	// angle while the AREA still matches OCCT — the overlap double-covers, which is exactly why an
+	// area match is a smoke test and not a proof.
+	//
+	// K7/L1/L7/N5 stood beside it, all four "Cylinder×Cylinder blend-flank crossings ~0.03 deep". They
+	// are gone: two blend flanks of EQUAL radius are the degenerate cylinder pair whose section the
+	// ruled∩quadric form declined, and the closed form now inside the intersector gives it exactly
+	// (ADR-0061 stage 4). The witnesses were the fold those declined arcs left behind.
 	{"simple", "J5"}:          "result self-intersects: Torus×Plane crossing at (-0.000,-150.000,0.000), 30.6 deep in both trims (#3491)",
 	{"simple", "J9"}:          declineCannotRoundCurvedBSpline,
-	{"simple", "K7"}:          "result self-intersects: 4 Cylinder×Cylinder blend-flank crossings ~0.027 deep, e.g. (29.333,2.506,9.333) (#3491)",
-	{"simple", "L1"}:          "result self-intersects: 4 Cylinder×Cylinder blend-flank crossings 0.026-0.032 deep, e.g. (39.810,80.190,103.634) (#3491)",
-	{"simple", "L7"}:          "result self-intersects: 3 Cylinder×Cylinder blend-flank crossings 0.024-0.031 deep, e.g. (99.298,16.793,72.440) (#3491)",
-	{"simple", "N5"}:          "result self-intersects: Cylinder×Cylinder blend-flank crossing 0.031 deep at (116.063,81.268,53.644) (#3491)",
 	{"simple", "L8"}:          "curved (torus-arm) Plane∧Cylinder edge 11018 could not be welded into the solid: corner solve declined (station gap / host non-tangency / closure failure)",
 	{"simple", "M3"}:          "curved (torus-arm) Plane∧Cylinder edge 11619 could not be welded into the solid: trihedral corner needs 3 arms (got 2 at vertex 11618)",
 	{"simple", "M6"}:          "curved miter arms unsupported at vertex 11938 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 5)",
@@ -156,8 +156,9 @@ var pendingCapability = map[quarantineKey]string{
 // pendingCapabilityCount pins the size of the pending list so it can only SHRINK by review.
 // 99 FAIL(faulty) + 5 FAIL(area), measured at 09a9b2d1 on 2026-08-01; +5 self-intersecting results
 // (J5/K7/L1/L7/N5, #3491) the exact watertight gate exposed on 2026-09-01 — geometry wrong all
-// along, counted green only while the detector read a tessellation.
-const pendingCapabilityCount = 109
+// along, counted green only while the detector read a tessellation. −4 on 2026-09-06: K7/L1/L7/N5
+// build OCCT-parity geometry now that the equal-radius cylinder section is exact (ADR-0061 stage 4).
+const pendingCapabilityCount = 105
 
 // pendingCapabilityReason returns the not-yet-built reason for a case and whether it is pending.
 //

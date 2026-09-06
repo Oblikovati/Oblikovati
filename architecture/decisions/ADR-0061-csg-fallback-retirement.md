@@ -953,3 +953,34 @@ Crossing cylinders are now exact all three ways round, through `brep.Boolean` wi
 
 The union is inclusion-exclusion to six figures, which is what makes the three one statement rather than
 three numbers. **29 failing tests left of the original 38**, 45 leaves of 49.
+
+### The Steinmetz degeneracy, solved where it belongs (2026-09-06)
+
+Two cylinders of EQUAL radius are the one pair the ruled∩quadric closed form declines for a reason that
+is not ill-conditioning: its quadratic's two roots COINCIDE at a fold, and the section is not two
+azimuth wraps but two planar ELLIPSES crossing at the folds. Subtracting the two implicit forms leaves a
+difference of squares, so the section lies in the two planes through the axes' bisectors, and in each it
+is an ellipse of semi-axes r and r/sin(half-angle).
+
+`equalCylinderSection` supplies it INSIDE `IntersectSurfacesAnalytic`, which is where the ground rules
+put a surface-pair closed form — a Steinmetz solid is a boolean of two cylinders like any other, and the
+only thing special about it is that its section has a closed form the generic one cannot express. It
+fires on the degeneracy and nowhere else: an unequal pair, or one whose axes are parallel or skew, falls
+through to the general form, which `TestUnequalCylindersKeepTheGeneralForm` pins.
+
+All three ways round, through `brep.Boolean` with every recognizer off:
+
+| operation | ours | exact |
+| --- | --- | --- |
+| ∩ (the bicylinder) | 144.0000 | 16r³/3 = 144 |
+| − | 195.2920 | 339.292 − 144 |
+| ∪ | 534.5840 | 2 × 339.292 − 144 |
+
+**And four OCCT blend-parity cases came with it.** `simple/K7`, `L1`, `L7` and `N5` were on the pending
+list as "result self-intersects: Cylinder×Cylinder blend-flank crossings ~0.03 deep" — two blend flanks
+of equal radius are exactly this pair, and the shallow interpenetration was the fold those declined arcs
+left behind. `pendingCapabilityCount` falls 109 → 105 and the parity scoreboard's green count rises
+127 → 131 simple, 143 → 147 overall. The fifth of that group, `J5`, is a torus through a plane and
+stands.
+
+**26 failing tests left of the original 38**, 44 leaves of 49.
