@@ -1129,3 +1129,45 @@ edge, and a face bounded by ONE closed circle has a ring of one point and no seg
 With both, `brep.Boolean` returns the rim crossing as a watertight four-face solid — notched holed wall,
 bitten top cap, whole bottom cap, tunnel — and with all 26 recognizers off `TestRimCrossingCutMomentsMatchOCC`,
 `TestRimCrossingCutIsWatertightAndFoldFree` and the `TestCurvedBooleansStayExact` rim-crossing row all pass.
+
+### One incidence solver for every crossing on a face (2026-09-06)
+
+The corner junction — a rod drilled through an ALREADY-NOTCHED cylinder, its exit bite crossing the
+notch (EPIC #1738, ADR-0048) — is the case where two imprints on one face bound the kept region
+between them. The rod's exit follows the wall crossing over part of the turn and the notch plane's
+section over the rest, and the two meet at two triple points.
+
+Three things were wrong, and they compound.
+
+**Two imprints on one face never met.** The arrangement WELDS coincident vertices; it does not split a
+segment where another segment crosses it. With no vertex at the triple points the rod's chart kept the
+whole wall crossing and ignored the notch entirely, so the tunnel ran on past the notch plane.
+`solveImprintCrossings` now co-refines every imprint pair, which is what `planeFaceUV` already does
+between its islands.
+
+**The section-plane solver reported none of those meetings.** It works from two curves' section PLANES,
+and a ruled crossing is not planar. The general question is different and simpler: both curves lie on
+ONE surface, so substituting one curve's parameterisation into the other's incidence makes the meeting a
+scalar root. `geom.CurveIncidence` names that condition — a section's plane, a ruled crossing's quadric
+— and `curveRootsOnOther` brackets its sign changes on a walk and bisects each.
+
+A crossing names BOTH of its surfaces, which matters more than it looks. Which one is the chart's own
+host carries no information at all — every point of the host satisfies it — and which is which depends
+on the side asking. Naming only the carried quadric made the crossing's meeting with a section on its own
+base unsolvable: the condition was identically zero along the walk, its sign flipped on float noise, and
+the roots came back as seven pieces of noise instead of the two triple points.
+
+**The frame solver and the imprint solver disagreed about where the triple point IS.** Frame crossings
+went through the section-plane route, which locates the shared point only to the accuracy of its
+candidate and then INVERTS it on each curve. On this fixture the wall named the triple point 5e-5 away
+from where the notch cap and the tunnel named it. The stitch does not weld across that, and does
+something worse than fail: it splits the wall's neighbouring notch edge at the stray vertex, leaving a
+zero-length remnant in the loop. Both solvers are now one — `curvePairMeets`, each side's parameter
+solved in its OWN walk, paired by the point they evaluate to — and the section route survives only as
+the fallback for a TANGENTIAL contact, where nothing changes sign.
+
+`brep.Boolean` now returns the corner junction as a watertight five-face solid. With all 26 recognizers
+off, `TestPartialRimCornerJunctionTakesAnalyticPath` and `TestPartialRimChainedCutDeclinesObservably`
+pass; the two corner certifications remain, and what they now measure is a TESSELLATION deficit (88 free
+edges at default quality, volume 0.98 % low) on a face whose boundary mixes a clipped ruled crossing with
+an elliptical arc — downstream of the modelling, and the next thing to take up in this family.

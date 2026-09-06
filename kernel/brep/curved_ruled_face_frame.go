@@ -70,22 +70,106 @@ func (c *loopFrame) solveFrameCrossings(imprint []geom.Curve3) ([]frameCrossing,
 	for li, l := range c.face.loops {
 		for ei, e := range l.edges {
 			for ii, imp := range imprint {
-				lo, hi := imp.Domain()
-				pts, coincident := geom.SectionCrossingCandidates(c.face.surface, e.curve, imp)
-				if coincident {
+				if _, coincident := geom.SectionCrossingCandidates(c.face.surface, e.curve, imp); coincident {
 					return nil, false
 				}
-				for _, p := range pts {
-					tE, okE := c.paramWithin(e.curve, e.t0, e.t1, p)
-					tI, okI := c.paramWithin(imp, lo, hi, p)
-					if okE && okI {
-						out = append(out, frameCrossing{loop: li, edge: ei, tEdge: tE, imp: ii, tImp: tI})
-					}
+				tE, tI := c.curvePairMeets(e.curve, e.t0, e.t1, imp)
+				for k := range tE {
+					out = append(out, frameCrossing{loop: li, edge: ei, tEdge: tE[k], imp: ii, tImp: tI[k]})
 				}
 			}
 		}
 	}
 	return out, true
+}
+
+// solveImprintCrossings solves every meeting BETWEEN imprint curves on this face, returning the
+// parameters to inject on each one.
+//
+// The arrangement welds coincident vertices; it does not split a segment where another crosses it. So
+// two imprints that meet without a shared vertex do not cut each other at all: a rod drilled through an
+// already-notched cylinder has its exit bounded by the wall crossing over part of the turn and by the
+// notch plane's section over the rest, the two meeting at the corner-junction triple points, and with no
+// vertex there the rod's chart kept the whole wall crossing and ignored the notch entirely (ADR-0061
+// stage 4). It is the same co-refinement planeFaceUV already does between its islands.
+func (c *loopFrame) solveImprintCrossings(imprint []geom.Curve3) [][]float64 {
+	out := make([][]float64, len(imprint))
+	for i := range imprint {
+		for j := i + 1; j < len(imprint); j++ {
+			if _, coincident := geom.SectionCrossingCandidates(c.face.surface, imprint[i], imprint[j]); coincident {
+				continue // two imprints on one curve: the arrangement's vertex weld already joins them
+			}
+			lo, hi := imprint[i].Domain()
+			ti, tj := c.curvePairMeets(imprint[i], lo, hi, imprint[j])
+			out[i] = append(out[i], ti...)
+			out[j] = append(out[j], tj...)
+		}
+	}
+	return out
+}
+
+// curvePairMeets is where two curves ON THIS FACE'S SURFACE meet, as a parameter on EACH — index-aligned,
+// a's span restricted to [aLo, aHi].
+//
+// Each side's parameter is solved in its own walk. The shared point is never recovered by inverting the
+// other curve: a section solver locates its candidate only to the accuracy of that candidate, and the
+// two charts that meet along a triple point then name it 5e-5 apart, which the stitch resolves by
+// splitting a neighbouring edge into a zero-length remnant instead of welding (ADR-0061 stage 4).
+func (c *loopFrame) curvePairMeets(a geom.Curve3, aLo, aHi float64, b geom.Curve3) (ta, tb []float64) {
+	bLo, bHi := b.Domain()
+	for _, tA := range curveRootsOnOther(a, aLo, aHi, b) {
+		for _, tB := range curveRootsOnOther(b, bLo, bHi, a) {
+			if float64(a.PointAt(tA).DistanceTo(b.PointAt(tB))) <= c.res.Sew() {
+				ta, tb = append(ta, tA), append(tb, tB)
+			}
+		}
+	}
+	if len(ta) > 0 {
+		return ta, tb
+	}
+	return c.sectionPairMeets(a, aLo, aHi, b)
+}
+
+// sectionPairMeets is the section-plane route to the same question, for a pair whose meeting the
+// incidence walk does not bracket — a TANGENTIAL contact, where no sign changes. It inverts the shared
+// point on each curve, so it answers only for curves with a closed-form parameter inversion.
+func (c *loopFrame) sectionPairMeets(a geom.Curve3, aLo, aHi float64, b geom.Curve3) (ta, tb []float64) {
+	bLo, bHi := b.Domain()
+	pts, _ := geom.SectionCrossingCandidates(c.face.surface, a, b)
+	for _, p := range pts {
+		tA, okA := c.paramWithin(a, aLo, aHi, p)
+		tB, okB := c.paramWithin(b, bLo, bHi, p)
+		if okA && okB {
+			ta, tb = append(ta, tA), append(tb, tB)
+		}
+	}
+	return ta, tb
+}
+
+// curveRootsOnOther is where a's own parameter, walked over [lo, hi], satisfies b's incidence: b's
+// condition evaluated along a is a scalar function, and every sign change is bisected to its root.
+//
+// The section-plane solver answers only for two PLANAR sections, and a ruled crossing is not planar — a
+// rod through an already-notched cylinder meets the notch section at two triple points that solver
+// reports none of.
+func curveRootsOnOther(a geom.Curve3, lo, hi float64, b geom.Curve3) []float64 {
+	if lo > hi {
+		lo, hi = hi, lo
+	}
+	var out []float64
+	for _, on := range geom.CurveIncidence(b) {
+		g := func(t float64) float64 { return on(a.PointAt(t)) }
+		prev, prevG := lo, g(lo)
+		for i := 1; i <= crossingSpanSamples; i++ {
+			t := lo + (hi-lo)*float64(i)/crossingSpanSamples
+			v := g(t)
+			if prevG*v < 0 {
+				out = append(out, bisectRoot(g, prev, t))
+			}
+			prev, prevG = t, v
+		}
+	}
+	return out
 }
 
 // solveSeamCrossings intersects the placed seam ruling with every frame edge and every imprint curve.
@@ -197,8 +281,9 @@ func (c *loopFrame) frameSegments(seamHits []frameCrossing) []uvSeg {
 // imprintSegments samples every imprint curve over its domain with its frame and seam incidences injected.
 func (c *loopFrame) imprintSegments(imprint []geom.Curve3, seamHits []frameCrossing) []uvSeg {
 	var out []uvSeg
+	meets := c.solveImprintCrossings(imprint)
 	for ii, imp := range imprint {
-		var inject, atSeam []float64
+		inject, atSeam := append([]float64(nil), meets[ii]...), []float64(nil)
 		for _, cr := range c.crossings {
 			if cr.imp == ii {
 				inject = append(inject, cr.tImp)
