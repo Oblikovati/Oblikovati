@@ -110,29 +110,13 @@ func (c *sphereFaceUV) multiFace() bool { return true }
 // wrapsAllU reports whether the kept region wraps the longitude (uvSide).
 func (c *sphereFaceUV) wrapsAllU() bool { return c.wrapping }
 
-// placeSeams puts the longitude seam clear of every imprint and frame longitude, so the seam crosses
-// the frame only through the interior of a smooth edge (uvSide).
+// placeSeams puts the longitude seam clear of every imprint's exact longitude extent and of every
+// frame longitude, so the seam crosses the frame only through the interior of a smooth edge (uvSide,
+// curved_seam_place.go).
 func (c *sphereFaceUV) placeSeams(imprint []geom.Curve3) {
 	c.seamU = 0
-	var us []float64
-	for _, cv := range imprint {
-		lo, hi := cv.Domain()
-		for k := 0; k <= sphereSeamProbe; k++ {
-			t := lo + (hi-lo)*float64(k)/sphereSeamProbe
-			us = append(us, float64(c.paramOf(cv.PointAt(t)).X))
-		}
-	}
-	for _, l := range c.face.loops {
-		for _, e := range l.edges {
-			us = append(us, float64(c.paramOf(e.start()).X), float64(c.paramOf(e.end()).X))
-		}
-	}
-	c.seamU = widestGapMid(us)
+	c.seamU = c.exactSeamAzimuth(imprint, ringChartU)
 }
-
-// sphereSeamProbe samples an imprint's longitudes when choosing where to put the seam. It only has to
-// find a gap, not a boundary, so a coarse walk is enough.
-const sphereSeamProbe = 32
 
 // assembleSegments samples the face's own loops, the imprint, the longitude seam and the POLE edges
 // into the arrangement's tagged segment set (uvSide).
@@ -326,6 +310,9 @@ func sphereFaceMaterial(c *sphereFaceUV) func() materialPredicate {
 
 // vClosed: latitude is a bounded window between the poles, not a period (loopFrameHost).
 func (c *sphereFaceUV) vClosed() bool { return false }
+
+// tubeSeamCurve: v is a bounded window here, so there is no tube seam (loopFrameHost).
+func (c *sphereFaceUV) tubeSeamCurve() (geom.Curve3, bool) { return nil, false }
 
 // seamOrigin is the surface parameter of the chart's (0,0): a sphere chart rotates its longitude
 // origin to place the seam; its latitude is the surface's own (uvSide, ADR-0063).

@@ -41,6 +41,11 @@ type loopFrameHost interface {
 	// as it is at the u-seam; without it the wrap lands in the arrangement as one segment spanning the
 	// whole rectangle, which slices the region into slivers (ADR-0062).
 	vClosed() bool
+	// tubeSeamCurve is the artificial seam closing a PERIODIC v — the torus's parallel at the placed
+	// tube angle — so its crossings with the frame and the imprint are solved exactly like the
+	// u-seam's, rather than folded from wherever the sampling straddled it (ADR-0061 stage 4). ok is
+	// false on a chart whose v is a bounded window.
+	tubeSeamCurve() (geom.Curve3, bool)
 }
 
 // loopFrame is a face's OWN boundary as the arrangement's frame (ADR-0060), shared by every chart that
@@ -59,6 +64,7 @@ type frameCrossing struct {
 	tEdge      float64
 	imp        int
 	tImp       float64
+	tube       bool // a seam incidence on the TUBE seam (periodic v) rather than the azimuth seam
 }
 
 const seamIncidence = -1
@@ -119,7 +125,7 @@ func (c *loopFrame) curvePairMeets(a geom.Curve3, aLo, aHi float64, b geom.Curve
 	bLo, bHi := b.Domain()
 	for _, tA := range curveRootsOnOther(a, aLo, aHi, b) {
 		for _, tB := range curveRootsOnOther(b, bLo, bHi, a) {
-			if float64(a.PointAt(tA).DistanceTo(b.PointAt(tB))) <= c.res.Sew() {
+			if float64(a.PointAt(tA).DistanceTo(b.PointAt(tB))) <= c.res.Sew() && !c.meetKnown(a, ta, tA) {
 				ta, tb = append(ta, tA), append(tb, tB)
 			}
 		}
@@ -128,6 +134,21 @@ func (c *loopFrame) curvePairMeets(a geom.Curve3, aLo, aHi float64, b geom.Curve
 		return ta, tb
 	}
 	return c.sectionPairMeets(a, aLo, aHi, b)
+}
+
+// meetKnown reports whether a meeting point is already in the list. A curve carrying TWO incidence
+// conditions — a straight seam, a ruled crossing — has both vanish at one crossing, so the walk brackets
+// that crossing once per condition and each root lands at the same point to rounding; injecting both
+// would put two vertices a rounding apart on the boundary, and the sliver between them reads as an
+// open edge. One point is one incidence, decided once (ADR-0061 stage 4).
+func (c *loopFrame) meetKnown(a geom.Curve3, known []float64, tA float64) bool {
+	p := a.PointAt(tA)
+	for _, t := range known {
+		if float64(a.PointAt(t).DistanceTo(p)) <= c.res.Sew() {
+			return true
+		}
+	}
+	return false
 }
 
 // sectionPairMeets is the section-plane route to the same question, for a pair whose meeting the
@@ -163,7 +184,10 @@ func curveRootsOnOther(a geom.Curve3, lo, hi float64, b geom.Curve3) []float64 {
 		for i := 1; i <= crossingSpanSamples; i++ {
 			t := lo + (hi-lo)*float64(i)/crossingSpanSamples
 			v := g(t)
-			if prevG*v < 0 {
+			switch {
+			case v == 0:
+				out = append(out, t) // the station IS the root: a seam placed exactly on a sample
+			case prevG*v < 0:
 				out = append(out, bisectRoot(g, prev, t))
 			}
 			prev, prevG = t, v
@@ -172,50 +196,50 @@ func curveRootsOnOther(a geom.Curve3, lo, hi float64, b geom.Curve3) []float64 {
 	return out
 }
 
-// solveSeamCrossings intersects the placed seam ruling with every frame edge and every imprint curve.
-// Rulings are skipped: the seam was placed clear of every ruling edge and of every imprint azimuth.
+// solveSeamCrossings intersects the placed seam with every frame edge and every imprint curve, through
+// the one incidence solver the frame and the imprint use for one another (seamMeets). Rulings are
+// skipped: the seam is placed clear of every ruling edge.
 func (c *loopFrame) solveSeamCrossings(imprint []geom.Curve3) []frameCrossing {
-	seam := c.host.seamCurve()
+	out := c.oneSeamCrossings(c.host.seamCurve(), imprint, false)
+	if tube, ok := c.host.tubeSeamCurve(); ok {
+		out = append(out, c.oneSeamCrossings(tube, imprint, true)...)
+	}
+	return out
+}
+
+// oneSeamCrossings solves one seam's crossings with every frame edge and every imprint curve.
+func (c *loopFrame) oneSeamCrossings(seam geom.Curve3, imprint []geom.Curve3, tube bool) []frameCrossing {
 	var out []frameCrossing
 	for li, l := range c.face.loops {
 		for ei, e := range l.edges {
-			if t, ok := c.seamHit(seam, e.curve, e.t0, e.t1); ok {
-				out = append(out, frameCrossing{loop: li, edge: ei, tEdge: t, imp: seamIncidence})
+			for _, t := range c.seamMeets(seam, e.curve, e.t0, e.t1) {
+				out = append(out, frameCrossing{loop: li, edge: ei, tEdge: t, imp: seamIncidence, tube: tube})
 			}
 		}
 	}
 	for ii, imp := range imprint {
 		lo, hi := imp.Domain()
-		if t, ok := c.seamHit(seam, imp, lo, hi); ok {
-			out = append(out, frameCrossing{loop: seamIncidence, edge: ii, tEdge: t, imp: seamIncidence})
+		for _, t := range c.seamMeets(seam, imp, lo, hi) {
+			out = append(out, frameCrossing{loop: seamIncidence, edge: ii, tEdge: t, imp: seamIncidence, tube: tube})
 		}
 	}
 	return out
 }
 
-// seamHit is the parameter where a section curve meets the seam, when it does within both spans.
-//
-// The crossing must lie on the SEAM ITSELF, not merely in its plane. The incidence solver works from
-// the two curves' section planes, and a seam that spans only HALF of its plane's curve — a sphere's
-// meridian is a half great circle, its plane a whole one — then reports a crossing on the other half
-// as if it were on the seam. Injected at the seam's own u, that put a boundary vertex half a turn away
-// from where it belongs, and the emitted arc started at the antipode of the real crossing. A ruled
-// wall's seam ruling spans its whole line, so this costs it nothing.
-func (c *loopFrame) seamHit(seam geom.Curve3, cv geom.Curve3, t0, t1 float64) (float64, bool) {
+// seamMeets is every parameter within [t0, t1] at which a curve meets the seam. It is curvePairMeets,
+// so a window loop the seam enters and leaves reports BOTH crossings, and a ruled∩quadric arc — which
+// has no section plane — is met through its incidence like any other curve. The seam-hit it replaces
+// took the section-plane candidates and stopped at the first within both spans: a loop the seam cut
+// through then carried one vertex on it, the far half of the loop was lost with the seam edge it should
+// have cancelled against, and the near-pinch cut came back with three open edges (ADR-0061 stage 4).
+// A crossing must lie on the seam ITSELF, not merely in its plane — a sphere's meridian is half its
+// great circle — which the solver's Sew-distance pairing on the seam's own span guarantees.
+func (c *loopFrame) seamMeets(seam, cv geom.Curve3, t0, t1 float64) []float64 {
 	if geom.IsStraightCurve(cv) {
-		return 0, false
+		return nil
 	}
-	sLo, sHi := seam.Domain()
-	pts, _ := geom.SectionCrossingCandidates(c.face.surface, seam, cv)
-	for _, p := range pts {
-		if _, onSeam := c.paramWithin(seam, sLo, sHi, p); !onSeam {
-			continue
-		}
-		if t, ok := c.paramWithin(cv, t0, t1, p); ok {
-			return t, true
-		}
-	}
-	return 0, false
+	ta, _ := c.curvePairMeets(cv, t0, t1, seam)
+	return ta
 }
 
 // paramWithin inverts a curve at a point and accepts it when the point lies on the curve within the
@@ -261,21 +285,32 @@ func (c *loopFrame) frameSegments(seamHits []frameCrossing) []uvSeg {
 	var out []uvSeg
 	for li, l := range c.face.loops {
 		for ei, e := range l.edges {
-			var inject, atSeam []float64
+			var inject []float64
 			for _, cr := range c.crossings {
 				if cr.loop == li && cr.edge == ei {
 					inject = append(inject, cr.tEdge)
 				}
 			}
-			for _, cr := range seamHits {
-				if cr.loop == li && cr.edge == ei {
-					atSeam = append(atSeam, cr.tEdge)
-				}
-			}
-			out = append(out, c.sampledPolyline(e.curve, e.t0, e.t1, inject, atSeam, segPolygon)...)
+			atSeam, atTube := seamHitParams(seamHits, func(cr frameCrossing) bool { return cr.loop == li && cr.edge == ei })
+			out = append(out, c.sampledPolyline(e.curve, e.t0, e.t1, inject, atSeam, atTube, segPolygon)...)
 		}
 	}
 	return out
+}
+
+// seamHitParams collects the parameters of the seam incidences a predicate selects, the azimuth seam's
+// and the tube seam's apart.
+func seamHitParams(hits []frameCrossing, on func(frameCrossing) bool) (atSeam, atTube []float64) {
+	for _, cr := range hits {
+		switch {
+		case !on(cr):
+		case cr.tube:
+			atTube = append(atTube, cr.tEdge)
+		default:
+			atSeam = append(atSeam, cr.tEdge)
+		}
+	}
+	return atSeam, atTube
 }
 
 // imprintSegments samples every imprint curve over its domain with its frame and seam incidences injected.
@@ -283,19 +318,15 @@ func (c *loopFrame) imprintSegments(imprint []geom.Curve3, seamHits []frameCross
 	var out []uvSeg
 	meets := c.solveImprintCrossings(imprint)
 	for ii, imp := range imprint {
-		inject, atSeam := append([]float64(nil), meets[ii]...), []float64(nil)
+		inject := append([]float64(nil), meets[ii]...)
 		for _, cr := range c.crossings {
 			if cr.imp == ii {
 				inject = append(inject, cr.tImp)
 			}
 		}
-		for _, cr := range seamHits {
-			if cr.loop == seamIncidence && cr.edge == ii {
-				atSeam = append(atSeam, cr.tEdge)
-			}
-		}
+		atSeam, atTube := seamHitParams(seamHits, func(cr frameCrossing) bool { return cr.loop == seamIncidence && cr.edge == ii })
 		lo, hi := imp.Domain()
-		out = append(out, c.sampledPolyline(imp, lo, hi, inject, atSeam, segImprint)...)
+		out = append(out, c.sampledPolyline(imp, lo, hi, inject, atSeam, atTube, segImprint)...)
 	}
 	return out
 }
@@ -304,9 +335,9 @@ func (c *loopFrame) imprintSegments(imprint []geom.Curve3, seamHits []frameCross
 // injected, unwrapping the azimuth along the walk so each segment is continuous, snapping every seam
 // incidence to the seam exactly, then folding each segment into the [0, 2π] strip. Any segment that
 // still straddles the seam (an incidence the solver did not see) is split there by interpolation.
-func (c *loopFrame) sampledPolyline(cv geom.Curve3, t0, t1 float64, inject, atSeam []float64, kind segKind) []uvSeg {
-	params := injectedParams(cv, t0, t1, append(append([]float64{}, inject...), atSeam...))
-	pts, poles := c.sampleChartPoints(cv, params, atSeam)
+func (c *loopFrame) sampledPolyline(cv geom.Curve3, t0, t1 float64, inject, atSeam, atTube []float64, kind segKind) []uvSeg {
+	params := injectedParams(cv, t0, t1, append(append(append([]float64{}, inject...), atSeam...), atTube...))
+	pts, poles := c.sampleChartPoints(cv, params, atSeam, atTube)
 	var out []uvSeg
 	for i := 1; i < len(params); i++ {
 		a, b := anchorPoleEnds(pts[i-1], pts[i], poles[i-1], poles[i])
@@ -326,13 +357,13 @@ func (c *loopFrame) sampledPolyline(cv geom.Curve3, t0, t1 float64, inject, atSe
 // walk so each step is continuous, snapping every seam incidence to the seam exactly. A sample that
 // lands on a PARAMETRIC POLE is flagged and left out of the unwrapping: u names no direction there, so
 // it may neither take a branch from its predecessor nor hand one to its successor.
-func (c *loopFrame) sampleChartPoints(cv geom.Curve3, params []float64, atSeam []float64) ([]math.Point2, []bool) {
+func (c *loopFrame) sampleChartPoints(cv geom.Curve3, params []float64, atSeam, atTube []float64) ([]math.Point2, []bool) {
 	pts, poles := make([]math.Point2, len(params)), make([]bool, len(params))
 	prevU, havePrev := 0.0, false
 	for i, t := range params {
 		p := cv.PointAt(t)
 		uv := c.host.paramOf(p)
-		u := float64(uv.X)
+		u, v := float64(uv.X), float64(uv.Y)
 		if poles[i] = c.atPole(p); poles[i] {
 			pts[i] = uv
 			continue
@@ -343,7 +374,10 @@ func (c *loopFrame) sampleChartPoints(cv geom.Curve3, params []float64, atSeam [
 		if containsParam(atSeam, t) {
 			u = 2 * stdmath.Pi * stdmath.Round(u/(2*stdmath.Pi))
 		}
-		pts[i], prevU, havePrev = math.P2(u, float64(uv.Y)), u, true
+		if containsParam(atTube, t) {
+			v = 2 * stdmath.Pi * stdmath.Round(v/(2*stdmath.Pi))
+		}
+		pts[i], prevU, havePrev = math.P2(u, v), u, true
 	}
 	return pts, poles
 }
@@ -392,13 +426,30 @@ func injectedParams(cv geom.Curve3, t0, t1 float64, extra []float64) []float64 {
 			params = append(params, t)
 		}
 	}
-	params = sortedUniqueParams(params)
+	params = preferInjected(sortedUniqueParams(params), extra)
 	if t0 > t1 {
 		for i, j := 0, len(params)-1; i < j; i, j = i+1, j-1 {
 			params[i], params[j] = params[j], params[i]
 		}
 	}
 	return params
+}
+
+// preferInjected replaces each kept station that an injected incidence was merged into by that
+// incidence's own parameter. sortedUniqueParams keeps the first of two parameters closer than its
+// gap, which is the sampling station when a seam lands exactly on one — a seam placed at π/2 on a rim
+// sampled at quarter turns — and the station's value no longer matched the seam mark, so the point
+// was not carried onto the seam and the fold broke. The incidence is the decided fact; the station
+// is only where the curve happened to be sampled (ADR-0061 stage 4).
+func preferInjected(kept, injected []float64) []float64 {
+	for _, t := range injected {
+		for i, k := range kept {
+			if k != t && stdmath.Abs(k-t) <= sortedUniqueGap {
+				kept[i] = t
+			}
+		}
+	}
+	return kept
 }
 
 // containsParam reports whether t is one of the listed parameters.
@@ -433,6 +484,9 @@ func (c *loopFrame) seamSegments(seamHits []frameCrossing) []uvSeg {
 	pad := c.host.seamOverrun()
 	vs := []float64{vMin - pad, vMax + pad}
 	for _, cr := range seamHits {
+		if cr.tube {
+			continue // the tube seam's own incidences split the tube seam, not this one
+		}
 		var cv geom.Curve3
 		if cr.loop == seamIncidence {
 			cv = c.crossingImprint(cr)

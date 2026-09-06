@@ -251,7 +251,11 @@ func splitPeriodicSeam(s uvSeg, onU bool) []uvSeg {
 	}
 	cu := unwrapAzimuthNear(ca, cb)
 	if cu >= 0 && cu <= 2*stdmath.Pi {
-		return []uvSeg{s} // no seam crossing on this coordinate
+		// No crossing — but an end that lands EXACTLY on the seam arrives as 0 from one side and 2π from
+		// the other, and it must be written on the side its own segment is on: a run that climbs to a
+		// solved seam incidence ends at 2π, not at the 0 the raw coordinate reads (ADR-0061 stage 4).
+		s.b = seamPoint(cu, ob, onU)
+		return []uvSeg{s}
 	}
 	seam, other := 0.0, 2*stdmath.Pi
 	if cu > 2*stdmath.Pi { // the run climbs past 2π: a → 2π, then 0 → b

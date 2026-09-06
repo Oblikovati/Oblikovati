@@ -35,7 +35,6 @@ var toleranceDebt = map[string]int{
 	"brep/curved_plane_partial_boss_wall.go":      1,
 	"brep/curved_plane_partial_drill.go":          1,
 	"brep/curved_plane_partial_gate.go":           1,
-	"brep/curved_plane_uv.go":                     1,
 	"brep/curved_plane_uv_frame.go":               2,
 	"brep/curved_stitch.go":                       1,
 	"brep/drill_multi.go":                         1,

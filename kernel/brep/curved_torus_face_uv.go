@@ -4,6 +4,7 @@ package brep
 
 import (
 	stdmath "math"
+	"sort"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
@@ -115,28 +116,11 @@ func (c *torusFaceUV) wrappingSolidFaces(kept []Face2D, segs []uvSeg, surface ge
 	return c.wrappingComponents(c, kept, segs, surface, f)
 }
 
-// placeSeams puts BOTH seams in the widest gap of the imprint's and the frame's own crossings, so a
-// contractible patch lands clear of both artificial seams (uvSide).
+// placeSeams puts BOTH seams clear of the imprint's exact extent in that coordinate and of the frame's
+// own, so a contractible patch lands clear of both artificial seams (uvSide, curved_seam_place.go).
 func (c *torusFaceUV) placeSeams(imprint []geom.Curve3) {
 	c.seamU, c.seamV = 0, 0
-	var us, vs []float64
-	sample := func(p math.Point3) {
-		u, v := c.torus.ParamAt(p)
-		us, vs = append(us, u), append(vs, v)
-	}
-	for _, cv := range imprint {
-		lo, hi := cv.Domain()
-		for i := 0; i <= imprintSampleCount; i++ {
-			sample(cv.PointAt(lo + (hi-lo)*float64(i)/imprintSampleCount))
-		}
-	}
-	for _, l := range c.face.loops {
-		for _, e := range l.edges {
-			sample(e.start())
-			sample(e.end())
-		}
-	}
-	c.seamU, c.seamV = widestGapMid(us), widestGapMid(vs)
+	c.seamU, c.seamV = c.exactSeamAzimuth(imprint, ringChartU), c.exactSeamAzimuth(imprint, ringChartV)
 }
 
 // assembleSegments samples the face's own loops, the imprint and the four artificial seams closing the
@@ -147,21 +131,52 @@ func (c *torusFaceUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
 	c.frameSegs = c.frameSegments(seamHits)
 	segs := append([]uvSeg{}, c.frameSegs...)
 	segs = append(segs, c.imprintSegments(imprint, seamHits)...)
-	return append(segs, c.rectangleSeams()...)
+	return append(segs, c.rectangleSeams(seamHits)...)
 }
 
-// rectangleSeams closes the doubly-periodic parameter rectangle on all four sides. The torus is closed
-// across each, so none bounds real geometry: a kept region wrapping one folds to its reverse twin, and
-// an all-seam loop is dropped.
-func (c *torusFaceUV) rectangleSeams() []uvSeg {
-	twoPi := 2 * stdmath.Pi
+// rectangleSeams closes the doubly-periodic parameter rectangle on all four sides, each side split at
+// every incidence solved on it so the seam shares those vertices with the curves that cross it. The
+// torus is closed across each, so none bounds real geometry: a kept region wrapping one folds to its
+// reverse twin, and an all-seam loop is dropped.
+func (c *torusFaceUV) rectangleSeams(seamHits []frameCrossing) []uvSeg {
 	uSeam, vSeam := c.seamCurve(), c.azimuthCircle()
-	return []uvSeg{
-		{a: math.P2(0, 0), b: math.P2(twoPi, 0), curve: vSeam, tA: 0, tB: 1, kind: segSeam},
-		{a: math.P2(0, twoPi), b: math.P2(twoPi, twoPi), curve: vSeam, tA: 0, tB: 1, kind: segSeam},
-		{a: math.P2(0, 0), b: math.P2(0, twoPi), curve: uSeam, tA: 0, tB: 1, kind: segSeam},
-		{a: math.P2(twoPi, 0), b: math.P2(twoPi, twoPi), curve: uSeam, tA: 0, tB: 1, kind: segSeam},
+	us, vs := []float64{0, twoPi}, []float64{0, twoPi}
+	for _, cr := range seamHits {
+		at := c.paramOf(c.seamHitPoint(cr))
+		if cr.tube {
+			us = append(us, float64(at.X))
+		} else {
+			vs = append(vs, float64(at.Y))
+		}
 	}
+	var out []uvSeg
+	for _, side := range []struct {
+		along []float64
+		onV   float64
+		vSide bool
+		curve geom.Curve3
+	}{{us, 0, true, vSeam}, {us, twoPi, true, vSeam}, {vs, 0, false, uSeam}, {vs, twoPi, false, uSeam}} {
+		sort.Float64s(side.along)
+		for i := 1; i < len(side.along); i++ {
+			if side.along[i]-side.along[i-1] <= arrTol {
+				continue
+			}
+			a, b := math.P2(side.along[i-1], side.onV), math.P2(side.along[i], side.onV)
+			if !side.vSide {
+				a, b = math.P2(side.onV, side.along[i-1]), math.P2(side.onV, side.along[i])
+			}
+			out = append(out, uvSeg{a: a, b: b, curve: side.curve, tA: 0, tB: 1, kind: segSeam})
+		}
+	}
+	return out
+}
+
+// seamHitPoint is the 3D point of a seam incidence, on whichever curve carries it.
+func (c *torusFaceUV) seamHitPoint(cr frameCrossing) math.Point3 {
+	if cr.loop == seamIncidence {
+		return c.imprint[cr.edge].PointAt(cr.tEdge)
+	}
+	return c.face.loops[cr.loop].edges[cr.edge].curve.PointAt(cr.tEdge)
 }
 
 // azimuthCircle is the circle at the placed tube angle — the artificial boundary closing the strip in
@@ -229,6 +244,10 @@ func torusFaceMaterial(c *torusFaceUV) func() materialPredicate {
 // vClosed: the tube angle is a period, so an imprint sampled across it wraps and must split at the
 // v-seam (loopFrameHost).
 func (c *torusFaceUV) vClosed() bool { return true }
+
+// tubeSeamCurve is the parallel at the placed tube angle — the seam closing the tube period
+// (loopFrameHost).
+func (c *torusFaceUV) tubeSeamCurve() (geom.Curve3, bool) { return c.azimuthCircle(), true }
 
 // seamOrigin is the surface parameter of the chart's (0,0): a torus chart places both seams
 // (uvSide, ADR-0063).

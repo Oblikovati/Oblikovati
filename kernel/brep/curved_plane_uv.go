@@ -225,13 +225,19 @@ func planeMaterial(c *planeUV) func() materialPredicate {
 	}
 }
 
+// sortedUniqueGap is how close two curve parameters may be and still count as one sample: a PARAMETER
+// gap on the curve's own domain, so it carries no model scale. Below it a segment between them spans
+// nothing the arrangement can weld.
+const sortedUniqueGap = 1e-12 // tol:parametric — coincident sample parameters
+
 // sortedUniqueParams sorts the parameter list and drops near-duplicates (an injected crossing that coincides
-// with a uniform sample), so no zero-length sample segment is emitted.
+// with a uniform sample), so no zero-length sample segment is emitted. The FIRST of a coincident pair is
+// kept; preferInjected then hands a kept station over to the incidence it stood for.
 func sortedUniqueParams(params []float64) []float64 {
 	sort.Float64s(params)
 	out := params[:0:0]
 	for i, p := range params {
-		if i == 0 || p-out[len(out)-1] > 1e-12 {
+		if i == 0 || p-out[len(out)-1] > sortedUniqueGap {
 			out = append(out, p)
 		}
 	}

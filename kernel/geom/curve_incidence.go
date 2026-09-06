@@ -2,7 +2,11 @@
 
 package geom
 
-import "oblikovati.org/math"
+import (
+	stdmath "math"
+
+	"oblikovati.org/math"
+)
 
 // CurveIncidence returns the conditions a point ALREADY ON the curve's host surface must satisfy to lie
 // on the CURVE itself: each is zero on it and signed on either side. The list is empty for a curve with
@@ -26,6 +30,9 @@ func CurveIncidence(cv Curve3) []func(math.Point3) float64 {
 	case TrimmedCurve3:
 		return CurveIncidence(x.Base)
 	}
+	if IsStraightCurve(cv) {
+		return straightIncidence(cv)
+	}
 	cf, ok := AsConic(cv)
 	if !ok {
 		return nil
@@ -45,4 +52,27 @@ func ruledQuadricIncidence(a RuledQuadricArc) []func(math.Point3) float64 {
 		out = append(out, form.ValueAt)
 	}
 	return out
+}
+
+// straightIncidence is a line's two conditions: the distances to two perpendicular planes through it.
+// A straight curve is no section, so it had no incidence at all, and a chart's artificial SEAM — a
+// ruling — could not be brought to the incidence solver: its crossings with an imprint were taken from
+// the section-plane route, which answers only for planar sections and so never for a ruled∩quadric
+// arc, and reported one point where a window loop crosses the seam twice (ADR-0061 stage 4).
+func straightIncidence(cv Curve3) []func(math.Point3) float64 {
+	lo, _ := cv.Domain()
+	if stdmath.IsInf(lo, 0) {
+		lo = 0
+	}
+	origin := cv.PointAt(lo)
+	dir, err := math.UnitVector3FromVector(cv.TangentAt(lo))
+	if err != nil {
+		return nil
+	}
+	n1 := math.AnyPerpendicular(dir).AsVector()
+	n2 := dir.AsVector().Cross(n1)
+	return []func(math.Point3) float64{
+		func(p math.Point3) float64 { return float64(origin.VectorTo(p).Dot(n1)) },
+		func(p math.Point3) float64 { return float64(origin.VectorTo(p).Dot(n2)) },
+	}
 }

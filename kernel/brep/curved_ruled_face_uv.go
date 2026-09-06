@@ -118,23 +118,12 @@ func (c *ruledFaceUV) coincidesWithFrame(imp geom.Curve3) bool {
 	return false
 }
 
-// placeSeams moves the azimuth seam clear of the imprint AND of every frame vertex and ruling edge, so
-// it crosses the frame only through the interior of a smooth section edge — where the crossing has a
-// closed form (uvSide).
+// placeSeams moves the azimuth seam clear of the imprint's exact azimuth extent AND of every frame
+// vertex and ruling edge, so it crosses the frame only through the interior of a smooth section edge,
+// and an imprint only where it must and transversally (uvSide, curved_seam_place.go).
 func (c *ruledFaceUV) placeSeams(imprint []geom.Curve3) {
 	c.seamU = 0
-	var us []float64
-	for _, cv := range imprint {
-		for _, s := range c.sampleImprintUV(cv) {
-			us = append(us, float64(s.a.X))
-		}
-	}
-	for _, l := range c.face.loops {
-		for _, e := range l.edges {
-			us = append(us, float64(c.paramOf(e.start()).X), float64(c.paramOf(e.end()).X))
-		}
-	}
-	c.seamU = widestGapMid(us)
+	c.seamU = c.exactSeamAzimuth(imprint, ringChartU)
 }
 
 // assembleSegments emits the frame loops, the imprint and the seam as one tagged segment set, every
@@ -197,3 +186,6 @@ func ruledFaceMaterial(c *ruledFaceUV) func() materialPredicate {
 
 // vClosed: a ruled wall's axial window is bounded, not periodic (loopFrameHost).
 func (c *ruledFaceUV) vClosed() bool { return false }
+
+// tubeSeamCurve: v is a bounded window here, so there is no tube seam (loopFrameHost).
+func (c *ruledFaceUV) tubeSeamCurve() (geom.Curve3, bool) { return nil, false }

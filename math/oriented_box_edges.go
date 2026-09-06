@@ -57,9 +57,9 @@ func perpToOthers(axes [3]UnitVector3, i int) UnitVector3 {
 	case axisSet(axes[j]) && axisSet(axes[k]):
 		return axes[j].Cross(axes[k]).AsUnit()
 	case axisSet(axes[j]):
-		return anyPerpendicular(axes[j])
+		return AnyPerpendicular(axes[j])
 	case axisSet(axes[k]):
-		return anyPerpendicular(axes[k])
+		return AnyPerpendicular(axes[k])
 	default:
 		return worldAxis(i)
 	}

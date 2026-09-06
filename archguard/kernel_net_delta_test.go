@@ -41,7 +41,10 @@ import (
 // kernelNetDeltaPin is the checked-in baseline. Update it in the same commit as the change that
 // moves it, and say in the PR which direction each moved and why.
 var kernelNetDeltaPin = map[string]int{
-	"tolerance-constants": 232,
+	// 232 → 231 (2026-09-06, ADR-0061 stage 4): a FALL — the ruled∩quadric gate's branch-separation
+	// margin (a twentieth of the largest gap) is gone; the gate reads the exact minimum of the gap
+	// against the stitch resolution instead, and the near-pinch crossings it refused are exact.
+	"tolerance-constants": 231,
 	// 765 → 754 (2026-09-05, ADR-0061 stage 2): a FALL — the analytic half-space pipeline is deleted,
 	// and its per-primitive dispatch took eleven geometry-kind assertions with it.
 	// 754 → 746 (2026-09-06, ADR-0061 stage 4): a FALL — restricting an edge's curve to its own
@@ -56,7 +59,12 @@ var kernelNetDeltaPin = map[string]int{
 	// guarded curved entry's fourth exit, "no exact path claims this", returned silently while the other
 	// three reported, so a boolean with a curved operand could fall to triangle soup with nothing
 	// downstream able to say why. The degradation is the same; it is now named.
-	"fallback-sites": 30,
+	// 30 → 31 (2026-09-06, ADR-0061 stage 4): CodeBooleanWindingReject. A RISE that names a degradation
+	// nothing reported before: a boolean result with a face wound against its outward normal, which the
+	// per-edge validity test admits and which shipped as a valid solid meshing as its own complement.
+	// A recognizer body that fails the winding certificate now demotes to the general pipeline and
+	// says so; a general-pipeline body that fails declines and says so.
+	"fallback-sites": 31,
 }
 
 func TestKernelNetDelta(t *testing.T) {

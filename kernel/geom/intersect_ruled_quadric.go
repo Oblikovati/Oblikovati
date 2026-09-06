@@ -59,8 +59,7 @@ func isFullAzimuth(s Surface) bool {
 
 // ruledQuadricAzimuthProbes is how many azimuths the conditioning gate samples across the full sweep.
 // The coefficients a, b, c are low-order trigonometric polynomials in u for every ruled/quadric pair,
-// so this resolves the discriminant's extrema far finer than the branch-separation margin the gate
-// then demands.
+// so this brackets every local minimum of the branch gap, which is then refined to rounding.
 const ruledQuadricAzimuthProbes = 720
 
 // ruledQuadricSkewFloor is the smallest |a| the gate accepts, as a fraction of ‖M‖·|D|². a = D·(M D)
@@ -70,35 +69,67 @@ const ruledQuadricAzimuthProbes = 720
 // regime the fast path must demote from, per the kernel ground rules.
 const ruledQuadricSkewFloor = 1e-3 // tol:conditioning — dimensionless transversality of ruling to quadric
 
-// ruledQuadricBranchSeparation is the smallest branch gap the gate accepts, as a fraction of the
-// largest gap over the sweep. The two roots meeting (gap → 0) is the fold that turns two wraps into a
-// window or a pinch, so this is the margin that certifies the wrap topology between the probes as well
-// as at them. It is a ratio of two lengths, hence model-scale free.
-const ruledQuadricBranchSeparation = 0.05 // tol:conditioning — min/max branch gap over the azimuth sweep
-
 // ruledQuadricConditioning reports whether base∩quad is the well-conditioned two-wrap section: base is
 // affine in its ruling parameter (the straight-ruling certificate), the ruling stays transverse to the
-// quadric, and the two roots stay apart across the whole azimuth. It is a gate on CONDITIONING, not on
-// surface type — a torus or a B-spline base fails the affine certificate, and a tangent or
-// near-parallel pair of cylinders fails the numeric margins, both landing on the general marcher.
+// quadric, and the two roots stay APART across the whole azimuth — apart at the modelling resolution,
+// which is the certificate that the two branches are two curves the stitch can tell from one another.
+// It is a gate on CONDITIONING, not on surface type — a torus or a B-spline base fails the affine
+// certificate, a near-parallel pair the transversality floor, and a tangent pair the separation.
+//
+// The separation is read at its exact minimum: the probes bracket every local minimum of the gap and
+// the extremum solver refines each to rounding, so the certificate holds between the probes as well as
+// at them. It used to demand a MARGIN instead — the smallest gap at least a twentieth of the largest —
+// which refused every near-pinch crossing while its roots were exact to 1e-13: two cylinders whose
+// radii differ by a part in a hundred thousand keep their branches 2√(2R·Δr) apart, a thousand welds,
+// and the margin was a policy standing in for this measurement. OCCT's cylinder∩cylinder walker
+// (IntPatch_ImpImpIntersection, CyCyNoGeometric) parametrises the same section with no separation
+// margin at all; what it guards is the fold, which this intersector refuses by base role
+// (ADR-0061 stage 4).
 func ruledQuadricConditioning(base Surface, quad Quadric, res Resolution) bool {
 	mNorm := quad.M.Norm()
 	if mNorm <= 0 {
 		return false // a degenerate (planar) quadric: the plane∩ruled conics are their own closed form
 	}
-	minGap, maxGap := stdmath.Inf(1), 0.0
-	for i := range ruledQuadricAzimuthProbes {
-		u := twoPi * float64(i) / ruledQuadricAzimuthProbes
+	gapAt := func(u float64) (float64, bool) {
 		r := straightRulingAt(base, u)
 		if r.SecondDiffScale > res.Weld() {
-			return false // not affine in v: this surface has no straight ruling to substitute
+			return 0, false // not affine in v: this surface has no straight ruling to substitute
 		}
 		co := quad.alongRuling(r)
 		if stdmath.Abs(co.a) < ruledQuadricSkewFloor*mNorm*float64(r.Dir.LengthSquared()) {
-			return false // the ruling runs (near) along the quadric: one root escapes, the solve cancels
+			return 0, false // the ruling runs (near) along the quadric: one root escapes, the solve cancels
 		}
-		gap := co.separation()
-		minGap, maxGap = stdmath.Min(minGap, gap), stdmath.Max(maxGap, gap)
+		return co.separation(), true
 	}
-	return minGap > 0 && minGap >= ruledQuadricBranchSeparation*maxGap
+	gaps := make([]float64, ruledQuadricAzimuthProbes)
+	for i := range gaps {
+		g, ok := gapAt(twoPi * float64(i) / ruledQuadricAzimuthProbes)
+		if !ok {
+			return false
+		}
+		gaps[i] = g
+	}
+	return minimumBranchGap(gaps, gapAt) > res.Stitch()
+}
+
+// minimumBranchGap refines every bracketed local minimum of the sampled gap to its exact value and
+// returns the smallest, reading the sweep as the circle it is.
+func minimumBranchGap(gaps []float64, gapAt func(float64) (float64, bool)) float64 {
+	n := len(gaps)
+	step := twoPi / float64(n)
+	least := stdmath.Inf(1)
+	for i, g := range gaps {
+		if g > gaps[(i+n-1)%n] || g > gaps[(i+1)%n] {
+			continue
+		}
+		u := ExtremumOnBracket(func(u float64) float64 {
+			gap, _ := gapAt(u)
+			return gap
+		}, float64(i-1)*step, float64(i+1)*step, false)
+		if gap, ok := gapAt(u); ok {
+			g = stdmath.Min(g, gap)
+		}
+		least = stdmath.Min(least, g)
+	}
+	return least
 }
