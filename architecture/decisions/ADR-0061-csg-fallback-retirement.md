@@ -1351,3 +1351,25 @@ and the four `TestCurvedBooleanVolumesMatchOCC` rows together.
 
 **Stage 4 standing, all 26 recognizers off: 5 failing tests, down from 22** — the near-pinch family (4)
 and the torus tangent about every axis.
+
+### What the torus tangent cut is now failing on (2026-09-06)
+
+The last non-near-pinch row is worth stating precisely, because it is no longer a modelling defect.
+
+A plane tangent to the R=5 r=2 torus's inner equator cuts a figure-eight whose two lobes TOUCH, and the
+intersect keeps a band on the torus that pinches once. All six axis placements now return the SAME body —
+three faces, two planar lobes and one pinched torus band, through the exact path — so the coin-toss the
+corpus was written for is gone. What fails is the MEASUREMENT:
+
+| measure | value | truth |
+| --- | ---: | ---: |
+| closed form (∫ over the (ρ,z) disc of ρ·(π − 2 arcsin 3/ρ)) | — | 114.886320 |
+| OCC | 114.886326 | matches to 8 figures |
+| ours, tessellated at DefaultQuality | 112.529001 | 2.05 % low (the gate's budget is 2 %) |
+| ours, `AnalyticShellVolume` | 106.438834 | **7.4 % low, and it reports ok** |
+
+The tessellated figure is a chord deficit on a torus and converges. The analytic one does not: it is
+wrong by 7.4 % on a face whose boundary touches itself, and its vector-area closure post-condition passed
+it. That is a mass-properties defect (M48/C3), not a boolean one, and it is the thing to take up — an
+oracle that gates a result must be more exact than the result it gates, and here it is an order of
+magnitude worse than the tessellation it replaced.
