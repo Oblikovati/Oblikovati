@@ -1009,3 +1009,30 @@ runs beside it being the chart's bookkeeping — was written, fired on the right
 nothing**: 26 failing tests before and after. Something further on still separates the two edges. An
 unproven change does not ship, so it is withdrawn rather than kept for looking right; what survives is
 the reduction, which is where the next attempt should start.
+
+### A section that touches nothing is not a decline (2026-09-06)
+
+Partial penetration — a stub whose cap ends INSIDE the other cylinder, on its very axis — declined all
+three ways round, and not in the crossing pairing at all. The stub's CAP is a planar face, and a plane
+through a cylinder's axis sections that wall in two straight RULINGS. `wallSectionIsland` asks
+`geom.AsConic` first and refuses anything that is not a conic, so a section with no contact in it
+refused the whole boolean: those rulings sit at radius 3 on a cap of radius 1.5, three units clear of
+its rim.
+
+The rule is the one the closed-surface pairing learned two entries ago, the other way about: a section
+CLEAR of the pair contributes nothing, whatever kind of curve it is. **The order matters, and the first
+attempt had it wrong.** Asking "is it clear?" FIRST cost an emboss pad on a chamfer cone its exact path
+— `conicEntersTrimInBand` brackets a branch's in-band window and answers conservatively, and a section
+the island rule does carry can still fail that test. Asked SECOND — only where `wallSectionIsland` has
+already declined — it turns a decline into a skip and never the other way round.
+
+All three ways round, through `brep.Boolean` with every recognizer off:
+
+| operation | ours | exact |
+| --- | --- | --- |
+| ∩ (the plug) | 20.5205 | — |
+| − (the blind hole) | 318.7715 | 339.292 − 20.521 |
+| ∪ (the stub joined on) | 361.1830 | 339.292 + 42.412 − 20.521 |
+
+**22 failing tests left of the original 38**, 43 leaves of 49. The four partial-penetration rows are
+gone in one change.

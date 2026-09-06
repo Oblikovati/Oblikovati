@@ -115,3 +115,61 @@ func TestGeneralPipelineBuildsTheSteinmetzBicylinder(t *testing.T) {
 		})
 	}
 }
+
+// PARTIAL penetration: a stub whose cap ends inside the other cylinder, on its very axis. The crossing
+// wraps the stub's azimuth and not the fat one's, and the stub's cap sections the fat wall in two
+// straight RULINGS three units clear of the cap's own rim — a section with no contact in it, which the
+// pairing used to refuse for not being a conic (ADR-0061 stage 4).
+func TestGeneralPipelineTakesAPartialPenetration(t *testing.T) {
+	t.Parallel()
+	const fatR, fatH, rodR, rodL = 3.0, 12.0, 1.5, 6.0
+	plug := partialPlugVolume(t)
+	fat := stdmath.Pi * fatR * fatR * fatH
+	rod := stdmath.Pi * rodR * rodR * rodL
+	for _, row := range []struct {
+		name string
+		op   brep.Op
+		want float64
+	}{
+		{"the plug", brep.Intersection, plug},
+		{"the blind hole", brep.Difference, fat - plug},
+		{"the stub joined on", brep.Union, fat + rod - plug},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			t.Parallel()
+			res := partiallyPenetrated(t, row.op)
+			if v := ops.Validate(res); !v.Valid || !v.Closed || !res.IsSolid() {
+				t.Fatalf("not a valid closed solid: %+v", v.Issues)
+			}
+			got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+			if rel := stdmath.Abs(got-row.want) / row.want; rel > 0.001 {
+				t.Errorf("volume %.6f, want %.6f — rel %.5f", got, row.want, rel)
+			}
+		})
+	}
+}
+
+// partialPlugVolume measures the shared plug on the intersection this pipeline builds; the other two
+// rows are pinned to it by inclusion-exclusion, so the three are one statement.
+func partialPlugVolume(t *testing.T) float64 {
+	t.Helper()
+	return query.BodyGeometryProperties(partiallyPenetrated(t, brep.Intersection), ops.DefaultQuality()).Volume
+}
+
+// partiallyPenetrated runs one boolean of a Ø6 cylinder with a Ø3 stub that stops on its axis.
+func partiallyPenetrated(t *testing.T, op brep.Op) *topo.Body {
+	t.Helper()
+	fat, err := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	if err != nil {
+		t.Fatalf("cylinder: %v", err)
+	}
+	stub, err := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 6)
+	if err != nil {
+		t.Fatalf("stub: %v", err)
+	}
+	res, err := brep.Boolean(op, fat, stub)
+	if err != nil {
+		t.Fatalf("boolean %v: %v", op, err)
+	}
+	return res
+}

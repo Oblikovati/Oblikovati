@@ -163,6 +163,14 @@ func collectWallIslands(curves []geom.Curve3, uf, wf curvedFace, rs ruledSide) (
 		}
 		pieces, ok := wallSectionIsland(cv, uf, wf, rs)
 		if !ok {
+			// A section wallSectionIsland cannot classify is only a decline when it TOUCHES the pair.
+			// A stub cap that ends ON a fat cylinder's AXIS sections that wall in two straight RULINGS,
+			// three units clear of the cap's own rim: "not a conic" refused a whole partial penetration
+			// over a section with no contact in it at all. The order matters — the clear test is asked
+			// SECOND, so a section the island rule does carry keeps carrying it (ADR-0061 stage 4).
+			if !conicEntersTrimInBand(cv, uf, rs.axis, rs.band) {
+				continue
+			}
 			return nil, false
 		}
 		out = append(out, pieces...)
