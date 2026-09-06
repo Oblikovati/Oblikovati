@@ -320,30 +320,27 @@ func (h *HoleFeature) facetedCounterbore(body *topo.Body, center math.Point3, in
 	return ops.BooleanWithDiagnostics(ops.Cut, stepped, drillTool(shoulder, into, r, boreLen, featOr(h.featName, "hole")), rec)
 }
 
-// cutCylinder cuts a single cylindrical hole, preferring an EXACT cylinder wall (K1b): a
-// through hole via brep.CutCylindricalHole, a blind hole via brep.CutBlindCylindricalHole
-// (wall + flat bottom). When the part shape isn't supported (the bore clips a face, or a blind
-// depth would exit), it falls back to the faceted boolean — a through-cut when `through`, the
-// requested depth otherwise.
+// cutCylinder cuts a single cylindrical hole: the analytic cylinder tool, named for THIS feature, taken
+// out of the body by the general boolean — the same operation an extruded circle cuts with, with the
+// same certificates and the same diagnostics.
+//
+// It used to reach for brep.CutCylindricalHole and CutBlindCylindricalHole directly, a drill
+// RECOGNIZER called from the model layer with no boolean around it: its bodies bypassed every
+// post-condition the boolean applies (the top cap's hole loop came out wound against the cap, and
+// only the boolean's winding certificate ever saw it), and its wall was minted brep:drillwall#0
+// whatever the feature, so two holes in one part were two faces with one key (ADR-0061 stage 4,
+// ADR-0043). The recorded replay tool (buildTool) and the cut are now the same solid.
 func (h *HoleFeature) cutCylinder(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth, entry float64, through bool, rec *diag.Recorder) (*topo.Body, error) {
 	// A blind hole whose bottom reaches (or passes) the part's far extent along the axis IS a
 	// through hole: the flush-bottom "blind" cut would leave a zero-thickness membrane for a
-	// floor, which the exact blind drill rightly rejects — and the rejection used to fall to the
-	// faceted prism cut, silently costing the bore its analytic cylinder wall (the tapped-hole
-	// thread had nothing to attach to, Oblikovati#1693). Promote it to the through cut, matching
-	// drill break-through behavior.
+	// floor. Promote it to the through cut, matching drill break-through behavior (Oblikovati#1693).
 	if !through && depth >= throughDepth(body, center, into)-cutterOverhang-geom.ResolutionForBox(body.RangeBox()).Plane() {
 		through = true
 	}
 	if through {
-		if res, err := brep.CutCylindricalHole(body, center, into.AsVector(), r); err == nil {
-			return res, nil
-		}
-		depth = throughDepth(body, center, into) // unsupported shape → faceted through-cut
-	} else if res, err := brep.CutBlindCylindricalHole(body, center, into.AsVector(), r, depth); err == nil {
-		return res, nil
+		depth = throughDepth(body, center, into)
 	}
-	tool := drillToolFrom(center, into, r, depth, entry, featOr(h.featName, "hole"))
+	tool := cylinderTool(center, into, r, depth, entry, featOr(h.featName, "hole"))
 	return ops.BooleanWithDiagnostics(ops.Cut, body, tool, rec)
 }
 

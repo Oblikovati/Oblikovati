@@ -103,12 +103,34 @@ func (c *ruledFaceUV) faceOf(surface geom.Surface, f curvedFace, loops []emitted
 // arrangement re-emits a boundary run as ONE edge across an incidence whose imprint dissolved (both cells
 // kept), but the incidence is a vertex on the NEIGHBOUR — the tool's side face meets the rim there — and a
 // shared edge must subdivide identically on both faces. A seam incidence is not a vertex: the seam is
-// artificial.
+// artificial. Nor is an incidence on the face's OWN seam ruling — the edge a primitive's wall carries
+// twice — whose neighbour across it is this very face: where an imprint circle crosses that ruling
+// inside the kept band, the ruling dissolves and nothing on either side keeps the point, and splitting
+// the rim there left the box's drilled rim as two arcs on the tool's seam azimuth while the cap across
+// it held one circle (ADR-0061 stage 4).
 func (c *ruledFaceUV) splitAtFrameCrossings(loops []curvedLoop) []curvedLoop {
 	pts := make([]math.Point3, 0, len(c.crossings))
 	for _, cr := range c.crossings {
+		if c.frameEdgeIsSeam(cr.loop, cr.edge) {
+			continue
+		}
 		fe := c.face.loops[cr.loop].edges[cr.edge]
 		pts = append(pts, fe.curve.PointAt(cr.tEdge))
 	}
 	return splitLoopsAtPoints(loops, pts, c.res)
+}
+
+// frameEdgeIsSeam reports whether a frame edge is the face's own seam: the same curve walked twice, once
+// each way, by the face's loops.
+func (c *ruledFaceUV) frameEdgeIsSeam(loop, edge int) bool {
+	curve := c.face.loops[loop].edges[edge].curve
+	seen := 0
+	for _, l := range c.face.loops {
+		for _, e := range l.edges {
+			if e.curve == curve {
+				seen++
+			}
+		}
+	}
+	return seen > 1
 }

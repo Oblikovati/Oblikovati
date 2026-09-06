@@ -52,7 +52,7 @@ func drillToolFrom(center math.Point3, axisInto math.UnitVector3, radius, depth,
 // so a caller always gets a tool.
 func cylinderTool(center math.Point3, axisInto math.UnitVector3, radius, depth, entry float64, feat string) *topo.Body {
 	base := center.TranslateBy(axisInto.AsVector().Scale(math.Scalar(-entry)))
-	cyl, err := brep.SolidCylinder(base, axisInto.AsVector(), radius, depth+entry)
+	cyl, err := brep.SolidCylinderNamed(base, axisInto.AsVector(), radius, depth+entry, feat)
 	if err != nil || cyl == nil {
 		return drillToolFrom(center, axisInto, radius, depth, entry, feat)
 	}

@@ -169,10 +169,11 @@ func TestHoleTerminatesBetweenTwoFaces(t *testing.T) {
 		d.Termination = FromToExtent
 		d.FromPlane, d.ToPlane = holeStopPlane(1.5), holeStopPlane(0.5)
 	})
-	// An internal slot from z=1.5 down to z=0.5. Unlike the to-face bore above, this one starts
-	// INSIDE material, which the exact blind drill declines — the result is all geom.Plane (the
-	// faceted drillTool prism), so the 32-gon area is what it genuinely removes.
-	want := 32 - drillToolPrismArea(1)*1.0
+	// An internal slot from z=1.5 down to z=0.5. This one starts INSIDE material, which the exact
+	// blind drill used to decline, leaving the faceted prism's 32-gon area as what it removed; the
+	// hole now cuts with the analytic cylinder tool through the general boolean, and an internal
+	// slot is a cylinder like any other (ADR-0061 stage 4).
+	want := 32 - stdmath.Pi*1*1*1.0
 	if stdmath.Abs(got-want) > 1e-6 {
 		t.Errorf("from-to bore left %g, want %g (1.0 deep, starting below the placement face)", got, want)
 	}

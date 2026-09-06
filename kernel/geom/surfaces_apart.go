@@ -32,7 +32,7 @@ func SurfacesApart(a, b Surface, gap float64) bool {
 		return ok && parallelPlanesApart(x, y, gap)
 	case Cylinder:
 		y, ok := b.(Cylinder)
-		return ok && coaxialCylindersApart(x, y, gap)
+		return ok && parallelCylindersApart(x, y, gap)
 	case Cone:
 		y, ok := b.(Cone)
 		return ok && parallelConesApart(x, y, gap)
@@ -50,17 +50,27 @@ func parallelPlanesApart(a, b Plane, gap float64) bool {
 	return stdmath.Abs(float64(a.Origin.VectorTo(b.Origin).Dot(n1))) > gap
 }
 
-// coaxialCylindersApart: two cylinders on the SAME axis line are everywhere |r1−r2| apart. Axes
-// that are parallel but distinct, or skew, are not proven here — the surfaces can still be apart,
-// but the separation is no longer this expression.
-func coaxialCylindersApart(a, b Cylinder, gap float64) bool {
+// parallelCylindersApart: two cylinders with PARALLEL axes a distance d apart are never closer than
+// d − r₁ − r₂ when they sit side by side, and than the outer radius less the inner radius less d when
+// one is nested in the other — the least separation, in closed form, which is what an apartness proof
+// needs; coaxial cylinders are the nested case at d = 0. Skew axes are not proven here. A bore inside a
+// disc's rim is the nested case, and refusing it made every second bore of a patterned disc "overlap
+// an uncovered wall" and decline the general pipeline (ADR-0061 stage 4).
+func parallelCylindersApart(a, b Cylinder, gap float64) bool {
 	if !parallelDirs(a.AxisDir.AsVector(), b.AxisDir.AsVector()) {
 		return false
 	}
-	if !onAxisLine(a.Origin, a.AxisDir, b.Origin) {
-		return false
+	d := axisLineDistance(a.Origin, a.AxisDir, b.Origin)
+	if d > a.Radius+b.Radius+gap {
+		return true // side by side
 	}
-	return stdmath.Abs(a.Radius-b.Radius) > gap
+	return d+stdmath.Min(a.Radius, b.Radius) < stdmath.Max(a.Radius, b.Radius)-gap // nested
+}
+
+// axisLineDistance is the perpendicular distance from p to the line through origin along dir.
+func axisLineDistance(origin math.Point3, dir math.UnitVector3, p math.Point3) float64 {
+	v := origin.VectorTo(p)
+	return float64(v.Sub(dir.AsVector().Scale(v.Dot(dir.AsVector()))).Length())
 }
 
 // parallelConesApart: two cones sharing an axis LINE and a half-angle are translates of one

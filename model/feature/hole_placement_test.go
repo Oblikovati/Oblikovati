@@ -41,13 +41,9 @@ func drillWithPlacement(t *testing.T, p HolePlacement) (*PartFeature, []*topo.Bo
 	return hole, fs.Result()
 }
 
-// facetedBlindBoreVolume is what one Ø2 × 1-deep bore removes when the exact blind drill declines
-// it and the faceted drillTool prism does the cut instead — the case for a bore that would clip a
-// side face (the corner bores below stand 1 cm in from the block's edges, so a Ø2 bore is tangent
-// to them). exactBlindBoreVolume is the same bore cut as a TRUE cylinder, πr²·depth; mass
+// exactBlindBoreVolume is what one Ø2 × 1-deep bore removes, cut as a TRUE cylinder: πr²·depth; mass
 // properties integrate that analytic face directly (M48/C3 #3453).
-func facetedBlindBoreVolume() float64 { return drillToolPrismArea(1) * 1 }
-func exactBlindBoreVolume() float64   { return stdmath.Pi * 1 * 1 * 1 }
+func exactBlindBoreVolume() float64 { return stdmath.Pi * 1 * 1 * 1 }
 
 // TestSketchPlacementDrillsOneHolePerCentrePoint is the placement that changes the shape of the
 // feature: ONE hole feature, four bores. Before this a four-hole pattern had to be four features
@@ -57,17 +53,31 @@ func TestSketchPlacementDrillsOneHolePerCentrePoint(t *testing.T) {
 		t.Skip("corpus tier (~3s): `make test-corpus`")
 	}
 	t.Parallel()
+	// Four Ø1 bores, each a whole radius clear of the sides and of one another. The corner bores used
+	// to be Ø2, tangent to two side faces each and to their neighbours — a line contact the exact
+	// drill declined and the faceted prism, inscribed and so NOT tangent, cut instead; the hole now
+	// cuts its true cylinder with the general boolean, and a tangent bore is that pipeline's own
+	// named gap (ADR-0061 stage 4), not this test's subject.
 	sk := sketch.NewSketches().Add(topOfBlockPlane())
 	for _, at := range [][2]float64{{1, 1}, {3, 1}, {3, 3}, {1, 3}} {
 		sk.Points().Add(math.P2(math.Scalar(at[0]), math.Scalar(at[1]))).SetCenterPoint(true)
 	}
-	hole, res := drillWithPlacement(t, SketchHolePlacement{Sketch: sk})
+	block, top := holeBlock()
+	fs := NewPartFeatures(nil)
+	NewBaseFeatures(fs).AddBase(block)
+	hole := NewHoleFeatures(fs).AddDrilled(top, func() float64 { return 1 }, func() float64 { return 1 })
+	hole.Definition().(*HoleFeature).Definition().Placement = SketchHolePlacement{Sketch: sk}
+	fs.Recompute()
+	res := fs.Result()
 	if !hole.Health().OK() {
 		t.Fatalf("sketch-placed hole sick: %+v", hole.Health())
 	}
-	want := 32 - 4*facetedBlindBoreVolume()
+	if r := ops.Validate(res[0]); !r.ValidSolid() {
+		t.Fatalf("four-bore block is not a valid solid: %+v", r.Issues)
+	}
+	want := 32 - 4*stdmath.Pi*0.5*0.5*1
 	if got := query.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
-		t.Errorf("volume = %g, want %g (block − FOUR Ø2×1 bores)", got, want)
+		t.Errorf("volume = %g, want %g (block − FOUR Ø1×1 bores)", got, want)
 	}
 }
 
