@@ -236,6 +236,13 @@ func splitVSeamCrossing(s uvSeg) []uvSeg { return splitPeriodicSeam(s, false) }
 // splitPeriodicSeam splits an imprint segment that straddles a periodic seam on the chosen coordinate (onU:
 // the azimuth u=X, else the tube angle v=Y) into two segments meeting at the seam. The OTHER coordinate and
 // the curve parameter are interpolated to the crossing; a non-straddling segment is returned unchanged.
+//
+// The piece on the far side of the seam is re-based onto its own end of the strip: the endpoint arrives
+// measured from the side it left (6.2955 for a run that climbs a hair past 2π), and the piece that
+// restarts at u=0 must end at 0.0123, not back at 6.2955. Left unrebased it was one segment spanning the
+// WHOLE chart at the crossing's v — a spurious near-horizontal cut that sliced the kept region into
+// slivers, and an oblique tunnel then came back with a stretch of the face's own ruling in the loop where
+// its entry crossing should have closed on itself (ADR-0061 stage 4).
 func splitPeriodicSeam(s uvSeg, onU bool) []uvSeg {
 	ca, oa := float64(s.a.X), float64(s.a.Y)
 	cb, ob := float64(s.b.X), float64(s.b.Y)
@@ -255,7 +262,7 @@ func splitPeriodicSeam(s uvSeg, onU bool) []uvSeg {
 	tSeam := s.tA + f*(s.tB-s.tA)
 	return []uvSeg{
 		{a: s.a, b: seamPoint(seam, oSeam, onU), curve: s.curve, tA: s.tA, tB: tSeam, kind: s.kind},
-		{a: seamPoint(other, oSeam, onU), b: s.b, curve: s.curve, tA: tSeam, tB: s.tB, kind: s.kind},
+		{a: seamPoint(other, oSeam, onU), b: seamPoint(cu-seam+other, ob, onU), curve: s.curve, tA: tSeam, tB: s.tB, kind: s.kind},
 	}
 }
 

@@ -1057,3 +1057,31 @@ boundary — not `segSeam`, which is why the rule written for the seam case (a l
 boundary is one closed imprint curve IS that curve) does not fire here and, tried twice now, changes
 nothing. Whatever puts a frame run in that loop is the next thing to find; the volume says the geometry
 is already right.
+
+### The seam split left the far piece measured from the wrong side (2026-09-06)
+
+The frame run in the previous entry was real, and it was a symptom. What put it there is one line in
+`splitPeriodicSeam`, the fallback that cuts an imprint segment straddling the chart seam when the
+crossing solver did not see the incidence.
+
+The split is right about where the seam is crossed: it interpolates the other coordinate and the curve
+parameter to the crossing and emits `a → 2π` and `0 → b`. But `b` still holds the value it arrived
+with, measured from the side the run LEFT. A run that climbs a hair past the seam ends at u = 6.2955,
+so the second piece ran `0 → 6.2955` — one segment across the WHOLE chart at the crossing's v, instead
+of the 0.0123-long stub it is.
+
+That spurious near-horizontal cut sliced the kept region into slivers. On the certification fixture the
+tunnel's entry crossing then bounded two thin cells rather than the band, one kept and one dropped, and
+the boundary walk closed the survivor along the face's own ruling — the `segPolygon` run. Every
+symptom above it (the unplaceable hole, the three unpaired edges) hangs off this.
+
+The far end is now re-based onto its own end of the strip: `cu - seam + other`.
+`TestSeamSplitKeepsBothPiecesInTheStrip` asserts the invariant directly — neither piece leaves [0, 2π], neither spans more than half the chart — and `TestObliqueTunnelThroughWallAndCapWelds` is the corpus case: the Ø1.8 tool at
+45° through a Ø6 cylinder now returns a **watertight** 4-face solid at 266.671894 against OCC's
+266.6720995.
+
+The reason this sat undiscovered is worth keeping: the fallback almost never runs. When
+`solveSeamCrossings` finds the incidence, `sampleChartPoints` snaps that sample exactly onto the seam
+and no segment straddles it at all. The exit ellipse in the same fixture takes that path and is
+correct; only the entry crossing, whose incidence the solver missed, reached the split — and the split
+had never been exercised by a case that checked its output.
