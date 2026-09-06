@@ -26,7 +26,10 @@ func stitch(faces []subFace, pass []curvedFace, prov []imprintSeg) (*topo.Body, 
 	if len(faces) == 0 && len(pass) == 0 {
 		return nil, false, nil
 	}
-	w := newWelder3(planarStitchGrid)
+	// The weld grid is the operands' own stitch resolution (ADR-0042), as the curved stitch's already
+	// is: an absolute grid merged distinct vertices of a millimetre-scale drilled plate and dropped its
+	// cap, where the same plate at unit scale welded cleanly (ADR-0061 stage 4).
+	w := newWelder3(geom.ResolutionForBox(stitchInputBox(faces, pass)).Stitch())
 	// Pass 1: weld every face's loops to vertex indices (collect the full vertex set).
 	out := make([]builtFace, len(faces))
 	for i, sf := range faces {
@@ -59,6 +62,23 @@ func stitch(faces []subFace, pass []curvedFace, prov []imprintSeg) (*topo.Body, 
 	all := curvedReorient(append(builtFacesToCurved(out, w.points), pass...))
 	body := curvedStitchNamed(all, planarStitchNaming(prov, w, out, all))
 	return body, tangent, nil
+}
+
+// stitchInputBox bounds every point the stitch welds: the planar fragments' rings and the pass-through
+// faces' loop ends.
+func stitchInputBox(faces []subFace, pass []curvedFace) math.Box {
+	box := curvedFaceBox(pass)
+	for _, sf := range faces {
+		for _, p := range sf.outer {
+			box = box.ExtendPoint(p)
+		}
+		for _, h := range sf.holes {
+			for _, p := range h {
+				box = box.ExtendPoint(p)
+			}
+		}
+	}
+	return box
 }
 
 // planarStitchNaming is the planar boolean's ADR-0043 naming policy for the unified stitch: every

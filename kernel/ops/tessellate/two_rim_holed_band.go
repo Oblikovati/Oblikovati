@@ -123,13 +123,17 @@ func bridgeRimsAtSeam(s geom.Surface, top3D, bot3D []math.Point3, lenses [][]mat
 	return wrap, true
 }
 
-// seamAngleFor is the azimuth the rim-bridging seam runs at: the face's chart seam when it carries one —
-// placed by the boolean in the corridor between the holes, exactly — else the widest sampled gap.
+// seamAngleFor is the azimuth the rim-bridging seam runs at: the face's chart seam when it carries one
+// and its top rim is intact — placed by the boolean in the corridor between the holes, exactly — else
+// the widest sampled gap clear of the holes and of the notch. A NOTCHED rim keeps its own placement:
+// the chart's seam is clear of the imprint, not of the rim's notch, and a bridge anchored in the notch
+// tangles the corner mesh — the corner junction's wall cracked along it (ADR-0061 stage 4).
 func seamAngleFor(chart [][]math.Point2, s geom.Surface, top []math.Point3, lenses [][]math.Point3) float64 {
-	if th, ok := chartSeamAngle(chart); ok {
+	ring := orderedRing(s, top)
+	if th, ok := chartSeamAngle(chart); ok && len(notchAngles(s, ring)) == 0 {
 		return th
 	}
-	return clearSeamAngle(s, orderedRing(s, top), lenses)
+	return clearSeamAngle(s, ring, lenses)
 }
 
 // chartSeamAngle is where a face's chart cuts the azimuth: the least u of its outer contour, which on a
