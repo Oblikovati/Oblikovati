@@ -40,11 +40,12 @@ import (
 // the kernel that vocabulary. They are capped rather than exempted: if the right answer is an
 // exemption, that is an ADR, not a silent hole in a guard.
 var geomSwitchDebt = map[string]int{
-	"addin/opregistry":             1,
-	"addin/router":                 5,
-	"app":                          13,
-	"kernel/blend":                 15,
-	"kernel/brep":                  82, // 93 → 82 (ADR-0061 stage 2): the analytic half-space pipeline is deleted
+	"addin/opregistry": 1,
+	"addin/router":     5,
+	"app":              13,
+	"kernel/blend":     15,
+	"kernel/brep":      74, // 93 → 82 (ADR-0061 stage 2, the analytic half-space pipeline deleted)
+	//                                     → 74 (stage 4): the edge sub-range switch moved to geom.SubCurve
 	"kernel/exchange/step/geommap": 11,
 	"kernel/geomapi":               9,
 	"kernel/ops":                   1,

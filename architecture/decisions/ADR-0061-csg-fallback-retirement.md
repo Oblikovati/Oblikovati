@@ -1298,3 +1298,12 @@ on the emission itself would be. That is a named follow-up, not a change made he
 
 **Stage 4 standing, all 26 recognizers off: 8 failing tests, down from 22** — the near-pinch family (4),
 the coaxial ball-and-rod with a SHOULDER (2 tests, 4 rows), and the torus tangent about every axis.
+
+### The edge sub-range switch moves to geom (2026-09-06)
+
+Restricting a run's curve to its own [t0, t1] was a ten-case switch over curve kinds in the stitch, and
+adding the ruled crossing to it tripped the geom-switch ratchet — rightly, because the switch was in the
+wrong place to begin with. `geom.SubCurve` now owns it: the stitch asks for the piece and gets back
+whatever kind owns it, a circle's sub-range as an `Arc3d`, a ruled crossing's as a shorter ruled arc,
+anything else as a `TrimmedCurve3`. The ratchets fall with it — `geomSwitchDebt["kernel/brep"]` 82 → 74,
+`kernelNetDeltaPin["type-assertions"]` 754 → 746.

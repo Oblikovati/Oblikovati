@@ -40,17 +40,17 @@ func angGap(a, b float64) float64 {
 	return d
 }
 
-// TestSpiricArcOfNativeOrdering: spiricArcOf stores a branch in native tube-angle order (V0<V1) even for a
+// TestSpiricArcOfNativeOrdering: geom.SubCurve stores a branch in native tube-angle order (V0<V1) even for a
 // reversed loop traversal (t0>t1), so the direction-sensitive spiric mesher charts the same patch either way
 // — the fix that made the unified cap match the analytic cap's mesh exactly (Oblikovati#1406).
 func TestSpiricArcOfNativeOrdering(t *testing.T) {
 	t.Parallel()
 	base := geom.SpiricArc{Phi: 0.3, M: 1, K: -6, C: 0, Branch: 1, V0: -1, V1: 1}
-	fwd := spiricArcOf(base, 0, 1).(geom.SpiricArc)
-	rev := spiricArcOf(base, 1, 0).(geom.SpiricArc) // reversed traversal
+	fwd := geom.SubCurve(base, 0, 1).(geom.SpiricArc)
+	rev := geom.SubCurve(base, 1, 0).(geom.SpiricArc) // reversed traversal
 	for _, sa := range []geom.SpiricArc{fwd, rev} {
 		if sa.V0 >= sa.V1 {
-			t.Errorf("spiricArcOf range [%.3f,%.3f] not native (V0<V1)", sa.V0, sa.V1)
+			t.Errorf("geom.SubCurve range [%.3f,%.3f] not native (V0<V1)", sa.V0, sa.V1)
 		}
 	}
 	if fwd.V0 != rev.V0 || fwd.V1 != rev.V1 {
