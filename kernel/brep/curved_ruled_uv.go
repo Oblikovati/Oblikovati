@@ -105,7 +105,19 @@ func (c ruledUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
 }
 
 // finalizeLoops drops the degenerate apex-pole rim loop from a kept cone face (uvSide; see dropApexLoop).
-func (c ruledUV) finalizeLoops(loops []curvedLoop) []curvedLoop { return c.dropApexLoop(loops) }
+// finalizeLoops drops the apex loop and every DEGENERATE edge. A zero-length straight edge bounds
+// nothing whatever put it there: left in, it has a single use and the body reads as open. A crossing
+// that wraps a rod's azimuth leaves one at the seam, and the rod's far rim then came back split into
+// two arcs against its cap's whole circle, with five open edges (ADR-0061 stage 4). It is the same
+// thing sphereFaceUV does at a pole (uvSide).
+func (c ruledUV) finalizeLoops(loops []curvedLoop) []curvedLoop {
+	return dropDegenerateEdges(c.dropApexLoop(loops), geom.ResolutionForSize(c.bandSize()))
+}
+
+// bandSize is the band's characteristic length, for the resolution its degenerate edges are judged at.
+func (c ruledUV) bandSize() float64 {
+	return 2*stdmath.Max(c.band.rBot, c.band.rTop) + (c.band.vMax - c.band.vMin)
+}
 
 // ruledMaterial wraps a ruled side's half-space predicate as a uvSide materialOf builder: a closure (not a
 // bound method value) so the predicate reads the receiver AFTER trimByImprint has shifted its seam. A method

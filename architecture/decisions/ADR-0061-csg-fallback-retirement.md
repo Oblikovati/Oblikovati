@@ -886,3 +886,24 @@ Steinmetz (all three ops), cone∩cone, cone∩cylinder, partial penetration, th
 junction, near-pinch continuity, the cap and rim crossings, the shoulder ball-rod variants, and every
 JOIN of a ruled crossing. Each is a slice of the same shape as these two, and each will surface its own
 defects on the way — the ones this session found were all of that kind.
+
+### A zero-length edge bounds nothing, whatever put it there (2026-09-06)
+
+Chasing the crossing-cylinder JOIN — the one operation of that family the wall pairing does not carry —
+found two charts dropping degenerate edges only in the case they were written for.
+
+`ruledFaceUV.finalizeLoops` dropped them only when the face was `boundedByApex`, and `ruledUV` dropped
+an apex LOOP but no degenerate edge at all. A zero-length straight edge bounds nothing whatever put it
+there: left in, it has a single use and the body reads as open — which is what the comment already said
+about a cone's apex. A crossing that wraps a rod's azimuth leaves the same thing at a seam. Both charts
+now drop them, as `sphereFaceUV` does at a pole and as OCCT's degenerate edges do in a face's wire.
+
+Measured with all 26 recognizers off, `TestTwoCapCrossingCutMembershipMatchesCSG` recovers: **33 → 32**
+failing tests (the other name that left the list is the grazing test, renamed rather than fixed).
+
+**The join itself is still open, and it is NOT the degenerate edges.** Reduced: the rod's far rim comes
+back as ONE circle on its cap and as TWO arcs on its wall, so five edges never pair. The two sides of a
+shared RIM must traverse the same edges, exactly as the two sides of a shared crossing must — the wall's
+emission splits its rim at the chart's seam, and the cap does not. The other end of the same rod welds
+its rim whole, so the split is not a property of the configuration but of where the seam lands. That is
+the next thing to reduce.

@@ -175,14 +175,14 @@ func (c *ruledFaceUV) orientLoops(loops []emittedLoop, _ bool) ([]curvedLoop, []
 	return faceLoops, nil, false
 }
 
-// finalizeLoops drops the DEGENERATE apex edges. The apex is one point in space, so the
-// parameter-space boundary that closes the rectangle there bounds nothing and must not survive as an
-// edge: left in, it is a zero-length edge with a single use and the body reads as open. It is the same
-// thing sphereFaceUV does at a pole, and OCCT's degenerate edges do in a face's wire (uvSide).
+// finalizeLoops drops every DEGENERATE edge. A zero-length straight edge bounds nothing whatever put it
+// there: left in, it has a single use and the body reads as open. A cone's apex is the case this was
+// written for — the parameter-space boundary that closes the rectangle at a point — and the gate said
+// "only at an apex", which names that case rather than the property. A crossing that wraps a rod's
+// azimuth leaves the same thing at a seam, and the rod's far rim then came back split in two arcs
+// against the cap's whole circle, with five open edges (ADR-0061 stage 4). It is the same thing
+// sphereFaceUV does at a pole, and OCCT's degenerate edges do in a face's wire (uvSide).
 func (c *ruledFaceUV) finalizeLoops(loops []curvedLoop) []curvedLoop {
-	if _, atApex := c.boundedByApex(); !atApex {
-		return loops
-	}
 	return dropDegenerateEdges(loops, c.res)
 }
 
