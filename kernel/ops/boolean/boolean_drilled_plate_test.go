@@ -133,23 +133,31 @@ func TestSecondBoreRimIsProvenanceNamed(t *testing.T) {
 	pairNamed := 0
 	for _, e := range s2.Edges() {
 		k := string(e.ReferenceKey())
-		if strings.Contains(k, "curvedbool:e#") {
+		if strings.Contains(k, "curvedbool:e#") || strings.Contains(k, "brep:edge#") {
 			t.Errorf("edge kept a build-order ordinal: %q (SSI-edge provenance missing)", k)
 		}
-		// A face-pair name carries the separator between the two parent faces' keys; the bore's rim joins
-		// its cylinder WALL to a slab cap (slab:face). The wall's own key is whichever path built it —
-		// the drill recognizer mints brep:drillwall, the general pipeline inherits the tool cylinder's
-		// face key — and the property under test is the SHAPE of the rim's name, not that token: a
-		// build-order-independent name derived from the two generating faces. Asserting the recognizer's
-		// token instead would fail the moment stage 4 of ADR-0061 routes this cut through the general
-		// pipeline, on a body whose rims are named exactly as well.
-		if strings.Contains(k, "/curvedbool:x#0/") && strings.Contains(k, "slab:face") && !strings.HasPrefix(k, "\x02slab:") {
+		// A face-pair name carries the two parent faces' keys; the bore's rim joins its cylinder WALL to a
+		// slab cap (slab:face). The wall's own key is whichever path built it — the drill recognizer
+		// mints brep:drillwall, the general pipeline inherits the tool cylinder's face key — and the
+		// separator is whichever naming hook composed it. The property under test is the SHAPE of the
+		// rim's name, not those tokens: a build-order-independent name derived from the two generating
+		// faces, on every rim, both bores' alike.
+		if _, isCircle := e.Geometry().(geom.Circle); isCircle && !wallCapPairName(k) {
+			t.Errorf("bore rim %q is not named by its wall and cap", k)
+		}
+		if wallCapPairName(k) {
 			pairNamed++
 		}
 	}
 	if pairNamed == 0 {
 		t.Error("no second-bore rim edge got a wall×cap provenance name — SSI-edge provenance did not fire")
 	}
+}
+
+// wallCapPairName reports a key composed of a bore wall's key and a slab cap's key.
+func wallCapPairName(k string) bool {
+	wall := strings.Contains(k, "drillwall") || strings.Contains(k, "cylinder:f#")
+	return wall && strings.Contains(k, "slab:face") && !strings.HasPrefix(k, "\x02slab:")
 }
 
 // TestDrilledPlateClippedDefers: a hole whose circle clips the slab edge is NOT a clean through-hole, so

@@ -43,14 +43,18 @@ func promoteConicReceivers(p, other *facePartition) {
 	p.planar, p.planarFull, p.planarHoles = planar, full, holes
 }
 
-// planarReceivesConic reports whether planar face i must move to the uv bucket: it has no detached curved
-// holes, the exact-frame chart can frame it, and some wall of other sections it with a conic entering its
-// trim (the same conicTouchesTool verdict wallCurveSegments declines on).
+// planarReceivesConic reports whether planar face i must move to the uv bucket: the exact-frame chart
+// can frame it — with its curved holes, which are frame edges there like any other conic — and some
+// wall of other sections it with a conic entering its trim (the same conicTouchesTool verdict
+// wallCurveSegments declines on).
+//
+// A face carrying a detached curved hole was refused here, and the polygonal bucket it stayed in then
+// declined the conic entering it: a plate with one bore could not take a second, and the second bore
+// was rebuilt from the faceted engine's provenance instead (ADR-0061 stage 4). The demotion route
+// (selectFacesDetached) already frames a holed face in this chart when an imprint MEETS its hole; a
+// conic that merely enters the face is the same chart with less to solve.
 func (p facePartition) planarReceivesConic(i int, other *facePartition) bool {
-	f := p.planar[i]
-	if len(p.planarHoles[i]) > 0 {
-		return false
-	}
+	f := p.planarFull[i]
 	if _, ok := newPlaneFaceUV(f, geom.ResolutionForBox(faceLoopBox(f))); !ok {
 		return false
 	}

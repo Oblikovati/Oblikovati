@@ -57,7 +57,7 @@ func stitch(faces []subFace, pass []curvedFace, prov []imprintSeg) (*topo.Body, 
 	// flood fill over the WHOLE set, and is a no-op on already-consistent input by construction,
 	// so the paths that were already consistent are unchanged (#1818, #3459).
 	all := curvedReorient(append(builtFacesToCurved(out, w.points), pass...))
-	body := curvedStitchNamed(all, planarStitchNaming(prov, w, out))
+	body := curvedStitchNamed(all, planarStitchNaming(prov, w, out, all))
 	return body, tangent, nil
 }
 
@@ -65,11 +65,13 @@ func stitch(faces []subFace, pass []curvedFace, prov []imprintSeg) (*topo.Body, 
 // intersection edge named by its generating parent face pair (disambiguated by rank along the parents'
 // intersection line), every intersection vertex by its meeting faces, originals keeping ordinal keys —
 // the same names the retired planar assemble minted. The curved relineage is off: these names are
-// already build-order-independent.
-func planarStitchNaming(prov []imprintSeg, w *welder3, faces []builtFace) stitchNaming {
+// already build-order-independent. A CURVED edge the imprint did not generate — a rim a wall's trim
+// emitted — is named from the faces that border it (curvedRimLineages), which is the provenance the
+// relineage would have read, applied only where the imprint has nothing to say.
+func planarStitchNaming(prov []imprintSeg, w *welder3, faces []builtFace, all []curvedFace) stitchNaming {
 	return stitchNaming{
 		edges: func(groups []edgeGroup, verts []math.Point3) []topo.Lineage {
-			return planarEdgeLineages(groups, verts, prov)
+			return planarEdgeLineages(groups, verts, prov, all)
 		},
 		vertex: planarVertexNamer(prov, w, faces),
 	}
@@ -78,8 +80,9 @@ func planarStitchNaming(prov []imprintSeg, w *welder3, faces []builtFace) stitch
 // planarEdgeLineages resolves each stitch group's edge lineage from the imprint provenance
 // (nameEdgeGroups), assigning the unparented ordinal fallbacks in sorted-pair order — the retired
 // assemble's deterministic order.
-func planarEdgeLineages(groups []edgeGroup, verts []math.Point3, prov []imprintSeg) []topo.Lineage {
+func planarEdgeLineages(groups []edgeGroup, verts []math.Point3, prov []imprintSeg, all []curvedFace) []topo.Lineage {
 	named := nameEdgeGroups(groups, verts, prov)
+	curvedRimLineages(named, groups, verts, all)
 	order := make([]int, len(groups))
 	for i := range order {
 		order[i] = i
