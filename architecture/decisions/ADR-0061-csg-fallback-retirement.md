@@ -1036,3 +1036,24 @@ All three ways round, through `brep.Boolean` with every recognizer off:
 
 **22 failing tests left of the original 38**, 43 leaves of 49. The four partial-penetration rows are
 gone in one change.
+
+### A boundary loop is never dropped for being unplaceable (2026-09-06)
+
+`groupLoopFaces` files each hole on the smallest outer loop that contains it — and, when none did,
+dropped it. Silently. That is the degradation the ground rules forbid, and it costs real boundary: a
+component with a loop that WRAPS the azimuth has no meaningful (u, v) area, so an oblique tunnel's entry
+crossing read as an unplaceable hole and vanished, leaving the tunnel face with one boundary instead of
+two.
+
+A hole the containment test cannot place now goes on the component's largest face. Measured on the
+cap-crossing certification fixture — a Ø1.8 tool at 45° through a Ø6 cylinder, exiting the top cap —
+the volume goes 269.984087 → **266.671894 against OCC's 266.6720995**, a match to six figures where
+before it was 1.2 % out. One corpus leaf recovers with it.
+
+**The face still does not weld, and the reduction is worth recording.** The entry crossing comes back as
+ONE closed curve on the wall it pierces and as an arc plus a straight edge on the tunnel's own chart, so
+three edges stay unpaired. That straight edge is tagged `segPolygon` — a FRAME edge, the face's own
+boundary — not `segSeam`, which is why the rule written for the seam case (a loop whose only real
+boundary is one closed imprint curve IS that curve) does not fire here and, tried twice now, changes
+nothing. Whatever puts a frame run in that loop is the next thing to find; the volume says the geometry
+is already right.

@@ -124,9 +124,17 @@ func groupLoopFaces(multiFace, wrapping bool, loops [][]dedge) [][][]dedge {
 		return [][][]dedge{loops}
 	}
 	for _, h := range holes {
-		if g := smallestContainingFace(groups, loopPointInside(h)); g != nil {
-			g.loops = append(g.loops, h)
+		g := smallestContainingFace(groups, loopPointInside(h))
+		if g == nil {
+			// A hole no outer loop contains is not a hole this grouping can place — and DROPPING it
+			// loses real boundary silently. It happens where the containment test cannot speak: a
+			// component with a loop that WRAPS the azimuth has no meaningful (u,v) area, so an oblique
+			// tunnel's entry crossing read as an unplaceable hole and vanished, leaving the tunnel face
+			// with one boundary and the solid with one open edge (ADR-0061 stage 4). The largest face
+			// of the component is the one it bounds.
+			g = largestFace(groups)
 		}
+		g.loops = append(g.loops, h)
 	}
 	out := make([][][]dedge, len(groups))
 	for i, g := range groups {
@@ -141,6 +149,18 @@ type faceGroup struct {
 	outer []dedge
 	loops [][]dedge
 	area  float64
+}
+
+// largestFace is the group with the biggest outer loop — where a hole goes when the containment test
+// cannot place it. groups is never empty here.
+func largestFace(groups []*faceGroup) *faceGroup {
+	best := groups[0]
+	for _, g := range groups[1:] {
+		if g.area > best.area {
+			best = g
+		}
+	}
+	return best
 }
 
 // smallestContainingFace returns the face group whose outer loop contains p and has the smallest area (so a
