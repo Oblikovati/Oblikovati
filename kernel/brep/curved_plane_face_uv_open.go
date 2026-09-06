@@ -27,16 +27,23 @@ import (
 // split at conic.PointAt(t) and the imprint terminates on the same value — so the two sides weld
 // byte-identically rather than to within a sampling error.
 
-// openCrossing is one exact crossing of an open conic imprint with a STRAIGHT frame edge.
+// openCrossing is one exact crossing of an open conic imprint with a frame edge, straight or curved.
 type openCrossing struct {
 	loop, edge int
-	sEdge      float64 // parameter along the frame edge, in [0,1]
+	sEdge      float64 // fraction along a STRAIGHT frame edge, in [0,1]
+	tEdge      float64 // parameter on the frame edge's OWN curve
 	tConic     float64 // parameter along the conic
 	at         math.Point3
 }
 
-// openFrameCrossings solves every (open conic, straight frame edge) crossing in closed form,
-// returning one list per open curve, each ordered along the conic.
+// openFrameCrossings solves every (open conic, frame edge) crossing in closed form, returning one list
+// per open curve, each ordered along the conic.
+//
+// A CURVED frame edge used to be skipped, which made an open imprint that ends on one invisible: it
+// entered the arrangement as a chord dangling inside the face, bounded nothing, and the face came back
+// whole. That is the disc-shaped cap of a cylinder bitten by a tool leaving through the RIM — the
+// commonest thing a rim crossing does (ADR-0061 stage 4). It is solved by the same conic-against-conic
+// substitution the island rule already uses on such an edge (conicEdgeCrossingPoints).
 func (c *planeFaceUV) openFrameCrossings(open []geom.Curve3) [][]openCrossing {
 	out := make([][]openCrossing, len(open))
 	for oi, cv := range open {
@@ -46,9 +53,6 @@ func (c *planeFaceUV) openFrameCrossings(open []geom.Curve3) [][]openCrossing {
 		}
 		for li, l := range c.loops {
 			for ei, e := range l.edges {
-				if !geom.IsStraightCurve(e.curve) {
-					continue // an open conic meets a conic frame edge nowhere this chart admits (conicCrossesFaceBoundary gates it)
-				}
 				out[oi] = append(out[oi], c.openEdgeCrossings(cv, pc, li, ei, e)...)
 			}
 		}
@@ -57,19 +61,32 @@ func (c *planeFaceUV) openFrameCrossings(open []geom.Curve3) [][]openCrossing {
 	return out
 }
 
-// openEdgeCrossings intersects one open conic with one straight frame edge.
+// openEdgeCrossings intersects one open conic with one frame edge, of either kind.
 func (c *planeFaceUV) openEdgeCrossings(cv geom.Curve3, pc planeConic, li, ei int, e loopEdge) []openCrossing {
-	a2, b2 := to2D(c.plane, e.start()), to2D(c.plane, e.end())
-	hits, _ := conicFrameHits(pc, a2, b2, c.res)
-	out := make([]openCrossing, 0, len(hits))
-	for _, h := range hits {
-		t, ok := geom.ConicParamAt(cv, to3D(c.plane, h.p))
-		if !ok {
+	pts, _, ok := conicEdgeCrossingPoints(pc, e, c.plane, c.res)
+	if !ok {
+		return nil
+	}
+	out := make([]openCrossing, 0, len(pts))
+	for _, h := range pts {
+		p3 := to3D(c.plane, h)
+		t, okT := geom.ConicParamAt(cv, p3)
+		tE, okE := geom.CurveParamAt(e.curve, p3)
+		if !okT || !okE {
 			continue
 		}
-		out = append(out, openCrossing{loop: li, edge: ei, sEdge: h.sEdge, tConic: t, at: cv.PointAt(t)})
+		out = append(out, openCrossing{loop: li, edge: ei, sEdge: edgeFraction(e, tE), tEdge: tE, tConic: t, at: cv.PointAt(t)})
 	}
 	return out
+}
+
+// edgeFraction places a parameter on the edge's own span as a fraction in [0,1], the currency a
+// straight frame edge is split on.
+func edgeFraction(e loopEdge, t float64) float64 {
+	if e.t1 == e.t0 {
+		return 0
+	}
+	return (t - e.t0) / (e.t1 - e.t0)
 }
 
 // openSegs samples each open conic over the span its crossings bound, tagged with the SOURCE curve
@@ -271,11 +288,14 @@ func wrapUnitParam(t float64) float64 {
 func sectionFaceCuts(cv geom.Curve3, pc planeConic, uf curvedFace, pl geom.Plane) []float64 {
 	res := geom.ResolutionForBox(faceLoopBox(uf))
 	var cuts []float64
-	for _, ring := range planarRings(uf) {
-		for i, n := 0, len(ring); i < n; i++ {
-			hits, _ := conicFrameHits(pc, to2D(pl, ring[i]), to2D(pl, ring[(i+1)%n]), res)
+	for _, l := range uf.loops {
+		for _, e := range l.edges {
+			hits, _, ok := conicEdgeCrossingPoints(pc, e, pl, res)
+			if !ok {
+				continue
+			}
 			for _, h := range hits {
-				if t, ok := geom.ConicParamAt(cv, to3D(pl, h.p)); ok {
+				if t, got := geom.ConicParamAt(cv, to3D(pl, h)); got {
 					cuts = append(cuts, t)
 				}
 			}

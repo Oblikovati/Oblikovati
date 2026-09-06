@@ -24,46 +24,61 @@ import (
 // it. ok=false when the edge is a curve this cannot put in parametric form, which the caller must
 // treat as "cannot decide" rather than "does not cross".
 func conicEdgeCrossings(pc planeConic, e loopEdge, pl geom.Plane, res geom.Resolution) (hits int, tangent, ok bool) {
+	ps, tangent, ok := conicEdgeCrossingPoints(pc, e, pl, res)
+	return len(ps), tangent, ok
+}
+
+// conicEdgeCrossingPoints is conicEdgeCrossings with the crossings themselves: WHERE the section meets
+// the edge, in the face's own plane chart. Counting and locating are the same solve, so they are one
+// routine — a clip that needs the parameters must not re-derive them by a second, polyline route that
+// can disagree with the count (ADR-0061 stage 4).
+func conicEdgeCrossingPoints(pc planeConic, e loopEdge, pl geom.Plane, res geom.Resolution) ([]math.Point2, bool, bool) {
 	if isStraightEdge(e) {
 		hs, tan := conicEdgeHits(pc, to2D(pl, e.start()), to2D(pl, e.end()), res)
-		return len(hs), tan, true
+		out := make([]math.Point2, 0, len(hs))
+		for _, h := range hs {
+			out = append(out, h.p)
+		}
+		return out, tan, true
 	}
 	params, span, got := edgeConicParams(e, pl)
 	if !got {
-		return 0, false, false
+		return nil, false, false
 	}
 	form, formOK := pc.implicit()
 	if !formOK {
-		return 0, false, false
+		return nil, false, false
 	}
 	ts, infinite := geom.IntersectConic2d(params, form)
 	if infinite {
-		return 0, true, true // the edge lies ON the section: a graze along its whole length
+		return nil, true, true // the edge lies ON the section: a graze along its whole length
 	}
-	return countInSpan(ts, span, params.Hyperbolic), false, true
+	return pointsInSpan(params, ts, span), false, true
+}
+
+// pointsInSpan evaluates the roots that lie within the edge's own parameter interval.
+func pointsInSpan(params geom.EllipticalParams2d, ts []float64, span edgeSpan) []math.Point2 {
+	var out []math.Point2
+	for _, t := range ts {
+		if inEdgeSpan(t, span, params.Hyperbolic) {
+			out = append(out, params.PointAt(t))
+		}
+	}
+	return out
 }
 
 // edgeSpan is the parameter interval of one boundary edge in its OWN curve's parameter — the angle
 // for an arc, the hyperbolic angle for a hyperbola branch — against which a root is admitted.
 type edgeSpan struct{ lo, hi float64 }
 
-// countInSpan counts the roots lying within the edge's own parameter interval. An angular parameter
+// inEdgeSpan reports a root lying within the edge's own parameter interval. An angular parameter
 // is compared MODULO a turn, because a root reported on [0, 2π) and an arc spanning the seam name the
 // same place by different numbers; a hyperbolic one is not periodic and is compared directly.
-func countInSpan(ts []float64, span edgeSpan, hyperbolic bool) int {
-	n := 0
-	for _, t := range ts {
-		if hyperbolic {
-			if t >= span.lo-conicSpanSlack && t <= span.hi+conicSpanSlack {
-				n++
-			}
-			continue
-		}
-		if angleWithin(t, span) {
-			n++
-		}
+func inEdgeSpan(t float64, span edgeSpan, hyperbolic bool) bool {
+	if hyperbolic {
+		return t >= span.lo-conicSpanSlack && t <= span.hi+conicSpanSlack
 	}
-	return n
+	return angleWithin(t, span)
 }
 
 // angleWithin reports an angle inside the span, both folded onto one turn from the span's start so a

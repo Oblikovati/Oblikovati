@@ -59,35 +59,46 @@ func closedSurfaceWallImprint(sf, wf curvedFace) ([]geom.Curve3, bool) {
 	}
 	res := geom.ResolutionForSize(rs.size())
 	curves, handled := geom.IntersectSurfacesAnalytic(sf.surface, rs.surface, res)
-	if !handled {
+	if !handled || !crossingsClose(curves, res) {
 		return nil, false
 	}
-	return keepCrossingsOnTheWall(curves, rs, res)
+	return keepCrossingsOnTheWall(curves, rs)
 }
 
 // keepCrossingsOnTheWall keeps the crossings that lie on the wall itself and drops the ones the
-// infinite surface contributes; ok=false when one straddles a rim or does not close.
-func keepCrossingsOnTheWall(curves []geom.Curve3, rs ruledSide, res geom.Resolution) ([]geom.Curve3, bool) {
+// infinite surface contributes. A crossing that leaves through a RIM is CLIPPED to the band: the
+// stretch between the rims is real imprint and the rim circle in the face's own frame closes the
+// region it opens (clipCrossingToBand). ok=false only when the clip finds nothing inside a band the
+// placement called a straddle.
+func keepCrossingsOnTheWall(curves []geom.Curve3, rs ruledSide) ([]geom.Curve3, bool) {
 	var out []geom.Curve3
 	for _, cv := range curves {
-		if !closedCrossing(cv, res) {
-			return nil, false
-		}
 		switch inside, clear := crossingBandPlacement(cv, rs); {
 		case inside:
 			out = append(out, cv)
 		case clear:
 		default:
-			return nil, false // straddles a rim: a crossing this slice does not pair
+			clipped, ok := clipCrossingToBand(cv, rs)
+			if !ok {
+				return nil, false
+			}
+			out = append(out, clipped...)
 		}
 	}
 	return out, true
 }
 
-// closedCrossing reports a crossing curve that returns to where it started.
-func closedCrossing(cv geom.Curve3, res geom.Resolution) bool {
-	lo, hi := cv.Domain()
-	return float64(cv.PointAt(lo).DistanceTo(cv.PointAt(hi))) <= res.Sew()
+// crossingsClose reports that every curve an intersector returned comes back to where it started. An
+// OPEN curve out of the intersector is a partial answer, and a partial answer is refused — unlike the
+// open arcs keepCrossingsOnTheWall itself produces, whose ends are rims this pipeline knows about.
+func crossingsClose(curves []geom.Curve3, res geom.Resolution) bool {
+	for _, cv := range curves {
+		lo, hi := cv.Domain()
+		if float64(cv.PointAt(lo).DistanceTo(cv.PointAt(hi))) > res.Sew() {
+			return false
+		}
+	}
+	return true
 }
 
 // crossingBandPlacement classifies a crossing's axial span against the wall's band (bandPlacement).
@@ -149,12 +160,12 @@ func wallWallImprint(a, b curvedFace) ([]geom.Curve3, bool) {
 	}
 	res := geom.ResolutionForSize(stdmath.Max(ra.size(), rb.size()))
 	curves, handled := geom.IntersectSurfacesAnalytic(ra.surface, rb.surface, res)
-	if !handled {
+	if !handled || !crossingsClose(curves, res) {
 		return nil, false
 	}
-	kept, ok := keepCrossingsOnTheWall(curves, ra, res)
+	kept, ok := keepCrossingsOnTheWall(curves, ra)
 	if !ok {
 		return nil, false
 	}
-	return keepCrossingsOnTheWall(kept, rb, res)
+	return keepCrossingsOnTheWall(kept, rb)
 }

@@ -214,7 +214,7 @@ func (c *planeFaceUV) frameEdgeSegs(li, ei int, e loopEdge, crossings []faceFram
 	if geom.IsStraightCurve(e.curve) {
 		return c.straightFrameEdgeSegs(li, ei, e, open)
 	}
-	params := conicSampleParams(e, crossings, li, ei)
+	params := conicSampleParams(e, crossings, open, li, ei)
 	segs := make([]uvSeg, 0, len(params)-1)
 	for i := 1; i < len(params); i++ {
 		a3, b3 := e.curve.PointAt(params[i-1]), e.curve.PointAt(params[i])
@@ -225,7 +225,7 @@ func (c *planeFaceUV) frameEdgeSegs(li, ei int, e loopEdge, crossings []faceFram
 
 // conicSampleParams builds the sample parameters of one conic frame edge, in the edge's own
 // traversal order (t0→t1), with each crossing's exact conic parameter injected.
-func conicSampleParams(e loopEdge, crossings []faceFrameCrossing, li, ei int) []float64 {
+func conicSampleParams(e loopEdge, crossings []faceFrameCrossing, open [][]openCrossing, li, ei int) []float64 {
 	lo, hi := stdmath.Min(e.t0, e.t1), stdmath.Max(e.t0, e.t1)
 	params := make([]float64, 0, imprintSampleCount+4)
 	for i := 0; i <= imprintSampleCount; i++ {
@@ -235,6 +235,11 @@ func conicSampleParams(e loopEdge, crossings []faceFrameCrossing, li, ei int) []
 		if cr.loop == li && cr.edge == ei {
 			params = append(params, cr.tConic)
 		}
+	}
+	// An OPEN imprint ending on this curved edge is a crossing too, and the sub-edge must terminate on
+	// it exactly or the bite it opens never closes (ADR-0061 stage 4).
+	for _, cr := range crossingsOnEdge(open, li, ei) {
+		params = append(params, cr.tEdge)
 	}
 	params = sortedUniqueParams(params)
 	if e.t0 > e.t1 { // the loop walks the circle backwards: emit in traversal order

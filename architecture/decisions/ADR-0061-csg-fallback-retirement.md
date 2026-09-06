@@ -1100,3 +1100,32 @@ cap-crossing family is gone from the list — single cap, two caps, cone cap —
 | sphere ∩ box | 1 | the curved cap must survive |
 | second-bore rim provenance | 1 | naming, not geometry |
 | face-interior-point oracle | 1 | a cylinder face yields no interior point |
+
+### The rim crossing, through the general pipeline (2026-09-06)
+
+A tool that leaves a cylinder through its top RIM — so the exit crossing straddles the rim rather than
+landing inside a cap — was the hand-written `curvedRimCrossCut`'s case (#1724 slice 2). That recognizer
+assembles an "exit chain" by hand: a wall arc plus a rim arc, with a mixed-arc cap bite to match. The
+general pipeline reaches the same body once two refusals are lifted, and neither is a special case.
+
+**A crossing that leaves the wall through a rim is CLIPPED to the band, not refused.** The stretch
+between the rims is real imprint, and the rim circle is already in the face's own frame, so the
+arrangement closes the region the clipped arc opens — the exit chain the recognizer built by hand is
+what the frame gives for free. `clipCrossingToBand` brackets each rim crossing on a walk of the curve
+and bisects it with the same `bisectRoot` the corner solver uses, so the clip introduces no tolerance of
+its own. Closedness moves off `keepCrossingsOnTheWall` and onto the intersector's raw output
+(`crossingsClose`), where it belongs: an OPEN curve out of an intersector is a partial answer and is
+still refused, while the open arcs the clip itself produces end on rims this pipeline knows about.
+
+**An open imprint may end on a CURVED frame edge.** `openFrameCrossings` skipped every non-straight
+frame edge, so a section ending on a disc's own rim circle was invisible: it entered the arrangement as
+a chord dangling inside the face, bounded nothing, and the cap came back whole. It is solved by the
+conic-against-conic substitution the island rule already uses on such an edge — `conicEdgeCrossings`
+now has a sibling, `conicEdgeCrossingPoints`, that returns WHERE rather than how many. Counting and
+locating are one solve; a clip that needed the parameters used to re-derive them by a second, polyline
+route, which is also why `sectionFaceCuts` found nothing on a disc: `planarRings` gives one point per
+edge, and a face bounded by ONE closed circle has a ring of one point and no segments at all.
+
+With both, `brep.Boolean` returns the rim crossing as a watertight four-face solid — notched holed wall,
+bitten top cap, whole bottom cap, tunnel — and with all 26 recognizers off `TestRimCrossingCutMomentsMatchOCC`,
+`TestRimCrossingCutIsWatertightAndFoldFree` and the `TestCurvedBooleansStayExact` rim-crossing row all pass.
