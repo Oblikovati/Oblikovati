@@ -984,3 +984,28 @@ left behind. `pendingCapabilityCount` falls 109 → 105 and the parity scoreboar
 stands.
 
 **26 failing tests left of the original 38**, 44 leaves of 49.
+
+### Where the cone crossings stand, and one rule withdrawn (2026-09-06)
+
+Cone crossings mostly carry already. Through `brep.Boolean` with every recognizer off:
+
+| pair | ∩ | − | ∪ |
+| --- | --- | --- | --- |
+| cone × cylinder | 18.5838 ✓ | 19.1153 ✓ | 370.9736 ✓ |
+| cone × cone | **open** | 26.7997 ✓ | 378.6580 ✓ |
+
+Each row is inclusion-exclusion consistent with the operands' own volumes, so the only gap in the family
+is the cone∩cone INTERSECT, and it is a weld: the two walls trace the SAME closed crossing curve and
+emit it as two different edges, one starting at `(3.2230, 0, 1.3380)` — the curve's own domain start —
+and the other at `(2.6732, 1.0401, −0.7897)`.
+
+Reduced: on one chart the loop is one imprint run spanning the curve's whole domain, which
+`emitImprintRun` canonicalises to `[lo, hi]`; on the other it is an imprint run covering 92 % of it plus
+a SEAM run for the rest, which `closedRunCoversCurve` rightly refuses to call a full traversal, so it
+emits the partial arc it actually walked.
+
+A rule for that — a loop whose only real boundary is one closed imprint curve IS that curve, the seam
+runs beside it being the chart's bookkeeping — was written, fired on the right loop, and **changed
+nothing**: 26 failing tests before and after. Something further on still separates the two edges. An
+unproven change does not ship, so it is withdrawn rather than kept for looking right; what survives is
+the reduction, which is where the next attempt should start.
