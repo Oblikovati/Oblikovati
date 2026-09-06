@@ -1215,3 +1215,27 @@ avoids the whole question by storing that crossing as a 9-point `geom.Polyline` 
 otherwise analytic solid, which is exactly the kind of silent degradation stage 4 exists to remove.
 
 **Stage 4 standing, all 26 recognizers off: 10 failing tests, down from 22.**
+
+### Recognising the section, and probing a wrapping band (2026-09-06)
+
+Two gaps that are not modelling defects at all — the bodies were right — but that kept a per-face gate
+from certifying them.
+
+**A section that IS a circle must come back as one.** The one general intersector builds every
+ruled∩quadric section as a `RuledQuadricArc`, and a cylinder through a sphere's centre cuts it in two
+CIRCLES. Delivered as general ruled arcs they lose everything downstream that reads the curve's kind:
+the per-face oracle's band walk, the tessellator's conformal rim stations, a bore rim's provenance name,
+every conic clip. `canonicalSection` asks the CURVE what it is after the general path has built it —
+sample the full sweep, certify one circle through every sample — so this is a recognition, not a
+type-pair fast path beside the intersector. The circle's normal takes a sign fixed by a total order on
+its components, so the two operands, which build the same section from opposite bases, derive the SAME
+circle, seam included.
+
+**`FaceInteriorPoint` declined every seam-wrapping face,** and that decline was right while the probe
+was a guess. What makes the probe safe is not the probe but the certification under it: whatever uv the
+band or cap rule proposes, the point is returned only when `brep.PointInFaceTrim` — an independent
+classifier, not these loops' own polygon — agrees it is on the face. A probe landing in the band the
+operation discards fails that and still declines. So the gate never gains a probe it cannot stand
+behind, and it stops skipping every ordinary bore wall and rod tunnel the general pipeline builds.
+
+**Stage 4 standing, all 26 recognizers off: 9 failing tests, down from 22.**

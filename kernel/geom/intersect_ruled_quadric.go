@@ -44,8 +44,8 @@ func RuledQuadricSection(base, other Surface, res Resolution) ([]Curve3, bool) {
 		return nil, false
 	}
 	return []Curve3{
-		RuledQuadricArc{Base: base, Quad: quad, Upper: false, U0: 0, U1: twoPi},
-		RuledQuadricArc{Base: base, Quad: quad, Upper: true, U0: 0, U1: twoPi},
+		canonicalSection(RuledQuadricArc{Base: base, Quad: quad, Upper: false, U0: 0, U1: twoPi}, res),
+		canonicalSection(RuledQuadricArc{Base: base, Quad: quad, Upper: true, U0: 0, U1: twoPi}, res),
 	}, true
 }
 

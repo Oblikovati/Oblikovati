@@ -345,18 +345,16 @@ func uSpanOf(samples []arcSample) float64 {
 // analytic surface and its uv loops — never from a tessellation. It is the representative point a
 // per-face gate classifies (M48/C3, Oblikovati/Oblikovati#3447).
 //
-// It DECLINES for a face whose loops wrap the parameter seam, and that is deliberate. A gate exists
-// to disprove a result; a probe it had to guess at can disprove a CORRECT one, and the cost of that
-// is not a weaker gate but a right answer thrown away — a five-face blind hole demoted to a
-// 1830-face faceted rescue. On a wrapping band no probe here has proved trustworthy: an even-odd
-// grid returns a point in the band the operation discards, and a step inward from the boundary can
-// land outside the true region while the loops' sampled polygon still calls it inside. Until a
-// wrapping band's interior can be certified exactly, the gate skips those faces under its own
-// "skipped rather than failed" rule and the volume bracket carries them.
-//
-// (The integrator's own side test does probe a wrapping band, through bandInteriorUV. That is sound
-// there for a different reason: a wrong answer is caught by the vector-area closure post-condition,
-// which declines the body rather than shipping it.)
+// A face whose loops WRAP the parameter seam is probed through regionProbeUV — the band and cap
+// probes the integrator's own side test uses — and not, as it once was, declined outright. The
+// decline was the right answer while the probe was a guess: a gate exists to disprove a result, and a
+// probe it had to guess at can disprove a CORRECT one, at the cost of a five-face blind hole demoted
+// to a 1830-face faceted rescue. What makes the probe safe is not the probe but the CERTIFICATION
+// below it: whatever uv the band or cap rule proposes, the point is returned only when
+// brep.PointInFaceTrim — an independent classifier, not these loops' polygon — agrees it is on the
+// face. A probe that lands in the band the operation discards fails that test and still declines, so
+// the gate never gains a probe it cannot stand behind, and it stops skipping every ordinary bore wall
+// and rod tunnel the general pipeline builds (ADR-0061 stage 4).
 //
 // Example: p, ok := query.FaceInteriorPoint(f) // ok ⇒ brep.PointInFaceTrim(f, p)
 func FaceInteriorPoint(f *topo.Face) (math.Point3, bool) {
@@ -370,10 +368,10 @@ func FaceInteriorPoint(f *topo.Face) (math.Point3, bool) {
 		return s.PointAt((uLo+uHi)/2, (vLo+vHi)/2), true
 	}
 	loops, ok := buildFaceLoops(s, f)
-	if !ok || loopsWrapASeam(loops) {
-		return math.Point3{}, false // see the seam-wrapping note above
+	if !ok {
+		return math.Point3{}, false
 	}
-	u, v, found := regionInteriorUV(loops)
+	u, v, found := regionProbeUV(s, loops)
 	if !found {
 		return math.Point3{}, false
 	}
