@@ -86,7 +86,7 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 	// A solid-membership side that WRAPS the whole azimuth (the cut/join OUTSIDE/tunnel wall) is a tube the
 	// contractible-outer emission below mis-files; emit it directly as one face per connected band (#1476).
 	if faces, lid, ok := c.wrappingSolidFaces(kept, segs, surface, f); ok {
-		return faces, lid, nil
+		return dropDegenerateLoops(faces, f), lid, nil
 	}
 	loops := dropArtificialLoops(chainLoops(keptBoundaryEdges(kept, c.uPeriodic(), c.vPeriodic())), segs)
 	// The same cells traced with the seams UNFOLDED: closed contours, one set per connected component
@@ -104,14 +104,29 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 			return nil, nil, ErrUnsupportedHalfSpace
 		}
 		faceLoops, faceLid, outerless := c.orientLoops(emitted, c.wrapsAllU())
-		faceLoops = dropDegenerateEdges(c.finalizeLoops(faceLoops), geom.ResolutionForBox(faceLoopBox(f)))
+		faceLoops = c.finalizeLoops(faceLoops)
 		faces = append(faces, curvedFace{
 			surface: surface, reversed: f.reversed, lineage: f.lineage, loops: faceLoops, outerless: outerless,
 			chart: chartForGroup(charts, group),
 		})
 		lid = append(lid, faceLid...)
 	}
-	return faces, lid, nil
+	return dropDegenerateLoops(faces, f), lid, nil
+}
+
+// dropDegenerateLoops applies the degenerate-edge rule to every face a trim produced, whichever emission
+// built it. It is ONE rule about the faces — a zero-length straight edge bounds nothing, and left in it
+// has a single use and the body reads as open — and it lives here because every chart's WRAPPING
+// emission is its own (ruledFaceUV assembles bands, loopFrame assembles components), so a copy inside
+// each of them is a copy that will be missed (ADR-0061 stage 4).
+func dropDegenerateLoops(faces []curvedFace, f curvedFace) []curvedFace {
+	res := geom.ResolutionForBox(faceLoopBox(f))
+	out := make([]curvedFace, 0, len(faces))
+	for _, cf := range faces {
+		cf.loops = dropDegenerateEdges(cf.loops, res)
+		out = append(out, cf)
+	}
+	return out
 }
 
 // dropArtificialLoops removes boundary loops made entirely of artificial seam edges — a loop that bounds

@@ -927,3 +927,29 @@ rod's far rim, whole on the cap and split in two on the wall, plus two zero-leng
 this drop — so they are not produced through `trimByImprint` at all. Which builder emits them is the
 next thing to find; the other end of the same rod welds its rim whole, so it is not a property of the
 configuration.
+
+### The crossing-cylinder join closes, and it was the degenerate edges after all (2026-09-06)
+
+The previous entry said the join's five unpaired edges were "not the degenerate drop", because they
+survived it. They survived it because they were never offered to it: `ruledFaceUV` has its OWN wrapping
+emission (`componentFaces`/`faceOf`, which assemble bands), and neither it nor `loopFrame`'s goes
+through `finalizeLoops` at all. Two copies of the drop, and the faces that needed it went through
+neither.
+
+`dropDegenerateLoops` now runs on every face a trim returns, whichever emission built it — one place,
+after both the wrapping return and the contractible loop. With the zero-length edges gone the rod's far
+rim welds whole on both sides, and the cap's two-arc split goes with them: the split was the vertex the
+degenerate edge had injected, not a seam placement at all. My earlier reading had the two faces the
+wrong way round — it is the CAP that had the arcs and the WALL that had the circle — which is what a
+face-by-face dump settles and a description does not.
+
+Crossing cylinders are now exact all three ways round, through `brep.Boolean` with every recognizer off:
+
+| operation | ours | exact |
+| --- | --- | --- |
+| ∩ (the shared lens) | 41.0411 | — |
+| − (the drilled cylinder) | 298.2509 | 339.292 − 41.041 |
+| ∪ (the cross) | 383.0739 | 339.292 + 84.823 − 41.041 |
+
+The union is inclusion-exclusion to six figures, which is what makes the three one statement rather than
+three numbers. **29 failing tests left of the original 38**, 45 leaves of 49.
