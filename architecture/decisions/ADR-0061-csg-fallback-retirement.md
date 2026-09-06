@@ -1586,3 +1586,55 @@ feature then shipped that torn body as healthy: **the feature engine does not `V
 gets without an error** (`classify`), which is the post-condition every public operation owes and the
 model layer does not yet ask for. The inscribed 32-gon prism the feature used to cut with was never
 tangent, which is why the row passed; it now drills Ø1 bores clear of everything and asks for πr²·h.
+
+### The honest count, and what it is made of (2026-09-06, night)
+
+The stage-4 count was taken with the recognizers off and the faceted engines ON, so a configuration the
+general pipeline declined and the reconstruction engine rebuilt from faceted provenance counted as a
+pass. Taken honestly — recognizers off AND `reconstructedCurvedBoolean`, the CSG engine and the
+mesh-arrangement rescue all declining — the kernel suite fails 20 tests. Eight of them assert that a
+fallback FIRES (`TestBooleanMeshArrangementFallbackRescue`, `TestBooleanRecordsCSGFallbackDiagnostic`,
+`TestABooleanWithNoExactCurvedPathDeclinesByName`, the reconstruction and volume-reject tests) and
+convert with stage 7, as the Consequences section already says. The rest are the general pipeline's
+remaining scope, each now measured to its cause:
+
+| configuration | rows | what the general pipeline says |
+| --- | --- | --- |
+| two-cap crossing: a steep rod exits both caps of a cylinder | 5 | the mixed pipeline declines (target 3 faces, tool 3) |
+| coaxial cylinders, overlapping or abutting, joined; a sphere joined to a rod on its axis | 3 | declines — the degenerate-overlap family, coincident surfaces |
+| the near-pinch continuity row's SNAP band | 1 | builds three exact faces; the row asks for the retired recognizer's four |
+| the drilled plate at 10 µm and 100 µm | 1 | drops a cap (see below) |
+| the corner junction's tessellation and membership audit | 2 | a regression of the night's own tessellation commit, found by bisecting it and fixed |
+
+**The drilled plate at a tenth of a millimetre is the resolution floor.** `minModelSize` floors every
+`Resolution` at one database centimetre, so a sub-centimetre model is measured with a centimetre's
+tolerances: a 10 µm plate's bottom cap, a tenth of the plate's thickness above the bore's rim, is
+"coplanar" with that rim at the floored sew gap, `sectionOnWallEdge` files the cap's section as a
+boundary contact, and the cap is dropped. Lowering the floor to a degeneracy floor (ten nanometres) mends
+the plate at 100 µm and fails 26 kernel tests at unit scale: the fixtures the corpus is built from are
+sub-centimetre rods and balls, and thirty call sites build a resolution from a radius, a height, or two
+origins rather than from the operands' extent, all of them leaning on the floor. That is ADR-0042's
+remaining debt — a resolution derives from the model's extent, once — and it is its own slice; the floor
+stays until it lands, and the row is served by the mesh-arrangement rescue, reported.
+
+**The corner junction cracked along the tessellator's bridge.** The chart-seam bridge of the two-rim
+holed band ignored the NOTCH in a notched rim — the chart's seam is clear of the imprint, not of the
+face's own boundary — and anchored in it. A notched rim keeps the sampled placement, which was written
+around the notch; the chart seam serves an intact rim, which is the near-pinch case it was made for.
+
+**Every hole type cuts with one revolved tool.** Counterbore, countersink and the drilled point each
+called a bespoke drill builder; each is now a meridian — stepped, chamfered, coned — revolved about the
+bore axis into one analytic solid (`revolvedTool`), named for the feature instance, and taken out by the
+general boolean in one operation. `CutCounterboreHole`, `CutCountersinkHole` and `CutBlindConicalHole`
+have no caller in the model layer left.
+
+**A feature that yields an invalid solid should be sick, and is not yet.** `classify` marks a feature
+healthy whenever its Recompute returns no error, whatever body it returned; a torn CSG body a tangent
+bore produced shipped as a healthy hole. Sickening a feature whose solid fails `Validate` was written
+and measured: eleven model tests fail, because their fixtures — the stand-in boxes the engine, suppression,
+reorder and pattern tests are built on — are bodies that call themselves solid and are not. The
+post-condition is right and the fixtures are the debt; it is withdrawn here and named for the slice that
+rebuilds those fixtures on real solids.
+
+The planar stitch's weld grid also derives from the operands now (`stitchInputBox`), as the curved
+stitch's did; it was an absolute grid a millimetre-scale plate could not survive.
