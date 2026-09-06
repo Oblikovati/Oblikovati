@@ -1329,3 +1329,25 @@ remaining call sites are worth an audit of their own.
 the torus tangent about every axis, and two rows of the shoulder rod — its CUT still keeps the wrong side
 of the ball, and its sphere comes back as ONE face with two loops where the surviving surface is two
 disconnected caps.
+
+### A disconnected kept region's components are faces (2026-09-06)
+
+After the shoulder rod's contact was seen at all, the ball ∪ rod came out exact but the ball − rod did
+not: it kept the wrong material, and its census showed ONE sphere face where the surviving surface is two
+disconnected caps — one below the seam circle, one beyond the rod's end.
+
+The emission grouped a trim's loops by (u,v) containment over the WHOLE kept set. Containment is the
+right question inside a component and meaningless across components: two loops in different components
+need not contain one another at all, and the two caps' rim circles are horizontal lines across the chart,
+so neither contained the other and both were filed on one face. That face carried two rings around a
+region it did not bound, and the analytic integrator read it as a third of the volume.
+
+`trimByImprint` now walks `keptComponents` first — each component is a face (or a set of patches) —
+and `groupLoopFaces` files the holes within it. `keptComponents` was already computed for the charts, so
+this asks the same question once instead of two different ones.
+
+The whole coaxial ball-and-rod family passes with all 26 recognizers off, `TestShoulderRodBooleansStayAnalytic`
+and the four `TestCurvedBooleanVolumesMatchOCC` rows together.
+
+**Stage 4 standing, all 26 recognizers off: 5 failing tests, down from 22** — the near-pinch family (4)
+and the torus tangent about every axis.

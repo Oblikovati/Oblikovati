@@ -88,30 +88,49 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 	if faces, lid, ok := c.wrappingSolidFaces(kept, segs, surface, f); ok {
 		return dropDegenerateLoops(faces, f), lid, nil
 	}
-	loops := dropArtificialLoops(chainLoops(keptBoundaryEdges(kept, c.uPeriodic(), c.vPeriodic())), segs)
 	// The same cells traced with the seams UNFOLDED: closed contours, one set per connected component
 	// (ADR-0063). Traced from the same cells so the chart and the loops cannot disagree.
 	charts := chartsOfComponents(c, kept)
 	var faces []curvedFace
 	var lid []loopEdge
-	// A curved∩curved cut can leave the kept region DISCONNECTED (the two lens caps a rod punches in a fat
-	// cone's wall) — unlike a plane cut, which leaves one band/patch. groupLoopFaces splits the boundary
-	// loops into connected faces by (u,v) containment; a wrapping band or single patch stays one face, so
-	// the half-space path is unchanged (#1403).
-	for _, group := range groupLoopFaces(c.multiFace(), c.wrapsAllU(), loops) {
-		emitted, ok := emitKeptLoops(c, group, segs)
+	// A kept region can be DISCONNECTED — the two lens caps a rod punches in a fat cone's wall, or the two
+	// caps a ball keeps when a rod's shoulder takes a belt out of it — and each component is a face. Its
+	// loops are then filed by (u,v) containment WITHIN the component, which is the only place containment
+	// means anything: two loops in different components need not contain one another at all, and grouping
+	// the whole set by containment merged a ball's two surviving caps into one face (#1403, ADR-0061
+	// stage 4).
+	for _, comp := range keptComponents(kept, c.uPeriodic(), c.vPeriodic()) {
+		compFaces, compLid, ok := componentPatchFaces(c, comp, segs, surface, f, charts)
 		if !ok {
 			return nil, nil, ErrUnsupportedHalfSpace
 		}
+		faces, lid = append(faces, compFaces...), append(lid, compLid...)
+	}
+	return dropDegenerateLoops(faces, f), lid, nil
+}
+
+// componentPatchFaces emits ONE connected component of the kept region as its patches: the component's
+// boundary loops filed by (u,v) containment, each group a face with the surface's orientation convention
+// applied. ok=false when a boundary run cannot be re-emitted as an exact edge.
+func componentPatchFaces(c uvSide, comp []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace,
+	charts []keptChart) ([]curvedFace, []loopEdge, bool) {
+	loops := dropArtificialLoops(chainLoops(keptBoundaryEdges(comp, c.uPeriodic(), c.vPeriodic())), segs)
+	var faces []curvedFace
+	var lid []loopEdge
+	for _, group := range groupLoopFaces(c.multiFace(), c.wrapsAllU(), loops) {
+		emitted, ok := emitKeptLoops(c, group, segs)
+		if !ok {
+			return nil, nil, false
+		}
 		faceLoops, faceLid, outerless := c.orientLoops(emitted, c.wrapsAllU())
-		faceLoops = c.finalizeLoops(faceLoops)
 		faces = append(faces, curvedFace{
-			surface: surface, reversed: f.reversed, lineage: f.lineage, loops: faceLoops, outerless: outerless,
+			surface: surface, reversed: f.reversed, lineage: f.lineage,
+			loops: c.finalizeLoops(faceLoops), outerless: outerless,
 			chart: chartForGroup(charts, group),
 		})
 		lid = append(lid, faceLid...)
 	}
-	return dropDegenerateLoops(faces, f), lid, nil
+	return faces, lid, true
 }
 
 // dropDegenerateLoops applies the degenerate-edge rule to every face a trim produced, whichever emission
