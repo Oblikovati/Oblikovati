@@ -1239,3 +1239,25 @@ operation discards fails that and still declines. So the gate never gains a prob
 behind, and it stops skipping every ordinary bore wall and rod tunnel the general pipeline builds.
 
 **Stage 4 standing, all 26 recognizers off: 9 failing tests, down from 22.**
+
+### A rim's name must not assert which path built it (2026-09-06)
+
+`TestSecondBoreRimIsProvenanceNamed` asserted that a bore rim's key contains `drillwall` — the token the
+DRILL RECOGNIZER mints for a bore wall. The general pipeline inherits the tool cylinder's own face key
+instead and names the rim `cylinder:f#2/curvedbool:x#0/slab:face#0`, which is the same thing said with
+the parents it actually has. The property under test is the SHAPE of the name — build-order-independent,
+derived from the two generating faces — and it now asserts that, so it will still hold when stage 7
+deletes the recognizer whose token it named.
+
+Two real naming gaps surfaced while checking this, and neither belongs to the retirement:
+
+- **The mixed stitch leaves a CURVED rim on a build-order ordinal.** It runs the planar imprint's naming
+  (`planarStitchNaming`) with the curved relineage OFF, which names every planar intersection edge well
+  and leaves a rim no planar imprint generated with `brep:edge#N`. Turning the relineage on is not the
+  fix: it also renames the originals the planar path deliberately keeps on ordinals, and re-derives the
+  planar names from the BUILT faces rather than the imprint's own parents — measured, six sew-golden
+  signatures and two naming tests move. The fix is to name the fallback groups from their bordering
+  faces at the hook, where the ordinal is minted, and it wants its own change.
+- **Two bores of one plate give their walls the SAME key** — `brep:drillwall#0` twice on the recognizer
+  path, `cylinder:f#2` twice on the general one. Ambiguous key resolution is an error by the ground
+  rules. This is pre-existing and identical on both paths.

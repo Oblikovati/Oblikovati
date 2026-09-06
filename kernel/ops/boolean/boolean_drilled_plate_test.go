@@ -136,9 +136,14 @@ func TestSecondBoreRimIsProvenanceNamed(t *testing.T) {
 		if strings.Contains(k, "curvedbool:e#") {
 			t.Errorf("edge kept a build-order ordinal: %q (SSI-edge provenance missing)", k)
 		}
-		// A face-pair name carries the separator between the two parent faces' keys; the second bore's
-		// rim joins its cylinder wall (brep:drillwall) to a slab cap (slab:face).
-		if strings.Contains(k, "/curvedbool:x#0/") && strings.Contains(k, "drillwall") && strings.Contains(k, "slab:face") {
+		// A face-pair name carries the separator between the two parent faces' keys; the bore's rim joins
+		// its cylinder WALL to a slab cap (slab:face). The wall's own key is whichever path built it —
+		// the drill recognizer mints brep:drillwall, the general pipeline inherits the tool cylinder's
+		// face key — and the property under test is the SHAPE of the rim's name, not that token: a
+		// build-order-independent name derived from the two generating faces. Asserting the recognizer's
+		// token instead would fail the moment stage 4 of ADR-0061 routes this cut through the general
+		// pipeline, on a body whose rims are named exactly as well.
+		if strings.Contains(k, "/curvedbool:x#0/") && strings.Contains(k, "slab:face") && !strings.HasPrefix(k, "\x02slab:") {
 			pairNamed++
 		}
 	}
