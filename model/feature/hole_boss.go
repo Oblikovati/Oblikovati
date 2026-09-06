@@ -6,7 +6,6 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
@@ -246,7 +245,7 @@ func (h *HoleFeature) drill(body *topo.Body, bore holeBore, into math.UnitVector
 	case CounterboreHole, SpotFaceHole:
 		return h.cutCounterbore(body, center, into, r, depth, entry, rec)
 	case CountersinkHole:
-		return h.cutCountersink(body, center, into, r, depth)
+		return h.cutCountersink(body, center, into, r, depth, entry, rec)
 	default:
 		return h.cutDrilled(body, center, into, r, depth, entry, rec)
 	}
@@ -260,17 +259,18 @@ func (h *HoleFeature) cutDrilled(body *topo.Body, center math.Point3, into math.
 		return h.cutCylinder(body, center, into, r, depth, entry, true, rec)
 	}
 	if angle := callOrZero(h.def.PointAngle); angle > 0 {
-		if res, err := brep.CutBlindConicalHole(body, center, into.AsVector(), r, depth, angle/2); err == nil {
-			return res, nil
+		tool, err := revolvedTool(center, into, drillPointMeridian(r, depth, r/stdmath.Tan(angle/2), entry), featOr(h.featName, "hole"))
+		if err != nil {
+			return nil, err
 		}
+		return ops.BooleanWithDiagnostics(ops.Cut, body, tool, rec)
 	}
 	return h.cutCylinder(body, center, into, r, depth, entry, false, rec)
 }
 
 // cutCountersink drills a conical countersink (recess widening to the sink diameter at the
-// surface) above the bore. The exact builder produces a true cone wall; an unsupported part
-// shape returns the error (a faceted cone approximation would be worse than a clear failure).
-func (h *HoleFeature) cutCountersink(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth float64) (*topo.Body, error) {
+// surface) above the bore: one revolved tool — the cone over the bore — through the general boolean.
+func (h *HoleFeature) cutCountersink(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth, entry float64, rec *diag.Recorder) (*topo.Body, error) {
 	cr, angle := callOrZero(h.def.CounterDiameter)/2, callOrZero(h.def.CounterAngle)
 	if cr <= r {
 		return nil, fmt.Errorf("countersink: sink Ø %g must exceed bore Ø %g", 2*cr, 2*r)
@@ -283,14 +283,18 @@ func (h *HoleFeature) cutCountersink(body *topo.Body, center math.Point3, into m
 	if !h.def.ThroughAll && depth <= depthCS {
 		return nil, fmt.Errorf("countersink: total depth %g must exceed the sink depth %g", depth, depthCS)
 	}
-	return brep.CutCountersinkHole(body, center, into.AsVector(), r, depth-depthCS, cr, half, h.def.ThroughAll)
+	if h.def.ThroughAll {
+		depth = throughDepth(body, center, into)
+	}
+	tool, err := revolvedTool(center, into, countersinkMeridian(r, cr, depthCS, depth, entry), featOr(h.featName, "hole"))
+	if err != nil {
+		return nil, err
+	}
+	return ops.BooleanWithDiagnostics(ops.Cut, body, tool, rec)
 }
 
-// cutCounterbore drills a counterbore: a shallow recess stepping down to the bore. The exact
-// path (brep.CutCounterboreHole) builds the stepped result in one shot — two cylinder walls and
-// an annular shoulder — from the planar slab; it does NOT chain two curved cuts (the second
-// would feed a curved body to the planar-only boolean). The faceted fallback cuts the recess
-// then the bore as sequential planar prisms (each stays planar, so it chains fine).
+// cutCounterbore drills a counterbore: a shallow recess stepping down to the bore, as one revolved
+// tool — two cylinder walls and the annular shoulder between them — through the general boolean.
 func (h *HoleFeature) cutCounterbore(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth, entry float64, rec *diag.Recorder) (*topo.Body, error) {
 	cr, cd := callOrZero(h.def.CounterDiameter)/2, callOrZero(h.def.CounterDepth)
 	if cr <= r {
@@ -299,25 +303,14 @@ func (h *HoleFeature) cutCounterbore(body *topo.Body, center math.Point3, into m
 	if cd <= 0 || (!h.def.ThroughAll && depth <= cd) {
 		return nil, fmt.Errorf("counterbore: recess depth %g must be > 0 and less than total depth %g", cd, depth)
 	}
-	if res, err := brep.CutCounterboreHole(body, center, into.AsVector(), r, depth-cd, cr, cd, h.def.ThroughAll); err == nil {
-		return res, nil
+	if h.def.ThroughAll {
+		depth = throughDepth(body, center, into)
 	}
-	return h.facetedCounterbore(body, center, into, r, depth, cr, cd, entry, rec)
-}
-
-// facetedCounterbore is the fallback for shapes the exact builder rejects: cut the recess prism,
-// then the bore prism from the shoulder (both planar cuts, so they chain through the boolean).
-func (h *HoleFeature) facetedCounterbore(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth, cr, cd, entry float64, rec *diag.Recorder) (*topo.Body, error) {
-	stepped, err := ops.BooleanWithDiagnostics(ops.Cut, body, drillToolFrom(center, into, cr, cd, entry, featOr(h.featName, "hole")), rec)
+	tool, err := revolvedTool(center, into, counterboreMeridian(r, cr, cd, depth, entry), featOr(h.featName, "hole"))
 	if err != nil {
 		return nil, err
 	}
-	shoulder := center.TranslateBy(into.AsVector().Scale(math.Scalar(cd)))
-	boreLen := depth - cd
-	if h.def.ThroughAll {
-		boreLen = throughDepth(stepped, shoulder, into)
-	}
-	return ops.BooleanWithDiagnostics(ops.Cut, stepped, drillTool(shoulder, into, r, boreLen, featOr(h.featName, "hole")), rec)
+	return ops.BooleanWithDiagnostics(ops.Cut, body, tool, rec)
 }
 
 // cutCylinder cuts a single cylindrical hole: the analytic cylinder tool, named for THIS feature, taken
