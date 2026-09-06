@@ -175,16 +175,9 @@ func (c *ruledFaceUV) orientLoops(loops []emittedLoop, _ bool) ([]curvedLoop, []
 	return faceLoops, nil, false
 }
 
-// finalizeLoops drops every DEGENERATE edge. A zero-length straight edge bounds nothing whatever put it
-// there: left in, it has a single use and the body reads as open. A cone's apex is the case this was
-// written for — the parameter-space boundary that closes the rectangle at a point — and the gate said
-// "only at an apex", which names that case rather than the property. A crossing that wraps a rod's
-// azimuth leaves the same thing at a seam, and the rod's far rim then came back split in two arcs
-// against the cap's whole circle, with five open edges (ADR-0061 stage 4). It is the same thing
-// sphereFaceUV does at a pole, and OCCT's degenerate edges do in a face's wire (uvSide).
-func (c *ruledFaceUV) finalizeLoops(loops []curvedLoop) []curvedLoop {
-	return dropDegenerateEdges(loops, c.res)
-}
+// finalizeLoops has nothing of its own to do: the degenerate edges a cone's apex leaves are dropped for
+// every chart at the one place the faces are built (trimByImprint, curved_uv_side.go) (uvSide).
+func (c *ruledFaceUV) finalizeLoops(loops []curvedLoop) []curvedLoop { return loops }
 
 // frameContains reports whether a seam-relative (u,v) point lies inside the face's frame: an upward
 // v-ray crosses the sampled boundary an odd number of times.

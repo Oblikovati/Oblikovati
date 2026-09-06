@@ -907,3 +907,23 @@ shared RIM must traverse the same edges, exactly as the two sides of a shared cr
 emission splits its rim at the chart's seam, and the cap does not. The other end of the same rod welds
 its rim whole, so the split is not a property of the configuration but of where the seam lands. That is
 the next thing to reduce.
+
+### One drop, one place (2026-09-06)
+
+The degenerate-edge drop had grown three copies — `sphereFaceUV.finalizeLoops` was one, `ruledFaceUV`'s
+was another (gated on an apex), and `ruledUV` had none. It is one rule about the FACES, not about any
+chart, so it now runs once where the faces are built: after `finalizeLoops`, in `trimByImprint` and in
+the wrapping emission. Three call sites become one, and every chart gets it — including the planar ones,
+which never had it. `TestApexChartDropsTheDegenerateApexEdge` now exercises the shared rule instead of a
+copy that no longer exists.
+
+`rejoinAcrossDrop` goes with it: dropping the edge is not enough when the vertex it stood on had already
+split a rim into two arcs, because two arcs are not one circle and the cap on the other side traverses
+it whole. Only a pair the DROP made adjacent is merged, so a rim genuinely divided by an imprint keeps
+its vertex.
+
+**The crossing-cylinder JOIN is still open and the cause is not here.** Its five unpaired edges are the
+rod's far rim, whole on the cap and split in two on the wall, plus two zero-length segments that survive
+this drop — so they are not produced through `trimByImprint` at all. Which builder emits them is the
+next thing to find; the other end of the same rod welds its rim whole, so it is not a property of the
+configuration.

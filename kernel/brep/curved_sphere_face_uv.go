@@ -231,9 +231,7 @@ func (c *sphereFaceUV) orientLoops(loops []emittedLoop, _ bool) ([]curvedLoop, [
 // zero-length edge with a single use, and the body reads as open. This is the counterpart of OCCT's
 // degenerate edges, which exist in the face's wire and are skipped by everything that builds geometry
 // from it (uvSide).
-func (c *sphereFaceUV) finalizeLoops(loops []curvedLoop) []curvedLoop {
-	return dropDegenerateEdges(loops, c.res)
-}
+func (c *sphereFaceUV) finalizeLoops(loops []curvedLoop) []curvedLoop { return loops }
 
 // dropDegenerateEdges removes the zero-length straight edges a chart's POLE or APEX segment leaves
 // behind: a boundary in parameter space that is one point in space. Shared by every chart whose
@@ -242,17 +240,52 @@ func dropDegenerateEdges(loops []curvedLoop, res geom.Resolution) []curvedLoop {
 	out := make([]curvedLoop, 0, len(loops))
 	for _, l := range loops {
 		edges := make([]loopEdge, 0, len(l.edges))
+		dropped := false
 		for _, e := range l.edges {
 			if float64(e.start().DistanceTo(e.end())) <= res.Weld() && geom.IsStraightCurve(e.curve) {
+				dropped = true
 				continue
 			}
 			edges = append(edges, e)
 		}
-		if len(edges) > 0 {
-			out = append(out, curvedLoop{edges: edges})
+		if len(edges) == 0 {
+			continue
 		}
+		if dropped {
+			edges = rejoinAcrossDrop(edges)
+		}
+		out = append(out, curvedLoop{edges: edges})
 	}
 	return out
+}
+
+// rejoinAcrossDrop merges the two neighbours a dropped degenerate edge left behind, when they are
+// contiguous stretches of ONE curve.
+//
+// Dropping the edge is not enough by itself: the vertex it stood on had already split a rim into two
+// arcs, and two arcs are not one circle. The cap on the other side of that rim traverses it whole, so
+// the two faces never pair and the body reads as open — five unpaired edges on a rod passing through a
+// cylinder (ADR-0061 stage 4). Only a pair the DROP made adjacent is merged, so a rim genuinely divided
+// by an imprint keeps its vertex.
+func rejoinAcrossDrop(edges []loopEdge) []loopEdge {
+	out := make([]loopEdge, 0, len(edges))
+	for _, e := range edges {
+		if n := len(out); n > 0 && continuesCurve(out[n-1], e) {
+			out[n-1].t1, out[n-1].v1 = e.t1, e.v1
+			continue
+		}
+		out = append(out, e)
+	}
+	if n := len(out); n > 1 && continuesCurve(out[n-1], out[0]) {
+		out[0].t0, out[0].v0 = out[n-1].t0, out[n-1].v0
+		out = out[:n-1]
+	}
+	return out
+}
+
+// continuesCurve reports that b carries on where a stopped, along the same curve.
+func continuesCurve(a, b loopEdge) bool {
+	return a.curve == b.curve && a.t1 == b.t0
 }
 
 // wrappingSolidFaces emits a kept region that WRAPS the longitude. A cap is exactly that: bounded above

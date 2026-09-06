@@ -452,7 +452,7 @@ func (c *loopFrame) wrappingComponents(side uvSide, kept []Face2D, segs []uvSeg,
 			lid = append(lid, reverseEdgeChain(e.section)...)
 		}
 		faces = append(faces, curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage,
-			loops: side.finalizeLoops(faceLoops),
+			loops: dropDegenerateEdges(side.finalizeLoops(faceLoops), geom.ResolutionForBox(faceLoopBox(f))),
 			chart: chartContours(chartOfKept(comp), side.seamOrigin())})
 	}
 	return faces, lid, len(faces) > 0

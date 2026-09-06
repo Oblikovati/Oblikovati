@@ -113,9 +113,11 @@ func TestApexChartDropsTheDegenerateApexEdge(t *testing.T) {
 		{curve: geom.NewLineSegment(apex, rim), t0: 0, t1: 1},
 		{curve: geom.NewLineSegment(apex, apex), t0: 0, t1: 1}, // the apex
 	}}}
-	out := c.finalizeLoops(loops)
+	// The drop is one rule for every chart, applied where the faces are built (curved_uv_side.go), so
+	// this exercises it directly rather than through a chart that no longer carries a copy.
+	out := dropDegenerateEdges(c.finalizeLoops(loops), geom.ResolutionForBox(faceLoopBox(f)))
 	if len(out) != 1 || len(out[0].edges) != 1 {
-		t.Fatalf("finalizeLoops kept %v, want the ruling alone", out)
+		t.Fatalf("the degenerate drop kept %v, want the ruling alone", out)
 	}
 	if d := float64(out[0].edges[0].start().DistanceTo(out[0].edges[0].end())); d < 1 {
 		t.Errorf("the surviving edge is %g long: the ruling was dropped instead of the apex", d)

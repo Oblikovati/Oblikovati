@@ -104,7 +104,7 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 			return nil, nil, ErrUnsupportedHalfSpace
 		}
 		faceLoops, faceLid, outerless := c.orientLoops(emitted, c.wrapsAllU())
-		faceLoops = c.finalizeLoops(faceLoops)
+		faceLoops = dropDegenerateEdges(c.finalizeLoops(faceLoops), geom.ResolutionForBox(faceLoopBox(f)))
 		faces = append(faces, curvedFace{
 			surface: surface, reversed: f.reversed, lineage: f.lineage, loops: faceLoops, outerless: outerless,
 			chart: chartForGroup(charts, group),
