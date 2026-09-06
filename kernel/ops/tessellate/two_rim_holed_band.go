@@ -32,7 +32,12 @@ const seamSteps = 16
 // carrying interior lens holes, by bridging the rims at a synthetic seam and unrolling. ok=false unless
 // the surface is a developable side and EXACTLY ONE of the hole loops is itself a full-wrap rim (zero →
 // holedConicWallMesh already handles it; two or more → not a two-rim band this mesher understands).
-func twoRimHoledBandMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
+//
+// chart is the face's own parametric trim (ADR-0063), when it carries one: its seam was placed by the
+// boolean clear of every hole, exactly, and the bridge goes there rather than into the widest gap between
+// the holes' SAMPLED points — which two lens holes that nearly pinch leave inside a lens once their
+// corridor is narrower than a sample step (ADR-0061 stage 4). nil reads the gap from the samples.
+func twoRimHoledBandMesh(chart [][]math.Point2, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
 	if !isDevelopableSide(s) || IsPeriodic(s.UDomain()) == IsPeriodic(s.VDomain()) {
 		return nil, false
 	}
@@ -40,7 +45,7 @@ func twoRimHoledBandMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math
 	if len(rims) != 1 {
 		return nil, false
 	}
-	wrap, ok := bridgeRimsAtSeam(s, outer3D, rims[0], lenses)
+	wrap, ok := bridgeRimsAtSeam(s, outer3D, rims[0], lenses, seamAngleFor(chart, s, outer3D, lenses))
 	if !ok {
 		return nil, false
 	}
@@ -88,18 +93,24 @@ func holeWrapsPeriod(s geom.Surface, hole []math.Point3) bool {
 // neighbouring cap; its interior points are interpolated ALONG the surface (never a chord through the solid)
 // and are reused identically on both rectangle edges, so the two seam copies weld. ok=false if either rim is
 // too short to order.
-func bridgeRimsAtSeam(s geom.Surface, top3D, bot3D []math.Point3, lenses [][]math.Point3) ([]math.Point3, bool) {
+//
+// The seam is a POLYLINE, not a straight slit: it leaves the bottom anchor for the seam azimuth at the
+// lowest lens point, runs up the corridor at that azimuth past the highest, and only then bends to the
+// top anchor. A rim vertex is at most half a rim step from the seam azimuth, and where two lens holes
+// nearly pinch their corridor is narrower than that step, so a straight slit between the nearest rim
+// vertices crossed a lens however the azimuth was chosen; the bent seam crosses none, and its interior
+// points are the seam's own, so both copies still weld (ADR-0061 stage 4).
+func bridgeRimsAtSeam(s geom.Surface, top3D, bot3D []math.Point3, lenses [][]math.Point3, seamTh float64) ([]math.Point3, bool) {
 	top := orderedRing(s, top3D)
 	bot := orderedRing(s, bot3D)
 	if len(top) < 3 || len(bot) < 3 {
 		return nil, false
 	}
-	seamTh := clearSeamAngle(s, top, lenses) // seam in the widest gap clear of BOTH lenses and the notch
-	ti := nearestAngleIndex(s, top, seamTh)  // seam anchors on EXISTING rim vertices (no new rim point → no crack)
+	ti := nearestAngleIndex(s, top, seamTh) // seam anchors on EXISTING rim vertices (no new rim point → no crack)
 	bi := nearestAngleIndex(s, bot, seamTh)
 	topSeq := rotateRing(top, ti)
 	botSeq := rotateRing(bot, bi)
-	seam := seamOnSurface(s, top[ti], bot[bi], seamSteps) // interior seam points, on the surface, bottom→top
+	seam := bentSeamOnSurface(s, top[ti], bot[bi], seamTh, lenses) // interior seam points, on the surface, bottom→top
 
 	wrap := make([]math.Point3, 0, len(topSeq)+len(botSeq)+2*len(seam)+3)
 	wrap = append(wrap, botSeq...)          // bottom rim, ascending θ from the seam vertex
@@ -110,6 +121,57 @@ func bridgeRimsAtSeam(s geom.Surface, top3D, bot3D []math.Point3, lenses [][]mat
 	wrap = append(wrap, topSeq[0])          // top-left corner: the seam top vertex
 	wrap = appendReversed(wrap, seam)       // left seam edge, top → bottom (same points, reversed → welds)
 	return wrap, true
+}
+
+// seamAngleFor is the azimuth the rim-bridging seam runs at: the face's chart seam when it carries one —
+// placed by the boolean in the corridor between the holes, exactly — else the widest sampled gap.
+func seamAngleFor(chart [][]math.Point2, s geom.Surface, top []math.Point3, lenses [][]math.Point3) float64 {
+	if th, ok := chartSeamAngle(chart); ok {
+		return th
+	}
+	return clearSeamAngle(s, orderedRing(s, top), lenses)
+}
+
+// chartSeamAngle is where a face's chart cuts the azimuth: the least u of its outer contour, which on a
+// periodic surface is the seam the chart's producer placed (ADR-0063).
+func chartSeamAngle(chart [][]math.Point2) (float64, bool) {
+	if len(chart) == 0 || len(chart[0]) == 0 {
+		return 0, false
+	}
+	least := stdmath.Inf(1)
+	for _, p := range chart[0] {
+		least = stdmath.Min(least, float64(p.X))
+	}
+	return normTwoPi(least), true
+}
+
+// bentSeamOnSurface builds the bridging seam's interior points bottom→top: with no lens a straight slit
+// between the anchors, otherwise three legs on the surface that keep to the seam azimuth wherever a lens
+// could be — from the bottom anchor to the seam azimuth at the lenses' lowest v, up to their highest, and
+// on to the top anchor.
+func bentSeamOnSurface(s geom.Surface, top, bot math.Point3, seamTh float64, lenses [][]math.Point3) []math.Point3 {
+	if len(lenses) == 0 {
+		return seamOnSurface(s, top, bot)
+	}
+	vLo, vHi := lensVExtent(s, lenses)
+	kneeLo, kneeHi := s.PointAt(seamTh, vLo), s.PointAt(seamTh, vHi)
+	out := append([]math.Point3{}, seamOnSurface(s, kneeLo, bot)...)
+	out = append(out, kneeLo)
+	out = append(out, seamOnSurface(s, kneeHi, kneeLo)...)
+	out = append(out, kneeHi)
+	return append(out, seamOnSurface(s, top, kneeHi)...)
+}
+
+// lensVExtent is the axial range the lens holes span.
+func lensVExtent(s geom.Surface, lenses [][]math.Point3) (vLo, vHi float64) {
+	vLo, vHi = stdmath.Inf(1), stdmath.Inf(-1)
+	for _, h := range lenses {
+		for _, p := range h {
+			v := vParam(s, p)
+			vLo, vHi = stdmath.Min(vLo, v), stdmath.Max(vHi, v)
+		}
+	}
+	return vLo, vHi
 }
 
 // clearSeamAngle returns an angle in the WIDEST angular gap clear of both the lens holes AND the top rim's
@@ -184,13 +246,13 @@ func nearestAngleIndex(s geom.Surface, ring []math.Point3, theta float64) int {
 
 // seamOnSurface returns the interior points of the seam slit from the bottom rim vertex up to the top rim
 // vertex, interpolated in (θ,v) and evaluated ON the surface so the slit never chords through the solid.
-func seamOnSurface(s geom.Surface, top, bot math.Point3, steps int) []math.Point3 {
+func seamOnSurface(s geom.Surface, top, bot math.Point3) []math.Point3 {
 	ut, vt := s.ParamAt(top)
 	ub, vb := s.ParamAt(bot)
 	dth := foldAngle(ut - ub) // shortest angular way from bottom to top
-	out := make([]math.Point3, 0, steps-1)
-	for k := 1; k < steps; k++ {
-		f := float64(k) / float64(steps)
+	out := make([]math.Point3, 0, seamSteps-1)
+	for k := 1; k < seamSteps; k++ {
+		f := float64(k) / float64(seamSteps)
 		out = append(out, s.PointAt(ub+dth*f, vb+(vt-vb)*f))
 	}
 	return out

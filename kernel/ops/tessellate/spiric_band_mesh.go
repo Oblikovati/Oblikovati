@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -32,8 +33,9 @@ func spiricBandMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	if len(lo.idx) < 3 || len(hi.idx) < 3 {
 		return nil, false
 	}
+	span := spiricBandSpan(f.Chart(), plus.arc, minus.arc)
 	rows := []bandRow{lo}
-	rows = append(rows, spiricInteriorRows(m, t, plus.arc, minus.arc, finerRowVs(lo, hi), q)...)
+	rows = append(rows, spiricInteriorRows(m, t, plus.arc, minus.arc, finerRowVs(lo, hi), span, q)...)
 	rows = append(rows, hi)
 	for i := 0; i+1 < len(rows); i++ {
 		stitchBandRows(m, rows[i], rows[i+1])
@@ -94,17 +96,59 @@ func spiricRow(m *Mesh, t geom.Torus, pts []math.Point3) bandRow {
 	return addRow(m, t, pts, ang)
 }
 
+// spiricBandSpan is the u-offset the loft crosses from the +1 branch to the −1 branch: +2π for the band
+// through u = Phi+π (the long way round the tube, the kept side of a cut through the hole), 0 for the lens
+// between the branches through u = Phi (the kept side of an intersect). The FACE says which, through its
+// chart (ADR-0063): the row's midpoint the long way is either in the trim or it is not. A face without a
+// chart takes the long way, which is the side this loft always assumed — and assumed wrongly for the
+// lens, whose mesh then covered the band on the far side of the tube (ADR-0061 stage 4).
+func spiricBandSpan(chart [][]math.Point2, plus, minus geom.SpiricArc) float64 {
+	if len(chart) == 0 {
+		return 2 * stdmath.Pi
+	}
+	v := (plus.V0 + plus.V1) / 2
+	uLo, uHi := plus.UAt(v), minus.UAt(v)+2*stdmath.Pi
+	if chartHoldsUV(chart, (uLo+uHi)/2, v, 2*stdmath.Pi, 2*stdmath.Pi) {
+		return 2 * stdmath.Pi
+	}
+	return 0
+}
+
+// chartHoldsUV is the even-odd test of a parameter point against a chart's closed contours, the point
+// first carried onto each contour's own branch of the periodic axes.
+func chartHoldsUV(chart [][]math.Point2, u, v, uPeriod, vPeriod float64) bool {
+	inside := false
+	for _, contour := range chart {
+		if len(contour) < 3 {
+			continue
+		}
+		cu, cv := 0.0, 0.0
+		for _, p := range contour {
+			cu, cv = cu+float64(p.X), cv+float64(p.Y)
+		}
+		cu, cv = cu/float64(len(contour)), cv/float64(len(contour))
+		qu := u - uPeriod*stdmath.Round((u-cu)/uPeriod)
+		qv := v - vPeriod*stdmath.Round((v-cv)/vPeriod)
+		if probe.PointInLoop2D(math.P2(qu, qv), contour) {
+			inside = !inside
+		}
+	}
+	return inside
+}
+
 // spiricInteriorRows builds the interior loft rows: at each u-fraction between the branches, fill u from the
-// +1 branch to the −1 branch (the long way, +2π, through u = Phi+π) at the given tube stations vs.
-func spiricInteriorRows(m *Mesh, t geom.Torus, plus, minus geom.SpiricArc, vs []float64, q Quality) []bandRow {
-	nCols := spiricBandColumns(plus, minus, q)
+// +1 branch to the −1 branch offset by span (+2π: the long way, through u = Phi+π; 0: the lens between
+// them) at the given tube stations vs. The rows always run in the sense of increasing u from the first
+// row, so the zipper winds them alike whichever side is meshed.
+func spiricInteriorRows(m *Mesh, t geom.Torus, plus, minus geom.SpiricArc, vs []float64, span float64, q Quality) []bandRow {
+	nCols := spiricBandColumns(plus, minus, span, q)
 	rows := make([]bandRow, 0, nCols-1)
 	for k := 1; k < nCols; k++ {
 		frac := float64(k) / float64(nCols)
 		pts := make([]math.Point3, len(vs))
 		for i, v := range vs {
 			uLo := plus.UAt(v)
-			uHi := minus.UAt(v) + 2*stdmath.Pi
+			uHi := minus.UAt(v) + span
 			pts[i] = t.PointAt(uLo+frac*(uHi-uLo), v)
 		}
 		rows = append(rows, addRow(m, t, pts, vs))
@@ -114,12 +158,12 @@ func spiricInteriorRows(m *Mesh, t geom.Torus, plus, minus geom.SpiricArc, vs []
 
 // spiricBandColumns picks the loft column count from the band's widest u-span and the angular tolerance, so
 // even the wide ( |K|/M small ) band is faceted to the chord deflection.
-func spiricBandColumns(plus, minus geom.SpiricArc, q Quality) int {
+func spiricBandColumns(plus, minus geom.SpiricArc, span float64, q Quality) int {
 	var maxSpan float64
 	for k := range 8 {
 		v := 2 * stdmath.Pi * float64(k) / 8
-		if span := minus.UAt(v) + 2*stdmath.Pi - plus.UAt(v); span > maxSpan {
-			maxSpan = span
+		if s := stdmath.Abs(minus.UAt(v) + span - plus.UAt(v)); s > maxSpan {
+			maxSpan = s
 		}
 	}
 	if n := int(stdmath.Ceil(maxSpan / q.AngleTol())); n > 2 {

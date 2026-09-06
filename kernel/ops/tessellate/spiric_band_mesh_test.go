@@ -31,12 +31,12 @@ func TestSpiricBandColumns(t *testing.T) {
 	phi, m, k, c := geom.TorusSectionCoeffs(tor, pl)
 	plus := geom.SpiricArc{Torus: tor, Phi: phi, M: m, K: k, C: c, Branch: +1, V0: 0, V1: 2 * stdmath.Pi}
 	minus := geom.SpiricArc{Torus: tor, Phi: phi, M: m, K: k, C: c, Branch: -1, V0: 0, V1: 2 * stdmath.Pi}
-	if n := spiricBandColumns(plus, minus, DefaultQuality()); n < 3 {
+	if n := spiricBandColumns(plus, minus, 2*stdmath.Pi, DefaultQuality()); n < 3 {
 		t.Errorf("spiricBandColumns = %d, want ≥3 for a wide band at default angle tolerance", n)
 	}
 	// A coarse angle tolerance needs fewer columns than a fine one.
-	coarse := spiricBandColumns(plus, minus, Quality{AngleTolerance: 1})
-	fine := spiricBandColumns(plus, minus, Quality{AngleTolerance: 0.05})
+	coarse := spiricBandColumns(plus, minus, 2*stdmath.Pi, Quality{AngleTolerance: 1})
+	fine := spiricBandColumns(plus, minus, 2*stdmath.Pi, Quality{AngleTolerance: 0.05})
 	if coarse >= fine {
 		t.Errorf("spiricBandColumns coarse=%d should be < fine=%d", coarse, fine)
 	}

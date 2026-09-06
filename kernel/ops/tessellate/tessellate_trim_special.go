@@ -61,7 +61,7 @@ func specialCurvedMeshers(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 		// a torus cut through the hole: a tube-wrapping band between two spiric ovals (#1375)
 		func() (*Mesh, bool) { return spiricBandMesh(f, s, q) },
 		// a two-rim band (a notched rim + an intact rim) carrying lens holes: bridge the seam, unroll
-		func() (*Mesh, bool) { return twoRimHoledBandMesh(s, outer3D, holes3D, q) },
+		func() (*Mesh, bool) { return twoRimHoledBandMesh(f.Chart(), s, outer3D, holes3D, q) },
 		// an OPEN oblique-ended cylinder wedge band (pyramid slant fillet, A1/D4): one exact zipped
 		// strip between the two end chains — the generic CDT's flat end slivers double-cover the
 		// neighbour plane and collide on its ear diagonals (deg-4 mesh edges), see tessellate_wedge_band.go
