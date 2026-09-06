@@ -1307,3 +1307,25 @@ wrong place to begin with. `geom.SubCurve` now owns it: the stitch asks for the 
 whatever kind owns it, a circle's sub-range as an `Arc3d`, a ruled crossing's as a shorter ruled arc,
 anything else as a `TrimmedCurve3`. The ratchets fall with it — `geomSwitchDebt["kernel/brep"]` 82 → 74,
 `kernelNetDeltaPin["type-assertions"]` 754 → 746.
+
+### Contact on a DISC is decided by the disc, not by a one-point polygon (2026-09-06)
+
+A rod stopping PART WAY through a ball's shoulder — its end cap neither inside the ball nor outside it,
+the ball's own surface crossing it — left the ball UNCUT. The cap's section with the ball is a circle
+strictly inside the cap's disc, and the contact test asked `pointInFace2D`, which reads ONE point per
+boundary edge. A face bounded by one closed circle therefore has a "polygon" of a single point, which
+contains nothing at all, so the section read as no contact, no imprint was planned, and the sphere passed
+through whole.
+
+`sectionMeetsFace` and `sectionInsideFace`'s walk now go through `faceContainsExact`, which meets an arc
+boundary by exact ray intervals — the containment test that already existed for exactly this reason. The
+ball ∪ rod join comes out at the closed-form volume and area to six figures.
+
+The same one-point-ring shape had already cost `sectionFaceCuts` its crossings on a disc (see the rim
+crossing above). `planarRings` is right for an all-straight face and wrong for every other, and the
+remaining call sites are worth an audit of their own.
+
+**Stage 4 standing, all 26 recognizers off: 7 failing tests, down from 22.** The near-pinch family (4),
+the torus tangent about every axis, and two rows of the shoulder rod — its CUT still keeps the wrong side
+of the ball, and its sphere comes back as ONE face with two loops where the surviving surface is two
+disconnected caps.

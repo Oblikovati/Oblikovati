@@ -98,11 +98,16 @@ func sphereSectionEnters(sf, of curvedFace) bool {
 
 // sectionMeetsFace reports whether any point of a section lies inside a planar face's trim — contact,
 // whether or not the section stays inside.
+//
+// Containment goes through faceContainsExact, which meets an ARC boundary by exact ray intervals. The
+// polygon test reads one point per edge, and a face bounded by ONE closed circle — a rod's end cap, the
+// commonest disc in CAD — then has a "polygon" of a single point that contains nothing at all: a rod
+// stopping part way through a ball's shoulder had its cap section read as no contact, and the ball
+// passed through whole (ADR-0061 stage 4).
 func sectionMeetsFace(cv geom.Curve3, uf curvedFace) bool {
-	pl := facePlane(uf)
 	lo, hi := cv.Domain()
 	for k := 0; k <= closedSectionWalkSamples; k++ {
-		if pointInFace2D(to2D(pl, cv.PointAt(lo+(hi-lo)*float64(k)/closedSectionWalkSamples)), uf) {
+		if faceContainsExact(uf, cv.PointAt(lo+(hi-lo)*float64(k)/closedSectionWalkSamples)) {
 			return true
 		}
 	}
@@ -230,11 +235,9 @@ func sectionInsideFace(cv geom.Curve3, uf curvedFace) bool {
 	if island, exact := conicIslandInFace(cv, uf); exact {
 		return island
 	}
-	pl := facePlane(uf)
 	lo, hi := cv.Domain()
 	for k := 0; k <= closedSectionWalkSamples; k++ {
-		p := cv.PointAt(lo + (hi-lo)*float64(k)/closedSectionWalkSamples)
-		if !pointInFace2D(to2D(pl, p), uf) {
+		if !faceContainsExact(uf, cv.PointAt(lo+(hi-lo)*float64(k)/closedSectionWalkSamples)) {
 			return false // it leaves the trim: not an island this pairing carries
 		}
 	}
