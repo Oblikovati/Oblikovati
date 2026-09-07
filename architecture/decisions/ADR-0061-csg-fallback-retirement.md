@@ -1992,8 +1992,22 @@ the same operands produce the same invalid body on the parent commit, where the 
   face by twice (`appendDistinctSection`).
 
 - **An assembly revolve machining a participant** removes nothing. A rectangle revolved a full turn is
-  an annular ring — two coaxial cylinders and two annular caps — and cutting it from a box leaves open
-  edges. It is the ONE app row still failing, reproduced at the kernel level as a six-face box cut by a
-  four-face washer, and it is a corpus row for the general pipeline rather than an argument for keeping
-  an engine: an engine that turns open edges into a watertight faceted body has hidden the open edges,
-  which is how this survived this long.
+  an annular ring — two coaxial cylinders and two annular caps — and cutting it from a box leaves eight
+  open edges. It is the ONE app row still failing. Reproduce it at the kernel level:
+
+  ```go
+  box, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 4), "box")
+  ring, _ := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 1, 0),
+      []math.Point2{math.P2(0.5, 0.5), math.P2(1.5, 0.5), math.P2(1.5, 1.5), math.P2(0.5, 1.5)}, "ring")
+  brep.BooleanDiag(brep.Difference, box, ring, nil) // eight unpaired edges
+  ```
+
+  Measured, the ring's INNER wall (the reversed r = 0.5 cylinder) contributes NO fragment. It admits
+  both of its imprints — the two rulings where the box's x = 0 and z = 0 faces cut it, ninety degrees
+  apart — but the arrangement then forms only TWO cells and samples both in the 270° one, so the
+  quarter cell that is inside the box is never built. The outer wall, on the same two planes and not
+  reversed, splits correctly.
+
+  It is a corpus row for the general pipeline rather than an argument for keeping an engine: an engine
+  that turns eight open edges into a watertight faceted body has hidden the open edges, which is how
+  this survived this long.
