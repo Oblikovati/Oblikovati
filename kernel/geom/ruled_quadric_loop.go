@@ -53,8 +53,10 @@ func (l RuledQuadricLoop) half() float64 { return (l.U1 - l.U0) / 2 }
 // distance, so the two rates cancel.
 func (l RuledQuadricLoop) uAt(s float64) float64 { return l.mid() - l.half()*stdmath.Cos(s) }
 
-// upperHalf reports whether s is on the outbound (upper-root) half of the turn.
-func upperHalf(s float64) bool { return s <= stdmath.Pi }
+// upperHalf reports whether s is on the outbound (upper-root) half of the turn. It folds s onto one
+// turn first: a difference quotient steps a whisker past either end, and the branch a step past 2π
+// belongs to is the one a step past 0 belongs to, not the one before 2π.
+func upperHalf(s float64) bool { return wrapAngle(s) <= stdmath.Pi }
 
 // PointAt returns the point at t ∈ [0,1], evaluated on the base surface at (u, v) with v the root the
 // half-turn selects.

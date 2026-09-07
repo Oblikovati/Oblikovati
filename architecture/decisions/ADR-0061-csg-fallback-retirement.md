@@ -2149,12 +2149,83 @@ That fixture has now been three things in a row, which is the retirement's story
 mesh-arrangement rescue's case, then the corpus row for the named refusal once the engines went, and now
 an exact result.
 
-### What stage 5 does NOT close
+### What the first slice did NOT close
 
 The torus pairs — torus × cylinder, torus × cone, torus × sphere, torus × torus. A torus is quartic, so
-it has no implicit quadric to substitute a ruling into and neither form applies. They are still refused
-by name, and the marcher would trace them (measured: two closed loops each, deviation ~1e-3, no
-diagnostics) — but wiring it back into the boolean would re-open a door stages 6 and 7 closed. The
-boolean is exact-or-refuse today, and that is the better property; the torus family wants a closed form,
-not an approximation. Deleting the last recognizer left `coneCylinderImprint` — a one-cone-one-cylinder
+it has no implicit quadric to substitute a ruling into and neither ruled form applies. The marcher would
+trace them (measured: two closed loops each, deviation ~1e-3, no diagnostics) — but wiring it back into
+the boolean would re-open a door stages 6 and 7 closed. The boolean is exact-or-refuse today, and that
+is the better property; the torus family wants a closed form, not an approximation.
+
+It got one: the second slice below reduces the torus against an axis-invariant quadric to a single
+harmonic. What that leaves refused is the pairs where the quadric is NOT axis-invariant — a rod across
+the ring, a tilted drill, another torus. Deleting the last recognizer left `coneCylinderImprint` — a one-cone-one-cylinder
 type guard in front of the general trace — with no caller, and it went the same way as the 26.
+
+## Stage 5, second slice — the torus reduction (2026-09-07)
+
+The folded window closed the ruled × quadric family; what stayed refused was every pair with a torus in
+it. A torus is quartic, so it has no implicit quadric of its own and the ruled bucket cannot reach it —
+which is where the reasoning stopped last time, and it stopped one step early.
+
+**The substitution runs the other way.** A point on a torus is
+
+```text
+P(u, v) = C + ρ(v)·e(u) + r·sin v·â,   ρ(v) = R + r·cos v,   e(u) = cos u·ê₁ + sin u·ê₂
+```
+
+which is AFFINE in e(u) — exactly the shape a ruled surface has in its ruling parameter, with the tube
+angle as the station and the azimuth as the unknown. Substituting it into a quadric leaves
+
+```text
+A(v) + ρ(v)·(T(v)·e(u)) + (e·Me)·ρ(v)² = 0
+```
+
+and when the quadric's quadratic form M is INVARIANT about the torus axis, e·Me is a constant and the
+whole azimuth dependence collapses to one harmonic |T⊥|·cos(u − ψ). One harmonic has a closed form:
+u = ψ ± arccos(−A/(ρ|T⊥|)), two ordered azimuths wherever |A| ≤ ρ|T⊥|.
+
+The family that reaches is every quadric whose M commutes with rotation about the torus axis — a SPHERE
+anywhere, and a cylinder or cone whose axis is PARALLEL to the torus's. In CAD terms: a ball meeting a
+ring, and an axial hole or boss through one. The gate is a test on the TENSOR, not on the surface's
+type, so the same cone passes coaxial and fails tilted.
+
+The topology is then the question the ruled bucket already asks, and it is now asked once for both:
+`periodicRootWindows` finds the spans where the two roots exist and refines the ends to the folds. Three
+shapes come out of it, and the third is the one a type-driven dispatch would have had to special-case:
+
+- the quadric reaches the tube at EVERY station → two full-period `TorusQuadricArc` branches;
+- it reaches part of the turn → one folded `TorusQuadricLoop` per window;
+- it is COAXIAL, so the constraint has no azimuth dependence at all → whole CIRCLES at the stations that
+  satisfy it, which is a shaft standing in the ring's hole.
+
+Every point of every one of them sits within 1e-12 of both surfaces, the loops close exactly, and the
+tangents agree with a central difference to cos 1.000000 through the folds.
+
+### One trap worth recording
+
+`kernel/geom/periodic_root_windows.go` compiled, formatted and was silently EXCLUDED from every build:
+Go reads a `_windows.go` suffix as a GOOS constraint. The symptom is "undefined" errors for functions
+that plainly exist in the same package. The file is `periodic_root_spans.go`.
+
+The other was the azimuth's branch cut. An azimuth read from an arctangent carries an arbitrary whole
+turn, so a difference quotient across the cut reported a 2π jump as an infinite derivative — tangents of
+1e7 on a curve whose real speed is 5. Differences of two such readings are only meaningful modulo a
+turn (`shortestTurnDelta`).
+
+### What it unlocked, and the gap it exposed
+
+A ball meeting a ring booleans exactly in all three operations. The three results are checked against
+EACH OTHER by Requicha's identity — V(∪) + V(∩) = V(ring) + V(ball) and V(−) + V(∩) = V(ring) — which
+three bodies built by three separate trims of the same section have no reason to satisfy unless the
+section is right; they agree to a part in a million, and the ring's own integral matches 2π²Rr². A
+coaxial shaft bored through a ring is exact too.
+
+**An AXIAL DRILL through a ring is not, and the reason is downstream.** The section is exact — the two
+seams come back as closed loops, each wrapping the drill's azimuth once, both inside its band — but the
+ruled chart's trim keeps only HALF the bore wall. It splits each seam at the two azimuths where the seam
+reaches its extreme height (ρ = R, where the tube is topmost) and emits one contractible patch bounded
+by two rulings, instead of the two-rim band. The result is two shells with an open boundary, which the
+boolean's own acceptance gate refuses — so nothing wrong ships, and the refusal is named. The fix
+belongs to the wall trim, not to the section. `TestAxialDrillThroughARingIsRefusedNotWrong` holds the
+gap so it stays named, and will flip from a refusal to a result when that lands.

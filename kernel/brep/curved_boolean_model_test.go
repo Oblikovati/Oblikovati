@@ -191,13 +191,20 @@ func TestCurvedImprintRuledPairIsExactSection(t *testing.T) {
 }
 
 // TestCurvedImprintTorusPairDefers: a torus is neither a straight-ruled parametrisation nor an implicit
-// quadric, so no closed form applies and curvedImprint must report handled=false (the caller routes the
-// pair to the SSI tracer), NOT an empty "they don't cross" result.
+// quadric, so the ruled closed form cannot reach it. Its OWN reduction can, but only for a quadric whose
+// quadratic form is invariant about the torus axis (ADR-0061 stage 5) — so an AXIAL drill is handled
+// exactly, which is what this test's original fixture became, and a rod driven ACROSS the ring still
+// defers: curvedImprint must report handled=false there (the caller routes the pair to the SSI tracer),
+// NOT an empty "they don't cross" result.
 func TestCurvedImprintTorusPairDefers(t *testing.T) {
 	t.Parallel()
-	a, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
-	b, _ := geom.NewCylinder(math.P3(4, 0, 0), math.V3(0, 0, 1), 0.5)
-	if _, ok := curvedImprint(curvedFace{surface: a}, curvedFace{surface: b}, geom.ResolutionForSize(1)); ok {
-		t.Error("torus∩cylinder should defer (handled=false) to the tracer, not be handled analytically")
+	ring, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
+	rod, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 0.5)
+	if _, ok := curvedImprint(curvedFace{surface: ring}, curvedFace{surface: rod}, geom.ResolutionForSize(1)); ok {
+		t.Error("torus∩skew rod should defer (handled=false) to the tracer, not be handled analytically")
+	}
+	drill, _ := geom.NewCylinder(math.P3(4, 0, 0), math.V3(0, 0, 1), 0.5)
+	if _, ok := curvedImprint(curvedFace{surface: ring}, curvedFace{surface: drill}, geom.ResolutionForSize(1)); !ok {
+		t.Error("torus∩axial drill is axis-invariant and must be handled by the closed form, not deferred")
 	}
 }

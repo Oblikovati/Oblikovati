@@ -160,6 +160,18 @@ func wrapAngle(t float64) float64 {
 	return t
 }
 
+// shortestTurnDelta returns b − a folded onto (−π, π]: the signed angle from a to b the short way
+// round. An azimuth read from an arctangent carries an arbitrary whole turn — the branch cut moves as
+// the vector it measures rotates — so a difference of two such readings is only meaningful modulo a
+// turn, and a difference quotient that ignores that reports a 2π jump as an infinite derivative.
+func shortestTurnDelta(a, b float64) float64 {
+	d := wrapAngle(b - a)
+	if d > stdmath.Pi {
+		d -= 2 * stdmath.Pi
+	}
+	return d
+}
+
 // sortedDedupedAngles returns the parameters in ascending order with coincident ones collapsed: two
 // roots meeting is a TANGENCY, one contact rather than two crossings, and a caller walking the list
 // as interval boundaries must not see it as an interval of zero width.

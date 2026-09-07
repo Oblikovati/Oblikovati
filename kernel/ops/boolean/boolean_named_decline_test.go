@@ -31,18 +31,20 @@ func sphereOnCylinderWall(t *testing.T) (*topo.Body, *topo.Body) {
 	return a, b
 }
 
-// torusMeetingSphere is a pair NO closed form covers: a torus is quartic, so it has no implicit quadric
-// to substitute a ruling into and neither the wrap form nor the folded window applies. It is the corpus
-// row for the named refusal — the exit that must stay loud.
-func torusMeetingSphere(t *testing.T) (*topo.Body, *topo.Body) {
+// skewRodThroughARing is a pair NO closed form covers. A torus is quartic, so it is no implicit quadric
+// and the ruled substitution cannot reach it; and the torus's own reduction needs the other surface's
+// quadratic form to be invariant about the RING's axis, which a rod driven across the ring's plane is
+// not — its azimuth dependence is a second harmonic whose roots are a quartic rather than an arccos. It
+// is the corpus row for the named refusal, the exit that must stay loud.
+func skewRodThroughARing(t *testing.T) (*topo.Body, *topo.Body) {
 	t.Helper()
-	a, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "t")
+	a, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
-		t.Fatalf("torus: %v", err)
+		t.Fatalf("ring: %v", err)
 	}
-	b, err := brep.SolidSphere(math.P3(5, 0, 0), 2, "s")
+	b, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1, 9)
 	if err != nil {
-		t.Fatalf("sphere: %v", err)
+		t.Fatalf("rod: %v", err)
 	}
 	return a, b
 }
@@ -53,7 +55,7 @@ func torusMeetingSphere(t *testing.T) (*topo.Body, *topo.Body) {
 // engines gone (stage 7) it is also the operation's error rather than a stand-in body.
 func TestABooleanWithNoExactCurvedPathRefusesByName(t *testing.T) {
 	t.Parallel()
-	a, b := torusMeetingSphere(t)
+	a, b := skewRodThroughARing(t)
 	rec := &diag.Recorder{}
 	body, err := BooleanWithDiagnostics(Join, a, b, rec)
 	if !errors.Is(err, ErrUnmodelledBoolean) {

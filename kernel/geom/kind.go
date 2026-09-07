@@ -118,6 +118,7 @@ const (
 	CurveSpiric
 	CurveTorusCyl
 	CurveRuledQuadric
+	CurveTorusQuadric
 	// curveKindCount is the sentinel one past the last real kind.
 	curveKindCount
 )
@@ -146,6 +147,7 @@ var curveKindNames = [...]string{
 	CurveSpiric:        "SpiricArc",
 	CurveTorusCyl:      "TorusCylinderArc",
 	CurveRuledQuadric:  "RuledQuadricArc",
+	CurveTorusQuadric:  "TorusQuadricArc",
 }
 
 // CurveKinds returns every CurveKind in declaration order (see SurfaceKinds).
@@ -196,4 +198,6 @@ var (
 	_ KindedCurve = TorusCylinderArc{}
 	_ KindedCurve = RuledQuadricArc{}
 	_ KindedCurve = RuledQuadricLoop{}
+	_ KindedCurve = TorusQuadricArc{}
+	_ KindedCurve = TorusQuadricLoop{}
 )

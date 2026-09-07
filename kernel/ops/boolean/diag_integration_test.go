@@ -28,22 +28,24 @@ func TestBooleanRefusesAnUnmodelledConfigurationByName(t *testing.T) {
 		t.Skip("corpus tier (~3s): `make test-corpus`")
 	}
 	t.Parallel()
-	// A ball joined to a TORUS: their crossing is a quartic space curve on both surfaces, which no
-	// closed form in the intersector claims, so this is a configuration that genuinely has no exact
-	// path. It replaces the sphere PAIR this test used to decline on, which now lands analytically —
-	// the conversion the assertion was written to make (ADR-0061); TestSpherePairVolumesAreExact is
-	// its positive form.
-	tor, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2, "t")
+	// A rod driven ACROSS a ring. This fixture has moved twice, each time because the pipeline grew
+	// past it: it was a sphere PAIR, which now lands analytically, then a ball joined to a torus, which
+	// the torus reduction now takes (ADR-0061 stage 5). What is left with genuinely no closed form is a
+	// pair the torus reduction cannot reach either: the rod's quadratic form is not invariant about the
+	// RING's axis, so the azimuth dependence is a second harmonic whose roots are a quartic. The
+	// positive forms of the two retired fixtures are TestSpherePairVolumesAreExact and
+	// TestRingAndBallBooleansAgreeWithRequicha.
+	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
-		t.Fatalf("torus: %v", err)
+		t.Fatalf("ring: %v", err)
 	}
-	ball, err := brep.SolidSphere(math.P3(5, 0, 0), 3, "ball")
+	rod, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1, 9)
 	if err != nil {
-		t.Fatalf("ball: %v", err)
+		t.Fatalf("rod: %v", err)
 	}
 
 	var rec diag.Recorder
-	res, err := ops.BooleanWithDiagnostics(ops.Join, tor, ball, &rec)
+	res, err := ops.BooleanWithDiagnostics(ops.Cut, ring, rod, &rec)
 	if !errors.Is(err, ops.ErrUnmodelledBoolean) {
 		t.Fatalf("a configuration no exact path models must be refused by name; got err=%v", err)
 	}

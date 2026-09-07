@@ -54,6 +54,15 @@ func IntersectSurfacesAnalytic(a, b Surface, res Resolution) (curves []Curve3, h
 	if curves, handled, ok := sphereSphereSection(a, b, res); ok {
 		return curves, handled // two spheres: the circle of their radical plane, exactly
 	}
+	// A torus has no quadric form of its own, but the substitution runs the other way: its own chart is
+	// affine in the azimuth direction, so an axis-invariant quadric reduces to one harmonic there
+	// (ADR-0061 stage 5, torus_quadric_arc.go). Anything else with a torus in it still marches.
+	if curves, ok := torusAgainstQuadric(a, b, res); ok {
+		return curves, true
+	}
+	if curves, ok := torusAgainstQuadric(b, a, res); ok {
+		return curves, true
+	}
 	// No plane: the remaining bucket is PARAMETRIC × IMPLICIT — a straight-ruled surface substituted
 	// into the other's quadric, whose section is the root of one quadratic in the ruling parameter
 	// (intersect_ruled_quadric.go). Everything else — anything with a torus, a B-spline or an offset,
@@ -274,4 +283,16 @@ func unitVec3(v math.Vector3) math.Vector3 {
 		return v.Scale(math.Scalar(1 / l))
 	}
 	return v
+}
+
+// torusAgainstQuadric routes a (torus, quadric) pair to the torus closed form, in that role order.
+// ok=false when the first surface is not a torus, the second has no quadric form, or the quadric's
+// quadratic part is not invariant about the torus axis.
+func torusAgainstQuadric(a, b Surface, res Resolution) ([]Curve3, bool) {
+	t, isTorus := a.(Torus)
+	implicit, isQuadric := b.(ImplicitQuadric)
+	if !isTorus || !isQuadric {
+		return nil, false
+	}
+	return TorusQuadricSection(t, implicit.QuadricForm(), res)
 }

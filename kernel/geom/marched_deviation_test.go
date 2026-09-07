@@ -111,23 +111,28 @@ func TestMarchedDeviationOfDegenerateInputIsZero(t *testing.T) {
 	}
 }
 
-// TestSurfaceIntersectMarchedPairReportsAchievedTolerance: a torus crossed by a cylinder has NO closed
-// form in either bucket (a torus is quartic, so it is neither a straight-ruled parametrisation nor an
-// implicit quadric), so SurfaceIntersect marches it — and every curve it returns must carry the achieved
-// deviation of that march, not a silent claim of exactness. The magnitude is checked against the sagitta
-// of the marched loops' own chord spacing, so the test measures the pipeline rather than freezing a
-// constant (#3489).
+// TestSurfaceIntersectMarchedPairReportsAchievedTolerance: a torus crossed by a SKEW rod has no closed
+// form in any bucket. A torus is quartic, so it is no implicit quadric and the ruled bucket cannot reach
+// it; and the torus bucket's own reduction needs the other surface's quadratic form to be invariant
+// about the TORUS axis, which a rod across the ring's plane is not (ADR-0061 stage 5). So SurfaceIntersect
+// marches it — and every curve it returns must carry the achieved deviation of that march, not a silent
+// claim of exactness. The magnitude is checked against the sagitta of the marched loops' own chord
+// spacing, so the test measures the pipeline rather than freezing a constant (#3489).
+//
+// The fixture used to be an AXIAL drill through the same ring. That pair is axis-invariant and now comes
+// back exact, which is why the row moved to the rod rather than being deleted: what it pins is that a
+// pair with no closed form still reports how exact it is.
 func TestSurfaceIntersectMarchedPairReportsAchievedTolerance(t *testing.T) {
 	t.Parallel()
 	tor, err := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
 	if err != nil {
 		t.Fatalf("torus: %v", err)
 	}
-	drill, _ := NewCylinder(math.P3(4, 0, 0), math.V3(0, 0, 1), 0.5)
+	drill, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 0.5)
 	box := math.NewBox(math.P3(-6, -6, -6), math.P3(6, 6, 6))
 	curves, handled := SurfaceIntersect(tor, drill, box, ResolutionForBox(box))
 	if !handled || len(curves) == 0 {
-		t.Fatalf("torus ∩ cylinder: handled=%v, %d curves; want a marched result", handled, len(curves))
+		t.Fatalf("torus ∩ skew rod: handled=%v, %d curves; want a marched result", handled, len(curves))
 	}
 	for i, c := range curves {
 		pl, ok := c.(Polyline)
