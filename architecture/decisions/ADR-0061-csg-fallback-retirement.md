@@ -1687,3 +1687,40 @@ reconstruction engine and convert at stage 7; one is the near-pinch continuity r
 which belongs to the recognizer being deleted; one is the drilled plate below a millimetre, which is
 the resolution floor named above. The general pipeline's remaining scope is the tangent contact — an
 off-axis rod on a ball (a quartic seam), and a bore tangent to the face it cuts.
+
+### Two spheres, and the certificate's own false positive (2026-09-07, later)
+
+**The simplest curved crossing there is was not in the intersector.** Two spheres meet in a circle —
+subtracting their implicit forms cancels the quadratic terms and leaves the radical plane — and neither
+bucket of `IntersectSurfacesAnalytic` reached it: a sphere has no straight ruling to substitute, so the
+parametric×implicit form declined both role assignments and the pair went to the marcher. The closed
+form is `sphereSphereSection`, gated like the others on conditioning: apart or nested is DECIDED with no
+curves, a tangent touch and a concentric pair decline, because a point and a coincident surface are not
+crossings a section curve can carry.
+
+The mixed pipeline had no pairing for two closed surfaces either, so a ball meeting a ball declined on
+box overlap alone. `pairClosedSurfaceImprints` takes the scope its sibling already takes — both faces
+boundary-less, every crossing closed, written to both sides — and `closedSurfaceUncovered` now reads a
+decided crossing as covered, which is the same correction the wall pairing needed. All three sphere-pair
+booleans come out as two spherical caps with exact volumes: the lens (π/12d)(2r−d)²(d²+4dr), and the
+union and difference that follow from it.
+
+**The winding certificate was condemning a correct body.** The band a rod keeps where it crosses a
+fatter cylinder is bounded by two loops that each wrap the rod's azimuth, and the chart carrying it is
+that band cut open at a seam. The certificate read a rim's direction against the nearest CONTOUR
+SEGMENT, the rim's middle sample sits exactly on the seam, and the seam runs across the rim — so the
+crossing-cylinder INTERSECT, whose volume matches OCC to six figures, was rejected and demoted to the
+faceted engines. A chart contour carries the artificial boundary along with the real one; a point list
+cannot tell them apart.
+
+The face's own trim can. One rule replaces three: at each station of a boundary ring, step a short way
+to the side the winding claims the material is on, and to the opposite side, and ask the trim about
+both. A station where they land on different sides has resolved the boundary and votes; one where they
+agree measured nothing and is passed over. That is the contract stated directly — no shoelace, no
+nesting among the other loops, no special case for a loop that wraps a period — and the drill and
+two-cap recognizers still ship the inverted faces the certificate was built to catch.
+
+**A converted test, by its own rule.** `TestBooleanRecordsCSGFallbackDiagnostic` declined on the sphere
+pair, and said in its own comment that it would convert when that configuration landed. It now asserts
+the wiring on a ball joined to a TORUS, whose crossing is a genuine quartic, and
+`TestSpherePairVolumesAreExact` is the sphere pair's positive form.
