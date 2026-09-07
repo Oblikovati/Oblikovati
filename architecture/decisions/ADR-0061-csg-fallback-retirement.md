@@ -1973,15 +1973,27 @@ this ADR's Consequences section named before stage 6 was written. Neither is a r
 this stage changed: reverting each of the stage's four geometry fixes in turn leaves both failing, and
 the same operands produce the same invalid body on the parent commit, where the rescue replaced it.
 
-- **A drilled hole whose depth exactly equals the plate's thickness.** The app's default hole on a
-  4 × 4 × 2 block is Ø1 × 2 from the top face, so the tool's cylinder ends at z = 2 flush with the top
-  AND its drill point's shoulder sits exactly at z = 0, the plate's bottom plane. The block's bottom
-  face is DROPPED — six faces come back where seven belong, with the four bottom edges and the bore's
-  bottom rim unpaired. The same cut with a plain `SolidCylinder` tool builds correctly, so what the
-  configuration turns on is the cone/cylinder junction landing exactly on the receiving plane.
-- **An assembly revolve machining a participant** removes nothing (the participant keeps its full
-  volume) instead of the machined result.
+- **A drilled hole whose depth exactly equals the plate's thickness — FIXED.** The app's default hole
+  on a 4 × 4 × 2 block is Ø1 × 2 from the top face, so the tool's cylinder ends at z = 2 flush with the
+  top AND its drill point's shoulder sits exactly at z = 0, the plate's bottom plane. The section there
+  is the cylinder wall's rim AND the cone's base, so the rule "a section on the wall's own edge is a
+  contact" skipped it from both faces. The underside then took the whole-face classification, its
+  interior point — the bore's centre — read as removed, and the face was DROPPED: six faces where seven
+  belong, with the four bottom edges and the bore's rim unpaired.
 
-Both are corpus rows for the general pipeline, not arguments for keeping an engine: an engine that
-turns a dropped face into a watertight faceted body has hidden the dropped face, which is how both
-survived this long.
+  What tells a contact from a crossing when the structural rule cannot is MEMBERSHIP, and asking it is
+  the fix. `sectionEnclosesOtherMaterial` steps to each side of the receiving plane at the section's
+  centre and asks the other solid's own oracle: material on BOTH sides is a crossing, so the face is
+  split; material on one is a contact, so nothing is. Never the plane itself — a through hole whose
+  tool ends exactly at the face has its centre ON the tool's boundary there, and that must read as a
+  contact. Two more rules fell out of the same fixture: a wall is never split by its OWN rim even when
+  the face it imprints is (each side takes only what is an imprint for it), and two walls of one solid
+  that meet AT the receiving plane section it in the SAME curve, which the arrangement cannot split a
+  face by twice (`appendDistinctSection`).
+
+- **An assembly revolve machining a participant** removes nothing. A rectangle revolved a full turn is
+  an annular ring — two coaxial cylinders and two annular caps — and cutting it from a box leaves open
+  edges. It is the ONE app row still failing, reproduced at the kernel level as a six-face box cut by a
+  four-face washer, and it is a corpus row for the general pipeline rather than an argument for keeping
+  an engine: an engine that turns open edges into a watertight faceted body has hidden the open edges,
+  which is how this survived this long.

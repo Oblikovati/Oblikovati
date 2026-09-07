@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -17,6 +18,12 @@ import (
 
 // uvWallFixture builds the partitions of a cylinder (radius 5, z∈[0,4]) and a plate (16×16, z∈[1,3]).
 func uvWallFixture(t *testing.T) (cyl, plate facePartition) {
+	c, p := uvWallBodies(t)
+	return partitionFaces(c), partitionFaces(p)
+}
+
+// uvWallBodies is uvWallFixture's geometry: a Ø10 × 4 cylinder through a plate spanning z 1..3.
+func uvWallBodies(t *testing.T) (cyl, plate *topo.Body) {
 	t.Helper()
 	c, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 4)
 	if err != nil {
@@ -26,7 +33,14 @@ func uvWallFixture(t *testing.T) (cyl, plate facePartition) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return partitionFaces(c), partitionFaces(p)
+	return c, p
+}
+
+// cylOracle is the membership oracle of the fixture's cylinder, which the imprint pairing asks whether
+// the other solid CROSSES a receiving face or rests on it.
+func cylOracle(t *testing.T) insideOracle {
+	c, _ := uvWallBodies(t)
+	return newInsideOracle(c, partitionFaces(c).allFaces())
 }
 
 // planeFaceAtZ returns the plate's horizontal face at height z, from the polygonal bucket.
@@ -197,7 +211,7 @@ func TestUvWallSharedImprintYieldsOneCircle(t *testing.T) {
 	t.Parallel()
 	cyl, plate := uvWallFixture(t)
 	promoteConicReceivers(&plate, &cyl)
-	curves, ok := uvWallSharedImprint(plate.uv[0], cyl.wall[0])
+	curves, _, ok := uvWallSharedImprint(plate.uv[0], cyl.wall[0], cylOracle(t))
 	if !ok || len(curves) != 1 {
 		t.Fatalf("uvWallSharedImprint = %d curves, ok=%v; want 1 circle", len(curves), ok)
 	}
@@ -214,7 +228,7 @@ func TestUvWallSharedImprintYieldsOneCircle(t *testing.T) {
 func TestUvWallSharedImprintOwnCapIsNoImprint(t *testing.T) {
 	t.Parallel()
 	cyl, _ := uvWallFixture(t)
-	curves, ok := uvWallSharedImprint(cyl.uv[0], cyl.wall[0])
+	curves, _, ok := uvWallSharedImprint(cyl.uv[0], cyl.wall[0], cylOracle(t))
 	if !ok || len(curves) != 0 {
 		t.Errorf("own cap × wall = %d curves ok=%v, want no imprint and no decline", len(curves), ok)
 	}
@@ -248,7 +262,7 @@ func TestCollectWallIslandsDropsClearSections(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	out, ok := collectWallIslands([]geom.Curve3{far}, planeFaceAtZ(t, plate, 3), cyl.wall[0], rs)
+	out, _, ok := collectWallIslands([]geom.Curve3{far}, planeFaceAtZ(t, plate, 3), cyl.wall[0], rs, cylOracle(t))
 	if !ok || len(out) != 0 {
 		t.Errorf("collectWallIslands = (%d curves, ok=%v), want (0, true)", len(out), ok)
 	}
@@ -262,7 +276,7 @@ func TestPairUVWallImprintsWritesBothSides(t *testing.T) {
 	promoteConicReceivers(&plate, &cyl)
 	uvImp := make([][]geom.Curve3, len(plate.uv))
 	wallImp := make([][]geom.Curve3, len(cyl.wall))
-	if !pairUVWallImprints(&plate, &cyl, uvImp, wallImp) {
+	if !pairUVWallImprints(&plate, &cyl, uvImp, wallImp, cylOracle(t)) {
 		t.Fatal("pairUVWallImprints declined the cylinder-through-plate contact")
 	}
 	if len(uvImp[0]) != 1 || len(uvImp[1]) != 1 || len(wallImp[0]) != 2 {

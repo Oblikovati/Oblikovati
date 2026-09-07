@@ -126,19 +126,24 @@ func wallSectionConicsTouch(f, wf curvedFace) bool {
 // pairUVWallImprints imprints every (exact-frame face of p, ruled wall of other) pair, appending the SAME
 // section curve to the uv face's list and to the wall's list — the shared-coordinate invariant that makes
 // the two sides' fragments weld. ok=false declines the boolean with a named reason (see uvWallSharedImprint).
-func pairUVWallImprints(p, other *facePartition, uvImp, wallImp [][]geom.Curve3) bool {
+func pairUVWallImprints(p, other *facePartition, uvImp, wallImp [][]geom.Curve3, otherIn insideOracle) bool {
 	for i, uf := range p.uv {
 		box := inflateBox(p.uvBox[i])
 		for k, wf := range other.wall {
 			if !box.Intersects(inflateBox(other.wallBox[k])) {
 				continue
 			}
-			curves, ok := uvWallSharedImprint(uf, wf)
+			onFace, onWall, ok := uvWallSharedImprint(uf, wf, otherIn)
 			if !ok {
 				return false
 			}
-			uvImp[i] = append(uvImp[i], curves...)
-			wallImp[k] = append(wallImp[k], curves...)
+			res := geom.ResolutionForBox(box)
+			for _, cv := range onFace {
+				uvImp[i] = appendDistinctSection(uvImp[i], cv, res)
+			}
+			for _, cv := range onWall {
+				wallImp[k] = appendDistinctSection(wallImp[k], cv, res)
+			}
 		}
 	}
 	return true
@@ -149,16 +154,16 @@ func pairUVWallImprints(p, other *facePartition, uvImp, wallImp [][]geom.Curve3)
 // unhandled surface pair, a section that clips either trim, or a boundary edge whose crossings cannot
 // be decided in closed form. A conic-framed receiver is no longer among them: conicEdgeCrossings
 // meets an arc boundary with the conic×conic substitution (#3503).
-func uvWallSharedImprint(uf, wf curvedFace) ([]geom.Curve3, bool) {
-	rs, ok := ruledFaceOf(wf)
-	if !ok {
-		return nil, false
+func uvWallSharedImprint(uf, wf curvedFace, otherIn insideOracle) (onFace, onWall []geom.Curve3, ok bool) {
+	rs, ruled := ruledFaceOf(wf)
+	if !ruled {
+		return nil, nil, false
 	}
 	curves, handled := geom.IntersectSurfacesAnalytic(facePlane(uf), rs.surface, geom.ResolutionForSize(rs.size()))
 	if !handled {
-		return nil, false
+		return nil, nil, false
 	}
-	return collectWallIslands(curves, uf, wf, rs)
+	return collectWallIslands(curves, uf, wf, rs, otherIn)
 }
 
 // collectWallIslands keeps the section curves that are imprints (closed islands in both trims) and drops
@@ -167,11 +172,22 @@ func uvWallSharedImprint(uf, wf curvedFace) ([]geom.Curve3, bool) {
 // contact, not an imprint, and contributes nothing (ADR-0060); so is one running along an edge of the
 // RECEIVING face, which is the same rule seen from the other side. The section a coaxial cylinder's
 // wall cuts from the plane of the cap closing the other IS that cap's own rim (sectionOnFaceBoundary).
-func collectWallIslands(curves []geom.Curve3, uf, wf curvedFace, rs ruledSide) ([]geom.Curve3, bool) {
-	var out []geom.Curve3
+func collectWallIslands(curves []geom.Curve3, uf, wf curvedFace, rs ruledSide, otherIn insideOracle) (onFace, onWall []geom.Curve3, ok bool) {
 	res := geom.ResolutionForBox(faceLoopBox(uf))
 	for _, cv := range curves {
-		if sectionOnWallEdge(cv, wf) || sectionOnFaceBoundary(cv, uf, res) {
+		if rimOfWall, rimOfFace := sectionOnWallEdge(cv, wf), sectionOnFaceBoundary(cv, uf, res); rimOfWall || rimOfFace {
+			if !sectionEnclosesOtherMaterial(cv, uf, otherIn) {
+				continue // a genuine boundary contact: neither side is split by it
+			}
+			// The other solid passes THROUGH the receiving face here, so that face IS split by the
+			// section — but a wall is never split by its OWN rim, and neither is a face by its own
+			// boundary, so each side takes only what is an imprint for it.
+			if !rimOfFace {
+				onFace = append(onFace, cv)
+			}
+			if !rimOfWall {
+				onWall = append(onWall, cv)
+			}
 			continue
 		}
 		pieces, ok := wallSectionIsland(cv, uf, wf, rs)
@@ -184,11 +200,75 @@ func collectWallIslands(curves []geom.Curve3, uf, wf curvedFace, rs ruledSide) (
 			if !conicEntersTrimInBand(cv, uf, rs.axis, rs.band) {
 				continue
 			}
-			return nil, false
+			return nil, nil, false
 		}
-		out = append(out, pieces...)
+		onFace, onWall = append(onFace, pieces...), append(onWall, pieces...)
 	}
-	return out, true
+	return onFace, onWall, true
+}
+
+// appendDistinctSection appends a section curve unless one already in the list traces the same stretch
+// of the same geometry.
+//
+// Two walls of ONE solid that meet exactly AT the receiving plane section it in the SAME curve: a
+// drill whose point's shoulder lands on the plate's underside cuts that plane in one circle, and the
+// cylinder and the cone each report it. The arrangement cannot split a face by one curve twice — it
+// bounds zero-area cells between the two copies and the trim declines (ADR-0061).
+func appendDistinctSection(list []geom.Curve3, cv geom.Curve3, res geom.Resolution) []geom.Curve3 {
+	for _, have := range list {
+		if sectionsRunTogether(have, cv, res) {
+			return list
+		}
+	}
+	return append(list, cv)
+}
+
+// sectionsRunTogether reports two section curves tracing the same stretch of geometry, each walked
+// against the other so a curve and a sub-run of it are not confused.
+func sectionsRunTogether(a, b geom.Curve3, res geom.Resolution) bool {
+	return curveWalksOn(a, b, res) && curveWalksOn(b, a, res)
+}
+
+// curveWalksOn reports every station of a lying on b's own span.
+func curveWalksOn(a, b geom.Curve3, res geom.Resolution) bool {
+	lo, hi := a.Domain()
+	blo, bhi := b.Domain()
+	for i := 0; i <= sectionContactSamples; i++ {
+		p := a.PointAt(lo + (hi-lo)*float64(i)/sectionContactSamples)
+		if _, ok := curveParamWithin(b, blo, bhi, p, res); !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// sectionEnclosesOtherMaterial reports the other solid having material INSIDE the section, in the
+// receiving face's OWN plane: the other solid passes THROUGH this face rather than resting on it, so
+// the section is a genuine imprint even where it also runs along an edge of the wall that carries it.
+//
+// It is what tells a contact from a crossing when the two look identical to the structural rule. A
+// drilled hole whose depth equals the plate's thickness puts the drill point's shoulder exactly on the
+// plate's underside: the section there is the cylinder wall's rim AND the cone's base, so "a section on
+// the wall's own edge is a contact" skipped it from both faces. The underside then took the whole-face
+// classification, its interior point — the bore's centre — read as removed, and the face was DROPPED
+// (ADR-0061).
+func sectionEnclosesOtherMaterial(cv geom.Curve3, uf curvedFace, otherIn insideOracle) bool {
+	pl := facePlane(uf)
+	pc, ok := toPlaneConic(cv, pl)
+	if !ok {
+		return false
+	}
+	n, err := math.UnitVector3FromVector(pl.Normal())
+	if err != nil {
+		return false
+	}
+	// BOTH sides, never the plane itself: a point on the receiving plane inside the section is on the
+	// other solid's boundary in the flush case — a through hole whose tool ends exactly at the face —
+	// where the answer must be "contact". Stepping to each side asks the question the plane cannot.
+	step := math.Scalar(offPlaneProbeSteps * geom.ResolutionForBox(faceLoopBox(uf)).Plane())
+	c := to3D(pl, pc.center)
+	return otherIn.inside(c.TranslateBy(n.AsVector().Scale(step))) &&
+		otherIn.inside(c.TranslateBy(n.AsVector().Scale(-step)))
 }
 
 // wallSectionIsland decides one plane∩wall section curve, returning the imprint pieces it contributes.
