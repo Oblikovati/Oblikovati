@@ -112,6 +112,15 @@ func (c *ruledFaceUV) admits(imprint []geom.Curve3) []geom.Curve3 {
 
 // coincidesWithFrame reports an imprint section lying in the plane of one of the face's own edges.
 func (c *ruledFaceUV) coincidesWithFrame(imp geom.Curve3) bool {
+	// Running along a frame edge is the same contact said without reference to a plane, and it is the
+	// half that matters when the imprint is not planar in form: a chamfer wedge's cone crosses the
+	// shaft's wall exactly at the wedge's own lower rim, and the crossing comes back as a ruled arc,
+	// which has no section plane for the test below to compare. The arrangement then carried the rim
+	// TWICE, a rounding apart, and zig-zagged between them — a ninety-fragment boundary that welded to
+	// nothing (ADR-0061 stage 4).
+	if sectionOnFaceBoundary(imp, c.face, c.res) {
+		return true
+	}
 	for _, l := range c.face.loops {
 		for _, e := range l.edges {
 			if _, coincident := geom.SectionCrossingCandidates(c.face.surface, e.curve, imp, c.res); coincident {
