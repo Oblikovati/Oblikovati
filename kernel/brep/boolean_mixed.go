@@ -291,7 +291,8 @@ func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3) (
 	okSW := pairClosedSurfaceWallImprints(pa, pb, sphA, wallB)
 	okWS := pairClosedSurfaceWallImprints(pb, pa, sphB, wallA)
 	okWW := pairWallWallImprints(pa, pb, wallA, wallB)
-	return uvA, uvB, wallA, wallB, sphA, sphB, okXA && okXB && okXX && okSW && okWS && okWW
+	okSS := pairClosedSurfaceImprints(pa, pb, sphA, sphB)
+	return uvA, uvB, wallA, wallB, sphA, sphB, okXA && okXB && okXX && okSW && okWS && okWW && okSS
 }
 
 // mixedWallFaces trims both operands' walls into the stitch's pass list.

@@ -54,16 +54,17 @@ func closedSurfaceImprints(p, other *facePartition, otherUV [][]geom.Curve3) ([]
 // section does enter should have been promoted to the exact-frame bucket; one that was not (it carries
 // detached holes, or its frame declined) is a genuine gap and declines.
 //
-// A wall, another sphere or a pass face still declines on box overlap: curved-versus-curved contact
-// stays with the bespoke recognisers until the crossings are charted (ADR-0061 stage 4).
+// Another closed surface is carried when its crossing with this one is DECIDED (closedSurfacePairCarried);
+// a pass face still declines on box overlap, its surface being one no chart frames.
 func closedSurfaceUncovered(sf curvedFace, box math.Box, other *facePartition) bool {
 	for i := range other.planar {
 		if box.Intersects(paddedFaceBox(other.planar[i])) && sphereSectionEnters(sf, other.planarFull[i]) {
 			return true
 		}
 	}
-	for _, b := range append(append([]math.Box(nil), other.sphereBox...), other.torusBox...) {
-		if box.Intersects(inflateBox(b)) {
+	faces, boxes := other.closedSurfaces()
+	for i, b := range boxes {
+		if box.Intersects(inflateBox(b)) && !closedSurfacePairCarried(sf, faces[i]) {
 			return true
 		}
 	}
@@ -247,3 +248,57 @@ func sectionInsideFace(cv geom.Curve3, uf curvedFace) bool {
 // closedSectionWalkSamples walks a non-conic section finely enough to catch an excursion out of any trim
 // a modelled tool face has.
 const closedSectionWalkSamples = 96
+
+// pairClosedSurfaceImprints imprints every (closed surface of p, closed surface of other) pair whose
+// boxes overlap, writing the shared crossing into both lists. ok=false declines the boolean.
+//
+// Two spheres are the simplest curved-versus-curved crossing there is — they meet in the circle of
+// their radical plane — and the mixed pipeline had no pairing for them at all, so a ball meeting a ball
+// declined on box overlap alone (ADR-0061 stage 4).
+func pairClosedSurfaceImprints(p, other *facePartition, impP, impOther [][]geom.Curve3) bool {
+	faces, boxes := p.closedSurfaces()
+	otherFaces, otherBoxes := other.closedSurfaces()
+	for i, sf := range faces {
+		box := inflateBox(boxes[i])
+		for k, of := range otherFaces {
+			if !box.Intersects(inflateBox(otherBoxes[k])) {
+				continue
+			}
+			curves, ok := closedSurfacePairImprint(sf, of)
+			if !ok {
+				return false
+			}
+			impP[i] = append(impP[i], curves...)
+			impOther[k] = append(impOther[k], curves...)
+		}
+	}
+	return true
+}
+
+// closedSurfacePairCarried reports whether the crossing of two closed-surface faces is decided — the
+// same reading the wall pairing takes, where an empty decided answer is a proof of clearness and not an
+// inability.
+func closedSurfacePairCarried(sf, of curvedFace) bool {
+	_, ok := closedSurfacePairImprint(sf, of)
+	return ok
+}
+
+// closedSurfacePairImprint is the exact shared imprint of two closed-surface faces, under the scope the
+// closed-surface × wall pairing already takes: both faces BOUNDARY-LESS, so every crossing is inside
+// both trims by construction, and every crossing CLOSED, so each side splits by even-odd containment
+// alone. Two faces on ONE surface overlap in a region rather than a curve and carry no imprint; their
+// shared material is settled by the ON/ON table (boolean_mixed_coincident.go).
+func closedSurfacePairImprint(sf, of curvedFace) ([]geom.Curve3, bool) {
+	if len(sf.loops) > 0 || len(of.loops) > 0 {
+		return nil, false
+	}
+	res := closedSurfaceRes(sf)
+	if geom.SurfacesCoincide(sf.surface, of.surface, res) {
+		return nil, true
+	}
+	curves, handled := geom.IntersectSurfacesAnalytic(sf.surface, of.surface, res)
+	if !handled || !crossingsClose(curves, res) {
+		return nil, false
+	}
+	return curves, true
+}

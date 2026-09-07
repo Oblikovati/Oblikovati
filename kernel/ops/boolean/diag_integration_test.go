@@ -27,17 +27,22 @@ func TestBooleanRecordsCSGFallbackDiagnostic(t *testing.T) {
 		t.Skip("corpus tier (~3s): `make test-corpus`")
 	}
 	t.Parallel()
-	a, err := brep.SolidSphere(math.P3(0, 0, 0), 2, "a")
+	// A ball joined to a TORUS: their crossing is a quartic space curve on both surfaces, which no
+	// closed form in the intersector claims, so this is a configuration that genuinely has no exact
+	// path. It replaces the sphere PAIR this test used to decline on, which now lands analytically —
+	// the conversion the assertion was written to make (ADR-0061); TestSpherePairVolumesAreExact is
+	// its positive form.
+	tor, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2, "t")
 	if err != nil {
-		t.Fatalf("sphere a: %v", err)
+		t.Fatalf("torus: %v", err)
 	}
-	b, err := brep.SolidSphere(math.P3(2, 0, 0), 2, "b") // overlaps a; sphere∩sphere has no exact handler
+	ball, err := brep.SolidSphere(math.P3(5, 0, 0), 3, "ball")
 	if err != nil {
-		t.Fatalf("sphere b: %v", err)
+		t.Fatalf("ball: %v", err)
 	}
 
 	var rec diag.Recorder
-	res, err := ops.BooleanWithDiagnostics(ops.Intersect, a, b, &rec)
+	res, err := ops.BooleanWithDiagnostics(ops.Join, tor, ball, &rec)
 	if err != nil {
 		t.Fatalf("ops.BooleanWithDiagnostics: %v", err)
 	}
@@ -69,8 +74,8 @@ func TestBooleanExactPathRecordsNoDiagnostic(t *testing.T) {
 	}
 }
 
-// TestBooleanNilRecorderStillWorks confirms the legacy ops.Boolean entry point (which passes a nil recorder)
-// is unaffected: the same fallback runs, just unobserved.
+// TestBooleanNilRecorderStillWorks confirms the legacy ops.Boolean entry point (which passes a nil
+// recorder) is unaffected: the same path runs, just unobserved.
 func TestBooleanNilRecorderStillWorks(t *testing.T) {
 	if testing.Short() {
 		t.Skip("corpus tier (~3s): `make test-corpus`")
