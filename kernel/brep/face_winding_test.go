@@ -97,6 +97,32 @@ func TestDrilledSlabFacesWindWithTheirNormals(t *testing.T) {
 	assertEveryFaceWinds(t, res)
 }
 
+// TestCrossingCylinderBandIsCertified is the regression for the certificate's own false positive: the
+// band a rod keeps where it crosses a fatter cylinder is bounded by two loops that each wrap the rod's
+// azimuth, and the chart that carries it is the band cut open at a seam. Reading a rim's direction
+// against the nearest CONTOUR SEGMENT put the verdict on that artificial seam — the rim's middle
+// sample sits exactly on it — and condemned a body whose volume matches OCC to six figures. The trim
+// answers instead: step off the boundary to the side the winding claims (ADR-0061 stage 4).
+func TestCrossingCylinderBandIsCertified(t *testing.T) {
+	t.Parallel()
+	fat, err := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	thin, err := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := Boolean(Intersection, fat, thin)
+	if err != nil {
+		t.Fatalf("Boolean(Intersection) on crossing cylinders: %v", err)
+	}
+	if n := len(res.Faces()); n != 3 {
+		t.Fatalf("crossing intersect has %d faces, want 3 (rod band + two lens caps)", n)
+	}
+	assertEveryFaceWinds(t, res)
+}
+
 // assertEveryFaceWinds fails on any face the certificate can read and finds inverted, and on any
 // face it cannot read at all — a corpus body's faces must be certifiable.
 func assertEveryFaceWinds(t *testing.T, b *topo.Body) {
