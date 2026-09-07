@@ -1724,3 +1724,27 @@ two-cap recognizers still ship the inverted faces the certificate was built to c
 pair, and said in its own comment that it would convert when that configuration landed. It now asserts
 the wiring on a ball joined to a TORUS, whose crossing is a genuine quartic, and
 `TestSpherePairVolumesAreExact` is the sphere pair's positive form.
+
+### The resolution floor, measured (2026-09-07, later)
+
+The drilled plate below a millimetre is the last corpus row the general pipeline does not build, and it
+is not a boolean defect. `geom.minModelSize` floors every `Resolution` at one database centimetre, so a
+part smaller than that is measured with a centimetre's tolerances. One circular derivation fell out of
+looking at it and is fixed here — `SectionCrossingCandidates` judged "are these two section planes one
+plane" at a tolerance derived from the gap between those very planes, which the floor then turned into
+an absolute 1e-4 — but the floor itself is what stops the plate.
+
+Lowering it to a genuine degeneracy floor (ten nanometres) mends the plate at a millimetre and fails 22
+kernel tests, and they do not share one cause. Measured, they are:
+
+| shape | example |
+| --- | --- |
+| a test that PINS the floor's value for a degenerate operand | `ResolutionForBody(nil).Size()` |
+| an angular classification reading a floored length tolerance | the fillet's cone∧plane arm calls a perpendicular plane "oblique" |
+| the boolean's own gates on fixtures a few units across | the general crossing, the half-space cuts, the Steinmetz |
+
+Each is a site deriving its resolution from a LOCAL quantity — a radius, a height, two origins — rather
+than from the model's extent, which is ADR-0042's rule and its remaining debt. The floor was masking
+all of them at once. Fixing them is its own slice with its own corpus (a part swept across six decades
+of scale), and it is not ADR-0061's: the retirement needs it only for this one row, which the
+mesh-arrangement rescue serves, reported.
