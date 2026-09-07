@@ -30,19 +30,6 @@ func hasCurvedFace(b *topo.Body) bool {
 	return false
 }
 
-// curvedFaceCount counts a body's non-planar faces. A BARE analytic primitive (cylinder/cone/sphere/torus
-// solid) has exactly one — its single curved wall; a composite (a washer's two cylinders, a filleted edge)
-// has more, which the curved boolean does not cut as a primitive.
-func curvedFaceCount(b *topo.Body) int {
-	n := 0
-	for _, f := range b.Faces() {
-		if _, planar := f.Geometry().(geom.Plane); !planar {
-			n++
-		}
-	}
-	return n
-}
-
 // curvedBooleanWorthTrying reports whether the exact curved boolean is worth attempting on these
 // operands, so the result can keep its analytic surfaces instead of being faceted for the planar path.
 // It holds when the TOOL is a bare analytic primitive (a single curved face — an extruded
@@ -61,17 +48,13 @@ func curvedFaceCount(b *topo.Body) int {
 // washer is cylinder − cylinder, so BOTH operands are curved and it never took the curved path
 // (measured 9.3175 cm³ with 0 analytic walls, against 9.4245 and 2 walls now; analytic 9.4248).
 //
-// It is still a face COUNT, and the ground rules ask for a classification: the planar path cannot
-// consume a curved face at all, so "either operand carries one" is the honest gate. Measured on the
-// multipoint disk that widening removes twenty CodeBooleanAnalyticFaceted defects and takes the rebuild
-// from 226 s to 39 s. It does NOT land here, because it also drives a fine-pitch coil join into the
-// mesh reconstruction, which does not terminate on that body: the widening waits on the cost gate the
-// analytic paths need (ADR-0061 stages 2 and 4), and #2254 tracks it with the coil as its corpus.
-// A tool with MORE than one curved face is still not attempted: no path recognises such a tool, so it
-// keeps the faceted path.
+// The gate is now a CLASSIFICATION, not a face count: the planar path cannot consume a curved face at
+// all, so "either operand carries one" is the whole of it (#2254, ADR-0061). The count it replaces
+// admitted a single curved face and refused two, which faceted the washer (cylinder − cylinder) and
+// every wrapped emboss pad (two cylindrical caps) — both of which the mixed per-face boolean builds
+// exactly once stage 4's charts are in.
 func curvedBooleanWorthTrying(target, tool *topo.Body) bool {
-	tc, oc := curvedFaceCount(target), curvedFaceCount(tool)
-	return oc == 1 || (tc == 1 && oc == 0)
+	return hasCurvedFace(target) || hasCurvedFace(tool)
 }
 
 // planarized converts a body the exact boolean cannot consume into one it can: an extrude-circle

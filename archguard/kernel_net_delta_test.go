@@ -50,7 +50,7 @@ var kernelNetDeltaPin = map[string]int{
 	// 754 → 746 (2026-09-06, ADR-0061 stage 4): a FALL — restricting an edge's curve to its own
 	// sub-range moved out of the stitch and into geom.SubCurve, where the rules put a switch over
 	// curve kinds; the stitch now asks for the piece and gets back whatever kind owns it.
-	"type-assertions": 746,
+	"type-assertions": 745,
 	"recognizers":     37, // 26 curvedExactPaths + 11 specialCurvedMeshers
 	// 28 → 29 (2026-09-03, ADR-0061): CodeBooleanAnalyticInvalid. A RISE that is an improvement — the
 	// public curved-boolean entry had no Validate post-condition, so a recognizer returning a torn body

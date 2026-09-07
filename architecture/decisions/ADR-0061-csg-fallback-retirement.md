@@ -1838,3 +1838,42 @@ drilled plate below a millimetre builds through the general pipeline, and the la
 kernel rows that was not a fallback's own test is closed. `geom/resolution.go` owes the tolerance
 ratchet one literal instead of two — `epsRel` and `volCoef` are relative fractions and now say so,
 leaving `minModelSize` as the single absolute anchor the relative system stands on.
+
+### The feature layer's face-count gate becomes a classification (2026-09-08)
+
+The Decision section above recorded a widening that did NOT land: `curvedBooleanWorthTrying` admitted a
+tool with exactly ONE curved face and refused one with two, where the rule asks for a classification —
+the planar path cannot consume a curved face at all, so "either operand carries one" is the whole of
+it. It was held back because the widening drove a fine-pitch coil join into the mesh reconstruction,
+which did not terminate on that body.
+
+**That blocker is gone.** With stage 4's charts in, `TestCoilJoinFinePitchWatertight` passes through
+the widened gate at all four pitches, and the whole model suite is green and no slower for it:
+`model/feature` 911 s → 892 s, the OCC parity suite 509 s → 456 s. The gate is now the classification,
+and `curvedFaceCount` is deleted in favour of the `hasCurvedFace` predicate that was already there.
+
+**A correction to the record.** The stage-4 gate section above reports `./model/...` failing 0 tests
+with the recognizers and engines off. That was wrong when it was written: the wrapped emboss failed
+then too, and the run that produced the 0 did not include it. The honest model count at that moment was
+2, both rows the wrapped emboss, and this section is what takes it to 0.
+
+The count was the whole of the model corpus's honest failing count, and the row it cost is the wrapped
+emboss. Its pad is a watertight cage of TWO cylindrical caps and a ring of planar side walls, so
+`oc == 2` and the count refused it; `planarized` then turned the shaft's analytic cylinder into a
+24-gon prism and handed a 26-face polyhedron and a 36-face cage to the planar boolean, which declined,
+and the triangle-soup CSG built the body. No recognizer was ever involved — the row was the FEATURE
+layer's, and it was the one place a shipping feature still needed an engine stage 7 deletes.
+
+**The model corpus now needs no recognizer and no faceted engine, measured, with the resolution floor
+at a nanometre:**
+
+| corpus | failing tests, recognizers AND engines off |
+| --- | ---: |
+| `./model/...` — every feature, and the OCC parity suite | **0** |
+| `./kernel/...` | 9 |
+
+Of the nine kernel rows, eight are the fallbacks' own tests (seven) plus the near-pinch continuity
+SNAP premise, all of which convert at stage 7. The ninth is
+`TestTessellationWatertightAcrossScales` at the 10 µm and 100 µm plates: the boolean builds them, and
+the MESH is not watertight there. That is the tessellator's own scale debt — `mesh.Quality` carries an
+absolute `ChordTolerance` — and it is downstream of this ADR.

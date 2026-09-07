@@ -61,7 +61,7 @@ var geomSwitchDebt = map[string]int{
 	"model/assembly":               4,
 	"model/compdef":                1,
 	"model/drawing":                20,
-	"model/feature":                50,
+	"model/feature":                49,
 	"model/sketch":                 15,
 }
 
