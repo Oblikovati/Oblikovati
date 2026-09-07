@@ -51,6 +51,9 @@ func IntersectSurfacesAnalytic(a, b Surface, res Resolution) (curves []Curve3, h
 	if curves, ok := equalCylinderSection(a, b, res); ok {
 		return curves, true // two EQUAL cylinders whose axes meet: two planar ellipses, exactly
 	}
+	if curves, handled, ok := sphereSphereSection(a, b, res); ok {
+		return curves, handled // two spheres: the circle of their radical plane, exactly
+	}
 	// No plane: the remaining bucket is PARAMETRIC × IMPLICIT — a straight-ruled surface substituted
 	// into the other's quadric, whose section is the root of one quadratic in the ruling parameter
 	// (intersect_ruled_quadric.go). Everything else — anything with a torus, a B-spline or an offset,
