@@ -213,21 +213,50 @@ func clipSectionToFace(cv geom.Curve3, uf curvedFace) ([]geom.Curve3, bool) {
 	}
 	cuts := sectionFaceCuts(cv, pc, uf, pl)
 	if len(cuts) < 2 {
-		return nil, false // it does not pass through the face: nothing to share
+		// No crossing at all. That is DECIDED — there is no imprint — whenever the section never
+		// reaches the face's interior: it runs along the face's own boundary, or it lies outside the
+		// trim. Only a section that IS inside without crossing out is an inability (ADR-0061).
+		if sectionClearOfFaceInterior(cv, uf) {
+			return nil, true
+		}
+		return nil, false
 	}
-	var out []geom.Curve3
+	out, touches, ok := insideSectionRuns(cv, cuts, uf)
+	if !ok {
+		return nil, false
+	}
+	if len(out) == 0 && touches {
+		return nil, true // DECIDED: every run is on this face's boundary or outside it, so there is
+		// no imprint — an empty answer from a decided walk is a proof, not an inability.
+	}
+	return out, len(out) > 0
+}
+
+// insideSectionRuns bounds the runs of the section that lie inside the face's trim, and reports whether
+// any run instead ran along the face's OWN boundary.
+//
+// A run on the boundary is a contact, not an imprint: nothing splits a face by its own edge (ADR-0060).
+// sectionOnFaceBoundary states the same rule for a section that runs along an edge from end to end; a
+// closed conic that coincides with only PART of the boundary — a rim circle met by the major arc of a
+// D-profile prism seated on it — is that rule asked per run.
+func insideSectionRuns(cv geom.Curve3, cuts []float64, uf curvedFace) (out []geom.Curve3, touches, ok bool) {
+	res := geom.ResolutionForBox(faceLoopBox(uf))
 	for _, run := range sectionRuns(cv, cuts) {
 		mid := cv.PointAt(sectionParamAt(cv, run.lo+(run.hi-run.lo)/2))
+		if pointOnFaceBoundary(mid, uf, res) {
+			touches = true
+			continue
+		}
 		if !faceContainsExact(uf, mid) {
 			continue
 		}
 		arc, got := geom.ConicArcBetween(cv, cv.PointAt(run.lo), cv.PointAt(sectionParamAt(cv, run.hi)), mid)
 		if !got {
-			return nil, false
+			return nil, false, false
 		}
 		out = append(out, arc)
 	}
-	return out, len(out) > 0
+	return out, touches, true
 }
 
 // sectionRuns turns the crossing parameters into the runs of curve they bound.
@@ -371,4 +400,20 @@ const imprintIncidence = -1
 func sortedOpenCrossings(cs []openCrossing) []openCrossing {
 	sort.Slice(cs, func(i, j int) bool { return cs[i].tConic < cs[j].tConic })
 	return cs
+}
+
+// sectionClearOfFaceInterior reports the section never entering the face's interior: every station is
+// on the face's own boundary or outside its trim. It is the decided reading of "no crossing" — the
+// answer a coplanar neighbour seated ON this face's rim gives, where the two share an arc of boundary
+// and meet nowhere else (ADR-0060, ADR-0061).
+func sectionClearOfFaceInterior(cv geom.Curve3, uf curvedFace) bool {
+	res := geom.ResolutionForBox(faceLoopBox(uf))
+	lo, hi := cv.Domain()
+	for i := 0; i <= sectionContactSamples; i++ {
+		p := cv.PointAt(lo + (hi-lo)*float64(i)/sectionContactSamples)
+		if !pointOnFaceBoundary(p, uf, res) && faceContainsExact(uf, p) {
+			return false
+		}
+	}
+	return true
 }

@@ -44,13 +44,13 @@ var kernelNetDeltaPin = map[string]int{
 	// 232 → 231 (2026-09-06, ADR-0061 stage 4): a FALL — the ruled∩quadric gate's branch-separation
 	// margin (a twentieth of the largest gap) is gone; the gate reads the exact minimum of the gap
 	// against the stitch resolution instead, and the near-pinch crossings it refused are exact.
-	"tolerance-constants": 230,
+	"tolerance-constants": 226,
 	// 765 → 754 (2026-09-05, ADR-0061 stage 2): a FALL — the analytic half-space pipeline is deleted,
 	// and its per-primitive dispatch took eleven geometry-kind assertions with it.
 	// 754 → 746 (2026-09-06, ADR-0061 stage 4): a FALL — restricting an edge's curve to its own
 	// sub-range moved out of the stitch and into geom.SubCurve, where the rules put a switch over
 	// curve kinds; the stitch now asks for the piece and gets back whatever kind owns it.
-	"type-assertions": 745,
+	"type-assertions": 727,
 	"recognizers":     37, // 26 curvedExactPaths + 11 specialCurvedMeshers
 	// 28 → 29 (2026-09-03, ADR-0061): CodeBooleanAnalyticInvalid. A RISE that is an improvement — the
 	// public curved-boolean entry had no Validate post-condition, so a recognizer returning a torn body
@@ -64,7 +64,7 @@ var kernelNetDeltaPin = map[string]int{
 	// per-edge validity test admits and which shipped as a valid solid meshing as its own complement.
 	// A recognizer body that fails the winding certificate now demotes to the general pipeline and
 	// says so; a general-pipeline body that fails declines and says so.
-	"fallback-sites": 31,
+	"fallback-sites": 26,
 }
 
 func TestKernelNetDelta(t *testing.T) {

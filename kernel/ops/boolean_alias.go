@@ -5,6 +5,7 @@ package ops
 import (
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops/boolean"
+	"oblikovati.org/kernel/ops/meshbrep"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -57,21 +58,19 @@ func CurvedBooleanWithDiagnostics(op PartFeatureOperation, target, tool *topo.Bo
 // See [boolean.PointInsideBody].
 func PointInsideBody(b *topo.Body, p math.Point3) bool { return boolean.PointInsideBody(b, p) }
 
-// MeshToBRep converts a closed welded mesh into a faceted B-rep solid. See [boolean.MeshToBRep].
+// MeshToBRep converts a closed welded mesh into a faceted B-rep solid. See [meshbrep.MeshToBRep].
 func MeshToBRep(verts []math.Point3, facets [][]int, feat string) *topo.Body {
-	return boolean.MeshToBRep(verts, facets, feat)
+	return meshbrep.MeshToBRep(verts, facets, feat)
 }
-
-// ReconstructionCutoverEnabled reports whether the analytic reconstruction path is the default.
-// See [boolean.ReconstructionCutoverEnabled].
-func ReconstructionCutoverEnabled() bool { return boolean.ReconstructionCutoverEnabled() }
 
 // The defect codes the boolean raises, re-exported so consumers match on one name.
 const (
-	CodeBooleanCSGFallback             diag.Code = boolean.CodeBooleanCSGFallback
-	CodeBooleanAnalyticFaceted         diag.Code = boolean.CodeBooleanAnalyticFaceted
-	CodeBooleanAnalyticReconstruction  diag.Code = boolean.CodeBooleanAnalyticReconstruction
-	CodeBooleanAnalyticVolumeReject    diag.Code = boolean.CodeBooleanAnalyticVolumeReject
-	CodeBooleanAnalyticFaceReject      diag.Code = boolean.CodeBooleanAnalyticFaceReject
-	CodeBooleanMeshArrangementFallback diag.Code = boolean.CodeBooleanMeshArrangementFallback
+	CodeBooleanAnalyticFaceted      diag.Code = boolean.CodeBooleanAnalyticFaceted
+	CodeBooleanAnalyticVolumeReject diag.Code = boolean.CodeBooleanAnalyticVolumeReject
+	CodeBooleanAnalyticFaceReject   diag.Code = boolean.CodeBooleanAnalyticFaceReject
+	CodeBooleanNoExactCurvedPath    diag.Code = boolean.CodeBooleanNoExactCurvedPath
 )
+
+// ErrUnmodelledBoolean is the boolean's refusal: the operands meet in a configuration no exact path
+// models. See [boolean.ErrUnmodelledBoolean].
+var ErrUnmodelledBoolean = boolean.ErrUnmodelledBoolean

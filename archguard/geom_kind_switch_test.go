@@ -50,7 +50,7 @@ var geomSwitchDebt = map[string]int{
 	"kernel/geomapi":               9,
 	"kernel/ops":                   1,
 	"kernel/ops/blend":             400,
-	"kernel/ops/boolean":           22,
+	"kernel/ops/boolean":           4,
 	"kernel/ops/heal":              12,
 	"kernel/ops/internal/probe":    3,
 	"kernel/ops/surface":           21,

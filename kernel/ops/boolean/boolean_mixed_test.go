@@ -14,11 +14,11 @@ import (
 	"oblikovati.org/math"
 )
 
-// TestBooleanMixedPassThroughBeforeReconstruction: a bossed block minus a notch far from the boss
-// takes the EXACT per-face-dispatch boolean (ADR-0058) — the boss cylinder passes through analytically
-// and the mesh-arrangement reconstruction is never consulted (no CodeBooleanAnalyticReconstruction
-// note). Before the dispatch, this class fell to the reconstruction rescue.
-func TestBooleanMixedPassThroughBeforeReconstruction(t *testing.T) {
+// TestBooleanMixedPassesTheBossThrough: a bossed block minus a notch far from the boss takes the
+// EXACT per-face-dispatch boolean (ADR-0058) — the boss cylinder passes through analytically and
+// nothing degrades. Before the dispatch this class fell to the mesh-arrangement reconstruction; that
+// engine is gone (ADR-0061 stage 7), so the assertion is now that no degradation is recorded at all.
+func TestBooleanMixedPassesTheBossThrough(t *testing.T) {
 	t.Parallel()
 	block, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")
 	cyl, _ := brep.SolidCylinder(math.P3(5, 5, 10), math.V3(0, 0, 1), 2, 3)
@@ -33,8 +33,8 @@ func TestBooleanMixedPassThroughBeforeReconstruction(t *testing.T) {
 	if err != nil || res == nil {
 		t.Fatalf("mixed cut failed: %v", err)
 	}
-	if rec.Has(CodeBooleanAnalyticReconstruction) {
-		t.Error("mesh reconstruction fired; want the exact per-face-dispatch boolean")
+	if rec.Has(CodeBooleanNoExactCurvedPath) || rec.Has(CodeBooleanAnalyticFaceted) {
+		t.Errorf("the mixed cut degraded; want the exact per-face-dispatch boolean: %v", rec.Records())
 	}
 	cyls := 0
 	for _, f := range res.Faces() {

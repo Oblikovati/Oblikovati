@@ -47,7 +47,6 @@ var mapOrderDebt = map[string]int{
 	"brep/reconstruct_dissolve.go":               1,
 	"brep/unify_coplanar.go":                     2,
 	"mesh/cage.go":                               1,
-	"meshbool/merge.go":                          2,
 	"ops/blend/fillet_corner_classify.go":        2,
 	"ops/blend/fillet_corner_partial.go":         1,
 	"ops/blend/fillet_corner_setback.go":         1,

@@ -1904,3 +1904,84 @@ the band margin (scaling `facePairCullPad` down by four decades does not move it
 rather than fixed: `facePairCullPad` is still an absolute length at nine other sites — the AABB cull,
 `geom.SurfacesApart`, the interval inflation, the band-window test — and relativising them is one
 slice with a scale sweep as its corpus, not a change to make one row at a time.
+
+### Stages 6 and 7: the doors close and the room is deleted (2026-09-08)
+
+**The doors.** `booleanGeneralExact` no longer reaches a faceted engine at any exit. A pair no exact
+path models is refused by name — `ErrUnmodelledBoolean`, carrying the operation, both operands' face
+counts and the underlying cause — and a result that fails its own acceptance gate is refused the same
+way rather than replaced by a triangle-soup stand-in. `meshArrangementFallback` is gone from
+`booleanGeneral`, `reconstructedCurvedBoolean` from `curvedExactBoolean`, and `booleanCSG` with them.
+`faceted-entry-sites` reaches 0.
+
+**The room.** Deleted: `kernel/meshbool` entire, and `csg*`, `meshbool_*` and `mesh_brep.go` from
+`kernel/ops/boolean` — 4 429 + 1 173 lines of engine, plus their tests.
+`faceted-engine-files` reaches 0.
+
+`MeshToBRep` came out of that deletion alive, in a new package. It is not an engine and nothing falls
+back to it: it converts a welded triangle mesh into a faceted B-rep, which is the mesh-solid IMPORT
+path a shipping feature uses. `kernel/ops/meshbrep` carries it and the welder it needs; the CSG's own
+triangle production (`bodyTriangles`, `booleanInputQuality`) went with the engine.
+
+**The tests converted, none deleted to move a number.** Every fallback-asserting test now asserts the
+REFUSAL — the error, the diagnostic, and that no body comes back — on the same fixture:
+`TestBooleanRefusesAnUnmodelledConfigurationByName` (a ball joined to a torus),
+`TestPartialRimChainedCutRefusesByName`, `TestABooleanWithNoExactCurvedPathRefusesByName`, and the
+off-axis rod on a ball. The five reconstruction fixtures became positive corpus rows driven through
+the PUBLIC boolean in `boolean_reconstruction_corpus_test.go`: the stepped shaft keeps both analytic
+walls, two boxes union exactly, the oblique bore keeps its elliptical rims, the oblique stub keeps its
+elliptical seam, and the cocylindrical cap stays analytic. The welder's own tests moved with it.
+
+**Three defects the engines had been masking, found by closing the doors.**
+
+- **A ruling imprint was clipped to the tool's trim but not to the wall's own band.** A ruling is an
+  infinite line; the tool face can cover a stretch of it that lies entirely outside the wall being
+  imprinted. A D-profile prism seated on a cylinder meets that cylinder along two rulings through its
+  chord's corners, and the tool's chord face covers them four units above the wall receiving them. The
+  wall split on a segment that never touched it and closed the fragment with a spurious full-turn arc
+  at each corner. `rulingSegments` intersects both trims.
+- **`pointOnFaceBoundary` chorded the ring and read a database centimetre.** It walked the loop
+  vertices, which is exact only while every edge is straight, at an absolute 1e-7. It now walks the
+  EDGES at the face's own on-plane tolerance. Judging the distance on the on-plane class rather than
+  the sew gap is what the sliver intersect needed: a sew gap is a tenth of a millimetre on a centimetre
+  part, and it read a 1e-4-thin slab's own interior imprint as lying on the boundary, dropping the four
+  side faces of the slab and leaving two faces and eight open edges.
+- **A hole ring that returns to a vertex is TWO loops.** Two glyphs of an embossed word whose outlines
+  meet trace as one walk through the shared contact; welded, that walk pinches on one vertex and the
+  body comes back closed and edge-manifold with an ODD Euler characteristic. The CSG used to split such
+  vertices apart. `splitPinchedRing` splits the walk into the loops it is and drops the slit's remnant.
+
+**What the general pipeline still refuses, named.** `mixed-decline-returns` is 3 and does not reach
+zero here: it counted configurations that routed to a faceted engine, and now counts the ones the
+pipeline refuses by name — which is what the ground rules ask for. Stage 5, a chart for freeform faces
+that ends the pass bucket, is what takes it to zero, and it blocks no corpus case today.
+
+**One quality gap, named rather than approximated.** A D-profile prism seated on a cylinder of the same
+radius builds a valid solid of the right volume with both walls analytic and on ONE surface — which is
+what #2167 was about, the faceted seam — but as TWO faces where a correct B-rep has one. Their common
+boundary is part of the cylinder's rim, not a whole edge of it, and `mergeCoincidentFaces` merges only
+a whole shared boundary. Splicing a partial one needs more than cutting the edge at the run's ends: the
+two faces' chart SEAMS meet inside the run being dissolved, so the merged loop has to fuse those too.
+Both tests pin the count at 2 rather than relaxing it, so landing that merge trips them and converts
+them.
+
+### What closing the doors surfaced in the host, named (2026-09-08)
+
+`./kernel/...`, `./model/...`, `./math/...` and archguard are green with the engines deleted. `./app/...`
+is not, and both rows are configurations that ONLY ever worked through a faceted rescue — the trade
+this ADR's Consequences section named before stage 6 was written. Neither is a regression in anything
+this stage changed: reverting each of the stage's four geometry fixes in turn leaves both failing, and
+the same operands produce the same invalid body on the parent commit, where the rescue replaced it.
+
+- **A drilled hole whose depth exactly equals the plate's thickness.** The app's default hole on a
+  4 × 4 × 2 block is Ø1 × 2 from the top face, so the tool's cylinder ends at z = 2 flush with the top
+  AND its drill point's shoulder sits exactly at z = 0, the plate's bottom plane. The block's bottom
+  face is DROPPED — six faces come back where seven belong, with the four bottom edges and the bore's
+  bottom rim unpaired. The same cut with a plain `SolidCylinder` tool builds correctly, so what the
+  configuration turns on is the cone/cylinder junction landing exactly on the receiving plane.
+- **An assembly revolve machining a participant** removes nothing (the participant keeps its full
+  volume) instead of the machined result.
+
+Both are corpus rows for the general pipeline, not arguments for keeping an engine: an engine that
+turns a dropped face into a watertight faceted body has hidden the dropped face, which is how both
+survived this long.

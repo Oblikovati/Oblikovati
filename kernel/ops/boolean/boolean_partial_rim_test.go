@@ -43,8 +43,8 @@ func TestPartialRimSecondCutTakesAnalyticPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("partial-rim cut: %v", err)
 	}
-	if rec.Has(CodeBooleanCSGFallback) {
-		t.Errorf("disjoint partial-rim cut fell back to CSG; want the exact analytic path. recs=%v", rec.Records())
+	if rec.Has(CodeBooleanNoExactCurvedPath) {
+		t.Errorf("disjoint partial-rim cut reported no exact path; want the exact analytic one. recs=%v", rec.Records())
 	}
 	if r := Validate(res); !r.Valid {
 		t.Fatalf("partial-rim result is not a valid solid: %v", r.Issues)
@@ -71,8 +71,8 @@ func TestPartialRimCornerJunctionTakesAnalyticPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("corner-junction cut: %v", err)
 	}
-	if rec.Has(CodeBooleanCSGFallback) {
-		t.Errorf("corner-junction cut fell back to CSG; want the exact analytic path. recs=%v", rec.Records())
+	if rec.Has(CodeBooleanNoExactCurvedPath) {
+		t.Errorf("corner-junction cut reported no exact path; want the exact analytic one. recs=%v", rec.Records())
 	}
 	if r := Validate(res); !r.Valid {
 		t.Fatalf("corner-junction result is not a valid solid: %v", r.Issues)
@@ -101,8 +101,8 @@ func TestPartialRimGrazingCutTakesTheGeneralPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("grazing cut: %v", err)
 	}
-	if rec.Has(CodeBooleanCSGFallback) {
-		t.Errorf("the grazing cut fell back to CSG; the wall-versus-wall pairing should carry it: %v", rec.Records())
+	if rec.Has(CodeBooleanNoExactCurvedPath) {
+		t.Errorf("the grazing cut reported no exact path; the wall-versus-wall pairing should carry it: %v", rec.Records())
 	}
 	if v := Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
 		t.Fatalf("grazing cut is not a valid closed manifold solid: %+v", v)

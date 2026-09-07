@@ -37,10 +37,9 @@ var allowedTreeImports = map[string][]string{
 	"kernel/brep": {"kernel/diag", "kernel/geom", "kernel/predicates", "kernel/topo", "math"},
 	"kernel/subd": {"kernel/geom", "kernel/topo", "math"},
 	// Test support only: a faceted fixture for tests that pin a planar-only path (ADR-0060, #3459).
-	"kernel/internal": {"kernel/brep", "kernel/geom", "kernel/ops/boolean", "kernel/ops/tessellate", "kernel/topo", "math"},
+	"kernel/internal": {"kernel/brep", "kernel/geom", "kernel/ops/meshbrep", "kernel/ops/tessellate", "kernel/topo", "math"},
 	"kernel/fit":      {"kernel/geom", "math"},
 	"kernel/blend":    {"kernel/geom", "kernel/topo", "math"},
-	"kernel/meshbool": {"kernel/predicates", "math"},
 	"kernel/shading":  {"math"},
 	"kernel/geomapi":  {"api", "kernel/geom", "math"},
 
@@ -61,10 +60,15 @@ var allowedTreeImports = map[string][]string{
 	// tessellate is a DERIVED view of the B-rep, below everything that models with it.
 	"kernel/ops/validate": {"kernel/brep", "kernel/geom", "kernel/mesh",
 		"kernel/ops/internal/probe", "kernel/topo", "math"},
-	"kernel/ops/tessellate": {"kernel/brep", "kernel/diag", "kernel/geom", "kernel/meshbool",
+	"kernel/ops/tessellate": {"kernel/brep", "kernel/diag", "kernel/geom",
 		"kernel/mesh", "kernel/ops/internal/probe", "kernel/ops/validate",
 		"kernel/predicates", "kernel/topo", "math"},
 	"kernel/ops/transform": {"kernel/geom", "kernel/ops/internal/retopo", "kernel/topo", "math"},
+	// meshbrep converts a welded triangle mesh into a faceted B-rep — the mesh-solid IMPORT path,
+	// not a modelling engine and nothing's fallback (ADR-0061 stage 7 left it standing when the
+	// faceted booleans that shared its welder went).
+	"kernel/ops/meshbrep": {"kernel/mesh", "kernel/ops/internal/tol", "kernel/ops/query",
+		"kernel/topo", "math"},
 	// blend is the one fillet/chamfer/draft engine (ADR-0050/0051).
 	"kernel/ops/blend": {"api", "kernel/blend", "kernel/brep", "kernel/diag", "kernel/geom",
 		"kernel/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
@@ -76,7 +80,7 @@ var allowedTreeImports = map[string][]string{
 		"kernel/ops/internal/tol", "kernel/ops/tessellate", "kernel/predicates", "kernel/topo", "math"},
 	// boolean is the top of the modelling stack: it certifies each result face against query's
 	// analytic oracle, so nothing below it may import boolean.
-	"kernel/ops/boolean": {"kernel/brep", "kernel/diag", "kernel/geom", "kernel/meshbool",
+	"kernel/ops/boolean": {"kernel/brep", "kernel/diag", "kernel/geom",
 		"kernel/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/tol",
 		"kernel/ops/query", "kernel/ops/tessellate", "kernel/ops/validate", "kernel/topo", "math"},
 	// heal repairs a body on a copy, independent of the modelling stack; surface rebuilds faces
@@ -91,7 +95,7 @@ var allowedTreeImports = map[string][]string{
 	// operations that belong to no family (section, shell, split, thicken).
 	"kernel/ops": {"kernel/brep", "kernel/diag", "kernel/geom", "kernel/ops/boolean",
 		"kernel/mesh", "kernel/ops/internal/probe", "kernel/ops/internal/retopo",
-		"kernel/ops/internal/tol", "kernel/ops/query", "kernel/ops/tessellate",
+		"kernel/ops/internal/tol", "kernel/ops/meshbrep", "kernel/ops/query", "kernel/ops/tessellate",
 		"kernel/ops/validate", "kernel/topo", "math"},
 
 	// exchange and hlr are CONSUMERS of geometry, so neither may name the kernel/ops façade —

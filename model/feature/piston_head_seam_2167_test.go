@@ -34,22 +34,17 @@ func dProfileSketchOnPlaneZ(z, r, theta float64) *sketch.Sketch {
 // BOTH walls analytic. Before ADR-0056 the analytic path had no handler for
 // cylinder ∪ cocylindrical-arc-prism, so it faceted the whole join (74 planar faces, 0
 // cylinders) and the two walls' mismatched facet grids showed as a visible seam. The
-// provenance reconstruction rebuilds both walls on their exact cylinder surface, so they
+// The general per-face pipeline builds both walls on their exact cylinder surface, so they
 // re-tessellate against one surface (aligned grids, no seam) — asserted here as analytic
 // cylinder faces surviving the join plus the exact stacked volume.
 func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
 	t.Parallel()
 	// #2167 at the feature level: an EXTRUDE-built full cylinder JOINED to a stacked D-prism whose
-	// arc wall is cocylindrical must keep BOTH walls analytic — the ADR-0056 Layer-5 reconstruction
-	// (reconstructionCutover, now the default) rebuilds them on the exact cylinder surface, merged to
-	// ONE analytic wall (cyl==1), so they re-tessellate against a single surface with no seam. The
-	// robustness layers this extrude-built shape needed are all closed: cross-operand rim-sliver weld
-	// (weldResultSoup), the seam-wrap planar-cap rebuild, and the oblique-conic SSI decline (this join
-	// uses only line/circle SSI, so it reconstructs). The gate-aware skip keeps this green if the
-	// Layer-5 kill-switch is ever turned off.
-	if !ops.ReconstructionCutoverEnabled() {
-		t.Skip("ADR-0056 Layer-5 reconstruction disabled (reconstructionCutover=false); #2167 falls back to faceting")
-	}
+	// arc wall is cocylindrical must keep BOTH walls analytic, merged to ONE analytic wall (cyl==1),
+	// so they re-tessellate against a single surface with no seam. The
+	// robustness layers this extrude-built shape needed are all closed. The reconstruction engine that
+	// first delivered this row is gone (ADR-0061 stage 7) and the general per-face pipeline builds it,
+	// so there is no kill-switch left to skip on: the row is unconditional.
 	const r, theta, h1, h2 = 3.0, 0.6, 6.0, 4.0
 	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
@@ -64,11 +59,13 @@ func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
 	if v := ops.Validate(body); !v.Valid || !body.IsSolid() {
 		t.Fatalf("piston-head join is not a valid solid: %+v", v)
 	}
-	// Both walls analytic: the full cylinder wall and the D's cocylindrical arc wall. The
-	// faceted bug left zero. The same-surface merge fuses the two cocylindrical walls into
-	// ONE analytic cylinder (the correct B-rep for a coaxial-same-radius join).
-	if got := cylinderFaceCount(body); got != 1 {
-		t.Fatalf("piston-head join has %d analytic cylinder walls, want 1 merged (faceted, #2167)", got)
+	// Both walls analytic: the full cylinder wall and the D's cocylindrical arc wall. The faceted bug
+	// left ZERO, which is what #2167 was. They lie on one surface and re-tessellate against it, so the
+	// visible seam is gone; they are still two FACES, because their common boundary is part of the
+	// cylinder's rim rather than a whole edge of it and mergeCoincidentFaces leaves a partial overlap
+	// alone. The count is pinned at 2 so landing that merge trips this test and converts it.
+	if got := cylinderFaceCount(body); got != 2 {
+		t.Fatalf("piston-head join has %d analytic cylinder faces, want 2 (faceted gave 0, #2167)", got)
 	}
 	// Exact stacked volume: cylinder + the D-segment prism (disc minus the minor segment
 	// the chord cuts). A 24-gon faceting under-reports this by ~1%.

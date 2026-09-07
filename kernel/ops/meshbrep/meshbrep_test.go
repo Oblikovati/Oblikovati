@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package boolean
+package meshbrep
 
 import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
 
@@ -29,13 +31,13 @@ func TestMeshToBRepTetraSolid(t *testing.T) {
 	if body == nil {
 		t.Fatal("MeshToBRep returned nil for a tetra mesh")
 	}
-	if r := Validate(body); !r.Valid || !body.IsSolid() {
+	if r := validate.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("tetra B-rep not a valid solid: valid=%v solid=%v problems=%v", r.Valid, body.IsSolid(), r.Issues)
 	}
 	if n := len(body.Faces()); n != 4 {
 		t.Errorf("face count = %d, want 4", n)
 	}
-	if v := query.BodyGeometryProperties(body, DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
+	if v := query.BodyGeometryProperties(body, mesh.DefaultQuality()).Volume; stdmath.Abs(v-1.0/6) > 1e-9 {
 		t.Errorf("volume = %v, want %v", v, 1.0/6)
 	}
 }
@@ -52,7 +54,7 @@ func TestMeshToBRepReorientsInwardMesh(t *testing.T) {
 	if body == nil {
 		t.Fatal("MeshToBRep returned nil for an inward-wound tetra")
 	}
-	if v := query.BodyGeometryProperties(body, DefaultQuality()).Volume; v <= 0 {
+	if v := query.BodyGeometryProperties(body, mesh.DefaultQuality()).Volume; v <= 0 {
 		t.Errorf("volume = %v, want positive after re-orientation", v)
 	}
 }
@@ -80,10 +82,10 @@ func TestMeshToBRepQuadFacet(t *testing.T) {
 	if body == nil {
 		t.Fatal("MeshToBRep returned nil for a cube mesh")
 	}
-	if r := Validate(body); !r.Valid || !body.IsSolid() {
+	if r := validate.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("cube B-rep not a valid solid: %v", r.Issues)
 	}
-	if v := query.BodyGeometryProperties(body, DefaultQuality()).Volume; stdmath.Abs(v-1.0) > 1e-9 {
+	if v := query.BodyGeometryProperties(body, mesh.DefaultQuality()).Volume; stdmath.Abs(v-1.0) > 1e-9 {
 		t.Errorf("volume = %v, want 1", v)
 	}
 }

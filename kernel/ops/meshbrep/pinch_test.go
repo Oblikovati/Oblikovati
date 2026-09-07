@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package boolean
+package meshbrep
 
 import (
 	"testing"
 
 	"oblikovati.org/kernel/mesh"
+	"oblikovati.org/kernel/ops/validate"
 	"oblikovati.org/math"
 )
 
@@ -39,7 +40,7 @@ func TestCSGCageSplitsPinchedVertex(t *testing.T) {
 	if b == nil {
 		t.Fatal("trianglesToBody returned nil")
 	}
-	r := Validate(b)
+	r := validate.Validate(b)
 	if !r.Valid {
 		t.Errorf("point-contact shells assemble invalid: χ=%d issues=%v", r.EulerCharacteristic, r.Issues)
 	}

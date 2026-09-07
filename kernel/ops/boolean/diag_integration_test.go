@@ -3,6 +3,7 @@
 package boolean_test
 
 import (
+	"errors"
 	"testing"
 
 	"oblikovati.org/kernel/ops/boolean"
@@ -15,14 +16,14 @@ import (
 	"oblikovati.org/math"
 )
 
-// TestBooleanRecordsCSGFallbackDiagnostic proves the diag channel end to end on the boolean side: a
-// curved configuration with no exact analytic/planar path (two overlapping spheres) falls back to
-// triangle-soup CSG, and that fallback is now RECORDED as a searchable Defect instead of silently
-// shipping a faceted mesh (the #1407 guardrail this infrastructure enables).
-// This asserts the DECLINE CODE, never the faceted body: when the configuration this declines on
-// lands analytically it becomes a positive corpus case (ADR-0061), so the assertion converts
-// rather than being deleted to move a number.
-func TestBooleanRecordsCSGFallbackDiagnostic(t *testing.T) {
+// TestBooleanRefusesAnUnmodelledConfigurationByName proves the diag channel end to end on the boolean
+// side. It used to prove that a configuration with no exact path fell back to triangle-soup CSG and
+// RECORDED the fallback as a searchable Defect (#1407). ADR-0061 stage 7 deleted the engine behind
+// that record, so the same fixture now proves the stronger contract: the operation REFUSES by name,
+// with the refusal both on the error and in the diagnostics, and no body is returned at all.
+// It asserts the DECLINE, never a faceted body: when this configuration lands analytically the
+// assertion converts to a positive corpus case rather than being deleted to move a number.
+func TestBooleanRefusesAnUnmodelledConfigurationByName(t *testing.T) {
 	if testing.Short() {
 		t.Skip("corpus tier (~3s): `make test-corpus`")
 	}
@@ -43,17 +44,17 @@ func TestBooleanRecordsCSGFallbackDiagnostic(t *testing.T) {
 
 	var rec diag.Recorder
 	res, err := ops.BooleanWithDiagnostics(ops.Join, tor, ball, &rec)
-	if err != nil {
-		t.Fatalf("ops.BooleanWithDiagnostics: %v", err)
+	if !errors.Is(err, ops.ErrUnmodelledBoolean) {
+		t.Fatalf("a configuration no exact path models must be refused by name; got err=%v", err)
 	}
-	if res == nil {
-		t.Fatal("nil result")
+	if res != nil {
+		t.Fatalf("a refused boolean must return no body; got %d faces", len(res.Faces()))
 	}
-	if !rec.Has(ops.CodeBooleanCSGFallback) {
-		t.Errorf("curved boolean fell back to CSG but recorded no %q diagnostic; got %v", ops.CodeBooleanCSGFallback, rec.Records())
+	if !rec.Has(ops.CodeBooleanNoExactCurvedPath) {
+		t.Errorf("the refusal recorded no %q diagnostic; got %v", ops.CodeBooleanNoExactCurvedPath, rec.Records())
 	}
 	if rec.Count(diag.Defect) == 0 {
-		t.Error("a CSG fallback must record a Defect-severity diagnostic")
+		t.Error("a refusal must record a Defect-severity diagnostic")
 	}
 }
 

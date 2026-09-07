@@ -35,8 +35,9 @@ func stitch(faces []subFace, pass []curvedFace, prov []imprintSeg) (*topo.Body, 
 	for i, sf := range faces {
 		rings := [][]int{w.ring(orientRing(sf.outer, sf.normal, true))}
 		for _, h := range sf.holes {
-			rings = append(rings, w.ring(orientRing(h, sf.normal, false)))
+			rings = append(rings, splitPinchedRing(w.ring(orientRing(h, sf.normal, false)))...)
 		}
+
 		out[i] = builtFace{rings: rings, normal: sf.normal, fromB: sf.fromB, lineage: sf.lineage, exactHoles: sf.exactHoles}
 	}
 	// Pass 2: with all vertices known, split every loop edge at any welded vertex lying on
@@ -295,6 +296,34 @@ func segCandidates(pa, pb math.Point3, grid float64, tree *geom.BoxTree) []int {
 // builtFace is a welded sub-face ready for the unified stitch: its loop rings (vertex indices, outer
 // first), its outward normal (the plane is re-derived from ring + normal at conversion), and the
 // source lineage to carry onto the result face (K1a).
+// splitPinchedRing splits a hole ring that returns to a vertex into the closed rings it really is, and
+// drops the degenerate remnants a shared run leaves behind.
+//
+// A ring that visits one vertex twice is TWO loops, not one. Two glyphs of an embossed word whose
+// outlines meet trace as a single walk through the shared contact, and welding that walk onto one
+// vertex leaves a PINCH: the body is closed and edge-manifold but its Euler characteristic is odd,
+// which the validity gate rightly refuses. The triangle-soup CSG used to split such vertices apart
+// (splitPinchedVertices) and there is no fallback behind the exact pipeline any more (ADR-0061 stage 7).
+//
+// Only HOLE rings go through here. They are the polygonal split's own rings; a curved face's chart
+// seam, which legitimately visits one vertex twice, is carried as a curvedLoop and never reaches this.
+func splitPinchedRing(ring []int) [][]int {
+	at := map[int]int{}
+	for i, v := range ring {
+		j, seen := at[v]
+		if !seen {
+			at[v] = i
+			continue
+		}
+		lobe, rest := ring[j:i], append(append([]int{}, ring[:j]...), ring[i:]...)
+		return append(splitPinchedRing(lobe), splitPinchedRing(rest)...)
+	}
+	if len(ring) < 3 {
+		return nil // a slit's remnant: a run walked out and back bounds no area
+	}
+	return [][]int{ring}
+}
+
 type builtFace struct {
 	rings      [][]int
 	normal     math.Vector3

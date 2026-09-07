@@ -1,63 +1,92 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package boolean
+// Package meshbrep converts a welded triangle mesh into a faceted B-rep solid.
+//
+// It is the mesh-solid IMPORT path — an STL or OBJ arriving as vertices and facet loops becomes a
+// body the modeller can carry, name and tessellate. It is not a modelling engine and no operation
+// falls back to it: the faceted booleans that once shared this welder are gone (ADR-0061 stage 7),
+// and the welder stayed because importing a mesh is a capability of its own.
+package meshbrep
 
 import (
 	stdmath "math"
 	"sort"
 
 	"oblikovati.org/kernel/mesh"
+	"oblikovati.org/kernel/ops/internal/tol"
 	"oblikovati.org/kernel/ops/query"
-	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// booleanInputQuality is the faceting the BSP-tree CSG meshes its operands at. It keeps the
-// display chord tolerance but DISABLES the angular-deflection refinement (a huge angle bound
-// → chord-only), because the faceted CSG fallback is numerically fragile: feeding it the
-// finer angle-bounded display mesh (e.g. 32-facet small cylinders) makes BSP plane splits
-// leave hairline cracks (a few unshared boundary edges). The boolean is a geometry op with
-// its own robustness ceiling, separate from how smoothly we DISPLAY analytic surfaces — so it
-// pins its input to the proven-robust chord-only resolution. (Analytic faces, including
-// modeled threads and drilled holes, still render at full DefaultQuality smoothness.)
-func booleanInputQuality() Quality {
-	return Quality{ChordTolerance: DefaultQuality().ChordTolerance, AngleTolerance: stdmath.Pi}
+// MeshToBRep converts a closed welded mesh — shared vertices and facets given as ordered
+// vertex-index loops (each typically a triangle) — into a faceted B-rep solid: one planar face
+// per facet, with shared edges and vertices. Facets with more than three vertices are
+// fan-triangulated. The cage is re-oriented to positive volume so an inward-wound (but
+// consistent) input still yields an outward solid. Returns nil for an empty mesh.
+//
+// Example: tetra := MeshToBRep(verts, [][]int{{0,1,2},{0,2,3},{0,3,1},{1,3,2}}, "mesh") — a
+// validated 4-face solid.
+func MeshToBRep(verts []math.Point3, facets [][]int, feat string) *topo.Body {
+	tris := facetTriangles(verts, facets)
+	if len(tris) == 0 {
+		return nil
+	}
+	body := trianglesToBody(tris, feat)
+	if body == nil {
+		return nil
+	}
+	// cageToBody trusts the facet winding for face normals; if the mesh was wound inward
+	// (negative volume) flip every facet so the result is a proper outward solid.
+	if query.BodyGeometryProperties(body, mesh.DefaultQuality()).Volume < 0 {
+		body = trianglesToBody(reversedTris(tris), feat)
+	}
+	return body
 }
 
-// bodyTriangles returns a body's tessellation as CSG triangles, each oriented
-// outward. The BSP-tree CSG depends on globally consistent outward winding, but
-// TessellateBody does not guarantee it for curved faces (a cylinder's side
-// triangles can wind either way — the same reason meshGeometryProperties
-// re-orients before its volume sum). Trusting the raw winding silently breaks any
-// boolean whose minuend is a curved body: the BSP misclassifies inside/outside and
-// subtracts nothing (cylinder − tool returned the uncut cylinder). We fix the
-// winding here with the per-vertex shading normals, which point outward.
-func bodyTriangles(b *topo.Body) []mesh.Tri {
-	m, _ := tessellate.TessellateBody(b, booleanInputQuality())
-	var out []mesh.Tri
-	for i := 0; i+2 < len(m.Indices); i += 3 {
-		ia, ib, ic := m.Indices[i], m.Indices[i+1], m.Indices[i+2]
-		a, bb, c := m.Positions[ia], m.Positions[ib], m.Positions[ic]
-		if query.OutwardRef(m, ia, ib, ic).Dot(a.VectorTo(bb).Cross(a.VectorTo(c))) < 0 {
-			bb, c = c, bb // flip to outward winding
+// facetTriangles fan-triangulates each facet loop into CSG triangles, dropping degenerate ones
+// and any facet whose indices are out of range.
+func facetTriangles(verts []math.Point3, facets [][]int) []mesh.Tri {
+	var tris []mesh.Tri
+	for _, f := range facets {
+		if len(f) < 3 || !facetInRange(f, len(verts)) {
+			continue
 		}
-		if t, ok := mesh.NewTri(a, bb, c); ok {
-			out = append(out, t)
+		for i := 1; i+1 < len(f); i++ {
+			if t, ok := mesh.NewTri(verts[f[0]], verts[f[i]], verts[f[i+1]]); ok {
+				tris = append(tris, t)
+			}
+		}
+	}
+	return tris
+}
+
+func facetInRange(f []int, n int) bool {
+	for _, idx := range f {
+		if idx < 0 || idx >= n {
+			return false
+		}
+	}
+	return true
+}
+
+// reversedTris flips each triangle's winding (swapping two corners).
+func reversedTris(tris []mesh.Tri) []mesh.Tri {
+	out := make([]mesh.Tri, 0, len(tris))
+	for _, t := range tris {
+		if rt, ok := mesh.NewTri(t.A, t.C, t.B); ok {
+			out = append(out, rt)
 		}
 	}
 	return out
 }
 
-// trianglesToBody welds CSG output triangles into a watertight B-rep: coincident
-// vertices merge, T-junctions are split out so the cage is combinatorially closed, and
-// the welded triangle cage becomes a body. Returns nil when the result is empty.
 func trianglesToBody(tris []mesh.Tri, feat string) *topo.Body {
 	// One model-relative resolution for the whole triangle set (ADR-0042): a tight
 	// vertex weld and a wider on-line tolerance, both scaling with the operand size,
 	// so a sub-µm part is no longer welded out of existence while a finely-detailed
 	// large part is not over-merged.
-	res := ResolutionForTris(tris)
+	res := tol.ForTris(tris)
 	verts, faces := weldTriangles(tris, res.Weld())
 	faces = dedupTriangles(faces)
 	if len(faces) == 0 {

@@ -48,10 +48,11 @@ var validateDebt = map[string]int{
 	"kernel/ops": 5,
 	// Draft, the two cylinder-fillet entry points, and all four FilletEdges* entries.
 	"kernel/ops/blend": 8,
-	// MeshToBRep still builds a body from an external mesh and hands it back unchecked. Facet
-	// dropped out here: #3329 made validity its post-condition, so an invalid cage is refused
-	// rather than laundered into an operand the planar boolean trusts.
-	"kernel/ops/boolean": 1,
+	// MeshToBRep still builds a body from an external mesh and hands it back unchecked. It moved
+	// out of kernel/ops/boolean with the faceted engines (ADR-0061 stage 7) — it is the mesh-solid
+	// IMPORT path, not a boolean — and the debt moved with it, unchanged. An imported STL is often
+	// not a valid solid, and refusing every such file is a product decision, not a kernel one.
+	"kernel/ops/meshbrep": 1,
 	// Healing builds a body FROM a broken one, so its post-condition matters most of all: a
 	// repair that leaves the body invalid has done nothing but hide the original defect.
 	"kernel/ops/heal":            8,

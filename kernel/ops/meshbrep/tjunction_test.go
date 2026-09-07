@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package boolean
+package meshbrep
 
 import (
 	"testing"
 	"time"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/math"
 )
@@ -20,7 +21,7 @@ func TestRemoveTJunctionsClosesCage(t *testing.T) {
 	// Vertex 3 sits on edge 0→1 of triangle (0,1,2): a T-junction. The split must use vertex 3, so the
 	// triangle becomes a fan (>1 face) and every undirected edge ends up shared an even number of times.
 	verts := []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(0, 2, 0), math.P3(1, 0, 0)}
-	lineTol := ResolutionForPoints(verts).Plane()
+	lineTol := geom.ResolutionForPoints(verts).Plane()
 
 	_, faces := removeTJunctions(verts, [][3]int{{0, 1, 2}}, lineTol)
 	if len(faces) < 2 {
@@ -35,7 +36,7 @@ func TestRemoveTJunctionsClosesCage(t *testing.T) {
 func TestRemoveTJunctionsNoFalseSplit(t *testing.T) {
 	t.Parallel()
 	verts := []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(0, 2, 0), math.P3(3, 3, 0)}
-	lineTol := ResolutionForPoints(verts).Plane()
+	lineTol := geom.ResolutionForPoints(verts).Plane()
 
 	_, faces := removeTJunctions(verts, [][3]int{{0, 1, 2}}, lineTol)
 	if len(faces) != 1 {
@@ -51,7 +52,7 @@ func TestRemoveTJunctionsNoFalseSplit(t *testing.T) {
 func TestRemoveTJunctionsScalesPastOldBudget(t *testing.T) {
 	t.Parallel()
 	tj := []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(0, 2, 0), math.P3(1, 0, 0)}
-	lineTol := ResolutionForPoints(tj).Plane() // small-scale tolerance, before the far pad blows up the bbox
+	lineTol := geom.ResolutionForPoints(tj).Plane() // small-scale tolerance, before the far pad blows up the bbox
 
 	verts := append([]math.Point3{}, tj...)
 	faces := [][3]int{{0, 1, 2}}
@@ -90,7 +91,7 @@ func TestRemoveTJunctionsMixedScaleFast(t *testing.T) {
 	faces = append(faces, [3]int{b, b + 1, b + 2})
 
 	done := make(chan struct{})
-	go func() { removeTJunctions(verts, faces, ResolutionForPoints(verts).Plane()); close(done) }()
+	go func() { removeTJunctions(verts, faces, geom.ResolutionForPoints(verts).Plane()); close(done) }()
 	select {
 	case <-done:
 	case <-time.After(10 * time.Second):

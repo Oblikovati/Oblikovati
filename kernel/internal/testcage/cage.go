@@ -9,7 +9,7 @@ package testcage
 
 import (
 	"oblikovati.org/kernel/brep"
-	"oblikovati.org/kernel/ops/boolean"
+	"oblikovati.org/kernel/ops/meshbrep"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
@@ -26,7 +26,7 @@ func Body(b *topo.Body, feat string) *topo.Body {
 	for i := 0; i+2 < len(m.Indices); i += 3 {
 		facets = append(facets, []int{m.Indices[i], m.Indices[i+1], m.Indices[i+2]})
 	}
-	cage := boolean.MeshToBRep(m.Positions, facets, feat)
+	cage := meshbrep.MeshToBRep(m.Positions, facets, feat)
 	if cage == nil {
 		return nil
 	}

@@ -320,11 +320,6 @@ func reverseRing(r []math.Point3) []math.Point3 {
 	return out
 }
 
-// boundaryImprintTol is the distance at which an imprint point counts as lying on a face's
-// boundary. The wobble between a boundary edge and its imprint re-derivation is float noise
-// (~1e-15), far below it; genuinely interior imprints sit at feature scale, far above it.
-const boundaryImprintTol = 1e-7 // tol:calibrated — planar imprint-on-boundary distance (see arrange2d arrTol)
-
 // interiorSegments filters out the segments that lie along f's boundary, keeping only the
 // ones that can actually split the face's interior.
 func interiorSegments(f curvedFace, segs [][2]math.Point3) [][2]math.Point3 {
@@ -337,21 +332,31 @@ func interiorSegments(f curvedFace, segs [][2]math.Point3) [][2]math.Point3 {
 	return out
 }
 
-// segmentOnFaceBoundary reports whether the whole segment lies on f's boundary (within
-// [boundaryImprintTol]). Endpoints AND midpoint are tested, so a segment that runs along a
-// boundary edge's line but crosses the interior elsewhere (a concave face) is kept.
+// segmentOnFaceBoundary reports whether the whole segment lies on f's boundary. Endpoints AND midpoint
+// are tested, so a segment that runs along a boundary edge's line but crosses the interior elsewhere
+// (a concave face) is kept.
 func segmentOnFaceBoundary(f curvedFace, s [2]math.Point3) bool {
 	mid := math.P3((s[0].X+s[1].X)/2, (s[0].Y+s[1].Y)/2, (s[0].Z+s[1].Z)/2)
-	return pointOnFaceBoundary(f, s[0]) && pointOnFaceBoundary(f, mid) && pointOnFaceBoundary(f, s[1])
+	res := geom.ResolutionForBox(faceLoopBox(f))
+	return pointOnFaceBoundary(s[0], f, res) && pointOnFaceBoundary(mid, f, res) && pointOnFaceBoundary(s[1], f, res)
 }
 
-// pointOnFaceBoundary reports whether p lies within [boundaryImprintTol] of any of f's
-// boundary edges.
-func pointOnFaceBoundary(f curvedFace, p math.Point3) bool {
-	for _, ring := range planarRings(f) {
-		n := len(ring)
-		for i := range n {
-			if distPointSegment(p, ring[i], ring[(i+1)%n]) < boundaryImprintTol {
+// pointOnFaceBoundary reports p lying on one of the face's own boundary EDGES, within that edge's own
+// parameter span and the face's own coincidence scale.
+//
+// It walks the edges, not the ring the loop vertices chord: those agree while every edge is straight
+// and part company the moment one is an arc, and a chorded rim answers "off the boundary" for a point
+// exactly on it (the same defect planarRings carries for containment). The tolerance is the face's,
+// not a database-centimetre constant (ADR-0042, ADR-0061).
+//
+// The DISTANCE is judged on the on-plane class, not the sew gap curveParamWithin uses for its span
+// test: a sew gap is a tenth of a millimetre on a centimetre part, which reads a 1e-4 sliver's own
+// interior imprint as lying on the boundary and drops it.
+func pointOnFaceBoundary(p math.Point3, f curvedFace, res geom.Resolution) bool {
+	for _, l := range f.loops {
+		for _, e := range l.edges {
+			t, ok := curveParamWithin(e.curve, e.t0, e.t1, p, res)
+			if ok && float64(e.curve.PointAt(t).DistanceTo(p)) <= res.Plane() {
 				return true
 			}
 		}

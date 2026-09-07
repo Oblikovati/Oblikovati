@@ -31,10 +31,19 @@ import (
 // A floor nobody lowers stops being a floor.
 //
 // Baseline taken 2026-09-03, before stage 1.
+// The doors are closed and the room is deleted (2026-09-08, ADR-0061 stages 6 and 7): no call reaches a
+// faceted engine and no faceted engine source remains. The guard stays, pinned at that floor, so an
+// engine cannot come back unnoticed — a RISE on either row is a new door out of the exact pipeline and
+// needs an ADR, exactly as it did on the way down.
+//
+// mixed-decline-returns is NOT zero and no longer means what it did. It counted configurations that
+// routed to a faceted engine; with the engines gone it counts the configurations the general pipeline
+// REFUSES by name, which is what the ground rules ask for rather than a defect. Stage 5 (a chart for
+// freeform faces, ending the pass bucket) is what takes it to zero.
 var fallbackDebt = map[string]int{
-	"faceted-entry-sites":   5,
+	"faceted-entry-sites":   0,
 	"mixed-decline-returns": 3,
-	"faceted-engine-files":  38,
+	"faceted-engine-files":  0,
 }
 
 // facetedEngines are the functions that produce or adopt a faceted body in place of the exact
@@ -107,11 +116,7 @@ func countFacetedEntrySites(t *testing.T) int {
 			return true
 		})
 	})
-	if n == 0 {
-		t.Fatal("counted no faceted entry sites — facetedEngines named functions that no longer " +
-			"exist under that name; re-point it or delete this guard because the retirement is done")
-	}
-	return n
+	return n // zero is the retirement's end state, not a broken guard: the engines are deleted
 }
 
 // countMixedDeclineReturns counts the returns of ErrUnsupportedMixedBoolean — the mixed per-face

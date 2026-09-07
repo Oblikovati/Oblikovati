@@ -137,8 +137,6 @@ var toleranceDebt = map[string]int{
 	"geom/quartic_real_roots.go":                  1,
 	"ops/blend/tangent_chain.go":                  1,
 	"ops/boolean/boolean_curved_subtract.go":      1,
-	"ops/boolean/meshbool_reconstruct_merge.go":   1,
-	"ops/boolean/meshbool_soup.go":                3,
 	"ops/heal/snap_edges.go":                      1,
 	"ops/internal/probe/probe.go":                 3,
 	"ops/query/body_query.go":                     1,

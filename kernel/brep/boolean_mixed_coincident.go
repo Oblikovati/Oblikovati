@@ -188,6 +188,12 @@ func joinOnSharedLoop(a, b curvedFace) (curvedFace, bool) {
 }
 
 // joinedLoops is the merged face's boundary, by whichever of the two shared-boundary forms applies.
+//
+// A PARTIAL shared boundary — b's edge running along only part of a's, which is what a D-profile prism
+// seated on a cylinder of the same radius gives — is out of scope and left unmerged. Splicing it needs
+// more than cutting a's edge at b's ends: the two faces' chart SEAMS meet inside the run being
+// dissolved, so the merged loop has to fuse those too, and that is the two-dimensional union of the
+// trims this function deliberately does not attempt (ADR-0061).
 func joinedLoops(a, b curvedFace, res geom.Resolution) ([]curvedLoop, bool) {
 	if ia, ib, ok := sharedLoopPair(a, b, res); ok {
 		return append(loopsExcept(a.loops, ia), loopsExcept(b.loops, ib)...), true

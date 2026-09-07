@@ -5,7 +5,6 @@ package boolean
 import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
-	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -36,11 +35,6 @@ func join(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Rec
 	}
 }
 
-// csgFallbackFaceLimit bounds the operand size for the invalid-result CSG fallback (see
-// booleanGeneral): small degenerate cases (the V2 flush-bottom oblique penetration) recover
-// cheaply, while a huge body's CSG attempt is costly and seldom valid.
-const csgFallbackFaceLimit = 256
-
 // toBrepOp maps the feature-level operation to the B-rep boolean operation (NewBody and
 // Surface have no B-rep analogue — both are handled before this point).
 func toBrepOp(op PartFeatureOperation) (brep.Op, bool) {
@@ -54,39 +48,6 @@ func toBrepOp(op PartFeatureOperation) (brep.Op, bool) {
 	default:
 		return 0, false
 	}
-}
-
-// booleanCSG runs the general intersecting boolean via the BSP-tree CSG over the
-// operands' triangles, welding the kept triangles back into a watertight solid
-// (PBI-171). An empty result (e.g. an intersection that turns out disjoint) yields an
-// empty body, which the caller drops.
-//
-// This is the LAST-RESORT fallback, not the primary curved path (M2 §M2, #1336): booleanGeneral reaches
-// it only after every exact analytic path (curvedExactPaths) and the exact planar B-rep boolean have
-// declined. The supported curved booleans keep their analytic surfaces and never land here — the
-// TestCurvedBooleansStayExact guard pins that. CSG remains for the unsupported long tail (arbitrary
-// freeform/NURBS overlaps), where a faceted-but-watertight result still beats failing.
-func booleanCSG(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, rec *diag.Recorder) (*topo.Body, error) {
-	rec.Recordf(CodeBooleanCSGFallback, diag.Defect,
-		"%s fell back to triangle-soup CSG (target %d faces, tool %d faces): no exact analytic/planar path",
-		op, len(target.Faces()), len(tool.Faces()))
-	a, b := bodyTriangles(target), bodyTriangles(tool)
-	// One model-relative on-plane tolerance for the BSP, scaled to the larger operand
-	// (ADR-0042) so a sub-µm boolean classifies coplanarity correctly.
-	planeTol := ResolutionForBodies(target, tool).Plane()
-	var result []mesh.Tri
-	switch op {
-	case Join:
-		result = csgUnion(a, b, planeTol)
-	case Cut:
-		result = csgSubtract(a, b, planeTol)
-	default:
-		result = csgIntersect(a, b, planeTol)
-	}
-	if body := trianglesToBody(result, "boolean-"+op.String()); body != nil {
-		return body, nil
-	}
-	return topo.MergeBodies(lin, true), nil
 }
 
 func cut(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Recorder) (*topo.Body, error) {

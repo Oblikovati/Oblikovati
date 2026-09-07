@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-package boolean
+package meshbrep
 
 import (
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// Pinched-vertex splitting for the CSG cage (#1693).
+// Pinched-vertex splitting for the welded cage (#1693).
 //
 // A near-tangent boolean contact — a fan blade tip designed exactly on its rim's inner wall
 // touches it in a lens thinner than the facet resolution — collapses under the vertex weld into

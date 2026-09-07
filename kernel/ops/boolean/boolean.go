@@ -3,6 +3,9 @@
 package boolean
 
 import (
+	"errors"
+	"fmt"
+
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/topo"
@@ -54,11 +57,6 @@ func Boolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, erro
 	return BooleanWithDiagnostics(op, target, tool, nil)
 }
 
-// CodeBooleanCSGFallback marks a boolean that abandoned the exact analytic/planar B-rep path for
-// triangle-soup CSG — a tracked defect: the result keeps no analytic surfaces and can hide a
-// volume-preserving topology error the volume guard misses (Oblikovati#1407).
-const CodeBooleanCSGFallback diag.Code = "boolean.csg-fallback"
-
 // CodeBooleanAnalyticFaceted marks a boolean whose analytic curved operand(s) were re-faceted
 // into a planar B-rep because no exact curved path applied (#1601). Faceting is permanent — the
 // analytic surface is unrecoverable and every downstream feature operates on facets — so the
@@ -100,61 +98,36 @@ func BooleanWithDiagnostics(op PartFeatureOperation, target, tool *topo.Body, re
 // rescue for a case that otherwise ships broken, never a preference.
 func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, rec *diag.Recorder) (*topo.Body, error) {
 	body, err := booleanGeneralExact(op, target, tool, lin, rec)
-	if err == nil && body != nil && Validate(body).ValidSolid() {
-		return body, nil // reconstruction now lives inside curvedExactBoolean (ADR-0056 L5), so a
-		// valid primary here is already the analytic reconstruction where one applied
+	if err != nil {
+		return nil, err
 	}
-	if mesh := meshArrangementFallback(op, target, tool, rec); mesh != nil {
-		return mesh, nil
+	if body != nil && !Validate(body).ValidSolid() {
+		return nil, unmodelledBoolean(op, target, tool, errInvalidExactResult)
 	}
-	return body, err
+	return body, nil
 }
 
-// CodeBooleanMeshArrangementFallback marks a boolean the analytic/planar/CSG path left
-// invalid and the exact mesh-arrangement engine (ADR-0052) recovered. The recovered
-// solid is exact-volume and watertight but FACETED (#2153) — its curved faces are
-// planar approximations — so this is a tracked degradation like the CSG fallback: a
-// valid faceted solid in place of a torn one, not the preferred analytic result.
-const CodeBooleanMeshArrangementFallback diag.Code = "boolean.mesh-arrangement-fallback"
+// errInvalidExactResult is the cause an exact result that fails Validate declines with. It used to be
+// the door to the mesh-arrangement rescue, which returned a watertight but FACETED body in its place
+// (ADR-0061 stage 6 closed that door: a body that fails its own post-condition is an error, never a
+// return value, and no engine stands behind it any more).
+var errInvalidExactResult = errors.New("the exact result is not a valid closed solid")
 
-// meshArrangementFallback rescues an invalid boolean result with the exact
-// mesh-arrangement engine, returning a valid faceted solid or nil when it does not
-// apply or does not recover. It is gated on the same modest operand size as the CSG
-// fallback: the engine tessellates both operands and runs an exact arrangement,
-// expensive on a large body and rarely the way to recover one.
-func meshArrangementFallback(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) *topo.Body {
-	mop, ok := toMeshboolOp(op)
-	if !ok || len(target.Faces())+len(tool.Faces()) > csgFallbackFaceLimit {
-		return nil
-	}
-	body := booleanViaMeshbool(target, tool, mop, DefaultQuality(), "boolean")
-	// Require a NON-EMPTY valid solid. An empty body vacuously passes Validate().ValidSolid()
-	// (no faces to violate manifoldness), but the fallback only reaches here because the
-	// primary path left a non-empty torn result — so real geometry is expected. An empty
-	// mesh result is not the tear it exists to rescue, so decline rather than adopt it.
-	if len(body.Faces()) == 0 || !Validate(body).ValidSolid() {
-		return nil
-	}
-	rec.Recordf(CodeBooleanMeshArrangementFallback, diag.Defect,
-		"%s: analytic/planar/CSG boolean left an invalid result; recovered with the exact mesh-arrangement engine (faceted, #2153)", op)
-	return body
-}
-
-// booleanGeneralExact runs the analytic/planar/CSG boolean (no mesh-arrangement
-// fallback): the exact analytic curved paths first, then the planar B-rep boolean,
-// falling to triangle-soup CSG when an operand has a non-planar face the B-rep path
-// cannot take. booleanGeneral wraps it with the mesh-arrangement rescue.
+// booleanGeneralExact runs the exact boolean: the analytic curved paths first, then the exact per-face
+// B-rep boolean. A configuration neither models is REFUSED by name (ADR-0061 stage 6) — there is no
+// triangle-soup CSG and no mesh-arrangement rescue behind it any more, so a caller that reaches this
+// error quarantines the feature instead of shipping a faceted body that looks solid.
 func booleanGeneralExact(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, rec *diag.Recorder) (*topo.Body, error) {
 	if body, ok := curvedExactGuarded(op, target, tool, rec); ok {
 		return body, nil
 	}
 	bop, ok := toBrepOp(op)
 	if !ok {
-		return booleanCSG(op, target, tool, lin, rec)
+		return nil, unmodelledBoolean(op, target, tool, errNotABoolean)
 	}
 	body, err := brep.BooleanDiag(bop, target, tool, rec)
 	if err != nil {
-		return booleanCSG(op, target, tool, lin, rec) // non-planar operand → triangle CSG
+		return nil, unmodelledBoolean(op, target, tool, err)
 	}
 	if body == nil {
 		return topo.MergeBodies(lin, true), nil
@@ -172,14 +145,29 @@ func booleanGeneralExact(op PartFeatureOperation, target, tool *topo.Body, lin t
 	// so every case the planar path already handles is untouched. The fallback is gated on a
 	// modest operand size: triangle CSG on a large body is expensive and rarely recovers it,
 	// so above the limit we keep the (fast) planar result rather than pay a big CSG attempt.
-	if shouldFallbackBoolean(op, target, tool, body) && len(target.Faces())+len(tool.Faces()) <= csgFallbackFaceLimit {
-		// Adopt the CSG fallback only when it is a genuine closed manifold solid — NOT merely
-		// Validate().Valid, which does not require Closed. T-junction removal now always closes
-		// the cage (#1336), so this is belt-and-braces: never replace a sound planar result with
-		// an open one.
-		if csg, cerr := booleanCSG(op, target, tool, lin, rec); cerr == nil && csg != nil && Validate(csg).ValidSolid() {
-			return csg, nil
-		}
+	if shouldFallbackBoolean(op, target, tool, body) {
+		return nil, unmodelledBoolean(op, target, tool, errFailedAcceptance)
 	}
 	return body, nil
 }
+
+// errNotABoolean is the cause for an op that is no boolean at all (NewBody, Surface); features
+// short-circuit on both before reaching here, so it names a caller error rather than a geometry one.
+var errNotABoolean = errors.New("the operation is not a boolean")
+
+// errFailedAcceptance is the cause an exact result that misses its own acceptance gate declines with:
+// invalid, or a face the operation should not have kept, or a volume outside the Requicha bracket.
+var errFailedAcceptance = errors.New("the exact result failed its own acceptance gate")
+
+// unmodelledBoolean is the boolean's NAMED decline: no exact path models this pair. It carries the
+// operation, both operands' face counts and the underlying cause, so a sick feature says what was
+// refused instead of reporting a bare failure (ADR-0061 stage 6).
+func unmodelledBoolean(op PartFeatureOperation, target, tool *topo.Body, cause error) error {
+	return fmt.Errorf("%w: %s of a %d-face target and a %d-face tool: %w",
+		ErrUnmodelledBoolean, op, len(target.Faces()), len(tool.Faces()), cause)
+}
+
+// ErrUnmodelledBoolean is the boolean's refusal: the operands meet in a configuration no exact path
+// models. It is a REFUSAL at classification, never a wrong result and never a faceted stand-in — the
+// ground rule the CSG and mesh-arrangement fallbacks broke for as long as they stood behind it.
+var ErrUnmodelledBoolean = errors.New("boolean: no exact path models this contact configuration")

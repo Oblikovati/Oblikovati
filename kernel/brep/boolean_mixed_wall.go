@@ -140,13 +140,7 @@ func wallPairImprint(wf, of curvedFace, otherImp [][][2]math.Point3, j int) ([]g
 // ruled route, not the cylinder route).
 func wallCurveSegments(cv geom.Curve3, of curvedFace, axis math.Vector3, band coneSideBand_) ([][2]math.Point3, bool) {
 	if line, ok := cv.(geom.Line); ok {
-		var segs [][2]math.Point3
-		for _, iv := range faceLineIntervals(of, line.Origin, line.Dir.AsVector()) {
-			if iv[1]-iv[0] > 1e-9 { // tol:calibrated — planar imprint overlap length (see arrange2d arrTol)
-				segs = append(segs, [2]math.Point3{line.PointAt(iv[0]), line.PointAt(iv[1])})
-			}
-		}
-		return segs, true
+		return rulingSegments(line, of, axis, band), true
 	}
 	// Every other section a plane can cut from a ruled wall is a CONIC — a circle or ellipse when
 	// the plane crosses the axis, a hyperbola branch when it runs parallel to one (an emboss pad's
@@ -158,6 +152,29 @@ func wallCurveSegments(cv geom.Curve3, of curvedFace, axis math.Vector3, band co
 		return nil, false
 	}
 	return nil, !conicTouchesTool(cv, of, axis, band, cf.AxialAmplitude(axis))
+}
+
+// rulingSegments clips one plane∩wall RULING to both trims that bound it: the tool face's polygon
+// intervals along the line, and the wall's own axial band.
+//
+// The band clip is not optional. A ruling is an INFINITE line, and clipping it to the tool face alone
+// leaves whatever part of it the tool covers — which can lie wholly outside the wall. A D-profile
+// prism seated on a cylinder of the same radius meets that cylinder's surface along two rulings
+// through its chord's corners, and the tool's chord face covers them over the PRISM's height, four
+// units above the wall the imprint was being written onto. The wall then split on a segment that never
+// touches it and closed the fragment with a spurious full-turn arc at each corner (ADR-0061 stage 7).
+func rulingSegments(line geom.Line, of curvedFace, axis math.Vector3, band coneSideBand_) [][2]math.Point3 {
+	inBand, ok := geom.AxialWindowParams(line, bandBase(axis, band), axis, band.vMin, band.vMax)
+	if !ok {
+		return nil // the ruling never reaches the band: no imprint on this wall
+	}
+	var segs [][2]math.Point3
+	for _, iv := range intersectIntervals(faceLineIntervals(of, line.Origin, line.Dir.AsVector()), inBand) {
+		if iv[1]-iv[0] > 1e-9 { // tol:calibrated — planar imprint overlap length (see arrange2d arrTol)
+			segs = append(segs, [2]math.Point3{line.PointAt(iv[0]), line.PointAt(iv[1])})
+		}
+	}
+	return segs
 }
 
 // wallSplitFaces trims each wall by its imprints through the ruled chart, classifying kept cells by
