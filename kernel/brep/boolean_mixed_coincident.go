@@ -164,25 +164,90 @@ func mergeCoincidentFaces(faces []curvedFace) []curvedFace {
 	return faces
 }
 
-// joinOnSharedLoop merges two faces on one surface whose common boundary is one whole loop of each.
-// ok=false when they are not on one surface, differ in sense, or share no complete loop.
+// joinOnSharedLoop merges two faces on one surface across the boundary they share: a whole loop of
+// each, which simply drops from both, or a single edge, where the loops SPLICE — the other face's chain
+// takes the shared edge's place, which is what dissolving an edge between two faces means. ok=false
+// when they are not on one surface, differ in sense, or share neither.
 func joinOnSharedLoop(a, b curvedFace) (curvedFace, bool) {
 	if a.reversed != b.reversed || !geom.SurfacesCoincide(a.surface, b.surface, geom.ResolutionForBox(faceLoopBox(a))) {
 		return curvedFace{}, false
 	}
 	res := geom.ResolutionForBox(faceLoopBox(a).Union(faceLoopBox(b)))
-	ia, ib, ok := sharedLoopPair(a, b, res)
+	loops, ok := joinedLoops(a, b, res)
 	if !ok {
 		return curvedFace{}, false
 	}
 	out := a
-	out.loops = append(loopsExcept(a.loops, ia), loopsExcept(b.loops, ib)...)
-	out.chart = nil // the merged trim is not either operand chart; the loops determine it
+	out.loops = loops
+	out.chart = nil // the merged trim is neither operand's chart; its loops determine it
 	if len(b.lineage.Key()) > 0 {
 		out.aliasKeys = append(append([][]byte(nil), a.aliasKeys...), b.lineage.Key())
 		out.aliasKeys = append(out.aliasKeys, b.aliasKeys...)
 	}
 	return out, true
+}
+
+// joinedLoops is the merged face's boundary, by whichever of the two shared-boundary forms applies.
+func joinedLoops(a, b curvedFace, res geom.Resolution) ([]curvedLoop, bool) {
+	if ia, ib, ok := sharedLoopPair(a, b, res); ok {
+		return append(loopsExcept(a.loops, ia), loopsExcept(b.loops, ib)...), true
+	}
+	return spliceOnSharedEdge(a, b, res)
+}
+
+// spliceOnSharedEdge merges two faces whose only common boundary is ONE edge. The two traverse it in
+// opposite senses — they lie on opposite sides of it — so removing it from each leaves two chains that
+// join end to end, and the merged loop is A's loop with that edge replaced by B's chain.
+//
+// The union of two coaxial cylinder bands is the case it was written for: each band's boundary is a
+// single loop carrying its seam twice and its two rims, and the rim they share is one edge of each.
+// ok=false unless exactly one edge is shared, which is what makes the splice unambiguous.
+func spliceOnSharedEdge(a, b curvedFace, res geom.Resolution) ([]curvedLoop, bool) {
+	ia, ea, ib, eb, n := sharedEdgePair(a, b, res)
+	if n != 1 {
+		return nil, false
+	}
+	spliced := curvedLoop{edges: append(append(append([]loopEdge{},
+		a.loops[ia].edges[:ea]...), rotatedChain(b.loops[ib].edges, eb)...),
+		a.loops[ia].edges[ea+1:]...)}
+	return append(append(loopsExcept(a.loops, ia), spliced), loopsExcept(b.loops, ib)...), true
+}
+
+// rotatedChain is a loop's edges with the one at k removed, rotated to start just after it — the chain
+// that runs from that edge's end back round to its start.
+func rotatedChain(edges []loopEdge, k int) []loopEdge {
+	out := make([]loopEdge, 0, len(edges)-1)
+	for i := 1; i < len(edges); i++ {
+		out = append(out, edges[(k+i)%len(edges)])
+	}
+	return out
+}
+
+// sharedEdgePair returns the first edge the two faces share and how many they share in all.
+func sharedEdgePair(a, b curvedFace, res geom.Resolution) (ia, ea, ib, eb, n int) {
+	ia, ea, ib, eb = -1, -1, -1, -1
+	for i, la := range a.loops {
+		for j, e := range la.edges {
+			for k, lb := range b.loops {
+				for m, o := range lb.edges {
+					if !edgesRunTogether(e, o, res) {
+						continue
+					}
+					if n == 0 {
+						ia, ea, ib, eb = i, j, k, m
+					}
+					n++
+				}
+			}
+		}
+	}
+	return ia, ea, ib, eb, n
+}
+
+// edgesRunTogether reports whether two loop edges trace the same stretch of the same curve.
+func edgesRunTogether(a, b loopEdge, res geom.Resolution) bool {
+	sa, sb := geom.SubCurve(a.curve, a.t0, a.t1), geom.SubCurve(b.curve, b.t0, b.t1)
+	return curveRunsAlongEdge(sa, b, res) && curveRunsAlongEdge(sb, a, res)
 }
 
 // sharedLoopPair finds one loop of a and one of b that are the same closed boundary.

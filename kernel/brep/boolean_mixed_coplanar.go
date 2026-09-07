@@ -97,11 +97,20 @@ func coplanarStraightImprints(target, other curvedFace) ([][2]math.Point3, bool)
 // coplanarConicImprints enters the other coplanar face's whole conic edges into target: an island when
 // wholly inside its material, the clipped arcs when it crosses the boundary, nothing when clear.
 // ok=false for a conic edge that is not a whole closed curve (an arc), which this does not model yet.
+//
+// An edge running ALONG target's own boundary contributes nothing, the same rule the wall pairing
+// follows: two coaxial cylinders abutting cap to cap present each disc with a copy of its own rim, and
+// asking the island rule to place a curve that IS the boundary declined the whole union
+// (sectionOnFaceBoundary, ADR-0061 stage 4).
 func coplanarConicImprints(target, other curvedFace) ([]geom.Curve3, bool) {
 	var out []geom.Curve3
+	res := geom.ResolutionForBox(faceLoopBox(target))
 	for _, l := range other.loops {
 		for _, e := range l.edges {
 			if geom.IsStraightCurve(e.curve) {
+				continue
+			}
+			if sectionOnFaceBoundary(geom.SubCurve(e.curve, e.t0, e.t1), target, res) {
 				continue
 			}
 			if !geom.CurveIsClosed(e.curve) || !isFullDomain(e.t0, e.t1) {

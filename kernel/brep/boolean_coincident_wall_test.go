@@ -21,11 +21,32 @@ import (
 // surviving caps close it.
 func TestCoaxialWallsUnionThroughTheGeneralPath(t *testing.T) {
 	t.Parallel()
+	for _, tc := range []struct {
+		name     string
+		baseZ, h float64
+	}{
+		{"overlapping bands", 3, 4},
+		// Abutting cap to cap is the same union with a different contact: the walls touch at a rim
+		// rather than overlapping, and the two discs at the join are COINCIDENT planes, each presenting
+		// the other with a copy of its own boundary.
+		{"abutting cap to cap", 4, 3},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			assertCoaxialUnionIsOneCylinder(t, tc.baseZ, tc.h)
+		})
+	}
+}
+
+// assertCoaxialUnionIsOneCylinder unions the r=2 cylinder over z∈[0,4] with the one of height h based
+// at baseZ, and pins the union as a single cylinder closed by two caps.
+func assertCoaxialUnionIsOneCylinder(t *testing.T, baseZ, h float64) {
+	t.Helper()
 	a, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	if err != nil {
 		t.Fatalf("SolidCylinder a: %v", err)
 	}
-	b, err := SolidCylinder(math.P3(0, 0, 3), math.V3(0, 0, 1), 2, 4)
+	b, err := SolidCylinder(math.P3(0, 0, math.Scalar(baseZ)), math.V3(0, 0, 1), 2, h)
 	if err != nil {
 		t.Fatalf("SolidCylinder b: %v", err)
 	}
@@ -52,7 +73,7 @@ func TestCoaxialWallsUnionThroughTheGeneralPath(t *testing.T) {
 	}
 	// The wall spans z∈[0,7] — no gap, which would tear the solid, and no overlap, which would double
 	// the surface where the two operands agree.
-	assertWallSpansTile(t, res, 0, 7)
+	assertWallSpansTile(t, res, 0, baseZ+h)
 }
 
 // assertWallSpansTile checks that the result's cylinder walls cover the axial range [lo, hi] exactly
