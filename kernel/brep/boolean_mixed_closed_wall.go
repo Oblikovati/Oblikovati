@@ -159,6 +159,13 @@ func wallWallImprint(a, b curvedFace) ([]geom.Curve3, bool) {
 		return nil, false
 	}
 	res := geom.ResolutionForSize(stdmath.Max(ra.size(), rb.size()))
+	// Two walls on ONE surface do not cross, and asking an intersector for the crossing they do not
+	// have returns "cannot", which is not the same as "unsupported": their contact is the region where
+	// the two bands overlap, and what divides it is where one band ends inside the other (ADR-0045,
+	// the degenerate-overlap class — boolean_mixed_coincident.go).
+	if geom.SurfacesCoincide(ra.surface, rb.surface, res) {
+		return coincidentWallImprint(ra, rb), true
+	}
 	curves, handled := geom.IntersectSurfacesAnalytic(ra.surface, rb.surface, res)
 	if !handled || !crossingsClose(curves, res) {
 		return nil, false

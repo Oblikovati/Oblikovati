@@ -296,8 +296,8 @@ func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3) (
 
 // mixedWallFaces trims both operands' walls into the stitch's pass list.
 func mixedWallFaces(pa, pb facePartition, pra, prb insideOracle, wallImpA, wallImpB [][]geom.Curve3, op Op) ([]curvedFace, bool) {
-	wallA, okA := wallSplitFaces(pa, wallImpA, prb, op, false)
-	wallB, okB := wallSplitFaces(pb, wallImpB, pra, op, true)
+	wallA, okA := wallSplitFaces(pa, wallImpA, prb, pb.allFaces(), op, false)
+	wallB, okB := wallSplitFaces(pb, wallImpB, pra, pa.allFaces(), op, true)
 	return append(wallA, wallB...), okA && okB
 }
 
@@ -353,7 +353,7 @@ func demotedHoleFaceTrims(full curvedFace, imprints [][2]math.Point3, other insi
 	for _, s := range imprints {
 		curves = append(curves, geom.NewLineSegment(s[0], s[1]))
 	}
-	return uvSplitOne(full, faceLoopBox(full), curves, uvKeepAt(full, allOthers, other, op, isB), op, isB)
+	return uvSplitOne(full, faceLoopBox(full), curves, coincidentKeepAt(full, allOthers, other, op, isB), op, isB)
 }
 
 // imprintMeetsHole reports an imprint segment crossing, ending on, or lying inside a detached hole
@@ -560,7 +560,7 @@ func pairUVUVImprints(pa, pb *facePartition, uvA, uvB [][]geom.Curve3) bool {
 func uvSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracle, others []curvedFace, op Op, isB bool) ([]curvedFace, bool) {
 	var out []curvedFace
 	for i, uf := range p.uv {
-		faces, ok := uvSplitOne(uf, p.uvBox[i], imprints[i], uvKeepAt(uf, others, other, op, isB), op, isB)
+		faces, ok := uvSplitOne(uf, p.uvBox[i], imprints[i], coincidentKeepAt(uf, others, other, op, isB), op, isB)
 		if !ok {
 			return nil, false
 		}

@@ -167,10 +167,10 @@ func wallCurveSegments(cv geom.Curve3, of curvedFace, axis math.Vector3, band co
 // wallSplitFaces trims each wall by its imprints through the ruled chart, classifying kept cells by
 // the boolean's keep table over the other operand's membership oracle; a wall with no imprints keeps
 // the whole-face pass-through classification; a kept Difference tool wall reverses into the cavity.
-func wallSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracle, op Op, isB bool) ([]curvedFace, bool) {
+func wallSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracle, others []curvedFace, op Op, isB bool) ([]curvedFace, bool) {
 	var out []curvedFace
 	for i, wf := range p.wall {
-		faces, ok := wallSplitOne(wf, imprints[i], other, op, isB)
+		faces, ok := wallSplitOne(wf, imprints[i], other, others, op, isB)
 		if !ok {
 			return nil, false
 		}
@@ -179,19 +179,23 @@ func wallSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracl
 	return out, true
 }
 
-// wallSplitOne trims one wall (or classifies it whole when it has no imprints).
-func wallSplitOne(wf curvedFace, imprint []geom.Curve3, other insideOracle, op Op, isB bool) ([]curvedFace, bool) {
+// wallSplitOne trims one wall (or classifies it whole when it has no imprints). The keep test is the
+// shared one: a point covered by a face of the other operand on the SAME surface follows the ON/ON
+// table, so two coaxial walls emit their overlap once (coincidentKeepAt).
+func wallSplitOne(wf curvedFace, imprint []geom.Curve3, other insideOracle, others []curvedFace, op Op, isB bool) ([]curvedFace, bool) {
+	keepAt := coincidentKeepAt(wf, others, other, op, isB)
 	if len(imprint) == 0 {
-		return passThroughKept([]curvedFace{wf}, other, op, isB)
+		return wallWholeKept(wf, keepAt, other, op, isB)
 	}
 	rs, ok := ruledFaceOf(wf)
 	if !ok {
 		return nil, false
 	}
 	c := newRuledFaceUV(wf, rs, op, isB, other.inside)
+	c.keepAt = keepAt
 	imprint = c.admits(imprint)
 	if len(imprint) == 0 {
-		return passThroughKept([]curvedFace{wf}, other, op, isB) // every imprint lay on the frame: untouched
+		return wallWholeKept(wf, keepAt, other, op, isB) // every imprint lay on the frame: untouched
 	}
 	faces, _, err := trimByImprint(c, wf, rs.surface, imprint, ruledFaceMaterial(c))
 	if err != nil {
@@ -201,4 +205,21 @@ func wallSplitOne(wf curvedFace, imprint []geom.Curve3, other insideOracle, op O
 		faces = reverseCurvedFaces(faces)
 	}
 	return faces, true
+}
+
+// wallWholeKept classifies an imprint-free wall as a whole, through the shared keep test — so a wall
+// wholly covered by a coincident wall of the other operand drops from one side and survives from the
+// other, instead of both sides asking a membership oracle about a point on the boundary they share.
+func wallWholeKept(wf curvedFace, keepAt func(math.Point3) bool, other insideOracle, op Op, isB bool) ([]curvedFace, bool) {
+	p, ok := passSamplePoint(wf)
+	if !ok {
+		return passThroughKept([]curvedFace{wf}, other, op, isB)
+	}
+	if !keepAt(p) {
+		return nil, true
+	}
+	if op == Difference && isB {
+		return reverseCurvedFaces([]curvedFace{wf}), true
+	}
+	return []curvedFace{wf}, true
 }

@@ -23,6 +23,10 @@ type ruledFaceUV struct {
 	loopFrame
 	frame    geom.RuledFrame
 	wrapping bool // some kept boundary loop wraps the azimuth (set by wrappingSolidFaces)
+	// keepAt is the shared keep test (coincidentKeepAt): the ON/ON table where a face of the other
+	// operand lies on this same surface, the membership oracle everywhere else. nil falls back to the
+	// oracle alone, which is what every caller outside the mixed dispatch supplies.
+	keepAt func(math.Point3) bool
 }
 
 // seamOverrun: a band is open in v, so the seam runs a full window past each end and bounds nothing
@@ -179,9 +183,18 @@ func (c *ruledFaceUV) frameContains(uv math.Point2) bool {
 func ruledFaceMaterial(c *ruledFaceUV) func() materialPredicate {
 	return func() materialPredicate {
 		return func(uv math.Point2) bool {
-			return c.frameContains(uv) && c.keptBySolid(float64(uv.X), float64(uv.Y))
+			return c.frameContains(uv) && c.keptAt(float64(uv.X), float64(uv.Y))
 		}
 	}
+}
+
+// keptAt is one cell's keep verdict: the shared test when the mixed dispatch supplied one, else the
+// chart's own membership reading.
+func (c *ruledFaceUV) keptAt(u, v float64) bool {
+	if c.keepAt != nil {
+		return c.keepAt(c.point3(u, v))
+	}
+	return c.keptBySolid(u, v)
 }
 
 // vClosed: a ruled wall's axial window is bounded, not periodic (loopFrameHost).

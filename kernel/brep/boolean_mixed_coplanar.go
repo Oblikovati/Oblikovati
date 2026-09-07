@@ -70,16 +70,6 @@ func faceContainsExact(f curvedFace, p math.Point3) bool {
 	return false
 }
 
-// coplanarCoverExact is coplanarCover with exact containment on a conic-edged covering face.
-func coplanarCoverExact(f curvedFace, ip math.Point3, others []curvedFace) (covered, sameNormal bool) {
-	for _, o := range others {
-		if coplanar(f, o) && faceContainsExact(o, ip) {
-			return true, faceNormal(f).Dot(faceNormal(o)) > 0
-		}
-	}
-	return false, false
-}
-
 // coplanarStraightImprints clips the other coplanar face's straight edges to target's exact material,
 // dropping any piece lying on target's own boundary (a shared edge is not an imprint).
 func coplanarStraightImprints(target, other curvedFace) ([][2]math.Point3, bool) {
@@ -171,16 +161,4 @@ func faceInteriorPoint(f curvedFace) (math.Point3, bool) {
 		return c.TranslateBy(dir.Scale(math.Scalar((ivs[0][0] + ivs[0][1]) / 2))), true
 	}
 	return math.Point3{}, false
-}
-
-// uvKeepAt is the exact-frame chart's keep test: a cell covered by a coplanar face of the other operand
-// follows the ON/ON table; every other cell follows the keep table over the membership oracle.
-func uvKeepAt(uf curvedFace, others []curvedFace, other insideOracle, op Op, isB bool) func(math.Point3) bool {
-	return func(pt math.Point3) bool {
-		covered, same := coplanarCoverExact(uf, pt, others)
-		if covered {
-			return coplanarKeep(op, isB, same)
-		}
-		return keep(op, isB, other.inside(pt))
-	}
 }

@@ -164,11 +164,14 @@ func uvWallSharedImprint(uf, wf curvedFace) ([]geom.Curve3, bool) {
 // collectWallIslands keeps the section curves that are imprints (closed islands in both trims) and drops
 // the ones clear of the pair; ok=false when any curve clips a trim. A section lying in the plane of one
 // of the wall's OWN edges — a plate's underside meeting the rim of the boss beneath it — is a boundary
-// contact, not an imprint, and contributes nothing (ADR-0060).
+// contact, not an imprint, and contributes nothing (ADR-0060); so is one running along an edge of the
+// RECEIVING face, which is the same rule seen from the other side. The section a coaxial cylinder's
+// wall cuts from the plane of the cap closing the other IS that cap's own rim (sectionOnFaceBoundary).
 func collectWallIslands(curves []geom.Curve3, uf, wf curvedFace, rs ruledSide) ([]geom.Curve3, bool) {
 	var out []geom.Curve3
+	res := geom.ResolutionForBox(faceLoopBox(uf))
 	for _, cv := range curves {
-		if sectionOnWallEdge(cv, wf) {
+		if sectionOnWallEdge(cv, wf) || sectionOnFaceBoundary(cv, uf, res) {
 			continue
 		}
 		pieces, ok := wallSectionIsland(cv, uf, wf, rs)
