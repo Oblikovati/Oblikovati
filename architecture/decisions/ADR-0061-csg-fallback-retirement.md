@@ -1748,3 +1748,43 @@ than from the model's extent, which is ADR-0042's rule and its remaining debt. T
 all of them at once. Fixing them is its own slice with its own corpus (a part swept across six decades
 of scale), and it is not ADR-0061's: the retirement needs it only for this one row, which the
 mesh-arrangement rescue serves, reported.
+
+### Stage 4's gate is met: the model corpus needs no recognizer and no engine (2026-09-07, night)
+
+Measured with the 26 `curvedExactPaths` recognizers emptied AND the three faceted engines refusing —
+`reconstructedCurvedBoolean`, the triangle CSG, and the mesh-arrangement rescue:
+
+| corpus | failing tests |
+| --- | ---: |
+| `./model/...` — every feature, and the OCC parity suite | **0** |
+| `./kernel/...` | 9 |
+
+Nothing in the model layer needs a recognizer or a fallback any more. Every hole, boss, chamfer,
+fillet, emboss, pattern, revolve, loft and sheet-metal case, and every OCC-certified volume, is built
+by the general per-face pipeline alone.
+
+The nine kernel rows are not general-pipeline scope, and each is named:
+
+- **seven test the fallbacks themselves** — the mesh-arrangement rescue, the CSG-fallback diagnostic,
+  the named decline, the observable chained decline, the two reconstruction rebuilds, and the off-axis
+  rod whose valid faceted solid is the assertion. They convert or go with the engines at stage 7,
+  exactly as the Consequences section said they would.
+- **one is the near-pinch continuity row's SNAP**: four faces where the general pipeline builds three,
+  because the retired recognizer snapped two near-equal radii together. That is the recognizer's own
+  convention and it moves with it.
+- **one is the drilled plate below a millimetre**, which is the resolution floor — ADR-0042's debt,
+  measured and named above.
+
+The last three defects that stood between the pipeline and this measurement were all one mistake in
+different clothes, and all of them shipped a WRONG BODY rather than a decline wherever the rescue was
+not there to catch it:
+
+- an imprint that runs along a frame edge is a CONTACT, whatever kind of curve carries it. The guard
+  said "two sections in one plane are one conic on the surface", which cannot see a crossing delivered
+  as a ruled arc — and a chamfer wedge's cone crosses the shaft's wall at exactly the wedge's own rim.
+  The arrangement carried that rim twice, a rounding apart, and zig-zagged between the copies: ninety
+  alternating fragments where one circle belonged.
+- the same rule from the receiving face's side, for a coplanar pair: two coaxial cylinders abutting cap
+  to cap hand each disc a copy of its own boundary.
+- and the merge that follows from both — two faces on one surface whose common boundary dissolves are
+  one face.
