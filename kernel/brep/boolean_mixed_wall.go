@@ -69,10 +69,12 @@ func overlapsUncarriedWall(wf curvedFace, box math.Box, other *facePartition) bo
 		if geom.SurfacesApart(wf.surface, other.wall[i].surface, facePairCullPad) {
 			continue
 		}
-		// Carried means an imprint was actually produced. A solver that finds NOTHING between two
-		// walls whose boxes overlap and which no separation proof settles has not proved they are
-		// clear — a grazing partial-rim cut is exactly that — so an empty crossing keeps the decline.
-		if curves, ok := wallWallImprint(wf, other.wall[i]); ok && len(curves) > 0 {
+		// Carried means the pair was DECIDED, not that curves came back. An empty decided result is a
+		// proof of its own: the two infinite surfaces are known not to cross, or every crossing they
+		// have lies clear of one of the two bands — a tool that enters a cylinder through one cap and
+		// leaves through the other never touches its wall, and the wall stays whole. Reading the
+		// EMPTINESS as the undecided case declined that whole two-cap family (ADR-0061 stage 4).
+		if _, ok := wallWallImprint(wf, other.wall[i]); ok {
 			continue
 		}
 		return true
