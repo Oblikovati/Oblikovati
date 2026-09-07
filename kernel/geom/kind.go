@@ -195,4 +195,5 @@ var (
 	_ KindedCurve = SpiricArc{}
 	_ KindedCurve = TorusCylinderArc{}
 	_ KindedCurve = RuledQuadricArc{}
+	_ KindedCurve = RuledQuadricLoop{}
 )

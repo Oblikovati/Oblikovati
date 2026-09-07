@@ -60,10 +60,11 @@ size
 the ball-and-rod recognizers; (4) every ruled crossing through one general pipeline, deleting the 26
 recognizers of `curvedExactPaths` ([#2246](https://github.com/Oblikovati/Oblikovati/issues/2246),
 [#2153](https://github.com/Oblikovati/Oblikovati/issues/2153)) — **DONE 2026-09-07**, see "Stage 4's
-deletion" below; (5) a chart for freeform faces, which ends the pass bucket; (6) failure becomes local,
-so one bad face no longer discards a whole analytic body — **DONE**; (7) delete the engines
-([#2251](https://github.com/Oblikovati/Oblikovati/issues/2251)) — **DONE**. Stage 5 is the only one
-still open.
+deletion" below; (5) planned as a chart for freeform faces ending the pass bucket — **the premise did
+not survive measurement**: the pass bucket is already empty and the refusals come from the INTERSECTOR,
+see "Stage 5" below, where the folded ruled∩quadric window landed and the torus family is what is left;
+(6) failure becomes local, so one bad face no longer discards a whole analytic body — **DONE**;
+(7) delete the engines ([#2251](https://github.com/Oblikovati/Oblikovati/issues/2251)) — **DONE**.
 
 **Stage 1 — a sub-face point on a plane the other solid shares is classified from both sides.** This
 is the first stage to land, and it is the defect the multipoint disk was left on.
@@ -2079,3 +2080,81 @@ and golangci-lint are green.
 torus meeting a sphere, a sphere crossing a non-coaxial cylinder — exactly as they were before this
 deletion, because no recognizer covered them either. They are stage 5's chart for freeform faces, which
 takes `mixed-decline-returns` from 3 to 0.
+
+## Stage 5 — the folded ruled∩quadric window (2026-09-07)
+
+Stage 5 was planned as "a chart for freeform faces, which ends the pass bucket", gated on
+`mixed-decline-returns` reaching zero. **Both halves of that were wrong, and measuring first is what
+showed it.** Driving every pair the boolean refuses through the per-face pipeline and reading which gate
+declined gives:
+
+| pair | pass bucket | gate that declined |
+| --- | --- | --- |
+| torus − axial drill | empty | closed-surface × wall imprint |
+| torus − radial rod | empty | closed-surface × wall imprint |
+| torus − sphere | empty | closed-surface × closed-surface imprint |
+| sphere ∩ crossing cylinder | empty | closed-surface × wall imprint |
+| sphere − cone | empty | closed-surface × wall imprint |
+
+The **pass bucket is empty in every case**: stages 2 and 3 gave the sphere and the torus their charts, so
+nothing in the corpus passes through un-charted any more, and the stage's stated content was already
+done. And the gate that declines is the IMPRINT — `geom.IntersectSurfacesAnalytic` answering
+`handled=false` — not a chart.
+
+The gate is wrong too. `mixed-decline-returns` counts the three sites where the pipeline refuses a pair
+BY NAME, and the ground rules require exactly that: "an unsupported configuration is refused at
+classification with a named decline". A kernel has a boundary; a count of zero would delete the place
+that states where it is. Stage 5 measures itself by which surface-pair families the sections cover.
+
+### What the intersector was missing: the fold
+
+`RuledQuadricArc` follows one ordered root of the ruling quadratic across the base's whole azimuth. That
+is the section's shape only while the ruling meets the quadric at EVERY azimuth — a rod driven right
+through a wall. A ball sitting off a cylinder's axis is the other shape: the ruling meets it over an
+azimuth WINDOW and misses it outside, so the two roots meet where the discriminant vanishes and the
+section is ONE closed loop that runs out along the upper root and back along the lower. Those meeting
+points are FOLDS, and `dv/du` is infinite at them, so the conditioning gate — which demands the two
+branches stay apart across the whole sweep — refused the whole family.
+
+A fold is a defect of the (u, v) GRAPH, not of the curve: the section is smooth in space, tangent to the
+ruling as it turns. `RuledQuadricLoop` is that curve, and the whole trick is its parameter. The azimuth
+runs u(s) = m − w·cos s over one turn, whose speed vanishes at each fold exactly as fast as dv/du
+diverges — both like the square root of the distance to the fold — so dP/ds stays finite. Measured
+against a central difference at 65 stations including both folds, the analytic tangent agrees to
+cos = 1.000000, and every point of the loop sits within 1e-15 of both surfaces.
+
+Three details earned their comments the hard way:
+
+- **The window's ends are found on the NEGATIVE side of the bisection**, never at the bracket's midpoint.
+  At an azimuth where the discriminant is a rounding ABOVE zero the two roots differ by 2√Δ/|a|, and √Δ
+  of a number bisected to 1e-20 is still 1e-10 — the loop closed with a 1.55e-7 gap. Taken from the side
+  where the roots have already merged, `foldRoot` answers the double root −b/2a for both halves and the
+  closure is exact.
+- **The window form must refuse a full wrap rather than dress it up.** A discriminant with no sign change
+  is the arc form's case, and a "loop" whose two folds are the same azimuth is not a curve.
+- **A tangency, a clear pair and an enclosed pair are ANSWERS, not refusals.** Reporting them as
+  unhandled would send a pair with no section to the marcher.
+
+### What it unlocked
+
+A ball crossing a rod off its axis — the smallest folded pair — now booleans exactly in all three
+operations. Certified against an independent oracle (the two primitives' analytic membership integrated
+by Monte Carlo, deliberately not the kernel's own classifier): join 13.0779 against 13.0779, cut 12.5542
+against 12.5559, intersect 0.012195 against 0.012187, each inside the integral's own error. The face
+census is asserted with the volume, because a body that measures right can still be the wrong shape.
+The seam itself is exact — the result reports `AchievedBoundaryTolerance` 0 and every point of the seam
+lies within 1e-9 of both surfaces.
+
+That fixture has now been three things in a row, which is the retirement's story on one pair: the
+mesh-arrangement rescue's case, then the corpus row for the named refusal once the engines went, and now
+an exact result.
+
+### What stage 5 does NOT close
+
+The torus pairs — torus × cylinder, torus × cone, torus × sphere, torus × torus. A torus is quartic, so
+it has no implicit quadric to substitute a ruling into and neither form applies. They are still refused
+by name, and the marcher would trace them (measured: two closed loops each, deviation ~1e-3, no
+diagnostics) — but wiring it back into the boolean would re-open a door stages 6 and 7 closed. The
+boolean is exact-or-refuse today, and that is the better property; the torus family wants a closed form,
+not an approximation. Deleting the last recognizer left `coneCylinderImprint` — a one-cone-one-cylinder
+type guard in front of the general trace — with no caller, and it went the same way as the 26.

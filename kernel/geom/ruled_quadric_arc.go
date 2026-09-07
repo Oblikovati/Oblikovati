@@ -156,6 +156,33 @@ func (c ruledQuadricCoeffs) root(upper bool) float64 {
 	return lo
 }
 
+// discriminantSlope returns dΔ/du = 2bb′ − 4(a′c + ac′) — how fast the two branches separate as the
+// azimuth leaves a fold. At a fold Δ itself has cancelled to zero, so this is the only quantity there
+// that still carries full precision, and [RuledQuadricLoop] reads its tangent from it.
+func (c ruledQuadricCoeffs) discriminantSlope() float64 {
+	return 2*c.b*c.db - 4*(c.da*c.c+c.a*c.dc)
+}
+
+// foldRoot is [ruledQuadricCoeffs.root] with the fold admitted: where Δ has fallen to zero the two
+// branches MEET at the double root −b/2a, and that point is on both surfaces. root answers NaN there,
+// which is right for a full-azimuth arc — it never reaches a fold — and wrong for a loop, whose two
+// ends ARE folds. A rounding below zero is read as the fold it is, not as a miss.
+func (c ruledQuadricCoeffs) foldRoot(upper bool) float64 {
+	if c.a == 0 {
+		return stdmath.NaN()
+	}
+	if c.discriminant() <= 0 {
+		return -c.b / (2 * c.a)
+	}
+	return c.root(upper)
+}
+
+// regularDvDu is dv/du with the branch term removed: the part of the derivative that stays finite at a
+// fold. The full derivative is this plus ±(Δ′/4a)/√Δ, which [RuledQuadricLoop.branchRatio] carries.
+func (c ruledQuadricCoeffs) regularDvDu(v float64) float64 {
+	return -c.db/(2*c.a) - v*c.da/c.a
+}
+
 // separation returns |v₊ − v₋| = √Δ/|a|, the two branches' gap along the ruling — the length the
 // conditioning gate reads to decide the branches stay apart across the whole azimuth sweep.
 func (c ruledQuadricCoeffs) separation() float64 {

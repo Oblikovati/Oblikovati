@@ -36,10 +36,19 @@ import (
 // engine cannot come back unnoticed — a RISE on either row is a new door out of the exact pipeline and
 // needs an ADR, exactly as it did on the way down.
 //
-// mixed-decline-returns is NOT zero and no longer means what it did. It counted configurations that
-// routed to a faceted engine; with the engines gone it counts the configurations the general pipeline
-// REFUSES by name, which is what the ground rules ask for rather than a defect. Stage 5 (a chart for
-// freeform faces, ending the pass bucket) is what takes it to zero.
+// mixed-decline-returns is NOT zero and IS NOT GOING TO BE. It counted configurations that routed to a
+// faceted engine; with the engines gone it counts the three sites at which the general pipeline REFUSES
+// by name, which is what the ground rules ask for — "an unsupported configuration is refused at
+// classification with a named decline". A kernel has a boundary, and driving this row to zero would
+// delete the place that states where it is, not move it.
+//
+// The plan this comment used to carry ("stage 5, a chart for freeform faces, ending the pass bucket")
+// rested on a premise the earlier stages retired: the sphere and torus charts landed in stages 2 and 3,
+// so the PASS bucket is empty for every pair in the corpus and the refusals do not come from it. They
+// come from the INTERSECTOR — a surface pair for which no closed-form section exists. Stage 5 therefore
+// measures itself by which families the sections cover, not by this count, and the coverage ratchet is
+// the corpus rows themselves (kernel/geom/ruled_quadric_loop_test.go and the ops folded-window rows).
+// What the row still guards is that no FOURTH refusal site appears without an ADR.
 var fallbackDebt = map[string]int{
 	"faceted-entry-sites":   0,
 	"mixed-decline-returns": 3,

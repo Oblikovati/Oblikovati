@@ -12,7 +12,11 @@ import (
 
 // Cone–cylinder imprint (M2 Phase 2, Oblikovati/Oblikovati#1335). A tapered rod (a narrow frustum) crossing
 // a fatter cylinder must trace as two clean closed loops (the rod's entry and exit), each lying on BOTH the
-// cone and the cylinder surface to tolerance — the SSI foundation the later boolean slices build on.
+// cone and the cylinder surface to tolerance.
+//
+// These rows used to call coneCylinderImprint, a wrapper whose whole body was a one-cone-one-cylinder type
+// guard in front of curvedImprintLoops. That is the shape ADR-0061 stage 4 deleted everywhere else, and its
+// last caller went with the recognizers, so the guard is gone and the rows drive the general trace directly.
 
 // TestConeCylinderImprintTwoCleanLoops crosses a frustum (axis x, radius 1→2.5 over x∈[-6,6]) through a
 // radius-3 cylinder (axis z) and checks the trace is two closed loops, each on both surfaces.
@@ -21,7 +25,7 @@ func TestConeCylinderImprintTwoCleanLoops(t *testing.T) {
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 
-	loops, ok := coneCylinderImprint(cone, cyl, nil)
+	loops, ok := curvedImprintLoops(cone, cyl, nil)
 	if !ok {
 		t.Fatal("cone–cylinder imprint declined; want two crossing loops")
 	}
@@ -40,18 +44,21 @@ func TestConeCylinderImprintOrderIndependent(t *testing.T) {
 	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	if _, ok := coneCylinderImprint(cyl, cone, nil); !ok {
+	if _, ok := curvedImprintLoops(cyl, cone, nil); !ok {
 		t.Error("cone–cylinder imprint should resolve with the cylinder passed first too")
 	}
 }
 
-// TestConeCylinderImprintTwoCylindersDefer: two cylinders are not the cone–cylinder case.
-func TestConeCylinderImprintTwoCylindersDefer(t *testing.T) {
+// TestConeCylinderImprintTracesTwoCylindersToo: the general trace does not care which ruled pair it is
+// handed. The guard this replaced answered ok=false for two cylinders so a different recognizer could
+// claim them; with one trace for every ruled pair, the answer is the two loops (ADR-0061 stage 4).
+func TestConeCylinderImprintTracesTwoCylindersToo(t *testing.T) {
 	t.Parallel()
 	a, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 	b, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	if _, ok := coneCylinderImprint(a, b, nil); ok {
-		t.Error("two cylinders should defer from the cone–cylinder imprint (ok=false)")
+	loops, ok := curvedImprintLoops(a, b, nil)
+	if !ok || len(loops) != 2 {
+		t.Errorf("two crossing cylinders traced ok=%v loops=%d, want two closed loops", ok, len(loops))
 	}
 }
 
