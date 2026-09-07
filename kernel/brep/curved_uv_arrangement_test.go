@@ -345,8 +345,10 @@ func TestClipParamsMultiArmHyperbola(t *testing.T) {
 	if !ok {
 		t.Fatal("the frustum side must yield its two rim circles")
 	}
-	// clipParams and curveV read the band and the conic alone, so the membership predicate is immaterial.
-	c := newConeUVSolid(side, band, Intersection, false, func(math.Point3) bool { return true })
+	// clipParams and curveV read the band and the conic alone, so no material predicate is needed: the
+	// bare frustum frame is enough (newConeUVSolid, which wrapped this with one, is deleted with the
+	// recognizers that were its only callers — ADR-0061 stage 4).
+	c := newRuledUVFrame(side.Apex, side.AxisDir.AsVector(), side.Ref.AsVector(), stdmath.Tan(side.HalfAngle), 0, band)
 	ranges := c.clipParams(curves[0])
 	if len(ranges) != 2 {
 		t.Fatalf("hyperbola has two arms in the band, clipParams returned %d ranges", len(ranges))

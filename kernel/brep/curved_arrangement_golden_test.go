@@ -14,14 +14,17 @@ import (
 
 // Characterization golden for the shared curved-boolean (u,v)-arrangement core (#1732, Slice 0).
 //
-// This is the REGRESSION GATE for the partial-rim side-trim work (issue Oblikovati/Oblikovati#1732):
-// composing a prior section-arc boundary with a new cut requires generalizing the arrangement machinery
-// EVERY curved boolean shares — trimByImprint → assembleSegments → arrangeBand → keptCells — plus adding
-// cutCylinderOperand to the ruledOperandOf dispatch. Both changes touch code the four certified #1724
-// cap-crossing slices and the whole ruled/solid cut family depend on. This golden captures their output
-// on develop BEFORE any change so the bare-band path stays BYTE-IDENTICAL through the refactor: the new
-// operand and the constraint-edge ingest must be strictly ADDITIVE, engaged only for an already-cut
-// target, so every fixture here — none of which is partial-rim — must come out unchanged.
+// It is the drift gate on the machinery every curved boolean shares — trimByImprint → assembleSegments →
+// arrangeBand → keptCells → curvedStitch. Each fixture is one cut whose structure and naming must stay
+// put through work on that core.
+//
+// REBASELINED for ADR-0061 stage 4. The nine cases used to call nine bespoke drivers
+// (RuledCrossingCutGeneral, SteinmetzCutGeneral, the four cap-crossing slices, …); they now call Boolean,
+// so what is pinned is the body the KERNEL ships rather than one an unreachable driver still built. Six
+// of the nine tightened when they moved: E 5→4 and free 1→0, the retired drivers' seam edge — an edge
+// used twice by ONE face — no longer emitted. Every Euler characteristic is unchanged (chi 0, 4 for the
+// Steinmetz's two wedge shells, 2 for the partial penetration), so the topology class is the same body,
+// and two-cap-tunnel is byte-identical.
 //
 // TWO TIERS, because the fixtures are faceted (cos/sin coordinates) and this job runs on ubuntu, macOS AND
 // Windows (ci.yml Tier-1 matrix):
@@ -77,7 +80,7 @@ type arrangementGoldenCase struct {
 	name       string
 	wantStruct string // asserted on every OS
 	wantKeys   string // asserted on Linux only (reference-key SHA)
-	make       func() (*topo.Body, bool)
+	make       func() (*topo.Body, error)
 }
 
 func cylZ(z, r, h float64) *topo.Body {
@@ -101,47 +104,47 @@ func arrangementGoldenCases() []arrangementGoldenCase {
 	target := func() *topo.Body { return cylZ(0, 3, 10) } // the r=3 h=10 cap-crossing target
 	return []arrangementGoldenCase{
 		// --- solid-cut family (rides trimByImprint + ruledOperandOf directly) ---
-		{"crossing-cylinder", "V4E5F4chi0free1", "V4E5F4chi0-daf5165df038e441", func() (*topo.Body, bool) {
-			return brep.RuledCrossingCutGeneral(cylZ(-6, 3, 12), cylX(-6, 1.5, 12), nil)
+		{"crossing-cylinder", "V4E4F4chi0free0", "V4E4F4chi0-74852750406b9602", func() (*topo.Body, error) {
+			return brep.Boolean(brep.Difference, cylZ(-6, 3, 12), cylX(-6, 1.5, 12))
 		}},
-		{"cone-cone-cut", "V4E5F4chi0free1", "V4E5F4chi0-62b46082d3a6e2e7", func() (*topo.Body, bool) {
+		{"cone-cone-cut", "V4E4F4chi0free0", "V4E4F4chi0-311173ef8acd01bf", func() (*topo.Body, error) {
 			fat, _ := brep.SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 			rod, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "rod")
-			return brep.RuledCrossingCutGeneral(fat, rod, nil)
+			return brep.Boolean(brep.Difference, fat, rod)
 		}},
-		{"cone-cylinder-cut", "V4E5F4chi0free1", "V4E5F4chi0-1f6dd86ad3e40a48", func() (*topo.Body, bool) {
+		{"cone-cylinder-cut", "V4E4F4chi0free0", "V4E4F4chi0-02f753d9a7fecdd0", func() (*topo.Body, error) {
 			cyl := cylZ(-6, 3, 12)
 			cone, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
-			return brep.RuledCrossingCutGeneral(cyl, cone, nil)
+			return brep.Boolean(brep.Difference, cyl, cone)
 		}},
 		// Re-baselined for the unified radial stitch (ADR-0058): the equal-radius Steinmetz cut leaves
 		// TWO wedge components touching at the two pinch points; the radial vertex-disk split now
 		// separates them into coincident-but-distinct shells (ADR-0047's bowtie rule, previously planar
 		// only) — V6/chi4 (two chi-2 shells) instead of the old shared-pinch-vertex V4/chi2 complex.
-		{"steinmetz-cut", "V6E6F6chi4free0", "V6E6F6chi4-ccc0e170dc8052c8", func() (*topo.Body, bool) {
-			return brep.SteinmetzCutGeneral(cylX(-6, 3, 12), cylZ(-6, 3, 12), nil)
+		{"steinmetz-cut", "V6E6F6chi4free0", "V6E6F6chi4-6a96f933d9fae724", func() (*topo.Body, error) {
+			return brep.Boolean(brep.Difference, cylX(-6, 3, 12), cylZ(-6, 3, 12))
 		}},
-		{"partial-penetration", "V4E5F5chi2free1", "V4E5F5chi2-324d24b080bb6f9b", func() (*topo.Body, bool) {
-			return brep.PartialPenetrationCutGeneral(cylZ(-6, 3, 12), cylX(-6, 1.5, 6), nil)
+		{"partial-penetration", "V4E4F5chi2free0", "V4E4F5chi2-93bc743a5194060b", func() (*topo.Body, error) {
+			return brep.Boolean(brep.Difference, cylZ(-6, 3, 12), cylX(-6, 1.5, 6))
 		}},
 		// --- the four certified #1724 cap-crossing slices (ride ruledOperandOf dispatch) ---
-		{"cap-crossing-interior", "V4E5F4chi0free1", "V4E5F4chi0-5970beadaf185034", func() (*topo.Body, bool) {
-			return brep.CapCrossingCutGeneral(target(), oblique45(-6.5), nil)
+		{"cap-crossing-interior", "V4E4F4chi0free0", "V4E4F4chi0-649f4b16c84d4e93", func() (*topo.Body, error) {
+			return brep.Boolean(brep.Difference, target(), oblique45(-6.5))
 		}},
-		{"rim-crossing", "V4E5F4chi0free0", "V4E5F4chi0-5015ac6e262cd9e0", func() (*topo.Body, bool) {
-			return brep.RimCrossingCutGeneral(target(), oblique45(-5.6), nil)
+		{"rim-crossing", "V4E5F4chi0free0", "V4E5F4chi0-706e075703bed170", func() (*topo.Body, error) {
+			return brep.Boolean(brep.Difference, target(), oblique45(-5.6))
 		}},
-		{"two-cap-tunnel", "V4E5F4chi0free1", "V4E5F4chi0-0adcb840d5945a7f", func() (*topo.Body, bool) {
+		{"two-cap-tunnel", "V4E5F4chi0free1", "V4E5F4chi0-3e6d014bf261527b", func() (*topo.Body, error) {
 			th := 20.0 * stdmath.Pi / 180
 			ux, uz := stdmath.Sin(th), stdmath.Cos(th)
 			tool, _ := brep.SolidCylinder(math.P3(-2.416, 0, -2.518), math.V3(math.Scalar(ux), 0, math.Scalar(uz)), 0.7, 16)
-			return brep.TwoCapCrossingCutGeneral(target(), tool, nil)
+			return brep.Boolean(brep.Difference, target(), tool)
 		}},
-		{"cone-cap-crossing", "V4E5F4chi0free1", "V4E5F4chi0-5308a224b7afb0c5", func() (*topo.Body, bool) {
+		{"cone-cap-crossing", "V4E4F4chi0free0", "V4E4F4chi0-da7299cbc9295d07", func() (*topo.Body, error) {
 			s := 1 / stdmath.Sqrt2
 			top := math.P3(math.Scalar(-6.5+16*s), 0, math.Scalar(2+16*s))
 			tool, _ := brep.SolidCylinderCone(math.P3(-6.5, 0, 2), top, 0.9, 0.6, "cone")
-			return brep.ConeCapCrossingCutGeneral(target(), tool, nil)
+			return brep.Boolean(brep.Difference, target(), tool)
 		}},
 	}
 }
@@ -150,9 +153,9 @@ func TestCurvedArrangementGolden(t *testing.T) {
 	t.Parallel()
 	for _, c := range arrangementGoldenCases() {
 		t.Run(c.name, func(t *testing.T) {
-			b, ok := c.make()
-			if !ok || b == nil {
-				t.Fatalf("%s: builder declined (ok=%v nil=%v) — fixture no longer classifies", c.name, ok, b == nil)
+			b, err := c.make()
+			if err != nil || b == nil {
+				t.Fatalf("%s: boolean failed (err=%v nil=%v) — fixture no longer classifies", c.name, err, b == nil)
 			}
 			gotStruct := structSig(b)
 			if c.wantStruct == "" {

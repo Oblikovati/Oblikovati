@@ -31,9 +31,9 @@ func scallopPlate(t *testing.T) *topo.Body {
 	if err != nil {
 		t.Fatalf("drill: %v", err)
 	}
-	res, ok := brep.CutEdgeScallop(plate, drill)
-	if !ok {
-		t.Fatal("CutEdgeScallop declined the edge-clipping drill")
+	res, err := brep.Boolean(brep.Difference, plate, drill)
+	if err != nil {
+		t.Fatalf("edge-clipping drill: %v", err)
 	}
 	return res
 }

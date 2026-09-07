@@ -30,9 +30,9 @@ func bossedBlock(t *testing.T) *topo.Body {
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
-	bossed, ok := brep.JoinCylindricalBoss(block, cyl)
-	if !ok || bossed == nil {
-		t.Fatalf("JoinCylindricalBoss declined; fixture unavailable")
+	bossed, err := brep.Boolean(brep.Union, block, cyl)
+	if err != nil {
+		t.Fatalf("boss union: %v", err)
 	}
 	return bossed
 }

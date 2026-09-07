@@ -59,9 +59,11 @@ size
 [#3255](https://github.com/Oblikovati/Oblikovati/issues/3255)); (3) sphere and torus charts, deleting
 the ball-and-rod recognizers; (4) every ruled crossing through one general pipeline, deleting the 26
 recognizers of `curvedExactPaths` ([#2246](https://github.com/Oblikovati/Oblikovati/issues/2246),
-[#2153](https://github.com/Oblikovati/Oblikovati/issues/2153)); (5) a chart for freeform faces, which
-ends the pass bucket; (6) failure becomes local, so one bad face no longer discards a whole analytic
-body; (7) delete the engines ([#2251](https://github.com/Oblikovati/Oblikovati/issues/2251)).
+[#2153](https://github.com/Oblikovati/Oblikovati/issues/2153)) — **DONE 2026-09-07**, see "Stage 4's
+deletion" below; (5) a chart for freeform faces, which ends the pass bucket; (6) failure becomes local,
+so one bad face no longer discards a whole analytic body — **DONE**; (7) delete the engines
+([#2251](https://github.com/Oblikovati/Oblikovati/issues/2251)) — **DONE**. Stage 5 is the only one
+still open.
 
 **Stage 1 — a sub-face point on a plane the other solid shares is classified from both sides.** This
 is the first stage to land, and it is the defect the multipoint disk was left on.
@@ -2011,3 +2013,69 @@ the engines deleted.
   bandV(p) and a window means what it says. `TestAnnularRingCutClosesTheBox` pins the topology and
   `TestAnnularRingCutRemovesExactlyAQuarter` the exact volume: the ring lies wholly within the box's y
   span and reaches ±1.5 inside a 2-unit box, so the cut removes exactly a quarter of the annulus.
+
+## Stage 4's deletion — the 26 recognizers are gone (2026-09-07)
+
+The stage-4 GATE was met on 2026-09-07: with `curvedExactPaths` emptied and the three faceted engines
+refusing, `./model/...` failed nothing. Stages 6 and 7 then landed, deleting the engines. What remained
+was the deletion the stage exists for, and this is it.
+
+**What went.** `curvedExactPaths` and its 26 entries; the four `kernel/ops/boolean` files that declared
+them (`boolean_crossing_cylinder.go`, `boolean_curved_convex.go`, `boolean_curved_subtract.go`,
+`boolean_curved_flat_subtract.go`) with the `gatedCurved` / `withoutRecorder` adapters; and the 25 brep
+files behind them — the ruled-crossing and partial-penetration drivers, the equal-radius Steinmetz family
+and its snap ceiling, the four cap-crossing slices and their rim-corner solver, the partial-rim cut and
+its corner-junction builder, the drill through-hole recipe, the cylinder boss and the straddling boss,
+the edge scallop, the coaxial cylinder union, and the coaxial sphere-and-rod builders with their span,
+winding and membership machinery. **45 files, 5 061 production lines and 2 069 test lines net.**
+
+`curvedExactBoolean` is now four guards around one call to `brep.BooleanDiag`. The near-pinch decline
+went with them (`CodeImprintNearPinchDeclined` and the gate that recorded it): it existed to hand a
+narrow-neck crossing to the Steinmetz constructor below the snap ceiling and to the faceted route above
+it, and neither destination exists. So did `curvedSolidMembership` and `newConeUVSolid`, whose only
+callers were the drivers; the two closed-form oracles they wrapped stay, reached from `ClassifyPoint`.
+
+**The ratchets.** `recognizers` **37 → 11** — the whole fall is the 26, and the 11 left are the
+tessellator's `specialCurvedMeshers`, now the only first-fit ladder in the kernel. `fallback-sites`
+26 → 24, `tolerance-constants` 226 → 216 (the drivers' own calibrated welds and snaps),
+`type-assertions` 727 → 692 (a per-pair recognizer recognises by asserting its operands' surface kinds;
+35 of those went). `dispatchLadders` loses its `boolean_curved.go` entry outright.
+
+**What the corpus says.** Every row the drivers' own tests carried was re-pointed at the general entry
+rather than deleted, and each came back with the SAME answer:
+
+| family | census through the driver | census through `Boolean` |
+| --- | --- | --- |
+| cone ∩ cone | 3 cones | 3 cones |
+| cone ∩ cylinder | 1 cone + 2 cylinders | same |
+| cylinder ∩ cylinder | 3 cylinders | same |
+| crossing cut / join | 2 cyl + 2 planes / 3 cyl + 4 planes | same |
+| partial ∩ / − / ∪ | 2+1 / 2+3 / 2+3 | same |
+| coaxial ball ∪/−/∩ rod, all 8 extents | sphere/cylinder/plane tallies | same |
+| shoulder extents, all 8 | sphere/cylinder/plane tallies | same |
+
+Three rows came back BETTER, and each is worth naming because each was a defect the driver carried:
+
+- **Six of the nine arrangement-golden cases tightened.** E fell 5 → 4 and the free-edge count 1 → 0:
+  the drivers emitted a seam edge used twice by ONE face, which `structSig` counts as free. Every Euler
+  characteristic is unchanged, so it is the same body with one fewer artificial edge. The golden is
+  rebaselined against `Boolean`, which is what the kernel now ships.
+- **The rim-crossing cut became exact.** Its driver clipped the section loop open at the rim, the
+  closed-form path refuses a clipped chain by contract, and the imprint therefore MARCHED — that pair
+  was the corpus's only body with a non-zero `AchievedBoundaryTolerance`. The per-face pipeline meets
+  each face's own section in closed form (the wall's ruled∩quadric arc, the cap's ellipse, the rim's
+  circle), so every edge is analytic and the body reports 0.
+- **The near-pinch band lost its ceiling.** Below the stitch resolution the Steinmetz recognizer SNAPPED
+  the radii to their mean and emitted the four-lobe bicylinder; the general pipeline does not move
+  geometry, so at δ = 0.4·ceiling it emits the honest three-face answer (the thin cylinder's full-wrap
+  band plus the fat one's two lens caps) and reserves four lobes for radii that are exactly equal. The
+  whole sweep now tracks the analytic crossing-intersection volume to 1e-4, where the old test had to
+  allow 4% for its faceted half. `TestBooleanIntersectNearPinchContinuity` carries the new premise.
+
+Nothing regressed: `./kernel/...`, `./model/...`, `./app/...`, `./math/...`, `./addin/...`, archguard
+and golangci-lint are green.
+
+**What stage 4 does NOT close.** Several pairs are still refused by name — a torus cut by a drill, a
+torus meeting a sphere, a sphere crossing a non-coaxial cylinder — exactly as they were before this
+deletion, because no recognizer covered them either. They are stage 5's chart for freeform faces, which
+takes `mixed-decline-returns` from 3 to 0.

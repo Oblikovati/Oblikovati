@@ -631,3 +631,23 @@ func anyLoopWraps(c *loopFrame, side uvSide, emitted []emittedLoop) bool {
 	}
 	return false
 }
+
+// bisectRoot refines a sign-change bracket [lo, hi] of g to a model-independent angular tolerance by
+// bisection — unconditionally convergent, no derivative needed (the corner equation is smooth but its
+// derivative adds no robustness a 60-step bisection to ~1e-16 rad lacks).
+func bisectRoot(g func(float64) float64, lo, hi float64) float64 {
+	glo := g(lo)
+	for range 60 {
+		mid := (lo + hi) / 2
+		gm := g(mid)
+		if gm == 0 || (hi-lo) < 1e-15 { // tol:angular — the bracket is an ANGLE in radians, model-scale free
+			return mid
+		}
+		if glo*gm < 0 {
+			hi = mid
+		} else {
+			lo, glo = mid, gm
+		}
+	}
+	return (lo + hi) / 2
+}

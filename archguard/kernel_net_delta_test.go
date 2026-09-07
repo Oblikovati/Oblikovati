@@ -44,14 +44,29 @@ var kernelNetDeltaPin = map[string]int{
 	// 232 → 231 (2026-09-06, ADR-0061 stage 4): a FALL — the ruled∩quadric gate's branch-separation
 	// margin (a twentieth of the largest gap) is gone; the gate reads the exact minimum of the gap
 	// against the stitch resolution instead, and the near-pinch crossings it refused are exact.
-	"tolerance-constants": 226,
+	// 226 → 216 (2026-09-07, ADR-0061 stage 4): a FALL of 10 — the deleted recognizer drivers carried
+	// their own calibrated tolerances (the corner-junction weld, the scallop and boss wall snaps, the
+	// cap-crossing corner bracket), and the general pipeline reads the model-relative resolution instead.
+	"tolerance-constants": 216,
 	// 765 → 754 (2026-09-05, ADR-0061 stage 2): a FALL — the analytic half-space pipeline is deleted,
 	// and its per-primitive dispatch took eleven geometry-kind assertions with it.
 	// 754 → 746 (2026-09-06, ADR-0061 stage 4): a FALL — restricting an edge's curve to its own
 	// sub-range moved out of the stitch and into geom.SubCurve, where the rules put a switch over
 	// curve kinds; the stitch now asks for the piece and gets back whatever kind owns it.
-	"type-assertions": 727,
-	"recognizers":     37, // 26 curvedExactPaths + 11 specialCurvedMeshers
+	// 727 → 692 (2026-09-07, ADR-0061 stage 4): a FALL of 35 — the 15 deleted brep drivers each opened
+	// by asserting its operands' surface kinds (a cylinder side, a cone frustum, a bare sphere, a
+	// planar cap), which is how a per-pair recognizer recognises. The general pipeline classifies a
+	// face by its chart, not by a type switch on its surface.
+	"type-assertions": 692,
+	// 37 → 11 (2026-09-07, ADR-0061 stage 4): a FALL of 26 — curvedExactPaths is DELETED. It was an
+	// ordered first-fit ladder of 26 bespoke recognizers tried before the general per-face pipeline,
+	// the shape the ground rules forbid ("dispatch is a classification that selects exactly one path"),
+	// and every pair it claimed — the ruled crossings, the equal-radius Steinmetz family, the drill
+	// through-hole and the cylinder boss, the four cap-crossing slices, the partial rim and its corner
+	// junction, the coaxial ball and rod — now goes through brep's one dispatch. The 15 brep driver
+	// files behind them (~2700 lines) went with them, and every corpus row they carried was re-pointed
+	// at the general entry rather than deleted.
+	"recognizers": 11, // the tessellator's specialCurvedMeshers ladder, the last one left
 	// 28 → 29 (2026-09-03, ADR-0061): CodeBooleanAnalyticInvalid. A RISE that is an improvement — the
 	// public curved-boolean entry had no Validate post-condition, so a recognizer returning a torn body
 	// shipped it silently; the degradation is now refused AND reported.
@@ -64,7 +79,12 @@ var kernelNetDeltaPin = map[string]int{
 	// per-edge validity test admits and which shipped as a valid solid meshing as its own complement.
 	// A recognizer body that fails the winding certificate now demotes to the general pipeline and
 	// says so; a general-pipeline body that fails declines and says so.
-	"fallback-sites": 26,
+	// 26 → 24 (2026-09-07, ADR-0061 stage 4): a FALL — CodeImprintNearPinchDeclined and the
+	// near-pinch gate that recorded it are deleted. The gate declined a crossing whose two lens loops
+	// leave a narrow neck so the bespoke Steinmetz constructor could take it below the snap ceiling and
+	// the faceted route above; both destinations are gone and the general trace resolves the neck
+	// itself, so the whole band is ordinary geometry with nothing to report.
+	"fallback-sites": 24,
 }
 
 func TestKernelNetDelta(t *testing.T) {

@@ -397,16 +397,24 @@ func TestBooleanJoinEqualRadiusSteinmetz(t *testing.T) {
 	}
 }
 
-// TestBooleanIntersectNearPinchContinuity sweeps the z-cylinder's radius across the near-pinch snap ceiling
-// (#1780) and pins two things. (1) BELOW the ceiling the snap produces a clean watertight analytic bicylinder
-// — the four-face, manifold, 16/3·R³ solid — where before #1780 the same input fell to the faceted route and
-// came out NON-manifold; the snap is a watertightness win, not just smoothness. (2) Volume is CONTINUOUS
-// across the ceiling: the snapped exact bicylinder (below) and the deterministic faceted fallback (above)
-// both track the analytic crossing-intersection volume to the faceting budget, so crossing the ceiling is no
-// volume jump — the true B-rep step is O(Δr·R²), well under 1e-3 here. This is the guard the old silent
-// fallback lacked (it would show as a VOLUME step). The residual band above the ceiling is still the faceted,
-// non-manifold route — folding it onto the analytic path is #1780 Direction 2 — so watertightness is asserted
-// only where the snap owns the result.
+// TestBooleanIntersectNearPinchContinuity sweeps the z-cylinder's radius up from the equal-radius pinch
+// (#1780) and pins that the near-pinch band has no seam in it. There used to be one: a snap ceiling at the
+// stitch resolution, below which a bespoke recognizer treated the radii as EQUAL and emitted the four-lobe
+// bicylinder, and above which the pair fell to the faceted route and came out non-manifold. Both are gone
+// (ADR-0061 stage 4) — the general pipeline builds every sample here — so the test asserts what is now true
+// of the whole band rather than of two sides of a ceiling:
+//
+//	(1) every sample is a valid closed manifold solid whose faces are all analytic cylinders;
+//	(2) the topology is the HONEST one for the radii given, not a snapped one — four lobes only where the
+//	    radii are exactly equal, and the thin cylinder's full-wrap band plus the fat cylinder's two lens
+//	    caps as soon as they differ at all, δ = 0.4·(the old ceiling) included;
+//	(3) the volume tracks the analytic crossing-intersection volume to 1e-4 across the sweep, where the old
+//	    test had to allow 4% for the faceted samples. Geometry is never nudged to make the operation
+//	    succeed, so continuity is a property of the answer, not of a snap.
+//
+// The δ=0 row also subsumes TestBooleanIntersectEqualRadiusDefersFromExactPath, deleted with the
+// recognizers: that test asserted the general intersect path must NOT be adopted at the pinch, so the
+// bespoke Steinmetz constructor could take it. The general path builds the four-lobe bicylinder itself.
 func TestBooleanIntersectNearPinchContinuity(t *testing.T) {
 	t.Parallel()
 	const r = 3.0
@@ -414,56 +422,44 @@ func TestBooleanIntersectNearPinchContinuity(t *testing.T) {
 	baseZ, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r, 12)
 	ceil := geom.ResolutionForBox(baseX.RangeBox().Union(baseZ.RangeBox())).Stitch()
 
-	// δ straddling the ceiling: 0, 0.4·ceil, 0.9·ceil snap (exact bicylinder); 2·ceil, 6·ceil fall to the
-	// faceted route (still ≪ 2.5e-4·r, so the near-pinch band, not a clean crossing).
-	type sample struct {
-		d       float64
-		snapped bool // within the ceiling: the exact analytic bicylinder the snap owns
-	}
-	samples := []sample{{0, true}, {0.4 * ceil, true}, {0.9 * ceil, true}, {2 * ceil, false}, {6 * ceil, false}}
-	vols := make([]float64, len(samples))
-	for i, s := range samples {
+	// δ straddling the retired snap ceiling: 0 is the true pinch, the rest are genuinely unequal radii
+	// (still ≪ 2.5e-4·r, so the near-pinch band, not a clean crossing).
+	deltas := []float64{0, 0.4 * ceil, 0.9 * ceil, 2 * ceil, 6 * ceil}
+	vols := make([]float64, len(deltas))
+	for i, d := range deltas {
 		cx, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, 12)
-		cz, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r+s.d, 12)
+		cz, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r+d, 12)
 		res, err := ops.Boolean(ops.Intersect, cx, cz)
 		if err != nil {
-			t.Fatalf("δ=%.3g: Boolean(Intersect): %v", s.d, err)
+			t.Fatalf("δ=%.3g: Boolean(Intersect): %v", d, err)
 		}
-		if s.snapped {
-			if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
-				t.Fatalf("δ=%.3g (snap band): must be a valid closed manifold solid, got %+v", s.d, v)
+		if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+			t.Fatalf("δ=%.3g: must be a valid closed manifold solid, got %+v", d, v)
+		}
+		for _, f := range res.Faces() {
+			if _, cyl := f.Geometry().(geom.Cylinder); !cyl {
+				t.Errorf("δ=%.3g: face surface %T is not a cylinder — the exact path must build every sample", d, f.Geometry())
 			}
-			if n := len(res.Faces()); n != 4 {
-				t.Errorf("δ=%.3g (snap band): %d faces, want the four-lobe bicylinder", s.d, n)
-			}
 		}
-		got := query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
-		want := crossingIntersectVolume(r, r+s.d)
-		if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
-			t.Errorf("δ=%.3g: volume %.4f, want %.4f (analytic) — rel %.4f > 4%%", s.d, got, want, rel)
+		// Four lobes only at the true pinch; unequal radii give the thin band + the fat cylinder's two caps.
+		wantFaces := 3
+		if d == 0 {
+			wantFaces = 4
 		}
-		vols[i] = got
+		if n := len(res.Faces()); n != wantFaces {
+			t.Errorf("δ=%.3g: %d faces, want %d", d, n, wantFaces)
+		}
+		vols[i] = query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+		want := crossingIntersectVolume(r, r+d)
+		if rel := stdmath.Abs(vols[i]-want) / want; rel > 1e-4 {
+			t.Errorf("δ=%.3g: volume %.6f, want %.6f (analytic) — rel %.3g > 1e-4", d, vols[i], want, rel)
+		}
 	}
-	// Volume continuity: no sample departs from the equal-radius baseline by more than the faceting budget, so
-	// the ceiling is not a volume discontinuity (the ~1.6% snap→faceted change is meshing noise — inscribed
-	// four-lobe vs CSG facets — not a geometry step; both B-reps are ~16/3·R³).
+	// No step across the retired ceiling: the whole sweep spans δ ≤ 6·ceil ≈ 1e-4, so the true volumes
+	// differ from the equal-radius baseline by far less than a faceting budget would have hidden.
 	for i, v := range vols {
-		if rel := stdmath.Abs(v-vols[0]) / vols[0]; rel > 0.04 {
-			t.Errorf("δ=%.3g volume %.4f jumped %.4f from the equal-radius baseline %.4f — a step across the snap ceiling", samples[i].d, v, rel, vols[0])
+		if rel := stdmath.Abs(v-vols[0]) / vols[0]; rel > 1e-3 {
+			t.Errorf("δ=%.3g volume %.6f jumped %.3g from the equal-radius baseline %.6f", deltas[i], v, rel, vols[0])
 		}
-	}
-}
-
-// TestBooleanIntersectEqualRadiusDefersFromExactPath: two EQUAL-radius perpendicular cylinders are the
-// Steinmetz case — its bicylinder pinches into four lobes, which the general crossing-intersect path cannot
-// emit as a clean watertight solid. The path must therefore NOT be adopted (validBooleanSolid rejects it),
-// so the boolean falls to the dedicated analytic Steinmetz handler instead of emitting a wrong solid.
-func TestBooleanIntersectEqualRadiusDefersFromExactPath(t *testing.T) {
-	t.Parallel()
-	a, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	b, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12) // equal radius
-
-	if res, ok := brep.RuledCrossingIntersectGeneral(a, b, nil); ok && ops.Validate(res).Valid {
-		t.Error("equal-radius (Steinmetz) crossing should not be adopted by the general intersect path")
 	}
 }

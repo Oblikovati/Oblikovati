@@ -10,70 +10,31 @@ import (
 	"oblikovati.org/kernel/topo"
 )
 
-// The CURVED half of the boolean: the analytic recognizers and the guards that decide whether to
-// trust one (split out of boolean.go for #2215).
+// The CURVED half of the boolean: the general per-face pipeline and the guards that decide whether to
+// trust its result (split out of boolean.go for #2215).
 //
-// curvedExactPaths is an ordered first-fit list of 26 recognizers whose try-order is load-bearing.
-// The ground rules forbid that shape — "dispatch is a classification that selects exactly one
-// path" — and #3397 replaces it; ADR-0056 "What this deletes" names the recognizers a completed
-// reconstruction retires. It is gathered in one file so that work has one place to land.
+// There is ONE path here. Until ADR-0061 stage 4 this file opened with curvedExactPaths, an ordered
+// first-fit list of 26 bespoke recognizers tried BEFORE the general pipeline; the ground rules forbid
+// that shape — "dispatch is a classification that selects exactly one path" — and every pair those
+// recognizers claimed is now built by brep's per-face dispatch. What they were (the ruled crossings, the
+// equal-radius Steinmetz family, the drill through-hole and the cylinder boss, the cap crossings, the
+// coaxial ball and rod) and why each is no longer a separate handler is recorded in ADR-0045 and
+// ADR-0061; the brep drivers behind them are deleted with them.
 //
-// The guards below it are why a wrong analytic result does not ship: a recognizer's body must be a
-// valid solid AND land inside the Requicha volume bracket, or the operation falls through.
+// The guards below are why a wrong result does not ship: the body must be a valid closed solid, its
+// faces must pass the Requicha membership certificate, no face may be wound against its outward normal,
+// and the volume must land inside the Requicha bracket. A pair the pipeline cannot model is refused BY
+// NAME (ErrUnmodelledBoolean); nothing is faceted behind the caller's back.
 
-// curvedExactBoolean tries each exact analytic curved-boolean path in turn, returning the first that
-// applies (M2, ADR-0027 §M2). Each keeps the operands' exact analytic surfaces instead of the triangle-soup
-// CSG fallback; one that does not apply returns ok=false so booleanGeneral moves on. Every path belongs to
-// one of three boolean KINDs (ADR-0045), distinguished by the DIMENSIONALITY of the operands' contact:
+// curvedExactBoolean runs brep's per-face-dispatch boolean (ADR-0058) on a pair carrying at least one
+// curved face and adopts the result only as a valid, correctly-wound solid. It is the ONLY curved path:
+// what brep's scope gate declines (ErrUnsupportedMixedBoolean) the caller refuses by name, where it once
+// fell first to the 26 recognizers and then to the mesh reconstruction (ADR-0061 stages 4 and 6).
 //
-//	TRANSVERSAL CROSSING (contact = a 1-D curve; the general SSI → (u,v)-arrangement → classify → stitch
-//	pipeline, or a curved solid trimmed by a convex tool's planar half-spaces, #1403/#1476):
-//	  - a curved solid ∩/− a convex planar tool or prism (a box; cylinder − box) → composed half-space cuts (#1334);
-//	  - two crossing cylinders ∩/−/∪ (rod band + fat-wall lens caps) (#1335);
-//	  - a cone crossing a cylinder, and a cone crossing a fatter cone, ∩/−/∪ (#1335);
-//	  - two EQUAL-radius perpendicular cylinders ∩/−/∪ (the Steinmetz bicylinder, imprint split at its pinches) (#1403);
-//	  - a thin rod ending inside a fatter solid ∩/−/∪ (a partial penetration: plug, blind hole, one-sided stub) (#1335);
-//	  - a rod COAXIAL with a ball, ending inside it ∩/−/∪ (the ball stud, its blind spherical bore, its plug) —
-//	    transversal, but the contact is one PLANAR circle and a sphere is not a rim-bounded band, so the split is
-//	    by construction and no arrangement runs; OCCT special-cases the same pair in closed form (#2036).
-//
-//	CURVED-ON-PLANAR (contact = one closed conic STRICTLY INSIDE a planar face, added as an inner loop; no
-//	SSI arrangement — the periodic (u,v) machinery does not apply to a flat bounded face, ADR-0045):
-//	  - drilling a clean through-hole in a slab with a straight cylinder (box − cylinder) (#1336);
-//	  - the union of a cylinder seated flush on a planar face (a boss/spigot) → seat-face hole + wall + cap (#1336).
-//
-//	DEGENERATE OVERLAP (contact = a 2-D region of COINCIDENT surfaces; a simplification, not an SSI handler,
-//	ADR-0045):
-//	  - the union of two coaxial equal-radius cylinders that overlap/abut → one taller cylinder (#1336).
+// An all-planar pair declines here (ok=false) and keeps its own guarded planar pipeline downstream,
+// byte-for-byte.
 func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	for _, exact := range curvedExactPaths {
-		body, ok := exact(op, target, tool, rec)
-		if !ok {
-			continue
-		}
-		// A recognizer's body is certified here, before it is adopted, so one that fails demotes to the
-		// GENERAL pipeline below rather than past it to the faceted engines: the general pipeline is what
-		// the recognizers are a shortcut for (ADR-0061 stage 4).
-		if inverted, found := invertedFace(body); found {
-			rec.Recordf(CodeBooleanWindingReject, diag.Defect,
-				"curved %s recognizer result has a face wound against its outward normal (%q): demoting to the general pipeline", op, inverted.ReferenceKey())
-			continue
-		}
-		return body, true
-	}
-	// General per-face dispatch (ADR-0058): when the curved faces are clear of the other operand,
-	// the exact planar pipeline splits the planar faces and the curved ones pass through whole —
-	// an EXACT analytic result where no bespoke recognizer applied, tried before the mesh rescue.
-	return mixedPassThroughBoolean(op, target, tool, rec)
-}
-
-// mixedPassThroughBoolean runs brep's per-face-dispatch boolean on MIXED operands (ADR-0058): only
-// when a curved face is present (an all-planar pair keeps its own guarded pipeline downstream,
-// byte-for-byte), and only adopted as a valid solid. It is the LAST word on a curved pair now: what
-// brep's scope gate declines (ErrUnsupportedMixedBoolean) the caller refuses by name, where it once
-// fell to the mesh reconstruction (ADR-0061 stage 6).
-func mixedPassThroughBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if !hasAnalyticFace(target) && !hasAnalyticFace(tool) {
+	if !hasCurvedFace(target) && !hasCurvedFace(tool) {
 		return nil, false
 	}
 	bop, ok := toBrepOp(op)
@@ -92,8 +53,8 @@ func mixedPassThroughBoolean(op PartFeatureOperation, target, tool *topo.Body, r
 	return body, true
 }
 
-// hasAnalyticFace reports whether a body carries a non-planar (analytic curved) face.
-func hasAnalyticFace(b *topo.Body) bool {
+// hasCurvedFace reports whether a body carries a non-planar (analytic curved) face.
+func hasCurvedFace(b *topo.Body) bool {
 	for _, f := range b.Faces() {
 		if _, planar := f.Geometry().(geom.Plane); !planar {
 			return true
@@ -270,23 +231,6 @@ func CurvedBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body
 // feature-level caller carries the kernel's quality signal instead of dropping it (#1601).
 func CurvedBooleanWithDiagnostics(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	return curvedExactGuarded(op, target, tool, rec)
-}
-
-// curvedExactPaths is the ordered list of exact analytic curved-boolean paths curvedExactBoolean tries; each
-// returns ok=false when it does not apply to (op, target, tool). The recorder carries the SSI imprint's
-// closure diagnostics (#1404) up to the boolean's caller; a path that takes no imprint ignores it. The paths
-// are grouped by op (the try-order within an op is load-bearing; do not reorder across a pair that two paths
-// could both accept) and tagged with their boolean KIND (ADR-0045): [T] transversal crossing, [P] curved-on-
-// planar, [D] degenerate overlap.
-var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body, *diag.Recorder) (*topo.Body, bool){
-	// Intersect — all [T] transversal (curved∩convex-planar half-space, then ruled crossings).
-	curvedConvexIntersect, curvedConvexSubtract,
-	curvedRuledCrossingIntersect, curvedSteinmetzIntersect,
-	curvedPartialIntersect, curvedBallRodIntersect,
-	// Cut — [P] the drill through-hole and the edge scallop (curved-on-planar), the rest [T] transversal.
-	curvedCylindricalHoleCut, curvedEdgeScallopCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedRuledCrossingCut, curvedCapCrossCut, curvedRimCrossCut, curvedTwoCapCrossCut, curvedConeCapCrossCut, curvedPartialRimCut, curvedPartialRimCornerCut, curvedBallRodCut,
-	// Join — [D] coaxial (degenerate overlap), [P] boss interior then straddling (curved-on-planar), the rest [T] transversal.
-	curvedCoaxialJoin, curvedCylinderBossJoin, curvedPartialBossJoin, curvedPartialJoin, curvedRuledCrossingJoin, curvedSteinmetzJoin, curvedBallRodJoin,
 }
 
 // shouldFallbackBoolean decides whether a result must be abandoned for the next path. Validity comes

@@ -6,151 +6,134 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// EPIC #1403 adoption guard. The general curved∩curved drivers must produce a solid that validBooleanSolid
-// ACCEPTS — i.e. one ops.Boolean actually adopts instead of silently discarding for the bespoke fallback. This
-// guard exists because every general migration shipped while the result was orientation-inconsistent:
-// validBooleanSolid rejected it and the bespoke handler did all the work, yet the brep tests (edge-USE-COUNT
-// "watertight" only) and the OCC oracle (run through the adopted = bespoke result) all passed. The imprint weld
-// fix (emitImprintRun, #1403) is what makes the INTERSECT adopt; the OUTSIDE-keep wrapping-band emission
-// (Oblikovati#1476) makes the crossing-cylinder CUT/JOIN adopt. This test fails if any silently falls back.
-func TestGeneralIntersectIsAdopted(t *testing.T) {
-	t.Parallel()
-	cases := []struct {
-		name    string
-		general func(a, b *topo.Body) (*topo.Body, bool)
-		a, b    func() *topo.Body
-	}{
-		{"crossing cylinders ∩",
-			func(a, b *topo.Body) (*topo.Body, bool) { return brep.RuledCrossingIntersectGeneral(a, b, nil) },
-			func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12); return b },
-			func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12); return b }},
-		{"cone ∩ cone",
-			func(a, b *topo.Body) (*topo.Body, bool) { return brep.RuledCrossingIntersectGeneral(a, b, nil) },
-			func() *topo.Body {
-				b, _ := brep.SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
-				return b
-			},
-			func() *topo.Body {
-				b, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
-				return b
-			}},
-		{"cone ∩ cylinder",
-			func(a, b *topo.Body) (*topo.Body, bool) { return brep.RuledCrossingIntersectGeneral(a, b, nil) },
-			func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12); return b },
-			func() *topo.Body {
-				b, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
-				return b
-			}},
+// The ruled-crossing and partial-penetration corpus at the ops entry (EPIC #1403, ADR-0061 stage 4).
+//
+// This file used to guard ADOPTION: each general brep driver was called directly and its result had to
+// pass validBooleanSolid, because the boolean would otherwise discard it and let a bespoke recognizer do
+// the work — a silent substitution that the brep tests (edge-use-count "watertight" only) and the OCC
+// oracle (run through the adopted, i.e. bespoke, result) both missed. The recognizers are deleted, so
+// there is nothing left to fall back TO and adoption is no longer a question. What the rows are worth is
+// the corpus itself: thirteen ruled pairs, each of which must come out of ops.Boolean as a valid solid.
+// Certification (the per-face membership rule and the Requicha bracket) runs inside that entry, so a wrong
+// body is refused by name rather than quietly replaced.
+
+// ruledPair is one corpus row: an operation over two ruled operands, built fresh per subtest. wantCyl and
+// wantPlan, when either is set, pin the analytic face census the pipeline must emit — the structure the
+// deleted drivers' own tests asserted, carried over so the shape is checked and not only the validity.
+type ruledPair struct {
+	name              string
+	op                PartFeatureOperation
+	a, b              func() *topo.Body
+	wantCyl, wantPlan int
+}
+
+func cylZ12(r float64) func() *topo.Body {
+	return func() *topo.Body {
+		b, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), math.Scalar(r), 12)
+		return b
 	}
-	for _, c := range cases {
+}
+
+func cylX(r, h float64) func() *topo.Body {
+	return func() *topo.Body {
+		b, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), math.Scalar(r), math.Scalar(h))
+		return b
+	}
+}
+
+func coneZ() *topo.Body {
+	b, _ := brep.SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
+	return b
+}
+
+func coneX(r0, r1 float64) func() *topo.Body {
+	return func() *topo.Body {
+		b, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), math.Scalar(r0), math.Scalar(r1), "thin")
+		return b
+	}
+}
+
+// assertRuledCorpus runs each pair through ops.Boolean and requires a valid solid.
+func assertRuledCorpus(t *testing.T, rows []ruledPair) {
+	t.Helper()
+	for _, c := range rows {
 		t.Run(c.name, func(t *testing.T) {
-			res, ok := c.general(c.a(), c.b())
-			if !ok {
-				t.Fatalf("%s: general intersect declined; want the general path taken", c.name)
+			res, err := Boolean(c.op, c.a(), c.b())
+			if err != nil {
+				t.Fatalf("%s: %v", c.name, err)
 			}
-			if r := Validate(res); !r.Valid {
-				t.Fatalf("%s: general result NOT adopted by validBooleanSolid (silent fallback): %+v", c.name, r)
+			if r := Validate(res); !r.ValidSolid() {
+				t.Fatalf("%s: the general pipeline produced a non-solid: %+v", c.name, r)
+			}
+			if c.wantCyl == 0 && c.wantPlan == 0 {
+				return
+			}
+			cyls, planes := 0, 0
+			for _, f := range res.Faces() {
+				switch f.Geometry().(type) {
+				case geom.Cylinder:
+					cyls++
+				case geom.Plane:
+					planes++
+				}
+			}
+			if cyls != c.wantCyl || planes != c.wantPlan {
+				t.Errorf("%s: %d cylinder + %d plane faces, want %d + %d", c.name, cyls, planes, c.wantCyl, c.wantPlan)
 			}
 		})
 	}
 }
 
-// TestGeneralCrossingCutJoinIsAdopted guards the crossing-cylinder CUT and JOIN general drivers (the
-// OUTSIDE-keep wrapping-band emission, Oblikovati#1476): each must produce a validBooleanSolid result so
-// ops.Boolean adopts it rather than falling back to the bespoke handler.
-func TestGeneralCrossingCutJoinIsAdopted(t *testing.T) {
+// TestRuledCrossingIntersectCorpus: every ruled∩ruled crossing — cylinder, cone, and the mixed pair.
+func TestRuledCrossingIntersectCorpus(t *testing.T) {
 	t.Parallel()
-	fat := func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12); return b }
-	rod := func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12); return b }
-	cases := []struct {
-		name    string
-		general func() (*topo.Body, bool)
-	}{
-		{"crossing cylinders − (drill)", func() (*topo.Body, bool) { return brep.RuledCrossingCutGeneral(fat(), rod(), nil) }},
-		{"crossing cylinders ∪", func() (*topo.Body, bool) { return brep.RuledCrossingJoinGeneral(fat(), rod(), nil) }},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			res, ok := c.general()
-			if !ok {
-				t.Fatalf("%s: general driver declined; want the general path taken", c.name)
-			}
-			if r := Validate(res); !r.Valid {
-				t.Fatalf("%s: general result NOT adopted by validBooleanSolid (silent fallback): %+v", c.name, r)
-			}
-		})
-	}
+	assertRuledCorpus(t, []ruledPair{
+		{"crossing cylinders ∩", Intersect, cylZ12(3), cylX(1.5, 12), 0, 0},
+		{"cone ∩ cone", Intersect, coneZ, coneX(0.8, 1.5), 0, 0},
+		{"cone ∩ cylinder", Intersect, cylZ12(3), coneX(1, 2.5), 0, 0},
+	})
 }
 
-// TestGeneralConeCutJoinIsAdopted guards the cone-pair CUT and JOIN general drivers (#1403, on the #1476
-// wrapping-band emission): each must produce a validBooleanSolid result so ops.Boolean adopts it instead of
-// falling back to the bespoke handler.
-func TestGeneralConeCutJoinIsAdopted(t *testing.T) {
+// TestRuledCrossingCutJoinCorpus: the crossing-cylinder CUT and JOIN, the OUTSIDE-keep wrapping-band
+// emission (Oblikovati#1476) that makes a side-breached wall a single holed tube.
+func TestRuledCrossingCutJoinCorpus(t *testing.T) {
 	t.Parallel()
-	fatCone := func() *topo.Body {
-		b, _ := brep.SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
-		return b
-	}
-	rodCone := func() *topo.Body {
-		b, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
-		return b
-	}
-	cyl := func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12); return b }
-	cone := func() *topo.Body {
-		b, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
-		return b
-	}
-	cases := []struct {
-		name    string
-		general func() (*topo.Body, bool)
-	}{
-		{"cone − cone (drill)", func() (*topo.Body, bool) { return brep.RuledCrossingCutGeneral(fatCone(), rodCone(), nil) }},
-		{"cone ∪ cone", func() (*topo.Body, bool) { return brep.RuledCrossingJoinGeneral(fatCone(), rodCone(), nil) }},
-		{"cone − cylinder (drill)", func() (*topo.Body, bool) { return brep.RuledCrossingCutGeneral(cyl(), cone(), nil) }},
-		{"cone ∪ cylinder", func() (*topo.Body, bool) { return brep.RuledCrossingJoinGeneral(cyl(), cone(), nil) }},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			res, ok := c.general()
-			if !ok {
-				t.Fatalf("%s: general driver declined; want the general path taken", c.name)
-			}
-			if r := Validate(res); !r.Valid {
-				t.Fatalf("%s: general result NOT adopted by validBooleanSolid (silent fallback): %+v", c.name, r)
-			}
-		})
-	}
+	assertRuledCorpus(t, []ruledPair{
+		{"crossing cylinders − (drill)", Cut, cylZ12(3), cylX(1.5, 12), 0, 0},
+		{"crossing cylinders ∪", Join, cylZ12(3), cylX(1.5, 12), 0, 0},
+	})
 }
 
-// TestGeneralPartialIsAdopted guards the partial-penetration general drivers (a thin rod ending inside a
-// fatter cylinder, #1403 on the #1476 wrapping-band + cap generalisation): each must produce a
-// validBooleanSolid result so ops.Boolean adopts it instead of falling back to the bespoke handler.
-func TestGeneralPartialIsAdopted(t *testing.T) {
+// TestRuledConeCutJoinCorpus: the same two operations over cone pairs and the cone/cylinder mix (#1403).
+func TestRuledConeCutJoinCorpus(t *testing.T) {
 	t.Parallel()
-	fat := func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12); return b }
-	stub := func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 6); return b }
-	cases := []struct {
-		name    string
-		general func() (*topo.Body, bool)
-	}{
-		{"partial ∩ (plug)", func() (*topo.Body, bool) { return brep.PartialPenetrationIntersectGeneral(fat(), stub(), nil) }},
-		{"partial − (blind hole)", func() (*topo.Body, bool) { return brep.PartialPenetrationCutGeneral(fat(), stub(), nil) }},
-		{"partial ∪ (entry stub)", func() (*topo.Body, bool) { return brep.PartialPenetrationJoinGeneral(fat(), stub(), nil) }},
-		{"partial − (rod stub lump)", func() (*topo.Body, bool) { return brep.PartialPenetrationCutGeneral(stub(), fat(), nil) }},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			res, ok := c.general()
-			if !ok {
-				t.Fatalf("%s: general driver declined; want the general path taken", c.name)
-			}
-			if r := Validate(res); !r.Valid {
-				t.Fatalf("%s: general result NOT adopted by validBooleanSolid (silent fallback): %+v", c.name, r)
-			}
-		})
-	}
+	assertRuledCorpus(t, []ruledPair{
+		{"cone − cone (drill)", Cut, coneZ, coneX(0.8, 1.5), 0, 0},
+		{"cone ∪ cone", Join, coneZ, coneX(0.8, 1.5), 0, 0},
+		{"cone − cylinder (drill)", Cut, cylZ12(3), coneX(1, 2.5), 0, 0},
+		{"cone ∪ cylinder", Join, cylZ12(3), coneX(1, 2.5), 0, 0},
+	})
+}
+
+// TestPartialPenetrationCorpus: a thin rod ending INSIDE a fatter cylinder — the plug, the blind hole, the
+// entry stub, and the lump left when the rod is the target (#1403 on the #1476 wrapping-band + cap work).
+func TestPartialPenetrationCorpus(t *testing.T) {
+	t.Parallel()
+	fat, stub := cylZ12(3), cylX(1.5, 6)
+	assertRuledCorpus(t, []ruledPair{
+		// 2 cyl: the fat-wall lens cap + the rod-wall band. 1 plane: the rod's blind cap.
+		{"partial ∩ (plug)", Intersect, fat, stub, 2, 1},
+		// 2 cyl: the holed fat wall + the rod tunnel. 3 plane: the fat's 2 caps + the blind cap as the
+		// pocket bottom.
+		{"partial − (blind hole)", Cut, fat, stub, 2, 3},
+		// 2 cyl: the holed fat wall + the single rod stub. 3 plane: the fat's 2 caps + the rod's ENTRY
+		// cap; its blind cap, inside the fat, is dropped.
+		{"partial ∪ (entry stub)", Join, fat, stub, 2, 3},
+		{"partial − (rod stub lump)", Cut, stub, fat, 0, 0},
+	})
 }

@@ -14,8 +14,8 @@ import (
 	"oblikovati.org/math"
 )
 
-// Cap-crossing slice-2 certification (EPIC Oblikovati/Oblikovati#1724, ADR-0046). The RIM-CROSSING cut
-// (brep.RimCrossingCutGeneral) is the next cap-crossing sub-family after the interior-exit slice: an oblique
+// Cap-crossing slice-2 certification (EPIC Oblikovati/Oblikovati#1724, ADR-0046). The RIM-CROSSING cut is
+// the next cap-crossing sub-family after the interior-exit slice: an oblique
 // cylinder tool whose exit ellipse CROSSES the cap rim at two corners, so the tool exits partly through the
 // cap and partly through the wall — the wall gains a top-rim NOTCH plus its entry hole, the cap a mixed
 // rim-arc + ellipse-arc bite, and the tunnel an [entry ⊕ ellipse-arc] mouth. As with slice 1 this is certified

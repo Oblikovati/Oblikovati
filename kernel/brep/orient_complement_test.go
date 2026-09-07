@@ -32,9 +32,9 @@ func shoulderRodJoin(t *testing.T) *topo.Body {
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
-	join, ok := CoaxialSphereRodJoin(ball, rod)
-	if !ok {
-		t.Fatal("ball ∪ shoulder rod declined the analytic path")
+	join, err := Boolean(Union, ball, rod)
+	if err != nil {
+		t.Fatalf("ball ∪ shoulder rod: %v", err)
 	}
 	return join
 }

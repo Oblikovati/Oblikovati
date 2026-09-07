@@ -169,3 +169,44 @@ func (c ruledUV) point3(u, v float64) math.Point3 {
 // seamOrigin is the surface parameter of the chart's (0,0): a ruled side rotates only its azimuth
 // origin, and its v IS the surface's own axial parameter (uvSide, ADR-0063).
 func (c ruledUV) seamOrigin() math.Point2 { return math.P2(c.seamU, 0) }
+
+// unwrapArcSegs makes one open imprint arc's (u,v) sampling CONTINUOUS in u — removing the 2π jump at a
+// pinch endpoint that paramOf's [0,2π) branch introduces — and shifts the whole arc by whole turns so its
+// mean azimuth lands in [0,2π). An arc running pinch-to-pinch then stays within one azimuth half (its
+// endpoint sits exactly on the seam, 0 or 2π, rather than wrapping across it), so splitSeamCrossing leaves
+// it whole and the lobe it bounds seals (#1403). Used only for the pinched Steinmetz arcs, whose endpoints
+// touch the seam; the ordinary closed-loop imprints keep the raw branch for splitSeamCrossing to resolve.
+func unwrapArcSegs(segs []uvSeg) []uvSeg {
+	if len(segs) == 0 {
+		return segs
+	}
+	us := make([]float64, len(segs)+1)
+	us[0] = float64(segs[0].a.X)
+	for i, s := range segs {
+		us[i+1] = unwrapAzimuthNear(us[i], float64(s.b.X))
+	}
+	mean := 0.0
+	for _, u := range us {
+		mean += u
+	}
+	shift := turnsToCanonical(mean / float64(len(us)))
+	out := make([]uvSeg, len(segs))
+	for i, s := range segs {
+		s.a = math.P2(math.Scalar(us[i]+shift), s.a.Y)
+		s.b = math.P2(math.Scalar(us[i+1]+shift), s.b.Y)
+		out[i] = s
+	}
+	return out
+}
+
+// turnsToCanonical returns the whole-turn shift (a multiple of 2π) that brings u into [0, 2π).
+func turnsToCanonical(u float64) float64 {
+	shift := 0.0
+	for u+shift < 0 {
+		shift += 2 * stdmath.Pi
+	}
+	for u+shift >= 2*stdmath.Pi {
+		shift -= 2 * stdmath.Pi
+	}
+	return shift
+}

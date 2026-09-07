@@ -71,8 +71,8 @@ func TestBooleanNearTangentCylindersStayManifold(t *testing.T) {
 			if res := ops.Validate(union); !res.Valid || !union.IsSolid() {
 				t.Fatalf("near-tangent union not a valid solid: %+v", res)
 			}
-			if rec.Has(brep.CodeImprintNearPinchDeclined) {
-				t.Fatalf("dr=%g must stay on the general analytic path, not decline (#1781)", dr)
+			if n := rec.Count(diag.Defect); n != 0 {
+				t.Fatalf("dr=%g must stay on the general analytic path with no degradation (#1781); got %v", dr, rec.Records())
 			}
 			got := query.BodyGeometryProperties(union, ops.DefaultQuality()).Volume
 			if stdmath.Abs(got-want) > 0.02*want {
@@ -88,8 +88,8 @@ func TestBooleanNearTangentCylindersStayManifold(t *testing.T) {
 		if res := ops.Validate(union); !res.Valid || !union.IsSolid() {
 			t.Fatalf("residual near-pinch union not a valid solid: %+v", res)
 		}
-		if rec.Has(brep.CodeImprintNearPinchDeclined) {
-			t.Fatalf("residual near-pinch union must ship the analytic path, not decline (#1818)")
+		if n := rec.Count(diag.Defect); n != 0 {
+			t.Fatalf("residual near-pinch union must ship the analytic path with no degradation (#1818); got %v", rec.Records())
 		}
 		if got := query.BodyGeometryProperties(union, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 0.02*want {
 			t.Errorf("union volume = %.4f, want ≈ %.4f (2·cyl − Steinmetz)", got, want)

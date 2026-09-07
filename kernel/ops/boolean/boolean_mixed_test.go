@@ -22,9 +22,9 @@ func TestBooleanMixedPassesTheBossThrough(t *testing.T) {
 	t.Parallel()
 	block, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")
 	cyl, _ := brep.SolidCylinder(math.P3(5, 5, 10), math.V3(0, 0, 1), 2, 3)
-	bossed, ok := brep.JoinCylindricalBoss(block, cyl)
-	if !ok {
-		t.Fatal("boss fixture unavailable")
+	bossed, err := brep.Boolean(brep.Union, block, cyl)
+	if err != nil {
+		t.Fatalf("boss fixture: %v", err)
 	}
 	notch, _ := brep.SolidBlock(math.P3(-1, 4, 1), math.P3(2, 6, 3), "notch")
 
@@ -59,8 +59,8 @@ func analyticVolumeOf(t *testing.T, b *topo.Body) float64 {
 
 // TestBooleanEmbeddedCavityExactVolume is the regression for the DrillThroughHole span-gate misfire:
 // cutting a cylinder EMBEDDED inside a block (not spanning it) used to be mis-recognized as a full
-// through-hole (silently removing π·r²·H instead of π·r²·h). The drill now declines and the per-face
-// dispatch cuts the exact cavity.
+// through-hole (silently removing π·r²·H instead of π·r²·h). That recipe is deleted (ADR-0061 stage 4);
+// the per-face dispatch bounds the bore by the tool's OWN band, so it cuts the exact cavity.
 func TestBooleanEmbeddedCavityExactVolume(t *testing.T) {
 	t.Parallel()
 	block, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")

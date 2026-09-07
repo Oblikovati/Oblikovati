@@ -44,13 +44,13 @@ var geomSwitchDebt = map[string]int{
 	"addin/router":     5,
 	"app":              13,
 	"kernel/blend":     15,
-	"kernel/brep":      74, // 93 → 82 (ADR-0061 stage 2, the analytic half-space pipeline deleted)
+	"kernel/brep":      42, // 93 → 82 (ADR-0061 stage 2, the analytic half-space pipeline deleted)
 	//                                     → 74 (stage 4): the edge sub-range switch moved to geom.SubCurve
 	"kernel/exchange/step/geommap": 11,
 	"kernel/geomapi":               9,
 	"kernel/ops":                   1,
 	"kernel/ops/blend":             400,
-	"kernel/ops/boolean":           4,
+	"kernel/ops/boolean":           1,
 	"kernel/ops/heal":              12,
 	"kernel/ops/internal/probe":    3,
 	"kernel/ops/surface":           21,

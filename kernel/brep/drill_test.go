@@ -119,18 +119,37 @@ func TestDrillRejectsOversizeHole(t *testing.T) {
 	}
 }
 
-// TestDrillThroughHoleDeclinesEmbeddedTool is the span-gate regression: a tool cylinder that does not
-// axially SPAN the slab (an embedded or blind cut) must decline rather than drill the unbounded axis
-// as a full through-hole (the silent wrong-volume misfire the per-face dispatch exposed, ADR-0058).
-func TestDrillThroughHoleDeclinesEmbeddedTool(t *testing.T) {
+// TestEmbeddedToolLeavesACavityNotAThroughHole is the span-gate regression, carried over from the retired
+// DrillThroughHole recipe (ADR-0061 stage 4). A tool cylinder that does not axially SPAN the slab must not
+// be drilled along its unbounded axis as a full through-hole — the silent wrong-volume misfire the
+// per-face dispatch exposed (ADR-0058). The recipe answered that by DECLINING; the general pipeline
+// answers it by building the right body: an embedded tool leaves a closed void (a second shell) and the
+// slab's outer faces untouched, while a spanning tool opens a hole through both caps of one shell.
+func TestEmbeddedToolLeavesACavityNotAThroughHole(t *testing.T) {
 	t.Parallel()
 	block, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "block")
+
 	embedded, _ := brep.SolidCylinder(math.P3(5, 5, 3), math.V3(0, 0, 1), 1, 4)
-	if _, ok := brep.DrillThroughHole(block, embedded); ok {
-		t.Fatal("embedded (non-spanning) tool did not decline the through-hole recipe")
+	cavity, err := brep.Boolean(brep.Difference, block, embedded)
+	if err != nil {
+		t.Fatalf("block − embedded cylinder: %v", err)
 	}
+	if n := len(cavity.Shells()); n != 2 {
+		t.Errorf("an embedded tool left %d shell(s), want 2 (the block plus the void inside it)", n)
+	}
+	if n := len(cavity.Faces()); n != 9 {
+		t.Errorf("an embedded tool left %d faces, want 9 (the block's 6 plus the void's wall and two caps)", n)
+	}
+
 	spanning, _ := brep.SolidCylinder(math.P3(5, 5, -1), math.V3(0, 0, 1), 1, 12)
-	if _, ok := brep.DrillThroughHole(block, spanning); !ok {
-		t.Fatal("spanning tool declined; the through-hole recipe should still accept it")
+	holed, err := brep.Boolean(brep.Difference, block, spanning)
+	if err != nil {
+		t.Fatalf("block − spanning cylinder: %v", err)
+	}
+	if n := len(holed.Shells()); n != 1 {
+		t.Errorf("a spanning tool left %d shell(s), want 1 (the bore opens the block, it does not enclose)", n)
+	}
+	if n := len(holed.Faces()); n != 7 {
+		t.Errorf("a spanning tool left %d faces, want 7 (the block's 6 plus the bore wall)", n)
 	}
 }

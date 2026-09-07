@@ -33,7 +33,7 @@ func TestCrossingCylinderImprintThinThroughFat(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)    // axis z, R=3
 	thin, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12) // axis x, r=1.5, through the centre
 
-	loops, ok := crossingCylinderImprint(fat, thin, nil)
+	loops, ok := curvedImprintLoops(fat, thin, nil)
 	if !ok || len(loops) != 2 {
 		t.Fatalf("thin-through-fat imprint: ok=%v loops=%d, want 2 closed loops", ok, len(loops))
 	}
@@ -97,7 +97,7 @@ func TestCrossingCylinderImprintEqualRadiusPinch(t *testing.T) {
 	const r = 3.0
 	a, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, 12) // axis x
 	b, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r, 12) // axis z
-	loops, ok := crossingCylinderImprint(a, b, nil)
+	loops, ok := curvedImprintLoops(a, b, nil)
 	if !ok || len(loops) != 2 {
 		t.Fatalf("equal-radius imprint: ok=%v loops=%d, want 2 closed Steinmetz ellipses", ok, len(loops))
 	}
@@ -133,7 +133,7 @@ func TestCrossingCylinderImprintNonCylinderDefers(t *testing.T) {
 	t.Parallel()
 	block, _ := SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "b")
 	cyl, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1, 4)
-	if _, ok := crossingCylinderImprint(block, cyl, nil); ok {
+	if _, ok := curvedImprintLoops(block, cyl, nil); ok {
 		t.Error("imprint of a block and a cylinder should defer (ok=false)")
 	}
 }
@@ -143,7 +143,7 @@ func TestCrossingCylinderImprintDisjointHasNoLoops(t *testing.T) {
 	t.Parallel()
 	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1, 4)
 	b, _ := SolidCylinder(math.P3(20, 0, 0), math.V3(1, 0, 0), 1, 4) // far away
-	if _, ok := crossingCylinderImprint(a, b, nil); ok {
+	if _, ok := curvedImprintLoops(a, b, nil); ok {
 		t.Error("disjoint cylinders should trace no imprint loop (ok=false)")
 	}
 }
@@ -157,7 +157,7 @@ func TestCrossingCylinderImprintSquatFat(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -2), math.V3(0, 0, 1), 50, 4)     // squat: R=50, h=4
 	rod, _ := SolidCylinder(math.P3(-60, 0, 0), math.V3(1, 0, 0), 1.5, 120) // axis x, through both walls
 	rec := &diag.Recorder{}
-	loops, ok := crossingCylinderImprint(fat, rod, rec)
+	loops, ok := curvedImprintLoops(fat, rod, rec)
 	if !ok || len(loops) != 2 {
 		t.Fatalf("squat-fat imprint: ok=%v loops=%d, want 2 closed loops", ok, len(loops))
 	}
@@ -176,39 +176,40 @@ func TestCrossingCylinderImprintSquatFat(t *testing.T) {
 	}
 }
 
-// TestCrossingCylinderImprintSnapBandSilent: radii closer than the snap ceiling decline the rod-band imprint
-// (so dispatch falls through to the exact Steinmetz constructor, which snaps them — #1780) WITHOUT recording a
-// degradation. The snap is honest, not a fallback, so it must raise no near-pinch defect.
-func TestCrossingCylinderImprintSnapBandSilent(t *testing.T) {
+// TestCurvedImprintNearPinchBandTraces: radii inside the old near-pinch band — from half the retired snap
+// ceiling out to twenty times it — trace the same two clean closed loops as any other crossing, with no
+// degradation recorded. This replaces two tests that pinned the opposite (ADR-0061 stage 4): the imprint
+// used to DECLINE this band so dispatch could fall through to the bespoke Steinmetz constructor below the
+// ceiling and to the faceted route above it, recording CodeImprintNearPinchDeclined for the latter. Both
+// destinations are deleted, and the general trace resolves the narrow neck itself, so the band is ordinary
+// geometry now rather than a conditioning cliff with two handlers on the far side.
+func TestCurvedImprintNearPinchBandTraces(t *testing.T) {
 	t.Parallel()
-	a, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
-	base, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	const r = 3.0
+	a, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, 12)
+	base, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r, 12)
 	ceil := geom.ResolutionForBox(a.RangeBox().Union(base.RangeBox())).Stitch()
-	b, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3+0.5*ceil, 12)
-	rec := &diag.Recorder{}
-	if _, ok := crossingCylinderImprint(a, b, rec); ok {
-		t.Fatal("snap-band radii must decline the rod-band imprint (Steinmetz snaps instead)")
-	}
-	if rec.Count(diag.Defect) != 0 || rec.Has(CodeImprintNearPinchDeclined) {
-		t.Errorf("snap-band decline must be SILENT (no degradation to record); got %v", rec.Records())
-	}
-}
 
-// TestCrossingCylinderImprintResidualBandRecords: radii ABOVE the snap ceiling but inside the near-pinch band
-// decline AND record exactly one CodeImprintNearPinchDeclined defect — the genuine, non-silent fallback the
-// residual band still takes until #1780 Direction 2 folds it onto the analytic path.
-func TestCrossingCylinderImprintResidualBandRecords(t *testing.T) {
-	t.Parallel()
-	a, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
-	base, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	ceil := geom.ResolutionForBox(a.RangeBox().Union(base.RangeBox())).Stitch()
-	b, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3+4*ceil, 12)
-	rec := &diag.Recorder{}
-	if _, ok := crossingCylinderImprint(a, b, rec); ok {
-		t.Fatal("residual-band radii must decline the rod-band imprint")
-	}
-	if !rec.Has(CodeImprintNearPinchDeclined) || rec.Count(diag.Defect) != 1 {
-		t.Errorf("residual-band decline must record exactly one near-pinch defect; got %v", rec.Records())
+	ca, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), r)
+	for _, k := range []float64{0.5, 4, 20} { // below, just above, and well above the retired ceiling
+		b, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r+k*ceil, 12)
+		rec := &diag.Recorder{}
+		loops, ok := curvedImprintLoops(a, b, rec)
+		if !ok || len(loops) != 2 {
+			t.Fatalf("Δr=%.3g·ceil: ok=%v loops=%d, want 2 closed loops", k, ok, len(loops))
+		}
+		if rec.Count(diag.Defect) != 0 {
+			t.Errorf("Δr=%.3g·ceil traced with %d defects, want none; got %v", k, rec.Count(diag.Defect), rec.Records())
+		}
+		cb, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r+k*ceil)
+		for i, lp := range loops {
+			if !samePoint(lp.PointAt(0), lp.PointAt(1), geom.ResolutionForSize(1)) {
+				t.Errorf("Δr=%.3g·ceil loop %d is not closed: %v vs %v", k, i, lp.PointAt(0), lp.PointAt(1))
+			}
+			if err := onBothCylinders(lp, ca, cb); err > 1e-4 {
+				t.Errorf("Δr=%.3g·ceil loop %d sits %.2e off a cylinder surface", k, i, err)
+			}
+		}
 	}
 }
 

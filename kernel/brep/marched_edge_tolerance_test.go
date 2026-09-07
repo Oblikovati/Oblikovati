@@ -34,26 +34,27 @@ func crossingCylinderPair(t *testing.T) (fat, rod *topo.Body) {
 func TestExactCrossingIntersectReportsZeroTolerance(t *testing.T) {
 	t.Parallel()
 	fat, rod := crossingCylinderPair(t)
-	res, ok := RuledCrossingIntersectGeneral(fat, rod, nil)
-	if !ok {
-		t.Fatal("crossing cylinders ∩ declined")
+	res, err := Boolean(Intersection, fat, rod)
+	if err != nil {
+		t.Fatalf("crossing cylinders ∩: %v", err)
 	}
 	if tol := res.AchievedBoundaryTolerance(); tol != 0 {
 		t.Errorf("a body stitched from the exact ruled∩quadric section reports AchievedBoundaryTolerance %g, want 0", tol)
 	}
 }
 
-// TestMarchedCutBodyReportsAchievedTolerance: a body stitched from a MARCHED imprint must be able to
-// say how exact its boundary is — before #3489 it reported nothing, and every consumer had to assume
-// the boundary was exact, which is why those bodies missed their exact volume by ~1e-4. The fixture is
-// the rim-crossing cut: the oblique rod's exit ellipse crosses the top rim, so the marching window
-// cuts the section loop OPEN, the closed-form path refuses a clipped chain by contract
-// (exactImprintLoops), and this imprint genuinely marches — the crossing pair no longer does.
+// TestRimCrossingCutIsExactToo: the oblique rod whose exit ellipse CROSSES the target's top rim used to
+// be the corpus's one marched body. Its bespoke driver clipped the section loop open at the rim, the
+// closed-form path refuses a clipped chain by contract (exactImprintLoops), and the imprint therefore
+// marched — so this test asserted a POSITIVE AchievedBoundaryTolerance and checked the residual reached
+// every edge. Deleting the driver (ADR-0061 stage 4) put the pair through the general per-face pipeline,
+// which meets each face's own section in closed form: the wall's ruled∩quadric arc, the cap's ellipse,
+// the rim's circle. Every edge of the result is an analytic curve, so the body is exact and must say 0.
 //
-// The assertion is on the ORDER, not on a frozen constant: the marched imprint's chord bow is bounded
-// below by round-off and above by the rod-circle sagitta of a coarse march, and it must be the same
-// number every edge stitched from that imprint carries.
-func TestMarchedCutBodyReportsAchievedTolerance(t *testing.T) {
+// The tolerance machinery itself is not left uncovered — kernel/topo's achieved_tolerance_test.go pins
+// how an edge inherits a curve's deviation and how the body reports the worst of them. What is gone is a
+// boolean in this corpus that produces an inexact one.
+func TestRimCrossingCutIsExactToo(t *testing.T) {
 	t.Parallel()
 	target, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
 	if err != nil {
@@ -64,48 +65,18 @@ func TestMarchedCutBodyReportsAchievedTolerance(t *testing.T) {
 	if err != nil {
 		t.Fatalf("rod: %v", err)
 	}
-	res, ok := RimCrossingCutGeneral(target, rod, nil)
-	if !ok {
-		t.Fatal("rim-crossing cut declined; the marched path is what this test measures")
+	res, err := Boolean(Difference, target, rod)
+	if err != nil {
+		t.Fatalf("rim-crossing cut: %v", err)
 	}
-	tol := res.AchievedBoundaryTolerance()
-	if tol <= 0 {
-		t.Fatalf("a body stitched from a marched imprint reports AchievedBoundaryTolerance %g; a chord approximation is never exact", tol)
+	if tol := res.AchievedBoundaryTolerance(); tol != 0 {
+		t.Errorf("the rim-crossing cut reports AchievedBoundaryTolerance %g, want 0 — every section is a closed form", tol)
 	}
-	// A 16-chord march of the r=3 wall circle bows by R(1−cos(π/16)) ≈ 5.8e-2; the tracer is far finer
-	// than that, so the achieved tolerance must sit well below it while staying above float round-off.
-	// (The wall, not the rod: the chains live on the target wall's chart, so its circle sets the bow.)
-	coarseBow := 3 * (1 - stdmath.Cos(stdmath.Pi/16))
-	if tol > coarseBow {
-		t.Errorf("AchievedBoundaryTolerance %.6g exceeds a 16-chord march's bow %.6g: the imprint is coarser than any usable march", tol, coarseBow)
-	}
-	assertMarchedEdgesShareTolerance(t, res, tol)
-}
-
-// assertMarchedEdgesShareTolerance checks that every inexact edge carries a POSITIVE achieved
-// tolerance no worse than the body's own reading, that the body's reading IS the worst edge's, and
-// that at least one edge is marched. A body may hold chains from more than one trace (the
-// rim-crossing cut stitches a closed entry loop and a corner-snapped exit chain, each with its own
-// measured deviation), so edges need not share one number — but none may exceed what the body
-// reports, and the body must not report more than any edge carries.
-func assertMarchedEdgesShareTolerance(t *testing.T, body *topo.Body, want float64) {
-	t.Helper()
-	marched, worst := 0, 0.0
-	for _, e := range body.Edges() {
-		if e.Tolerance() == 0 {
-			continue
+	for _, e := range res.Edges() {
+		if e.Tolerance() != 0 {
+			t.Errorf("edge %d carries tolerance %.6g on a curve of %T; the general pipeline meets these faces exactly",
+				e.ID(), e.Tolerance(), e.Geometry())
 		}
-		marched++
-		worst = stdmath.Max(worst, e.Tolerance())
-		if e.Tolerance() > want {
-			t.Errorf("edge %d reports tolerance %.6g, above the body's AchievedBoundaryTolerance %.6g", e.ID(), e.Tolerance(), want)
-		}
-	}
-	if marched == 0 {
-		t.Error("no edge of a marched-imprint body carries an achieved tolerance; the residual did not reach the edges")
-	}
-	if worst != want {
-		t.Errorf("the body reports %.6g but its worst edge carries %.6g; the reading must be the measured worst", want, worst)
 	}
 }
 
