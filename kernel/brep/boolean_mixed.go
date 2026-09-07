@@ -263,7 +263,7 @@ func booleanMixed(op Op, a, b *topo.Body) (*topo.Body, bool, error) {
 	if !okK || !okP || !okQ {
 		return nil, false, ErrUnsupportedMixedBoolean
 	}
-	return stitch(kept, append(pass, walls...), prov)
+	return stitch(kept, mergeCoincidentFaces(append(pass, walls...)), prov)
 }
 
 // mixedKeptFragments runs both operands' polygonal splits (with detached-hole re-attachment).

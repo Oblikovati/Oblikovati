@@ -35,17 +35,23 @@ func TestCoaxialWallsUnionThroughTheGeneralPath(t *testing.T) {
 	}
 	assertWatertight(t, res)
 	assertEveryFaceWinds(t, res)
+	// The union of two coaxial cylinders IS one cylinder. Two bands meeting at a rim would be a valid
+	// solid of the same volume carrying an edge the model does not have — the surface is smooth across
+	// it — which a user could select and a fillet would try to round (mergeCoincidentFaces).
 	walls := 0
 	for _, f := range res.Faces() {
 		if _, isCyl := f.Geometry().(geom.Cylinder); isCyl {
 			walls++
 		}
 	}
-	if walls == 0 {
-		t.Error("the coaxial union kept no cylinder face — the wall was not built analytically")
+	if walls != 1 {
+		t.Errorf("the coaxial union has %d cylinder faces, want 1 (the two bands merge across the rim they share)", walls)
 	}
-	// The shared band z∈[3,4] must be emitted ONCE: the wall spans TILE z∈[0,7] — no gap, which would
-	// tear the solid, and no overlap, which would double the surface where the two operands agree.
+	if n := len(res.Faces()); n != 3 {
+		t.Errorf("%d faces, want 3 (one wall and the two surviving caps)", n)
+	}
+	// The wall spans z∈[0,7] — no gap, which would tear the solid, and no overlap, which would double
+	// the surface where the two operands agree.
 	assertWallSpansTile(t, res, 0, 7)
 }
 
