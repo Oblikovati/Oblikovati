@@ -128,6 +128,24 @@ func TestObliqueStubOnBoxKeepsItsEllipticalSeam(t *testing.T) {
 	}
 }
 
+// TestAnnularRingCutRemovesExactlyAQuarter is the volume half of the ring row (brep carries its
+// topology). The ring lies wholly within the box's y span and reaches x, z = ±1.5 inside a 2-unit box,
+// so the removed material is exactly a QUARTER of the annulus — an exact number, not a bracket.
+func TestAnnularRingCutRemovesExactlyAQuarter(t *testing.T) {
+	t.Parallel()
+	box, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 4), "box")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	ring, err := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 1, 0),
+		[]math.Point2{math.P2(0.5, 0.5), math.P2(1.5, 0.5), math.P2(1.5, 1.5), math.P2(0.5, 1.5)}, "ring")
+	if err != nil {
+		t.Fatalf("SolidOfRevolution: %v", err)
+	}
+	body := mustBooleanSolid(t, Cut, box, ring)
+	assertVolume(t, body, 2*2*4-stdmath.Pi*(1.5*1.5-0.5*0.5)/4, 1e-9)
+}
+
 // mustBooleanSolid runs the public boolean and requires a valid closed manifold solid.
 func mustBooleanSolid(t *testing.T, op PartFeatureOperation, target, tool *topo.Body) *topo.Body {
 	t.Helper()

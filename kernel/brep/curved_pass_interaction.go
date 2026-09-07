@@ -292,7 +292,15 @@ func conicEntersTrimInBand(cv geom.Curve3, of curvedFace, axis math.Vector3, ban
 // trim a modelled tool face has.
 const conicBandWalkSamples = 64
 
-// bandBase is the point the band's axial coordinate is measured from — its own vMin along the axis.
+// bandBase is the point the band's axial coordinate is measured FROM: the point on the axis where
+// bandV reads ZERO, so origin.VectorTo(p)·axis IS bandV(p) and a [vMin, vMax] window means what it says.
+//
+// It is the bottom rim offset BACK by vMin, because bandV(bottom) is vMin and not zero. The expression
+// this replaces read `-bandV(bottom) + vMin`, which cancels to zero and returned the bottom rim itself.
+// That was invisible while every band began at vMin = 0 and shifted the window by a whole band height
+// on one that does not: an annular ring's REVERSED inner wall frames itself from its far rim and
+// reports [-1, 0], so a ruling clipped to its band came back over the band below it, the wall kept no
+// fragment, and the cut left eight open edges (ADR-0061).
 func bandBase(axis math.Vector3, band coneSideBand_) math.Point3 {
-	return band.bottom.TranslateBy(axis.Scale(math.Scalar(-bandV(band.bottom, axis, band) + band.vMin)))
+	return band.bottom.TranslateBy(axis.Scale(math.Scalar(-band.vMin)))
 }

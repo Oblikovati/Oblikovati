@@ -1965,13 +1965,15 @@ two faces' chart SEAMS meet inside the run being dissolved, so the merged loop h
 Both tests pin the count at 2 rather than relaxing it, so landing that merge trips them and converts
 them.
 
-### What closing the doors surfaced in the host, named (2026-09-08)
+### What closing the doors surfaced in the host, and its fixes (2026-09-08)
 
-`./kernel/...`, `./model/...`, `./math/...` and archguard are green with the engines deleted. `./app/...`
-is not, and both rows are configurations that ONLY ever worked through a faceted rescue — the trade
-this ADR's Consequences section named before stage 6 was written. Neither is a regression in anything
-this stage changed: reverting each of the stage's four geometry fixes in turn leaves both failing, and
-the same operands produce the same invalid body on the parent commit, where the rescue replaced it.
+Closing the doors turned two host configurations from silently faceted into refused. Both were
+configurations that ONLY ever worked through a faceted rescue — the trade this ADR's Consequences
+section named before stage 6 was written — and neither was a regression in anything this stage changed:
+reverting each of the stage's four geometry fixes in turn left both failing, and the same operands
+produced the same invalid body on the parent commit, where the rescue replaced it. Both are fixed here,
+and `./kernel/...`, `./model/...`, `./app/...`, `./math/...`, `./addin/...` and archguard are green with
+the engines deleted.
 
 - **A drilled hole whose depth exactly equals the plate's thickness — FIXED.** The app's default hole
   on a 4 × 4 × 2 block is Ø1 × 2 from the top face, so the tool's cylinder ends at z = 2 flush with the
@@ -1991,23 +1993,21 @@ the same operands produce the same invalid body on the parent commit, where the 
   that meet AT the receiving plane section it in the SAME curve, which the arrangement cannot split a
   face by twice (`appendDistinctSection`).
 
-- **An assembly revolve machining a participant** removes nothing. A rectangle revolved a full turn is
-  an annular ring — two coaxial cylinders and two annular caps — and cutting it from a box leaves eight
-  open edges. It is the ONE app row still failing. Reproduce it at the kernel level:
+- **An assembly revolve machining a participant — FIXED.** A rectangle revolved a full turn is an
+  annular ring — two coaxial cylinders and two annular caps — and cutting it from a box left eight open
+  edges, because the ring's INNER wall contributed no fragment at all.
 
-  ```go
-  box, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 4), "box")
-  ring, _ := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 1, 0),
-      []math.Point2{math.P2(0.5, 0.5), math.P2(1.5, 0.5), math.P2(1.5, 1.5), math.P2(0.5, 1.5)}, "ring")
-  brep.BooleanDiag(brep.Difference, box, ring, nil) // eight unpaired edges
-  ```
+  That wall is REVERSED, so it frames itself from its far rim and its band reports [−1, 0] where the
+  outer wall's reports [0, 1]. `bandBase` — the point a band's axial coordinate is measured FROM — read
+  `−bandV(bottom) + vMin`, which cancels to zero and returns the bottom rim itself; but bandV AT the
+  bottom rim is vMin, not zero. So the [vMin, vMax] window was offset by a whole band height and the
+  inner wall's imprints came back clipped over the band BELOW it: measured, its two rulings spanned
+  y ∈ [0, 0.5] where the wall lives at y ∈ [0.5, 1.5]. Nothing crossed the wall, the arrangement made
+  two cells instead of four, and neither was inside the box. The outer wall, whose band begins at zero,
+  was unaffected — which is why exactly half the tool went missing.
 
-  Measured, the ring's INNER wall (the reversed r = 0.5 cylinder) contributes NO fragment. It admits
-  both of its imprints — the two rulings where the box's x = 0 and z = 0 faces cut it, ninety degrees
-  apart — but the arrangement then forms only TWO cells and samples both in the 270° one, so the
-  quarter cell that is inside the box is never built. The outer wall, on the same two planes and not
-  reversed, splits correctly.
-
-  It is a corpus row for the general pipeline rather than an argument for keeping an engine: an engine
-  that turns eight open edges into a watertight faceted body has hidden the open edges, which is how
-  this survived this long.
+  The error was invisible for as long as every band began at vMin = 0 and a faceted engine stood behind
+  the result. `bandBase` is now the bottom rim offset BACK by vMin, so `origin.VectorTo(p)·axis` IS
+  bandV(p) and a window means what it says. `TestAnnularRingCutClosesTheBox` pins the topology and
+  `TestAnnularRingCutRemovesExactlyAQuarter` the exact volume: the ring lies wholly within the box's y
+  span and reaches ±1.5 inside a 2-unit box, so the cut removes exactly a quarter of the annulus.
