@@ -160,7 +160,7 @@ func lineTouchesWallAndTool(l geom.Line, of curvedFace, axis math.Vector3, band 
 	for _, iv := range faceLineIntervals(of, l.Origin, l.Dir.AsVector()) {
 		vA := bandV(l.PointAt(iv[0]), axis, band)
 		vB := bandV(l.PointAt(iv[1]), axis, band)
-		if spansOverlap(stdmath.Min(vA, vB), stdmath.Max(vA, vB), band.vMin, band.vMax) {
+		if spanMeetsBand(stdmath.Min(vA, vB), stdmath.Max(vA, vB), band) {
 			return true
 		}
 	}
@@ -191,7 +191,7 @@ func conicTouchesTool(cv geom.Curve3, of curvedFace, axis math.Vector3, band con
 		return false // the conic lies wholly outside the polygon trim
 	}
 	vc := bandV(to3D(pl, pc.center), axis, band) // the conic centre, back through the tool chart
-	return spansOverlap(vc-amp, vc+amp, band.vMin, band.vMax)
+	return spanMeetsBand(vc-amp, vc+amp, band)
 }
 
 // conicPolygonCrossingInBand scans the polygon's edges for exact conic crossings; touched=true when a
@@ -232,18 +232,38 @@ func bandV(p math.Point3, axis math.Vector3, band coneSideBand_) float64 {
 	return band.vMin + float64(band.bottom.VectorTo(p).Dot(axis))
 }
 
-// spansOverlap reports whether [a0,a1] and [b0,b1] come within facePairCullPad of each other. The pad
-// was a parameter and every caller passed the same constant: one cull tolerance, named once.
-func spansOverlap(a0, a1, b0, b1 float64) bool {
-	return a0 <= b1+facePairCullPad && b0 <= a1+facePairCullPad
+// spanMeetsBand reports whether the axial span [lo,hi] comes within the band's own cull margin of the
+// band. Every caller asks about one band, so the band is the argument and the margin is read off it.
+func spanMeetsBand(lo, hi float64, band coneSideBand_) bool {
+	pad := bandCullPad(band)
+	return lo <= band.vMax+pad && band.vMin <= hi+pad
+}
+
+// bandCullPad is the axial margin a section must clear a wall's rim by to count as strictly inside the
+// band — facePairCullPad expressed against the band's OWN extent instead of as an absolute length.
+//
+// It is ten stitch welds, which is exactly what facePairCullPad is (ten planar stitch grids) at the
+// historical ~1-unit part, so no larger part's classification moves. As an absolute length it was a
+// margin only at that one scale: a 0.2 mm plate's cap sits exactly one such pad below its bore's rim,
+// so the section read as a rim contact and the simplest drill there is declined (ADR-0042, ADR-0061).
+func bandCullPad(band coneSideBand_) float64 {
+	return cullPadStitches * geom.ResolutionForSize(bandSize(band)).Stitch()
+}
+
+// cullPadStitches is the cull margin counted in stitch welds — dimensionless, so it scales with the band.
+const cullPadStitches = 10 // tol:numeric — margin in stitch welds, not a length
+
+// bandSize is a wall band's own extent: its diameter at the wider rim plus its axial height.
+func bandSize(band coneSideBand_) float64 {
+	return 2*stdmath.Max(band.rBot, band.rTop) + (band.vMax - band.vMin)
 }
 
 // bandPlacement classifies an axial span against a wall band: strictly inside it, or strictly clear of
 // it. Neither means the span straddles a rim, which its callers decline. The span's SOURCE differs — a
 // conic's centre and amplitude in closed form, a general crossing walked — the rule does not.
 func bandPlacement(lo, hi float64, band coneSideBand_) (inside, clear bool) {
-	return lo > band.vMin+facePairCullPad && hi < band.vMax-facePairCullPad,
-		!spansOverlap(lo, hi, band.vMin, band.vMax)
+	pad := bandCullPad(band)
+	return lo > band.vMin+pad && hi < band.vMax-pad, !spanMeetsBand(lo, hi, band)
 }
 
 // conicEntersTrimInBand reports whether an unbounded conic section has a point inside BOTH the wall's

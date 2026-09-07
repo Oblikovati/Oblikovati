@@ -3,8 +3,6 @@
 package brep
 
 import (
-	stdmath "math"
-
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -107,9 +105,7 @@ type ruledSide struct {
 }
 
 // size is the band's characteristic length, for the resolution its intersections are taken at.
-func (r ruledSide) size() float64 {
-	return 2*stdmath.Max(r.band.rBot, r.band.rTop) + (r.band.vMax - r.band.vMin)
-}
+func (r ruledSide) size() float64 { return bandSize(r.band) }
 
 // wallPairImprint is the exact shared imprint of one (wall, planar face) pair: every plane∩wall
 // ruling line clipped to the tool face's trim, emitted as segments for the wall AND mirrored onto the

@@ -1877,3 +1877,30 @@ SNAP premise, all of which convert at stage 7. The ninth is
 `TestTessellationWatertightAcrossScales` at the 10 µm and 100 µm plates: the boolean builds them, and
 the MESH is not watertight there. That is the tessellator's own scale debt — `mesh.Quality` carries an
 absolute `ChordTolerance` — and it is downstream of this ADR.
+
+### A wall band's cull margin was an absolute length (2026-09-08)
+
+The ninth kernel row above — `TestTessellationWatertightAcrossScales` at the 100 µm plate — was not
+the tessellator after all. The BOOLEAN declined it, and the reason is one more absolute length used as
+a model-relative margin.
+
+`bandPlacement` asks whether a section curve sits strictly inside a wall's axial band, clear of both
+rims. Its margin was `facePairCullPad`, which is ten planar stitch grids: right for a part about one
+database unit across, and nothing at any other scale. The plate is 6e-5 tall and its bore runs from
+−1e-5 to 7e-5, so the top cap's section sits EXACTLY one pad below the bore's rim. It read as a rim
+contact rather than an interior island, `wallSectionIsland` fell through to `clipSectionToWall`, and
+the simplest drill there is — a block cut by a cylinder, six faces against three — declined.
+
+The margin is now the band's own: ten stitch welds of a `Resolution` built from the band's extent
+(`bandCullPad`), which reproduces the absolute constant exactly at the historical ~1-unit part and
+scales with the part everywhere else. `spansOverlap` becomes `spanMeetsBand` — all four callers were
+comparing a span against one band, so the band is the argument and the margin is read off it — and
+`ruledSide.size` is now the same `bandSize` the margin uses.
+
+**What is left below the corpus, named.** At 10 µm — a decade below the sweep's smallest case — the
+same drill returns an EMPTY body with no error. Every face classifies as removed, so nothing reaches
+the stitch. That is a wrong body rather than a decline, which this ADR's rules forbid, and it is not
+the band margin (scaling `facePairCullPad` down by four decades does not move it). It is named here
+rather than fixed: `facePairCullPad` is still an absolute length at nine other sites — the AABB cull,
+`geom.SurfacesApart`, the interval inflation, the band-window test — and relativising them is one
+slice with a scale sweep as its corpus, not a change to make one row at a time.
