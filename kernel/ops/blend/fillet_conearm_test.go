@@ -140,7 +140,7 @@ func coneArmOracleCases() []coneArmCase {
 // and both faces; a plane∧plane edge (the third, straight corner edge) is not recognized.
 func TestConePlaneEdge(t *testing.T) {
 	t.Parallel()
-	e, _, _ := conePlaneFixtureEdge(t, false)
+	e, _, _, _ := conePlaneFixtureEdge(t, false)
 	co, pl, cf, pf, ok := conePlaneEdge(e)
 	if !ok {
 		t.Fatalf("conePlaneEdge did not recognize a cone∧plane edge")
@@ -162,8 +162,8 @@ func TestConePlaneEdge(t *testing.T) {
 // edge is NOT handled here (handled=false), keeping the existing planar path byte-identical.
 func TestConeArmEdge_Dispatches(t *testing.T) {
 	t.Parallel()
-	e, _, _ := conePlaneFixtureEdge(t, false)
-	ef, handled, err := coneArmEdge(nil, e, filletPick{edge: e, r0: 10, r1: 10})
+	e, body, _, _ := conePlaneFixtureEdge(t, false)
+	ef, handled, err := coneArmEdge(body, e, filletPick{edge: e, r0: 10, r1: 10})
 	if !handled || err != nil || ef.armSurface == nil {
 		t.Fatalf("cone∧plane cap edge: want handled+no-error+arm, got handled=%v err=%v arm=%v", handled, err, ef.armSurface)
 	}
@@ -188,7 +188,7 @@ func TestConeArmEdge_Dispatches(t *testing.T) {
 // 20 (=2r) short — the mutation witness below.
 func TestConeArm_ConcaveBoreBuilds(t *testing.T) {
 	t.Parallel()
-	e, co, pl := conePlaneFixtureEdge(t, true) // reversed cone face → concave bore
+	e, body, co, pl := conePlaneFixtureEdge(t, true) // reversed cone face → concave bore
 	coneFace, planeFace := boreFaces(e)
 	res := tol.ForSize(300)
 	nOut, _ := math.UnitVector3FromVector(outwardPlaneNormal(planeFace, pl))
@@ -215,7 +215,7 @@ func TestConeArm_ConcaveBoreBuilds(t *testing.T) {
 	if wantReason != coneArmBuilt || tor.Center != wantTor.Center || tor.MajorRadius != wantTor.MajorRadius {
 		t.Fatalf("coneArmFillet's concave-bore arm %+v does not match coneArmSurface(s=-1) directly %+v", tor, wantTor)
 	}
-	if _, _, err := coneArmEdge(nil, e, filletPick{edge: e, r0: 10, r1: 10}); err != nil {
+	if _, _, err := coneArmEdge(body, e, filletPick{edge: e, r0: 10, r1: 10}); err != nil {
 		t.Fatalf("concave bore should build without error via coneArmEdge, got: %v", err)
 	}
 }
@@ -311,7 +311,7 @@ func TestClassifyConeArm_RulingRejects(t *testing.T) {
 // conePlaneFixtureEdge builds a minimal Cone∧Plane cap (circle) edge: host cone (apex (0,0,270), axis
 // −ẑ, tanα=1/3), cap plane z=0, on the bottom rim circle radius 90. When reversed is true the cone face
 // is Reversed (material OUTSIDE the cone — a conical bore) for the concave-bore gate test.
-func conePlaneFixtureEdge(t *testing.T, reversed bool) (*topo.Edge, geom.Cone, geom.Plane) {
+func conePlaneFixtureEdge(t *testing.T, reversed bool) (*topo.Edge, *topo.Body, geom.Cone, geom.Plane) {
 	t.Helper()
 	lin := topo.NewLineage(topo.Tok("test", "cone-cap-edge", 0))
 	bld := topo.NewBuilder(true, lin)
@@ -331,7 +331,9 @@ func conePlaneFixtureEdge(t *testing.T, reversed bool) (*topo.Edge, geom.Cone, g
 	}
 	pl := planeOn(t, math.P3(0, 0, 0), math.V3(0, 0, -1))
 	bld.AddFace(pl, lin, topo.OuterLoop(topo.Rev(e)))
-	return e, co, pl
+	// The body is the model ADR-0042 measures: coneArmEdge classifies the plane's angle to the axis in an
+	// arc-length band read off it, and a nil body floors that band to the degeneracy resolution.
+	return e, bld.Build(), co, pl
 }
 
 // boreFaces returns the (cone, plane) faces of a conePlaneFixtureEdge in a stable order.

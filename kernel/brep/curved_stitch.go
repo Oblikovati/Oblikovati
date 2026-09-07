@@ -151,16 +151,15 @@ func (m *radialMinter) mintVertex(p math.Point3, pinch bool) *topo.Vertex {
 	return tv
 }
 
-// curvedFaceBox bounds the loop-edge endpoints of the faces being stitched — the geometry whose
-// Resolution sets the stitch weld grid (#1602).
+// curvedFaceBox bounds the faces being stitched — the geometry whose Resolution sets the stitch weld
+// grid (#1602). It is faceLoopBox over the set, so an edge is bounded over its OWN span: a cap and its
+// lid are each bounded by ONE closed circle whose two ends are the same seam point, and an
+// endpoint-only box degenerates to that point, flooring the weld grid to the degeneracy resolution and
+// leaving the circle's two seam copies (1.2e-15 apart) unmerged (ADR-0042, ADR-0061 stage 4).
 func curvedFaceBox(faces []curvedFace) math.Box {
 	box := math.EmptyBox()
 	for _, f := range faces {
-		for _, loop := range f.loops {
-			for _, le := range loop.edges {
-				box = box.ExtendPoint(le.start()).ExtendPoint(le.end())
-			}
-		}
+		box = box.Union(faceLoopBox(f))
 	}
 	return box
 }

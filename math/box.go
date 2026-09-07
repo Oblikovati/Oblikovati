@@ -99,8 +99,16 @@ func (b Box) ExtendPoint(p Point3) Box {
 	}
 }
 
-// Union returns the smallest box containing both boxes.
+// Union returns the smallest box containing both boxes. The empty box is the IDENTITY, as EmptyBox
+// documents: extending by its corners would take the +Inf/−Inf sentinels literally and return an
+// infinite box, which then floors every Resolution derived from it (ADR-0042, ADR-0061 stage 4).
 func (b Box) Union(o Box) Box {
+	if o.IsEmpty() {
+		return b
+	}
+	if b.IsEmpty() {
+		return o
+	}
 	return b.ExtendPoint(o.Min).ExtendPoint(o.Max)
 }
 

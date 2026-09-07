@@ -26,12 +26,15 @@ import (
 // count as the same vertex. 1e-9 is the precedent already set by the bounds-relative
 // convex-hull and surface-query tolerances, and sits ~7 orders inside float64's ~16
 // significant digits, leaving ample headroom for arithmetic.
-const epsRel = 1e-9
+const epsRel = 1e-9 // tol:numeric — a RELATIVE precision (a fraction of model size), not a length
 
-// minModelSize floors the model size so a degenerate, single-point or empty operand
-// still yields a strictly positive resolution. 1 (one database centimetre) matches the
-// long-standing convex-hull fallback.
-const minModelSize = 1.0
+// minModelSize floors the model size so a degenerate, single-point or empty operand still yields a
+// strictly positive resolution. It is a floor for DEGENERACY, not a smallest part: at one database
+// centimetre every sub-centimetre model was measured with a centimetre's tolerances, and a 100 µm
+// plate's cap — a tenth of its own thickness above the bore's rim — read as coplanar with it, so the
+// general boolean dropped the cap (ADR-0042, ADR-0061 stage 4). A nanometre is far below any part the
+// kernel is asked to build and still twelve orders above float64's rounding of a model that size.
+const minModelSize = 1e-9
 
 // Per-purpose tolerance coefficients, as multiples of the base resolution (epsRel × size).
 // They differ ON PURPOSE: a vertex weld must be TIGHT — only float-noise-coincident
@@ -56,7 +59,7 @@ const (
 // volCoef is the relative volume tolerance for boolean result classification. Volume
 // scales with size³, so this keeps the classification scale-faithful; it reproduces
 // boolean.go's 1e-6 cm³ at a 1 cm reference part (size = 1).
-const volCoef = 1e-6
+const volCoef = 1e-6 // tol:numeric — a relative volume fraction, not a length
 
 // Resolution is a model's size-relative coincidence scale: the single value from which
 // all weld / on-line / on-plane / sew / volume tolerances are derived. Build it from the

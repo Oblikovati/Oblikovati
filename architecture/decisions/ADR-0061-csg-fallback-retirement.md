@@ -1788,3 +1788,53 @@ not there to catch it:
   to cap hand each disc a copy of its own boundary.
 - and the merge that follows from both — two faces on one surface whose common boundary dissolves are
   one face.
+
+### The resolution floor is lowered: the whole kernel builds at a nanometre (2026-09-08)
+
+The measurement above said the floor's 22 failures "do not share one cause". That reading was wrong,
+and the correction is the point of this section. Lowering `minModelSize` further, from a centimetre to
+a nanometre, raised the count to 55 — and 53 of those had ONE cause in two places, plus one more in a
+third. Each is a quantity read from too small a sample, which the centimetre floor had been silently
+replacing with a centimetre.
+
+**A face's box must bound its edges, not its vertices.** `faceLoopBox` and `curvedFaceBox` both took a
+face's extent from the points where its loop edges meet. A face bounded by ONE closed circle — every
+cylinder cap, every sphere lid, every disc — has both ends of that circle at the same seam point, so
+its box was a POINT and the resolution derived from it was the floor. Nineteen call sites read
+`faceLoopBox`; the stitch's weld grid reads `curvedFaceBox`. At a centimetre the point-box handed every
+such face a centimetre's tolerances and the answers happened to be right. At a nanometre the cap's own
+rim stopped crossing its own probe line, and the hemisphere's two seam vertices (1.2e-15 apart) stopped
+welding: `V−E+2F−L = 3`, an inadmissible Euler characteristic on a two-face solid.
+
+The fix is `geom.CurveBox(c, t0, t1)`, the exact box a curve reaches over its span: `AxialExtent` along
+each world axis, so a conic's box carries its interior stationary points and not merely its two ends.
+Both face boxes are built from it, and `curvedFaceBox` is now `faceLoopBox` over the set rather than a
+second copy of the same walk.
+
+**A window's pad must be relative when the roots inside it are.** `lineWindowOf` padded the face's
+extent along a probe line by an absolute `facePairCullPad` (1e-5), while the conic solver that consumes
+the window rejects a root within `tjTol` (1e-7) of either end measured in the segment's NORMALISED
+parameter. The two do not compose: at a 3 m cap the pad is 1.7e-9 of the window, so the cap's own rim
+read as outside its own window and the face reported no interior point. The pad is now a fraction of
+the window's own span (`lineWindowSlack`), which is scale-invariant by construction. This is what
+`TestCornerJunctionScaleInvariantAngle` was already asserting one level up.
+
+**The empty box was not union's identity.** `math.EmptyBox` documents itself as "the identity box for
+union", and `Box.Union` extended by the other box's corners — taking the ±Inf sentinels literally and
+returning an INFINITE box. A seamless sphere face has no loop edges, so its face box is empty, so a
+stitch set containing one had an infinite box and an infinite model size. That is the same defect as
+the point-box with the sign reversed: a disjoint union of a block and a ball came back as seven shells
+with twelve unpaired edges, because the weld was as coarse as the point-box's was fine.
+
+With those three fixed, `./kernel/...`, `./model/...` and `./math/...` are green at
+`minModelSize = 1e-9`. Two premise tests moved, and both were pinning the floor rather than testing
+behaviour: `kernel/ops`'s constructors now read the floor from `geom.ResolutionForSize(0)` instead of
+repeating the literal, and the fillet's cone-arm tests now hand `coneArmEdge` the BODY their fixture
+builds instead of `nil` — an angular band read off a nil body is a band read off the degeneracy floor,
+which is what made a perpendicular cap plane read as "oblique".
+
+The floor is now what its name says: a guard against a degenerate operand, not a smallest part. The
+drilled plate below a millimetre builds through the general pipeline, and the last of stage 4's nine
+kernel rows that was not a fallback's own test is closed. `geom/resolution.go` owes the tolerance
+ratchet one literal instead of two — `epsRel` and `volCoef` are relative fractions and now say so,
+leaving `minModelSize` as the single absolute anchor the relative system stands on.

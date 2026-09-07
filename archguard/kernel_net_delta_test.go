@@ -44,7 +44,7 @@ var kernelNetDeltaPin = map[string]int{
 	// 232 → 231 (2026-09-06, ADR-0061 stage 4): a FALL — the ruled∩quadric gate's branch-separation
 	// margin (a twentieth of the largest gap) is gone; the gate reads the exact minimum of the gap
 	// against the stitch resolution instead, and the near-pinch crossings it refused are exact.
-	"tolerance-constants": 231,
+	"tolerance-constants": 230,
 	// 765 → 754 (2026-09-05, ADR-0061 stage 2): a FALL — the analytic half-space pipeline is deleted,
 	// and its per-primitive dispatch took eleven geometry-kind assertions with it.
 	// 754 → 746 (2026-09-06, ADR-0061 stage 4): a FALL — restricting an edge's curve to its own

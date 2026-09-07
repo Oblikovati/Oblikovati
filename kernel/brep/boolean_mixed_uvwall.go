@@ -288,13 +288,21 @@ func conicCrossesFaceBoundary(pc planeConic, f curvedFace) (crosses, ok bool) {
 	return false, true
 }
 
-// faceLoopBox is a planar face's exact loop-point bounding box with NO cull pad — the uv bucket's box
+// faceLoopBox is a face's exact boundary bounding box with NO cull pad — the uv bucket's box
 // convention (partitionFaces takes it from the topo face's range box, which is unpadded too).
+//
+// It bounds each edge over its OWN span (geom.CurveBox), not only the vertices the loop chains: a face
+// bounded by one closed circle has both ends at the same seam point, and a vertex-only box degenerates
+// to that point. Every caller derives a Resolution from this box, so the degenerate box handed the
+// whole face the model-size floor as its scale (ADR-0042, ADR-0061 stage 4).
 func faceLoopBox(f curvedFace) math.Box {
 	box := math.EmptyBox()
-	for _, ring := range planarRings(f) {
-		for _, p := range ring {
-			box = box.ExtendPoint(p)
+	for _, l := range f.loops {
+		for _, e := range l.edges {
+			box = box.ExtendPoint(e.start()).ExtendPoint(e.end())
+			if eb, ok := geom.CurveBox(e.curve, e.t0, e.t1); ok {
+				box = box.Union(eb)
+			}
 		}
 	}
 	return box
