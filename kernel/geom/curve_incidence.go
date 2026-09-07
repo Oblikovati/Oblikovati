@@ -22,12 +22,10 @@ import (
 // as lying on the section. A ruled-quadric crossing lies on TWO surfaces and names both, because which
 // of them is the host — and so carries no information — depends on the chart asking.
 func CurveIncidence(cv Curve3) []func(math.Point3) float64 {
-	switch x := cv.(type) {
-	case RuledQuadricArc:
-		return ruledQuadricIncidence(x)
-	case *RuledQuadricArc:
-		return ruledQuadricIncidence(*x)
-	case TrimmedCurve3:
+	if on, ok := sectionIncidence(cv); ok {
+		return on
+	}
+	if x, ok := cv.(TrimmedCurve3); ok {
 		return CurveIncidence(x.Base)
 	}
 	if IsStraightCurve(cv) {
@@ -43,15 +41,60 @@ func CurveIncidence(cv Curve3) []func(math.Point3) float64 {
 	}
 }
 
-// ruledQuadricIncidence is the crossing's two conditions: the quadric it carries, and the base surface
-// it runs on when that surface has an implicit form of its own.
-func ruledQuadricIncidence(a RuledQuadricArc) []func(math.Point3) float64 {
-	out := []func(math.Point3) float64{a.Quad.ValueAt}
-	if q, ok := a.Base.(ImplicitQuadric); ok {
+// sectionIncidence answers for the intersector's own section forms — the curves it returns from a
+// closed form, which are on two surfaces by construction and name both. Each is listed by value AND by
+// pointer: an imprint may travel by identity so the arrangement's run-merge can compare curves with ==,
+// and a form that answers for one and not the other reports no incidence for half its callers.
+func sectionIncidence(cv Curve3) ([]func(math.Point3) float64, bool) {
+	switch x := cv.(type) {
+	case RuledQuadricArc:
+		return ruledQuadricIncidence(x.Base, x.Quad), true
+	case *RuledQuadricArc:
+		return ruledQuadricIncidence(x.Base, x.Quad), true
+	case RuledQuadricLoop:
+		return ruledQuadricIncidence(x.Base, x.Quad), true
+	case *RuledQuadricLoop:
+		return ruledQuadricIncidence(x.Base, x.Quad), true
+	case TorusQuadricArc:
+		return torusQuadricIncidence(x.Torus, x.Quad), true
+	case *TorusQuadricArc:
+		return torusQuadricIncidence(x.Torus, x.Quad), true
+	case TorusQuadricLoop:
+		return torusQuadricIncidence(x.Torus, x.Quad), true
+	case *TorusQuadricLoop:
+		return torusQuadricIncidence(x.Torus, x.Quad), true
+	}
+	return nil, false
+}
+
+// ruledQuadricIncidence is a ruled∩quadric section's two conditions: the quadric it carries, and the
+// base surface it runs on when that surface has an implicit form of its own. It serves the wrapping arc
+// and the folded loop alike — they are one closed form over different windows, so they are ON the same
+// two surfaces.
+func ruledQuadricIncidence(base Surface, quad Quadric) []func(math.Point3) float64 {
+	out := []func(math.Point3) float64{quad.ValueAt}
+	if q, ok := base.(ImplicitQuadric); ok {
 		form := q.QuadricForm()
 		out = append(out, form.ValueAt)
 	}
 	return out
+}
+
+// torusQuadricIncidence is a torus∩quadric section's two conditions: the quadric it carries, and the
+// TORUS it runs on. A torus is quartic and has no quadric form, so its condition is its own signed
+// distance — an exact implicit function like any other, and the one thing a caller solving against this
+// curve needs.
+//
+// A section curve WITHOUT its conditions is not merely slower to intersect: it cannot be intersected at
+// all. curvePairMeets needs roots on BOTH curves and pairs them by distance, so a curve that reports no
+// incidence yields no crossing — silently. That is how an axial drill through a ring lost the crossings
+// between its bore seams and the wall chart's own seam, and came back as half a tube bridged by two
+// rulings (ADR-0061 stage 5).
+func torusQuadricIncidence(t Torus, quad Quadric) []func(math.Point3) float64 {
+	return []func(math.Point3) float64{
+		quad.ValueAt,
+		func(p math.Point3) float64 { return float64(SignedDistanceToSurface(t, p)) },
+	}
 }
 
 // straightIncidence is a line's two conditions: the distances to two perpendicular planes through it.

@@ -2221,11 +2221,31 @@ three bodies built by three separate trims of the same section have no reason to
 section is right; they agree to a part in a million, and the ring's own integral matches 2π²Rr². A
 coaxial shaft bored through a ring is exact too.
 
-**An AXIAL DRILL through a ring is not, and the reason is downstream.** The section is exact — the two
-seams come back as closed loops, each wrapping the drill's azimuth once, both inside its band — but the
-ruled chart's trim keeps only HALF the bore wall. It splits each seam at the two azimuths where the seam
-reaches its extreme height (ρ = R, where the tube is topmost) and emits one contractible patch bounded
-by two rulings, instead of the two-rim band. The result is two shells with an open boundary, which the
-boolean's own acceptance gate refuses — so nothing wrong ships, and the refusal is named. The fix
-belongs to the wall trim, not to the section. `TestAxialDrillThroughARingIsRefusedNotWrong` holds the
-gap so it stays named, and will flip from a refusal to a result when that lands.
+An AXIAL DRILL through a ring — a flange's bolt hole, and the commonest thing anyone does to a torus —
+was a NAMED REFUSAL for one commit, and the cause is worth writing down because the symptom pointed
+nowhere near it.
+
+The section was exact from the start: two closed seams, each wrapping the drill's azimuth once, both
+inside its band. But the ruled chart's trim kept only HALF the bore wall, splitting each seam at the two
+azimuths where it reaches its extreme height and bridging with two rulings. Two shells, open boundary,
+refused by the acceptance gate.
+
+The probe that mattered compared the failing case against a WORKING analogue with the same shape — a rod
+crossing a fat cylinder, whose wall also carries two wrapping imprints. Same seam azimuth, same band,
+same bucket. The difference was one number: the rod's wall reported FOUR seam crossings and the drill's
+TWO. The two missing ones were the imprints' own crossings with the chart's seam.
+
+**`geom.CurveIncidence` knew a `RuledQuadricArc`'s two implicit conditions and none of the three section
+curves added after it** — the folded ruled loop and both torus forms. `curvePairMeets` needs roots on
+BOTH curves and pairs them by distance, so a curve that reports no incidence yields no crossing at all,
+silently. The fix is three dispatch cases: a ruled section is on its quadric and on its base's implicit
+form, a torus section is on its quadric and on the torus's own signed distance.
+
+An intermediate probe ruled out everything else first: sampling the same seams as plain POLYLINES failed
+identically, so it was never the new curve type or its parameterisation — a polyline has no incidence
+either.
+
+Every axial drill through a ring now comes out as two faces in one closed shell, and the three
+operations satisfy Requicha against the operands' own analytic volumes.
+`TestEverySectionCurveReportsItsIncidence` walks every section form the intersector can return and fails
+when the next one arrives without its conditions.

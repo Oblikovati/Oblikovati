@@ -137,30 +137,90 @@ func TestSkewRodThroughARingIsRefusedByName(t *testing.T) {
 	}
 }
 
-// TestAxialDrillThroughARingIsRefusedNotWrong is a NAMED GAP, and the row exists so it stays named.
+// TestAxialDrillThroughARingIsExact drills a hole straight through a ring — a flange's bolt hole, and
+// the commonest thing anyone does to a torus. The seams it leaves are two closed loops, each wrapping
+// the drill's azimuth once, and the result is the ring's surface with two holes plus the bore wall: two
+// faces, one shell, closed.
 //
-// The section is exact — the drill's two seams come back as closed loops on the ring, each wrapping the
-// drill's azimuth once — but the ruled chart's trim keeps only HALF the bore wall: it splits each seam
-// at the two azimuths where the seam reaches its extreme height (ρ = R, where the tube is topmost) and
-// emits one contractible patch bounded by two rulings instead of the two-rim band. The result is two
-// shells and an open boundary, which the boolean's own acceptance gate refuses — so nothing wrong
-// ships. The fix belongs to the wall trim, not to the section, and this row will flip from a refusal to
-// a result when it lands.
-func TestAxialDrillThroughARingIsRefusedNotWrong(t *testing.T) {
+// The row was a NAMED REFUSAL for one commit. The section was exact from the start, but the ruled
+// chart's trim kept half the bore wall and bridged it with two rulings, and the acceptance gate refused
+// that body. The cause was one missing case: geom.CurveIncidence knew a RuledQuadricArc's two implicit
+// conditions and none of the three section curves added after it, so curvePairMeets — which needs roots
+// on BOTH curves and pairs them by distance — found no crossing at all between the bore seams and the
+// wall chart's own seam. A section curve without its incidence is not slower to intersect; it cannot be
+// intersected, silently.
+func TestAxialDrillThroughARingIsExact(t *testing.T) {
 	t.Parallel()
-	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
+	const major, minor, at, bore = 5.0, 1.5, 5.0, 0.8
+	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), major, minor, "ring")
 	if err != nil {
 		t.Fatalf("ring: %v", err)
 	}
-	drill, err := brep.SolidCylinder(math.P3(5, 0, -4), math.V3(0, 0, 1), 0.8, 8)
+	drill, err := brep.SolidCylinder(math.P3(at, 0, -4), math.V3(0, 0, 1), bore, 8)
 	if err != nil {
 		t.Fatalf("drill: %v", err)
 	}
-	body, err := ops.Boolean(ops.Cut, ring, drill)
-	if err == nil {
-		t.Fatalf("the axial drill built a body of %d faces; the wall trim does not close it yet, so it must be refused", len(body.Faces()))
+	bored, err := ops.Boolean(ops.Cut, ring, drill)
+	if err != nil {
+		t.Fatalf("ring − axial drill: %v", err)
 	}
-	if body != nil {
-		t.Error("a refused boolean must return no body")
+	if r := ops.Validate(bored); !r.Valid || !r.Closed || !r.Manifold || !bored.IsSolid() {
+		t.Fatalf("the bored ring is not a valid closed manifold solid: %+v", r)
 	}
+	if n, shells := len(bored.Faces()), len(bored.Shells()); n != 2 || shells != 1 {
+		t.Errorf("the bored ring has %d faces in %d shells, want the ring's surface and the bore wall in one", n, shells)
+	}
+	tori, cyls := 0, 0
+	for _, f := range bored.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Torus:
+			tori++
+		case geom.Cylinder:
+			cyls++
+		}
+	}
+	if tori != 1 || cyls != 1 {
+		t.Errorf("got %d torus + %d cylinder faces, want one of each", tori, cyls)
+	}
+	// The ring's surface carries the drill's two seams as holes; the bore wall is bounded by both.
+	for _, f := range bored.Faces() {
+		if n := len(f.Loops()); n != 2 {
+			t.Errorf("face %T has %d loops, want 2 (the drill leaves two seams on each)", f.Geometry(), n)
+		}
+	}
+
+	// Certified by Requicha across the three operations, against the two operands' own analytic volumes.
+	lens := opVolume(t, ops.Intersect, ring, drill)
+	ringVol := 2 * stdmath.Pi * stdmath.Pi * major * minor * minor
+	drillVol := stdmath.Pi * bore * bore * 8
+	for _, c := range []struct {
+		name string
+		got  float64
+		want float64
+	}{
+		{"ring − drill", query.BodyGeometryProperties(bored, ops.DefaultQuality()).Volume, ringVol - lens},
+		{"ring ∪ drill", opVolume(t, ops.Join, ring, drill), ringVol + drillVol - lens},
+	} {
+		if stdmath.Abs(c.got-c.want) > 1e-6*c.want {
+			t.Errorf("%s measures %.6f, want %.6f", c.name, c.got, c.want)
+		}
+	}
+	// And the lens itself against the membership integral, which is the only one of the three that does
+	// not follow from the others.
+	if want := 5.81529; stdmath.Abs(lens-want) > 5e-3*want {
+		t.Errorf("ring ∩ drill measures %.6f, want %.6f from the membership integral", lens, want)
+	}
+}
+
+// opVolume runs one boolean and returns its analytic volume, failing the test if it does not.
+func opVolume(t *testing.T, op ops.PartFeatureOperation, a, b *topo.Body) float64 {
+	t.Helper()
+	res, err := ops.Boolean(op, a, b)
+	if err != nil {
+		t.Fatalf("%v: %v", op, err)
+	}
+	if r := ops.Validate(res); !r.Valid || !r.Closed || !r.Manifold || !res.IsSolid() {
+		t.Fatalf("%v: not a valid closed manifold solid: %+v", op, r)
+	}
+	return query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
 }
