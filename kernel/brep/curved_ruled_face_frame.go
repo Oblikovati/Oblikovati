@@ -76,7 +76,7 @@ func (c *loopFrame) solveFrameCrossings(imprint []geom.Curve3) ([]frameCrossing,
 	for li, l := range c.face.loops {
 		for ei, e := range l.edges {
 			for ii, imp := range imprint {
-				if _, coincident := geom.SectionCrossingCandidates(c.face.surface, e.curve, imp); coincident {
+				if _, coincident := geom.SectionCrossingCandidates(c.face.surface, e.curve, imp, c.res); coincident {
 					return nil, false
 				}
 				tE, tI := c.curvePairMeets(e.curve, e.t0, e.t1, imp)
@@ -102,7 +102,7 @@ func (c *loopFrame) solveImprintCrossings(imprint []geom.Curve3) [][]float64 {
 	out := make([][]float64, len(imprint))
 	for i := range imprint {
 		for j := i + 1; j < len(imprint); j++ {
-			if _, coincident := geom.SectionCrossingCandidates(c.face.surface, imprint[i], imprint[j]); coincident {
+			if _, coincident := geom.SectionCrossingCandidates(c.face.surface, imprint[i], imprint[j], c.res); coincident {
 				continue // two imprints on one curve: the arrangement's vertex weld already joins them
 			}
 			lo, hi := imprint[i].Domain()
@@ -156,7 +156,7 @@ func (c *loopFrame) meetKnown(a geom.Curve3, known []float64, tA float64) bool {
 // point on each curve, so it answers only for curves with a closed-form parameter inversion.
 func (c *loopFrame) sectionPairMeets(a geom.Curve3, aLo, aHi float64, b geom.Curve3) (ta, tb []float64) {
 	bLo, bHi := b.Domain()
-	pts, _ := geom.SectionCrossingCandidates(c.face.surface, a, b)
+	pts, _ := geom.SectionCrossingCandidates(c.face.surface, a, b, c.res)
 	for _, p := range pts {
 		tA, okA := c.paramWithin(a, aLo, aHi, p)
 		tB, okB := c.paramWithin(b, bLo, bHi, p)

@@ -106,7 +106,7 @@ func TestSectionCrossingCandidatesOnCylinder(t *testing.T) {
 	cyl := testCylinderY(t)
 	rim := tiltedSection(t, cyl, -1.5, 7.5)
 	tool := tiltedSection(t, cyl, -1.5, -30) // a second oblique section through the same station crosses the rim twice
-	pts, coincident := SectionCrossingCandidates(cyl, rim, tool)
+	pts, coincident := SectionCrossingCandidates(cyl, rim, tool, ResolutionForSize(4))
 	if coincident || len(pts) != 2 {
 		t.Fatalf("two crossing sections: %d points coincident=%v", len(pts), coincident)
 	}
@@ -119,7 +119,7 @@ func TestSectionCrossingCandidatesOnCylinder(t *testing.T) {
 		}
 	}
 	ruling := NewLineSegment(cyl.PointAt(1.2, -0.5), cyl.PointAt(1.2, 0.5))
-	pts, _ = SectionCrossingCandidates(cyl, ruling, rim)
+	pts, _ = SectionCrossingCandidates(cyl, ruling, rim, ResolutionForSize(4))
 	if len(pts) != 1 {
 		t.Fatalf("ruling × section: %d points, want 1", len(pts))
 	}
@@ -127,10 +127,10 @@ func TestSectionCrossingCandidatesOnCylinder(t *testing.T) {
 		t.Errorf("ruling pierce %v is %g off the section plane", pts[0], d)
 	}
 	same := tiltedSection(t, cyl, -1.5, 7.5)
-	if _, coincident := SectionCrossingCandidates(cyl, rim, same); !coincident {
+	if _, coincident := SectionCrossingCandidates(cyl, rim, same, ResolutionForSize(4)); !coincident {
 		t.Errorf("the same section twice must report coincident")
 	}
-	if pts, _ := SectionCrossingCandidates(cyl, ruling, NewLineSegment(cyl.PointAt(2, 0), cyl.PointAt(2, 1))); len(pts) != 0 {
+	if pts, _ := SectionCrossingCandidates(cyl, ruling, NewLineSegment(cyl.PointAt(2, 0), cyl.PointAt(2, 1)), ResolutionForSize(4)); len(pts) != 0 {
 		t.Errorf("two rulings never cross, got %d", len(pts))
 	}
 }

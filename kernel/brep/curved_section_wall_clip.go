@@ -58,7 +58,7 @@ func sectionWallCuts(cv geom.Curve3, wf curvedFace) []float64 {
 	res := geom.ResolutionForBox(faceLoopBox(wf))
 	var cuts []float64
 	for _, te := range borderEdges(wf) {
-		pts, _ := geom.SectionCrossingCandidates(wf.surface, te.le.curve, cv)
+		pts, _ := geom.SectionCrossingCandidates(wf.surface, te.le.curve, cv, res)
 		for _, p := range pts {
 			if _, onEdge := curveParamWithin(te.le.curve, te.le.t0, te.le.t1, p, res); !onEdge {
 				continue

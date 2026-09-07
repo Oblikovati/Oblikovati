@@ -114,7 +114,7 @@ func (c *ruledFaceUV) admits(imprint []geom.Curve3) []geom.Curve3 {
 func (c *ruledFaceUV) coincidesWithFrame(imp geom.Curve3) bool {
 	for _, l := range c.face.loops {
 		for _, e := range l.edges {
-			if _, coincident := geom.SectionCrossingCandidates(c.face.surface, e.curve, imp); coincident {
+			if _, coincident := geom.SectionCrossingCandidates(c.face.surface, e.curve, imp, c.res); coincident {
 				return true
 			}
 		}

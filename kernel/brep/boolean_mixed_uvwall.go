@@ -302,9 +302,10 @@ func faceLoopBox(f curvedFace) math.Box {
 
 // sectionOnWallEdge reports a section curve coincident with one of the wall's edges on its surface.
 func sectionOnWallEdge(cv geom.Curve3, wf curvedFace) bool {
+	res := geom.ResolutionForBox(faceLoopBox(wf))
 	for _, l := range wf.loops {
 		for _, e := range l.edges {
-			if _, coincident := geom.SectionCrossingCandidates(wf.surface, e.curve, cv); coincident {
+			if _, coincident := geom.SectionCrossingCandidates(wf.surface, e.curve, cv, res); coincident {
 				return true
 			}
 		}

@@ -100,10 +100,16 @@ func CurveParamAt(c Curve3, p math.Point3) (float64, bool) {
 // two sections in ONE plane: on the surface they are the same conic, a contact no crossing describes.
 // Two rulings never cross. A pair it cannot describe (a non-planar curve) returns nothing.
 //
+// res is the MODEL's coincidence scale, and is the caller's to supply: whether two section planes are
+// one plane is a question about the part, and deriving the answer's tolerance from the gap between the
+// two planes themselves — which is what this used to do — makes it circular. On a part below a
+// centimetre the derived scale then floored to one, and a cap a tenth of a millimetre from a bore's rim
+// read as coplanar with it (ADR-0061 stage 4, ADR-0042).
+//
 // Example:
 //
-//	pts, same := geom.SectionCrossingCandidates(cyl, rimArc, toolSection)
-func SectionCrossingCandidates(s Surface, a, b Curve3) (pts []math.Point3, coincident bool) {
+//	pts, same := geom.SectionCrossingCandidates(cyl, rimArc, toolSection, res)
+func SectionCrossingCandidates(s Surface, a, b Curve3, res Resolution) (pts []math.Point3, coincident bool) {
 	sa, sb := IsStraightCurve(a), IsStraightCurve(b)
 	switch {
 	case sa && sb:
@@ -120,7 +126,7 @@ func SectionCrossingCandidates(s Surface, a, b Curve3) (pts []math.Point3, coinc
 	}
 	p0, dir, ok := PlanePlaneLine(pa, pb)
 	if !ok {
-		return nil, coplanarPlanes(pa, pb)
+		return nil, coplanarPlanes(pa, pb, res)
 	}
 	ln, err := NewLine(p0, dir)
 	if err != nil {
@@ -162,9 +168,8 @@ func lineSurfacePierces(s Surface, ln Line) []math.Point3 {
 	return pts
 }
 
-// coplanarPlanes reports whether two parallel planes are the same plane.
-func coplanarPlanes(a, b Plane) bool {
-	res := ResolutionForPoints([]math.Point3{a.Origin, b.Origin})
+// coplanarPlanes reports whether two parallel planes are the same plane, at the model's own scale.
+func coplanarPlanes(a, b Plane, res Resolution) bool {
 	return stdmath.Abs(float64(a.Normal().Dot(a.Origin.VectorTo(b.Origin)))) <= res.Sew()
 }
 
