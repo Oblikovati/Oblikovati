@@ -1638,3 +1638,52 @@ rebuilds those fixtures on real solids.
 
 The planar stitch's weld grid also derives from the operands now (`stitchInputBox`), as the curved
 stitch's did; it was an absolute grid a millimetre-scale plate could not survive.
+
+### The degenerate overlap, and an empty answer that was a proof (2026-09-07)
+
+Two of the four configurations the honest count named are done, and both were the same mistake in
+different clothes: the pipeline read an ABSENCE as an inability.
+
+**A tool that never touches the wall.** A steep rod enters a cylinder through one cap and leaves
+through the other, staying inside the wall the whole way. `overlapsUncarriedWall` asked the wall pair
+for a crossing and read "no curves" as "not decided", so the whole two-cap family declined —
+five corpus rows, one of them the OCC-certified `TestTwoCapCrossingCutMomentsMatchOCC`.
+`wallWallImprint` already says which it means: ok=false is undecided, ok=true with no curves is the
+decided answer, and it has two roots — the two infinite surfaces are known not to cross, or every
+crossing they have lies clear of one of the two bands. Either way the walls do not touch. The guard
+the old reading protected, a grazing partial-rim cut, declines at the intersector's conditioning gate,
+which is ok=false, and its certifications hold on both paths.
+
+**Two walls on ONE surface.** Two coaxial cylinders of equal radius overlap in a REGION, not along a
+curve — the degenerate-overlap class ADR-0045 names, which the planar boolean has always had and the
+curved side never did. Asked for their crossing, the intersector correctly answers that it cannot: the
+ruling quadratic's leading coefficient vanishes identically along a cylinder's own axis. The pipeline
+read that as an unsupported pair.
+
+It is three rules, and none of them is about cylinders:
+
+- **Identity.** `geom.SurfacesCoincide` is the sibling of `geom.SurfacesApart`, and answers with the
+  same discipline — exact and one-sided, true only where a finite set of parameters proves it. Planes,
+  cylinders, cones, spheres and tori; anything else is false. The type switch lives in `kernel/geom`,
+  where the ground rules put it.
+- **The imprint.** Two coincident walls' contact is bounded by where one band ENDS inside the other, so
+  the imprint is each band's rim circles taken in the other's frame (`coincidentWallImprint`). Each
+  side's own rim lands on its own frame and `admits` drops it there, so the pair is still solved once
+  and written to both.
+- **The classification.** A point covered by a face of the other operand ON THE SAME SURFACE follows the
+  ON/ON table, never the membership oracle — which is meaningless there, the point being on the
+  boundary the two solids share. That rule existed for planes as `uvKeepAt`/`coplanarCoverExact`; both
+  are deleted, and `coincidentKeepAt` serves the exact-frame chart, the ruled wall, and the demoted
+  planar face alike. The wall path had no such test at all, so it now takes the other operand's faces.
+
+One more thing had to give way. The section a coaxial cylinder's wall cuts from the plane of the cap
+closing the other IS that cap's own rim, and no face is split by its own boundary. That is the
+receiving face's half of the rule `sectionOnWallEdge` already stated for the wall, and it is stated by
+walking the section: every sample must lie on ONE edge's own span, so a section that merely touches the
+boundary or runs past its end stays a genuine imprint.
+
+**Honest count: 20 → 12.** Of the twelve, nine assert that a fallback fires or exercise the
+reconstruction engine and convert at stage 7; one is the near-pinch continuity row's SNAP premise,
+which belongs to the recognizer being deleted; one is the drilled plate below a millimetre, which is
+the resolution floor named above. The general pipeline's remaining scope is the tangent contact — an
+off-axis rod on a ball (a quartic seam), and a bore tangent to the face it cuts.
