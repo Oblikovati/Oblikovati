@@ -4263,3 +4263,60 @@ mesher decline and records no chart, while the router also carries four charted 
 serves and seven uncharted tori that fall to the reported full domain. The entry is reworded to that;
 it stays DEBT under #3411 and the registry may still only shrink. The earlier "133 of 133 / 182 of 182"
 figures in the classification section above were true when measured and are superseded by this table.
+
+### Platform stability, measured (2026-09-09)
+
+CI run 34280554924 was green on every job but `test (macos-latest)`, where twelve rows failed across
+`kernel/geom`, `kernel/brep`, `kernel/ops/boolean` and `model/feature`. macOS runners are arm64, and
+the Go compiler FUSES `x*y+z` into a single-rounding FMA there and never on amd64. So the branch's
+own arithmetic differed by an ulp on one platform, and four decisions that should not have been able
+to see an ulp saw it. The rule each broke is the ground rule that **output is byte-identical across
+runs and platforms**, and, under it, that a tolerance is classified by the origin of its operands.
+
+Reproduction, without a macOS machine — cross-compile natively and run the test binary under
+`binfmt` emulation, which is ~40× faster than compiling inside the container:
+
+```
+GOARCH=arm64 go test -c -o /tmp/pkg.test ./kernel/ops/boolean
+docker run --rm --platform linux/arm64 -v <workspace>:/ws -w /ws/<worktree>/kernel/ops/boolean \
+  golang:1.27 /ws/<worktree>/.armbin/pkg.test -test.run '<Row>$' -test.count=1 -test.v
+```
+
+To prove FMA is the whole cause, and then to find WHICH fusion: `-gcflags=all=-d=fmahash=<bits>`
+enables FMA only where the position hash matches, so a 40-bit pattern disables it everywhere (the row
+goes green ⇒ FMA is the cause) and prefix bisection over `0`/`1` narrows to the sites; add a leading
+`v` to have the compiler print each matched `file:line`.
+
+The four causes, none of them "a formula that needed rounding":
+
+1. **Two spellings of one quantity** (`torus_quadric_harmonic2.go`). The axis-invariant station's
+   level was written twice — `constant + m11·ρ²` and `constant + ρ²(m11+m22)/2`. arm64 fused the
+   first and not the second (a division blocks fusion), so the reproduction proof that the arccos path
+   IS the general path written out failed by one ulp. `harmonic()` now READS the general form's level;
+   that one expression rounds its product explicitly.
+2. **A weld grid finer than the coordinates it compares** (`geom.CurveSpanBox`, `brep.faceLoopBox`).
+   `CurveBox` declines a curve kind with no closed-form axial extent and documents that the caller must
+   then bound it by sampling; `faceLoopBox` never did. A face bounded by ONE closed spiric — each lobe
+   of the oblique torus figure-eight — therefore measured its own scale as a POINT, took the 1e-9
+   model-size floor, and welded its stitch on a **1e-15** grid. The lobes' shared pinch point is read
+   twice; on amd64 the two readings were bit-identical and on arm64 1.3e-15 apart, so the seam tore
+   open into unpaired edges and the exact result failed its own acceptance gate.
+3. **One incidence, two windows** (`brep.spanIsRimContact`). `bandPlacement` pads both its verdicts, so
+   a crossing sitting ON a wall's rim is neither "inside" nor "clear" and falls to the clip — which
+   measures against the UNPADDED band, finds nothing between the rims, and refuses the boolean. Which
+   window a rim crossing landed in was decided by the last bit of its axial coordinate: the chamfer
+   wedge's cone meets its shaft wall exactly at the wedge's own rim, inside the band on amd64 and
+   outside it on arm64. A crossing that IS a rim now classifies as such and is dropped — it imprints
+   the edge the face already carries — so only a true straddle reaches the clip.
+4. **A branch root read at a fold** (`geom.torusFoldAzimuth`). A folded section loop's window ends are
+   bisected roots of the discriminant, so the discriminant there is zero only to rounding; where it
+   rounds POSITIVE the branch pair still separates, by half a square root of that rounding — ~1e-8 in
+   azimuth, ~1e-7 in position. `TorusQuadricLoop` now reads the MERGED azimuth at its folds (the lane's
+   own extremum, or the one-harmonic form's fold phase) instead of a branch root, which is what the
+   type always documented. Before it, a tilted drill's section closed 1e-7 off its host wall's own seam
+   ruling on arm64 and on it on amd64, and the wall's chart arranged into a different set of cells.
+
+Causes 2, 3 and 4 are latent defects, not arm64 defects: each is a decision taken at a precision
+finer than the quantity deciding it, and the FMA difference only chose which side of it this corpus
+landed on. Each carries a regression test that fails on amd64 too (the fold tangency and the
+degenerate face box), or a unit test of the predicate that closes the gap (the rim contact).
