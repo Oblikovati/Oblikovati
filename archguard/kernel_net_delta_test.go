@@ -129,7 +129,15 @@ var kernelNetDeltaPin = map[string]int{
 	// determine that trim, ADR-0063 refuses to guess a side — and the pair was then left as two faces
 	// with nothing said. It now says so, and the merge is post-conditioned on a chart it verified
 	// rather than shipping one nobody did.
-	"fallback-sites": 27,
+	// 27 → 28 (2026-09-08, ADR-0061 stage 5, cocylindrical wall merge, review round 1):
+	// CodeMeshNotWatertight. A RISE that names a degradation nothing reported before. Every per-face
+	// mesher certifies its own patch, but nothing certified the BODY: two faces can each mesh
+	// correctly and still discretise the boundary they SHARE differently, and the crack that leaves
+	// was invisible until somebody counted free edges. TessellateBody now carries its own
+	// post-condition — a closed solid's mesh is a closed surface — and reports the tear with the
+	// faces it touches. The check reads the B-REP for closure, so it cannot fire on a body that is
+	// genuinely open.
+	"fallback-sites": 28,
 }
 
 func TestKernelNetDelta(t *testing.T) {

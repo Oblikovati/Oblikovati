@@ -73,37 +73,11 @@ func FreeEdgeCount(m *Mesh) int {
 }
 
 // WeldedFreeEdgeCount welds coincident vertices (by [weldKey]) and counts edges not shared by exactly
-// two triangles — the watertightness metric for a single mesh.
+// two triangles — the watertightness metric for a single mesh. It is the SIZE of what
+// [tornMeshEdges] finds, so the count and the body post-condition that names the faces a tear touches
+// can never disagree about what a free edge is (ADR-0061 stage 5).
 func WeldedFreeEdgeCount(m *Mesh) int {
-	grid := geom.ResolutionForPoints(m.Positions).Weld()
-	canon := map[[3]int64]int{}
-	weld := make([]int, len(m.Positions))
-	for i, p := range m.Positions {
-		k := WeldKey(p, grid)
-		if c, ok := canon[k]; ok {
-			weld[i] = c
-		} else {
-			canon[k], weld[i] = i, i
-		}
-	}
-	deg := map[[2]int]int{}
-	for t := 0; 3*t+2 < len(m.Indices); t++ {
-		v := [3]int{weld[m.Indices[3*t]], weld[m.Indices[3*t+1]], weld[m.Indices[3*t+2]]}
-		for k := range 3 {
-			a, b := v[k], v[(k+1)%3]
-			if a > b {
-				a, b = b, a
-			}
-			deg[[2]int{a, b}]++
-		}
-	}
-	free := 0
-	for _, d := range deg {
-		if d != 2 {
-			free++
-		}
-	}
-	return free
+	return len(tornMeshEdges(m))
 }
 
 // interiorUVGrid returns staggered (u,v) points strictly inside the trim (inside the outer loop,
