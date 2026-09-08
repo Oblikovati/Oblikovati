@@ -87,7 +87,7 @@ func trigQuadraticRoots(a, b, c, d, e float64) []float64 {
 	if stdmath.Abs(k4) <= trigLeadingZero*polyScale(k4, k3, k2, k1, k0) {
 		ts = append(ts, stdmath.Pi) // u = ∞: the half-turn the substitution omits
 	}
-	for _, u := range RealQuarticRoots(k0, k1, k2, k3, k4) {
+	for _, u := range realRootsUpToQuartic(k0, k1, k2, k3, k4) {
 		ts = append(ts, wrapAngle(2*stdmath.Atan(u)))
 	}
 	return sortedDedupedAngles(ts)
@@ -112,7 +112,7 @@ func hyperbolicConicRoots(p EllipticalParams2d, q Conic2dImplicit) ([]float64, b
 		return nil, true // the branch lies on the implicit conic everywhere
 	}
 	var ts []float64
-	for _, w := range RealQuarticRoots(k0, k1, k2, k3, k4) {
+	for _, w := range realRootsUpToQuartic(k0, k1, k2, k3, k4) {
 		if w > 0 {
 			ts = append(ts, stdmath.Log(w))
 		}

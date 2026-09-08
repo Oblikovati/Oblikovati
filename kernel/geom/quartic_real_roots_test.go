@@ -109,3 +109,35 @@ func TestLargestRealRootOfCubic_OneRealRoot(t *testing.T) {
 		t.Fatalf("largest root %.12f is not a root: f(root) = %.3e, want ≈0", got, f)
 	}
 }
+
+// TestRealRootsUpToQuarticDeflatesAVanishingLeadingCoefficient is the regression for the silent NaN
+// (ADR-0061 stage 5, third slice). [RealQuarticRoots] divides by c4, and the Weierstrass substitution
+// t = tan(u/2) makes c4 the equation's value at the half-turn — zero whenever a root sits there, which
+// is not exotic: a rod driven across a ring hits it at every tube station. The division then produced
+// ±Inf, every root came back NaN, and a NaN fails every "is this root real" comparison it is put
+// through, so the whole station returned EMPTY rather than wrong. realRootsUpToQuartic deflates instead.
+func TestRealRootsUpToQuarticDeflatesAVanishingLeadingCoefficient(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		name               string
+		c0, c1, c2, c3, c4 float64
+		want               []float64
+	}{
+		// 169·t³ − 169·t, the derivative of the rod-across-a-ring station in tan(u/2): roots at the
+		// azimuths 0 and ±π/2, with the fourth escaped to the half-turn the substitution cannot reach.
+		{"cubic (c4 = 0)", 0, -169, 0, 169, 0, []float64{-1, 0, 1}},
+		{"quadratic (c4 = c3 = 0)", -6, 1, 1, 0, 0, []float64{-3, 2}},
+		{"linear (only c1, c0)", 3, -2, 0, 0, 0, []float64{1.5}},
+		{"constant", 5, 0, 0, 0, 0, nil},
+		// The non-degenerate case must be untouched: it is still Ferrari's.
+		{"quartic (c4 ≠ 0)", 24, -50, 35, -10, 1, []float64{1, 2, 3, 4}},
+	} {
+		got := realRootsUpToQuartic(c.c0, c.c1, c.c2, c.c3, c.c4)
+		for _, r := range got {
+			if stdmath.IsNaN(r) || stdmath.IsInf(r, 0) {
+				t.Fatalf("%s: returned %v — a non-finite root is the silent failure this guards", c.name, got)
+			}
+		}
+		assertRootsMatch(t, c.name, got, c.want)
+	}
+}
