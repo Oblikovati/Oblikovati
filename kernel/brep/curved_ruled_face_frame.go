@@ -263,11 +263,31 @@ func curveParamWithin(cv geom.Curve3, t0, t1 float64, p math.Point3, res geom.Re
 		return t, float64(cv.PointAt(t).DistanceTo(p)) <= res.Sew()
 	}
 	slack := paramSlack(cv, hi-lo, res)
-	if t < lo-slack || t > hi+slack {
+	t, on := paramOnSpanBranch(cv, t, lo, hi, slack)
+	if !on {
 		return 0, false
 	}
 	t = stdmath.Max(lo, stdmath.Min(hi, t))
 	return t, float64(cv.PointAt(t).DistanceTo(p)) <= res.Sew()
+}
+
+// paramOnSpanBranch places an inverted parameter on the branch the span lives on. CurveParamAt answers
+// inside the curve's OWN domain, and a closed curve's span can run up to that domain's end — where the
+// same point comes back as the domain's start, a whole period away (ADR-0061: an inverted azimuth
+// carries an arbitrary whole turn). A wall's rim split at the boss's ends yields exactly such a span,
+// [t, domain end], and without this the piece touching the seam matched nothing. An open curve has no
+// other branch, so it is the unchanged direct test.
+func paramOnSpanBranch(cv geom.Curve3, t, lo, hi, slack float64) (float64, bool) {
+	if !geom.CurveIsClosed(cv) {
+		return t, t >= lo-slack && t <= hi+slack
+	}
+	dlo, dhi := cv.Domain()
+	for _, b := range [3]float64{t, t - (dhi - dlo), t + (dhi - dlo)} {
+		if b >= lo-slack && b <= hi+slack {
+			return b, true
+		}
+	}
+	return t, false
 }
 
 // paramSlack converts the sew tolerance to a parameter slack through the curve's speed over the span.
