@@ -2403,3 +2403,83 @@ as close as 0.5 to the axis, so the wall integrates 7.19 where 8.26 is right, an
 rod − ball stay 8.7% and 9.0% low. Driving that face through the chart mesher instead measures **1.44%
 and 1.43%** — but it needs `twoRimHoledBandMesh`, `HoledConicWallMesh` and `saddleBandLoftMesh` retired
 together, which is a slice of its own and the one that finally deletes the ladder.
+
+### 2026-09-08 — the tessellator's last first-fit ladder becomes a classification
+
+`specialCurvedMeshers` (`kernel/ops/tessellate/tessellate_trim_special.go`) was an eleven-entry ordered
+try-list: each surface-specific mesher declined so the next could claim the face. It was the last
+first-fit ladder in the kernel, and its order was load-bearing — the belt fan had to precede the
+gnomonic patch, the notched-rim loft had to precede the holed unroll — with nothing anywhere saying so
+except the sequence itself. `classifyCurvedTrim` (`curved_trim_classify.go`) replaces it. It reads the
+face's trim once, names the one kind it is, and `specialCurvedMesh` switches on that name; a mesher that
+declines on its own conditioning demotes the face to the general path, never to a second special case.
+
+**The proof is a test a ladder cannot pass.** `TestCurvedTrimKindsAreMutuallyExclusive` evaluates EVERY
+predicate on every curved face of seventeen corpus bodies and fails if two answer for one face, and it
+also asserts that the kind the classification selects IS the one predicate that holds.
+`TestTheClassificationCorpusReachesEveryArm` keeps that from going vacuous: each arm the package can
+build must appear. For a ladder, two rungs claiming one face is the mechanism, not the defect — which is
+why no such test could ever have been written against it.
+
+**Eleven entries, eight arms.** Three entries were never separate recognizers:
+
+| deleted | why it was not a recognizer |
+| --- | --- |
+| `sphereZoneCapFan`, `sphereSeamedCapFan` | three entries read three RIM FORMS into the same `buildSphereCap`; they are one `kindSphereCapFan` arm whose `sphereCapRim` names the form, and the forms exclude each other by the boundary's own shape (coplanar samples / a lone pole vertex / a doubled seam edge) |
+| `notchedRimBandMesh`, `twoClosedRimBandMesh` | both delegated to `saddleBandLoftMesh`; they are one `kindRuledBandLoft` arm |
+| `coneApexFan`, `coneSectorFan`, `coneApexSectorMesh` | the two fans differed only in the wrap-around triangle; one `apexFan(cone, rim, closed)` |
+
+`recognizers` 11 → 8. `archguard`'s `dispatchLadders` loses its last entry and `countRecognizers` counts
+classification arms alongside ladder entries — a ladder's rungs and a classification's arms measure the
+same thing, so the number survives the shape change. Asking each surface family ONCE also collapsed six
+geometry-kind assertions: `geomSwitchDebt[kernel/ops/tessellate]` 52 → 46, `type-assertions` 691 → 685.
+`fallback-sites` and `tolerance-constants` are unmoved — no `diag.Code` and no tolerance changed hands.
+
+**`kindChart` is now an arm, not a postscript.** A face that records its own parametric trim (ADR-0063)
+and that no special shape claims is meshed from that trim directly, instead of travelling the whole
+generic (u,v) path to reach the same conclusion at its end. `kindUncharted` takes the identical call and
+declines on the spot, because there is no region to build from, so the general path is reached by the
+faces that have nothing better — which is what a `default` arm is for.
+
+| row | before | after |
+| --- | --- | --- |
+| RODB∩ rod ∩ ball | 0.00851 vs 0.012187 (30.20%) | **0.008847 (27.41%)**, 60 triangles, watertight |
+| RS− / RD− / RODB∪ / RODB− | 200.903 / 213.473 / 11.937 / 11.424 | unchanged to the digit |
+| occtparity fingerprint pins | — | unmoved (byte-identical) |
+
+The rod WALL's lens patch carries a chart and used to chord flat across a lens 0.1 mm deep; it is meshed
+from its own region now. What is left of that 27% is the ball's arc-bounded sphere patch.
+
+**Every arm was measured against the chart mesher, and none can be deleted yet.** Each arm was driven
+through `chartFaceMesh` on every face it claims across `kernel/ops/tessellate`, `kernel/ops/boolean`,
+`kernel/ops/blend` and `kernel/brep` — 573 faces — comparing face area, triangle count and rim edges.
+The keeps are numbered, not assumed:
+
+| arm | faces | chart declines | verdict |
+| --- | --- | --- | --- |
+| `kindConeApexFan` | 9 | 8 | KEEP — identical area (24.55015 both) for 3× the triangles (96 vs 32); the fan is exact on a developable |
+| `kindSphereCapFan` | 6 | 5 | KEEP — +0.31% area for **13×** the triangles (130560 vs 9728) |
+| `kindSphereZoneBand` | 4 | 4 | KEEP — the chart mesher takes none of them |
+| `kindSpherePatch` | 291 | 279 | KEEP — 96% of its faces record no chart |
+| `kindRuledBandLoft` | 162 | 105 | KEEP — three faces LOSE area, −7.52% (35.31 → 32.65) and −5.19%/−5.25% (41.18 → 39.05); the ruled loft is exact rim-to-rim and needs no interior row |
+| `kindSpiricBand` | 10 | 0 | KEEP — three faces match to ±0.17%, the fourth loses **9.39%** (310.80 → 281.62) |
+| `kindTwoRimHoledBand` | 37 | 18 | KEEP on a body-level gap, see below |
+| `kindWedgeBand` | 54 | 54 | KEEP — the chart mesher takes none of them |
+
+The seven rungs of `meshSeamCrossingFace` measure the same way and more sharply: with `kindChart` an arm,
+every face still reaching `unequalRimBandMesh`, `closedDomainMesh`, `HoledConicWallMesh`,
+`saddleBandLoftMesh` or `closedBandLoftMesh` has the chart mesher DECLINE — 133 of 133 over the same
+four packages, and 182 of 182 over the whole of `./kernel/...`. Those rungs are, by construction, the
+paths for a face that records no region.
+
+**The named gap: `kindTwoRimHoledBand`.** This is the arm the last slice's measurement pointed at, and it
+is worth stating exactly where it stops. Per FACE the chart mesher wins: over the 19 charted two-rim
+holed bands it matches the unroll to ±0.2% of area on 18 and betters the rod wall by **+1.48%** (24.475 →
+24.838 mm², the analytic wall being 24.87) with 40–85% fewer triangles and the same rim count, and
+routing them to it moves RODB∪ and RODB− from 8.72%/9.02% to **1.44%/1.43%**. Per BODY it loses, and a
+face-local rim count is exactly the certificate that cannot see why: at `PropertyQuality` the corner
+junction's wall (#1738) comes back with **870 rim edges against its neighbours' 864**, cracking the body
+with 6 free edges, and its area FALLS from 160.93 to 158.65 as the chord tolerance tightens — refinement
+is meant to raise it. `TestRimCrossingCutMembershipMatchesCSG` then moves 222 interior points off the
+analytic predicate. Until the chart mesher's fine-quality boundary agrees with the neighbour's, the
+unroll stays; RODB∪ and RODB− stay pinned at 8.72% and 9.02%, and their pins say so.
