@@ -56,15 +56,44 @@ func chartFaceMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 }
 
 // chartMeshIsBoundedByItsRim accepts the mesh only when its unpaired edges are EXACTLY the boundary
-// segments it was given — a patch whose only free edges are its rim, no more and no fewer.
+// segments it was given — the same SET, not merely the same count.
 //
-// Equality, not a bound. Too many means the mesh tore (a seam that did not close, a region the
-// triangulation lost). Too FEW means it closed over its own boundary — a covering of the whole surface
-// has no free edges at all, and that is precisely the full-domain degradation this mesher exists to
-// remove, so a one-sided bound would wave it through. Either way the face is DECLINED and the router's
-// defect reporter speaks, rather than the wrong mesh shipping quietly.
+// The set, because a count cancels. It was a count, and on the merged cocylindrical wall at
+// PropertyQuality it read 578 against a rim of 578 while FIVE of those free edges were no rim segment
+// at all and five rim segments carried the wrong number of triangles: the face passed a gate it should
+// have failed, and the body it belongs to shipped ten unpaired edges. Neighbouring a wrong edge with a
+// missing one is exactly the shape a chart that disagrees with its own boundary produces, so the
+// cancelling pair is the case worth catching, not an unlikely coincidence.
+//
+// Both directions still matter. Extra free edges mean the mesh tore (a seam that did not close, a region
+// the triangulation lost). MISSING ones mean it closed over its own boundary — a covering of the whole
+// surface has no free edges at all, and that is precisely the full-domain degradation this mesher exists
+// to remove. Either way the face is DECLINED and the router's defect reporter speaks, rather than the
+// wrong mesh shipping quietly.
 func chartMeshIsBoundedByItsRim(m *Mesh, chains []chartChain) bool {
-	return m != nil && m.TriangleCount() > 0 && WeldedFreeEdgeCount(m) == chainSegmentCount(chains)
+	if m == nil || m.TriangleCount() == 0 {
+		return false
+	}
+	rim := chainSegmentKeys(chains, geom.ResolutionForPoints(m.Positions).Weld())
+	for _, e := range weldedFreeEdgeKeys(m) {
+		if !rim[e] {
+			return false // a free edge that is no rim segment
+		}
+		delete(rim, e)
+	}
+	return len(rim) == 0 // every rim segment accounted for
+}
+
+// weldedFreeEdgeKeys is the mesh's unpaired edges, keyed the way a boundary segment is — so the two can
+// be compared as SETS and not merely counted.
+func weldedFreeEdgeKeys(m *Mesh) [][2][3]int64 {
+	grid := geom.ResolutionForPoints(m.Positions).Weld()
+	torn := tornMeshEdges(m)
+	out := make([][2][3]int64, 0, len(torn))
+	for _, t := range torn {
+		out = append(out, orderedSegmentKey(m.Positions[t.lo], m.Positions[t.hi], grid))
+	}
+	return out
 }
 
 // chartCover is the shared covering accumulator (covering_vertices.go) with the chart's own
@@ -300,30 +329,33 @@ func inwardProbe(stations []float64, i int, periodic bool) float64 {
 // chartBoundaryClearance is how much of a boundary CHORD an interior node must keep clear of it.
 //
 // The region comes from the chart, which samples the boundary curve finely; the mesh's own boundary is
-// the shared edge's much coarser chord polygon. Between the two lies a band, as wide as the edge
-// discretisation's sagitta, where the chart's answer does not describe the mesh's boundary at all — the
-// chart calls a sliver outside the chord "inside the hole", so the triangles there are dropped and the
-// mesh's rim detours around the gap through interior nodes the neighbour face has never heard of
-// (measured on the one-window torus complement: 32 rim edges where the shared oval has 28).
+// the shared edge's much coarser chord polygon. Between the two lies a band where the chart's answer
+// does not describe the mesh's boundary at all — the chart calls a sliver outside the chord "inside the
+// hole", so the triangles there are dropped and the mesh's rim detours around the gap through interior
+// nodes the neighbour face has never heard of (measured on the one-window torus complement: 32 rim
+// edges where the shared oval has 28).
 //
-// Keeping every interior node a WHOLE chord clear of the boundary puts the band entirely inside the
-// FIRST triangle off the boundary, whose centroid is then two thirds of a chord away — outside a band
-// that is at most chord²/8ρ wide, since a discretisation whose chord is not far shorter than the curve's
-// own radius would not have been accepted. It is a mesh-density quantity, not a tolerance: where the
-// shared edge is finely sampled the chord is small and the grid clearance below governs instead.
+// It is a MEASURED constant, not a derived one, and saying which is the honest part. The band's width is
+// bounded by the discretisation's sagitta, chord²/8ρ, and a clearance of k chords puts the first
+// triangle's centroid (2/3)·k·chord out — so the sagitta argument alone is satisfied by any
+// k > 3·chord/(16ρ), about 0.03 for the faces here. It does not predict what actually fails, because the
+// band is not always a sagitta: where a boundary TOUCHES itself the rim is sampled coarsely right at the
+// touch (the lemniscate complement carries 0.17 rad of u in one chord against the covering's own 0.0245
+// stations) and an interior node lands INSIDE the chord rather than beside it. What bounds that is the
+// chord itself.
 //
-// 0.5 → 1.0 (Task 7 round 1). Half a chord is not enough where a boundary TOUCHES itself. The genus-1
-// torus complement (a torus R=5 r=1.5 cut by the plane x = R, whose section is the LEMNISCATE) passes
-// through the same 3D point twice, at (u,v) = (3π/2, π/2) and (3π/2, 3π/2), and its rim is sampled
-// coarsely right there — 0.17 rad of u in one chord against the covering's own 0.0245 stations. Interior
-// nodes landed inside those chords and split them: measured at PropertyQuality, 276 unpaired edges
-// against a rim of 272, four rim segments carrying no triangle at all, the face declined by its own rim
-// gate and fallen to the surface's whole domain (296.062 mm² against the 264.830 it had built), and the
-// body cracked with 272 free edges. A whole chord clears them: 272 == 272, 264.871 mm², body watertight
-// at 203.869 mm³ against an analytic 203.905. The cost is a slightly coarser interior next to a coarse
-// boundary — the same face reads 263.423 mm² at DefaultQuality against 263.730 — which is the trade the
-// gate is for.
-const chartBoundaryClearance = 1.0
+// So it is swept, on the three bodies whose charted faces the clearance governs — the genus-1 lemniscate
+// complement, RS− and RD− — at both facetings, counting failures over
+// ./kernel/ops/tessellate/ ./kernel/ops/boolean/:
+//
+//	k          0.125  0.25  0.5  0.75  0.875  1.0  1.1  1.25  1.5  2.0  3.0  4.0
+//	failures      5     4    2    0      0     0    0     1     3    4    7   16
+//
+// A plateau of 0.75 … 1.1, pinned at its middle. Below it the complement tears at PropertyQuality (272
+// free edges, the face declined and fallen to the surface's whole domain); above it the clearance starts
+// eating the interior next to a coarse boundary and the complement's own volume walks away from the
+// analytic (−1.30 % at 0.875, −1.72 % at 1.25, −11.0 % at 4.0).
+const chartBoundaryClearance = 0.875 // tol:mesh-density (chords; swept 0.125…4, plateau 0.75…1.1)
 
 // chartNodeClearance is the fraction of a grid gap an interior node must keep from the boundary. A node
 // ON a constraint owns no triangle and derails the segment recovery; one just inside it makes a sliver
@@ -351,6 +383,14 @@ func (b *chartCover) clearOfChains(chains []chartChain, u, v, margin float64) bo
 }
 
 // chainIsNear reports whether the shifted chain comes within its clearance of (u,v) in the scaled (u,v).
+//
+// The clearance is the chain's MEAN chord, deliberately, and reading each segment's own length instead
+// was tried and measured worse. A boundary is not sampled uniformly — the merged cocylindrical wall's
+// notched rim carries 320 chords of 0.074 mm around its top and TWO of 4 mm down the boss's chord edges
+// — but a clearance scaled to those two would clear a 4 mm disc of interior nodes off a face 4 mm tall
+// and starve the region: measured, the merged band went from 10 unpaired edges at PropertyQuality to
+// 469, and the figure-eight band overshot its analytic area. The mean is what the covering as a whole is
+// sampled at, which is the scale the chart-versus-chord band is compared against.
 func (b *chartCover) chainIsNear(c chartChain, sh [2]float64, u, v, gridMargin float64) bool {
 	x, y := u*b.su, v*b.sv
 	margin := stdmath.Max(gridMargin, chartBoundaryClearance*c.chord)

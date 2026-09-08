@@ -3,8 +3,6 @@
 package tessellate
 
 import (
-	stdmath "math"
-
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
@@ -33,7 +31,6 @@ type chartChain struct {
 	uv                     []math.Point2
 	uMin, uMax, vMin, vMax float64 // the chain's own (u,v) box, so a clearance query rejects it cheaply
 	chord                  float64 // its mean 3D chord — the scale of its own discretisation
-	longest                float64 // its LONGEST 3D chord — the widest clearance any of its segments asks
 }
 
 // chartBoundaryChains lifts every boundary loop of a face onto the chart's branch, outer loop first.
@@ -62,7 +59,7 @@ func liftLoopOntoChart(s geom.Surface, r chartRegion, loop []math.Point3) (chart
 		c.uv[i] = math.P2(cu[i]+du, cv[i]+dv)
 	}
 	c.uMin, c.uMax, c.vMin, c.vMax = uvBBox(c.uv)
-	c.chord, c.longest = meanChainChord(c.p3), longestChainChord(c.p3)
+	c.chord = meanChainChord(c.p3)
 	return c, true
 }
 
@@ -100,16 +97,6 @@ func meanChainChord(p3 []math.Point3) float64 {
 	return sum / float64(len(p3)-1)
 }
 
-// longestChainChord is a lifted chain's longest 3D segment — the widest clearance any of its segments
-// asks for, and so the only bound a cheap box rejection may use (see chainIsNear).
-func longestChainChord(p3 []math.Point3) float64 {
-	longest := 0.0
-	for i := 1; i < len(p3); i++ {
-		longest = stdmath.Max(longest, float64(p3[i-1].DistanceTo(p3[i])))
-	}
-	return longest
-}
-
 // chainSegmentCount is how many boundary segments a set of chains carries an ODD number of times — the
 // number of unpaired mesh edges a correctly meshed patch bounded by them has, and so the acceptance
 // bound.
@@ -121,18 +108,29 @@ func longestChainChord(p3 []math.Point3) float64 {
 // gate read 56, declined a mesh that was right, and the wall fell to the flat-patch CDT (57.913 mm²
 // where 173.811 is the region's own area, and the body reported a 32-edge tear).
 func chainSegmentCount(chains []chartChain) int {
+	n := 0
+	for _, c := range chains {
+		n += len(chainSegmentKeys([]chartChain{c}, geom.ResolutionForPoints(c.p3).Weld()))
+	}
+	return n
+}
+
+// chainSegmentKeys is the SET of boundary segments a set of chains carries an odd number of times, keyed
+// the way the mesh's own welded edges are — the rim a correctly meshed patch must have, exactly.
+func chainSegmentKeys(chains []chartChain, grid float64) map[[2][3]int64]bool {
 	used := map[[2][3]int64]int{}
 	for _, c := range chains {
-		grid := geom.ResolutionForPoints(c.p3).Weld()
 		for i := 0; i+1 < len(c.p3); i++ {
 			used[orderedSegmentKey(c.p3[i], c.p3[i+1], grid)]++
 		}
 	}
-	n := 0
-	for _, k := range used {
-		n += k % 2
+	out := make(map[[2][3]int64]bool, len(used))
+	for k, n := range used {
+		if n%2 == 1 {
+			out[k] = true
+		}
 	}
-	return n
+	return out
 }
 
 // orderedSegmentKey is a boundary segment's identity: its two welded endpoints, smaller first, so a
