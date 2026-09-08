@@ -2768,3 +2768,168 @@ It now asserts the property itself: each azimuth strictly between the lane's ext
 one on ITS OWN side. Nothing weaker separates a correct pairing from one that took both roots from the
 same side, which would still have two certified roots and a positive discriminant. Proven live by
 swapping the two readers, which fails the row.
+
+### The chart mesher at fine quality: boundary parity, a balanced covering, and two conditioning declines (2026-09-08)
+
+Task 2 left the chart-driven mesher measurably better per face than the wrapping arms it was meant to
+replace, and measurably worse per BODY at `PropertyQuality`. This slice is the diagnosis of why, and the
+four fixes it took. Every number below is `tessellate.TessellateBody` / `TessellateFace` at
+`ops.DefaultQuality()` (chord 0.05) and `ops.PropertyQuality()` (chord 0.001).
+
+#### 1. The replication pad was measured on the wrong axis
+
+The covering replicates the branch window a little way either side so the point set is periodic out past
+any triangle's circumcircle; that is what makes both sides of the window triangulate the same rim the
+same way, and it is what the canonical (half-open) window relies on to keep exactly one of each
+seam-spanning triangle. The pad was `chartCoverPadStations` gaps of THAT AXIS'S OWN stations. A straight
+axis gets no chord subdivision, so a cylinder wall's covering is three ROWS tall against 256 columns and
+its triangles reach the whole height, while the pad is three COLUMN gaps — 0.22 mm on the #1738 corner
+junction against circumcircles of millimetres.
+
+Measured there, at `PropertyQuality`, on the wall the classification hands the chart mesher:
+
+| | before | after |
+| --- | --- | --- |
+| unpaired edges vs its rim | 871 vs 868 | 868 vs 868 |
+| rim segments carrying TWO triangles | 3 | 0 |
+| free edges that are no rim segment | 4 | 0 |
+| accepted by its own rim gate | no (fell back to the arm) | yes |
+| face area, Default → Property | 160.933 → declined | 160.933 → 161.155 |
+
+The pad is now `chartCoverPadStations` of the covering's COARSEST cell, taken as a 3D length across both
+axes and carried back through each axis's metric, capped at the window. Replicating the WHOLE period is
+also correct and was measured: 23.16 s against 1.69 s for the same 97460 triangles on the figure-eight
+torus band at `PropertyQuality`, because a doubly-periodic covering has nine shifts. The pad exists to
+avoid exactly that, so it stays — measured correctly.
+
+Task 2 also recorded the same face's area FALLING from 160.93 to 158.65 under refinement. That does not
+reproduce on this branch: it measures 160.933 → 161.155 both before and after the pad fix. The fall
+belonged to an intermediate state of the sweep, not to the code that landed.
+
+#### 2. A straight covering axis had no cell size of its own
+
+With the pad fixed, the corner junction's body was watertight at both facetings and its wall's area
+right to 0.07 % — and 2617 interior points of a 60³ membership audit read OUTSIDE the solid they are
+inside. The covering's cells were 0.52 mm wide and 5 mm tall, so its triangles spanned the wall's whole
+height and their planes cut 0.16 mm INTO a solid of radius 3. No area, volume or watertightness gate can
+see that; only a membership oracle can.
+
+`balancedCoverGrid` gives a FLOORED axis — one whose breakpoints are the package's minimum-cell floor,
+because it has no chord to resolve — the cell size the other axis's chord asks for, capped at
+`maxInteriorCells`. An axis the chord already subdivided is left alone: re-balancing a torus's tube
+against its ring drove the figure-eight band from 110.947 mm² to the whole torus, so the rule is scoped
+to the axis that has no density of its own.
+
+With it, `TestRimCrossingCutMembershipMatchesCSG`, `TestCapCrossingCutMembershipMatchesCSG`,
+`TestConeCapCrossingCutMembershipMatchesCSG`, `TestPartialRimDisjointCutMembershipMatchesCSG` and
+`TestPartialRimCornerCutMembershipMatchesCSG` are all green with the wall on the chart mesher.
+
+#### 3. The two-rim holed band is a CONDITIONING arm now, not a shape arm
+
+`nearPinchCorridorChords` is swept, not chosen: failures over
+`./kernel/ops/tessellate/ ./kernel/ops/boolean/` by ratio are 0.5→8, 1→5, 2→2, **3→0, 4→0, 6→0, 8→0**,
+12→1, 20→1, 40→1. The plateau is 3 … 8 and 4 sits inside it.
+
+`twoRimHoledTrimOf` recognised a shape. It now recognises a shape the general path cannot serve, which
+is the ground rules' own test for a fast path. Two configurations qualify, and nothing else:
+
+- a face that records no chart at all — there is no region to mesh from;
+- a band whose two lens windows pass within `nearPinchCorridorChords` of the boundary's own chord. The
+  chart mesher lays its constraints at the shared edges' discretisation; where two windows are closer
+  than a few of those chords the two chord polygons no longer separate the corridor and the constrained
+  triangulation loses it (measured on the #1818 near-pinch crossings: 126–2359 unpaired edges against
+  rims of 128–2304, and the region as much as 4 % out). The unroll's BENT seam is built for exactly that
+  corridor (stage 4).
+
+Corpus rows that move, per BODY:
+
+| row | before | after | analytic |
+| --- | --- | --- | --- |
+| RODB∪ rod ∪ ball | 11.93691 (8.72 % low) | 12.88969 (**1.44 %**) | 13.077910 |
+| RODB− rod − ball | 11.42387 (9.02 % low) | 12.37665 (**1.43 %**) | 12.555898 |
+| RODB∩ rod ∩ ball | 0.008847 (27.41 %) | 0.008764 (28.10 %) | 0.012187 |
+
+RODB∪ and RODB− were PINNED two-sided at 8.72 % and 9.02 % with 1.44 %/1.43 % written down as the number
+that would move them; it did, and they are bounded rows again at 2 %. RODB∩'s pin is re-measured, not
+widened: its lens patch is refined by the balanced grid and a finer faceting of a lens 0.1 mm deep takes
+a little more volume out of a body of 0.012 mm³.
+
+The arm is NOT deleted. It keeps 8 corpus faces (16 face-tessellations across the two facetings), all of
+them near-pinch crossing joins, and `TestTheTwoRimArmKeepsOnlyTheNearPinchBands` asserts that split in
+both directions over the classification corpus.
+
+#### 4. A spiric band that pinches is refused
+
+`spiricBandMesh` sweeps ONE direction round the tube for the whole band, which describes the region only
+while the strip between its boundaries has a width everywhere. Against an independent analytic oracle —
+the figure-eight (torus R=5 r=2 cut by y=3, tangent to its inner equator), whose two pieces partition the
+torus's 394.78418 mm² by integrating r(R+r·cos v) du dv over (5+2cos v)·sin u ≷ 3:
+
+| piece | analytic | the loft | the chart mesher |
+| --- | --- | --- | --- |
+| below y=3 | 283.09969 | 310.80041 | 281.61993 |
+| above y=3 | 111.68448 | 215.17746 | 110.94725 |
+| sum | 394.78418 | **525.97787** | 392.56718 |
+
+The loft covered the tangency twice, and its two halves summed to a third more than the whole torus —
+which no body volume on either piece could show. `bandPinches` refuses that configuration before any
+geometry is built, on an ARC LENGTH against the rims' own weld tolerance, never a bare angle. The
+unpinched spiric bands are untouched: the three other corpus rows and `occtparity`'s J3/A4 fingerprints
+are byte-identical, so the loft keeps the bodies it reads right — and their third of the triangles.
+
+#### 5. A charted face on a singly-periodic surface never reached the chart
+
+`meshSeamCrossingFace` ended a cylinder/cone/sphere face that no wrapping mesher reduced at the
+best-fit-plane CDT, which flattens a band that wraps the seam. Task 5 measured 61 free edges there on
+the merged cocylindrical wall a D-prism leaves on a cylinder of its own radius, and read it as "the
+chart mesher does not take a singly-periodic surface". It does; it was never asked. `chartFaceMesh` now
+takes such a face when it records a region, and the best-fit-plane CDT keeps the sphere cap straddling
+the pole, which records none.
+
+The corpus row is built on the FACE shape rather than on that body, because the merge itself is not on
+this branch: a cylinder band whose second rim steps axially at ONE azimuth (the chord edges a D-prism
+leaves), carrying the chart that region determines. Through the router, at both facetings:
+
+| | before | after | analytic |
+| --- | --- | --- | --- |
+| free edges vs its rims (Default) | 26 vs 64 | 64 vs 64 | — |
+| free edges vs its rims (Property) | 320 vs 584 | 584 vs 584 | — |
+| area (Default) | 47.510 | 212.348 | 212.695 |
+| area (Property) | 42.601 | 212.689 | 212.695 |
+
+#### What was measured and NOT shipped
+
+Task 5's other recommendation — that `orderedRing` rotate a ring rather than sort it — is not taken, and
+the measurement is why. Under the classification a notched band no longer reaches `twoRimHoledBandMesh`
+at all (it is `kindRuledBandLoft`, the ruled loft declines a rim that is not a v(u) graph, and it lands
+on the router exit fixed above), so `orderedRing`'s only remaining callers are the two band LOFTS, which
+stitch their rows BY angle and refuse a rim that is not single-valued in it — for them the sort is the
+ordering. Driving the notched-rim fixture through `bridgeRimsAtSeam` both ways measures 78 unpaired edges
+with the sort and 81 with a rotation, against a rim of 74: neither is right, and the residual belongs to
+the bridge, not to the ordering. `orderedRing`'s doc now says which reader it is for.
+
+#### One pre-existing defect this slice's new gate exposes
+
+`TestEveryCorpusBodyIsWatertightUnderRefinement` meshes every classification-corpus body at both
+facetings. One row is not watertight at `PropertyQuality` and is pinned at its measured count with the
+diagnosis beside it: "ring − half space", the torus cut by the plane x = R, whose section is the
+LEMNISCATE — the two spiric branches MEET at (R, 0, ±r), so the face's boundary passes through the same
+3D point twice. The chart mesher returns 276 unpaired edges against a rim of 272, four extra, two per
+node; it is declined by its own rim gate and the face falls to the surface's whole domain (296.062 mm²
+against the 264.830 it had built), cracking the planar cap with it. PRE-EXISTING, proved by removing
+this slice's spiric conditioning gate and re-measuring: identical, 272.
+
+Body VOLUME is deliberately not asserted monotone. A body with a concave curved feature LOSES volume as
+it refines, because the faceted bore is inscribed and grows into the solid (the drilled plate
+325.419 → 325.262, the conical drill point 345.318 → 345.288). The invariant that does hold is per-FACE
+area, and `TestEveryChartedFaceGainsAreaUnderRefinement` asserts it on every charted corpus face.
+
+#### Ratchets
+
+| pin | move | why |
+| --- | --- | --- |
+| `tolerance-constants` | 214, unmoved | no tolerance changed hands; the pad, the balance and the corridor are mesh-density quantities |
+| `type-assertions` | 684, unmoved | nothing added or removed a geometry-kind assertion |
+| `recognizers` | 12, unmoved | `lensCorridorOutrunsTheSampling` is a CONDITIONING gate inside `twoRimHoledTrimOf`, not a bespoke shape; the registry counts shapes |
+| `fallback-sites` | 26, unmoved | no `diag.Code` added or removed |
+| `geomSwitchDebt["kernel/ops/tessellate"]` | 45, unmoved | same |
