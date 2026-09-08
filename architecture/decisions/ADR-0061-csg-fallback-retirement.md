@@ -3223,3 +3223,50 @@ the first triangle off the boundary, whose centroid is then two thirds of a chor
 
 `knownFreeEdgesAtFineQuality` is now EMPTY: every classification-corpus body is watertight at both
 facetings.
+
+#### Review round 3: the merged band's chart was 0.05 rad off its own edges (2026-09-08)
+
+Task 7 measured what the round-2 section did not: the merged cocylindrical band's chart does not agree
+with the face that carries it. On the D-prism body the merged face's own edges put the notch corners at
+`u = 4.112388980` and `5.312388980` — `ParamAt` of the D-prism's chord vertices, exactly ∓0.6 − π/2 —
+while the chart recorded `4.092588062` and `5.292588062`: the whole notch rotated by −0.019800918 rad,
+0.059 mm at radius 3. Region and boundary then disagree in a strip 0.06 mm wide along the boss's chord
+edges. At `DefaultQuality` the boundary clearance swallows it; at `PropertyQuality` it left ten
+unpaired edges, pinned as `mergedBandFineFreeEdges`.
+
+**Where the rotation entered.** `bandCircuit` closes two period-turning rims into one contour by
+re-cutting each at the same crossing of the period, and `recutRing` did that by *snapping to the
+nearest SAMPLE and translating the whole ring onto it*:
+
+```go
+cut  := nearestRingSample(ring, at, coord)
+base := at - coord(ring[cut])            // an arbitrary sub-period shift
+```
+
+`base` is the gap between the wanted crossing and whichever sample happened to be closest — up to half
+a sampling step, 0.098 rad at 32 samples — and every one of the ring's vertices was moved by it. The
+first rim escapes (its cut is its own first sample, so `base` is 0); the second does not. `at` itself
+was short too: `bandCircuit` passed `seam + netA`, and `netA` is the travel the SAMPLES report, which
+`loopToUV` leaves one step short of a period because the closing step is the edge a sample list leaves
+implicit. So the two seam traversals were a step apart as well.
+
+**The rule this broke.** A face's chart is the face's OWN (u, v) boundary (ADR-0063). The only
+re-basing it admits is by a WHOLE period, which maps back to the same 3-D point; anything else is a
+different face. `recutRing` now cuts at the interpolated crossing on the ring's own chord — the one
+point the construction may invent — and shifts by `sign·2π·floor(...)`, a whole number of turns and
+nothing else. `bandCircuit` cuts the second rim where the first ENDS, `seam ± 2π`, not at the sampled
+travel. `nearestRingSample` is deleted with the rule it served.
+
+**Guarded as a class, not as an instance.** `TestEveryChartCarriesItsFacesOwnVertices` walks every
+charted face of five cheap boolean bodies — the cocylindrical merge, both coaxial unions, a bore
+continuing a bore, a drilled block — and requires every loop vertex the face carries to be a vertex of
+its chart. It compares in 3-D, through `PointAt`, which is what makes the rule period-blind and
+rotation-sensitive at once: a vertex a whole turn away is the same point, a rotated one is not. Run
+against the previous code it fails with eight such vertices on the cocylindrical row.
+
+**What it moved.** The merged band is watertight at BOTH facetings and `mergedBandFineFreeEdges` is
+deleted. The piston head was already watertight and silent after Task 7 and stays so. One row lost its
+subject: `query.TestATornClosedBodyReportsThroughTheHarvest` needed a body that tears, and nothing in
+the corpus tears any more. It is replaced by the identity it was really guarding — the harvest's codes
+are exactly the codes the face meshes carry — driven on the near-pinch crossing rods, the one corpus
+body whose faces still record anything at `PropertyQuality`, and it refuses to pass on an empty set.

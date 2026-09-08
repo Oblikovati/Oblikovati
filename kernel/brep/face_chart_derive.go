@@ -100,6 +100,11 @@ func withDomainFrame(s geom.Surface, closed [][]math.Point2, outerless, uPer, vP
 // and what makes the strip between them the region they bound. Each is re-cut at the same crossing of
 // the period, which is what makes the result a rectangle rather than the sheared parallelogram an
 // arbitrary starting sample would give.
+//
+// The second rim is cut where the first ENDS: a WHOLE turn from the seam, not the travel the samples
+// report. loopToUV leaves a rim one sampling step short of its period — the closing step is the edge a
+// sample list leaves implicit — so cutting at that travel put the circuit's two seam traversals a step
+// apart and sheared it after all (ADR-0061 stage 5, round 3).
 func bandCircuit(a, b []math.Point2, alongU bool) ([]math.Point2, bool) {
 	coord := chartCoord(alongU)
 	netA, netB := ringTravel(a, coord), ringTravel(b, coord)
@@ -108,54 +113,92 @@ func bandCircuit(a, b []math.Point2, alongU bool) ([]math.Point2, bool) {
 	}
 	seam := coord(a[0])
 	ra, okA := recutRing(a, seam, alongU)
-	rb, okB := recutRing(b, seam+netA, alongU)
+	rb, okB := recutRing(b, seam+stdmath.Copysign(twoPi, netA), alongU)
 	if !okA || !okB {
 		return nil, false
 	}
 	return append(ra, rb...), true
 }
 
-// recutRing rotates a period-turning ring so it begins where it crosses `at`, and shifts it onto that
-// branch. It declines a ring that is not monotone in the coordinate, where "the crossing" is not one
-// place — the figure-eight, and every other case only the producer's chart can settle.
+// recutRing rotates a period-turning ring so it begins where it CROSSES `at`, and shifts it onto that
+// branch by a WHOLE TURN and by nothing else.
+//
+// Both halves of that are load-bearing, and getting them wrong is what put a merged band's chart
+// 0.0497 rad off its own edges (ADR-0061 stage 5, round 3). Starting at the NEAREST SAMPLE leaves the
+// cut up to half a sampling step from the seam; shifting the ring by that raw difference then
+// translates every one of the ring's own vertices by the gap, so the chart disagreed with the face's
+// boundary EVERYWHERE, not only at the seam. A face's chart is its own (u, v) boundary (ADR-0063): the
+// only re-basing it admits is by whole periods, and the one point this may invent is the crossing,
+// interpolated on the ring's own chord.
+//
+// It declines a ring that is not monotone in the coordinate, where "the crossing" is not one place —
+// the figure-eight, and every other case only the producer's chart can settle.
 func recutRing(ring []math.Point2, at float64, alongU bool) ([]math.Point2, bool) {
 	coord := chartCoord(alongU)
 	sign := stdmath.Copysign(1, ringTravel(ring, coord))
-	for i := 1; i < len(ring); i++ {
-		if (coord(ring[i])-coord(ring[i-1]))*sign < 0 {
-			return nil, false // not monotone: no single crossing to cut at
-		}
+	if !ringAdvancesOneWay(ring, coord, sign) {
+		return nil, false
 	}
-	cut := nearestRingSample(ring, at, coord)
-	out := make([]math.Point2, 0, len(ring))
-	base := at - coord(ring[cut])
-	for i := range ring {
-		j := (cut + i) % len(ring)
-		shift := base
-		if j < cut {
-			shift += sign * twoPi // past the ring's own start: keep the walk continuous
-		}
-		out = append(out, shiftAlongChart(ring[j], shift, alongU))
+	turn := ringOverOnePeriod(ring, coord, at, sign, alongU)
+	k, ok := crossingSegment(turn, coord, at, sign)
+	if !ok {
+		return nil, false
 	}
-	// Close the turn. loopToUV samples a rim one step SHORT of its full period (the closing step is the
-	// one edge a sample list leaves implicit), so without this the circuit stops a step early and every
-	// point in that last step reads outside the band.
-	return append(out, shiftAlongChart(out[0], sign*twoPi, alongU)), true
+	return rotatedAtCrossing(turn, coord, at, k, sign, alongU), true
 }
 
-// nearestRingSample is the sample whose coordinate is closest to the wanted crossing, modulo turns.
-func nearestRingSample(ring []math.Point2, at float64, coord func(math.Point2) float64) int {
-	best, bestGap := 0, stdmath.Inf(1)
-	for i, p := range ring {
-		gap := wrapToPeriod(coord(p) - at)
-		if gap > stdmath.Pi {
-			gap = twoPi - gap
-		}
-		if gap < bestGap {
-			best, bestGap = i, gap
+// ringAdvancesOneWay reports whether the ring only ever moves one way in the periodic coordinate.
+func ringAdvancesOneWay(ring []math.Point2, coord func(math.Point2) float64, sign float64) bool {
+	for i := 1; i < len(ring); i++ {
+		if (coord(ring[i])-coord(ring[i-1]))*sign < 0 {
+			return false
 		}
 	}
-	return best
+	return true
+}
+
+// ringOverOnePeriod is the ring shifted onto the branch that holds `at` — by a whole number of periods
+// — with its closing point appended, so it spans exactly one period.
+func ringOverOnePeriod(ring []math.Point2, coord func(math.Point2) float64, at, sign float64,
+	alongU bool) []math.Point2 {
+	base := sign * twoPi * stdmath.Floor((at-coord(ring[0]))*sign/twoPi)
+	out := make([]math.Point2, 0, len(ring)+1)
+	for _, p := range ring {
+		out = append(out, shiftAlongChart(p, base, alongU))
+	}
+	return append(out, shiftAlongChart(out[0], sign*twoPi, alongU))
+}
+
+// crossingSegment is the segment of a one-period ring that `at` falls in — the first whose far end is
+// strictly past it, so the crossing never lands on the segment's own end and duplicates a vertex.
+func crossingSegment(turn []math.Point2, coord func(math.Point2) float64, at, sign float64) (int, bool) {
+	for k := 0; k+1 < len(turn); k++ {
+		if (coord(turn[k+1])-at)*sign > 0 {
+			return k, true
+		}
+	}
+	return 0, false
+}
+
+// rotatedAtCrossing restarts the one-period ring at the crossing and walks it back round to the
+// crossing a period later. Every ORIGINAL vertex keeps its own coordinate, shifted by whole turns.
+func rotatedAtCrossing(turn []math.Point2, coord func(math.Point2) float64, at float64, k int,
+	sign float64, alongU bool) []math.Point2 {
+	q := crossingPoint(turn[k], turn[k+1], coord, at)
+	out := append([]math.Point2{q}, turn[k+1:]...)
+	for _, p := range turn[1 : k+1] {
+		out = append(out, shiftAlongChart(p, sign*twoPi, alongU))
+	}
+	return append(out, shiftAlongChart(q, sign*twoPi, alongU))
+}
+
+// crossingPoint interpolates the ring's own polyline where it reaches `at`.
+func crossingPoint(p, q math.Point2, coord func(math.Point2) float64, at float64) math.Point2 {
+	span := coord(q) - coord(p)
+	if span == 0 {
+		return p
+	}
+	return p.Lerp(q, math.Scalar((at-coord(p))/span))
 }
 
 // shiftAlongChart moves a chart sample along the periodic coordinate.

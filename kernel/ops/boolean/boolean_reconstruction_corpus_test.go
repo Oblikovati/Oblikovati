@@ -78,16 +78,6 @@ func TestCocylindricalCapOnWallIsOneAnalyticFace(t *testing.T) {
 	assertMergedBandMeshesWatertight(t, body)
 }
 
-// mergedBandFineFreeEdges is what this fixture still leaves at PropertyQuality, and it is a chart the
-// MERGE recorded, not a mesher defect. Measured on the merged face: its own edges put the notch corners
-// at u = 4.112388980 and 5.312388980 (ParamAt of the D-prism's chord vertices, exactly ∓0.6 − π/2),
-// while the chart it carries records them at 4.092588062 and 5.292588062 — the whole notch rotated by
-// −0.019800918 rad, 0.059 mm at radius 3. The region and the boundary then disagree in a strip 0.06 mm
-// wide and 4 mm tall along the boss's chord edges: at DefaultQuality the boundary clearance covers it
-// and the body is watertight, at PropertyQuality ten edges around the two corners are left unpaired.
-// Correcting the chart is kernel/brep's (the merge's faceChart), which this task does not touch.
-const mergedBandFineFreeEdges = 10
-
 // assertMergedBandMeshesWatertight requires the merged band's MESH to be a closed surface at BOTH gate
 // facetings, and to report no tear.
 //
@@ -105,16 +95,19 @@ const mergedBandFineFreeEdges = 10
 //   - the covering's replication pad was measured on the wrong axis's stations.
 //
 // The mesh reads 174.086 mm² of the analytic 174.096 and the body is watertight at both facetings.
+//
+// It was then pinned at TEN free edges at PropertyQuality, on a chart the MERGE recorded 0.0198 rad
+// off the edges its own face carries. That is fixed too (ADR-0061 stage 5, round 3): bandCircuit's
+// re-cut snapped the second rim to its nearest SAMPLE and then translated the whole rim by that gap,
+// which is a re-basing by something other than a whole period. It now cuts at the interpolated
+// crossing and shifts by whole turns only, so every vertex of the chart is the face's own. Both
+// facetings are watertight and the pin is gone.
 func assertMergedBandMeshesWatertight(t *testing.T, b *topo.Body) {
 	t.Helper()
 	for _, gq := range gateQualities() {
-		want := 0
-		if gq.name == "property" {
-			want = mergedBandFineFreeEdges
-		}
 		mesh, _ := tessellate.TessellateBody(b, gq.q)
-		if n := tessellate.FreeEdgeCount(mesh); n != want {
-			t.Errorf("%s quality: the merged body meshes with %d free edges, want %d", gq.name, n, want)
+		if n := tessellate.FreeEdgeCount(mesh); n != 0 {
+			t.Errorf("%s quality: the merged body meshes with %d free edges, want 0", gq.name, n)
 		}
 		assertMeshTearIsReported(t, mesh, tessellate.FreeEdgeCount(mesh))
 	}

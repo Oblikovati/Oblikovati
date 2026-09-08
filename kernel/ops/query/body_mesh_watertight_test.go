@@ -17,24 +17,84 @@ import (
 // (model/feature/result_diagnostics.go). A defect recorded only on the whole-body mesh reaches none of
 // them — every TessellateBody caller discards that mesh — so the row that matters is this one.
 
-// TestATornClosedBodyReportsThroughTheHarvest: a closed body whose mesh has a crack must carry it on
-// BodyMeshDiagnostics — the list a feature reply, the API and the UI read.
+// TestTheHarvestCarriesEveryCodeTheFaceMeshesDo is the wiring, stated as an identity.
 //
-// The #2167 cocylindrical join used to tear at DefaultQuality and that is what this row drove. It does
-// not any more (ADR-0061 stage 5, Task 7 round 1: the router offers a seam-wrapping face on a singly
-// periodic surface its own chart, the chart's membership test reads a slanted seam, and the rim gate no
-// longer counts a seam SLIT twice). At PropertyQuality the same body still tears, on a chart the MERGE
-// records 0.0198 rad off the edges the face carries, so the row drives it there and stays a real proof
-// of the harvest. It fails loudly if that tear closes too — which is the correct signal to re-point it
-// at whatever still tears, or to delete it if nothing does.
-func TestATornClosedBodyReportsThroughTheHarvest(t *testing.T) {
+// This row drove a body that TORE, and asserted the tear came out of BodyMeshDiagnostics. Nothing in
+// the corpus tears any more — Task 7 gave the merged band its own mesher and ADR-0061 stage 5 round 3
+// gave the merge a chart that matches its own edges — so that precondition is gone, and the row says
+// so rather than hunting for a body that still cracks.
+//
+// What it guards instead is the defect that made the tear invisible in the first place: the check ran
+// somewhere the harvest could not see it. The harvest's codes must be EXACTLY the codes the face
+// meshes carry. That identity holds whether or not anything is torn today, and it fails the moment a
+// tessellation defect is recorded anywhere the faces route does not reach — which is the whole of what
+// went wrong (ADR-0061 stage 5, review round 2). The step before it, "the body's tear is recorded on a
+// FACE mesh", is pinned in kernel/ops/tessellate.
+func TestTheHarvestCarriesEveryCodeTheFaceMeshesDo(t *testing.T) {
 	t.Parallel()
-	body := cocylindricalBossOnWall(t)
-	mesh, _ := tessellate.TessellateBody(body, PropertyQuality())
-	if n := tessellate.FreeEdgeCount(mesh); n == 0 {
-		t.Fatalf("the fixture meshes watertight; it is not the torn case this row needs")
+	body := nearPinchCrossingRods(t)
+	_, meshes := tessellate.TessellateBodyFaces(body, PropertyQuality())
+	want := codeSet(faceMeshDiagnostics(meshes))
+	if len(want) == 0 {
+		t.Fatal("no face of this body records anything; the identity would hold vacuously")
 	}
-	assertHarvested(t, BodyMeshDiagnostics(body, PropertyQuality()), tessellate.CodeMeshNotWatertight)
+	assertSameCodes(t, codeSet(BodyMeshDiagnostics(body, PropertyQuality())), want)
+}
+
+// nearPinchCrossingRods is the one corpus body whose faces still record a tessellation degradation at
+// PropertyQuality — two rods crossing with a 4e-5 radius difference, whose wall's two lens windows
+// leave a corridor narrower than the boundary's own chords. It is the fixture that makes the identity
+// above a proof rather than a tautology.
+func nearPinchCrossingRods(t *testing.T) *topo.Body {
+	t.Helper()
+	along, err := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
+	if err != nil {
+		t.Fatalf("along-x rod: %v", err)
+	}
+	across, err := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3.00004, 12)
+	if err != nil {
+		t.Fatalf("along-z rod: %v", err)
+	}
+	body, err := brep.Boolean(brep.Union, along, across)
+	if err != nil {
+		t.Fatalf("crossing rods: %v", err)
+	}
+	return body
+}
+
+// faceMeshDiagnostics is everything the face meshes recorded, in meshing order.
+func faceMeshDiagnostics(meshes []*tessellate.Mesh) []diag.Diagnostic {
+	var out []diag.Diagnostic
+	for _, m := range meshes {
+		if m != nil {
+			out = append(out, m.Diagnostics...)
+		}
+	}
+	return out
+}
+
+// codeSet is the distinct codes of a diagnostic list.
+func codeSet(ds []diag.Diagnostic) map[diag.Code]bool {
+	out := map[diag.Code]bool{}
+	for _, d := range ds {
+		out[d.Code] = true
+	}
+	return out
+}
+
+// assertSameCodes requires the two sets to hold the same codes.
+func assertSameCodes(t *testing.T, got, want map[diag.Code]bool) {
+	t.Helper()
+	for c := range want {
+		if !got[c] {
+			t.Errorf("the face meshes recorded %q and the harvest dropped it", c)
+		}
+	}
+	for c := range got {
+		if !want[c] {
+			t.Errorf("the harvest reported %q that no face mesh recorded", c)
+		}
+	}
 }
 
 // TestAWatertightBodyHarvestsNoTear is the control: a plain cylinder meshes closed, and the harvest
@@ -50,42 +110,4 @@ func TestAWatertightBodyHarvestsNoTear(t *testing.T) {
 			t.Errorf("a watertight body harvested %q: %s", d.Code, d.Detail)
 		}
 	}
-}
-
-// cocylindricalBossOnWall is the #2167 shape from primitives: a boss whose wall is cocylindrical with
-// its host's, flattened on one side so the merged wall's second rim is notched.
-func cocylindricalBossOnWall(t *testing.T) *topo.Body {
-	t.Helper()
-	host, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 6)
-	if err != nil {
-		t.Fatalf("host cylinder: %v", err)
-	}
-	upper, err := brep.SolidCylinder(math.P3(0, 0, 6), math.V3(0, 0, 1), 3, 4)
-	if err != nil {
-		t.Fatalf("boss cylinder: %v", err)
-	}
-	chop, err := brep.SolidBlock(math.P3(2.4, -4, 5), math.P3(5, 4, 11), "chop")
-	if err != nil {
-		t.Fatalf("chop block: %v", err)
-	}
-	boss, err := brep.Boolean(brep.Difference, upper, chop)
-	if err != nil {
-		t.Fatalf("flattening the boss: %v", err)
-	}
-	body, err := brep.Boolean(brep.Union, host, boss)
-	if err != nil {
-		t.Fatalf("seating the boss: %v", err)
-	}
-	return body
-}
-
-// assertHarvested requires the code on the harvest at Defect severity.
-func assertHarvested(t *testing.T, ds []diag.Diagnostic, code diag.Code) {
-	t.Helper()
-	for _, d := range ds {
-		if d.Code == code && d.Severity == diag.Defect {
-			return
-		}
-	}
-	t.Errorf("BodyMeshDiagnostics did not carry %q; got %v", code, ds)
 }
