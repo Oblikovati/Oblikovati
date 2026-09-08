@@ -37,15 +37,9 @@ const seamSteps = 16
 // boolean clear of every hole, exactly, and the bridge goes there rather than into the widest gap between
 // the holes' SAMPLED points — which two lens holes that nearly pinch leave inside a lens once their
 // corridor is narrower than a sample step (ADR-0061 stage 4). nil reads the gap from the samples.
-func twoRimHoledBandMesh(chart [][]math.Point2, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
-	if !isDevelopableSide(s) || IsPeriodic(s.UDomain()) == IsPeriodic(s.VDomain()) {
-		return nil, false
-	}
-	rims, lenses := splitWrappingHoles(s, holes3D)
-	if len(rims) != 1 {
-		return nil, false
-	}
-	wrap, ok := bridgeRimsAtSeam(s, outer3D, rims[0], lenses, seamAngleFor(chart, s, outer3D, lenses))
+func twoRimHoledBandMesh(chart [][]math.Point2, s geom.Surface, outer3D []math.Point3, h twoRimHoledTrim, q Quality) (*Mesh, bool) {
+	lenses := h.lenses
+	wrap, ok := bridgeRimsAtSeam(s, outer3D, h.rim, lenses, seamAngleFor(chart, s, outer3D, lenses))
 	if !ok {
 		return nil, false
 	}

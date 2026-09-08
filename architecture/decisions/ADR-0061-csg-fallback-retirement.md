@@ -2483,3 +2483,71 @@ with 6 free edges, and its area FALLS from 160.93 to 158.65 as the chord toleran
 is meant to raise it. `TestRimCrossingCutMembershipMatchesCSG` then moves 222 interior points off the
 analytic predicate. Until the chart mesher's fine-quality boundary agrees with the neighbour's, the
 unroll stays; RODB∪ and RODB− stay pinned at 8.72% and 9.02%, and their pins say so.
+
+### 2026-09-08 — corrections to the curved-trim classification section above
+
+Review found the section above claimed more than it had done, and one of its claims was measurably
+wrong. This corrects it; the earlier text stands as written, since this ADR is append-only.
+
+**The sphere family's ladder had been relocated, not eliminated, and the exclusivity proof could not
+see it.** The first pass folded five of the eleven rungs into two arms, but underneath, the cap's three
+rim readings were still tried in order, and the three "predicates" the exclusivity test evaluated were
+`classifySphereTrim(...) == X` — three comparisons against one answer, which cannot both be true, so
+the test was a tautology for exactly the part that still contained a ladder. The rim forms are now read
+as an INVENTORY: all three evaluated, the number that held counted, and a boundary two forms claim
+refused rather than resolved by position. `TestSphereCapRimFormsAreDisjoint` evaluates the three
+independently on every corpus sphere face, and `TestTheTwoSeamedRimFormsAreDisjoint` holds them to the
+one shape that used to collide.
+
+**Two of the three rim forms were NOT disjoint, and the ladder had been hiding it.** A loop of
+`[seam, ONE full circle, seam-reversed]` reads as a pole-seamed rim (one full-circle edge plus a lone
+pole vertex) AND as a seamed multi-arc rim (a lone doubled edge plus a coplanar rim ring). It is OCCT
+blend/simple J2's own sphere face. Refusing the ambiguity moved J2's byte-identity fingerprint from
+165886 triangles to 33991 (and A3's from 305166 to 544658) — the fingerprint pins caught what no
+reasoning had. The discriminator is the rim EDGE COUNT, which is what the multi-arc form's name has
+always claimed: one rim edge is the pole-seamed form, two or more the multi-arc form. With it both
+fingerprints are byte-identical again, and the ladder's old outcome is reproduced exactly, because the
+rung it tried first is the form that now holds alone.
+
+**`recognizers` 11 → 8 was a change of counting horizon, not a deletion.** The number is re-derived and
+the pin is **12**, a RISE that is a correction of the measurement rather than new code. A ladder ENTRY
+was never one recognizer: entry 0 recognized two cone shapes, and three entries read three rim forms
+into one builder. Counting the bespoke SHAPE recognizers behind the arms (`curvedTrimRecognizers` in
+`archguard/kernel_net_delta_test.go`, whose names must all be functions of `kernel/ops/tessellate` and
+whose keys must all be cases of the classification's switch) gives **12 before this slice and 12
+after**. Nothing bespoke was deleted. What was deleted is builder duplication — `coneApexFan` and
+`coneSectorFan` became one `apexFan`; `sphereZoneCapFan`, `sphereSeamedCapFan`, `notchedRimBandMesh`,
+`twoClosedRimBandMesh` and `SphereCapFan` became arms over shared builders. The number will fall when a
+SHAPE goes, which is what it is for.
+
+**Every recognizer was running twice per curved face.** The classification computed the cone rim, the
+cap rim, the tube-wrapping edges and the wedge end chains and threw the results away; the selected
+mesher computed them again. `classifyCurvedTrim` now returns a `curvedTrim` carrying the recognition
+alongside the kind, and the switch hands it to the builder — "decide each incidence once and reuse the
+result". `tubeWrappingEdges` and `wedgeBandEndChains` return the torus and the cylinder they decided,
+so `spiricBandMesh`'s `t, _ := s.(geom.Torus)` — a second assertion of a kind already decided, with the
+verdict discarded — is gone. `geomSwitchDebt[kernel/ops/tessellate]` 52 → **45**, `type-assertions`
+691 → **684**.
+
+**The merged ruled-band arm had narrowed one branch.** The old `twoClosedRimBandMesh` carried no lens
+guard; the merge ANDed `!faceHasLensHole` onto both forms, so a developable side whose two closed edges
+include a lens (a drilled cone apex cap) would have stopped reaching the loft. The guard belongs to the
+NOTCHED form alone — the saddle loft pools all open edges into one rim, so only a notched band can fold
+a lens into its base rim (#1591) — and it is scoped back to that form. No corpus row argued for the
+narrowing, so behaviour is preserved rather than "fixed".
+
+**A ladder's second shape is now guarded.** `TestNoFirstFitDispatchLadders` matches a range loop over a
+table of funcs; writing the same rungs out as consecutive `if x, ok := recognise(...); ok { return x }`
+statements is the identical mechanism and was invisible to it — which is how the sphere ladder survived
+the first pass. `TestNoUnprovenPayloadGatedChains` (`archguard/payload_gated_chain_test.go`) detects
+that shape. It is a REGISTRY rather than a ban, because the shape alone cannot distinguish a ladder
+from a classification whose recognizers are proved disjoint, and `classifyCurvedTrim` is the latter. It
+is scoped to `kernel/ops/tessellate`: kernel-wide the shape has **16** instances, 12 of them in
+`kernel/brep` and `kernel/ops/blend`, and registering those from here would make the guard a source of
+merge conflicts with work that owns those packages rather than a ratchet. Widening it is the natural
+follow-up once those packages get their own disjointness proofs.
+
+**The `kindSphereCapFan` KEEP rests on the wrong reason above.** It stands on the chart mesher
+declining 5 of its 6 corpus faces, not on triangle count: where the chart mesher DID take a cap it read
++0.31% of area, which on a convex cap is CLOSER to the closed form, not further. Triangle count is a
+cost, not a correctness argument, and the section above used it as one.

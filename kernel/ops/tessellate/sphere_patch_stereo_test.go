@@ -51,7 +51,7 @@ func TestSpherePatchStereographicSevenEighths(t *testing.T) {
 	outer = append(outer, quarterArc(O, C, B, 8)...) // C→B (x=0 plane)
 	outer = append(outer, quarterArc(O, B, A, 8)...) // B→A (z=0 plane)
 
-	m, ok := SpherePatchMesh(nil, sphere, outer, nil, DefaultQuality())
+	m, ok := SpherePatchMeshOf(nil, sphere, outer, nil, DefaultQuality())
 	if !ok {
 		t.Fatal("spherePatchMesh declined the 7/8 patch (stereographic chart should claim it)")
 	}

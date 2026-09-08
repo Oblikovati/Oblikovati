@@ -46,7 +46,11 @@ func TestTwoRimHoledBandMeshesFullBand(t *testing.T) {
 	bot := rimLoop(s, 0, 96)
 	lens := lensLoop(s, 0, 5, 0.12, 0.35, 40)
 	q := Quality{ChordTolerance: 0.005, AngleTolerance: 2 * stdmath.Pi / 180}
-	m, ok := twoRimHoledBandMesh(nil, s, top, [][]math.Point3{bot, lens}, q)
+	h, recognized := twoRimHoledTrimOf(s, [][]math.Point3{bot, lens})
+	if !recognized {
+		t.Fatal("twoRimHoledTrimOf declined a full two-rim band with a lens hole")
+	}
+	m, ok := twoRimHoledBandMesh(nil, s, top, h, q)
 	if !ok {
 		t.Fatal("twoRimHoledBandMesh declined a full two-rim band with a lens hole")
 	}
@@ -67,8 +71,9 @@ func TestTwoRimHoledBandDeclinesWithoutWrappingRim(t *testing.T) {
 	s := bandCylinder(10)
 	seamWrap := rimLoop(s, 10, 64) // a single seam-wrapping outer (stand-in) — no rim among the holes
 	lens := lensLoop(s, 0, 5, 0.12, 0.35, 40)
-	if _, ok := twoRimHoledBandMesh(nil, s, seamWrap, [][]math.Point3{lens}, DefaultQuality()); ok {
-		t.Error("meshed a face with zero wrapping rim-holes; want decline (holedConicWallMesh's case)")
+	_ = seamWrap
+	if _, ok := twoRimHoledTrimOf(s, [][]math.Point3{lens}); ok {
+		t.Error("recognized a face with zero wrapping rim-holes; want decline (holedConicWallMesh's case)")
 	}
 }
 

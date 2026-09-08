@@ -81,25 +81,55 @@ func classificationCorpus() []struct {
 }
 
 // TestCurvedTrimKindsAreMutuallyExclusive is the reorder-independence proof: no curved face in the
-// corpus satisfies two classification predicates, and the kind classifyCurvedTrim selects is exactly
-// the one predicate that holds (or the charted/uncharted residual when none does).
+// corpus satisfies two classification recognizers, and the kind classifyCurvedTrim selects is exactly
+// the one recognizer that holds (or the sphere family's residual, or the charted/uncharted residual,
+// when none does).
 func TestCurvedTrimKindsAreMutuallyExclusive(t *testing.T) {
 	t.Parallel()
 	q := ops.DefaultQuality()
+	forEachCurvedCorpusFace(t, func(body string, i int, f *topo.Face) {
+		hits := tessellate.CurvedTrimRecognizerHits(f, q)
+		if len(hits) > 1 {
+			sort.Strings(hits)
+			t.Errorf("%s face %d (%T): %d recognizers claim it (%s) — a classification answers at "+
+				"most once, so which mesher runs would depend on the order they are written in",
+				body, i, f.Geometry(), len(hits), strings.Join(hits, ", "))
+		}
+		assertClassificationAgrees(t, body, i, f, hits, q)
+	})
+}
+
+// TestSphereCapRimFormsAreDisjoint is the same proof one level down, where the ladder used to hide
+// after the first pass at this task: the spherical cap's three RIM FORMS are read as an inventory, all
+// three evaluated, and a face two of them claim is refused rather than resolved by position. This is
+// what says the refusal never has to fire — and it is a real assertion, not a tautology, because each
+// form is a separate recognizer function with its own gate.
+func TestSphereCapRimFormsAreDisjoint(t *testing.T) {
+	t.Parallel()
+	q := ops.DefaultQuality()
+	seen := 0
+	forEachCurvedCorpusFace(t, func(body string, i int, f *topo.Face) {
+		hits := tessellate.SphereCapRimFormHits(f, q)
+		seen += len(hits)
+		if len(hits) > 1 {
+			sort.Strings(hits)
+			t.Errorf("%s face %d: %d cap rim forms claim it (%s) — the boundary cannot be two shapes, "+
+				"and taking the first is the ladder this replaced", body, i, len(hits), strings.Join(hits, ", "))
+		}
+	})
+	if seen == 0 {
+		t.Error("no corpus face presented any cap rim form — the disjointness proof covers nothing")
+	}
+}
+
+// forEachCurvedCorpusFace runs visit over every CURVED face of every corpus body.
+func forEachCurvedCorpusFace(t *testing.T, visit func(body string, i int, f *topo.Face)) {
+	t.Helper()
 	for _, row := range classificationCorpus() {
-		body := row.build(t)
-		for i, f := range body.Faces() {
-			if _, planar := f.Geometry().(geom.Plane); planar {
-				continue // the classification only sees curved faces
+		for i, f := range row.build(t).Faces() {
+			if _, planar := f.Geometry().(geom.Plane); !planar {
+				visit(row.name, i, f)
 			}
-			hits := tessellate.CurvedTrimPredicateHits(f, q)
-			if len(hits) > 1 {
-				sort.Strings(hits)
-				t.Errorf("%s face %d (%T): %d predicates claim it (%s) — a classification answers at "+
-					"most once, so which mesher runs would depend on the order they are written in",
-					row.name, i, f.Geometry(), len(hits), strings.Join(hits, ", "))
-			}
-			assertClassificationAgrees(t, row.name, i, f, hits, q)
 		}
 	}
 }
@@ -126,30 +156,32 @@ func classifiedCurvedFaces(t *testing.T) map[string]int {
 	t.Helper()
 	q := ops.DefaultQuality()
 	seen := map[string]int{}
-	for _, row := range classificationCorpus() {
-		for _, f := range row.build(t).Faces() {
-			if _, planar := f.Geometry().(geom.Plane); !planar {
-				seen[tessellate.ClassifyCurvedTrimName(f, q)]++
-			}
-		}
-	}
+	forEachCurvedCorpusFace(t, func(_ string, _ int, f *topo.Face) {
+		seen[tessellate.ClassifyCurvedTrimName(f, q)]++
+	})
 	return seen
 }
 
-// assertClassificationAgrees ties classifyCurvedTrim to the predicates: it must select the one kind
-// that holds, and when none holds it must fall to the charted or uncharted residual.
+// assertClassificationAgrees ties classifyCurvedTrim to the recognizers: it must select the one kind
+// that holds, and when none holds it must fall to a residual — the sphere family's arc-bounded patch,
+// or the charted/uncharted split.
 func assertClassificationAgrees(t *testing.T, body string, i int, f *topo.Face, hits []string, q tessellate.Quality) {
 	t.Helper()
 	got := tessellate.ClassifyCurvedTrimName(f, q)
 	if len(hits) == 1 {
 		if got != hits[0] {
-			t.Errorf("%s face %d (%T): predicate %s holds but the classification chose %s",
+			t.Errorf("%s face %d (%T): recognizer %s holds but the classification chose %s",
 				body, i, f.Geometry(), hits[0], got)
 		}
 		return
 	}
-	if len(hits) == 0 && got != tessellate.ChartedTrimKindName() && got != tessellate.UnchartedTrimKindName() {
-		t.Errorf("%s face %d (%T): no predicate holds but the classification chose %s, not the residual",
+	residual := map[string]bool{
+		tessellate.SpherePatchTrimKindName(): true,
+		tessellate.ChartedTrimKindName():     true,
+		tessellate.UnchartedTrimKindName():   true,
+	}
+	if len(hits) == 0 && !residual[got] {
+		t.Errorf("%s face %d (%T): no recognizer holds but the classification chose %s, not a residual",
 			body, i, f.Geometry(), got)
 	}
 }

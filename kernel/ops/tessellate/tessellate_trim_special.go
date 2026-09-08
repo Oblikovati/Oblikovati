@@ -19,27 +19,29 @@ import (
 // specialCurvedMesh meshes a curved face whose trim is one of the surface-specific shapes the generic
 // (u,v) path mis-meshes, or a face that carries its own parametric trim (kindChart, meshed from the
 // region ADR-0063 records). It returns (nil,false) only for kindUncharted — a face with no chart and
-// no special shape — so the caller falls through to toUVLoops. It selects ONE mesher, the kind
-// classifyCurvedTrim names, and if that mesher declines on its own conditioning the face demotes to
-// the generic path rather than to a second special case.
+// no special shape — so the caller falls through to toUVLoops. It selects ONE builder, the kind
+// classifyCurvedTrim named, and hands it that classification's own recognition rather than making it
+// read the face again; if the builder declines on its own conditioning the face demotes to the generic
+// path rather than to a second special case.
 func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
-	switch classifyCurvedTrim(f, s, outer3D, holes3D, q) {
+	t := classifyCurvedTrim(f, s, outer3D, holes3D, q)
+	switch t.kind {
 	case kindConeApexFan:
-		return coneApexMesh(f, s, outer3D, holes3D)
+		return apexFan(t.cone), true
 	case kindSphereCapFan:
-		return sphereCapFanMesh(f, s, outer3D, holes3D, q)
+		return buildSphereCap(t.cap.sph, t.cap.rim, t.cap.axis, q), true
 	case kindSphereZoneBand:
-		return SphereZoneBandFan(f, s, q)
+		return SphereZoneBandFan(t.belt, q), true
 	case kindSpherePatch:
-		return SpherePatchMesh(f, s, outer3D, holes3D, q)
+		return SpherePatchMesh(t.patch, outer3D, holes3D, q)
 	case kindRuledBandLoft:
 		return saddleBandLoftMesh(f, s, q)
 	case kindSpiricBand:
-		return spiricBandMesh(f, s, q)
+		return spiricBandMesh(f, t.tube, q)
 	case kindTwoRimHoledBand:
-		return twoRimHoledBandMesh(f.Chart(), s, outer3D, holes3D, q)
+		return twoRimHoledBandMesh(f.Chart(), s, outer3D, t.holed, q)
 	case kindWedgeBand:
-		return wedgeBandLoftMesh(f, s, q)
+		return wedgeBandLoftMesh(t.wedge), true
 	default:
 		// kindChart meshes the region the face itself records; kindUncharted records none, so the
 		// same call declines and the face falls through to the generic (u,v) trim path.
@@ -47,45 +49,13 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 	}
 }
 
-// coneApexMesh meshes a cone face that closes to its apex — a closed conic apex CAP (a drill point or
-// an oblique apex cut) or an apex-collapsed SECTOR (a partial angular sweep). Both exploit that a cone
-// is developable, so a triangle fan from the apex gives exact area, orientation-independently.
-func coneApexMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) (*Mesh, bool) {
-	cone, rim, closed, ok := coneApexFanRim(f, s, outer3D, holes3D)
-	if !ok {
-		return nil, false
-	}
-	return apexFan(cone, rim, closed), true
-}
-
-// coneApexFanRim returns the cone, the rim the apex fan sweeps and whether that rim CLOSES (a cap's
-// full conic rim wraps; a sector's base arc does not). ok=false for every cone face that is not an
-// apex topology — a frustum band, a saddle-bounded stub, a holed face whose inner rim is a hole, or a
-// seamed apex face whose loop already spans the apex.
-//
-// Example: a drill point's single circular rim → (rim = the circle, closed = true).
-func coneApexFanRim(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) (geom.Cone, []math.Point3, bool, bool) {
-	cone, isCone := s.(geom.Cone)
-	if !isCone || len(holes3D) != 0 {
-		return cone, nil, false, false
-	}
-	if faceIsConeApexCap(f) {
-		return cone, outer3D, true, len(outer3D) >= 3
-	}
-	if len(f.Loops()) != 1 {
-		return cone, nil, false, false
-	}
-	rim := rimExcludingApex(outer3D, cone.Apex, geom.ResolutionForPoints(outer3D).Weld())
-	// No apex vertex on the loop (a frustum/stub), or too few rim points for a fan.
-	return cone, rim, false, len(rim) != len(outer3D) && len(rim) >= 2
-}
-
 // apexFan builds the apex→rim triangle fan for a cone (rim in path order, apex excluded), each
 // triangle wound to agree with the cone's outward normal — a reversed face then flips it. A CLOSED rim
 // (a conic cap) gets the wrap-around triangle; an open one (a sector's base arc) does not, so the
 // fan spans only the real sector and its free boundary is the base arc plus the two meridian rulings.
 // The apex is not a topology vertex but the surface's geometric tip, and it carries the axial normal.
-func apexFan(cone geom.Cone, rim []math.Point3, closed bool) *Mesh {
+func apexFan(c coneApexTrim) *Mesh {
+	cone, rim := c.cone, c.rim
 	m := &Mesh{}
 	apex := m.AddVertex(cone.Apex, cone.AxisDir.AsVector().Scale(-1)) // axial normal at the pole
 	idx := make([]int, len(rim))
@@ -93,7 +63,7 @@ func apexFan(cone geom.Cone, rim []math.Point3, closed bool) *Mesh {
 		u, v := cone.ParamAt(p)
 		idx[i] = m.AddVertex(p, cone.NormalAt(u, v))
 	}
-	for i := range fanSpanCount(len(rim), closed) {
+	for i := range fanSpanCount(len(rim), c.closed) {
 		b, c := idx[i], idx[(i+1)%len(rim)]
 		if triangleFlipped(cone, cone.Apex, m.Positions[b], m.Positions[c]) {
 			b, c = c, b

@@ -14,12 +14,13 @@ import (
 // classification that selects exactly one path; never add to an ordered try-list, a first-fit ladder,
 // or a load-bearing order").
 //
-// What replaces it is a classification: classifyCurvedTrim reads the face's trim ONCE and names the
-// one kind it is, and specialCurvedMesh switches on that name. The predicates are mutually exclusive,
-// so the order they are written in decides nothing — TestCurvedTrimKindsAreMutuallyExclusive evaluates
-// every one of them on every corpus face and fails if two answer true for the same face. That test is
-// what a ladder can never have: with a ladder, "two rungs both accept this face" is not a bug, it is
-// the mechanism.
+// What replaces it is a classification: classifyCurvedTrim reads the face's trim ONCE and returns the
+// one kind it is TOGETHER WITH the recognition the arm needs, and specialCurvedMesh switches on that
+// kind and hands the payload straight to the builder. Nothing is recognised twice ("decide each
+// incidence once and reuse the result"), and the recognizers are mutually exclusive, so the order they
+// are written in decides nothing — TestCurvedTrimKindsAreMutuallyExclusive evaluates every one of them
+// on every corpus face and fails if two answer true for the same face. That test is what a ladder can
+// never have: with a ladder, "two rungs both accept this face" is not a bug, it is the mechanism.
 //
 // The classification is TOTAL: a face no special kind claims is named too — kindChart when it carries
 // the parametric trim ADR-0063 records, so the chart-driven mesher meshes the face's OWN region, and
@@ -46,8 +47,8 @@ const (
 	// kindSpherePatch is an arc-bounded sphere trim: a constrained triangulation in a patch-centred
 	// gnomonic or stereographic chart.
 	kindSpherePatch
-	// kindRuledBandLoft is a developable side bounded by two full-wrap rims with no lens hole — two
-	// closed rims, or one closed rim and one notched rim. A ruled band needs no interior row.
+	// kindRuledBandLoft is a developable side bounded by two full-wrap rims — two closed rims, or one
+	// closed rim and one notched rim. A ruled band needs no interior row.
 	kindRuledBandLoft
 	// kindSpiricBand is a torus band bounded by two edges that each wrap the whole tube.
 	kindSpiricBand
@@ -69,37 +70,46 @@ func (k curvedTrimKind) String() string {
 	return names[k]
 }
 
-// classifyCurvedTrim names the one kind a curved face's trim is. The predicates it reads are mutually
-// exclusive (TestCurvedTrimKindsAreMutuallyExclusive), so this reads as a chain only because Go has no
-// "the one true predicate" expression — reordering it changes no answer.
+// curvedTrim is the classification's verdict: the kind, and the recognition the selected mesher needs.
+// Exactly one payload field is meaningful, the one its kind names; the rest are zero. Carrying the
+// payload is what keeps a recognizer from running twice — once to decide and once to build.
+type curvedTrim struct {
+	kind  curvedTrimKind
+	cone  coneApexTrim
+	cap   sphereCapTrim
+	belt  sphereBeltTrim
+	patch spherePatchTrim
+	tube  spiricTubeTrim
+	holed twoRimHoledTrim
+	wedge wedgeBandTrim
+}
+
+// classifyCurvedTrim names the one kind a curved face's trim is and carries its recognition. The
+// recognizers it reads are mutually exclusive (TestCurvedTrimKindsAreMutuallyExclusive), so this reads
+// as a chain only because Go has no "the one true recognizer" expression — reordering changes no answer.
 //
 // Example: the wall of a rod a ball is set into carries one full-wrap rim plus the ball's lens window,
-// so it classifies as kindTwoRimHoledBand and nothing else.
-func classifyCurvedTrim(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) curvedTrimKind {
-	if isConeApexTrim(f, s, outer3D, holes3D) {
-		return kindConeApexFan
+// so it classifies as kindTwoRimHoledBand, carrying that rim and that lens, and nothing else.
+func classifyCurvedTrim(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) curvedTrim {
+	if c, ok := coneApexTrimOf(f, s, outer3D, holes3D); ok {
+		return curvedTrim{kind: kindConeApexFan, cone: c}
 	}
-	switch classifySphereTrim(f, s, outer3D, holes3D, q) {
-	case sphereTrimCap:
-		return kindSphereCapFan
-	case sphereTrimBelt:
-		return kindSphereZoneBand
-	case sphereTrimPatch:
-		return kindSpherePatch
+	if t, ok := classifySphereTrim(f, s, outer3D, holes3D, q); ok {
+		return t
 	}
-	if isRuledTwoRimBand(f, s, q) {
-		return kindRuledBandLoft
+	if ruledTwoRimBandHolds(f, s, q) {
+		return curvedTrim{kind: kindRuledBandLoft}
 	}
-	if isSpiricTubeBand(f, s, q) {
-		return kindSpiricBand
+	if b, ok := spiricTubeTrimOf(f, s, q); ok {
+		return curvedTrim{kind: kindSpiricBand, tube: b}
 	}
-	if isTwoRimHoledBand(s, holes3D) {
-		return kindTwoRimHoledBand
+	if h, ok := twoRimHoledTrimOf(s, holes3D); ok {
+		return curvedTrim{kind: kindTwoRimHoledBand, holed: h}
 	}
-	if isWedgeBandTrim(f, s, q) {
-		return kindWedgeBand
+	if w, ok := wedgeBandTrimOf(f, s, q); ok {
+		return curvedTrim{kind: kindWedgeBand, wedge: w}
 	}
-	return chartedKind(f)
+	return curvedTrim{kind: chartedKind(f)}
 }
 
 // chartedKind splits the faces no special kind claims by whether they carry the parametric trim
@@ -110,73 +120,4 @@ func chartedKind(f *topo.Face) curvedTrimKind {
 		return kindChart
 	}
 	return kindUncharted
-}
-
-// isConeApexTrim reports whether the trim is a cone closing to its apex. A holed cone face never is:
-// its inner rim is a hole, not the fan's far end.
-func isConeApexTrim(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) bool {
-	_, _, _, ok := coneApexFanRim(f, s, outer3D, holes3D)
-	return ok
-}
-
-// isSphereCapTrim, isSphereBeltTrim and isSpherePatchTrim read ONE inventory of the sphere trim's
-// rims (classifySphereTrim), so their exclusivity is a property of that function rather than a
-// coincidence between three independent tests.
-func isSphereCapTrim(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) bool {
-	return classifySphereTrim(f, s, outer3D, holes3D, q) == sphereTrimCap
-}
-
-// isSphereBeltTrim reports whether the sphere trim is the belt between two coaxial closed rims.
-func isSphereBeltTrim(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) bool {
-	return classifySphereTrim(f, s, outer3D, holes3D, q) == sphereTrimBelt
-}
-
-// isSpherePatchTrim reports whether the sphere trim is the arc-bounded patch a chart holds.
-func isSpherePatchTrim(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) bool {
-	return classifySphereTrim(f, s, outer3D, holes3D, q) == sphereTrimPatch
-}
-
-// isRuledTwoRimBand reports whether the trim is a developable side bounded by two full-wrap rims and
-// carrying no lens hole — the shape the ruled loft stitches rim-to-rim with no interior row. A band
-// carrying a genuine (non-wrapping) lens hole is kindTwoRimHoledBand instead: the loft pools ALL open
-// edges into one rim, so it would fold the lens into the base rim (#1591).
-func isRuledTwoRimBand(f *topo.Face, s geom.Surface, q Quality) bool {
-	return isDevelopableSide(s) && !faceHasLensHole(f, s, q) && isPeriodicTwoRimBand(f)
-}
-
-// isSpiricTubeBand reports whether the trim is a torus band bounded by two edges that each wrap the
-// whole tube (#1375) — a torus cut through its hole.
-func isSpiricTubeBand(f *topo.Face, s geom.Surface, q Quality) bool {
-	_, _, ok := tubeWrappingEdges(f, s, q)
-	return ok
-}
-
-// isTwoRimHoledBand reports whether the trim is a singly-periodic developable side whose hole loops are
-// ONE full-wrap rim plus at least one lens window. The lens is what separates it from
-// kindRuledBandLoft, which the pure rim-to-rim loft meshes exactly because it carries none.
-//
-// This arm is the one the chart mesher very nearly takes, and the measurement of why it does not is
-// worth keeping (ADR-0061 stage 5). The unroll is not an exact fast path — it bridges the two rims at
-// an invented seam and triangulates the flattened branch, and on the rod a ball is set into it meshes
-// the right 24.5 mm² of wall with triangles whose planes pass 0.5 from the axis, so the wall
-// integrates 7.19 where 8.26 is right. Per FACE the chart mesher is better: over the corpus's 19
-// charted two-rim holed bands it matches the unroll to ±0.2% of area on 18 and betters the rod wall by
-// 1.5%, with 40–85% fewer triangles and the same rim count, and routing them to it moves RODB∪/RODB−
-// from 8.72%/9.02% to 1.44%/1.43%. Per BODY it is not: at PropertyQuality the corner junction's wall
-// (#1738) comes back with 870 rim edges against its neighbours' 864, cracking the body with 6 free
-// edges, and its area FALLS from 160.93 to 158.65 as the chord tolerance tightens — refinement is
-// meant to raise it. Until that is fixed the wall the boolean charts stays on the unroll.
-func isTwoRimHoledBand(s geom.Surface, holes3D [][]math.Point3) bool {
-	if !isDevelopableSide(s) || IsPeriodic(s.UDomain()) == IsPeriodic(s.VDomain()) {
-		return false
-	}
-	rims, lenses := splitWrappingHoles(s, holes3D)
-	return len(rims) == 1 && len(lenses) > 0
-}
-
-// isWedgeBandTrim reports whether the trim is an open oblique-ended cylinder wedge — two end chains,
-// no seam and no closed rim (A1/D4's pyramid slant fillet).
-func isWedgeBandTrim(f *topo.Face, s geom.Surface, q Quality) bool {
-	_, ok := wedgeBandEndChains(f, s, q)
-	return ok
 }
