@@ -49,6 +49,17 @@ func TestBoreContinuingABoreIsOneWall(t *testing.T) {
 	if n := cylinderWalls(through); n != 1 {
 		t.Errorf("the continued bore has %d cylinder walls, want 1", n)
 	}
+	assertMergeMovedNoCoordinate(t, through)
+}
+
+// assertMergeMovedNoCoordinate pins the merge as combinatorial: it drops a boundary and re-chains the
+// rest, so no edge acquires an achieved tolerance. A merge that nudged a seam to make the two loops
+// meet would show here as a nonzero achieved boundary tolerance (ADR-0042).
+func assertMergeMovedNoCoordinate(t *testing.T, b *topo.Body) {
+	t.Helper()
+	if tol := b.AchievedBoundaryTolerance(); tol != 0 {
+		t.Errorf("the merged body's achieved boundary tolerance is %g, want 0 — the merge moved geometry", tol)
+	}
 }
 
 // TestTwoBoresWithNoSharedEdgeStayTwoFaces is the NEGATIVE row: two bores on ONE surface — same axis,
@@ -72,6 +83,7 @@ func TestTwoBoresWithNoSharedEdgeStayTwoFaces(t *testing.T) {
 		t.Fatalf("second bore: %v", err)
 	}
 	assertWatertight(t, both)
+	assertMergeMovedNoCoordinate(t, both)
 	if n := cylinderWalls(both); n != 2 {
 		t.Errorf("two bores separated by material have %d cylinder walls, want 2 — they share no edge", n)
 	}
