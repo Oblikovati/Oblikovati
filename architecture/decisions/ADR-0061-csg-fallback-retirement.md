@@ -3639,3 +3639,86 @@ of the pair universe so that a run needing more has re-added a pair it already r
 non-adding split strictly shrinks a finite set; hence the pass terminates. `tjSplitBudget`'s comment
 now says exactly that. `booleanOnce`'s refusal reported a FACE count in a message that says
 "segments"; it now counts the segments.
+
+### The chart mesher at fine quality, round 2: a set, a refusal and a swept clearance (2026-09-08)
+
+Five findings against the round before. One of them (the merged band's residual ten free edges) was
+closed upstream by `7a89841e`, which fixed the chart the merge records; the other four are here.
+
+#### The rim gate counted where it had to compare
+
+`chartMeshIsBoundedByItsRim` held the mesh's unpaired-edge COUNT against the boundary's segment count.
+A count cancels: on the merged cocylindrical wall at PropertyQuality it read 578 against a rim of 578
+while FIVE of those free edges were no rim segment at all and five rim segments carried the wrong number
+of triangles. The face passed a gate it should have failed and the body shipped ten unpaired edges.
+Neighbouring a wrong edge with a missing one is exactly the shape a chart that disagrees with its own
+boundary produces, so the cancelling pair is the case worth catching, not a coincidence. It compares the
+SETS now, keyed the way the mesh's own welded edges are. It costs no corpus row — `7a89841e` corrected
+that chart — which is the point: the gate is what stops the next such chart passing.
+
+#### `chartChain.longest` was dead, and wiring it is measurably worse
+
+The field and `longestChainChord` were added and documented as "the only bound a cheap box rejection may
+use", and `chainIsNear` never read it — so the previous round's claim that the clearance is read per
+SEGMENT was false of the shipped code. Implementing it properly was measured and rejected: a boundary is
+not sampled uniformly (the merged wall's notched rim carries 320 chords of 0.074 mm and TWO of 4 mm),
+but a clearance scaled to those two clears a 4 mm disc of interior nodes off a face 4 mm tall and
+starves the region — the merged band went from 10 unpaired edges at PropertyQuality to **469** and the
+figure-eight band overshot its analytic area. The field is deleted and `chainIsNear` records why the
+mean is the right scale.
+
+#### The loft refuses a pinched band again, for the uncharted case
+
+Routing a CHARTED spiric band to the chart mesher replaced `bandPinches` for every band the corpus
+builds, and the round before deleted it on that basis. One step too far: the routing gates on a chart, a
+property of the PRODUCER, where `bandPinches` gated on the loft's own failure mode, and "no primitive
+boolean in the corpus builds an uncharted torus band" is an observation about today's corpus, not an
+invariant. An uncharted pinching band would loft silently and wrong (310.800 mm² where the analytic
+region is 283.100, the two halves summing to 525.98 against a torus of 394.78).
+
+`bandPinches` is back, scoped in its doc to the uncharted case, and the refusal is NAMED downstream: the
+face falls to the general path, which for a band that records no region ends at `recordIgnoredTrim`'s
+`CodeTrimIgnoredFullDomain`. `TestAnUnchartedPinchedBandIsRefusedAndSaidSo` drives the figure-eight
+piece's own torus face with `SetChart(nil)` through the router, for both operations, and asserts the
+decline AND that the mesh is the reported fallback rather than the loft's answer. With the gate disabled
+it fires twice: "meshed with no named decline: []" and 138.925 mm² where the fallback is 394.784 less a
+chord deficit.
+
+#### `chartBoundaryClearance` is swept, not re-tuned
+
+It went 0.5 → 1.0 on one failing case, with a derivation that does not predict it. The band is bounded
+by the discretisation's sagitta, chord²/8ρ, and k chords of clearance put the first triangle's centroid
+(2/3)·k·chord out, so the sagitta argument alone is satisfied by any k > 3·chord/(16ρ) — about 0.03 for
+these faces. It does not settle the constant because the band is not always a sagitta: where a boundary
+TOUCHES itself the rim is sampled coarsely right at the touch (the lemniscate complement carries 0.17 rad
+of u in one chord against the covering's own 0.0245 stations) and an interior node lands INSIDE the
+chord rather than beside it. What bounds that is the chord, and its size is measured.
+
+Swept on the three bodies whose charted faces the clearance governs — the genus-1 lemniscate complement,
+RS− and RD− — at both facetings, counting failures over `./kernel/ops/tessellate/ ./kernel/ops/boolean/`:
+
+| k | 0.125 | 0.25 | 0.5 | 0.75 | 0.875 | 1.0 | 1.1 | 1.25 | 1.5 | 2.0 | 3.0 | 4.0 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| failures | 5 | 4 | 2 | **0** | **0** | **0** | **0** | 1 | 3 | 4 | 7 | 16 |
+
+A plateau of 0.75 … 1.1, pinned at its middle, **0.875**, with a `// tol:` naming the sweep. The
+collateral the previous round only admitted in prose is asserted: the complement's torus FACE carries a
+two-sided area pin, 263.610 ± 0.5 mm², and its row's doc records the re-measured 1.30 % (201.258 against
+an analytic 203.905) rather than the 1.11 % it read before the constant moved.
+
+#### The bisect the previous round asserted but did not show
+
+`git bisect run` over `c1e8f2a8..2d1a996f`, with a focused row asserting `ring − half space` watertight
+at PropertyQuality, in a clean worktree:
+
+```text
+Bisecting: 16 revisions left to test after this (roughly 4 steps)
+…
+95cdd21ec18cccf06840ef62c48602902aa89c0e is the first bad commit
+    kernel/tessellate: a charted trim is meshed, not discarded, (ADR-0061)
+bisect found first bad commit
+```
+
+The previous round named `6f8f5125` from a coarser run. The first bad commit is **`95cdd21e`** — the
+same slice, one commit earlier: the wiring that replaced `torusComplementMesh`'s exits with the
+chart-driven mesher, measured only at DefaultQuality.
