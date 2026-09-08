@@ -40,7 +40,7 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 		return torusComplementMesh(t, holes3D, q)
 	}
 	if len(outer3D) < 3 {
-		return fullDomainGridMesh(s, q)
+		return recordIgnoredTrim(fullDomainGridMesh(s, q), s, len(f.Loops()))
 	}
 	if m, special := specialCurvedMesh(f, s, outer3D, holes3D, q); special {
 		return m // a cone-apex/sphere fan or cap, sphere box-cut patch, or notched-rim band
@@ -113,12 +113,17 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 		if m, ok := torusTubeBandLoftMesh(f, s, q); ok {
 			return m // spiric closed-rim HOST (J3/A4): a TUBE-wrapping band (meridian circle + canal rail + seam)
 		}
-		return fullDomainGridMesh(s, q) // shouldn't reach: a doubly-periodic band that isn't two circles + a seam
+		// Shouldn't reach: a doubly-periodic band that isn't two circles + a seam. The grid is the whole
+		// surface, so the trim is lost — say so rather than ship it quietly (recordIgnoredTrim).
+		return recordIgnoredTrim(fullDomainGridMesh(s, q), s, len(f.Loops()))
 	}
 	if IsPeriodic(s.UDomain()) != IsPeriodic(s.VDomain()) {
 		m := trimmedPatchMesh(s, outer3D, holes3D) // sphere cap on the pole: CDT in the best-fit plane
 		recordUnmeshedWallWrap(m, s, outer3D, len(holes3D))
 		return m
 	}
-	return fullDomainGridMesh(s, q) // doubly-periodic / aperiodic seam face we can't reduce
+	// A doubly-periodic or aperiodic seam face no mesher reduced. The grid covers the whole surface, so
+	// a TRIMMED face meshed this way carries material it does not have and omits its own boundary; the
+	// degradation is recorded rather than silent (recordIgnoredTrim).
+	return recordIgnoredTrim(fullDomainGridMesh(s, q), s, len(f.Loops()))
 }

@@ -84,7 +84,14 @@ var kernelNetDeltaPin = map[string]int{
 	// leave a narrow neck so the bespoke Steinmetz constructor could take it below the snap ceiling and
 	// the faceted route above; both destinations are gone and the general trace resolves the neck
 	// itself, so the whole band is ordinary geometry with nothing to report.
-	"fallback-sites": 24,
+	// 24 → 25 (2026-09-08, ADR-0061 stage 5): CodeTrimIgnoredFullDomain. A RISE that names a
+	// degradation nothing reported before, which is what the ratchet exists to allow. The curved-face
+	// router ends at the surface's WHOLE parametric domain for a boundary no wrapping mesher
+	// recognised; on a TRIMMED face that mesh carries material the face does not have and omits the
+	// face's own boundary, and it shipped silently. The stage-5 booleans — a ring meeting a ball, a
+	// ring bored by a coaxial shaft — are exact B-reps whose meshes land there, so what was an
+	// invisible wrong picture is now a reported one. The degradation is the same; it is now named.
+	"fallback-sites": 25,
 }
 
 func TestKernelNetDelta(t *testing.T) {

@@ -2249,3 +2249,41 @@ Every axial drill through a ring now comes out as two faces in one closed shell,
 operations satisfy Requicha against the operands' own analytic volumes.
 `TestEverySectionCurveReportsItsIncidence` walks every section form the intersector can return and fails
 when the next one arrives without its conditions.
+
+## What stage 5 handed downstream: the mesh (2026-09-08)
+
+The bodies stage 5 made buildable are exact B-reps, certified against independent oracles. Their MESHES
+are not. Measured at default quality, against each body's analytic volume:
+
+| body | free mesh edges | mesh volume | analytic | error |
+| --- | --- | --- | --- | --- |
+| bare torus (control) | 0 | 219.23 | 222.07 | 1.3% (chord) |
+| drilled plate (control) | 0 | 175.03 | 174.87 | 0.1% |
+| ring − axial drill | 64 | 215.61 | 216.26 | 0.3% |
+| ring ∪ ball | 0 | 252.20 | 232.34 | 8.6% |
+| ring − ball | 64 | 211.12 | 198.20 | 6.5% |
+| **ring ∩ ball** | 64 | **227.33** | **23.87** | **852%** |
+| rod ∪ ball (folded window) | 28 | 11.87 | 13.08 | 9.2% |
+| ring − coaxial shaft | 64 | 144.78 | 203.59 | 29% |
+
+The lens says what is happening: the curved-face router ends at the surface's WHOLE parametric domain
+for a boundary no wrapping mesher recognised, and the ring∩ball lens is a torus band wrapping the tube
+between two section curves that none of them charts. So the mesh is the entire torus — 227 mm³ where the
+face carries 24 — and the face's own boundary is absent, which is where the free edges come from.
+
+This is not a regression: no boolean could build these pairs before, and the tessellator's limitation
+for torus trims is long-standing (its meshers are an eleven-entry first-fit ladder keyed on the shape a
+face's boundary makes, which is the last such ladder in the kernel). But it shipped SILENTLY, and the
+ground rules do not allow that: "a fallback, approximation, or dropped element is a `diag.Defect` that
+reaches feature health, the API and the UI". `CodeTrimIgnoredFullDomain` now says it, on exactly the
+faces whose trim was discarded and on no untrimmed one — a bare torus IS its whole domain and the same
+grid is right there. `fallback-sites` rises 24 → 25 for it, which is what the ratchet exists to allow.
+
+**A chart-driven mesher is the fix, and it has two constraints that a first attempt taught.** Meshing
+each face from the `(u, v)` contours the boolean already records on it (ADR-0063) gets the REGION right
+— the lens came back at 23.15 against 23.87, a 3% chord deficit like any other face. But it broke
+watertightness everywhere it touched, because a face's boundary must be discretised identically on both
+sides of every shared edge, and the chart's own sampling is not the tessellated edge's. So the mesher
+has to take the REGION from the chart and the POINTS from the shared edges — mapping each tessellated
+boundary point into the chart's branch rather than re-sampling the contour. That is the next slice, and
+it is what retires the ladder.
