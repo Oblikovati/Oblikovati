@@ -3014,3 +3014,45 @@ chart-driven mesher this face wants is not reachable for a singly-periodic surfa
 to the chart mesher's own router. The count is pinned in
 `TestCocylindricalCapOnWallIsOneAnalyticFace` with that diagnosis beside it, so landing the router's
 fix trips the row and converts it, exactly as the face count was pinned before this slice.
+
+#### Review round 1: the merge's silent exits, and the body's own mesh post-condition (2026-09-08, later)
+
+Five things the slice above got wrong. Four are the same mistake in different clothes — a degradation
+that was measured and written down here instead of being REPORTED where it happens.
+
+**The mesh tear shipped unreported.** The section above pinned the merged band's 4 free edges in a
+corpus row and named the router defect that causes them, and stopped there. But the ground rule is not
+"write it down": a fallback, approximation or dropped element is a `diag.Defect` that reaches the
+result. This is the #2167 piston head, so what shipped was one rendering defect traded for another
+while the B-rep row went green. `TessellateBody` now carries its own post-condition —
+`recordMeshTear`: when the B-REP says the body is a closed solid and the welded mesh has free edges,
+`CodeMeshNotWatertight` records the count and the reference keys of the faces the tear touches. The
+closure test reads the B-rep, never the mesh, so it cannot fire on a body that is genuinely open, and
+a watertight body records nothing (both are rows). `mergedBodyMesh` keeps each face's triangle span so
+the defect can name faces at all; `WeldedFreeEdgeCount` is now the SIZE of what `tornMeshEdges` finds,
+so the count and the post-condition can never disagree about what a free edge is.
+`fallback-sites` rises 27 → 28 for it — a RISE that names a degradation nothing reported before.
+
+**Three merge exits shipped a silent two-face body.** `sharedEdgeTwins`' ambiguity case, and the walk
+that does not close, both returned a bare `false` and fell out of `mergeOnSharedBoundary` with nothing
+said — the same shape as the mesh tear, one layer up. Every exit now carries a `mergeDecline` naming
+its reason, and `recordMergeDecline` reports all but ONE: two faces that share no boundary are simply
+two faces, and a diagnostic that fires on the ordinary case is noise. The reasons are the ambiguous
+pairing, the open walk, the undecided chart and the mixed complement below.
+
+**The decline code was a promise, not a guard.** Its test recorded the constant into a throwaway
+recorder and asserted it came back, which proves nothing about the merge. Three rows now drive real
+pairs to real refusals: a cylinder wall against a face carrying one edge on that wall's own seam (the
+wall walks its seam twice, so both traversals run with that edge and the pairing cannot choose), a
+torus band whose fused loops bound two regions, and a complement merged with a patch.
+
+**`outerless` was inherited, not decided.** The merged face took a's complement flag. That flag is
+precisely the datum ADR-0063 says a face's rings do NOT determine, so inheriting it decides the merged
+face's outer loop by which operand happened to be indexed first. A pair that disagrees on it is now
+refused by name (`declineMixedComplement`).
+
+**A test with a false premise.** `TestWeldedCutsDropsAStationNamedTwice` offset its second station by
+`1e-16`, which is bit-identical to the first in float64, so it exercised the exact duplicate test and
+never the weld it was written for. It now uses a station half a weld away — asserting first that the
+two differ bitwise — and a third eight welds away that must survive, so the dedup cannot be a blanket
+collapse.
