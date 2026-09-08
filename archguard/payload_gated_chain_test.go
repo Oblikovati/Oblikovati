@@ -45,9 +45,14 @@ var payloadGatedChains = map[string]string{
 	// DEBT. The B-spline face router: three shapes tried in order, each gated on a loop shape no other
 	// claims, but nothing proves it. #3410 gives it a classification and a disjointness proof.
 	"kernel/ops/tessellate/tessellate_trim.go:splineFaceMesh": "#3410",
-	// DEBT. The seam-crossing router. Every face still reaching it has the chart mesher decline
-	// (measured 182 of 182), so it is the chartless-face path; its rungs go when the chart mesher can
-	// take them. #3411.
+	// DEBT. The seam-crossing router. It is NOT the chartless-face path, which is what this entry used
+	// to say ("measured 182 of 182"): re-measured over `go test ./kernel/...` on 2026-09-08 (final fix
+	// wave, finding 8), 196 faces reach it — 185 take one of its five bespoke rungs and every one of
+	// those has the chart mesher DECLINE (closedDomainMesh 127, closedBandLoftMesh 39,
+	// HoledConicWallMesh 9, saddleBandLoftMesh 8, unequalRimBandMesh 2; all record no chart), 7
+	// uncharted faces fall to chartedTrimMesh's REPORTED full domain, and 4 charted singly-periodic
+	// cylinder bands reach singlyPeriodicWrapMesh, where the chart mesher ACCEPTS them. The rungs go
+	// when the chart mesher can take the 185. #3411.
 	"kernel/ops/tessellate/tessellate_trim.go:meshSeamCrossingFace": "#3411",
 }
 

@@ -4239,3 +4239,27 @@ the floor decides no corpus mesh today; it stays because the failure it guards (
 derails segment recovery) is real and its cost at 0.3 is nothing. The annotation on
 `chartBoundaryClearance` said "swept 0.125…4" against a table of 0.50…3.00; it now says what the table
 shows. G17 is closed; no pin moved.
+
+### Final fix wave, finding 8 — the seam-crossing router re-measured (2026-09-08)
+
+The `payloadGatedChains` entry for `meshSeamCrossingFace` said "every face still reaching it has the
+chart mesher decline (measured 182 of 182), so it is the chartless-face path". That stopped being true
+when `singlyPeriodicWrapMesh` began routing charted singly-periodic bands through it and the chart
+mesher accepting them. Re-measured by instrumenting the router's exits over `go test -count=1
+./kernel/...` (2 m 07 s, every package green; the instrumentation was reverted): 196 faces reach it.
+
+| exit | faces | chart mesher's verdict |
+| --- | --- | --- |
+| `closedDomainMesh` (cylinder 117, cone 8, offset 2) | 127 | declines (no chart) |
+| `closedBandLoftMesh` (torus) | 39 | declines (no chart) |
+| `HoledConicWallMesh` | 9 | declines (no chart) |
+| `saddleBandLoftMesh` | 8 | declines (no chart) |
+| `unequalRimBandMesh` | 2 | declines (no chart) |
+| `chartedTrimMesh` (torus, uncharted) | 7 | declines → reported full domain |
+| `singlyPeriodicWrapMesh` (cylinder, charted) | 4 | **accepts** |
+
+So the honest statement is: every face taking one of the five bespoke rungs (185 of 185) has the chart
+mesher decline and records no chart, while the router also carries four charted bands the chart mesher
+serves and seven uncharted tori that fall to the reported full domain. The entry is reworded to that;
+it stays DEBT under #3411 and the registry may still only shrink. The earlier "133 of 133 / 182 of 182"
+figures in the classification section above were true when measured and are superseded by this table.
