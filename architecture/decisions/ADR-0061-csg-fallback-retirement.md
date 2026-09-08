@@ -2337,3 +2337,69 @@ fingerprints are rebaselined with that measurement beside them.
 What is left on the full-domain path is a band wrapping the ring's AZIMUTH rather than its tube (a
 coaxial shaft bored through a ring), and the sphere and cylinder faces of the folded-window family.
 `CodeTrimIgnoredFullDomain` reports each of them.
+
+### The chart-driven mesher: region from the chart, points from the shared edges (2026-09-08)
+
+The two constraints the first attempt taught are met by keeping them in different places. The REGION is
+the face's carried chart (ADR-0063) — the closed `(u, v)` contours the boolean recorded, which are the
+only record of which of the two regions a pair of wrapping rims bounds. The mesh vertices ON the
+boundary are the SHARED EDGE discretisations and nothing else, so a face's boundary is identical on both
+sides of every edge it shares. `chartFaceMesh` (`kernel/ops/tessellate/chart_face_*.go`) is that mesher,
+and it takes any charted face whose surface wraps in one direction or both.
+
+It works in the COVERING space rather than in a cut branch, and that is the whole of why it is general:
+the chart's contours already close there, so no seam is cut, no keyhole is assembled and no boundary
+point is invented. The construction is the one the periodic B-spline cover already used (#1510): lift
+each boundary loop onto the chart's branch, replicate the boundary and an interior grid one period
+either way, triangulate the lot ONCE with the boundary segments as constraints, and keep each triangle
+whose centroid lies in the chart's own half-open window and on its material side. Period-shifted copies
+of a boundary point are the SAME 3D point, so welding closes every seam; a sphere pole's row welds to
+one vertex and its degenerate triangles drop out.
+
+| body | before | after |
+| --- | --- | --- |
+| RS− ring − coaxial shaft | 144.78 vs 203.59 (29% low), 64 free edges, trim reported | **201.18 (1.2%), watertight, nothing reported** |
+| RD− ring − axial drill | whole torus grid, SILENTLY, 64 free edges | **213.47 vs 216.26 (1.3%), watertight** |
+| RODB∪ rod ∪ ball (sphere face) | whole ball, 28 free edges, trim reported | **watertight, nothing reported** (11.94 vs 13.08) |
+| torus − axis-parallel half space | 201.07 vs 203.90 (1.4%), by the window mesher | **201.63 (1.1%), by the chart** |
+| RING / bare sphere / drilled plate | unchanged controls | unchanged |
+
+**Deleted.** `torus_complement_mesh.go` — the genus-1 torus complement's window-and-patch construction,
+which charted the torus on a window centred on ONE oval, filled the window minus the oval with a local
+patch, and fell to the full torus grid, silently, for a second window. It is exactly a charted outerless
+face, and the measurement above is the proof the general mesher reproduces it. The router's
+`s.(geom.Torus)` went with it: an outerless face on ANY periodic surface is meshed from what the face
+RECORDS, not from what its surface is. `type-assertions` 692 → 691, `geomSwitchDebt[kernel/ops/tessellate]`
+53 → 52; `fallback-sites` unmoved, because a face that carries no chart still reaches the reporter.
+
+**Three things had to be right, and each was wrong first.**
+
+- **A wrapping region's chart arrives SPLIT at the arrangement's own seam.** The bored ring records its
+  torus face as two disjoint POSITIVE rectangles, `v ∈ [3.98, 2π]` and `v ∈ [0, 2.30]`, which are one
+  band through the v seam. Even-odd over all contours together reads it correctly; reading the first as
+  an outer and the second as its hole inverts the face.
+- **An even-odd count ON a border answers by which side the ray was cast from.** A sphere's `v = +π/2`
+  pole row read OUTSIDE while `v = −π/2` read inside, and the cap around the north pole came back
+  missing — 32 free edges on the rod ∪ ball sphere. A station at a bounded axis's end asks half a grid
+  gap inward instead, which is the cell it bounds and not a tolerance.
+- **Between the chart's fine sampling of a boundary curve and the mesh's own coarse chord lies a band
+  where the chart does not describe the mesh's boundary at all.** The chart calls a sliver outside the
+  chord "inside the hole", the triangles there are dropped, and the rim detours around the gap through
+  interior nodes the neighbour face has never heard of — 32 rim edges where the shared oval has 28.
+  Keeping every interior node half a chord clear of the boundary puts that band inside the first
+  triangle off the rim, whose centroid is then a third of a chord away.
+
+A fourth was a limitation rather than a defect: a STRAIGHT axis (a cylinder or cone's height) needs no
+chord subdivision, so the adaptive breakpoints are its two ends and the covering gets no interior row at
+all. The triangulation then reaches right across the face for its diagonals — measured on a windowed rod
+wall, triangles whose planes passed within 0.1 of the axis and a volume integral of 1.00 where 8.15 is
+right. The station count is floored at the package's own `minInteriorCells`, which is the floor
+`adaptiveStep` already applies to every step for the same reason.
+
+**What it does not reach yet, measured.** The folded-window family's rod WALL is claimed by
+`specialCurvedMeshers` before the router ever gets to the chart (`twoRimHoledBandMesh`, entry 9 of the
+last first-fit ladder in the kernel). It meshes 24.47 mm² of wall area with triangles whose planes pass
+as close as 0.5 to the axis, so the wall integrates 7.19 where 8.26 is right, and rod ∪ ball and
+rod − ball stay 8.7% and 9.0% low. Driving that face through the chart mesher instead measures **1.44%
+and 1.43%** — but it needs `twoRimHoledBandMesh`, `HoledConicWallMesh` and `saddleBandLoftMesh` retired
+together, which is a slice of its own and the one that finally deletes the ladder.
