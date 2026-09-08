@@ -286,3 +286,38 @@ func TestPairUVWallImprintsWritesBothSides(t *testing.T) {
 		t.Error("the uv face's imprint curve is not the wall's own: the two sides would split differently")
 	}
 }
+
+// TestFaceLoopBoxBoundsAClosedNonConicLoop: a face bounded by ONE closed section whose curve kind has
+// no closed-form axial extent must still measure its own scale. Its two loop ends are the same point,
+// so an endpoint-only box is a POINT, and geom.ResolutionForBox then hands the face the model-size
+// floor — a 1e-15 stitch weld grid, below the rounding of the face's own coordinates. Two readings of
+// the torus figure-eight's shared pinch point then stayed unmerged wherever they were not bit-identical
+// and the seam tore open (CI run 34280554924 macos-latest, ADR-0061).
+func TestFaceLoopBoxBoundsAClosedNonConicLoop(t *testing.T) {
+	t.Parallel()
+	ring, err := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lid, err := geom.NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	curves, ok := geom.IntersectSurfacesAnalytic(ring, lid, geom.ResolutionForSize(20))
+	if !ok || len(curves) == 0 {
+		t.Fatalf("torus∩plane at the saddle: ok=%v n=%d", ok, len(curves))
+	}
+	lobe := curves[0]
+	lo, hi := lobe.Domain()
+	if _, closedForm := geom.CurveBox(lobe, lo, hi); closedForm {
+		t.Skipf("%T now has a closed-form extent; this row needs another curve kind", lobe)
+	}
+	f := curvedFace{surface: lid, loops: []curvedLoop{{edges: []loopEdge{{curve: lobe, t0: lo, t1: hi}}}}}
+	box := faceLoopBox(f)
+	if size := float64(box.Diagonal().Length()); size < 1 {
+		t.Fatalf("faceLoopBox of a lobe of a torus of major radius 5 has diagonal %g; it is units across", size)
+	}
+	if grid := geom.ResolutionForBox(box).Stitch(); grid < 1e-9 {
+		t.Fatalf("the face's stitch weld grid is %g — the model-size floor, not the face's own scale", grid)
+	}
+}

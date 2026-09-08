@@ -371,18 +371,21 @@ func conicCrossesFaceBoundary(pc planeConic, f curvedFace) (crosses, ok bool) {
 // faceLoopBox is a face's exact boundary bounding box with NO cull pad — the uv bucket's box
 // convention (partitionFaces takes it from the topo face's range box, which is unpadded too).
 //
-// It bounds each edge over its OWN span (geom.CurveBox), not only the vertices the loop chains: a face
-// bounded by one closed circle has both ends at the same seam point, and a vertex-only box degenerates
-// to that point. Every caller derives a Resolution from this box, so the degenerate box handed the
-// whole face the model-size floor as its scale (ADR-0042, ADR-0061 stage 4).
+// It bounds each edge over its OWN span (geom.CurveSpanBox), not only the vertices the loop chains: a
+// face bounded by one closed circle has both ends at the same seam point, and a vertex-only box
+// degenerates to that point. Every caller derives a Resolution from this box, so the degenerate box
+// handed the whole face the model-size floor as its scale (ADR-0042, ADR-0061 stage 4).
+//
+// CurveSpanBox, not CurveBox: a curve kind with no closed-form axial extent — the SpiricArc the torus
+// figure-eight's lobes are bounded by — left the box at the endpoints, which for those CLOSED lobes is
+// one point, so the face measured its own scale as the 1e-9 model-size floor and the stitch welded on
+// a 1e-15 grid (CI run 34280554924 macos-latest).
 func faceLoopBox(f curvedFace) math.Box {
 	box := math.EmptyBox()
 	for _, l := range f.loops {
 		for _, e := range l.edges {
 			box = box.ExtendPoint(e.start()).ExtendPoint(e.end())
-			if eb, ok := geom.CurveBox(e.curve, e.t0, e.t1); ok {
-				box = box.Union(eb)
-			}
+			box = box.Union(geom.CurveSpanBox(e.curve, e.t0, e.t1))
 		}
 	}
 	return box

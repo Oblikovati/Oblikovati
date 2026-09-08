@@ -69,3 +69,62 @@ func TestCurveBoxLineSegment(t *testing.T) {
 		t.Fatalf("segment box = %v, want %v", box, want)
 	}
 }
+
+// obliqueFigureEightLobe is one lobe of a tilted torus cut by z=1 — the section at the saddle, whose
+// curve kind (a spiric) has no closed-form axial extent, so CurveBox declines it.
+func obliqueFigureEightLobe(t *testing.T) geom.Curve3 {
+	t.Helper()
+	ring, err := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2)
+	if err != nil {
+		t.Fatalf("NewTorus: %v", err)
+	}
+	lid, err := geom.NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1))
+	if err != nil {
+		t.Fatalf("NewPlane: %v", err)
+	}
+	curves, ok := geom.IntersectSurfacesAnalytic(ring, lid, geom.ResolutionForSize(20))
+	if !ok || len(curves) == 0 {
+		t.Fatalf("torus∩plane at the saddle: ok=%v n=%d", ok, len(curves))
+	}
+	return curves[0]
+}
+
+// CurveSpanBox bounds a curve whose kind has no closed-form extent, where CurveBox declines. A face
+// bounded by ONE such closed curve otherwise measured its own scale as a point and took the model-size
+// floor, which put its stitch weld grid at 1e-15 — below the rounding of its own coordinates
+// (CI run 34280554924 macos-latest).
+func TestCurveSpanBoxBoundsACurveWithNoClosedFormExtent(t *testing.T) {
+	t.Parallel()
+	lobe := obliqueFigureEightLobe(t)
+	lo, hi := lobe.Domain()
+	if _, ok := geom.CurveBox(lobe, lo, hi); ok {
+		t.Skipf("%T now has a closed-form extent; this row needs another curve kind", lobe)
+	}
+	box := geom.CurveSpanBox(lobe, lo, hi)
+	if float64(box.Diagonal().Length()) < 1 {
+		t.Fatalf("%T span box = %v (diagonal %g): a lobe of a torus of major radius 5 is units across",
+			lobe, box, float64(box.Diagonal().Length()))
+	}
+	for i := range 17 {
+		p := lobe.PointAt(lo + (hi-lo)*float64(i)/16)
+		if !box.Contains(p) {
+			t.Fatalf("%T span box %v misses its own point %v", lobe, box, p)
+		}
+	}
+}
+
+// CurveSpanBox is CurveBox where the closed form applies: same box, so nothing a conic bounds moves.
+func TestCurveSpanBoxIsCurveBoxWhereTheClosedFormApplies(t *testing.T) {
+	t.Parallel()
+	c, err := geom.NewCircle(math.P3(1, 0, 5), math.V3(0, 0, 1), 2)
+	if err != nil {
+		t.Fatalf("NewCircle: %v", err)
+	}
+	want, ok := geom.CurveBox(c, 0, 1)
+	if !ok {
+		t.Fatalf("CurveBox declined a circle")
+	}
+	if got := geom.CurveSpanBox(c, 0, 1); got != want {
+		t.Fatalf("CurveSpanBox = %v, want CurveBox's %v", got, want)
+	}
+}
