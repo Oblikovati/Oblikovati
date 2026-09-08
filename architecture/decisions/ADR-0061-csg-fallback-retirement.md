@@ -4176,3 +4176,22 @@ reads 4 constants / 4 cases / 3 registered, and the pin reports `recognizers: 12
 equality is the guard, not the count: the wedge gate turned `wedgeBandTrimOf` into a dispatcher (its own
 verdict is a literal after guards), so that event alone would leave the COUNT at 12 while the names
 differ. `recognizers` stays 12; nothing in the kernel changed.
+
+### Final fix wave, finding 2 — a tear is worded by its degree; G10 corrected (2026-09-08)
+
+`CodeMeshNotWatertight` reported every edge not shared by exactly two triangles as "free edge(s) … a
+pair of neighbouring faces did not discretise the boundary they share the same way", and `meshTear`
+carried each edge's degree without the report ever reading it. A degree-1 edge IS that (a crack); a
+degree-3-or-more edge is the opposite defect — a doubled surface — and its only live firing, FIG8− at
+`DefaultQuality`, was exactly that misdescribed. The report now partitions the tears by degree
+(`partitionTears`) and words each class on its own (`tearDetail`): cracks name the shared-boundary
+disagreement, over-merges name a coincident or twice-meshed triangle, and a mesh carrying both says
+"torn AND doubled". `TestADoubledMeshOfAClosedSolidIsReportedAsOverMerged` duplicates one triangle of a
+box face and asserts the detail names an over-merge and not a crack; the crack row asserts the
+converse.
+
+**Correction to G10.** G10 reads "The FIG8 cut piece meshes with 2 free edges at `DefaultQuality` …
+between a planar lid and the torus face at the lemniscate pinch" and the close-out table calls it a
+crack. The two edges were of degree FOUR, `on=[lid lid torus torus]`: the chart mesher's boundary-only
+corner triangle at the pinch coincided with the lid's tip triangle. It was a doubled surface, not a
+crack, and it is gone (finding 1). G10 is closed.

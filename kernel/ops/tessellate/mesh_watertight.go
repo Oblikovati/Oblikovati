@@ -38,8 +38,11 @@ import (
 
 // CodeMeshNotWatertight marks a body mesh that is NOT a closed surface although the B-rep it was built
 // from IS a closed solid. Everything read from that mesh downstream — the rendered surface, a mesh
-// export, a volume integrated from facets — is a torn shell, and the faces named in the detail are the
-// ones whose shared boundary did not discretise the same way on both sides.
+// export, a volume integrated from facets — is wrong there, and the detail says HOW by the edges'
+// degrees: an edge used by ONE triangle is a crack (two neighbours discretised their shared boundary
+// differently), one used by THREE or more is a doubled surface (a face emitted a triangle that coincides
+// with a neighbour's, or two faces meshed one region). The two are different defects in different
+// meshers, and one wording for both sent the reader to the wrong one (final fix wave, finding 2).
 const CodeMeshNotWatertight diag.Code = "tessellate.mesh-not-watertight"
 
 // recordBodyMeshTear is the post-condition itself: it records the tear on the face mesh of the
@@ -54,9 +57,40 @@ func recordBodyMeshTear(b *topo.Body, faces []*topo.Face, fm []*Mesh) {
 		return
 	}
 	fm[on].Diagnose(diag.Diagnostic{Code: CodeMeshNotWatertight, Severity: diag.Defect,
-		Detail: fmt.Sprintf("the B-rep is a closed solid but its mesh has %d free edge(s), on face(s) "+
-			"%s: a pair of neighbouring faces did not discretise the boundary they share the same way, "+
-			"so the meshed surface is torn there", len(torn), tornFaceNames(faces, torn))})
+		Detail: tearDetail(faces, torn)})
+}
+
+// tearDetail words the tear by the class its edges' degrees put it in.
+func tearDetail(faces []*topo.Face, torn []meshTear) string {
+	cracks, doubled := partitionTears(torn)
+	names := tornFaceNames(faces, torn)
+	switch {
+	case len(doubled) == 0:
+		return fmt.Sprintf("the B-rep is a closed solid but its mesh has %d free edge(s), each used by one "+
+			"triangle, on face(s) %s: a pair of neighbouring faces did not discretise the boundary they "+
+			"share the same way, so the meshed surface is torn there", len(cracks), names)
+	case len(cracks) == 0:
+		return fmt.Sprintf("the B-rep is a closed solid but its mesh has %d over-merged edge(s), each used "+
+			"by three or more triangles, on face(s) %s: a face emitted a triangle that coincides with a "+
+			"neighbour's, or two faces meshed one region, so the meshed surface is doubled there",
+			len(doubled), names)
+	}
+	return fmt.Sprintf("the B-rep is a closed solid but its mesh has %d free edge(s) (one triangle each) "+
+		"and %d over-merged edge(s) (three or more), on face(s) %s: the meshed surface is torn AND "+
+		"doubled there", len(cracks), len(doubled), names)
+}
+
+// partitionTears splits the tears by degree: one use is a crack, three or more an over-merge. Zero
+// cannot occur (an edge is only recorded by a triangle that uses it) and two is not a tear.
+func partitionTears(torn []meshTear) (cracks, doubled []meshTear) {
+	for _, tear := range torn {
+		if len(tear.on) == 1 {
+			cracks = append(cracks, tear)
+			continue
+		}
+		doubled = append(doubled, tear)
+	}
+	return cracks, doubled
 }
 
 // firstTornMesh is the lowest index a tear touches that has a mesh to record on. ok=false when nothing

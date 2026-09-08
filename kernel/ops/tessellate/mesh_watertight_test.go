@@ -42,6 +42,52 @@ func TestATornMeshOfAClosedSolidIsReported(t *testing.T) {
 	fm[0].Diagnostics = nil
 	recordBodyMeshTear(body, faces, fm)
 	assertTearReported(t, fm[0], string(faces[0].ReferenceKey()))
+	assertTearDetailSays(t, fm[0], "free edge(s), each used by one triangle", "over-merged")
+}
+
+// TestADoubledMeshOfAClosedSolidIsReportedAsOverMerged is the other class: a face that emits one of its
+// triangles TWICE leaves every edge of that triangle used by three triangles. That is not a crack — no
+// edge is missing a neighbour — and the detail must say so, because the mesher to look at is the one
+// that doubled a surface, not the pair that disagreed on a boundary (final fix wave, finding 2).
+func TestADoubledMeshOfAClosedSolidIsReportedAsOverMerged(t *testing.T) {
+	t.Parallel()
+	body := subd.ToBody(subd.Box(2, 2, 2), "box")
+	faces, fm := TessellateBodyFaces(body, DefaultQuality())
+	fm[0].Indices = append(fm[0].Indices, fm[0].Indices[:3]...) // the first triangle, emitted twice
+	fm[0].Diagnostics = nil
+	recordBodyMeshTear(body, faces, fm)
+	assertTearReported(t, fm[0], string(faces[0].ReferenceKey()))
+	assertTearDetailSays(t, fm[0], "over-merged edge(s), each used by three or more triangles", "torn there")
+}
+
+// TestPartitionTearsSplitsByDegree: one use is a crack, three or more an over-merge, and the two classes
+// are counted apart.
+func TestPartitionTearsSplitsByDegree(t *testing.T) {
+	t.Parallel()
+	torn := []meshTear{{on: []int{0}}, {on: []int{0, 0, 1}}, {on: []int{1}}, {on: []int{0, 1, 1, 1}}}
+	cracks, doubled := partitionTears(torn)
+	if len(cracks) != 2 || len(doubled) != 2 {
+		t.Errorf("partitionTears gave %d cracks and %d over-merges, want 2 and 2", len(cracks), len(doubled))
+	}
+	if !strings.Contains(tearDetail(nil, torn), "torn AND doubled") {
+		t.Errorf("a mesh with both classes must say so; got %q", tearDetail(nil, torn))
+	}
+}
+
+// assertTearDetailSays checks the recorded detail names its class and not the other one.
+func assertTearDetailSays(t *testing.T, m *Mesh, wants, refuses string) {
+	t.Helper()
+	for _, d := range m.Diagnostics {
+		if d.Code != CodeMeshNotWatertight {
+			continue
+		}
+		if !strings.Contains(d.Detail, wants) {
+			t.Errorf("the tear detail does not name its class (%q): %s", wants, d.Detail)
+		}
+		if strings.Contains(d.Detail, refuses) {
+			t.Errorf("the tear detail names the OTHER class (%q): %s", refuses, d.Detail)
+		}
+	}
 }
 
 // TestATearReachesTheWholeBodyMesh: the tear is recorded on a FACE mesh, and MergeMesh carries face
