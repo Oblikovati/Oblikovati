@@ -35,8 +35,8 @@ import (
 // Example: a ball with an axle bored right through keeps a belt whose area is exactly 2πR·h, where h
 // is the axial distance between the two rim planes.
 func SphereZoneBandFan(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
-	sph, ok := s.(geom.Sphere)
-	if !ok {
+	sph, isSphere := sphereOf(s)
+	if !isSphere {
 		return nil, false
 	}
 	near, far, fr, ok := zoneBandRims(f, sph, q)

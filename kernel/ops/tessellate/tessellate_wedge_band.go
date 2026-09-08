@@ -29,11 +29,7 @@ import (
 // ok=false for any face that is not exactly that shape (holes, a seam wrap, a curved rail, a
 // densified rail, iso ends — all fall through to the shipped paths, byte-identical).
 func wedgeBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
-	cyl, isCyl := s.(geom.Cylinder)
-	if !isCyl || len(f.Loops()) != 1 {
-		return nil, false
-	}
-	ends, ok := wedgeBandEndChains(f, cyl, q)
+	ends, ok := wedgeBandEndChains(f, s, q)
 	if !ok {
 		return nil, false
 	}
@@ -55,8 +51,9 @@ type wedgeEndChain struct {
 // axis-parallel RAIL edges that discretize to their endpoints, separating exactly 2 maximal end-chain
 // runs (a run may be several edges — a miter seam stored as chord segments), each u-monotone, at
 // least one oblique (non-iso in v) — all spanning less than a half turn. ok=false otherwise.
-func wedgeBandEndChains(f *topo.Face, cyl geom.Cylinder, q Quality) ([2]wedgeEndChain, bool) {
-	if len(seamEdgesOf(f)) != 0 {
+func wedgeBandEndChains(f *topo.Face, s geom.Surface, q Quality) ([2]wedgeEndChain, bool) {
+	cyl, isCyl := s.(geom.Cylinder)
+	if !isCyl || len(f.Loops()) != 1 || len(seamEdgesOf(f)) != 0 {
 		return [2]wedgeEndChain{}, false
 	}
 	runs, ok := wedgeChainRuns(f, cyl, q)

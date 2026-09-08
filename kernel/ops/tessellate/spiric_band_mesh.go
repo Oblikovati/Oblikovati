@@ -26,14 +26,11 @@ import (
 // different planes, and lofting between those sweeps the whole tube (measured on simple/W2, whose 0.418
 // band read 4.9146, 52% of the entire torus). Neither of those wraps, so neither reaches here.
 func spiricBandMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
-	t, isTorus := s.(geom.Torus)
-	if !isTorus {
-		return nil, false
-	}
-	first, second, ok := tubeWrappingEdges(f, t, q)
+	first, second, ok := tubeWrappingEdges(f, s, q)
 	if !ok {
 		return nil, false
 	}
+	t, _ := s.(geom.Torus) // tubeWrappingEdges only accepts a torus
 	m := &Mesh{}
 	lo := spiricRow(m, t, dropClosingDup(DiscretizeEdge(first, q)))
 	hi := spiricRow(m, t, dropClosingDup(DiscretizeEdge(second, q)))
@@ -55,7 +52,11 @@ func spiricBandMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 // tubeWrappingEdges returns the face's two edges that each go the whole way round the TUBE, which is
 // what makes the face a band the loft can sweep. ok=false for any other count: one such edge bounds a
 // cap, none bounds an ordinary patch, and three or more is not a band.
-func tubeWrappingEdges(f *topo.Face, t geom.Torus, q Quality) (first, second *topo.Edge, ok bool) {
+func tubeWrappingEdges(f *topo.Face, s geom.Surface, q Quality) (first, second *topo.Edge, ok bool) {
+	t, isTorus := s.(geom.Torus)
+	if !isTorus {
+		return nil, nil, false
+	}
 	var wrapping []*topo.Edge
 	for _, e := range f.Edges() {
 		if edgeWrapsTheTube(t, DiscretizeEdge(e, q)) {

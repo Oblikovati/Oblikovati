@@ -101,26 +101,40 @@ func meshMaxZ(m *Mesh) float64 {
 }
 
 // TestSeamedCapFanDeclinesForeignShapes drives the recognizer's decline arms directly: a shape it
-// does not understand must fall through to the existing paths, never mesh a wrong fan.
+// does not understand must fall through to the existing paths, never mesh a wrong fan. The recognizer
+// is one of the three RIM FORMS the sphere-cap arm of the curved-trim classification reads
+// (curved_trim_classify.go); it used to be a ladder rung of its own.
 func TestSeamedCapFanDeclinesForeignShapes(t *testing.T) {
 	t.Parallel()
 	const radius = 13.0
+	seamedRim := func(f *topo.Face) bool {
+		sph, isSphere := sphereOf(f.Geometry())
+		if !isSphere {
+			return false
+		}
+		_, _, ok := recognizeSeamedCapRim(f, sph, PropertyQuality())
+		return ok
+	}
 	t.Run("plain multi-arc rim without a seam declines (sphereCapFan's shape)", func(t *testing.T) {
 		face := coplanarRimFace(t, radius)
-		if _, ok := sphereSeamedCapFan(face, face.Geometry(), PropertyQuality()); ok {
-			t.Fatal("seamed-cap fan claimed a seamless coplanar rim — that is sphereCapFan's face")
+		if seamedRim(face) {
+			t.Fatal("seamed-cap fan claimed a seamless coplanar rim — that is the bare rim form's face")
 		}
 	})
 	t.Run("doubled edge that is not a pole seam declines (a slit, not a seam)", func(t *testing.T) {
 		face := slitRimFace(t, radius)
-		if _, ok := sphereSeamedCapFan(face, face.Geometry(), PropertyQuality()); ok {
+		if seamedRim(face) {
 			t.Fatal("seamed-cap fan claimed a doubled edge that never reaches the pole")
 		}
 	})
 	t.Run("the seamed hemisphere itself is claimed", func(t *testing.T) {
 		face := seamedHemisphereFace(t, radius, 6)
-		if _, ok := sphereSeamedCapFan(face, face.Geometry(), PropertyQuality()); !ok {
+		if !seamedRim(face) {
 			t.Fatal("seamed-cap fan declined the exact shape it exists for")
+		}
+		if form := classifySphereTrim(face, face.Geometry(), FaceOuterBoundary(face, PropertyQuality()),
+			faceHoleBoundaries(face, PropertyQuality()), PropertyQuality()); form != sphereTrimCap {
+			t.Fatalf("the seamed hemisphere classifies as sphere trim form %d, want the cap form", form)
 		}
 	})
 }

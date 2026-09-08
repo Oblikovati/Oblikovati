@@ -28,26 +28,6 @@ import (
 // (model-relative, ADR-0042). A rim vertex sits on the plane (distance 0); a pole is a full radius off.
 const zoneOffPlaneRelTol = 1e-3
 
-// sphereZoneCapFan meshes a sphere face whose outer boundary is one full-circle rim plus a meridian
-// seam to an enclosed POLE off the rim plane — the large zone one off-centre plane cuts from a sphere
-// (OCCT blend/simple J2: psphere -90..45, the kept part reaches the south pole). The fan is built on
-// the rim circle's exact normal and the pole vertex, so it sweeps the true zone where newellUnit is
-// biased. ok=false unless that exact shape holds, so the caller defers to spherePatchMesh.
-//
-// Example: a sphere cut by z=+35.36 (R=50) keeps the zone from the south pole up to that rim → a
-// watertight fan of area 2πR·h from rim to pole, not the small north cap capAxis would have meshed.
-func sphereZoneCapFan(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
-	sph, ok := s.(geom.Sphere)
-	if !ok || len(f.Loops()) != 1 {
-		return nil, false // a holed face is not a pole-reaching zone; the fan would pave over the hole
-	}
-	rim, axis, ok := zoneRimAxis(f, sph, q)
-	if !ok || len(rim) < 3 {
-		return nil, false
-	}
-	return buildSphereCap(sph, rim, axis, q), true
-}
-
 // zoneRimAxis returns the rim's shared discretization (fan row 0) and the unit cap axis (centre →
 // enclosed pole) for a pole-reaching sphere zone, or ok=false when the outer loop is not one
 // full-circle rim plus a single off-plane pole vertex.

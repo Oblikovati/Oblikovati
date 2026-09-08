@@ -25,22 +25,6 @@ import (
 // was asked for. The seam edge borders only this face (both uses are this loop's), so the fan's
 // seam-free interior leaves no weld counterpart dangling.
 
-// sphereSeamedCapFan meshes a sphere face whose outer loop is a coplanar rim chain plus one doubled
-// seam edge running to an enclosed pole, by fanning latitude rings from the rim (kept exactly — the
-// shared edge discretization every neighbour welds to) to that pole. ok=false for any other shape,
-// so every existing sphere path is byte-identical.
-func sphereSeamedCapFan(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
-	sph, ok := s.(geom.Sphere)
-	if !ok || len(f.Loops()) != 1 {
-		return nil, false
-	}
-	rim, axis, ok := recognizeSeamedCapRim(f, sph, q)
-	if !ok {
-		return nil, false
-	}
-	return buildSphereCap(sph, rim, axis, q), true
-}
-
 // recognizeSeamedCapRim runs the recognizer chain: exactly one doubled (opposite-sense) loop edge —
 // the seam — whose far vertex sits on the cap pole, with the remaining uses chaining into a closed
 // coplanar rim ring validated through the SAME capAxis the plain cap uses. ok=false on any miss, so

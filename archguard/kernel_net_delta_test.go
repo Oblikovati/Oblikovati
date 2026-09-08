@@ -27,7 +27,7 @@ import (
 //
 //	tolerance constants  toleranceDebt      (TestNoUnjustifiedAbsoluteEpsilons, #2189)
 //	type assertions      geomSwitchDebt     (TestGeometryKindSwitchesLiveInGeom, #2188)
-//	recognizers          the dispatch tables TestNoFirstFitDispatchLadders pins (#2186)
+//	recognizers          the classification arms (and any surviving dispatch table) below
 //	fallback sites       diag.Code declarations under kernel/
 //
 // Fallback sites are counted as declared diag.Code kinds because the rules require a degradation
@@ -65,7 +65,9 @@ var kernelNetDeltaPin = map[string]int{
 	// 692 → 691 (2026-09-08, ADR-0061 stage 5): a FALL — the curved-face router's `s.(geom.Torus)`
 	// went with torusComplementMesh. An outerless face on any periodic surface is now meshed from the
 	// chart it carries, so the router asks what the FACE records, not what its surface is.
-	"type-assertions": 691,
+	// 691 → 685 (2026-09-08, ADR-0061 stage 5): a FALL of 6 — the same six geometry-kind assertions
+	// the curved-trim classification collapsed, counted by the net-delta ratchet.
+	"type-assertions": 685,
 	// 37 → 11 (2026-09-07, ADR-0061 stage 4): a FALL of 26 — curvedExactPaths is DELETED. It was an
 	// ordered first-fit ladder of 26 bespoke recognizers tried before the general per-face pipeline,
 	// the shape the ground rules forbid ("dispatch is a classification that selects exactly one path"),
@@ -74,7 +76,12 @@ var kernelNetDeltaPin = map[string]int{
 	// junction, the coaxial ball and rod — now goes through brep's one dispatch. The 15 brep driver
 	// files behind them (~2700 lines) went with them, and every corpus row they carried was re-pointed
 	// at the general entry rather than deleted.
-	"recognizers": 11, // the tessellator's specialCurvedMeshers ladder, the last one left
+	// 11 → 8 (2026-09-08, ADR-0061 stage 5): a FALL of 3 — specialCurvedMeshers, the last first-fit
+	// ladder in the kernel, is replaced by classifyCurvedTrim, and three of its eleven entries were
+	// never separate recognizers at all: sphereCapFan, sphereZoneCapFan and sphereSeamedCapFan read
+	// three RIM FORMS into the same buildSphereCap, and notchedRimBandMesh and twoClosedRimBandMesh
+	// both delegated to saddleBandLoftMesh. They are one cap arm and one ruled-band arm now.
+	"recognizers": 8,
 	// 28 → 29 (2026-09-03, ADR-0061): CodeBooleanAnalyticInvalid. A RISE that is an improvement — the
 	// public curved-boolean entry had no Validate post-condition, so a recognizer returning a torn body
 	// shipped it silently; the degradation is now refused AND reported.
@@ -131,36 +138,80 @@ func TestKernelNetDelta(t *testing.T) {
 	}
 }
 
-// countRecognizers counts the entries of the ordered dispatch tables — each entry is one
-// analytic recognizer, and the count is what "generality over special cases" is measured by.
+// classificationArms are the CLASSIFICATIONS that replaced the deleted ladders: the file, and the
+// function whose switch names one special-case path per arm. A ladder's entries and a classification's
+// arms count the same thing — how many bespoke shapes the general pipeline has not yet absorbed — so
+// the recognizer number survives the shape change and stays comparable across it.
+var classificationArms = map[string]string{
+	// ADR-0061 stage 5 (#3409): the curved-face tessellator's surface-specific meshers.
+	"kernel/ops/tessellate/tessellate_trim_special.go": "specialCurvedMesh",
+}
+
+// countRecognizers counts the entries of the ordered dispatch tables plus the arms of the
+// classifications that replaced them — each is one analytic recognizer, and the count is what
+// "generality over special cases" is measured by.
 func countRecognizers(t *testing.T) int {
 	t.Helper()
-	fset := token.NewFileSet()
+	n := countLadderEntries(t) + countClassificationArms(t)
+	if n == 0 {
+		t.Fatal("counted no recognizers — the dispatch tables moved; update dispatchLadders/classificationArms")
+	}
+	return n
+}
+
+// countLadderEntries counts the []func entries of every registered first-fit ladder.
+func countLadderEntries(t *testing.T) int {
+	t.Helper()
 	n := 0
 	for file := range dispatchLadders {
-		f, err := parser.ParseFile(fset, filepath.Join("..", file), nil, 0)
-		if err != nil {
-			t.Fatalf("parsing %s: %v", file, err)
-		}
-		ast.Inspect(f, func(node ast.Node) bool {
+		ast.Inspect(parseKernelFile(t, file), func(node ast.Node) bool {
 			cl, ok := node.(*ast.CompositeLit)
 			if !ok {
 				return true
 			}
-			at, ok := cl.Type.(*ast.ArrayType)
-			if !ok || at.Len != nil {
-				return true
-			}
-			if _, isFunc := at.Elt.(*ast.FuncType); isFunc {
-				n += len(cl.Elts)
+			at, isSlice := cl.Type.(*ast.ArrayType)
+			if isSlice && at.Len == nil {
+				if _, isFunc := at.Elt.(*ast.FuncType); isFunc {
+					n += len(cl.Elts)
+				}
 			}
 			return true
 		})
 	}
-	if n == 0 {
-		t.Fatal("counted no recognizers — the dispatch tables moved; update dispatchLadders")
+	return n
+}
+
+// countClassificationArms counts the case clauses of each registered classification switch. A default
+// clause carries no expression and is not an arm — it is where the general pipeline takes the face.
+func countClassificationArms(t *testing.T) int {
+	t.Helper()
+	n := 0
+	for file, fn := range classificationArms {
+		ast.Inspect(parseKernelFile(t, file), func(node ast.Node) bool {
+			decl, ok := node.(*ast.FuncDecl)
+			if !ok || decl.Name.Name != fn {
+				return true
+			}
+			ast.Inspect(decl.Body, func(inner ast.Node) bool {
+				if cc, isCase := inner.(*ast.CaseClause); isCase {
+					n += len(cc.List)
+				}
+				return true
+			})
+			return false
+		})
 	}
 	return n
+}
+
+// parseKernelFile parses one file of the kernel module, failing the test rather than returning an error.
+func parseKernelFile(t *testing.T, file string) *ast.File {
+	t.Helper()
+	f, err := parser.ParseFile(token.NewFileSet(), filepath.Join("..", file), nil, 0)
+	if err != nil {
+		t.Fatalf("parsing %s: %v", file, err)
+	}
+	return f
 }
 
 // countDiagCodes counts the declared diag.Code kinds under kernel/: one per way the kernel can

@@ -57,7 +57,12 @@ var geomSwitchDebt = map[string]int{
 	// 53 → 52 (2026-09-08, ADR-0061): the torus-complement branch's `s.(geom.Torus)` is gone with
 	// torusComplementMesh — the chart-driven mesher takes an outerless charted face on ANY periodic
 	// surface, so the router asks whether the face carries a chart, not what its surface is.
-	"kernel/ops/tessellate": 52,
+	// 52 → 46 (2026-09-08, ADR-0061 stage 5): a FALL of 6 — the curved-trim CLASSIFICATION asks each
+	// surface family ONCE. sphereOf is the tessellator's single sphere test (it replaced four); the
+	// cone test lives only in coneApexFanRim (it replaced three, with coneApexFan/coneApexSectorMesh);
+	// the torus and cylinder tests moved into tubeWrappingEdges and wedgeBandEndChains, so the
+	// predicate and the mesher read one answer instead of asserting twice.
+	"kernel/ops/tessellate": 46,
 	"kernel/ops/transform":  4,
 	"kernel/ops/validate":   9,
 	"kernel/topo":           3,

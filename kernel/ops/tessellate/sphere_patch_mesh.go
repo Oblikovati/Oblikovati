@@ -36,11 +36,11 @@ const (
 // SpherePatchMesh meshes a multi-arc sphere patch in a patch-centred chart. ok=false unless the surface
 // is a sphere whose boundary clears the chart's antipode — then the caller keeps its existing path.
 func SpherePatchMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
-	sph, ok := s.(geom.Sphere)
-	if !ok || len(outer3D) < 3 {
+	sph, isSphere := sphereOf(s)
+	if !isSphere {
 		return nil, false
 	}
-	chart, ok := chooseSphereChart(f, sph, outer3D, holes3D)
+	chart, ok := sphereChartOf(f, sph, outer3D, holes3D)
 	if !ok {
 		return nil, false
 	}

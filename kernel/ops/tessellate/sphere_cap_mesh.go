@@ -30,15 +30,34 @@ import (
 // Example: a unit sphere cut by z=0, the lower face's rim is the equator → a watertight, true
 // hemisphere cap (tessellated volume → 2/3 πr³).
 func SphereCapFan(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
-	sph, ok := s.(geom.Sphere)
-	if !ok || len(outer3D) < 3 || len(holes3D) > 0 {
+	sph, isSphere := sphereOf(s)
+	if !isSphere {
 		return nil, false
 	}
-	axis, ok := capAxis(sph, outer3D)
+	axis, ok := planarCircleRimAxis(sph, outer3D, holes3D)
 	if !ok {
 		return nil, false
 	}
 	return buildSphereCap(sph, outer3D, axis, q), true
+}
+
+// sphereOf is the tessellator's ONE sphere test. Concentrating it here keeps the geometry-kind
+// assertion in a single place per surface family rather than one per mesher (kernel ground rules;
+// archguard geomSwitchDebt).
+func sphereOf(s geom.Surface) (geom.Sphere, bool) {
+	sph, ok := s.(geom.Sphere)
+	return sph, ok
+}
+
+// planarCircleRimAxis returns the cap axis of the BARE rim form — a boundary that is one closed
+// planar circle and nothing else. A face carrying HOLES is not that form: the fan sweeps the rim
+// straight to the pole and would pave right over them, so it declines and lets the belt or the
+// gnomonic patch take the face.
+func planarCircleRimAxis(sph geom.Sphere, outer3D []math.Point3, holes3D [][]math.Point3) (math.Vector3, bool) {
+	if len(outer3D) < 3 || len(holes3D) > 0 {
+		return math.Vector3{}, false
+	}
+	return capAxis(sph, outer3D)
 }
 
 // capAxis returns the unit direction from the sphere centre toward the pole the cap encloses (the
