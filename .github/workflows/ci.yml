@@ -206,9 +206,11 @@ jobs:
       - name: Translator-module coverage
         if: matrix.os == 'ubuntu-latest'
         run: |
+          # -timeout 30m: the inventor batch-translate package rebuilds all 77 testdata parts (527 s on
+          # CI run 34280554924) and hit `go test`'s 10m per-package default once (run 33765461130).
           for m in model/exchange/translators/solidworks model/exchange/translators/inventor \
                    model/exchange/translators/olecf; do
-            (cd "$m" && go test -covermode=count -coverprofile=cover.out ./...)
+            (cd "$m" && go test -covermode=count -coverprofile=cover.out -timeout 30m ./...)
             tail -n +2 "$m/cover.out" >> coverage.out
           done
       # The tier-1 promise ("make test finishes in seconds") is held here, WITHOUT a
