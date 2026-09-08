@@ -15,15 +15,18 @@ import (
 // opposite edges sample identically — the shape of every analytic fillet/blend face and
 // of axial cylinder/cone walls — a STRUCTURED grid of thin iso quads tessellates it
 // watertight and with correct curved area. (Ear-clipping the boundary instead would chord
-// long triangles across the curvature and get the area wrong.) Anything else — holes, a
-// non-rectangular trim, a seam-crossing periodic loop — falls back to the full-domain grid
-// (a follow-up; needs a constrained triangulation).
+// long triangles across the curvature and get the area wrong.) A trim that is neither an iso
+// rectangle nor a shape one of the wrapping meshers recognises is meshed from the parametric trim the
+// face CARRIES (ADR-0061/ADR-0063, chart_face_mesh.go): region from the chart, points from the shared
+// edges. Only a face that carries no chart at all still falls to the surface's whole domain, and that
+// degradation is reported (trim_ignored.go).
 //
 // This file is the ROUTER. The pieces it dispatches to are split by responsibility:
 // tessellate_trim_grid.go (the structured (u,v) grid construction),
 // tessellate_trim_boundary.go (the trim-boundary → (u,v) imprint and the boundary patch mesher),
 // tessellate_trim_special.go (the surface-specific special-case meshers and the cone-apex fans),
-// tessellate_trim_policy.go (the full-domain quality/deflection fallback).
+// tessellate_trim_policy.go (the full-domain quality/deflection fallback),
+// chart_face_mesh.go (the chart-driven covering-space mesher this router ends at).
 
 // tessellateCurvedFace meshes a curved face's trimmed region (see file doc).
 func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
