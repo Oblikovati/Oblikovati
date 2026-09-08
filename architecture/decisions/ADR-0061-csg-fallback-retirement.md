@@ -3087,3 +3087,139 @@ closed body and stays silent for a plain cylinder, and `model/feature`'s
 list a feature reply, the API and the UI show. The measured cost is the group weld on every
 tessellation: no change on the bodies that dominate (a filleted box 8.38 → 8.37 ms, a torus 3.31 →
 3.43 ms), and tens of microseconds on the smallest (a chamfered box 35 → 63 µs).
+
+### Corrections and a second slice for the chart mesher at fine quality (2026-09-08, review round 1)
+
+Five findings against the section above. Three of them are corrections to what that section CLAIMS; two
+are defects it left standing. All numbers are `tessellate.TessellateBody` / `TessellateFace` at
+`ops.DefaultQuality()` (chord 0.05) and `ops.PropertyQuality()` (chord 0.001).
+
+#### Correction 1 — the net-delta report was wrong
+
+The ratchets table above says `fallback-sites` "26, unmoved". The pin on this branch is **28**: the
+cocylindrical-merge slice raised it 26 → 27 for `CodeCocylindricalMergeUndecided` and 27 → 28 for
+`CodeMeshNotWatertight`, both before this work rebased onto it. This slice moves none of the four:
+
+| pin | value at this HEAD | moved by this slice |
+| --- | --- | --- |
+| `tolerance-constants` | 214 | no |
+| `type-assertions` | 684 | no |
+| `recognizers` | 12 | no |
+| `fallback-sites` | **28** | no |
+| `geomSwitchDebt["kernel/ops/tessellate"]` | 45 | no |
+
+`bandPinches` and `tubeSweepRadius` are DELETED this round (below) and were never recognizers;
+`lensCorridorOutrunsTheSampling` and `onContour` are conditioning gates inside existing recognizers, not
+bespoke shapes, and the registry counts shapes.
+
+#### Correction 2 — the two-rim arm's survivor set and its test's name
+
+The section above names `TestTheTwoRimArmKeepsOnlyTheNearPinchBands`; the test that shipped is
+`TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe`, and it asserts a wider rule than the sentence beside
+it. The arm keeps TWO configurations, not one:
+
+- a band whose two lens windows pass within `nearPinchCorridorChords` of the boundary's own chord — the
+  8 near-pinch crossing joins (16 face-tessellations across the two facetings);
+- a band that records NO chart, which the general path cannot serve at all — one face in the
+  classification corpus (the saddle band of `rod − crossing rod`).
+
+#### The spiric arm is a CHART gate now, and `bandPinches` is deleted
+
+The section above kept `kindSpiricBand` for every band and refused only the PINCHED ones, and argued
+from a measurement of DELETING the arm (occtparity's J3 and A4 drifting 3×). That measurement tested a
+different change from the one the brief asked for, and the section says as much in the same sentence:
+those two hosts' faces record no chart, so the brief's rule would have left them on the loft.
+
+Measured, per face, over every spiric band the kernel corpus builds — ten of them, at both facetings:
+
+| face (boundary anchor) | tol | chart | loft area / tris | chart-mesher area / tris |
+| --- | --- | --- | --- | --- |
+| (6.325, 1.498, 0) | 0.05 | 1 | 24.808532 / 256 | 24.778946 / 206 |
+| (6.325, 1.498, 0) | 0.001 | 1 | 24.866088 / 18944 | 24.865105 / 11612 |
+| (2.236, 2, 0) | 0.05 | 2 | 248.799622 / 1620 | 248.387145 / 1364 |
+| (6.325, 1.498, −0) | 0.05 | 2 | 269.934972 / 2176 | 269.700621 / 1920 |
+| (6.325, 1.498, −0) | 0.001 | 2 | 271.205553 / 171008 | 271.197115 / 120184 |
+| figure-eight, below y=3 | 0.05 | 2 | 310.800413 (analytic 283.09969) | 281.619928 |
+| figure-eight, below y=3 | 0.001 | 2 | — | 283.075286 |
+| figure-eight, above y=3 | 0.05 | 2 | 215.177464 (analytic 111.68448) | 110.947245 |
+| figure-eight, above y=3 | 0.001 | 2 | — | 111.674711 |
+
+Every one is charted, the chart mesher accepts every one, it reads the same area to within 0.004–0.17 %
+on the eight that do not pinch — with a THIRD fewer triangles at PropertyQuality — and it is RIGHT where
+the loft was wrong. And the sweep over `model/feature/occtparity` settles what keeps the arm: J3's and
+A4's host tori record **chart = 0** and `chartFaceMesh` declines them outright.
+
+So `spiricTubeTrimOf` declines a face that carries a chart, and `bandPinches`/`tubeSweepRadius` — which
+existed only to refuse the two charted faces the loft read wrong — are DELETED with their tests. The
+fingerprints do not move, because the faces that keep the loft are exactly the uncharted ones.
+`kindSpiricBand` is now a named exception in `TestTheClassificationCorpusReachesEveryArm`, beside
+`kindWedgeBand`, because no primitive boolean in this package builds an uncharted torus band.
+
+#### The merged cocylindrical band, on the real body
+
+`TestCocylindricalCapOnWallIsOneAnalyticFace` was pinned at 4 free edges by the merge slice and measured
+61 under the classification. Three things were wrong, all of them in `kernel/ops/tessellate`:
+
+1. **The router never offered the face its chart.** Fixed in the section above, and it is what takes the
+   body from 61 free edges to a mesh at all.
+2. **A band's artificial seam can be SLANTED, and the membership test folded onto one branch.** This
+   face's bottom rim runs u ∈ [0, 2π] and its notched top rim u ∈ [−0.1963, 6.0868] — two seam edges an
+   exact period apart but a fifth of a radian out of plumb — so the contour spans 6.4795 of a 6.2832
+   period. Folding a query onto [uLo, uLo+2π) put the sliver between the two seam edges outside every
+   contour: the region measured **171.141 mm² against an analytic 174.096**, exactly the seam triangle,
+   and the covering tore along it (88 unpaired edges against a rim of 54). `covers` now counts even-odd
+   at every period SHIFT; the region reads 174.086 and the face meshes 173.762 with free == rim.
+3. **A centroid can land exactly ON that seam.** The slant is eight u-stations over the whole v range,
+   so grid-built centroids sit on it to 1e-11 — measured, (−0.008181231, 0.416666667) against a seam at
+   −0.008181231 — and an even-odd count there answers by which side the ray was cast from. Forty such
+   holes tore the wall at PropertyQuality (615 against 578). `triangleIsMaterial` retries a NO by the
+   majority of three points pulled toward the triangle's own vertices, and only when the centroid is
+   within `chartContourIncidence` of a contour edge: an ungated retry regressed the cap-crossing,
+   rim-crossing and cone-cap certifications (216, 6 and 435 free edges at PropertyQuality).
+
+A fourth was on the FEATURE-built body, whose merged wall arrives as ONE wrapping loop rather than two:
+its boundary walks the artificial SLIT twice, so `chainSegmentCount` read 56 where a correct patch bounds
+54, declined a mesh that was right, and the wall fell to the flat-patch CDT (57.913 mm² where 173.811 is
+its region's own area, and the body reported a 32-edge tear). The count is over segments used an ODD
+number of times now.
+
+| row | before | after |
+| --- | --- | --- |
+| `TestCocylindricalCapOnWallIsOneAnalyticFace` @Default | 61 free edges | **0** |
+| the same @Property | — | 10, pinned (below) |
+| `TestPistonHeadMeshTearReachesTheFeaturesDiagnostics` | asserted the tear | converted to `…MeshIsWatertightAndSilent`: 0 free edges at BOTH facetings, no diagnostic at all |
+
+The ten at PropertyQuality are a `kernel/brep` fact and are pinned with it: the merged face's own edges
+put the notch corners at u = 4.112388980 and 5.312388980 (`ParamAt` of the D-prism's chord vertices,
+exactly ∓0.6 − π/2), while the chart it carries records them at 4.092588062 and 5.292588062 — the whole
+notch rotated by **−0.019800918 rad**, 0.059 mm at radius 3. Region and boundary then disagree in a strip
+0.06 mm wide and 4 mm tall along the boss's chord edges. Correcting the chart is the merge's `faceChart`,
+which this task does not touch.
+
+#### Correction 3 — "ring − half space" was NOT pre-existing, and it is fixed
+
+The section above called that body's PropertyQuality tear pre-existing on the strength of ablating one of
+its own changes. The mandated bisect says otherwise. At the wave base `c1e8f2a8`, in a clean worktree,
+the body meshes **watertight at PropertyQuality, 203.865665 mm³** against an analytic 203.905.
+`git bisect run` over `c1e8f2a8..2d1a996f` with a focused row names **6f8f5125** — the slice that deleted
+`torusComplementMesh` and sent the genus-1 complement to the chart-driven mesher, measuring only
+DefaultQuality.
+
+The cause is the boundary clearance. That torus's section under the plane x = R is the LEMNISCATE: it
+passes through the same 3D point twice, at (u,v) = (3π/2, π/2) and (3π/2, 3π/2), and its rim is sampled
+coarsely right there — 0.17 rad of u in one chord against the covering's own 0.0245 stations. Interior
+nodes landed INSIDE those chords and split them, four rim segments ended up carrying no triangle at all,
+the face was declined by its own rim gate and fell to the surface's whole domain.
+
+`chartBoundaryClearance` is 1.0 chords, not 0.5. A whole chord puts the chart-versus-chord band inside
+the first triangle off the boundary, whose centroid is then two thirds of a chord away.
+
+| | before | after | wave base |
+| --- | --- | --- | --- |
+| body free edges @Property | 272 | **0** | 0 |
+| body volume @Property | 186.156188 | **203.869265** | 203.865665 |
+| torus face @Property | 296.062 (whole domain), declined | 264.871, free == rim == 272 | 264.872 |
+| torus face @Default | 263.730 | 263.423 | 263.596 |
+
+`knownFreeEdgesAtFineQuality` is now EMPTY: every classification-corpus body is watertight at both
+facetings.
