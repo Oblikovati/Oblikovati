@@ -122,7 +122,14 @@ var kernelNetDeltaPin = map[string]int{
 	// (geom.SectionDecline) and brep records it as a Defect naming which certificate refused; the
 	// ordinary refusal still records nothing, because a diagnostic that fires on every marched boolean
 	// in the system is noise.
-	"fallback-sites": 26,
+	// 26 → 27 (2026-09-08, ADR-0061 stage 5, cocylindrical wall merge):
+	// CodeCocylindricalMergeUndecided. A RISE that names a degradation nothing reported before. Two
+	// kept faces on ONE surface whose shared boundary dissolves are one face, and the merged face's
+	// parametric trim is the union of the two in the covering space. Where the fused loops do not
+	// determine that trim, ADR-0063 refuses to guess a side — and the pair was then left as two faces
+	// with nothing said. It now says so, and the merge is post-conditioned on a chart it verified
+	// rather than shipping one nobody did.
+	"fallback-sites": 27,
 }
 
 func TestKernelNetDelta(t *testing.T) {

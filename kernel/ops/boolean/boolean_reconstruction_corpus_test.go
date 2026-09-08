@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -50,15 +51,14 @@ func TestOverlappingBoxesUnionExactly(t *testing.T) {
 	assertVolume(t, mustBooleanSolid(t, Join, a, b), 12, 1e-9)
 }
 
-// TestCocylindricalCapOnWallStaysAnalytic: a D-profile prism seated on a cylinder of the SAME radius.
-// #2167 was that this join FACETED — no analytic cylinder at all — so the two walls' mismatched facet
-// grids showed as a visible seam. Both walls are analytic here and lie on ONE surface, so they
-// re-tessellate against that surface and the seam is gone.
+// TestCocylindricalCapOnWallIsOneAnalyticFace: a D-profile prism seated on a cylinder of the SAME
+// radius. #2167 was that this join FACETED — no analytic cylinder at all — so the two walls'
+// mismatched facet grids showed as a visible seam.
 //
-// They are still TWO faces where a correct B-rep has one: their common boundary is part of the
-// cylinder's rim, not a whole edge of it, which mergeCoincidentFaces leaves alone (see joinedLoops).
-// The count is pinned at 2 rather than relaxed, so landing that merge trips this test and converts it.
-func TestCocylindricalCapOnWallStaysAnalytic(t *testing.T) {
+// The two walls are now ONE face, which is what a correct B-rep has: they lie on one surface and the
+// run they share bounds nothing, so it dissolves (ADR-0061 stage 5). This row was pinned at 2 while
+// that merge was outstanding, and converting it is what landing the merge means.
+func TestCocylindricalCapOnWallIsOneAnalyticFace(t *testing.T) {
 	if testing.Short() {
 		t.Skip("corpus tier: `make test-corpus`")
 	}
@@ -68,12 +68,35 @@ func TestCocylindricalCapOnWallStaysAnalytic(t *testing.T) {
 		t.Fatalf("cylinder: %v", err)
 	}
 	body := mustBooleanSolid(t, Join, cyl, dPrismBody(3, 0.6, 6, 10, "d"))
-	if n := cylinderFaceCount(body); n != 2 {
-		t.Errorf("cocylindrical join has %d analytic cylinder faces, want 2 — both walls analytic, on "+
-			"one surface, pending the partial-boundary merge that makes them one face", n)
+	if n := cylinderFaceCount(body); n != 1 {
+		t.Errorf("cocylindrical join has %d analytic cylinder faces, want 1 — the boss's wall and its "+
+			"host's are one surface and share a boundary that bounds nothing", n)
 	}
 	minor := 0.5 * 9 * (1.2 - stdmath.Sin(1.2))
 	assertVolume(t, body, stdmath.Pi*9*6+(stdmath.Pi*9-minor)*4, 5e-3)
+	assertMergedBandMeshFreeEdges(t, body, 4)
+}
+
+// assertMergedBandMeshFreeEdges pins the merged band's MESH free-edge count.
+//
+// It is 4 and not 0, and the reason is downstream of this B-rep and named rather than left to be
+// found. The merged wall is a band whose second rim is NOTCHED: it runs along the host's rim at
+// v = 6 across the boss's flat, and along the boss's own top rim at v = 10 everywhere else, joined by
+// two runs at ONE azimuth each (the boss's chord edges). The tessellation router hands such a face to
+// twoRimHoledBandMesh, whose bridgeRimsAtSeam orders each rim with orderedRing — a STABLE SORT BY
+// AZIMUTH. A stable sort keeps a tie's input order, and the two chord runs are approached from
+// opposite sides, so one of them comes out reversed: the ring jumps rim-to-rim at that corner and the
+// four triangles around it do not pair. Disabling that mesher is worse, not better — the router then
+// short-circuits at IsPeriodic(u) != IsPeriodic(v) to the flat-patch CDT (61 free edges, and it says
+// so), so the chart-driven mesher this face wants is not reachable for a singly-periodic surface at
+// all. Both are the chart mesher's own router to settle (ADR-0061 stage 5); the count is pinned here
+// so landing that trips this row and converts it, exactly as the face count was pinned before this.
+func assertMergedBandMeshFreeEdges(t *testing.T, b *topo.Body, want int) {
+	t.Helper()
+	mesh, _ := tessellate.TessellateBody(b, DefaultQuality())
+	if n := tessellate.FreeEdgeCount(mesh); n != want {
+		t.Errorf("the merged body meshes with %d free edges, pinned at %d", n, want)
+	}
 }
 
 // TestObliqueBoreKeepsItsEllipticalRims: a tilted cylinder bored cleanly through a slab's top and

@@ -59,13 +59,12 @@ func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
 	if v := ops.Validate(body); !v.Valid || !body.IsSolid() {
 		t.Fatalf("piston-head join is not a valid solid: %+v", v)
 	}
-	// Both walls analytic: the full cylinder wall and the D's cocylindrical arc wall. The faceted bug
-	// left ZERO, which is what #2167 was. They lie on one surface and re-tessellate against it, so the
-	// visible seam is gone; they are still two FACES, because their common boundary is part of the
-	// cylinder's rim rather than a whole edge of it and mergeCoincidentFaces leaves a partial overlap
-	// alone. The count is pinned at 2 so landing that merge trips this test and converts it.
-	if got := cylinderFaceCount(body); got != 2 {
-		t.Fatalf("piston-head join has %d analytic cylinder faces, want 2 (faceted gave 0, #2167)", got)
+	// ONE analytic wall: the full cylinder wall and the D's cocylindrical arc wall lie on one surface,
+	// and the run they share bounds nothing, so it dissolves and the two are one face (ADR-0061 stage
+	// 5). The faceted bug left ZERO cylinders, which is what #2167 was; this row was pinned at 2 while
+	// the merge was outstanding, and converting it is what landing the merge means.
+	if got := cylinderFaceCount(body); got != 1 {
+		t.Fatalf("piston-head join has %d analytic cylinder faces, want 1 (faceted gave 0, #2167)", got)
 	}
 	// Exact stacked volume: cylinder + the D-segment prism (disc minus the minor segment
 	// the chord cuts). A 24-gon faceting under-reports this by ~1%.
