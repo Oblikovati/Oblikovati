@@ -64,6 +64,9 @@ func TestEveryCorpusBodyIsWatertightUnderRefinement(t *testing.T) {
 // chart-driven mesher owns: it is where the defect actually lives, and a body total can hide a face
 // that loses area behind another that gains it.
 func TestEveryChartedFaceGainsAreaUnderRefinement(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~2.5 min on CI): `make test-corpus`")
+	}
 	t.Parallel()
 	coarse, fine := refinementQualities()
 	seen := 0

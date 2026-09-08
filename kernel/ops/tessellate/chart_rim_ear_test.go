@@ -23,6 +23,9 @@ import (
 
 // TestNoChartedFaceEmitsARimOnlyTriangle is the mesher-level invariant over the chart corpus.
 func TestNoChartedFaceEmitsARimOnlyTriangle(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~3 min on CI): `make test-corpus`")
+	}
 	t.Parallel()
 	coarse, fine := refinementQualities()
 	seen := 0
