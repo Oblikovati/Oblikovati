@@ -42,32 +42,51 @@ const (
 // Returning exact curves (a real circle, not a 64-gon) is what lets a drilled hole be a
 // single cylindrical face with a stable reference key, rather than faceted soup.
 func IntersectSurfacesAnalytic(a, b Surface, res Resolution) (curves []Curve3, handled bool) {
+	curves, _, handled = IntersectSurfacesAnalyticDeclining(a, b, res)
+	return curves, handled
+}
+
+// IntersectSurfacesAnalyticDeclining is [IntersectSurfacesAnalytic] that also NAMES its refusal. A bare
+// handled=false says only "nothing claimed this pair", which is the ordinary case and no degradation at
+// all; a CONDITIONING demotion is a closed form that applies to the pair and cannot name its answer at
+// these numbers, and that IS a degradation — it is where the exact pipeline gives up ground it normally
+// holds. geom owns no I/O and takes no recorder, so it returns the reason and its caller records it
+// (kernel/brep's boolean, CodeSectionConditioningDemotion).
+//
+//	curves, why, handled := geom.IntersectSurfacesAnalyticDeclining(ring, rod, res)
+//	if why.IsConditioning() { rec.Recordf(...) }
+func IntersectSurfacesAnalyticDeclining(a, b Surface, res Resolution) ([]Curve3, SectionDecline, bool) {
 	if pl, ok := a.(Plane); ok {
-		return intersectPlaneSurface(pl, b, res)
+		return withoutReason(intersectPlaneSurface(pl, b, res))
 	}
 	if pl, ok := b.(Plane); ok {
-		return intersectPlaneSurface(pl, a, res)
+		return withoutReason(intersectPlaneSurface(pl, a, res))
 	}
 	if curves, ok := equalCylinderSection(a, b, res); ok {
-		return curves, true // two EQUAL cylinders whose axes meet: two planar ellipses, exactly
+		return curves, DeclineNone, true // two EQUAL cylinders whose axes meet: two planar ellipses, exactly
 	}
 	if curves, handled, ok := sphereSphereSection(a, b, res); ok {
-		return curves, handled // two spheres: the circle of their radical plane, exactly
+		return withoutReason(curves, handled) // two spheres: the circle of their radical plane, exactly
 	}
 	// A torus has no quadric form of its own, but the substitution runs the other way: its own chart is
-	// affine in the azimuth direction, so an axis-invariant quadric reduces to one harmonic there
-	// (ADR-0061 stage 5, torus_quadric_arc.go). Anything else with a torus in it still marches.
-	if curves, ok := torusAgainstQuadric(a, b, res); ok {
-		return curves, true
+	// affine in the azimuth direction, so ANY quadric reduces to two harmonics there (ADR-0061 stage 5,
+	// torus_quadric_arc.go and torus_quadric_harmonic2.go). A torus against a torus still marches.
+	if curves, why, ok := torusAgainstQuadric(a, b, res); ok || why.IsConditioning() {
+		return curves, why, ok
 	}
-	if curves, ok := torusAgainstQuadric(b, a, res); ok {
-		return curves, true
+	if curves, why, ok := torusAgainstQuadric(b, a, res); ok || why.IsConditioning() {
+		return curves, why, ok
 	}
 	// No plane: the remaining bucket is PARAMETRIC × IMPLICIT — a straight-ruled surface substituted
 	// into the other's quadric, whose section is the root of one quadratic in the ruling parameter
-	// (intersect_ruled_quadric.go). Everything else — anything with a torus, a B-spline or an offset,
-	// and any ruled/quadric pair the conditioning gate refuses — reports handled=false and marches.
-	return intersectRuledQuadric(a, b, res)
+	// (intersect_ruled_quadric.go). Everything else — a torus pair, a B-spline or an offset, and any
+	// ruled/quadric pair the conditioning gate refuses — reports handled=false and marches.
+	return withoutReason(intersectRuledQuadric(a, b, res))
+}
+
+// withoutReason tags a bucket whose only answer is a bool: solved, or simply not claimed.
+func withoutReason(curves []Curve3, handled bool) ([]Curve3, SectionDecline, bool) {
+	return curves, noClosedFormWhen(handled), handled
 }
 
 func intersectPlaneSurface(pl Plane, other Surface, res Resolution) ([]Curve3, bool) {
@@ -286,13 +305,14 @@ func unitVec3(v math.Vector3) math.Vector3 {
 }
 
 // torusAgainstQuadric routes a (torus, quadric) pair to the torus closed form, in that role order.
-// ok=false when the first surface is not a torus, the second has no quadric form, or the quadric's
-// quadratic part is not invariant about the torus axis.
-func torusAgainstQuadric(a, b Surface, res Resolution) ([]Curve3, bool) {
+// ok=false when the first surface is not a torus, the second has no quadric form, or the reduction
+// declines — and then the reason says which, so a conditioning demotion is not mistaken for a role
+// that simply does not apply.
+func torusAgainstQuadric(a, b Surface, res Resolution) ([]Curve3, SectionDecline, bool) {
 	t, isTorus := a.(Torus)
 	implicit, isQuadric := b.(ImplicitQuadric)
 	if !isTorus || !isQuadric {
-		return nil, false
+		return nil, DeclineNoClosedForm, false
 	}
 	return TorusQuadricSection(t, implicit.QuadricForm(), res)
 }

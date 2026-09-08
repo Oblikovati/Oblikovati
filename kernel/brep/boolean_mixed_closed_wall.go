@@ -5,6 +5,7 @@ package brep
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 )
 
@@ -18,8 +19,9 @@ import (
 // coordinates and their fragments weld. What is new is only which two buckets are paired.
 
 // pairClosedSurfaceWallImprints imprints every (closed-surface face of p, ruled wall of other) pair
-// whose boxes overlap, appending the shared crossing to both lists. ok=false declines the boolean.
-func pairClosedSurfaceWallImprints(p, other *facePartition, sphImp, wallImp [][]geom.Curve3) bool {
+// whose boxes overlap, appending the shared crossing to both lists. ok=false declines the boolean, and
+// a section that declined for CONDITIONING is recorded before it does (recordSectionDecline).
+func pairClosedSurfaceWallImprints(p, other *facePartition, sphImp, wallImp [][]geom.Curve3, rec *diag.Recorder) bool {
 	faces, boxes := p.closedSurfaces()
 	for i, sf := range faces {
 		box := inflateBox(boxes[i])
@@ -27,8 +29,9 @@ func pairClosedSurfaceWallImprints(p, other *facePartition, sphImp, wallImp [][]
 			if !box.Intersects(inflateBox(other.wallBox[k])) {
 				continue
 			}
-			curves, ok := closedSurfaceWallImprint(sf, wf)
+			curves, why, ok := closedSurfaceWallImprint(sf, wf)
 			if !ok {
+				recordSectionDecline(rec, why, sf, wf)
 				return false
 			}
 			sphImp[i] = append(sphImp[i], curves...)
@@ -52,17 +55,21 @@ func pairClosedSurfaceWallImprints(p, other *facePartition, sphImp, wallImp [][]
 //     the ball where nothing touches it and the difference came back with the ball's face missing.
 //
 // Anything else declines, and pairing it is the rest of stage 4.
-func closedSurfaceWallImprint(sf, wf curvedFace) ([]geom.Curve3, bool) {
+func closedSurfaceWallImprint(sf, wf curvedFace) ([]geom.Curve3, geom.SectionDecline, bool) {
 	rs, ok := ruledFaceOf(wf)
 	if !ok || len(sf.loops) > 0 {
-		return nil, false
+		return nil, geom.DeclineNoClosedForm, false
 	}
 	res := geom.ResolutionForSize(rs.size())
-	curves, handled := geom.IntersectSurfacesAnalytic(sf.surface, rs.surface, res)
+	curves, why, handled := geom.IntersectSurfacesAnalyticDeclining(sf.surface, rs.surface, res)
 	if !handled || !crossingsClose(curves, res) {
-		return nil, false
+		return nil, why, false
 	}
-	return keepCrossingsOnTheWall(curves, rs)
+	kept, ok := keepCrossingsOnTheWall(curves, rs)
+	if !ok {
+		return nil, geom.DeclineNoClosedForm, false // the band clip's own scope, not the section's
+	}
+	return kept, geom.DeclineNone, true
 }
 
 // keepCrossingsOnTheWall keeps the crossings that lie on the wall itself and drops the ones the

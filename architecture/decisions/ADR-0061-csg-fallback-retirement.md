@@ -2729,3 +2729,42 @@ Nothing was deleted, because nothing was replaced: the arccos is a sub-family of
 stays as its fast path, gated on the tensor rather than on a type, and proven to reproduce bit for bit.
 What was deleted is the REFUSAL — three fixtures that pinned "a skew rod through a ring cannot be
 built", now three fixtures that pin the exact result.
+
+#### Review round 1: four things the slice above got wrong (2026-09-08, later)
+
+**A degenerate station fabricated an azimuth.** `torusLaneAt` answered a station with no azimuth
+dependence by returning the ANCHOR as both branches. The anchor is a seed extremum from tube angle 0 —
+not a root of this station — so a loop evaluated there would put a point on the torus that is not on the
+quadric, silently, while the doc comment claimed every azimuth it reports is certified. It now returns
+`ok=false`; the section declines by name, the branch-gap reader answers a zero gap (which fails the
+conditioning gate), and the per-point reader answers NaN, which is what `torusHarmonic.root` already
+does for the same reason. A plausible-looking wrong azimuth is worse than none.
+
+**The demotion was not reported.** All the refusals collapsed into one anonymous `ok=false`, which the
+ADR paragraph above described and nothing else did. But the ground rule is not "write it down": a
+fallback is a `diag.Defect` that reaches feature health, the API and the UI. The problem is that the
+intersector refuses two DIFFERENT things with that one bool — "no bucket claims this pair", which is the
+ordinary case and no loss at all, and a CONDITIONING demotion, where the closed form applies and cannot
+name its answer at these numbers. `geom.SectionDecline` now names the reason,
+`IntersectSurfacesAnalyticDeclining` returns it, and brep's closed-surface pairings record it as
+`CodeSectionConditioningDemotion` (a `diag.Defect`) on the boolean's own recorder. The ordinary refusal
+records nothing, because a diagnostic that fires on every marched boolean in the system is noise.
+`fallback-sites` rises 25 → 26 for it — a RISE that names a degradation nothing reported before.
+
+**A window was dropped on an unverified premise.** The builder SKIPS a window whose branch pair merges
+at a flanking extremum, on the theory that a neighbouring lane carries that pair itself. Nothing checked
+that it does, and the test that drives the skip compares three quantities that are all small and
+comparable just inside a fold: a mis-fire deletes an entire section loop — a hole in a solid that simply
+is not there — with no error and no diagnostic. The finished loop SET is now counted against the
+stations themselves: at every probe tube angle, the loops whose window covers it must account for
+exactly the azimuths that station carries, two each. A dropped loop leaves two azimuths belonging to
+nothing and a doubled one two too many, and `TestADroppedSectionLoopIsCaughtByTheAzimuthCount` removes
+each of the rod's four loops in turn and requires the count to catch every one.
+
+**A dead assertion.** `TestALaneStraddlesItsOwnExtremum` compared
+`turnBetween(centre, upper, true) + turnBetween(centre, lower, false)` against `separation()`, which is
+that expression verbatim — so the branch could never fire and the row never tested straddling at all.
+It now asserts the property itself: each azimuth strictly between the lane's extremum and the flanking
+one on ITS OWN side. Nothing weaker separates a correct pairing from one that took both roots from the
+same side, which would still have two certified roots and a positive discriminant. Proven live by
+swapping the two readers, which fails the row.

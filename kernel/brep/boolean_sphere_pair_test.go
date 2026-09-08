@@ -64,7 +64,7 @@ func TestSpherePairSectionIsOneCircle(t *testing.T) {
 	pa, pb := partitionFaces(a), partitionFaces(b)
 	fa, _ := pa.closedSurfaces()
 	fb, _ := pb.closedSurfaces()
-	curves, ok := closedSurfacePairImprint(fa[0], fb[0])
+	curves, _, ok := closedSurfacePairImprint(fa[0], fb[0])
 	if !ok {
 		t.Fatal("two crossing spheres are undecided; their section is a circle in closed form")
 	}
@@ -85,7 +85,7 @@ func TestDisjointSpheresImprintNothing(t *testing.T) {
 	pa, pb := partitionFaces(a), partitionFaces(b)
 	fa, _ := pa.closedSurfaces()
 	fb, _ := pb.closedSurfaces()
-	curves, ok := closedSurfacePairImprint(fa[0], fb[0])
+	curves, _, ok := closedSurfacePairImprint(fa[0], fb[0])
 	if !ok || len(curves) != 0 {
 		t.Errorf("disjoint spheres: ok=%v, %d curves; want decided and empty", ok, len(curves))
 	}

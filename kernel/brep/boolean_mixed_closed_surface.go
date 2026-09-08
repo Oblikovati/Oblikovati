@@ -3,6 +3,7 @@
 package brep
 
 import (
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -255,7 +256,7 @@ const closedSectionWalkSamples = 96
 // Two spheres are the simplest curved-versus-curved crossing there is — they meet in the circle of
 // their radical plane — and the mixed pipeline had no pairing for them at all, so a ball meeting a ball
 // declined on box overlap alone (ADR-0061 stage 4).
-func pairClosedSurfaceImprints(p, other *facePartition, impP, impOther [][]geom.Curve3) bool {
+func pairClosedSurfaceImprints(p, other *facePartition, impP, impOther [][]geom.Curve3, rec *diag.Recorder) bool {
 	faces, boxes := p.closedSurfaces()
 	otherFaces, otherBoxes := other.closedSurfaces()
 	for i, sf := range faces {
@@ -264,8 +265,9 @@ func pairClosedSurfaceImprints(p, other *facePartition, impP, impOther [][]geom.
 			if !box.Intersects(inflateBox(otherBoxes[k])) {
 				continue
 			}
-			curves, ok := closedSurfacePairImprint(sf, of)
+			curves, why, ok := closedSurfacePairImprint(sf, of)
 			if !ok {
+				recordSectionDecline(rec, why, sf, of)
 				return false
 			}
 			impP[i] = append(impP[i], curves...)
@@ -279,7 +281,7 @@ func pairClosedSurfaceImprints(p, other *facePartition, impP, impOther [][]geom.
 // same reading the wall pairing takes, where an empty decided answer is a proof of clearness and not an
 // inability.
 func closedSurfacePairCarried(sf, of curvedFace) bool {
-	_, ok := closedSurfacePairImprint(sf, of)
+	_, _, ok := closedSurfacePairImprint(sf, of)
 	return ok
 }
 
@@ -288,17 +290,17 @@ func closedSurfacePairCarried(sf, of curvedFace) bool {
 // both trims by construction, and every crossing CLOSED, so each side splits by even-odd containment
 // alone. Two faces on ONE surface overlap in a region rather than a curve and carry no imprint; their
 // shared material is settled by the ON/ON table (boolean_mixed_coincident.go).
-func closedSurfacePairImprint(sf, of curvedFace) ([]geom.Curve3, bool) {
+func closedSurfacePairImprint(sf, of curvedFace) ([]geom.Curve3, geom.SectionDecline, bool) {
 	if len(sf.loops) > 0 || len(of.loops) > 0 {
-		return nil, false
+		return nil, geom.DeclineNoClosedForm, false
 	}
 	res := closedSurfaceRes(sf)
 	if geom.SurfacesCoincide(sf.surface, of.surface, res) {
-		return nil, true
+		return nil, geom.DeclineNone, true
 	}
-	curves, handled := geom.IntersectSurfacesAnalytic(sf.surface, of.surface, res)
+	curves, why, handled := geom.IntersectSurfacesAnalyticDeclining(sf.surface, of.surface, res)
 	if !handled || !crossingsClose(curves, res) {
-		return nil, false
+		return nil, why, false
 	}
-	return curves, true
+	return curves, geom.DeclineNone, true
 }

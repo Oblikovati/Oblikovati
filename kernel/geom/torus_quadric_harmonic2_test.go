@@ -154,7 +154,10 @@ func TestALaneStraddlesItsOwnExtremum(t *testing.T) {
 		v := twoPi * float64(i) / 401
 		h := torusSecondHarmonicAt(ring, q, v)
 		for _, a := range anchors {
-			l := torusLaneAt(h, a)
+			l, ok := torusLaneAt(h, a)
+			if !ok {
+				t.Fatalf("v=%g anchor %g: the lane is unreadable, but torusLaneAnchors accepted the tracks", v, a)
+			}
 			if l.discriminant() <= 0 {
 				dead++
 				if l.lower != l.center || l.upper != l.center {
@@ -165,13 +168,34 @@ func TestALaneStraddlesItsOwnExtremum(t *testing.T) {
 			live++
 			assertLaneRoot(t, h, v, l.lower)
 			assertLaneRoot(t, h, v, l.upper)
-			if turnBetween(l.center, l.upper, true)+turnBetween(l.center, l.lower, false) != l.separation() {
-				t.Fatalf("v=%g anchor %g: the separation does not span the pair", v, a)
-			}
+			assertLaneStraddles(t, h, v, a, l)
 		}
 	}
 	if live == 0 || dead == 0 {
 		t.Fatalf("the sweep saw %d live and %d dead lanes; it must exercise both", live, dead)
+	}
+}
+
+// assertLaneStraddles is the property the lane's whole design rests on: its two azimuths lie on
+// OPPOSITE sides of the extremum that names it, each strictly between that extremum and the flanking
+// one on its side. Nothing weaker distinguishes a correct pairing from the complementary one — a lane
+// that took both roots from the same side would still have two certified roots and a positive
+// discriminant, and would trace a curve through the wrong arc.
+func assertLaneStraddles(t *testing.T, h torusSecondHarmonic, v, anchor float64, l torusLane) {
+	t.Helper()
+	ex := h.extrema()
+	i, n := nearestAngleIndex(ex, l.center), len(ex)
+	forward := turnBetween(l.center, l.upper, true)
+	backward := turnBetween(l.center, l.lower, false)
+	toNext := turnBetween(l.center, ex[(i+1)%n], true)
+	toPrev := turnBetween(l.center, ex[(i+n-1)%n], false)
+	if forward <= 0 || forward >= toNext {
+		t.Fatalf("v=%g anchor %g: the upper azimuth is %g past the extremum, outside (0, %g) to the next one",
+			v, anchor, forward, toNext)
+	}
+	if backward <= 0 || backward >= toPrev {
+		t.Fatalf("v=%g anchor %g: the lower azimuth is %g back from the extremum, outside (0, %g) to the previous one",
+			v, anchor, backward, toPrev)
 	}
 }
 
@@ -199,7 +223,10 @@ func TestALaneReproducesTheOneHarmonicRoots(t *testing.T) {
 		if !ok || h.discriminant() <= 0 {
 			continue
 		}
-		l := torusLaneAt(torusSecondHarmonicAt(ring, q, v), h.phase)
+		l, ok := torusLaneAt(torusSecondHarmonicAt(ring, q, v), h.phase)
+		if !ok {
+			t.Fatalf("v=%g: the one-harmonic station has no readable lane", v)
+		}
 		for _, want := range []float64{h.root(true), h.root(false)} {
 			near := stdmath.Min(stdmath.Abs(shortestTurnDelta(want, l.lower)), stdmath.Abs(shortestTurnDelta(want, l.upper)))
 			if near > 1e-9 { // tol:angular — the arccos and the quartic on the same root
@@ -222,5 +249,83 @@ func TestALaneAnchorTrackIsRefusedWhenItCannotBeFollowed(t *testing.T) {
 	ring := testRing(t)
 	if _, ok := torusLaneAnchors(ring, Quadric{}); ok {
 		t.Error("a quadric with no form at all must not yield lane anchors")
+	}
+}
+
+// TestADroppedSectionLoopIsCaughtByTheAzimuthCount is the live proof of the loop-set certificate. The
+// section builder SKIPS a window whose branch pair merges at a flanking extremum, on the premise that
+// the neighbouring lane carries that pair itself. Nothing about the skip verifies the premise, and a
+// mis-fire deletes a whole section loop — a hole in a solid that simply is not there, with no error.
+// So the finished set is counted against the stations: every azimuth a station carries must belong to
+// a loop whose window covers it, two per loop. This row removes each loop in turn, and doubles one, and
+// requires the count to catch every case.
+func TestADroppedSectionLoopIsCaughtByTheAzimuthCount(t *testing.T) {
+	t.Parallel()
+	ring := testRing(t)
+	rod, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1)
+	q := rod.QuadricForm()
+	loops, why, ok := torusSkewSection(ring, q, ResolutionForSize(12))
+	if !ok || why != DeclineNone || len(loops) != 4 {
+		t.Fatalf("rod across the ring: ok=%v why=%v loops=%d, want four loops and no decline", ok, why, len(loops))
+	}
+	if got := torusLoopsAccountForEveryAzimuth(ring, q, loops); got != DeclineNone {
+		t.Fatalf("the correct loop set is reported as %v", got)
+	}
+	for i := range loops {
+		short := append(append([]Curve3{}, loops[:i]...), loops[i+1:]...)
+		if got := torusLoopsAccountForEveryAzimuth(ring, q, short); got != DeclineTorusLaneUnaccounted {
+			t.Errorf("dropping loop %d goes unnoticed: %v", i, got)
+		}
+	}
+	if got := torusLoopsAccountForEveryAzimuth(ring, q, append(loops, loops[0])); got != DeclineTorusLaneUnaccounted {
+		t.Errorf("a doubled loop goes unnoticed: %v", got)
+	}
+}
+
+// TestTheFullTurnTopologyDeclinesByName: a rod ACROSS the ring whose radius exceeds the tube's swallows
+// the tube's own flank at every tube angle, so the branch pair never folds. That is four independent
+// full-period branches rather than a folded pair, a topology this reduction does not carry — and the
+// refusal has to say so, because it is a CONDITIONING demotion (the closed form applies to the pair)
+// and not the ordinary "nothing claims this pair".
+func TestTheFullTurnTopologyDeclinesByName(t *testing.T) {
+	t.Parallel()
+	ring := testRing(t)
+	fat, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 2)
+	curves, why, ok := IntersectSurfacesAnalyticDeclining(ring, fat, ResolutionForSize(12))
+	if ok || len(curves) != 0 {
+		t.Fatalf("ok=%v curves=%d, want the named refusal", ok, len(curves))
+	}
+	if why != DeclineTorusLaneFullTurn || !why.IsConditioning() {
+		t.Errorf("refused with %v (conditioning=%v), want the full-turn decline", why, why.IsConditioning())
+	}
+}
+
+// TestAnOrdinaryRefusalIsNotAConditioningDemotion: a torus PAIR has no closed form in any bucket, and
+// that is not a degradation — nothing was given up. Reporting it as one would put a defect on every
+// marched boolean in the system, which is the noise that makes a diagnostic worthless.
+func TestAnOrdinaryRefusalIsNotAConditioningDemotion(t *testing.T) {
+	t.Parallel()
+	ring := testRing(t)
+	linked, _ := NewTorus(math.P3(5, 0, 0), math.V3(1, 0, 0), 5, 1.5)
+	_, why, ok := IntersectSurfacesAnalyticDeclining(ring, linked, ResolutionForSize(12))
+	if ok || why != DeclineNoClosedForm || why.IsConditioning() {
+		t.Errorf("torus pair: ok=%v why=%v conditioning=%v, want the ordinary refusal", ok, why, why.IsConditioning())
+	}
+}
+
+// TestEverySectionDeclineIsNamed: a reason with no name reaches a user as "SectionDecline(?)", which is
+// worse than no diagnostic. This fails when the next reason lands without its string.
+func TestEverySectionDeclineIsNamed(t *testing.T) {
+	t.Parallel()
+	seen := map[string]bool{}
+	for d := DeclineNone; d <= DeclineTorusLaneSeparation; d++ {
+		name := d.String()
+		if name == "SectionDecline(?)" || seen[name] {
+			t.Errorf("SectionDecline %d has a missing or duplicate name %q", d, name)
+		}
+		seen[name] = true
+	}
+	if got := SectionDecline(200).String(); got != "SectionDecline(?)" {
+		t.Errorf("an out-of-range decline names itself %q", got)
 	}
 }

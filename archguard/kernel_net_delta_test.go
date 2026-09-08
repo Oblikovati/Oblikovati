@@ -113,7 +113,16 @@ var kernelNetDeltaPin = map[string]int{
 	// face's own boundary, and it shipped silently. The stage-5 booleans — a ring meeting a ball, a
 	// ring bored by a coaxial shaft — are exact B-reps whose meshes land there, so what was an
 	// invisible wrong picture is now a reported one. The degradation is the same; it is now named.
-	"fallback-sites": 25,
+	// 25 → 26 (2026-09-08, ADR-0061 stage 5, third slice): CodeSectionConditioningDemotion. A RISE that
+	// names a degradation nothing reported before. The analytic intersector refused two different things
+	// with one anonymous ok=false: "no bucket claims this pair", which is the ordinary case and no loss
+	// at all, and a CONDITIONING demotion — the closed form applies to the pair and cannot name its own
+	// answer at these numbers, so the exact pipeline gives up ground it normally holds. Only the second
+	// is a fallback, and it was indistinguishable from the first. geom now returns the reason
+	// (geom.SectionDecline) and brep records it as a Defect naming which certificate refused; the
+	// ordinary refusal still records nothing, because a diagnostic that fires on every marched boolean
+	// in the system is noise.
+	"fallback-sites": 26,
 }
 
 func TestKernelNetDelta(t *testing.T) {

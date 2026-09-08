@@ -40,12 +40,17 @@ type torusLane struct {
 }
 
 // torusLaneAt returns the lane of h whose extremum is nearest anchor. Every azimuth it reports is a
-// CERTIFIED root of the station polynomial (or the extremum itself at a fold) — nothing here picks a
-// root by index or by a hard-coded branch.
-func torusLaneAt(h torusSecondHarmonic, anchor float64) torusLane {
+// CERTIFIED root of the station polynomial (or, at a fold, the station's OWN extremum, which both
+// branches share there) — nothing here picks a root by index or by a hard-coded branch.
+//
+// ok=false is a station with fewer than two extrema, which is a station polynomial with no azimuth
+// dependence at all. There is no lane to read there, and the anchor is a seed from ANOTHER station: it
+// is not a root of this one, so returning it would put a point on the torus that is not on the quadric
+// and say nothing. The caller declines instead.
+func torusLaneAt(h torusSecondHarmonic, anchor float64) (torusLane, bool) {
 	ex := h.extrema()
 	if len(ex) < 2 {
-		return torusLane{center: anchor, lower: anchor, upper: anchor} // a constant station: no lane at all
+		return torusLane{}, false
 	}
 	i, n := nearestAngleIndex(ex, anchor), len(ex)
 	prev, next := ex[(i+n-1)%n], ex[(i+1)%n]
@@ -56,7 +61,7 @@ func torusLaneAt(h torusSecondHarmonic, anchor float64) torusLane {
 		flanks: [2]float64{h.valueAt(prev), h.valueAt(next)},
 		lower:  arcRootFrom(roots, ex[i], prev, false),
 		upper:  arcRootFrom(roots, ex[i], next, true),
-	}
+	}, true
 }
 
 // discriminant is positive exactly where the lane's two azimuths exist and distinct, and crosses zero

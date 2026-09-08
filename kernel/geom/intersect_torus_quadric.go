@@ -23,43 +23,55 @@ import (
 // TorusQuadricSection returns the exact intersection of a torus with an implicit quadric, on the
 // torus's own chart. The quadric's quadratic form is CLASSIFIED once — invariant about the torus axis
 // or not — and exactly one reduction runs: the one-harmonic arccos of this file, or the general
-// second-harmonic lanes of intersect_torus_quadric_skew.go. ok=false is a named decline from whichever
-// one the classification chose.
+// second-harmonic lanes of intersect_torus_quadric_skew.go. ok=false always carries the reason it
+// refused ([SectionDecline]), so a caller can tell a CONDITIONING demotion — a closed form that applies
+// but cannot name its answer at these numbers — from "no closed form claims this pair", and record the
+// first as the degradation it is.
 //
-//	curves, ok := geom.TorusQuadricSection(ring, drill.QuadricForm(), geom.ResolutionForBox(box))
-func TorusQuadricSection(t Torus, q Quadric, res Resolution) ([]Curve3, bool) {
+//	curves, why, ok := geom.TorusQuadricSection(ring, drill.QuadricForm(), geom.ResolutionForBox(box))
+func TorusQuadricSection(t Torus, q Quadric, res Resolution) ([]Curve3, SectionDecline, bool) {
 	_, e1, e2 := torusAxisFrame(t)
 	if _, invariant := quadricIsAxisInvariant(q, e1, e2); !invariant {
 		return torusSkewSection(t, q, res)
 	}
 	if coaxialTorusQuadric(t, q) {
-		return torusCoaxialCircles(t, q)
+		curves, ok := torusCoaxialCircles(t, q)
+		return curves, noClosedFormWhen(ok), ok
 	}
 	spans, ok := periodicRootWindows(func(v float64) float64 {
 		h, _ := torusHarmonicAt(t, q, v)
 		return h.discriminant()
 	}, torusStationProbes)
 	if !ok {
-		return torusFullTurnSection(t, q, res) // the quadric reaches the tube at every station
+		curves, full := torusFullTurnSection(t, q, res) // the quadric reaches the tube at every station
+		return curves, noClosedFormWhen(full), full
 	}
 	if len(spans) == 0 {
-		return nil, true // it reaches the tube nowhere: they do not meet, and that is an answer
+		return nil, DeclineNone, true // it reaches the tube nowhere: they do not meet, and that is an answer
 	}
 	return torusHarmonicLoops(t, q, spans, res)
 }
 
+// noClosedFormWhen names the ordinary refusal for a step whose only answer is a bool.
+func noClosedFormWhen(ok bool) SectionDecline {
+	if ok {
+		return DeclineNone
+	}
+	return DeclineNoClosedForm
+}
+
 // torusHarmonicLoops builds one folded loop per tube-angle window of the one-harmonic reduction.
-func torusHarmonicLoops(t Torus, q Quadric, spans [][2]float64, res Resolution) ([]Curve3, bool) {
+func torusHarmonicLoops(t Torus, q Quadric, spans [][2]float64, res Resolution) ([]Curve3, SectionDecline, bool) {
 	out := make([]Curve3, 0, len(spans))
 	for _, w := range spans {
 		anchor, _ := torusHarmonicAt(t, q, (w[0]+w[1])/2)
 		loop := TorusQuadricLoop{Torus: t, Quad: q, V0: w[0], V1: w[1], UA: anchor.phase}
 		if !torusWindowConditioning(loop, res) {
-			return nil, false
+			return nil, DeclineTorusLaneSeparation, false
 		}
 		out = append(out, loop)
 	}
-	return out, true
+	return out, DeclineNone, true
 }
 
 // torusStationProbes is how many tube angles the window finder samples. The harmonic's discriminant is a
@@ -184,7 +196,11 @@ func torusBranchGapAt(t Torus, q Quadric, v, anchor float64) float64 {
 	if st.invariant {
 		return torusBranchGap(t, st.harmonic())
 	}
-	return torusLaneAt(st.secondHarmonic(), anchor).separation() * (t.MajorRadius + t.MinorRadius)
+	l, ok := torusLaneAt(st.secondHarmonic(), anchor)
+	if !ok {
+		return 0 // an unreadable station: a zero gap fails the gate, which is the decline
+	}
+	return l.separation() * (t.MajorRadius + t.MinorRadius)
 }
 
 // torusWindowProbes samples a window's interior for its widest branch separation, which has one interior

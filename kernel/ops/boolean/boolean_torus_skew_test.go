@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
@@ -289,3 +290,41 @@ func jitteredStratum(rng *rand.Rand, i int) float64 {
 // against the countersink lens's exact 5.5502832 (a one-dimensional quadrature of the disc∩annulus area
 // per height), a lattice this fine lands within 2e-5 relative — a hundredth of membershipTol.
 const skewStrata = 160
+
+// TestALaneConditioningDemotionIsReported: a rod across the ring whose radius EXCEEDS the tube's
+// swallows the tube's flank at every tube angle, so the branch pair never folds — four independent
+// full-period branches rather than a folded pair, which the second-harmonic reduction does not carry.
+// It refuses, and the refusal is the kind that has to be said out loud: the closed form APPLIED to this
+// pair and gave up ground it normally holds, which is a fallback, and a fallback is a diag.Defect that
+// reaches feature health, the API and the UI.
+//
+// The counterpart matters as much: the same rod at a radius the reduction DOES carry must record
+// nothing. A diagnostic that fires on the ordinary case is noise, and "no closed form claims this pair"
+// — a torus against a torus, say — is the ordinary case.
+func TestALaneConditioningDemotionIsReported(t *testing.T) {
+	t.Parallel()
+	ring := skewCorpusRing(t)
+	fat, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 2, 9)
+	if err != nil {
+		t.Fatalf("fat rod: %v", err)
+	}
+	for _, op := range []ops.PartFeatureOperation{ops.Cut, ops.Join} {
+		var rec diag.Recorder
+		if _, err := ops.BooleanWithDiagnostics(op, ring, fat, &rec); err == nil {
+			t.Fatalf("%v: the full-turn topology must be refused, not built", op)
+		}
+		if !rec.Has(brep.CodeSectionConditioningDemotion) {
+			t.Errorf("%v: the demotion recorded no %q; got %v", op, brep.CodeSectionConditioningDemotion, rec.Records())
+		}
+		if rec.Count(diag.Defect) == 0 {
+			t.Errorf("%v: a conditioning demotion must be a Defect", op)
+		}
+	}
+	var quiet diag.Recorder
+	if _, err := ops.BooleanWithDiagnostics(ops.Cut, ring, skewCorpusRod(t).body, &quiet); err != nil {
+		t.Fatalf("the rod the reduction carries must build: %v", err)
+	}
+	if quiet.Has(brep.CodeSectionConditioningDemotion) {
+		t.Errorf("a section the closed form named recorded a demotion: %v", quiet.Records())
+	}
+}

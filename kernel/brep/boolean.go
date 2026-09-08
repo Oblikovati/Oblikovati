@@ -77,7 +77,7 @@ func BooleanDiag(op Op, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, error)
 		// Per-face dispatch (ADR-0058): straight-edged planar faces take the exact pipeline, the
 		// rest pass through whole under booleanMixed's conservative scope gate; out-of-scope
 		// operands still decline with ErrUnsupportedMixedBoolean to the curved/CSG fallbacks.
-		res, tangent, err := booleanMixed(op, a, b)
+		res, tangent, err := booleanMixed(op, a, b, rec)
 		return recordTangent(res, tangent, err, rec)
 	}
 	res, tangent, err := booleanOnce(op, fa, fb, a, b)

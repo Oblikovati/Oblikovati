@@ -3,6 +3,7 @@
 package brep
 
 import (
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -232,7 +233,7 @@ func passSamplePoint(f curvedFace) (math.Point3, bool) {
 // booleanMixed is booleanOnce's per-face-dispatch counterpart for operands with pass-through faces.
 // It returns ErrUnsupportedMixedBoolean whenever the conservative scope gate declines, so the caller falls to the
 // curved/CSG paths exactly as before.
-func booleanMixed(op Op, a, b *topo.Body) (*topo.Body, bool, error) {
+func booleanMixed(op Op, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool, error) {
 	pa, pb := partitionFaces(a), partitionFaces(b)
 	if !passClearOf(pa, pb) || !passClearOf(pb, pa) {
 		return nil, false, ErrUnsupportedMixedBoolean
@@ -252,7 +253,7 @@ func booleanMixed(op Op, a, b *topo.Body) (*topo.Body, bool, error) {
 	// (uv) faces' imprints run BEFORE the polygonal split, mirroring the same segments onto the other
 	// side's imprint lists so the two faces split on identical coordinates.
 	impA, impB, prov := imprintCandidates(pa.planarFull, pb.planarFull, pairs)
-	uvImpA, uvImpB, wallImpA, wallImpB, sphImpA, sphImpB, okI := mixedCurvedImprints(&pa, &pb, impA, impB, pra, prb)
+	uvImpA, uvImpB, wallImpA, wallImpB, sphImpA, sphImpB, okI := mixedCurvedImprints(&pa, &pb, impA, impB, pra, prb, rec)
 	if !okI {
 		return nil, false, ErrUnsupportedMixedBoolean
 	}
@@ -276,7 +277,7 @@ func mixedKeptFragments(pa, pb facePartition, impA, impB [][][2]math.Point3, pra
 // mixedCurvedImprints plans both operands' exact-frame and wall imprints in one pass, then pairs the
 // exact-frame faces against the OTHER operand's ruled walls: that pairing writes the same section curve
 // into both the uv face's and the wall's list, so the two sides split on identical coordinates (#3460).
-func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3, pra, prb insideOracle) (uvA, uvB, wallA, wallB, sphA, sphB [][]geom.Curve3, ok bool) {
+func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3, pra, prb insideOracle, rec *diag.Recorder) (uvA, uvB, wallA, wallB, sphA, sphB [][]geom.Curve3, ok bool) {
 	uvA, uvB, okU := bothUVImprints(pa, pb, impA, impB)
 	wallA, okWA := wallImprints(pa, pb, impB)
 	wallB, okWB := wallImprints(pb, pa, impA)
@@ -288,10 +289,10 @@ func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3, p
 	okXA := pairUVWallImprints(pa, pb, uvA, wallB, prb)
 	okXB := pairUVWallImprints(pb, pa, uvB, wallA, pra)
 	okXX := pairUVUVImprints(pa, pb, uvA, uvB)
-	okSW := pairClosedSurfaceWallImprints(pa, pb, sphA, wallB)
-	okWS := pairClosedSurfaceWallImprints(pb, pa, sphB, wallA)
+	okSW := pairClosedSurfaceWallImprints(pa, pb, sphA, wallB, rec)
+	okWS := pairClosedSurfaceWallImprints(pb, pa, sphB, wallA, rec)
 	okWW := pairWallWallImprints(pa, pb, wallA, wallB)
-	okSS := pairClosedSurfaceImprints(pa, pb, sphA, sphB)
+	okSS := pairClosedSurfaceImprints(pa, pb, sphA, sphB, rec)
 	return uvA, uvB, wallA, wallB, sphA, sphB, okXA && okXB && okXX && okSW && okWS && okWW && okSS
 }
 
