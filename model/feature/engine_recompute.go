@@ -245,12 +245,20 @@ func sickReason(kind string, err error) string {
 }
 
 // classify turns a feature's recompute result into health + the running body state:
-// ErrDeferred → warning (passthrough); other error → sick (poison); a healed
-// reference (ADR-0043 P6) → warning with the rebuilt body kept; nil → healthy.
+// ErrDeferred → warning (passthrough); ErrAdoptedInvalidBody → warning with the adopted body kept
+// and dependents NOT quarantined; other error → sick (poison); a healed reference (ADR-0043 P6) →
+// warning with the rebuilt body kept; nil → healthy.
 func (fs *PartFeatures) classify(pf *PartFeature, bodies []*topo.Body, out Output, err error, sick map[ID]bool) []*topo.Body {
 	switch {
 	case errors.Is(err, ErrDeferred):
 		pf.health = health.Health{Status: health.Warning, Reason: err.Error()}
+		pf.cached = out.Bodies
+	case errors.Is(err, ErrAdoptedInvalidBody):
+		// The body is invalid but the feature only ADOPTED it (an import, a derive): the fault is the
+		// source document's, so the geometry is KEPT and the drift surfaced instead of the feature
+		// being sickened and its dependents quarantined. Same non-fatal channel ErrDeferred and
+		// reference-heal drift use (ADR-0061 stage 6). Deliberately does NOT touch sick.
+		pf.health = health.Warn(sickReason(pf.Kind(), err))
 		pf.cached = out.Bodies
 	case err != nil:
 		pf.health = health.Sicken(sickReason(pf.Kind(), err))

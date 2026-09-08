@@ -6,6 +6,10 @@ import (
 	"errors"
 	stdmath "math"
 	"testing"
+	"time"
+
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/diag"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/query"
@@ -57,7 +61,10 @@ const (
 func sweepDrill(t *testing.T, bore float64) drillOutcome {
 	t.Helper()
 	ring, drill := ringAndDrill(t, bore)
-	body, err := Boolean(Cut, ring, drill)
+	body, err, ok := booleanWithinDeadline(t, ring, drill)
+	if !ok {
+		t.Fatalf("bore %g: the boolean did not terminate within %s", bore, drillDeadline(t))
+	}
 	if err != nil || body == nil {
 		return drillRefused
 	}
@@ -65,6 +72,27 @@ func sweepDrill(t *testing.T, bore float64) drillOutcome {
 		return drillSilent // the ring came back with no bore in it at all
 	}
 	return classifyBoredRing(ring, body, bore)
+}
+
+// booleanWithinDeadline runs one cut under a deadline, so a pipeline that stops terminating fails the
+// sweep as a test rather than hanging the whole suite (the r=1.585e-7 row is exactly that case).
+func booleanWithinDeadline(t *testing.T, ring, drill *topo.Body) (*topo.Body, error, bool) {
+	t.Helper()
+	type result struct {
+		body *topo.Body
+		err  error
+	}
+	done := make(chan result, 1)
+	go func() {
+		b, err := Boolean(Cut, ring, drill)
+		done <- result{b, err}
+	}()
+	select {
+	case r := <-done:
+		return r.body, r.err, true
+	case <-time.After(drillDeadline(t)):
+		return nil, nil, false
+	}
 }
 
 // classifyBoredRing decides whether a built result IS the exact bore: the RD- row's own shape gate
@@ -102,10 +130,16 @@ func TestTheAxialDrillSweepPinsTheResolutionFloor(t *testing.T) {
 		bore float64
 		want drillOutcome
 	}{
-		// Below the floor: the silent band the size classification now refuses by name.
-		{1e-11, drillRefused}, {1e-10, drillRefused}, {1e-9, drillRefused},
-		// Above the floor and inside the capability gap: refused by name, on the pipeline's own merits.
-		{1e-8, drillRefused}, {1e-6, drillRefused}, {1e-4, drillRefused}, {1e-3, drillRefused}, {0.0631, drillRefused},
+		// BELOW the floor: the size classification refuses these before any geometry is built. The floor
+		// at this pair is thickness < Weld = 2.00499e-8, i.e. RADIUS < 1.0025e-8 — so 1e-8 is below it,
+		// not above. (The silent band the floor exists for ends much lower, at ~0.0998 x Weld; the floor
+		// covers it with margin. An earlier version of this comment filed 1e-8 as "above the floor",
+		// which mis-stated the classification's reach by an order of magnitude.)
+		{1e-11, drillRefused}, {1e-10, drillRefused}, {1e-9, drillRefused}, {1e-8, drillRefused},
+		// ABOVE the floor, inside the capability gap: the size classification does not answer, and these
+		// are refused on the pipeline's own merits — by name up to ~6.3e-5 of the extent, and by the
+		// post-hoc Requicha volume bracket above that (see TestASmallBoreIsRefusedNotShippedWrong).
+		{1e-6, drillRefused}, {1e-4, drillRefused}, {1e-3, drillRefused}, {0.0631, drillRefused},
 		// The exact plateau.
 		{0.1, drillExact}, {0.2, drillExact}, {0.4, drillExact}, {0.631, drillExact}, {0.8, drillExact},
 	} {
@@ -117,15 +151,16 @@ func TestTheAxialDrillSweepPinsTheResolutionFloor(t *testing.T) {
 
 // TestNoDrillRadiusIsAnsweredSilently is the stage's actual invariant, swept at five points per decade
 // across the five decades that BRACKET the silent band (the measurement put its top edge at
-// 0.0998 x Weld, i.e. r ~ 1e-9, and these decades run from 1e-12 to 1e-8 either side of it). A
+// 0.0998 x Weld, i.e. radius ~1e-9, and these decades run from 1e-12 to 1e-8 either side of it). A
 // "silent" outcome — the ring handed back with no bore in it, err=nil, nothing recorded — is the
 // defect; every other outcome is honest.
 //
-// It stops at 1e-8 on purpose. Above the floor the classification no longer answers and each point
-// costs a full curved boolean, and at least one radius near 1.6e-7 does not terminate in any budget
-// this suite can afford — a pathology of the small-radius torus-cylinder section, recorded in
-// ADR-0061 alongside the wrong-volume band it sits in. The upper decades are covered instead by
-// TestTheAxialDrillSweepPinsTheResolutionFloor's named points, which run in ~1.7 s.
+// It stops at 1e-8 because that is where the size classification stops answering (the floor is
+// radius < 1.0025e-8 at this pair) and each point above it costs a full curved boolean. The upper
+// decades are covered instead by TestTheAxialDrillSweepPinsTheResolutionFloor's named points, which
+// run in ~1.8 s, and the one radius that used to hang the whole suite has its own row
+// (TestTheNonConvergentDrillTerminatesAndIsNamed). Every point here runs under a deadline, so a
+// pipeline that stops terminating fails as a test instead of wedging the run.
 func TestNoDrillRadiusIsAnsweredSilently(t *testing.T) {
 	t.Parallel()
 	for e := -12; e <= -8; e++ {
@@ -180,4 +215,48 @@ func TestTheBoreOracleAgreesWithTheShippedExactRow(t *testing.T) {
 	if rel := stdmath.Abs(removed-oracle) / oracle; rel > 1e-5 { // tol:calibrated — measured 3.5e-7
 		t.Errorf("the quadrature oracle disagrees with the exact row by %.3g relative (removed %g, oracle %g)", rel, removed, oracle)
 	}
+}
+
+// TestTheNonConvergentDrillTerminatesAndIsNamed is the corpus row for the third outcome the ground
+// rules do not admit. At r = 1.585e-7 the boolean did not RETURN AT ALL: the planar T-junction pass
+// subdivides "until stable", and at a scale comparable to its absolute 1e-7 tolerance it never became
+// stable, so the operation hung — neither a refusal nor a wrong body. splitTJunctions now stops at a
+// provable budget (brep.tjSplitBudget) and the refusal is named end to end.
+//
+// The row asserts BOTH halves, because either alone can be met dishonestly: a silent break would
+// terminate without a name, and a name without a bound would still hang.
+func TestTheNonConvergentDrillTerminatesAndIsNamed(t *testing.T) {
+	t.Parallel()
+	ring, drill := ringAndDrill(t, 1.585e-7)
+	rec := &diag.Recorder{}
+	done := make(chan error, 1)
+	go func() {
+		_, err := BooleanWithDiagnostics(Cut, ring, drill, rec)
+		done <- err
+	}()
+	select {
+	case err := <-done:
+		if !errors.Is(err, ErrUnmodelledBoolean) {
+			t.Fatalf("want the boolean's named refusal; got %v", err)
+		}
+	case <-time.After(drillDeadline(t)):
+		t.Fatalf("the boolean did not terminate within %s: a hang is neither a refusal nor a wrong body",
+			drillDeadline(t))
+	}
+	if !rec.Has(brep.CodeArrangementUnconverged) {
+		t.Errorf("the unconverged subdivision must be REPORTED, not silently broken out of; got %v", rec.Records())
+	}
+}
+
+// drillDeadline is the per-boolean budget the sweep rows allow, derived from the test binary's own
+// deadline so a slow machine does not turn a correctness row into a flake. Every point the sweep
+// measured returns in well under a second; the budget is generous by two orders.
+func drillDeadline(t *testing.T) time.Duration {
+	t.Helper()
+	if d, ok := t.Deadline(); ok {
+		if budget := time.Until(d) / 4; budget < 30*time.Second {
+			return budget
+		}
+	}
+	return 30 * time.Second
 }

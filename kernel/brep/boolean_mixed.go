@@ -258,7 +258,7 @@ func booleanMixed(op Op, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool,
 		return nil, false, ErrUnsupportedMixedBoolean
 	}
 	kept, demoted, okK := mixedKeptFragments(pa, pb, impA, impB, pra, prb, pairs, op, prov)
-	pass, okP := mixedPassFaces(pa, pb, pra, prb, uvImpA, uvImpB, sphImpA, sphImpB, op)
+	pass, okP := mixedPassFaces(pa, pb, pra, prb, uvImpA, uvImpB, sphImpA, sphImpB, op, rec)
 	pass = append(pass, demoted...)
 	walls, okQ := mixedWallFaces(pa, pb, pra, prb, wallImpA, wallImpB, op)
 	if !okK || !okP || !okQ {
@@ -305,13 +305,13 @@ func mixedWallFaces(pa, pb facePartition, pra, prb insideOracle, wallImpA, wallI
 
 // mixedPassFaces assembles the stitch's pass list: both sides' whole pass-through faces plus the
 // exact-frame (uv) trims, all classified/reversed by the boolean's keep table.
-func mixedPassFaces(pa, pb facePartition, pra, prb insideOracle, uvImpA, uvImpB, sphImpA, sphImpB [][]geom.Curve3, op Op) ([]curvedFace, bool) {
+func mixedPassFaces(pa, pb facePartition, pra, prb insideOracle, uvImpA, uvImpB, sphImpA, sphImpB [][]geom.Curve3, op Op, rec *diag.Recorder) ([]curvedFace, bool) {
 	passA, okA := passThroughKept(pa.pass, prb, op, false)
 	passB, okB := passThroughKept(pb.pass, pra, op, true)
 	uvA, okVA := uvSplitFaces(pa, uvImpA, prb, pb.allFaces(), op, false)
 	uvB, okVB := uvSplitFaces(pb, uvImpB, pra, pa.allFaces(), op, true)
-	sphA, okSA := closedSurfaceSplitFaces(pa, sphImpA, prb, op, false)
-	sphB, okSB := closedSurfaceSplitFaces(pb, sphImpB, pra, op, true)
+	sphA, okSA := closedSurfaceSplitFaces(pa, sphImpA, prb, op, false, rec)
+	sphB, okSB := closedSurfaceSplitFaces(pb, sphImpB, pra, op, true, rec)
 	if !okA || !okB || !okVA || !okVB || !okSA || !okSB {
 		return nil, false
 	}

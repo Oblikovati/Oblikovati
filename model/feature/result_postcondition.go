@@ -55,24 +55,33 @@ type AdoptedBodiesFeature interface {
 	AdoptsExternalBodies() bool
 }
 
-// The COMPLETE adopted set, surveyed rather than sampled (finding 1 of the stage-6 review, which
-// caught DerivedAssemblyComponent and ShrinkwrapComponent missing: the same imperfect STEP body was
-// reported through a part derive and SICKENED the feature through an assembly derive). It is the
-// non-parametric base plus the three derive-family features already grouped by DeriveStatus in
-// derived_assembly.go — each either replays bodies it was handed or pulls another document's, and
-// each falls back to `frozen` bodies captured at BreakLink, which are adopted twice over:
+// The COMPLETE adopted set. It is surveyed BY SHAPE — every Feature.Recompute that emits a
+// *topo.Body it did not construct, i.e. appends a stored field rather than a value it built this
+// call — because the two earlier attempts at this list were anchored on something else and each
+// missed a member. The first sampled two types and missed the assembly derive and the shrinkwrap;
+// the second anchored on the DeriveStatus group and missed the IMPORT family's second member,
+// ImportedBodyFeature, so a torn STL sickened its feature and quarantined everything downstream.
+// The shape query is `grep -A4 "func (.*) Recompute(in Input) (Output, error)"` for an append of a
+// stored body field, and it returns exactly these five:
 //
-//	NonParametricBaseFeature  wraps bodies a translator produced (STEP/STL import).
+//	NonParametricBaseFeature  wraps bodies a translator produced (the STEP/B-rep import path).
+//	ImportedBodyFeature       wraps one body of a foreign MESH file (STL/OBJ/3MF) or a STEP body,
+//	                          injected verbatim; an STL is very often not a valid closed solid.
 //	DerivedPartComponent      pulls a source PART's bodies, placed by a transform.
 //	DerivedAssemblyComponent  pulls a source ASSEMBLY's placed bodies and merges the included ones.
 //	ShrinkwrapComponent       simplifies a source assembly's bodies; the simplification cannot be
 //	                          more valid than what it simplifies.
 //
-// AssemblyProxyCutFeature is deliberately NOT here: it reads another occurrence's bodies as a TOOL
-// and BUILDS a boolean result, so its output is this engine's work and carries the full
-// post-condition.
+// The three derive-family members also fall back to `frozen` bodies captured at BreakLink, which
+// are adopted twice over.
+//
+// Two neighbours are deliberately NOT here, and both are pinned as counter-examples by
+// TestOnlyTheAdoptingFeaturesAreExempt: AssemblyProxyCutFeature reads another occurrence's bodies
+// as a TOOL and BUILDS a boolean from them, and MeshSolidFeature CONSTRUCTS a faceted solid through
+// ops.MeshToBRep. Both outputs are this engine's own work and carry the full post-condition.
 var (
 	_ AdoptedBodiesFeature = (*NonParametricBaseFeature)(nil)
+	_ AdoptedBodiesFeature = (*ImportedBodyFeature)(nil)
 	_ AdoptedBodiesFeature = (*DerivedPartComponent)(nil)
 	_ AdoptedBodiesFeature = (*DerivedAssemblyComponent)(nil)
 	_ AdoptedBodiesFeature = (*ShrinkwrapComponent)(nil)

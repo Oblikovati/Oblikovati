@@ -41,12 +41,24 @@ type Face2D struct {
 // region is excluded. Segments are split at every interior crossing and coincident
 // endpoints are welded, so the result is a valid cell complex.
 func Arrange(segments [][2]math.Point2) []Face2D {
-	pts, edges := planarize(segments)
+	cells, _ := ArrangeChecked(segments)
+	return cells
+}
+
+// ArrangeChecked is [Arrange] with the T-junction pass's convergence reported. ok=false means the
+// subdivision hit [tjSplitBudget] and the cell complex CANNOT be trusted — the caller must decline,
+// never use the cells. Arrange returns them anyway for the callers that predate this and cannot act
+// on the answer; every caller that can refuse should use this one.
+func ArrangeChecked(segments [][2]math.Point2) ([]Face2D, bool) {
+	pts, edges, converged := planarize(segments)
+	if !converged {
+		return nil, false
+	}
 	if len(edges) == 0 {
-		return nil
+		return nil, true
 	}
 	cycles := traceCycles(pts, edges)
-	return nestFaces(cycles)
+	return nestFaces(cycles), true
 }
 
 // planarize splits every segment at its intersections with the others and welds the
@@ -54,7 +66,7 @@ func Arrange(segments [][2]math.Point2) []Face2D {
 // undirected edges as index pairs. Pair candidacy comes from a uniform grid hash over the
 // segments' padded AABBs (#1607), retiring the O(S²) all-pairs scan; the narrow phase and
 // its ordering are unchanged, so the arrangement is identical.
-func planarize(segments [][2]math.Point2) ([]math.Point2, [][2]int) {
+func planarize(segments [][2]math.Point2) ([]math.Point2, [][2]int, bool) {
 	weld := newWelder()
 	edges := map[[2]int]bool{}
 	cull := newSegmentCullGrid(segments)
@@ -65,7 +77,7 @@ func planarize(segments [][2]math.Point2) ([]math.Point2, [][2]int) {
 			}
 		}
 	}
-	splitTJunctions(weld.points, edges)
+	converged := splitTJunctions(weld.points, edges)
 	out := make([][2]int, 0, len(edges))
 	for e := range edges {
 		out = append(out, e)
@@ -78,7 +90,7 @@ func planarize(segments [][2]math.Point2) ([]math.Point2, [][2]int) {
 		}
 		return out[i][1] < out[j][1]
 	})
-	return weld.points, out
+	return weld.points, out, converged
 }
 
 // tjTol bounds the perpendicular distance at which a welded vertex counts as lying ON an
@@ -93,10 +105,11 @@ const tjTol = 1e-7 // tol:calibrated — matches the welder grid; see arrTol
 // chain clipped to land exactly on a hole-loop edge, #860), the touch point welds as a vertex
 // but the host edge is left whole, so the chain dangles and the face never partitions. This
 // pass welds such chains shut, the crux of robust planar arrangement under faceted-curve cuts.
-func splitTJunctions(pts []math.Point2, edges map[[2]int]bool) {
+func splitTJunctions(pts []math.Point2, edges map[[2]int]bool) bool {
 	// The welded point set is fixed here (only edges split), so one grid hash over it culls
 	// every vertex-on-edge scan below (#1607).
 	verts := newVertexCullGrid(pts)
+	budget := tjSplitBudget(len(pts))
 	for changed := true; changed; {
 		changed = false
 		for e := range edges {
@@ -104,13 +117,32 @@ func splitTJunctions(pts []math.Point2, edges map[[2]int]bool) {
 			if c < 0 {
 				continue
 			}
+			if budget--; budget < 0 {
+				return false // churning, not converging: see tjSplitBudget
+			}
 			delete(edges, e)
 			edges[canonEdge(e[0], c)] = true
 			edges[canonEdge(c, e[1])] = true
 			changed = true
 		}
 	}
+	return true
 }
+
+// tjSplitBudget is the PROVABLE bound on how many T-junction splits a converging run can make, not a
+// tuned number. Each split replaces one edge with two whose endpoints are existing welded vertices,
+// so it strictly grows a SET keyed by canonical index pairs; a set of undirected pairs over n
+// vertices holds at most n(n−1)/2 members, so at most that many splits can ever add anything. A run
+// that exceeds it is not subdividing towards a fixed point, it is revisiting pairs it already has.
+//
+// It has to exist because the loop's termination argument silently depends on scale. tjTol is an
+// ABSOLUTE 1e-7, and it is used twice over: as a perpendicular DISTANCE to the edge and as a
+// dimensionless bound on the parameter t along it. On geometry whose own features are near 1e-7 —
+// measured: the RING corpus body cut by an axial drill of radius 1.585e-7 — those two readings stop
+// agreeing, the pass keeps finding "interior" vertices on edges it has just made, and the boolean
+// never returns. A hang is neither a refusal nor a wrong body, and the ground rules admit only those
+// two (ADR-0061 stage 6, review round 2).
+func tjSplitBudget(n int) int { return n * (n - 1) / 2 }
 
 // vertexOnEdgeInterior returns a vertex index lying strictly inside segment a→b (within
 // [tjTol] of it, parameter away from both ends), or −1 if none. The lowest such index is

@@ -79,7 +79,11 @@ type uvSide interface {
 func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.Curve3, materialOf func() materialPredicate) ([]curvedFace, []loopEdge, error) {
 	c.placeSeams(imprint) // move the artificial seam(s) clear of the imprint before arranging
 	segs := c.assembleSegments(imprint)
-	kept := keptCells(arrangeBand(segs), materialOf())
+	cells, converged := arrangeBand(segs)
+	if !converged {
+		return nil, nil, unconvergedArrangement(len(segs))
+	}
+	kept := keptCells(cells, materialOf())
 	if len(kept) == 0 {
 		return nil, nil, nil // the whole side is on the dropped side
 	}

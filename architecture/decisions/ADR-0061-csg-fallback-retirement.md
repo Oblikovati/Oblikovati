@@ -3474,3 +3474,79 @@ loop and two holes — exactly the shape containment works on), `go test ./kerne
 The feature engine's post-condition runs level 1. That is a benchmark rather than a suite wall time
 on purpose: it is not affected by what else the machine is doing, and it names the mechanism instead
 of hiding it inside a 900-second number.
+
+### Stage 6, review round 2 — the hang, the import family, and three corrections (2026-09-08)
+
+#### The third outcome: a boolean that did not return
+
+Round 1 recorded, as a concern, that a drill of radius ≈1.585e−7 through the RING body did not
+terminate. That was the wrong disposition: the ground rules admit an operation that refuses and an
+operation that answers, and nothing else. A hang is neither, and it is the worst of the three for a
+UI, which cannot even report it.
+
+The loop is `brep.splitTJunctions` (`arrange2d.go`), the planar arrangement's T-junction pass, which
+subdivides "until stable". Its termination argument silently depends on scale: `tjTol` is an
+ABSOLUTE 1e−7 and is read twice over — as a perpendicular DISTANCE from the edge, and as a
+dimensionless bound on the parameter `t` along it. On geometry whose own features sit near 1e−7
+those two readings stop agreeing, the pass keeps finding "interior" vertices on edges it has just
+made, and it never converges. The stack at the hang:
+
+```
+BooleanDiag → booleanMixed → mixedPassFaces → closedSurfaceSplitFaces →
+closedSurfaceSplitOne → trimByImprint → arrangeBand → Arrange → planarize → splitTJunctions
+```
+
+The bound is PROVABLE rather than tuned. Each split replaces one edge with two whose endpoints are
+existing welded vertices, so it strictly grows a SET keyed by canonical index pairs; a set of
+undirected pairs over n vertices holds at most n(n−1)/2 members, so at most that many splits can ever
+add anything. `tjSplitBudget(n) = n(n−1)/2`, and a run that exceeds it is revisiting pairs it already
+has. Exceeding it is NOT a silent break: `planarize` reports non-convergence, the new
+`ArrangeChecked` returns `ok=false` (plain `Arrange` keeps its signature for the callers that cannot
+act on the answer), `trimByImprint` returns `ErrUnconvergedArrangement`, and the mixed boolean's face
+pass records `arrangement.unconverged` (a `diag.Defect`) on the recorder it already carries before
+refusing. The cells are never used: an unstable cell complex would make every face traced from it a
+guess.
+
+| | before | after |
+| --- | --- | --- |
+| r = 1.585e−7 through the RING | did not return in any budget the suite could give it | refused in 0.07 s: `ErrUnmodelledBoolean`, with `arrangement.unconverged` recorded |
+| `splitTJunctions` termination | "until stable", unbounded | bounded by `tjSplitBudget`, reported when hit |
+| sweep rows | could wedge the suite | each runs under a deadline derived from `t.Deadline()` |
+
+`fallback-sites` rises by one for `CodeArrangementUnconverged` — a RISE that names a degradation
+nothing reported before, and in this case one that could not be reported at all, because the
+operation never got far enough to report anything.
+
+#### The import family
+
+Round 1's exemption survey anchored on the `DeriveStatus` group and so missed the IMPORT family's
+second member. `ImportedBodyFeature` (`imported_body.go`) wraps one body of a foreign MESH file
+(STL/OBJ/3MF) or a STEP body and injects it verbatim — "the mesh-exchange counterpart of
+`NonParametricBaseFeature`" — and declared nothing, so a torn STL sickened its feature and
+quarantined everything downstream. An STL is very often not a valid closed solid; this is the single
+most likely way a user meets the post-condition.
+
+The list is now surveyed BY SHAPE — every `Recompute` that emits a `*topo.Body` it did not construct,
+i.e. appends a stored field rather than a value it built this call — because two anchors in a row
+each missed a member. The complete set is five: `NonParametricBaseFeature`, `ImportedBodyFeature`,
+`DerivedPartComponent`, `DerivedAssemblyComponent`, `ShrinkwrapComponent`. Two neighbours are pinned
+as counter-examples: `AssemblyProxyCutFeature` booleans another occurrence's bodies as a tool, and
+`MeshSolidFeature` CONSTRUCTS a faceted solid through `ops.MeshToBRep` — both outputs are this
+engine's own work and carry the full post-condition.
+
+#### Three corrections to the round-1 record
+
+The stage-6 round-1 section above stands as written (this ADR is append-only); these correct it.
+
+1. **The floor's reach.** The round-1 table says the classification claims "r ≤ 1e−9". It does not:
+   the floor is a THICKNESS of `Weld` = 2.00499e−8 at the RING pair, so it claims **radius <
+   1.0025e−8** — an order of magnitude more than recorded. The measured silent band still ends far
+   below that (≈0.0998 × Weld), which is the margin the floor was chosen for; only the description
+   was wrong.
+2. **The fourth row's mechanism.** The round-1 sweep table calls the 6.3e−5 … 6.3e−3 band "refused",
+   next to rows that are refused BY NAME at classification. It is not the same thing: in that band
+   the pipeline builds a complete, valid, correctly-wound solid and only the post-hoc Requicha volume
+   bracket rejects it. The distinction matters because a volume bracket is a smoke test, not a proof
+   — a wrong body of coincidentally right volume would pass it.
+3. **The benchmark invocation.** The recorded command said `-benchtime 200x`; the numbers were taken
+   at `300x`.

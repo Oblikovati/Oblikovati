@@ -153,23 +153,53 @@ func TestAnAdoptedInvalidBodyDoesNotQuarantineDependents(t *testing.T) {
 	}
 }
 
-// Every feature that adopts bodies must declare it — the whole derive family, not the two that
-// happened to be noticed first. The assembly derive and the shrinkwrap were missing, so the same
-// imperfect STEP body was reported through a part derive and SICKENED the feature through an
-// assembly derive (finding 1 of the stage-6 review).
-func TestTheWholeDeriveFamilyDeclaresItsBodiesAdopted(t *testing.T) {
+// Every feature that emits a body it did not construct must declare it. This list is the DERIVE
+// family AND the IMPORT family: the first attempt sampled two types and missed the assembly derive
+// and the shrinkwrap; the second anchored on the DeriveStatus group and missed ImportedBodyFeature,
+// so a torn STL sickened its feature and quarantined everything downstream (findings 1 of stage-6
+// review rounds 1 and 2). The membership rule is the SHAPE, not any existing grouping: a Recompute
+// that appends a stored body field rather than one it built this call.
+func TestEveryFeatureThatAdoptsBodiesDeclaresIt(t *testing.T) {
 	t.Parallel()
 	for _, f := range []Feature{
-		&NonParametricBaseFeature{}, &DerivedPartComponent{}, &DerivedAssemblyComponent{}, &ShrinkwrapComponent{},
+		&NonParametricBaseFeature{}, &ImportedBodyFeature{},
+		&DerivedPartComponent{}, &DerivedAssemblyComponent{}, &ShrinkwrapComponent{},
 	} {
 		if !adoptsExternalBodies(f) {
-			t.Errorf("%s pulls bodies it did not build and must declare AdoptsExternalBodies", f.Kind())
+			t.Errorf("%s emits a body it did not construct and must declare AdoptsExternalBodies", f.Kind())
 		}
 	}
-	// The counter-example that keeps the exemption honest: a proxy cut READS another occurrence's
-	// bodies but BUILDS a boolean from them, so its result is this engine's work.
-	if adoptsExternalBodies(&AssemblyProxyCutFeature{}) {
-		t.Error("a proxy cut builds its result and must carry the full post-condition")
+}
+
+// The counter-examples that keep the exemption from widening. Both of these READ geometry from
+// elsewhere but BUILD their result from it, so the full post-condition applies: a proxy cut booleans
+// another occurrence's bodies as a tool, and a mesh-solid constructs a faceted B-rep through
+// ops.MeshToBRep. Exempting either would let a body this engine built ship invalid.
+func TestOnlyTheAdoptingFeaturesAreExempt(t *testing.T) {
+	t.Parallel()
+	for _, f := range []Feature{&AssemblyProxyCutFeature{}, &MeshSolidFeature{}} {
+		if adoptsExternalBodies(f) {
+			t.Errorf("%s BUILDS its result and must carry the full post-condition", f.Kind())
+		}
+	}
+}
+
+// An invalid IMPORTED body takes the same non-fatal route as a derived one — the row that was red on
+// the committed tree because the classify arm had been lost.
+func TestAnInvalidImportedBodyWarnsAndKeepsItsGeometry(t *testing.T) {
+	t.Parallel()
+	fs := NewPartFeatures(nil)
+	pf := NewImportedBodies(fs).Add(tornSquareSolid(), "res-uuid", "stl")
+	fs.Recompute()
+
+	if pf.Health().Status != health.Warning {
+		t.Fatalf("a torn STL must warn, not sicken its feature; got %+v", pf.Health())
+	}
+	if !strings.Contains(pf.Health().Reason, "adopted body is not a valid B-rep") {
+		t.Errorf("the warning must name the invariant; got %q", pf.Health().Reason)
+	}
+	if got := len(fs.Result()); got != 1 {
+		t.Errorf("the imported body is kept, not dropped; the result holds %d bodies", got)
 	}
 }
 

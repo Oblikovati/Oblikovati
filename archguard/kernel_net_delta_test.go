@@ -149,7 +149,14 @@ var kernelNetDeltaPin = map[string]int{
 	// re-export of the same code — the one name a model-layer consumer matches on, the convention the
 	// other four boolean codes already follow — is counted a second time. One new degradation, two
 	// declarations of its name.
-	"fallback-sites": 30,
+	// 30 → 31 (2026-09-08, ADR-0061 stage 6, review round 2): CodeArrangementUnconverged. A RISE that
+	// names a degradation nothing reported before, and one that COULD not be reported before: the
+	// planar T-junction pass subdivided "until stable" and, on geometry at the scale of its absolute
+	// 1e-7 tolerance, never became stable — measured, an axial drill of radius 1.585e-7 through the
+	// RING body never returned at all. A hang is neither a refusal nor a wrong body, and the ground
+	// rules admit only those two. The pass now stops at a provable budget (n(n-1)/2 splits, the size
+	// of the canonical edge-pair set it grows) and the boolean refuses by name instead of hanging.
+	"fallback-sites": 31,
 }
 
 func TestKernelNetDelta(t *testing.T) {

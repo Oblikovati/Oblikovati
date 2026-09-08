@@ -148,11 +148,11 @@ func closedSurfaceUVImprint(sf, uf curvedFace) ([]geom.Curve3, bool) {
 // closedSurfaceSplitFaces trims each closed-surface face by its imprints through its loop-framed chart,
 // classifying kept cells by the boolean's keep table over the other operand's membership. A sphere with
 // no imprint keeps the whole-face pass-through classification.
-func closedSurfaceSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracle, op Op, isB bool) ([]curvedFace, bool) {
+func closedSurfaceSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracle, op Op, isB bool, rec *diag.Recorder) ([]curvedFace, bool) {
 	var out []curvedFace
 	faces2, _ := p.closedSurfaces()
 	for i, sf := range faces2 {
-		faces, ok := closedSurfaceSplitOne(sf, imprints[i], other, op, isB)
+		faces, ok := closedSurfaceSplitOne(sf, imprints[i], other, op, isB, rec)
 		if !ok {
 			return nil, false
 		}
@@ -163,7 +163,7 @@ func closedSurfaceSplitFaces(p facePartition, imprints [][]geom.Curve3, other in
 
 // closedSurfaceSplitOne trims one closed-surface face (or classifies it whole when it has no imprints),
 // through whichever of the two charts frames it.
-func closedSurfaceSplitOne(sf curvedFace, imprint []geom.Curve3, other insideOracle, op Op, isB bool) ([]curvedFace, bool) {
+func closedSurfaceSplitOne(sf curvedFace, imprint []geom.Curve3, other insideOracle, op Op, isB bool, rec *diag.Recorder) ([]curvedFace, bool) {
 	if len(imprint) == 0 {
 		return passThroughKept([]curvedFace{sf}, other, op, isB)
 	}
@@ -173,6 +173,7 @@ func closedSurfaceSplitOne(sf curvedFace, imprint []geom.Curve3, other insideOra
 	}
 	faces, _, err := trimByImprint(side, sf, sf.surface, imprint, material)
 	if err != nil {
+		recordArrangementDecline(rec, err) // a hang would have been the alternative; say why we refused
 		return nil, false
 	}
 	faces = boundedTrims(faces)

@@ -15,7 +15,7 @@ import (
 // is paid thousands of times over a rebuild — and unlike a suite wall time it is not affected by
 // whatever else the machine is doing.
 //
-//	go test ./kernel/ops/validate/ -run XXX -bench Level -benchtime 200x
+//	go test ./kernel/ops/validate/ -run XXX -bench Level -benchtime 300x
 
 func BenchmarkLevelTopologyOnly(b *testing.B) {
 	body := drilledPlate(b)

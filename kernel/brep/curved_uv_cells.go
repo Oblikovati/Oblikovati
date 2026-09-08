@@ -19,12 +19,12 @@ import (
 // arrangeBand runs the planar subdivision on the assembled band, returning the cells as (u,v) polygons
 // (outer loop + nested holes). It is the periodic band flattened to a rectangle; cross-seam adjacency is
 // reconciled later when the kept region's boundary is walked.
-func arrangeBand(segs []uvSeg) []Face2D {
+func arrangeBand(segs []uvSeg) ([]Face2D, bool) {
 	in := make([][2]math.Point2, 0, len(segs))
 	for _, s := range segs {
 		in = append(in, [2]math.Point2{s.a, s.b})
 	}
-	return Arrange(in)
+	return ArrangeChecked(in)
 }
 
 // keptCells returns the arrangement cells whose interior is on the material side of the imprint, each cell
