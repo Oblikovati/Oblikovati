@@ -62,7 +62,10 @@ var kernelNetDeltaPin = map[string]int{
 	// by asserting its operands' surface kinds (a cylinder side, a cone frustum, a bare sphere, a
 	// planar cap), which is how a per-pair recognizer recognises. The general pipeline classifies a
 	// face by its chart, not by a type switch on its surface.
-	"type-assertions": 692,
+	// 692 → 691 (2026-09-08, ADR-0061 stage 5): a FALL — the curved-face router's `s.(geom.Torus)`
+	// went with torusComplementMesh. An outerless face on any periodic surface is now meshed from the
+	// chart it carries, so the router asks what the FACE records, not what its surface is.
+	"type-assertions": 691,
 	// 37 → 11 (2026-09-07, ADR-0061 stage 4): a FALL of 26 — curvedExactPaths is DELETED. It was an
 	// ordered first-fit ladder of 26 bespoke recognizers tried before the general per-face pipeline,
 	// the shape the ground rules forbid ("dispatch is a classification that selects exactly one path"),

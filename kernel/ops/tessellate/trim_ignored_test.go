@@ -22,8 +22,10 @@ import (
 // ground rules do not let it ship silently.
 //
 // The bodies below are the ones ADR-0061 stage 5 made buildable: a ring meeting a ball, and a ring
-// bored by a coaxial shaft. Their B-reps are exact and certified against independent oracles; it is the
-// MESH that is not there yet, and this row is what keeps that visible until a chart-driven mesher lands.
+// bored by a coaxial shaft. Both are meshed from their own region now — the tube-wrapping band by the
+// band loft, the azimuth-wrapping band by the chart-driven mesher — so these rows assert the mesh, and
+// the reporter's own row moved to chart_face_cover_test.go, where a face that carries NO chart is what
+// still reaches it.
 
 // hasIgnoredTrim reports whether a body's mesh recorded the discarded-trim defect.
 func hasIgnoredTrim(t *testing.T, b *topo.Body) bool {
@@ -85,11 +87,15 @@ func TestATubeWrappingBandMeshesItsOwnRegion(t *testing.T) {
 	}
 }
 
-// TestADiscardedTrimIsReported: a ring bored by a COAXIAL shaft leaves two bands that wrap the ring's
-// azimuth rather than its tube, and no mesher charts those. The router meshes the whole torus and the
-// body must report the degradation — which is what keeps the gap visible until the chart-driven mesher
-// covers it.
-func TestADiscardedTrimIsReported(t *testing.T) {
+// TestABoredRingCarriesItsOwnTrim: a ring bored by a COAXIAL shaft leaves two torus bands that wrap
+// the ring's AZIMUTH rather than its tube, which no wrapping mesher charted — the router meshed the
+// whole torus (144.78 mm3 against 203.59) and the body reported the discarded trim.
+//
+// The chart-driven mesher takes it now: region from the face's carried chart, points from the shared
+// edges (ADR-0061). So this row asserts the opposite of what it used to — a watertight body, a volume
+// that is a chord deficit, and NO defect. What keeps the reporter honest is
+// TestAFaceWithoutAChartStillReportsItsDiscardedTrim, beside recordIgnoredTrim itself.
+func TestABoredRingCarriesItsOwnTrim(t *testing.T) {
 	t.Parallel()
 	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
@@ -101,14 +107,21 @@ func TestADiscardedTrimIsReported(t *testing.T) {
 	}
 	bored, err := ops.Boolean(ops.Cut, ring, shaft)
 	if err != nil {
-		t.Fatalf("ring − coaxial shaft: %v", err)
+		t.Fatalf("ring - coaxial shaft: %v", err)
 	}
-	// The B-rep is right — that is the point of reporting the MESH rather than refusing the boolean.
 	if v := ops.Validate(bored); !v.Valid || !v.Closed || !v.Manifold {
 		t.Fatalf("the bored ring's B-rep is not a valid closed manifold solid: %+v", v)
 	}
-	if !hasIgnoredTrim(t, bored) {
-		t.Error("the bored ring meshed over the torus's whole domain without recording the discarded trim")
+	mesh, _ := tessellate.TessellateBody(bored, ops.DefaultQuality())
+	if free := tessellate.FreeEdgeCount(mesh); free != 0 {
+		t.Errorf("the bored ring meshed with %d free edges, want a watertight mesh", free)
+	}
+	if hasIgnoredTrim(t, bored) {
+		t.Error("the bored ring still reports a discarded trim; the chart mesher charts it now")
+	}
+	const want = 203.59 // the boolean's own certified corpus (TestBoredRingIsExact)
+	if got := tessellate.MeshGeometryProperties(mesh).Volume; stdmath.Abs(got-want) > 0.05*want {
+		t.Errorf("the bored ring meshes to %.5f against an analytic %.5f; that is not a chord deficit", got, want)
 	}
 }
 

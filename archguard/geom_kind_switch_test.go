@@ -54,15 +54,18 @@ var geomSwitchDebt = map[string]int{
 	"kernel/ops/heal":              12,
 	"kernel/ops/internal/probe":    3,
 	"kernel/ops/surface":           21,
-	"kernel/ops/tessellate":        53,
-	"kernel/ops/transform":         4,
-	"kernel/ops/validate":          9,
-	"kernel/topo":                  3,
-	"model/assembly":               4,
-	"model/compdef":                1,
-	"model/drawing":                20,
-	"model/feature":                49,
-	"model/sketch":                 15,
+	// 53 → 52 (2026-09-08, ADR-0061): the torus-complement branch's `s.(geom.Torus)` is gone with
+	// torusComplementMesh — the chart-driven mesher takes an outerless charted face on ANY periodic
+	// surface, so the router asks whether the face carries a chart, not what its surface is.
+	"kernel/ops/tessellate": 52,
+	"kernel/ops/transform":  4,
+	"kernel/ops/validate":   9,
+	"kernel/topo":           3,
+	"model/assembly":        4,
+	"model/compdef":         1,
+	"model/drawing":         20,
+	"model/feature":         49,
+	"model/sketch":          15,
 }
 
 func TestGeometryKindSwitchesLiveInGeom(t *testing.T) {
