@@ -2551,3 +2551,181 @@ follow-up once those packages get their own disjointness proofs.
 declining 5 of its 6 corpus faces, not on triangle count: where the chart mesher DID take a cap it read
 +0.31% of area, which on a convex cap is CLOSER to the closed form, not further. Triangle count is a
 cost, not a correctness argument, and the section above used it as one.
+
+### Stage 5, third slice — the torus's SECOND harmonic (2026-09-08)
+
+The second slice above reduced a torus against a quadric whose quadratic form `M` is INVARIANT about
+the torus axis, and said plainly what it could not reach: "a skew rod is not in it: its M is not
+axis-invariant, the u-dependence is a second harmonic, and the roots are a quartic in tan(u/2) rather
+than an arccos". That is now the general case, and the arccos is the sub-family it collapses to.
+
+**The dependence the first slice dropped.** Writing the torus point as `W₀ + ρ·e(u)` and substituting
+into `Q(X) = W·MW + 2G·W + K`,
+
+```text
+Q = (W₀·MW₀ + 2 G·W₀ + K) + ρ·(e·T) + ρ²·(e·Me),   T = 2(M W₀ + G)
+```
+
+The term LINEAR in `e` is `x·cos u + y·sin u` — one harmonic, and the only one the first slice kept.
+The term QUADRATIC in `e` is
+
+```text
+e·Me = m₁₁·cos²u + 2 m₁₂·cos u·sin u + m₂₂·sin²u
+     = (m₁₁+m₂₂)/2 + ((m₁₁−m₂₂)/2)·cos 2u + m₁₂·sin 2u
+```
+
+with `m₁₁ = ê₁·Mê₁`, `m₂₂ = ê₂·Mê₂`, `m₁₂ = ê₁·Mê₂` — a constant plus a SECOND harmonic that vanishes
+exactly when `m₁₁ = m₂₂` and `m₁₂ = 0`, which is `quadricIsAxisInvariant`. So the reduction the first
+slice found was the general one with two coefficients set to zero, and the general one is
+
+```text
+f(u) = Level + Cos1·cos u + Sin1·sin u + Cos2·cos 2u + Sin2·sin 2u = 0
+Cos2 = ρ²(m₁₁−m₂₂)/2   Sin2 = ρ²·m₁₂   Cos1 = ρ·x   Sin1 = ρ·y
+Level = W₀·MW₀ + 2 G·W₀ + K + ρ²(m₁₁+m₂₂)/2
+```
+
+verified against `q.ValueAt(t.PointAt(u,v))` at random `(u, v)` to 1e-12 relative for a sphere, an axial
+drill, a rod across the ring, a tilted drill and a tilted cone. The azimuths are the same Weierstrass
+quartic the conic×conic bucket already solves (`trigQuadraticRoots`); this slice added no second solver.
+
+**The real question was not the roots, it was which two of them are one branch.** The one-harmonic
+station has exactly two azimuths, ordered by construction. A second-harmonic station has up to FOUR: an
+infinite rod driven across a ring pierces the tube on BOTH of the ring's flanks, so every tube angle it
+reaches carries two disjoint pairs. A pair is named by the EXTREMUM it straddles — `df/du` is a station
+polynomial of the same shape, so the same solver finds the extrema — and the pair MERGES onto that
+extremum at its fold, which is exactly what `phase ± arccos` does as the arccos falls to zero. The
+lane's discriminant
+
+```text
+min(−f(c)·f(c⁻), −f(c)·f(c⁺))
+```
+
+with `c` the lane's extremum and `c⁻, c⁺` its neighbours, IS `reach² − level²` for a one-harmonic
+station (whose only extrema are its peak and its trough). So `periodicRootWindows` answers the
+window/fold topology for both buckets unchanged, and both build the same `TorusQuadricLoop`; the loop
+gained one field, the lane label, and its azimuth reader classifies the station once and takes exactly
+one reduction.
+
+Three things are certified rather than assumed, because each of them is a place a guess would ship a
+wrong body:
+
+- **every azimuth by its residual** on the station polynomial, after a Newton polish in the ANGLE (the
+  `tan(u/2)` chart is ill-conditioned near the half-turn, where a root sits at a nearly infinite `t`);
+- **that a lane is a lane**: when four azimuths are present EVERY extremum has flanks of the opposite
+  sign, so the COMPLEMENTARY pairing reports the same windows. It is rejected because its own extremum
+  does not vanish at the fold — a comparison of computed values against each other, with no floor;
+- **that the extremum tracks stay separable** across the tube's whole turn. They are seeded at one
+  station and followed by nearest extremum; a count that changes, a drift past half the seeds' own
+  spacing, or two seeds claiming one extremum is a pairing this form cannot name, and the pair demotes
+  to the general marcher rather than being named wrongly.
+
+A lane whose pair exists at EVERY station is the full-turn topology — four independent branches, not a
+folded pair — and declines by name too. It is not in the corpus and no row needs it.
+
+#### What the second harmonic unlocked
+
+| body | analytic volume | oracle | census |
+| --- | --- | --- | --- |
+| ring ∪ rod across the ring | 241.4230 | Requicha 1e-9, membership 4e-4 | 1 torus + 2 cyl + 2 plane |
+| ring − rod across the ring | 213.1487 | Requicha 1e-9, membership 3e-4 | 1 torus + 1 cyl |
+| ring ∩ rod across the ring | 8.9174 | membership 6e-4 | 2 torus + 1 cyl |
+| ring ∪ tilted drill | 236.3615 | Requicha 1e-9, membership 5e-4 | 1 torus + 2 cyl + 2 plane |
+| ring − tilted drill | 216.2553 | Requicha 1e-9, membership 3e-4 | 1 torus + 1 cyl |
+| ring ∩ tilted drill | 5.8108 | membership 8e-4 | 2 torus + 1 cyl |
+| ring ∪ off-centre countersink | 247.3034 | Requicha 1e-9, membership 2e-4 | 1 torus + 1 cone + 1 plane |
+| ring − off-centre countersink | 216.5158 | Requicha 1e-9, membership 3e-4 | 1 torus + 1 cone + 1 plane |
+| ring ∩ off-centre countersink | 5.5503 | 1-D quadrature 5.5502832 | 1 torus + 1 cone + 1 plane |
+
+Every one reports `AchievedBoundaryTolerance() == 0`: the section is a closed form and says so. The
+countersink row is the REPRODUCTION row — its axis is parallel to the ring's, so its tensor is
+axis-invariant however far off-centre it sits, and it must still take the arccos. Its level is proven
+equal to the one-harmonic form's bit for bit, and its two azimuths to 1e-9.
+
+`TestSkewRodThroughARingIsRefusedByName` is gone, and with it the two other fixtures that pinned the
+same refusal. All three moved to the pair that genuinely has no closed form — two interlocked TORI,
+where NEITHER side supplies an implicit quadric to substitute a chart into. `mixed-decline-returns`
+stays at 3: the refusal SITE is unchanged, only what reaches it.
+
+#### Two traps, both of which returned an empty answer rather than a wrong one
+
+**A quartic whose leading coefficient vanishes divided by zero.** `RealQuarticRoots` needs `c4 ≠ 0`,
+and the Weierstrass substitution makes `c4` the equation's value at the half-turn — zero whenever a
+root sits there. `trigQuadraticRoots` already recovered that one root by hand, so the degeneracy was
+KNOWN; what nobody had checked is what the rest of the solve does with it. It produced `±Inf`, every
+other root came back `NaN`, and a `NaN` fails every "is this root real" comparison it is put through,
+so the station returned no roots at all. The rod across a ring hits it at every tube station: its
+derivative is `−42.25·sin 2u`, whose quartic is a cubic. `realRootsUpToQuartic` deflates to the cubic,
+the quadratic or the line, both conic callers take it, and the regression row asserts no returned root
+is non-finite.
+
+**The membership oracle had a bias its own error bars denied.** Sampling triples from one `math/rand`
+stream, the countersink lens read 5.5305, 5.5535 and 5.5536 from three seeds — a spread of 1e-3 that
+did NOT shrink with the sample count, against an exact 5.5502832 obtained by a one-dimensional
+quadrature of the disc-against-annulus area per height. That is the generator's 3D lattice structure,
+not sampling noise, and at the tolerance this slice needed it would have read as a kernel error. The
+oracle now samples a JITTERED LATTICE — one point per cell of a 160³ stratification — which lands
+within 2e-5 on the same row. An oracle that gates a result must be more exact than the result it gates.
+
+#### The mesh, measured — the handoff to the tessellation slice
+
+The B-reps are exact and certified above. Their MESHES are the next slice's problem, and this is where
+they stand at default quality (the bare torus control is 1.3% low from chord inscription):
+
+| body | free mesh edges | mesh volume | analytic | error |
+| --- | --- | --- | --- | --- |
+| bare torus (control) | 0 | 219.2269 | 222.0661 | 1.28% |
+| ring ∪ rod across the ring | 64 | 241.6298 | 241.4230 | 0.09% |
+| ring − rod across the ring | 64 | 213.6862 | 213.1487 | 0.25% |
+| ring ∩ rod across the ring | 0 | 8.7249 | 8.9174 | 2.16% |
+| ring ∪ tilted drill | 64 | 235.5702 | 236.3615 | 0.33% |
+| ring − tilted drill | 64 | 215.6019 | 216.2553 | 0.30% |
+| ring ∩ tilted drill | 0 | 5.7069 | 5.8108 | 1.79% |
+| ring ∪ off-centre countersink | 0 | 244.2205 | 247.3034 | 1.25% |
+| ring − off-centre countersink | 0 | 213.6195 | 216.5158 | 1.34% |
+| ring ∩ off-centre countersink | 0 | 5.3972 | 5.5503 | 2.76% |
+
+The volumes are right everywhere — no row is out by a factor, which is what a wrong REGION looks like.
+What is not right is watertightness on the six rows that leave the ring's own surface holed by a
+through-bore: 64 free edges each, the same count and the same cause the existing `ring − axial drill`
+row carries (measured here unchanged at 64, 215.6087 against 216.2569). The ring's surface with two
+bore seams as holes is not a tube-wrapping band, so the loft above does not claim it and the trim ends
+on the full parametric domain. The three countersink rows and the three lens rows are watertight,
+because their torus faces are a single-hole trim and a wrapping band respectively.
+
+#### A pre-existing defect this slice surfaced, and did not cause
+
+Driving the tilted drill through a range of lengths, ~20% of the JOINs are refused by name: the mixed
+per-face boolean returns a body with two shells and open edges, the acceptance gate refuses it, and
+the operation declines. It is NOT this slice's: the identical failure reproduces on the ONE-harmonic
+path, which this slice does not touch, and it reproduces on the wave base `c1e8f2a8` in a clean tree.
+The smallest reproducer is an AXIS-INVARIANT one:
+
+```text
+ring  = brep.SolidTorus(P3(0,0,0), V3(0,0,1), 5, 1.5)
+drill = brep.SolidCylinder(P3(5.3,0,-h/2), V3(0,0,1), 0.8, h)   // 21 of 21 heights refuse the JOIN
+drill = brep.SolidCylinder(P3(5.5,0,-h/2), V3(0,0,1), 0.8, h)   // 21 of 21 refuse
+drill = brep.SolidCylinder(P3(5.0,0,-h/2), V3(0,0,1), 0.8, h)   // 21 of 21 succeed
+drill = brep.SolidCylinder(P3(5.4,0,-h/2), V3(0,0,1), 0.8, h)   // 21 of 21 succeed
+```
+
+The seam solve is not the cause — the wall's seam crossings and its split faces are identical between a
+succeeding and a failing case (4 crossings, 2 faces each) — so it is downstream of the wall, in the
+stitch. The corpus's tilted drill is 10 long, which is clear of it; the defect needs its own slice.
+
+#### The measurement
+
+| | before | after |
+| --- | --- | --- |
+| torus × quadric families solved | axis-invariant M only | every quadric M |
+| azimuths a station may carry | 2 | 4, paired into lanes |
+| curve forms | `TorusQuadricArc`, `TorusQuadricLoop` | unchanged — the loop carries both reductions |
+| `CurveKind` values | 16 | 16 |
+| section solvers | 1 (arccos) + the shared window finder | 1 (arccos) + 1 (quartic) + the SAME window finder |
+| polynomial root solvers in `kernel/geom` | 1 | 1 |
+| `mixed-decline-returns` | 3 | 3 |
+| `tolerance-constants` / `type-assertions` | 214 / 692 | 214 / 692 |
+
+Nothing was deleted, because nothing was replaced: the arccos is a sub-family of the new reduction and
+stays as its fast path, gated on the tensor rather than on a type, and proven to reproduce bit for bit.
+What was deleted is the REFUSAL — three fixtures that pinned "a skew rod through a ring cannot be
+built", now three fixtures that pin the exact result.
