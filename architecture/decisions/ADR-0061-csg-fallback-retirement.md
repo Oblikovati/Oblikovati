@@ -4195,3 +4195,47 @@ between a planar lid and the torus face at the lemniscate pinch" and the close-o
 crack. The two edges were of degree FOUR, `on=[lid lid torus torus]`: the chart mesher's boundary-only
 corner triangle at the pinch coincided with the lid's tip triangle. It was a doubled surface, not a
 crack, and it is gone (finding 1). G10 is closed.
+
+### Final fix wave, findings 4 and 5 — the complement is an oval, and the node clearance is measured (2026-09-08)
+
+**Finding 4, a false geometric claim.** Three earlier sections (the pre-existing-defect note, the bisect
+correction, and G18) and the code comments beside `chartBoundaryClearance` say the ring − half-space
+complement's section is "the LEMNISCATE", that "the boundary passes through the same 3D point twice", at
+(u,v) = (3π/2, π/2) and (3π/2, 3π/2). Measured on HEAD: the torus R=5 r=1.5 cut by the plane x = R keeps
+ONE loop of two `SpiricArc` edges, (5, 0, −1.5) → (5, 0, +1.5), a single smooth oval; the face's chart
+is the whole domain minus one 512-point hole; and the two cited (u,v) points are the oval's top and
+bottom, 3.0000 mm apart. The lemniscate is the figure-eight fixture (d = R − r = 3 on the R=5 r=2
+torus), a different body. The clearance's failure mechanism is unchanged and correctly described
+otherwise — the rim's chord is coarsest in u at the oval's APEX (0.17 rad in one chord against the
+covering's 0.0245 stations) and an interior node lands inside that chord — only the shape was wrong.
+Corrected in `chart_face_clearance.go`, `chart_face_mesh_test.go` and `chart_monotone_refinement_test.go`;
+the earlier ADR text stands as written, superseded here.
+
+**G18 re-stated.** `chartBoundaryClearance`'s failure edge rests on ONE face: the complement's torus at
+`PropertyQuality`, at the oval's apex, where the rim's chord is coarsest in u. A second boundary sampled
+that coarsely at a turn would be worth more than another value of k. Guard unchanged: the two-sided pin
+263.55487 ± 0.05, proven to fire at k = 1.0.
+
+**Finding 5, `chartNodeClearance`.** It was a bare `0.3`; it now carries `// tol:mesh-density` and the
+sweep G17 asked for. It is a FLOOR under the chord clearance (`chainIsNear` takes `max(gridMargin,
+0.875·chord)`), and over the whole chart corpus — RS−, RD−, the three RODB rows, the complement, both
+figure-eight pieces and the merged band, both facetings, free edges and every charted face's area:
+
+| k | not watertight | faces whose area moved from k = 0 | chains where the floor wins the max |
+| --- | --- | --- | --- |
+| 0.0 | none | — | 0 |
+| 0.1 | none | none | 0 |
+| 0.2 | none | none | 0 |
+| 0.3 | none | none | 3 (the RODB∪/RODB−/RODB∩ rod walls' lens windows at `PropertyQuality`) |
+| 0.4 | none | RODB∪/RODB− rod wall @D 24.85688 → 24.85677 | 5 |
+| 0.5 | none | RODB∪/RODB− rod wall @D 24.85688 → 24.85680 | 8 |
+| 0.75 | none | RD− torus @D 290.28594 → 290.28632; rod walls @D → 24.85662; lens patches @D 0.25358 → 0.25330 | 12 |
+
+Which branch wins: at `DefaultQuality` the chord clearance wins on every chain of every face; at
+`PropertyQuality` the grid floor wins on exactly three chains — the lens windows on the rod walls, whose
+chords are shorter than 0.3 of a grid gap — and where it wins it culls no node the chord clearance had
+not already culled: every face is byte-identical from k = 0 to k = 0.3. The first node goes at 0.4. So
+the floor decides no corpus mesh today; it stays because the failure it guards (a node on a constraint
+derails segment recovery) is real and its cost at 0.3 is nothing. The annotation on
+`chartBoundaryClearance` said "swept 0.125…4" against a table of 0.50…3.00; it now says what the table
+shows. G17 is closed; no pin moved.

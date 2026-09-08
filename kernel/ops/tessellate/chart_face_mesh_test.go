@@ -191,8 +191,10 @@ func assertCorpusVolume(t *testing.T, row chartCorpusRow, got float64) {
 // tube minus ONE oval cap — a torus-minus-disk, outerless, with the oval as its only boundary. The
 // window-and-patch construction that used to mesh it is gone and the chart-driven mesher takes the face.
 //
-// Its section under x = R is the LEMNISCATE, so the boundary passes through the same 3D point twice and
-// this row is what the boundary clearance is swept on (chartBoundaryClearance). Re-measured there:
+// Its section under x = R is a single smooth OVAL — one loop of two spiric arcs, (5,0,−1.5) → (5,0,+1.5);
+// it is NOT the lemniscate this comment once claimed (that is the figure-eight fixture, d = R − r), and
+// the boundary passes through no 3D point twice. The rim's chord is coarsest in u at the oval's apex,
+// and this row is what the boundary clearance is swept on (chartBoundaryClearance). Re-measured there:
 // 201.258 against an analytic 203.905 at DefaultQuality, 1.30 % — the comment said 1.11 % from before the
 // sweep, and the number moved with the constant. At PropertyQuality it is 203.869, 0.017 %.
 //
@@ -231,7 +233,7 @@ func TestTheGenusOneComplementIsChartedNotWindowed(t *testing.T) {
 }
 
 // complementTorusFaceArea is the torus face's own meshed area at DefaultQuality, pinned TWO-SIDED: the
-// boundary clearance buys the lemniscate's watertightness with interior density next to a coarse
+// boundary clearance buys the oval's watertightness at its apex with interior density next to a coarse
 // boundary, and this is the only place that price is visible.
 //
 // The window is 0.05 mm², not the 0.5 a first attempt used, because 0.5 pinned nothing: it admitted BOTH

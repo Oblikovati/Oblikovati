@@ -23,14 +23,19 @@ import (
 // bounded by the discretisation's sagitta, chord²/8ρ, and a clearance of k chords puts the first
 // triangle's centroid (2/3)·k·chord out — so the sagitta argument alone is satisfied by any
 // k > 3·chord/(16ρ), about 0.03 for the faces here. It does not predict what actually fails, because the
-// band is not always a sagitta: where a boundary TOUCHES itself the rim is sampled coarsely right at the
-// touch (the lemniscate complement carries 0.17 rad of u in one chord against the covering's own 0.0245
-// stations) and an interior node lands INSIDE the chord rather than beside it. What bounds that is the
-// chord itself.
+// band is not always a sagitta: at the oval's APEX, where the rim's chord is coarsest in u (the genus-1
+// complement carries 0.17 rad of u in one chord there against the covering's own 0.0245 stations), an
+// interior node lands INSIDE the chord rather than beside it. What bounds that is the chord itself.
+//
+// (This used to say the complement's boundary "touches itself" on a lemniscate. It does not: the torus
+// R=5 r=1.5 cut by the plane x = R keeps ONE loop of two spiric arcs, (5,0,−1.5) → (5,0,+1.5), a single
+// smooth oval, and the two (u,v) points once cited as its touch, (3π/2, π/2) and (3π/2, 3π/2), are the
+// oval's top and bottom, 2r = 3 mm apart. The lemniscate is the figure-eight fixture, d = R − r, a
+// different body — final fix wave, finding 4.)
 //
 // So it is measured. Swept on the three bodies whose charted faces the clearance governs — the genus-1
-// lemniscate complement, RS− and RD− — reading each body's free edges and its torus FACE's own area at
-// BOTH facetings, so a plateau is flat in the numbers and not merely in a pass/fail count:
+// complement, RS− and RD− — reading each body's free edges and its torus FACE's own area at BOTH
+// facetings, so a plateau is flat in the numbers and not merely in a pass/fail count:
 //
 //	k       complement D      complement P        RS− D       RS− P       RD− D       RD− P
 //	0.50    0 / 263.72994     272 / 296.06212     0 / 236.36  0 / 237.87  0 / 290.29  0 / 291.88
@@ -53,12 +58,31 @@ import (
 // the edge. It is 1.6× the largest k that fails and 1.46× the smallest that passes, and it costs
 // 0.13 mm² of 263.7 — 0.05% — against sitting at 0.6. The complement's face area is pinned two-sided at
 // the value this k gives (chart_face_mesh_test.go), so the constant cannot move without saying so.
-const chartBoundaryClearance = 0.875 // tol:mesh-density (chords; swept 0.125…4, fails at k ≤ 0.55)
+const chartBoundaryClearance = 0.875 // tol:mesh-density (chords; swept 0.50…3.00 above, fails at k ≤ 0.55)
 
 // chartNodeClearance is the fraction of a grid gap an interior node must keep from the boundary. A node
 // ON a constraint owns no triangle and derails the segment recovery; one just inside it makes a sliver
 // against the exact edge points, which this mesher may not move.
-const chartNodeClearance = 0.3
+//
+// It is a FLOOR under the chord clearance — chainIsNear takes the larger of the two — and 0.3 is the
+// value at which it is only that. Swept over the whole chart corpus (RS−, RD−, the three RODB rows, the
+// complement, both figure-eight pieces, the merged band) at both facetings (final fix wave, finding 5):
+//
+//	k       bodies not watertight   faces whose area moved from k = 0    chains where the floor wins the max
+//	0.0     none                    —                                    0
+//	0.1     none                    none                                 0
+//	0.2     none                    none                                 0
+//	0.3     none                    none                                 3  (RODB∪, RODB−, RODB∩ rod walls at PropertyQuality)
+//	0.4     none                    RODB∪/RODB− rod wall D 24.85688 → 24.85677   5
+//	0.5     none                    RODB∪/RODB− rod wall D 24.85688 → 24.85680   8
+//	0.75    none                    RD− torus D, both rod walls D, both lens patches D   12
+//
+// Every face is byte-identical from k = 0 to k = 0.3: where the floor wins the max (three lens-window
+// chains whose chords are shorter than 0.3 of a grid gap, at PropertyQuality) it culls no node the chord
+// clearance had not already culled. The first node goes at 0.4. So the floor never decides a corpus mesh
+// today; it is kept because the failure it guards is real (a node on a constraint) and its cost here is
+// nothing. It is not centred: 0.3 is the largest swept value at which nothing moves.
+const chartNodeClearance = 0.3 // tol:mesh-density (fraction of a grid gap; swept 0…0.75, first node culled at 0.4)
 
 // nodeMargin is that clearance in the metric-scaled (u,v), so it reads as a 3D distance on both axes.
 func (b *chartCover) nodeMargin() float64 {

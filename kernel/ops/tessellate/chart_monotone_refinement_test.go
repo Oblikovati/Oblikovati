@@ -53,7 +53,7 @@ func TestEveryCorpusBodyIsWatertightUnderRefinement(t *testing.T) {
 			hi := meshedFreeEdges(t, body, fine)
 			if want := knownFreeEdgesAtFineQuality[row.name]; hi != want {
 				t.Errorf("%d free edges at the fine faceting, want %d — see knownFreeEdgesAtFineQuality: "+
-					"either a new crack, or the lemniscate node is fixed and this row is now watertight",
+					"either a new crack, or a pinned body is fixed and this row is now watertight",
 					hi, want)
 			}
 		})
