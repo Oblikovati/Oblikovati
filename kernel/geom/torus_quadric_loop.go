@@ -53,12 +53,28 @@ func (l TorusQuadricLoop) PointAt(t float64) math.Point3 {
 	return l.Torus.PointAt(l.azimuthAt(s, v), v)
 }
 
-// azimuthAt is the azimuth of the branch s selects at tube angle v. At and just outside a fold both
-// reductions return the merged azimuth itself — the harmonic clamps to its phase, the lane returns its
-// own extremum — so the two halves meet at exactly the same point and the loop closes.
+// azimuthAt is the azimuth of the branch s selects at tube angle v. AT a fold — the ends of each
+// half-turn, where v is the window end the discriminant vanishes at — it reads the MERGED azimuth
+// (torusFoldAzimuth) rather than a branch root, because at a fold the two branches are one azimuth by
+// definition and the closed form for a root is singular there.
+//
+// Reading a root there instead cost the loop its closure. A window end is a BISECTED root of the
+// discriminant, so the discriminant at it is zero only to rounding, and where it rounds POSITIVE the
+// two roots still exist — half a square root of that rounding either side of the merged azimuth, which
+// for a 1e-16 discriminant is ~1e-8 in azimuth. PointAt(0) and PointAt(1) then landed a rounding apart
+// instead of identical as this type documents, and downstream the loop's closure vertex sat 1e-7 off
+// its host wall's own seam ruling on one platform and on it on the other, which arranged the wall's
+// chart into a different set of cells (CI run 34280554924 macos-latest, ADR-0061).
 func (l TorusQuadricLoop) azimuthAt(s, v float64) float64 {
+	if atFoldTurn(s) {
+		return torusFoldAzimuth(l.Torus, l.Quad, v, l.UA)
+	}
 	return torusAzimuthAt(l.Torus, l.Quad, v, l.UA, upperHalf(s))
 }
+
+// atFoldTurn reports the turn parameters that map to the window's ends — where vAt's cosine is ±1 and
+// the two branches have merged. They are exactly the ends of the two half-turns.
+func atFoldTurn(s float64) bool { return s == 0 || s == stdmath.Pi || s == twoPi }
 
 // TangentAt returns dP/dt by the same central difference [TorusQuadricArc.TangentAt] uses, in the
 // LOOP's own parameter — which is where the cosine earns its keep. du/dv diverges at each fold, but

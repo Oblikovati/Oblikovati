@@ -175,3 +175,23 @@ func torusAzimuthAt(t Torus, q Quadric, v, anchor float64, upper bool) float64 {
 	}
 	return l.root(upper)
 }
+
+// torusFoldAzimuth is the MERGED azimuth of a station's branch pair: the one azimuth both branches
+// share at a fold. It makes the same classification torusAzimuthAt does and then reads the pair's
+// LABEL instead of one of its roots — the lane's own extremum, or the one-harmonic form's fold phase.
+//
+// It exists because a fold's window end is a bisected root of the discriminant: the discriminant there
+// is zero only to rounding, so root() still separates the pair by half a square root of that rounding
+// (~1e-8 in azimuth) instead of returning the merged value. Only a caller that KNOWS it is at a fold
+// can say so, which is why this is a second entry rather than a branch inside torusAzimuthAt.
+func torusFoldAzimuth(t Torus, q Quadric, v, anchor float64) float64 {
+	st := torusStationAt(t, q, v)
+	if st.invariant {
+		return st.harmonic().foldRoot()
+	}
+	l, ok := torusLaneAt(st.secondHarmonic(), anchor)
+	if !ok {
+		return stdmath.NaN()
+	}
+	return l.center
+}

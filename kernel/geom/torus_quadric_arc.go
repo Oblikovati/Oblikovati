@@ -61,6 +61,17 @@ func (h torusHarmonic) root(upper bool) float64 {
 	return h.phase - stdmath.Acos(arg)
 }
 
+// foldRoot is the azimuth the harmonic's two roots merge onto at a fold: the phase where the level
+// reaches −reach, and half a turn from it where it reaches +reach. It is root()'s own formula with the
+// arccos argument taken at the ±1 the fold puts it at, instead of at a discriminant that is zero only
+// to rounding — which is what makes the two halves of a folded loop meet at exactly one point.
+func (h torusHarmonic) foldRoot() float64 {
+	if h.reach == 0 {
+		return stdmath.NaN() // no azimuth dependence at all: see root
+	}
+	return h.phase + stdmath.Acos(stdmath.Copysign(1, -h.level))
+}
+
 // torusAxisFrame is the torus's own orthonormal frame: the axis and the two in-plane directions its
 // azimuth sweeps.
 func torusAxisFrame(t Torus) (axis, e1, e2 math.Vector3) {

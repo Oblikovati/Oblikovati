@@ -329,3 +329,81 @@ func TestEverySectionDeclineIsNamed(t *testing.T) {
 		t.Errorf("an out-of-range decline names itself %q", got)
 	}
 }
+
+// TestAFoldedLoopSitsOnItsStationsTangencyAtEveryFold is the fold invariant TorusQuadricLoop rests on.
+// At a fold the tube circle TOUCHES the quadric: the two azimuths have merged onto the station's own
+// extremum, so the quadric's rate of change along that circle vanishes there. The loop's fold point
+// must sit at that tangency.
+//
+// A window end is a bisected root of the discriminant, so the discriminant at it is zero only to
+// rounding, and where it rounds POSITIVE the branch pair still separates — by half a square root of
+// that rounding, ~1e-8 in azimuth, which is a slope of ~1e-8 of the station's scale rather than zero.
+// The loop's closure point then carried that noise, and whether it landed on a host wall's own seam
+// ruling was decided by the last bit: on arm64, where the compiler fuses x*y+z, a tilted drill's
+// section closed 1e-7 off the wall's seam and the wall's chart arranged into a different set of cells
+// (CI run 34280554924 macos-latest, ADR-0061).
+func TestAFoldedLoopSitsOnItsStationsTangencyAtEveryFold(t *testing.T) {
+	t.Parallel()
+	ring := testRing(t)
+	folds := 0
+	for _, c := range skewTestQuadrics(t) {
+		curves, _, ok := IntersectSurfacesAnalyticDeclining(ring, quadricSurfaceOf(t, c.name), ResolutionForSize(20))
+		if !ok {
+			continue
+		}
+		for _, cv := range curves {
+			l, folded := cv.(TorusQuadricLoop)
+			if !folded {
+				continue
+			}
+			folds += 2
+			assertFoldIsTangent(t, c.name, ring, c.quad, l, 0)
+			assertFoldIsTangent(t, c.name, ring, c.quad, l, stdmath.Pi)
+			if start, end := l.PointAt(0), l.PointAt(1); start != end {
+				t.Errorf("%s: the loop's ends are %v and %v; a folded loop closes on ONE point", c.name, start, end)
+			}
+		}
+	}
+	if folds < 2 { // never pass vacuously: the family must yield folded loops for this row to prove anything
+		t.Fatalf("the family produced %d folds; this row proves nothing without them", folds)
+	}
+}
+
+// assertFoldIsTangent reads the station polynomial's slope at the azimuth the loop takes at one fold.
+func assertFoldIsTangent(t *testing.T, name string, ring Torus, q Quadric, l TorusQuadricLoop, s float64) {
+	t.Helper()
+	v := l.vAt(s)
+	h := torusSecondHarmonicAt(ring, q, v)
+	u := l.azimuthAt(s, v)
+	if slope := stdmath.Abs(h.slopeAt(u)); slope > foldTangencyTol*h.scale() {
+		t.Errorf("%s: at the fold v=%g the loop takes azimuth %.17g, where the station's slope is %.3e "+
+			"(%.3e relative) — the branches have not merged onto the extremum", name, v, u, slope, slope/h.scale())
+	}
+}
+
+// foldTangencyTol is how far off tangency a fold azimuth may read, relative to the station polynomial's
+// own coefficient scale. It compares a slope with the coefficients it was formed from, so it carries no
+// model scale; a branch root read at a fold misses it by ~1e-8, six orders above this.
+const foldTangencyTol = 1e-13 // tol:numeric — relative slope at a station's tangency
+
+// quadricSurfaceOf rebuilds the surface behind one of skewTestQuadrics' entries, which the section
+// entry point takes rather than the quadric form.
+func quadricSurfaceOf(t *testing.T, name string) Surface {
+	t.Helper()
+	switch name {
+	case "ball off centre":
+		s, _ := NewSphere(math.P3(3, 2, 1), 2.5)
+		return s
+	case "axial drill":
+		s, _ := NewCylinder(math.P3(5, 0, 0), math.V3(0, 0, 1), 0.8)
+		return s
+	case "rod across the ring":
+		s, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1)
+		return s
+	case "tilted drill":
+		s, _ := NewCylinder(math.P3(5, 0, 0), math.V3(0.3, 0, 1), 0.8)
+		return s
+	}
+	s, _ := NewCone(math.P3(4, 1, -3), math.V3(0.4, 0.2, 1), 0.5)
+	return s
+}
