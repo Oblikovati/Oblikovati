@@ -96,7 +96,9 @@ func authoringMethodDeclarations(t *testing.T) map[string]string {
 		}
 		for i, ln := range strings.Split(string(src), "\n") {
 			if m := authoringMethodDecl.FindStringSubmatch(ln); m != nil {
-				out[m[2]] = filepath.ToSlash(strings.TrimPrefix(path, "../")) + ":" + itoa(i+1)
+				// Slash BEFORE stripping "../": WalkDir hands back `..\kernel\...` on Windows, so the
+				// prefix never matched there and every key missed the registry (CI run 34280554924).
+				out[m[2]] = strings.TrimPrefix(filepath.ToSlash(path), "../") + ":" + itoa(i+1)
 			}
 		}
 		return nil

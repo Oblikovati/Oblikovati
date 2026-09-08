@@ -102,7 +102,9 @@ func scanPayloadGatedChains(t *testing.T, root string) []string {
 		if parseErr != nil {
 			t.Fatalf("parsing %s: %v", p, parseErr)
 		}
-		collectChainedFuncs(f, filepath.ToSlash(strings.TrimPrefix(p, "../")), hits)
+		// Slash BEFORE stripping "../": WalkDir hands back `..\kernel\...` on Windows, so the
+		// prefix never matched there and every key missed the registry (CI run 34280554924).
+		collectChainedFuncs(f, strings.TrimPrefix(filepath.ToSlash(p), "../"), hits)
 		return nil
 	})
 	if err != nil {
