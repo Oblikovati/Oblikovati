@@ -17,16 +17,24 @@ import (
 // (model/feature/result_diagnostics.go). A defect recorded only on the whole-body mesh reaches none of
 // them — every TessellateBody caller discards that mesh — so the row that matters is this one.
 
-// TestATornClosedBodyReportsThroughTheHarvest: the cocylindrical join of #2167 meshes with a crack,
-// and BodyMeshDiagnostics must carry it.
+// TestATornClosedBodyReportsThroughTheHarvest: a closed body whose mesh has a crack must carry it on
+// BodyMeshDiagnostics — the list a feature reply, the API and the UI read.
+//
+// The #2167 cocylindrical join used to tear at DefaultQuality and that is what this row drove. It does
+// not any more (ADR-0061 stage 5, Task 7 round 1: the router offers a seam-wrapping face on a singly
+// periodic surface its own chart, the chart's membership test reads a slanted seam, and the rim gate no
+// longer counts a seam SLIT twice). At PropertyQuality the same body still tears, on a chart the MERGE
+// records 0.0198 rad off the edges the face carries, so the row drives it there and stays a real proof
+// of the harvest. It fails loudly if that tear closes too — which is the correct signal to re-point it
+// at whatever still tears, or to delete it if nothing does.
 func TestATornClosedBodyReportsThroughTheHarvest(t *testing.T) {
 	t.Parallel()
 	body := cocylindricalBossOnWall(t)
-	mesh, _ := tessellate.TessellateBody(body, DefaultQuality())
+	mesh, _ := tessellate.TessellateBody(body, PropertyQuality())
 	if n := tessellate.FreeEdgeCount(mesh); n == 0 {
 		t.Fatalf("the fixture meshes watertight; it is not the torn case this row needs")
 	}
-	assertHarvested(t, BodyMeshDiagnostics(body, DefaultQuality()), tessellate.CodeMeshNotWatertight)
+	assertHarvested(t, BodyMeshDiagnostics(body, PropertyQuality()), tessellate.CodeMeshNotWatertight)
 }
 
 // TestAWatertightBodyHarvestsNoTear is the control: a plain cylinder meshes closed, and the harvest

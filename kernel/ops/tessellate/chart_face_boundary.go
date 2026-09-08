@@ -3,6 +3,8 @@
 package tessellate
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
@@ -31,6 +33,7 @@ type chartChain struct {
 	uv                     []math.Point2
 	uMin, uMax, vMin, vMax float64 // the chain's own (u,v) box, so a clearance query rejects it cheaply
 	chord                  float64 // its mean 3D chord — the scale of its own discretisation
+	longest                float64 // its LONGEST 3D chord — the widest clearance any of its segments asks
 }
 
 // chartBoundaryChains lifts every boundary loop of a face onto the chart's branch, outer loop first.
@@ -59,7 +62,7 @@ func liftLoopOntoChart(s geom.Surface, r chartRegion, loop []math.Point3) (chart
 		c.uv[i] = math.P2(cu[i]+du, cv[i]+dv)
 	}
 	c.uMin, c.uMax, c.vMin, c.vMax = uvBBox(c.uv)
-	c.chord = meanChainChord(c.p3)
+	c.chord, c.longest = meanChainChord(c.p3), longestChainChord(c.p3)
 	return c, true
 }
 
@@ -97,12 +100,47 @@ func meanChainChord(p3 []math.Point3) float64 {
 	return sum / float64(len(p3)-1)
 }
 
-// chainSegmentCount is how many boundary segments a set of chains carries — the number of unpaired
-// mesh edges a correctly meshed patch bounded by them has, and so the acceptance bound.
+// longestChainChord is a lifted chain's longest 3D segment — the widest clearance any of its segments
+// asks for, and so the only bound a cheap box rejection may use (see chainIsNear).
+func longestChainChord(p3 []math.Point3) float64 {
+	longest := 0.0
+	for i := 1; i < len(p3); i++ {
+		longest = stdmath.Max(longest, float64(p3[i-1].DistanceTo(p3[i])))
+	}
+	return longest
+}
+
+// chainSegmentCount is how many boundary segments a set of chains carries an ODD number of times — the
+// number of unpaired mesh edges a correctly meshed patch bounded by them has, and so the acceptance
+// bound.
+//
+// Odd, not all, because a face's boundary may walk an artificial SLIT twice: the piston head's merged
+// cocylindrical wall arrives as ONE wrapping loop of 56 points — its bottom circle (32), its notched rim
+// (22) and the seam that bridges them, up and back down. Those two seam segments are the same two 3D
+// points in opposite order; a correct patch welds them into an interior edge and bounds 54, not 56. The
+// gate read 56, declined a mesh that was right, and the wall fell to the flat-patch CDT (57.913 mm²
+// where 173.811 is the region's own area, and the body reported a 32-edge tear).
 func chainSegmentCount(chains []chartChain) int {
-	n := 0
+	used := map[[2][3]int64]int{}
 	for _, c := range chains {
-		n += len(c.uv) - 1
+		grid := geom.ResolutionForPoints(c.p3).Weld()
+		for i := 0; i+1 < len(c.p3); i++ {
+			used[orderedSegmentKey(c.p3[i], c.p3[i+1], grid)]++
+		}
+	}
+	n := 0
+	for _, k := range used {
+		n += k % 2
 	}
 	return n
+}
+
+// orderedSegmentKey is a boundary segment's identity: its two welded endpoints, smaller first, so a
+// segment and its reverse are the same key.
+func orderedSegmentKey(a, b math.Point3, grid float64) [2][3]int64 {
+	ka, kb := WeldKey(a, grid), WeldKey(b, grid)
+	if ka[0] > kb[0] || (ka[0] == kb[0] && (ka[1] > kb[1] || (ka[1] == kb[1] && ka[2] > kb[2]))) {
+		ka, kb = kb, ka
+	}
+	return [2][3]int64{ka, kb}
 }

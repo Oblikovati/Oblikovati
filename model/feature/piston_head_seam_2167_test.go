@@ -78,16 +78,19 @@ func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
 	}
 }
 
-// TestPistonHeadMeshTearReachesTheFeaturesDiagnostics: the merged cocylindrical wall is a band whose
-// second rim is NOTCHED, and the tessellation router meshes it with a crack at the notch's corner
-// (ADR-0061 stage 5 — orderedRing's stable azimuth sort reverses one of the rim's two same-azimuth
-// runs). That is not this B-rep's defect to fix, but it IS a rendered surface with a hole in it, and
-// the ground rules do not let it ship silently: it must reach the user who asked for the feature.
+// TestPistonHeadMeshIsWatertightAndSilent: the merged cocylindrical wall is a band whose second rim is
+// NOTCHED, and the tessellator used to mesh it with a hole — a rendered surface the user could see
+// through. This row was written the other way round, asserting that the tear REACHED the feature's own
+// report rather than shipping quietly, with "when the router's fix lands, the mesh closes and this row
+// converts to asserting the silence" written into it.
 //
-// This is that row. It drives the #2167 extrude pair and reads the FEATURE's own report — the same
-// list a feature reply, the API and the UI show — so the defect cannot go quiet without failing here.
-// When the router's fix lands, the mesh closes and this row converts to asserting the silence.
-func TestPistonHeadMeshTearReachesTheFeaturesDiagnostics(t *testing.T) {
+// It landed (ADR-0061 stage 5, Task 7 round 1). The wall records its own chart; the router now offers a
+// seam-wrapping face on a SINGLY-periodic surface that chart instead of the flat-patch CDT, the chart's
+// membership test reads a band whose artificial seam is slanted, and the rim gate no longer counts the
+// two copies of a seam SLIT the boundary walks twice. The wall meshes 173.811 mm² of its own region
+// where the flat patch gave 57.913, the body is watertight at BOTH facetings, and the feature reports
+// nothing at all. So this is the silence.
+func TestPistonHeadMeshIsWatertightAndSilent(t *testing.T) {
 	t.Parallel()
 	const r, theta, h1, h2 = 3.0, 0.6, 6.0, 4.0
 	fs := NewPartFeatures(nil)
@@ -95,17 +98,22 @@ func TestPistonHeadMeshTearReachesTheFeaturesDiagnostics(t *testing.T) {
 	ex.AddByDistanceExtent(circleSketchAt(0, 0, r), 0, ops.NewBody, func() float64 { return h1 })
 	boss := ex.AddByDistanceExtent(dProfileSketchOnPlaneZ(h1, r, theta), 0, ops.Join, func() float64 { return h2 })
 	fs.Recompute()
-	assertFeatureReportsMeshTear(t, boss.Diagnostics())
-}
-
-// assertFeatureReportsMeshTear requires the body's mesh tear on a feature's own report, at Defect.
-func assertFeatureReportsMeshTear(t *testing.T, ds []diag.Diagnostic) {
-	t.Helper()
-	for _, d := range ds {
-		if d.Code == tessellate.CodeMeshNotWatertight && d.Severity == diag.Defect {
-			return
+	assertFeatureReportsNoMeshTear(t, boss.Diagnostics())
+	for _, q := range []ops.Quality{ops.DefaultQuality(), ops.PropertyQuality()} {
+		mesh, _ := tessellate.TessellateBody(fs.Result()[0], q)
+		if n := tessellate.FreeEdgeCount(mesh); n != 0 {
+			t.Errorf("tol %g: the piston head meshes with %d free edges, want 0", q.ChordTolerance, n)
 		}
 	}
-	t.Errorf("the piston head's mesh tear reaches no user: the feature reports %v, without %q",
-		ds, tessellate.CodeMeshNotWatertight)
+}
+
+// assertFeatureReportsNoMeshTear requires the feature's own report — the list a feature reply, the API
+// and the UI show — to carry no mesh tear.
+func assertFeatureReportsNoMeshTear(t *testing.T, ds []diag.Diagnostic) {
+	t.Helper()
+	for _, d := range ds {
+		if d.Code == tessellate.CodeMeshNotWatertight {
+			t.Errorf("the piston head still reports a mesh tear: %v", ds)
+		}
+	}
 }

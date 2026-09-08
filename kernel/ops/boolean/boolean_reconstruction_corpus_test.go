@@ -75,35 +75,49 @@ func TestCocylindricalCapOnWallIsOneAnalyticFace(t *testing.T) {
 	}
 	minor := 0.5 * 9 * (1.2 - stdmath.Sin(1.2))
 	assertVolume(t, body, stdmath.Pi*9*6+(stdmath.Pi*9-minor)*4, 5e-3)
-	assertMergedBandMeshFreeEdges(t, body, 4)
+	assertMergedBandMeshesWatertight(t, body)
 }
 
-// assertMergedBandMeshFreeEdges pins the merged band's MESH free-edge count AND that the tear is
-// reported, so nothing about it is silent.
+// mergedBandFineFreeEdges is what this fixture still leaves at PropertyQuality, and it is a chart the
+// MERGE recorded, not a mesher defect. Measured on the merged face: its own edges put the notch corners
+// at u = 4.112388980 and 5.312388980 (ParamAt of the D-prism's chord vertices, exactly ∓0.6 − π/2),
+// while the chart it carries records them at 4.092588062 and 5.292588062 — the whole notch rotated by
+// −0.019800918 rad, 0.059 mm at radius 3. The region and the boundary then disagree in a strip 0.06 mm
+// wide and 4 mm tall along the boss's chord edges: at DefaultQuality the boundary clearance covers it
+// and the body is watertight, at PropertyQuality ten edges around the two corners are left unpaired.
+// Correcting the chart is kernel/brep's (the merge's faceChart), which this task does not touch.
+const mergedBandFineFreeEdges = 10
+
+// assertMergedBandMeshesWatertight requires the merged band's MESH to be a closed surface at BOTH gate
+// facetings, and to report no tear.
 //
-// It is 4 and not 0, and the reason is downstream of this B-rep. The merged wall is a band whose
-// second rim is NOTCHED: it runs along the host's rim at v = 6 across the boss's flat, and along the
-// boss's own top rim at v = 10 everywhere else, joined by two runs at ONE azimuth each (the boss's
-// chord edges). The tessellation router hands such a face to twoRimHoledBandMesh, whose
-// bridgeRimsAtSeam orders each rim with orderedRing — a STABLE SORT BY AZIMUTH. A stable sort keeps a
-// tie's input order, and the two chord runs are approached from opposite sides, so one of them comes
-// out reversed: the ring jumps rim-to-rim at that corner and the four triangles around it do not pair.
-// Disabling that mesher is worse, not better — the router then short-circuits at
-// IsPeriodic(u) != IsPeriodic(v) to the flat-patch CDT (61 free edges, and it says so), so the
-// chart-driven mesher this face wants is not reachable for a singly-periodic surface at all. Both are
-// the chart mesher's own router to settle (ADR-0061 stage 5).
+// This row was pinned at 4 free edges while the tessellator could not mesh the merged face, with the
+// number written down as what landing the router's fix would move. It moved. Three things were wrong
+// and all three are fixed in kernel/ops/tessellate (ADR-0061 stage 5, Task 7 round 1):
 //
-// What this row will NOT let happen is the tear shipping unreported: TessellateBody's post-condition
-// says a closed solid's mesh is a closed surface, and the defect it records names the faces the tear
-// touches. The count is pinned so landing the router's fix trips this row and converts it, exactly as
-// the face count was pinned before the merge landed.
-func assertMergedBandMeshFreeEdges(t *testing.T, b *topo.Body, want int) {
+//   - the router sent a seam-wrapping face on a SINGLY-periodic surface straight to the flat-patch CDT,
+//     so the chart-driven mesher this face wants was unreachable (61 free edges, 74.416 mm² of wall
+//     where 174.096 is right);
+//   - the merged face's chart is a band with a SLANTED seam — its bottom rim runs u ∈ [0, 2π] and its
+//     notched top rim u ∈ [−0.1963, 6.0868] — so it spans 6.4795 of a 6.2832 period, and folding a
+//     membership query onto one branch lost the sliver between the two seam edges (region 171.141 mm²,
+//     88 unpaired edges against a rim of 54);
+//   - the covering's replication pad was measured on the wrong axis's stations.
+//
+// The mesh reads 174.086 mm² of the analytic 174.096 and the body is watertight at both facetings.
+func assertMergedBandMeshesWatertight(t *testing.T, b *topo.Body) {
 	t.Helper()
-	mesh, _ := tessellate.TessellateBody(b, DefaultQuality())
-	if n := tessellate.FreeEdgeCount(mesh); n != want {
-		t.Errorf("the merged body meshes with %d free edges, pinned at %d", n, want)
+	for _, gq := range gateQualities() {
+		want := 0
+		if gq.name == "property" {
+			want = mergedBandFineFreeEdges
+		}
+		mesh, _ := tessellate.TessellateBody(b, gq.q)
+		if n := tessellate.FreeEdgeCount(mesh); n != want {
+			t.Errorf("%s quality: the merged body meshes with %d free edges, want %d", gq.name, n, want)
+		}
+		assertMeshTearIsReported(t, mesh, tessellate.FreeEdgeCount(mesh))
 	}
-	assertMeshTearIsReported(t, mesh, want)
 }
 
 // assertMeshTearIsReported requires the torn mesh to carry the named Defect — a degradation the ground

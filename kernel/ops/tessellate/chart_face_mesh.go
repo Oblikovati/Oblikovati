@@ -306,12 +306,24 @@ func inwardProbe(stations []float64, i int, periodic bool) float64 {
 // mesh's rim detours around the gap through interior nodes the neighbour face has never heard of
 // (measured on the one-window torus complement: 32 rim edges where the shared oval has 28).
 //
-// Keeping every interior node half a chord clear of the boundary puts the band entirely inside the
-// FIRST triangle off the boundary, whose centroid is then a third of a chord away — outside a band that
-// is at most chord²/8ρ wide, since a discretisation whose chord is not far shorter than the curve's own
-// radius would not have been accepted. It is a mesh-density quantity, not a tolerance: where the shared
-// edge is finely sampled the chord is small and the grid clearance below governs instead.
-const chartBoundaryClearance = 0.5
+// Keeping every interior node a WHOLE chord clear of the boundary puts the band entirely inside the
+// FIRST triangle off the boundary, whose centroid is then two thirds of a chord away — outside a band
+// that is at most chord²/8ρ wide, since a discretisation whose chord is not far shorter than the curve's
+// own radius would not have been accepted. It is a mesh-density quantity, not a tolerance: where the
+// shared edge is finely sampled the chord is small and the grid clearance below governs instead.
+//
+// 0.5 → 1.0 (Task 7 round 1). Half a chord is not enough where a boundary TOUCHES itself. The genus-1
+// torus complement (a torus R=5 r=1.5 cut by the plane x = R, whose section is the LEMNISCATE) passes
+// through the same 3D point twice, at (u,v) = (3π/2, π/2) and (3π/2, 3π/2), and its rim is sampled
+// coarsely right there — 0.17 rad of u in one chord against the covering's own 0.0245 stations. Interior
+// nodes landed inside those chords and split them: measured at PropertyQuality, 276 unpaired edges
+// against a rim of 272, four rim segments carrying no triangle at all, the face declined by its own rim
+// gate and fallen to the surface's whole domain (296.062 mm² against the 264.830 it had built), and the
+// body cracked with 272 free edges. A whole chord clears them: 272 == 272, 264.871 mm², body watertight
+// at 203.869 mm³ against an analytic 203.905. The cost is a slightly coarser interior next to a coarse
+// boundary — the same face reads 263.423 mm² at DefaultQuality against 263.730 — which is the trade the
+// gate is for.
+const chartBoundaryClearance = 1.0
 
 // chartNodeClearance is the fraction of a grid gap an interior node must keep from the boundary. A node
 // ON a constraint owns no triangle and derails the segment recovery; one just inside it makes a sliver
@@ -367,9 +379,44 @@ func boxIsNear(box [4]float64, x, y, margin float64) bool {
 }
 
 // keepChartTriangles keeps each triangle whose centroid lies in the chart's branch window AND on its
-// material side — the region's own two-part definition, handed to the shared canonical selection.
+// material side — the region's own two-part definition.
 func (b *chartCover) keepChartTriangles(tris [][3]int) [][3]int {
-	return b.keepCanonical(tris, func(u, v float64) bool {
-		return b.r.inWindow(u, v) && b.r.covers(u, v)
-	})
+	out := make([][3]int, 0, len(tris))
+	for _, t := range tris {
+		if u, v := b.centroid(t); b.r.inWindow(u, v) && b.triangleIsMaterial(t, u, v) {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
+// triangleIsMaterial answers the region for one triangle: at its centroid, and — only when that answers
+// NO — by the majority of three points halfway from the centroid to each vertex.
+//
+// The retry is for a centroid that lands ON a contour edge, where an even-odd count answers by which
+// side the ray was cast from rather than by the geometry. That is not a measure-zero curiosity here: a
+// band's artificial seam can be SLANTED (the merged cocylindrical wall's runs from (0,0) to (−0.1963,10)),
+// and a slope of exactly eight u-stations over the whole v range puts grid-built centroids EXACTLY on it
+// — measured on that face at PropertyQuality, the centroid (−0.008181231, 0.416666667) and the seam agree
+// to 1e-11, both branches read "outside", and the triangle vanished from both. Forty such holes tore the
+// wall (615 unpaired edges against a rim of 578).
+//
+// The retry can only ADD a triangle the point test refused, never duplicate one: covers is periodic, so a
+// triangle it accepts anywhere is accepted on exactly the one translate inWindow keeps. A majority, not
+// "any", so a triangle that genuinely lies outside a real boundary — where at most one sub-point can fall
+// the other side of the chart-versus-chord band — is still refused.
+func (b *chartCover) triangleIsMaterial(t [3]int, u, v float64) bool {
+	if b.r.covers(u, v) {
+		return true
+	}
+	if fu, fv := b.r.fold(u, v); !b.r.onContour(fu, fv) {
+		return false // a decided NO: the centroid is nowhere near a contour edge
+	}
+	votes := 0
+	for _, i := range t {
+		if b.r.covers((u+b.uu[i])/2, (v+b.vv[i])/2) {
+			votes++
+		}
+	}
+	return votes >= 2
 }

@@ -67,12 +67,48 @@ func branchWindow(lo, hi float64, periodic bool) (float64, float64) {
 func (r chartRegion) covers(u, v float64) bool {
 	fu, fv := r.fold(u, v)
 	in := false
-	for _, c := range r.contours {
-		if pointInUVPoly(c, [2]float64{fu, fv}) {
-			in = !in
+	for _, sh := range r.shifts() {
+		for _, c := range r.contours {
+			if pointInUVPoly(c, [2]float64{fu + sh[0], fv + sh[1]}) {
+				in = !in
+			}
 		}
 	}
 	return in
+}
+
+// chartContourIncidence is how close, as a fraction of the chart's own (u,v) extent, a query has to be
+// to a contour edge before the even-odd count there is treated as undecided rather than as an answer.
+//
+// A contour is stored as math.Point2, whose components carry about seven significant digits, so a query
+// nearer than about 1e-7 of the extent is on the edge as far as the stored contour can tell. 1e-6 is a
+// decade of margin on that and is still ten thousand times finer than the finest covering cell any
+// quality asks for, so it can only catch a genuine incidence.
+const chartContourIncidence = 1e-6 // tol:parametric (relative to the chart's own extent)
+
+// onContour reports whether (u,v) — already folded — lies ON a contour edge at some period shift, to
+// within chartContourIncidence of the chart's extent. An even-odd count there answers by which side the
+// ray was cast from, not by the geometry.
+func (r chartRegion) onContour(fu, fv float64) bool {
+	tol := chartContourIncidence * stdmath.Max(r.uHi-r.uLo, r.vHi-r.vLo)
+	for _, sh := range r.shifts() {
+		for _, c := range r.contours {
+			if distToUVPoly(c, fu+sh[0], fv+sh[1]) <= tol {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// distToUVPoly is the distance from (x,y) to a closed contour's nearest edge.
+func distToUVPoly(c []math.Point2, x, y float64) float64 {
+	best := stdmath.Inf(1)
+	for i := range c {
+		a, b := c[i], c[(i+1)%len(c)]
+		best = stdmath.Min(best, distToSeg2D(x, y, float64(a.X), float64(a.Y), float64(b.X), float64(b.Y)))
+	}
+	return best
 }
 
 // fold carries a query onto the chart's branch on each wrapping axis. A bounded axis is left alone: a
