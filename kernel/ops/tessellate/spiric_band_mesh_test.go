@@ -118,3 +118,38 @@ func TestAzimuthInterpolatorFollowsTheSeam(t *testing.T) {
 		}
 	}
 }
+
+// TestTubeSweepRadiusIsTheTorusOwnSpeed: the arc a radian of azimuth travels is R + r·cos v — the
+// torus's own |dP/du|, which is what turns the band's angular width into a length a tolerance can be
+// compared against.
+func TestTubeSweepRadiusIsTheTorusOwnSpeed(t *testing.T) {
+	t.Parallel()
+	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
+	for _, row := range []struct {
+		v, want float64
+	}{{0, 7}, {stdmath.Pi, 3}, {stdmath.Pi / 2, 5}} {
+		if got := tubeSweepRadius(tor, row.v); stdmath.Abs(got-row.want) > 1e-9 { // tol:numeric
+			t.Errorf("tubeSweepRadius at v=%g is %.9f, want R + r·cos v = %g", row.v, got, row.want)
+		}
+	}
+}
+
+// TestBandPinchesWhereTheBoundariesTouch is the conditioning gate the figure-eight needs: a strip whose
+// two boundaries MEET at some tube station is two lobes joined at a point, and one sweep round the tube
+// cannot say which side of the meeting a row belongs to (see bandPinches for the 310.800-vs-283.100
+// measurement). A strip that keeps a width everywhere is swept as before.
+func TestBandPinchesWhereTheBoundariesTouch(t *testing.T) {
+	t.Parallel()
+	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
+	loRim := []math.Point3{math.P3(7, 0, 0), math.P3(-7, 0, 0)} // together these set the weld scale
+	hiRim := []math.Point3{math.P3(0, 7, 0), math.P3(0, -7, 0)}
+	vs := []float64{0, 1, 2, stdmath.Pi, 4, 5, 6}
+	apart := func(v float64) float64 { return 0.8 + 0.1*stdmath.Cos(v) }
+	if bandPinches(tor, func(float64) float64 { return 0 }, apart, vs, loRim, hiRim) {
+		t.Error("bandPinches called a strip 0.7–0.9 rad wide pinched")
+	}
+	touching := func(v float64) float64 { return stdmath.Abs(v - stdmath.Pi) } // meets the other at v = π
+	if !bandPinches(tor, func(float64) float64 { return 0 }, touching, vs, loRim, hiRim) {
+		t.Error("bandPinches missed boundaries that MEET at v = π — the figure-eight's own tangency")
+	}
+}

@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/tessellate"
@@ -118,4 +119,58 @@ func countTorusFaces(b *topo.Body) int {
 		}
 	}
 	return n
+}
+
+// TestAnUnchartedPinchedBandIsRefusedAndSaidSo is the gate the ROUTING alone does not give.
+//
+// A charted spiric band never reaches the tube-wrapping loft — spiricTubeTrimOf hands it to the general
+// chart-driven mesher — so the loft's own conditioning matters only for an UNCHARTED one. "No primitive
+// boolean in the corpus builds an uncharted torus band" is an observation about today's corpus, not an
+// invariant, and a band whose two boundaries MEET is the one shape a single sweep round the tube cannot
+// describe: the loft covers the tangency twice (310.800 mm² where the analytic region is 283.100, and
+// its two halves summing to 525.98 against a torus of 394.78).
+//
+// So the figure-eight's own face is stripped of its chart and driven through the router. The loft must
+// refuse it, the mesh must not be the loft's, and the refusal must be NAMED — a diag.Defect the feature
+// reply, the API and the UI carry — not a silent sweep.
+func TestAnUnchartedPinchedBandIsRefusedAndSaidSo(t *testing.T) {
+	t.Parallel()
+	for _, op := range []ops.PartFeatureOperation{ops.Cut, ops.Intersect} {
+		face := unchartedFigureEightTorusFace(t, op)
+		mesh := tessellate.TessellateFace(face, ops.DefaultQuality())
+		if !meshReportsIgnoredTrim(mesh) {
+			t.Errorf("%v: an uncharted pinched band was meshed with no named decline: %v", op, mesh.Diagnostics)
+		}
+		// The reported fallback is the surface's WHOLE domain, a chord deficit under 394.784; the loft's
+		// own answers for these two pieces are 310.800 and 215.177, so anything near either is the sweep
+		// this row exists to refuse.
+		if area := tessellate.MeshGeometryProperties(mesh).Area; area < 0.95*figureEightTorusArea {
+			t.Errorf("%v: the uncharted pinched band meshed %.5f mm² — the loft's own answer, not the "+
+				"reported whole-domain fallback (%.5f less a chord deficit)", op, area, figureEightTorusArea)
+		}
+	}
+}
+
+// unchartedFigureEightTorusFace is the figure-eight piece's torus face with its chart removed, which is
+// what a producer that recorded none would hand the tessellator.
+func unchartedFigureEightTorusFace(t *testing.T, op ops.PartFeatureOperation) *topo.Face {
+	t.Helper()
+	for _, f := range figureEightPiece(t, op).Faces() {
+		if _, isTorus := f.Geometry().(geom.Torus); isTorus {
+			f.SetChart(nil)
+			return f
+		}
+	}
+	t.Fatalf("the figure-eight %v piece has no torus face", op)
+	return nil
+}
+
+// meshReportsIgnoredTrim reports whether a mesh carries the discarded-trim defect at Defect severity.
+func meshReportsIgnoredTrim(m *tessellate.Mesh) bool {
+	for _, d := range m.Diagnostics {
+		if d.Code == tessellate.CodeTrimIgnoredFullDomain && d.Severity == diag.Defect {
+			return true
+		}
+	}
+	return false
 }
