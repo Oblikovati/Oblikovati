@@ -3722,3 +3722,73 @@ bisect found first bad commit
 The previous round named `6f8f5125` from a coarser run. The first bad commit is **`95cdd21e`** — the
 same slice, one commit earlier: the wiring that replaced `torusComplementMesh`'s exits with the
 chart-driven mesher, measured only at DefaultQuality.
+
+### The chart mesher at fine quality, round 3: one rim key, and the clearance measured per body (2026-09-08)
+
+Two findings against round 2, and the corrections they force to that round's own numbers.
+
+#### One rim key, for the gate and for the tests
+
+Round 2 made the acceptance gate compare SETS and left `chainSegmentCount` behind as production code with
+only test callers. Worse, the two had DIVERGED: the gate keys a rim once per face on the MESH's weld
+grid, `chainSegmentCount` keyed it per chain on per-chain grids, and `geom.ResolutionForPoints` scales
+with the points it is given — so on a multi-loop face the corpus row and the shipped gate were answering
+different questions, and `chart_face_cover_test.go` had stopped asserting the gate.
+
+`chainSegmentCount` is deleted. `chartRimMismatch` is the one comparison, returning the two numbers the
+gate decides on (unpaired edges that are no rim segment; rim segments the mesh does not bound), and the
+tests read the gate through it. `TestTheRimIsKeyedOnceForTheWholeFace` drives the three-loop windowed
+wall and requires the per-chain reading to agree with the gate's, so nothing can go back to counting its
+own way without failing.
+
+#### A refusal that names the shape it refused
+
+`CodeTrimIgnoredFullDomain` said "no mesher recognised its boundary on this surface" even when a mesher
+HAD recognised it and given it up — a pinched spiric band, which round 2 made the loft refuse. The two
+are different repairs, so `specialCurvedMesh` now returns WHY it declined and the reporter says it: "the
+mesher that recognised it refused the shape — its two tube-wrapping boundaries MEET, so the band is two
+lobes joined at a point and no single sweep round the tube describes it". Asserted end-to-end by
+`TestAnUnchartedPinchedBandIsRefusedAndSaidSo`.
+
+#### The clearance, measured per body and per faceting
+
+Round 2's sweep was one aggregate failure count, which cannot show a plateau's flatness and hid that its
+own quoted areas came from different code states. Re-measured on this HEAD, per body, per faceting, as
+free edges and the torus FACE's own area:
+
+| k | complement D | complement P | RS− D | RS− P | RD− D | RD− P |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0.50 | 0 / 263.72994 | **272 / 296.06212** | 0 / 236.36 | 0 / 237.87 | 0 / 290.29 | 0 / 291.88 |
+| 0.55 | 0 / 263.72994 | **272 / 296.06212** | 0 / 236.36 | 0 / 237.87 | 0 / 290.29 | 0 / 291.88 |
+| 0.60 | 0 / 263.68219 | 0 / 264.87124 | 0 / 236.36 | 0 / 237.87 | 0 / 290.29 | 0 / 291.88 |
+| 0.70 | 0 / 263.60871 | 0 / 264.87119 | 0 / 236.10 | 0 / 237.87 | 0 / 290.29 | 0 / 291.88 |
+| **0.875** | 0 / **263.55487** | 0 / 264.87111 | 0 / 236.10 | 0 / 237.87 | 0 / 290.29 | 0 / 291.88 |
+| 1.00 | 0 / 263.42317 | 0 / 264.87104 | 0 / 236.10 | 0 / 237.87 | 0 / 290.29 | 0 / 291.88 |
+| 1.10 | 0 / 263.33288 | 0 / 264.87097 | 0 / 235.44 | 0 / 237.87 | 0 / 290.28 | 0 / 291.88 |
+| 1.50 | 0 / 263.15360 | 0 / 264.87045 | — | — | — | — |
+| 3.00 | 0 / 260.51898 | 0 / 264.86644 | — | — | — | — |
+
+Three corrections to round 2 fall out of it:
+
+- **The failure edge is 0.55, not 0.5–0.75.** Only ONE body and ONE faceting ever fails — the complement
+  at PropertyQuality, where the face is declined and falls to the whole domain (296.062 against the
+  264.871 it builds). Above 0.6 nothing fails at any k measured, so the upper end is not a plateau edge
+  at all: it is a monotone COST, the clearance removing interior nodes next to a coarse boundary.
+- **The areas ARE monotone in k.** Round 2 reported them non-monotone (263.596 @0.5, 263.610 @0.875,
+  263.423 @1.0); those three readings came from three different code states, not from one sweep. Measured
+  in one pass on one HEAD they fall with every step, which is what a rule that only ever REMOVES interior
+  nodes must do.
+- **0.875 is chosen, not centred**, and round 2 should not have called it a middle. It is 1.6× the
+  largest k that fails and 1.46× the smallest that passes, and it costs 0.13 mm² of 263.7 — 0.05 % —
+  against sitting at 0.6.
+
+#### The complement's pin, which round 2 did not actually pin
+
+`263.610 ± 0.5` admitted both readings the clearance moved between (263.42317 at k = 1.0 and 263.72994 at
+k = 0.5), so a row meant to catch the constant drifting would have sat green through exactly that, and
+its centre was a value from an intermediate state rather than the measurement at HEAD. It is
+**263.55487 ± 0.05**: tessellation is byte-identical run to run by ground rule, so the reading is exact
+and the window absorbs only the five decimals the literal is written to plus the last-place spread an
+FMA-contracting toolchain gives an area sum — four decades above that, and a factor of 2.6 below the
+nearest reading it must exclude. Proven to fire: at k = 1.0 it reports "the complement's torus face
+meshes 263.42317 mm², off its pin of 263.55487 ± 0.05".
