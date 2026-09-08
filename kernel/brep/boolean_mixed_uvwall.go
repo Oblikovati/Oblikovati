@@ -380,6 +380,12 @@ func conicCrossesFaceBoundary(pc planeConic, f curvedFace) (crosses, ok bool) {
 // figure-eight's lobes are bounded by — left the box at the endpoints, which for those CLOSED lobes is
 // one point, so the face measured its own scale as the 1e-9 model-size floor and the stitch welded on
 // a 1e-15 grid (CI run 34280554924 macos-latest).
+//
+// "No cull pad" stays true of what this function adds; CurveSpanBox's own sampled branch does grow its
+// walk's hull by the step reach the curve's speed bounds, because a walk's hull is an UNDER-bound and
+// this box's users need a bound. That growth applies only to a curve kind with no closed form, and it
+// is conservative in the direction both users want: a box cull that over-reaches keeps a candidate it
+// would otherwise drop, and a Resolution taken from a slightly larger extent is slightly looser.
 func faceLoopBox(f curvedFace) math.Box {
 	box := math.EmptyBox()
 	for _, l := range f.loops {

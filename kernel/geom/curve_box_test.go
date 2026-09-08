@@ -93,6 +93,10 @@ func obliqueFigureEightLobe(t *testing.T) geom.Curve3 {
 // bounded by ONE such closed curve otherwise measured its own scale as a point and took the model-size
 // floor, which put its stitch weld grid at 1e-15 — below the rounding of its own coordinates
 // (CI run 34280554924 macos-latest).
+//
+// Every probe is taken OFF the walk's own stations: the box is built at i/curveSpanSamples, so a probe
+// on that grid is a point the box was extended with and cannot fail. offGridParams walks a prime count
+// of half-offset parameters instead, which shares no station with the walk.
 func TestCurveSpanBoxBoundsACurveWithNoClosedFormExtent(t *testing.T) {
 	t.Parallel()
 	lobe := obliqueFigureEightLobe(t)
@@ -105,12 +109,68 @@ func TestCurveSpanBoxBoundsACurveWithNoClosedFormExtent(t *testing.T) {
 		t.Fatalf("%T span box = %v (diagonal %g): a lobe of a torus of major radius 5 is units across",
 			lobe, box, float64(box.Diagonal().Length()))
 	}
-	for i := range 17 {
-		p := lobe.PointAt(lo + (hi-lo)*float64(i)/16)
-		if !box.Contains(p) {
-			t.Fatalf("%T span box %v misses its own point %v", lobe, box, p)
+	for _, t01 := range offGridParams() {
+		if p := lobe.PointAt(lo + (hi-lo)*t01); !box.Contains(p) {
+			t.Fatalf("%T span box %v misses its own point %v at t=%g", lobe, box, p, t01)
 		}
 	}
+}
+
+// TestCurveSpanBoxHoldsAWigglyCurveItsWalkUnderBounds is the property the walk alone does NOT have.
+// A helix of 6.4 turns is sampled 5 times a turn by curveSpanSamples stations, so the hull of those
+// stations is an inscribed pentagon that misses the tube. Both of those numbers are load-bearing: a
+// WHOLE turn count makes the stations divide the turn evenly and land on the axes, and a start on the
+// reference direction puts the first station at +r itself, either of which makes the hull exact on an
+// axis and the row vacuous. Hence 6.4 turns from a reference direction at 45°. The row asserts BOTH halves — that the bare hull really does miss, and that
+// the returned box (the hull grown by the step reach the curve's own speed bounds) holds every
+// off-grid point anyway.
+func TestCurveSpanBoxHoldsAWigglyCurveItsWalkUnderBounds(t *testing.T) {
+	t.Parallel()
+	const radius = 3.0
+	coil, err := geom.NewHelix3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 1, 0), radius, 1, 0, 6.4, false)
+	if err != nil {
+		t.Fatalf("NewHelix3d: %v", err)
+	}
+	lo, hi := coil.Domain()
+	if _, ok := geom.CurveBox(coil, lo, hi); ok {
+		t.Skipf("%T now has a closed-form extent; this row needs a curve the walk under-bounds", coil)
+	}
+	hull, box := stationHull(coil, lo, hi), geom.CurveSpanBox(coil, lo, hi)
+	missed, params := 0, offGridParams()
+	for _, t01 := range params {
+		p := coil.PointAt(lo + (hi-lo)*t01)
+		if !hull.Contains(p) {
+			missed++
+		}
+		if !box.Contains(p) {
+			t.Errorf("%T span box %v misses its own point %v at t=%g", coil, box, p, t01)
+		}
+	}
+	if missed == 0 { // never pass vacuously: without a real under-bound the grown box proves nothing
+		t.Fatalf("the walk's bare hull %v already holds all %d off-grid points; this row needs a curve "+
+			"whose walk under-bounds it", hull, len(params))
+	}
+}
+
+// stationHull is the hull of the walk CurveSpanBox builds its box from, with no growth — the
+// under-bound the grown box has to improve on.
+func stationHull(c geom.Curve3, t0, t1 float64) math.Box {
+	box := math.EmptyBox()
+	for i := 0; i <= geom.CurveSpanSamplesForTest; i++ {
+		box = box.ExtendPoint(c.PointAt(t0 + (t1-t0)*float64(i)/geom.CurveSpanSamplesForTest))
+	}
+	return box
+}
+
+// offGridParams returns parameters in (0, 1) that share no value with the walk's stations: a prime
+// count of them, each offset half a step of its own spacing.
+func offGridParams() []float64 {
+	const probes = 97 // prime, so k/97 lands on i/32 only at the ends, which the half-offset removes
+	out := make([]float64, probes)
+	for k := range out {
+		out[k] = (float64(k) + 0.5) / probes
+	}
+	return out
 }
 
 // CurveSpanBox is CurveBox where the closed form applies: same box, so nothing a conic bounds moves.
